@@ -8,7 +8,7 @@ permissions:
 jobs:
   native:
     name: Native career ${{ matrix.test }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 25
     strategy:
       fail-fast: false

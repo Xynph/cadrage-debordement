@@ -17,7 +17,7 @@ concurrency:
 jobs:
   long-careers:
     name: Carriere ${{ matrix.scenario }} - 15 saisons
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -49,7 +49,7 @@ jobs:
     name: Validation carrieres longues
     if: ${{ always() }}
     needs: long-careers
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5

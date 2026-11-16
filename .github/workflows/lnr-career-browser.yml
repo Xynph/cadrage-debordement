@@ -12,7 +12,7 @@ jobs:
   node:
     # tests/lnr-career.cjs est déjà exécuté par Tests JavaScript en PR.
     if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v5
@@ -30,7 +30,7 @@ jobs:
   long-career:
     # tests/lnr-career-long.cjs est déjà exécuté par Tests JavaScript en PR.
     if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
@@ -41,7 +41,7 @@ jobs:
           node-version: '24'
       - run: node tests/lnr-career-long.cjs
   chromium:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5

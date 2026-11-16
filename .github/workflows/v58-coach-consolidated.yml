@@ -8,7 +8,7 @@ permissions:
 jobs:
   coach:
     name: V58 ${{ matrix.test }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 10
     strategy:
       fail-fast: false

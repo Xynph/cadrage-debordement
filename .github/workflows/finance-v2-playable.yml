@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 jobs:
   native-finance-v2:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +20,7 @@ jobs:
       - name: Native finance actions and save/import regression
         run: node --test tests/finance-v2-playable.cjs tests/career-integration.cjs tests/saves.cjs tests/v51-world-finance.cjs
   chromium-finance-v2:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
