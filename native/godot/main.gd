@@ -294,7 +294,8 @@ func _live() -> Dictionary:
 func _receive_model(value: Dictionary) -> void:
 	# Coup d’envoi : la scène 3D se construit d’un bloc sur le fil principal. Le panneau d’attente est posé et
 	# dessiné d’abord (deux images), puis la réponse est traitée : jamais d’écran figé sans message.
-	if bridge.last_response_ok and last_command != "tick" and _opens_live_view(value) and is_instance_valid(command_wait_overlay):
+	var live_opening := bridge.last_response_ok and last_command != "tick" and _opens_live_view(value) and is_instance_valid(command_wait_overlay)
+	if live_opening:
 		if not command_wait_overlay.panel_visible(): command_wait_overlay.set_context(_command_wait_context(last_command))
 		command_wait_overlay.reveal_now(LIVE_VIEW_WAIT_MESSAGE)
 		await get_tree().process_frame
@@ -319,7 +320,8 @@ func _receive_model(value: Dictionary) -> void:
 		reception_id = Immersive.Reception.new_priority(model, value)
 	# Keep one uninterrupted wait when the player's action follows an automatic tick
 	# or a light decision: the queued command keeps the same panel.
-	if not response_ok or queued_action.is_empty() or not (received_command == "tick" or shows_wait_panel(str(queued_action.get("command", "")))):
+	# Entrée dans le direct : le panneau reste affiché jusqu'à la fin de la construction de la scène (retiré plus bas).
+	if not live_opening and (not response_ok or queued_action.is_empty() or not (received_command == "tick" or shows_wait_panel(str(queued_action.get("command", ""))))):
 		command_wait_overlay.dismiss()
 	SquadViews.U.remember(self)
 	model = value
@@ -346,6 +348,7 @@ func _receive_model(value: Dictionary) -> void:
 	if _has_career():
 		accent = Color("106d43") if Immersive.Selections.nation_only(model) else Color(G.identity(model.club).get("color", "#d43e47"))
 	if not export_path.is_empty() and not _write_export():
+		if live_opening: command_wait_overlay.dismiss()
 		if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 		return
 	if bridge.last_response_ok and received_command not in ["epcr_preview", "competition_editor_preview"]: last_error = ""
@@ -395,6 +398,7 @@ func _receive_model(value: Dictionary) -> void:
 	call_deferred("_refresh_coach")
 	if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 	_record_timing(received_command, receive_us)
+	if live_opening: command_wait_overlay.dismiss()
 	if not queued_action.is_empty() and bridge.last_response_ok:
 		var next := queued_action.duplicate(true)
 		queued_action.clear()
