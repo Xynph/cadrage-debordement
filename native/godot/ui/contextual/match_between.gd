@@ -112,6 +112,28 @@ var precision_chiffres: Label
 var echantillon_court := false
 ## Opacité des chiffres pendant l'échantillon court : lisibles, mais en retrait du score et des alertes.
 const ATTENUE := 0.5
+## Journée en direct (`direct.journee`, moteur match-multiplex.cjs) : classement « si ça finit
+## ainsi » sous le duel et multiplex des autres matchs à côté de Gabi. Masqués sans la donnée.
+var classement_tuile: PanelContainer
+var classement_lignes: VBoxContainer
+## Marges des trois tuiles de droite (duel, classement, faits), resserrées avec le classement.
+var _tuiles_droite: Array = []
+var multiplex: PanelContainer
+var multiplex_cartes: GridContainer
+var multiplex_precision: Label
+## Dernière journée montrée (null sans multiplex) et sa clé (rien n'est reconstruit sans changement).
+var journee_vue: Variant = null
+var _journee_cle := ""
+## Scores des autres matchs à la minute montrée et à la précédente : liseré vert sur ceux qui ont
+## changé (état gardé par l'écran, aucun calcul sportif).
+var _journee_minute := -1
+var _scores_cour: Dictionary = {}
+var _scores_prec: Dictionary = {}
+## Lignes du classement en direct : notre voisinage (± 3 places) et le haut du tableau.
+const CLASSEMENT_LIGNES := 9
+const VERT_SCORE := Color("65b081")
+const MONTEE := Color("65b081")
+const DESCENTE := Color("e2876f")
 
 ## Domination minute par minute (`direct.domination`) : barres au-dessus de l'axe pour l'équipe
 ## qui reçoit, au-dessous pour l'autre, mi-temps et points marqués en repère.
@@ -339,6 +361,27 @@ class Anneau extends Control:
 		var largeur := CHIFFRES.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x
 		draw_string(CHIFFRES, c + Vector2(-largeur * 0.5, corps * 0.36), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, Color("f2ecdc") if not vide else Color("7b8a84"))
 
+## Évolution d'un club au classement en direct (`delta` du moteur) : triangle vert vers le haut s'il
+## gagne des places, rouge vers le bas s'il en perd, tiret sinon.
+class Fleche extends Control:
+	var delta := 0
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(size.x, size.y) * 0.32
+		if delta > 0: draw_colored_polygon(PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, r * 0.7), c + Vector2(-r, r * 0.7)]), Color("65b081"))
+		elif delta < 0: draw_colored_polygon(PackedVector2Array([c + Vector2(0, r), c + Vector2(r, -r * 0.7), c + Vector2(-r, -r * 0.7)]), Color("e2876f"))
+		else: draw_line(c - Vector2(r * 0.8, 0), c + Vector2(r * 0.8, 0), Color("7b8a84"), maxf(1.0, r * 0.35))
+
+## Pastille ronde aux couleurs d'un club (neutre si la couleur est inconnue).
+class Pastille extends Control:
+	var teinte := Color("7b8a84")
+
+	func _draw() -> void:
+		var r := minf(size.x, size.y) * 0.5
+		draw_circle(size * 0.5, r, teinte)
+		draw_arc(size * 0.5, r - 0.5, 0.0, TAU, 20, Color(1, 1, 1, 0.25), 1.0, true)
+
 ## Entrée dans les 22 adverses : un carré aux couleurs du club.
 class Carre extends Control:
 	var teinte := Color.WHITE
@@ -523,6 +566,7 @@ func _construire() -> void:
 		remove_child(enfant)
 		enfant.queue_free()
 	_cle = ""
+	_journee_cle = ""
 	terrain = ancien if ancien != null else Terrain2D.new()
 	terrain.densite = _densite
 	terrain.legende = false
@@ -786,11 +830,50 @@ func _page() -> void:
 	cadre_chiffres.add_child(titre_chiffres)
 	cadre_chiffres.add_child(chiffres)
 	S.G.fill(chiffres, true)
+	# Classement en direct (« si ça finit ainsi »), sous le duel ; masqué sans la journée.
+	var cadre_classement := _panneau(droite, px(14))
+	classement_tuile = cadre_classement.get_parent().get_parent()
+	classement_tuile.name = "MatchBetweenLiveTable"
+	cadre_classement.add_theme_constant_override("separation", px(6))
+	cadre_classement.add_child(_titre("Classement en direct", "si ça finit ainsi"))
+	classement_lignes = S.G.v(px(2))
+	classement_lignes.name = "MatchBetweenLiveTableRows"
+	classement_lignes.add_theme_constant_override("separation", px(2))
+	cadre_classement.add_child(classement_lignes)
+	classement_tuile.visible = false
 	var cadre_faits := _panneau(droite, px(14))
 	cadre_faits.add_child(_titre("Faits marquants"))
 	cadre_faits.add_child(faits)
-	# Bas : la carte de Gabi en largeur.
-	_carte_gabi(page)
+	_tuiles_droite = [cadre_chiffres.get_parent(), cadre_classement.get_parent(), cadre_faits.get_parent()]
+	# Bas : la carte de Gabi en largeur, le multiplex des autres matchs à côté.
+	var bas := S.G.h(px(20))
+	bas.name = "MatchBetweenBottom"
+	bas.add_theme_constant_override("separation", px(20))
+	page.add_child(bas)
+	_carte_gabi(bas)
+	S.G.fill(adjoint_cadre)
+	# Multiplex : titre et minute à gauche, une rangée de cartes (la bande garde la hauteur de Gabi).
+	var cadre_multiplex := _panneau(bas, px(14))
+	multiplex = cadre_multiplex.get_parent().get_parent()
+	multiplex.name = "MatchBetweenMultiplex"
+	var rangee_multiplex := S.G.h(px(14))
+	rangee_multiplex.add_theme_constant_override("separation", px(14))
+	S.G.fill(rangee_multiplex, true)
+	cadre_multiplex.add_child(rangee_multiplex)
+	var tete_multiplex := S.G.v(px(2))
+	tete_multiplex.alignment = BoxContainer.ALIGNMENT_CENTER
+	rangee_multiplex.add_child(tete_multiplex)
+	tete_multiplex.add_child(_texte("MULTIPLEX", 22, FAIBLE, false, true))
+	multiplex_precision = _texte("", 26, OR, false, true)
+	multiplex_precision.name = "MatchBetweenMultiplexMinute"
+	tete_multiplex.add_child(multiplex_precision)
+	multiplex_cartes = GridContainer.new()
+	multiplex_cartes.name = "MatchBetweenMultiplexCards"
+	multiplex_cartes.add_theme_constant_override("h_separation", px(10))
+	multiplex_cartes.add_theme_constant_override("v_separation", px(8))
+	multiplex_cartes.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	rangee_multiplex.add_child(multiplex_cartes)
+	multiplex.visible = false
 
 ## Colonne gauche : Notre XV, onglets Terrain (par défaut), Tableau et XV adverse ; la carte
 ## Changement dessous.
@@ -985,6 +1068,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.alimenter(direct.get("deroule", []), mini(live.get("events", []).size(), int(direct.get("borne", live.get("events", []).size()))))
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
+	_remplir_journee(model, direct, equipes)
 	_niveaux = direct.get("niveaux", [])
 	var voulu := niveau_regie if not niveau_regie.is_empty() else str(direct.get("niveau", ""))
 	if niveau_libelle() != _libelle_niveau(voulu) or grille_niveaux.get_child_count() != _niveaux.size(): _remplir_niveaux(voulu)
@@ -1069,9 +1153,21 @@ func _remplir_fil() -> void:
 	if is_instance_valid(faits):
 		S.clear(faits)
 		var nombre := 3 if _densite < 0.6 else 4
+		# Classement en direct sous le duel : les faits marquants se resserrent (le dernier fait
+		# reste en bandeau sur le terrain ; en 1280×720, une ligne par fait, le texte en infobulle).
+		var serre := _journee_montree()
+		if serre: nombre = 1 if _densite < 0.6 else 2
 		var recents := visibles.slice(maxi(0, visibles.size() - nombre))
 		recents.reverse()
-		for n in recents.size(): faits.add_child(_ligne_fil(recents[n], n == 0, false))
+		for n in recents.size():
+			var ligne_fait := _ligne_fil(recents[n], n == 0, false)
+			if serre:
+				for etiquette: Label in ligne_fait.find_children("*", "Label", true, false):
+					etiquette.max_lines_visible = 1
+					etiquette.tooltip_text = etiquette.text
+				for icone: Control in ligne_fait.find_children("*", "Control", true, false):
+					if icone is Icone: icone.custom_minimum_size = Vector2(px(30), px(30))
+			faits.add_child(ligne_fait)
 		if recents.is_empty(): faits.add_child(_texte("Aucun fait marquant pour l’instant.", 24, FAIBLE))
 
 func _ligne_fil(entree: Dictionary, dernier: bool, en_bandeau: bool) -> Control:
@@ -1121,7 +1217,7 @@ func _valeur(rang: Dictionary, cote: int) -> String:
 ## Chiffre clé : libellé, valeur de l'équipe qui reçoit, barre comparée, valeur de l'autre.
 func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	var ligne := S.G.h(px(12))
-	ligne.custom_minimum_size.y = px(40)
+	ligne.custom_minimum_size.y = px(30 if _journee_montree() else 40)
 	S.G.fill(ligne, true)
 	var titre := _texte(str(LIBELLES_COURTS.get(str(rang.get("cle", "")), rang.get("label", ""))), 26, DOUX)
 	titre.tooltip_text = str(rang.get("label", ""))
@@ -1131,7 +1227,7 @@ func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	titre.custom_minimum_size.x = px(120)
 	S.G.fill(titre, false, 2.2)
 	ligne.add_child(titre)
-	var a := _texte(_valeur(rang, 0), 30, IVOIRE)
+	var a := _texte(_valeur(rang, 0), 26 if _journee_montree() else 30, IVOIRE)
 	a.add_theme_font_override("font", CHIFFRES_GRAS)
 	a.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	a.custom_minimum_size.x = px(78)
@@ -1143,7 +1239,7 @@ func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	barre.custom_minimum_size = Vector2(px(80), px(24))
 	S.G.fill(barre, false, 1.2)
 	ligne.add_child(barre)
-	var b := _texte(_valeur(rang, 1), 30, IVOIRE)
+	var b := _texte(_valeur(rang, 1), 26 if _journee_montree() else 30, IVOIRE)
 	b.add_theme_font_override("font", CHIFFRES_GRAS)
 	b.custom_minimum_size.x = px(78)
 	ligne.add_child(b)
@@ -1151,6 +1247,7 @@ func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 
 func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	S.clear(chiffres)
+	chiffres.add_theme_constant_override("separation", mini(8, px(2 if _journee_montree() else 6)))
 	# Premières minutes : un « 100 % / 0 % » ne dit rien. Les parts restent masquées (« — ») et les
 	# compteurs atténués jusqu'au seuil du moteur ; le titre dit quand la lecture deviendra fiable.
 	echantillon_court = est_court(direct)
@@ -1166,6 +1263,251 @@ func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	_rangs = rangs
 	_remplir_anneaux(direct)
 	_remplir_zone22(direct)
+
+## Journée en direct (`direct.journee`) : classement en direct et multiplex, masqués sans elle.
+func _remplir_journee(model: Dictionary, direct: Dictionary, equipes: Array) -> void:
+	if not is_instance_valid(classement_tuile) or not is_instance_valid(multiplex): return
+	var journee: Variant = direct.get("journee")
+	if not journee is Dictionary: journee = null
+	var cle := JSON.stringify(journee)
+	if cle == _journee_cle: return
+	_journee_cle = cle
+	journee_vue = journee
+	var avant := classement_tuile.visible
+	if journee == null:
+		classement_tuile.visible = false
+		multiplex.visible = false
+		_journee_minute = -1
+		_scores_cour = {}
+		_scores_prec = {}
+		if avant: _resserrer(direct)
+		return
+	var teintes := _teintes_clubs(model, equipes)
+	_remplir_classement(journee.get("classement", []) if journee.get("classement") is Array else [], teintes)
+	_remplir_multiplex(journee, teintes)
+	if avant != classement_tuile.visible: _resserrer(direct)
+
+## Le classement en direct prend place sous le duel : duel resserré, faits marquants réduits.
+func _resserrer(direct: Dictionary) -> void:
+	var serre := _journee_montree()
+	for n in _tuiles_droite.size():
+		var marge: MarginContainer = _tuiles_droite[n]
+		for bord in ["left", "top", "right", "bottom"]: marge.add_theme_constant_override("margin_" + bord, px(10 if serre else [16, 14, 14][n]))
+		(marge.get_child(0) as VBoxContainer).add_theme_constant_override("separation", mini(8, px(6 if serre else 10)))
+	_remplir_chiffres(direct, {})
+	_remplir_fil()
+
+func _journee_montree() -> bool:
+	return is_instance_valid(classement_tuile) and classement_tuile.visible
+
+## Couleur de chaque club connu du modèle (tableaux des ligues, notre club, les deux équipes du
+## match), par identifiant ; un club sans couleur reste neutre.
+static func _teintes_clubs(model: Dictionary, equipes: Array) -> Dictionary:
+	var clubs: Array = []
+	for division: Variant in model.get("leagues", []):
+		if division is Dictionary: clubs.append_array(division.get("rows", []))
+	clubs.append(model.get("club"))
+	clubs.append_array(equipes)
+	var teintes := {}
+	for club: Variant in clubs:
+		if not club is Dictionary or club.get("id") == null: continue
+		var c := str(S.G.identity(club).get("color", club.get("color", "")))
+		if c.begins_with("#") and (c.length() == 7 or c.length() == 9): teintes[_cle_club(club.get("id"))] = Color(c)
+	return teintes
+
+static func _cle_club(id: Variant) -> String:
+	return str(int(id)) if id is float or id is int else str(id)
+
+## Lignes montrées du classement (indices ; -1 pour « … ») : tout le tableau s'il tient, sinon le
+## haut du tableau et notre voisinage (trois places de part et d'autre), sans défilement.
+static func lignes_classement(classement: Array, capacite: int = CLASSEMENT_LIGNES) -> Array:
+	var n := classement.size()
+	if n <= capacite: return range(n)
+	var nous := -1
+	for k in n:
+		if classement[k] is Dictionary and bool(classement[k].get("nous", false)): nous = k
+	if nous < 0: return range(capacite)
+	var fenetre := mini(7, capacite)
+	var debut := clampi(nous - 3, 0, n - fenetre)
+	var fin := debut + fenetre
+	var restants := capacite - fenetre
+	if debut <= restants: return range(maxi(capacite, fin))
+	if restants < 2: return range(debut, fin)
+	var lignes: Array = range(restants - 1)
+	lignes.append(-1)
+	lignes.append_array(range(debut, fin))
+	return lignes
+
+func _remplir_classement(classement: Array, teintes: Dictionary) -> void:
+	S.clear(classement_lignes)
+	classement_tuile.visible = not classement.is_empty()
+	if classement.is_empty(): return
+	# En 1280×720, notre voisinage seul (± 3 places) ; plus grand, le haut du tableau en plus.
+	for k: int in lignes_classement(classement, CLASSEMENT_LIGNES if _densite >= 0.6 else 7):
+		if k < 0:
+			var ellipse := _texte("…", 22, FAIBLE)
+			ellipse.name = "MatchBetweenLiveTableGap"
+			ellipse.custom_minimum_size.y = px(22)
+			ellipse.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			classement_lignes.add_child(ellipse)
+			continue
+		if classement[k] is Dictionary: classement_lignes.add_child(_ligne_classement(classement[k], teintes))
+
+## Ligne du classement : rang, évolution, pastille du club, sigle et nom, badges de bonus, points.
+## Notre club surligné (fond or, liseré or).
+func _ligne_classement(r: Dictionary, teintes: Dictionary) -> Control:
+	var nous := bool(r.get("nous", false))
+	var ligne := PanelContainer.new()
+	ligne.name = "MatchBetweenLiveRow%d" % int(r.get("rang", 0))
+	ligne.set_meta("rang", int(r.get("rang", 0)))
+	ligne.set_meta("nous", nous)
+	var fond := S.G.T.box(Color(OR, 0.16) if nous else Color(1, 1, 1, 0.025 if int(r.get("rang", 0)) % 2 == 1 else 0.0), maxi(3, px(8)))
+	fond.content_margin_left = px(8)
+	fond.content_margin_right = px(10)
+	fond.content_margin_top = 0
+	fond.content_margin_bottom = 0
+	if nous:
+		fond.border_width_left = maxi(2, px(5))
+		fond.border_color = OR
+	ligne.add_theme_stylebox_override("panel", fond)
+	ligne.custom_minimum_size.y = px(32)
+	ligne.mouse_filter = Control.MOUSE_FILTER_PASS
+	var delta := int(r.get("delta", 0))
+	var nom := str(r.get("nom", ""))
+	ligne.tooltip_text = "%d. %s · %d pts · %d joués · différence %+d%s" % [int(r.get("rang", 0)), nom if not nom.is_empty() else str(r.get("abbr", "")), int(r.get("points", 0)), int(r.get("joues", 0)), int(r.get("diff", 0)),
+		("" if r.get("rangOfficiel") == null else " · %s au classement officiel" % ("%de" % int(r.rangOfficiel) if int(r.rangOfficiel) > 1 else "1er"))]
+	var rang := S.G.h(px(8))
+	rang.add_theme_constant_override("separation", px(8))
+	ligne.add_child(rang)
+	var numero := _cellule(str(int(r.get("rang", 0))), 36, OR if nous else DOUX, 26, true)
+	numero.name = "Rang"
+	rang.add_child(numero)
+	var fleche := Fleche.new()
+	fleche.name = "Evolution"
+	fleche.delta = delta
+	fleche.custom_minimum_size = Vector2(px(22), px(22))
+	fleche.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	fleche.tooltip_text = "Gagne %d place%s" % [delta, "s" if delta > 1 else ""] if delta > 0 else ("Perd %d place%s" % [-delta, "s" if delta < -1 else ""] if delta < 0 else "Même place")
+	rang.add_child(fleche)
+	var pastille := Pastille.new()
+	pastille.name = "Couleur"
+	pastille.teinte = teintes.get(_cle_club(r.get("clubId")), FAIBLE)
+	pastille.custom_minimum_size = Vector2(px(18), px(18))
+	pastille.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rang.add_child(pastille)
+	var sigle := str(r.get("abbr", ""))
+	var club := _cellule(sigle if not sigle.is_empty() else nom, 0, IVOIRE, 26)
+	club.name = "Club"
+	rang.add_child(club)
+	for badge: Array in [["bonusOff", "BO", "bonus offensif"], ["bonusDef", "BD", "bonus défensif"]]:
+		var nombre := int(r.get(badge[0], 0)) if r.get(badge[0]) != null else 0
+		if nombre <= 0: continue
+		var pastille_bonus := PanelContainer.new()
+		pastille_bonus.name = "Badge" + str(badge[1])
+		var style := S.G.T.box(Color(VERT_SCORE, 0.18) if badge[1] == "BO" else Color(OR, 0.16), maxi(3, px(6)))
+		style.content_margin_left = px(6)
+		style.content_margin_right = px(6)
+		style.content_margin_top = 0
+		style.content_margin_bottom = 0
+		pastille_bonus.add_theme_stylebox_override("panel", style)
+		pastille_bonus.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		pastille_bonus.tooltip_text = "%d %s%s" % [nombre, badge[2], "s" if nombre > 1 else ""]
+		pastille_bonus.mouse_filter = Control.MOUSE_FILTER_PASS
+		var texte := _texte(str(badge[1]), 20, VERT_SCORE.lightened(0.2) if badge[1] == "BO" else OR, false, true)
+		texte.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pastille_bonus.add_child(texte)
+		rang.add_child(pastille_bonus)
+	var points := _cellule(str(int(r.get("points", 0))), 44, OR if nous else IVOIRE, 26, true)
+	points.name = "Points"
+	rang.add_child(points)
+	return ligne
+
+## Multiplex : une carte par autre match (deux lignes club et score, essais en petit, minute ou
+## « Terminé ») ; liseré vert sur un score qui a changé depuis la minute montrée précédente.
+func _remplir_multiplex(journee: Dictionary, teintes: Dictionary) -> void:
+	var matchs: Array = journee.get("matchs", []) if journee.get("matchs") is Array else []
+	var minute := int(journee.get("minute", 0))
+	var scores := {}
+	for m: Variant in matchs:
+		if m is Dictionary: scores[str(m.get("id", ""))] = [int(m.get("home", {}).get("score", 0)), int(m.get("away", {}).get("score", 0))]
+	if minute != _journee_minute:
+		if _journee_minute >= 0: _scores_prec = _scores_cour
+		_journee_minute = minute
+	_scores_cour = scores
+	S.clear(multiplex_cartes)
+	multiplex.visible = not matchs.is_empty()
+	if matchs.is_empty(): return
+	multiplex_precision.text = "%d′" % minute if not matchs.all(func(m: Variant): return m is Dictionary and bool(m.get("fini", false))) else "terminé"
+	# Une seule rangée jusqu'à huit matchs (championnat de seize clubs), deux au-delà.
+	multiplex_cartes.columns = matchs.size() if matchs.size() <= 8 else ceili(matchs.size() / 2.0)
+	for m: Variant in matchs:
+		if not m is Dictionary: continue
+		var id := str(m.get("id", ""))
+		var change: bool = _scores_prec.has(id) and _scores_prec[id] != scores[id]
+		var carte := _carte_match(m, change, teintes)
+		carte.name = "MatchBetweenMultiplexMatch%d" % multiplex_cartes.get_child_count()
+		multiplex_cartes.add_child(carte)
+
+func _carte_match(m: Dictionary, change: bool, teintes: Dictionary) -> Control:
+	var carte := PanelContainer.new()
+	carte.name = "MatchBetweenMultiplexMatch"
+	carte.set_meta("id", str(m.get("id", "")))
+	carte.set_meta("change", change)
+	var style := S.G.T.box(Color(RELIEF, 0.97), maxi(4, px(10)))
+	style.content_margin_left = px(10)
+	style.content_margin_right = px(10)
+	style.content_margin_top = px(4)
+	style.content_margin_bottom = px(4)
+	if change:
+		style.set_border_width_all(maxi(1, px(3)))
+		style.border_color = VERT_SCORE
+	carte.add_theme_stylebox_override("panel", style)
+	carte.custom_minimum_size.x = px(180)
+	var fini := bool(m.get("fini", false))
+	var cotes: Array = [m.get("home", {}), m.get("away", {})]
+	carte.tooltip_text = "%s %d – %d %s · %s" % [str(cotes[0].get("nom", "")), int(cotes[0].get("score", 0)), int(cotes[1].get("score", 0)), str(cotes[1].get("nom", "")), "terminé" if fini else "%d′" % int(m.get("minute", 0))]
+	var rang := S.G.h(px(10))
+	rang.add_theme_constant_override("separation", px(10))
+	carte.add_child(rang)
+	var lignes := S.G.v(0)
+	lignes.add_theme_constant_override("separation", 0)
+	S.G.fill(lignes)
+	rang.add_child(lignes)
+	var meneur := -1
+	if int(cotes[0].get("score", 0)) != int(cotes[1].get("score", 0)): meneur = 0 if int(cotes[0].get("score", 0)) > int(cotes[1].get("score", 0)) else 1
+	for cote in 2:
+		var club: Dictionary = cotes[cote] if cotes[cote] is Dictionary else {}
+		var ligne := S.G.h(px(6))
+		ligne.add_theme_constant_override("separation", px(6))
+		ligne.name = "Domicile" if cote == 0 else "Exterieur"
+		lignes.add_child(ligne)
+		var pastille := Pastille.new()
+		pastille.teinte = teintes.get(_cle_club(club.get("id")), FAIBLE)
+		pastille.custom_minimum_size = Vector2(px(14), px(14))
+		pastille.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ligne.add_child(pastille)
+		var sigle := str(club.get("abbr", ""))
+		var nom_club := _cellule(sigle if not sigle.is_empty() else str(club.get("nom", "")), 0, IVOIRE if meneur == cote or meneur < 0 else DOUX, 26)
+		nom_club.name = "Club"
+		nom_club.custom_minimum_size.x = px(56)
+		ligne.add_child(nom_club)
+		var essais := int(club.get("essais", 0))
+		var petit := _cellule("(%d)" % essais if essais > 0 else "", 24, FAIBLE, 20, true)
+		petit.name = "Essais"
+		petit.tooltip_text = "%d essai%s" % [essais, "s" if essais > 1 else ""]
+		ligne.add_child(petit)
+		var score := _cellule(str(int(club.get("score", 0))), 32, IVOIRE if meneur == cote or meneur < 0 else DOUX, 26, true)
+		score.name = "Score"
+		ligne.add_child(score)
+	var heure := _texte("Terminé" if fini else "%d′" % int(m.get("minute", 0)), 22, FAIBLE if fini else OR, false, true)
+	heure.name = "Minute"
+	heure.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	heure.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	heure.custom_minimum_size.x = px(40)
+	rang.add_child(heure)
+	return carte
 
 ## Échantillon du moteur (`direct.echantillon`) : court tant que le jeu montré n'atteint pas le
 ## seuil (dix minutes). Sans l'information (ancienne projection), l'échantillon est jugé suffisant.
