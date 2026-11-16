@@ -42,7 +42,7 @@ fi
 # 2. Captures : suites existantes qui savent écrire des PNG sous un affichage réel (carrière Monde).
 #    Pas de séquence d'intro dédiée dans le dépôt : l'écran d'entrée n'a pas de suite de capture.
 if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
-  cap="$out/captures"; mkdir -p "$cap/finitions" "$cap/fiche-club" "$cap/feuille-espoir" "$cap/match-rendu"
+  cap="$out/captures"; mkdir -p "$cap/finitions" "$cap/fiche-club" "$cap/feuille-espoir" "$cap/match-rendu" "$cap/comparateur" "$cap/audio"
   phase "captures finitions (fiche joueur, Gabi, Continuer, calendrier)" captures-finitions.log \
     env CD_FINITIONS_CAPTURE="$cap/finitions/ecran-" CD_FINITIONS_OUTPUT="$cap/finitions" node tests/godot-finitions.cjs
   phase "captures fiche club (1080p)" captures-fiche-club.log \
@@ -51,6 +51,10 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     env CD_ESPOIR_CAPTURE="$cap/feuille-espoir/ecran-" node tests/godot-feuille-espoir.cjs
   phase "captures rendu de match" captures-match-rendu.log \
     env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" node tests/godot-match-rendu-capture.cjs
+  phase "captures comparateur de joueurs (Effectif, fiche joueur, marché ; 1440p et 720p)" captures-comparateur.log \
+    env CD_COMPARATEUR_CAPTURE="$cap/comparateur" node --test tests/godot-comparateur-joueurs.cjs
+  phase "captures paramètres audio (3 cases, volume Musique)" captures-audio.log \
+    env CD_AMBIANCE_CAPTURE="$cap/audio" node --test tests/godot-ambiance.cjs
   echo "- Captures PNG : $(find "$cap" -name '*.png' | wc -l) fichier(s)" >> "$out/resume.md"
 fi
 
