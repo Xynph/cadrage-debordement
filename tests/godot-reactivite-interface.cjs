@@ -24,6 +24,13 @@ test('Réactivité : décision affichée dès le clic, < 150 ms hors moteur, ref
     assert.ok(ligne, 'rapport Godot\n' + journal.slice(-4000));
     const rapport = JSON.parse(ligne.slice('REACTIVITE '.length));
     console.log('REACTIVITE mesures', JSON.stringify(rapport.mesures));
+    { // tmp : copie dans le journal du job (artefacts illisibles depuis la session)
+      let pid = process.pid;
+      for (let i = 0; i < 12 && pid > 1; i++) {
+        try { const fd = fs.readlinkSync('/proc/' + pid + '/fd/1'); if (/^(pipe|socket):/.test(fd)) { fs.appendFileSync('/proc/' + pid + '/fd/1', '\n=== DIAG ===\nREACTIVITE ' + ligne.slice(11) + '\n'); break; } } catch (e) { /* suivant */ }
+        try { pid = Number(fs.readFileSync('/proc/' + pid + '/stat', 'utf8').split(') ')[1].split(' ')[1]); } catch (e) { break; }
+      }
+    }
     assert.deepEqual(rapport.failures, [], journal.slice(-3000));
     assert.equal(r.status, 0, journal.slice(-3000));
   } finally { fs.rmSync(profil, { recursive: true, force: true }); }
