@@ -28,7 +28,7 @@ function factory(eligibility){
   const before=count(active,'A-1'),minimum=next.length===15?8:incoming&&out!==null?Math.min(8,before):Math.max(0,next.length-7);
   return a>=minimum;
  }
- const edition=s=>typeof CDWorldCareer!=='undefined'&&[3,4,5].includes(CDWorldCareer.edition(s)?.version)?CDWorldCareer.edition(s):null;
+ const edition=s=>{if(typeof CDWorldCareer==='undefined')return null;const e=CDWorldCareer.edition(s);return [3,4,5].includes(e?.version)?e:null;};
  const activeClub=(s,id)=>edition(s)&&leagueIds.some(k=>s.worldMode.leagues[k].members.includes(id));
  const activeMatch=(s,l)=>edition(s)&&['jlo-d1','jlo-d2','jlo-d1-d2'].includes(l?.worldContext?.competitionId);
  // Jeunes des centres japonais (youth-<club japonais>-<saison>-<n>), règlement 2026-27 :
@@ -52,16 +52,18 @@ function factory(eligibility){
   if(/^jlo-academy-(6[89]|7\d|8[0-7])-\d+-\d+-\d+$/.test(p.id))return {category:'A-1',reason:'local-game-academy'};
   return {category:'C',reason:'unverified-recruit-registration'};
  }
- function classified(s,p){
-  const e=edition(s),initial=e?.registry.japanCategories?.[p.id];
-  if(initial)return {id:p.id,...initial,rank:CDWorldCareer.sourcePlayer(s,p.id)?.rating||0};
+ // Catégorie d'inscription d'un joueur. Une liste lit l'édition de la carrière une fois pour tous ses joueurs (la
+ // classification ne modifie pas la carrière) : même résultat qu'un appel par joueur, sans relire l'édition à chaque fois.
+ function classified(s,p,e=edition(s)){
+  const initial=e?.registry.japanCategories?.[p.id];
+  if(initial)return {id:p.id,...initial,rank:CDWorldCareer.sourcePlayerIn(e,p.id)?.rating||0};
   return {...youthCategory(s,p),id:p.id,basis:'estimated',rank:0};
  }
- const registered=(s,club)=>selectRegistration(club.players.map(p=>classified(s,p)));
+ const registered=(s,club)=>{const e=edition(s);return selectRegistration(club.players.map(p=>classified(s,p,e)));};
  const registrationIds=(s,club)=>new Set(registered(s,club).map(p=>p.id));
  function list(s,c,ids){
-  const players=new Map(c.players.map(p=>[p.id,p]));
-  return ids.filter(Boolean).map(id=>players.has(id)?classified(s,players.get(id)):{id,category:null});
+  const players=new Map(c.players.map(p=>[p.id,p])),e=edition(s);
+  return ids.filter(Boolean).map(id=>players.has(id)?classified(s,players.get(id),e):{id,category:null});
  }
  function nominations(s,c,lineup,bench,{partial=false}={}){
   if(!activeClub(s,c.id))return true;
