@@ -1,0 +1,4 @@
+== suites (2) (code 1)
+not ok 1 - Carrière Monde : enseignements du match avec axe de semaine, tour du championnat le lundi
+  name: 'AssertionError'
+::error file=tests/club-mail-enseignements.cjs::Godot : ECHEC (1), durée 19 s, limite 300s

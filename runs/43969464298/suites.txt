@@ -1,0 +1,2 @@
+tests/club-mail-enseignements.cjs
+tests/club-mail.cjs
