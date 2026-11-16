@@ -20,7 +20,7 @@ Pas de faux plaquages, mètres gagnés individuels ni défenseurs battus : ces c
 
 ## Vérification
 
-Plan et spécification validée : `docs/superpowers/specs/2026-11-07-dedicated-matchday-design.md` et `docs/superpowers/plans/2026-11-07-dedicated-matchday.md`.
+Plan et spécification validée : `docs/plans-historiques/specs/2026-11-07-dedicated-matchday-design.md` et `docs/plans-historiques/2026-11-07-dedicated-matchday.md`.
 
 Tests Node : préférences invalides, absence de fausses mesures, huit matchs appariés à mêmes graines (état carrière final strictement identique au moteur natif avec même gestion de l'adjoint), changements effectifs, exports/imports, secondes, pauses, file restaurée, dernière séquence à plusieurs événements et cinq vitesses linéaires. Régressions match-actions/cockpit/flow et sauvegardes exécutées.
 

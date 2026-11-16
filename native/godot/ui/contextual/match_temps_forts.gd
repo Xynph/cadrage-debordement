@@ -859,7 +859,8 @@ func _jouer_choregraphie(plan: Dictionary) -> bool:
 		# longue course ; ballon porté : cadrage rapproché du jeu courant.
 		var genre := str(pistes.get("type", ""))
 		# Même cadrage pour un essai en jeu courant et un franchissement : le plan ne trahit pas l'issue.
-		cadrage.regler(true, "kick" if genre == "jeu_au_pied" or genre.begins_with("penalite") else "carry", genre in ["franchissement", "essai_jeu_courant"])
+		# Pénalité jouée à la main : cadrage du jeu courant (le demi relance aussitôt).
+		cadrage.regler(true, "kick" if genre in ["jeu_au_pied", "penalite_au_but", "penalite_en_touche"] else "carry", genre in ["franchissement", "essai_jeu_courant"])
 		if pistes.get("coupe", false): cadrage.couper()
 	suivi.append({"evenement": "choregraphie", "plan": str(plan.get("kind", "")), "type": str(pistes.get("type", "")), "premier": index, "dernier": dernier,
 		"duree_prevue": float(pistes.get("duree", 0.0)), "debut_ms": Time.get_ticks_msec()})

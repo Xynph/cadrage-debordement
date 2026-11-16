@@ -135,6 +135,8 @@ test('Fréquences : chaque jour, chaque semaine (défaut, Réglages), chaque moi
     const avant = fs.readFileSync(profil(dir));
     let model = jeu.regler(jeu.call('snapshot'));
     model = jeu.call('advance_until_event', { fromDate: model.meta.calendarToday, maxDays: jours });
+    // Sauvegarde complète due : écrite juste après la réponse (jour différé, lot 36), comme la boucle stdio du jeu.
+    jeu.bridge.handle.flush();
     return { ecrit: !fs.readFileSync(profil(dir)).equals(avant), lignes: lignes(dir).length - 1, date: model.meta.calendarToday, autosave: model.meta.autosave };
   };
   for (const [politique, attendu] of [['jour', [true, true]], ['semaine', [false, true]], ['mois', [false, false]]]) {

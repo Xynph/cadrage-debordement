@@ -4,16 +4,17 @@ signal changed
 const Atomic = preload("res://atomic_file.gd")
 const AUTOMATIC_SCREEN := -1
 const MAX_SCREEN_INDEX := 2147483647
-const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN,"stadium":"day","salary_period":"weekly","match_highlights":"dynamique","continue_messages":"importants","continue_injuries":"titulaires","continue_flow":"equilibre","autosave":"semaine"}
-const OPTIONAL_KEYS := ["display_screen","stadium","salary_period","match_highlights","continue_messages","continue_injuries","continue_flow","autosave"]
+const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN,"stadium":"day","salary_period":"weekly","match_highlights":"dynamique","continue_messages":"importants","continue_injuries":"titulaires","autosave":"semaine"}
+const OPTIONAL_KEYS := ["display_screen","stadium","salary_period","match_highlights","continue_messages","continue_injuries","autosave"]
+## Anciens réglages retirés : encore lus sans erreur dans un fichier existant, puis ignorés (et effacés à la
+## prochaine écriture). « Flux de Continuer » retiré le 16/11/2026 (décision de Léo : pas de niveaux).
+const RETIRED_KEYS := ["continue_flow"]
 ## Fréquence de la sauvegarde complète de la carrière (lue par le moteur dans ce même fichier, native/engine/action-journal.cjs).
 ## Chaque décision est de toute façon notée aussitôt dans le journal d'actions ; la fermeture et « Sauvegarder » écrivent toujours tout.
 const AUTOSAVE := ["jour","semaine","mois"]
 ## « Continuer » s'arrête aussi sur : nouveaux messages (importants, tous, aucun) et blessures (titulaires ou tout l'effectif).
 const CONTINUE_MESSAGES := ["importants","tous","aucun"]
 const CONTINUE_INJURIES := ["titulaires","effectif"]
-## Flux de « Continuer » (façon FM) : quels éléments informatifs arrêtent l'avance ; « Doit répondre » arrête toujours.
-const CONTINUE_FLOWS := ["allege","equilibre","complet"]
 ## Ce que le match montre : des temps forts choisis (« dynamique » par défaut) au match complet.
 const MATCH_HIGHLIGHTS := ["aucun","resume","cles","etendus","dynamique","integral"]
 ## Anciennes clés ignorées à la lecture (jamais refusées, jamais réécrites) : l'introduction se joue toujours en entier.
@@ -33,6 +34,7 @@ func _validated(candidate: Variant) -> Dictionary:
 		_fail("Préférences refusées : champs absents ou inconnus. Le fichier original est conservé.")
 		return {}
 	for key in candidate:
+		if key in RETIRED_KEYS: continue
 		if not DEFAULTS.has(key) and key not in LEGACY_KEYS:
 			_fail("Préférences refusées : champ inconnu « %s ». Le fichier original est conservé." % key)
 			return {}
@@ -69,15 +71,14 @@ func _validated(candidate: Variant) -> Dictionary:
 		return {}
 	var continue_messages: Variant = candidate.get("continue_messages",DEFAULTS.continue_messages)
 	var continue_injuries: Variant = candidate.get("continue_injuries",DEFAULTS.continue_injuries)
-	var continue_flow: Variant = candidate.get("continue_flow",DEFAULTS.continue_flow)
-	if not continue_messages is String or continue_messages not in CONTINUE_MESSAGES or not continue_injuries is String or continue_injuries not in CONTINUE_INJURIES or not continue_flow is String or continue_flow not in CONTINUE_FLOWS:
+	if not continue_messages is String or continue_messages not in CONTINUE_MESSAGES or not continue_injuries is String or continue_injuries not in CONTINUE_INJURIES:
 		_fail("Arrêts de « Continuer » refusés : choisissez un réglage proposé.")
 		return {}
 	var autosave: Variant = candidate.get("autosave",DEFAULTS.autosave)
 	if not autosave is String or autosave not in AUTOSAVE:
 		_fail("Fréquence de sauvegarde refusée : choisissez chaque jour, chaque semaine ou chaque mois.")
 		return {}
-	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium,"salary_period":salary_period,"match_highlights":match_highlights,"continue_messages":continue_messages,"continue_injuries":continue_injuries,"continue_flow":continue_flow,"autosave":autosave}
+	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium,"salary_period":salary_period,"match_highlights":match_highlights,"continue_messages":continue_messages,"continue_injuries":continue_injuries,"autosave":autosave}
 
 func load_profile(directory: String) -> bool:
 	_available = false

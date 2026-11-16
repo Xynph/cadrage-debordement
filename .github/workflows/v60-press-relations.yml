@@ -6,7 +6,7 @@ permissions:
   contents: read
 jobs:
   press-relations:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
