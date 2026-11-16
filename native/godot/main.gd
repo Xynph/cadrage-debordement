@@ -5,6 +5,7 @@ const SeasonLabel = preload("res://ui/season_label.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
 const ContinueProgress = preload("res://ui/continue_progress.gd")
+const Optimistic = preload("res://ui/optimistic_decisions.gd")
 ## « Continuer » : tranche de calcul du moteur entre deux mises à jour du panneau (date qui défile, « Arrêter »).
 const CONTINUE_SLICE_MS := 700
 ## Seuil unique : le panneau d’attente n’apparaît qu’au-delà de 0,5 s (sinon simple flash).
@@ -120,6 +121,8 @@ var connection_error := false
 var last_error := ""
 var pending_route := ""
 var queued_action: Dictionary = {}
+## Retouches affichées avant la réponse du moteur pour la décision en cours (optimistic_decisions.gd).
+var optimistic_edits: Array = []
 var last_command := "snapshot"
 var tick_steps := 1
 var closing := false
@@ -293,8 +296,11 @@ func _receive_model(value: Dictionary) -> void:
 		command_wait_overlay.dismiss()
 	SquadViews.U.remember(self)
 	model = value
+	optimistic_edits = []
+	# Décision suivante déjà en file et déjà affichée : elle reste affichée jusqu'à sa propre réponse.
+	if response_ok and queued_action.get("optimistic") is Array: model = Optimistic.apply(model, queued_action.optimistic)
 	if model.get("meta", {}).has("seasonStartYear"): SeasonLabel.start_year = int(model.meta.seasonStartYear)
-	if decision_feedback != null: decision_feedback.complete(received_command, response_ok, model)
+	if decision_feedback != null: decision_feedback.complete(received_command, response_ok, value)
 	if not preferences_loaded and not str(model.get("meta", {}).get("dataDir", "")).is_empty():
 		preferences_loaded = true
 		user_preferences.load_profile(str(model.meta.dataDir))
@@ -366,7 +372,7 @@ func _record_timing(command: String, receive_us: int) -> void:
 	if not _timing_trace: return
 	var now := Time.get_ticks_usec()
 	var bridge_timing: Dictionary = bridge.last_timing
-	var entry := {"command": command, "rendu_ms": (now - receive_us) / 1000.0, "moteur_ms": bridge_timing.get("moteur_ms", 0.0), "analyse_ms": bridge_timing.get("analyse_ms", 0.0), "file_ms": bridge_timing.get("file_ms", 0.0), "octets": bridge_timing.get("octets", 0), "total_ms": (now - _command_sent_us) / 1000.0 if _command_sent_us > 0 else 0.0, "route": route}
+	var entry := {"command": command, "rendu_ms": (now - receive_us) / 1000.0, "moteur_ms": bridge_timing.get("moteur_ms", 0.0), "analyse_ms": bridge_timing.get("analyse_ms", 0.0), "composition_ms": bridge_timing.get("composition_ms", 0.0), "sections": bridge_timing.get("sections", []).size(), "file_ms": bridge_timing.get("file_ms", 0.0), "octets": bridge_timing.get("octets", 0), "total_ms": (now - _command_sent_us) / 1000.0 if _command_sent_us > 0 else 0.0, "route": route}
 	_command_sent_us = 0
 	timing_log.append(entry)
 	print("CD_TIMING ", JSON.stringify(entry))
@@ -380,6 +386,14 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 	if closing: return false
 	if waiting:
 		if command == "tick": return false
+		# Bascule ou sélection simple : affichée tout de suite, envoyée après la réponse en cours. Une nouvelle
+		# valeur pour le même réglage remplace celle en file (sa charge utile est lue sur le modèle déjà retouché).
+		var early := Optimistic.edits(command, payload, model)
+		if not early.is_empty() and last_command not in ["snapshot", "tick"] and not shows_wait_panel(last_command) and (queued_action.is_empty() or (str(queued_action.get("command", "")) == command and queued_action.get("optimistic") is Array and Optimistic.same_paths(queued_action.optimistic, early))):
+			queued_action = {"command":command, "payload":payload.duplicate(true), "target_route":target_route, "optimistic":early}
+			model = Optimistic.apply(model, early)
+			call_deferred("_render_optimistic")
+			return true
 		# Après un tick ou une décision légère, la décision suivante attend son tour.
 		# La même décision répétée n’attend pas : sa charge utile a été lue sur le
 		# modèle d’avant la réponse en cours et écraserait celle-ci (ex. set_tactics).
@@ -400,13 +414,27 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 	if _timing_trace: _command_sent_us = Time.get_ticks_usec()
 	pending_route = target_route
 	if SeasonPreparation.is_advance(command): SeasonPreparation.show_pending(self, true)
-	if decision_feedback != null: decision_feedback.begin(command, payload, model)
+	var edits := Optimistic.edits(command, payload, model)
+	var shown := not edits.is_empty() and Optimistic.applied(model, edits)
+	# Avant toute retouche : la décision se mesure par rapport au modèle confirmé.
+	if decision_feedback != null: decision_feedback.begin(command, payload, bridge.model if shown and not bridge.model.is_empty() else model)
+	optimistic_edits = edits
+	if not edits.is_empty() and not shown:
+		model = Optimistic.apply(model, edits)
+		call_deferred("_render_optimistic")
 	if command == CareerProgression.CONTINUE_COMMAND:
 		payload = _continue_payload(str(payload.get("fromDate", "")))
 		continue_progress.begin(_continue_context(), not user_preferences.data.reduced_motion)
 	else: _present_command_wait(command)
 	bridge.send(command, payload)
 	return waiting
+
+## Affichage anticipé d'une décision (ou retour au modèle confirmé après un refus) : l'écran en cours est redessiné
+## sans attendre le moteur. Les scènes contextuelles et le match gardent leur propre rafraîchissement.
+func _render_optimistic() -> void:
+	if closing or not _has_career() or route in ["Accueil", "Création", "Match"]: return
+	if is_instance_valid(contextual_director) and contextual_director.active(): return
+	_render(false)
 
 ## « Continuer » : tranches partielles (le moteur répond au bout de CONTINUE_SLICE_MS avec la date atteinte),
 ## arrêts réglés dans les préférences. Les arrêts obligatoires (match, rendez-vous, presse) ne se règlent pas.
@@ -511,9 +539,15 @@ func _failed(message: String) -> void:
 	if decision_feedback != null: decision_feedback.complete(last_command, false, model)
 	waiting = false
 	if SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, false)
+	var anticipated := not optimistic_edits.is_empty() or queued_action.get("optimistic") is Array
 	queued_action.clear()
 	pending_route = ""
 	connection_error = bridge.child_pid <= 0 or bridge._stopping
+	# Décision affichée d'avance puis refusée (ou moteur arrêté avant sa réponse) : retour au modèle confirmé.
+	optimistic_edits = []
+	if anticipated and not bridge.model.is_empty() and not is_same(model, bridge.model):
+		model = bridge.model
+		call_deferred("_render_optimistic")
 	var epcr_dialog := get_node_or_null("EpcrPreparationDialog") if last_command == "epcr_preview" else null
 	var editor_dialog := get_node_or_null("CompetitionEditorDialog") if last_command == "competition_editor_preview" else null
 	var market_dialog := get_node_or_null("InterclubMarket") if last_command in ["interclub_negotiate", "interclub_auction"] else null

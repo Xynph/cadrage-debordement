@@ -219,6 +219,7 @@
       "tests/godot-match-framing.cjs": 3,
       "tests/godot-regen-bank-v2.cjs": 7,
       "tests/godot-portraits-progressifs.cjs": 3,
+      "tests/godot-reactivite-interface.cjs": 90,
       "tests/godot-regen-portraits.cjs": 2,
       "tests/godot-soundscape06.cjs": 2,
       "tests/match-pass-live.cjs": 2,
