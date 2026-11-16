@@ -10,6 +10,10 @@ const Decisions = preload("res://ui/decision_views.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Sort = preload("res://ui/recruitment_sort.gd")
 const ROW_HEIGHT := 38
+# Construction progressive de la liste : les premières lignes tout de suite, le reste sur les images suivantes.
+const FIRST_ROWS := 26
+const ROWS_PER_FRAME := 18
+const VISIBLE_MARGIN := 6
 const WIDTH := 2248
 const LEFT := 1402
 const RIGHT := 830
@@ -29,6 +33,7 @@ var data: Dictionary
 var tab := 0
 var report_by_player := {}
 var max_salary := 0.0
+var _generation := 0
 var table_rows: Control
 var dossier: Control
 var count: Label
@@ -356,10 +361,17 @@ func _refresh() -> void:
 	direction.text = "↓ Décroissant" if _sort_descending() else "↑ Croissant"
 	_sort_arrows()
 	var selection: Dictionary = {}
+	var selected_index := -1
 	for i in visible.size():
-		var item: Dictionary = visible[i]
-		_row(item, i, str(item.id) == current)
-		if str(item.id) == current: selection = item
+		if str(visible[i].id) == current:
+			selection = visible[i]
+			selected_index = i
+			break
+	_generation += 1
+	var built := mini(visible.size(), FIRST_ROWS)
+	if selected_index >= 0: built = maxi(built, mini(visible.size(), selected_index + VISIBLE_MARGIN))
+	_build_rows(visible, current, 0, built)
+	if built < visible.size(): _build_remaining(visible, current, built, _generation)
 	if results.is_empty():
 		var caption := "Aucun rapport conservé. Confiez une mission pour observer des pistes." if tab == 3 else "Aucune piste ne correspond aux filtres actuels."
 		D.text(table_rows, 24, 58, caption, 27, C.MUTED, 500, LEFT - 50)
@@ -368,6 +380,21 @@ func _refresh() -> void:
 	else:
 		_profile(selection, report_by_player.get(str(selection.get("id", "")), {}))
 	table_scroll.set_deferred("scroll_vertical",scroll)
+
+func _build_rows(items: Array, current: String, from: int, to: int) -> void:
+	for i in range(from, to):
+		var item: Dictionary = items[i]
+		_row(item, i, str(item.id) == current)
+
+func _build_remaining(items: Array, current: String, from: int, generation: int) -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	var next := from
+	while next < items.size():
+		await tree.process_frame
+		if not is_instance_valid(self) or generation != _generation or not is_inside_tree(): return
+		var upto := mini(items.size(), next + ROWS_PER_FRAME)
+		_build_rows(items, current, next, upto)
+		next = upto
 
 func _row(item: Dictionary, index: int, selected: bool) -> void:
 	var player := item if tab != 3 else _market_player(str(item.get("playerId", "")))
@@ -619,7 +646,8 @@ static func _portrait(parent: Node, area: Rect2, player: Dictionary, player_id: 
 	if str(player.get("id", "")).is_empty():
 		D.photo(parent, "recruit-profile" if full else "player-%02d" % posmod(player_id.hash(), 16), area)
 		return
-	var photo := G.portrait(0, C.px(minf(area.size.x, area.size.y)), player)
+	# Fiche détaillée : visage tout de suite ; lignes de la liste : cases vides remplies par tranches (portrait_loader).
+	var photo: Control = G.portrait(0, C.px(minf(area.size.x, area.size.y)), player) if full else G.portrait_lazy(0, C.px(minf(area.size.x, area.size.y)), player)
 	photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(photo)
 	D.place(photo, area)
