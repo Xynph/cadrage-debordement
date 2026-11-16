@@ -38,7 +38,7 @@ signal camera_demandee(mode: String)
 var hote_barre: Control
 
 ## Libellés courts des stats comparées (le libellé complet en infobulle) : rien de tronqué.
-const LIBELLES_COURTS := {"metres": "Mètres gagnés", "franchissements": "Franchissements", "plaquages": "Plaquages",
+const LIBELLES_COURTS := {"metres": "Mètres gagnés", "franchissements": "Franchis.", "plaquages": "Plaquages",
 	"plaquages_manques": "Plaq. manqués", "recuperations": "Récupérations", "melees": "Mêlées", "touches": "Touches",
 	"penalites": "Pénalités", "en_avant": "En-avant", "pieds": "Jeu au pied"}
 ## Les dix stats comparées du duel (possession et occupation dans leurs anneaux, le reste dans le
