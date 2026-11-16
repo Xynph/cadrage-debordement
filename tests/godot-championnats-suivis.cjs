@@ -24,7 +24,7 @@ function preparer(profil) {
   } finally { bridge.close(); }
 }
 
-test('Championnats suivis : choix, indicateur de fluidité et classement suivi de loin', { skip: !godot && 'SDK Godot requis' }, () => {
+test('Championnats suivis : choix, vitesse de jeu estimée (5 étoiles), choix automatique et classement en consultation', { skip: !godot && 'SDK Godot requis' }, () => {
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-suivis-'));
   try {
     preparer(profil);
