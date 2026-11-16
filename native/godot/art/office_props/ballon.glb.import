@@ -1,0 +1,15 @@
+[remap]
+
+importer="scene"
+importer_version=1
+type="PackedScene"
+path="res://.godot/imported/ballon.glb-bd7e72d5ba1484917b3b46d5b624ac42.scn"
+
+[deps]
+
+source_file="res://art/office_props/ballon.glb"
+dest_files=["res://.godot/imported/ballon.glb-bd7e72d5ba1484917b3b46d5b624ac42.scn"]
+
+[params]
+
+gltf/embedded_image_handling=3
