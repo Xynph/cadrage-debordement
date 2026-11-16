@@ -5,6 +5,8 @@ const SeasonLabel = preload("res://ui/season_label.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
 const ContinueProgress = preload("res://ui/continue_progress.gd")
+const Optimistic = preload("res://ui/optimistic_decisions.gd")
+const ScreenRefresh = preload("res://ui/screen_refresh.gd")
 ## « Continuer » : tranche de calcul du moteur entre deux mises à jour du panneau (date qui défile, « Arrêter »).
 const CONTINUE_SLICE_MS := 700
 ## Seuil unique : le panneau d’attente n’apparaît qu’au-delà de 0,5 s (sinon simple flash).
@@ -120,6 +122,16 @@ var connection_error := false
 var last_error := ""
 var pending_route := ""
 var queued_action: Dictionary = {}
+## Retouches affichées avant la réponse du moteur pour la décision en cours (optimistic_decisions.gd).
+var optimistic_edits: Array = []
+## Rafraîchissement par écran (ui/screen_refresh.gd) : après une réponse, l'écran n'est redessiné que s'il lit une
+## section changée. Faux : rendu complet à chaque réponse (mesure témoin des tests).
+var refresh_by_screen := true
+## État de l'écran affiché au moment de son dernier rendu complet (ScreenRefresh.stamp).
+var _screen_stamp: Dictionary = {}
+## Dernier choix après une réponse (ScreenRefresh.FULL ou NONE) et nombre de rendus complets de l'écran (mesures).
+var last_refresh := ""
+var screen_renders := 0
 var last_command := "snapshot"
 var tick_steps := 1
 var closing := false
@@ -281,10 +293,12 @@ func _receive_model(value: Dictionary) -> void:
 	# A queued action can replace last_command below; keep this response's identity.
 	var received_command := last_command
 	var response_ok: bool = bridge.last_response_ok
+	var route_before := route
 	var reception_id := ""
 	if received_command == CareerProgression.CONTINUE_COMMAND and is_instance_valid(continue_progress):
 		if response_ok and value.get("meta", {}).get("advanceUntilEvent") is Dictionary: continue_progress.finish(value.meta.advanceUntilEvent)
 		else: continue_progress.dismiss()
+	if received_command == CareerProgression.CONTINUE_COMMAND and _decision_due(value, response_ok): _open_reprise_decision.call_deferred()
 	if response_ok and (received_command in ["advance_day", CareerProgression.CONTINUE_COMMAND, "preseason_advance", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
 		reception_id = Immersive.Reception.new_priority(model, value)
 	# Keep one uninterrupted wait when the player's action follows an automatic tick
@@ -293,8 +307,11 @@ func _receive_model(value: Dictionary) -> void:
 		command_wait_overlay.dismiss()
 	SquadViews.U.remember(self)
 	model = value
+	optimistic_edits = []
+	# Décision suivante déjà en file et déjà affichée : elle reste affichée jusqu'à sa propre réponse.
+	if response_ok and queued_action.get("optimistic") is Array: model = Optimistic.apply(model, queued_action.optimistic)
 	if model.get("meta", {}).has("seasonStartYear"): SeasonLabel.start_year = int(model.meta.seasonStartYear)
-	if decision_feedback != null: decision_feedback.complete(received_command, response_ok, model)
+	if decision_feedback != null: decision_feedback.complete(received_command, response_ok, value)
 	if not preferences_loaded and not str(model.get("meta", {}).get("dataDir", "")).is_empty():
 		preferences_loaded = true
 		user_preferences.load_profile(str(model.meta.dataDir))
@@ -323,6 +340,10 @@ func _receive_model(value: Dictionary) -> void:
 			_reset_reception(reception_id)
 			if has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 			route = "Réception"
+		# Arrêt « À noter » de « Continuer » (façon FM) : tous les éléments du jour sont en Réception, le plus récent en tête.
+		elif received_command == CareerProgression.CONTINUE_COMMAND and _stop_kind(model) == "a_noter":
+			_reset_reception()
+			route = "Réception"
 	if bridge.last_response_ok and last_command in ["new_career","next_season","import","restore_checkpoint"] and _has_career():
 		table_division = str(model.meta.get("leagueId", "elite"))
 	if response_ok and received_command == "match_talk_continue" and _live().is_empty():
@@ -339,7 +360,8 @@ func _receive_model(value: Dictionary) -> void:
 			_update_live_bar()
 			_update_header_date()
 			match_screen.update_frame(model)
-		else: _render(false)
+		# Changement d'écran, de boîte de réception, de carrière ou avance du calendrier : toujours le rendu complet.
+		else: _refresh_after_response(response_ok, route != route_before or not reception_id.is_empty() or received_command in ["new_career", "import", "recover_profile", "restore_checkpoint", "next_season", "finish_round", "advance_day", CareerProgression.CONTINUE_COMMAND] or SeasonPreparation.is_advance(received_command))
 	if bridge.last_response_ok:
 		if is_instance_valid(status):
 			status.text = _settled_status_text()
@@ -366,7 +388,7 @@ func _record_timing(command: String, receive_us: int) -> void:
 	if not _timing_trace: return
 	var now := Time.get_ticks_usec()
 	var bridge_timing: Dictionary = bridge.last_timing
-	var entry := {"command": command, "rendu_ms": (now - receive_us) / 1000.0, "moteur_ms": bridge_timing.get("moteur_ms", 0.0), "analyse_ms": bridge_timing.get("analyse_ms", 0.0), "file_ms": bridge_timing.get("file_ms", 0.0), "octets": bridge_timing.get("octets", 0), "total_ms": (now - _command_sent_us) / 1000.0 if _command_sent_us > 0 else 0.0, "route": route}
+	var entry := {"command": command, "rafraichissement": last_refresh, "rendu_ms": (now - receive_us) / 1000.0, "moteur_ms": bridge_timing.get("moteur_ms", 0.0), "analyse_ms": bridge_timing.get("analyse_ms", 0.0), "composition_ms": bridge_timing.get("composition_ms", 0.0), "sections": bridge_timing.get("sections", []).size(), "file_ms": bridge_timing.get("file_ms", 0.0), "octets": bridge_timing.get("octets", 0), "total_ms": (now - _command_sent_us) / 1000.0 if _command_sent_us > 0 else 0.0, "route": route}
 	_command_sent_us = 0
 	timing_log.append(entry)
 	print("CD_TIMING ", JSON.stringify(entry))
@@ -376,10 +398,33 @@ func _record_timing(command: String, receive_us: int) -> void:
 static func shows_wait_panel(command: String) -> bool:
 	return COMMAND_WAIT_MESSAGES.has(command) or SeasonPreparation.is_advance(command) or command == CareerProgression.CONTINUE_COMMAND
 
+## Décision de la préparation attendue (arrêt ou refus de « Continuer », reprise.cjs) : « La reprise » s'ouvre
+## d'elle-même, comme une décision en attente dans Football Manager.
+func _decision_due(value: Dictionary, ok: bool) -> bool:
+	var advance: Variant = value.get("meta", {}).get("advanceUntilEvent")
+	if ok and advance is Dictionary and advance.get("stop") is Dictionary and str(advance.stop.get("kind", "")) == "decision": return true
+	return not ok and not (value.get("clubLife", {}).get("reprise", {}).get("due", []) as Array).is_empty()
+
+func _stop_kind(value: Dictionary) -> String:
+	var advance: Variant = value.get("meta", {}).get("advanceUntilEvent")
+	return str(advance.stop.get("kind", "")) if advance is Dictionary and advance.get("stop") is Dictionary else ""
+
+func _open_reprise_decision() -> void:
+	if has_node("RepriseDialog"): return
+	load("res://ui/reprise_dialog.gd").open(self)
+
 func _command(command: String, payload: Dictionary = {}, target_route: String = "") -> bool:
 	if closing: return false
 	if waiting:
 		if command == "tick": return false
+		# Bascule ou sélection simple : affichée tout de suite, envoyée après la réponse en cours. Une nouvelle
+		# valeur pour le même réglage remplace celle en file (sa charge utile est lue sur le modèle déjà retouché).
+		var early := Optimistic.edits(command, payload, model)
+		if not early.is_empty() and last_command not in ["snapshot", "tick"] and not shows_wait_panel(last_command) and (queued_action.is_empty() or (str(queued_action.get("command", "")) == command and queued_action.get("optimistic") is Array and Optimistic.same_paths(queued_action.optimistic, early))):
+			queued_action = {"command":command, "payload":payload.duplicate(true), "target_route":target_route, "optimistic":early}
+			model = Optimistic.apply(model, early)
+			call_deferred("_render_optimistic", early)
+			return true
 		# Après un tick ou une décision légère, la décision suivante attend son tour.
 		# La même décision répétée n’attend pas : sa charge utile a été lue sur le
 		# modèle d’avant la réponse en cours et écraserait celle-ci (ex. set_tactics).
@@ -400,13 +445,54 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 	if _timing_trace: _command_sent_us = Time.get_ticks_usec()
 	pending_route = target_route
 	if SeasonPreparation.is_advance(command): SeasonPreparation.show_pending(self, true)
-	if decision_feedback != null: decision_feedback.begin(command, payload, model)
+	var edits := Optimistic.edits(command, payload, model)
+	var shown := not edits.is_empty() and Optimistic.applied(model, edits)
+	# Avant toute retouche : la décision se mesure par rapport au modèle confirmé.
+	if decision_feedback != null: decision_feedback.begin(command, payload, bridge.model if shown and not bridge.model.is_empty() else model)
+	optimistic_edits = edits
+	if not edits.is_empty() and not shown:
+		model = Optimistic.apply(model, edits)
+		call_deferred("_render_optimistic", edits)
 	if command == CareerProgression.CONTINUE_COMMAND:
 		payload = _continue_payload(str(payload.get("fromDate", "")))
 		continue_progress.begin(_continue_context(), not user_preferences.data.reduced_motion)
 	else: _present_command_wait(command)
 	bridge.send(command, payload)
 	return waiting
+
+## Affichage anticipé d'une décision (ou retour au modèle confirmé après un refus) : l'écran en cours est redessiné
+## sans attendre le moteur. Les scènes contextuelles et le match gardent leur propre rafraîchissement.
+## `edits` : retouches affichées ; l'écran n'est pas redessiné s'il ne lit aucune de leurs sections (ScreenRefresh),
+## et reste alors construit hors attente, ce qui permet aussi de le garder à la confirmation.
+func _render_optimistic(edits: Array = []) -> void:
+	if closing or not _has_career() or route in ["Accueil", "Création", "Match"]: return
+	if is_instance_valid(contextual_director) and contextual_director.active(): return
+	if refresh_by_screen and not edits.is_empty() and _screen_current() and not ScreenRefresh.concerns(route, ScreenRefresh.edit_ids(edits)):
+		last_refresh = ScreenRefresh.NONE
+		return
+	_render(false)
+
+## Vrai si l'écran affiché est celui du dernier rendu complet noté, pour la même route et le même jour.
+func _screen_current() -> bool:
+	if _screen_stamp.is_empty() or not is_instance_valid(root_content): return false
+	var now := _screen_state()
+	return _screen_stamp.content == now.content and _screen_stamp.route == now.route and _screen_stamp.day == now.day
+
+func _screen_state() -> Dictionary:
+	return ScreenRefresh.stamp(root_content.get_instance_id() if is_instance_valid(root_content) else 0, route, waiting, model, last_error, connection_error, _status_has_error())
+
+## Après une réponse acceptée : rendu complet, sauf si l'écran affiché ne lit aucune section changée
+## (table ui/screen_refresh.json) et a été construit dans le même état (hors attente, même jour, même erreur). Les
+## éléments vivants hors de l'écran (bandeau du direct, date, état, Gabi) sont mis à jour dans les deux cas.
+func _refresh_after_response(response_ok: bool, force_full: bool) -> void:
+	last_refresh = ScreenRefresh.FULL
+	if refresh_by_screen and response_ok and not force_full and _has_career():
+		last_refresh = ScreenRefresh.plan(route, _screen_stamp, _screen_state(), bridge.last_changes, bridge.last_full_model)
+	if last_refresh == ScreenRefresh.FULL:
+		_render(false)
+		return
+	_update_live_bar()
+	_update_header_date()
 
 ## « Continuer » : tranches partielles (le moteur répond au bout de CONTINUE_SLICE_MS avec la date atteinte),
 ## arrêts réglés dans les préférences. Les arrêts obligatoires (match, rendez-vous, presse) ne se règlent pas.
@@ -511,9 +597,17 @@ func _failed(message: String) -> void:
 	if decision_feedback != null: decision_feedback.complete(last_command, false, model)
 	waiting = false
 	if SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, false)
+	var anticipated := not optimistic_edits.is_empty() or queued_action.get("optimistic") is Array
+	var reverted: Array = optimistic_edits.duplicate()
+	if queued_action.get("optimistic") is Array: reverted.append_array(queued_action.optimistic)
 	queued_action.clear()
 	pending_route = ""
 	connection_error = bridge.child_pid <= 0 or bridge._stopping
+	# Décision affichée d'avance puis refusée (ou moteur arrêté avant sa réponse) : retour au modèle confirmé.
+	optimistic_edits = []
+	if anticipated and not bridge.model.is_empty() and not is_same(model, bridge.model):
+		model = bridge.model
+		call_deferred("_render_optimistic", reverted)
 	var epcr_dialog := get_node_or_null("EpcrPreparationDialog") if last_command == "epcr_preview" else null
 	var editor_dialog := get_node_or_null("CompetitionEditorDialog") if last_command == "competition_editor_preview" else null
 	var market_dialog := get_node_or_null("InterclubMarket") if last_command in ["interclub_negotiate", "interclub_auction"] else null
@@ -631,7 +725,16 @@ func _build_subnavigation(parent: Container) -> void:
 			row.add_child(button)
 		return
 
+## Rendu complet de l'écran ; note son état (ScreenRefresh.stamp) quand un nouvel arbre a été construit.
 func _render(remember_ui: bool = true) -> void:
+	var before := root_content.get_instance_id() if is_instance_valid(root_content) else 0
+	_render_screen(remember_ui)
+	var after := root_content.get_instance_id() if is_instance_valid(root_content) else 0
+	if after != before:
+		screen_renders += 1
+		_screen_stamp = _screen_state()
+
+func _render_screen(remember_ui: bool) -> void:
 	if route == "Presse" and not has_meta("press_mail_origin"): route = "Réception"
 	if not Immersive.Selections.navigation_allowed(model, route): route = "Réception"
 	call_deferred("_refresh_coach")
@@ -1066,7 +1169,8 @@ func primary_action() -> void:
 		return
 	var daily := _daily_progression()
 	if not daily.is_empty():
-		if daily.has("route"): _navigate(daily.route)
+		if daily.has("open"): _open_reprise_decision()
+		elif daily.has("route"): _navigate(daily.route)
 		elif daily.has("command"): _command(daily.command, daily.payload)
 		return
 	if not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})

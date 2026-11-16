@@ -66,18 +66,38 @@ static func build(owner_app: Control, canvas: Control) -> void:
 	D.place(page, Rect2(0, 0, WIDTH, HEIGHT))
 	page._build()
 
+## Fiches gardées en mémoire pour un même instant de carrière (lot 23) : revenir sur un club déjà ouvert ce jour-là
+## ne demande rien au moteur.
+const CACHE_CLUBS := 16
+
 ## Instant de carrière : une fiche en cache n'est plus servie après une journée ou un match.
 static func stamp(owner_app: Control) -> String:
 	var meta: Dictionary = owner_app.model.get("meta", {})
 	return "%s|%s|%s|%d" % [meta.get("season", ""), meta.get("week", ""), meta.get("calendarToday", meta.get("date", "")), owner_app.model.get("history", []).size()]
 
 static func cached(owner_app: Control, id: int) -> Dictionary:
-	var fresh: Variant = owner_app.model.get("clubSheet")
-	if fresh is Dictionary and int(fresh.get("id", -1)) == id:
-		owner_app.set_meta("club_sheet_cache", {"id":id, "stamp":stamp(owner_app), "data":fresh.duplicate(true)})
+	var moment := stamp(owner_app)
 	var cache: Variant = owner_app.get_meta("club_sheet_cache", {})
-	if cache is Dictionary and int(cache.get("id", -1)) == id and cache.get("stamp") == stamp(owner_app): return cache.data
-	return {}
+	if not (cache is Dictionary and cache.get("stamp") == moment and cache.get("sheets") is Dictionary): cache = {"stamp":moment, "sheets":{}, "order":[]}
+	# Fiche lue en lecture seule : le modèle n'est jamais modifié par l'interface, aucune copie n'est utile.
+	var fresh: Variant = owner_app.model.get("clubSheet")
+	if fresh is Dictionary and fresh.get("id") != null and not is_same(cache.sheets.get(int(fresh.id)), fresh):
+		var fresh_id := int(fresh.id)
+		cache.sheets[fresh_id] = fresh
+		cache.order.erase(fresh_id)
+		cache.order.append(fresh_id)
+		while cache.order.size() > CACHE_CLUBS: cache.sheets.erase(cache.order.pop_front())
+	owner_app.set_meta("club_sheet_cache", cache)
+	return cache.sheets.get(id, {})
+
+## Club suivi : la liste du modèle (clubLife.clubSheet.followed) fait foi, elle suit la décision dès le clic ;
+## à défaut, le drapeau de la fiche.
+func _followed() -> bool:
+	var life: Variant = app.model.get("clubLife")
+	var sheet: Variant = life.get("clubSheet") if life is Dictionary else null
+	var followed: Variant = sheet.get("followed") if sheet is Dictionary else null
+	if followed is Array: return followed.any(func(value: Variant) -> bool: return (value is int or value is float) and int(value) == club_id)
+	return bool(data.get("followed", false))
 
 static func request(owner_app: Control, id: int) -> void:
 	var key := "%d|%s" % [id, stamp(owner_app)]
@@ -178,7 +198,7 @@ func _hero() -> void:
 	var stadium := str(data.get("stadium", "")) if data.get("stadium") != null else ""
 	var capacity: Variant = data.get("capacity")
 	D.text(hero, 332, 236, ("Stade : " + stadium if not stadium.is_empty() else "Stade non renseigné") + ("  ·  %s places" % _thousands(capacity) if capacity is float or capacity is int else ""), 28, C.MUTED, 500, 1030)
-	if bool(data.get("followed", false)): D.chip(hero, Rect2(332, 254, 140, 34), "★ Club suivi", C.GOLD)
+	if _followed(): D.chip(hero, Rect2(332, 254, 140, 34), "★ Club suivi", C.GOLD)
 	# Tuiles clés : classement, forme, réputation, effectif.
 	var table: Dictionary = data.get("table", {})
 	var tiles := [
@@ -236,7 +256,7 @@ func _tabs() -> void:
 		D.tab_state(tab, rect.size, i == active, TAB_ICONS[i])
 		tab.toggle_mode = true
 		tab.button_pressed = i == active
-	var followed := bool(data.get("followed", false))
+	var followed := _followed()
 	var actions := [
 		["Ne plus suivre" if followed else "Suivre le club", "ClubSheetFollow", "star" if not followed else "close", _follow.bind(not followed)],
 		["Calendrier", "ClubSheetCalendar", "calendar", _calendar],
@@ -255,9 +275,8 @@ func _select(index: int) -> void:
 	app._render(false)
 
 func _follow(value: bool) -> void:
-	# La fiche est relue après la décision (drapeau « suivi » à jour).
-	app.remove_meta("club_sheet_cache")
-	app.remove_meta("club_sheet_requested")
+	# Lot 23 : la fiche reste affichée (aucune relecture du club) ; le suivi bascule dès le clic (décision optimiste,
+	# optimistic_decisions.gd) et le modèle du moteur le confirme ou l'annule.
 	app._command("club_follow", {"club":club_id, "follow":value})
 
 ## Calendrier du club (matchs joués et à venir de la saison), adversaires cliquables.

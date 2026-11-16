@@ -359,7 +359,7 @@ static func _staff(card: Panel, app: Control) -> void:
 	for i in mini(4, people.size()):
 		var person: Dictionary = people[i]
 		var y := 67 + i * 75
-		var portrait := G.portrait(0, C.px(82), person)
+		var portrait := G.portrait_lazy(0, C.px(82), person)
 		card.add_child(portrait)
 		D.place(portrait, Rect2(18,y,82,65))
 		D.text(card, 116, y+24, person.get("roleLabel",person.get("role","Encadrement")), 22, C.MUTED, 500, 390)

@@ -58,9 +58,9 @@ static func sort_value(person: Dictionary, field: String, own_context: bool = fa
 static func attributes_known(person: Dictionary, own_context: bool = false) -> bool:
 	return owned(person,own_context) or _metadata(person).get("stage","") == "deep"
 
-static func range_delta(left: Dictionary, right: Dictionary, field: String, own_context: bool = false) -> String:
+static func range_delta(left: Dictionary, right: Dictionary, field: String, own_context: bool = false, right_own_context: Variant = null) -> String:
 	var first := bounds(left,field,own_context)
-	var second := bounds(right,field,own_context)
+	var second := bounds(right,field,own_context if right_own_context == null else bool(right_own_context))
 	if first.is_empty() or second.is_empty(): return "Non comparable"
 	var minimum: float = float(second.min)-float(first.max)
 	var maximum: float = float(second.max)-float(first.min)
