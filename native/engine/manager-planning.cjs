@@ -118,7 +118,7 @@ function goalProjection(goal,source){
   if(valid){measuredMatches++;if(metric==='penalties')total+=stats.penalties;else{attempts+=stats[metric];won+=stats[metric+'Won'];}}
   return {...r,value:valid?(metric==='penalties'?stats.penalties:100*stats[metric+'Won']/stats[metric]):null,events:(r.events||[]).filter(e=>e.kind===kind)};
  });
- return {...goal,rows,measuredMatches,value:measuredMatches?(metric==='penalties'?total/measuredMatches:100*won/attempts):null,notice:'Mesures conservées depuis le choix de cet objectif, au plus 40 rencontres. Les écarts ne prouvent pas l’effet de la préparation ; une donnée absente reste inconnue.'};
+ return {...goal,rows,measuredMatches,value:measuredMatches?(metric==='penalties'?total/measuredMatches:100*won/attempts):null,notice:'Suivi des matchs depuis le choix de cet objectif, dans la limite de 40 matchs. À lire avec prudence : la préparation n’explique pas tout.'};
 }
 function validateRequest(model,command,payload){
  const p=project(model);

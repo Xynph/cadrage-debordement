@@ -126,7 +126,6 @@ static func hospitality(parent: Node, rectangle: Rect2) -> void:
 static func _header(app: Control, canvas: Control, tab: String) -> void:
 	hospitality(canvas, Rect2(1370,0,878,185))
 	U.art_fade(canvas, Rect2(1370,0,185,185))
-	D.chip(canvas, Rect2(2005,11,147,26), "ILLUSTRATION", C.GOLD).name = "FinanceHospitalityIllustration"
 	D.text(canvas, 2, 38, "L’ÉQUILIBRE DU PROJET", 31, C.GOLD, 700, 400)
 	D.line(canvas, Vector2(329,23), Vector2(650,23), Color(C.GOLD,.65))
 	U.italic(D.text(canvas, 7, 106, "Garder une longueur d’avance.", 76, C.IVORY, 800, 1280), 800)
@@ -152,9 +151,9 @@ static func _metrics(app: Control, canvas: Control, accounts: Dictionary, financ
 	var market: Array = app.model.get("market", [])
 	var available := market.filter(func(player: Dictionary): return player.get("available",false))
 	var captions := [
-		["Trésorerie", "money", U.amount(cash), "Montants de jeu", C.ALERT if cash != null and float(cash)<0.0 else C.MINT],
+		["Trésorerie", "money", U.amount(cash), "Trésorerie du club", C.ALERT if cash != null and float(cash)<0.0 else C.MINT],
 		["Marché du recrutement", "search", "%d profils" % market.size(), "%d accessibles" % available.size(), C.MINT],
-		["Masse salariale · joueurs", "people", G.salary_amount(wages), "hors cotisations", C.MINT],
+		["Salaires des joueurs", "people", G.salary_amount(wages), "hors cotisations", C.MINT],
 		["Marge courante · par semaine", "shield", U.amount(margin), "hors guichet", C.AMBER if margin != null and float(margin)<0.0 else C.MINT]
 	]
 	for i in captions.size():

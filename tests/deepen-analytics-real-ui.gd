@@ -103,17 +103,17 @@ func run() -> void:
 	if picker==null: finish();return
 	var details: Control = app.body.find_child("PerformancePlayerDetail",true,false)
 	# Le sélecteur de la vue n'est pas dans l'ordre de la liste du modèle et le premier joueur peut n'avoir aucune
-	# feuille (« Aucune feuille conservée »). Le contrôle porte sur un joueur réellement mesuré, lu dans le sélecteur.
+	# feuille (« Pas encore de match suivi »). Le contrôle porte sur un joueur réellement mesuré, lu dans le sélecteur.
 	var roster: Array = app.model.clubLife.playerMatchHistory.players
 	var measured_index := 0
 	for index in picker.item_count:
-		if not picker.get_item_text(index).ends_with(" · 0 feuille(s)"): measured_index=index; break
+		if not picker.get_item_text(index).ends_with(" · 0 match"): measured_index=index; break
 	# La fiche affichée à l'ouverture est celle du joueur sélectionné par la vue (sans feuille en CI),
 	# qui n'est pas forcément l'entrée 0 du sélecteur : on sélectionne toujours explicitement le joueur mesuré.
 	picker.select(measured_index)
 	picker.item_selected.emit(measured_index)
 	await settle()
-	check(text(details).contains("minutes connues") and text(details).contains("par 80 min"),"Minutes et ratios réels affichés · "+text(details).left(300).replace("\n"," | ")+" · index="+str(measured_index)+" items="+str(picker.item_count)+" feuilles modèle="+str(roster.filter(func(p: Dictionary): return p.get("matches",[]).size()>0).size())+" · "+str(picker.get_item_text(0))+" ; "+str(picker.get_item_text(mini(1,picker.item_count-1))))
+	check(text(details).contains("minutes jouées") and text(details).contains("par 80 min"),"Minutes et ratios réels affichés · "+text(details).left(300).replace("\n"," | ")+" · index="+str(measured_index)+" items="+str(picker.item_count)+" feuilles modèle="+str(roster.filter(func(p: Dictionary): return p.get("matches",[]).size()>0).size())+" · "+str(picker.get_item_text(0))+" ; "+str(picker.get_item_text(mini(1,picker.item_count-1))))
 	var measured_name: String = picker.get_item_text(measured_index).split(" · ")[0]
 	var actual: Dictionary = {}
 	for candidate: Dictionary in roster:
@@ -122,7 +122,7 @@ func run() -> void:
 	if actual.is_empty(): finish();return
 	check(text(details).contains(str(actual.name)),"Identité du joueur issue du vrai worker")
 	check(actual.measuredMatches>0 and actual.minutes!=null,"Minutes réellement mesurées")
-	check(text(details).contains(str(int(actual.minutes))+" minutes connues"),"Dénominateur réel affiché")
+	check(text(details).contains(str(int(actual.minutes))+" minutes jouées"),"Dénominateur réel affiché")
 	await reveal(picker)
 	picker.grab_focus()
 	await settle()

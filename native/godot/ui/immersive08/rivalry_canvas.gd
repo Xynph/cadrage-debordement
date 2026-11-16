@@ -243,7 +243,7 @@ func _echo_detail(event: Dictionary) -> void:
 	view[0].popup_centered(Vector2i(940, 520))
 
 func _archives() -> void:
-	var panel := D.panel(workspace, Rect2(0, 0, LEFT, 828), "Le palmarès conservé", "trophy", "", "RivalryArchives")
+	var panel := D.panel(workspace, Rect2(0, 0, LEFT, 828), "Le palmarès", "trophy", "", "RivalryArchives")
 	var scroll := ScrollContainer.new()
 	scroll.name = "RivalryArchiveScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

@@ -691,7 +691,6 @@ func _bottom() -> void:
 	var scorer := _panel(self, Rect2(1765, 1013, 483, 211), "MEILLEUR RÉALISATEUR", "ball", "CompetitionScoring")
 	D.photo(scorer, "player-hero", Rect2(6, 51, 158, 155))
 	var caption := D.rect(scorer, Rect2(6, 181, 158, 25), Color("101819e8"), 3)
-	D.text(caption, 79, 18, "ILLUSTRATION", 16, C.IVORY, 700, 158, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(scorer, 180, 89, "Donnée indisponible", 26, C.IVORY, 700, 280)
 	D.text(scorer, 180, 123, "Points individuels", 22, C.MUTED, 500, 280)
 	D.text(scorer, 180, 150, "non conservés par la carrière.", 22, C.MUTED, 500, 287)

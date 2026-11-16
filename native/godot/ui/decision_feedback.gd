@@ -350,9 +350,12 @@ func _amount(value: Variant) -> String:
 		if index > 0 and (raw.length()-index)%3 == 0 and raw[index-1] != "-": result += " "
 		result += raw[index]
 	return result + " €"
+func _score(value: Variant) -> String:
+	var number := snappedf(float(value), 0.1)
+	return str(int(number)) if is_equal_approx(number, round(number)) else str(number).replace(".", ",")
 func _metric_line(metric: String, before: Variant, after: Variant) -> String:
 	var label: String = {"cash":"Trésorerie","wage":"Salaires "+preload("res://ui/salary_display.gd").period_label(),"morale":"Moral collectif"}[metric]
-	if metric == "morale": return "%s : %s → %s / 100%s" % [label,str(before),str(after)," (stable)" if before == after else ""]
+	if metric == "morale": return "%s : %s → %s / 100%s" % [label,_score(before),_score(after)," (stable)" if before == after else ""]
 	return "%s : %s → %s%s" % [label,preload("res://ui/salary_display.gd").amount(before) if metric == "wage" else _amount(before),preload("res://ui/salary_display.gd").amount(after) if metric == "wage" else _amount(after)," (stable)" if before == after else ""]
 
 func control() -> Button:

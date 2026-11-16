@@ -131,7 +131,7 @@ function factory(){
  // Consultative only: all measures use the initial observed reference, never
  // attribute earlier gains to a newly chosen plan or reconstruct missed games.
  function historicalReview(s,p,stage,current,row){
-  const basis='Écarts depuis la référence initiale ; ils ne prouvent pas l’effet du plan actuel.'+(current.model==='annual-v11'?' Le niveau évolue au bilan annuel, pas à chaque semaine.':'');
+  const basis='Évolution depuis le début du suivi : le plan actuel n’explique pas tout.'+(current.model==='annual-v11'?' Le niveau évolue au bilan annuel, pas à chaque semaine.':'');
   const advice=(key,label,detail,destination=null,suggestedPlan=null)=>({key,label,detail,destination,suggestedPlan});
   if(!row)return {status:'untracked',label:'Commencer par observer',basis,evidence:null,objective:null,recommendation:advice('start','Créer une référence','Démarrer le suivi avant de mesurer de nouveaux progrès.')};
   if(row.baseline.clubId!==s.club)return {status:'context',label:'Référence d’un autre club',basis,evidence:null,objective:null,recommendation:advice('context','Examiner les faits du nouveau club','La référence initiale vient d’un autre club ; aucun déficit de minutes local n’est déduit. Réviser le plan pour le club courant.','Effectif','integration')};
@@ -206,7 +206,7 @@ function factory(){
  function review(s,p,stage,current,row){
   const result=historicalReview(s,p,stage,current,row),history=measuredHistory(row),recent=recentReview(s,current,row,history);
   result.recent=recent;result.shortTermObjective=shortTermObjective(s,current,row,history);
-  result.basis+=' La fenêtre récente et l’objectif daté utilisent leurs propres bornes observées, présentées séparément.';
+  result.basis+=' La période récente et l’objectif daté sont mesurés séparément.';
   if(!row||result.status==='context'||result.recommendation.key==='recover'||stage!=='professional')return result;
   if(!recent.available){
    if(recent.reason==='counter'||recent.reason==='context'){

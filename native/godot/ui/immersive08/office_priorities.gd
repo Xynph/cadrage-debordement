@@ -89,17 +89,22 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 		result.append(_item("OfficeMedicalPriorityAction","Adapter le groupe aux blessures",
 			"%d joueur%s blessé%s. Vérifiez les solutions disponibles dans l’effectif." % [injured.size(),"s" if injured.size() > 1 else "","s" if injured.size() > 1 else ""],
 			"Avant la composition","heart","squad","important"))
-	var contracts: Array = model.get("squad",[]).filter(func(player: Dictionary):
-		return player.get("contractEnd") != null and int(player.contractEnd) <= season + 1)
+	# Une seule définition : les échéances de la saison en cours (celles du courrier de fin de saison et de
+	# Recrutement). Sans échéance cette saison, les contrats de la saison suivante sont à anticiper.
+	var due: Array = model.get("squad",[]).filter(func(player: Dictionary):
+		return player.get("contractEnd") != null and int(player.contractEnd) <= season)
+	var contracts: Array = due if not due.is_empty() else model.get("squad",[]).filter(func(player: Dictionary):
+		return player.get("contractEnd") != null and int(player.contractEnd) == season + 1)
 	contracts.sort_custom(func(a: Dictionary,b: Dictionary):
 		return str(a.get("id","")) < str(b.get("id","")) if int(a.contractEnd) == int(b.contractEnd) else int(a.contractEnd) < int(b.contractEnd))
 	if not contracts.is_empty():
 		var first: Dictionary = contracts[0]
 		var expiry := int(first.contractEnd)
 		var deadline := "Fin de cette saison" if expiry <= season else "Fin " + G.contract_year(expiry)
-		var ending: int = int(P.contract_counts(model).end_of_season)
-		result.append(_item("OfficeContractsAction","Préparer %d échéance%s de contrat%s" % [contracts.size(),"s" if contracts.size() > 1 else "",
-			" (dont %d en fin de saison)" % ending if ending > 0 and ending != contracts.size() else ""],
+		var plural := contracts.size() > 1
+		var title := "Préparer %d échéance%s de contrat en fin de saison" % [contracts.size(),"s" if plural else ""] if not due.is_empty() \
+			else "Anticiper %d échéance%s de contrat l’an prochain" % [contracts.size(),"s" if plural else ""]
+		result.append(_item("OfficeContractsAction",title,
 			str(first.get("name","Joueur")) + " · Fin de contrat " + G.contract_year(expiry),deadline,
 			"people","contract","important" if expiry <= season else "normal",str(first.get("id",""))))
 	if not ended and live.is_empty():

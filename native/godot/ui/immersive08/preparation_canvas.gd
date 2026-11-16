@@ -425,7 +425,7 @@ func _threats(section: Control) -> void:
 		D.text(panel, 111, y + 56, "%s  ·  %s" % [p.get("pos", ""), p.get("role", "")], 17, C.MUTED, 500, 740)
 		D.line(panel, Vector2(20, y + 73), Vector2(863, y + 73), Color(C.LINE, .67))
 	var signals: Array = reports.get("signals", [])
-	D.text(panel, 23, 331, "%d signal(aux) documenté(s) · détails dans le dossier" % signals.size() if not signals.is_empty() else "Observations adverses indisponibles." if reports.is_empty() else "Pas de signal robuste dans les observations disponibles.", 24, GOLD, 500, 842)
+	D.text(panel, 23, 331, "%d signal(aux) relevé(s) · détails dans le dossier" % signals.size() if not signals.is_empty() else "Observations adverses indisponibles." if reports.is_empty() else "Pas de signal robuste dans les observations disponibles.", 24, GOLD, 500, 842)
 
 func _consignes() -> void:
 	var section := _section("PreparationConsignes")

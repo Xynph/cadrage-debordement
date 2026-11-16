@@ -152,8 +152,8 @@ static func _tasks(app: Control) -> Array:
 	if app.Immersive.Selections.nation_only(app.model): return tasks
 	if not app.model.get("selection", {}).get("valid", false): tasks.append(["Compléter la feuille de match", "Composition"])
 	if not app.model.get("meta", {}).get("trained", false): tasks.append(["Organiser la charge de la semaine", "Entraînement"])
-	var contracts := P.contracts(app.model)
-	if not contracts.is_empty(): tasks.append(["Examiner %s de contrat" % P.plural(contracts.size(), "échéance", "échéances"), "Effectif"])
+	var contracts := P.contracts_ending(app.model)
+	if not contracts.is_empty(): tasks.append(["Examiner %s de contrat en fin de saison" % P.plural(contracts.size(), "échéance", "échéances"), "Effectif"])
 	if P.group(app.model).injured > 0: tasks.append(["Consulter les indisponibilités de l’effectif", "Effectif"])
 	var reports: Array = app.model.get("decisions", {}).get("recruitment", {}).get("reports", [])
 	if not reports.is_empty(): tasks.append(["Consulter %d rapport(s) de recrutement" % reports.size(), "Recrutement"])
@@ -265,7 +265,7 @@ static func _activity_filters(card: Panel, app: Control, state: Dictionary, mess
 			_redraw(app,id),state.activity_filter==key,"",false,app.accent,id)
 		action.add_theme_font_size_override("font_size", C.px(18))
 		action.accessibility_name = "%s : %d courrier(s)" % [Reading.LABELS[key], counts[key]]
-		action.tooltip_text = "Filtrer les états réellement indiqués par le moteur. Les messages sans décision explicite restent des informations."
+		action.tooltip_text = "Filtrer par état. Les messages sans décision explicite restent des informations."
 
 static func _open_related(app: Control, message: Dictionary, action: Callable) -> void:
 	if message.is_empty():
@@ -466,7 +466,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		D.photo(row,image,Rect2(24,6,53,50))
 		D.text(row,90,25,message.get("subject",message.category),20,C.IVORY,700,450)
 		D.text(row,90,48,("URGENT · " if reading.urgent else "") + str(reading.label) + " · " + message.text,17,C.ALERT if reading.urgent else C.MUTED,500,598)
-		var badge := "Message %02d" % message.position
+		var badge := "Courrier"
 		if message.get("press_invitation", {}).get("status") == "pending": badge = "À traiter"
 		elif message.get("calendar_notice", {}).get("status") == "pending": badge = "À décider"
 		elif message.has("international_event"): badge = "Sélections"
@@ -513,7 +513,7 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	D.text(card,46,48,category.to_upper(),28,C.IVORY,800,780)
 	_icon(card,ICONS[category],Rect2(47,64,20,20),COLORS[category])
 	var event: Dictionary = message.get("international_event", {})
-	var source := "Journal de la sélection" if national else ("Journal du club" if message.is_empty() else "Journal du club · Message %02d" % message.position)
+	var source := "Journal de la sélection" if national else ("Journal du club" if message.is_empty() else "Journal du club")
 	if not event.is_empty():
 		var date := P.fixture_date({"date":event.get("date")})
 		source = "Sélections" if date.is_empty() else "Sélections · " + date

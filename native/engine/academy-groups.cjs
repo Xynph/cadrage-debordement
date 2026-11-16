@@ -89,8 +89,8 @@ module.exports = function academyGroups() {
       const limit = modern(s) ? 17 : 18;
       const younger = players.filter(player => player.age <= limit).length;
       news(modern(s)
-        ? `Le centre accueille ${accepted.length} jeune(s). Effectif : ${younger} Crabos et ${players.length - younger} Espoirs.`
-        : `Le centre accueille ${accepted.length} nouveau(x) jeune(s). Effectif : ${younger} U18 et ${players.length - younger} U21.`);
+        ? `Le centre accueille ${accepted.length} jeune(s). Le centre compte désormais ${players.length} jeunes : ${younger} Crabos et ${players.length - younger} Espoirs.`
+        : `Le centre accueille ${accepted.length} nouveau(x) jeune(s). Le centre compte désormais ${players.length} jeunes : ${younger} U18 et ${players.length - younger} U21.`);
     }
     if (accepted.length < additions.length) {
       news('Le centre a atteint son plafond de 75 jeunes. Certains postes restent à compléter à la prochaine arrivée.');

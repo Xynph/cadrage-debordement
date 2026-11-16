@@ -219,7 +219,7 @@ func _show_event() -> void:
 	if ActionPitch.valid(scene.get("from")) and ActionPitch.valid(scene.get("to")):
 		pitch.from=scene.from
 		pitch.to=scene.to
-		coordinates.text = "Ballon : (%s ; %s) → (%s ; %s) m. Origine claire, arrivée dorée. Schéma enregistré, sans trajectoire animée ni direction d’attaque déduite." % [Journal._number(scene.from.x),Journal._number(scene.from.y),Journal._number(scene.to.x),Journal._number(scene.to.y)]
+		coordinates.text = "Ballon : (%s ; %s) → (%s ; %s) m. Départ en clair, arrivée en doré." % [Journal._number(scene.from.x),Journal._number(scene.from.y),Journal._number(scene.to.x),Journal._number(scene.to.y)]
 	else: coordinates.text = "Position non renseignée."
 	pitch.queue_redraw()
 
@@ -278,12 +278,12 @@ func _show_phase(selected: int) -> void:
 			var team: String = G.club_name(teams[side]) if side<teams.size() else "Équipe "+str(side+1)
 			lines.append("%s · attaque : %s · défense : %s" % [team,_plan_label(phase.plans.attack[side],false),_plan_label(phase.plans.defence[side],true)])
 	if phase.firstScore==null: lines.append("Score non renseigné.")
-	else: lines.append("Score au premier fait documenté : %s — %s ; au dernier : %s — %s." % [Journal._number(phase.firstScore[0]),Journal._number(phase.firstScore[1]),Journal._number(phase.lastScore[0]),Journal._number(phase.lastScore[1])])
+	else: lines.append("Score au premier temps fort : %s — %s ; au dernier : %s — %s." % [Journal._number(phase.firstScore[0]),Journal._number(phase.firstScore[1]),Journal._number(phase.lastScore[0]),Journal._number(phase.lastScore[1])])
 	var counts: Array[String] = []
 	for kind in ["try","goal","miss","penalty","turnover","setpiece-win","setpiece-loss"]:
 		if phase.counts.has(kind): counts.append(str(Journal.KINDS[kind])+" : "+str(phase.counts[kind]))
 	if not counts.is_empty(): lines.append("Faits retenus · "+" · ".join(counts))
-	lines.append("Ce bilan des faits retenus ne prouve pas l’effet d’une consigne. Aucune durée d’animation n’est déduite des minutes.")
+	lines.append("Ce bilan ne suffit pas à juger l’effet d’une consigne.")
 	phase_summary.text="\n".join(lines)
 
 static func _plan_label(value: String, defence: bool) -> String:

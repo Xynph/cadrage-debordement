@@ -28,9 +28,9 @@ func run() -> void:
 		var panel: Control = view.build(host)
 		scroll.add_child(panel)
 		for i in 4: await process_frame
-		check(text(panel).contains("5 rencontres"), "Cinq rencontres " + str(size))
-		check(text(panel).contains("couverture 5 / 5 rencontres"), "Couverture réelle " + str(size))
-		check(text(panel).contains("Trois dernières / deux précédentes"), "Comparaison descriptive " + str(size))
+		check(text(panel).contains("5 matchs"), "Cinq matchs " + str(size))
+		check(not text(panel).contains("couverture") and not text(panel).contains("documentée"), "Pas de vocabulaire technique " + str(size))
+		check(text(panel).contains("Trois derniers matchs / deux précédents"), "Comparaison descriptive " + str(size))
 		check(panel.get_combined_minimum_size().x <= size.x, "Pas de débordement horizontal " + str(size))
 		check(JSON.stringify(model) == before, "Modèle immuable " + str(size))
 		host.queue_free()
@@ -38,7 +38,7 @@ func run() -> void:
 	var empty := Host.new()
 	empty.model = {"clubLife":{"performanceAnalysis":{"available":true,"summary":{"played":0}}}}
 	var empty_panel: Control = view.build(empty)
-	check(text(empty_panel).contains("Aucune rencontre conservée"), "État vide explicite")
+	check(text(empty_panel).contains("Pas encore de match joué"), "État vide explicite")
 	empty_panel.free()
 	empty.model = {}
 	var unavailable: Control = view.build(empty)
