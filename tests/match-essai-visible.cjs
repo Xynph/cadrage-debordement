@@ -19,7 +19,10 @@ const NIVEAUX_MONTRES = ['resume', 'cles', 'etendus', 'dynamique', 'integral'];
 
 function jouer(club) {
   const { run } = context();
-  run(`start(${club}); beginMatch(); continueMatch();`);
+  // Météo fixée à « sec » (docs/meteo-match-20261116.md) : ce test vérifie la mise en scène des essais, pas
+  // la météo ; sous la pluie le ballon porté et les mêlées changent de fréquence selon les graines. Les effets
+  // de la météo sont mesurés dans tests/meteo-match.cjs.
+  run(`start(${club}); beginMatch(); if(S.live.weatherVersion===1){S.live.weather='Sec';S.live.meteo={pluie:0,vent:0,chaleur:0,terrain:'souple'}} continueMatch();`);
   for (let i = 0; i < 800 && !run('S.live.finished'); i++) run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
   assert.equal(run('S.live.finished'), true);
   const events = JSON.parse(run('JSON.stringify(S.live.events)'));
