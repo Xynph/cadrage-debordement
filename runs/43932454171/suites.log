@@ -1,0 +1,78 @@
+::group::tests/godot-continuer.cjs
+Parcours quotidien Godot · 25 contrôles réussis
+CD_CONTINUER premier arrêt : {"days":7.0,"from":"2026-07-13","pressDelegated":0.0,"stop":{"detail":"Gabi attend le programme des matchs amicaux : choisissez dans « La reprise » ou confiez-la-lui.","kind":"decision","label":"Décision attendue"},"to":"2026-07-20"} en 513 ms
+Continuer Godot · 42 contrôles réussis
+ERROR: The process 2843 does not exist or is not a child of the calling process.
+TAP version 13
+# Subtest: Bouton principal « Continuer » et « Jour suivant » (règles d’interface)
+ok 1 - Bouton principal « Continuer » et « Jour suivant » (règles d’interface)
+  ---
+  duration_ms: 152.12657
+  type: 'test'
+  ...
+# Subtest: « Continuer » dans le jeu : panneau, arrêt motivé, « Arrêter », « Jour suivant » encore là
+ok 2 - « Continuer » dans le jeu : panneau, arrêt motivé, « Arrêter », « Jour suivant » encore là
+  ---
+  duration_ms: 28252.661497
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 28409.715131
+CD_CPU_PROFILE suite=tests/godot-continuer.cjs user_s=27.99 system_s=2.43 wall_s=28.43 cpu_pct=107% max_rss_kb=1573228
+PASS tests/godot-continuer.cjs (28 s)
+::endgroup::
+::group::tests/godot-reprise.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+REPRISE UI : 44 contrôles ; 0 échecs
+
+Preuves reprise : /tmp/tmp.dAAmX51yRn/suite.fPLT4q/oval-reprise-ui-EbzsNc
+TAP version 13
+# Subtest: Reprise : départ choisi à la création et décision de reprise dans la Préparation
+ok 1 - Reprise : départ choisi à la création et décision de reprise dans la Préparation
+  ---
+  duration_ms: 19515.882285
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19521.157855
+CD_CPU_PROFILE suite=tests/godot-reprise.cjs user_s=18.53 system_s=1.51 wall_s=19.54 cpu_pct=102% max_rss_kb=1596512
+PASS tests/godot-reprise.cjs (20 s)
+::endgroup::
+::group::tests/godot-finitions.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PHASE fiche_joueur
+DIAG fiche : route=Effectif joueur=world:champ:7c8b8a958fb0522bb063 historique=1 lignes=1
+PHASE gabi_voile
+PHASE continuer
+PHASE fatigue
+PHASE calendrier
+DIAG semaine : bouton=<Object#null>
+FINITIONS 48 controles, 0 echec
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+     at: _set_size (scene/gui/control.cpp:1519)
+     GDScript backtrace (most recent call first):
+         [0] continuer (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-finitions.gd:166)
+         [1] run (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-finitions.gd:282)
+         [2] gabi_voile (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-finitions.gd:159)
+         [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-finitions.gd:31)
+
+CD_CPU_PROFILE suite=tests/godot-finitions.cjs user_s=98.12 system_s=12.75 wall_s=98.00 cpu_pct=113% max_rss_kb=2683628
+PASS tests/godot-finitions.cjs (98 s)
+::endgroup::

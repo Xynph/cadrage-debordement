@@ -1,0 +1,3 @@
+tests/godot-continuer.cjs
+tests/godot-reprise.cjs
+tests/godot-finitions.cjs
