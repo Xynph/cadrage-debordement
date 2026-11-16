@@ -110,6 +110,8 @@ function choregraphier(tf,plans,events,lire){
 // Tout ce qui suit est lu dans le journal, sans rien écrire ni tirer : le moteur reste la
 // source de vérité, la vue 2D ne fait qu'interpoler entre ces images.
 const SANS_IMAGE=new Set(['message','advantage','card','sub','tactic','break','end']);
+// Minutes de jeu montré avant d'afficher possession et occupation et de lire les tendances.
+const ECHANTILLON_MINUTES=10;
 const DEROULE_MAX=14;
 const r1=n=>Math.round(n*10)/10;
 // Scènes déjà calculées (une scène passée ne change plus, sauf la toute dernière).
@@ -317,11 +319,15 @@ function project(model,niveau,lire,options={}){
  const joues=vues.filter(l=>jouable(l)&&!SANS_IMAGE.has(l.kind));
  const tenus=[0,1].map(s=>joues.filter(l=>l.possession===s).length);
  const occupes=[joues.filter(l=>l.x!==null&&l.x>50).length,joues.filter(l=>l.x!==null&&l.x<50).length];
+ // Échantillon court (lot 5, 16/11/2026) : avant ECHANTILLON_MINUTES de jeu montré, les parts
+ // (possession, occupation) ne sont pas affichées (« 100 % / 0 % » à la 2e minute) et les
+ // compteurs portent `court` : l'écran les atténue, l'adjoint ne les commente pas.
  const tot=a=>a[0]+a[1],minuteVue=derniere?.minute??0,MIN_FAITS=6;
- const compte=(rang)=>({...rang,vide:rang.valeurs[0]+rang.valeurs[1]===0&&minuteVue<10});
+ const court=minuteVue<ECHANTILLON_MINUTES;
+ const compte=(rang)=>({...rang,vide:rang.valeurs[0]+rang.valeurs[1]===0&&court,court});
  const tableau=[
-  {cle:'possession',label:'Possession',valeurs:pourcent(tenus[0],tenus[1]),unite:'%',vide:tot(tenus)<MIN_FAITS},
-  {cle:'occupation',label:'Occupation',valeurs:pourcent(occupes[0],occupes[1]),unite:'%',vide:tot(occupes)<MIN_FAITS},
+  {cle:'possession',label:'Possession',valeurs:pourcent(tenus[0],tenus[1]),unite:'%',vide:tot(tenus)<MIN_FAITS||court,court},
+  {cle:'occupation',label:'Occupation',valeurs:pourcent(occupes[0],occupes[1]),unite:'%',vide:tot(occupes)<MIN_FAITS||court,court},
   compte({cle:'metres',label:'Mètres gagnés',valeurs:rugby.map(e=>Math.round(e.metres))}),
   compte({cle:'franchissements',label:'Franchissements',valeurs:rugby.map(e=>e.franchissements)}),
   compte({cle:'plaquages',label:'Plaquages réussis',valeurs:rugby.map(e=>e.plaquesStoppes)}),
@@ -340,13 +346,15 @@ function project(model,niveau,lire,options={}){
  // = somme des joueurs ; plaquages, mètres… réalistes (le journal seul en donnait 0 ou 1 par ailier).
  const feuille=feuilleStats.feuilleMontree(events,borne<lignes.length?lignes[borne].i:events.length,String(etat.rencontre||''),lire);
  feuilleStats.completerTableau(tableau,feuille);
+ // Les chiffres ajoutés par la feuille (passes, rucks…) portent eux aussi la longueur de l'échantillon.
+ for(const r of tableau)r.court=court;
  // Notes du direct : chiffres et apport de cette même feuille (match-notes.cjs, une seule source).
  const contexteNotes=etat.notes?{...etat.notes,feuille,apports:feuilleStats.apportsNote(feuille)}:etat.notes;
  const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',
   // Minute du dernier fait montré (borne) : l'horloge de l'entracte ne court pas devant ce qui a été vu.
   horlogeMontree:derniere?horloge(derniere):etat.horloge||'',camp:etat.camp??-1,
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
-  fil,traces,reperes,chiffres,elan,cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
+  fil,traces,reperes,chiffres,elan,echantillon:{minutes:minuteVue,suffisant:!court,seuil:ECHANTILLON_MINUTES},cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
   borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],
   tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1,contexteNotes),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel,contexteNotes),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null,hommeDuMatch:null};
@@ -409,4 +417,4 @@ function project(model,niveau,lire,options={}){
  return direct;
 }
 
-module.exports=Object.freeze({NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX});
+module.exports=Object.freeze({NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX,ECHANTILLON_MINUTES});

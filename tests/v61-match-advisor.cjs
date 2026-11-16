@@ -66,6 +66,13 @@ for(const observations of [0,1,9]){
  assert.doesNotMatch(html,/Appliquer en (attaque|defense)/);
 }
 lowSample('sample(0,10,50)');
+// Lot 5 : dix observations à la 1re minute ne suffisent pas, il faut aussi dix minutes de jeu.
+assert.equal(getAdvice().attack,'large','10 observations before the 10th minute : keep the selected attack');
+assert.equal(getAdvice().possession,null);
+assert.match(getAdvice().attackReason,/pas assez d.observations/i);
+lowSample('live.minute=9');
+assert.equal(getAdvice().occupation,null,'9th minute : still too early');
+lowSample('live.minute=10');
 assert.equal(getAdvice().attack,'conquete');
 assert.equal(getAdvice().possession,0);
 assert.equal(getAdvice().attackChanged,true);
@@ -82,4 +89,4 @@ assert.equal(getAdvice().attack,'large','late deficit takes precedence');
 assert.equal(getAdvice().defence,'pression');
 lowSample('live.minute=65;live.score[theirs]=0;live.score[ours]=7');
 assert.equal(getAdvice().defence,'prudente','late lead remains independent of sample maturity');
-console.log(JSON.stringify({passed:true,checks:['read-only analysis','RNG isolation','score based attack','defensive contextual advice','pause only','stale advice rejected','no duplicate change','legacy match and save parser','10-observation boundary for both ratios','maintained tactics without evidence','independent penalty and score signals']}));
+console.log(JSON.stringify({passed:true,checks:['read-only analysis','RNG isolation','score based attack','defensive contextual advice','pause only','stale advice rejected','no duplicate change','legacy match and save parser','10-observation boundary for both ratios','10-minute boundary for both ratios','maintained tactics without evidence','independent penalty and score signals']}));
