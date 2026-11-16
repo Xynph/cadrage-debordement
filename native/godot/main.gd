@@ -294,7 +294,7 @@ func _live() -> Dictionary:
 func _receive_model(value: Dictionary) -> void:
 	# Coup d’envoi : la scène 3D se construit d’un bloc sur le fil principal. Le panneau d’attente est posé et
 	# dessiné d’abord (deux images), puis la réponse est traitée : jamais d’écran figé sans message.
-	var live_opening := bridge.last_response_ok and last_command != "tick" and _opens_live_view(value) and is_instance_valid(command_wait_overlay)
+	var live_opening: bool = bridge.last_response_ok and last_command != "tick" and _opens_live_view(value) and is_instance_valid(command_wait_overlay)
 	if live_opening:
 		if not command_wait_overlay.panel_visible(): command_wait_overlay.set_context(_command_wait_context(last_command))
 		command_wait_overlay.reveal_now(LIVE_VIEW_WAIT_MESSAGE)
