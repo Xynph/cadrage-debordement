@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   node:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v5
@@ -25,7 +25,7 @@ jobs:
           node tests/matchday-lineup.cjs
           node tests/matchday-matchplan.cjs
   chromium:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
