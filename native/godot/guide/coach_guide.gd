@@ -615,6 +615,13 @@ func open_tour() -> void:
 	fragment_index = 0
 	_open()
 
+## Aide de l'écran (F1) : les conseils de la page, puis le rappel des raccourcis (table de ui/raccourcis_clavier.gd).
+func _fragments_aide(id: String) -> Array:
+	var fragments: Array = Content.fragments(id).duplicate()
+	if mode == "screen" and app._has_career():
+		fragments.append({"id": id + "-raccourcis", "text": "Au clavier, tout va plus vite :\n" + "\n".join(preload("res://ui/raccourcis_clavier.gd").lignes_aide())})
+	return fragments
+
 func open_help() -> void:
 	mode = "screen"
 	fragment_index = 0
@@ -647,7 +654,7 @@ func _show_page(force: bool, request_speech: bool = true) -> void:
 	var id: String = _context_page if mode == "context" else (profile.data.step if mode == "tour" else Content.for_route(app.route, app.model))
 	var page: Array = Content.page(id)
 	if id != current_id: fragment_index = 0
-	var fragments: Array = [_context_fragment] if mode == "context" else Content.fragments(id)
+	var fragments: Array = [_context_fragment] if mode == "context" else _fragments_aide(id)
 	fragment_index = clampi(fragment_index, 0, fragments.size() - 1)
 	fragment_id = str(fragments[fragment_index].id)
 	var key := mode + ":" + id + ":" + str(fragment_index) + ":" + str(app.route)
@@ -679,7 +686,7 @@ func _show_page(force: bool, request_speech: bool = true) -> void:
 func _step(direction: int, skip_page: bool = false) -> void:
 	if _blocked(): return
 	if mode == "context": close(); return
-	var fragments: Array = Content.fragments(current_id)
+	var fragments: Array = _fragments_aide(current_id)
 	if not skip_page and fragment_index + direction >= 0 and fragment_index + direction < fragments.size():
 		fragment_index += direction; _show_page(true)
 		_request_portrait_gesture(false)

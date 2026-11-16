@@ -151,6 +151,42 @@ static func unread(app: Control) -> int:
 	var marks: Dictionary = _state(app).marks
 	return _messages(app).filter(func(message: Dictionary): return not marks.get(message.id, {}).get("read", false)).size()
 
+## Prochain message non lu, dans l'ordre d'affichage de la boîte (tri choisi, priorités en tête, fils regroupés).
+## Dictionnaire vide s'il n'en reste aucun. Sert au raccourci Espace (ui/raccourcis_clavier.gd).
+static func next_unread(app: Control) -> Dictionary:
+	var state := _state(app)
+	var marks: Dictionary = state.marks
+	var candidates := _messages(app).filter(func(message: Dictionary):
+		var mark: Dictionary = marks.get(message.id, {})
+		return not mark.get("read", false) and not mark.get("archived", false))
+	if state.oldest_first: candidates.reverse()
+	var priority := _priority_ids(app.model)
+	var mandatory := candidates.filter(func(message: Dictionary): return message.has("press_invitation") and message.id in priority)
+	var urgent := candidates.filter(func(message: Dictionary): return message.id in priority and not message.has("press_invitation")) # même ordre que la boîte : tous non lus ici
+	var ordered: Array = mandatory + urgent + candidates.filter(func(message: Dictionary): return message not in mandatory and message not in urgent)
+	for group: Dictionary in Reading.groups(ordered):
+		return group.messages[0]
+	return {}
+
+## Ouvre le prochain message non lu : même effet qu'un clic sur sa ligne (sélection, marqué lu), dossier et filtres remis à « Tous ».
+static func open_next_unread(app: Control) -> bool:
+	var message := next_unread(app)
+	if message.is_empty(): return false
+	var state := _state(app)
+	state.folder = 0
+	state.category = "Tous"
+	state.activity_filter = "all"
+	state.selected = message.id
+	state.press_opened = message.id if message.has("press_invitation") else ""
+	state.expanded_threads[Reading.thread_key(message)] = true
+	state.scroll = 0
+	var mark: Dictionary = state.marks.get(message.id, {})
+	mark.read = true
+	state.marks[message.id] = mark
+	if app.route == "Réception": app._render()
+	else: app._navigate("Réception")
+	return true
+
 static func _tasks(app: Control) -> Array:
 	var tasks := []
 	if app.Immersive.Selections.nation_only(app.model): return tasks
