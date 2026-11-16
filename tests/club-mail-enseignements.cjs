@@ -24,7 +24,7 @@ test('Carrière Monde : enseignements du match avec axe de semaine, tour du cham
     for (let i = 0; i < 300 && m.meta.calendarToday < FIN; i++) {
       m = jeu.regler(m);
       const bilan = m.clubLife.clubMail.mails.find(x => x.type === 'bilan_match' && x.status === 'nouveau');
-      if (bilan && !repondu) {
+      if (bilan && !repondu && !m.live && !m.meta.calendarCadence?.matchReady) {
         const avant = JSON.parse(vm.run('JSON.stringify({ai:S.aiRoster||null,others:Object.keys(S.clubs).filter(k=>String(k)!==String(S.club)).map(k=>S.clubs[k].players?.length)})'));
         const r = jeu.brut('club_mail_reply', { id: bilan.id, choice: 'defense' });
         assert.equal(r.ok, true, r.error);
