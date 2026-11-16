@@ -98,6 +98,17 @@ deux dossiers. Le [manifeste](../tools/agent-skills/manifest.json) liste chaque
 fichier avec son empreinte ; `node tools/agent-skills/update.cjs --check` les
 vérifie hors ligne et `--commit <sha>` met le kit à jour depuis la source.
 
+## Pilotage Godot retenu le 15 novembre 2026
+
+| Ressource | Provenance / relevé | Utilité | Coût / licence | Statut et preuve |
+| --- | --- | --- | --- | --- |
+| [Fulviuus/godot-mcp](https://github.com/Fulviuus/godot-mcp/tree/8f9760caca300680bfffe564faf98c17b38a8e59) | Recherche GitHub du 15/11 ; dépôt, licence, manifeste et démarrage inspectés, version 2.0.2 épinglée. | Piloter le vrai jeu, inspecter la scène, évaluer du GDScript et capturer l'écran. | MIT, Node/Godot locaux ; aucun modèle ou service facturé requis. | **Intégré** via `tools/godot-agent/` : installation externe, bootstrap STDIO éprouvé avec les 28 outils et `godot_project_info`, carrière Monde pilotée et PNG observé via HTTP. Configuration Codex/Claude déclarée ; chargement natif de la session à vérifier après réouverture du projet de confiance. |
+| [Profiler Godot](https://docs.godotengine.org/en/latest/tutorials/scripting/debug/the_profiler.html) | Documentation officielle consultée le 15/11. | Distinguer coût des scripts, rendu et moteur avant une optimisation. | Documentation libre à consulter ; aucun nouvel outil payant. | **Retenu** ; aucun gain global ni profil CPU n'est revendiqué sans mesure. |
+
+Les candidats à licence non vérifiée restent des références et ne sont pas
+installés. Les résultats locaux, dimensions et limites sont consignés dans
+[la recette de l'outillage](recette-outillage-godot-20261115.md).
+
 | Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
 | --- | --- | --- | --- | --- |
 | [awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/tree/c6ca6c41c839b68319ffc08430b99ab768debc32) | Dépôt demandé par Léo. Cloné le 11 novembre 2026 au commit `dcf3bbbb83f3`, mis à jour le 16 novembre 2026 au commit `c6ca6c41c839` (décision de Léo) ; les 14 compétences retenues ont été relues diff par diff (31 fichiers Markdown copiés). Changements : descriptions et flux de travail réécrits avec vérifications headless (4.7.2), comptes rendus de version 4.7, `game-ai/references/behavior-trees.md` remplacé par `fsm-perception-steering.md`. Refusés : 4 scripts `assets/*.gd` (`check_scripts_compile`, `check_3d_scene`, `check_audio_buses`, `test_animation_states`), consignés dans `refused` au manifeste ; les étapes qui les citent et l'appel conditionnel à `godot-nodes-scenes/scripts/check_godot_project.py` (module non installé) sont à ignorer, ce que rappelle la note ajoutée en tête de chaque `SKILL.md`. Aucune commande réseau, instruction de contournement ni hors sujet ajoutée. | Godot 4.7 : `godot-gdscript`, `godot-ui-control`, `godot-gdscript-headless-testing`, `godot-export`, `godot-3d-essentials`, `godot-shaders`, `godot-audio`, `godot-animation`. Transversal : `save-systems`, `game-ui-ux`, `game-feel`, `game-ai`, `procedural-gen`, `performance-optimization`. | Gratuit. Apache-2.0 ; licence et notice copiées dans `_licences/` de chaque dossier. | **Intégré** comme aide aux agents, hors du jeu distribué. Relire le diff à chaque mise à jour : une compétence est une consigne donnée aux agents. Les 63 autres compétences du dépôt (Unity, Unreal, Roblox, genres) ne sont pas copiées. |
@@ -164,16 +175,16 @@ relevé n’est pas une nouvelle vérification en ligne de leurs pages.
   (Haiku) ajouté pour la lecture des journaux. Aucun service payant utilisé.
 - **Preuve :** décision consignée dans le ticket commun #591 le 12/11/2026.
 
-## Son et musique — 16 novembre 2026
+## Son (la musique est abandonnée) — 16 novembre 2026
 
-Chantier « son et ambiance » (branche `claude/son-ambiance-20261116`). Réseau de la machine cloud limité à GitHub, npm et pip : OpenGameArt et kenney.nl répondent 403, aucune musique n'a donc pu être vue ni écoutée. Aucun morceau tiers n'est intégré ; le jeu cherche `native/godot/audio/music/bureau.ogg` (Bureau, Réception) et `menus.ogg` (autres écrans), OGG en boucle, moins de 3 Mo, et reste silencieux tant qu'ils manquent.
+Chantier « son et ambiance » (branche `claude/son-ambiance-20261116`). **Décision de Léo du 16/11/2026 (19h20) : pas de musique dans le jeu.** Le lecteur de musique, le bus « Musique », les réglages et les cases correspondantes ont été retirés (branche `claude/sans-musique-20261116`) ; un ancien `sound.json` qui contient encore les champs de musique se charge, ces champs sont ignorés. Restent les sons de match (foule, sifflets, stade) et le volume des effets.
 
 | Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
 | --- | --- | --- | --- | --- |
 | Sifflets de foule `crowd-whistle.wav` (`scripts/build-native-crowd.cjs`) | Synthèse déterministe écrite pour le jeu le 16 novembre 2026 ; aucun échantillon tiers ; non écoutée par l'agent. | Sifflets du public à domicile sur pénalité accordée à l'extérieur. | Original du projet, sans attribution. | **Intégré** (PR « ambiance sonore »). Écoute à faire par Léo. |
-| [Kenney — Music Jingles](https://kenney.nl/assets/music-jingles) | Connu des assets Kenney, **non rouvert** le 16 novembre 2026 (403 du proxy). | Courts motifs : peu adaptés à une boucle de fond, éventuellement pour des transitions. | CC0 annoncée par Kenney, à revérifier sur la page avant import. | **À explorer**. |
-| [OpenGameArt — musique CC0, recherche « ambient »](https://opengameart.org/art-search-advanced?keys=ambient&field_art_type_tid%5B0%5D=12&field_art_licenses_tid%5B0%5D=4) | Adresse de recherche construite de mémoire, **non ouverte** le 16 novembre 2026 (403). | Trouver un morceau doux en boucle pour `bureau.ogg` et un second pour `menus.ogg`. | Filtre CC0 de la recherche ; contrôler la licence portée par chaque fiche. | **À explorer**. Retenir seulement un morceau écouté, CC0 ou sans attribution, OGG < 3 Mo ; le consigner ici avec lien de la fiche, auteur et date. |
-| [Free Music Archive — filtre domaine public / CC0](https://freemusicarchive.org/search?adv=1&music-filter-CC-attribution-only=0) | Adresse non vérifiée, non ouverte le 16 novembre 2026. | Autre source de pistes calmes sans attribution. | Licence propre à chaque piste ; écarter tout CC-BY. | **À explorer**. |
+| [Kenney — Music Jingles](https://kenney.nl/assets/music-jingles) | Connu des assets Kenney, **non rouvert** le 16 novembre 2026 (403 du proxy). | Courts motifs : peu adaptés à une boucle de fond, éventuellement pour des transitions. | CC0 annoncée par Kenney, à revérifier sur la page avant import. | **Écarté** (abandonné, décision de Léo du 16/11/2026 : plus de musique dans le jeu). |
+| [OpenGameArt — musique CC0, recherche « ambient »](https://opengameart.org/art-search-advanced?keys=ambient&field_art_type_tid%5B0%5D=12&field_art_licenses_tid%5B0%5D=4) | Adresse de recherche construite de mémoire, **non ouverte** le 16 novembre 2026 (403). | Trouver un morceau doux en boucle pour `bureau.ogg` et un second pour `menus.ogg`. | Filtre CC0 de la recherche ; contrôler la licence portée par chaque fiche. | **Écarté** (abandonné, décision de Léo du 16/11/2026 : plus de musique dans le jeu). |
+| [Free Music Archive — filtre domaine public / CC0](https://freemusicarchive.org/search?adv=1&music-filter-CC-attribution-only=0) | Adresse non vérifiée, non ouverte le 16 novembre 2026. | Autre source de pistes calmes sans attribution. | Licence propre à chaque piste ; écarter tout CC-BY. | **Écarté** (abandonné, décision de Léo du 16/11/2026 : plus de musique dans le jeu). |
 
 ## Modèle pour une nouvelle entrée
 

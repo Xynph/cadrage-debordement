@@ -1,0 +1,3 @@
+{
+  "expression": "scene.coach.fermer_bulle()\nscene._navigate(\"Bureau\")\nreturn \"Bureau ouvert\""
+}

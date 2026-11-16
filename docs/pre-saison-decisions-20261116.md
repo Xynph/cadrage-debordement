@@ -14,13 +14,13 @@ convoqués, même barème ; deux décisions s'y ajoutent, « Continuer » s'arr�
 Le dernier point recrutement n'est pas une décision : c'est un élément « À noter » (ci-dessous),
 qui renvoie à Recrutement.
 
-## Éléments « À noter » et flux de Continuer (façon FM, 16/11/2026)
+## Éléments « À noter » de Continuer (façon FM, 16/11/2026)
 
 Consigne de Léo : « Continuer » avance jusqu'au prochain jour qui contient des éléments pour le
 manager, s'arrête et les montre **tous** en Réception (plusieurs le même jour, c'est normal).
 
 - **Doit répondre** (arrêt `decision`, obligatoire) : le bouton principal devient « DÉCISION
-  ATTENDUE → » et ouvre « La reprise » ; la partie n'avance pas sans réponse, quel que soit le flux.
+  ATTENDUE → » et ouvre « La reprise » ; la partie n'avance pas sans réponse.
 - **Informatif** (arrêt `a_noter`, facultatif) : un nouvel appui sur Continuer repart sans réponse.
   Courrier existant de la Réception (`news`), un seul envoi par élément (`S.reprise.notes`,
   identifiants `type:date`, 32 au plus, remis à zéro à chaque saison).
@@ -33,16 +33,36 @@ manager, s'arrête et les montre **tous** en Réception (plusieurs le même jour
 | Dernier point recrutement | veille de la 1re journée | 3 postes faibles au plus, renvoi à Recrutement |
 | Veille de la 1re journée | veille de la 1re journée | adversaire, condition moyenne, blessés |
 
-Réglage « Flux de Continuer » (Préférences, à côté des messages et blessures ; clé `continue_flow`) :
-
-| Flux | Types qui arrêtent |
-| --- | --- |
-| Allégé | veille |
-| Équilibré (défaut) | amical, stage, recrutement, veille |
-| Complet | + retour des internationaux |
-
-Les éléments hors flux arrivent quand même en Réception ; un arrêt cite tous les éléments du jour.
+Tous ces éléments arrêtent l'avance : pas de niveaux (décision de Léo, 16/11/2026, qui remplace le réglage
+« Flux de Continuer » allégé / équilibré / complet, retiré des Préférences ; l'ancienne clé `continue_flow` d'un
+`interface.json` existant est lue sans erreur et ignorée, l'ancien `stops.flux` envoyé au moteur aussi). Un arrêt
+cite tous les éléments du jour.
 Scores et minutes : hachage de la saison et de l'élément, aucun `Math.random`.
+
+## Arrêts informatifs de toute la saison (décision de Léo, 16/11/2026)
+
+Continuer s'arrête aussi, pendant la saison, sur des moments sans décision, et peut s'arrêter plusieurs fois le
+même jour (comme FM). Réglage en données : `native/engine/continuer-arrets.json` (types, libellé, priorité,
+seuils, `maxParJour` = 3 arrêts au plus, le dernier regroupe le reste). Arrêt `info` (facultatif) :
+
+| Type | Quand |
+| --- | --- |
+| Veille de match | la veille d'une rencontre du club : feuille (23), blessés à remplacer, rang et forme de l'adversaire |
+| Rapport médical | un joueur de l'effectif absent au moins 4 semaines |
+| Bilan du match | le lendemain : score, infirmerie |
+| Fin de phase | changement de phase du championnat du club ou de sa coupe d'Europe (rang, suite) |
+| Mi-saison | lendemain du match de la moitié du championnat : rang, objectif de la direction |
+| Marché des transferts | une semaine avant la fenêtre des clubs (semaine 13) |
+| Rapport de recruteur | mission de recrutement terminée (remplace l'arrêt « message » de ce courrier) |
+
+Tous toujours actifs (pas de niveaux).
+
+Retour de convocation internationale : déjà couvert par l'arrêt `international` (courrier groupé, #758).
+Lecture seule (`SIGNAL_SOURCE`), aucun courrier ni état écrit : la carrière est identique avec ou sans ces arrêts.
+Les arrêts suivants du même jour restent en mémoire du moteur (`infoQueue`, worker.cjs) ; chaque appui sur Continuer
+montre le suivant sans avancer (`days: 0`, `queued` = restants) ; oubliés dès que la date change. Le joueur ne les coupe
+pas ; `stops.ignorer: ['info']` les coupe tous (outils, essais). Prochain arrêt annoncé : veille et mi-saison. Test : `tests/continuer-arrets-saison.cjs` (fenêtre courte en
+CI de PR ; saison complète avec `ARRETS_SAISON_COMPLETE=1` dans le créneau régulier `career-resilience.yml`).
 
 ## Éléments visuels ajoutés (existants seulement)
 
