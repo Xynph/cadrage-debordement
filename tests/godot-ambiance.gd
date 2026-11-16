@@ -89,6 +89,48 @@ func run() -> void:
 	check(audio._music.playing and audio.preferences.set_value("music_volume", 0) and AudioServer.is_bus_mute(music_bus) and not audio._music.playing, "Volume musique zéro mute le bus et coupe le lecteur")
 	check(audio.preferences.set_value("music_volume", 30) and not AudioServer.is_bus_mute(music_bus), "Volume musique restauré")
 
+	# Cases à cocher.
+	var prefs = audio.preferences
+	check(prefs.get_flag("music_on") and not prefs.get_flag("music_in_match") and prefs.get_flag("match_sounds"), "Valeurs par défaut des cases : musique oui, musique en match non, sons de match oui")
+	check(prefs.set_value("music_on", false) and not audio._music.playing, "Décocher « Musique » coupe la musique aussitôt")
+	step_music(audio, 3.0)
+	check(not audio._music.playing and audio._music_gain == 0.0, "Musique décochée : silence au Bureau")
+	check(prefs.set_value("music_on", true), "Musique recochée")
+	step_music(audio, 3.0)
+	check(audio._music.playing, "Musique recochée : elle reprend")
+	check(not prefs.set_value("music_on", "oui") and not prefs.set_value("match_sounds", 1), "Une case n'accepte qu'un oui ou non")
+	audio.last_error = ""
+	audio.refresh_visibility("Match", true)
+	step_music(audio, 3.0)
+	check(not audio._music.playing, "Musique en match décochée : coupée sur l'écran Match")
+	check(prefs.set_value("music_in_match", true), "Musique pendant les matchs cochée")
+	step_music(audio, 3.0)
+	check(audio._music.playing, "Musique pendant les matchs cochée : elle continue sur l'écran Match")
+	audio._live_active = true
+	step_music(audio, 3.0)
+	check(audio._music.playing, "Musique pendant les matchs cochée : elle continue pendant le direct")
+	check(prefs.set_value("music_on", false), "Musique décochée avec musique en match cochée")
+	step_music(audio, 3.0)
+	check(not audio._music.playing, "Musique décochée : même la musique de match se coupe")
+	audio._live_active = false
+	check(prefs.set_value("music_on", true) and prefs.set_value("music_in_match", false), "Retour aux réglages par défaut")
+	# Sons de match.
+	audio.set_presenting(true)
+	await create_timer(0.45).timeout
+	check(prefs.set_value("match_sounds", false) and not audio._bed.playing and not audio._reaction.playing, "Décocher « Sons de match » coupe l'ambiance du stade")
+	check(not audio.play_shown("try", 0) and not audio.play_shown("penalty", 1), "Sons de match décochés : ni foule ni sifflets")
+	step_music(audio, 3.0)
+	audio.refresh_visibility("Bureau", false)
+	audio.set_presenting(false)
+	step_music(audio, 3.0)
+	check(audio._music.playing, "Sons de match décochés : la musique n'est pas touchée")
+	check(prefs.set_value("match_sounds", true), "Sons de match recochés")
+	# Les cases survivent à un rechargement.
+	check(prefs.set_value("music_in_match", true), "Case enregistrée")
+	var reloaded = load("res://audio/sound_preferences.gd").new()
+	check(reloaded.load_profile(directory) and reloaded.get_flag("music_in_match") and reloaded.get_flag("music_on") and reloaded.get_flag("match_sounds"), "Cases relues au redémarrage")
+	check(prefs.set_value("music_in_match", false), "Case remise par défaut")
+
 	# Foule : camp domicile = 0.
 	audio.cue_played.connect(func(id: String): cues.append(id))
 	audio.crowd_mood.connect(func(mood: String): moods.append(mood))

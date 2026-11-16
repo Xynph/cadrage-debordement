@@ -3,7 +3,10 @@ extends RefCounted
 signal changed
 signal error_changed(message: String)
 const Atomic = preload("res://atomic_file.gd")
-const DEFAULTS := {"version": 1, "interface_volume": 35, "stadium_volume": 25, "music_volume": 30}
+const DEFAULTS := {"version": 1, "interface_volume": 35, "stadium_volume": 25, "music_volume": 30, "music_on": true, "music_in_match": false, "match_sounds": true}
+## Champs apparus après la première version : absents d'un ancien fichier = valeur par défaut, sans refus.
+const OPTIONAL := ["music_volume", "music_on", "music_in_match", "match_sounds"]
+const FLAGS := ["music_on", "music_in_match", "match_sounds"]
 ## Canaux : Interface = effets, Stade = ambiance de foule, Musique = musique douce du Bureau et des menus.
 const MAX_BYTES := 4096
 var data: Dictionary = DEFAULTS.duplicate(true)
@@ -17,25 +20,37 @@ func _fail(message: String) -> bool:
 	return false
 
 func _validated(candidate: Variant) -> Dictionary:
-	# Un fichier d'avant la musique n'a pas « music_volume » : valeur par défaut, sans refus.
-	if candidate is Dictionary and candidate.size() == DEFAULTS.size() - 1 and not candidate.has("music_volume"):
-		candidate = candidate.duplicate()
-		candidate["music_volume"] = DEFAULTS.music_volume
-	if not candidate is Dictionary or candidate.size() != DEFAULTS.size():
+	if not candidate is Dictionary:
 		_fail("Réglages sonores refusés : champs absents ou inconnus. Original conservé.")
 		return {}
+	candidate = candidate.duplicate()
+	for key in OPTIONAL:
+		if not candidate.has(key):
+			candidate[key] = DEFAULTS[key]
+	if candidate.size() != DEFAULTS.size():
+		_fail("Réglages sonores refusés : champs absents ou inconnus. Original conservé.")
+		return {}
+	var result := {"version": 1}
 	for key in DEFAULTS:
 		if not candidate.has(key):
 			_fail("Réglages sonores refusés : champ absent « %s ». Original conservé." % key)
 			return {}
 		var value: Variant = candidate[key]
+		if key in FLAGS:
+			if typeof(value) != TYPE_BOOL:
+				_fail("Réglage sonore refusé : oui ou non attendu pour « %s »." % key)
+				return {}
+			result[key] = value
+			continue
 		if not typeof(value) in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(value)) or float(value) != floor(float(value)):
 			_fail("Réglage sonore refusé : un entier est attendu pour « %s »." % key)
 			return {}
 		if (key == "version" and value != 1) or (key != "version" and (value < 0 or value > 100)):
 			_fail("Version sonore inconnue ou volume hors de 0 à 100. Original conservé.")
 			return {}
-	return {"version": 1, "interface_volume": int(candidate.interface_volume), "stadium_volume": int(candidate.stadium_volume), "music_volume": int(candidate.music_volume)}
+		if key != "version":
+			result[key] = int(value)
+	return result
 
 func load_profile(directory: String) -> bool:
 	_available = false
@@ -74,10 +89,14 @@ func load_profile(directory: String) -> bool:
 func get_value(key: String) -> int:
 	return int(data.get(key, 0))
 
+## Cases à cocher : musique, musique pendant les matchs, sons de match.
+func get_flag(key: String) -> bool:
+	return bool(data.get(key, DEFAULTS.get(key, false)))
+
 func set_value(key: String, value: Variant) -> bool:
 	if not _available:
 		return _fail(last_error if not last_error.is_empty() else "Réglages sonores non chargés : aucun dossier de repli.")
-	if key not in ["interface_volume", "stadium_volume", "music_volume"]:
+	if key == "version" or not DEFAULTS.has(key):
 		return _fail("Réglage sonore inconnu : « %s »." % key)
 	var next := data.duplicate(true)
 	next[key] = value

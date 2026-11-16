@@ -134,12 +134,12 @@ func apply_preferences() -> void:
 		AudioServer.set_bus_mute(index, value == 0)
 	if not _profile_ready or preferences.get_value("interface_volume") == 0:
 		_ui.stop()
-	if not _profile_ready or preferences.get_value("stadium_volume") == 0:
+	if not _profile_ready or preferences.get_value("stadium_volume") == 0 or not preferences.get_flag("match_sounds"):
 		_bed.stop()
 		_reaction.stop()
 		_bed_gain = 0.0
 		_reaction_gain = 0.0
-	if not _profile_ready or preferences.get_value("music_volume") == 0:
+	if not _profile_ready or preferences.get_value("music_volume") == 0 or not preferences.get_flag("music_on"):
 		_music.stop()
 		_music_gain = 0.0
 
@@ -237,7 +237,7 @@ func _process(delta: float) -> void:
 	if not _registered:
 		return
 	_update_music(delta)
-	var enabled := _active and _profile_ready and preferences.get_value("stadium_volume") > 0
+	var enabled := _active and _profile_ready and preferences.get_value("stadium_volume") > 0 and preferences.get_flag("match_sounds")
 	var desired := (0.35 if _voice_active else 1.0) if enabled else 0.0
 	_bed_gain = move_toward(_bed_gain, desired, delta / 0.22)
 	if enabled and not _bed.playing:
@@ -262,9 +262,15 @@ func set_music_stream(slot: String, stream: AudioStream) -> void:
 	_music_overrides[slot] = stream
 
 func _music_slot_for(route: String) -> String:
-	if route.is_empty() or route in MUSIC_SILENT_ROUTES or not _music_blocks.is_empty() or _live_active or _presenting:
+	var in_match := preferences.get_flag("music_in_match")
+	if route.is_empty() or not _music_blocks.is_empty():
 		return ""
-	var slot := "bureau" if route in MUSIC_OFFICE_ROUTES else "menus"
+	# « Musique pendant les matchs » : l'écran Match et le direct gardent la musique ; Accueil et co. restent muets.
+	if route in MUSIC_SILENT_ROUTES and not (route == "Match" and in_match):
+		return ""
+	if (_live_active or _presenting) and not in_match:
+		return ""
+	var slot := "bureau" if route in MUSIC_OFFICE_ROUTES or route == "Match" else "menus"
 	return slot if _music_stream(slot) != null else ("bureau" if _music_stream("bureau") != null else "")
 
 func _music_stream(slot: String) -> AudioStream:
@@ -287,7 +293,7 @@ func _music_loop(stream: AudioStream) -> AudioStream:
 	return looped
 
 func _update_music(delta: float) -> void:
-	var enabled := _profile_ready and preferences.get_value("music_volume") > 0
+	var enabled := _profile_ready and preferences.get_value("music_volume") > 0 and preferences.get_flag("music_on")
 	var target := _music_slot_for(_music_route) if enabled else ""
 	# Fondu entre écrans : on descend, on change de morceau à zéro, on remonte.
 	var desired := 1.0 if not target.is_empty() and target == _music_slot else 0.0
@@ -383,7 +389,7 @@ func observe_model(model: Dictionary, route: String, command: String = "snapshot
 		_play_reaction(cue.id, cue.mood)
 
 func _play_reaction(id: String, mood: String = "joie") -> bool:
-	if not _registered or not _active or not _profile_ready or preferences.get_value("stadium_volume") == 0:
+	if not _registered or not _active or not _profile_ready or preferences.get_value("stadium_volume") == 0 or not preferences.get_flag("match_sounds"):
 		return false
 	var now := Time.get_ticks_msec()
 	if now - _last_reaction_ms < 350:
