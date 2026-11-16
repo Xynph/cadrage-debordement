@@ -38,7 +38,7 @@ on:
         required: false
         default: false
       captures_quoi:
-        description: 'Captures voulues, séparées par des virgules : intro, finitions, fiche-club, feuille-espoir, match-rendu ; vide = toutes'
+        description: 'Captures voulues, séparées par des virgules : intro, finitions, fiche-club, feuille-espoir, match-rendu (hors défaut) ; vide = toutes sauf match-rendu'
         type: string
         required: false
         default: ''
@@ -76,12 +76,12 @@ jobs:
         with:
           ref: ${{ github.event_name == 'push' && github.sha || inputs.ref }}
           persist-credentials: false
-      - name: Outils en ligne de main (la branche testée peut ne pas les avoir)
+      - name: Outils en ligne (ceux de la branche testée s'ils existent, sinon ceux de main)
         shell: bash
         run: |
           set -euo pipefail
           git fetch --no-tags --depth=1 "https://github.com/${{ github.repository }}.git" main
-          git show FETCH_HEAD:ci/en-ligne-run.sh > ci/en-ligne-run.sh
+          [[ -f ci/en-ligne-run.sh ]] || git show FETCH_HEAD:ci/en-ligne-run.sh > ci/en-ligne-run.sh
       - name: Lire les paramètres (push de secours)
         if: ${{ github.event_name == 'push' }}
         shell: bash
@@ -159,7 +159,10 @@ jobs:
             exit 1
           fi
       - name: Exécuter suites, captures et mesures demandées
+        id: executer
         shell: bash
+        # Plus court que le job : si une phase se bloque, l'étape suivante (always) reste exécutée.
+        timeout-minutes: 80
         env:
           SDL_AUDIODRIVER: dummy
           LIBGL_ALWAYS_SOFTWARE: '1'
@@ -169,6 +172,20 @@ jobs:
           code=$?
           [[ -f "$RUNNER_TEMP/resultats/resume.md" ]] && cat "$RUNNER_TEMP/resultats/resume.md" >> "$GITHUB_STEP_SUMMARY"
           exit $code
+      - name: Afficher résumé, échecs et fin des journaux dans le journal du job
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          r="$RUNNER_TEMP/resultats"
+          echo "::group::resume.md"; cat "$r/resume.md" 2>/dev/null || echo "(absent)"; echo "::endgroup::"
+          echo "::group::echecs.txt"; cat "$r/echecs.txt" 2>/dev/null || echo "(aucun échec relevé)"; echo "::endgroup::"
+          if [[ -s "$r/journaux-echec.txt" ]]; then
+            while read -r j; do echo "::group::fin de $j (80 dernières lignes)"; tail -n 80 "$r/$j"; echo "::endgroup::"; done < "$r/journaux-echec.txt"
+          fi
+          if [[ "${{ steps.executer.outcome }}" != success ]]; then
+            dernier="$(ls -t "$r"/*.log 2>/dev/null | head -1)"
+            [[ -n "$dernier" ]] && { echo "::group::dernier journal écrit : $(basename "$dernier")"; tail -n 80 "$dernier"; echo "::endgroup::"; }
+          fi
       - name: Conserver les résultats en artefact (7 jours)
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

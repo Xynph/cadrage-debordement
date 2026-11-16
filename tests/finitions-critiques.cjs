@@ -11,15 +11,17 @@ const Monde = require('./helpers/carriere-monde.cjs');
 
 test('Continuer : prochain arrêt prévisible', () => {
   const base = { today: '2026-09-01', meeting: null, next: { date: '2026-09-11', opponent: 'Rivaux' } };
-  assert.deepEqual(C.plan(base), { kind: 'match', date: '2026-09-11', opponent: 'Rivaux' });
+  // Arrêts informatifs de la saison coupés (`ignorer: ['info']`) : le match ; sinon la veille du match l'annonce.
+  assert.deepEqual(C.plan(base, null, ['info']), { kind: 'match', date: '2026-09-11', opponent: 'Rivaux' });
+  assert.deepEqual(C.plan(base), { kind: 'info', date: '2026-09-10', detail: 'veille du match contre Rivaux' });
   assert.equal(C.plan({ ...base, next: null }), null, 'aucun arrêt prévisible sans rencontre');
   assert.equal(C.plan(base, '2026-09-05').kind, 'reprise', 'la reprise de l’entraînement est plus proche que le match');
-  assert.equal(C.plan(base, '2026-09-20').kind, 'match', 'une reprise passée ou plus tardive ne compte pas');
+  assert.equal(C.plan(base, '2026-09-20', ['info']).kind, 'match', 'une reprise passée ou plus tardive ne compte pas');
   const rdv = C.plan({ ...base, meeting: { kind: 'medical', id: 'm' } });
   assert.equal(rdv.kind, 'rendez_vous');
   assert.equal(rdv.date, '2026-09-02', 'rendez-vous en file : dès le lendemain');
   assert.equal(rdv.detail, 'Point médical');
-  assert.equal(C.plan({ ...base, meeting: { kind: 'press', completed: true } }).kind, 'match', 'rendez-vous achevé ignoré');
+  assert.equal(C.plan({ ...base, meeting: { kind: 'press', completed: true } }, null, ['info']).kind, 'match', 'rendez-vous achevé ignoré');
   assert.equal(C.plan(null), null);
 });
 
@@ -31,7 +33,7 @@ test('Continuer : les tranches partielles publient le prochain arrêt', () => {
     assert.equal(r.ok, true, r.error);
     // Une tranche partielle (budget minimal) : progress.plan ; sinon l'avance s'est arrêtée d'elle-même (modèle complet).
     if (r.progress) {
-      assert.ok(r.progress.plan === null || (typeof r.progress.plan.date === 'string' && ['match', 'reprise', 'rendez_vous'].includes(r.progress.plan.kind)), 'plan : ' + JSON.stringify(r.progress.plan));
+      assert.ok(r.progress.plan === null || (typeof r.progress.plan.date === 'string' && ['match', 'reprise', 'rendez_vous', 'decision', 'a_noter', 'info'].includes(r.progress.plan.kind)), 'plan : ' + JSON.stringify(r.progress.plan));
       if (r.progress.plan) assert.ok(r.progress.plan.date >= r.progress.today, 'le prochain arrêt est devant');
     } else assert.ok(r.model.meta.advanceUntilEvent, 'arrêt direct');
   } finally { jeu.fermer(); }

@@ -3,11 +3,13 @@ extends RefCounted
 signal changed
 signal error_changed(message: String)
 const Atomic = preload("res://atomic_file.gd")
-const DEFAULTS := {"version": 1, "interface_volume": 35, "stadium_volume": 25, "music_volume": 30, "music_on": true, "music_in_match": false, "match_sounds": true}
+const DEFAULTS := {"version": 1, "interface_volume": 35, "stadium_volume": 25, "match_sounds": true}
 ## Champs apparus après la première version : absents d'un ancien fichier = valeur par défaut, sans refus.
-const OPTIONAL := ["music_volume", "music_on", "music_in_match", "match_sounds"]
-const FLAGS := ["music_on", "music_in_match", "match_sounds"]
-## Canaux : Interface = effets, Stade = ambiance de foule, Musique = musique douce du Bureau et des menus.
+const OPTIONAL := ["match_sounds"]
+const FLAGS := ["match_sounds"]
+## Champs d'une ancienne version (musique, abandonnée le 16/11/2026) : ignorés à la lecture, non réécrits.
+const LEGACY_IGNORED := ["music_volume", "music_on", "music_in_match"]
+## Canaux : Interface = effets, Stade = ambiance de foule.
 const MAX_BYTES := 4096
 var data: Dictionary = DEFAULTS.duplicate(true)
 var last_error := ""
@@ -24,6 +26,8 @@ func _validated(candidate: Variant) -> Dictionary:
 		_fail("Réglages sonores refusés : champs absents ou inconnus. Original conservé.")
 		return {}
 	candidate = candidate.duplicate()
+	for key in LEGACY_IGNORED:
+		candidate.erase(key)
 	for key in OPTIONAL:
 		if not candidate.has(key):
 			candidate[key] = DEFAULTS[key]
@@ -89,7 +93,7 @@ func load_profile(directory: String) -> bool:
 func get_value(key: String) -> int:
 	return int(data.get(key, 0))
 
-## Cases à cocher : musique, musique pendant les matchs, sons de match.
+## Cases à cocher : sons de match.
 func get_flag(key: String) -> bool:
 	return bool(data.get(key, DEFAULTS.get(key, false)))
 

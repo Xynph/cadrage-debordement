@@ -36,7 +36,10 @@ fi
 filtered_list="$(mktemp)"
 printf '%s\n' "${suites[@]}" > "$filtered_list"
 list="$filtered_list"
+source "$root/ci/suite-tmp.sh"
 work="$(mktemp -d)"
+cleanup() { [[ "${CD_KEEP_TMP:-0}" == 1 ]] || rm -rf "$work" "$filtered_list"; }
+trap cleanup EXIT
 mkdir -p "$work/logs" "$work/running"
 : > "$work/results.md"
 export CD_SHARD_WORK="$work"
@@ -155,6 +158,9 @@ budget() {
     tests/finitions-critiques.cjs) echo 900s ;;
     # Feuille incomplète : appel d'un espoir (#726), carrières Monde jouées sur plusieurs journées ; 398 s en local sous charge (CI : suite 7/7, 180 s dépassées) ; budget ≈ 3 fois.
     tests/feuille-espoirs.cjs) echo 1200s ;;
+    # Réactivité du moteur (lot 19) : deux carrières Monde par test (projection d'avant et par sections), 130 à 170 s
+    # mesurées ; 180 s dépassées au hasard en CI le 16/11 (#788, #790, #796, #801). Budget ≈ 3 fois, assertions inchangées.
+    tests/reactivite-projection-verification.cjs|tests/reactivite-projection-rapide.cjs|tests/reactivite-projection-decisions.cjs) echo 540s ;;
     *) echo 180s ;;
   esac
 }
@@ -166,6 +172,10 @@ run_one() {
   limit="$(budget "$test")"
   limit="$(( ${limit%s} * budget_pct / 100 ))s"
   touch "$work/running/$name"
+  # TMPDIR propre à la suite (sous-shell de run_one) : supprimé après la suite, même en cas d'échec ou de délai.
+  local suite_tmp
+  suite_tmp="$(cd_suite_tmp_new "$work")"
+  export TMPDIR="$suite_tmp"
   start=$SECONDS
   local t0 timer=()
   t0="$(date +%s%N)"
@@ -181,6 +191,7 @@ run_one() {
     printf 'CD_CPU_PROFILE suite=%s wall_s=%d.%02d\n' "$test" $(( (t1-t0)/1000000000 )) $(( (t1-t0)/10000000%100 )) >> "$log"
   fi
   rm -f "$work/running/$name"
+  cd_suite_tmp_drop "$suite_tmp"
   {
     flock 9
     echo "::group::$test"
@@ -195,7 +206,7 @@ run_one() {
   } 9> "$work/print.lock"
   rm -f "$log"
 }
-export -f run_one budget
+export -f run_one budget cd_suite_tmp_new cd_suite_tmp_drop
 
 # Les dernières suites en cours restent visibles dans les annotations même si le runner
 # est interrompu avant le résumé final.
@@ -207,6 +218,7 @@ interrupted() {
 }
 trap 'interrupted SIGTERM 143' TERM
 trap 'interrupted SIGINT 130' INT
+# (la sortie « exit » de interrupted déclenche le trap EXIT : cleanup)
 
 # Mémoire réservée (Mo) et exclusivité (1/0) par suite, dans l'ordre de la liste.
 mapfile -t plan < <(node -e '
@@ -272,5 +284,4 @@ total="$(find tests -maxdepth 1 -name '*.cjs' ! -name 'harness.cjs' | wc -l)"
   echo ""
   echo "**Échecs : $failures**"
 } >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
-rm -rf "$work"
 [[ "$failures" -eq 0 && "$executed" -eq "${#suites[@]}" ]]

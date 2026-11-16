@@ -250,9 +250,18 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
       const origin = projectSkills({ attributesV2: zero, gameplayPosition: position });
       const columns = axes.map(axis => projectSkills({ attributesV2: { ...zero, [axis]: 100 }, gameplayPosition: position }));
       const weights = Object.fromEntries(Object.keys(origin).map(skill => [skill, axes.map((axis, i) => (columns[i][skill] - origin[skill]) / 100)]));
-      projections.set(key, { origin, weights });
+      projections.set(key, { origin, weights, terms: new Map() });
     }
     return projections.get(key);
+  }
+  function sparseTerms(weights, roleWeight) {
+    const role = Object.entries(roleWeight).map(([skill, w]) => {
+      const row = weights[skill], index = [], coefficient = [];
+      for (let i = 0; i < row.length; i++) if (row[i] !== 0) { index.push(i); coefficient.push(row[i]); }
+      return { skill, w, index, coefficient };
+    });
+    const used = [...new Set(role.flatMap(term => term.index))].sort((a, b) => a - b);
+    return { role, used, total: role.reduce((sum, term) => sum + term.w, 0) };
   }
 
   // Les 36 attributs suivent la nouvelle note : même facteur pour tous au-dessus du plancher (20),
@@ -263,17 +272,19 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     const baseline = projectSkills({ attributesV2: starting, gameplayPosition: position });
     const growth = target - player.rating, shift = player.rating - player.skillBase;
     // Note au poste (roleNote) pour un facteur donné, calculée sur les seules compétences du poste.
-    const { origin, weights } = linearProjection(position, axes);
-    const role = Object.entries(roleWeights[player.fam] || roleWeights[7]);
-    const total = role.reduce((sum, [, w]) => sum + w, 0);
+    const { origin, terms: termsByFamily } = linearProjection(position, axes);
+    const family = roleWeights[player.fam] ? player.fam : 7;
+    // Termes non nuls de la note au poste, relevés une fois par poste et famille : un terme nul
+    // n'ajoute rien à la somme, le résultat reste identique au calcul sur les 36 attributs.
+    if (!termsByFamily.has(family)) termsByFamily.set(family, sparseTerms(linearProjection(position, axes).weights, roleWeights[family]));
+    const { role, used, total } = termsByFamily.get(family);
     const scaled = new Array(values.length);
     const noteAt = factor => {
-      for (let i = 0; i < values.length; i++) scaled[i] = clamp(Math.round(20 + (values[i] - 20) * factor), 20, 97);
+      for (const i of used) scaled[i] = clamp(Math.round(20 + (values[i] - 20) * factor), 20, 97);
       let sum = 0;
-      for (const [skill, w] of role) {
-        const row = weights[skill];
+      for (const { skill, w, index, coefficient } of role) {
         let projected = origin[skill];
-        for (let i = 0; i < scaled.length; i++) projected += row[i] * scaled[i];
+        for (let k = 0; k < index.length; k++) projected += coefficient[k] * scaled[index[k]];
         const value = round(clamp(player.skills[skill] + round(projected) - baseline[skill], 15, 99));
         sum += w * clamp(value + shift, 15, 99);
       }
@@ -397,11 +408,16 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     }
   }
 
-  function apply(players, sources = null, context = null) {
+  // `ratingsOnly` (aperçu des effectifs à l'ouverture, seules les notes sont lues) : la note d'un joueur
+  // recalé est sa note cible ; recaler ses 36 attributs ne la change pas. Les joueurs de complément lisent
+  // la note au poste de leurs coéquipiers recalés : un effectif qui en compte est recalé en entier.
+  function apply(players, sources = null, context = null, { ratingsOnly = false } = {}) {
     if (worldVersion === 2 && context) context = { ...context, club: clubDeviation(players.filter(p => !sources || sources.has(p.id))) };
+    const quick = ratingsOnly && worldVersion === 2 && context && !players.some(p => /^depth-/.test(p.id) && !p.attributesV2 && Number.isFinite(p.rating));
     for (const player of players) {
       if (!player.attributesV2 || sources && !sources.has(player.id)) continue;
-      if (worldVersion === 2 && context) calibrateV2(player, context);
+      if (quick && !reviewed[player.id] && !elite[player.id]) player.rating = targetRating(player, context);
+      else if (worldVersion === 2 && context) calibrateV2(player, context);
       else if (player.age >= 23) calibrate(player);
     }
     if (worldVersion === 2 && context) {
