@@ -44,7 +44,9 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-avance-mesure-'));
 fs.cpSync(depuis, dir, { recursive: true });
 fs.rmSync(path.join(dir, 'PrototypeGodot', 'profil.lock'), { force: true });
 const jeu = M.ouvrir({ ...options, dataDir: dir });
-const res = { differe: options.dayDeferral !== false, jours: [], cloture: null, continuer: [], apresReponse: [] };
+const res = { differe: options.dayDeferral !== false, jours: [], joursCpu: [], cloture: null, continuer: [], apresReponse: [] };
+// Temps processeur (utilisateur + système) d'une commande : moins sensible que la durée à la charge d'une machine partagée.
+const cpu = since => { const u = process.cpuUsage(since); return Math.round((u.user + u.system) / 1000); };
 try {
   const apres = () => { const t = performance.now(); jeu.bridge.handle.flush(); res.apresReponse.push(Math.round(performance.now() - t)); };
   let model = jeu.call('snapshot');
@@ -52,19 +54,19 @@ try {
   for (let d = 0; d < 9 && res.cloture === null; d++) {
     model = jeu.regler(model); apres();
     if (model.meta.calendarCadence?.matchReady && model.next) { model = M.jouerLeMatch(jeu, model); apres(); continue; }
-    const semaine = model.meta.week, t = performance.now(), r = jeu.brut('advance_day', { fromDate: model.meta.calendarToday });
+    const semaine = model.meta.week, c = process.cpuUsage(), t = performance.now(), r = jeu.brut('advance_day', { fromDate: model.meta.calendarToday });
     if (!r.ok) throw Error(r.error);
-    const ms = Math.round(performance.now() - t); model = r.model; apres();
-    if (model.meta.week !== semaine) res.cloture = { ms, phases: r.timing }; else res.jours.push(ms);
+    const ms = Math.round(performance.now() - t), cpuMs = cpu(c); model = r.model; apres();
+    if (model.meta.week !== semaine) res.cloture = { ms, cpu: cpuMs, phases: r.timing }; else { res.jours.push(ms); res.joursCpu.push(cpuMs); }
   }
   for (let k = 0; k < 3 && res.continuer.length < 2; k++) {
     model = jeu.regler(model); apres();
     if (model.meta.calendarCadence?.matchReady && model.next) { model = M.jouerLeMatch(jeu, model); apres(); continue; }
-    const t = performance.now(), r = jeu.brut('advance_until_event', { fromDate: model.meta.calendarToday });
+    const c = process.cpuUsage(), t = performance.now(), r = jeu.brut('advance_until_event', { fromDate: model.meta.calendarToday });
     if (!r.ok) throw Error(r.error);
-    model = r.model; res.continuer.push({ ms: Math.round(performance.now() - t), jours: model.meta.advanceUntilEvent.days, arret: model.meta.advanceUntilEvent.stop.kind }); apres();
+    model = r.model; res.continuer.push({ ms: Math.round(performance.now() - t), cpu: cpu(c), jours: model.meta.advanceUntilEvent.days, arret: model.meta.advanceUntilEvent.stop.kind }); apres();
   }
-  res.medianeJour = mediane(res.jours);
+  res.medianeJour = mediane(res.jours); res.medianeJourCpu = mediane(res.joursCpu);
   res.empreinte = crypto.createHash('sha256').update(jeu.bridge.vm.run('JSON.stringify(S)')).digest('hex').slice(0, 16);
   res.date = model.meta.calendarToday;
 } finally { jeu.bridge.close(); fs.rmSync(dir, { recursive: true, force: true }); }
