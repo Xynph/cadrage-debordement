@@ -4,6 +4,7 @@ extends SceneTree
 ## CD_OUVERTURE (JSON) et un tableau. Garde-fou large : la médiane doit rester sous BUDGET_MS.
 const Flow = preload("helpers/contextual_flow.gd")
 const ROUTES := ["Bureau", "Effectif", "Club", "Finances", "Recrutement", "Staff"]
+const SIZES := [Vector2i(1920, 1080), Vector2i(1600, 900)]
 const OPENINGS := 7
 const BUDGET_MS := 600.0
 var app: Control
@@ -47,27 +48,36 @@ func run() -> void:
 	await settle()
 	await Flow.settle_club_meetings(app, self, check)
 	if is_instance_valid(app.coach): app.coach.close()
-	for route in ROUTES: times[route] = []
-	for round in OPENINGS + 1:
+	var all := {}
+	var table := ""
+	for size: Vector2i in SIZES:
+		root.size = size
+		await settle()
+		times = {}
+		nodes = {}
+		first = {}
+		for route in ROUTES: times[route] = []
+		for round in OPENINGS + 1:
+			for route in ROUTES:
+				var started := Time.get_ticks_usec()
+				app._navigate(route)
+				var elapsed := (Time.get_ticks_usec() - started) / 1000.0
+				await settle()
+				if round == 0:
+					first[route] = elapsed # première ouverture à froid, hors médiane
+					continue
+				times[route].append(elapsed)
+				nodes[route] = count_nodes(app.body)
+		var report := {}
+		table += "\nFenêtre %dx%d\n| Écran | 1re ouverture (ms) | Médiane (ms) | Min (ms) | Max (ms) | Nœuds |\n| --- | --- | --- | --- | --- | --- |\n" % [size.x, size.y]
 		for route in ROUTES:
-			var started := Time.get_ticks_usec()
-			app._navigate(route)
-			var elapsed := (Time.get_ticks_usec() - started) / 1000.0
-			await settle()
-			if round == 0:
-				first[route] = elapsed # première ouverture à froid, hors médiane
-				continue
-			times[route].append(elapsed)
-			nodes[route] = count_nodes(app.body)
-	var table := "| Écran | 1re ouverture (ms) | Médiane (ms) | Min (ms) | Max (ms) | Nœuds |\n| --- | --- | --- | --- | --- | --- |\n"
-	var report := {}
-	for route in ROUTES:
-		var list: Array = times[route]
-		var mid := median(list)
-		report[route] = {"mediane": snappedf(mid, 0.1), "min": snappedf(list.min(), 0.1), "max": snappedf(list.max(), 0.1), "noeuds": nodes[route], "premiere": snappedf(first[route], 0.1), "ouvertures": list}
-		table += "| %s | %.0f | %.0f | %.0f | %.0f | %d |\n" % [route, first[route], mid, list.min(), list.max(), nodes[route]]
-		check(mid < BUDGET_MS, "%s : médiane %.0f ms, budget %.0f ms" % [route, mid, BUDGET_MS])
-	print("CD_OUVERTURE ", JSON.stringify(report))
+			var list: Array = times[route]
+			var mid := median(list)
+			report[route] = {"mediane": snappedf(mid, 0.1), "min": snappedf(list.min(), 0.1), "max": snappedf(list.max(), 0.1), "noeuds": nodes[route], "premiere": snappedf(first[route], 0.1), "ouvertures": list}
+			table += "| %s | %.0f | %.0f | %.0f | %.0f | %d |\n" % [route, first[route], mid, list.min(), list.max(), nodes[route]]
+			check(mid < BUDGET_MS, "%dx%d %s : médiane %.0f ms, budget %.0f ms" % [size.x, size.y, route, mid, BUDGET_MS])
+		all["%dx%d" % [size.x, size.y]] = report
+	print("CD_OUVERTURE ", JSON.stringify(all))
 	print(table)
 	print("OUVERTURE ECRANS : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	app.bridge.stop()
