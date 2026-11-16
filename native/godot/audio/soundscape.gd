@@ -49,6 +49,15 @@ var _reaction_scale := 1.0
 var _last_ui_ms := -1000
 var _last_error_ms := -1000
 var _last_reaction_ms := -1000
+var _last_reaction_priority := 0
+## Temps de jeu (ms) cumulé par _process : suit le rythme du direct (ralenti, image lente) et se fige
+## quand l'arbre est en pause. Remplaçable par une horloge fournie (tests) : Callable sans argument, en ms.
+var _game_ms := 0
+var game_clock := Callable()
+## Deux réactions plus proches que cela (temps de jeu) : la plus importante gagne.
+const REACTION_WINDOW_MS := 350
+## Importance d'une réaction : essai > transformation > tentative manquée > sifflets de pénalité.
+const REACTION_PRIORITY := {"stadium-try": 4, "stadium-goal": 3, "stadium-miss": 2, "crowd-whistle": 1}
 var _signature := ""
 var _history: Array[String] = []
 var _seen: Dictionary = {}
@@ -233,7 +242,11 @@ func _crowd_cue(kind: String, team: int) -> Dictionary:
 			return {"id": "crowd-whistle", "mood": "sifflets"} if team == 1 else {}
 	return {}
 
+func _game_time_ms() -> int:
+	return int(game_clock.call()) if game_clock.is_valid() else _game_ms
+
 func _process(delta: float) -> void:
+	_game_ms += int(delta * 1000.0)
 	if not _registered:
 		return
 	_update_music(delta)
@@ -394,10 +407,14 @@ func observe_model(model: Dictionary, route: String, command: String = "snapshot
 func _play_reaction(id: String, mood: String = "joie") -> bool:
 	if not _registered or not _active or not _profile_ready or preferences.get_value("stadium_volume") == 0 or not preferences.get_flag("match_sounds"):
 		return false
-	var now := Time.get_ticks_msec()
-	if now - _last_reaction_ms < 350:
+	var now := _game_time_ms()
+	var priority: int = REACTION_PRIORITY.get(id, 1)
+	# Anti-rebond en temps de jeu. Dans la fenêtre, seule une réaction strictement plus importante
+	# remplace celle en cours ; une réaction rejetée ne change pas le repère (résultat indépendant de l'ordre).
+	if now - _last_reaction_ms < REACTION_WINDOW_MS and priority <= _last_reaction_priority:
 		return false
 	_last_reaction_ms = now
+	_last_reaction_priority = priority
 	_reaction.stop()
 	# Déception : le même souffle que la tentative manquée, plus grave et plus bas.
 	_reaction.stream = _streams["stadium-miss" if mood == "deception" else id]
