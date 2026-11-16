@@ -2,7 +2,7 @@ extends RefCounted
 ## Tireurs et lanceur : consignes individuelles du XV (buteur, buteur de secours, lanceur en touche,
 ## jeu au pied d'occupation), ouvertes depuis l'écran Composition. Le moteur projette `tactics.roles`
 ## (native/engine/model.cjs, playerRolesView) et reçoit les choix par `set_tactics` avec `roles`.
-## Premier choix de chaque liste : « Choix du staff » (le meilleur à ce rôle).
+## Premier choix de chaque liste : « Choix du staff » (celui que le staff juge le meilleur à ce rôle).
 const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const PersonName = preload("res://ui/person_name.gd")
@@ -22,6 +22,35 @@ static func _value(person: Variant) -> String:
 	if not person is Dictionary or person.get("value") == null: return "—"
 	return str(int(person.get("value")))
 
+## Jugement du staff (docs/jugement-staff-20261116.md) : avis du staff quand il s'écarte de la fiche,
+## confiance du buteur hors de la normale, sang-froid quand il a été vu sous pression (fourchette).
+static func _details(person: Variant) -> String:
+	if not person is Dictionary: return ""
+	var parts := PackedStringArray()
+	var estimation: Variant = person.get("estimation")
+	if estimation != null and person.get("value") != null and int(estimation) != int(person.get("value")):
+		parts.append("avis du staff %d" % int(estimation))
+	var confiance: Variant = person.get("confiance")
+	if confiance is Dictionary and str(confiance.get("label", "Normale")) != "Normale":
+		parts.append(str(confiance.get("label", "")))
+	var sang_froid: Variant = person.get("sangFroid")
+	if sang_froid is Dictionary:
+		parts.append("sang-froid %d–%d" % [int(sang_froid.get("min", 0)), int(sang_froid.get("max", 0))])
+	return "" if parts.is_empty() else " · " + " · ".join(parts)
+
+## Membre du staff qui juge (« Entraîneur des arrières … ») : texte vide sans projection.
+static func judge_text(model: Dictionary) -> String:
+	var avis: Variant = view(model).get("avis")
+	if not avis is Dictionary: return ""
+	var names := PackedStringArray()
+	for key: String in ["arrieres", "avants"]:
+		var judge: Variant = avis.get(key)
+		if judge is Dictionary and not str(judge.get("name", "")).is_empty():
+			var label := "%s (%s)" % [PersonName.initial_and_surname(str(judge.get("name", ""))), str(judge.get("roleLabel", ""))]
+			if not names.has(label): names.append(label)
+	if names.is_empty(): return ""
+	return "Avis de %s, d’après ce que le staff a vu : il peut s’écarter de la fiche. Le sang-froid se révèle dans les fins de match serrées." % " et ".join(names)
+
 ## Lignes de l'écran : pour chaque rôle, libellés de la liste (staff d'abord), identifiants
 ## (chaîne vide = choix du staff) et index retenu.
 static func rows(model: Dictionary) -> Array:
@@ -30,14 +59,14 @@ static func rows(model: Dictionary) -> Array:
 		if not role is Dictionary: continue
 		var attribute := str(role.get("attributeLabel", ""))
 		var staff: Variant = role.get("staff")
-		var labels: Array = ["Choix du staff · %s (%s %s)" % [_name(staff), attribute, _value(staff)]]
+		var labels: Array = ["Choix du staff · %s (%s %s)%s" % [_name(staff), attribute, _value(staff), _details(staff)]]
 		var ids: Array = [""]
 		var chosen: Variant = role.get("chosen")
 		var chosen_id := str(chosen.get("id", "")) if chosen is Dictionary else ""
 		var selected := 0
 		for person: Variant in role.get("candidates", []):
 			if not person is Dictionary: continue
-			labels.append("%s · %s · %s %s" % [_name(person), str(person.get("pos", "")), attribute, _value(person)])
+			labels.append("%s · %s · %s %s%s" % [_name(person), str(person.get("pos", "")), attribute, _value(person), _details(person)])
 			ids.append(str(person.get("id", "")))
 			if str(person.get("id", "")) == chosen_id: selected = ids.size() - 1
 		# Joueur désigné hors du XV (blessé, remplaçant) : gardé dans la liste, signalé.
@@ -64,7 +93,12 @@ static func body(model: Dictionary, on_choice: Callable) -> VBoxContainer:
 	var box := C.v(10)
 	box.name = "TacticsRolesBody"
 	var editable := bool(view(model).get("editable", false))
-	box.add_child(C.wrap("Le staff désigne par défaut le meilleur à chaque rôle. Vos choix valent pour les prochains matchs, dès le coup d’envoi.", 18))
+	box.add_child(C.wrap("Le staff désigne par défaut celui qu’il juge le meilleur à chaque rôle. Vos choix valent pour les prochains matchs, dès le coup d’envoi.", 18))
+	var judge := judge_text(model)
+	if not judge.is_empty():
+		var note := C.wrap(judge, 16, C.MUTED)
+		note.name = "TacticsRolesJudge"
+		box.add_child(note)
 	for row: Dictionary in rows(model):
 		var line := C.h(12)
 		line.name = "TacticsRoleRow_" + row.id
