@@ -671,7 +671,16 @@ function createBridge(options={}){
   }
   // Ligne du journal pour la commande qui vient de réussir (graine avant/après, horloge utilisée).
   const journalAppend=(command,payload,priorSeed)=>{try{if(!journal.exists()&&journal.count()===0&&loadedSha)journal.reset(loadedSha);journal.append({c:command,p:payload,k:clock,s:priorSeed,e:seed});}catch(e){const failure=Error('Décision non notée dans le journal de sauvegarde : '+e.message);failure.storageFailure=true;throw failure;}};
-  const autosaveMeta=()=>journal?{policy:savePolicy(),lastSave:lastSavedKey?.date??null,pending:journal.count(),saved:savedNow,notice:journalNotice}:null;
+  // `planned` : sauvegarde complète prévue juste après la réponse (jour différé, voir dayAfter) : annoncée comme faite ;
+  // si elle échoue, la commande suivante le dit.
+  const autosaveMeta=(planned=null)=>journal?{policy:savePolicy(),lastSave:(planned??lastSavedKey)?.date??null,pending:planned?0:journal.count(),saved:planned?true:savedNow,notice:journalNotice}:null;
+  // Jour différé (mode journal, lot 36) : un jour du calendrier (« Jour suivant » ou jour de « Continuer ») est noté au
+  // journal avant sa réponse, comme une décision ; sa validation stricte (clôture de semaine, avant-saison) et la
+  // sauvegarde complète due suivent la réponse (flushStep), au plus tard avant la commande suivante ou la fermeture.
+  // Les jours de « Continuer » ne sont plus sérialisés un par un : la carrière l'est une fois, à l'arrêt. En cas
+  // d'échec, la journée (ou l'avance) est annulée et la commande suivante le dit. CD_JOUR_DIFFERE=0 (ou
+  // dayDeferral:false) rétablit le chemin d'avant.
+  const dayDeferral=journalMode&&options.dayDeferral!==false&&process.env.CD_JOUR_DIFFERE!=='0';
   // Écriture différée des décisions courantes (option deferredCommits, activée par le jeu ; CD_ECRITURE_DIFFEREE=0
   // la coupe). Une décision qui n'avance pas le calendrier (composition, consignes, réunions, causeries, temps du
   // match en direct…) répond d'abord à l'interface ; sa sérialisation, sa validation stricte et l'écriture atomique
@@ -709,6 +718,7 @@ function createBridge(options={}){
    // après la réponse plutôt qu'avant.
    if(!pendingCommit&&undoPending){undoPending=false;if(run('!!S')){run('nativeSaveCurrent()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;}return true;}
    const pending=pendingCommit;if(!pending)return true;
+   if(pending.day)return dayStep(pending);
    try{
     if(pending.stage===0){run(memoDomains?'nativeSaveCurrent();':'save();');pending.stage=1;return false;}
     if(pending.stage===1){run('nativeValidateSaved('+pending.full+')');pending.stage=2;return false;}
@@ -721,6 +731,24 @@ function createBridge(options={}){
     pendingCommit=null;
     const failure=Error('Votre dernière décision n’a pas pu être enregistrée ; elle est annulée et cette nouvelle action n’a pas été appliquée. '+error.message);failure.command=pending.command;failure.storageFailure=true;
     try{restorePrior({...pending.prior,state:()=>({...pending.prior.state(),saveError:true})});}catch(restore){failure.message+=' Restauration impossible : '+restore.message;}
+    pendingFailure=failure;
+    return true;
+   }
+  }
+  // Jour différé (dayDeferral) : validation stricte (clôture, avant-saison), puis sauvegarde complète si elle est due. Un
+  // échec annule la journée (ou l'avance de « Continuer ») et retire ses lignes du journal ; la commande suivante le dit.
+  function dayStep(pending){
+   try{
+    if(pending.stage===1){if(pending.validate&&run('!!S')){run('nativeSaveCurrent()');run('nativeValidateSaved(false)');unvalidated=false;}pending.stage=2;return false;}
+    pendingCommit=null;
+    if(pending.save)fullSave();
+    cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
+    return true;
+   }catch(error){
+    pendingCommit=null;
+    const failure=Error('Votre dernière journée n’a pas pu être enregistrée ; elle est annulée et cette nouvelle action n’a pas été appliquée. '+error.message);failure.command=pending.command;failure.storageFailure=true;
+    try{restorePrior({...pending.prior,state:()=>({...pending.prior.state(),saveError:true})});}catch(restore){failure.message+=' Restauration impossible : '+restore.message;}
+    if(journal){try{journal.truncate(pending.journalAt.offset,pending.journalAt.count);}catch(e){failure.message+=' Journal non raccourci : '+e.message;}}
     pendingFailure=failure;
     return true;
    }
@@ -812,9 +840,13 @@ function createBridge(options={}){
     // suffit ; l'état reprend le texte de la dernière sauvegarde quand la carrière n'a pas bougé depuis.
     const priorFromSave=cleanSave!==null&&store['bdt-v1']===cleanSave;
     if(priorFromSave&&verifyCleanCopy&&run('JSON.stringify(S)')!==cleanSave)throw Error('Copie d’annulation : la carrière a changé hors commande.');
+    // Jour différé (voir dayDeferral) ; jour de « Continuer » (light) : ni sérialisé, ni copié avant lui. Un échec après
+    // modification est repris par l'avance (retour au début de l'avance et rejeu des jours déjà passés).
+    const dayAfter=dayDeferral&&command==='advance_day'&&!replay&&!restoring&&!resumeCheckpoint&&!coalescing,sessionDay=dayAfter&&light===true;
+    let dayCheck=false;
     // Rejeu : pas de copie d'annulation (un échec reprend toute la reprise depuis le profil), sauf pour la délégation
     // qui la relit elle-même pendant la commande.
-    const priorStateText=priorFromSave?cleanSave:replay&&command!=='delegate'?null:run('JSON.stringify(S)'),priorExtra=JSON.parse(run('JSON.stringify({playback:S?.live?playback(S.live):null,saveError:lastSaveError})'));
+    const priorStateText=priorFromSave?cleanSave:sessionDay||replay&&command!=='delegate'?null:run('JSON.stringify(S)'),priorExtra=JSON.parse(run('JSON.stringify({playback:S?.live?playback(S.live):null,saveError:lastSaveError})'));
     const priorState=()=>({state:priorStateText===undefined?undefined:JSON.parse(priorStateText),...priorExtra});
     const priorStore=copyStore(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
     // Décision courante (n'avance pas le calendrier). En mode journal, elle n'est ni sérialisée ni validée ni écrite :
@@ -1057,12 +1089,15 @@ function createBridge(options={}){
      if(savesDeferred){ctx.save=realSave;savesDeferred=false;realSave=null;}
      mark('commande');
      // Décision regroupée (voir COALESCING) : sa validation stricte n'est pas sautée, même un jour de semaine.
-     if(advancesWithinWeek){run('save()');if(coalescing)run('nativeValidateSaved('+coalescing.full+')');if(memoDomains&&coalescing?.full!==true)run('nativeSectionsFresh=true');}
+     if(advancesWithinWeek){if(!sessionDay){run('save()');if(coalescing)run('nativeValidateSaved('+coalescing.full+')');if(memoDomains&&coalescing?.full!==true)run('nativeSectionsFresh=true');}}
      // Validation complète (sans reprise des sections) à la création, à l'import et à chaque fin de semaine ou
      // de saison ; entre deux, les sections dont le texte sauvegardé n'a pas changé ne sont pas reparcourues.
      else{run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');');mark('completion');
       // Décision différée : seul l'effet visible de save() sur la projection (indicateur d'échec) est appliqué ici.
       if(defer)run('if(S&&!validatingStartup)lastSaveError=false;');
+      // Jour différé : validation stricte après la réponse ; le texte assemblé ici sert à la projection et à la copie
+      // d'annulation de la commande suivante (jour de « Continuer » : texte assemblé une fois, à l'arrêt).
+      else if(dayAfter){dayCheck=true;if(!sessionDay){run('save();');mark('serialisation');if(memoDomains)run('nativeSectionsFresh=true');}}
       else{run('save();');mark('serialisation');run('nativeValidateSaved('+(FULL_VALIDATION.has(command)||coalescing?.full===true)+')');unvalidated=false;
        // Validation partielle : elle ne modifie pas la carrière, le texte qui vient d'être assemblé sert à la projection.
        if(memoDomains&&!FULL_VALIDATION.has(command)&&coalescing?.full!==true)run('nativeSectionsFresh=true');}}
@@ -1071,7 +1106,7 @@ function createBridge(options={}){
      // que « Jour suivant » ; la projection pour l'interface et l'écriture du profil sont faites une fois, à l'arrêt.
      // Rejeu : l'état suffit, ni projection ni écriture (le journal décrit déjà cette commande).
      if(replay){if(defer)unvalidated=true;cleanSave=null;return {id,ok:true,light:true};}
-     if(light){if(sectionsOn)run('nativeStateVersions.markDirty('+JSON.stringify(stateVersions.HEAVY)+')');if(journal)journalAppend(command,request.payload??{},priorSeed);cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;return {id,ok:true,light:true};}
+     if(light){if(sectionsOn)run('nativeStateVersions.markDirty('+JSON.stringify(stateVersions.HEAVY)+')');if(journal)journalAppend(command,request.payload??{},priorSeed);cleanSave=!sessionDay&&typeof store['bdt-v1']==='string'?store['bdt-v1']:null;return {id,ok:true,light:true,check:dayCheck,deferred:sessionDay};}
      const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      if(journalMode){
       savedNow=false;
@@ -1080,10 +1115,18 @@ function createBridge(options={}){
       // Projection par sections (lot 19) : ce texte n'est plus assemblé par la projection ; la copie d'annulation est
       // faite après la réponse (flushStep), ou par la commande suivante si elle arrive avant.
       if(defer){if(sectionsOn)undoPending=true;else run('nativeSaveCurrent()');unvalidated=true;}
-      if(!defer&&(SYNC_COMMANDS.has(command)||restoring||resumeCheckpoint)||fullSaveDue()){fullSave();undoPending=false;}
+      let planned=null;
+      if(dayAfter){
+       // Jour différé : noté avant la réponse ; validation et sauvegarde complète due après (flushStep).
+       const at={offset:journal.size(),count:journal.count()};journalAppend(command,request.payload??{},priorSeed);undoPending=false;
+       const due=fullSaveDue();if(due)planned=dateKey();
+       if(dayCheck)unvalidated=true;
+       if(dayCheck||due)pendingCommit={command,day:true,stage:1,validate:dayCheck,save:due,journalAt:at,prior:{seed:priorSeed,clock:priorClock,store:priorStore,state:priorState,text:priorStateText,fromSave:priorFromSave}};
+      }
+      else if(!defer&&(SYNC_COMMANDS.has(command)||restoring||resumeCheckpoint)||fullSaveDue()){fullSave();undoPending=false;}
       else journalAppend(command,request.payload??{},priorSeed);
       cleanSave=undoPending?null:typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
-      model.meta.autosave=autosaveMeta();
+      model.meta.autosave=autosaveMeta(planned);
      }else if(defer){
       pendingCommit={command,stage:0,full:FULL_VALIDATION.has(command),tick:command==='tick',prior:{seed:priorSeed,clock:priorClock,store:priorStore,state:priorState,text:priorStateText,fromSave:priorFromSave}};
       // La carrière en mémoire diffère désormais du texte enregistré : aucune copie d'annulation ne peut le reprendre.
@@ -1112,6 +1155,8 @@ function createBridge(options={}){
       if(sectionsOn&&syncedAtStart)versionsSynced=true;
       throw error;
      }
+     // Jour de « Continuer » sans copie d'annulation : l'avance reprend la carrière (advanceUntilEvent, restoreSession).
+     if(sessionDay){error.sessionRestore=true;throw error;}
      seed=priorSeed;clock=priorClock;store=copyStore(priorStore);ctx.nativePrior=priorState();cleanSave=priorFromSave?priorStateText:null;run('nativeSystems.clearTransient('+(syncedAtStart&&sectionsOn&&error.storageFailure!==true)+')');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
      run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;nativeSaveSections=null;');
      if(syncedAtStart&&sectionsOn&&!error.storageFailure)run('nativeStateVersions.adopt()');
@@ -1119,6 +1164,7 @@ function createBridge(options={}){
     }finally{if(savesDeferred){ctx.save=realSave;savesDeferred=false;realSave=null;}deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;delete ctx.nativeAttributeBaseline;delete ctx.nativePressPrevious;delete ctx.nativeKnowledgeBefore;delete ctx.nativeKnowledgeCommand;delete ctx.nativeKnowledgeReceipt;delete ctx.nativeKnowledgeVerify;}
    }catch(error){
     if(replay)throw error;projectionCache.clear();
+    if(error.sessionRestore)return {id,ok:false,model:null,sessionRestore:true,error:error.message};
     // Commande refusée sans effet (carrière rétablie telle qu'avant la commande, ou jamais modifiée) alors que
     // l'interface détient déjà le modèle de cet état : réponse légère (message + « rien n'a changé ») au lieu d'une
     // projection complète. Échec d'écriture, packs ou profil : modèle complet comme avant.
@@ -1148,20 +1194,43 @@ function createBridge(options={}){
     const model=snapshotRaw({command:'advance_day',payload:{fromDate:session.lastFrom}});mark('projection');
     // Mode journal : chaque jour est déjà noté ; la sauvegarde complète n'a lieu qu'à la fin de l'avance, si la
     // fréquence choisie l'exige (jamais pendant les tranches).
-    if(journalMode){savedNow=false;if(fullSaveDue())fullSave();}else persist();mark('ecriture_disque');
+    let planned=null;
+    if(journalMode&&session.deferred){
+     // Jours différés (dayDeferral) : la carrière est sérialisée une fois, ici (texte de la projection quand il est à
+     // jour) ; la validation stricte (si une clôture ou un jour d'avant-saison est passé) et la sauvegarde complète due
+     // suivent la réponse. Un échec ramène la carrière au jour de départ de l'avance (journal raccourci).
+     run('nativeSaveCurrent()');savedNow=false;undoPending=false;const due=fullSaveDue();if(due)planned=dateKey();
+     if(session.check)unvalidated=true;
+     if(session.check||due){const start=session.start;pendingCommit={command:'advance_until_event',day:true,stage:1,validate:!!session.check,save:due,journalAt:session.journalAt,prior:{seed:start.seed,clock:start.clock,store:start.store,text:start.text,fromSave:start.fromSave,state:()=>({state:JSON.parse(start.text),playback:null,saveError:false})}};}
+    }
+    else if(journalMode){savedNow=false;if(fullSaveDue())fullSave();}else persist();mark('ecriture_disque');
     cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
     const absorbed=session.absorbed||coalescing;if(absorbed&&pendingCommit===absorbed)pendingCommit=null;
     model.meta.advanceUntilEvent={days:session.days,from:session.from,to:model.meta.calendarToday??null,stop:stop??{kind:'arret',label:continuer.STOPS.arret.label,detail:null},pressDelegated:session.pressDelegated||0};
-    model.meta.profileSafety=profileSafety.project();if(journal)model.meta.autosave=autosaveMeta();continuePlan(model);
+    model.meta.profileSafety=profileSafety.project();if(journal)model.meta.autosave=autosaveMeta(planned);continuePlan(model);
     const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
    }catch(error){
     // Écriture impossible : la carrière revient au jour de départ, comme un « Jour suivant » refusé.
+    if(pendingCommit?.day)pendingCommit=null;
     try{restorePrior({...session.start,state:()=>({state:JSON.parse(session.start.text),playback:null,saveError:true})});}catch{}
     // Les jours notés pendant cette avance sont retirés du journal : il décrit de nouveau la carrière en mémoire.
     if(journal&&session.journalAt){try{journal.truncate(session.journalAt.offset,session.journalAt.count);}catch(e){error.message+=' Journal non raccourci : '+e.message;}}
     projectionCache.clear();
     return {id,ok:false,model:closed?null:snapshot(),error:error.message};
    }
+  }
+  // Reprise d'une avance après un jour différé en échec : carrière du départ de l'avance, puis jours déjà passés rejoués
+  // avec leur horloge et leur graine (comme au chargement du journal, dont leurs lignes restent valides).
+  function restoreSession(session){
+   restorePrior({...session.start,state:()=>({state:JSON.parse(session.start.text),playback:null,saveError:false})});
+   const actions=session.actions||[];
+   for(let i=0;i<actions.length;i++){
+    const a=actions[i];seed=a.s>>>0;run('nativeSectionsFresh=false');projectionCache.clear();
+    try{handleCommand({id:'continuer-'+(i+1),command:a.c,payload:a.p},false,a);}catch(error){restorePrior({...session.start,state:()=>({state:JSON.parse(session.start.text),playback:null,saveError:false})});session.days=0;return {ok:false,error:'Reprise impossible : '+error.message};}
+    if(seed!==a.e){restorePrior({...session.start,state:()=>({state:JSON.parse(session.start.text),playback:null,saveError:false})});session.days=0;return {ok:false,error:'Reprise impossible : résultat différent.'};}
+   }
+   run('nativeSectionsFresh=false');if(sectionsOn)run('nativeStateVersions.reset()');run('save()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
+   return {ok:true};
   }
   function advanceUntilEvent(request){
    const id=request.id;let opts;
@@ -1187,12 +1256,21 @@ function createBridge(options={}){
    // sans rien écrire ; « Jour suivant », lui, la confie au staff.
    if(current.days===0&&before?.decisions?.length)return {id,ok:false,model:snapshot(),error:continuer.decisionText(before.decisions)};
    for(;;){
-    const r=handleCommand({id,command:'advance_day',payload:{fromDate:today}},true);
+    const seedBefore=seed,r=handleCommand({id,command:'advance_day',payload:{fromDate:today}},true);
     if(!r.ok){
+     // Jour différé en échec après modification (sans copie d'annulation) : retour au début de l'avance et rejeu des
+     // jours déjà passés, puis comme avant.
+     if(r.sessionRestore){
+      const replayed=restoreSession(current);
+      if(!replayed.ok){if(current.days>0&&journal&&current.journalAt){try{journal.truncate(current.journalAt.offset,current.journalAt.count);}catch{}}return {id,ok:false,model:closed?null:snapshot(),error:r.error+' '+replayed.error};}
+      if(current.days===0)return {id,ok:false,model:closed?null:snapshot(),error:r.error};
+     }
      // Premier jour refusé : même réponse que « Jour suivant ». Plus tard : arrêt, les jours déjà passés sont écrits.
      if(current.days===0)return r;
      stop={kind:'blocage',label:continuer.STOPS.blocage.label,detail:r.error};break;
     }
+    if(r.check)current.check=true;
+    if(r.deferred){current.deferred=true;(current.actions??=[]).push({c:'advance_day',p:{fromDate:today},k:clock,s:seedBefore,e:seed});}
     current.days++;n++;current.lastFrom=today;
     // Décision en attente regroupée : sérialisée et validée avec le premier jour ; les jours suivants de la même
     // semaine retrouvent le chemin léger de « Jour suivant » (sans revalidation complète à chaque jour).
@@ -1224,7 +1302,8 @@ function createBridge(options={}){
    }
    // Décision en attente : regroupée dans une commande écrite avant sa réponse, écrite d'abord sinon. Une commande
    // regroupée refusée laisse la décision en mémoire et en attente (sérialisation reprise du début).
-   coalescing=pendingCommit&&deferredCommits&&!pendingFailure&&COALESCING.has(request?.command)&&!resumeCheckpoint?pendingCommit:null;
+   // Un jour différé n'est pas regroupé : sa validation et sa sauvegarde se terminent d'abord.
+   coalescing=pendingCommit&&!pendingCommit.day&&deferredCommits&&!pendingFailure&&COALESCING.has(request?.command)&&!resumeCheckpoint?pendingCommit:null;
    if(coalescing){coalescing.stage=0;}
    else if(pendingCommit){const started=performance.now();flushCommit();lastFlushMs=performance.now()-started;}
    if(pendingFailure&&request?.command!=='shutdown'){
