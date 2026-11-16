@@ -6,10 +6,11 @@ extends Control
 ## un tableau de bord inspiré des écrans « match overview » des jeux de management de football,
 ## adapté au rugby : domination minute par minute, chiffres clés comparés, fil, Mon XV (note,
 ## énergie, alertes), regard de l'adjoint et accès direct à la tactique et aux remplacements.
-## Une seule mise en page (choix de Léo, 12 novembre 2026, rendu 1) : un tableau de bord en
-## tuiles façon FM, terrain 2D petit en haut au centre ; Mon XV en tableau complet est la tuile
-## principale (à gauche, en relief) ; momentum et faits marquants au centre ; Gabi et douze stats
-## comparées à droite. Il n'affiche que la projection `live.direct` du moteur et le modèle : aucun calcul sportif.
+## Une seule mise en page (maquette validée par Léo, 16 novembre 2026) : Notre XV à gauche (tuile
+## principale ; vue Terrain par défaut, Tableau, XV adverse ; carte Changement dessous), le terrain
+## 2D en grand au centre avec momentum, anneaux possession et occupation et tuile « Dans les 22 »,
+## le duel (chiffres comparés) et les faits marquants à droite, Gabi en largeur en bas. Il n'affiche
+## que la projection `live.direct` du moteur et le modèle : aucun calcul sportif.
 const S = preload("res://ui/contextual/skin.gd")
 const T = preload("res://theme.gd")
 const Terrain2D = preload("res://ui/contextual/match_terrain_2d.gd")
@@ -40,8 +41,9 @@ var hote_barre: Control
 const LIBELLES_COURTS := {"metres": "Mètres gagnés", "franchissements": "Franchissements", "plaquages": "Plaquages",
 	"plaquages_manques": "Plaq. manqués", "recuperations": "Récupérations", "melees": "Mêlées", "touches": "Touches",
 	"penalites": "Pénalités", "en_avant": "En-avant", "pieds": "Jeu au pied"}
-## Les douze stats comparées de la tuile Statistiques (le reste dans le tiroir, menu Plus).
-const STATS := ["possession", "occupation", "metres", "franchissements", "plaquages", "plaquages_manques",
+## Les dix stats comparées du duel (possession et occupation dans leurs anneaux, le reste dans le
+## tiroir, menu Plus).
+const STATS := ["metres", "franchissements", "plaquages", "plaquages_manques",
 	"recuperations", "melees", "touches", "penalites", "en_avant", "pieds"]
 const FATIGUE := 55
 const EPUISE := 40
@@ -80,9 +82,24 @@ var _dernier_fait := -1
 var _rangs: Array = []
 ## Faits marquants (les derniers faits joués).
 var faits: VBoxContainer
-## Onglets de la tuile principale : Mon XV ou le XV adverse (`direct.adversaire`).
-var onglet_adverse := false
+## Vue de la tuile principale : « terrain » (par défaut, les quinze à leur poste), « tableau »
+## (Mon XV en tableau complet) ou « adverse » (le XV adverse, `direct.adversaire`).
+var vue_xv := "terrain"
 var onglets: Array[Button] = []
+## Vue Terrain de Notre XV et conteneur du tableau (entête et lignes).
+var formation: Formation
+var tableau_xv: VBoxContainer
+var precision_xv: Label
+## Carte Changement : le joueur du XV le plus en difficulté (poste, -1 si rien d'urgent).
+var carte_changement: PanelContainer
+var changement: HBoxContainer
+var changement_poste := -1
+## Anneaux possession et occupation (`direct.tableau`).
+var anneau_possession: Anneau
+var anneau_occupation: Anneau
+## Tuile « Dans les 22 » (`direct.zone22`), masquée sans la donnée.
+var zone22: PanelContainer
+var zone22_contenu: VBoxContainer
 var _xv_donnees: Array = []
 var _equipes: Array = []
 ## Tuile principale (Mon XV) : l'œil commence par elle.
@@ -287,6 +304,102 @@ class Energie extends Control:
 			draw_string(CHIFFRES, c + Vector2(-largeur * 0.5, corps * 0.36), numero, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, Color("f2ecdc"))
 		# Blessure ou carton : pastille en haut à droite de l'anneau.
 		if marque.a > 0.0: draw_circle(c + Vector2(r, -r) * 0.72, maxf(3.0, 7.0 * densite), marque)
+
+## Anneau d'une part comparée (possession, occupation) : l'arc de chaque équipe à ses couleurs,
+## en partant du haut pour l'équipe qui reçoit ; au centre, la part de notre équipe. « — » tant que
+## la part est vide ou l'échantillon court (comme les chiffres comparés).
+class Anneau extends Control:
+	const CHIFFRES = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBold.ttf")
+	var valeurs: Array = [0, 0]
+	var vide := true
+	## Part montrée au centre : celle de notre équipe (l'équipe qui reçoit si le camp est inconnu).
+	var camp := 0
+	var couleurs: Array[Color] = [Color("b8343c"), Color("e9e6d6")]
+	var densite := 0.5
+
+	func texte_centre() -> String:
+		return "—" if vide else "%d%%" % roundi(float(valeurs[clampi(camp, 0, 1)]))
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var epais := maxf(5.0, 14.0 * densite)
+		var r := minf(size.x, size.y) * 0.5 - epais * 0.5 - 1.0
+		if r < 6.0: return
+		draw_circle(c, r, Color("0b1012"))
+		var a := maxf(0.0, float(valeurs[0]))
+		var b := maxf(0.0, float(valeurs[1]))
+		if vide or a + b <= 0.0: draw_arc(c, r, 0.0, TAU, 64, Color("2c3a37"), epais, true)
+		else:
+			var part := a / (a + b)
+			var depart := -PI * 0.5
+			if part > 0.0: draw_arc(c, r, depart, depart + TAU * part, maxi(6, roundi(64 * part)), couleurs[0], epais, true)
+			if part < 1.0: draw_arc(c, r, depart + TAU * part, depart + TAU, maxi(6, roundi(64 * (1.0 - part))), couleurs[1], epais, true)
+		var texte := texte_centre()
+		var corps := roundi(maxf(13.0, r * 0.62))
+		var largeur := CHIFFRES.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x
+		draw_string(CHIFFRES, c + Vector2(-largeur * 0.5, corps * 0.36), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, Color("f2ecdc") if not vide else Color("7b8a84"))
+
+## Entrée dans les 22 adverses : un carré aux couleurs du club.
+class Carre extends Control:
+	var teinte := Color.WHITE
+
+	func _draw() -> void:
+		var cote := minf(size.x, size.y)
+		draw_rect(Rect2((size - Vector2(cote, cote)) * 0.5, Vector2(cote, cote)), teinte)
+
+## Vue Terrain de Notre XV : mini-terrain vertical rayé, avants en haut ; chaque joueur est un
+## bouton placé à son poste (anneau d'énergie, nom court et note dessous).
+class Formation extends Control:
+	## Poste 1 à 15 : [abscisse de 0 à 1, rang de 0 (première ligne) à 5 (arrière)].
+	const PLACES := [[0.25, 0], [0.5, 0], [0.75, 0], [0.38, 1], [0.62, 1], [0.16, 2], [0.84, 2], [0.5, 2],
+		[0.36, 3], [0.64, 3], [0.11, 4], [0.37, 4], [0.63, 4], [0.89, 4], [0.5, 5]]
+	const RANGS := 6
+	var densite := 0.5
+	## Boutons des joueurs, dans l'ordre des postes, et leur anneau d'énergie.
+	var cases: Array[Button] = []
+	var anneaux: Array[Control] = []
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_RESIZED: placer()
+
+	func _zone() -> Rect2:
+		var marge := maxf(4.0, 12.0 * densite)
+		return Rect2(Vector2(marge, marge), size - Vector2(marge, marge) * 2.0)
+
+	## Une case par joueur : largeur d'un quart de terrain, hauteur d'un rang ; l'anneau prend la
+	## hauteur qui reste au-dessus du nom.
+	func placer() -> void:
+		var zone := _zone()
+		if zone.size.x <= 0.0 or zone.size.y <= 0.0: return
+		var hauteur := zone.size.y / float(RANGS)
+		var largeur := minf(zone.size.x / 4.0, hauteur * 2.6)
+		var texte := maxf(16.0, 34.0 * densite)
+		var diametre := clampf(hauteur - texte - maxf(2.0, 6.0 * densite), maxf(18.0, 36.0 * densite), 92.0 * densite)
+		for n in mini(cases.size(), PLACES.size()):
+			var place: Array = PLACES[n]
+			var centre := zone.position + Vector2(float(place[0]) * zone.size.x, (float(place[1]) + 0.5) * hauteur)
+			var case := cases[n]
+			case.size = Vector2(largeur, hauteur)
+			case.position = Vector2(clampf(centre.x - largeur * 0.5, zone.position.x, zone.end.x - largeur), centre.y - hauteur * 0.5)
+			if n < anneaux.size(): anneaux[n].custom_minimum_size = Vector2(diametre, diametre)
+
+	func _draw() -> void:
+		var zone := _zone()
+		if zone.size.x <= 0.0 or zone.size.y <= 0.0: return
+		draw_rect(Rect2(Vector2.ZERO, size), Color("16281e"))
+		var bandes := 10
+		for bande in bandes:
+			var y0 := zone.position.y + zone.size.y * bande / float(bandes)
+			draw_rect(Rect2(zone.position.x, y0, zone.size.x, zone.size.y / float(bandes)), Color("31603c") if bande % 2 == 0 else Color("285132"))
+		var ligne := Color(1, 1, 1, 0.35)
+		var epais := maxf(1.0, 2.0 * densite)
+		draw_rect(zone, ligne, false, epais)
+		for part: float in [0.04, 0.96, 0.27, 0.73, 0.5]:
+			var y := zone.position.y + zone.size.y * part
+			draw_line(Vector2(zone.position.x, y), Vector2(zone.end.x, y), Color(1, 1, 1, 0.5 if part == 0.5 else 0.3), epais)
+		for part: float in [0.42, 0.58]:
+			var y := zone.position.y + zone.size.y * part
+			draw_dashed_line(Vector2(zone.position.x, y), Vector2(zone.end.x, y), Color(1, 1, 1, 0.2), epais, maxf(4.0, 10.0 * densite))
 
 ## Échelle de l'interface, comme les autres écrans du jeu (immersive08/components.gd) :
 ## les tailles sont écrites pour 2560×1440 et réduites jusqu'à la moitié en 1280×720.
@@ -586,10 +699,26 @@ func _composants() -> void:
 	faits.name = "MatchBetweenHighlights"
 	adjoint = S.G.v(px(10))
 	adjoint.name = "MatchBetweenAdvice"
+	formation = Formation.new()
+	formation.name = "MatchBetweenFormation"
+	formation.densite = _densite
+	formation.custom_minimum_size = Vector2(px(300), px(260))
+	changement = S.G.h(px(16))
+	changement.name = "MatchBetweenSwap"
+	anneau_possession = Anneau.new()
+	anneau_possession.name = "MatchBetweenPossession"
+	anneau_occupation = Anneau.new()
+	anneau_occupation.name = "MatchBetweenOccupation"
+	for anneau: Anneau in [anneau_possession, anneau_occupation]:
+		anneau.densite = _densite
+		anneau.custom_minimum_size = Vector2(px(124), px(124))
+		anneau.mouse_filter = Control.MOUSE_FILTER_PASS
+	zone22_contenu = S.G.v(px(6))
+	zone22_contenu.name = "MatchBetweenZone22Rows"
 
 ## Carte de Gabi (portrait, une phrase, l'action proposée) dans un panneau en relief.
 func _carte_gabi(parent: Control) -> void:
-	var cadre := _panneau(parent, px(18), Color(RELIEF, 0.97))
+	var cadre := _panneau(parent, px(14), Color(RELIEF, 0.97))
 	adjoint_cadre = cadre.get_parent().get_parent()
 	cadre.add_child(adjoint)
 
@@ -619,11 +748,13 @@ func _cellule(texte: String, largeur: int, couleur: Color, taille: float = 26, c
 	else: S.G.fill(etiquette)
 	return etiquette
 
-## Tableau de bord en tuiles (rendu 1 retenu) : la barre de commandes, puis trois colonnes.
-## Gauche : Mon XV (onglet : le XV adverse), tuile principale en relief. Centre : terrain
-## 2D petit (dernier fait en bandeau au-dessus), momentum, faits marquants. Droite : Gabi, stats.
+## Tableau de bord (maquette validée par Léo, 16 novembre 2026) : la barre de commandes, trois
+## colonnes, puis Gabi en largeur. Gauche : Notre XV (onglets Terrain, Tableau, XV adverse), tuile
+## principale au liseré or, et la carte Changement dessous. Centre : le terrain 2D en grand (dernier
+## fait en bandeau par-dessus), puis momentum, anneaux possession et occupation, tuile « Dans les
+## 22 ». Droite : le duel (chiffres comparés), puis les faits marquants.
 func _page() -> void:
-	var page := S.G.v(px(18))
+	var page := S.G.v(px(14))
 	S.full(page)
 	add_child(page)
 	var barre: Control
@@ -639,11 +770,36 @@ func _page() -> void:
 	grille.name = "MatchBetweenTiles"
 	S.G.fill(grille, true)
 	page.add_child(grille)
-	# Gauche : Mon XV (tuile principale).
+	_colonne_xv(grille)
+	_colonne_centre(grille)
+	# Droite : le duel (chiffres comparés), puis les faits marquants.
+	var droite := S.G.v(px(20))
+	droite.name = "MatchBetweenColumn"
+	droite.custom_minimum_size.x = px(560)
+	grille.add_child(droite)
+	var cadre_chiffres := _panneau(droite, px(16))
+	cadre_chiffres.get_parent().get_parent().name = "MatchBetweenDuel"
+	S.G.fill(cadre_chiffres.get_parent().get_parent(), true)
+	var titre_chiffres := _titre("Le duel", "comparées")
+	precision_chiffres = titre_chiffres.get_child(1) as Label
+	precision_chiffres.name = "MatchBetweenFiguresSample"
+	cadre_chiffres.add_child(titre_chiffres)
+	cadre_chiffres.add_child(chiffres)
+	S.G.fill(chiffres, true)
+	var cadre_faits := _panneau(droite, px(14))
+	cadre_faits.add_child(_titre("Faits marquants"))
+	cadre_faits.add_child(faits)
+	# Bas : la carte de Gabi en largeur.
+	_carte_gabi(page)
+
+## Colonne gauche : Notre XV, onglets Terrain (par défaut), Tableau et XV adverse ; la carte
+## Changement dessous.
+func _colonne_xv(grille: Control) -> void:
 	var gauche := S.G.v(px(20))
-	gauche.custom_minimum_size.x = px(860)
+	gauche.name = "MatchBetweenSquadColumn"
+	gauche.custom_minimum_size.x = px(840)
 	grille.add_child(gauche)
-	var cadre_xv := _panneau(gauche, px(22), Color(RELIEF, 0.98))
+	var cadre_xv := _panneau(gauche, px(18), Color(RELIEF, 0.98))
 	tuile_principale = cadre_xv.get_parent().get_parent()
 	tuile_principale.name = "MatchBetweenMain"
 	S.G.fill(tuile_principale, true)
@@ -651,43 +807,66 @@ func _page() -> void:
 	bord.border_width_left = maxi(2, px(5))
 	bord.border_color = Color(OR, 0.85)
 	tuile_principale.add_theme_stylebox_override("panel", bord)
-	# Onglets « Mon XV | <adversaire> » : le même tableau, aux couleurs de l'équipe choisie.
 	var tete := S.G.h(px(8))
 	cadre_xv.add_child(tete)
 	var groupe := ButtonGroup.new()
 	onglets.clear()
-	for n in 2:
-		# Onglets « Mon XV | XV adverse » (choix de Léo).
-		var onglet := _segment("Mon XV" if n == 0 else "XV adverse", groupe, (n == 1) == onglet_adverse)
-		onglet.name = "MatchBetweenTabOwn" if n == 0 else "MatchBetweenTabOpponent"
-		onglet.custom_minimum_size = Vector2(px(170), px(52))
+	for n in VUES_XV.size():
+		var vue: String = VUES_XV[n][0]
+		var onglet := _segment(str(VUES_XV[n][1]), groupe, vue == vue_xv)
+		onglet.name = str(VUES_XV[n][2])
+		onglet.custom_minimum_size = Vector2(px(150), px(48))
 		onglet.add_theme_font_size_override("font_size", px(30))
-		var adverse := n == 1
-		onglet.pressed.connect(func():
-			onglet_adverse = adverse
-			for k in onglets.size(): onglets[k].set_pressed_no_signal((k == 1) == adverse)
-			if not _xv_donnees.is_empty(): _remplir_xv(_xv_donnees[0], _xv_donnees[1]))
+		onglet.pressed.connect(func(): choisir_vue_xv(vue))
 		onglets.append(onglet)
 		tete.add_child(onglet)
-	var precision := _texte("note · énergie · plaquages · mètres", 22, FAIBLE)
-	precision.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	S.G.fill(precision)
-	tete.add_child(precision)
+	precision_xv = _texte("", 22, FAIBLE)
+	precision_xv.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	precision_xv.clip_text = true
+	precision_xv.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	S.G.fill(precision_xv)
+	tete.add_child(precision_xv)
+	# Vue Terrain : les quinze joueurs à leur poste sur un mini-terrain.
+	cadre_xv.add_child(formation)
+	S.G.fill(formation, true)
+	# Vue Tableau (et XV adverse) : le tableau complet.
+	tableau_xv = S.G.v(px(2))
+	tableau_xv.name = "MatchBetweenTable"
+	S.G.fill(tableau_xv, true)
+	cadre_xv.add_child(tableau_xv)
 	var entete := S.G.h(px(8))
 	for colonne: Array in COLONNES_XV:
 		entete.add_child(_cellule(str(colonne[0]).to_upper(), int(colonne[1]), FAIBLE, 20, int(colonne[1]) > 0 and colonne[0] != "Poste" and colonne[0] != "Énergie"))
-	cadre_xv.add_child(entete)
-	cadre_xv.add_child(xv)
+	tableau_xv.add_child(entete)
+	tableau_xv.add_child(xv)
 	S.G.fill(xv, true)
-	# Centre : terrain petit, momentum, faits marquants.
+	# Carte Changement : le joueur le plus en difficulté, ou rien d'urgent.
+	var cadre_changement := _panneau(gauche, px(12))
+	carte_changement = cadre_changement.get_parent().get_parent()
+	carte_changement.name = "MatchBetweenSwapCard"
+	cadre_changement.add_child(changement)
+	_montrer_vue_xv()
+
+## Colonne centrale : le terrain 2D en grand, le dernier fait en bandeau par-dessus ; dessous,
+## momentum, anneaux possession et occupation, tuile « Dans les 22 ».
+func _colonne_centre(grille: Control) -> void:
 	var centre := S.G.v(px(20))
 	S.G.fill(centre, false, 1.0)
 	grille.add_child(centre)
 	var cadre_terrain := _panneau(centre, px(14))
 	cadre_terrain.get_parent().get_parent().name = "MatchBetweenPitchTile"
+	S.G.fill(cadre_terrain.get_parent().get_parent(), true)
+	var scene := Control.new()
+	scene.name = "MatchBetweenScene"
+	scene.clip_contents = true
+	scene.custom_minimum_size = Vector2(px(560), px(300))
+	S.G.fill(scene, true)
+	cadre_terrain.add_child(scene)
+	S.full(terrain)
+	scene.add_child(terrain)
 	bandeau = PanelContainer.new()
 	bandeau.name = "MatchBetweenBanner"
-	var style := S.G.T.box(Color(FOND, 0.6), maxi(4, px(8)))
+	var style := S.G.T.box(Color(FOND, 0.72), maxi(4, px(8)))
 	style.border_width_left = maxi(2, px(5))
 	style.border_color = OR
 	style.content_margin_left = px(10)
@@ -696,38 +875,62 @@ func _page() -> void:
 	style.content_margin_bottom = px(4)
 	bandeau.add_theme_stylebox_override("panel", style)
 	bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cadre_terrain.add_child(bandeau)
+	bandeau.anchor_right = 1.0
+	bandeau.offset_left = px(12)
+	bandeau.offset_right = -px(12)
+	bandeau.offset_top = px(10)
+	bandeau.offset_bottom = px(10)
+	scene.add_child(bandeau)
 	bandeau.add_child(fil)
 	S.G.fill(fil)
-	var scene := Control.new()
-	scene.name = "MatchBetweenScene"
-	scene.clip_contents = true
-	scene.custom_minimum_size = Vector2(px(660), px(400))
-	cadre_terrain.add_child(scene)
-	S.full(terrain)
-	scene.add_child(terrain)
-	var cadre_frise := _panneau(centre, px(14))
-	cadre_frise.add_child(_titre("Momentum", "points marqués et cartons"))
+	var rangee := S.G.h(px(20))
+	rangee.name = "MatchBetweenGauges"
+	centre.add_child(rangee)
+	var cadre_frise := _panneau(rangee, px(14))
+	S.G.fill(cadre_frise.get_parent().get_parent())
+	cadre_frise.add_child(_titre("Momentum"))
 	cadre_frise.add_child(domination)
-	domination.size_flags_vertical = Control.SIZE_FILL
-	var cadre_faits := _panneau(centre, px(14))
-	S.G.fill(cadre_faits.get_parent().get_parent(), true)
-	cadre_faits.add_child(_titre("Faits marquants"))
-	cadre_faits.add_child(faits)
-	# Droite : Gabi, puis les douze stats comparées.
-	var droite := S.G.v(px(20))
-	droite.name = "MatchBetweenColumn"
-	droite.custom_minimum_size.x = px(640)
-	grille.add_child(droite)
-	_carte_gabi(droite)
-	var cadre_chiffres := _panneau(droite, px(16))
-	S.G.fill(cadre_chiffres.get_parent().get_parent(), true)
-	var titre_chiffres := _titre("Statistiques", "comparées")
-	precision_chiffres = titre_chiffres.get_child(1) as Label
-	precision_chiffres.name = "MatchBetweenFiguresSample"
-	cadre_chiffres.add_child(titre_chiffres)
-	cadre_chiffres.add_child(chiffres)
-	S.G.fill(chiffres, true)
+	domination.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var cadre_anneaux := _panneau(rangee, px(14))
+	cadre_anneaux.get_parent().get_parent().name = "MatchBetweenRings"
+	var anneaux := S.G.h(px(14))
+	cadre_anneaux.add_child(anneaux)
+	S.G.fill(anneaux, true)
+	for paire: Array in [[anneau_possession, "Possession"], [anneau_occupation, "Occupation"]]:
+		var bloc := S.G.v(px(4))
+		S.G.fill(bloc, true)
+		anneaux.add_child(bloc)
+		var anneau: Anneau = paire[0]
+		# Anneau carré au centre de son bloc, qui prend la hauteur disponible.
+		S.G.fill(anneau, true)
+		anneau.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		bloc.add_child(anneau)
+		var nom := _texte(str(paire[1]).to_upper(), 26, FAIBLE, false, true)
+		nom.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bloc.add_child(nom)
+	var cadre_22 := _panneau(rangee, px(14))
+	zone22 = cadre_22.get_parent().get_parent()
+	zone22.name = "MatchBetweenZone22"
+	zone22.custom_minimum_size.x = px(380)
+	cadre_22.add_child(_titre("Dans les 22", "entrées · points · temps"))
+	cadre_22.add_child(zone22_contenu)
+	zone22.visible = false
+
+## Vues de la tuile principale : identifiant, libellé de l'onglet, nom du nœud de l'onglet.
+const VUES_XV := [["terrain", "Terrain", "MatchBetweenTabPitch"], ["tableau", "Tableau", "MatchBetweenTabOwn"], ["adverse", "XV adverse", "MatchBetweenTabOpponent"]]
+
+## Onglet de la tuile principale choisi : la vue change, les données restent celles du dernier relevé.
+func choisir_vue_xv(vue: String) -> void:
+	vue_xv = vue
+	for k in onglets.size(): onglets[k].set_pressed_no_signal(VUES_XV[k][0] == vue)
+	_montrer_vue_xv()
+	if not _xv_donnees.is_empty(): _remplir_xv(_xv_donnees[0], _xv_donnees[1])
+
+func _montrer_vue_xv() -> void:
+	if not is_instance_valid(formation): return
+	formation.visible = vue_xv == "terrain"
+	tableau_xv.visible = vue_xv != "terrain"
+	precision_xv.text = "énergie · note du match" if vue_xv == "terrain" else "note · énergie · plaquages · mètres"
 
 ## Arrêt-décision : le match attend le manager.
 func _arret_decision() -> void:
@@ -796,7 +999,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	var passe := _passe(model, live, direct)
 	var conseil: Variant = passe.conseil
 	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []), direct.get("feuille", {}).get("joueurs", {}) if direct.get("feuille") is Dictionary else {},
-		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs, direct.get("pourquoi"), direct.get("hommeDuMatch")])
+		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs, direct.get("pourquoi"), direct.get("hommeDuMatch"), direct.get("zone22"), direct.get("echantillon")])
 	if cle == _cle: return
 	_cle = cle
 	_lignes = direct.get("fil", [])
@@ -926,7 +1129,7 @@ func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	titre.clip_text = true
 	titre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	titre.custom_minimum_size.x = px(120)
-	S.G.fill(titre, false, 1.6)
+	S.G.fill(titre, false, 2.2)
 	ligne.add_child(titre)
 	var a := _texte(_valeur(rang, 0), 30, IVOIRE)
 	a.add_theme_font_override("font", CHIFFRES_GRAS)
@@ -957,10 +1160,12 @@ func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	var rangs: Array = direct.get("tableau", [])
 	var par_cle := {}
 	for rang: Dictionary in rangs: par_cle[str(rang.get("cle", ""))] = rang
-	# Douze stats comparées, toujours dans le même ordre (« — » tant qu'une stat est vide).
+	# Dix stats comparées, toujours dans le même ordre (« — » tant qu'une stat est vide).
 	for cle: String in STATS:
 		if par_cle.has(cle): _ligne_chiffre(chiffres, par_cle[cle])
 	_rangs = rangs
+	_remplir_anneaux(direct)
+	_remplir_zone22(direct)
 
 ## Échantillon du moteur (`direct.echantillon`) : court tant que le jeu montré n'atteint pas le
 ## seuil (dix minutes). Sans l'information (ancienne projection), l'échantillon est jugé suffisant.
@@ -977,8 +1182,12 @@ static func seuil_echantillon(direct: Dictionary) -> int:
 func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	_xv_donnees = [joueurs, direct]
 	S.clear(xv)
+	# Vue Terrain et carte Changement : toujours tenues à jour (mêmes données que le tableau).
+	var infos := _infos_xv(joueurs, direct)
+	_remplir_formation(infos)
+	_remplir_changement(infos)
 	# Onglet adverse : les alertes de Mon XV restent calculées pour Gabi.
-	if onglet_adverse:
+	if vue_xv == "adverse":
 		_alertes_seules(joueurs, direct)
 		_remplir_xv_adverse(direct)
 		return
@@ -991,7 +1200,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 26, DOUX, true))
 		return
-	var hauteur := px(48)
+	var hauteur := px(38)
 	for poste in joueurs.size():
 		var joueur: Variant = joueurs[poste]
 		var case := Button.new()
@@ -1028,7 +1237,6 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 			continue
 		var d := W.donnees_joueur(joueur, notes, cartons, feuille)
 		var id: String = d.id
-		var fiche: Dictionary = notes.get(id, {}) if notes.get(id) is Dictionary else {}
 		var note: float = d.note
 		var condition: float = d.energie
 		ligne.add_child(_cellule(_nom_court(str(d.nom)), 0, IVOIRE, 28))
@@ -1055,22 +1263,242 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		var nom := _texte(str(joueur.get("name", "")), 20, FAIBLE)
 		nom.visible = false
 		ligne.add_child(nom)
+		var info: Dictionary = infos[poste]
+		var alerte: String = info.alerte
+		pastille.marque = info.marque
+		if not alerte.is_empty(): alertes_xv.append({"poste": poste, "id": id, "nom": str(joueur.get("name", "")), "alerte": alerte, "condition": condition})
+		case.tooltip_text = str(info.detail)
+		xv.add_child(case)
+	_ligne_equipe(feuille, int(direct.get("camp", -1)), joueurs.map(func(j: Variant) -> String: return str(j.get("id", "")) if j is Dictionary else ""))
+
+## Données de Notre XV, poste par poste, partagées par le tableau, la vue Terrain et la carte
+## Changement : données du joueur (`W.donnees_joueur`), alerte, marque de l'anneau, infobulle.
+func _infos_xv(joueurs: Array, direct: Dictionary) -> Array:
+	var notes: Dictionary = direct.get("notes", {}) if direct.get("notes") is Dictionary else {}
+	var feuille: Dictionary = direct.get("feuille", {}) if direct.get("feuille") is Dictionary else {}
+	var cartons: Dictionary = {}
+	for carton: Variant in direct.get("cartons", []):
+		if carton is Dictionary: cartons[str(carton.get("id", ""))] = carton
+	var infos: Array = []
+	for poste in joueurs.size():
+		var joueur: Variant = joueurs[poste]
+		if not joueur is Dictionary:
+			infos.append({"vacant": true, "alerte": "", "marque": Color.TRANSPARENT, "detail": "%d · poste vacant" % (poste + 1)})
+			continue
+		var d := W.donnees_joueur(joueur, notes, cartons, feuille)
+		var id: String = d.id
+		var fiche: Dictionary = notes.get(id, {}) if notes.get(id) is Dictionary else {}
+		var condition: float = d.energie
 		var alerte := ""
 		if d.blesse: alerte = "blessé"
 		elif cartons.has(id): alerte = "carton jaune, retour %s′" % str(cartons[id].get("retour", "")) if cartons[id].get("retour") != null else "exclu"
 		elif condition < EPUISE: alerte = "épuisé"
 		elif condition < FATIGUE: alerte = "fatigué"
-		if alerte == "blessé": pastille.marque = ALERTE
-		elif alerte.begins_with("carton") or alerte == "exclu": pastille.marque = Color("e8c24a")
+		var marque := Color.TRANSPARENT
+		if alerte == "blessé": marque = ALERTE
+		elif alerte.begins_with("carton") or alerte == "exclu": marque = Color("e8c24a")
 		var plaq := int(d.get("plaquages", 0))
-		var detail := "%d · %s · %s\nÉnergie %d %%, note %.1f (%d action%s du match), %d plaquage%s" % [poste + 1, str(joueur.get("pos", "")), str(joueur.get("name", "")), roundi(condition), note, int(fiche.get("faits", 0)), "s" if int(fiche.get("faits", 0)) > 1 else "", plaq, "s" if plaq > 1 else ""]
+		var detail := "%d · %s · %s\nÉnergie %d %%, note %.1f (%d action%s du match), %d plaquage%s" % [poste + 1, str(joueur.get("pos", "")), str(joueur.get("name", "")), roundi(condition), float(d.note), int(fiche.get("faits", 0)), "s" if int(fiche.get("faits", 0)) > 1 else "", plaq, "s" if plaq > 1 else ""]
 		if not feuille.is_empty(): detail += " (%d manqué%s), %d course%s, %d passe%s" % [int(d.plaquages_manques), "s" if int(d.plaquages_manques) > 1 else "", int(d.courses), "s" if int(d.courses) > 1 else "", int(d.passes), "s" if int(d.passes) > 1 else ""]
-		if not alerte.is_empty():
-			alertes_xv.append({"poste": poste, "id": id, "nom": str(joueur.get("name", "")), "alerte": alerte, "condition": condition})
-			detail += "\n" + alerte.capitalize()
-		case.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
-		xv.add_child(case)
-	_ligne_equipe(feuille, int(direct.get("camp", -1)), joueurs.map(func(j: Variant) -> String: return str(j.get("id", "")) if j is Dictionary else ""))
+		if not alerte.is_empty(): detail += "\n" + alerte.capitalize()
+		var info := d.duplicate()
+		info.merge({"alerte": alerte, "marque": marque, "carton": cartons.has(id), "detail": detail + "\nCliquer : ouvrir le banc sur ce joueur."}, true)
+		infos.append(info)
+	return infos
+
+## Vue Terrain : un bouton par joueur à son poste (anneau d'énergie, numéro, nom court, note) ;
+## un clic ouvre le banc sur lui, l'infobulle est celle de sa ligne du tableau.
+func _remplir_formation(infos: Array) -> void:
+	if not is_instance_valid(formation): return
+	for enfant in formation.get_children():
+		formation.remove_child(enfant)
+		enfant.queue_free()
+	formation.cases.clear()
+	formation.anneaux.clear()
+	for poste in mini(infos.size(), Formation.PLACES.size()):
+		var info: Dictionary = infos[poste]
+		var case := Button.new()
+		case.name = "MatchBetweenFormationPlayer%d" % (poste + 1)
+		case.flat = true
+		case.focus_mode = Control.FOCUS_ALL
+		case.set_meta("contextual_enabled", true)
+		case.tooltip_text = str(info.detail)
+		case.pressed.connect(func(): joueur_choisi.emit(poste))
+		var vide := StyleBoxEmpty.new()
+		var survol := S.G.T.box(Color(1, 1, 1, 0.08), maxi(3, px(10)))
+		var focus := S.G.T.box(Color.TRANSPARENT, maxi(3, px(10)), OR)
+		focus.set_border_width_all(maxi(1, px(2)))
+		for style: StyleBox in [survol, focus]: style.set_content_margin_all(0)
+		case.add_theme_stylebox_override("normal", vide)
+		case.add_theme_stylebox_override("pressed", vide)
+		case.add_theme_stylebox_override("hover", survol)
+		case.add_theme_stylebox_override("focus", focus)
+		var pile := S.G.v(px(4))
+		pile.alignment = BoxContainer.ALIGNMENT_CENTER
+		pile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		S.full(pile)
+		case.add_child(pile)
+		var anneau := Energie.new()
+		anneau.valeur = float(info.get("energie", 100.0))
+		anneau.numero = str(poste + 1)
+		anneau.densite = _densite
+		anneau.marque = info.marque
+		anneau.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		anneau.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pile.add_child(anneau)
+		# Nom court et note sur une pastille sombre : lisibles sur le vert.
+		var etiquette := PanelContainer.new()
+		var fond := S.G.T.box(Color(FOND, 0.78), maxi(3, px(8)))
+		fond.content_margin_left = px(8)
+		fond.content_margin_right = px(8)
+		fond.content_margin_top = 0
+		fond.content_margin_bottom = 0
+		etiquette.add_theme_stylebox_override("panel", fond)
+		etiquette.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		etiquette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pile.add_child(etiquette)
+		var ligne := S.G.h(px(6))
+		ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		etiquette.add_child(ligne)
+		var vacant: bool = info.get("vacant", false)
+		var nom := _texte("Vacant" if vacant else _nom_court(str(info.nom)), 26, FAIBLE if vacant else IVOIRE, false, true)
+		nom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ligne.add_child(nom)
+		if not vacant:
+			var note := _texte("%.1f" % float(info.note), 26, _teinte_note(float(info.note)))
+			note.add_theme_font_override("font", CHIFFRES_GRAS)
+			note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			ligne.add_child(note)
+		formation.add_child(case)
+		formation.cases.append(case)
+		formation.anneaux.append(anneau)
+	formation.placer()
+	formation.queue_redraw()
+
+## Carte Changement : le joueur du XV le plus en difficulté (blessé, sinon l'énergie la plus basse,
+## les joueurs sanctionnés mis à part) s'il est blessé ou sous le seuil de fatigue ; le bouton ouvre
+## le banc sur lui. Le remplaçant reste le choix du manager.
+func _remplir_changement(infos: Array) -> void:
+	if not is_instance_valid(changement): return
+	S.clear(changement)
+	var choisi := -1
+	for poste in infos.size():
+		var info: Dictionary = infos[poste]
+		if info.get("vacant", false) or info.get("carton", false): continue
+		if choisi < 0: choisi = poste
+		else:
+			var actuel: Dictionary = infos[choisi]
+			if bool(info.blesse) != bool(actuel.blesse):
+				if info.blesse: choisi = poste
+			elif float(info.energie) < float(actuel.energie): choisi = poste
+	var urgent := choisi >= 0 and (bool(infos[choisi].blesse) or float(infos[choisi].energie) < FATIGUE)
+	changement_poste = choisi if urgent else -1
+	var colonne := S.G.v(px(2))
+	colonne.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	S.G.fill(colonne)
+	colonne.add_child(_texte("CHANGEMENT", 26, FAIBLE, false, true))
+	if urgent:
+		var info: Dictionary = infos[choisi]
+		var anneau := Energie.new()
+		anneau.name = "MatchBetweenSwapEnergy"
+		anneau.valeur = float(info.energie)
+		anneau.numero = str(choisi + 1)
+		anneau.densite = _densite
+		anneau.marque = info.marque
+		anneau.custom_minimum_size = Vector2(px(76), px(76))
+		anneau.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		anneau.tooltip_text = str(info.detail)
+		anneau.mouse_filter = Control.MOUSE_FILTER_PASS
+		changement.add_child(anneau)
+		var nom := _texte("%s · %s" % [_nom_court(str(info.nom)), poste_court(str(info.poste))], 30, IVOIRE, false, true)
+		nom.clip_text = true
+		nom.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		colonne.add_child(nom)
+		var etat_joueur := "Énergie %d %%" % roundi(float(info.energie)) + (" · blessé" if info.blesse else "")
+		var ligne_energie := _texte(etat_joueur, 26, ALERTE if info.blesse or float(info.energie) < EPUISE else Energie.teinte_pour(float(info.energie)))
+		ligne_energie.name = "MatchBetweenSwapEnergyText"
+		colonne.add_child(ligne_energie)
+	else:
+		var calme := _texte("Aucun changement urgent", 28, DOUX)
+		calme.clip_text = true
+		calme.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		colonne.add_child(calme)
+	changement.add_child(colonne)
+	var poste := choisi
+	var bouton := _bouton("Préparer le changement", func(): joueur_choisi.emit(poste), true, true) if urgent else _bouton("Ouvrir le banc", func(): tiroir_demande.emit("Banc"))
+	bouton.name = "MatchBetweenSwapAction"
+	bouton.custom_minimum_size.y = px(56)
+	bouton.add_theme_font_size_override("font_size", px(26))
+	bouton.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bouton.tooltip_text = "Ouvrir le banc sur ce joueur (le match se met en pause)." if urgent else "Ouvrir le banc (le match se met en pause)."
+	bouton.set_meta("contextual_enabled", true)
+	changement.add_child(bouton)
+
+## Anneaux possession et occupation : les parts du moteur (`direct.tableau`), « — » tant que la
+## part est vide ou l'échantillon court.
+func _remplir_anneaux(direct: Dictionary) -> void:
+	var court := est_court(direct)
+	var camp := int(direct.get("camp", -1))
+	var sigles: Array = domination.sigles if is_instance_valid(domination) else ["", ""]
+	for paire: Array in [[anneau_possession, "possession", "Possession"], [anneau_occupation, "occupation", "Occupation"]]:
+		var anneau: Anneau = paire[0]
+		if not is_instance_valid(anneau): continue
+		var rang: Dictionary = {}
+		for r: Variant in direct.get("tableau", []):
+			if r is Dictionary and str(r.get("cle", "")) == paire[1]: rang = r
+		anneau.couleurs = terrain.couleurs.duplicate()
+		anneau.camp = camp if camp in [0, 1] else 0
+		anneau.valeurs = rang.get("valeurs", [0, 0]) if not rang.is_empty() else [0, 0]
+		anneau.vide = rang.is_empty() or bool(rang.get("vide", false)) or court
+		anneau.tooltip_text = "%s : trop tôt pour conclure." % paire[2] if anneau.vide else "%s : %s %d %% · %s %d %%" % [paire[2], str(sigles[0]), roundi(float(anneau.valeurs[0])), str(sigles[1]), roundi(float(anneau.valeurs[1]))]
+		anneau.queue_redraw()
+
+## Tuile « Dans les 22 » (`direct.zone22` : entrées, points et secondes par équipe) : un carré par
+## entrée aux couleurs du club, les points, les points par entrée, le temps passé. Sans la donnée,
+## la tuile reste masquée.
+func _remplir_zone22(direct: Dictionary) -> void:
+	if not is_instance_valid(zone22): return
+	var z: Variant = direct.get("zone22")
+	var valide := z is Dictionary and z.get("entrees") is Array and (z.entrees as Array).size() == 2
+	zone22.visible = valide
+	S.clear(zone22_contenu)
+	if not valide: return
+	var points: Array = z.get("points", [0, 0]) if z.get("points") is Array and (z.points as Array).size() == 2 else [0, 0]
+	var secondes: Array = z.get("secondes", [0, 0]) if z.get("secondes") is Array and (z.secondes as Array).size() == 2 else [0, 0]
+	for cote in 2:
+		var entrees := int(z.entrees[cote])
+		var marques := int(points[cote])
+		var duree := int(secondes[cote])
+		var bloc := S.G.v(px(2))
+		bloc.name = "MatchBetweenZone22Team%d" % cote
+		zone22_contenu.add_child(bloc)
+		var ligne := S.G.h(px(10))
+		bloc.add_child(ligne)
+		var sigle := _texte(str(domination.sigles[cote]) if is_instance_valid(domination) else "", 28, terrain.couleurs[cote].lightened(0.15), false, true)
+		sigle.custom_minimum_size.x = px(70)
+		ligne.add_child(sigle)
+		var carres := S.G.h(px(5))
+		carres.name = "MatchBetweenZone22Entries%d" % cote
+		S.G.fill(carres)
+		ligne.add_child(carres)
+		for k in mini(entrees, 10):
+			var carre := Carre.new()
+			carre.teinte = terrain.couleurs[cote]
+			carre.custom_minimum_size = Vector2(px(22), px(22))
+			carre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			carre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			carres.add_child(carre)
+		if entrees > 10: carres.add_child(_texte("+%d" % (entrees - 10), 26, DOUX))
+		if entrees == 0: carres.add_child(_texte("aucune entrée", 26, FAIBLE))
+		var total := _texte("%d pt%s" % [marques, "s" if marques > 1 else ""], 30, IVOIRE)
+		total.add_theme_font_override("font", CHIFFRES_GRAS)
+		ligne.add_child(total)
+		var ratio := ("%.1f" % (float(marques) / float(entrees))).replace(".", ",") if entrees > 0 else "—"
+		var detail := _texte("%d entrée%s · %s pt/entrée · %d:%02d" % [entrees, "s" if entrees > 1 else "", ratio, floori(duree / 60.0), duree % 60], 26, DOUX)
+		detail.clip_text = true
+		detail.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		bloc.add_child(detail)
+	zone22.tooltip_text = "Entrées dans les 22 mètres adverses, points marqués et temps passé dans la zone."
 
 ## Ligne « Équipe » sous un XV : plaquages, mètres et essais de toute l'équipe (feuille de statistiques),
 ## remplaçants sortis compris. Le total est la somme des joueurs de la feuille ; l'écart avec la somme
@@ -1087,7 +1515,7 @@ func _ligne_equipe(feuille: Dictionary, camp: int, visibles: Array) -> void:
 			total[cle] += int(f.get(cle, 0))
 			if not visibles.has(id): sortis[cle] += int(f.get(cle, 0))
 	var ligne := S.G.h(px(8))
-	ligne.custom_minimum_size.y = px(52)
+	ligne.custom_minimum_size.y = px(40)
 	ligne.name = "MatchBetweenTeamTotal"
 	ligne.tooltip_text = "Total de l'équipe, remplaçants sortis compris (%d plaquage%s, %d m, %d essai%s déjà aux joueurs remplacés)." % [sortis.plaquages, "s" if sortis.plaquages > 1 else "", sortis.metres, sortis.essais, "s" if sortis.essais > 1 else ""]
 	ligne.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -1116,7 +1544,7 @@ func _remplir_xv_adverse(direct: Dictionary) -> void:
 	if liste.is_empty():
 		xv.add_child(_texte("Composition adverse pas encore vue.", 26, DOUX, true))
 		return
-	var hauteur := px(48)
+	var hauteur := px(38)
 	for poste in liste.size():
 		var j: Variant = liste[poste]
 		var case := Button.new()
@@ -1264,7 +1692,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	portrait.texture = image
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	portrait.custom_minimum_size = Vector2(px(96), px(96))
+	portrait.custom_minimum_size = Vector2(px(80), px(80))
 	portrait.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var matte := ShaderMaterial.new()
@@ -1313,9 +1741,11 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 		etiquette.tooltip_text = "\n".join(raisons) if not raisons.is_empty() else str(phrase[0])
 		etiquette.mouse_filter = Control.MOUSE_FILTER_PASS
 		colonne.add_child(etiquette)
+	# Les actions à droite de la carte (Gabi en largeur, sous le tableau de bord).
 	var actions := S.G.h(px(10))
+	actions.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	if fini: _remplir_pourquoi(colonne, direct, actions)
-	colonne.add_child(actions)
+	carte.add_child(actions)
 	# L'action qui va avec la phrase : remplacer le joueur signalé, ou appliquer les consignes
 	# proposées (seulement si l'adjoint propose autre chose que les consignes en place).
 	if remplacer >= 0:
