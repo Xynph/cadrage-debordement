@@ -88,9 +88,10 @@ fi
 if [[ "${CD_EL_MESURES:-false}" == "true" ]]; then
   export CD_NODE_EXECUTABLE="$(command -v node)"
   data="$(mktemp -d)"
+  trap '[[ "${CD_KEEP_TMP:-0}" == 1 ]] || rm -rf "$data"' EXIT
   phase "mesure du parcours des écrans (tests/godot-chargement-mesure.gd)" mesures-parcours.log \
     env CD_GODOT_TIMING=1 CD_GODOT_DATA_DIR="$data/PrototypeGodot" "$CD_GODOT_EXECUTABLE" --headless --audio-driver Dummy --path native/godot --script "$root/tests/godot-chargement-mesure.gd"
-  rm -rf "$data"
+  [[ "${CD_KEEP_TMP:-0}" == 1 ]] || rm -rf "$data"
   phase "portraits progressifs" mesures-portraits.log node tests/godot-portraits-progressifs.cjs
   if grep -h '^CD_MESURE ' "$out/mesures-parcours.log" 2>/dev/null | head -1 | sed 's/^CD_MESURE //' > "$out/mesure.json" && [[ -s "$out/mesure.json" ]]; then
     node -e '
