@@ -5,6 +5,7 @@ const SeasonLabel = preload("res://ui/season_label.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
 const ContinueProgress = preload("res://ui/continue_progress.gd")
+const SaveIndicator = preload("res://ui/save_indicator.gd")
 const Optimistic = preload("res://ui/optimistic_decisions.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
 const ScreenRefresh = preload("res://ui/screen_refresh.gd")
@@ -44,8 +45,9 @@ const COMMAND_WAIT_MESSAGES := {
 const STARTUP_WAIT_MESSAGE := "Ouverture du bureau du manager…"
 ## Entrée dans le match en direct : la scène 3D se construit d’un bloc ; ce panneau est dessiné avant.
 const LIVE_VIEW_WAIT_MESSAGE := "Entrée des joueurs sur la pelouse…"
-## Avances du calendrier après lesquelles le moteur peut écrire la sauvegarde complète (fréquence des Réglages).
-const AUTOSAVE_ADVANCES := ["advance_day", "finish_round", "next_season"]
+## Avances du calendrier dont la sauvegarde complète est écrite AVANT la réponse (fréquence des Réglages). Le jour suivant
+## et Continuer sont sauvegardés après la réponse (lot 36) : le panneau ne la nomme pas, la disquette la montre.
+const AUTOSAVE_ADVANCES := ["finish_round", "next_season"]
 ## Commandes de lecture pure (aucun changement d'état de carrière).
 const READ_ONLY_COMMANDS := ["club_sheet"]
 ## Titre du panneau d’attente par commande (les autres : « En coulisses »).
@@ -119,6 +121,7 @@ var accent := Color("d43e47")
 var bridge: Node
 var command_wait_overlay: CommandWaitOverlay
 var continue_progress: ContinueProgress
+var save_indicator: SaveIndicator
 var timer: Timer
 var body: VBoxContainer
 var heading: Label
@@ -230,6 +233,7 @@ func _ready() -> void:
 	bridge.model_changed.connect(_receive_model)
 	bridge.command_failed.connect(_failed)
 	bridge.progressed.connect(_continue_progressed)
+	bridge.persist_changed.connect(_persist_changed)
 	_trace_startup("bridge.created")
 	navigation_controller = load("res://ui/navigation_controller.gd").new()
 	add_child(navigation_controller)
@@ -266,6 +270,8 @@ func _ready() -> void:
 	add_child(command_wait_overlay)
 	continue_progress = ContinueProgress.new()
 	add_child(continue_progress)
+	save_indicator = SaveIndicator.new()
+	add_child(save_indicator)
 	waiting = true
 	_present_startup_wait()
 	_trace_startup("render.begin")
@@ -539,12 +545,15 @@ func _continue_context() -> Dictionary:
 		info = {"date": str(next.date).substr(0, 10), "opponent": str(opponent.get("name", ""))}
 	return {"date": str(meta.get("calendarToday", "")), "accent": accent, "next": info if not info.is_empty() else null}
 
+## Sauvegarde en arrière-plan du moteur : disquette discrète en bas de l'écran, sans jamais bloquer le joueur.
+func _persist_changed(state: String, _message: String) -> void:
+	if is_instance_valid(save_indicator): save_indicator.apply_state(state, user_preferences == null or not user_preferences.data.reduced_motion)
+
 ## Tranche reçue : la date défile ; on demande la suite, ou l'arrêt si le joueur l'a demandé (les jours passés
 ## sont alors écrits par le moteur avant sa réponse).
 func _continue_progressed(progress: Dictionary) -> void:
 	if not waiting or last_command != CareerProgression.CONTINUE_COMMAND or closing: return
 	continue_progress.advance_to(progress)
-	if bool(progress.get("saving", false)): continue_progress.show_saving()
 	var parts := str(progress.get("today", "")).split("-")
 	if is_instance_valid(header_date) and parts.size() == 3 and int(parts[1]) in range(1, 13):
 		header_date.text = "%s %s %s" % [parts[2], ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."][int(parts[1])-1], parts[0]]
