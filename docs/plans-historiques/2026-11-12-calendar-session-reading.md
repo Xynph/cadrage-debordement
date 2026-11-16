@@ -8,7 +8,7 @@
 
 **Tech Stack:** GDScript, Godot 4.7.2 officiel, Node 22, registre SDK existant.
 
-**Spec:** `docs/superpowers/specs/2026-11-12-calendar-session-reading-design.md`
+**Spec:** `docs/plans-historiques/specs/2026-11-12-calendar-session-reading-design.md`
 
 ## Global Constraints
 

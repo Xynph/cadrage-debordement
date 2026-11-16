@@ -8,7 +8,7 @@
 
 **Tech Stack:** JavaScript natif, CSS Grid, polices et WebP locaux, Node test et Playwright/Chromium.
 
-**Spec:** `docs/superpowers/specs/2026-11-07-premium-manager-office-design.md`
+**Spec:** `docs/plans-historiques/specs/2026-11-07-premium-manager-office-design.md`
 
 ## Global Constraints
 

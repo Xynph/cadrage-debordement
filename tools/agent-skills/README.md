@@ -13,7 +13,7 @@ Elles ne font pas partie du jeu distribué.
 
 Pour ajouter une compétence de la même source, ajouter son `name` et son
 `path` dans `manifest.json`, puis relancer la mise à jour sur le commit voulu.
-Seuls des fichiers Markdown sont acceptés ; aucun script tiers n'est exécuté.
+Seuls des fichiers Markdown sont acceptés ; les autres (scripts `.gd`, `.py`…) sont refusés, consignés dans `refused` au manifeste, et aucun script tiers n'est exécuté.
 
 Avant de valider une mise à jour, relire le diff : une compétence est une
 consigne donnée aux agents. Inscrire toute nouvelle source dans
