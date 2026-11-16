@@ -635,32 +635,65 @@ static func _aire_commune(a: Rect2, b: Rect2) -> float:
 
 ## Position la plus proche de `voulue` où la bulle (taille `taille`) ne recouvre aucun contrôle interactif ;
 ## à défaut, celle qui en recouvre le moins. Le haut est borné par `y_min` (sous la barre du haut).
+## Coût borné : les rectangles sont calculés une fois, les candidats sont dédoublonnés et plafonnés
+## (les plus proches de `voulue`), et chaque test s'arrête au premier recouvrement (écran Effectif : 296 contrôles).
 func _position_libre(voulue: Vector2, taille: Vector2, y_min: float) -> Vector2:
 	var zones := _zones_interactives()
+	if zones.is_empty(): return voulue
 	var marge := 4.0
-	var recouvrement := func(p: Vector2) -> float:
-		var total := 0.0
-		for z: Rect2 in zones: total += _aire_commune(Rect2(p, taille).grow(marge), z)
-		return total
-	if zones.is_empty() or recouvrement.call(voulue) <= 0.0: return voulue
-	var xs: Array[float] = [voulue.x, 8.0, app.size.x - taille.x - 8.0]
-	var ys: Array[float] = [voulue.y]
+	if not _recouvre(Rect2(voulue, taille).grow(marge), zones): return voulue
+	var x_max := maxf(8.0, app.size.x - taille.x - 8.0)
+	var y_max := maxf(y_min, app.size.y - taille.y - 8.0)
+	var xs := {}
+	var ys := {}
+	for cx: float in [voulue.x, 8.0, app.size.x - taille.x - 8.0]: xs[roundi(clampf(cx, 8.0, x_max))] = true
+	ys[roundi(clampf(voulue.y, y_min, y_max))] = true
 	for z: Rect2 in zones:
-		xs.append(z.end.x + 8.0); xs.append(z.position.x - taille.x - 8.0)
-		ys.append(z.end.y + 8.0); ys.append(z.position.y - taille.y - 8.0)
+		xs[roundi(clampf(z.end.x + 8.0, 8.0, x_max))] = true
+		xs[roundi(clampf(z.position.x - taille.x - 8.0, 8.0, x_max))] = true
+		ys[roundi(clampf(z.end.y + 8.0, y_min, y_max))] = true
+		ys[roundi(clampf(z.position.y - taille.y - 8.0, y_min, y_max))] = true
+	var cxs := _plus_proches(xs.keys(), voulue.x, PLAFOND_CANDIDATS)
+	var cys := _plus_proches(ys.keys(), voulue.y, PLAFOND_CANDIDATS)
 	var meilleur := voulue
-	var meilleur_aire := recouvrement.call(voulue) as float
-	var meilleure_distance := 0.0
-	for cy: float in ys:
-		var py := clampf(cy, y_min, maxf(y_min, app.size.y - taille.y - 8.0))
-		for cx: float in xs:
-			var px := clampf(cx, 8.0, maxf(8.0, app.size.x - taille.x - 8.0))
-			var p := Vector2(px, py)
-			var aire := recouvrement.call(p) as float
+	var meilleure_distance := INF
+	for cy: float in cys:
+		for cx: float in cxs:
+			var p := Vector2(cx, cy)
+			var distance := p.distance_to(voulue)
+			if distance >= meilleure_distance: continue
+			if not _recouvre(Rect2(p, taille).grow(marge), zones):
+				meilleur = p; meilleure_distance = distance
+	if meilleure_distance < INF: return meilleur
+	# Aucune place libre : le candidat qui recouvre le moins (jeu réduit, cas rare).
+	var meilleur_aire := INF
+	var proches_x := cxs.slice(0, 12)
+	var proches_y := cys.slice(0, 12)
+	for cy: float in proches_y:
+		for cx: float in proches_x:
+			var p := Vector2(cx, cy)
+			var cadre := Rect2(p, taille).grow(marge)
+			var aire := 0.0
+			for z: Rect2 in zones: aire += _aire_commune(cadre, z)
 			var distance := p.distance_to(voulue)
 			if aire < meilleur_aire - 0.5 or (absf(aire - meilleur_aire) <= 0.5 and distance < meilleure_distance):
 				meilleur = p; meilleur_aire = aire; meilleure_distance = distance
 	return meilleur
+
+const PLAFOND_CANDIDATS := 28
+
+static func _recouvre(cadre: Rect2, zones: Array[Rect2]) -> bool:
+	for z: Rect2 in zones:
+		if cadre.intersects(z): return true
+	return false
+
+## Les `n` valeurs les plus proches de `cible`, de la plus proche à la plus éloignée.
+static func _plus_proches(valeurs: Array, cible: float, n: int) -> Array[float]:
+	var tri: Array = valeurs.duplicate()
+	tri.sort_custom(func(a, b): return absf(float(a) - cible) < absf(float(b) - cible))
+	var sortie: Array[float] = []
+	for v in tri.slice(0, n): sortie.append(float(v))
+	return sortie
 
 func fermer_bulle() -> void:
 	if is_instance_valid(_bulle): _bulle.hide()
