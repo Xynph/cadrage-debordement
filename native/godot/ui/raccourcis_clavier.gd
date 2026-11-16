@@ -1,0 +1,130 @@
+extends Node
+# Raccourcis clavier de la carrière (façon Football Manager). Un seul gestionnaire, installé par le décor
+# immersif ; il ne touche ni au moteur ni aux commandes : il actionne les boutons que le manager voit.
+#   Espace / Entrée : prochain message non lu de la Réception ; sans non lu, Continuer (bouton visible et actif)      1 à 9 : menus de gauche, dans l'ordre affiché
+#   Échap : referme la fiche ouverte (sinon le menu de la carrière, déjà géré)      Ctrl+F : accès rapide (Ctrl+K)
+# Jamais actif : champ de saisie ayant le focus, fenêtre ou dialogue ouvert, réunion ou match en cours, intro.
+# Les autres raccourcis (Ctrl+S, Ctrl+J, Ctrl+K, F1, Alt+←/→) restent dans navigation_controller.gd.
+const NOM := "RaccourcisClavier"
+const Reception = preload("res://ui/immersive08/reception_canvas.gd")
+const INDICES := [" · Espace : prochain message", " · Espace : continuer"]
+var app: Control
+# Vrai après Tab ou une flèche : Espace/Entrée appartiennent alors au bouton ciblé, pas à « Continuer ».
+var _focus_clavier := false
+
+static func installer(owner_app: Control) -> void:
+	var gestionnaire: Node = owner_app.get_node_or_null(NOM)
+	if gestionnaire == null:
+		gestionnaire = load("res://ui/raccourcis_clavier.gd").new()
+		gestionnaire.name = NOM
+		gestionnaire.app = owner_app
+		owner_app.add_child(gestionnaire)
+	gestionnaire.annoncer_continuer()
+
+## Info-bulle « Espace : prochain message » ou « Espace : continuer », recalculée au survol et au focus (le texte est réécrit chaque jour).
+func annoncer_continuer() -> void:
+	var bouton: Button = app.primary_button if is_instance_valid(app) else null
+	if not is_instance_valid(bouton): return
+	for signal_bouton: Signal in [bouton.mouse_entered, bouton.focus_entered]:
+		if not signal_bouton.is_connected(_ajouter_indice): signal_bouton.connect(_ajouter_indice.bind(bouton))
+
+func _ajouter_indice(bouton: Button) -> void:
+	if not is_instance_valid(bouton) or bouton.disabled: return
+	var texte := bouton.tooltip_text
+	for indice: String in INDICES: texte = texte.trim_suffix(indice)
+	bouton.tooltip_text = texte + INDICES[0 if not Reception.next_unread(app).is_empty() else 1]
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed: _focus_clavier = false
+	var touche := _touche(event)
+	if touche == null: return
+	if touche.keycode in [KEY_TAB, KEY_BACKTAB, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]: _focus_clavier = true
+	# Après un clic, le dernier bouton cliqué garde le focus : Espace doit quand même faire avancer.
+	if not _focus_clavier and _est_continuer(touche) and _continuer(): get_viewport().set_input_as_handled()
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	var touche := _touche(event)
+	if touche == null: return
+	var utilise := false
+	if _est_continuer(touche): utilise = _continuer()
+	elif touche.keycode == KEY_ESCAPE: utilise = _retour()
+	elif touche.keycode == KEY_F and touche.ctrl_pressed and not touche.alt_pressed: utilise = _recherche()
+	elif not touche.ctrl_pressed and not touche.alt_pressed and not touche.meta_pressed:
+		var rang := _rang_menu(touche)
+		if rang >= 0: utilise = _menu(rang)
+	if utilise: get_viewport().set_input_as_handled()
+
+func _touche(event: InputEvent) -> InputEventKey:
+	var touche := event as InputEventKey
+	return touche if touche != null and touche.pressed and not touche.echo else null
+
+func _est_continuer(event: InputEventKey) -> bool:
+	return event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER] and not event.ctrl_pressed and not event.alt_pressed and not event.meta_pressed and not event.shift_pressed
+
+## 0 à 8 pour les touches 1 à 9. `physical_keycode` couvre la rangée de chiffres d'un clavier AZERTY sans Maj.
+func _rang_menu(event: InputEventKey) -> int:
+	for code: int in [event.keycode, event.physical_keycode]:
+		if code >= KEY_1 and code <= KEY_9: return code - KEY_1
+		if code >= KEY_KP_1 and code <= KEY_KP_9: return code - KEY_KP_1
+	return -1
+
+## Aucun raccourci ne doit agir en dehors du bureau de la carrière.
+func actif() -> bool:
+	if not is_instance_valid(app) or app.closing or not app.has_method("_has_career") or not app._has_career(): return false
+	if app.has_method("intro_active") and app.intro_active(): return false
+	if app.route in ["Accueil", "Création", "Packs"] or not is_instance_valid(app.root_content): return false
+	var directeur: Variant = app.get("contextual_director")
+	if is_instance_valid(directeur) and (directeur.active_meeting() or directeur.match_immersed()): return false
+	if is_instance_valid(app.get("continue_progress")) and app.continue_progress.running: return false
+	if is_instance_valid(app.get("command_wait_overlay")) and app.command_wait_overlay.blocks_input(): return false
+	var focus := app.get_viewport().gui_get_focus_owner()
+	if focus is LineEdit or focus is TextEdit or focus is SpinBox: return false
+	return not _fenetre_ouverte(app)
+
+func _fenetre_ouverte(noeud: Node) -> bool:
+	for enfant in noeud.get_children():
+		if enfant is Window and enfant.visible and not enfant.is_queued_for_deletion(): return true
+		if _fenetre_ouverte(enfant): return true
+	return false
+
+## Règle de Léo : tant qu'il reste un message non lu, la touche l'ouvre ; Continuer seulement quand la boîte est lue.
+func _continuer() -> bool:
+	if not actif(): return false
+	if Reception.open_next_unread(app): return true
+	var bouton: Button = app.primary_button
+	if not is_instance_valid(bouton) or bouton.disabled or not bouton.is_visible_in_tree(): return false
+	# Une autre touche d'action ciblée au clavier garde Espace/Entrée pour elle.
+	var focus := app.get_viewport().gui_get_focus_owner()
+	if _focus_clavier and focus is BaseButton and focus != bouton: return false
+	bouton.pressed.emit()
+	return true
+
+func _menu(rang: int) -> bool:
+	if not actif(): return false
+	var entrees := app.root_content.find_children("Nav_*", "Button", true, false)
+	if rang >= entrees.size(): return false
+	var bouton: Button = entrees[rang]
+	if bouton.disabled or not bouton.is_visible_in_tree(): return false
+	bouton.pressed.emit()
+	return true
+
+## Échap referme d'abord la fiche ouverte. Sans fiche, on laisse le menu de la carrière (main.gd), qui ne quitte jamais seul.
+func _retour() -> bool:
+	if not actif(): return false
+	var retour: Button = app.root_content.find_child("PlayerBackToSquad", true, false) as Button
+	if app.route == "Effectif" and app.get_meta("immersive08_full_player", false) and is_instance_valid(retour):
+		retour.pressed.emit()
+		return true
+	var navigation: Node = app.get("navigation_controller")
+	if app.route == "Fiche club" and is_instance_valid(navigation):
+		if navigation._destination(-1) >= 0: navigation._travel(-1)
+		else: app._navigate("Classements")
+		return true
+	return false
+
+## La seule recherche existante est l'accès rapide (menus, joueurs, clubs) : Ctrl+F l'ouvre comme Ctrl+K.
+func _recherche() -> bool:
+	var navigation: Node = app.get("navigation_controller") if is_instance_valid(app) else null
+	if not actif() or not is_instance_valid(navigation): return false
+	navigation.open_palette()
+	return true
