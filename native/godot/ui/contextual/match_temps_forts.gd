@@ -874,10 +874,15 @@ func _lire_choregraphie(reel: float) -> void:
 			_score = tf.plans[index].get("score", _score)
 			index = k
 		_jalon_montre = true
-		if str(tf.plans[index].get("kind", "")) == "try": _sonner("try")
+		if str(tf.plans[index].get("kind", "")) == "try":
+			_sonner("try")
+			# Essai aplati et annoncé : le bandeau passe aussitôt au nouveau score (+5).
+			_score = tf.plans[index].get("score", _score)
 		# Tir au but : son jalon est le passage du ballon, le résultat est à l'écran.
 		if tf.plans[index].has("annonce") and not _resultat_sonne:
 			_resultat_sonne = true
+			# Transformation ou tir vus : le score suit (+2 / +3), pas avant.
+			_score = tf.plans[index].get("score", _score)
 			_sonner("goal" if str(tf.plans[index].get("kind", "")) == "goal" else "miss")
 		_habiller()
 	var echue := _tenu > float(pistes.get("duree", 0.0)) / maxf(vitesse, 0.01) + ECHEANCE_CHOREGRAPHIE
@@ -946,9 +951,11 @@ func _lire(delta: float, reel: float) -> void:
 	# Le résultat d'un tir s'affiche après la frappe, pas avant.
 	if plan.has("annonce") and temps >= RESULTAT and not _resultat_sonne:
 		_resultat_sonne = true
-		_habiller()
 		var marque: Array = plan.get("score", _score)
 		var reussi: bool = str(plan.get("kind", "")) == "goal" or (str(plan.get("kind", "")) == "transformation" and marque.size() >= 2 and _score.size() >= 2 and int(marque[0]) + int(marque[1]) > int(_score[0]) + int(_score[1]))
+		# Le résultat est à l'écran : le bandeau du score le suit (la transformation vaut +2 à cet instant).
+		_score = marque
+		_habiller()
 		_sonner("goal" if reussi else "miss")
 	_legender_essai()
 	var mouvement := float(plan.get("mouvement", 0.0))
@@ -1150,6 +1157,8 @@ func _legender_essai() -> void:
 	if _essai_attendu(tf.plans[index]): return
 	_essai_montre = true
 	_sonner("try")
+	# L'essai est aplati et légendé : le bandeau du score passe au nouveau score (+5) au même instant.
+	_score = tf.plans[index].get("score", _score)
 	_habiller()
 
 ## Un fait vient d'être joué sur le terrain 2D : le bandeau du score le suit.
