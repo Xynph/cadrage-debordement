@@ -76,8 +76,13 @@ test('Carrière Monde : courrier varié, réponses enregistrées, monde inchang�
       // Une réponse par type de mail (chaque réponse coûte une projection complète du modèle).
       for (const mail of m.clubLife.clubMail.mails.filter(x => x.status === 'nouveau' && x.reponses.some(r => r.disponible) && !reponses.some(y => y.startsWith(x.type + '/')))) {
         const choix = mail.reponses.find(r => r.id === CHOIX[mail.type] && r.disponible) || mail.reponses.find(r => r.disponible);
+        // Réponse déclarée « club du manager seulement » (state-versions.cjs, OWN_CLUB) : sections lourdes autres que les
+        // clubs et clubs autres que celui du manager intacts (sinon la projection garderait un texte périmé).
+        const horsClub = () => sha(vm.run('JSON.stringify([S.aiRoster,S.staffCareer,S.potentialEvolution,S.worldMode,S.matchNotes,S.clubs.filter((c,i)=>i!==S.club)])'));
+        const avantReponse = horsClub();
         const debut = Date.now(), r = jeu.brut('club_mail_reply', { id: mail.id, choice: choix.id });
         durees.reponses += Date.now() - debut;
+        if (r.ok) assert.equal(horsClub(), avantReponse, mail.type + '/' + choix.id + ' : seul le club du manager change');
         assert.equal(r.ok, true, mail.type + '/' + choix.id + ' : ' + r.error);
         m = r.model;
         assert.equal(m.meta.clubMailReply.choice, choix.id);

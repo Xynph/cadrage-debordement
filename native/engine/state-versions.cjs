@@ -38,6 +38,9 @@ const UNTOUCHED = Object.freeze({
   scout_mission: except('clubs'), extend_contract: except('clubs'), press_conference: except('clubs'),
   recruit: except('clubs', 'aiRoster', 'potentialEvolution'), league_detail_set: except('worldMode'),
   train: except('clubs', 'aiRoster', 'potentialEvolution'),
+  // Réponse au courrier du club (club-mail.cjs, apply) : moral, confiance, presse, séance, caisse et journal (sections
+  // légères), joueur du club ou jeune promu dans l'effectif du club du manager seulement (contrôlé par tests/club-mail.cjs).
+  club_mail_reply: except('clubs'),
 });
 
 function untouched(command, payload) {
@@ -51,7 +54,7 @@ function untouched(command, payload) {
 // du manager dans `clubs` (S.clubs[S.club], S.club inchangé). Les autres clubs (~13,8 Mo) ne sont alors pas
 // resérialisés ; le club du manager l'est, joueur par joueur et champ par champ (voir SOURCE, parties de la section des
 // clubs). Vérifié en mode vérification (les autres clubs sont relus et comparés).
-const OWN_CLUB = Object.freeze(new Set(['set_player_load', 'set_development_focus', 'training_plan', 'extend_contract', 'staff_meeting', 'observe_player']));
+const OWN_CLUB = Object.freeze(new Set(['set_player_load', 'set_development_focus', 'training_plan', 'extend_contract', 'staff_meeting', 'observe_player', 'club_mail_reply']));
 const ownClubOnly = command => OWN_CLUB.has(command);
 
 // Commandes sans effet sur la note et les qualités des joueurs, même si elles touchent la section des clubs (consigne de

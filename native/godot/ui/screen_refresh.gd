@@ -24,7 +24,7 @@ const NESTED := ["clubLife", "meta", "staff", "decisions", "live"]
 ## Tous les écrans (valeur possible de « ecrans »).
 const EVERY_SCREEN := "*"
 ## Éléments de l'état d'un écran comparés entre son rendu et la réponse (voir `stamp`).
-const STAMP_KEYS := ["content", "route", "waiting", "day", "error", "connection_error", "status_error"]
+const STAMP_KEYS := ["content", "route", "waiting", "day", "error", "connection_error", "status_error", "storage_error"]
 
 static var _loaded: Dictionary = {}
 
@@ -39,12 +39,13 @@ static func table() -> Dictionary:
 ## État de l'écran affiché, à noter à chaque rendu complet et à comparer à la réponse suivante.
 ## `content` : identifiant de l'arbre affiché (0 sans écran) ; `day` : date de carrière du modèle ; `status_error` :
 ## voyant d'alerte de la barre latérale (stockage, journal de sauvegarde, réglages), dessiné au rendu.
-## Exemple : `ScreenRefresh.stamp(root_content.get_instance_id(), route, waiting, model, last_error, connection_error, _status_has_error())`.
-static func stamp(content: int, route: String, waiting: bool, model: Dictionary, error: String, connection_error: bool, status_error: bool = false) -> Dictionary:
+## `storage_error` : voyant « Stockage à vérifier » seul (écriture), distinct des refus de décision.
+## Exemple : `ScreenRefresh.stamp(root_content.get_instance_id(), route, waiting, model, last_error, connection_error, _status_has_error(), _storage_has_error())`.
+static func stamp(content: int, route: String, waiting: bool, model: Dictionary, error: String, connection_error: bool, status_error: bool = false, storage_error: bool = false) -> Dictionary:
 	var meta: Variant = model.get("meta")
 	var day := ""
 	if meta is Dictionary: day = str(meta.get("calendarToday", meta.get("date", "")))
-	return {"content": content, "route": route, "waiting": waiting, "day": day, "error": error, "connection_error": connection_error, "status_error": status_error}
+	return {"content": content, "route": route, "waiting": waiting, "day": day, "error": error, "connection_error": connection_error, "status_error": status_error, "storage_error": storage_error}
 
 ## Identifiants des sections d'un relevé du pont : "tactics" pour une section entière, "clubLife.press" pour une
 ## sous-section. Sous-section retirée (relevé vide pour la section) : la section entière, inconnue de la table.
