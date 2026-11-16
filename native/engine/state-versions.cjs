@@ -46,11 +46,12 @@ function untouched(command, payload) {
   return UNTOUCHED[command] || [];
 }
 
-// Décisions sur un joueur du club (charge, axe de progression, plan de travail) : parmi les sections lourdes, elles ne
-// touchent que le club du manager dans `clubs` (S.clubs[S.club], S.club inchangé). Les autres clubs (~13,8 Mo) ne sont
-// alors pas resérialisés ; le club du manager l'est, joueur par joueur et champ par champ (voir SOURCE, parties de la
-// section des clubs). Vérifié en mode vérification (les autres clubs sont relus et comparés).
-const OWN_CLUB = Object.freeze(new Set(['set_player_load', 'set_development_focus', 'training_plan']));
+// Décisions sur un joueur du club (charge, axe de progression, plan de travail, prolongation de contrat), réunion du
+// staff et observation ciblée (prime ou coût débité au club) : parmi les sections lourdes, elles ne touchent que le club
+// du manager dans `clubs` (S.clubs[S.club], S.club inchangé). Les autres clubs (~13,8 Mo) ne sont alors pas
+// resérialisés ; le club du manager l'est, joueur par joueur et champ par champ (voir SOURCE, parties de la section des
+// clubs). Vérifié en mode vérification (les autres clubs sont relus et comparés).
+const OWN_CLUB = Object.freeze(new Set(['set_player_load', 'set_development_focus', 'training_plan', 'extend_contract', 'staff_meeting', 'observe_player']));
 const ownClubOnly = command => OWN_CLUB.has(command);
 
 // Commandes sans effet sur la note et les qualités des joueurs, même si elles touchent la section des clubs (consigne de
@@ -77,7 +78,7 @@ const playersUntouched = (command, payload) => PLAYERS_STABLE.has(command) || un
 const SOURCE = `const nativeStateVersions=(()=>{
  const HEAVY=new Set(${JSON.stringify(HEAVY)});
  let state=null,counter=0,current=new Map();const texts=new Map(),versions=new Map(),dirty=new Set(),partsOf=new Map();
- let verifying=false;const memos=new Map();
+ let verifying=false;const memos=new Map(),computed=Object.create(null);
  const plain=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
  const isIndex=k=>typeof k==='string'&&/^(0|[1-9][0-9]*)$/.test(k);
  // Club du manager isolable dans la section des clubs (sinon null : jeton unique pour la section).
@@ -88,8 +89,22 @@ const SOURCE = `const nativeStateVersions=(()=>{
   for(let i=0;i<c.players.length;i++)if(!Object.hasOwn(c.players,i)||!plain(c.players[i]))return null;
   return c;
  }
- // Champs objets des joueurs du club suivis clé par clé.
- const NESTED=new Set(['dev']);
+ // Champs objets des joueurs du club suivis clé par clé ; SUBSPLIT : sous-objets suivis un niveau plus bas (axe de
+ // progression : focus et XP changent au choix d'un axe, les bonus acquis seulement à la séance).
+ const NESTED=new Set(['dev']),SUBSPLIT=new Set(['dev.specialization']);
+ // Jetons d'un champ objet (chemin « dev » ou « dev.specialization ») : nature par joueur, clés, puis valeur clé par clé.
+ const ABSENT={};
+ function fieldParts(out,path,values){
+  const obj=v=>v!==ABSENT&&plain(v);
+  out.set('clubs~p:'+path+'~kind',JSON.stringify(values.map(v=>v===ABSENT?0:obj(v)?1:'v'+JSON.stringify(v))));
+  out.set('clubs~p:'+path+'~keys',JSON.stringify(values.map(v=>obj(v)?Object.keys(v):0)));
+  const inner=new Set();for(const v of values)if(obj(v))for(const k of Object.keys(v))inner.add(k);
+  for(const k of inner){
+   const sub=path+'.'+k;
+   if(SUBSPLIT.has(sub)){fieldParts(out,sub,values.map(v=>obj(v)&&Object.hasOwn(v,k)?v[k]:ABSENT));continue;}
+   out.set('clubs~p:'+sub,JSON.stringify(values.map(v=>obj(v)&&Object.hasOwn(v,k)?v[k]:undefined)));
+  }
+ }
  function clubParts(s,c,others){
   const out=new Map(),o=s.club,players=c.players;
   if(others)out.set('clubs~others',JSON.stringify(s.clubs.map((x,i)=>i===o?0:x)));
@@ -100,11 +115,7 @@ const SOURCE = `const nativeStateVersions=(()=>{
   for(const f of fields){
    if(!NESTED.has(f)){out.set('clubs~p:'+f,JSON.stringify(players.map(p=>Object.hasOwn(p,f)?p[f]:undefined)));continue;}
    // Champ objet découpé un niveau plus bas (dev : progression, potentiel, axe de travail…).
-   const values=players.map(p=>Object.hasOwn(p,f)?p[f]:undefined),inner=new Set();
-   out.set('clubs~p:'+f+'~kind',JSON.stringify(players.map((p,i)=>!Object.hasOwn(p,f)?0:plain(values[i])?1:'v'+JSON.stringify(values[i]))));
-   out.set('clubs~p:'+f+'~keys',JSON.stringify(values.map(v=>plain(v)?Object.keys(v):0)));
-   for(const v of values)if(plain(v))for(const k of Object.keys(v))inner.add(k);
-   for(const k of inner)out.set('clubs~p:'+f+'.'+k,JSON.stringify(values.map(v=>plain(v)&&Object.hasOwn(v,k)?v[k]:undefined)));
+   fieldParts(out,f,players.map(p=>Object.hasOwn(p,f)?p[f]:ABSENT));
   }
   return out;
  }
@@ -180,8 +191,17 @@ const SOURCE = `const nativeStateVersions=(()=>{
   const roster=()=>{if(fast['clubs~roster']!==1)note('clubs~roster');};
   let clubsP=null,ownP=null,playersP=null,managerP=null;const pp=new Map();
   const nested=new Map(),NK=Object.create(null);
+  // Sous-objet suivi clé par clé (chemin f : « dev », « dev.specialization ») ; un sous-objet de SUBSPLIT est mandaté à
+  // son tour, sinon (valeur non objet ou figée) toutes ses parties sont lues.
   const inner=(f,v)=>{let x=nested.get(v);if(!x){const keys='clubs~p:'+f+'~keys';x=new Proxy(v,{
-   get(t,k){if(typeof k==='string'){note(NK[f+'.'+k]??=('clubs~p:'+f+'.'+k));if(!Object.hasOwn(t,k))note(keys);}return t[k];},
+   get(t,k){
+    if(typeof k==='string'){
+     const sub=f+'.'+k;
+     if(!Object.hasOwn(t,k))note(keys);
+     if(SUBSPLIT.has(sub)){const w=t[k];note('clubs~p:'+sub+'~kind');if(!plain(w))return w;if(Object.isExtensible(w))return inner(sub,w);addAll(x=>x.startsWith('clubs~p:'+sub+'.')||x==='clubs~p:'+sub+'~keys');return w;}
+     note(NK[sub]??=('clubs~p:'+sub));
+    }
+    return t[k];},
    has(t,k){note(keys);return k in t;},
    ownKeys(t){note(keys);return Reflect.ownKeys(t);},
    getOwnPropertyDescriptor(t,k){note(keys);return Reflect.getOwnPropertyDescriptor(t,k);}});nested.set(v,x);}return x;};
@@ -189,8 +209,10 @@ const SOURCE = `const nativeStateVersions=(()=>{
    get(t,k){
     if(typeof k==='string'&&NESTED.has(k)){
      if(!Object.hasOwn(t,k))roster();
+     // Valeur non objet (champ absent compris) : entièrement décrite par le jeton « ~kind ».
      const v=t[k];note('clubs~p:'+k+'~kind');
-     if(plain(v)&&Object.isExtensible(v))return inner(k,v);
+     if(!plain(v))return v;
+     if(Object.isExtensible(v))return inner(k,v);
      addAll(x=>x.startsWith('clubs~p:'+k+'.')||x==='clubs~p:'+k+'~keys');return v;
     }
     if(typeof k==='string'&&fastField[k]!==1){
@@ -257,6 +279,8 @@ const SOURCE = `const nativeStateVersions=(()=>{
  return {
   refresh,trace,part,
   current(){return current;},
+  // Nombre de calculs (hors reprise) de chaque texte mémorisé par memoText (tests).
+  computed(){return {...computed};},
   // Texte JSON de compute(S) repris tant que les jetons lus lors du dernier calcul n'ont pas changé (relevé par trace).
   // Fonctions de S seulement : à n'utiliser qu'après refresh, dans la même projection. En vérification, recalcul et
   // comparaison.
@@ -266,7 +290,7 @@ const SOURCE = `const nativeStateVersions=(()=>{
     if(verifying){const fresh=JSON.stringify(compute(S));if(fresh!==hit.text)throw Error('Mémoire de projection périmée : '+name+'.');}
     return hit.text;
    }
-   const real=S,t=trace(real);
+   const real=S,t=trace(real);computed[name]=(computed[name]||0)+1;
    let text;S=t.proxy;
    try{text=JSON.stringify(compute(t.proxy));}finally{S=real;t.done();}
    memos.set(name,{text,all:t.all(),deps:[...t.read].map(k=>[k,current.get(k)])});

@@ -455,7 +455,7 @@ function createBridge(options={}){
   // complète) y est calculé une seule fois puis partagé. Hors projection, chaque appel
   // recalcule comme avant. CD_ENGINE_MEMO=0 coupe ce partage (contrôle d'identité).
   const projectionMemo=process.env.CD_ENGINE_MEMO!=='0';
-  if(projectionMemo)run(`{const original=matchDossier;let active=false,cached;globalThis.nativeProjectionMemo=on=>{active=on;cached=undefined;};matchDossier=function(){if(!active)return original();if(cached===undefined)cached=original();return cached;};}`);
+  if(projectionMemo)run(`{const original=matchDossier;let active=false,cached;globalThis.nativeProjectionMemo=on=>{active=on;cached=undefined;};globalThis.nativeProjectionMemoBypass=fn=>{const was=active;active=false;try{return fn();}finally{active=was;}};matchDossier=function(){if(!active)return original();if(cached===undefined)cached=original();return cached;};}`);
   // Vie du club avec la mémoire par domaine ; si la mémoire elle-même échoue (hors vérification), calcul complet comme
   // avant : une réponse n'est jamais perdue à cause d'elle.
   const projectClubLife=()=>{
@@ -495,23 +495,57 @@ function createBridge(options={}){
   let visibleText=null,visibleMap=null;
   const visibleOf=text=>{if(text!==visibleText){visibleMap=JSON.parse(text);visibleText=text;}return visibleMap;};
   // Début d'une projection par sections : réglages globaux de la présentation (mode, frontière de connaissance…).
+  // La frontière (~6 Mo) entre dans les réglages globaux par un numéro, changé seulement quand son texte change (même
+  // chaîne reprise de la mémoire : comparaison immédiate) : ni jointure ni comparaison de 6 Mo à chaque réponse.
+  let globalVisibility=null,globalVisibilityId=0;
   const beginSections=m=>{
    const visibility=run('nativeStateVersions.memoText("visibility",state=>nativeKnowledge.visibility(state))');
-   sectionMemo.begin({globals:[String(m.meta?.mode??''),visibility,process.env.CD_PORTRAIT_CARRURE!=='0',process.env.CD_CARNET_CIBLES??'',creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ')].join('\u0001'),bypass:projectionState.bypass,verify:verifyProjection});
+   if(visibility!==globalVisibility){globalVisibility=visibility;globalVisibilityId++;}
+   sectionMemo.begin({globals:[String(m.meta?.mode??''),String(m.meta?.database?.id??''),'frontiere#'+globalVisibilityId,process.env.CD_PORTRAIT_CARRURE!=='0',process.env.CD_CARNET_CIBLES??'',creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ')].join('\u0001'),bypass:projectionState.bypass,verify:verifyProjection});
    projectionState.visibility=visibility;
+  };
+  // Décisions du manager (decisions.cjs) : fonction de la carrière seule, reprises tant que les parties lues n'ont pas
+  // changé (relevé fin, state-versions.cjs). Le dossier d'avant-match, partagé pendant une projection, est recalculé
+  // dans le relevé pour que ses lectures y soient notées. En vérification, recalculées et comparées.
+  const DECISIONS_MEMO=projectionMemo?'nativeStateVersions.memoText("decisions",()=>nativeProjectionMemoBypass(()=>nativeDecisions()))':'nativeStateVersions.memoText("decisions",()=>nativeDecisions())';
+  // Décisions par sections (clé de premier niveau de decisions) : chacune est reprise telle que présentée à la réponse
+  // précédente quand son texte brut et les réglages globaux sont les mêmes (projection-sections.cjs) ; les rapports
+  // d'observation, joints à `recruitment`, font partie de son entrée. Pendant le direct, `development` garde sa
+  // présentation de la dernière réponse complète.
+  if(sectionsOn)run(`globalThis.nativeDecisionParts=(()=>{let last,parts=null;return text=>{if(text!==last){const d=JSON.parse(text);parts=d&&typeof d==='object'&&!Array.isArray(d)?Object.keys(d).map(k=>[k,JSON.stringify(d[k])]).filter(x=>x[1]!==undefined):d===null?null:[[null,text]];last=text;}return parts;};})();`);
+  const projectDecisionSections=()=>{
+   const parts=run('nativeDecisionParts('+DECISIONS_MEMO+')');
+   if(parts===null)return null;
+   if(parts.length===1&&parts[0][0]===null)return JSON.parse(parts[0][1]);
+   const out={};
+   for(const [key,text] of parts){
+    const path='decisions.'+key;
+    if(key==='development'&&projectionState.live){out[key]=JSON.parse(text);liveSection(out,key,path);continue;}
+    if(key==='recruitment'&&text.charCodeAt(0)===123){
+     const reports=sub('reports',()=>run('nativeStateVersions.memoText("reports",state=>nativeKnowledge.reports(state))'));
+     const kept=sectionMemo.take(path,[text,reports]);
+     if(kept){out[key]=kept;continue;}
+     const value=JSON.parse(text);value.reports.push(...JSON.parse(reports));out[key]=value;continue;
+    }
+    out[key]=sectionMemo.take(path,text)||JSON.parse(text);
+   }
+   return out;
   };
   // Carrière internationale (international-native.cjs, projectCareer) : reprise tant que ses entrées sont les mêmes
   // (carrière internationale, effectifs vus par les sélections, club, phase, absents de la tournée d'été). En
   // vérification, recalculée et comparée.
-  let nationalMemo=null;
+  // Sa présentation (section `international` du modèle) est elle-même reprise quand son texte brut et les réglages
+  // globaux sont ceux de la réponse précédente (projection-sections.cjs) ; `nationalRaw` note qu'elle est suivie ainsi.
+  let nationalMemo=null,nationalRaw=null;
   const memoNational=compute=>{
    const roster=run('nativeStateVersions.memoText("roster",()=>nativeInternationalRoster())');
    const inputs=run(`JSON.stringify([S?.national??null,S?.club??null,S?.phase??null,(()=>{try{return typeof CDReprise!=='undefined'?CDReprise.absentees(S):null}catch(e){return 'indisponible'}})()])`);
    const hit=nationalMemo&&nationalMemo.roster===roster&&nationalMemo.inputs===inputs?nationalMemo:null;
-   if(hit&&!verifyProjection)return {...hit.out,international:JSON.parse(hit.text)};
+   if(hit&&!verifyProjection){nationalRaw=hit.text;return {...hit.out,international:sectionMemo.take('international',hit.text)||JSON.parse(hit.text)};}
    const out=compute(),text=JSON.stringify(out.international);
    if(hit&&text!==hit.text)throw Error('Mémoire de projection périmée : international.');
    nationalMemo={roster,inputs,text,out:{date:out.date,current:out.current,managedClub:out.managedClub}};
+   if(text!==undefined){nationalRaw=text;const kept=sectionMemo.take('international',text);if(kept)return {...out,international:kept};}
    return out;
   };
   // Catalogues de création (projection-sections.cjs, CATALOGUES) : repris tels que présentés à la réponse précédente
@@ -528,6 +562,10 @@ function createBridge(options={}){
    const kept=projectionState.live?sectionMemo.keep(path):null;
    if(kept)container[key]=kept;else sectionMemo.note(path);
   };
+  // Parties de la vie du club lues par une autre étape avant la présentation finale (reprise impossible : la
+  // sentinelle serait lue à leur place) : presse (répliques de Gabi), compétition personnalisée (nom du championnat).
+  // Les autres parties, mémorisables ou non, sont reprises quand leur texte brut et les réglages globaux sont les mêmes.
+  const LIFE_READ_EARLY=new Set(['press','customCompetition']);
   const projectLifeSections=(m,operation)=>{
    const live=projectionState.live;
    const staffKey=JSON.stringify(m.meta?.catalogue??null)+'\u0001'+JSON.stringify(m.meta?.database??null);
@@ -539,7 +577,7 @@ function createBridge(options={}){
     const path='clubLife.'+key;
     if(text===null){life[key]=sectionMemo.keep(path);if(key==='staffCareer')projectionState.staff=sectionMemo.keep('staff');continue;}
     if(key==='staffCareer'&&memoDomainKeys.includes(key)){const [career,team]=sectionMemo.takeAll([[path,text],['staff',[text,staffKey]]]);life[key]=career||JSON.parse(text);projectionState.staff=team;continue;}
-    life[key]=(memoDomainKeys.includes(key)&&sectionMemo.take(path,text))||JSON.parse(text);
+    life[key]=(!LIFE_READ_EARLY.has(key)&&sectionMemo.take(path,text))||JSON.parse(text);
    }
    return life;
   };
@@ -553,8 +591,8 @@ function createBridge(options={}){
     sectionMemo.abort();return attempt(false);
    }
   };
-  const snapshotProjection=(operation,bypass=true)=>{updatePressPolicy();projectionState=null;const [m,catalogueTokens]=sub('model',()=>sectionsOn?JSON.parse(run('nativeCatalogueSections.read()')):[readProjection('nativeModel()'),null]);if(sectionsOn&&run('!!S'))projectionState={sections:true,bypass,live:!!operation&&LIVE_COMMANDS.has(operation.command)&&!!m.live&&!m.live.finished&&!(operation.command==='match_talk_continue'&&operation.payload?.phase==='post'),staff:null,result:null};if(projectionState){sub('versions',()=>refreshVersions(operation));sub('visibility',()=>beginSections(m));}if(catalogueTokens)sub('catalogues',()=>carryCatalogues(m,catalogueTokens));sub('france',()=>projectFranceCalendar(m));m.decisions=sub('decisions',()=>readProjection('nativeDecisions()'));liveSection(m.decisions,'development','decisions.development');if(m.decisions?.recruitment)sub('reports',()=>m.decisions.recruitment.reports.push(...(projectionState?JSON.parse(run('nativeStateVersions.memoText("reports",state=>nativeKnowledge.reports(state))')):readProjection('nativeKnowledge.reports(S)'))));if(projectionState){try{m.clubLife=sub('clubLife',()=>projectLifeSections(m,operation));}catch(error){if(ctx.nativeVerifyMemo||verifyProjection)throw error;/* Repli : calcul complet comme avant (la mémoire ne fait jamais perdre une réponse). */sectionMemo.abort();projectionState=null;run('nativeSystems.clearMemo();nativeStateVersions.reset();');m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');}}else m.clubLife=sub('clubLife',()=>memoDomains?projectClubLife():readProjection('nativeSystems.project()'));
-   const keptInternational=projectionState?.live?sectionMemo.keep('international'):null;if(keptInternational)m.international=keptInternational;else{sub('national',()=>national.project(m,projectionState?{roster:()=>JSON.parse(run('nativeStateVersions.memoText("roster",()=>nativeInternationalRoster())')),memo:memoNational}:{}));if(projectionState&&m.international!==undefined)sectionMemo.note('international');}m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();if(journal)m.meta.autosave=autosaveMeta();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=sub('packs',()=>packs.project(sub('staff',()=>projectionState?.staff?{...m,staff:projectionState.staff}:staff.project(m)),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'),projectionState?{nested:modelDelta.NESTED,carriedOf:sectionMemo.carriedOf,recordCarried:sectionMemo.recordCarried,signature:sectionMemo.packSignature}:null));if(projectionState)projectionState.result=result;sub('presentation',()=>staff.applyCareerPresentation(result));const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=sub('epcr',()=>epcrPreparation.project(result));sub('calendar',()=>projectCalendar(result,operation));if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=sub('direct',()=>matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography}));}catch(error){result.live.directError=String(error?.message||error);}}return result;};
+  const snapshotProjection=(operation,bypass=true)=>{updatePressPolicy();projectionState=null;const [m,catalogueTokens]=sub('model',()=>sectionsOn?JSON.parse(run('nativeCatalogueSections.read()')):[readProjection('nativeModel()'),null]);if(sectionsOn&&run('!!S'))projectionState={sections:true,bypass,live:!!operation&&LIVE_COMMANDS.has(operation.command)&&!!m.live&&!m.live.finished&&!(operation.command==='match_talk_continue'&&operation.payload?.phase==='post'),staff:null,result:null};if(projectionState){sub('versions',()=>refreshVersions(operation));sub('visibility',()=>beginSections(m));}if(catalogueTokens)sub('catalogues',()=>carryCatalogues(m,catalogueTokens));sub('france',()=>projectFranceCalendar(m));if(projectionState)m.decisions=sub('decisions',()=>projectDecisionSections());else{m.decisions=sub('decisions',()=>readProjection('nativeDecisions()'));if(m.decisions?.recruitment)sub('reports',()=>m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)')));}if(projectionState){try{m.clubLife=sub('clubLife',()=>projectLifeSections(m,operation));}catch(error){if(ctx.nativeVerifyMemo||verifyProjection)throw error;/* Repli : calcul complet comme avant (la mémoire ne fait jamais perdre une réponse). */sectionMemo.abort();projectionState=null;run('nativeSystems.clearMemo();nativeStateVersions.reset();');m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');}}else m.clubLife=sub('clubLife',()=>memoDomains?projectClubLife():readProjection('nativeSystems.project()'));
+   const keptInternational=projectionState?.live?sectionMemo.keep('international'):null;if(keptInternational)m.international=keptInternational;else{nationalRaw=null;sub('national',()=>national.project(m,projectionState?{roster:()=>JSON.parse(run('nativeStateVersions.memoText("roster",()=>nativeInternationalRoster())')),memo:memoNational}:{}));if(projectionState&&m.international!==undefined&&nationalRaw===null)sectionMemo.note('international');}m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();if(journal)m.meta.autosave=autosaveMeta();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=sub('packs',()=>packs.project(sub('staff',()=>projectionState?.staff?{...m,staff:projectionState.staff}:staff.project(m)),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'),projectionState?{nested:modelDelta.NESTED,carriedOf:sectionMemo.carriedOf,recordCarried:sectionMemo.recordCarried,signature:sectionMemo.packSignature}:null));if(projectionState)projectionState.result=result;sub('presentation',()=>staff.applyCareerPresentation(result));const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=sub('epcr',()=>epcrPreparation.project(result));sub('calendar',()=>projectCalendar(result,operation));if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=sub('direct',()=>matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography}));}catch(error){result.live.directError=String(error?.message||error);}}return result;};
   // Raw models stay private; every protocol path still applies the final
   // knowledge boundary after attaching receipts, previews or export metadata.
   const snapshot=operation=>{const m=snapshotRaw(operation);continuePlan(m);return projectKnowledge(m);};
