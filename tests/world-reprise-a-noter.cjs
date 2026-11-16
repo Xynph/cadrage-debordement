@@ -1,7 +1,7 @@
 'use strict';
 // Préparation (reprise.cjs, décision de Léo du 16/11/2026), éléments « À noter » (façon FM), en carrière Monde
 // (`world-champ`, club 0, départ « Reprise des premiers clubs », calendrier journalier comme le jeu) : courrier
-// en Réception, arrêt sans réponse attendue selon le flux de Continuer, plusieurs éléments le même jour
+// en Réception, arrêt sans réponse attendue (tous les éléments, pas de niveaux), plusieurs éléments le même jour
 // regroupés dans un seul arrêt. Séparé de tests/world-reprise-decisions.cjs (même carrière, mêmes assertions)
 // pour rester sous le délai de 180 s du lanceur CI.
 const { test } = require('node:test');
@@ -30,9 +30,9 @@ test('À noter : arrêts informatifs regroupés par jour, Continuer repart sans 
   for (const decision of ['amicaux', 'stage']) m = j.go('reprise_decide', { decision, option: 'equilibre' });
   assert.equal(m.meta.continuePlan.kind, 'reprise', 'plus de décision : prochain arrêt, la reprise');
   const arrets = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 30; i++) {
     m = j.regler(m);
-    const r = j.brut('advance_until_event', { fromDate: m.meta.calendarToday, stops: { messages: 'aucun', flux: 'equilibre' } });
+    const r = j.brut('advance_until_event', { fromDate: m.meta.calendarToday, stops: { messages: 'aucun' } });
     assert.equal(r.ok, true, 'un arrêt informatif n’empêche jamais de repartir : ' + r.error);
     m = r.model;
     const a = m.meta.advanceUntilEvent;
@@ -40,16 +40,16 @@ test('À noter : arrêts informatifs regroupés par jour, Continuer repart sans 
     if (a.stop.kind === 'match') break;
     if (a.stop.kind === 'a_noter') assert.equal(m.meta.decisionsDue.length, 0, 'aucune réponse attendue');
   }
-  console.log('Arrêts (flux équilibré) :', JSON.stringify(arrets));
+  console.log('Arrêts :', JSON.stringify(arrets));
   const notes = arrets.filter(x => x[1] === 'a_noter');
   const s = j.etat();
   assert.ok(notes.some(x => x[0] === '2026-08-07' && /bilan du stage/.test(x[2])), 'bilan du stage');
   const amical = notes.find(x => /compte rendu de match amical/.test(x[2]));
   assert.ok(amical, 'compte rendu d’amical');
-  // Flux équilibré : le retour des internationaux arrive en Réception sans arrêter l'avance.
+  // Tous les éléments arrêtent l'avance (pas de niveaux, décision de Léo du 16/11), retour des internationaux compris.
   const retour = s.reprise.notes.find(x => x.startsWith('retour:'));
   assert.ok(retour, JSON.stringify(s.reprise.notes));
-  assert.ok(!arrets.some(x => x[0] === retour.slice(7)), 'retour sans arrêt en flux équilibré');
+  assert.ok(notes.some(x => x[0] === retour.slice(7) && /retour des internationaux/.test(x[2])), 'arrêt sur le retour des internationaux');
   assert.ok(s.news.some(n => /^Match amical 1\/\d : /.test(n)) && s.news.some(n => /^Retour de tournée : \d+ internationa/.test(n)));
   const veille = notes.at(-1);
   assert.equal(veille[0], '2026-09-05', 'veille de la 1re journée');

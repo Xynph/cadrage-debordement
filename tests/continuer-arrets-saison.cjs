@@ -2,7 +2,7 @@
 // Arrêts informatifs de « Continuer » pendant la saison (décision de Léo, 16/11/2026) : façon Football Manager,
 // l'avance s'arrête aussi sur des moments sans décision (veille et lendemain de match, rapport médical, mi-saison,
 // fin de phase, marché, recruteur), avec parcimonie, et plusieurs fois le même jour si besoin.
-//   1. Règle pure (continuer.cjs + continuer-arrets.json) : flux, priorité, plafond par jour, regroupement.
+//   1. Règle pure (continuer.cjs + continuer-arrets.json) : types toujours actifs, priorité, plafond par jour, regroupement.
 //   2. CI de PR (rapide) : carrière Monde (`world-champ`, calendrier journalier) partie de la veille de la saison,
 //      jouée à « Continuer » sur une fenêtre courte : veille, lendemain, rapport médical, un jour à plusieurs arrêts,
 //      arrêt du même jour sans avancer ; puis même graine sans arrêts informatifs : état identique en fin de fenêtre.
@@ -19,13 +19,13 @@ const M = require('./helpers/carriere-monde.cjs');
 const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 
 const FACULTATIFS = Object.keys(C.STOPS).filter(k => !C.STOPS[k].mandatory);
-const opts = (flux = 'equilibre', extra = {}) => C.validate({ fromDate: '2026-09-01', stops: { flux, ...extra } });
+const opts = (extra = {}) => C.validate({ fromDate: '2026-09-01', stops: { ...extra } });
 
-test('Règle : types informatifs, flux, priorité, plusieurs arrêts le même jour', () => {
-  // Réglage en données : chaque type a un libellé, une priorité et au moins un flux connu.
+test('Règle : types informatifs toujours actifs, priorité, plusieurs arrêts le même jour', () => {
+  // Réglage en données : chaque type a un libellé et une priorité ; plus de niveaux (décision de Léo, 16/11).
   for (const [k, t] of Object.entries(C.ARRETS.types)) {
     assert.ok(t.label && Number.isFinite(t.priorite), k);
-    assert.ok(t.flux.length && t.flux.every(f => Object.hasOwn(C.FLUX, f)), k + ' : flux connus');
+    assert.equal(t.flux, undefined, k + ' : pas de niveau');
   }
   assert.equal(C.STOPS.info.mandatory, false, 'un arrêt informatif est toujours facultatif');
   const base = { today: '2026-10-09', matchReady: false, canAdvance: true, ended: false, live: false, meeting: null, press: false, pressIds: [],
@@ -48,29 +48,31 @@ test('Règle : types informatifs, flux, priorité, plusieurs arrêts le même jo
   assert.deepEqual([r.stop.type, ...r.queue.map(x => x.type)], ['veille', 'medical', 'mercato'], JSON.stringify(r));
   assert.match(r.queue[0].detail, /^Absence longue : Remplaçant \(6 sem\.\)/);
   assert.match(r.queue[1].detail, /marché dans une semaine/);
-  // Flux allégé : seulement la veille ; « info » ignoré : rien.
-  assert.deepEqual(C.informatifs({ ...hier, round: 11 }, jour, opts('allege')).map(x => x.type), ['veille']);
-  assert.deepEqual(C.informatifs({ ...hier, round: 11 }, jour, opts('equilibre', { ignorer: ['info'] })), []);
+  // Ancien réglage de niveau (`flux`) ignoré : mêmes arrêts ; « info » ignoré (outils, essais) : rien.
+  for (const flux of ['allege', 'equilibre', 'complet'])
+    assert.deepEqual(C.informatifs({ ...hier, round: 11 }, jour, opts({ flux })).map(x => x.type), ['veille', 'medical', 'mercato'], flux);
+  assert.deepEqual(C.informatifs({ ...hier, round: 11 }, jour, opts({ ignorer: ['info'] })), []);
   // Arrêt principal (obligatoire ou existant) d'abord, puis les éléments du jour ; plafond par jour, reste regroupé.
   const plafond = C.ARRETS.maxParJour;
   const charge = { ...jour, meeting: { kind: 'board', id: 'b' }, missions: [{ id: 'mission-1', n: 2 }], lendemain: { id: 'x', opponent: 'Autres', home: false, us: 20, them: 13, injured: 1 } };
-  r = C.arrets({ ...hier, round: 11 }, charge, opts('complet'));
+  r = C.arrets({ ...hier, round: 11 }, charge, opts());
   assert.equal(r.stop.kind, 'rendez_vous');
   assert.equal(1 + r.queue.length, plafond, 'au plus ' + plafond + ' arrêts le même jour');
   assert.equal(r.queue.at(-1).type, 'groupe');
   assert.match(r.queue.at(-1).detail, /Rapport de recruteur : 2 profils proposés/);
   // Fin de phase et mi-saison.
   const fin = { ...base, phases: { champ: { phase: 'semi', champion: null } }, standing: { rank: 2, points: 70, played: 26, size: 14 } };
-  r = C.arrets(hier, fin, opts('allege'));
+  r = C.arrets(hier, fin, opts());
   assert.equal(r.stop.type, 'fin_phase');
   assert.equal(r.stop.detail, 'Championnat : fin de phase (phase régulière), nous terminons 2e sur 14 (70 pts, 26 matchs). Suite : demi-finales.');
   r = C.arrets(hier, { ...base, miSaison: { rank: 4, points: 30, played: 13, size: 14, goal: 'Viser les phases finales' } }, opts());
   assert.equal(r.stop.detail, 'Mi-saison : 4e sur 14 (30 pts, 13 matchs). Objectif de la direction : viser les phases finales.');
   // Veille de la 1re journée déjà annoncée par la préparation (« À noter ») : pas en double.
   assert.equal(C.informatifs(hier, { ...base, veille, notes: ['veille:2026-10-09'] }, opts()).length, 0);
-  // Prochain arrêt annoncé : veille et mi-saison, selon le flux.
+  // Prochain arrêt annoncé : mi-saison puis veille ; arrêts informatifs ignorés : le match.
   assert.deepEqual(C.plan({ ...base, today: '2026-10-05', halfDate: '2026-10-06' }), { kind: 'info', date: '2026-10-07', detail: 'mi-saison' });
-  assert.deepEqual(C.plan({ ...base, today: '2026-10-05', halfDate: '2026-10-06' }, null, 'allege'), { kind: 'info', date: '2026-10-09', detail: 'veille du match contre Rivaux' });
+  assert.deepEqual(C.plan({ ...base, today: '2026-10-08' }), { kind: 'info', date: '2026-10-09', detail: 'veille du match contre Rivaux' });
+  assert.deepEqual(C.plan({ ...base, today: '2026-10-05', halfDate: '2026-10-06' }, null, ['info']), { kind: 'match', date: '2026-10-10', opponent: 'Rivaux' });
 });
 
 // ------------------------------------------------------------------ carrière Monde jouée à « Continuer »
@@ -78,7 +80,7 @@ const sha = text => crypto.createHash('sha256').update(text, 'utf8').digest('hex
 const COMPLETE = process.env.ARRETS_SAISON_COMPLETE === '1';
 const jours = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 
-// Joue à « Continuer » (flux donné) depuis le départ `start` ; rend les arrêts [date, kind, type, detail, jours],
+// Joue à « Continuer » depuis la carrière `origine` ; rend les arrêts [date, kind, type, detail, jours],
 // l'empreinte de l'état au jour `repere` (atteint exactement, avance bornée) et la date finale (`fin` : arrêt).
 // Carrière créée une seule fois (étape coûteuse) puis copiée pour chaque parcours.
 const ouvrir = dir => M.ouvrir({ dataDir: dir, deferredCommits: true, testVm: true, mandatoryPress: false });
@@ -88,7 +90,7 @@ function creer(start) {
   try { jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: 102, start })); jeu.call('save'); } finally { jeu.bridge.close(); }
   return dir;
 }
-function parcours(origine, flux, { ignorer = [], repere = null, fin = null } = {}) {
+function parcours(origine, { ignorer = [], repere = null, fin = null } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-arrets-saison-'));
   fs.cpSync(origine, dir, { recursive: true });
   fs.rmSync(path.join(dir, 'PrototypeGodot', 'profil.lock'), { force: true });
@@ -106,7 +108,7 @@ function parcours(origine, flux, { ignorer = [], repere = null, fin = null } = {
       if (m.meta.calendarCadence?.matchReady && m.next) { m = M.jouerLeMatch(jeu, m); continue; }
       if (m.live) { m = jeu.regler(skipMatchTalk(jeu.call('finish_round'), jeu.call)); continue; }
       const borne = repere && !empreinte && m.meta.calendarToday < repere ? { maxDays: Math.min(C.MAX_DAYS, jours(m.meta.calendarToday, repere)) } : {};
-      const r = jeu.brut('advance_until_event', { fromDate: m.meta.calendarToday, ...borne, stops: { messages: 'aucun', flux, ignorer } });
+      const r = jeu.brut('advance_until_event', { fromDate: m.meta.calendarToday, ...borne, stops: { messages: 'aucun', ignorer } });
       if (!r.ok) {
         if (jeu.bridge.vm.run('S.phase') === 'ended') break;
         assert.fail('Continuer refusé le ' + m.meta.calendarToday + ' : ' + r.error);
@@ -148,11 +150,11 @@ const FIN_COURTE = '2026-10-02', REPERE_COURT = '2026-09-21';
 test('Fenêtre de saison : veille, lendemain, plusieurs arrêts le même jour, monde inchangé', { skip: COMPLETE, timeout: 600000 }, () => {
   const t0 = Date.now(), origine = creer('veille');
   try {
-  const avec = parcours(origine, 'complet', { repere: REPERE_COURT, fin: FIN_COURTE });
+  const avec = parcours(origine, { repere: REPERE_COURT, fin: FIN_COURTE });
   console.log('Fenêtre', avec.date, '·', Math.round((Date.now() - t0) / 1000), 's');
   const { types } = bilan(avec.arrets);
   assert.ok(types.veille >= 2 && types.lendemain >= 2, 'veilles et lendemains : ' + JSON.stringify(types));
-  const sans = parcours(origine, 'complet', { ignorer: ['info'], repere: REPERE_COURT, fin: REPERE_COURT });
+  const sans = parcours(origine, { ignorer: ['info'], repere: REPERE_COURT, fin: REPERE_COURT });
   assert.ok(avec.empreinte && sans.empreinte, 'repère atteint dans les deux parcours');
   assert.equal(sans.empreinte.etat, avec.empreinte.etat, 'état de carrière identique avec ou sans arrêts informatifs');
   assert.equal(sans.empreinte.graine, avec.empreinte.graine, 'graine identique');
@@ -165,19 +167,15 @@ test('Fenêtre de saison : veille, lendemain, plusieurs arrêts le même jour, m
 test('Saison complète : arrêts informatifs répartis, monde inchangé au 15/12', { skip: !COMPLETE, timeout: 3600000 }, () => {
   const REPERE = '2026-12-15', origine = creer('premiers-clubs');
   try {
-  const avec = parcours(origine, 'complet', { repere: REPERE });
+  const avec = parcours(origine, { repere: REPERE });
   console.log('Saison jusqu’au', avec.date);
-  const { infos, types, parMois } = bilan(avec.arrets);
-  const equilibre = new Set(C.fluxTypes('equilibre')), parMoisEquilibre = {};
-  for (const x of infos.filter(x => equilibre.has(x[2]))) parMoisEquilibre[x[0].slice(0, 7)] = (parMoisEquilibre[x[0].slice(0, 7)] || 0) + 1;
-  console.log('Par mois (types du flux équilibré) :', JSON.stringify(parMoisEquilibre));
+  const { types, parMois } = bilan(avec.arrets);
   assert.ok(Object.keys(parMois).length >= 6, 'répartis sur la saison : ' + Object.keys(parMois).join(', '));
   assert.equal(types.mi_saison, 1, 'une mi-saison');
   assert.ok(types.fin_phase >= 1, 'au moins une fin de phase');
-  // Parcimonie : jamais un arrêt informatif par jour. Flux complet (le plus bavard) : au plus 14 par mois.
+  // Parcimonie : jamais un arrêt informatif par jour ; au plus 14 par mois (11 mesurés en décembre, le 16/11).
   for (const [k, n] of Object.entries(parMois)) assert.ok(n <= 14, k + ' : ' + n + ' arrêts informatifs');
-  for (const [k, n] of Object.entries(parMoisEquilibre)) assert.ok(n <= 8, k + ' (équilibré) : ' + n);
-  const sans = parcours(origine, 'complet', { ignorer: ['info'], repere: REPERE, fin: REPERE });
+  const sans = parcours(origine, { ignorer: ['info'], repere: REPERE, fin: REPERE });
   assert.ok(avec.empreinte && sans.empreinte, 'repère atteint dans les deux parcours');
   assert.equal(sans.empreinte.etat, avec.empreinte.etat, 'état de carrière identique avec ou sans arrêts informatifs');
   assert.equal(sans.empreinte.graine, avec.empreinte.graine, 'graine identique');

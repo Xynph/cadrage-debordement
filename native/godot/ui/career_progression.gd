@@ -79,5 +79,4 @@ static func next_day(meta: Dictionary, fixture: Variant) -> Dictionary:
 static func continue_stops(preferences: Dictionary) -> Dictionary:
 	var messages := str(preferences.get("continue_messages", "importants"))
 	var blessures := str(preferences.get("continue_injuries", "titulaires"))
-	var flux := str(preferences.get("continue_flow", "equilibre"))
-	return {"messages": messages if messages in ["importants", "tous", "aucun"] else "importants", "blessures": blessures if blessures in ["titulaires", "effectif"] else "titulaires", "flux": flux if flux in ["allege", "equilibre", "complet"] else "equilibre"}
+	return {"messages": messages if messages in ["importants", "tous", "aucun"] else "importants", "blessures": blessures if blessures in ["titulaires", "effectif"] else "titulaires"}

@@ -39,11 +39,11 @@ const STOPS = Object.freeze({
   offre: { mandatory: false, label: 'Offre pour un joueur' },
   fatigue: { mandatory: false, label: 'Gabi : titulaires fatigués' },
   reprise: { mandatory: false, label: 'Reprise de l’entraînement' },
-  // Éléments informatifs de la pré-saison (reprise.cjs, courrier en Réception) : arrêt sans réponse attendue, selon
-  // le flux choisi (FLUX) ; un nouvel appui sur Continuer repart. Tous les éléments du jour sont regroupés.
+  // Éléments informatifs de la pré-saison (reprise.cjs, courrier en Réception) : arrêt sans réponse attendue ; un
+  // nouvel appui sur Continuer repart. Tous les éléments du jour sont regroupés.
   a_noter: { mandatory: false, label: 'À noter' },
   // Moments de la saison sans décision (veille et lendemain de match, rapport médical, mi-saison, fin de phase,
-  // marché, recruteur) : arrêts informatifs réglés par continuer-arrets.json et le flux ; plusieurs le même jour
+  // marché, recruteur) : arrêts informatifs réglés par continuer-arrets.json, toujours actifs ; plusieurs le même jour
   // possibles (file du jour, voir arrets()). Libellé de l'arrêt : celui du type (« Veille de match »…).
   info: { mandatory: false, label: 'À savoir' },
   message: { mandatory: false, label: 'Nouveau message' },
@@ -52,24 +52,19 @@ const STOPS = Object.freeze({
   arret: { mandatory: true, label: 'Avance arrêtée' },
 });
 const MAX_DAYS = 120;
-// Réglage des arrêts informatifs de la saison (types, flux, priorité, seuils) : données, pas code.
+// Réglage des arrêts informatifs de la saison (types, priorité, seuils) : données, pas code.
 const ARRETS = require('./continuer-arrets.json');
 const MESSAGE_MODES = ['importants', 'tous', 'aucun'];
-// Flux de Continuer (façon FM27 : allégé, équilibré, complet) : types d'éléments informatifs qui arrêtent l'avance.
-// « Doit répondre » (match, rendez-vous, décision…) arrête toujours ; les autres éléments restent en Réception.
-const FLUX = Object.freeze({
-  allege: Object.freeze(['veille']),
-  equilibre: Object.freeze(['amical', 'stage', 'recrutement', 'veille']),
-  complet: Object.freeze(['retour', 'amical', 'stage', 'recrutement', 'veille']),
-});
+// Pas de niveaux (décision de Léo, 16/11/2026) : tous les éléments informatifs arrêtent l'avance ; le joueur ne
+// choisit que les messages et les blessures. L'ancien réglage `stops.flux` est encore accepté, et ignoré.
 const NOTE_LABELS = { retour: 'retour des internationaux', amical: 'compte rendu de match amical', stage: 'bilan du stage', recrutement: 'dernier point recrutement', veille: 'veille de la 1re journée' };
 const INJURY_MODES = ['titulaires', 'effectif'];
 // Messages de routine : ils restent dans la Réception mais n'arrêtent pas « Continuer » en mode « importants ».
 const ROUTINE = [/^le point de la semaine/i, /^votre bureau est ouvert/i, /entra[iî]nement.*retenu/i, /^feuille pr[ée]par[ée]e/i,
   /^r[ée]sultats? de la journ[ée]e/i, /^journ[ée]e \d+/i, /^conf[ée]rence tenue par/i,
-  // Éléments de pré-saison : ils ont leur propre arrêt « À noter », réglé par le flux de Continuer.
+  // Éléments de pré-saison : ils ont leur propre arrêt « À noter ».
   /^(match amical|retour de tourn[ée]e|fin du stage|dernier point recrutement|veille de la 1re journ[ée]e)/i,
-  // Rapport d'une mission de recrutement : arrêt informatif « Rapport de recruteur », réglé par le flux.
+  // Rapport d'une mission de recrutement : arrêt informatif « Rapport de recruteur ».
   /^rapport de recrutement disponible/i];
 
 // Lecture des signaux dans la VM : état seul, aucune écriture. Évaluée avant la boucle puis après chaque jour.
@@ -153,12 +148,11 @@ function options(payload = {}) {
   if (typeof stops !== 'object' || stops === null || Array.isArray(stops) || Object.keys(stops).some(k => !['messages', 'blessures', 'ignorer', 'flux'].includes(k)))
     throw Error('Réglages d’arrêt invalides.');
   const messages = stops.messages ?? 'importants', blessures = stops.blessures ?? 'titulaires';
-  const flux = stops.flux ?? 'equilibre';
-  if (!MESSAGE_MODES.includes(messages) || !INJURY_MODES.includes(blessures) || !Object.hasOwn(FLUX, flux)) throw Error('Réglages d’arrêt invalides.');
+  if (!MESSAGE_MODES.includes(messages) || !INJURY_MODES.includes(blessures) || (stops.flux !== undefined && typeof stops.flux !== 'string')) throw Error('Réglages d’arrêt invalides.');
   // Arrêts facultatifs ignorés (outils, essais, réglage avancé) : jamais un arrêt obligatoire.
   const ignorer = stops.ignorer ?? [];
   if (!Array.isArray(ignorer) || ignorer.length > 20 || ignorer.some(k => !STOPS[k] || STOPS[k].mandatory)) throw Error('Arrêt obligatoire ou inconnu : il ne peut pas être ignoré.');
-  return { messages, blessures, flux, ignorer: [...new Set(ignorer)] };
+  return { messages, blessures, ignorer: [...new Set(ignorer)] };
 }
 
 function validate(payload) {
@@ -216,10 +210,9 @@ function detect(before, after, settings, repriseDate = null) {
       return days >= 0 && days <= 7 && (after.names[tired[0]] || 'Un titulaire') + ' est sous 70 % de condition avant le match du ' + shortDate(after.next.date) + '.';
     }],
     ['a_noter', () => {
-      const types = FLUX[settings.flux || 'equilibre'];
       const fresh = added(before.notes || [], after.notes || []).map(id => id.split(':')[0]);
-      if (!fresh.some(k => types.includes(k))) return false;
-      // Tous les éléments arrivés ce jour-là sont cités (ils sont tous en Réception), pas seulement ceux du flux.
+      if (!fresh.length) return false;
+      // Tous les éléments arrivés ce jour-là sont cités (ils sont tous en Réception).
       const what = [...new Set(fresh)].map(k => NOTE_LABELS[k] || 'élément de préparation');
       return (fresh.length > 1 ? fresh.length + ' éléments en Réception : ' : 'En Réception : ') + what.join(', ') + '.';
     }],
@@ -244,18 +237,17 @@ function detect(before, after, settings, repriseDate = null) {
 // si besoin. Tout vient de la lecture des signaux de la veille et du jour (aucune écriture : l'avance reste
 // exactement N « Jour suivant ») ; chaque élément n'apparaît qu'au passage du jour où il se produit.
 const TYPES = ARRETS.types;
-const fluxTypes = flux => Object.keys(TYPES).filter(k => (TYPES[k].flux || []).includes(flux));
 const ordinal = n => n + (n === 1 ? 're' : 'e');
 const phaseLabel = p => ARRETS.phases[p] || p;
 const competitionLabel = (id, after) => ARRETS.competitions[id] || (id === after.leagueId ? 'Championnat' : id);
 const pts = st => st && st.rank ? ordinal(st.rank) + (st.size ? ' sur ' + st.size : '') + ' (' + st.points + ' pts, ' + st.played + ' matchs)' : null;
 
-// Éléments informatifs apparus entre `before` et `after`, filtrés par le flux et triés par priorité :
+// Éléments informatifs apparus entre `before` et `after` (tous les types, toujours actifs), triés par priorité :
 // [{type, key, label, detail}]. Vide si l'arrêt « info » est ignoré.
 function informatifs(before, after, settings = {}) {
   if (!before || !after || !after.today || before.today === after.today) return [];
   if ((settings.ignorer || []).includes('info')) return [];
-  const allowed = new Set(fluxTypes(settings.flux || 'equilibre')), out = [];
+  const allowed = new Set(Object.keys(TYPES)), out = [];
   const push = (type, key, detail) => { if (allowed.has(type) && detail) out.push({ type, key: type + ':' + key, label: TYPES[type].label, detail }); };
   const v = after.veille;
   // Veille de la 1re journée déjà annoncée par la préparation (reprise.cjs, « À noter ») : pas en double.
@@ -323,12 +315,12 @@ function arrets(before, after, settings, repriseDate = null) {
 // club (jour de match), de la reprise de l'entraînement et d'un rendez-vous déjà en file (le jour suivant).
 // Les arrêts imprévisibles (blessure, courrier, message) ne comptent pas : ils interrompent sans prévenir.
 // Rend {kind, date, opponent|detail} ou null.
-function plan(after, repriseDate = null, flux = 'equilibre', ignorer = []) {
+function plan(after, repriseDate = null, ignorer = []) {
   if (!after || !after.today) return null;
-  const candidates = [];
+  const candidates = [], ign = Array.isArray(ignorer) ? ignorer : [];
   // Arrêts informatifs prévisibles de la saison : veille du prochain match, lendemain du match de mi-saison.
-  if (!ignorer.includes('info')) {
-    const types = new Set(fluxTypes(flux)), shift = (iso, n) => new Date(Date.parse(iso) + n * 86400000).toISOString().slice(0, 10);
+  if (!ign.includes('info')) {
+    const types = new Set(Object.keys(TYPES)), shift = (iso, n) => new Date(Date.parse(iso) + n * 86400000).toISOString().slice(0, 10);
     const eve = after.next ? shift(after.next.date, -1) : null;
     const preVeille = (after.notesNext || []).some(n => n.kind === 'veille' && n.date === eve);
     if (types.has('veille') && eve && eve > after.today && !preVeille) candidates.push({ kind: 'info', date: eve, detail: 'veille du match contre ' + after.next.opponent });
@@ -337,7 +329,7 @@ function plan(after, repriseDate = null, flux = 'equilibre', ignorer = []) {
   if (after.next && after.next.date >= after.today) candidates.push({ kind: 'match', date: after.next.date, opponent: after.next.opponent });
   // Une décision due le jour de la reprise passe avant elle (tri stable).
   if (after.decisionNext && after.decisionNext.date > after.today) candidates.push({ kind: 'decision', date: after.decisionNext.date, detail: after.decisionNext.detail });
-  const note = (after.notesNext || []).find(n => n.date > after.today && (FLUX[flux] || FLUX.equilibre).includes(n.kind));
+  const note = ign.includes('a_noter') ? null : (after.notesNext || []).find(n => n.date > after.today);
   if (note) candidates.push({ kind: 'a_noter', date: note.date, detail: NOTE_LABELS[note.kind] || 'élément de préparation' });
   if (repriseDate && repriseDate > after.today) candidates.push({ kind: 'reprise', date: repriseDate });
   if (after.meeting && !after.meeting.completed) {
@@ -348,4 +340,4 @@ function plan(after, repriseDate = null, flux = 'equilibre', ignorer = []) {
   return candidates[0] || null;
 }
 
-module.exports = { plan, STOPS, MAX_DAYS, MESSAGE_MODES, INJURY_MODES, FLUX, ARRETS, SIGNAL_SOURCE, validate, detect, informatifs, arrets, fluxTypes, routine, decisionText };
+module.exports = { plan, STOPS, MAX_DAYS, MESSAGE_MODES, INJURY_MODES, ARRETS, SIGNAL_SOURCE, validate, detect, informatifs, arrets, routine, decisionText };

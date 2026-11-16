@@ -55,8 +55,8 @@ test('Règle d’arrêt : obligatoires jamais ignorés, réglages des messages e
   assert.equal(C.detect(offres, offres, o), null, 'une offre déjà vue n’arrête plus');
   assert.equal(C.detect({ ...base, offers: [] }, offres, C.validate({ fromDate: '2026-09-01', stops: { ignorer: ['offre'] } })), null);
   // Prochain arrêt prévisible (info-bulle) : le plus proche de la rencontre, de la reprise et d'un rendez-vous en file.
-  assert.deepEqual(C.plan(base, null, 'equilibre', ['info']), { kind: 'match', date: '2026-09-05', opponent: 'Rivaux' });
-  // Veille du match : arrêt informatif annoncé (flux équilibré par défaut), avant le match lui-même.
+  assert.deepEqual(C.plan(base, null, ['info']), { kind: 'match', date: '2026-09-05', opponent: 'Rivaux' });
+  // Veille du match : arrêt informatif annoncé (toujours actif), avant le match lui-même.
   assert.deepEqual(C.plan(base), { kind: 'info', date: '2026-09-04', detail: 'veille du match contre Rivaux' });
   assert.deepEqual(C.plan(base, '2026-09-03'), { kind: 'reprise', date: '2026-09-03' });
   // Décision de la préparation : arrêt obligatoire le jour dû, annoncée avant la reprise du même jour.
@@ -66,27 +66,26 @@ test('Règle d’arrêt : obligatoires jamais ignorés, réglages des messages e
   assert.equal(C.detect({ ...base, decisions: ['amicaux'] }, { ...base, decisions: ['amicaux'] }, o), null, 'déjà signalée');
   assert.deepEqual(C.plan({ ...base, decisionNext: { date: '2026-09-03', detail: 'Programme des matchs amicaux' } }, '2026-09-03'),
     { kind: 'decision', date: '2026-09-03', detail: 'Programme des matchs amicaux' });
-  // Éléments « À noter » : arrêt informatif selon le flux (allégé, équilibré, complet), éléments du jour regroupés.
+  // Éléments « À noter » : arrêt informatif toujours actif (pas de niveaux), éléments du jour regroupés. L'ancien
+  // réglage `flux` est encore accepté et ignoré.
   const vus = { ...base, notes: ['retour:2026-09-02', 'amical:2026-09-02'] };
-  const flux = f => C.detect({ ...base, notes: [] }, vus, C.validate({ fromDate: '2026-09-01', stops: { flux: f } }));
-  assert.equal(flux('allege'), null, 'allégé : ni amical ni retour');
-  assert.equal(flux('equilibre').kind, 'a_noter');
-  assert.equal(flux('equilibre').detail, '2 éléments en Réception : retour des internationaux, compte rendu de match amical.');
-  assert.equal(flux('complet').kind, 'a_noter');
-  assert.equal(C.detect({ ...base, notes: ['retour:2026-09-02'] }, { ...base, notes: ['retour:2026-09-02', 'retour:2026-09-03'] }, C.validate({ fromDate: '2026-09-01' })), null, 'équilibré : le retour seul n’arrête pas');
-  assert.equal(C.detect(vus, vus, o), null, 'déjà vus');
-  assert.throws(() => C.validate({ fromDate: '2026-09-01', stops: { flux: 'tout' } }), /invalides/);
-  const prevus = { ...base, notesNext: [{ date: '2026-09-02', kind: 'retour' }, { date: '2026-09-04', kind: 'veille' }] };
-  assert.deepEqual(C.plan(prevus, null, 'complet'), { kind: 'a_noter', date: '2026-09-02', detail: 'retour des internationaux' });
-  assert.deepEqual(C.plan(prevus, null, 'equilibre'), { kind: 'a_noter', date: '2026-09-04', detail: 'veille de la 1re journée' });
-  // « Doit répondre » arrête toujours, quel que soit le flux, et passe avant un élément à noter du même jour.
-  for (const f of ['allege', 'equilibre', 'complet']) {
-    const stop = C.detect({ ...base, notes: [] }, { ...vus, decisions: ['stage'] }, C.validate({ fromDate: '2026-09-01', stops: { flux: f, ignorer: FACULTATIFS } }));
-    assert.equal(stop.kind, 'decision', 'flux ' + f);
-    assert.equal(C.STOPS[stop.kind].mandatory, true);
+  for (const f of [undefined, 'allege', 'equilibre', 'complet']) {
+    const stop = C.detect({ ...base, notes: [] }, vus, C.validate({ fromDate: '2026-09-01', stops: f ? { flux: f } : {} }));
+    assert.equal(stop.kind, 'a_noter', 'flux ' + f);
+    assert.equal(stop.detail, '2 éléments en Réception : retour des internationaux, compte rendu de match amical.');
   }
+  assert.equal(C.detect({ ...base, notes: ['retour:2026-09-02'] }, { ...base, notes: ['retour:2026-09-02', 'retour:2026-09-03'] }, C.validate({ fromDate: '2026-09-01' })).kind, 'a_noter', 'le retour des internationaux arrête aussi');
+  assert.equal(C.detect(vus, vus, o), null, 'déjà vus');
+  assert.equal(C.validate({ fromDate: '2026-09-01', stops: { flux: 'tout' } }).flux, undefined, 'ancien flux ignoré');
+  assert.throws(() => C.validate({ fromDate: '2026-09-01', stops: { flux: 3 } }), /invalides/);
+  const prevus = { ...base, notesNext: [{ date: '2026-09-02', kind: 'retour' }, { date: '2026-09-04', kind: 'veille' }] };
+  assert.deepEqual(C.plan(prevus), { kind: 'a_noter', date: '2026-09-02', detail: 'retour des internationaux' });
+  // « Doit répondre » arrête toujours et passe avant un élément à noter du même jour.
+  const stop = C.detect({ ...base, notes: [] }, { ...vus, decisions: ['stage'] }, C.validate({ fromDate: '2026-09-01', stops: { ignorer: FACULTATIFS } }));
+  assert.equal(stop.kind, 'decision');
+  assert.equal(C.STOPS[stop.kind].mandatory, true);
   assert.throws(() => C.validate({ fromDate: '2026-09-01', stops: { ignorer: ['decision'] } }), /obligatoire/);
-  assert.equal(C.plan({ ...prevus, decisionNext: { date: '2026-09-02', detail: 'Orientation du stage' } }, null, 'complet').kind, 'decision');
+  assert.equal(C.plan({ ...prevus, decisionNext: { date: '2026-09-02', detail: 'Orientation du stage' } }).kind, 'decision');
   assert.equal(C.plan({ ...base, meeting: { kind: 'board', id: 'b' } }).kind, 'rendez_vous');
   assert.equal(C.plan({ ...base, next: null }), null);
   assert.throws(() => C.validate({ fromDate: '2026-09-01', maxDays: 0 }), /jours/);
