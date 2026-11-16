@@ -60,7 +60,7 @@ module.exports = function champMatchFactory(rules, editionId = 'rugby-world-2026
       const {position, kicker, distance, angle} = rules.kickAt(round);
       for (const side of [q.first, 1 - q.first]) {
         const player = players[side][kicker];
-        const chance = clamp(.23 + skill(player, 'goal', true) * .006 -
+        const chance = clamp(.23 + skill(player, 'goal', fitArrete(l)) * .006 -
           Math.max(0, distance - 25) * .005 - angle * .13 + (unit(l, side, 'mental') - 70) * .001 -
           (l.weather === 'Vent' ? .16 : l.weather === 'Pluie' ? .06 : 0), .22, .93);
         const made = Math.random() < chance;

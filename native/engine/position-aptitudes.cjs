@@ -75,7 +75,7 @@ module.exports=function positionAptitudes(){
 
  function rating(p,slot){return derive(p).positionRatings[positionNumber(slot)]??0;}
  function efficiency(p,slot){const f=FAMILIES[positionNumber(slot)-1],data=derive(p);return Math.min(1,data.positionRatings[positionNumber(slot)]/Math.max(1,data._familyNotes[f]));}
- function contextualSkill(p,key,slot){return skill(p,key,true)*efficiency(p,slot);}
+ function contextualSkill(p,key,slot,fit=true){return skill(p,key,fit)*efficiency(p,slot);}
  let reservations=null,installed=false;
  function eligible(p,slot){
   if(!p)return false;
@@ -249,8 +249,8 @@ module.exports=function positionAptitudes(){
   unit=(live,side,key,filter)=>{
    // Une seule passe sans objets intermédiaires (appelée des dizaines de fois par action) : mêmes joueurs retenus,
    // mêmes valeurs dans le même ordre, donc la même moyenne. Filtre et note ne modifient pas les joueurs.
-   const on=live.sheets[side].on,players=activePlayers(live,side),values=[];
-   for(const p of players){const slot=on.indexOf(p.id);if(filter&&!filter(Object.assign(Object.create(p),{fam:FAMILIES[slot]})))continue;values.push(contextualSkill(p,key,slot));}
+   const on=live.sheets[side].on,players=activePlayers(live,side),values=[],fit=fitArrete(live); // fatigue des phases arrêtées (dist/matchflow.js)
+   for(const p of players){const slot=on.indexOf(p.id);if(filter&&!filter(Object.assign(Object.create(p),{fam:FAMILIES[slot]})))continue;values.push(contextualSkill(p,key,slot,fit));}
    return values.length?mean(values):25;
   };
   sheetAverage=(team,ids,key,filter=()=>true)=>{

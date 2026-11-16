@@ -23,7 +23,7 @@ module.exports=function worldKnockout(){
     if(round>=1000)throw Error('Épreuve de tirs au but sans décision après 1000 tours.');
     const location=round<6?round+1:4,depth=location<=3?22:40,offset=[2,3,5,6].includes(location)?20:0,distance=Math.hypot(depth,offset),angle=Math.atan2(offset,depth);
     for(const i of [shootout.first,1-shootout.first]){
-     const p=kickers[i][round%3],chance=clamp(.23+skill(p,'goal',true)*.006-Math.max(0,distance-25)*.005-angle*.13+(unit(l,i,'mental')-70)*.001-(l.weather==='Vent'?.16:l.weather==='Pluie'?.06:0),.22,.93),made=Math.random()<chance;
+     const p=kickers[i][round%3],chance=clamp(.23+skill(p,'goal',fitArrete(l))*.006-Math.max(0,distance-25)*.005-angle*.13+(unit(l,i,'mental')-70)*.001-(l.weather==='Vent'?.16:l.weather==='Pluie'?.06:0),.22,.93),made=Math.random()<chance;
      shootout.attempts.push({side:i,playerId:p.id,location,made});
      if(made)shootout.score[i]++;
      if(!fullSeries&&round<6){
