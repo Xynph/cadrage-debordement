@@ -14,15 +14,15 @@ const CARTES := {
 	"titre": preload("res://intro/carte_titre.gd"),
 }
 const MEMO_FILE := "intro-memo.json"
-const MODES := ["complete", "short"]
 
 var app: Control
 var data: Dictionary = {}
-## « complete » ou « short » (réglage Introduction, ou premier lancement).
-var mode := "complete"
-## Premier lancement : aucun réglage Introduction n'est encore enregistré.
-var first_run := false
 var reduced_motion := false
+## Tout premier lancement : aucun mémo de phrase dans le profil. Les cartes automatiques ne se passent pas ;
+## dès le 2e lancement, une touche ou un clic passe la carte en cours.
+var first_run := false
+## Raccourci réservé au développement et aux tests (jamais proposé au joueur) : titre seul.
+var title_only := false
 ## Index de la dernière phrase du stade montrée (mémo du dossier de profil, -1 : aucune).
 var last_phrase := -1
 var _memo_path := ""
@@ -53,20 +53,14 @@ static func enabled() -> bool:
 		if not OS.get_environment(variable).is_empty(): return false
 	return true
 
-## Lit le profil sans attendre le moteur : réglage Introduction, mode calme et volumes.
-## Fichier absent ou sans réglage Introduction : premier lancement, séquence complète.
+## Lit le profil sans attendre le moteur : mode calme et volumes. La séquence complète se joue à chaque lancement, sans réglage joueur.
 static func read_profile(root: String) -> Dictionary:
 	# Même dossier que le moteur (native/engine/worker.cjs) : <dossier>/PrototypeGodot, sauf s'il y est déjà.
 	var directory := root if root.get_file() == "PrototypeGodot" else root.path_join("PrototypeGodot")
-	var result := {"mode": "complete", "first": true, "reduced_motion": false, "gain": 0.75 * 0.25, "memo": directory.path_join(MEMO_FILE), "last_phrase": -1}
+	var result := {"reduced_motion": false, "gain": 0.75 * 0.25, "memo": directory.path_join(MEMO_FILE), "last_phrase": -1, "first": true}
 	var memo := _json(result.memo)
-	if memo.has("derniere_phrase") and typeof(memo.derniere_phrase) in [TYPE_INT, TYPE_FLOAT]: result.last_phrase = int(memo.derniere_phrase)
+	if memo.has("derniere_phrase") and typeof(memo.derniere_phrase) in [TYPE_INT, TYPE_FLOAT]: result.last_phrase = int(memo.derniere_phrase); result.first = false
 	var interface := _json(directory.path_join("interface.json"))
-	if FileAccess.file_exists(directory.path_join("interface.json")) and interface.is_empty():
-		result.mode = "short"; result.first = false # Fichier illisible : rien d'imposé au joueur.
-	if interface.has("intro"):
-		result.first = false
-		result.mode = "complete" if interface.intro == "complete" else "short"
 	result.reduced_motion = interface.get("reduced_motion", false) == true
 	var volume := float(interface.get("volume", 75)) if typeof(interface.get("volume", 75)) in [TYPE_INT, TYPE_FLOAT] else 75.0
 	var sound := _json(directory.path_join("sound.json"))
@@ -90,14 +84,14 @@ func setup(host: Control, profile_directory: String) -> void:
 	layer = 90
 	data = load_data()
 	var profile := read_profile(profile_directory)
-	var forced_mode := OS.get_environment("CD_GODOT_INTRO_MODE")
-	mode = forced_mode if forced_mode in MODES else str(profile.mode)
-	first_run = bool(profile.first) and forced_mode.is_empty()
 	reduced_motion = bool(profile.reduced_motion)
 	stadium_gain = float(profile.gain)
 	last_phrase = int(profile.last_phrase)
 	_memo_path = str(profile.memo)
-	order = (data.get("sequence_complete" if mode == "complete" else "sequence_courte", ["titre"]) as Array).filter(func(id): return CARTES.has(str(id)))
+	first_run = bool(profile.first)
+	# CD_GODOT_INTRO_MODE=courte (ou short) : titre seul, pour les tests automatisés et le développement.
+	title_only = OS.get_environment("CD_GODOT_INTRO_MODE") in ["courte", "short"]
+	order = (data.get("sequence_courte" if title_only else "sequence_complete", ["titre"] if title_only else ["prologue", "stade", "titre"]) as Array).filter(func(id): return CARTES.has(str(id)))
 	if order.is_empty(): order = ["titre"]
 	_root = Control.new()
 	_root.name = "IntroRoot"
@@ -202,11 +196,12 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 	skip()
 
-## Passer la carte en cours (touche, clic ou manette). L'écran titre ne se quitte qu'avec un moteur prêt.
+## Touche, clic ou manette. Au tout premier lancement, les cartes automatiques (prologue, stade) ne se passent pas ;
+## ensuite oui. L'écran titre ne se quitte qu'avec un moteur prêt.
 func skip() -> void:
 	if _closing or current == null or _since_change < float(data.get("garde_touche", 0.15)): return
 	if current.get("automatic") == true:
-		_goto(index + 1)
+		if not first_run: _goto(index + 1)
 	elif engine_ready:
 		_goto(index + 1)
 
@@ -232,9 +227,6 @@ func finish(duration: float = -1.0) -> void:
 	if is_instance_valid(app) and app.get("bridge") != null:
 		if app.bridge.model_changed.is_connected(_on_model): app.bridge.model_changed.disconnect(_on_model)
 		if app.bridge.command_failed.is_connected(_on_failed): app.bridge.command_failed.disconnect(_on_failed)
-	if first_run and is_instance_valid(app) and app.get("user_preferences") != null:
-		# Premier lancement vu : les suivants passent directement au titre (modifiable dans Paramètres).
-		app.user_preferences.set_value("intro", "short")
 	if current != null and current.has_method("leave"): current.leave()
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var fade := create_tween()

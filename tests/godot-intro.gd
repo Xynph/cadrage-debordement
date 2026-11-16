@@ -1,7 +1,8 @@
 extends SceneTree
 ## Ouverture du jeu (native/godot/intro/) sur le vrai jeu et le vrai moteur.
-## CD_INTRO_PHASE = premier (séquence complète, passage par touche, réglage écrit),
-## second (même profil : écran titre seul), qa (profil de test sans CD_GODOT_INTRO : aucune introduction)
+## CD_INTRO_PHASE = premier (1er lancement : séquence complète, touche sans effet sur les cartes, phrase mémorisée),
+## second (même profil : séquence complète, une touche passe chaque carte, autre phrase),
+## ancien (profil portant encore intro=short : séquence complète quand même, clé ignorée), court (raccourci de test : titre seul), qa (profil de test sans CD_GODOT_INTRO : aucune introduction)
 ## ou film (séquence complète sans toucher au clavier, captures à plusieurs instants de chaque carte).
 ## CD_INTRO_CAPTURES : dossier des captures de chaque carte (facultatif).
 ## Dans toutes les phases avec introduction, chaque image est contrôlée : jamais les textes de deux cartes à la fois.
@@ -75,6 +76,9 @@ func run() -> void:
 	var phase := OS.get_environment("CD_INTRO_PHASE")
 	var profile := OS.get_environment("CD_GODOT_DATA_DIR")
 	var started := Time.get_ticks_msec()
+	var memo_path := profile.path_join("PrototypeGodot").path_join("intro-memo.json")
+	var earlier: Variant = JSON.parse_string(FileAccess.get_file_as_string(memo_path)) if FileAccess.file_exists(memo_path) else null
+	var earlier_phrase := int(earlier.get("derniere_phrase", -1)) if earlier is Dictionary else -1
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
 	await process_frame
@@ -96,20 +100,28 @@ func run() -> void:
 			check(sequence.shown == ["prologue", "stade", "titre"], "Film : prologue, stade, titre sans toucher au clavier (%s)" % [sequence.shown])
 			check(watched_frames > 0 and overlaps == 0, "Fondus : aucun texte de deux cartes visible à la fois (%d images en fondu, %d chevauchements)" % [watched_frames, overlaps])
 			await finish(); return
-		if phase == "premier":
-			check(sequence.mode == "complete" and sequence.first_run, "Premier lancement : séquence complète")
+		if phase != "court":
+			check(phase == "premier" or earlier_phrase >= 0, "Deuxième lancement : phrase du premier retrouvée dans le mémo (%d)" % earlier_phrase)
 			check(sequence.current_id() == "prologue", "Carte 1 : prologue")
 			await wait(1.2)
 			await capture("intro-1-prologue")
 			check(sequence.current_id() == "prologue", "Carte 1 tenue tant qu'on ne la passe pas")
 			await wait(0.3)
 			await press()
-			check(sequence.current_id() == "stade", "Une touche passe à la carte 2 (stade)")
+			check(sequence.first_run == (phase == "premier"), "Premier lancement détecté par l'absence de mémo (%s)" % phase)
+			if phase == "premier":
+				check(sequence.current_id() == "prologue", "1er lancement : une touche ne passe pas la carte 1 (prologue)")
+				await until(func(): return sequence.current_id() == "stade", 15.0)
+				check(sequence.current_id() == "stade", "1er lancement : le prologue se termine seul, carte 2 (stade)")
+			else:
+				await until(func(): return sequence.current_id() == "stade", 2.0)
+				check(sequence.current_id() == "stade", "Lancements suivants : une touche passe la carte 1 (prologue)")
 			var stade: Control = sequence.current
 			var look: ShaderMaterial = stade.picture.material
 			check(look.shader.resource_path.ends_with("canvas_intro_stade.gdshader") and look.get_shader_parameter("image") != null and look.get_shader_parameter("depth_map") != null, "Stade : illustration animée par le shader (image + profondeur), pas la vue 3D du match")
 			check(not str(stade.phrase.get("texte", "")).is_empty(), "Phrase d'ambiance tirée de intro.json")
-			var memo: Variant = JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("PrototypeGodot").path_join("intro-memo.json")))
+			var memo: Variant = JSON.parse_string(FileAccess.get_file_as_string(memo_path))
+			if phase == "second": check(stade.phrase_index != earlier_phrase, "Deuxième lancement : phrase du stade différente de la première (%d puis %d)" % [earlier_phrase, stade.phrase_index])
 			check(memo is Dictionary and int(memo.get("derniere_phrase", -2)) == stade.phrase_index, "Index de la phrase mémorisé dans le profil (%s)" % [memo])
 			var raw := FileAccess.get_file_as_string("res://intro/intro.json").to_lower()
 			check(not raw.contains("cadrage") and not raw.contains("débordement") and not raw.contains("presente"), "Ouverture : aucun nom d'éditeur abandonné dans intro.json")
@@ -134,8 +146,13 @@ func run() -> void:
 			await capture("intro-2-stade")
 			check(sequence.current_id() == "stade" or sequence.engine_ready, "Carte 2 tenue tant que le moteur démarre")
 			await press()
-			await until(func(): return sequence.current_id() == "titre", 2.0)
-			check(sequence.current_id() == "titre", "Une touche passe à l'écran titre")
+			if phase == "premier":
+				check(sequence.current_id() == "stade", "1er lancement : une touche ne passe pas la carte 2 (stade)")
+				await until(func(): return sequence.current_id() == "titre", 30.0)
+				check(sequence.current_id() == "titre", "1er lancement : le stade se termine seul, écran titre")
+			else:
+				await until(func(): return sequence.current_id() == "titre", 2.0)
+				check(sequence.current_id() == "titre", "Lancements suivants : une touche passe la carte 2 (stade)")
 			check(sequence.shown == ["prologue", "stade", "titre"], "Ordre des cartes : prologue, stade, titre (%s)" % [sequence.shown])
 			var titre: Control = sequence.current
 			check(titre._prompt.text.begins_with("APPUIE"), "Invitation au tutoiement (« Appuie »)")
@@ -145,15 +162,14 @@ func run() -> void:
 				await capture("intro-3-titre-chargement")
 				await press()
 				check(is_instance_valid(sequence) and sequence.current_id() == "titre", "Moteur pas prêt : une touche ne quitte pas l'écran titre")
-		else:
-			check(sequence.mode == "short" and not sequence.first_run, "Deuxième lancement : version courte")
-			check(sequence.shown == ["titre"], "Version courte : écran titre seul (%s)" % [sequence.shown])
+		if phase == "court":
+			check(sequence.title_only and sequence.shown == ["titre"], "Raccourci de test CD_GODOT_INTRO_MODE=courte : titre seul (%s)" % [sequence.shown])
 		await until(func(): return sequence.engine_ready, 60.0)
 		check(sequence.engine_ready and not app.waiting, "Moteur prêt pendant l'écran titre")
 		await wait(0.9)
 		await wait(2.0)
 		check(sequence.current.ready_shown and sequence.current._prompt.visible and sequence.current._prompt.modulate.a > 0.3, "Invitation à continuer une fois le moteur prêt et le logo révélé")
-		await capture("intro-3-titre-pret" if phase == "premier" else "intro-court-titre")
+		await capture("intro-3-titre-pret" if phase != "ancien" else "intro-court-titre")
 		var ready_ms := Time.get_ticks_msec() - started
 		print("INTRO moteur prêt + titre : %d ms" % ready_ms)
 		await wait(0.3)
@@ -162,10 +178,10 @@ func run() -> void:
 		check(intro() == null, "Une touche ouvre le menu principal")
 		check(overlaps == 0, "Fondus : aucun texte de deux cartes visible à la fois (%d images en fondu, %d chevauchements)" % [watched_frames, overlaps])
 		check(app.route == "Accueil" and app.get_node_or_null("IntroSequence") == null, "Menu principal existant affiché")
-		await capture("intro-4-menu" if phase == "premier" else "intro-court-menu")
-		if phase == "premier":
-			var saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("PrototypeGodot").path_join("interface.json")))
-			check(saved is Dictionary and saved.get("intro") == "short", "Après le premier lancement, le réglage passe à « Courte »")
+		await capture("intro-4-menu" if phase != "ancien" else "intro-court-menu")
+		if true:
+			var saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("PrototypeGodot").path_join("interface.json"))) if FileAccess.file_exists(profile.path_join("PrototypeGodot").path_join("interface.json")) else {}
+			check(not (saved is Dictionary and saved.get("intro") == "short" and phase not in ["ancien", "court"]), "Le profil n'est jamais modifié par l'introduction (aucune clé « intro » écrite)")
 	finish()
 
 func finish() -> void:

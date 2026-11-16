@@ -108,7 +108,7 @@ func profile_cases() -> void:
 	check(not p.set_value("volume",10) and not p.last_error.is_empty(),"Écriture sans chargement refusée visiblement")
 	var folder := directory.path_join("valid")
 	check(p.load_profile(folder),"Dossier absolu neuf accepté")
-	check(p.data == {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":-1,"stadium":"day","salary_period":"weekly","match_highlights":"dynamique","continue_messages":"importants","continue_injuries":"titulaires","intro":"short"},"Valeurs par défaut sans carrière")
+	check(p.data == {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":-1,"stadium":"day","salary_period":"weekly","match_highlights":"dynamique","continue_messages":"importants","continue_injuries":"titulaires"},"Valeurs par défaut sans carrière")
 	check(not FileAccess.file_exists(folder.path_join("interface.json")),"Lire un profil absent ne crée pas de fichier")
 	check(not p.load_profile("relative-folder") and not p.last_error.is_empty(),"Chemin relatif refusé visiblement")
 	check(p.load_profile(folder),"Retour au dossier absolu")
@@ -138,6 +138,13 @@ func profile_cases() -> void:
 	legacy_bytes = FileAccess.get_file_as_bytes(legacy_path)
 	check(q.load_profile(legacy_folder) and q.data.display_screen == 1 and q.data.get("stadium") == "day","Profil avec écran seul relu en mode jour")
 	check(FileAccess.get_file_as_bytes(legacy_path) == legacy_bytes,"La reprise du profil avec écran seul conserve ses octets")
+	for old_intro in ["short","complete","autre"]:
+		write(legacy_path,JSON.stringify({"version":1,"volume":40,"reduced_motion":false,"quality":"balanced","camera":"tv","intro":old_intro}))
+		legacy_bytes = FileAccess.get_file_as_bytes(legacy_path)
+		check(q.load_profile(legacy_folder) and q.data.volume == 40 and not q.data.has("intro"),"Ancienne clé « intro » (%s) ignorée sans refuser le fichier" % old_intro)
+		check(FileAccess.get_file_as_bytes(legacy_path) == legacy_bytes,"La lecture avec l'ancienne clé « intro » conserve ses octets")
+	check(q.set_value("volume",41) and not FileAccess.get_file_as_string(legacy_path).contains("intro") and q.data.volume == 41,"Réécriture du profil : l'ancienne clé « intro » disparaît")
+	check(not q.set_value("intro","short") and not q.last_error.is_empty(),"Le réglage « intro » n'existe plus")
 	screen_only["stadium"] = "night"
 	write(legacy_path,JSON.stringify(screen_only))
 	legacy_bytes = FileAccess.get_file_as_bytes(legacy_path)

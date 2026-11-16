@@ -4,14 +4,15 @@ signal changed
 const Atomic = preload("res://atomic_file.gd")
 const AUTOMATIC_SCREEN := -1
 const MAX_SCREEN_INDEX := 2147483647
-const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN,"stadium":"day","salary_period":"weekly","match_highlights":"dynamique","continue_messages":"importants","continue_injuries":"titulaires","intro":"short"}
-const OPTIONAL_KEYS := ["display_screen","stadium","salary_period","match_highlights","continue_messages","continue_injuries","intro"]
+const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN,"stadium":"day","salary_period":"weekly","match_highlights":"dynamique","continue_messages":"importants","continue_injuries":"titulaires"}
+const OPTIONAL_KEYS := ["display_screen","stadium","salary_period","match_highlights","continue_messages","continue_injuries"]
 ## « Continuer » s'arrête aussi sur : nouveaux messages (importants, tous, aucun) et blessures (titulaires ou tout l'effectif).
 const CONTINUE_MESSAGES := ["importants","tous","aucun"]
 const CONTINUE_INJURIES := ["titulaires","effectif"]
 ## Ce que le match montre : des temps forts choisis (« dynamique » par défaut) au match complet.
 const MATCH_HIGHLIGHTS := ["aucun","resume","cles","etendus","dynamique","integral"]
-const INTRO_MODES := ["complete","short"]
+## Anciennes clés ignorées à la lecture (jamais refusées, jamais réécrites) : l'introduction se joue toujours en entier.
+const LEGACY_KEYS := ["intro"]
 const MAX_BYTES := 16 * 1024
 var data: Dictionary = DEFAULTS.duplicate(true)
 var last_error := ""
@@ -27,7 +28,7 @@ func _validated(candidate: Variant) -> Dictionary:
 		_fail("Préférences refusées : champs absents ou inconnus. Le fichier original est conservé.")
 		return {}
 	for key in candidate:
-		if not DEFAULTS.has(key):
+		if not DEFAULTS.has(key) and key not in LEGACY_KEYS:
 			_fail("Préférences refusées : champ inconnu « %s ». Le fichier original est conservé." % key)
 			return {}
 	for key in DEFAULTS:
@@ -66,12 +67,7 @@ func _validated(candidate: Variant) -> Dictionary:
 	if not continue_messages is String or continue_messages not in CONTINUE_MESSAGES or not continue_injuries is String or continue_injuries not in CONTINUE_INJURIES:
 		_fail("Arrêts de « Continuer » refusés : choisissez un réglage proposé.")
 		return {}
-	## Introduction au lancement : complète (premier lancement) ou courte (écran titre seul), voir intro/.
-	var intro: Variant = candidate.get("intro",DEFAULTS.intro)
-	if not intro is String or intro not in INTRO_MODES:
-		_fail("Introduction refusée : choisissez Complète ou Courte.")
-		return {}
-	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium,"salary_period":salary_period,"match_highlights":match_highlights,"continue_messages":continue_messages,"continue_injuries":continue_injuries,"intro":intro}
+	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium,"salary_period":salary_period,"match_highlights":match_highlights,"continue_messages":continue_messages,"continue_injuries":continue_injuries}
 
 func load_profile(directory: String) -> bool:
 	_available = false
