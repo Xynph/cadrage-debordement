@@ -261,10 +261,18 @@ function createBridge(options={}){
    }
    function nativeSaveText(state){
     const texts=new Map(),parts=[];
-    for(const key of Object.keys(state)){const text=JSON.stringify(state[key]);if(text===undefined)continue;texts.set(key,text);parts.push(JSON.stringify(key)+':'+text);}
+    let clubs=null;
+    for(const key of Object.keys(state)){
+     let text;
+     /* Clubs : texte assemblé club par club (identique à JSON.stringify d'un tableau sans toJSON), gardé pour la
+        projection (state-versions.cjs, clubs~others) qui n'a alors plus à resérialiser les autres clubs. */
+     const v=state[key];
+     if(key==='clubs'&&Array.isArray(v)&&Object.getPrototypeOf(v)===Array.prototype&&typeof v.toJSON!=='function'){clubs=new Array(v.length);for(let i=0;i<v.length;i++)clubs[i]=JSON.stringify(v[i])??'null';text='['+clubs.join(',')+']';}
+     else text=JSON.stringify(v);
+     if(text===undefined)continue;texts.set(key,text);parts.push(JSON.stringify(key)+':'+text);}
     const whole='{'+parts.join(',')+'}';
     if(nativeVerifySections&&whole!==JSON.stringify(state))throw Error('Sauvegarde par sections différente du texte complet.');
-    nativeSaveSections={state,texts,keys:[...texts.keys()],whole};return whole;
+    nativeSaveSections={state,texts,keys:[...texts.keys()],whole,clubs};return whole;
    }
    function nativeSafeTreeSections(root){
     if(!root||root!==nativeSafeTreeArmed||nativeSaveSections?.state!==root)return null;
