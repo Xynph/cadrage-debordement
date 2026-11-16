@@ -218,18 +218,19 @@ function factory(){
 }
 
 // --- Côté Node (hors VM) : banc d'essai et estimation de fluidité --------------------
-// Coûts remesurés le 16/11/2026 après #753, sur la machine de mesure (2 cœurs partagés,
-// 7,8 Go, banc d'essai ≈ 25 ms + 53 ms), carrière Monde de 116 clubs, club de l'Élite :
-// semaine réelle par le worker (match délégué, réunions, finish_round, projection,
-// sauvegarde) et saisons complètes du harnais (voir la PR « championnats suivis »).
-// - semaine avec le seul championnat du club suivi en détail : médiane 9,2 s ;
-// - tout suivi en détail : médiane 10,7 s ;
-// - rencontre de l'IA suivie en détail : ≈ 65 ms ; suivie de loin : moins de 1 ms, compté 1 ms.
-// Les valeurs ci-dessous sont ramenées hors contention (÷ 1,12 pour 2 cœurs, ÷ 1,15 pour
-// moins de 8 Go) : estimate() retrouve les mesures sur la machine de mesure.
+// Coûts remesurés le 17/11/2026 après #805, #806 et #815 (outil : tools/vitesse-jeu-recalage.cjs, suite
+// tests/mesure-vitesse-jeu.cjs, run en ligne 43974906654), runner GitHub (4 cœurs, 15 Go, banc d'essai ≈ 13,3 ms + 47 ms,
+// soit facteurs 0,55 série et 0,89 calcul), carrière Monde de 116 clubs, club de l'Élite, options du jeu : semaine
+// réelle (7 jours un par un, clôture, rendez-vous, match délégué, travail après réponse), médiane de 3 semaines
+// avec match après 2 d'échauffement :
+// - seul le championnat du club suivi en détail : 11,7 s (dont 9,9 s de réponses) ;
+// - tous suivis en détail : 14,2 s (dont 12,2 s de réponses) ; semaine sans match du club : 6 à 7,8 s ;
+// - rencontre de l'IA suivie en détail : ≈ 110 ms ramenés à la référence (de loin : moins de 1 ms, compté 1 ms).
+// Avant (16/11, après #753, 2 cœurs partagés) : base 6900 ms, 50 ms par rencontre suivie, semaines de 9,2 s et 10,7 s.
+// Les valeurs sont ramenées à la référence comme estimate() (÷ facteur du banc d'essai, hors contention).
 const REFERENCE=Object.freeze({
  benchmarkMs:Object.freeze({serial:25,compute:53}),
- baseWeekMs:6900,detailedMatchMs:50,quickMatchMs:1,seasonExtraMs:0,
+ baseWeekMs:20600,detailedMatchMs:110,quickMatchMs:1,seasonExtraMs:0,
 });
 // Matchs de saison régulière et de poules européennes par saison et par championnat
 // (formats de la saison 2026-27 ; poules européennes réparties entre Top 14, Premiership et URC).
