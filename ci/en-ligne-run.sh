@@ -95,6 +95,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     phase "captures paramètres audio (onglet Son)" captures-audio.log \
       env CD_AMBIANCE_CAPTURE="$cap/audio" node --test tests/godot-ambiance.cjs
   fi
+  while IFS= read -r -d '' f; do python3 -c 'import sys;from PIL import Image;im=Image.open(sys.argv[1]).convert("RGB");im.thumbnail((1920,1920));im.save(sys.argv[1][:-4]+".jpg","JPEG",quality=85)' "$f" && rm -f "$f"; done < <(find "$cap" -name '*.png' -print0)
   echo "- Captures PNG :$(echo "$quoi" | tr -s ' ') $(find "$cap" -name '*.png' | wc -l) fichier(s)" >> "$out/resume.md"
 fi
 
