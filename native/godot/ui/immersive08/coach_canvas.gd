@@ -21,6 +21,7 @@ const GabiPortrait = preload("res://guide/coach_portrait_3d.gd")
 const Avis = preload("res://guide/gabi_avis.gd")
 const Semaine = preload("res://guide/gabi_semaine.gd")
 const Medaillon = preload("res://guide/gabi_medaillon.gd")
+const PremiersPas = preload("res://guide/gabi_premiers_pas.gd")
 const ACCENT = Color("176e49")
 const FOND = Color("10241b")
 ## Bulle spontanée (première visite d'un écran, conseil de composition) : au plus une par jour de jeu.
@@ -805,6 +806,7 @@ func bureau_disponible() -> bool:
 ## Appelé par office_canvas.gd : carnet de la semaine (synthèse et conseil) au-dessus, Gabi debout dessous.
 func installer_bureau(zone: Control) -> void:
 	_bureau = zone
+	PremiersPas.observer(profile, str(app.route), app.model, str(app.last_command), bool(app.bridge.last_response_ok))
 	_semaine = Semaine.synthese(app.model)
 	zone.resized.connect(_disposer_bureau.bind(zone))
 	_disposer_bureau(zone)
@@ -849,6 +851,7 @@ func _disposer_bureau(zone: Control) -> void:
 			_bureau_suivre.tooltip_text = str(action.get("detail", "Applique la proposition de Gabi (tu peux toujours la défaire)"))
 			_bureau_suivre.disabled = app.waiting or not app._live().is_empty()
 			y += 42 + 16
+	y = _premiers_pas(carnet, pad, y, w, text_w)
 	var carnet_h := y + 6
 	D.place(carnet, Rect2(0, 0, w, carnet_h))
 	# Gabi debout, en entier, sous son carnet : il occupe le reste de la zone, pieds en bas.
@@ -897,6 +900,36 @@ func _disposer_bureau(zone: Control) -> void:
 		var physical := _bureau_figure.size * _bureau_figure.get_global_transform_with_canvas().get_scale().y
 		if physical.x < 8: physical = _bureau_figure.size
 		source.set_render_size(Vector2i(roundi(physical.x * 1.25), roundi(physical.y * 1.25)))
+
+## Appelé par main.gd après chaque rendu : coche les objectifs des premiers pas sur l'événement réel.
+func observer_premiers_pas(route: String, model: Dictionary, command: String, response_ok: bool) -> void:
+	PremiersPas.observer(profile, route, model, command, response_ok)
+
+## « Premiers pas » : un objectif à la fois sous le conseil de la semaine, avec son bouton d'action ; se coche
+## sur l'événement réel (gabi_premiers_pas.gd). Masquable ; disparaît une fois fini ou à la 1re journée.
+func _premiers_pas(carnet: Control, pad: float, y: float, w: float, text_w: float) -> float:
+	if not PremiersPas.visible(app.model, profile.data): return y
+	var liste := PremiersPas.objectifs(app.model, profile.data)
+	var objectif := PremiersPas.courant(liste)
+	if objectif.is_empty(): return y
+	D.line(carnet, Vector2(pad, y), Vector2(w - pad, y), Color(C.GOLD, .3))
+	y += 12
+	var libelle := "PREMIERS PAS · %d SUR %d" % [PremiersPas.faits(liste), liste.size()]
+	y = _ligne_carnet(carnet, pad, y, text_w, libelle, str(objectif.texte), "check", C.MINT, "GabiPremiersPas")
+	var action: Dictionary = objectif.action
+	var bouton := D.button(carnet, Rect2(pad + 34, y - 2, w - pad * 2 - 34 - 84, 42), str(objectif.libelle), func(): _suivre_premier_pas(action), false, "arrow", true, ACCENT, "GabiPremiersPasAction")
+	bouton.tooltip_text = str(objectif.titre)
+	bouton.disabled = app.waiting or not app._live().is_empty()
+	var masquer := D.button(carnet, Rect2(w - pad - 78, y - 2, 78, 42), "Masquer", func():
+		PremiersPas.masquer(profile)
+		app.call_deferred("_render"), false, "", true, ACCENT, "GabiPremiersPasMasquer")
+	masquer.tooltip_text = "Ne plus afficher les premiers pas"
+	return y + 42 + 16
+
+func _suivre_premier_pas(action: Dictionary) -> void:
+	if app.waiting or not app._live().is_empty(): return
+	if str(action.get("type", "")) == "reprise": app._open_reprise_decision()
+	else: suivre_conseil(action)
 
 ## Gabi en pied : un second portrait 3D (même modèle), cadré en entier ; repli : le portrait 2D du guide.
 func _source_pied() -> TextureRect:

@@ -911,6 +911,7 @@ func _refresh_coach() -> void:
 	if is_instance_valid(coach):
 		coach.refresh()
 		coach.consider_context(route, model, last_command, bridge.last_response_ok)
+		if coach.has_method("observer_premiers_pas"): coach.observer_premiers_pas(route, model, last_command, bridge.last_response_ok)
 	_layout_coach()
 
 func _observe_navigation() -> void:
