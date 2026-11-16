@@ -38,6 +38,6 @@ test('Ambiance native : captures des paramètres audio (CD_AMBIANCE_CAPTURE)',{s
   env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(racine,'PrototypeGodot'),CD_AMBIANCE_CAPTURE:dossier},encoding:'utf8',windowsHide:true,timeout:420000});
  const output=(run.stdout||'')+(run.stderr||'');console.log(output);
  if(run.error)throw run.error;assert.equal(run.status,0,output);
- assert.match(output,/AMBIANCE CAPTURES \d+ vérifications, 0 échec/);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error/);
+ assert.match(output,/AMBIANCE CAPTURES\s*:\s*\d+ vérifications, 0 échec/);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error/);
  assert.equal(fs.readdirSync(dossier).filter(f=>f.endsWith('.png')).length,2,'2 captures PNG attendues');
 });

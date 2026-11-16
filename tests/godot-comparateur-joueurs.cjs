@@ -29,7 +29,7 @@ test('Comparateur de joueurs : captures des écrans (CD_COMPARATEUR_CAPTURE)',{s
  fs.rmSync(sauvegarde,{force:true});
  if(run.error)throw run.error;
  assert.equal(run.status,0,'Godot : '+log.slice(-1500));
- assert.match(log,/COMPARATEUR CAPTURES \d+ contrôles ; 0 échecs\b/);
+ assert.match(log,/COMPARATEUR CAPTURES\s*:\s*\d+ contrôles ; 0 échecs\b/);
  assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error/);
  assert.ok(fs.readdirSync(dossier).filter(f=>f.endsWith('.png')).length>=6,'6 captures PNG attendues');
 });
