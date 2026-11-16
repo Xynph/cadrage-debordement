@@ -196,7 +196,13 @@ function createBridge(options={}){
   class EngineDate extends Date{constructor(...args){super(...(args.length?args:[clock]));}static now(){return clock;}}
   const storage={offline:true,directory:dataDir,getItem:key=>{if(deferredDelegateActive){deferredDelegateRead=true;throw deferredReadError;}if(savesDeferred&&key==='bdt-v1'&&realSave)realSave();return store[key]??null;},setItem:(key,value)=>{store[key]=String(value);},removeItem:key=>{delete store[key];}};
   const element={innerHTML:'',textContent:'',style:{}};
-  ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
+  // Formats numériques réutilisés (même résultat) : le jeu crée un Intl.NumberFormat à chaque montant affiché (money,
+  // ~120 demandes salariales par réponse) ; sa création coûte ~50 µs. Prototype et méthodes statiques gardés.
+  const numberFormats=new Map();
+  const NumberFormat=function NumberFormat(locales,options){const key=JSON.stringify([locales??null,options??null]);let format=numberFormats.get(key);if(!format){format=new Intl.NumberFormat(locales,options);if(numberFormats.size<64)numberFormats.set(key,format);}return format;};
+  NumberFormat.prototype=Intl.NumberFormat.prototype;NumberFormat.supportedLocalesOf=Intl.NumberFormat.supportedLocalesOf.bind(Intl.NumberFormat);
+  const engineIntl=Object.create(Intl,{NumberFormat:{value:NumberFormat,writable:true,configurable:true}});
+  ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl:engineIntl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:15000,filename}:{timeout:15000});
   // Lecture ou bascule immédiate de l'état (aucune boucle, aucun calcul) : sans minuterie de garde. Sa mise en place (un
   // fil par appel) coûtait ~0,1 à 1 ms à chaque appel, soit plusieurs ms par réponse.
