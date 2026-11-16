@@ -24,7 +24,7 @@ func settle(frames: int = 12) -> void:
 
 func capture(name: String) -> void:
 	await settle(16)
-	check(root.get_texture().get_image().save_png(capture_dir.path_join(name + ".png")) == OK, "Capture " + name)
+	check(root.get_texture().get_image().save_jpg(capture_dir.path_join(name + ".jpg", 0.9)) == OK, "Capture " + name)
 
 func run_capture() -> void:
 	create_timer(300.0).timeout.connect(func():

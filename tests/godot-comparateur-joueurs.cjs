@@ -31,5 +31,5 @@ test('Comparateur de joueurs : captures des écrans (CD_COMPARATEUR_CAPTURE)',{s
  assert.equal(run.status,0,'Godot : '+log.slice(-1500));
  assert.match(log,/COMPARATEUR CAPTURES\s*:\s*\d+ contrôles ; 0 échecs\b/);
  assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error/);
- assert.ok(fs.readdirSync(dossier).filter(f=>f.endsWith('.png')).length>=6,'6 captures PNG attendues');
+ assert.ok(fs.readdirSync(dossier).filter(f=>f.endsWith('.jpg')).length>=6,'6 captures PNG attendues');
 });
