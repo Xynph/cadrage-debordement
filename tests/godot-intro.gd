@@ -143,7 +143,7 @@ func run() -> void:
 		check(app.route == "Accueil" and app.get_node_or_null("IntroSequence") == null, "Menu principal existant affiché")
 		await capture("intro-4-menu" if phase == "premier" else "intro-court-menu")
 		if phase == "premier":
-			var saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("interface.json")))
+			var saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("PrototypeGodot").path_join("interface.json")))
 			check(saved is Dictionary and saved.get("intro") == "short", "Après le premier lancement, le réglage passe à « Courte »")
 	finish()
 

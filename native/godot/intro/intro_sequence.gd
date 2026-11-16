@@ -51,7 +51,9 @@ static func enabled() -> bool:
 
 ## Lit le profil sans attendre le moteur : réglage Introduction, mode calme et volumes.
 ## Fichier absent ou sans réglage Introduction : premier lancement, séquence complète.
-static func read_profile(directory: String) -> Dictionary:
+static func read_profile(root: String) -> Dictionary:
+	# Même dossier que le moteur (native/engine/worker.cjs) : <dossier>/PrototypeGodot, sauf s'il y est déjà.
+	var directory := root if root.get_file() == "PrototypeGodot" else root.path_join("PrototypeGodot")
 	var result := {"mode": "complete", "first": true, "reduced_motion": false, "gain": 0.75 * 0.25}
 	var interface := _json(directory.path_join("interface.json"))
 	if FileAccess.file_exists(directory.path_join("interface.json")) and interface.is_empty():

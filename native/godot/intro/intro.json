@@ -23,7 +23,7 @@
       "interlettrage_duree": 2.8,
       "interlettrage_mention": 14,
       "mention_a": 0.9,
-      "lumieres_floues": 0.6,
+      "lumieres_floues": 1.2,
       "grain": 0.035
     },
     "stade": {
@@ -66,7 +66,7 @@
         },
         {
           "surtitre": "LE PARADOXE DU RUGBY",
-          "texte": "Pour avancer, on se passe le ballon vers l'arrière."
+          "texte": "Pour avancer, on se passe le ballon vers l’arrière."
         },
         {
           "surtitre": "1ER JANVIER 1906 · PARC DES PRINCES",
@@ -85,9 +85,9 @@
       "halo_logo": 0.35,
       "halo": 0.22,
       "mise_au_point": 1.5,
-      "exposition_fond": 0.5,
-      "vignette_fond": 0.85,
-      "brume_fond": 0.3,
+      "exposition_fond": 0.4,
+      "vignette_fond": 1.0,
+      "brume_fond": 0.12,
       "derive_fond": 0.01
     }
   }
