@@ -74,12 +74,12 @@ function missedGoal(l,side){
 }
 function kickOpenPlay(l,side){
  tacticalCount(l,side,'kicks');
- const dir=side===0?1:-1,origin=l.territory,distance=clamp(12+(unit(l,side,'kick',p=>p.fam>=4)-60)*.5+rand(-8,10)+collectivePreparationBonus(l,side,'pied')-(l.weather==='Vent'?9:0),3,45),landing=origin+dir*distance;
+ const dir=side===0?1:-1,origin=l.territory,distance=clamp(12+(unit(l,side,'kick',p=>p.fam>=4)-60)*.5+rand(-8,10)+collectivePreparationBonus(l,side,'pied')+occupationKickEdge(l,side)-(l.weather==='Vent'?9:0),3,45),landing=origin+dir*distance;
  const outcome=Math.random();
  if(landing<=0||landing>=100)return resolveInGoal(l,side,outcome<.5?'attacking-kick-grounded':'kick-dead',origin);
  if(outcome<.23)return resolveTouch(l,side,landing,{direct:true});
  if(outcome<.58)return resolveTouch(l,side,landing);
- ballPossession(l,1-side,landing);addEvent(l,`${actionName(l,side,'kicker')} (${S.clubs[l.pair[side]].abbr}) gagne ${Math.round(distance)} mètres au pied ; ${actionName(l,1-side,'receiver')} réceptionne pour ${S.clubs[l.pair[1-side]].abbr}.`,'play',{kind:'kick',team:side,actor:actionPlayer(l,side,'kicker')?.id||null,from:{x:origin,y:35},to:{x:landing,y:35}});return true;
+ ballPossession(l,1-side,landing);const botteur=occupationKicker(l,side);addEvent(l,`${botteur?.name||S.clubs[l.pair[side]].abbr} (${S.clubs[l.pair[side]].abbr}) gagne ${Math.round(distance)} mètres au pied ; ${actionName(l,1-side,'receiver')} réceptionne pour ${S.clubs[l.pair[1-side]].abbr}.`,'play',{kind:'kick',team:side,actor:botteur?.id||null,from:{x:origin,y:35},to:{x:landing,y:35}});return true;
 }
 // Découpage des longues courses (docs/match-courses-20261112.md) : quand une course réussie
 // mène à un essai (ou à un ballon tenu ou échappé dans l'en-but), le journal écrit la course

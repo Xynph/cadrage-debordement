@@ -37,6 +37,11 @@ module.exports=function nativeGestion(command,p){
  }
  if(command==='set_tactics'){
   requireThat(Object.hasOwn(TACTICS,p.attack)&&Object.hasOwn(DEFENCES,p.defense),'Consigne inconnue.');
+  // Consignes individuelles (buteur, secours, lanceur, jeu au pied) : avant le coup d'envoi seulement.
+  if(Object.hasOwn(p,'roles')){
+   requireThat(!S.live&&S.phase!=='ended','Les tireurs et le lanceur se désignent avant le coup d’envoi.');
+   requireThat(setPlayerRoles(p.roles),'Rôle inconnu ou joueur absent de l’effectif.');
+  }
   if(S.live){requireThat(tacticalRules(S.live)&&S.live.paused&&!S.live.finished&&!presentationPending(S.live),'Mettez le match en pause pour changer les consignes.');setLiveTactic(p.attack);setLiveDefence(p.defense);}
   else{requireThat(S.phase!=='ended','Saison terminée.');S.tactic=p.attack;setDefence(p.defense);}return;
  }

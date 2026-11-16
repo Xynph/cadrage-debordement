@@ -380,6 +380,8 @@ static func composition(model: Dictionary) -> Dictionary:
 		chosen.append(proposal)
 		if chosen.size() == CHANGEMENTS_MAX: break
 	if chosen.is_empty():
+		var tirs := buteur_mediocre(model)
+		if not tirs.is_empty(): return tirs
 		return _composition_validee(model, vacant)
 	var phrases := PackedStringArray()
 	for proposal: Dictionary in chosen:
@@ -390,6 +392,15 @@ static func composition(model: Dictionary) -> Dictionary:
 	for proposal: Dictionary in chosen:
 		changes.append({"slot": proposal.slot, "playerId": str(proposal.entrant.id), "sortant": str(proposal.sortant.get("id", ""))})
 	return _resultat(texte, "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes, "libelle": "Suivre le conseil"})
+
+## Buteur désigné nettement moins adroit que le choix du staff (projection `tactics.roles.alerte`).
+static func buteur_mediocre(model: Dictionary) -> Dictionary:
+	var tactics: Dictionary = model.get("tactics", {}) if model.get("tactics") is Dictionary else {}
+	var roles: Dictionary = tactics.get("roles", {}) if tactics.get("roles") is Dictionary else {}
+	var alerte: Variant = roles.get("alerte")
+	if not alerte is Dictionary: return {}
+	var texte := "Tu as confié les tirs à %s (%d au but). %s tire à %d : je lui rendrais les tirs, chaque pénalité manquée coûte trois points." % [str(alerte.get("name", "")), int(_nombre(alerte.get("value"))), str(alerte.get("staffName", "")), int(_nombre(alerte.get("staffValue")))]
+	return _resultat(texte, "mise_en_garde", NEUTRE)
 
 ## Version courte du conseil de composition (carnet de la semaine et bulle du Bureau le jour de match : une seule source).
 static func composition_courte(model: Dictionary, action: Dictionary) -> String:
