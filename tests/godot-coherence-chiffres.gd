@@ -170,7 +170,7 @@ func run() -> void:
 	var dump := FileAccess.open(output.path_join("finances.txt"), FileAccess.WRITE)
 	dump.store_string(money)
 	dump.close()
-	check(money.to_lower().contains("masse salariale · joueurs") and money.contains(G.salary_amount(payroll.players_weekly)), "Finances : masse salariale des joueurs = " + G.salary_amount(payroll.players_weekly))
+	check(money.to_lower().contains("salaires des joueurs") and money.contains(G.salary_amount(payroll.players_weekly)), "Finances : masse salariale des joueurs = " + G.salary_amount(payroll.players_weekly))
 	check(money.contains("hors cotisations"), "Finances : « hors cotisations » annoncé")
 	check(money.contains("Salaires et cotisations") and money.contains(G.euros(payroll.charge_weekly)), "Finances : la répartition donne la même charge que le Club")
 	check(money.to_lower().count("masse salariale") == money.to_lower().count("masse salariale · joueurs"), "Finances : « Masse salariale » toujours qualifiée")
