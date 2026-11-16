@@ -39,6 +39,66 @@ static func relevant(model: Dictionary) -> bool:
 	if not bool(r.get("available", false)): return false
 	return r.get("today") != null or bool(r.get("editable", false)) or (r.get("report") is Dictionary and int(model.get("meta", {}).get("week", 99)) <= 6)
 
+## Une décision de la préparation (reprise.cjs, `decisions[]`) : options, conséquences, conseil de Gabi et
+## délégation. Chaque choix passe par la commande `reprise_decide`.
+static func build_decision(app: Control, panel: Control, decision: Dictionary) -> void:
+	var key := str(decision.get("key", ""))
+	var editable := bool(decision.get("editable", false))
+	var selected := str(decision.get("selected", "")) if decision.get("selected") != null else ""
+	var options: Array = decision.get("options", [])
+	var state := ""
+	if bool(decision.get("pending", false)) and decision.get("due") != null: state = "À DÉCIDER AVANT LE %s" % day_text(str(decision.due)).to_upper()
+	elif not selected.is_empty(): state = "CONFIÉ À GABI" if bool(decision.get("staff", false)) else "ARRÊTÉ"
+	var box := G.v(6)
+	box.name = "RepriseDecision_" + key
+	panel.add_child(box)
+	var head := G.label(str(decision.get("title", "")).to_upper() + (" · " + state if not state.is_empty() else ""), 13, G.ALERT if bool(decision.get("pending", false)) else G.GOLD, true)
+	head.name = "RepriseDecisionTitle_" + key
+	box.add_child(head)
+	var row := HFlowContainer.new()
+	row.name = "RepriseDecisionOptions_" + key
+	row.add_theme_constant_override("h_separation", 8)
+	row.add_theme_constant_override("v_separation", 8)
+	box.add_child(row)
+	var chosen_summary := ""
+	for option: Dictionary in options:
+		var id := str(option.get("id", ""))
+		var button := G.button("%s\n%s" % [str(option.get("label", "")).to_upper(), str(option.get("detail", ""))], func():
+			if editable: app._command("reprise_decide", {"decision": key, "option": id}))
+		button.name = "RepriseDecisionOption_%s_%s" % [key, id]
+		button.tooltip_text = str(option.get("summary", ""))
+		button.custom_minimum_size = Vector2(250, 62)
+		button.disabled = not editable and id != selected
+		if id == selected:
+			G.selected(button, app.accent)
+			chosen_summary = str(option.get("summary", ""))
+		row.add_child(button)
+	if not chosen_summary.is_empty():
+		var line := G.wrap(chosen_summary, 14, G.INK)
+		line.name = "RepriseDecisionSummary_" + key
+		box.add_child(line)
+	var advice: Variant = decision.get("advice")
+	if not editable or not (advice is Dictionary): return
+	var card := G.card(box, app.accent)
+	card.name = "RepriseDecisionGabi_" + key
+	var line := G.h(12)
+	card.add_child(line)
+	var words := G.v(2)
+	G.fill(words)
+	line.add_child(words)
+	var advised := options.filter(func(o): return str(o.get("id", "")) == str(advice.get("option", "")))
+	words.add_child(G.label("GABI · CONSEIL", 12, G.GOLD, true))
+	words.add_child(G.wrap("« %s »%s" % [str(advice.get("text", "")), (" Conseil : %s." % str(advised[0].get("label", "")).to_lower()) if not advised.is_empty() else ""], 15, G.INK))
+	if str(advice.get("option", "")) != selected and not advised.is_empty():
+		var follow := G.button("Suivre le conseil", func(): app._command("reprise_decide", {"decision": key, "option": str(advice.option)}))
+		follow.name = "RepriseDecisionFollow_" + key
+		line.add_child(follow)
+	if selected.is_empty():
+		var staff := G.button("Confier à Gabi", func(): app._command("reprise_decide", {"decision": key, "option": "staff"}))
+		staff.name = "RepriseDecisionStaff_" + key
+		staff.tooltip_text = "Gabi retient le choix prudent du staff, sans écart avec la préparation habituelle."
+		line.add_child(staff)
+
 static func build(app: Control, parent: Control) -> void:
 	var r: Dictionary = app.model.get("clubLife", {}).get("reprise", {})
 	if not bool(r.get("available", false)): return
@@ -100,6 +160,9 @@ static func build(app: Control, parent: Control) -> void:
 				app._command("reprise_choose", {"habitual": true} if bool(hit[0].get("habitual", false)) else {"date": str(advice.date)}))
 			follow.name = "RepriseFollowAdvice"
 			line.add_child(follow)
+	# Décisions de la préparation : programme des amicaux, orientation du stage.
+	for decision: Dictionary in r.get("decisions", []):
+		build_decision(app, panel, decision)
 	# Internationaux en congés.
 	var internationals: Array = r.get("internationals", [])
 	if not internationals.is_empty():
@@ -157,5 +220,11 @@ static func build(app: Control, parent: Control) -> void:
 		var minutes := 0
 		for y: Dictionary in report.get("youth", []): minutes += int(y.get("minutes", 0))
 		var done := G.wrap("Bilan de la préparation %s : reprise le %s, %s, %d match%s amica%s, %d jeune%s du centre pour %d minutes de jeu." % ["(gérée par le staff)" if bool(report.get("auto", false)) else "", day_text(str(report.get("date", "")), false), weeks_text(float(report.get("weeks", 0))), int(report.get("friendlies", 0)), "s" if int(report.get("friendlies", 0)) > 1 else "", "ux" if int(report.get("friendlies", 0)) > 1 else "l", (report.get("youth", []) as Array).size(), "s" if (report.get("youth", []) as Array).size() > 1 else "", minutes], 14, G.INK)
+		var choices: Array[String] = []
+		for decision: Dictionary in r.get("decisions", []):
+			for option: Dictionary in decision.get("options", []):
+				if decision.get("selected") != null and str(option.get("id", "")) == str(decision.selected): choices.append(str(option.get("label", "")).to_lower())
+		var receipts := int(report.get("receipts", 0))
+		if not choices.is_empty(): done.text += " Choix : %s%s." % [", ".join(choices), (", recettes %d €" % receipts) if receipts > 0 else ((", frais de déplacement %d €" % -receipts) if receipts < 0 else "")]
 		done.name = "RepriseReport"
 		panel.add_child(done)

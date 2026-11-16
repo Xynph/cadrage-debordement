@@ -285,6 +285,7 @@ func _receive_model(value: Dictionary) -> void:
 	if received_command == CareerProgression.CONTINUE_COMMAND and is_instance_valid(continue_progress):
 		if response_ok and value.get("meta", {}).get("advanceUntilEvent") is Dictionary: continue_progress.finish(value.meta.advanceUntilEvent)
 		else: continue_progress.dismiss()
+	if received_command == CareerProgression.CONTINUE_COMMAND and _decision_due(value, response_ok): _open_reprise_decision.call_deferred()
 	if response_ok and (received_command in ["advance_day", CareerProgression.CONTINUE_COMMAND, "preseason_advance", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
 		reception_id = Immersive.Reception.new_priority(model, value)
 	# Keep one uninterrupted wait when the player's action follows an automatic tick
@@ -322,6 +323,10 @@ func _receive_model(value: Dictionary) -> void:
 		if _has_career() and (received_command in ["new_career", "next_season", "finish_round", "restore_checkpoint"] or not reception_id.is_empty()):
 			_reset_reception(reception_id)
 			if has_meta("press_mail_origin"): remove_meta("press_mail_origin")
+			route = "Réception"
+		# Arrêt « À noter » de « Continuer » (façon FM) : tous les éléments du jour sont en Réception, le plus récent en tête.
+		elif received_command == CareerProgression.CONTINUE_COMMAND and _stop_kind(model) == "a_noter":
+			_reset_reception()
 			route = "Réception"
 	if bridge.last_response_ok and last_command in ["new_career","next_season","import","restore_checkpoint"] and _has_career():
 		table_division = str(model.meta.get("leagueId", "elite"))
@@ -375,6 +380,21 @@ func _record_timing(command: String, receive_us: int) -> void:
 ## décision supplémentaire attend son tour au lieu d’être refusée.
 static func shows_wait_panel(command: String) -> bool:
 	return COMMAND_WAIT_MESSAGES.has(command) or SeasonPreparation.is_advance(command) or command == CareerProgression.CONTINUE_COMMAND
+
+## Décision de la préparation attendue (arrêt ou refus de « Continuer », reprise.cjs) : « La reprise » s'ouvre
+## d'elle-même, comme une décision en attente dans Football Manager.
+func _decision_due(value: Dictionary, ok: bool) -> bool:
+	var advance: Variant = value.get("meta", {}).get("advanceUntilEvent")
+	if ok and advance is Dictionary and advance.get("stop") is Dictionary and str(advance.stop.get("kind", "")) == "decision": return true
+	return not ok and not (value.get("clubLife", {}).get("reprise", {}).get("due", []) as Array).is_empty()
+
+func _stop_kind(value: Dictionary) -> String:
+	var advance: Variant = value.get("meta", {}).get("advanceUntilEvent")
+	return str(advance.stop.get("kind", "")) if advance is Dictionary and advance.get("stop") is Dictionary else ""
+
+func _open_reprise_decision() -> void:
+	if has_node("RepriseDialog"): return
+	load("res://ui/reprise_dialog.gd").open(self)
 
 func _command(command: String, payload: Dictionary = {}, target_route: String = "") -> bool:
 	if closing: return false
@@ -1066,7 +1086,8 @@ func primary_action() -> void:
 		return
 	var daily := _daily_progression()
 	if not daily.is_empty():
-		if daily.has("route"): _navigate(daily.route)
+		if daily.has("open"): _open_reprise_decision()
+		elif daily.has("route"): _navigate(daily.route)
 		elif daily.has("command"): _command(daily.command, daily.payload)
 		return
 	if not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})

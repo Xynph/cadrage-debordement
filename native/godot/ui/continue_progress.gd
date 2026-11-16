@@ -336,6 +336,12 @@ func _plan_title(plan: Dictionary) -> String:
 			var label := str(plan.get("detail", "")).to_lower()
 			return "Jusqu’au rendez-vous : %s" % label if not label.is_empty() else "Jusqu’au rendez-vous du club"
 		"reprise": return "Jusqu’à la reprise de l’entraînement"
+		"decision":
+			var what := str(plan.get("detail", "")).to_lower()
+			return "Jusqu’à la décision : %s" % what if not what.is_empty() else "Jusqu’à la prochaine décision"
+		"a_noter":
+			var note := str(plan.get("detail", ""))
+			return "Jusqu’au prochain élément à noter : %s" % note if not note.is_empty() else "Jusqu’au prochain élément à noter"
 	return "Les jours défilent…"
 
 
