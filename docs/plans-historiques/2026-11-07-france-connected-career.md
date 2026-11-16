@@ -8,7 +8,7 @@
 
 **Tech Stack:** JavaScript natif, APIs existantes de rugby/management, node:test, navigateur Chromium de la vraie page.
 
-**Spec:** `docs/superpowers/specs/2026-11-07-clubs-territoires-design.md` ; audit préalable hors dépôt `CD/golden-engine-architecture.md`.
+**Spec:** `docs/plans-historiques/specs/2026-11-07-clubs-territoires-design.md` ; audit préalable hors dépôt `CD/golden-engine-architecture.md`.
 
 ## Contraintes globales
 

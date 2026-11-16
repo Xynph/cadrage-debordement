@@ -1,6 +1,6 @@
 # Portage complet de l’inventaire — plan d’exécution
 
-**Spécification :** `docs/superpowers/specs/2026-11-08-portage-inventaire.md`.
+**Spécification :** `docs/plans-historiques/specs/2026-11-08-portage-inventaire.md`.
 **Base :**2e0fff10 ; branche feature/portage-inventaire-20261108 ; dépendance PR396.
 **Méthode :** sous-systèmes autonomes sur chemins disjoints, raccordement sérialisé par l’intégrateur, tests rouges puis implémentation et revue ciblée. Pas d’approbation humaine intermédiaire pour les choix ordinaires déjà autorisés.
 

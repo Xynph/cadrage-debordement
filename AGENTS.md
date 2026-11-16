@@ -45,6 +45,8 @@ Ce fichier prime sur le kit. Mode autonome (`project.yaml`) : seules
 suppressions, opérations destructives et dépenses demandent l'accord de Léo.
 Toute commande ajoutée ou modifiée dans `.claude/skills/` l'est aussi dans
 `.agents/skills/`.
+Kit d'agents : CCGS seul (décision de Léo, 16/11/2026) ; ne pas utiliser ni
+réinstaller Superpowers (ses plans passés sont dans `docs/plans-historiques/`).
 
 ## Modèles, effort et quota (règle permanente de Léo)
 

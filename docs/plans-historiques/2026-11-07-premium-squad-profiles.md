@@ -8,7 +8,7 @@
 
 **Tech Stack:** JavaScript natif, CSS, node:test et Playwright.
 
-**Spec:** `docs/superpowers/specs/2026-11-07-premium-squad-profiles-design.md`.
+**Spec:** `docs/plans-historiques/specs/2026-11-07-premium-squad-profiles-design.md`.
 
 ## Contraintes globales
 

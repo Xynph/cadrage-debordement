@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   nettoyage:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
