@@ -29,3 +29,15 @@ test('Ambiance native : bus Musique, musique coupée en match, foule selon le ca
  const output=(run.stdout||'')+(run.stderr||'');console.log(output);
  if(run.error)throw run.error;assert.equal(run.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:|instances were leaked/);
 });
+// Captures (rendu graphique) : CD_AMBIANCE_CAPTURE=<dossier> ; sans cette variable, rien n'est lancé.
+// Onglet Son des paramètres : trois cases et volume Musique, case « Musique » cochée puis décochée.
+test('Ambiance native : captures des paramètres audio (CD_AMBIANCE_CAPTURE)',{skip:(!godot&&'SDK Godot requis')||(!process.env.CD_AMBIANCE_CAPTURE&&'CD_AMBIANCE_CAPTURE absent')},()=>{
+ const dossier=path.resolve(process.env.CD_AMBIANCE_CAPTURE);fs.mkdirSync(dossier,{recursive:true});
+ const racine=fs.mkdtempSync(path.join(os.tmpdir(),'cd-ambiance-capture-'));
+ const run=spawnSync(godot,['--display-driver','x11','--rendering-method','gl_compatibility','--windowed','--resolution','1920x1080','--max-fps','120','--audio-driver','Dummy','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-ambiance.gd')],{
+  env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(racine,'PrototypeGodot'),CD_AMBIANCE_CAPTURE:dossier},encoding:'utf8',windowsHide:true,timeout:420000});
+ const output=(run.stdout||'')+(run.stderr||'');console.log(output);
+ if(run.error)throw run.error;assert.equal(run.status,0,output);
+ assert.match(output,/AMBIANCE CAPTURES \d+ vérifications, 0 échec/);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error/);
+ assert.equal(fs.readdirSync(dossier).filter(f=>f.endsWith('.png')).length,2,'2 captures PNG attendues');
+});

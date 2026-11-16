@@ -1,5 +1,7 @@
 extends SceneTree
 ## Ambiance sonore : bus Musique, musique douce du Bureau coupée en match, foule selon le camp qui marque.
+## Captures (rendu graphique, vrai jeu) : CD_AMBIANCE_CAPTURE=<dossier> ; l'onglet Son des paramètres est photographié
+## avec « Musique » cochée puis décochée (« Musique pendant les matchs » grisée). Sans la variable, rien ne change.
 
 var failures: Array[String] = []
 var checks := 0
@@ -7,8 +9,63 @@ var proof := OS.get_environment("CD_AMBIANCE_PROOF")
 var moods: Array[String] = []
 var cues: Array[String] = []
 
+var capture_dir := OS.get_environment("CD_AMBIANCE_CAPTURE")
+
 func _initialize() -> void:
+	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
+		call_deferred("run_capture")
+		return
 	call_deferred("run")
+
+func settle(frames: int = 12) -> void:
+	await create_timer(.4).timeout
+	for i in frames: await process_frame
+	await RenderingServer.frame_post_draw
+
+func capture(name: String) -> void:
+	await settle(16)
+	check(root.get_texture().get_image().save_png(capture_dir.path_join(name + ".png")) == OK, "Capture " + name)
+
+func run_capture() -> void:
+	create_timer(300.0).timeout.connect(func():
+		printerr("FAIL: délai dépassé (300 s)")
+		quit(1))
+	DirAccess.make_dir_recursive_absolute(capture_dir)
+	root.size = Vector2i(1920, 1080)
+	DisplayServer.window_set_size(root.size)
+	var app = load("res://main.tscn").instantiate()
+	root.add_child(app)
+	var deadline := Time.get_ticks_msec() + 60000
+	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline: await process_frame
+	app.timer.stop()
+	await settle()
+	check(not app.model.is_empty(), "Jeu chargé (accueil sans carrière)")
+	check(app.soundscape != null and app.soundscape_ready, "Gestionnaire sonore prêt")
+	app.settings()
+	await settle(24)
+	var dialog: AcceptDialog = app.find_child("PreferencesDialog", true, false)
+	check(dialog != null, "Paramètres ouverts")
+	if dialog != null:
+		var tabs: TabContainer = dialog.find_child("PreferencesTabs", true, false)
+		tabs.current_tab = 1
+		await settle(12)
+		var music_on := dialog.find_child("PreferencesMusicOn", true, false) as CheckBox
+		var in_match := dialog.find_child("PreferencesMusicInMatch", true, false) as CheckBox
+		var match_sounds := dialog.find_child("PreferencesMatchSounds", true, false) as CheckBox
+		var volume := dialog.find_child("PreferencesMusicVolume", true, false) as SpinBox
+		check(music_on != null and in_match != null and match_sounds != null and volume != null, "Trois cases et volume Musique présents")
+		if music_on != null and in_match != null and match_sounds != null:
+			print("DIAG audio : musique=", music_on.button_pressed, " en_match=", in_match.button_pressed, " grisee=", in_match.disabled, " sons=", match_sounds.button_pressed, " volume=", volume.value)
+			check(music_on.button_pressed and not in_match.disabled, "Case Musique cochée : « pendant les matchs » disponible")
+			await capture("parametres-audio-musique-cochee")
+			music_on.button_pressed = false
+			await settle(12)
+			check(not music_on.button_pressed and in_match.disabled, "Case Musique décochée : « pendant les matchs » grisée")
+			await capture("parametres-audio-musique-decochee")
+	print("AMBIANCE CAPTURES : %d vérifications, %d échec(s)" % [checks, failures.size()])
+	app.closing = true
+	app.bridge.stop()
+	quit(1 if not failures.is_empty() else 0)
 
 func check(value: bool, message: String) -> void:
 	checks += 1
