@@ -292,8 +292,11 @@ static func _height(state: Dictionary) -> float:
 ## Une seule reconstruction quand la hauteur disponible change (taille de fenêtre, bandeau au-dessus de la boîte).
 static func _fit(app: Control, page: Control) -> void:
 	if is_instance_valid(page) and page.is_inside_tree():
-		await page.get_tree().process_frame
-		await page.get_tree().process_frame
+		# Le nœud peut quitter l'arbre pendant la première attente (écran reconstruit) : l'arbre est gardé, pas relu.
+		var tree := page.get_tree()
+		await tree.process_frame
+		if not is_instance_valid(page) or not page.is_inside_tree(): return
+		await tree.process_frame
 	if not is_instance_valid(page) or not page.is_inside_tree() or app.route != "Réception": return
 	var workspace := app.body_scroll as Control
 	if not is_instance_valid(workspace): return
