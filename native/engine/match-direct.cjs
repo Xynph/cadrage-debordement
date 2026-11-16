@@ -346,6 +346,8 @@ function project(model,niveau,lire,options={}){
  // = somme des joueurs ; plaquages, mètres… réalistes (le journal seul en donnait 0 ou 1 par ailier).
  const feuille=feuilleStats.feuilleMontree(events,borne<lignes.length?lignes[borne].i:events.length,String(etat.rencontre||''),lire);
  feuilleStats.completerTableau(tableau,feuille);
+ // Les chiffres ajoutés par la feuille (passes, rucks…) portent eux aussi la longueur de l'échantillon.
+ for(const r of tableau)r.court=court;
  // Notes du direct : chiffres et apport de cette même feuille (match-notes.cjs, une seule source).
  const contexteNotes=etat.notes?{...etat.notes,feuille,apports:feuilleStats.apportsNote(feuille)}:etat.notes;
  const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',
