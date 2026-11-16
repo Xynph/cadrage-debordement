@@ -13,6 +13,7 @@ const Link = preload("res://ui/entity_link.gd")
 const Knowledge = preload("res://ui/player_knowledge_text.gd")
 const EquipeType = preload("res://ui/equipe_type_view.gd")
 const Notes = preload("res://ui/notes_match.gd")
+const Palmares = preload("res://ui/immersive08/palmares_text.gd")
 const ROUTE := "Fiche club"
 const WIDTH := 2248
 const HEIGHT := 1240
@@ -382,9 +383,23 @@ func _overview() -> void:
 		D.text(club, 24, y, str(row[0]), 24, C.MUTED, 500, 250)
 		D.text(club, 280, y, str(row[1]) if row[1] != null and str(row[1]) != "" else "—", 26, C.IVORY, 600, 400)
 		D.line(club, Vector2(24, y + 22), Vector2(676, y + 22), Color(C.LINE, .35))
-		y += 72
+		y += 58
+	_palmares(club, 700)
 	_season_panel()
 	_rivalry_panel()
+
+## Palmarès connu dès le premier jour (titres et dernières saisons), état vide en langage de club.
+func _palmares(panel: Control, width: int) -> void:
+	var palmares: Dictionary = data.get("palmares", {})
+	if palmares.is_empty(): return
+	D.text(panel, 24, 700, "PALMARÈS", 22, C.GOLD, 700, 300)
+	if bool(palmares.get("vide", false)):
+		_paragraph(panel, Rect2(24, 722, width - 48, 100), str(palmares.get("emptyText", "")), 22, "ClubSheetPalmaresVide")
+		return
+	D.text(panel, 24, 762, str(palmares.get("headline", "")), 28, C.MINT, 800, width - 48)
+	var detail := Palmares.titles_text(app.model, palmares, 2)
+	if detail.is_empty(): detail = "\n".join(Palmares.recent_lines(app.model, palmares, 2))
+	_paragraph(panel, Rect2(24, 776, width - 48, 60), detail, 20, "ClubSheetPalmaresDetail")
 
 static func _strategy(value: Variant) -> String:
 	if not value is String or str(value).is_empty(): return "—"

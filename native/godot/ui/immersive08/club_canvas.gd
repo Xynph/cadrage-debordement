@@ -5,6 +5,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
+const Palmares = preload("res://ui/immersive08/palmares_text.gd")
 const G = preload("res://ui/game_skin.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
@@ -502,6 +503,10 @@ static func _history(app: Control, canvas: Control) -> void:
 	var titles := 0
 	for year: Dictionary in data.seasons: titles += year.get("titles",[]).size()
 	var rows := [["Saisons archivées",data.seasons.size()],["Titres conservés",titles],["Derniers résultats",data.events.size()]]
+	var palmares: Dictionary = app.model.get("club",{}).get("palmares",{}) if international else {}
+	if not palmares.is_empty():
+		# Palmarès connu dès le premier jour, fusionné aux saisons jouées en carrière.
+		rows = [["Titres au palmarès",Palmares.count_text(int(palmares.get("totalTitles",0)))],["Finales connues",Palmares.count_text(palmares.get("finals",[]).size())],["Saisons jouées avec vous",Palmares.count_text(int(palmares.get("careerSeasons",0)))]]
 	for i in rows.size():
 		var y := 278+i*73
 		D.text(card, 24, y, rows[i][0], 29, C.IVORY, 600, 475)
@@ -527,9 +532,23 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 	list.add_child(analysis)
 	list.add_child(C.rule())
 	var years: Array = data.seasons
+	var palmares: Dictionary = app.model.get("club",{}).get("palmares",{})
+	list.add_child(C.label("LE PALMARÈS",27,C.GOLD,true,700))
+	if palmares.is_empty() or bool(palmares.get("vide",false)):
+		var empty := C.wrap(str(palmares.get("emptyText","")) if not palmares.is_empty() else "La première page de l’histoire du club s’écrit avec vous.",26,C.IVORY,true,700)
+		empty.name = "ClubPalmaresVide"
+		list.add_child(empty)
+	else:
+		var head := C.wrap(str(palmares.headline),30,C.MINT,true,800)
+		head.name = "ClubPalmaresTitre"
+		list.add_child(head)
+		var titles_line := Palmares.titles_text(app.model,palmares,4)
+		if not titles_line.is_empty(): list.add_child(C.wrap(titles_line,24,C.IVORY,true,600))
+		for line: String in Palmares.recent_lines(app.model,palmares,8): list.add_child(C.wrap(line,22,C.MUTED,true))
+	list.add_child(C.rule())
 	list.add_child(C.wrap("Les saisons passées et les derniers résultats du club. Les rangs concernent la phase régulière.",22,C.MUTED,true))
 	if years.size() >= 2: _world_comparison(app,list,years)
-	if years.is_empty(): list.add_child(C.wrap("Aucune saison archivée pour ce club.",26,C.IVORY,true,700))
+	if years.is_empty(): list.add_child(C.wrap("Votre première saison au club s’inscrira ici dès son terme.",24,C.MUTED,true))
 	for year: Dictionary in years: list.add_child(_world_year(app,year))
 	list.add_child(C.rule())
 	list.add_child(C.label("LES DERNIERS RÉSULTATS",27,C.GOLD,true,700))

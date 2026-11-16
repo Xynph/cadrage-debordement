@@ -132,6 +132,7 @@ func executer() -> void:
 	for i in 4: verifier(page.find_child("ClubSheetTab%d" % i, true, false) != null, "onglet %d présent" % i)
 	for action in ["ClubSheetFollow", "ClubSheetCalendar", "ClubSheetCompare", "ClubSheetRecruit"]: verifier(page.find_child(action, true, false) != null, "action " + action)
 	verifier(page.find_child("ClubSheetSeason", true, false) != null and page.find_child("ClubSheetHeadToHead", true, false) != null, "vue d'ensemble : saison et confrontations")
+	verifier(page.find_child("ClubSheetPalmaresVide", true, false) != null or page.find_child("ClubSheetPalmaresDetail", true, false) != null, "vue d'ensemble : palmarès connu ou état vide en langage de club")
 	chevauchements(page, "vue")
 	await capture("fiche-club-vue-ensemble")
 	# Actions : calendrier du club, comparaison, suivi (commande moteur).

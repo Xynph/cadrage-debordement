@@ -308,9 +308,10 @@ func _layout() -> void:
 	var text_height := bubble.get_theme_font("font").get_multiline_string_size(bubble.text,HORIZONTAL_ALIGNMENT_LEFT,balloon_width - 45.0,15,-1,TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE).y
 	var line_count := ceili(text_height / bubble.get_theme_font("font").get_height(15))
 	text_height += maxi(0,line_count - 1) * bubble.get_theme_constant("line_spacing")
-	var balloon_height := maxf(114.0,ceilf(text_height) + 24.0) if short_layout else 132.0
+	# La bulle s'étend à la hauteur du texte (jamais de barre de défilement ni de phrase coupée).
+	var balloon_height := maxf(114.0 if short_layout else 132.0,ceilf(text_height) + 24.0)
 	if _settings_panel.visible: width = maxf(492.0, width)
-	var body_height := balloon_height if short_layout else 150.0
+	var body_height := balloon_height if short_layout else maxf(150.0,balloon_height + 18.0)
 	if portrait_extent != legacy_extent: body_height = maxf(body_height, portrait_top + portrait_extent.y)
 	var expanded_height := body_height + 70.0
 	_body.custom_minimum_size = Vector2(width, body_height)
