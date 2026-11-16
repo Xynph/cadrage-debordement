@@ -29,8 +29,10 @@ const DETAIL_WIDTH := 2248.0 - 700.0 - 18.0
 const ROW_HEIGHT := 90.0
 const HALF := (DETAIL_WIDTH - 52.0 - 18.0) / 2.0
 const SUBJECTS = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Formation", "Compétitions", "Club"]
-const ACTIVITY_CAPTIONS := {"all":"Tout", "todo":"À faire", "waiting":"En attente", "info":"Infos"}
-const PORTRAITS = {"Médical":"mail-medical", "Direction":"mail-direction", "Recrutement":"mail-recruitment", "Formation":"academy-player", "Compétitions":"mail-trainer"}
+## Icône du service expéditeur (palette existante) ; un portrait n'est montré que pour une personne identifiée.
+const SERVICE_ICONS = {"Presse":"globe", "Sélections":"flag", "Calendrier":"calendar", "Invitation":"people", "Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"home"}
+## Entrées du menu « Sujet » hors catégories : états rares et archives, pour qu'une seule rangée de filtres suffise.
+const SUBJECT_EXTRAS = [["archives", "Archives"], ["waiting", "En attente"], ["info", "Infos"]]
 # Trois formes : singulier et pluriel accordés (moteur actuel) et la forme historique « contrat(s) expire(nt) » des anciennes carrières.
 const SEASON_EXPIRY_MAILS := [
 	"%d contrat expire à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs.",
@@ -213,26 +215,10 @@ static func _tasks(app: Control) -> Array:
 	return tasks
 
 static func heading(row: Control, app: Control) -> Label:
-	var state := _state(app)
 	D.text(row,1,19,"LE COURRIER DE VOTRE CARRIÈRE",17,C.GOLD,600,780)
 	var title := D.text(row,-1,57,"Réception.",28,C.IVORY,700,777)
 	var counts := Reading.counts(_messages(app),app.model)
-	D.text(row,1,82,"%d courriers · %d urgences vérifiables" % [counts.all,counts.urgent],17,C.MUTED,500,730)
-	D.line(row,Vector2(746,38),Vector2(746,76),C.LINE)
-	D.chip(row,Rect2(773,36,199,34),"%d non lus" % unread(app),C.MINT)
-	D.chip(row,Rect2(991,36,204,34),"%d à faire" % Reading.counts(_messages(app), app.model).todo,C.AMBER)
-	var x := 1230
-	var widths := [95,140,145,154,196,196]
-	for i in CATEGORIES.size():
-		var category: String = CATEGORIES[i]
-		var name := "InboxCategory"+str(i)
-		var action := D.button(row,Rect2(x,36,widths[i],34),category,func():
-			state.category=category
-			state.scroll=0
-			_redraw(app,name),state.category==category,ICONS.get(category,""),true,app.accent,name)
-		action.add_theme_font_size_override("font_size",C.px(18))
-		action.tooltip_text = "Filtrer le courrier · " + category
-		x += widths[i] + 14
+	D.text(row,1,82,"%d non lus · %d à faire · %s" % [unread(app),counts.todo,P.plural(counts.urgent,"urgence","urgences")],17,C.MUTED,500,730)
 	return title
 
 static func build(app: Control) -> Control:
@@ -268,9 +254,10 @@ static func build(app: Control) -> Control:
 	var category_view: Dictionary = state.duplicate()
 	category_view.category = "Tous"
 	var list := D.panel(page,Rect2(0,0,LIST_WIDTH,height),"","","","InboxMessages")
-	_list_filters(list, app, state, unfiltered, messages.filter(func(item: Dictionary): return _visible(item,category_view)))
+	_list_filters(list, app, state, messages.filter(func(item: Dictionary): return not state.marks.get(item.id, {}).get("archived", false)), messages.filter(func(item: Dictionary): return _visible(item,category_view)))
 	_list(list,app,state,visible)
-	_detail(D.panel(page,Rect2(LIST_WIDTH+GAP,0,DETAIL_WIDTH,height),"","","","InboxDetail"),app,state,current)
+	var layout := _detail_layout(app, state, current, height)
+	_detail(D.panel(page,Rect2(LIST_WIDTH+GAP,0,DETAIL_WIDTH,layout.card_height),"","","","InboxDetail"),app,state,current,layout)
 	if state.get("return_focus", false):
 		state.return_focus = false
 		_restore_reading.call_deferred(page, state)
@@ -282,12 +269,10 @@ static func build(app: Control) -> Control:
 static func _h(base: float) -> float:
 	return maxf(base, 32.0 / C.density)
 
-## Ordonnées de l'en-tête de liste : dossiers, états, sujet, puis filet au-dessus des messages.
+## Ordonnées de l'en-tête de liste : une seule rangée de filtres, puis filet au-dessus des messages.
 static func _header_rows() -> Array[float]:
-	var folders := 16.0 + _h(44)
-	var states := folders + _h(44) + 10
-	var subject := states + _h(44) + 10
-	return [folders, states, subject, subject + _h(44) + 8]
+	var filters := 16.0 + _h(44)
+	return [filters, filters + _h(44) + 8]
 
 static func _height(state: Dictionary) -> float:
 	return clampf(float(state.get("page_height", PAGE.y)), MIN_HEIGHT, PAGE.y)
@@ -318,52 +303,89 @@ static func _visible(message: Dictionary, state: Dictionary) -> bool:
 	if state.folder == 2: return mark.get("favorite",false)
 	return true
 
-## En tête de la liste : dossiers, états et sujet (les filtres de la boîte, regroupés au-dessus des messages).
-static func _list_filters(card: Panel, app: Control, state: Dictionary, messages: Array, all_subjects: Array) -> void:
-	var captions := ["Tous", "Non lus (%d)" % unread(app), "Favoris", "Archives"]
-	for index in captions.size():
-		var id := "InboxFolder"+str(index)
-		var row := D.button(card,Rect2(12+index*169,_header_rows()[0],163,_h(44)),captions[index],func():
-			state.folder=index
-			state.category="Tous"
-			state.scroll=0
-			_redraw(app,id),state.folder==index,"",true,app.accent,id)
-		row.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		row.add_theme_font_size_override("font_size", C.px(18))
-		row.tooltip_text = ["Tous les messages", "Messages non lus", "Messages favoris", "Messages traités"][index]
-	var counts := Reading.counts(messages, app.model)
-	var keys := ["all", "todo", "waiting", "info"]
-	var widths := [130, 160, 192, 168]
+## En tête de la liste : une seule rangée (Tous · Non lus · À faire · Favoris) et un menu « Sujet » qui regroupe
+## les services, les archives et les états rares (En attente, Infos).
+static func _list_filters(card: Panel, app: Control, state: Dictionary, active: Array, all_subjects: Array) -> void:
+	var todo: int = Reading.counts(active, app.model).todo
+	# [légende, nom du bouton, dossier, état, infobulle]
+	var filters := [
+		["Tous", "InboxFolder0", 0, "all", "Tous les messages"],
+		["Non lus (%d)" % unread(app), "InboxFolder1", 1, "all", "Messages non lus"],
+		["À faire (%d)" % todo, "InboxActivity_todo", 0, "todo", Reading.LABELS.todo + ". Les messages sans décision explicite restent des informations."],
+		["Favoris", "InboxFolder2", 2, "all", "Messages favoris"],
+	]
+	var widths := [96, 150, 140, 112]
 	var x := 12
-	for index in keys.size():
-		var key: String = keys[index]
-		var id := "InboxActivity_" + key
-		var action := D.button(card,Rect2(x,_header_rows()[1],widths[index],_h(44)),"%s (%d)" % [ACTIVITY_CAPTIONS[key], counts[key]],func():
-			state.activity_filter = key
-			state.selected = ""
+	for index in filters.size():
+		var filter: Array = filters[index]
+		var folder: int = filter[2]
+		var activity: String = filter[3]
+		var id: String = filter[1]
+		var chosen: bool = state.folder == folder and state.activity_filter == activity
+		var action := D.button(card,Rect2(x,_header_rows()[0],widths[index],_h(44)),filter[0],func():
+			state.folder = folder
+			state.activity_filter = activity
+			state.category = "Tous"
+			if activity != "all": state.selected = ""
 			state.scroll = 0
-			_redraw(app,id),state.activity_filter==key,"",true,app.accent,id)
+			_redraw(app,id),chosen,"",true,app.accent,id)
 		action.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		action.add_theme_font_size_override("font_size", C.px(17))
-		action.accessibility_name = "%s : %d courrier(s)" % [Reading.LABELS[key], counts[key]]
-		action.tooltip_text = Reading.LABELS[key] + ". Les messages sans décision explicite restent des informations."
+		action.add_theme_font_size_override("font_size", C.px(18))
+		action.tooltip_text = filter[4]
 		x += widths[index] + 6
 	var subject := OptionButton.new()
 	subject.name = "InboxSubject"
+	subject.fit_to_longest_item = false
 	subject.add_theme_font_override("font",C.BOLD)
-	subject.add_theme_font_size_override("font_size",maxi(12,C.px(17)))
-	subject.tooltip_text = "Filtrer le courrier par sujet"
-	for index in SUBJECTS.size():
-		var category: String = SUBJECTS[index]
+	subject.add_theme_font_size_override("font_size",maxi(12,C.px(18)))
+	subject.tooltip_text = "Sujet : services du club, archives, messages en attente ou d'information"
+	var entries: Array = []
+	for category: String in SUBJECTS:
 		var count := all_subjects.size() if category == "Tous" else all_subjects.filter(func(message: Dictionary): return message.category == category).size()
-		subject.add_item("Sujet : %s (%d)" % [category, count])
-		if category == state.category: subject.select(index)
+		entries.append({"kind":"category", "value":category, "label":("Tous les sujets" if category == "Tous" else category) + " (%d)" % count, "short":"Sujet ▾" if category == "Tous" else category + " ▾"})
+	var chosen_entry := -1
+	for index in entries.size():
+		if entries[index].kind == "category" and entries[index].value == state.category: chosen_entry = index
+	var archive_selected: bool = state.folder == 3
+	var extra_selected: bool = state.folder != 3 and state.activity_filter in ["waiting", "info"]
+	for index in entries.size():
+		subject.add_item(entries[index].label, index)
+	subject.add_separator()
+	var base := entries.size()
+	var statuses := {"waiting":Reading.counts(active, app.model).waiting, "info":Reading.counts(active, app.model).info}
+	for extra: Array in SUBJECT_EXTRAS:
+		var count_text := ""
+		if extra[0] == "archives": count_text = " (%d)" % (messages_archived(app))
+		else: count_text = " (%d)" % statuses[extra[0]]
+		entries.append({"kind":extra[0], "value":extra[0], "label":str(extra[1]) + count_text, "short":str(extra[1]) + " ▾"})
+		subject.add_item(entries[-1].label, entries.size() - 1)
+		if (extra[0] == "archives" and archive_selected) or (extra[0] != "archives" and extra_selected and state.activity_filter == extra[0]): chosen_entry = entries.size() - 1
+	subject.select(subject.get_item_index(maxi(chosen_entry, 0)))
+	subject.text = entries[maxi(chosen_entry, 0)].short
 	subject.item_selected.connect(func(index: int):
-		state.category = SUBJECTS[index]
+		var entry: Dictionary = entries[subject.get_item_id(index)]
+		match entry.kind:
+			"category":
+				state.category = entry.value
+				if state.folder == 3: state.folder = 0
+				if state.activity_filter in ["waiting", "info"]: state.activity_filter = "all"
+			"archives":
+				state.folder = 3
+				state.category = "Tous"
+				state.activity_filter = "all"
+			_:
+				state.folder = 0
+				state.activity_filter = entry.kind
+				state.selected = ""
 		state.scroll = 0
 		_redraw(app,"InboxSubject"))
 	card.add_child(subject)
-	D.place(subject,Rect2(12,_header_rows()[2],676,_h(44)))
+	D.place(subject,Rect2(x+6,_header_rows()[0],688-x-6,_h(44)))
+
+## Nombre de messages rangés dans les archives.
+static func messages_archived(app: Control) -> int:
+	var marks: Dictionary = _state(app).marks
+	return _messages(app).filter(func(message: Dictionary): return marks.get(message.id, {}).get("archived", false)).size()
 
 static func _open_related(app: Control, message: Dictionary, action: Callable) -> void:
 	if message.is_empty():
@@ -471,7 +493,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		state.oldest_first=not state.oldest_first
 		state.scroll=0
 		_redraw(app,"InboxSort"),false,"clock",true,app.accent,"InboxSort")
-	var top := _header_rows()[3]
+	var top := _header_rows()[1]
 	D.line(card,Vector2(1,top),Vector2(LIST_WIDTH-1,top))
 	var scroll := ScrollContainer.new()
 	scroll.name = "InboxMessageScroll"
@@ -549,8 +571,7 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 		var dot := D.rect(row,Rect2(0,6,5,ROW_HEIGHT-12),C.MINT,2)
 		dot.name = "UnreadDot"
 	elif mark.get("favorite",false): _icon(row,"star",Rect2(5,10,14,14),C.GOLD)
-	var image: String = PORTRAITS.get(message.category,"mail-trainer")
-	D.photo(row,image,Rect2(16,14,58,58))
+	_sender_badge(row, app, message, Rect2(16,14,58,58))
 	var text_x := 88.0
 	var date := _date(message)
 	D.text(row,width-12,28,date,16,C.MUTED,500,150,HORIZONTAL_ALIGNMENT_RIGHT)
@@ -564,9 +585,42 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 	elif reading.key == "waiting": prefix = str(reading.label) + " · "
 	D.text(row,text_x,80,prefix + excerpt,15,tone,500,width-text_x-14)
 
+## Service expéditeur (clé de SERVICE_ICONS) : presse, sélections, calendrier, invitation ou catégorie du courrier.
+static func _service(message: Dictionary) -> String:
+	if message.has("press_invitation"): return "Presse"
+	if message.has("international_event"): return "Sélections"
+	if message.has("calendar_notice"): return "Calendrier"
+	if message.has("scene_invitation"): return "Invitation"
+	return str(message.get("category", "Club"))
+
+## Joueur identifié qui signe le courrier (son nom est l'expéditeur) ; vide sinon.
+static func _sender_player(app: Control, message: Dictionary) -> Dictionary:
+	var mail: Dictionary = message.get("club_mail", {})
+	if mail.is_empty() or not mail.get("joueur") is String or str(mail.joueur).is_empty(): return {}
+	for player: Dictionary in app.model.get("squad", []):
+		if str(player.get("id", "")) == str(mail.joueur):
+			return player if not str(player.get("name", "")).is_empty() and str(mail.get("expediteur", "")).contains(str(player.name)) else {}
+	return {}
+
+## Pastille de l'expéditeur : icône du service dans la palette du jeu, ou vrai portrait d'une personne identifiée.
+static func _sender_badge(parent: Control, app: Control, message: Dictionary, area: Rect2) -> void:
+	var player := _sender_player(app, message)
+	if not player.is_empty():
+		var portrait := Portraits.portrait(int(player.get("portraitIndex",0)),C.px(area.size.x),player)
+		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		parent.add_child(portrait); D.place(portrait,area)
+		return
+	var service := _service(message)
+	var color: Color = COLORS.get(service, C.GOLD if service in ["Presse", "Sélections", "Calendrier", "Invitation"] else C.MUTED)
+	var tile := D.rect(parent,area,Color(color,.12),8,Color(color,.5))
+	tile.name = "SenderIcon"
+	tile.tooltip_text = _sender(app, message)
+	_icon(tile,SERVICE_ICONS.get(service, "home"),Rect2(area.size.x*.2,area.size.y*.2,area.size.x*.6,area.size.y*.6),color)
+
 ## Expéditeur du courrier, pour la liste et l'en-tête du mail ouvert.
 static func _sender(app: Control, message: Dictionary) -> String:
 	if message.has("club_mail"): return str(message.club_mail.get("expediteur", SENDERS.Club))
+	if message.has("scene_invitation"): return SENDERS.Club
 	if message.has("press_invitation"): return "Service de presse"
 	if message.has("international_event"): return "Sélections" if not app.Immersive.Selections.nation_only(app.model) else "Fédération"
 	if message.has("calendar_notice"): return "Calendrier des compétitions"
@@ -582,6 +636,7 @@ static func _date(message: Dictionary) -> String:
 
 static func _row_id(message: Dictionary) -> String:
 	if message.has("club_mail"): return "InboxClubMail_" + str(message.id).replace("-", "_")
+	if message.has("scene_invitation"): return "InboxSceneInvitation_" + str(message.scene_invitation.id).replace("-", "_").replace(":", "_")
 	if message.get("press_invitation", {}).get("status") == "pending": return "InboxPressInvitation"
 	if message.has("press_invitation"): return "InboxPressMessage_" + str(message.position)
 	return "InboxMessage_" + str(message.position)
@@ -602,7 +657,32 @@ static func _message_key(event: InputEvent, app: Control, message_id: String) ->
 	app.get_viewport().set_input_as_handled()
 	buttons[next].pressed.emit()
 
-static func _detail(card: Panel, app: Control, state: Dictionary, message: Dictionary) -> void:
+## Mise en page du mail ouvert : texte et pièces liées en haut, actions collées juste dessous (pied compact).
+## La carte épouse son contenu (au plus la hauteur de la boîte) : pas de zone vide entre le texte et les réponses.
+static func _detail_layout(app: Control, state: Dictionary, message: Dictionary, height: float) -> Dictionary:
+	var width := DETAIL_WIDTH
+	var event: Dictionary = message.get("international_event", {})
+	var focused := message.has("press_invitation") or message.has("calendar_notice") or message.has("club_mail") or message.has("scene_invitation") or not event.is_empty()
+	var footer_height := _reply_row(app, message) + _h(46) + 10 + _h(44)
+	var footer_max := height - 26 - footer_height
+	var card := Panel.new() # support de mesure des pièces liées
+	var attachments := _attachments(card,app,state,message,0,focused,false)
+	if footer_max - 20 - 18 - attachments - 252 < 80: # Fenêtre basse : les priorités de la semaine restent au Bureau.
+		focused = true
+		attachments = _attachments(card,app,state,message,0,focused,false)
+	card.free()
+	var body := C.wrap(message.get("text","Aucun message à afficher dans ce dossier."),22,C.IVORY)
+	body.name = "InboxMessageText"
+	C.fill(body)
+	var pixels := body.get_theme_font_size("font_size")
+	var text_height := body.get_theme_font("font").get_multiline_string_size(body.text,HORIZONTAL_ALIGNMENT_LEFT,C.px(width-80),pixels,-1,TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE).y / C.density
+	var room := footer_max - 252 - 18 - attachments - 20
+	var body_height := clampf(text_height+18,52,maxf(52,room))
+	var footer_top := minf(252 + body_height + 18 + attachments + 20, maxf(footer_max, 252 + 52 + 18 + attachments + 20))
+	var card_height := height if message.is_empty() else minf(height, footer_top + footer_height + 26)
+	return {"focused":focused, "attachments":attachments, "body":body, "body_height":body_height, "footer_top":footer_top, "card_height":card_height}
+
+static func _detail(card: Panel, app: Control, state: Dictionary, message: Dictionary, layout: Dictionary) -> void:
 	card.clip_contents = true
 	var width := DETAIL_WIDTH
 	var national: bool = app.Immersive.Selections.nation_only(app.model)
@@ -635,31 +715,20 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 		var date := _date(message)
 		D.text(card,32,220,"De : " + _sender(app,message) + ("" if date.is_empty() else "  ·  " + date),18,C.MUTED,500,width-64)
 	D.line(card,Vector2(26,236),Vector2(width-26,236),Color(C.LINE,.7))
-	# Pied du mail : réponses et actions, toujours visibles en bas.
-	var reply := _reply_row(app, message)
-	var height := _height(state)
-	var footer_top := height - 26 - (reply + _h(46) + 10 + _h(44))
-	var focused := message.has("press_invitation") or message.has("calendar_notice") or message.has("club_mail") or not event.is_empty()
-	var attachments := _attachments(card,app,state,message,0,focused,false)
-	if footer_top - 30 - attachments - 252 < 80: # Fenêtre basse : les priorités de la semaine restent au Bureau.
-		focused = true
-		attachments = _attachments(card,app,state,message,0,focused,false)
-	var body := C.wrap(message.get("text","Aucun message à afficher dans ce dossier."),22,C.IVORY)
-	body.name = "InboxMessageText"
-	C.fill(body)
+	# Corps du mail, pièces liées juste dessous, puis le pied compact (réponses et actions).
+	var footer_top: float = layout.footer_top
+	var card_height: float = layout.card_height
+	var focused: bool = layout.focused
+	var body_height: float = layout.body_height
 	var scroll := ScrollContainer.new()
 	scroll.name = "InboxReadingScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	card.add_child(scroll)
-	var pixels := body.get_theme_font_size("font_size")
-	var text_height := body.get_theme_font("font").get_multiline_string_size(body.text,HORIZONTAL_ALIGNMENT_LEFT,C.px(width-80),pixels,-1,TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE).y / C.density
-	var room := footer_top - 30 - attachments - 252
-	var body_height := clampf(text_height+18,52,maxf(52,room))
 	D.place(scroll,Rect2(34,252,width-68,body_height))
-	scroll.add_child(body)
+	scroll.add_child(layout.body)
 	_attachments(card,app,state,message,252+body_height+18,focused,true)
 	if not message.is_empty():
-		D.rect(card,Rect2(1,footer_top-16,width-2,height-footer_top+15),Color(C.PANEL,.55),0)
+		D.rect(card,Rect2(1,footer_top-16,width-2,card_height-footer_top+15),Color(C.PANEL,.55),0)
 		D.line(card,Vector2(1,footer_top-16),Vector2(width-1,footer_top-16),Color(C.LINE,.8))
 		_actions(card,app,state,message,int(footer_top))
 	for action in card.find_children("*", "Button", true, false):
@@ -688,6 +757,16 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 				var action := D.button(card,Rect2(26,top,HALF,_h(46)),caption,_open_related.bind(app, message, app._open_press_invitation.bind(invitation.id)),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
 				action.disabled = app.waiting or (not receipt and (not conference.get("available", false) or conference.get("invitationId") != invitation.id))
 				if action.disabled: action.tooltip_text = str(conference.get("reason", ""))
+	elif message.has("scene_invitation"):
+		var scene: Dictionary = message.scene_invitation
+		var open := D.button(card,Rect2(26,top,HALF,_h(46)),"Ouvrir l’invitation",func():
+			if is_instance_valid(app.contextual_director): app.contextual_director.open_invitation(str(scene.id)),true,"arrow",false,app.accent,"InboxOpenSceneInvitation")
+		open.disabled = app.waiting
+		D.button(card,Rect2(26+HALF+18,top,HALF,_h(46)),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
+			mark.archived=not mark.get("archived",false)
+			mark.read=true
+			state.marks[message.id]=mark
+			_redraw(app,"InboxFolder"+str(state.folder)),false,"check",false,app.accent,"InboxToggleArchive")
 	elif message.has("club_mail"):
 		_club_mail_actions(card, app, state, message, top)
 	elif message.get("calendar_notice", {}).get("status") == "pending":
@@ -838,7 +917,7 @@ static func _metric(parent: Control, rectangle: Rect2, icon: String, value: Stri
 static func _redraw(app: Control, focus: String) -> void:
 	var state := _state(app)
 	var scroll: ScrollContainer = app.root_content.find_child("InboxMessageScroll",true,false)
-	if is_instance_valid(scroll) and not focus.begins_with("InboxFolder") and not focus.begins_with("InboxCategory") and focus!="InboxSort" and focus!="InboxSubject":
+	if is_instance_valid(scroll) and not focus.begins_with("InboxFolder") and not focus.begins_with("InboxActivity") and focus!="InboxSort" and focus!="InboxSubject":
 		state.scroll = scroll.scroll_vertical
 	app._render()
 	var action: Control = app.root_content.find_child(focus,true,false)

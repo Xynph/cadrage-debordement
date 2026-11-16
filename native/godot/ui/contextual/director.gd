@@ -217,25 +217,7 @@ func _input(event: InputEvent) -> void:
 
 func install_entrypoints() -> void:
 	if active() or not is_instance_valid(app.root_content): return
-	if app.route == "Réception":
-		var parent: Node = app.body
-		if parent == null or parent.find_child("ContextualInvitations", true, false) != null: return
-		var pending: Array = app.model.get("clubLife", {}).get("sceneInvitations", {}).get("invitations", []).filter(func(item: Dictionary): return item.get("status") == "pending" and item.get("available", false))
-		if pending.is_empty(): return
-		var list := S.G.v(8)
-		list.name = "ContextualInvitations"
-		parent.add_child(list)
-		parent.move_child(list, 0)
-		list.add_child(S.G.section("Les invitations du club"))
-		for invitation: Dictionary in pending:
-			var row := S.G.h(12)
-			list.add_child(row)
-			var words := S.G.wrap(str(invitation.get("title", "Invitation")) + "\n" + str(invitation.get("reason", "")), 14)
-			S.G.fill(words)
-			row.add_child(words)
-			row.add_child(S.G.button("OUVRIR", func(): open_invitation(str(invitation.id))))
-		_contain_entry_content(parent, list)
-	elif app.route == "Préparation":
+	if app.route == "Préparation":
 		var parent: Node = app.root_content.find_child("PreparationEntrainement", true, false)
 		if parent == null and app.management_ui.get("preparation", {}).get("tab", 0) == 2:
 			parent = app.body

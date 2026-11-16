@@ -10,6 +10,9 @@ extends SceneTree
 ##   hauteur, mail ouvert en grand (≥ 60 % de la largeur), plus de cartes de courriers liés en bas à droite,
 ##   réponses visibles en bas du mail, aucun chevauchement ni texte qui déborde ; ouverture, lu/non lu, ordre de
 ##   la liste identique à l'ordre d'affichage (raccourci Espace « prochain non lu »).
+## - Réception v2 (corrections de Léo 16/11) : une seule rangée de filtres (Tous · Non lus · À faire · Favoris + menu Sujet),
+##   plus de bande « Les invitations du club » (les invitations sont des messages de la liste, à faire), icône de service
+##   à la place d'un même visage, pas de vide au-dessus des réponses du mail ouvert.
 ## Captures (rendu graphique) : CD_COURRIER_CAPTURES=<dossier>.
 ## Imprime une ligne COURRIER {checks, failures}.
 const Flow = preload("helpers/contextual_flow.gd")
@@ -75,6 +78,7 @@ func reply_and_open() -> void:
 	check(not mail.is_empty(), "Un mail du club attend une réponse")
 	if mail.is_empty(): return
 	for size: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720)]: await reception_layout(mail, size)
+	await invitations_in_list(mail)
 	root.size = Vector2i(1600, 900)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 	app._reset_reception(str(mail.id))
@@ -153,16 +157,29 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 	var d := detail.get_global_rect()
 	check(screen.encloses(l.grow(-1)) and screen.encloses(d.grow(-1)), "Liste et mail dans la fenêtre · " + tag + " " + str(l) + " " + str(d))
 	check(l.end.x <= d.position.x, "Liste à gauche du mail · " + tag)
-	check(absf(l.size.y - d.size.y) < 2.0 and absf(l.position.y - d.position.y) < 2.0, "Liste sur toute la hauteur du mail · " + tag)
+	check(absf(l.position.y - d.position.y) < 2.0 and d.size.y <= l.size.y + 2.0, "Mail aligné en haut de la liste, sans la dépasser · " + tag)
 	var useful := d.end.x - l.position.x
 	check(d.size.x >= .6 * useful, "Mail ouvert ≥ 60 %% de la largeur utile · %s (%.0f / %.0f)" % [tag, d.size.x, useful])
 	check(l.size.x <= .36 * useful, "Liste étroite · %s (%.0f / %.0f)" % [tag, l.size.x, useful])
-	for gone in ["InboxContext", "InboxCategoryChart", "InboxFolders", "InboxActivityFilters"]:
+	for gone in ["InboxContext", "InboxCategoryChart", "InboxFolders", "InboxActivityFilters", "ContextualInvitations", "InboxCategory0", "InboxFolder3", "InboxActivity_all", "InboxActivity_waiting", "InboxActivity_info"]:
 		check(node(gone) == null, "Plus de bloc séparé « " + gone + " » · " + tag)
 	check(app.root_content.find_children("InboxRelated_*", "", true, false).is_empty(), "Plus de cartes de courriers en bas à droite · " + tag)
-	for name in ["InboxFolder0", "InboxFolder1", "InboxFolder2", "InboxFolder3", "InboxActivity_all", "InboxActivity_todo", "InboxSort"]:
+	# Une seule rangée de filtres, en tête de liste : quatre boutons et le menu Sujet, à la même hauteur.
+	var filter_row: Array[Control] = []
+	for name in ["InboxFolder0", "InboxFolder1", "InboxActivity_todo", "InboxFolder2", "InboxSubject"]:
 		var filter := node(name)
 		check(filter != null and l.encloses(filter.get_global_rect()), "Filtre en tête de liste · " + name + " · " + tag)
+		if filter != null: filter_row.append(filter)
+	for filter in filter_row: check(absf(filter.get_global_rect().position.y - filter_row[0].get_global_rect().position.y) < 2.0, "Filtres sur une seule rangée · " + str(filter.name) + " · " + tag)
+	var filter_buttons: Array = list.find_children("Inbox*", "Button", true, false).filter(func(b: Button) -> bool: return str(b.name).begins_with("InboxFolder") or str(b.name).begins_with("InboxActivity_") or str(b.name).begins_with("InboxCategory"))
+	check(filter_buttons.size() == 4, "Quatre boutons de filtre, pas davantage · " + tag + " (" + str(filter_buttons.size()) + ")")
+	check(node("InboxSort") != null and l.encloses(node("InboxSort").get_global_rect()), "Tri en tête de liste · " + tag)
+	var menu := node("InboxSubject") as OptionButton
+	if menu != null:
+		var labels: Array = []
+		for index in menu.item_count: labels.append(menu.get_item_text(index))
+		for wanted in ["Staff", "Médical", "Archives", "En attente", "Infos"]:
+			check(labels.any(func(text: String) -> bool: return text.begins_with(wanted)), "Menu Sujet : « " + wanted + " » accessible · " + tag)
 	# Le mail ouvert : texte lisible, réponses visibles en bas du mail, aucun chevauchement.
 	var text := node("InboxMessageText") as Label
 	check(text != null and text.text.contains(str(mail.get("corps", "")).left(30)), "Le mail sélectionné est ouvert · " + tag)
@@ -174,8 +191,26 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 	var replies: Array = actions.filter(func(b: Button) -> bool: return str(b.name).begins_with("InboxClubMailReply_"))
 	check(not replies.is_empty(), "Réponses du courrier affichées · " + tag)
 	for reply: Button in replies:
-		check(d.encloses(reply.get_global_rect()) and reply.get_global_rect().position.y > d.position.y + d.size.y * .5, "Réponse en bas du mail · " + str(reply.name) + " · " + tag)
+		check(d.encloses(reply.get_global_rect()), "Réponse dans le mail · " + str(reply.name) + " · " + tag)
 		check(reply.size.x >= reply.get_theme_font("font").get_string_size(reply.text, HORIZONTAL_ALIGNMENT_LEFT, -1, reply.get_theme_font_size("font_size")).x * .98, "Libellé de réponse entier · " + reply.text + " · " + tag)
+		check(reply.size.y >= 24.0, "Bouton de réponse lisible (%.0f px) · %s" % [reply.size.y, tag])
+	# Pas de vide : les actions sont collées sous le contenu (texte, pièces liées) et le pied tient dans la carte.
+	if not actions.is_empty():
+		var first_top := 100000.0
+		var last_bottom := 0.0
+		for action: Button in actions:
+			first_top = minf(first_top, action.get_global_rect().position.y)
+			last_bottom = maxf(last_bottom, action.get_global_rect().end.y)
+		var content_bottom := d.position.y
+		for item: Control in detail.find_children("*", "Control", true, false):
+			if not item.is_visible_in_tree() or item is Panel or item is TextureRect or item is Button or item.get_parent() is ScrollContainer: continue
+			if item.get_global_rect().position.y < first_top - 1.0 and (item is Label or item is ScrollContainer): content_bottom = maxf(content_bottom, item.get_global_rect().end.y)
+		for item: Button in detail.find_children("*", "Button", true, false):
+			if item.is_visible_in_tree() and item.get_global_rect().end.y < first_top - 1.0: content_bottom = maxf(content_bottom, item.get_global_rect().end.y)
+		var gap := first_top - content_bottom
+		check(gap <= .25 * d.size.y, "Pas de vide entre le contenu du mail et ses actions · %s (%.0f px sur %.0f)" % [tag, gap, d.size.y])
+		var below := d.end.y - last_bottom
+		check(below <= .25 * d.size.y, "Pas de vide sous les actions · %s (%.0f px sur %.0f)" % [tag, below, d.size.y])
 	for i in actions.size():
 		check(d.encloses(actions[i].get_global_rect().grow(-1)), "Action dans le mail · " + str(actions[i].name) + " · " + tag)
 		for j in range(i + 1, actions.size()):
@@ -183,6 +218,17 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 			var b: Rect2 = actions[j].get_global_rect().grow(-1)
 			if a.intersects(b) and not actions[i].is_ancestor_of(actions[j]) and not actions[j].is_ancestor_of(actions[i]):
 				check(false, "Chevauchement %s / %s · %s" % [actions[i].name, actions[j].name, tag])
+	# Icône du service à la place d'un même visage : un portrait seulement pour une personne identifiée.
+	var portraits := 0
+	var icons := 0
+	for row: Button in rows():
+		var message: Array = Reception._messages(app).filter(func(item: Dictionary) -> bool: return str(item.id) == str(row.get_meta("message_id")))
+		if message.is_empty(): continue
+		if row.find_child("SenderIcon", true, false) != null: icons += 1
+		else:
+			portraits += 1
+			check(not Reception._sender_player(app, message[0]).is_empty(), "Portrait réservé à une personne identifiée · " + str(row.name) + " · " + tag)
+	check(icons > 0, "Les expéditeurs de service ont une icône · " + tag + " (" + str(icons) + " icônes, " + str(portraits) + " portraits)")
 	# Ordre de la liste = ordre d'affichage (le raccourci Espace ouvre le premier non lu de cette liste).
 	await expand_threads()
 	var ids: Array = rows().map(func(row: Button) -> String: return str(row.get_meta("message_id")))
@@ -222,3 +268,38 @@ func display_order() -> Array:
 	for group: Dictionary in Reception.Reading.groups(ordered):
 		for m: Dictionary in group.messages: result.append(str(m.id))
 	return result
+
+## Les invitations du club sont des messages de la liste (catégorie Club, à faire), sans bande ni bouton blanc au-dessus de la boîte.
+## Fixture d'interface contrôlée : le produit lit la projection du moteur, ici on y ajoute une invitation en attente.
+func invitations_in_list(mail: Dictionary) -> void:
+	var original: Dictionary = app.model.duplicate(true)
+	var scenes: Dictionary = app.model.get("clubLife", {}).get("sceneInvitations", {})
+	var entries: Array = scenes.get("invitations", []).duplicate(true)
+	entries.append({"id":"qa-invitation", "title":"Entretien avec le staff", "reason":"Le nouveau manager prend ses fonctions : faire connaissance.", "status":"pending", "available":true})
+	if not app.model.has("clubLife"): app.model.clubLife = {}
+	if not app.model.clubLife.has("sceneInvitations"): app.model.clubLife.sceneInvitations = {}
+	app.model.clubLife.sceneInvitations.invitations = entries
+	app._reset_reception(str(mail.id))
+	app._navigate("Réception", false)
+	await settle(8)
+	check(node("ContextualInvitations") == null, "Aucune bande d'invitations au-dessus de la boîte")
+	var found: Array = Reception._messages(app).filter(func(item: Dictionary) -> bool: return item.has("scene_invitation") and item.id == "invitation:qa-invitation")
+	check(found.size() == 1 and found[0].category == "Club", "Invitation du club : message de catégorie Club")
+	if found.size() == 1: check(Reception.Reading.status(found[0], app.model).key == "todo", "Invitation du club : à faire")
+	await expand_threads()
+	var row := node("InboxSceneInvitation_qa_invitation") as Button
+	check(row != null and row.get_parent() == node("InboxMessageRows"), "Invitation rangée dans la liste")
+	if row != null:
+		row.pressed.emit()
+		await settle()
+		var open := node("InboxOpenSceneInvitation") as Button
+		check(open != null and not open.disabled and str(open.text).begins_with("Ouvrir"), "Invitation ouverte : bouton pour y répondre")
+		check(app.find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return b.text == "OUVRIR").is_empty(), "Aucun bouton « OUVRIR » hors palette")
+	var ids: Array = rows().map(func(item: Button) -> String: return str(item.get_meta("message_id")))
+	check(ids == display_order() and ids.has("invitation:qa-invitation"), "Invitations dans l'ordre d'affichage (Espace = prochain non lu)")
+	var marks: Dictionary = app.management_ui.reception.marks
+	for id: String in ids: marks[id] = {"read":true}
+	marks.erase("invitation:qa-invitation")
+	check(str(Reception.next_unread(app).get("id", "")) == "invitation:qa-invitation", "Espace ouvre l'invitation non lue")
+	app.model = original
+	app._reset_reception(str(mail.id))

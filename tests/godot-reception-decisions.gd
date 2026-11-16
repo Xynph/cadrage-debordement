@@ -16,6 +16,19 @@ func check(value: bool, message: String) -> void:
 func settle() -> void:
 	for frame in 12: await process_frame
 
+## Menu « Sujet » (archives, états rares) : même effet qu'un choix dans la liste déroulante.
+func choose_subject(prefix: String) -> void:
+	var menu := app.find_child("InboxSubject", true, false) as OptionButton
+	check(menu != null, "Menu Sujet disponible : " + prefix)
+	if menu == null: return
+	for index in menu.item_count:
+		if not menu.is_item_separator(index) and menu.get_item_text(index).begins_with(prefix):
+			menu.select(index)
+			menu.item_selected.emit(index)
+			await settle()
+			return
+	check(false, "Entrée de menu Sujet introuvable : " + prefix)
+
 func key(code: int) -> void:
 	for pressed in [true,false]:
 		var event := InputEventKey.new(); event.keycode = code; event.pressed = pressed
@@ -84,7 +97,7 @@ func run() -> void:
 	check(not selected.is_empty(), "Invitation sélectionnée explicitement")
 	await capture("02-decision-presse")
 	check(not app.contextual_director.active(), "Lire l’invitation ne déclenche pas encore le rendez-vous")
-	await activate("InboxActivity_info")
+	await choose_subject("Infos")
 	var rows := app.find_child("InboxMessageRows",true,false)
 	var buttons: Array = rows.get_children().filter(func(node): return node is Button and node.has_meta("message_id"))
 	check(not buttons.is_empty(), "Informations réelles présentes")
@@ -93,9 +106,9 @@ func run() -> void:
 		buttons[0].grab_focus(); await key(KEY_DOWN)
 		check(state.selected == next_id, "Flèche bas sélectionne le courrier suivant sans commande")
 	await capture("03-informations")
-	await activate("InboxActivity_waiting")
+	await choose_subject("En attente")
 	check(app.find_child("InboxOpenPressInvitation",true,false) == null, "Aucune conférence disponible inventée dans En attente")
-	await activate("InboxActivity_all")
+	await activate("InboxFolder0")
 	var expiry: Array = app.Immersive.Reception._messages(app).filter(func(message: Dictionary): return message.get("season_expiry",false))
 	check(not expiry.is_empty(), "Courrier réel d'échéance disponible dans la carrière témoin")
 	if not expiry.is_empty():
