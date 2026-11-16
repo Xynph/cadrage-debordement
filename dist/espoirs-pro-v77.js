@@ -82,7 +82,7 @@
     st.promotions.push({playerId:id,name:promoted.name,pos:promoted.pos,season:s.season,
       round:s.round,age:promoted.age,rating:promoted.rating,potential:promoted.dev.potential,
       salary:promoted.salary,years,contractEnd:promoted.contractEnd});
-    if(Array.isArray(s.news))s.news.unshift(promoted.name+' passe professionnel pour '+years+' saison(s). Choisissez sa place dans le groupe professionnel.');
+    if(Array.isArray(s.news))s.news.unshift(promoted.name+' passe professionnel pour '+years+' saison(s). Choisis sa place dans le groupe professionnel.');
     try{
       if(save&&save()===false)throw Error('save');
       return true;
@@ -107,7 +107,7 @@
     }).join('');
     const history=[...st.promotions.map(p=>({...p,season:s.season})),...st.history.flatMap(h=>h.promotions.map(p=>({...p,season:h.season})))].slice(0,15);
     return '<section class="cd04-panel" style="padding:18px;margin-top:18px"><h2>V77 · La passerelle professionnelle</h2>'+
-      '<p>Sélectionnez un Espoir et la durée de son premier contrat : intégration immédiate dans l’effectif professionnel, puis sélection possible dans votre feuille de 23. Le temps de jeu fait progresser le joueur via le système de carrière existant.</p>'+
+      '<p>Sélectionne un Espoir et la durée de son premier contrat : intégration immédiate dans l’effectif professionnel, puis sélection possible dans ta feuille de 23. Le temps de jeu fait progresser le joueur via le système de carrière existant.</p>'+
       '<p><strong>Promotions cette saison : '+st.promotions.length+'/3</strong> · Professionnels : '+s.clubs[s.club].players.length+'/42</p>'+
       '<div class="tablewrap"><table><thead><tr><th>Espoir</th><th>Poste</th><th>Niveau</th><th>Potentiel</th><th>Signer un premier contrat</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       '<button type="button" onclick="nav(\'team\')">Composer la feuille de 23 →</button>'+

@@ -11,11 +11,11 @@ assert.equal(run('l.playbookVersion'),1);
 assert.equal(run('fourZoneWhatIf(l)'),null);
 assert.equal(run('fourZonePreviewChoice.plan'),'');
 const empty=run('fourZoneWhatIfPanel(l)');
-for(const label of ['Et si vous changiez une seule zone','Zone à comparer','Type de consigne','Consigne alternative','Choisir un scénario','Comparaison avant après']){
+for(const label of ['Et si tu changeais une seule zone','Zone à comparer','Type de consigne','Consigne alternative','Choisir un scénario','Comparaison avant après']){
  assert.ok(empty.includes(label),label);
 }
-assert.ok(run('fourZoneTacticalPanel(l).includes("Et si vous changiez une seule zone")'));
-assert.ok(run('playbookPanel(l).includes("Et si vous changiez une seule zone")'));
+assert.ok(run('fourZoneTacticalPanel(l).includes("Et si tu changeais une seule zone")'));
+assert.ok(run('playbookPanel(l).includes("Et si tu changeais une seule zone")'));
 assert.equal(run('fourZoneTacticalPreview(l).length'),4);
 
 const before=run('JSON.stringify(S)'),disk=t.store['bdt-v1'];
