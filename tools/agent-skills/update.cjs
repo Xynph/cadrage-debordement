@@ -11,8 +11,8 @@
 //       même chose depuis un clone local déjà placé sur ce commit.
 //
 // Relire le diff avant de valider une mise à jour : une compétence est une
-// consigne donnée aux agents. Aucun script tiers n'est exécuté ; seuls des
-// fichiers .md sont acceptés.
+// consigne donnée aux agents. Aucun script tiers n'est exécuté ni copié ; seuls
+// des fichiers .md sont acceptés, les autres sont consignés dans `refused`.
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -32,7 +32,8 @@ const SAFE = /^(?:[A-Za-z0-9][A-Za-z0-9_-]*\/)*[A-Za-z0-9][A-Za-z0-9_-]*\.md$/;
 // soit présente.
 const NOTE = 'Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — '
   + 'AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois '
-  + '(`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.';
+  + '(`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu. Les scripts cités par ce guide '
+  + '(`assets/*.gd`, `scripts/*.py` d\'un autre module) ne sont pas installés : ignorer ces étapes.';
 const NOTE_BLOCK = '\n> ' + NOTE + '\n';
 const FRONT = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
 function addNote(buffer) {
@@ -122,8 +123,12 @@ function update({ commit, local }) {
     for (const skill of source.skills) {
       const origin = path.join(checkout, skill.path);
       skill.files = {};
+      delete skill.refused;
       for (const file of listFiles(origin)) {
-        if (!SAFE.test(file)) throw Error('Fichier refusé (seuls les .md sont acceptés) : ' + skill.path + '/' + file);
+        // Un fichier qui n'est pas du Markdown (script .gd, .py, .sh…) est refusé et
+        // consigné au manifeste ; un nom de .md douteux arrête la mise à jour.
+        if (!/\.md$/i.test(file)) { (skill.refused = skill.refused || []).push(file); continue; }
+        if (!SAFE.test(file)) throw Error('Fichier refusé (nom douteux) : ' + skill.path + '/' + file);
         const data = fs.readFileSync(path.join(origin, file));
         skill.files[file] = sha256(data);
         staged.push([skill.name + '/' + file, file === 'SKILL.md' ? addNote(data) : data]);

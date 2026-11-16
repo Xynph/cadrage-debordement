@@ -69,7 +69,7 @@ module.exports=function nativeModel(){
  }
  // Feuille incomplète : jeune du centre proposé pour chaque place vide (espoirs-match.cjs), à côté du match à 22.
  if(errors.length&&!l&&S.phase!=='ended'&&typeof nativeSystems!=='undefined'){const espoirs=nativeSystems.domain('espoirsMatch')?.offers(S);if(espoirs)selection.espoirs=espoirs;}
- const tactics={attack:S.tactic,defense:S.defence||'equilibre',attacks:Object.entries(TACTICS).map(([id,[label,description]])=>({id,label,description})),defenses:Object.entries(DEFENCES).map(([id,[label,description]])=>({id,label,description})),penalty:S.live&&S.live.userSide>=0?(S.live.penaltyPolicies?.[S.live.userSide]||'auto'):'auto',penalties:Object.entries(PENALTY_POLICIES).map(([id,label])=>({id,label}))};
+ const tactics={attack:S.tactic,defense:S.defence||'equilibre',attacks:Object.entries(TACTICS).map(([id,[label,description]])=>({id,label,description})),defenses:Object.entries(DEFENCES).map(([id,[label,description]])=>({id,label,description})),penalty:S.live&&S.live.userSide>=0?(S.live.penaltyPolicies?.[S.live.userSide]||'auto'):'auto',penalties:Object.entries(PENALTY_POLICIES).map(([id,label])=>({id,label})),...(typeof playerRolesView==='function'?{roles:playerRolesView()}:{})};
  const row=c=>({...summary(c),played:c.played,won:c.won,drawn:c.drawn,lost:c.lost,pf:c.pf,pa:c.pa,bonus:c.bonus,form:c.form});
  const leagues=france?['elite','accession'].map(id=>({id,name:id==='elite'?'Élite — 14 clubs':'Accession — 16 clubs',phase:S.franceMode.leagues[id].phase,champion:S.franceMode.leagues[id].champion===null?null:summary(S.clubs[S.franceMode.leagues[id].champion]),finalist:S.franceMode.leagues[id].finalist===null?null:summary(S.clubs[S.franceMode.leagues[id].finalist]),rows:divisionRankings[id].map(row)})):[{id:'elite',name:'Ligue Première',rows:sorted.map(row)}];
  const leagueId=france?CDFranceCompetition.leagueId(S):'elite';
@@ -89,7 +89,7 @@ module.exports=function nativeModel(){
   ['Tirs de pénalité',a.goals+' / '+a.goalAttempts,b.goals+' / '+b.goalAttempts],
   ['Transformations',a.conversions+' / '+a.conversionAttempts,b.conversions+' / '+b.conversionAttempts]
  ].map(([label,home,away])=>({label,home,away}));}
- return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:chooseScorer(own,S.lineup)?.id||null,selection,tactics,calendar,leagues,market,figures:(()=>{
+ return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:(S.playerRoles?.buteur&&S.lineup.includes(S.playerRoles.buteur)?S.playerRoles.buteur:chooseScorer(own,S.lineup)?.id)||null,selection,tactics,calendar,leagues,market,figures:(()=>{
   // Chiffres lus par plusieurs écrans : une seule source (club-budget.cjs), jamais recalculés côté interface.
   const w=typeof chiffresMasse==='function'?chiffresMasse():{joueursHebdo:own.players.reduce((n,p)=>n+p.salary,0)};
   const c=typeof chiffresContrats==='function'?chiffresContrats():null;

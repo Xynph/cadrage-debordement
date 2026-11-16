@@ -8,6 +8,8 @@ description: Rôles de studio du kit Claude Code Game Studios (game designer, di
 Le kit Claude Code Game Studios est installé dans `.claude/` (pour Claude Code)
 et ses commandes sont copiées dans `.agents/skills/` (pour Codex).
 `AGENTS.md` prime sur tout le kit.
+Kit d'agents : CCGS seul (décision de Léo, 16/11/2026) ; ne pas utiliser ni
+réinstaller Superpowers (ses plans passés sont dans `docs/plans-historiques/`).
 
 ## Rôles (agents)
 

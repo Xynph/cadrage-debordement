@@ -1,7 +1,8 @@
 'use strict';
-// Parcours communs à reactivite-projection-verification.cjs, reactivite-projection-rapide.cjs et
-// reactivite-projection-decisions.cjs (ancienne suite unique reactivite-projection.cjs, au-delà des 180 s du lanceur) :
-// un parcours Monde par processus, comparaison par étapes.
+// Parcours communs aux suites reactivite-projection-verification*.cjs et reactivite-projection-rapide*.cjs (ancienne
+// suite unique reactivite-projection.cjs, au-delà des 180 s du lanceur) : un parcours Monde par processus, un segment
+// par suite, comparaison par étapes. La suite reactivite-projection-decisions.cjs a son parcours dans
+// reactivite-projection-decisions-parcours.cjs.
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -23,70 +24,64 @@ function flat(model) {
   return out;
 }
 
-// Décisions sur un joueur du club et délégation (lot 20, #777) : seconde consigne de charge (champ déjà présent),
-// délégations de la composition et de l'entraînement, axe de progression, plan de travail. Sans match : la suite
-// reactivite-projection-decisions.cjs compare la projection d'avant, le mode vérification et la projection rapide.
-function decisions(options) {
-  fs.rmSync(DOSSIER, { recursive: true, force: true });
-  const jeu = M.ouvrir({ hebdomadaire: true, deferredCommits: true, testVm: true, dataDir: DOSSIER, ...options });
-  const etapes = [];
-  try {
-    if (options.projectionSections !== false) jeu.bridge.vm.run("{const d=nativeSystems.domain('interclubMarket'),o=d.project;globalThis.__marche=0;d.project=function(){__marche++;return o.apply(this,arguments);};}");
-    const marche = () => options.projectionSections !== false ? jeu.bridge.vm.run('__marche') : 0;
-    // Domaines de la vie du club recalculés pendant l'axe de progression (support, carrière du manager), et calculs des
-    // décisions du manager : compteurs posés sur les projections, en mode rapide seulement.
-    const rapide = options.projectionSections !== false && !options.verifyProjection;
-    if (rapide) jeu.bridge.vm.run("{globalThis.__domaines=0;for(const k of ['clubSupport','managerCareer']){const d=nativeSystems.domain(k),o=d.project;d.project=function(){__domaines++;return o.apply(this,arguments);};}}");
-    const domaines = () => rapide ? jeu.bridge.vm.run('__domaines') : 0;
-    const decisionsCalculees = () => rapide ? jeu.bridge.vm.run('nativeStateVersions.computed().decisions??0') : 0;
-    const note = (etiquette, model) => { const textes = flat(model); textes.set('meta.dataDir', ''); etapes.push({ etiquette, textes, live: false, joint: !!model[TEXTS] }); return model; };
-    const call = (command, payload) => { const model = jeu.call(command, payload); jeu.bridge.handle.flush(); return note(command, model); };
-    let model = note('création', M.creer(jeu));
-    model = call('set_player_load', { playerId: model.squad[4].id, mode: 'repos' });
-    const avantDecisions = marche();
-    model = call('set_player_load', { playerId: model.squad[4].id, mode: 'normal' });
-    for (const [key, enabled] of [['lineup', true], ['training', true], ['training', false], ['lineup', false]]) model = call('set_delegation', { key, enabled });
-    const decisionsMarche = marche() - avantDecisions;
-    model = call('set_development_focus', { playerId: model.squad[6].id, focus: 'stamina' });
-    // Second axe sur un joueur qui en a déjà un (#socle) : seuls l'axe et l'XP de l'axe changent.
-    const avantAxe = domaines();
-    model = call('set_development_focus', { playerId: model.squad[6].id, focus: 'equilibre' });
-    const axeDomaines = domaines() - avantAxe;
-    model = call('training_plan', { plan: model.clubLife.clubSupport.training.plans[0].key, context: model.clubLife.clubSupport.context });
-    // Club du manager seulement (#socle) : prolongation, réunion du staff, observation ciblée.
-    const renouvelable = model.squad.find(p => p.renewal.available);
-    assert.ok(renouvelable, 'un contrat à prolonger');
-    model = call('extend_contract', { playerId: renouvelable.id, salary: 100000, years: renouvelable.renewal.minYears, confirmed: true });
-    model = call('staff_meeting', { context: model.clubLife.clubSupport.context, plan: model.clubLife.clubSupport.meeting.options[0].key });
-    const cible = jeu.bridge.vm.run('S.clubs[29].players[0].id');
-    model = call('observe_player', { playerId: cible, confirmed: true, context: { season: model.meta.season, week: model.meta.week, club: model.club.id } });
-    // Consigne de jeu après tout cela : décisions du manager reprises (aucun recalcul).
-    const avantTactique = decisionsCalculees();
-    model = call('set_tactics', { attack: model.tactics.attacks.find(o => o.id !== model.tactics.attack).id, defense: model.tactics.defense });
-    const tactiqueDecisions = decisionsCalculees() - avantTactique;
-    note('instantané', jeu.call('snapshot'));
-    jeu.bridge.handle.flush();
-    const profil = sha(fs.readFileSync(path.join(DOSSIER, 'PrototypeGodot', 'donnees.json'), 'utf8'));
-    return { etapes, profil, lecturesMarche: 0, decisionsMarche, axeDomaines, tactiqueDecisions };
-  } finally { jeu.fermer(); fs.rmSync(DOSSIER, { recursive: true, force: true }); }
-}
+// Segments du parcours (16/11/2026, pour rester sous le délai de 180 s du lanceur CI) : chaque segment rejoue la même
+// carrière, mêmes graines et mêmes appels dans le même ordre, mais ne relève et ne compare que ses propres réponses,
+// puis s'arrête (les appels des segments précédents ne sont ni relevés ni hachés).
+//   'consignes' : instantané, création, lectures, tactiques, composition, charge, adversaire, axe collectif, refus ;
+//   'semaines'  : les semaines closes jusqu'au prochain match ;
+//   'direct'    : coup d'envoi, pause, consigne, minutes, délégation, fin de semaine, après le match, sur une carrière
+//                 ouverte la veille de la première rencontre (`start: 'veille'`, comme tests/sauvegarde-journal-plantage-monde.cjs) :
+//                 sans elle, le direct rejouait deux mois de calendrier (4 semaines closes, déjà couvertes par 'semaines').
+const SEGMENTS = ['consignes', 'semaines', 'direct'];
 
 function parcours(options) {
-  if (options.scenario === 'decisions') { const { scenario, ...reste } = options; return decisions(reste); }
+  const { segment, ...reglages } = options;
+  assert.ok(SEGMENTS.includes(segment), 'segment du parcours : ' + segment);
+  let etape = 'consignes';
+  const actif = () => etape === segment;
   fs.rmSync(DOSSIER, { recursive: true, force: true });
-  const jeu = M.ouvrir({ hebdomadaire: true, deferredCommits: true, testVm: true, dataDir: DOSSIER, ...options });
+  const jeu = M.ouvrir({ hebdomadaire: true, deferredCommits: true, testVm: true, dataDir: DOSSIER, ...reglages });
   const etapes = [];
   try {
-    if (options.projectionSections !== false) jeu.bridge.vm.run("{const d=nativeSystems.domain('interclubMarket'),o=d.project;globalThis.__marche=0;d.project=function(){__marche++;return o.apply(this,arguments);};}");
-    const marche = () => options.projectionSections !== false ? jeu.bridge.vm.run('__marche') : 0;
-    const note = (etiquette, model, live = false) => { const textes = flat(model); textes.set('meta.dataDir', ''); etapes.push({ etiquette, textes, live, joint: !!model[TEXTS] }); return model; };
+    if (reglages.projectionSections !== false) jeu.bridge.vm.run("{const d=nativeSystems.domain('interclubMarket'),o=d.project;globalThis.__marche=0;d.project=function(){__marche++;return o.apply(this,arguments);};}");
+    const marche = () => reglages.projectionSections !== false ? jeu.bridge.vm.run('__marche') : 0;
+    const note = (etiquette, model, live = false) => {
+      if (actif()) { const textes = flat(model); textes.set('meta.dataDir', ''); etapes.push({ etiquette, textes, live, joint: !!model[TEXTS] }); }
+      return model;
+    };
     const call = (command, payload, live) => { const model = jeu.call(command, payload); jeu.bridge.handle.flush(); return note(command, model, live); };
+    const fin = () => {
+      jeu.bridge.handle.flush();
+      return { etapes, profil: sha(fs.readFileSync(path.join(DOSSIER, 'PrototypeGodot', 'donnees.json'), 'utf8')), lecturesMarche };
+    };
+    let lecturesMarche = 0;
+    // Direct : coup d'envoi, pause, consigne, minutes, délégation, fin.
+    const direct = depart => {
+      let model = depart;
+      etape = 'direct';
+      if (!model.selection.valid) model = call('auto_lineup');
+      model = note('coup d’envoi', skipMatchTalk(jeu.call('begin_match'), jeu.call));
+      model = call('pause', { paused: true }, true);
+      model = call('set_tactics', { attack: model.tactics.attacks.find(o => o.id !== model.tactics.attack).id, defense: model.tactics.defense }, true);
+      model = call('pause', { paused: false }, true);
+      for (let q = 0; q < 6 && model.live && !model.live.finished; q++) model = call('tick', { steps: 10 }, true);
+      model = note('délégation', skipMatchTalk(jeu.call('delegate'), jeu.call));
+      if (model.live) model = note('fin de semaine', skipMatchTalk(jeu.call('finish_round'), jeu.call));
+      note('après le match', jeu.call('snapshot'));
+      return fin();
+    };
+    let model;
+    if (segment === 'direct') {
+      etape = 'direct';
+      model = note('création', jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: 102, start: 'veille' })));
+      return direct(model);
+    }
     note('instantané', jeu.call('snapshot'));
-    let model = M.creer(jeu);
+    model = M.creer(jeu);
     note('création', model);
     const avantLectures = marche();
     call('snapshot'); call('club_sheet', { club: 5 }); call('club_sheet', { club: 9 });
-    const lecturesMarche = marche() - avantLectures;
+    lecturesMarche = marche() - avantLectures;
     for (let i = 0; i < 2; i++) model = call('set_tactics', { attack: model.tactics.attacks.find(o => o.id !== model.tactics.attack).id, defense: model.tactics.defense });
     model = call('auto_lineup');
     model = call('set_player_load', { playerId: model.squad[4].id, mode: 'repos' });
@@ -96,38 +91,33 @@ function parcours(options) {
     const refus = jeu.brut('club_meeting_ack', { meetingId: 'inconnu' });
     assert.equal(refus.ok, false);
     note('refus', refus.model);
-    // Jusqu'au prochain match (semaines closes), puis direct : coup d'envoi, pause, consigne, minutes, fin.
+    if (segment === 'consignes') return fin();
+    etape = 'semaines';
+    // Jusqu'au prochain match (semaines closes).
     for (let w = 0; w < 30 && !model.next; w++) { model = jeu.regler(model); if (model.next) break; model = call('finish_round'); }
     model = jeu.regler(model);
-    if (!model.selection.valid) model = call('auto_lineup');
-    model = note('coup d’envoi', skipMatchTalk(jeu.call('begin_match'), jeu.call));
-    model = call('pause', { paused: true }, true);
-    model = call('set_tactics', { attack: model.tactics.attacks.find(o => o.id !== model.tactics.attack).id, defense: model.tactics.defense }, true);
-    model = call('pause', { paused: false }, true);
-    for (let q = 0; q < 6 && model.live && !model.live.finished; q++) model = call('tick', { steps: 10 }, true);
-    model = note('délégation', skipMatchTalk(jeu.call('delegate'), jeu.call));
-    if (model.live) model = note('fin de semaine', skipMatchTalk(jeu.call('finish_round'), jeu.call));
-    note('après le match', jeu.call('snapshot'));
-    jeu.bridge.handle.flush();
-    const profil = sha(fs.readFileSync(path.join(DOSSIER, 'PrototypeGodot', 'donnees.json'), 'utf8'));
-    return { etapes, profil, lecturesMarche };
+    return fin();
   } finally { jeu.fermer(); fs.rmSync(DOSSIER, { recursive: true, force: true }); }
 }
 
-// Chaque parcours dans son propre processus (tas plafonné) : trois carrières Monde de suite tiennent sur 8 Go.
-function parcoursIsole(options) {
+// Chaque parcours dans son propre processus (tas plafonné) : deux carrières Monde de suite tiennent sur 8 Go.
+// `script` : fichier qui reconnaît `--parcours` (par défaut ce module ; la suite des décisions a le sien).
+function parcoursIsole(options, script = __filename) {
   const { spawnSync } = require('node:child_process');
   const sortie = path.join(os.tmpdir(), 'rl27-reactivite-parcours-' + process.pid + '.json');
-  const child = spawnSync(process.execPath, ['--max-old-space-size=2048', __filename, '--parcours', JSON.stringify(options), sortie], { encoding: 'utf8', maxBuffer: 64 * 1048576, timeout: 1500000 });
+  const child = spawnSync(process.execPath, ['--max-old-space-size=2048', script, '--parcours', JSON.stringify(options), sortie], { encoding: 'utf8', maxBuffer: 64 * 1048576, timeout: 1500000 });
   assert.equal(child.status, 0, 'parcours ' + JSON.stringify(options) + ' : ' + (child.stderr || '').slice(-2000));
   const out = JSON.parse(fs.readFileSync(sortie, 'utf8'));fs.rmSync(sortie, { force: true });
   out.etapes.forEach(e => { e.textes = new Map(e.textes); });
   return out;
 }
-if (process.argv[2] === '--parcours') {
-  const out = parcours(JSON.parse(process.argv[3]));
+// Sortie d'un processus enfant : résultat du parcours écrit en JSON (textes en tableaux).
+function ecrireParcours(out, sortie) {
   out.etapes.forEach(e => { e.textes = [...e.textes]; });
-  fs.writeFileSync(process.argv[4], JSON.stringify(out));
+  fs.writeFileSync(sortie, JSON.stringify(out));
+}
+if (require.main === module && process.argv[2] === '--parcours') {
+  ecrireParcours(parcours(JSON.parse(process.argv[3])), process.argv[4]);
   process.exit(0);
 }
 
@@ -149,4 +139,4 @@ function comparer(reference, autre, nom) {
   return gardees;
 }
 
-module.exports = { DOSSIER, M, createEncoder, parcoursIsole, comparer };
+module.exports = { DOSSIER, M, TEXTS, createEncoder, flat, sha, parcoursIsole, ecrireParcours, comparer };

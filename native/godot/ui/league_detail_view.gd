@@ -1,7 +1,8 @@
 extends RefCounted
-## Championnats suivis « comme Football Manager » : chaque championnat du Monde est suivi
-## en détail (moteur de match complet) ou suivi de loin, avec une jauge de fluidité
-## estimée pour cette machine. Le moteur fournit le banc d'essai et le tableau des coûts ;
+## Championnats suivis « comme Football Manager » : chaque championnat du Monde est en
+## « Détail complet » (moteur de match complet) ou en « Consultation » (résultats et
+## classements), avec la « Vitesse de jeu estimée » en 5 étoiles pour cette machine. Le
+## moteur fournit le banc d'essai, le tableau des coûts et le choix automatique ;
 ## l'interface additionne seulement ce tableau quand on coche ou décoche.
 const G = preload("res://ui/carnet_skin.gd")
 const Club = preload("res://ui/club_views.gd")
@@ -10,7 +11,6 @@ const CUSTOM := "creation_detailed_custom"
 const REQUESTED := "league_benchmark_requested"
 const CACHE := "league_benchmark"
 const ORDER := ["elite", "accession", "nationale", "prem", "champ", "urc", "srp", "jlo-d1", "jlo-d2"]
-const COUNTRY := {"elite":"FR", "accession":"FR", "nationale":"FR", "prem":"GB", "champ":"GB", "urc":"URC", "srp":"SRP", "jlo-d1":"JP", "jlo-d2":"JP"}
 
 ## Machine : cœurs logiques et mémoire physique (Go), lus par Godot au lancement.
 static func machine() -> Dictionary:
@@ -59,23 +59,14 @@ static func ordered(ids: Array, all: Array) -> Array:
 		if league.id in ids: result.append(league.id)
 	return result
 
-## Dernier cran de la jauge encore jugé confortable (Fluide, en vert) pour les choix par défaut.
-const COMFORT_INDEX := 0
-
-## Par défaut, comme FM : le championnat du club choisi (ses coupes d'Europe suivent dans
-## le moteur), puis les autres championnats de son pays tant que la jauge de cette machine
-## reste confortable. Sans mesure de la machine : le championnat du club seul.
+## Choix automatique selon la machine (calculé par le moteur, league-detail.cjs autoChoice) :
+## le championnat du club, puis ceux de son pays, puis les autres, tant que la vitesse
+## estimée garde la cible d'étoiles (4). Sans mesure : le championnat du club seul.
 static func default_for(own: String, all: Array, costs: Dictionary = {}) -> Array:
-	var country: String = COUNTRY.get(own, "")
 	var result: Array = []
-	for league: Dictionary in all:
-		if league.id == own: result.append(league.id)
-	if costs.is_empty() or country.is_empty(): return result
-	for league: Dictionary in all:
-		if league.id == own or COUNTRY.get(league.id, "") != country: continue
-		var trial := result.duplicate()
-		trial.append(league.id)
-		if int(estimate(costs, trial).get("index", 99)) <= COMFORT_INDEX: result = trial
+	var auto: Variant = costs.get("auto", {}).get(own) if costs.get("auto") is Dictionary else null
+	if auto is Array: result = auto.duplicate()
+	if not own.is_empty() and own not in result: result.append(own)
 	return ordered(result, all)
 
 static func selected(app: Control, own: String, all: Array) -> Array:
@@ -89,6 +80,7 @@ static func selected(app: Control, own: String, all: Array) -> Array:
 	return ordered(ids, all)
 
 ## Estimation : coût fixe de la saison plus le surcoût de chaque championnat détaillé.
+## `stars` : premier cran (5 étoiles d'abord) dont la semaine reste sous le seuil.
 static func estimate(costs: Dictionary, ids: Array) -> Dictionary:
 	if costs.is_empty(): return {}
 	var season := float(costs.get("baseSeasonMs", 0))
@@ -99,13 +91,11 @@ static func estimate(costs: Dictionary, ids: Array) -> Dictionary:
 	var week := season / weeks
 	var levels: Array = costs.get("levels", [])
 	var level: Dictionary = {}
-	var index := 0
-	for i in levels.size():
-		level = levels[i]
-		index = i
-		var limit: Variant = level.get("maxWeekMs")
-		if limit != null and week <= float(limit): break
-	return {"weekMs":week, "seasonMs":season, "level":level, "index":index, "count":levels.size()}
+	for candidate: Dictionary in levels:
+		level = candidate
+		var limit: Variant = candidate.get("belowWeekMs")
+		if limit == null or week < float(limit): break
+	return {"weekMs":week, "seasonMs":season, "level":level, "stars":int(level.get("stars", 0)), "count":levels.size()}
 
 static func duration(milliseconds: float) -> String:
 	var seconds := roundi(milliseconds / 1000.0)
@@ -122,7 +112,8 @@ static func state_color(level: Dictionary) -> Color:
 		"danger": return G.ALERT
 	return G.MUTED
 
-## Jauge à trois crans (Fluide, Correct, Lent) aux couleurs d'état du carnet.
+## Jauge « Vitesse de jeu estimée » : 5 étoiles (5 = rapide) aux couleurs d'état du carnet,
+## libellé du cran et durée estimée d'une semaine et d'une saison sur cette machine.
 static func gauge(parent: Node, app: Control, ids: Array) -> void:
 	var bench := benchmark(app)
 	var costs: Dictionary = bench.get("costs", {})
@@ -130,13 +121,24 @@ static func gauge(parent: Node, app: Control, ids: Array) -> void:
 	var block := G.v(5)
 	block.name = "LeagueDetailGauge"
 	parent.add_child(block)
+	block.add_child(G.label("VITESSE DE JEU ESTIMÉE", 11, G.MUTED))
 	if result.is_empty():
 		block.add_child(G.wrap("Mesure de votre machine en cours… La jauge s’affiche dans un instant.", 13, G.MUTED))
 		return
 	var level: Dictionary = result.level
 	var tint := state_color(level)
+	var stars := int(result.stars)
 	var head := G.h(10)
 	block.add_child(head)
+	var row := G.h(2)
+	row.name = "LeagueDetailStars"
+	row.set_meta("stars", stars)
+	row.tooltip_text = "%d étoile%s sur 5 : plus il y a d’étoiles, plus le jeu avance vite." % [stars, "s" if stars > 1 else ""]
+	head.add_child(row)
+	for i in 5:
+		var star := G.label("★" if i < stars else "☆", 24, tint if i < stars else G.LINE, true)
+		star.name = "Star%d" % (i + 1)
+		row.add_child(star)
 	var verdict := G.label(str(level.get("label", "")), 22, tint, true)
 	verdict.name = "LeagueDetailVerdict"
 	head.add_child(verdict)
@@ -145,24 +147,6 @@ static func gauge(parent: Node, app: Control, ids: Array) -> void:
 	G.fill(timing)
 	timing.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(timing)
-	var bar := G.h(3)
-	bar.name = "LeagueDetailBar"
-	block.add_child(bar)
-	var levels: Array = costs.get("levels", [])
-	for i in levels.size():
-		var notch := ColorRect.new()
-		notch.custom_minimum_size = Vector2(0, 10)
-		G.fill(notch)
-		notch.color = state_color(levels[i]) if i <= int(result.index) else G.LINE
-		notch.tooltip_text = str(levels[i].get("label", ""))
-		bar.add_child(notch)
-	var legend := G.h(3)
-	block.add_child(legend)
-	for i in levels.size():
-		var caption := G.label(str(levels[i].get("label", "")), 10, G.INK if i == int(result.index) else G.MUTED)
-		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		G.fill(caption)
-		legend.add_child(caption)
 
 static func machine_line(app: Control) -> String:
 	var bench := benchmark(app)
@@ -182,7 +166,7 @@ static func summary(app: Control, parent: Node, own: String, catalogue: Array) -
 	var box := G.card(parent, G.GOLD)
 	box.name = "CreationLeagueDetail"
 	box.add_child(G.label("CHAMPIONNATS SUIVIS", 11, G.MUTED))
-	box.add_child(G.wrap("%d suivi%s en détail sur %d · les autres suivis de loin." % [ids.size(), "s" if ids.size() > 1 else "", all.size()], 13, G.INK))
+	box.add_child(G.wrap("%d en détail complet sur %d · les autres en consultation." % [ids.size(), all.size()], 13, G.INK))
 	gauge(box, app, ids)
 	var open_button := G.button("Choisir les championnats…", func(): open(app, own, catalogue))
 	open_button.name = "CreationLeagueDetailOpen"
@@ -192,7 +176,8 @@ static func summary(app: Control, parent: Node, own: String, catalogue: Array) -
 static func payload(app: Control, own: String, catalogue: Array) -> Array:
 	return selected(app, own, leagues(app, catalogue))
 
-## Fenêtre de choix. `career` : la carrière existe déjà, le choix vaut pour la saison suivante.
+## Fenêtre de choix. `career` : la carrière existe déjà (Paramètres), le choix vaut à partir
+## de la semaine suivante.
 static func open(app: Control, own: String, catalogue: Array, career: Dictionary = {}) -> void:
 	var existing := app.get_node_or_null("LeagueDetailDialog")
 	if existing != null:
@@ -211,13 +196,13 @@ static func open(app: Control, own: String, catalogue: Array, career: Dictionary
 	dialog.name = "LeagueDetailDialog"
 	dialog.title = "Championnats suivis"
 	app._prepare_dialog(dialog, 760)
-	dialog.get_ok_button().text = "Valider" if career.is_empty() else "Appliquer à la saison suivante"
+	dialog.get_ok_button().text = "Valider" if career.is_empty() else "Appliquer dès la semaine prochaine"
 	var body := G.panel(dialog)
 	body.add_child(G.label("SUIVI DU RUGBY MONDIAL", 11, G.MUTED))
-	body.add_child(G.wrap("Suivi en détail, votre cellule d’analyse décortique chaque rencontre : statistiques et notes des joueurs, équipe-type, feuilles de match complètes. Suivi de loin, vous recevez les scores, les classements, les blessures et l’évolution des joueurs, sans notes individuelles ni feuilles de match : le monde avance bien plus vite.", 13, G.INK))
-	body.add_child(G.wrap("Toujours suivis en détail : votre championnat, vos coupes d’Europe, les phases finales et les clubs des joueurs que vous suivez au recrutement.", 13, G.GOLD))
+	body.add_child(G.wrap("En détail complet, votre cellule d’analyse décortique chaque rencontre : statistiques et notes des joueurs, équipe-type, feuilles de match complètes. En consultation, vous recevez les scores, les classements, les blessures et l’évolution des joueurs, sans notes individuelles ni feuilles de match : le monde avance bien plus vite.", 13, G.INK))
+	body.add_child(G.wrap("Toujours en détail complet : votre championnat, vos coupes d’Europe, les phases finales et les clubs des joueurs que vous suivez au recrutement.", 13, G.GOLD))
 	if not career.is_empty():
-		body.add_child(G.wrap("Comme dans les grands jeux de gestion, le changement prend effet au début de la saison suivante, pour garder des statistiques de saison complètes.", 13, G.GOLD))
+		body.add_child(G.wrap("Le changement prend effet à partir de la semaine prochaine. Un championnat passé en consultation garde ses résultats, mais ses notes de joueurs s’arrêtent là.", 13, G.GOLD))
 	var gauge_box := G.v(4)
 	body.add_child(gauge_box)
 	gauge(gauge_box, app, chosen)
@@ -247,7 +232,7 @@ static func open(app: Control, own: String, catalogue: Array, career: Dictionary
 		var tag := G.label("", 11, G.MUTED)
 		row.add_child(tag)
 		var paint := func(on: bool):
-			tag.text = "VOTRE CHAMPIONNAT" if league.id == own else ("SUIVI EN DÉTAIL" if on else "SUIVI DE LOIN")
+			tag.text = "VOTRE CHAMPIONNAT" if league.id == own else ("DÉTAIL COMPLET" if on else "CONSULTATION")
 			tag.add_theme_color_override("font_color", G.GOOD if on else G.MUTED)
 		paint.call(check.button_pressed)
 		checks[league.id] = check
@@ -264,7 +249,15 @@ static func open(app: Control, own: String, catalogue: Array, career: Dictionary
 	var set_all := func(on: bool):
 		for id: String in checks:
 			if id != own: checks[id].button_pressed = on
-	shortcuts.add_child(G.button("Tout suivre en détail", set_all.bind(true)))
+	var auto := G.button("Choix automatique selon votre PC", func():
+		var target: Array = default_for(own, all, benchmark(app).get("costs", {}))
+		for id: String in checks:
+			if id != own: checks[id].button_pressed = id in target)
+	auto.name = "LeagueDetailAuto"
+	auto.disabled = benchmark(app).get("costs", {}).is_empty()
+	auto.tooltip_text = "Coche les championnats que cette machine suit en détail complet en gardant au moins %d étoiles." % int(benchmark(app).get("costs", {}).get("autoTarget", 4))
+	shortcuts.add_child(auto)
+	shortcuts.add_child(G.button("Tout en détail", set_all.bind(true)))
 	shortcuts.add_child(G.button("Seulement mon championnat", set_all.bind(false)))
 	var spacer := Control.new()
 	G.fill(spacer)

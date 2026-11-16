@@ -38,7 +38,7 @@ on:
         required: false
         default: false
       captures_quoi:
-        description: 'Captures voulues, séparées par des virgules : intro, finitions, fiche-club, feuille-espoir, match-rendu (hors défaut) ; vide = toutes sauf match-rendu'
+        description: 'Captures voulues, séparées par des virgules : intro, finitions, fiche-club, feuille-espoir, match-rendu (hors défaut), comparateur, audio ; vide = intro, finitions, fiche-club, feuille-espoir'
         type: string
         required: false
         default: ''
@@ -64,7 +64,7 @@ concurrency:
 jobs:
   en-ligne:
     if: ${{ !inputs.menage }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 90
     env:
       CD_EL_SUITES: ${{ inputs.suites }}
@@ -200,7 +200,7 @@ jobs:
   publier:
     needs: en-ligne
     if: ${{ always() && !inputs.menage && needs.en-ligne.result != 'skipped' }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 15
     permissions:
       contents: write
@@ -241,7 +241,7 @@ jobs:
 
   menage:
     if: ${{ inputs.menage }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 15
     permissions:
       contents: write
