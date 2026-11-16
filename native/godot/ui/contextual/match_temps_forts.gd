@@ -910,7 +910,7 @@ func _jouer(plan: Dictionary) -> void:
 	_resultat_sonne = false
 	_plaque = false
 	# La clameur et la légende de l'essai partent quand l'essai est à l'écran : fin de la course,
-	# ou porteur arrivé à sa place d'aplatissement (ballon porté), voir _essai_attendu.
+	# ou geste d'essai de la vue aplati (course, ballon porté), voir _essai_attendu.
 	_essai_montre = str(plan.get("kind", "")) != "try"
 	if float(plan.get("mouvement", 0.0)) > 0.0:
 		_depuis = _derniers.duplicate()
@@ -932,6 +932,11 @@ func _lire(delta: float, reel: float) -> void:
 	if stage.is_presenting_extended_pass() and _tenu < ECHEANCE_GESTE:
 		_tenu += reel
 		if _tenu >= ECHEANCE_GESTE: suivi.append({"evenement": "echeance", "cause": "geste", "plan": str(tf.plans[index].get("kind", "")), "debut_ms": Time.get_ticks_msec()})
+		# Ballon porté qui finit en essai : la durée du plan est un plancher, pas un ajout (le
+		# regroupement ne s'arrête pas sept secondes avant de repartir vers la ligne).
+		if phase == "jeu" and enchaine_essai(tf.get("plans", []), index): temps += delta
+		# Le geste d'essai tient l'image jusqu'après la joie : l'essai est légendé dès qu'il est aplati.
+		_legender_essai()
 		return
 	var plan: Dictionary = tf.plans[index]
 	temps += delta
@@ -945,10 +950,7 @@ func _lire(delta: float, reel: float) -> void:
 		var marque: Array = plan.get("score", _score)
 		var reussi: bool = str(plan.get("kind", "")) == "goal" or (str(plan.get("kind", "")) == "transformation" and marque.size() >= 2 and _score.size() >= 2 and int(marque[0]) + int(marque[1]) > int(_score[0]) + int(_score[1]))
 		_sonner("goal" if reussi else "miss")
-	if not _essai_montre and not _essai_attendu(plan):
-		_essai_montre = true
-		_sonner("try")
-		_habiller()
+	_legender_essai()
 	var mouvement := float(plan.get("mouvement", 0.0))
 	if mouvement > 0.0 and temps < mouvement + PAS:
 		sous_image += delta
@@ -1124,16 +1126,31 @@ func _habiller() -> void:
 static func essai_en_cours(plan: Dictionary, instant: float) -> bool:
 	return str(plan.get("kind", "")) == "try" and instant < float(plan.get("mouvement", 0.0))
 
-## Part de la durée d'un plan d'essai au-delà de laquelle il est légendé, même si le porteur
-## n'a pas tout à fait rejoint sa place (repli : la légende ne manque jamais l'essai).
+## Le plan `index` est une conquête (ballon porté) que l'essai suit sans coupe : sa durée est un
+## plancher que le geste de la vue absorbe, pour que la poussée continue jusqu'à la ligne.
+static func enchaine_essai(plans: Array, index: int) -> bool:
+	if index < 0 or index + 1 >= plans.size(): return false
+	var suivant: Dictionary = plans[index + 1]
+	return str(plans[index].get("kind", "")) == "setpiece-win" and str(suivant.get("kind", "")) == "try" and not suivant.get("coupe", false)
+
+## Part de la durée d'un plan d'essai au-delà de laquelle il est légendé, même si le geste
+## d'essai n'est pas aplati (repli : la légende ne manque jamais l'essai).
 const ESSAI_REPLI := 0.85
 
-## L'essai du plan courant n'est pas encore à l'écran : course encore en mouvement, ou porteur
-## (ballon porté, plan sans mouvement) pas encore arrivé là où le moteur le fait aplatir.
+## L'essai du plan courant n'est pas encore à l'écran : course encore en mouvement, ou geste
+## d'essai de la vue (course, ballon porté) pas encore aplati dans l'en-but.
 func _essai_attendu(plan: Dictionary) -> bool:
 	if str(plan.get("kind", "")) != "try": return false
 	if essai_en_cours(plan, temps): return true
-	return temps < float(plan.get("duree", 0.0)) * ESSAI_REPLI and stage.has_method("porteur_arrive") and not stage.porteur_arrive()
+	return temps < float(plan.get("duree", 0.0)) * ESSAI_REPLI and stage.has_method("essai_aplati") and not stage.essai_aplati()
+
+## Légende et clameur de l'essai du plan joué, à l'instant où il est aplati à l'écran.
+func _legender_essai() -> void:
+	if phase != "jeu" or _essai_montre or index < 0 or index >= tf.plans.size(): return
+	if _essai_attendu(tf.plans[index]): return
+	_essai_montre = true
+	_sonner("try")
+	_habiller()
 
 ## Un fait vient d'être joué sur le terrain 2D : le bandeau du score le suit.
 func _score_joue(marque: Array) -> void:

@@ -54,7 +54,9 @@ function sequence() {
   return { club: 0, frames: retenues.map(frame => ({
     scene: frame.scene, teams: frame.teams,
     events: frame.event ? [{ min: frame.event.min, text: frame.event.text, type: frame.event.type,
-      scene: { kind: frame.event.scene.kind, team: frame.event.scene.team, move: frame.event.scene.move || null } }] : [],
+      scene: { kind: frame.event.scene.kind, team: frame.event.scene.team, move: frame.event.scene.move || null,
+      // « porte » : la conquête annonce l'essai sur ballon porté (le geste de la vue pousse d'autant plus loin).
+      ...(frame.event.scene.porte === true ? { porte: true } : {}) } }] : [],
   })) };
   } finally { h.close(); }
 }

@@ -300,14 +300,12 @@ func set_live_cadence(steps: int) -> void:
 	_live_cadence = steps
 
 
-## Le porteur du ballon a rejoint la place que lui donne le moteur (à `seuil` mètres près, au sol) ;
-## vrai sans porteur. Sert à la régie pour ne légender un essai qu'une fois aplati à l'écran.
-func porteur_arrive(seuil: float = 1.0) -> bool:
-	if _carrier_id.is_empty() or not _actors.has(_carrier_id): return true
-	var entry: Dictionary = _actors[_carrier_id]
-	var ici: Vector3 = (entry.node as Node3D).position
-	var cible: Vector3 = entry.get("target", ici)
-	return Vector2(ici.x - cible.x, ici.z - cible.z).length() <= seuil
+## L'essai mis en scène par un geste (course ou ballon porté) est aplati à l'écran ; vrai sans
+## geste d'essai (l'image du moteur est posée telle quelle). Sert à la régie pour légender et
+## acclamer l'essai à l'instant où on le voit aplati (lot 8 : une scène d'essai n'a pas de porteur,
+## l'ancien contrôle « porteur arrivé » était toujours vrai).
+func essai_aplati() -> bool:
+	return _gestes == null or not _gestes.active() or _gestes.essai_aplati()
 
 
 func is_presenting_extended_pass() -> bool:
