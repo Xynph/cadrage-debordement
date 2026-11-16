@@ -983,9 +983,11 @@ function createBridge(options={}){
   // Prochain arrêt prévisible de « Continuer » (info-bulle du bouton) : rencontre du club, reprise de
   // l'entraînement ou rendez-vous en file. Lecture seule, seulement en calendrier journalier.
   const repriseDate=()=>run("(()=>{try{return CDReprise.project()?.club?.date??null}catch(e){return null}})()");
+  var continueFlux='equilibre'; // var : lisible par continuePlan même pendant l'initialisation du pont.
   function continuePlan(model){
    if(!model?.meta?.calendarCadence)return;
-   try{model.meta.continuePlan=continuer.plan(advanceSignal(),repriseDate());mark('prochain_arret');}catch{delete model.meta.continuePlan;}
+   // Flux de Continuer : celui de la dernière avance demandée (préférence du joueur), équilibré par défaut.
+   try{const signal=advanceSignal();model.meta.continuePlan=continuer.plan(signal,repriseDate(),continueFlux);model.meta.decisionsDue=signal?.decisions||[];mark('prochain_arret');}catch{delete model.meta.continuePlan;delete model.meta.decisionsDue;}
   }
   function finishAdvance(id,session,stop){
    try{
@@ -1014,7 +1016,7 @@ function createBridge(options={}){
     opts=continuer.validate(request.payload??{});
     if(!run('!!S'))throw Error('Créez ou importez une carrière.');
    }catch(error){advanceSession=null;return {id:Number.isSafeInteger(id)||typeof id==='string'?id:null,ok:false,model:closed?null:snapshot(),error:error.message};}
-   const started=performance.now(),session=advanceSession;advanceSession=null;
+   const started=performance.now(),session=advanceSession;advanceSession=null;continueFlux=opts.flux;
    // Arrêt atteint à la tranche précédente avec une sauvegarde complète due : elle est écrite maintenant, pendant que
    // l'interface affiche « Sauvegarde de la carrière… » (tranche `saving`). Le motif d'arrêt réel est conservé.
    if(session?.pendingStop)return finishAdvance(id,session,session.pendingStop);
@@ -1030,6 +1032,9 @@ function createBridge(options={}){
     if(journal)current.journalAt={offset:journal.size(),count:journal.count()};
    }
    let before=advanceSignal(),today=opts.fromDate,stop=null,n=0;
+   // Décision de préparation attendue aujourd'hui (reprise.cjs) : refus comme un rendez-vous obligatoire,
+   // sans rien écrire ; « Jour suivant », lui, la confie au staff.
+   if(current.days===0&&before?.decisions?.length)return {id,ok:false,model:snapshot(),error:continuer.decisionText(before.decisions)};
    for(;;){
     const r=handleCommand({id,command:'advance_day',payload:{fromDate:today}},true);
     if(!r.ok){
@@ -1053,13 +1058,13 @@ function createBridge(options={}){
       // La décision regroupée fait partie des jours en mémoire : elle sera écrite avec eux (arrêt, fermeture ou
       // commande suivante), pas séparément entre deux tranches.
       if(current.absorbed&&pendingCommit===current.absorbed){pendingCommit=null;current.absorbed=null;}
-      advanceSession=current;return {id,ok:true,model:null,progress:{from:current.from,today,days:current.days,next:after.next,plan:continuer.plan(after,current.repriseDate)}};}
+      advanceSession=current;return {id,ok:true,model:null,progress:{from:current.from,today,days:current.days,next:after.next,plan:continuer.plan(after,current.repriseDate,opts.flux)}};}
      stop={kind:'limite',label:continuer.STOPS.limite.label,detail:'Avance interrompue après '+current.days+' jours sans événement.'};break;
     }
    }
    // Tranches partielles : si la fréquence choisie (jour, semaine, mois) exige une sauvegarde complète à l'arrêt, une
    // dernière tranche `saving` l'annonce d'abord ; la requête suivante écrit le profil et rend le modèle.
-   if(opts.partial&&journalMode&&current.days>0&&fullSaveDue()){current.pendingStop=stop;if(current.absorbed&&pendingCommit===current.absorbed){pendingCommit=null;current.absorbed=null;}advanceSession=current;return {id,ok:true,model:null,progress:(()=>{const after=advanceSignal();return {from:current.from,today:today??current.lastFrom,days:current.days,next:after?.next,plan:continuer.plan(after,current.repriseDate),saving:true};})()};}
+   if(opts.partial&&journalMode&&current.days>0&&fullSaveDue()){current.pendingStop=stop;if(current.absorbed&&pendingCommit===current.absorbed){pendingCommit=null;current.absorbed=null;}advanceSession=current;return {id,ok:true,model:null,progress:(()=>{const after=advanceSignal();return {from:current.from,today:today??current.lastFrom,days:current.days,next:after?.next,plan:continuer.plan(after,current.repriseDate,opts.flux),saving:true};})()};}
    return finishAdvance(id,current,stop);
   }
   function handle(request){

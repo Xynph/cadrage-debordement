@@ -121,7 +121,11 @@ static func build(app:Control,player:Dictionary) -> Control:
 	D.text(hero,1828,234,"NIVEAU",23,C.MUTED,600,220,HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(hero,2084,234,"POTENTIEL",23,C.GOLD,600,235,HORIZONTAL_ALIGNMENT_CENTER)
 	D.button(hero,Rect2(1710,264,236,46),"Comparer",func():
-		if str(player.id) not in app.management_ui.compare and app.management_ui.compare.size()<2:app.management_ui.compare.append(str(player.id))
+		# Le premier joueur est mémorisé ; si un autre est déjà en mémoire, il devient A et cette fiche B.
+		var memo:Array=app.management_ui.compare
+		if str(player.id) not in memo:
+			if memo.size()==1:memo.append(str(player.id))
+			else:memo.assign([str(player.id)])
 		app.SquadViews.comparison(app),false,"people",true,app.accent,"FullPlayerCompare")
 	D.button(hero,Rect2(1962,264,260,46),"Ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerCoachNote")
 	var active:=clampi(int(app.management_ui.get("immersive_player_tab",0)),0,5)

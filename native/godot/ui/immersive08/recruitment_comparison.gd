@@ -1,11 +1,19 @@
 extends RefCounted
-## Consultation seulement : les valeurs proviennent de la projection courante.
+## Comparateur unique de deux joueurs (mon effectif et marché) : consultation seulement, toutes les valeurs
+## proviennent de la projection courante (aucun appel au moteur). La mémoire du premier joueur est
+## `management_ui.compare`, partagée avec l’Effectif et la fiche joueur.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/decision_views.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const U = preload("res://ui/management_state.gd")
 const A = preload("res://ui/player_attributes.gd")
 const G = preload("res://ui/game_skin.gd")
+const K = preload("res://ui/player_knowledge_text.gd")
+const NotesMatch = preload("res://ui/notes_match.gd")
+
+## Repères où l’écart désigne le meilleur des deux (qualité sportive). Âge, salaire, prime et échéance ne
+## sont jamais présentés comme un avantage à eux seuls.
+const HIGHER_BETTER := ["rating", "potential", "condition", "seasonNote"]
 
 static func numeric(value: Variant) -> bool:
 	return (value is int or value is float) and is_finite(float(value))
@@ -15,19 +23,54 @@ static func delta(left: Variant, right: Variant, unit: String = "") -> String:
 	var difference := float(right) - float(left)
 	return ("+" if difference > 0 else "") + A.caption(snappedf(difference, 0.1)) + unit
 
-static func value(player: Dictionary, key: String, reports: Dictionary) -> Variant:
-	if key in ["rating","potential"]: return G.knowledge_sort_value(player,key)
-	if key.begins_with("attribute:"): return A.detail(player).get(key.trim_prefix("attribute:"))
+static func own(player: Dictionary) -> bool:
+	return bool(player.get("__own", false))
+
+static func value(player: Dictionary, key: String, _reports: Dictionary = {}) -> Variant:
+	if key in ["rating","potential"]: return G.knowledge_sort_value(player,key,own(player))
+	if key.begins_with("attribute:"): return A.detail(player,own(player)).get(key.trim_prefix("attribute:"))
 	return player.get(key)
 
-static func initial_ids(players: Array, chosen: String, saved: Array) -> Array[String]:
+## 0 si A est meilleur, 1 si B l’est, -1 sinon (égalité, valeur inconnue, fourchettes qui se chevauchent).
+static func leader(key: String, pair: Array) -> int:
+	if not (key in HIGHER_BETTER or key.begins_with("attribute:")): return -1
+	if key in ["rating","potential"]:
+		var first := G.knowledge_bounds(pair[0],key,own(pair[0]))
+		var second := G.knowledge_bounds(pair[1],key,own(pair[1]))
+		if first.is_empty() or second.is_empty(): return -1
+		if float(first.min) > float(second.max): return 0
+		if float(second.min) > float(first.max): return 1
+		return -1
+	var left: Variant = value(pair[0],key)
+	var right: Variant = value(pair[1],key)
+	if not numeric(left) or not numeric(right) or float(left) == float(right): return -1
+	return 0 if float(left) > float(right) else 1
+
+## Joueur prêt à afficher : copie légère portant l’appartenance à l’effectif et la moyenne de la saison.
+static func prepared(app: Control, player: Dictionary, mine: bool) -> Dictionary:
+	var result := player.duplicate()
+	result["__own"] = mine
+	if mine:
+		var average: Variant = NotesMatch.joueur(app.model, str(player.get("id", ""))).get("moyenne")
+		if numeric(average): result["seasonNote"] = float(average)
+	return result
+
+static func initial_ids(players: Array, chosen: String, saved: Array, own_ids: Array = []) -> Array[String]:
 	var ids: Array[String] = []
 	for player: Dictionary in players: ids.append(str(player.id))
 	var left := chosen if chosen in ids else str(saved[0]) if saved.size() > 0 and str(saved[0]) in ids else ids[0] if not ids.is_empty() else ""
-	var right := str(saved[1]) if saved.size() > 1 and str(saved[1]) in ids and str(saved[1]) != left else ""
+	var right := str(saved[1]) if saved.size() > 1 and str(saved[0]) == left and str(saved[1]) in ids and str(saved[1]) != left else ""
 	var position := ""
 	for player: Dictionary in players:
 		if str(player.id) == left: position = str(player.get("pos", ""))
+	# Second choix proposé : le meilleur joueur de mon effectif au même poste, sinon un autre du même poste.
+	if right.is_empty():
+		var best := -INF
+		for player: Dictionary in players:
+			var id := str(player.id)
+			if id != left and id in own_ids and str(player.get("pos", "")) == position and float(player.get("rating", 0)) > best:
+				best = float(player.get("rating", 0))
+				right = id
 	if right.is_empty():
 		for player: Dictionary in players:
 			if str(player.id) != left and str(player.get("pos", "")) == position:
@@ -44,15 +87,28 @@ static func candidates(players: Array, query: String, position: String, chosen: 
 		if str(player.id) in chosen: return true
 		return (position.is_empty() or player.get("pos") == position) and (term.is_empty() or U.fold(str(player.get("name", "")) + " " + str(player.get("pos", ""))).contains(term)))
 
-static func open(app: Control, chosen: String, reports: Dictionary) -> void:
-	var players: Array = app.model.get("market", [])
+## Réserve : joueurs de mon effectif d’abord, puis marché (sans doublon).
+static func pool(model: Dictionary) -> Array:
+	var result: Array = []
+	var seen: Dictionary = {}
+	for source in ["squad", "market"]:
+		for player: Dictionary in model.get(source, []):
+			var id := str(player.get("id", ""))
+			if id.is_empty() or seen.has(id): continue
+			seen[id] = true
+			result.append(player)
+	return result
+
+static func open(app: Control, chosen: String, reports: Dictionary, return_focus: String = "") -> void:
+	var players: Array = pool(app.model)
+	var own_ids: Array = app.model.get("squad", []).map(func(player: Dictionary): return str(player.get("id", "")))
 	var width := mini(1940, maxi(620, int(app.get_viewport_rect().size.x) - 48))
-	var view := D.dialog(app, "Comparer deux pistes", "MarketComparison", width)
+	var view := D.dialog(app, "Comparer deux joueurs", "MarketComparison", width)
 	var dialog: AcceptDialog = view[0]
 	var content: VBoxContainer = view[1]
-	var state: Dictionary = app.management_ui.market
-	var selected := initial_ids(players, chosen, state.get("comparison_ids", []))
-	state.comparison_ids = selected.duplicate()
+	var memory: Array = app.management_ui.compare
+	var selected := initial_ids(players, chosen, memory, own_ids)
+	memory.assign(selected.filter(func(id: String): return not id.is_empty()))
 	var heading := C.label("Comparer avant de décider", 28, C.IVORY, true, 800)
 	heading.name = "MarketComparisonHeading"
 	content.add_child(heading)
@@ -62,7 +118,7 @@ static func open(app: Control, chosen: String, reports: Dictionary) -> void:
 	var search := LineEdit.new()
 	search.name = "MarketComparisonSearch"
 	search.placeholder_text = "Chercher un nom ou un poste…"
-	search.accessibility_name = "Chercher les candidats à comparer"
+	search.accessibility_name = "Chercher les joueurs à comparer"
 	search.clear_button_enabled = true
 	search.set_meta("immersive_style_applied", true)
 	search.add_theme_font_override("font", C.BODY)
@@ -86,10 +142,10 @@ static func open(app: Control, chosen: String, reports: Dictionary) -> void:
 		var column := C.v(10)
 		C.fill(column)
 		choices.add_child(column)
-		column.add_child(C.label("PISTE " + ["A", "B"][slot], 27, C.GOLD))
+		column.add_child(C.label("JOUEUR " + ["A", "B"][slot], 27, C.GOLD))
 		var picker := OptionButton.new()
 		picker.name = "MarketComparisonPlayer" + str(slot)
-		picker.accessibility_name = "Choisir la piste " + ["A", "B"][slot]
+		picker.accessibility_name = "Choisir le joueur " + ["A", "B"][slot]
 		picker.set_meta("immersive_style_applied", true)
 		picker.add_theme_font_override("font", C.DISPLAY)
 		picker.add_theme_font_size_override("font_size", C.px(20))
@@ -108,16 +164,16 @@ static func open(app: Control, chosen: String, reports: Dictionary) -> void:
 	content.add_child(detail)
 	var redraw := func():
 		_clear(detail)
-		state.comparison_ids = selected.duplicate()
+		memory.assign(selected.filter(func(id: String): return not id.is_empty()))
 		var pair: Array[Dictionary] = [{}, {}]
 		for slot in 2:
 			for player: Dictionary in players:
-				if str(player.id) == selected[slot]: pair[slot] = player; break
+				if str(player.id) == selected[slot]: pair[slot] = prepared(app, player, str(player.id) in own_ids); break
 		if pair[0].is_empty() or pair[1].is_empty():
-			detail.add_child(C.wrap("Choisissez deux pistes pour consulter leurs différences. Les profils indisponibles restent consultables.", 18))
+			detail.add_child(C.wrap("Choisissez deux joueurs pour consulter leurs différences. Les profils indisponibles restent consultables.", 18))
 			return
 		if selected[0] == selected[1]:
-			detail.add_child(C.wrap("Sélectionnez deux pistes distinctes.", 18, C.ALERT))
+			detail.add_child(C.wrap("Sélectionnez deux joueurs distincts.", 18, C.ALERT))
 			return
 		_cards(detail, pair, reports,app)
 		var tabs := TabContainer.new()
@@ -131,9 +187,9 @@ static func open(app: Control, chosen: String, reports: Dictionary) -> void:
 		overview.name = "Vue d’ensemble"
 		tabs.add_child(overview)
 		_header(overview)
-		for field in [["Poste", "pos", ""], ["Âge", "age", " ans"], ["Niveau / 100", "rating", ""], ["Potentiel / 100", "potential", ""], ["Condition", "condition", " %"], ["Prime à la signature", "fee", " €"], ["Salaire demandé "+G.salary_period(), "salary", " €"]]:
+		for field in [["Poste", "pos", ""], ["Âge", "age", " ans"], ["Niveau / 100", "rating", ""], ["Potentiel / 100", "potential", ""], ["Condition", "condition", " %"], ["Moyenne de la saison", "seasonNote", ""], ["Fin de contrat", "contractEnd", ""], ["Prime à la signature", "fee", " €"], ["Salaire "+G.salary_period(), "salary", " €"]]:
 			_row(overview, str(field[0]), str(field[1]), pair, reports, str(field[2]))
-		overview.add_child(C.wrap("Prime et salaire sont des demandes distinctes. Aucun contrat n’est signé depuis cette comparaison. Le potentiel provient des rapports datés.", 18))
+		overview.add_child(C.wrap("Pour un joueur à recruter, prime et salaire sont des demandes distinctes ; pour un joueur de votre effectif, ce sont ses conditions actuelles. Aucun contrat n’est signé depuis cette comparaison. Le potentiel provient des rapports datés. En vert : le meilleur des deux.", 18))
 		var attributes := C.v(8)
 		attributes.name = "36 attributs"
 		tabs.add_child(attributes)
@@ -165,13 +221,13 @@ static func open(app: Control, chosen: String, reports: Dictionary) -> void:
 			for player: Dictionary in players:
 				if str(player.id) == selected[0]: position = str(player.get("pos", ""))
 		var filtered := candidates(players, search.text, position, selected)
-		count.text = "%d pistes proposées · les deux choix restent visibles · indisponibles consultables" % filtered.size()
+		count.text = "%d joueurs proposés · les deux choix restent visibles · indisponibles consultables" % filtered.size()
 		for slot in 2:
 			picks[slot].clear()
-			picks[slot].add_item("Choisir une piste")
+			picks[slot].add_item("Choisir un joueur")
 			picks[slot].set_item_metadata(0, "")
 			for player: Dictionary in filtered:
-				picks[slot].add_item(str(player.name) + " · " + str(player.pos) + (" · indisponible" if not player.get("available", false) else ""))
+				picks[slot].add_item(str(player.name) + " · " + str(player.pos) + (" · mon effectif" if str(player.id) in own_ids else " · indisponible" if not player.get("available", false) else ""))
 				var index := picks[slot].item_count - 1
 				picks[slot].set_item_metadata(index, str(player.id))
 				picks[slot].set_item_tooltip(index, picks[slot].get_item_text(index))
@@ -185,8 +241,8 @@ static func open(app: Control, chosen: String, reports: Dictionary) -> void:
 	same_position.toggled.connect(func(_pressed: bool): refresh_pickers.call())
 	refresh_pickers.call()
 	redraw.call()
-	dialog.canceled.connect(func(): _restore_focus(app))
-	dialog.confirmed.connect(func(): _restore_focus(app))
+	dialog.canceled.connect(func(): _restore_focus(app, return_focus))
+	dialog.confirmed.connect(func(): _restore_focus(app, return_focus))
 	Dialogs.show_centered(dialog, Vector2i(width, mini(1220, int(app.get_viewport_rect().size.y) - 100)))
 	dialog.add_theme_font_size_override("title_font_size", C.px(30))
 	dialog.get_ok_button().add_theme_font_size_override("font_size", C.px(18))
@@ -203,7 +259,12 @@ static func _jump_to_section(target: Control) -> void:
 			return
 		ancestor = ancestor.get_parent()
 
-static func _restore_focus(app: Control) -> void:
+static func _restore_focus(app: Control, return_focus: String = "") -> void:
+	if not return_focus.is_empty():
+		# Ouvert depuis l’Effectif ou la fiche : la mémoire A/B a pu changer, les compteurs sont redessinés.
+		app._render()
+		preload("res://ui/immersive08/club_ui.gd").focus(app, return_focus)
+		return
 	var button := app.find_child("CompareMarket", true, false) as Button
 	if button != null: button.grab_focus.call_deferred()
 
@@ -220,6 +281,12 @@ static func _cards(parent: Node, pair: Array[Dictionary], reports: Dictionary,ap
 		panel.add_child(body)
 		var player: Dictionary = pair[slot]
 		body.add_child(C.wrap(["A · ", "B · "][slot] + str(player.get("name", "—")), 24, C.IVORY, true, 700))
+		if own(player):
+			var squad_status := C.wrap("Dans votre effectif · " + str(player.get("status", "")), 18, C.MINT)
+			squad_status.name = "MarketComparisonAvailability" + str(slot)
+			body.add_child(squad_status)
+			body.add_child(C.wrap(str(player.get("contractLabel", "")), 18, C.GOLD))
+			continue
 		var available := bool(player.get("available", false))
 		var status := C.wrap("Offre possible" if available else "Offre indisponible · " + str(player.get("reason", "Motif non communiqué")), 18, C.MINT if available else C.ALERT)
 		status.name = "MarketComparisonAvailability" + str(slot)
@@ -248,18 +315,30 @@ static func _row(parent: Node, title: String, key: String, pair: Array[Dictionar
 	C.fill(label, false, 1.5)
 	row.add_child(label)
 	var values: Array = []
-	for player: Dictionary in pair:
+	var best := leader(key, pair)
+	for slot in 2:
+		var player: Dictionary = pair[slot]
 		var datum: Variant = value(player, key, reports)
 		values.append(datum)
-		var caption := "Non communiqué" if datum == null else G.salary_amount(datum) if key == "salary" and numeric(datum) else G.euros(datum) if key == "fee" and numeric(datum) else A.caption(datum) + unit if numeric(datum) else str(datum)
-		if key == "rating": caption = G.rating_text(player)
+		var caption := "Non communiqué" if datum == null else G.salary_amount(datum) if key == "salary" and numeric(datum) else G.euros(datum) if key == "fee" and numeric(datum) else G.contract_year(datum) if key == "contractEnd" else NotesMatch.texte_note(datum) if key == "seasonNote" else A.caption(datum) + unit if numeric(datum) else str(datum)
+		if key == "fee" and datum == null and own(player): caption = "Sous contrat"
+		elif key == "rating": caption = G.rating_text(player, own(player))
 		elif key == "potential": caption = G.potential_text(player)
 		var text := C.wrap(caption, 20, G.POTENTIAL_COLOR if key == "potential" else C.IVORY, true)
 		text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		C.fill(text)
 		row.add_child(text)
+		if best == slot:
+			text.add_theme_color_override("font_color", C.MINT)
+			text.tooltip_text = "Le meilleur des deux sur ce repère"
+			text.mouse_filter = Control.MOUSE_FILTER_PASS
 	var difference_text := delta(values[0],values[1],unit) if key != "pos" else "Même poste" if values[0] == values[1] else "Postes différents"
-	if key in ["rating","potential"]: difference_text = G.knowledge_delta(pair[0],pair[1],key)
+	if key in ["rating","potential"]: difference_text = K.range_delta(pair[0],pair[1],key,own(pair[0]),own(pair[1]))
+	elif key == "contractEnd" and numeric(values[0]) and numeric(values[1]):
+		var years := int(values[1]) - int(values[0])
+		difference_text = "Même échéance" if years == 0 else ("+" if years > 0 else "") + str(years) + (" an" if absi(years) == 1 else " ans")
+	elif key == "seasonNote" and numeric(values[0]) and numeric(values[1]):
+		difference_text = ("+" if float(values[1]) > float(values[0]) else "") + NotesMatch.texte_note(float(values[1]) - float(values[0]))
 	if key == "salary" and numeric(values[0]) and numeric(values[1]):
 		var wage_difference := float(values[1])-float(values[0])
 		difference_text = ("+" if wage_difference > 0 else "") + G.salary_amount(wage_difference)

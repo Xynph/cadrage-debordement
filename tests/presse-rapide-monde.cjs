@@ -43,7 +43,7 @@ const scenePresse = model => model.clubLife?.clubMeetings?.scene?.kind === 'pres
 function jusquALaConference(jeu, model, garde = 12) {
   for (let i = 0; i < garde; i++) {
     if (conferenceOuverte(model)) return model;
-    if (model.clubLife?.clubMeetings?.scene) model = jeu.regler(model);
+    if (model.clubLife?.clubMeetings?.scene || model.clubLife?.reprise?.due?.length) model = jeu.regler(model);
     if (conferenceOuverte(model)) return model;
     model = jeu.call('advance_until_event', { fromDate: model.meta.calendarToday, stops: { messages: 'aucun', ignorer: FACULTATIFS } });
   }
