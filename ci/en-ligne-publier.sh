@@ -21,8 +21,10 @@ stage="$work/stage"; mkdir -p "$stage"
 cp -R "$src"/. "$stage"/
 reduire_png() {
   local f="$1" out="${1%.png}.jpg"
-  if python3 -c 'import PIL' 2>/dev/null; then
-    python3 -I - "$f" "$out" <<'PY' || return 1
+  # Pas de -I : il ignore le site utilisateur où « pip install --user » place Pillow (cause de l'échec
+  # du run 43915583104). -E + répertoire neutre suffisent contre un module planté.
+  if (cd "$work" && python3 -E -c 'import PIL') 2>/dev/null; then
+    (cd "$work" && python3 -E - "$f" "$out") <<'PY' || return 1
 import sys
 from PIL import Image
 im = Image.open(sys.argv[1]).convert("RGB")
@@ -37,8 +39,10 @@ PY
   fi
   rm -f "$f"
 }
+n_png=0; n_perdus=0; perdus=""
 while IFS= read -r -d '' f; do
-  reduire_png "$f" || { echo "PNG non converti, retiré : ${f#$stage/}"; rm -f "$f"; }
+  n_png=$((n_png + 1))
+  reduire_png "$f" || { echo "PNG non converti, retiré : ${f#$stage/}"; rm -f "$f" "${f%.png}.jpg"; n_perdus=$((n_perdus + 1)); perdus+=" ${f#$stage/}"; }
 done < <(find "$stage" -type f -iname '*.png' -print0)
 # Journaux : 100 Ko de fin au plus ; autres fichiers texte : 500 Ko ; binaires restants > 1 Mo retirés.
 while IFS= read -r -d '' f; do
@@ -52,6 +56,16 @@ while IFS= read -r -d '' f; do
     [[ $taille -gt $(( 1024 * 1024 )) ]] && rm -f "$f"
   fi
 done < <(find "$stage" -type f -print0)
+# Rendre l'échec visible : le résumé dit combien de captures annoncées sont réellement publiées.
+n_jpg=$(find "$stage" -type f \( -iname '*.jpg' -o -iname '*.jpeg' \) | wc -l)
+if [[ $n_png -gt 0 || $n_jpg -gt 0 ]]; then
+  if [[ $n_perdus -gt 0 || $n_jpg -lt $n_png ]]; then
+    { echo; echo "- ATTENTION captures : $n_jpg image(s) publiée(s) sur $n_png annoncée(s) ; non converties :${perdus:- (voir journal du job publier)}"; } >> "$stage/resume.md"
+    echec_images=1
+  else
+    { echo; echo "- Captures publiées : $n_jpg/$n_png (JPEG 1280 px)"; } >> "$stage/resume.md"
+  fi
+fi
 now=$(date -u +%s)
 printf 'run=%s\nepoch=%s\ndate=%s\n' "$run" "$now" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$stage/meta.txt"
 ajout=$(du -sb "$stage" | cut -f1)
@@ -90,10 +104,10 @@ for essai in 1 2 3 4 5; do
     git checkout -q --orphan "${branche}-tmp"; git add -A
     git commit -q -m "$msg (branche réécrite)"; git branch -q -M "$branche"
     lease="--force-with-lease=$branche:${tip}"; [[ $existe == true ]] || lease="--force"
-    git push -q $lease origin "HEAD:refs/heads/$branche" && { echo "Publié (réécriture) : runs/$run"; exit 0; }
+    git push -q $lease origin "HEAD:refs/heads/$branche" && { echo "Publié (réécriture) : runs/$run"; exit $(( ${echec_images:-0} )); }
   else
     git commit -q -m "$msg"
-    if git push -q origin "HEAD:refs/heads/$branche"; then echo "Publié : $branche runs/$run (+${ajout} octets)"; exit 0; fi
+    if git push -q origin "HEAD:refs/heads/$branche"; then echo "Publié : $branche runs/$run (+${ajout} octets)"; [[ ${echec_images:-0} -eq 0 ]] || echo "ECHEC : captures non publiées (voir resume.md)" >&2; exit $(( ${echec_images:-0} )); fi
   fi
   echo "Push refusé (essai $essai/5), nouvelle tentative."; sleep $(( essai * 3 ))
   git checkout -q --detach 2>/dev/null; git branch -q -D "$branche" 2>/dev/null; git branch -q -D "${branche}-tmp" 2>/dev/null
