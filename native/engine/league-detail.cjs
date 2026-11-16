@@ -6,8 +6,10 @@
 // club du manager, les coupes d'Europe où il est engagé, les phases finales et les rencontres
 // des clubs d'un joueur suivi au recrutement. Sans état `leagueDetail` (anciennes carrières,
 // tests), tout est détaillé et le hasard reste le flux unique du moteur (identique à main).
-// Changer la liste en cours de partie prend effet au début de la saison suivante (comme FM),
-// pour garder des statistiques, notes et équipes-types de saison homogènes.
+// Changer la liste en cours de partie (Paramètres, comme le niveau de détail de FM) prend effet
+// à la semaine suivante : le changement prévu (`pending`) est appliqué juste avant la première
+// rencontre de l'IA jouée après la commande, donc pour toute une journée à la fois. Les
+// statistiques et notes d'un championnat passé en consultation s'arrêtent à cette semaine.
 //
 // Hasard (version 2) : dès qu'un championnat est suivi de loin, chaque rencontre de l'IA
 // (détaillée ou non) tire ses hasards dans un flux propre, dérivé de la graine de la carrière
@@ -91,6 +93,8 @@ function factory(){
  // Point d'entrée du monde pour chaque rencontre de l'IA. `full` joue le moteur complet.
  function play(s,f,full){
   if(!active(s)||!world(s))return full();
+  // Changement prévu dans les Paramètres : appliqué au début de la journée suivante.
+  if(s.leagueDetail.pending)applyPending(s);
   if(quickFixture(s,f))return isolated(s,f,()=>simulate(s,f));
   return separated(s)?isolated(s,f,full):full();
  }
@@ -231,13 +235,14 @@ const REFERENCE=Object.freeze({
 // (formats de la saison 2026-27 ; poules européennes réparties entre Top 14, Premiership et URC).
 const SEASON_MATCHES=Object.freeze({elite:210,accession:240,nationale:182,prem:118,champ:182,urc:172,srp:80,'jlo-d1':108,'jlo-d2':56});
 const WEEKS=46;
-// Trois crans aux couleurs d'état de l'interface (succès, alerte, danger) : l'interface
-// choisit la couleur du thème, le moteur ne fournit que l'état.
-const LEVELS=Object.freeze([
- Object.freeze({id:'fluide',label:'Fluide',maxWeekMs:10000,state:'succes'}),
- Object.freeze({id:'correct',label:'Correct',maxWeekMs:14000,state:'alerte'}),
- Object.freeze({id:'lent',label:'Lent',maxWeekMs:Infinity,state:'danger'}),
-]);
+// Vitesse de jeu estimée « comme FM » : 5 étoiles (5 = rapide), seuils en secondes par semaine
+// dans vitesse-jeu.json. L'interface choisit la couleur du thème selon l'état, le moteur ne
+// fournit que l'état (succès, alerte, danger).
+const VITESSE=require('./vitesse-jeu.json');
+const LEVELS=Object.freeze(VITESSE.crans.map(c=>Object.freeze({id:c.id,label:c.libelle,stars:c.etoiles,belowWeekMs:c.sousSemaineMs??Infinity,state:c.etat})));
+const AUTO_TARGET=VITESSE.cibleChoixAuto;
+// Pays de chaque championnat : le choix automatique ajoute d'abord ceux du pays du club.
+const COUNTRY=Object.freeze({elite:'FR',accession:'FR',nationale:'FR',prem:'GB',champ:'GB',urc:'URC',srp:'SRP','jlo-d1':'JP','jlo-d2':'JP'});
 // Charges représentatives : sérialisation d'un gros état (le poste dominant d'une semaine :
 // copie d'annulation, validation, sauvegarde) et calcul flottant proche du moteur de match.
 function benchmark(){
@@ -262,17 +267,31 @@ function estimate({detailed,leagues=Object.keys(SEASON_MATCHES),machine={}}){
  const set=new Set(detailed);let detailedMatches=0,quickMatches=0;
  for(const id of leagues){const n=SEASON_MATCHES[id]||0;if(set.has(id))detailedMatches+=n;else quickMatches+=n;}
  const seasonMs=(WEEKS*R.baseWeekMs*serial+detailedMatches*R.detailedMatchMs*compute+quickMatches*R.quickMatchMs*compute+R.seasonExtraMs*serial)*contention;
- const weekMs=seasonMs/WEEKS,level=LEVELS.find(l=>weekMs<=l.maxWeekMs);
- return {weekMs:Math.round(weekMs),seasonMs:Math.round(seasonMs),detailedMatches,quickMatches,level:level.id,label:level.label,state:level.state};
+ const weekMs=seasonMs/WEEKS,level=LEVELS.find(l=>weekMs<l.belowWeekMs)||LEVELS[LEVELS.length-1];
+ return {weekMs:Math.round(weekMs),seasonMs:Math.round(seasonMs),detailedMatches,quickMatches,level:level.id,label:level.label,stars:level.stars,state:level.state};
+}
+// Choix automatique selon la machine (bouton « Choix automatique selon votre PC », défaut des
+// nouvelles carrières) : le championnat du club, puis ceux de son pays, puis les autres dans
+// l'ordre du registre, chacun ajouté seulement si la vitesse estimée garde `target` étoiles.
+// Déterministe : même machine mesurée, même championnat du club -> même liste.
+function autoChoice({own,machine={},target=AUTO_TARGET,leagues=Object.keys(SEASON_MATCHES)}){
+ let chosen=leagues.includes(own)?[own]:[];
+ const country=COUNTRY[own],others=leagues.filter(id=>id!==own);
+ const order=[...others.filter(id=>country&&COUNTRY[id]===country),...others.filter(id=>!country||COUNTRY[id]!==country)];
+ for(const id of order){const trial=[...chosen,id];if(estimate({detailed:trial,leagues,machine}).stars>=target)chosen=trial;}
+ return leagues.filter(id=>chosen.includes(id));
 }
 // Tableau transmis à l'interface : coût fixe et coût de chaque championnat selon son mode,
-// déjà adaptés à la machine, pour une jauge recalculée sans aller-retour au moteur.
+// déjà adaptés à la machine, pour une jauge recalculée sans aller-retour au moteur, et le
+// choix automatique pour chaque championnat de club possible.
 function costTable(machine={}){
  const leagues=Object.keys(SEASON_MATCHES),none=estimate({detailed:[],machine}),table={};
  for(const id of leagues){
   const one=estimate({detailed:[id],machine});
   table[id]={quickMs:Math.round(SEASON_MATCHES[id]*REFERENCE.quickMatchMs*factorOf(machine.computeMs,REFERENCE.benchmarkMs.compute)),extraDetailedMs:one.seasonMs-none.seasonMs,matches:SEASON_MATCHES[id]};
  }
- return {weeks:WEEKS,baseSeasonMs:none.seasonMs,leagues:table,levels:LEVELS.map(l=>({id:l.id,label:l.label,maxWeekMs:Number.isFinite(l.maxWeekMs)?l.maxWeekMs:null,state:l.state}))};
+ return {weeks:WEEKS,baseSeasonMs:none.seasonMs,leagues:table,autoTarget:AUTO_TARGET,
+  auto:Object.fromEntries(['',...leagues].map(own=>[own,autoChoice({own,machine})])),
+  levels:LEVELS.map(l=>({id:l.id,label:l.label,stars:l.stars,belowWeekMs:Number.isFinite(l.belowWeekMs)?l.belowWeekMs:null,state:l.state}))};
 }
-module.exports={files,commands,factory,benchmark,estimate,costTable,REFERENCE,SEASON_MATCHES,LEVELS};
+module.exports={files,commands,factory,benchmark,estimate,autoChoice,costTable,REFERENCE,SEASON_MATCHES,LEVELS,AUTO_TARGET,COUNTRY};

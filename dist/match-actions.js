@@ -37,6 +37,88 @@ function carryTackler(l,side,carrierId,gain){
  return best;
 }
 function actionName(l,side,role){return actionPlayer(l,side,role)?.name||S.clubs[l.pair[side]].abbr}
+
+// Consignes individuelles (docs/consignes-individuelles-20261116.md) : le manager désigne son buteur, un
+// buteur de secours, son lanceur en touche et son joueur au pied d'occupation (S.playerRoles). Sans
+// désignation, le staff choisit le meilleur à chaque rôle, comme les clubs de l'IA : c'est le calcul
+// d'avant, à l'identique. Les désignations sont copiées au coup d'envoi (l.playerRoles) pour les rencontres
+// créées avec `playerRolesVersion` ; un match commencé avant garde ses règles. Aucun tirage : la suite des
+// tirages ne change pas, seules les probabilités et les distances suivent le joueur choisi.
+let PLAYER_ROLES_RULES=1;
+const PLAYER_ROLES={buteur:['Buteur','goal'],secours:['Buteur de secours','goal'],lanceur:['Lanceur en touche','lineout'],pied:['Jeu au pied d’occupation','kick']};
+// Coefficients de jeu (non mesurés, ordres de grandeur) : touche gagnée par point de « touche » d'écart avec
+// le talonneur en jeu, malus d'un lanceur qui n'est pas talonneur, mètres par point de « jeu au pied ».
+const PLAYER_ROLE_COEFS={lancer:.004,nonTalonneur:.05,pied:.25};
+function playerRolesRules(l){return l.playerRolesVersion===1&&Array.isArray(l.playerRoles)}
+// Désignations valides pour une feuille : seulement des joueurs de la feuille (titulaires et remplaçants).
+function sanitizePlayerRoles(roles,ids){
+ const out={},known=new Set((ids||[]).filter(Boolean));
+ if(!roles||typeof roles!=='object')return out;
+ for(const key of Object.keys(PLAYER_ROLES)){const id=roles[key];if(typeof id==='string'&&known.has(id))out[key]=id}
+ if(out.secours&&out.secours===out.buteur)delete out.secours;
+ return out;
+}
+function initializePlayerRoles(l){
+ if(!PLAYER_ROLES_RULES)return;
+ l.playerRolesVersion=1;
+ l.playerRoles=l.pair.map((ci,side)=>ci===S.club?sanitizePlayerRoles(S.playerRoles,[...l.sheets[side].on,...l.sheets[side].bench]):{});
+}
+function designatedPlayer(l,side,role){
+ if(!playerRolesRules(l))return null;const id=l.playerRoles[side]?.[role];if(!id)return null;
+ return activePlayers(l,side).find(p=>p.id===id)||null;
+}
+// Choix du staff : meilleur buteur en jeu (calcul d'origine), talonneur en jeu au lancer, meilleur
+// botteur parmi les arrières au jeu au pied.
+function staffRolePlayer(l,side,role){
+ const on=activePlayers(l,side);
+ if(role==='buteur'||role==='secours')return chooseScorer(S.clubs[l.pair[side]],on.map(p=>p.id));
+ if(role==='lanceur'){const id=l.sheets[side].on[1];return on.find(p=>p.id===id&&p.fam===1)||[...on.filter(p=>p.fam===1)].sort((a,b)=>skill(b,'lineout',true)-skill(a,'lineout',true))[0]||null}
+ if(role==='pied')return [...on.filter(p=>p.fam>=4)].sort((a,b)=>skill(b,'kick',true)-skill(a,'kick',true))[0]||null;
+ return null;
+}
+// Buteur d'une tentative : le buteur désigné, à défaut le buteur de secours, à défaut le choix du staff.
+function goalKicker(l,side){return designatedPlayer(l,side,'buteur')||designatedPlayer(l,side,'secours')||staffRolePlayer(l,side,'buteur')}
+// Écart de réussite en touche dû au lanceur désigné (0 sans désignation : calcul d'avant).
+function lineoutThrowEdge(l,side){
+ const thrower=designatedPlayer(l,side,'lanceur');if(!thrower)return 0;
+ const ref=staffRolePlayer(l,side,'lanceur');if(!ref||ref.id===thrower.id)return 0;
+ const diff=(skill(thrower,'lineout',true)-skill(ref,'lineout',true))*PLAYER_ROLE_COEFS.lancer;
+ return thrower.fam===1?diff:Math.min(0,diff)-PLAYER_ROLE_COEFS.nonTalonneur;
+}
+// Mètres gagnés ou perdus au pied d'occupation par le botteur désigné (0 sans désignation).
+function occupationKickEdge(l,side){
+ const kicker=designatedPlayer(l,side,'pied');if(!kicker)return 0;
+ const ref=staffRolePlayer(l,side,'pied');if(!ref||ref.id===kicker.id)return 0;
+ return (skill(kicker,'kick',true)-skill(ref,'kick',true))*PLAYER_ROLE_COEFS.pied;
+}
+function occupationKicker(l,side){return designatedPlayer(l,side,'pied')||actionPlayer(l,side,'kicker')}
+// Désignations du manager hors match (null : rendre le rôle au staff). Refus : rôle inconnu, joueur hors effectif.
+function setPlayerRoles(roles){
+ if(!roles||typeof roles!=='object'||Array.isArray(roles))return false;
+ const own=club(),next={...(S.playerRoles||{})};
+ for(const [key,id] of Object.entries(roles)){
+  if(!Object.hasOwn(PLAYER_ROLES,key))return false;
+  if(id===null){delete next[key];continue}
+  if(typeof id!=='string'||!own.players.some(p=>p.id===id))return false;
+  next[key]=id;
+ }
+ if(next.secours&&next.secours===next.buteur)delete next.secours;
+ for(const key of Object.keys(next))if(!own.players.some(p=>p.id===next[key]))delete next[key];
+ if(Object.keys(next).length)S.playerRoles=next;else delete S.playerRoles;
+ return true;
+}
+// Lecture pour l'interface : pour chaque rôle, choix du staff, joueur désigné et candidats du XV
+// (valeur de l'attribut du rôle, condition comprise). Alerte quand le buteur désigné tire nettement moins
+// bien que le choix du staff (seuil en points d'attribut).
+const PLAYER_ROLE_ALERT=8;
+function playerRolesView(){
+ const own=club(),xv=S.lineup.map(id=>own.players.find(p=>p.id===id)).filter(Boolean),designated=S.playerRoles||{};
+ const value=(p,k)=>p?Math.round(skill(p,k,true)):null,brief=(p,k)=>p?{id:p.id,name:p.name,pos:p.pos,value:value(p,k)}:null;
+ const staffOf=role=>{const k=PLAYER_ROLES[role][1];if(role==='buteur')return chooseScorer(own,S.lineup);if(role==='secours'){const first=designated.buteur&&S.lineup.includes(designated.buteur)?designated.buteur:chooseScorer(own,S.lineup)?.id;return chooseScorer(own,S.lineup.filter(id=>id&&id!==first))}if(role==='lanceur')return own.players.find(p=>p.id===S.lineup[1]&&p.fam===1)||[...xv.filter(p=>p.fam===1)].sort((a,b)=>skill(b,k,true)-skill(a,k,true))[0]||null;return [...xv.filter(p=>p.fam>=4)].sort((a,b)=>skill(b,k,true)-skill(a,k,true))[0]||null};
+ const roles=Object.entries(PLAYER_ROLES).map(([id,[label,k]])=>{const chosen=own.players.find(p=>p.id===designated[id])||null;return {id,label,attribute:k,attributeLabel:ATTR[k]||k,staff:brief(staffOf(id),k),chosen:brief(chosen,k),inLineup:!!chosen&&S.lineup.includes(chosen.id),candidates:[...xv].sort((a,b)=>skill(b,k,true)-skill(a,k,true)||String(a.id).localeCompare(String(b.id))).map(p=>brief(p,k))}});
+ const buteur=roles.find(r=>r.id==='buteur'),alerte=buteur.chosen&&buteur.staff&&buteur.inLineup&&buteur.staff.value-buteur.chosen.value>=PLAYER_ROLE_ALERT?{playerId:buteur.chosen.id,name:buteur.chosen.name,value:buteur.chosen.value,staffName:buteur.staff.name,staffValue:buteur.staff.value}:null;
+ return {editable:!S.live&&S.phase!=='ended',roles,alerte};
+}
 function captureMatchAction(l,type,meta={}){
  if(l.userSide<0)return undefined;
  const prior=l.events.at(-1)?.scene,kind=meta.kind||(['turnover','try','goal','penalty','advantage','card','sub','tactic','break','end'].includes(type)?type:'message');
