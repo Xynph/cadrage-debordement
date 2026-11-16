@@ -424,6 +424,8 @@ func dispose() -> void:
 			node.stream = null
 			node.queue_free()
 	_streams.clear()
+	_music_streams.clear()
+	_music_overrides.clear()
 	if preferences.changed.is_connected(apply_preferences):
 		preferences.changed.disconnect(apply_preferences)
 	if preferences.error_changed.is_connected(_preference_error):

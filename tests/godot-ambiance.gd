@@ -157,10 +157,25 @@ func run() -> void:
 	check(audio._crowd_cue_for(event) == {"id": "stadium-try", "mood": "deception"}, "Journal moteur : essai de l'extérieur lu comme déception")
 
 	check(not audio.preferences.set_value("music_volume", 101), "Volume musique hors 0..100 refusé")
+	# Les lecteurs encore en lecture ont un objet de lecture libéré de façon asynchrone par le mixeur :
+	# on le suit pour que rien ne reste vivant à la sortie.
+	var pending: Array[WeakRef] = []
+	for player in [audio._ui, audio._bed, audio._reaction, audio._music]:
+		if player.playing:
+			pending.append(weakref(player.get_stream_playback()))
+	stream = null
+	reloaded = null
 	audio.dispose()
 	check(AudioServer.get_bus_index("Musique") < 0 and AudioServer.get_bus_index("Interface") < 0, "Dispose retire les bus créés")
 	check(AudioServer.get_bus_volume_linear(master) >= 0.0, "Master intact")
 	app.queue_free()
+	await process_frame
+	var drain_deadline := Time.get_ticks_msec() + 500
+	for playback in pending:
+		while playback.get_ref() != null and Time.get_ticks_msec() < drain_deadline:
+			await process_frame
+	cues.clear()
+	moods.clear()
 	await process_frame
 	print("Ambiance : %d vérifications, %d échec(s)" % [checks, failures.size()])
 	quit(1 if not failures.is_empty() else 0)
