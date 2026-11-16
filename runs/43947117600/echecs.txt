@@ -1,0 +1,16 @@
+== captures Réception (1920x1080, 1280x720) (code 1)
+not ok 1 - Courrier du club : réponse en un clic, écran concerné ouvert, arrêts informatifs sur l’écran utile
+    FAIL: Liste et mail dans la fenêtre · 1920x1080 [P: (444.8654, 284.6342), S: (559.0673, 838.9742)] [P: (1017.368, 284.6342), S: (869.5774, 838.9742)]
+    FAIL: Liste étroite · 1920x1080 (559 / 1442)
+    FAIL: Plus de bloc séparé « InboxContext » · 1920x1080
+    FAIL: Plus de bloc séparé « InboxCategoryChart » · 1920x1080
+    FAIL: Plus de bloc séparé « InboxFolders » · 1920x1080
+    FAIL: Plus de bloc séparé « InboxActivityFilters » · 1920x1080
+    FAIL: Plus de cartes de courriers en bas à droite · 1920x1080
+    FAIL: Filtre en tête de liste · InboxFolder0 · 1920x1080
+    FAIL: Filtre en tête de liste · InboxFolder1 · 1920x1080
+    FAIL: Filtre en tête de liste · InboxFolder2 · 1920x1080
+    FAIL: Filtre en tête de liste · InboxFolder3 · 1920x1080
+    FAIL: Filtre en tête de liste · InboxActivity_all · 1920x1080
+    FAIL: Filtre en tête de liste · InboxActivity_todo · 1920x1080
+    FAIL: Réponse en bas du mail · InboxClubMailReply_dementir · 1920x1080
