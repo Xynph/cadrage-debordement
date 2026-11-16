@@ -105,6 +105,7 @@ const SIGNAL_SOURCE = `(function(){
   notes:typeof CDReprise!=='undefined'?CDReprise.notesSeen(s):[],
   notesNext:typeof CDReprise!=='undefined'?CDReprise.nextNotes(s):[],
   preseason:!!pre,
+  courrier:(()=>{try{return nativeSystems.domain('clubMail').stops(s);}catch(e){return [];}})(),
   ...(world&&today?saison(s,today,fixtures,next,name,byId,players):{})};
  // Faits de la saison pour les arrêts informatifs (continuer-arrets.json) : lecture seule, calculés seulement les
  // jours où ils servent (veille, lendemain, mi-saison, fin de phase).
@@ -138,7 +139,7 @@ const SIGNAL_SOURCE = `(function(){
   out.longInjured=players.filter(p=>p.injury>=MEDICAL_WEEKS).map(p=>p.id);
   out.injuryWeeks=Object.fromEntries(players.filter(p=>p.injury>=MEDICAL_WEEKS).map(p=>[p.id,p.injury]));
   const reports=s.manager?.reports||[];
-  out.missions=(s.manager?.missions||[]).filter(m=>m.status==='done').map(m=>({id:m.id,n:reports.filter(r=>r.mission===m.id).length}));
+  out.missions=(s.manager?.missions||[]).filter(m=>m.status==='done').map(m=>{const r=reports.filter(x=>x.mission===m.id);return {id:m.id,n:r.length,player:r[0]?.playerId!=null?String(r[0].playerId):null};});
   return out;
  }
 })()`;
@@ -248,7 +249,7 @@ function informatifs(before, after, settings = {}) {
   if (!before || !after || !after.today || before.today === after.today) return [];
   if ((settings.ignorer || []).includes('info')) return [];
   const allowed = new Set(Object.keys(TYPES)), out = [];
-  const push = (type, key, detail) => { if (allowed.has(type) && detail) out.push({ type, key: type + ':' + key, label: TYPES[type].label, detail }); };
+  const push = (type, key, detail, extra = {}) => { if (allowed.has(type) && detail) out.push({ type, key: type + ':' + key, label: TYPES[type].label, detail, ...extra }); };
   const v = after.veille;
   // Veille de la 1re journée déjà annoncée par la préparation (reprise.cjs, « À noter ») : pas en double.
   const preVeille = (after.notes || []).includes('veille:' + after.today);
@@ -286,11 +287,17 @@ function informatifs(before, after, settings = {}) {
   }
   const known = new Set((before.missions || []).map(x => x.id));
   for (const x of (after.missions || []).filter(x => !known.has(x.id)))
-    push('recruteur', x.id, x.n ? x.n + ' profil' + (x.n > 1 ? 's' : '') + ' proposé' + (x.n > 1 ? 's' : '') + ' par votre recruteur, à comparer dans Recrutement.' : 'Mission terminée : aucun profil ne correspond à tous les critères.');
+    push('recruteur', x.id, x.n ? x.n + ' profil' + (x.n > 1 ? 's' : '') + ' proposé' + (x.n > 1 ? 's' : '') + ' par votre recruteur, à comparer dans Recrutement.' : 'Mission terminée : aucun profil ne correspond à tous les critères.', x.player ? { joueur: x.player } : {});
+  // Courrier du club qui attend une réponse ou compte (club-mail.cjs) : un arrêt par mail, l'écran s'ouvre sur lui.
+  const lus = new Set((before.courrier || []).map(x => x.id));
+  for (const c of (after.courrier || []).filter(x => !lus.has(x.id)))
+    push('courrier', c.id, c.expediteur + ' : ' + c.sujet, { mail: c.id, ...(c.joueur ? { joueur: c.joueur } : {}) });
   return out.sort((a, b) => TYPES[a.type].priorite - TYPES[b.type].priorite || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 }
 
-const infoStop = item => ({ kind: 'info', label: item.label, detail: item.detail, type: item.type });
+// Écran utile ouvert par l'interface sur cet arrêt (continuer-arrets.json, « ecran ») ; mail ou joueur concerné.
+const infoStop = item => ({ kind: 'info', label: item.label, detail: item.detail, type: item.type, ...(TYPES[item.type]?.ecran ? { ecran: TYPES[item.type].ecran } : {}),
+  ...(item.mail ? { mail: item.mail } : {}), ...(item.joueur ? { joueur: item.joueur } : {}) });
 // Arrêts du jour : l'arrêt principal (detect) puis les éléments informatifs, au plus `maxParJour` ; au-delà, le
 // dernier arrêt regroupe le reste. Rend {stop, queue} : `queue` = arrêts suivants du même jour, montrés à chaque
 // nouvel appui sur Continuer sans avancer (worker.cjs).
@@ -304,7 +311,7 @@ function arrets(before, after, settings, repriseDate = null) {
     if (room <= 0) infos = [];
     else {
       const rest = items.slice(room - 1);
-      infos = [...infos.slice(0, room - 1), { kind: 'info', label: STOPS.info.label, detail: rest.map(i => i.label + ' : ' + i.detail).join(' · '), type: 'groupe' }];
+      infos = [...infos.slice(0, room - 1), { kind: 'info', label: STOPS.info.label, detail: rest.map(i => i.label + ' : ' + i.detail).join(' · '), type: 'groupe', ecran: 'Réception' }];
     }
   }
   const all = primary ? [primary, ...infos] : infos;

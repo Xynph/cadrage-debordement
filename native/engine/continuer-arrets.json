@@ -1,16 +1,18 @@
 {
   "version": 1,
-  "_doc": "Arrêts informatifs de « Continuer » pendant la saison (continuer.cjs, kind « info »), toujours actifs (décision de Léo, 16/11/2026 : pas de niveaux). Aucun n'attend de réponse ; ils ne changent rien à la carrière (lecture seule). priorite : ordre des arrêts d'un même jour (plus petit d'abord). maxParJour : arrêts au plus le même jour, arrêt principal compris ; au-delà, le dernier arrêt regroupe le reste.",
+  "_doc": "Arrêts informatifs de « Continuer » pendant la saison (continuer.cjs, kind « info »), toujours actifs (décision de Léo, 16/11/2026 : pas de niveaux). Aucun n'attend de réponse ; ils ne changent rien à la carrière (lecture seule). priorite : ordre des arrêts d'un même jour (plus petit d'abord). maxParJour : arrêts au plus le même jour, arrêt principal compris ; au-delà, le dernier arrêt regroupe le reste. ecran : écran que l'interface ouvre sur l'arrêt (« infirmerie » : Effectif filtré sur les blessés ; « fiche » : fiche du joueur concerné ; « Réception » : le mail). courrier : mails du club qui arrêtent l'avance (club-mail.cjs, au plus « arretsParJour » de club-mail.json).",
   "maxParJour": 3,
   "types": {
     "veille": {
       "label": "Veille de match",
-      "priorite": 10
+      "priorite": 10,
+      "ecran": "Composition"
     },
     "medical": {
       "label": "Rapport médical",
       "priorite": 20,
-      "semainesMin": 4
+      "semainesMin": 4,
+      "ecran": "infirmerie"
     },
     "lendemain": {
       "label": "Bilan du match",
@@ -18,11 +20,13 @@
     },
     "fin_phase": {
       "label": "Fin de phase",
-      "priorite": 40
+      "priorite": 40,
+      "ecran": "Classements"
     },
     "mi_saison": {
       "label": "Mi-saison",
-      "priorite": 50
+      "priorite": 50,
+      "ecran": "Classements"
     },
     "mercato": {
       "label": "Marché des transferts",
@@ -30,11 +34,18 @@
       "semaines": [
         13
       ],
-      "semainesAvant": 1
+      "semainesAvant": 1,
+      "ecran": "Recrutement"
     },
     "recruteur": {
       "label": "Rapport de recruteur",
-      "priorite": 70
+      "priorite": 70,
+      "ecran": "fiche"
+    },
+    "courrier": {
+      "label": "Courrier",
+      "priorite": 15,
+      "ecran": "Réception"
     }
   },
   "phases": {
