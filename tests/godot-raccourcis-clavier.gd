@@ -109,6 +109,29 @@ func run() -> void:
 	await key(KEY_ESCAPE)
 	check(palette != null and not palette.visible, "Échap referme l'accès rapide")
 
+	# Rappels : une seule table pour le pied de page, les paramètres et l'aide F1.
+	var Table = load("res://ui/raccourcis_clavier.gd")
+	var ligne: String = Table.lignes_aide()[0]
+	app._navigate("Bureau")
+	await settle()
+	var pied := app.find_child("ImmersiveShortcuts", true, false)
+	check(pied != null and pied.text == Table.pied_de_page(), "Pied de page issu de la table")
+	var options = load("res://ui/preferences_dialog.gd").open(app, app.user_preferences)
+	await settle(4)
+	var rappel := app.find_child("PreferencesShortcuts", true, false)
+	check(options != null and rappel != null, "Paramètres : section « Raccourcis clavier »")
+	if rappel != null:
+		var texte := rappel.get_parent().get_child(1) as Label
+		check(texte != null and texte.text.contains(ligne), "Paramètres : lignes issues de la table")
+	app._clear_dialogs()
+	await settle(2)
+	app._open_coach()
+	await settle(2)
+	var aide: Array = app.coach._fragments_aide(app.coach.current_id)
+	check(not aide.is_empty() and str(aide.back().text).contains(ligne), "Aide F1 : dernier conseil = raccourcis issus de la table")
+	app.coach.close()
+	await settle(2)
+
 	# Espace : d'abord le prochain message non lu, puis seulement Continuer.
 	var Reception = load("res://ui/immersive08/reception_canvas.gd")
 	app._navigate("Bureau")

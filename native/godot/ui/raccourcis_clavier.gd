@@ -8,9 +8,27 @@ extends Node
 const NOM := "RaccourcisClavier"
 const Reception = preload("res://ui/immersive08/reception_canvas.gd")
 const INDICES := [" · Espace : prochain message", " · Espace : continuer"]
+## Table unique des raccourcis : [touche, libellé court, explication, dans le pied de page]. Pied de page, paramètres et aide F1 la lisent.
+const TABLE := [
+	["Espace", "Suite", "Ouvre le prochain message non lu ; une fois le courrier lu, passe à la suite du calendrier (Entrée aussi).", true],
+	["1 à 9", "Menus", "Ouvre l'écran du menu de gauche, dans l'ordre affiché.", true],
+	["Échap", "Retour", "Referme la fiche ou la fenêtre au premier plan.", true],
+	["Ctrl F", "Rechercher", "Cherche un joueur, un club ou un écran (Ctrl K aussi).", true],
+	["F1", "Aide", "Les conseils de Gabi pour l'écran en cours.", true],
+	["Ctrl S", "Sauvegarder", "Enregistre la carrière.", false],
+	["Alt ← / →", "Historique", "Revient à l'écran précédent ou suivant.", false],
+]
 var app: Control
 # Vrai après Tab ou une flèche : Espace/Entrée appartiennent alors au bouton ciblé, pas à « Continuer ».
 var _focus_clavier := false
+
+## Pied de page : « Espace Suite   ·   1 à 9 Menus … ».
+static func pied_de_page() -> String:
+	return "   ·   ".join(TABLE.filter(func(l: Array): return l[3]).map(func(l: Array): return "%s %s" % [l[0], l[1]]))
+
+## Lignes de l'aide et des paramètres : « Espace : explication ».
+static func lignes_aide() -> PackedStringArray:
+	return PackedStringArray(TABLE.map(func(l: Array): return "%s : %s" % [l[0], l[2]]))
 
 static func installer(owner_app: Control) -> void:
 	var gestionnaire: Node = owner_app.get_node_or_null(NOM)
@@ -20,6 +38,29 @@ static func installer(owner_app: Control) -> void:
 		gestionnaire.app = owner_app
 		owner_app.add_child(gestionnaire)
 	gestionnaire.annoncer_continuer()
+
+## Onglet « Raccourcis » ajouté aux paramètres à leur ouverture (la boîte est construite ailleurs : aucun fichier partagé touché).
+func _enfant_ajoute(noeud: Node) -> void:
+	if noeud.name == "PreferencesDialog": _ajouter_onglet.call_deferred(noeud)
+
+func _ajouter_onglet(boite: Node) -> void:
+	var onglets := boite.find_child("PreferencesTabs", true, false) as TabContainer
+	if onglets == null or onglets.find_child("PreferencesShortcuts", true, false) != null: return
+	var page := VBoxContainer.new()
+	page.name = "Raccourcis clavier"
+	var titre := Label.new()
+	titre.name = "PreferencesShortcuts"
+	titre.text = "RACCOURCIS CLAVIER"
+	page.add_child(titre)
+	var texte := Label.new()
+	texte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	texte.text = "\n".join(lignes_aide())
+	texte.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.add_child(texte)
+	onglets.add_child(page)
+
+func _ready() -> void:
+	app.child_entered_tree.connect(_enfant_ajoute)
 
 ## Info-bulle « Espace : prochain message » ou « Espace : continuer », recalculée au survol et au focus (le texte est réécrit chaque jour).
 func annoncer_continuer() -> void:

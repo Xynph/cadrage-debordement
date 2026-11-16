@@ -581,7 +581,7 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	app.status = D.text(row,2,36,app._settled_status_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
 	app.status.name = "ImmersiveSaveStatus"
 	if app.route != "Bureau":
-		var shortcuts := D.text(row,782,36-FOOTER_RISE,"Espace Suite   ·   1-9 Menus   ·   Échap Retour   ·   Ctrl F Rechercher   ·   F1 Aide",17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
+		var shortcuts := D.text(row,782,36-FOOTER_RISE,Raccourcis.pied_de_page(),17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
 		shortcuts.name = "ImmersiveShortcuts"
 	if app.decision_feedback != null:
 		var feedback: Button = app.decision_feedback.control()
