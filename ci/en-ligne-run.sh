@@ -73,4 +73,5 @@ if [[ "${CD_EL_MESURES:-false}" == "true" ]]; then
 fi
 
 [[ -s "$out/echecs.txt" ]] || rm -f "$out/echecs.txt"
+echo "=== DIAG ==="; grep -hE 'GABI_PHASE|GABI_BANDEAU|FAIL|PASS|ECHEC|temps|limite' "$out"/*.log 2>/dev/null | head -60; cat "$out/resume.md" 2>/dev/null
 exit $failed
