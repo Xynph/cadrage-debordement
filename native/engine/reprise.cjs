@@ -217,9 +217,11 @@ function factory(){
  const planClub=(st,id)=>st?.plan?.clubs.find(r=>r[0]===id)||null;
 
  // ------------------------------------------------------------ état
- function blank(s,start){return {version:1,start,season:s.season,choice:null,youth:null,auto:start==='veille',plan:null,report:null,history:[],program:null,camp:null};}
+ function blank(s,start){return {version:1,start,season:s.season,choice:null,youth:null,auto:start==='veille',plan:null,report:null,history:[],program:null,camp:null,notes:[]};}
  // Nouvelle saison visée (choix d'intersaison) : les décisions de la préparation repartent de zéro.
- function retarget(st,t){st.season=t;st.auto=false;st.program=null;st.camp=null;}
+ function retarget(st,t){upgrade(st);st.season=t;st.auto=false;st.program=null;st.camp=null;}
+ // État d'avant le 16/11/2026 (9 clés) : décisions et éléments « À noter » ajoutés au premier passage.
+ function upgrade(st){if(st&&st.notes===undefined){st.program??=null;st.camp??=null;st.notes=[];}return st;}
  // L'avant-saison (avant-saison.cjs, S.preseason) porte la date de juillet-août ; la reprise en
  // choisit seulement le point de départ.
  const P=()=>typeof CDPreseason!=='undefined'?CDPreseason:null;
@@ -238,7 +240,9 @@ function factory(){
  // Ouverture du calendrier constatée (commande, entraînement de la semaine) : plan figé.
  function sync(s){
   const st=s?.reprise;if(!active(s)||!st)return false;
+  upgrade(st);
   settle(s);
+  deliver(s);
   if(pending(s))return false;
   const last=weekSeen.get(s);weekSeen.set(s,s.round);
   if(st.plan===null||st.plan&&st.season!==s.season&&s.phase!=='ended'){handover(s);return true;}
@@ -286,10 +290,85 @@ function factory(){
  }
  // Avance au-delà du jour dû sans réponse : le staff applique le choix prudent et le dit.
  function record(s,key,id,staff){
-  s.reprise[DECISIONS[key].field]={id,staff};
+  upgrade(s.reprise);s.reprise[DECISIONS[key].field]={id,staff};
   // Seule la délégation est annoncée : le choix du manager est visible dans « La reprise ».
   if(staff&&typeof news==='function')news(`Gabi a arrêté ${key==='amicaux'?'le programme des matchs amicaux':'l’orientation du stage'} à votre place : ${DECISIONS[key].options[id].label.toLowerCase()}.`);
  }
+ // ------------------------------------------------------------ éléments « À noter » (courrier de pré-saison)
+ // Façon FM : des éléments informatifs arrivent en Réception le jour où ils se produisent ; « Continuer » s'arrête
+ // dessus selon son flux (continuer.cjs, FLUX), sans réponse attendue. Plusieurs éléments le même jour sont
+ // normaux : ils sont tous dans la Réception à l'arrêt. Identifiant « type:date[:n] », gardé dans S.reprise.notes
+ // pour n'envoyer chaque élément qu'une fois. Club du manager, préparation non confiée au staff.
+ const NOTE_MAX=32;
+ function schedule(s){
+  const st=s.reprise;if(!active(s)||!st||st.auto||st.season!==s.season||s.phase==='ended')return [];
+  const rep=decide(s,s.club,st),first=fmDay(s,s.club);if(rep===null||first===null||today(s)>first)return [];
+  const out=[],tour=tourists(s),row=buildClub(s,s.club,tour,st),eve=first-1;
+  const backs=new Map();
+  for(const p of s.clubs[s.club].players){const t=tour.get(p.id);if(t&&t.back>rep&&t.back<first){if(!backs.has(t.back))backs.set(t.back,[]);backs.get(t.back).push(p);}}
+  for(const [day,players]of backs)out.push({id:'retour:'+iso(day),kind:'retour',day,players});
+  const dates=row?friendlyDates(row):[];
+  dates.forEach((day,i)=>{if(day<eve)out.push({id:'amical:'+iso(day),kind:'amical',day,index:i,count:dates.length,row});});
+  const due=dueDays(s),end=due?due.stage+4:rep+WEEK+4;
+  if(end<eve)out.push({id:'stage:'+iso(end),kind:'stage',day:end});
+  if(eve>rep){out.push({id:'recrutement:'+iso(eve),kind:'recrutement',day:eve});out.push({id:'veille:'+iso(eve),kind:'veille',day:eve,first});}
+  return out.sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id));
+ }
+ // Force d'un club : moyenne des 23 meilleures notes (adversaire d'amical selon le programme).
+ const strength=c=>{const r=c.players.map(p=>p.rating).sort((a,b)=>b-a).slice(0,23);return r.length?r.reduce((n,x)=>n+x,0)/r.length:0;};
+ function friendlyOpponent(s,note,program){
+  const own=strength(s.clubs[s.club]),pool=s.clubs.filter(c=>c.id!==s.club&&c.players.length>=23).map(c=>({c,d:strength(c)-own}));
+  const fit=program==='rodage'?pool.filter(x=>x.d<=-3):program==='releve'?pool.filter(x=>x.d>=2):pool.filter(x=>Math.abs(x.d)<3);
+  const list=(fit.length?fit:pool).sort((a,b)=>Math.abs(a.d)-Math.abs(b.d)||a.c.id-b.c.id).slice(0,10);
+  // Un adversaire différent à chaque amical (rang dans le programme), point de départ tiré de la saison.
+  return list.length?list[(hash('amical-adversaire:'+s.season+':'+s.club)+note.index)%list.length]:null;
+ }
+ function noteText(s,note){
+  const st=s.reprise,club=s.clubs[s.club],name=club.name,day=d=>iso(d).slice(8,10)+'/'+iso(d).slice(5,7);
+  if(note.kind==='retour'){
+   const n=note.players.length,names=note.players.sort((a,b)=>b.rating-a.rating).slice(0,4).map(p=>p.name).join(', ');
+   return `Retour de tournée : ${n} ${n>1?'internationaux':'international'} rejoi${n>1?'gnent':'nt'} le groupe (${names}${n>4?'…':''}). Le staff les remet en route progressivement.`;
+  }
+  if(note.kind==='amical'){
+   const program=st.program?.id||PRUDENT,opp=friendlyOpponent(s,note,program),home=program==='rodage'||program===PRUDENT&&note.index%2===0;
+   const gap=opp?opp.d:0,h=k=>hash('amical-score:'+s.season+':'+note.id+':'+k);
+   let us=10+h(0)%24,them=10+h(1)%24;const edge=Math.round(clamp(-gap*1.5+(home?3:-3),-18,18));if(edge>0)us+=edge;else them-=edge;
+   const m=mods(s,s.club),ids=st.youth!==null?st.youth:suggestYouth(s,s.club,tourists(s)).map(p=>p.id);
+   const youths=ids.map(x=>academyOf(s,s.club).find(p=>p.id===x)).filter(p=>p&&!p.injury).map(p=>{const base=25+hash('amical:'+s.season+':'+p.id+':'+note.day)%31;return {p,minutes:m.youth===1?base:Math.round(clamp(base*m.youth,10,80))};});
+   const hurt=club.players.filter(p=>p.injury>0).length,other=opp?opp.c.name:'un club invité';
+   const score=home?`${name} ${us}-${them} ${other}`:`${other} ${them}-${us} ${name}`;
+   return `Match amical ${note.index+1}/${note.count} : ${score}${home?' (à domicile)':' (à l’extérieur)'}. `+
+    (youths.length?`Jeunes du centre : ${youths.slice(0,5).map(y=>y.p.name+' '+y.minutes+' min').join(', ')}${youths.length>5?` et ${youths.length-5} autre${youths.length>6?'s':''}`:''}. `:'')+
+    `Infirmerie : ${hurt?hurt+' joueur'+(hurt>1?'s':'')+' indisponible'+(hurt>1?'s':''):'aucun indisponible'}.`;
+  }
+  if(note.kind==='stage'){
+   const o=DECISIONS.stage.options[st.camp?.id||PRUDENT];
+   return `Fin du stage de préparation (${o.label.toLowerCase()}) : ${summary(o,0).replace(/^./,c=>c.toLowerCase())}`;
+  }
+  if(note.kind==='recrutement'){
+   let needs=[];try{needs=typeof recruitmentNeeds==='function'?recruitmentNeeds(JSON.parse(JSON.stringify(club))).filter(x=>x.need).slice(0,3):[];}catch(e){needs=[];}
+   return needs.length?`Dernier point recrutement avant la 1re journée : postes à renforcer, ${needs.map(x=>x.pos+' ('+x.reasons[0]+')').join(', ')}. Le marché reste ouvert dans Recrutement.`
+    :'Dernier point recrutement avant la 1re journée : l’effectif couvre tous les postes, rien d’urgent dans Recrutement.';
+  }
+  const f=s.worldMode.fixtures.find(x=>(x.homeId===s.club||x.awayId===s.club)&&x.date===iso(note.first));
+  const opp=f?s.clubs[f.homeId===s.club?f.awayId:f.homeId]?.name:null,top=[...club.players].sort((a,b)=>b.rating-a.rating).slice(0,23);
+  const cond=Math.round(top.reduce((n,p)=>n+(p.condition??100),0)/Math.max(1,top.length)),hurt=club.players.filter(p=>p.injury>0).length;
+  return `Veille de la 1re journée${opp?` : ${f.homeId===s.club?'réception de':'déplacement à'} ${opp} demain`:''}. Condition moyenne du groupe ${cond} %, ${hurt?hurt+' blessé'+(hurt>1?'s':''):'aucun blessé'}.`;
+ }
+ // Envoi des éléments du jour (et de ceux d'un jour passé d'un bond) : une seule fois chacun.
+ function deliver(s){
+  const st=s.reprise;if(!st||!Array.isArray(st.notes))return 0;
+  const now=today(s);let n=0;
+  for(const note of schedule(s)){
+   if(note.day>now||st.notes.includes(note.id))continue;
+   if(typeof news==='function')news(noteText(s,note));
+   st.notes.push(note.id);st.notes=st.notes.slice(-NOTE_MAX);n++;
+  }
+  return n;
+ }
+ // Lecture pour « Continuer » : éléments déjà envoyés, et prochains éléments prévus ({date, kind}).
+ const notesSeen=s=>active(s)&&Array.isArray(s.reprise?.notes)?s.reprise.notes.slice():[];
+ function nextNotes(s){const st=s?.reprise;if(!st||!Array.isArray(st.notes))return [];const now=today(s);return schedule(s).filter(n=>n.day>now&&!st.notes.includes(n.id)).map(n=>({date:iso(n.day),kind:n.kind}));}
  function settle(s){
   const d=dueDays(s);if(!d)return false;const now=today(s);let changed=false;
   for(const k of DECISION_KEYS)if(s.reprise[DECISIONS[k].field]==null&&now>d[k]){record(s,k,PRUDENT,true);changed=true;}
@@ -566,9 +645,9 @@ function factory(){
  function validate(s){
   const st=s?.reprise;if(st===undefined)return true;
   const fail=m=>{throw Error('Reprise : '+m+'.');},check=(ok,m)=>{if(!ok)fail(m);};
-  // 9 clés avant les décisions de la préparation (16/11/2026), 11 depuis.
+  // 9 clés avant les décisions de la préparation (16/11/2026), 12 depuis (décisions et éléments « À noter »).
   const n=object(st)?Object.keys(st).length:0;
-  check(n===9&&st.program===undefined&&st.camp===undefined||n===11&&DECISION_KEYS.every(k=>{const v=st[DECISIONS[k].field];return v===null||object(v)&&Object.keys(v).length===2&&typeof v.id==='string'&&Object.hasOwn(DECISIONS[k].options,v.id)&&typeof v.staff==='boolean';}),'décisions de préparation invalides');
+  check(n===9&&st.program===undefined&&st.camp===undefined&&st.notes===undefined||n===12&&Array.isArray(st.notes)&&st.notes.length<=NOTE_MAX&&st.notes.every(x=>typeof x==='string'&&/^(retour|amical|stage|recrutement|veille):\d{4}-\d{2}-\d{2}$/.test(x))&&DECISION_KEYS.every(k=>{const v=st[DECISIONS[k].field];return v===null||object(v)&&Object.keys(v).length===2&&typeof v.id==='string'&&Object.hasOwn(DECISIONS[k].options,v.id)&&typeof v.staff==='boolean';}),'décisions de préparation invalides');
   check(object(st)&&st.version===1&&STARTS.includes(st.start)&&(int(st.season,1,s.season)||s.phase==='ended'&&st.season===s.season+1)&&typeof st.auto==='boolean','état invalide');
   check(st.plan!==null||st.season===s.season&&s.round===0,'plan de reprise absent');
   check(st.choice===null||int(st.choice,1,18),'date choisie invalide');
@@ -596,7 +675,7 @@ function factory(){
   wrap('initializeCollectivePreparation',(result,l)=>scaleCollective(l));
   // Nouvelle saison : la décision prise en fin de saison s'applique, sinon la date habituelle.
   wrap('advanceSeason',()=>{const s=live();if(!s)return;const st=s.reprise;
-   const keep=st.season===s.season;st.season=s.season;st.auto=false;if(!keep){st.choice=null;st.youth=null;st.program=null;st.camp=null;}
+   const keep=st.season===s.season;st.season=s.season;st.auto=false;if(!keep){st.choice=null;st.youth=null;st.program=null;st.camp=null;}if(Array.isArray(st.notes))st.notes=[];
    handover(s);});
   return true;
  }
@@ -609,7 +688,7 @@ function factory(){
    return {id:p.id,name:p.name,pos:p.pos,nation:x.nation,from:iso(dayOf(year(s)+'-'+(NC.has(x.nation)?'07-04':'06-27'))+shift),through:iso(x.back+shift-1),returnDate:iso(x.back+shift)};
   }).sort((a,b)=>a.returnDate.localeCompare(b.returnDate)||(a.id<b.id?-1:1));
  }
- const api=Object.freeze({create,sync,pending,today,project,absentees,validate,creation,handover,tourists,clubDefault,options,effectsFor,STARTS,due,nextDecision});
+ const api=Object.freeze({create,sync,pending,today,project,absentees,validate,creation,handover,tourists,clubDefault,options,effectsFor,STARTS,due,nextDecision,notesSeen,nextNotes});
  g.CDReprise=api;
  return {project,validate,execute,installHooks,create,sync,pending,creation};
 }

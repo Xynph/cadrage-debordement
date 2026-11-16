@@ -937,9 +937,11 @@ function createBridge(options={}){
   // Prochain arrêt prévisible de « Continuer » (info-bulle du bouton) : rencontre du club, reprise de
   // l'entraînement ou rendez-vous en file. Lecture seule, seulement en calendrier journalier.
   const repriseDate=()=>run("(()=>{try{return CDReprise.project()?.club?.date??null}catch(e){return null}})()");
+  var continueFlux='equilibre'; // var : lisible par continuePlan même pendant l'initialisation du pont.
   function continuePlan(model){
    if(!model?.meta?.calendarCadence)return;
-   try{model.meta.continuePlan=continuer.plan(advanceSignal(),repriseDate());mark('prochain_arret');}catch{delete model.meta.continuePlan;}
+   // Flux de Continuer : celui de la dernière avance demandée (préférence du joueur), équilibré par défaut.
+   try{const signal=advanceSignal();model.meta.continuePlan=continuer.plan(signal,repriseDate(),continueFlux);model.meta.decisionsDue=signal?.decisions||[];mark('prochain_arret');}catch{delete model.meta.continuePlan;delete model.meta.decisionsDue;}
   }
   function finishAdvance(id,session,stop){
    try{
@@ -964,7 +966,7 @@ function createBridge(options={}){
     opts=continuer.validate(request.payload??{});
     if(!run('!!S'))throw Error('Créez ou importez une carrière.');
    }catch(error){advanceSession=null;return {id:Number.isSafeInteger(id)||typeof id==='string'?id:null,ok:false,model:closed?null:snapshot(),error:error.message};}
-   const started=performance.now(),session=advanceSession;advanceSession=null;
+   const started=performance.now(),session=advanceSession;advanceSession=null;continueFlux=opts.flux;
    if(opts.stop){
     if(session&&session.days>0)return finishAdvance(id,session,{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'});
     const model=snapshotRaw();model.meta.advanceUntilEvent={days:0,from:opts.fromDate,to:model.meta.calendarToday??null,stop:{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'}};
@@ -1002,7 +1004,7 @@ function createBridge(options={}){
       // La décision regroupée fait partie des jours en mémoire : elle sera écrite avec eux (arrêt, fermeture ou
       // commande suivante), pas séparément entre deux tranches.
       if(current.absorbed&&pendingCommit===current.absorbed){pendingCommit=null;current.absorbed=null;}
-      advanceSession=current;return {id,ok:true,model:null,progress:{from:current.from,today,days:current.days,next:after.next,plan:continuer.plan(after,current.repriseDate)}};}
+      advanceSession=current;return {id,ok:true,model:null,progress:{from:current.from,today,days:current.days,next:after.next,plan:continuer.plan(after,current.repriseDate,opts.flux)}};}
      stop={kind:'limite',label:continuer.STOPS.limite.label,detail:'Avance interrompue après '+current.days+' jours sans événement.'};break;
     }
    }

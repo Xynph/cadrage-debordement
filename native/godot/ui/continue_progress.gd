@@ -339,6 +339,9 @@ func _plan_title(plan: Dictionary) -> String:
 		"decision":
 			var what := str(plan.get("detail", "")).to_lower()
 			return "Jusqu’à la décision : %s" % what if not what.is_empty() else "Jusqu’à la prochaine décision"
+		"a_noter":
+			var note := str(plan.get("detail", ""))
+			return "Jusqu’au prochain élément à noter : %s" % note if not note.is_empty() else "Jusqu’au prochain élément à noter"
 	return "Les jours défilent…"
 
 

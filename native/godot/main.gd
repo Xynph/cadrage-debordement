@@ -324,6 +324,10 @@ func _receive_model(value: Dictionary) -> void:
 			_reset_reception(reception_id)
 			if has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 			route = "Réception"
+		# Arrêt « À noter » de « Continuer » (façon FM) : tous les éléments du jour sont en Réception, le plus récent en tête.
+		elif received_command == CareerProgression.CONTINUE_COMMAND and _stop_kind(model) == "a_noter":
+			_reset_reception()
+			route = "Réception"
 	if bridge.last_response_ok and last_command in ["new_career","next_season","import","restore_checkpoint"] and _has_career():
 		table_division = str(model.meta.get("leagueId", "elite"))
 	if response_ok and received_command == "match_talk_continue" and _live().is_empty():
@@ -383,6 +387,10 @@ func _decision_due(value: Dictionary, ok: bool) -> bool:
 	var advance: Variant = value.get("meta", {}).get("advanceUntilEvent")
 	if ok and advance is Dictionary and advance.get("stop") is Dictionary and str(advance.stop.get("kind", "")) == "decision": return true
 	return not ok and not (value.get("clubLife", {}).get("reprise", {}).get("due", []) as Array).is_empty()
+
+func _stop_kind(value: Dictionary) -> String:
+	var advance: Variant = value.get("meta", {}).get("advanceUntilEvent")
+	return str(advance.stop.get("kind", "")) if advance is Dictionary and advance.get("stop") is Dictionary else ""
 
 func _open_reprise_decision() -> void:
 	if has_node("RepriseDialog"): return
@@ -1061,7 +1069,8 @@ func primary_action() -> void:
 		return
 	var daily := _daily_progression()
 	if not daily.is_empty():
-		if daily.has("route"): _navigate(daily.route)
+		if daily.has("open"): _open_reprise_decision()
+		elif daily.has("route"): _navigate(daily.route)
 		elif daily.has("command"): _command(daily.command, daily.payload)
 		return
 	if not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
