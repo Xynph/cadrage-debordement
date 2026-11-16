@@ -18,6 +18,7 @@
   quand le diff touche Godot (`native/godot/`, `tests/godot-*`, lanceurs) et
   sautés sinon. Recette SDK ciblée : étiquette `godot-sdk`. Vérifications
   lourdes (SDK, économie, résilience, Windows) : créneau régulier sur `main`.
+- **PC de Léo indisponible** : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot).
 - **Fusion automatique** (décision de Léo, 16/11/2026) : en passant une PR en
   prête, activer la fusion auto de GitHub en squash
   (`gh api -X PUT repos/Xynph/cadrage-debordement/pulls/<n>/ccr/auto_merge -f merge_method=squash`

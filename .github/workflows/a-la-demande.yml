@@ -1,0 +1,149 @@
+name: Tests en ligne à la demande
+# Quand le PC de Léo est indisponible : suites, captures et mesures Godot se lancent ici (runner
+# ubuntu standard, gratuit pour un dépôt public, aucun secret) via `bash ci/en-ligne.sh`.
+# workflow_dispatch n'existe que sur la branche par défaut : utilisable après fusion dans main.
+#
+# Déclencheur de secours (quand le dispatch par l'API est refusé) : un push sur une branche
+# `en-ligne/**` ; les paramètres sont lus dans ci/en-ligne.json (ref, suites, captures, mesures)
+# et le code testé est celui de la branche poussée. ci/en-ligne.sh s'en charge.
+on:
+  push:
+    branches: ['en-ligne/**']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branche à tester'
+        type: string
+        required: false
+        default: main
+      suites:
+        description: 'Suites tests/*.cjs séparées par des espaces (godot-xxx accepté sans chemin) ; vide = aucune'
+        type: string
+        required: false
+        default: ''
+      captures:
+        description: 'Captures PNG des écrans principaux (carrière Monde, rendu sous xvfb)'
+        type: boolean
+        required: false
+        default: false
+      mesures:
+        description: "Temps d'ouverture des écrans et portraits progressifs"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+# Une relance sur la même branche remplace l'exécution précédente.
+concurrency:
+  group: a-la-demande-${{ inputs.ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  en-ligne:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CD_EL_SUITES: ${{ inputs.suites }}
+      CD_EL_CAPTURES: ${{ inputs.captures }}
+      CD_EL_MESURES: ${{ inputs.mesures }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event_name == 'push' && github.sha || inputs.ref }}
+          persist-credentials: false
+      - name: Lire les paramètres (push de secours)
+        if: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e '
+            const c = JSON.parse(require("fs").readFileSync("ci/en-ligne.json", "utf8"));
+            const out = [
+              "CD_EL_SUITES=" + String(c.suites || "").replace(/[^A-Za-z0-9._ \/-]/g, ""),
+              "CD_EL_CAPTURES=" + (c.captures === true),
+              "CD_EL_MESURES=" + (c.mesures === true)
+            ].join("\n") + "\n";
+            require("fs").appendFileSync(process.env.GITHUB_ENV, out);
+          '
+      - name: Vérifier qu'un travail est demandé
+        shell: bash
+        run: |
+          if [[ -z "${CD_EL_SUITES// /}" && "$CD_EL_CAPTURES" != "true" && "$CD_EL_MESURES" != "true" ]]; then
+            echo "::error::Rien à faire : renseigner suites, captures ou mesures."; exit 1
+          fi
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Préparer le rendu logiciel gratuit sous X11
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri
+      - name: Cache de l'archive du SDK Godot
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/cd-godot-sdk
+          key: godot-sdk-${{ hashFiles('ci/godot-sdk.json') }}
+      - name: Installer le SDK officiel épinglé et vérifier son archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, pathlib, shutil, urllib.request, zipfile
+          config = json.loads(pathlib.Path('ci/godot-sdk.json').read_text())
+          tools = pathlib.Path(os.environ['RUNNER_TEMP']) / 'godot-sdk'
+          tools.mkdir()
+          archive = tools / 'godot.zip'
+          cached = pathlib.Path.home() / '.cache' / 'cd-godot-sdk' / 'godot.zip'
+          if cached.is_file() and cached.stat().st_size == config['bytes'] and hashlib.sha256(cached.read_bytes()).hexdigest() == config['sha256']:
+              shutil.copyfile(cached, archive)
+              print('SDK Godot : archive restaurée du cache')
+          else:
+              urllib.request.urlretrieve(config['url'], archive)
+              cached.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(archive, cached)
+          assert archive.stat().st_size == config['bytes'], 'Unexpected SDK archive size'
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == config['sha256'], 'SDK checksum mismatch'
+          with zipfile.ZipFile(archive) as z:
+              assert z.namelist() == [config['executable']], 'Unexpected SDK archive member'
+              z.extractall(tools)
+          executable = tools / config['executable']
+          executable.chmod(0o755)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('CD_GODOT_EXECUTABLE=' + str(executable) + '\n')
+              env.write('CD_GODOT_EXE=' + str(executable) + '\n')
+          PY
+      - name: Préparer et importer le vrai projet
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build-godot-prototype.py --stage-only --node "$(command -v node)"
+          timeout --kill-after=10s 180s "$CD_GODOT_EXECUTABLE" --headless --audio-driver Dummy --path native/godot --import 2>&1 | tee "$RUNNER_TEMP/godot-import.log"
+          if grep -Eq 'SCRIPT ERROR|Parse Error|ERROR:' "$RUNNER_TEMP/godot-import.log"; then
+            exit 1
+          fi
+      - name: Exécuter suites, captures et mesures demandées
+        shell: bash
+        env:
+          SDL_AUDIODRIVER: dummy
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          set +e
+          xvfb-run -a -s '-screen 0 1920x1080x24' bash ci/en-ligne-run.sh "$RUNNER_TEMP/resultats"
+          code=$?
+          [[ -f "$RUNNER_TEMP/resultats/resume.md" ]] && cat "$RUNNER_TEMP/resultats/resume.md" >> "$GITHUB_STEP_SUMMARY"
+          exit $code
+      - name: Publier les résultats
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: resultats-en-ligne
+          path: ${{ runner.temp }}/resultats
+          retention-days: 7
+          if-no-files-found: ignore
