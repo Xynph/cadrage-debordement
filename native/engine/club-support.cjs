@@ -56,6 +56,9 @@ function factory(){
   if(trainWeek.__nativeSupportMedical)return true;
   const prior=trainWeek,wrapped=function(...args){const state=S,trained=state?.trained,before=new Map((state?.clubs?.[state.club]?.players||[]).map(p=>[p.id,{injury:p.injury,protocol:CDMedicalV68.treatment(p)}]));const result=prior.apply(this,args);if(state&&S===state&&!trained&&state.trained)CDMedicalV68.completeTraining(state,before);return result;};wrapped.__nativeSupportMedical=true;trainWeek=wrapped;return true;
  }
- return {project,validate,execute,installHooks};
+ // Joueurs suivis par le médical (mêmes filtre, ordre et champs que project().medical.players, réduits à ceux que lit
+ // l'observation des rendez-vous du club) : sans projeter tout le domaine (devis d'agents, plans, dossier de match).
+ function medicalPlayers(){return S?roster(S).filter(p=>p.injury>0||p.medicalV68?.stage==='reprise').map(p=>({id:p.id,injury:p.injury,stage:p.medicalV68?.stage??'blesse'})):[];}
+ return {project,medicalPlayers,validate,execute,installHooks};
 }
 module.exports={files,commands,factory};

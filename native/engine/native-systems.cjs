@@ -31,9 +31,17 @@ function bootstrap(){
    projectText(sections){
     if(!S)return '{}';
     if(!sections||nativeMemoDomains===false){memo.clear();return JSON.stringify(this.project());}
+    return '{'+this.projectParts(sections).map(([key,text])=>JSON.stringify(key)+':'+text).join(',')+'}';
+   },
+   // Même calcul que projectText, domaine par domaine : [clé, texte] dans l'ordre des domaines (texte repris de la
+   // mémoire = même chaîne qu'au calcul précédent). « skip » (Set de clés de MEMO_DOMAINS, direct du match) : ces
+   // domaines ne sont ni calculés ni repris ; leur texte vaut null et l'appelant garde leur dernière présentation.
+   projectParts(sections,skip=null){
+    if(!S)return [];
     const parts=[];
     for(const [key,d] of Object.entries(domains)){
      let text;
+     if(skip&&skip.has(key)&&MEMO_DOMAINS.has(key)){parts.push([key,null]);continue;}
      if(!MEMO_DOMAINS.has(key)){text=JSON.stringify(d.project());}
      else{
       const hit=memo.get(key);
@@ -50,10 +58,11 @@ function bootstrap(){
        memo.set(key,{text,all,deps:[...read].map(k=>[k,sections.get(k)])});
       }
      }
-     if(text!==undefined)parts.push(JSON.stringify(key)+':'+text);
+     if(text!==undefined)parts.push([key,text]);
     }
-    return '{'+parts.join(',')+'}';
+    return parts;
    },
+   memoDomains(){return [...MEMO_DOMAINS];},
    clearMemo(){memo.clear();},
    memoStats(){return {...memoStats};},
    validate(state){
@@ -62,7 +71,9 @@ function bootstrap(){
     if(state&&state===nativeStaffTransition?.state&&state.season===nativeStaffTransition.completed+1&&state.staffCareer?.lastAdvancedSeason===nativeStaffTransition.completed-1)domains.staffCareer.advance(state,nativeStaffTransition.completed);
     if(state)for(const d of Object.values(domains))d.validate(state);
    },
-   clearTransient(){memo.clear();nativeStaffTransition=null;for(const d of Object.values(domains))if(d.clearTransient)d.clearTransient();},
+   // keepMemo : carrière rétablie à l'identique (commande refusée) ; la mémoire, indexée par les versions des sections
+   // lues, reste juste.
+   clearTransient(keepMemo){if(!keepMemo)memo.clear();nativeStaffTransition=null;for(const d of Object.values(domains))if(d.clearTransient)d.clearTransient();},
    execute(command,payload){const owner=owners.get(command);if(!owner)throw Error('Commande de domaine inconnue.');return owner.execute(command,payload);},
    installHooks(){for(const d of Object.values(domains))d.installHooks();}
   };
