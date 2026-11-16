@@ -486,7 +486,9 @@ function createBridge(options={}){
   const refreshVersions=operation=>{
    const command=operation?.command??'snapshot',declared=stateVersions.untouched(command,operation?.payload),live=projectionState.live;
    if(live)run('nativeStateVersions.markDirty('+JSON.stringify(stateVersions.HEAVY.filter(key=>!declared.includes(key)))+')');
-   run('nativeStateVersions.refresh('+JSON.stringify(live?stateVersions.HEAVY:declared)+','+(verifyProjection&&!live)+')');
+   // Décision sur un joueur du club (state-versions.cjs, OWN_CLUB) : seul le club du manager est relu dans `clubs`.
+   const own=!live&&stateVersions.ownClubOnly(command)?['clubs']:[];
+   run('nativeStateVersions.refresh('+JSON.stringify(live?stateVersions.HEAVY:declared)+','+(verifyProjection&&!live)+','+JSON.stringify(own)+')');
    versionsSynced=true;
   };
   // Frontière de connaissance (~6 Mo) : relue une fois par texte (même chaîne = même carte, jamais modifiée).

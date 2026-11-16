@@ -1,5 +1,5 @@
 'use strict';
-// Réactivité du moteur (lot 19) : projection par sections (projection-sections.cjs), versions des sections de la
+// Réactivité du moteur (lots 19 et 20) : projection par sections (projection-sections.cjs), versions des sections de la
 // carrière (state-versions.cjs), réponses légères aux commandes refusées et direct du match allégé.
 //
 // Sur la même graine, carrière Monde (`world-champ`, cadence de la semaine pour atteindre vite un match) :
@@ -53,6 +53,14 @@ function parcours(options) {
     for (let i = 0; i < 2; i++) model = call('set_tactics', { attack: model.tactics.attacks.find(o => o.id !== model.tactics.attack).id, defense: model.tactics.defense });
     model = call('auto_lineup');
     model = call('set_player_load', { playerId: model.squad[4].id, mode: 'repos' });
+    // Décisions sur un joueur du club et délégation (lot 20) : seul le club du manager est relu ; la seconde consigne
+    // de charge (champ déjà présent) et la délégation ne recalculent pas le marché entre clubs.
+    const avantDecisions = marche();
+    model = call('set_player_load', { playerId: model.squad[4].id, mode: 'normal' });
+    for (const [key, enabled] of [['lineup', true], ['training', true], ['training', false], ['lineup', false]]) model = call('set_delegation', { key, enabled });
+    const decisionsMarche = marche() - avantDecisions;
+    model = call('set_development_focus', { playerId: model.squad[6].id, focus: 'stamina' });
+    model = call('training_plan', { plan: model.clubLife.clubSupport.training.plans[0].key, context: model.clubLife.clubSupport.context });
     model = call('set_opponent_level', { level: 'decouverte' });
     model = call('set_collective_focus', { focus: 'conquete' });
     // Refus sans effet (rendez-vous inconnu) : modèle complet ici, comparé plus bas à la réponse légère.
@@ -73,7 +81,7 @@ function parcours(options) {
     note('après le match', jeu.call('snapshot'));
     jeu.bridge.handle.flush();
     const profil = sha(fs.readFileSync(path.join(DOSSIER, 'PrototypeGodot', 'donnees.json'), 'utf8'));
-    return { etapes, profil, lecturesMarche };
+    return { etapes, profil, lecturesMarche, decisionsMarche };
   } finally { jeu.fermer(); fs.rmSync(DOSSIER, { recursive: true, force: true }); }
 }
 
@@ -121,6 +129,7 @@ test('Projection par sections : mêmes modèles et même profil, direct allégé
   assert.ok(comparer(avant, rapide, 'sections') > 0, 'direct : des sections gardées de la dernière réponse complète');
   assert.ok(rapide.etapes.slice(2).every(e => e.joint), 'textes des sections joints aux réponses');
   assert.equal(rapide.lecturesMarche, 0, 'instantané et fiches club sans recalcul du marché entre clubs');
+  assert.equal(rapide.decisionsMarche, 0, 'charge d’un joueur et délégation sans recalcul du marché entre clubs');
 });
 
 test('Commande refusée : réponse légère « rien n’a changé », même modèle reconstruit', { timeout: 600000 }, () => {

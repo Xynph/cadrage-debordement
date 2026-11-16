@@ -51,11 +51,15 @@ function bootstrap(){
        text=hit.text;
        if(nativeVerifyMemo){const fresh=JSON.stringify(d.project());if(fresh!==text)throw Error('Mémoire de projection périmée : '+key+'.');}
       }else{
-       const real=S,read=new Set();let all=false;
-       const traced=new Proxy(real,{get(t,k,r){if(typeof k==='string')read.add(k);return Reflect.get(t,k,t);},has(t,k){if(typeof k==='string')read.add(k);return Reflect.has(t,k);},ownKeys(t){all=true;return Reflect.ownKeys(t);},getOwnPropertyDescriptor(t,k){if(typeof k==='string')read.add(k);return Reflect.getOwnPropertyDescriptor(t,k);}});
+       // Versions des sections de la carrière (state-versions.cjs) : lectures relevées partie par partie (club du
+       // manager, joueur par joueur et champ par champ ; manager clé par clé). Sinon, sections de premier niveau.
+       const real=S,fine=typeof nativeStateVersions!=='undefined'&&sections===nativeStateVersions.current();
+       let read=new Set(),all=false,traced,done=null;
+       if(fine){const t=nativeStateVersions.trace(real);traced=t.proxy;read=t.read;all=()=>t.all();done=t.done;}
+       else traced=new Proxy(real,{get(t,k,r){if(typeof k==='string')read.add(k);return Reflect.get(t,k,t);},has(t,k){if(typeof k==='string')read.add(k);return Reflect.has(t,k);},ownKeys(t){all=true;return Reflect.ownKeys(t);},getOwnPropertyDescriptor(t,k){if(typeof k==='string')read.add(k);return Reflect.getOwnPropertyDescriptor(t,k);}});
        S=traced;
-       try{text=JSON.stringify(d.project());}finally{S=real;}
-       memo.set(key,{text,all,deps:[...read].map(k=>[k,sections.get(k)])});
+       try{text=JSON.stringify(d.project());}finally{S=real;done?.();}
+       memo.set(key,{text,all:typeof all==='function'?all():all,deps:[...read].map(k=>[k,sections.get(k)])});
       }
      }
      if(text!==undefined)parts.push([key,text]);
