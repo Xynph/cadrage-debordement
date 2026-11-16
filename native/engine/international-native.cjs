@@ -13,7 +13,7 @@ const editionsByFamily = new Map(referenceEditions.map(edition => [edition.id.re
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 const readableDate = date => dateFormatter.format(new Date(date));
 const campKey = camp => [camp.competitionId, camp.nation, camp.from].join('/');
-const mailKeys = ['id','kind','title','body','date','action','nation'];
+const mailKeys = ['id','kind','title','body','date','action','nation','players'];
 const limit = 45;
 
 module.exports = function nativeInternational(run, ctx, facts, enabled) {
@@ -121,10 +121,66 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       messages.push({
         id:'club-return/'+key,kind:'international_return',title:'Retour de sélection',
         body:`${count} ${count === 1 ? 'joueur revient' : 'joueurs reviennent'} du rassemblement de ${teamNames[camp.nation]} pour ${competitionName(camp.competitionId)}. La mise à disposition prend fin le ${readableDate(after.date)}.`,
-        date:after.date,action:'international',nation:camp.nation,
+        date:after.date,action:'international',nation:camp.nation,players,
       });
     }
     return messages;
+  }
+
+  // Un seul courrier par vague (décision de Léo, 16/11/2026) : toutes les convocations de joueurs du club du même
+  // jour, toutes sélections confondues, puis tous les retours du même jour. Titre court, une ligne par sélection
+  // (pays, compétition, joueurs, dates), identifiants des joueurs pour les liens vers leurs fiches.
+  function groupWaves(messages, state, players, clubPlayerIds) {
+    const club = new Set(clubPlayerIds), names = new Map(players.map(p => [p.id, p.name]));
+    const camps = new Map(state.callups.map(camp => [campKey(camp), camp]));
+    const out = [], waves = new Map();
+    for (const mail of messages) {
+      const kind = mail.kind === 'international_release' ? 'release' : mail.kind === 'international_return' && mail.id.startsWith('club-return/') ? 'return' : null;
+      const camp = kind ? camps.get(mail.id.slice(mail.id.indexOf('/') + 1)) : null;
+      if (!camp) { out.push(mail); continue; }
+      const key = kind + '/' + mail.date;
+      if (!waves.has(key)) { const wave = { kind, date: mail.date, rows: [] }; waves.set(key, wave); out.push(wave); }
+      waves.get(key).rows.push({ camp, ids: kind === 'release' ? camp.playerIds.filter(id => club.has(id)) : mail.players || [] });
+    }
+    return out.map(item => item.rows ? waveMail(item, names) : item).filter(Boolean);
+  }
+  function waveMail(wave, names) {
+    const release = wave.kind === 'release', rows = wave.rows.filter(row => row.ids.length);
+    if (!rows.length) return null;
+    const ids = [...new Set(rows.flatMap(row => row.ids))], n = ids.length, s = n > 1 ? 's' : '';
+    const lines = rows.map(({ camp, ids }) => {
+      const who = ids.map(id => names.get(id) || id).join(', ');
+      const dates = !release ? `mise à disposition terminée le ${readableDate(wave.date)}`
+        : camp.competitionId.startsWith('rugby-world-cup-') ? `départ le ${readableDate(camp.from)}, retour selon le parcours`
+        : `du ${readableDate(camp.from)} au ${readableDate(camp.through)} inclus`;
+      return `${teamNames[camp.nation]} (${competitionName(camp.competitionId)}) : ${who} ; ${dates}.`;
+    });
+    let body = lines.join('\n');
+    if (body.length > 1000) body = body.slice(0, 999) + '…';
+    const nations = [...new Set(rows.map(row => row.camp.nation))];
+    return { id: (release ? 'club-release-wave/' : 'club-return-wave/') + wave.date, kind: release ? 'international_release' : 'international_return',
+      title: release ? `Convocations internationales : ${n} joueur${s}` : `Retour des internationaux : ${n} joueur${s}`,
+      body, date: wave.date, action: 'international', ...(nations.length === 1 ? { nation: nations[0] } : {}), players: ids.slice(0, 80) };
+  }
+
+  // Même fenêtre internationale : les sélections ne convoquent pas toutes le même jour (Six Nations : 30 et
+  // 31 janvier). Une vague arrivée dans les 7 jours suivant le courrier précédent du même type le complète (même
+  // identifiant : un seul élément en Réception et pour « Continuer »).
+  function mergeWaves(profile, messages) {
+    const WAVE_DAYS = 7 * 86400000;
+    return messages.map(mail => {
+      const kind = /^club-(release|return)-wave\//.exec(mail.id)?.[1];
+      if (!kind) return mail;
+      const prior = [...profile.mail].reverse().find(m => m.id.startsWith('club-' + kind + '-wave/') && m.date <= mail.date &&
+        Date.parse(mail.date) - Date.parse(m.date) <= WAVE_DAYS);
+      if (!prior || prior.id === mail.id) return mail;
+      const players = [...new Set([...(prior.players || []), ...mail.players])].slice(0, 80), n = players.length;
+      let body = [...new Set([...prior.body.split('\n'), ...mail.body.split('\n')])].join('\n');
+      if (body.length > 1000) body = body.slice(0, 999) + '…';
+      const { nation, ...rest } = prior;
+      return { ...rest, title: (kind === 'release' ? 'Convocations internationales : ' : 'Retour des internationaux : ') + n + ' joueur' + (n > 1 ? 's' : ''),
+        body, players, ...(nation && nation === mail.nation ? { nation } : {}) };
+    });
   }
 
   function matchMail(state, players, nation) {
@@ -145,7 +201,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const clubPlayerIds = managed.club ? players.filter(p => p.clubId === clubId).map(p => p.id) : [];
     const moved = career.advance(profile.career, {from:profile.career.date,to,players,managedNation:managed.nation,
       clubPlayerIds,notifyActive});
-    const messages = dutyMail(profile.career,moved.state,moved.mail,clubPlayerIds);
+    const messages = mergeWaves(profile,groupWaves(dutyMail(profile.career,moved.state,moved.mail,clubPlayerIds),moved.state,players,clubPlayerIds));
     messages.push(...matchMail(moved.state,players,managed.nation));
     return {...profile,career:moved.state,mail:append(profile,messages)};
   }
@@ -157,7 +213,8 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       profile.mail.some(mail => !mail || typeof mail.id !== 'string' || !mail.id.length || mail.id.length > 240 ||
         Object.keys(mail).some(key => !mailKeys.includes(key)) ||
         ['kind','title','body','date'].some(key => typeof mail[key] !== 'string' || !mail[key].length || mail[key].length > 1000) ||
-        !['international','national_job'].includes(mail.action) || (mail.nation && !teamIds.includes(mail.nation))) ||
+        !['international','national_job'].includes(mail.action) || (mail.nation && !teamIds.includes(mail.nation)) ||
+        (mail.players !== undefined && !(Array.isArray(mail.players) && mail.players.length <= 80 && mail.players.every(id => typeof id === 'string' && id.length && id.length <= 180)))) ||
       new Set(profile.mail.map(mail => mail.id)).size !== profile.mail.length) throw Error('Profil international invalide.');
     career.validate(profile.career);
   }
