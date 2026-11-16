@@ -94,7 +94,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var continue_injuries := _option(continue_row,["Blessures : titulaires","Blessures : tout l’effectif"],"PreferencesContinueInjuries")
 	continue_injuries.tooltip_text = continue_messages.tooltip_text
 	var continue_flow := _option(continue_row,["Flux : allégé","Flux : équilibré","Flux : complet"],"PreferencesContinueFlow")
-	continue_flow.tooltip_text = "Éléments « À noter » qui arrêtent « Continuer » (ils restent tous en Réception).\nAllégé : veille de match. Équilibré : + amicaux, stage, dernier point recrutement. Complet : + retour des internationaux.\nLes décisions à prendre arrêtent toujours."
+	continue_flow.tooltip_text = "Moments sans décision qui arrêtent aussi « Continuer », parfois plusieurs fois le même jour.\nAllégé : veille de match, fin de phase. Équilibré : + rapport médical, mi-saison, marché, recruteur, amicaux, stage, dernier point recrutement. Complet : + lendemain de match, retour des internationaux.\nLes décisions à prendre arrêtent toujours."
 	stadium.tooltip_text = "Le réglage s’applique au stade 3D et est conservé pour les prochains matchs."
 	var error := C.wrap("",18,C.ALERT)
 	error.name = "PreferencesError"

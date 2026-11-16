@@ -42,6 +42,9 @@ static func continue_tooltip(meta: Dictionary) -> String:
 			"reprise": what = "Reprise de l’entraînement"
 			"decision": what = "Décision attendue : " + str(plan.get("detail", "")).to_lower()
 			"a_noter": what = "À noter : " + str(plan.get("detail", ""))
+			"info":
+				var info := str(plan.get("detail", ""))
+				what = info.left(1).to_upper() + info.substr(1)
 			_: what = str(plan.get("detail", "Rendez-vous du club"))
 		lines.append("Prochain arrêt prévu : %s, %s%s." % [what, short_date(date), in_days(today, date)])
 	lines.append("Arrêt plus tôt si un rendez-vous, un courrier important, une offre ou la blessure d’un titulaire l’exige.")

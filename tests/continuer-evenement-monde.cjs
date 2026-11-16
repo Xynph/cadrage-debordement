@@ -55,7 +55,9 @@ test('Règle d’arrêt : obligatoires jamais ignorés, réglages des messages e
   assert.equal(C.detect(offres, offres, o), null, 'une offre déjà vue n’arrête plus');
   assert.equal(C.detect({ ...base, offers: [] }, offres, C.validate({ fromDate: '2026-09-01', stops: { ignorer: ['offre'] } })), null);
   // Prochain arrêt prévisible (info-bulle) : le plus proche de la rencontre, de la reprise et d'un rendez-vous en file.
-  assert.deepEqual(C.plan(base), { kind: 'match', date: '2026-09-05', opponent: 'Rivaux' });
+  assert.deepEqual(C.plan(base, null, 'equilibre', ['info']), { kind: 'match', date: '2026-09-05', opponent: 'Rivaux' });
+  // Veille du match : arrêt informatif annoncé (flux équilibré par défaut), avant le match lui-même.
+  assert.deepEqual(C.plan(base), { kind: 'info', date: '2026-09-04', detail: 'veille du match contre Rivaux' });
   assert.deepEqual(C.plan(base, '2026-09-03'), { kind: 'reprise', date: '2026-09-03' });
   // Décision de la préparation : arrêt obligatoire le jour dû, annoncée avant la reprise du même jour.
   const due = C.detect(base, { ...base, decisions: ['amicaux'] }, C.validate({ fromDate: '2026-09-01', stops: { ignorer: FACULTATIFS } }));

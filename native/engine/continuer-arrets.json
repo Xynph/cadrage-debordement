@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "_doc": "Arrêts informatifs de « Continuer » pendant la saison (continuer.cjs, kind « info »). Aucun n'attend de réponse ; ils ne changent rien à la carrière (lecture seule). flux : réglages « Flux de Continuer » (allégé, équilibré, complet) où le type arrête l'avance. priorite : ordre des arrêts d'un même jour (plus petit d'abord). maxParJour : arrêts au plus le même jour, arrêt principal compris ; au-delà, le dernier arrêt regroupe le reste.",
+  "maxParJour": 3,
+  "types": {
+    "veille": { "label": "Veille de match", "priorite": 10, "flux": ["allege", "equilibre", "complet"] },
+    "medical": { "label": "Rapport médical", "priorite": 20, "flux": ["equilibre", "complet"], "semainesMin": 4 },
+    "lendemain": { "label": "Bilan du match", "priorite": 30, "flux": ["complet"] },
+    "fin_phase": { "label": "Fin de phase", "priorite": 40, "flux": ["allege", "equilibre", "complet"] },
+    "mi_saison": { "label": "Mi-saison", "priorite": 50, "flux": ["equilibre", "complet"] },
+    "mercato": { "label": "Marché des transferts", "priorite": 60, "flux": ["equilibre", "complet"], "semaines": [13], "semainesAvant": 1 },
+    "recruteur": { "label": "Rapport de recruteur", "priorite": 70, "flux": ["equilibre", "complet"] }
+  },
+  "phases": {
+    "league": "phase régulière",
+    "pool": "phase de poules",
+    "barrage": "barrages",
+    "elimination": "barrages",
+    "r16": "huitièmes de finale",
+    "quarter": "quarts de finale",
+    "semi": "demi-finales",
+    "final": "finale",
+    "promotion": "barrages d’accession"
+  },
+  "competitions": {
+    "champions": "Coupe des champions",
+    "challenge": "Challenge européen"
+  }
+}

@@ -44,6 +44,29 @@ Réglage « Flux de Continuer » (Préférences, à côté des messages et bless
 Les éléments hors flux arrivent quand même en Réception ; un arrêt cite tous les éléments du jour.
 Scores et minutes : hachage de la saison et de l'élément, aucun `Math.random`.
 
+## Arrêts informatifs de toute la saison (décision de Léo, 16/11/2026)
+
+Continuer s'arrête aussi, pendant la saison, sur des moments sans décision, et peut s'arrêter plusieurs fois le
+même jour (comme FM). Réglage en données : `native/engine/continuer-arrets.json` (types, libellé, priorité, flux,
+seuils, `maxParJour` = 3 arrêts au plus, le dernier regroupe le reste). Arrêt `info` (facultatif) :
+
+| Type | Quand | Flux |
+| --- | --- | --- |
+| Veille de match | la veille d'une rencontre du club : feuille (23), blessés à remplacer, rang et forme de l'adversaire | allégé, équilibré, complet |
+| Rapport médical | un joueur de l'effectif absent au moins 4 semaines | équilibré, complet |
+| Bilan du match | le lendemain : score, infirmerie | complet |
+| Fin de phase | changement de phase du championnat du club ou de sa coupe d'Europe (rang, suite) | tous |
+| Mi-saison | lendemain du match de la moitié du championnat : rang, objectif de la direction | équilibré, complet |
+| Marché des transferts | une semaine avant la fenêtre des clubs (semaine 13) | équilibré, complet |
+| Rapport de recruteur | mission de recrutement terminée (remplace l'arrêt « message » de ce courrier) | équilibré, complet |
+
+Retour de convocation internationale : déjà couvert par l'arrêt `international` (courrier groupé, #758).
+Lecture seule (`SIGNAL_SOURCE`), aucun courrier ni état écrit : la carrière est identique avec ou sans ces arrêts.
+Les arrêts suivants du même jour restent en mémoire du moteur (`infoQueue`, worker.cjs) ; chaque appui sur Continuer
+montre le suivant sans avancer (`days: 0`, `queued` = restants) ; oubliés dès que la date change. Le joueur coupe un
+type en choisissant un flux plus léger (préférence existante « Flux de Continuer ») ; `stops.ignorer: ['info']` les
+coupe tous. Prochain arrêt annoncé : veille et mi-saison. Test : `tests/continuer-arrets-saison.cjs`.
+
 ## Éléments visuels ajoutés (existants seulement)
 
 Aucune couleur, police ni composant nouveau. Ajouts : libellé « DÉCISION ATTENDUE → » du bouton
