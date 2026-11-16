@@ -43,7 +43,7 @@ func profile_cases() -> void:
 	check(not profile.load_profile("relatif"), "Profil relatif refusé sans repli")
 	var directory := proof.path_join("profil Émile été")
 	check(profile.load_profile(directory), "Dossier neuf Unicode chargé")
-	check(profile.data == {"version": 1, "interface_volume": 35, "stadium_volume": 25}, "Valeurs initiales exactes et indépendantes")
+	check(profile.data == {"version": 1, "interface_volume": 35, "stadium_volume": 25, "music_volume": 30, "music_on": true, "music_in_match": false, "match_sounds": true}, "Valeurs initiales exactes et indépendantes")
 	check(not FileAccess.file_exists(directory.path_join("sound.json")), "Lecture absente ne crée pas de réglages")
 	var changes := [0]
 	profile.changed.connect(func(): changes[0] += 1)
@@ -209,7 +209,9 @@ func sound_cases() -> void:
 	check(cues.size() == count + 1, "Sortir du mute ne rejoue aucun essai consommé")
 	audio.set_voice_active(true)
 	await create_timer(0.3).timeout
-	check(is_equal_approx(db_to_linear(audio._bed.volume_db), 0.35) and is_equal_approx(db_to_linear(audio._reaction.volume_db), 0.55), "Voix active atténue seulement les lecteurs stade")
+	# La réaction garde son souffle propre : déception (pitch grave) = 0,75, joie = 1 ; la voix ajoute 0,55.
+	var mood_scale := 0.75 if audio._reaction.pitch_scale < 1.0 else 1.0
+	check(is_equal_approx(db_to_linear(audio._bed.volume_db), 0.35) and is_equal_approx(db_to_linear(audio._reaction.volume_db), 0.55 * mood_scale), "Voix active atténue seulement les lecteurs stade")
 	audio.set_voice_active(false)
 	await create_timer(0.3).timeout
 	check(is_equal_approx(db_to_linear(audio._bed.volume_db), 1.0), "Fin de voix restaure progressivement le stade")
