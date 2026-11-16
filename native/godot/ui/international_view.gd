@@ -1,4 +1,5 @@
 extends RefCounted
+const FocusLater := preload("res://ui/focus_later.gd")
 
 const G = preload("res://ui/game_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
@@ -370,7 +371,7 @@ static func _picker(parent: Node, id: String, caption: String, choices: Array, s
 static func _refresh_editions(app: Control, id: String) -> void:
 	app._render(false)
 	var focus := app.find_child(id, true, false) as Control
-	if focus != null: focus.grab_focus.call_deferred()
+	if focus != null: FocusLater.grab(focus)
 
 static func _editions(app: Control, international: Dictionary, names: Dictionary) -> Control:
 	var view := G.v()

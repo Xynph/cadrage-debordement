@@ -123,7 +123,7 @@ static func gauge(parent: Node, app: Control, ids: Array) -> void:
 	parent.add_child(block)
 	block.add_child(G.label("VITESSE DE JEU ESTIMÉE", 11, G.MUTED))
 	if result.is_empty():
-		block.add_child(G.wrap("Mesure de votre machine en cours… La jauge s’affiche dans un instant.", 13, G.MUTED))
+		block.add_child(G.wrap("Mesure de ta machine en cours… La jauge s’affiche dans un instant.", 13, G.MUTED))
 		return
 	var level: Dictionary = result.level
 	var tint := state_color(level)

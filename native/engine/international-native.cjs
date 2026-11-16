@@ -22,7 +22,8 @@ const ROSTER = `S.clubs.flatMap(club=>club.players.map(p=>({
     ...nativePositionAptitudes.project(p),injury:p.injury,suspension:p.suspension,nationaleQualifications:p.nationaleQualifications,clubId:club.id,
     formeMatch:typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.selection(p.id):0
   })))`;
-module.exports = function nativeInternational(run, ctx, facts, enabled) {
+// `peek` (facultatif) : lecture immédiate de l'état sans minuterie de garde (worker.cjs).
+module.exports = function nativeInternational(run, ctx, facts, enabled, peek = run) {
   const career = createInternationalCareer(competitions, callups, facts);
   const teams = teamIds.map(id => ({ id, name: facts.nations[id]?.[0] ?? id, flagCode: facts.nations[id]?.[1] ?? null }));
   // Les Lions jouent des tests sans être une sélection que l'on peut diriger.
@@ -31,10 +32,10 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
   const read = (source = 'S') => JSON.parse(run(`JSON.stringify(${source}?.national??null)`));
   const supported = () => !!run('CDWorldCareer.active(S)&&S.worldMode.day!==undefined');
   const worldDay = () => run('CDWorldCareer.calendarToday(S)');
-  const ended = () => run("S.phase==='ended'");
+  const ended = () => peek("S.phase==='ended'");
   const nextOpening = () => run('CDWorldCareer.nextOpening(S)');
   const role = profile => manager.managerRole(profile?.role);
-  const isNationalOnly = () => run('S?.national?.role?.club===false');
+  const isNationalOnly = () => peek('S?.national?.role?.club===false');
   // Joueurs de tous les clubs vus par les sélections. Le texte de l'expression sert aussi à la mémoire de la projection
   // (worker.cjs, nativeInternationalRoster) : même calcul, repris tant que les sections lues de la carrière n'ont pas changé.
   run(`globalThis.nativeInternationalRoster=()=>${ROSTER}`);

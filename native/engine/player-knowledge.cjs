@@ -210,9 +210,10 @@ function factory(){
    if(!object(value))return;
    const pid=typeof value.playerId==='string'&&Object.hasOwn(visible,value.playerId)?value.playerId:typeof value.id==='string'&&Object.hasOwn(visible,value.id)?value.id:null;
    const unknownId=typeof value.playerId==='string'?value.playerId:value.id;
-   const aliases=typeof value.playerId==='string'||typeof value.pos==='string'?aliasesWithLevels:aliasesWithoutLevels;
-   const hasPlayerData=aliases.some(k=>Object.hasOwn(value,k))||typeof value.name==='string'&&typeof value.pos==='string';
-   const looksLikePlayer=!pid&&id(unknownId)&&(typeof value.playerId==='string'||typeof value.pos==='string'||typeof value.name==='string')&&aliases.some(k=>Object.hasOwn(value,k));
+   // Données de joueur : relevées seulement pour un objet identifié (mêmes conditions qu'avant, évaluées paresseusement).
+   const aliased=()=>(typeof value.playerId==='string'||typeof value.pos==='string'?aliasesWithLevels:aliasesWithoutLevels).some(k=>Object.hasOwn(value,k));
+   const hasPlayerData=!!pid&&(aliased()||typeof value.name==='string'&&typeof value.pos==='string');
+   const looksLikePlayer=!pid&&(typeof value.playerId==='string'||typeof value.pos==='string'||typeof value.name==='string')&&id(unknownId)&&aliased();
    const ownPerson=pid?visible[pid]:looksLikePlayer?{rating:null,ratingRange:null,potential:null,potentialRange:null,knowledge:{version:VERSION,owned:false,stage:'unobserved',observedAt:null}}:person;
    if(pid&&hasPlayerData||looksLikePlayer){
     Object.assign(value,plainCopy(ownPerson));
@@ -230,8 +231,9 @@ function factory(){
     for(const key of ['positionRatings','positionNotes','_familyNotes','roleRatings'])if(Object.hasOwn(value,key))value[key]={};
     if(ownPerson.knowledge.stage!=='deep')for(const key of attrs)if(Object.hasOwn(value,key))value[key]=key==='skillBase'?null:{};
    }
-   for(const [key,child]of Object.entries(value)){
+   for(const key of Object.keys(value)){
     if(key==='knowledge'||key==='ratingRange'||key==='potentialRange')continue;
+    const child=value[key];
     if(ceilingSet.has(key)){value[key]=null;continue;}
     if(ownPerson&&boundKeys.has(key)){value[key]=key==='noteMin'?ownPerson.ratingRange?.min??null:key==='noteMax'?ownPerson.ratingRange?.max??null:key==='potentialMin'?ownPerson.potentialRange?.min??null:ownPerson.potentialRange?.max??null;continue;}
     if(ownPerson&&!ownPerson.knowledge.owned&&(levelSet.has(key)||key==='rating')){value[key]=null;continue;}

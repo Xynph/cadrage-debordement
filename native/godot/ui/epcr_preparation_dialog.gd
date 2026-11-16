@@ -1,5 +1,6 @@
 extends AcceptDialog
 ## Brouillon consultatif : aucune inscription ni modification de carrière.
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
@@ -99,7 +100,7 @@ func _build() -> void:
 	verify.disabled = not preview.get("supported",false)
 	if verify.disabled: result.text = "La référence 2026/27 ne permet pas de vérifier cette saison."
 	Dialogs.show_centered(self,Vector2i(width,height))
-	verify.call_deferred("grab_focus")
+	FocusLater.grab(verify)
 
 func _ids() -> Array:
 	var ids: Array = []
@@ -142,7 +143,7 @@ func _on_model(value: Dictionary) -> void:
 	preview = data.duplicate(true)
 	_finish_request()
 	_show_report()
-	verify.call_deferred("grab_focus")
+	FocusLater.grab(verify)
 
 func _on_failure(message: String) -> void:
 	if not pending: return

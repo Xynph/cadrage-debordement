@@ -5,6 +5,7 @@ extends RefCounted
 ##  - « Appeler un espoir : nom, âge, poste, note » (choix par défaut quand il existe), prêté pour ce match seulement ;
 ##  - « Jouer à 22 » quand la règle le permet (selection.reducedBench, Nationale).
 ## Commandes : begin_match { espoirs: [{slot, playerId}] } ou { reducedBench: true } ; espoir_appeler { assignments }.
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -130,5 +131,5 @@ static func ouvrir(app: Control, begin_match: bool) -> ConfirmationDialog:
 		elif payload.has("espoirs"):
 			app._command("espoir_appeler", {"assignments": payload.espoirs}))
 	Dialogs.show_centered(dialog, Vector2i(640, 290 if not has_22 else 340))
-	dialog.get_ok_button().call_deferred("grab_focus")
+	FocusLater.grab(dialog.get_ok_button())
 	return dialog
