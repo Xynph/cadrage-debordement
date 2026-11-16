@@ -16,6 +16,12 @@ const campKey = camp => [camp.competitionId, camp.nation, camp.from].join('/');
 const mailKeys = ['id','kind','title','body','date','action','nation','players'];
 const limit = 45;
 
+// Expression VM : joueurs de tous les clubs tels que les sélections les voient.
+const ROSTER = `S.clubs.flatMap(club=>club.players.map(p=>({
+    id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),condition:p.condition,
+    ...nativePositionAptitudes.project(p),injury:p.injury,suspension:p.suspension,nationaleQualifications:p.nationaleQualifications,clubId:club.id,
+    formeMatch:typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.selection(p.id):0
+  })))`;
 module.exports = function nativeInternational(run, ctx, facts, enabled) {
   const career = createInternationalCareer(competitions, callups, facts);
   const teams = teamIds.map(id => ({ id, name: facts.nations[id]?.[0] ?? id, flagCode: facts.nations[id]?.[1] ?? null }));
@@ -29,12 +35,10 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
   const nextOpening = () => run('CDWorldCareer.nextOpening(S)');
   const role = profile => manager.managerRole(profile?.role);
   const isNationalOnly = () => run('S?.national?.role?.club===false');
-  const roster = () => JSON.parse(run(`JSON.stringify(S.clubs.flatMap(club=>club.players.map(p=>({
-    id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),condition:p.condition,
-    ...nativePositionAptitudes.project(p),injury:p.injury,suspension:p.suspension,nationaleQualifications:p.nationaleQualifications,clubId:club.id,
-    formeMatch:typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.selection(p.id):0
-  }))))`));
-
+  // Joueurs de tous les clubs vus par les sélections. Le texte de l'expression sert aussi à la mémoire de la projection
+  // (worker.cjs, nativeInternationalRoster) : même calcul, repris tant que les sections lues de la carrière n'ont pas changé.
+  run(`globalThis.nativeInternationalRoster=()=>${ROSTER}`);
+  const roster = () => JSON.parse(run(`JSON.stringify(${ROSTER})`));
   function write(profile) {
     ctx.nativeNationalWrite = profile;
     try { run('S.national=JSON.parse(JSON.stringify(nativeNationalWrite))'); }
@@ -301,15 +305,35 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     write({...profile,role:next,mail:append(profile,[mail,...(nation ? matchMail(profile.career,roster(),nation) : [])])});
   }
 
-  function project(model) {
+  // Projection de la carrière internationale. `options.memo(compute)` (worker.cjs, réactivité) : le calcul lourd
+  // (sélection, compétitions, disponibilités) ne dépend que de la carrière internationale, des effectifs vus par les
+  // sélections, du club, de la phase, de la prochaine ouverture et des absents de la tournée d'été ; il est repris tant
+  // que ces entrées n'ont pas changé. Les effets sur le reste du modèle (méta, prochain match) sont appliqués à chaque fois.
+  function project(model, options = {}) {
     const profile = read();
     if (!profile) {
       if (enabled && !model.club) model.international = {teams,role:'club'};
       return;
     }
+    const compute = () => projectCareer(profile, options);
+    const out = options.memo ? options.memo(compute) : compute();
+    model.international = out.international;
+    const { date, current, managedClub } = out;
+    if (ended()) {
+      const waiting = date < nextOpening();
+      if (waiting) model.meta.canAdvanceSeason=false;
+      model.meta.calendarToday=date;
+      model.meta.calendarCadence={day:(new Date(date+'T00:00:00Z').getUTCDay()+6)%7,matchReady:false,canAdvance:waiting&&!current};
+    }
+    if (current && !model.live) model.meta.nationalMatchToday=true;
+    if (!managedClub) { model.next=null; model.calendar=[]; }
+  }
+  // Partie lourde de project : {international, date, current (rencontre dirigée du jour), managedClub}.
+  function projectCareer(profile, options) {
+    const model = {};
     const date = profile.career.date;
     const managed = role(profile);
-    const players = roster();
+    const players = options.roster ? options.roster() : roster();
     const overview = career.project(profile.career,{date,players,managedNation:managed.nation});
     const clubId = run('S.club');
     const relevant = new Map(players.filter(p => managed.club && p.clubId === clubId).concat(overview.squad).map(p => [p.id,p]));
@@ -341,14 +365,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
         availability.nextReturn = availability.players[0].returnDate;
       }
     }
-    if (ended()) {
-      const waiting = date < nextOpening();
-      if (waiting) model.meta.canAdvanceSeason=false;
-      model.meta.calendarToday=date;
-      model.meta.calendarCadence={day:(new Date(date+'T00:00:00Z').getUTCDay()+6)%7,matchReady:false,canAdvance:waiting&&!current};
-    }
-    if (current && !model.live) model.meta.nationalMatchToday=true;
-    if (!managed.club) { model.next=null; model.calendar=[]; }
+    return { international: model.international, date, current: !!current, managedClub: !!managed.club };
   }
 
   return { initialize, validate, advance, checkSeason, command, project, isNationalOnly, read };

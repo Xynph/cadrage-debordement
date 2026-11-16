@@ -18,7 +18,7 @@
   quand le diff touche Godot (`native/godot/`, `tests/godot-*`, lanceurs) et
   sautés sinon. Recette SDK ciblée : étiquette `godot-sdk`. Vérifications
   lourdes (SDK, économie, résilience, Windows) : créneau régulier sur `main`.
-- **PC de Léo indisponible** : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot).
+- **PC de Léo indisponible** : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot) ; résultats lisibles via la branche `resultats-en-ligne` (`runs/<run_id>/`, extraits par `ci/en-ligne.sh` dans `/tmp/en-ligne/<run_id>/`), l'artefact étant bloqué ; `--captures intro,fiche-club` limite les captures ; ne jamais créer de branche `tmp/` ailleurs : le workflow supprime seul `en-ligne/*` et `tmp/*` (`bash ci/en-ligne.sh --menage`).
 - **Fusion automatique** (décision de Léo, 16/11/2026) : en passant une PR en
   prête, activer la fusion auto de GitHub en squash
   (`gh api -X PUT repos/Xynph/cadrage-debordement/pulls/<n>/ccr/auto_merge -f merge_method=squash`
@@ -30,6 +30,12 @@
   d'une réservation non résolue. Si la CI est rouge, la PR attend : corriger.
 - Expliquer chaque phase en une phrase, rendre le résultat, le lien de PR et
   la prochaine étape. Messages courts.
+
+- Évolution de gameplay ou d'interface : appliquer la
+  [boucle courte](docs/developpement-jeu-boucle-courte.md) (décision de manager,
+  reproduction Monde, rejeu ciblé, observation dans le vrai Godot, puis recette
+  complète). [Pont local](tools/godot-agent/README.md) pour piloter et capturer ;
+  voir `.agents/skills/rugby-legacy-boucle-courte/SKILL.md`. Un seul Godot à la fois.
 
 ## Kit Claude Code Game Studios
 
