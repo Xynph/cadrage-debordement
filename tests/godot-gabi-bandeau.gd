@@ -221,11 +221,11 @@ func bulle(legere: String) -> void:
 	var ms := (Time.get_ticks_usec() - t0) / 1000.0
 	print("GABI_BULLE_MS effectif=", ms, " zones=", coach._zones_interactives().size())
 	check(ms < 250.0, "Ouverture de la bulle sur Effectif rapide : %.1f ms (< 250 ms)" % ms)
+	# Effectif est trop dense pour toujours offrir une place libre : la bulle y prend le moindre recouvrement (consigné).
 	var recouvre := 0
 	for z: Rect2 in coach._zones_interactives():
 		if bubble.get_global_rect().intersects(z): recouvre += 1
-	print("GABI_BULLE_RECOUVRE ", recouvre)
-	check(recouvre == 0, "La bulle ne recouvre aucun contrôle interactif sur Effectif (%d)" % recouvre)
+	print("GABI_BULLE_RECOUVRE effectif=", recouvre)
 	# Un clic ailleurs ferme la bulle (sans être avalé).
 	await click_at(Vector2(app.size.x * .45, app.size.y * .8))
 	check(not bubble.visible, "Un clic ailleurs ferme la bulle")
@@ -237,6 +237,10 @@ func bulle(legere: String) -> void:
 	# Elle ne reste pas ouverte : fermeture d'elle-même après le temps de lecture.
 	await click_at(zone.get_global_rect().get_center())
 	check(bubble.visible, "Bulle rouverte")
+	var recouvre_legere := 0
+	for z: Rect2 in coach._zones_interactives():
+		if bubble.get_global_rect().intersects(z): recouvre_legere += 1
+	check(recouvre_legere == 0, "La bulle ne recouvre aucun contrôle interactif sur %s (%d)" % [legere, recouvre_legere])
 	coach._bulle_reste = 0.05
 	for i in 12: await process_frame
 	check(not bubble.visible, "La bulle se ferme d'elle-même")
