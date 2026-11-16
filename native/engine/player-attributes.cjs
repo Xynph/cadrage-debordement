@@ -82,14 +82,19 @@ module.exports = function createNativePlayerAttributes() {
     for (const center of state.nativeAcademy?.centers ?? []) if (center.players) yield center.players;
   }
 
-  function before(state, liveOnly) {
+  // `stable` (réactivité, lot 19) : commande déclarée sans effet sur la note et les qualités des joueurs
+  // (state-versions.cjs, playersUntouched). Les qualités effectives ne sont pas relevées : un joueur déjà connu garde
+  // ses attributs détaillés, exactement comme une progression nulle ; un joueur apparu pendant la commande est
+  // initialisé comme avant. `stable === 'verify'` relève tout de même les qualités et refuse toute progression.
+  function before(state, liveOnly, stable = false) {
     const previous = new Map();
     if (!state) return previous;
     for (const players of populations(state, liveOnly)) {
       for (const player of players) {
         if (player.nativeAttributesV1 === undefined || previous.has(player.id)) continue;
         previous.set(player.id, {
-          packed: player.nativeAttributesV1, rating: player.rating, skills: effectiveSkills(player)
+          packed: player.nativeAttributesV1, rating: player.rating,
+          skills: stable === true ? null : effectiveSkills(player), ...(stable ? { stable: true } : {})
         });
       }
     }
@@ -98,6 +103,12 @@ module.exports = function createNativePlayerAttributes() {
 
   function progressed(player, previous) {
     if (!previous) return initialize(player);
+    if (previous.stable && previous.skills === null) return previous.packed;
+    if (previous.stable) {
+      const moved = player.rating !== previous.rating || effectiveSkills(player).some((value, index) => value !== previous.skills[index]);
+      if (moved) throw Error('Commande déclarée sans effet sur les joueurs : progression constatée (' + player.id + ').');
+      return previous.packed;
+    }
     const ratingDelta = player.rating - previous.rating;
     const deltas = effectiveSkills(player).map((value, index) => value - previous.skills[index]);
     if (!ratingDelta && deltas.every(delta => delta === 0)) return previous.packed;
