@@ -1001,6 +1001,9 @@ func _settled_status_text() -> String:
 	if user_preferences != null and not user_preferences.last_error.is_empty(): return "RÉGLAGES LOCAUX · " + user_preferences.last_error
 	if is_instance_valid(soundscape) and not soundscape.last_error.is_empty(): return "RÉGLAGES SONORES · " + soundscape.last_error
 	if decision_feedback != null and not decision_feedback.status_text().is_empty(): return decision_feedback.status_text()
+	# Reprise après une fermeture pendant un match (native/engine/worker.cjs, matchResumeNotice).
+	var resume: Variant = model.get("meta",{}).get("matchResumeNotice")
+	if resume is Dictionary and not str(resume.get("text","")).is_empty(): return "REPRISE DE CARRIÈRE · " + str(resume.text)
 	return _autosave_status()
 
 ## Ligne d'état de la sauvegarde (meta.autosave, native/engine/action-journal.cjs) : fréquence choisie, date de la
@@ -1426,8 +1429,19 @@ func _credits() -> void:
 	d.popup_centered(Vector2i(760,300))
 	d.confirmed.connect(d.queue_free)
 
+## Reprise avant le match (décision de Léo, 16/11/2026) : une carrière n'est jamais enregistrée en plein match. Du coup
+## d'envoi à la validation du résultat (direct, entracte, causeries), quitter fait reprendre la carrière avant le coup
+## d'envoi : le manager le confirme d'abord. Une fermeture imposée par le système n'est jamais bloquée (le moteur
+## reprend alors de lui-même avant le match).
+const QUIT_DURING_MATCH_TEXT := "Le match est en cours. Si vous quittez maintenant, vous reprendrez avant le coup d’envoi et ce match sera à rejouer."
+
+func match_in_progress() -> bool:
+	if _live().is_empty(): return false
+	var cadence: Variant = model.get("meta",{}).get("calendarCadence")
+	return not (cadence is Dictionary and bool(cadence.get("resultConfirmed",false)))
+
 func request_quit() -> void:
-	if not _live().is_empty() and not _live().get("finished",false): confirm("Quitter le jeu", "La dernière décision confirmée est sauvegardée. Quitter cette rencontre ?",_close)
+	if match_in_progress(): confirm("Quitter pendant le match", QUIT_DURING_MATCH_TEXT, _close, true)
 	else: _close()
 
 func _close(exit_code: int = 0) -> void:

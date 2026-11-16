@@ -333,7 +333,9 @@ function createBridge(options={}){
   // reprend tel quel pour sa copie « bdt-before-import » (même carrière, même document) au lieu de le recréer.
   const protectCurrent=(reason,replaySeed=seed,replayClock=clock)=>{
    if(!peek('!!S')||!fs.existsSync(file))return null;
-   const text=run('JSON.stringify(createSaveDocument())');
+   const text=saveDocumentText();
+   // Pendant un match, la copie décrit la carrière d'avant le coup d'envoi (celle du profil sur le disque).
+   if(preMatch){replaySeed=preMatch.seed;replayClock=preMatch.clock;}
    profileSafety.checkpoint({profile:profileSafety.readProfile(file),replaySeed,replayClock,text,reason,...JSON.parse(run('JSON.stringify({club:S.clubs[S.club].name,season:S.season,round:S.round??0})'))});
    return text;
   };
@@ -609,7 +611,7 @@ function createBridge(options={}){
    }
   };
   const snapshotProjection=(operation,bypass=true)=>{updatePressPolicy();projectionState=null;const [m,catalogueTokens]=sub('model',()=>sectionsOn?JSON.parse(run('nativeCatalogueSections.read()')):[readProjection('nativeModel()'),null]);if(sectionsOn&&peek('!!S'))projectionState={sections:true,bypass,live:!!operation&&LIVE_COMMANDS.has(operation.command)&&!!m.live&&!m.live.finished&&!(operation.command==='match_talk_continue'&&operation.payload?.phase==='post'),staff:null,result:null};if(projectionState){sub('versions',()=>refreshVersions(operation));sub('visibility',()=>beginSections(m));}if(catalogueTokens)sub('catalogues',()=>carryCatalogues(m,catalogueTokens));sub('france',()=>projectFranceCalendar(m));if(projectionState)m.decisions=sub('decisions',()=>projectDecisionSections());else{m.decisions=sub('decisions',()=>readProjection('nativeDecisions()'));if(m.decisions?.recruitment)sub('reports',()=>m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)')));}if(projectionState){try{m.clubLife=sub('clubLife',()=>projectLifeSections(m,operation));}catch(error){if(ctx.nativeVerifyMemo||verifyProjection)throw error;/* Repli : calcul complet comme avant (la mémoire ne fait jamais perdre une réponse). */sectionMemo.abort();projectionState=null;run('nativeSystems.clearMemo();nativeStateVersions.reset();');m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');}}else m.clubLife=sub('clubLife',()=>memoDomains?projectClubLife():readProjection('nativeSystems.project()'));
-   const keptInternational=projectionState?.live?sectionMemo.keep('international'):null;if(keptInternational)m.international=keptInternational;else{nationalRaw=null;sub('national',()=>national.project(m,projectionState?{roster:()=>JSON.parse(run('nativeStateVersions.memoText("roster",()=>nativeInternationalRoster())')),memo:memoNational}:{}));if(projectionState&&m.international!==undefined&&nationalRaw===null)sectionMemo.note('international');}m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();if(journal)m.meta.autosave=autosaveMeta();m.meta.academyGroupPolicy=peek('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(peek('JSON.stringify(S?.careerVariation??null)'));const result=sub('packs',()=>packs.project(sub('staff',()=>projectionState?.staff?{...m,staff:projectionState.staff}:staff.project(m)),JSON.parse(peek('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'),projectionState?{nested:modelDelta.NESTED,carriedOf:sectionMemo.carriedOf,recordCarried:sectionMemo.recordCarried,signature:sectionMemo.packSignature}:null));if(projectionState)projectionState.result=result;sub('presentation',()=>staff.applyCareerPresentation(result));const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=sub('epcr',()=>epcrPreparation.project(result));sub('calendar',()=>projectCalendar(result,operation));if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=sub('direct',()=>matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography}));}catch(error){result.live.directError=String(error?.message||error);}}return result;};
+   const keptInternational=projectionState?.live?sectionMemo.keep('international'):null;if(keptInternational)m.international=keptInternational;else{nationalRaw=null;sub('national',()=>national.project(m,projectionState?{roster:()=>JSON.parse(run('nativeStateVersions.memoText("roster",()=>nativeInternationalRoster())')),memo:memoNational}:{}));if(projectionState&&m.international!==undefined&&nationalRaw===null)sectionMemo.note('international');}m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.matchResumeNotice=matchResumeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();if(journal)m.meta.autosave=autosaveMeta();m.meta.academyGroupPolicy=peek('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(peek('JSON.stringify(S?.careerVariation??null)'));const result=sub('packs',()=>packs.project(sub('staff',()=>projectionState?.staff?{...m,staff:projectionState.staff}:staff.project(m)),JSON.parse(peek('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'),projectionState?{nested:modelDelta.NESTED,carriedOf:sectionMemo.carriedOf,recordCarried:sectionMemo.recordCarried,signature:sectionMemo.packSignature}:null));if(projectionState)projectionState.result=result;sub('presentation',()=>staff.applyCareerPresentation(result));const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=sub('epcr',()=>epcrPreparation.project(result));sub('calendar',()=>projectCalendar(result,operation));if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=sub('direct',()=>matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography}));}catch(error){result.live.directError=String(error?.message||error);}}return result;};
   // Raw models stay private; every protocol path still applies the final
   // knowledge boundary after attaching receipts, previews or export metadata.
   const snapshot=operation=>{const m=snapshotRaw(operation);continuePlan(m);return projectKnowledge(m);};
@@ -685,7 +687,39 @@ function createBridge(options={}){
    }
    write(target,fs.readFileSync(source));
   };
+  // Reprise avant le match (décision de Léo, 16/11/2026) : une carrière n'est jamais enregistrée en plein match. Du coup
+  // d'envoi (begin_match) à la validation du résultat (finish_round), le profil écrit est celui d'avant le coup d'envoi
+  // (texte de la carrière, graine et horloge d'alors, autres clés du magasin à jour) et le journal ne note rien : une
+  // fermeture ou une coupure pendant le match fait reprendre la carrière le jour du match, avant le coup d'envoi.
+  // CD_REPRISE_AVANT_MATCH=0 (ou matchResume:false) rétablit l'ancien comportement (tests des anciennes sauvegardes).
+  const matchResume=options.matchResume!==false&&process.env.CD_REPRISE_AVANT_MATCH!=='0';
+  const matchOpenNow=()=>matchResume&&peek("!!S?.live&&S.worldMode?.resultConfirmed!==true&&S.franceCalendar?.resultConfirmed!==true");
+  let preMatch=null,matchResumeNotice=null;
+  // Ancienne sauvegarde écrite en plein match (avant cette règle) sans l'état d'avant le coup d'envoi : lue telle quelle,
+  // match repris en pause, et le manager en est informé.
+  const legacyMatchNotice=()=>matchOpenNow()?{kind:'en-match',text:'Cette carrière a été enregistrée pendant un match par une version précédente du jeu : l’état d’avant le coup d’envoi n’y figure pas. Le match reprend donc en pause, à la minute enregistrée.'}:null;
+  const PRE_MATCH_NOTICE={kind:'avant-match',text:'Le match en cours n’avait pas été terminé : votre carrière reprend avant le coup d’envoi.'};
+  // Texte d'avant le coup d'envoi validé une fois (validation complète) avant sa première écriture.
+  const preMatchStore=()=>{
+   if(!preMatch.validated){ctx.nativePreMatchText=preMatch.text;try{run('validateCareer(JSON.parse(nativePreMatchText))');}finally{delete ctx.nativePreMatchText;}preMatch.validated=true;}
+   return {...store,'bdt-v1':preMatch.text};
+  };
+  // Document de sauvegarde de la carrière (export, copies de sécurité) : pendant un match, celui d'avant le coup d'envoi.
+  const saveDocumentText=()=>{
+   if(!preMatch)return run('JSON.stringify(createSaveDocument())');
+   ctx.nativePreMatchText=preMatch.text;
+   try{return run('JSON.stringify(createSaveDocument(JSON.parse(nativePreMatchText)))');}finally{delete ctx.nativePreMatchText;}
+  };
   const persist=()=>{
+   if(!preMatch)return persistNow();
+   // Profil d'avant le coup d'envoi déjà publié et inchangé depuis : rien à réécrire.
+   if(preMatch.committed&&preMatch.committed===committedFiles&&profileFilesVersion()===committedFiles)return;
+   const current={seed,clock,store},written=preMatchStore();
+   seed=preMatch.seed;clock=preMatch.clock;store=written;
+   try{persistNow();}finally{seed=current.seed;clock=current.clock;store=current.store;}
+   preMatch.committed=committedFiles;
+  };
+  const persistNow=()=>{
    committedFiles='';
    if(resumeCheckpoint)profileSafety.checkpoint({...resumeCheckpoint,reason:'adaptation-reprise'});
    const token=randomUUID(),text=profileChunks(),temp=path.join(dataDir,'donnees.tmp-'+token),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
@@ -725,7 +759,7 @@ function createBridge(options={}){
    persist();
   }
   // Ligne du journal pour la commande qui vient de réussir (graine avant/après, horloge utilisée).
-  const journalAppend=(command,payload,priorSeed)=>{try{if(!journal.exists()&&journal.count()===0&&loadedSha)journal.reset(loadedSha);journal.append({c:command,p:payload,k:clock,s:priorSeed,e:seed});}catch(e){const failure=Error('Décision non notée dans le journal de sauvegarde : '+e.message);failure.storageFailure=true;throw failure;}};
+  const journalAppend=(command,payload,priorSeed)=>{if(preMatch)return;try{if(!journal.exists()&&journal.count()===0&&loadedSha)journal.reset(loadedSha);journal.append({c:command,p:payload,k:clock,s:priorSeed,e:seed});}catch(e){const failure=Error('Décision non notée dans le journal de sauvegarde : '+e.message);failure.storageFailure=true;throw failure;}};
   // `planned` : sauvegarde complète prévue juste après la réponse (jour différé, voir dayAfter) : annoncée comme faite ;
   // si elle échoue, la commande suivante le dit.
   const autosaveMeta=(planned=null)=>journal?{policy:savePolicy(),lastSave:(planned??lastSavedKey)?.date??null,pending:planned?0:journal.count(),saved:planned?true:savedNow,notice:journalNotice}:null;
@@ -765,6 +799,7 @@ function createBridge(options={}){
    seed=prior.seed;clock=prior.clock;store=copyStore(prior.store);ctx.nativePrior=prior.state();cleanSave=prior.fromSave?prior.text:null;projectionCache.clear();
    try{run('nativeSystems.clearTransient()');run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;nativeSaveSections=null;');}
    finally{delete ctx.nativePrior;}
+   if(preMatch&&!matchOpenNow())preMatch=null;
   };
   // Termine la décision en attente par étapes : sérialisation, validation, puis écriture atomique. Entre deux étapes,
   // la boucle stdio lit les commandes arrivées : une commande qui n'attend donc au plus que l'étape en cours, et une
@@ -899,7 +934,8 @@ function createBridge(options={}){
       // Un grand export est réduit sans perte (références de joueurs, marché) : son état littéral diffère alors de la
       // sauvegarde ; cette empreinte permet de comparer le texte exact du profil à l'état restitué sans affaiblir le contrôle.
       if(payload?.proof===true)ctx.nativeSaveProof=texte=>{preuve=createHash('sha256').update(texte,'utf8').digest('hex');};
-      try{model.meta.exportText=run('JSON.stringify(createSaveDocument())');}finally{delete ctx.nativeSaveProof;}
+      // Pendant un match : document de la carrière d'avant le coup d'envoi (reprise avant le match, voir preMatch).
+      try{model.meta.exportText=saveDocumentText();}finally{delete ctx.nativeSaveProof;}
       if(preuve)model.meta.exportRoundTripSha256=preuve;
       return {id,ok:true,model:projectKnowledge(model)};
     }
@@ -924,6 +960,8 @@ function createBridge(options={}){
     const priorStateText=priorFromSave?cleanSave:sessionDay||replay&&command!=='delegate'?null:run('JSON.stringify(S)'),priorExtra=JSON.parse(run('JSON.stringify({playback:S?.live?playback(S.live):null,saveError:lastSaveError})'));
     const priorState=()=>({state:priorStateText===undefined?undefined:JSON.parse(priorStateText),...priorExtra});
     const priorStore=copyStore(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
+    // Reprise avant le match : copie d'avant le coup d'envoi en cours (rétablie si la commande échoue).
+    const preMatchBefore=preMatch,noticeBefore=matchResumeNotice,openBefore=matchOpenNow();let closesMatch=false;
     // Décision courante (n'avance pas le calendrier). En mode journal, elle n'est ni sérialisée ni validée ni écrite :
     // une ligne de journal suffit. Rejouée, elle suit le même chemin qu'à l'origine (l'adaptation de reprise éventuelle
     // n'existait pas encore quand elle a été prise).
@@ -1165,6 +1203,14 @@ function createBridge(options={}){
      // ne s'arrêtent donc pas sur elle. Les grands moments restent obligatoires.
      if(advancesCareer&&ctx.nativeMandatoryPress)run('if(nativeSystems.domain("press").autoDelegate())nativeSystems.domain("clubMeetings").settleDelegatedPress();');
      if(savesDeferred){ctx.save=realSave;savesDeferred=false;realSave=null;}
+     // Reprise avant le match : le coup d'envoi garde l'état d'avant lui (texte, graine, horloge) ; le match validé
+     // (ou la carrière remplacée) le libère, et la carrière réelle est alors enregistrée en entier.
+     if(matchResume){
+      const openAfter=matchOpenNow();
+      if(!openAfter){closesMatch=!!preMatch;preMatch=null;matchResumeNotice=null;}
+      else if(!openBefore&&command==='begin_match'&&typeof priorStateText==='string')preMatch={seed:priorSeed,clock:priorClock,text:priorStateText,validated:false,committed:null};
+      else if(command==='import'||command==='new_career'){preMatch=null;matchResumeNotice=legacyMatchNotice();}
+     }
      mark('commande');
      // Décision regroupée (voir COALESCING) : sa validation stricte n'est pas sautée, même un jour de semaine.
      if(advancesWithinWeek){if(!sessionDay){run('save()');if(coalescing)run('nativeValidateSaved('+coalescing.full+')');if(memoDomains&&coalescing?.full!==true)run('nativeSectionsFresh=true');}}
@@ -1201,7 +1247,9 @@ function createBridge(options={}){
        if(dayCheck)unvalidated=true;
        if(dayCheck||due)pendingCommit={command,day:true,stage:1,validate:dayCheck,save:due,journalAt:at,prior:{seed:priorSeed,clock:priorClock,store:priorStore,state:priorState,text:priorStateText,fromSave:priorFromSave}};
       }
-      else if(!defer&&(SYNC_COMMANDS.has(command)||restoring||resumeCheckpoint)||fullSaveDue()){fullSave();undoPending=false;}
+      // Pendant un match (preMatch), rien n'est noté ; « Sauvegarder » écrit le profil d'avant le coup d'envoi. Le match
+      // validé n'étant pas au journal, sa validation est suivie d'une sauvegarde complète.
+      else if(closesMatch||(preMatch?SYNC_COMMANDS.has(command)||!!restoring:!defer&&(SYNC_COMMANDS.has(command)||restoring||resumeCheckpoint)||fullSaveDue())){fullSave();undoPending=false;}
       else journalAppend(command,request.payload??{},priorSeed);
       cleanSave=undoPending?null:typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
       model.meta.autosave=autosaveMeta(planned);
@@ -1223,6 +1271,7 @@ function createBridge(options={}){
      continuePlan(model);
      const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
     }catch(error){
+     preMatch=preMatchBefore;matchResumeNotice=noticeBefore;
      if(replay)throw error;
      // Refus avant toute modification (gardes, paramètres) : la carrière en mémoire est intacte ; pas de relecture
      // de son texte d'avant (~22 Mo). En vérification, l'égalité est contrôlée.
@@ -1459,16 +1508,29 @@ function createBridge(options={}){
     restorePrior({...base,fromSave:false,state:()=>({state:JSON.parse(base.text),playback:null,saveError:false})});
     if(apply(applied)!==applied){restorePrior({...base,fromSave:false,state:()=>({state:JSON.parse(base.text),playback:null,saveError:false})});applied=0;}
    }
-   const kept=applied<actions.length?journal.preserve('non-rejoue'):null;
+   // Ancien journal (avant la reprise avant le match) qui s'arrête en plein match : reprise jusqu'à la veille de son coup
+   // d'envoi ; les lignes du match interrompu sont conservées à part, jamais effacées.
+   let matchCut=null;
+   if(matchOpenNow()){
+    const kick=actions.slice(0,applied).map(a=>a.c).lastIndexOf('begin_match');
+    if(kick>=0){
+     restorePrior({...base,fromSave:false,state:()=>({state:JSON.parse(base.text),playback:null,saveError:false})});
+     if(apply(kick)===kick&&!matchOpenNow())matchCut=kick;
+     else{restorePrior({...base,fromSave:false,state:()=>({state:JSON.parse(base.text),playback:null,saveError:false})});if(apply(applied)!==applied){restorePrior({...base,fromSave:false,state:()=>({state:JSON.parse(base.text),playback:null,saveError:false})});applied=0;}}
+    }
+   }
+   const kept=applied<actions.length?journal.preserve('non-rejoue'):matchCut!==null?journal.preserve('avant-match'):null;
+   if(matchCut!==null){applied=matchCut;matchResumeNotice=PRE_MATCH_NOTICE;}
    journal.reset(loadedSha,actions.slice(0,applied));
    // Texte de la carrière reprise en mémoire (copie d'annulation de la prochaine commande, profil d'une écriture directe).
    // Actions rejouées sans projection : versions des sections de la carrière toutes relues à la projection suivante.
    projectionCache.clear();peek('nativeSectionsFresh=false');if(sectionsOn)run('nativeStateVersions.reset()');if(applied)run('save()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
    const ms=Math.round(performance.now()-started);
-   journalNotice=kept?{alert:true,replayed:applied,total:actions.length,ms,text:applied+' action'+(applied>1?'s':'')+' sur '+actions.length+' reprise'+(applied>1?'s':'')+' depuis le journal de sauvegarde ; la suite n’a pas pu être rejouée ('+reason+' ; journal conservé : '+kept+').'}
+   journalNotice=kept&&matchCut===null?{alert:true,replayed:applied,total:actions.length,ms,text:applied+' action'+(applied>1?'s':'')+' sur '+actions.length+' reprise'+(applied>1?'s':'')+' depuis le journal de sauvegarde ; la suite n’a pas pu être rejouée ('+reason+' ; journal conservé : '+kept+').'}
     :{alert:false,replayed:applied,total:actions.length,ms,text:applied+' action'+(applied>1?'s':'')+' reprise'+(applied>1?'s':'')+' depuis le journal de sauvegarde après un arrêt imprévu.'};
   }
   resumeJournal();
+  if(!matchResumeNotice&&!profileError)matchResumeNotice=legacyMatchNotice();
   // Harnais de tests en processus (tests/monde-harness.cjs) : accès direct à la VM de la carrière.
   // Jamais exposé par le protocole stdio (options fixées par le code appelant).
   if(options.testVm===true)return {handle,close,flush,pending,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store}};
