@@ -20,6 +20,9 @@
 const STOPS = Object.freeze({
   match: { mandatory: true, label: 'Jour de match' },
   rendez_vous: { mandatory: true, label: 'Rendez-vous obligatoire' },
+  // Décisions de la préparation (reprise.cjs) : le jour dû, « Continuer » s'arrête ; tant qu'elles ne sont pas
+  // prises ou confiées à Gabi, il refuse de repartir (comme un rendez-vous). « Jour suivant » les confie au staff.
+  decision: { mandatory: true, label: 'Décision attendue' },
   // Conférence de presse : avec le réglage « Conférences ordinaires : envoyer l'adjoint », Gabi tient la conférence
   // ordinaire dans le moteur dès son ouverture (press.cjs autoDelegate, même commande que le jour avancé) : elle
   // n'arrête donc plus l'avance, et son compte rendu (« Conférence tenue par Gabi ») est un message de routine. Les
@@ -80,6 +83,8 @@ const SIGNAL_SOURCE = `(function(){
   squad:players.map(p=>p.id).sort().join(','),
   window:s.economy?.aiRecruitmentWindow??null,
   offers:(s.economy?.offers||[]).map(o=>({id:String(o.id),player:byId.get(o.playerId)?.name||''})),
+  decisions:typeof CDReprise!=='undefined'?CDReprise.due(s):[],
+  decisionNext:typeof CDReprise!=='undefined'?CDReprise.nextDecision(s):null,
   preseason:!!pre};
 })()`;
 
@@ -109,6 +114,13 @@ function validate(payload) {
 }
 
 const routine = title => ROUTINE.some(r => r.test(title));
+// Décisions de la préparation attendues (clés de reprise.cjs) : motif d'arrêt ou de refus, vu du manager.
+const DECISION_TEXT = { amicaux: 'le programme des matchs amicaux', stage: 'l’orientation du stage de préparation' };
+function decisionText(keys) {
+  const what = (keys || []).map(k => DECISION_TEXT[k] || 'une décision de préparation');
+  if (!what.length) return '';
+  return 'Gabi attend ' + what.join(' et ') + ' : choisissez dans « La reprise » ou confiez-' + (what.length > 1 ? 'les' : 'la') + '-lui.';
+}
 const added = (before, after) => after.filter(id => !before.includes(id));
 const shortDate = iso => { const [y, m, d] = iso.split('-'); return d + '/' + m; };
 
@@ -120,6 +132,7 @@ function detect(before, after, settings, repriseDate = null) {
   const checks = [
     ['match', () => after.matchReady && (after.next ? 'Rencontre contre ' + after.next.opponent + ' aujourd’hui.' : 'Rencontre prévue aujourd’hui.')],
     ['rendez_vous', () => after.meeting && !after.meeting.completed && (({ press: 'Conférence de presse', medical: 'Point médical', board: 'Rendez-vous avec la direction' })[after.meeting.kind] || 'Rendez-vous du club')],
+    ['decision', () => added(before.decisions || [], after.decisions || []).length && decisionText(after.decisions)],
     ['conference', () => after.press && 'La presse vous attend avant de continuer.'],
     ['conversation', () => (after.sceneActive || added(before.sceneIds, after.sceneIds).length) && 'Une demande d’entretien vous attend en Réception.'],
     ['calendrier', () => after.fixtures !== before.fixtures && 'Une rencontre du club a été ajoutée ou déplacée.'],
@@ -165,6 +178,8 @@ function plan(after, repriseDate = null) {
   if (!after || !after.today) return null;
   const candidates = [];
   if (after.next && after.next.date >= after.today) candidates.push({ kind: 'match', date: after.next.date, opponent: after.next.opponent });
+  // Une décision due le jour de la reprise passe avant elle (tri stable).
+  if (after.decisionNext && after.decisionNext.date > after.today) candidates.push({ kind: 'decision', date: after.decisionNext.date, detail: after.decisionNext.detail });
   if (repriseDate && repriseDate > after.today) candidates.push({ kind: 'reprise', date: repriseDate });
   if (after.meeting && !after.meeting.completed) {
     const label = ({ press: 'Conférence de presse', medical: 'Point médical', board: 'Rendez-vous avec la direction' })[after.meeting.kind] || 'Rendez-vous du club';
@@ -174,4 +189,4 @@ function plan(after, repriseDate = null) {
   return candidates[0] || null;
 }
 
-module.exports = { plan, STOPS, MAX_DAYS, MESSAGE_MODES, INJURY_MODES, SIGNAL_SOURCE, validate, detect, routine };
+module.exports = { plan, STOPS, MAX_DAYS, MESSAGE_MODES, INJURY_MODES, SIGNAL_SOURCE, validate, detect, routine, decisionText };

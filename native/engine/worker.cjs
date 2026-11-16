@@ -976,6 +976,9 @@ function createBridge(options={}){
     current.start={seed,clock,store:copyStore(store),text:fromSave?cleanSave:run('JSON.stringify(S)'),fromSave};
    }
    let before=advanceSignal(),today=opts.fromDate,stop=null,n=0;
+   // Décision de préparation attendue aujourd'hui (reprise.cjs) : refus comme un rendez-vous obligatoire,
+   // sans rien écrire ; « Jour suivant », lui, la confie au staff.
+   if(current.days===0&&before?.decisions?.length)return {id,ok:false,model:snapshot(),error:continuer.decisionText(before.decisions)};
    for(;;){
     const r=handleCommand({id,command:'advance_day',payload:{fromDate:today}},true);
     if(!r.ok){
