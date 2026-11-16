@@ -93,7 +93,7 @@ une partie du raisonnement sont perdus au changement).
   - une suite JS : `node tests/<suite>.cjs` ;
   - suites Godot (SDK 4.7.2 requis) : `bash ci/run-godot-suites.sh <liste>` ;
   - projet Godot : `godot --path native/godot`.
-- PC de Léo indisponible : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot).
+- PC de Léo indisponible : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot) ; résultats lisibles via la branche `resultats-en-ligne` (`runs/<run_id>/`, extraits par `ci/en-ligne.sh` dans `/tmp/en-ligne/<run_id>/`), l'artefact étant bloqué ; `--captures intro,fiche-club` limite les captures ; ne jamais créer de branche `tmp/` ailleurs : le workflow supprime seul `en-ligne/*` et `tmp/*` (`bash ci/en-ligne.sh --menage`).
 
 Version du moteur et écarts avec les connaissances du modèle :
 @docs/engine-reference/godot/VERSION.md
