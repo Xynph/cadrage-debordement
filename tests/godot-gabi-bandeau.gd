@@ -109,7 +109,7 @@ func run() -> void:
 	var zones := {}
 	for route: String in ROUTES:
 		if coach.expanded: coach.close()
-		app._navigate(route)
+		app._navigate(route); await settle()
 		if coach.expanded: coach.close()
 		coach.fermer_bulle(); await settle()
 		await bandeau(route)
@@ -198,10 +198,10 @@ func bandeau_bureau(zone: Control, topbar: Control) -> void:
 ## Clic sur Gabi : bulle d'avis (« Ton avis, Gabi ? » + menu), sous le bandeau ; fermée d'un clic ailleurs.
 func bulle(legere: String) -> void:
 	var coach: Control = app.coach
-	app._navigate("Effectif")
+	app._navigate("Effectif"); await settle()
 	if coach.expanded: coach.close()
 	coach.fermer_bulle()
-	coach._attente.clear(); await settle()
+	coach._attente.clear()
 	var zone: Control = app.root_content.find_child("GabiBandeau", true, false)
 	if zone == null: return
 	await click_at(zone.get_global_rect().get_center())
@@ -219,7 +219,8 @@ func bulle(legere: String) -> void:
 	await click_at(Vector2(app.size.x * .45, app.size.y * .8))
 	check(not bubble.visible, "Un clic ailleurs ferme la bulle")
 	# La suite sur l'écran le plus léger (même Gabi, même bulle).
-	app._navigate(legere); coach.fermer_bulle(); await settle()
+	app._navigate(legere); await settle()
+	coach.fermer_bulle(); coach._attente.clear()
 	zone = app.root_content.find_child("GabiBandeau", true, false)
 	if zone == null: return
 	# Elle ne reste pas ouverte : fermeture d'elle-même après le temps de lecture.
@@ -266,7 +267,7 @@ func click_at(point: Vector2) -> void:
 ## Bureau : la zone de Gabi est une vraie zone de l'écran, sans chevauchement, et les blocs restent lisibles.
 func bureau() -> void:
 	var coach: Control = app.coach
-	app._navigate("Bureau")
+	app._navigate("Bureau"); await settle()
 	if coach.expanded: coach.close()
 	coach.fermer_bulle(); await settle()
 	var zone: Control = app.root_content.find_child("GabiBureau", true, false)
