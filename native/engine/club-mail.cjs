@@ -164,7 +164,8 @@ function factory() {
     // Lendemain d'un match du club : trois enseignements tirés des vraies statistiques, axe de semaine proposé.
     bilan_match(F) {
       const last = F.season[F.season.length - 1];
-      if (!last?.stats || last.date !== F.yesterday) return [];
+      // Après la clôture du match (réponse possible), au plus trois jours après la rencontre.
+      if (F.s.live || !last?.stats || !last.date || last.date < shift(F.d, -3) || last.date >= F.d) return [];
       const x = last.stats, o = last.other || {}, pct = (a, b) => b > 0 ? Math.round(a / b * 100) : null;
       const notes = [];
       const melee = pct(x.scrumsWon, x.scrums), touche = pct(x.lineoutsWon, x.lineouts), pied = pct(x.goals, x.goalAttempts);
@@ -193,7 +194,7 @@ function factory() {
       const w = big.score[0] >= big.score[1] ? 0 : 1;
       const carton = F.name(big.pair[w]) + ' ' + big.score[w] + '-' + big.score[1 - w] + ' face à ' + F.name(big.pair[1 - w]);
       const rows = F.rows(), rank = id => rows.findIndex(r => String(r.clubId) === String(id));
-      let surprise = 'aucune surprise, la hiérarchie a été respectée';
+      let surprise = 'la hiérarchie a été respectée';
       const ups = games.filter(r => r.score[0] !== r.score[1]).map(r => { const win = r.score[0] > r.score[1] ? 0 : 1, a = rank(r.pair[win]), b = rank(r.pair[1 - win]); return { r, win, ecart: a >= 0 && b >= 0 ? a - b : 0 }; }).filter(u => u.ecart >= 4).sort((a, b) => b.ecart - a.ecart);
       if (ups[0]) surprise = F.name(ups[0].r.pair[ups[0].win]) + ' a fait tomber ' + F.name(ups[0].r.pair[1 - ups[0].win]);
       const leader = rows[0] ? F.name(rows[0].clubId) + ' (' + (rows[0].points ?? 0) + ' pts)' : null;

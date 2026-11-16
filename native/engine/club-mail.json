@@ -594,7 +594,7 @@
       ]
     },
     "tour_championnats": {
-      "categorie": "competition", "declencheur": "tour_championnats", "priorite": 48, "arret": false, "ecran": "Classements",
+      "categorie": "competition", "declencheur": "tour_championnats", "priorite": 30, "arret": false, "ecran": "Classements",
       "expediteur": "Le service communication",
       "formulations": [
         {"sujet":"Le tour du championnat","corps":"Ce qu'il fallait retenir de la semaine chez nos concurrents. Le carton : {carton}. La surprise : {surprise}. En tête : {leader}. Et {serie}."},

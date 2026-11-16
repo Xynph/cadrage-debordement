@@ -3,7 +3,7 @@
 //   - lendemain d'un match du club : Gabi envoie « trois enseignements » tirés des vraies statistiques du match
 //     (mêlée, touche, discipline, buteur, territoire) et propose un axe ; la réponse oriente la préparation collective ;
 //   - chaque lundi : « le tour du championnat » (carton, surprise, leader, série) dans le championnat du club.
-// Carrière Monde (`world-champ`, départ « veille ») jouée à « Continuer » sur trois semaines.
+// Carrière Monde (`world-champ`, départ « veille ») jouée à « Continuer » sur quatre semaines.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -12,7 +12,7 @@ const { test } = require('node:test');
 const M = require('./helpers/carriere-monde.cjs');
 const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 
-const FIN = '2026-10-01';
+const FIN = '2026-10-08';
 
 test('Carrière Monde : enseignements du match avec axe de semaine, tour du championnat le lundi', { timeout: 900000 }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-enseignements-'));
@@ -49,7 +49,7 @@ test('Carrière Monde : enseignements du match avec axe de semaine, tour du cham
     assert.ok(bilans.length >= 2, 'enseignements après chaque match : ' + bilans.length);
     assert.ok(repondu, 'réponse au bilan donnée');
     assert.ok(tours.length >= 2, 'tour du championnat chaque lundi : ' + tours.length);
-    for (let i = 1; i < bilans.length; i++) assert.notEqual(bilans[i].f, bilans[i - 1].f, 'formulation répétée');
+        for (let i = 1; i < bilans.length; i++) assert.notEqual(bilans[i].sujet.split(' ')[0], bilans[i - 1].sujet.split(' ')[0], 'formulation répétée');
   } finally {
     jeu.fermer?.();
     fs.rmSync(dir, { recursive: true, force: true });
