@@ -4,10 +4,9 @@
 //   1. le module du journal : ligne coupée, marque de publication, journal étranger ou abîmé, fréquences ;
 //   2. une décision ne réécrit pas le profil (~23 Mo) : une ligne de journal synchronisée, rien après la réponse ;
 //      la fermeture fait la sauvegarde complète et vide le journal ;
-//   3. plantage simulé entre deux sauvegardes complètes (décisions, jours, coup d'envoi, minutes du direct, match
-//      délégué) : au chargement, le journal rejoué donne exactement la même empreinte que la sauvegarde complète ;
-//   4. une dernière ligne coupée est ignorée ; un journal divergent est repris jusqu'à la dernière action confirmée,
-//      conservé sous un autre nom et signalé ; un ajout impossible refuse la décision avec sa raison ;
+//   3. plantage simulé, ligne coupée, journal divergent : tests/sauvegarde-journal-plantage-monde.cjs (suite séparée
+//      le 16/11/2026 pour rester sous le délai de 180 s du lanceur CI) ;
+//   4. un ajout impossible refuse la décision avec sa raison ;
 //   5. fréquences « Chaque jour », « Chaque semaine » (défaut, lue dans interface.json comme le fait Godot),
 //      « Chaque mois ».
 // Une seule carrière Monde ouverte à la fois (machine de 8 Go) : chaque pont est fermé avant le suivant, et le tas
@@ -24,16 +23,14 @@ const path = require('node:path');
 const { test, before, after } = require('node:test');
 const M = require('./helpers/carriere-monde.cjs');
 const J = require('../native/engine/action-journal.cjs');
-const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 
 const sha = text => crypto.createHash('sha256').update(text).digest('hex');
 const dossier = dir => path.join(dir, 'PrototypeGodot');
 const profil = dir => path.join(dossier(dir), 'donnees.json');
 const journal = dir => path.join(dossier(dir), J.FILE);
 const lignes = dir => fs.readFileSync(journal(dir), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
-const empreinte = dir => { const p = JSON.parse(fs.readFileSync(profil(dir), 'utf8')); return { carriere: sha(p.store['bdt-v1']), seed: p.seed, clock: p.clock }; };
 
-let racine, preparation, veille, copies = 0;
+let racine, preparation, copies = 0;
 // Copie du disque d'un profil, comme après une coupure brutale (le verrou du processus disparu est retiré).
 function copie(source) {
   const dir = path.join(racine, 'copie-' + (++copies));
@@ -48,12 +45,8 @@ before(() => {
   racine = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-journal-'));
   // Carrière en avant-saison (lundi 13 juillet 2026) : fréquences et décisions.
   preparation = path.join(racine, 'preparation');
-  let jeu = ouvrir(preparation);
+  const jeu = ouvrir(preparation);
   try { M.creer(jeu); } finally { jeu.bridge.close(); }
-  // Carrière ouverte la veille de la première rencontre : match et direct sans deux mois de calendrier.
-  veille = path.join(racine, 'veille');
-  jeu = ouvrir(veille);
-  try { jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: 102, start: 'veille' })); } finally { jeu.bridge.close(); }
 });
 after(() => { if (racine) fs.rmSync(racine, { recursive: true, force: true }); });
 
@@ -119,61 +112,6 @@ test('Décision : profil intact, une ligne de journal, rien à écrire après la
   assert.ok(!fs.readFileSync(profil(dir)).equals(avant), 'la fermeture écrit la carrière');
   assert.equal(lignes(dir).length, 1, 'journal remis à zéro après la sauvegarde complète');
   assert.equal(lignes(dir)[0].base, sha(fs.readFileSync(profil(dir))), 'le journal est lié au profil publié');
-});
-
-test('Plantage simulé entre deux sauvegardes : le journal rejoué donne la même empreinte que la sauvegarde complète', { timeout: 1500000 }, () => {
-  const A = copie(veille);
-  let crash, jeu = ouvrir(A, { savePolicy: 'mois' });
-  try {
-    let model = jeu.call('snapshot');
-    model = jeu.call('set_tactics', { attack: autreAttaque(model), defense: model.tactics.defense });
-    model = M.jusquAuMatch(jeu, model);
-    if (!model.selection.valid) model = jeu.call('auto_lineup');
-    model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
-    assert.ok(model.live, 'rencontre en direct');
-    for (let i = 0; i < 3; i++) jeu.call('tick', { steps: 2 });
-    model = skipMatchTalk(jeu.call('delegate'), jeu.call);
-    assert.ok(model.live?.finished || !model.live, 'match délégué jusqu’au bout');
-    const actions = lignes(A).slice(1);
-    assert.ok(actions.length >= 6, 'décision, jour(s), coup d’envoi, minutes et délégation notés : ' + actions.map(a => a.c).join(','));
-    assert.ok(actions.some(a => a.s !== a.e), 'le match consomme la graine : la vérification par graine est exercée');
-    crash = copie(A);                               // disque au moment de la coupure
-    jeu.call('save');                               // sauvegarde complète de référence
-  } finally { jeu.bridge.close(); }
-  const reference = empreinte(A);
-  const C = copie(crash), D = copie(crash);
-  jeu = ouvrir(crash, { savePolicy: 'mois' });
-  try {
-    const model = jeu.call('snapshot');
-    const notice = model.meta.autosave.notice;
-    assert.equal(notice.alert, false, notice.text);
-    assert.equal(notice.replayed, notice.total);
-    assert.ok(model.live?.finished || !model.live, 'le match délégué est retrouvé');
-    jeu.call('save');
-  } finally { jeu.bridge.close(); }
-  assert.deepEqual(empreinte(crash), reference, 'journal rejoué = sauvegarde complète, à l’octet près');
-
-  // Coupure pendant l'ajout d'une ligne : ignorée, le reste est repris.
-  fs.appendFileSync(journal(C), '{"c":"set_tactics","p":{"att');
-  jeu = ouvrir(C, { savePolicy: 'mois' });
-  try { assert.equal(jeu.call('snapshot').meta.autosave.notice.alert, false); jeu.call('save'); } finally { jeu.bridge.close(); }
-  assert.deepEqual(empreinte(C), reference, 'ligne coupée ignorée');
-
-  // Journal divergent (graine notée fausse sur l'avant-dernière action) : reprise jusqu'à l'action précédente,
-  // journal d'origine conservé, joueur informé.
-  const texte = fs.readFileSync(journal(D), 'utf8').split('\n').filter(Boolean);
-  const fausse = texte.length - 2, ligne = JSON.parse(texte[fausse]);
-  ligne.e = (ligne.e + 1) >>> 0; texte[fausse] = JSON.stringify(ligne);
-  fs.writeFileSync(journal(D), texte.join('\n') + '\n');
-  jeu = ouvrir(D, { savePolicy: 'mois' });
-  try {
-    const notice = jeu.call('snapshot').meta.autosave.notice;
-    assert.equal(notice.alert, true);
-    assert.equal(notice.replayed, fausse - 1);
-    assert.match(notice.text, /journal conservé : journal-non-rejoue-/);
-    assert.equal(lignes(D).length, fausse, 'le journal décrit la carrière reprise');
-    assert.ok(fs.readdirSync(dossier(D)).some(f => f.startsWith('journal-non-rejoue-')), 'journal d’origine conservé');
-  } finally { jeu.bridge.close(); }
 });
 
 test('Journal impossible à compléter : la décision est refusée avec sa raison et annulée', { timeout: 900000 }, () => {

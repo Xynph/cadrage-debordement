@@ -537,6 +537,11 @@ static func _heading(parent: Node, app: Control) -> void:
 		parent.add_child(app.minibar)
 		app.minibar.hide()
 
+## Décor du bureau (ballon, coupe) : la scène n'est chargée qu'une fois ; un rendu sur deux
+## relisait ballon.glb (et son avertissement d'UID) faute de référence gardée.
+const OFFICE_PROPS_PATH := "res://art/office_props/office_props.tscn"
+static var _office_props_scene: PackedScene
+
 static func _sync_office_props(match_status: Label) -> void:
 	if not match_status.is_inside_tree(): return
 	var row := match_status.get_parent()
@@ -546,8 +551,9 @@ static func _sync_office_props(match_status: Label) -> void:
 			row.remove_child(props)
 			props.queue_free()
 	elif props == null:
-		var scene := load("res://art/office_props/office_props.tscn") as PackedScene
-		props = scene.instantiate() as TextureRect
+		if _office_props_scene == null:
+			_office_props_scene = load(OFFICE_PROPS_PATH) as PackedScene
+		props = _office_props_scene.instantiate() as TextureRect
 		row.add_child(props)
 		D.place(props,Rect2(1080,5,260,78))
 
