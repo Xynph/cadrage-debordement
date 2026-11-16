@@ -48,7 +48,7 @@
  // Les joueurs fictifs initiaux ont 30 indices distincts ; les autres IDs utilisent
  // un hash stable vers les 32 illustrations. Réemploi possible, aucun portrait réel.
  function portraitIndex(id){const str=String(id??''),initial=/^p\d+-(\d+)-\d+$/.exec(str);if(initial)return Number(initial[1])%32;let hash=2166136261;for(let i=0;i<str.length;i++)hash=Math.imul(hash^str.charCodeAt(i),16777619)>>>0;return hash%32;}
- function portrait(index,large=false){if(!Number.isInteger(index)||index<0||index>=32)return '<span class="ed-monogram" aria-hidden="true">XV</span>';const cell=index%16;return '<span class="ed-portrait'+(large?' is-large':'')+'" role="img" aria-label="Portrait décoratif fictif généré par IA" title="Portrait décoratif fictif généré par IA" style="--atlas:url(assets/editorial/portraits-'+Math.floor(index/16)+'.webp);background-position:'+(cell%4)*100/3+'% '+Math.floor(cell/4)*100/3+'%"></span>';}
+ function portrait(index,large=false){if(!Number.isInteger(index)||index<0||index>=32)return '<span class="ed-monogram" aria-hidden="true">XV</span>';const cell=index%16;return '<span class="ed-portrait'+(large?' is-large':'')+'" role="img" aria-label="Portrait" title="Portrait" style="--atlas:url(assets/editorial/portraits-'+Math.floor(index/16)+'.webp);background-position:'+(cell%4)*100/3+'% '+Math.floor(cell/4)*100/3+'%"></span>';}
  // Uniquement des projections de lecture. Les décisions et messages proviennent
  // des API natives et leurs commandes sont raccordées dans install().
  function officeView(m,details={}){
