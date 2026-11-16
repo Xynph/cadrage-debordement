@@ -118,7 +118,8 @@ async function reviewStorage(){
  const children=[];
  try{
   fs.mkdirSync(path.join(engine,'core'),{recursive:true});
-  for(const name of ['worker.cjs','model.cjs'])fs.copyFileSync(path.join(path.dirname(workerPath),name),path.join(engine,name));
+  // Tout le moteur natif tel qu'il est livré (le worker charge aujourd'hui une centaine de modules et de bases voisins).
+  for(const entry of fs.readdirSync(path.dirname(workerPath),{withFileTypes:true}))if(entry.isFile())fs.copyFileSync(path.join(path.dirname(workerPath),entry.name),path.join(engine,entry.name));
   for(const name of CORE_FILES){const target=path.join(engine,'core',name);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.resolve(__dirname,'../dist',name),target);}
   const exported=require(path.join(engine,'worker.cjs'));
   const valid=exported.createBridge({dataDir:path.join(temp,'outside')});assert.equal(valid.handle({id:1,command:'snapshot'}).ok,true);valid.close();
