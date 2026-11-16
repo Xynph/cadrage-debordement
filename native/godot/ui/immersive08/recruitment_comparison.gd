@@ -2,6 +2,7 @@ extends RefCounted
 ## Comparateur unique de deux joueurs (mon effectif et marché) : consultation seulement, toutes les valeurs
 ## proviennent de la projection courante (aucun appel au moteur). La mémoire du premier joueur est
 ## `management_ui.compare`, partagée avec l’Effectif et la fiche joueur.
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/decision_views.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
@@ -292,7 +293,7 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 	dialog.add_theme_font_size_override("title_font_size", C.px(30))
 	dialog.get_ok_button().add_theme_font_size_override("font_size", fs(18))
 	dialog.get_ok_button().custom_minimum_size.y = C.px(34)
-	picks[1].grab_focus.call_deferred()
+	FocusLater.grab(picks[1])
 
 ## Ajuste la hauteur de la fenêtre au contenu de la synthèse (jamais au-delà du maximum) : pas de grand vide sous
 ## le tableau en 1440p. Le défilement reste disponible pour l'onglet des 36 attributs.
@@ -320,7 +321,7 @@ static func _restore_focus(app: Control, return_focus: String = "") -> void:
 		preload("res://ui/immersive08/club_ui.gd").focus(app, return_focus)
 		return
 	var button := app.find_child("CompareMarket", true, false) as Button
-	if button != null: button.grab_focus.call_deferred()
+	if button != null: FocusLater.grab(button)
 
 static func _cards(parent: Node, pair: Array[Dictionary], reports: Dictionary,app: Control) -> void:
 	var cards := C.h(28)

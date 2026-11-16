@@ -74,7 +74,53 @@ module.exports=function positionAptitudes(){
  }
 
  function rating(p,slot){return derive(p).positionRatings[positionNumber(slot)]??0;}
- function efficiency(p,slot){const f=FAMILIES[positionNumber(slot)-1],data=derive(p);return Math.min(1,data.positionRatings[positionNumber(slot)]/Math.max(1,data._familyNotes[f]));}
+ // Mémoire d'un pas de match, ou de tout un match de l'ordinateur (advanceRugby, voir installHooks) : pendant le jeu,
+ // ni les qualités, ni la note, ni le poste, ni la spécialisation d'un joueur ne changent (seule sa condition baisse ;
+ // la progression vient après le coup de sifflet final). Efficacité au poste et qualité brute (avant forme) y sont donc
+ // calculées une fois par joueur et par poste ou qualité, puis relues. Hors d'un match : calcul direct.
+ let stepMemo=null,memoSkillBase=null,memoRoleBase=null;const viewOf=new WeakMap();
+ const newMemo=()=>({efficiency:new Map(),skill:new Map(),role:new Map(),views:new Map()});
+ const memoRow=(map,p)=>{let row=map.get(p);if(!row){row=Object.create(null);map.set(p,row);}return row;};
+ // skill et roleNote (dist/rugby.js) ne sont remplacées que le temps d'une mémoire (withMemo) : aucun coût ailleurs.
+ // Même expression que skill : qualité bornée relue, puis forme du moment (condition) appliquée.
+ // Une vue au poste (slotView, jamais modifiée) partage la ligne de son joueur : qualités, note, base et spécialisation
+ // sont lues sur le joueur (prototype) ; seule la famille diffère, et ni skill ni roleNote (famille explicite) ne la lisent
+ // quand les qualités existent (sinon ensureSkills les créerait sur la vue, d'après sa famille : ligne propre).
+ const memoKey=p=>p.skills&&viewOf.get(p)||p;
+ function memoSkill(p,k,fit=false){
+  if(!p)return memoSkillBase(p,k,fit);
+  const row=memoRow(stepMemo.skill,memoKey(p));let n=row[k];
+  if(n===undefined){n=memoSkillBase(p,k,false);row[k]=n;}
+  // Fatigue des phases arrêtées (fit==='arrete', voir fitArrete) : même pondération que skill.
+  if(!fit)return n;const perte=.5-p.condition*.005,w=fit==='arrete'?FATIGUE_ARRETE[k]:undefined;return n*(1-(w===undefined?1:w)*perte);
+ }
+ // Note de rôle : indépendante de la condition.
+ function memoRole(p,f=p?.fam){
+  if(!p)return memoRoleBase(p,f);
+  const row=memoRow(stepMemo.role,memoKey(p));let n=row[f];
+  if(n===undefined){n=memoRoleBase(p,f);row[f]=n;}
+  return n;
+ }
+ function withMemo(memo,fn){
+  const skill0=skill,role0=roleNote;
+  stepMemo=memo;memoSkillBase=skill0;memoRoleBase=role0;skill=memoSkill;roleNote=memoRole;
+  try{return fn();}finally{skill=skill0;roleNote=role0;stepMemo=memoSkillBase=memoRoleBase=null;}
+ }
+ const note=(p,f=p?.fam)=>stepMemo?memoRole(p,f):baseNote(p,f);
+ // Joueur vu au poste du maillot (prototype = le joueur, seule la famille est propre), réutilisé dans une mémoire.
+ function slotView(p,slot){
+  if(!stepMemo)return Object.assign(Object.create(p),{fam:FAMILIES[slot]});
+  const row=memoRow(stepMemo.views,p);let v=row[slot];
+  if(v===undefined){v=Object.assign(Object.create(p),{fam:FAMILIES[slot]});row[slot]=v;viewOf.set(v,p);}
+  return v;
+ }
+ function efficiencyNow(p,slot){const f=FAMILIES[positionNumber(slot)-1],data=derive(p);return Math.min(1,data.positionRatings[positionNumber(slot)]/Math.max(1,data._familyNotes[f]));}
+ function efficiency(p,slot){
+  if(!stepMemo||!p)return efficiencyNow(p,slot);
+  const row=memoRow(stepMemo.efficiency,p);let v=row[slot];
+  if(v===undefined){v=efficiencyNow(p,slot);row[slot]=v;}
+  return v;
+ }
  function contextualSkill(p,key,slot,fit=true){return skill(p,key,fit)*efficiency(p,slot);}
  let reservations=null,installed=false;
  function eligible(p,slot){
@@ -133,13 +179,38 @@ module.exports=function positionAptitudes(){
  function installHooks(){
   if(installed)return;installed=true;
   const oldBuild=buildSheet,oldManager=managerSheet,oldStrategic=strategicPlayerScore;
+  // Pas de match avec mémoire (voir stepMemo) ; un pas imbriqué garde la mémoire du pas qui l'englobe.
+  if(typeof advanceRugby==='function'){
+   const oldAdvance=advanceRugby;
+   // Rencontre de l'ordinateur (userSide −1, simulée d'un seul tenant) : la mémoire dure tout le match, rien ne
+   // s'exécutant entre deux pas ; elle est abandonnée au coup de sifflet final (progression appliquée ensuite).
+   const matchMemos=new WeakMap();
+   advanceRugby=function(l){
+    if(stepMemo)return oldAdvance.apply(this,arguments);
+    const whole=!!l&&typeof l==='object'&&l.userSide===-1,memo=whole&&matchMemos.get(l)||newMemo(),self=this,args=arguments;
+    try{return withMemo(memo,()=>oldAdvance.apply(self,args));}
+    finally{if(whole){if(l.finished)matchMemos.delete(l);else matchMemos.set(l,memo);}}
+   };
+   Object.assign(advanceRugby,oldAdvance);
+  }
+  // Composition des équipes d'une rencontre de l'ordinateur (createRugbyMatch automatisé : feuilles, choix du
+  // manager) : mêmes garanties, la mémoire vit le temps de la création. Les recrues et prêts éventuels sont de
+  // nouveaux joueurs (ou des joueurs déplacés sans changer de qualités) : ils ont leur propre ligne.
+  if(typeof createRugbyMatch==='function'){
+   const oldCreate=createRugbyMatch;
+   createRugbyMatch=function(pair,legacy,automated){
+    if(stepMemo||automated!==true)return oldCreate.apply(this,arguments);
+    const self=this,args=arguments;return withMemo(newMemo(),()=>oldCreate.apply(self,args));
+   };
+   Object.assign(createRugbyMatch,oldCreate);
+  }
   slotEligible=(p,slot)=>eligible(p,slot);benchEligible=(p,slot)=>eligible(p,slot+15);
   fitScore=(p,f=p.fam)=>{
-   const n=FAMILIES.indexOf(f);return (f===p.fam?baseNote(p):rating(p,n))*(.5+p.condition*.005);
+   const n=FAMILIES.indexOf(f);return (f===p.fam?note(p):rating(p,n))*(.5+p.condition*.005);
   };
   // Joueur vu au poste du maillot : vue légère (prototype = le joueur, seule la famille est propre) au lieu d'une copie
   // complète à chaque note ; oldStrategic ne fait que lire (comme unit et sheetAverage ci-dessous).
-  strategicPlayerScore=(p,slot,...args)=>oldStrategic(Object.assign(Object.create(p),{fam:FAMILIES[slot]}),slot,...args)*efficiency(p,slot);
+  strategicPlayerScore=(p,slot,...args)=>oldStrategic(slotView(p,slot),slot,...args)*efficiency(p,slot);
   function improveBench(team,sheet,preferred=[]){
    const used=new Set(sheet.lineup.filter(Boolean)),wanted=[],pool=availablePool(team);
    for(let i=0;i<8;i++){
@@ -248,9 +319,10 @@ module.exports=function positionAptitudes(){
   };
   unit=(live,side,key,filter)=>{
    // Une seule passe sans objets intermédiaires (appelée des dizaines de fois par action) : mêmes joueurs retenus,
-   // mêmes valeurs dans le même ordre, donc la même moyenne. Filtre et note ne modifient pas les joueurs.
+   // mêmes valeurs dans le même ordre, donc la même moyenne. Filtre et note ne modifient pas les joueurs (ni la vue au
+   // poste, reprise de la mémoire du match quand elle existe).
    const on=live.sheets[side].on,players=activePlayers(live,side),values=[],fit=fitArrete(live); // fatigue des phases arrêtées (dist/matchflow.js)
-   for(const p of players){const slot=on.indexOf(p.id);if(filter&&!filter(Object.assign(Object.create(p),{fam:FAMILIES[slot]})))continue;values.push(contextualSkill(p,key,slot,fit));}
+   for(const p of players){const slot=on.indexOf(p.id);if(filter&&!filter(slotView(p,slot)))continue;values.push(contextualSkill(p,key,slot,fit));}
    return values.length?mean(values):25;
   };
   sheetAverage=(team,ids,key,filter=()=>true)=>{

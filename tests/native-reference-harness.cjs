@@ -78,7 +78,9 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir='',beforePos
    }`,
    tick:"if(!S.live)throw Error('Aucun match en cours.');if(!Number.isInteger(nativePayload.steps??1)||(nativePayload.steps??1)<1||(nativePayload.steps??1)>120)throw Error('Nombre de pas invalide.');for(let i=0;i<(nativePayload.steps??1);i++)tick();",
    pause:"if(!S.live)throw Error('Aucun match en cours.');if(nativePayload.paused!==undefined&&typeof nativePayload.paused!=='boolean')throw Error('Pause invalide.');if(nativePayload.paused===false)continueMatch();else pauseMatch();",
-   delegate:"if(!S.live)throw Error('Aucun match à déléguer.');nativeSystems.domain('matchTalks').setDelegating(true);try{nativeSystems.domain('matchTalks').observe('delegate');for(let steps=0;!S.live.finished;steps++){if(steps>=3000)throw Error('Limite de délégation atteinte.');if(S.live.paused)continueMatch();else tick();}}finally{nativeSystems.domain('matchTalks').setDelegating(false);}",
+   // Même séquence que le worker (native/engine/worker.cjs, commande delegate) : l'adjoint
+   // (domaine matchDelegation) gère le banc et le plan pendant le match délégué.
+   delegate:"if(!S.live)throw Error('Aucun match à déléguer.');nativeSystems.domain('matchTalks').setDelegating(true);try{nativeSystems.domain('matchTalks').observe('delegate');nativeSystems.domain('matchDelegation').setActive(true);for(let steps=0;!S.live.finished;steps++){if(steps>=3000)throw Error('Limite de délégation atteinte.');if(S.live.paused)continueMatch();else tick();}}finally{nativeSystems.domain('matchTalks').setDelegating(false);nativeSystems.domain('matchDelegation').setActive(false);}",
    finish_round:"if(!(S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())))throw Error('Terminez le match avant de valider la journée.');finishRound();",
    save:''
   };

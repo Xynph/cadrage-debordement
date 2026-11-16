@@ -161,7 +161,7 @@ func _display_reception() -> void:
 	await _settle()
 	var dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
 	var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
-	_check(tabs != null and tabs.get_tab_count() == 3,"Bundled preferences contain all three sections")
+	_check(tabs != null and tabs.get_tab_count() == 4,"Bundled preferences contain all four sections")
 	if tabs != null: tabs.current_tab = 2
 	await _settle()
 	var windowed: Button = dialog.find_child("PreferencesWindowed",true,false)
@@ -1190,7 +1190,7 @@ func _native06_reception() -> void:
 		app.settings(); await _settle()
 		var dialog: AcceptDialog = app.get_node("PreferencesDialog")
 		var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
-		_check(tabs != null and tabs.get_tab_count() == 3, "Native06 three compact settings tabs")
+		_check(tabs != null and tabs.get_tab_count() == 4, "Native06 four compact settings tabs")
 		var client := Rect2i(Vector2i.ZERO, Vector2i(get_tree().root.get_visible_rect().size))
 		var dialog_bounds := Rect2i(dialog.position, dialog.size)
 		_check(dialog.visible and client.encloses(dialog_bounds), "Native06 settings fit the actual client: " + str(dialog_bounds))
