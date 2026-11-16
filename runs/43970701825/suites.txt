@@ -1,0 +1,13 @@
+tests/reactivite-projection-decisions.cjs
+tests/reactivite-projection-verification.cjs
+tests/reactivite-projection-verification-direct.cjs
+tests/reactivite-projection-rapide.cjs
+tests/reactivite-projection-rapide-direct.cjs
+tests/memo-projection-monde.cjs
+tests/sauvegarde-journal-monde.cjs
+tests/native-club-meetings.cjs
+tests/native-club-meetings-packs.cjs
+tests/native-player-attributes.cjs
+tests/presse-rapide-monde.cjs
+tests/native-press-invitations.cjs
+tests/presse-promesses-monde.cjs
