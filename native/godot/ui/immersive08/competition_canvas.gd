@@ -1,5 +1,6 @@
 extends Control
 ## Classements, phases finales, calendrier et résultats de la carrière native.
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -24,7 +25,7 @@ const PRIMARY := Color("106d43")
 const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
 const JAPAN_COMPETITIONS := ["jlo-d1", "jlo-d2", "jlo-d1-d2"]
 const RESULT_TINTS := {"V": WIN, "N": DRAW, "D": LOSS}
-const AFAR_HINT := "Championnat suivi de loin : scores, classement, blessures et évolution des joueurs, sans notes individuelles ni feuilles de match. À changer dans Réglages › Championnats suivis, pour la saison suivante."
+const AFAR_HINT := "Championnat en consultation : scores, classement, blessures et évolution des joueurs, sans notes individuelles ni feuilles de match. À changer dans Paramètres › Championnats suivis, effet dès la semaine suivante."
 const TABLE_COLUMNS := [
 	["#", 41, 58, "rank"], ["J", 488, 52, "played"], ["V", 549, 50, "won"],
 	["N", 610, 50, "drawn"], ["D", 671, 50, "lost"], ["PF", 744, 59, "pf"],
@@ -250,7 +251,7 @@ func _header() -> void:
 		afar.name = "CompetitionFollowedFromAfar"
 		afar.mouse_filter = Control.MOUSE_FILTER_STOP
 		afar.tooltip_text = AFAR_HINT
-		D.text(afar, 18, 29, "SUIVI DE LOIN", 22, WARM, 700, 250)
+		D.text(afar, 18, 29, "CONSULTATION", 22, WARM, 700, 250)
 	var crest :=D.rect(self, Rect2(1122, 103, 218, 78), Color("111a1b"), 8, WARM)
 	var emblem := G._pack_texture(str(league.get("logoPath", "")))
 	if emblem == null:
@@ -688,7 +689,7 @@ func _stats() -> void:
 		D.text(aggregate, x + 22, 112, ["Matchs joués", "Points marqués", "Matchs nuls", "Points / match"][i], 26, C.MUTED, 500, 254)
 		D.text(aggregate, x + 22, 170, values[i], 61, C.IVORY, 800, 253)
 	var caption := "Résultats de toutes les poules conservés par la carrière." if league.has("pools") else "Résultats et compteurs de championnat conservés par la carrière."
-	if _followed_from_afar(): caption = "Championnat suivi de loin : scores, essais et classement, sans notes individuelles."
+	if _followed_from_afar(): caption = "Championnat en consultation : scores, essais et classement, sans notes individuelles."
 	D.text(aggregate, 28, 248, caption, 26, C.MUTED, 500, 1210)
 
 func _bottom() -> void:
@@ -824,7 +825,7 @@ func _turn(key: String, direction: int, id: String) -> void:
 	var target := owner_app.find_child(id + ("Previous" if direction < 0 else "Next"), true, false) as Button
 	if target != null and target.disabled:
 		target = owner_app.find_child(id + ("Next" if direction < 0 else "Previous"), true, false) as Button
-	if target != null: target.grab_focus.call_deferred()
+	if target != null: FocusLater.grab(target)
 
 func _entity_area(parent: Node, area: Rect2, target: Dictionary, id: String, caption: String) -> Button:
 	if not target_available(app, str(target.kind), target.id): return null

@@ -1,5 +1,7 @@
 extends SceneTree
 ## Ambiance sonore : bus Interface et Stade, sons de match, foule selon le camp qui marque.
+## Captures (rendu graphique, vrai jeu) : CD_AMBIANCE_CAPTURE=<dossier> ; l'onglet Son des paramètres est photographié.
+## Sans la variable, rien ne change.
 
 var failures: Array[String] = []
 var checks := 0
@@ -7,8 +9,57 @@ var proof := OS.get_environment("CD_AMBIANCE_PROOF")
 var moods: Array[String] = []
 var cues: Array[String] = []
 
+var capture_dir := OS.get_environment("CD_AMBIANCE_CAPTURE")
+
 func _initialize() -> void:
+	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
+		call_deferred("run_capture")
+		return
 	call_deferred("run")
+
+func settle(frames: int = 12) -> void:
+	await create_timer(.4).timeout
+	for i in frames: await process_frame
+	await RenderingServer.frame_post_draw
+
+func capture(name: String) -> void:
+	await settle(16)
+	check(root.get_texture().get_image().save_png(capture_dir.path_join(name + ".png")) == OK, "Capture " + name)
+
+func run_capture() -> void:
+	create_timer(300.0).timeout.connect(func():
+		printerr("FAIL: délai dépassé (300 s)")
+		quit(1))
+	DirAccess.make_dir_recursive_absolute(capture_dir)
+	root.size = Vector2i(1920, 1080)
+	DisplayServer.window_set_size(root.size)
+	var app = load("res://main.tscn").instantiate()
+	root.add_child(app)
+	var deadline := Time.get_ticks_msec() + 60000
+	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline: await process_frame
+	app.timer.stop()
+	await settle()
+	check(not app.model.is_empty(), "Jeu chargé (accueil sans carrière)")
+	check(app.soundscape != null and app.soundscape_ready, "Gestionnaire sonore prêt")
+	app.settings()
+	await settle(24)
+	var dialog: AcceptDialog = app.find_child("PreferencesDialog", true, false)
+	check(dialog != null, "Paramètres ouverts")
+	if dialog != null:
+		var tabs: TabContainer = dialog.find_child("PreferencesTabs", true, false)
+		tabs.current_tab = 1
+		await settle(12)
+		var match_sounds := dialog.find_child("PreferencesMatchSounds", true, false) as CheckBox
+		check(match_sounds != null or dialog.find_child("PreferencesInterfaceVolume", true, false) != null, "Réglages sonores présents")
+		await capture("parametres-audio")
+		tabs.current_tab = tabs.get_tab_count() - 1
+		await settle(12)
+		check(dialog.find_child("PreferencesShortcuts", true, false) != null, "Onglet Raccourcis clavier présent")
+		await capture("parametres-raccourcis")
+	print("AMBIANCE CAPTURES : %d vérifications, %d échec(s)" % [checks, failures.size()])
+	app.closing = true
+	app.bridge.stop()
+	quit(1 if not failures.is_empty() else 0)
 
 func check(value: bool, message: String) -> void:
 	checks += 1

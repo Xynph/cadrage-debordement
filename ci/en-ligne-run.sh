@@ -46,12 +46,12 @@ fi
 #    Pas de séquence d'intro dédiée dans le dépôt : l'écran d'entrée n'a pas de suite de capture.
 if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   # CD_EL_CAPTURES_QUOI : liste séparée par des virgules ou espaces parmi intro, finitions, fiche-club,
-  # feuille-espoir, match-rendu, reception ; vide ou « toutes » = toutes SAUF match-rendu (40 passes, 57 min sous llvmpipe :
-  # à demander explicitement ; sans GPU, Forward+ n'existe pas, donc seules les passes « actuel » en 1280x720).
+  # feuille-espoir, match-rendu, comparateur, audio, reception ; vide ou « toutes » = intro, finitions, fiche-club, feuille-espoir ; match-rendu (40 passes, 57 min sous llvmpipe :
+  # à demander explicitement ; sans GPU, Forward+ n'existe pas, donc seules les passes « actuel » en 1280x720). comparateur et audio : aussi à demander explicitement.
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|reception) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -89,6 +89,16 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/match-rendu"
     phase "captures rendu de match" captures-match-rendu.log \
       env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" CD_MATCH_RENDU_PASSES=actuel CD_MATCH_RENDU_TAILLES=1280x720 node tests/godot-match-rendu-capture.cjs
+  fi
+  if veut comparateur; then
+    mkdir -p "$cap/comparateur"
+    phase "captures comparateur de joueurs (Effectif, fiche joueur, marché ; 1440p et 720p)" captures-comparateur.log \
+      env CD_COMPARATEUR_CAPTURE="$cap/comparateur" node --test tests/godot-comparateur-joueurs.cjs
+  fi
+  if veut audio; then
+    mkdir -p "$cap/audio"
+    phase "captures paramètres (onglets Son et Raccourcis clavier)" captures-audio.log \
+      env CD_AMBIANCE_CAPTURE="$cap/audio" node --test tests/godot-ambiance.cjs
   fi
   echo "- Captures PNG :$(echo "$quoi" | tr -s ' ') $(find "$cap" -name '*.png' | wc -l) fichier(s)" >> "$out/resume.md"
 fi

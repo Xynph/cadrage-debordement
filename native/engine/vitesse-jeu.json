@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "description": "Vitesse de jeu estimée (comme FM) : étoiles selon les secondes par semaine de jeu estimées pour cette machine. Une semaine tombe dans le premier cran dont elle reste sous `sousSemaineMs` (null : dernier cran). Le choix automatique vise `cibleChoixAuto` étoiles.",
+  "cibleChoixAuto": 4,
+  "crans": [
+    { "etoiles": 5, "id": "tres-rapide", "libelle": "Très rapide", "sousSemaineMs": 3000, "etat": "succes" },
+    { "etoiles": 4, "id": "rapide", "libelle": "Rapide", "sousSemaineMs": 6000, "etat": "succes" },
+    { "etoiles": 3, "id": "correcte", "libelle": "Correcte", "sousSemaineMs": 10000, "etat": "alerte" },
+    { "etoiles": 2, "id": "lente", "libelle": "Lente", "sousSemaineMs": 15000, "etat": "danger" },
+    { "etoiles": 1, "id": "tres-lente", "libelle": "Très lente", "sousSemaineMs": null, "etat": "danger" }
+  ]
+}

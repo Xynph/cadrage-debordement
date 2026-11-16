@@ -207,12 +207,43 @@ function clauses(state, clubId, sens) {
   return bilan;
 }
 
+// Politiques salariales reprises tant que le tableau des forces est le même objet au même contenu : une projection
+// demande des centaines de salaires d'affilée avec les mêmes forces (club-budget.cjs, budgetForcesDemande).
+const politiquesMemo = new WeakMap();
+function politiquesDe(forces, bareme2) {
+  if (!Array.isArray(forces)) return politiques(forces, bareme2);
+  const hit = politiquesMemo.get(forces);
+  if (hit && hit.bareme2 === bareme2 && hit.vues.length === forces.length * 3 &&
+    forces.every((f, i) => Object.is(f.id, hit.vues[3 * i]) && Object.is(f.division, hit.vues[3 * i + 1]) && Object.is(f.base, hit.vues[3 * i + 2]))) return hit.resultat;
+  const resultat = politiques(forces, bareme2);
+  politiquesMemo.set(forces, { bareme2, vues: forces.flatMap(f => [f.id, f.division, f.base]), resultat });
+  return resultat;
+}
+
+// Même valeur que club(liste, division, politique).get(joueur.id).annuel sans classer ni chiffrer tout l'effectif : le
+// rang du joueur dans le tri de club() est le nombre de joueurs classés avant lui. Ce tri est un ordre total quand les
+// notes sont des nombres finis et les identifiants distincts ; sinon, calcul complet.
+function annuelDans(liste, joueur, division, politique) {
+  const complet = () => club(liste, division, politique).get(joueur.id).annuel;
+  const id = String(joueur.id), vus = new Set();
+  let rang = 0;
+  for (const x of liste) {
+    if (!Number.isFinite(x.rating)) return complet();
+    const autre = String(x.id);
+    if (vus.has(autre)) return complet();
+    vus.add(autre);
+    if (((joueur.rating - x.rating) || (autre < id ? -1 : 1)) < 0) rang++;
+  }
+  const contratEspoir = rang >= NOYAU && Number.isFinite(joueur.age) && joueur.age <= AGE_ESPOIR;
+  return contratEspoir ? espoir(joueur, division, politique) : detail(joueur, politique).annuel;
+}
+
 // Salaire hebdomadaire qu'un joueur demande au club donné, selon la même règle que les salaires de départ.
 function demande(state, forces, clubId, joueur, economie = null) {
-  const equipe = state.clubs.find(c => c.id === clubId), force = forces.find(f => f.id === clubId), politique = politiques(forces, state.seniorCalibrationVersion === 2).get(clubId);
+  const equipe = state.clubs.find(c => c.id === clubId), force = forces.find(f => f.id === clubId), politique = politiquesDe(forces, state.seniorCalibrationVersion === 2).get(clubId);
   if (!equipe || !force || !politique) throw Error('Demande salariale : club inconnu.');
   const autres = (equipe.players ?? []).filter(x => x.id !== joueur.id);
-  return hebdo(club([...autres, joueur], categorie(force.division, economie), politique).get(joueur.id).annuel, facteurDe(state, force.division));
+  return hebdo(annuelDans([...autres, joueur], joueur, categorie(force.division, economie), politique), facteurDe(state, force.division));
 }
 
 // Valeur de marché hebdomadaire d'un joueur sans club, pour un club moyen de la référence.

@@ -30,10 +30,42 @@ test('Estimation : plus de championnats détaillés, jamais plus rapide',()=>{
  assert.ok(slow.seasonMs>fast.seasonMs,'une machine deux fois plus lente est estimée plus lente');
  assert.throws(()=>leagueDetail.estimate({detailed:'elite'}),/Championnats actifs/);
  const table=leagueDetail.costTable({});
- assert.equal(table.levels.length,3);assert.deepEqual(table.levels.map(l=>l.state),['succes','alerte','danger'],'couleurs d’état du thème');
+ assert.deepEqual(table.levels.map(l=>l.stars),[5,4,3,2,1],'jauge à 5 étoiles');
+ assert.deepEqual(table.levels.map(l=>l.state),['succes','succes','alerte','danger','danger'],'couleurs d’état du thème');
  for(const id of WORLD)assert.ok(table.leagues[id].extraDetailedMs>0&&table.leagues[id].quickMs>=0,id);
  const sum=table.baseSeasonMs+WORLD.reduce((n,id)=>n+table.leagues[id].extraDetailedMs,0);
  assert.ok(Math.abs(sum-leagueDetail.estimate({detailed:WORLD}).seasonMs)<=WORLD.length,'la jauge de l’interface additionne le même tableau');
+});
+
+test('Vitesse estimée : seuils en données, 5 étoiles ≤ 3 s, 1 étoile ≥ 15 s par semaine',()=>{
+ const data=require('../native/engine/vitesse-jeu.json');
+ assert.equal(data.cibleChoixAuto,4);assert.equal(leagueDetail.AUTO_TARGET,4);
+ assert.deepEqual(data.crans.map(c=>c.sousSemaineMs),[3000,6000,10000,15000,null]);
+ // Machine simulée : on choisit la vitesse de calcul pour viser une semaine donnée.
+ const R=leagueDetail.REFERENCE,base=leagueDetail.estimate({detailed:[]}).weekMs;
+ const at=week=>{const f=week/base;return {serialMs:R.benchmarkMs.serial*f,computeMs:R.benchmarkMs.compute*f,cores:8,memoryGb:16};};
+ for(const [week,stars] of [[2500,5],[2999,5],[3100,4],[5900,4],[9500,3],[14500,2],[15100,1],[40000,1]])
+  assert.equal(leagueDetail.estimate({detailed:[],machine:at(week)}).stars,stars,week+' ms');
+});
+
+test('Choix automatique selon le PC : déterministe, vise 4 étoiles, pays du club d’abord',()=>{
+ const R=leagueDetail.REFERENCE,all=Object.keys(leagueDetail.SEASON_MATCHES);
+ const machine=f=>({serialMs:R.benchmarkMs.serial*f,computeMs:R.benchmarkMs.compute*f,cores:8,memoryGb:16});
+ // Machine très rapide : tout en détail ; machine de référence : le seul championnat du club.
+ assert.deepEqual(leagueDetail.autoChoice({own:'elite',machine:machine(.25)}),all);
+ assert.deepEqual(leagueDetail.autoChoice({own:'elite',machine:{}}),['elite']);
+ // Machine moyenne simulée : résultat figé, toujours sous la cible ou le club seul.
+ const mid=machine(.78),first=leagueDetail.autoChoice({own:'prem',machine:mid});
+ for(let i=0;i<5;i++)assert.deepEqual(leagueDetail.autoChoice({own:'prem',machine:mid}),first,'même machine, même choix');
+ assert.ok(first.includes('prem'));
+ assert.ok(leagueDetail.estimate({detailed:first,machine:mid}).stars>=4);
+ const extra=all.filter(id=>!first.includes(id));
+ for(const id of extra)assert.ok(leagueDetail.estimate({detailed:[...first,id],machine:mid}).stars<4,'ajouter '+id+' passerait sous 4 étoiles');
+ // Valeur figée (seuils et coûts de référence actuels) : le Championship (même pays) passe avant les autres.
+ assert.deepEqual(first,['elite','nationale','prem','champ']);
+ // L'interface lit le même choix dans le tableau des coûts.
+ const table=leagueDetail.costTable(mid);
+ assert.deepEqual(table.auto.prem,first);assert.equal(table.autoTarget,4);assert.deepEqual(table.auto[''],leagueDetail.autoChoice({own:'',machine:mid}));
 });
 
 test('Banc d’essai : mesure positive et stable',()=>{
@@ -111,14 +143,17 @@ test('Carrière Monde : choix enregistré, validé, résultats rapides cohérent
   assert.ok(state.history.some(r=>r.competitionId==='nationale'),'la Nationale a joué en résultats rapides');
   go('import',{text});
 
-  // Changement en cours de partie : prévu pour la saison suivante, puis appliqué.
+  // Changement en cours de partie (Paramètres) : prévu, puis appliqué à la journée suivante.
   model=go('league_detail_set',{detailed:['prem','jlo-d1']});
   assert.deepEqual(model.clubLife.leagueDetail.pending,['elite','prem','jlo-d1']);
-  assert.deepEqual(model.clubLife.leagueDetail.leagues.filter(l=>l.detailed).map(l=>l.id),['elite','urc'],'aucun effet avant la nouvelle saison');
+  assert.deepEqual(model.clubLife.leagueDetail.leagues.filter(l=>l.detailed).map(l=>l.id),['elite','urc'],'aucun effet avant la journée suivante');
   assert.equal(raw('league_detail_set',{detailed:['nulle-part']}).ok,false);
   assert.equal(raw('league_detail_set',{detailed:[],extra:1}).ok,false);
-  run(`(()=>{S.leagueDetail.pending=['elite','prem','jlo-d1'];CDLeagueDetail.applyPending(S);})()`);
-  assert.deepEqual(JSON.parse(run('JSON.stringify(S.leagueDetail)')).detailed,['elite','prem','jlo-d1']);
+  if(model.next){if(!model.selection.valid){go('auto_lineup');if(!go('snapshot').selection.valid)go('promote_cover',{confirmed:true});}go('begin_match');go('delegate');}
+  model=settleClubMeetings(go('finish_round'),go);
+  const applied=JSON.parse(run('JSON.stringify(S.leagueDetail)'));
+  assert.deepEqual([applied.detailed,applied.pending],[['elite','prem','jlo-d1'],null],'appliqué dès la journée suivante');
+  assert.deepEqual(model.clubLife.leagueDetail.leagues.filter(l=>l.detailed).map(l=>l.id),['elite','prem','jlo-d1']);
   // Sauvegardes trafiquées refusées.
   const forged=JSON.parse(text);
   for(const breakage of [s=>{s.leagueDetail.detailed=['inconnu'];},s=>{s.leagueDetail.extra=1;},s=>{s.leagueDetail.detailed=['urc','elite'];},s=>{s.leagueDetail.pending=[];},s=>{s.leagueDetail.salt=-1;},s=>{delete s.leagueDetail.salt;}]){

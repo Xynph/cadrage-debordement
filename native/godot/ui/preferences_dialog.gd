@@ -1,7 +1,9 @@
 extends RefCounted
+const FocusLater := preload("res://ui/focus_later.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const Raccourcis = preload("res://ui/raccourcis_clavier.gd")
 
 static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	for child in app.get_children():
@@ -40,20 +42,28 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var comfort := G.v(9); comfort.name = "Confort"; tabs.add_child(comfort)
 	var sound := G.v(10); sound.name = "Son"; tabs.add_child(sound)
 	var display := G.v(10); display.name = "Affichage"; tabs.add_child(display)
+	var shortcuts := G.v(10); shortcuts.name = "Raccourcis clavier"; tabs.add_child(shortcuts)
 	comfort.add_child(C.label("CAMÉRA ET ACCESSIBILITÉ",20,C.GOLD,true,700))
 	var volume := _volume(comfort,"Volume global","PreferencesVolume")
 	var motion := CheckButton.new()
 	motion.name = "PreferencesMotion"; motion.text = "Mouvement réduit · mode calme"; motion.custom_minimum_size.y = 36
 	comfort.add_child(motion)
 	comfort.add_child(C.wrap("Le mode calme garde une caméra tactique fixe. Les joueurs, les sons et les bulles restent disponibles.",17,C.MUTED))
-	# Carrière Monde : championnats suivis en détail, modifiables pour la saison suivante (comme FM).
+	# Carrière Monde : championnats en détail complet ou en consultation, modifiables en cours
+	# de partie (effet dès la semaine suivante, comme le niveau de détail de FM).
 	var leagues: Variant = app.model.get("clubLife", {}).get("leagueDetail", {})
 	if leagues is Dictionary and bool(leagues.get("available", false)):
 		comfort.add_child(C.label("VITESSE DU MONDE",20,C.GOLD,true,700))
-		var detailed := 0
+		var detail_view := preload("res://ui/league_detail_view.gd")
+		var detailed: Array = []
 		for league: Dictionary in leagues.get("leagues", []):
-			if bool(league.get("detailed", true)): detailed += 1
-		comfort.add_child(C.wrap("%d championnat%s suivi%s en détail, les autres suivis de loin." % [detailed, "s" if detailed > 1 else "", "s" if detailed > 1 else ""],17,C.MUTED))
+			if bool(league.get("next", league.get("detailed", true))): detailed.append(str(league.get("id", "")))
+		comfort.add_child(C.wrap("%d championnat%s en détail complet, les autres en consultation." % [detailed.size(), "s" if detailed.size() > 1 else ""],17,C.MUTED))
+		detail_view.request_benchmark(app)
+		var gauge_box := G.v(4)
+		gauge_box.name = "PreferencesLeagueSpeed"
+		comfort.add_child(gauge_box)
+		detail_view.gauge(gauge_box, app, detailed)
 		var choose := G.button("Championnats suivis…", func():
 			dialog.queue_free()
 			preload("res://ui/league_detail_view.gd").open_career(app))
@@ -95,6 +105,11 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var continue_injuries := _option(continue_row,["Blessures : titulaires","Blessures : tout l’effectif"],"PreferencesContinueInjuries")
 	continue_injuries.tooltip_text = continue_messages.tooltip_text
 	stadium.tooltip_text = "Le réglage s’applique au stade 3D et est conservé pour les prochains matchs."
+	# Même table que le pied de page et l'aide F1 (ui/raccourcis_clavier.gd).
+	var shortcuts_title := C.label("RACCOURCIS CLAVIER",20,C.GOLD,true,700)
+	shortcuts_title.name = "PreferencesShortcuts"
+	shortcuts.add_child(shortcuts_title)
+	shortcuts.add_child(C.wrap("\n".join(Raccourcis.lignes_aide()),17,C.IVORY))
 	var error := C.wrap("",18,C.ALERT)
 	error.name = "PreferencesError"
 	error.max_lines_visible = 3
@@ -186,7 +201,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	refresh.call()
 	# Grands écrans : le dialogue gagne en hauteur pour que l'onglet Affichage tienne entier dans sa zone défilante.
 	Dialogs.show_centered(dialog,Vector2i(width,680 if app.get_window().size.y>=1080 else 600))
-	volume.get_line_edit().call_deferred("grab_focus")
+	FocusLater.grab(volume.get_line_edit())
 	return dialog
 
 static func _volume(parent: Node, caption: String, id: String) -> SpinBox:
