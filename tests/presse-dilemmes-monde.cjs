@@ -97,7 +97,7 @@ const conferenceOuverte = model => model.clubLife?.press?.conference?.available 
 function jusquALaConference(jeu, model, garde = 30) {
   for (let i = 0; i < garde; i++) {
     if (conferenceOuverte(model)) return model;
-    if (model.clubLife?.clubMeetings?.scene) model = jeu.regler(model);
+    if (model.clubLife?.clubMeetings?.scene || model.clubLife?.reprise?.due?.length) model = jeu.regler(model);
     if (conferenceOuverte(model)) return model;
     model = jeu.call('advance_until_event', { fromDate: model.meta.calendarToday, stops: { messages: 'aucun', ignorer: FACULTATIFS } });
     if (model.meta.advanceUntilEvent?.stop?.kind === 'match') model = M.jouerLeMatch(jeu, model);
