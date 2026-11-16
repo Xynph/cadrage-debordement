@@ -458,7 +458,7 @@ function createBridge(options={}){
   // complète) y est calculé une seule fois puis partagé. Hors projection, chaque appel
   // recalcule comme avant. CD_ENGINE_MEMO=0 coupe ce partage (contrôle d'identité).
   const projectionMemo=process.env.CD_ENGINE_MEMO!=='0';
-  if(projectionMemo)run(`{const original=matchDossier;let active=false,cached;globalThis.nativeProjectionMemo=on=>{active=on;cached=undefined;};globalThis.nativeProjectionMemoBypass=fn=>{const was=active;active=false;try{return fn();}finally{active=was;}};matchDossier=function(){if(!active)return original();if(cached===undefined)cached=original();return cached;};}`);
+  if(projectionMemo)run(`{const original=matchDossier;let active=false,cached;let serial=0;globalThis.nativeProjectionMemo=on=>{active=on;cached=undefined;if(on)serial++;};globalThis.nativeProjectionActive=()=>active?serial:0;globalThis.nativeProjectionMemoBypass=fn=>{const was=active;active=false;try{return fn();}finally{active=was;}};matchDossier=function(){if(!active)return original();if(cached===undefined)cached=original();return cached;};}`);
   // Vie du club avec la mémoire par domaine ; si la mémoire elle-même échoue (hors vérification), calcul complet comme
   // avant : une réponse n'est jamais perdue à cause d'elle.
   const projectClubLife=()=>{
