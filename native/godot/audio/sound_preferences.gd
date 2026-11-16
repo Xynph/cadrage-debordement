@@ -3,7 +3,8 @@ extends RefCounted
 signal changed
 signal error_changed(message: String)
 const Atomic = preload("res://atomic_file.gd")
-const DEFAULTS := {"version": 1, "interface_volume": 35, "stadium_volume": 25}
+const DEFAULTS := {"version": 1, "interface_volume": 35, "stadium_volume": 25, "music_volume": 30}
+## Canaux : Interface = effets, Stade = ambiance de foule, Musique = musique douce du Bureau et des menus.
 const MAX_BYTES := 4096
 var data: Dictionary = DEFAULTS.duplicate(true)
 var last_error := ""
@@ -16,6 +17,10 @@ func _fail(message: String) -> bool:
 	return false
 
 func _validated(candidate: Variant) -> Dictionary:
+	# Un fichier d'avant la musique n'a pas « music_volume » : valeur par défaut, sans refus.
+	if candidate is Dictionary and candidate.size() == DEFAULTS.size() - 1 and not candidate.has("music_volume"):
+		candidate = candidate.duplicate()
+		candidate["music_volume"] = DEFAULTS.music_volume
 	if not candidate is Dictionary or candidate.size() != DEFAULTS.size():
 		_fail("Réglages sonores refusés : champs absents ou inconnus. Original conservé.")
 		return {}
@@ -30,7 +35,7 @@ func _validated(candidate: Variant) -> Dictionary:
 		if (key == "version" and value != 1) or (key != "version" and (value < 0 or value > 100)):
 			_fail("Version sonore inconnue ou volume hors de 0 à 100. Original conservé.")
 			return {}
-	return {"version": 1, "interface_volume": int(candidate.interface_volume), "stadium_volume": int(candidate.stadium_volume)}
+	return {"version": 1, "interface_volume": int(candidate.interface_volume), "stadium_volume": int(candidate.stadium_volume), "music_volume": int(candidate.music_volume)}
 
 func load_profile(directory: String) -> bool:
 	_available = false
@@ -72,7 +77,7 @@ func get_value(key: String) -> int:
 func set_value(key: String, value: Variant) -> bool:
 	if not _available:
 		return _fail(last_error if not last_error.is_empty() else "Réglages sonores non chargés : aucun dossier de repli.")
-	if key not in ["interface_volume", "stadium_volume"]:
+	if key not in ["interface_volume", "stadium_volume", "music_volume"]:
 		return _fail("Réglage sonore inconnu : « %s »." % key)
 	var next := data.duplicate(true)
 	next[key] = value
