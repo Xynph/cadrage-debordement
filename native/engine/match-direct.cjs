@@ -10,6 +10,7 @@ const choregraphe=require('./match-choregraphe.cjs');
 const notesMatch=require('./match-notes.cjs');
 const feuilleStats=require('./match-stats.cjs');
 const pourquoi=require('./match-pourquoi.cjs');
+const {zone22}=require('./match-zone22.cjs');
 
 const NIVEAUX=Object.freeze(Object.keys(selection.NIVEAUX));
 const LIBELLES=Object.freeze({aucun:'Commentaire seul',resume:'Résumé',cles:'Temps forts clés',etendus:'Temps forts étendus',dynamique:'Dynamique',integral:'Match complet'});
@@ -356,7 +357,9 @@ function project(model,niveau,lire,options={}){
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
   fil,traces,reperes,chiffres,elan,echantillon:{minutes:minuteVue,suffisant:!court,seuil:ECHANTILLON_MINUTES},cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
   borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],
-  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1,contexteNotes),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel,contexteNotes),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
+  tableau,domination:domination(vues),
+  // Entrées dans les 22 adverses, points et secondes qui en découlent (faits montrés seulement).
+  zone22:zone22(vues),notes:notesDuMatch(vues,events,etat.camp??-1,contexteNotes),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel,contexteNotes),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null,hommeDuMatch:null};
  // Homme du match (résumé d'après-match) : désigné quand tout le journal a été montré, par le
  // calcul de la note enregistrée (match-notes.cjs).
