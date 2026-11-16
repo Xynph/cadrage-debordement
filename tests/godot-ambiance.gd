@@ -52,6 +52,10 @@ func run_capture() -> void:
 		var match_sounds := dialog.find_child("PreferencesMatchSounds", true, false) as CheckBox
 		check(match_sounds != null or dialog.find_child("PreferencesInterfaceVolume", true, false) != null, "Réglages sonores présents")
 		await capture("parametres-audio")
+		tabs.current_tab = tabs.get_tab_count() - 1
+		await settle(12)
+		check(dialog.find_child("PreferencesShortcuts", true, false) != null, "Onglet Raccourcis clavier présent")
+		await capture("parametres-raccourcis")
 	print("AMBIANCE CAPTURES : %d vérifications, %d échec(s)" % [checks, failures.size()])
 	app.closing = true
 	app.bridge.stop()
