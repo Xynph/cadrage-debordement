@@ -24,7 +24,6 @@ func run() -> void:
 	check(FileAccess.file_exists(IMPORT), "Réglage d'import du ballon versionné")
 	var reglage := FileAccess.get_file_as_string(IMPORT)
 	check(reglage.contains("gltf/embedded_image_handling=3"), "Texture du ballon embarquée dans le glb")
-	print("CD_IMPORT_BEGIN\n", reglage, "CD_IMPORT_END")
 	var scene := load(BALL) as PackedScene
 	if not check(scene != null, "ballon.glb importé"):
 		finish()
