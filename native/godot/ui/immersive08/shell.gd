@@ -323,8 +323,9 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		action.add_theme_font_override("font",C.DISPLAY);action.add_theme_font_size_override("font_size",maxi(12,C.px(23)));action.add_theme_color_override("font_color",C.MUTED)
 		var symbol:=C.icon(["flag","settings","save"][i],24,C.MUTED);dock.add_child(symbol);D.place(symbol,Rect2(23,y+10,24,24))
 	D.rect(dock,Rect2(0,220,247,75),Color("0b1614"))
-	D.rect(dock,Rect2(21,245,8,8),C.ALERT if app._status_has_error() else C.MINT,4)
-	D.text(dock,39,255,"Stockage à vérifier" if app._status_has_error() else "Sauvegarde automatique",17,C.MUTED,500,198)
+	var storage_error: bool = app._storage_has_error() if app.has_method("_storage_has_error") else app._status_has_error()
+	D.rect(dock,Rect2(21,245,8,8),C.ALERT if storage_error else C.MINT,4)
+	D.text(dock,39,255,"Stockage à vérifier" if storage_error else "Sauvegarde automatique",17,C.MUTED,500,198)
 	var profile := "Sélection nationale" if national else G.club_abbr(app.model.club)+" · Carrière principale"
 	D.text(dock,24,281,profile,17,C.FAINT,500,210)
 

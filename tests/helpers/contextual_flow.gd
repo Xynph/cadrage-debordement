@@ -16,8 +16,15 @@ static func skip_talk(app: Control, tree: SceneTree, expected_phase: String, che
 # Call only at a declared setup/advance boundary, after assertions about the
 # meeting under test. The bundled QA helper uses the actual public worker API.
 static func settle_club_meetings(app: Control, tree: SceneTree, check: Callable, stop_before_kind: String = "") -> bool:
+	# Rendez-vous du club d'abord : tant que l'un d'eux attend (conférence de presse d'arrivée d'une carrière
+	# démarrée à la reprise du club), le moteur refuse aussi `reprise_decide` (recette native du 16/11/2026).
+	var Runner = preload("res://qa_runner.gd")
+	if not await Runner.settle_club_meetings(app, tree, check, stop_before_kind): return false
+	if app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene") is Dictionary: return true
+	var due: Variant = app.model.get("clubLife", {}).get("reprise", {}).get("due", [])
+	var decided: bool = due is Array and not due.is_empty()
 	if not await settle_reprise_decisions(app, tree, check): return false
-	return await preload("res://qa_runner.gd").settle_club_meetings(app, tree, check, stop_before_kind)
+	return await Runner.settle_club_meetings(app, tree, check, stop_before_kind) if decided else true
 
 # « Doit répondre » de la pré-saison (reprise.cjs, clubLife.reprise.due) : « Continuer » ne repart pas sans réponse.
 # Les suites qui ne testent pas ces décisions les confient à Gabi par la commande publique et referment
