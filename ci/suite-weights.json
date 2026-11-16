@@ -177,7 +177,8 @@
       "tests/native-stats-melees.cjs": 35,
       "tests/player-population.cjs": 2,
       "tests/press-regional-world.cjs": 140,
-      "tests/reactivite-projection.cjs": 300,
+      "tests/reactivite-projection-verification.cjs": 170,
+      "tests/reactivite-projection-rapide.cjs": 130,
       "tests/salary-floor-resume.cjs": 22,
       "tests/sauvegarde-idempotente.cjs": 233,
       "tests/sauvegarde-journal-monde.cjs": 180,
@@ -302,7 +303,9 @@
       "tests/world-domestic-venues.cjs": 1344,
       "tests/youth-matches-worker.cjs": 2048,
       "tests/youth-matches.cjs": 1880,
-      "tests/world-rating-scale.cjs": 1900
+      "tests/world-rating-scale.cjs": 1900,
+      "tests/reactivite-projection-verification.cjs": 2370,
+      "tests/reactivite-projection-rapide.cjs": 2370
     }
   }
 }
