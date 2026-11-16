@@ -819,10 +819,27 @@ func _settled_status_text() -> String:
 	if user_preferences != null and not user_preferences.last_error.is_empty(): return "RÉGLAGES LOCAUX · " + user_preferences.last_error
 	if is_instance_valid(soundscape) and not soundscape.last_error.is_empty(): return "RÉGLAGES SONORES · " + soundscape.last_error
 	if decision_feedback != null and not decision_feedback.status_text().is_empty(): return decision_feedback.status_text()
-	return "Sauvegarde automatique · Profil de carrière indépendant"
+	return _autosave_status()
+
+## Ligne d'état de la sauvegarde (meta.autosave, native/engine/action-journal.cjs) : fréquence choisie, date de la
+## dernière sauvegarde complète, reprise du journal d'actions après un arrêt imprévu.
+func _autosave_status() -> String:
+	var info: Variant = model.get("meta",{}).get("autosave")
+	if not info is Dictionary: return "Sauvegarde automatique · Profil de carrière indépendant"
+	var notice: Variant = info.get("notice")
+	if notice is Dictionary and not str(notice.get("text","")).is_empty():
+		return ("JOURNAL DE SAUVEGARDE · " if bool(notice.get("alert",false)) else "Sauvegarde automatique · ") + str(notice.text)
+	var text := "Sauvegarde automatique · " + str({"jour":"chaque jour","semaine":"chaque semaine","mois":"chaque mois"}.get(str(info.get("policy","")),"profil indépendant"))
+	var last := str(info.get("lastSave",""))
+	if last.length() == 10: text += " · dernière le %s/%s" % [last.substr(8,2), last.substr(5,2)]
+	return text
+
+func _autosave_alert() -> bool:
+	var info: Variant = model.get("meta",{}).get("autosave")
+	return info is Dictionary and info.get("notice") is Dictionary and bool(info.notice.get("alert",false))
 
 func _status_has_error() -> bool:
-	return not last_error.is_empty() or model.get("meta",{}).get("saveError",false) or (user_preferences != null and not user_preferences.last_error.is_empty()) or (is_instance_valid(soundscape) and not soundscape.last_error.is_empty())
+	return not last_error.is_empty() or model.get("meta",{}).get("saveError",false) or _autosave_alert() or (user_preferences != null and not user_preferences.last_error.is_empty()) or (is_instance_valid(soundscape) and not soundscape.last_error.is_empty())
 
 func _apply_user_preferences() -> void:
 	if user_preferences == null: return

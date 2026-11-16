@@ -179,6 +179,7 @@
       "tests/press-regional-world.cjs": 140,
       "tests/salary-floor-resume.cjs": 22,
       "tests/sauvegarde-idempotente.cjs": 233,
+      "tests/sauvegarde-journal-monde.cjs": 180,
       "tests/save-copy-fast-paths.cjs": 60,
       "tests/save-sections-incremental.cjs": 64,
       "tests/season-label.cjs": 9,
