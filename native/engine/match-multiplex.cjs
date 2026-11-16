@@ -18,7 +18,9 @@
 const files=Object.freeze([]),commands=Object.freeze([]);
 
 function factory(){
- let enabled=true,cache=null;
+ // `preparing` : déroulé anticipé en cours sur la copie de la carrière (les fonctions du moteur appelées
+ // pendant ce temps travaillent sur la copie ; un observateur des effets réels doit les ignorer).
+ let enabled=true,cache=null,preparing=false;
  const counters={prepared:0,consumed:0,divergences:0};
  const world=s=>!!s&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s)&&!!s.worldMode;
  const copy=x=>typeof nativeJsonCopy==='function'?nativeJsonCopy(x):JSON.parse(JSON.stringify(x));
@@ -85,7 +87,7 @@ function factory(){
   const key=keyOf(s,own);
   if(cache?.key===key)return cache;
   const list=others(s,own),matchs=new Map(),real=s,shadow=copy(real);
-  S=shadow;
+  S=shadow;preparing=true;
   try{
    const W=CDWorldCareer.multiplex(shadow);
    for(const f of list){
@@ -93,7 +95,7 @@ function factory(){
     const result=withStream(seed,()=>W.simulate(f,rec.step));
     matchs.set(f.id,{fixture:copy(f),result,timeline:rec.done(result,seed)});
    }
-  }finally{S=real;}
+  }finally{S=real;preparing=false;}
   counters.prepared++;
   cache={key,ownId:own.id,competitionId:own.competitionId,phase:own.phase,matchs};
   return cache;
@@ -143,7 +145,7 @@ function factory(){
  }
  return {
   project(){return null;},validate(){return true;},execute(){throw Error('Multiplex : aucune commande.');},installHooks(){return true;},
-  prepare,official,journee,
+  prepare,official,journee,preparing(){return preparing;},
   // Essais et mesures : interrupteur (référence « sans multiplex ») et compteurs.
   setEnabled(value){if(typeof value!=='boolean')throw Error('Multiplex : drapeau invalide.');enabled=value;if(!value)cache=null;},
   counters(){return {...counters,cached:cache?cache.matchs.size:0};}
