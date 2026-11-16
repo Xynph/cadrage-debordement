@@ -1,0 +1,3 @@
+{
+  "expression": "scene._command(\"new_career\", {\"mode\":\"world-champ\", \"club\":0})\nreturn \"Création Monde demandée\""
+}
