@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Exécute, sur un runner GitHub, les phases demandées par .github/workflows/a-la-demande.yml.
 # Usage (variables d'environnement) : CD_EL_SUITES="a b" CD_EL_CAPTURES=true|false CD_EL_MESURES=true|false
+#   CD_EL_PHASES="comparateur audio" (facultatif : ne lance que les phases de captures et de mesures dont
+#   le nom contient l'un de ces mots, sans tenir compte de la casse) ; CD_EL_PHASE_MIN (défaut 40) :
+#   durée maximale d'une phase en minutes, pour qu'un blocage laisse un diagnostic au lieu de tout perdre.
 #   bash ci/en-ligne-run.sh <dossier-de-sortie>
 # À lancer sous xvfb, avec CD_GODOT_EXECUTABLE défini. Écrit resume.md, echecs.txt et les journaux
 # dans le dossier de sortie ; sort en erreur si une phase échoue. Mode Monde uniquement.
@@ -14,13 +17,24 @@ failed=0
 : > "$out/echecs.txt"
 { echo "## Tests en ligne : ${GITHUB_REF_NAME:-?} @ $(git rev-parse --short HEAD)"; echo; } > "$out/resume.md"
 
+# voulue <nom> : vrai si CD_EL_PHASES est vide ou si le nom contient l'un de ses mots.
+voulue() {
+  [[ -z "${CD_EL_PHASES// /}" ]] && return 0
+  local n="${1,,}" w
+  for w in $CD_EL_PHASES; do [[ "$n" == *"${w,,}"* ]] && return 0; done
+  return 1
+}
+
 phase() { # phase <nom> <journal> <commande...>
   local name="$1" log="$out/$2"; shift 2
+  voulue "$name" || { echo "- IGNOREE (hors --phases) : $name" >> "$out/resume.md"; return 0; }
   local t=$SECONDS
-  "$@" > "$log" 2>&1; local code=$?
+  timeout --kill-after=30s "${CD_EL_PHASE_MIN:-40}m" "$@" > "$log" 2>&1; local code=$?
+  [[ $code -eq 124 ]] && echo "ARRET : phase interrompue après ${CD_EL_PHASE_MIN:-40} min" >> "$log"
   if [[ $code -eq 0 ]]; then echo "- OK : $name ($((SECONDS-t)) s)" >> "$out/resume.md"
   else
     failed=1; echo "- ECHEC ($code) : $name ($((SECONDS-t)) s), journal $2" >> "$out/resume.md"
+    echo "$2" >> "$out/journaux-echec.txt"
     { echo "== $name (code $code)"; grep -E 'FAIL|ECHEC|Error|ERROR|not ok' "$log" | head -15; } >> "$out/echecs.txt"
   fi
 }

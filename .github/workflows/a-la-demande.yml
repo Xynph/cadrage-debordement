@@ -6,6 +6,11 @@ name: Tests en ligne à la demande
 # Déclencheur de secours (quand le dispatch par l'API est refusé) : un push sur une branche
 # `en-ligne/**` ; les paramètres sont lus dans ci/en-ligne.json (ref, suites, captures, mesures)
 # et le code testé est celui de la branche poussée. ci/en-ligne.sh s'en charge.
+#
+# Lisibilité depuis une machine qui ne peut pas télécharger les artefacts (proxy) : le résumé, les
+# échecs et la fin des journaux de phase en échec sont écrits dans le journal du job (groupes), et
+# PNG + résumé + échecs sont publiés sur la branche resultats-en-ligne/<run_id> (commit orphelin,
+# les 5 plus récentes sont gardées ; ci/en-ligne.sh la récupère par git puis la supprime).
 on:
   push:
     branches: ['en-ligne/**']
@@ -31,6 +36,11 @@ on:
         type: boolean
         required: false
         default: false
+      phases:
+        description: 'Ne lancer que les phases de captures/mesures dont le nom contient un de ces mots (ex. "comparateur audio") ; vide = toutes'
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -44,7 +54,10 @@ jobs:
   en-ligne:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    permissions:
+      contents: write # seulement pour publier la branche resultats-en-ligne/<run_id>
     env:
+      CD_EL_PHASES: ${{ inputs.phases }}
       CD_EL_SUITES: ${{ inputs.suites }}
       CD_EL_CAPTURES: ${{ inputs.captures }}
       CD_EL_MESURES: ${{ inputs.mesures }}
@@ -69,7 +82,8 @@ jobs:
             const out = [
               "CD_EL_SUITES=" + String(c.suites || "").replace(/[^A-Za-z0-9._ \/-]/g, ""),
               "CD_EL_CAPTURES=" + (c.captures === true),
-              "CD_EL_MESURES=" + (c.mesures === true)
+              "CD_EL_MESURES=" + (c.mesures === true),
+              "CD_EL_PHASES=" + String(c.phases || "").replace(/[\\"'`$]/g, "")
             ].join("\n") + "\n";
             require("fs").appendFileSync(process.env.GITHUB_ENV, out);
           '
@@ -135,7 +149,10 @@ jobs:
             exit 1
           fi
       - name: Exécuter suites, captures et mesures demandées
+        id: executer
         shell: bash
+        # Plus court que le job : si une phase se bloque, les étapes suivantes (always) restent exécutées.
+        timeout-minutes: 80
         env:
           SDL_AUDIODRIVER: dummy
           LIBGL_ALWAYS_SOFTWARE: '1'
@@ -145,6 +162,57 @@ jobs:
           code=$?
           [[ -f "$RUNNER_TEMP/resultats/resume.md" ]] && cat "$RUNNER_TEMP/resultats/resume.md" >> "$GITHUB_STEP_SUMMARY"
           exit $code
+      - name: Afficher résumé, échecs et fin des journaux dans le journal du job
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          r="$RUNNER_TEMP/resultats"
+          echo "::group::resume.md"; cat "$r/resume.md" 2>/dev/null || echo "(absent : arrêt avant ou pendant la première phase)"; echo "::endgroup::"
+          echo "::group::echecs.txt"; cat "$r/echecs.txt" 2>/dev/null || echo "(aucun échec relevé)"; echo "::endgroup::"
+          if [[ -s "$r/journaux-echec.txt" ]]; then
+            while read -r j; do
+              echo "::group::fin de $j (80 dernières lignes)"; tail -n 80 "$r/$j"; echo "::endgroup::"
+            done < "$r/journaux-echec.txt"
+          fi
+          # Étape interrompue (délai, annulation) en pleine phase : son journal n'est pas dans la liste.
+          if [[ "${{ steps.executer.outcome }}" != success ]]; then
+            dernier="$(ls -t "$r"/*.log 2>/dev/null | head -1)"
+            [[ -n "$dernier" ]] && { echo "::group::dernier journal écrit : $(basename "$dernier") (80 dernières lignes)"; tail -n 80 "$dernier"; echo "::endgroup::"; }
+          fi
+          echo "::group::PNG produits"; find "$r" -name '*.png' -printf '%s %P\n' 2>/dev/null | sort -k2 || true; echo "::endgroup::"
+      - name: Publier PNG, résumé et échecs sur la branche resultats-en-ligne/<run_id>
+        if: ${{ always() }}
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          r="$RUNNER_TEMP/resultats"; [[ -d "$r" ]] || { echo "Rien à publier."; exit 0; }
+          max=$((40 * 1024 * 1024)); total=0
+          pub="$RUNNER_TEMP/publication"; rm -rf "$pub"; mkdir -p "$pub"
+          for f in resume.md echecs.txt; do [[ -f "$r/$f" ]] && cp "$r/$f" "$pub/"; done
+          # Fin des journaux en échec (utile même si le job est illisible).
+          if [[ -s "$r/journaux-echec.txt" ]]; then
+            mkdir -p "$pub/journaux"
+            while read -r j; do tail -n 200 "$r/$j" > "$pub/journaux/$j"; done < "$r/journaux-echec.txt"
+          fi
+          while IFS= read -r -d '' f; do
+            rel="${f#"$r"/}"; sz=$(stat -c %s "$f")
+            if (( total + sz > max )); then echo "Limite de taille atteinte : $rel ignoré"; echo "ignoré (limite 40 Mo) : $rel" >> "$pub/ignores.txt"; continue; fi
+            total=$((total + sz)); mkdir -p "$pub/$(dirname "$rel")"; cp "$f" "$pub/$rel"
+          done < <(find "$r" -name '*.png' -print0 | sort -z)
+          cd "$pub"
+          git init -q -b resultats && git add -A
+          git -c user.name=en-ligne -c user.email=en-ligne@users.noreply.github.com commit -q -m "resultats en ligne ${{ github.run_id }}" || { echo "Rien à publier."; exit 0; }
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          url="https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="$auth" push -q "$url" "HEAD:refs/heads/resultats-en-ligne/${{ github.run_id }}" \
+            && echo "Publié : resultats-en-ligne/${{ github.run_id }} ($total octets de PNG)"
+          # Ménage : ne garder que les 5 branches de résultats les plus récentes (identifiants croissants).
+          git -c http.extraheader="$auth" ls-remote --heads "$url" 'refs/heads/resultats-en-ligne/*' \
+            | sed 's|.*refs/heads/resultats-en-ligne/||' | sort -n | head -n -5 \
+            | while read -r old; do git -c http.extraheader="$auth" push -q "$url" --delete "resultats-en-ligne/$old" && echo "Ancienne branche supprimée : $old"; done
       - name: Publier les résultats
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
