@@ -107,7 +107,7 @@ test('a closed club season retains the international date at the next opening af
  const reopened = bridge({ date: '2028-07-16', opening: '2028-07-18', phase: 'ended', profile: saved });
  assert.deepEqual(reopened.read(), saved);
  assert.equal(reopened.project().meta.calendarToday, '2028-07-18');
- assert.throws(() => reopened.advance(), /Commencez la saison suivante/);
+ assert.throws(() => reopened.advance(), /Commence la saison suivante/);
 });
 
 // Décision de Léo (16/11/2026) : un seul courrier par vague de convocations, toutes sélections confondues.
