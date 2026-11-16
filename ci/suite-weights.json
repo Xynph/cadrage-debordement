@@ -179,7 +179,7 @@
       "tests/press-regional-world.cjs": 140,
       "tests/reactivite-projection-verification.cjs": 170,
       "tests/reactivite-projection-rapide.cjs": 130,
-      "tests/reactivite-projection-decisions.cjs": 100,
+      "tests/reactivite-projection-decisions.cjs": 130,
       "tests/salary-floor-resume.cjs": 22,
       "tests/sauvegarde-idempotente.cjs": 233,
       "tests/sauvegarde-journal-monde.cjs": 70,

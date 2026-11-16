@@ -507,7 +507,8 @@ function createBridge(options={}){
   // Décisions du manager (decisions.cjs) : fonction de la carrière seule, reprises tant que les parties lues n'ont pas
   // changé (relevé fin, state-versions.cjs). Le dossier d'avant-match, partagé pendant une projection, est recalculé
   // dans le relevé pour que ses lectures y soient notées. En vérification, recalculées et comparées.
-  const DECISIONS_MEMO=projectionMemo?'nativeStateVersions.memoText("decisions",()=>nativeProjectionMemoBypass(()=>nativeDecisions()))':'nativeStateVersions.memoText("decisions",()=>nativeDecisions())';
+  // Mémoire périmée : calcul direct, relevé fait après la réponse (flushStep, warmPending).
+  const DECISIONS_MEMO=projectionMemo?'nativeStateVersions.memoTextLater("decisions",()=>nativeProjectionMemoBypass(()=>nativeDecisions()))':'nativeStateVersions.memoTextLater("decisions",()=>nativeDecisions())';
   // Décisions par sections (clé de premier niveau de decisions) : chacune est reprise telle que présentée à la réponse
   // précédente quand son texte brut et les réglages globaux sont les mêmes (projection-sections.cjs) ; les rapports
   // d'observation, joints à `recruitment`, font partie de son entrée. Pendant le direct, `development` garde sa
@@ -515,6 +516,7 @@ function createBridge(options={}){
   if(sectionsOn)run(`globalThis.nativeDecisionParts=(()=>{let last,parts=null;return text=>{if(text!==last){const d=JSON.parse(text);parts=d&&typeof d==='object'&&!Array.isArray(d)?Object.keys(d).map(k=>[k,JSON.stringify(d[k])]).filter(x=>x[1]!==undefined):d===null?null:[[null,text]];last=text;}return parts;};})();`);
   const projectDecisionSections=()=>{
    const parts=run('nativeDecisionParts('+DECISIONS_MEMO+')');
+   if(!warmPending&&run('nativeStateVersions.hasLater()'))warmPending=true;
    if(parts===null)return null;
    if(parts.length===1&&parts[0][0]===null)return JSON.parse(parts[0][1]);
    const out={};
@@ -730,7 +732,10 @@ function createBridge(options={}){
   const COALESCING=new Set([...PRESS_PROGRESSION,'save','advance_until_event']);
   // Lectures pures (aucune écriture de la carrière) : elles gardent le texte des sections de la projection précédente.
   const READ_ONLY=new Set(['snapshot','club_sheet','epcr_preview','competition_editor_preview']);
-  let pendingCommit=null,pendingFailure=null,coalescing=null,undoPending=false;
+  let pendingCommit=null,pendingFailure=null,coalescing=null,undoPending=false,warmPending=false;
+  // Relevés différés de la mémoire de projection (state-versions.cjs, memoTextLater) : faits après la réponse, en
+  // dernière étape de l'écriture différée ; abandonnés si une commande arrive avant.
+  const dropWarm=()=>{if(warmPending){warmPending=false;run('nativeStateVersions.dropLater()');}};
   const restorePrior=prior=>{
    stateEpoch++;
    seed=prior.seed;clock=prior.clock;store=copyStore(prior.store);ctx.nativePrior=prior.state();cleanSave=prior.fromSave?prior.text:null;projectionCache.clear();
@@ -745,7 +750,9 @@ function createBridge(options={}){
   function flushStep(){
    // Journal et projection par sections : copie d'annulation de la dernière décision (texte de la carrière), faite
    // après la réponse plutôt qu'avant.
-   if(!pendingCommit&&undoPending){undoPending=false;if(run('!!S')){run('nativeSaveCurrent()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;}return true;}
+   if(!pendingCommit&&undoPending){undoPending=false;if(run('!!S')){run('nativeSaveCurrent()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;}return !warmPending;}
+   // Relevés différés (rien à écrire) : un échec ne coûte que la reprise de la mémoire, jamais la réponse ni l'écriture.
+   if(!pendingCommit&&warmPending){warmPending=false;try{run('nativeStateVersions.warm()');}catch(error){run('nativeStateVersions.dropLater()');if(verifyProjection)throw error;}return true;}
    const pending=pendingCommit;if(!pending)return true;
    try{
     if(pending.stage===0){run(memoDomains?'nativeSaveCurrent();':'save();');pending.stage=1;return false;}
@@ -754,7 +761,7 @@ function createBridge(options={}){
     if(pending.tick&&committedFiles&&seed===pending.prior.seed&&sameStore(store,pending.prior.store)&&profileFilesVersion()===committedFiles)clock=pending.prior.clock;
     else persist();
     cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
-    return true;
+    return !warmPending;
    }catch(error){
     pendingCommit=null;
     const failure=Error('Votre dernière décision n’a pas pu être enregistrée ; elle est annulée et cette nouvelle action n’a pas été appliquée. '+error.message);failure.command=pending.command;failure.storageFailure=true;
@@ -787,6 +794,7 @@ function createBridge(options={}){
   }
   // `replay` : ligne du journal rejouée au chargement (horloge et graine enregistrées, ni projection ni écriture).
   function handleCommand(request,light=false,replay=null){
+   dropWarm();
    let id=null;const epochBefore=stateEpoch;
    try{
     if(!request||typeof request!=='object'||Array.isArray(request))throw Error('Message JSON invalide.');
@@ -1254,6 +1262,8 @@ function createBridge(options={}){
    return finishAdvance(id,current,stop);
   }
   function handle(request){
+   // Relevés différés non faits avant cette commande : abandonnés (la mémoire concernée sera recalculée directement).
+   dropWarm();
    // « Continuer » interrompu par une autre commande : les jours déjà passés sont écrits d'abord.
    if(advanceSession&&request?.command!=='advance_until_event'){
     const session=advanceSession;advanceSession=null;
@@ -1284,7 +1294,7 @@ function createBridge(options={}){
    }finally{if(coalescing&&pendingCommit===coalescing)coalescing.stage=0;coalescing=null;lastFlushMs=0;allowProjectionCache=false;if(!reading)projectionCache.clear();}
   }
   // Écriture de la décision en attente (boucle stdio : dès que la réponse est partie). Renvoie la durée en ms.
-  const flush=()=>{if(!pendingCommit&&!undoPending)return 0;const started=performance.now();flushCommit();return performance.now()-started;};
+  const flush=()=>{if(!pendingCommit&&!undoPending&&!warmPending)return 0;const started=performance.now();flushCommit();return performance.now()-started;};
   const pending=()=>pendingCommit?pendingCommit.command:null;
   // Une étape de l'écriture en attente (boucle stdio) : vrai quand il ne reste rien à écrire.
   const flushNext=()=>flushStep();

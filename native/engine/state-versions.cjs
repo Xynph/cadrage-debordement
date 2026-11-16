@@ -78,7 +78,7 @@ const playersUntouched = (command, payload) => PLAYERS_STABLE.has(command) || un
 const SOURCE = `const nativeStateVersions=(()=>{
  const HEAVY=new Set(${JSON.stringify(HEAVY)});
  let state=null,counter=0,current=new Map();const texts=new Map(),versions=new Map(),dirty=new Set(),partsOf=new Map();
- let verifying=false;const memos=new Map(),computed=Object.create(null);
+ let verifying=false;const memos=new Map(),computed=Object.create(null),later=new Map();
  const plain=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
  const isIndex=k=>typeof k==='string'&&/^(0|[1-9][0-9]*)$/.test(k);
  // Club du manager isolable dans la section des clubs (sinon null : jeton unique pour la section).
@@ -296,11 +296,34 @@ const SOURCE = `const nativeStateVersions=(()=>{
    memos.set(name,{text,all:t.all(),deps:[...t.read].map(k=>[k,current.get(k)])});
    return text;
   },
+  // Comme memoText, sans relevé au calcul : sur une mémoire périmée, calcul direct (sans mandataires, environ deux fois
+  // plus rapide) et relevé différé, fait par warm() après la réponse si la carrière n'a pas bougé entre-temps. En
+  // vérification, relevé immédiat (memoText).
+  memoTextLater(name,compute){
+   const hit=memos.get(name);
+   if(verifying||hit&&!hit.all&&hit.deps.every(([k,v])=>current.get(k)===v))return this.memoText(name,compute);
+   computed[name]=(computed[name]||0)+1;
+   const text=JSON.stringify(compute(S));
+   later.set(name,{compute,state:S,current,text});
+   return text;
+  },
+  // Relevés différés (après la réponse) : seulement sur la même carrière et les mêmes versions qu'au calcul direct,
+  // sinon abandonnés. Le texte relevé doit être celui du calcul direct.
+  warm(){
+   for(const [name,w] of later){
+    later.delete(name);
+    if(w.state!==S||w.current!==current||!S)continue;
+    memos.delete(name);
+    if(this.memoText(name,w.compute)!==w.text){memos.delete(name);throw Error('Mémoire de projection : relevé différé différent du calcul direct ('+name+').');}
+   }
+  },
+  dropLater(){later.clear();},
+  hasLater(){return later.size>0;},
   // Sections lourdes modifiées sans être relues (direct du match) : relues à la prochaine projection complète.
   markDirty(keys){for(const key of keys)dirty.add(key);},
   // Carrière rétablie à l'identique (commande refusée, état relu depuis son texte d'avant) : les textes connus la décrivent.
   adopt(){if(S)state=S;},
-  reset(){state=null;memos.clear();partMemos.clear();texts.clear();versions.clear();dirty.clear();partsOf.clear();current=new Map();}
+  reset(){state=null;memos.clear();later.clear();partMemos.clear();texts.clear();versions.clear();dirty.clear();partsOf.clear();current=new Map();}
  };
 })();`;
 
