@@ -31,7 +31,7 @@ func run() -> void:
 		check(texture.get_size()==Vector2(256,256) and actual_image.get_data()==expected.get_data(),"Crop exact de la cellule cataloguée : "+str(item.base.id))
 		check(Portrait.material(item.person)!=null,"Variation locale réellement disponible")
 	var cache := Portrait.cache_info()
-	check(cache.textures<=48 and cache.materials<=128,"Caches bornés après200bases")
+	check(cache.textures<=Portrait.MAX_TEXTURES and cache.materials<=Portrait.MAX_MATERIALS,"Caches bornés après200bases")
 	if OS.get_environment("CD_REGEN_BANK_GRAPHICS")=="1":
 		for kind in ["player","staff"]:await contact_sheet(fixtures,kind)
 	print(JSON.stringify({"checks":checks,"failures":failures}))

@@ -7,6 +7,9 @@ const U = preload("res://ui/management_state.gd")
 const POTENTIAL_COLOR := Color("ffb454")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 29
+const FIRST_ROWS := 26
+const ROWS_PER_FRAME := 18
+const VISIBLE_MARGIN := 6
 const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Notes = preload("res://ui/notes_match.gd")
 var app: Control
@@ -17,6 +20,8 @@ var count: Label
 var compare: Button
 var selected_summary: Label
 var sort_headers: Dictionary = {}
+var _generation := 0
+var _group := ""
 
 static func build(owner_app: Control) -> Control:
 	var page: Control = load("res://ui/immersive08/squad_canvas.gd").new()
@@ -307,22 +312,19 @@ func _refresh(reveal: bool) -> void:
 	state.visible_player=app.selected_player
 	count.text="%d / %d joueurs · liste complète" % [players.size(),app.model.get("squad",[]).size()]
 	compare.text="Comparer (%d/2)" % app.management_ui.compare.size()
-	var family := ""
-	var visible := players
-	for i in visible.size():
-		var player:Dictionary=visible[i]
-		var group := "AVANTS" if float(player.get("fam",0))<=3 else "ARRIÈRES"
-		if state.sort=="Poste" and group!=family:
-			family=group
-			var banner:=Control.new()
-			banner.custom_minimum_size=Vector2(C.px(1668),C.px(GROUP_HEIGHT))
-			rows.add_child(banner)
-			D.rect(banner,Rect2(0,0,1668,GROUP_HEIGHT),Color("122421"),2)
-			var source: Array = players if state.family==U.WATCH_FILTER else app.model.get("squad",[])
-			var total:int=source.filter(func(p:Dictionary):return (float(p.get("fam",0))<=3)==(group=="AVANTS")).size()
-			D.text(banner,14,22,group+" · "+str(total)+" JOUEURS",19,C.GOLD,700,900)
-		_row(player,i)
-	if visible.is_empty():
+	# Construction progressive : les lignes visibles sont créées tout de suite, le reste sur les
+	# images suivantes (60 lignes d'un coup coûtaient plus de 100 ms avant la première image).
+	_generation += 1
+	_group = ""
+	var built := mini(players.size(),FIRST_ROWS)
+	if reveal:
+		for i in players.size():
+			if str(players[i].id) == app.selected_player:
+				built = maxi(built,mini(players.size(),i+VISIBLE_MARGIN))
+				break
+	_build_rows(players,0,built)
+	if built < players.size(): _build_remaining(players,built,_generation)
+	if players.is_empty():
 		var empty:=C.wrap("Aucun joueur ne correspond. Modifiez les filtres ou réinitialisez la recherche.",22)
 		rows.add_child(empty)
 	if reveal:
@@ -333,6 +335,36 @@ func _refresh(reveal: bool) -> void:
 				break
 	_profile()
 	selected_summary.text="1 joueur sélectionné · "+str(P.player(app.model,app.selected_player).get("name","—"))
+
+func _build_rows(players: Array,from: int,to: int) -> void:
+	for i in range(from,to):
+		var player:Dictionary=players[i]
+		var group := "AVANTS" if float(player.get("fam",0))<=3 else "ARRIÈRES"
+		if state.sort=="Poste" and group!=_group:
+			_group=group
+			var banner:=Control.new()
+			banner.custom_minimum_size=Vector2(C.px(1668),C.px(GROUP_HEIGHT))
+			rows.add_child(banner)
+			D.rect(banner,Rect2(0,0,1668,GROUP_HEIGHT),Color("122421"),2)
+			var source: Array = players if state.family==U.WATCH_FILTER else app.model.get("squad",[])
+			var total:int=source.filter(func(p:Dictionary):return (float(p.get("fam",0))<=3)==(group=="AVANTS")).size()
+			D.text(banner,14,22,group+" · "+str(total)+" JOUEURS",19,C.GOLD,700,900)
+		_row(player,i)
+
+func _build_remaining(players: Array,from: int,generation: int) -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	var next := from
+	while next < players.size():
+		await tree.process_frame
+		if not is_instance_valid(self) or generation != _generation or not is_inside_tree(): return
+		var upto := mini(players.size(),next+ROWS_PER_FRAME)
+		_build_rows(players,next,upto)
+		next = upto
+	# Le défilement mémorisé n'existait pas tant que la liste était incomplète.
+	var scroll := find_child("SquadScroll",true,false) as ScrollContainer
+	if scroll != null and int(state.get("scroll",0)) > 0:
+		await tree.process_frame
+		if is_instance_valid(self) and generation == _generation and is_instance_valid(scroll): scroll.scroll_vertical = int(state.scroll)
 
 func _row(player:Dictionary,index:int) -> void:
 	var row:=Button.new()
@@ -347,7 +379,7 @@ func _row(player:Dictionary,index:int) -> void:
 	rows.add_child(row)
 	row.gui_input.connect(_row_key.bind(row))
 	D.text(row,14,24,G.n(player.get("shirtNumber","—")) if player.get("shirtNumber")!=null else "—",21,C.MUTED,600,38)
-	var portrait:Control=G.portrait(int(player.get("portraitIndex",0)),C.px(31),player) if not str(player.get("id","")).is_empty() else C.photo("player-%02d" % posmod(int(player.get("portraitIndex",index)),16))
+	var portrait:Control=G.portrait_lazy(int(player.get("portraitIndex",0)),C.px(31),player) if not str(player.get("id","")).is_empty() else C.photo("player-%02d" % posmod(int(player.get("portraitIndex",index)),16))
 	portrait.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	row.tooltip_text+="\n"+portrait.tooltip_text
 	var reason := U.watch_reason(player) if state.family==U.WATCH_FILTER else ""

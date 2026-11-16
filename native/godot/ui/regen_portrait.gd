@@ -1,10 +1,17 @@
 extends RefCounted
 ## Éléments IA prégénérés + composition locale ; aucune inférence d'IA.
 const VERSION := 1
-const MAX_TEXTURES := 48
-const MAX_MATERIALS := 128
+# Un groupe pro (60 joueurs), un staff et deux équipes de jeunes se consultent
+# l'un après l'autre : un cache plus petit que cet ensemble, vidé dans l'ordre
+# d'entrée, se renouvelle à chaque ouverture d'écran (1,6 s mesurées). Les
+# plus anciens sont retirés en dernier (LRU) ; une face recadrée pèse 256 Kio.
+const MAX_TEXTURES := 192
+const MAX_MATERIALS := 384
+const MAX_ATLAS := 16
 static var _textures: Dictionary = {}
 static var _materials: Dictionary = {}
+# Atlas gardés chargés : sans référence, Godot les décode de nouveau (30-40 ms) à chaque recadrage.
+static var _atlas: Dictionary = {}
 static var _shader: Shader
 const SHADER := """
 shader_type canvas_item;
@@ -114,13 +121,35 @@ static func describe(person: Dictionary = {}) -> Dictionary:
 		result.merge({"version":2,"bankVersion":2,"baseId":"%s:%03d" % [result.atlas,cell],"assetPath":path,"columns":6 if new_staff else 4,"rows":4,"assetCell":cell%16 if origin=="player" else band*(6 if new_staff else 4)+(within-4 if new_staff else within)},true)
 	return result
 
-static func texture(person: Dictionary = {}) -> Texture2D:
-	var profile := describe(person)
-	var cache_key := "%s:%s:%d" % [profile.get("bankVersion",1),profile.atlas,profile.cell]
-	if _textures.has(cache_key): return _textures[cache_key]
-	var path: String = profile.get("assetPath","res://art/regen-staff-atlas.png" if profile.atlas=="staff" else "res://assets/editorial/portraits-%d.webp" % (int(profile.cell)/16))
+static func _touch(cache: Dictionary, key: String) -> Variant:
+	var value: Variant = cache[key]
+	cache.erase(key)
+	cache[key] = value
+	return value
+
+static func _cache_key(profile: Dictionary) -> String:
+	return "%s:%s:%d" % [profile.get("bankVersion",1),profile.atlas,profile.cell]
+
+static func _source(path: String) -> Texture2D:
+	if _atlas.has(path): return _atlas[path]
 	if not ResourceLoader.exists(path): return null
 	var source := load(path) as Texture2D
+	if source==null: return null
+	if _atlas.size()>=MAX_ATLAS: _atlas.erase(_atlas.keys()[0])
+	_atlas[path] = source
+	return source
+
+## Vrai si le visage et sa composition sont déjà en cache : l'application est alors immédiate.
+static func cached(person: Dictionary = {}) -> bool:
+	var profile := describe(person)
+	return _textures.has(_cache_key(profile)) and _materials.has(JSON.stringify(profile))
+
+static func texture(person: Dictionary = {}) -> Texture2D:
+	var profile := describe(person)
+	var cache_key := _cache_key(profile)
+	if _textures.has(cache_key): return _touch(_textures,cache_key)
+	var path: String = profile.get("assetPath","res://art/regen-staff-atlas.png" if profile.atlas=="staff" else "res://assets/editorial/portraits-%d.webp" % (int(profile.cell)/16))
+	var source := _source(path)
 	if source==null: return null
 	# Material UVs must be local to this face, never coordinates of the whole
 	# atlas. Crop/resize are native Image operations, once per base cell.
@@ -145,7 +174,7 @@ static func texture(person: Dictionary = {}) -> Texture2D:
 static func material(person: Dictionary = {}) -> ShaderMaterial:
 	var profile := describe(person)
 	var cache_key := JSON.stringify(profile)
-	if _materials.has(cache_key): return _materials[cache_key]
+	if _materials.has(cache_key): return _touch(_materials,cache_key)
 	if _shader==null:
 		_shader = Shader.new()
 		_shader.code = SHADER
@@ -171,4 +200,4 @@ static func apply(rect: TextureRect, person: Dictionary = {}) -> bool:
 static func cache_info() -> Dictionary:
 	return {"textures":_textures.size(),"materials":_materials.size(),"maxTextures":MAX_TEXTURES,"maxMaterials":MAX_MATERIALS}
 static func clear_cache() -> void:
-	_textures.clear();_materials.clear()
+	_textures.clear();_materials.clear();_atlas.clear()
