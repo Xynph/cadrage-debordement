@@ -275,9 +275,11 @@ func _process(_delta: float) -> void:
 		if OS.kill(child_pid) == OK: _release()
 		return
 	if not running:
-		if not _stopping:
-			command_failed.emit("Le processus moteur s’est arrêté.")
+		# Libéré AVANT le signal : l'interface voit un moteur arrêté (child_pid <= 0) et propose de le relancer.
+		var unexpected := not _stopping
 		_release()
+		if unexpected:
+			command_failed.emit("Le processus moteur s’est arrêté.")
 
 func _release() -> void:
 	# Called only once the child is dead, so pipe reads cannot remain blocked.

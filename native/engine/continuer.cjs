@@ -33,6 +33,7 @@ const STOPS = Object.freeze({
   blessure: { mandatory: false, label: 'Blessure' },
   effectif: { mandatory: false, label: 'Mouvement dans l’effectif' },
   marche: { mandatory: false, label: 'Fenêtre des transferts' },
+  offre: { mandatory: false, label: 'Offre pour un joueur' },
   fatigue: { mandatory: false, label: 'Gabi : titulaires fatigués' },
   reprise: { mandatory: false, label: 'Reprise de l’entraînement' },
   message: { mandatory: false, label: 'Nouveau message' },
@@ -60,7 +61,7 @@ const SIGNAL_SOURCE = `(function(){
  const fixtures=world?(s.worldMode.fixtures||[]).filter(f=>f.homeId===s.club||f.awayId===s.club):[];
  const next=fixtures.filter(f=>today&&f.date>=today).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)[0]||null;
  const name=id=>s.clubs?.[id]?.name||'';
- return {today,matchReady:!!d?.matchReady,canAdvance:d?d.canAdvance!==false:false,ended:s.phase==='ended',live:!!s.live,
+ return {today,matchReady:!!d?.matchReady,canAdvance:d?d.canAdvance!==false:false,ended:s.phase==='ended',live:!!s.live&&!(d?.resultConfirmed===true),
   meeting:meeting&&!meeting.completed?{kind:meeting.kind,id:meeting.id}:meeting?{kind:meeting.kind,id:meeting.id,completed:true}:null,press,
   pressIds:(s.pressInvitations?.entries||[]).filter(e=>e.status==='pending').map(e=>e.id),
   pressDelegated:(()=>{const d=s.pressDelegation?.delegated||[],e=d[d.length-1];return e?e.season+':'+e.week+':'+e.club:null;})(),
@@ -78,6 +79,7 @@ const SIGNAL_SOURCE = `(function(){
   tired:starters.filter(p=>(p.condition??100)<70).map(p=>p.id),
   squad:players.map(p=>p.id).sort().join(','),
   window:s.economy?.aiRecruitmentWindow??null,
+  offers:(s.economy?.offers||[]).map(o=>({id:String(o.id),player:byId.get(o.playerId)?.name||''})),
   preseason:!!pre};
 })()`;
 
@@ -131,6 +133,8 @@ function detect(before, after, settings, repriseDate = null) {
     }],
     ['effectif', () => after.squad !== before.squad && 'Un joueur est arrivé ou a quitté le club.'],
     ['marche', () => after.window !== before.window && after.window !== null && 'Les clubs ont bougé sur le marché des transferts.'],
+    ['offre', () => { const known = new Set((before.offers || []).map(o => o.id)), fresh = (after.offers || []).filter(o => !known.has(o.id));
+      return fresh.length && (fresh.length > 1 ? fresh.length + ' offres reçues pour vos joueurs.' : 'Offre reçue pour ' + (fresh[0].player || 'un de vos joueurs') + '.'); }],
     ['fatigue', () => {
       const tired = added(before.tired, after.tired);
       if (!tired.length || !after.next) return false;
