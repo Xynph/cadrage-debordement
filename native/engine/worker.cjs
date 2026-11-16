@@ -31,7 +31,7 @@ const franceCalendar=require('./france-calendar-cadence.cjs');
 const confirmMatchResult=require('./match-result.cjs');
 const matchDirect=require('./match-direct.cjs');
 const calendarPlanning=require('./calendar-planning.cjs'),calendarMail=require('./calendar-mail.cjs');
-const worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),publishedVenue=require('./world-venues.cjs'),worldRegistry=require('./world-registry.json');
+const jsonCopy=require('./json-copy.cjs'),worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),publishedVenue=require('./world-venues.cjs'),worldRegistry=require('./world-registry.json');
 const clubHistory=require('./club-history.json');
 const clubPalmares=require('./club-palmares.cjs'),gabiRepliques=require('./gabi-repliques.cjs');
 const {createWorldEditions}=require('./world-editions.cjs');
@@ -233,7 +233,7 @@ function createBridge(options={}){
   if(japanRegistry)ctx.nativeWorldJapanRegistryText=JSON.stringify(japanRegistry);
   if(nationaleRegistry)ctx.nativeWorldNationaleRegistryText=JSON.stringify(nationaleRegistry);
   if(champRegistry)ctx.nativeWorldChampRegistryText=JSON.stringify(champRegistry);
-  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',nativeSaveText(S));lastSaveError=false;}};
+  run(`const nativeJsonCopy=(${jsonCopy.toString()})();render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',nativeSaveText(S));lastSaveError=false;}};
    /* Sauvegarde incrémentale : le texte de la carrière est assemblé section par section (premier niveau de S),
       identique à JSON.stringify(S) ; ces textes servent ensuite à la validation (sections inchangées) et à
       l'écriture du profil (encodage des seules sections modifiées). */
@@ -827,7 +827,8 @@ function createBridge(options={}){
      // save() puis la validation (voir plus bas) ; les save() internes du moteur (fin de semaine, coup d'envoi…)
      // sérialisaient donc ~25 Mo pour rien. Ils sont différés comme pour une décision ; une lecture de la carrière
      // enregistrée pendant la commande la sérialise d'abord (storage.getItem).
-     if(defer||advancesCareer&&!restoring&&!resumeCheckpoint){deferringSave??=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');realSave=ctx.save;ctx.save=deferringSave;savesDeferred=true;}
+     // Création : même règle, la commande se termine aussi par save() puis la validation complète.
+     if(defer||(advancesCareer||command==='new_career')&&!restoring&&!resumeCheckpoint){deferringSave??=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');realSave=ctx.save;ctx.save=deferringSave;savesDeferred=true;}
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command==='new_career'){
       if(!legacyModes&&payload.mode!==WORLD_ONLY_MODE)throw Error('Seul le mode Monde est disponible pour une nouvelle carrière.');
@@ -1050,6 +1051,8 @@ function createBridge(options={}){
      ctx.nativeKnowledgeVerify=stablePlayers==='verify';
      run(`if(nativeKnowledge.observe(S,nativeKnowledgeBefore,nativeKnowledgeCommand,nativePayload,{observedPlayerIds:nativeKnowledgeCommand==='academy_center_scout'?(nativeSystems.domain('academyPathways').project().centers||[]).find(c=>c.id===nativePayload.centerId)?.candidates.map(p=>p.id)||[]:[]})&&nativeKnowledgeVerify)throw Error('Commande déclarée sans effet sur les joueurs : connaissance nouvelle ('+nativeKnowledgeCommand+').');`);
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
+     // Courrier du club (club-mail.cjs) : une réception par jour de calendrier ; seule la boîte est écrite.
+     run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »
      // ne s'arrêtent donc pas sur elle. Les grands moments restent obligatoires.
@@ -1132,15 +1135,19 @@ function createBridge(options={}){
   // la date et peut demander la suite ou l'arrêt ({stop:true}). Ces jours restent en mémoire (advanceSession) et sont
   // écrits avant toute autre commande, à la fermeture ou à l'arrêt : jamais perdus en fonctionnement normal.
   let advanceSession=null;
+  // Arrêts suivants du même jour (continuer.arrets : arrêt principal puis éléments informatifs) : chaque nouvel appui
+  // sur Continuer montre le suivant sans avancer ; en mémoire seulement (rien n'est écrit dans la carrière), oubliés
+  // dès que la date change ou qu'une autre carrière est ouverte.
+  let infoQueue=null;
   const advanceSignal=()=>JSON.parse(run('JSON.stringify('+continuer.SIGNAL_SOURCE+')'));
   // Prochain arrêt prévisible de « Continuer » (info-bulle du bouton) : rencontre du club, reprise de
   // l'entraînement ou rendez-vous en file. Lecture seule, seulement en calendrier journalier.
   const repriseDate=()=>run("(()=>{try{return CDReprise.project()?.club?.date??null}catch(e){return null}})()");
-  var continueFlux='equilibre'; // var : lisible par continuePlan même pendant l'initialisation du pont.
+  var continueIgnore=[]; // var : lisible par continuePlan même pendant l'initialisation du pont.
   function continuePlan(model){
    if(!model?.meta?.calendarCadence)return;
-   // Flux de Continuer : celui de la dernière avance demandée (préférence du joueur), équilibré par défaut.
-   try{const signal=advanceSignal();model.meta.continuePlan=continuer.plan(signal,repriseDate(),continueFlux);model.meta.decisionsDue=signal?.decisions||[];mark('prochain_arret');}catch{delete model.meta.continuePlan;delete model.meta.decisionsDue;}
+   // Arrêts facultatifs ignorés par la dernière avance demandée (outils, essais) : aucun par défaut.
+   try{const signal=advanceSignal();model.meta.continuePlan=continuer.plan(signal,repriseDate(),continueIgnore);model.meta.decisionsDue=signal?.decisions||[];mark('prochain_arret');}catch{delete model.meta.continuePlan;delete model.meta.decisionsDue;}
   }
   function finishAdvance(id,session,stop){
    stateEpoch++;
@@ -1151,7 +1158,7 @@ function createBridge(options={}){
     if(journalMode){savedNow=false;if(fullSaveDue())fullSave();}else persist();mark('ecriture_disque');
     cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
     const absorbed=session.absorbed||coalescing;if(absorbed&&pendingCommit===absorbed)pendingCommit=null;
-    model.meta.advanceUntilEvent={days:session.days,from:session.from,to:model.meta.calendarToday??null,stop:stop??{kind:'arret',label:continuer.STOPS.arret.label,detail:null},pressDelegated:session.pressDelegated||0};
+    model.meta.advanceUntilEvent={days:session.days,from:session.from,to:model.meta.calendarToday??null,stop:stop??{kind:'arret',label:continuer.STOPS.arret.label,detail:null},pressDelegated:session.pressDelegated||0,queued:infoQueue?.stops.length||0};
     model.meta.profileSafety=profileSafety.project();if(journal)model.meta.autosave=autosaveMeta();continuePlan(model);
     const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
    }catch(error){
@@ -1170,11 +1177,20 @@ function createBridge(options={}){
     opts=continuer.validate(request.payload??{});
     if(!run('!!S'))throw Error('Créez ou importez une carrière.');
    }catch(error){advanceSession=null;return {id:Number.isSafeInteger(id)||typeof id==='string'?id:null,ok:false,model:closed?null:snapshot(),error:error.message};}
-   const started=performance.now(),session=advanceSession;advanceSession=null;continueFlux=opts.flux;
+   const started=performance.now(),session=advanceSession;advanceSession=null;continueIgnore=opts.ignorer;
    if(opts.stop){
     if(session&&session.days>0)return finishAdvance(id,session,{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'});
     const model=snapshotRaw();model.meta.advanceUntilEvent={days:0,from:opts.fromDate,to:model.meta.calendarToday??null,stop:{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'}};
     return {id,ok:true,model:projectKnowledge(model)};
+   }
+   let before=advanceSignal(),today=opts.fromDate,stop=null,n=0;
+   // Arrêt suivant du même jour en attente : montré sans avancer ni rien écrire (plusieurs arrêts le même jour).
+   const queued=!session&&infoQueue&&before?.today&&infoQueue.date===before.today?infoQueue.stops.shift():null;
+   if(!session&&!queued)infoQueue=null;
+   if(queued){
+    if(!infoQueue.stops.length)infoQueue=null;
+    const model=snapshotRaw();model.meta.advanceUntilEvent={days:0,from:opts.fromDate,to:model.meta.calendarToday??null,stop:queued,pressDelegated:0,queued:infoQueue?.stops.length||0};
+    continuePlan(model);return {id,ok:true,model:projectKnowledge(model)};
    }
    const current=session||{days:0,from:opts.fromDate,lastFrom:null,repriseDate:repriseDate(),start:null};
    if(!current.start){
@@ -1182,7 +1198,6 @@ function createBridge(options={}){
     current.start={seed,clock,store:copyStore(store),text:fromSave?cleanSave:run('JSON.stringify(S)'),fromSave};
     if(journal)current.journalAt={offset:journal.size(),count:journal.count()};
    }
-   let before=advanceSignal(),today=opts.fromDate,stop=null,n=0;
    // Décision de préparation attendue aujourd'hui (reprise.cjs) : refus comme un rendez-vous obligatoire,
    // sans rien écrire ; « Jour suivant », lui, la confie au staff.
    if(current.days===0&&before?.decisions?.length)return {id,ok:false,model:snapshot(),error:continuer.decisionText(before.decisions)};
@@ -1199,9 +1214,9 @@ function createBridge(options={}){
     if(coalescing){current.absorbed=coalescing;coalescing=null;}
     const after=advanceSignal();
     if(after&&before&&after.pressDelegated!==before.pressDelegated)current.pressDelegated=(current.pressDelegated||0)+1;
-    stop=continuer.detect(before,after,opts,current.repriseDate);
+    const found=continuer.arrets(before,after,opts,current.repriseDate);stop=found.stop;
     before=after;today=after?.today;
-    if(stop)break;
+    if(stop){infoQueue=found.queue.length&&today?{date:today,stops:found.queue}:null;break;}
     if(!today){stop={kind:'blocage',label:continuer.STOPS.blocage.label,detail:'Date de carrière indisponible.'};break;}
     if(n>=opts.maxDays||current.days>=continuer.MAX_DAYS){stop={kind:'limite',label:continuer.STOPS.limite.label,detail:'Avance interrompue après '+current.days+' jours sans événement.'};break;}
     if(opts.budgetMs>0&&performance.now()-started>=opts.budgetMs){
@@ -1209,13 +1224,14 @@ function createBridge(options={}){
       // La décision regroupée fait partie des jours en mémoire : elle sera écrite avec eux (arrêt, fermeture ou
       // commande suivante), pas séparément entre deux tranches.
       if(current.absorbed&&pendingCommit===current.absorbed){pendingCommit=null;current.absorbed=null;}
-      advanceSession=current;return {id,ok:true,model:null,progress:{from:current.from,today,days:current.days,next:after.next,plan:continuer.plan(after,current.repriseDate,opts.flux)}};}
+      advanceSession=current;return {id,ok:true,model:null,progress:{from:current.from,today,days:current.days,next:after.next,plan:continuer.plan(after,current.repriseDate,opts.ignorer)}};}
      stop={kind:'limite',label:continuer.STOPS.limite.label,detail:'Avance interrompue après '+current.days+' jours sans événement.'};break;
     }
    }
    return finishAdvance(id,current,stop);
   }
   function handle(request){
+   if(['new_career','import','restore_checkpoint','next_season','advance_day'].includes(request?.command))infoQueue=null;
    // « Continuer » interrompu par une autre commande : les jours déjà passés sont écrits d'abord.
    if(advanceSession&&request?.command!=='advance_until_event'){
     const session=advanceSession;advanceSession=null;
