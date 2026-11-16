@@ -16,7 +16,21 @@ static func skip_talk(app: Control, tree: SceneTree, expected_phase: String, che
 # Call only at a declared setup/advance boundary, after assertions about the
 # meeting under test. The bundled QA helper uses the actual public worker API.
 static func settle_club_meetings(app: Control, tree: SceneTree, check: Callable, stop_before_kind: String = "") -> bool:
+	if not await settle_reprise_decisions(app, tree, check): return false
 	return await preload("res://qa_runner.gd").settle_club_meetings(app, tree, check, stop_before_kind)
+
+# « Doit répondre » de la pré-saison (reprise.cjs, clubLife.reprise.due) : « Continuer » ne repart pas sans réponse.
+# Les suites qui ne testent pas ces décisions les confient à Gabi par la commande publique et referment
+# « La reprise » ouverte par l'arrêt.
+static func settle_reprise_decisions(app: Control, tree: SceneTree, check: Callable) -> bool:
+	var due: Variant = app.model.get("clubLife", {}).get("reprise", {}).get("due", [])
+	for key: Variant in (due as Array).duplicate() if due is Array else []:
+		if not await _progression_command(app, tree, check, "reprise_decide", {"decision": str(key), "option": "staff"}): return false
+	var dialog := app.get_node_or_null("RepriseDialog")
+	if dialog != null:
+		dialog.queue_free()
+		await tree.process_frame
+	return true
 
 # Setup boundaries for careers using the public daily calendar. These helpers
 # never manufacture a fixture/date or bypass a meeting/match guard.

@@ -128,3 +128,5 @@ les mesurer (environ 25 minutes par saison simulée sur la machine partagée).
   modélisées ici en carrière de club.
 - La cohésion du vestiaire (`v39.cohesion`) est un indicateur ; l’effet sportif des
   automatismes passe par la puissance de la préparation collective, faible par construction.
+- Décisions de la préparation (programme des amicaux, orientation du stage) et application des
+  effets en calendrier journalier : [pre-saison-decisions-20261116.md](pre-saison-decisions-20261116.md).

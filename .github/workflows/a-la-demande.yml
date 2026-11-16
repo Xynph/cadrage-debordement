@@ -53,6 +53,12 @@ jobs:
         with:
           ref: ${{ github.event_name == 'push' && github.sha || inputs.ref }}
           persist-credentials: false
+      - name: Outils en ligne de main (la branche testée peut ne pas les avoir)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 "https://github.com/${{ github.repository }}.git" main
+          git show FETCH_HEAD:ci/en-ligne-run.sh > ci/en-ligne-run.sh
       - name: Lire les paramètres (push de secours)
         if: ${{ github.event_name == 'push' }}
         shell: bash

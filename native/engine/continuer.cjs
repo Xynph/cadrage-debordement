@@ -20,6 +20,9 @@
 const STOPS = Object.freeze({
   match: { mandatory: true, label: 'Jour de match' },
   rendez_vous: { mandatory: true, label: 'Rendez-vous obligatoire' },
+  // Décisions de la préparation (reprise.cjs) : le jour dû, « Continuer » s'arrête ; tant qu'elles ne sont pas
+  // prises ou confiées à Gabi, il refuse de repartir (comme un rendez-vous). « Jour suivant » les confie au staff.
+  decision: { mandatory: true, label: 'Décision attendue' },
   // Conférence de presse : avec le réglage « Conférences ordinaires : envoyer l'adjoint », Gabi tient la conférence
   // ordinaire dans le moteur dès son ouverture (press.cjs autoDelegate, même commande que le jour avancé) : elle
   // n'arrête donc plus l'avance, et son compte rendu (« Conférence tenue par Gabi ») est un message de routine. Les
@@ -36,6 +39,9 @@ const STOPS = Object.freeze({
   offre: { mandatory: false, label: 'Offre pour un joueur' },
   fatigue: { mandatory: false, label: 'Gabi : titulaires fatigués' },
   reprise: { mandatory: false, label: 'Reprise de l’entraînement' },
+  // Éléments informatifs de la pré-saison (reprise.cjs, courrier en Réception) : arrêt sans réponse attendue, selon
+  // le flux choisi (FLUX) ; un nouvel appui sur Continuer repart. Tous les éléments du jour sont regroupés.
+  a_noter: { mandatory: false, label: 'À noter' },
   message: { mandatory: false, label: 'Nouveau message' },
   ouverture: { mandatory: false, label: 'Ouverture de la saison' },
   limite: { mandatory: true, label: 'Pause' },
@@ -43,10 +49,20 @@ const STOPS = Object.freeze({
 });
 const MAX_DAYS = 120;
 const MESSAGE_MODES = ['importants', 'tous', 'aucun'];
+// Flux de Continuer (façon FM27 : allégé, équilibré, complet) : types d'éléments informatifs qui arrêtent l'avance.
+// « Doit répondre » (match, rendez-vous, décision…) arrête toujours ; les autres éléments restent en Réception.
+const FLUX = Object.freeze({
+  allege: Object.freeze(['veille']),
+  equilibre: Object.freeze(['amical', 'stage', 'recrutement', 'veille']),
+  complet: Object.freeze(['retour', 'amical', 'stage', 'recrutement', 'veille']),
+});
+const NOTE_LABELS = { retour: 'retour des internationaux', amical: 'compte rendu de match amical', stage: 'bilan du stage', recrutement: 'dernier point recrutement', veille: 'veille de la 1re journée' };
 const INJURY_MODES = ['titulaires', 'effectif'];
 // Messages de routine : ils restent dans la Réception mais n'arrêtent pas « Continuer » en mode « importants ».
 const ROUTINE = [/^le point de la semaine/i, /^votre bureau est ouvert/i, /entra[iî]nement.*retenu/i, /^feuille pr[ée]par[ée]e/i,
-  /^r[ée]sultats? de la journ[ée]e/i, /^journ[ée]e \d+/i, /^conf[ée]rence tenue par/i];
+  /^r[ée]sultats? de la journ[ée]e/i, /^journ[ée]e \d+/i, /^conf[ée]rence tenue par/i,
+  // Éléments de pré-saison : ils ont leur propre arrêt « À noter », réglé par le flux de Continuer.
+  /^(match amical|retour de tourn[ée]e|fin du stage|dernier point recrutement|veille de la 1re journ[ée]e)/i];
 
 // Lecture des signaux dans la VM : état seul, aucune écriture. Évaluée avant la boucle puis après chaque jour.
 const SIGNAL_SOURCE = `(function(){
@@ -80,19 +96,24 @@ const SIGNAL_SOURCE = `(function(){
   squad:players.map(p=>p.id).sort().join(','),
   window:s.economy?.aiRecruitmentWindow??null,
   offers:(s.economy?.offers||[]).map(o=>({id:String(o.id),player:byId.get(o.playerId)?.name||''})),
+  decisions:typeof CDReprise!=='undefined'?CDReprise.due(s):[],
+  decisionNext:typeof CDReprise!=='undefined'?CDReprise.nextDecision(s):null,
+  notes:typeof CDReprise!=='undefined'?CDReprise.notesSeen(s):[],
+  notesNext:typeof CDReprise!=='undefined'?CDReprise.nextNotes(s):[],
   preseason:!!pre};
 })()`;
 
 function options(payload = {}) {
   const stops = payload.stops ?? {};
-  if (typeof stops !== 'object' || stops === null || Array.isArray(stops) || Object.keys(stops).some(k => !['messages', 'blessures', 'ignorer'].includes(k)))
+  if (typeof stops !== 'object' || stops === null || Array.isArray(stops) || Object.keys(stops).some(k => !['messages', 'blessures', 'ignorer', 'flux'].includes(k)))
     throw Error('Réglages d’arrêt invalides.');
   const messages = stops.messages ?? 'importants', blessures = stops.blessures ?? 'titulaires';
-  if (!MESSAGE_MODES.includes(messages) || !INJURY_MODES.includes(blessures)) throw Error('Réglages d’arrêt invalides.');
+  const flux = stops.flux ?? 'equilibre';
+  if (!MESSAGE_MODES.includes(messages) || !INJURY_MODES.includes(blessures) || !Object.hasOwn(FLUX, flux)) throw Error('Réglages d’arrêt invalides.');
   // Arrêts facultatifs ignorés (outils, essais, réglage avancé) : jamais un arrêt obligatoire.
   const ignorer = stops.ignorer ?? [];
   if (!Array.isArray(ignorer) || ignorer.length > 20 || ignorer.some(k => !STOPS[k] || STOPS[k].mandatory)) throw Error('Arrêt obligatoire ou inconnu : il ne peut pas être ignoré.');
-  return { messages, blessures, ignorer: [...new Set(ignorer)] };
+  return { messages, blessures, flux, ignorer: [...new Set(ignorer)] };
 }
 
 function validate(payload) {
@@ -109,6 +130,13 @@ function validate(payload) {
 }
 
 const routine = title => ROUTINE.some(r => r.test(title));
+// Décisions de la préparation attendues (clés de reprise.cjs) : motif d'arrêt ou de refus, vu du manager.
+const DECISION_TEXT = { amicaux: 'le programme des matchs amicaux', stage: 'l’orientation du stage de préparation' };
+function decisionText(keys) {
+  const what = (keys || []).map(k => DECISION_TEXT[k] || 'une décision de préparation');
+  if (!what.length) return '';
+  return 'Gabi attend ' + what.join(' et ') + ' : choisissez dans « La reprise » ou confiez-' + (what.length > 1 ? 'les' : 'la') + '-lui.';
+}
 const added = (before, after) => after.filter(id => !before.includes(id));
 const shortDate = iso => { const [y, m, d] = iso.split('-'); return d + '/' + m; };
 
@@ -120,6 +148,7 @@ function detect(before, after, settings, repriseDate = null) {
   const checks = [
     ['match', () => after.matchReady && (after.next ? 'Rencontre contre ' + after.next.opponent + ' aujourd’hui.' : 'Rencontre prévue aujourd’hui.')],
     ['rendez_vous', () => after.meeting && !after.meeting.completed && (({ press: 'Conférence de presse', medical: 'Point médical', board: 'Rendez-vous avec la direction' })[after.meeting.kind] || 'Rendez-vous du club')],
+    ['decision', () => added(before.decisions || [], after.decisions || []).length && decisionText(after.decisions)],
     ['conference', () => after.press && 'La presse vous attend avant de continuer.'],
     ['conversation', () => (after.sceneActive || added(before.sceneIds, after.sceneIds).length) && 'Une demande d’entretien vous attend en Réception.'],
     ['calendrier', () => after.fixtures !== before.fixtures && 'Une rencontre du club a été ajoutée ou déplacée.'],
@@ -141,6 +170,14 @@ function detect(before, after, settings, repriseDate = null) {
       const days = Math.round((Date.parse(after.next.date) - Date.parse(after.today)) / 86400000);
       return days >= 0 && days <= 7 && (after.names[tired[0]] || 'Un titulaire') + ' est sous 70 % de condition avant le match du ' + shortDate(after.next.date) + '.';
     }],
+    ['a_noter', () => {
+      const types = FLUX[settings.flux || 'equilibre'];
+      const fresh = added(before.notes || [], after.notes || []).map(id => id.split(':')[0]);
+      if (!fresh.some(k => types.includes(k))) return false;
+      // Tous les éléments arrivés ce jour-là sont cités (ils sont tous en Réception), pas seulement ceux du flux.
+      const what = [...new Set(fresh)].map(k => NOTE_LABELS[k] || 'élément de préparation');
+      return (fresh.length > 1 ? fresh.length + ' éléments en Réception : ' : 'En Réception : ') + what.join(', ') + '.';
+    }],
     ['reprise', () => repriseDate && after.today === repriseDate && before.today !== repriseDate && 'Le groupe reprend l’entraînement aujourd’hui.'],
     ['ouverture', () => before.preseason && !after.preseason && 'Le calendrier de la saison est ouvert.'],
     ['message', () => {
@@ -161,10 +198,14 @@ function detect(before, after, settings, repriseDate = null) {
 // club (jour de match), de la reprise de l'entraînement et d'un rendez-vous déjà en file (le jour suivant).
 // Les arrêts imprévisibles (blessure, courrier, message) ne comptent pas : ils interrompent sans prévenir.
 // Rend {kind, date, opponent|detail} ou null.
-function plan(after, repriseDate = null) {
+function plan(after, repriseDate = null, flux = 'equilibre') {
   if (!after || !after.today) return null;
   const candidates = [];
   if (after.next && after.next.date >= after.today) candidates.push({ kind: 'match', date: after.next.date, opponent: after.next.opponent });
+  // Une décision due le jour de la reprise passe avant elle (tri stable).
+  if (after.decisionNext && after.decisionNext.date > after.today) candidates.push({ kind: 'decision', date: after.decisionNext.date, detail: after.decisionNext.detail });
+  const note = (after.notesNext || []).find(n => n.date > after.today && (FLUX[flux] || FLUX.equilibre).includes(n.kind));
+  if (note) candidates.push({ kind: 'a_noter', date: note.date, detail: NOTE_LABELS[note.kind] || 'élément de préparation' });
   if (repriseDate && repriseDate > after.today) candidates.push({ kind: 'reprise', date: repriseDate });
   if (after.meeting && !after.meeting.completed) {
     const label = ({ press: 'Conférence de presse', medical: 'Point médical', board: 'Rendez-vous avec la direction' })[after.meeting.kind] || 'Rendez-vous du club';
@@ -174,4 +215,4 @@ function plan(after, repriseDate = null) {
   return candidates[0] || null;
 }
 
-module.exports = { plan, STOPS, MAX_DAYS, MESSAGE_MODES, INJURY_MODES, SIGNAL_SOURCE, validate, detect, routine };
+module.exports = { plan, STOPS, MAX_DAYS, MESSAGE_MODES, INJURY_MODES, FLUX, SIGNAL_SOURCE, validate, detect, routine, decisionText };
