@@ -155,6 +155,9 @@ budget() {
     tests/finitions-critiques.cjs) echo 900s ;;
     # Feuille incomplète : appel d'un espoir (#726), carrières Monde jouées sur plusieurs journées ; 398 s en local sous charge (CI : suite 7/7, 180 s dépassées) ; budget ≈ 3 fois.
     tests/feuille-espoirs.cjs) echo 1200s ;;
+    # Décisions de la préparation (reprise) : trois sous-tests de ~60 s chacun (183 s au total en local), une carrière Monde neuve
+    # chacun, jours de préparation avancés un à un jusqu'à la reprise puis au stage ; 180 s dépassées au hasard en CI (2 fois le 16/11, PR sans rapport), poids 115 ; budget ≈ 3 fois.
+    tests/world-reprise-decisions.cjs) echo 360s ;;
     *) echo 180s ;;
   esac
 }
