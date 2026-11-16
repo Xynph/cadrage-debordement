@@ -73,4 +73,5 @@ if [[ "${CD_EL_MESURES:-false}" == "true" ]]; then
 fi
 
 [[ -s "$out/echecs.txt" ]] || rm -f "$out/echecs.txt"
+echo "=== DIAG ==="; grep -hE 'REACTIVITE|FAIL|not ok|# (pass|fail)' "$out"/*.log 2>/dev/null | cut -c1-3000 | head -80; cat "$out/resume.md" 2>/dev/null
 exit $failed
