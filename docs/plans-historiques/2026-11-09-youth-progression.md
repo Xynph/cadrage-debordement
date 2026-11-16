@@ -8,7 +8,7 @@
 
 **Tech Stack:** JavaScript CommonJS/factory VM, Node 22, tests du vrai harness.
 
-**Spec:** `docs/superpowers/specs/2026-11-09-youth-progression-design.md`
+**Spec:** `docs/plans-historiques/specs/2026-11-09-youth-progression-design.md`
 
 ## Global Constraints
 

@@ -11,7 +11,7 @@
 **Architecture:** Transport négocié autour du worker, réassemblage dans le pont.
 Intentions natives bornées ; calculs de planning sur le modèle public uniquement.
 **Tech Stack:** Node CJS, Godot 4.7.2, tests Node et GDScript.
-**Spec:** `docs/superpowers/specs/2026-11-12-manager-planning-design.md`
+**Spec:** `docs/plans-historiques/specs/2026-11-12-manager-planning-design.md`
 
 ## Global Constraints
 

@@ -1,6 +1,6 @@
 # Renouvellement des joueurs v2 — vérifications Cloud
 
-La politique est décrite dans `superpowers/specs/2026-11-09-player-population-design.md`. Elle ne conserve pas artificiellement les grands effectifs initiaux : elle vise une profondeur qualifiée de 37 professionnels et une population disponible, professionnels plus candidats majeurs, référencée à la création. Les retraites restent effectives.
+La politique est décrite dans `docs/plans-historiques/specs/2026-11-09-player-population-design.md`. Elle ne conserve pas artificiellement les grands effectifs initiaux : elle vise une profondeur qualifiée de 37 professionnels et une population disponible, professionnels plus candidats majeurs, référencée à la création. Les retraites restent effectives.
 
 ## Régressions et nouveaux flux
 

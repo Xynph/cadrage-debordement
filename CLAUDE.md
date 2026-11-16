@@ -19,6 +19,7 @@ département, spécialistes), ~78 commandes `/…`, hooks et règles par dossier
 Le protocole CCGS d'origine (« demander avant chaque écriture », « aucun commit
 sans instruction ») **ne s'applique pas** ici. Léo veut un maximum d'autonomie :
 
+- Kit d'agents : CCGS seul (décision de Léo, 16/11/2026) ; ne pas utiliser ni réinstaller Superpowers (ses plans passés sont dans `docs/plans-historiques/`).
 - Écrire, committer, ouvrir des PR et fusionner selon `AGENTS.md`, sans
   demander de validation pour les décisions techniques secondaires.
 - Demander d'abord pour : suppression de fichiers ou de données, opération

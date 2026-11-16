@@ -5,7 +5,7 @@
 **Goal:** Mettre en place l'écran de match et les quinze interactions validées.
 **Architecture:** Shell dédié après le rendu natif, réemploi du terrain 2D/3D ; contrôleur de cadence et des décisions via API natives. Préférences hors sauvegarde ; projections statistiques sans nombres inventés.
 **Tech Stack:** JavaScript/CSS sans compilation, Node, Playwright Chromium.
-**Spec:** docs/superpowers/specs/2026-11-07-dedicated-matchday-design.md
+**Spec:** docs/plans-historiques/specs/2026-11-07-dedicated-matchday-design.md
 
 ## Global Constraints
 PC 1920×1080 et 1440×900, aucun défilement global. Aucun coefficient de jeu, règle rugby, MATCH3D, index réservé LNR ou schéma de sauvegarde modifié. Confirmation obligatoire pour Résultat immédiat. Statistiques permanentes.

@@ -5,7 +5,7 @@
 **Goal:** Raccorder les décors validés et les causeries au vrai moteur de carrière.
 **Architecture:** Deux domaines natifs persistants possèdent les causeries et les invitations. Une coque Godot contextuelle remplace la gestion pendant le match, réutilise le vrai rendu et les commandes existantes. Les vues restent sans effet tant qu'une décision n'est pas confirmée.
 **Tech Stack:** Node/VM, GDScript Godot 4.6+, ressources locales gratuites.
-**Spec:** `docs/superpowers/specs/2026-11-10-contextual-scenes.json` + demandes utilisateur : six déclarations simples et directes, ton intrinsèque, portraits et logo du club actif.
+**Spec:** `docs/plans-historiques/specs/2026-11-10-contextual-scenes.json` + demandes utilisateur : six déclarations simples et directes, ton intrinsèque, portraits et logo du club actif.
 
 ## Global Constraints
 

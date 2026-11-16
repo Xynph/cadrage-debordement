@@ -3,7 +3,7 @@
 **Goal:** Raccorder presse, infirmerie et direction à trois scènes natives utiles.
 **Architecture:** Trois vues et trois décors indépendants ; directeur commun pour priorité, fermeture et points d’entrée. Les domaines existants restent autorités.
 **Tech Stack:** Godot4.6, GDScript, vrai worker Node, ressources locales CC0.
-**Spec:** docs/superpowers/specs/2026-11-10-three-contextual-rooms.md
+**Spec:** docs/plans-historiques/specs/2026-11-10-three-contextual-rooms.md
 
 ## Global constraints
 - Six déclarations des causeries et leur ton intrinsèque restent inchangés.

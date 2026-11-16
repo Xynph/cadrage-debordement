@@ -5,7 +5,7 @@
 **Goal:** Livrer une base native commune anonymisée, le pack Rugby Réel et l’import d’identités personnalisées à la création et en carrière.
 **Architecture:** Compilation des données actives en catalogue anonymisé ; état sportif indépendant des projections d’identité. Installation ZIP locale et atomique ; UI Godot raccordée aux commandes du worker.
 **Tech Stack:** JavaScript/Node embarqué, GDScript/Godot4.7.2, Python de construction, Windows x64.
-**Spec:** docs/superpowers/specs/2026-11-07-identity-packs-design.md
+**Spec:** docs/plans-historiques/specs/2026-11-07-identity-packs-design.md
 
 ## Global Constraints
 

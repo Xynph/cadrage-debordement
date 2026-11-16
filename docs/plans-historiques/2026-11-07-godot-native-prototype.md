@@ -8,7 +8,7 @@
 
 **Tech Stack:** Godot4.7.2 stable/GDScript, Node JavaScript existant, WebP et TTF/OFL, build Python.
 
-**Spec:** `docs/superpowers/specs/2026-11-07-godot-native-prototype-design.md`.
+**Spec:** `docs/plans-historiques/specs/2026-11-07-godot-native-prototype-design.md`.
 
 ## Contraintes globales
 
