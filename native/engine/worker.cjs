@@ -454,23 +454,27 @@ function createBridge(options={}){
    }catch{return '';}
   };
   // Texte du profil : identique octet pour octet à JSON.stringify({protocol:1,seed,clock,store}), mais
-  // chaque valeur du magasin (la carrière fait ~22 Mo) n'est réencodée que si elle a changé.
+  // chaque valeur du magasin (la carrière fait ~22 Mo) n'est réencodée que si elle a changé. Le texte est rendu en
+  // morceaux, écrits l'un après l'autre : ni la carrière encodée ni le profil complet (~40 Mo chacun, en double octet)
+  // ne sont assemblés en mémoire à chaque écriture.
   const storeEncoding=new Map(),sectionEscapes=new Map();
   // Encodage JSON (chaîne dans la chaîne) de la carrière à partir de ses sections : l'échappement d'un texte
   // se fait caractère par caractère et les coupures tombent sur des virgules, donc la concaténation des
   // sections encodées est exactement JSON.stringify(texte complet).
   const encodeSections=sections=>{
-   const parts=[];
+   const chunks=['"{'];
    for(const key of sections.keys){
     const text=sections.texts.get(key);let hit=sectionEscapes.get(key);
     if(!hit||hit.text!==text){hit={text,escaped:JSON.stringify(JSON.stringify(key)+':'+text).slice(1,-1)};sectionEscapes.set(key,hit);}
-    parts.push(hit.escaped);
+    if(chunks.length>1)chunks.push(',');
+    chunks.push(hit.escaped);
    }
    for(const key of [...sectionEscapes.keys()])if(!sections.texts.has(key))sectionEscapes.delete(key);
-   return '"{'+parts.join(',')+'}"';
+   chunks.push('}"');
+   return chunks;
   };
-  const profileText=()=>{
-   const entries=[];
+  const profileChunks=()=>{
+   const chunks=['{"protocol":1,"seed":'+JSON.stringify(seed)+',"clock":'+JSON.stringify(clock)+',"store":{'];let first=true;
    for(const key of Object.keys(store)){
     const value=store[key];let encoded;
     if(typeof value==='string'){
@@ -478,15 +482,18 @@ function createBridge(options={}){
      if(cached&&cached.value===value)encoded=cached.encoded;
      else{
       const sections=key==='bdt-v1'?ctx.nativeSaveSections:null;
-      encoded=sections&&sections.whole===value?encodeSections(sections):JSON.stringify(value);
-      if(ctx.nativeVerifySections&&encoded!==JSON.stringify(value))throw Error('Encodage par sections différent du texte complet.');
+      encoded=sections&&sections.whole===value?encodeSections(sections):[JSON.stringify(value)];
+      if(ctx.nativeVerifySections&&encoded.join('')!==JSON.stringify(value))throw Error('Encodage par sections différent du texte complet.');
       storeEncoding.set(key,{value,encoded});
      }
-    }else encoded=JSON.stringify(value);
-    if(encoded!==undefined)entries.push(JSON.stringify(key)+':'+encoded);
+    }else{const text=JSON.stringify(value);encoded=text===undefined?undefined:[text];}
+    if(encoded===undefined)continue;
+    chunks.push((first?'':',')+JSON.stringify(key)+':');first=false;
+    for(const chunk of encoded)chunks.push(chunk);
    }
    for(const key of storeEncoding.keys())if(!Object.hasOwn(store,key)||typeof store[key]!=='string')storeEncoding.delete(key);
-   return '{"protocol":1,"seed":'+JSON.stringify(seed)+',"clock":'+JSON.stringify(clock)+',"store":{'+entries.join(',')+'}}';
+   chunks.push('}}');
+   return chunks;
   };
   // Copie de secours du fichier courant : un lien physique vers le fichier déjà écrit (et forcé sur
   // disque) remplace la relecture et la réécriture de ~25 Mo ; le renommage atomique qui suit est
@@ -505,8 +512,8 @@ function createBridge(options={}){
   const persist=()=>{
    committedFiles='';
    if(resumeCheckpoint)profileSafety.checkpoint({...resumeCheckpoint,reason:'adaptation-reprise'});
-   const token=randomUUID(),text=profileText(),temp=path.join(dataDir,'donnees.tmp-'+token),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
-   const write=(target,content)=>{const fd=fs.openSync(target,'wx');try{fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}};
+   const token=randomUUID(),text=profileChunks(),temp=path.join(dataDir,'donnees.tmp-'+token),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
+   const write=(target,content)=>{const fd=fs.openSync(target,'wx');try{if(Array.isArray(content))for(const chunk of content)fs.writeFileSync(fd,chunk);else fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}};
    const ordinary=target=>{const s=fs.lstatSync(target);if(!s.isFile()||s.isSymbolicLink())throw Error('Fichier de sauvegarde ou de secours non ordinaire.');};
    let stashed=false,published=false;
    try{
