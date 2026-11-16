@@ -57,6 +57,8 @@ declare -A suite_limits=(
   [tests/godot-delegue-composition.cjs]=900
   # Finitions critiques : carrière Monde (création, un match, jour de match suivant) côté Node puis un passage Godot ; ~4 min en local.
   [tests/godot-finitions.cjs]=900
+  # Mesure de la jauge de vitesse : deux carrières Monde (~4 min chacune), informative.
+  [tests/mesure-vitesse-jeu.cjs]=1200
 )
 # Suites INFORMATIVES : exécutées et journalisées, mais un échec n'empêche pas le job (avertissement + ligne
 # « informatif » dans le résumé). Une suite n'y reste que tant qu'elle est instable ; à retirer dès qu'elle est stabilisée.
