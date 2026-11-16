@@ -20,6 +20,7 @@ const PAS_SORTIE=0.2;       // pas des pistes envoyées à la vue
 const DUREE_MIN=12, DUREE_MAX=25;
 const DUREE_PLAFOND=50;     // plusieurs faits du moteur : la mise en scène peut aller jusque-là
 const DUREE_LIMITE=60;      // garde-fou : au-delà, la mise en scène est abandonnée
+const PASSES_SECOURS=6;     // tirages de secours quand rien ne tient sous DUREE_PLAFOND (voir composer)
 const EN_BUT=2;             // le ballon est aplati 2 m derrière la ligne (même règle que la vue)
 const ECART=0.8;            // distance visée entre deux joueurs hors contact (garantie : 0,6 m), en mètres
 const EVITEMENT=1.7;        // rayon d'évitement (direction voulue), en mètres
@@ -1574,7 +1575,9 @@ function composer(entree){
  const cible=fini(e.duree_cible)?borne(e.duree_cible,DUREE_MIN,max):Math.min(max,14+alea()*8+4*faits);
  const essais=[];
  // Deux passes au plus : la seconde (autre tirage, même graine) seulement si la première n'a rien donné de juste.
- for(let passe=0;passe<2&&!essais.some(x=>x.ecart<500);passe++){
+ // Au-delà, jusqu'à PASSES_SECOURS passes de plus, seulement si aucune mise en scène ne tient sous le plafond :
+ // un temps fort long (touche au milieu, plusieurs franchissements) peut dépasser 50 s aux deux premiers tirages.
+ for(let passe=0;passe<2+PASSES_SECOURS&&!essais.some(x=>x.ecart<(passe<2?500:1000));passe++){
   for(let phases=0;phases<=4;phases++){
    const r=simuler(e,phases,(graine^Math.imul(phases+1+passe*5,0x9E3779B1))>>>0);
    // Hors de la durée voulue mais sous le plafond (50 s, validé par Léo) : gardée en dernier recours.
