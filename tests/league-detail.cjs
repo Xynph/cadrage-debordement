@@ -30,7 +30,7 @@ test('Estimation : plus de championnats détaillés, jamais plus rapide',()=>{
  assert.ok(slow.seasonMs>fast.seasonMs,'une machine deux fois plus lente est estimée plus lente');
  assert.throws(()=>leagueDetail.estimate({detailed:'elite'}),/Championnats actifs/);
  const table=leagueDetail.costTable({});
- assert.equal(table.levels.length,5);
+ assert.equal(table.levels.length,3);assert.deepEqual(table.levels.map(l=>l.state),['succes','alerte','danger'],'couleurs d’état du thème');
  for(const id of WORLD)assert.ok(table.leagues[id].extraDetailedMs>0&&table.leagues[id].quickMs>=0,id);
  const sum=table.baseSeasonMs+WORLD.reduce((n,id)=>n+table.leagues[id].extraDetailedMs,0);
  assert.ok(Math.abs(sum-leagueDetail.estimate({detailed:WORLD}).seasonMs)<=WORLD.length,'la jauge de l’interface additionne le même tableau');
@@ -60,7 +60,9 @@ test('Carrière Monde : choix enregistré, validé, résultats rapides cohérent
   const own=model.clubLife.leagueDetail.own;
   assert.equal(own,'elite');
   let state=JSON.parse(go('export').meta.exportText).state;
-  assert.deepEqual(state.leagueDetail,{version:1,policy:'league-detail-v1',detailed:['elite','urc'],pending:null},'le championnat du club est toujours détaillé');
+  const {salt,...rest}=state.leagueDetail;
+  assert.deepEqual(rest,{version:2,policy:'league-detail-v2',detailed:['elite','urc'],pending:null},'le championnat du club est toujours détaillé');
+  assert.ok(Number.isInteger(salt)&&salt>=0&&salt<=0xffffffff,'graine du flux séparé');
   assert.deepEqual(model.clubLife.leagueDetail.leagues.filter(l=>l.detailed).map(l=>l.id),['elite','urc']);
 
   // Une saison complète de Premiership (résultats rapides) jouée par le moteur léger.
@@ -119,7 +121,7 @@ test('Carrière Monde : choix enregistré, validé, résultats rapides cohérent
   assert.deepEqual(JSON.parse(run('JSON.stringify(S.leagueDetail)')).detailed,['elite','prem','jlo-d1']);
   // Sauvegardes trafiquées refusées.
   const forged=JSON.parse(text);
-  for(const breakage of [s=>{s.leagueDetail.detailed=['inconnu'];},s=>{s.leagueDetail.extra=1;},s=>{s.leagueDetail.detailed=['urc','elite'];},s=>{s.leagueDetail.pending=[];}]){
+  for(const breakage of [s=>{s.leagueDetail.detailed=['inconnu'];},s=>{s.leagueDetail.extra=1;},s=>{s.leagueDetail.detailed=['urc','elite'];},s=>{s.leagueDetail.pending=[];},s=>{s.leagueDetail.salt=-1;},s=>{delete s.leagueDetail.salt;}]){
    const copy=JSON.parse(JSON.stringify(forged));breakage(copy.state);
    const r=raw('import',{text:JSON.stringify(copy)});assert.equal(r.ok,false);assert.match(r.error,/Championnats actifs/);
   }

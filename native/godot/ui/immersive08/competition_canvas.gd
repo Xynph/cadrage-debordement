@@ -24,6 +24,7 @@ const PRIMARY := Color("106d43")
 const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
 const JAPAN_COMPETITIONS := ["jlo-d1", "jlo-d2", "jlo-d1-d2"]
 const RESULT_TINTS := {"V": WIN, "N": DRAW, "D": LOSS}
+const AFAR_HINT := "Championnat suivi de loin : scores, classement, blessures et évolution des joueurs, sans notes individuelles ni feuilles de match. À changer dans Réglages › Championnats suivis, pour la saison suivante."
 const TABLE_COLUMNS := [
 	["#", 41, 58, "rank"], ["J", 488, 52, "played"], ["V", 549, 50, "won"],
 	["N", 610, 50, "drawn"], ["D", 671, 50, "lost"], ["PF", 744, 59, "pf"],
@@ -244,7 +245,13 @@ func _header() -> void:
 	var subhead := "%s   ·   SAISON %s   ·   %s" % [_league_short(league).to_upper(), G.season_label(app.model.meta.get("season", "—")), short_round.to_upper()]
 	D.rect(self, Rect2(24, 132, 735, 43), Color("142122"), 5, C.LINE)
 	D.text(self, 44, 161, subhead, 25, C.IVORY, 600, 691)
-	var crest := D.rect(self, Rect2(1122, 103, 218, 78), Color("111a1b"), 8, WARM)
+	if _followed_from_afar():
+		var afar := D.rect(self, Rect2(775, 132, 280, 43), C.RAISED, 5, WARM)
+		afar.name = "CompetitionFollowedFromAfar"
+		afar.mouse_filter = Control.MOUSE_FILTER_STOP
+		afar.tooltip_text = AFAR_HINT
+		D.text(afar, 18, 29, "SUIVI DE LOIN", 22, WARM, 700, 250)
+	var crest :=D.rect(self, Rect2(1122, 103, 218, 78), Color("111a1b"), 8, WARM)
 	var emblem := G._pack_texture(str(league.get("logoPath", "")))
 	if emblem == null:
 		_icon(self, "trophy", Rect2(1188, 18, 87, 87), WARM)
@@ -273,6 +280,14 @@ func _header() -> void:
 	if EquipeType.disponible(app.model):
 		D.button(self, Rect2(1858, 203, 200, 45), "XV type", func(): EquipeType.ouvrir(app, league.id if league.get("id") else "", "journee"), false, "trophy", true, app.accent, "CompetitionEquipeType")
 	D.line(self, Vector2(0, 254), Vector2(WIDTH, 254), Color(WARM, .55))
+
+## Championnat suivi de loin (Réglages › Championnats suivis, carrière Monde configurée).
+func _followed_from_afar() -> bool:
+	var detail: Variant = app.model.get("clubLife", {}).get("leagueDetail", {})
+	if not detail is Dictionary or not bool(detail.get("configured", false)) or league.has("pools"): return false
+	for item: Variant in detail.get("leagues", []):
+		if item is Dictionary and str(item.get("id", "")) == str(league.get("id", "")): return not bool(item.get("detailed", true))
+	return false
 
 func _switch(tab_id: String) -> void:
 	if tab_id == "calendar":
@@ -672,7 +687,9 @@ func _stats() -> void:
 		D.rect(aggregate, Rect2(x, 70, 288, 127), Color("11251e"), 6, Color("436257"))
 		D.text(aggregate, x + 22, 112, ["Matchs joués", "Points marqués", "Matchs nuls", "Points / match"][i], 26, C.MUTED, 500, 254)
 		D.text(aggregate, x + 22, 170, values[i], 61, C.IVORY, 800, 253)
-	D.text(aggregate, 28, 248, "Résultats de toutes les poules conservés par la carrière." if league.has("pools") else "Résultats et compteurs de championnat conservés par la carrière.", 26, C.MUTED, 500, 1210)
+	var caption := "Résultats de toutes les poules conservés par la carrière." if league.has("pools") else "Résultats et compteurs de championnat conservés par la carrière."
+	if _followed_from_afar(): caption = "Championnat suivi de loin : scores, essais et classement, sans notes individuelles."
+	D.text(aggregate, 28, 248, caption, 26, C.MUTED, 500, 1210)
 
 func _bottom() -> void:
 	var started: bool = league.get("rows", []).any(func(club: Dictionary): return float(club.get("played", 0)) > 0)

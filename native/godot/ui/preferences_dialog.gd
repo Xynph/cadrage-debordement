@@ -53,14 +53,16 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		var detailed := 0
 		for league: Dictionary in leagues.get("leagues", []):
 			if bool(league.get("detailed", true)): detailed += 1
-		comfort.add_child(C.wrap("%d championnat%s suivi%s en détail, les autres en résultats rapides." % [detailed, "s" if detailed > 1 else "", "s" if detailed > 1 else ""],17,C.MUTED))
-		var choose := G.button("Championnats simulés…", func():
+		comfort.add_child(C.wrap("%d championnat%s suivi%s en détail, les autres suivis de loin." % [detailed, "s" if detailed > 1 else "", "s" if detailed > 1 else ""],17,C.MUTED))
+		var choose := G.button("Championnats suivis…", func():
 			dialog.queue_free()
 			preload("res://ui/league_detail_view.gd").open_career(app))
 		choose.name = "PreferencesLeagueDetail"
 		comfort.add_child(choose)
 	var camera := _choice(comfort,"Caméra préférée",["TV","Vue de dessus","Action"],"PreferencesCamera")
 	var quality := _choice(comfort,"Qualité de la scène",["Économie","Équilibrée","Détaillée"],"PreferencesQuality")
+	var autosave := _choice(comfort,"Sauvegarde automatique",["Chaque jour","Chaque semaine","Chaque mois"],"PreferencesAutosave")
+	autosave.tooltip_text = "Sauvegarde complète à la fin d’une avance du calendrier. Chaque décision est notée aussitôt ; la fermeture et « Sauvegarder » enregistrent toujours tout."
 	var sound_profile: RefCounted = app.soundscape.preferences if is_instance_valid(app.soundscape) else null
 	sound.add_child(C.label("MIXAGE DE L’INTERFACE ET DU STADE",20,C.GOLD,true,700))
 	sound.add_child(C.wrap("Les sons d’interface et l’ambiance du stade ont chacun leur volume.",18,C.IVORY))
@@ -108,6 +110,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		stadium.select(1 if profile.data.stadium == "evening" else 0)
 		continue_messages.select(maxi(0,["importants","tous","aucun"].find(str(profile.data.get("continue_messages","importants")))))
 		continue_injuries.select(1 if profile.data.get("continue_injuries") == "effectif" else 0)
+		autosave.select(maxi(0,profile.AUTOSAVE.find(str(profile.data.get("autosave","semaine")))))
 		if screen.item_count > screen_labels.size(): screen.remove_item(screen.item_count-1)
 		var saved_screen: int = profile.data.display_screen
 		if saved_screen >= screen_count:
@@ -139,6 +142,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	stadium.item_selected.connect(func(index: int): profile.set_value("stadium",["day","evening"][index]); refresh.call())
 	continue_messages.item_selected.connect(func(index: int): profile.set_value("continue_messages",["importants","tous","aucun"][index]); refresh.call())
 	continue_injuries.item_selected.connect(func(index: int): profile.set_value("continue_injuries",["titulaires","effectif"][index]); refresh.call())
+	autosave.item_selected.connect(func(index: int): profile.set_value("autosave",profile.AUTOSAVE[index]); refresh.call())
 	interface_volume.value_changed.connect(func(value: float):
 		if sound_profile != null: sound_profile.set_value("interface_volume",int(value))
 		refresh.call())

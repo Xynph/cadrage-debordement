@@ -572,7 +572,7 @@ static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	var payload := {"mode":mode,"varyCurrent":bool(app.management_ui.get("creation_vary_current",true))}
 	if mode == "world-champ" and role != "nation": payload.start = str(app.management_ui.get("creation_start", "premiers-clubs"))
 	if role != "nation": payload.club = int(selected.id)
-	# Championnats simulés en détail (les autres en résultats rapides) : carrière Monde seulement.
+	# Championnats suivis en détail (les autres suivis de loin) : carrière Monde seulement.
 	if mode.begins_with("world"):
 		payload.detailedLeagues = LeagueDetail.payload(app, str(selected.get("division", "")) if role != "nation" else "", app.pack_manager.creation_catalogue())
 	if role in ["dual", "nation"]:

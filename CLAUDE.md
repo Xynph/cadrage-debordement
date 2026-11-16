@@ -93,6 +93,7 @@ une partie du raisonnement sont perdus au changement).
   - une suite JS : `node tests/<suite>.cjs` ;
   - suites Godot (SDK 4.7.2 requis) : `bash ci/run-godot-suites.sh <liste>` ;
   - projet Godot : `godot --path native/godot`.
+- PC de Léo indisponible : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot).
 
 Version du moteur et écarts avec les connaissances du modèle :
 @docs/engine-reference/godot/VERSION.md

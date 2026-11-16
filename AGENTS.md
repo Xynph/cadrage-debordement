@@ -18,12 +18,16 @@
   quand le diff touche Godot (`native/godot/`, `tests/godot-*`, lanceurs) et
   sautés sinon. Recette SDK ciblée : étiquette `godot-sdk`. Vérifications
   lourdes (SDK, économie, résilience, Windows) : créneau régulier sur `main`.
-- **Fusion** : autorisation permanente de Léo (11/11/2026) dans le périmètre
-  demandé ; ne pas la redemander. Un seul intégrateur arbitre et applique les
-  protections serveur. Une PR prête à « Validation CI » vert se
-  fusionne aussitôt via le [gate officiel](docs/chat-release-gate.md). 
+- **PC de Léo indisponible** : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot).
+- **Fusion automatique** (décision de Léo, 16/11/2026) : en passant une PR en
+  prête, activer la fusion auto de GitHub en squash
+  (`gh api -X PUT repos/Xynph/cadrage-debordement/pulls/<n>/ccr/auto_merge -f merge_method=squash`
+  depuis Claude Code, sinon `gh pr merge <n> --auto --squash`). GitHub fusionne
+  seul dès que la CI obligatoire est verte : ne pas surveiller la CI en boucle.
+  Un seul intégrateur arbitre les collisions et les protections serveur ; le
+  [gate officiel](docs/chat-release-gate.md) reste pour un lot sensible.
   Aucun push direct sur `main`, jamais de contournement d'un contrôle rouge ou
-  d'une réservation non résolue. Regrouper les fusions plutôt que les enchaîner.
+  d'une réservation non résolue. Si la CI est rouge, la PR attend : corriger.
 - Expliquer chaque phase en une phrase, rendre le résultat, le lien de PR et
   la prochaine étape. Messages courts.
 

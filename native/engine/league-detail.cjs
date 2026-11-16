@@ -1,15 +1,25 @@
 'use strict';
-// Championnats actifs « comme Football Manager » (demande de Léo du 13/11/2026).
-// Chaque championnat du Monde est soit « détaillé » (moteur de match complet), soit en
-// « résultats rapides » : score, essais, buts, blessures, fatigue et progression simplifiée,
-// sans moteur de match ni feuille de match conservée. Le championnat du club du joueur est
-// toujours détaillé. Sans état `leagueDetail` (anciennes carrières, tests), tout est détaillé.
+// Championnats suivis « comme Football Manager » (demandes de Léo des 13 et 16/11/2026).
+// Chaque championnat du Monde est soit « suivi en détail » (moteur de match complet), soit
+// « suivi de loin » : score, essais, buts, blessures, fatigue et progression simplifiée,
+// sans moteur de match ni feuille de match conservée. Toujours en détail : le championnat du
+// club du manager, les coupes d'Europe où il est engagé, les phases finales et les rencontres
+// des clubs d'un joueur suivi au recrutement. Sans état `leagueDetail` (anciennes carrières,
+// tests), tout est détaillé et le hasard reste le flux unique du moteur (identique à main).
 // Changer la liste en cours de partie prend effet au début de la saison suivante (comme FM),
 // pour garder des statistiques, notes et équipes-types de saison homogènes.
+//
+// Hasard (version 2) : dès qu'un championnat est suivi de loin, chaque rencontre de l'IA
+// (détaillée ou non) tire ses hasards dans un flux propre, dérivé de la graine de la carrière
+// (`salt`, lue sans tirage à la création), de la saison et de l'identifiant de la rencontre.
+// Le flux principal n'avance donc plus avec les matchs de l'IA : changer le réglage d'un
+// championnat ne décale plus les tirages des rencontres des championnats suivis en détail.
+// Quand tout est suivi en détail, rien ne change par rapport au flux unique.
 const files=Object.freeze([]),commands=Object.freeze(['league_detail_set']);
 
 function factory(){
- const POLICY='league-detail-v1',EUROPE=['champions','challenge'],QUICK_PHASES=['league','pool'];
+ const POLICY='league-detail-v2',POLICY_V1='league-detail-v1',EUROPE=['champions','challenge'],QUICK_PHASES=['league','pool'];
+ const SALT_V1=0x9e3779b9;
  const WEATHER=[['Sec',.7],['Vent',.15],['Pluie',.15]];
  const object=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
  const shape=(x,keys)=>object(x)&&Object.keys(x).length===keys.length&&keys.every(k=>Object.hasOwn(x,k));
@@ -19,8 +29,20 @@ function factory(){
  const leagueIds=s=>Object.keys(s.worldMode.leagues);
  const leagueOf=(s,clubId)=>leagueIds(s).find(id=>s.worldMode.leagues[id].members.includes(clubId))??null;
  const own=s=>leagueOf(s,s.club);
- const active=s=>s?.leagueDetail?.version===1;
+ const active=s=>s?.leagueDetail?.version===1||s?.leagueDetail?.version===2;
  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+ // Brassage 32 bits (FNV-1a puis finaliseur de MurmurHash3) : graine d'un flux de rencontre.
+ function mix(text){
+  let h=0x811c9dc5;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}
+  h^=h>>>16;h=Math.imul(h,0x85ebca6b)>>>0;h^=h>>>13;h=Math.imul(h,0xc2b2ae35)>>>0;h^=h>>>16;return h>>>0;
+ }
+ // Graine de la carrière lue sans tirage (worker natif) ; ailleurs, empreinte du monde créé.
+ function freshSalt(s){
+  if(typeof nativeRandomPeek==='function'){const v=Number(nativeRandomPeek());if(Number.isInteger(v)&&v>=0)return mix('cd-ligues|'+v);}
+  return mix('cd-ligues|'+s.club+'|'+JSON.stringify(s.worldMode.leagues));
+ }
+ const saltOf=s=>s.leagueDetail.version===2?s.leagueDetail.salt:SALT_V1;
+ function stateFor(s,detailed){return {version:2,policy:POLICY,detailed,pending:null,salt:freshSalt(s)};}
  // Liste demandée -> liste normalisée (ordre du registre, championnat du club inclus).
  function normalize(s,ids){
   check(Array.isArray(ids)&&ids.length<=leagueIds(s).length&&ids.every(id=>typeof id==='string'),'liste de championnats invalide');
@@ -32,22 +54,45 @@ function factory(){
  function create(s,ids){
   if(ids===undefined||ids===null)return false;
   check(world(s),'réservé à la carrière Monde');
-  s.leagueDetail={version:1,policy:POLICY,detailed:normalize(s,ids),pending:null};
+  s.leagueDetail=stateFor(s,normalize(s,ids));
   return true;
  }
  function detailedLeague(s,id){
   if(!active(s))return true;
   return s.leagueDetail.detailed.includes(id)||id===own(s);
  }
- // Seules les rencontres de saison régulière et de poules passent en résultat rapide :
+ // Au moins un championnat suivi de loin : les rencontres de l'IA ont leur propre flux.
+ const separated=s=>active(s)&&world(s)&&leagueIds(s).some(id=>!detailedLeague(s,id));
+ // Coupe d'Europe où le club du manager est engagé cette saison : suivie en entier.
+ const ownCompetition=(s,id)=>s.worldMode.fixtures.some(x=>x.competitionId===id&&(x.homeId===s.club||x.awayId===s.club));
+ // Club d'un joueur suivi au recrutement : ses rencontres gardent notes et feuilles.
+ function watchedClub(s,id){
+  const watch=s.manager?.watch;if(!Array.isArray(watch)||!watch.length)return false;
+  const ids=new Set(watch);return (s.clubs[id]?.players||[]).some(p=>ids.has(p.id));
+ }
+ // Seules les rencontres de saison régulière et de poules sont suivies de loin :
  // les phases finales, barrages et accessions gardent le moteur complet (preuves de
  // prolongation, tirs au but et règles de départage propres à chaque compétition).
  function quickFixture(s,f){
   if(!active(s)||!world(s)||!f||!QUICK_PHASES.includes(f.phase))return false;
   if(f.homeId===s.club||f.awayId===s.club)return false;
-  if(EUROPE.includes(f.competitionId))return [f.homeId,f.awayId].every(id=>!detailedLeague(s,leagueOf(s,id)));
-  if(!Object.hasOwn(s.worldMode.leagues,f.competitionId))return false;
-  return !detailedLeague(s,f.competitionId);
+  let light;
+  if(EUROPE.includes(f.competitionId))light=!ownCompetition(s,f.competitionId)&&[f.homeId,f.awayId].every(id=>!detailedLeague(s,leagueOf(s,id)));
+  else light=Object.hasOwn(s.worldMode.leagues,f.competitionId)&&!detailedLeague(s,f.competitionId);
+  return light&&!watchedClub(s,f.homeId)&&!watchedClub(s,f.awayId);
+ }
+ // Exécute `fn` avec un flux de hasard propre à la rencontre (Math.random remplacé puis rendu).
+ function isolated(s,f,fn){
+  let x=mix(saltOf(s)+'|'+s.season+'|'+f.id+'|'+f.competitionId);
+  const prior=Math.random;
+  Math.random=()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};
+  try{return fn();}finally{Math.random=prior;}
+ }
+ // Point d'entrée du monde pour chaque rencontre de l'IA. `full` joue le moteur complet.
+ function play(s,f,full){
+  if(!active(s)||!world(s))return full();
+  if(quickFixture(s,f))return isolated(s,f,()=>simulate(s,f));
+  return separated(s)?isolated(s,f,full):full();
  }
  const roll=()=>Math.random();
  function poisson(mean){const limit=Math.exp(-mean);let k=0,p=1;do{k++;p*=roll();}while(p>limit&&k<40);return k-1;}
@@ -123,14 +168,17 @@ function factory(){
  function applyPending(s){
   if(!active(s)||!world(s))return false;
   const st=s.leagueDetail;
-  if(st.pending){st.detailed=normalize(s,st.pending);st.pending=null;}
-  else st.detailed=normalize(s,st.detailed);
+  const next=normalize(s,st.pending||st.detailed);
+  // Une carrière de la version 1 reçoit son flux de hasard propre au changement de saison.
+  if(st.version===1)s.leagueDetail=stateFor(s,next);
+  else{st.detailed=next;st.pending=null;}
   return true;
  }
  function validate(s){
   if(!s||s.leagueDetail===undefined)return true;
   const st=s.leagueDetail;
-  check(shape(st,['version','policy','detailed','pending'])&&st.version===1&&st.policy===POLICY,'état invalide');
+  check(shape(st,['version','policy','detailed','pending'])&&st.version===1&&st.policy===POLICY_V1
+   ||shape(st,['version','policy','detailed','pending','salt'])&&st.version===2&&st.policy===POLICY&&Number.isInteger(st.salt)&&st.salt>=0&&st.salt<=0xffffffff,'état invalide');
   check(world(s),'état hors carrière Monde');
   const ids=leagueIds(s),valid=list=>Array.isArray(list)&&new Set(list).size===list.length&&list.every(id=>ids.includes(id))&&list.every((id,i)=>i===0||ids.indexOf(list[i-1])<ids.indexOf(id));
   check(valid(st.detailed),'liste des championnats détaillés invalide');
@@ -141,7 +189,7 @@ function factory(){
   const s=state();check(command==='league_detail_set','commande inconnue');
   check(world(s),'réservé à la carrière Monde');
   check(shape(payload,['detailed']),'paramètres invalides');
-  if(!active(s))s.leagueDetail={version:1,policy:POLICY,detailed:leagueIds(s).slice(),pending:null};
+  if(!active(s))s.leagueDetail=stateFor(s,leagueIds(s).slice());
   const next=normalize(s,payload.detailed);
   s.leagueDetail.pending=JSON.stringify(next)===JSON.stringify(s.leagueDetail.detailed)?null:next;
   return {leagueDetail:project()};
@@ -151,6 +199,7 @@ function factory(){
   const names=Object.fromEntries((CDWorldCareer.edition(s)?.registry?.leagues||[]).map(l=>[l.id,l.name]));
   const mine=own(s),st=active(s)?s.leagueDetail:null;
   return {available:true,configured:!!st,own:mine,pending:st?.pending?st.pending.slice():null,
+   europe:EUROPE.filter(id=>ownCompetition(s,id)),
    leagues:leagueIds(s).map(id=>({id,name:names[id]||id,clubs:s.worldMode.leagues[id].members.length,
     detailed:detailedLeague(s,id),own:id===mine,next:st?.pending?st.pending.includes(id)||id===mine:detailedLeague(s,id)}))};
  }
@@ -161,32 +210,33 @@ function factory(){
   }
   return true;
  }
- return Object.freeze({create,quickFixture,simulate,detailedLeague,applyPending,validate,execute,project,installHooks});
+ return Object.freeze({create,quickFixture,simulate,play,separated,detailedLeague,applyPending,validate,execute,project,installHooks});
 }
 
 // --- Côté Node (hors VM) : banc d'essai et estimation de fluidité --------------------
-// Coûts mesurés le 13/11/2026 sur la machine de référence (2 cœurs partagés, 7 Go),
-// carrière Monde de 116 clubs, semaines jouées avec délégation (finish_round) :
-// voir la PR « championnats actifs » pour le détail des mesures.
-// - coût fixe d'une semaine (commandes, réunions, conférence, validation et sauvegarde
-//   d'un état d'environ 22 Mo) : 15,6 à 18,5 s, retenu 16 s ;
-// - rencontre au moteur complet : 92 ms (création des feuilles 31 ms + moteur 60 ms + suites) ;
-// - rencontre en résultat rapide : moins de 1 ms, compté 1 ms ;
-// - intersaison (next_season) non comptée : elle n'a pas été mesurée ici.
+// Coûts remesurés le 16/11/2026 après #753, sur la machine de mesure (2 cœurs partagés,
+// 7,8 Go, banc d'essai ≈ 25 ms + 53 ms), carrière Monde de 116 clubs, club de l'Élite :
+// semaine réelle par le worker (match délégué, réunions, finish_round, projection,
+// sauvegarde) et saisons complètes du harnais (voir la PR « championnats suivis »).
+// - semaine avec le seul championnat du club suivi en détail : médiane 9,2 s ;
+// - tout suivi en détail : médiane 10,7 s ;
+// - rencontre de l'IA suivie en détail : ≈ 65 ms ; suivie de loin : moins de 1 ms, compté 1 ms.
+// Les valeurs ci-dessous sont ramenées hors contention (÷ 1,12 pour 2 cœurs, ÷ 1,15 pour
+// moins de 8 Go) : estimate() retrouve les mesures sur la machine de mesure.
 const REFERENCE=Object.freeze({
- benchmarkMs:Object.freeze({serial:18,compute:70}),
- baseWeekMs:16000,detailedMatchMs:92,quickMatchMs:1,seasonExtraMs:0,
+ benchmarkMs:Object.freeze({serial:25,compute:53}),
+ baseWeekMs:6900,detailedMatchMs:50,quickMatchMs:1,seasonExtraMs:0,
 });
 // Matchs de saison régulière et de poules européennes par saison et par championnat
 // (formats de la saison 2026-27 ; poules européennes réparties entre Top 14, Premiership et URC).
 const SEASON_MATCHES=Object.freeze({elite:210,accession:240,nationale:182,prem:118,champ:182,urc:172,srp:80,'jlo-d1':108,'jlo-d2':56});
 const WEEKS=46;
+// Trois crans aux couleurs d'état de l'interface (succès, alerte, danger) : l'interface
+// choisit la couleur du thème, le moteur ne fournit que l'état.
 const LEVELS=Object.freeze([
- Object.freeze({id:'rapide',label:'Rapide',maxWeekMs:3000,color:'38664b'}),
- Object.freeze({id:'fluide',label:'Fluide',maxWeekMs:6000,color:'5d8a4a'}),
- Object.freeze({id:'correct',label:'Correct',maxWeekMs:10000,color:'b08a2e'}),
- Object.freeze({id:'lent',label:'Lent',maxWeekMs:15000,color:'c0682c'}),
- Object.freeze({id:'tres-lent',label:'Très lent',maxWeekMs:Infinity,color:'963f32'}),
+ Object.freeze({id:'fluide',label:'Fluide',maxWeekMs:10000,state:'succes'}),
+ Object.freeze({id:'correct',label:'Correct',maxWeekMs:14000,state:'alerte'}),
+ Object.freeze({id:'lent',label:'Lent',maxWeekMs:Infinity,state:'danger'}),
 ]);
 // Charges représentatives : sérialisation d'un gros état (le poste dominant d'une semaine :
 // copie d'annulation, validation, sauvegarde) et calcul flottant proche du moteur de match.
@@ -213,7 +263,7 @@ function estimate({detailed,leagues=Object.keys(SEASON_MATCHES),machine={}}){
  for(const id of leagues){const n=SEASON_MATCHES[id]||0;if(set.has(id))detailedMatches+=n;else quickMatches+=n;}
  const seasonMs=(WEEKS*R.baseWeekMs*serial+detailedMatches*R.detailedMatchMs*compute+quickMatches*R.quickMatchMs*compute+R.seasonExtraMs*serial)*contention;
  const weekMs=seasonMs/WEEKS,level=LEVELS.find(l=>weekMs<=l.maxWeekMs);
- return {weekMs:Math.round(weekMs),seasonMs:Math.round(seasonMs),detailedMatches,quickMatches,level:level.id,label:level.label,color:level.color};
+ return {weekMs:Math.round(weekMs),seasonMs:Math.round(seasonMs),detailedMatches,quickMatches,level:level.id,label:level.label,state:level.state};
 }
 // Tableau transmis à l'interface : coût fixe et coût de chaque championnat selon son mode,
 // déjà adaptés à la machine, pour une jauge recalculée sans aller-retour au moteur.
@@ -223,6 +273,6 @@ function costTable(machine={}){
   const one=estimate({detailed:[id],machine});
   table[id]={quickMs:Math.round(SEASON_MATCHES[id]*REFERENCE.quickMatchMs*factorOf(machine.computeMs,REFERENCE.benchmarkMs.compute)),extraDetailedMs:one.seasonMs-none.seasonMs,matches:SEASON_MATCHES[id]};
  }
- return {weeks:WEEKS,baseSeasonMs:none.seasonMs,leagues:table,levels:LEVELS.map(l=>({id:l.id,label:l.label,maxWeekMs:Number.isFinite(l.maxWeekMs)?l.maxWeekMs:null,color:l.color}))};
+ return {weeks:WEEKS,baseSeasonMs:none.seasonMs,leagues:table,levels:LEVELS.map(l=>({id:l.id,label:l.label,maxWeekMs:Number.isFinite(l.maxWeekMs)?l.maxWeekMs:null,state:l.state}))};
 }
 module.exports={files,commands,factory,benchmark,estimate,costTable,REFERENCE,SEASON_MATCHES,LEVELS};

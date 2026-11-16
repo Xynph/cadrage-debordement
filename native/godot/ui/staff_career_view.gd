@@ -58,6 +58,7 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 	var next := G.button("SUIVANT →", func(): pass)
 	var page_label := G.label("", 12, G.MUTED)
 	paging.add_child(previous); paging.add_child(page_label); paging.add_child(next)
+	var generation := [0]
 	var redraw := func():
 		for child in list.get_children(): list.remove_child(child); child.queue_free()
 		var people: Array = []
@@ -70,7 +71,12 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 		var filtered := people.filter(func(p: Dictionary): return query.is_empty() or U.fold(str(p.name) + " " + str(p.get("roleLabel", p.role))).contains(query))
 		local.page = clampi(int(local.page), 0, maxi(0, ceili(float(filtered.size()) / PAGE_SIZE) - 1))
 		var start: int = int(local.page) * PAGE_SIZE
-		for person: Dictionary in filtered.slice(start, start + PAGE_SIZE): _person(app, list, person, data, tabs.selected == 0 and app.selected_staff_club == int(app.model.club.id))
+		# Les premières cartes tout de suite, les autres sur les images suivantes.
+		var own: bool = tabs.selected == 0 and app.selected_staff_club == int(app.model.club.id)
+		var page_people: Array = filtered.slice(start, start + PAGE_SIZE)
+		generation[0] += 1
+		for person: Dictionary in page_people.slice(0, FIRST_CARDS): _person(app, list, person, data, own)
+		if page_people.size() > FIRST_CARDS: _more_cards(app, list, page_people, data, own, generation, generation[0])
 		count.text = "%d / %d membres · %s" % [filtered.size(), people.size(), ["staff en poste", "candidats recrutables", "archives conservées"][tabs.selected]]
 		if filtered.is_empty(): list.add_child(G.wrap("Aucun profil dans cette sélection.", 15))
 		previous.disabled = int(local.page) == 0
@@ -83,6 +89,23 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 	redraw.call()
 	parent.add_child(G.wrap("Les âges et contrats sont ceux de la carrière simulée. Les identités n’accordent aucun bonus de match. Les engagements rémunérés sont indiqués séparément ; les autres contrats restent descriptifs.", 12))
 
+const FIRST_CARDS := 6
+const CARDS_PER_FRAME := 7
+
+static func _more_cards(app: Control, list: VBoxContainer, people: Array, data: Dictionary, own: bool, generation: Array, mine: int) -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	var next := FIRST_CARDS
+	while next < people.size():
+		await tree.process_frame
+		if not is_instance_valid(list) or not list.is_inside_tree() or generation[0] != mine: return
+		for person: Dictionary in people.slice(next, next + CARDS_PER_FRAME): _person(app, list, person, data, own)
+		next += CARDS_PER_FRAME
+	var scroll := list.get_parent() as ScrollContainer
+	var wanted := int(app.management_ui.get("staff", {}).get("scroll", 0))
+	if scroll != null and wanted > 0:
+		await tree.process_frame
+		if is_instance_valid(scroll) and generation[0] == mine: scroll.scroll_vertical = wanted
+
 static func _person(app: Control, parent: Container, person: Dictionary, data: Dictionary, own: bool) -> void:
 	var card := G.card(parent)
 	var row := G.h(12)
@@ -91,7 +114,7 @@ static func _person(app: Control, parent: Container, person: Dictionary, data: D
 	var appearance := person.duplicate(true)
 	appearance.portraitRole = "staff"
 	var staff_view = load("res://ui/staff_view.gd")
-	row.add_child(staff_view.portrait_link(app, G.portrait(0, 68, appearance), person))
+	row.add_child(staff_view.portrait_link(app, G.portrait_lazy(0, 68, appearance), person))
 	var text := G.v(4)
 	G.fill(text); row.add_child(text)
 	text.add_child(staff_view.name_link(app, person, 21))

@@ -670,7 +670,7 @@ func _xv() -> void:
 	var side := D.panel(workspace, Rect2(1144, 0, 1104, 844), "XV type de la saison", "tactic", "", "ClubSheetXVList")
 	var source := str(xv.get("source", "probable"))
 	var explanation := ""
-	if total == 0: explanation = "Saison pas encore commencée pour ce club (ou championnat en résultats rapides) : XV probable de la composition automatique."
+	if total == 0: explanation = "Saison pas encore commencée pour ce club (ou championnat suivi de loin) : XV probable de la composition automatique."
 	elif source == "feuilles": explanation = "Le XV qui revient le plus : pour chaque maillot, le joueur le plus souvent titulaire à ce poste sur %d feuille%s de match." % [total, "" if total == 1 else "s"]
 	else: explanation = "XV le plus fréquent sur %d feuille%s ; %d maillot%s complété%s par le XV probable (joueur parti ou poste jamais tenu par un joueur encore au club)." % [total, "" if total == 1 else "s", int(xv.get("completed", 0)), "" if int(xv.get("completed", 0)) == 1 else "s", "" if int(xv.get("completed", 0)) == 1 else "s"]
 	_paragraph(side, Rect2(24, 70, 1056, 96), explanation, 22, "ClubSheetXVSource")
