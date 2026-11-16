@@ -34,6 +34,7 @@ engine_skip='SDK Godot (requis|absent)|Godot SDK required|SKIP [^ ]+ : SDK absen
 # (Les plafonds et suites informatives ci-dessous des suites exclues — CD_MODES_HERITES — sont conservés pour leur retour.)
 declare -A suite_limits=(
   [tests/godot-art-direction.cjs]=600
+  [tests/godot-gabi-bandeau.cjs]=600
   [tests/godot-match-temps-forts.cjs]=600
   [tests/godot-immersive08.cjs]=600
   # Notes de match : préparation Node de la carrière Monde (~68 jours jusqu'au premier match, 3 matchs), puis Godot.

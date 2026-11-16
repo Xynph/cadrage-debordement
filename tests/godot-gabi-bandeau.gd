@@ -27,6 +27,12 @@ func wait_model() -> void:
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < until: await process_frame
 	check(not app.waiting and not app.model.is_empty(), "Moteur réel disponible")
 
+var _phase_start := 0
+func phase(name: String) -> void:
+	var now := Time.get_ticks_msec()
+	if _phase_start > 0: print("GABI_PHASE ", name, " ", now - _phase_start)
+	_phase_start = now
+
 func settle() -> void:
 	await create_timer(.3).timeout
 	for i in 10: await process_frame
@@ -82,23 +88,22 @@ func content(except: Array) -> Array:
 func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
-	app = load("res://main.tscn").instantiate(); root.add_child(app); await wait_model(); app.timer.stop()
-	app._command("new_career", {"club": 0, "mode": "world-champ"}); await wait_model()
-	await ContextualFlow.settle_club_meetings(app, self, check)
+	phase(""); app = load("res://main.tscn").instantiate(); root.add_child(app); await wait_model(); app.timer.stop()
+	phase("demarrage"); app._command("new_career", {"club": 0, "mode": "world-champ"}); await wait_model()
+	phase("creation_carriere"); await ContextualFlow.settle_club_meetings(app, self, check); phase("reunions_club")
 	check(str(app.model.meta.get("mode")) == "world", "Carrière Monde")
 	var coach: Control = app.coach
 	app._navigate("Bureau"); await settle()
 	if coach.expanded: coach.close(); await settle()
 	await layout_normal()
+	phase("mise_en_page")
 	for route: String in ROUTES:
 		if coach.expanded: coach.close()
 		app._navigate(route); await settle()
 		if coach.expanded: coach.close(); await settle()
 		coach.fermer_bulle(); await settle()
 		await bandeau(route)
-	await bulle()
-	await bureau()
-	await coupe()
+	phase("bandeaux"); await bulle(); phase("bulle"); await bureau(); phase("bureau"); await coupe(); phase("coupe")
 	print("GABI_BANDEAU ", checks, " controles, ", failures.size(), " echec", "s" if failures.size() > 1 else "")
 	quit(1 if failures.size() > 0 else 0)
 
