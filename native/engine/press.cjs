@@ -38,7 +38,7 @@ function factory(){
   const rival=nextOpponentId(s);
   if(rival!==null){
    const own=s.clubs?.[s.club]?.id??s.club,pair=[own,rival].sort((a,b)=>a<b?-1:a>b?1:0),tension=s.interclubWorld?.pairs?.[pair[0]+':'+pair[1]]?.tension;
-   if(Number.isFinite(tension)&&tension>=60)return {kind:'derby',label:'Derby face à '+(facts.fixture?.opponent||'votre rival')};
+   if(typeof isDerby==='function'?isDerby(s,own,rival):Number.isFinite(tension)&&tension>=60)return {kind:'derby',label:'Derby face à '+(facts.fixture?.opponent||'votre rival')};
   }
   if((s.trust??50)<35||(s.pressRelations?.boardPressure??0)>=75)return {kind:'crise',label:'Climat de crise'};
   return null;

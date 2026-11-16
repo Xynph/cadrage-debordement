@@ -108,7 +108,7 @@ function makeStats(){return{possession:0,territory:0,scrums:0,scrumsWon:0,lineou
 function createRugbyMatch(pair,legacy=null,automated=false,preparation=null){if(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S))for(const ci of pair)CDFranceCareer.ensureAISheet(S.clubs[ci]);const userSide=automated?-1:pair.indexOf(S.club);const sheets=pair.map((ci,s)=>{let c=S.clubs[ci],sel=ci===S.club?buildSheet(c,S.lineup,S.reserves):buildSheet(c);return{on:sel.lineup,bench:sel.bench,initial:[...sel.lineup],used:[...sel.lineup.filter(Boolean)],minutes:{},cards:[],yellowCounts:{},sentOff:[],subs:0}});
 const l={engine:2,pair:[...pair],minute:0,score:[0,0],tries:[0,0],events:[],finished:false,paused:false,halftime:false,userSide,sheets,stats:[makeStats(),makeStats()],tactics:pair.map(ci=>ci===S.club?S.tactic:['equilibre','large','conquete','occupation'][rand(0,3)]),weather:['Sec','Sec','Pluie','Vent'][rand(0,3)],possession:rand(0,1),territory:50,subs:[],pending:null};
 if(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)){l.franceContext=CDFranceCareer.context(pair);if(!l.franceContext)throw Error('Rencontre hors du calendrier France.');}
-if(!legacy){if(S.developmentFocusVersion===1)l.developmentFocusVersion=1;if(S.physicalLoadVersion===1)l.physicalLoadVersion=1;initializeManagers(l,automated);initializeMatchRules(l);initializeMatchFlow(l);initializeTacticalPlans(l);initializePlaybooks(l);initializeCollectivePreparation(l);initializeRestarts(l);initializePlayerRoles(l);initializeStaffJudgement(l);initializePreparation(l,preparation);const trap=matchTrapOffset(teamLevel(activePlayers(l,0))-teamLevel(activePlayers(l,1)));if(trap)l.levelTrap=trap*MATCH_LEVEL_CURVE.complet.piege}
+if(!legacy){if(S.developmentFocusVersion===1)l.developmentFocusVersion=1;if(S.physicalLoadVersion===1)l.physicalLoadVersion=1;initializeManagers(l,automated);initializeMatchRules(l);initializeMatchFlow(l);initializeTacticalPlans(l);initializePlaybooks(l);initializeCollectivePreparation(l);initializeRestarts(l);initializePlayerRoles(l);initializeStaffJudgement(l);initializeDerby(l);initializePreparation(l,preparation);const trap=matchTrapOffset(teamLevel(activePlayers(l,0))-teamLevel(activePlayers(l,1)));if(trap)l.levelTrap=trap*MATCH_LEVEL_CURVE.complet.piege}
 if(legacy){l.minute=legacy.minute;l.score=[...legacy.score];l.tries=[...legacy.tries];l.events=[...legacy.events];l.finished=legacy.finished;l.halftime=l.minute>=40;l.paused=l.minute===40&&!l.finished;if(userSide>=0){l.tactics[userSide]=S.tactic;l.tactics[1-userSide]=legacy.opponentTactic||'equilibre';let s=sheets[userSide];s.used=[...new Set([...(legacy.used||[]),...s.on])];s.bench=s.bench.filter(id=>!s.used.includes(id));for(let id of s.used)s.minutes[id]=l.minute/Math.max(1,s.used.length)*15}}
 return l}
 // Courbe de niveau commune (lot 0 « notes réalistes », 14/11/2026, docs/courbe-niveau-moteur-20261114.md).
@@ -138,7 +138,7 @@ function teamEdge(l,side,kind){const opp=1-side,t=l.tactics[side],weather=l.weat
 // V19: wider attack exposes an outnumbered backline; possession sides with extra players can exploit width.
 if(l.advantageModel===2&&kind==='attack'&&t==='large')b+=(on.length-activePlayers(l,opp).length)*.018;
 if(kind==='attack'&&!tacticalRules(l)){if(t==='large')b+=(unit(l,side,'pass',p=>p.fam>=4)-(l.balanceVersion===2?75:65))*(l.balanceVersion===2?.003:.006)+(l.balanceVersion===2?.015:.035);if(t==='conquete')b+=(unit(l,side,'power',p=>p.fam<=3)-(l.balanceVersion===2?75:65))*(l.balanceVersion===2?.002:.004);if(weather==='Pluie'&&t==='large')b-=.075;if(weather==='Vent'&&t==='occupation')b-=.025}
-b+=matchLevelEdge(l,side);if(l.franceContext?!l.franceContext.neutral:l.worldContext?!l.worldContext.neutral:S.phase!=='semi'&&S.phase!=='final')b+=side===0?MATCH_LEVEL_CURVE.complet.terrain:-MATCH_LEVEL_CURVE.complet.terrain;if(l.balanceVersion===2)b+=(clubMorale(l.pair[side])-70)*.001;else if(l.pair[side]===S.club)b+=(S.morale-70)*.001;if(kind==='attack')b-=collectivePreparationBonus(l,opp,'defence');return b}
+b+=matchLevelEdge(l,side);if(l.franceContext?!l.franceContext.neutral:l.worldContext?!l.worldContext.neutral:S.phase!=='semi'&&S.phase!=='final')b+=(side===0?1:-1)*MATCH_LEVEL_CURVE.complet.terrain*(derbyRules(l)?DERBYS.match.domicile:1);if(l.balanceVersion===2)b+=(clubMorale(l.pair[side])-70)*.001;else if(l.pair[side]===S.club)b+=(S.morale-70)*.001;if(kind==='attack')b-=collectivePreparationBonus(l,opp,'defence');return b}
 function changePossession(l){if(restartRules(l))ballPossession(l,1-l.possession);else l.possession=1-l.possession}
 // The field is modelled as 70 m wide (y=0..70), with the posts at y=35.
 // These are game-balance coefficients, not measured professional kick percentages.
@@ -176,7 +176,7 @@ function disciplineDecision(l,foul,incident){
  const discipline=unit(l,foul,'discipline');
  const history=l.disciplineHistory?.[foul]||{count:0,recent:0};
  const repeated=history.recent>=3;
- const risk=clamp(.045+(65-discipline)*.0015+(repeated?.18:0),.02,.35);
+ const risk=clamp(.045+(65-discipline)*.0015+(repeated?.18:0)+(derbyRules(l)?DERBYS.match.carton:0),.02,.35);
  const sanction=incident.serious?(Math.random()<.18?'red':'yellow'):(Math.random()<risk?'yellow':null);
  return {sanction,repeated};
 }
@@ -240,7 +240,7 @@ function opponentDefensiveScout(l,side){
 }
 function aiSubs(l,side){opponentDefensiveScout(l,side);manageSubstitutions(l,side)}
 function advanceRugby(l){if(l.finished||l.paused)return;if(flowRules(l))resumeFlowHalf(l);const before=l.minute,intervalPlayers=revisedRules(l)?[activePlayers(l,0),activePlayers(l,1)]:null;l.minute=flowRules(l)?l.minute+1:Math.min(l.minute+1,80);for(let side=0;side<2;side++){const s=l.sheets[side];s.cards=s.cards.filter(c=>{if(c.until<=l.minute){if(!(frontRowRules(l)&&s.front.exclusions.some(e=>e.id===c.id&&e.kind==='yellow'&&!e.closed)))addEvent(l,`${matchPlayer(l,side,c.id)?.name||'Le joueur'} revient après son carton jaune.`,'card');return false}return true});restoreRedReplacements(l,side);for(const p of intervalPlayers?.[side]||activePlayers(l,side)){s.minutes[p.id]=(s.minutes[p.id]||0)+(l.minute-before);const load=tacticalLoad(l,side);p.condition=clamp(p.condition-load*(1+(70-skill(p,'stamina'))*.009)*(l.minute-before),12,100)}if(side!==l.userSide){adaptManager(l,side);aiSubs(l,side)}}
-const observation=beginPlanObservation(l);const side=l.possession,opp=1-side;l.stats[side].possession++;l.stats[0].territory+=l.territory;l.stats[1].territory+=100-l.territory;if(flowRules(l))advanceFlowPlay(l);else if(restartRules(l)){if(l.minute===41)performKickRestart(l,'kickoff',1-l.firstKickoff,'second-half',l.firstKickoff);advanceCausalPlay(l)}else{const roll=Math.random();let penaltyProb=clamp(.12+(70-unit(l,opp,'discipline'))*.002,.06,.23);
+const observation=beginPlanObservation(l);const side=l.possession,opp=1-side;l.stats[side].possession++;l.stats[0].territory+=l.territory;l.stats[1].territory+=100-l.territory;if(flowRules(l))advanceFlowPlay(l);else if(restartRules(l)){if(l.minute===41)performKickRestart(l,'kickoff',1-l.firstKickoff,'second-half',l.firstKickoff);advanceCausalPlay(l)}else{const roll=Math.random();let penaltyProb=clamp(.12+(70-unit(l,opp,'discipline'))*.002,.06,.23)*derbyFouls(l);
 if(roll<penaltyProb)awardPenalty(l,side);else if(roll<penaltyProb+.12)contestSetPiece(l,side,'scrum');else if(roll<penaltyProb+.24)contestSetPiece(l,side,'lineout');else{const t=l.tactics[side],dir=side===0?1:-1;if(t==='occupation'&&Math.random()<.5){let gain=clamp(12+(unit(l,side,'kick',p=>p.fam>=4)-60)*.5+rand(-8,10)-(l.weather==='Vent'?9:0),3,38);l.territory=clamp(l.territory+dir*gain,5,95);addEvent(l,`${S.clubs[l.pair[side]].abbr} gagne ${Math.round(gain)} mètres au pied.`);changePossession(l)}else{let edge=teamEdge(l,side,'attack'),success=Math.random()<clamp(.49+edge,.18,.84);if(success){l.territory=clamp(l.territory+dir*rand(12,25),1,99);let danger=side===0?l.territory>74:l.territory<26;if(danger&&Math.random()<clamp(.36+edge,.16,.75))scoreTry(l,side,'open');else if(l.minute%8===0)addEvent(l,`${S.clubs[l.pair[side]].abbr} enchaîne les temps de jeu ${danger?'dans les 22 mètres':'et franchit la ligne d’avantage'}.`)}else{changePossession(l);addEvent(l,`${S.clubs[l.pair[opp]].abbr} récupère le ballon ${l.weather==='Pluie'?'sur une faute de main':'après une séquence défensive'}.`,'turnover')}}}}
 finishPlanObservation(l,observation);if(!flowRules(l)){if(l.minute===40&&!l.halftime){l.halftime=true;l.paused=true;addEvent(l,'Mi-temps. Analysez les statistiques et ajustez vos consignes.','break')}if(l.minute>=80)finishRugbyMatch(l)}}
 function rugbyBegin(reducedBench=false){
@@ -286,3 +286,27 @@ function rugbyPrematch(){const m=nextMatch();let errors=sheetErrors();return hea
 function applyMatchInjuries(l){if(l.injuriesApplied)return;l.injuriesApplied=true;commitStaffJudgement(l);const v39Before=v39MatchBefore(l);recordDevelopmentMatch(l);trackManagerLoad(l);recordPhysicalMatchLoad(l);for(let side=0;side<2;side++){const s=l.sheets[side];for(let id of s.used){let p=matchPlayer(l,side,id),minutes=s.minutes[id]||0;if(!p||p.injury||!minutes)continue;let risk=(p.condition<55?.07:.025)*minutes/80;if(Math.random()<risk){p.injury=rand(1,4);if(l.pair[side]===S.club)news(`${p.name} est blessé après la rencontre : ${p.injury} semaine(s) d’indisponibilité.`)}}}v39AfterMatch(l,v39Before)}
 
 function inspectPlayer(id){inspectCareerPlayer(id)}
+
+// Derbys et rivalités, carrière Monde (décision du 16/11/2026, docs/derbys-20261116.md). Une rivalité est une
+// paire de clubs dont la tension atteint le seuil : tension vécue (monde interclubs) ou rivalité historique et
+// géographique semée ci-dessous (identifiants de clubs du Monde, tension de départ). Valeurs de jeu :
+// match.fautes multiplie la probabilité de pénalité (+10 à +20 %), match.carton s'ajoute au risque de jaune
+// d'une faute (≈ +0,3 carton par match), match.domicile multiplie l'avantage du terrain ; apres s'ajoute au
+// retentissement d'un match ordinaire. Règles copiées au coup d'envoi (derbyVersion) : une rencontre commencée
+// avant cette version garde ses règles.
+const DERBYS={version:1,seuil:60,
+ rivalites:[[0,9,70],[0,17,65],[5,15,85],[4,5,65],[1,2,65],[3,8,62],[6,16,75],[6,25,65],[10,11,80],[12,14,70],[12,22,70],[14,22,75],[7,18,62],[7,20,62],[23,27,65],[26,98,80],[9,97,65],[101,22,70],[89,90,70],[99,18,62],[30,31,75],[31,33,70],[35,37,80],[40,41,70],[40,42,65],[41,43,65],[44,45,80],[46,47,70],[48,49,80],[50,51,65],[53,55,80]],
+ match:{fautes:1.12,carton:.02,domicile:1.25},
+ apres:{victoire:{moral:3,confiance:2,supporters:4,pression:-3},defaite:{moral:-3,confiance:-2,supporters:-4,pression:4},nul:{moral:0,confiance:0,supporters:-1,pression:1}}};
+function derbySeed(a,b){for(const [x,y,t] of DERBYS.rivalites)if(x===a&&y===b||x===b&&y===a)return t;return 0}
+function derbyTension(s,a,b){if(!Number.isInteger(a)||!Number.isInteger(b)||a===b)return 0;const k=a<b?a+':'+b:b+':'+a,t=s?.interclubWorld?.pairs?.[k]?.tension,monde=typeof CDWorldCareer!=='undefined'&&!!CDWorldCareer.active?.(s);return Math.max(Number.isFinite(t)?t:0,monde?derbySeed(a,b):0)}
+function isDerby(s,a,b){return derbyTension(s,a,b)>=DERBYS.seuil}
+function derbyRules(l){return l?.derbyVersion===1}
+function derbyFouls(l){return derbyRules(l)?DERBYS.match.fautes:1}
+function initializeDerby(l){const t=derbyTension(S,l.pair[0],l.pair[1]);if(t>=DERBYS.seuil){l.derbyVersion=1;l.derby={tension:t}}}
+// Retentissement d'un derby du club du manager (après le bilan ordinaire du match).
+function derbyAftermath(s,r){if(!r||!Array.isArray(r.pair)||!r.pair.includes(s.club)||!isDerby(s,r.pair[0],r.pair[1]))return null;
+ const i=r.pair.indexOf(s.club),d=r.score[i]-r.score[1-i],issue=d>0?'victoire':d<0?'defaite':'nul',e=DERBYS.apres[issue],c=(v,a,b)=>Math.max(a,Math.min(b,Math.round(v)));
+ s.morale=c((s.morale??70)+e.moral,25,98);s.trust=c((s.trust??50)+e.confiance,0,100);const pr=s.pressRelations;
+ if(pr){if(Number.isFinite(pr.fanTrust))pr.fanTrust=c(pr.fanTrust+e.supporters,0,100);if(Number.isFinite(pr.boardPressure))pr.boardPressure=c(pr.boardPressure+e.pression,0,100)}
+ return {issue,...e}}
