@@ -36,7 +36,7 @@ const COMMAND_WAIT_MESSAGES := {
 	"academy_groups_enable": "Mise à jour des centres de formation…",
 	"promote_cover": "Enregistrement des renforts…",
 	"national_play_match": "Simulation de la rencontre internationale…",
-	"league_benchmark": "Mesure de votre machine…",
+	"league_benchmark": "Mesure de ta machine…",
 	"club_sheet": "Préparation de la fiche du club…",
 	"league_detail_set": "Enregistrement des championnats suivis…"
 }
