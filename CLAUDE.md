@@ -89,7 +89,7 @@ une partie du raisonnement sont perdus au changement).
   `docs/gdd/`, les ADR dans `docs/architecture/`.
 - Les commandes de lancement et de test du tableau CCGS (gdUnit4, projet à la
   racine) ne s'appliquent pas. Commandes réelles :
-  - retour rapide : `node ci/quick-check.cjs <liste-des-fichiers-modifiés>` ;
+  - retour rapide : `git diff --name-only origin/main > /tmp/diff.txt && node ci/quick-check.cjs /tmp/diff.txt` (un **fichier** listant les chemins, pas les chemins en arguments ; trop long sur la machine cloud : laisser la CI) ;
   - une suite JS : `node tests/<suite>.cjs` ;
   - suites Godot (SDK 4.7.2 requis) : `bash ci/run-godot-suites.sh <liste>` ;
   - projet Godot : `godot --path native/godot`.
