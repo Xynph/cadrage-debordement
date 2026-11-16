@@ -1,0 +1,2 @@
+tests/godot-comparateur-joueurs.cjs
+tests/godot-recruitment-comparison.cjs
