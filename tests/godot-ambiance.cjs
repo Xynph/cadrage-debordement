@@ -25,7 +25,7 @@ test('Musique : aucun fichier de plus de 3 Mo, uniquement OGG, dans audio/music'
 test('Ambiance native : bus Musique, musique coupée en match, foule selon le camp',{skip:!godot&&'SDK Godot requis'},()=>{
  const base=process.env.CD_SOUNDS_PROOF||os.tmpdir();fs.mkdirSync(base,{recursive:true});
  const proof=fs.mkdtempSync(path.join(base,'cd-ambiance-é '));
- const run=spawnSync(godot,['--headless','--audio-driver','Dummy','--max-fps','120','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-ambiance.gd')],{env:{...process.env,CD_AMBIANCE_PROOF:proof},encoding:'utf8',windowsHide:true,timeout:60000});
+ const run=spawnSync(godot,['--headless','--audio-driver','Dummy','--max-fps','120','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-ambiance.gd')],{env:{...process.env,CD_AMBIANCE_PROOF:proof,CD_NODE_EXECUTABLE:process.execPath},encoding:'utf8',windowsHide:true,timeout:60000});
  const output=(run.stdout||'')+(run.stderr||'');console.log(output);
  if(run.error)throw run.error;assert.equal(run.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:|instances were leaked/);
 });

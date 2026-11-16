@@ -317,7 +317,10 @@ func _match_signature(model: Dictionary, live: Dictionary) -> String:
 
 func _displayed_index(live: Dictionary, events: Array) -> int:
 	var scene: Dictionary = live.get("scene", {})
-	var identity: Variant = JSON.parse_string(str(scene.get("key", "")))
+	var key := str(scene.get("key", ""))
+	if key.is_empty():
+		return -1
+	var identity: Variant = JSON.parse_string(key)
 	if not identity is Array or identity.size() != 4:
 		return -1
 	# The adapter key names an actual displayed event, not a prose classification.
