@@ -65,7 +65,7 @@ func wait_engine() -> void:
 
 func capture(name: String) -> void:
 	await settle(16)
-	check(root.get_texture().get_image().save_jpg(capture_dir.path_join(name+".jpg", 0.9))==OK,"Capture "+name)
+	check(root.get_texture().get_image().save_jpg(capture_dir.path_join(name+".jpg"), 0.9)==OK,"Capture "+name)
 
 func close_dialogs() -> void:
 	app._clear_dialogs()
