@@ -1,6 +1,7 @@
 extends RefCounted
 ## Session-only reading model. An informative message is never promoted to a
 ## decision solely because its wording sounds urgent.
+const ClubMail = preload("res://ui/club_mail.gd")
 const LABELS := {"all":"Tous les états", "todo":"À faire", "waiting":"En attente", "info":"Informations"}
 
 static func status(message: Dictionary, model: Dictionary) -> Dictionary:
@@ -12,6 +13,9 @@ static func status(message: Dictionary, model: Dictionary) -> Dictionary:
 				return {"key":"todo", "label":"À faire", "urgent":bool(conference.get("required", false)), "reason":"Vos réponses sont attendues."}
 			if conference.has("available") and conference.available == false and not str(conference.get("reason", "")).is_empty():
 				return {"key":"waiting", "label":"En attente", "urgent":false, "reason":str(conference.reason)}
+	var mail: Dictionary = message.get("club_mail", {})
+	if not mail.is_empty() and ClubMail.awaiting(model, mail):
+		return {"key":"todo", "label":"Réponse attendue", "urgent":bool(mail.get("arret", false)), "reason":"Choisis une réponse : elle a des conséquences."}
 	var notice: Dictionary = message.get("calendar_notice", {})
 	if notice.get("status") == "pending":
 		return {"key":"todo", "label":"À décider", "urgent":false, "reason":"Choisir de recaler ou de conserver votre préparation."}

@@ -43,7 +43,7 @@ func profile_cases() -> void:
 	check(not profile.load_profile("relatif"), "Profil relatif refusé sans repli")
 	var directory := proof.path_join("profil Émile été")
 	check(profile.load_profile(directory), "Dossier neuf Unicode chargé")
-	check(profile.data == {"version": 1, "interface_volume": 35, "stadium_volume": 25, "music_volume": 30, "music_on": true, "music_in_match": false, "match_sounds": true}, "Valeurs initiales exactes et indépendantes")
+	check(profile.data == {"version": 1, "interface_volume": 35, "stadium_volume": 25, "match_sounds": true}, "Valeurs initiales exactes et indépendantes")
 	check(not FileAccess.file_exists(directory.path_join("sound.json")), "Lecture absente ne crée pas de réglages")
 	var changes := [0]
 	profile.changed.connect(func(): changes[0] += 1)

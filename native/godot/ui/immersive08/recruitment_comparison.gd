@@ -16,6 +16,19 @@ const NotesMatch = preload("res://ui/notes_match.gd")
 ## sont jamais présentés comme un avantage à eux seuls.
 const HIGHER_BETTER := ["rating", "potential", "condition", "seasonNote"]
 
+## Postes proches (même famille) : repli du second choix quand mon effectif n'a personne au poste de A.
+const FAMILIES := [["Pilier gauche", "Pilier droit", "Talonneur"], ["Deuxième ligne", "Troisième ligne", "Numéro 8"], ["Demi de mêlée", "Demi d’ouverture"], ["Centre", "Ailier", "Arrière"]]
+## Taille minimale lisible (px) des commandes du comparateur, comme le reste de l'interface (720p compris).
+const MIN_FONT := 13
+
+static func fs(value: float) -> int:
+	return maxi(MIN_FONT, C.px(value))
+
+static func close_position(first: String, second: String) -> bool:
+	for family: Array in FAMILIES:
+		if first in family and second in family: return true
+	return false
+
 static func numeric(value: Variant) -> bool:
 	return (value is int or value is float) and is_finite(float(value))
 
@@ -56,31 +69,45 @@ static func prepared(app: Control, player: Dictionary, mine: bool) -> Dictionary
 		if numeric(average): result["seasonNote"] = float(average)
 	return result
 
+## Second choix par défaut : {"id", "tier"}. tier 0 = même poste dans mon effectif, 1 = poste proche dans mon effectif,
+## 2 = même poste ailleurs, 3 = poste proche ailleurs, 4 = meilleur disponible.
+static func second_choice(players: Array, left: String, own_ids: Array = []) -> Dictionary:
+	var position := ""
+	for player: Dictionary in players:
+		if str(player.id) == left: position = str(player.get("pos", ""))
+	for tier in 5:
+		var best := -INF
+		var found := ""
+		for player: Dictionary in players:
+			var id := str(player.id)
+			if id == left: continue
+			var mine := id in own_ids
+			var pos := str(player.get("pos", ""))
+			var fits := (mine if tier < 2 else true) and (pos == position if tier in [0, 2] else close_position(position, pos) if tier in [1, 3] else true)
+			if fits and float(player.get("rating", 0)) > best:
+				best = float(player.get("rating", 0))
+				found = id
+		if not found.is_empty(): return {"id": found, "tier": tier}
+	return {"id": "", "tier": 4}
+
 static func initial_ids(players: Array, chosen: String, saved: Array, own_ids: Array = []) -> Array[String]:
 	var ids: Array[String] = []
 	for player: Dictionary in players: ids.append(str(player.id))
 	var left := chosen if chosen in ids else str(saved[0]) if saved.size() > 0 and str(saved[0]) in ids else ids[0] if not ids.is_empty() else ""
 	var right := str(saved[1]) if saved.size() > 1 and str(saved[0]) == left and str(saved[1]) in ids and str(saved[1]) != left else ""
-	var position := ""
-	for player: Dictionary in players:
-		if str(player.id) == left: position = str(player.get("pos", ""))
-	# Second choix proposé : le meilleur joueur de mon effectif au même poste, sinon un autre du même poste.
-	if right.is_empty():
-		var best := -INF
-		for player: Dictionary in players:
-			var id := str(player.id)
-			if id != left and id in own_ids and str(player.get("pos", "")) == position and float(player.get("rating", 0)) > best:
-				best = float(player.get("rating", 0))
-				right = id
-	if right.is_empty():
-		for player: Dictionary in players:
-			if str(player.id) != left and str(player.get("pos", "")) == position:
-				right = str(player.id)
-				break
-	if right.is_empty():
-		for id in ids:
-			if id != left: right = id; break
+	if right.is_empty(): right = str(second_choice(players, left, own_ids).id)
 	return [left, right]
+
+## Mention affichée quand B n'est pas au même poste que A (choix par défaut seulement), sinon vide.
+static func default_note(players: Array, left: String, right: String, own_ids: Array = []) -> String:
+	var choice := second_choice(players, left, own_ids)
+	if str(choice.id) != right: return ""
+	match int(choice.tier):
+		1: return "Aucun autre joueur de votre effectif à ce poste : B est un poste proche."
+		2: return "Aucun autre joueur de votre effectif à ce poste : B vient du marché."
+		3: return "Aucun joueur à ce poste : B est un poste proche."
+		4: return "Aucun joueur à ce poste ni à un poste proche : B est le meilleur disponible."
+	return ""
 
 static func candidates(players: Array, query: String, position: String, chosen: Array) -> Array:
 	var term := U.fold(query).strip_edges()
@@ -110,10 +137,14 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 	var memory: Array = app.management_ui.compare
 	var selected := initial_ids(players, chosen, memory, own_ids)
 	memory.assign(selected.filter(func(id: String): return not id.is_empty()))
-	var heading := C.label("Comparer avant de décider", 28, C.IVORY, true, 800)
-	heading.name = "MarketComparisonHeading"
-	content.add_child(heading)
-	content.add_child(C.wrap("Écart B − A : une valeur positive signifie que B est plus élevé. L’âge et le coût ne constituent pas, à eux seuls, un avantage.", 18, C.MUTED))
+	# Un seul titre : celui de la fenêtre. Marge sous la barre, puis une ligne de lecture de l'écart.
+	var top_margin := Control.new()
+	top_margin.custom_minimum_size.y = C.px(8)
+	content.add_child(top_margin)
+	var compact := app.get_viewport_rect().size.y < 900
+	var reading := C.wrap("Écart B − A : une valeur positive signifie que B est plus élevé. L’âge et le coût ne constituent pas, à eux seuls, un avantage.", 18, C.MUTED)
+	reading.name = "MarketComparisonReading"
+	content.add_child(reading)
 	var filters := C.h(24)
 	content.add_child(filters)
 	var search := LineEdit.new()
@@ -123,7 +154,7 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 	search.clear_button_enabled = true
 	search.set_meta("immersive_style_applied", true)
 	search.add_theme_font_override("font", C.BODY)
-	search.add_theme_font_size_override("font_size", C.px(18))
+	search.add_theme_font_size_override("font_size", fs(18))
 	search.custom_minimum_size.y = C.px(38)
 	C.fill(search)
 	filters.add_child(search)
@@ -133,7 +164,8 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 	same_position.accessibility_name = same_position.text
 	same_position.set_meta("immersive_style_applied", true)
 	same_position.add_theme_font_override("font", C.DISPLAY)
-	same_position.add_theme_font_size_override("font_size", C.px(18))
+	same_position.add_theme_font_size_override("font_size", fs(18))
+	same_position.button_pressed = true
 	same_position.custom_minimum_size.y = C.px(38)
 	filters.add_child(same_position)
 	var choices := C.h(28)
@@ -149,14 +181,16 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 		picker.accessibility_name = "Choisir le joueur " + ["A", "B"][slot]
 		picker.set_meta("immersive_style_applied", true)
 		picker.add_theme_font_override("font", C.DISPLAY)
-		picker.add_theme_font_size_override("font_size", C.px(20))
-		picker.get_popup().add_theme_font_size_override("font_size", C.px(18))
+		picker.add_theme_font_size_override("font_size", fs(20))
+		picker.get_popup().add_theme_font_size_override("font_size", fs(18))
 		picker.custom_minimum_size.y = C.px(38)
 		picker.fit_to_longest_item = false
 		picker.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		C.fill(picker)
 		column.add_child(picker)
 		picks.append(picker)
+	# Dictionnaire : une lambda ne modifie pas une chaîne capturée.
+	var note := {"text": default_note(players, selected[0], selected[1], own_ids)}
 	var count := C.wrap("", 18)
 	count.name = "MarketComparisonCount"
 	content.add_child(count)
@@ -181,8 +215,8 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 		tabs.name = "MarketComparisonTabs"
 		tabs.set_meta("immersive_style_applied", true)
 		tabs.add_theme_font_override("font", C.BOLD)
-		tabs.add_theme_font_size_override("font_size", C.px(20))
-		tabs.get_tab_bar().add_theme_font_size_override("font_size", C.px(20))
+		tabs.add_theme_font_size_override("font_size", fs(20))
+		tabs.get_tab_bar().add_theme_font_size_override("font_size", fs(20))
 		detail.add_child(tabs)
 		var overview := C.v(6)
 		overview.name = "Vue d’ensemble"
@@ -190,7 +224,15 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 		_header(overview)
 		for field in [["Poste", "pos", ""], ["Âge", "age", " ans"], ["Niveau / 100", "rating", ""], ["Potentiel / 100", "potential", ""], ["Condition", "condition", " %"], ["Moyenne de la saison", "seasonNote", ""], ["Fin de contrat", "contractEnd", ""], ["Prime à la signature", "fee", " €"], ["Salaire "+G.salary_period(), "salary", " €"]]:
 			_row(overview, str(field[0]), str(field[1]), pair, reports, str(field[2]))
-		overview.add_child(C.wrap("Pour un joueur à recruter, prime et salaire sont des demandes distinctes ; pour un joueur de votre effectif, ce sont ses conditions actuelles. Aucun contrat n’est signé depuis cette comparaison. Le potentiel provient des rapports datés. En vert : le meilleur des deux.", 18))
+		var footnote := "Pour un joueur à recruter, prime et salaire sont des demandes distinctes ; pour un joueur de votre effectif, ce sont ses conditions actuelles. Aucun contrat n’est signé depuis cette comparaison. Le potentiel provient des rapports datés. En vert : le meilleur des deux."
+		if compact:
+			# Petite fenêtre : la note passe en info-bulle pour que la synthèse tienne sans défilement.
+			overview.tooltip_text = footnote
+			reading.tooltip_text = footnote
+			overview.mouse_filter = Control.MOUSE_FILTER_PASS
+			reading.mouse_filter = Control.MOUSE_FILTER_PASS
+		else:
+			overview.add_child(C.wrap(footnote, 18))
 		var attributes := C.v(8)
 		attributes.name = "36 attributs"
 		tabs.add_child(attributes)
@@ -204,7 +246,7 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 				if target != null: _jump_to_section(target))
 			jump.name = "MarketComparisonGroupJump" + str(index)
 			jump.set_meta("immersive_style_applied", true)
-			jump.add_theme_font_size_override("font_size", C.px(16))
+			jump.add_theme_font_size_override("font_size", fs(16))
 			jump.custom_minimum_size.y = C.px(34)
 			C.fill(jump)
 			group_links.add_child(jump)
@@ -222,7 +264,7 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 			for player: Dictionary in players:
 				if str(player.id) == selected[0]: position = str(player.get("pos", ""))
 		var filtered := candidates(players, search.text, position, selected)
-		count.text = "%d joueurs proposés · les deux choix restent visibles · indisponibles consultables" % filtered.size()
+		count.text = "%d joueurs proposés · les deux choix restent visibles · indisponibles consultables" % filtered.size() + ("\n" + str(note.text) if not str(note.text).is_empty() else "")
 		for slot in 2:
 			picks[slot].clear()
 			picks[slot].add_item("Choisir un joueur")
@@ -236,6 +278,7 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 	for slot in 2:
 		picks[slot].item_selected.connect(func(index: int):
 			selected[slot] = str(picks[slot].get_item_metadata(index))
+			note.text = ""
 			refresh_pickers.call()
 			redraw.call())
 	search.text_changed.connect(func(_text: String): refresh_pickers.call())
@@ -244,11 +287,22 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 	redraw.call()
 	dialog.canceled.connect(func(): _restore_focus(app, return_focus))
 	dialog.confirmed.connect(func(): _restore_focus(app, return_focus))
-	Dialogs.show_centered(dialog, Vector2i(width, mini(1220, int(app.get_viewport_rect().size.y) - 100)))
+	var height := mini(1220, int(app.get_viewport_rect().size.y) - 100)
+	Dialogs.show_centered(dialog, Vector2i(width, height))
+	_fit_height.call_deferred(dialog, content, width, height)
 	dialog.add_theme_font_size_override("title_font_size", C.px(30))
-	dialog.get_ok_button().add_theme_font_size_override("font_size", C.px(18))
+	dialog.get_ok_button().add_theme_font_size_override("font_size", fs(18))
 	dialog.get_ok_button().custom_minimum_size.y = C.px(34)
 	FocusLater.grab(picks[1])
+
+## Ajuste la hauteur de la fenêtre au contenu de la synthèse (jamais au-delà du maximum) : pas de grand vide sous
+## le tableau en 1440p. Le défilement reste disponible pour l'onglet des 36 attributs.
+static func _fit_height(dialog: AcceptDialog, content: Control, width: int, maximum: int) -> void:
+	for i in 3: await dialog.get_tree().process_frame
+	if not is_instance_valid(dialog) or not dialog.visible: return
+	var wanted := ceili(content.get_combined_minimum_size().y) + C.px(150)
+	if wanted < maximum - C.px(40):
+		Dialogs.show_centered(dialog, Vector2i(width, maxi(wanted, C.px(520))))
 
 static func _jump_to_section(target: Control) -> void:
 	target.grab_focus()
