@@ -1,0 +1,470 @@
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/native-press-ui.cjs
+::group::tests/v60-question-bank.cjs
+PASS V60 bank: 25 themes, 500 prompts, 1500 variants, 5 responses, 12-week exclusion
+CD_CPU_PROFILE suite=tests/v60-question-bank.cjs user_s=0.03 system_s=0.00 wall_s=0.03 cpu_pct=121% max_rss_kb=55704
+PASS tests/v60-question-bank.cjs (0 s)
+::endgroup::
+::group::tests/v25-whatif.cjs
+V25 : comparaison attaque/défense, quatre zones, calcul moteur, lecture seule, UI, sauvegardes et héritage validés
+CD_CPU_PROFILE suite=tests/v25-whatif.cjs user_s=0.32 system_s=0.03 wall_s=0.87 cpu_pct=41% max_rss_kb=107372
+PASS tests/v25-whatif.cjs (1 s)
+::endgroup::
+::group::tests/v26-dual-whatif.cjs
+V26 : deux zones distinctes, attaque/défense, coefficients du moteur, lecture seule et sauvegardes validés
+CD_CPU_PROFILE suite=tests/v26-dual-whatif.cjs user_s=0.32 system_s=0.04 wall_s=0.27 cpu_pct=135% max_rss_kb=107396
+PASS tests/v26-dual-whatif.cjs (0 s)
+::endgroup::
+::group::tests/v23-local-zones.cjs
+V23 : priorités locales, clics par zone, absence de mutation automatique et anciennes sauvegardes validés
+CD_CPU_PROFILE suite=tests/v23-local-zones.cjs user_s=0.29 system_s=0.03 wall_s=0.25 cpu_pct=129% max_rss_kb=107336
+PASS tests/v23-local-zones.cjs (0 s)
+::endgroup::
+::group::tests/v24-four-zones.cjs
+V24 : quatre zones, coefficients du moteur, priorités locales, lecture seule et sauvegardes validés
+CD_CPU_PROFILE suite=tests/v24-four-zones.cjs user_s=0.25 system_s=0.03 wall_s=0.22 cpu_pct=131% max_rss_kb=100640
+PASS tests/v24-four-zones.cjs (1 s)
+::endgroup::
+::group::tests/v27-physical-load.cjs
+{"passed":true,"cases":["training modes","unique weekly application","planning guard","match minutes","AI recovery","old live saves","validated exports","season rollover"]}
+CD_CPU_PROFILE suite=tests/v27-physical-load.cjs user_s=0.40 system_s=0.04 wall_s=0.32 cpu_pct=136% max_rss_kb=109808
+PASS tests/v27-physical-load.cjs (0 s)
+::endgroup::
+::group::tests/v40-match-cockpit.cjs
+{"passed":true,"checks":["5 UI regions","23 and opponents","no state/RNG mutations","tab selection","legal subs","statistics counters","paused tactics","card status","legacy match save"]}
+CD_CPU_PROFILE suite=tests/v40-match-cockpit.cjs user_s=0.26 system_s=0.02 wall_s=0.22 cpu_pct=126% max_rss_kb=97592
+PASS tests/v40-match-cockpit.cjs (0 s)
+::endgroup::
+::group::tests/v58-native-dashboard.cjs
+V58 native dashboard: 9 assertions PASS (read-only)
+CD_CPU_PROFILE suite=tests/v58-native-dashboard.cjs user_s=0.01 system_s=0.00 wall_s=0.02 cpu_pct=100% max_rss_kb=44388
+PASS tests/v58-native-dashboard.cjs (0 s)
+::endgroup::
+::group::tests/manager-season-pilotage.cjs
+manager-season-pilotage: PASS (priorités, économie, contrats, blessures, formation, rendu, sauvegarde)
+CD_CPU_PROFILE suite=tests/manager-season-pilotage.cjs user_s=0.13 system_s=0.01 wall_s=0.12 cpu_pct=122% max_rss_kb=76604
+PASS tests/manager-season-pilotage.cjs (0 s)
+::endgroup::
+::group::tests/manager-mobility.cjs
+PASS ancienne carriere : activation absente et bureau visible
+PASS activation volontaire sans salaire ni effectif modifie
+PASS aucune candidature en saison reguliere
+PASS decisions du vrai championnat et refus expliques
+PASS candidature unique et comptes inchanges
+PASS refus financiers et sportifs distincts
+PASS refus volontaire sans effet financier
+PASS confirmation interface puis rendez-vous sauvegarde
+PASS une seule acceptation et annulation avant depart
+PASS export import garde le rendez-vous sans transfert anticipe
+PASS transfert natif effectif en saison 2
+PASS comparaison temoin : aucun transfert argent ni joueur
+PASS centres de formation conserves sans doublon
+PASS ledger source archive et palmares conserve
+PASS V48 reste unique et pas de double remplacement
+PASS reprise et vues natives apres changement
+PASS journee native et rapprochement financier du nouveau club
+PASS rollback integral et stockage non modifie sur erreur
+PASS dix corruptions rejetees par le validateur natif
+PASS ancienne sauvegarde sans V59 non modifiee silencieusement
+PASS trois saisons completes et deux prises de poste
+PASS reprise identique pour meme etat et meme graine du harness
+MANAGER MOBILITY PASS {"engine":"native harness with actual match simulation","passed":22,"checks":["ancienne carriere : activation absente et bureau visible","activation volontaire sans salaire ni effectif modifie","aucune candidature en saison reguliere","decisions du vrai championnat et refus expliques","candidature unique et comptes inchanges","refus financiers et sportifs distincts","refus volontaire sans effet financier","confirmation interface puis rendez-vous sauvegarde","une seule acceptation et annulation avant depart","export import garde le rendez-vous sans transfert anticipe","transfert natif effectif en saison 2","comparaison temoin : aucun transfert argent ni joueur","centres de formation conserves sans doublon","ledger source archive et palmares conserve","V48 reste unique et pas de double remplacement","reprise et vues natives apres changement","journee native et rapprochement financier du nouveau club","rollback integral et stockage non modifie sur erreur","dix corruptions rejetees par le validateur natif","ancienne sauvegarde sans V59 non modifiee silencieusement","trois saisons completes et deux prises de poste","reprise identique pour meme etat et meme graine du harness"],"limitations":["No native Windows test","No automatic firing or unemployed mode","No manager salary or indemnity introduced","Seeded contexts used, no claim of production RNG persistence"]}
+CD_CPU_PROFILE suite=tests/manager-mobility.cjs user_s=19.22 system_s=0.31 wall_s=15.07 cpu_pct=129% max_rss_kb=296024
+PASS tests/manager-mobility.cjs (15 s)
+::endgroup::
+::group::tests/main-menu.cjs
+PASS startup displays an actual home menu, not immediate club choice
+PASS new career selects clubs, can return to menu, and start a game
+PASS main menu does not erase the current save and resumes it
+PASS relaunch always opens menu with a recoverable saved career
+PASS new career with an existing save requires confirmation
+PASS theme, help and keyboard-friendly actions exist and are independent of saves
+CD_CPU_PROFILE suite=tests/main-menu.cjs user_s=0.20 system_s=0.02 wall_s=0.21 cpu_pct=107% max_rss_kb=86512
+PASS tests/main-menu.cjs (1 s)
+::endgroup::
+::group::tests/main-menu-v2.cjs
+PASS guided creation launches a new active independent slot
+PASS changing the current career autosaves the chosen slot
+PASS new game preserves previous slot and creates a second one
+PASS slot restoration uses existing review and restores exactly the selected career
+PASS corrupted slot never replaces the current or canonical save
+PASS deleting an archive never removes the active canonical career
+PASS pause is non-destructive and reduced motion is persisted separately
+CD_CPU_PROFILE suite=tests/main-menu-v2.cjs user_s=0.51 system_s=0.03 wall_s=0.51 cpu_pct=106% max_rss_kb=97936
+PASS tests/main-menu-v2.cjs (0 s)
+::endgroup::
+::group::tests/preparation.cjs
+{"passed":true,"checks":["rapport sans mutation ni aléatoire","cinq résultats réels et conquête observée","projection sans blessés","conseils selon qualités et fraîcheur","adoption avec zones préservées","comparaison par poste et feuille à 23","verrouillage en match","suivi des plans effectifs dans les deux sens","changement de plan en cours de match","bilan initial conservé","export/import direct et rapport","données hostiles","moteur et tirages inchangés","anciens matchs préservés"]}
+CD_CPU_PROFILE suite=tests/preparation.cjs user_s=1.76 system_s=0.07 wall_s=1.20 cpu_pct=153% max_rss_kb=159096
+PASS tests/preparation.cjs (1 s)
+::endgroup::
+::group::tests/presse-promesses-monde.cjs
+TAP version 13
+# Subtest: la conférence pose une question d’objectif facultative, avec vraisemblance et réactions
+ok 1 - la conférence pose une question d’objectif facultative, avec vraisemblance et réactions
+  ---
+  duration_ms: 7463.48729
+  type: 'test'
+  ...
+# Subtest: promesse tenue : supporters, direction et crédibilité (réputation du manager) progressent
+ok 2 - promesse tenue : supporters, direction et crédibilité (réputation du manager) progressent
+  ---
+  duration_ms: 11087.697852
+  type: 'test'
+  ...
+# Subtest: promesse irréaliste : presse et direction réagissent, puis la promesse ratée coûte cher
+ok 3 - promesse irréaliste : presse et direction réagissent, puis la promesse ratée coûte cher
+  ---
+  duration_ms: 21925.773478
+  type: 'test'
+  ...
+# Subtest: refuser de promettre : médias −1, question close pour la saison
+ok 4 - refuser de promettre : médias −1, question close pour la saison
+  ---
+  duration_ms: 10378.365713
+  type: 'test'
+  ...
+# Subtest: objectif du conseil : une promesse en dessous de sa place le froisse, sans créer d’objectif en double
+ok 5 - objectif du conseil : une promesse en dessous de sa place le froisse, sans créer d’objectif en double
+  ---
+  duration_ms: 13915.937609
+  type: 'test'
+  ...
+# Subtest: sauvegarde, rechargement et validateur
+ok 6 - sauvegarde, rechargement et validateur
+  ---
+  duration_ms: 16146.636998
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 80937.414663
+CD_CPU_PROFILE suite=tests/presse-promesses-monde.cjs user_s=89.41 system_s=6.74 wall_s=82.06 cpu_pct=117% max_rss_kb=2959788
+PASS tests/presse-promesses-monde.cjs (82 s)
+::endgroup::
+::group::tests/presse-promesses-saison.cjs
+victoires à domicile : 3 / 11 → broken · rappels mi-saison, sprint
+rang final : 14
+maintien : broken · division elite → accession · crédibilité 33
+TAP version 13
+# Subtest: saison complète : rappels, verdicts aux échéances, sauvegarde
+ok 1 - saison complète : rappels, verdicts aux échéances, sauvegarde
+  ---
+  duration_ms: 114036.773852
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 114045.620241
+CD_CPU_PROFILE suite=tests/presse-promesses-saison.cjs user_s=131.53 system_s=4.32 wall_s=120.49 cpu_pct=112% max_rss_kb=2751440
+PASS tests/presse-promesses-saison.cjs (121 s)
+::endgroup::
+::group::tests/presse-rapide-monde.cjs
+conférence ordinaire le 2026-08-24 : 3 questions, moment null
+conférences tenues par Gabi : 4 · arrêts presse (grands moments) : 0 · 63 jours
+TAP version 13
+# Subtest: Arrivée : grand moment, 4 questions, en personne
+ok 1 - Arrivée : grand moment, 4 questions, en personne
+  ---
+  duration_ms: 3858.571175
+  type: 'test'
+  ...
+# Subtest: Conférence ordinaire : 3 questions au plus, adjoint au léger coût
+ok 2 - Conférence ordinaire : 3 questions au plus, adjoint au léger coût
+  ---
+  duration_ms: 17763.01568
+  type: 'test'
+  ...
+# Subtest: Réglage « envoyer l’adjoint » : Continuer ne s’arrête plus sur une conférence ordinaire
+ok 3 - Réglage « envoyer l’adjoint » : Continuer ne s’arrête plus sur une conférence ordinaire
+  ---
+  duration_ms: 29532.0441
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 57751.320575
+CD_CPU_PROFILE suite=tests/presse-rapide-monde.cjs user_s=65.04 system_s=8.07 wall_s=58.05 cpu_pct=125% max_rss_kb=3256220
+PASS tests/presse-rapide-monde.cjs (58 s)
+::endgroup::
+::group::tests/gabi-repliques.cjs
+TAP version 13
+# Subtest: Sans carrière ou sans club : aucune réplique
+ok 1 - Sans carrière ou sans club : aucune réplique
+  ---
+  duration_ms: 0.604753
+  type: 'test'
+  ...
+# Subtest: Le prochain match est la réplique de repli, avec son action
+ok 2 - Le prochain match est la réplique de repli, avec son action
+  ---
+  duration_ms: 1.017877
+  type: 'test'
+  ...
+# Subtest: Priorités : courrier > feuille > blessé > condition > presse > contrat > match
+ok 3 - Priorités : courrier > feuille > blessé > condition > presse > contrat > match
+  ---
+  duration_ms: 1.028751
+  type: 'test'
+  ...
+# Subtest: Condition et blessures ne comptent qu’à l’approche du match (3 jours)
+ok 4 - Condition et blessures ne comptent qu’à l’approche du match (3 jours)
+  ---
+  duration_ms: 0.337393
+  type: 'test'
+  ...
+# Subtest: Contrat urgent : les mieux notés d’abord, sans match au calendrier
+ok 5 - Contrat urgent : les mieux notés d’abord, sans match au calendrier
+  ---
+  duration_ms: 0.224658
+  type: 'test'
+  ...
+# Subtest: Déterminisme et ambiance rare : une fois sur quatre au plus, jamais seule
+ok 6 - Déterminisme et ambiance rare : une fois sur quatre au plus, jamais seule
+  ---
+  duration_ms: 1.985439
+  type: 'test'
+  ...
+# Subtest: Carrière Monde : le moteur attache la réplique à l’instantané (jour 1 et jour de match)
+ok 7 - Carrière Monde : le moteur attache la réplique à l’instantané (jour 1 et jour de match)
+  ---
+  duration_ms: 17534.725695
+  type: 'test'
+  ...
+# Subtest: Registre unique : Gabi tutoie le manager dans toutes ses répliques
+ok 8 - Registre unique : Gabi tutoie le manager dans toutes ses répliques
+  ---
+  duration_ms: 0.433619
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17546.989351
+CD_CPU_PROFILE suite=tests/gabi-repliques.cjs user_s=20.70 system_s=1.63 wall_s=17.61 cpu_pct=126% max_rss_kb=2479036
+PASS tests/gabi-repliques.cjs (18 s)
+::endgroup::
+::group::tests/consignes-individuelles.cjs
+TAP version 13
+# Subtest: Commande set_tactics : désignation, retour au staff, refus et sauvegarde
+ok 1 - Commande set_tactics : désignation, retour au staff, refus et sauvegarde
+  ---
+  duration_ms: 5652.46159
+  type: 'test'
+  ...
+# Subtest: Coup d’envoi : les désignations du manager sont copiées, l’IA garde le choix du staff
+ok 2 - Coup d’envoi : les désignations du manager sont copiées, l’IA garde le choix du staff
+  ---
+  duration_ms: 1267.362325
+  type: 'test'
+  ...
+# Subtest: Buteur de secours : il prend les tirs quand le buteur désigné n’est plus sur le terrain
+ok 3 - Buteur de secours : il prend les tirs quand le buteur désigné n’est plus sur le terrain
+  ---
+  duration_ms: 110.831866
+  type: 'test'
+  ...
+# Subtest: Effets sans tirage : réussite au pied, touche et longueur du jeu au pied suivent le joueur choisi
+ok 4 - Effets sans tirage : réussite au pied, touche et longueur du jeu au pied suivent le joueur choisi
+  ---
+  duration_ms: 110.447211
+  type: 'test'
+  ...
+# Subtest: Délégation identique au calcul d’avant, déterminisme et stats IA contre IA
+ok 5 - Délégation identique au calcul d’avant, déterminisme et stats IA contre IA
+  ---
+  duration_ms: 8953.606617
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16104.526407
+CD_CPU_PROFILE suite=tests/consignes-individuelles.cjs user_s=35.81 system_s=1.63 wall_s=30.33 cpu_pct=123% max_rss_kb=2637560
+PASS tests/consignes-individuelles.cjs (30 s)
+::endgroup::
+::group::tests/fiche-club-monde.cjs
+fiche club : 3 feuilles pour le club 8, compteurs 23967 o (0.10 % de l'état, 22.4 Mio)
+TAP version 13
+# Subtest: XV le plus fréquent : feuilles connues, déterministe, format compact validé
+ok 1 - XV le plus fréquent : feuilles connues, déterministe, format compact validé
+  ---
+  duration_ms: 5.804194
+  type: 'test'
+  ...
+# Subtest: Fiche club en carrière Monde : feuilles réelles, XV type recalculé, lecture seule, ancienne sauvegarde, clubs suivis
+ok 2 - Fiche club en carrière Monde : feuilles réelles, XV type recalculé, lecture seule, ancienne sauvegarde, clubs suivis
+  ---
+  duration_ms: 46836.77129
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 46848.764369
+CD_CPU_PROFILE suite=tests/fiche-club-monde.cjs user_s=51.88 system_s=4.33 wall_s=46.95 cpu_pct=119% max_rss_kb=2749264
+PASS tests/fiche-club-monde.cjs (47 s)
+::endgroup::
+::group::tests/finitions-critiques.cjs
+TAP version 13
+# Subtest: Continuer : prochain arrêt prévisible
+ok 1 - Continuer : prochain arrêt prévisible
+  ---
+  duration_ms: 1.267364
+  type: 'test'
+  ...
+# Subtest: Continuer : les tranches partielles publient le prochain arrêt
+ok 2 - Continuer : les tranches partielles publient le prochain arrêt
+  ---
+  duration_ms: 8958.397979
+  type: 'test'
+  ...
+# Subtest: Fiche joueur : l’historique expose la compétition (identifiant et libellé)
+ok 3 - Fiche joueur : l’historique expose la compétition (identifiant et libellé)
+  ---
+  duration_ms: 71758.359605
+  type: 'test'
+  ...
+# Subtest: Espoirs appelés : note au poste cohérente avec le niveau ; inscrit sans jouer = petite expérience
+ok 4 - Espoirs appelés : note au poste cohérente avec le niveau ; inscrit sans jouer = petite expérience
+  ---
+  duration_ms: 23753.673303
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 104478.784525
+CD_CPU_PROFILE suite=tests/finitions-critiques.cjs user_s=109.12 system_s=15.40 wall_s=104.79 cpu_pct=118% max_rss_kb=3111044
+PASS tests/finitions-critiques.cjs (105 s)
+::endgroup::
+::group::tests/continuer-evenement-monde.cjs
+13/07 → premier match en une commande : 68 jours, 19464 ms · Rencontre contre Meadowbridge Rovers aujourd’hui.
+après le match : 7 jours · match · Rencontre contre Trentwood Archers aujourd’hui.
+arrêts : [["2026-07-20","decision"],["2026-07-27","decision"],["2026-07-31","a_noter"],["2026-08-01","a_noter"],["2026-08-02","arret"]] · tranches partielles : 15
+TAP version 13
+# Subtest: Règle d’arrêt : obligatoires jamais ignorés, réglages des messages et des blessures
+ok 1 - Règle d’arrêt : obligatoires jamais ignorés, réglages des messages et des blessures
+  ---
+  duration_ms: 3.018471
+  type: 'test'
+  ...
+# Subtest: Une seule commande : du 13/07 au jour du premier match
+ok 2 - Une seule commande : du 13/07 au jour du premier match
+  ---
+  duration_ms: 34720.234022
+  type: 'test'
+  ...
+# Subtest: Arrêt sur un rendez-vous obligatoire, refus tant qu’il n’est pas réglé
+ok 3 - Arrêt sur un rendez-vous obligatoire, refus tant qu’il n’est pas réglé
+  ---
+  duration_ms: 16877.888533
+  type: 'test'
+  ...
+# Subtest: Même graine : état et profil identiques à N « Jour suivant » successifs
+ok 4 - Même graine : état et profil identiques à N « Jour suivant » successifs
+  ---
+  duration_ms: 23577.43603
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 84564.086744
+CD_CPU_PROFILE suite=tests/continuer-evenement-monde.cjs user_s=91.83 system_s=12.86 wall_s=84.90 cpu_pct=123% max_rss_kb=3143524
+PASS tests/continuer-evenement-monde.cjs (85 s)
+::endgroup::
+::group::tests/world-reprise-decisions.cjs
+Préparation du manager / prudente : {"manager":{"fatigue":6,"conditionGap":0,"injuryRisk":0,"automatismes":-16,"morale":3,"lateCondition":0,"friendlies":2},"prudent":{"fatigue":0,"conditionGap":3,"injuryRisk":0.4,"automatismes":-13,"morale":2,"lateCondition":0,"friendlies":2},"recettes":60000}
+TAP version 13
+# Subtest: Continuer s’arrête sur chaque décision, le choix du manager a des conséquences mesurables
+ok 1 - Continuer s’arrête sur chaque décision, le choix du manager a des conséquences mesurables
+  ---
+  duration_ms: 37317.996772
+  type: 'test'
+  ...
+# Subtest: Délégation : Jour suivant et « Confier à Gabi » appliquent le choix prudent
+ok 2 - Délégation : Jour suivant et « Confier à Gabi » appliquent le choix prudent
+  ---
+  duration_ms: 33066.258072
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 70390.184553
+CD_CPU_PROFILE suite=tests/world-reprise-decisions.cjs user_s=76.67 system_s=10.54 wall_s=70.74 cpu_pct=123% max_rss_kb=3296800
+PASS tests/world-reprise-decisions.cjs (70 s)
+::endgroup::
+::group::tests/godot-recruitment06.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Recrutement/presse06 headless : 39 contrôles ; 0 échec(s)
+
+Preuves headless : /tmp/tmp.kfi49JwfhM/suite.7OYrEc/cd-recruitment06-grONLV
+TAP version 13
+# Subtest: Recrutement et presse : présentations natives des rapports et relances
+ok 1 - Recrutement et presse : présentations natives des rapports et relances
+  ---
+  duration_ms: 7287.885834
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7292.619243
+CD_CPU_PROFILE suite=tests/godot-recruitment06.cjs user_s=8.41 system_s=0.55 wall_s=7.39 cpu_pct=121% max_rss_kb=806900
+PASS tests/godot-recruitment06.cjs (8 s)
+::endgroup::
