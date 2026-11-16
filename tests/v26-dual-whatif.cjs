@@ -13,7 +13,7 @@ assert.equal(run('fourZoneSecondChoice.zone'),'construction');
 assert.equal(run('fourZoneSecondChoice.kind'),'defence');
 assert.equal(run('fourZoneSecondChoice.plan'),'');
 const initialPanel=run('fourZoneDoubleWhatIfPanel(l)');
-for(const term of ['Deux ajustements, deux zones','Deuxième zone','Deuxième type de consigne','Deuxième consigne alternative','Choisissez d’abord']){
+for(const term of ['Deux ajustements, deux zones','Deuxième zone','Deuxième type de consigne','Deuxième consigne alternative','Choisis d’abord']){
  assert.ok(initialPanel.includes(term),term);
 }
 assert.ok(run('fourZoneTacticalPanel(l).includes("Deux ajustements, deux zones")'));
@@ -38,7 +38,7 @@ assert.ok(both.changes[1].after.fatigue>both.changes[1].before.fatigue);
 assert.equal(run('fourZoneTacticalPreview(l).find(z=>z.zone==="sortie").attack.actual'),'equilibre');
 assert.equal(run('fourZoneTacticalPreview(l).find(z=>z.zone==="construction").defence.actual'),'equilibre');
 let html=run('fourZoneDoubleWhatIfPanel(l)');
-for(const phrase of ['1. Vos 22 mètres','2. Vos 22 → milieu','Gain par progression réussie','Faute de main','Indice de fatigue offensive','Pénalité : ajustement du modèle','Couverture défensive','Indice de fatigue défensive','Compromis dans les deux secteurs','ne sont pas additionnés']){
+for(const phrase of ['1. Tes 22 mètres','2. Tes 22 → milieu','Gain par progression réussie','Faute de main','Indice de fatigue offensive','Pénalité : ajustement du modèle','Couverture défensive','Indice de fatigue défensive','Compromis dans les deux secteurs','ne sont pas additionnés']){
  assert.ok(html.includes(phrase),phrase);
 }
 assert.ok(html.includes("setFourZoneSecondChoice('kind',this.value)"));

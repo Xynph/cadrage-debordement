@@ -107,7 +107,7 @@
   const show=(p,q)=>{const rel=relation(s,p.id,q.id);return rel?rel.label+' ('+rel.score+')':'—'};
   return '<section class="card v70-relations" aria-label="Relations de groupe V70">'+
    '<div class="cardtitle"><h2>Duos, rivalités et leadership · V70</h2><span class="tag">'+(can?'INTERVENTION DISPONIBLE':'LECTURE SEULE')+'</span></div>'+
-   '<p class="help">Le vestiaire V64 suit les personnes ; ici, vous gérez les liens entre joueurs. Leurs affinités n\'influencent le match que si les deux sont simultanément sur le terrain. Effet limité à ±1,8 point de résolution offensive.</p>'+
+   '<p class="help">Le vestiaire V64 suit les personnes ; ici, tu gères les liens entre joueurs. Leurs affinités n\'influencent le match que si les deux sont simultanément sur le terrain. Effet limité à ±1,8 point de résolution offensive.</p>'+
    '<p><strong>Leader pressenti :</strong> '+escape(head?.name||'Aucun joueur assez disponible')+' · sélection basée sur qualités mentales, condition et satisfaction.</p>'+
    '<div class="row budgetline"><label>Joueur A<select id="v70-a">'+players.map(escapeOption).join('').replace('value="'+escape(first.id)+'"','value="'+escape(first.id)+'" selected')+'</select></label>'+
    '<label>Joueur B<select id="v70-b">'+players.map(escapeOption).join('').replace('value="'+escape(second.id)+'"','value="'+escape(second.id)+'" selected')+'</select></label></div>'+
@@ -135,7 +135,7 @@
    const a=root.document?.getElementById('v70-a')?.value,b=root.document?.getElementById('v70-b')?.value;
    const ok=perform(current(),mode,a,b,{save:()=>{root.save();return typeof lastSaveError==='undefined'||!lastSaveError;},
     message:(...args)=>root.managerMessage(...args),render:()=>root.render()});
-   if(!ok&&typeof root.toast==='function')root.toast('Duo ou décision indisponible : vérifiez les joueurs et le verrou hebdomadaire.');
+   if(!ok&&typeof root.toast==='function')root.toast('Duo ou décision indisponible : vérifie les joueurs et le verrou hebdomadaire.');
    return ok;
   };
   return true;

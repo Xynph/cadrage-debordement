@@ -11,7 +11,7 @@ assert.equal(a.academy,run('S.development.academy.length'),'espoirs natifs');
 assert.equal(a.weeklyPayroll,run('club().players.reduce((s,p)=>s+p.salary,0)'),'masse salariale native');
 assert.equal(run('JSON.stringify(S)'),before,'pas de mutation de la carrière lors du modèle');
 const html=run('managerSeasonPanel()');
-assert.match(html,/Piloter votre saison/);
+assert.match(html,/Piloter ta saison/);
 assert.match(html,/Suivre la relève/);
 assert.match(html,/Explorer le recrutement/);
 assert.match(html,/officeAction\('market',null,'contracts'\)/);
