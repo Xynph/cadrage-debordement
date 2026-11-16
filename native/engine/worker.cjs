@@ -1051,6 +1051,8 @@ function createBridge(options={}){
      ctx.nativeKnowledgeVerify=stablePlayers==='verify';
      run(`if(nativeKnowledge.observe(S,nativeKnowledgeBefore,nativeKnowledgeCommand,nativePayload,{observedPlayerIds:nativeKnowledgeCommand==='academy_center_scout'?(nativeSystems.domain('academyPathways').project().centers||[]).find(c=>c.id===nativePayload.centerId)?.candidates.map(p=>p.id)||[]:[]})&&nativeKnowledgeVerify)throw Error('Commande déclarée sans effet sur les joueurs : connaissance nouvelle ('+nativeKnowledgeCommand+').');`);
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
+     // Courrier du club (club-mail.cjs) : une réception par jour de calendrier ; seule la boîte est écrite.
+     run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »
      // ne s'arrêtent donc pas sur elle. Les grands moments restent obligatoires.
