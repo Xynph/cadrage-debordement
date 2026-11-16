@@ -27,6 +27,12 @@ func step_music(audio: Node, seconds: float) -> void:
 	for i in int(seconds / 0.1):
 		audio._update_music(0.1)
 
+## Le minuteur de la scène suit les images, l'anti-rebond des réactions l'horloge murale : sous charge
+## (suites lancées en parallèle en CI) le premier peut finir avant le second. On attend donc l'horloge réelle.
+func past_reaction_debounce(audio: Node) -> void:
+	while Time.get_ticks_msec() - int(audio._last_reaction_ms) < 400:
+		await process_frame
+
 func run() -> void:
 	var directory := proof.path_join("profil")
 	DirAccess.make_dir_recursive_absolute(directory)
@@ -141,11 +147,11 @@ func run() -> void:
 	audio.refresh_visibility("Match", true)
 	audio.set_presenting(true)
 	check(audio.play_shown("try", 0) and moods.back() == "joie", "Réaction jouée : joie")
-	await create_timer(0.45).timeout
+	await past_reaction_debounce(audio)
 	check(audio.play_shown("try", 1) and moods.back() == "deception" and audio._reaction.pitch_scale < 1.0, "Réaction jouée : déception, plus grave")
-	await create_timer(0.45).timeout
+	await past_reaction_debounce(audio)
 	check(audio.play_shown("penalty", 1) and moods.back() == "sifflets" and cues.back() == "crowd-whistle", "Réaction jouée : sifflets")
-	await create_timer(0.45).timeout
+	await past_reaction_debounce(audio)
 	check(not audio.play_shown("penalty", 0), "Pénalité pour le domicile : pas de sifflets")
 	# Même chemin via le journal moteur.
 	var scene_try := {"kind": "try", "team": 1, "to": [1, 2]}
