@@ -57,6 +57,7 @@
       "tests/match-courses.cjs": 7,
       "tests/match-direct.cjs": 370,
       "tests/match-choregraphe.cjs": 580,
+      "tests/godot-engine.cjs": 200,
       "tests/match-essai-visible.cjs": 74,
       "tests/match-highlights.cjs": 30,
       "tests/match-regles.cjs": 30,
