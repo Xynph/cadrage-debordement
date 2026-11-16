@@ -36,7 +36,7 @@ const COMMAND_WAIT_MESSAGES := {
 	"population_enable": "Mise à jour de la base de joueurs…",
 	"academy_groups_enable": "Mise à jour des centres de formation…",
 	"national_play_match": "Simulation de la rencontre internationale…",
-	"league_benchmark": "Mesure de votre machine…"
+	"league_benchmark": "Mesure de ta machine…"
 }
 ## Seuls les vrais chargements ont un panneau (décision de Léo, 16/11/2026) : ouverture du jeu, création ou reprise de
 ## carrière, coup d’envoi, avance du calendrier (Continuer, sauvegarde automatique comprise), fichiers et packs.
