@@ -65,7 +65,8 @@ Lecture seule (`SIGNAL_SOURCE`), aucun courrier ni état écrit : la carrière e
 Les arrêts suivants du même jour restent en mémoire du moteur (`infoQueue`, worker.cjs) ; chaque appui sur Continuer
 montre le suivant sans avancer (`days: 0`, `queued` = restants) ; oubliés dès que la date change. Le joueur coupe un
 type en choisissant un flux plus léger (préférence existante « Flux de Continuer ») ; `stops.ignorer: ['info']` les
-coupe tous. Prochain arrêt annoncé : veille et mi-saison. Test : `tests/continuer-arrets-saison.cjs`.
+coupe tous. Prochain arrêt annoncé : veille et mi-saison. Test : `tests/continuer-arrets-saison.cjs` (fenêtre courte en
+CI de PR ; saison complète avec `ARRETS_SAISON_COMPLETE=1` dans le créneau régulier `career-resilience.yml`).
 
 ## Éléments visuels ajoutés (existants seulement)
 

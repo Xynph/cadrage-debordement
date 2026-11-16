@@ -3,11 +3,11 @@
 // l'avance s'arrête aussi sur des moments sans décision (veille et lendemain de match, rapport médical, mi-saison,
 // fin de phase, marché, recruteur), avec parcimonie, et plusieurs fois le même jour si besoin.
 //   1. Règle pure (continuer.cjs + continuer-arrets.json) : flux, priorité, plafond par jour, regroupement.
-//   2. Saison Monde (`world-champ`, calendrier journalier) jouée à « Continuer » : arrêts informatifs répartis
-//      (nombre par mois borné), au moins un jour à plusieurs arrêts, et l'état de carrière est identique avec ou
-//      sans arrêts informatifs (les arrêts ne changent pas le monde).
-// Saison complète : lourde (CI). Essai local : `ARRETS_SAISON_JUSQUA=AAAA-MM-JJ` borne la date,
-// `ARRETS_SAISON_REPERE` fixe le jour de comparaison, `ARRETS_SAISON_SANS_COMPARAISON=1` saute la seconde saison.
+//   2. CI de PR (rapide) : carrière Monde (`world-champ`, calendrier journalier) partie de la veille de la saison,
+//      jouée à « Continuer » sur une fenêtre courte : veille, lendemain, rapport médical, un jour à plusieurs arrêts,
+//      arrêt du même jour sans avancer ; puis même graine sans arrêts informatifs : état identique en fin de fenêtre.
+//   3. `ARRETS_SAISON_COMPLETE=1` (créneau lourd régulier sur main, .github/workflows/career-resilience.yml) :
+//      saison complète, arrêts informatifs répartis (nombre par mois borné), état comparé au 15/12 (~30 min).
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -73,21 +73,31 @@ test('Règle : types informatifs, flux, priorité, plusieurs arrêts le même jo
   assert.deepEqual(C.plan({ ...base, today: '2026-10-05', halfDate: '2026-10-06' }, null, 'allege'), { kind: 'info', date: '2026-10-09', detail: 'veille du match contre Rivaux' });
 });
 
-// ------------------------------------------------------------------ saison Monde jouée à « Continuer »
+// ------------------------------------------------------------------ carrière Monde jouée à « Continuer »
 const sha = text => crypto.createHash('sha256').update(text, 'utf8').digest('hex');
-const JUSQUA = process.env.ARRETS_SAISON_JUSQUA || null;
-
-// Joue la saison à « Continuer » (flux donné) ; rend les arrêts [date, kind, type, detail, jours], l'empreinte de
-// l'état au jour `repere` (atteint exactement, avance bornée) et la date finale. `fin` : date d'arrêt du parcours.
+const COMPLETE = process.env.ARRETS_SAISON_COMPLETE === '1';
 const jours = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
-function saison(flux, { ignorer = [], repere, fin = JUSQUA } = {}) {
+
+// Joue à « Continuer » (flux donné) depuis le départ `start` ; rend les arrêts [date, kind, type, detail, jours],
+// l'empreinte de l'état au jour `repere` (atteint exactement, avance bornée) et la date finale (`fin` : arrêt).
+// Carrière créée une seule fois (étape coûteuse) puis copiée pour chaque parcours.
+const ouvrir = dir => M.ouvrir({ dataDir: dir, deferredCommits: true, testVm: true, mandatoryPress: false });
+function creer(start) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-arrets-saison-'));
-  const jeu = M.ouvrir({ dataDir: dir, deferredCommits: true, testVm: true, mandatoryPress: false });
+  const jeu = ouvrir(dir);
+  try { jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: 102, start })); jeu.call('save'); } finally { jeu.bridge.close(); }
+  return dir;
+}
+function parcours(origine, flux, { ignorer = [], repere = null, fin = null } = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-arrets-saison-'));
+  fs.cpSync(origine, dir, { recursive: true });
+  fs.rmSync(path.join(dir, 'PrototypeGodot', 'profil.lock'), { force: true });
+  const jeu = ouvrir(dir);
   const arrets = [];
   let empreinte = null;
   try {
-    let m = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: 102, start: 'premiers-clubs' }));
-    for (const decision of ['amicaux', 'stage']) m = jeu.call('reprise_decide', { decision, option: 'equilibre' });
+    let m = jeu.regler(jeu.call('snapshot'));
+    for (const decision of m.clubLife?.reprise?.due || []) m = jeu.call('reprise_decide', { decision, option: 'equilibre' });
     for (let i = 0; i < 900; i++) {
       m = jeu.regler(m);
       if (repere && !empreinte && m.meta.calendarToday === repere)
@@ -98,7 +108,7 @@ function saison(flux, { ignorer = [], repere, fin = JUSQUA } = {}) {
       const borne = repere && !empreinte && m.meta.calendarToday < repere ? { maxDays: Math.min(C.MAX_DAYS, jours(m.meta.calendarToday, repere)) } : {};
       const r = jeu.brut('advance_until_event', { fromDate: m.meta.calendarToday, ...borne, stops: { messages: 'aucun', flux, ignorer } });
       if (!r.ok) {
-        if (jeu.bridge.vm.run("S.phase") === 'ended') break;
+        if (jeu.bridge.vm.run('S.phase') === 'ended') break;
         assert.fail('Continuer refusé le ' + m.meta.calendarToday + ' : ' + r.error);
       }
       m = r.model;
@@ -116,48 +126,60 @@ function saison(flux, { ignorer = [], repere, fin = JUSQUA } = {}) {
   } finally { jeu.fermer(); fs.rmSync(dir, { recursive: true, force: true }); }
 }
 
-test('Saison Monde : arrêts informatifs répartis, plusieurs arrêts certains jours, monde inchangé', { timeout: 3600000 }, () => {
-  const t0 = Date.now();
-  // Repère de comparaison : mi-décembre (poules européennes et championnat en cours), atteint exactement.
-  const REPERE = process.env.ARRETS_SAISON_REPERE || (JUSQUA && JUSQUA <= '2026-12-15' ? null : '2026-12-15');
-  const avec = saison('complet', { repere: REPERE });
-  const infos = avec.arrets.filter(x => x[1] === 'info');
-  const parMois = {};
-  for (const x of infos) parMois[x[0].slice(0, 7)] = (parMois[x[0].slice(0, 7)] || 0) + 1;
-  const parJour = {};
-  for (const x of avec.arrets) parJour[x[0]] = (parJour[x[0]] || 0) + 1;
+function bilan(arrets) {
+  const infos = arrets.filter(x => x[1] === 'info'), types = {}, parMois = {}, parJour = {};
+  for (const x of infos) { types[x[2]] = (types[x[2]] || 0) + 1; parMois[x[0].slice(0, 7)] = (parMois[x[0].slice(0, 7)] || 0) + 1; }
+  for (const x of arrets) parJour[x[0]] = (parJour[x[0]] || 0) + 1;
   const multiples = Object.entries(parJour).filter(([, n]) => n > 1);
-  const types = {};
-  for (const x of infos) types[x[2]] = (types[x[2]] || 0) + 1;
-  const equilibre = new Set(C.fluxTypes('equilibre'));
-  const parMoisEquilibre = {};
-  for (const x of infos.filter(x => equilibre.has(x[2]))) parMoisEquilibre[x[0].slice(0, 7)] = (parMoisEquilibre[x[0].slice(0, 7)] || 0) + 1;
-  console.log('Saison', avec.date, '·', avec.arrets.length, 'arrêts dont', infos.length, 'informatifs ·', Math.round((Date.now() - t0) / 1000), 's');
-  console.log('Par type :', JSON.stringify(types));
-  console.log('Par mois (complet) :', JSON.stringify(parMois));
-  console.log('Par mois (types du flux équilibré) :', JSON.stringify(parMoisEquilibre));
-  console.log('Jours à plusieurs arrêts :', JSON.stringify(multiples.slice(0, 8)), multiples.length);
-  for (const x of infos.slice(0, 12)) console.log('  ', x[0], x[2], '·', x[3]);
-  assert.ok(infos.length > 0, 'des arrêts informatifs');
-  assert.ok(types.veille > 0, 'veille de match');
-  const mois = Object.keys(parMois);
-  if (!JUSQUA) {
-    assert.ok(mois.length >= 6, 'répartis sur la saison : ' + mois.join(', '));
-    assert.ok(types.mi_saison === 1, 'une mi-saison');
-    assert.ok(types.fin_phase >= 1, 'au moins une fin de phase');
-  }
-  // Parcimonie : jamais un arrêt informatif par jour. Flux complet (le plus bavard) : au plus 14 par mois.
-  for (const [k, n] of Object.entries(parMois)) assert.ok(n <= 14, k + ' : ' + n + ' arrêts informatifs');
-  for (const [k, n] of Object.entries(parMoisEquilibre)) assert.ok(n <= 8, k + ' (équilibré) : ' + n);
+  console.log(arrets.length, 'arrêts dont', infos.length, 'informatifs · par type', JSON.stringify(types), '· par mois', JSON.stringify(parMois));
+  console.log('Jours à plusieurs arrêts :', JSON.stringify(multiples));
+  for (const x of infos.slice(0, 10)) console.log('  ', x[0], x[2], '·', x[3]);
   for (const [d, n] of Object.entries(parJour)) assert.ok(n <= C.ARRETS.maxParJour, d + ' : ' + n + ' arrêts');
   assert.ok(multiples.length > 0, 'au moins un jour à plusieurs arrêts');
-  // Les arrêts suivants du même jour n'avancent pas la date.
-  assert.ok(avec.arrets.some(x => x[4] === 0 && x[1] === 'info'), 'arrêt du même jour sans avancer');
-  if (process.env.ARRETS_SAISON_SANS_COMPARAISON) return; // essai local sur machine chargée seulement
-  // Même graine, arrêts informatifs coupés : même carrière au même jour (les arrêts ne changent pas le monde).
-  if (!REPERE) return;
-  const sans = saison('complet', { ignorer: ['info'], repere: REPERE, fin: REPERE });
+  assert.ok(arrets.some(x => x[4] === 0 && x[1] === 'info'), 'arrêt du même jour sans avancer');
+  return { infos, types, parMois };
+}
+
+// Fenêtre courte (CI de PR) : départ « veille » (préparation confiée au staff, 1re journée le 19/09), deux
+// semaines de saison : veilles, lendemains et un jour à deux arrêts (01/10). Le rapport médical, la mi-saison et
+// la fin de phase sont vérifiés par la saison complète. Comparaison sans arrêts informatifs au 21/09 (après le
+// premier lendemain de match).
+const FIN_COURTE = '2026-10-02', REPERE_COURT = '2026-09-21';
+test('Fenêtre de saison : veille, lendemain, plusieurs arrêts le même jour, monde inchangé', { skip: COMPLETE, timeout: 600000 }, () => {
+  const t0 = Date.now(), origine = creer('veille');
+  try {
+  const avec = parcours(origine, 'complet', { repere: REPERE_COURT, fin: FIN_COURTE });
+  console.log('Fenêtre', avec.date, '·', Math.round((Date.now() - t0) / 1000), 's');
+  const { types } = bilan(avec.arrets);
+  assert.ok(types.veille >= 2 && types.lendemain >= 2, 'veilles et lendemains : ' + JSON.stringify(types));
+  const sans = parcours(origine, 'complet', { ignorer: ['info'], repere: REPERE_COURT, fin: REPERE_COURT });
   assert.ok(avec.empreinte && sans.empreinte, 'repère atteint dans les deux parcours');
   assert.equal(sans.empreinte.etat, avec.empreinte.etat, 'état de carrière identique avec ou sans arrêts informatifs');
   assert.equal(sans.empreinte.graine, avec.empreinte.graine, 'graine identique');
+  assert.ok(!sans.arrets.some(x => x[1] === 'info'));
+  console.log('Durée totale', Math.round((Date.now() - t0) / 1000), 's');
+  } finally { fs.rmSync(origine, { recursive: true, force: true }); }
+});
+
+// Saison complète (créneau lourd régulier sur main) : répartition sur l'année, mi-saison, fin de phase.
+test('Saison complète : arrêts informatifs répartis, monde inchangé au 15/12', { skip: !COMPLETE, timeout: 3600000 }, () => {
+  const REPERE = '2026-12-15', origine = creer('premiers-clubs');
+  try {
+  const avec = parcours(origine, 'complet', { repere: REPERE });
+  console.log('Saison jusqu’au', avec.date);
+  const { infos, types, parMois } = bilan(avec.arrets);
+  const equilibre = new Set(C.fluxTypes('equilibre')), parMoisEquilibre = {};
+  for (const x of infos.filter(x => equilibre.has(x[2]))) parMoisEquilibre[x[0].slice(0, 7)] = (parMoisEquilibre[x[0].slice(0, 7)] || 0) + 1;
+  console.log('Par mois (types du flux équilibré) :', JSON.stringify(parMoisEquilibre));
+  assert.ok(Object.keys(parMois).length >= 6, 'répartis sur la saison : ' + Object.keys(parMois).join(', '));
+  assert.equal(types.mi_saison, 1, 'une mi-saison');
+  assert.ok(types.fin_phase >= 1, 'au moins une fin de phase');
+  // Parcimonie : jamais un arrêt informatif par jour. Flux complet (le plus bavard) : au plus 14 par mois.
+  for (const [k, n] of Object.entries(parMois)) assert.ok(n <= 14, k + ' : ' + n + ' arrêts informatifs');
+  for (const [k, n] of Object.entries(parMoisEquilibre)) assert.ok(n <= 8, k + ' (équilibré) : ' + n);
+  const sans = parcours(origine, 'complet', { ignorer: ['info'], repere: REPERE, fin: REPERE });
+  assert.ok(avec.empreinte && sans.empreinte, 'repère atteint dans les deux parcours');
+  assert.equal(sans.empreinte.etat, avec.empreinte.etat, 'état de carrière identique avec ou sans arrêts informatifs');
+  assert.equal(sans.empreinte.graine, avec.empreinte.graine, 'graine identique');
+  } finally { fs.rmSync(origine, { recursive: true, force: true }); }
 });
