@@ -92,6 +92,8 @@ function bootstrap(){
  const CDAcademyFollowUp=nativeSystems.domain('academyFollowUp');
  // Championnats actifs : le monde appelle CDLeagueDetail.quickFixture/simulate pour les résultats rapides.
  const CDLeagueDetail=nativeSystems.domain('leagueDetail');
+ // Multiplex de la journée (match-multiplex.cjs) : la validation du monde garde le déroulé montré.
+ const CDMultiplex=nativeSystems.domain('multiplex');
  const CDNativeAcademyGroups=(${academyGroups.toString()})();
  const nativeBaseValidator=validateCareer;
  validateCareer=state=>{const result=nativeBaseValidator(state);nativeSystems.validate(state);if(state)CDNativeAcademyGroups.validate(state);return result;};
@@ -123,7 +125,9 @@ domains.clubSheet=require('./club-sheet.cjs');
 domains.pressPromises=require('./press-promises.cjs');
 // Courrier du club avec réponses (native/engine/club-mail.cjs) ; ses données sont injectées dans la VM par le prélude.
 domains.clubMail=require('./club-mail.cjs');
-const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands]);
+// Multiplex des autres matchs de la journée et classement en direct (native/engine/match-multiplex.cjs).
+domains.multiplex=require('./match-multiplex.cjs');
+const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files])]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};

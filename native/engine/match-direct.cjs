@@ -414,7 +414,25 @@ function project(model,niveau,lire,options={}){
     direct.arret={cle:'carton-'+i,raison:'carton',rouge:l.cause==='red',pourNous:l.equipe!==direct.camp,texte:nommer(events[i].text),horloge:horloge(l)};
   }
  }
+ // Multiplex des autres matchs de la journée et classement « si ça finit ainsi » (match-multiplex.cjs),
+ // à la minute du dernier fait montré : jamais au-delà de ce que le joueur a vu.
+ if(typeof lire.journee==='function'){
+  try{
+   const fini=live.finished===true&&borne>=events.length,vue=vues.at(-1);
+   const j=lire.journee(minuteVue,fini,direct.score,vue?vue.essaisApres:[0,0]);
+   direct.journee=j?habillerJournee(j,model):null;
+  }catch(error){direct.journee=null;direct.journeeErreur=String(error?.message||error);}
+ }
  return direct;
+}
+
+// Noms et sigles affichés (identité du club, presentation) des clubs du multiplex et du classement.
+function habillerJournee(j,model){
+ const fiches=new Map();
+ for(const c of [...(Array.isArray(model.league)?model.league:[]),...(Array.isArray(model.live?.teams)?model.live.teams:[])])if(c&&c.id!==undefined)fiches.set(c.id,c);
+ const nom=(id,x)=>{const c=fiches.get(id);return c?{abbr:c.presentation?.abbr||c.abbr||x.abbr,nom:c.presentation?.name||c.name||x.nom}:{abbr:x.abbr,nom:x.nom};};
+ return {...j,matchs:j.matchs.map(m=>({...m,home:{...m.home,...nom(m.home.id,m.home)},away:{...m.away,...nom(m.away.id,m.away)}})),
+  classement:j.classement.map(r=>({...r,...nom(r.clubId,r)}))};
 }
 
 module.exports=Object.freeze({NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX,ECHANTILLON_MINUTES});
