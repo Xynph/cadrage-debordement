@@ -67,7 +67,7 @@ func reply_and_open() -> void:
 	app._reset_reception(str(mail.id))
 	app._navigate("Réception", false)
 	await settle()
-	var row := app.root_content.find_child("InboxClubMail_" + str(mail.id).replace("-", "_"), true, false)
+	var row: Node = app.root_content.find_child("InboxClubMail_" + str(mail.id).replace("-", "_"), true, false)
 	check(row != null, "Mail rangé dans la Réception · " + str(mail.sujet))
 	var option: Dictionary = (mail.reponses as Array).filter(func(r: Dictionary) -> bool: return r.disponible)[0]
 	var reply := button("InboxClubMailReply_" + str(option.id))
