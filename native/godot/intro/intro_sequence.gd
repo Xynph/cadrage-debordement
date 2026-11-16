@@ -108,6 +108,53 @@ func setup(host: Control, profile_directory: String) -> void:
 		app.bridge.model_changed.connect(_on_model)
 		app.bridge.command_failed.connect(_on_failed)
 	_goto(0)
+	if _prechauffer(): _hold_clock()
+
+## Shaders compilés avant le premier mouvement de l'introduction. Au tout premier lancement (aucun cache de
+## shaders), le portrait 3D de Gabi, rendu sous l'introduction dès l'arrivée du moteur, compilait ses shaders
+## en plein prologue : fil principal figé 1 à 2 s (recette du 16/11 : une seconde à 9 i/s). Ce rendu, et celui
+## des shaders des cartes suivantes (hors écran), sont faits dès la première image, encore immobile ; les
+## horloges de l'introduction ne partent qu'ensuite (_hold_clock). Avec un cache, cela ne coûte que quelques ms.
+const SHADERS_CARTES := [
+	"res://intro/canvas_intro_fond.gdshader", "res://intro/canvas_intro_filet.gdshader",
+	"res://intro/canvas_intro_stade.gdshader", "res://intro/canvas_intro_halo.gdshader",
+	"res://intro/canvas_intro_logo.gdshader",
+]
+var _warming := false
+
+func _prechauffer() -> bool:
+	var guide: Variant = app.get("coach") if is_instance_valid(app) else null
+	if guide is Node and is_instance_valid(guide):
+		var portrait: Variant = guide.get("portrait")
+		if portrait is Node and is_instance_valid(portrait) and portrait.has_method("prechauffer"): portrait.prechauffer()
+	var viewport := SubViewport.new()
+	viewport.name = "IntroPrechauffage"
+	viewport.size = Vector2i(16, 16)
+	viewport.transparent_bg = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	for path: String in SHADERS_CARTES:
+		var rect := ColorRect.new()
+		rect.size = Vector2(16, 16)
+		var material := ShaderMaterial.new()
+		material.shader = load(path)
+		rect.material = material
+		viewport.add_child(rect)
+	add_child(viewport)
+	return true
+
+## Laisse passer l'image de préchauffage et la suivante avant de lancer les horloges : la carte reste à son
+## instant 0, rien n'est sauté ni raccourci.
+func _hold_clock() -> void:
+	_warming = true
+	var card := current
+	if card != null: card.set_process(false)
+	# Image 1 : rendu de préchauffage ; image 2 : son delta contient la compilation ; image 3 : horloges.
+	# (Pas de frame_post_draw : jamais émis sans rendu, en headless.)
+	for frame in 3: await get_tree().process_frame
+	_warming = false
+	var viewport := get_node_or_null("IntroPrechauffage")
+	if viewport != null: viewport.queue_free()
+	if is_instance_valid(card): card.set_process(true)
 
 ## Index de la phrase d'ambiance : tiré au hasard, jamais celui du lancement précédent. `roll` (0..1) rend le tirage
 ## testable ; avec un seul choix, pas d'alternative.
@@ -180,7 +227,7 @@ func _goto(next: int) -> void:
 	card.begin()
 
 func _process(delta: float) -> void:
-	if _closing or current == null: return
+	if _closing or current == null or _warming: return
 	_since_change += delta
 	_elapsed += delta
 	if current.get("automatic") == true:
