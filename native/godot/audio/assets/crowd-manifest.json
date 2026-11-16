@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "origin": "Synthèse procédurale originale locale — Oval Legacy 27",
+  "generator": "scripts/build-native-crowd.cjs",
+  "third_party_assets": false,
+  "sample_rate": 24000,
+  "sounds": [
+    {
+      "file": "crowd-whistle.wav",
+      "bytes": 134444,
+      "sha256": "5a2c50a7506529ca4725e1fb19e2b1019a76e6808b3a295fbe55ed42ee67e9fd"
+    }
+  ]
+}

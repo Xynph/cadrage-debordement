@@ -572,11 +572,11 @@ func compact_context(player: Dictionary) -> void:
 	var peer := actions[0] as Button
 	var requested := [str(player.id), str(peer.get_meta("peer_id"))]
 	await keyboard(peer, "comparer un pair du même poste")
-	var comparison := app.get_node_or_null("PlayerComparison") as AcceptDialog
+	var comparison := app.get_node_or_null("MarketComparison") as AcceptDialog
 	check(comparison != null, "Vrai comparateur ouvert")
 	if comparison == null: return
 	for slot in 2:
-		var choice := comparison.find_child("ComparisonPlayer"+str(slot), true, false) as OptionButton
+		var choice := comparison.find_child("MarketComparisonPlayer"+str(slot), true, false) as OptionButton
 		check(choice != null and str(choice.get_item_metadata(choice.selected)) == requested[slot], "Comparateur ouvre le dossier exact " + str(slot))
 	# Fermer sans reconstruire le dossier compact, afin de continuer le scénario de resize.
 	comparison.hide()
@@ -628,13 +628,13 @@ func immersive_drafts(player: Dictionary, annotation: String) -> void:
 	notebook.queue_free()
 	await settle()
 	await keyboard(named("FullPlayerCompare"), "comparer depuis la fiche immersive")
-	var comparison := app.get_node_or_null("PlayerComparison") as AcceptDialog
+	var comparison := app.get_node_or_null("MarketComparison") as AcceptDialog
 	check(comparison != null, "La fiche immersive ouvre le comparateur réel")
 	if comparison == null: return
-	var first := comparison.find_child("ComparisonPlayer0", true, false) as OptionButton
-	var other := comparison.find_child("ComparisonPlayer1", true, false) as OptionButton
+	var first := comparison.find_child("MarketComparisonPlayer0", true, false) as OptionButton
+	var other := comparison.find_child("MarketComparisonPlayer1", true, false) as OptionButton
 	check(first != null and str(first.get_item_metadata(first.selected)) == str(player.id), "Le comparateur conserve l’identifiant de la fiche ouverte")
-	check(other != null and other.item_count == app.model.squad.size() + 1, "Le second comparateur expose tous les joueurs réels")
+	check(other != null and other.item_count >= app.model.squad.size() + 1, "Le second comparateur expose tous les joueurs de l’effectif (et du marché)")
 	comparison.hide()
 	comparison.queue_free()
 	await settle()
