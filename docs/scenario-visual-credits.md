@@ -3,7 +3,7 @@
 Crédit des six images d’aperçu : **Scenario**. Elles sont distribuées sous la
 licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), selon
 [la notice de la collection](https://huggingface.co/datasets/scenario-labs/3d-collection/blob/8a63e6f72eb91b28fd7d8b03730681e0c2bb6e63/LICENSE).
-Depuis le 16 novembre 2026, les vignettes n’apparaissent plus sur les écrans (hors sujet) ; l’attribution figure dans l’écran Crédits du jeu.
+**Retirées du jeu le 16 novembre 2026** (décision de Léo) : les vignettes n’étaient plus affichées depuis la PR #747 et les fichiers ont été supprimés ; l’attribution n’est donc plus distribuée. Ce document reste comme historique.
 Les fichiers ont été renommés et sont affichés à l’échelle, sans recadrage.
 Leur contenu est identique aux aperçus publiés.
 
