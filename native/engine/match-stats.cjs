@@ -144,8 +144,11 @@ function fabrique(){
    const parts=totalTenus?minute.tenus.map(t=>t/totalTenus):[possession===0?1:0,possession===1?1:0];
    const jeu=Math.max(.3,1-REGLAGES.arret*minute.arrets);
    const x=minute.x.length?minute.x.reduce((a,b)=>a+b,0)/minute.x.length:territoire;
+   // Présents des deux camps relevés une fois pour la minute (ni la feuille ni les exclusions ne changent pendant la
+   // routine ; les listes ne sont que lues) : mêmes joueurs, mêmes fiches, dans le même ordre.
+   const present=[presents(0,m),presents(1,m)];
    for(const s of [0,1]){
-    const att=presents(s,m),def=presents(1-s,m);
+    const att=present[s],def=present[1-s];
     if(!att.length||!def.length||!(parts[s]>0))continue;
     const plans=minute.plans||{},style=STYLES_ATTAQUE[plans.attack?.[s]]||STYLES_ATTAQUE.equilibre,defense=STYLES_DEFENSE[plans.defence?.[1-s]]||STYLES_DEFENSE.equilibre;
     const attendu=Math.max(0,REGLAGES.coursesParMinute*parts[s]*jeu*style.courses-.5*minute.courses[s]);
@@ -184,7 +187,7 @@ function fabrique(){
     const pieds=poisson(REGLAGES.piedsParMinute*parts[s]*jeu*style.pieds*(camp<40?1.55:camp<60?.95:.45),r);
     for(let k=0;k<pieds;k++){const buteur=choisir(att,c=>POIDS.pieds[c.poste]*(.5+attr(c.id,'kick')/100),r);if(!buteur)break;buteur.j.coupsDePied++;buteur.j.metresAuPied+=18+r()*30}
    }
-   for(const s of [0,1])for(const c of presents(s,m))c.j.minutes++;
+   for(const s of [0,1])for(const c of present[s])c.j.minutes++;
   }
 
   const fermer=jusqua=>{
