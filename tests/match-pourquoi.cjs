@@ -51,6 +51,15 @@ test('Victoire : ce qui a porté d’abord, un levier une seule fois', () => {
   assert.equal(r.raisons[1].action, 'Ajuster la tactique');
 });
 
+test('Fait à contre-courant du résultat : « À surveiller » après une victoire (cas du match réel du 19/09)', () => {
+  // Victoire 29-17 (camp 1) : la touche a porté, mais le XV a fini moins frais.
+  const d = { camp: 1, score: [17, 29], tableau: tableau({ touches: [7, 7], touchesSur: [11, 8], occupation: [43, 57], penalites: [9, 10] }) };
+  const r = P.raisons(P.faits(d, { energie: [66, 79] }));
+  assert.deepEqual(r.raisons.map(x => [x.levier, x.sens]), [['preparation', 'positif'], ['condition', 'negatif']]);
+  assert.match(r.raisons[0].texte, /^Touche : 7 sur 8 pour nous, 7 sur 11 pour eux/);
+  assert.match(r.raisons[1].texte, /^À surveiller : notre XV a fini à 66 % d’énergie contre 79 %/);
+});
+
 test('Composition : joueurs sous 5,5 nommés ; notes adverses ignorées', () => {
   const notes = { a: { note: 4.8, faits: 6, cote: 0 }, b: { note: 5.2, faits: 3, cote: 0 }, c: { note: 7.1, faits: 9, cote: 0 }, x: { note: 3.9, faits: 4, cote: 1 } };
   const r = P.raisons(P.faits(direct([10, 18], {}, notes), { noms: { a: 'Martin', b: 'Durand', x: 'Adverse' } }));

@@ -121,8 +121,12 @@ function raisons(f) {
   }
   return {
     issue,
-    raisons: choisis.map((c, i) => ({ rang: i + 1, levier: c.levier, levierLabel: LEVIERS[c.levier].label, sens: c.poids > 0 ? 'negatif' : 'positif',
-      texte: c.texte, action: LEVIERS[c.levier].action, route: LEVIERS[c.levier].route, poids: c.poids })),
+    raisons: choisis.map((c, i) => {
+      const sens = c.poids > 0 ? 'negatif' : 'positif';
+      // Fait à contre-courant du résultat : dit comme tel (« À surveiller » après une victoire).
+      const prefixe = issue === 'victoire' && sens === 'negatif' ? 'À surveiller : ' : issue === 'defaite' && sens === 'positif' ? 'Point d’appui : ' : '';
+      return { rang: i + 1, levier: c.levier, levierLabel: LEVIERS[c.levier].label, sens, texte: prefixe ? prefixe + c.texte[0].toLowerCase() + c.texte.slice(1) : c.texte, action: LEVIERS[c.levier].action, route: LEVIERS[c.levier].route, poids: c.poids };
+    }),
   };
 }
 

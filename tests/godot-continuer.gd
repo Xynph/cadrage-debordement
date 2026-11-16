@@ -152,8 +152,8 @@ func run() -> void:
 	# reprend à sa dernière sauvegarde.
 	var saved := today()
 	OS.kill(app.bridge.child_pid)
-	var until := Time.get_ticks_msec() + 20000
-	while (app.bridge.child_pid > 0 or not app.connection_error) and Time.get_ticks_msec() < until: await process_frame
+	var kill_limit := Time.get_ticks_msec() + 20000
+	while (app.bridge.child_pid > 0 or not app.connection_error) and Time.get_ticks_msec() < kill_limit: await process_frame
 	await settle(4)
 	check(app.connection_error and app.bridge.child_pid <= 0, "Moteur arrêté détecté")
 	check(app.primary_text().begins_with("RELANCER LE MOTEUR"), "Bouton principal : relancer le moteur (" + app.primary_text() + ")")
