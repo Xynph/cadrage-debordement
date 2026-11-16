@@ -123,7 +123,7 @@ static func gauge(parent: Node, app: Control, ids: Array) -> void:
 	parent.add_child(block)
 	block.add_child(G.label("VITESSE DE JEU ESTIMÉE", 11, G.MUTED))
 	if result.is_empty():
-		block.add_child(G.wrap("Mesure de votre machine en cours… La jauge s’affiche dans un instant.", 13, G.MUTED))
+		block.add_child(G.wrap("Mesure de ta machine en cours… La jauge s’affiche dans un instant.", 13, G.MUTED))
 		return
 	var level: Dictionary = result.level
 	var tint := state_color(level)
@@ -150,12 +150,12 @@ static func gauge(parent: Node, app: Control, ids: Array) -> void:
 
 static func machine_line(app: Control) -> String:
 	var bench := benchmark(app)
-	if bench.is_empty(): return "Votre machine : mesure en cours."
+	if bench.is_empty(): return "Ta machine : mesure en cours."
 	var parts := PackedStringArray()
 	if bench.get("cores") != null: parts.append("%d cœurs" % int(bench.cores))
 	if bench.get("memoryGb") != null: parts.append("%s Go de mémoire" % str(snappedf(float(bench.memoryGb), 0.1)))
 	parts.append("banc d’essai %d ms + %d ms" % [roundi(float(bench.get("serialMs", 0))), roundi(float(bench.get("computeMs", 0)))])
-	return "Votre machine : " + " · ".join(parts) + "."
+	return "Ta machine : " + " · ".join(parts) + "."
 
 ## Encart de la page de création : résumé, jauge et accès au choix détaillé.
 static func summary(app: Control, parent: Node, own: String, catalogue: Array) -> void:
@@ -199,8 +199,8 @@ static func open(app: Control, own: String, catalogue: Array, career: Dictionary
 	dialog.get_ok_button().text = "Valider" if career.is_empty() else "Appliquer dès la semaine prochaine"
 	var body := G.panel(dialog)
 	body.add_child(G.label("SUIVI DU RUGBY MONDIAL", 11, G.MUTED))
-	body.add_child(G.wrap("En détail complet, votre cellule d’analyse décortique chaque rencontre : statistiques et notes des joueurs, équipe-type, feuilles de match complètes. En consultation, vous recevez les scores, les classements, les blessures et l’évolution des joueurs, sans notes individuelles ni feuilles de match : le monde avance bien plus vite.", 13, G.INK))
-	body.add_child(G.wrap("Toujours en détail complet : votre championnat, vos coupes d’Europe, les phases finales et les clubs des joueurs que vous suivez au recrutement.", 13, G.GOLD))
+	body.add_child(G.wrap("En détail complet, ta cellule d’analyse décortique chaque rencontre : statistiques et notes des joueurs, équipe-type, feuilles de match complètes. En consultation, tu reçois les scores, les classements, les blessures et l’évolution des joueurs, sans notes individuelles ni feuilles de match : le monde avance bien plus vite.", 13, G.INK))
+	body.add_child(G.wrap("Toujours en détail complet : ton championnat, tes coupes d’Europe, les phases finales et les clubs des joueurs que tu suis au recrutement.", 13, G.GOLD))
 	if not career.is_empty():
 		body.add_child(G.wrap("Le changement prend effet à partir de la semaine prochaine. Un championnat passé en consultation garde ses résultats, mais ses notes de joueurs s’arrêtent là.", 13, G.GOLD))
 	var gauge_box := G.v(4)
@@ -232,7 +232,7 @@ static func open(app: Control, own: String, catalogue: Array, career: Dictionary
 		var tag := G.label("", 11, G.MUTED)
 		row.add_child(tag)
 		var paint := func(on: bool):
-			tag.text = "VOTRE CHAMPIONNAT" if league.id == own else ("DÉTAIL COMPLET" if on else "CONSULTATION")
+			tag.text = "TON CHAMPIONNAT" if league.id == own else ("DÉTAIL COMPLET" if on else "CONSULTATION")
 			tag.add_theme_color_override("font_color", G.GOOD if on else G.MUTED)
 		paint.call(check.button_pressed)
 		checks[league.id] = check
@@ -249,7 +249,7 @@ static func open(app: Control, own: String, catalogue: Array, career: Dictionary
 	var set_all := func(on: bool):
 		for id: String in checks:
 			if id != own: checks[id].button_pressed = on
-	var auto := G.button("Choix automatique selon votre PC", func():
+	var auto := G.button("Choix automatique selon ton PC", func():
 		var target: Array = default_for(own, all, benchmark(app).get("costs", {}))
 		for id: String in checks:
 			if id != own: checks[id].button_pressed = id in target)

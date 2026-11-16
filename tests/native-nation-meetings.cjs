@@ -40,8 +40,8 @@ test('legacy and dual club mandates retain mandatory scenes and progression guar
   const a=setup(role);a.d.observe('new_career');
   assert.equal(a.d.project().scene.kind,'press');
   assert.deepEqual(plain(a.d.project().queue.map(e=>e.kind)),['board']);
-  assert.throws(()=>a.d.guard('advance_day'),/rendez-vous/);
-  assert.throws(()=>a.d.guard('national_take_job',{role:'dual',nation:'FRA',confirmed:true}),/rendez-vous/);
+  assert.throws(()=>a.d.guard('advance_day'),/rendez-vous/i);
+  assert.throws(()=>a.d.guard('national_take_job',{role:'dual',nation:'FRA',confirmed:true}),/rendez-vous/i);
   assert.equal(a.d.guard('national_take_job',{role:'nation',nation:'FRA',confirmed:true}),true,
    'Leaving club responsibility must reach the authoritative mandate controller');
  }
