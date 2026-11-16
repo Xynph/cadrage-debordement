@@ -1,0 +1,4 @@
+== suites (3) (code 1)
+not ok 4 - Sauvegarde en arrière-plan : le moteur signale persist started puis done (ou failed), sans changer la carrière
+  name: 'AssertionError'
+::error file=tests/avance-jour-differe.cjs::Godot : ECHEC (1), durée 102 s, limite 300s
