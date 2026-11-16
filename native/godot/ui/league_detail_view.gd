@@ -240,8 +240,8 @@ static func open(app: Control, own: String, catalogue: Array, career: Dictionary
 		check.button_pressed = league.id in chosen
 		check.disabled = league.id == own
 		check.add_theme_font_size_override("font_size", 14)
-		for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: check.add_theme_color_override(key, G.INK)
-		check.add_theme_color_override("font_disabled_color", G.INK)
+		# Couleurs du thème de la fenêtre (encre claire, grisé pour le championnat verrouillé) :
+		# une encre forcée ici restait sombre sur le fond sombre des fenêtres du jeu.
 		G.fill(check)
 		row.add_child(check)
 		var tag := G.label("", 11, G.MUTED)
