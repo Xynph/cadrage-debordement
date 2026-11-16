@@ -1,6 +1,6 @@
 'use strict';
 // Raccourcis clavier façon Football Manager : interface Godot réelle + worker réel, carrière Monde.
-//   Espace/Entrée = Continuer, 1 à 9 = menus, Échap = fermer la fiche, Ctrl+F = accès rapide, muets en saisie.
+//   Espace = Continuer, 1 à 9 = menus, Échap = fermer la fiche, Ctrl+F = accès rapide, muets en saisie.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');

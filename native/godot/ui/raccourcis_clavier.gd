@@ -1,7 +1,7 @@
 extends Node
 # Raccourcis clavier de la carrière (façon Football Manager). Un seul gestionnaire, installé par le décor
 # immersif ; il ne touche ni au moteur ni aux commandes : il actionne les boutons que le manager voit.
-#   Espace / Entrée : prochain message non lu de la Réception ; sans non lu, Continuer (bouton visible et actif)      1 à 9 : menus de gauche, dans l'ordre affiché
+#   Espace : prochain message non lu de la Réception ; sans non lu, Continuer (bouton visible et actif)      1 à 9 : menus de gauche, dans l'ordre affiché
 #   Échap : referme la fiche ouverte (sinon le menu de la carrière, déjà géré)      Ctrl+F : accès rapide (Ctrl+K)
 # Jamais actif : champ de saisie ayant le focus, fenêtre ou dialogue ouvert, réunion ou match en cours, intro.
 # Les autres raccourcis (Ctrl+S, Ctrl+J, Ctrl+K, F1, Alt+←/→) restent dans navigation_controller.gd.
@@ -10,7 +10,7 @@ const Reception = preload("res://ui/immersive08/reception_canvas.gd")
 const INDICES := [" · Espace : prochain message", " · Espace : continuer"]
 ## Table unique des raccourcis : [touche, libellé court, explication, dans le pied de page]. Pied de page, paramètres et aide F1 la lisent.
 const TABLE := [
-	["Espace", "Suite", "Ouvre le prochain message non lu ; une fois le courrier lu, passe à la suite du calendrier (Entrée aussi).", true],
+	["Espace", "Suite", "Ouvre le prochain message non lu ; une fois le courrier lu, passe à la suite du calendrier. Sur un bouton ciblé au clavier, Espace l'active lui-même.", true],
 	["1 à 9", "Menus", "Ouvre l'écran du menu de gauche, dans l'ordre affiché.", true],
 	["Échap", "Retour", "Referme la fiche ou la fenêtre au premier plan.", true],
 	["Ctrl F", "Rechercher", "Cherche un joueur, un club ou un écran (Ctrl K aussi).", true],
@@ -19,7 +19,7 @@ const TABLE := [
 	["Alt ← / →", "Historique", "Revient à l'écran précédent ou suivant.", false],
 ]
 var app: Control
-# Vrai après Tab ou une flèche : Espace/Entrée appartiennent alors au bouton ciblé, pas à « Continuer ».
+# Vrai après Tab ou une flèche : Espace appartient alors au bouton ciblé, pas à « Continuer ».
 var _focus_clavier := false
 
 ## Pied de page : « Espace Suite   ·   1 à 9 Menus … ».
@@ -75,13 +75,16 @@ func _ajouter_indice(bouton: Button) -> void:
 	for indice: String in INDICES: texte = texte.trim_suffix(indice)
 	bouton.tooltip_text = texte + INDICES[0 if not Reception.next_unread(app).is_empty() else 1]
 
+## Passe avant les contrôles uniquement quand Espace tombe sur « Continuer » lui-même, resté ciblé après un clic : il doit alors ouvrir le courrier non lu.
+## Tout autre contrôle (bouton, liste, arbre, dialogue) reçoit Espace d'abord ; le gestionnaire ne voit la touche que par `_unhandled_key_input`.
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed: _focus_clavier = false
 	var touche := _touche(event)
 	if touche == null: return
 	if touche.keycode in [KEY_TAB, KEY_BACKTAB, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]: _focus_clavier = true
-	# Après un clic, le dernier bouton cliqué garde le focus : Espace doit quand même faire avancer.
-	if not _focus_clavier and _est_continuer(touche) and _continuer(): get_viewport().set_input_as_handled()
+	if _focus_clavier or not _est_continuer(touche) or not is_instance_valid(app): return
+	var focus := app.get_viewport().gui_get_focus_owner()
+	if focus != null and focus == app.get("primary_button") and _continuer(): get_viewport().set_input_as_handled()
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var touche := _touche(event)
@@ -100,7 +103,7 @@ func _touche(event: InputEvent) -> InputEventKey:
 	return touche if touche != null and touche.pressed and not touche.echo else null
 
 func _est_continuer(event: InputEventKey) -> bool:
-	return event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER] and not event.ctrl_pressed and not event.alt_pressed and not event.meta_pressed and not event.shift_pressed
+	return event.keycode in [KEY_SPACE] and not event.ctrl_pressed and not event.alt_pressed and not event.meta_pressed and not event.shift_pressed
 
 ## 0 à 8 pour les touches 1 à 9. `physical_keycode` couvre la rangée de chiffres d'un clavier AZERTY sans Maj.
 func _rang_menu(event: InputEventKey) -> int:
@@ -134,9 +137,10 @@ func _continuer() -> bool:
 	if Reception.open_next_unread(app): return true
 	var bouton: Button = app.primary_button
 	if not is_instance_valid(bouton) or bouton.disabled or not bouton.is_visible_in_tree(): return false
-	# Une autre touche d'action ciblée au clavier garde Espace/Entrée pour elle.
+	# Un contrôle qui utilise Espace (bouton, liste, arbre) le garde pour lui.
 	var focus := app.get_viewport().gui_get_focus_owner()
-	if _focus_clavier and focus is BaseButton and focus != bouton: return false
+	if focus is ItemList or focus is Tree: return false
+	if focus is BaseButton and focus != bouton: return false
 	bouton.pressed.emit()
 	return true
 

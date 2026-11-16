@@ -1,5 +1,5 @@
 extends SceneTree
-# Raccourcis clavier de la carrière Monde : Espace/Entrée = Continuer, 1 à 9 = menus, Échap = fermer la fiche,
+# Raccourcis clavier de la carrière Monde : Espace = Continuer (Entrée ne fait rien), 1 à 9 = menus, Échap = fermer la fiche,
 # Ctrl+F = accès rapide, et aucun raccourci dans un champ de saisie ou devant un dialogue.
 const Flow = preload("helpers/contextual_flow.gd")
 var app: Control
@@ -112,7 +112,9 @@ func run() -> void:
 	# Rappels : une seule table pour le pied de page, les paramètres et l'aide F1.
 	var Table = load("res://ui/raccourcis_clavier.gd")
 	var ligne: String = Table.lignes_aide()[0]
-	app._navigate("Bureau")
+	check(not ligne.contains("Entrée"), "Table : Entrée n'est plus un raccourci")
+	# Le pied de page n'existe que hors du Bureau.
+	app._navigate("Effectif")
 	await settle()
 	var pied := app.find_child("ImmersiveShortcuts", true, false)
 	check(pied != null and pied.text == Table.pied_de_page(), "Pied de page issu de la table")
@@ -177,5 +179,20 @@ func run() -> void:
 	continuer.disabled = false
 	await key(KEY_SPACE)
 	check(compteur[0] == 1, "Zéro non lu : Espace = Continuer (" + str(compteur[0]) + ")")
+	# Entrée ne déclenche plus Continuer.
+	compteur[0] = 0
+	await key(KEY_ENTER)
+	check(compteur[0] == 0, "Entrée : pas de Continuer (" + str(compteur[0]) + ")")
+	# Un autre bouton ciblé : Espace l'active, pas Continuer.
+	var autre := Button.new()
+	autre.name = "BoutonTestRaccourci"
+	var presses := [0]
+	autre.pressed.connect(func(): presses[0] += 1)
+	app.add_child(autre)
+	autre.grab_focus()
+	await settle(2)
+	await key(KEY_SPACE)
+	check(presses[0] == 1 and compteur[0] == 0, "Bouton ciblé + Espace : le bouton est activé, pas Continuer (" + str(presses[0]) + "/" + str(compteur[0]) + ")")
+	autre.queue_free()
 	await wait_idle()
 	finish()
