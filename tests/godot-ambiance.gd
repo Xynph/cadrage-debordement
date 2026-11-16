@@ -1,5 +1,5 @@
 extends SceneTree
-## Ambiance sonore : bus Musique, musique douce du Bureau coupée en match, foule selon le camp qui marque.
+## Ambiance sonore : bus Interface et Stade, sons de match, foule selon le camp qui marque.
 
 var failures: Array[String] = []
 var checks := 0
@@ -28,114 +28,43 @@ var clock_ms := [0]
 func advance_ms(ms: int) -> void:
 	clock_ms[0] += ms
 
-## Fait avancer le fondu de la musique de « seconds » secondes simulées.
-func step_music(audio: Node, seconds: float) -> void:
-	for i in int(seconds / 0.1):
-		audio._update_music(0.1)
-
 func run() -> void:
 	var directory := proof.path_join("profil")
 	DirAccess.make_dir_recursive_absolute(directory)
-	# Fichier d'avant la musique : accepté, volume musique par défaut.
-	write(directory.path_join("sound.json"), '{"version":1,"interface_volume":35,"stadium_volume":25}')
+	# Ancien fichier d'avant l'abandon de la musique : les champs de musique sont ignorés.
+	write(directory.path_join("sound.json"), '{"version":1,"interface_volume":35,"stadium_volume":25,"music_volume":30,"music_on":true,"music_in_match":false,"match_sounds":true}')
 	var app := Control.new()
 	root.add_child(app)
 	var audio = load("res://audio/soundscape.gd").new()
 	app.add_child(audio)
 	check(audio.setup(app), "Setup du gestionnaire sonore")
-	check(audio.load_profile(directory) and audio.preferences.get_value("music_volume") == 30, "Ancien sound.json sans musique accepté, volume musique 30")
+	check(audio.load_profile(directory) and audio.preferences.data == {"version": 1, "interface_volume": 35, "stadium_volume": 25, "match_sounds": true}, "Ancien sound.json avec champs de musique accepté, champs ignorés")
 	var master := AudioServer.get_bus_index("Master")
-	for label in ["Interface", "Stade", "Musique"]:
+	for label in ["Interface", "Stade"]:
 		var index := AudioServer.get_bus_index(label)
 		check(index > 0 and AudioServer.get_bus_send(index) == "Master", "Bus " + label + " présent, enfant de Master")
-	var music_bus := AudioServer.get_bus_index("Musique")
-	check(is_equal_approx(AudioServer.get_bus_volume_linear(music_bus), 0.30), "Volume musique appliqué au bus Musique")
-	check(audio.preferences.set_value("music_volume", 45) and is_equal_approx(AudioServer.get_bus_volume_linear(music_bus), 0.45), "Réglage musique persisté et appliqué")
-
-	# Sans fichier de musique : silence, aucune erreur.
-	audio.refresh_visibility("Bureau", false)
-	step_music(audio, 3.0)
-	check(not audio._music.playing and audio.last_error.is_empty(), "Aucun morceau fourni : silence sans erreur")
-
-	# Morceaux branchés (le son de stade sert de maquette) : Bureau puis menu.
-	var stream: AudioStream = audio._streams["stadium-bed"]
-	audio.set_music_stream("bureau", stream)
-	audio.set_music_stream("menus", stream.duplicate())
-	audio.refresh_visibility("Bureau", false)
-	step_music(audio, 3.0)
-	check(audio._music.playing and audio._music_slot == "bureau" and audio._music_gain > 0.99, "Musique du Bureau lancée avec fondu")
-	audio.refresh_visibility("Effectif", false)
-	step_music(audio, 0.5)
-	check(audio._music.playing and audio._music_gain < 1.0 and audio._music_slot == "bureau", "Changement d'écran : fondu sortant avant le morceau suivant")
-	step_music(audio, 3.0)
-	check(audio._music_slot == "menus" and audio._music.playing and audio._music_gain > 0.99, "Menus : morceau des menus en fondu entrant")
-	# Pas pendant le match.
-	audio.refresh_visibility("Match", true)
-	step_music(audio, 3.0)
-	check(not audio._music.playing and audio._music_gain == 0.0, "Route Match : musique coupée")
-	audio.refresh_visibility("Bureau", false)
-	step_music(audio, 3.0)
-	check(audio._music.playing, "Retour au Bureau : musique reprise")
-	audio._live_active = true
-	step_music(audio, 3.0)
-	check(not audio._music.playing, "Direct en cours (même hors écran Match) : musique coupée")
-	audio._live_active = false
-	# Intro : blocage explicite.
-	audio.set_music_blocked("intro", true)
-	step_music(audio, 3.0)
-	check(not audio._music.playing, "Intro active : musique bloquée")
-	audio.set_music_blocked("intro", false)
-	step_music(audio, 3.0)
-	check(audio._music.playing, "Intro finie : musique libérée")
-	audio.refresh_visibility("Accueil", false)
-	step_music(audio, 3.0)
-	check(not audio._music.playing, "Écran d'accueil (intro) : pas de musique")
-	audio.refresh_visibility("Bureau", false)
-	step_music(audio, 3.0)
-	check(audio._music.playing and audio.preferences.set_value("music_volume", 0) and AudioServer.is_bus_mute(music_bus) and not audio._music.playing, "Volume musique zéro mute le bus et coupe le lecteur")
-	check(audio.preferences.set_value("music_volume", 30) and not AudioServer.is_bus_mute(music_bus), "Volume musique restauré")
+	check(AudioServer.get_bus_index("Musique") < 0, "Aucun bus Musique")
+	check(not audio.preferences.set_value("music_volume", 45) and not audio.preferences.set_value("music_on", true), "Les réglages de musique n'existent plus")
+	audio.last_error = ""
+	check(audio.preferences.set_value("stadium_volume", 25) and not FileAccess.get_file_as_string(directory.path_join("sound.json")).contains("music"), "Réécriture : plus aucun champ de musique")
 
 	# Cases à cocher.
 	var prefs = audio.preferences
-	check(prefs.get_flag("music_on") and not prefs.get_flag("music_in_match") and prefs.get_flag("match_sounds"), "Valeurs par défaut des cases : musique oui, musique en match non, sons de match oui")
-	check(prefs.set_value("music_on", false) and not audio._music.playing, "Décocher « Musique » coupe la musique aussitôt")
-	step_music(audio, 3.0)
-	check(not audio._music.playing and audio._music_gain == 0.0, "Musique décochée : silence au Bureau")
-	check(prefs.set_value("music_on", true), "Musique recochée")
-	step_music(audio, 3.0)
-	check(audio._music.playing, "Musique recochée : elle reprend")
-	check(not prefs.set_value("music_on", "oui") and not prefs.set_value("match_sounds", 1), "Une case n'accepte qu'un oui ou non")
+	check(prefs.get_flag("match_sounds"), "Valeur par défaut : sons de match oui")
+	check(not prefs.set_value("match_sounds", "oui") and not prefs.set_value("match_sounds", 1), "Une case n'accepte qu'un oui ou non")
 	audio.last_error = ""
 	audio.refresh_visibility("Match", true)
-	step_music(audio, 3.0)
-	check(not audio._music.playing, "Musique en match décochée : coupée sur l'écran Match")
-	check(prefs.set_value("music_in_match", true), "Musique pendant les matchs cochée")
-	step_music(audio, 3.0)
-	check(audio._music.playing, "Musique pendant les matchs cochée : elle continue sur l'écran Match")
-	audio._live_active = true
-	step_music(audio, 3.0)
-	check(audio._music.playing, "Musique pendant les matchs cochée : elle continue pendant le direct")
-	check(prefs.set_value("music_on", false), "Musique décochée avec musique en match cochée")
-	step_music(audio, 3.0)
-	check(not audio._music.playing, "Musique décochée : même la musique de match se coupe")
-	audio._live_active = false
-	check(prefs.set_value("music_on", true) and prefs.set_value("music_in_match", false), "Retour aux réglages par défaut")
 	# Sons de match.
 	audio.set_presenting(true)
 	advance_ms(450)
 	check(prefs.set_value("match_sounds", false) and not audio._bed.playing and not audio._reaction.playing, "Décocher « Sons de match » coupe l'ambiance du stade")
 	check(not audio.play_shown("try", 0) and not audio.play_shown("penalty", 1), "Sons de match décochés : ni foule ni sifflets")
-	step_music(audio, 3.0)
 	audio.refresh_visibility("Bureau", false)
 	audio.set_presenting(false)
-	step_music(audio, 3.0)
-	check(audio._music.playing, "Sons de match décochés : la musique n'est pas touchée")
 	check(prefs.set_value("match_sounds", true), "Sons de match recochés")
-	# Les cases survivent à un rechargement.
-	check(prefs.set_value("music_in_match", true), "Case enregistrée")
+	# La case survit à un rechargement.
 	var reloaded = load("res://audio/sound_preferences.gd").new()
-	check(reloaded.load_profile(directory) and reloaded.get_flag("music_in_match") and reloaded.get_flag("music_on") and reloaded.get_flag("match_sounds"), "Cases relues au redémarrage")
-	check(prefs.set_value("music_in_match", false), "Case remise par défaut")
+	check(reloaded.load_profile(directory) and reloaded.get_flag("match_sounds"), "Case relue au redémarrage")
 
 	# Foule : camp domicile = 0.
 	audio.cue_played.connect(func(id: String): cues.append(id))
@@ -178,17 +107,15 @@ func run() -> void:
 	advance_ms(450)
 	check(audio._crowd_cue_for(event) == {"id": "stadium-try", "mood": "deception"}, "Journal moteur : essai de l'extérieur lu comme déception")
 
-	check(not audio.preferences.set_value("music_volume", 101), "Volume musique hors 0..100 refusé")
 	# Les lecteurs encore en lecture ont un objet de lecture libéré de façon asynchrone par le mixeur :
 	# on le suit pour que rien ne reste vivant à la sortie.
 	var pending: Array[WeakRef] = []
-	for player in [audio._ui, audio._bed, audio._reaction, audio._music]:
+	for player in [audio._ui, audio._bed, audio._reaction]:
 		if player.playing:
 			pending.append(weakref(player.get_stream_playback()))
-	stream = null
 	reloaded = null
 	audio.dispose()
-	check(AudioServer.get_bus_index("Musique") < 0 and AudioServer.get_bus_index("Interface") < 0, "Dispose retire les bus créés")
+	check(AudioServer.get_bus_index("Interface") < 0, "Dispose retire les bus créés")
 	check(AudioServer.get_bus_volume_linear(master) >= 0.0, "Master intact")
 	app.queue_free()
 	await process_frame
