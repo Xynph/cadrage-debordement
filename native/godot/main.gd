@@ -31,12 +31,18 @@ const COMMAND_WAIT_MESSAGES := {
 	"advance_champ_preparation": "Avance de la préparation…",
 	"population_enable": "Mise à jour de la base de joueurs…",
 	"academy_groups_enable": "Mise à jour des centres de formation…",
-	"promote_cover": "Enregistrement des renforts…",
 	"national_play_match": "Simulation de la rencontre internationale…",
-	"league_benchmark": "Mesure de votre machine…",
-	"club_sheet": "Préparation de la fiche du club…",
-	"league_detail_set": "Enregistrement des championnats suivis…"
+	"league_benchmark": "Mesure de votre machine…"
 }
+## Seuls les vrais chargements ont un panneau (décision de Léo, 16/11/2026) : ouverture du jeu, création ou reprise de
+## carrière, coup d’envoi, avance du calendrier (Continuer, sauvegarde automatique comprise), fichiers et packs.
+## Décisions et menus (fiche d’un club, renforts, championnats suivis…) restent instantanés : jamais de panneau.
+## Ouverture du jeu : panneau d’attente tant que le moteur n’a pas rendu le profil (au-delà du même seuil).
+const STARTUP_WAIT_MESSAGE := "Ouverture du bureau du manager…"
+## Entrée dans le match en direct : la scène 3D se construit d’un bloc ; ce panneau est dessiné avant.
+const LIVE_VIEW_WAIT_MESSAGE := "Entrée des joueurs sur la pelouse…"
+## Avances du calendrier après lesquelles le moteur peut écrire la sauvegarde complète (fréquence des Réglages).
+const AUTOSAVE_ADVANCES := ["advance_day", "finish_round", "next_season"]
 ## Commandes de lecture pure (aucun changement d'état de carrière).
 const READ_ONLY_COMMANDS := ["club_sheet"]
 ## Titre du panneau d’attente par commande (les autres : « En coulisses »).
@@ -50,6 +56,7 @@ const COMMAND_WAIT_KICKERS := {
 	"import": "Reprise de carrière",
 	"restore_checkpoint": "Reprise de carrière",
 	"save": "Sauvegarde",
+	"snapshot": "Ouverture",
 	"national_play_match": "Sélection nationale"
 }
 ## Conseils de Gabi affichés pendant une attente (fonctions réelles du jeu).
@@ -247,6 +254,7 @@ func _ready() -> void:
 	continue_progress = ContinueProgress.new()
 	add_child(continue_progress)
 	waiting = true
+	_present_startup_wait()
 	_trace_startup("render.begin")
 	_render()
 	_trace_startup("render.end")
@@ -272,6 +280,14 @@ func _live() -> Dictionary:
 	return model.live if model.get("live") is Dictionary else {}
 
 func _receive_model(value: Dictionary) -> void:
+	# Coup d’envoi : la scène 3D se construit d’un bloc sur le fil principal. Le panneau d’attente est posé et
+	# dessiné d’abord (deux images), puis la réponse est traitée : jamais d’écran figé sans message.
+	if bridge.last_response_ok and last_command != "tick" and _opens_live_view(value) and is_instance_valid(command_wait_overlay):
+		if not command_wait_overlay.panel_visible(): command_wait_overlay.set_context(_command_wait_context(last_command))
+		command_wait_overlay.reveal_now(LIVE_VIEW_WAIT_MESSAGE)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		if closing: return
 	var receive_us := Time.get_ticks_usec()
 	# Une lecture moteur sans changement d'état (fiche club) ne périme pas les lecteurs suspendus.
 	if is_instance_valid(navigation_controller) and not (bridge.last_response_ok and last_command in READ_ONLY_COMMANDS): navigation_controller.invalidate_readers()
@@ -430,6 +446,7 @@ func _continue_context() -> Dictionary:
 func _continue_progressed(progress: Dictionary) -> void:
 	if not waiting or last_command != CareerProgression.CONTINUE_COMMAND or closing: return
 	continue_progress.advance_to(progress)
+	if bool(progress.get("saving", false)): continue_progress.show_saving()
 	var parts := str(progress.get("today", "")).split("-")
 	if is_instance_valid(header_date) and parts.size() == 3 and int(parts[1]) in range(1, 13):
 		header_date.text = "%s %s %s" % [parts[2], ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."][int(parts[1])-1], parts[0]]
@@ -457,8 +474,42 @@ func _present_command_wait(command: String) -> void:
 	var message: String = COMMAND_WAIT_MESSAGES.get(command, "")
 	if message.is_empty() and SeasonPreparation.is_advance(command): message = "Avance de la préparation…"
 	if not message.is_empty():
-		command_wait_overlay.set_context(_command_wait_context(command))
+		var context := _command_wait_context(command)
+		# Sauvegarde automatique attendue à la fin de cette avance : le panneau la nomme.
+		if autosave_expected(command):
+			message = message.trim_suffix("…") + " et sauvegarde…"
+			context.kicker = "Sauvegarde automatique"
+		command_wait_overlay.set_context(context)
 		command_wait_overlay.present(message, not user_preferences.data.reduced_motion, COMMAND_WAIT_REVEAL_SECONDS)
+
+## Vrai si ce modèle ouvre l’écran du match en direct (scène 3D) : rencontre en cours, aucune causerie au
+## vestiaire, direct pas encore affiché. Après le coup d’envoi ou la causerie d’avant-match.
+func _opens_live_view(value: Dictionary) -> bool:
+	var live: Variant = value.get("live")
+	if not live is Dictionary or live.is_empty(): return false
+	if is_instance_valid(contextual_director) and contextual_director.active() and contextual_director.kind == "live": return false
+	var talks: Variant = value.get("clubLife", {}).get("matchTalks", {}) if value.get("clubLife") is Dictionary else {}
+	return not (talks is Dictionary and talks.get("scene") is Dictionary)
+
+## Ouverture du jeu (et reconnexion) : même panneau que les autres chargements, au-delà du même seuil.
+func _present_startup_wait() -> void:
+	if not is_instance_valid(command_wait_overlay): return
+	command_wait_overlay.set_context(_command_wait_context("snapshot"))
+	command_wait_overlay.present(STARTUP_WAIT_MESSAGE, user_preferences == null or not user_preferences.data.reduced_motion, COMMAND_WAIT_REVEAL_SECONDS)
+
+## Prévision : l’avance `command` doit-elle se terminer par la sauvegarde complète (même règle que `due` dans
+## native/engine/action-journal.cjs) ? Le moteur décide ; ceci ne sert qu’au libellé du panneau.
+func autosave_expected(command: String) -> bool:
+	if command not in AUTOSAVE_ADVANCES: return false
+	var info: Variant = model.get("meta", {}).get("autosave")
+	if not info is Dictionary: return false
+	if command == "next_season": return true
+	# Réglage du joueur (interface.json, relu par le moteur à chaque avance), sinon celui du dernier modèle.
+	var policy := str(user_preferences.data.get("autosave", info.get("policy", "semaine"))) if user_preferences != null else str(info.get("policy", "semaine"))
+	var today := str(model.get("meta", {}).get("calendarToday", ""))
+	var last := str(info.get("lastSave", ""))
+	if command != "advance_day" or today.length() != 10 or last.length() != 10: return command == "finish_round" and policy != "mois"
+	return CareerProgression.autosave_due(policy, last, CareerProgression.shift_day(today, 1))
 
 ## Contexte du panneau d’attente : date du jour, club et faits réels du modèle.
 func _command_wait_context(command: String) -> Dictionary:
@@ -1218,6 +1269,7 @@ func reconnect() -> void:
 	connection_error = false
 	waiting = true
 	last_command = "snapshot"
+	_present_startup_wait()
 	bridge.start(_profile_path())
 
 func _live_tick() -> void:

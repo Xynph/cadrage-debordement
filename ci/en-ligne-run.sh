@@ -51,6 +51,9 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     env CD_ESPOIR_CAPTURE="$cap/feuille-espoir/ecran-" node tests/godot-feuille-espoir.cjs
   phase "captures rendu de match" captures-match-rendu.log \
     env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" node tests/godot-match-rendu-capture.cjs
+  mkdir -p "$cap/ecrans-chargement"
+  phase "captures écrans de chargement (ouverture, création, Continuer, coup d'envoi)" captures-ecrans-chargement.log \
+    env CD_ECRANS_CAPTURE="$cap/ecrans-chargement/ecran-" node tests/godot-ecrans-chargement.cjs
   echo "- Captures PNG : $(find "$cap" -name '*.png' | wc -l) fichier(s)" >> "$out/resume.md"
 fi
 

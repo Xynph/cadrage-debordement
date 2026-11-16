@@ -1015,6 +1015,9 @@ function createBridge(options={}){
     if(!run('!!S'))throw Error('Créez ou importez une carrière.');
    }catch(error){advanceSession=null;return {id:Number.isSafeInteger(id)||typeof id==='string'?id:null,ok:false,model:closed?null:snapshot(),error:error.message};}
    const started=performance.now(),session=advanceSession;advanceSession=null;
+   // Arrêt atteint à la tranche précédente avec une sauvegarde complète due : elle est écrite maintenant, pendant que
+   // l'interface affiche « Sauvegarde de la carrière… » (tranche `saving`). Le motif d'arrêt réel est conservé.
+   if(session?.pendingStop)return finishAdvance(id,session,session.pendingStop);
    if(opts.stop){
     if(session&&session.days>0)return finishAdvance(id,session,{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'});
     const model=snapshotRaw();model.meta.advanceUntilEvent={days:0,from:opts.fromDate,to:model.meta.calendarToday??null,stop:{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'}};
@@ -1054,6 +1057,9 @@ function createBridge(options={}){
      stop={kind:'limite',label:continuer.STOPS.limite.label,detail:'Avance interrompue après '+current.days+' jours sans événement.'};break;
     }
    }
+   // Tranches partielles : si la fréquence choisie (jour, semaine, mois) exige une sauvegarde complète à l'arrêt, une
+   // dernière tranche `saving` l'annonce d'abord ; la requête suivante écrit le profil et rend le modèle.
+   if(opts.partial&&journalMode&&current.days>0&&fullSaveDue()){current.pendingStop=stop;if(current.absorbed&&pendingCommit===current.absorbed){pendingCommit=null;current.absorbed=null;}advanceSession=current;return {id,ok:true,model:null,progress:(()=>{const after=advanceSignal();return {from:current.from,today:today??current.lastFrom,days:current.days,next:after?.next,plan:continuer.plan(after,current.repriseDate),saving:true};})()};}
    return finishAdvance(id,current,stop);
   }
   function handle(request){

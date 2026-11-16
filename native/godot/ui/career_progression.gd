@@ -70,3 +70,22 @@ static func continue_stops(preferences: Dictionary) -> Dictionary:
 	var messages := str(preferences.get("continue_messages", "importants"))
 	var blessures := str(preferences.get("continue_injuries", "titulaires"))
 	return {"messages": messages if messages in ["importants", "tous", "aucun"] else "importants", "blessures": blessures if blessures in ["titulaires", "effectif"] else "titulaires"}
+
+## Sauvegarde complète due entre `last` et `now` (AAAA-MM-JJ) pour la fréquence des Réglages : même règle que
+## `due` dans native/engine/action-journal.cjs (jour : date changée ; semaine : autre lundi ; mois : autre mois).
+static func autosave_due(policy: String, last: String, now: String) -> bool:
+	if last.length() != 10 or now.length() != 10: return false
+	match policy:
+		"jour": return now != last
+		"mois": return now.substr(0, 7) != last.substr(0, 7)
+	return shift_day(now, -weekday_from_monday(now)) != shift_day(last, -weekday_from_monday(last))
+
+## Date ISO décalée de `days` jours (UTC, midi : aucun effet d'heure d'été).
+static func shift_day(iso: String, days: int) -> String:
+	var unix := Time.get_unix_time_from_datetime_string(iso + "T12:00:00") + days * 86400
+	return Time.get_date_string_from_unix_time(unix)
+
+## Rang du jour dans la semaine, lundi = 0.
+static func weekday_from_monday(iso: String) -> int:
+	var unix := Time.get_unix_time_from_datetime_string(iso + "T12:00:00")
+	return (int(Time.get_datetime_dict_from_unix_time(unix).weekday) + 6) % 7

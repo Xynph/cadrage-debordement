@@ -50,6 +50,8 @@ var _tween: Tween
 var _closing := Timer.new()
 var running := false
 var stopping := false
+## Vrai pendant la dernière tranche : le moteur écrit la sauvegarde complète (fréquence des Réglages).
+var saving := false
 
 
 func _ready() -> void:
@@ -211,6 +213,7 @@ func begin(context: Dictionary, animate: bool = true) -> void:
 	_kill_tween()
 	running = true
 	stopping = false
+	saving = false
 	_motion = animate
 	_accent = context.get("accent", RED)
 	_from = str(context.get("date", ""))
@@ -258,6 +261,25 @@ func advance_to(progress: Dictionary) -> void:
 		_tween.tween_property(sheet_day, "modulate:a", 1.0, 0.22).set_ease(Tween.EASE_OUT)
 
 
+## Dernière tranche de « Continuer » : l'arrêt est atteint et la sauvegarde automatique est en cours d'écriture.
+## La barre balaie en boucle (barre pleine et fixe si les mouvements sont réduits) ; « Arrêter » est grisé : l’arrêt est atteint.
+func show_saving() -> void:
+	if not running: return
+	saving = true
+	kicker.text = "SAUVEGARDE AUTOMATIQUE"
+	title.text = "Sauvegarde de la carrière…"
+	hint.text = "Le bureau range les dossiers avant votre retour : quelques instants."
+	stop_button.disabled = true
+	_kill_tween()
+	if _motion:
+		bar.value = 0.0
+		_tween = create_tween().set_loops()
+		_tween.tween_property(bar, "value", 1.0, 0.7).from(0.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_tween.tween_property(bar, "value", 0.0, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	else:
+		bar.value = 1.0
+
+
 func request_stop() -> void:
 	if not running or stopping: return
 	stopping = true
@@ -271,6 +293,8 @@ func request_stop() -> void:
 func finish(info: Dictionary) -> void:
 	running = false
 	stopping = false
+	saving = false
+	_kill_tween()
 	var stop: Dictionary = info.get("stop", {}) if info.get("stop") is Dictionary else {}
 	var days := int(info.get("days", 0))
 	_show_date(str(info.get("to", _from)), days)
@@ -292,6 +316,7 @@ func finish(info: Dictionary) -> void:
 func dismiss() -> void:
 	running = false
 	stopping = false
+	saving = false
 	_closing.stop()
 	_kill_tween()
 	hide()
