@@ -94,11 +94,29 @@ function choregraphier(tf,plans,events,lire){
   const idx=plans[0].index;
   for(let i=idx-1;i>=0&&avant===null;i--){const e=events[i];if(e?.scene&&!['advantage','card','break','end'].includes(e.scene.kind))avant=lire.scenes([i])[0]}
  }
- const base=choregraphe.entreeDepuisTempsFort({...tf,plans},events,{avant,cle:tf.cle});
+ let base=choregraphe.entreeDepuisTempsFort({...tf,plans},events,{avant,cle:tf.cle});
  if(!base){CHOREGRAPHIES.set(cle,null);return null}
  const ids=base.joueurs.map(p=>p.id),bruts=typeof lire.profils==='function'?lire.profils(ids):{},profils={};
  for(const p of base.joueurs)profils[p.id]=choregraphe.profil(p.slot,bruts[p.id]?.vitesse);
- const c=choregraphe.composer({...base,profils});
+ let c=null;
+ try{c=choregraphe.composer({...base,profils});}
+ catch(error){
+  // Longue action (remise en jeu puis nombreux temps de jeu) : même la mise en scène la plus courte dépasse le plafond
+  // de durée. Plutôt que de ne rien montrer, l'action est reprise plus tard (un fait de moins en amont à chaque essai),
+  // depuis la scène affichée juste avant le premier fait gardé ; le fait clé et sa suite restent montrés.
+  const duree=e=>e instanceof RangeError&&/durée voulue/.test(e.message);
+  const amont=base.etapes.filter(s=>!s.cle&&s.plan!==undefined&&s.plan<base.dernier).length;
+  if(!duree(error)||amont<1)throw error;
+  for(let limite=amont-1;limite>=0&&!c;limite--){
+   const court=choregraphe.entreeDepuisTempsFort({...tf,plans},events,{avant,cle:tf.cle,limiteAmont:limite});
+   if(!court)break;
+   const manquants=court.joueurs.filter(p=>!profils[p.id]).map(p=>p.id),autres=manquants.length&&typeof lire.profils==='function'?lire.profils(manquants):{};
+   for(const p of court.joueurs)if(!profils[p.id])profils[p.id]=choregraphe.profil(p.slot,autres[p.id]?.vitesse);
+   try{c=choregraphe.composer({...court,profils});base=court;}
+   catch(retry){if(!duree(retry))throw retry;}
+  }
+  if(!c)throw error;
+ }
  // Outil de test (options.choregraphe === 'entrees') : l'entrée est jointe, pour en faire un jeu d'essai.
  Object.defineProperty(c,'entree',{value:{...base,profils},enumerable:false});
  CHOREGRAPHIES.set(cle,c);
