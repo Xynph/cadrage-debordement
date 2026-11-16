@@ -26,11 +26,11 @@ func run() -> void:
 	var original_texture := r.texture
 	var original_material := r.material
 	check(Portrait.apply(r,player) and r.texture==original_texture and r.material==original_material,"Même identité réutilise texture et matériau")
-	for i in 220:
+	for i in 520:
 		var person := {"id":"regen:cache:"+str(i),"portraitRole":"staff" if i%2 else "player","appearanceAge":40+i%40,"age":42+i%40}
 		check(Portrait.texture(person)!=null and Portrait.material(person)!=null,"Base et composition disponibles : "+str(i))
 	var cache := Portrait.cache_info()
-	check(cache.textures<=48 and cache.materials<=128,"Caches bornés après 220 identités")
+	check(cache.textures<=Portrait.MAX_TEXTURES and cache.materials<=Portrait.MAX_MATERIALS,"Caches bornés après 520 identités")
 	var unknown := Portrait.describe({"id":"staff:unknown","portraitRole":"staff"})
 	check(unknown.ageBasis=="illustrative" and unknown.referenceAge==null,"L’âge absent reste explicitement illustratif")
 	check(Portrait.describe({"id":"staff:fixed","portraitRole":"staff","appearanceAge":54,"age":54}).cell==Portrait.describe({"id":"staff:fixed","portraitRole":"staff","appearanceAge":54,"age":78}).cell,"L’âge courant ne change pas le visage de référence")

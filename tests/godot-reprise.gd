@@ -68,6 +68,46 @@ func run() -> void:
 	await settle()
 	check(app.find_child("RepriseDialog",true,false)!=null,"La fenêtre de reprise reste ouverte après le choix")
 	await capture("reprise-decision")
+	# Décisions de la préparation (16/11/2026) : « Continuer » s'arrête le jour de la reprise et ouvre la fenêtre.
+	var amicaux := app.find_child("RepriseDecision_amicaux",true,false)
+	check(amicaux!=null and app.find_child("RepriseDecision_stage",true,false)!=null,"Programme des amicaux et stage proposés")
+	var title := app.find_child("RepriseDecisionTitle_amicaux",true,false) as Label
+	check(title!=null and title.text.contains("À DÉCIDER AVANT LE LUNDI 20 JUILLET"),"Échéance du programme affichée : "+(title.text if title else ""))
+	check(app.find_child("RepriseDecisionGabi_amicaux",true,false)!=null,"Conseil de Gabi pour les amicaux")
+	var dialog := app.find_child("RepriseDialog",true,false) as AcceptDialog
+	if dialog != null: dialog.queue_free()
+	await settle()
+	var stopped := false
+	for attempt in 8:
+		check(await ContextualFlow.settle_club_meetings(app, self, check),"Rendez-vous réglés avant Continuer")
+		app._command("advance_until_event", {"fromDate": str(app.model.meta.calendarToday), "stops": {"messages": "aucun"}})
+		var wait := Time.get_ticks_msec()+180000
+		while app.waiting and Time.get_ticks_msec()<wait: await process_frame
+		await settle()
+		var stop: Dictionary = app.model.get("meta",{}).get("advanceUntilEvent",{}).get("stop",{})
+		if str(stop.get("kind",""))=="decision": stopped = true; break
+	check(stopped,"Continuer s’arrête sur la décision des amicaux")
+	check(str(app.model.meta.get("calendarToday",""))=="2026-07-20","Arrêt le jour de la reprise")
+	await settle()
+	check(app.find_child("RepriseDialog",true,false)!=null,"La reprise s’ouvre d’elle-même sur la décision")
+	var rodage := app.find_child("RepriseDecisionOption_amicaux_rodage",true,false) as Button
+	check(rodage!=null and not rodage.disabled,"Option rodage à domicile disponible")
+	if rodage != null:
+		await press(rodage); await response()
+	var chosen: Array = app.model.clubLife.reprise.decisions.filter(func(d): return d.key=="amicaux")
+	check(not chosen.is_empty() and str(chosen[0].selected)=="rodage","Programme retenu par le moteur")
+	var staff := app.find_child("RepriseDecisionStaff_stage",true,false) as Button
+	check(staff!=null,"Stage : confier à Gabi")
+	if staff != null:
+		await press(staff); await response()
+	var camp: Array = app.model.clubLife.reprise.decisions.filter(func(d): return d.key=="stage")
+	check(not camp.is_empty() and str(camp[0].selected)=="equilibre" and bool(camp[0].staff),"Stage confié à Gabi (choix prudent)")
+	await settle()
+	var block := app.find_child("RepriseDecision_amicaux",true,false) as Control
+	var scroll := app.find_child("RepriseScroll",true,false) as ScrollContainer
+	if scroll != null and block != null: scroll.ensure_control_visible(block)
+	await settle()
+	await capture("reprise-decisions-preparation")
 	var result := FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
 	result.store_string(JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name()},"  ")); result.close()
 	print("REPRISE UI : %d contrôles ; %d échecs" % [checks,failures.size()])

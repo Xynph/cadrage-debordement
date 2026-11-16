@@ -175,10 +175,9 @@ static func conseil(model: Dictionary, fixture: Dictionary, jours: int) -> Dicti
 	var fatigue := Avis.fatigue(model)
 	var cash_fatigue := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
 	if cash_fatigue >= 0 and not fixture.is_empty() and not fatigue.is_empty():
-		return fatigue.merged({"texte": _fatigue_courte(model, fatigue)}, true) if not fatigue.get("action", {}).is_empty() else fatigue
-	if Avis._jour_de_match(model):
-		var compo := Avis.composition(model)
-		if not compo.get("action", {}).is_empty(): return compo.merged({"texte": _composition_courte(model, compo.action)}, true)
+		return fatigue.merged({"texte": Avis.fatigue_courte(model, fatigue)}, true) if not fatigue.get("action", {}).is_empty() else fatigue
+	var du_jour := Avis.conseil_jour_de_match(model)
+	if not du_jour.is_empty(): return du_jour
 	var cash := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
 	if cash < 0:
 		return _ecran("Finances", "Va voir les comptes avant de signer qui que ce soit : on redresse, puis on repeint.", "mise_en_garde", Avis.NEGATIF, "Ouvrir les finances")
@@ -199,35 +198,3 @@ static func conseil(model: Dictionary, fixture: Dictionary, jours: int) -> Dicti
 		return _ecran("Club", "Pas de match en vue : passe voir le club, les installations et le staff.", "consigne", Avis.NEUTRE, "Ouvrir le club")
 	return _ecran("Préparation", "Prépare le prochain match dans l'ordre : l'effectif, la composition, puis le plan de jeu.", "consigne", Avis.POSITIF, "Ouvrir la préparation")
 
-## Version courte du conseil de fatigue pour le carnet (le détail reste dans la bulle de Gabi).
-static func _fatigue_courte(model: Dictionary, avis: Dictionary) -> String:
-	var parts := PackedStringArray()
-	for change: Variant in avis.get("action", {}).get("changements", []):
-		if not change is Dictionary: continue
-		var sortant := Avis.joueur(model, str(change.get("sortant", "")))
-		var entrant := Avis.joueur(model, str(change.get("playerId", "")))
-		parts.append("%s (%d %%) pour %s" % [Avis._nom(entrant), int(Avis.condition(entrant)), Avis._nom(sortant)])
-	var total := int(Avis.fatigue_donnees(model).get("count", parts.size()))
-	var qui := "%d des %d titulaires fatigués" % [parts.size(), total] if total > parts.size() else "%d titulaires fatigués" % parts.size()
-	if parts.size() > 2: return "Je ferais souffler %s : %s et %d autre%s." % [qui, ", ".join(parts.slice(0, 2)), parts.size() - 2, "s" if parts.size() > 3 else ""]
-	return "Je ferais souffler les fatigués : %s." % " ; ".join(parts)
-
-## Version courte du conseil de composition pour le carnet (le détail reste dans « Ton avis, Gabi ? »).
-static func _composition_courte(model: Dictionary, action: Dictionary) -> String:
-	var parts := PackedStringArray()
-	for change: Variant in action.get("changements", []):
-		if not change is Dictionary: continue
-		var entrant := Avis._nom(Avis.joueur(model, str(change.get("playerId", ""))))
-		var sortant := Avis._nom(Avis.joueur(model, str(change.get("sortant", ""))))
-		var poste := ""
-		for assignment: Variant in model.get("selection", {}).get("slots", []) if model.get("selection") is Dictionary else []:
-			if assignment is Dictionary and int(_nombre(assignment.get("slot"), -1)) == int(_nombre(change.get("slot"), -2)): poste = str(assignment.get("label", "")).to_lower()
-		var morceau := entrant + (" à la place " + _de(sortant) if not sortant.is_empty() else "")
-		if not poste.is_empty(): morceau += " (" + poste + ")"
-		parts.append(morceau)
-	if parts.is_empty(): return "Je changerais la feuille avant le match."
-	return "Pour le match, je changerais %s : %s. Les gars sont plus frais." % ["une chose" if parts.size() == 1 else "deux choses", " ; ".join(parts)]
-
-## « de Smart », « d'Amos » (élision devant une voyelle).
-static func _de(nom: String) -> String:
-	return ("d'" if not nom.is_empty() and nom.left(1).to_upper() in ["A", "E", "I", "O", "U", "Y", "É", "È", "Ê", "Â", "Î", "Ô"] else "de ") + nom

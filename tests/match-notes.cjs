@@ -249,20 +249,21 @@ function libere() { if (global.gc) global.gc(); }
 function journeeEnDirect(jeu, model, notes) {
   model = M.jusquAuMatch(jeu, model);
   model = M.jouerLeMatch(jeu, model, { delegue: false });
-  let dernier = null, minutes = 0;
+  let dernier = null, minutes = 0, pourquoiAvantLaFin = false;
   for (let k = 0; k < 400 && !model.live.finished; k++) {
     if (model.clubLife?.matchTalks?.scene) { model = skipMatchTalk(model, jeu.call); continue; }
     // Trois minutes en temps forts (direct), puis des pas de 30 minutes : chaque commande réécrit les 20 Mo de la
     // sauvegarde (~4 s) ; une minute à la fois coûtait ~230 s. Le résultat est identique (le direct se lit sur le journal).
     model = minutes++ < 3 ? jeu.call('tick', { minute: true, temps_forts: 'dynamique' }) : jeu.call('tick', { steps: 30 });
     if (model.live.direct?.notes) dernier = model.live.direct;
+    if (!model.live.finished && model.live.direct?.pourquoi) pourquoiAvantLaFin = true;
   }
   assert.equal(model.live.finished, true, 'match terminé');
   if (notes) {
     // Tout montrer : le direct se lit alors sur le journal complet.
     for (let k = 0; k < 40 && (!dernier || dernier.borne < model.live.events.length); k++) { model = jeu.call('tick', { minute: true, temps_forts: 'aucun' }); dernier = model.live.direct; }
   }
-  const direct = dernier && { notes: dernier.notes, camp: dernier.camp };
+  const direct = dernier && { notes: dernier.notes, camp: dernier.camp, score: dernier.score, pourquoi: dernier.pourquoi ?? null, pourquoiAvantLaFin, toutMontre: dernier.borne >= model.live.events.length };
   // Le débrief clôt la journée (le résultat est confirmé).
   model = skipMatchTalk(model, jeu.call);
   if (model.live) model = jeu.call('finish_round');
@@ -331,6 +332,25 @@ test('Direct (Monde) : la note affichée en fin de match est la note enregistré
   // Autres matchs de la journée (simulés sans direct) : notés aussi.
   assert.ok(obs.clubsNotes > 2, 'joueurs d’autres clubs notés : ' + obs.clubsNotes + ' clubs');
   assert.ok(obs.actualite, 'actualité de l’homme du match');
+});
+
+test('Direct (Monde) : « Pourquoi » au coup de sifflet final, trois raisons au plus, chacune avec son levier', () => {
+  const { obs } = partage();
+  const P = require('../native/engine/match-pourquoi.cjs');
+  const d = obs.direct;
+  assert.equal(d.pourquoiAvantLaFin, false, 'rien avant le coup de sifflet final');
+  assert.equal(d.toutMontre, true);
+  assert.ok(d.pourquoi && Array.isArray(d.pourquoi.raisons), 'pourquoi posé en fin de match : ' + JSON.stringify(d.pourquoi));
+  const [nous, eux] = [d.score[d.camp], d.score[1 - d.camp]];
+  assert.equal(d.pourquoi.issue, nous > eux ? 'victoire' : nous < eux ? 'defaite' : 'nul');
+  assert.ok(d.pourquoi.raisons.length <= P.MAX);
+  assert.equal(new Set(d.pourquoi.raisons.map(r => r.levier)).size, d.pourquoi.raisons.length, 'un levier une seule fois');
+  for (const r of d.pourquoi.raisons) {
+    assert.ok(P.LEVIERS[r.levier], r.levier);
+    assert.equal(r.route, P.LEVIERS[r.levier].route);
+    assert.ok(r.texte.length > 20 && Math.abs(r.poids) >= P.SEUIL, JSON.stringify(r));
+  }
+  console.log('Pourquoi :', d.pourquoi.issue, JSON.stringify(d.pourquoi.raisons.map(r => [r.levier, r.texte])));
 });
 
 test('Équipe-type : publiée à chaque journée, pour chaque championnat, quinze postes distincts', () => {

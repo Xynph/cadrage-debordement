@@ -25,7 +25,14 @@ export CD_GODOT_REQUIRED=1
 unset CD_MODES_HERITES
 export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--require=$root/ci/godot-env.cjs"
 node "$root/ci/godot-env.cjs" --check || exit 1
+source "$root/ci/suite-tmp.sh"
 work="$(mktemp -d)"
+suite_tmp=""
+# Nettoyage en toutes circonstances (fin normale, échec, SIGINT/SIGTERM) ; CD_KEEP_TMP=1 conserve les dossiers.
+cleanup() { cd_suite_tmp_drop "$suite_tmp"; [[ "${CD_KEEP_TMP:-0}" == 1 ]] || rm -rf "$work"; }
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 # Motifs des sauts « faute de moteur » écrits par les suites (node:test TAP ou console).
 engine_skip='SDK Godot (requis|absent)|Godot SDK required|SKIP [^ ]+ : SDK absent|SDK et worker knowledge requis|Set CD_GODOT_EXECUTABLE|NON EXÉCUTÉ \(CD_GODOT'
@@ -44,6 +51,8 @@ declare -A suite_limits=(
   # Préparation Node de la carrière Monde (~46 jours) puis Godot : 126 à 221 s mesurés selon le runner.
   [tests/godot-reader-history.cjs]=600
   [tests/godot-analysis-club-graphics.cjs]=600
+  # Préparation Node de la carrière Monde jusqu'au premier match (~60 jours simulés, sauvegarde de ~50 Mo) puis Godot : ~2 à 5 min.
+  [tests/native-club-support-ui.cjs]=600
   # Délégation de la composition : carrière Monde hebdomadaire jouée côté Node jusqu'à l'alerte de fatigue (feuille gardée), puis le vrai jeu.
   [tests/godot-delegue-composition.cjs]=900
   # Finitions critiques : carrière Monde (création, un match, jour de match suivant) côté Node puis un passage Godot ; ~4 min en local.
@@ -51,12 +60,10 @@ declare -A suite_limits=(
 )
 # Suites INFORMATIVES : exécutées et journalisées, mais un échec n'empêche pas le job (avertissement + ligne
 # « informatif » dans le résumé). Une suite n'y reste que tant qu'elle est instable ; à retirer dès qu'elle est stabilisée.
-#  - native-club-support-ui (14/11) : échoue par intermittence : rouge sur le run planifié du 14/11 00:56 (145 s) et sur
-#    le workflow_dispatch du 14/11 08:02 (150 s), vert le 13/11 19:54 ; rouge 3 fois sur 4 en local. Après la première réunion de soutien, les commandes suivantes sont
-#    refusées (« terminez le rendez-vous en attente ») ou le moteur local ne répond plus, puis le script plante sur un bouton
-#    absent et le processus Godot reste en attente jusqu'au délai de 120 s. Cause non isolée (le test enchaîne sur une
-#    sauvegarde Monde de 46 Mo préparée hors Godot) ; chantier de stabilisation à part.
-informative_suites=(tests/native-club-support-ui.cjs)
+# Aucune pour l'instant : native-club-support-ui, informative le 14/11 (rouge par intermittence), est stabilisée et
+# bloquante comme les autres (causes : tests/native-club-support-ui.cjs, en tête de fichier de préparation
+# tests/helpers/support-ui-prepare.cjs).
+informative_suites=()
 failures=0; informative_failures=0; executed=0; other_skips=0
 : > "$work/results.md"
 for test in "${suites[@]}"; do
@@ -65,6 +72,8 @@ for test in "${suites[@]}"; do
   start=$SECONDS
   limit="${CD_GODOT_SUITE_LIMIT:-${suite_limits[$test]:-300}}s"
   log="$work/$(basename "$test").log"
+  suite_tmp="$(cd_suite_tmp_new "$work")"
+  export TMPDIR="$suite_tmp"
   t0="$(date +%s%N)"
   if [[ -x /usr/bin/time ]]; then
     timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" \
@@ -76,6 +85,7 @@ for test in "${suites[@]}"; do
     t1="$(date +%s%N)"
     printf 'CD_CPU_PROFILE suite=%s wall_s=%d.%02d\n' "$test" $(( (t1-t0)/1000000000 )) $(( (t1-t0)/10000000%100 )) >> "$log"
   fi
+  cd_suite_tmp_drop "$suite_tmp"; suite_tmp=""
   cat "$log"
   verdict=OK
   if [[ $code -ne 0 ]]; then
@@ -107,5 +117,4 @@ done
   echo ""
   echo "Sauts déclarés pour d'autres raisons (plateforme, outil manuel) : $other_skips"
 } >> "$summary"
-rm -rf "$work"
 [[ "$failures" -eq 0 ]]

@@ -166,7 +166,9 @@ func run() -> void:
 				if frames[i].scene.kind == "setpiece-win" and i > 0 and frames[i - 1].scene.kind == "lineout":
 					won = i
 			frames[won].events[0].scene.move = "equilibre"
+			# La séquence du moteur porte déjà « porte » (essai sur ballon porté) : retiré pour le cas sans.
 			if porte: frames[won].events[0].scene["porte"] = true
+			else: frames[won].events[0].scene.erase("porte")
 			var view = make_view()
 			await process_frame
 			var gestes: RefCounted = view._gestes

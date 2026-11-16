@@ -528,7 +528,8 @@ func _montrer(contenu: Dictionary) -> void:
 			call_deferred("_layout_bulle"))
 	_bulle_actions.visible = _bulle_actions.get_child_count() > 0
 	if contenu.get("genre") != "fait":
-		if contenu.get("genre") != "avis" and not Avis.ecran(str(app.route), app.model).is_empty():
+		# « Ton avis, Gabi ? » sur chaque écran : sans avis propre à l'écran, Gabi répond par sa visite guidée.
+		if contenu.get("genre") != "avis":
 			_button(_bulle_menu, "Ton avis, Gabi ?", "GabiMenuAvis", demander_avis)
 		_button(_bulle_menu, "Aide de l'écran", "GabiMenuAide", func(): fermer_bulle(); open_help())
 		_button(_bulle_menu, "Visite guidée", "GabiMenuVisite", func(): fermer_bulle(); open_tour())
@@ -602,10 +603,97 @@ func _layout_bulle() -> void:
 		_bulle.vers_droite = true
 		_bulle.pointe_y = clampf(tete - y, 24.0, height - 24.0)
 	else: _bulle.vers_droite = false
+	# Générique : la bulle ne recouvre aucun contrôle interactif de l'écran (boutons, champs, curseurs).
+	var libre := _position_libre(Vector2(x, y), Vector2(width, height), topbar.end.y + 12.0)
+	x = libre.x; y = libre.y
 	if _bulle_tween == null or not _bulle_tween.is_running(): _bulle.global_position = Vector2(x, y)
 	else: _bulle.global_position.x = x
 	_bulle.pointe_x = clampf(face.get_center().x - x, 24.0, width - 24.0)
 	_bulle.queue_redraw()
+
+## Contrôles interactifs visibles sous la bulle (hors bulle et hors Gabi) : zones à ne pas recouvrir.
+func _zones_interactives() -> Array[Rect2]:
+	var zones: Array[Rect2] = []
+	var pile: Array[Node] = [app]
+	while not pile.is_empty():
+		var node: Node = pile.pop_back()
+		if node == _bulle: continue
+		if node is Control:
+			var c := node as Control
+			if not c.visible: continue
+			var interactif := (c is BaseButton or c is LineEdit or c is TextEdit or c is Range) and c.mouse_filter != Control.MOUSE_FILTER_IGNORE
+			if interactif and c.is_visible_in_tree():
+				var r := c.get_global_rect()
+				if r.size.x > 4.0 and r.size.y > 4.0 and not (is_instance_valid(_bandeau) and _bandeau.is_ancestor_of(c)) and not (is_instance_valid(_bureau_figure) and (_bureau_figure == c or _bureau_figure.is_ancestor_of(c))):
+					zones.append(r)
+		for child in node.get_children(): pile.append(child)
+	return zones
+
+static func _aire_commune(a: Rect2, b: Rect2) -> float:
+	var r := a.intersection(b)
+	return r.size.x * r.size.y if r.size.x > 0.0 and r.size.y > 0.0 else 0.0
+
+## Position la plus proche de `voulue` où la bulle (taille `taille`) ne recouvre aucun contrôle interactif ;
+## à défaut, celle qui en recouvre le moins. Le haut est borné par `y_min` (sous la barre du haut).
+## Coût borné : les rectangles sont calculés une fois, les candidats sont dédoublonnés et plafonnés
+## (les plus proches de `voulue`), et chaque test s'arrête au premier recouvrement (écran Effectif : 296 contrôles).
+func _position_libre(voulue: Vector2, taille: Vector2, y_min: float) -> Vector2:
+	var zones := _zones_interactives()
+	if zones.is_empty(): return voulue
+	var marge := 4.0
+	if not _recouvre(Rect2(voulue, taille).grow(marge), zones): return voulue
+	var x_max := maxf(8.0, app.size.x - taille.x - 8.0)
+	var y_max := maxf(y_min, app.size.y - taille.y - 8.0)
+	var xs := {}
+	var ys := {}
+	for cx: float in [voulue.x, 8.0, app.size.x - taille.x - 8.0]: xs[roundi(clampf(cx, 8.0, x_max))] = true
+	ys[roundi(clampf(voulue.y, y_min, y_max))] = true
+	for z: Rect2 in zones:
+		xs[roundi(clampf(z.end.x + 8.0, 8.0, x_max))] = true
+		xs[roundi(clampf(z.position.x - taille.x - 8.0, 8.0, x_max))] = true
+		ys[roundi(clampf(z.end.y + 8.0, y_min, y_max))] = true
+		ys[roundi(clampf(z.position.y - taille.y - 8.0, y_min, y_max))] = true
+	var cxs := _plus_proches(xs.keys(), voulue.x, PLAFOND_CANDIDATS)
+	var cys := _plus_proches(ys.keys(), voulue.y, PLAFOND_CANDIDATS)
+	var meilleur := voulue
+	var meilleure_distance := INF
+	for cy: float in cys:
+		for cx: float in cxs:
+			var p := Vector2(cx, cy)
+			var distance := p.distance_to(voulue)
+			if distance >= meilleure_distance: continue
+			if not _recouvre(Rect2(p, taille).grow(marge), zones):
+				meilleur = p; meilleure_distance = distance
+	if meilleure_distance < INF: return meilleur
+	# Aucune place libre : le candidat qui recouvre le moins (jeu réduit, cas rare).
+	var meilleur_aire := INF
+	var proches_x := cxs.slice(0, 12)
+	var proches_y := cys.slice(0, 12)
+	for cy: float in proches_y:
+		for cx: float in proches_x:
+			var p := Vector2(cx, cy)
+			var cadre := Rect2(p, taille).grow(marge)
+			var aire := 0.0
+			for z: Rect2 in zones: aire += _aire_commune(cadre, z)
+			var distance := p.distance_to(voulue)
+			if aire < meilleur_aire - 0.5 or (absf(aire - meilleur_aire) <= 0.5 and distance < meilleure_distance):
+				meilleur = p; meilleur_aire = aire; meilleure_distance = distance
+	return meilleur
+
+const PLAFOND_CANDIDATS := 28
+
+static func _recouvre(cadre: Rect2, zones: Array[Rect2]) -> bool:
+	for z: Rect2 in zones:
+		if cadre.intersects(z): return true
+	return false
+
+## Les `n` valeurs les plus proches de `cible`, de la plus proche à la plus éloignée.
+static func _plus_proches(valeurs: Array, cible: float, n: int) -> Array[float]:
+	var tri: Array = valeurs.duplicate()
+	tri.sort_custom(func(a, b): return absf(float(a) - cible) < absf(float(b) - cible))
+	var sortie: Array[float] = []
+	for v in tri.slice(0, n): sortie.append(float(v))
+	return sortie
 
 func fermer_bulle() -> void:
 	if is_instance_valid(_bulle): _bulle.hide()
@@ -989,6 +1077,10 @@ func _deliver_context(id: String, fragment: Dictionary, visit: String, event: St
 	var page: Array = Content.page(id)
 	var moment: Dictionary = Moments.moment(id, str(short.get("id", "")), app.model)
 	var message := {"genre": "contexte", "titre": "GABI · " + str(page[1]).to_upper(), "texte": str(short.get("text", "")), "categorie": moment.categorie, "ton": moment.ton, "route": str(app.route), "visit": visit, "event": event}
+	if event.is_empty():
+		# Réplique spontanée : l'information utile d'abord (gabi-repliques.cjs), l'ambiance seulement en complément et plus rarement.
+		message = _replique_utile(message, str(short.get("text", "")))
+		if message.is_empty(): return
 	if _bulle_permise() and _spontane_permis():
 		_consommer(message)
 		_montrer(message)
@@ -996,7 +1088,29 @@ func _deliver_context(id: String, fragment: Dictionary, visit: String, event: St
 		_attente = message
 		_maj_indice()
 
+## Informations déjà dites pendant cette session (clé moteur) : Gabi ne se répète pas d'un écran à l'autre.
+var _infos_dites: Dictionary = {}
+
+## Remplace la réplique d'ambiance par l'information utile du moteur (`model.gabi`), avec son bouton d'action.
+## Retourne {} quand il n'y a rien d'utile à dire et que l'ambiance n'est pas de tour : Gabi se tait.
+func _replique_utile(ambiance: Dictionary, texte_ambiance: String) -> Dictionary:
+	var gabi: Dictionary = app.model.get("gabi", {}) if app.model.get("gabi") is Dictionary else {}
+	var utile: Dictionary = gabi.get("replique", {}) if gabi.get("replique") is Dictionary else {}
+	var complement := bool(gabi.get("ambiance", false)) and not texte_ambiance.is_empty()
+	if utile.is_empty() or _infos_dites.has(str(utile.get("cle", ""))):
+		# Rien de nouveau : l'ambiance seule n'ouvre une bulle que quand elle est de tour.
+		return ambiance if complement and utile.is_empty() else {}
+	var message: Dictionary = ambiance.duplicate(true)
+	message.texte = str(utile.texte) + ("\n" + texte_ambiance if complement else "")
+	message.titre = "GABI · " + {"courrier": "COURRIER", "feuille": "LA FEUILLE", "blesses": "INFIRMERIE", "condition": "CONDITION", "contrat": "CONTRATS", "match": "PROCHAIN MATCH"}.get(str(utile.get("genre", "")), "UN MOT")
+	message.categorie = "mise_en_garde" if str(utile.get("genre", "")) in ["feuille", "blesses", "condition", "contrat"] else "consigne"
+	message.ton = Avis.NEUTRE
+	if utile.get("action") is Dictionary: message.action = (utile.action as Dictionary).duplicate(true)
+	message.info = str(utile.get("cle", ""))
+	return message
+
 func _consommer(message: Dictionary) -> void:
+	if not str(message.get("info", "")).is_empty(): _infos_dites[str(message.info)] = true
 	var visit := str(message.get("visit", ""))
 	var event := str(message.get("event", ""))
 	var changed := false

@@ -121,7 +121,11 @@ static func build(app:Control,player:Dictionary) -> Control:
 	D.text(hero,1828,234,"NIVEAU",23,C.MUTED,600,220,HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(hero,2084,234,"POTENTIEL",23,C.GOLD,600,235,HORIZONTAL_ALIGNMENT_CENTER)
 	D.button(hero,Rect2(1710,264,236,46),"Comparer",func():
-		if str(player.id) not in app.management_ui.compare and app.management_ui.compare.size()<2:app.management_ui.compare.append(str(player.id))
+		# Le premier joueur est mémorisé ; si un autre est déjà en mémoire, il devient A et cette fiche B.
+		var memo:Array=app.management_ui.compare
+		if str(player.id) not in memo:
+			if memo.size()==1:memo.append(str(player.id))
+			else:memo.assign([str(player.id)])
 		app.SquadViews.comparison(app),false,"people",true,app.accent,"FullPlayerCompare")
 	D.button(hero,Rect2(1962,264,260,46),"Ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerCoachNote")
 	var active:=clampi(int(app.management_ui.get("immersive_player_tab",0)),0,5)
@@ -404,7 +408,7 @@ static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	var reason := str(renewal.get("reason", ""))
 	D.text(card,24,113,G.salary(player.get("salary",0)),40,C.IVORY,700,515)
 	D.text(card,24,151,"Fin de contrat : " + G.contract_year(player.get("contractEnd")),27,C.MUTED,500,515)
-	D.text(card,24,183,"Montants de jeu" if reason.is_empty() else reason,19,C.MUTED if reason.is_empty() else C.ALERT,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
+	D.text(card,24,183,"Contrat du joueur" if reason.is_empty() else reason,19,C.MUTED if reason.is_empty() else C.ALERT,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var offer:=D.button(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"arrow",true,app.accent,"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason

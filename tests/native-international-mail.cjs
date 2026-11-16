@@ -10,16 +10,16 @@ const player = { id: 'lnr:hook', name: 'Joueur de référence', pos: 'Talonneur'
 const facts = { nations: { FRA: ['France', 'fr'] }, players: { [player.id]: { seniorNation: 'FRA', seniorCaps: 5 } } };
 const dateAfter = date => new Date(Date.parse(date) + 86400000).toISOString().slice(0, 10);
 
-function bridge({ date = '2027-01-30', opening = '2027-08-16', phase = 'league', profile } = {}) {
+function bridge({ date = '2027-01-30', opening = '2027-08-16', phase = 'league', profile, players = [player], facts: known = facts } = {}) {
  const ctx = vm.createContext({
-  S: { club: 0, clubs: [{ id: 0, players: [player] }], phase, worldMode: { day: 0 }, ...(profile ? { national: profile } : {}) },
+  S: { club: 0, clubs: [{ id: 0, players }], phase, worldMode: { day: 0 }, ...(profile ? { national: profile } : {}) },
   CDWorldCareer: { active: () => true, calendarToday: () => date, nextOpening: () => opening },
   roleNote: p => p.rating,
   // This mail unit fixture supplies the same published position contract as
   // the full worker; aptitude calculations have their own engine suites.
   nativePositionAptitudes: { project: p => Object.fromEntries(['primaryPosition','primaryPositions','secondaryPositions','positionRatings','qualifiedFrontRowPositions'].map(key=>[key,p[key]])) },
  });
- const international = createNativeInternational(source => vm.runInContext(source, ctx), ctx, facts, true);
+ const international = createNativeInternational(source => vm.runInContext(source, ctx), ctx, known, true);
  international.initialize(42, { nationalRole: 'dual', nation: 'FRA' });
  return {
   read: international.read,
@@ -81,7 +81,8 @@ test('international mail explains the camp and records the club return exactly o
  assert.equal(returns.length, 1);
  assert.equal(returns[0].nation, 'FRA');
  assert.equal(returns[0].action, 'international');
- assert.match(returns[0].body, /joueur revient du rassemblement/);
+ assert.equal(returns[0].title, 'Retour des internationaux : 1 joueur');
+ assert.deepEqual(returns[0].players, [player.id], 'lien vers la fiche du joueur');
  assert.match(returns[0].body, /Tournoi des Six Nations 2027/);
  const afterReturn = JSON.parse(JSON.stringify(reopened.read()));
  const again = bridge({ date: afterReturn.career.date, profile: afterReturn });
@@ -107,4 +108,20 @@ test('a closed club season retains the international date at the next opening af
  assert.deepEqual(reopened.read(), saved);
  assert.equal(reopened.project().meta.calendarToday, '2028-07-18');
  assert.throws(() => reopened.advance(), /Commencez la saison suivante/);
+});
+
+// Décision de Léo (16/11/2026) : un seul courrier par vague de convocations, toutes sélections confondues.
+test('one call-up wave with several nations produces a single club mail listing every player', () => {
+ const english = { ...player, id: 'rfu:hook', name: 'Talonneur anglais' };
+ const both = { nations: { FRA: ['France', 'fr'], ENG: ['Angleterre', 'gb'] },
+  players: { [player.id]: { seniorNation: 'FRA', seniorCaps: 5 }, [english.id]: { seniorNation: 'ENG', seniorCaps: 7 } } };
+ const career = bridge({ players: [player, english], facts: both });
+ career.advance();
+ const released = career.read().mail.filter(mail => mail.kind === 'international_release');
+ assert.equal(released.length, 1, JSON.stringify(released.map(mail => mail.title)));
+ assert.equal(released[0].title, 'Convocations internationales : 2 joueurs');
+ assert.deepEqual([...released[0].players].sort(), [english.id, player.id].sort());
+ assert.match(released[0].body, /France \(Tournoi des Six Nations 2027\) : Joueur de référence/);
+ assert.match(released[0].body, /Angleterre \(Tournoi des Six Nations 2027\) : Talonneur anglais/);
+ assert.equal(released[0].nation, undefined, 'plusieurs sélections : pas de pays unique');
 });

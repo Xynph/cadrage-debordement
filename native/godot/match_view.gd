@@ -300,6 +300,14 @@ func set_live_cadence(steps: int) -> void:
 	_live_cadence = steps
 
 
+## L'essai mis en scène par un geste (course ou ballon porté) est aplati à l'écran ; vrai sans
+## geste d'essai (l'image du moteur est posée telle quelle). Sert à la régie pour légender et
+## acclamer l'essai à l'instant où on le voit aplati (lot 8 : une scène d'essai n'a pas de porteur,
+## l'ancien contrôle « porteur arrivé » était toujours vrai).
+func essai_aplati() -> bool:
+	return _gestes == null or not _gestes.active() or _gestes.essai_aplati()
+
+
 func is_presenting_extended_pass() -> bool:
 	return _pass_plan.get("duration", 0.0) == Pass.LIVE_SECONDS or (_gestes != null and _gestes.holding_tick())
 
@@ -1363,10 +1371,21 @@ func _build_spectators(positions: Array[Vector3], rotations: Array[float], rng: 
 	_instance_batch("SpectatorsSeatedLegs", torso, coloured, legs, trousers)
 
 
+## Lisibilité du ballon à la distance de la caméra TV (lot 5, 16 novembre 2026) : un peu plus
+## grand que nature, crème lumineux et souligné d'un contour sombre de deux pixels environ.
+## Ni halo ni cercle au sol dans les vues de retransmission (choix de Léo) ; le ballon reste
+## dans les mains du porteur (les mains le tiennent par ses flancs, voir match_presentation.gd).
+const BALLON_LISIBLE := 1.25
+const BALLON_CONTOUR := "res://shaders/ballon_contour.gdshader"
+
 func _build_ball() -> void:
 	_ball = Node3D.new()
 	_ball.name = "Ball"
 	add_child(_ball)
+	var corps := Node3D.new()
+	corps.name = "BallBody"
+	corps.scale = Vector3.ONE * BALLON_LISIBLE
+	_ball.add_child(corps)
 	var ball := MeshInstance3D.new()
 	var shape := SphereMesh.new()
 	shape.radius = 0.23
@@ -1375,8 +1394,16 @@ func _build_ball() -> void:
 	shape.rings = 12
 	ball.mesh = shape
 	ball.scale = Vector3(0.87, 0.53, 0.53)
-	ball.material_override = _material(Color("f6ebc6"))
-	_ball.add_child(ball)
+	var cuir := _material(Color("f8efcf"))
+	# Légère émission : le ballon ne s'éteint pas dans l'ombre des joueurs.
+	cuir.emission_enabled = true
+	cuir.emission = Color("f8efcf")
+	cuir.emission_energy_multiplier = 0.22
+	var contour := ShaderMaterial.new()
+	contour.shader = load(BALLON_CONTOUR)
+	cuir.next_pass = contour
+	ball.material_override = cuir
+	corps.add_child(ball)
 	# Original dark seams give rotation and hand contact a readable reference.
 	for offset in [-0.095, 0.095]:
 		var seam := MeshInstance3D.new()
@@ -1389,7 +1416,7 @@ func _build_ball() -> void:
 		seam.rotation.z = PI * 0.5
 		seam.position.x = offset
 		seam.material_override = _material(Color("263c43"))
-		_ball.add_child(seam)
+		corps.add_child(seam)
 	# A flat presentation halo keeps the small oval legible at fullfield scale.
 	var halo := MeshInstance3D.new()
 	_ball_marker = halo

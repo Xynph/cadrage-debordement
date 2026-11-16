@@ -13,6 +13,9 @@ const INK = Color("f5f4ec")
 const MUTED = Color("bdc8c9")
 const GOLD = Color("ddbd80")
 const GOOD = Color("a6d2ae")
+# Assez large pour un groupe pro entier (60 photos de 512 px) : plus petit, le cache
+# se renouvelle à chaque ouverture de l'effectif. Les plus anciens partent en premier (LRU).
+const PACK_TEXTURES := 128
 static var textures: Dictionary = {}
 
 # Dense carnet scale: explicit legacy sizes keep their role, without enlarging
@@ -188,7 +191,11 @@ static func crest(club: Dictionary, width: int = 56) -> Control:
 
 static func _pack_texture(path: String) -> Texture2D:
 	if path.is_empty() or not path.is_absolute_path() or not FileAccess.file_exists(path): return null
-	if textures.has(path): return textures[path]
+	if textures.has(path):
+		var known: Texture2D = textures[path]
+		textures.erase(path)
+		textures[path] = known
+		return known
 	var image := Image.new()
 	if image.load(path) != OK: return null
 	var longest := maxi(image.get_width(), image.get_height())
@@ -196,16 +203,34 @@ static func _pack_texture(path: String) -> Texture2D:
 		var ratio := 512.0 / longest
 		image.resize(maxi(1, roundi(image.get_width() * ratio)), maxi(1, roundi(image.get_height() * ratio)), Image.INTERPOLATE_LANCZOS)
 	var texture := ImageTexture.create_from_image(image)
-	if textures.size() >= 48: textures.erase(textures.keys()[0])
+	if textures.size() >= PACK_TEXTURES: textures.erase(textures.keys()[0])
 	textures[path] = texture
 	return texture
 
 static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> TextureRect:
+	var r := _portrait_rect(width, player)
+	fill_portrait(r, index, player)
+	return r
+
+static func _portrait_rect(width: int, player: Dictionary) -> TextureRect:
 	var r := TextureRect.new()
 	var caption := str(player.get("name", "Portrait"))
-	if caption.is_empty(): caption = "Portrait"
+	r.tooltip_text = caption if not caption.is_empty() else "Portrait"
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r.custom_minimum_size = Vector2(width, width)
+	return r
+
+static func _pack_path(player: Dictionary) -> String:
 	var identity_data: Dictionary = player.get("identity", {})
-	var path := str(player.get("portraitPath", identity_data.get("portraitPath", "")))
+	return str(player.get("portraitPath", identity_data.get("portraitPath", "")))
+
+## Applique la photo du pack, sinon le visage composé, sinon la planche
+## éditoriale, sinon l'initiale. Même résultat qu'un portrait créé d'un coup.
+static func fill_portrait(r: TextureRect, index: int, player: Dictionary) -> void:
+	var caption := str(player.get("name", "Portrait"))
+	if caption.is_empty(): caption = "Portrait"
+	var path := _pack_path(player)
 	var texture := _pack_texture(path)
 	if texture != null:
 		r.texture = texture
@@ -213,17 +238,47 @@ static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> Te
 	elif not str(player.get("id", "")).is_empty() and preload("res://ui/regen_portrait.gd").apply(r, player):
 		r.tooltip_text = caption if path.is_empty() else "Image du pack indisponible · " + caption
 	else:
-		var atlas := AtlasTexture.new()
 		index = posmod(index, 32)
-		atlas.atlas = load("res://assets/editorial/portraits-%d.webp" % (index / 16))
-		var cell := atlas.atlas.get_size() / 4.0
-		atlas.region = Rect2(Vector2(index % 4, (index % 16) / 4) * cell, cell)
-		r.texture = atlas
+		var atlas_path := "res://assets/editorial/portraits-%d.webp" % (index / 16)
+		# Planche absente (projet non importé, fichier retiré) : on garde l'initiale, sans erreur de chargement.
+		var sheet := load(atlas_path) as Texture2D if ResourceLoader.exists(atlas_path) else null
+		if sheet != null:
+			var atlas := AtlasTexture.new()
+			atlas.atlas = sheet
+			var cell := sheet.get_size() / 4.0
+			atlas.region = Rect2(Vector2(index % 4, (index % 16) / 4) * cell, cell)
+			r.texture = atlas
+		else:
+			r.add_child(_initial_label(caption))
 		r.tooltip_text = caption if path.is_empty() else "Image du pack indisponible · " + caption
-	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	r.custom_minimum_size = Vector2(width, width)
+
+## Portrait d'une liste longue : tout de suite s'il est déjà prêt (cache), sinon
+## case vide et chargement progressif par `portrait_loader.gd`, lignes visibles d'abord.
+static func portrait_lazy(index: int, width: int = 60, player: Dictionary = {}) -> TextureRect:
+	if _portrait_ready(player): return portrait(index, width, player)
+	var r := _portrait_rect(width, player)
+	preload("res://ui/portrait_loader.gd").request(r, index, player)
 	return r
+
+static func _portrait_ready(player: Dictionary) -> bool:
+	var path := _pack_path(player)
+	if not path.is_empty() and textures.has(path): return true
+	if not path.is_empty() and path.is_absolute_path() and FileAccess.file_exists(path): return false
+	if str(player.get("id", "")).is_empty(): return true
+	return preload("res://ui/regen_portrait.gd").cached(player)
+
+static func _initial_label(caption: String) -> Label:
+	var words := caption.strip_edges().split(" ", false)
+	var initials := ""
+	for word in words.slice(0, 2): initials += word.substr(0, 1).to_upper()
+	var label := Label.new()
+	label.text = initials if not initials.is_empty() else "?"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	label.add_theme_color_override("font_color", MUTED)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
 
 static var venue_textures: Dictionary = {}
 const TERRITORY_STANDALONE := [30, 61, 70]

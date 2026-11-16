@@ -312,7 +312,7 @@ func _recommended(section: Control) -> void:
 		picture.custom_minimum_size = Vector2.ZERO
 		panel.add_child(picture)
 		D.place(picture,Rect2(20,image_top,847,432-image_top))
-		var caption := "Photo d’archive" if picture.get_meta("photo_kind") == "archive" else "Photo du pack" if picture.get_meta("photo_kind") == "pack" else "Illustration IA · ambiance du club"
+		var caption := "Photo d’archive" if picture.get_meta("photo_kind") == "archive" else "Photo du pack" if picture.get_meta("photo_kind") == "pack" else "Ambiance du club"
 		D.text(panel,30,424,caption,16,C.MUTED,500,827)
 	var tactics: Dictionary = app.model.get("tactics", {})
 	D.text(panel,23,455,"AVEC BALLON · " + _tactic_label(tactics.get("attacks", []), tactics.get("attack")),18,GREEN,600,414)
@@ -346,7 +346,7 @@ func _recent(section: Control) -> void:
 		if not club.is_empty():
 			var picture := G.club_picture(club)
 			panel.add_child(picture); D.place(picture,Rect2(22,110,856,145))
-			D.text(panel,32,243,"Photo d’archive" if picture.get_meta("photo_kind") == "archive" else "Photo du pack" if picture.get_meta("photo_kind") == "pack" else "Illustration IA · ambiance du club",16,C.MUTED,500,820)
+			D.text(panel,32,243,"Photo d’archive" if picture.get_meta("photo_kind") == "archive" else "Photo du pack" if picture.get_meta("photo_kind") == "pack" else "Ambiance du club",16,C.MUTED,500,820)
 	for i in mini(5, recent.size()):
 		var result: Dictionary = recent[i]
 		var y := 70 + i * 40
@@ -425,7 +425,7 @@ func _threats(section: Control) -> void:
 		D.text(panel, 111, y + 56, "%s  ·  %s" % [p.get("pos", ""), p.get("role", "")], 17, C.MUTED, 500, 740)
 		D.line(panel, Vector2(20, y + 73), Vector2(863, y + 73), Color(C.LINE, .67))
 	var signals: Array = reports.get("signals", [])
-	D.text(panel, 23, 331, "%d signal(aux) documenté(s) · détails dans le dossier" % signals.size() if not signals.is_empty() else "Observations adverses indisponibles." if reports.is_empty() else "Pas de signal robuste dans les observations disponibles.", 24, GOLD, 500, 842)
+	D.text(panel, 23, 331, "%d signal(aux) relevé(s) · détails dans le dossier" % signals.size() if not signals.is_empty() else "Observations adverses indisponibles." if reports.is_empty() else "Pas de signal robuste dans les observations disponibles.", 24, GOLD, 500, 842)
 
 func _consignes() -> void:
 	var section := _section("PreparationConsignes")

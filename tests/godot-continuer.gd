@@ -137,8 +137,32 @@ func run() -> void:
 	await wait_idle()
 	var stopped: Dictionary = app.model.get("meta", {}).get("advanceUntilEvent", {})
 	check(today() > before, "Les jours déjà passés sont gardés après « Arrêter »")
-	check(first_progress[0] == false or stopped.get("stop", {}).get("kind") in ["arret", "match", "rendez_vous", "conference", "reprise", "ouverture", "message", "international"], "Arrêt demandé ou événement du même jour : " + JSON.stringify(stopped.get("stop", {})))
+	check(first_progress[0] == false or stopped.get("stop", {}).get("kind") in ["arret", "match", "rendez_vous", "conference", "reprise", "ouverture", "message", "international", "decision", "a_noter"], "Arrêt demandé ou événement du même jour : " + JSON.stringify(stopped.get("stop", {})))
 	check(not str(app.model.get("meta", {}).get("dataDir", "")).is_empty(), "Profil de carrière présent")
+	# 4. Info-bulle de « Continuer » : le prochain arrêt prévu par le moteur (meta.continuePlan).
+	await Flow.settle_club_meetings(app, self, check)
+	app._navigate("Bureau")
+	await settle()
+	var tip := button("ImmersiveContinue").tooltip_text if button("ImmersiveContinue") != null else ""
+	var plan: Variant = app.model.get("meta", {}).get("continuePlan")
+	check(tip.begins_with("Continuer jusqu’au prochain événement."), "Info-bulle de « Continuer » : " + tip)
+	check(not plan is Dictionary or tip.contains("Prochain arrêt prévu"), "Info-bulle : prochain arrêt annoncé (" + JSON.stringify(plan) + ")")
+	# 5. Moteur arrêté en cours de partie (processus tué, mémoire saturée : étude du 16/11/2026, « Continuer »
+	# rouvrait en boucle la conférence de presse) : le bouton principal devient « Relancer » et la carrière
+	# reprend à sa dernière sauvegarde.
+	var saved := today()
+	OS.kill(app.bridge.child_pid)
+	var kill_limit := Time.get_ticks_msec() + 20000
+	while (app.bridge.child_pid > 0 or not app.connection_error) and Time.get_ticks_msec() < kill_limit: await process_frame
+	await settle(4)
+	check(app.connection_error and app.bridge.child_pid <= 0, "Moteur arrêté détecté")
+	check(app.primary_text().begins_with("RELANCER LE MOTEUR"), "Bouton principal : relancer le moteur (" + app.primary_text() + ")")
+	app._clear_dialogs()
+	app.primary_action()
+	await wait_idle()
+	check(not app.connection_error and app.bridge.child_pid > 0, "Moteur relancé par le bouton principal")
+	check(today() == saved, "Carrière reprise à sa date (" + saved + " → " + today() + ")")
+	check(app.primary_text() != "RELANCER LE MOTEUR  →", "Le bouton principal redevient « Continuer » ou l’action du jour")
 	finish()
 
 func mesure() -> void:

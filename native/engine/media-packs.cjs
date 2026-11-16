@@ -4,6 +4,8 @@
 const fs=require('node:fs'),path=require('node:path'),zlib=require('node:zlib'),crypto=require('node:crypto');
 const staffRegistry=require('./staff.cjs');
 const venues=require('./venue-media.cjs');
+// Sentinelle d'une section reprise (projection-sections.cjs) : laissée telle quelle par le parcours des packs.
+const SECTION_SENTINEL=Symbol.for('cd.sectionSentinel');
 const leagues=require('./competition-identities.cjs');
 const pressIdentities=require('./press-identities.cjs');
 const boardIdentities=require('./board-identities.cjs');
@@ -181,7 +183,10 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
  }
 
  function get(id){return id==='base'?null:read(id);}
- function project(model,binding,creation,worldCreation='base',pacificCreation='base',japanCreation='base',nationaleCreation='base',champCreation='base'){
+ // `hooks` (projection-sections.cjs, facultatif) : sections reprises d'une réponse à l'autre. Une section reprise est une
+ // sentinelle laissée telle quelle par le parcours ; ses noms portés (carried) sont ceux mémorisés à son dernier calcul,
+ // relus à la même place et dans le même ordre ; `signature` reçoit l'empreinte des remplacements de noms.
+ function project(model,binding,creation,worldCreation='base',pacificCreation='base',japanCreation='base',nationaleCreation='base',champCreation='base',hooks=null){
   const memo=new Map(),getOnce=id=>{if(id==='base')return null;if(!memo.has(id))memo.set(id,read(id));return memo.get(id);};
   const world=model.meta.mode==='world',edition=world?databaseFor(model.meta.database?.id??worldDatabase.id):database;
   const champ=world&&edition.id===champDatabase?.id,nationale=world&&edition.id===nationaleDatabase?.id,japan=world&&edition.id===japanDatabase?.id,pacific=world&&edition.id===pacificDatabase?.id,staff=staffRegistry.forDatabase(edition.id);
@@ -199,16 +204,32 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
   const replacements=new Map();if(chosen){for(const c of edition.clubs){const cp=chosen.clubs[c.id];if(cp?.name)replacements.set(c.name,cp.name);}for(const p of identityPlayers(edition)){const pp=playerIdentity(chosen,p.id);if(pp?.name)replacements.set(p.name,pp.name);}for(const c of model.meta.catalogue){if(chosen.clubs[c.id]?.name)replacements.set(c.name,chosen.clubs[c.id].name);}}
   if(chosen)for(const c of staff.registry.clubs)for(const p of c.members){const custom=chosen.staff?.[p.id];if(custom?.name)replacements.set(p.name,custom.name);}
   // A career keeps the names it was started with. Texts that quote them follow the pack too, by identifier.
-  if(chosen)(function carried(value){
+  const carried=(value,sink)=>{
    if(!value||typeof value!=='object')return;
-   if(Array.isArray(value)){for(const item of value)carried(item);return;}
-   if(typeof value.id==='string'&&/^(?:lnr|world|staff):/.test(value.id)&&typeof value.name==='string'&&value.name){const identity=playerIdentity(chosen,value.id)||chosen.staff?.[value.id];if(typeof identity?.name==='string'&&identity.name!==value.name)replacements.set(value.name,identity.name);}
-   for(const item of Object.values(value))carried(item);
-  })(model);
+   if(Array.isArray(value)){for(const item of value)carried(item,sink);return;}
+   if(typeof value.id==='string'&&/^(?:lnr|world|staff):/.test(value.id)&&typeof value.name==='string'&&value.name){const identity=playerIdentity(chosen,value.id)||chosen.staff?.[value.id];if(typeof identity?.name==='string'&&identity.name!==value.name)sink(value.name,identity.name);}
+   for(const item of Object.values(value))carried(item,sink);
+  };
+  const setReplacement=(from,to)=>replacements.set(from,to);
+  if(chosen&&!hooks)carried(model,setReplacement);
+  else if(chosen){
+   // Même parcours, section par section (chemins « clé » et « clé.sous-clé » des clés imbriquées de l'encodeur).
+   const section=(sectionPath,value)=>{
+    if(value&&typeof value==='object'&&value[SECTION_SENTINEL]){for(const [from,to] of hooks.carriedOf(sectionPath)||[])replacements.set(from,to);return;}
+    const list=[];carried(value,(from,to)=>{list.push([from,to]);replacements.set(from,to);});hooks.recordCarried(sectionPath,list);
+   };
+   for(const [key,value] of Object.entries(model)){
+    if(hooks.nested.has(key)&&value&&typeof value==='object'&&!Array.isArray(value)&&!value[SECTION_SENTINEL]){
+     carried({id:value.id,name:value.name},setReplacement);
+     for(const [name,inner] of Object.entries(value))section(key+'.'+name,inner);
+    }else section(key,value);
+   }
+  }
   // Journalistes et rédactions : le texte archivé garde les noms de base, le pack actif les présente.
   if(chosen)for(const [from,to]of pressIdentities.replacements(chosen.press,pressBank))replacements.set(from,to);
   // Présidents et directeurs sportifs de départ : nom inventé de la base → nom du pack.
   if(chosen)for(const [from,to]of boardIdentities.replacements(chosen.boards,edition))replacements.set(from,to);
+  if(hooks)hooks.signature(chosen?chosen.meta.id+'|'+chosen.meta.digest+'|'+JSON.stringify([...replacements]):'base');
   const escaped=[...replacements.keys()].filter(Boolean).sort((a,b)=>b.length-a.length).map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));const pattern=escaped.length?new RegExp(escaped.join('|'),'gu'):null;
   function projectTerritory(club,pack){
    const photos=pack.clubs[club.id]?.photos;
@@ -216,7 +237,7 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
    // This edition deliberately left the first 30 territories in the licensed local atlas.
    if(pack.meta.id.slice(0,-65)==='rugby-reel-monde-champ-atlas'&&club.id>=0&&club.id<30)club.licensedTerritoryArchive=true;
   }
-  function walk(value,pack,replace){if(typeof value==='string')return replace&&pattern?value.replace(pattern,s=>replacements.get(s)):value;if(!value||typeof value!=='object')return value;if(Array.isArray(value))return value.map(x=>walk(x,pack,replace));const out={};for(const [k,v]of Object.entries(value))out[k]=k==='coachNotebook'?walk(v,pack,false):['id','playerId','outId','inIds','eligibleIds','captain','kicker','pair','slug','dataDir','database','exportText'].includes(k)?v:walk(v,pack,replace);if(pack){if(typeof value.slug==='string'&&Number.isInteger(value.id))projectTerritory(out,pack);if(typeof value.playerId==='string'&&Object.hasOwn(value,'playerName')&&playerIdentity(pack,value.playerId)?.name)out.playerName=playerIdentity(pack,value.playerId).name;if(Number.isInteger(value.clubId)&&Object.hasOwn(value,'clubName')&&pack.clubs[value.clubId]?.name)out.clubName=pack.clubs[value.clubId].name;if(typeof value.venue==='string'&&Number.isInteger(value.home?.id)&&!value.neutral&&value.venue===value.home.stadium&&pack.clubs[value.home.id]?.stadium)out.venue=pack.clubs[value.home.id].stadium;const item=typeof value.id==='number'?pack.clubs[value.id]:playerIdentity(pack,value.id)||pack.staff?.[value.id];if(item){if(staff.ids.has(value.id)){out.identityStatus='custom';if(!item.portrait)out.portraitStatus='missing';}if(item.name)out.name=item.name;if(item.abbr)out.abbr=item.abbr;if(item.city)out.city=item.city;if(item.stadium)out.stadium=item.stadium;if(item.role)out.role=item.role;if(item.logo)out.logoPath=path.join(pack.folder,item.logo);if(item.portrait){out.portraitPath=path.join(pack.folder,item.portrait);out.portraitStatus=item.portraitStatus;}}}return out;}
+  function walk(value,pack,replace){if(value&&typeof value==='object'&&value[SECTION_SENTINEL])return value;if(typeof value==='string')return replace&&pattern?value.replace(pattern,s=>replacements.get(s)):value;if(!value||typeof value!=='object')return value;if(Array.isArray(value))return value.map(x=>walk(x,pack,replace));const out={};for(const [k,v]of Object.entries(value))out[k]=k==='coachNotebook'?walk(v,pack,false):['id','playerId','outId','inIds','eligibleIds','captain','kicker','pair','slug','dataDir','database','exportText'].includes(k)?v:walk(v,pack,replace);if(pack){if(typeof value.slug==='string'&&Number.isInteger(value.id))projectTerritory(out,pack);if(typeof value.playerId==='string'&&Object.hasOwn(value,'playerName')&&playerIdentity(pack,value.playerId)?.name)out.playerName=playerIdentity(pack,value.playerId).name;if(Number.isInteger(value.clubId)&&Object.hasOwn(value,'clubName')&&pack.clubs[value.clubId]?.name)out.clubName=pack.clubs[value.clubId].name;if(typeof value.venue==='string'&&Number.isInteger(value.home?.id)&&!value.neutral&&value.venue===value.home.stadium&&pack.clubs[value.home.id]?.stadium)out.venue=pack.clubs[value.home.id].stadium;const item=typeof value.id==='number'?pack.clubs[value.id]:playerIdentity(pack,value.id)||pack.staff?.[value.id];if(item){if(staff.ids.has(value.id)){out.identityStatus='custom';if(!item.portrait)out.portraitStatus='missing';}if(item.name)out.name=item.name;if(item.abbr)out.abbr=item.abbr;if(item.city)out.city=item.city;if(item.stadium)out.stadium=item.stadium;if(item.role)out.role=item.role;if(item.logo)out.logoPath=path.join(pack.folder,item.logo);if(item.portrait){out.portraitPath=path.join(pack.folder,item.portrait);out.portraitStatus=item.portraitStatus;}}}return out;}
   const catalogue=model.meta.catalogue,worldCatalogue=model.meta.worldCatalogue,legacyCatalogue=model.meta.legacyCatalogue,pacificCatalogue=model.meta.pacificCatalogue,japanCatalogue=model.meta.japanCatalogue,nationaleCatalogue=model.meta.nationaleCatalogue,champCatalogue=model.meta.champCatalogue;model=walk(model,chosen,true);
   const scopes=[['common',database,legacyCreation],['world',worldDatabase,internationalCreation],['world-pacific',pacificDatabase,pacificPack],['world-japan',japanDatabase,japanPack],['world-nationale',nationaleDatabase,nationalePack],['world-champ',champDatabase,champPack]];
   model.meta.creationCompetitions=Object.fromEntries(scopes.filter(([,db])=>db).map(([mode,db,pack])=>[mode,leagues.presentation(db,pack)]));

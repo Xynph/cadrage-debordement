@@ -1,6 +1,7 @@
 ---
 paths:
   - "design/gdd/**"
+  - "docs/gdd/**"
 ---
 
 # Design Document Rules

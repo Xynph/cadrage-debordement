@@ -7,6 +7,18 @@ const Sheet = preload("res://ui/national_sheet.gd")
 const Availability = preload("res://ui/international_availability.gd")
 const FIXTURES_PER_PAGE := 10
 
+const MONTHS_FR := ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"]
+
+# Date ISO (AAAA-MM-JJ) en français lisible ; toute autre valeur est rendue telle quelle.
+static func french_date(iso: Variant) -> String:
+	var parts := str(iso).split("-")
+	if parts.size() != 3 or not parts[1].is_valid_int() or int(parts[1]) < 1 or int(parts[1]) > 12: return str(iso)
+	var day := int(parts[2])
+	return "%s %s %s" % ["1er" if day == 1 else str(day), MONTHS_FR[int(parts[1]) - 1], parts[0]]
+
+static func _period(from: Variant, through: Variant) -> String:
+	return "du %s au %s" % [french_date(from), french_date(through)]
+
 static func nation_only(model: Dictionary) -> bool:
 	return model.get("international", {}).get("role") == "nation"
 
@@ -95,7 +107,7 @@ static func _nation_details(app: Control, team: Dictionary) -> Control:
 	for callup: Dictionary in international.get("callups", []):
 		if str(callup.get("nation", "")) != nation_id or callup.get("players", []).is_empty(): continue
 		var camp := G.panel(list)
-		camp.add_child(G.section("Convocations connues", "%s au %s" % [callup.get("from", ""), callup.get("through", "")]))
+		camp.add_child(G.section("Convocations connues", _period(callup.get("from", ""), callup.get("through", ""))))
 		for player: Dictionary in callup.get("players", []):
 			var known := false
 			for source: String in ["squad", "market"]:
@@ -271,6 +283,8 @@ static func build(app: Control) -> Control:
 	var tabs := TabContainer.new()
 	tabs.name = "InternationalTabs"
 	page.add_child(tabs)
+	# Onglets lisibles : même corps que les boutons de la page, jamais sous 14 px.
+	tabs.add_theme_font_size_override("font_size", maxi(14, C.px(20)))
 	tabs.add_child(_callups(app, international, names))
 	tabs.add_child(_editions(app, international, names))
 	tabs.add_child(_offers(app, international, role))
@@ -293,7 +307,7 @@ static func _callups(app: Control, international: Dictionary, names: Dictionary)
 	for callup: Dictionary in international.get("callups", []):
 		var list := G.panel(view)
 		var caption := str(names.get(callup.nation, callup.nation))
-		var heading := G.section(caption, "%s au %s" % [callup.from, callup.through])
+		var heading := G.section(caption, _period(callup.from, callup.through))
 		var title := heading.get_child(0) as Control
 		heading.remove_child(title)
 		var title_link := _projected_reading(app, title, {"kind":"nation", "id":str(callup.nation)}, "InternationalCallupNation_" + str(callup.nation).validate_node_name(), caption)

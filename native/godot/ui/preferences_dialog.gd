@@ -53,19 +53,25 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		var detailed := 0
 		for league: Dictionary in leagues.get("leagues", []):
 			if bool(league.get("detailed", true)): detailed += 1
-		comfort.add_child(C.wrap("%d championnat%s suivi%s en détail, les autres en résultats rapides." % [detailed, "s" if detailed > 1 else "", "s" if detailed > 1 else ""],17,C.MUTED))
-		var choose := G.button("Championnats simulés…", func():
+		comfort.add_child(C.wrap("%d championnat%s suivi%s en détail, les autres suivis de loin." % [detailed, "s" if detailed > 1 else "", "s" if detailed > 1 else ""],17,C.MUTED))
+		var choose := G.button("Championnats suivis…", func():
 			dialog.queue_free()
 			preload("res://ui/league_detail_view.gd").open_career(app))
 		choose.name = "PreferencesLeagueDetail"
 		comfort.add_child(choose)
 	var camera := _choice(comfort,"Caméra préférée",["TV","Vue de dessus","Action"],"PreferencesCamera")
 	var quality := _choice(comfort,"Qualité de la scène",["Économie","Équilibrée","Détaillée"],"PreferencesQuality")
+	var autosave := _choice(comfort,"Sauvegarde automatique",["Chaque jour","Chaque semaine","Chaque mois"],"PreferencesAutosave")
+	autosave.tooltip_text = "Sauvegarde complète à la fin d’une avance du calendrier. Chaque décision est notée aussitôt ; la fermeture et « Sauvegarder » enregistrent toujours tout."
 	var sound_profile: RefCounted = app.soundscape.preferences if is_instance_valid(app.soundscape) else null
 	sound.add_child(C.label("MIXAGE DE L’INTERFACE ET DU STADE",20,C.GOLD,true,700))
 	sound.add_child(C.wrap("Les sons d’interface et l’ambiance du stade ont chacun leur volume.",18,C.IVORY))
 	var interface_volume := _volume(sound,"Sons d’interface","PreferencesInterfaceVolume")
 	var stadium_volume := _volume(sound,"Ambiance du stade","PreferencesStadiumVolume")
+	var music_volume := _volume(sound,"Musique du Bureau et des menus","PreferencesMusicVolume")
+	var music_on := _flag(sound,"Musique","PreferencesMusicOn")
+	var music_in_match := _flag(sound,"Musique pendant les matchs","PreferencesMusicInMatch")
+	var match_sounds := _flag(sound,"Sons de match (public, sifflets, ambiance du stade)","PreferencesMatchSounds")
 	sound.add_child(C.wrap("0 coupe le canal. L’ambiance accompagne le direct visible. Le volume global garde son réglage.",17,C.MUTED))
 	display.add_child(C.label("AFFICHAGE ET UNITÉS",20,C.GOLD,true,700))
 	var screen_count := 0 if DisplayServer.get_name() == "headless" else DisplayServer.get_screen_count()
@@ -91,6 +97,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	continue_messages.tooltip_text = "Les matchs, rendez-vous et décisions obligatoires arrêtent toujours « Continuer »."
 	var continue_injuries := _option(continue_row,["Blessures : titulaires","Blessures : tout l’effectif"],"PreferencesContinueInjuries")
 	continue_injuries.tooltip_text = continue_messages.tooltip_text
+	var continue_flow := _option(continue_row,["Flux : allégé","Flux : équilibré","Flux : complet"],"PreferencesContinueFlow")
+	continue_flow.tooltip_text = "Éléments « À noter » qui arrêtent « Continuer » (ils restent tous en Réception).\nAllégé : veille de match. Équilibré : + amicaux, stage, dernier point recrutement. Complet : + retour des internationaux.\nLes décisions à prendre arrêtent toujours."
 	stadium.tooltip_text = "Le réglage s’applique au stade 3D et est conservé pour les prochains matchs."
 	var error := C.wrap("",18,C.ALERT)
 	error.name = "PreferencesError"
@@ -108,6 +116,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		stadium.select(1 if profile.data.stadium == "evening" else 0)
 		continue_messages.select(maxi(0,["importants","tous","aucun"].find(str(profile.data.get("continue_messages","importants")))))
 		continue_injuries.select(1 if profile.data.get("continue_injuries") == "effectif" else 0)
+		continue_flow.select(maxi(0,["allege","equilibre","complet"].find(str(profile.data.get("continue_flow","equilibre")))))
+		autosave.select(maxi(0,profile.AUTOSAVE.find(str(profile.data.get("autosave","semaine")))))
 		if screen.item_count > screen_labels.size(): screen.remove_item(screen.item_count-1)
 		var saved_screen: int = profile.data.display_screen
 		if saved_screen >= screen_count:
@@ -118,9 +128,19 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 			screen.select(saved_screen+1)
 		interface_volume.editable = sound_profile != null
 		stadium_volume.editable = sound_profile != null
+		music_volume.editable = sound_profile != null
+		music_on.disabled = sound_profile == null
+		match_sounds.disabled = sound_profile == null
 		if sound_profile != null:
 			interface_volume.set_value_no_signal(sound_profile.get_value("interface_volume"))
 			stadium_volume.set_value_no_signal(sound_profile.get_value("stadium_volume"))
+			music_volume.set_value_no_signal(sound_profile.get_value("music_volume"))
+			music_on.set_pressed_no_signal(sound_profile.get_flag("music_on"))
+			music_in_match.set_pressed_no_signal(sound_profile.get_flag("music_in_match"))
+			match_sounds.set_pressed_no_signal(sound_profile.get_flag("match_sounds"))
+			music_in_match.disabled = not sound_profile.get_flag("music_on")
+		else:
+			music_in_match.disabled = true
 		var reasons: Array[String] = []
 		if not profile.last_error.is_empty(): reasons.append(profile.last_error)
 		if sound_profile != null and not sound_profile.last_error.is_empty(): reasons.append(sound_profile.last_error)
@@ -139,12 +159,21 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	stadium.item_selected.connect(func(index: int): profile.set_value("stadium",["day","evening"][index]); refresh.call())
 	continue_messages.item_selected.connect(func(index: int): profile.set_value("continue_messages",["importants","tous","aucun"][index]); refresh.call())
 	continue_injuries.item_selected.connect(func(index: int): profile.set_value("continue_injuries",["titulaires","effectif"][index]); refresh.call())
+	continue_flow.item_selected.connect(func(index: int): profile.set_value("continue_flow",["allege","equilibre","complet"][index]); refresh.call())
+	autosave.item_selected.connect(func(index: int): profile.set_value("autosave",profile.AUTOSAVE[index]); refresh.call())
 	interface_volume.value_changed.connect(func(value: float):
 		if sound_profile != null: sound_profile.set_value("interface_volume",int(value))
 		refresh.call())
 	stadium_volume.value_changed.connect(func(value: float):
 		if sound_profile != null: sound_profile.set_value("stadium_volume",int(value))
 		refresh.call())
+	music_volume.value_changed.connect(func(value: float):
+		if sound_profile != null: sound_profile.set_value("music_volume",int(value))
+		refresh.call())
+	for item in [[music_on,"music_on"],[music_in_match,"music_in_match"],[match_sounds,"match_sounds"]]:
+		item[0].toggled.connect(func(value: bool):
+			if sound_profile != null: sound_profile.set_value(item[1],value)
+			refresh.call())
 	var reset := G.button("Réinitialiser ces préférences",func(): profile.reset_defaults(); refresh.call())
 	reset.name = "PreferencesReset"; comfort.add_child(reset)
 	display.add_child(C.wrap("Le mode de fenêtre s’applique à cette session.",18,C.IVORY))
@@ -188,6 +217,11 @@ static func _volume(parent: Node, caption: String, id: String) -> SpinBox:
 	volume.update_on_text_changed = false
 	volume.suffix = "%"; volume.custom_minimum_size = Vector2(150,36); row.add_child(volume)
 	return volume
+
+static func _flag(parent: Node, caption: String, id: String) -> CheckBox:
+	var box := CheckBox.new()
+	box.name = id; box.text = caption; parent.add_child(box)
+	return box
 
 static func _choice(parent: Node, caption: String, values: Array, id: String) -> OptionButton:
 	var row := G.h(12); parent.add_child(row)

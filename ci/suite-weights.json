@@ -177,8 +177,12 @@
       "tests/native-stats-melees.cjs": 35,
       "tests/player-population.cjs": 2,
       "tests/press-regional-world.cjs": 140,
+      "tests/reactivite-projection-verification.cjs": 170,
+      "tests/reactivite-projection-rapide.cjs": 130,
+      "tests/reactivite-projection-decisions.cjs": 100,
       "tests/salary-floor-resume.cjs": 22,
       "tests/sauvegarde-idempotente.cjs": 233,
+      "tests/sauvegarde-journal-monde.cjs": 70,
       "tests/save-copy-fast-paths.cjs": 60,
       "tests/save-sections-incremental.cjs": 64,
       "tests/season-label.cjs": 9,
@@ -189,6 +193,7 @@
       "tests/world-debut-13-juillet.cjs": 72,
       "tests/world-finance-ko.cjs": 23,
       "tests/world-nationale-squad.cjs": 18,
+      "tests/world-reprise-decisions.cjs": 118,
       "tests/world-reprise-preparation.cjs": 99,
       "tests/world-reprise.cjs": 41,
       "tests/world-stades-retours.cjs": 75,
@@ -200,7 +205,9 @@
       "tests/youth-portraits-origin.cjs": 13,
       "tests/world-rating-scale.cjs": 45,
       "tests/presse-promesses-monde.cjs": 196,
-      "tests/presse-promesses-saison.cjs": 380
+      "tests/presse-promesses-saison.cjs": 380,
+      "tests/sauvegarde-journal-plantage-monde.cjs": 76,
+      "tests/world-reprise-a-noter.cjs": 61
     }
   },
   "godot": {
@@ -217,12 +224,16 @@
       "tests/godot-international-reception.cjs": 19,
       "tests/godot-match-framing.cjs": 3,
       "tests/godot-regen-bank-v2.cjs": 7,
+      "tests/godot-ouverture-ecrans.cjs": 90,
+      "tests/godot-portraits-progressifs.cjs": 3,
+      "tests/godot-reactivite-interface.cjs": 150,
       "tests/godot-regen-portraits.cjs": 2,
       "tests/godot-soundscape06.cjs": 2,
       "tests/match-pass-live.cjs": 2,
       "tests/godot-analysis-club-graphics.cjs": 2,
       "tests/godot-entity-projections.cjs": 2,
       "tests/godot-gabi-composition.cjs": 2,
+      "tests/godot-gabi-bandeau.cjs": 75,
       "tests/godot-match-animations.cjs": 2,
       "tests/godot-match-choregraphie.cjs": 19,
       "tests/godot-match-entracte-2d-capture.cjs": 2,
@@ -299,7 +310,14 @@
       "tests/world-domestic-venues.cjs": 1344,
       "tests/youth-matches-worker.cjs": 2048,
       "tests/youth-matches.cjs": 1880,
-      "tests/world-rating-scale.cjs": 1900
+      "tests/world-rating-scale.cjs": 1900,
+      "tests/reactivite-projection-verification.cjs": 2370,
+      "tests/reactivite-projection-rapide.cjs": 2370,
+      "tests/reactivite-projection-decisions.cjs": 2370,
+      "tests/sauvegarde-journal-monde.cjs": 2370,
+      "tests/sauvegarde-journal-plantage-monde.cjs": 2370,
+      "tests/world-reprise-decisions.cjs": 3945,
+      "tests/world-reprise-a-noter.cjs": 3945
     }
   }
 }

@@ -14,12 +14,55 @@ static func daily(meta: Dictionary, fixture: Variant, route: String) -> Dictiona
 		if route == "Préparation":
 			return {"route": "Match", "label": "ALLER AU MATCH  →", "short": "Jour de match"}
 		return {"route": "Préparation", "label": "PRÉPARER LE MATCH  →", "short": "Préparer"}
+	# « Doit répondre » (façon FM) : une décision de la préparation attend ; le bouton change de libellé et ouvre
+	# « La reprise » au lieu d'avancer (reprise.cjs, meta.decisionsDue).
+	var due: Array = meta.get("decisionsDue", []) if meta.get("decisionsDue") is Array else []
+	if not due.is_empty():
+		return {"open": "reprise", "label": "DÉCISION ATTENDUE  →", "short": "Décision attendue", "tooltip": "Décision attendue : Gabi attend votre réponse dans « La reprise » avant de continuer."}
 	var today := str(meta.get("calendarToday", ""))
 	if today.is_empty() or not bool(cadence.get("canAdvance", false)):
 		return {"disabled": true, "label": str(cadence.get("reason", "L’avance est indisponible.")), "short": "Continuer"}
 	# « Continuer » (façon Football Manager) : le moteur avance jour après jour jusqu'au prochain événement
 	# (match, rendez-vous, presse, courrier, blessure…), avant-saison comprise ; voir native/engine/continuer.cjs.
-	return {"command": CONTINUE_COMMAND, "payload": {"fromDate": today}, "label": "CONTINUER  →", "short": "Continuer"}
+	return {"command": CONTINUE_COMMAND, "payload": {"fromDate": today}, "label": "CONTINUER  →", "short": "Continuer", "tooltip": continue_tooltip(meta)}
+
+const WEEKDAYS := ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."]
+
+## Info-bulle de « Continuer » : le prochain arrêt prévisible annoncé par le moteur (meta.continuePlan :
+## rencontre du club, reprise de l'entraînement, rendez-vous en file) et ce qui peut arrêter l'avance plus tôt.
+static func continue_tooltip(meta: Dictionary) -> String:
+	var lines: Array[String] = ["Continuer jusqu’au prochain événement."]
+	var plan: Variant = meta.get("continuePlan")
+	var today := str(meta.get("calendarToday", ""))
+	if plan is Dictionary and not str(plan.get("date", "")).is_empty():
+		var date := str(plan.date)
+		var what := ""
+		match str(plan.get("kind", "")):
+			"match": what = "Match contre " + str(plan.get("opponent", "l’adversaire")) if not str(plan.get("opponent", "")).is_empty() else "Jour de match"
+			"reprise": what = "Reprise de l’entraînement"
+			"decision": what = "Décision attendue : " + str(plan.get("detail", "")).to_lower()
+			"a_noter": what = "À noter : " + str(plan.get("detail", ""))
+			_: what = str(plan.get("detail", "Rendez-vous du club"))
+		lines.append("Prochain arrêt prévu : %s, %s%s." % [what, short_date(date), in_days(today, date)])
+	lines.append("Arrêt plus tôt si un rendez-vous, un courrier important, une offre ou la blessure d’un titulaire l’exige.")
+	lines.append("Jour suivant : un seul jour (Ctrl+J).")
+	return "\n".join(lines)
+
+## « sam. 19/09 » depuis une date ISO.
+static func short_date(iso: String) -> String:
+	var parts := iso.split("-")
+	if parts.size() != 3: return iso
+	var unix := Time.get_unix_time_from_datetime_string(iso + "T12:00:00")
+	var weekday := int(Time.get_datetime_dict_from_unix_time(unix).get("weekday", 0))
+	return "%s %s/%s" % [WEEKDAYS[weekday], parts[2], parts[1]]
+
+## « (dans 5 jours) », « (demain) » ou rien.
+static func in_days(today: String, date: String) -> String:
+	if today.is_empty() or date.is_empty(): return ""
+	var days := int(round((Time.get_unix_time_from_datetime_string(date + "T12:00:00") - Time.get_unix_time_from_datetime_string(today + "T12:00:00")) / 86400.0))
+	if days <= 0: return " (aujourd’hui)"
+	if days == 1: return " (demain)"
+	return " (dans %d jours)" % days
 
 const CONTINUE_COMMAND := "advance_until_event"
 
@@ -33,4 +76,5 @@ static func next_day(meta: Dictionary, fixture: Variant) -> Dictionary:
 static func continue_stops(preferences: Dictionary) -> Dictionary:
 	var messages := str(preferences.get("continue_messages", "importants"))
 	var blessures := str(preferences.get("continue_injuries", "titulaires"))
-	return {"messages": messages if messages in ["importants", "tous", "aucun"] else "importants", "blessures": blessures if blessures in ["titulaires", "effectif"] else "titulaires"}
+	var flux := str(preferences.get("continue_flow", "equilibre"))
+	return {"messages": messages if messages in ["importants", "tous", "aucun"] else "importants", "blessures": blessures if blessures in ["titulaires", "effectif"] else "titulaires", "flux": flux if flux in ["allege", "equilibre", "complet"] else "equilibre"}

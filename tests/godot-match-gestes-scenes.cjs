@@ -8,14 +8,17 @@
 // Un recalibrage des probabilités (course, finition, pénalités, conquête) ne change donc plus cette fixture ; seul un
 // changement de la mise en scène elle-même (faits, positions, commentaires) la régénère :
 //   node tests/godot-match-gestes-scenes.cjs > tests/fixtures/match-gestes-sequence.json
-const { context } = require('./harness.cjs');
+const { context } = require('./monde-harness.cjs');
 const T = require('./helpers/tirages.cjs');
 const { normalize } = require('../dist/match3d/scene-adapter.js');
 
 function sequence() {
-  const { run } = context();
+  const h = context(827381, { club: 0 });
+  try {
+  h.toMatch();
+  const { run } = h;
   // Quinze joueurs par camp (le test Godot désigne chacun des quinze postes comme porteur) : aucun carton, aucun remplacement.
-  run(`start(0); S.tactic="conquete"; beginMatch(); pauseMatch(); var l = S.live;
+  run(`S.tactic="conquete"; beginMatch(); pauseMatch(); var l = S.live;
     delete l.penalitesVersion; // pas de pénalité de conquête : on veut la conquête elle-même
     l.paused = false; syncMatchPresentation(l);
     l.playbooks.forEach(p => p.lineout = "maul"); l.penaltyPolicies = ["touch", "touch"]; l.minute = 21;
@@ -51,8 +54,11 @@ function sequence() {
   return { club: 0, frames: retenues.map(frame => ({
     scene: frame.scene, teams: frame.teams,
     events: frame.event ? [{ min: frame.event.min, text: frame.event.text, type: frame.event.type,
-      scene: { kind: frame.event.scene.kind, team: frame.event.scene.team, move: frame.event.scene.move || null } }] : [],
+      scene: { kind: frame.event.scene.kind, team: frame.event.scene.team, move: frame.event.scene.move || null,
+      // « porte » : la conquête annonce l'essai sur ballon porté (le geste de la vue pousse d'autant plus loin).
+      ...(frame.event.scene.porte === true ? { porte: true } : {}) } }] : [],
   })) };
+  } finally { h.close(); }
 }
 
 module.exports = { sequence };

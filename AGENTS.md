@@ -1,155 +1,103 @@
-# Cadrage Débordement
+# Rugby Legacy 27 (dépôt Cadrage Débordement)
 
 ## Cycle de travail
 
-GitHub est la référence pour le code et l’avancement. À chaque reprise,
-vérifier le `main` de [Xynph/cadrage-debordement](https://github.com/Xynph/cadrage-debordement)
-et les PR pertinentes avant de modifier une copie locale.
+- GitHub fait référence : à chaque reprise, partir du `main` de
+  [Xynph/cadrage-debordement](https://github.com/Xynph/cadrage-debordement) et des PR utiles.
+- **Coordination Claude / Codex** : le ticket [#591](https://github.com/Xynph/cadrage-debordement/issues/591)
+  est le tableau commun (règles en tête du ticket). Avant un chantier, vérifier
+  l'absence de doublon ; le réserver (`RÉSERVÉ`) ; signaler `PRÊT`,
+  `FUSION EN COURS`, `FUSIONNÉ` et tout changement de données figées à régénérer.
+  Lire le tableau en tête du ticket, pas tout l'historique des commentaires.
+- Les producteurs travaillent sur des branches distinctes et des périmètres
+  compatibles ; la description de la PR est la passation
+  ([cycle court](docs/developpement-parallele.md)).
+- **CI** ([détail](docs/ci-debit-20261112.md)) : PR ouverte en brouillon (CI
+  légère, « Validation CI » rouge exprès : ne pas le « réparer ») ; passée en
+  prête, elle lance la batterie complète. Les jobs « Godot i/3 » sont bloquants
+  quand le diff touche Godot (`native/godot/`, `tests/godot-*`, lanceurs) et
+  sautés sinon. Recette SDK ciblée : étiquette `godot-sdk`. Vérifications
+  lourdes (SDK, économie, résilience, Windows) : créneau régulier sur `main`.
+- **PC de Léo indisponible** : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot) ; résultats lisibles via la branche `resultats-en-ligne` (`runs/<run_id>/`, extraits par `ci/en-ligne.sh` dans `/tmp/en-ligne/<run_id>/`), l'artefact étant bloqué ; `--captures intro,fiche-club` limite les captures ; ne jamais créer de branche `tmp/` ailleurs : le workflow supprime seul `en-ligne/*` et `tmp/*` (`bash ci/en-ligne.sh --menage`).
+- **Fusion automatique** (décision de Léo, 16/11/2026) : en passant une PR en
+  prête, activer la fusion auto de GitHub en squash
+  (`gh api -X PUT repos/Xynph/cadrage-debordement/pulls/<n>/ccr/auto_merge -f merge_method=squash`
+  depuis Claude Code, sinon `gh pr merge <n> --auto --squash`). GitHub fusionne
+  seul dès que la CI obligatoire est verte : ne pas surveiller la CI en boucle.
+  Un seul intégrateur arbitre les collisions et les protections serveur ; le
+  [gate officiel](docs/chat-release-gate.md) reste pour un lot sensible.
+  Aucun push direct sur `main`, jamais de contournement d'un contrôle rouge ou
+  d'une réservation non résolue. Si la CI est rouge, la PR attend : corriger.
+- Expliquer chaque phase en une phrase, rendre le résultat, le lien de PR et
+  la prochaine étape. Messages courts.
 
-**Coordination Claude / Codex (obligatoire depuis le 12 novembre 2026, demande
-de Léo)** : le ticket [#591](https://github.com/Xynph/cadrage-debordement/issues/591)
-est le tableau commun des chantiers. Avant de commencer, le lire pour éviter
-tout doublon ; en commençant, réserver le chantier (ligne du tableau et
-commentaire `RÉSERVÉ`) ; signaler `PRÊT`, `FUSION EN COURS` et `FUSIONNÉ`, ainsi
-que tout changement de données figées que les autres branches devront
-régénérer. Les règles détaillées sont en tête du ticket.
+- Évolution de gameplay ou d'interface : appliquer la
+  [boucle courte](docs/developpement-jeu-boucle-courte.md) (décision de manager,
+  reproduction Monde, rejeu ciblé, observation dans le vrai Godot, puis recette
+  complète). [Pont local](tools/godot-agent/README.md) pour piloter et capturer ;
+  voir `.agents/skills/rugby-legacy-boucle-courte/SKILL.md`. Un seul Godot à la fois.
 
-Les producteurs travaillent sur des branches distinctes et des périmètres
-compatibles. La description de la PR est la passation. Le
-[cycle court](docs/developpement-parallele.md) précise quand signaler une
-collision, quels tests consigner et comment préparer la reprise.
+## Kit Claude Code Game Studios
 
-**Débit CI** ([détail](docs/ci-debit-20261112.md)) : ouvrir chaque PR en
-brouillon et pousser librement (CI légère : classification et syntaxe, verdict
-« Validation CI » volontairement rouge) ; passer la PR en prête quand elle est
-prête, ce qui lance la batterie complète (7 runners). Ne pas « réparer » un
-rouge de brouillon : il signifie seulement « batterie non lancée ».
-Depuis le 14/11, les suites Godot (jobs « Godot i/3 ») sont BLOQUANTES, intégrées à « Validation CI » dans
-le workflow : elles tournent sur une PR prête dont le diff touche des fichiers Godot (`native/godot/`, `tests/godot-*`,
-lanceurs et plan de shards Godot, ce workflow) et doivent réussir ; sur toute autre PR le job est sauté, ce qui ne fait pas
-échouer l'agrégateur. Elles restent informatives sur le créneau régulier. Les autres vérifications lourdes d'après
-fusion (SDK, économie, résilience, recette Windows) tournent sur créneau régulier (2 à 4 h) sur le dernier `main`, la
-batterie JS à chaque fusion ; pour la recette SDK ciblée d'une PR prête, poser l'étiquette
-`godot-sdk`. Une PR prête dont « Validation CI » est vert se fusionne sans attendre.
+Rôles dans `.claude/agents/`, commandes dans `.claude/skills/` (Claude Code) et
+`.agents/skills/` (Codex, qui lit d'abord `.agents/skills/ccgs-studio/SKILL.md`).
+Ce fichier prime sur le kit. Mode autonome (`project.yaml`) : seules
+suppressions, opérations destructives et dépenses demandent l'accord de Léo.
+Toute commande ajoutée ou modifiée dans `.claude/skills/` l'est aussi dans
+`.agents/skills/`.
 
-Léo a donné son accord de principe aux intégrations ordinaires le 2 novembre
-2026. Un seul intégrateur arbitre et applique les protections serveur et le
-[gate officiel déployé](docs/chat-release-gate.md), avec toute autorisation
-qu’il exige. Aucun push direct sur `main`.
+## Modèles, effort et quota (règle permanente de Léo)
 
-Le 11 novembre 2026, Léo a confirmé son autorisation permanente de fusionner
-dans le périmètre demandé. Ne pas redemander cet accord déjà fourni : appliquer
-le gate officiel, les protections serveur et la coordination des responsabilités.
-Une réservation non résolue ou un contrôle rouge reste un blocage à traiter,
-sans contourner les contrôles ni élargir le périmètre autorisé.
-
-Expliquer brièvement chaque phase à Léo en français, puis avancer dans le
-périmètre autorisé. Rendre le résultat, le lien de la PR et la prochaine étape
-concrète.
-
-## Kit Claude Code Game Studios (Claude et Codex)
-
-Depuis le 15/11/2026, le dépôt embarque le kit CCGS (MIT) : 49 rôles de studio
-dans `.claude/agents/`, ~78 commandes. Claude Code les charge depuis `.claude/` ;
-Codex les trouve dans `.agents/skills/` (mêmes commandes) et lit d'abord
-`.agents/skills/ccgs-studio/SKILL.md` (rôles et adaptation des commandes
-écrites pour Claude Code). Ce fichier `AGENTS.md` prime sur le kit ; le mode est
-autonome (`project.yaml`) : seules suppressions, opérations destructives et
-dépenses demandent l'accord de Léo. Une commande ajoutée ou modifiée dans
-`.claude/skills/` doit l'être aussi dans `.agents/skills/`.
-
-Pour une évolution de gameplay ou d'interface, appliquer la
-[boucle courte](docs/developpement-jeu-boucle-courte.md) : décision de manager,
-reproduction Monde, rejeu ciblé, puis observation dans le vrai Godot et recette
-complète. Le [pont local](tools/godot-agent/README.md) fournit le pilotage et les
-captures sur une copie de développement. Lire aussi
-`.agents/skills/rugby-legacy-boucle-courte/SKILL.md` ; un seul Godot à la fois,
-aucun agent supplémentaire sans accord de Léo.
-
-## Modèles, effort et quota
-
-Règle permanente de Léo, transmise le 12 novembre 2026 :
-
-- Partir du modèle courant avec un effort moyen lorsque le réglage est
-  accessible. Le modèle **et** l'effort choisis par Léo pour la session sont
-  un plafond : ne jamais les dépasser, y compris pour les sous-tâches.
-- Réserver les modèles légers au travail cadré dont une erreur se vérifie
-  facilement : recherche, lecture de logs, exécution de tests, régénération,
-  renommage ou conflit simple. Garder les décisions et modifications
+- Le modèle **et** l'effort de la session sont un plafond, sous-tâches comprises.
+- Modèle léger pour le cadré et vérifiable (recherche, logs, tests,
+  régénération, renommage, conflit simple) ; décisions et modifications
   importantes au modèle principal.
-- Pour une difficulté de conception, d'interface, de moteur, d'économie,
-  d'architecture ou un bug inexpliqué, commencer par un moyen de vérifier
-  (test, build, script), puis augmenter l'effort dans le plafond autorisé,
-  avant d'envisager un modèle plus puissant dans ce même plafond.
-- Aucun sous-agent ni aucune session supplémentaire en parallèle sans
-  l'accord de Léo. Une recommandation de skill ne vaut pas cet accord.
-- Garder les lectures et comptes rendus ciblés ; changer de réglage à une
-  fin d'étape avec passation, jamais au milieu d'un raisonnement.
-- Dans les comptes rendus, préciser pour chaque tâche lancée le modèle et
-  l'effort réellement utilisés. Si le runtime n'expose pas ces informations
-  ou ne permet pas de les changer, le dire ; distinguer ce constat de la
-  recommandation GPT-6.1 Sol et ne pas inventer un changement de réglage.
+- Difficulté (conception, interface, moteur, économie, architecture, bug
+  inexpliqué) : d'abord un moyen de vérifier, puis plus d'effort, puis seulement
+  un modèle plus puissant, toujours sous le plafond.
+- Pas de session parallèle supplémentaire sans accord de Léo.
+- Lectures ciblées : `.ignore` exclut les grosses données des recherches ;
+  ne pas lire `DEVELOPPEMENT.md` ni `README.md` en entier.
+- Dans chaque compte rendu : modèle et effort réellement utilisés, et réglage
+  recommandé pour la suite (Codex : effort GPT‑6.1 Sol ; Claude : modèle et
+  effort Claude, voir `CLAUDE.md`). Ne pas inventer un réglage non exposé.
 
-## Registre partagé des ressources
+## Ressources
 
-À chaque reprise de Rugby Legacy, consulter le [registre des ressources utiles](docs/ressources-utiles.md)
-avant une recherche ou une réutilisation d’assets, bibliothèques ou inspirations.
-Y enregistrer les nouveaux liens utiles transmis par Léo ou retenus pendant le
-travail : provenance, utilité, coût/licence, statut, date et preuve de vérification.
-Mettre à jour les décisions sans prétendre avoir lu, essayé ou intégré un contenu
-sur la seule présence de son URL. Ce registre partagé sert aux reprises PC et
-Cloud ; les anciens chats ne constituent pas un inventaire exhaustif automatique.
+Avant toute recherche d'assets, bibliothèques ou inspirations, consulter le
+[registre](docs/ressources-utiles.md) ; y consigner tout nouveau lien retenu
+(provenance, utilité, coût/licence, statut, date, preuve). Ne pas prétendre
+avoir lu ou intégré un contenu sur la seule présence de son URL.
 
-## Collaboration et esprit critique
+## Esprit critique
 
-- Léo attend un partenaire critique pour tout Rugby Legacy : ne pas approuver
-  automatiquement ses propositions. En cas de désaccord, le dire clairement,
-  expliquer pourquoi avec les conséquences concrètes pour le jeu, puis proposer
-  la solution recommandée.
-- Signaler spontanément les incohérences et les améliorations utiles, y compris
-  quand une demande est techniquement réalisable mais dessert la lisibilité,
-  le réalisme, l’équilibrage ou le plaisir de jeu. Ne pas dissimuler un désaccord
-  derrière un simple « oui, mais » ou une exécution silencieusement différente.
-- Distinguer ce qui existe et a été vérifié de ce qui est proposé ou reste à
-  réaliser. Après discussion, les choix explicites de Léo priment ; avancer sans
-  demandes répétées de confirmation.
-- Dans chaque message adressé à Léo sur Rugby Legacy, indiquer en français le
-  niveau d’effort recommandé pour GPT‑6.1 Sol, adapté à la tâche ou à la prochaine
-  étape, afin qu’il puisse l’ajuster. Réserver cette recommandation aux échanges
-  sur Rugby Legacy.
+Partenaire critique, pas approbateur : dire un désaccord clairement avec ses
+conséquences pour le jeu et proposer la solution recommandée, puis la
+corriger. Signaler les incohérences même quand la demande est faisable.
+Distinguer vérifié, proposé et à faire. Les choix explicites de Léo priment.
 
 ## Contraintes produit
 
-- Avant de modifier un match, un effectif, la discipline ou une compétition,
-  lire [les références du rugby](docs/rugby-rules-reference.md). Fixer la
-  saison simulée et vérifier les lois officielles et les dispositions
-  françaises applicables. Distinguer règles, abstractions volontaires et
-  points non vérifiés. Écarter par défaut les variantes amateurs, jeunes et à
-  sept du XV adulte d’élite. La réussite des tests ne suffit pas à établir
-  la conformité aux règles.
-- Avant d’intégrer des données réelles, consulter
-  [les données du jeu](docs/donnees-du-jeu.md). Conserver la provenance des
-  données et estimations dans les métadonnées et la documentation technique.
-- Pour la version portable, lire [la documentation hors ligne](offline/README.md).
-  Stocker les carrières hors du dossier de l’exécutable et rendre les erreurs
-  d’écriture visibles, sans repli silencieux. Réserver la mention « testé sous
-  Windows » à une exécution native vérifiée.
-- Mode Monde uniquement (décision de Léo, 13/11/2026) : aucun test ne doit
-  tourner dans l'ancien mode de carrière France ni dans les autres anciens
-  modes ; tout nouveau test crée une carrière world-champ. Les tests encore
-  marqués CD_MODES_HERITES sont exclus de la CI jusqu'à leur migration ou
-  suppression.
+- Match, effectif, discipline, compétition : lire d'abord
+  [les références du rugby](docs/rugby-rules-reference.md) ; fixer la saison,
+  vérifier lois officielles et dispositions françaises ; XV adulte d'élite
+  seulement ; des tests verts ne prouvent pas la conformité aux règles.
+- Données réelles : lire [les données du jeu](docs/donnees-du-jeu.md) ; garder
+  la provenance dans les métadonnées. Vrais noms, photos, logos : uniquement
+  dans le dépôt privé `rugby-reel-donnees`.
+- Version portable : [doc hors ligne](offline/README.md) ; carrières hors du
+  dossier de l'exécutable ; erreurs d'écriture visibles. « Testé sous Windows »
+  seulement après exécution native vérifiée.
+- Mode Monde uniquement (décision de Léo, 13/11/2026) : aucun test dans l'ancien
+  mode France ni les autres anciens modes ; tout nouveau test crée une carrière
+  world-champ. Les tests encore marqués CD_MODES_HERITES sont exclus de la CI
+  jusqu'à leur migration ou suppression.
+- Cap : consolider (améliorer l'existant) plutôt qu'ajouter.
 
-## Immersion et textes du jeu
+## Immersion (10/11/2026)
 
-Préférence explicite de Léo, 10 novembre 2026 : tout l’univers de Rugby Legacy
-est présenté naturellement du point de vue du manager pour préserver
-l’immersion : personnages, clubs, événements, finances, dialogues et écrans.
-Ne pas afficher de badge ou d’avertissement « personnage fictif », « profil
-généré par IA », « montant fictif » ou de rappels similaires sur le caractère
-fictif du jeu. Montrer les informations utiles à la décision et employer le
-vocabulaire du club. La provenance et les distinctions de sources restent
-internes aux données et à la documentation technique, sans faux justificatif
-de source affiché. Conserver les coûts, risques, inconnues et conditions
-utiles, les erreurs réelles de sauvegarde ou de connexion, les réglages et
-les crédits nécessaires. Cette règle concerne aussi les futurs contenus.
+Tout est présenté du point de vue du manager, avec le vocabulaire du club.
+Aucun badge ni rappel « fictif », « généré par IA », « montant fictif ». Garder
+coûts, risques, inconnues, vraies erreurs de sauvegarde ou de connexion,
+réglages et crédits. Provenance et sources restent internes aux données et à
+la doc technique.

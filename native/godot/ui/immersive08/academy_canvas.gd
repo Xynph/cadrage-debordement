@@ -117,7 +117,6 @@ func _heading() -> void:
 		D.text(card, 66, 37, entry[2], 34, entry[4], 700, width - 73)
 		D.text(card, 66, 62, entry[3], 19, C.IVORY, 500, width - 73)
 		x += width + 17.0
-	D.scenario_photo(hero, "chair", Rect2(2070, 9, 158, 142))
 	integration = _action(hero, Rect2(1709, 160, 519, 65), "Préparer une intégration", _integration_dialog, true, "arrow", "AcademyPrepareIntegration")
 	integration.add_theme_font_size_override("font_size", C.px(35))
 	_update_integration()
@@ -415,7 +414,7 @@ func _staff_page() -> void:
 	_action(panel, Rect2(931, 428, 437, 63), "Ouvrir le staff", func(): app._navigate("Staff"), false, "arrow", "AcademyOpenStaff")
 
 func _inactive_pathway_status() -> String:
-	return "Parcours à activer" if pathway.get("available", false) else "Parcours indisponibles"
+	return "Parcours à activer" if pathway.get("available", false) else "Au calendrier des Espoirs"
 
 func _lower_pathways() -> void:
 	var tile := D.panel(self, Rect2(1, 916, 1272, 303), "Parcours de formation · les prochaines étapes", "school", "", "AcademyLowerPathways")

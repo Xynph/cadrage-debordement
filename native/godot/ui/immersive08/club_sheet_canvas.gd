@@ -13,6 +13,7 @@ const Link = preload("res://ui/entity_link.gd")
 const Knowledge = preload("res://ui/player_knowledge_text.gd")
 const EquipeType = preload("res://ui/equipe_type_view.gd")
 const Notes = preload("res://ui/notes_match.gd")
+const Palmares = preload("res://ui/immersive08/palmares_text.gd")
 const ROUTE := "Fiche club"
 const WIDTH := 2248
 const HEIGHT := 1240
@@ -65,18 +66,38 @@ static func build(owner_app: Control, canvas: Control) -> void:
 	D.place(page, Rect2(0, 0, WIDTH, HEIGHT))
 	page._build()
 
+## Fiches gardées en mémoire pour un même instant de carrière (lot 23) : revenir sur un club déjà ouvert ce jour-là
+## ne demande rien au moteur.
+const CACHE_CLUBS := 16
+
 ## Instant de carrière : une fiche en cache n'est plus servie après une journée ou un match.
 static func stamp(owner_app: Control) -> String:
 	var meta: Dictionary = owner_app.model.get("meta", {})
 	return "%s|%s|%s|%d" % [meta.get("season", ""), meta.get("week", ""), meta.get("calendarToday", meta.get("date", "")), owner_app.model.get("history", []).size()]
 
 static func cached(owner_app: Control, id: int) -> Dictionary:
-	var fresh: Variant = owner_app.model.get("clubSheet")
-	if fresh is Dictionary and int(fresh.get("id", -1)) == id:
-		owner_app.set_meta("club_sheet_cache", {"id":id, "stamp":stamp(owner_app), "data":fresh.duplicate(true)})
+	var moment := stamp(owner_app)
 	var cache: Variant = owner_app.get_meta("club_sheet_cache", {})
-	if cache is Dictionary and int(cache.get("id", -1)) == id and cache.get("stamp") == stamp(owner_app): return cache.data
-	return {}
+	if not (cache is Dictionary and cache.get("stamp") == moment and cache.get("sheets") is Dictionary): cache = {"stamp":moment, "sheets":{}, "order":[]}
+	# Fiche lue en lecture seule : le modèle n'est jamais modifié par l'interface, aucune copie n'est utile.
+	var fresh: Variant = owner_app.model.get("clubSheet")
+	if fresh is Dictionary and fresh.get("id") != null and not is_same(cache.sheets.get(int(fresh.id)), fresh):
+		var fresh_id := int(fresh.id)
+		cache.sheets[fresh_id] = fresh
+		cache.order.erase(fresh_id)
+		cache.order.append(fresh_id)
+		while cache.order.size() > CACHE_CLUBS: cache.sheets.erase(cache.order.pop_front())
+	owner_app.set_meta("club_sheet_cache", cache)
+	return cache.sheets.get(id, {})
+
+## Club suivi : la liste du modèle (clubLife.clubSheet.followed) fait foi, elle suit la décision dès le clic ;
+## à défaut, le drapeau de la fiche.
+func _followed() -> bool:
+	var life: Variant = app.model.get("clubLife")
+	var sheet: Variant = life.get("clubSheet") if life is Dictionary else null
+	var followed: Variant = sheet.get("followed") if sheet is Dictionary else null
+	if followed is Array: return followed.any(func(value: Variant) -> bool: return (value is int or value is float) and int(value) == club_id)
+	return bool(data.get("followed", false))
 
 static func request(owner_app: Control, id: int) -> void:
 	var key := "%d|%s" % [id, stamp(owner_app)]
@@ -177,7 +198,7 @@ func _hero() -> void:
 	var stadium := str(data.get("stadium", "")) if data.get("stadium") != null else ""
 	var capacity: Variant = data.get("capacity")
 	D.text(hero, 332, 236, ("Stade : " + stadium if not stadium.is_empty() else "Stade non renseigné") + ("  ·  %s places" % _thousands(capacity) if capacity is float or capacity is int else ""), 28, C.MUTED, 500, 1030)
-	if bool(data.get("followed", false)): D.chip(hero, Rect2(332, 254, 140, 34), "★ Club suivi", C.GOLD)
+	if _followed(): D.chip(hero, Rect2(332, 254, 140, 34), "★ Club suivi", C.GOLD)
 	# Tuiles clés : classement, forme, réputation, effectif.
 	var table: Dictionary = data.get("table", {})
 	var tiles := [
@@ -235,7 +256,7 @@ func _tabs() -> void:
 		D.tab_state(tab, rect.size, i == active, TAB_ICONS[i])
 		tab.toggle_mode = true
 		tab.button_pressed = i == active
-	var followed := bool(data.get("followed", false))
+	var followed := _followed()
 	var actions := [
 		["Ne plus suivre" if followed else "Suivre le club", "ClubSheetFollow", "star" if not followed else "close", _follow.bind(not followed)],
 		["Calendrier", "ClubSheetCalendar", "calendar", _calendar],
@@ -254,9 +275,8 @@ func _select(index: int) -> void:
 	app._render(false)
 
 func _follow(value: bool) -> void:
-	# La fiche est relue après la décision (drapeau « suivi » à jour).
-	app.remove_meta("club_sheet_cache")
-	app.remove_meta("club_sheet_requested")
+	# Lot 23 : la fiche reste affichée (aucune relecture du club) ; le suivi bascule dès le clic (décision optimiste,
+	# optimistic_decisions.gd) et le modèle du moteur le confirme ou l'annule.
 	app._command("club_follow", {"club":club_id, "follow":value})
 
 ## Calendrier du club (matchs joués et à venir de la saison), adversaires cliquables.
@@ -382,9 +402,23 @@ func _overview() -> void:
 		D.text(club, 24, y, str(row[0]), 24, C.MUTED, 500, 250)
 		D.text(club, 280, y, str(row[1]) if row[1] != null and str(row[1]) != "" else "—", 26, C.IVORY, 600, 400)
 		D.line(club, Vector2(24, y + 22), Vector2(676, y + 22), Color(C.LINE, .35))
-		y += 72
+		y += 58
+	_palmares(club, 700)
 	_season_panel()
 	_rivalry_panel()
+
+## Palmarès connu dès le premier jour (titres et dernières saisons), état vide en langage de club.
+func _palmares(panel: Control, width: int) -> void:
+	var palmares: Dictionary = data.get("palmares", {})
+	if palmares.is_empty(): return
+	D.text(panel, 24, 700, "PALMARÈS", 22, C.GOLD, 700, 300)
+	if bool(palmares.get("vide", false)):
+		_paragraph(panel, Rect2(24, 722, width - 48, 100), str(palmares.get("emptyText", "")), 22, "ClubSheetPalmaresVide")
+		return
+	D.text(panel, 24, 762, str(palmares.get("headline", "")), 28, C.MINT, 800, width - 48)
+	var detail := Palmares.titles_text(app.model, palmares, 2)
+	if detail.is_empty(): detail = "\n".join(Palmares.recent_lines(app.model, palmares, 2))
+	_paragraph(panel, Rect2(24, 776, width - 48, 60), detail, 20, "ClubSheetPalmaresDetail")
 
 static func _strategy(value: Variant) -> String:
 	if not value is String or str(value).is_empty(): return "—"
@@ -655,7 +689,7 @@ func _xv() -> void:
 	var side := D.panel(workspace, Rect2(1144, 0, 1104, 844), "XV type de la saison", "tactic", "", "ClubSheetXVList")
 	var source := str(xv.get("source", "probable"))
 	var explanation := ""
-	if total == 0: explanation = "Saison pas encore commencée pour ce club (ou championnat en résultats rapides) : XV probable de la composition automatique."
+	if total == 0: explanation = "Saison pas encore commencée pour ce club (ou championnat suivi de loin) : XV probable de la composition automatique."
 	elif source == "feuilles": explanation = "Le XV qui revient le plus : pour chaque maillot, le joueur le plus souvent titulaire à ce poste sur %d feuille%s de match." % [total, "" if total == 1 else "s"]
 	else: explanation = "XV le plus fréquent sur %d feuille%s ; %d maillot%s complété%s par le XV probable (joueur parti ou poste jamais tenu par un joueur encore au club)." % [total, "" if total == 1 else "s", int(xv.get("completed", 0)), "" if int(xv.get("completed", 0)) == 1 else "s", "" if int(xv.get("completed", 0)) == 1 else "s"]
 	_paragraph(side, Rect2(24, 70, 1056, 96), explanation, 22, "ClubSheetXVSource")

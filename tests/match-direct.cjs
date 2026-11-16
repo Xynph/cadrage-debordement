@@ -176,7 +176,7 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
     let model = demarrer(jeu);
     let deroules = 0;
     const bornes = [], vus = new Set();
-    let verifies = 0, sigles = 0;
+    let verifies = 0, sigles = 0, echantillons = 0;
     for (let k = 0; k < 60 && !model.live.finished && !model.live.atBreak && !(k > 0 && model.live.paused); k++) {
       model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
       const live = model.live, direct = live.direct, events = live.events;
@@ -228,6 +228,14 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
       // compte au moins un plaquage, les faits du journal (en-avant, franchissements) sont repris tels quels.
       const t = Object.fromEntries(direct.tableau.map(r => [r.cle, r]));
       assert.equal(t.possession.valeurs[0] + t.possession.valeurs[1], 100);
+      // Échantillon (lot 5) : avant dix minutes de jeu montré, ni possession ni occupation, et
+      // tous les chiffres sont marqués « court » (atténués à l'écran, jamais commentés par l'adjoint).
+      const minuteVue = vues.filter(l => !l.bandeau && l.kind !== 'break' && l.kind !== 'end').at(-1)?.minute ?? 0;
+      const court = minuteVue < D.ECHANTILLON_MINUTES;
+      assert.deepEqual(direct.echantillon, { minutes: minuteVue, suffisant: !court, seuil: D.ECHANTILLON_MINUTES });
+      assert.ok(direct.tableau.every(r => r.court === court), 'chaque chiffre porte la longueur de l’échantillon');
+      if (court) assert.ok(t.possession.vide && t.occupation.vide, `parts masquées à la ${minuteVue}e minute`);
+      else echantillons++;
       const lignes = vues;
       for (const cote of [0, 1]) {
         const courses = lignes.filter(l => l.kind === 'carry' && l.equipe === 1 - cote && Math.abs(l.x - l.depuis) < 22).length;
@@ -256,6 +264,7 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
     assert.ok(deroules > 20, 'des faits à rejouer pendant les entractes : ' + deroules);
     assert.ok(verifies >= 4, 'temps forts vérifiés : ' + verifies);
     assert.ok(sigles > 0, 'identités affichées vérifiées');
+    assert.ok(echantillons > 0, 'parts affichées une fois l’échantillon suffisant');
   } finally { jeu.fermer(); }
 });
 

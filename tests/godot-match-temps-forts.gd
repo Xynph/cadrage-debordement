@@ -169,6 +169,20 @@ func run() -> void:
 		if vue != null and vue.regie != null:
 			await linked(vue)
 			followed = vue.regie.suivi
+	elif mode == "score_essai":
+		# Carrière Monde arrêtée à la causerie d'avant-match (godot-match-score-essai.cjs).
+		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("monde.json"))})
+		await settle()
+		var limite_s := Time.get_ticks_msec() + 120000
+		while Time.get_ticks_msec() < limite_s and (surface() == null or surface().regie == null):
+			var scene_s: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+			if scene_s is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene_s.key, "phase": scene_s.phase, "skip": true})
+			await settle(2)
+		var vue_s := surface()
+		check(vue_s != null and vue_s.regie != null, "Carrière Monde : le direct en temps forts s'ouvre")
+		if vue_s != null and vue_s.regie != null:
+			await scoring(vue_s)
+			followed = vue_s.regie.suivi
 	elif mode == "defaut":
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("causerie.json"))})
 		await settle()
@@ -220,6 +234,77 @@ func check_liaisons(followed: Array) -> void:
 	var refusees: Array = followed.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison_refusee" or (e.evenement == "echeance" and str(e.get("cause", "")) == "liaison"))
 	check(refusees.is_empty(), "Aucune liaison refusée ni interrompue : " + str(refusees))
 	if not liaisons.is_empty(): print("Liaisons jouées : ", liaisons.map(func(e: Dictionary) -> String: return "%s%s %.1f s" % [str(e.type), " (coupe)" if bool(e.coupe) else "", float(e.get("duree_reelle", 0.0))]))
+
+## Bandeau du score pendant un essai (règle de Léo) : rien n'annonce l'essai avant qu'on le voie ;
+## une fois aplati et légendé, le score suit (+5), puis la transformation vue (+2) ; le bandeau 2D
+## de l'entracte redit le score montré. Mesuré image par image sur les vrais temps forts.
+func scoring(view: Control) -> void:
+	var regie: Node = view.regie
+	var fin := int(OS.get_environment("CD_SCORE_MINUTES")) if OS.get_environment("CD_SCORE_MINUTES").is_valid_int() else 30
+	var deadline := Time.get_ticks_msec() + (int(OS.get_environment("CD_SCORE_LIMITE")) if OS.get_environment("CD_SCORE_LIMITE").is_valid_int() else 900) * 1000
+	var reprise := false
+	var sonde := 0
+	var avant := 0
+	var apres := 0
+	var transfo_avant := 0
+	var transfo_apres := 0
+	var faux: Array = []
+	var inter := 0
+	var inter_faux: Array = []
+	var captures := {}
+	var somme := func(a: Array) -> int: return int(a[0]) + int(a[1])
+	while app.model.get("live") is Dictionary and int(app.model.live.minute) < fin and Time.get_ticks_msec() < deadline:
+		await process_frame
+		sonde += 1
+		if sonde % 600 == 0: print("sonde score : minute ", app.model.live.minute, " état ", regie.etat, " phase ", regie.phase, " index ", regie.index, " pause ", app.model.live.paused, " ", avant, "/", apres)
+		if not reprise and not app.waiting and regie.etat != regie.JEU:
+			reprise = true
+			if app.model.live.paused: app._command("pause", {"paused": false})
+		if regie.etat == regie.INTER and regie.phase != "liaison" and regie.tf.is_empty() == false and regie._retenu.is_empty():
+			var direct: Array = app.model.live.get("direct", {}).get("score", app.model.live.get("score", [0, 0]))
+			var differe: Array = regie.between.score_differe()
+			var montre: Array = differe if not differe.is_empty() else direct
+			inter += 1
+			if view.score.text != "%d — %d" % [int(montre[0]), int(montre[1])] and inter_faux.size() < 4: inter_faux.append("%s ≠ %s" % [view.score.text, str(montre)])
+			continue
+		if regie.etat != regie.JEU or regie.phase != "jeu" or regie.index < 0 or regie.index >= regie.tf.plans.size(): continue
+		var plan: Dictionary = regie.tf.plans[regie.index]
+		var kind := str(plan.get("kind", ""))
+		var affiche: String = view.score.text
+		var final: int = somme.call(plan.score)
+		var texte := affiche.split(" — ")
+		if texte.size() != 2: continue
+		var vu: int = int(texte[0]) + int(texte[1])
+		if kind == "try":
+			var points: int = final - 5
+			if not regie._essai_montre:
+				# Pas encore aplati : ni légende de l'essai ni nouveau score.
+				avant += 1
+				if vu != points or str(view.events.text).begins_with("Essai"):
+					if faux.size() < 6: faux.append("avant l'aplati : score %s (attendu +0), légende « %s »" % [affiche, str(view.events.text)])
+			else:
+				apres += 1
+				if vu != final and faux.size() < 6: faux.append("essai aplati : score %s (attendu %d points au total)" % [affiche, final])
+		elif kind == "transformation" and plan.has("annonce"):
+			if not regie._resultat_sonne:
+				transfo_avant += 1
+				var base: int = somme.call(regie.tf.plans[regie.index - 1].score) if regie.index > 0 else vu
+				if vu != base and faux.size() < 6: faux.append("avant le résultat de la transformation : score %s (attendu %d)" % [affiche, base])
+			else:
+				transfo_apres += 1
+				if vu != final and faux.size() < 6: faux.append("transformation vue : score %s (attendu %d)" % [affiche, final])
+		# Captures (rendu réel sous xvfb, hors CI) : CD_SCORE_CAPTURES = dossier de sortie.
+		var dossier := OS.get_environment("CD_SCORE_CAPTURES")
+		if dossier != "" and kind == "try" and not captures.has("png_" + str(regie._essai_montre)) and (regie._essai_montre or regie.temps > 1.0):
+			captures["png_" + str(regie._essai_montre)] = true
+			await RenderingServer.frame_post_draw
+			var image := root.get_viewport().get_texture().get_image()
+			if image != null: image.save_png(dossier.path_join("score-essai-" + ("apres" if regie._essai_montre else "avant") + ".png"))
+		if apres > 30 and transfo_apres > 5 and avant > 5 and inter > 30: break
+	check(avant > 0 and apres > 0, "Des essais sont joués en 3D (%d images avant l'aplati, %d après)" % [avant, apres])
+	check(faux.is_empty(), "Bandeau du score : ancien score jusqu'à l'aplati, nouveau score ensuite : " + str(faux))
+	check(inter == 0 or inter_faux.is_empty(), "Bandeau 2D de l'entracte cohérent avec le score montré (%d images) : %s" % [inter, str(inter_faux)])
+	print("Score pendant l'essai : ", avant, " images avant, ", apres, " après ; transformation ", transfo_avant, "/", transfo_apres, " ; entracte ", inter)
 
 func inactive(view: Control) -> void:
 	check(view.regie == null and not view.temps_forts_actifs(), "Repli (CD_MATCH_TEMPS_FORTS=0) : aucune régie")

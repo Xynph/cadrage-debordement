@@ -5,10 +5,14 @@ extends SceneTree
 const View = preload("res://match_view.gd")
 const Presentation = preload("res://match_presentation.gd")
 const Gestes = preload("res://match_gestes.gd")
+const Regie = preload("res://ui/contextual/match_temps_forts.gd")
 const STEP := 1.0 / 30.0
 const TV_OFFSET := View.TV_OFFSET  # caméra TV de la vue (plus haute depuis le 12 novembre 2026)
 const ACTION_OFFSET := Vector3(5.0, 12.0, 18.0)
 const TICK := 0.32
+## Allure de pointe crédible d'un ballon porté qui avance, en m/s (valeur choisie : un ballon porté
+## d'élite avance à 1,5 à 2,5 m/s ; le paquet ne sprinte pas).
+const MAUL_PEAK_MAX := 2.8
 
 var failures: Array[String] = []
 var checks := 0
@@ -119,6 +123,19 @@ func run() -> void:
 	var scorer_pitch := 0.0
 	var scorer_hands := 99.0
 	var cheering := 0
+	# Ballon porté jusqu'à l'essai (lot 8, 16/11/2026) : allure du regroupement, attente de la régie
+	# par plan (échéance ECHEANCE_GESTE), instant où le ballon est aplati dans l'en-but, légende.
+	var drive_peak := {"maul": 0.0, "essai_maul": 0.0}
+	var drive_path := {"maul": 0.0, "essai_maul": 0.0}
+	var last_center := Vector3.INF
+	var last_drive_phase := ""
+	var hold_by_kind := {}
+	var try_grounded_at := -1.0
+	var maul_drive := 0.0
+	var maul_try_follows_seen := false
+	var maul_lead := 0.0
+	var aplati_too_early := false
+	var aplati_at_ground := false
 	# Caméra TV par défaut : recadrage pendant le geste, retour ensuite.
 	var camera: Camera3D = view._camera
 	check(camera_plain(view, TV_OFFSET, View.TV_TAILLE), "Avant le geste la caméra TV est celle d'origine")
@@ -221,6 +238,29 @@ func run() -> void:
 				ball_outside += 1
 		if view.is_presenting_extended_pass():
 			waited += STEP
+			hold_by_kind[kinds[index]] = float(hold_by_kind.get(kinds[index], 0.0)) + STEP
+		if gestes.phase in ["maul", "essai_maul"]:
+			var center: Vector3 = gestes._frame().center
+			if last_drive_phase == gestes.phase and last_center.is_finite():
+				var moved: float = Vector2(center.x - last_center.x, center.z - last_center.z).length()
+				drive_path[gestes.phase] += moved
+				drive_peak[gestes.phase] = maxf(drive_peak[gestes.phase], moved / STEP)
+			last_center = center
+			last_drive_phase = gestes.phase
+		else:
+			last_drive_phase = ""
+		if gestes.phase == "essai_maul":
+			var ball_now: Vector3 = view._ball.global_position
+			# Aplati : ballon au sol dans l'en-but, à son point d'aplatissement (point d'essai du moteur
+			# reporté de Gestes.IN_GOAL m dans l'en-but).
+			var line_now := float(frames[at_try].scene.ball.x) - 50.0
+			var spot_now := Vector3(line_now + signf(line_now) * Gestes.IN_GOAL, 0.0, float(frames[at_try].scene.ball.y) - 35.0)
+			var in_goal: bool = absf(ball_now.x) > 50.0 and ball_now.y < 0.2 and Vector3(ball_now.x, 0.0, ball_now.z).distance_to(spot_now) < 0.01
+			if in_goal and try_grounded_at < 0.0:
+				try_grounded_at = gestes.time
+				aplati_at_ground = view.has_method("essai_aplati") and view.essai_aplati()
+			if not in_goal and view.has_method("essai_aplati") and view.essai_aplati():
+				aplati_too_early = true
 		var kind: String = kinds[index]
 		if kind == "lineout" and gestes.phase == "touche" and gestes.awaiting and gestes.done and not aligned:
 			aligned = true
@@ -273,11 +313,19 @@ func run() -> void:
 				caught = hands(view, gestes.jumper) < 0.3 and view._ball.global_position.y > 2.8
 		if gestes.phase == "maul" and gestes.done and not maul_checked:
 			maul_checked = true
+			maul_drive = float(gestes.drive)
+			maul_try_follows_seen = bool(gestes.get("maul_try_follows"))
 			maul_carrier = gestes.carrier
 			var holder: Dictionary = view._actors[gestes.carrier]
 			maul_ball = Presentation.ball_anchor(holder.node, holder.rig).distance_to(view._ball.global_position)
 			var engine_ball := Vector3(float(frames[index].scene.ball.x) - 50.0, 0.0, float(frames[index].scene.ball.y) - 35.0)
-			maul_arrival = Vector3(view._ball.global_position.x, 0.0, view._ball.global_position.z).distance_to(engine_ball)
+			# Essai à suivre (fait « porte ») : le ballon porté peut pousser jusqu'à Gestes.MAUL_TRY_LEAD m
+			# au-delà du point du moteur, vers la ligne ; l'écart compté est celui qui reste au-delà.
+			var arrived := Vector3(view._ball.global_position.x, 0.0, view._ball.global_position.z)
+			var pushed: float = (arrived.x - engine_ball.x) * gestes.dir
+			maul_lead = pushed
+			arrived.x -= gestes.dir * clampf(pushed, 0.0, Gestes.MAUL_TRY_LEAD if gestes.maul_try_follows else 0.0)
+			maul_arrival = arrived.distance_to(engine_ball)
 			for id: String in gestes.cast:
 				var member: Dictionary = gestes.cast[id]
 				if member.role == "opp_pack": maul_opponents += 1
@@ -315,11 +363,21 @@ func run() -> void:
 	check(maul_checked, "La touche conservée « ballon porté » forme un regroupement")
 	check(maul_carrier == featured(frames[at_lineout + 1].scene), "Le porteur du ballon porté est l'acteur désigné par le moteur")
 	check(maul_ball < 0.05, "Le ballon est dans les bras du porteur : " + str(maul_ball))
-	check(maul_arrival < 0.6, "Le ballon porté arrive au point de ballon du moteur : " + str(maul_arrival))
+	check(maul_arrival < 0.6, "Le ballon porté arrive au point de ballon du moteur (avance permise si l'essai suit) : " + str(maul_arrival))
 	check(maul_opponents >= 1, "Au moins un adversaire est lié : c'est bien un maul")
 	check(maul_spread < 3.8, "Le regroupement reste compact : " + str(maul_spread))
 	check(maul_pitch > 0.2, "Les liés poussent buste engagé : " + str(maul_pitch))
 	check(try_checked, "L'essai prolonge le ballon porté")
+	# Lot 8 : le ballon porté avance à allure de ballon porté (pas de sprint du paquet), le porteur
+	# aplatit dans l'en-but avant la fin du plan (la régie n'attend un geste que ECHEANCE_GESTE s par
+	# plan), et l'essai n'est légendé qu'une fois aplati, dès qu'il l'est.
+	var drive_pace := {"maul": drive_path.maul / maxf(0.01, maul_drive), "essai_maul": drive_path.essai_maul / maxf(0.01, float(gestes.drive))}
+	print("MATCH_GESTES_MAUL ", JSON.stringify({"pointe_m_s": drive_peak, "moyenne_m_s": drive_pace, "chemin_m": drive_path, "attente_s": hold_by_kind, "aplati_s": snappedf(try_grounded_at, 0.01), "avance_m": snappedf(maul_lead, 0.01)}))
+	check(drive_peak.maul <= MAUL_PEAK_MAX + 0.05 and drive_peak.essai_maul <= MAUL_PEAK_MAX + 0.05, "Le ballon porté avance à allure de ballon porté (pointe %.1f m/s au plus) : %s" % [MAUL_PEAK_MAX, str(drive_peak)])
+	check(try_grounded_at > 0.0 and aplati_at_ground and not aplati_too_early, "Le porteur aplatit dans l'en-but ; l'essai est dit aplati à cet instant, jamais avant : %.2f s" % try_grounded_at)
+	check(maul_try_follows_seen, "La conquête annonce l'essai sur ballon porté (fait « porte » du moteur) : la poussée prend de l'avance")
+	for kind: String in hold_by_kind:
+		check(float(hold_by_kind[kind]) < Regie.ECHEANCE_GESTE - 0.5, "Le geste tient dans le plan « %s » (échéance de la régie %.0f s) : %.2f s" % [kind, Regie.ECHEANCE_GESTE, hold_by_kind[kind]])
 	# Point d'essai du moteur (sur la ligne), reporté de Gestes.IN_GOAL mètres dans l'en-but : on voit l'essai.
 	var line_x := float(frames[at_try].scene.ball.x) - 50.0
 	var try_point := Vector3(line_x + signf(line_x) * Gestes.IN_GOAL, 0.0, float(frames[at_try].scene.ball.y) - 35.0)

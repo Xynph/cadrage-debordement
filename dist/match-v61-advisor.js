@@ -2,6 +2,9 @@
 // V61 : aide a la decision issue exclusivement des statistiques natives du match.
 // Aucune simulation, aucun tirage RNG et aucune ecriture en sauvegarde au rendu.
 const MATCH_ADVICE_MIN_OBSERVATIONS=10;
+// Lot 5 (16/11/2026) : pas de lecture de la possession ni de l'occupation avant dix minutes de
+// jeu, même avec assez d'observations (« 0 % d'occupation » à la 2e minute n'est pas un signal).
+const MATCH_ADVICE_MIN_MINUTES=10;
 function matchV61Advice(view){
  const l=view?.visualSource||view;
  if(!l||!Array.isArray(l.stats)||!Array.isArray(l.score)||!Array.isArray(l.tactics)||!Number.isInteger(l.userSide)||l.userSide<0||l.userSide>1)return null;
@@ -10,10 +13,10 @@ function matchV61Advice(view){
  const ratio=key=>{const a=value(own,key),b=value(opp,key);return a+b>0?Math.round(100*a/(a+b)):null};
  // Each play observation increments possession once and records territory at the same time.
  const observations=value(own,'possession')+value(opp,'possession');
- const ready=observations>=MATCH_ADVICE_MIN_OBSERVATIONS;
+ const minute=Number.isFinite(l.minute)?l.minute:0;
+ const ready=observations>=MATCH_ADVICE_MIN_OBSERVATIONS&&minute>=MATCH_ADVICE_MIN_MINUTES;
  const possession=ready?ratio('possession'):null,occupation=ready?ratio('territory'):null;
  const margin=(Number(l.score[side])||0)-(Number(l.score[other])||0);
- const minute=Number.isFinite(l.minute)?l.minute:0;
  const penaltyGap=value(own,'penalties')-value(opp,'penalties');
  let attack=typeof l.tactics[side]==='string'?l.tactics[side]:'equilibre';
  let attackReason=ready?'Les indicateurs ne justifient pas de changement offensif prioritaire.':
