@@ -39,7 +39,8 @@ else
   (
     cd "$tmp/w" || exit 1
     # Le workflow et ses scripts viennent de main s'ils manquent sur la branche testée.
-    git checkout -q origin/main -- .github/workflows/a-la-demande.yml ci/en-ligne-run.sh 2>/dev/null || true
+    git checkout -q origin/main -- .github/workflows/a-la-demande.yml 2>/dev/null || true
+    [[ -f ci/en-ligne-run.sh ]] || git checkout -q origin/main -- ci/en-ligne-run.sh 2>/dev/null || true
     printf '{"ref":"%s","suites":"%s","captures":%s,"mesures":%s,"phases":"%s"}\n' "$ref" "$suites" "$captures" "$mesures" "$phases" > ci/en-ligne.json
     git add -f ci/en-ligne.json .github/workflows/a-la-demande.yml ci/en-ligne-run.sh
     git -c user.name=en-ligne -c user.email=en-ligne@users.noreply.github.com commit -q -m "chore: test en ligne temporaire ($ref)" || exit 1

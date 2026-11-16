@@ -63,8 +63,14 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     env CD_FICHE_CAPTURES=1 CD_FICHE_OUTPUT="$cap/fiche-club" node tests/godot-fiche-club.cjs
   phase "captures feuille espoir" captures-feuille-espoir.log \
     env CD_ESPOIR_CAPTURE="$cap/feuille-espoir/ecran-" node tests/godot-feuille-espoir.cjs
-  phase "captures rendu de match" captures-match-rendu.log \
-    env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" node tests/godot-match-rendu-capture.cjs
+  # Rendu de match : 40 passes, 1 h sous llvmpipe, et Forward+ n'y existe pas. Exclue par défaut ; si
+  # elle est demandée par --phases, seules les passes « actuel » en 1280x720 sont lancées.
+  if [[ -n "${CD_EL_PHASES// /}" ]] && voulue "captures rendu de match"; then
+    phase "captures rendu de match" captures-match-rendu.log \
+      env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" CD_MATCH_RENDU_PASSES=actuel CD_MATCH_RENDU_TAILLES=1280x720 node tests/godot-match-rendu-capture.cjs
+  else
+    echo "- IGNOREE (exclue par défaut ; --phases \"rendu de match\" pour la lancer) : captures rendu de match" >> "$out/resume.md"
+  fi
   echo "- Captures PNG : $(find "$cap" -name '*.png' | wc -l) fichier(s)" >> "$out/resume.md"
 fi
 
