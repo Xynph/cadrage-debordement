@@ -35,7 +35,10 @@ function factory(){
   const session=CDTrainingPlansV67.session(S,engine);
   const plans=session.status==='applied'?[]:Object.entries(CDTrainingPlansV67.PLANS).map(([key,p])=>{const preview=copy(CDTrainingPlansV67.preview(S,key,engine));for(const row of preview.players)delete row.name;return {...copy(p),...preview};});
   const dossier=!S.live&&S.phase!=='ended'?matchDossier():null;
-  const players=roster(S).map(p=>({id:p.id,contractEnd:p.contractEnd,salary:p.salary,quotes:[1,2,3].flatMap(years=>Object.keys(CDAgentsV71.POLICY).map(policy=>CDAgentsV71.quote(S,p.id,years,policy,bridge())).filter(Boolean).map(q=>{const result=copy(q);delete result.name;return result;}))})).filter(p=>p.quotes.length);
+  // Devis d'agents (le plus coûteux) : partie mémorisée à part (state-versions.cjs, part) ; une décision qui ne touche
+  // ni contrats, ni salaires, ni effectif (charge, délégation…) les reprend.
+  const quotes=()=>roster(S).map(p=>({id:p.id,contractEnd:p.contractEnd,salary:p.salary,quotes:[1,2,3].flatMap(years=>Object.keys(CDAgentsV71.POLICY).map(policy=>CDAgentsV71.quote(S,p.id,years,policy,bridge())).filter(Boolean).map(q=>{const result=copy(q);delete result.name;return result;}))})).filter(p=>p.quotes.length);
+  const players=typeof nativeStateVersions!=='undefined'?nativeStateVersions.part('clubSupport.agents',quotes):quotes();
   return {context:context(S),notice:'Arbitrages fictifs du jeu. Le suivi médical générique ne représente ni une commotion, ni un protocole HIA, ni un avis de santé. Les budgets sont fictifs.',diagnostic:{...copy(CDStaffAdvisorV66.diagnostic(S,CDStaffMeetingV65)),available:meetingAvailable()},meeting:{available:meetingAvailable(),receipt:copy(CDStaffMeetingV65.currentMeeting(S)),lastDecision:copy(S.nativeSupport?.meeting||null),options:Object.entries(CDStaffMeetingV65.OPTIONS).map(([key,o])=>({key,...copy(o),preview:copy(CDStaffMeetingV65.preview(S,key))}))},training:{available:CDTrainingPlansV67.allowed(S),plans,session},medical:{available:CDMedicalV68.canManage(S),protocols:Object.entries(CDMedicalV68.PROTOCOLS).map(([key,p])=>({key,...copy(p)})),players:roster(S).filter(p=>p.injury>0||p.medicalV68?.stage==='reprise').map(p=>({id:p.id,injury:p.injury,condition:p.condition,fatigue:p.physicalLoad?.fatigue??0,protocol:CDMedicalV68.treatment(p),stage:p.medicalV68?.stage??'blesse'}))},briefing:{available:!!dossier,fixture:dossier?v69Context(dossier):null,opponentId:dossier?.opponent.id??null,selected:dossier?v69Selection(dossier):'neutre',evidence:dossier?copy(v69Evidence(dossier)):null,plans:Object.entries(V69_PLANS).map(([key,p])=>({key,...copy(p)}))},agents:{players,policies:Object.entries(CDAgentsV71.POLICY).map(([key,p])=>({key,label:p.label,detail:p.detail})),history:copy(S.v71AgentDesk?.history||[]),talks:Object.entries(S.economy?.talks||{}).filter(([,t])=>t.kind==='renew').map(([key,t])=>({key,...copy(t)}))}};
  }
  function execute(command,payload){
@@ -56,6 +59,9 @@ function factory(){
   if(trainWeek.__nativeSupportMedical)return true;
   const prior=trainWeek,wrapped=function(...args){const state=S,trained=state?.trained,before=new Map((state?.clubs?.[state.club]?.players||[]).map(p=>[p.id,{injury:p.injury,protocol:CDMedicalV68.treatment(p)}]));const result=prior.apply(this,args);if(state&&S===state&&!trained&&state.trained)CDMedicalV68.completeTraining(state,before);return result;};wrapped.__nativeSupportMedical=true;trainWeek=wrapped;return true;
  }
- return {project,validate,execute,installHooks};
+ // Joueurs suivis par le médical (mêmes filtre, ordre et champs que project().medical.players, réduits à ceux que lit
+ // l'observation des rendez-vous du club) : sans projeter tout le domaine (devis d'agents, plans, dossier de match).
+ function medicalPlayers(){return S?roster(S).filter(p=>p.injury>0||p.medicalV68?.stage==='reprise').map(p=>({id:p.id,injury:p.injury,stage:p.medicalV68?.stage??'blesse'})):[];}
+ return {project,medicalPlayers,validate,execute,installHooks};
 }
 module.exports={files,commands,factory};
