@@ -1,0 +1,3 @@
+{
+  "expression": "return {\"fps\":Performance.get_monitor(Performance.TIME_FPS),\"process_ms\":Performance.get_monitor(Performance.TIME_PROCESS)*1000.0,\"physics_ms\":Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)*1000.0,\"memory_bytes\":Performance.get_monitor(Performance.MEMORY_STATIC),\"nodes\":Performance.get_monitor(Performance.OBJECT_NODE_COUNT),\"draw_calls\":Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)}"
+}

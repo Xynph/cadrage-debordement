@@ -17,10 +17,13 @@ failed=0
 phase() { # phase <nom> <journal> <commande...>
   local name="$1" log="$out/$2"; shift 2
   local t=$SECONDS
-  "$@" > "$log" 2>&1; local code=$?
+  # Délai par phase (CD_EL_PHASE_MIN, 40 min) : un blocage laisse un diagnostic au lieu d'un job tué sans trace.
+  timeout --kill-after=30s "${CD_EL_PHASE_MIN:-40}m" "$@" > "$log" 2>&1; local code=$?
+  [[ $code -eq 124 ]] && echo "ARRET : phase interrompue après ${CD_EL_PHASE_MIN:-40} min" >> "$log"
   if [[ $code -eq 0 ]]; then echo "- OK : $name ($((SECONDS-t)) s)" >> "$out/resume.md"
   else
     failed=1; echo "- ECHEC ($code) : $name ($((SECONDS-t)) s), journal $2" >> "$out/resume.md"
+    echo "$2" >> "$out/journaux-echec.txt"
     { echo "== $name (code $code)"; grep -E 'FAIL|ECHEC|Error|ERROR|not ok' "$log" | head -15; } >> "$out/echecs.txt"
   fi
 }
@@ -43,9 +46,10 @@ fi
 #    Pas de séquence d'intro dédiée dans le dépôt : l'écran d'entrée n'a pas de suite de capture.
 if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   # CD_EL_CAPTURES_QUOI : liste séparée par des virgules ou espaces parmi intro, finitions, fiche-club,
-  # feuille-espoir, match-rendu ; vide ou « toutes » = toutes.
+  # feuille-espoir, match-rendu ; vide ou « toutes » = toutes SAUF match-rendu (40 passes, 57 min sous llvmpipe :
+  # à demander explicitement ; sans GPU, Forward+ n'existe pas, donc seules les passes « actuel » en 1280x720).
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
-  [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir match-rendu "
+  [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
     case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
@@ -79,7 +83,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   if veut match-rendu; then
     mkdir -p "$cap/match-rendu"
     phase "captures rendu de match" captures-match-rendu.log \
-      env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" node tests/godot-match-rendu-capture.cjs
+      env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" CD_MATCH_RENDU_PASSES=actuel CD_MATCH_RENDU_TAILLES=1280x720 node tests/godot-match-rendu-capture.cjs
   fi
   echo "- Captures PNG :$(echo "$quoi" | tr -s ' ') $(find "$cap" -name '*.png' | wc -l) fichier(s)" >> "$out/resume.md"
 fi
@@ -88,9 +92,10 @@ fi
 if [[ "${CD_EL_MESURES:-false}" == "true" ]]; then
   export CD_NODE_EXECUTABLE="$(command -v node)"
   data="$(mktemp -d)"
+  trap '[[ "${CD_KEEP_TMP:-0}" == 1 ]] || rm -rf "$data"' EXIT
   phase "mesure du parcours des écrans (tests/godot-chargement-mesure.gd)" mesures-parcours.log \
     env CD_GODOT_TIMING=1 CD_GODOT_DATA_DIR="$data/PrototypeGodot" "$CD_GODOT_EXECUTABLE" --headless --audio-driver Dummy --path native/godot --script "$root/tests/godot-chargement-mesure.gd"
-  rm -rf "$data"
+  [[ "${CD_KEEP_TMP:-0}" == 1 ]] || rm -rf "$data"
   phase "portraits progressifs" mesures-portraits.log node tests/godot-portraits-progressifs.cjs
   if grep -h '^CD_MESURE ' "$out/mesures-parcours.log" 2>/dev/null | head -1 | sed 's/^CD_MESURE //' > "$out/mesure.json" && [[ -s "$out/mesure.json" ]]; then
     node -e '

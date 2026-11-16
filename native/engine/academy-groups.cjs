@@ -97,7 +97,20 @@ module.exports = function academyGroups() {
     }
   }
 
+  // Pendant un remplissage, ni le personnel, ni les installations, ni les clubs ne changent : le poids de
+  // recrutement d'un club (qui parcourt tout le personnel du monde) est calculé une fois par club.
   function refill(s, initial) {
+    if (typeof academyRecruitmentWeight !== 'function') return refillCenters(s, initial);
+    const original = academyRecruitmentWeight, weights = new Map();
+    academyRecruitmentWeight = club => {
+      if (!club || typeof club !== 'object') return original(club);
+      if (!weights.has(club)) weights.set(club, original(club));
+      return weights.get(club);
+    };
+    try { return refillCenters(s, initial); } finally { academyRecruitmentWeight = original; }
+  }
+
+  function refillCenters(s, initial) {
     const ids = occupiedIds(s);
     const human = s.development;
     const policy3 = modern(s);

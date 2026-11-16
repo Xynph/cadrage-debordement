@@ -78,12 +78,23 @@ func run() -> void:
 		check(dialog != null and dialog.visible, "Comparateur ouvert " + str(dimensions))
 		if dimensions == Vector2i(2560,1440):
 			check(dialog.size.x >= 1850 and dialog.size.y >= 1150, "Surface de lecture confortable en 1440p")
-			var hero: Label = dialog.find_child("MarketComparisonHeading",true,false)
-			check(hero.get_theme_font_size("font_size") == 28, "Titre dense de 28 px en 1440p")
+			check(dialog.find_child("MarketComparisonHeading",true,false) == null, "Un seul titre : pas d’en-tête doublonnant la barre de fenêtre")
+			check(dialog.size.y < 1220, "Hauteur de fenêtre ajustée au contenu en 1440p")
 		var left: OptionButton = dialog.find_child("MarketComparisonPlayer0",true,false)
 		var right: OptionButton = dialog.find_child("MarketComparisonPlayer1",true,false)
 		check(left.selected > 0 and right.selected > 0 and left.get_item_metadata(left.selected) != right.get_item_metadata(right.selected), "Deux vrais candidats distincts préselectionnés")
 		check(right.has_focus(), "Focus initial sur choix B")
+		var same: CheckButton = dialog.find_child("MarketComparisonSamePosition",true,false)
+		check(same != null and same.button_pressed, "« Même poste que A » activé par défaut")
+		var left_pos := ""
+		var right_pos := ""
+		for player: Dictionary in app.model.market:
+			if str(player.id) == str(left.get_item_metadata(left.selected)): left_pos = str(player.pos)
+			if str(player.id) == str(right.get_item_metadata(right.selected)): right_pos = str(player.pos)
+		for player: Dictionary in app.model.squad:
+			if str(player.id) == str(left.get_item_metadata(left.selected)): left_pos = str(player.pos)
+			if str(player.id) == str(right.get_item_metadata(right.selected)): right_pos = str(player.pos)
+		check(left_pos == right_pos or dialog.find_child("MarketComparisonCount",true,false).text.contains("Aucun"), "B au même poste que A, sinon mention claire")
 		if dimensions == Vector2i(2560,1440):
 			check(right.get_theme_font_size("font_size") == 20, "Sélecteur dense de 20 px en 1440p")
 			var rating_row: HBoxContainer = dialog.find_child("MarketComparisonRow_rating",true,false)
@@ -117,6 +128,27 @@ func run() -> void:
 		await settle()
 		check(not is_instance_valid(dialog) or not dialog.visible, "Échap ferme la consultation")
 		check(button.has_focus(), "Retour du focus au bouton Comparer")
+	# 720p : la synthèse tient sans défilement initial, sans en-tête doublon, avec des listes lisibles (≥ 13 px).
+	root.size = Vector2i(1280,720)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(Vector2i(1280,720))
+	await settle()
+	Comparison.open(app, "", {})
+	for i in 6: await settle()
+	var small: AcceptDialog = app.find_child("MarketComparison",true,false)
+	check(small != null and small.visible, "Comparateur ouvert en 720p")
+	if small != null:
+		check(small.find_child("MarketComparisonHeading",true,false) == null, "720p : un seul titre")
+		var scroll: Control = small.find_child("MarketComparisonDetails",true,false)
+		var ancestor: Node = scroll
+		while ancestor != null and not ancestor is ScrollContainer: ancestor = ancestor.get_parent()
+		if ancestor != null:
+			var bar: VScrollBar = (ancestor as ScrollContainer).get_v_scroll_bar()
+			check(not bar.visible, "720p : pas de barre de défilement initiale")
+			check((ancestor as ScrollContainer).scroll_vertical == 0, "720p : le haut du comparateur reste visible")
+		for slot in 2:
+			var picker: OptionButton = small.find_child("MarketComparisonPlayer" + str(slot),true,false)
+			check(picker.get_theme_font_size("font_size") >= 13, "720p : liste déroulante lisible (≥ 13 px)")
+		(small.get_ok_button() as Button).pressed.emit(); await settle()
 	check(FileAccess.get_sha256(filename) == initial, "Aucune écriture de carrière ou négociation")
 	var file := FileAccess.open(output.path_join("report.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name()},"  ")); file.close()

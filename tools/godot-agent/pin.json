@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/Fulviuus/godot-mcp.git",
+  "commit": "8f9760caca300680bfffe564faf98c17b38a8e59",
+  "version": "2.0.2",
+  "license": "MIT",
+  "godot": "4.7.2",
+  "advancedTools": false
+}

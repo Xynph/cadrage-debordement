@@ -25,7 +25,14 @@ export CD_GODOT_REQUIRED=1
 unset CD_MODES_HERITES
 export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--require=$root/ci/godot-env.cjs"
 node "$root/ci/godot-env.cjs" --check || exit 1
+source "$root/ci/suite-tmp.sh"
 work="$(mktemp -d)"
+suite_tmp=""
+# Nettoyage en toutes circonstances (fin normale, échec, SIGINT/SIGTERM) ; CD_KEEP_TMP=1 conserve les dossiers.
+cleanup() { cd_suite_tmp_drop "$suite_tmp"; [[ "${CD_KEEP_TMP:-0}" == 1 ]] || rm -rf "$work"; }
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 # Motifs des sauts « faute de moteur » écrits par les suites (node:test TAP ou console).
 engine_skip='SDK Godot (requis|absent)|Godot SDK required|SKIP [^ ]+ : SDK absent|SDK et worker knowledge requis|Set CD_GODOT_EXECUTABLE|NON EXÉCUTÉ \(CD_GODOT'
@@ -65,6 +72,8 @@ for test in "${suites[@]}"; do
   start=$SECONDS
   limit="${CD_GODOT_SUITE_LIMIT:-${suite_limits[$test]:-300}}s"
   log="$work/$(basename "$test").log"
+  suite_tmp="$(cd_suite_tmp_new "$work")"
+  export TMPDIR="$suite_tmp"
   t0="$(date +%s%N)"
   if [[ -x /usr/bin/time ]]; then
     timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" \
@@ -76,6 +85,7 @@ for test in "${suites[@]}"; do
     t1="$(date +%s%N)"
     printf 'CD_CPU_PROFILE suite=%s wall_s=%d.%02d\n' "$test" $(( (t1-t0)/1000000000 )) $(( (t1-t0)/10000000%100 )) >> "$log"
   fi
+  cd_suite_tmp_drop "$suite_tmp"; suite_tmp=""
   cat "$log"
   verdict=OK
   if [[ $code -ne 0 ]]; then
@@ -107,5 +117,4 @@ done
   echo ""
   echo "Sauts déclarés pour d'autres raisons (plateforme, outil manuel) : $other_skips"
 } >> "$summary"
-rm -rf "$work"
 [[ "$failures" -eq 0 ]]

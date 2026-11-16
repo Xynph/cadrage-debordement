@@ -1,0 +1,3 @@
+{
+  "expression": "tree.root.mode=Window.MODE_WINDOWED\ntree.root.size=Vector2i(1280,720)\nawait tree.process_frame\nawait tree.process_frame\nreturn {\"width\":tree.root.size.x,\"height\":tree.root.size.y}"
+}
