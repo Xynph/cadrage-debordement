@@ -215,6 +215,17 @@ func bulle(legere: String) -> void:
 	check(bubble.get_global_rect().position.y >= topbar.get_global_rect().end.y - 1, "La bulle descend du bandeau (sous lui)")
 	check(Rect2(Vector2.ZERO, app.size).grow(1).encloses(bubble.get_global_rect()), "Bulle entière dans l'application")
 	await capture("bulle-effectif")
+	# Coût de l'ouverture sur Effectif (296 contrôles : ~44 s avant) et placement hors de tout contrôle interactif.
+	var t0 := Time.get_ticks_usec()
+	coach._layout_bulle()
+	var ms := (Time.get_ticks_usec() - t0) / 1000.0
+	print("GABI_BULLE_MS effectif=", ms, " zones=", coach._zones_interactives().size())
+	check(ms < 250.0, "Ouverture de la bulle sur Effectif rapide : %.1f ms (< 250 ms)" % ms)
+	var recouvre := 0
+	for z: Rect2 in coach._zones_interactives():
+		if bubble.get_global_rect().intersects(z): recouvre += 1
+	print("GABI_BULLE_RECOUVRE ", recouvre)
+	check(recouvre == 0, "La bulle ne recouvre aucun contrôle interactif sur Effectif (%d)" % recouvre)
 	# Un clic ailleurs ferme la bulle (sans être avalé).
 	await click_at(Vector2(app.size.x * .45, app.size.y * .8))
 	check(not bubble.visible, "Un clic ailleurs ferme la bulle")
