@@ -31,7 +31,7 @@ const franceCalendar=require('./france-calendar-cadence.cjs');
 const confirmMatchResult=require('./match-result.cjs');
 const matchDirect=require('./match-direct.cjs');
 const calendarPlanning=require('./calendar-planning.cjs'),calendarMail=require('./calendar-mail.cjs');
-const worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),publishedVenue=require('./world-venues.cjs'),worldRegistry=require('./world-registry.json');
+const jsonCopy=require('./json-copy.cjs'),worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),publishedVenue=require('./world-venues.cjs'),worldRegistry=require('./world-registry.json');
 const clubHistory=require('./club-history.json');
 const clubPalmares=require('./club-palmares.cjs'),gabiRepliques=require('./gabi-repliques.cjs');
 const {createWorldEditions}=require('./world-editions.cjs');
@@ -233,7 +233,7 @@ function createBridge(options={}){
   if(japanRegistry)ctx.nativeWorldJapanRegistryText=JSON.stringify(japanRegistry);
   if(nationaleRegistry)ctx.nativeWorldNationaleRegistryText=JSON.stringify(nationaleRegistry);
   if(champRegistry)ctx.nativeWorldChampRegistryText=JSON.stringify(champRegistry);
-  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',nativeSaveText(S));lastSaveError=false;}};
+  run(`const nativeJsonCopy=(${jsonCopy.toString()})();render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',nativeSaveText(S));lastSaveError=false;}};
    /* Sauvegarde incrémentale : le texte de la carrière est assemblé section par section (premier niveau de S),
       identique à JSON.stringify(S) ; ces textes servent ensuite à la validation (sections inchangées) et à
       l'écriture du profil (encodage des seules sections modifiées). */

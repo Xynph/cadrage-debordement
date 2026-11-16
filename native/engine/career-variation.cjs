@@ -9,7 +9,8 @@ module.exports = function careerVariation(dependencies = {}) {
     'composure','discipline','teamwork','leadership','workRate','acceleration','topSpeed','agility','explosiveness',
     'strength','endurance','jumping','scrumTechnique','hooking','lineoutThrow','lineoutJump','lineoutLift','maul','kickChase','aerialAbility'];
   const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
-  const copy = value => JSON.parse(JSON.stringify(value));
+  // Copie JSON (nativeJsonCopy dans le moteur, json-copy.cjs : même résultat, plus rapide).
+  const copy = typeof nativeJsonCopy === 'function' ? nativeJsonCopy : value => JSON.parse(JSON.stringify(value));
   const round = value => Math.round(value * 100) / 100;
   const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
   const check = (condition, message) => { if (!condition) throw Error('Variation de carrière : ' + message); };
@@ -121,13 +122,17 @@ module.exports = function careerVariation(dependencies = {}) {
     for (const pool of populations(state)) for (const original of pool) {
       if (seen.has(original)) continue;
       seen.add(original);
+      // Première occurrence : les champs de la copie variée lui sont donnés tels quels (la copie n'est lue
+      // ensuite que pour les doublons du même joueur, qui en reçoivent chacun une copie).
+      let fresh = false;
       if (!canonical.has(original.id)) {
         const varied = player(original,config);
         canonical.set(original.id,varied);
         changes.set(original.id,varied.rating-original.rating);
+        fresh = true;
       }
       const varied = canonical.get(original.id);
-      for (const field of fields) if (own(varied,field)) original[field] = typeof varied[field] === 'object' ? copy(varied[field]) : varied[field];
+      for (const field of fields) if (own(varied,field)) original[field] = typeof varied[field] === 'object' && !fresh ? copy(varied[field]) : varied[field];
     }
     // These are initial coaching references, not past results or observations.
     const offices = [state,...Object.values(state.nativeAcademy?.offices ?? {})];
