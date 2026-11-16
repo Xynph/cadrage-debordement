@@ -6,6 +6,8 @@ signal model_changed(model: Dictionary)
 ## Réponse partielle sans modèle (« Continuer » : avance en tranches, native/engine/continuer.cjs).
 signal progressed(progress: Dictionary)
 signal command_failed(message: String)
+## Sauvegarde en arrière-plan du moteur (après la réponse) : state = "started", "done" ou "failed" (message = raison).
+signal persist_changed(state: String, message: String)
 
 const IMPORT_LIMIT_BYTES := 8 * 1024 * 1024
 const WORLD_IMPORT_LIMIT_BYTES := 16 * 1024 * 1024
@@ -90,7 +92,7 @@ func start(data_dir: String) -> void:
 		command_failed.emit("Le dossier PrototypeGodot doit être absolu.")
 		return
 	# No command interpreter, network server, or browser process.
-	var process := OS.execute_with_pipe(node_path, PackedStringArray(NODE_MEMORY_ARGS + [worker_path, "--data-dir", data_dir]), true)
+	var process := OS.execute_with_pipe(node_path, PackedStringArray(NODE_MEMORY_ARGS + [worker_path, "--events", "--data-dir", data_dir]), true)
 	if process.is_empty():
 		command_failed.emit("Impossible de démarrer le moteur local.")
 		return
@@ -301,8 +303,24 @@ func _stderr_loop() -> void:
 		if _stderr.get_error() != OK:
 			return
 
+## Événements du moteur sur la sortie d'erreur (une ligne « CD_EVENT {json} »), hors des réponses : ils ne sont jamais
+## pris pour une erreur et ne changent ni les réponses ni leur ordre.
+const EVENT_PREFIX := "CD_EVENT "
+
 func _report_stderr(message: String) -> void:
+	if message.begins_with(EVENT_PREFIX):
+		handle_engine_event(message.substr(EVENT_PREFIX.length()))
+		return
 	command_failed.emit("Moteur local : " + message)
+
+## Interprète un événement du moteur ; renvoie vrai s'il a été reconnu (ligne illisible ou inconnue : ignorée).
+func handle_engine_event(json_text: String) -> bool:
+	var parsed: Variant = JSON.parse_string(json_text)
+	if not (parsed is Dictionary) or str(parsed.get("event", "")) != "persist": return false
+	var state := str(parsed.get("state", ""))
+	if not state in ["started", "done", "failed"]: return false
+	persist_changed.emit(state, str(parsed.get("message", "")))
+	return true
 
 func _transport_error(message: String) -> void:
 	_stopping = true

@@ -713,7 +713,19 @@ function createBridge(options={}){
   // avance du calendrier reprend la décision à son compte (regroupement ci-dessus). Chaque étape renvoie vrai quand
   // il n'y a plus rien à écrire. En cas d'échec, l'état d'avant la décision est rétabli et l'erreur est gardée pour
   // la prochaine réponse.
+  // Signal de sauvegarde en arrière-plan (option onEvent ; le jeu l'active avec --events) : `persist` started au début du
+  // travail différé (sérialisation, validation, écriture), done à sa fin, failed s'il échoue (l'erreur reste refusée à la
+  // commande suivante, comme avant). Observation seulement : aucune réponse, graine ni écriture n'en dépend.
+  const emitEvent=typeof options.onEvent==='function'?options.onEvent:null;let persistBusy=false;
   function flushStep(){
+   if(!emitEvent)return flushWork();
+   const before=pendingFailure;
+   if(pendingCommit&&!persistBusy){persistBusy=true;try{emitEvent({event:'persist',state:'started',command:pendingCommit.command});}catch{}}
+   const done=flushWork();
+   if(persistBusy&&done){persistBusy=false;const failed=pendingFailure&&pendingFailure!==before;try{emitEvent(failed?{event:'persist',state:'failed',message:pendingFailure.message}:{event:'persist',state:'done'});}catch{}}
+   return done;
+  }
+  function flushWork(){
    // Journal et projection par sections : copie d'annulation de la dernière décision (texte de la carrière), faite
    // après la réponse plutôt qu'avant.
    if(!pendingCommit&&undoPending){undoPending=false;if(run('!!S')){run('nativeSaveCurrent()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;}return true;}
@@ -1401,7 +1413,7 @@ function createBridge(options={}){
 module.exports={createBridge,applicationRoot,IMPORT_LIMIT_BYTES,REQUEST_LIMIT_BYTES,WORLD_IMPORT_LIMIT_BYTES,WORLD_REQUEST_LIMIT_BYTES,EXTENDED_IMPORT_LIMIT_BYTES,EXTENDED_REQUEST_LIMIT_BYTES,CHAMP_IMPORT_LIMIT_BYTES,CHAMP_REQUEST_LIMIT_BYTES,CORE_FILES:Object.freeze([...MODULES])};
 if(require.main===module){
  let bridge;
- try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');/* Match en temps forts : mode de base du jeu. Repli sur le direct d'origine : CD_MATCH_TEMPS_FORTS=0. */const niveauTempsForts=process.env.CD_MATCH_TEMPS_FORTS==='0'?null:(process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique');bridge=createBridge({dailyCalendar:true,mandatoryPress:true,internationalCareer:true,deferredCommits:true,journal:true,lightErrors:true,...(niveauTempsForts?{matchHighlights:niveauTempsForts}:{}),...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
+ try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');/* Match en temps forts : mode de base du jeu. Repli sur le direct d'origine : CD_MATCH_TEMPS_FORTS=0. */const niveauTempsForts=process.env.CD_MATCH_TEMPS_FORTS==='0'?null:(process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique');bridge=createBridge({dailyCalendar:true,mandatoryPress:true,internationalCareer:true,deferredCommits:true,journal:true,lightErrors:true,...(process.argv.includes('--events')||process.env.CD_EVENTS==='1'?{onEvent:e=>{try{process.stderr.write('CD_EVENT '+JSON.stringify(e)+'\n');}catch{}}}:{}),...(niveauTempsForts?{matchHighlights:niveauTempsForts}:{}),...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
  catch(e){process.stdout.write(JSON.stringify({id:null,ok:false,model:null,error:e.message})+'\n');process.exitCode=1;return;}
  const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity}),delta=require('./model-delta.cjs').createEncoder();
  input.on('line',line=>{
