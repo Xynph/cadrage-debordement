@@ -580,9 +580,10 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	D.line(row,Vector2(0,-FOOTER_RISE),Vector2(2248,-FOOTER_RISE),Color(C.LINE,.7))
 	app.status = D.text(row,2,36,app._settled_status_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
 	app.status.name = "ImmersiveSaveStatus"
-	if app.route != "Bureau":
-		var shortcuts := D.text(row,782,36-FOOTER_RISE,Raccourcis.pied_de_page(),17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
-		shortcuts.name = "ImmersiveShortcuts"
+	# Rappel des raccourcis sur tous les écrans, Bureau compris : le pied de page est hors de la zone défilante
+	# (Gabi, blocs et frise y restent), donc il ne recouvre rien ; le bouton Continuer est dans le bandeau du haut.
+	var shortcuts := D.text(row,782,36-FOOTER_RISE,Raccourcis.pied_de_page(),17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
+	shortcuts.name = "ImmersiveShortcuts"
 	if app.decision_feedback != null:
 		var feedback: Button = app.decision_feedback.control()
 		feedback.add_theme_font_override("font",C.DISPLAY)

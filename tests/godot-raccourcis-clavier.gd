@@ -113,11 +113,26 @@ func run() -> void:
 	var Table = load("res://ui/raccourcis_clavier.gd")
 	var ligne: String = Table.lignes_aide()[0]
 	check(not ligne.contains("Entrée"), "Table : Entrée n'est plus un raccourci")
-	# Le pied de page n'existe que hors du Bureau.
+	# Le pied de page existe sur tous les écrans, Bureau compris.
 	app._navigate("Effectif")
 	await settle()
 	var pied := app.find_child("ImmersiveShortcuts", true, false)
 	check(pied != null and pied.text == Table.pied_de_page(), "Pied de page issu de la table")
+	# Bureau : pied de page présent, sans recouvrir Continuer ni la zone de travail.
+	app._navigate("Bureau")
+	await settle()
+	var pied_bureau := app.find_child("ImmersiveShortcuts", true, false) as Label
+	check(pied_bureau != null and pied_bureau.text == Table.pied_de_page(), "Bureau : pied de page des raccourcis présent")
+	var bouton := app.find_child("ImmersiveContinue", true, false) as Button
+	var zone := app.find_child("CareerWorkspace", true, false) as Control
+	check(bouton != null and zone != null, "Bureau : bouton Continuer et zone de travail trouvés")
+	if pied_bureau != null and bouton != null and zone != null:
+		if pied_bureau.visible:
+			check(not pied_bureau.get_global_rect().intersects(bouton.get_global_rect()), "Bureau : le pied de page ne chevauche pas Continuer")
+			check(not pied_bureau.get_global_rect().intersects(zone.get_global_rect()), "Bureau : le pied de page ne recouvre pas la zone de travail")
+		check(pied_bureau.get_global_rect().position.y > bouton.get_global_rect().end.y, "Bureau : le pied de page est sous Continuer")
+	app._navigate("Effectif")
+	await settle()
 	var options = load("res://ui/preferences_dialog.gd").open(app, app.user_preferences)
 	await settle(4)
 	var rappel := app.find_child("PreferencesShortcuts", true, false)
