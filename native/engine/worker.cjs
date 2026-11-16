@@ -187,6 +187,8 @@ function createBridge(options={}){
   const element={innerHTML:'',textContent:'',style:{}};
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:15000,filename}:{timeout:15000});
+  // Lecture sans tirage du flux unique : graine des flux séparés des championnats suivis de loin.
+  ctx.nativeRandomPeek=()=>seed;
   ctx.nativeMandatoryPress=options.mandatoryPress===true;
   // Essais seulement : plafond d'export abaissé pour exercer la réduction sans perte des grands exports.
   if(Number.isInteger(options.saveBytes)&&options.saveBytes>0)ctx.nativeSaveBytes=options.saveBytes;
