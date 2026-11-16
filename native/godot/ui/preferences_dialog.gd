@@ -1,4 +1,5 @@
 extends RefCounted
+const FocusLater := preload("res://ui/focus_later.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
@@ -193,7 +194,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	refresh.call()
 	# Grands écrans : le dialogue gagne en hauteur pour que l'onglet Affichage tienne entier dans sa zone défilante.
 	Dialogs.show_centered(dialog,Vector2i(width,680 if app.get_window().size.y>=1080 else 600))
-	volume.get_line_edit().call_deferred("grab_focus")
+	FocusLater.grab(volume.get_line_edit())
 	return dialog
 
 static func _volume(parent: Node, caption: String, id: String) -> SpinBox:

@@ -1,5 +1,6 @@
 extends VBoxContainer
 ## Calendrier de carrière : la date simulée et le programme viennent du moteur.
+const FocusLater := preload("res://ui/focus_later.gd")
 
 const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -91,7 +92,7 @@ func _setup(owner_app: Control, table_callback: Callable) -> void:
 	var focus_id := str(reading.get("focus",""))
 	if not focus_id.is_empty():
 		var focus := find_child(focus_id,true,false) as Control
-		if focus != null: focus.call_deferred("grab_focus")
+		if focus != null: FocusLater.grab(focus)
 
 func _index(items: Dictionary, date: String, value: Dictionary) -> void:
 	if not items.has(date): items[date] = []
@@ -125,7 +126,7 @@ func _shift_month(amount: int) -> void:
 		if date.is_empty(): return
 		_select(date)
 		var target := find_child("MonthPrevious" if amount < 0 else "MonthNext",true,false) as Control
-		if target != null: target.call_deferred("grab_focus")
+		if target != null: FocusLater.grab(target)
 		return
 	var year := month.left(4).to_int()
 	var number := month.right(2).to_int() + amount
@@ -141,7 +142,7 @@ func _shift_month(amount: int) -> void:
 	selected = today if today.begins_with(month) else month + "-01"
 	_refresh()
 	var target := find_child("MonthPrevious" if amount < 0 else "MonthNext", true, false) as Control
-	if target != null: target.call_deferred("grab_focus")
+	if target != null: FocusLater.grab(target)
 
 func _select(date: String) -> void:
 	if _date(date).is_empty(): return
@@ -150,7 +151,7 @@ func _select(date: String) -> void:
 	selected = date
 	_refresh()
 	var target := find_child("MonthDay_" + date, true, false) as Control
-	if target != null: target.call_deferred("grab_focus")
+	if target != null: FocusLater.grab(target)
 
 func _filter_by(value: String) -> void:
 	if value not in Agenda.FILTERS: return
@@ -158,14 +159,14 @@ func _filter_by(value: String) -> void:
 	filter = value
 	_refresh()
 	var target := find_child("MonthFilter_" + value, true, false) as Control
-	if target != null: target.call_deferred("grab_focus")
+	if target != null: FocusLater.grab(target)
 
 func _view_as(value: String) -> void:
 	if value not in ["month","week"]: return
 	view_mode = value
 	_refresh()
 	var target := find_child("CalendarView_"+value,true,false) as Control
-	if target != null: target.call_deferred("grab_focus")
+	if target != null: FocusLater.grab(target)
 
 func _remember_focus(id: String) -> void:
 	app.management_ui["calendar_reading"]["focus"] = id
@@ -810,7 +811,7 @@ func _open_training_today() -> void:
 	app.Immersive.open_training(app)
 	var tab := app.find_child("TrainingTab0", true, false) as Button
 	if tab == null: tab = app.find_child("PreparationTabEntrainement", true, false) as Button
-	if tab != null: tab.grab_focus.call_deferred()
+	if tab != null: FocusLater.grab(tab)
 
 func _open_preparation(fixture: Dictionary) -> void:
 	_remember_focus("CalendarOpenFixture_"+str(fixture.get("id","")).validate_node_name())

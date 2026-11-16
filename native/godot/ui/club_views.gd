@@ -1,4 +1,5 @@
 extends RefCounted
+const FocusLater := preload("res://ui/focus_later.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Semantics = preload("res://ui/data_semantics.gd")
 const CalendarIcons = preload("res://ui/immersive08/components.gd")
@@ -522,7 +523,7 @@ static func tables(app: Control) -> Control:
 		if focus_index in [0,2]:
 			var target: Button = pager.get_child(0).get_child(focus_index)
 			if target.disabled:target=pager.get_child(0).get_child(2 if focus_index==0 else 0)
-			if not target.disabled:target.grab_focus.call_deferred()
+			if not target.disabled:FocusLater.grab(target)
 	page.redraw.call(page.capacity)
 	if international:
 		var legend := G.h(10)

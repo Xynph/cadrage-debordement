@@ -1,5 +1,6 @@
 extends Control
 ## Le registre des confrontations reste indexé par les identifiants du monde.
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -118,7 +119,7 @@ func _pairs() -> void:
 			state.page = 0
 			_display()
 			var focus := workspace.find_child("RivalryFilter" + str(i), true, false) as Button
-			if focus != null: focus.grab_focus.call_deferred(), (i == 1) == only_club, "shield" if i == 1 else "people", true, PRIMARY, "RivalryFilter" + str(i))
+			if focus != null: FocusLater.grab(focus), (i == 1) == only_club, "shield" if i == 1 else "people", true, PRIMARY, "RivalryFilter" + str(i))
 	var pairs: Array = data.get("pairs", [])
 	if only_club: pairs = pairs.filter(func(pair: Dictionary): return own.get("id") in [pair.get("a"), pair.get("b")])
 	var selected := str(state.get("selected_pair", ""))
@@ -178,7 +179,7 @@ func _pair_row(parent: Panel, pair: Dictionary, index: int, selected: bool) -> v
 		state.selected_pair = key
 		_display()
 		var focus := workspace.find_child(id, true, false) as Button
-		if focus != null: focus.grab_focus.call_deferred(), selected, "", false, PRIMARY, id)
+		if focus != null: FocusLater.grab(focus), selected, "", false, PRIMARY, id)
 	row.set_meta("pair_key", key)
 	row.accessibility_name = _club(a) + " contre " + _club(b)
 	row.add_theme_stylebox_override("normal", C.box(Color("17462f") if selected else Color("131d20") if index % 2 == 0 else Color("101819"), Color(C.LINE, .55), 3, 0))
@@ -329,7 +330,7 @@ func _pager(parent: Node, key: String, pages: int, x: float, y: float) -> void:
 			_display()
 			var target := workspace.find_child(id, true, false) as Button
 			if target != null and target.disabled: target = workspace.find_child("RivalryNext" if i == 0 else "RivalryPrevious", true, false) as Button
-			if target != null: target.grab_focus.call_deferred(), false, "", true, PRIMARY, id)
+			if target != null: FocusLater.grab(target), false, "", true, PRIMARY, id)
 		button.disabled = int(state[key]) + direction not in range(pages)
 	D.text(parent, x + 211, y + 26, "%d / %d" % [int(state[key]) + 1, pages], 22, C.MUTED, 600, 71, HORIZONTAL_ALIGNMENT_CENTER)
 
