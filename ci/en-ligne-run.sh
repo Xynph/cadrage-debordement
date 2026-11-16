@@ -72,5 +72,6 @@ if [[ "${CD_EL_MESURES:-false}" == "true" ]]; then
   fi
 fi
 
+echo "=== LOT26 ==="; cat "$out/resume.md"; cat "$out/mesure.json" 2>/dev/null | head -c 20000; echo; tail -5 "$out/mesures-parcours.log" 2>/dev/null; grep -hE "LOT26_|FAIL" "$out"/*.log 2>/dev/null | head -80; cat "$out/echecs.txt" 2>/dev/null; echo "=== FIN LOT26 ==="
 [[ -s "$out/echecs.txt" ]] || rm -f "$out/echecs.txt"
 exit $failed
