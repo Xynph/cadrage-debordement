@@ -254,6 +254,7 @@
       "tests/godot-match-silhouettes.cjs": 2,
       "tests/godot-reader-history.cjs": 141,
       "tests/godot-delegue-composition.cjs": 150,
+      "tests/godot-engine.cjs": 300,
       "tests/godot-salary-display.cjs": 2,
       "tests/godot-staff-mentoring.cjs": 2,
       "tests/godot-world-entity-targets.cjs": 2,
