@@ -1,4 +1,5 @@
 extends RefCounted
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const TableOrder = preload("res://ui/player_table_order.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -237,7 +238,7 @@ static func _bench(card:Panel,app:Control) -> int:
 			state.descending=not state.descending if state.key==key else false
 			state.key=key;app._render()
 			var focus: Control=app.root_content.find_child("BenchSort_"+key,true,false)
-			if focus!=null:focus.grab_focus.call_deferred(),false,"",false,app.accent,"BenchSort_"+key)
+			if focus!=null:FocusLater.grab(focus),false,"",false,app.accent,"BenchSort_"+key)
 		button.add_theme_font_size_override("font_size",C.px(16))
 	var entries: Array=[]
 	for slot in range(15,23):
@@ -311,7 +312,7 @@ static func _restore_focus(app: Control) -> void:
 	var focus_id:=str(Selection.state(app).get("focus",""))
 	if focus_id.is_empty():return
 	var focus:Control=app.root_content.find_child(focus_id,true,false)
-	if focus!=null:focus.grab_focus.call_deferred()
+	if focus!=null:FocusLater.grab(focus)
 
 static func _outside(card: Panel,app: Control) -> void:
 	var index:int=app.selected_slot

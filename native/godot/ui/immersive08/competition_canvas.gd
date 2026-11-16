@@ -1,5 +1,6 @@
 extends Control
 ## Classements, phases finales, calendrier et résultats de la carrière native.
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -824,7 +825,7 @@ func _turn(key: String, direction: int, id: String) -> void:
 	var target := owner_app.find_child(id + ("Previous" if direction < 0 else "Next"), true, false) as Button
 	if target != null and target.disabled:
 		target = owner_app.find_child(id + ("Next" if direction < 0 else "Previous"), true, false) as Button
-	if target != null: target.grab_focus.call_deferred()
+	if target != null: FocusLater.grab(target)
 
 func _entity_area(parent: Node, area: Rect2, target: Dictionary, id: String, caption: String) -> Button:
 	if not target_available(app, str(target.kind), target.id): return null
