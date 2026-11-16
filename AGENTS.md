@@ -83,6 +83,7 @@ Distinguer vérifié, proposé et à faire. Les choix explicites de Léo priment
   world-champ. Les tests encore marqués CD_MODES_HERITES sont exclus de la CI
   jusqu'à leur migration ou suppression.
 - Cap : consolider (améliorer l'existant) plutôt qu'ajouter.
+- Charte provisoire (16/11/2026) : aucune nouvelle couleur, police, taille ou style ; voir [docs/charte-provisoire.md](docs/charte-provisoire.md).
 
 ## Immersion (10/11/2026)
 

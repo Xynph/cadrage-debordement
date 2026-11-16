@@ -28,6 +28,7 @@ sans instruction ») **ne s'applique pas** ici. Léo veut un maximum d'autonomie
 - Cap actuel : **consolider** (améliorer l'existant, rendre le jeu agréable,
   beau et addictif) plutôt qu'ajouter de nouvelles fonctionnalités.
 - Uniquement la carrière **Monde** : aucun test sur l'ancien mode France.
+- Charte graphique provisoire : aucune nouvelle couleur, police ou style ; voir `docs/charte-provisoire.md`.
 - Données réelles (vrais noms, photos, logos) : jamais dans ce dépôt public ;
   elles vont dans le dépôt privé `rugby-reel-donnees` (pack Rugby Réel).
 - Agents : modèle le plus puissant seulement pour la conception et le difficile
