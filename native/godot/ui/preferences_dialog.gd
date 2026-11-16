@@ -61,6 +61,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		comfort.add_child(choose)
 	var camera := _choice(comfort,"Caméra préférée",["TV","Vue de dessus","Action"],"PreferencesCamera")
 	var quality := _choice(comfort,"Qualité de la scène",["Économie","Équilibrée","Détaillée"],"PreferencesQuality")
+	var intro := _choice(comfort,"Introduction au lancement",["Complète","Courte"],"PreferencesIntro")
+	intro.tooltip_text = "Complète : présentation, stade et écran titre. Courte : écran titre seul."
 	var sound_profile: RefCounted = app.soundscape.preferences if is_instance_valid(app.soundscape) else null
 	sound.add_child(C.label("MIXAGE DE L’INTERFACE ET DU STADE",20,C.GOLD,true,700))
 	sound.add_child(C.wrap("Les sons d’interface et l’ambiance du stade ont chacun leur volume.",18,C.IVORY))
@@ -104,6 +106,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		camera.disabled = profile.data.reduced_motion
 		camera.tooltip_text = "Choix différé : le mode calme utilise une caméra tactique fixe." if profile.data.reduced_motion else "Caméra appliquée à la scène du match."
 		quality.select(["economy","balanced","detail"].find(profile.data.quality))
+		intro.select(0 if profile.data.get("intro") == "complete" else 1)
 		salary_period.select(["weekly","monthly","annual"].find(profile.data.salary_period))
 		stadium.select(1 if profile.data.stadium == "evening" else 0)
 		continue_messages.select(maxi(0,["importants","tous","aucun"].find(str(profile.data.get("continue_messages","importants")))))
@@ -134,6 +137,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	salary_period.item_selected.connect(func(index: int):
 		profile.set_value("salary_period",["weekly","monthly","annual"][index])
 		refresh.call())
+	intro.item_selected.connect(func(index: int): profile.set_value("intro",["complete","short"][index]); refresh.call())
 	quality.item_selected.connect(func(index: int): profile.set_value("quality",["economy","balanced","detail"][index]); refresh.call())
 	screen.item_selected.connect(func(index: int): profile.set_value("display_screen",index-1); refresh.call())
 	stadium.item_selected.connect(func(index: int): profile.set_value("stadium",["day","evening"][index]); refresh.call())
