@@ -181,15 +181,13 @@ static func _resultat(texte: String, categorie: String, ton: String, action: Dic
 
 static func _reception(model: Dictionary) -> Dictionary:
 	var dernier := dernier_resultat(model)
-	var messages: Array = model.get("messages", []) if model.get("messages") is Array else []
-	var count := messages.size()
 	if not dernier.is_empty() and dernier.issue == "defaite":
 		return _resultat("Le courrier ne rattrape pas un %d-%d. Lis ce qui concerne le groupe d'abord, la presse attendra : elle sait déjà ce qu'elle va écrire." % [dernier.pour, dernier.contre], "mauvaise_nouvelle", NEGATIF)
 	if not dernier.is_empty() and dernier.issue == "victoire":
 		return _resultat("Une victoire, ça remplit la boîte aux lettres. Profites-en, mais garde un œil sur les messages du staff : c'est là que se cachent les vrais soucis.", "bonne_nouvelle", POSITIF)
 	return _resultat(_variante(model, [
-		"%d message%s qui t'attendent. Trie comme à l'atelier : ce qui touche les joueurs avant ce qui touche les papiers." % [count, "s" if count > 1 else ""],
-		"Rien d'urgent ne crie plus fort que le reste ici. Commence par le staff, finis par les partenaires.",
+		"Trie comme à l'atelier : ce qui touche les joueurs avant ce qui touche les papiers.",
+		"Commence par les messages du staff : une décision sur le groupe mérite ton attention avant le courrier des partenaires.",
 	]), "consigne", NEUTRE)
 
 static func _bureau(model: Dictionary) -> Dictionary:
@@ -197,6 +195,10 @@ static func _bureau(model: Dictionary) -> Dictionary:
 	var morale := _nombre(model.get("meta", {}).get("morale"), -1.0)
 	var serie_ := serie(model)
 	var opponent := adversaire(model)
+	# Jour de match, feuille perfectible : le même conseil précis que le carnet de la semaine (avec « Suivre le
+	# conseil »), avant tout le reste, comme dans le carnet.
+	var precis := conseil_jour_de_match(model)
+	if not precis.is_empty(): return precis
 	if serie_.get("issue") == "defaite" and int(serie_.nombre) >= 3:
 		return _resultat("%d défaites d'affilée. On ne repeint pas une armoire bancale : reviens aux bases, la mêlée et la touche, et le reste suivra." % serie_.nombre, "mauvaise_nouvelle", NEGATIF)
 	if trust >= 0 and trust < 45:
@@ -388,6 +390,52 @@ static func composition(model: Dictionary) -> Dictionary:
 	for proposal: Dictionary in chosen:
 		changes.append({"slot": proposal.slot, "playerId": str(proposal.entrant.id), "sortant": str(proposal.sortant.get("id", ""))})
 	return _resultat(texte, "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes, "libelle": "Suivre le conseil"})
+
+## Version courte du conseil de composition (carnet de la semaine et bulle du Bureau le jour de match : une seule source).
+static func composition_courte(model: Dictionary, action: Dictionary) -> String:
+	var parts := PackedStringArray()
+	for change: Variant in action.get("changements", []):
+		if not change is Dictionary: continue
+		var entrant := _nom(joueur(model, str(change.get("playerId", ""))))
+		var sortant := _nom(joueur(model, str(change.get("sortant", ""))))
+		var poste := ""
+		for assignment: Variant in model.get("selection", {}).get("slots", []) if model.get("selection") is Dictionary else []:
+			if assignment is Dictionary and int(_nombre(assignment.get("slot"), -1)) == int(_nombre(change.get("slot"), -2)): poste = str(assignment.get("label", "")).to_lower()
+		var morceau := entrant + (" à la place " + _de(sortant) if not sortant.is_empty() else "")
+		if not poste.is_empty(): morceau += " (" + poste + ")"
+		parts.append(morceau)
+	if parts.is_empty(): return "Je changerais la feuille avant le match."
+	return "Pour le match, je changerais %s : %s." % ["une chose" if parts.size() == 1 else "deux choses", " ; ".join(parts)]
+
+## « de Smart », « d'Amos » (élision devant une voyelle).
+static func _de(nom: String) -> String:
+	return ("d'" if not nom.is_empty() and nom.left(1).to_upper() in ["A", "E", "I", "O", "U", "Y", "É", "È", "Ê", "Â", "Î", "Ô"] else "de ") + nom
+
+## Le conseil précis du jour de match (changements de composition, avec « Suivre le conseil »), ou {} si la
+## feuille est déjà bonne. Source unique : le carnet de la semaine (gabi_semaine.gd) et la bulle de Gabi au
+## Bureau (« Ton avis, Gabi ? », fil du bandeau) disent exactement la même chose ce jour-là.
+static func conseil_jour_de_match(model: Dictionary) -> Dictionary:
+	if not _jour_de_match(model): return {}
+	var repos := fatigue(model)
+	var cash := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
+	if cash >= 0 and not repos.is_empty():
+		return repos.merged({"texte": fatigue_courte(model, repos)}, true) if not repos.get("action", {}).is_empty() else repos
+	var compo := composition(model)
+	if compo.get("action", {}).is_empty(): return {}
+	return compo.merged({"texte": composition_courte(model, compo.action)}, true)
+## Version courte du conseil de fatigue pour le carnet (le détail reste dans la bulle de Gabi).
+static func fatigue_courte(model: Dictionary, avis: Dictionary) -> String:
+	var parts := PackedStringArray()
+	for change: Variant in avis.get("action", {}).get("changements", []):
+		if not change is Dictionary: continue
+		var sortant := joueur(model, str(change.get("sortant", "")))
+		var entrant := joueur(model, str(change.get("playerId", "")))
+		parts.append("%s (%d %%) pour %s" % [_nom(entrant), int(condition(entrant)), _nom(sortant)])
+	var total := int(fatigue_donnees(model).get("count", parts.size()))
+	var qui := "%d des %d titulaires fatigués" % [parts.size(), total] if total > parts.size() else "%d titulaires fatigués" % parts.size()
+	if parts.size() > 2: return "Je ferais souffler %s : %s et %d autre%s." % [qui, ", ".join(parts.slice(0, 2)), parts.size() - 2, "s" if parts.size() > 3 else ""]
+	return "Je ferais souffler les fatigués : %s." % " ; ".join(parts)
+
 
 ## Alerte de fatigue : des titulaires de la feuille du prochain match sont sous 70 % de condition.
 ## Le moteur (selection.fatigue, position-aptitudes.cjs) propose pour chacun le meilleur remplaçant frais au
