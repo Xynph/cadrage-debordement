@@ -25,23 +25,23 @@ const t0 = performance.now();
 const bancAvant = LD.benchmark();
 
 const jeu = M.ouvrir({ seed: graine, journal: true, deferredCommits: true, lightErrors: true, testVm: true });
-let acc = 0, accCpu = 0;
+let acc = 0, accCpu = 0, accCmd = 0, nCmd = 0;
 const orig = jeu.bridge.handle, flush = orig.flush;
 const mesure = (fn) => { const c = process.cpuUsage(), t = performance.now(); const r = fn(); const u = process.cpuUsage(c); acc += performance.now() - t; accCpu += (u.user + u.system) / 1000; return r; };
-const enrobe = m => { const r = mesure(() => orig(m)); if (flush) mesure(() => flush()); return r; };
+const enrobe = m => { const a = acc; const r = mesure(() => orig(m)); accCmd += acc - a; nCmd++; if (flush) mesure(() => flush()); return r; };
 enrobe.flush = flush;
 jeu.bridge.handle = enrobe;
 const semaines = [];
 try {
   let model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club, detailedLeagues: suivis }));
-  const creationMs = Math.round(acc); acc = 0; accCpu = 0;
+  const creationMs = Math.round(acc); acc = 0; accCpu = 0; accCmd = 0; nCmd = 0;
   let match = false, jours = 0, jeuxMatch = 0;
   for (let i = 0; i < 400 && semaines.filter(s => s.match).length < echauffement + nSemaines && performance.now() - t0 < budgetMs; i++) {
     model = jeu.regler(model);
     if (model.meta.calendarCadence?.matchReady && model.next) { model = M.jouerLeMatch(jeu, model); match = true; continue; }
     const semaine = model.meta.week;
     model = jeu.call('advance_day', { fromDate: model.meta.calendarToday }); jours++;
-    if (model.meta.week !== semaine) { semaines.push({ semaine, match, jours, ms: Math.round(acc), cpuMs: Math.round(accCpu) }); acc = 0; accCpu = 0; match = false; jours = 0; }
+    if (model.meta.week !== semaine) { semaines.push({ semaine, match, jours, ms: Math.round(acc), cpuMs: Math.round(accCpu), reponseMs: Math.round(accCmd), commandes: nCmd }); acc = 0; accCpu = 0; accCmd = 0; nCmd = 0; match = false; jours = 0; }
   }
   var creation = creationMs, date = model.meta.calendarToday;
 } finally { jeu.bridge.close(); }
@@ -59,8 +59,8 @@ const weekRef = semaineMs / contention;
 const resultat = {
   suivis: mode, club, date, creationMs: creation, benchmark: { avant: bancAvant, apres: bancApres, retenu: banc, facteurSerie: +serial.toFixed(3), facteurCalcul: +compute.toFixed(3) },
   machine: { cores, memoryGb: +memoryGb.toFixed(1), contention, node: process.version },
-  semaines: semaines.map(s => ({ semaine: s.semaine, match: s.match, jours: s.jours, ms: s.ms, cpuMs: s.cpuMs })),
-  semaineMs, semaineCpuMs, semaineRefMs: Math.round(weekRef * 1000) / 1000, suivisN, loinN,
+  semaines: semaines.map(s => ({ semaine: s.semaine, match: s.match, jours: s.jours, ms: s.ms, cpuMs: s.cpuMs, reponseMs: s.reponseMs, commandes: s.commandes })),
+  semaineMs, semaineCpuMs, semaineReponseMs: mediane(utiles.map(s => s.reponseMs)), semaineRefMs: Math.round(weekRef * 1000) / 1000, suivisN, loinN,
   // baseWeekMs si le coût d'un match suivi / de loin est celui de REFERENCE (estimation directe, sans seconde configuration).
 };
 // Ramené par estimate() : base*série + (suivis*d + loin*q)*calcul/46 = semaine de référence.
