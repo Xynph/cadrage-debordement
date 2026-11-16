@@ -1,5 +1,6 @@
 extends RefCounted
 ## UI de session : ni sauvegarde, ni calcul d'effet métier, ni copie du monde.
+const FocusLater := preload("res://ui/focus_later.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const EntityLink = preload("res://ui/entity_link.gd")
 const TRAINING_LABELS := {"repos":"Repos","normal":"Travail normal","intense":"Travail intense"}
@@ -433,4 +434,4 @@ func _open() -> void:
 		current.focus_next=current.get_path_to(focus_chain[(index+1)%focus_chain.size()])
 		current.focus_previous=current.get_path_to(focus_chain[posmod(index-1,focus_chain.size())])
 	dialog.popup_centered(Vector2i(640,450))
-	close.call_deferred("grab_focus")
+	FocusLater.grab(close)

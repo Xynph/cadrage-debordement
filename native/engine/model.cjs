@@ -89,7 +89,7 @@ module.exports=function nativeModel(){
   ['Tirs de pénalité',a.goals+' / '+a.goalAttempts,b.goals+' / '+b.goalAttempts],
   ['Transformations',a.conversions+' / '+a.conversionAttempts,b.conversions+' / '+b.conversionAttempts]
  ].map(([label,home,away])=>({label,home,away}));}
- return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:(S.playerRoles?.buteur&&S.lineup.includes(S.playerRoles.buteur)?S.playerRoles.buteur:chooseScorer(own,S.lineup)?.id)||null,selection,tactics,calendar,leagues,market,figures:(()=>{
+ return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:typeof staffKickerId==='function'?staffKickerId():(S.playerRoles?.buteur&&S.lineup.includes(S.playerRoles.buteur)?S.playerRoles.buteur:chooseScorer(own,S.lineup)?.id)||null,selection,tactics,calendar,leagues,market,figures:(()=>{
   // Chiffres lus par plusieurs écrans : une seule source (club-budget.cjs), jamais recalculés côté interface.
   const w=typeof chiffresMasse==='function'?chiffresMasse():{joueursHebdo:own.players.reduce((n,p)=>n+p.salary,0)};
   const c=typeof chiffresContrats==='function'?chiffresContrats():null;

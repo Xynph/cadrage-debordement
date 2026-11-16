@@ -1,4 +1,5 @@
 extends RefCounted
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -92,7 +93,7 @@ static func open_target(app: Control, id: Variant) -> bool:
 	app._navigate("Finances", false)
 	if index >= 0:
 		var target := app.find_child("FinanceLedgerTarget",true,false) as Control
-		if target != null: target.call_deferred("grab_focus")
+		if target != null: FocusLater.grab(target)
 	return true
 
 static func build(app: Control, canvas: Control) -> void:
@@ -487,7 +488,7 @@ static func _wage_sort(app: Control, key: String) -> void:
 	app.management_ui["finance_wage_scroll"] = 0
 	app._render()
 	var button := app.find_child("FinanceSort_"+key,true,false)
-	if button != null: button.call_deferred("grab_focus")
+	if button != null: FocusLater.grab(button)
 
 static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 	var wages := D.panel(canvas, Rect2(0,346,1398,783), "Contrats et salaires", "people", "", "FinanceSalaryTable")

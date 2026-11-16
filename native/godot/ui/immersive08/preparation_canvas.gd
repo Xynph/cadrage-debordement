@@ -1,5 +1,6 @@
 extends Control
 ## Dossier adverse et intentions de jeu. Le troisième onglet ouvre le planning.
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -201,7 +202,7 @@ func _choose(index: int) -> void:
 	owner._render()
 	if index == 2:
 		var next := owner.find_child("TrainingTab0", true, false) as Button
-		if next != null: next.grab_focus.call_deferred()
+		if next != null: FocusLater.grab(next)
 
 func _observe(node: Node) -> void:
 	if node is BaseButton and node.focus_mode != Control.FOCUS_NONE and node != match_context.pause_button:

@@ -1,4 +1,5 @@
 extends RefCounted
+const FocusLater := preload("res://ui/focus_later.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Board = preload("res://ui/lineup_board.gd")
@@ -206,7 +207,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 			state.table_sort=field;state.scroll=0
 			_squad_rows(app,list,profile,count,compare)
 			var next: Control=header.find_child("RosterColumn_"+field,false,false)
-			if next!=null:next.grab_focus.call_deferred())
+			if next!=null:FocusLater.grab(next))
 		label.name="RosterColumn_"+field
 		label.custom_minimum_size.x=column[2]
 		if field=="name": G.fill(label)
@@ -265,7 +266,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 			label.tooltip_text=value
 			row.add_child(label)
 		list.add_child(b)
-		if str(p.id)==focus_id:b.grab_focus.call_deferred()
+		if str(p.id)==focus_id:FocusLater.grab(b)
 	list.get_parent().set_deferred("scroll_vertical",int(app.management_ui.roster.scroll))
 	if revealed!=null:_reveal_roster_row.call_deferred(app,list,revealed)
 	_show_profile(app,profile)
