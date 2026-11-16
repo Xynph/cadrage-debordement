@@ -2,9 +2,11 @@ extends SceneTree
 ## Écran entre deux temps forts (lot 5, 16/11/2026) : statistiques et lecture de Gabi sur un
 ## échantillon court. Projection `direct` de fixture (forme de native/engine/match-direct.cjs) :
 ## à la 2e minute, parts masquées, chiffres atténués, Gabi sans pourcentage ni ton alarmiste ;
-## à la 12e minute, chiffres pleins et lecture de l'occupation. Bandeau du direct à l'échelle.
+## à la 12e minute, chiffres pleins et lecture de l'occupation. Bandeau du direct à l'échelle ;
+## légende d'un essai retenue jusqu'à l'aplatissement.
 const Between = preload("res://ui/contextual/match_between.gd")
 const LiveView = preload("res://ui/contextual/live_view.gd")
+const Regie = preload("res://ui/contextual/match_temps_forts.gd")
 var checks := 0
 var failures: Array[String] = []
 
@@ -69,5 +71,12 @@ func run() -> void:
 	check(LiveView.echelle_pour(720.0) == 1.0 and LiveView.echelle_pour(1080.0) == 1.0, "Bandeau : jamais réduit sous 1080p")
 	check(is_equal_approx(LiveView.echelle_pour(1440.0), 1440.0 / 1080.0), "Bandeau : agrandi en 1440p")
 	check(roundi(LiveView.BANDEAU_TAILLES.legende * LiveView.echelle_pour(1080.0)) >= 22, "Légende du temps fort lisible en 1080p")
+	check(Between.muette("Les indicateurs ne justifient pas de changement offensif prioritaire.") and not Between.muette("Occupation de 30 % : rechercher du terrain au pied."), "Conseil sans proposition : Gabi lit le match montré")
+	# Essai : rien n'est écrit ni acclamé avant que le ballon soit aplati (fin du mouvement du plan).
+	var essai := {"kind": "try", "mouvement": 2.4, "duree": 3.4}
+	check(Regie.essai_en_cours(essai, 0.0) and Regie.essai_en_cours(essai, 2.3), "Essai : légende tue pendant la course")
+	check(not Regie.essai_en_cours(essai, 2.4), "Essai : légende à l'aplatissement")
+	check(not Regie.essai_en_cours({"kind": "try", "mouvement": 0.0}, 0.0), "Essai sans mouvement : légende tout de suite")
+	check(not Regie.essai_en_cours({"kind": "carry", "mouvement": 2.0}, 0.5), "Course : légende inchangée")
 	print("MATCH_ECHANTILLON %d controles, %d echec" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)

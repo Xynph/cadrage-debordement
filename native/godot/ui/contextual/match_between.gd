@@ -1219,11 +1219,16 @@ static func _phrase_forte(raisons: Array) -> String:
 	var choisie := str(raisons[0])
 	for raison: Variant in raisons:
 		var texte := str(raison)
-		if not texte.begins_with("Aucun") and not texte.begins_with("Pas assez"):
+		if not muette(texte):
 			choisie = texte
 			break
 	var coupe := choisie.find(". ")
 	return choisie.substr(0, coupe + 1) if coupe > 0 else choisie
+
+## Raison du conseiller qui ne propose rien (« Aucun signal… », « Pas assez d’observations… »,
+## « Les indicateurs ne justifient pas… ») : Gabi lit alors le match montré, plutôt que de la répéter.
+static func muette(raison: String) -> bool:
+	return raison.begins_with("Aucun") or raison.begins_with("Pas assez") or raison.begins_with("Les indicateurs ne justifient")
 
 ## Une phrase répétée d'une raison à l'autre (« Conservez la consigne en place. ») n'est dite
 ## qu'une fois, à la dernière raison qui la contient.
@@ -1297,7 +1302,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	var lecture := _lecture(direct)
 	if not lecture.is_empty(): raisons.push_front(lecture)
 	raisons = _sans_redites(raisons)
-	var parlantes := raisons.filter(func(r: String): return not r.begins_with("Aucun") and not r.begins_with("Pas assez"))
+	var parlantes := raisons.filter(func(r: String): return not muette(r))
 	# Lecture générale sans alerte : ton posé et en retrait (ivoire atténué), l'alerte garde la couleur.
 	if phrases.is_empty() and parlantes.is_empty(): phrases.append([_lecture_generale(direct), DOUX])
 	if phrases.is_empty() and not raisons.is_empty(): phrases.append([_phrase_forte(raisons), IVOIRE])
