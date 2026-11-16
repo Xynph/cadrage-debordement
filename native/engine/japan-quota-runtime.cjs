@@ -56,7 +56,7 @@ function factory(eligibility){
  // classification ne modifie pas la carrière) : même résultat qu'un appel par joueur, sans relire l'édition à chaque fois.
  function classified(s,p,e=edition(s)){
   const initial=e?.registry.japanCategories?.[p.id];
-  if(initial)return {id:p.id,...initial,rank:CDWorldCareer.sourcePlayerIn(e,p.id)?.rating||0};
+  if(initial)return {id:p.id,...initial,rank:(typeof CDWorldCareer.sourcePlayerIn==='function'?CDWorldCareer.sourcePlayerIn(e,p.id):CDWorldCareer.sourcePlayer(s,p.id))?.rating||0};
   return {...youthCategory(s,p),id:p.id,basis:'estimated',rank:0};
  }
  const registered=(s,club)=>{const e=edition(s);return selectRegistration(club.players.map(p=>classified(s,p,e)));};
