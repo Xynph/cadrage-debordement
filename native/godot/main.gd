@@ -560,7 +560,6 @@ func _persist_changed(state: String, _message: String) -> void:
 func _continue_progressed(progress: Dictionary) -> void:
 	if not waiting or last_command != CareerProgression.CONTINUE_COMMAND or closing: return
 	continue_progress.advance_to(progress)
-	if bool(progress.get("saving", false)): continue_progress.show_saving()
 	var parts := str(progress.get("today", "")).split("-")
 	if is_instance_valid(header_date) and parts.size() == 3 and int(parts[1]) in range(1, 13):
 		header_date.text = "%s %s %s" % [parts[2], ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."][int(parts[1])-1], parts[0]]
