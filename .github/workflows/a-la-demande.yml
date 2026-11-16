@@ -6,6 +6,11 @@ name: Tests en ligne à la demande
 # Déclencheur de secours (quand le dispatch par l'API est refusé) : un push sur une branche
 # `en-ligne/**` ; les paramètres sont lus dans ci/en-ligne.json (ref, suites, captures, mesures)
 # et le code testé est celui de la branche poussée. ci/en-ligne.sh s'en charge.
+#
+# Résultats : publiés par git (job « publier ») dans la branche orpheline `resultats-en-ligne`,
+# sous runs/<run_id>/, lisibles depuis la session Claude (artefacts et stockage bloqués par le proxy) ;
+# l'artefact reste disponible 7 jours pour Léo. La branche de repli en-ligne/<horodatage> est supprimée
+# par le workflow ; l'entrée `menage` supprime les branches en-ligne/* et tmp/* de plus d'un jour.
 on:
   push:
     branches: ['en-ligne/**']
@@ -26,8 +31,18 @@ on:
         type: boolean
         required: false
         default: false
+      captures_quoi:
+        description: 'Captures voulues, séparées par des virgules : intro, finitions, fiche-club, feuille-espoir, match-rendu ; vide = toutes'
+        type: string
+        required: false
+        default: ''
       mesures:
         description: "Temps d'ouverture des écrans et portraits progressifs"
+        type: boolean
+        required: false
+        default: false
+      menage:
+        description: 'Ménage seul : supprime les branches distantes en-ligne/* et tmp/* de plus d un jour (aucun test)'
         type: boolean
         required: false
         default: false
@@ -37,16 +52,18 @@ permissions:
 
 # Une relance sur la même branche remplace l'exécution précédente.
 concurrency:
-  group: a-la-demande-${{ inputs.ref || github.ref_name }}
+  group: a-la-demande-${{ inputs.menage && 'menage' || inputs.ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   en-ligne:
+    if: ${{ !inputs.menage }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
       CD_EL_SUITES: ${{ inputs.suites }}
       CD_EL_CAPTURES: ${{ inputs.captures }}
+      CD_EL_CAPTURES_QUOI: ${{ inputs.captures_quoi }}
       CD_EL_MESURES: ${{ inputs.mesures }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -69,6 +86,7 @@ jobs:
             const out = [
               "CD_EL_SUITES=" + String(c.suites || "").replace(/[^A-Za-z0-9._ \/-]/g, ""),
               "CD_EL_CAPTURES=" + (c.captures === true),
+              "CD_EL_CAPTURES_QUOI=" + String(c.captures_quoi || "").replace(/[^a-z, -]/g, ""),
               "CD_EL_MESURES=" + (c.mesures === true)
             ].join("\n") + "\n";
             require("fs").appendFileSync(process.env.GITHUB_ENV, out);
@@ -145,7 +163,7 @@ jobs:
           code=$?
           [[ -f "$RUNNER_TEMP/resultats/resume.md" ]] && cat "$RUNNER_TEMP/resultats/resume.md" >> "$GITHUB_STEP_SUMMARY"
           exit $code
-      - name: Publier les résultats
+      - name: Conserver les résultats en artefact (7 jours)
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -153,3 +171,77 @@ jobs:
           path: ${{ runner.temp }}/resultats
           retention-days: 7
           if-no-files-found: ignore
+
+  # Publication par git : seul job (avec « menage ») à écrire dans le dépôt ; aucun code de la branche
+  # testée n'y est exécuté (pas de checkout), le script vient de main.
+  publier:
+    needs: en-ligne
+    if: ${{ always() && !inputs.menage && needs.en-ligne.result != 'skipped' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    concurrency:
+      group: resultats-en-ligne-publication
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Récupérer les résultats
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: resultats-en-ligne
+          path: ${{ runner.temp }}/resultats
+      - name: Publier dans la branche resultats-en-ligne
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --quiet pillow || sudo apt-get install -y --no-install-recommends imagemagick
+          mkdir "$RUNNER_TEMP/outil" && cd "$RUNNER_TEMP/outil" && git init -q
+          git fetch -q --no-tags --depth=1 "https://github.com/${{ github.repository }}.git" main
+          git show FETCH_HEAD:ci/en-ligne-publier.sh > "$RUNNER_TEMP/en-ligne-publier.sh"
+          b64="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::$b64"
+          export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.https://github.com/.extraheader" GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $b64"
+          cd "$RUNNER_TEMP"
+          bash en-ligne-publier.sh "$RUNNER_TEMP/resultats" "${{ github.run_id }}" "https://github.com/${{ github.repository }}.git"
+      - name: Supprimer la branche de repli qui a déclenché le run
+        if: ${{ always() && github.event_name == 'push' }}
+        shell: bash
+        env:
+          BRANCHE: ${{ github.ref_name }}
+        run: |
+          # Seul le préfixe en-ligne/ est concerné.
+          [[ "$BRANCHE" =~ ^en-ligne/[A-Za-z0-9._-]+$ ]] || { echo "Branche $BRANCHE hors préfixe en-ligne/ : rien supprimé."; exit 0; }
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$BRANCHE" && echo "Branche $BRANCHE supprimée."
+
+  menage:
+    if: ${{ inputs.menage }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Supprimer les branches en-ligne/* et tmp/* de plus d'un jour
+        shell: bash
+        run: |
+          set -uo pipefail
+          repo="${{ github.repository }}"; limite=$(( $(date +%s) - 86400 )); n=0
+          for prefixe in en-ligne tmp; do
+            while IFS=' ' read -r ref sha; do
+              # Garde-fou : seuls les préfixes en-ligne/ et tmp/ sont supprimés.
+              [[ "$ref" =~ ^refs/heads/(en-ligne|tmp)/[A-Za-z0-9._/-]+$ ]] || continue
+              date="$(gh api "repos/$repo/commits/$sha" --jq '.commit.committer.date' 2>/dev/null || true)"
+              [[ -n "$date" ]] || continue
+              [[ "$(date -d "$date" +%s)" -lt $limite ]] || { echo "Gardée (récente) : ${ref#refs/heads/}"; continue; }
+              if gh api -X DELETE "repos/$repo/git/${ref}" >/dev/null 2>&1; then
+                echo "Supprimée : ${ref#refs/heads/}"; n=$((n+1))
+              else
+                echo "Suppression refusée : ${ref#refs/heads/}"
+              fi
+            done < <(gh api --paginate "repos/$repo/git/matching-refs/heads/$prefixe/" --jq '.[] | "\(.ref) \(.object.sha)"')
+          done
+          echo "## Ménage des branches : $n supprimée(s)" >> "$GITHUB_STEP_SUMMARY"
