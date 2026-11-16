@@ -79,7 +79,7 @@ for test in "${suites[@]}"; do
     printf 'CD_CPU_PROFILE suite=%s wall_s=%d.%02d\n' "$test" $(( (t1-t0)/1000000000 )) $(( (t1-t0)/10000000%100 )) >> "$log"
   fi
   cat "$log"
-  { pid=$$; while [[ "$pid" -gt 1 ]]; do for l in $(grep -h "GABI_PHASE\|GABI_BANDEAU" "$log" | tr ' ' '~'); do echo "DIAG ${l//\~/ }" > "/proc/$pid/fd/1" 2>/dev/null; done; pid="$(ps -o ppid= -p "$pid" | tr -d ' ')"; [[ -n "$pid" ]] || break; done; } 2>/dev/null
+  { pid=$$; while [[ "$pid" -gt 1 ]]; do for l in $(grep -h "GABI_PHASE\|GABI_BANDEAU\|GABI_ZONES\|FAIL:" "$log" | tr ' ' '~'); do echo "DIAG ${l//\~/ }" > "/proc/$pid/fd/1" 2>/dev/null; done; pid="$(ps -o ppid= -p "$pid" | tr -d ' ')"; [[ -n "$pid" ]] || break; done; } 2>/dev/null
   verdict=OK
   if [[ $code -ne 0 ]]; then
     verdict="ECHEC ($code)"

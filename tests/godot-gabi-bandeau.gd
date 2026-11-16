@@ -106,14 +106,21 @@ func run() -> void:
 	if coach.expanded: coach.close(); await settle()
 	await layout_normal()
 	phase("mise_en_page")
+	var zones := {}
 	for route: String in ROUTES:
 		if coach.expanded: coach.close()
 		app._navigate(route)
 		if coach.expanded: coach.close()
 		coach.fermer_bulle(); await settle()
 		await bandeau(route)
+		if route != "Bureau": zones[route] = coach._zones_interactives().size()
+	# Ouvrir la bulle place celle-ci hors des contrôles interactifs de l'écran : coût quadratique en leur nombre
+	# (~44 s sur le runner pour Effectif). Une seule ouverture sur Effectif ; le reste sur l'écran le plus léger.
+	var legere := "Réception"
+	for route: String in zones: if int(zones[route]) < int(zones[legere]): legere = route
+	print("GABI_ZONES ", zones, " legere=", legere)
 	phase("bandeaux")
-	await bulle()
+	await bulle(legere)
 	phase("bulle")
 	await bureau()
 	phase("bureau")
@@ -189,7 +196,7 @@ func bandeau_bureau(zone: Control, topbar: Control) -> void:
 	await capture("bandeau-bureau")
 
 ## Clic sur Gabi : bulle d'avis (« Ton avis, Gabi ? » + menu), sous le bandeau ; fermée d'un clic ailleurs.
-func bulle() -> void:
+func bulle(legere: String) -> void:
 	var coach: Control = app.coach
 	app._navigate("Effectif")
 	if coach.expanded: coach.close()
@@ -197,9 +204,7 @@ func bulle() -> void:
 	coach._attente.clear(); await settle()
 	var zone: Control = app.root_content.find_child("GabiBandeau", true, false)
 	if zone == null: return
-	phase("b0_preparation")
 	await click_at(zone.get_global_rect().get_center())
-	phase("b1_clic_ouvre")
 	var bubble: Control = coach._bulle
 	check(bubble.visible, "Clic sur Gabi : sa bulle s'ouvre")
 	check(str(coach._bulle_titre.text) == "TON AVIS, GABI ?", "La bulle donne son avis : " + str(coach._bulle_titre.text))
@@ -210,24 +215,23 @@ func bulle() -> void:
 	check(bubble.get_global_rect().position.y >= topbar.get_global_rect().end.y - 1, "La bulle descend du bandeau (sous lui)")
 	check(Rect2(Vector2.ZERO, app.size).grow(1).encloses(bubble.get_global_rect()), "Bulle entière dans l'application")
 	await capture("bulle-effectif")
-	phase("b2_verifs")
 	# Un clic ailleurs ferme la bulle (sans être avalé).
 	await click_at(Vector2(app.size.x * .45, app.size.y * .8))
 	check(not bubble.visible, "Un clic ailleurs ferme la bulle")
-	phase("b3_clic_ailleurs")
+	# La suite sur l'écran le plus léger (même Gabi, même bulle).
+	app._navigate(legere); coach.fermer_bulle(); await settle()
+	zone = app.root_content.find_child("GabiBandeau", true, false)
+	if zone == null: return
 	# Elle ne reste pas ouverte : fermeture d'elle-même après le temps de lecture.
 	await click_at(zone.get_global_rect().get_center())
 	check(bubble.visible, "Bulle rouverte")
-	phase("b4_rouverte")
 	coach._bulle_reste = 0.05
 	for i in 12: await process_frame
 	check(not bubble.visible, "La bulle se ferme d'elle-même")
-	phase("b5_autoferme")
 	# Le menu ouvre l'aide de l'écran en grand (mode grand conservé), et un second clic sur Gabi ferme la bulle.
 	await click_at(zone.get_global_rect().get_center())
 	await click_at(zone.get_global_rect().get_center())
 	check(not bubble.visible, "Second clic sur Gabi : bulle refermée")
-	phase("b6_double_clic")
 	# Limite de fréquence : une seule bulle spontanée par jour de jeu.
 	coach._jour_spontane = ""
 	check(coach._spontane_permis(), "Première bulle spontanée du jour permise")
@@ -235,7 +239,6 @@ func bulle() -> void:
 	coach._attente = {"genre": "contexte", "titre": "GABI", "texte": "Un mot pour toi, coach.", "route": str(app.route), "categorie": "consigne", "ton": "neutre"}
 	coach._maj_indice()
 	await settle()
-	phase("b7_attente")
 	var face: Control = zone.find_child("GabiMedaillon", true, false)
 	check(face != null and face.indice, "Indice discret quand Gabi a quelque chose à dire")
 	check(str(coach._remarque) == "Un mot pour toi, coach.", "Le fil du bandeau donne le message en attente")
