@@ -1,0 +1,37 @@
+TAP version 13
+# Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+# COMPARATEUR JOUEURS : 13 contrôles ; 0 échecs
+# Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+# OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.4 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+# COMPARATEUR JOUEURS : 13 contrôles ; 0 échecs
+# DIAG Effectif 1440p : fenêtre=(2560, 1440) vert=4
+# DIAG Fiche joueur 1440p : fenêtre=(2560, 1440) vert=3
+# DIAG Marché contre effectif 1440p : fenêtre=(2560, 1440) vert=2
+# DIAG Effectif 720p : fenêtre=(1280, 720) vert=4
+# DIAG Fiche joueur 720p : fenêtre=(1280, 720) vert=3
+# DIAG Marché contre effectif 720p : fenêtre=(1280, 720) vert=2
+# COMPARATEUR CAPTURES : 45 contrôles ; 0 échecs
+# libspeechd.so.2: cannot open shared object file: No such file or directory
+# WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+#      at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+# Subtest: Comparateur de joueurs : second choix par défaut, mémoire A/B et écarts sans nouvelle règle
+ok 1 - Comparateur de joueurs : second choix par défaut, mémoire A/B et écarts sans nouvelle règle
+  ---
+  duration_ms: 620.653239
+  type: 'test'
+  ...
+# Subtest: Comparateur de joueurs : captures des écrans (CD_COMPARATEUR_CAPTURE)
+ok 2 - Comparateur de joueurs : captures des écrans (CD_COMPARATEUR_CAPTURE)
+  ---
+  duration_ms: 111184.397846
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 112225.365592
