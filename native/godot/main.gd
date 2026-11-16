@@ -87,6 +87,7 @@ const AcademyFollowUpViews = preload("res://ui/academy_follow_up_view.gd")
 const SupportViews = preload("res://ui/support_view.gd")
 const ManagerCareerViews = preload("res://ui/manager_career_view.gd")
 const PlaybookViews = preload("res://ui/playbook_view.gd")
+const IntroSequence = preload("res://intro/intro_sequence.gd")
 const NAV_CHAPTERS = [
 	{"label":"Bureau", "routes":["Réception","Bureau"]},
 	{"label":"Équipe", "routes":["Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match"]},
@@ -266,6 +267,11 @@ func _ready() -> void:
 	_trace_startup("bridge.start.begin")
 	bridge.start(_profile_path())
 	_trace_startup("bridge.start.end")
+	# Ouverture du jeu (intro/) : cartes d'introduction pendant le démarrage du moteur, jamais en QA ni en test.
+	if qa_script.is_empty() and IntroSequence.enabled():
+		var intro: CanvasLayer = IntroSequence.new()
+		add_child(intro)
+		intro.setup(self, _profile_path())
 	timer.start()
 	get_tree().auto_accept_quit = false
 	get_tree().root.close_requested.connect(request_quit)
