@@ -16,7 +16,8 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  const japanLeague=id=>!!JP&&JP.leagues.includes(id);
  const japanPromotion=id=>!!JP&&id===JP.promotionId;
  const srpOptions={policy:SRP?.referencePolicy,futurePolicy:SRP?.futurePolicy};
- const copy=x=>JSON.parse(JSON.stringify(x)),eq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+ // Copie JSON (nativeJsonCopy, json-copy.cjs : même résultat, plus rapide) ; hors du moteur, JSON.
+ const copy=typeof nativeJsonCopy==='function'?nativeJsonCopy:x=>JSON.parse(JSON.stringify(x)),eq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
  const check=(yes,message)=>{if(!yes)throw Error('Monde international : '+message);};
  const leagueId=(s,id=s.club)=>IDS.find(k=>s.worldMode.leagues[k].members.includes(id))||'guest';
  const sizing=()=>({clubCount:REG.clubs.length,maxRound:WEEKS,rounds:WEEKS});
@@ -300,7 +301,8 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  function previewRoster(id){
   const players=initialRoster(REG.clubs[id]);
   players.push(...nativeProfessionalDepth.additions(id,players,1));
-  if(seniorCalibration)seniorCalibration.apply(players,SOURCES,{clubId:id,leagueId:REG.clubs[id].leagueId,registry:REG});
+  // Aperçu (catalogue des clubs) : seules les notes sont lues.
+  if(seniorCalibration)seniorCalibration.apply(players,SOURCES,{clubId:id,leagueId:REG.clubs[id].leagueId,registry:REG},{ratingsOnly:true});
   return players;
  }
  function start(id,dailyCalendar=false){
