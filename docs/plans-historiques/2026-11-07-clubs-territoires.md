@@ -8,7 +8,7 @@
 
 **Tech Stack:** JavaScript/CSS natifs, SVG propres, WebP locaux, node:test, Playwright ; lanceur Go existant pour la réception ultérieure.
 
-**Spec:** `docs/superpowers/specs/2026-11-07-clubs-territoires-design.md`.
+**Spec:** `docs/plans-historiques/specs/2026-11-07-clubs-territoires-design.md`.
 
 ## Contraintes globales
 

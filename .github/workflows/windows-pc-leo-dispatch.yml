@@ -15,7 +15,7 @@ jobs:
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' ||
         (github.event_name == 'workflow_dispatch' && github.actor == 'Xynph' && github.triggering_actor == 'Xynph'))
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 5
     environment: recette-pc-leo
     steps:

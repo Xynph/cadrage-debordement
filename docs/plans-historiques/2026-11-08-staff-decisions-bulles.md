@@ -11,7 +11,7 @@ images réelles privées référencées par IDs. Format de pack versionné compa
 
 **Tech Stack:** Godot4.7.2 Windows, GDScript, Node26, JS/CJS, outils Python locaux.
 
-**Spec:** docs/superpowers/specs/2026-11-08-staff-decisions-bulles-design.md
+**Spec:** docs/plans-historiques/specs/2026-11-08-staff-decisions-bulles-design.md
 
 ## Global Constraints
 

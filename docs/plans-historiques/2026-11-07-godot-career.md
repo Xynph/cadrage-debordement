@@ -8,7 +8,7 @@
 
 **Tech Stack:** Godot4.7.2 GDScript, Node embarqué, JavaScript de simulation existant, TTF et WebP locaux.
 
-**Spec:** `docs/superpowers/specs/2026-11-07-godot-career-design.md`.
+**Spec:** `docs/plans-historiques/specs/2026-11-07-godot-career-design.md`.
 
 ## Contraintes globales
 

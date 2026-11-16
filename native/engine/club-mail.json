@@ -1,0 +1,582 @@
+{
+  "version": 1,
+  "_doc": "Courrier du club (club-mail.cjs), façon Football Manager : chaque jour de calendrier, des interlocuteurs du club écrivent au manager (tutoiement) selon l'état de la carrière. Recevoir un mail ne change rien au monde : seule la réponse du manager a un effet (commande club_mail_reply, notée au journal d'actions). Contenu en données : types, expéditeurs, formulations (une par réception, jamais deux fois de suite la même pour un type), réponses et effets, seuils et cadence. Effets possibles d'une réponse : moral (moral du groupe), confiance (direction), supporters, medias, pression (relations presse), satisfaction, fatigue, condition, plan (charge individuelle), entrainement (séance collective), focus (préparation collective), promesse (temps de jeu promis), promouvoir (jeune du centre), caisse (euros), suite (mail de suivi), appel (commission de discipline). Placeholders entre accolades : variables calculées par le moteur à la réception.",
+  "cadence": {
+    "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; arretsParJour : mails qui arrêtent « Continuer » le même jour ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
+    "maxParJour": 3,
+    "arretsParJour": 2,
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 3, "recrutement": 2, "presse": 2, "direction": 2, "competition": 3, "formation": 2, "moments": 2 },
+    "boite": 160,
+    "projection": 80,
+    "delaiReponse": 7,
+    "memoire": 150
+  },
+  "categories": {
+    "infirmerie": { "label": "Médical", "ecran": "infirmerie" },
+    "vestiaire": { "label": "Vestiaire", "ecran": "Vestiaire" },
+    "staff": { "label": "Staff", "ecran": "Préparation" },
+    "recrutement": { "label": "Recrutement", "ecran": "Recrutement" },
+    "presse": { "label": "Presse", "ecran": "Presse" },
+    "direction": { "label": "Direction", "ecran": "Club" },
+    "competition": { "label": "Compétitions", "ecran": "Calendrier" },
+    "formation": { "label": "Formation", "ecran": "Formation" },
+    "moments": { "label": "Club", "ecran": "Effectif" }
+  },
+  "humeurs": {
+    "haut": ["le groupe vit bien, ça rigole à la muscu et ça bosse dur", "l'ambiance est au beau fixe, les jeunes suivent les anciens", "on sent une vraie envie, personne ne traîne aux séances"],
+    "moyen": ["l'ambiance est correcte mais un peu plate", "le groupe tient, sans plus : il manque une étincelle", "rien d'alarmant, mais quelques têtes sont basses"],
+    "bas": ["le vestiaire est tendu, on se parle moins", "les gars doutent, ça se voit à l'entraînement", "il y a de la frustration, certains commencent à râler"]
+  },
+  "pelouses": {
+    "ete": ["sèche et rapide, on a arrosé ce matin", "dure et un peu jaunie par la chaleur", "rase et rapide, idéale pour jouer large"],
+    "automne": ["grasse par endroits, les mêlées vont glisser", "souple, elle a bien bu la pluie de la semaine", "correcte, un peu lourde côté tribune"],
+    "hiver": ["lourde, les crampons vont s'enfoncer", "gelée tôt le matin, on a bâché les en-buts", "boueuse devant les poteaux, ça va être un combat d'avants"],
+    "printemps": ["belle et régulière, elle a repoussé", "rapide, on a tondu court", "en bon état malgré les dernières averses"]
+  },
+  "profilsArbitre": [
+    "très pointilleux au sol : il siffle vite les mains dans le ruck",
+    "il laisse jouer et accorde beaucoup d'avantages",
+    "intransigeant sur les hors-jeu en défense",
+    "sévère en mêlée fermée, il pénalise la première poussée illicite",
+    "il communique beaucoup avec les capitaines, la discipline paie avec lui"
+  ],
+  "types": {
+    "kine_bilan": {
+      "categorie": "infirmerie", "declencheur": "bilan_kine", "priorite": 40, "arret": false, "ecran": "infirmerie",
+      "expediteur": "Le kiné du club",
+      "formulations": [
+        { "sujet": "Bilan de l'infirmerie : {n} absent(s)", "corps": "Point du lundi : {liste}. Les soins suivent leur cours. Si tu veux, on peut alléger la séance collective pour soulager ceux qui reviennent." },
+        { "sujet": "L'infirmerie cette semaine", "corps": "Salut coach. À l'infirmerie : {liste}. Rien de neuf côté protocole, mais une séance de récupération collective aiderait les organismes." },
+        { "sujet": "Point médical hebdomadaire", "corps": "{n} joueur(s) en soins : {liste}. On garde le cap. Je reste à ta disposition pour adapter la charge de la semaine." }
+      ],
+      "reponses": [
+        { "id": "recuperation", "libelle": "Séance de récupération cette semaine", "effets": { "entrainement": "repos" }, "resultat": "La séance collective de la semaine passe en récupération." },
+        { "id": "programme", "libelle": "Garder le programme prévu", "effets": {}, "resultat": "Le programme de la semaine ne change pas." }
+      ]
+    },
+    "retour_blesse": {
+      "categorie": "infirmerie", "declencheur": "retour_blesse", "priorite": 30, "arret": false, "ecran": "infirmerie",
+      "expediteur": "Le médecin du club",
+      "formulations": [
+        { "sujet": "{joueur} reprend l'entraînement", "corps": "Bonne nouvelle : {joueur} ({poste}) a terminé ses soins et rejoint le groupe aujourd'hui. Je conseille une reprise progressive, mais c'est ton choix." },
+        { "sujet": "Retour de {joueur}", "corps": "{joueur} est apte. Il a hâte de retrouver le terrain. On peut le ménager quelques jours ou le remettre tout de suite dans le rythme." },
+        { "sujet": "Feu vert médical pour {joueur}", "corps": "Les derniers examens de {joueur} sont bons : il reprend avec le groupe. Dis-moi comment tu veux gérer sa charge." }
+      ],
+      "reponses": [
+        { "id": "progressif", "libelle": "Reprise progressive", "effets": { "plan": "normal" }, "resultat": "Charge individuelle allégée pour sa reprise." },
+        { "id": "rythme", "libelle": "Le remettre dans le rythme", "effets": { "plan": "collective", "satisfaction": 2 }, "resultat": "Il suit la séance collective ; il apprécie ta confiance." }
+      ]
+    },
+    "surcharge": {
+      "categorie": "infirmerie", "declencheur": "surcharge", "priorite": 15, "arret": true, "ecran": "infirmerie",
+      "expediteur": "Le préparateur physique",
+      "seuils": { "fatigue": 25, "condition": 62 },
+      "formulations": [
+        { "sujet": "Alerte charge : {joueur}", "corps": "{joueur} enchaîne les minutes ({minutes} min cette saison) et sa charge monte à {fatigue}/100. Condition à {condition} %. Le risque de blessure grimpe si on ne fait rien." },
+        { "sujet": "{joueur} est dans le rouge", "corps": "Les GPS ne mentent pas : {joueur} accumule ({fatigue}/100 de charge, {condition} % de condition). Je propose de le reposer ou d'alléger sa semaine." },
+        { "sujet": "Surcharge de {joueur}", "corps": "Coach, {joueur} tire sur la corde. {minutes} minutes jouées, charge à {fatigue}/100. À toi de voir, mais l'ignorer, c'est prendre un risque." }
+      ],
+      "reponses": [
+        { "id": "reposer", "libelle": "Le mettre au repos", "effets": { "plan": "repos", "satisfaction": -1 }, "resultat": "Repos individuel jusqu'à nouvel ordre ; il aurait aimé continuer." },
+        { "id": "alleger", "libelle": "Alléger sa semaine", "effets": { "plan": "normal" }, "resultat": "Charge individuelle allégée." },
+        { "id": "ignorer", "libelle": "Ignorer : il continue", "effets": { "satisfaction": 1 }, "resultat": "Il garde sa charge : le risque de blessure reste élevé." }
+      ]
+    },
+    "gene": {
+      "categorie": "infirmerie", "declencheur": "gene", "priorite": 12, "arret": true, "ecran": "Composition",
+      "expediteur": "Le médecin du club",
+      "seuils": { "condition": 72, "conditionMin": 45 },
+      "formulations": [
+        { "sujet": "{joueur} veut jouer malgré une gêne", "corps": "{joueur} traîne une gêne musculaire ({condition} % de condition) mais il insiste pour tenir sa place demain contre {adversaire}. Que décides-tu ?" },
+        { "sujet": "Gêne pour {joueur} avant {adversaire}", "corps": "Il serre les dents, il dit que ça va. Moi je vois un joueur à {condition} %. {joueur} veut absolument jouer demain." },
+        { "sujet": "{joueur} : jouer ou pas ?", "corps": "Petite alerte : {joueur} s'est plaint d'une gêne à la fin de la séance. Il veut être sur la feuille contre {adversaire}. Je peux trancher si tu préfères." }
+      ],
+      "reponses": [
+        { "id": "aligner", "libelle": "L'aligner", "effets": { "satisfaction": 2, "fatigue": 6 }, "resultat": "Il joue : il est ravi, mais sa charge augmente." },
+        { "id": "preserver", "libelle": "Le préserver", "effets": { "satisfaction": -2, "plan": "repos" }, "resultat": "Il est mis au repos : retire-le de la feuille dans Composition.", "ouvrir": true },
+        { "id": "medecin", "libelle": "Laisser le médecin trancher", "effets": { "fatigue": -6 }, "resultat": "Le médecin le ménage à l'échauffement ; la décision finale reste sur ta feuille." }
+      ]
+    },
+    "moral_groupe": {
+      "categorie": "vestiaire", "declencheur": "moral_groupe", "priorite": 50, "arret": false, "ecran": "Vestiaire",
+      "expediteur": "{capitaine}, capitaine",
+      "intervalle": 13,
+      "formulations": [
+        { "sujet": "Des nouvelles du vestiaire", "corps": "Coach, petit mot du capitaine : {humeur}. Moral du groupe : {moral}/100. Si tu as un geste à faire, c'est le moment." },
+        { "sujet": "Le moral des troupes", "corps": "Je te fais remonter ce que je sens : {humeur}. On est à {moral}/100 de moral. Les gars attendent un signe de ta part." },
+        { "sujet": "Le point du capitaine", "corps": "Comme chaque quinzaine : {humeur}. Moral {moral}/100. À toi de voir ce qu'on fait." }
+      ],
+      "reponses": [
+        { "id": "reunir", "libelle": "Réunir le groupe", "effets": { "moral": 1 }, "resultat": "Une causerie qui remet tout le monde dans le même sens." },
+        { "id": "sortie", "libelle": "Organiser une sortie d'équipe", "effets": { "moral": 2, "caisse": -4000 }, "resultat": "Soirée d'équipe offerte par le club." },
+        { "id": "cadres", "libelle": "Laisser faire les cadres", "effets": {}, "resultat": "Tu fais confiance aux leaders du vestiaire." }
+      ]
+    },
+    "temps_de_jeu": {
+      "categorie": "vestiaire", "declencheur": "temps_de_jeu", "priorite": 20, "arret": true, "ecran": "Vestiaire",
+      "expediteur": "{joueur}",
+      "intervalle": 9,
+      "formulations": [
+        { "sujet": "Mon temps de jeu", "corps": "Coach, je ne vais pas tourner autour du pot : {minutes} minutes cette saison, ce n'est pas assez. Je bosse, je veux jouer. Qu'est-ce que je dois faire ?" },
+        { "sujet": "Besoin de te parler", "corps": "Je me sens à l'écart du groupe des 23. J'ai {age} ans, je ne veux pas perdre une saison. J'aimerais savoir où j'en suis." },
+        { "sujet": "Frustré", "corps": "Je suis frustré, je ne vais pas te mentir. Je pense mériter ma chance. Est-ce que tu peux me donner une perspective ?" }
+      ],
+      "reponses": [
+        { "id": "promettre", "libelle": "Lui promettre du temps de jeu", "effets": { "promesse": "regulier" }, "resultat": "Promesse suivie sur trois rencontres : tenue, il sera ravi ; rompue, il le prendra mal." },
+        { "id": "montrer", "libelle": "« Montre-le à l'entraînement »", "effets": { "satisfaction": -1 }, "resultat": "Il a compris le message, sans enthousiasme." },
+        { "id": "plus_tard", "libelle": "En reparler plus tard", "effets": { "satisfaction": -3, "suite": { "type": "relance_temps_de_jeu", "jours": 14 } }, "resultat": "Il repartira à la charge dans deux semaines." }
+      ]
+    },
+    "relance_temps_de_jeu": {
+      "categorie": "vestiaire", "declencheur": "suite", "priorite": 22, "arret": true, "ecran": "Vestiaire",
+      "expediteur": "{joueur}",
+      "formulations": [
+        { "sujet": "On devait en reparler", "corps": "Coach, tu m'avais dit qu'on en reparlerait. Je n'ai toujours pas eu ma chance. Je commence à me poser des questions sur mon avenir ici." },
+        { "sujet": "Toujours sur le banc", "corps": "Deux semaines ont passé. Je reste motivé, mais je veux une réponse claire." }
+      ],
+      "reponses": [
+        { "id": "promettre", "libelle": "Lui promettre du temps de jeu", "effets": { "promesse": "regulier" }, "resultat": "Promesse enregistrée, suivie sur trois rencontres." },
+        { "id": "franchise", "libelle": "Être franc : il n'est pas dans tes plans", "effets": { "satisfaction": -8, "moral": -1 }, "resultat": "Il encaisse mal ; son envie de départ grandit." }
+      ]
+    },
+    "promesse_tenue": {
+      "categorie": "vestiaire", "declencheur": "promesse_tenue", "priorite": 35, "arret": false, "ecran": "Vestiaire",
+      "expediteur": "{joueur}",
+      "formulations": [
+        { "sujet": "Merci coach", "corps": "Tu as tenu parole, j'ai eu mes minutes. Je ne l'oublierai pas, je vais tout donner pour le groupe." },
+        { "sujet": "Promesse tenue", "corps": "Je voulais juste te dire merci. J'ai retrouvé du plaisir à jouer." }
+      ],
+      "reponses": [
+        { "id": "feliciter", "libelle": "Le féliciter devant le groupe", "effets": { "moral": 1 }, "resultat": "Le vestiaire voit qu'une parole donnée est tenue." },
+        { "id": "simple", "libelle": "Répondre simplement", "effets": {}, "resultat": "Message reçu." }
+      ]
+    },
+    "promesse_rompue": {
+      "categorie": "vestiaire", "declencheur": "promesse_rompue", "priorite": 18, "arret": true, "ecran": "Vestiaire",
+      "expediteur": "{joueur}",
+      "formulations": [
+        { "sujet": "Tu m'avais promis", "corps": "Tu m'avais promis du temps de jeu. Je n'ai pas eu mes minutes. Je me sens trahi, et je ne suis pas le seul à l'avoir remarqué." },
+        { "sujet": "Parole non tenue", "corps": "Je ne comprends pas. On s'était mis d'accord et rien n'a suivi. J'attends une explication." }
+      ],
+      "reponses": [
+        { "id": "expliquer", "libelle": "S'expliquer en tête à tête", "effets": { "satisfaction": 3 }, "resultat": "La discussion apaise un peu les choses." },
+        { "id": "assumer", "libelle": "Assumer ton choix", "effets": { "satisfaction": -2, "moral": -1 }, "resultat": "Tu ne cèdes rien ; le vestiaire grince." }
+      ]
+    },
+    "cadre_rdv": {
+      "categorie": "vestiaire", "declencheur": "cadre_rdv", "priorite": 16, "arret": true, "ecran": "Vestiaire",
+      "expediteur": "{joueur}",
+      "formulations": [
+        { "sujet": "Je peux te voir ?", "corps": "Coach, après {defaites} défaites de suite, les anciens voudraient te parler. Rien contre toi, on veut juste trouver des solutions ensemble." },
+        { "sujet": "Un mot des cadres", "corps": "Le groupe cogite après cette série. En tant que cadre, je pense qu'une discussion franche ferait du bien. Tu es disponible ?" },
+        { "sujet": "Besoin d'échanger", "corps": "On traverse une mauvaise passe ({defaites} défaites). J'aimerais te proposer deux ou trois idées des joueurs." }
+      ],
+      "reponses": [
+        { "id": "recevoir", "libelle": "Le recevoir tout de suite", "effets": { "moral": 2, "satisfaction": 2 }, "resultat": "L'échange redonne de l'air au groupe." },
+        { "id": "groupe", "libelle": "Le laisser parler au groupe", "effets": { "moral": 1, "satisfaction": 1 }, "resultat": "Les cadres prennent la parole devant tout le monde." },
+        { "id": "plus_tard", "libelle": "Plus tard", "effets": { "satisfaction": -2 }, "resultat": "Il repart sans réponse." }
+      ]
+    },
+    "recrue": {
+      "categorie": "vestiaire", "declencheur": "recrue", "priorite": 45, "arret": false, "ecran": "Vestiaire",
+      "expediteur": "{capitaine}, capitaine",
+      "formulations": [
+        { "sujet": "Comment va {joueur} ?", "corps": "{joueur} est là depuis quelques semaines. {integration}" },
+        { "sujet": "L'intégration de {joueur}", "corps": "Je te fais un point sur notre recrue {joueur} : {integration}" }
+      ],
+      "variantes": {
+        "bien": ["il s'est fondu dans le groupe, il est déjà de toutes les sorties.", "il a trouvé sa place, les gars l'apprécient."],
+        "mal": ["il reste dans son coin, il a du mal à trouver ses repères.", "il ne s'est pas encore fait sa place, il mange souvent seul."]
+      },
+      "reponses": [
+        { "id": "parrain", "libelle": "Lui désigner un parrain", "effets": { "satisfaction": 3 }, "resultat": "Un ancien le prend sous son aile." },
+        { "id": "laisser", "libelle": "Le laisser trouver sa place", "effets": {}, "resultat": "Tu laisses le temps faire." }
+      ]
+    },
+    "seance_adjoint": {
+      "categorie": "staff", "declencheur": "seance_adjoint", "priorite": 60, "arret": false, "ecran": "Préparation",
+      "expediteur": "Gabi, ton adjoint",
+      "formulations": [
+        { "sujet": "La séance de la semaine", "corps": "Coach, pour la séance de la semaine on est sur un mode « {mode} ». Condition moyenne du groupe : {condition} %. Je peux durcir ou alléger si tu veux." },
+        { "sujet": "Programme d'entraînement", "corps": "Le plan prévu reste « {mode} ». Les organismes sont à {condition} % en moyenne. Ton avis ?" },
+        { "sujet": "Avant la séance", "corps": "Les gars sont à {condition} % de condition. On garde « {mode} » ou on change ?" }
+      ],
+      "reponses": [
+        { "id": "intense", "libelle": "Intensifier", "effets": { "entrainement": "intense" }, "resultat": "Séance intense : plus de progrès, plus de fatigue." },
+        { "id": "garder", "libelle": "Garder le plan", "effets": {}, "resultat": "Plan inchangé." },
+        { "id": "alleger", "libelle": "Alléger", "effets": { "entrainement": "repos" }, "resultat": "Séance de récupération." }
+      ]
+    },
+    "analyste": {
+      "categorie": "staff", "declencheur": "analyste", "priorite": 25, "arret": false, "ecran": "Préparation",
+      "expediteur": "L'analyste vidéo",
+      "formulations": [
+        { "sujet": "Vidéo : {adversaire}", "corps": "J'ai découpé les derniers matchs de {adversaire} (forme : {forme}). Leur point faible : {faiblesse}. On peut orienter la préparation dessus." },
+        { "sujet": "Ce que j'ai vu de {adversaire}", "corps": "Après visionnage, {adversaire} souffre surtout sur {faiblesse}. Je te prépare un montage pour le groupe si tu veux en faire l'axe de la semaine." },
+        { "sujet": "Analyse avant {adversaire}", "corps": "Rapport vidéo prêt : {faiblesse}, c'est là qu'on peut les faire plier. Forme récente de {adversaire} : {forme}." }
+      ],
+      "reponses": [
+        { "id": "conquete", "libelle": "Travailler la conquête", "effets": { "focus": "conquete" }, "resultat": "Préparation collective orientée mêlée et touche." },
+        { "id": "defense", "libelle": "Travailler la défense", "effets": { "focus": "defence" }, "resultat": "Préparation collective orientée organisation défensive." },
+        { "id": "plan", "libelle": "Rester sur notre plan", "effets": {}, "resultat": "Préparation inchangée." }
+      ]
+    },
+    "tests_physiques": {
+      "categorie": "staff", "declencheur": "tests_physiques", "priorite": 55, "arret": false, "ecran": "Préparation",
+      "expediteur": "Le préparateur physique",
+      "intervalle": 25,
+      "formulations": [
+        { "sujet": "Résultats des tests physiques", "corps": "Tests du mois bouclés. Condition moyenne : {condition} %. {chargés} joueur(s) au-dessus de 20/100 de charge. Je recommande une semaine plus légère." },
+        { "sujet": "Tests du mois", "corps": "Les chiffres : {condition} % de condition moyenne, {chargés} joueur(s) chargé(s). Le groupe tient, mais il faut surveiller." }
+      ],
+      "reponses": [
+        { "id": "recup", "libelle": "Semaine de récupération", "effets": { "entrainement": "repos" }, "resultat": "La semaine passe en récupération." },
+        { "id": "maintenir", "libelle": "Maintenir la charge", "effets": {}, "resultat": "Charge maintenue." }
+      ]
+    },
+    "entraineur_avants": {
+      "categorie": "staff", "declencheur": "entraineur_avants", "priorite": 58, "arret": false, "ecran": "Préparation",
+      "expediteur": "L'entraîneur des avants",
+      "intervalle": 18,
+      "formulations": [
+        { "sujet": "Notre conquête", "corps": "Sur le dernier match : {melees} mêlées gagnées sur {melees_total}, {touches} touches sur {touches_total}. Je veux une séance spécifique conquête cette semaine." },
+        { "sujet": "Mêlée et touche", "corps": "Les chiffres de la conquête : mêlée {melees}/{melees_total}, touche {touches}/{touches_total}. On peut mieux faire. Je te propose un bloc spécifique." }
+      ],
+      "reponses": [
+        { "id": "conquete", "libelle": "Séance spécifique conquête", "effets": { "focus": "conquete" }, "resultat": "Préparation collective orientée conquête." },
+        { "id": "non", "libelle": "Pas cette semaine", "effets": {}, "resultat": "Préparation inchangée." }
+      ]
+    },
+    "entraineur_arrieres": {
+      "categorie": "staff", "declencheur": "entraineur_arrieres", "priorite": 59, "arret": false, "ecran": "Préparation",
+      "expediteur": "L'entraîneur des trois-quarts",
+      "intervalle": 18,
+      "formulations": [
+        { "sujet": "Les lignes arrières", "corps": "Nos trois-quarts ont du mal à gagner du terrain. Je propose de travailler le jeu au pied d'occupation cette semaine." },
+        { "sujet": "Une idée pour les arrières", "corps": "On s'expose trop dans notre camp. Un bloc sur le jeu au pied nous ferait respirer. Tu valides ?" }
+      ],
+      "reponses": [
+        { "id": "pied", "libelle": "Travailler le jeu au pied", "effets": { "focus": "pied" }, "resultat": "Préparation collective orientée jeu au pied." },
+        { "id": "non", "libelle": "Laisser le plan", "effets": {}, "resultat": "Préparation inchangée." }
+      ]
+    },
+    "recruteur": {
+      "categorie": "recrutement", "declencheur": "recruteur", "priorite": 30, "arret": false, "ecran": "fiche",
+      "expediteur": "La cellule de recrutement",
+      "formulations": [
+        { "sujet": "Mission terminée : {n} profil(s)", "corps": "Rapport bouclé. Mon préféré : {joueur} ({poste}, {age} ans, note {note}). Les autres profils sont dans Recrutement." },
+        { "sujet": "Rapport du recruteur", "corps": "J'ai vu ce qu'il fallait voir. {joueur} ({poste}) sort du lot. Tu trouveras le dossier complet dans Recrutement." }
+      ],
+      "reponses": []
+    },
+    "agent": {
+      "categorie": "recrutement", "declencheur": "agent", "priorite": 35, "arret": true, "ecran": "fiche",
+      "expediteur": "Un agent de joueurs",
+      "intervalle": 20,
+      "formulations": [
+        { "sujet": "Proposition : {joueur}", "corps": "Bonjour coach. Je représente {joueur}, {poste} de {age} ans. Il cherche un projet ambitieux et votre club l'intéresse. Salaire visé autour de {salaire} € par semaine. Intéressé ?" },
+        { "sujet": "Un {poste} disponible", "corps": "Je me permets de vous écrire : mon joueur {joueur} ({age} ans) serait prêt à rejoindre votre effectif. Je pense qu'il comblerait votre besoin au poste." },
+        { "sujet": "{joueur} pour votre club ?", "corps": "{joueur} ({poste}) est libre de discuter. Profil sérieux, attentes raisonnables ({salaire} €/sem.). Je vous laisse revenir vers moi." }
+      ],
+      "reponses": [
+        { "id": "negocier", "libelle": "Ouvrir les discussions", "effets": {}, "resultat": "Sa fiche s'ouvre : fais-lui une offre dans Recrutement.", "ouvrir": true },
+        { "id": "rapport", "libelle": "Demander un rapport au recruteur", "effets": { "caisse": -1500, "suite": { "type": "rapport_agent", "jours": 3 } }, "resultat": "Le recruteur va le voir jouer (1 500 €)." },
+        { "id": "decliner", "libelle": "Décliner poliment", "effets": {}, "resultat": "Tu remercies l'agent." }
+      ]
+    },
+    "rapport_agent": {
+      "categorie": "recrutement", "declencheur": "suite", "priorite": 33, "arret": false, "ecran": "fiche",
+      "expediteur": "La cellule de recrutement",
+      "formulations": [
+        { "sujet": "Rapport sur {joueur}", "corps": "Je l'ai vu : {joueur}, note actuelle {note}, potentiel estimé {potentiel}. {avis}" },
+        { "sujet": "Mon avis sur {joueur}", "corps": "Note {note}, potentiel autour de {potentiel}. {avis}" }
+      ],
+      "reponses": []
+    },
+    "contrats": {
+      "categorie": "recrutement", "declencheur": "contrats", "priorite": 52, "arret": false, "ecran": "contrats",
+      "expediteur": "Le directeur sportif",
+      "intervalle": 27,
+      "formulations": [
+        { "sujet": "{n} contrat(s) à échéance", "corps": "Pour rappel, {n} contrat(s) arrivent à échéance en fin de saison : {liste}. Il faut anticiper avant que d'autres clubs ne se placent." },
+        { "sujet": "Les échéances de la saison", "corps": "État des lieux des fins de contrat : {liste}. Dis-moi qui on prolonge." }
+      ],
+      "reponses": []
+    },
+    "prolongation": {
+      "categorie": "recrutement", "declencheur": "prolongation", "priorite": 26, "arret": true, "ecran": "contrats",
+      "expediteur": "L'agent de {joueur}",
+      "formulations": [
+        { "sujet": "Avenir de {joueur}", "corps": "Bonjour. Le contrat de {joueur} se termine en fin de saison. Il se plaît au club et souhaite prolonger. Pouvons-nous ouvrir les discussions ?" },
+        { "sujet": "{joueur} veut prolonger", "corps": "{joueur} m'a mandaté : il veut rester. Mais d'autres clubs s'informent. J'aimerais une réponse." },
+        { "sujet": "Prolongation de {joueur}", "corps": "Mon client {joueur} ({poste}) est en fin de contrat. Il est prêt à s'engager à nouveau si le club le souhaite." }
+      ],
+      "reponses": [
+        { "id": "ouvrir", "libelle": "Ouvrir les discussions", "effets": { "satisfaction": 3 }, "resultat": "Il est touché ; négocie son contrat depuis sa fiche.", "ouvrir": true },
+        { "id": "reporter", "libelle": "Reporter", "effets": { "satisfaction": -2 }, "resultat": "L'agent patientera, sans plaisir." },
+        { "id": "refuser", "libelle": "Refuser", "effets": { "satisfaction": -8 }, "resultat": "Il comprend qu'il n'a plus d'avenir ici." }
+      ]
+    },
+    "article": {
+      "categorie": "presse", "declencheur": "article", "priorite": 48, "arret": false, "ecran": "Presse",
+      "expediteur": "Le quotidien régional",
+      "formulations": [
+        { "sujet": "« {titre} »", "corps": "Le journal titre ce matin : « {titre} ». {score} face à {adversaire}. Le correspondant attend une réaction." },
+        { "sujet": "La presse après {adversaire}", "corps": "Article du jour sur notre match ({score} contre {adversaire}) : « {titre} »." }
+      ],
+      "variantes": {
+        "victoire": ["Une victoire qui fait du bien", "Le collectif récompensé", "Le club sur sa lancée"],
+        "defaite": ["Une défaite qui interroge", "Le club manque le coche", "Des regrets plein la tête"],
+        "nul": ["Un nul en demi-teinte", "Partage des points"]
+      },
+      "reponses": [
+        { "id": "saluer", "libelle": "Saluer le travail du groupe", "effets": { "moral": 1 }, "resultat": "Les joueurs apprécient." },
+        { "id": "rien", "libelle": "Ne pas réagir", "effets": { "medias": -1 }, "resultat": "Le correspondant note ton silence." }
+      ]
+    },
+    "rumeur": {
+      "categorie": "presse", "declencheur": "rumeur", "priorite": 42, "arret": false, "ecran": "Presse",
+      "expediteur": "Le quotidien régional",
+      "intervalle": 20,
+      "formulations": [
+        { "sujet": "Rumeur : {joueur} courtisé", "corps": "Selon nos informations, plusieurs clubs se renseignent sur {joueur}, en fin de contrat. Le club confirme-t-il ?" },
+        { "sujet": "{joueur} sur le départ ?", "corps": "La rumeur enfle : {joueur} pourrait quitter le club. Les supporters s'inquiètent." }
+      ],
+      "reponses": [
+        { "id": "dementir", "libelle": "Démentir", "effets": { "supporters": 1, "satisfaction": -1 }, "resultat": "Les supporters sont rassurés ; le joueur moins." },
+        { "id": "laisser", "libelle": "Laisser dire", "effets": { "medias": 1, "satisfaction": 1 }, "resultat": "La presse s'en donne à cœur joie." }
+      ]
+    },
+    "critique": {
+      "categorie": "presse", "declencheur": "critique", "priorite": 14, "arret": true, "ecran": "Presse",
+      "expediteur": "Le quotidien régional",
+      "formulations": [
+        { "sujet": "« Le club en crise ? »", "corps": "{defaites} défaites de suite : la presse s'interroge sur tes choix. Les journalistes demandent une conférence de presse." },
+        { "sujet": "La série noire", "corps": "Après {defaites} revers, l'éditorial du jour est sévère. Comment réponds-tu ?" },
+        { "sujet": "Critiques après la série", "corps": "Les observateurs pointent ton système. Une prise de parole est attendue." }
+      ],
+      "reponses": [
+        { "id": "calme", "libelle": "Conférence : ton calme", "effets": { "medias": 2 }, "resultat": "Ton calme rassure les observateurs." },
+        { "id": "offensif", "libelle": "Conférence : ton offensif", "effets": { "moral": 2, "medias": -3 }, "resultat": "Le vestiaire apprécie, la presse beaucoup moins." },
+        { "id": "proteger", "libelle": "Conférence : protéger les joueurs", "effets": { "moral": 3, "confiance": -2 }, "resultat": "Tu prends tout sur toi ; la direction tique." },
+        { "id": "silence", "libelle": "Garder le silence", "effets": { "medias": -2, "pression": 1 }, "resultat": "Le silence alimente les critiques." }
+      ]
+    },
+    "une_derby": {
+      "categorie": "presse", "declencheur": "une_derby", "priorite": 28, "arret": false, "ecran": "Presse",
+      "expediteur": "Le quotidien régional",
+      "formulations": [
+        { "sujet": "À la une : le derby contre {adversaire}", "corps": "Toute la ville ne parle que de ça : le derby contre {adversaire}, dans trois jours. Le journal veut ta déclaration d'avant-match." },
+        { "sujet": "Derby : la une", "corps": "« Le derby de l'année » : la une est pour le choc contre {adversaire}. Tu chauffes l'ambiance ou tu calmes le jeu ?" }
+      ],
+      "reponses": [
+        { "id": "chauffer", "libelle": "Faire monter la pression", "effets": { "supporters": 2, "moral": 1, "medias": -1 }, "resultat": "Les supporters sont chauds bouillants." },
+        { "id": "apaiser", "libelle": "Jouer l'apaisement", "effets": { "medias": 1 }, "resultat": "Déclaration mesurée, saluée par la presse." }
+      ]
+    },
+    "affluence": {
+      "categorie": "direction", "declencheur": "affluence", "priorite": 56, "arret": false, "ecran": "Finances",
+      "expediteur": "Le responsable de la billetterie",
+      "formulations": [
+        { "sujet": "Affluence contre {adversaire}", "corps": "Bilan billetterie de la réception de {adversaire} : {ambiance} (capacité {capacite} places). On peut relancer avec une opération places à petit prix." },
+        { "sujet": "Les tribunes", "corps": "Contre {adversaire}, {ambiance}. Je propose une opération tarifaire pour le prochain match à domicile." }
+      ],
+      "variantes": {
+        "plein": ["les tribunes étaient pleines et bruyantes", "ambiance des grands soirs, guichets fermés ou presque"],
+        "moyen": ["les tribunes étaient correctement garnies", "une affluence honnête, sans plus"],
+        "faible": ["les tribunes sonnaient creux", "beaucoup de sièges vides"]
+      },
+      "reponses": [
+        { "id": "operation", "libelle": "Opération places à petit prix", "effets": { "caisse": -8000, "supporters": 2 }, "resultat": "Opération lancée : 8 000 € de manque à gagner, supporters ravis." },
+        { "id": "rien", "libelle": "Garder les tarifs", "effets": {}, "resultat": "Tarifs inchangés." }
+      ]
+    },
+    "sponsor": {
+      "categorie": "direction", "declencheur": "sponsor", "priorite": 46, "arret": false, "ecran": "Finances",
+      "expediteur": "Le directeur commercial",
+      "intervalle": 27,
+      "formulations": [
+        { "sujet": "Le sponsor principal est {etat}", "corps": "Retour du partenaire maillot : il est {etat} ({bilan}). Il aimerait un geste : un objectif affiché ou une opération avec les joueurs." },
+        { "sujet": "Nouvelles du partenaire", "corps": "Notre sponsor principal se dit {etat} après {bilan}. Comment veux-tu entretenir la relation ?" }
+      ],
+      "reponses": [
+        { "id": "objectif", "libelle": "Le rassurer avec un objectif", "effets": { "confiance": 2, "pression": 3 }, "resultat": "Objectif affiché : la direction apprécie, la pression monte." },
+        { "id": "operation", "libelle": "Proposer une opération avec les joueurs", "effets": { "caisse": 12000, "moral": -1 }, "resultat": "12 000 € d'activation ; une demi-journée en moins pour récupérer." },
+        { "id": "rien", "libelle": "Rien de spécial", "effets": {}, "resultat": "La relation suit son cours." }
+      ]
+    },
+    "president": {
+      "categorie": "direction", "declencheur": "president", "priorite": 24, "arret": true, "ecran": "Club",
+      "expediteur": "Le président",
+      "intervalle": 34,
+      "formulations": [
+        { "sujet": "Un mot du président", "corps": "Coach, je voulais te dire où on en est : ma confiance est {niveau} ({confiance}/100). {message}" },
+        { "sujet": "Point avec la présidence", "corps": "Le conseil m'a demandé un point. Confiance : {confiance}/100, {niveau}. {message}" }
+      ],
+      "variantes": {
+        "haute": ["Continue comme ça, le projet avance.", "Les partenaires sont contents, moi aussi."],
+        "moyenne": ["On attend un peu plus de régularité.", "Rien d'inquiétant, mais il faut des résultats."],
+        "basse": ["Je te soutiens, mais le conseil s'impatiente.", "Il va falloir réagir vite."]
+      },
+      "reponses": [
+        { "id": "temps", "libelle": "Demander du temps", "effets": { "confiance": 2, "pression": 2 }, "resultat": "Il t'accorde du crédit, en échange d'engagements." },
+        { "id": "bilan", "libelle": "Présenter un bilan rassurant", "effets": { "confiance": 1 }, "resultat": "Bilan bien reçu." },
+        { "id": "moyens", "libelle": "Réclamer des moyens", "effets": { "confiance": -3, "caisse": 20000 }, "resultat": "20 000 € débloqués, mais il n'a pas aimé le ton." }
+      ]
+    },
+    "supporters_derby": {
+      "categorie": "direction", "declencheur": "supporters_derby", "priorite": 32, "arret": false, "ecran": "Club",
+      "expediteur": "Le président des supporters",
+      "formulations": [
+        { "sujet": "Après le derby", "corps": "{reaction} Le kop attend un mot de ta part." },
+        { "sujet": "Le derby vu des tribunes", "corps": "Coach, au nom des supporters : {reaction}" }
+      ],
+      "variantes": {
+        "victoire": ["Quelle soirée ! Le derby est à nous, toute la ville est en fête.", "On s'en souviendra longtemps : merci pour ce derby."],
+        "defaite": ["Perdre le derby, ça fait mal. Les tribunes sont déçues.", "Le derby perdu passe mal chez les supporters."],
+        "nul": ["Un derby sans vainqueur : on reste sur notre faim."]
+      },
+      "reponses": [
+        { "id": "remercier", "libelle": "Remercier les supporters", "effets": { "supporters": 2 }, "resultat": "Ton message est affiché au club-house." },
+        { "id": "discret", "libelle": "Rester discret", "effets": {}, "resultat": "Pas de prise de parole." }
+      ]
+    },
+    "arbitre": {
+      "categorie": "competition", "declencheur": "arbitre", "priorite": 54, "arret": false, "ecran": "Préparation",
+      "expediteur": "La commission des arbitres",
+      "formulations": [
+        { "sujet": "Arbitre désigné contre {adversaire}", "corps": "L'arbitre de la rencontre contre {adversaire} est désigné. Profil : {profil}. À intégrer dans tes consignes." },
+        { "sujet": "Désignation arbitrale", "corps": "Pour {adversaire}, l'arbitre désigné est un habitué de la division : {profil}." }
+      ],
+      "reponses": [
+        { "id": "discipline", "libelle": "Insister sur la discipline à l'entraînement", "effets": { "focus": "defence" }, "resultat": "Préparation collective orientée défense et discipline." },
+        { "id": "rien", "libelle": "Rien à changer", "effets": {}, "resultat": "Consignes inchangées." }
+      ]
+    },
+    "rivaux": {
+      "categorie": "competition", "declencheur": "rivaux", "priorite": 57, "arret": false, "ecran": "Classements",
+      "expediteur": "Le service des sports",
+      "formulations": [
+        { "sujet": "Les résultats de nos rivaux", "corps": "Ce week-end chez nos voisins de classement : {liste}. Nous sommes {rang}." },
+        { "sujet": "La journée des concurrents", "corps": "Résultats des équipes qui nous entourent : {liste}. Classement actuel : {rang}." }
+      ],
+      "reponses": []
+    },
+    "tirage": {
+      "categorie": "competition", "declencheur": "tirage", "priorite": 36, "arret": false, "ecran": "Calendrier",
+      "expediteur": "L'organisateur de la compétition",
+      "formulations": [
+        { "sujet": "Tirage : {competition}", "corps": "Le tirage est connu : en {competition}, nous affronterons {liste}." },
+        { "sujet": "Nos adversaires en {competition}", "corps": "Poule constituée : {liste}. Le calendrier est à jour." }
+      ],
+      "reponses": []
+    },
+    "tele": {
+      "categorie": "competition", "declencheur": "tele", "priorite": 34, "arret": false, "ecran": "Calendrier",
+      "expediteur": "La ligue",
+      "formulations": [
+        { "sujet": "Calendrier modifié pour la télévision", "corps": "Le diffuseur a choisi notre rencontre contre {adversaire} : elle est déplacée au {date}. Décide en Réception si tu recales la préparation." },
+        { "sujet": "Nouvelle date contre {adversaire}", "corps": "Pour la retransmission télévisée, le match contre {adversaire} se jouera le {date}." }
+      ],
+      "reponses": []
+    },
+    "discipline": {
+      "categorie": "competition", "declencheur": "discipline", "priorite": 19, "arret": true, "ecran": "Préparation",
+      "expediteur": "La commission de discipline",
+      "seuils": { "cartons": 6, "amende": 5000, "frais": 1500, "alourdie": 7500 },
+      "formulations": [
+        { "sujet": "Convocation : cumul de cartons", "corps": "Le club totalise {cartons} cartons jaunes cette saison. La commission propose une amende de {amende} €. Vous pouvez l'accepter ou faire appel (frais de dossier {frais} €)." },
+        { "sujet": "Commission de discipline", "corps": "Suite au cumul de {cartons} cartons jaunes, une amende de {amende} € est prononcée contre le club. Un appel reste possible." }
+      ],
+      "reponses": [
+        { "id": "accepter", "libelle": "Accepter la sanction", "effets": { "caisse": -5000 }, "resultat": "Amende réglée." },
+        { "id": "appel", "libelle": "Faire appel", "effets": { "appel": true, "suite": { "type": "verdict_appel", "jours": 4 } }, "resultat": "Appel déposé : le verdict tombera dans quelques jours." }
+      ]
+    },
+    "verdict_appel": {
+      "categorie": "competition", "declencheur": "suite", "priorite": 20, "arret": false, "ecran": "Finances",
+      "expediteur": "La commission d'appel",
+      "formulations": [
+        { "sujet": "Verdict de l'appel", "corps": "{verdict}" },
+        { "sujet": "Décision en appel", "corps": "La commission d'appel s'est prononcée : {verdict}" }
+      ],
+      "reponses": []
+    },
+    "pepite": {
+      "categorie": "formation", "declencheur": "pepite", "priorite": 27, "arret": true, "ecran": "Formation",
+      "expediteur": "Le directeur du centre de formation",
+      "seuils": { "age": 18, "potentiel": 68, "note": 58 },
+      "formulations": [
+        { "sujet": "Une pépite chez les Espoirs : {joueur}", "corps": "{joueur} ({poste}, {age} ans) crève l'écran chez les Espoirs : note {note}, potentiel {potentiel}. Je pense qu'il est prêt à goûter au groupe pro." },
+        { "sujet": "{joueur} frappe à la porte", "corps": "Il faut que je te parle de {joueur} : {age} ans, note {note}. Il progresse vite. On l'intègre au groupe pro ou on le laisse mûrir ?" }
+      ],
+      "reponses": [
+        { "id": "integrer", "libelle": "L'intégrer au groupe pro", "effets": { "promouvoir": true }, "resultat": "Il signe son premier contrat professionnel." },
+        { "id": "progresser", "libelle": "Le laisser progresser", "effets": {}, "resultat": "Il reste au centre une saison de plus." }
+      ]
+    },
+    "rapport_centre": {
+      "categorie": "formation", "declencheur": "rapport_centre", "priorite": 60, "arret": false, "ecran": "Formation",
+      "expediteur": "Le directeur du centre de formation",
+      "intervalle": 27,
+      "formulations": [
+        { "sujet": "Rapport du centre : Crabos et Espoirs", "corps": "Le centre compte {n} jeunes. Note moyenne {note}. Les plus prometteurs : {liste}." },
+        { "sujet": "Les nouvelles du centre", "corps": "{n} jeunes à l'entraînement cette semaine. À suivre de près : {liste}." }
+      ],
+      "reponses": []
+    },
+    "selection_jeune": {
+      "categorie": "formation", "declencheur": "selection_jeune", "priorite": 44, "arret": false, "ecran": "Formation",
+      "expediteur": "La fédération",
+      "formulations": [
+        { "sujet": "Les sélections de jeunes reprennent", "corps": "Les sélections nationales de jeunes entrent en compétition ({competition}). Nos jeunes du centre suivent la compétition de près." }
+      ],
+      "reponses": []
+    },
+    "anniversaire": {
+      "categorie": "moments", "declencheur": "anniversaire", "priorite": 70, "arret": false, "ecran": "Effectif",
+      "expediteur": "L'intendant",
+      "formulations": [
+        { "sujet": "C'est l'anniversaire de {joueur}", "corps": "{joueur} fête son anniversaire aujourd'hui. Le gâteau est prêt au vestiaire, il ne manque que toi pour souffler les bougies." },
+        { "sujet": "Gâteau au vestiaire", "corps": "Les gars ont prévu une surprise pour l'anniversaire de {joueur}. Tu passes ?" }
+      ],
+      "reponses": [
+        { "id": "feter", "libelle": "Marquer le coup", "effets": { "moral": 1 }, "resultat": "Moment de rires au vestiaire." },
+        { "id": "rien", "libelle": "Envoyer un mot", "effets": {}, "resultat": "Il apprécie l'attention." }
+      ]
+    },
+    "jalon": {
+      "categorie": "moments", "declencheur": "jalon", "priorite": 66, "arret": false, "ecran": "Effectif",
+      "expediteur": "Le service communication",
+      "formulations": [
+        { "sujet": "{joueur} : {n}e match de la saison", "corps": "{joueur} vient de disputer son {n}e match de la saison. Une petite attention pour un pilier du groupe ?" },
+        { "sujet": "Un cap pour {joueur}", "corps": "{n} matchs cette saison pour {joueur}. Une régularité qui mérite d'être soulignée." }
+      ],
+      "reponses": [
+        { "id": "feliciter", "libelle": "Le féliciter devant le groupe", "effets": { "satisfaction": 2 }, "resultat": "Il est fier." },
+        { "id": "rien", "libelle": "Rien de particulier", "effets": {}, "resultat": "Message classé." }
+      ]
+    },
+    "serie": {
+      "categorie": "moments", "declencheur": "serie", "priorite": 41, "arret": false, "ecran": "Classements",
+      "expediteur": "Le service communication",
+      "formulations": [
+        { "sujet": "{n} victoires de suite !", "corps": "Le club enchaîne {n} victoires de suite, sa meilleure série de la saison. Les supporters en redemandent." },
+        { "sujet": "Série en cours : {n} succès", "corps": "{n} victoires d'affilée : le groupe est sur un nuage." }
+      ],
+      "reponses": [
+        { "id": "feliciter", "libelle": "Féliciter le groupe", "effets": { "moral": 1 }, "resultat": "Le groupe savoure." },
+        { "id": "concentration", "libelle": "Rappeler l'exigence", "effets": { "medias": 1 }, "resultat": "Ton discours d'exigence plaît aux observateurs." }
+      ]
+    },
+    "pelouse": {
+      "categorie": "moments", "declencheur": "pelouse", "priorite": 64, "arret": false, "ecran": "Composition",
+      "expediteur": "Le responsable de la pelouse",
+      "formulations": [
+        { "sujet": "État de la pelouse avant {adversaire}", "corps": "Pour demain contre {adversaire} : la pelouse est {pelouse}. À prendre en compte dans ta composition." },
+        { "sujet": "La pelouse pour demain", "corps": "Petit point terrain avant {adversaire} : {pelouse}." }
+      ],
+      "reponses": []
+    }
+  }
+}

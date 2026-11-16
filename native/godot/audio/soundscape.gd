@@ -11,13 +11,6 @@ const ASSETS := {
 }
 ## Sifflets de foule (scripts/build-native-crowd.cjs), hors ASSETS : l'ensemble figé des six sons d'origine reste inchangé.
 const EXTRA := {"crowd-whistle": "crowd-whistle.wav"}
-## Musique douce en boucle (OGG, CC0 ou libre sans attribution, < 3 Mo). Fichier absent = silence, jamais une erreur.
-const MUSIC_SLOTS := {"bureau": "res://audio/music/bureau.ogg", "menus": "res://audio/music/menus.ogg"}
-const MUSIC_BUS := "Musique"
-const MUSIC_FADE_SECONDS := 1.2
-## Écrans sans musique : le titre garde son silence tant que l'intro (qui gère son propre son) n'est pas branchée.
-const MUSIC_SILENT_ROUTES := ["Accueil", "Création", "Packs", "Match"]
-const MUSIC_OFFICE_ROUTES := ["Réception", "Bureau"]
 static var _bus_users := 0
 static var _created_buses: Array[String] = []
 static var _app_owners: Dictionary = {}
@@ -28,13 +21,6 @@ var _streams: Dictionary = {}
 var _ui: AudioStreamPlayer
 var _bed: AudioStreamPlayer
 var _reaction: AudioStreamPlayer
-var _music: AudioStreamPlayer
-var _music_route := ""
-var _music_slot := ""
-var _music_gain := 0.0
-var _music_blocks: Dictionary = {}
-var _music_streams: Dictionary = {}
-var _music_overrides: Dictionary = {}
 var _registered := false
 var _profile_ready := false
 var _active := false
@@ -49,6 +35,15 @@ var _reaction_scale := 1.0
 var _last_ui_ms := -1000
 var _last_error_ms := -1000
 var _last_reaction_ms := -1000
+var _last_reaction_priority := 0
+## Temps de jeu (ms) cumulé par _process : suit le rythme du direct (ralenti, image lente) et se fige
+## quand l'arbre est en pause. Remplaçable par une horloge fournie (tests) : Callable sans argument, en ms.
+var _game_ms := 0
+var game_clock := Callable()
+## Deux réactions plus proches que cela (temps de jeu) : la plus importante gagne.
+const REACTION_WINDOW_MS := 350
+## Importance d'une réaction : essai > transformation > tentative manquée > sifflets de pénalité.
+const REACTION_PRIORITY := {"stadium-try": 4, "stadium-goal": 3, "stadium-miss": 2, "crowd-whistle": 1}
 var _signature := ""
 var _history: Array[String] = []
 var _seen: Dictionary = {}
@@ -72,7 +67,7 @@ func setup(app: Control) -> bool:
 			_streams[id] = stream
 	if _bus_users == 0:
 		_created_buses.clear()
-		for label in ["Interface", "Stade", MUSIC_BUS]:
+		for label in ["Interface", "Stade"]:
 			var index := AudioServer.get_bus_index(label)
 			if index < 0:
 				AudioServer.add_bus()
@@ -86,7 +81,6 @@ func setup(app: Control) -> bool:
 	_ui = _player("InterfaceSound", "Interface")
 	_bed = _player("StadiumBed", "Stade")
 	_reaction = _player("StadiumReaction", "Stade")
-	_music = _player("AmbianceMusic", MUSIC_BUS)
 	var bed_stream := (_streams["stadium-bed"] as AudioStreamWAV).duplicate() as AudioStreamWAV
 	bed_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	bed_stream.loop_begin = 0
@@ -124,7 +118,7 @@ func load_profile(directory: String) -> bool:
 func apply_preferences() -> void:
 	if not _registered:
 		return
-	for item in [["Interface", "interface_volume"], ["Stade", "stadium_volume"], [MUSIC_BUS, "music_volume"]]:
+	for item in [["Interface", "interface_volume"], ["Stade", "stadium_volume"]]:
 		var index := AudioServer.get_bus_index(item[0])
 		if index < 0:
 			_fail("Bus sonore disparu : " + str(item[0]))
@@ -139,9 +133,6 @@ func apply_preferences() -> void:
 		_reaction.stop()
 		_bed_gain = 0.0
 		_reaction_gain = 0.0
-	if not _profile_ready or preferences.get_value("music_volume") == 0 or not preferences.get_flag("music_on"):
-		_music.stop()
-		_music_gain = 0.0
 
 func _node_added(node: Node) -> void:
 	if node is BaseButton:
@@ -207,7 +198,6 @@ func set_voice_active(value: bool) -> void:
 func refresh_visibility(route: String, live_visible: bool) -> void:
 	_shown = route == "Match" and live_visible
 	_active = _shown and (_live_active or _presenting)
-	_music_route = route
 
 ## Match en temps forts : le stade s'entend pendant un temps fort rejoué, même si le
 ## moteur est déjà à la mi-temps ou au coup de sifflet final.
@@ -233,10 +223,13 @@ func _crowd_cue(kind: String, team: int) -> Dictionary:
 			return {"id": "crowd-whistle", "mood": "sifflets"} if team == 1 else {}
 	return {}
 
+func _game_time_ms() -> int:
+	return int(game_clock.call()) if game_clock.is_valid() else _game_ms
+
 func _process(delta: float) -> void:
+	_game_ms += int(delta * 1000.0)
 	if not _registered:
 		return
-	_update_music(delta)
 	var enabled := _active and _profile_ready and preferences.get_value("stadium_volume") > 0 and preferences.get_flag("match_sounds")
 	var desired := (0.35 if _voice_active else 1.0) if enabled else 0.0
 	_bed_gain = move_toward(_bed_gain, desired, delta / 0.22)
@@ -249,66 +242,6 @@ func _process(delta: float) -> void:
 	_reaction.volume_db = linear_to_db(_reaction_gain) if _reaction_gain > 0.0 else -80.0
 	if not enabled and _reaction_gain == 0.0:
 		_reaction.stop()
-
-## Musique d'ambiance : Bureau et menus, jamais en match (écran ou direct en cours), jamais bloquée par l'intro.
-func set_music_blocked(reason: String, blocked: bool) -> void:
-	if blocked:
-		_music_blocks[reason] = true
-	else:
-		_music_blocks.erase(reason)
-
-## Branche un morceau à la place du fichier du dossier audio/music (tests, recette).
-func set_music_stream(slot: String, stream: AudioStream) -> void:
-	_music_overrides[slot] = stream
-
-func _music_slot_for(route: String) -> String:
-	var in_match := preferences.get_flag("music_in_match")
-	if route.is_empty() or not _music_blocks.is_empty():
-		return ""
-	# « Musique pendant les matchs » : l'écran Match et le direct gardent la musique ; Accueil et co. restent muets.
-	if route in MUSIC_SILENT_ROUTES and not (route == "Match" and in_match):
-		return ""
-	if (_live_active or _presenting) and not in_match:
-		return ""
-	var slot := "bureau" if route in MUSIC_OFFICE_ROUTES or route == "Match" else "menus"
-	return slot if _music_stream(slot) != null else ("bureau" if _music_stream("bureau") != null else "")
-
-func _music_stream(slot: String) -> AudioStream:
-	if _music_overrides.has(slot):
-		return _music_overrides[slot]
-	if not _music_streams.has(slot):
-		var path: String = MUSIC_SLOTS.get(slot, "")
-		_music_streams[slot] = ResourceLoader.load(path) as AudioStream if not path.is_empty() and ResourceLoader.exists(path) else null
-	return _music_streams[slot]
-
-func _music_loop(stream: AudioStream) -> AudioStream:
-	var looped := stream.duplicate() as AudioStream
-	if looped is AudioStreamWAV:
-		var wav := looped as AudioStreamWAV
-		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		wav.loop_begin = 0
-		wav.loop_end = wav.data.size() / (4 if wav.stereo else 2)
-	elif "loop" in looped:
-		looped.set("loop", true)
-	return looped
-
-func _update_music(delta: float) -> void:
-	var enabled := _profile_ready and preferences.get_value("music_volume") > 0 and preferences.get_flag("music_on")
-	var target := _music_slot_for(_music_route) if enabled else ""
-	# Fondu entre écrans : on descend, on change de morceau à zéro, on remonte.
-	var desired := 1.0 if not target.is_empty() and target == _music_slot else 0.0
-	_music_gain = move_toward(_music_gain, desired, delta / MUSIC_FADE_SECONDS)
-	if _music_gain == 0.0 and target != _music_slot:
-		_music_slot = target
-		_music.stop()
-		if not target.is_empty():
-			_music.stream = _music_loop(_music_stream(target))
-	if _music_gain > 0.0 or (not _music_slot.is_empty() and desired > 0.0):
-		if not _music.playing and _music.stream != null:
-			_music.play()
-	_music.volume_db = linear_to_db(_music_gain) if _music_gain > 0.0 else -80.0
-	if _music_gain == 0.0 and _music_slot.is_empty() and _music.playing:
-		_music.stop()
 
 func _match_signature(model: Dictionary, live: Dictionary) -> String:
 	var meta: Dictionary = model.get("meta", {})
@@ -394,10 +327,14 @@ func observe_model(model: Dictionary, route: String, command: String = "snapshot
 func _play_reaction(id: String, mood: String = "joie") -> bool:
 	if not _registered or not _active or not _profile_ready or preferences.get_value("stadium_volume") == 0 or not preferences.get_flag("match_sounds"):
 		return false
-	var now := Time.get_ticks_msec()
-	if now - _last_reaction_ms < 350:
+	var now := _game_time_ms()
+	var priority: int = REACTION_PRIORITY.get(id, 1)
+	# Anti-rebond en temps de jeu. Dans la fenêtre, seule une réaction strictement plus importante
+	# remplace celle en cours ; une réaction rejetée ne change pas le repère (résultat indépendant de l'ordre).
+	if now - _last_reaction_ms < REACTION_WINDOW_MS and priority <= _last_reaction_priority:
 		return false
 	_last_reaction_ms = now
+	_last_reaction_priority = priority
 	_reaction.stop()
 	# Déception : le même souffle que la tentative manquée, plus grave et plus bas.
 	_reaction.stream = _streams["stadium-miss" if mood == "deception" else id]
@@ -418,14 +355,12 @@ func dispose() -> void:
 		_app_owners.erase(_app.get_instance_id())
 	if is_inside_tree() and get_tree().node_added.is_connected(_node_added):
 		get_tree().node_added.disconnect(_node_added)
-	for node in [_ui, _bed, _reaction, _music]:
+	for node in [_ui, _bed, _reaction]:
 		if is_instance_valid(node):
 			node.stop()
 			node.stream = null
 			node.queue_free()
 	_streams.clear()
-	_music_streams.clear()
-	_music_overrides.clear()
 	if preferences.changed.is_connected(apply_preferences):
 		preferences.changed.disconnect(apply_preferences)
 	if preferences.error_changed.is_connected(_preference_error):

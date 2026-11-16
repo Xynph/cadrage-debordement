@@ -17,7 +17,7 @@ concurrency:
 jobs:
   long-careers:
     name: Carriere ${{ matrix.scenario }} - 15 saisons
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -45,11 +45,28 @@ jobs:
           path: ${{ runner.temp }}/career-resilience/*-report.json
           retention-days: 14
           if-no-files-found: error
+  # Arrêts informatifs de « Continuer » sur une saison Monde complète jouée à Continuer (décision de Léo du 16/11) :
+  # trop long pour chaque PR (~30 min, 1748 s mesurés en CI le 16/11) ; la CI de PR garde une fenêtre courte.
+  continuer-arrets-saison:
+    name: Continuer - arrets informatifs sur une saison
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Saison complete jouee a Continuer
+        env:
+          ARRETS_SAISON_COMPLETE: '1'
+        run: timeout --signal=TERM --kill-after=10s 2400s node tests/continuer-arrets-saison.cjs
   evidence:
     name: Validation carrieres longues
     if: ${{ always() }}
     needs: long-careers
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5

@@ -33,6 +33,13 @@ static func edits(command: String, payload: Dictionary, model: Dictionary) -> Ar
 			return [[["decisions", "delegation", key], payload.enabled]]
 		"press_policy":
 			return _leaf(model, ["clubLife", "press", "policy", "ordinary"], payload.get("ordinary"))
+		"club_mail_reply":
+			# Courrier du club (ui/club_mail.gd) : la réponse choisie s'affiche dès le clic.
+			var answers: Variant = _node(model, ["clubLife", "clubMail", "reponses"])
+			var mail_id := str(payload.get("id", ""))
+			var choice := str(payload.get("choice", ""))
+			if not answers is Dictionary or mail_id.is_empty() or choice.is_empty(): return []
+			return [[["clubLife", "clubMail", "reponses", mail_id], choice]]
 		"club_follow":
 			var followed: Variant = _node(model, ["clubLife", "clubSheet", "followed"])
 			if not followed is Array or not payload.get("follow") is bool or not (payload.get("club") is int or payload.get("club") is float): return []

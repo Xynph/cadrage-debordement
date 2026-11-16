@@ -5,7 +5,7 @@
 **Goal:** Compléter les staffs initiaux France30 et Monde116 par des personnages fictifs distincts des références.
 **Architecture:** Module pur de fonction/tiers/génération, vue composée par édition, politique persistante optionnelle pour les nouveaux cycles. Anciennes carrières inchangées.
 **Tech Stack:** Node CommonJS, VM native, tests node:test, portraits locaux banque2.
-**Spec:** docs/superpowers/specs/2026-11-10-staff-completion-design.md
+**Spec:** docs/plans-historiques/specs/2026-11-10-staff-completion-design.md
 
 ## Global Constraints
 

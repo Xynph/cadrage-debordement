@@ -30,9 +30,8 @@ func _initialize() -> void:
 	check(single.get("command") == "advance_day" and single.get("payload") == {"fromDate": date}, "« Jour suivant » reste disponible : un seul pas.")
 	var preseason := {"calendarToday": "2026-07-13", "calendarCadence": {"matchReady": false, "canAdvance": true, "preseason": true}}
 	check(progression.daily(preseason, null, "Bureau").get("command") == "advance_until_event", "L’avant-saison avance aussi jusqu’au prochain événement (plus de « + 7 jours »).")
-	check(progression.continue_stops({}) == {"messages": "importants", "blessures": "titulaires", "flux": "equilibre"}, "Arrêts par défaut : messages importants, blessures des titulaires.")
-	check(progression.continue_stops({"continue_messages": "aucun", "continue_injuries": "effectif", "continue_flow": "complet"}) == {"messages": "aucun", "blessures": "effectif", "flux": "complet"}, "Réglages d’arrêt du joueur transmis au moteur.")
-	check(progression.continue_stops({"continue_flow": "tout"}).flux == "equilibre", "Flux inconnu : équilibré.")
+	check(progression.continue_stops({}) == {"messages": "importants", "blessures": "titulaires"}, "Arrêts par défaut : messages importants, blessures des titulaires.")
+	check(progression.continue_stops({"continue_messages": "aucun", "continue_injuries": "effectif", "continue_flow": "complet"}) == {"messages": "aucun", "blessures": "effectif"}, "Réglages d’arrêt du joueur transmis au moteur ; l’ancien flux n’est plus envoyé (pas de niveaux).")
 	# « Doit répondre » : une décision due change le bouton, qui ouvre « La reprise » au lieu d'avancer.
 	var due := {"calendarToday": date, "calendarCadence": {"matchReady": false, "canAdvance": true}, "decisionsDue": ["amicaux"]}
 	var answer: Dictionary = progression.daily(due, fixture, "Bureau")

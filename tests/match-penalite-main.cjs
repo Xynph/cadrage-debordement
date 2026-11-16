@@ -1,6 +1,6 @@
 'use strict';
 // Pénalité jouée vite à la main : vrai choix du moteur (décision, effets, faits, fréquence).
-// Conception : docs/match-choregraphe-20261112.md, § 12.
+// Conception : docs/match-choregraphe-20261112.md, § 13 (quatrième tranche).
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {context}=require('./harness.cjs');

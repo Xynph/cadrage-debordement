@@ -5,7 +5,7 @@
 **Goal:** Livrer un ZIP Windows reçu sur son véritable EXE, rattaché au commit final et accompagné de preuves téléchargeables, pour un budget externe de 0 €.
 **Architecture:** Un outillage CI indépendant prépare le SDK et appelle le constructeur existant. Le pilote intégré couvre le cycle long ; des classes SceneTree de recette embarquées couvrent le démarrage graphique et la reprise. Un override.cfg déclaré dans la seule copie QA sélectionne ces classes et une scène vide ; le paquet normal garde main.tscn. La livraison finale main est reconstruite/reçue puis jointe à un brouillon de Release.
 **Tech Stack:** Python standard, PowerShell7, Node22.23.4, Godot4.7.2, Windows2022 standard, API GitHub Releases.
-**Spec:** docs/superpowers/specs/2026-11-11-windows-delivery-design.md et demande utilisateur détaillée du11novembre.
+**Spec:** docs/plans-historiques/specs/2026-11-11-windows-delivery-design.md et demande utilisateur détaillée du11novembre.
 
 ## Global Constraints
 - Budget externe0€, dépôt public, standard runner uniquement ; pas d'Artifacts/cache payants nouveaux.
