@@ -45,6 +45,14 @@ const MAUL_FORM := 0.7
 const MAUL_START := 0.5
 const MAUL_PACE := 2.0     # allure moyenne du ballon porté, en m/s
 const MAUL_JOIN_PACE := 5.0  # allure de pointe des joueurs qui rejoignent le ballon porté (le groupe avance aussi)
+# Ballon porté qui finit en essai (lot 8, 16/11/2026) : la poussée jusqu'à la ligne garde
+# l'allure MAUL_PACE (pointe 1,25 fois plus) au lieu d'un sprint du paquet, en MAUL_TRY_DRIVE s au plus,
+# pour que le geste entier (poussée, plongeon, joie) tienne sous TRY_HOLD_MAX. Si la ligne est trop
+# loin pour cela, le ballon porté de la conquête avance d'autant plus (MAUL_TRY_LEAD m au plus au-delà
+# du point du moteur : écart de placement accepté par Léo), en MAUL_PORTE_DRIVE s au plus.
+const MAUL_TRY_DRIVE := 7.0
+const MAUL_TRY_LEAD := 6.0
+const MAUL_PORTE_DRIVE := 8.5
 const STRIDE_CYCLE := 0.6  # ballon porté : un cycle de deux petits pas couvre 0,6 m
 const STANCE := 0.65       # part du cycle où le pied pousse au sol
 const CROUCH := 0.12       # abaissement du bassin des pousseurs, en mètres
@@ -102,6 +110,8 @@ var line_x := 0.0
 var throw_side := 0
 var thrower := ""
 var maul_wanted := false
+# La conquête annonce un essai sur ballon porté (fait « porte » du moteur) : la poussée prend de l'avance.
+var maul_try_follows := false
 var target := Vector3.ZERO
 var ball_from := Vector3.ZERO
 var ball_from_basis := Basis.IDENTITY
@@ -219,7 +229,7 @@ func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: boo
 				_align(_last_lineout, thrown_by)
 		if phase == "touche":
 			# Ballon porté : combinaison jouée, ou ballon porté formé après la prise (fait « porte » du moteur).
-			_resolve(scene, team, featured, kind == "setpiece-win" and (str(record.get("move", "")) == "maul" or record.get("porte", false) == true))
+			_resolve(scene, team, featured, kind == "setpiece-win" and (str(record.get("move", "")) == "maul" or record.get("porte", false) == true), record.get("porte", false) == true)
 		_velocity.clear()
 		return
 	var approaching := phase == "approche"
@@ -262,6 +272,17 @@ func cancel() -> void:
 	_releve = ""
 	done = true
 	_ball_ready = false
+
+
+## L'essai mis en scène est aplati à l'écran (ballon au sol dans l'en-but) ; vrai hors geste d'essai.
+## Sert à la régie : l'essai est légendé et acclamé à cet instant, ni avant ni après la joie.
+func essai_aplati() -> bool:
+	match phase:
+		"essai_maul":
+			return dive_set and time >= maxf(drive, peel + dive_seconds)
+		"essai":
+			return time >= pass_at + drive
+	return true
 
 
 func _ball_in_hands() -> bool:
@@ -848,7 +869,7 @@ func _frame() -> Dictionary:
 	if phase == "maul":
 		k = _drive_curve(clampf((time - MAUL_START) / drive, 0.0, 1.0))
 	else:
-		k = smoothstep(0.0, 1.0, clampf(time / drive, 0.0, 1.0))
+		k = _drive_curve(clampf(time / drive, 0.0, 1.0))
 		angle = lerp_angle(axis_from, axis_to, smoothstep(0.0, turn_seconds, time))
 	var u := Vector3(sin(angle), 0.0, cos(angle))
 	var r := Vector3(-u.z, 0.0, u.x)
@@ -1110,7 +1131,8 @@ func _approach(scene: Dictionary) -> void:
 
 
 ## Le moteur a tranché : l'équipe « team » prend le ballon en l'air.
-func _resolve(scene: Dictionary, team: int, featured: String, maul: bool) -> void:
+## `try_follows` : le moteur a écrit « porte » sur la conquête, l'essai sur ballon porté suit.
+func _resolve(scene: Dictionary, team: int, featured: String, maul: bool, try_follows: bool = false) -> void:
 	if str(jumpers[team]).is_empty():
 		cancel()
 		return
@@ -1119,6 +1141,7 @@ func _resolve(scene: Dictionary, team: int, featured: String, maul: bool) -> voi
 	jumper = jumpers[side]
 	carrier = featured if view._actors.has(featured) else jumper
 	maul_wanted = maul
+	maul_try_follows = maul and try_follows
 	target = view._world(scene.get("ball", {}))
 	awaiting = false
 	done = false
@@ -1135,7 +1158,11 @@ func _start_maul() -> void:
 	center_to = target + u * 1.95
 	axis_to = atan2(u.x, u.z)
 	axis_from = axis_to
-	drive = clampf(center_from.distance_to(center_to) / MAUL_PACE, 1.6, 6.0)
+	if maul_try_follows:
+		# Essai à suivre : le reste jusqu'à la ligne doit tenir en MAUL_TRY_DRIVE s à MAUL_PACE.
+		var rest := (dir * 50.0 - center_to.x) * dir
+		center_to.x += dir * clampf(rest - MAUL_PACE * MAUL_TRY_DRIVE, 0.0, MAUL_TRY_LEAD)
+	drive = clampf(center_from.distance_to(center_to) / MAUL_PACE, 1.6, MAUL_PORTE_DRIVE if maul_try_follows else 6.0)
 	if not cast.has(carrier) or cast[carrier].team != side or cast[carrier].role == "half":
 		carrier = thrower if cast.has(thrower) and cast[thrower].team == side else jumper
 	var rear: Array[Vector2] = [Vector2(-0.75, -0.32), Vector2(-0.75, 0.32), Vector2(-1.5, -0.5), Vector2(-1.5, 0.5), Vector2(-2.25, 0.0)]
@@ -1222,7 +1249,7 @@ func _start_maul_try(scene: Dictionary, scorer: String) -> void:
 	axis_to = atan2(u.x, u.z)
 	# Le groupe pivote sans faire courir sa queue (2,3 m du centre) à plus de 3 m/s.
 	turn_seconds = maxf(0.6, 1.5 * absf(angle_difference(axis_from, axis_to)) * 2.3 / 3.0)
-	drive = clampf(center_from.distance_to(center_to) / 2.8, 1.2, 4.0)
+	drive = clampf(center_from.distance_to(center_to) / MAUL_PACE, 1.2, MAUL_TRY_DRIVE)
 	peel = maxf(drive - DIVE_SECONDS + 0.15, 0.45)
 	previous_carrier = carrier
 	for id: String in cast:

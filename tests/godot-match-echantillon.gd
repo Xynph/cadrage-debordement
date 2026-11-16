@@ -78,5 +78,10 @@ func run() -> void:
 	check(not Regie.essai_en_cours(essai, 2.4), "Essai : légende à l'aplatissement")
 	check(not Regie.essai_en_cours({"kind": "try", "mouvement": 0.0}, 0.0), "Essai sans mouvement : légende tout de suite")
 	check(not Regie.essai_en_cours({"kind": "carry", "mouvement": 2.0}, 0.5), "Course : légende inchangée")
+	# Lot 8 : ballon porté qui finit en essai, la conquête ne marque pas l'arrêt avant l'essai.
+	var porte := [{"kind": "lineout", "coupe": true}, {"kind": "setpiece-win", "coupe": false}, {"kind": "try", "coupe": false}, {"kind": "transformation", "coupe": true}]
+	check(Regie.enchaine_essai(porte, 1), "Ballon porté puis essai : la durée de la conquête est un plancher")
+	check(not Regie.enchaine_essai(porte, 0) and not Regie.enchaine_essai(porte, 2) and not Regie.enchaine_essai(porte, 3), "Autres plans : durée inchangée")
+	check(not Regie.enchaine_essai([{"kind": "setpiece-win"}, {"kind": "carry"}], 0), "Conquête sans essai : durée inchangée")
 	print("MATCH_ECHANTILLON %d controles, %d echec" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)
