@@ -57,6 +57,34 @@ test('Règle d’arrêt : obligatoires jamais ignorés, réglages des messages e
   // Prochain arrêt prévisible (info-bulle) : le plus proche de la rencontre, de la reprise et d'un rendez-vous en file.
   assert.deepEqual(C.plan(base), { kind: 'match', date: '2026-09-05', opponent: 'Rivaux' });
   assert.deepEqual(C.plan(base, '2026-09-03'), { kind: 'reprise', date: '2026-09-03' });
+  // Décision de la préparation : arrêt obligatoire le jour dû, annoncée avant la reprise du même jour.
+  const due = C.detect(base, { ...base, decisions: ['amicaux'] }, C.validate({ fromDate: '2026-09-01', stops: { ignorer: FACULTATIFS } }));
+  assert.equal(due.kind, 'decision');
+  assert.match(due.detail, /programme des matchs amicaux/);
+  assert.equal(C.detect({ ...base, decisions: ['amicaux'] }, { ...base, decisions: ['amicaux'] }, o), null, 'déjà signalée');
+  assert.deepEqual(C.plan({ ...base, decisionNext: { date: '2026-09-03', detail: 'Programme des matchs amicaux' } }, '2026-09-03'),
+    { kind: 'decision', date: '2026-09-03', detail: 'Programme des matchs amicaux' });
+  // Éléments « À noter » : arrêt informatif selon le flux (allégé, équilibré, complet), éléments du jour regroupés.
+  const vus = { ...base, notes: ['retour:2026-09-02', 'amical:2026-09-02'] };
+  const flux = f => C.detect({ ...base, notes: [] }, vus, C.validate({ fromDate: '2026-09-01', stops: { flux: f } }));
+  assert.equal(flux('allege'), null, 'allégé : ni amical ni retour');
+  assert.equal(flux('equilibre').kind, 'a_noter');
+  assert.equal(flux('equilibre').detail, '2 éléments en Réception : retour des internationaux, compte rendu de match amical.');
+  assert.equal(flux('complet').kind, 'a_noter');
+  assert.equal(C.detect({ ...base, notes: ['retour:2026-09-02'] }, { ...base, notes: ['retour:2026-09-02', 'retour:2026-09-03'] }, C.validate({ fromDate: '2026-09-01' })), null, 'équilibré : le retour seul n’arrête pas');
+  assert.equal(C.detect(vus, vus, o), null, 'déjà vus');
+  assert.throws(() => C.validate({ fromDate: '2026-09-01', stops: { flux: 'tout' } }), /invalides/);
+  const prevus = { ...base, notesNext: [{ date: '2026-09-02', kind: 'retour' }, { date: '2026-09-04', kind: 'veille' }] };
+  assert.deepEqual(C.plan(prevus, null, 'complet'), { kind: 'a_noter', date: '2026-09-02', detail: 'retour des internationaux' });
+  assert.deepEqual(C.plan(prevus, null, 'equilibre'), { kind: 'a_noter', date: '2026-09-04', detail: 'veille de la 1re journée' });
+  // « Doit répondre » arrête toujours, quel que soit le flux, et passe avant un élément à noter du même jour.
+  for (const f of ['allege', 'equilibre', 'complet']) {
+    const stop = C.detect({ ...base, notes: [] }, { ...vus, decisions: ['stage'] }, C.validate({ fromDate: '2026-09-01', stops: { flux: f, ignorer: FACULTATIFS } }));
+    assert.equal(stop.kind, 'decision', 'flux ' + f);
+    assert.equal(C.STOPS[stop.kind].mandatory, true);
+  }
+  assert.throws(() => C.validate({ fromDate: '2026-09-01', stops: { ignorer: ['decision'] } }), /obligatoire/);
+  assert.equal(C.plan({ ...prevus, decisionNext: { date: '2026-09-02', detail: 'Orientation du stage' } }, null, 'complet').kind, 'decision');
   assert.equal(C.plan({ ...base, meeting: { kind: 'board', id: 'b' } }).kind, 'rendez_vous');
   assert.equal(C.plan({ ...base, next: null }), null);
   assert.throws(() => C.validate({ fromDate: '2026-09-01', maxDays: 0 }), /jours/);
@@ -99,6 +127,8 @@ test('Une seule commande : du 13/07 au jour du premier match', { timeout: 150000
     jeu.bridge.vm.run("{const d=nativeSystems.domain('clubMeetings');d.observe=()=>{};delete S.clubMeetings;}");
     let model = jeu.call('snapshot');
     assert.equal(model.meta.calendarToday, '2026-07-13');
+    // Décisions de la préparation prises d'avance (« La reprise ») : elles n'arrêtent plus l'avance.
+    for (const decision of ['amicaux', 'stage']) model = jeu.call('reprise_decide', { decision, option: 'equilibre' });
     const t = performance.now();
     model = avancer(jeu, model, { stops: { messages: 'aucun', ignorer: FACULTATIFS } });
     const duree = performance.now() - t;
@@ -134,6 +164,7 @@ test('Arrêt sur un rendez-vous obligatoire, refus tant qu’il n’est pas rég
   const jeu = ouvrir(dir);
   try {
     let model = jeu.call('snapshot');
+    for (const decision of ['amicaux', 'stage']) model = jeu.call('reprise_decide', { decision, option: 'equilibre' });
     model = avancer(jeu, model, { stops: { messages: 'aucun', ignorer: FACULTATIFS } });
     const a = model.meta.advanceUntilEvent;
     assert.equal(a.stop.kind, 'rendez_vous', JSON.stringify(a));
