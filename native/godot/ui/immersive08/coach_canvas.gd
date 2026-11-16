@@ -238,9 +238,9 @@ func _build_adjoint() -> void:
 	_voile = ColorRect.new()
 	_voile.name = "GabiVoile"
 	_voile.color = Color(0.02, 0.05, 0.04, 0.55)
-	_voile.mouse_filter = Control.MOUSE_FILTER_STOP
-	_voile.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.pressed: close())
+	# Le voile assombrit seulement : il laisse passer le clic. Un clic hors de Gabi ferme le grand mode (_input) ET
+	# atteint ce qu'il visait (recette native du 16/11/2026 : « Nouvelle carrière » demandait deux clics).
+	_voile.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_voile.hide()
 
 ## Bandeau de Gabi en service : carrière ouverte, Gabi activé, zone du bandeau construite par shell.gd.
@@ -703,6 +703,10 @@ func fermer_bulle() -> void:
 
 ## Un clic ailleurs ferme la bulle (le clic continue vers ce qu'il visait) ; Échap aussi.
 func _input(event: InputEvent) -> void:
+	# Grand mode (aide, visite, moment clé) sous voile : un clic hors du cadre de Gabi le referme, sans consommer le clic.
+	if expanded and visible and is_instance_valid(_voile) and _voile.visible and event is InputEventMouseButton and event.pressed:
+		if not get_global_rect().grow(4).has_point(event.position): close()
+		return
 	if not is_instance_valid(_bulle) or not _bulle.visible: return
 	if event is InputEventMouseButton and event.pressed:
 		var at: Vector2 = event.position
