@@ -26,7 +26,7 @@ var _focus_clavier := false
 static func pied_de_page() -> String:
 	return "   ·   ".join(TABLE.filter(func(l: Array): return l[3]).map(func(l: Array): return "%s %s" % [l[0], l[1]]))
 
-## Lignes de l'aide et des paramètres : « Espace : explication ».
+## Lignes de l'aide (F1) et de l'onglet « Raccourcis clavier » des paramètres (ui/preferences_dialog.gd) : « Espace : explication ».
 static func lignes_aide() -> PackedStringArray:
 	return PackedStringArray(TABLE.map(func(l: Array): return "%s : %s" % [l[0], l[2]]))
 
@@ -38,29 +38,6 @@ static func installer(owner_app: Control) -> void:
 		gestionnaire.app = owner_app
 		owner_app.add_child(gestionnaire)
 	gestionnaire.annoncer_continuer()
-
-## Onglet « Raccourcis » ajouté aux paramètres à leur ouverture (la boîte est construite ailleurs : aucun fichier partagé touché).
-func _enfant_ajoute(noeud: Node) -> void:
-	if noeud.name == "PreferencesDialog": _ajouter_onglet.call_deferred(noeud)
-
-func _ajouter_onglet(boite: Node) -> void:
-	var onglets := boite.find_child("PreferencesTabs", true, false) as TabContainer
-	if onglets == null or onglets.find_child("PreferencesShortcuts", true, false) != null: return
-	var page := VBoxContainer.new()
-	page.name = "Raccourcis clavier"
-	var titre := Label.new()
-	titre.name = "PreferencesShortcuts"
-	titre.text = "RACCOURCIS CLAVIER"
-	page.add_child(titre)
-	var texte := Label.new()
-	texte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	texte.text = "\n".join(lignes_aide())
-	texte.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	page.add_child(texte)
-	onglets.add_child(page)
-
-func _ready() -> void:
-	app.child_entered_tree.connect(_enfant_ajoute)
 
 ## Info-bulle « Espace : prochain message » ou « Espace : continuer », recalculée au survol et au focus (le texte est réécrit chaque jour).
 func annoncer_continuer() -> void:
