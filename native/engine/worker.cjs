@@ -595,7 +595,7 @@ function createBridge(options={}){
    const live=projectionState.live;
    const staffKey=JSON.stringify(m.meta?.catalogue??null)+'\u0001'+JSON.stringify(m.meta?.database??null);
    let skip=null;
-   if(live){skip=memoDomainKeys.filter(key=>sectionMemo.available('clubLife.'+key));if(!sectionMemo.available('staff'))skip=skip.filter(key=>key!=='staffCareer');}
+   if(live){skip=memoDomainKeys.filter(key=>!LIFE_READ_EARLY.has(key)&&sectionMemo.available('clubLife.'+key));if(!sectionMemo.available('staff'))skip=skip.filter(key=>key!=='staffCareer');}
    const parts=run('nativeSystems.projectParts(nativeStateVersions.current(),'+(skip?'new Set('+JSON.stringify(skip)+')':'null')+')');
    const life={};
    for(const [key,text] of parts){

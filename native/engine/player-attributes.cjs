@@ -92,6 +92,8 @@ module.exports = function createNativePlayerAttributes() {
     for (const players of populations(state, liveOnly)) {
       for (const player of players) {
         if (player.nativeAttributesV1 === undefined || previous.has(player.id)) continue;
+        // Commande stable (sans vérification) : seul le texte d'attributs est gardé (chaîne, sans objet par joueur).
+        if (stable === true) { previous.set(player.id, player.nativeAttributesV1); continue; }
         previous.set(player.id, {
           packed: player.nativeAttributesV1, rating: player.rating,
           skills: stable === true ? null : effectiveSkills(player), ...(stable ? { stable: true } : {})
@@ -123,7 +125,8 @@ module.exports = function createNativePlayerAttributes() {
     for (const players of populations(state, liveOnly)) {
       for (const player of players) {
         if (previous && !hasFullProfile(player.attributesV2)) {
-          player.nativeAttributesV1 = progressed(player, previous.get(player.id));
+          const before = previous.get(player.id);
+          player.nativeAttributesV1 = typeof before === 'string' ? before : progressed(player, before);
           continue;
         }
         const packed = player.nativeAttributesV1;
