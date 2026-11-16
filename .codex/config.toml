@@ -1,0 +1,6 @@
+[mcp_servers.godot]
+command = "node"
+args = ["tools/godot-agent/stdio.cjs"]
+startup_timeout_sec = 240
+tool_timeout_sec = 120
+enabled_tools = ["godot_project_info", "godot_run", "godot_stop", "godot_game_logs", "godot_list_games", "godot_scene_tree", "godot_eval", "godot_screenshot", "godot_hot_reload", "godot_validate_script", "godot_api_search", "godot_api_doc"]

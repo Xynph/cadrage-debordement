@@ -305,6 +305,9 @@ func finish(info: Dictionary) -> void:
 	# Conférences ordinaires tenues par Gabi pendant l'avance (réglage « envoyer l'adjoint ») : dites, sans arrêt.
 	var delegated := int(info.get("pressDelegated", 0))
 	hint.text = ("Gabi a tenu %s à votre place. " % ("la conférence de presse" if delegated == 1 else "%d conférences de presse" % delegated) if delegated > 0 else "") + "Carrière sauvegardée."
+	# Autres arrêts du même jour (façon FM) : un nouvel appui sur Continuer les montre sans avancer.
+	var queued := int(info.get("queued", 0))
+	if queued > 0: hint.text = ("Encore %d élément%s aujourd’hui : Continuer pour %s. " % [queued, "s" if queued > 1 else "", "les voir" if queued > 1 else "le voir"]) + hint.text
 	stop_button.visible = false
 	bar.value = 1.0
 	if not visible: show()
@@ -367,6 +370,9 @@ func _plan_title(plan: Dictionary) -> String:
 		"a_noter":
 			var note := str(plan.get("detail", ""))
 			return "Jusqu’au prochain élément à noter : %s" % note if not note.is_empty() else "Jusqu’au prochain élément à noter"
+		"info":
+			var moment := str(plan.get("detail", ""))
+			return "Jusqu’à la %s" % moment if not moment.is_empty() else "Les jours défilent…"
 	return "Les jours défilent…"
 
 

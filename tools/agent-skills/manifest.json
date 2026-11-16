@@ -4,8 +4,8 @@
     {
       "id": "awesome-gamedev-agent-skills",
       "repository": "https://github.com/gamedev-skills/awesome-gamedev-agent-skills",
-      "commit": "dcf3bbbb83f365632402c086bf595048aa24aaa8",
-      "retrieved": "2026-11-10",
+      "commit": "c6ca6c41c839b68319ffc08430b99ab768debc32",
+      "retrieved": "2026-11-16",
       "licence": "Apache-2.0",
       "licenceFiles": {
         "LICENSE": "6f82dcfeb95a1c0a0452180a3b16f21bf82111780018fed59d95a052b5b75f6c",
@@ -17,17 +17,20 @@
           "path": "skills/godot/godot-gdscript",
           "usage": "GDScript 4.x idiomatique : typage, cycle de vie, signaux, await",
           "files": {
-            "SKILL.md": "9039fb6de0980495fbc77fb87aae22256d92e7b5cca558b9e318b53dbf557459",
-            "references/annotations-and-typing.md": "b905cae5114ecbbba2cac14ad49b05a2c252535a670f5a1d701b41def3a90f78"
-          }
+            "SKILL.md": "a8b29cb9d2fb66ca96e822d4c95e828806d18829d6fd04213059459c70bd45e4",
+            "references/annotations-and-typing.md": "81133aa49ce952a48af213709b49d49c23a631ef89f0a29865ee2e94903f9713"
+          },
+          "refused": [
+            "assets/check_scripts_compile.gd"
+          ]
         },
         {
           "name": "godot-ui-control",
           "path": "skills/godot/godot-ui-control",
           "usage": "Interfaces Control : ancres, conteneurs, Theme, navigation au clavier",
           "files": {
-            "SKILL.md": "0b2cc92d670cc2274f6579748a1703ec6a2bf70dc3d2875985deea1018f05bdc",
-            "references/layout-and-theming.md": "5f54eed206cd7d7f5fecffd2ce1c189739eba5b5e18b2d1773f9ba7202427f66"
+            "SKILL.md": "aaca3aa929d5889de1ef2b4bfe807522726f49939b1e932b8910526c93462f14",
+            "references/layout-and-theming.md": "8bfa683af237ca6f2fd8be6e131572d9add261ab88e7a98221d45104ba69adbb"
           }
         },
         {
@@ -35,7 +38,7 @@
           "path": "skills/godot/godot-gdscript-headless-testing",
           "usage": "Tests GDScript en ligne de commande avec code de sortie fiable",
           "files": {
-            "SKILL.md": "980ecf1815cb179bc92749e419e3d5c87cc998413c57ed87035e34dc45e87034"
+            "SKILL.md": "8f817a05c6e3c3f34c2c64271dae2acb0465f50c6b173c1f836393c532f1efb5"
           }
         },
         {
@@ -43,8 +46,8 @@
           "path": "skills/godot/godot-export",
           "usage": "Export et builds : préréglages, modèles, export headless",
           "files": {
-            "SKILL.md": "473552185df50d5ab4a2ef874f47e08ffd7f6f552e191a7a5922c288b29800a6",
-            "references/presets-and-cli.md": "4f1a080d0f126cc3ca657e2af633ed2e4f781460ad4640e8567986f669f5972d"
+            "SKILL.md": "0861e1d9204c33110f8f729b221641584ec43a76b028da7ada7a34f6aa2137b3",
+            "references/presets-and-cli.md": "5b325bdcb9e972b764dcda5bdc533486dd9b2c7d5facce587f9376ece84e0551"
           }
         },
         {
@@ -52,17 +55,20 @@
           "path": "skills/godot/godot-3d-essentials",
           "usage": "Scène 3D : caméra, lumières, WorldEnvironment, matériaux",
           "files": {
-            "SKILL.md": "6164f02300775b7db62a79ca9f65f8dc2232efa64268fb330621cf898bbec73d",
-            "references/scene-and-environment.md": "94d016b194b9d2a5d5ffa3b9cef531b639b15413740f0132ba9f4cc0cba03c34"
-          }
+            "SKILL.md": "5955e7c95c59961cda0957c3dac2365382ccdd89a78851a02c5cb578daa3fec7",
+            "references/scene-and-environment.md": "729118e4824d4744cf270bc423ee5b64d147856679f33b68fbcaa5019904e2cc"
+          },
+          "refused": [
+            "assets/check_3d_scene.gd"
+          ]
         },
         {
           "name": "godot-shaders",
           "path": "skills/godot/godot-shaders",
           "usage": "Shaders canvas_item et spatial",
           "files": {
-            "SKILL.md": "e96ac075c0d85f14af8de2a3f92bc4f0389a9bb9e9ac32bc1519f2aa4679d6be",
-            "references/shading-language.md": "406987a5728ac06e5a93b878d390387545a0f118a014b65a65d0e003bf3a64c9"
+            "SKILL.md": "ea6233ccdf34d8d1defdb6a9d83d9df84e14b4317e3ae95855577e7aea628847",
+            "references/shading-language.md": "26a742730ae1340613bcd3f7dd001fe1ace098ca78473510dcbeee23f715635f"
           }
         },
         {
@@ -70,26 +76,32 @@
           "path": "skills/godot/godot-audio",
           "usage": "Lecture et mixage : bus, volumes, synchronisation",
           "files": {
-            "SKILL.md": "9ed39d72403eef39e2cbedb1015262ee8413f4f71c91734ba25f82eece839b5b",
-            "references/buses-and-effects.md": "f84f5c91fc78631670315b4c63643603841ad1ca1f211a7891c8bc408f8c3e80"
-          }
+            "SKILL.md": "191b743fbaca3ebc4fcb30d39aa15b39eb64052dd4e5594e961624ade05e9f56",
+            "references/buses-and-effects.md": "49a9bd9829d584b316e749e8bc890032d38febf67e8da2d05732b89b59796918"
+          },
+          "refused": [
+            "assets/check_audio_buses.gd"
+          ]
         },
         {
           "name": "godot-animation",
           "path": "skills/godot/godot-animation",
           "usage": "AnimationPlayer, AnimationTree, Tween",
           "files": {
-            "SKILL.md": "924eba14c119e7b08a53a77be3949def5d226c69db3b38de7d351285dfbb5bb8",
-            "references/animation-tree-and-tween.md": "7b10c70963f8211c72733716cd98992fb7f168724c59815aa9e22d2423bc8221"
-          }
+            "SKILL.md": "9010eaffda19ca17a3671097a327c7c6845603f2528c2a16b0eda7adc5ef7a9a",
+            "references/animation-tree-and-tween.md": "40eeb1defbbf7484a1cc4b8ac90de03abdbd8dde7728003162ed18d7b0c6b76b"
+          },
+          "refused": [
+            "assets/test_animation_states.gd"
+          ]
         },
         {
           "name": "save-systems",
           "path": "skills/disciplines/save-systems",
           "usage": "Sauvegardes : écriture atomique, versions, migrations, emplacements",
           "files": {
-            "SKILL.md": "17a7e580cdb8ee2fe654fe1b2d9ba3066c57ef1ea6a8cd9cc69141ebaea16224",
-            "references/versioning-and-migration.md": "a95ee265936b5bb332934ae19a90c02c70f927adb3898e5a95ce1877abe9873c"
+            "SKILL.md": "84620777d23dd018665ba86254fcf52fbd88e517d4cfe41b112c720711d6c908",
+            "references/versioning-and-migration.md": "f648f75adcf0c3028f350f07ea4202ff433ab170da4859748e2a675092c71768"
           }
         },
         {
@@ -97,8 +109,8 @@
           "path": "skills/disciplines/game-ui-ux",
           "usage": "Interface de jeu : mise en page, échelle, focus, pile d'écrans",
           "files": {
-            "SKILL.md": "accd64692faed4656661a2d6977f20ed505134c1ab5f1732de1798c90071ce5c",
-            "references/layout-and-flow.md": "961fc8c8e45a1ee5120e1deef9f6aef932ae3949e6f1ce26548b9d7616775d73"
+            "SKILL.md": "69140650cd9a28dc208bd1540358f47829aabb3f0834311c3d39b7a451e8b163",
+            "references/layout-and-flow.md": "2adc76f28f305e44afd90667e25e65b129b21433966e9b0fbedc48dd7ab1af4f"
           }
         },
         {
@@ -106,8 +118,8 @@
           "path": "skills/disciplines/game-feel",
           "usage": "Retours visuels et sonores, easing, impact",
           "files": {
-            "SKILL.md": "48971c7ad1fbb39069cb165f0e45f88c13776585870d69d5de8a04bbe0988e28",
-            "references/feedback-recipes.md": "f8cca962733b0b1f5d1db75fe966f6e13bf11015e39a04a849d6ff5c3e0e835e"
+            "SKILL.md": "a3591662e732f1540887570f584bd18778f4f728708afa013a33e20bcc949a06",
+            "references/feedback-recipes.md": "dd084164150a75f84ce7d8459956ef35b1d3e5270aa7421612ab2671a9da0740"
           }
         },
         {
@@ -115,9 +127,9 @@
           "path": "skills/disciplines/game-ai",
           "usage": "IA de jeu : décisions, utilité, états",
           "files": {
-            "SKILL.md": "5c193ac1debc8ec9ed8f44be7a05d12d817ac390e1fa82018bcae4f2ff53fbd8",
-            "references/behavior-trees.md": "eed3fdb943801a7696f2ca03a54d60fc9111a63c5c817e567516b5e2df2c04a9",
-            "references/pathfinding.md": "75d6c8397fc5ff2fb8ac3dd74e7b4f881331f2531f40b6f8db451f14adb6534d"
+            "SKILL.md": "5b36c3d22fbe60b3fdfd4baefaee4a8781cb1067a7ef7fa638cb04b4455491ca",
+            "references/fsm-perception-steering.md": "61af2d796d0ee89ecc153e02c7112df0328df579a20b08f6a0325e2458730ce3",
+            "references/pathfinding.md": "e4cc932af6bbd1ccff845caff97db3371a33538ba125288a96b2216ee0a72628"
           }
         },
         {
@@ -125,9 +137,9 @@
           "path": "skills/disciplines/procedural-gen",
           "usage": "Génération procédurale et graines reproductibles",
           "files": {
-            "SKILL.md": "4bd422eff2c28dbb12e0edf7ef68f3e98bcbbdf4d430815ba6da2d0692630cc4",
-            "references/dungeon-generation.md": "70da11446ed7345ae069e4fc59e62bfdfb354b6a92973557ad8387532fb1f65f",
-            "references/noise.md": "4f4da0458cdebcd4323ee36da9e25032d5f3a52b3cf8b46177eced6cf79597ab"
+            "SKILL.md": "9b6d6c8e64313b1d05bed7aa64cf2afb8163d9dadec85a0f8197e572efadb8f3",
+            "references/dungeon-generation.md": "167638d8e79ad215256d52954f971bd30784960a2f1c1e7b1096d15d77aef933",
+            "references/noise.md": "d1dd6ce1b9059d43f991c4080c7f37b0dec43e60979310f79384d06f52ddb95b"
           }
         },
         {
@@ -135,8 +147,8 @@
           "path": "skills/disciplines/performance-optimization",
           "usage": "Mesure et optimisation des performances",
           "files": {
-            "SKILL.md": "287161d2ed49670a051271c8fade5a7265fda5109d39c218c02598dca7983e2a",
-            "references/profiling-and-budgets.md": "d8d4fce0dafee2a4d46dc526cd59d07fc6b66faf9f89b4da59352b7beaeaae99"
+            "SKILL.md": "61538ac2e3ef68aca3194aec7eb9f54510762e86ac81ff1a4451e9fead31a3be",
+            "references/profiling-and-budgets.md": "010ab745097b48f14b0843ef95b2745895c154c1829e923764caee822b9c0a65"
           }
         }
       ]

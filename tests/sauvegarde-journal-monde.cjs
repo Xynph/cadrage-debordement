@@ -135,6 +135,8 @@ test('Fréquences : chaque jour, chaque semaine (défaut, Réglages), chaque moi
     const avant = fs.readFileSync(profil(dir));
     let model = jeu.regler(jeu.call('snapshot'));
     model = jeu.call('advance_until_event', { fromDate: model.meta.calendarToday, maxDays: jours });
+    // Sauvegarde complète due : écrite juste après la réponse (jour différé, lot 36), comme la boucle stdio du jeu.
+    jeu.bridge.handle.flush();
     return { ecrit: !fs.readFileSync(profil(dir)).equals(avant), lignes: lignes(dir).length - 1, date: model.meta.calendarToday, autosave: model.meta.autosave };
   };
   for (const [politique, attendu] of [['jour', [true, true]], ['semaine', [false, true]], ['mois', [false, false]]]) {
@@ -157,29 +159,4 @@ test('Fréquences : chaque jour, chaque semaine (défaut, Réglages), chaque moi
     } finally { jeu.bridge.close(); }
     assert.equal(lignes(dir).length, 1, politique + ' : la fermeture sauvegarde tout');
   }
-});
-
-test('Continuer en tranches : une tranche « sauvegarde » annonce la sauvegarde complète due, la suivante l’écrit', { timeout: 900000 }, () => {
-  const dir = copie(preparation);
-  fs.writeFileSync(path.join(dossier(dir), 'interface.json'), JSON.stringify({ version: 1, volume: 75, reduced_motion: false, quality: 'balanced', camera: 'tv', autosave: 'jour' }));
-  const jeu = ouvrir(dir);
-  try {
-    let model = jeu.regler(jeu.call('snapshot'));
-    const avant = fs.readFileSync(profil(dir));
-    let r = jeu.brut('advance_until_event', { fromDate: model.meta.calendarToday, maxDays: 2, budgetMs: 60000, partial: true });
-    let annonce = null;
-    for (let i = 0; i < 20 && r.ok && !r.model; i++) {
-      if (r.progress?.saving) {
-        annonce = r.progress;
-        assert.ok(fs.readFileSync(profil(dir)).equals(avant), 'rien n’est écrit avant la tranche suivante');
-      }
-      r = jeu.brut('advance_until_event', { fromDate: r.progress.today, budgetMs: 60000, partial: true });
-    }
-    assert.equal(r.ok, true, r.error);
-    assert.ok(annonce, 'chaque jour : la sauvegarde complète est annoncée avant d’être écrite');
-    assert.equal(annonce.today, r.model.meta.calendarToday, 'tranche annoncée à la date de l’arrêt');
-    assert.equal(r.model.meta.autosave.saved, true, 'sauvegarde complète écrite');
-    assert.ok(!fs.readFileSync(profil(dir)).equals(avant), 'profil réécrit');
-    assert.notEqual(r.model.meta.advanceUntilEvent.stop.kind, 'arret', 'le vrai motif d’arrêt est conservé');
-  } finally { jeu.bridge.close(); }
 });

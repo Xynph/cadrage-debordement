@@ -6,6 +6,7 @@ const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
 const ContinueProgress = preload("res://ui/continue_progress.gd")
 const Optimistic = preload("res://ui/optimistic_decisions.gd")
+const ClubMail = preload("res://ui/club_mail.gd")
 const ScreenRefresh = preload("res://ui/screen_refresh.gd")
 ## « Continuer » : tranche de calcul du moteur entre deux mises à jour du panneau (date qui défile, « Arrêter »).
 const CONTINUE_SLICE_MS := 700
@@ -363,6 +364,11 @@ func _receive_model(value: Dictionary) -> void:
 		elif received_command == CareerProgression.CONTINUE_COMMAND and _stop_kind(model) == "a_noter":
 			_reset_reception()
 			route = "Réception"
+		# Arrêt informatif (veille, rapport médical, mi-saison, marché, recruteur, courrier du club) : l'écran utile
+		# s'ouvre directement (ui/club_mail.gd), comme dans Football Manager.
+		elif received_command == CareerProgression.CONTINUE_COMMAND and _stop_kind(model) == "info":
+			var info_route := ClubMail.stop_route(self, model.meta.advanceUntilEvent.stop)
+			if not info_route.is_empty(): route = info_route
 	if bridge.last_response_ok and last_command in ["new_career","next_season","import","restore_checkpoint"] and _has_career():
 		table_division = str(model.meta.get("leagueId", "elite"))
 	if response_ok and received_command == "match_talk_continue" and _live().is_empty():
@@ -395,6 +401,8 @@ func _receive_model(value: Dictionary) -> void:
 			notice("Renforts signés",str(model.meta.coverage.get("message","La feuille a été complétée.")))
 		if last_command=="recover_profile" and not str(model.meta.get("recoveryBackup","")).is_empty():
 			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nVous pouvez maintenant créer ou importer une carrière.")
+	# Réponse à un mail du club qui mène à un écran (négocier, prolonger, préserver un joueur).
+	if response_ok and received_command == "club_mail_reply": ClubMail.after_reply(self)
 	call_deferred("_refresh_coach")
 	if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 	_record_timing(received_command, receive_us)

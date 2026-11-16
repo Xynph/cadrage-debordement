@@ -6,7 +6,7 @@ Lancée par Léo : exécuter `E:/Cadrage-Debordement/prompts/mission-autonome-6h
 - Seuil minimal : **18:20:56 UTC / 19:20:56 Europe/Paris**. Les agents simultanés ne cumulent pas leur durée.
 - Base distante contrôlée : `3fe6d160a34a9bf3b19005eaef003ac4b1e4ec21`.
 - Branche de reprise : `feature/portage-inventaire-20261108`, HEAD initial `2e0fff1042ae978d8676130785eb15291a8ded6a` ; modifications du portage encore non publiées au départ.
-- Plan et preuves : `docs/superpowers/plans/2026-11-08-portage-inventaire.md` et journal local `.superpowers/sdd/2026-11-08-portage-inventaire/progress.md`.
+- Plan et preuves : `docs/plans-historiques/2026-11-08-portage-inventaire.md` et journal local `.superpowers/sdd/2026-11-08-portage-inventaire/progress.md`.
 - Interruptions constatées depuis le lancement : aucune à ce stade.
 
 ## Ordre initial

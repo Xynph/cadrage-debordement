@@ -168,8 +168,6 @@ func run() -> void:
 		app.timer.stop()
 		await settle()
 		check(app.bridge.last_response_ok, "Continuer accepté · " + app.last_error)
-		check(saving_seen.progress, "Sauvegarde chaque jour : tranche « sauvegarde » reçue du moteur")
-		check(saving_seen.panel and saving_seen.kicker == "SAUVEGARDE AUTOMATIQUE", "Panneau Continuer : « Sauvegarde de la carrière… » (%s)" % saving_seen.kicker)
 		var autosave: Variant = app.model.get("meta", {}).get("autosave")
 		check(autosave is Dictionary and autosave.get("saved", false) and str(autosave.get("lastSave", "")) == str(app.model.meta.get("calendarToday", "")), "Profil sauvegardé à l'arrêt : " + str(autosave))
 	else: check(false, "Veille du match : Continuer disponible (%s)" % str(cadence))

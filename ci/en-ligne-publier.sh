@@ -22,7 +22,7 @@ cp -R "$src"/. "$stage"/
 reduire_png() {
   local f="$1" out="${1%.png}.jpg"
   if python3 -c 'import PIL' 2>/dev/null; then
-    python3 -I - "$f" "$out" <<'PY' || return 1
+    python3 - "$f" "$out" <<'PY' || return 1
 import sys
 from PIL import Image
 im = Image.open(sys.argv[1]).convert("RGB")
