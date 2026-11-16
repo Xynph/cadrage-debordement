@@ -7,7 +7,7 @@ extends RefCounted
 static func grab(control: Object) -> void:
 	if control == null:
 		return
-	var ref := weakref(control)
+	var ref: WeakRef = weakref(control)
 	var apply := func() -> void:
 		var target := ref.get_ref() as Control
 		if target != null and target.is_inside_tree():
