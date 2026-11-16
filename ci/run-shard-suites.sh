@@ -158,6 +158,9 @@ budget() {
     tests/finitions-critiques.cjs) echo 900s ;;
     # Feuille incomplète : appel d'un espoir (#726), carrières Monde jouées sur plusieurs journées ; 398 s en local sous charge (CI : suite 7/7, 180 s dépassées) ; budget ≈ 3 fois.
     tests/feuille-espoirs.cjs) echo 1200s ;;
+    # Réactivité du moteur (lot 19) : deux carrières Monde par test (projection d'avant et par sections), 130 à 170 s
+    # mesurées ; 180 s dépassées au hasard en CI le 16/11 (#788, #790, #796, #801). Budget ≈ 3 fois, assertions inchangées.
+    tests/reactivite-projection-verification.cjs|tests/reactivite-projection-rapide.cjs|tests/reactivite-projection-decisions.cjs) echo 540s ;;
     *) echo 180s ;;
   esac
 }

@@ -30,6 +30,21 @@ func _initialize() -> void:
 	check(ids[0]=="s1" and ids[1]=="s3","Mémoire A/B respectée quand elle est complète")
 	ids=Comparison.initial_ids(pool,"m1",["s1","s3"],own)
 	check(ids[0]=="m1" and ids[1]=="s2","Mémoire d’un autre premier joueur ignorée")
+	# Second choix par défaut : même poste dans mon effectif, puis poste proche, puis meilleur disponible, avec mention.
+	var roster:=[person("h1","Demi de mêlée",72),person("h2","Demi de mêlée",66),person("l1","Deuxième ligne",80),person("l2","Deuxième ligne",75),person("c1","Centre",60),person("mh","Demi de mêlée",90)]
+	var mine:=["h1","h2","l1","l2","c1"]
+	ids=Comparison.initial_ids(roster,"h1",[],mine)
+	check(ids[1]=="h2","Demi de mêlée : B est l’autre demi de mêlée de mon effectif, pas un deuxième ligne ni le marché")
+	check(Comparison.default_note(roster,"h1","h2",mine)=="","Même poste dans mon effectif : aucune mention")
+	var lone:=[person("o1","Ailier",70),person("o2","Centre",65),person("o3","Talonneur",90),person("o4","Ailier",50)]
+	ids=Comparison.initial_ids(lone,"o1",[],["o1","o2","o3"])
+	check(ids[1]=="o2","Poste proche dans mon effectif (centre pour un ailier) avant un autre poste")
+	check(Comparison.default_note(lone,"o1","o2",["o1","o2","o3"]).contains("poste proche"),"Poste proche : mention claire")
+	ids=Comparison.initial_ids(lone,"o3",[],["o1","o2","o3"])
+	check(ids[1]=="o1","Aucun poste proche : le meilleur disponible")
+	check(Comparison.default_note(lone,"o3","o1",["o1","o2","o3"]).contains("meilleur disponible"),"Meilleur disponible : mention claire")
+	check(Comparison.default_note(lone,"o3","o2",["o1","o2","o3"])=="","Choix de B différent du défaut : aucune mention")
+	check(Comparison.close_position("Pilier gauche","Talonneur") and not Comparison.close_position("Centre","Pilier droit"),"Familles de postes proches")
 	var a:=person("a","Talonneur",70,{"__own":true,"condition":90,"age":30,"salary":500})
 	var b:=person("b","Talonneur",70,{"__own":true,"condition":70,"age":22,"salary":2000})
 	check(Comparison.leader("condition",[a,b])==0,"Meilleure condition : A en tête")
@@ -89,8 +104,9 @@ func long_name_fits(label: String) -> void:
 		check(card!=null and card.is_visible_in_tree(),label+" : fiche "+["A","B"][slot]+" visible")
 	print("DIAG ",label," : fenêtre=",root.size," vert=",green_count())
 
-func open_squad_comparison(own_ids: Array) -> void:
-	app.management_ui.compare=own_ids.duplicate()
+## Seul le joueur A est mémorisé : le comparateur propose lui-même B par défaut (même poste, #807).
+func open_squad_comparison(first_id: String) -> void:
+	app.management_ui.compare=[first_id]
 	app._navigate("Effectif")
 	await settle(24)
 	var button := app.find_child("OpenComparison",true,false) as Button
@@ -123,7 +139,6 @@ func run_captures() -> void:
 	var mine: Dictionary = squad[0]
 	for player: Dictionary in squad:
 		if float(player.get("rating",0))>float(mine.get("rating",0)): mine=player
-	var other: Dictionary = squad[1] if str(squad[1].id)!=str(mine.id) else squad[0]
 	var target: Dictionary = market[0]
 	for player: Dictionary in market:
 		if str(player.get("pos",""))==str(mine.get("pos","")) and float(player.get("rating",0))>=float(target.get("rating",0)): target=player
@@ -134,8 +149,8 @@ func run_captures() -> void:
 		DisplayServer.window_set_size(size)
 		await settle(24)
 		var tag := "%dp" % size.y
-		# 1. Depuis l’Effectif : deux joueurs de mon effectif, bouton COMPARER.
-		await open_squad_comparison([str(mine.id),str(other.id)])
+		# 1. Depuis l’Effectif : joueur A mémorisé seul, bouton COMPARER ; B par défaut au même poste.
+		await open_squad_comparison(str(mine.id))
 		long_name_fits("Effectif "+tag)
 		await capture("comparateur-effectif-"+tag)
 		await close_dialogs()

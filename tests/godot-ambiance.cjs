@@ -17,12 +17,7 @@ test('Sifflets de foule : WAV déterministe, discret, publié égal au générat
  const manifest=JSON.parse(fs.readFileSync(path.join(dir,'crowd-manifest.json'),'utf8'));
  assert.equal(manifest.third_party_assets,false);assert.equal(manifest.sounds[0].sha256,crypto.createHash('sha256').update(wave).digest('hex'));
 });
-test('Musique : aucun fichier de plus de 3 Mo, uniquement OGG, dans audio/music',()=>{
- const dir=path.join(__dirname,'../native/godot/audio/music');
- if(!fs.existsSync(dir))return;
- for(const f of fs.readdirSync(dir).filter(n=>!n.endsWith('.import')&&n!=='.gitkeep')){assert.match(f,/\.ogg$/,f+' en OGG');assert.ok(fs.statSync(path.join(dir,f)).size<3*1024*1024,f+' < 3 Mo');}
-});
-test('Ambiance native : bus Musique, musique coupée en match, foule selon le camp',{skip:!godot&&'SDK Godot requis'},()=>{
+test('Ambiance native : sons de match, ancien sound.json avec champs de musique ignorés, foule selon le camp',{skip:!godot&&'SDK Godot requis'},()=>{
  const base=process.env.CD_SOUNDS_PROOF||os.tmpdir();fs.mkdirSync(base,{recursive:true});
  const proof=fs.mkdtempSync(path.join(base,'cd-ambiance-é '));
  const run=spawnSync(godot,['--headless','--audio-driver','Dummy','--max-fps','120','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-ambiance.gd')],{env:{...process.env,CD_AMBIANCE_PROOF:proof,CD_NODE_EXECUTABLE:process.execPath},encoding:'utf8',windowsHide:true,timeout:60000});
@@ -30,7 +25,7 @@ test('Ambiance native : bus Musique, musique coupée en match, foule selon le ca
  if(run.error)throw run.error;assert.equal(run.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:|instances were leaked/);
 });
 // Captures (rendu graphique) : CD_AMBIANCE_CAPTURE=<dossier> ; sans cette variable, rien n'est lancé.
-// Onglet Son des paramètres : trois cases et volume Musique, case « Musique » cochée puis décochée.
+// Onglet Son des paramètres (volumes Interface et Stade, sons de match).
 test('Ambiance native : captures des paramètres audio (CD_AMBIANCE_CAPTURE)',{skip:(!godot&&'SDK Godot requis')||(!process.env.CD_AMBIANCE_CAPTURE&&'CD_AMBIANCE_CAPTURE absent')},()=>{
  const dossier=path.resolve(process.env.CD_AMBIANCE_CAPTURE);fs.mkdirSync(dossier,{recursive:true});
  const racine=fs.mkdtempSync(path.join(os.tmpdir(),'cd-ambiance-capture-'));
