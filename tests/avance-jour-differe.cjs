@@ -177,7 +177,9 @@ test('Sauvegarde en arrière-plan : le moteur signale persist started puis done 
       assert.deepEqual(evenements.map(e => e.state), options.avec ? attendu : [], 'début puis fin, une seule fois');
       if (options.avec) {
         assert.ok(evenements.every(e => e.event === 'persist'));
-        assert.equal(etapes[0], 'started', 'début signalé dès la première étape, avant l’écriture');
+        // Travail en plusieurs étapes : le début est signalé dès la première (avant l'écriture) ; en une seule, début et fin
+        // tombent dans le même appel, dans cet ordre (contrôlé ci-dessus).
+        if (etapes.length) assert.equal(etapes[0], 'started', 'début signalé dès la première étape, avant l’écriture');
         if (echec) assert.match(evenements[1].message, /dernière journée n’a pas pu être enregistrée.*contrôle simulé/);
       }
       // Jour calme suivant : rien à écrire, aucun signal.
