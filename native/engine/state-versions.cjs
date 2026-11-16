@@ -284,27 +284,28 @@ const SOURCE = `const nativeStateVersions=(()=>{
   // Texte JSON de compute(S) repris tant que les jetons lus lors du dernier calcul n'ont pas changé (relevé par trace).
   // Fonctions de S seulement : à n'utiliser qu'après refresh, dans la même projection. En vérification, recalcul et
   // comparaison.
-  memoText(name,compute){
+  // \`stringify\` (facultatif) : mise en texte de la valeur, identique à JSON.stringify pour elle.
+  memoText(name,compute,stringify=JSON.stringify){
    const hit=memos.get(name);
    if(hit&&!hit.all&&hit.deps.every(([k,v])=>current.get(k)===v)){
-    if(verifying){const fresh=JSON.stringify(compute(S));if(fresh!==hit.text)throw Error('Mémoire de projection périmée : '+name+'.');}
+    if(verifying){const fresh=stringify(compute(S));if(fresh!==hit.text)throw Error('Mémoire de projection périmée : '+name+'.');}
     return hit.text;
    }
    const real=S,t=trace(real);computed[name]=(computed[name]||0)+1;
    let text;S=t.proxy;
-   try{text=JSON.stringify(compute(t.proxy));}finally{S=real;t.done();}
+   try{text=stringify(compute(t.proxy));}finally{S=real;t.done();}
    memos.set(name,{text,all:t.all(),deps:[...t.read].map(k=>[k,current.get(k)])});
    return text;
   },
   // Comme memoText, sans relevé au calcul : sur une mémoire périmée, calcul direct (sans mandataires, environ deux fois
   // plus rapide) et relevé différé, fait par warm() après la réponse si la carrière n'a pas bougé entre-temps. En
   // vérification, relevé immédiat (memoText).
-  memoTextLater(name,compute){
+  memoTextLater(name,compute,stringify=JSON.stringify){
    const hit=memos.get(name);
-   if(verifying||hit&&!hit.all&&hit.deps.every(([k,v])=>current.get(k)===v))return this.memoText(name,compute);
+   if(verifying||hit&&!hit.all&&hit.deps.every(([k,v])=>current.get(k)===v))return this.memoText(name,compute,stringify);
    computed[name]=(computed[name]||0)+1;
-   const text=JSON.stringify(compute(S));
-   later.set(name,{compute,state:S,current,text});
+   const text=stringify(compute(S));
+   later.set(name,{compute,stringify,state:S,current,text});
    return text;
   },
   // Relevés différés (après la réponse) : seulement sur la même carrière et les mêmes versions qu'au calcul direct,
@@ -314,7 +315,7 @@ const SOURCE = `const nativeStateVersions=(()=>{
     later.delete(name);
     if(w.state!==S||w.current!==current||!S)continue;
     memos.delete(name);
-    if(this.memoText(name,w.compute)!==w.text){memos.delete(name);throw Error('Mémoire de projection : relevé différé différent du calcul direct ('+name+').');}
+    if(this.memoText(name,w.compute,w.stringify)!==w.text){memos.delete(name);throw Error('Mémoire de projection : relevé différé différent du calcul direct ('+name+').');}
    }
   },
   dropLater(){later.clear();},

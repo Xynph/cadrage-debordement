@@ -198,6 +198,9 @@ function createBridge(options={}){
   const element={innerHTML:'',textContent:'',style:{}};
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:15000,filename}:{timeout:15000});
+  // Lecture ou bascule immédiate de l'état (aucune boucle, aucun calcul) : sans minuterie de garde. Sa mise en place (un
+  // fil par appel) coûtait ~0,1 à 1 ms à chaque appel, soit plusieurs ms par réponse.
+  const peek=source=>vm.runInContext(source,ctx);
   // Lecture sans tirage du flux unique : graine des flux séparés des championnats suivis de loin.
   ctx.nativeRandomPeek=()=>seed;
   ctx.nativeMandatoryPress=options.mandatoryPress===true;
@@ -311,19 +314,19 @@ function createBridge(options={}){
    // Attributs des joueurs de la rencontre (feuille de statistiques, match-stats.cjs).
    attributs:()=>JSON.parse(run('JSON.stringify((()=>{const l=S.live,o={};if(!l)return o;l.sheets.forEach((sh,s)=>{for(const id of new Set([...sh.on,...(sh.bench||[]),...(sh.used||[])])){if(id==null)continue;const p=matchPlayer(l,s,id);if(p&&p.skills)o[id]={skills:p.skills}}});return o})())'))};
   try{run("if(loadSaveFailure)throw Error(loadSaveFailure);if(S){validateCareer(S);if(S.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(!nativeLegacyModes&&CDWorldEditions.forState(S)?.mode!=='world-champ')throw Error(nativeLegacyCareerMessage);if(normalizeAcademyPotential(S))validateCareer(S);nativeProfessionalDepth.fill(S);nativeAttributeStore.complete(S);if(S.live&&!S.live.finished)S.live.paused=true;if(S.national?.role?.club!==false)nativeSystems.domain('press').observeInvitation();}");validateCalendarState(calendarState());}catch(e){profileError='Profil illisible : '+e.message;run('S=null;');}
-  const national=makeNational(run,ctx,nationalFacts,options.internationalCareer===true);
+  const national=makeNational(run,ctx,nationalFacts,options.internationalCareer===true,peek);
   const updatePressPolicy=()=>{ctx.nativeMandatoryPress=options.mandatoryPress===true&&!national.isNationalOnly();};
   try{if(options.dailyCalendar)run('nativeEnableDailyCalendar()');national.initialize(seed);updatePressPolicy();}
   catch(e){profileError='Profil illisible : '+e.message;run('S=null;');}
   let resumeCheckpoint=null;
-  if(loadedProfile&&!profileError&&run('!!S')){
+  if(loadedProfile&&!profileError&&peek('!!S')){
    const original=JSON.parse(loadedProfile.toString('utf8')).store['bdt-v1'];
    if(original!==run('JSON.stringify(S)'))resumeCheckpoint={profile:loadedProfile,replaySeed:seed,replayClock:clock,text:run('JSON.stringify(createSaveDocument())'),...JSON.parse(run('JSON.stringify({club:S.clubs[S.club].name,season:S.season,round:S.round??0})'))};
   }
   // Copie de reprise de la carrière ouverte avant son remplacement. Le texte du document est rendu : l'import le
   // reprend tel quel pour sa copie « bdt-before-import » (même carrière, même document) au lieu de le recréer.
   const protectCurrent=(reason,replaySeed=seed,replayClock=clock)=>{
-   if(!run('!!S')||!fs.existsSync(file))return null;
+   if(!peek('!!S')||!fs.existsSync(file))return null;
    const text=run('JSON.stringify(createSaveDocument())');
    profileSafety.checkpoint({profile:profileSafety.readProfile(file),replaySeed,replayClock,text,reason,...JSON.parse(run('JSON.stringify({club:S.clubs[S.club].name,season:S.season,round:S.round??0})'))});
    return text;
@@ -508,15 +511,21 @@ function createBridge(options={}){
   // changé (relevé fin, state-versions.cjs). Le dossier d'avant-match, partagé pendant une projection, est recalculé
   // dans le relevé pour que ses lectures y soient notées. En vérification, recalculées et comparées.
   // Mémoire périmée : calcul direct, relevé fait après la réponse (flushStep, warmPending).
-  const DECISIONS_MEMO=projectionMemo?'nativeStateVersions.memoTextLater("decisions",()=>nativeProjectionMemoBypass(()=>nativeDecisions()))':'nativeStateVersions.memoTextLater("decisions",()=>nativeDecisions())';
+  const DECISIONS_MEMO=projectionMemo?'nativeStateVersions.memoTextLater("decisions",()=>nativeProjectionMemoBypass(()=>nativeDecisions()),nativeDecisionParts.stringify)':'nativeStateVersions.memoTextLater("decisions",()=>nativeDecisions(),nativeDecisionParts.stringify)';
   // Décisions par sections (clé de premier niveau de decisions) : chacune est reprise telle que présentée à la réponse
   // précédente quand son texte brut et les réglages globaux sont les mêmes (projection-sections.cjs) ; les rapports
   // d'observation, joints à `recruitment`, font partie de son entrée. Pendant le direct, `development` garde sa
   // présentation de la dernière réponse complète.
-  if(sectionsOn)run(`globalThis.nativeDecisionParts=(()=>{let last,parts=null;return text=>{if(text!==last){const d=JSON.parse(text);parts=d&&typeof d==='object'&&!Array.isArray(d)?Object.keys(d).map(k=>[k,JSON.stringify(d[k])]).filter(x=>x[1]!==undefined):d===null?null:[[null,text]];last=text;}return parts;};})();`);
+  // Texte des décisions assemblé clé par clé (même texte que JSON.stringify pour un objet simple sans toJSON) : ses
+  // parties sont gardées avec lui, sans relire le texte.
+  if(sectionsOn)run(`globalThis.nativeDecisionParts=(()=>{let last,parts=null;
+   const split=d=>d&&typeof d==='object'&&!Array.isArray(d)&&Object.getPrototypeOf(d)===Object.prototype&&typeof d.toJSON!=='function'?Object.keys(d).map(k=>[k,JSON.stringify(d[k])]).filter(x=>x[1]!==undefined):null;
+   const out=text=>{if(text!==last){const d=JSON.parse(text);parts=split(d)??(d===null?null:[[null,text]]);last=text;}return parts;};
+   out.stringify=d=>{const list=split(d);if(!list)return JSON.stringify(d);const text='{'+list.map(([k,t])=>JSON.stringify(k)+':'+t).join(',')+'}';last=text;parts=list;return text;};
+   return out;})();`);
   const projectDecisionSections=()=>{
    const parts=run('nativeDecisionParts('+DECISIONS_MEMO+')');
-   if(!warmPending&&run('nativeStateVersions.hasLater()'))warmPending=true;
+   if(!warmPending&&peek('nativeStateVersions.hasLater()'))warmPending=true;
    if(parts===null)return null;
    if(parts.length===1&&parts[0][0]===null)return JSON.parse(parts[0][1]);
    const out={};
@@ -585,7 +594,7 @@ function createBridge(options={}){
   };
   const snapshotRaw=(operation,bypass=true)=>{
    if(sectionsOn&&!bypass)sectionMemo.abort();
-   const attempt=allow=>{if(!projectionMemo)return attachPalmares(snapshotProjection(operation,allow));run('nativeProjectionMemo(true)');try{return attachPalmares(snapshotProjection(operation,allow));}finally{run('nativeProjectionMemo(false)');}};
+   const attempt=allow=>{if(!projectionMemo)return attachPalmares(snapshotProjection(operation,allow));peek('nativeProjectionMemo(true)');try{return attachPalmares(snapshotProjection(operation,allow));}finally{peek('nativeProjectionMemo(false)');}};
    try{return attempt(bypass);}
    catch(error){
     // Pack d'identité dont les remplacements de noms ont changé : projection refaite sans reprise de section.
@@ -593,8 +602,8 @@ function createBridge(options={}){
     sectionMemo.abort();return attempt(false);
    }
   };
-  const snapshotProjection=(operation,bypass=true)=>{updatePressPolicy();projectionState=null;const [m,catalogueTokens]=sub('model',()=>sectionsOn?JSON.parse(run('nativeCatalogueSections.read()')):[readProjection('nativeModel()'),null]);if(sectionsOn&&run('!!S'))projectionState={sections:true,bypass,live:!!operation&&LIVE_COMMANDS.has(operation.command)&&!!m.live&&!m.live.finished&&!(operation.command==='match_talk_continue'&&operation.payload?.phase==='post'),staff:null,result:null};if(projectionState){sub('versions',()=>refreshVersions(operation));sub('visibility',()=>beginSections(m));}if(catalogueTokens)sub('catalogues',()=>carryCatalogues(m,catalogueTokens));sub('france',()=>projectFranceCalendar(m));if(projectionState)m.decisions=sub('decisions',()=>projectDecisionSections());else{m.decisions=sub('decisions',()=>readProjection('nativeDecisions()'));if(m.decisions?.recruitment)sub('reports',()=>m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)')));}if(projectionState){try{m.clubLife=sub('clubLife',()=>projectLifeSections(m,operation));}catch(error){if(ctx.nativeVerifyMemo||verifyProjection)throw error;/* Repli : calcul complet comme avant (la mémoire ne fait jamais perdre une réponse). */sectionMemo.abort();projectionState=null;run('nativeSystems.clearMemo();nativeStateVersions.reset();');m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');}}else m.clubLife=sub('clubLife',()=>memoDomains?projectClubLife():readProjection('nativeSystems.project()'));
-   const keptInternational=projectionState?.live?sectionMemo.keep('international'):null;if(keptInternational)m.international=keptInternational;else{nationalRaw=null;sub('national',()=>national.project(m,projectionState?{roster:()=>JSON.parse(run('nativeStateVersions.memoText("roster",()=>nativeInternationalRoster())')),memo:memoNational}:{}));if(projectionState&&m.international!==undefined&&nationalRaw===null)sectionMemo.note('international');}m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();if(journal)m.meta.autosave=autosaveMeta();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=sub('packs',()=>packs.project(sub('staff',()=>projectionState?.staff?{...m,staff:projectionState.staff}:staff.project(m)),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'),projectionState?{nested:modelDelta.NESTED,carriedOf:sectionMemo.carriedOf,recordCarried:sectionMemo.recordCarried,signature:sectionMemo.packSignature}:null));if(projectionState)projectionState.result=result;sub('presentation',()=>staff.applyCareerPresentation(result));const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=sub('epcr',()=>epcrPreparation.project(result));sub('calendar',()=>projectCalendar(result,operation));if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=sub('direct',()=>matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography}));}catch(error){result.live.directError=String(error?.message||error);}}return result;};
+  const snapshotProjection=(operation,bypass=true)=>{updatePressPolicy();projectionState=null;const [m,catalogueTokens]=sub('model',()=>sectionsOn?JSON.parse(run('nativeCatalogueSections.read()')):[readProjection('nativeModel()'),null]);if(sectionsOn&&peek('!!S'))projectionState={sections:true,bypass,live:!!operation&&LIVE_COMMANDS.has(operation.command)&&!!m.live&&!m.live.finished&&!(operation.command==='match_talk_continue'&&operation.payload?.phase==='post'),staff:null,result:null};if(projectionState){sub('versions',()=>refreshVersions(operation));sub('visibility',()=>beginSections(m));}if(catalogueTokens)sub('catalogues',()=>carryCatalogues(m,catalogueTokens));sub('france',()=>projectFranceCalendar(m));if(projectionState)m.decisions=sub('decisions',()=>projectDecisionSections());else{m.decisions=sub('decisions',()=>readProjection('nativeDecisions()'));if(m.decisions?.recruitment)sub('reports',()=>m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)')));}if(projectionState){try{m.clubLife=sub('clubLife',()=>projectLifeSections(m,operation));}catch(error){if(ctx.nativeVerifyMemo||verifyProjection)throw error;/* Repli : calcul complet comme avant (la mémoire ne fait jamais perdre une réponse). */sectionMemo.abort();projectionState=null;run('nativeSystems.clearMemo();nativeStateVersions.reset();');m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');}}else m.clubLife=sub('clubLife',()=>memoDomains?projectClubLife():readProjection('nativeSystems.project()'));
+   const keptInternational=projectionState?.live?sectionMemo.keep('international'):null;if(keptInternational)m.international=keptInternational;else{nationalRaw=null;sub('national',()=>national.project(m,projectionState?{roster:()=>JSON.parse(run('nativeStateVersions.memoText("roster",()=>nativeInternationalRoster())')),memo:memoNational}:{}));if(projectionState&&m.international!==undefined&&nationalRaw===null)sectionMemo.note('international');}m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();if(journal)m.meta.autosave=autosaveMeta();m.meta.academyGroupPolicy=peek('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(peek('JSON.stringify(S?.careerVariation??null)'));const result=sub('packs',()=>packs.project(sub('staff',()=>projectionState?.staff?{...m,staff:projectionState.staff}:staff.project(m)),JSON.parse(peek('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'),projectionState?{nested:modelDelta.NESTED,carriedOf:sectionMemo.carriedOf,recordCarried:sectionMemo.recordCarried,signature:sectionMemo.packSignature}:null));if(projectionState)projectionState.result=result;sub('presentation',()=>staff.applyCareerPresentation(result));const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=sub('epcr',()=>epcrPreparation.project(result));sub('calendar',()=>projectCalendar(result,operation));if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=sub('direct',()=>matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography}));}catch(error){result.live.directError=String(error?.message||error);}}return result;};
   // Raw models stay private; every protocol path still applies the final
   // knowledge boundary after attaching receipts, previews or export metadata.
   const snapshot=operation=>{const m=snapshotRaw(operation);continuePlan(m);return projectKnowledge(m);};
@@ -706,7 +715,7 @@ function createBridge(options={}){
   // Sauvegarde complète en mode journal : texte de la carrière à jour, validation des décisions qui ne l'ont pas encore
   // été (leurs sections modifiées), puis écriture atomique ; le journal repart de zéro.
   function fullSave(){
-   if(run('!!S')){run('nativeSaveCurrent()');mark('texte_complet');if(unvalidated){run('nativeValidateSaved(false)');unvalidated=false;mark('validation_decisions');}}
+   if(peek('!!S')){run('nativeSaveCurrent()');mark('texte_complet');if(unvalidated){run('nativeValidateSaved(false)');unvalidated=false;mark('validation_decisions');}}
    persist();
   }
   // Ligne du journal pour la commande qui vient de réussir (graine avant/après, horloge utilisée).
@@ -750,7 +759,7 @@ function createBridge(options={}){
   function flushStep(){
    // Journal et projection par sections : copie d'annulation de la dernière décision (texte de la carrière), faite
    // après la réponse plutôt qu'avant.
-   if(!pendingCommit&&undoPending){undoPending=false;if(run('!!S')){run('nativeSaveCurrent()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;}return !warmPending;}
+   if(!pendingCommit&&undoPending){undoPending=false;if(peek('!!S')){run('nativeSaveCurrent()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;}return !warmPending;}
    // Relevés différés (rien à écrire) : un échec ne coûte que la reprise de la mémoire, jamais la réponse ni l'écriture.
    if(!pendingCommit&&warmPending){warmPending=false;try{run('nativeStateVersions.warm()');}catch(error){run('nativeStateVersions.dropLater()');if(verifyProjection)throw error;}return true;}
    const pending=pendingCommit;if(!pending)return true;
@@ -807,7 +816,7 @@ function createBridge(options={}){
     // y compris le premier snapshot en lecture seule après une reprise (plancher et prévision).
     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
     const syncedAtStart=versionsSynced;
-    if(!READ_ONLY.has(command)){run('nativeSectionsFresh=false');stateEpoch++;versionsSynced=false;}
+    if(!READ_ONLY.has(command)){peek('nativeSectionsFresh=false');stateEpoch++;versionsSynced=false;}
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
     if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};cleanSave=null;run('S=null;loadSaveFailure="";lastSaveError=false;nativeSaveSections=null;');return {id,ok:true,model:snapshot()};}
     if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
@@ -815,7 +824,7 @@ function createBridge(options={}){
     // Fiche d'un club (lecture seule, rien n'est écrit) : native/engine/club-sheet.cjs.
     if(command==='club_sheet'){
      if(!Number.isSafeInteger(payload.club)||Object.keys(payload).some(k=>k!=='club'))throw Error('Paramètres de fiche club invalides.');
-     if(!run('!!S'))throw Error('Créez ou importez une carrière.');
+     if(!peek('!!S'))throw Error('Créez ou importez une carrière.');
      ctx.nativePayload={club:payload.club};
      const model=snapshotRaw();model.clubSheet=JSON.parse(run('JSON.stringify(nativeSystems.domain("clubSheet").sheet(nativePayload.club))'));model.clubSheet.palmares=clubPalmares.build({history:clubHistory[payload.club],archives:model.archives,clubId:payload.club,clubName:model.clubSheet.name});
      return {id,ok:true,model:projectKnowledge(model)};
@@ -881,7 +890,7 @@ function createBridge(options={}){
       if(payload.varyPotential!==undefined||payload.careerVariation!==undefined||payload.seed!==undefined)throw Error('Le potentiel varie à chaque nouvelle carrière ; paramètres de variation non autorisés.');
       if(payload.start!==undefined&&!repriseStarts.includes(payload.start))throw Error('Départ de partie invalide.');
      }
-     if(command!=='new_career'&&command!=='import'&&!run('!!S'))throw Error('Créez ou importez une carrière.');
+     if(command!=='new_career'&&command!=='import'&&!peek('!!S'))throw Error('Créez ou importez une carrière.');
      ctx.nativeCommand=command;
      if(managerPlanning.commands.includes(command))managerPlanning.validateRequest(snapshot(),command,payload);
      run("nativeSystems.domain('matchTalks').guard(nativeCommand,nativePayload);nativeSystems.domain('sceneInvitations').guard(nativeCommand,nativePayload);nativeSystems.domain('clubMeetings').guard(nativeCommand,nativePayload);");
@@ -1108,7 +1117,7 @@ function createBridge(options={}){
      // de saison ; entre deux, les sections dont le texte sauvegardé n'a pas changé ne sont pas reparcourues.
      else{run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');');mark('completion');
       // Décision différée : seul l'effet visible de save() sur la projection (indicateur d'échec) est appliqué ici.
-      if(defer)run('if(S&&!validatingStartup)lastSaveError=false;');
+      if(defer)peek('if(S&&!validatingStartup)lastSaveError=false;');
       else{run('save();');mark('serialisation');run('nativeValidateSaved('+(FULL_VALIDATION.has(command)||coalescing?.full===true)+')');unvalidated=false;
        // Validation partielle : elle ne modifie pas la carrière, le texte qui vient d'être assemblé sert à la projection.
        if(memoDomains&&!FULL_VALIDATION.has(command)&&coalescing?.full!==true)run('nativeSectionsFresh=true');}}
@@ -1214,7 +1223,7 @@ function createBridge(options={}){
    try{
     if(closed)throw Error('Le moteur est fermé.');
     opts=continuer.validate(request.payload??{});
-    if(!run('!!S'))throw Error('Créez ou importez une carrière.');
+    if(!peek('!!S'))throw Error('Créez ou importez une carrière.');
    }catch(error){advanceSession=null;return {id:Number.isSafeInteger(id)||typeof id==='string'?id:null,ok:false,model:closed?null:snapshot(),error:error.message};}
    const started=performance.now(),session=advanceSession;advanceSession=null;continueFlux=opts.flux;
    if(opts.stop){
@@ -1282,7 +1291,7 @@ function createBridge(options={}){
    }
    pendingFailure=null;
    // Toute commande autre qu'une lecture peut modifier la carrière : le texte des sections n'est plus réputé à jour.
-   if(!READ_ONLY.has(request?.command))run('nativeSectionsFresh=false');
+   if(!READ_ONLY.has(request?.command))peek('nativeSectionsFresh=false');
    const reading=request?.command==='snapshot';
    if(!reading)projectionCache.clear();
    allowProjectionCache=reading;
@@ -1323,7 +1332,7 @@ function createBridge(options={}){
    let reason='';
    const apply=count=>{
     for(let i=0;i<count;i++){
-     const a=actions[i];seed=a.s>>>0;run('nativeSectionsFresh=false');projectionCache.clear();
+     const a=actions[i];seed=a.s>>>0;peek('nativeSectionsFresh=false');projectionCache.clear();
      try{handleCommand({id:'journal-'+(i+1),command:a.c,payload:a.p},false,a);}catch(error){reason=a.c+' : '+error.message;return i;}
      if(seed!==a.e){reason=a.c+' : résultat différent de celui noté';return i;}
     }
@@ -1339,7 +1348,7 @@ function createBridge(options={}){
    journal.reset(loadedSha,actions.slice(0,applied));
    // Texte de la carrière reprise en mémoire (copie d'annulation de la prochaine commande, profil d'une écriture directe).
    // Actions rejouées sans projection : versions des sections de la carrière toutes relues à la projection suivante.
-   projectionCache.clear();run('nativeSectionsFresh=false');if(sectionsOn)run('nativeStateVersions.reset()');if(applied)run('save()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
+   projectionCache.clear();peek('nativeSectionsFresh=false');if(sectionsOn)run('nativeStateVersions.reset()');if(applied)run('save()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
    const ms=Math.round(performance.now()-started);
    journalNotice=kept?{alert:true,replayed:applied,total:actions.length,ms,text:applied+' action'+(applied>1?'s':'')+' sur '+actions.length+' reprise'+(applied>1?'s':'')+' depuis le journal de sauvegarde ; la suite n’a pas pu être rejouée ('+reason+' ; journal conservé : '+kept+').'}
     :{alert:false,replayed:applied,total:actions.length,ms,text:applied+' action'+(applied>1?'s':'')+' reprise'+(applied>1?'s':'')+' depuis le journal de sauvegarde après un arrêt imprévu.'};
