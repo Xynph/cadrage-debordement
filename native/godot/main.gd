@@ -35,7 +35,7 @@ const COMMAND_WAIT_MESSAGES := {
 	"national_play_match": "Simulation de la rencontre internationale…",
 	"league_benchmark": "Mesure de votre machine…",
 	"club_sheet": "Préparation de la fiche du club…",
-	"league_detail_set": "Enregistrement des championnats simulés…"
+	"league_detail_set": "Enregistrement des championnats suivis…"
 }
 ## Commandes de lecture pure (aucun changement d'état de carrière).
 const READ_ONLY_COMMANDS := ["club_sheet"]

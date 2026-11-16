@@ -53,8 +53,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		var detailed := 0
 		for league: Dictionary in leagues.get("leagues", []):
 			if bool(league.get("detailed", true)): detailed += 1
-		comfort.add_child(C.wrap("%d championnat%s suivi%s en détail, les autres en résultats rapides." % [detailed, "s" if detailed > 1 else "", "s" if detailed > 1 else ""],17,C.MUTED))
-		var choose := G.button("Championnats simulés…", func():
+		comfort.add_child(C.wrap("%d championnat%s suivi%s en détail, les autres suivis de loin." % [detailed, "s" if detailed > 1 else "", "s" if detailed > 1 else ""],17,C.MUTED))
+		var choose := G.button("Championnats suivis…", func():
 			dialog.queue_free()
 			preload("res://ui/league_detail_view.gd").open_career(app))
 		choose.name = "PreferencesLeagueDetail"
