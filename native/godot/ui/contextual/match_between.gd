@@ -89,6 +89,12 @@ var _equipes: Array = []
 var tuile_principale: PanelContainer
 ## Alertes de Mon XV (fatigue, blessure, carton) : pour l'adjoint et les tests.
 var alertes_xv: Array[Dictionary] = []
+## Précision du titre des statistiques : « comparées », ou l'avertissement d'échantillon court.
+var precision_chiffres: Label
+## Échantillon trop court (`direct.echantillon`, lot 5) : chiffres atténués, adjoint sans lecture.
+var echantillon_court := false
+## Opacité des chiffres pendant l'échantillon court : lisibles, mais en retrait du score et des alertes.
+const ATTENUE := 0.5
 
 ## Domination minute par minute (`direct.domination`) : barres au-dessus de l'axe pour l'équipe
 ## qui reçoit, au-dessous pour l'autre, mi-temps et points marqués en repère.
@@ -563,7 +569,7 @@ func _composants() -> void:
 	domination = Domination.new()
 	domination.name = "MatchBetweenMomentum"
 	domination.densite = _densite
-	domination.custom_minimum_size = Vector2(0, px(150))
+	domination.custom_minimum_size = Vector2(0, px(180))
 	domination.tooltip_text = "Qui domine, minute par minute (occupation, possession, points, franchissements), et les essais, tirs réussis et cartons déjà vus."
 	domination.mouse_filter = Control.MOUSE_FILTER_PASS
 	S.G.fill(domination, true)
@@ -716,7 +722,10 @@ func _page() -> void:
 	_carte_gabi(droite)
 	var cadre_chiffres := _panneau(droite, px(16))
 	S.G.fill(cadre_chiffres.get_parent().get_parent(), true)
-	cadre_chiffres.add_child(_titre("Statistiques", "comparées"))
+	var titre_chiffres := _titre("Statistiques", "comparées")
+	precision_chiffres = titre_chiffres.get_child(1) as Label
+	precision_chiffres.name = "MatchBetweenFiguresSample"
+	cadre_chiffres.add_child(titre_chiffres)
 	cadre_chiffres.add_child(chiffres)
 	S.G.fill(chiffres, true)
 
@@ -939,6 +948,12 @@ func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 
 func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	S.clear(chiffres)
+	# Premières minutes : un « 100 % / 0 % » ne dit rien. Les parts restent masquées (« — ») et les
+	# compteurs atténués jusqu'au seuil du moteur ; le titre dit quand la lecture deviendra fiable.
+	echantillon_court = est_court(direct)
+	chiffres.modulate = Color(1, 1, 1, ATTENUE) if echantillon_court else Color.WHITE
+	if is_instance_valid(precision_chiffres):
+		precision_chiffres.text = ("trop tôt pour conclure · %d′" % seuil_echantillon(direct)) if echantillon_court else "comparées"
 	var rangs: Array = direct.get("tableau", [])
 	var par_cle := {}
 	for rang: Dictionary in rangs: par_cle[str(rang.get("cle", ""))] = rang
@@ -946,6 +961,16 @@ func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	for cle: String in STATS:
 		if par_cle.has(cle): _ligne_chiffre(chiffres, par_cle[cle])
 	_rangs = rangs
+
+## Échantillon du moteur (`direct.echantillon`) : court tant que le jeu montré n'atteint pas le
+## seuil (dix minutes). Sans l'information (ancienne projection), l'échantillon est jugé suffisant.
+static func est_court(direct: Dictionary) -> bool:
+	var echantillon: Variant = direct.get("echantillon")
+	return echantillon is Dictionary and not bool(echantillon.get("suffisant", true))
+
+static func seuil_echantillon(direct: Dictionary) -> int:
+	var echantillon: Variant = direct.get("echantillon")
+	return int(echantillon.get("seuil", 10)) if echantillon is Dictionary else 10
 
 ## Mon XV : tableau complet, une ligne par joueur (numéro, nom, poste, note colorée, jauge
 ## d'énergie, plaquages, mètres, essais) ; alertes en infobulle ; un clic ouvre le banc sur lui.
@@ -1273,10 +1298,11 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	if not lecture.is_empty(): raisons.push_front(lecture)
 	raisons = _sans_redites(raisons)
 	var parlantes := raisons.filter(func(r: String): return not r.begins_with("Aucun") and not r.begins_with("Pas assez"))
-	if phrases.is_empty() and parlantes.is_empty(): phrases.append([_lecture_generale(direct), IVOIRE])
+	# Lecture générale sans alerte : ton posé et en retrait (ivoire atténué), l'alerte garde la couleur.
+	if phrases.is_empty() and parlantes.is_empty(): phrases.append([_lecture_generale(direct), DOUX])
 	if phrases.is_empty() and not raisons.is_empty(): phrases.append([_phrase_forte(raisons), IVOIRE])
 	for phrase: Array in phrases:
-		var etiquette := _texte(str(phrase[0]), 32, phrase[1], true, true)
+		var etiquette := _texte(str(phrase[0]), 28 if phrase[1] == DOUX else 32, phrase[1], true, true)
 		etiquette.max_lines_visible = 3
 		etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		etiquette.tooltip_text = "\n".join(raisons) if not raisons.is_empty() else str(phrase[0])
@@ -1362,7 +1388,7 @@ func _passe(model: Dictionary, live: Dictionary, direct: Dictionary) -> Dictiona
 ## occupation, possession et score de ce qui a été montré.
 func _lecture_generale(direct: Dictionary) -> String:
 	var camp := int(direct.get("camp", -1))
-	if not camp in [0, 1]: return "Le match se met en place : je vous signale le premier joueur en difficulté."
+	if not camp in [0, 1] or est_court(direct): return "Le match se met en place : je vous signale le premier joueur en difficulté."
 	var valeurs := {}
 	for rang: Variant in direct.get("tableau", []):
 		if rang is Dictionary and not rang.get("vide", false): valeurs[str(rang.get("cle", ""))] = rang.get("valeurs", [0, 0])
@@ -1370,26 +1396,30 @@ func _lecture_generale(direct: Dictionary) -> String:
 	var ecart := int(score[camp]) - int(score[1 - camp]) if score.size() == 2 else 0
 	if valeurs.has("occupation"):
 		var o := int(valeurs.occupation[camp])
-		if o >= 58: return ("On joue dans leur moitié (%d %% d’occupation) : restez patients, les points viendront." % o) if ecart <= 0 else ("On mène et on occupe leur camp (%d %%) : gardez cette pression." % o)
-		if o <= 42: return "On joue trop dans notre camp (%d %% d’occupation) : il faut en sortir au pied." % o
+		if o >= SEUIL_LECTURE: return ("On joue dans leur moitié (%d %% d’occupation) : restez patients, les points viendront." % o) if ecart <= 0 else ("On mène et on occupe leur camp (%d %%) : gardez cette pression." % o)
+		if o <= 100 - SEUIL_LECTURE: return "On joue beaucoup dans notre moitié (%d %% d’occupation) : un dégagement au pied nous ferait du bien." % o
 	if valeurs.has("possession"):
 		var p := int(valeurs.possession[camp])
-		if p >= 58: return "On a le ballon (%d %%) : il faut maintenant gagner la ligne d’avantage." % p
-		if p <= 42: return "Ils ont le ballon (%d %%) : notre défense doit monter vite et rester groupée." % (100 - p)
+		if p >= SEUIL_LECTURE: return "On a le ballon (%d %%) : cherchons maintenant à gagner la ligne d’avantage." % p
+		if p <= 100 - SEUIL_LECTURE: return "Ils ont davantage le ballon (%d %%) : une défense qui monte groupée les gênera." % (100 - p)
 	if ecart < 0: return "Menés de %d point%s, mais le match reste ouvert : pas de précipitation." % [-ecart, "s" if -ecart > 1 else ""]
 	return "Début de match équilibré : j’observe leur organisation et je vous signale le premier joueur en difficulté."
 
+## Part (possession, occupation) à partir de laquelle l'adjoint en parle : un écart net, pas 58/42.
+const SEUIL_LECTURE := 62
+
 ## Une phrase tirée des chiffres du moteur : qui domine depuis cinq minutes, la discipline.
+## Rien tant que l'échantillon est court (premières minutes) : l'adjoint ne s'alarme pas d'un départ.
 func _lecture(direct: Dictionary) -> String:
 	var camp := int(direct.get("camp", -1))
-	if not camp in [0, 1]: return ""
+	if not camp in [0, 1] or est_court(direct): return ""
 	var minutes: Array = direct.get("domination", {}).get("minutes", []) if direct.get("domination") is Dictionary else []
 	if minutes.size() >= 5:
 		var somme := 0.0
 		for v: Variant in minutes.slice(minutes.size() - 5): somme += float(v)
 		var nous := somme / 5.0 * (1.0 if camp == 0 else -1.0)
-		if nous <= -35.0: return "L’adversaire nous fait reculer depuis cinq minutes : il faut sortir de notre camp."
-		if nous >= 35.0: return "On domine depuis cinq minutes : il faut concrétiser cette pression."
+		if nous <= -35.0: return "Ils nous font reculer depuis cinq minutes : cherchons à sortir de notre camp."
+		if nous >= 35.0: return "On domine depuis cinq minutes : à nous de concrétiser cette pression."
 	for rang: Variant in direct.get("tableau", []):
 		if rang is Dictionary and str(rang.get("cle", "")) == "penalites":
 			var v: Array = rang.get("valeurs", [0, 0])

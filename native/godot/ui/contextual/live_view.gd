@@ -40,6 +40,12 @@ var barre_commandes: Control
 ## Bande de commandes des temps forts, sous le bandeau du score : la même pendant les temps forts
 ## 3D et l'entracte 2D (demande de Léo, 12 novembre 2026). L'écran intermédiaire y pose sa barre.
 var bande_temps_forts: HBoxContainer
+## Lisibilité du bandeau et de la légende (lot 5, 16/11/2026) : tailles écrites pour 1080p,
+## agrandies avec la hauteur de l'écran (×1,33 en 1440p), jamais réduites en dessous.
+const BANDEAU_TAILLES := {"horloge": 32, "equipe": 32, "score": 60, "pause": 22, "legende": 24, "ecusson": 52}
+const LEGENDE_LARGEUR := 720
+var echelle := 1.0
+var _legende: Control
 
 func _ready() -> void:
 	name = "ContextualLiveMatch"
@@ -129,8 +135,9 @@ func _ready() -> void:
 	var event_row := S.G.h(10)
 	frame.add_child(event_row)
 	var event_panel := S.panel(event_row, 10)
-	event_panel.get_parent().custom_minimum_size.x = 480
+	event_panel.get_parent().custom_minimum_size.x = LEGENDE_LARGEUR
 	event_panel.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_legende = event_panel.get_parent()
 	events = S.wrap("", 14, S.TEXT)
 	event_panel.add_child(events)
 	event_row.add_child(S.G.spacer())
@@ -217,7 +224,32 @@ func _ready() -> void:
 	app.pause_button = play
 	app.match_finish = finish
 	app.match_clock = clock
+	_mettre_a_l_echelle()
+	get_viewport().size_changed.connect(_mettre_a_l_echelle)
 	apply_preferences()
+
+## Échelle de l'écran : 1 jusqu'en 1080p, puis proportionnelle à la hauteur (1,33 en 1440p).
+static func echelle_pour(hauteur: float) -> float:
+	return clampf(hauteur / 1080.0, 1.0, 2.0)
+
+## Bandeau du score (le même en 3D et pendant l'entracte 2D) et légende du temps fort, lisibles
+## d'un coup d'œil en 1080p comme en 1440p : horloge, noms, score, pause et légende agrandis.
+func _mettre_a_l_echelle() -> void:
+	if not is_instance_valid(clock): return
+	echelle = echelle_pour(get_viewport().get_visible_rect().size.y)
+	var t := func(cle: String) -> int: return roundi(float(BANDEAU_TAILLES[cle]) * echelle)
+	clock.add_theme_font_size_override("font_size", t.call("horloge"))
+	clock.custom_minimum_size.x = roundi(104 * echelle)
+	for nom: Label in [home, away]: nom.add_theme_font_size_override("font_size", t.call("equipe"))
+	score.add_theme_font_size_override("font_size", t.call("score"))
+	score.custom_minimum_size.x = roundi(170 * echelle)
+	play.add_theme_font_size_override("font_size", t.call("pause"))
+	play.custom_minimum_size = Vector2(roundi(132 * echelle), roundi(46 * echelle))
+	events.add_theme_font_size_override("font_size", t.call("legende"))
+	events.add_theme_color_override("font_color", S.TEXT)
+	if is_instance_valid(_legende): _legende.custom_minimum_size.x = roundi(LEGENDE_LARGEUR * echelle)
+	_ecussons_cle = ""
+	_poser_ecussons(_live().get("teams", []))
 
 func update_frame(value: Dictionary) -> void:
 	model = value
@@ -320,9 +352,9 @@ func _poser_ecussons(teams: Array) -> void:
 		if teams.size() <= cote or not teams[cote] is Dictionary: continue
 		var filet := ColorRect.new()
 		filet.color = Color.from_string(str(S.G.identity(teams[cote]).get("color", "#d8c183")), S.GOLD)
-		filet.custom_minimum_size = Vector2(6, 40)
+		filet.custom_minimum_size = Vector2(roundi(6 * echelle), roundi(46 * echelle))
 		filet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		var ecusson := S.G.crest(teams[cote], 44)
+		var ecusson := S.G.crest(teams[cote], roundi(BANDEAU_TAILLES.ecusson * echelle))
 		ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		if cote == 0:
 			boite.add_child(ecusson)
