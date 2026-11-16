@@ -546,7 +546,7 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 		_metric(card,Rect2(33,430+offset,357,43),"people","%d disponibles" % group.available,C.MINT)
 		_metric(card,Rect2(404,430+offset,296,43),"heart","%d blessés" % group.injured,C.ALERT if group.injured>0 else C.MUTED)
 		_metric(card,Rect2(714,430+offset,416,43),"heart","Condition · %d %%" % group.condition,C.MINT)
-	var focused := message.has("press_invitation") or message.has("calendar_notice") or not event.is_empty()
+	var focused := message.has("press_invitation") or message.has("calendar_notice") or message.has("club_mail") or not event.is_empty()
 	if not focused and not national:
 		var tasks := _tasks(app).slice(0,3)
 		var recommendations := D.panel(card,Rect2(26,489+offset,1112,145),"Mes recommandations","warning")
@@ -563,7 +563,7 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 			var fixture := D.button(card,Rect2(26,648+offset,1112,45),"Dossier de préparation · "+str(next.get("label","Prochain match")),func():app._navigate("Préparation"),false,"tactic",false,app.accent,"InboxPreparation")
 			fixture.tooltip_text = "Ouvrir l’analyse de la prochaine rencontre"
 	if not message.is_empty(): _actions(card,app,state,message,int((489 if focused else 712)+offset))
-	_context(card,app,state,message,int((610 if focused else 830)+offset))
+	_context(card,app,state,message,int((610 if focused else 830)+offset+_reply_row(app, message)))
 	for action in card.find_children("*", "Button", true, false):
 		action.add_theme_font_size_override("font_size", C.px(18))
 
@@ -628,12 +628,13 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			mark.read=true
 			state.marks[message.id]=mark
 			_redraw(app,"InboxFolder"+str(state.folder)),false,"check",false,app.accent,"InboxToggleArchive")
-	D.button(card,Rect2(26,top+48,300,34),"Retirer des favoris" if mark.get("favorite",false) else "Ajouter aux favoris",func():
+	var below := top + 48 + _reply_row(app, message)
+	D.button(card,Rect2(26,below,300,34),"Retirer des favoris" if mark.get("favorite",false) else "Ajouter aux favoris",func():
 		mark.favorite=not mark.get("favorite",false)
 		state.marks[message.id]=mark
 		_redraw(app,"InboxToggleFavorite"),false,"star",true,app.accent,"InboxToggleFavorite")
 	if not mark.get("archived",false):
-		D.button(card,Rect2(342,top+48,300,34),"Marquer non lu" if mark.get("read",false) else "Marquer lu",func():
+		D.button(card,Rect2(342,below,300,34),"Marquer non lu" if mark.get("read",false) else "Marquer lu",func():
 			mark.read=not mark.get("read",false)
 			state.marks[message.id]=mark
 			_redraw(app,"InboxToggleRead"),false,"mail",true,app.accent,"InboxToggleRead")
@@ -663,6 +664,10 @@ static func _club_mail_actions(card: Panel, app: Control, state: Dictionary, mes
 		mark.read=true
 		state.marks[message.id]=mark
 		_redraw(app,"InboxFolder"+str(state.folder)),false,"check",false,app.accent,"InboxToggleArchive")
+
+## Hauteur de la rangée de réponses d'un mail du club qui en attend une (0 sinon).
+static func _reply_row(app: Control, message: Dictionary) -> int:
+	return 48 if message.has("club_mail") and ClubMail.awaiting(app.model, message.club_mail) else 0
 
 static func _reply_club_mail(app: Control, mail_id: String, choice: String) -> void:
 	ClubMail.reply(app, mail_id, choice)
