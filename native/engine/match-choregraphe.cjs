@@ -1337,7 +1337,9 @@ function simuler(e,phases,graine){
     // Le jeu reprend : la suite que le moteur a décidée (course, passe, essai, ballon perdu).
     sp.etape=12;d.pen=false;d.debutJeu=t;etat(k,'course');
     preparer(k);
-    if(!d.etape)cloturer();
+    // Suite du moteur hors du temps fort (16 novembre 2026) : il tape et repart quand même, plaqué
+    // après un gain court (« tap and go »), au lieu de rester planté au point avec le ballon.
+    if(!d.etape)lancerPorte(k,{gain:4});
     else if(d.chaine.length===0)agir(k);
     else{d.phase='tenu';d.tenuDepuis=t;d.tenuDe=null}
    }else if(sp.etape===2&&t-sp.t2>=1.3){sp.etape=3;sp.t3=t}

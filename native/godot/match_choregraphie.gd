@@ -85,6 +85,9 @@ const PLAQUAGE_APPROCHE := 0.8
 ## restant avec la taille du porteur se résorbe à PLAQUAGE_RESORPTION m/s.
 const PLAQUAGE_RAPPROCHE := 3.0
 const PLAQUAGE_RESORPTION := 2.0
+## Au contact, l'écart restant est repris dans le plongeon : en PLAQUAGE_RESORPTION_DUREE s au plus
+## (16 novembre 2026 : l'approche bornée laissait jusqu'à 1 m d'écart, plaqueur à plus d'1 m du porteur).
+const PLAQUAGE_RESORPTION_DUREE := 0.3
 const PLAQUAGE_ECART := 0.42
 const PLAQUAGE_RETRAIT := 0.3
 var _raccord: Dictionary = {}
@@ -329,8 +332,9 @@ func place(id: String, actor: Node3D) -> void:
 	if attache:
 		# Résidu entre la place affichée au contact et la taille du porteur : il se résorbe.
 		var residu: Vector3 = vu[2] if vu[2] is Vector3 else (p + (vu[0] as Vector3)) - cible
-		residu = residu.move_toward(Vector3.ZERO, PLAQUAGE_RESORPTION * dt)
-		_decalages[id] = [cible + residu - p, temps, residu]
+		var allure_residu: float = vu[3] if vu.size() > 3 else maxf(PLAQUAGE_RESORPTION, residu.length() / PLAQUAGE_RESORPTION_DUREE)
+		residu = residu.move_toward(Vector3.ZERO, allure_residu * dt)
+		_decalages[id] = [cible + residu - p, temps, residu, allure_residu]
 		p = cible + residu
 	elif _decalages.has(id) or voulu != Vector3.ZERO:
 		var decalage := (vu[0] as Vector3).move_toward(voulu, PLAQUAGE_RAPPROCHE * dt)
