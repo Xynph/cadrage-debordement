@@ -27,9 +27,20 @@ func wait_model() -> void:
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < until: await process_frame
 	check(not app.waiting and not app.model.is_empty(), "Moteur réel disponible")
 
+## Attente légère : quelques images pour la mise en page, puis la fin de l'animation d'ouverture de la bulle
+## (signal d'état plutôt que délai fixe de 0,3 s + 10 images, appelé ~60 fois).
 func settle() -> void:
-	await create_timer(.3).timeout
-	for i in 10: await process_frame
+	for i in 4: await process_frame
+	var coach: Control = app.coach if app != null else null
+	var until := Time.get_ticks_msec() + 2000
+	while coach != null and coach._bulle_tween != null and coach._bulle_tween.is_running() and Time.get_ticks_msec() < until: await process_frame
+
+## Durée de chaque phase (diagnostic CI : GABI_PHASE <nom> <ms>).
+var _phase_start := 0
+func phase(name: String) -> void:
+	var now := Time.get_ticks_msec()
+	if _phase_start > 0: print("GABI_PHASE ", name, " ", now - _phase_start)
+	_phase_start = now
 
 func capture(id: String) -> void:
 	var directory := OS.get_environment("CD_GABI_CAPTURES")
@@ -82,23 +93,39 @@ func content(except: Array) -> Array:
 func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	phase("")
 	app = load("res://main.tscn").instantiate(); root.add_child(app); await wait_model(); app.timer.stop()
+	phase("demarrage")
 	app._command("new_career", {"club": 0, "mode": "world-champ"}); await wait_model()
+	phase("creation_carriere")
 	await ContextualFlow.settle_club_meetings(app, self, check)
+	phase("reunions_club")
 	check(str(app.model.meta.get("mode")) == "world", "Carrière Monde")
 	var coach: Control = app.coach
 	app._navigate("Bureau"); await settle()
 	if coach.expanded: coach.close(); await settle()
 	await layout_normal()
+	phase("mise_en_page")
+	var zones := {}
 	for route: String in ROUTES:
 		if coach.expanded: coach.close()
 		app._navigate(route); await settle()
-		if coach.expanded: coach.close(); await settle()
+		if coach.expanded: coach.close()
 		coach.fermer_bulle(); await settle()
 		await bandeau(route)
-	await bulle()
+		if route != "Bureau": zones[route] = coach._zones_interactives().size()
+	# Ouvrir la bulle place celle-ci hors des contrôles interactifs de l'écran : coût quadratique en leur nombre
+	# (~44 s sur le runner pour Effectif). Une seule ouverture sur Effectif ; le reste sur l'écran le plus léger.
+	var legere := "Réception"
+	for route: String in zones: if int(zones[route]) < int(zones[legere]): legere = route
+	print("GABI_ZONES ", zones, " legere=", legere)
+	phase("bandeaux")
+	await bulle(legere)
+	phase("bulle")
 	await bureau()
+	phase("bureau")
 	await coupe()
+	phase("coupe")
 	print("GABI_BANDEAU ", checks, " controles, ", failures.size(), " echec", "s" if failures.size() > 1 else "")
 	quit(1 if failures.size() > 0 else 0)
 
@@ -169,10 +196,10 @@ func bandeau_bureau(zone: Control, topbar: Control) -> void:
 	await capture("bandeau-bureau")
 
 ## Clic sur Gabi : bulle d'avis (« Ton avis, Gabi ? » + menu), sous le bandeau ; fermée d'un clic ailleurs.
-func bulle() -> void:
+func bulle(legere: String) -> void:
 	var coach: Control = app.coach
 	app._navigate("Effectif"); await settle()
-	if coach.expanded: coach.close(); await settle()
+	if coach.expanded: coach.close()
 	coach.fermer_bulle()
 	coach._attente.clear()
 	var zone: Control = app.root_content.find_child("GabiBandeau", true, false)
@@ -188,12 +215,32 @@ func bulle() -> void:
 	check(bubble.get_global_rect().position.y >= topbar.get_global_rect().end.y - 1, "La bulle descend du bandeau (sous lui)")
 	check(Rect2(Vector2.ZERO, app.size).grow(1).encloses(bubble.get_global_rect()), "Bulle entière dans l'application")
 	await capture("bulle-effectif")
+	# Coût de l'ouverture sur Effectif (296 contrôles : ~44 s avant) et placement hors de tout contrôle interactif.
+	var t0 := Time.get_ticks_usec()
+	coach._layout_bulle()
+	var ms := (Time.get_ticks_usec() - t0) / 1000.0
+	print("GABI_BULLE_MS effectif=", ms, " zones=", coach._zones_interactives().size())
+	check(ms < 250.0, "Ouverture de la bulle sur Effectif rapide : %.1f ms (< 250 ms)" % ms)
+	# Effectif est trop dense pour toujours offrir une place libre : la bulle y prend le moindre recouvrement (consigné).
+	var recouvre := 0
+	for z: Rect2 in coach._zones_interactives():
+		if bubble.get_global_rect().intersects(z): recouvre += 1
+	print("GABI_BULLE_RECOUVRE effectif=", recouvre)
 	# Un clic ailleurs ferme la bulle (sans être avalé).
 	await click_at(Vector2(app.size.x * .45, app.size.y * .8))
 	check(not bubble.visible, "Un clic ailleurs ferme la bulle")
+	# La suite sur l'écran le plus léger (même Gabi, même bulle).
+	app._navigate(legere); await settle()
+	coach.fermer_bulle(); coach._attente.clear()
+	zone = app.root_content.find_child("GabiBandeau", true, false)
+	if zone == null: return
 	# Elle ne reste pas ouverte : fermeture d'elle-même après le temps de lecture.
 	await click_at(zone.get_global_rect().get_center())
 	check(bubble.visible, "Bulle rouverte")
+	var recouvre_legere := 0
+	for z: Rect2 in coach._zones_interactives():
+		if bubble.get_global_rect().intersects(z): recouvre_legere += 1
+	check(recouvre_legere == 0, "La bulle ne recouvre aucun contrôle interactif sur %s (%d)" % [legere, recouvre_legere])
 	coach._bulle_reste = 0.05
 	for i in 12: await process_frame
 	check(not bubble.visible, "La bulle se ferme d'elle-même")
@@ -236,7 +283,7 @@ func click_at(point: Vector2) -> void:
 func bureau() -> void:
 	var coach: Control = app.coach
 	app._navigate("Bureau"); await settle()
-	if coach.expanded: coach.close(); await settle()
+	if coach.expanded: coach.close()
 	coach.fermer_bulle(); await settle()
 	var zone: Control = app.root_content.find_child("GabiBureau", true, false)
 	check(zone != null and zone.is_visible_in_tree(), "Zone de Gabi au Bureau")
@@ -300,7 +347,7 @@ func bureau() -> void:
 	var utile: Dictionary = coach._replique_utile({"genre": "contexte", "titre": "GABI · BUREAU", "texte": "La cafetière peut attendre."}, "La cafetière peut attendre.")
 	check(str(utile.get("texte", "")).begins_with("Prochain match") and not str(utile.get("texte", "")).contains("cafetière"), "Réplique spontanée : l'info utile d'abord, sans ambiance quand elle n'est pas de tour")
 	check(utile.get("action") is Dictionary and str(utile.action.get("libelle", "")) == "Ouvrir la préparation", "Réplique spontanée : bouton d'action présent")
-	coach._montrer(utile); await settle(); await settle()
+	coach._montrer(utile); await settle()
 	check(coach._bulle.visible and coach._bulle.find_child("GabiSuivreConseil", true, false) != null, "La bulle utile porte son bouton d'action")
 	# Générique : aucune zone interactive visible (boutons) n'est recouverte par la bulle ouverte au Bureau.
 	var recouverts := 0
@@ -320,13 +367,13 @@ func bureau() -> void:
 func coupe() -> void:
 	var coach: Control = app.coach
 	app._navigate("Bureau"); await settle()
-	coach.disable(); await settle(); await settle()
+	coach.disable(); await settle()
 	var zone: Control = app.root_content.find_child("GabiBandeau", true, false)
 	check(zone == null or not zone.is_visible_in_tree(), "Gabi coupé : plus de Gabi dans le bandeau")
 	check(app.root_content.find_child("GabiBureau", true, false) == null, "Gabi coupé : Bureau classique")
 	var fixture: Control = app.root_content.find_child("OfficeFixture", true, false)
 	check(fixture != null and absf(fixture.size.x - 1360 * C.density) <= 1.5, "Gabi coupé : blocs du Bureau en pleine largeur")
-	coach.open_help(); await settle(); await settle()
+	coach.open_help(); await settle()
 	coach.close(); await settle()
 	zone = app.root_content.find_child("GabiBandeau", true, false)
 	check(zone != null and zone.is_visible_in_tree(), "Gabi réactivé : de retour dans le bandeau")

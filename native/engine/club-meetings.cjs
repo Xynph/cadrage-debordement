@@ -150,11 +150,13 @@ module.exports={
    // The hook captures only a real clock transition, never a guessed advance.
    const previous=st.observed||(transition?{context:transition.from,players:[],objectives:[],warning:'none'}:null),c=context(),scope=previous&&previous.context.season===c.season&&previous.context.club===c.club;
    const advanced=!!previous&&!same(previous.context,c),fresh=command==='new_career'||!!previous&&!scope;
-   const press=projectDomain('press'),support=projectDomain('clubSupport'),strategy=projectDomain('clubStrategy');
+   const press=projectDomain('press'),strategy=projectDomain('clubStrategy');
    if((command==='new_career'||advanced)&&press?.conference?.available&&same(press.context,c))add(st,'press',reasons.press,'press:'+c.season+':'+c.club+':'+c.week);
    const oldPlayers=new Map((scope?previous.players:[]).map(p=>[p.id,p]));
    const players=roster().map(p=>{const old=oldPlayers.get(p.id),injured=p.injury>0;return {id:p.id,injured,stage:stage(p),episode:(old?.episode||0)+(injured&&!old?.injured?1:0)};});
-   for(const p of support?.medical?.players||[]){
+   const support=nativeSystems.domain('clubSupport');
+   // Liste médicale seule (club-support.cjs, medicalPlayers) : sans projeter tout le domaine à chaque commande.
+   for(const p of (typeof support?.medicalPlayers==='function'?support.medicalPlayers():support?.project()?.medical?.players)||[]){
     const now=players.find(x=>x.id===p.id),old=oldPlayers.get(p.id);if(!now)continue;
     if(p.injury>0&&!old?.injured)add(st,'medical',reasons.injury,'medical:'+c.season+':'+c.club+':'+p.id+':injury:'+now.episode,p.id);
     else if(p.injury<=0&&p.stage==='reprise'&&old?.stage!=='reprise')add(st,'medical',reasons.reprise,'medical:'+c.season+':'+c.club+':'+p.id+':reprise:'+now.episode,p.id);

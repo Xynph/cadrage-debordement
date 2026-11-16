@@ -31,9 +31,17 @@ function bootstrap(){
    projectText(sections){
     if(!S)return '{}';
     if(!sections||nativeMemoDomains===false){memo.clear();return JSON.stringify(this.project());}
+    return '{'+this.projectParts(sections).map(([key,text])=>JSON.stringify(key)+':'+text).join(',')+'}';
+   },
+   // Même calcul que projectText, domaine par domaine : [clé, texte] dans l'ordre des domaines (texte repris de la
+   // mémoire = même chaîne qu'au calcul précédent). « skip » (Set de clés de MEMO_DOMAINS, direct du match) : ces
+   // domaines ne sont ni calculés ni repris ; leur texte vaut null et l'appelant garde leur dernière présentation.
+   projectParts(sections,skip=null){
+    if(!S)return [];
     const parts=[];
     for(const [key,d] of Object.entries(domains)){
      let text;
+     if(skip&&skip.has(key)&&MEMO_DOMAINS.has(key)){parts.push([key,null]);continue;}
      if(!MEMO_DOMAINS.has(key)){text=JSON.stringify(d.project());}
      else{
       const hit=memo.get(key);
@@ -43,17 +51,22 @@ function bootstrap(){
        text=hit.text;
        if(nativeVerifyMemo){const fresh=JSON.stringify(d.project());if(fresh!==text)throw Error('Mémoire de projection périmée : '+key+'.');}
       }else{
-       const real=S,read=new Set();let all=false;
-       const traced=new Proxy(real,{get(t,k,r){if(typeof k==='string')read.add(k);return Reflect.get(t,k,t);},has(t,k){if(typeof k==='string')read.add(k);return Reflect.has(t,k);},ownKeys(t){all=true;return Reflect.ownKeys(t);},getOwnPropertyDescriptor(t,k){if(typeof k==='string')read.add(k);return Reflect.getOwnPropertyDescriptor(t,k);}});
+       // Versions des sections de la carrière (state-versions.cjs) : lectures relevées partie par partie (club du
+       // manager, joueur par joueur et champ par champ ; manager clé par clé). Sinon, sections de premier niveau.
+       const real=S,fine=typeof nativeStateVersions!=='undefined'&&sections===nativeStateVersions.current();
+       let read=new Set(),all=false,traced,done=null;
+       if(fine){const t=nativeStateVersions.trace(real);traced=t.proxy;read=t.read;all=()=>t.all();done=t.done;}
+       else traced=new Proxy(real,{get(t,k,r){if(typeof k==='string')read.add(k);return Reflect.get(t,k,t);},has(t,k){if(typeof k==='string')read.add(k);return Reflect.has(t,k);},ownKeys(t){all=true;return Reflect.ownKeys(t);},getOwnPropertyDescriptor(t,k){if(typeof k==='string')read.add(k);return Reflect.getOwnPropertyDescriptor(t,k);}});
        S=traced;
-       try{text=JSON.stringify(d.project());}finally{S=real;}
-       memo.set(key,{text,all,deps:[...read].map(k=>[k,sections.get(k)])});
+       try{text=JSON.stringify(d.project());}finally{S=real;done?.();}
+       memo.set(key,{text,all:typeof all==='function'?all():all,deps:[...read].map(k=>[k,sections.get(k)])});
       }
      }
-     if(text!==undefined)parts.push(JSON.stringify(key)+':'+text);
+     if(text!==undefined)parts.push([key,text]);
     }
-    return '{'+parts.join(',')+'}';
+    return parts;
    },
+   memoDomains(){return [...MEMO_DOMAINS];},
    clearMemo(){memo.clear();},
    memoStats(){return {...memoStats};},
    validate(state){
@@ -62,7 +75,9 @@ function bootstrap(){
     if(state&&state===nativeStaffTransition?.state&&state.season===nativeStaffTransition.completed+1&&state.staffCareer?.lastAdvancedSeason===nativeStaffTransition.completed-1)domains.staffCareer.advance(state,nativeStaffTransition.completed);
     if(state)for(const d of Object.values(domains))d.validate(state);
    },
-   clearTransient(){memo.clear();nativeStaffTransition=null;for(const d of Object.values(domains))if(d.clearTransient)d.clearTransient();},
+   // keepMemo : carrière rétablie à l'identique (commande refusée) ; la mémoire, indexée par les versions des sections
+   // lues, reste juste.
+   clearTransient(keepMemo){if(!keepMemo)memo.clear();nativeStaffTransition=null;for(const d of Object.values(domains))if(d.clearTransient)d.clearTransient();},
    execute(command,payload){const owner=owners.get(command);if(!owner)throw Error('Commande de domaine inconnue.');return owner.execute(command,payload);},
    installHooks(){for(const d of Object.values(domains))d.installHooks();}
   };

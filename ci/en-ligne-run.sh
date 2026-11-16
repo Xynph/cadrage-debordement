@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Exécute, sur un runner GitHub, les phases demandées par .github/workflows/a-la-demande.yml.
-# Usage (variables d'environnement) : CD_EL_SUITES="a b" CD_EL_CAPTURES=true|false CD_EL_MESURES=true|false
+# Usage (variables d'environnement) : CD_EL_SUITES="a b" CD_EL_CAPTURES=true|false [CD_EL_CAPTURES_QUOI="intro,finitions,..."] CD_EL_MESURES=true|false
 #   bash ci/en-ligne-run.sh <dossier-de-sortie>
 # À lancer sous xvfb, avec CD_GODOT_EXECUTABLE défini. Écrit resume.md, echecs.txt et les journaux
 # dans le dossier de sortie ; sort en erreur si une phase échoue. Mode Monde uniquement.
@@ -42,25 +42,56 @@ fi
 # 2. Captures : suites existantes qui savent écrire des PNG sous un affichage réel (carrière Monde).
 #    Pas de séquence d'intro dédiée dans le dépôt : l'écran d'entrée n'a pas de suite de capture.
 if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
-  cap="$out/captures"; mkdir -p "$cap/finitions" "$cap/fiche-club" "$cap/feuille-espoir" "$cap/match-rendu"
-  phase "captures finitions (fiche joueur, Gabi, Continuer, calendrier)" captures-finitions.log \
-    env CD_FINITIONS_CAPTURE="$cap/finitions/ecran-" CD_FINITIONS_OUTPUT="$cap/finitions" node tests/godot-finitions.cjs
-  phase "captures fiche club (1080p)" captures-fiche-club.log \
-    env CD_FICHE_CAPTURES=1 CD_FICHE_OUTPUT="$cap/fiche-club" node tests/godot-fiche-club.cjs
-  phase "captures feuille espoir" captures-feuille-espoir.log \
-    env CD_ESPOIR_CAPTURE="$cap/feuille-espoir/ecran-" node tests/godot-feuille-espoir.cjs
-  phase "captures rendu de match" captures-match-rendu.log \
-    env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" node tests/godot-match-rendu-capture.cjs
-  echo "- Captures PNG : $(find "$cap" -name '*.png' | wc -l) fichier(s)" >> "$out/resume.md"
+  # CD_EL_CAPTURES_QUOI : liste séparée par des virgules ou espaces parmi intro, finitions, fiche-club,
+  # feuille-espoir, match-rendu ; vide ou « toutes » = toutes.
+  quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
+  [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir match-rendu "
+  for q in $quoi; do
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu) ;;
+      *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
+  done
+  veut() { [[ "$quoi" == *" $1 "* ]]; }
+  cap="$out/captures"; mkdir -p "$cap"
+  if veut intro; then
+    mkdir -p "$cap/intro"
+    if [[ -f tests/godot-intro.cjs ]]; then
+      phase "captures intro (prologue, stade, titre)" captures-intro.log \
+        env CD_INTRO_GRAPHICS=1 CD_INTRO_CAPTURES="$cap/intro" node tests/godot-intro.cjs
+    else
+      echo "- IGNORE : captures intro (tests/godot-intro.cjs absent de la branche testée)" >> "$out/resume.md"
+    fi
+  fi
+  if veut finitions; then
+    mkdir -p "$cap/finitions"
+    phase "captures finitions (fiche joueur, Gabi, Continuer, calendrier)" captures-finitions.log \
+      env CD_FINITIONS_CAPTURE="$cap/finitions/ecran-" CD_FINITIONS_OUTPUT="$cap/finitions" node tests/godot-finitions.cjs
+  fi
+  if veut fiche-club; then
+    mkdir -p "$cap/fiche-club"
+    phase "captures fiche club (1080p)" captures-fiche-club.log \
+      env CD_FICHE_CAPTURES=1 CD_FICHE_OUTPUT="$cap/fiche-club" node tests/godot-fiche-club.cjs
+  fi
+  if veut feuille-espoir; then
+    mkdir -p "$cap/feuille-espoir"
+    phase "captures feuille espoir" captures-feuille-espoir.log \
+      env CD_ESPOIR_CAPTURE="$cap/feuille-espoir/ecran-" node tests/godot-feuille-espoir.cjs
+  fi
+  if veut match-rendu; then
+    mkdir -p "$cap/match-rendu"
+    phase "captures rendu de match" captures-match-rendu.log \
+      env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" node tests/godot-match-rendu-capture.cjs
+  fi
+  echo "- Captures PNG :$(echo "$quoi" | tr -s ' ') $(find "$cap" -name '*.png' | wc -l) fichier(s)" >> "$out/resume.md"
 fi
 
 # 3. Mesures : parcours des écrans principaux (CD_MESURE en JSON) et portraits progressifs.
 if [[ "${CD_EL_MESURES:-false}" == "true" ]]; then
   export CD_NODE_EXECUTABLE="$(command -v node)"
   data="$(mktemp -d)"
+  trap '[[ "${CD_KEEP_TMP:-0}" == 1 ]] || rm -rf "$data"' EXIT
   phase "mesure du parcours des écrans (tests/godot-chargement-mesure.gd)" mesures-parcours.log \
     env CD_GODOT_TIMING=1 CD_GODOT_DATA_DIR="$data/PrototypeGodot" "$CD_GODOT_EXECUTABLE" --headless --audio-driver Dummy --path native/godot --script "$root/tests/godot-chargement-mesure.gd"
-  rm -rf "$data"
+  [[ "${CD_KEEP_TMP:-0}" == 1 ]] || rm -rf "$data"
   phase "portraits progressifs" mesures-portraits.log node tests/godot-portraits-progressifs.cjs
   if grep -h '^CD_MESURE ' "$out/mesures-parcours.log" 2>/dev/null | head -1 | sed 's/^CD_MESURE //' > "$out/mesure.json" && [[ -s "$out/mesure.json" ]]; then
     node -e '
