@@ -5,7 +5,8 @@ extends SceneTree
 ##   1. Ouverture du jeu : panneau « Ouverture du bureau du manager… » jusqu'au premier modèle.
 ##   2. Création de carrière : panneau « Création de la carrière… », bouton « Création en cours… ».
 ##   3. Menus et décisions : navigation et fiche d'un club sans panneau ni voile.
-##   4. Continuer : panneau de progression, puis tranche « Sauvegarde de la carrière… » avant l'écriture du profil.
+##   4. Continuer : panneau de progression ; la sauvegarde (après la réponse) est montrée par la disquette, jamais par
+##      la carte ; le moteur signale son début et sa fin (persist_changed).
 ##   5. Coup d'envoi : panneau posé, opaque et dessiné avant la construction de la scène 3D du match.
 ## CD_ECRANS_CAPTURE=<préfixe de chemin> : captures PNG (≤ 1280 px de large, rendu fenêtré requis).
 const Main = preload("res://main.gd")
@@ -147,14 +148,10 @@ func run() -> void:
 	await settle(4)
 
 	# 4. Continuer jusqu'au jour du match, sauvegarde automatique comprise.
-	var saving_seen := {"progress": false, "panel": false, "kicker": ""}
+	var persist_states: Array[String] = []
 	var progress_panel: Control = app.continue_progress
-	var on_progress := func(progress: Dictionary):
-		if bool(progress.get("saving", false)):
-			saving_seen.progress = true
-			saving_seen.panel = progress_panel.saving and progress_panel.title.text == "Sauvegarde de la carrière…"
-			saving_seen.kicker = str(progress_panel.kicker.text)
-	app.bridge.progressed.connect(on_progress, CONNECT_DEFERRED)
+	var on_persist := func(state: String, _message: String): persist_states.append(state)
+	app.bridge.persist_changed.connect(on_persist)
 	var today := str(app.model.get("meta", {}).get("calendarToday", ""))
 	var cadence: Dictionary = app.model.get("meta", {}).get("calendarCadence", {})
 	if cadence.get("canAdvance", false) and not cadence.get("matchReady", false):
@@ -163,7 +160,6 @@ func run() -> void:
 		check(progress_panel.visible and progress_panel.running, "Continuer : panneau de progression affiché")
 		var start_continue := Time.get_ticks_msec()
 		while app.waiting and Time.get_ticks_msec() < start_continue + 240000:
-			if progress_panel.saving: await capture("03-continuer-sauvegarde")
 			await process_frame
 		app.timer.stop()
 		await settle()
@@ -171,9 +167,18 @@ func run() -> void:
 		var autosave: Variant = app.model.get("meta", {}).get("autosave")
 		check(autosave is Dictionary and autosave.get("saved", false) and str(autosave.get("lastSave", "")) == str(app.model.meta.get("calendarToday", "")), "Profil sauvegardé à l'arrêt : " + str(autosave))
 	else: check(false, "Veille du match : Continuer disponible (%s)" % str(cadence))
-	app.bridge.progressed.disconnect(on_progress)
-	# « Jour suivant » : libellé de la sauvegarde prévue (chaque jour).
-	check(app.autosave_expected("advance_day"), "Jour suivant avec sauvegarde chaque jour : sauvegarde annoncée")
+	# La sauvegarde de la clôture suit la réponse : début et fin signalés par le moteur, disquette visible puis cachée.
+	var wait_persist := Time.get_ticks_msec()
+	while not persist_states.has("done") and Time.get_ticks_msec() < wait_persist + 30000: await process_frame
+	check(persist_states.size() >= 2 and persist_states[0] == "started" and persist_states.has("done") and not persist_states.has("failed"), "Sauvegarde en arrière-plan : début puis fin signalés (%s)" % str(persist_states))
+	app.save_indicator.min_shown = 0.2
+	var wait_hidden := Time.get_ticks_msec()
+	while app.save_indicator.shown() and Time.get_ticks_msec() < wait_hidden + 5000: await process_frame
+	check(not app.save_indicator.shown(), "Sauvegarde terminée : disquette cachée")
+	app.bridge.persist_changed.disconnect(on_persist)
+	# « Jour suivant » est sauvegardé après la réponse : le panneau ne la nomme plus (la disquette la montre).
+	check(not app.autosave_expected("advance_day"), "Jour suivant : pas de sauvegarde annoncée dans le panneau")
+	check(app.autosave_expected("next_season"), "Nouvelle saison : sauvegarde toujours annoncée (écrite avant la réponse)")
 
 	# 5. Coup d'envoi.
 	if not await Flow.prepare_match_day(app, self, check):

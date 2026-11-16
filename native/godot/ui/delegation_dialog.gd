@@ -8,6 +8,7 @@ extends ConfirmationDialog
 ## note » (choix par défaut : le meilleur jeune du centre apte au poste, prêté pour ce match) ou « Jouer à 22 » quand la
 ## règle le permet (Nationale) : begin_match { espoirs } ou { reducedBench }.
 ## Commandes : begin_match { delegated: true, composition } puis delegate (chaînées par app.queued_action).
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Avis = preload("res://guide/gabi_avis.gd")
@@ -70,7 +71,7 @@ func _build() -> void:
 	canceled.connect(queue_free)
 	app.add_child(self)
 	Dialogs.show_centered(self, Vector2i(640, 360 if incomplete else 210))
-	get_ok_button().call_deferred("grab_focus")
+	FocusLater.grab(get_ok_button())
 
 ## Libellé du bouton selon le choix de feuille : « Déléguer à 22 » quand le match à 22 est retenu.
 func _bouton() -> void:
