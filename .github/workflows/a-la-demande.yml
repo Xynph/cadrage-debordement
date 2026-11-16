@@ -38,7 +38,7 @@ on:
         required: false
         default: false
       captures_quoi:
-        description: 'Captures voulues, séparées par des virgules : intro, finitions, fiche-club, feuille-espoir, match-rendu (hors défaut) ; vide = toutes sauf match-rendu'
+        description: 'Captures voulues, séparées par des virgules : intro, finitions, fiche-club, feuille-espoir, match-rendu (hors défaut), comparateur, audio ; vide = intro, finitions, fiche-club, feuille-espoir'
         type: string
         required: false
         default: ''
