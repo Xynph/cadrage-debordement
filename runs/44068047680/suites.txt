@@ -1,0 +1,2 @@
+tests/godot-reception-tout-lu.cjs
+tests/godot-courrier-club.cjs
