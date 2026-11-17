@@ -12,7 +12,7 @@ var _spec: Dictionary = {}
 var _ground: ColorRect
 var _rule: ColorRect
 var _words: Control
-var _name: Label
+var _name: Control
 var _mention: Label
 var _time := 0.0
 var _calm := false
@@ -35,7 +35,8 @@ func configure(sequence: Node, spec: Dictionary) -> void:
 	_words.name = "IntroPrologueTexte"
 	_words.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plan.add_child(_words)
-	_name = Plan.spaced(_words, str(spec.get("texte", "")), 1280, 748, 62, C.IVORY, C.DISPLAY, float(spec.get("interlettrage_depart", 34)))
+	# Interlettrage et montée animés : texte dessiné glyphe par glyphe (sans paliers d'un pixel).
+	_name = Plan.fluid(_words, str(spec.get("texte", "")), 1280, 748, 62, C.IVORY, C.DISPLAY, float(spec.get("interlettrage_depart", 34)))
 	_name.name = "IntroProloguePhrase"
 	_mention = Plan.spaced(_words, str(spec.get("surtitre", "")), 1280, 648, 24, C.GOLD, C.BOLD, float(spec.get("interlettrage_mention", 14)))
 	_mention.name = "IntroPrologueSurtitre"
@@ -67,12 +68,8 @@ func _process(delta: float) -> void:
 	_name.modulate.a = Plan.soft((_time - name_at) / name_for)
 	var k := _out_cubic((_time - name_at) / settle)
 	Plan.set_tracking(_name, lerpf(float(_spec.get("interlettrage_depart", 34)), float(_spec.get("interlettrage_final", 16)), k))
-	_name.position.y = _base_y(_name) + (1.0 - k) * 10.0 * C.density
+	_name.set_rise((1.0 - k) * 10.0 * C.density)
 	_mention.modulate.a = Plan.soft((_time - mention_at) / 0.8)
-
-func _base_y(label: Label) -> float:
-	if not label.has_meta("base_y"): label.set_meta("base_y", label.position.y)
-	return float(label.get_meta("base_y"))
 
 static func _out_cubic(t: float) -> float:
 	var x := clampf(t, 0.0, 1.0)

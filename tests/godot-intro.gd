@@ -110,6 +110,18 @@ func run() -> void:
 			check(sequence.current_id() == "prologue", "Carte 1 : prologue")
 			await wait(1.2)
 			await capture("intro-1-prologue")
+			# Recette du 17/11 : l'interlettrage entier (Label) avançait par sauts de 12 px, lus comme des FPS faibles.
+			# La phrase doit se resserrer à chaque image, sans palier.
+			var phrase := sequence.current.find_child("IntroProloguePhrase", true, false) as Control
+			var serrages: Array[float] = []
+			for i in 6:
+				var t: Variant = phrase.get("tracking") if phrase != null else null
+				serrages.append(float(t) if t != null else float((phrase.get_meta("variation") as FontVariation).spacing_glyph) if phrase != null and phrase.has_meta("variation") else 0.0)
+				await process_frame
+			var baisses := 0
+			for i in range(1, serrages.size()): if serrages[i] < serrages[i - 1]: baisses += 1
+			# La première image après la capture peut ne pas avoir avancé l'horloge : 4 baisses sur 5 au moins.
+			check(baisses >= 4, "Prologue : interlettrage resserré à chaque image, sans palier (%s)" % [serrages])
 			check(sequence.current_id() == "prologue", "Carte 1 tenue tant qu'on ne la passe pas")
 			await wait(0.3)
 			await press()
