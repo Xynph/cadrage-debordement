@@ -526,12 +526,13 @@ static func _open_current_player(app: Control, player_id: String) -> void:
 
 static func _list(card: Panel, app: Control, state: Dictionary, messages: Array) -> void:
 	D.text(card,22,40,"Messages (%d)" % messages.size(),26,C.IVORY,700,420)
-	D.button(card,Rect2(470,8,218,_h(44)),"Plus anciens" if state.oldest_first else "Plus récents",func():
+	# « Tout marquer comme lu » (228-490) et le tri (500-688) côte à côte, sans se recouvrir.
+	D.button(card,Rect2(500,8,188,_h(44)),"Plus anciens" if state.oldest_first else "Plus récents",func():
 		state.oldest_first=not state.oldest_first
 		state.scroll=0
 		_redraw(app,"InboxSort"),false,"clock",true,app.accent,"InboxSort")
 	var markable := markable_read(app, messages)
-	var mark_all := D.button(card,Rect2(236,12,262,38),"Tout marquer comme lu" + (" (%d)" % markable.size() if not markable.is_empty() else ""),func():
+	var mark_all := D.button(card,Rect2(228,12,262,38),"Tout marquer comme lu" + (" (%d)" % markable.size() if not markable.is_empty() else ""),func():
 		mark_all_read(app, messages)
 		_redraw(app,"InboxMarkAllRead"),false,"check",true,app.accent,"InboxMarkAllRead")
 	mark_all.add_theme_font_size_override("font_size",C.px(18))

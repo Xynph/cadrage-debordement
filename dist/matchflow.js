@@ -1,6 +1,6 @@
 'use strict';
 function flowRules(l){return restartRules(l)&&l.flowVersion===1}
-function initializeMatchFlow(l){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false};if(QUICK_TAP_RULES)l.quickTapVersion=1;if(SET_PIECE_FATIGUE_RULES)l.setPieceFatigueVersion=1}
+function initializeMatchFlow(l){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false};if(QUICK_TAP_RULES)l.quickTapVersion=1;if(SET_PIECE_FATIGUE_RULES)l.setPieceFatigueVersion=1;if(WEATHER_RULES){l.weatherVersion=1;l.meteo=tirerMeteo(l)}}
 function periodBoundary(l){return l.flow.period===1?40:l.flow.fullEnd}
 function atHalftime(l){return flowRules(l)?l.flow.atBreak:l.minute===40&&l.paused&&!l.finished}
 function matchMinute(l){if(!flowRules(l)||l.flow.period===1)return l.minute;return 40+l.minute-l.flow.firstEnd}
@@ -106,6 +106,31 @@ let QUICK_TAP_RULES=1;
 // d'élite presque stable sur le match. Jeu courant (plaquage, vitesse, puissance, mêlée, passe, pied d'occupation) inchangé.
 var FATIGUE_ARRETE={goal:.2,lineout:.5};
 let SET_PIECE_FATIGUE_RULES=1;
+// La météo pèse sur le match (docs/meteo-match-20261116.md). Les rencontres créées avec `weatherVersion` portent
+// `l.meteo` = {pluie 0-2, vent 0-2, chaleur 0-1, terrain 'souple'|'lourd'}, tiré sans aléa à partir de l'étiquette
+// (Sec/Pluie/Vent, tirage inchangé), de l'affiche et de la date : aucun tirage ajouté. Les rencontres commencées avant
+// gardent les forfaits d'origine (but −16 points par vent, −6 sous la pluie ; pied −9 m par vent ; ballon perdu au
+// plaquage 0,55 sous la pluie). Réglages de jeu : effets par niveau d'intensité, mêmes règles pour tous les clubs.
+var METEO_MATCH={
+ tirage:{pluieForte:.4,ventFort:.4,chaleurSec:1/6},
+ but:{pluie:.03,vent:.055},             // réussite au but retirée par niveau
+ enAvant:{pluie:.022},                  // probabilité d'en-avant dans le jeu courant, par niveau
+ ballonPerdu:{base:.3,pluie:.07},       // part des plaquages subis qui finissent en en-avant
+ piedJeu:{pluie:.25},                   // jeu au pied d'occupation : ×(1+0,25 par niveau)
+ piedMetres:{vent:4},                   // longueur perdue par niveau de vent (moyenne, vent de face ou de dos)
+ piedAlea:{vent:4},                     // dispersion ajoutée par niveau de vent
+ ballonPorte:{pluie:.04},               // finition sur ballon porté et mêlée près de la ligne, par niveau
+ terrainLourd:{gain:.85},               // mètres gagnés par avancée sur terrain lourd
+ chaleur:{fatigue:1.12}                 // fatigue par minute sous forte chaleur
+};
+let WEATHER_RULES=1;
+function meteoActive(l){return l?.weatherVersion===1&&!!l.meteo}
+function meteoNiveau(l,k){return meteoActive(l)?l.meteo[k]||0:0}
+function tirerMeteo(l){const t=METEO_MATCH.tirage,cle=[...l.pair,S.season??'',S.round??'',S.week??'',l.weather].join('|');let h=2166136261;for(let i=0;i<cle.length;i++)h=Math.imul(h^cle.charCodeAt(i),16777619)>>>0;
+ const u=(h%10007)/10007,v=((h>>>14)%10007)/10007,pluie=l.weather==='Pluie'?(u<t.pluieForte?2:1):0;
+ return{pluie,vent:l.weather==='Vent'?(u<t.ventFort?2:1):0,chaleur:l.weather==='Sec'&&v<t.chaleurSec?1:0,terrain:pluie===2?'lourd':'souple'}}
+function meteoLibelle(l){if(!meteoActive(l))return l.weather.toLowerCase();const m=l.meteo;return m.pluie===2?'forte pluie, terrain lourd':m.pluie?'pluie, terrain glissant':m.vent===2?'grand vent':m.vent?'vent':m.chaleur?'forte chaleur':'sec'}
+function meteoConseil(l){if(!meteoActive(l))return null;const m=l.meteo;return m.pluie===2?'Terrain lourd et ballon glissant : le staff conseille le jeu au pied, le ballon porté et la conquête plutôt que le large.':m.pluie?'Ballon glissant : le staff conseille de limiter les passes à risque et d’occuper au pied.':m.vent===2?'Grand vent : le staff prévient que les tirs au but et le jeu au pied long deviennent aléatoires ; prenez les points faciles et jouez la touche.':m.vent?'Du vent : tirs au but un peu moins sûrs, jeu au pied plus court.':m.chaleur?'Forte chaleur : les organismes vont souffrir, le staff conseille d’anticiper les remplacements.':'Terrain sec : les qualités techniques peuvent s’exprimer.'}
 function fitArrete(l){return l?.setPieceFatigueVersion===1?'arrete':true}
 function quickTapRules(l){return flowRules(l)&&l.quickTapVersion===1}
 // Le demi de mêlée joue la pénalité ; à défaut, le premier troisième ligne en jeu.
