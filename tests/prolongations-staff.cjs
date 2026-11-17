@@ -79,7 +79,8 @@ test('Carrière Monde : le directeur sportif tranche, écrit, et le manager gard
       assert.equal(r(`dsContratsSalaireSuivant(club().players.find(p=>p.id===${JSON.stringify(id)}))`), salaire, 'nouveau salaire dès la saison prochaine');
     }
     // Courrier : un mail par décision, réponses disponibles.
-    r("{const d=nativeSystems.domain('clubMail');d.recevoir(S,'2026-08-16');for(let i=17;i<=30;i++)d.recevoir(S,'2026-08-'+i);}");
+    // Une semaine de courrier d'abord : passé le délai de réponse (7 jours), un courrier sans réponse est classé.
+    r("{const d=nativeSystems.domain('clubMail');for(let i=16;i<=22;i++)d.recevoir(S,'2026-08-'+i);}");
     const mails = JSON.parse(r("JSON.stringify(S.clubMail.mails.filter(m=>m.type.startsWith('ds_')).map(m=>({id:m.id,type:m.type,player:m.player,vars:m.vars,status:m.status})))"));
     assert.ok(mails.length >= 3, mails.length + ' courriers du directeur sportif');
     assert.ok(mails.every(m => /directeur sportif/.test(m.vars.signature) && m.vars.raison), 'signature et raison');
@@ -87,7 +88,6 @@ test('Carrière Monde : le directeur sportif tranche, écrit, et le manager gard
     const ouverts = mails.filter(m => m.status === 'nouveau'), prolonge = ouverts.find(m => m.type === 'ds_prolongation'), departs = ouverts.filter(m => m.type === 'ds_depart'), depart = departs.find(m => !JSON.parse(r(`JSON.stringify(dsContratsRefus('forcer',${JSON.stringify(m.player)}))`))) || departs[0];
     assert.ok(mails.some(m => m.type === 'ds_prolongation') && mails.some(m => m.type === 'ds_depart'), 'prolongations et départs annoncés');
     assert.ok(prolonge && depart, 'des courriers encore ouverts');
-    assert.ok(mails.length >= 20, 'toutes les décisions annoncées en deux semaines (' + mails.length + ')');
     // Annuler une prolongation : ancien contrat, prime remboursée, il partira.
     const avant = JSON.parse(r(`JSON.stringify((()=>{const e=S.manager.contractDesk.decisions.find(x=>x.id===${JSON.stringify(prolonge.player)});return {cash:club().cash,fee:e.fee,old:club().players.find(p=>p.id===e.id).salary,oldEnd:e.oldEnd}})())`));
     model = jeu.call('club_mail_reply', { id: prolonge.id, choice: 'annuler' });
@@ -109,6 +109,10 @@ test('Carrière Monde : le directeur sportif tranche, écrit, et le manager gard
       model = jeu.call('club_mail_reply', { id: autre.id, choice: 'econome' });
       assert.equal(model.decisions.delegation.contractsPolicy, 'econome');
     }
+    // Deuxième semaine : toutes les décisions sont annoncées en deux semaines.
+    r("{const d=nativeSystems.domain('clubMail');for(let i=23;i<=30;i++)d.recevoir(S,'2026-08-'+i);}");
+    const tous = r("S.clubMail.mails.filter(m=>m.type.startsWith('ds_')).length");
+    assert.ok(tous >= 20, 'toutes les décisions annoncées en deux semaines (' + tous + ')');
     assert.doesNotThrow(() => r('validateCareer(JSON.parse(JSON.stringify(S)))'), 'sauvegarde valide');
     assert.throws(() => r('{const s=JSON.parse(JSON.stringify(S));s.manager.delegation.contractsPolicy="tout";validateCareer(s)}'), /consigne/);
     // Case décochée : plus rien n'est tranché.
