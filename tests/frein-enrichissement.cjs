@@ -67,3 +67,53 @@ test('Six saisons à +1 M€ avant prime : la caisse reste bornée (réserve + 3
   assert.ok(cash>=r,'la caisse ne passe pas sous la réserve');
  }
 });
+
+// --- Moteur (carrière Monde `world-champ`, graine fixe) ---
+const { ouvrir, creer } = require('./helpers/carriere-monde.cjs');
+test('Moteur Monde : création sans dividende ni investissement, jokers au vrai prix, dividende de l’entreprise',()=>{
+ const jeu=ouvrir({hebdomadaire:true,testVm:true});
+ try{
+  creer(jeu,0);
+  const run=s=>jeu.bridge.vm.run(s),lire=s=>JSON.parse(run('JSON.stringify('+s+')'));
+  // 1. Création : rien de distribué.
+  assert.equal(lire('S.clubBudget.clubs.filter(c=>c.dividende>0||c.investissement>0).length'),0);
+  assert.equal(lire('S.ledger.filter(e=>/Dividende/.test(JSON.stringify(e))).length'),0);
+  assert.equal(lire('club().players.length>=40&&S.clubBudget.clubs[S.club].reserve>0'),true);
+  // Outils : vide n places (joueurs retirés du club joué, lineup/reserves à null).
+  run(`var T={marge:m=>{const c=club(),l=budgetLimites(false).get(c.id).limite,top=c.players.slice().sort((a,b)=>b.salary-a.salary)[0];
+    top.salary=Math.max(1,top.salary+Math.floor((l-m-budgetMasse(c)*52)/52));},vider:n=>{const c=club();const ids=[...S.lineup.slice(0,n)];S.lineup=S.lineup.map((id,i)=>i<n?null:id);
+    const feuille=new Set([...S.lineup,...S.reserves]);c.players=c.players.filter(p=>feuille.has(p.id));return ids},
+   libre:(slot,sal)=>{const p=S.economy.freeAgents.find(x=>slotEligible(x,slot)&&!(x.injury>0));p.rating=90;p.salary=sal||p.salary;
+    p.age=Math.min(p.age,28);p.contractEnd=S.season+3;return p.id}};`);
+  const etat=()=>lire(`({vides:[...S.lineup,...S.reserves].filter(id=>!id).length})`);
+  // 2. Joker libre au salaire demandé + espoirs au plancher.
+  const ids=lire('T.vider(3)');run('T.marge(2e6)');const joker=lire('T.libre(0)');
+  assert.equal(etat().vides,3);
+  const r=lire(`(()=>{const p=S.economy.freeAgents.find(x=>x.id===${JSON.stringify(joker)});const demande=salaryDemandBreakdown(p,'recruit').asked;
+   const avant=new Set(club().players.map(x=>x.id));const ok=promoteCover();
+   const nouveaux=club().players.filter(x=>!avant.has(x.id));
+   return {ok,demande,vides:[...S.lineup,...S.reserves].filter(id=>!id).length,j:club().players.find(x=>x.id===${JSON.stringify(joker)})||null,
+    libre:S.economy.freeAgents.some(x=>x.id===${JSON.stringify(joker)}),saison:S.season,plancher:nativeStartingSalaries.plancherHebdo(S,budgetLigue(S.club)),
+    autres:nouveaux.filter(x=>x.id!==${JSON.stringify(joker)}).map(x=>[x.salary,x.contractEnd])};})()`);
+  assert.ok(r.j,'le joker rejoint le club');assert.equal(r.libre,false);
+  assert.equal(r.j.contractEnd,r.saison);assert.equal(r.j.salary,r.demande);
+  assert.equal(r.vides,0,'feuille complète');
+  assert.ok(r.autres.length>=1,'des espoirs comblent les autres places');
+  for(const [salaire,fin] of r.autres){assert.ok(salaire>=r.plancher,'espoir '+salaire+' < plancher '+r.plancher);assert.equal(fin,r.saison);}
+  // 3. Limite salariale trop serrée : pas de joker, un espoir à la place.
+  lire('T.vider(2)');
+  run('T.marge(100)');const joker2=lire('T.libre(0)');
+  const r3=lire(`(()=>{const avant=new Set(club().players.map(x=>x.id));const id=${JSON.stringify(joker2)};
+   const l=budgetLimites(false).get(club().id);const limite=l?l.limite:Infinity;
+   const ok=promoteCover();return {ok,limite,joker:club().players.some(x=>x.id===id),libre:S.economy.freeAgents.some(x=>x.id===id),
+    vides:[...S.lineup,...S.reserves].filter(id=>!id).length,nouveaux:club().players.filter(x=>!avant.has(x.id)).length};})()`);
+  assert.equal(r3.joker,false,'joker hors limite refusé');assert.equal(r3.libre,true);
+  assert.ok(r3.nouveaux>=1);assert.equal(r3.vides,0);
+  // 4. Dividende : caisse très au-dessus de la réserve, nouvelle saison.
+  const d=lire(`(()=>{const c=club(),b=S.clubBudget.clubs[S.club];c.cash=b.reserve+50e6;const avant=c.cash,n=S.ledger.length;
+   budgetOuvrir(true,true);const cb=S.clubBudget.clubs[S.club];
+   return {type:cb.type,dividende:cb.dividende,avant,apres:club().cash,ecr:S.ledger.slice(n).filter(e=>/Dividende versé au groupe actionnaire/.test(JSON.stringify(e))).map(e=>e.amount??e.delta??e.value)};})()`);
+  assert.equal(d.type,'entreprise');assert.ok(d.dividende>0);
+  assert.equal(d.ecr.length,1);assert.equal(d.ecr[0],-d.dividende);assert.equal(d.apres,d.avant-d.dividende);
+ }finally{jeu.fermer();}
+});
