@@ -1,6 +1,7 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
 const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
+const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 var director: Node
 ## Régie du match en temps forts (mode de base ; absente avec CD_MATCH_TEMPS_FORTS=0).
 var regie: Node
@@ -13,6 +14,8 @@ var stage: Node3D
 var model: Dictionary = {}
 var clock: Label
 var score: Label
+## Météo et vent sous le score (même bandeau en 3D et pendant l'entracte 2D).
+var meteo_ligne: Label
 var home: Label
 var away: Label
 var play: Button
@@ -42,7 +45,7 @@ var barre_commandes: Control
 var bande_temps_forts: HBoxContainer
 ## Lisibilité du bandeau et de la légende (lot 5, 16/11/2026) : tailles écrites pour 1080p,
 ## agrandies avec la hauteur de l'écran (×1,33 en 1440p), jamais réduites en dessous.
-const BANDEAU_TAILLES := {"horloge": 32, "equipe": 32, "score": 60, "pause": 22, "legende": 24, "ecusson": 52}
+const BANDEAU_TAILLES := {"horloge": 32, "equipe": 32, "score": 60, "pause": 22, "legende": 24, "ecusson": 52, "meteo": 20}
 const LEGENDE_LARGEUR := 720
 var echelle := 1.0
 var _legende: Control
@@ -123,6 +126,13 @@ func _ready() -> void:
 	banner.add_child(away)
 	play = S.button("PAUSE", _pause)
 	banner.add_child(play)
+	meteo_ligne = S.label("", 18, S.MUTED)
+	meteo_ligne.name = "MatchWeather"
+	meteo_ligne.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	meteo_ligne.clip_text = true
+	meteo_ligne.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	meteo_ligne.hide()
+	scoreboard.add_child(meteo_ligne)
 	if TempsForts.enabled():
 		bande_temps_forts = S.G.h(12)
 		bande_temps_forts.name = "MatchCommandBand"
@@ -246,6 +256,7 @@ func _mettre_a_l_echelle() -> void:
 	play.add_theme_font_size_override("font_size", t.call("pause"))
 	play.custom_minimum_size = Vector2(roundi(132 * echelle), roundi(46 * echelle))
 	events.add_theme_font_size_override("font_size", t.call("legende"))
+	meteo_ligne.add_theme_font_size_override("font_size", t.call("meteo"))
 	events.add_theme_color_override("font_color", S.TEXT)
 	if is_instance_valid(_legende): _legende.custom_minimum_size.x = roundi(LEGENDE_LARGEUR * echelle)
 	_ecussons_cle = ""
@@ -266,6 +277,11 @@ func update_frame(value: Dictionary) -> void:
 	if live.get("finished", false): clock.text = "TERMINÉ"
 	elif live.get("atBreak", false): clock.text = "MI-TEMPS"
 	play.text = "REPRENDRE" if live.get("paused", false) else "PAUSE"
+	meteo_ligne.text = Meteo.bandeau(live)
+	meteo_ligne.visible = not meteo_ligne.text.is_empty()
+	meteo_ligne.add_theme_color_override("font_color", S.GOLD if live.get("atBreak", false) else S.MUTED)
+	meteo_ligne.tooltip_text = Meteo.conseil(live)
+	meteo_ligne.mouse_filter = Control.MOUSE_FILTER_PASS if not meteo_ligne.tooltip_text.is_empty() else Control.MOUSE_FILTER_IGNORE
 	# Une causerie retenue par un temps fort : la reprise passera par elle.
 	play.set_meta("contextual_enabled", not live.get("finished", false) and director._talk().is_empty())
 	finish.visible = live.get("finished", false)

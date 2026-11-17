@@ -4,7 +4,13 @@ const PENALTY_POLICIES={auto:'Selon le contexte',points:'Chercher les points',to
 function normalizeOppositionSnapshot(state){if(!state.difficulty)state.difficulty='classique';if(state.defence===undefined)state.defence='equilibre';for(let c of state.clubs){if(c.morale===undefined){let value=75;for(let f of c.form)value=clamp(value+(f==='V'?6:f==='D'?-5:1),25,98);c.morale=value}}return state}
 function setupOpposition(){if(S)normalizeOppositionSnapshot(S)}
 function clubMorale(ci){return ci===S.club?S.morale:(S.clubs[ci].morale??75)}
-function updateOppositionMorale(r){r.pair.forEach((ci,i)=>{if(ci===S.club)return;const diff=typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?CDFranceCompetition.outcome(r,ci):r.score[i]-r.score[1-i];S.clubs[ci].morale=clamp(clubMorale(ci)+(diff>0?6:diff<0?-5:1),25,98)})}
+// Moral des clubs IA en carrière Monde (17/11/2026, docs/top14-dispute-20261117.md §5) : il revient vers `repos` d'un quart
+// de son écart à chaque match avant le résultat (+4 / −4, nul +1). L'ancien cumul (+6 / −5, borné 25-98) saturait en quelques
+// journées : le leader jouait à 98 (≈ +6 points de niveau, teamEdge ×0,001 par point) et le dernier à 25 (≈ −9), ce qui
+// creusait le classement au-delà de l'écart des effectifs (leader 20-24 victoires sur 26, dernier à 9-30 points).
+// Équilibre : ±10 autour de 75 pour un club qui gagne (ou perd) 80 % de ses matchs. Autres modes : règle d'origine.
+const MORAL_IA_MONDE=Object.freeze({repos:75,retour:.25,victoire:4,defaite:-4,nul:1,min:25,max:98});
+function updateOppositionMorale(r){const M=S.worldMode?MORAL_IA_MONDE:null;r.pair.forEach((ci,i)=>{if(ci===S.club)return;const diff=typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?CDFranceCompetition.outcome(r,ci):r.score[i]-r.score[1-i];const m=clubMorale(ci);S.clubs[ci].morale=M?clamp(Math.round(m-(m-M.repos)*M.retour+(diff>0?M.victoire:diff<0?M.defaite:M.nul)),M.min,M.max):clamp(m+(diff>0?6:diff<0?-5:1),25,98)})}
 function difficultyLevel(l=null){return l?.aiLevel||S.difficulty||'classique'}
 function managerStyle(ci){return ['conquete','large','occupation','equilibre'][ci%4]}
 function sheetAverage(c,ids,key,filter=()=>true){let players=ids.map(id=>c.players.find(p=>p.id===id)).filter(p=>p&&filter(p));return players.length?mean(players.map(p=>skill(p,key,true))):25}

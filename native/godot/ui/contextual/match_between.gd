@@ -1105,7 +1105,7 @@ func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 	var possession: Variant = direct.get("possession")
 	if not etat_force.is_empty(): etat.text = etat_force
 	elif live.get("finished", false): etat.text = "Match terminé"
-	elif live.get("atBreak", false): etat.text = "Mi-temps"
+	elif live.get("atBreak", false): etat.text = "Mi-temps · on change de camp" if live.get("meteo") is Dictionary and live.meteo.get("ventDos") is Array else "Mi-temps"
 	elif (possession is float or possession is int) and equipes.size() >= 2:
 		var cote := clampi(int(possession), 0, 1)
 		etat.text = "%s a le ballon %s" % [S.G.club_name(equipes[cote]), _zone(float(direct.get("zone", {}).get("x", 50.0)), cote)]
