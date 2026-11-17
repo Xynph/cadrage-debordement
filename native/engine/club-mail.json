@@ -45,9 +45,9 @@
       "categorie": "infirmerie", "declencheur": "bilan_kine", "priorite": 40, "arret": false, "ecran": "infirmerie",
       "expediteur": "Le kiné du club",
       "formulations": [
-        { "sujet": "Bilan de l'infirmerie : {n} absent(s)", "corps": "Point du lundi : {liste}. Les soins suivent leur cours. Si tu veux, on peut alléger la séance collective pour soulager ceux qui reviennent." },
-        { "sujet": "L'infirmerie cette semaine", "corps": "Salut coach. À l'infirmerie : {liste}. Rien de neuf côté protocole, mais une séance de récupération collective aiderait les organismes." },
-        { "sujet": "Point médical hebdomadaire", "corps": "{n} joueur(s) en soins : {liste}. On garde le cap. Je reste à ta disposition pour adapter la charge de la semaine." }
+        { "sujet": "Bilan de l'infirmerie : {n} absent(s)", "corps": "Point du lundi, coach. À l'infirmerie : {liste}.\n\nLes soins suivent leur cours, pas de mauvaise surprise ce week-end. Ceux qui reviennent sont encore raides, surtout après les contacts.\n\nSi tu passes la séance collective en récupération, on accélère les retours et on soulage tout le monde avant {prochain}. Si on garde le programme, je surveille les plus fragiles de près." },
+        { "sujet": "L'infirmerie cette semaine", "corps": "Salut coach. Le point infirmerie : {liste}.\n\nRien de neuf côté protocole. L'équipe est {classement}, je sais que tu as besoin de monde, mais forcer maintenant, c'est risquer une rechute.\n\nUne séance de récupération collective aiderait les organismes. À toi de voir si tu préfères garder le rythme prévu." },
+        { "sujet": "Point médical hebdomadaire", "corps": "Point médical de la semaine. Absents : {liste}.\n\nForme récente du groupe : {forme}. Les matchs s'enchaînent et ça se ressent sur les tissus, notamment chez les avants.\n\nJe te recommande d'alléger : une semaine de récupération maintenant nous évitera deux blessures le mois prochain. Si tu gardes le programme, je n'ajoute personne à la liste, promis, mais je croise les doigts." }
       ],
       "reponses": [
         { "id": "recuperation", "libelle": "Séance de récupération cette semaine", "effets": { "entrainement": "repos" }, "resultat": "La séance collective de la semaine passe en récupération." },
@@ -72,9 +72,9 @@
       "expediteur": "Le préparateur physique",
       "seuils": { "fatigue": 25, "condition": 62 },
       "formulations": [
-        { "sujet": "Alerte charge : {joueur}", "corps": "{joueur} enchaîne les minutes ({minutes} min cette saison) et sa charge monte à {fatigue}/100. Condition à {condition} %. Le risque de blessure grimpe si on ne fait rien." },
-        { "sujet": "{joueur} est dans le rouge", "corps": "Les GPS ne mentent pas : {joueur} accumule ({fatigue}/100 de charge, {condition} % de condition). Je propose de le reposer ou d'alléger sa semaine." },
-        { "sujet": "Surcharge de {joueur}", "corps": "Coach, {joueur} tire sur la corde. {minutes} minutes jouées, charge à {fatigue}/100. À toi de voir, mais l'ignorer, c'est prendre un risque." }
+        { "sujet": "Alerte charge : {joueur}", "corps": "{joueur} enchaîne : {minutes} minutes cette saison et une charge qui monte à {fatigue}/100. Condition à {condition} %.\n\nLes données GPS montrent une baisse de vitesse sur ses dernières séances, c'est le signal qu'on surveille avant une blessure musculaire.\n\nRepos complet : il râlera mais repartira frais. Semaine allégée : un bon compromis. S'il continue au même rythme, le risque reste élevé et je ne pourrai rien garantir." },
+        { "sujet": "{joueur} est dans le rouge", "corps": "Les GPS ne mentent pas : {joueur} accumule ({fatigue}/100 de charge, {condition} % de condition), avec {matchs} matchs dans les jambes cette saison.\n\nÀ {age} ans, il récupère moins vite qu'avant, même s'il ne le dira jamais.\n\nJe propose de le reposer ou d'alléger sa semaine. Ta décision, coach." },
+        { "sujet": "Surcharge de {joueur}", "corps": "Surcharge détectée sur {joueur} ({poste}) : {fatigue}/100 de charge pour {condition} % de condition.\n\nAvant {prochain}, j'aimerais le préserver. Il veut jouer, évidemment, mais les chiffres sont clairs.\n\nMettre au repos, alléger, ou le laisser continuer : dans le dernier cas, je le garde à l'œil chaque jour." }
       ],
       "reponses": [
         { "id": "reposer", "libelle": "Le mettre au repos", "effets": { "plan": "repos", "satisfaction": -1 }, "resultat": "Repos individuel jusqu'à nouvel ordre ; il aurait aimé continuer." },
@@ -102,9 +102,9 @@
       "expediteur": "{capitaine}, capitaine",
       "intervalle": 13,
       "formulations": [
-        { "sujet": "Des nouvelles du vestiaire", "corps": "Coach, petit mot du capitaine : {humeur}. Moral du groupe : {moral}/100. Si tu as un geste à faire, c'est le moment." },
-        { "sujet": "Le moral des troupes", "corps": "Je te fais remonter ce que je sens : {humeur}. On est à {moral}/100 de moral. Les gars attendent un signe de ta part." },
-        { "sujet": "Le point du capitaine", "corps": "Comme chaque quinzaine : {humeur}. Moral {moral}/100. À toi de voir ce qu'on fait." }
+        { "sujet": "Des nouvelles du vestiaire", "corps": "Coach, petit mot du capitaine : {humeur}. Moral du groupe : {moral}/100.\n\nForme récente {forme}, on est {classement}. Les gars le savent, ils en parlent entre eux à la récup.\n\nSi tu as un geste à faire, c'est le moment. Une causerie remet tout le monde dans le même sens ; une sortie d'équipe coûte un peu au club mais soude le groupe ; sinon, les cadres peuvent gérer." },
+        { "sujet": "Le moral des troupes", "corps": "Je te fais remonter ce que je sens : {humeur}. On est à {moral}/100 de moral.\n\nAvant {prochain}, on a besoin d'être alignés. Les jeunes regardent les anciens, et les anciens te regardent toi.\n\nLes gars attendent un signe de ta part. Je peux aussi m'en occuper avec les cadres si tu préfères rester en retrait." },
+        { "sujet": "Le point du capitaine", "corps": "Comme chaque quinzaine, le point du capitaine : {humeur}. Moral : {moral}/100.\n\nSur le terrain, ça donne {forme} sur les derniers matchs. Je ne cherche pas d'excuses, je te dis ce qui se passe dans le vestiaire.\n\nDis-moi comment tu veux le gérer : causerie, sortie d'équipe, ou confiance aux leaders." }
       ],
       "reponses": [
         { "id": "reunir", "libelle": "Réunir le groupe", "effets": { "moral": 1 }, "resultat": "Une causerie qui remet tout le monde dans le même sens." },
@@ -117,9 +117,9 @@
       "expediteur": "{joueur}",
       "intervalle": 9,
       "formulations": [
-        { "sujet": "Mon temps de jeu", "corps": "Coach, je ne vais pas tourner autour du pot : {minutes} minutes cette saison, ce n'est pas assez. Je bosse, je veux jouer. Qu'est-ce que je dois faire ?" },
-        { "sujet": "Besoin de te parler", "corps": "Je me sens à l'écart du groupe des 23. J'ai {age} ans, je ne veux pas perdre une saison. J'aimerais savoir où j'en suis." },
-        { "sujet": "Frustré", "corps": "Je suis frustré, je ne vais pas te mentir. Je pense mériter ma chance. Est-ce que tu peux me donner une perspective ?" }
+        { "sujet": "Mon temps de jeu", "corps": "Coach, je ne vais pas tourner autour du pot : {minutes} minutes cette saison, ce n'est pas assez. {matchs} feuilles de match, souvent pour finir sur le banc.\n\nJe bosse, je suis à l'heure à chaque séance, et je pense valoir mieux que ça. À {age} ans, je ne peux pas me permettre une saison blanche.\n\nDis-moi franchement ce que je dois faire. Si tu me promets des minutes, je les attends sur les trois prochains matchs ; si tu me dis de patienter, j'ai besoin de savoir pourquoi." },
+        { "sujet": "Besoin de te parler", "corps": "Je me sens à l'écart du groupe des 23. {minutes} minutes depuis la reprise, alors que l'équipe est {classement} et qu'on aurait besoin de tout le monde.\n\nJ'ai {age} ans, je ne veux pas perdre une saison. Je ne demande pas d'être titulaire, juste une vraie chance de montrer ce que je vaux.\n\nJ'aimerais savoir où j'en suis avec toi. Une réponse claire, même dure, je préfère ça au silence." },
+        { "sujet": "Frustré", "corps": "Je suis frustré, je te le dis comme je le pense. {minutes} minutes cette saison pour un {poste} à {note} de note, je ne comprends pas.\n\nLes gars me charrient au vestiaire, et moi je commence à regarder ailleurs. Ce n'est pas une menace, c'est ce que je ressens.\n\nUne promesse de temps de jeu me remettrait dedans, mais si elle n'est pas tenue je le prendrai mal. Si tu me demandes de le montrer à l'entraînement, je l'entendrai, sans sauter de joie." }
       ],
       "reponses": [
         { "id": "promettre", "libelle": "Lui promettre du temps de jeu", "effets": { "promesse": "regulier" }, "resultat": "Promesse suivie sur trois rencontres : tenue, il sera ravi ; rompue, il le prendra mal." },
@@ -197,9 +197,9 @@
       "categorie": "staff", "declencheur": "seance_adjoint", "priorite": 60, "arret": false, "ecran": "Préparation",
       "expediteur": "Gabi, ton adjoint",
       "formulations": [
-        { "sujet": "La séance de la semaine", "corps": "Coach, pour la séance de la semaine on est sur un mode « {mode} ». Condition moyenne du groupe : {condition} %. Je peux durcir ou alléger si tu veux." },
-        { "sujet": "Programme d'entraînement", "corps": "Le plan prévu reste « {mode} ». Les organismes sont à {condition} % en moyenne. Ton avis ?" },
-        { "sujet": "Avant la séance", "corps": "Les gars sont à {condition} % de condition. On garde « {mode} » ou on change ?" }
+        { "sujet": "La séance de la semaine", "corps": "Coach, pour la séance de la semaine on est sur un mode « {mode} ». Condition moyenne du groupe : {condition} %.\n\nAvant {prochain}, j'ai calé le contenu sur la conquête et les lancements. Les gars sont {classement}, ils savent ce qui les attend.\n\nIntensifier : plus de progrès, plus de fatigue. Alléger : on récupère. Sinon, je garde le plan." },
+        { "sujet": "Programme d'entraînement", "corps": "Le plan prévu reste « {mode} ». Les organismes sont à {condition} % en moyenne.\n\nForme récente {forme} : le groupe a besoin de rythme, mais pas au point de se cramer.\n\nTon avis ? Je peux durcir, alléger, ou laisser tel quel." },
+        { "sujet": "Avant la séance", "corps": "Les gars sont à {condition} % avant la séance, mode « {mode} ».\n\nJ'ai l'impression que certains tirent la langue, d'autres en redemandent. À toi de trancher pour le collectif.\n\nDis-moi si on intensifie, si on allège, ou si on garde le plan." }
       ],
       "reponses": [
         { "id": "intense", "libelle": "Intensifier", "effets": { "entrainement": "intense" }, "resultat": "Séance intense : plus de progrès, plus de fatigue." },
@@ -211,9 +211,9 @@
       "categorie": "staff", "declencheur": "analyste", "priorite": 25, "arret": false, "ecran": "Préparation",
       "expediteur": "L'analyste vidéo",
       "formulations": [
-        { "sujet": "Vidéo : {adversaire}", "corps": "J'ai découpé les derniers matchs de {adversaire} (forme : {forme}). Leur point faible : {faiblesse}. On peut orienter la préparation dessus." },
-        { "sujet": "Ce que j'ai vu de {adversaire}", "corps": "Après visionnage, {adversaire} souffre surtout sur {faiblesse}. Je te prépare un montage pour le groupe si tu veux en faire l'axe de la semaine." },
-        { "sujet": "Analyse avant {adversaire}", "corps": "Rapport vidéo prêt : {faiblesse}, c'est là qu'on peut les faire plier. Forme récente de {adversaire} : {forme}." }
+        { "sujet": "Vidéo : {adversaire}", "corps": "J'ai découpé les derniers matchs de {adversaire} (forme : {forme}).\n\nLeur point faible : {faiblesse}. Ça revient sur presque chaque séquence où ils sont mis sous pression.\n\nOn peut orienter la préparation dessus : conquête ou défense, je monte la vidéo en conséquence. Sinon, on reste sur notre plan." },
+        { "sujet": "Ce que j'ai vu de {adversaire}", "corps": "Après visionnage, {adversaire} souffre surtout sur {faiblesse}. Leur forme récente : {forme}.\n\nJe te prépare un montage de dix minutes pour le groupe si tu veux en faire l'axe de la semaine.\n\nTravailler la conquête, la défense, ou garder notre plan : dis-moi." },
+        { "sujet": "Analyse avant {adversaire}", "corps": "Rapport vidéo prêt : {faiblesse}, c'est là qu'on peut les faire plier. Forme récente de {adversaire} : {forme}.\n\nJe te laisse choisir l'axe de la semaine : conquête, défense, ou notre plan." }
       ],
       "reponses": [
         { "id": "conquete", "libelle": "Travailler la conquête", "effets": { "focus": "conquete" }, "resultat": "Préparation collective orientée mêlée et touche." },
@@ -264,8 +264,8 @@
       "categorie": "recrutement", "declencheur": "recruteur", "priorite": 30, "arret": false, "ecran": "fiche",
       "expediteur": "La cellule de recrutement",
       "formulations": [
-        { "sujet": "Mission terminée : {n} profil(s)", "corps": "Rapport bouclé. Mon préféré : {joueur} ({poste}, {age} ans, note {note}). Les autres profils sont dans Recrutement." },
-        { "sujet": "Rapport du recruteur", "corps": "J'ai vu ce qu'il fallait voir. {joueur} ({poste}) sort du lot. Tu trouveras le dossier complet dans Recrutement." }
+        { "sujet": "Mission terminée : {n} profil(s)", "corps": "Rapport bouclé, coach : {n} profil(s) observés sur la mission.\n\nMon préféré : {joueur}, {poste} de {age} ans, note {note}. Il a le volume de jeu et la tête pour s'adapter vite chez nous.\n\nLes autres profils, avec mes notes de match, sont dans Recrutement. Si tu veux avancer, je peux relancer son entourage cette semaine." },
+        { "sujet": "Rapport du recruteur", "corps": "J'ai vu ce qu'il fallait voir. {joueur} ({poste}, {age} ans) sort du lot : note {note}, et une constance rare sur les matchs observés.\n\nIl ne coûtera pas rien, mais pour une équipe {classement}, c'est le genre de joueur qui fait la différence.\n\nLe dossier complet est dans Recrutement, avec {n} profil(s) au total." }
       ],
       "reponses": []
     },
@@ -274,9 +274,9 @@
       "expediteur": "Un agent de joueurs",
       "intervalle": 20,
       "formulations": [
-        { "sujet": "Proposition : {joueur}", "corps": "Bonjour coach. Je représente {joueur}, {poste} de {age} ans. Il cherche un projet ambitieux et votre club l'intéresse. Salaire visé autour de {salaire} € par semaine. Intéressé ?" },
-        { "sujet": "Un {poste} disponible", "corps": "Je me permets de vous écrire : mon joueur {joueur} ({age} ans) serait prêt à rejoindre votre effectif. Je pense qu'il comblerait votre besoin au poste." },
-        { "sujet": "{joueur} pour votre club ?", "corps": "{joueur} ({poste}) est libre de discuter. Profil sérieux, attentes raisonnables ({salaire} €/sem.). Je vous laisse revenir vers moi." }
+        { "sujet": "Proposition : {joueur}", "corps": "Bonjour coach. Je représente {joueur}, {poste} de {age} ans. Il cherche un projet ambitieux et ton club l'intéresse.\n\nNote actuelle {note}, {matchs} matchs cette saison. Salaire visé autour de {salaire} € par semaine, discutable selon la durée.\n\nTu peux ouvrir les discussions tout de suite, demander un rapport à ton recruteur (1 500 €), ou décliner : je comprendrai." },
+        { "sujet": "Un {poste} disponible", "corps": "Je me permets de t'écrire : mon joueur {joueur} ({age} ans, {poste}) serait prêt à rejoindre ton effectif.\n\nIl a vu que ton équipe était {classement} et il pense pouvoir apporter de la profondeur. Prétentions : environ {salaire} € par semaine.\n\nSi tu veux un avis indépendant, ton recruteur peut aller le voir jouer. Sinon, sa fiche est prête." },
+        { "sujet": "{joueur} pour ton club ?", "corps": "Coach, une opportunité : {joueur}, {poste} de {age} ans, note {note}, libre de s'engager.\n\nD'autres clubs sont sur le coup, mais il préfère un projet où il jouera. Salaire visé : {salaire} € par semaine.\n\nTu ouvres les discussions, tu demandes un rapport, ou tu passes ton tour ?" }
       ],
       "reponses": [
         { "id": "negocier", "libelle": "Ouvrir les discussions", "effets": {}, "resultat": "Sa fiche s'ouvre : fais-lui une offre dans Recrutement.", "ouvrir": true },
@@ -298,8 +298,8 @@
       "expediteur": "Le directeur sportif",
       "intervalle": 27,
       "formulations": [
-        { "sujet": "{n} contrat(s) à échéance", "corps": "Pour rappel, {n} contrat(s) arrivent à échéance en fin de saison : {liste}. Il faut anticiper avant que d'autres clubs ne se placent." },
-        { "sujet": "Les échéances de la saison", "corps": "État des lieux des fins de contrat : {liste}. Dis-moi qui on prolonge." }
+        { "sujet": "{n} contrat(s) à échéance", "corps": "Pour rappel, coach : {n} contrat(s) arrivent à échéance en fin de saison : {liste}.\n\nLes agents commencent à appeler. Les meilleurs profils partent en premier, et à ce stade de la saison on négocie encore à prix correct.\n\nPasse par l'onglet Contrats et dis-moi qui on prolonge ; ceux qu'on laisse filer, j'aime autant le savoir tôt pour préparer le recrutement." },
+        { "sujet": "Les échéances de la saison", "corps": "État des lieux des fins de contrat : {liste}.\n\nOn est {classement}, donc on a des arguments pour retenir les cadres. Mais chaque semaine qui passe, un autre club peut se placer.\n\nDis-moi qui on prolonge. Je préparerai les dossiers et je te préviendrai si un joueur fait monter les enchères." }
       ],
       "reponses": []
     },
@@ -307,9 +307,9 @@
       "categorie": "recrutement", "declencheur": "prolongation", "priorite": 26, "arret": true, "ecran": "contrats",
       "expediteur": "L'agent de {joueur}",
       "formulations": [
-        { "sujet": "Avenir de {joueur}", "corps": "Bonjour. Le contrat de {joueur} se termine en fin de saison. Il se plaît au club et souhaite prolonger. Pouvons-nous ouvrir les discussions ?" },
-        { "sujet": "{joueur} veut prolonger", "corps": "{joueur} m'a mandaté : il veut rester. Mais d'autres clubs s'informent. J'aimerais une réponse." },
-        { "sujet": "Prolongation de {joueur}", "corps": "Mon client {joueur} ({poste}) est en fin de contrat. Il est prêt à s'engager à nouveau si le club le souhaite." }
+        { "sujet": "Avenir de {joueur}", "corps": "Bonjour coach. Le contrat de {joueur} se termine en fin de saison. Il se plaît au club, sa famille est installée, et il souhaite prolonger.\n\nSes chiffres parlent pour lui : {matchs} matchs cette saison, une note de {note} à {age} ans. D'autres clubs l'ont appelé, il n'a pas décroché.\n\nSi tu ouvres les discussions, on négocie depuis sa fiche et il le prendra comme une marque de confiance. Reporter le froissera ; refuser, il comprendra qu'il n'a plus d'avenir ici." },
+        { "sujet": "{joueur} veut prolonger", "corps": "{joueur} m'a mandaté : il veut rester. Mais je ne vais pas te mentir, deux clubs se sont manifestés et l'un d'eux est pressé.\n\n{poste}, {age} ans, {matchs} matchs disputés : c'est un profil qui se vend bien, et il le sait.\n\nOuvre la porte maintenant et on trouve un accord raisonnable. Plus on attend, plus le prix monte et plus il doute." },
+        { "sujet": "Prolongation de {joueur}", "corps": "Mon client {joueur} ({poste}, {age} ans) arrive au bout de son contrat. Il a joué {matchs} matchs cette saison avec une note de {note}, et il aimerait continuer l'aventure.\n\nIl m'a dit une chose : il veut sentir que le coach compte sur lui. Le salaire viendra après.\n\nJe te propose qu'on se voie. Si tu préfères attendre, dis-le moi, je le ferai patienter ; un refus, en revanche, il faudra que je le lui annonce." }
       ],
       "reponses": [
         { "id": "ouvrir", "libelle": "Ouvrir les discussions", "effets": { "satisfaction": 3 }, "resultat": "Il est touché ; négocie son contrat depuis sa fiche.", "ouvrir": true },
@@ -321,8 +321,8 @@
       "categorie": "presse", "declencheur": "article", "priorite": 48, "arret": false, "ecran": "Presse",
       "expediteur": "Le quotidien régional",
       "formulations": [
-        { "sujet": "« {titre} »", "corps": "Le journal titre ce matin : « {titre} ». {score} face à {adversaire}. Le correspondant attend une réaction." },
-        { "sujet": "La presse après {adversaire}", "corps": "Article du jour sur notre match ({score} contre {adversaire}) : « {titre} »." }
+        { "sujet": "« {titre} »", "corps": "Le journal titre ce matin : « {titre} ». {score} face à {adversaire}.\n\nLe correspondant détaille le match en une page et termine sur une question : l'équipe, aujourd'hui {classement}, peut-elle tenir ce rythme ?\n\nIl attend une réaction. Saluer le travail du groupe fera plaisir au vestiaire ; ne rien dire, il le notera dans son prochain papier." },
+        { "sujet": "La presse après {adversaire}", "corps": "Article du jour sur notre match : {score} contre {adversaire}, sous le titre « {titre} ».\n\nForme récente : {forme}. Le papier est plutôt juste sur le contenu, un peu dur sur certains individus.\n\nUn mot de toi pour le groupe serait bien reçu en interne. Le silence, le journaliste le remarquera." }
       ],
       "variantes": {
         "victoire": ["Une victoire qui fait du bien", "Le collectif récompensé", "Le club sur sa lancée"],
@@ -339,8 +339,8 @@
       "expediteur": "Le quotidien régional",
       "intervalle": 20,
       "formulations": [
-        { "sujet": "Rumeur : {joueur} courtisé", "corps": "Selon nos informations, plusieurs clubs se renseignent sur {joueur}, en fin de contrat. Le club confirme-t-il ?" },
-        { "sujet": "{joueur} sur le départ ?", "corps": "La rumeur enfle : {joueur} pourrait quitter le club. Les supporters s'inquiètent." }
+        { "sujet": "Rumeur : {joueur} courtisé", "corps": "Coach, ici la rubrique sport. Selon nos informations, au moins deux clubs se renseignent sur {joueur}, {poste} de {age} ans dont le contrat s'achève en fin de saison.\n\nLe dossier pèse lourd : {matchs} matchs disputés cette saison, une note de {note}, et une équipe aujourd'hui {classement} qui peut difficilement se passer d'un titulaire.\n\nOn publie demain. Un démenti rassurera les tribunes mais risque de vexer le joueur, qui aime se savoir désiré ; laisser dire fera vendre du papier et lui fera plaisir." },
+        { "sujet": "{joueur} sur le départ ?", "corps": "La rumeur enfle en ville : {joueur} pourrait quitter le club à l'été. Son agent ne dément pas, et sur le forum des supporters le sujet tourne depuis trois jours.\n\nÀ {age} ans, avec {matchs} matchs et {minutes} minutes au compteur cette saison, c'est un {poste} qui compte. Son contrat arrive à échéance, et ça, tout le monde le sait.\n\nUne phrase de ta part suffirait à fermer le dossier. Si tu ne dis rien, on écrira que la porte est ouverte." }
       ],
       "reponses": [
         { "id": "dementir", "libelle": "Démentir", "effets": { "supporters": 1, "satisfaction": -1 }, "resultat": "Les supporters sont rassurés ; le joueur moins." },
@@ -351,9 +351,9 @@
       "categorie": "presse", "declencheur": "critique", "priorite": 14, "arret": true, "ecran": "Presse",
       "expediteur": "Le quotidien régional",
       "formulations": [
-        { "sujet": "« Le club en crise ? »", "corps": "{defaites} défaites de suite : la presse s'interroge sur tes choix. Les journalistes demandent une conférence de presse." },
-        { "sujet": "La série noire", "corps": "Après {defaites} revers, l'éditorial du jour est sévère. Comment réponds-tu ?" },
-        { "sujet": "Critiques après la série", "corps": "Les observateurs pointent ton système. Une prise de parole est attendue." }
+        { "sujet": "« Le club en crise ? »", "corps": "{defaites} défaites de suite : le quotidien titre sur une possible crise et s'interroge ouvertement sur tes choix.\n\nForme récente : {forme}, l'équipe est {classement}. Les chiffres sont durs, et l'éditorialiste ne s'en prive pas.\n\nLes journalistes demandent une conférence de presse. Un ton calme rassurera les observateurs ; un ton offensif galvanisera le vestiaire mais braquera la presse ; protéger les joueurs, c'est tout prendre sur toi, et la direction le notera." },
+        { "sujet": "La série noire", "corps": "Après {defaites} revers d'affilée, l'éditorial du jour est sévère. On parle de système à bout de souffle et de vestiaire qui doute.\n\nLe classement n'aide pas : {classement}, avec {prochain} en ligne de mire.\n\nComment réponds-tu ? Le silence passera pour de la fébrilité, une prise de parole peut retourner la semaine." },
+        { "sujet": "Critiques après la série", "corps": "Les observateurs pointent ton système après {defaites} défaites. Sur les plateaux, certains réclament déjà du changement.\n\nForme : {forme}. Le prochain match, contre {prochain}, sera regardé à la loupe.\n\nUne prise de parole est attendue. Choisis le ton : c'est lui qu'on retiendra, plus que les mots." }
       ],
       "reponses": [
         { "id": "calme", "libelle": "Conférence : ton calme", "effets": { "medias": 2 }, "resultat": "Ton calme rassure les observateurs." },
@@ -410,8 +410,8 @@
       "expediteur": "Le président",
       "intervalle": 34,
       "formulations": [
-        { "sujet": "Un mot du président", "corps": "Coach, je voulais te dire où on en est : ma confiance est {niveau} ({confiance}/100). {message}" },
-        { "sujet": "Point avec la présidence", "corps": "Le conseil m'a demandé un point. Confiance : {confiance}/100, {niveau}. {message}" }
+        { "sujet": "Un mot du président", "corps": "Coach, je voulais te dire où on en est. Ma confiance est {niveau} : {confiance}/100. {message}\n\nL'équipe est {classement}, forme récente {forme}. Le conseil regarde les deux chiffres, moi je regarde aussi le jeu.\n\nSi tu me demandes du temps, je te le donne, mais en échange d'engagements publics. Un bilan rassurant me suffira pour cette fois. Et si tu réclames des moyens, je peux débloquer 20 000 €, sans garantie que le conseil apprécie le ton." },
+        { "sujet": "Point avec la présidence", "corps": "Le conseil m'a demandé un point sur l'équipe première. Confiance : {confiance}/100, {niveau}. {message}\n\nOn est {classement} et le prochain rendez-vous, c'est {prochain}. Les partenaires posent des questions, je préfère avoir tes réponses avant eux.\n\nDis-moi ce dont tu as besoin : du temps, des moyens, ou simplement que je te laisse travailler." }
       ],
       "variantes": {
         "haute": ["Continue comme ça, le projet avance.", "Les partenaires sont contents, moi aussi."],
@@ -485,7 +485,7 @@
       "expediteur": "La commission de discipline",
       "seuils": { "cartons": 6, "amende": 5000, "frais": 1500, "alourdie": 7500 },
       "formulations": [
-        { "sujet": "Convocation : cumul de cartons", "corps": "Le club totalise {cartons} cartons jaunes cette saison. La commission propose une amende de {amende} €. Vous pouvez l'accepter ou faire appel (frais de dossier {frais} €)." },
+        { "sujet": "Convocation : cumul de cartons", "corps": "Le club totalise {cartons} cartons jaunes cette saison. La commission propose une amende de {amende} €. Tu peux l'accepter ou faire appel (frais de dossier {frais} €)." },
         { "sujet": "Commission de discipline", "corps": "Suite au cumul de {cartons} cartons jaunes, une amende de {amende} € est prononcée contre le club. Un appel reste possible." }
       ],
       "reponses": [
@@ -507,8 +507,8 @@
       "expediteur": "Le directeur du centre de formation",
       "seuils": { "age": 18, "potentiel": 68, "note": 58 },
       "formulations": [
-        { "sujet": "Une pépite chez les Espoirs : {joueur}", "corps": "{joueur} ({poste}, {age} ans) crève l'écran chez les Espoirs : note {note}, potentiel {potentiel}. Je pense qu'il est prêt à goûter au groupe pro." },
-        { "sujet": "{joueur} frappe à la porte", "corps": "Il faut que je te parle de {joueur} : {age} ans, note {note}. Il progresse vite. On l'intègre au groupe pro ou on le laisse mûrir ?" }
+        { "sujet": "Une pépite chez les Espoirs : {joueur}", "corps": "Coach, il faut que tu regardes {joueur}. {poste}, {age} ans, il crève l'écran chez les Espoirs : note {note}, et un potentiel que j'estime à {potentiel}.\n\nIl a la tête bien faite, il arrive le premier à la muscu et il écoute. Les éducateurs du centre sont unanimes.\n\nJe pense qu'il est prêt à goûter au groupe pro : il signerait son premier contrat professionnel. Si tu préfères le laisser mûrir, il reste chez nous une saison de plus, et on le retrouvera plus solide." },
+        { "sujet": "{joueur} frappe à la porte", "corps": "Il faut que je te parle de {joueur} : {age} ans, note {note}, potentiel {potentiel}. Il progresse plus vite que tous les jeunes que j'ai vus passer ces dernières années.\n\nJe le vois bien au contact des pros, mais je ne veux pas le brûler. C'est un {poste} qui a besoin de minutes, pas d'un banc.\n\nOn l'intègre au groupe pro ou on le laisse mûrir au centre ? Les deux se défendent, je te fais confiance." }
       ],
       "reponses": [
         { "id": "integrer", "libelle": "L'intégrer au groupe pro", "effets": { "promouvoir": true }, "resultat": "Il signe son premier contrat professionnel." },
@@ -520,8 +520,8 @@
       "expediteur": "Le directeur du centre de formation",
       "intervalle": 27,
       "formulations": [
-        { "sujet": "Rapport du centre : Crabos et Espoirs", "corps": "Le centre compte {n} jeunes. Note moyenne {note}. Les plus prometteurs : {liste}." },
-        { "sujet": "Les nouvelles du centre", "corps": "{n} jeunes à l'entraînement cette semaine. À suivre de près : {liste}." }
+        { "sujet": "Rapport du centre : Crabos et Espoirs", "corps": "Le point mensuel du centre, coach. On compte {n} jeunes entre Crabos et Espoirs, note moyenne {note}.\n\nLes plus prometteurs : {liste}. Ils s'entraînent bien et commencent à regarder vers le groupe pro.\n\nRien à décider pour l'instant ; je te préviendrai dès qu'un garçon sera prêt à franchir le cap." },
+        { "sujet": "Les nouvelles du centre", "corps": "{n} jeunes à l'entraînement au centre cette semaine, pour une note moyenne de {note}.\n\nÀ suivre de près : {liste}. Les éducateurs sont contents de l'état d'esprit.\n\nSi tu passes au centre, ils seront ravis de te voir. Ça compte, pour un gamin, que le coach des pros connaisse son prénom." }
       ],
       "reponses": []
     },

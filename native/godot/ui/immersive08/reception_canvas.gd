@@ -101,10 +101,10 @@ static func _messages(app: Control) -> Array[Dictionary]:
 		var previous_date := P.fixture_date({"date":notice.fromDate})
 		var new_date := P.fixture_date({"date":notice.toDate})
 		var opponent := str(notice.opponent)
-		var fixture := "Votre rencontre" if opponent.is_empty() else "Votre rencontre contre " + opponent
+		var fixture := "Ta rencontre" if opponent.is_empty() else "Ta rencontre contre " + opponent
 		var text := "%s, initialement prévue le %s, aura lieu le %s." % [fixture, previous_date, new_date]
 		match notice.status:
-			"pending": text += "\n\nVous pouvez recaler les séances à venir sur la nouvelle date ou conserver la préparation prévue."
+			"pending": text += "\n\nTu peux recaler les séances à venir sur la nouvelle date ou conserver la préparation prévue."
 			"recalibrated": text += "\n\nLa préparation a été recalée."
 			"kept": text += "\n\nLa préparation prévue a été conservée."
 			"superseded": text += "\n\nUn courrier plus récent indique la nouvelle date."
@@ -124,7 +124,7 @@ static func _messages(app: Control) -> Array[Dictionary]:
 			var reason := str(scene.get("reason", "")).strip_edges()
 			messages.push_front({
 				"id":"invitation:" + str(scene.id), "subject":str(scene.get("title", "Invitation du club")),
-				"text":reason if not reason.is_empty() else "Le club vous invite à un moment de rencontre.",
+				"text":reason if not reason.is_empty() else "Le club t'invite à un moment de rencontre.",
 				"category":"Club", "route":"Bureau", "position":200000 + index, "scene_invitation":scene
 			})
 	var press: Dictionary = app.model.get("clubLife", {}).get("press", {})
@@ -138,8 +138,8 @@ static func _messages(app: Control) -> Array[Dictionary]:
 		}.get(invitation.kind, "Invitation de presse")
 		var detail := "%s · Saison %s · Semaine %d." % [Press._club(app, context.club), SeasonLabel.label(context.season), int(context.week) + 1]
 		match invitation.status:
-			"pending": detail += "\n\nLes journalistes vous attendent. Publiez vos réponses pour poursuivre."
-			"published": detail += "\n\nVos réponses ont été publiées."
+			"pending": detail += "\n\nLes journalistes t'attendent. Publie tes réponses pour poursuivre."
+			"published": detail += "\n\nTes réponses ont été publiées."
 			"expired": detail += "\n\nCe rendez-vous est passé."
 		messages.push_front({
 			"id":invitation.id, "subject":subject, "text":detail, "category":"Compétitions",
@@ -248,7 +248,7 @@ static func _tasks(app: Control) -> Array:
 	return tasks
 
 static func heading(row: Control, app: Control) -> Label:
-	D.text(row,1,19,"LE COURRIER DE VOTRE CARRIÈRE",17,C.GOLD,600,780)
+	D.text(row,1,19,"LE COURRIER DE TA CARRIÈRE",17,C.GOLD,600,780)
 	var title := D.text(row,-1,57,"Réception.",28,C.IVORY,700,777)
 	var counts := Reading.counts(_messages(app),app.model)
 	D.text(row,1,82,"%d non lus · %d à faire · %s" % [unread(app),counts.todo,P.plural(counts.urgent,"urgence","urgences")],17,C.MUTED,500,730)
@@ -537,7 +537,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 	mark_all.add_theme_font_size_override("font_size",C.px(18))
 	mark_all.disabled = markable.is_empty()
 	mark_all.accessibility_name = "Tout marquer comme lu : %d courrier(s) d'information" % markable.size()
-	mark_all.tooltip_text = ("Marque comme lus les %d courriers d'information affichés. Les courriers qui attendent votre décision restent non lus." % markable.size()) if not markable.is_empty() else "Aucun courrier d'information non lu dans cette vue. Les courriers qui attendent votre décision restent à traiter."
+	mark_all.tooltip_text = ("Marque comme lus les %d courriers d'information affichés. Les courriers qui attendent ta décision restent non lus." % markable.size()) if not markable.is_empty() else "Aucun courrier d'information non lu dans cette vue. Les courriers qui attendent ta décision restent à traiter."
 	var top := _header_rows()[1]
 	D.line(card,Vector2(1,top),Vector2(LIST_WIDTH-1,top))
 	var scroll := ScrollContainer.new()
@@ -553,7 +553,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 	scroll.add_child(rows)
 	if messages.is_empty():
 		D.text(card,26,top+52,"Aucun message dans cette vue.",24,C.MUTED,600,640)
-		D.text(card,26,top+90,"Choisissez un autre dossier ou filtre.",19,C.MUTED,400,640,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(card,26,top+90,"Choisis un autre dossier ou filtre.",19,C.MUTED,400,640,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var list_entries: Array[Dictionary] = []
 	for group: Dictionary in Reading.groups(messages):
 		var linked: Array = group.messages
@@ -585,7 +585,29 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 			rows.add_child(toggle)
 			continue
 		_row(rows, app, state, message)
+	_blocking_notice(rows, app)
 	scroll.set_deferred("scroll_vertical",int(state.scroll))
+
+## Rendez-vous obligatoire du club en cours (conférence de presse d'arrivée…), vide sinon.
+static func _blocking(app: Control) -> Dictionary:
+	return app.contextual_director.blocking_meeting() if is_instance_valid(app.contextual_director) else {}
+
+## Notice en tête de la liste : un rendez-vous obligatoire passe avant tout le reste (#810), avec un accès direct.
+static func _blocking_notice(rows: Control, app: Control) -> void:
+	var blocking := _blocking(app)
+	if blocking.is_empty(): return
+	var notice := C.v(6)
+	notice.name = "ContextualInvitationsBlocked"
+	var why := C.wrap("Rendez-vous obligatoire : termine " + app.contextual_director.meeting_label(blocking) + " avant d'avancer et d'ouvrir les invitations du club.",17,C.GOLD)
+	C.fill(why)
+	notice.add_child(why)
+	if blocking.get("kind") == "press" and not blocking.get("completed", false):
+		var go := C.button("OUVRIR LA CONFÉRENCE DE PRESSE", func(): app._open_press_conference(), true, app.accent)
+		go.name = "ContextualOpenPress"
+		go.add_theme_font_size_override("font_size", C.px(17))
+		notice.add_child(go)
+	rows.add_child(notice)
+	rows.move_child(notice, 0)
 
 ## Une ligne de la liste, façon FM : non lu en évidence, expéditeur et date, objet, état et début du texte.
 static func _row(rows: Control, app: Control, state: Dictionary, message: Dictionary) -> void:
@@ -806,7 +828,9 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 		var scene: Dictionary = message.scene_invitation
 		var open := D.button(card,Rect2(26,top,HALF,_h(46)),"Ouvrir l’invitation",func():
 			if is_instance_valid(app.contextual_director): app.contextual_director.open_invitation(str(scene.id)),true,"arrow",false,app.accent,"InboxOpenSceneInvitation")
-		open.disabled = app.waiting
+		var blocking := _blocking(app)
+		open.disabled = app.waiting or not blocking.is_empty()
+		if not blocking.is_empty(): open.tooltip_text = "Disponible après " + app.contextual_director.meeting_label(blocking) + "."
 		D.button(card,Rect2(26+HALF+18,top,HALF,_h(46)),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
 			mark.archived=not mark.get("archived",false)
 			mark.read=true
