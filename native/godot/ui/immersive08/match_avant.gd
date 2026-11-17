@@ -102,8 +102,14 @@ func setup(owner: Control, on_kickoff: Callable, on_delegate: Callable) -> void:
 	delegate = _bouton("Déléguer le match", on_delegate, false)
 	delegate.name = "MatchOpenDelegation"
 	header.add_child(delegate)
-	kickoff = _bouton("COUP D'ENVOI  →", on_kickoff, true)
+	kickoff = _bouton("COUP D'ENVOI", on_kickoff, true)
 	kickoff.name = "MatchKickoff"
+	kickoff.icon = C.icon_texture("arrow", C.BG)
+	kickoff.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	kickoff.expand_icon = false
+	kickoff.add_theme_constant_override("icon_max_width", M(20))
+	kickoff.add_theme_constant_override("h_separation", M(10))
+	for state in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_focus_color"]: kickoff.add_theme_color_override(state, C.BG)
 	header.add_child(kickoff)
 	content = VBoxContainer.new()
 	content.name = "MatchPrematchBoard"
@@ -142,7 +148,8 @@ func _bouton(caption: String, callback: Callable, primary: bool) -> Button:
 ## Rafraîchit l'écran (reconstruit seulement quand les données montrées changent).
 func refresh(model: Dictionary, play: Button) -> void:
 	var next: Dictionary = model.next if model.get("next") is Dictionary else {}
-	kickoff.text = play.text.to_upper() + "  →"
+	# Même libellé que le bouton du direct (« COUP D'ENVOI », « Jouer à 22 ») ; la flèche est une icône.
+	kickoff.text = play.text
 	kickoff.disabled = play.disabled
 	kickoff.tooltip_text = play.tooltip_text
 	delegate.visible = not next.is_empty()
