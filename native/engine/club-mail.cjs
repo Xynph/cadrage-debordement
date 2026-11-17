@@ -81,6 +81,7 @@ function factory() {
     const form = id => hist.filter(r => r.pair.includes(id)).slice(-5).map(r => { const i = r.pair.indexOf(id); return r.score[i] > r.score[1 - i] ? 'V' : r.score[i] < r.score[1 - i] ? 'D' : 'N'; }).join('-');
     const derby = id => {
       if (id === null || id === undefined) return false;
+      if (typeof isDerby === 'function') return isDerby(s, s.clubs?.[s.club]?.id ?? s.club, s.clubs?.[id]?.id ?? id);
       const a = s.clubs?.[s.club]?.id ?? s.club, b = s.clubs?.[id]?.id ?? id, pair = [a, b].sort((x, y) => x < y ? -1 : x > y ? 1 : 0);
       const t = s.interclubWorld?.pairs?.[pair[0] + ':' + pair[1]]?.tension;
       return Number.isFinite(t) && t >= (D.seuilDerby ?? 60);
