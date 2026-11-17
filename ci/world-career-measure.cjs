@@ -93,14 +93,19 @@ function resultatsParLigue(s){
  for(const c of s.clubs){
   const k=b.clubs[c.id],lg=leagueOf(s,c);if(!k)continue;
   let prime=0,amende=0;try{prime=clubBudget.primeClassement(k.division,k.rang,k.taille);amende=clubBudget.regles({division:k.division,masseAnnuelle:k.masse,recettes:k.recettes+prime}).amende;}catch{}
-  const l=out[lg]??={clubs:0,enPerte:0,exploitationEnPerte:0,resultats:[],exploitations:[],caisses:[],masseSurRecettes:[]};
+  const l=out[lg]??={clubs:0,enPerte:0,exploitationEnPerte:0,resultats:[],exploitations:[],caisses:[],masseSurRecettes:[],detail:{recettes:[],charges:[],masse:[],investissement:[],fraisMatch:[],dividende:[],centre:[],horsBudget:[],reserve:[]}};
+  const jeunes=s.aiRoster?.academies?.find(a=>a.clubId===c.id)?.players?.length??(c.id===s.club?s.development?.academy?.length:null);
+  for(const [cle,v] of [['recettes',k.recettes],['charges',k.charges],['masse',k.masse],['investissement',k.investissement??0],['fraisMatch',k.fraisMatch??0],['dividende',k.dividende??0],['reserve',k.reserve??0],
+   ['horsBudget',c.cash-k.depart-(k.recettes-k.charges)]])l.detail[cle].push(v/1e6);
+  if(Number.isFinite(jeunes))l.detail.centre.push(jeunes);
   const resultat=(c.cash+prime-amende-k.depart)/1e6,exploitation=(k.recettes+prime-k.charges-amende)/1e6;
   l.clubs++;if(resultat<0)l.enPerte++;if(exploitation<0)l.exploitationEnPerte++;
   l.resultats.push(resultat);l.exploitations.push(exploitation);l.caisses.push(c.cash/1e6);if(k.recettes>0)l.masseSurRecettes.push(k.masse/(k.recettes+prime));
  }
  return Object.fromEntries(Object.entries(out).map(([lg,l])=>[lg,{clubs:l.clubs,enPerte:l.enPerte,exploitationEnPerte:l.exploitationEnPerte,
   resultatMedian:round(median(l.resultats)),resultatMin:round(Math.min(...l.resultats)),resultatMax:round(Math.max(...l.resultats)),
-  exploitationMediane:round(median(l.exploitations)),caisseMediane:round(median(l.caisses)),caisseMax:round(Math.max(...l.caisses)),masseSurRecettes:round(median(l.masseSurRecettes))}]));
+  exploitationMediane:round(median(l.exploitations)),caisseMediane:round(median(l.caisses)),caisseMax:round(Math.max(...l.caisses)),masseSurRecettes:round(median(l.masseSurRecettes)),
+  medianes:Object.fromEntries(Object.entries(l.detail).filter(([,v])=>v.length).map(([cle,v])=>[cle,round(median(v))]))}]));
 }
 function observe(label,s,storeText,profileBytes,exportResult,events,elapsedMs){
  const leagues={};
