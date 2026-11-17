@@ -50,8 +50,26 @@ static func spaced(parent: Control, value: String, center_x: float, baseline: fl
 	set_tracking(label, tracking)
 	return label
 
+## Texte animé sans paliers (texte_fluide.gd) : mêmes coordonnées et même ombre que spaced(), mais interlettrage
+## et montée flottants. Pour les textes dont l'interlettrage s'anime ; les textes fixes restent des Label.
+static func fluid(parent: Control, value: String, center_x: float, baseline: float, font_size: int, color: Color, font: Font, tracking: float, width: float = 2400.0) -> Control:
+	var node: Control = preload("res://intro/texte_fluide.gd").new()
+	var pixels := maxi(12, C.px(font_size))
+	node.setup(value, font, pixels, color)
+	node.shadow_offset = Vector2(0, C.px(3))
+	node.shadow_outline = C.px(10)
+	parent.add_child(node)
+	node.size = Vector2(C.px(width), font.get_height(pixels) + C.px(24))
+	node.position = Vector2(C.px(center_x - width / 2.0), C.px(baseline) - font.get_ascent(pixels))
+	node.set_tracking_reference(tracking)
+	return node
+
 ## Interlettrage en pixels de référence ; le texte reste centré (l'espace ajouté après la dernière lettre est compensé).
-static func set_tracking(label: Label, tracking: float) -> void:
+static func set_tracking(control: Control, tracking: float) -> void:
+	if control.has_method("set_tracking_reference"):
+		control.set_tracking_reference(tracking)
+		return
+	var label := control as Label
 	var variation: FontVariation = label.get_meta("variation")
 	var pixels := tracking * C.density
 	variation.spacing_glyph = roundi(pixels)
