@@ -955,3 +955,5 @@ Le jeu d'entrées se refait avec un petit script (non versionné) qui suit `test
   Léo sur la vidéo ; valeurs choisies, non mesurées.
 - Le groupe « Sur pénalité » du tiroir Tactique de Godot n'a été contrôlé que par la commande du
   moteur, pas à l'écran.
+
+- Reprise 16/11 (PR #812) : quand aucun des deux tirages ne tient sous le plafond (50 s, inchangé), le chorégraphe essaie jusqu'à six tirages de secours (`PASSES_SECOURS`) avant d'abandonner. Cas trouvé : graine 7, 11′, touche au milieu puis trois faits jusqu'à l'essai (53 et 57 s aux deux tirages, 49,2 s au sixième). Les temps forts déjà résolus aux deux premiers tirages ne changent pas.

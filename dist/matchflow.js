@@ -1,6 +1,6 @@
 'use strict';
 function flowRules(l){return restartRules(l)&&l.flowVersion===1}
-function initializeMatchFlow(l){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false};if(QUICK_TAP_RULES)l.quickTapVersion=1}
+function initializeMatchFlow(l){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false};if(QUICK_TAP_RULES)l.quickTapVersion=1;if(SET_PIECE_FATIGUE_RULES)l.setPieceFatigueVersion=1}
 function periodBoundary(l){return l.flow.period===1?40:l.flow.fullEnd}
 function atHalftime(l){return flowRules(l)?l.flow.atBreak:l.minute===40&&l.paused&&!l.finished}
 function matchMinute(l){if(!flowRules(l)||l.flow.period===1)return l.minute;return 40+l.minute-l.flow.firstEnd}
@@ -97,6 +97,16 @@ function eventClock(l,event){if(!flowRules(l)||event.period===undefined)return `
 // le jeu (ordres de grandeur : minorité des pénalités, surtout près de la ligne quand on est
 // mené), non mesurés.
 let QUICK_TAP_RULES=1;
+// Fatigue des phases arrêtées (docs/fatigue-phases-arretees-20261116.md). Avant : la fatigue retirait jusqu'à la moitié
+// de la compétence, quel que soit le geste (skill(p,k,true) = n × (0,5 + condition × 0,005)). Un coup de pied au but
+// se prépare sans effort au moment du tir : un buteur d'élite (97) tombait à 54 à condition 11. Désormais, pour les
+// rencontres créées avec `setPieceFatigueVersion` (les matchs commencés avant gardent leurs règles), la perte est
+// multipliée par FATIGUE_ARRETE[compétence] : 0,2 au but (97 → 88 à condition 11, 94 à condition 73), 0,5 en touche
+// (lancer sans effort, mais sauteurs et lifteurs dans l'effort). Réglages de jeu, ordres de grandeur : réussite au but
+// d'élite presque stable sur le match. Jeu courant (plaquage, vitesse, puissance, mêlée, passe, pied d'occupation) inchangé.
+var FATIGUE_ARRETE={goal:.2,lineout:.5};
+let SET_PIECE_FATIGUE_RULES=1;
+function fitArrete(l){return l?.setPieceFatigueVersion===1?'arrete':true}
 function quickTapRules(l){return flowRules(l)&&l.quickTapVersion===1}
 // Le demi de mêlée joue la pénalité ; à défaut, le premier troisième ligne en jeu.
 function quickTapper(l,side){const on=activePlayers(l,side),id=l.sheets[side].on[8];return on.find(p=>p.id===id)||on.find(p=>p.fam===4)||on.find(p=>p.fam===3)||on[0]||null}

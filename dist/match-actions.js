@@ -74,8 +74,8 @@ function staffRolePlayer(l,side,role){
  // Jugement du staff (docs/jugement-staff-20261116.md) : le staff classe les joueurs d'après sa perception.
  if(staffJudgementRules(l)&&(role==='buteur'||role==='secours'))return judgedBest(l,side,on,'goal');
  if(staffJudgementRules(l)&&role==='pied')return judgedBest(l,side,on.filter(p=>p.fam>=4),'kick');
- if(role==='buteur'||role==='secours')return chooseScorer(S.clubs[l.pair[side]],on.map(p=>p.id));
- if(role==='lanceur'){const id=l.sheets[side].on[1];return on.find(p=>p.id===id&&p.fam===1)||[...on.filter(p=>p.fam===1)].sort((a,b)=>skill(b,'lineout',true)-skill(a,'lineout',true))[0]||null}
+ if(role==='buteur'||role==='secours')return chooseScorer(S.clubs[l.pair[side]],on.map(p=>p.id),l);
+ if(role==='lanceur'){const id=l.sheets[side].on[1];return on.find(p=>p.id===id&&p.fam===1)||[...on.filter(p=>p.fam===1)].sort((a,b)=>skill(b,'lineout',fitArrete(l))-skill(a,'lineout',fitArrete(l)))[0]||null}
  if(role==='pied')return [...on.filter(p=>p.fam>=4)].sort((a,b)=>skill(b,'kick',true)-skill(a,'kick',true))[0]||null;
  return null;
 }
@@ -85,7 +85,7 @@ function goalKicker(l,side){return designatedPlayer(l,side,'buteur')||designated
 function lineoutThrowEdge(l,side){
  const thrower=designatedPlayer(l,side,'lanceur');if(!thrower)return 0;
  const ref=staffRolePlayer(l,side,'lanceur');if(!ref||ref.id===thrower.id)return 0;
- const diff=(skill(thrower,'lineout',true)-skill(ref,'lineout',true))*PLAYER_ROLE_COEFS.lancer;
+ const diff=(skill(thrower,'lineout',fitArrete(l))-skill(ref,'lineout',fitArrete(l)))*PLAYER_ROLE_COEFS.lancer;
  return thrower.fam===1?diff:Math.min(0,diff)-PLAYER_ROLE_COEFS.nonTalonneur;
 }
 // Mètres gagnés ou perdus au pied d'occupation par le botteur désigné (0 sans désignation).
