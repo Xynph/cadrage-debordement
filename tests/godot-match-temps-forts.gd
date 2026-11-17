@@ -109,11 +109,24 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(not controls.is_visible_in_tree() or between.get_global_rect().end.y <= controls.get_global_rect().position.y + 1.0, label + " : rien sous la barre de commandes")
 	check(not controls.is_visible_in_tree(), label + " : une seule barre de commandes (celle de l'écran intermédiaire)")
 	check(between.get_global_rect().position.y >= view.clock.get_global_rect().end.y - 1.0, label + " : rien sous le bandeau du score")
-	var feed: Control = between.fil.get_parent()
-	for node: Control in between.find_children("*", "Control", true, false):
-		# Le fil défile : ses lignes anciennes sont atteignables, pas coupées.
-		if not node.is_visible_in_tree() or node == between.arret or between.arret.is_ancestor_of(node) or feed.is_ancestor_of(node): continue
-		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé" + ("" if inside(between.get_global_rect(), node.get_global_rect()) else " (%s hors de %s)" % [str(node.get_global_rect()), str(between.get_global_rect())]))
+	# Notre XV, vue Terrain puis vue Tableau : rien n'est coupé dans l'une ni dans l'autre.
+	var vue_avant: String = between.vue_xv
+	between.find_child("MatchBetweenTabPitch", true, false).pressed.emit()
+	await settle(4)
+	check(between.vue_xv == "terrain" and between.formation.is_visible_in_tree() and not between.xv.is_visible_in_tree() and between.tuile_principale.is_ancestor_of(between.formation), label + " : Notre XV en vue Terrain, tuile principale")
+	var cases: Array = between.formation.cases
+	check(cases.size() == 15 and cases.all(func(b: Button): return b.is_visible_in_tree() and inside(between.formation.get_global_rect(), b.get_global_rect())), label + " : quinze joueurs dans le mini-terrain (%d)" % cases.size())
+	var anneaux: Array = between.formation.anneaux
+	check(anneaux.size() == 15 and anneaux.all(func(a: Control): return a.size.x >= 18.0 and a.size.y >= 18.0), label + " : anneaux d'énergie lisibles (%s)" % (str(anneaux[0].size) if not anneaux.is_empty() else "aucun"))
+	var etiquettes: Array = between.formation.find_children("*", "Label", true, false)
+	check(not etiquettes.is_empty() and etiquettes.all(func(l: Label): return l.get_theme_font_size("font_size") >= 13), label + " : noms et notes du terrain lisibles")
+	_pas_coupe(between, label + " (Terrain)")
+	if proof != "" and OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES") != "": await _capture(label, "terrain")
+	between.find_child("MatchBetweenTabOwn", true, false).pressed.emit()
+	await settle(4)
+	check(between.xv.is_visible_in_tree() and between.xv.columns == 1 and between.tuile_principale.is_ancestor_of(between.xv) and not between.formation.is_visible_in_tree(), label + " : Mon XV en tableau, tuile principale (onglet Tableau)")
+	_pas_coupe(between, label + " (Tableau)")
+	if proof != "" and OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES") != "": await _capture(label, "tableau")
 	check(between.chiffres.get_child_count() >= 3 and between.fil.get_child_count() >= 1, label + " : fil et chiffres remplis")
 	# Mise à l'échelle : texte de 13 points au moins en 720p, doublé en 1440p.
 	var density: float = between.densite_pour(Vector2(size))
@@ -129,11 +142,23 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(not view.find_children("*", "OptionButton", true, false).any(func(o: OptionButton): return o.is_visible_in_tree()), label + " : pas de sélecteur « Horloge … » dans la bande (vitesse dans Paramètres)")
 	check(between.domination.is_visible_in_tree() and between.domination.size.y >= between.px(120), label + " : frise du match visible (%d px)" % int(between.domination.size.y))
 	check(not between.adjoint_cadre.visible or between.adjoint_cadre.is_visible_in_tree(), label + " : carte de Gabi à l'écran")
-	check(between.xv.is_visible_in_tree() and between.xv.columns == 1 and between.tuile_principale.is_ancestor_of(between.xv), label + " : Mon XV en tableau, tuile principale")
 	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, label + " : faits marquants")
-	# Terrain 2D petit (rendu 1) : moins de 45 % de la largeur et de la hauteur de l'écran.
-	check(pitch.size.x <= size.x * 0.45 and pitch.size.y <= size.y * 0.45, label + " : terrain 2D petit (%s)" % str(pitch.size))
-	var column: Control = between.adjoint_cadre.get_parent()
+	# Maquette du 16 novembre 2026 : le terrain 2D en grand au centre, plus large que Notre XV et que le duel.
+	var colonne_xv: Control = between.find_child("MatchBetweenSquadColumn", true, false)
+	var column: Control = between.find_child("MatchBetweenColumn", true, false)
+	check(pitch.size.x >= size.x * 0.38 and pitch.size.y >= size.y * 0.35 and pitch.size.x > colonne_xv.size.x and pitch.size.x > column.size.x, label + " : terrain 2D en grand au centre (%s)" % str(pitch.size))
+	check(colonne_xv.get_global_rect().end.x <= pitch.get_global_rect().position.x and column.get_global_rect().position.x >= pitch.get_global_rect().end.x, label + " : Notre XV à gauche, le duel à droite")
+	# Le bandeau du dernier fait est posé sur le terrain, en haut.
+	var bandeau: Control = between.bandeau
+	check(bandeau.is_visible_in_tree() and between.terrain.get_parent().is_ancestor_of(bandeau) and bandeau.get_global_rect().position.y <= pitch.get_global_rect().position.y + pitch.size.y * 0.2, label + " : dernier fait en bandeau sur le terrain")
+	# Anneaux possession et occupation, tuile « Dans les 22 » seulement avec sa donnée.
+	for anneau: Control in [between.anneau_possession, between.anneau_occupation]:
+		check(anneau.is_visible_in_tree() and anneau.size.x >= between.px(110) and not str(anneau.texte_centre()).is_empty(), label + " : anneau " + str(anneau.name) + " (" + anneau.texte_centre() + ")")
+	var direct_vu: Dictionary = between._dernier[2] if between._dernier.size() == 4 else {}
+	check(between.zone22.visible == (direct_vu.get("zone22") is Dictionary), label + " : tuile « Dans les 22 » montrée seulement avec sa donnée")
+	check(between.carte_changement.is_visible_in_tree() and between.carte_changement.get_global_rect().position.y >= between.tuile_principale.get_global_rect().end.y - 1.0 and between.find_child("MatchBetweenSwapAction", true, false).is_visible_in_tree(), label + " : carte Changement sous Notre XV")
+	# Gabi en largeur, en bas.
+	check(not between.adjoint_cadre.visible or between.adjoint_cadre.size.x >= between.size.x * 0.9 and between.adjoint_cadre.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : carte de Gabi en largeur, en bas")
 	var used := 0.0
 	for panel: Control in column.get_children():
 		if panel.visible: used += panel.size.y
@@ -141,6 +166,26 @@ func layout(view: Control, size: Vector2i) -> void:
 	for row: Control in between.chiffres.get_children():
 		for cell: Label in row.find_children("*", "Label", true, false):
 			check(cell.get_minimum_size().x <= cell.size.x + 1.0 or cell.clip_text, label + " : chiffre entier : " + cell.text)
+	# Vue rendue telle que le joueur l'avait.
+	between.find_child({"terrain": "MatchBetweenTabPitch", "tableau": "MatchBetweenTabOwn", "adverse": "MatchBetweenTabOpponent"}[vue_avant], true, false).pressed.emit()
+	await settle(2)
+
+## Rien de l'écran intermédiaire ne déborde de son cadre (le fil défile : ses lignes anciennes sont
+## atteignables, pas coupées).
+func _pas_coupe(between: Control, label: String) -> void:
+	var feed: Control = between.fil.get_parent()
+	for node: Control in between.find_children("*", "Control", true, false):
+		if not node.is_visible_in_tree() or node == between.arret or between.arret.is_ancestor_of(node) or feed.is_ancestor_of(node): continue
+		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé" + ("" if inside(between.get_global_rect(), node.get_global_rect()) else " (%s hors de %s)" % [str(node.get_global_rect()), str(between.get_global_rect())]))
+
+## Capture de l'écran (CD_MATCH_TEMPS_FORTS_CAPTURES : dossier ; rendu fenêtré seulement).
+func _capture(label: String, vue: String) -> void:
+	if DisplayServer.get_name() == "headless": return
+	await RenderingServer.frame_post_draw
+	var image := root.get_texture().get_image()
+	if image == null: return
+	var chemin := OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES").path_join("ecran-2d-lot1-%s-%s-%s.png" % [mode, label.replace("×", "x"), vue])
+	print("CAPTURE ", chemin, " ", image.get_size(), " ", image.save_png(chemin))
 
 func run() -> void:
 	root.size = Vector2i(1280, 720)
@@ -1020,13 +1065,81 @@ func terrain2d(view: Control) -> void:
 	check(minutes.size() >= 1 and between.domination.minutes == minutes, "Domination : la courbe du moteur, minute par minute (%d minutes)" % minutes.size())
 	check(minutes.all(func(v: Variant): return absf(float(v)) <= 100.0), "Domination bornée")
 	var rangs: Array = direct.get("tableau", [])
-	check(rangs.size() >= 10 and between.chiffres.get_child_count() == between.STATS.filter(func(c: String): return rangs.any(func(r: Dictionary): return str(r.cle) == c)).size() and between.chiffres.get_child_count() >= 10, "Statistiques : %d comparées sur %d" % [between.chiffres.get_child_count(), rangs.size()])
+	# Le duel : les dix chiffres comparés (possession et occupation sont dans leurs anneaux).
+	check(rangs.size() >= 10 and between.chiffres.get_child_count() == between.STATS.filter(func(c: String): return rangs.any(func(r: Dictionary): return str(r.cle) == c)).size() and between.chiffres.get_child_count() >= 8, "Statistiques : %d comparées sur %d" % [between.chiffres.get_child_count(), rangs.size()])
+	check(not between.STATS.has("possession") and not between.STATS.has("occupation"), "Possession et occupation hors du duel")
 	for ligne: Node in between.chiffres.get_children():
 		# Libellé court à l'écran, libellé du moteur en infobulle.
 		var titre := (ligne.get_child(0) as Label).tooltip_text
 		var rang: Array = rangs.filter(func(r: Dictionary): return str(r.label) == titre)
+		check(rang.size() == 1 and not str(rang[0].cle) in ["possession", "occupation"], "Chiffre « %s » du duel (ni possession ni occupation)" % titre)
 		check(rang.size() == 1 and (ligne.get_child(1) as Label).text.begins_with(str(int(rang[0].valeurs[0]))) and (ligne.get_child(3) as Label).text.begins_with(str(int(rang[0].valeurs[1]))) or rang.size() == 1 and rang[0].get("vide", false), "Chiffre « %s » repris du moteur" % titre)
+	# Anneaux : les parts du moteur, la nôtre au centre (« — » si la part est vide ou l'échantillon court).
+	var camp_anneau: int = int(direct.camp) if int(direct.get("camp", -1)) in [0, 1] else 0
+	for paire: Array in [[between.anneau_possession, "possession"], [between.anneau_occupation, "occupation"]]:
+		var rang_anneau: Array = rangs.filter(func(r: Dictionary): return str(r.cle) == paire[1])
+		var anneau: Control = paire[0]
+		var vide: bool = rang_anneau.is_empty() or rang_anneau[0].get("vide", false) or between.est_court(direct)
+		var attendu := "—" if vide else "%d%%" % roundi(float(rang_anneau[0].valeurs[camp_anneau]))
+		check(rang_anneau.size() == 1 and (vide or anneau.valeurs == rang_anneau[0].valeurs) and anneau.vide == vide and anneau.texte_centre() == attendu and anneau.couleurs == between.terrain.couleurs, "Anneau %s : valeurs du moteur (%s, attendu %s)" % [paire[1], anneau.texte_centre(), attendu])
 	var lineup: Array = between._passe(app.model, app.model.live, direct).lineup
+	# Vue Terrain par défaut : les quinze du moteur à leur poste, anneau d'énergie, nom court et note.
+	check(between.vue_xv == "terrain" and between.formation.is_visible_in_tree() and not between.xv.is_visible_in_tree(), "Notre XV s'ouvre sur la vue Terrain")
+	var cases: Array = between.formation.cases
+	var conformes_terrain := 0
+	for poste in mini(lineup.size(), cases.size()):
+		var joueur_t: Variant = lineup[poste]
+		if not joueur_t is Dictionary: continue
+		var textes_t: Array = cases[poste].find_children("*", "Label", true, false).map(func(l: Label): return l.text)
+		var anneau_t: Control = between.formation.anneaux[poste]
+		var note_t := float(direct.get("notes", {}).get(str(joueur_t.id), {}).get("note", 6.5))
+		if between._nom_court(str(joueur_t.name)) in textes_t and "%.1f" % note_t in textes_t and is_equal_approx(float(anneau_t.valeur), float(joueur_t.condition)) and anneau_t.numero == str(poste + 1) and str(joueur_t.name) in cases[poste].tooltip_text: conformes_terrain += 1
+	check(cases.size() == 15 and conformes_terrain == lineup.size(), "Vue Terrain : anneau, nom, note et infobulle du moteur pour chaque joueur (%d/%d)" % [conformes_terrain, lineup.size()])
+	var choisis: Array = []
+	var noter := func(poste: int): choisis.append(poste)
+	between.joueur_choisi.connect(noter)
+	(cases[3] as Button).pressed.emit()
+	between.joueur_choisi.disconnect(noter)
+	check(choisis == [3] and view.drawer.visible and view.drawer_tab == "Banc" and view.selected_slot == 3, "Vue Terrain : un clic sur le 4 ouvre le banc sur lui (%s, poste %d)" % [str(choisis), view.selected_slot])
+	if view.drawer.visible: view._fermer_tiroir()
+	await settle(2)
+	# Carte Changement : blessé d'abord, sinon l'énergie la plus basse, sous le seuil de fatigue ; les sanctionnés à part.
+	var sanctionnes := {}
+	for carton: Variant in direct.get("cartons", []):
+		if carton is Dictionary: sanctionnes[str(carton.get("id", ""))] = true
+	var attendu_changement := -1
+	for poste in lineup.size():
+		var j: Variant = lineup[poste]
+		if not j is Dictionary or sanctionnes.has(str(j.id)): continue
+		if attendu_changement < 0: attendu_changement = poste
+		else:
+			var a: Dictionary = lineup[attendu_changement]
+			var blesse := int(j.get("injury", 0)) > 0
+			if blesse != (int(a.get("injury", 0)) > 0):
+				if blesse: attendu_changement = poste
+			elif float(j.condition) < float(a.condition): attendu_changement = poste
+	if attendu_changement >= 0 and int(lineup[attendu_changement].get("injury", 0)) <= 0 and float(lineup[attendu_changement].condition) >= between.FATIGUE: attendu_changement = -1
+	var action_changement: Button = between.find_child("MatchBetweenSwapAction", true, false)
+	check(between.changement_poste == attendu_changement and action_changement != null and action_changement.text == ("Préparer le changement" if attendu_changement >= 0 else "Ouvrir le banc"), "Carte Changement : poste %d attendu %d (%s)" % [between.changement_poste, attendu_changement, action_changement.text if action_changement != null else "sans bouton"])
+	# Tuile « Dans les 22 » : masquée sans `direct.zone22`, remplie avec une donnée injectée.
+	check(between.zone22.visible == (direct.get("zone22") is Dictionary), "Tuile « Dans les 22 » masquée sans sa donnée")
+	var avec_22: Dictionary = direct.duplicate()
+	avec_22["zone22"] = {"entrees": [3, 1], "points": [10, 0], "secondes": [200, 65]}
+	between.update_frame(app.model, app.model.live, avec_22, func(_c: Dictionary): pass)
+	await settle(2)
+	var textes_22: Array = between.zone22.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
+	var carres := func(cote: int) -> int: return between.zone22.find_child("MatchBetweenZone22Entries%d" % cote, true, false).get_children().filter(func(c: Node): return c.get("teinte") != null).size()
+	check(between.zone22.is_visible_in_tree() and carres.call(0) == 3 and carres.call(1) == 1, "Dans les 22 : un carré par entrée (%d, %d)" % [carres.call(0), carres.call(1)])
+	check(textes_22.has("10 pts") and textes_22.has("0 pt") and textes_22.any(func(t: String): return t.contains("3,3 pt/entrée") and t.contains("3:20")) and textes_22.any(func(t: String): return t.contains("0,0 pt/entrée") and t.contains("1:05")), "Dans les 22 : points, points par entrée, temps passé " + str(textes_22))
+	var carre0: Control = between.zone22.find_child("MatchBetweenZone22Entries0", true, false).get_child(0)
+	check(carre0.teinte == between.terrain.couleurs[0], "Dans les 22 : carrés aux couleurs du club")
+	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
+	await settle(2)
+	check(between.zone22.visible == (direct.get("zone22") is Dictionary), "Tuile « Dans les 22 » de nouveau masquée sans sa donnée")
+	# Onglet Tableau : le tableau complet, contrôlé ligne par ligne.
+	between.find_child("MatchBetweenTabOwn", true, false).pressed.emit()
+	await settle(2)
+	check(between.vue_xv == "tableau" and between.xv.is_visible_in_tree() and not between.formation.is_visible_in_tree(), "Onglet Tableau : Mon XV en tableau")
 	var lignes_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
 	check(lignes_xv.size() == lineup.size() and lineup.size() == 15, "Mon XV : quinze joueurs (%d)" % lignes_xv.size())
 	var conformes := 0
@@ -1048,6 +1161,19 @@ func terrain2d(view: Control) -> void:
 	between.update_frame(copie, copie.live, direct_complet, func(_c: Dictionary): pass)
 	var adjoint_textes: Array = between.adjoint.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
 	check(adjoint_textes.any(func(t: String): return t.begins_with("N° 7") and "31" in t), "L'adjoint signale le joueur à bout : " + str(adjoint_textes.slice(0, 3)))
+	# Carte Changement : le 7 à bout (31 %) est proposé, sauf blessé ou sanctionné prioritaire ; le bouton ouvre le banc sur lui.
+	var blesses: Array = copie.live.lineup.filter(func(j: Variant): return j is Dictionary and int(j.get("injury", 0)) > 0)
+	if blesses.is_empty() and not sanctionnes.has(str(copie.live.lineup[6].id)):
+		var choisis_copie: Array = []
+		var noter_copie := func(poste: int): choisis_copie.append(poste)
+		between.joueur_choisi.connect(noter_copie)
+		var action_copie: Button = between.find_child("MatchBetweenSwapAction", true, false)
+		action_copie.pressed.emit()
+		between.joueur_choisi.disconnect(noter_copie)
+		var energie_copie: Label = between.find_child("MatchBetweenSwapEnergyText", true, false)
+		check(between.changement_poste == 6 and action_copie.text == "Préparer le changement" and energie_copie != null and energie_copie.text.begins_with("Énergie 31 %") and choisis_copie == [6], "Carte Changement : le 7 à bout, « Préparer le changement » ouvre le banc sur lui (%s)" % str(choisis_copie))
+		if view.drawer.visible: view._fermer_tiroir()
+		await settle(2)
 	var phrases := {}
 	var redites := 0
 	for t: String in adjoint_textes:
@@ -1114,6 +1240,7 @@ func terrain2d(view: Control) -> void:
 	check(menu != null and menu.get_popup().get_item_text(0) == "Statistiques", "Tous les chiffres du moteur restent dans le tiroir Statistiques (menu Plus)")
 	await layout(view, Vector2i(1280, 720))
 	await layout(view, Vector2i(1920, 1080))
+	await layout(view, Vector2i(2560, 1440))
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	print("TERRAIN2D ", JSON.stringify({"faits": ecarts.faits, "deplacement": deplacement, "ballons": ballons.size(), "minutes": minutes.size()}))

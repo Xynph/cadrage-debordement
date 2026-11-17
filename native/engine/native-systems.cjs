@@ -19,7 +19,9 @@ function bootstrap(){
   const domains={${definitions}},owners=new Map(),memo=new Map(),memoStats={};
   // Domaines mémorisables : projections coûteuses relues sans changement entre deux décisions (marché entre clubs,
   // carrière du manager, staff…), sans état transitoire ni dépendance au déroulé d'une commande.
-  const MEMO_DOMAINS=new Set(['interclubMarket','managerCareer','regenScouting','clubSupport','staffCareer','coachNotebook','youthDevelopment','staffMentoring','clubWorld','performanceAnalysis','staffEmployment']);
+  const MEMO_DOMAINS=new Set(['interclubMarket','managerCareer','regenScouting','clubSupport','staffCareer','coachNotebook','youthDevelopment','staffMentoring','clubWorld','performanceAnalysis','staffEmployment','press']);
+  // Réglage hors de S dont dépend une projection mémorisée (d.memoKey, ex. presse obligatoire) : un autre réglage périme la mémoire.
+  const extraOf=d=>typeof d.memoKey==='function'?String(d.memoKey()):'';
   ${Object.entries(domains).map(([key,d])=>d.commands.map(c=>`owners.set(${JSON.stringify(c)},domains[${JSON.stringify(key)}]);`).join('')).join('')}
   return {
    domain(id){return domains[id]||null;},
@@ -46,7 +48,7 @@ function bootstrap(){
      if(!MEMO_DOMAINS.has(key)){text=JSON.stringify(d.project());}
      else{
       const hit=memo.get(key);
-      const stale=hit?hit.all?['*']:hit.deps.filter(([k,t])=>sections.get(k)!==t).map(([k])=>k):null;
+      const extra=extraOf(d),stale=hit?hit.all||hit.extra!==extra?['*']:hit.deps.filter(([k,t])=>sections.get(k)!==t).map(([k])=>k):null;
       memoStats[key]=stale===null?'calcul':stale.length?'périmé:'+stale.join('+'):'repris';
       if(hit&&stale.length===0){
        text=hit.text;
@@ -60,7 +62,7 @@ function bootstrap(){
        else traced=new Proxy(real,{get(t,k,r){if(typeof k==='string')read.add(k);return Reflect.get(t,k,t);},has(t,k){if(typeof k==='string')read.add(k);return Reflect.has(t,k);},ownKeys(t){all=true;return Reflect.ownKeys(t);},getOwnPropertyDescriptor(t,k){if(typeof k==='string')read.add(k);return Reflect.getOwnPropertyDescriptor(t,k);}});
        S=traced;
        try{text=JSON.stringify(d.project());}finally{S=real;done?.();}
-       memo.set(key,{text,all:typeof all==='function'?all():all,deps:[...read].map(k=>[k,sections.get(k)])});
+       memo.set(key,{text,extra,all:typeof all==='function'?all():all,deps:[...read].map(k=>[k,sections.get(k)])});
       }
      }
      if(text!==undefined)parts.push([key,text]);
@@ -92,6 +94,8 @@ function bootstrap(){
  const CDAcademyFollowUp=nativeSystems.domain('academyFollowUp');
  // Championnats actifs : le monde appelle CDLeagueDetail.quickFixture/simulate pour les résultats rapides.
  const CDLeagueDetail=nativeSystems.domain('leagueDetail');
+ // Multiplex de la journée (match-multiplex.cjs) : la validation du monde garde le déroulé montré.
+ const CDMultiplex=nativeSystems.domain('multiplex');
  const CDNativeAcademyGroups=(${academyGroups.toString()})();
  const nativeBaseValidator=validateCareer;
  validateCareer=state=>{const result=nativeBaseValidator(state);nativeSystems.validate(state);if(state)CDNativeAcademyGroups.validate(state);return result;};
@@ -123,7 +127,9 @@ domains.clubSheet=require('./club-sheet.cjs');
 domains.pressPromises=require('./press-promises.cjs');
 // Courrier du club avec réponses (native/engine/club-mail.cjs) ; ses données sont injectées dans la VM par le prélude.
 domains.clubMail=require('./club-mail.cjs');
-const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands]);
+// Multiplex des autres matchs de la journée et classement en direct (native/engine/match-multiplex.cjs).
+domains.multiplex=require('./match-multiplex.cjs');
+const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files])]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};

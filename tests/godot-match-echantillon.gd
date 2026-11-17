@@ -49,8 +49,9 @@ func run() -> void:
 	check(between.echantillon_court, "2e minute : échantillon court")
 	check(is_equal_approx(between.chiffres.modulate.a, Between.ATTENUE), "2e minute : chiffres atténués")
 	check(between.precision_chiffres.text.contains("trop tôt") and between.precision_chiffres.text.contains("10′"), "2e minute : le titre dit quand conclure (" + between.precision_chiffres.text + ")")
-	var possession: Label = between.chiffres.get_child(0).get_child(1)
-	check(possession.text == "—", "2e minute : possession masquée (" + possession.text + ")")
+	# Possession et occupation : dans leurs anneaux (maquette du 16/11/2026), plus dans le duel.
+	check(between.anneau_possession.texte_centre() == "—" and between.anneau_possession.vide and between.anneau_occupation.texte_centre() == "—", "2e minute : possession et occupation masquées (" + between.anneau_possession.texte_centre() + ")")
+	check((between.chiffres.get_child(0).get_child(0) as Label).tooltip_text == "metres" and between.chiffres.get_child_count() == 2, "Le duel commence aux mètres : ni possession ni occupation")
 	var gabi := texte_gabi(between)
 	check(not gabi.contains("%") and not gabi.contains("trop") and gabi.contains("se met en place"), "2e minute : Gabi posé, sans pourcentage (" + gabi + ")")
 	# 12e minute : chiffres pleins, Gabi lit l'occupation (30 % pour son camp, écart net).
@@ -59,8 +60,9 @@ func run() -> void:
 	for i in 2: await process_frame
 	check(not between.echantillon_court and between.chiffres.modulate.a == 1.0, "12e minute : chiffres pleins")
 	check(between.precision_chiffres.text == "comparées", "12e minute : titre ordinaire")
-	possession = between.chiffres.get_child(0).get_child(1)
-	check(possession.text == "57%", "12e minute : possession affichée (" + possession.text + ")")
+	# Notre camp (1) au centre de l'anneau ; les deux parts du moteur dans l'arc et l'infobulle.
+	check(between.anneau_possession.texte_centre() == "43%" and between.anneau_possession.valeurs == [57, 43] and between.anneau_possession.tooltip_text.contains("57 %"), "12e minute : possession affichée (" + between.anneau_possession.texte_centre() + ", " + between.anneau_possession.tooltip_text + ")")
+	check(between.anneau_occupation.texte_centre() == "30%" and between.anneau_occupation.valeurs == [70, 30], "12e minute : occupation affichée (" + between.anneau_occupation.texte_centre() + ")")
 	gabi = texte_gabi(between)
 	check(gabi.contains("30 %") and gabi.contains("dégagement") and not gabi.contains("trop dans notre camp"), "12e minute : lecture de l'occupation, sans alarme (" + gabi + ")")
 	# Projection d'avant le lot 5 (sans `echantillon`) : rien n'est atténué.

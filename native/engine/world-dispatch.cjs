@@ -29,6 +29,6 @@ module.exports=function worldDispatcher(editions,makeCareer){
   nextOpening:onState('nextOpening'),clubReleaseOn:onState('clubReleaseOn'),
   enableDaily:s=>{if(edition(s))current(s).enableDaily(s);},
   dailyStatus:onState('dailyStatus'),advanceDay:onState('advanceDay'),
-  label:onState('label'),validate:onState('validate'),finishWeek:()=>current(S).finishWeek(),
+  label:onState('label'),validate:onState('validate'),multiplex:onState('multiplex'),finishWeek:()=>current(S).finishWeek(),
  });
 };

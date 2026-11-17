@@ -121,7 +121,17 @@ function fabrique(){
     const r=tirageDe(base,'forme',k);j._forme=Math.exp(.24*gauss(r));}
    return j;
   };
+  // Présents d'un camp mémorisés tant que la composition (même tableau `on`), les exclusions et la minute ne changent
+  // pas : les listes ne sont que lues (jamais modifiées), les fiches sont créées au premier relevé comme avant.
+  let versionExclus=0;const memoPresents=[null,null];
   const presents=(camp,minute)=>{
+   const m=memoPresents[camp],src=on[camp];
+   if(m&&m.src===src&&m.minute===minute&&m.version===versionExclus&&src)return m.liste;
+   const liste=lister(camp,minute);
+   if(camp===0||camp===1)memoPresents[camp]={src,minute,version:versionExclus,liste};
+   return liste;
+  };
+  const lister=(camp,minute)=>{
    const liste=[];
    (on[camp]||[]).forEach((id,poste)=>{if(id==null||poste>14)return;const retour=exclus.get(String(id));if(retour!==undefined&&minute<retour)return;liste.push({id:String(id),poste,j:fiche(id,camp,poste)})});
    return liste;
@@ -221,7 +231,9 @@ function fabrique(){
     minute.courses[team]++;
     const def=presents(1-team,min);
     if(acteur){acteur.j.courses++;acteur.j.metres+=gain;dernierPorteur[team]=acteur}
-    const demi=presents(team,min).find(c=>c.poste===8);if(demi&&acteur&&demi!==acteur&&r()<REGLAGES.passeDuDemi)demi.j.passes++;
+    // Avant la mémoire des présents, `demi` et `acteur` venaient toujours de deux relevés distincts (objets différents,
+    // même pour le même joueur) : la comparaison était toujours vraie ; elle est gardée telle quelle (mêmes feuilles).
+    const demi=presents(team,min).find(c=>c.poste===8);if(demi&&acteur&&r()<REGLAGES.passeDuDemi)demi.j.passes++;
     if(gain>=22){
      if(acteur){acteur.j.franchissements++;acteur.j.defenseursBattus++}
      const rate=def.length?choisir(def,c=>POIDS.plaquages[c.poste]*(c.poste>=10?2:1),r):null;if(rate)rate.j.plaquagesManques++;
@@ -276,7 +288,7 @@ function fabrique(){
    if(kind==='card'&&s.incident===true&&team!==null&&acteur){
     const rouge=s.card==='red'||s.cause==='red';
     if(rouge)acteur.j.cartonsRouges++;else acteur.j.cartonsJaunes++;
-    exclus.set(acteur.id,rouge?Infinity:min+10);
+    exclus.set(acteur.id,rouge?Infinity:min+10);versionExclus++;
     // Le carton sanctionne la dernière pénalité de son équipe : elle revient au joueur sanctionné.
     if(dernierePenalite&&dernierePenalite.camp===team&&min-dernierePenalite.minute<=1&&dernierePenalite.j!==acteur.j){dernierePenalite.j.penalitesConcedees--;acteur.j.penalitesConcedees++;dernierePenalite.j=acteur.j}
     continue;

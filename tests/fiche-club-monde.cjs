@@ -75,7 +75,9 @@ test('Fiche club en carrière Monde : feuilles réelles, XV type recalculé, lec
   try {
     let model = M.creer(jeu, 0);
     // Feuilles réelles capturées au moment où le moteur les enregistre (lecture seule).
-    jeu.bridge.vm.run(`globalThis.__feuilles=[];(()=>{const o=recordDevelopmentMatch,w=function(l){if(l&&!l.developmentRecorded)for(let s=0;s<2;s++)__feuilles.push([l.pair[s],(l.sheets[s].initial||[]).map(x=>x==null?null:String(x))]);return o.apply(this,arguments);};Object.assign(w,o);recordDevelopmentMatch=w;})();`);
+    // Le multiplex joue les autres rencontres de la journée à l'avance sur une copie de la carrière : ces feuilles-là
+    // ne sont pas enregistrées dans la vraie carrière et ne comptent pas (domaine « multiplex », preparing()).
+    jeu.bridge.vm.run(`globalThis.__feuilles=[];(()=>{const o=recordDevelopmentMatch,w=function(l){const mx=typeof nativeSystems!=='undefined'?nativeSystems.domain('multiplex'):null;if(l&&!l.developmentRecorded&&!(mx&&typeof mx.preparing==='function'&&mx.preparing()))for(let s=0;s<2;s++)__feuilles.push([l.pair[s],(l.sheets[s].initial||[]).map(x=>x==null?null:String(x))]);return o.apply(this,arguments);};Object.assign(w,o);recordDevelopmentMatch=w;})();`);
     model = M.jouer(jeu, model, 3);
     const feuilles = JSON.parse(jeu.bridge.vm.run('JSON.stringify(__feuilles)'));
     assert.ok(feuilles.length >= 100, 'feuilles capturées : ' + feuilles.length);

@@ -270,10 +270,18 @@ function createBridge(options={}){
    }
    function nativeSaveText(state){
     const texts=new Map(),parts=[];
-    for(const key of Object.keys(state)){const text=JSON.stringify(state[key]);if(text===undefined)continue;texts.set(key,text);parts.push(JSON.stringify(key)+':'+text);}
+    let clubs=null;
+    for(const key of Object.keys(state)){
+     let text;
+     /* Clubs : texte assemblé club par club (identique à JSON.stringify d'un tableau sans toJSON), gardé pour la
+        projection (state-versions.cjs, clubs~others) qui n'a alors plus à resérialiser les autres clubs. */
+     const v=state[key];
+     if(key==='clubs'&&Array.isArray(v)&&Object.getPrototypeOf(v)===Array.prototype&&typeof v.toJSON!=='function'){clubs=new Array(v.length);for(let i=0;i<v.length;i++)clubs[i]=JSON.stringify(v[i])??'null';text='['+clubs.join(',')+']';}
+     else text=JSON.stringify(v);
+     if(text===undefined)continue;texts.set(key,text);parts.push(JSON.stringify(key)+':'+text);}
     const whole='{'+parts.join(',')+'}';
     if(nativeVerifySections&&whole!==JSON.stringify(state))throw Error('Sauvegarde par sections différente du texte complet.');
-    nativeSaveSections={state,texts,keys:[...texts.keys()],whole};return whole;
+    nativeSaveSections={state,texts,keys:[...texts.keys()],whole,clubs};return whole;
    }
    function nativeSafeTreeSections(root){
     if(!root||root!==nativeSafeTreeArmed||nativeSaveSections?.state!==root)return null;
@@ -317,6 +325,8 @@ function createBridge(options={}){
   // Chorégraphe des temps forts (présentation seule, éteint par défaut) : CD_MATCH_CHOREGRAPHE=1.
   const matchChoreography=options.matchChoreography??process.env.CD_MATCH_CHOREGRAPHE==='1';
   const matchDirectReader={profils:ids=>JSON.parse(run('JSON.stringify(nativeMatchDirect.profils('+JSON.stringify(ids)+'))')),scenes:indices=>JSON.parse(run('JSON.stringify(nativeMatchDirect.scenes('+JSON.stringify(indices)+'))')),transformation:(index,made)=>JSON.parse(run('JSON.stringify(nativeMatchDirect.transformation('+Number(index)+','+(made===true)+'))')),etat:()=>JSON.parse(run('JSON.stringify(nativeMatchDirect.etat())')),
+   // Multiplex de la journée et classement en direct à la minute montrée (match-multiplex.cjs).
+   journee:(minute,fini,score,essais)=>JSON.parse(run('JSON.stringify(nativeSystems.domain("multiplex").journee('+JSON.stringify([minute,fini,score,essais]).slice(1,-1)+'))')),
    // Attributs des joueurs de la rencontre (feuille de statistiques, match-stats.cjs).
    attributs:()=>JSON.parse(run('JSON.stringify((()=>{const l=S.live,o={};if(!l)return o;l.sheets.forEach((sh,s)=>{for(const id of new Set([...sh.on,...(sh.bench||[]),...(sh.used||[])])){if(id==null)continue;const p=matchPlayer(l,s,id);if(p&&p.skills)o[id]={skills:p.skills}}});return o})())'))};
   try{run("if(loadSaveFailure)throw Error(loadSaveFailure);if(S){validateCareer(S);if(S.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(!nativeLegacyModes&&CDWorldEditions.forState(S)?.mode!=='world-champ')throw Error(nativeLegacyCareerMessage);if(normalizeAcademyPotential(S))validateCareer(S);nativeProfessionalDepth.fill(S);nativeAttributeStore.complete(S);if(S.live&&!S.live.finished)S.live.paused=true;if(S.national?.role?.club!==false)nativeSystems.domain('press').observeInvitation();}");validateCalendarState(calendarState());}catch(e){profileError='Profil illisible : '+e.message;run('S=null;');}
@@ -587,7 +597,7 @@ function createBridge(options={}){
    const live=projectionState.live;
    const staffKey=JSON.stringify(m.meta?.catalogue??null)+'\u0001'+JSON.stringify(m.meta?.database??null);
    let skip=null;
-   if(live){skip=memoDomainKeys.filter(key=>sectionMemo.available('clubLife.'+key));if(!sectionMemo.available('staff'))skip=skip.filter(key=>key!=='staffCareer');}
+   if(live){skip=memoDomainKeys.filter(key=>!LIFE_READ_EARLY.has(key)&&sectionMemo.available('clubLife.'+key));if(!sectionMemo.available('staff'))skip=skip.filter(key=>key!=='staffCareer');}
    const parts=run('nativeSystems.projectParts(nativeStateVersions.current(),'+(skip?'new Set('+JSON.stringify(skip)+')':'null')+')');
    const life={};
    for(const [key,text] of parts){
