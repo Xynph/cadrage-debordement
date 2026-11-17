@@ -31,9 +31,9 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var description := C.v(5)
 	C.fill(description)
 	masthead.add_child(description)
-	description.add_child(C.label("VOTRE POSTE DE MANAGER",18,C.GOLD,true,700))
+	description.add_child(C.label("TON POSTE DE MANAGER",18,C.GOLD,true,700))
 	description.add_child(C.label("Confort de jeu",38,C.IVORY,true,700))
-	description.add_child(C.wrap("Les préférences locales suivent votre profil.",18,C.MUTED))
+	description.add_child(C.wrap("Les préférences locales suivent ton profil.",18,C.MUTED))
 	masthead.add_child(C.photo("club-forest",Vector2(230,95)))
 	var tabs := TabContainer.new()
 	tabs.name = "PreferencesTabs"
@@ -186,7 +186,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	windowed.tooltip_text = "Occupe tout l’espace disponible sur l’écran choisi, avec la barre des tâches accessible."
 	display_row.add_child(windowed)
 	var links := G.h(8); display.add_child(links)
-	links.add_child(G.button("Importez un pack personnalisé",func():
+	links.add_child(G.button("Importe un pack personnalisé",func():
 		dialog.hide(); dialog.queue_free()
 		app.pack_manager.open("career" if app._has_career() else "creation")))
 	links.add_child(G.button("Aide du coach",func():
@@ -271,7 +271,7 @@ static func _press_refresh(app: Control, choices: HBoxContainer, explanation: La
 		button.custom_minimum_size = Vector2(190,36)
 		button.tooltip_text = "Réglage actuel." if key == now else "Choisir ce réglage."
 		choices.add_child(button)
-	explanation.text = "Gabi répond à la presse lors des conférences ordinaires ; vous restez convoqué aux grands rendez-vous (arrivée, phase finale, bilan de saison, derby, crise). Gabi s’exprime sur un ton prudent : ni moral ni confiance gagnés, un léger coût auprès des médias." if now == "adjoint" else "Vous répondez vous-même à chaque conférence : « Continuer » s’arrête sur la conférence de la semaine. Choisissez l’adjoint pour que Gabi tienne les conférences ordinaires ; vous restez convoqué aux grands rendez-vous."
+	explanation.text = "Gabi répond à la presse lors des conférences ordinaires ; tu restes convoqué aux grands rendez-vous (arrivée, phase finale, bilan de saison, derby, crise). Gabi s’exprime sur un ton prudent : ni moral ni confiance gagnés, un léger coût auprès des médias." if now == "adjoint" else "Tu réponds toi-même à chaque conférence : « Continuer » s’arrête sur la conférence de la semaine. Choisis l’adjoint pour que Gabi tienne les conférences ordinaires ; tu restes convoqué aux grands rendez-vous."
 
 static func _press_current(app: Control) -> String:
 	return "adjoint" if str(app.model.get("clubLife", {}).get("press", {}).get("policy", {}).get("ordinary", "moi")) == "adjoint" else "moi"

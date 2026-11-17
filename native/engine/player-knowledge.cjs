@@ -144,7 +144,7 @@ function factory(){
   return {available:!reason,reason,cost:5000,workCycles,workUnit:'week',sourceScoutId:job?job.sourceScoutId:staff?.id??null,sourceScoutLevel:job?job.sourceScoutLevel:staff?.level??null,pending:!!job,job:job?{id:job.id,status:job.status,remaining:job.remaining,remainingWeeks:job.remaining}:null,context};
  }
  function plan(s,payload,effects={}){
-  check(s&&shape(payload,['playerId','confirmed','context'])&&id(payload.playerId)&&payload.confirmed===true&&shape(payload.context,['season','week','club']),'confirmez le coût et le contexte de l’observation');
+  check(s&&shape(payload,['playerId','confirmed','context'])&&id(payload.playerId)&&payload.confirmed===true&&shape(payload.context,['season','week','club']),'confirme le coût et le contexte de l’observation');
   check(payload.context.season===s.season&&payload.context.week===week(s)&&payload.context.club===s.club,'contexte d’observation périmé');
   const p=players(s).get(payload.playerId);check(p,'joueur extérieur introuvable');const status=scouting(s,p);check(status.available,status.reason||'observation indisponible');
   // The worker supplies the existing ledger and inbox functions. Tests can use
@@ -166,7 +166,7 @@ function factory(){
    job.remaining--;
    if(job.remaining===0){
     job.status='done';job.completedSeason=s.season;job.completedWeek=week(s);const p=players(s).get(job.playerId);
-    if(p){const out=records(s);out.set(p.id,record(s,p,'target:'+job.id,{season:s.season,week:week(s)},out.get(p.id)));store(s,out);effects.message?.('Rapport d’observation disponible','Le suivi du joueur a été actualisé. Consultez sa fiche avant de décider.');}
+    if(p){const out=records(s);out.set(p.id,record(s,p,'target:'+job.id,{season:s.season,week:week(s)},out.get(p.id)));store(s,out);effects.message?.('Rapport d’observation disponible','Le suivi du joueur a été actualisé. Consulte sa fiche avant de décider.');}
     else effects.message?.('Observation terminée','Ce joueur n’est plus accessible dans le vivier actuel.');
    }
   }
@@ -182,7 +182,7 @@ function factory(){
   return (s?.playerKnowledge?.jobs||[]).filter(j=>j.status==='done').slice(-20).reverse().flatMap(j=>{
    const p=people.get(j.playerId);if(!p)return [];
    return [{id:'target-report:'+j.id,mission:j.id,playerId:p.id,name:p.name,pos:p.pos,family:p.family,age:p.age,rating:p.rating,note:p.rating,potential:p.potential,salary:null,price:null,grade:null,season:j.completedSeason,week:j.completedWeek,
-    assessment:{source:'Observation ciblée · saison '+(typeof libelleSaison==='function'?libelleSaison:String)(j.completedSeason)+' · semaine '+j.completedWeek,age:null,stale:null,available:true,availability:'Joueur identifié dans son effectif actuel. Conditions et accord à vérifier avant toute signature.',fit:'Observation individuelle ciblée.',observed:[],estimates:[],limits:['Salaires et coûts à vérifier dans la négociation actuelle.'],caution:'Le suivi indique les dernières informations de votre staff.'}}];
+    assessment:{source:'Observation ciblée · saison '+(typeof libelleSaison==='function'?libelleSaison:String)(j.completedSeason)+' · semaine '+j.completedWeek,age:null,stale:null,available:true,availability:'Joueur identifié dans son effectif actuel. Conditions et accord à vérifier avant toute signature.',fit:'Observation individuelle ciblée.',observed:[],estimates:[],limits:['Salaires et coûts à vérifier dans la négociation actuelle.'],caution:'Le suivi indique les dernières informations de ton staff.'}}];
   });
  }
  function visibility(s){

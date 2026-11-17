@@ -255,7 +255,7 @@ func _dossier() -> void:
 	_crest(comparison, ours, Rect2(26, 72, 70, 73))
 	_crest(comparison, opponent, Rect2(1245, 72, 70, 73))
 	D.text(comparison, 117, 108, G.club_name(ours), 28, C.IVORY, 700, 488)
-	D.text(comparison, 117, 138, "VOTRE XV SÉLECTIONNÉ", 17, GREEN, 700, 475)
+	D.text(comparison, 117, 138, "TON XV SÉLECTIONNÉ", 17, GREEN, 700, 475)
 	var opponent_link := Link.name_link(app, comparison, Rect2(749, 82, 481, 36), "club", str(int(opponent.get("id", -1))) if opponent.get("id") != null else "", G.club_name(opponent), 28, C.IVORY, "PreparationOpponentLink")
 	if opponent_link is Button: (opponent_link as Button).alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	elif opponent_link is Label: (opponent_link as Label).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -341,6 +341,8 @@ func _recent(section: Control) -> void:
 	var panel := D.panel(section, Rect2(0, 614, 900, 352), "Les faits récents", "calendar", "", "PreparationRecent")
 	var recent: Array = reports.get("recent", [])
 	var opponent := _opponent()
+	_form_chips(panel, recent)
+	_head_to_head(panel)
 	if recent.is_empty():
 		D.text(panel, 24, 93, "Résultats adverses non publiés dans ce dossier." if reports.is_empty() else "Aucun résultat adverse enregistré cette saison.", 19, C.MUTED, 500, 850)
 		var club := _opponent()
@@ -368,8 +370,53 @@ func _recent(section: Control) -> void:
 		D.text(panel,25+index*288,329,stages[index][1],16,C.MUTED,500,270)
 	_sheet_map(section)
 
+## Forme de l'adversaire en pastilles V/N/D (mêmes rencontres et même ordre que la liste).
+func _form_chips(panel: Panel, recent: Array) -> void:
+	var results: Array[String] = []
+	for i in mini(5, recent.size()):
+		var result: Dictionary = recent[i]
+		var score: Array = result.get("score", [])
+		if score.size() != 2: continue
+		var side := int(result.get("side", 0))
+		var us := int(score[side])
+		var them := int(score[1 - side])
+		results.append("V" if us > them else "D" if us < them else "N")
+	if results.is_empty(): return
+	var x0 := 880 - results.size() * 40
+	D.text(panel, x0 - 92, 44, "FORME", 16, C.MUTED, 600, 84, HORIZONTAL_ALIGNMENT_RIGHT)
+	for i in results.size():
+		var chip := D.chip(panel, Rect2(x0 + i * 40, 22, 32, 30), results[i], C.ALERT if results[i] == "D" else C.GOLD if results[i] == "N" else C.MINT)
+		if chip != null: chip.name = "PreparationOpponentForm%d" % i
+
+## Confrontations directes (cinq dernières rencontres entre les deux clubs) : pastilles V/N/D et dernier score.
+func _head_to_head(panel: Panel) -> void:
+	var rows: Array = reports.get("headToHead", [])
+	var results: Array[String] = []
+	var v := 0
+	var n := 0
+	var d := 0
+	for i in mini(5, rows.size()):
+		var score: Array = rows[i].get("score", [])
+		if score.size() != 2: continue
+		var side := int(rows[i].get("side", 0))
+		var us := int(score[side])
+		var them := int(score[1 - side])
+		results.append("V" if us > them else "D" if us < them else "N")
+		if us > them: v += 1
+		elif us < them: d += 1
+		else: n += 1
+	if results.is_empty(): return
+	var last: Array = rows[0].get("score", [])
+	var ls := int(rows[0].get("side", 0))
+	var venue := "à domicile" if bool(rows[0].get("home", ls == 0)) else "à l'extérieur"
+	D.text(panel, 36 + results.size() * 36, 62, "Face à eux : %d V · %d N · %d D   —   Dernier : %d-%d %s" % [v, n, d, int(last[ls]), int(last[1 - ls]), venue], 17, C.MUTED, 500, 700)
+	var x0 := 24
+	for i in results.size():
+		var chip := D.chip(panel, Rect2(x0 + i * 36, 60, 30, 26), results[i], C.ALERT if results[i] == "D" else C.GOLD if results[i] == "N" else C.MINT)
+		if chip != null: chip.name = "PreparationHeadToHead%d" % i
+
 func _sheet_map(section: Control) -> void:
-	var panel := D.panel(section,Rect2(917,614,427,352),"Votre XV projeté","people","","PreparationSheetMap")
+	var panel := D.panel(section,Rect2(917,614,427,352),"Ton XV projeté","people","","PreparationSheetMap")
 	D.rect(panel,Rect2(15,65,397,263),Color("153b2c"),3,Color("4b7f64"))
 	for y in [130,196,263]: D.line(panel,Vector2(18,y),Vector2(409,y),Color("6e9e81",.3))
 	D.line(panel,Vector2(213,68),Vector2(213,326),Color("6e9e81",.3))
@@ -435,7 +482,7 @@ func _consignes() -> void:
 	for i in 2:
 		var pair: Array = [["attack", "attacks", "Avec le ballon", "Attack", "ball", GREEN], ["defense", "defenses", "Sans le ballon", "Defense", "shield", GOLD]][i]
 		var card := D.panel(section, Rect2(i * 1132, 0, 1116, 853), pair[2], pair[4], "", "Preparation" + str(pair[3]))
-		D.text(card, 22, 94, "Votre intention de jeu pour la rencontre", 26, C.IVORY, 500, 1065)
+		D.text(card, 22, 94, "Ton intention de jeu pour la rencontre", 26, C.IVORY, 500, 1065)
 		if i == 0:
 			match_context.status = D.text(card, 22, 131, "", 23, C.IVORY, 500, 745)
 			match_context.status.name = "PreparationMatchState"

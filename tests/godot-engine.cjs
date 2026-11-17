@@ -72,8 +72,8 @@ try{
  }
  {
   const restored=bridge('main');assert.equal(good(restored,'snapshot').meta.round,round+1);assert.deepEqual(JSON.parse(good(restored,'export').meta.exportText).state,JSON.parse(exported).state);
-  // Import an actual live native export (taken during the match above): restart paused, score/fitness preserved.
-  good(restored,'import',{text:liveText});assert.equal(good(restored,'snapshot').live.paused,true);
+  // Export pris pendant le match ci-dessus : reprise avant le coup d'envoi (#836), aucun match en cours après import.
+  good(restored,'import',{text:liveText});assert.equal(good(restored,'snapshot').live,null,'export en plein match = carrière d’avant le coup d’envoi');
   assert.deepEqual(JSON.parse(good(restored,'export').meta.exportText).state,JSON.parse(liveText).state);release(restored);
  }
  {
@@ -88,17 +88,18 @@ try{
  }
  {
   // The private profile preserves the RNG cursor as well as the native career.
-  const seeded=bridge('seeded');good(seeded,'import',{text:liveText});good(seeded,'pause',{paused:false});good(seeded,'tick',{steps:12});good(seeded,'pause');good(seeded,'save');
+  // Match commencé puis interrompu : le profil garde la carrière et la graine d'avant le coup d'envoi (#836).
+  const seeded=bridge('seeded');good(seeded,'import',{text:liveText});talk(seeded,good(seeded,'begin_match'));good(seeded,'pause',{paused:false});good(seeded,'tick',{steps:12});good(seeded,'pause');good(seeded,'save');
   const copyRoot=path.join(root,'seeded-copy','PrototypeGodot');fs.mkdirSync(copyRoot,{recursive:true});fs.copyFileSync(path.join(root,'seeded','PrototypeGodot','donnees.json'),path.join(copyRoot,'donnees.json'));
   good(seeded,'shutdown');release(seeded);
  }
  {
-  const resumed=[];for(const name of ['seeded','seeded-copy']){const item=bridge(name);good(item,'pause',{paused:false});good(item,'delegate');resumed.push(state(item));release(item);}
+  const resumed=[];for(const name of ['seeded','seeded-copy']){const item=bridge(name);assert.equal(good(item,'snapshot').live,null,'reprise avant le coup d’envoi : '+name);talk(item,good(item,'begin_match'));good(item,'pause',{paused:false});good(item,'delegate');resumed.push(state(item));release(item);}
   assert.deepEqual(resumed[0],resumed[1],'RNG persistant après redémarrage');
  }
  // Export en direct réel transmis au passage Godot (import par le vrai pont, scène de match).
  liveExportFile=path.join(os.tmpdir(),'cd-godot-live-'+process.pid+'.json');fs.writeFileSync(liveExportFile,liveText);
- console.log(JSON.stringify({passed:true,checks:['bounded protocol','legacy career refused','world career determinism (twin worker)','snapshot RNG invariance','normalized scene parity','delegated match parity','atomic persistence/restart','import rollback','real disk write refusal','profile lock','live paused import','closed commands']}));
+ console.log(JSON.stringify({passed:true,checks:['bounded protocol','legacy career refused','world career determinism (twin worker)','snapshot RNG invariance','normalized scene parity','delegated match parity','atomic persistence/restart','import rollback','real disk write refusal','profile lock','pre-match resume on live import','closed commands']}));
 }finally{for(const b of bridges.splice(0)){try{b.close();}catch{/* déjà fermé */}}fs.rmSync(root,{recursive:true,force:true});}
 
 // Exercise the actual private JSON-lines pipes, including malformed input and clean exit.
@@ -356,11 +357,10 @@ func _model(model):
    stage = 4
    bridge.send("import", {"text": FileAccess.get_file_as_string(${JSON.stringify(liveExport.replaceAll('\\','/'))})})
   4:
-   var imported_live: Variant = model.get("live")
-   # Match réel importé en pause : 30 joueurs moins les éventuels exclus (carton) à cet instant du match.
-   var on_pitch: int = imported_live.scene.get("players", []).size() if imported_live is Dictionary and imported_live.get("scene") is Dictionary else -1
-   if not imported_live is Dictionary or not imported_live.get("paused", false) or on_pitch < 24 or on_pitch > 30:
-    _failed("Scène importée invalide (joueurs : %d)" % on_pitch)
+   # Export pris en plein match : la carrière reprend avant le coup d'envoi (#836), puis le match se relance.
+   # (Le pont Godot ouvre le moteur en cadence quotidienne ; le relancement du match est vérifié côté Node.)
+   if model.get("live") != null or not model.get("club") is Dictionary:
+    _failed("Export en plein match : la carrière devait reprendre avant le coup d'envoi")
     return
    stage = 5
    bridge.stop()

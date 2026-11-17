@@ -53,7 +53,7 @@ static func home(app: Control) -> Control:
 	D.text(content,110,535,"RUGBY LEGACY 27",29,C.GOLD,700,1370)
 	D.text(content,104,664,"Un club. Un territoire.",108,C.IVORY,800,1460)
 	D.text(content,106,775,"Une saison à écrire.",103,C.IVORY,700,1458)
-	D.text(content,112,851,"Prenez les rênes. Préparez le XV, faites grandir le club et vivez la saison.",29,C.IVORY,400,1400,HORIZONTAL_ALIGNMENT_LEFT,true)
+	D.text(content,112,851,"Prends les rênes. Prépare le XV, fais grandir le club et vis la saison.",29,C.IVORY,400,1400,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var meta: Dictionary = app.model.get("meta",{})
 	var database: Dictionary = app.pack_manager.database("creation")
 	var catalogue: Array = app.pack_manager.creation_catalogue()
@@ -83,7 +83,7 @@ static func _fit(page: Control, content: Control, reference: Vector2) -> void:
 
 static func _choices(card: Panel, app: Control, club: Dictionary, meta: Dictionary, accent: Color) -> void:
 	D.text(card,43,58,"OUVRIR LE CARNET",25,C.GOLD,700,737)
-	D.text(card,41,120,"Votre prochain chapitre",48,C.IVORY,700,739)
+	D.text(card,41,120,"Ton prochain chapitre",48,C.IVORY,700,739)
 	D.line(card,Vector2(42,144),Vector2(785,144),Color(C.LINE,.75))
 	var scroll := ScrollContainer.new()
 	scroll.follow_focus = true
@@ -124,7 +124,7 @@ static func _choices(card: Panel, app: Control, club: Dictionary, meta: Dictiona
 	C.fill(_action(row,"Paramètres",app.settings,"EntrySettings",accent))
 	C.fill(_action(row,"Quitter",app.request_quit,"EntryQuit",accent))
 	for warning: String in missing:
-		choices.add_child(C.wrap(warning+" · Réimportez le pack dans Identités et packs.",19,C.ALERT))
+		choices.add_child(C.wrap(warning+" · Réimporte le pack dans Identités et packs.",19,C.ALERT))
 	if meta.get("recoveryRequired",false):
 		choices.add_child(C.wrap("Le profil ne peut pas être chargé. Sa copie sera conservée avant récupération.",21,C.ALERT))
 		_action(choices,"Récupérer le profil",app.recover_profile,"EntryRecover",accent)
@@ -170,8 +170,8 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	var divider := 236 if compact else 327
 	D.photo(banner,"brand",Rect2(41,16,162,71) if compact else Rect2(41,34,252,110))
 	D.line(banner,Vector2(divider,19 if compact else 35),Vector2(divider,height-(19 if compact else 39)),Color(C.GOLD,.75))
-	D.text(banner,divider+38,34 if compact else 67,"VOTRE PREMIÈRE SAISON" if creation else "L’ATELIER DES IDENTITÉS",22 if compact else 24,C.GOLD,700,1040)
-	D.text(banner,divider+36,80 if compact else 131,"Prendre les rênes" if creation else "Habiller votre rugby",44 if compact else 57,C.IVORY,700,1050)
+	D.text(banner,divider+38,34 if compact else 67,"TA PREMIÈRE SAISON" if creation else "L’ATELIER DES IDENTITÉS",22 if compact else 24,C.GOLD,700,1040)
+	D.text(banner,divider+36,80 if compact else 131,"Prendre les rênes" if creation else "Habiller ton rugby",44 if compact else 57,C.IVORY,700,1050)
 	D.line(banner,Vector2(0,height-1),Vector2(2560,height-1),C.LINE)
 	var inset := C.margin(38)
 	inset.add_theme_constant_override("margin_top",C.px(6 if compact else 14))
@@ -283,7 +283,7 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 		heading.add_child(underline)
 	else:
 		heading.add_child(Editorial.sans_heading("Choisir sa réalité", 53))
-		heading.add_child(C.wrap("Sélectionnez la réalité de jeu pour votre prochaine carrière.", 25, C.IVORY))
+		heading.add_child(C.wrap("Sélectionne la réalité de jeu pour ta prochaine carrière.", 25, C.IVORY))
 	column.add_child(C.rule())
 	var body := C.margin(21 if creation else 27)
 	C.fill(body, true)
@@ -430,7 +430,7 @@ static func _career_context(app: Control, page: Control) -> void:
 	if selected.is_empty(): return
 	var context := C.v(8)
 	context.name = "EntryCareerContext"
-	var heading := C.wrap("VOTRE CARNET · " + G.club_name(selected), 24, C.GOLD, true, 700)
+	var heading := C.wrap("TON CARNET · " + G.club_name(selected), 24, C.GOLD, true, 700)
 	heading.name = "EntrySelectedClub"
 	context.add_child(heading)
 	var tiles := C.h(12)
@@ -439,8 +439,8 @@ static func _career_context(app: Control, page: Control) -> void:
 	var rivals := catalogue.filter(func(club: Dictionary): return club.get("playable", true) and str(club.get("division", "")) == division).size()
 	var ground := str(selected.get("stadium", ""))
 	var objective := str(selected.get("goal", ""))
-	_tile(tiles, "01  ·  PROJET SPORTIF", "Votre feuille de route", objective if not objective.is_empty() else "Consultez les objectifs du club dans le Bureau après la prise de poste.", "training-session", C.MINT)
-	_tile(tiles, "02  ·  TERRAIN", "Jouer à domicile", ground if not ground.is_empty() else "Retrouvez les installations du club dans le carnet de carrière.", str({"nationale":"nationale-ground","champ":"champ-ground"}.get(division,"entry-ground")), C.GOLD, true, .52 if division in ["nationale","champ"] else .29)
+	_tile(tiles, "01  ·  PROJET SPORTIF", "Ta feuille de route", objective if not objective.is_empty() else "Consulte les objectifs du club dans le Bureau après la prise de poste.", "training-session", C.MINT)
+	_tile(tiles, "02  ·  TERRAIN", "Jouer à domicile", ground if not ground.is_empty() else "Retrouve les installations du club dans le carnet de carrière.", str({"nationale":"nationale-ground","champ":"champ-ground"}.get(division,"entry-ground")), C.GOLD, true, .52 if division in ["nationale","champ"] else .29)
 	_tile(tiles, "03  ·  COMPÉTITION", Club.competition_name(division), "%s clubs jouables dans cette division" % G.n(rivals), "trophy", C.BLUE)
 	var column := choices.get_parent()
 	column.add_child(context)

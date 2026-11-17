@@ -325,7 +325,7 @@ func _refresh(reveal: bool) -> void:
 	_build_rows(players,0,built)
 	if built < players.size(): _build_remaining(players,built,_generation)
 	if players.is_empty():
-		var empty:=C.wrap("Aucun joueur ne correspond. Modifiez les filtres ou réinitialisez la recherche.",22)
+		var empty:=C.wrap("Aucun joueur ne correspond. Modifie les filtres ou réinitialise la recherche.",22)
 		rows.add_child(empty)
 	if reveal:
 		var scroll := find_child("SquadScroll",true,false) as ScrollContainer

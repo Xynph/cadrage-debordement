@@ -17,13 +17,13 @@ function factory(){
    attackOptions:[{id:'inherit',label:'Plan principal',description:'Suivre le choix général.'},...options(TACTICS)],defenceOptions:[{id:'inherit',label:'Plan principal',description:'Suivre le choix général.'},...options(DEFENCES)],
    setPieces:[['scrum','Mêlées',SCRUM_MOVES],['lineout','Touches',LINEOUT_MOVES],['kickoff','Renvois',KICKOFF_MOVES]].map(([key,label,table])=>({key,label,selected:plan[key],options:options(table)})),
    preview:live&&playbookRules(live)?copy(fourZoneTacticalPreview(live)):[],staffAdvice:live?copy(numericalStaffAdvice(live)):null,
-   notice:'Une consigne locale remplace le plan principal dans sa zone. Les phases arrêtées suivent leur propre choix. Ces compromis de simulation ne garantissent aucun résultat.',reason:available()?'':live?'Mettez le match en pause pour décider, en dehors des transitions et après le coup de sifflet.':'Décision indisponible en fin de saison.'};
+   notice:'Une consigne locale remplace le plan principal dans sa zone. Les phases arrêtées suivent leur propre choix. Ces compromis de simulation ne garantissent aucun résultat.',reason:available()?'':live?'Mets le match en pause pour décider, en dehors des transitions et après le coup de sifflet.':'Décision indisponible en fin de saison.'};
  }
  function execute(command,p){
   check(object(p)&&Object.keys(p).every(key=>['context','key','value','zone'].includes(key)),'Champs du carnet inconnus.');
   const current=context();
-  check(object(p.context)&&Object.keys(p.context).length===4&&Object.keys(current).every(key=>p.context[key]===current[key]),'Ce carnet est périmé : actualisez le plan de jeu.');
-  check(available(),'Plan indisponible : mettez le match en pause et terminez sa transition.');
+  check(object(p.context)&&Object.keys(p.context).length===4&&Object.keys(current).every(key=>p.context[key]===current[key]),'Ce carnet est périmé : actualise le plan de jeu.');
+  check(available(),'Plan indisponible : mets le match en pause et termine sa transition.');
   check(['attack','defence','scrum','lineout','kickoff'].includes(p.key),'Rubrique du carnet inconnue.');
   const local=['attack','defence'].includes(p.key),table=p.key==='attack'?TACTICS:p.key==='defence'?DEFENCES:{scrum:SCRUM_MOVES,lineout:LINEOUT_MOVES,kickoff:KICKOFF_MOVES}[p.key];
   check(table&&typeof p.value==='string'&&(local&&p.value==='inherit'||Object.hasOwn(table,p.value)),'Choix tactique inconnu.');

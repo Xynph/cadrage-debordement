@@ -158,7 +158,9 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(between.zone22.visible == (direct_vu.get("zone22") is Dictionary), label + " : tuile « Dans les 22 » montrée seulement avec sa donnée")
 	check(between.carte_changement.is_visible_in_tree() and between.carte_changement.get_global_rect().position.y >= between.tuile_principale.get_global_rect().end.y - 1.0 and between.find_child("MatchBetweenSwapAction", true, false).is_visible_in_tree(), label + " : carte Changement sous Notre XV")
 	# Gabi en largeur, en bas.
-	check(not between.adjoint_cadre.visible or between.adjoint_cadre.size.x >= between.size.x * 0.9 and between.adjoint_cadre.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : carte de Gabi en largeur, en bas")
+	# Avec la journée en direct, le multiplex partage la bande du bas avec Gabi.
+	var bande_bas: float = between.adjoint_cadre.size.x + (between.multiplex.size.x + between.px(20) if between.multiplex.visible else 0.0)
+	check(not between.adjoint_cadre.visible or bande_bas >= between.size.x * 0.9 and between.adjoint_cadre.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : carte de Gabi en largeur, en bas")
 	var used := 0.0
 	for panel: Control in column.get_children():
 		if panel.visible: used += panel.size.y
@@ -228,6 +230,20 @@ func run() -> void:
 		if vue_s != null and vue_s.regie != null:
 			await scoring(vue_s)
 			followed = vue_s.regie.suivi
+	elif mode == "multiplex":
+		# Carrière world-champ arrêtée au coup d'envoi de son premier match (godot-match-temps-forts.cjs).
+		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("multiplex.json"))})
+		await settle()
+		var limite_m := Time.get_ticks_msec() + 120000
+		while Time.get_ticks_msec() < limite_m and (surface() == null or surface().regie == null):
+			var scene_m: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+			if scene_m is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene_m.key, "phase": scene_m.phase, "skip": true})
+			await settle(2)
+		var vue_m := surface()
+		check(vue_m != null and vue_m.regie != null, "Carrière Monde : le direct en temps forts s'ouvre")
+		if vue_m != null and vue_m.regie != null:
+			await journee_directe(vue_m)
+			followed = vue_m.regie.suivi
 	elif mode == "defaut":
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("causerie.json"))})
 		await settle()
@@ -1244,3 +1260,172 @@ func terrain2d(view: Control) -> void:
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	print("TERRAIN2D ", JSON.stringify({"faits": ecarts.faits, "deplacement": deplacement, "ballons": ballons.size(), "minutes": minutes.size()}))
+
+## Mode « multiplex » : carrière world-champ réelle. Le moteur projette la journée (`direct.journee`)
+## dès le coup d'envoi : au moins une carte de multiplex et notre club dans le classement en direct ;
+## puis une journée fictive injectée (rangs, points, badges, scores, surlignage, liseré du score qui
+## change), sans journée (tuiles masquées), et rien de coupé en 1280×720, 1920×1080 et 2560×1440.
+func journee_directe(view: Control) -> void:
+	var regie: Node = view.regie
+	var between: Control = regie.between
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 180000 and not (regie.etat == regie.INTER and between.visible and regie._retenu.is_empty()):
+		if not regie.arret.is_empty(): between.reprise_demandee.emit()
+		elif app.model.live.get("paused", false) and not app.waiting and not app.model.live.get("finished", false): await command("pause", {"paused": false})
+		await process_frame
+	check(regie.etat == regie.INTER and between.visible, "Multiplex : l'écran intermédiaire s'ouvre")
+	await until(func(): return not app.waiting, 30000)
+	if not app.model.live.paused: await command("pause", {"paused": true})
+	await settle(6)
+	var direct: Dictionary = regie._live_inter.get("direct", app.model.live.direct)
+	var journee: Variant = direct.get("journee")
+	check(journee is Dictionary, "Carrière world-champ : le moteur fournit la journée en direct")
+	if journee is Dictionary:
+		var matchs: Array = journee.get("matchs", [])
+		var classement: Array = journee.get("classement", [])
+		var cartes := _cartes_multiplex(between)
+		check(matchs.size() >= 1 and between.multiplex.is_visible_in_tree() and cartes.size() == matchs.size(), "Multiplex réel : une carte par autre match (%d cartes, %d matchs)" % [cartes.size(), matchs.size()])
+		var ok_scores := 0
+		for n in mini(cartes.size(), matchs.size()):
+			var scores: Array = cartes[n].find_children("Score", "Label", true, false).map(func(l: Label): return l.text)
+			if scores == [str(int(matchs[n].home.score)), str(int(matchs[n].away.score))]: ok_scores += 1
+		check(ok_scores == matchs.size(), "Multiplex réel : scores du moteur (%d/%d)" % [ok_scores, matchs.size()])
+		var nous: Array = classement.filter(func(r: Dictionary): return bool(r.get("nous", false)))
+		var ligne_nous := _ligne_nous(between)
+		check(nous.size() == 1 and between.classement_tuile.is_visible_in_tree() and ligne_nous != null and int(ligne_nous.get_meta("rang")) == int(nous[0].rang), "Classement réel : notre club (%s) surligné à son rang" % (str(nous[0].get("abbr", "")) if nous.size() == 1 else "absent"))
+		print("MULTIPLEX_REEL ", JSON.stringify({"minute": journee.get("minute"), "matchs": matchs.size(), "clubs": classement.size(), "nous": nous[0].rang if nous.size() == 1 else null}))
+	await _mise_en_page_journee(view, "reel")
+	for taille: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]: await layout(view, taille)
+	await journee_fictive(view, direct)
+
+func _cartes_multiplex(between: Control) -> Array:
+	return between.multiplex_cartes.get_children().filter(func(n: Node): return not n.is_queued_for_deletion() and str(n.name).begins_with("MatchBetweenMultiplexMatch"))
+
+func _lignes_classement(between: Control) -> Array:
+	return between.classement_lignes.get_children().filter(func(n: Node): return not n.is_queued_for_deletion())
+
+func _ligne_nous(between: Control) -> Control:
+	for ligne: Node in _lignes_classement(between):
+		if ligne.has_meta("nous") and bool(ligne.get_meta("nous")): return ligne
+	return null
+
+## Journée fictive : quatorze clubs, nous huitièmes (montée de deux places, bonus défensif), six
+## autres matchs dont un terminé.
+func _journee_test(minute: int, score_m2: int) -> Dictionary:
+	var classement: Array = []
+	var nous_id: Variant = app.model.get("club", {}).get("id", 0)
+	for rang in range(1, 15):
+		classement.append({"rang": rang, "clubId": nous_id if rang == 8 else 900 + rang, "abbr": "NOUS" if rang == 8 else "C%02d" % rang, "nom": "Club %d" % rang, "joues": 3, "points": 40 - rang * 2,
+			"diff": 30 - rang * 4, "bonusOff": 1 if rang in [1, 10] else 0, "bonusDef": 1 if rang in [8, 10] else 0, "rangOfficiel": rang + (2 if rang == 8 else -1 if rang == 9 else 0), "delta": 2 if rang == 8 else -1 if rang == 9 else 0, "nous": rang == 8})
+	var matchs: Array = []
+	for k in 6:
+		var dom := 10 + k * 2
+		matchs.append({"id": "m%d" % k, "home": {"id": 901 + k * 2, "abbr": "C%02d" % (1 + k * 2), "nom": "Club %d" % (1 + k * 2), "score": score_m2 if k == 2 else dom, "essais": 2 if k == 2 else k % 3},
+			"away": {"id": 902 + k * 2, "abbr": "C%02d" % (2 + k * 2), "nom": "Club %d" % (2 + k * 2), "score": 7 + k, "essais": 1}, "minute": 80 if k == 0 else minute, "fini": k == 0})
+	return {"minute": minute, "matchs": matchs, "classement": classement}
+
+func journee_fictive(view: Control, direct: Dictionary) -> void:
+	var between: Control = view.regie.between
+	# Contrôles du contenu en 1920×1080 (leader et voisinage) ; la mise en page suit aux trois tailles.
+	root.size = Vector2i(1920, 1080)
+	root.content_scale_size = root.size
+	await settle(8)
+	var avec: Dictionary = direct.duplicate()
+	avec["journee"] = _journee_test(52, 14)
+	between.update_frame(app.model, app.model.live, avec, func(_c: Dictionary): pass)
+	var suite: Dictionary = direct.duplicate()
+	suite["journee"] = _journee_test(53, 19)
+	between.update_frame(app.model, app.model.live, suite, func(_c: Dictionary): pass)
+	await settle(4)
+	# Classement : le leader, « … », puis notre voisinage (5e à 11e) ; rien de plus, sans défilement.
+	var lignes := _lignes_classement(between)
+	var rangs: Array = lignes.map(func(n: Node): return int(n.get_meta("rang")) if n.has_meta("rang") else -1)
+	var attendus: Array = [5, 6, 7, 8, 9, 10, 11] if between._densite < 0.6 else [1, -1, 5, 6, 7, 8, 9, 10, 11]
+	check(between.classement_tuile.is_visible_in_tree() and rangs == attendus, "Classement fictif : notre voisinage (± 3), le leader si la hauteur le permet " + str(rangs))
+	# Règle de sélection, indépendante de la fenêtre : 1280×720 (sept lignes) et plus grand (neuf).
+	var tableau: Array = _journee_test(52, 14).classement
+	check(between.lignes_classement(tableau, 7) == [4, 5, 6, 7, 8, 9, 10] and between.lignes_classement(tableau, 9) == [0, -1, 4, 5, 6, 7, 8, 9, 10] and between.lignes_classement(tableau.slice(0, 9), 9) == range(9), "Classement : lignes choisies (voisinage, leader, tableau court entier)")
+	check(between.classement_tuile.find_children("*", "ScrollContainer", true, false).is_empty(), "Classement : pas de défilement interne")
+	var par_rang := {}
+	for n: Node in lignes:
+		if n.has_meta("rang"): par_rang[int(n.get_meta("rang"))] = n
+	var texte := func(ligne: Node, nom: String) -> String: return (ligne.find_child(nom, true, false) as Label).text if ligne.find_child(nom, true, false) != null else ""
+	check(range(1, 12).filter(func(r: int): return par_rang.has(r)).all(func(r: int): return texte.call(par_rang[r], "Points") == str(40 - r * 2) and texte.call(par_rang[r], "Rang") == str(r)), "Classement fictif : rangs et points du moteur")
+	var badges := func(r: int) -> Array: return ["BO", "BD"].filter(func(b: String): return par_rang[r].find_child("Badge" + b, true, false) != null)
+	check(badges.call(1) == ["BO"] and badges.call(8) == ["BD"] and badges.call(10) == ["BO", "BD"] and badges.call(5).is_empty(), "Classement fictif : badges BO/BD (%s, %s, %s, %s)" % [badges.call(1), badges.call(8), badges.call(10), badges.call(5)])
+	var nous: Control = _ligne_nous(between)
+	var style: StyleBoxFlat = nous.get_theme_stylebox("panel") if nous != null else null
+	check(nous != null and int(nous.get_meta("rang")) == 8 and style != null and style.border_width_left > 0 and style.bg_color.a > 0.1 and texte.call(nous, "Club") == "NOUS", "Classement fictif : notre club surligné")
+	check(nous != null and int(nous.find_child("Evolution", true, false).delta) == 2 and int(par_rang[9].find_child("Evolution", true, false).delta) == -1 and int(par_rang[5].find_child("Evolution", true, false).delta) == 0, "Classement fictif : flèches de l'évolution")
+	var teinte_nous: Variant = S_couleur(app.model.get("club", {}))
+	check(nous != null and (teinte_nous == null or (nous.find_child("Couleur", true, false).teinte as Color).is_equal_approx(teinte_nous)) and (par_rang[1].find_child("Couleur", true, false).teinte as Color).is_equal_approx(between.FAIBLE), "Classement fictif : pastille aux couleurs du club, neutre sinon")
+	# Multiplex : six cartes, scores et essais, « Terminé », liseré vert sur le seul score qui a changé.
+	var cartes := _cartes_multiplex(between)
+	check(cartes.size() == 6 and between.multiplex.is_visible_in_tree(), "Multiplex fictif : six cartes (%d)" % cartes.size())
+	if cartes.size() == 6:
+		var scores: Array = cartes.map(func(c: Node): return c.find_children("Score", "Label", true, false).map(func(l: Label): return l.text))
+		check(scores[2] == ["19", "9"] and scores[0] == ["10", "7"] and scores[5] == ["20", "12"], "Multiplex fictif : scores " + str(scores))
+		var essais: Array = cartes[2].find_children("Essais", "Label", true, false).map(func(l: Label): return l.text)
+		check(essais == ["(2)", "(1)"], "Multiplex fictif : essais en petit " + str(essais))
+		check((cartes[0].find_child("Minute", true, false) as Label).text == "Terminé" and (cartes[1].find_child("Minute", true, false) as Label).text == "53′", "Multiplex fictif : minute et « Terminé »")
+		var changes: Array = cartes.map(func(c: Node): return bool(c.get_meta("change", false)))
+		check(changes == [false, false, true, false, false, false] and (cartes[2].get_theme_stylebox("panel") as StyleBoxFlat).border_width_top > 0 and (cartes[1].get_theme_stylebox("panel") as StyleBoxFlat).border_width_top == 0, "Multiplex fictif : liseré vert sur le score qui a changé " + str(changes))
+	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, "Faits marquants visibles avec le classement")
+	await _mise_en_page_journee(view, "fictif")
+	# Hors phase de ligue : classement vide, multiplex seul.
+	var sans_table: Dictionary = direct.duplicate()
+	var j: Dictionary = _journee_test(60, 19)
+	j["classement"] = []
+	sans_table["journee"] = j
+	between.update_frame(app.model, app.model.live, sans_table, func(_c: Dictionary): pass)
+	await settle(2)
+	check(not between.classement_tuile.visible and between.multiplex.is_visible_in_tree(), "Hors phase de ligue : classement masqué, multiplex montré")
+	# Sans journée (match délégué, ancienne carrière) : les deux tuiles masquées, sans message.
+	var sans: Dictionary = direct.duplicate()
+	sans["journee"] = null
+	between.update_frame(app.model, app.model.live, sans, func(_c: Dictionary): pass)
+	await settle(2)
+	check(not between.classement_tuile.visible and not between.multiplex.visible and between.faits.is_visible_in_tree(), "Sans journée : classement et multiplex masqués")
+	await _mise_en_page_journee(view, "sans")
+	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
+	await settle(2)
+
+static func S_couleur(club: Dictionary) -> Variant:
+	var source: Dictionary = club.get("presentation", club) if club.get("presentation") is Dictionary else club
+	var c := str(source.get("color", club.get("color", "")))
+	return Color(c) if c.begins_with("#") and (c.length() == 7 or c.length() == 9) else null
+
+## Les deux tuiles de la journée dans l'écran, entières et lisibles, aux trois tailles de fenêtre.
+func _mise_en_page_journee(view: Control, variante: String) -> void:
+	var between: Control = view.regie.between
+	for taille: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]:
+		root.size = taille
+		root.content_scale_size = taille
+		await settle(12)
+		var label := "Journée %s %d×%d" % [variante, taille.x, taille.y]
+		var ecran := Rect2(Vector2.ZERO, Vector2(taille))
+		_pas_coupe(between, label)
+		for tuile: Control in [between.classement_tuile, between.multiplex]:
+			if tuile.visible: check(tuile.is_visible_in_tree() and inside(ecran, tuile.get_global_rect()) and tuile.size.y >= tuile.get_combined_minimum_size().y - 1.0, label + " : " + str(tuile.name) + " entier")
+		if between.classement_tuile.visible:
+			var lignes := _lignes_classement(between)
+			check(lignes.size() >= mini(7, between.journee_vue.classement.size()) and lignes.all(func(l: Control): return inside(between.classement_tuile.get_global_rect(), l.get_global_rect())), label + " : lignes du classement dans la tuile (%d)" % lignes.size())
+		# Aucun texte tronqué : sigles, rangs, points, scores et minutes entiers.
+		for tuile: Control in [between.classement_tuile, between.multiplex]:
+			if not tuile.visible: continue
+			for etiquette: Label in tuile.find_children("*", "Label", true, false):
+				if not etiquette.is_visible_in_tree() or etiquette.text.is_empty(): continue
+				var police: Font = etiquette.get_theme_font("font")
+				var largeur := police.get_string_size(etiquette.text, HORIZONTAL_ALIGNMENT_LEFT, -1, etiquette.get_theme_font_size("font_size")).x
+				check(largeur <= etiquette.size.x + 1.0, label + " : « %s » entier (%d sur %d px)" % [etiquette.text, int(largeur), int(etiquette.size.x)])
+				check(etiquette.get_theme_font_size("font_size") >= 10, label + " : « %s » lisible" % etiquette.text)
+		if between.classement_tuile.visible: check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1 and inside(ecran, between.faits.get_global_rect()), label + " : faits marquants visibles")
+		if DisplayServer.get_name() != "headless" and OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES") != "":
+			await RenderingServer.frame_post_draw
+			var image := root.get_texture().get_image()
+			if image != null:
+				var chemin := OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES").path_join("ecran-2d-multiplex-%s-%dx%d.png" % [variante, taille.x, taille.y])
+				print("CAPTURE ", chemin, " ", image.get_size(), " ", image.save_png(chemin))
+	root.size = Vector2i(1280, 720)
+	root.content_scale_size = root.size
+	await settle(4)

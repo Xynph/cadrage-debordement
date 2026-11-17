@@ -28,6 +28,48 @@ func texts(node: Node) -> Array:
 		if child is Label or child is Button or child is RichTextLabel: out.append(str(child.text))
 	return out
 
+## Contraste WCAG entre deux couleurs opaques.
+func contrast(a: Color, b: Color) -> float:
+	var la := luminance(a)
+	var lb := luminance(b)
+	return (maxf(la, lb) + 0.05) / (minf(la, lb) + 0.05)
+
+func luminance(c: Color) -> float:
+	var channels := [c.r, c.g, c.b].map(func(v: float): return v / 12.92 if v <= 0.03928 else pow((v + 0.055) / 1.055, 2.4))
+	return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+
+## Lisibilité de la zone « Les invitations du club » : cartes compactes, texte au moins aussi grand que les courriers,
+## bouton « Ouvrir » dans la même carte que son texte, à sa droite, et contraste du texte secondaire >= 4,5:1.
+func check_readable_invitations(invitations: Node, expected: int) -> void:
+	var cards := invitations.find_children("ContextualInvitation_*", "PanelContainer", true, false)
+	check(cards.size() == expected, "Une carte par invitation (%d pour %d)" % [cards.size(), expected])
+	var mail_sizes: Array = []
+	var rows := app.find_child("InboxMessageRows", true, false)
+	if rows != null and rows.get_child_count() > 0:
+		for label: Label in rows.get_child(0).find_children("*", "Label", true, false): mail_sizes.append(label.get_theme_font_size("font_size"))
+	check(not mail_sizes.is_empty(), "Courriers de la Réception mesurables")
+	var mail_title: int = mail_sizes.max() if not mail_sizes.is_empty() else 0
+	var mail_detail: int = mail_sizes.min() if not mail_sizes.is_empty() else 0
+	for card: PanelContainer in cards:
+		var title := card.find_child("ContextualInvitationTitle", true, false) as Label
+		var reason := card.find_child("ContextualInvitationReason", true, false) as Label
+		var open := card.find_child("ContextualInvitationOpen", true, false) as Button
+		check(title != null and reason != null and open != null, "La carte " + str(card.name) + " contient titre, raison et bouton")
+		if title == null or reason == null or open == null: continue
+		check(title.get_theme_font_size("font_size") >= mail_title, "Titre d'invitation au moins aussi grand que le titre d'un courrier (%d pour %d)" % [title.get_theme_font_size("font_size"), mail_title])
+		check(reason.get_theme_font_size("font_size") >= mail_detail and reason.get_theme_font_size("font_size") >= 12, "Raison au moins aussi grande que le détail d'un courrier (%d pour %d)" % [reason.get_theme_font_size("font_size"), mail_detail])
+		var card_rect := card.get_global_rect()
+		check(card_rect.grow(1.0).encloses(open.get_global_rect()), "Le bouton « Ouvrir » reste dans sa carte")
+		check(open.get_global_rect().position.x >= reason.get_global_rect().position.x + minf(reason.get_minimum_size().x, 40.0), "Le bouton « Ouvrir » est à droite du texte de sa carte")
+		check(card_rect.size.x <= root.size.x * 0.75 and card_rect.size.y <= root.size.y * 0.2, "Carte compacte : " + str(card_rect.size))
+		var panel := card.get_theme_stylebox("panel") as StyleBoxFlat
+		check(panel != null and contrast(reason.get_theme_color("font_color"), panel.bg_color) >= 4.5, "Contraste de la raison >= 4,5:1")
+		check(panel != null and contrast(title.get_theme_color("font_color"), panel.bg_color) >= 4.5, "Contraste du titre >= 4,5:1")
+	var banner := invitations.find_child("ContextualInvitationsBlocked", true, false) as Control
+	var press := invitations.find_child("ContextualOpenPress", true, false) as Control
+	if banner != null and press != null: check(banner.get_global_rect().grow(1.0).encloses(press.get_global_rect()), "Le bouton de la conférence est dans le bandeau d'information")
+	check(invitations.get_global_rect().end.y <= root.size.y * 0.35, "La zone des invitations ne pousse pas les courriers hors de l'écran")
+
 func run() -> void:
 	root.size = Vector2i(1600, 900)
 	app = load("res://main.tscn").instantiate()

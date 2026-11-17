@@ -276,7 +276,7 @@ static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
 	if goals.is_empty() and shown == 0:
 		U.icon(card, "flag", Vector2(23,179 + offset), C.GOLD, 25)
 		D.text(card, 72, 201 + offset, "Aucun jalon enregistré", 26, C.IVORY, 600, 405)
-		D.text(card, 72, 238 + offset, "Fixez une échéance avec la direction.", 22, C.MUTED, 500, 400)
+		D.text(card, 72, 238 + offset, "Fixe une échéance avec la direction.", 22, C.MUTED, 500, 400)
 	D.button(card, Rect2(21,351,457,36), "Suivre les objectifs", func(): _open_strategy(app, 1), false, "arrow", true, U.GREEN, "ClubBoardGoals")
 
 static func _locker(card: Panel, app: Control) -> void:
@@ -506,7 +506,7 @@ static func _history(app: Control, canvas: Control) -> void:
 	var palmares: Dictionary = app.model.get("club",{}).get("palmares",{}) if international else {}
 	if not palmares.is_empty():
 		# Palmarès connu dès le premier jour, fusionné aux saisons jouées en carrière.
-		rows = [["Titres au palmarès",Palmares.count_text(int(palmares.get("totalTitles",0)))],["Finales connues",Palmares.count_text(palmares.get("finals",[]).size())],["Saisons jouées avec vous",Palmares.count_text(int(palmares.get("careerSeasons",0)))]]
+		rows = [["Titres au palmarès",Palmares.count_text(int(palmares.get("totalTitles",0)))],["Finales connues",Palmares.count_text(palmares.get("finals",[]).size())],["Saisons jouées avec toi",Palmares.count_text(int(palmares.get("careerSeasons",0)))]]
 	for i in rows.size():
 		var y := 278+i*73
 		D.text(card, 24, y, rows[i][0], 29, C.IVORY, 600, 475)
@@ -535,7 +535,7 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 	var palmares: Dictionary = app.model.get("club",{}).get("palmares",{})
 	list.add_child(C.label("LE PALMARÈS",27,C.GOLD,true,700))
 	if palmares.is_empty() or bool(palmares.get("vide",false)):
-		var empty := C.wrap(str(palmares.get("emptyText","")) if not palmares.is_empty() else "La première page de l’histoire du club s’écrit avec vous.",26,C.IVORY,true,700)
+		var empty := C.wrap(str(palmares.get("emptyText","")) if not palmares.is_empty() else "La première page de l’histoire du club s’écrit avec toi.",26,C.IVORY,true,700)
 		empty.name = "ClubPalmaresVide"
 		list.add_child(empty)
 	else:
@@ -548,7 +548,7 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 	list.add_child(C.rule())
 	list.add_child(C.wrap("Les saisons passées et les derniers résultats du club. Les rangs concernent la phase régulière.",22,C.MUTED,true))
 	if years.size() >= 2: _world_comparison(app,list,years)
-	if years.is_empty(): list.add_child(C.wrap("Votre première saison au club s’inscrira ici dès son terme.",24,C.MUTED,true))
+	if years.is_empty(): list.add_child(C.wrap("Ta première saison au club s’inscrira ici dès son terme.",24,C.MUTED,true))
 	for year: Dictionary in years: list.add_child(_world_year(app,year))
 	list.add_child(C.rule())
 	list.add_child(C.label("LES DERNIERS RÉSULTATS",27,C.GOLD,true,700))
@@ -643,7 +643,7 @@ static func _territory(app: Control, canvas: Control) -> void:
 			credit.name = "VenuePhotoCredit_" + kind
 			_venue_credit(credit, photo)
 	var links := D.panel(page, Rect2(0,837,2248,193), "Un territoire, une identité", "shield")
-	D.text(links, 24, 116, "Découvrez le territoire et écrivez la suite de l’histoire du club.", 31, C.IVORY, 600, 1360)
+	D.text(links, 24, 116, "Découvre le territoire et écris la suite de l’histoire du club.", 31, C.IVORY, 600, 1360)
 	D.button(links, Rect2(1415,80,373,59), "Crédits et licences", app._credits, false, "info", false, U.GREEN, "ClubAtlasCredits")
 	D.button(links, Rect2(1804,80,420,59), "Revenir à la vue d’ensemble", func(): _tab(app, "overview", "ClubTab_overview"), true, "arrow", false, U.GREEN, "ClubAtlasBack")
 

@@ -67,7 +67,7 @@ static func _person(app: Control, parent: Node, player: Dictionary, returned: bo
 	content.add_child(C.wrap(player.competitionName, 19, C.GOLD))
 	if returned:
 		content.add_child(C.wrap("De retour au club depuis le " + _date(player.returnDate), 20, C.MINT))
-		content.add_child(C.wrap("Consultez la fiche pour vérifier sa condition et ses éventuelles blessures.", 17, C.MUTED))
+		content.add_child(C.wrap("Consulte la fiche pour vérifier sa condition et ses éventuelles blessures.", 17, C.MUTED))
 	else:
 		content.add_child(C.wrap("Absent du %s au %s inclus" % [_date(player.from), _date(player.through)], 20, C.IVORY))
 		content.add_child(C.wrap("Retour au club prévu le " + _date(player.returnDate), 20, C.MINT))
@@ -90,9 +90,9 @@ static func build(app: Control) -> Control:
 		_metric(metrics, "Prochain retour au club", _date(state.get("nextReturn")), C.MINT)
 		_metric(metrics, "Postes principaux concernés", str(state.get("positions", []).size()), C.IVORY)
 		if int(state.get("absentCount", 0)) == 0:
-			view.add_child(C.wrap("Aucun joueur de votre club n’est actuellement convoqué.", 22, C.MINT))
+			view.add_child(C.wrap("Aucun joueur de ton club n’est actuellement convoqué.", 22, C.MINT))
 		else:
-			view.add_child(C.label("Vos joueurs convoqués", 25, C.IVORY, true, 700))
+			view.add_child(C.label("Tes joueurs convoqués", 25, C.IVORY, true, 700))
 			for player: Dictionary in state.get("players", []): _person(app, view, player)
 			view.add_child(C.wrap("Les retours restent prévisionnels : le parcours dans une compétition peut prolonger une convocation.", 18, C.MUTED))
 			var coverage := C.card("POSTES À PRÉPARER")
@@ -116,7 +116,7 @@ static func build(app: Control) -> Control:
 			view.add_child(C.label("Retours des sept derniers jours", 25, C.IVORY, true, 700))
 			for player: Dictionary in state.returned: _person(app, view, player, true)
 	else:
-		view.add_child(C.wrap("Votre mandat porte sur la sélection seule. Le suivi de l’effectif d’un club ne s’applique pas.", 21, C.MUTED))
+		view.add_child(C.wrap("Ton mandat porte sur la sélection seule. Le suivi de l’effectif d’un club ne s’applique pas.", 21, C.MUTED))
 	view.add_child(C.label("Prochaines fenêtres · 90 jours", 25, C.IVORY, true, 700))
 	if state.get("windows", []).is_empty():
 		view.add_child(C.wrap("Aucune nouvelle fenêtre annoncée d’ici le " + _date(state.get("horizonDate")) + ".", 21, C.MUTED))
@@ -129,5 +129,5 @@ static func build(app: Control) -> Control:
 		var nations := PackedStringArray()
 		for nation: Dictionary in window.nations: nations.append(nation.name)
 		content.add_child(C.wrap(" · ".join(nations), 18, C.MUTED))
-		content.add_child(C.wrap("Convocations non encore connues : préparez vos solutions de remplacement.", 18, C.MINT))
+		content.add_child(C.wrap("Convocations non encore connues : prépare tes solutions de remplacement.", 18, C.MINT))
 	return view

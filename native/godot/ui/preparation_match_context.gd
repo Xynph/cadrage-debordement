@@ -124,9 +124,9 @@ func _live_caption(live: Dictionary, phase: Phase) -> String:
 	return "%s %s – %s %s  ·  %s" % [G.club_abbr(teams[0]), G.n(score[0]), G.n(score[1]), G.club_abbr(teams[1]), clock]
 
 func _status_text(phase: Phase, available: bool) -> String:
-	var edit_hint := "Vous pouvez modifier vos consignes." if available else "Les consignes sont momentanément indisponibles."
+	var edit_hint := "Tu peux modifier tes consignes." if available else "Les consignes sont momentanément indisponibles."
 	match phase:
-		Phase.RUNNING: return "Match en cours · Pause requise pour modifier vos consignes."
+		Phase.RUNNING: return "Match en cours · Pause requise pour modifier tes consignes."
 		Phase.PAUSED: return "Match en pause · " + edit_hint
 		Phase.HALFTIME: return "Mi-temps · " + edit_hint
 		Phase.FINISHED: return "Match terminé · Les consignes sont closes."

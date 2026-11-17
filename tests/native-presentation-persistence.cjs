@@ -33,7 +33,10 @@ test('Les images seules ne réécrivent ni la carrière ni son secours', () => {
   Date.now = () => now;
   // Carrière Monde, réglée comme le vrai jeu (calendrier journalier, presse obligatoire) ; le direct
   // s'ouvre le jour de la première rencontre du club.
-  bridge = createBridge({dataDir, seed: 411, dailyCalendar: true, mandatoryPress: true, internationalCareer: true});
+  // Écriture du direct à chaque minute : chemin des carrières enregistrées en plein match par une version précédente,
+  // toujours suivi pour elles (matchResume:false) ; une carrière actuelle n'écrit plus rien pendant le match
+  // (tests/reprise-avant-match.cjs).
+  bridge = createBridge({dataDir, seed: 411, dailyCalendar: true, mandatoryPress: true, internationalCareer: true, matchResume: false});
   let career = settleClubMeetings(good('new_career', {mode: 'world-champ', club: 0}), good);
   for (let day = 0; !(career.meta.calendarCadence?.matchReady && career.next); day++) {
    assert.ok(day < 150, 'Aucun jour de match en 150 journées');
@@ -88,7 +91,7 @@ test('Les images seules ne réécrivent ni la carrière ni son secours', () => {
   assert.deepEqual(fs.readFileSync(backup), paused, 'Un secours manquant doit être recréé');
   const durable = good('export').meta.exportText;
   good('shutdown');
-  bridge = createBridge({dataDir});
+  bridge = createBridge({dataDir, matchResume: false});
   assert.equal(good('export').meta.exportText, durable);
  } finally {
   Date.now = realNow;

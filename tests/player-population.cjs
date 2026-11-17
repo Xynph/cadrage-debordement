@@ -60,10 +60,14 @@ test('new policy rejects corrupt origin, duplicated pool ownership and unbounded
 test('available population is bounded, compensates departures and records excess returning to the small-club pool',()=>{
  const h=context(),r=h.run;r('start(0);S.season=3;S.aiRoster.population.lastPoolSeason=2;var wanted=S.aiRoster.population.referenceAccessible;S.clubs[1].players=S.clubs[1].players.slice(0,15);S.economy.freeAgents=[];S.market=[];aiRosterPrepareMarket()');
  assert.ok(r('aiRosterAccessibleCount()')>=r('wanted'));
- r('for(let i=0;i<400;i++){let p=aiRosterSmallClubPlayer(i%15,1000+i);p.id="historic-released-"+i;p.population={version:1,origin:"released",season:1,availableSince:1,clubId:null};p.contractEnd=null;S.economy.freeAgents.push(p)};aiRosterTrimFreeAgents();S.market=aiRosterMarketPool([])');
+ r('for(let i=0;i<400;i++){let p=aiRosterSmallClubPlayer(i%15,1000+i);p.id="historic-released-"+i;p.population={version:1,origin:"released",season:1,availableSince:3,clubId:null};p.contractEnd=null;S.economy.freeAgents.push(p)};aiRosterTrimFreeAgents();S.market=aiRosterMarketPool([])');
  assert.equal(r('S.economy.freeAgents.length'),r('aiRosterFreeAgentLimit()'));
  assert.ok(r('S.aiRoster.population.history.find(x=>x.season===3).departed')>0);
  assert.equal(r('new Set(S.economy.freeAgents.map(p=>p.id)).size'),r('S.economy.freeAgents.length'));
+ assert.equal(valid(r),true);
+ // Comme dans FM : libre depuis deux saisons → départ ; trentenaire libre depuis une saison → retraite.
+ r('S.economy.freeAgents=[];var mk=(id,age,since)=>{let p=aiRosterSmallClubPlayer(2,2000+id);p.id="fm-"+id;p.age=age;p.dev.retireAge=38;p.population={version:1,origin:"released",season:1,availableSince:since,clubId:null};p.contractEnd=null;S.economy.freeAgents.push(p)};mk(1,25,1);mk(2,33,2);mk(3,25,2);mk(4,33,3);aiRosterTrimFreeAgents();S.market=aiRosterMarketPool([])');
+ assert.equal(r('S.economy.freeAgents.map(p=>p.id).sort().join()'),'fm-3,fm-4');
  assert.equal(valid(r),true);
 });
 

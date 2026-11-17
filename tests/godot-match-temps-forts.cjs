@@ -45,6 +45,8 @@ function run(mode,dossier=mode){
  if(mode==='entracte')Object.assign(env,{CD_MATCH_TEMPS_FORTS_HORLOGE:'rapide',CD_GODOT_SEED:'7'});
  // Terrain 2D : horloge normale, vitesse réelle, comme le joueur le voit.
  if(mode==='terrain2d')Object.assign(env,{CD_GODOT_SEED:'7'});
+ // Journée en direct (carrière world-champ) : horloge rapide pour atteindre vite l'écran intermédiaire.
+ if(mode==='multiplex'){Object.assign(env,{CD_MATCH_TEMPS_FORTS_HORLOGE:'rapide',CD_MATCH_TEMPS_FORTS_VITESSE:'4',CD_GODOT_SEED:'7'});delete env.CD_MODES_HERITES;}
  // CD_MATCH_TEMPS_FORTS_CAPTURES=<dossier> : rendu fenêtré (pas headless) et captures de l'écran intermédiaire.
  const fenetre=!!process.env.CD_MATCH_TEMPS_FORTS_CAPTURES;
  const result=spawnSync(godot,[...(fenetre?[]:['--headless']),'--max-fps','60','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts.gd')],{env,encoding:'utf8',windowsHide:true,timeout:600000});
@@ -98,6 +100,23 @@ if(veut('terrain2d')){
  const terrain=run('terrain2d');
  assert.deepEqual(terrain.failures,[]);assert.ok(terrain.checks>=25,'contrôles du terrain 2D : '+terrain.checks);
  bilan.push('terrain 2D '+terrain.checks);
+}
+if(veut('multiplex')){
+ // Journée en direct (classement et multiplex) : carrière world-champ réelle arrêtée au coup d'envoi
+ // de son premier match ; le moteur projette `direct.journee` dès `begin_match`.
+ const dataDir=fs.mkdtempSync(path.join(directory,'carriere-monde-'));
+ const bridge=createBridge({dataDir,seed:7,now:1700000000000,dailyCalendar:true,mandatoryPress:true,internationalCareer:true});
+ let id=0;const call=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+' : '+r.error);return r.model;};
+ let model=call('new_career',{mode:'world-champ',club:0});
+ for(let day=0;day<150;day++){model=settleClubMeetings(model,call);if(model.meta.calendarCadence?.matchReady)break;model=call('advance_day',{fromDate:model.meta.calendarToday});}
+ assert.equal(model.meta.calendarCadence?.matchReady,true,'jour du premier match atteint');
+ model=settleClubMeetings(model,call);model=call('auto_lineup');if(!model.selection?.valid)call('promote_cover',{confirmed:true});
+ assert.ok(call('begin_match').live,'match Monde commencé');
+ fs.writeFileSync(path.join(directory,'multiplex.json'),call('export').meta.exportText);
+ bridge.close?.();fs.rmSync(dataDir,{recursive:true,force:true});
+ const journee=run('multiplex');
+ assert.deepEqual(journee.failures,[]);assert.ok(journee.checks>=60,'contrôles de la journée en direct : '+journee.checks);
+ bilan.push('journée en direct '+journee.checks);
 }
 if(veut('entracte')){
  const entracte=run('entracte');

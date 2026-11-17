@@ -11,13 +11,13 @@ module.exports=function nativeGestion(command,p){
   requireThat(setDevelopmentFocus(p.playerId,p.focus),'Objectif indisponible : séance appliquée, match en cours ou qualité inconnue.');return;
  }
  if(command==='promote_academy'){
-  requireThat(p.confirmed===true&&!S.live&&S.phase!=='ended','Confirmez le salaire et la promotion hors match.');
+  requireThat(p.confirmed===true&&!S.live&&S.phase!=='ended','Confirme le salaire et la promotion hors match.');
   const target=S.development.academy.find(x=>x.id===p.playerId);
   requireThat(target&&professionalPlaces()>0,'Espoir indisponible ou effectif complet.');
   requireThat(promoteYouth(p.playerId),'Promotion refusée.');return;
  }
  if(command==='scout_mission'){
-  requireThat(p.confirmed===true&&!S.live&&S.phase!=='ended','Confirmez la mission à 5 000 € hors match.');
+  requireThat(p.confirmed===true&&!S.live&&S.phase!=='ended','Confirme la mission à 5 000 € hors match.');
   requireThat([p.family,p.maxAge,p.budget,p.maxWage].every(Number.isInteger),'Critères entiers requis.');
   requireThat(createScoutMission(p.family,p.maxAge,p.budget,p.maxWage),'Mission refusée : critères, trésorerie ou quatre missions déjà en cours.');return;
  }
@@ -42,24 +42,24 @@ module.exports=function nativeGestion(command,p){
    requireThat(!S.live&&S.phase!=='ended','Les tireurs et le lanceur se désignent avant le coup d’envoi.');
    requireThat(setPlayerRoles(p.roles),'Rôle inconnu ou joueur absent de l’effectif.');
   }
-  if(S.live){requireThat(tacticalRules(S.live)&&S.live.paused&&!S.live.finished&&!presentationPending(S.live),'Mettez le match en pause pour changer les consignes.');setLiveTactic(p.attack);setLiveDefence(p.defense);}
+  if(S.live){requireThat(tacticalRules(S.live)&&S.live.paused&&!S.live.finished&&!presentationPending(S.live),'Mets le match en pause pour changer les consignes.');setLiveTactic(p.attack);setLiveDefence(p.defense);}
   else{requireThat(S.phase!=='ended','Saison terminée.');S.tactic=p.attack;setDefence(p.defense);}return;
  }
  if(command==='set_penalty_policy'){
   // Consigne sur pénalité pendant le match (tir au but, pénaltouche, jouer vite à la main, ou selon le contexte).
   requireThat(Object.hasOwn(PENALTY_POLICIES,p.policy),'Consigne sur pénalité inconnue.');
-  requireThat(S.live&&S.live.paused&&!S.live.finished&&!presentationPending(S.live),'Mettez le match en pause pour changer la consigne sur pénalité.');
+  requireThat(S.live&&S.live.paused&&!S.live.finished&&!presentationPending(S.live),'Mets le match en pause pour changer la consigne sur pénalité.');
   setPenaltyPolicy(p.policy);return;
  }
  if(command==='set_player_load'){requireThat(setPhysicalTraining(p.playerId,p.mode),'Charge indisponible : séance appliquée, joueur absent ou match en cours.');return;}
  if(command==='promote_cover'){
-  requireThat(p.confirmed===true,'Confirmez le salaire hebdomadaire de chaque renfort.');
+  requireThat(p.confirmed===true,'Confirme le salaire hebdomadaire de chaque renfort.');
   requireThat(!S.live&&S.phase!=='ended','Promotion indisponible pendant le match ou après la saison.');
   repairSheet();
   const slots=vacantMatchSlots(S.lineup,S.reserves),count=slots.length;
   if(Object.hasOwn(p,'expectedSlots')){
    requireThat(Array.isArray(p.expectedSlots)&&p.expectedSlots.length===count&&slots.every((slot,i)=>slot===p.expectedSlots[i]),
-    'La feuille a changé. Consultez le nouveau devis de renfort.');
+    'La feuille a changé. Consulte le nouveau devis de renfort.');
   }
   requireThat(count>0,'La feuille de match est déjà complète.');
   requireThat(count<=professionalPlaces(),'Effectif trop important pour promouvoir ces joueurs.');
@@ -69,7 +69,7 @@ module.exports=function nativeGestion(command,p){
   return {coverage:{count,weeklySalary:coverSalary,totalWeeklySalary,message:`${count} renfort${count===1?'':'s'} signé${count===1?'':'s'}. Salaires supplémentaires de ${totalWeeklySalary.toLocaleString('fr-FR')} € par semaine. Feuille à 23 complète.`}};
  }
  if(command==='recruit'||command==='extend_contract'){
-  requireThat(p.confirmed===true,'Confirmez le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
+  requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
   const kind=command==='recruit'?'recruit':'renew',target=talkPlayer(p.playerId,kind);requireThat(target,'Joueur indisponible ou offre périmée.');
   requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||professionalPlaces()>0,'Effectif complet.');
   requireThat(negotiateContract(p.playerId,kind,p.salary,p.years),'Offre refusée : durée, joueur ou négociation indisponible.');
@@ -77,11 +77,11 @@ module.exports=function nativeGestion(command,p){
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');
   return {negotiation:{playerId:p.playerId,status:talk.status,message:talk.status==='signed'?'Contrat signé.':talk.message,fee:talk.fee,salary:talk.acceptedSalary,years:talk.years}};
  }
- if(command==='next_season'){requireThat(p.confirmed===true&&S.phase==='ended'&&!S.live,'Confirmez le passage à la saison suivante après la fin des compétitions.');advanceSeason();return;}
+ if(command==='next_season'){requireThat(p.confirmed===true&&S.phase==='ended'&&!S.live,'Confirme le passage à la saison suivante après la fin des compétitions.');advanceSeason();return;}
  if(command==='substitute'){
-  const l=S.live;requireThat(l&&l.paused&&!l.finished&&!presentationPending(l),'Remplacement indisponible : mettez le match en pause.');
+  const l=S.live;requireThat(l&&l.paused&&!l.finished&&!presentationPending(l),'Remplacement indisponible : mets le match en pause.');
   const on=l.sheets[l.userSide].on,explicitSlot=Object.hasOwn(p,'slot');
-  requireThat(explicitSlot||typeof p.outId==='string'&&p.outId.length>0,'Précisez le poste du remplacement.');
+  requireThat(explicitSlot||typeof p.outId==='string'&&p.outId.length>0,'Précise le poste du remplacement.');
   const slot=explicitSlot?p.slot:on.indexOf(p.outId);
   requireThat(Number.isInteger(slot)&&slot>=0&&slot<15,'Poste de remplacement invalide.');
   requireThat(!Object.hasOwn(p,'outId')||on[slot]===p.outId,'Le joueur de ce poste a changé.');

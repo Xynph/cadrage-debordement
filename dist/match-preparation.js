@@ -152,6 +152,12 @@ function dossierRecent(ci){
   return {round,phase:r.phase,pair:r.pair,score:r.score,side,opponent:r.pair[1-side],result:r.score[side]>r.score[1-side]?'V':r.score[side]===r.score[1-side]?'N':'D',stats:r.stats?.[side]||null};
  });
 }
+function dossierHeadToHead(oppId){
+ return S.history.filter(r=>r.pair.includes(S.club)&&r.pair.includes(oppId)&&r.pair[0]!==r.pair[1]).slice(-5).reverse().map(r=>{
+  const side=r.pair.indexOf(S.club);
+  return {score:r.score,side,home:side===0,result:r.score[side]>r.score[1-side]?'V':r.score[side]===r.score[1-side]?'N':'D'};
+ });
+}
 function dossierAdvice(own,opponent){
  const packEdge=own.power-opponent.power,backEdge=own.backs-opponent.backs;
  let attack='equilibre',attackReason='Aucun avantage net ne ressort : conserver plusieurs solutions limite la dépendance à un seul secteur.';
@@ -166,11 +172,11 @@ function dossierAdvice(own,opponent){
 function signedDossier(n){return (n>=0?'+':'')+Math.round(n)}
 function matchDossier(){
  const pair=nextMatch();if(!pair)return null;
- const opponent=S.clubs[pair.find(ci=>ci!==S.club)],projection=managerSheet(opponent,club(),'Sec',S.difficulty||'classique'),own=dossierMetrics(club(),S.lineup),other=dossierMetrics(opponent,projection.lineup),recent=dossierRecent(opponent.id);
+ const opponent=S.clubs[pair.find(ci=>ci!==S.club)],projection=managerSheet(opponent,club(),'Sec',S.difficulty||'classique'),own=dossierMetrics(club(),S.lineup),other=dossierMetrics(opponent,projection.lineup),recent=dossierRecent(opponent.id),headToHead=dossierHeadToHead(opponent.id);
  const candidates=projection.lineup.map(id=>opponent.players.find(p=>p.id===id)).filter(Boolean);
  const kicker=chooseScorer(opponent,projection.lineup),leader=[...candidates].sort((a,b)=>roleNote(b)-roleNote(a))[0],runner=[...candidates].filter(p=>p.fam>=4).sort((a,b)=>skill(b,'speed',true)-skill(a,'speed',true))[0];
  const threats=[...new Map([[leader,'Référence au poste'],[kicker,'Buteur pressenti'],[runner,'Vitesse à surveiller']].filter(([p])=>p).map(([p,role])=>[p.id,{id:p.id,name:p.name,pos:p.pos,note:roleNote(p),fitness:p.condition,role}])).values()];
- return {pair,opponent,projection,own,other,recent,threats,advice:dossierAdvice(own,other)};
+ return {pair,opponent,projection,own,other,recent,headToHead,threats,advice:dossierAdvice(own,other)};
 }
 function adoptDossierPlan(){if(S.live)return;const d=matchDossier();if(!d)return;S.tactic=d.advice.attack;S.defence=d.advice.defence;save();render();toast('Plan principal adopté. Les consignes personnalisées par zone restent prioritaires.')}
 function prepareSquad(tab='sheet'){if(S.live||!['sheet','depth','table'].includes(tab))return;squadTab=tab;nav('team')}

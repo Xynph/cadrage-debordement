@@ -231,6 +231,77 @@ func _input(event: InputEvent) -> void:
 	if (event.ctrl_pressed and code == KEY_K) or (event.alt_pressed and code in [KEY_LEFT, KEY_RIGHT]) or code in [KEY_F1, KEY_ESCAPE]:
 		get_viewport().set_input_as_handled()
 
+const Components = preload("res://ui/immersive08/components.gd")
+const INVITATION_PANEL := Color("172321")
+const INVITATION_TITLE := Color("f2ecdc")
+const INVITATION_REASON := Color("abb7b1")
+const INVITATION_GOLD := Color("d8c183")
+const INVITATION_GAP := 12
+
+# Mêmes corps que les lignes du courrier (reception_canvas.gd : 20 pour le titre, 17 pour le détail), mis à l'échelle
+# de la fenêtre : la carte reste lisible à toutes les résolutions, au lieu des 12 px plafonnés de reading_size().
+func _invitation_title_size() -> int: return maxi(13, Components.px(20))
+func _invitation_reason_size() -> int: return maxi(12, Components.px(17))
+func _invitation_card_width() -> int: return maxi(300, Components.px(620))
+
+# Carte sombre de la charte (panneau #172321, filet d'accent à gauche) : le texte à gauche, l'action à droite.
+func _invitation_card(card_name: String, edge: Color) -> Dictionary:
+	var card := PanelContainer.new()
+	card.name = card_name
+	var style := StyleBoxFlat.new()
+	style.bg_color = INVITATION_PANEL
+	style.border_color = edge.darkened(.55)
+	style.set_border_width_all(1)
+	style.set_border_width(SIDE_LEFT, 4)
+	style.set_corner_radius_all(4)
+	style.content_margin_left = 14
+	style.content_margin_right = 12
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+	card.add_theme_stylebox_override("panel", style)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	card.add_child(row)
+	return {"card": card, "row": row}
+func _invitation_text(text: String, size: int, color: Color, bold: bool = false) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", size)
+	label.add_theme_color_override("font_color", color)
+	if bold: label.add_theme_font_override("font", Components.BOLD)
+	return label
+
+func _invitation_button(text: String, callback: Callable) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.custom_minimum_size = Vector2(Components.px(150), maxi(32, Components.px(46)))
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	button.add_theme_font_size_override("font_size", _invitation_reason_size())
+	button.add_theme_font_override("font", Components.BOLD)
+	var states := {"normal": Color("2f5a52"), "hover": Color("3a6d63"), "pressed": Color("244a43"), "disabled": Color("26302f")}
+	for key: String in states:
+		var box := StyleBoxFlat.new()
+		box.bg_color = states[key]
+		box.border_color = Color("5f8f84") if key != "disabled" else Color("3a4744")
+		box.set_border_width_all(1)
+		box.set_corner_radius_all(4)
+		box.content_margin_left = 14
+		box.content_margin_right = 14
+		button.add_theme_stylebox_override(key, box)
+	var focus := StyleBoxFlat.new()
+	focus.draw_center = false
+	focus.border_color = INVITATION_TITLE
+	focus.set_border_width_all(2)
+	focus.set_corner_radius_all(4)
+	button.add_theme_stylebox_override("focus", focus)
+	for key: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		button.add_theme_color_override(key, INVITATION_TITLE)
+	button.add_theme_color_override("font_disabled_color", Color("9aa7a1"))
+	button.pressed.connect(callback)
+	return button
+
 func install_entrypoints() -> void:
 	if active() or not is_instance_valid(app.root_content): return
 	if app.route == "Préparation":

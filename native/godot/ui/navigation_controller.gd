@@ -224,7 +224,7 @@ func _build_palette() -> void:
 	_dialog = AcceptDialog.new()
 	_dialog.name = "NavigationPalette"
 	app._prepare_dialog(_dialog,_palette_size().x)
-	_dialog.title = "Votre carnet · accès rapide"
+	_dialog.title = "Ton carnet · accès rapide"
 	_dialog.get_ok_button().text = "OUVRIR"
 	var content := C.v(12)
 	content.custom_minimum_size.x = _palette_size().x-60
@@ -314,7 +314,7 @@ func _refresh_results(query: String) -> void:
 			var club: Dictionary = row.club
 			if not (club.get("id") is int or club.get("id") is float): continue
 			var id := str(int(club.get("id")))
-			var detail := "Votre club" if id == own_id else ("★ Suivi · " if int(club.get("id", -1)) in followed else "") + ("Fiche du club" if str(row.league).is_empty() else str(row.league))
+			var detail := "Ton club" if id == own_id else ("★ Suivi · " if int(club.get("id", -1)) in followed else "") + ("Fiche du club" if str(row.league).is_empty() else str(row.league))
 			candidates.append({"kind":"club", "id":id, "route":"Club" if id == own_id else app.Immersive.ClubSheet.ROUTE, "label":"Club · %s · %s" % [G.club_name(club), detail]})
 		var seen := {}
 		for source in ["squad", "market"]:
@@ -338,7 +338,7 @@ func _refresh_results(query: String) -> void:
 		_results.add_item(candidate.label)
 		_results.set_item_tooltip(_results.item_count - 1, candidate.label)
 	if _results.item_count > 0: _results.select(0)
-	_count.text = "Aucun résultat · essayez un autre nom ou menu." if total == 0 else "%d résultat(s)%s" % [total, " · les 12 premiers, précisez votre recherche" if total > RESULT_LIMIT else ""]
+	_count.text = "Aucun résultat · essaie un autre nom ou menu." if total == 0 else "%d résultat(s)%s" % [total, " · les 12 premiers, précise ta recherche" if total > RESULT_LIMIT else ""]
 	_dialog.get_ok_button().disabled = total == 0
 
 func _activate_selected() -> void:

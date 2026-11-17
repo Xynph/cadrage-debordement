@@ -258,9 +258,9 @@ func reading_actions() -> void:
 			if preference_tabs.get_tab_title(index)=="Affichage":preference_tabs.current_tab=index;break
 	await settle()
 	await capture_dialog("parametres-1440")
-	var packs_button: Button = button(app,"Importez un pack personnalisé")
+	var packs_button: Button = button(app,"Importe un pack personnalisé")
 	check(packs_button != null and packs_button.is_visible_in_tree(),"Accès personnalisé aux packs visible dans les paramètres")
-	await press("Importez un pack personnalisé")
+	await press("Importe un pack personnalisé")
 	check(app.route=="Packs" and app.pack_manager.scope=="career","Paramètres ouvrent les packs de carrière")
 	await press("Importer une autre réalité")
 	check(app.pack_manager.picker.visible,"Vrai dialogue ZIP accessible")

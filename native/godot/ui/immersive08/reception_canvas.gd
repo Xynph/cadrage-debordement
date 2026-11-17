@@ -35,9 +35,9 @@ const SERVICE_ICONS = {"Presse":"globe", "Sélections":"flag", "Calendrier":"cal
 const SUBJECT_EXTRAS = [["archives", "Archives"], ["waiting", "En attente"], ["info", "Infos"]]
 # Trois formes : singulier et pluriel accordés (moteur actuel) et la forme historique « contrat(s) expire(nt) » des anciennes carrières.
 const SEASON_EXPIRY_MAILS := [
-	"%d contrat expire à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs.",
-	"%d contrats expirent à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs.",
-	"%d contrat(s) expire(nt) à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs.",
+	"%d contrat expire à la fin de cette saison. Consulte l'onglet Contrats pour anticiper les départs.",
+	"%d contrats expirent à la fin de cette saison. Consulte l'onglet Contrats pour anticiper les départs.",
+	"%d contrat(s) expire(nt) à la fin de cette saison. Consulte l'onglet Contrats pour anticiper les départs.",
 ]
 
 static func _state(app: Control) -> Dictionary:
@@ -138,7 +138,7 @@ static func _messages(app: Control) -> Array[Dictionary]:
 		}.get(invitation.kind, "Invitation de presse")
 		var detail := "%s · Saison %s · Semaine %d." % [Press._club(app, context.club), SeasonLabel.label(context.season), int(context.week) + 1]
 		match invitation.status:
-			"pending": detail += "\n\nLes journalistes t'attendent. Publie tes réponses pour poursuivre."
+			"pending": detail += "\n\nLes journalistes t’attendent. Publie tes réponses pour poursuivre."
 			"published": detail += "\n\nTes réponses ont été publiées."
 			"expired": detail += "\n\nCe rendez-vous est passé."
 		messages.push_front({
@@ -826,6 +826,9 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 				var action := D.button(card,Rect2(26,top,HALF,_h(46)),caption,_open_related.bind(app, message, app._open_press_invitation.bind(invitation.id)),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
 				action.disabled = app.waiting or (not receipt and (not conference.get("available", false) or conference.get("invitationId") != invitation.id))
 				if action.disabled: action.tooltip_text = str(conference.get("reason", ""))
+				# Conférence ordinaire seulement (le moteur donne `moment` pour arrivée, phase finale, bilan, derby, crise).
+				if not receipt and conference.get("available", false) and conference.get("invitationId") == invitation.id and not conference.get("moment") is Dictionary:
+					_press_policy_toggle(card, app, Rect2(589,top,549,38))
 	elif message.has("scene_invitation"):
 		var scene: Dictionary = message.scene_invitation
 		var open := D.button(card,Rect2(26,top,HALF,_h(46)),"Ouvrir l’invitation",func():
@@ -888,6 +891,34 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			_redraw(app,"InboxToggleRead"),false,"mail",true,app.accent,"InboxToggleRead")
 
 ## Courrier du club : une rangée de réponses (si le mail en attend une), puis l'écran concerné et le classement.
+## Bascule discrète du réglage « conférences ordinaires » (commande press_policy, comme dans les Paramètres) ; la conférence en cours reste à traiter.
+static func _press_policy_toggle(card: Panel, app: Control, rectangle: Rect2) -> void:
+	var toggle := D.button(card,rectangle,_press_policy_caption(app),_press_policy_choose.bind(app, card),false,"",true,app.accent,"InboxPressPolicy")
+	toggle.tooltip_text = "Gabi tient les conférences ordinaires à votre place, sur un ton prudent : médias −2 et relation −1 avec chaque journaliste présent. Vous restez convoqué aux grands rendez-vous (arrivée, phase finale, bilan de saison, derby, crise). La conférence ouverte reste à traiter."
+	toggle.disabled = app.waiting
+
+static func _press_policy_current(app: Control) -> String:
+	return "adjoint" if str(app.model.get("clubLife", {}).get("press", {}).get("policy", {}).get("ordinary", "moi")) == "adjoint" else "moi"
+
+static func _press_policy_caption(app: Control) -> String:
+	return "Les prochaines fois, y aller moi-même" if _press_policy_current(app) == "adjoint" else "Les prochaines fois, envoyer Gabi aux conférences ordinaires"
+
+static func _press_policy_choose(app: Control, card: Panel) -> void:
+	var next := "moi" if _press_policy_current(app) == "adjoint" else "adjoint"
+	app._command("press_policy", {"ordinary":next})
+	_press_policy_refresh(app, card)
+	# Un refus du moteur ramène le modèle à l'ancien réglage : relire un instant plus tard (le minuteur meurt avec la carte).
+	var later := Timer.new()
+	later.one_shot = true
+	later.wait_time = 0.8
+	card.add_child(later)
+	later.timeout.connect(_press_policy_refresh.bind(app, card))
+	later.start()
+
+static func _press_policy_refresh(app: Control, card: Panel) -> void:
+	var toggle := card.get_node_or_null("InboxPressPolicy") as Button
+	if toggle != null: toggle.text = _press_policy_caption(app)
+
 static func _club_mail_actions(card: Panel, app: Control, state: Dictionary, message: Dictionary, top: int) -> void:
 	var mail: Dictionary = message.club_mail
 	var mark: Dictionary = state.marks.get(message.id,{})
