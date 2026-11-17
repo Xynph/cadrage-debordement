@@ -78,6 +78,17 @@ func reply_and_open() -> void:
 	check(not mail.is_empty(), "Un mail du club attend une réponse")
 	if mail.is_empty(): return
 	for size: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720)]: await reception_layout(mail, size)
+	# Recette du 17/11 : le bilan de Gabi propose quatre réponses, coupées sur une seule rangée
+	# (« Axer la semaine sur la conquêt »). Mêmes contrôles avec ses quatre libellés réels, au plus étroit.
+	var original: Array = mail.reponses
+	mail.reponses = [
+		{"id":"conquete", "libelle":"Axer la semaine sur la conquête", "disponible":true, "effets":""},
+		{"id":"defense", "libelle":"Axer sur la défense et la discipline", "disponible":true, "effets":""},
+		{"id":"pied", "libelle":"Axer sur le jeu au pied", "disponible":true, "effets":""},
+		{"id":"plan", "libelle":"Garder notre plan", "disponible":true, "effets":""},
+	]
+	await reception_layout(mail, Vector2i(1280, 720))
+	mail.reponses = original
 	await invitations_in_list(mail)
 	root.size = Vector2i(1600, 900)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
