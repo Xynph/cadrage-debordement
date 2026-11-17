@@ -1,0 +1,22 @@
+::group::tests/godot-derby-etiquette.cjs
+Étiquette Derby (Godot) : {"controles":11,"failures":[]}
+Captures : /tmp/tmp.OKN4Hr0HsT/suite.qmg30P/rl27-derby-captures-um1xyJ
+TAP version 13
+# Subtest: Étiquette Derby sur le prochain match (Bureau, Composition, Préparation)
+ok 1 - Étiquette Derby sur le prochain match (Bureau, Composition, Préparation)
+  ---
+  duration_ms: 83248.357652
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 83255.082767
+CD_CPU_PROFILE suite=tests/godot-derby-etiquette.cjs user_s=76.60 system_s=11.26 wall_s=83.64 cpu_pct=105% max_rss_kb=2811536
+PASS tests/godot-derby-etiquette.cjs (84 s)
+::endgroup::
