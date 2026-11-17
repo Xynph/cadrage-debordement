@@ -64,7 +64,7 @@ test('international mail explains the camp and records the club return exactly o
  const first = initial.project().international.currentManagedFixture;
  assert.equal(first.date, '2027-02-06');
  const before = initial.read();
- assert.throws(() => initial.advance(), /Jouez votre match international/);
+ assert.throws(() => initial.advance(), /Joue ton match international/);
  assert.deepEqual(initial.read(), before);
  initial.play(first);
  assert.equal(initial.read().mail.filter(mail => mail.kind === 'international_result').length, 1);
@@ -93,7 +93,7 @@ test('international mail explains the camp and records the club return exactly o
 
 test('a closed club season retains the international date at the next opening after 2027', () => {
  const initial = bridge({ date: '2028-07-16', opening: '2028-07-18', phase: 'ended' });
- assert.throws(() => initial.checkSeason(), /Terminez les journées/);
+ assert.throws(() => initial.checkSeason(), /Termine les journées/);
  initial.advance();
  assert.equal(initial.project().meta.calendarToday, '2028-07-17');
  assert.equal(initial.project().meta.canAdvanceSeason, false);
@@ -107,7 +107,7 @@ test('a closed club season retains the international date at the next opening af
  const reopened = bridge({ date: '2028-07-16', opening: '2028-07-18', phase: 'ended', profile: saved });
  assert.deepEqual(reopened.read(), saved);
  assert.equal(reopened.project().meta.calendarToday, '2028-07-18');
- assert.throws(() => reopened.advance(), /Commencez la saison suivante/);
+ assert.throws(() => reopened.advance(), /Commence la saison suivante/);
 });
 
 // Décision de Léo (16/11/2026) : un seul courrier par vague de convocations, toutes sélections confondues.

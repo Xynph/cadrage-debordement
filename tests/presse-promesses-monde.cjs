@@ -90,7 +90,7 @@ test('promesse irréaliste : presse et direction réagissent, puis la promesse r
   assert.ok(folle, 'un objectif hors de portée est proposé à un club modeste');
   const { model } = conference(folle.id);
   if (folle.realism === 'irrealiste') {
-    assert.ok(messages().includes('La presse doute de votre promesse'));
+    assert.ok(messages().includes('La presse doute de ta promesse'));
     assert.ok(messages().includes('La direction s’inquiète'));
     assert.ok(folle.effects.mediaTrust < 0 && folle.effects.boardPressure > 0 && folle.effects.trust < 0);
   }

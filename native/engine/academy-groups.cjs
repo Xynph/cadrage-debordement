@@ -212,7 +212,7 @@ module.exports = function academyGroups() {
     const human = s.development, own = s.clubs[s.club];
     s.academyIntake = { version: 1, season: s.season, players: proposal(s, own, human.academy, ids) };
     human.intakeSeason = s.season;
-    news(`Nouvelle génération : ${s.academyIntake.players.length} jeunes de 16 ans se présentent au centre de formation. Choisissez ceux que vous gardez en Crabos.`);
+    news(`Nouvelle génération : ${s.academyIntake.players.length} jeunes de 16 ans se présentent au centre de formation. Choisis ceux que tu gardes en Crabos.`);
   }
   function pendingIntake(s) {
     return modern(s) && s.academyIntake?.version === 1 && s.academyIntake.season === s.season ? s.academyIntake : null;
@@ -269,8 +269,8 @@ module.exports = function academyGroups() {
     const result = { context, version: s.academyGroupPolicy ?? 0, centers: s.clubs.length,
       available: false, additions: 0, blocked: [], reason: '' };
     if (worldwide(s)) result.reason = 'Les Crabos et les Espoirs sont déjà actifs dans tous les clubs.';
-    else if (s.aiRosterVersion !== 2 || s.aiRoster?.version !== 2) result.reason = 'Activez d’abord la politique de population récente.';
-    else if (s.live || s.phase !== 'league') result.reason = 'Ouvrez cette reprise hors match, pendant le championnat.';
+    else if (s.aiRosterVersion !== 2 || s.aiRoster?.version !== 2) result.reason = 'Active d’abord la politique de population récente.';
+    else if (s.live || s.phase !== 'league') result.reason = 'Ouvre cette reprise hors match, pendant le championnat.';
     if (result.reason) return result;
     const all = [{ clubId: s.club, players: s.development.academy }, ...s.aiRoster.academies];
     for (const { clubId, players } of all) {
@@ -281,19 +281,19 @@ module.exports = function academyGroups() {
     }
     if (result.blocked.length) {
       const first = result.blocked[0];
-      result.reason = `${first.name} aurait besoin de ${first.required} places pour garder ses ${first.current} jeunes et compléter ses groupes. Le plafond est de ${capacity}. Réessayez après les sorties de saison.`;
+      result.reason = `${first.name} aurait besoin de ${first.required} places pour garder ses ${first.current} jeunes et compléter ses groupes. Le plafond est de ${capacity}. Réessaie après les sorties de saison.`;
     } else result.available = true;
     return result;
   }
 
   function enable(s, payload) {
     if (payload.confirmed !== true || Object.keys(payload).some(key => !['confirmed', 'context'].includes(key))) {
-      throw Error('Confirmez la reprise des groupes Crabos et Espoirs.');
+      throw Error('Confirme la reprise des groupes Crabos et Espoirs.');
     }
     const result = preview(s);
     const supplied = payload.context;
     if (!supplied || Object.keys(supplied).length !== 3 || Object.keys(result.context).some(key => supplied[key] !== result.context[key])) {
-      throw Error('Le contexte de carrière a changé. Consultez à nouveau la reprise des groupes.');
+      throw Error('Le contexte de carrière a changé. Consulte à nouveau la reprise des groupes.');
     }
     if (!result.available) throw Error(result.reason);
     start(s);

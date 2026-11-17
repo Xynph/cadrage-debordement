@@ -274,7 +274,7 @@ static func build(app: Control) -> Control:
 		var status := "Club et sélection" if role == "dual" else "Sélection uniquement"
 		page.add_child(G.section("%s · %s" % [status, names.get(nation, nation)]))
 	else:
-		page.add_child(G.section("Votre carrière en club", "Suivez les convocations et les postes disponibles."))
+		page.add_child(G.section("Ta carrière en club", "Suis les convocations et les postes disponibles."))
 	var directory := HFlowContainer.new()
 	directory.name = "InternationalNationLinks"
 	page.add_child(directory)
@@ -532,11 +532,11 @@ static func _offers(app: Control, international: Dictionary, role: String) -> Co
 			full_time.name = "NationalJobCurrentOnly"
 			view.add_child(full_time)
 		view.add_child(G.button("Quitter la sélection", func():
-			app.confirm("Quitter la sélection", "Votre carrière en club continue.",
+			app.confirm("Quitter la sélection", "Ta carrière en club continue.",
 				func(): app._command("national_leave_job", {"confirmed":true}))))
 	return view
 
 static func _take(app: Control, nation: String, name: String, role: String) -> void:
-	var detail := "Vous continuerez à diriger votre club et prendrez en charge cette sélection." if role == "dual" else "Votre carrière se poursuivra à la tête de cette sélection."
+	var detail := "Tu continueras à diriger ton club et prendras en charge cette sélection." if role == "dual" else "Ta carrière se poursuivra à la tête de cette sélection."
 	app.confirm("Prendre en charge " + name, detail,
 		func(): app._command("national_take_job", {"nation":nation, "role":role, "confirmed":true}))

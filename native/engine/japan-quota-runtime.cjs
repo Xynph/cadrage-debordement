@@ -154,7 +154,7 @@ function factory(eligibility){
   };
   sheetErrors=function(){
    const errors=originalErrors();
-   if(activeClub(S,S.club)&&!nominations(S,club(),S.lineup,S.reserves))errors.push('League One : vérifiez les inscriptions et les quotas de la feuille (14 A-1, au plus 6 B/C).');
+   if(activeClub(S,S.club)&&!nominations(S,club(),S.lineup,S.reserves))errors.push('League One : vérifie les inscriptions et les quotas de la feuille (14 A-1, au plus 6 B/C).');
    return errors;
   };
   promoteCover=function(){
@@ -171,7 +171,7 @@ function factory(eligibility){
     ensureSkills(p);ensureContract(p);ensureDevelopment(p);club().players.push(p);list[bench?i-15:i]=p.id;
    }
    if(vacancy.length)news(vacancy.length+' espoir(s) promu(s) pour compléter la feuille de match.');
-   save();render();toast(vacancy.length?vacancy.length+' espoir(s) rejoint le groupe.':'Votre feuille de match est complète.');
+   save();render();toast(vacancy.length?vacancy.length+' espoir(s) rejoint le groupe.':'Ta feuille de match est complète.');
   };
   legalChange=function(l,side,slot,incoming){
    return originalLegal(l,side,slot,incoming)&&matchChange(S,l,side,l.sheets[side].on[slot],incoming,slot);

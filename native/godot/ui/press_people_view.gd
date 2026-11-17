@@ -21,7 +21,7 @@ static func build(app: Control, data: Dictionary = {}) -> Control:
 	var page := G.v(10)
 	page.name = "Relations"
 	G.fill(page, true)
-	page.add_child(G.wrap("Vos relations avec les journalistes vous suivent au fil de votre carrière.", 12))
+	page.add_child(G.wrap("Tes relations avec les journalistes te suivent au fil de ta carrière.", 12))
 	var people: Array = model.get("people", [])
 	if people.is_empty():
 		page.add_child(G.wrap("Aucun journaliste disponible.", 16))

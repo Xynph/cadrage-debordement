@@ -19,8 +19,8 @@ static func state_text(quote: Dictionary) -> Dictionary:
 		return {"title":"RETRAIT POUR CETTE JOURNÉE", "progress":"Trois propositions refusées · discussion close", "action":"Prochaine action : attendre la prochaine journée avant une nouvelle proposition.", "blocked":true}
 	if status == "counter":
 		var attempts := int(negotiation.get("attempts", 0))
-		return {"title":"CONTRE-OFFRE REÇUE", "progress":"Proposition %d/3 enregistrée" % attempts, "action":"Prochaine action : ajuster votre proposition %d/3, ou reprendre les conditions demandées." % mini(3, attempts+1), "blocked":false}
-	return {"title":"PRÉPARER UNE PROPOSITION", "progress":"Prochaine proposition · 1/3", "action":"Prochaine action : choisir salaire et durée, puis autoriser l’offre si vous souhaitez poursuivre.", "blocked":false}
+		return {"title":"CONTRE-OFFRE REÇUE", "progress":"Proposition %d/3 enregistrée" % attempts, "action":"Prochaine action : ajuster ta proposition %d/3, ou reprendre les conditions demandées." % mini(3, attempts+1), "blocked":false}
+	return {"title":"PRÉPARER UNE PROPOSITION", "progress":"Prochaine proposition · 1/3", "action":"Prochaine action : choisir salaire et durée, puis autoriser l’offre si tu souhaites poursuivre.", "blocked":false}
 
 static func _card(parent: Node, title: String, id: String, tint: Color) -> VBoxContainer:
 	var card := PanelContainer.new()
@@ -110,7 +110,7 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 		counter_text.text = "Discussion close.\n" + str(quote.get("reason","Négociation close jusqu’à la prochaine journée."))
 	counter.add_child(counter_text)
 	counter.add_child(C.wrap("Les conditions affichées sont celles de la discussion enregistrée. Aucun accord n’est garanti.",16,C.MUTED))
-	var proposal := _card(columns,"VOTRE NOUVELLE PROPOSITION","ContractProposal",C.BLUE)
+	var proposal := _card(columns,"TA NOUVELLE PROPOSITION","ContractProposal",C.BLUE)
 	# Le plus petit salaire qu’un contrat peut porter vient du moteur quand il le fournit.
 	var floor_salary := float(app.model.get("finance",{}).get("salaryFloor",1000))
 	var salary := _spin(proposal,"OfferSalary",Salary.field_label(),floor_salary,100000,float(quote.get("salary",player.get("salary",5000))),100,"€ / semaine")
@@ -158,7 +158,7 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	body.add_child(action)
 	if blocked and not phase.blocked:
 		body.add_child(C.wrap(str(quote.get("reason","Cette offre ne peut pas être envoyée dans la situation actuelle.")),18,C.ALERT))
-	body.add_child(C.wrap("En autorisant, vous envoyez ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée. Sinon, seule la discussion est enregistrée. Annuler ne transmet aucune proposition.",16,C.MUTED))
+	body.add_child(C.wrap("En autorisant, tu envoies ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée. Sinon, seule la discussion est enregistrée. Annuler ne transmet aucune proposition.",16,C.MUTED))
 	dialog.get_ok_button().text = "AUTORISER LA SIGNATURE SI ACCORD"
 	dialog.get_ok_button().disabled = blocked
 	dialog.get_cancel_button().text = "FERMER" if blocked else "ANNULER"

@@ -9,7 +9,7 @@ const shape=(x,keys)=>object(x)&&Object.keys(x).length===keys.length&&keys.every
 const text=x=>typeof x==='string'&&x.length>=1&&x.length<=80&&x===x.trim()&&!/[\x00-\x1f\x7f]/.test(x);
 const key=x=>x.normalize('NFC').toLocaleLowerCase('fr');
 function namesCheck(names){
- check(Array.isArray(names)&&names.length>=2&&names.length<=LIMIT&&names.every(text),'saisissez 2 à 32 noms de clubs de 1 à 80 caractères');
+ check(Array.isArray(names)&&names.length>=2&&names.length<=LIMIT&&names.every(text),'saisis 2 à 32 noms de clubs de 1 à 80 caractères');
  check(new Set(names.map(key)).size===names.length,'chaque club doit avoir un nom distinct');
 }
 function generate(payload){

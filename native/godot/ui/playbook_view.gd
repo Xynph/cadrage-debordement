@@ -91,11 +91,11 @@ static func _phases(app: Control, parent: Container, data: Dictionary, available
 	for phase: Dictionary in data.setPieces:
 		var card := G.panel(parent)
 		card.add_child(G.section(str(phase.label), "Un compromis entre conservation, territoire et prise de risque."))
-		_selector(app, card, "VOTRE CHOIX", str(phase.key), phase.options, str(phase.selected), available)
+		_selector(app, card, "TON CHOIX", str(phase.key), phase.options, str(phase.selected), available)
 
 static func _advice(app: Control, parent: Container, data: Dictionary, available: bool) -> void:
 	if not data.inMatch or not data.staffAdvice is Dictionary:
-		parent.add_child(G.wrap("La lecture du rapport de force apparaîtra pendant le match. Préparez d’abord vos zones et vos phases arrêtées ; vous pourrez les ajuster en pause.", 17))
+		parent.add_child(G.wrap("La lecture du rapport de force apparaîtra pendant le match. Prépare d’abord tes zones et tes phases arrêtées ; tu pourras les ajuster en pause.", 17))
 		return
 	var advice: Dictionary = data.staffAdvice
 	var card := G.panel(parent)
@@ -120,4 +120,4 @@ static func _advice(app: Control, parent: Container, data: Dictionary, available
 			var button := G.button("ADAPTER « %s » → %s" % [zone.label, label], func(): _choose(app, str(suggestion.kind), str(suggestion.value), str(zone.id), true))
 			button.disabled = not available
 			card.add_child(button)
-	if suggestions.is_empty(): card.add_child(G.wrap("Aucune consigne supplémentaire recommandée pour l’instant. Gardez votre lecture du terrain.", 15))
+	if suggestions.is_empty(): card.add_child(G.wrap("Aucune consigne supplémentaire recommandée pour l’instant. Garde ta lecture du terrain.", 15))

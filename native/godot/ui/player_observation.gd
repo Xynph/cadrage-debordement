@@ -17,7 +17,7 @@ static func delay(scouting: Dictionary) -> String:
 static func reason(app: Control,person: Dictionary) -> String:
 	if not person.get("scouting") is Dictionary: return ""
 	var scouting: Dictionary = person.scouting
-	if K.owned(person): return "Joueur de votre club"
+	if K.owned(person): return "Joueur de ton club"
 	if app.waiting: return "Une décision est en cours"
 	if not app._live().is_empty(): return "Indisponible pendant le match"
 	if scouting.get("pending",false): return "Observation en cours" + (" · %s semaine(s) restante(s)" % G.n(scouting.job.remainingWeeks) if scouting.get("job") is Dictionary and scouting.job.get("remainingWeeks") != null else "")

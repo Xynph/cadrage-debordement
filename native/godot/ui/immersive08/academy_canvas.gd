@@ -151,7 +151,7 @@ func _group_upgrade_reason(preview: Dictionary) -> void:
 	var dialog := AcceptDialog.new()
 	app._prepare_dialog(dialog, 620)
 	dialog.title = "Mise à jour des centres de formation"
-	dialog.dialog_text = str(preview.get("reason", "Réessayez après la prochaine intersaison."))
+	dialog.dialog_text = str(preview.get("reason", "Réessaie après la prochaine intersaison."))
 	app.add_child(dialog)
 	dialog.confirmed.connect(dialog.queue_free)
 	dialog.canceled.connect(dialog.queue_free)
@@ -273,7 +273,7 @@ func _draw_rows(people: Array) -> void:
 	var shown := people
 	if shown.is_empty():
 		D.text(rows, 24, 65, "Aucun joueur dans cette sélection.", 29, C.IVORY, 600, 1301)
-		D.text(rows, 24, 109, "Changez le groupe d’âge ou les filtres pour retrouver les Espoirs de votre carrière.", 23, C.MUTED, 500, 1301)
+		D.text(rows, 24, 109, "Change le groupe d’âge ou les filtres pour retrouver les Espoirs de ta carrière.", 23, C.MUTED, 500, 1301)
 	for i in shown.size():
 		var p: Dictionary = shown[i]
 		var status := _status(p)
@@ -313,7 +313,7 @@ func _select(p: Dictionary) -> void:
 func _update_integration() -> void:
 	integration.disabled = app.waiting or selected.is_empty() or _professional(selected)
 	integration.text = "Préparer une intégration" if development.get("promotionAvailable", false) else "Consulter le premier contrat"
-	integration.tooltip_text = "Consulter les conditions du premier contrat professionnel" if not integration.disabled else "Sélectionnez un Espoir."
+	integration.tooltip_text = "Consulter les conditions du premier contrat professionnel" if not integration.disabled else "Sélectionne un Espoir."
 
 func _dossier() -> void:
 	if is_instance_valid(dossier):
@@ -324,7 +324,7 @@ func _dossier() -> void:
 	if selected.is_empty():
 		D.photo(dossier, "academy-training", Rect2(2, 2, 293, 336))
 		D.text(dossier, 308, 63, "Aucun dossier sélectionné", 38, C.IVORY, 700, 510)
-		D.text(dossier, 310, 105, "Choisissez un joueur dans le tableau.", 25, C.MUTED, 500, 510)
+		D.text(dossier, 310, 105, "Choisis un joueur dans le tableau.", 25, C.MUTED, 500, 510)
 		return
 	_portrait(dossier, selected, Rect2(2, 2, 293, 336), true)
 	var p := selected
@@ -378,7 +378,7 @@ func _trend(parent: Node, p: Dictionary) -> void:
 
 func _pathways() -> void:
 	var panel := D.panel(self, Rect2(1, 317, 1393, 581), "Du centre au rugby professionnel", "school", "", "AcademyPathwayPane")
-	D.text(panel, 25, 107, Copy.notice("academy", pathway.get("description", "Choisissez un Espoir pour suivre sa progression.")), 25, C.IVORY, 500, 1347)
+	D.text(panel, 25, 107, Copy.notice("academy", pathway.get("description", "Choisis un Espoir pour suivre sa progression.")), 25, C.IVORY, 500, 1347)
 	var people := _prospects()
 	D.text(panel, 25, 150, "LES MEILLEURS POTENTIELS", 24, GOLD, 700, 1250)
 	for i in mini(6, people.size()):

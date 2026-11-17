@@ -66,14 +66,14 @@ const COMMAND_WAIT_KICKERS := {
 }
 ## Conseils de Gabi affichés pendant une attente (fonctions réelles du jeu).
 const GABI_TIPS := [
-	"Avant un match, passez par la Préparation : les consignes d’attaque et de défense se règlent en un clic.",
-	"Un joueur lourdement chargé peut souffler : passez sa charge en « repos » depuis le suivi de fatigue.",
-	"La composition automatique propose un XV cohérent ; vous gardez la main poste par poste ensuite.",
+	"Avant un match, passe par la Préparation : les consignes d’attaque et de défense se règlent en un clic.",
+	"Un joueur lourdement chargé peut souffler : passe sa charge en « repos » depuis le suivi de fatigue.",
+	"La composition automatique propose un XV cohérent ; tu gardes la main poste par poste ensuite.",
 	"Une observation ciblée affine la fourchette de niveau d’un joueur avant de lui faire une offre.",
-	"Le centre de formation récompense la patience : suivez la progression des jeunes semaine après semaine.",
-	"En conférence de presse, vos réponses pèsent sur le moral du vestiaire et sur la confiance de la direction.",
-	"Le calendrier signale les jours de match : avancez jour par jour pour ne rien manquer du courrier.",
-	"Les contrats qui arrivent à échéance apparaissent au Bureau : anticipez les prolongations."
+	"Le centre de formation récompense la patience : suis la progression des jeunes semaine après semaine.",
+	"En conférence de presse, tes réponses pèsent sur le moral du vestiaire et sur la confiance de la direction.",
+	"Le calendrier signale les jours de match : avance jour par jour pour ne rien manquer du courrier.",
+	"Les contrats qui arrivent à échéance apparaissent au Bureau : anticipe les prolongations."
 ]
 const Immersive = preload("res://ui/immersive08/shell.gd")
 const ImmersiveEntry = preload("res://ui/immersive08/entry_canvas.gd")
@@ -412,7 +412,7 @@ func _receive_model(value: Dictionary) -> void:
 		if last_command=="promote_cover" and model.meta.get("coverage") is Dictionary:
 			notice("Renforts signés",str(model.meta.coverage.get("message","La feuille a été complétée.")))
 		if last_command=="recover_profile" and not str(model.meta.get("recoveryBackup","")).is_empty():
-			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nVous pouvez maintenant créer ou importer une carrière.")
+			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nTu peux maintenant créer ou importer une carrière.")
 	# Réponse à un mail du club qui mène à un écran (négocier, prolonger, préserver un joueur).
 	if response_ok and received_command == "club_mail_reply": ClubMail.after_reply(self)
 	call_deferred("_refresh_coach")
@@ -475,7 +475,7 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 		if last_command == "snapshot": return false
 		var active_command := str(queued_action.get("command", last_command))
 		if not command_wait_overlay.visible or command != active_command:
-			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
+			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessaie après sa réponse.")
 		return false
 	# La fiche d'un club est une lecture moteur sans changement d'état : les lecteurs suspendus
 	# (rencontre ouverte avant la fiche, etc.) restent valides et le retour arrière les restitue.
@@ -666,7 +666,7 @@ func _refuse_action(message: String) -> void:
 		status.text = "ACTION NON EFFECTUÉE · " + message
 		status.add_theme_color_override("font_color", Color("f1b6a9"))
 	if not (is_instance_valid(contextual_director) and contextual_director.active()):
-		notice("Votre décision n'a pas été appliquée", message)
+		notice("Ta décision n'a pas été appliquée", message)
 
 func _failed(message: String) -> void:
 	command_wait_overlay.dismiss()
@@ -704,7 +704,7 @@ func _failed(message: String) -> void:
 	# Moteur arrêté : le bouton principal devient « Relancer » (primary_action), la carrière reprend de sa sauvegarde.
 	if connection_error:
 		if is_instance_valid(primary_button): _update_live_bar()
-		message += "\n\nLe moteur du jeu s’est arrêté. Cliquez sur « Relancer » (bouton principal) : la carrière reprend à sa dernière sauvegarde."
+		message += "\n\nLe moteur du jeu s’est arrêté. Clique sur « Relancer » (bouton principal) : la carrière reprend à sa dernière sauvegarde."
 	# The immersive scene owns its visible error panel; a second modal would
 	# survive a successful retry and obscure the resumed match.
 	if is_instance_valid(contextual_director) and contextual_director.active() and not connection_error: return
@@ -716,7 +716,7 @@ func _failed(message: String) -> void:
 	_clear_dialogs()
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 590)
-	d.title = "Votre décision n'a pas été appliquée"
+	d.title = "Ta décision n'a pas été appliquée"
 	d.dialog_text = message
 	add_child(d)
 	d.popup_centered(Vector2i(590, 180))
@@ -923,7 +923,7 @@ func _render_screen(remember_ui: bool) -> void:
 	header_date = G.label("", 11, G.MUTED)
 	overline.add_child(header_date)
 	_update_header_date()
-	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"Les hommes du projet.","Composition":"Votre feuille à 23.","Préparation":"Préparer la rencontre.","Calendrier":"Le fil de la saison.","Classements":"La course aux sommets.","Recrutement":"Construire l’effectif.","Finances":"Les moyens du projet.","Club":"Un club. Un territoire.","Match":"Le jour de match."}.get(route, route.to_upper()), 35, G.INK, true)
+	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"Les hommes du projet.","Composition":"Ta feuille à 23.","Préparation":"Préparer la rencontre.","Calendrier":"Le fil de la saison.","Classements":"La course aux sommets.","Recrutement":"Construire l’effectif.","Finances":"Les moyens du projet.","Club":"Un club. Un territoire.","Match":"Le jour de match."}.get(route, route.to_upper()), 35, G.INK, true)
 	heading.add_theme_font_override("font", G.T.BODY)
 	heading.add_theme_font_size_override("font_size", 20)
 	titles.add_child(heading)
@@ -1019,7 +1019,7 @@ func _observe_navigation() -> void:
 
 func _settled_status_text() -> String:
 	if not last_error.is_empty(): return "ACTION NON EFFECTUÉE · " + last_error
-	if model.get("meta",{}).get("saveError",false): return "DERNIÈRE SAUVEGARDE IMPOSSIBLE · Vérifiez le stockage avant de poursuivre."
+	if model.get("meta",{}).get("saveError",false): return "DERNIÈRE SAUVEGARDE IMPOSSIBLE · Vérifie le stockage avant de poursuivre."
 	if user_preferences != null and not user_preferences.last_error.is_empty(): return "RÉGLAGES LOCAUX · " + user_preferences.last_error
 	if is_instance_valid(soundscape) and not soundscape.last_error.is_empty(): return "RÉGLAGES SONORES · " + soundscape.last_error
 	if decision_feedback != null and not decision_feedback.status_text().is_empty(): return decision_feedback.status_text()
@@ -1156,7 +1156,7 @@ func _build_sidebar(parent: Node) -> void:
 	G.fill(club_context)
 	club_marks.add_child(club_context)
 	club_context.add_child(G.label(G.club_abbr(model.club),23,G.INK,true))
-	club_context.add_child(G.label("VOTRE CLUB",9,G.MUTED))
+	club_context.add_child(G.label("TON CLUB",9,G.MUTED))
 	var name := G.label(G.club_name(model.club), 16, G.INK, true)
 	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name.max_lines_visible=2
@@ -1243,7 +1243,7 @@ func _daily_progression() -> Dictionary:
 
 ## Info-bulle du bouton principal : pour « Continuer », le prochain arrêt prévu (career_progression.gd).
 func primary_tooltip() -> String:
-	if connection_error and bridge.child_pid <= 0: return "Le moteur du jeu s’est arrêté. Cliquez pour le relancer : la carrière reprend à sa dernière sauvegarde."
+	if connection_error and bridge.child_pid <= 0: return "Le moteur du jeu s’est arrêté. Clique pour le relancer : la carrière reprend à sa dernière sauvegarde."
 	if _live().is_empty() and not _press_required() and Immersive.Selections.current_fixture(model).is_empty() and not model.get("meta", {}).get("canAdvanceSeason", false):
 		var daily := _daily_progression()
 		if daily.has("tooltip"): return str(daily.tooltip)
@@ -1336,7 +1336,7 @@ func pause_menu() -> void:
 	var d := AcceptDialog.new()
 	d.name = "ImmersivePauseMenu"
 	_prepare_dialog(d, 820)
-	d.title = "Votre carrière"
+	d.title = "Ta carrière"
 	ImmersiveDialogs.pause_content(d,self)
 	for pair in [["Accueil","home"],["Exporter","export"],["Importer","import"],["Copies de sécurité","profile_safety"],["Paramètres","settings"],["Quitter","quit"]]:
 		var button := d.add_button(pair[0],false,pair[1])
@@ -1394,7 +1394,7 @@ func _file_selected(path: String) -> void:
 			return
 		confirm("Reprendre cette carrière", "Cette carrière sera vérifiée avant sa reprise. La carrière actuelle sera conservée dans Copies de sécurité avant son remplacement ; si cette copie ne peut pas être écrite, l'importation sera refusée.", func(): _command("import", {"text":text}, "Réception"), _has_career())
 	else:
-		if waiting: _refuse_action("Une décision est en cours. Réessayez après sa réponse."); return
+		if waiting: _refuse_action("Une décision est en cours. Réessaie après sa réponse."); return
 		export_path = path
 		_command("export")
 
@@ -1435,7 +1435,7 @@ func _clear_dialogs() -> void:
 			child.queue_free()
 
 func recover_profile() -> void:
-	confirm("Conserver et récupérer le profil", "Une copie du profil endommagé sera conservée avant sa récupération. Vous pourrez ensuite créer ou importer une carrière.",func(): _command("recover_profile",{"confirmed":true}))
+	confirm("Conserver et récupérer le profil", "Une copie du profil endommagé sera conservée avant sa récupération. Tu pourras ensuite créer ou importer une carrière.",func(): _command("recover_profile",{"confirmed":true}))
 
 func reconnect() -> void:
 	if waiting or bridge.child_pid > 0: return

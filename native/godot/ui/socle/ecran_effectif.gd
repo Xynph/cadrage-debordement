@@ -488,7 +488,7 @@ func _fiche() -> void:
 	var joueur := _joueur_choisi()
 	if joueur.is_empty():
 		var vide := _carte()
-		vide.add_child(J.texte("Choisissez un joueur dans la liste.", J.T_CORPS, J.TEXTE_DOUX))
+		vide.add_child(J.texte("Choisis un joueur dans la liste.", J.T_CORPS, J.TEXTE_DOUX))
 		colonne_droite.add_child(vide)
 	else:
 		colonne_droite.add_child(_carte_joueur(joueur))

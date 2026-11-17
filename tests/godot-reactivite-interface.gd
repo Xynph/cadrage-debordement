@@ -48,7 +48,7 @@ func command(id: String, payload: Dictionary = {}) -> bool:
 func close_dialogs() -> int:
 	var count := 0
 	for dialog: Node in app.find_children("*", "AcceptDialog", true, false):
-		if dialog is FileDialog or (dialog as AcceptDialog).title != "Votre décision n'a pas été appliquée": continue
+		if dialog is FileDialog or (dialog as AcceptDialog).title != "Ta décision n'a pas été appliquée": continue
 		count += 1
 		dialog.free()
 	return count
@@ -132,7 +132,7 @@ func decisions() -> void:
 	var after: Array = app.model.get("clubLife", {}).get("clubSheet", {}).get("followed", [])
 	check(not app.bridge.last_response_ok, "Le moteur refuse de suivre son propre club")
 	check(after == before and is_same(app.model, app.bridge.model), "Refus : la bascule est annulée (modèle confirmé)")
-	check(close_dialogs() == 1, "Refus : fenêtre habituelle « Votre décision n'a pas été appliquée »")
+	check(close_dialogs() == 1, "Refus : fenêtre habituelle « Ta décision n'a pas été appliquée »")
 
 ## Sections reprises sans copie : un instantané différentiel = un instantané complet.
 func integrity() -> void:

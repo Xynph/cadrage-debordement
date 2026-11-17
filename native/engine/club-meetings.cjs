@@ -28,11 +28,11 @@ module.exports={
   // Refus d'une action pendant un rendez-vous obligatoire : nommer CE rendez-vous et dire où le trouver (recette native
   // du 16/11/2026 : le message générique laissait le joueur sans piste en début de carrière).
   function pending(st,e){
-   if(!st.current)return 'terminez d’abord l’entretien ouvert, puis le rendez-vous qui vous attend en Réception';
-   if(e.completed)return 'le rendez-vous est terminé : cliquez sur « Continuer » dans sa salle pour le clore avant de poursuivre';
-   if(e.kind==='press')return 'la conférence de presse vous attend ; ouvrez-la avec le bouton « Conf. de presse » (en haut à droite) ou depuis son courrier en Réception, avant de poursuivre';
-   if(e.kind==='medical'){const p=roster().find(p=>p.id===e.playerId);return 'le point médical'+(p?.name?' de '+p.name:'')+' vous attend en Réception, avant de poursuivre';}
-   return 'le rendez-vous avec la direction vous attend en Réception, avant de poursuivre';
+   if(!st.current)return 'termine d’abord l’entretien ouvert, puis le rendez-vous qui t’attend en Réception';
+   if(e.completed)return 'le rendez-vous est terminé : clique sur « Continuer » dans sa salle pour le clore avant de poursuivre';
+   if(e.kind==='press')return 'la conférence de presse t’attend ; ouvre-la avec le bouton « Conf. de presse » (en haut à droite) ou depuis son courrier en Réception, avant de poursuivre';
+   if(e.kind==='medical'){const p=roster().find(p=>p.id===e.playerId);return 'le point médical'+(p?.name?' de '+p.name:'')+' t’attend en Réception, avant de poursuivre';}
+   return 'le rendez-vous avec la direction t’attend en Réception, avant de poursuivre';
   }
   const stage=p=>p.medicalV68?.stage||null;
   const medicalAvailable=s=>!s.live&&!s.trained&&s.phase==='league';
@@ -111,7 +111,7 @@ module.exports={
   function project(){
    const st=S?.clubMeetings,active=hasClub();
    const display=e=>({...copy(e),ackAllowed:ackAllowed(e)});
-   return {scene:active&&st?.current?display(st.current):null,queue:(active?st?.queue||[]:[]).map(display),receipts:copy(st?.receipts||[]),notice:active?'Rendez-vous de carrière obligatoires. Les décisions sont appliquées par les systèmes existants ; lire un bilan n’accorde aucun effet sportif.':'Vous vous consacrez à votre sélection. Les reçus des rendez-vous du club restent consultables.'};
+   return {scene:active&&st?.current?display(st.current):null,queue:(active?st?.queue||[]:[]).map(display),receipts:copy(st?.receipts||[]),notice:active?'Rendez-vous de carrière obligatoires. Les décisions sont appliquées par les systèmes existants ; lire un bilan n’accorde aucun effet sportif.':'Tu te consacres à ta sélection. Les reçus des rendez-vous du club restent consultables.'};
   }
   function add(st,kind,reason,sourceKey,playerId){
    if(st.seen.includes(sourceKey)||st.queue.length>=80)return;
@@ -216,7 +216,7 @@ module.exports={
     check(ackAllowed(e),'une décision réelle est encore requise');
     complete(e,command,e.kind==='board'?priority(S):stage(roster().find(p=>p.id===e.playerId))==='reprise'?'maintain':'read');
    }else{
-    check(e.completed&&e.decision,'terminez les échanges ou la décision avant de continuer');
+    check(e.completed&&e.decision,'termine les échanges ou la décision avant de continuer');
     st.receipts.push(copy(e));st.receipts=st.receipts.slice(-96);st.current=null;promote(st);
    }
    validate(S);return {clubMeetingDecision:{command,meetingId:e.id,kind:e.kind,completed:e.completed}};

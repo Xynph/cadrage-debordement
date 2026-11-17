@@ -209,7 +209,7 @@ function factory(){
  function execute(command,payload){
   const s=state();check(command==='club_follow','commande inconnue');check(s,'aucune carrière');
   check(obj(payload)&&Object.keys(payload).every(k=>['club','follow'].includes(k))&&int(payload.club,0,s.clubs.length-1)&&typeof payload.follow==='boolean','paramètres invalides');
-  check(payload.club!==s.club,'votre club est déjà suivi par vos soins');
+  check(payload.club!==s.club,'ton club est déjà suivi par tes soins');
   const st=etat(s),liste=st.followed.filter(id=>id!==payload.club);
   if(payload.follow){check(liste.length<MAX_FOLLOW,'24 clubs suivis au plus');liste.push(payload.club);}
   st.followed=liste;

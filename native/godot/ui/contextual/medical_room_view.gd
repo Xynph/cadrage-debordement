@@ -105,7 +105,7 @@ func _draw() -> void:
 	var player := _player()
 	if player.is_empty():
 		facts_scroll.add_child(S.label("Joueur indisponible", 20, S.GOLD))
-		facts_scroll.add_child(S.wrap("Ce joueur n’est plus présent dans l’effectif actuel. Choisissez un dossier disponible.", 15))
+		facts_scroll.add_child(S.wrap("Ce joueur n’est plus présent dans l’effectif actuel. Choisis un dossier disponible.", 15))
 	else:
 		var person := S.G.h(12)
 		facts_scroll.add_child(person)

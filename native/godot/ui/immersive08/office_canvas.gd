@@ -48,14 +48,14 @@ static func build(app: Control) -> Control:
 	var fixture_w := 1060 if gabi else 1360
 	_fixture(_card(page,Rect2(280,220,fixture_w,418),"","","OfficeFixture"),app,fixture_w)
 	var priorities_w := main_w - fixture_w - GAP
-	_priorities(_card(page,Rect2(280+fixture_w+GAP,220,priorities_w,418),"VOS TROIS PRIORITÉS","calendar","OfficeDecisions"),app,priorities_w)
+	_priorities(_card(page,Rect2(280+fixture_w+GAP,220,priorities_w,418),"TES TROIS PRIORITÉS","calendar","OfficeDecisions"),app,priorities_w)
 	var widths: Array = ROW2_GABI if gabi else ROW2_CLASSIC
 	var x := 280
 	_group(_card(page,Rect2(x,654,widths[0],448),"ÉTAT DU GROUPE","heart","OfficeGroup"),app,widths[0])
 	x += widths[0] + GAP
 	_standings(_card(page,Rect2(x,654,widths[1],448),"CLASSEMENT · "+P.league_name(app.model),"trophy","OfficeStandings"),app,widths[1])
 	x += widths[1] + GAP
-	_journal(_card(page,Rect2(x,654,widths[2],448),"DANS VOTRE BUREAU","mail","OfficeJournal"),app,widths[2])
+	_journal(_card(page,Rect2(x,654,widths[2],448),"DANS TON BUREAU","mail","OfficeJournal"),app,widths[2])
 	x += widths[2] + GAP
 	_recruitment(_card(page,Rect2(x,654,widths[3],448),"LE PROFIL À SUIVRE","search","OfficeRecruitment"),app,widths[3])
 	var recent := Office.recent_results(app)
@@ -119,7 +119,7 @@ static func _fixture(card: Panel, app: Control, w: int = 1360) -> void:
 			D.text(card,27,210,P.fixture_venue(scheduled),22,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif preparation.is_empty():
 			D.text(card,27,100,"La saison se termine." if app.model.meta.get("canAdvanceSeason",false) else "Le travail continue.",42,C.IVORY,700,740)
-			D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
+			D.text(card,27,156,"Retrouve les résultats et prépare la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif SeasonPreparation.is_champ(app.model.meta):
 			var fixture := P.next_scheduled_fixture(app.model)
 			D.chip(card,Rect2(24,22,210,29),"PRÉPARATION",C.GOLD)
@@ -139,7 +139,7 @@ static func _fixture(card: Panel, app: Control, w: int = 1360) -> void:
 			D.chip(card,Rect2(24,22,322 if japan else 281,29),World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),C.GOLD)
 			D.text(card,27,121,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),58,C.IVORY,800,920)
 			D.text(card,27,183,World.preparation_note(preparation),30,C.IVORY,600,720)
-			D.text(card,27,223,"Avancez de quatre semaines au plus, jusqu’à la prochaine rencontre.",21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
+			D.text(card,27,223,"Avance de quatre semaines au plus, jusqu’à la prochaine rencontre.",21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
 		D.button(card,Rect2(27,354,420,45),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,app.accent,"OfficePreparationAction")
 		return
 	var match_label := str(next.get("label",P.league_name(app.model)))
@@ -205,7 +205,7 @@ static func _live_content(card: Panel, app: Control, match_info: Dictionary) -> 
 
 static func _priorities(card: Panel, app: Control, w: int = 872) -> void:
 	var tasks := Office.priorities(app.model)
-	if tasks.is_empty(): D.text(card,26,108,"Reprenez une carrière pour retrouver les décisions du club.",21,C.MUTED,400,w-56,HORIZONTAL_ALIGNMENT_LEFT,true)
+	if tasks.is_empty(): D.text(card,26,108,"Reprends une carrière pour retrouver les décisions du club.",21,C.MUTED,400,w-56,HORIZONTAL_ALIGNMENT_LEFT,true)
 	for i in tasks.size():
 		var y := 66+i*102
 		var item: Dictionary = tasks[i]
@@ -316,11 +316,11 @@ static func _journal(card: Panel, app: Control, w: int = 548) -> void:
 		var color: Color = [C.BLUE,C.ALERT,C.GOLD][i]
 		D.rect(card,Rect2(18,y,4,92),color,2)
 		D.text(card,37,y+19,category+" · JOURNAL",17,color,600,text_w)
-		D.text(card,37,y+49,"Les échéances du groupe" if category=="DIRECTION" else "La relève est en marche" if category=="FORMATION" else "Les nouvelles de votre carrière",22 if compact else 23,C.IVORY,600,text_w)
+		D.text(card,37,y+49,"Les échéances du groupe" if category=="DIRECTION" else "La relève est en marche" if category=="FORMATION" else "Les nouvelles de ta carrière",22 if compact else 23,C.IVORY,600,text_w)
 		var lines := D.words(message,int(52.0*text_w/480.0),2)
 		for j in lines.size(): D.text(card,37,y+75+j*24,lines[j],18,C.MUTED,400,text_w,HORIZONTAL_ALIGNMENT_LEFT,true)
 		if i<2: D.line(card,Vector2(36,y+105),Vector2(w-24,y+105),Color(C.LINE,.5))
-	if messages.is_empty(): D.text(card,37,120,"Le journal s’ouvrira avec votre carrière.",20,C.MUTED,400,text_w,HORIZONTAL_ALIGNMENT_LEFT,true)
+	if messages.is_empty(): D.text(card,37,120,"Le journal s’ouvrira avec ta carrière.",20,C.MUTED,400,text_w,HORIZONTAL_ALIGNMENT_LEFT,true)
 
 static func _recruitment(card: Panel, app: Control, w: int = 546) -> void:
 	var spotlight := Office.recruitment_spotlight(app.model)

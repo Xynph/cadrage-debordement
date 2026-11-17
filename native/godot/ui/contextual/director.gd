@@ -231,6 +231,77 @@ func _input(event: InputEvent) -> void:
 	if (event.ctrl_pressed and code == KEY_K) or (event.alt_pressed and code in [KEY_LEFT, KEY_RIGHT]) or code in [KEY_F1, KEY_ESCAPE]:
 		get_viewport().set_input_as_handled()
 
+const Components = preload("res://ui/immersive08/components.gd")
+const INVITATION_PANEL := Color("172321")
+const INVITATION_TITLE := Color("f2ecdc")
+const INVITATION_REASON := Color("abb7b1")
+const INVITATION_GOLD := Color("d8c183")
+const INVITATION_GAP := 12
+
+# Mêmes corps que les lignes du courrier (reception_canvas.gd : 20 pour le titre, 17 pour le détail), mis à l'échelle
+# de la fenêtre : la carte reste lisible à toutes les résolutions, au lieu des 12 px plafonnés de reading_size().
+func _invitation_title_size() -> int: return maxi(13, Components.px(20))
+func _invitation_reason_size() -> int: return maxi(12, Components.px(17))
+func _invitation_card_width() -> int: return maxi(300, Components.px(620))
+
+# Carte sombre de la charte (panneau #172321, filet d'accent à gauche) : le texte à gauche, l'action à droite.
+func _invitation_card(card_name: String, edge: Color) -> Dictionary:
+	var card := PanelContainer.new()
+	card.name = card_name
+	var style := StyleBoxFlat.new()
+	style.bg_color = INVITATION_PANEL
+	style.border_color = edge.darkened(.55)
+	style.set_border_width_all(1)
+	style.set_border_width(SIDE_LEFT, 4)
+	style.set_corner_radius_all(4)
+	style.content_margin_left = 14
+	style.content_margin_right = 12
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+	card.add_theme_stylebox_override("panel", style)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	card.add_child(row)
+	return {"card": card, "row": row}
+func _invitation_text(text: String, size: int, color: Color, bold: bool = false) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", size)
+	label.add_theme_color_override("font_color", color)
+	if bold: label.add_theme_font_override("font", Components.BOLD)
+	return label
+
+func _invitation_button(text: String, callback: Callable) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.custom_minimum_size = Vector2(Components.px(150), maxi(32, Components.px(46)))
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	button.add_theme_font_size_override("font_size", _invitation_reason_size())
+	button.add_theme_font_override("font", Components.BOLD)
+	var states := {"normal": Color("2f5a52"), "hover": Color("3a6d63"), "pressed": Color("244a43"), "disabled": Color("26302f")}
+	for key: String in states:
+		var box := StyleBoxFlat.new()
+		box.bg_color = states[key]
+		box.border_color = Color("5f8f84") if key != "disabled" else Color("3a4744")
+		box.set_border_width_all(1)
+		box.set_corner_radius_all(4)
+		box.content_margin_left = 14
+		box.content_margin_right = 14
+		button.add_theme_stylebox_override(key, box)
+	var focus := StyleBoxFlat.new()
+	focus.draw_center = false
+	focus.border_color = INVITATION_TITLE
+	focus.set_border_width_all(2)
+	focus.set_corner_radius_all(4)
+	button.add_theme_stylebox_override("focus", focus)
+	for key: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		button.add_theme_color_override(key, INVITATION_TITLE)
+	button.add_theme_color_override("font_disabled_color", Color("9aa7a1"))
+	button.pressed.connect(callback)
+	return button
+
 func install_entrypoints() -> void:
 	if active() or not is_instance_valid(app.root_content): return
 	if app.route == "Réception":
@@ -242,31 +313,64 @@ func install_entrypoints() -> void:
 		list.name = "ContextualInvitations"
 		parent.add_child(list)
 		parent.move_child(list, 0)
-		list.add_child(S.G.section("Les invitations du club"))
+		var title := _invitation_text("Les invitations du club", maxi(15, Components.px(24)), INVITATION_TITLE, true)
+		title.name = "ContextualInvitationsTitle"
+		list.add_child(title)
 		# Rendez-vous obligatoire en cours (conférence de presse d'arrivée…) : le moteur refuse d'ouvrir une
 		# invitation avant lui. On le dit et on y mène, au lieu d'un « OUVRIR » refusé (recette native du 16/11/2026).
 		var blocking := blocking_meeting()
+		var banner: Control = null
 		if not blocking.is_empty():
-			var notice := S.G.h(12)
-			notice.name = "ContextualInvitationsBlocked"
-			list.add_child(notice)
-			var why := S.G.wrap("Après " + meeting_label(blocking) + " : terminez ce rendez-vous pour ouvrir les invitations.", 14)
+			var notice := _invitation_card("ContextualInvitationsBlocked", INVITATION_GOLD)
+			list.add_child(notice.card)
+			banner = notice.card
+			var why := _invitation_text("Après " + meeting_label(blocking) + " : terminez ce rendez-vous pour ouvrir les invitations.", _invitation_reason_size(), INVITATION_REASON)
+			why.name = "ContextualInvitationsBlockedText"
 			S.G.fill(why)
-			notice.add_child(why)
+			notice.row.add_child(why)
 			if blocking.get("kind") == "press" and not blocking.get("completed", false):
-				var go := S.G.button("OUVRIR LA CONFÉRENCE DE PRESSE", func(): app._open_press_conference())
+				var go := _invitation_button("Ouvrir la conférence de presse", func(): app._open_press_conference())
 				go.name = "ContextualOpenPress"
-				notice.add_child(go)
+				notice.row.add_child(go)
+		# Cartes côte à côte quand la largeur le permet, empilées sinon (colonnes recalculées au redimensionnement).
+		var grid := GridContainer.new()
+		grid.name = "ContextualInvitationCards"
+		grid.add_theme_constant_override("h_separation", INVITATION_GAP)
+		grid.add_theme_constant_override("v_separation", 8)
+		S.G.fill(grid)
+		list.add_child(grid)
+		grid.columns = 1
+		grid.resized.connect(func():
+			var minimum := _invitation_card_width()
+			var columns := clampi(int((grid.size.x + INVITATION_GAP) / (minimum + INVITATION_GAP)), 1, mini(maxi(pending.size(), 1), 3))
+			if grid.columns != columns: grid.columns = columns
+			# Les cartes se partagent la largeur sans dépasser un confort de lecture : le bouton reste près de son texte.
+			var width := clampf((grid.size.x - INVITATION_GAP * (columns - 1)) / columns, minimum, Components.px(1100))
+			for card: Control in grid.get_children(): card.custom_minimum_size.x = width
+			if is_instance_valid(banner): banner.custom_minimum_size.x = minf(grid.size.x, width * columns + INVITATION_GAP * (columns - 1)))
 		for invitation: Dictionary in pending:
-			var row := S.G.h(12)
-			list.add_child(row)
-			var words := S.G.wrap(str(invitation.get("title", "Invitation")) + "\n" + str(invitation.get("reason", "")), 14)
+			var entry := _invitation_card("ContextualInvitation_" + str(invitation.get("id", "")), Color("4f7f73"))
+			entry.card.custom_minimum_size.x = _invitation_card_width()
+			grid.add_child(entry.card)
+			var words := S.G.v(2)
 			S.G.fill(words)
-			row.add_child(words)
-			var open := S.G.button("OUVRIR", func(): open_invitation(str(invitation.id)))
+			entry.row.add_child(words)
+			var heading := _invitation_text(str(invitation.get("title", "Invitation")), _invitation_title_size(), INVITATION_TITLE, true)
+			heading.name = "ContextualInvitationTitle"
+			words.add_child(heading)
+			var reason_text := str(invitation.get("reason", ""))
+			if not reason_text.is_empty():
+				var reason := _invitation_text(reason_text, _invitation_reason_size(), INVITATION_REASON)
+				reason.name = "ContextualInvitationReason"
+				reason.max_lines_visible = 2
+				reason.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+				reason.tooltip_text = reason_text
+				words.add_child(reason)
+			var open := _invitation_button("Ouvrir", func(): open_invitation(str(invitation.id)))
+			open.name = "ContextualInvitationOpen"
 			open.disabled = not blocking.is_empty()
 			if open.disabled: open.tooltip_text = "Disponible après " + meeting_label(blocking) + "."
-			row.add_child(open)
+			entry.row.add_child(open)
 		_contain_entry_content(parent, list)
 	elif app.route == "Préparation":
 		var parent: Node = app.root_content.find_child("PreparationEntrainement", true, false)

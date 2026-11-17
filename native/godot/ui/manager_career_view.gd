@@ -30,9 +30,9 @@ static func build(app: Control) -> Control:
 	var data: Dictionary = app.model.get("clubLife", {}).get("managerCareer", {})
 	var context: Dictionary = data.get("context", {})
 	var left := G.panel(page, 1.0)
-	G.chapter(left, "19", "Votre carrière", "Un poste unique, un parcours conservé.", app.accent)
+	G.chapter(left, "19", "Ta carrière", "Un poste unique, un parcours conservé.", app.accent)
 	var career := G.scroll(left)
-	G.photo_note(career, app.model.club, "Votre mandat", G.club_name(app.model.club), "city", 150)
+	G.photo_note(career, app.model.club, "Ton mandat", G.club_name(app.model.club), "city", 150)
 	career.add_child(G.wrap(data.get("notice", "La mobilité reste disponible après la fin de toutes les compétitions."), 14))
 	if not data.get("active", false):
 		var activate := G.button("ACTIVER LES CANDIDATURES", func(): app._command("manager_career_activate", {"context":context}))
@@ -69,7 +69,7 @@ static func build(app: Control) -> Control:
 		if data.get("applications", []).is_empty(): career.add_child(G.wrap("Aucune candidature enregistrée.", 14))
 		for a: Dictionary in data.get("applications", []):
 			career.add_child(G.wrap("%s · %s" % [G.season_label(a.season), _club(app, a.clubId)], 18, G.INK))
-			career.add_child(G.wrap({"offer":"La direction accepte votre candidature.","stable":"Le club conserve son technicien.","finances":"La situation financière bloque ce changement.","reputation":"Parcours insuffisant pour les attentes du club.","declined":"Offre refusée.","cancelled":"Prise de poste annulée.","expired":"Offre expirée.","completed":"Prise de poste effectuée."}.get(a.reason, str(a.status)), 14))
+			career.add_child(G.wrap({"offer":"La direction accepte ta candidature.","stable":"Le club conserve son technicien.","finances":"La situation financière bloque ce changement.","reputation":"Parcours insuffisant pour les attentes du club.","declined":"Offre refusée.","cancelled":"Prise de poste annulée.","expired":"Offre expirée.","completed":"Prise de poste effectuée."}.get(a.reason, str(a.status)), 14))
 			if a.status == "offered" and data.get("window", false) and pending == null:
 				var accept := G.button("EXAMINER ET CONFIRMER L’OFFRE", func(): _confirm(app, context, a), true)
 				accept.name = "ManagerCareerAccept_" + str(a.clubId)

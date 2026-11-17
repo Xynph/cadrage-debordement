@@ -31,7 +31,7 @@ function factory(){
   return {context:context(S),limit:2000,capacity:100,notice:'Notes personnelles de cette carrière. Elles n’appliquent aucune décision sportive.',entries:(S.coachNotebook?.entries||[]).map(e=>({target:e.target,text:decode(e.textCodes),season:e.season,week:e.week,club:e.club,...identity(e.target)})),targets:[identity('career'),...people.values()].map(p=>({...p,target:p.id,available:true}))};
  }
  function execute(command,payload){
-  check(!!S,'créez ou importez une carrière');check(commandsList().includes(command),'commande inconnue');validate(S);
+  check(!!S,'crée ou importe une carrière');check(commandsList().includes(command),'commande inconnue');validate(S);
   check(shape(payload,command==='coach_note_save'?['context','target','text']:['context','target','confirmed'])&&shape(payload.context,['season','week','club']),'paramètres ou champs inconnus');
   const now=context(S);check(Object.keys(now).every(k=>payload.context[k]===now[k]),'contexte périmé');check(target(payload.target),'cible invalide');
   const prior=S.coachNotebook?.entries||[],index=prior.findIndex(e=>e.target===payload.target);let entries;

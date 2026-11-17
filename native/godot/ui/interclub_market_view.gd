@@ -85,7 +85,7 @@ func _redraw() -> void:
 			filtered.append(person)
 			if person.get("available", false): available += 1
 	page = clampi(page,0,maxi(0,ceili(float(filtered.size())/PAGE_SIZE)-1))
-	var buyer_status := G.wrap("Votre effectif professionnel est complet. Le catalogue reste consultable.", 13, G.ALERT)
+	var buyer_status := G.wrap("Ton effectif professionnel est complet. Le catalogue reste consultable.", 13, G.ALERT)
 	buyer_status.name = "InterclubBuyerStatus"
 	buyer_status.visible = available == 0 and app.model.get("decisions", {}).get("recruitment", {}).get("places", -1) == 0
 	rows.add_child(buyer_status)
@@ -128,7 +128,7 @@ func _draw_negotiation() -> void:
 	search_field.editable = false
 	var person := selected_person
 	_profile_heading(rows, person)
-	rows.add_child(G.wrap("La consultation ne réserve pas le joueur. La clôture peut attribuer le joueur à un autre club ; vous verrez le gagnant pressenti avant de confirmer.",13))
+	rows.add_child(G.wrap("La consultation ne réserve pas le joueur. La clôture peut attribuer le joueur à un autre club ; tu verras le gagnant pressenti avant de confirmer.",13))
 	var fields := G.h(12)
 	rows.add_child(fields)
 	for item in [["Indemnité (€)","fee",offer_fee,1000000000,1000],["Salaire "+G.salary_period(),"salary",offer_salary,100000,100]]:
@@ -149,7 +149,7 @@ func _draw_negotiation() -> void:
 			salary_input = input
 			preload("res://ui/salary_display.gd").bind_input(input,offer_salary,1000,100000)
 			input.value_changed.connect(func(_value: float): offer_salary=preload("res://ui/salary_display.gd").input_weekly(input); _invalidate_quote())
-	local_message = G.wrap("Proposez vos conditions pour recevoir les réponses et découvrir les offres concurrentes.",13)
+	local_message = G.wrap("Propose tes conditions pour recevoir les réponses et découvrir les offres concurrentes.",13)
 	local_message.name = "InterclubNegotiationMessage"
 	rows.add_child(local_message)
 	var examine := G.button("SOUMETTRE LES CONDITIONS",_negotiate)
@@ -166,7 +166,7 @@ func _draw_negotiation() -> void:
 func _invalidate_quote() -> void:
 	negotiation = {}
 	close_button.disabled = true
-	local_message.text = "Conditions modifiées : soumettez-les à nouveau avant toute clôture."
+	local_message.text = "Conditions modifiées : soumets-les à nouveau avant toute clôture."
 
 func _payload() -> Dictionary:
 	return {"playerId":str(selected_person.id),"sellerId":int(selected_person.clubId),"fee":offer_fee,"salary":offer_salary,"sourceSalary":int(selected_person.sourceSalary),"contractEnd":int(selected_person.contractEnd),"context":_data().get("context",{}).duplicate(true)}
@@ -197,14 +197,14 @@ func _on_model(value: Dictionary) -> void:
 		if winner is Dictionary:
 			lines.append("Gagnant pressenti : " + str(winner.club) + ". Vérification finale à la clôture.")
 			close_button.disabled = false
-		else: lines.append("Aucune offre recevable : modifiez vos conditions ou abandonnez.")
+		else: lines.append("Aucune offre recevable : modifie tes conditions ou abandonne.")
 		local_message.text = "\n".join(lines)
 	elif app.last_command == "interclub_auction":
 		pending = false
 		negotiation = {}
 		close_button.disabled = true
 		var receipt: Dictionary = value.get("meta",{}).get("interclubTransfer",{})
-		local_message.text = "Accord conclu : le joueur rejoint votre club." if receipt.get("humanWon",false) else "Un club concurrent a remporté le joueur. Votre trésorerie est conservée."
+		local_message.text = "Accord conclu : le joueur rejoint ton club." if receipt.get("humanWon",false) else "Un club concurrent a remporté le joueur. Ta trésorerie est conservée."
 
 func _on_failure(message: String) -> void:
 	if not pending: return
@@ -213,7 +213,7 @@ func _on_failure(message: String) -> void:
 	salary_input.editable = true
 	negotiation = {}
 	close_button.disabled = true
-	local_message.text = message + " Vos conditions sont conservées ; soumettez-les à nouveau."
+	local_message.text = message + " Tes conditions sont conservées ; soumets-les à nouveau."
 
 func _confirm_auction() -> void:
 	if pending or app.waiting or negotiation.is_empty(): return

@@ -35,6 +35,6 @@ func run() -> void:
 		check(PlayerAttributes.is_generated(generated) and not PlayerAttributes.is_generated(original), "Détection des joueurs générés")
 		check(not PlayerAttributes.is_generated({}), "Joueur sans identifiant : jamais présenté comme généré")
 		check(heading(generated) == "Joueur généré pour compléter l’effectif", "Repères d'un joueur généré : titre explicite")
-		check(heading(original) == "Repères du joueur dans votre carrière", "Repères d'un joueur d'origine inchangés")
+		check(heading(original) == "Repères du joueur dans ta carrière", "Repères d'un joueur d'origine inchangés")
 	print("depth-player-label : %d contrôles, %d échec(s)" % [checks, failures.size()])
 	quit(1 if not failures.is_empty() else 0)

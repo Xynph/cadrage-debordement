@@ -74,7 +74,7 @@ module.exports={
    }else{
     const event=CDLivingLockerRoom.weeklyEvent(S);if(!event||event.key!==p.eventKey||!Object.hasOwn(CDLivingLockerRoom.CHOICES,p.choice))throw Error('Événement de vestiaire périmé.');ok=CDLivingLockerRoom.apply(S,p.choice,{save:()=>true});
    }
-   if(!ok)throw Error('Décision de vestiaire refusée : vérifiez disponibilité et limite hebdomadaire.');
+   if(!ok)throw Error('Décision de vestiaire refusée : vérifie disponibilité et limite hebdomadaire.');
    validate(S);return {relationshipDecision:{command,context:context()}};
   }
   let installed=false;
