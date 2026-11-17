@@ -205,6 +205,7 @@
       "tests/continuer-arrets-saison.cjs": 115,
       "tests/club-mail.cjs": 140,
       "tests/godot-forme-adverse.cjs": 120,
+      "tests/godot-confrontations-directes.cjs": 120,
       "tests/club-mail-enseignements.cjs": 45,
       "tests/world-reprise-decisions.cjs": 118,
       "tests/world-reprise-preparation.cjs": 99,
