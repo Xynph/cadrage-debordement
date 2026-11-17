@@ -1,0 +1,92 @@
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/godot-guide.cjs
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/godot-guide-context.cjs
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/godot-guide-integration.cjs
+::group::tests/godot-intro.cjs
+--- premier
+INTRO moteur prêt + titre : 20519 ms
+INTRO 26 contrôles, 0 échecs
+--- second
+INTRO moteur prêt + titre : 10842 ms
+INTRO 25 contrôles, 0 échecs
+--- ancien
+INTRO moteur prêt + titre : 10871 ms
+INTRO 24 contrôles, 0 échecs
+--- court
+INTRO moteur prêt + titre : 7468 ms
+INTRO 9 contrôles, 0 échecs
+--- qa
+INTRO 2 contrôles, 0 échecs
+Journaux de l’ouverture : /tmp/tmp.r51QVzBDp4/suite.qBsI0P/cd-intro-ArfBMn
+CD_CPU_PROFILE suite=tests/godot-intro.cjs user_s=26.06 system_s=2.04 wall_s=60.63 cpu_pct=46% max_rss_kb=426600
+PASS tests/godot-intro.cjs (60 s)
+::endgroup::
+::group::tests/godot-gabi-bandeau.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+GABI_PHASE demarrage 4571
+GABI_PHASE creation_carriere 4824
+GABI_PHASE reunions_club 839
+GABI_PHASE mise_en_page 171
+GABI_ZONES { "Réception": 62, "Effectif": 296, "Composition": 101, "Préparation": 49, "Recrutement": 111, "Club": 46, "Finances": 36, "Classements": 79, "Formation": 65 } legere=Finances
+GABI_PHASE bandeaux 1984
+GABI_BULLE_MS effectif=12.596 zones=296
+GABI_BULLE_RECOUVRE effectif=2
+GABI_PHASE bulle 1252
+GABI_PHASE bureau 394
+GABI_PHASE coupe 338
+GABI_BANDEAU 381 controles, 0 echec
+
+CD_CPU_PROFILE suite=tests/godot-gabi-bandeau.cjs user_s=15.07 system_s=1.16 wall_s=14.97 cpu_pct=108% max_rss_kb=1138832
+PASS tests/godot-gabi-bandeau.cjs (15 s)
+::endgroup::
+::group::tests/godot-gabi-adjoint.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+AVIS creation.json Réception : Trie comme à l'atelier : ce qui touche les joueurs avant ce qui touche les papiers.
+AVIS creation.json Bureau : Pas de match à l'horizon immédiat. C'est le moment de régler les dossiers qui traînent : contrats, staff, jeunes.
+AVIS creation.json Effectif : 10 contrats s'arrêtent à la fin de la saison. Prolonge ceux qui portent le maillot, pas ceux qui portent les beaux discours.
+AVIS creation.json Composition : C'est le XV que j'aurais aligné. Devant, ça pousse ; derrière, ça court. Valide et va dormir.
+AVIS creation.json Préparation : Les organismes vont bien. Mets de la mêlée cette semaine : on n'a jamais perdu un match pour avoir trop poussé à l'entraînement.
+AVIS creation.json Recrutement : Rien d'urgent, 2 places libres. Si tu dois renforcer, regarde au poste de talonneur : relève contractuelle insuffisante.
+AVIS creation.json Club : Les installations peuvent passer au niveau 3, et on en a les moyens. Un vestiaire où l'eau chaude tient, ça se voit sur le terrain en février.
+AVIS creation.json Finances : Chaque semaine coûte 15 700 € de plus qu'elle ne rapporte. Ça tient tant qu'il y a de la trésorerie, mais une saison, c'est long.
+AVIS creation.json Classements : Pas encore de classement : personne n'a joué. Le premier match dira qui a bien préparé l'été.
+AVIS creation.json Formation : On a 2 pépites. Sécurise-les par un contrat, mais ne les jette pas en pro trop tôt : j'en ai brûlé un comme ça, je m'en veux encore.
+AVIS apres-match.json Réception : Le courrier ne rattrape pas un 22-26. Lis ce qui concerne le groupe d'abord, la presse attendra : elle sait déjà ce qu'elle va écrire.
+AVIS apres-match.json Bureau : Je ferais souffler 6 titulaires fatigués : Booth (100 %) pour Bond, Dearden (86 %) pour Brewer et 4 autres.
+AVIS apres-match.json Effectif : Bond est à 66 % de condition et il n'est pas le seul (11 sous 75 %). Allège sa charge, ou il te lâchera au mauvais moment.
+AVIS apres-match.json Composition : En demi d’ouverture, Amos est à 70 % de condition et tourne à 4,9 de moyenne, mais Abbott sort d'un 8,3, est à 94 % et vaut 59 au poste. En troisième ligne, Mcculloch est à 78 % de condition et tourne à 4,0 de moyenne, mais North sort d'un 8,1, est à 88 % et vaut 63 au poste ; il est jeune, protège-le. Je ferais ces deux changements.
+AVIS apres-match.json Préparation : Veille ou jour de match : pas de charge. On répète les lancements de touche à vide, on rentre tôt.
+AVIS apres-match.json Recrutement : Rien d'urgent, 2 places libres. Si tu dois renforcer, regarde au poste de talonneur : relève contractuelle insuffisante.
+AVIS apres-match.json Club : Les installations peuvent passer au niveau 3, et on en a les moyens. Un vestiaire où l'eau chaude tient, ça se voit sur le terrain en février.
+AVIS apres-match.json Finances : Chaque semaine coûte 15 700 € de plus qu'elle ne rapporte. Ça tient tant qu'il y a de la trésorerie, mais une saison, c'est long.
+AVIS apres-match.json Classements : 10e sur 14. Le peloton est serré : deux victoires et on change de monde, deux défaites aussi.
+AVIS apres-match.json Formation : On a 2 pépites. Sécurise-les par un contrat, mais ne les jette pas en pro trop tôt : j'en ai brûlé un comme ça, je m'en veux encore.
+SEMAINE creation.json match : Samedi 19/09, Meadowbridge Rovers chez eux : dans 68 jours. On a le temps de bien construire.
+SEMAINE creation.json groupe : 40 disponibles, 0 blessé, 94 % de condition, moral à 75. Le groupe est frais.
+SEMAINE creation.json alerte : 10 contrats s'arrêtent en fin de saison. Il faudra trancher avant l'hiver.
+SEMAINE creation.json conseil : Commence par prolonger ceux qui portent le maillot, pas ceux qui portent les beaux discours. -> Effectif
+SEMAINE apres-match.json match : Samedi 26/09, Trentwood Archers à la maison : dans 5 jours. Cette semaine compte.
+SEMAINE apres-match.json groupe : 39 disponibles, 1 blessé, 88 % de condition, moral à 76. Mais 6 titulaires de la feuille sous 70 % : à ménager.
+SEMAINE apres-match.json alerte : 6 titulaires de la feuille sous 70 % de condition. Il faut les faire souffler.
+SEMAINE apres-match.json conseil : Je ferais souffler 6 titulaires fatigués : Booth (100 %) pour Bond, Dearden (86 %) pour Brewer et 4 autres. -> composition
+GABI_ADJOINT 173 controles, 0 echec
+TAP version 13
+# Subtest: Gabi adjoint : avis de chaque écran, conseils avec action, couche connaissance
+ok 1 - Gabi adjoint : avis de chaque écran, conseils avec action, couche connaissance
+  ---
+  duration_ms: 48400.060287
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 48405.039054
+CD_CPU_PROFILE suite=tests/godot-gabi-adjoint.cjs user_s=52.90 system_s=4.03 wall_s=48.74 cpu_pct=116% max_rss_kb=2659736
+PASS tests/godot-gabi-adjoint.cjs (49 s)
+::endgroup::

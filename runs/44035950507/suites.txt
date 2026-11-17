@@ -1,0 +1,6 @@
+tests/godot-intro.cjs
+tests/godot-guide.cjs
+tests/godot-guide-context.cjs
+tests/godot-guide-integration.cjs
+tests/godot-gabi-bandeau.cjs
+tests/godot-gabi-adjoint.cjs
