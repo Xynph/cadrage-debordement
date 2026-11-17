@@ -304,10 +304,19 @@ function recettesImprevues(ecritures, { forces, clubId, receptions, accueil = 1 
 }
 // Ce que coûtent ces recettes imprévues, cumulées sur la saison (une défaite à domicile compense une
 // victoire) : 70 % du cumul positif, moins ce qui a déjà été payé. compte : compteur du club.
-function fraisDeMatch(compte, ecart) {
+// Un club dont le budget voté est déjà dans le rouge s'en sert d'abord pour boucher ce trou (deficit :
+// perte annuelle prévue, voir deficitPrevu) ; seul ce qui dépasse repart en primes et en frais.
+function fraisDeMatch(compte, ecart, deficit = 0) {
   const imprevu = (Number.isFinite(compte?.imprevu) ? compte.imprevu : 0) + (Number.isFinite(ecart) ? ecart : 0);
-  const deja = Number.isFinite(compte?.fraisMatch) ? compte.fraisMatch : 0, montant = Math.max(0, rond(TRAIN_DE_VIE * imprevu - deja));
+  const base = imprevu - (Number.isFinite(deficit) && deficit > 0 ? deficit : 0);
+  const deja = Number.isFinite(compte?.fraisMatch) ? compte.fraisMatch : 0, montant = Math.max(0, rond(TRAIN_DE_VIE * base - deja));
   return { montant, imprevu, fraisMatch: deja + montant };
+}
+// Perte annuelle que le budget voté d'un club prévoit avant le propriétaire (recettes moyennes, fonctionnement
+// de base, salaires et cotisations) ; 0 si le budget est équilibré ou excédentaire.
+function deficitPrevu(forces, clubId, masseAnnuelle) {
+  const { annuel } = regleDe(forces, clubId);
+  return Math.max(0, rond(masseAnnuelle * (1 + COTISATIONS) - annuel * (1 - FONCTIONNEMENT)));
 }
 const LIBELLE_FRAIS_MATCH = 'Frais de match et primes de résultats';
 // Ajoute les écritures d'une semaine au compteur d'un club ; classement : {division, rang, taille} du moment.
@@ -552,7 +561,8 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
  // Mode Monde : les recettes de guichet imprévues (série de victoires, phase finale) coûtent aussi des primes et des frais.
  if(!budgetFrance()){
   const compte=b.clubs[c.id],accueil=typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1;
-  const frais=nativeClubBudget.fraisDeMatch(compte,nativeClubBudget.recettesImprevues(ecritures,{forces,clubId:c.id,receptions:repere.receptions[c.id]||12,accueil}));
+  const frais=nativeClubBudget.fraisDeMatch(compte,nativeClubBudget.recettesImprevues(ecritures,{forces,clubId:c.id,receptions:repere.receptions[c.id]||12,accueil}),
+   nativeClubBudget.deficitPrevu(forces,c.id,masse*52));
   compte.imprevu=frais.imprevu;compte.fraisMatch=frais.fraisMatch;
   if(frais.montant>0)ecritures.push({title:libelle+' · '+nativeClubBudget.LIBELLE_FRAIS_MATCH,amount:-frais.montant});
  }
@@ -835,5 +845,5 @@ const VALIDATION = `{
 
 module.exports = Object.freeze({ PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
   RESERVE, EXCEDENTS, EXCEDENT_DORMANT, TRAIN_DE_VIE, reserveCible, engagement, apportProprietaire, annonceDividende, annonceInvestissement,
-  recettesImprevues, fraisDeMatch, LIBELLE_FRAIS_MATCH,
+  recettesImprevues, fraisDeMatch, deficitPrevu, LIBELLE_FRAIS_MATCH,
   recettes, semaine, proprietaire, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros });

@@ -169,4 +169,9 @@ test('Guichet imprévu : rien pour un match moyen, tout pour une phase finale, f
  for(const e of pas){const f=B.fraisDeMatch(compte,e);payes.push(f.montant);compte={imprevu:f.imprevu,fraisMatch:f.fraisMatch};}
  assert.deepEqual(payes,[7e5,0,0,0],'après 1 M€ puis 1,2 M€ de manque, rien de plus à payer');
  const f=B.fraisDeMatch(compte,1e6);assert.equal(f.montant,Math.round((0.7*(1e6+1e6-4e5-8e5+5e5)-7e5)/100)*100);
+ // Budget voté dans le rouge (1,5 M€ de perte prévue) : l'imprévu bouche d'abord le trou.
+ assert.equal(B.fraisDeMatch({},1e6,1.5e6).montant,0,'tout va au trou prévu');
+ assert.equal(B.fraisDeMatch({},2.5e6,1.5e6).montant,7e5,'70 % de ce qui dépasse');
+ assert.equal(B.deficitPrevu(forces,id,1e6),0,'petite masse : budget excédentaire');
+ const r=B.recettes(forces).get(id);assert.equal(B.deficitPrevu(forces,id,r),Math.round((r*1.4-r*(1-B.FONCTIONNEMENT))/100)*100);
 });
