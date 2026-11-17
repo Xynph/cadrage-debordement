@@ -1,0 +1,30 @@
+::group::tests/godot-prolongations-staff.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PROLONGATIONS_STAFF 17 controles, 0 echec
+
+CD_CPU_PROFILE suite=tests/godot-prolongations-staff.cjs user_s=0.31 system_s=0.03 wall_s=0.54 cpu_pct=62% max_rss_kb=124136
+PASS tests/godot-prolongations-staff.cjs (0 s)
+::endgroup::
+::group::tests/godot-prolongations-staff-carriere.cjs
+Prolongations (Godot) : {"controles":14,"detail":"Le directeur sportif tranche en mars les fins de contrat que tu n'as pas réglées, selon son jugement : il prolonge les joueurs utiles dans la masse salariale que le club s'autorise, jamais au-dessus du plafond de la ligue. Chaque décision arrive au courrier, annulable. Consigne : équilibre. Cette saison : 11 prolongés, 12 laissés partir.","failures":[]}
+Captures : /tmp/tmp.JglGnGDF9a/suite.BZKPdt/rl27-prolongations-captures-QprGMM
+TAP version 13
+# Subtest: Contrats : case des prolongations au staff dans le vrai jeu
+ok 1 - Contrats : case des prolongations au staff dans le vrai jeu
+  ---
+  duration_ms: 21667.317457
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21671.807973
+CD_CPU_PROFILE suite=tests/godot-prolongations-staff-carriere.cjs user_s=24.39 system_s=2.07 wall_s=22.46 cpu_pct=117% max_rss_kb=1356092
+PASS tests/godot-prolongations-staff-carriere.cjs (23 s)
+::endgroup::

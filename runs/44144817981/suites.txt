@@ -1,0 +1,2 @@
+tests/godot-prolongations-staff.cjs
+tests/godot-prolongations-staff-carriere.cjs
