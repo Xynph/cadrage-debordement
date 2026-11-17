@@ -1606,10 +1606,13 @@ const xDe=p=>p&&fini(p.x)?p.x:null;
 // Plaqueur nommé par le moteur pour un temps de jeu (fait `tackler`), repris par l'étape.
 const plaqueurDe=r=>r?.tackler!=null?{plaqueur:String(r.tackler)}:{};
 // Plans que les pistes savent montrer avant le fait clé, en remontant le temps fort.
-function remonter(plans,rec,k,T){
+// `limite` : nombre de faits montrés en amont du fait clé. Plus bas, l'action est reprise plus tard, sans sa remise en
+// jeu (mise en scène complète au-delà du plafond de durée : voir choregraphier dans match-direct.cjs).
+function remonter(plans,rec,k,T,limite=Infinity){
  let premier=k;
  const etapes=[];let ouverture=null;
  for(let i=k-1;i>=0;i--){
+  if(etapes.length>=limite)break;
   const p=plans[i],r=rec(i);if(!r)break;
   if(p.kind==='carry'&&r.team===T&&r.actor!=null){
    // Un long gain (dix mètres et plus) se montre comme une percée, plaquée au bout par la couverture.
@@ -1637,7 +1640,7 @@ function remonter(plans,rec,k,T){
 }
 // Rend null si le temps fort ne contient rien que les pistes savent mettre en scène.
 // `profils` : {id: {vmax, amax}} ; `avant` : scène affichée juste avant le premier plan.
-function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
+function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle='',limiteAmont=Infinity}={}){
  const plans=tf?.plans;if(!Array.isArray(plans))return null;
  const rec=k=>events?.[plans[k]?.index]?.scene||null;
  const gain=r=>r&&fini(r.to?.x)&&fini(r.from?.x)?Math.abs(r.to.x-r.from.x):0;
@@ -1707,7 +1710,7 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
  // Faute de main : les plans qui l'amènent, puis l'en-avant (ou la passe en avant) du joueur nommé.
  function entreeFaute(k){
   const r=rec(k),T=r?.team;if(![0,1].includes(T))return null;
-  const amont=remonter(plans,rec,k,T);
+  const amont=remonter(plans,rec,k,T,limiteAmont);
   const depart=amont.ouverture&&amont.ouverture.k!=='jeu'?plans[amont.premier].scene:amont.premier>0?plans[amont.premier-1].scene:(avant||tf.depart);
   if(!depart||!Array.isArray(depart.players))return null;
   let joueur=r.actor!=null&&depart.players.some(q=>String(q.id)===String(r.actor)&&q.side===T)?String(r.actor):null;
@@ -1768,11 +1771,11 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
  let etapes=[],ouverture=null,premier=k,dernier=k,vedette=null,sens=null;
  if(type==='essai_jeu_courant'){
   vedette=String(r.actor);
-  const amont=remonter(plans,rec,k,T);
+  const amont=remonter(plans,rec,k,T,limiteAmont);
   ({premier,ouverture}=amont);etapes=[...amont.etapes,{k:'essai',joueur:vedette,plan:k,cle:true}];
  }else if(type==='franchissement'){
   vedette=String(r.actor);sens=Math.sign(r.to.x-r.from.x);
-  const amont=remonter(plans,rec,k,T);
+  const amont=remonter(plans,rec,k,T,limiteAmont);
   ({premier,ouverture}=amont);etapes=[...amont.etapes,{k:'franchi',joueur:vedette,x:r.to.x,depuis:r.from.x,plan:k,cle:true}];
   // La suite que le moteur a décidée : un temps de jeu de la même équipe, ou le ballon récupéré par l'adversaire.
   const n=plans[k+1],rn=rec(k+1);
@@ -1797,7 +1800,7 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
   const touche=kind==='touch';
   const de=xDe(r.from),vers_=xDe(r.to);
   sens=fini(de)&&fini(vers_)&&Math.abs(vers_-de)>1?Math.sign(vers_-de):T===0?1:-1;
-  const amont=remonter(plans,rec,k,T);
+  const amont=remonter(plans,rec,k,T,limiteAmont);
   ({premier,ouverture}=amont);
   vedette=r.actor!=null?String(r.actor):null;
   // Touche : la ligne du moteur (celle de la touche qui suit), pas la plus proche du botteur.
