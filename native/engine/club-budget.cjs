@@ -73,8 +73,16 @@ const EXCEDENTS = Object.freeze({
   entreprise: Object.freeze({ investi: 0.35, dividende: 0.35 }),
   association: Object.freeze({ investi: 0.5, dividende: 0 }),
 });
-const reserveCible = (annuel, clubId) => Math.round(((RESERVE.min + RESERVE.ecart * unite('reserve|' + clubId)) * Math.min(annuel, RESERVE.seuil) +
-  RESERVE.auDela * Math.max(0, annuel - RESERVE.seuil)) / 10000) * 10000;
+// Deuxième division française : réserve de 20 à 30 % des recettes (league-economy.cjs, reserve). Ses clubs démarrent avec
+// 20 à 33 % de leurs recettes en caisse ; avec la réserve générale, cette trésorerie de départ était tout entière engagée
+// en investissements dès la deuxième saison et toute la division finissait dans le rouge (14 à 16 clubs sur 16).
+// Un club de Pro D2 garde un matelas plus large : une descente en troisième division coupe ses recettes de moitié,
+// et le contrôle de gestion lui demande des garanties.
+const reserveCible = (annuel, clubId, division = null) => {
+  const propre = ECONOMIE.CHAMPIONNATS[division]?.reserve, regle = propre ? { ...RESERVE, ...propre } : RESERVE;
+  return Math.round(((regle.min + regle.ecart * unite('reserve|' + clubId)) * Math.min(annuel, regle.seuil) +
+    regle.auDela * Math.max(0, annuel - regle.seuil)) / 10000) * 10000;
+};
 // Part de l'excédent engagée à l'ouverture : la part propre au propriétaire, ou davantage pour qu'il
 // ne reste pas plus d'une demi-réserve qui dort.
 function engagement(surplus, reserve, type) {
@@ -280,7 +288,7 @@ function ouverture({ forces, saison, clubs, types = null, excedents = false }) {
   for (const force of forces) tailles.set(force.division, (tailles.get(force.division) ?? 0) + 1);
   return { version: 1, saison, semaines: 0, alertes: {}, clubs: clubs.map(club => {
     const p = proprietaire(forces, club.id, types?.[club.id]), division = forces.find(force => force.id === club.id).division, taille = Math.max(2, tailles.get(division));
-    const reserve = reserveCible(annuels.get(club.id), club.id), surplus = excedents ? Math.max(0, club.cash - reserve) : 0;
+    const reserve = reserveCible(annuels.get(club.id), club.id, division), surplus = excedents ? Math.max(0, club.cash - reserve) : 0;
     const { dividende, investissement } = engagement(surplus, reserve, p.type);
     return { type: p.type, enveloppe: p.enveloppe, depart: club.cash - dividende, recettes: 0, charges: 0, salaires: 0, masse: Math.round(club.masse), division, rang: Math.ceil(taille / 2), taille,
       reserve, investissement, dividende };

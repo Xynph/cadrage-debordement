@@ -31,6 +31,15 @@ test('Limites : seule la Pro D2 est encadrée, les autres championnats gardent l
   }
 });
 
+test('Réserve : 20 à 30 % des recettes en Pro D2, règle générale ailleurs', () => {
+  const R = B.recettes(forces);
+  for (const f of forces) {
+    const r = B.reserveCible(R.get(f.id), f.id, f.division), general = B.reserveCible(R.get(f.id), f.id);
+    if (f.division === 'accession') assert.ok(r >= 0.2 * R.get(f.id) - 1e4 && r <= 0.3 * R.get(f.id) + 1e4, 'Pro D2 ' + f.id + ' : ' + r);
+    else assert.equal(r, general, f.division + ' ' + f.id);
+  }
+});
+
 test('Moteur Monde : aucun club de Pro D2 ne vote une perte que son propriétaire ne comblera pas, un club bien géré finit positif', () => {
   const jeu = ouvrir({ hebdomadaire: true, testVm: true });
   try {
@@ -43,6 +52,10 @@ test('Moteur Monde : aucun club de Pro D2 ne vote une perte que son propriétair
     for (const c of etat) assert.ok(c.masse <= c.limite * 1.02, 'club ' + c.id + ' : ' + Math.round(c.masse) + ' > ' + c.limite);
     const parts = etat.map(c => c.masse / c.recettes).sort((a, b) => a - b), mediane = parts[8];
     assert.ok(mediane > 0.24 && mediane <= 0.31, 'salaires des joueurs / recettes, médiane ' + mediane.toFixed(3));
+    // Deuxième saison : la trésorerie de départ d'un club de Pro D2 n'est plus engagée d'un coup en investissements.
+    const engage = lire(`(()=>{const f=budgetForces(),o=nativeClubBudget.ouverture({forces:f,saison:2,clubs:S.clubs.map(c=>({id:c.id,cash:c.cash,masse:budgetMasse(c)*52})),types:budgetTypes(),excedents:true});
+      return S.clubs.filter(c=>budgetLigue(c.id)==='accession').map(c=>o.clubs[c.id].investissement+o.clubs[c.id].dividende).sort((a,b)=>a-b);})()`);
+    assert.ok(engage[8] <= 250000, 'engagé à l’ouverture de la saison 2, médiane ' + engage[8] + ' : ' + JSON.stringify(engage));
     // Saison projetée par le vrai budget du moteur (écritures hebdomadaires du club géré, frais de match, clôture) :
     // un match sur deux à domicile, forme et classement selon la force du club.
     const saison = lire(`(()=>{const f=budgetForces(),repere=budgetRepere(),n=wageForecastWeeks(),clubs=S.clubs.filter(c=>budgetLigue(c.id)==='accession');
