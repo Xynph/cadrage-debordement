@@ -291,6 +291,7 @@ static func _standings(card: Panel, app: Control, w: int = 684) -> void:
 		D.text(card,w-130,y+23,"%+d" % (int(club.get("pf",0))-int(club.get("pa",0))),23,C.MUTED,500,70,HORIZONTAL_ALIGNMENT_RIGHT)
 		D.text(card,w-37,y+23,G.n(club.get("points",0)),25,C.IVORY,700,60,HORIZONTAL_ALIGNMENT_RIGHT)
 		if not own: D.line(card,Vector2(20,y+33),Vector2(w-20,y+33),Color(C.LINE,.35))
+	_objective(card, app, rows, w)
 	D.text(card,26,392,"FORME",18,C.MUTED,500,75)
 	var form: Array = []
 	for club: Dictionary in rows:
@@ -302,6 +303,47 @@ static func _standings(card: Panel, app: Control, w: int = 684) -> void:
 	var action := D.button(card,Rect2(w-324,403,300,32),"Classement complet",func():app._navigate("Classements"),false,"arrow",true,app.accent,"OfficeStandingsAction")
 	action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 	action.add_theme_color_override("font_color",C.GOLD)
+
+## Objectif du conseil en tête du classement : place visée, place actuelle et tendance.
+## Jalon « place au classement » de la direction s'il existe, sinon l'objectif sportif du club (« Top 6 », « Maintien »…).
+static func objective_status(model: Dictionary, rows: Array) -> Dictionary:
+	var club: Dictionary = model.get("club", {})
+	var size := rows.size()
+	for league in model.get("leagues", []):
+		if league is Dictionary and league.get("id") == model.get("meta", {}).get("leagueId"): size = maxi(size, league.get("rows", []).size())
+	var target := 0
+	var label := ""
+	var strategy: Variant = model.get("clubLife", {}).get("clubStrategy", {})
+	var board: Dictionary = strategy.get("board", {}) if strategy is Dictionary and strategy.get("board") is Dictionary else {}
+	for goal in board.get("objectives", []):
+		if goal is Dictionary and str(goal.get("type", "")) == "rank" and str(goal.get("status", "pending")) == "pending" and goal.get("target") != null:
+			target = int(goal.get("target"))
+			label = "Top %d" % target if target > 1 else "Titre"
+			break
+	if target <= 0:
+		var text := str(club.get("goal", "")).strip_edges()
+		var lower := text.to_lower()
+		if lower.begins_with("top "): target = int(text.substr(4))
+		elif lower.contains("titre"): target = 2
+		elif lower.contains("maintien") and size > 2: target = size - 2
+		label = "Titre" if lower.contains("titre") else text
+	if target <= 0 or size == 0: return {}
+	var rank: Variant = null
+	for row: Dictionary in rows:
+		if row.get("id") == club.get("id") and P.standings_open(row): rank = row.get("rank")
+	if rank == null: return {"label": label, "target": target, "rank": null, "trend": "à lancer", "tone": "muted"}
+	var delta := target - int(rank)
+	var trend := "en avance" if delta >= 2 else "dans l’objectif" if delta >= 0 else "à portée" if delta >= -2 else "en retard"
+	return {"label": label, "target": target, "rank": int(rank), "trend": trend, "tone": "good" if delta >= 0 else "warn" if delta >= -2 else "bad"}
+
+static func _objective(card: Panel, app: Control, rows: Array, w: int) -> void:
+	var status := objective_status(app.model, rows)
+	if status.is_empty(): return
+	var tone: Color = C.MUTED if status.tone == "muted" else C.MINT if status.tone == "good" else C.AMBER if status.tone == "warn" else C.ALERT
+	var place := "" if status.rank == null else " · %s%s" % [G.n(status.rank), "er" if int(status.rank) == 1 else "e"]
+	var chip := D.chip(card, Rect2(w-262,16,242,30), "%s%s · %s" % [str(status.label), place, status.trend], tone)
+	chip.name = "OfficeBoardObjective"
+	chip.tooltip_text = "Objectif du conseil : %s (place visée : %d)" % [str(status.label), int(status.target)]
 
 static func _journal(card: Panel, app: Control, w: int = 548) -> void:
 	var text_w := w - 68

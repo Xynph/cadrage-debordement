@@ -2,8 +2,9 @@
 // Journal d'actions (carrière Monde `world-champ`) : docs/sauvegarde-journal-20261116.md,
 // native/engine/action-journal.cjs. Séparé de tests/sauvegarde-journal-monde.cjs (mêmes assertions) pour rester
 // sous le délai de 180 s du lanceur CI.
-//   1. plantage simulé entre deux sauvegardes complètes (décisions, jours, coup d'envoi, minutes du direct, match
-//      délégué) : au chargement, le journal rejoué donne exactement la même empreinte que la sauvegarde complète ;
+//   1. plantage simulé entre deux sauvegardes complètes (décisions et jours après un match validé ; le match lui-même
+//      n'est jamais noté, voir tests/reprise-avant-match.cjs) : au chargement, le journal rejoué donne exactement la
+//      même empreinte que la sauvegarde complète ;
 //   2. une dernière ligne coupée est ignorée ; un journal divergent est repris jusqu'à la dernière action confirmée,
 //      conservé sous un autre nom et signalé.
 // Une seule carrière Monde ouverte à la fois (machine de 8 Go) : chaque pont est fermé avant le suivant, et le tas
@@ -62,9 +63,16 @@ test('Plantage simulé entre deux sauvegardes : le journal rejoué donne la mêm
     for (let i = 0; i < 3; i++) jeu.call('tick', { steps: 2 });
     model = skipMatchTalk(jeu.call('delegate'), jeu.call);
     assert.ok(model.live?.finished || !model.live, 'match délégué jusqu’au bout');
+    // Reprise avant le match (16/11/2026) : le match n'est jamais noté au journal ; sa validation enregistre la
+    // carrière en entier, puis les décisions et les jours suivants sont de nouveau notés.
+    assert.ok(!lignes(A).slice(1).some(a => ['begin_match', 'tick', 'delegate'].includes(a.c)), 'match en cours jamais noté au journal');
+    model = skipMatchTalk(jeu.call('finish_round'), jeu.call);
+    assert.equal(lignes(A).length, 1, 'résultat validé : sauvegarde complète, journal vide');
+    model = M.jusquALaSemaineSuivante(jeu, model);
+    model = jeu.call('set_tactics', { attack: autreAttaque(model), defense: model.tactics.defense });
     const actions = lignes(A).slice(1);
-    assert.ok(actions.length >= 6, 'décision, jour(s), coup d’envoi, minutes et délégation notés : ' + actions.map(a => a.c).join(','));
-    assert.ok(actions.some(a => a.s !== a.e), 'le match consomme la graine : la vérification par graine est exercée');
+    assert.ok(actions.length >= 3, 'décision et jours jusqu’à la clôture de la semaine notés : ' + actions.map(a => a.c).join(','));
+    assert.ok(actions.some(a => a.s !== a.e), 'la clôture de la semaine consomme la graine : la vérification par graine est exercée');
     crash = copie(A);                               // disque au moment de la coupure
     jeu.call('save');                               // sauvegarde complète de référence
   } finally { jeu.bridge.close(); }
@@ -76,7 +84,7 @@ test('Plantage simulé entre deux sauvegardes : le journal rejoué donne la mêm
     const notice = model.meta.autosave.notice;
     assert.equal(notice.alert, false, notice.text);
     assert.equal(notice.replayed, notice.total);
-    assert.ok(model.live?.finished || !model.live, 'le match délégué est retrouvé');
+    assert.ok(!model.live, 'carrière reprise après la clôture de la semaine du match');
     jeu.call('save');
   } finally { jeu.bridge.close(); }
   assert.deepEqual(empreinte(crash), reference, 'journal rejoué = sauvegarde complète, à l’octet près');

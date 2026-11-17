@@ -386,6 +386,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   if(S.worldMode.day!==undefined){
    S.worldMode.day=0;
    delete S.worldMode.resultConfirmed;
+   delete S.worldMode.multiplex;
   }
   planStages(S);sync(S);
   if(S.phase==='ended'){check(S.worldMode.movement&&(!JP||S.worldMode.japan?.movement)&&(!N||S.worldMode.nationale?.movement?.status==='ready')&&IDS.every(id=>S.worldMode.leagues[id].champion!==null)&&['champions','challenge'].every(id=>S.worldMode.europe[id].champion!==null),'saison terminée sans titres et mouvements.');const titleLeague=edition.version>=2?leagueId(S):'elite';S.ending=S.clubs[S.worldMode.leagues[titleLeague].champion].name+' remporte '+(edition.version>=2?REG.leagues.find(l=>l.id===titleLeague).name:'le championnat')+'. La prochaine campagne se prépare déjà.';S.worldManagement.champion=S.worldMode.leagues.elite.champion;for(const id of IDS)careerRecord('trophy',REG.leagues.find(l=>l.id===id).name,S.worldMode.leagues[id].champion,'world-'+id);news(S.ending);}
@@ -412,7 +413,8 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  function validate(s){
   check(active(s),'édition de base inconnue.');const w=s.worldMode,V=CDWorldValidation;
   if(s.seniorCalibrationVersion!==undefined)check((seniorCalibration?.versions??[seniorCalibration?.version]).includes(s.seniorCalibrationVersion),'barème senior inconnu.');
-  check(V.keys(w,['version','catalogue','rules','startYear','week','leagues','fixtures','yearbook','movement','europe','draws','previousRanks','qualification',...(JP?['japan']:[]),...(N?['nationale']:[]),...(CH?['champ']:[]),...(w.access===undefined?[]:['access']),...(w.day===undefined?[]:['day']),...(w.resultConfirmed===undefined?[]:['resultConfirmed']),...(w.calendarPolicy===undefined?[]:['calendarPolicy'])]),'métadonnées de compétition non reconnues.');
+  check(V.keys(w,['version','catalogue','rules','startYear','week','leagues','fixtures','yearbook','movement','europe','draws','previousRanks','qualification',...(JP?['japan']:[]),...(N?['nationale']:[]),...(CH?['champ']:[]),...(w.access===undefined?[]:['access']),...(w.day===undefined?[]:['day']),...(w.resultConfirmed===undefined?[]:['resultConfirmed']),...(w.calendarPolicy===undefined?[]:['calendarPolicy']),...(w.multiplex===undefined?[]:['multiplex'])]),'métadonnées de compétition non reconnues.');
+  check(w.multiplex===undefined||w.multiplex&&typeof w.multiplex.key==='string'&&w.multiplex.results&&typeof w.multiplex.results==='object'&&!Array.isArray(w.multiplex.results)&&V.keys(w.multiplex,['key','results']),'multiplex de la journée invalide.');
   check(w.calendarPolicy===undefined||lnrOpening(s)&&s.season===1&&w.day!==undefined,'politique de calendrier inconnue.');
   if(CH)check(eq(w.champ,champBoundary()),'frontières du Champ modifiées.');
   check(w.rules===edition.rules&&w.startYear===2026,'profil de règles inconnu.');
