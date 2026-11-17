@@ -6,11 +6,21 @@ const Editorial = preload("res://ui/entry_editorial.gd")
 const Kit = preload("res://ui/creation_options/kit.gd")
 const SHOWN := 3
 
-static func build(app: Control, parent: Node, data: Dictionary, state: String) -> void:
-	var column := Kit.block(parent, "CreationRivals", "Rivalités et derbys", 1.0, false)
-	var list := C.v(10)
+static func build(app: Control, parent: Node, selected: Dictionary, data: Dictionary, state: String) -> void:
+	var column := Kit.block(parent, "CreationRivals", "Rivalités et derbys", 1.0, true)
+	var list := C.v(16)
 	list.name = "CreationRivalList"
 	column.add_child(list)
+	# Ambiance du tunnel dans la place restante (aucune hauteur imposée : rien ne déborde en petite fenêtre).
+	var mood := C.photo("match-tunnel", Vector2.ZERO, true, .45)
+	mood.name = "CreationRivalsMood"
+	mood.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	mood.modulate = Color(.78, .78, .78)
+	mood.tooltip_text = ""
+	column.add_child(mood)
+	# Une bande trop fine ne se montre pas (le contrôle garde sa place pour suivre les redimensionnements).
+	mood.resized.connect(func() -> void: mood.self_modulate.a = 1.0 if mood.size.y >= C.px(40) else 0.0)
+	list.set_meta("division", str(selected.get("division", "")))
 	var rivals: Array = data.get("rivals", []) if data.get("rivals") is Array else []
 	if state == "pending" and rivals.is_empty():
 		for index in SHOWN:
@@ -47,7 +57,7 @@ static func _rival(app: Control, list: VBoxContainer, rival: Dictionary) -> void
 	var row := C.h(12)
 	row.name = "CreationRival_" + str(rival.get("id", name))
 	list.add_child(row)
-	row.add_child(Kit.crest(app, rival.get("id"), name, C.px(48)))
+	row.add_child(Kit.crest(app, rival.get("id"), name, C.px(56)))
 	var side := C.v(3)
 	side.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(C.fill(side))
@@ -67,6 +77,9 @@ static func _rival(app: Control, list: VBoxContainer, rival: Dictionary) -> void
 	for iso: Variant in dates.slice(0, 3):
 		var day := Kit.day_month(str(iso))
 		if not day.is_empty(): days.append(day)
-	var when := Kit.ellipsis(C.label(("Derbys · " + " · ".join(days)) if not days.is_empty() else "Dates des derbys au calendrier", 17, C.MUTED, false))
+	var other := Kit.club_by_id(app, rival.get("id"))
+	var elsewhere := not other.is_empty() and str(other.get("division", "")) != str(list.get_meta("division", ""))
+	var note := "Derbys · " + " · ".join(days) if not days.is_empty() else ("Pas dans ta division cette saison" if elsewhere else "Dates des derbys au calendrier")
+	var when := Kit.ellipsis(C.label(note, 17, C.MUTED, false))
 	when.name = "CreationRivalDates"
 	side.add_child(when)

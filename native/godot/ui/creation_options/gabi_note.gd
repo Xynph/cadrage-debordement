@@ -17,7 +17,7 @@ static func build(app: Control, parent: Node, selected: Dictionary, choosable: b
 	column.add_child(row)
 	var medallion := Medallion.new()
 	medallion.name = "CreationGabiPortrait"
-	medallion.custom_minimum_size = Vector2(C.px(150), C.px(150))
+	medallion.custom_minimum_size = Vector2(C.px(176), C.px(176))
 	medallion.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	medallion.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(medallion)

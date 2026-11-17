@@ -91,11 +91,6 @@ static func _fill(app: Control, rail: HBoxContainer, selected: Dictionary, start
 		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		dot.resized.connect(dot.queue_redraw)
 		cell.add_child(dot)
-		if here:
-			var mark := Kit.tag("Ton arrivée", Editorial.RAIL_GOLD)
-			mark.name = "CreationSeasonArrival"
-			mark.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-			cell.add_child(mark)
 		var body := C.v(2)
 		body.alignment = BoxContainer.ALIGNMENT_BEGIN
 		if before: body.modulate = Color(1, 1, 1, .55)
@@ -104,6 +99,12 @@ static func _fill(app: Control, rail: HBoxContainer, selected: Dictionary, start
 			"friendlies": _friendlies(body, data, start, state)
 			"fixture": _fixture(app, body, data, state)
 			_: _dated(body, str(node.get("date", "")), str(node.get("detail", "")), bool(node.get("wait", false)))
+		if here:
+			# Repère d'arrivée sous l'étape : les dates des étapes restent alignées.
+			var mark := Kit.tag("Ton arrivée", Editorial.RAIL_GOLD)
+			mark.name = "CreationSeasonArrival"
+			mark.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			cell.add_child(mark)
 
 ## Date en grand (jour, mois, jour de la semaine) et une ligne d'explication.
 static func _dated(parent: VBoxContainer, iso: String, detail: String, wait: bool) -> void:
@@ -235,17 +236,24 @@ static func _fixture(app: Control, parent: VBoxContainer, data: Dictionary, stat
 	var kickoff: Variant = match_day.get("kickoff")
 	var when := Kit.weekday(iso)
 	if kickoff != null and not str(kickoff).is_empty(): when += " · " + str(kickoff)
-	side.add_child(C.label(when, 16, C.MUTED, false))
+	# Domicile ou extérieur : pictogramme à côté du jour et de l'heure.
 	var venue := C.h(5)
-	venue.alignment = BoxContainer.ALIGNMENT_CENTER
 	venue.name = "CreationFirstFixtureVenue"
-	parent.add_child(venue)
-	venue.add_child(C.icon(C.fixture_location_icon("home" if home else "away"), 17, C.MINT if home else C.GOLD))
-	var against := Kit.ellipsis(C.label(("Reçoit " if home else "À ") + opponent, 17, C.IVORY, false))
+	side.add_child(venue)
+	var place := C.icon(C.fixture_location_icon("home" if home else "away"), 17, C.MINT if home else C.GOLD)
+	place.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	place.tooltip_text = "Domicile" if home else "Extérieur"
+	place.mouse_filter = Control.MOUSE_FILTER_PASS
+	venue.add_child(place)
+	venue.add_child(C.label(when, 16, C.MUTED, false))
+	# Adversaire sur toute la largeur de l'étape, centré (deux lignes au plus).
+	var against := C.wrap(("Reçoit " if home else "À ") + opponent, 17, C.IVORY)
+	against.name = "CreationFirstFixtureOpponent"
 	against.tooltip_text = "%s · %s" % ["Domicile" if home else "Extérieur", opponent]
 	against.mouse_filter = Control.MOUSE_FILTER_PASS
-	against.custom_minimum_size.x = 0
-	venue.add_child(against)
+	against.max_lines_visible = 2
+	against.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	parent.add_child(against)
 
 ## Repère de la frise : trait continu d'une étape à l'autre, point plein pour l'arrivée.
 class RailNode extends Control:

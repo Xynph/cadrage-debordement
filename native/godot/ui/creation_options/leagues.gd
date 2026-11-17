@@ -18,8 +18,8 @@ const GROUPS := [
 	["SRP", "Nouvelle-Zélande · Australie · Pacifique", ["nz", "au", "fj"], ["srp"]],
 	["JP", "Japon", ["jp"], ["jlo-d1", "jlo-d2"]],
 ]
-const PILL_HEIGHT := 70
-const LOGO := 54
+const PILL_HEIGHT := 78
+const LOGO := 58
 
 static func build(app: Control, parent: Node, own: String, catalogue: Array) -> VBoxContainer:
 	var all := LeagueDetail.leagues(app, catalogue)
@@ -68,6 +68,14 @@ static func build(app: Control, parent: Node, own: String, catalogue: Array) -> 
 		columns.add_child(stack)
 		for entry: Array in (present.slice(0, split) if side == 0 else present.slice(split)):
 			_country(app, stack, entry[0], entry[1], known, ids, own, catalogue)
+	var later := C.h(6)
+	later.name = "CreationLeagueLater"
+	later.size_flags_vertical = Control.SIZE_SHRINK_END
+	column.add_child(later)
+	var gear := C.icon("settings", 17, C.FAINT)
+	gear.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	later.add_child(gear)
+	later.add_child(C.fill(C.wrap("Ce choix reste modifiable en cours de partie, dans les Réglages.", 17, C.FAINT)))
 	return column
 
 static func _split(present: Array) -> int:
@@ -109,7 +117,6 @@ static func _country(app: Control, parent: Node, group: Array, members: Array, k
 	var title := C.wrap(str(group[1]), 21, C.IVORY, true, 700)
 	title.name = "CreationLeagueCountryName"
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	title.max_lines_visible = 2
 	head.add_child(C.fill(title))
 	var followed := members.filter(func(id: String): return id in ids).size()
 	var tally := C.label("%d/%d en détail" % [followed, members.size()], 17, C.GOLD if followed > 0 else C.MUTED, false, 600)

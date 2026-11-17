@@ -26,7 +26,6 @@ static func build(app: Control, parent: Node, selected: Dictionary, data: Dictio
 		for role: Array in ROLES: _card(row, role, faces.get(role[0]))
 	else:
 		_aggregate(row, selected)
-	column.add_child(C.rule())
 	var level := C.h(10)
 	level.name = "CreationLevelSection"
 	column.add_child(level)
@@ -49,7 +48,7 @@ static func _frame(row: HBoxContainer, id: String) -> VBoxContainer:
 	style.set_corner_radius_all(0)
 	frame.add_theme_stylebox_override("panel", style)
 	row.add_child(C.fill(frame))
-	var card := C.v(4)
+	var card := C.v(2)
 	frame.add_child(card)
 	return card
 
@@ -65,7 +64,7 @@ static func _card(row: HBoxContainer, role: Array, face: Variant) -> void:
 		return
 	var person: Dictionary = face
 	var index := int(person.get("portraitIndex", person.get("id", 0)))
-	var portrait := G.portrait(index, C.px(104), person)
+	var portrait := G.portrait(index, C.px(86), person)
 	portrait.name = "CreationFacePortrait_" + str(role[0])
 	portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	portrait.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -105,7 +104,7 @@ static func _ghost_card(row: HBoxContainer, role: Array) -> void:
 	var head := Kit.caps(str(role[1]), 17)
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card.add_child(head)
-	var disc := Kit.disc_ghost(104)
+	var disc := Kit.disc_ghost(86)
 	disc.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	card.add_child(disc)
 	for width in [120, 80]:

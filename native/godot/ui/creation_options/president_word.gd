@@ -8,16 +8,16 @@ const Editorial = preload("res://ui/entry_editorial.gd")
 const Kit = preload("res://ui/creation_options/kit.gd")
 
 static func build(app: Control, parent: Node, selected: Dictionary, data: Dictionary, state: String) -> void:
-	var column := Kit.block(parent, "CreationPresidentWord", "", 1.0, true, Kit.SURFACE, 0)
+	var column := Kit.block(parent, "CreationPresidentWord", "", 1.0, false, Kit.SURFACE, 0)
 	column.add_theme_constant_override("separation", C.px(10))
 	# Bandeau photo : bureau de la direction, titre en haut, silhouette et nom du président en bas.
 	var banner := Control.new()
 	banner.name = "CreationPresidentBanner"
 	banner.clip_contents = true
-	banner.custom_minimum_size.y = C.px(168)
+	banner.custom_minimum_size.y = C.px(196)
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(banner)
-	var picture := C.photo("office-hero", Vector2.ZERO, true, .42)
+	var picture := C.photo("trophy", Vector2.ZERO, true, .35)
 	banner.add_child(picture)
 	picture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var gradient := Gradient.new()
@@ -44,7 +44,14 @@ static func build(app: Control, parent: Node, selected: Dictionary, data: Dictio
 	stack.add_child(C.fill(Control.new(), true))
 	var identity := C.h(14)
 	stack.add_child(identity)
-	var portrait := Silhouette.new()
+	# Portrait de la direction (art/immersive08/mail-direction), sinon silhouette.
+	var face := C.texture("mail-direction")
+	var portrait: Control
+	if face == null: portrait = Silhouette.new()
+	else:
+		var disc := PhotoDisc.new()
+		disc.show_texture(face)
+		portrait = disc
 	portrait.name = "CreationPresidentPortrait"
 	portrait.custom_minimum_size = Vector2(C.px(92), C.px(92))
 	portrait.size_flags_vertical = Control.SIZE_SHRINK_END
@@ -123,7 +130,37 @@ static func welcome_text(club: Dictionary) -> String:
 	else: parts.append("Mon bureau t’est ouvert.")
 	return " ".join(parts)
 
-## Silhouette du président (aucun portrait fourni) : buste stylisé dans un disque cerclé d'or.
+## Portrait rond cerclé d'or (photo découpée en disque).
+class PhotoDisc extends Control:
+	var disc := Control.new()
+	var image := TextureRect.new()
+	func _init() -> void:
+		disc.clip_children = CanvasItem.CLIP_CHILDREN_ONLY
+		disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		disc.draw.connect(func() -> void: disc.draw_circle(disc.size / 2.0, minf(disc.size.x, disc.size.y) / 2.0, Color.WHITE))
+		add_child(disc)
+		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		disc.add_child(image)
+		resized.connect(_fit)
+	func show_texture(texture: Texture2D) -> void:
+		image.texture = texture
+	func _fit() -> void:
+		var gap := maxf(2.0, size.x * .05)
+		disc.position = Vector2(gap, gap)
+		disc.size = size - Vector2(gap, gap) * 2.0
+		image.position = Vector2.ZERO
+		image.size = disc.size
+		disc.queue_redraw()
+		queue_redraw()
+	func _draw() -> void:
+		var center := size / 2.0
+		var radius := minf(size.x, size.y) / 2.0
+		draw_circle(center, radius, Color("0f2a20"))
+		draw_arc(center, radius - 1.5, 0, TAU, 64, Editorial.RAIL_GOLD, maxf(2.0, radius * .06), true)
+
+## Silhouette du président (aucun portrait disponible) : buste stylisé dans un disque cerclé d'or.
 class Silhouette extends Control:
 	func _draw() -> void:
 		var center := size / 2.0

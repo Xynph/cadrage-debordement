@@ -2,8 +2,8 @@ extends RefCounted
 ## Écran « Options de carrière » (étape 03 de la création, après le choix du club) : une page dense et
 ## éditoriale, sans défilement en 1920×1080. Grille en trois colonnes alignées sur deux rangs :
 ##   rang 1 · ton club (photo du stade) | ta première saison (frise et départ) | Gabi se présente
-##   rang 2 · le mot du président, rivalités | championnats suivis | ton vestiaire et niveau de départ,
-##            les rendez-vous, puis « Changer de club » et « Prendre les rênes ».
+##   rang 2 · le mot du président, rivalités | championnats suivis, puis « Changer de club » et « Prendre
+##            les rênes » | ton vestiaire et niveau de départ, les rendez-vous.
 ## Les blocs qui dépendent de l'aperçu moteur (`club_preview`) montrent des emplacements tant qu'il manque,
 ## puis se replient sur le catalogue de création si le moteur ne le fournit pas.
 const C = preload("res://ui/immersive08/components.gd")
@@ -63,7 +63,7 @@ static func build(app: Control, page: Control, selected: Dictionary, mode: Strin
 	left.name = "CreationOptionsLeft"
 	bottom.add_child(left)
 	President.build(app, left, selected, data, state)
-	Rivals.build(app, left, data, state)
+	Rivals.build(app, left, selected, data, state)
 	var middle := C.v(GAP)
 	middle.name = "CreationOptionsMiddle"
 	bottom.add_child(middle)
@@ -74,7 +74,7 @@ static func build(app: Control, page: Control, selected: Dictionary, mode: Strin
 	Faces.build(app, right, selected, data, state, func(_value: bool) -> void:
 		if gabi.is_valid(): gabi.call(str(app.management_ui.get("creation_start", "premiers-clubs"))))
 	listeners.append(Appointments.build(app, right, selected, choosable, data))
-	_actions(app, right, selected, mode, role, nation, preferred)
+	_actions(app, middle, selected, mode, role, nation, preferred)
 	_ratios(bottom)
 	Kit.request_preview(app, club_id)
 

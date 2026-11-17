@@ -10,8 +10,8 @@ const INTERNATIONALS_BACK := "2026-07-18"
 
 ## Rend un Callable `refresh(start)` qui réécrit la liste quand le départ change.
 static func build(app: Control, parent: Node, selected: Dictionary, choosable: bool, data: Dictionary) -> Callable:
-	var column := Kit.block(parent, "CreationAppointments", "Les rendez-vous qui t’attendent", 1.0, true)
-	var list := C.v(9)
+	var column := Kit.photo_block(parent, "CreationAppointments", "Les rendez-vous qui t’attendent", "press-room", 1.0, true, .3, .84)
+	var list := C.v(10)
 	list.name = "CreationAppointmentList"
 	column.add_child(list)
 	var refresh := func(start: String) -> void:
@@ -51,7 +51,7 @@ static func _row(list: VBoxContainer, key: String, iso: String, fallback: String
 	var style := C.box(Kit.DEEP, Color(Editorial.RAIL_GOLD, .7) if key == "press" else Editorial.LINE, 0, 4)
 	style.set_corner_radius_all(0)
 	chip.add_theme_stylebox_override("panel", style)
-	chip.custom_minimum_size = Vector2(C.px(92), C.px(54))
+	chip.custom_minimum_size = Vector2(C.px(92), C.px(46))
 	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(chip)
 	var stamp := C.v(0)
@@ -64,7 +64,7 @@ static func _row(list: VBoxContainer, key: String, iso: String, fallback: String
 		word.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		stamp.add_child(word)
 	else:
-		var day := C.label(str(int(date.day)), 28, C.IVORY, true, 800)
+		var day := C.label(str(int(date.day)), 25, C.IVORY, true, 800)
 		day.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		stamp.add_child(day)
 		var month := C.label(str(Kit.MONTHS_SHORT[int(date.month) - 1]).to_upper(), 15, Editorial.RAIL_GOLD, true, 700)
@@ -79,6 +79,7 @@ static func _row(list: VBoxContainer, key: String, iso: String, fallback: String
 	text.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(C.fill(text))
 	text.add_child(Kit.ellipsis(C.label(title, 22, C.IVORY, true, 700)))
-	var line := C.wrap(detail, 17, C.MUTED)
-	line.max_lines_visible = 2
+	var line := Kit.ellipsis(C.label(detail, 17, C.MUTED, false))
+	line.tooltip_text = detail
+	line.mouse_filter = Control.MOUSE_FILTER_PASS
 	text.add_child(line)

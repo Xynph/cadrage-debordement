@@ -139,6 +139,10 @@ func run() -> void:
 	check(app.find_child("CreationSeasonStep_eve",true,false)!=null,"Départ veille : étape de la veille dans la frise")
 	choice.select(0); choice.item_selected.emit(0); await settle()
 	await capture("reprise-creation")
+	if root.size != Vector2i(1920,1080):
+		# Autres tailles (1600×900, 1280×720) : l'écran Options seulement ; la suite (Préparation) est calée sur 1920×1080.
+		await finish()
+		return
 	var start := app.find_child("CreationStart",true,false) as Button
 	check(start!=null and not start.disabled,"Création disponible")
 	await press(start); await response()
@@ -201,7 +205,9 @@ func run() -> void:
 	if scroll != null and block != null: scroll.ensure_control_visible(block)
 	await settle()
 	await capture("reprise-decisions-preparation")
+	await finish()
+func finish() -> void:
 	var result := FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
-	result.store_string(JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name()},"  ")); result.close()
+	result.store_string(JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name(),"size":[root.size.x,root.size.y]},"  ")); result.close()
 	print("REPRISE UI : %d contrôles ; %d échecs" % [checks,failures.size()])
 	await app._close(0 if failures.is_empty() else 1)
