@@ -168,6 +168,8 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
   const levelOf = id => levels?.joueurs?.[id] || NONE;
   const etageOf = clubId => levels?.clubs?.[clubId] ?? 'milieu';
   const leagueScale = leagueId => scale.leagues[leagueId] || scale.leagues.guest;
+  // Étage du club, élargi dans les championnats aux effectifs resserrés (scale.etageScale, absent = 1).
+  const etageBonus = (clubId, leagueId) => (scale.etages[etageOf(clubId)] ?? 0) * (scale.etageScale?.[leagueId] ?? 1);
   const statsByRegistry = new WeakMap();
   const band = age => (age < scale.age.seniorFrom ? 'jeune' : 'senior');
 
@@ -226,7 +228,7 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     const young = player.age < A.seniorFrom;
     const spread = known ? deviation(player, player.rating, context, statut) * R.known
       : young ? z * R.unknown : (context.club?.get(player.fam)?.(player.rating) ?? z) * R.unknown;
-    let value = base + (scale.etages[etageOf(context.clubId)] ?? 0) + clamp(spread, -R.limit, R.limit);
+    let value = base + etageBonus(context.clubId, context.leagueId) + clamp(spread, -R.limit, R.limit);
     if (young) value -= (A.seniorFrom - player.age) * A.youngPerYear * (statut === 'titulaire' ? 0.5 : 1);
     // L'écart dans l'effectif d'un senior au statut inconnu contient déjà son âge.
     if (known && player.age >= A.veteranFrom) value -= (player.age - A.veteranFrom + 1) * A.veteranPerYear;
@@ -365,7 +367,7 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
   function youthPotential(s, club, player, weight = 0) {
     if (worldVersion !== 2 || !s?.worldMode?.leagues || !club) return null;
     const leagueId = Object.entries(s.worldMode.leagues).find(([, l]) => l.members?.includes(club.id))?.[0] ?? 'guest';
-    const Y = scale.academy, anchor = leagueScale(leagueId).titulaire + (scale.etages[etageOf(club.id)] ?? 0);
+    const Y = scale.academy, anchor = leagueScale(leagueId).titulaire + etageBonus(club.id, leagueId);
     const draw = hashText(player.id + ':formation-v2'), percentile = (draw % 10000) / 100, variation = draw >>> 14;
     const elitePercent = Y.elitePercent + Y.elitePerWeight * weight, strong = Y.strongBase + weight;
     const index = percentile >= 100 - elitePercent ? 3 : percentile >= 100 - elitePercent - strong ? 2 : percentile >= 100 - elitePercent - strong - Y.promising ? 1 : 0;
@@ -393,7 +395,7 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     // Au poste, sa note reste aussi sous celle du moins bon titulaire potentiel (même poste, sinon tout l'effectif).
     const peers = context.others.filter(p => p.pos === player.pos);
     const noteFloor = Math.min(...(peers.length ? peers : context.others).map(p => roleNote(p)));
-    const value = Math.min(L.rotation + (scale.etages[etageOf(context.clubId)] ?? 0) - 1, context.floor - 1,
+    const value = Math.min(L.rotation + etageBonus(context.clubId, context.leagueId) - 1, context.floor - 1,
       player.rating + noteFloor - 1 - roleNote(player));
     const target = Math.round(clamp(value, 40, 95));
     if (typeof player.nativeAttributesV1 === 'string' && /^\d{72}$/.test(player.nativeAttributesV1) && player.rating > 20) {
