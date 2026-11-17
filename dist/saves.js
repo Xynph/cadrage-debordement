@@ -183,6 +183,7 @@ function validateRestartState(l,s=null){
 
 function validateFlowState(l,s=null){
  saveCheck(l.flowVersion===1&&l.restartVersion===1,'Cette version du déroulement de match n’est pas prise en charge.');
+ if(l.setPieceFatigueVersion!==undefined)saveCheck(l.setPieceFatigueVersion===1,'Version de la fatigue des phases arrêtées invalide.');
  const f=l.flow;saveCheck(saveObject(f)&&[1,2].includes(f.period)&&typeof f.atBreak==='boolean'&&typeof f.ballDead==='boolean'&&f.resolvingAward===false);
  const pacific=typeof CDWorldSRPMatch!=='undefined'&&CDWorldSRPMatch.applies(l,s);
  saveCheck(l.srpExtra===undefined||pacific&&f.period===2&&l.knockout===undefined,'Prolongation Pacific incompatible avec le déroulement.');

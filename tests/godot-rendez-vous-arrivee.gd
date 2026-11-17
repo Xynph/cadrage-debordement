@@ -100,16 +100,17 @@ func run() -> void:
 	# 2. Invitations du club pendant la conférence.
 	app._show_press_inbox()
 	await frames(10)
-	var invitations := app.find_child("ContextualInvitations", true, false)
+	# Disposition façon FM (#813) : plus de bande d'invitations, la notice ouvre la liste des messages.
+	var inbox := app.find_child("InboxMessageRows", true, false)
 	var pending: Array = app.model.get("clubLife", {}).get("sceneInvitations", {}).get("invitations", []).filter(func(item: Dictionary): return item.get("status") == "pending" and item.get("available", false))
 	if not pending.is_empty():
-		check(invitations != null, "Invitations du club affichées en Réception")
-		if invitations != null:
-			check(invitations.find_child("ContextualInvitationsBlocked", true, false) != null, "Les invitations disent qu'elles viennent après la conférence")
-			check(invitations.find_child("ContextualOpenPress", true, false) != null, "Accès direct à la conférence depuis les invitations")
-			var enabled := invitations.find_children("*", "Button", true, false).filter(func(b: Button): return b.text.to_lower() == "ouvrir" and not b.disabled)
-			check(enabled.is_empty(), "Aucun « Ouvrir » d'invitation actif pendant la conférence")
-			check_readable_invitations(invitations, pending.size())
+		check(inbox != null, "Liste des messages affichée en Réception")
+		var blocked: Node = inbox.find_child("ContextualInvitationsBlocked", true, false) if inbox != null else null
+		check(blocked != null and blocked.get_index() == 0, "En tête de la Réception : les invitations viennent après la conférence")
+		if blocked != null:
+			check(blocked.find_child("ContextualOpenPress", true, false) != null, "Accès direct à la conférence depuis la notice")
+		var enabled := app.find_children("InboxOpenSceneInvitation", "Button", true, false).filter(func(b: Button): return not b.disabled)
+		check(enabled.is_empty(), "Aucune invitation du club ouvrable pendant la conférence")
 
 	# 3. Bouton principal « Conf. de presse » : la vraie salle de presse.
 	check(str(app.primary_button.text) == "Conf. de presse", "Bouton principal « Conf. de presse » (" + str(app.primary_button.text) + ")")

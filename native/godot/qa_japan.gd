@@ -110,6 +110,9 @@ func _reception() -> void:
 			await _capture(league+"-creation-"+str(size.x))
 	if not await _pick("CreationDivision_jlo-d2"): return
 	if not await _pick("CreationClub80"): return
+	if app.find_child("CreationNext",true,false) != null:
+		if not _press("CreationNext"): return
+		await _settle()
 	if not _press("CreationStart"): return
 	_confirm()
 	if not await _wait(): return

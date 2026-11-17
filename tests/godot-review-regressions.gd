@@ -496,6 +496,8 @@ func _run() -> void:
 			app._navigate("Création")
 			var club_choice := app.find_child("CreationClub0", true, false) as Button
 			if club_choice != null: club_choice.pressed.emit()
+			var suivant1 := app.root_content.find_child("CreationNext", true, false) as Button
+			if suivant1 != null: suivant1.pressed.emit()
 			var start := app.root_content.find_child("CreationStart", true, false) as Button
 			if start != null: start.pressed.emit()
 			await _wait()
@@ -512,6 +514,8 @@ func _run() -> void:
 		app._navigate("Création")
 		var club_choice := app.find_child("CreationClub0", true, false) as Button
 		if club_choice != null: club_choice.pressed.emit()
+		var suivant2 := app.root_content.find_child("CreationNext", true, false) as Button
+		if suivant2 != null: suivant2.pressed.emit()
 		var retry := app.root_content.find_child("CreationStart", true, false) as Button
 		_check(retry != null, "Explicit club creation retry available")
 		if retry != null:

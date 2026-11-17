@@ -35,17 +35,26 @@ func run() -> void:
 	app.timer.stop()
 	var serial: int=app.bridge._next_id
 	Entry.begin_creation(app); await settle()
+	# Écran du club : les options de carrière ont leur propre écran (étape 03).
+	check(app.find_child("CreationVaryCurrent",true,false)==null and app.find_child("CreationCareerOptions",true,false)==null,"Écran du club allégé : pas d’options de carrière")
+	var clubs := app.find_child("CreationClubGrid",true,false) as GridContainer
+	check(clubs!=null and clubs.get_child_count()>0,"Vrais clubs disponibles")
+	var first := clubs.get_child(0) as Button
+	await key(first)
+	var next := app.find_child("CreationNext",true,false) as Button
+	check(next!=null and not next.disabled,"Options de carrière accessibles après le choix du club")
+	await key(next)
+	check(app.find_child("CreationCareerOptions",true,false)!=null and app.find_child("CreationClubGrid",true,false)==null,"Écran dédié aux options de carrière")
 	var option := app.find_child("CreationVaryCurrent",true,false) as CheckBox
 	check(option!=null and option.button_pressed,"Niveau variable coché par défaut")
 	check(option.text=="Faire légèrement varier le niveau actuel","Libellé explicite")
 	await key(option)
 	check(not option.button_pressed and app.management_ui.creation_vary_current==false,"Espace décoche réellement la case")
-	var clubs := app.find_child("CreationClubGrid",true,false) as GridContainer
-	check(clubs!=null and clubs.get_child_count()>0,"Vrais clubs disponibles")
-	var first := clubs.get_child(0) as Button
-	await key(first)
+	await key(app.find_child("CreationBackToClubs",true,false) as Button)
+	check(app.find_child("CreationClubGrid",true,false)!=null,"Retour au choix du club")
+	await key(app.find_child("CreationNext",true,false) as Button)
 	option=app.find_child("CreationVaryCurrent",true,false)
-	check(not option.button_pressed,"Choisir le club conserve l’option décochée")
+	check(not option.button_pressed,"L’aller-retour vers le club conserve l’option décochée")
 	check(app.bridge._next_id==serial,"Case et choix de club ne commandent ni sauvegarde ni génération")
 	check(app.find_child("CreationVaryPotential",true,false)==null,"Aucun interrupteur du potentiel")
 	var start := app.find_child("CreationStart",true,false) as Button
@@ -58,6 +67,9 @@ func run() -> void:
 	var before := FileAccess.get_sha256(profile)
 	serial=app.bridge._next_id
 	Entry.begin_creation(app); await settle()
+	check(app.find_child("CreationClubGrid",true,false)!=null,"Une nouvelle ouverture repart du choix du club")
+	await key((app.find_child("CreationClubGrid",true,false) as GridContainer).get_child(0) as Button)
+	await key(app.find_child("CreationNext",true,false) as Button)
 	option=app.find_child("CreationVaryCurrent",true,false)
 	check(option.button_pressed,"Une nouvelle ouverture remet le défaut coché")
 	check(FileAccess.get_sha256(profile)==before and app.bridge._next_id==serial,"Ouvrir l’écran suivant préserve la carrière existante")

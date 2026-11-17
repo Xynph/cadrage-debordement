@@ -304,75 +304,7 @@ func _invitation_button(text: String, callback: Callable) -> Button:
 
 func install_entrypoints() -> void:
 	if active() or not is_instance_valid(app.root_content): return
-	if app.route == "Réception":
-		var parent: Node = app.body
-		if parent == null or parent.find_child("ContextualInvitations", true, false) != null: return
-		var pending: Array = app.model.get("clubLife", {}).get("sceneInvitations", {}).get("invitations", []).filter(func(item: Dictionary): return item.get("status") == "pending" and item.get("available", false))
-		if pending.is_empty(): return
-		var list := S.G.v(8)
-		list.name = "ContextualInvitations"
-		parent.add_child(list)
-		parent.move_child(list, 0)
-		var title := _invitation_text("Les invitations du club", maxi(15, Components.px(24)), INVITATION_TITLE, true)
-		title.name = "ContextualInvitationsTitle"
-		list.add_child(title)
-		# Rendez-vous obligatoire en cours (conférence de presse d'arrivée…) : le moteur refuse d'ouvrir une
-		# invitation avant lui. On le dit et on y mène, au lieu d'un « OUVRIR » refusé (recette native du 16/11/2026).
-		var blocking := blocking_meeting()
-		var banner: Control = null
-		if not blocking.is_empty():
-			var notice := _invitation_card("ContextualInvitationsBlocked", INVITATION_GOLD)
-			list.add_child(notice.card)
-			banner = notice.card
-			var why := _invitation_text("Après " + meeting_label(blocking) + " : termine ce rendez-vous pour ouvrir les invitations.", _invitation_reason_size(), INVITATION_REASON)
-			why.name = "ContextualInvitationsBlockedText"
-			S.G.fill(why)
-			notice.row.add_child(why)
-			if blocking.get("kind") == "press" and not blocking.get("completed", false):
-				var go := _invitation_button("Ouvrir la conférence de presse", func(): app._open_press_conference())
-				go.name = "ContextualOpenPress"
-				notice.row.add_child(go)
-		# Cartes côte à côte quand la largeur le permet, empilées sinon (colonnes recalculées au redimensionnement).
-		var grid := GridContainer.new()
-		grid.name = "ContextualInvitationCards"
-		grid.add_theme_constant_override("h_separation", INVITATION_GAP)
-		grid.add_theme_constant_override("v_separation", 8)
-		S.G.fill(grid)
-		list.add_child(grid)
-		grid.columns = 1
-		grid.resized.connect(func():
-			var minimum := _invitation_card_width()
-			var columns := clampi(int((grid.size.x + INVITATION_GAP) / (minimum + INVITATION_GAP)), 1, mini(maxi(pending.size(), 1), 3))
-			if grid.columns != columns: grid.columns = columns
-			# Les cartes se partagent la largeur sans dépasser un confort de lecture : le bouton reste près de son texte.
-			var width := clampf((grid.size.x - INVITATION_GAP * (columns - 1)) / columns, minimum, Components.px(1100))
-			for card: Control in grid.get_children(): card.custom_minimum_size.x = width
-			if is_instance_valid(banner): banner.custom_minimum_size.x = minf(grid.size.x, width * columns + INVITATION_GAP * (columns - 1)))
-		for invitation: Dictionary in pending:
-			var entry := _invitation_card("ContextualInvitation_" + str(invitation.get("id", "")), Color("4f7f73"))
-			entry.card.custom_minimum_size.x = _invitation_card_width()
-			grid.add_child(entry.card)
-			var words := S.G.v(2)
-			S.G.fill(words)
-			entry.row.add_child(words)
-			var heading := _invitation_text(str(invitation.get("title", "Invitation")), _invitation_title_size(), INVITATION_TITLE, true)
-			heading.name = "ContextualInvitationTitle"
-			words.add_child(heading)
-			var reason_text := str(invitation.get("reason", ""))
-			if not reason_text.is_empty():
-				var reason := _invitation_text(reason_text, _invitation_reason_size(), INVITATION_REASON)
-				reason.name = "ContextualInvitationReason"
-				reason.max_lines_visible = 2
-				reason.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-				reason.tooltip_text = reason_text
-				words.add_child(reason)
-			var open := _invitation_button("Ouvrir", func(): open_invitation(str(invitation.id)))
-			open.name = "ContextualInvitationOpen"
-			open.disabled = not blocking.is_empty()
-			if open.disabled: open.tooltip_text = "Disponible après " + meeting_label(blocking) + "."
-			entry.row.add_child(open)
-		_contain_entry_content(parent, list)
-	elif app.route == "Préparation":
+	if app.route == "Préparation":
 		var parent: Node = app.root_content.find_child("PreparationEntrainement", true, false)
 		if parent == null and app.management_ui.get("preparation", {}).get("tab", 0) == 2:
 			parent = app.body

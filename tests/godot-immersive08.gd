@@ -102,7 +102,7 @@ func entry() -> void:
 	await settle()
 	await engine_idle()
 	check(app.find_child("CreationEditionRow",true,false)==null,"La création montre un seul catalogue")
-	check(app.route=="Création" and app.find_child("CreationStart",true,false)!=null,"Nouvelle carrière ouvre le vrai catalogue et l’action de création")
+	check(app.route=="Création" and app.find_child("CreationNext",true,false)!=null,"Nouvelle carrière ouvre le vrai catalogue et l’action de création")
 	var summary := app.find_child("CreationCompetitionSummary",true,false) as Control
 	var choices := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
 	check(app.find_child("CreationPagination",true,false)==null and summary!=null and choices!=null and choices.size.y>=240,"Le championnat précède une grille unique de clubs")
@@ -170,6 +170,8 @@ func pacific() -> void:
 	app._render()
 	await settle()
 	await click(app.find_child("CreationClub58",true,false))
+	await settle()
+	await click(app.find_child("CreationNext",true,false))
 	await settle()
 	await click(app.find_child("CreationStart",true,false))
 	await worker()
@@ -294,6 +296,7 @@ func japan(compact: bool) -> void:
 	await capture(("54" if compact else "53")+"-japon-creation-"+dimensions)
 	var club_id := 80 if compact else 72
 	if not await edition_action("CreationClub%d" % club_id): return
+	if not await edition_action("CreationNext"): return
 	if not await edition_action("CreationStart"): return
 	await worker()
 	await ContextualFlow.settle_club_meetings(app, self, check)
@@ -383,7 +386,7 @@ func nationale(compact: bool) -> void:
 			await create_timer(.2).timeout
 			await settle()
 			var creation_list := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
-			var start := app.find_child("CreationStart",true,false) as Button
+			var start := app.find_child("CreationNext",true,false) as Button
 			var last_club := app.find_child("CreationClub101",true,false) as Button
 			check(creation_list!=null and last_club!=null and creation_list.get_global_rect().grow(1).encloses(last_club.get_global_rect()),"La dernière carte de Nationale reste visible après redimensionnement à %s" % size)
 			check(start!=null and root.get_visible_rect().grow(1).encloses(start.get_global_rect()),"L’action de création reste visible après redimensionnement à %s" % size)
@@ -392,6 +395,7 @@ func nationale(compact: bool) -> void:
 	await capture(("63" if compact else "62")+"-nationale-creation-"+dimensions)
 	var club_id := 101 if compact else 100
 	if not await edition_action("CreationClub%d" % club_id): return
+	if not await edition_action("CreationNext"): return
 	if not await edition_action("CreationStart"): return
 	await worker()
 	await ContextualFlow.settle_club_meetings(app, self, check)
@@ -468,6 +472,7 @@ func champ(compact: bool) -> void:
 	if not await edition_action("CreationClub%d" % club_id): return
 	check(app.find_child("CreationStadium",true,false)!=null,"Le dossier du club affiche son stade")
 	await capture(("71" if compact else "70")+"-champ-creation-"+dimensions)
+	if not await edition_action("CreationNext"): return
 	if not await edition_action("CreationStart"): return
 	await worker()
 	await ContextualFlow.settle_club_meetings(app, self, check)
@@ -569,8 +574,7 @@ func reception() -> void:
 	var archive_button: Button = app.find_child("InboxToggleArchive", true, false)
 	check(archive_button != null, "L’archivage du message sélectionné est proposé dans les favoris")
 	if archive_button != null: archive_button.pressed.emit()
-	app.find_child("InboxFolder3", true, false).pressed.emit()
-	await settle()
+	await choose_subject("Archives")
 	list = app.find_child("InboxMessageRows", true, false)
 	check(message_rows(list).size() == 1 and message_rows(list)[0].get_meta("message_text") == original, "Le dossier Archives retrouve le message traité")
 	if app.find_child("InboxToggleArchive", true, false) == null and not message_rows(list).is_empty():
@@ -594,6 +598,19 @@ func reception() -> void:
 	app.find_child("InboxOpenMessageAction", true, false).pressed.emit()
 	await settle()
 	check(app.route == "Effectif", "L'alerte contrat ouvre l'effectif réel")
+
+## Menu « Sujet » (archives, états rares) : même effet qu'un choix dans la liste déroulante.
+func choose_subject(prefix: String) -> void:
+	var menu := app.find_child("InboxSubject", true, false) as OptionButton
+	check(menu != null, "Menu Sujet disponible : " + prefix)
+	if menu == null: return
+	for index in menu.item_count:
+		if not menu.is_item_separator(index) and menu.get_item_text(index).begins_with(prefix):
+			menu.select(index)
+			menu.item_selected.emit(index)
+			await settle()
+			return
+	check(false, "Entrée de menu Sujet introuvable : " + prefix)
 
 func message_rows(list: Node) -> Array:
 	return list.get_children().filter(func(node: Node): return node.has_meta("message_id"))

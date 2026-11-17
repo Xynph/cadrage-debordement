@@ -14,7 +14,10 @@ const BENCH_ROLES=[1,0,0,2,3,4,5,6];
 const COVER_WEEKLY_SALARY=2500;
 function seedHash(text){let h=2166136261;for(const ch of String(text)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
 function ensureSkills(p){if(p.skills)return p;let seed=seedHash(p.id||p.name),prof=PROFILES[p.fam]||PROFILES[7];p.skillBase=p.rating;p.skills={};Object.keys(ATTR).forEach((k,i)=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;p.skills[k]=clamp(p.rating+prof[i]+(seed%19)-9,20,97)});return p}
-function skill(p,k,fit=false){if(!p)return 25;ensureSkills(p);let n=clamp(p.skills[k]+p.rating-p.skillBase+focusedBonus(p,k),15,99);return fit?n*(.50+p.condition*.005):n}
+// `fit` : false = compétence nue ; true = avec la fatigue (jeu courant : ×0,5 à condition 0) ; 'arrete' (rencontres
+// avec `setPieceFatigueVersion`, voir fitArrete) = la perte due à la fatigue est pondérée par FATIGUE_ARRETE[k] pour les
+// gestes de phase arrêtée (but, lancer en touche) ; les autres compétences gardent la fatigue du jeu courant.
+function skill(p,k,fit=false){if(!p)return 25;ensureSkills(p);let n=clamp(p.skills[k]+p.rating-p.skillBase+focusedBonus(p,k),15,99);if(!fit)return n;const perte=.5-p.condition*.005,w=fit==='arrete'?FATIGUE_ARRETE[k]:undefined;return n*(1-(w===undefined?1:w)*perte)}
 // Termes de chaque grille de poids lus une fois (mêmes paires, même ordre d'addition qu'Object.entries à chaque appel) ;
 // skill(p,k) y est déroulé à l'identique (qualités créées au besoin, bonus de spécialisation, bornes 15-99).
 const ROLE_WEIGHT_TERMS=new WeakMap();
@@ -32,7 +35,7 @@ if(S.live&&!S.live.engine){let prev=S.live,l=createRugbyMatch(prev.pair,prev);S.
 if(old)news('Nouvelle version : attributs des joueurs, feuille à 23 et moteur de match enrichi. Ta carrière est conservée.');setupDevelopment(true);setupOpposition();setupManager();save()}
 function chooseSheet(i,id,bench=false){if(S.live)return;const list=bench?S.reserves:S.lineup,p=player(id);if(id&&(!p||p.injury||!(bench?benchEligible(p,i):slotEligible(p,i))))return;const all=[...S.lineup,...S.reserves],current=(bench?15:0)+i;if(id&&all.some((x,j)=>x===id&&j!==current)){toast('Ce joueur figure déjà sur la feuille.');return}list[i]=id||null;save();render()}
 function promoteCover(){if(S.live)return;repairSheet();if([...S.lineup,...S.reserves].filter(id=>!id).length>professionalPlaces())return false;let n=0;for(let i=0;i<23;i++){const isBench=i>=15,j=isBench?i-15:i,list=isBench?S.reserves:S.lineup;if(list[j])continue;let slot=isBench?[1,0,2,3,5,8,9,10][j]:j;let p=makePlayer(400+n,slot,56);p.id='academy-'+S.season+'-'+S.round+'-'+(S.playerSerial=(S.playerSerial||0)+1);delete p.skills;p.rating=rand(52,61);delete p.skills;p.age=19;p.condition=100;p.salary=COVER_WEEKLY_SALARY;ensureSkills(p);ensureContract(p);ensureDevelopment(p);club().players.push(p);list[j]=p.id;n++}if(n)news(`${n} espoir(s) promu(s) pour compléter la feuille de match.`);save();render();toast(n?`${n} espoir(s) rejoint le groupe.`:'Ta feuille de match est complète.')}
-function chooseScorer(c,ids){return ids.map(id=>c.players.find(p=>p.id===id)).filter(Boolean).sort((a,b)=>skill(b,'goal',true)-skill(a,'goal',true))[0]}
+function chooseScorer(c,ids,l=null){const fit=l?fitArrete(l):true;return ids.map(id=>c.players.find(p=>p.id===id)).filter(Boolean).sort((a,b)=>skill(b,'goal',fit)-skill(a,'goal',fit))[0]}
 // Index des effectifs (premier joueur de chaque identifiant, comme la recherche linéaire) : un match en relit l'effectif
 // des milliers de fois. Il est repris tant que le tableau garde les mêmes joueurs, dans le même ordre et avec les mêmes
 // identifiants (comparaison complète à chaque appel, sans allocation) ; sinon il est reconstruit. Résultats inchangés.
@@ -40,7 +43,7 @@ const SQUAD_INDEX=new WeakMap();
 function squadIndex(players){const ix=SQUAD_INDEX.get(players);if(ix){const n=players.length;let same=ix.list.length===n;for(let i=0;same&&i<n;i++){const p=players[i];if(p!==ix.list[i]||p.id!==ix.ids[i])same=false}if(same)return ix.byId}const list=players.slice(),ids=list.map(p=>p.id),byId=new Map();for(const p of list)if(!byId.has(p.id))byId.set(p.id,p);SQUAD_INDEX.set(players,{list,ids,byId});return byId}
 function matchPlayer(l,side,id){return squadIndex(S.clubs[l.pair[side]].players).get(id)}
 function activePlayers(l,side){const s=l.sheets[side],byId=squadIndex(S.clubs[l.pair[side]].players);return s.on.map(id=>byId.get(id)).filter(p=>p&&!s.cards.some(c=>c.id===p.id&&c.until>l.minute))}
-function unit(l,side,k,filter){let p=activePlayers(l,side);if(filter)p=p.filter(filter);return p.length?mean(p.map(p=>skill(p,k,true))):25}
+function unit(l,side,k,filter){let p=activePlayers(l,side);if(filter)p=p.filter(filter);const fit=fitArrete(l);return p.length?mean(p.map(p=>skill(p,k,fit))):25}
 function addEvent(l,text,type='play',meta={}){const scene=captureMatchAction(l,type,meta);l.events.push({min:l.minute,text,type,...(flowRules(l)?{period:l.flow.period}:{}),...(scene?{scene}:{})});const playbackState=MATCH_PLAYBACK.get(l);if(playbackState&&!playbackState.running)playbackState.cursor=l.events.length-1}
 // Scope: French professional substitutions and red-card replacement, edition 2025/26.
 // Existing fixtures without this profile retain their original rules until completion.
@@ -150,7 +153,7 @@ function goalKickGeometry(conversion=false,tryY=35,territory=50,side=0){
 function goalChance(l,side,conversion=false,tryY=35){
  const kicker=goalKicker(l,side);
  const shot=goalKickGeometry(conversion,tryY,l.territory,side);
- const brut=(conversion?.28:.23)+skill(kicker,'goal',true)*.006-Math.max(0,shot.distance-25)*.005-shot.angle*.13+(unit(l,side,'mental')-70)*.001-(l.weather==='Vent'?.16:l.weather==='Pluie'?.06:0)+goalKickPressure(l,side,kicker,conversion);
+ const brut=(conversion?.28:.23)+skill(kicker,'goal',fitArrete(l))*.006-Math.max(0,shot.distance-25)*.005-shot.angle*.13+(unit(l,side,'mental')-70)*.001-(l.weather==='Vent'?.16:l.weather==='Pluie'?.06:0)+goalKickPressure(l,side,kicker,conversion);
  // Essais réalistes : les échecs au but reculent d'autant (réussite réelle ~ 70-80 %), sans écraser l'écart entre buteurs.
  const chance=essaisRules(l)?clamp(1-(1-brut)*ESSAIS.but,.22,.96):clamp(brut,.22,.93);
  if(l.sjLastKick)l.sjLastKick.p=chance;

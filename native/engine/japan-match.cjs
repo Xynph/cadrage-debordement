@@ -54,7 +54,7 @@ module.exports = function japanMatchFactory(rules) {
       const {distance,angle}=goalKickGeometry(true,y);
       for (const side of [q.first,1-q.first]) {
         const p=players[side][round%5];
-        const chance=clamp(.23+skill(p,'goal',true)*.006-Math.max(0,distance-25)*.005-angle*.13
+        const chance=clamp(.23+skill(p,'goal',fitArrete(l))*.006-Math.max(0,distance-25)*.005-angle*.13
           +(unit(l,side,'mental')-70)*.001-(l.weather==='Vent'?.16:l.weather==='Pluie'?.06:0),.22,.93);
         const made=Math.random()<chance;
         q.attempts.push({side,playerId:p.id,location,made});taken[side]++;

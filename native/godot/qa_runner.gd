@@ -500,6 +500,9 @@ func _run() -> void:
 		chosen_club = int(str(picked.name).trim_prefix("CreationClub"))
 		picked.pressed.emit()
 		await _settle()
+	if app.find_child("CreationNext",true,false) != null:
+		_press_named("CreationNext")
+		await _settle()
 	_press_named("CreationStart")
 	await _wait(180000) # la base Monde (5 962 joueurs) se génère plus lentement que l'ancienne base à 30 clubs
 	_check(str(app.model.get("meta",{}).get("mode","")).begins_with("world") and int(app.model.club.id)==chosen_club,"Actual Monde career created through UI")
@@ -937,6 +940,9 @@ func _world_creation(club_id: int, league: String, edition: String = "world") ->
 	if not _press_named("CreationClub" + str(club_id)): return false
 	await _settle()
 	var replacing: bool = app._has_career()
+	if app.find_child("CreationNext",true,false) != null:
+		if not _press_named("CreationNext"): return false
+		await _settle()
 	if not _press_named("CreationStart"): return false
 	if replacing:
 		await _settle()
