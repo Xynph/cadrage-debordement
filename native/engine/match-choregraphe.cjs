@@ -1817,6 +1817,22 @@ function finir({type,equipe,vedette,sens,ouverture,etapes,premier,dernier,tf,pla
  if(!depart||!Array.isArray(depart.players))return null;
  const mis=depart.players.find(p=>p.featured&&p.side===depart.possession);
  const joueurs=depart.players.map(p=>({id:p.id,side:p.side,slot:p.slot,x:p.x,y:p.y}));
+ // Joueur qui entre en jeu après la scène de départ (retour de carton jaune, remplaçant) et dont le moteur nomme
+ // un fait plus loin dans l'action : il est pris dans la première scène du temps fort où il figure, au poste qu'il y
+ // tient, et prend la place de celui que cette entrée remplace (même équipe, même poste) s'il n'a aucun rôle.
+ {
+  const presents=new Set(joueurs.map(p=>String(p.id))),requis=new Set(etapes.filter(s=>s.joueur!=null).map(s=>String(s.joueur)));
+  for(const id of requis){
+   if(presents.has(id))continue;
+   for(let i=premier;i<=dernier;i++){
+    const q=plans[i]?.scene?.players?.find(p=>String(p.id)===id);if(!q)continue;
+    const remplace=joueurs.findIndex(p=>p.side===q.side&&p.slot===q.slot&&!requis.has(String(p.id))&&String(p.id)!==String(vedette)&&String(p.id)!==String(marqueur)&&String(p.id)!==String(mis?.id));
+    const entree={id:q.id,side:q.side,slot:q.slot,x:q.x,y:q.y};
+    if(remplace>=0)joueurs[remplace]=entree;else joueurs.push(entree);
+    presents.add(id);break;
+   }
+  }
+ }
  if(choisirBotteur){
   // Botteur d'un coup de pied en touche : l'ouvreur, sinon l'arrière, sinon le demi (choix de mise en scène).
   const pick=[9,14,8].map(s=>joueurs.find(p=>p.side===equipe&&p.slot===s)).find(Boolean);
