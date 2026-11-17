@@ -102,6 +102,106 @@
       "prompt": "New standalone cinematic ultrawide 2:1 photorealistic sports photograph for a French rugby union XV PC management game's pre-match page. Seen from behind, a professional fictional XV rugby team in charcoal and dark green warm-up jackets is in the stadium tunnel, about to emerge into warm ivory floodlights and fine rain over the pitch. Several athletic adult players on the right, no discernible faces, no visible numbers or logos. Rich shadows, muted forest and antique-gold details, cold air, authentic French stadium atmosphere, realistic scale. Space on the left is dark concrete with subtle atmospheric detail and open composition to place separately rendered native game text. No UI, words, readable signs, logos, watermarks or border."
     },
     {
+      "id": "match-tunnel-sec",
+      "file": "match-tunnel-sec.png",
+      "source": "exec-a868a685-034d-4989-bc0e-76b42a0af03f.png",
+      "sourceType": "generated",
+      "source_sha256": "04129ec17c9fd587c55edc42d9474e777f496f069a5c32349b1b6e2372195da6",
+      "crop": [
+        0,
+        0,
+        1774,
+        887
+      ],
+      "width": 1774,
+      "height": 887,
+      "bytes": 2251898,
+      "sha256": "04129ec17c9fd587c55edc42d9474e777f496f069a5c32349b1b6e2372195da6",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Edit the supplied match-tunnel.png in place as a cinematic ultrawide 2:1 photorealistic sports photograph, 1774 × 887 PNG, for a French rugby union XV PC management game's pre-match page. Same scene, same framing and players. Seen from behind, the same professional fictional XV rugby team in charcoal and dark green warm-up jackets is in the same stadium tunnel, about to emerge onto the pitch. Clear dry evening: no rain at all, dry concrete floor without puddles, crisp warm-ivory floodlights under a deep blue dusk sky, dry green pitch. Keep the identical camera position, perspective, crop, concrete corridor and handrail, stadium geometry, rugby posts, and exact positions, poses, scale, hairstyles and kit of the several athletic adult players on the right, including the scrum cap. Rich shadows, muted forest and antique-gold details, authentic French stadium atmosphere, realistic scale. Space on the left is dark concrete with subtle atmospheric detail and open composition to place separately rendered native game text. Preserve the entire dark left wall and ensure the weather effects leave it dark. Apply only the requested changes in weather and its physical effects on light and surfaces. All players seen from behind with no discernible faces, no visible numbers or logos. No UI, text, names, readable signs, logos, watermarks or border."
+    },
+    {
+      "id": "match-tunnel-forte-pluie",
+      "file": "match-tunnel-forte-pluie.png",
+      "source": "exec-f984b359-2348-4108-825b-2e69569c5a66.png",
+      "sourceType": "generated",
+      "source_sha256": "285590d6b9421f651859e8eef50da1816d916d2462919ae54c30c4879b2753af",
+      "crop": [
+        0,
+        0,
+        1774,
+        887
+      ],
+      "width": 1774,
+      "height": 887,
+      "bytes": 2379621,
+      "sha256": "285590d6b9421f651859e8eef50da1816d916d2462919ae54c30c4879b2753af",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Edit the supplied match-tunnel.png in place as a cinematic ultrawide 2:1 photorealistic sports photograph, 1774 × 887 PNG, for a French rugby union XV PC management game's pre-match page. Same scene, same framing and players. Seen from behind, the same professional fictional XV rugby team in charcoal and dark green warm-up jackets is in the same stadium tunnel, about to emerge onto the pitch. Heavy rain: dense sheets of rain in the floodlight beams, waterlogged pitch with standing water and splashes, soaked jackets, puddles on the tunnel floor, darker and colder. Keep the identical camera position, perspective, crop, concrete corridor and handrail, stadium geometry, rugby posts, and exact positions, poses, scale, hairstyles and kit of the several athletic adult players on the right, including the scrum cap. Rich shadows, muted forest and antique-gold details, authentic French stadium atmosphere, realistic scale. Space on the left is dark concrete with subtle atmospheric detail and open composition to place separately rendered native game text. Preserve the entire dark left wall and ensure the weather effects leave it dark. Apply only the requested changes in weather and its physical effects on light and surfaces. All players seen from behind with no discernible faces, no visible numbers or logos. No UI, text, names, readable signs, logos, watermarks or border."
+    },
+    {
+      "id": "match-tunnel-vent",
+      "file": "match-tunnel-vent.png",
+      "source": "exec-90dc69ef-c4a4-4071-b123-831e6d57049c.png",
+      "sourceType": "generated",
+      "source_sha256": "49cfd154da6fe02060d8010f58c39dcb42ae26493e3661a59647c750fbd01f00",
+      "crop": [
+        0,
+        0,
+        1774,
+        887
+      ],
+      "width": 1774,
+      "height": 887,
+      "bytes": 2275828,
+      "sha256": "49cfd154da6fe02060d8010f58c39dcb42ae26493e3661a59647c750fbd01f00",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Edit the supplied match-tunnel.png in place as a cinematic ultrawide 2:1 photorealistic sports photograph, 1774 × 887 PNG, for a French rugby union XV PC management game's pre-match page. Same scene, same framing and players. Seen from behind, the same professional fictional XV rugby team in charcoal and dark green warm-up jackets is in the same stadium tunnel, about to emerge onto the pitch. Strong wind, no rain: stadium flags and advertising tarpaulins snapping in the wind, jackets and shorts pulled by gusts, loose paper and grass blown across the pitch, dry ground, clouds racing in the dusk sky. Keep the identical camera position, perspective, crop, concrete corridor and handrail, stadium geometry, rugby posts, and exact positions, poses, scale, hairstyles and kit of the several athletic adult players on the right, including the scrum cap. Rich shadows, muted forest and antique-gold details, authentic French stadium atmosphere, realistic scale. Space on the left is dark concrete with subtle atmospheric detail and open composition to place separately rendered native game text. Preserve the entire dark left wall and ensure the weather effects leave it dark. Apply only the requested changes in weather and its physical effects on light and surfaces. All players seen from behind with no discernible faces, no visible numbers or logos. No UI, text, names, readable signs, logos, watermarks or border."
+    },
+    {
+      "id": "match-tunnel-chaleur",
+      "file": "match-tunnel-chaleur.png",
+      "source": "exec-313075af-7d99-4fba-94ea-73594dc1fa72.png",
+      "sourceType": "generated",
+      "source_sha256": "35715aec78647817f1dc3e79ceff318e05a1dbd1adb8e8cac647090b892ad3ed",
+      "crop": [
+        0,
+        0,
+        1774,
+        887
+      ],
+      "width": 1774,
+      "height": 887,
+      "bytes": 2106080,
+      "sha256": "35715aec78647817f1dc3e79ceff318e05a1dbd1adb8e8cac647090b892ad3ed",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Edit the supplied match-tunnel.png in place as a cinematic ultrawide 2:1 photorealistic sports photograph, 1774 × 887 PNG, for a French rugby union XV PC management game's pre-match page. Same scene, same framing and players. Seen from behind, the same professional fictional XV rugby team in charcoal and dark green warm-up jackets is in the same stadium tunnel, about to emerge onto the pitch. Hot late afternoon: warm low golden sunlight flooding the pitch, long shadows, light heat haze over the grass, dry ground, no rain, floodlights off or faint. Keep the identical camera position, perspective, crop, concrete corridor and handrail, stadium geometry, rugby posts, and exact positions, poses, scale, hairstyles and kit of the several athletic adult players on the right, including the scrum cap. Rich shadows, muted forest and antique-gold details, authentic French stadium atmosphere, realistic scale. Space on the left is dark concrete with subtle atmospheric detail and open composition to place separately rendered native game text. Preserve the entire dark left wall and ensure the weather effects leave it dark. Apply only the requested changes in weather and its physical effects on light and surfaces. All players seen from behind with no discernible faces, no visible numbers or logos. No UI, text, names, readable signs, logos, watermarks or border."
+    },
+    {
+      "id": "match-tunnel-neutre",
+      "file": "match-tunnel-neutre.png",
+      "source": "exec-88fe43a9-0715-404c-a664-f1827ccbaaf2.png",
+      "sourceType": "generated",
+      "source_sha256": "61e3de9cb9018accaf0778f4fe12509b3b8d12a5f356e395998645e5502119c5",
+      "crop": [
+        0,
+        0,
+        1774,
+        887
+      ],
+      "width": 1774,
+      "height": 887,
+      "bytes": 2104871,
+      "sha256": "61e3de9cb9018accaf0778f4fe12509b3b8d12a5f356e395998645e5502119c5",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Edit the supplied match-tunnel.png in place as a cinematic ultrawide 2:1 photorealistic sports photograph, 1774 × 887 PNG, for a French rugby union XV PC management game's pre-match page. Same scene, same framing and players. Seen from behind, the same professional fictional XV rugby team in charcoal and dark green warm-up jackets is in the same stadium tunnel, about to emerge onto the pitch. Neutral weather: dry, soft overcast dusk, even light, no rain, no visible wind, no strong sun. Keep the identical camera position, perspective, crop, concrete corridor and handrail, stadium geometry, rugby posts, and exact positions, poses, scale, hairstyles and kit of the several athletic adult players on the right, including the scrum cap. Rich shadows, muted forest and antique-gold details, authentic French stadium atmosphere, realistic scale. Space on the left is dark concrete with subtle atmospheric detail and open composition to place separately rendered native game text. Preserve the entire dark left wall and ensure the weather effects leave it dark. Apply only the requested changes in weather and its physical effects on light and surfaces. All players seen from behind with no discernible faces, no visible numbers or logos. No UI, text, names, readable signs, logos, watermarks or border."
+    },
+    {
       "id": "analysis-room",
       "file": "analysis-room.png",
       "source": "exec-d01e747e-e331-453a-b647-fe7e8e227edd.png",
