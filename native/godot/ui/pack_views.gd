@@ -12,10 +12,10 @@ static func missing_warning(app: Control, parent: Container, scope: String, pape
 	var career_missing := false
 	for warning: String in app.model.get("packs", {}).get("missing", []):
 		if warning.begins_with("Pack de carrière absent") and scope != "creation":
-			messages.append("Pack de carrière absent · Présentation de base anonymisée. Réimportez le pack pour retrouver vos identités.")
+			messages.append("Pack de carrière absent · Présentation de base anonymisée. Réimporte le pack pour retrouver tes identités.")
 			career_missing = true
 	if scope != "career" and _creation_missing(app):
-		messages.append("Pack de création absent · Présentation de base anonymisée. Réimportez le pack ou choisissez Base pour créer une carrière.")
+		messages.append("Pack de création absent · Présentation de base anonymisée. Réimporte le pack ou choisis Base pour créer une carrière.")
 	if messages.is_empty(): return
 	parent.add_child(G.wrap("\n".join(messages), 13, G.ALERT if paper else Color("f1b6a9")))
 	parent.add_child(G.button("GÉRER LES PACKS", func(): app.pack_manager.open("career" if career_missing else "creation")))
@@ -67,11 +67,11 @@ static func page(app: Control) -> Control:
 	var packs: Dictionary = app.model.get("packs", {})
 	var selected: String = app.pack_manager.selected_id()
 	if not compatible:
-		page.add_child(C.wrap("Cette ancienne carrière utilise des joueurs générés. Vous pouvez installer des packs ici et les utiliser dans une nouvelle carrière sur la base commune.", 21, C.ALERT))
+		page.add_child(C.wrap("Cette ancienne carrière utilise des joueurs générés. Tu peux installer des packs ici et les utiliser dans une nouvelle carrière sur la base commune.", 21, C.ALERT))
 	var missing: Array = packs.get("missing", []).filter(func(message: String): return message.begins_with("Stockage") or not creation and message.begins_with("Pack de carrière absent"))
 	if creation and _creation_missing(app): missing.append("Pack de création absent dans cette édition")
 	if not missing.is_empty():
-		page.add_child(C.wrap("PACK MANQUANT · " + ", ".join(missing) + "\nLes identités concernées utilisent la base anonymisée. Réimportez le pack pour retrouver ses images et ses noms.", 21, C.ALERT))
+		page.add_child(C.wrap("PACK MANQUANT · " + ", ".join(missing) + "\nLes identités concernées utilisent la base anonymisée. Réimporte le pack pour retrouver ses images et ses noms.", 21, C.ALERT))
 	if not app.last_error.is_empty(): page.add_child(C.wrap(app.last_error, 21, C.ALERT))
 
 	var inspected_id := str(preview.get("id", ""))
@@ -114,7 +114,7 @@ static func page(app: Control) -> Control:
 
 static func _empty(parent: Container, picture_height: float) -> void:
 	var content := _section(parent, "Import local", "Importer une autre réalité", "match-tunnel", picture_height)
-	for step in [["01", "Ouvrir le ZIP", "Choisissez une archive sur votre ordinateur."], ["02", "Vérifier le contenu", "Consultez les clubs, joueurs, compétitions et médias fournis."], ["03", "Installer", "Le pack devient disponible pour vos prochaines carrières."]]:
+	for step in [["01", "Ouvrir le ZIP", "Choisis une archive sur ton ordinateur."], ["02", "Vérifier le contenu", "Consulte les clubs, joueurs, compétitions et médias fournis."], ["03", "Installer", "Le pack devient disponible pour tes prochaines carrières."]]:
 		content.add_child(C.rule())
 		var line := C.h(14)
 		content.add_child(line)
@@ -160,7 +160,7 @@ static func _picture(parent: Container, art: String, height: float) -> void:
 static func _catalogue(app: Control, parent: Container, selected: String, compatible: bool, picture_height: float) -> void:
 	var content := _section(parent, "Identités actives" if selected == "base" else "", "Jeu de base", "maquette-reality-base", picture_height, true)
 	content.add_child(C.label("Identités du jeu", 25, C.IVORY, false))
-	content.add_child(C.wrap("Retrouvez les clubs, les joueurs et les compétitions de votre carrière.", 21, C.IVORY))
+	content.add_child(C.wrap("Retrouve les clubs, les joueurs et les compétitions de ta carrière.", 21, C.IVORY))
 	content.add_child(C.rule())
 	var facts := C.h(18)
 	content.add_child(facts)
@@ -185,7 +185,7 @@ static func _installed_card(app: Control, parent: Container, pack: Dictionary, s
 	var active := id == selected
 	var content := _section(parent, "Pack actif" if active else "Pack installé", str(pack.get("name", "Pack personnalisé")), "maquette-reality-pack", picture_height)
 	if featured:
-		content.add_child(C.wrap("Les identités et les médias fournis par votre pack, dans le monde commun de Rugby Legacy 27.", 21, C.IVORY))
+		content.add_child(C.wrap("Les identités et les médias fournis par ton pack, dans le monde commun de Rugby Legacy 27.", 21, C.IVORY))
 		_inventory(content, pack)
 		content.add_child(C.rule())
 	else:
@@ -215,7 +215,7 @@ static func _installed_card(app: Control, parent: Container, pack: Dictionary, s
 
 static func _create_with_pack(app: Control, id: String) -> void:
 	if app.waiting:
-		app._refuse_action("Attendez la fin du traitement avant de continuer.")
+		app._refuse_action("Attends la fin du traitement avant de continuer.")
 		return
 	if id == app.pack_manager.selected_id("creation"):
 		app._navigate("Création")
@@ -270,7 +270,7 @@ static func _fact(parent: Container, value: Variant, caption: String) -> void:
 static func _preview(app: Control, parent: Container, pack: Dictionary) -> void:
 	var content := _section(parent, "Prêt à installer", str(pack.get("name", "Pack personnalisé")))
 	_inventory(content, pack)
-	content.add_child(C.wrap("L’installation ajoute le pack à votre profil. Vous pourrez ensuite le sélectionner."))
+	content.add_child(C.wrap("L’installation ajoute le pack à ton profil. Tu pourras ensuite le sélectionner."))
 	if pack.get("rightsStatus", "") == "not-cleared-for-public-distribution":
 		content.add_child(C.wrap("Droits de redistribution publique des photos et logos à vérifier séparément."))
 	var install := C.button("INSTALLER CE PACK", app.pack_manager.install, true)

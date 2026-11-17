@@ -1,7 +1,7 @@
 'use strict';
 // Retouches de cohérence (carrière Monde, mode unique), côté moteur :
 //  1. fiche club : « remplaçants les plus utilisés » ne reprend jamais un joueur du XV type affiché à côté ;
-//  2. fiche club : « Vos confrontations » sans match passé reçoit le prochain match entre les deux clubs
+//  2. fiche club : « Tes confrontations » sans match passé reçoit le prochain match entre les deux clubs
 //     (date, lieu, compétition), absent quand les clubs ne se rencontrent pas ;
 //  4. délégation : une feuille à 22 (pilier de remplacement manquant) peut être déléguée, le match est joué à 22 ;
 //  5. finances : le centre de formation (coût réel du budget de saison) est publié à part, dans les charges.

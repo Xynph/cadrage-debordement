@@ -47,7 +47,7 @@ function factory(){
   calendar(custom.schedule);check(JSON.stringify(s.schedule)===JSON.stringify(custom.schedule),'calendrier de carrière divergent');return true;
  }
  function prepareCreation(payload){
-  check(shape(payload,['mode','club','confirmed','document'])&&payload.mode==='custom'&&payload.confirmed===true&&Number.isInteger(payload.club)&&payload.club>=0&&payload.club<14,'confirmez la nouvelle carrière et choisissez un club');
+  check(shape(payload,['mode','club','confirmed','document'])&&payload.mode==='custom'&&payload.confirmed===true&&Number.isInteger(payload.club)&&payload.club>=0&&payload.club<14,'confirme la nouvelle carrière et choisis un club');
   check(typeof S==='undefined'||!S?.live,'création indisponible pendant un match');return prepare(payload.document);
  }
  function create(payload){
@@ -66,7 +66,7 @@ function factory(){
   if(installed)return;installed=true;const previous=worldNewSeason;
   worldNewSeason=function(){const result=previous.apply(this,arguments);if(S?.customCompetition)S.schedule=copy(S.customCompetition.schedule);return result;};
  }
- function execute(){throw Error('Créez la compétition personnalisée depuis l’atelier.');}
+ function execute(){throw Error('Crée la compétition personnalisée depuis l’atelier.');}
  return {prepare,prepareCreation,create,project,validate,installHooks,execute};
 }
 function support(document){try{factory().prepare(document);return {playable:true,reason:'14 clubs aller-retour : carrière fictive jouable avec les phases finales historiques.'};}catch(e){return {playable:false,reason:e.message};}}

@@ -92,7 +92,7 @@ func _sync_drafts() -> void:
 	context.career = app.management_ui.get("career","")
 	if state.get("draft_context",{}) != context:
 		var previous: Dictionary = state.get("drafts",{})
-		state.draft_notice = "Les choix locaux ont été réinitialisés : la semaine, la saison ou le club a changé. Relisez le contexte avant de confirmer." if not previous.is_empty() else ""
+		state.draft_notice = "Les choix locaux ont été réinitialisés : la semaine, la saison ou le club a changé. Relis le contexte avant de confirmer." if not previous.is_empty() else ""
 		state.drafts = {}
 		state.draft_context = context
 	if not state.get("drafts") is Dictionary: state.drafts = {}
@@ -116,7 +116,7 @@ func _redraw() -> void:
 	if people.is_empty(): list.add_child(G.wrap("Aucun jeune dans cette sélection.",14))
 	counter.text = "%d jeunes · %s" % [people.size(),"suivi actif" if _data().get("enabled",false) else "suivi à démarrer"]
 	if not str(state.get("draft_notice","")).is_empty(): counter.text += "\n"+str(state.draft_notice)
-	if _data().get("locked",false): counter.text += "\nObjectifs verrouillés : révisez-les avant la séance, hors match et pendant la saison régulière."
+	if _data().get("locked",false): counter.text += "\nObjectifs verrouillés : révise-les avant la séance, hors match et pendant la saison régulière."
 	previous.disabled = start==0; next.disabled = start+PAGE_SIZE>=people.size()
 	page_label.text = "%d / %d" % [int(state.page)+1,maxi(1,ceili(float(people.size())/PAGE_SIZE))]
 
@@ -190,7 +190,7 @@ func _person(person: Dictionary) -> void:
 			for i in plan.item_count:
 				if str(plan.get_item_metadata(i))==str(suggested): plan.select(i); update_focus.call(); remember.call(); save.grab_focus())
 		prepare.name = "YouthReviewPrepare"; prepare.disabled = save.disabled; card.add_child(prepare)
-		card.add_child(G.wrap("Préparer ne modifie rien : relisez la répartition, puis confirmez l’objectif choisi.",12))
+		card.add_child(G.wrap("Préparer ne modifie rien : relis la répartition, puis confirme l’objectif choisi.",12))
 
 func _review(parent: Container,person: Dictionary) -> void:
 	var review: Dictionary = person.get("review",{})

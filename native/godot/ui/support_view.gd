@@ -8,7 +8,7 @@ static func build(app: Control) -> Control:
 	G.fill(page, true)
 	var data: Dictionary = app.model.get("clubLife", {}).get("clubSupport", {})
 	if data.is_empty():
-		page.add_child(G.wrap("Créez une carrière pour réunir votre staff.", 18))
+		page.add_child(G.wrap("Crée une carrière pour réunir ton staff.", 18))
 		return page
 	var paper := G.panel(page)
 	G.fill(paper.get_parent(), true)

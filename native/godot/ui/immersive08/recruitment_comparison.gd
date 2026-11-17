@@ -103,8 +103,8 @@ static func default_note(players: Array, left: String, right: String, own_ids: A
 	var choice := second_choice(players, left, own_ids)
 	if str(choice.id) != right: return ""
 	match int(choice.tier):
-		1: return "Aucun autre joueur de votre effectif à ce poste : B est un poste proche."
-		2: return "Aucun autre joueur de votre effectif à ce poste : B vient du marché."
+		1: return "Aucun autre joueur de ton effectif à ce poste : B est un poste proche."
+		2: return "Aucun autre joueur de ton effectif à ce poste : B vient du marché."
 		3: return "Aucun joueur à ce poste : B est un poste proche."
 		4: return "Aucun joueur à ce poste ni à un poste proche : B est le meilleur disponible."
 	return ""
@@ -205,10 +205,10 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 			for player: Dictionary in players:
 				if str(player.id) == selected[slot]: pair[slot] = prepared(app, player, str(player.id) in own_ids); break
 		if pair[0].is_empty() or pair[1].is_empty():
-			detail.add_child(C.wrap("Choisissez deux joueurs pour consulter leurs différences. Les profils indisponibles restent consultables.", 18))
+			detail.add_child(C.wrap("Choisis deux joueurs pour consulter leurs différences. Les profils indisponibles restent consultables.", 18))
 			return
 		if selected[0] == selected[1]:
-			detail.add_child(C.wrap("Sélectionnez deux joueurs distincts.", 18, C.ALERT))
+			detail.add_child(C.wrap("Sélectionne deux joueurs distincts.", 18, C.ALERT))
 			return
 		_cards(detail, pair, reports,app)
 		var tabs := TabContainer.new()
@@ -224,7 +224,7 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 		_header(overview)
 		for field in [["Poste", "pos", ""], ["Âge", "age", " ans"], ["Niveau / 100", "rating", ""], ["Potentiel / 100", "potential", ""], ["Condition", "condition", " %"], ["Moyenne de la saison", "seasonNote", ""], ["Fin de contrat", "contractEnd", ""], ["Prime à la signature", "fee", " €"], ["Salaire "+G.salary_period(), "salary", " €"]]:
 			_row(overview, str(field[0]), str(field[1]), pair, reports, str(field[2]))
-		var footnote := "Pour un joueur à recruter, prime et salaire sont des demandes distinctes ; pour un joueur de votre effectif, ce sont ses conditions actuelles. Aucun contrat n’est signé depuis cette comparaison. Le potentiel provient des rapports datés. En vert : le meilleur des deux."
+		var footnote := "Pour un joueur à recruter, prime et salaire sont des demandes distinctes ; pour un joueur de ton effectif, ce sont ses conditions actuelles. Aucun contrat n’est signé depuis cette comparaison. Le potentiel provient des rapports datés. En vert : le meilleur des deux."
 		if compact:
 			# Petite fenêtre : la note passe en info-bulle pour que la synthèse tienne sans défilement.
 			overview.tooltip_text = footnote
@@ -337,7 +337,7 @@ static func _cards(parent: Node, pair: Array[Dictionary], reports: Dictionary,ap
 		var player: Dictionary = pair[slot]
 		body.add_child(C.wrap(["A · ", "B · "][slot] + str(player.get("name", "—")), 24, C.IVORY, true, 700))
 		if own(player):
-			var squad_status := C.wrap("Dans votre effectif · " + str(player.get("status", "")), 18, C.MINT)
+			var squad_status := C.wrap("Dans ton effectif · " + str(player.get("status", "")), 18, C.MINT)
 			squad_status.name = "MarketComparisonAvailability" + str(slot)
 			body.add_child(squad_status)
 			body.add_child(C.wrap(str(player.get("contractLabel", "")), 18, C.GOLD))

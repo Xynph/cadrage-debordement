@@ -218,7 +218,15 @@ effectif 5e et 9e)**, League One D2 (8 clubs, -0,40 sur la graine 7). L'écart t
 petit (effectifs de tête à 54-55 de niveau en Championship, 68-70 en Premiership : les clubs d'un même championnat se tiennent à quelques dixièmes) alors que
 la pente du moteur est correcte (0,16 par point, cible 0,183, voir §4). La piste est donc **dans le barème des
 notes (#716)** : élargir l'écart de niveau entre clubs de ces trois championnats (les tranches 3-5 et 5+
-y sont presque vides), pas dans le moteur de match. À décider.
+y sont presque vides), pas dans le moteur de match.
+**Décision de Léo (17/11) : élargi.** `native/engine/world-rating-scale.json` → `etageScale` multiplie l'étage du club
+(cador +2 … relégable −2) par 3 en Premiership et par 2 en Championship et League One D2 (nouvelles carrières Monde
+seulement ; les sauvegardes existantes ne sont pas recalculées). Écart type du XV entre clubs d'une carrière neuve :
+Premiership 1,54 → 2,58, Championship 1,13 → 2,12, League One D2 1,50 → 2,46 (Top 14 2,37, URC 2,35, Super Rugby 2,80).
+Corrélation rang final / effectif (Spearman, `scripts/mesure-essais-monde.cjs`, main du 17/11, graines 4242 et 7,
+avant → après) : Premiership 0,20 / 0,53 → 0,50 / 0,70 ; Championship 0,13 / −0,11 → 0,49 / 0,44 ; League One D2
+0,43 / −0,17 → 0,00 / 0,14 (8 clubs, 14 matchs : bruit de graine dominant). Les autres championnats bougent seulement
+par le changement de tirage (Top 14 0,63 / 0,77 → 0,31 / 0,78).
 
 ### 7.3 Notes par maillot (POSTES_NOTE ré-étalonné)
 

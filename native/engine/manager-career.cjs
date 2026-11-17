@@ -37,7 +37,7 @@ function factory(){
   }else{
    check(managerMobilityWindow(),'les candidatures ouvrent à la fin de toutes les compétitions');
    if(command==='manager_career_apply'){check(Number.isInteger(p.clubId),'club invalide');accepted=managerMobilityApply(p.clubId);}
-   else if(command==='manager_career_accept'){check(p.confirmed===true,'confirmez la prise de poste pour la saison suivante');check(typeof p.offerId==='string','offre invalide');accepted=managerMobilityAccept(p.offerId);}
+   else if(command==='manager_career_accept'){check(p.confirmed===true,'confirme la prise de poste pour la saison suivante');check(typeof p.offerId==='string','offre invalide');accepted=managerMobilityAccept(p.offerId);}
    else if(command==='manager_career_decline'){check(typeof p.offerId==='string','offre invalide');accepted=managerMobilityDecline(p.offerId);}
    else if(command==='manager_career_cancel')accepted=managerMobilityCancel();
   }

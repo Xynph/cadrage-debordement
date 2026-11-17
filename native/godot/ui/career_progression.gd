@@ -18,7 +18,7 @@ static func daily(meta: Dictionary, fixture: Variant, route: String) -> Dictiona
 	# « La reprise » au lieu d'avancer (reprise.cjs, meta.decisionsDue).
 	var due: Array = meta.get("decisionsDue", []) if meta.get("decisionsDue") is Array else []
 	if not due.is_empty():
-		return {"open": "reprise", "label": "DÉCISION ATTENDUE  →", "short": "Décision attendue", "tooltip": "Décision attendue : Gabi attend votre réponse dans « La reprise » avant de continuer."}
+		return {"open": "reprise", "label": "DÉCISION ATTENDUE  →", "short": "Décision attendue", "tooltip": "Décision attendue : Gabi attend ta réponse dans « La reprise » avant de continuer."}
 	var today := str(meta.get("calendarToday", ""))
 	if today.is_empty() or not bool(cadence.get("canAdvance", false)):
 		return {"disabled": true, "label": str(cadence.get("reason", "L’avance est indisponible.")), "short": "Continuer"}

@@ -16,9 +16,9 @@ static func build(app: Control) -> Control:
 	G.photo_note(text, app.model.club, "Le centre", "La prochaine génération", "stadium", 140)
 	text.add_child(G.metric(G.n(data.get("academy", []).size()), "espoirs au centre"))
 	var pathways: Dictionary = app.model.get("clubLife", {}).get("academyPathways", {})
-	var follow_up := "Retrouvez les rencontres juniors, les trajectoires et les mentorats dans les parcours du centre." if pathways.get("available", false) else "Le suivi individuel des Espoirs reste disponible ici."
+	var follow_up := "Retrouve les rencontres juniors, les trajectoires et les mentorats dans les parcours du centre." if pathways.get("available", false) else "Le suivi individuel des Espoirs reste disponible ici."
 	var group_policy := int(app.model.get("meta", {}).get("academyGroupPolicy", 0))
-	var intake := "Le 1er juillet, une nouvelle génération de 16 ans arrive : vous choisissez qui garder en Crabos (16-17 ans) ; à 18 ans, ils passent en Espoirs. " if group_policy >= 3 else "À l’intersaison, les clubs complètent les groupes U18 et U21. " if group_policy >= 2 else "Le centre accueille de nouveaux Espoirs à l’intersaison. "
+	var intake := "Le 1er juillet, une nouvelle génération de 16 ans arrive : tu choisis qui garder en Crabos (16-17 ans) ; à 18 ans, ils passent en Espoirs. " if group_policy >= 3 else "À l’intersaison, les clubs complètent les groupes U18 et U21. " if group_policy >= 2 else "Le centre accueille de nouveaux Espoirs à l’intersaison. "
 	text.add_child(G.wrap(intake + follow_up, 14))
 	text.add_child(G.button("PARCOURS DU CENTRE →", func(): app._navigate("Centre")))
 	text.add_child(G.button("SUIVI DES JEUNES →", func(): app._navigate("Suivi des jeunes")))
@@ -148,7 +148,7 @@ static func open_player(app: Control, player_id: String) -> AcceptDialog:
 	dialog.add_child(body)
 	var data: Dictionary = app.model.get("decisions",{}).get("development",{})
 	var matches: Array = data.get("academy",[]).filter(func(person: Dictionary): return str(person.id)==player_id)
-	if matches.is_empty(): body.add_child(G.wrap("Ce joueur n’est plus au centre. Revenez au suivi actualisé.",16))
+	if matches.is_empty(): body.add_child(G.wrap("Ce joueur n’est plus au centre. Reviens au suivi actualisé.",16))
 	else:
 		var person: Dictionary = matches[0]
 		body.add_child(G.section(str(person.name),str(person.pos)+" · "+G.n(person.age)+" ans"))

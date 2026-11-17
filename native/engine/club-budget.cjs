@@ -249,7 +249,7 @@ function compter(compte, ecritures, masseAnnuelle, classement = null) {
 }
 
 const ANNONCES = Object.freeze({
-  mecene: e => `Le président finance le club sur sa fortune. Il vous l’a dit en face : cette saison, il comblera jusqu’à ${euros(e)} de pertes. Au-delà, il vous demandera des comptes.`,
+  mecene: e => `Le président finance le club sur sa fortune. Il te l’a dit en face : cette saison, il comblera jusqu’à ${euros(e)} de pertes. Au-delà, il te demandera des comptes.`,
   entreprise: e => `Le groupe actionnaire a voté son budget : il comblera jusqu’à ${euros(e)} de déficit cette saison, pas un euro de plus.`,
   association: () => 'Le club appartient à ses adhérents : personne ne comblera un déficit. Chaque euro dépensé cette saison devra être gagné.',
 });
@@ -276,8 +276,8 @@ function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, r
   const resultatPrevu = rond(recettesPrevues - chargesPrevues + horsBudget - ligue.amende);
   const apportPrevu = Math.min(compte.enveloppe, Math.max(0, -resultatPrevu));
   const alertes = [];
-  if (ligue.depassementPlafond > 0) alertes.push({ cle: 'plafond', message: `La ligue vous a écrit : la masse salariale (${euros(masseAnnuelle)} par an) dépasse le plafond de ${euros(ligue.plafond)}. Sans départs avant la dernière journée, le club paiera une amende.` });
-  if (ligue.depassementRecettes > 0) alertes.push({ cle: 'recettes', message: `Le contrôleur de gestion de la ligue vous alerte : les salaires des joueurs (${euros(masseAnnuelle)} par an) dépassent 52 % des recettes attendues (${euros(ligue.limiteRecettes)}). Sans correction avant la dernière journée, le club sera sanctionné.` });
+  if (ligue.depassementPlafond > 0) alertes.push({ cle: 'plafond', message: `La ligue t’a écrit : la masse salariale (${euros(masseAnnuelle)} par an) dépasse le plafond de ${euros(ligue.plafond)}. Sans départs avant la dernière journée, le club paiera une amende.` });
+  if (ligue.depassementRecettes > 0) alertes.push({ cle: 'recettes', message: `Le contrôleur de gestion de la ligue t’alerte : les salaires des joueurs (${euros(masseAnnuelle)} par an) dépassent 52 % des recettes attendues (${euros(ligue.limiteRecettes)}). Sans correction avant la dernière journée, le club sera sanctionné.` });
   if (-resultatPrevu - compte.enveloppe > annuel * TOLERANCE_DEFICIT) alertes.push({ cle: 'deficit', message: compte.enveloppe > 0
     ? `Le directeur financier tire la sonnette d’alarme : à ce rythme, la saison se terminera sur une perte de ${euros(resultatPrevu)}, bien plus que les ${euros(compte.enveloppe)} promis par le propriétaire.`
     : `Le trésorier tire la sonnette d’alarme : à ce rythme, la saison se terminera sur une perte de ${euros(resultatPrevu)}, et personne ne la comblera.` });
@@ -302,7 +302,7 @@ function cloture({ division, compte, tresorerie, rang, taille, joue = false }) {
   if (ligue.amende > 0) {
     const motif = ligue.depassementPlafond >= ligue.depassementRecettes ? 'dépassement du plafond salarial' : 'salaires des joueurs au-dessus de 52 % des recettes';
     ecritures.push({ title: 'Amende de la ligue (' + motif + ')', amount: -ligue.amende });
-    if (joue) { confiance -= 6; messages.push(`La ligue sanctionne le club : ${euros(ligue.amende)} d’amende pour ${motif}. Vos dirigeants n’apprécient pas de voir le club épinglé.`); }
+    if (joue) { confiance -= 6; messages.push(`La ligue sanctionne le club : ${euros(ligue.amende)} d’amende pour ${motif}. Tes dirigeants n’apprécient pas de voir le club épinglé.`); }
   }
   const resultat = rond(tresorerie + prime - ligue.amende - compte.depart), deficit = Math.max(0, -resultat);
   const apport = Math.min(compte.enveloppe, deficit), decouvert = deficit - apport;
@@ -313,8 +313,8 @@ function cloture({ division, compte, tresorerie, rang, taille, joue = false }) {
     if (grave) {
       confiance -= Math.min(15, 5 + Math.round(decouvert / recettesSaison * 100));
       messages.push(compte.type === 'association'
-        ? `Le club termine la saison avec ${euros(deficit)} de pertes et personne pour les combler. Le bureau de l’association vous en tient pour responsable.`
-        : `Les pertes de la saison (${euros(deficit)}) dépassent de ${euros(decouvert)} ce que le propriétaire avait promis. Il a versé ${euros(apport)} et vous l’a fait savoir : sa confiance en a pris un coup.`);
+        ? `Le club termine la saison avec ${euros(deficit)} de pertes et personne pour les combler. Le bureau de l’association t’en tient pour responsable.`
+        : `Les pertes de la saison (${euros(deficit)}) dépassent de ${euros(decouvert)} ce que le propriétaire avait promis. Il a versé ${euros(apport)} et te l’a fait savoir : sa confiance en a pris un coup.`);
     } else if (deficit === 0) messages.push(`Le club termine la saison dans le vert : ${euros(resultat)} de mieux en caisse qu’au départ. Le propriétaire n’a rien eu à verser.`);
   }
   return { ecritures, messages, confiance, prime, amende: ligue.amende, resultat, apport, decouvert: rond(decouvert) };
@@ -362,7 +362,7 @@ function leviers({ solde, objectif = 'tresorerie', reste, formationHebdo = 0, de
     vigilance: 'La saison est financée, mais les travaux d’installations la feraient basculer dans le rouge.',
     facultatif: `À ce rythme, ${cible}. Renoncer aux dépenses facultatives suffit à redresser la barre.`,
     effectif: `À ce rythme, ${cible}. Les dépenses facultatives ne suffisent pas : il faudra alléger la masse salariale.`,
-    grave: `À ce rythme, ${cible}. Il faudrait libérer plus d’un quart des salaires : la saison se terminera probablement sur une perte que le propriétaire vous reprochera.`,
+    grave: `À ce rythme, ${cible}. Il faudrait libérer plus d’un quart des salaires : la saison se terminera probablement sur une perte que le propriétaire te reprochera.`,
     tard: `La saison s’achève : ${cible}. Il est trop tard pour la redresser ; la prochaine se prépare dès l’intersaison.`,
   }[etat];
   return { etat, objectif, manque, solde: rond(solde), salairesALiberer: salaires, leviers: liste, conclusion };

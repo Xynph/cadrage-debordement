@@ -127,7 +127,7 @@ func run() -> void:
 	view.update_frame(app.model, {"playerId":"injured:real"})
 	view._confirm_protocol()
 	check(director.commands.is_empty(), "authoritative medical refusal respected")
-	app.last_error = "Décision périmée : consultez la semaine actuelle."
+	app.last_error = "Décision périmée : consulte la semaine actuelle."
 	check(app.model.squad[0].injury == 2 and view._followup().protocol == "standard", "refused response does not fabricate successful treatment")
 	view.update_frame(app.model, {"meetingId":"medical:read-only", "playerId":"injured:real", "completed":false, "ackAllowed":true})
 	await settle()

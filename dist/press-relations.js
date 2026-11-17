@@ -23,7 +23,7 @@ const DIALOGUE_TONES=Object.freeze({confident:'Affirmé',honest:'Honnête',aggre
 // Chaque ton est un compromis (façon FM), jamais un choix évident :
 //  - Affirmé : le vestiaire et les supporters suivent, la presse reste réservée (relation légèrement en baisse) ;
 //  - Honnête : relation et médias en hausse, mais admettre une faiblesse coûte du moral et la confiance de la direction ;
-//  - Agressif : les joueurs se sentent défendus (moral ++), mais presse -- et la direction s'inquiète (amende, pression) ;
+//  - Agressif : les joueurs se sentent défendus (moral ++), mais presse -- et la pression monte (pas d'amende : on défend ses joueurs, on ne vise pas l'arbitrage) ;
 //  - Prudent : neutre, petit gain de confiance de la direction, réponse sans saveur pour la presse ;
 //  - Humour : moral +, relation en hausse ou en baisse selon le style du journaliste.
 // Le contexte (série de défaites, série de victoires, derby, thème de la question) module chaque ton.

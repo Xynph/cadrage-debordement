@@ -846,7 +846,7 @@ function createBridge(options={}){
     return !warmPending;
    }catch(error){
     pendingCommit=null;
-    const failure=Error('Votre dernière décision n’a pas pu être enregistrée ; elle est annulée et cette nouvelle action n’a pas été appliquée. '+error.message);failure.command=pending.command;failure.storageFailure=true;
+    const failure=Error('Ta dernière décision n’a pas pu être enregistrée ; elle est annulée et cette nouvelle action n’a pas été appliquée. '+error.message);failure.command=pending.command;failure.storageFailure=true;
     try{restorePrior({...pending.prior,state:()=>({...pending.prior.state(),saveError:true})});}catch(restore){failure.message+=' Restauration impossible : '+restore.message;}
     pendingFailure=failure;
     return true;
@@ -865,7 +865,7 @@ function createBridge(options={}){
     return true;
    }catch(error){
     pendingCommit=null;
-    const failure=Error('Votre dernière journée n’a pas pu être enregistrée ; elle est annulée et cette nouvelle action n’a pas été appliquée. '+error.message);failure.command=pending.command;failure.storageFailure=true;
+    const failure=Error('Ta dernière journée n’a pas pu être enregistrée ; elle est annulée et cette nouvelle action n’a pas été appliquée. '+error.message);failure.command=pending.command;failure.storageFailure=true;
     try{restorePrior({...pending.prior,state:()=>({...pending.prior.state(),saveError:true})});}catch(restore){failure.message+=' Restauration impossible : '+restore.message;}
     if(journal){try{journal.truncate(pending.journalAt.offset,pending.journalAt.count);}catch(e){failure.message+=' Journal non raccourci : '+e.message;}}
     pendingFailure=failure;
@@ -912,12 +912,12 @@ function createBridge(options={}){
     if(!READ_ONLY.has(command)){peek('nativeSectionsFresh=false');stateEpoch++;versionsSynced=false;}
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
     if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};cleanSave=null;run('S=null;loadSaveFailure="";lastSaveError=false;nativeSaveSections=null;');return {id,ok:true,model:snapshot()};}
-    if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
+    if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirme la récupération du profil.');
     if(command==='competition_editor_preview'){const model=snapshotRaw();model.competitionEditor=competitionEditor.project(payload);return {id,ok:true,model:projectKnowledge(model)};}
     // Fiche d'un club (lecture seule, rien n'est écrit) : native/engine/club-sheet.cjs.
     if(command==='club_sheet'){
      if(!Number.isSafeInteger(payload.club)||Object.keys(payload).some(k=>k!=='club'))throw Error('Paramètres de fiche club invalides.');
-     if(!peek('!!S'))throw Error('Créez ou importez une carrière.');
+     if(!peek('!!S'))throw Error('Crée ou importe une carrière.');
      ctx.nativePayload={club:payload.club};
      const model=snapshotRaw();model.clubSheet=JSON.parse(run('JSON.stringify(nativeSystems.domain("clubSheet").sheet(nativePayload.club))'));model.clubSheet.palmares=clubPalmares.build({history:clubHistory[payload.club],archives:model.archives,clubId:payload.club,clubName:model.clubSheet.name});
      return {id,ok:true,model:projectKnowledge(model)};
@@ -991,7 +991,7 @@ function createBridge(options={}){
       if(payload.varyPotential!==undefined||payload.careerVariation!==undefined||payload.seed!==undefined)throw Error('Le potentiel varie à chaque nouvelle carrière ; paramètres de variation non autorisés.');
       if(payload.start!==undefined&&!repriseStarts.includes(payload.start))throw Error('Départ de partie invalide.');
      }
-     if(command!=='new_career'&&command!=='import'&&!peek('!!S'))throw Error('Créez ou importez une carrière.');
+     if(command!=='new_career'&&command!=='import'&&!peek('!!S'))throw Error('Crée ou importe une carrière.');
      ctx.nativeCommand=command;
      if(managerPlanning.commands.includes(command))managerPlanning.validateRequest(snapshot(),command,payload);
      run("nativeSystems.domain('matchTalks').guard(nativeCommand,nativePayload);nativeSystems.domain('sceneInvitations').guard(nativeCommand,nativePayload);nativeSystems.domain('clubMeetings').guard(nativeCommand,nativePayload);");
@@ -1000,7 +1000,7 @@ function createBridge(options={}){
      // À partir d'ici la commande peut modifier la carrière ; avant, un refus la laisse intacte (voir le catch).
      mutating=true;
      if(PRESEASON_OPENERS.has(command)&&run('!!CDPreseason.pending(S)'))run('CDPreseason.open(S)');
-     if(BLOCKED_AFTER_RESULT.has(command)&&run('nativeDailyStatus()?.resultConfirmed===true'))throw Error('Résultat confirmé. Continuez jusqu’à la clôture de la semaine.');
+     if(BLOCKED_AFTER_RESULT.has(command)&&run('nativeDailyStatus()?.resultConfirmed===true'))throw Error('Résultat confirmé. Continue jusqu’à la clôture de la semaine.');
      if(command==='interclub_negotiate'||command==='academy_groups_preview'){
       ctx.nativeCommand=command;
       const extra=command==='academy_groups_preview'?{academyGroups:run('CDNativeAcademyGroups.preview(S)')}:run('nativeSystems.execute(nativeCommand,nativePayload)');
@@ -1026,7 +1026,7 @@ function createBridge(options={}){
      }else if(command==='observe_player'){
       ctx.nativeKnowledgeReceipt=run(`nativeKnowledge.plan(S,nativePayload,{charge:amount=>ledgerEntry('Observation ciblée',-amount),message:(title,body)=>managerMessage(title,body,'recruitment','recruitment')})`);
      }else if(command==='population_enable'){
-      if(payload.confirmed!==true||Object.keys(payload).some(k=>!['confirmed','context'].includes(k)))throw Error('Confirmez explicitement la nouvelle politique de population.');
+      if(payload.confirmed!==true||Object.keys(payload).some(k=>!['confirmed','context'].includes(k)))throw Error('Confirme explicitement la nouvelle politique de population.');
       const context=JSON.parse(run('JSON.stringify({season:S.season,week:S.franceMode?.version===1?S.franceMode.week:S.round,club:S.club})'));
       if(!payload.context||Object.keys(payload.context).length!==3||['season','week','club'].some(k=>payload.context[k]!==context[k]))throw Error('Le contexte de carrière a changé.');
       if(!run("typeof enablePopulationPolicy==='function'&&enablePopulationPolicy()"))throw Error('Activation de population indisponible ou déjà effectuée.');
@@ -1041,7 +1041,7 @@ function createBridge(options={}){
       run("nativeSystems.domain('customCompetition').create((({varyCurrent,...custom})=>custom)(nativePayload))");
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='new_career'){
-       const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode),selectedClub=payload.nationalRole==='nation'?0:payload.club;if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(selectedClub)||selectedClub<0||(worldEdition?!worldEdition.playable.includes(selectedClub):selectedClub>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');ctx.nativePayload.club=selectedClub;protectCurrent('nouvelle-carriere',priorSeed,priorClock);if(worldEdition)run('CDWorldCareer.start(nativePayload.club,nativePayload.mode,'+(options.dailyCalendar===true)+')');if(payload.detailedLeagues!==undefined){if(!worldEdition)throw Error('Championnats actifs : réservé à la carrière Monde.');run('CDLeagueDetail.create(S,nativePayload.detailedLeagues)');}else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimportez-le ou choisissez Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
+       const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode),selectedClub=payload.nationalRole==='nation'?0:payload.club;if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(selectedClub)||selectedClub<0||(worldEdition?!worldEdition.playable.includes(selectedClub):selectedClub>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');ctx.nativePayload.club=selectedClub;protectCurrent('nouvelle-carriere',priorSeed,priorClock);if(worldEdition)run('CDWorldCareer.start(nativePayload.club,nativePayload.mode,'+(options.dailyCalendar===true)+')');if(payload.detailedLeagues!==undefined){if(!worldEdition)throw Error('Championnats actifs : réservé à la carrière Monde.');run('CDLeagueDetail.create(S,nativePayload.detailedLeagues)');}else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimporte-le ou choisis Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
       if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='train'){
@@ -1102,7 +1102,7 @@ function createBridge(options={}){
        // VM timeouts skip its inner finally; restore without executing more VM code.
        ctx.createRugbyMatch=nativeCreate;
       }
-      if(hadFixture&&!run('!!S.live'))throw Error(reducedBench?'La feuille à 22 a changé après la préparation. Vérifiez la composition et l’entraînement.':'Coup d’envoi refusé : vérifiez la feuille à 23 et le calendrier.');
+      if(hadFixture&&!run('!!S.live'))throw Error(reducedBench?'La feuille à 22 a changé après la préparation. Vérifie la composition et l’entraînement.':'Coup d’envoi refusé : vérifie la feuille à 23 et le calendrier.');
      }else if(command==='tick'){
       if(!run('!!S.live'))throw Error('Aucun match en cours.');const steps=payload.steps??1;
       if(!Number.isInteger(steps)||steps<1||steps>120)throw Error('Nombre de pas invalide (1 à 120).');
@@ -1141,7 +1141,7 @@ function createBridge(options={}){
      }else if(command==='finish_round'){
       run('nativeConfirmMatchResult()');
      }else if(['advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation'].includes(command)){
-      if(run('S.worldMode?.day!==undefined'))throw Error('Utilisez l’avance journalière pour cette préparation.');
+      if(run('S.worldMode?.day!==undefined'))throw Error('Utilise l’avance journalière pour cette préparation.');
       if(!Number.isInteger(payload.fromWeek)||payload.fromWeek<0||payload.fromWeek>=46)throw Error('Semaine de préparation invalide.');
       const allowed=command==='advance_champ_preparation'
        ?"CDWorldCareer.edition(S)?.version===5&&CDWorldCareer.leagueId(S)==='champ'"
@@ -1378,12 +1378,12 @@ function createBridge(options={}){
    try{
     if(closed)throw Error('Le moteur est fermé.');
     opts=continuer.validate(request.payload??{});
-    if(!peek('!!S'))throw Error('Créez ou importez une carrière.');
+    if(!peek('!!S'))throw Error('Crée ou importe une carrière.');
    }catch(error){advanceSession=null;return {id:Number.isSafeInteger(id)||typeof id==='string'?id:null,ok:false,model:closed?null:snapshot(),error:error.message};}
    const started=performance.now(),session=advanceSession;advanceSession=null;continueIgnore=opts.ignorer;
    if(opts.stop){
-    if(session&&session.days>0)return finishAdvance(id,session,{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'});
-    const model=snapshotRaw();model.meta.advanceUntilEvent={days:0,from:opts.fromDate,to:model.meta.calendarToday??null,stop:{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'}};
+    if(session&&session.days>0)return finishAdvance(id,session,{kind:'arret',label:continuer.STOPS.arret.label,detail:'Tu as arrêté l’avance.'});
+    const model=snapshotRaw();model.meta.advanceUntilEvent={days:0,from:opts.fromDate,to:model.meta.calendarToday??null,stop:{kind:'arret',label:continuer.STOPS.arret.label,detail:'Tu as arrêté l’avance.'}};
     return {id,ok:true,model:projectKnowledge(model)};
    }
    let before=advanceSignal(),today=opts.fromDate,stop=null,n=0;

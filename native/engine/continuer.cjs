@@ -28,7 +28,7 @@ const STOPS = Object.freeze({
   // n'arrête donc plus l'avance, et son compte rendu (« Conférence tenue par Gabi ») est un message de routine. Les
   // grands moments (arrivée, phase finale, bilan, derby, crise) restent un arrêt obligatoire.
   conference: { mandatory: true, label: 'Conférence de presse obligatoire' },
-  conversation: { mandatory: true, label: 'Un joueur demande à vous parler' },
+  conversation: { mandatory: true, label: 'Un joueur demande à te parler' },
   calendrier: { mandatory: true, label: 'Calendrier modifié' },
   blocage: { mandatory: true, label: 'Avance impossible' },
   invitation: { mandatory: false, label: 'Invitation de presse' },
@@ -60,7 +60,7 @@ const MESSAGE_MODES = ['importants', 'tous', 'aucun'];
 const NOTE_LABELS = { retour: 'retour des internationaux', amical: 'compte rendu de match amical', stage: 'bilan du stage', recrutement: 'dernier point recrutement', veille: 'veille de la 1re journée' };
 const INJURY_MODES = ['titulaires', 'effectif'];
 // Messages de routine : ils restent dans la Réception mais n'arrêtent pas « Continuer » en mode « importants ».
-const ROUTINE = [/^le point de la semaine/i, /^votre bureau est ouvert/i, /entra[iî]nement.*retenu/i, /^feuille pr[ée]par[ée]e/i,
+const ROUTINE = [/^le point de la semaine/i, /^(votre|ton) bureau est ouvert/i, /entra[iî]nement.*retenu/i, /^feuille pr[ée]par[ée]e/i,
   /^r[ée]sultats? de la journ[ée]e/i, /^journ[ée]e \d+/i, /^conf[ée]rence tenue par/i,
   // Éléments de pré-saison : ils ont leur propre arrêt « À noter ».
   /^(match amical|retour de tourn[ée]e|fin du stage|dernier point recrutement|veille de la 1re journ[ée]e)/i,
@@ -175,7 +175,7 @@ const DECISION_TEXT = { amicaux: 'le programme des matchs amicaux', stage: 'l’
 function decisionText(keys) {
   const what = (keys || []).map(k => DECISION_TEXT[k] || 'une décision de préparation');
   if (!what.length) return '';
-  return 'Gabi attend ' + what.join(' et ') + ' : choisissez dans « La reprise » ou confiez-' + (what.length > 1 ? 'les' : 'la') + '-lui.';
+  return 'Gabi attend ' + what.join(' et ') + ' : choisis dans « La reprise » ou confie-' + (what.length > 1 ? 'les' : 'la') + '-lui.';
 }
 const added = (before, after) => after.filter(id => !before.includes(id));
 const shortDate = iso => { const [y, m, d] = iso.split('-'); return d + '/' + m; };
@@ -189,8 +189,8 @@ function detect(before, after, settings, repriseDate = null) {
     ['match', () => after.matchReady && (after.next ? 'Rencontre contre ' + after.next.opponent + ' aujourd’hui.' : 'Rencontre prévue aujourd’hui.')],
     ['rendez_vous', () => after.meeting && !after.meeting.completed && (({ press: 'Conférence de presse', medical: 'Point médical', board: 'Rendez-vous avec la direction' })[after.meeting.kind] || 'Rendez-vous du club')],
     ['decision', () => added(before.decisions || [], after.decisions || []).length && decisionText(after.decisions)],
-    ['conference', () => after.press && 'La presse vous attend avant de continuer.'],
-    ['conversation', () => (after.sceneActive || added(before.sceneIds, after.sceneIds).length) && 'Une demande d’entretien vous attend en Réception.'],
+    ['conference', () => after.press && 'La presse t’attend avant de continuer.'],
+    ['conversation', () => (after.sceneActive || added(before.sceneIds, after.sceneIds).length) && 'Une demande d’entretien t’attend en Réception.'],
     ['calendrier', () => after.fixtures !== before.fixtures && 'Une rencontre du club a été ajoutée ou déplacée.'],
     ['blocage', () => (after.ended || after.live || !after.canAdvance) && (after.ended ? 'La saison est terminée.' : 'Le moteur n’autorise pas le jour suivant.')],
     ['invitation', () => added(before.pressIds, after.pressIds).length && 'Une invitation de presse est arrivée en Réception.'],
@@ -203,7 +203,7 @@ function detect(before, after, settings, repriseDate = null) {
     ['effectif', () => after.squad !== before.squad && 'Un joueur est arrivé ou a quitté le club.'],
     ['marche', () => after.window !== before.window && after.window !== null && 'Les clubs ont bougé sur le marché des transferts.'],
     ['offre', () => { const known = new Set((before.offers || []).map(o => o.id)), fresh = (after.offers || []).filter(o => !known.has(o.id));
-      return fresh.length && (fresh.length > 1 ? fresh.length + ' offres reçues pour vos joueurs.' : 'Offre reçue pour ' + (fresh[0].player || 'un de vos joueurs') + '.'); }],
+      return fresh.length && (fresh.length > 1 ? fresh.length + ' offres reçues pour tes joueurs.' : 'Offre reçue pour ' + (fresh[0].player || 'un de tes joueurs') + '.'); }],
     ['fatigue', () => {
       const tired = added(before.tired, after.tired);
       if (!tired.length || !after.next) return false;
@@ -283,11 +283,11 @@ function informatifs(before, after, settings = {}) {
   const mercato = TYPES.mercato;
   if (mercato && after.round !== before.round && Number.isInteger(after.round)) {
     const ahead = mercato.semainesAvant ?? 1;
-    if ((mercato.semaines || []).includes(after.round + ahead)) push('mercato', after.season + ':' + (after.round + ahead), 'Les clubs bougent sur le marché dans ' + (ahead > 1 ? ahead + ' semaines' : 'une semaine') + ' : derniers jours pour boucler vos dossiers dans Recrutement.');
+    if ((mercato.semaines || []).includes(after.round + ahead)) push('mercato', after.season + ':' + (after.round + ahead), 'Les clubs bougent sur le marché dans ' + (ahead > 1 ? ahead + ' semaines' : 'une semaine') + ' : derniers jours pour boucler tes dossiers dans Recrutement.');
   }
   const known = new Set((before.missions || []).map(x => x.id));
   for (const x of (after.missions || []).filter(x => !known.has(x.id)))
-    push('recruteur', x.id, x.n ? x.n + ' profil' + (x.n > 1 ? 's' : '') + ' proposé' + (x.n > 1 ? 's' : '') + ' par votre recruteur, à comparer dans Recrutement.' : 'Mission terminée : aucun profil ne correspond à tous les critères.', x.player ? { joueur: x.player } : {});
+    push('recruteur', x.id, x.n ? x.n + ' profil' + (x.n > 1 ? 's' : '') + ' proposé' + (x.n > 1 ? 's' : '') + ' par ton recruteur, à comparer dans Recrutement.' : 'Mission terminée : aucun profil ne correspond à tous les critères.', x.player ? { joueur: x.player } : {});
   // Courrier du club qui attend une réponse ou compte (club-mail.cjs) : un arrêt par mail, l'écran s'ouvre sur lui.
   const lus = new Set((before.courrier || []).map(x => x.id));
   for (const c of (after.courrier || []).filter(x => !lus.has(x.id)))

@@ -93,7 +93,7 @@ module.exports={
    if(S.live||S.phase==='ended'||command.startsWith('scene_invitation_'))return;
    if(command==='new_career'){
     st=state();const leader=roster().find(p=>p.id===S.v39?.leader)||roster()[0],colleague=staff()[0],prefix='intro:'+S.season+':'+S.club+':';
-    if(leader)add(st,'private_player','intro',leader.id,'Le nouveau manager prend ses fonctions : présenter votre manière de travailler et écouter le joueur.',prefix+'player');
+    if(leader)add(st,'private_player','intro',leader.id,'Le nouveau manager prend ses fonctions : présenter ta manière de travailler et écouter le joueur.',prefix+'player');
     if(colleague)add(st,'private_staff','staff_alignment',colleague.id,'Le nouveau manager prend ses fonctions : faire connaissance et accorder le travail du staff.',prefix+'staff');
     return;
    }
@@ -132,7 +132,7 @@ module.exports={
    }else{
     check(!expired(e),'invitation périmée ou participant parti');
     if(command==='scene_invitation_open'){
-     check(st.activeId===null||st.activeId===e.id,'fermez l’entretien actif');st.activeId=e.id;
+     check(st.activeId===null||st.activeId===e.id,'ferme l’entretien actif');st.activeId=e.id;
     }else{
      check(st.activeId===e.id&&!e.decision&&text(p.choiceId),'réponse déjà décidée ou entretien fermé');
      const choice=options(e).find(x=>x.id===p.choiceId);check(!!choice,'déclaration non autorisée');
@@ -142,11 +142,11 @@ module.exports={
       relationships.execute('relationship_conversation',{context:context(),playerId:e.participantId,choice:relationshipChoice(choice)});
       effect='relationship';nextStep='relationships';summary='Entretien enregistré par le suivi des relations. Aucune promesse de contrat ou de temps de jeu n’a été créée.';
      }else if(e.kind==='private_staff'){
-      effect='staff_receipt';nextStep=e.topic==='load'?'training':'staff';summary='Votre réponse est consignée. Reprenez les responsabilités du staff ou les réglages de préparation pour appliquer la suite du travail.';
+      effect='staff_receipt';nextStep=e.topic==='load'?'training':'staff';summary='Ta réponse est consignée. Reprends les responsabilités du staff ou les réglages de préparation pour appliquer la suite du travail.';
      }else{
       const available=typeof v39Active==='function'?v39Active():!!S.v39;
       if(available&&typeof v39TeamTalk==='function'){check(v39TeamTalk(teamChoice(choice))===true,'réunion déjà utilisée cette semaine');effect='team_talk';summary='Réunion enregistrée par la vie du groupe ; ses effets habituels sont appliqués une seule fois.';}
-      else{effect='team_receipt';summary='La déclaration au groupe est consignée. Le suivi de cohésion est inactif : poursuivez dans la préparation collective.';}
+      else{effect='team_receipt';summary='La déclaration au groupe est consignée. Le suivi de cohésion est inactif : poursuis dans la préparation collective.';}
       nextStep='preparation';st.lastTeamDecision=context();
      }
      e.decision={id:e.id+':reply',choiceId:choice.id,...context(),effect,nextStep,summary};
@@ -154,7 +154,7 @@ module.exports={
    }
    validate(S);return {sceneInvitationDecision:{command,id:e.id,status:e.status,...(e.decision?{receiptId:e.decision.id}:{})}};
   }
-  function guard(command){if(command==='begin_match'&&S?.sceneInvitations?.activeId)throw Error('Fermez l’entretien actif avant le coup d’envoi.');return true;}
+  function guard(command){if(command==='begin_match'&&S?.sceneInvitations?.activeId)throw Error('Ferme l’entretien actif avant le coup d’envoi.');return true;}
   function installHooks(){return true;}
   return {project,execute,validate,installHooks,observe,guard};
  }

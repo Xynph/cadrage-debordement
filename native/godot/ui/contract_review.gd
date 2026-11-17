@@ -155,8 +155,8 @@ func _build() -> void:
 	state = app.management_ui.roster.contract_review
 	if not state.has("sort"): state.sort = "contractEnd"
 	if not state.has("descending"): state.descending = false
-	add_child(_label("Les échéances de votre effectif", 26))
-	add_child(_label("Échéances classées par année de fin, sans présumer une urgence. Anticipez les fins de contrat et préparez les prolongations.", 17, C.MUTED))
+	add_child(_label("Les échéances de ton effectif", 26))
+	add_child(_label("Échéances classées par année de fin, sans présumer une urgence. Anticipe les fins de contrat et prépare les prolongations.", 17, C.MUTED))
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 10)
 	add_child(top)
@@ -264,7 +264,7 @@ func _build() -> void:
 	sidebar.get_parent().size_flags_stretch_ratio = 1.0
 	sidebar.get_parent().custom_minimum_size.x = 440
 	sidebar.add_child(_label("Échéances et postes à anticiper", 24))
-	sidebar.add_child(_label("Postes principaux · aucun départ annoncé. Cliquez un poste pour filtrer.", 16, C.MUTED))
+	sidebar.add_child(_label("Postes principaux · aucun départ annoncé. Clique un poste pour filtrer.", 16, C.MUTED))
 	var side_scroll := ScrollContainer.new()
 	side_scroll.follow_focus = true
 	_scroll.mouse_force_pass_scroll_events = false
@@ -314,14 +314,14 @@ func _refresh() -> void:
 	var filters := state.duplicate(true)
 	filters.live = not app._live().is_empty()
 	var players := filtered(app.model.get("squad", []), filters)
-	_count.text = "%d / %d joueurs · cliquez un titre pour trier · consultation sans signature" % [players.size(), app.model.get("squad", []).size()]
+	_count.text = "%d / %d joueurs · clique un titre pour trier · consultation sans signature" % [players.size(), app.model.get("squad", []).size()]
 	for key: String in _headers:
 		var sort: Button = _headers[key]
 		var selected := str(state.sort) == key
 		sort.text = str(sort.get_meta("caption")) + (" ▼" if state.descending else " ▲") if selected else str(sort.get_meta("caption")) + " ↕"
 		sort.tooltip_text = "Trier par " + str(sort.get_meta("caption")) + (" · ordre décroissant" if selected and state.descending else " · ordre croissant" if selected else "")
 		sort.accessibility_name = sort.tooltip_text
-	if players.is_empty(): _rows.add_child(_label("Aucun joueur ne correspond. Modifiez les filtres ou réinitialisez la recherche.", 18, C.MUTED))
+	if players.is_empty(): _rows.add_child(_label("Aucun joueur ne correspond. Modifie les filtres ou réinitialise la recherche.", 18, C.MUTED))
 	for player: Dictionary in players: _row(player)
 	var year := int(state.season) if int(state.season) > 0 else int(app.model.get("meta", {}).get("season", 1))
 	_coverage.add_child(_label("Échéances par année", 19))

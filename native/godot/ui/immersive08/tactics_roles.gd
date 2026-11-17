@@ -86,14 +86,14 @@ static func payload(model: Dictionary, role_id: String, player_id: String) -> Di
 static func warning(model: Dictionary) -> String:
 	var alerte: Variant = view(model).get("alerte")
 	if not alerte is Dictionary: return ""
-	return "Le staff vous met en garde : %s tire à %s au but, %s à %s. Sur une saison, l’écart se paie en points." % [str(alerte.get("name", "")), _value(alerte), str(alerte.get("staffName", "")), str(int(alerte.get("staffValue", 0)))]
+	return "Le staff te met en garde : %s tire à %s au but, %s à %s. Sur une saison, l’écart se paie en points." % [str(alerte.get("name", "")), _value(alerte), str(alerte.get("staffName", "")), str(int(alerte.get("staffValue", 0)))]
 
 ## Corps de la fenêtre : une liste par rôle. `on_choice` reçoit la charge utile de `set_tactics`.
 static func body(model: Dictionary, on_choice: Callable) -> VBoxContainer:
 	var box := C.v(10)
 	box.name = "TacticsRolesBody"
 	var editable := bool(view(model).get("editable", false))
-	box.add_child(C.wrap("Le staff désigne par défaut celui qu’il juge le meilleur à chaque rôle. Vos choix valent pour les prochains matchs, dès le coup d’envoi.", 18))
+	box.add_child(C.wrap("Le staff désigne par défaut celui qu’il juge le meilleur à chaque rôle. Tes choix valent pour les prochains matchs, dès le coup d’envoi.", 18))
 	var judge := judge_text(model)
 	if not judge.is_empty():
 		var note := C.wrap(judge, 16, C.MUTED)

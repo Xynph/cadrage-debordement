@@ -173,7 +173,7 @@ static func _journal(parent: Node, app: Control) -> void:
 	var block := _card(parent,"OfficeJournalCard")
 	block.name = "OfficeJournal"
 	block.add_child(_text("Le journal du club", 24, INK, true))
-	block.add_child(_text("Les nouvelles de votre carrière", 12, MUTED))
+	block.add_child(_text("Les nouvelles de ta carrière", 12, MUTED))
 	var messages: Array = app.model.get("messages", [])
 	if messages.is_empty(): block.add_child(_text("Le carnet s'ouvre. Les premières nouvelles du club apparaîtront ici.", 14))
 	for index in mini(5, messages.size()):
@@ -201,7 +201,7 @@ static func _decisions(parent: Node, app: Control) -> void:
 	contracts.sort_custom(func(a: Dictionary,b: Dictionary):return int(a.contractEnd)<int(b.contractEnd) if int(a.contractEnd)!=int(b.contractEnd) else str(a.id)<str(b.id))
 	if not contracts.is_empty():
 		var first: Dictionary = contracts[0]
-		var card := _decision(parent, "%d contrat%s" % [contracts.size(), "s" if contracts.size() > 1 else ""], "Échéances d’ici la saison %s. Consultez les contrats et les possibilités de prolongation." % G.season_label(int(model.meta.get("season", 1)) + 1), func(): _player(app, str(first.id)), app.accent, "OfficeContracts")
+		var card := _decision(parent, "%d contrat%s" % [contracts.size(), "s" if contracts.size() > 1 else ""], "Échéances d’ici la saison %s. Consulte les contrats et les possibilités de prolongation." % G.season_label(int(model.meta.get("season", 1)) + 1), func(): _player(app, str(first.id)), app.accent, "OfficeContracts")
 		_contracts_preview(card,app,contracts)
 	var selection: Dictionary = model.get("selection", {})
 	var vacant := 0
@@ -209,13 +209,13 @@ static func _decisions(parent: Node, app: Control) -> void:
 		if slot.get("playerId") == null: vacant += 1
 	var errors: Array = selection.get("errors", [])
 	if vacant > 0 or not errors.is_empty():
-		_decision(parent, "%d poste%s à couvrir" % [vacant, "s" if vacant > 1 else ""] if vacant > 0 else "La feuille à vérifier", str(errors[0]) if not errors.is_empty() else "Complétez la sélection avant la rencontre.", func(): _navigate(app, "Composition"), app.accent, "OfficeSelection")
+		_decision(parent, "%d poste%s à couvrir" % [vacant, "s" if vacant > 1 else ""] if vacant > 0 else "La feuille à vérifier", str(errors[0]) if not errors.is_empty() else "Complète la sélection avant la rencontre.", func(): _navigate(app, "Composition"), app.accent, "OfficeSelection")
 	if not model.meta.get("trained", false) and model.get("live") == null and not model.meta.get("canAdvanceSeason", false):
-		_decision(parent, "La semaine à préparer", "L'entraînement de cette semaine reste à effectuer. Choisissez le travail du groupe.", func(): _navigate(app, "Préparation"), app.accent, "OfficeTraining")
+		_decision(parent, "La semaine à préparer", "L'entraînement de cette semaine reste à effectuer. Choisis le travail du groupe.", func(): _navigate(app, "Préparation"), app.accent, "OfficeTraining")
 	elif contracts.is_empty() and vacant == 0 and errors.is_empty():
 		var ready := _card(parent,"OfficeReadyCard")
 		ready.add_child(_text("Le groupe est en ordre",24,INK,true))
-		ready.add_child(_text("Retrouvez vos choix de sélection et la préparation de la prochaine rencontre.",14))
+		ready.add_child(_text("Retrouve tes choix de sélection et la préparation de la prochaine rencontre.",14))
 		ready.add_child(_link("Voir la composition  →",func():_navigate(app,"Composition"),app.accent))
 	_journal(parent, app)
 
@@ -284,7 +284,7 @@ static func _fixture(parent: Node, app: Control) -> void:
 		over.add_child(_text(caption, 12, G.INK))
 	else:
 		over.add_child(_text("La saison se termine" if app.model.meta.get("canAdvanceSeason", false) else "Le travail continue", 34, G.INK, true))
-		over.add_child(_text("Retrouvez les résultats et préparez la suite du projet.", 14, G.INK))
+		over.add_child(_text("Retrouve les résultats et prépare la suite du projet.", 14, G.INK))
 	var action := G.button(app.primary_text(), app.primary_action, true)
 	action.name = "OfficePrimaryAction"
 	action.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN

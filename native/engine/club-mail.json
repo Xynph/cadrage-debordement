@@ -274,9 +274,9 @@
       "expediteur": "Un agent de joueurs",
       "intervalle": 20,
       "formulations": [
-        { "sujet": "Proposition : {joueur}", "corps": "Bonjour coach. Je représente {joueur}, {poste} de {age} ans. Il cherche un projet ambitieux et votre club l'intéresse. Salaire visé autour de {salaire} € par semaine. Intéressé ?" },
-        { "sujet": "Un {poste} disponible", "corps": "Je me permets de vous écrire : mon joueur {joueur} ({age} ans) serait prêt à rejoindre votre effectif. Je pense qu'il comblerait votre besoin au poste." },
-        { "sujet": "{joueur} pour votre club ?", "corps": "{joueur} ({poste}) est libre de discuter. Profil sérieux, attentes raisonnables ({salaire} €/sem.). Je vous laisse revenir vers moi." }
+        { "sujet": "Proposition : {joueur}", "corps": "Bonjour coach. Je représente {joueur}, {poste} de {age} ans. Il cherche un projet ambitieux et ton club l'intéresse. Salaire visé autour de {salaire} € par semaine. Intéressé ?" },
+        { "sujet": "Un {poste} disponible", "corps": "Je me permets de t'écrire : mon joueur {joueur} ({age} ans) serait prêt à rejoindre ton effectif. Je pense qu'il comblerait ton besoin au poste." },
+        { "sujet": "{joueur} pour ton club ?", "corps": "{joueur} ({poste}) est libre de discuter. Profil sérieux, attentes raisonnables ({salaire} €/sem.). Je te laisse revenir vers moi." }
       ],
       "reponses": [
         { "id": "negocier", "libelle": "Ouvrir les discussions", "effets": {}, "resultat": "Sa fiche s'ouvre : fais-lui une offre dans Recrutement.", "ouvrir": true },
@@ -485,7 +485,7 @@
       "expediteur": "La commission de discipline",
       "seuils": { "cartons": 6, "amende": 5000, "frais": 1500, "alourdie": 7500 },
       "formulations": [
-        { "sujet": "Convocation : cumul de cartons", "corps": "Le club totalise {cartons} cartons jaunes cette saison. La commission propose une amende de {amende} €. Vous pouvez l'accepter ou faire appel (frais de dossier {frais} €)." },
+        { "sujet": "Convocation : cumul de cartons", "corps": "Le club totalise {cartons} cartons jaunes cette saison. La commission propose une amende de {amende} €. Tu peux l'accepter ou faire appel (frais de dossier {frais} €)." },
         { "sujet": "Commission de discipline", "corps": "Suite au cumul de {cartons} cartons jaunes, une amende de {amende} € est prononcée contre le club. Un appel reste possible." }
       ],
       "reponses": [
