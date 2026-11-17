@@ -1,0 +1,45 @@
+::group::tests/godot-investissements-excedents.cjs
+Investissements (Godot) : {"bloc":"Excédents réinvestis · 1 400 000 €\nTravaux du niveau 3 · 6 % financés\nAccueil du stade · niveau 0 / 5\nStaff · aucune progression pour l’instant\nDépensé : 152 000 € sur 1 400 000 €\n","controles":6,"failures":["lignes « Investissements » visibles dans Finances"]} · moteur : {"montant":1400000,"depense":152000,"orientation":null,"parts":{"installations":0.30000000000000004,"staff":0.35000000000000003,"accueil":0.35000000000000003},"depenseParPart":{"installations":45600,"staff":53200,"accueil":53200},"installations":{"niveau":2,"max":10,"devis":750000,"avancement":0.0608,"achevesCetteSaison":0},"accueil":{"niveau":0,"max":5,"degrade":false,"gagnesCetteSaison":0,"avancement":0.2128,"effet":0},"staff":{"points":0,"personnes":0}}
+TAP version 13
+# Subtest: Excédents réinvestis : chantiers du président visibles dans le vrai jeu
+not ok 1 - Excédents réinvestis : chantiers du président visibles dans le vrai jeu
+  ---
+  duration_ms: 93890.15333
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-investissements-excedents.cjs:14:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + [
+    +   'lignes « Investissements » visibles dans Finances'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'lignes « Investissements » visibles dans Finances'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-investissements-excedents.cjs:43:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 93896.482573
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-investissements-excedents.cjs user_s=99.59 system_s=11.49 wall_s=94.66 cpu_pct=117% max_rss_kb=2801616
+::error file=tests/godot-investissements-excedents.cjs::Godot : ECHEC (1), durée 95 s, limite 1200s
+::endgroup::

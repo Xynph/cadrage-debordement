@@ -1,0 +1,7 @@
+== suites (1) (code 1)
+not ok 1 - Excédents réinvestis : chantiers du président visibles dans le vrai jeu
+  name: 'AssertionError'
+::error file=tests/godot-investissements-excedents.cjs::Godot : ECHEC (1), durée 95 s, limite 1200s
+== captures excédents réinvestis (Club > Infrastructures, Finances ; 1080p) (code 1)
+not ok 1 - Excédents réinvestis : chantiers du président visibles dans le vrai jeu
+  name: 'AssertionError'
