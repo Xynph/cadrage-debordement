@@ -133,6 +133,8 @@ budget() {
     # match-direct 370 s (5 tests, 3 carrières), management-france-day-worker 200 s (avant-saison jouée jour par jour) ; assertions inchangées.
     tests/lifecycle-native.cjs|tests/management-france-day-worker.cjs) echo 420s ;;
     tests/match-direct.cjs) echo 600s ;;
+    # Reprise avant le match (#836) : plusieurs carrières Monde rechargées en plein match et matchs rejoués, 83 s en local, 180 s dépassées en CI.
+    tests/reprise-avant-match.cjs) echo 600s ;;
     # Entrées dans les 22 (#824) : un match Monde complet joué au worker (81 projections) ; 180 s dépassées en CI
     # sur les PR #837 et #841 (17/11) ; assertions inchangées.
     tests/match-zone22.cjs) echo 600s ;;

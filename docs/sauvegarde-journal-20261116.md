@@ -61,8 +61,19 @@ conservé de même (`journal-ecarte-*`, `journal-illisible-*`), jamais effacé.
   décision qui rendrait la carrière invalide (défaut du moteur) est refusée plus tard, avec l'avance qui la valide.
 - La réponse d'une décision reste dominée par la projection du modèle (~0,3 s) et le filtre de connaissance
   (~0,15 s) : chantier distinct (audit E1/E2).
-- Une sauvegarde manuelle au milieu d'un direct, suivie d'un arrêt imprévu : le direct rechargé est en pause ; si les
-  minutes notées ne se rejouent pas à l'identique, la reprise s'arrête et le signale (pas de perte silencieuse).
 
 Tests : `tests/sauvegarde-journal-monde.cjs`. CD_JOURNAL=0 rétablit l'ancien chemin (écriture différée par décision) ;
 CD_SAUVEGARDE_AUTO=jour|semaine|mois force la fréquence.
+
+## Reprise avant le match (décision de Léo, 16/11/2026)
+
+Une carrière n'est jamais enregistrée en plein match. Du coup d'envoi à la validation du résultat (`finish_round`), le
+profil écrit (fermeture, « Sauvegarder », coupure) est celui d'avant le coup d'envoi (carrière, graine, horloge), le
+journal ne note rien et l'export décrit aussi la carrière d'avant le match : au rechargement, jour du match, coup d'envoi
+à rejouer. La validation du résultat enregistre la carrière en entier. Dans le jeu, « Quitter » pendant le match demande
+confirmation ; une fermeture imposée par le système n'est jamais bloquée.
+Anciennes sauvegardes : un journal qui contient le coup d'envoi est repris jusqu'à la veille de celui-ci (lignes du match
+conservées dans `journal-avant-match-*.jsonl`) ; un profil écrit en plein match par une version précédente ne contient
+pas l'état d'avant le coup d'envoi : il est lu tel quel, match en pause à la minute enregistrée, avec un avis
+(`meta.matchResumeNotice`). Tests : `tests/reprise-avant-match.cjs`, `tests/godot-quitter-pendant-match.cjs` ;
+`matchResume:false` ou CD_REPRISE_AVANT_MATCH=0 rétablit l'ancien comportement.

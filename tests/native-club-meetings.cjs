@@ -114,10 +114,12 @@ try{
  for(let weeks=0;!model.next;weeks++){assert.ok(weeks<8,'Une rencontre du club doit arriver');settle();if(!model.meta.trained){good('train',{mode:'repos'});settle();}if(model.next)break;good('finish_round');}
  settle();const legacyMatchday=JSON.parse(exported()),matchWeek=model.meta.week;delete legacyMatchday.state.clubMeetings;
  good('auto_lineup');good('begin_match');good('delegate');good('finish_round');assert.equal(room()?.kind,'press');assert.equal(room().context.week,matchWeek+1);settle();
- assert.equal(room(),null);const final=exported();good('shutdown');bridge=createBridge({dataDir:root});good('snapshot');assert.equal(exported(),final);
+ assert.equal(room(),null);const final=exported();good('shutdown');bridge=createBridge({dataDir:root,testVm:true});good('snapshot');assert.equal(exported(),final);
  // A legacy save can proceed straight into a match without a baseline mutation.
  importGood({text:signed(legacyMatchday)});assert.equal(JSON.parse(exported()).state.clubMeetings,undefined);settle();good('auto_lineup');settle();good('begin_match');settle();good('delegate');
- const postDoc=JSON.parse(exported()),talk=postDoc.state.contextualMatch.current,post=talk.phases.at(-1);assert.equal(post.phase,'post');assert.equal(postDoc.state.live.finished,true);post.closed=false;post.status=null;post.decision=null;postDoc.state.contextualMatch.receipts=postDoc.state.contextualMatch.receipts.filter(r=>r.key!==talk.key||r.phase!=='post');
+ // Reprise avant le match (16/11/2026) : l'export pendant le match décrit la carrière d'avant le coup d'envoi. Le document
+ // d'une ancienne sauvegarde écrite après le match mais avant sa validation est donc lu dans la carrière en mémoire.
+ const postDoc=JSON.parse(bridge.vm.run('JSON.stringify(createSaveDocument())')),talk=postDoc.state.contextualMatch.current,post=talk.phases.at(-1);assert.equal(post.phase,'post');assert.equal(postDoc.state.live.finished,true);post.closed=false;post.status=null;post.decision=null;postDoc.state.contextualMatch.receipts=postDoc.state.contextualMatch.receipts.filter(r=>r.key!==talk.key||r.phase!=='post');
  importGood({text:signed(postDoc)});good('match_talk_continue',{key:talk.key,phase:'post',skip:true});assert.equal(room()?.kind,'press','The first real legacy post-match continuation must also schedule press');settle();
  console.log('Native club meetings production worker: mandatory queue, restart pending/completed, authoritative press/medical, strict import, no repeat, real advancement and atomic rollback PASS.');
 }finally{bridge?.close();fs.rmSync(root,{recursive:true,force:true});}
