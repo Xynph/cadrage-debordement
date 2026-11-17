@@ -147,6 +147,8 @@ func _render_moment(parent: Control) -> void:
 func _render_conference(column: VBoxContainer) -> void:
 	var questions := _questions()
 	var question: Dictionary = questions[question_index]
+	# Salle 3D : le journaliste de cette question tend son micro (affichage seul).
+	if room != null and room.has_method("ask"): room.ask(question_index)
 	var content := S.G.h(20)
 	S.G.fill(content, true)
 	column.add_child(content)

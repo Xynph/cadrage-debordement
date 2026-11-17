@@ -81,6 +81,7 @@ function factory() {
     const form = id => hist.filter(r => r.pair.includes(id)).slice(-5).map(r => { const i = r.pair.indexOf(id); return r.score[i] > r.score[1 - i] ? 'V' : r.score[i] < r.score[1 - i] ? 'D' : 'N'; }).join('-');
     const derby = id => {
       if (id === null || id === undefined) return false;
+      if (typeof isDerby === 'function') return isDerby(s, s.clubs?.[s.club]?.id ?? s.club, s.clubs?.[id]?.id ?? id);
       const a = s.clubs?.[s.club]?.id ?? s.club, b = s.clubs?.[id]?.id ?? id, pair = [a, b].sort((x, y) => x < y ? -1 : x > y ? 1 : 0);
       const t = s.interclubWorld?.pairs?.[pair[0] + ':' + pair[1]]?.tension;
       return Number.isFinite(t) && t >= (D.seuilDerby ?? 60);
@@ -160,6 +161,48 @@ function factory() {
     seance_adjoint(F) {
       if (F.dow !== 1 || F.s.trained) return [];
       return [{ key: F.d, vars: { mode: MODE_LABELS[F.s.training] || String(F.s.training || 'normal'), condition: Math.round(F.mean(F.players.filter(p => !(p.injury > 0)).map(conditionOf))) } }];
+    },
+    // Lendemain d'un match du club : trois enseignements tirés des vraies statistiques, axe de semaine proposé.
+    bilan_match(F) {
+      const last = F.season[F.season.length - 1];
+      // Après la clôture du match (réponse possible), au plus trois jours après la rencontre.
+      if (F.s.live || !last?.stats || !last.date || last.date < shift(F.d, -3) || last.date >= F.d) return [];
+      const x = last.stats, o = last.other || {}, pct = (a, b) => b > 0 ? Math.round(a / b * 100) : null;
+      const notes = [];
+      const melee = pct(x.scrumsWon, x.scrums), touche = pct(x.lineoutsWon, x.lineouts), pied = pct(x.goals, x.goalAttempts);
+      if (melee !== null) notes.push({ poids: (85 - melee) * 1.2, axe: 'conquete', texte: melee < 80 ? 'mêlée en difficulté, ' + x.scrumsWon + ' sur ' + x.scrums + ' conservées' : 'mêlée solide, ' + x.scrumsWon + ' sur ' + x.scrums });
+      if (touche !== null) notes.push({ poids: (90 - touche) * 1.2, axe: 'conquete', texte: touche < 85 ? 'touche fragile, ' + x.lineoutsWon + ' sur ' + x.lineouts + ' gagnées' : 'touche propre, ' + x.lineoutsWon + ' sur ' + x.lineouts });
+      if (Number.isFinite(x.penalties)) notes.push({ poids: (x.penalties - 9) * 4 + (Number(x.yellows) || 0) * 12, axe: 'defence', texte: x.penalties >= 10 || x.yellows > 0 ? x.penalties + ' pénalités concédées' + (x.yellows > 0 ? ' et ' + x.yellows + ' carton' + (x.yellows > 1 ? 's' : '') + ' jaune' + (x.yellows > 1 ? 's' : '') : '') + ', trop de cadeaux' : 'discipline tenue, ' + x.penalties + ' pénalités seulement' });
+      if (pied !== null) notes.push({ poids: (75 - pied) * 0.8, axe: 'pied', texte: pied < 70 ? 'buteur en délicatesse, ' + x.goals + ' sur ' + x.goalAttempts + ' face aux perches' : 'buteur précis, ' + x.goals + ' sur ' + x.goalAttempts });
+      const tot = (Number(x.territory) || 0) + (Number(o.territory) || 0);
+      if (tot > 0) { const t = Math.round(x.territory / tot * 100); notes.push({ poids: (50 - t) * 1.5, axe: 'pied', texte: t < 50 ? 'on a joué dans notre camp, ' + t + ' % de territoire' : 'on a occupé le terrain, ' + t + ' % de territoire' }); }
+      if (notes.length < 3) return [];
+      notes.sort((a, b) => b.poids - a.poids || a.axe.localeCompare(b.axe));
+      const top = notes.slice(0, 3), axe = top[0].poids > 0 ? top[0].axe : null;
+      const AXES = { conquete: 'la conquête', defence: 'la défense et la discipline', pied: 'le jeu au pied' };
+      const res = last.us > last.them ? 'la victoire' : last.us < last.them ? 'la défaite' : 'le nul';
+      return [{ key: last.fixtureId || last.date, vars: { adversaire: F.name(last.opp), score: last.us + '-' + last.them, resultat: res, un: top[0].texte, deux: top[1].texte, trois: top[2].texte, axe: axe ? AXES[axe] : 'notre plan de jeu' } }];
+    },
+    // Lundi : le tour du championnat du club (résultats marquants de la semaine passée, série en cours, leader).
+    tour_championnats(F) {
+      if (F.dow !== 0) return [];
+      const from = shift(F.d, -7), week = F.hist.filter(r => r.date && r.date >= from && r.date < F.d && !r.pair.includes(F.s.club));
+      const members = new Set((F.s.worldMode?.leagues?.[F.lid]?.members || []).map(String));
+      const inLeague = r => !members.size || (members.has(String(r.pair[0])) && members.has(String(r.pair[1])));
+      const games = week.filter(inLeague);
+      if (games.length < 2) return [];
+      const big = [...games].sort((a, b) => Math.abs(b.score[0] - b.score[1]) - Math.abs(a.score[0] - a.score[1]) || String(a.date).localeCompare(String(b.date)))[0];
+      const w = big.score[0] >= big.score[1] ? 0 : 1;
+      const carton = F.name(big.pair[w]) + ' ' + big.score[w] + '-' + big.score[1 - w] + ' face à ' + F.name(big.pair[1 - w]);
+      const rows = F.rows(), rank = id => rows.findIndex(r => String(r.clubId) === String(id));
+      let surprise = 'la hiérarchie a été respectée';
+      const ups = games.filter(r => r.score[0] !== r.score[1]).map(r => { const win = r.score[0] > r.score[1] ? 0 : 1, a = rank(r.pair[win]), b = rank(r.pair[1 - win]); return { r, win, ecart: a >= 0 && b >= 0 ? a - b : 0 }; }).filter(u => u.ecart >= 4).sort((a, b) => b.ecart - a.ecart);
+      if (ups[0]) surprise = F.name(ups[0].r.pair[ups[0].win]) + ' a fait tomber ' + F.name(ups[0].r.pair[1 - ups[0].win]);
+      const leader = rows[0] ? F.name(rows[0].clubId) + ' (' + (rows[0].points ?? 0) + ' pts)' : null;
+      if (!leader) return [];
+      const runs = [...members].map(id => { let n = 0; const mine = F.hist.filter(r => r.pair.map(String).includes(id)); for (let i = mine.length - 1; i >= 0; i--) { const k = mine[i].pair.map(String).indexOf(id); if (mine[i].score[k] > mine[i].score[1 - k]) n++; else break; } return { id, n }; }).filter(x => x.n >= 3 && String(x.id) !== String(F.s.club)).sort((a, b) => b.n - a.n || a.id.localeCompare(b.id));
+      const serie = runs[0] ? F.name(Number.isNaN(Number(runs[0].id)) ? runs[0].id : Number(runs[0].id)) || F.name(runs[0].id) : '';
+      return [{ key: F.d, vars: { carton, surprise, leader, serie: serie ? serie + ' enchaîne ' + runs[0].n + ' victoires de suite' : 'aucune équipe ne s’envole' } }];
     },
     analyste(F) {
       if (!F.next || F.next.date !== shift(F.d, 2)) return [];

@@ -187,6 +187,28 @@ static func open_next_unread(app: Control) -> bool:
 	else: app._navigate("Réception")
 	return true
 
+## Courriers d'information non lus parmi `messages` : jamais une décision (« À faire », « En attente »),
+## ni une priorité (invitation de presse ou avis de calendrier en attente, courrier de sélection).
+static func markable_read(app: Control, messages: Array) -> Array[Dictionary]:
+	var marks: Dictionary = _state(app).marks
+	var priority := _priority_ids(app.model)
+	var result: Array[Dictionary] = []
+	for message: Dictionary in messages:
+		if marks.get(message.id, {}).get("read", false) or message.id in priority: continue
+		if message.get("press_invitation", {}).get("status") == "pending" or message.get("calendar_notice", {}).get("status") == "pending": continue
+		if Reading.status(message, app.model).key == "info": result.append(message)
+	return result
+
+## État d'interface de session (mêmes marques que l'ouverture d'un courrier) : aucune commande moteur.
+static func mark_all_read(app: Control, messages: Array) -> int:
+	var marks: Dictionary = _state(app).marks
+	var targets := markable_read(app, messages)
+	for message: Dictionary in targets:
+		var mark: Dictionary = marks.get(message.id, {})
+		mark.read = true
+		marks[message.id] = mark
+	return targets.size()
+
 static func _tasks(app: Control) -> Array:
 	var tasks := []
 	if app.Immersive.Selections.nation_only(app.model): return tasks
@@ -438,6 +460,14 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		state.oldest_first=not state.oldest_first
 		state.scroll=0
 		_redraw(app,"InboxSort"),false,"clock",true,app.accent,"InboxSort")
+	var markable := markable_read(app, messages)
+	var mark_all := D.button(card,Rect2(236,12,262,38),"Tout marquer comme lu" + (" (%d)" % markable.size() if not markable.is_empty() else ""),func():
+		mark_all_read(app, messages)
+		_redraw(app,"InboxMarkAllRead"),false,"check",true,app.accent,"InboxMarkAllRead")
+	mark_all.add_theme_font_size_override("font_size",C.px(18))
+	mark_all.disabled = markable.is_empty()
+	mark_all.accessibility_name = "Tout marquer comme lu : %d courrier(s) d'information" % markable.size()
+	mark_all.tooltip_text = ("Marque comme lus les %d courriers d'information affichés. Les courriers qui attendent ta décision restent non lus." % markable.size()) if not markable.is_empty() else "Aucun courrier d'information non lu dans cette vue. Les courriers qui attendent votre décision restent à traiter."
 	D.text(card,25,78,"↑ ↓ choisir · Entrée ouvrir le courrier",17,C.MUTED,500,700)
 	D.line(card,Vector2(1,94),Vector2(748,94))
 	var scroll := ScrollContainer.new()
