@@ -1,0 +1,6 @@
+tests/meteo-veille.cjs
+tests/meteo-affichage-modele.cjs
+tests/meteo-match.cjs
+tests/club-mail.cjs
+tests/continuer-arrets-saison.cjs
+tests/godot-courrier-club.cjs

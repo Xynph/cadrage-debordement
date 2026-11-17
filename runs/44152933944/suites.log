@@ -1,0 +1,199 @@
+::group::tests/meteo-veille.cjs
+TAP version 13
+# Subtest: Rien avant la veille ; annonce la veille, gardée dans la sauvegarde
+ok 1 - Rien avant la veille ; annonce la veille, gardée dans la sauvegarde
+  ---
+  duration_ms: 533.493082
+  type: 'test'
+  ...
+# Subtest: Un seul courrier « Bulletin météo », qui ouvre la composition
+ok 2 - Un seul courrier « Bulletin météo », qui ouvre la composition
+  ---
+  duration_ms: 0.565724
+  type: 'test'
+  ...
+# Subtest: Tirage sans aléa : même prévision, aléa du moteur intact
+ok 3 - Tirage sans aléa : même prévision, aléa du moteur intact
+  ---
+  duration_ms: 26.687885
+  type: 'test'
+  ...
+# Subtest: Ancienne sauvegarde arrivée à la veille : l’annonce est fixée à la commande suivante
+ok 4 - Ancienne sauvegarde arrivée à la veille : l’annonce est fixée à la commande suivante
+  ---
+  duration_ms: 1056.825521
+  type: 'test'
+  ...
+# Subtest: Coup d’envoi : la météo annoncée est celle du match, vent compris ; rien ne bouge ensuite
+ok 5 - Coup d’envoi : la météo annoncée est celle du match, vent compris ; rien ne bouge ensuite
+  ---
+  duration_ms: 3412.237404
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 52208.417357
+CD_CPU_PROFILE suite=tests/meteo-veille.cjs user_s=50.84 system_s=6.38 wall_s=53.25 cpu_pct=107% max_rss_kb=2706736
+PASS tests/meteo-veille.cjs (54 s)
+::endgroup::
+::group::tests/meteo-affichage-modele.cjs
+TAP version 13
+# Subtest: Coup d’envoi : météo tirée et exposée dans le direct
+ok 1 - Coup d’envoi : météo tirée et exposée dans le direct
+  ---
+  duration_ms: 1.135603
+  type: 'test'
+  ...
+# Subtest: Vent orienté : camp favorisé par période, inversé à la mi-temps
+ok 2 - Vent orienté : camp favorisé par période, inversé à la mi-temps
+  ---
+  duration_ms: 116.052344
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14777.200213
+CD_CPU_PROFILE suite=tests/meteo-affichage-modele.cjs user_s=23.28 system_s=1.58 wall_s=20.74 cpu_pct=119% max_rss_kb=1939828
+PASS tests/meteo-affichage-modele.cjs (20 s)
+::endgroup::
+::group::tests/meteo-match.cjs
+{"sec":{"enAvant":16.1,"butPct":76.6,"essais":6.72,"essaisPortes":0.85,"melees":9.3,"pieds":3.9,"points":54.4,"condition":74.1,"metresParAvancee":15.3},"pluie":{"enAvant":20.8,"butPct":72.6,"essais":5.64,"essaisPortes":1.52,"melees":12.2,"pieds":8.1,"points":48.3,"condition":74.5,"metresParAvancee":12.9},"vent":{"enAvant":16.2,"butPct":68.9,"essais":6.81,"essaisPortes":0.86,"melees":9.3,"pieds":2.4,"points":52.7,"condition":74,"metresParAvancee":15.3},"chaleur":{"enAvant":16.1,"butPct":77.9,"essais":6.88,"essaisPortes":1,"melees":9.4,"pieds":4,"points":55.7,"condition":71.8,"metresParAvancee":15.3},"secAvant":{"enAvant":15.6,"butPct":74.9,"essais":6.66,"essaisPortes":0.85,"melees":9,"pieds":4,"points":54.1,"condition":74.1,"metresParAvancee":15.2},"pluieAvant":{"enAvant":20,"butPct":73.9,"essais":5.97,"essaisPortes":1.09,"melees":11.7,"pieds":6,"points":51.2,"condition":74.6,"metresParAvancee":14.7},"ventAvant":{"enAvant":16.1,"butPct":66.9,"essais":7.07,"essaisPortes":0.92,"melees":9.2,"pieds":2.4,"points":54.3,"condition":74,"metresParAvancee":15.3}}
+TAP version 13
+# Subtest: Sec, pluie forte, grand vent, chaleur : écarts crédibles et modérés (même affiches, même graine)
+ok 1 - Sec, pluie forte, grand vent, chaleur : écarts crédibles et modérés (même affiches, même graine)
+  ---
+  duration_ms: 36193.764099
+  type: 'test'
+  ...
+# Subtest: Météo tirée par le moteur : déterministe, sans tirage supplémentaire, intensités cohérentes avec l’étiquette
+ok 2 - Météo tirée par le moteur : déterministe, sans tirage supplémentaire, intensités cohérentes avec l’étiquette
+  ---
+  duration_ms: 2647.659668
+  type: 'test'
+  ...
+# Subtest: Rencontre commencée sans la version : anciennes règles ; sauvegarde validée
+ok 3 - Rencontre commencée sans la version : anciennes règles ; sauvegarde validée
+  ---
+  duration_ms: 102.367694
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38952.393372
+CD_CPU_PROFILE suite=tests/meteo-match.cjs user_s=57.87 system_s=1.48 wall_s=52.72 cpu_pct=112% max_rss_kb=1982608
+PASS tests/meteo-match.cjs (53 s)
+::endgroup::
+::group::tests/club-mail.cjs
+2026-10-14 · 54 mails · 28 types · 25 réponses · 29 arrêts informatifs · 89 s
+Types : meteo, pepite, rumeur, temps_de_jeu, article, bilan_match, president, tour_championnats, seance_adjoint, agent, moral_groupe, arbitre, analyste, entraineur_avants, gene, rapport_centre, rapport_agent, affluence, surcharge, anniversaire, contrats, relance_temps_de_jeu, sponsor, cadre_rdv, discipline, retour_blesse, kine_bilan, prolongation
+Réponses : rumeur/dementir, pepite/progresser, meteo/composition, tour_championnats/vestiaire, president/bilan, bilan_match/conquete, article/saluer, temps_de_jeu/plus_tard, arbitre/discipline, moral_groupe/sortie, agent/rapport, seance_adjoint/garder, gene/medecin, entraineur_avants/conquete, analyste/conquete, surcharge/alleger, affluence/operation, anniversaire/feter, relance_temps_de_jeu/promettre, sponsor/objectif, kine_bilan/programme, retour_blesse/progressif, discipline/appel, cadre_rdv/recevoir, prolongation/reporter
+Durée totale 96 s {"creation":11571,"reponses":8563,"controles":6482,"partie":89172}
+TAP version 13
+# Subtest: Données : catalogue complet, formulations variées, effets connus
+ok 1 - Données : catalogue complet, formulations variées, effets connus
+  ---
+  duration_ms: 1.224948
+  type: 'test'
+  ...
+# Subtest: Carrière Monde : courrier varié, réponses enregistrées, monde inchangé à la réception, rejeu identique
+ok 2 - Carrière Monde : courrier varié, réponses enregistrées, monde inchangé à la réception, rejeu identique
+  ---
+  duration_ms: 97076.598858
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 97083.625042
+CD_CPU_PROFILE suite=tests/club-mail.cjs user_s=100.00 system_s=14.47 wall_s=97.45 cpu_pct=117% max_rss_kb=2894320
+PASS tests/club-mail.cjs (98 s)
+::endgroup::
+::group::tests/continuer-arrets-saison.cjs
+Fenêtre 2026-10-02 · 50 s
+23 arrêts dont 17 informatifs · par type {"courrier":12,"lendemain":2,"veille":2,"groupe":1} · par mois {"2026-09":15,"2026-10":2}
+Jours à plusieurs arrêts : [["2026-09-19",3],["2026-09-20",2],["2026-09-21",3],["2026-09-25",3],["2026-09-27",3],["2026-09-28",3],["2026-10-01",3]]
+   2026-09-19 courrier · Le staff technique : Bulletin météo : Sec
+   2026-09-19 courrier · Le directeur du centre de formation : Une pépite chez les Espoirs : Romain Roumazet
+   2026-09-20 courrier · Callum BOND : Besoin de te parler
+   2026-09-20 lendemain · Défaite 39-50 à Meadowbridge Rovers. Infirmerie : aucun indisponible.
+   2026-09-21 courrier · Gabi, ton adjoint : Débrief : Meadowbridge Rovers
+   2026-09-21 courrier · Le président : Un mot du président
+   2026-09-23 courrier · Un agent de joueurs : Lucas Mercier pour ton club ?
+   2026-09-25 veille · Demain, réception de Trentwood Archers : feuille de match complète (23). Adversaire : Trentwood Archers 6e, nous 10e, forme V.
+   2026-09-25 courrier · Le staff technique : Bulletin météo avant Trentwood Archers
+   2026-09-25 courrier · Le médecin du club : Gêne pour Darren DOWNES avant Trentwood Archers
+Durée totale 68 s
+TAP version 13
+# Subtest: Règle : types informatifs toujours actifs, priorité, plusieurs arrêts le même jour
+ok 1 - Règle : types informatifs toujours actifs, priorité, plusieurs arrêts le même jour
+  ---
+  duration_ms: 2.759591
+  type: 'test'
+  ...
+# Subtest: Fenêtre de saison : veille, lendemain, plusieurs arrêts le même jour, monde inchangé
+ok 2 - Fenêtre de saison : veille, lendemain, plusieurs arrêts le même jour, monde inchangé
+  ---
+  duration_ms: 68206.357431
+  type: 'test'
+  ...
+# Subtest: Saison complète : arrêts informatifs répartis, monde inchangé au 15/12
+ok 3 - Saison complète : arrêts informatifs répartis, monde inchangé au 15/12 # SKIP
+  ---
+  duration_ms: 0.482168
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 68215.128339
+CD_CPU_PROFILE suite=tests/continuer-arrets-saison.cjs user_s=74.02 system_s=6.90 wall_s=68.61 cpu_pct=117% max_rss_kb=3020936
+PASS tests/continuer-arrets-saison.cjs (68 s)
+::endgroup::
+::group::tests/godot-courrier-club.cjs
+TAP version 13
+# Subtest: Courrier du club : réponse en un clic, écran concerné ouvert, arrêts informatifs sur l’écran utile
+ok 1 - Courrier du club : réponse en un clic, écran concerné ouvert, arrêts informatifs sur l’écran utile
+  ---
+  duration_ms: 17206.737947
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17211.530396
+CD_CPU_PROFILE suite=tests/godot-courrier-club.cjs user_s=20.31 system_s=1.60 wall_s=17.23 cpu_pct=127% max_rss_kb=1632508
+PASS tests/godot-courrier-club.cjs (17 s)
+::endgroup::
