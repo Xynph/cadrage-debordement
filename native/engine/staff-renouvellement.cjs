@@ -43,7 +43,8 @@ function planifier(membres, x) {
     let d;
     if (m.ansMax < 2) d = { decision: 'libere', raison: 'retraite' };
     else if (deja >= besoin) d = { decision: 'libere', raison: 'surnombre' };
-    else if (Number.isFinite(x.marche[m.role]) && x.marche[m.role] >= m.estime + 6) d = { decision: 'libere', raison: 'mieux' };
+    // Stabilité : seul un membre faible pour le club est remplacé, et seulement si le marché offre nettement mieux.
+    else if (m.estime < x.base - 5 && Number.isFinite(x.marche[m.role]) && x.marche[m.role] >= m.estime + 8) d = { decision: 'libere', raison: 'mieux' };
     else {
       const ans = Math.min(m.age <= 58 ? 3 : 2, m.ansMax);
       d = { decision: 'prolonge', raison: m.estime >= x.base - 5 ? 'solide' : 'continuite', ans };

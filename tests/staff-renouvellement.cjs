@@ -23,6 +23,8 @@ test('Plan pur : prolonge les utiles, laisse partir surnombre, retraite et moins
   assert.equal(par.a1.decision, 'prolonge');
   assert.equal(par.a2.raison, 'surnombre', 'un adjoint suffit en plus de celui encore sous contrat');
   assert.equal(par.s.raison, 'mieux', 'le marché offre 80 contre 66');
+  const stable = R.planifier([membre('b', 'scout', 74)], { ...x, marche: { scout: 84 } });
+  assert.equal(stable[0].decision, 'prolonge', 'un membre au niveau du club reste, même si le marché offre mieux');
   assert.ok(plan.filter(d => d.decision === 'prolonge').every(d => d.ans >= 2 && d.ans <= 3), 'prolongation = au moins une saison de plus');
   assert.deepEqual(R.planifier([...[membre('c', 'coach', 75), membre('a1', 'assistant', 74)]].reverse(), x), R.planifier([membre('c', 'coach', 75), membre('a1', 'assistant', 74)], x), 'ordre sans effet');
 });
