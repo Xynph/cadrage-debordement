@@ -103,7 +103,8 @@ test('Un essai « sur ballon porté » suit une touche gagnée où le ballon por
 test('Le fait « porte » ne change aucun tirage : le témoin qui l’ignore donne le même match', () => {
   // Témoin : la même conquête sans écrire le fait. Même journal (hors champ), même score.
   const { run } = context();
-  run(`start(7); beginMatch(); continueMatch();`);
+  // Même météo « sec » que `jouer` : sinon le témoin joue la météo tirée et diverge du match réel (écart de test, pas de moteur).
+  run(`start(7); beginMatch(); if(S.live.weatherVersion===1){S.live.weather='Sec';S.live.meteo={pluie:0,vent:0,chaleur:0,terrain:'souple'}} continueMatch();`);
   run(`(()=>{const origine=contestSetPiece;contestSetPiece=function(...a){const r=origine.apply(this,a);for(const e of S.live.events)if(e.scene)delete e.scene.porte;return r}})()`);
   for (let i = 0; i < 800 && !run('S.live.finished'); i++) run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
   const temoin = JSON.parse(run('JSON.stringify({events:S.live.events,score:S.live.score})'));
