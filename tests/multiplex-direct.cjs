@@ -69,6 +69,8 @@ test('même graine : S.history identique avec et sans déroulé anticipé, multi
     assert.ok(finale.matchs.every(m => m.fini));
     assert.ok(finale.classement.length >= 10 && finale.classement.filter(r => r.nous).length === 1);
 
+    // Classement officiel d'avant la journée : base des bonus du jour et des flèches.
+    const avantJournee = vmJson(avec.jeu, `CDWorldCareer.rows(S,${JSON.stringify(competition)})`);
     valider(avec.jeu, a.model); valider(sans.jeu, b.model);
     const hA = vmJson(avec.jeu, 'S.history'), hB = vmJson(sans.jeu, 'S.history');
     assert.ok(hA.length > 0);
@@ -85,8 +87,17 @@ test('même graine : S.history identique avec et sans déroulé anticipé, multi
     }
     // Classement en direct final = classement officiel (points, bonus, rang).
     const officiel = vmJson(avec.jeu, `CDWorldCareer.rows(S,${JSON.stringify(competition)})`);
+    // Bonus affichés = bonus pris CETTE journée (cumul officiel après − avant), jamais les cumuls de la saison.
+    const avantDe = id => avantJournee.find(x => x.clubId === id) || {};
+    const duJour = (r, k) => Math.max(0, (r[k] | 0) - (avantDe(r.clubId)[k] | 0));
     assert.deepEqual(finale.classement.map(r => [r.clubId, r.rang, r.points, r.joues, r.diff, r.bonusOff, r.bonusDef]),
-      officiel.map((r, i) => [r.clubId, i + 1, r.points, r.played, r.pf - r.pa, r.offensiveBonus, r.defensiveBonus]));
+      officiel.map((r, i) => [r.clubId, i + 1, r.points, r.played, r.pf - r.pa, duJour(r, 'offensiveBonus'), duJour(r, 'defensiveBonus')]));
+    // Flèches : sans match officiel joué avant la journée, aucun rang officiel ni évolution.
+    const classe = avantJournee.some(r => (r.played | 0) > 0);
+    for (const r of finale.classement) {
+      if (!classe) assert.ok(r.rangOfficiel === null && r.delta === 0, 'pas de flèche avant le premier match officiel : ' + r.clubId);
+      else assert.equal(r.delta, avantJournee.findIndex(x => x.clubId === r.clubId) + 1 - r.rang, 'évolution du rang : ' + r.clubId);
+    }
   } finally { avec.jeu.fermer(); sans.jeu.fermer(); }
 });
 
