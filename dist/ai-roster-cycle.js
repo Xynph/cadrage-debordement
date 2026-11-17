@@ -4,7 +4,7 @@
 const AI_ROSTER_MAX_EVENTS=180,AI_ROSTER_MAX_REPORTS=196;
 function aiRosterActive(){return [1,2].includes(S?.aiRosterVersion)&&S.aiRoster?.version===S.aiRosterVersion}
 function aiRosterPopulationActive(s=S){return s?.aiRosterVersion===2&&s.aiRoster?.version===2}
-function aiRosterAccessibleCount(s=S){return new Set([...s.clubs.flatMap(c=>c.players),...s.economy.freeAgents.filter(p=>p.age>=18)].map(p=>p.id)).size}
+function aiRosterAccessibleCount(s=S){const ids=new Set();for(const c of s.clubs)for(const p of c.players)ids.add(p.id);for(const p of s.economy.freeAgents)if(p.age>=18)ids.add(p.id);return ids.size}
 function aiRosterPopulationReference(s=S){
  const source=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s)?CDWorldCareer.edition(s).registry.clubs:
   s.commonDatabase&&typeof CDCommonRosters!=='undefined'?CDCommonRosters.clubs:s.clubs;

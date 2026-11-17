@@ -1,7 +1,9 @@
 extends RefCounted
+const FocusLater := preload("res://ui/focus_later.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const Raccourcis = preload("res://ui/raccourcis_clavier.gd")
 
 static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	for child in app.get_children():
@@ -40,6 +42,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var comfort := G.v(9); comfort.name = "Confort"; tabs.add_child(comfort)
 	var sound := G.v(10); sound.name = "Son"; tabs.add_child(sound)
 	var display := G.v(10); display.name = "Affichage"; tabs.add_child(display)
+	var shortcuts := G.v(10); shortcuts.name = "Raccourcis clavier"; tabs.add_child(shortcuts)
 	comfort.add_child(C.label("CAMÉRA ET ACCESSIBILITÉ",20,C.GOLD,true,700))
 	var volume := _volume(comfort,"Volume global","PreferencesVolume")
 	var motion := CheckButton.new()
@@ -70,6 +73,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var quality := _choice(comfort,"Qualité de la scène",["Économie","Équilibrée","Détaillée"],"PreferencesQuality")
 	var autosave := _choice(comfort,"Sauvegarde automatique",["Chaque jour","Chaque semaine","Chaque mois"],"PreferencesAutosave")
 	autosave.tooltip_text = "Sauvegarde complète à la fin d’une avance du calendrier. Chaque décision est notée aussitôt ; la fermeture et « Sauvegarder » enregistrent toujours tout."
+	# Carrière : le réglage « Conférences ordinaires » (commande press_policy) n'existait que dans la salle de presse.
+	var press_policy := _press_policy(app, comfort)
 	var sound_profile: RefCounted = app.soundscape.preferences if is_instance_valid(app.soundscape) else null
 	sound.add_child(C.label("MIXAGE DE L’INTERFACE ET DU STADE",20,C.GOLD,true,700))
 	sound.add_child(C.wrap("Les sons d’interface et l’ambiance du stade ont chacun leur volume.",18,C.IVORY))
@@ -102,6 +107,11 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var continue_injuries := _option(continue_row,["Blessures : titulaires","Blessures : tout l’effectif"],"PreferencesContinueInjuries")
 	continue_injuries.tooltip_text = continue_messages.tooltip_text
 	stadium.tooltip_text = "Le réglage s’applique au stade 3D et est conservé pour les prochains matchs."
+	# Même table que le pied de page et l'aide F1 (ui/raccourcis_clavier.gd).
+	var shortcuts_title := C.label("RACCOURCIS CLAVIER",20,C.GOLD,true,700)
+	shortcuts_title.name = "PreferencesShortcuts"
+	shortcuts.add_child(shortcuts_title)
+	shortcuts.add_child(C.wrap("\n".join(Raccourcis.lignes_aide()),17,C.IVORY))
 	var error := C.wrap("",18,C.ALERT)
 	error.name = "PreferencesError"
 	error.max_lines_visible = 3
@@ -134,6 +144,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 			interface_volume.set_value_no_signal(sound_profile.get_value("interface_volume"))
 			stadium_volume.set_value_no_signal(sound_profile.get_value("stadium_volume"))
 			match_sounds.set_pressed_no_signal(sound_profile.get_flag("match_sounds"))
+		if press_policy.is_valid(): press_policy.call()
 		var reasons: Array[String] = []
 		if not profile.last_error.is_empty(): reasons.append(profile.last_error)
 		if sound_profile != null and not sound_profile.last_error.is_empty(): reasons.append(sound_profile.last_error)
@@ -193,7 +204,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	refresh.call()
 	# Grands écrans : le dialogue gagne en hauteur pour que l'onglet Affichage tienne entier dans sa zone défilante.
 	Dialogs.show_centered(dialog,Vector2i(width,680 if app.get_window().size.y>=1080 else 600))
-	volume.get_line_edit().call_deferred("grab_focus")
+	FocusLater.grab(volume.get_line_edit())
 	return dialog
 
 static func _volume(parent: Node, caption: String, id: String) -> SpinBox:
@@ -221,3 +232,58 @@ static func _option(row: Node, values: Array, id: String) -> OptionButton:
 	for value in values: option.add_item(value)
 	row.add_child(option)
 	return option
+
+## Rubrique « Carrière et club » de l'onglet Confort : « Conférences ordinaires : y aller / envoyer l'adjoint ».
+## Même commande moteur que la salle de presse (press_policy) ; préférence de carrière, permise pendant un rendez-vous.
+## Retourne la fonction qui relit le modèle (vide hors carrière de club).
+static func _press_policy(app: Control, parent: Node) -> Callable:
+	var policy: Variant = app.model.get("clubLife", {}).get("press", {}).get("policy", {})
+	if not policy is Dictionary or policy.is_empty() or app.model.get("international", {}).get("role") == "nation": return Callable()
+	var section := G.v(6)
+	section.name = "PreferencesPressSection"
+	parent.add_child(section)
+	section.add_child(C.label("CARRIÈRE ET CLUB",20,C.GOLD,true,700))
+	var row := G.h(12)
+	section.add_child(row)
+	var caption := G.label("Conférences ordinaires",14)
+	G.fill(caption)
+	row.add_child(caption)
+	var choices := G.h(8)
+	choices.name = "PreferencesPressPolicy"
+	row.add_child(choices)
+	var explanation := C.wrap("",17,C.MUTED)
+	explanation.name = "PreferencesPressNotice"
+	section.add_child(explanation)
+	var refresh := _press_refresh.bind(app, choices, explanation)
+	refresh.call()
+	return refresh
+
+## Les boutons sont reconstruits à chaque lecture du modèle ; aucune fermeture ne se référence elle-même.
+static func _press_refresh(app: Control, choices: HBoxContainer, explanation: Label) -> void:
+	var now := _press_current(app)
+	for child in choices.get_children():
+		choices.remove_child(child)
+		child.queue_free()
+	for option: Array in [["moi", "Y aller"], ["adjoint", "Envoyer l’adjoint"]]:
+		var key: String = option[0]
+		var button := G.button(option[1], func(): _press_choose(app, key, choices, explanation), key == now)
+		button.name = "PreferencesPressPolicy_" + key
+		button.custom_minimum_size = Vector2(190,36)
+		button.tooltip_text = "Réglage actuel." if key == now else "Choisir ce réglage."
+		choices.add_child(button)
+	explanation.text = "Gabi répond à la presse lors des conférences ordinaires ; vous restez convoqué aux grands rendez-vous (arrivée, phase finale, bilan de saison, derby, crise). Gabi s’exprime sur un ton prudent : ni moral ni confiance gagnés, un léger coût auprès des médias." if now == "adjoint" else "Vous répondez vous-même à chaque conférence : « Continuer » s’arrête sur la conférence de la semaine. Choisissez l’adjoint pour que Gabi tienne les conférences ordinaires ; vous restez convoqué aux grands rendez-vous."
+
+static func _press_current(app: Control) -> String:
+	return "adjoint" if str(app.model.get("clubLife", {}).get("press", {}).get("policy", {}).get("ordinary", "moi")) == "adjoint" else "moi"
+
+static func _press_choose(app: Control, key: String, choices: HBoxContainer, explanation: Label) -> void:
+	if _press_current(app) == key: return
+	app._command("press_policy", {"ordinary":key})
+	_press_refresh(app, choices, explanation)
+	# Un refus du moteur ramène le modèle à l'ancien réglage : relire un instant plus tard (le minuteur meurt avec la boîte).
+	var later := Timer.new()
+	later.one_shot = true
+	later.wait_time = 0.8
+	explanation.add_child(later)
+	later.timeout.connect(_press_refresh.bind(app, choices, explanation))
+	later.start()

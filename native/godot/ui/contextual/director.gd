@@ -45,6 +45,22 @@ func _meeting() -> Dictionary:
 		return value if outcome is Dictionary and outcome.get("invitationId") == origin and outcome.get("context") == value.get("context") else {}
 	return value if press.get("context") == value.get("context") and press.get("conference", {}).get("invitationId") == origin else {}
 
+## Rendez-vous du club obligatoire qui bloque les autres actions (en cours ou premier de la file), vide sinon.
+func blocking_meeting() -> Dictionary:
+	var meetings: Dictionary = app.model.get("clubLife", {}).get("clubMeetings", {})
+	var scene: Variant = meetings.get("scene")
+	if scene is Dictionary: return scene
+	var queue: Array = meetings.get("queue", [])
+	return queue[0] if not queue.is_empty() and queue[0] is Dictionary else {}
+
+## Nom d'un rendez-vous du club pour le joueur : « la conférence de presse », « le point médical »…
+static func meeting_label(meeting: Dictionary) -> String:
+	match str(meeting.get("kind", "")):
+		"press": return "la conférence de presse"
+		"medical": return "le point médical"
+		"board": return "le rendez-vous avec la direction"
+	return "le rendez-vous du club"
+
 func _talk() -> Dictionary:
 	var value: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 	return value if value is Dictionary else {}
@@ -227,13 +243,30 @@ func install_entrypoints() -> void:
 		parent.add_child(list)
 		parent.move_child(list, 0)
 		list.add_child(S.G.section("Les invitations du club"))
+		# Rendez-vous obligatoire en cours (conférence de presse d'arrivée…) : le moteur refuse d'ouvrir une
+		# invitation avant lui. On le dit et on y mène, au lieu d'un « OUVRIR » refusé (recette native du 16/11/2026).
+		var blocking := blocking_meeting()
+		if not blocking.is_empty():
+			var notice := S.G.h(12)
+			notice.name = "ContextualInvitationsBlocked"
+			list.add_child(notice)
+			var why := S.G.wrap("Après " + meeting_label(blocking) + " : terminez ce rendez-vous pour ouvrir les invitations.", 14)
+			S.G.fill(why)
+			notice.add_child(why)
+			if blocking.get("kind") == "press" and not blocking.get("completed", false):
+				var go := S.G.button("OUVRIR LA CONFÉRENCE DE PRESSE", func(): app._open_press_conference())
+				go.name = "ContextualOpenPress"
+				notice.add_child(go)
 		for invitation: Dictionary in pending:
 			var row := S.G.h(12)
 			list.add_child(row)
 			var words := S.G.wrap(str(invitation.get("title", "Invitation")) + "\n" + str(invitation.get("reason", "")), 14)
 			S.G.fill(words)
 			row.add_child(words)
-			row.add_child(S.G.button("OUVRIR", func(): open_invitation(str(invitation.id))))
+			var open := S.G.button("OUVRIR", func(): open_invitation(str(invitation.id)))
+			open.disabled = not blocking.is_empty()
+			if open.disabled: open.tooltip_text = "Disponible après " + meeting_label(blocking) + "."
+			row.add_child(open)
 		_contain_entry_content(parent, list)
 	elif app.route == "Préparation":
 		var parent: Node = app.root_content.find_child("PreparationEntrainement", true, false)
