@@ -213,6 +213,29 @@ static func summary(app: Control, parent: Node, own: String, catalogue: Array, d
 	box.add_child(open_button)
 	return open_button
 
+## Écran Options de carrière : bascule un championnat entre détail complet et consultation
+## (le championnat du club reste toujours en détail), puis reconstruit la page.
+static func toggle(app: Control, own: String, catalogue: Array, id: String) -> void:
+	if id == own: return
+	var all := leagues(app, catalogue)
+	var ids := selected(app, own, all)
+	if id in ids: ids.erase(id)
+	else: ids.append(id)
+	app.management_ui[SELECTION] = ordered(ids, all)
+	app.management_ui[CUSTOM] = true
+	app._render(false)
+
+## Raccourcis de l'écran Options : « auto » (choix selon le PC), « all » (tout en détail), « own » (seulement le club).
+static func preset(app: Control, own: String, catalogue: Array, kind: String) -> void:
+	var all := leagues(app, catalogue)
+	if kind == "auto":
+		app.management_ui.erase(CUSTOM)
+		app.management_ui.erase(SELECTION)
+	else:
+		app.management_ui[SELECTION] = all.map(func(league: Dictionary): return str(league.id)) if kind == "all" else ([own] if not own.is_empty() else [])
+		app.management_ui[CUSTOM] = true
+	app._render(false)
+
 ## Liste envoyée à new_career (le moteur ajoute de toute façon le championnat du club).
 static func payload(app: Control, own: String, catalogue: Array) -> Array:
 	return selected(app, own, leagues(app, catalogue))

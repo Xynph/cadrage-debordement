@@ -44,8 +44,34 @@ func run() -> void:
 	await press(next)
 	check(app.find_child("CreationCareerOptions",true,false)!=null and app.find_child("CreationClubGrid",true,false)==null,"Écran dédié aux options de carrière")
 	check(app.find_child("CreationLeagueDetail",true,false)!=null and app.find_child("CreationVaryCurrent",true,false)!=null,"Championnats suivis et niveau de départ sur l’écran des options")
-	var suivis := app.find_child("CreationLeagueDetailNames",true,false) as Label
-	check(suivis!=null and suivis.text.begins_with("En détail : ") and app.find_child("CreationLeagueDetailCount",true,false)!=null and app.find_child("CreationLeagueDetailOpen",true,false)!=null,"Championnats suivis : nombre, noms et choix détaillé dans la section sombre")
+	var suivis := app.find_child("CreationLeagueDetailCount",true,false) as Label
+	check(suivis!=null and suivis.text.contains("en détail complet sur"),"Championnats suivis : compte affiché")
+	check(app.find_child("CreationLeagueDetailNames",true,false)==null and app.find_child("CreationLeagueDetailOpen",true,false)==null,"Anciens nœuds de la liste de noms retirés")
+	var pays := 0
+	for code in ["FR","GB","URC","SRP","JP"]:
+		if app.find_child("CreationLeagueCountry_"+code,true,false)!=null: pays += 1
+	check(pays>=3,"Au moins 3 blocs pays (%d)" % pays)
+	var mine := app.find_child("CreationLeagueCard_elite",true,false) as Button
+	var mine_state := mine.find_child("CreationLeagueCardState",true,false) as Label if mine!=null else null
+	check(mine_state!=null and mine_state.text.contains("Ton championnat"),"Vignette du championnat du club : « Ton championnat »")
+	var count_before := suivis.text if suivis!=null else ""
+	var other := app.find_child("CreationLeagueCard_prem",true,false) as Button
+	var other_state := other.find_child("CreationLeagueCardState",true,false) as Label if other!=null else null
+	var state_before := other_state.text if other_state!=null else ""
+	check(other!=null and not other.disabled and state_before!="","Vignette d’un autre championnat disponible")
+	if other != null:
+		await press(other)
+		var count_after := app.find_child("CreationLeagueDetailCount",true,false) as Label
+		var other_after := app.find_child("CreationLeagueCard_prem",true,false) as Button
+		var state_after := (other_after.find_child("CreationLeagueCardState",true,false) as Label).text if other_after!=null else ""
+		check(count_after!=null and count_after.text!=count_before,"Un clic sur une vignette change le compte : "+count_before+" → "+(count_after.text if count_after else ""))
+		check(state_after!=state_before,"Un clic sur une vignette change son état : "+state_before+" → "+state_after)
+		if other_after != null:
+			await press(other_after)
+		var count_back := app.find_child("CreationLeagueDetailCount",true,false) as Label
+		var other_back := app.find_child("CreationLeagueCard_prem",true,false) as Button
+		var state_back := (other_back.find_child("CreationLeagueCardState",true,false) as Label).text if other_back!=null else ""
+		check(count_back!=null and count_back.text==count_before and state_back==state_before,"Un second clic remet le championnat comme avant")
 	var choice := app.find_child("CreationStartChoice",true,false) as OptionButton
 	check(choice!=null and choice.item_count==3,"Trois départs proposés")
 	check(choice.selected==0 and choice.get_item_text(0).contains("13 juillet"),"Départ par défaut : reprise des premiers clubs")
