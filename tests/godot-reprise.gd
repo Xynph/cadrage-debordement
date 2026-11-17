@@ -85,6 +85,7 @@ func run() -> void:
 	var clubs := app.find_child("CreationClubGrid",true,false) as GridContainer
 	check(clubs!=null and clubs.get_child_count()>0,"Vrais clubs disponibles")
 	await press(clubs.get_child(0) as Button)
+	await capture("creation-1-club")
 	# Écran du club allégé : les options de carrière ont leur écran (étape 03), ouvert par « Options de carrière ».
 	check(app.find_child("CreationStartChoice",true,false)==null and app.find_child("CreationStart",true,false)==null,"Écran du club sans options de carrière")
 	var next := app.find_child("CreationNext",true,false) as Button
@@ -122,6 +123,7 @@ func run() -> void:
 		var other_back := app.find_child("CreationLeagueCard_prem",true,false) as Button
 		var state_back := (other_back.find_child("CreationLeagueCardState",true,false) as Label).text if other_back!=null else ""
 		check(count_back!=null and count_back.text==count_before and state_back==state_before,"Un second clic remet le championnat comme avant")
+	await capture("creation-2-options-carriere")
 	var choice := app.find_child("CreationStartChoice",true,false) as OptionButton
 	check(choice!=null and choice.item_count==3,"Trois départs proposés")
 	check(choice.selected==0 and choice.get_item_text(0).contains("13 juillet"),"Départ par défaut : reprise des premiers clubs")

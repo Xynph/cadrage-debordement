@@ -895,7 +895,7 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 ## Bascule discrète du réglage « conférences ordinaires » (commande press_policy, comme dans les Paramètres) ; la conférence en cours reste à traiter.
 static func _press_policy_toggle(card: Panel, app: Control, rectangle: Rect2) -> void:
 	var toggle := D.button(card,rectangle,_press_policy_caption(app),_press_policy_choose.bind(app, card),false,"",true,app.accent,"InboxPressPolicy")
-	toggle.tooltip_text = "Gabi tient les conférences ordinaires à votre place, sur un ton prudent : médias −2 et relation −1 avec chaque journaliste présent. Vous restez convoqué aux grands rendez-vous (arrivée, phase finale, bilan de saison, derby, crise). La conférence ouverte reste à traiter."
+	toggle.tooltip_text = "Gabi tient les conférences ordinaires à ta place, sur un ton prudent : médias −2 et relation −1 avec chaque journaliste présent. Tu restes convoqué aux grands rendez-vous (arrivée, phase finale, bilan de saison, derby, crise). La conférence ouverte reste à traiter."
 	toggle.disabled = app.waiting
 
 static func _press_policy_current(app: Control) -> String:
