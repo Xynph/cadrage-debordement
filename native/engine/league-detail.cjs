@@ -226,11 +226,16 @@ function factory(){
 // - seul le championnat du club suivi en détail : 11,7 s (dont 9,9 s de réponses) ;
 // - tous suivis en détail : 14,2 s (dont 12,2 s de réponses) ; semaine sans match du club : 6 à 7,8 s ;
 // - rencontre de l'IA suivie en détail : ≈ 110 ms ramenés à la référence (de loin : moins de 1 ms, compté 1 ms).
+// Seconde mesure le 17/11/2026, PC de Léo (Windows 11, 32 cœurs, 62 Go, Node 26 ; banc d'essai à froid ≈ 6,3 ms + 20,1 ms,
+// soit facteurs 0,252 série et 0,379 calcul) : club seul 7,07 s (médiane de 3 semaines) ; tous suivis 8,26 s (médiane
+// de 10 semaines, deux pics isolés à 12,5 s écartés par la médiane) -> base ≈ 25 800 à 27 100 ms, ≈ 130 à 160 ms par
+// rencontre suivie. Le banc sous-estime ce PC par rapport au runner : avec 20 600 / 110 la jauge y affichait 4 étoiles
+// pour une semaine réelle de 7,1 s (3 étoiles). Valeurs retenues : la plus prudente des deux machines, arrondie.
 // Avant (16/11, après #753, 2 cœurs partagés) : base 6900 ms, 50 ms par rencontre suivie, semaines de 9,2 s et 10,7 s.
 // Les valeurs sont ramenées à la référence comme estimate() (÷ facteur du banc d'essai, hors contention).
 const REFERENCE=Object.freeze({
  benchmarkMs:Object.freeze({serial:25,compute:53}),
- baseWeekMs:20600,detailedMatchMs:110,quickMatchMs:1,seasonExtraMs:0,
+ baseWeekMs:26000,detailedMatchMs:130,quickMatchMs:1,seasonExtraMs:0,
 });
 // Matchs de saison régulière et de poules européennes par saison et par championnat
 // (formats de la saison 2026-27 ; poules européennes réparties entre Top 14, Premiership et URC).

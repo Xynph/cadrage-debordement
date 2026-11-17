@@ -55,7 +55,7 @@ test('Choix automatique selon le PC : déterministe, vise 4 étoiles, pays du cl
  assert.deepEqual(leagueDetail.autoChoice({own:'elite',machine:machine(.2)}),all);
  assert.deepEqual(leagueDetail.autoChoice({own:'elite',machine:{}}),['elite']);
  // Machine moyenne simulée : résultat figé, toujours sous la cible ou le club seul.
- const mid=machine(.27),first=leagueDetail.autoChoice({own:'prem',machine:mid});
+ const mid=machine(.215),first=leagueDetail.autoChoice({own:'prem',machine:mid});
  for(let i=0;i<5;i++)assert.deepEqual(leagueDetail.autoChoice({own:'prem',machine:mid}),first,'même machine, même choix');
  assert.ok(first.includes('prem'));
  assert.ok(leagueDetail.estimate({detailed:first,machine:mid}).stars>=4);
