@@ -124,7 +124,7 @@ test('Moteur Monde : création sans dividende ni investissement, jokers au vrai 
     out[x.id===c.id?'joue':'gere']={guichet:g,frais:fr.map(l=>l.amount),compte:[cpt.imprevu,cpt.fraisMatch]};}
    return out;})()`);
   for(const [qui,x] of Object.entries(f)){
-   assert.equal(x.frais.length,1,qui+' : une ligne de frais');assert.ok(Math.abs(-x.frais[0]-0.7*x.guichet)<=200,qui+' : 70 % de la recette de phase finale');
+   assert.equal(x.frais.length,1,qui+' : une ligne de frais');assert.ok(Math.abs(-x.frais[0]-0.5*x.guichet)<=200,qui+' : 50 % de la recette de phase finale');
    assert.equal(x.compte[0],x.guichet,qui+' : toute la recette de phase finale est imprévue');assert.equal(x.compte[1],-x.frais[0],qui+' : frais comptés');
   }
  }finally{jeu.fermer();}
@@ -167,11 +167,11 @@ test('Guichet imprévu : rien pour un match moyen, tout pour une phase finale, f
  // Cumul : une défaite compense une victoire ; on paie 70 % du cumul positif, une seule fois.
  let compte={};const pas=[1e6,-4e5,-8e5,5e5];const payes=[];
  for(const e of pas){const f=B.fraisDeMatch(compte,e);payes.push(f.montant);compte={imprevu:f.imprevu,fraisMatch:f.fraisMatch};}
- assert.deepEqual(payes,[7e5,0,0,0],'après 1 M€ puis 1,2 M€ de manque, rien de plus à payer');
- const f=B.fraisDeMatch(compte,1e6);assert.equal(f.montant,Math.round((0.7*(1e6+1e6-4e5-8e5+5e5)-7e5)/100)*100);
+ assert.deepEqual(payes,[5e5,0,0,0],'après 1 M€ puis 1,2 M€ de manque, rien de plus à payer');
+ const f=B.fraisDeMatch(compte,1e6);assert.equal(f.montant,Math.round((0.5*(1e6+1e6-4e5-8e5+5e5)-5e5)/100)*100);
  // Budget voté dans le rouge (1,5 M€ de perte prévue) : l'imprévu bouche d'abord le trou.
  assert.equal(B.fraisDeMatch({},1e6,1.5e6).montant,0,'tout va au trou prévu');
- assert.equal(B.fraisDeMatch({},2.5e6,1.5e6).montant,7e5,'70 % de ce qui dépasse');
+ assert.equal(B.fraisDeMatch({},2.5e6,1.5e6).montant,5e5,'50 % de ce qui dépasse');
  assert.equal(B.deficitPrevu(forces,id,1e6),0,'petite masse : budget excédentaire');
  const r=B.recettes(forces).get(id);assert.equal(B.deficitPrevu(forces,id,r),Math.round((r*1.4-r*(1-B.FONCTIONNEMENT))/100)*100);
 });

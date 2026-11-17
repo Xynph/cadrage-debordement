@@ -309,7 +309,7 @@ function recettesImprevues(ecritures, { forces, clubId, receptions, accueil = 1 
 function fraisDeMatch(compte, ecart, deficit = 0) {
   const imprevu = (Number.isFinite(compte?.imprevu) ? compte.imprevu : 0) + (Number.isFinite(ecart) ? ecart : 0);
   const base = imprevu - (Number.isFinite(deficit) && deficit > 0 ? deficit : 0);
-  const deja = Number.isFinite(compte?.fraisMatch) ? compte.fraisMatch : 0, montant = Math.max(0, rond(TRAIN_DE_VIE * base - deja));
+  const deja = Number.isFinite(compte?.fraisMatch) ? compte.fraisMatch : 0, montant = Math.max(0, rond(PART_FRAIS_IMPREVUS * base - deja));
   return { montant, imprevu, fraisMatch: deja + montant };
 }
 // Perte annuelle que le budget voté d'un club prévoit avant le propriétaire (recettes moyennes, fonctionnement
@@ -318,6 +318,8 @@ function deficitPrevu(forces, clubId, masseAnnuelle) {
   const { annuel } = regleDe(forces, clubId);
   return Math.max(0, rond(masseAnnuelle * (1 + COTISATIONS) - annuel * (1 - FONCTIONNEMENT)));
 }
+// Moitié seulement (décision de Léo du 17/11 : « il faut que ça reste un jeu ») : une belle saison doit se voir en caisse.
+const PART_FRAIS_IMPREVUS = 0.5;
 const LIBELLE_FRAIS_MATCH = 'Frais de match et primes de résultats';
 // Ajoute les écritures d'une semaine au compteur d'un club ; classement : {division, rang, taille} du moment.
 function compter(compte, ecritures, masseAnnuelle, classement = null) {
@@ -845,5 +847,5 @@ const VALIDATION = `{
 
 module.exports = Object.freeze({ PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
   RESERVE, EXCEDENTS, EXCEDENT_DORMANT, TRAIN_DE_VIE, reserveCible, engagement, apportProprietaire, annonceDividende, annonceInvestissement,
-  recettesImprevues, fraisDeMatch, deficitPrevu, LIBELLE_FRAIS_MATCH,
+  recettesImprevues, fraisDeMatch, PART_FRAIS_IMPREVUS, deficitPrevu, LIBELLE_FRAIS_MATCH,
   recettes, semaine, proprietaire, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros });
