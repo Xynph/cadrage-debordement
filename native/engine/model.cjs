@@ -46,6 +46,11 @@ module.exports=function nativeModel(){
  const liveMeteo=l=>{if(typeof meteoLibelle!=='function')return null;const actif=meteoActive(l),m=actif?l.meteo:{};
   return {libelle:meteoLibelle(l),conseil:actif?meteoConseilBase(l,m):null,pluie:m.pluie||0,vent:m.vent||0,chaleur:m.chaleur||0,terrain:m.terrain||null,
    ventDos:ventSensActif(l)?[l.meteo.sens,1-l.meteo.sens]:null};};
+ // Météo annoncée la veille du prochain match du club (world-career.cjs), même format que `live.meteo` : la
+ // rencontre fictive porte les mêmes versions de règles que celle du coup d'envoi. null avant la veille.
+ const nextMeteo=()=>{try{const m=typeof CDWorldCareer!=='undefined'&&typeof CDWorldCareer.meteoAnnoncee==='function'?CDWorldCareer.meteoAnnoncee(S):null;if(!m||!pair||typeof WEATHER_RULES==='undefined')return null;
+  const f={pair,weather:m.weather,...(WEATHER_RULES?{weatherVersion:1,meteo:{pluie:m.pluie,vent:m.vent,chaleur:m.chaleur,terrain:m.terrain,sens:m.sens},...(typeof WIND_DIRECTION_RULES!=='undefined'&&WIND_DIRECTION_RULES?{windVersion:1}:{})}:{})};
+  return {...liveMeteo(f),date:m.date};}catch(e){return null;}};
  const fixture=france?CDFranceCompetition.userFixture(S):null;
  const errors=sheetErrors(),all=[...S.lineup,...S.reserves];
  const selection={valid:errors.length===0,errors,slots:all.map((playerId,slot)=>({
@@ -102,7 +107,7 @@ module.exports=function nativeModel(){
   const c=typeof chiffresContrats==='function'?chiffresContrats():null;
   return {payroll:w,contracts:c?{season:c.saison,horizonSeason:c.horizonSaison,squadSize:c.effectif,endOfSeason:c.finDeSaison.length,byHorizon:c.horizon.length}:null};
  })(),finance:{cash:own.cash,wage:own.players.reduce((n,p)=>n+p.salary,0),ledger:S.ledger,...(typeof budgetActif==='function'&&budgetActif()?{notice:'Salaires dus sur 52 semaines, payés sur les '+wageForecastWeeks()+' semaines de la saison.',salaryFloor:budgetPlancherHebdo()}:{notice:'Montants fictifs. '+(france?'34 semaines payées par saison. Monde fermé sans Nationale.':'29 semaines payées par saison.')})},club:summary(own),league:sorted.map(c=>({...summary(c),played:c.played,won:c.won,drawn:c.drawn,lost:c.lost,pf:c.pf,pa:c.pa,bonus:c.bonus,form:c.form})),squad,
-  next:pair?{pair,home:summary(S.clubs[pair[0]]),away:summary(S.clubs[pair[1]]),label:label(),round:S.round,week:meta.week,neutral:fixture?.neutral??['semi','final'].includes(S.phase),phase:fixture?.phase??S.phase}:null,
+  next:pair?{pair,home:summary(S.clubs[pair[0]]),away:summary(S.clubs[pair[1]]),label:label(),round:S.round,week:meta.week,neutral:fixture?.neutral??['semi','final'].includes(S.phase),phase:fixture?.phase??S.phase,...(()=>{const m=nextMeteo();return m?{meteo:m}:{};})()}:null,
   archives,history:S.history,messages:S.news,ledger:S.ledger,
   live:l?{lineup:l.sheets[l.userSide].on.map(livePlayer),reserves:l.sheets[l.userSide].bench.map(livePlayer),substitutions:l.sheets[l.userSide].on.map((outId,i)=>({slot:i,label:POS[i],outId,inIds:l.paused&&!l.finished&&!presentationPending(l)?eligibleChanges(l,l.userSide,i).map(p=>p.id):[]})),tactics:{attack:l.tactics[l.userSide],defense:l.defences?.[l.userSide]||'equilibre'},decision:resultDecision,neutral:fixture?.neutral??false,minute:l.minute,period:l.flow?.period??(l.minute>40?2:1),score:l.score,tries:l.tries,paused:l.paused,finished:l.finished,halftime:l.halftime,atBreak:atHalftime(l),weather:l.weather,meteo:liveMeteo(l),pair:l.pair,teams:l.pair.map(id=>summary(S.clubs[id])),events:l.events,stats:l.stats,statsRows,scene:CDMatch3DAdapter.normalize(matchScene(l))}:null,meta};
 };
