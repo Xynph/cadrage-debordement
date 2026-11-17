@@ -159,7 +159,7 @@ function goalKickGeometry(conversion=false,tryY=35,territory=50,side=0){
 function goalChance(l,side,conversion=false,tryY=35){
  const kicker=goalKicker(l,side);
  const shot=goalKickGeometry(conversion,tryY,l.territory,side);
- const brut=(conversion?.28:.23)+skill(kicker,'goal',fitArrete(l))*.006-Math.max(0,shot.distance-25)*.005-shot.angle*.13+(unit(l,side,'mental')-70)*.001-(meteoActive(l)?METEO_MATCH.but.pluie*l.meteo.pluie+METEO_MATCH.but.vent*l.meteo.vent:l.weather==='Vent'?.16:l.weather==='Pluie'?.06:0)+goalKickPressure(l,side,kicker,conversion);
+ const brut=(conversion?.28:.23)+skill(kicker,'goal',fitArrete(l))*.006-Math.max(0,shot.distance-25)*.005-shot.angle*.13+(unit(l,side,'mental')-70)*.001-(meteoActive(l)?METEO_MATCH.but.pluie*l.meteo.pluie+ventBut(l,side):l.weather==='Vent'?.16:l.weather==='Pluie'?.06:0)+goalKickPressure(l,side,kicker,conversion);
  // Essais réalistes : les échecs au but reculent d'autant (réussite réelle ~ 70-80 %), sans écraser l'écart entre buteurs.
  const chance=essaisRules(l)?clamp(1-(1-brut)*ESSAIS.but,.22,.96):clamp(brut,.22,.93);
  if(l.sjLastKick)l.sjLastKick.p=chance;

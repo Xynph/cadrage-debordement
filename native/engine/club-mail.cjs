@@ -100,6 +100,9 @@ function factory() {
     return lead;
   };
   const playerVars = p => ({ joueur: String(p.name || ''), poste: String(p.pos || ''), age: Number(p.age) || 0, note: Number(p.rating) || 0, matchs: Number(p.dev?.appearances) || 0, minutes: Number(p.dev?.minutes) || 0, parcours: parcours(Number(p.dev?.appearances) || 0) });
+  const careerApps = p => (Array.isArray(p.dev?.history) ? p.dev.history.reduce((a, h) => a + (Number(h?.appearances) || 0), 0) : 0) + (Number(p.dev?.appearances) || 0);
+  // Total jamais inférieur à celui déjà vu : l'historique de développement est tronqué à 12 saisons.
+  const careerTotal = (p, seen) => Math.max(careerApps(p), Number(seen?.[p.id]) || 0);
   const parcours = n => n > 1 ? n + ' matchs disputés cette saison' : n === 1 ? 'un seul match disputé cette saison' : 'pas encore de match officiel cette saison';
   // Contexte du club joint à chaque courrier (textes plus riches) : classement, forme récente, prochain adversaire.
   const clubVars = F => {
@@ -379,6 +382,18 @@ function factory() {
       }
       return [];
     },
+    // Cap de carrière d'un joueur de l'effectif (50e, 100e, 150e… match en carrière, tous clubs confondus) : matchs des
+    // saisons closes (historique de développement) + saison en cours. La mémoire garde le total vu la veille ; un joueur
+    // arrivé en cours de route ou une première réception n'écrit rien.
+    jalon_carriere(F, t, st) {
+      const seen = st.memo.careerApps || {}, marks = t.seuils?.caps || [50, 100, 150, 200, 250, 300], out = [];
+      for (const p of F.players) {
+        const now = careerTotal(p, seen), before = seen[p.id] ?? now;
+        const m = marks.slice().reverse().find(x => before < x && now >= x);
+        if (m) out.push({ key: p.id + ':' + m, player: p.id, vars: { ...playerVars(p), n: m, carriere: now } });
+      }
+      return out;
+    },
     serie(F) {
       const last = F.season[F.season.length - 1], n = F.streak('V');
       if (!last || last.date !== F.yesterday || ![4, 6, 8, 10].includes(n)) return [];
@@ -412,6 +427,13 @@ function factory() {
     m.arrivals = arrivals;
     m.squad = F.players.map(p => p.id).slice(0, 120);
     m.apps = Object.fromEntries(F.players.map(p => [p.id, Number(p.dev?.appearances) || 0]));
+    // Un cap franchi mais pas encore écrit (plafond du jour ou de la semaine atteint) reste « à venir » : la mémoire n'avance pas.
+    const caps = TYPES.jalon_carriere?.seuils?.caps || [50, 100, 150, 200, 250, 300], seenApps = m.careerApps || {};
+    m.careerApps = Object.fromEntries(F.players.map(p => {
+      const now = careerTotal(p, seenApps), before = seenApps[p.id] ?? now;
+      const pendant = caps.some(x => before < x && now >= x && !st.sent['jalon_carriere:' + p.id + ':' + x]);
+      return [p.id, pendant ? before : now];
+    }));
     m.missions = (s.manager?.missions || []).filter(x => x.status === 'done').map(x => String(x.id)).slice(-30);
     m.pools = Object.entries(s.worldMode.europe || {}).filter(([, c]) => (c.pools || []).some(p => Array.isArray(p) && p.includes(s.club))).map(([id]) => id + ':' + s.season);
     m.calendar = (s.calendarMail?.messages || []).map(x => x.id).slice(-40);

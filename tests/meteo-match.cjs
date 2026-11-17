@@ -85,7 +85,7 @@ test('Rencontre commencée sans la version : anciennes règles ; sauvegarde vali
   const s = setup();
   s.run(`var lv=(function(){const fx=CDWorldCareer.fixtures(S).find(f=>f.homeId!==S.club&&f.awayId!==S.club);for(const id of [fx.homeId,fx.awayId])CDFranceCareer.ensureAISheet(S.clubs[id]);return createRugbyMatch([fx.homeId,fx.awayId],null,true)})()`);
   assert.equal(s.run('lv.weatherVersion'), 1);
-  const r = JSON.parse(s.run(`(function(){lv.weather='Vent';lv.meteo={pluie:0,vent:2,chaleur:0,terrain:'souple'};const nouveau=goalChance(lv,0,true,35);delete lv.weatherVersion;const vieux=goalChance(lv,0,true,35);lv.weatherVersion=1;return JSON.stringify({nouveau,vieux})})()`));
+  const r = JSON.parse(s.run(`(function(){lv.weather='Vent';lv.meteo={pluie:0,vent:2,chaleur:0,terrain:'souple',sens:0};const nouveau=goalChance(lv,0,true,35);delete lv.weatherVersion;const vieux=goalChance(lv,0,true,35);lv.weatherVersion=1;return JSON.stringify({nouveau,vieux})})()`));
   assert.ok(r.nouveau > r.vieux, 'grand vent moins pénalisant que l’ancien forfait −16 points : ' + JSON.stringify(r));
   s.run('validateFlowState(lv)');
   s.run('lv.meteo.vent=7');
