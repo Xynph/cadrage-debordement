@@ -30,6 +30,11 @@ const CROCHETS = `globalThis.__mesure=[];(()=>{
   const m=l.__mesure||(l.__mesure={entrees:[0,0],penalites:[[0,0,0,0],[0,0,0,0]],pas:[0,0]});
   const side=l.possession,dedans=zone(side,l.territory);m.pas[side]++;
   // Niveau joué (note × forme, joueurs en jeu, remplaçants compris) et avantage total du moteur, moyennés sur les pas.
+  // Terme de terrain réellement appliqué par teamEdge (camp 0 = recevant) : avantage avec le contexte du match moins
+  // le même avec un terrain neutre, mesuré au premier pas du match (docs/top14-dispute-20261117.md §8).
+  if(!m.ter&&typeof teamEdge==='function'){const wc=l.worldContext,fc=l.franceContext,a=teamEdge(l,0,'attack');
+   if(wc)l.worldContext={...wc,neutral:true};if(fc)l.franceContext={...fc,neutral:true};const b=teamEdge(l,0,'attack');l.worldContext=wc;l.franceContext=fc;
+   m.ter={val:Math.round((a-b)*10000)/10000,neutre:!!(wc&&wc.neutral),fc:!!fc,derby:typeof derbyRules==='function'&&!!derbyRules(l),fact:typeof terrainFactor==='function'?terrainFactor(wc&&wc.competitionId):null};}
   if(typeof teamLevel==='function'){const n=m.niv||(m.niv=[0,0,0,0,0]);n[0]+=teamLevel(activePlayers(l,0));n[1]+=teamLevel(activePlayers(l,1));n[2]+=teamEdge(l,0,'attack')-teamEdge(l,1,'attack');n[3]+=matchLevelEdge(l,0);n[4]++;}
   const r=avance.apply(this,arguments);
   if(!dedans&&l.possession===side&&zone(side,l.territory))m.entrees[side]++;
@@ -58,7 +63,7 @@ const CROCHETS = `globalThis.__mesure=[];(()=>{
    __mesure.push({xv:[xv(0),xv(1)],comp:c.competitionId||'?',phase:c.phase||'?',pair:l.pair.slice(),score:l.score.slice(),tries:l.tries.slice(),
     goals:l.stats.map(s=>s.goals),goalAttempts:l.stats.map(s=>s.goalAttempts),conv:l.stats.map(s=>s.conversions),convAtt:l.stats.map(s=>s.conversionAttempts),
     pen:l.stats.map(s=>s.penalties),entrees:l.__mesure.entrees,choix:l.__mesure.penalites,pas:l.__mesure.pas,essais,
-    niv:l.__mesure.niv&&l.__mesure.niv[4]?l.__mesure.niv.slice(0,4).map(x=>Math.round(x/l.__mesure.niv[4]*1000)/1000):null,pertes:[l.events.filter(e=>e.type==='turnover').length,0],phases:l.__mesure.phases||{},
+    ter:l.__mesure.ter||null,niv:l.__mesure.niv&&l.__mesure.niv[4]?l.__mesure.niv.slice(0,4).map(x=>Math.round(x/l.__mesure.niv[4]*1000)/1000):null,pertes:[l.events.filter(e=>e.type==='turnover').length,0],phases:l.__mesure.phases||{},
     scrums:l.stats.map(s=>s.scrums),lineouts:l.stats.map(s=>s.lineouts)});}
   return r;};
 })();`;

@@ -273,6 +273,7 @@ static func _category(title: String) -> Array:
 	if key.begins_with("vente :") or key.begins_with("signature :") or key.begins_with("prolongation") or key.begins_with("signature agent"):
 		return ["Contrat","people",C.BLUE]
 	if key.contains("salaires"): return ["Salaires","people",C.ALERT]
+	if key.ends_with("investissements : staff"): return ["Staff","people",C.AMBER]
 	if key.contains("billetterie"): return ["Billetterie","home",C.MINT]
 	if key.contains("partenaire") or key.contains("sponsor"): return ["Partenaire","shield",C.MINT]
 	if key.contains("installations"): return ["Installations","settings",C.AMBER]

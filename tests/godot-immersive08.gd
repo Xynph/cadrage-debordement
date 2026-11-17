@@ -879,11 +879,13 @@ func desktop_1080() -> void:
 	await capture("09-entrainement-1920x1080")
 	app._navigate("Match")
 	await settle()
+	# Avant le coup d'envoi : tableau de bord (match_avant.gd) avec l'affiche photo du tunnel ; le terrain 3D revient au coup d'envoi.
 	var pitch: Control = app.find_child("ImmersiveMatchPitch",true,false)
-	var tunnel: TextureRect = app.find_child("Art_match_tunnel",true,false)
+	var tunnel: TextureRect = app.find_child("MatchPosterPhoto",true,false)
 	check(pitch!=null and tunnel!=null and tunnel.texture!=null and tunnel.is_visible_in_tree(),"Le jour de match conserve son visuel et la scène à 1080p")
-	if pitch!=null:
-		check(Rect2(Vector2.ZERO,Vector2(root.size)).grow(1).encloses(pitch.get_global_transform()*Rect2(Vector2.ZERO,pitch.size)),"Terrain directement accessible en 1080p")
+	var kickoff_1080: Control = app.match_screen.opening.kickoff if app.match_screen!=null and "opening" in app.match_screen and app.match_screen.opening!=null else null
+	if kickoff_1080!=null:
+		check(kickoff_1080.is_visible_in_tree() and Rect2(Vector2.ZERO,Vector2(root.size)).grow(1).encloses(kickoff_1080.get_global_rect()),"Coup d’envoi directement accessible en 1080p")
 	await capture("27-avant-match-1920x1080")
 	root.size=Vector2i(1280,720)
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
@@ -1119,14 +1121,15 @@ func match_flow() -> void:
 	app._navigate("Match")
 	await settle()
 	var frame: Control = app.find_child("ImmersiveMatchPitch",true,false)
-	check(frame!=null and app.find_child("Art_match_tunnel",true,false)!=null,"Avant-match illustré dans le vrai écran de rencontre")
+	check(frame!=null and app.find_child("MatchPosterPhoto",true,false)!=null,"Avant-match illustré dans le vrai écran de rencontre")
 	if frame==null: return
 	var scene: Node3D = app.match_view
 	var match_ui: Control = app.match_screen
 	await capture("27-avant-match-2560x1440")
 	# Un rendez-vous de direction peut s'être ouvert pendant le parcours : le moteur refuse alors la rencontre.
 	await ContextualFlow.settle_club_meetings(app, self, check)
-	var kickoff: Button = app.pause_button
+	# Avant le coup d'envoi, le bouton visible est celui du bandeau du tableau de bord (même action que app.pause_button).
+	var kickoff: Button = match_ui.opening.kickoff if "opening" in match_ui and match_ui.opening!=null and match_ui.opening.is_visible_in_tree() else app.pause_button
 	var kickoff_rect := kickoff.get_global_rect()
 	var event_seen := {"pressed":false}
 	kickoff.pressed.connect(func(): event_seen.pressed=true,CONNECT_ONE_SHOT)

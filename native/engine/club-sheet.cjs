@@ -256,6 +256,6 @@ function factory(){
   }
   return true;
  }
- return {project,validate,execute,installHooks,sheet,enregistrer,jeton,decoder,encoder,xvFrequent,compteurs};
+ return {project,validate,execute,installHooks,sheet,enregistrer,jeton,decoder,encoder,xvFrequent,compteurs,xvType};
 }
 module.exports={files,commands,factory};
