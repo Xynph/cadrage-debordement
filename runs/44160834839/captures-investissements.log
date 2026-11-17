@@ -1,0 +1,18 @@
+TAP version 13
+# Investissements (Godot) : {"bloc":"Excédents réinvestis · 1 400 000 €\\nTravaux du niveau 3 · 6 % financés\\nAccueil du stade · niveau 0 / 5\\nStaff · aucune progression pour l’instant\\nDépensé : 152 000 € sur 1 400 000 €\\n","controles":8,"failures":[]} · moteur : {"montant":1400000,"depense":152000,"orientation":null,"parts":{"installations":0.30000000000000004,"staff":0.35000000000000003,"accueil":0.35000000000000003},"depenseParPart":{"installations":45600,"staff":53200,"accueil":53200},"installations":{"niveau":2,"max":10,"devis":750000,"avancement":0.0608,"achevesCetteSaison":0},"accueil":{"niveau":0,"max":5,"degrade":false,"gagnesCetteSaison":0,"avancement":0.2128,"effet":0},"staff":{"points":0,"personnes":0}}
+# Captures : /home/runner/work/_temp/resultats/captures/investissements
+# Subtest: Excédents réinvestis : chantiers du président visibles dans le vrai jeu
+ok 1 - Excédents réinvestis : chantiers du président visibles dans le vrai jeu
+  ---
+  duration_ms: 110089.398056
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 110491.977703
