@@ -241,6 +241,7 @@
       "tests/godot-regen-bank-v2.cjs": 7,
       "tests/godot-ouverture-ecrans.cjs": 90,
       "tests/godot-portraits-progressifs.cjs": 3,
+      "tests/godot-portraits-prechauffage.cjs": 60,
       "tests/godot-reactivite-interface.cjs": 150,
       "tests/godot-courrier-club.cjs": 90,
       "tests/godot-regen-portraits.cjs": 2,

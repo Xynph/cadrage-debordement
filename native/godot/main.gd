@@ -9,6 +9,7 @@ const SaveIndicator = preload("res://ui/save_indicator.gd")
 const Optimistic = preload("res://ui/optimistic_decisions.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
 const ScreenRefresh = preload("res://ui/screen_refresh.gd")
+const PortraitWarmup = preload("res://ui/portrait_warmup.gd")
 ## « Continuer » : tranche de calcul du moteur entre deux mises à jour du panneau (date qui défile, « Arrêter »).
 const CONTINUE_SLICE_MS := 700
 ## Seuil unique : le panneau d’attente n’apparaît qu’au-delà de 0,5 s (sinon simple flash).
@@ -417,6 +418,9 @@ func _receive_model(value: Dictionary) -> void:
 	if response_ok and received_command == "club_mail_reply": ClubMail.after_reply(self)
 	call_deferred("_refresh_coach")
 	if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
+	# Portraits de l'effectif fabriqués en tâche de fond, interface au repos : la 1re Composition ou le
+	# 1er Effectif n'a plus à les décoder d'un bloc (ui/portrait_warmup.gd). Rien pendant le direct.
+	if response_ok and received_command != "tick": PortraitWarmup.schedule(self)
 	_record_timing(received_command, receive_us)
 	if live_opening: command_wait_overlay.dismiss()
 	if not queued_action.is_empty() and bridge.last_response_ok:

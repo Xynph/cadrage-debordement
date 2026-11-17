@@ -252,6 +252,16 @@ static func fill_portrait(r: TextureRect, index: int, player: Dictionary) -> voi
 			r.add_child(_initial_label(caption))
 		r.tooltip_text = caption if path.is_empty() else "Image du pack indisponible · " + caption
 
+## Préchauffe le cache d'un portrait sans créer de nœud (ui/portrait_warmup.gd) : mêmes étapes coûteuses et
+## mêmes clés de cache que fill_portrait — photo du pack (textures[chemin]), sinon visage composé
+## (regen_portrait.gd : base recadrée par planche et case, puis composition par profil). La planche éditoriale
+## du dernier repli est une ressource déjà gardée par Godot : rien à préparer.
+## Exemple : `G.warm_portrait(player)` puis `G._portrait_ready(player)` est vrai.
+static func warm_portrait(player: Dictionary) -> void:
+	if _pack_texture(_pack_path(player)) != null: return
+	if str(player.get("id", "")).is_empty(): return
+	if preload("res://ui/regen_portrait.gd").texture(player) != null: preload("res://ui/regen_portrait.gd").material(player)
+
 ## Portrait d'une liste longue : tout de suite s'il est déjà prêt (cache), sinon
 ## case vide et chargement progressif par `portrait_loader.gd`, lignes visibles d'abord.
 static func portrait_lazy(index: int, width: int = 60, player: Dictionary = {}) -> TextureRect:
