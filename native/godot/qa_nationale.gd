@@ -103,10 +103,13 @@ func _reception() -> void:
 			var c := app.find_child("CreationClub"+str(id),true,false) as Button
 			all_visible = all_visible and c != null and list.get_global_rect().encloses(c.get_global_rect())
 		_check(all_visible,"14 clubs visibles à "+str(size.x))
-		var next_button := app.find_child("CreationStart",true,false) as Button
+		var next_button := (app.find_child("CreationNext",true,false) if app.find_child("CreationNext",true,false) != null else app.find_child("CreationStart",true,false)) as Button
 		_check(next_button != null and app.get_viewport_rect().encloses(next_button.get_global_rect()),"action de création à portée à "+str(size.x))
 		await _capture("nationale-creation-"+str(size.x))
 	if not await _pick("CreationClub100"): return
+	if app.find_child("CreationNext",true,false) != null:
+		if not _press("CreationNext"): return
+		await _settle()
 	if not _press("CreationStart"): return
 	_confirm()
 	if not await _wait(): return

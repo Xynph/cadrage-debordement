@@ -106,7 +106,7 @@ func creation_grid_fits(expected: int, context: String) -> void:
 func creation_dossier_fits(expected: int, context: String) -> void:
 	var dossier := named("CreationDossier") as Control
 	var honours := named("CreationHonours") as Control
-	var action := named("CreationStart") as Control
+	var action := (named("CreationNext") if named("CreationNext") != null else named("CreationStart")) as Control
 	if dossier == null or honours == null or action == null:
 		check(false, "Dossier, palmarès et action présents · " + context)
 		return
@@ -264,14 +264,14 @@ func _run() -> void:
 		return
 	app.timer.stop()
 	await press(named("EntryNewCareer"))
-	var start := named("CreationStart") as Button
+	var start := named("CreationNext") as Button
 	check(named("CreationCompetitionSummary") != null and named("CreationClubTitle") == null and start != null and start.disabled, "La création présente le championnat avant le choix d’un club")
 	check(named("CreationPagination") == null and app.find_children("CreationClub*", "Button", true, false).size() == 14, "Toute l’Élite est présente dans une seule liste")
 	check(text_present(app, "26 matchs par club") and text_present(app, "Le 13e dispute un barrage"), "Le résumé décrit le format et le barrage simulés")
 	var grid := named("CreationClubGrid") as GridContainer
 	check(grid != null and grid.columns == 3 and scroll_fits("CreationClubsScroll"), "La liste compacte affiche toute la grille en trois colonnes")
 	await press(named("CreationClub0"))
-	check(named("CreationClubTitle") != null and named("CreationCompetitionSummary") == null and not (named("CreationStart") as Button).disabled, "Choisir un club révèle sa fiche et active la prise de poste")
+	check(named("CreationClubTitle") != null and named("CreationCompetitionSummary") == null and not (named("CreationNext") as Button).disabled, "Choisir un club révèle sa fiche et active la prise de poste")
 	check(named("CreationStadium") != null and text_present(app, "Trésorerie de départ") and not text_present(app, "Trésorerie de départ simulée"), "La fiche présente le stade et la trésorerie de départ")
 	check(text_present(app, "Stade Ernest Wallon") and text_present(app, "jeu de mouvement") and named("CreationClubPresentation") != null, "La présentation raconte l’histoire du club choisi et indique son stade")
 	check(named("CreationClubFounded") != null and text_present(app, "Fondé en 1907") and text_present(app, "25 titres") and text_present(app, "6 titres"), "La fiche affiche la fondation et les titres du club anonymisé")
@@ -308,7 +308,7 @@ func _run() -> void:
 	check(text_present(app, "Championnats internationaux"), "Les compétitions internationales forment leur propre groupe")
 	check(text_present(app, "114 clubs jouables"), "Le total mondial reste visible après filtrage")
 	await press(named("CreationCountry_FR"))
-	check(named("CreationCompetitionSummary") != null and (named("CreationStart") as Button).disabled, "Changer de championnat demande un nouveau choix explicite")
+	check(named("CreationCompetitionSummary") != null and (named("CreationNext") as Button).disabled, "Changer de championnat demande un nouveau choix explicite")
 	await press(named("CreationClub0"))
 	var base := named("CreationBaseIdentity") as Button
 	var importer := named("CreationImportReality") as Button
@@ -357,6 +357,7 @@ func _run() -> void:
 		app.coach.open_help()
 		await settle()
 		check(app.coach.expanded,"Aide de création ouverte pendant le test au clic")
+	if named("CreationNext") != null: await press(named("CreationNext"))
 	if not await click_action(named("CreationStart")):
 		await finish()
 		return
@@ -381,6 +382,7 @@ func _run() -> void:
 	check(app.model.meta.legacyPackCreation != "base" and app.model.meta.worldPackCreation == app.model.packs.career, "Préférence France isolée de la carrière Monde")
 	await press(button("← Retour"))
 	check(named("CreationClubTitle").text == "Toulouse témoin" and named("CreationDivision_prem") == null, "France 30 retrouve son catalogue et son pack")
+	if named("CreationNext") != null: await press(named("CreationNext"))
 	await press(named("CreationStart"))
 	await press(button("ANNULER"))
 	check(app.model.meta.mode == "world", "Annuler conserve la carrière ouverte")
