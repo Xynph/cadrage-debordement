@@ -32,8 +32,12 @@ func demander(commande: String, payload := {}) -> void:
 	app._command(commande, payload)
 	await attendre(commande)
 
-func capturer(nom: String) -> void:
+## `reposer` réapplique l'état montré juste avant la capture : le direct continue et renvoie le vrai modèle.
+func capturer(nom: String, reposer := Callable()) -> void:
 	await poser(10)
+	if reposer.is_valid():
+		reposer.call()
+		await poser(2)
 	if DisplayServer.get_name() != "headless" and not sortie.is_empty():
 		verifier(root.get_texture().get_image().save_png(sortie.path_join(nom + ".png")) == OK, "capture " + nom)
 
@@ -79,12 +83,12 @@ func executer() -> void:
 		textes.direct = vue.meteo_ligne.text
 		verifier(vue.meteo_ligne.visible and vue.meteo_ligne.text.begins_with("Grand vent · dans le dos de") and vue.meteo_ligne.text.ends_with("en 1re période"), "bandeau : vent de la 1re période « %s »" % vue.meteo_ligne.text)
 		verifier(not vue.meteo_ligne.tooltip_text.is_empty(), "bandeau : conseil du staff en infobulle")
-		await capturer("meteo-bandeau-direct")
+		await capturer("meteo-bandeau-direct", func(): vue.update_frame(avec_vent()))
 		vue.update_frame(avec_vent(true))
 		await poser(4)
 		textes.mi_temps = vue.meteo_ligne.text
 		verifier(vue.meteo_ligne.text.begins_with("Mi-temps · changement de camp : le vent passe dans le dos de"), "bandeau : changement de camp « %s »" % vue.meteo_ligne.text)
-		await capturer("meteo-bandeau-mi-temps")
+		await capturer("meteo-bandeau-mi-temps", func(): vue.update_frame(avec_vent(true)))
 	print("METEO ", JSON.stringify({"controles": controles, "failures": echecs, "textes": textes}))
 	app.closing = true
 	app.bridge.stop()
