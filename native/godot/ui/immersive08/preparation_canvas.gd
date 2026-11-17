@@ -342,6 +342,7 @@ func _recent(section: Control) -> void:
 	var recent: Array = reports.get("recent", [])
 	var opponent := _opponent()
 	_form_chips(panel, recent)
+	_head_to_head(panel)
 	if recent.is_empty():
 		D.text(panel, 24, 93, "Résultats adverses non publiés dans ce dossier." if reports.is_empty() else "Aucun résultat adverse enregistré cette saison.", 19, C.MUTED, 500, 850)
 		var club := _opponent()
@@ -386,6 +387,33 @@ func _form_chips(panel: Panel, recent: Array) -> void:
 	for i in results.size():
 		var chip := D.chip(panel, Rect2(x0 + i * 40, 22, 32, 30), results[i], C.ALERT if results[i] == "D" else C.GOLD if results[i] == "N" else C.MINT)
 		if chip != null: chip.name = "PreparationOpponentForm%d" % i
+
+## Confrontations directes (cinq dernières rencontres entre les deux clubs) : pastilles V/N/D et dernier score.
+func _head_to_head(panel: Panel) -> void:
+	var rows: Array = reports.get("headToHead", [])
+	var results: Array[String] = []
+	var v := 0
+	var n := 0
+	var d := 0
+	for i in mini(5, rows.size()):
+		var score: Array = rows[i].get("score", [])
+		if score.size() != 2: continue
+		var side := int(rows[i].get("side", 0))
+		var us := int(score[side])
+		var them := int(score[1 - side])
+		results.append("V" if us > them else "D" if us < them else "N")
+		if us > them: v += 1
+		elif us < them: d += 1
+		else: n += 1
+	if results.is_empty(): return
+	var last: Array = rows[0].get("score", [])
+	var ls := int(rows[0].get("side", 0))
+	var venue := "à domicile" if bool(rows[0].get("home", ls == 0)) else "à l'extérieur"
+	D.text(panel, 36 + results.size() * 36, 62, "Face à eux : %d V · %d N · %d D   —   Dernier : %d-%d %s" % [v, n, d, int(last[ls]), int(last[1 - ls]), venue], 17, C.MUTED, 500, 700)
+	var x0 := 24
+	for i in results.size():
+		var chip := D.chip(panel, Rect2(x0 + i * 36, 60, 30, 26), results[i], C.ALERT if results[i] == "D" else C.GOLD if results[i] == "N" else C.MINT)
+		if chip != null: chip.name = "PreparationHeadToHead%d" % i
 
 func _sheet_map(section: Control) -> void:
 	var panel := D.panel(section,Rect2(917,614,427,352),"Ton XV projeté","people","","PreparationSheetMap")
