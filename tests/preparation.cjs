@@ -17,7 +17,7 @@ for(const ci of [0,13]){
  const loaded=context(run('JSON.parse(JSON.stringify(S))'));assert.equal(loaded.run('JSON.stringify(S.live.planUsage)'),run('JSON.stringify(l.planUsage)'));
  for(const mutate of ['bad.live.preparation.opponent=bad.club','bad.live.preparation.attack="bad"','bad.live.planUsage.attack.large.phases=999','bad.live.planUsage.zones.sortie+=1','bad.live.planUsage.defence.pression.oppMetres=-2']){run('var bad=JSON.parse(JSON.stringify(S))');assert.throws(()=>run(mutate+';validateCareer(bad)'))}
  run('while(!l.finished){l.paused=false;advanceRugby(l)}captureReport();var facts=JSON.stringify(S.lastReport.preparation);S.tactic="equilibre";S.defence="equilibre";var html=matchDebrief(S.lastReport)');assert.equal(run('JSON.stringify(S.lastReport.preparation)'),run('facts'));assert.ok(run('html.includes("Les attaques réellement utilisées")'));assert.ok(run('!!createSaveDocument()'));
- run('finishRound()');assert.ok(run('!!createSaveDocument()'));assert.ok(run('rugbyPrematch().includes("Vos choix, les faits du match")'));
+ run('finishRound()');assert.ok(run('!!createSaveDocument()'));assert.ok(run('rugbyPrematch().includes("Tes choix, les faits du match")'));
  // Export/import preserve the finished report as well as live usage.
  const json=run('JSON.stringify(createSaveDocument())'),restored=context();restored.run(`pendingSave=parseSaveDocument(${JSON.stringify(json)});confirmSaveImport()`);assert.equal(restored.run('JSON.stringify(S.lastReport.planUsage)'),run('JSON.stringify(S.lastReport.planUsage)'));
 }

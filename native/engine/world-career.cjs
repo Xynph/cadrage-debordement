@@ -374,7 +374,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    const entry={...r,fixtureId:f.id,competitionId:f.competitionId,leagueId:f.competitionId,season:S.season,round:S.round,competitionRound:f.round,week:S.round,date:f.date,phase:f.phase,poolId:f.poolId??null,neutral:f.neutral};
    S.history.push(entry);updateOppositionMorale(entry);worldRecordResult(entry);results.push(entry);
   }
-  const own=results.find(r=>r.pair.includes(S.club)),won=CDFranceCareer.recordOwnOutcome(own);
+  const own=results.find(r=>r.pair.includes(S.club)),won=CDFranceCareer.recordOwnOutcome(own);if(own&&typeof derbyAftermath==='function')derbyAftermath(S,own);
   financeWeek(ownFixture&&!ownFixture.neutral?[ownFixture.homeId,ownFixture.awayId]:null,won);worldWeeklyEconomy(results);careerBoardWeekReview();recordSatisfactionRound(S.live);recordIndividualObjectivesRound(S.live);
   S.live=null;S.trained=false;S.worldMode.week++;
   if(S.worldMode.day!==undefined){

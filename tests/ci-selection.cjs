@@ -78,6 +78,7 @@ equals(['tests/v35-salary-demand.cjs'],['tests/v35-salary-demand.cjs']);
 equals(['ci/select-tests.cjs','.github/workflows/tests.yml'],['tests/ci-selection.cjs']);
 assert.ok(selectTests(['dist/match-preparation.js']).includes('tests/v28-collective-preparation.cjs'));
 assert.ok(selectTests(['dist/restarts.js']).includes('tests/v28-collective-preparation.cjs'));
+assert.ok(['dist/rugby.js','dist/restarts.js'].every(p=>selectTests([p]).includes('tests/derbys-monde.cjs')));
 assert.ok(selectTests(['dist/game.js']).includes('tests/v28-collective-preparation.cjs'));
 assert.ok(selectTests(['dist/rugby.js']).includes('tests/v28-collective-preparation.cjs'));
 assert.ok(selectTests(['dist/development.js']).includes('tests/v29-focused-development.cjs'));
