@@ -209,7 +209,7 @@ function judgedOrder(clubId,judges,players,key,l=null){return [...players].map(p
 function judgedBest(l,side,players,key){return judgedOrder(l.pair[side],l.staffJudges[side],players,key,l)[0]||null}
 function initializeStaffJudgement(l){
  if(!STAFF_JUDGEMENT_RULES)return;
- l.staffJudgementVersion=1;l.staffJudges=l.pair.map(ci=>staffJudges(ci));l.sjConfiance={};l.sjVu={};l.sjDecisif=false;
+ l.staffJudgementVersion=1;l.staffJudgementSubs=1;l.staffJudges=l.pair.map(ci=>staffJudges(ci));l.sjConfiance={};l.sjVu={};l.sjDecisif=false;
 }
 // Moment décisif pour l'équipe `side` (extra : points déjà acquis avant le tir, l'essai pour une transformation).
 function decisiveMoment(l,side,extra=0){const D=STAFF_JUDGEMENT.decisif;return staffJudgementRules(l)&&l.minute>=D.minute&&Math.abs(l.score[side]+extra-l.score[1-side])<=D.ecart}
@@ -253,6 +253,23 @@ function pruneStaffJudgement(){
  const st=staffJudgementStore();if(!st)return;const ids=new Set(S.clubs.flatMap(c=>(c.players||[]).map(p=>p.id)));
  for(const map of [st.confiance,st.vu])for(const id of Object.keys(map))if(!ids.has(id))delete map[id];
 }
+// Lot 2 (composition, remplaçants, match délégué) : le staff du club du manager note chaque joueur à un poste
+// d'après sa perception de la note au poste (erreur fixe par couple membre du staff / joueur / famille de poste,
+// spécialiste des avants pour les familles 0-3, des arrières sinon), condition comprise comme la vraie note.
+// Les clubs de l'IA gardent la vraie note (performance, stabilité des résultats). Les choix explicites du
+// manager ne passent jamais par là : seules les places laissées au staff sont concernées.
+function staffSheetJudges(c){return STAFF_JUDGEMENT_RULES&&c&&S&&c.id===S.club?staffJudges(c.id):null}
+// La perception s'ajoute à la note du moteur (fitScore, éventuellement remplacée par les aptitudes au poste) : elle ne
+// change que l'ordre de préférence, jamais la base de calcul ni l'admissibilité.
+// Perception d'un joueur pour la feuille de match. L'erreur du staff est déjà bornée par son niveau
+// (judgementAmplitude : 1,5 à 10 points). La première ligne (familles 0 et 1 : piliers, talonneur) se juge à la
+// mesure (poussée, chrono de mêlée) : un entraîneur des avants au moins moyen (niveau >= defaut) ne s'y trompe pas, le
+// meilleur disponible pondéré par la condition ouvre le match (tests/world-composition-staff.cjs) ; un staff faible
+// ou les autres postes gardent l'erreur (tests/jugement-staff-lot2.cjs).
+function perceivedFit(judges,p,f=p.fam){const j=f<=3?judges.avants:judges.arrieres;if(f<=1&&j.level>=STAFF_JUDGEMENT.niveau.defaut)return fitScore(p,f);return fitScore(p,f)+judgementError(j,p.id,'poste'+f)*(.5+p.condition*.005)}
+// Remplacements décidés par le staff en match (match délégué, « faire les changements ») : seulement pour le
+// club du manager et les rencontres commencées avec ces règles (`staffJudgementSubs`, copié au coup d'envoi).
+function staffSubsFit(l,side){if(!(l?.staffJudgementSubs===1&&l.pair?.[side]===S.club&&l.staffJudges?.[side]))return fitScore;const j=l.staffJudges[side];return (p,f=p.fam)=>perceivedFit(j,p,f)}
 // Pour l'interface hors match : choix du staff du club du manager parmi `players` (attribut `key`).
 function staffPickOutsideMatch(players,key){if(!STAFF_JUDGEMENT_RULES)return null;return judgedOrder(S.club,staffJudges(S.club),players,key)[0]||null}
 // Lecture pour l'interface : pour chaque rôle, choix du staff, joueur désigné et candidats du XV
