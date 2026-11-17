@@ -622,14 +622,14 @@ func _jauge_vent(level: int) -> Control:
 	gauge.alignment = BoxContainer.ALIGNMENT_END
 	gauge.add_theme_constant_override("separation", M(4))
 	gauge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	gauge.tooltip_text = ["Vent faible", "Vent", "Grand vent"][clampi(level, 0, 2)]
+	gauge.tooltip_text = ["Pas de vent notable", "Vent", "Grand vent"][clampi(level, 0, 2)]
 	for i in 3:
 		var bar := Panel.new()
 		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		bar.custom_minimum_size = Vector2(M(8), M(14 + i * 8))
 		bar.size_flags_vertical = Control.SIZE_SHRINK_END
 		var style := StyleBoxFlat.new()
-		style.bg_color = C.GOLD if i <= level else Color(C.IVORY, .2)
+		style.bg_color = C.GOLD if level > 0 and i <= level else Color(C.IVORY, .2)
 		style.set_corner_radius_all(M(2))
 		bar.add_theme_stylebox_override("panel", style)
 		gauge.add_child(bar)
