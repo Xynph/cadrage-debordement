@@ -51,7 +51,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|creation) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -89,6 +89,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/comparateur"
     phase "captures comparateur de joueurs (Effectif, fiche joueur, marché ; 1440p et 720p)" captures-comparateur.log \
       env CD_COMPARATEUR_CAPTURE="$cap/comparateur" node --test tests/godot-comparateur-joueurs.cjs
+  fi
+  if veut creation; then
+    mkdir -p "$cap/creation"
+    phase "captures création (choix du club, options de carrière ; 1080p)" captures-creation.log \
+      env CD_REPRISE_UI_GRAPHICS=1 CD_REPRISE_UI_OUTPUT="$cap/creation" node --test tests/godot-reprise.cjs
   fi
   if veut audio; then
     mkdir -p "$cap/audio"
