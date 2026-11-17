@@ -23,7 +23,8 @@ module.exports=function worldDispatcher(editions,makeCareer){
   sourcePlayer:(s,id)=>current(s).sourcePlayer(id),
   // Même lecture pour une édition déjà connue (editions.forState(s) lu une fois par l'appelant pour toute une liste).
   sourcePlayerIn:(e,id)=>{const result=byEdition.get(e);if(!result)throw Error('Édition de carrière mondiale indisponible.');return result.sourcePlayer(id);},
-  previewRoster:(database,id)=>byEdition.get(editions.forDatabase(database)).previewRoster(id),
+  previewRoster:(database,id,full=false)=>byEdition.get(editions.forDatabase(database)).previewRoster(id,full),
+  previewFixtures:(mode,dailyCalendar=false)=>byEdition.get(editions.forMode(mode)).previewFixtures(dailyCalendar),
   sizing:onState('sizing'),leagueId:onState('leagueId'),ranked:onState('ranked'),rows:onState('rows'),
   cupTables:onState('cupTables'),fixtures:onState('fixtures'),userFixture:onState('userFixture'),calendarToday:onState('calendarToday'),
   nextOpening:onState('nextOpening'),clubReleaseOn:onState('clubReleaseOn'),

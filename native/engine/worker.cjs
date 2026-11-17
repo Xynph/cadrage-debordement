@@ -23,7 +23,7 @@ const {factory:internationalCallups}=require('./international-callups.cjs');
 const factsFile=path.join(__dirname,'player-real-facts.json');
 const playerFactsCatalogue=fs.existsSync(factsFile)?JSON.parse(fs.readFileSync(factsFile,'utf8')):{};
 const professionalDepth=require('./professional-depth.cjs');
-const epcrPreparation=require('./epcr-preparation.cjs');
+const epcrPreparation=require('./epcr-preparation.cjs'),clubPreview=require('./club-preview.cjs');
 const competitionEditor=require('./competition-editor.cjs');
 const leagueDetail=require('./league-detail.cjs');
 const {calendarContext}=require('./calendar-clock.cjs');
@@ -80,6 +80,7 @@ const PRESS_PROGRESSION=new Set(['advance_day','begin_match','finish_round','nex
 const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select','advance_until_event']);
 COMMANDS.add('observe_player');
 COMMANDS.add('league_benchmark');
+COMMANDS.add('club_preview');
 COMMANDS.add('restore_checkpoint');
 COMMANDS.add('remove_checkpoint');
 COMMANDS.add('calendar_template');
@@ -799,7 +800,7 @@ function createBridge(options={}){
   // décision est alors écrite d'abord, comme avant.
   const COALESCING=new Set([...PRESS_PROGRESSION,'save','advance_until_event']);
   // Lectures pures (aucune écriture de la carrière) : elles gardent le texte des sections de la projection précédente.
-  const READ_ONLY=new Set(['snapshot','club_sheet','epcr_preview','competition_editor_preview']);
+  const READ_ONLY=new Set(['snapshot','club_sheet','epcr_preview','competition_editor_preview','club_preview']);
   let pendingCommit=null,pendingFailure=null,coalescing=null,undoPending=false,warmPending=false;
   // Relevés différés de la mémoire de projection (state-versions.cjs, memoTextLater) : faits après la réponse, en
   // dernière étape de l'écriture différée ; abandonnés si une commande arrive avant.
@@ -921,6 +922,22 @@ function createBridge(options={}){
      ctx.nativePayload={club:payload.club};
      const model=snapshotRaw();model.clubSheet=JSON.parse(run('JSON.stringify(nativeSystems.domain("clubSheet").sheet(nativePayload.club))'));model.clubSheet.palmares=clubPalmares.build({history:clubHistory[payload.club],archives:model.archives,clubId:payload.club,clubName:model.clubSheet.name});
      return {id,ok:true,model:projectKnowledge(model)};
+    }
+    // Aperçu d'un club à la création (écran « Options de carrière ») : lecture seule, sans carrière requise,
+    // rien n'est écrit ; meta.clubPreview est recalculé à chaque appel (native/engine/club-preview.cjs).
+    if(command==='club_preview'){
+     const champ=worldEditions.forMode('world-champ');
+     if(!champ)throw Error('La carrière Monde est indisponible sur cette installation.');
+     if(Object.keys(payload).some(k=>k!=='club')||!Number.isSafeInteger(payload.club))throw Error('Paramètres d’aperçu de club invalides : indique seulement l’identifiant du club (club).');
+     if(!champ.playable.includes(payload.club))throw Error('Club inconnu : choisis un club du catalogue de la carrière Monde.');
+     const priorPayload=ctx.nativePayload;ctx.nativePayload={club:payload.club,daily:options.dailyCalendar===true};
+     let raw;try{raw=JSON.parse(run(clubPreview.VM_SOURCE));}finally{if(priorPayload===undefined)delete ctx.nativePayload;else ctx.nativePayload=priorPayload;}
+     const model=projectKnowledge(snapshotRaw()),names=new Map((model.meta.champCatalogue||[]).map(c=>[c.id,c.name]));
+     const packId=creation('world-champ');let pack=null;
+     if(packId!=='base'){try{const selected=packs.get(packId);if(selected?.meta.databaseId===champRegistry.id)pack=selected;}catch{pack=null;}}
+     model.meta.clubPreview=clubPreview.build({clubId:payload.club,raw,names:id=>names.get(id),pack,playerName:(p,id)=>mediaPacks.playerIdentity(p,id)?.name,
+      patchLook:process.env.CD_PORTRAIT_CARRURE!=='0'?face=>portraitLooks.patch(face,true):null,registry:champRegistry});
+     return {id,ok:true,model};
     }
     if(command==='epcr_preview'){const model=snapshotRaw();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='pack_inspect'){packs.inspect(payload.path,edition(payload.mode??currentEdition()));return {id,ok:true,model:snapshot()};}

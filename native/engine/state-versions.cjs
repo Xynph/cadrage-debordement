@@ -26,7 +26,7 @@ const except = (...keys) => Object.freeze(HEAVY.filter(key => !keys.includes(key
 const UNTOUCHED = Object.freeze({
   // Lectures et consultations.
   snapshot: NONE, club_sheet: NONE, epcr_preview: NONE, competition_editor_preview: NONE,
-  academy_groups_preview: NONE, interclub_negotiate: NONE, save: NONE,
+  club_preview: NONE, academy_groups_preview: NONE, interclub_negotiate: NONE, save: NONE,
   // Réglages, consignes, rendez-vous, causeries : sections légères seulement.
   set_tactics: NONE, set_penalty_policy: NONE, set_collective_focus: NONE, set_opponent_level: NONE,
   set_delegation: NONE, press_policy: NONE, club_follow: NONE, set_lineup: NONE, auto_lineup: NONE,

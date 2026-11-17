@@ -92,14 +92,25 @@ function factory(){
  // (habitude de club, déterministe), plus une semaine après un parcours jusqu'en finale.
  function clubDefault(s,id){
   const fm=fmMonday(s,id);if(fm===null)return null;
-  const p=profile(s,id);
-  const real=s.season===1&&leagueOf(s,id)==='elite'&&ELITE_2026[id];
+  return habitualDay(id,leagueOf(s,id),fm,s.season,finalist(s,id));
+ }
+ // Formule de clubDefault, sans carrière : club, championnat, lundi de la 1re rencontre (jour), saison, finaliste.
+ function habitualDay(id,league,fm,season,wasFinalist){
+  const p=LEAGUES[league]||{ref:7,min:6,max:8};
+  const real=season===1&&league==='elite'&&ELITE_2026[id];
   if(real)return {day:dayOf(real),real:true,finalShift:false};
   // Habitude du club, fixée sur l'Élite 2026 quand elle existe (même écart à la 1re journée).
   const habit=ELITE_2026[id]?Math.round((dayOf(ELITE_2026[id])-dayOf('2026-08-31'))/WEEK)*-1:p.min+hash('reprise:'+id)%(p.max-p.min+1);
-  const shift=finalist(s,id)?1:0;
+  const shift=wasFinalist?1:0;
   const weeks=clamp(habit-shift,p.min-1,p.max);
   return {day:fm-weeks*WEEK,real:false,finalShift:!!shift};
+ }
+ // Aperçu de création (club_preview, aucune carrière) : date habituelle de reprise du club, veille de la 1re
+ // rencontre officielle et matchs amicaux de la préparation, mêmes formules que la carrière (saison 1).
+ function preview(id,league,firstIso){
+  const first=dayOf(firstIso),def=habitualDay(id,league,monday(first),1,false),rep=def.day;
+  const n=friendliesFor((first-rep)/WEEK),dates=friendlyDates({fx:{friendlies:n},first,rep});
+  return {firstClubs:'2026-07-13',club:iso(rep),real:def.real,eve:iso(first-1),friendlies:{count:n,dates:dates.map(iso)}};
  }
  // Lundis proposés au manager : de ref+3 à ref-3 semaines avant la 1re journée, jamais avant le
  // départ de la partie ni avant aujourd'hui, et la date habituelle du club.
@@ -688,7 +699,7 @@ function factory(){
    return {id:p.id,name:p.name,pos:p.pos,nation:x.nation,from:iso(dayOf(year(s)+'-'+(NC.has(x.nation)?'07-04':'06-27'))+shift),through:iso(x.back+shift-1),returnDate:iso(x.back+shift)};
   }).sort((a,b)=>a.returnDate.localeCompare(b.returnDate)||(a.id<b.id?-1:1));
  }
- const api=Object.freeze({create,sync,pending,today,project,absentees,validate,creation,handover,tourists,clubDefault,options,effectsFor,STARTS,due,nextDecision,notesSeen,nextNotes});
+ const api=Object.freeze({create,sync,pending,today,project,absentees,validate,creation,preview,handover,tourists,clubDefault,options,effectsFor,STARTS,due,nextDecision,notesSeen,nextNotes});
  g.CDReprise=api;
  return {project,validate,execute,installHooks,create,sync,pending,creation};
 }
