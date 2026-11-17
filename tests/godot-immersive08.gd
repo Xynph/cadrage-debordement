@@ -569,8 +569,7 @@ func reception() -> void:
 	var archive_button: Button = app.find_child("InboxToggleArchive", true, false)
 	check(archive_button != null, "L’archivage du message sélectionné est proposé dans les favoris")
 	if archive_button != null: archive_button.pressed.emit()
-	app.find_child("InboxFolder3", true, false).pressed.emit()
-	await settle()
+	await choose_subject("Archives")
 	list = app.find_child("InboxMessageRows", true, false)
 	check(message_rows(list).size() == 1 and message_rows(list)[0].get_meta("message_text") == original, "Le dossier Archives retrouve le message traité")
 	if app.find_child("InboxToggleArchive", true, false) == null and not message_rows(list).is_empty():
@@ -594,6 +593,19 @@ func reception() -> void:
 	app.find_child("InboxOpenMessageAction", true, false).pressed.emit()
 	await settle()
 	check(app.route == "Effectif", "L'alerte contrat ouvre l'effectif réel")
+
+## Menu « Sujet » (archives, états rares) : même effet qu'un choix dans la liste déroulante.
+func choose_subject(prefix: String) -> void:
+	var menu := app.find_child("InboxSubject", true, false) as OptionButton
+	check(menu != null, "Menu Sujet disponible : " + prefix)
+	if menu == null: return
+	for index in menu.item_count:
+		if not menu.is_item_separator(index) and menu.get_item_text(index).begins_with(prefix):
+			menu.select(index)
+			menu.item_selected.emit(index)
+			await settle()
+			return
+	check(false, "Entrée de menu Sujet introuvable : " + prefix)
 
 func message_rows(list: Node) -> Array:
 	return list.get_children().filter(func(node: Node): return node.has_meta("message_id"))

@@ -91,7 +91,8 @@ module.exports=function positionAptitudes(){
   if(!p)return memoSkillBase(p,k,fit);
   const row=memoRow(stepMemo.skill,memoKey(p));let n=row[k];
   if(n===undefined){n=memoSkillBase(p,k,false);row[k]=n;}
-  return fit?n*(.50+p.condition*.005):n;
+  // Fatigue des phases arrêtées (fit==='arrete', voir fitArrete) : même pondération que skill.
+  if(!fit)return n;const perte=.5-p.condition*.005,w=fit==='arrete'?FATIGUE_ARRETE[k]:undefined;return n*(1-(w===undefined?1:w)*perte);
  }
  // Note de rôle : indépendante de la condition.
  function memoRole(p,f=p?.fam){
@@ -120,7 +121,7 @@ module.exports=function positionAptitudes(){
   if(v===undefined){v=efficiencyNow(p,slot);row[slot]=v;}
   return v;
  }
- function contextualSkill(p,key,slot){return skill(p,key,true)*efficiency(p,slot);}
+ function contextualSkill(p,key,slot,fit=true){return skill(p,key,fit)*efficiency(p,slot);}
  let reservations=null,installed=false;
  function eligible(p,slot){
   if(!p)return false;
@@ -320,8 +321,8 @@ module.exports=function positionAptitudes(){
    // Une seule passe sans objets intermédiaires (appelée des dizaines de fois par action) : mêmes joueurs retenus,
    // mêmes valeurs dans le même ordre, donc la même moyenne. Filtre et note ne modifient pas les joueurs (ni la vue au
    // poste, reprise de la mémoire du match quand elle existe).
-   const on=live.sheets[side].on,players=activePlayers(live,side),values=[];
-   for(const p of players){const slot=on.indexOf(p.id);if(filter&&!filter(slotView(p,slot)))continue;values.push(contextualSkill(p,key,slot));}
+   const on=live.sheets[side].on,players=activePlayers(live,side),values=[],fit=fitArrete(live); // fatigue des phases arrêtées (dist/matchflow.js)
+   for(const p of players){const slot=on.indexOf(p.id);if(filter&&!filter(slotView(p,slot)))continue;values.push(contextualSkill(p,key,slot,fit));}
    return values.length?mean(values):25;
   };
   sheetAverage=(team,ids,key,filter=()=>true)=>{
