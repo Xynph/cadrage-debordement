@@ -99,7 +99,15 @@ function factory() {
     if (!lead) lead = [...F.players].filter(p => !p.injury).sort((a, b) => (b.attributesV2?.leadership ?? 0) - (a.attributesV2?.leadership ?? 0) || String(a.id).localeCompare(String(b.id)))[0] || null;
     return lead;
   };
-  const playerVars = p => ({ joueur: String(p.name || ''), poste: String(p.pos || ''), age: Number(p.age) || 0 });
+  const playerVars = p => ({ joueur: String(p.name || ''), poste: String(p.pos || ''), age: Number(p.age) || 0, note: Number(p.rating) || 0, matchs: Number(p.dev?.appearances) || 0, minutes: Number(p.dev?.minutes) || 0, parcours: parcours(Number(p.dev?.appearances) || 0) });
+  const parcours = n => n > 1 ? n + ' matchs disputés cette saison' : n === 1 ? 'un seul match disputé cette saison' : 'pas encore de match officiel cette saison';
+  // Contexte du club joint à chaque courrier (textes plus riches) : classement, forme récente, prochain adversaire.
+  const clubVars = F => {
+    let classement = 'encore sans classement';
+    try { const rows = F.rows(), i = rows.findIndex(r => r.clubId === F.s.club); if (i >= 0 && F.season.length) classement = ordinal(i + 1) + ' sur ' + rows.length + ' au classement'; } catch { /* classement indisponible */ }
+    const forme = F.season.slice(-5).map(F.outcome).join('-') || 'aucun match joué';
+    return { classement, forme, prochain: F.next ? F.name(F.opponent(F.next)) : 'notre prochain adversaire' };
+  };
 
   // ------------------------------------------------------------------ déclencheurs : [{key, vars, player?}]
   const T = {
@@ -416,14 +424,15 @@ function factory() {
     for (const m of st.mails) if (m.status === 'nouveau' && d > shift(m.date, C.delaiReponse ?? 7)) m.status = 'classe';
     const candidates = [];
     if (!first) {
-      for (const su of st.suites) if (su.date <= d) candidates.push({ type: su.type, key: su.key, vars: su.vars, player: su.player, suite: true });
+      const context = clubVars(F);
+      for (const su of st.suites) if (su.date <= d) candidates.push({ type: su.type, key: su.key, vars: { ...su.vars, ...context }, player: su.player, suite: true });
       st.suites = st.suites.filter(su => su.date > d);
       for (const [type, t] of Object.entries(TYPES)) {
         const trigger = T[t.declencheur];
         if (!trigger || t.declencheur === 'suite') continue;
         let list = [];
         try { list = trigger(F, t, st) || []; } catch (e) { list = []; }
-        for (const c of list) candidates.push({ type, ...c });
+        for (const c of list) candidates.push({ type, ...c, vars: { ...context, ...(c.vars || {}) } });
       }
     }
     candidates.sort((a, b) => (TYPES[a.type]?.priorite ?? 99) - (TYPES[b.type]?.priorite ?? 99) || (a.type < b.type ? -1 : a.type > b.type ? 1 : 0));

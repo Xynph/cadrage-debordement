@@ -196,11 +196,16 @@ func run() -> void:
 	if not entries.is_empty():
 		app._navigate("Réception")
 		await settle()
-		var invitations: Node = app.root_content.find_child("ContextualInvitations", true, false)
-		check(invitations != null, "Actual Reception exposes the factual invitation entrypoint")
-		var buttons: Array[Node] = invitations.find_children("*", "Button", true, false) if invitations != null else []
-		check(buttons.size() == entries.size(), "Reception has one open button per actual pending invitation")
-		if not buttons.is_empty(): buttons[0].pressed.emit()
+		check(app.root_content.find_child("ContextualInvitations", true, false) == null, "Plus de bande d'invitations au-dessus de la Réception")
+		var rows: Array = app.root_content.find_children("InboxSceneInvitation_*", "Button", true, false)
+		check(rows.size() == entries.size(), "Chaque invitation du club est un message de la liste")
+		var opener := app.root_content.find_child("InboxOpenSceneInvitation", true, false) as Button
+		if opener == null and not rows.is_empty():
+			rows[0].pressed.emit()
+			await settle()
+			opener = app.root_content.find_child("InboxOpenSceneInvitation", true, false) as Button
+		check(opener != null, "L'invitation ouverte propose de l'ouvrir")
+		if opener != null: opener.pressed.emit()
 		else: director.open_invitation(str(entries[0].id))
 		await wait_command("scene_invitation_open")
 		immersive_check("conversation")

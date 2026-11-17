@@ -215,6 +215,10 @@ jobs:
             native/godot/**/*.uid
           key: godot-import-4.7.2-${{ hashFiles('native/godot/**') }}
           restore-keys: godot-import-4.7.2-
+      - name: Rétablir les réglages d'import versionnés
+        shell: bash
+        # Le cache restauré écrase les .import suivis par Git (ex. ballon.glb.import) : on reprend ceux du commit.
+        run: git ls-files -z -- 'native/godot/*.import' | xargs -0 -r git checkout --
       - name: Préparer le projet Godot (staging des ressources)
         shell: bash
         # Comme en local : registres anonymisés, photos, portraits et modèle CC0 copiés
