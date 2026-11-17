@@ -9,7 +9,7 @@ function attackingGoal(side){return ownGoal(1-side)}
 function ownHalf(side,at){return side===0?at<50:at>50}
 function own22(side,at){return side===0?at<=22:at>=78}
 function ballPossession(l,side,at=l.territory){l.possession=side;l.territory=at;if(restartRules(l))l.kickContext={team:side,halfEligible:ownHalf(side,at),twentyTwoEligible:own22(side,at)}}
-function initializeRestarts(l){l.restartVersion=1;l.restartLog=[];l.firstKickoff=l.possession;ballPossession(l,l.possession);addEvent(l,`Coup d’envoi. Météo : ${l.weather.toLowerCase()}.`);performKickRestart(l,'kickoff',l.firstKickoff,'start',1-l.firstKickoff)}
+function initializeRestarts(l){l.restartVersion=1;l.restartLog=[];l.firstKickoff=l.possession;ballPossession(l,l.possession);addEvent(l,`Coup d’envoi. Météo : ${meteoLibelle(l)}.`);performKickRestart(l,'kickoff',l.firstKickoff,'start',1-l.firstKickoff)}
 function registerRestart(l,kind,team,at,cause,by,origin=l.territory){
  if(['extra-first','extra-second'].includes(cause)&&!l.franceContext&&!l.worldContext)return null;
  if(!restartRules(l)||l.finished||!Number.isFinite(origin)||origin<0||origin>100||!RESTART_CAUSES[kind]?.includes(cause)||![0,1].includes(team)||![0,1].includes(by)||!Number.isFinite(at)||at<0||at>100)return null;
@@ -74,7 +74,7 @@ function missedGoal(l,side){
 }
 function kickOpenPlay(l,side){
  tacticalCount(l,side,'kicks');
- const dir=side===0?1:-1,origin=l.territory,distance=clamp(12+(unit(l,side,'kick',p=>p.fam>=4)-60)*.5+rand(-8,10)+collectivePreparationBonus(l,side,'pied')+occupationKickEdge(l,side)-(l.weather==='Vent'?9:0),3,45),landing=origin+dir*distance;
+ const dir=side===0?1:-1,origin=l.territory,distance=clamp(12+(unit(l,side,'kick',p=>p.fam>=4)-60)*.5+rand(-8,10)+collectivePreparationBonus(l,side,'pied')+occupationKickEdge(l,side)-(meteoActive(l)?METEO_MATCH.piedMetres.vent*l.meteo.vent+(Math.random()*2-1)*METEO_MATCH.piedAlea.vent*l.meteo.vent:l.weather==='Vent'?9:0),3,45),landing=origin+dir*distance;
  const outcome=Math.random();
  if(landing<=0||landing>=100)return resolveInGoal(l,side,outcome<.5?'attacking-kick-grounded':'kick-dead',origin);
  if(outcome<.23)return resolveTouch(l,side,landing,{direct:true});

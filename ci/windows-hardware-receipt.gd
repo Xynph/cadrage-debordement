@@ -91,6 +91,9 @@ func create_career() -> bool:
 	await helper._settle()
 	if not helper._press_named("CreationClub29"): return false
 	await helper._settle()
+	if app.find_child("CreationNext", true, false) != null:
+		if not helper._press_named("CreationNext"): return false
+		await helper._settle()
 	if not helper._press_named("CreationStart") or not await wait_ready(): return false
 	return app._has_career() and int(app.model.get("club", {}).get("id", -1)) == 29 and app.model.get("meta", {}).get("edition") == "world-champ"
 

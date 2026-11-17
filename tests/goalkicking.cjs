@@ -7,12 +7,13 @@ assert.equal(run('goalKickGeometry(true,35).angle'),0);
 assert.ok(run('goalKickGeometry(true,10).angle')>0);
 assert.ok(run('goalKickGeometry(false,35,50,0).distance')>run('goalKickGeometry(false,35,80,0).distance'));
 assert.ok(run('goalKickGeometry(false,35,50,1).distance')<run('goalKickGeometry(false,35,80,1).distance'));
-run('var match=S.live,team=match.userSide;match.weather="Sec"');
+// Météo (lot météo) : la météo du match est un objet {pluie, vent} ; on la fixe en même temps que le libellé.
+run('var match=S.live,team=match.userSide;match.weather="Sec";match.meteo={pluie:0,vent:0}');
 assert.ok(run('goalChance(match,team,true,35)')>run('goalChance(match,team,true,10)'),'central conversion should be easier');
-run('var dryChance=goalChance(match,team,true,35);match.weather="Vent"');
+run('var dryChance=goalChance(match,team,true,35);match.weather="Vent";match.meteo={pluie:0,vent:2}');
 assert.ok(run('goalChance(match,team,true,35)')<run('dryChance'),'wind should reduce kick accuracy');
 assert.ok(Number.isFinite(run('goalChance(match,team,true,35)')));
-run('match.weather="Sec";var kicker=chooseScorer(S.clubs[match.pair[team]],activePlayers(match,team).map(p=>p.id));var previousCondition=kicker.condition;var fitChance=goalChance(match,team,true,35);kicker.condition=30');
+run('match.weather="Sec";match.meteo={pluie:0,vent:0};var kicker=chooseScorer(S.clubs[match.pair[team]],activePlayers(match,team).map(p=>p.id));var previousCondition=kicker.condition;var fitChance=goalChance(match,team,true,35);kicker.condition=30');
 assert.ok(run('goalChance(match,team,true,35)')<run('fitChance'),'fatigued kicker should be less accurate');
 run('kicker.condition=previousCondition');
 console.log('V17 goal-kicking geometry and accuracy checks passed');

@@ -124,7 +124,7 @@ func run() -> void:
 		await roster_reading(resolution, annotated, annotation)
 		await route_reading(resolution)
 		await navigate("Création")
-		for id in ["CreationStart", "CreationClubsScroll"]:
+		for id in ["CreationNext", "CreationClubsScroll"]:
 			check(inside(named(id)), "Création : contrôle directement visible %s %s" % [id,resolution])
 		await capture("creation-dense-" + str(resolution.x))
 	if scenario == "responsive":

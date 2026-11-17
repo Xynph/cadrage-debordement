@@ -3,7 +3,8 @@ extends SceneTree
 ## Chaque écran est ouvert plusieurs fois ; l'écran d'accueil sert de témoin du châssis commun. Imprime
 ## CD_OUVERTURE (JSON) et un tableau. Garde-fou large : la médiane doit rester sous BUDGET_MS.
 const Flow = preload("helpers/contextual_flow.gd")
-const ROUTES := ["Bureau", "Effectif", "Club", "Finances", "Recrutement", "Staff"]
+## Préparation : 1 s à 45 i/s à sa première ouverture (recette native du 17/11).
+const ROUTES := ["Bureau", "Effectif", "Club", "Finances", "Recrutement", "Staff", "Préparation"]
 const SIZES := [Vector2i(1920, 1080), Vector2i(1600, 900)]
 const OPENINGS := 7
 const BUDGET_MS := 600.0

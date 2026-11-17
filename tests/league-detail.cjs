@@ -51,18 +51,18 @@ test('Vitesse estimée : seuils en données, 5 étoiles ≤ 3 s, 1 étoile ≥ 1
 test('Choix automatique selon le PC : déterministe, vise 4 étoiles, pays du club d’abord',()=>{
  const R=leagueDetail.REFERENCE,all=Object.keys(leagueDetail.SEASON_MATCHES);
  const machine=f=>({serialMs:R.benchmarkMs.serial*f,computeMs:R.benchmarkMs.compute*f,cores:8,memoryGb:16});
- // Machine très rapide : tout en détail ; machine de référence : le seul championnat du club.
- assert.deepEqual(leagueDetail.autoChoice({own:'elite',machine:machine(.25)}),all);
+ // Machine très rapide (cinq fois plus rapide que la référence, coûts du 17/11/2026) : tout en détail ; machine de référence : le seul championnat du club.
+ assert.deepEqual(leagueDetail.autoChoice({own:'elite',machine:machine(.2)}),all);
  assert.deepEqual(leagueDetail.autoChoice({own:'elite',machine:{}}),['elite']);
  // Machine moyenne simulée : résultat figé, toujours sous la cible ou le club seul.
- const mid=machine(.78),first=leagueDetail.autoChoice({own:'prem',machine:mid});
+ const mid=machine(.215),first=leagueDetail.autoChoice({own:'prem',machine:mid});
  for(let i=0;i<5;i++)assert.deepEqual(leagueDetail.autoChoice({own:'prem',machine:mid}),first,'même machine, même choix');
  assert.ok(first.includes('prem'));
  assert.ok(leagueDetail.estimate({detailed:first,machine:mid}).stars>=4);
  const extra=all.filter(id=>!first.includes(id));
  for(const id of extra)assert.ok(leagueDetail.estimate({detailed:[...first,id],machine:mid}).stars<4,'ajouter '+id+' passerait sous 4 étoiles');
  // Valeur figée (seuils et coûts de référence actuels) : le Championship (même pays) passe avant les autres.
- assert.deepEqual(first,['elite','nationale','prem','champ']);
+ assert.deepEqual(first,['elite','prem','champ','srp','jlo-d2']);
  // L'interface lit le même choix dans le tableau des coûts.
  const table=leagueDetail.costTable(mid);
  assert.deepEqual(table.auto.prem,first);assert.equal(table.autoTarget,4);assert.deepEqual(table.auto[''],leagueDetail.autoChoice({own:'',machine:mid}));

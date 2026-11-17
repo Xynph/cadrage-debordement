@@ -93,6 +93,13 @@ func run() -> void:
 	check(not button.disabled, "Bouton actif tant que des informations sont non lues")
 	check(button.text.contains("(%d)" % before.info), "Compteur du bouton : %d (« %s »)" % [before.info, button.text])
 	check(not button.tooltip_text.is_empty(), "Infobulle présente")
+	# Capture CI du 17/11 : « Tout marquer comme lu (12) » recouvrait le tri « Plus récents ».
+	var sort := app.root_content.find_child("InboxSort", true, false) as Button
+	check(sort != null and not button.get_global_rect().intersects(sort.get_global_rect()), "« Tout marquer comme lu » ne recouvre pas le tri")
+	if sort != null:
+		var font := sort.get_theme_font("font")
+		var needed := font.get_string_size(sort.text, HORIZONTAL_ALIGNMENT_LEFT, -1, sort.get_theme_font_size("font_size")).x
+		check(sort.size.x >= needed, "Libellé du tri entier (« %s »)" % sort.text)
 	await capture("avant")
 	button.pressed.emit()
 	await settle()

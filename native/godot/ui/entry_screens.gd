@@ -7,6 +7,9 @@ const C = preload("res://ui/immersive08/components.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
 const LeagueDetail = preload("res://ui/league_detail_view.gd")
 const CREATION_SELECTION := "creation_selection"
+## Étape de la création (accueil moderne) : « club » (choix du club) puis « carriere » (écran des options :
+## championnats suivis, niveau de départ, départ de la partie), qui porte l'action de création.
+const CREATION_STEP := "creation_step"
 const TROPHIES := ["elite", "accession", "nationale", "prem", "champ", "champions", "challenge", "urc", "srp", "jlo-d1", "jlo-d2", "jlo-d3"]
 const ARCHIVE_TROPHIES := ["eng-third", "jp-national", "jp-top-league", "jp-company", "sr-au", "sr-nz", "sr-trans-tasman", "other"]
 
@@ -166,6 +169,7 @@ const CREATION_FORMATS := {
 
 static func begin_creation(app: Control) -> void:
 	app.management_ui.erase(CREATION_SELECTION)
+	app.management_ui.erase(CREATION_STEP)
 	app.management_ui.erase("creation_role")
 	app.management_ui.erase("creation_nation")
 	app.management_ui.erase("creation_vary_current")
@@ -180,7 +184,9 @@ static func _division(app: Control, id: String, clubs: Array, mode: String) -> v
 	var changed: bool = app.club_division != id
 	app.club_division = id
 	if app.pack_manager.creation_mode == "auto":
-		if changed: app.management_ui.erase(CREATION_SELECTION)
+		if changed:
+			app.management_ui.erase(CREATION_SELECTION)
+			app.management_ui.erase(CREATION_STEP)
 	elif not clubs.any(func(club: Dictionary): return int(club.id) == app.selected_club):
 		app.selected_club = int(clubs[0].id)
 		app.management_ui["creation_" + mode + "_" + id] = {"page":0}
@@ -694,6 +700,10 @@ static func creation(app: Control) -> Control:
 			selected = club
 			break
 	if not modern: app.selected_club = int(selected.id)
+	# Étape 03 : écran dédié aux options de carrière, une fois le club choisi.
+	if modern and not selected.is_empty() and str(app.management_ui.get(CREATION_STEP, "club")) == "carriere":
+		_career_options(app, page, selected, mode, role, nation, candidates, preferred, division)
+		return page
 	var row := C.h(21) if modern else G.h(24)
 	G.fill(row, true)
 	if not modern: page.add_child(row)
@@ -971,13 +981,20 @@ static func creation(app: Control) -> Control:
 	if not modern: list.add_child(G.wrap(world_info, 12))
 	var caption := "CHOISISSEZ UN CLUB" if selected.is_empty() else "PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →"
 	if modern: caption = "Choisis un club" if selected.is_empty() else "Prendre les rênes  →"
-	if mode.begins_with("world"): LeagueDetail.summary(app, dossier if modern else list, str(selected.get("division", division)), candidates)
-	_career_variation_controls(app,dossier if modern else list,modern)
-	if mode == "world-champ" and role != "nation": _career_start_controls(app,dossier if modern else list,modern,selected)
 	var can_start := not selected.is_empty() and (role == "club" or not nation.is_empty())
+	if not modern:
+		if mode.begins_with("world"): LeagueDetail.summary(app, list, str(selected.get("division", division)), candidates)
+		_career_variation_controls(app,list,modern)
+		if mode == "world-champ" and role != "nation": _career_start_controls(app,list,modern,selected)
+	# Accueil moderne : les options de carrière ont leur propre écran (étape 03) ; ce bouton y mène.
+	if modern: caption = "Choisis un club" if selected.is_empty() else "Options de carrière  →"
 	var start := G.button(caption, func():
-		if can_start: _create(app, selected, mode), true)
-	start.name="CreationStart"
+		if not can_start: return
+		if modern:
+			app.management_ui[CREATION_STEP] = "carriere"
+			app._render()
+		else: _create(app, selected, mode), true)
+	start.name = "CreationNext" if modern else "CreationStart"
 	start.disabled = app.waiting or unavailable or not can_start
 	if modern:
 		Editorial.action(start, true, false, maxi(40, C.px(72)))
@@ -997,6 +1014,73 @@ static func creation(app: Control) -> Control:
 		list.add_child(start)
 	if app.waiting and app.last_command == "new_career": _show_creation_waiting(app, page)
 	return page
+
+## Écran « Options de carrière » (étape 03, accueil moderne) : rappel du club à gauche, réglages de la carrière
+## à droite (championnats suivis et vitesse de jeu, niveau de départ, départ de la partie), puis la prise de poste.
+static func _career_options(app: Control, page: Control, selected: Dictionary, mode: String, role: String, nation: Dictionary, candidates: Array, preferred: String, division: String) -> void:
+	var screen := app.get_window().size
+	var row := C.h(21)
+	G.fill(row, true)
+	page.add_child(row)
+	var dossier := G.panel(row, .38 if screen.y < 850 else .34)
+	dossier.name = "CreationDossier"
+	dossier.add_theme_constant_override("separation", C.px(7))
+	Editorial.surface(dossier.get_parent(), Color("142020"), Editorial.LINE, 14)
+	var preview := C.v(3 if screen.y < 850 else 5)
+	dossier.add_child(C.fill(preview, true))
+	var championship := str(_competition_identity(app, division).get("name", Club.competition_name(division)))
+	_club_preview(app, preview, selected, championship, preferred == "base")
+	var back := G.button("←  Changer de club", func():
+		app.management_ui[CREATION_STEP] = "club"
+		app._render())
+	back.name = "CreationBackToClubs"
+	back.disabled = app.waiting
+	Editorial.action(back, false, false, maxi(34, C.px(56)))
+	dossier.add_child(back)
+	var options := G.panel(row, .62 if screen.y < 850 else .66)
+	options.name = "CreationCareerOptions"
+	options.add_theme_constant_override("separation", C.px(14))
+	Editorial.surface(options.get_parent(), Color("142020"), Editorial.LINE, 14)
+	var heading := C.label("Les options de ta carrière", 46, C.IVORY, true, 800)
+	heading.name = "CreationCareerOptionsHeading"
+	options.add_child(heading)
+	options.add_child(C.wrap("Avec %s : règle le suivi des championnats, le niveau de départ et ta date d’arrivée. Les championnats suivis restent modifiables en cours de partie, dans les Réglages." % G.club_name(selected), 22, C.MUTED))
+	var rule := ColorRect.new()
+	rule.color = Editorial.RAIL_GOLD
+	rule.custom_minimum_size = Vector2(C.px(310), 2)
+	rule.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	options.add_child(rule)
+	var sections := G.scroll(options)
+	(sections.get_parent() as ScrollContainer).name = "CreationCareerOptionsScroll"
+	sections.add_theme_constant_override("separation", C.px(16))
+	if mode.begins_with("world"): LeagueDetail.summary(app, sections, str(selected.get("division", division)), candidates)
+	_career_variation_controls(app, _option_section(sections, "CreationLevelSection", "Niveau de départ"), true)
+	if mode == "world-champ" and role != "nation":
+		_career_start_controls(app, _option_section(sections, "CreationArrivalSection", ""), true, selected)
+	var installed: Array = app.pack_manager.installed("creation")
+	var unavailable := preferred != "base" and not installed.any(func(pack: Dictionary): return str(pack.id) == preferred)
+	var can_start := role == "club" or not nation.is_empty()
+	var start := G.button("Prendre les rênes  →", func():
+		if can_start: _create(app, selected, mode), true)
+	start.name = "CreationStart"
+	start.disabled = app.waiting or unavailable or not can_start
+	Editorial.action(start, true, false, maxi(40, C.px(72)))
+	start.add_theme_font_size_override("font_size", maxi(20, C.px(41)))
+	options.add_child(start)
+	if app.waiting and app.last_command == "new_career": _show_creation_waiting(app, page)
+
+## Section sombre de l'écran des options (titre doré facultatif).
+static func _option_section(parent: Node, id: String, title: String) -> VBoxContainer:
+	var frame := PanelContainer.new()
+	frame.name = id
+	Editorial.surface(frame, Color("1a2729"), Editorial.LINE, 10)
+	parent.add_child(frame)
+	var inset := C.margin(18)
+	frame.add_child(inset)
+	var column := C.v(8)
+	inset.add_child(column)
+	if not title.is_empty(): column.add_child(C.label(title, 20, C.IVORY, true, 700))
+	return column
 
 static func _nation_creation(app: Control, page: Control, mode: String, preferred: String, nation: Dictionary, modern: bool) -> void:
 	var panel := G.panel(page)
