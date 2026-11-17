@@ -56,7 +56,7 @@ func _readable_footer() -> void:
 func _setup(app: Control) -> void:
 	_app = app
 	name = "ProfileSafety"
-	title = "Copies de sécurité de vos carrières"
+	title = "Copies de sécurité de tes carrières"
 	app._prepare_dialog(self, DIALOG_SIZE.x)
 	get_ok_button().text = "FERMER"
 	get_ok_button().set_meta("immersive_style_applied", true)
@@ -105,17 +105,17 @@ func _render() -> void:
 	var data: Dictionary = _app.model.get("meta", {}).get("profileSafety", {})
 	var entries: Array = data.get("entries", [])
 	_body.add_child(_reading_label("Retrouver une carrière", 32, G.INK, true))
-	_body.add_child(_reading_wrap("Vos copies sont conservées avant un import, une nouvelle carrière ou une adaptation à la reprise. Choisissez celle que vous souhaitez retrouver.", 22))
-	_body.add_child(_reading_wrap("Le fichier d’origine est conservé à l’identique. La copie reprise est vérifiée pour cette version ; les matchs en cours repartent en pause. Gardez aussi un export sur un autre support.", 20))
+	_body.add_child(_reading_wrap("Tes copies sont conservées avant un import, une nouvelle carrière ou une adaptation à la reprise. Choisis celle que tu souhaites retrouver.", 22))
+	_body.add_child(_reading_wrap("Le fichier d’origine est conservé à l’identique. La copie reprise est vérifiée pour cette version ; les matchs en cours repartent en pause. Garde aussi un export sur un autre support.", 20))
 	var storage: String = "%d / %d copies · %.1f / %.0f Mio" % [entries.size(), int(data.get("maxEntries", 8)), float(data.get("usedBytes", 0)) / 1048576.0, float(data.get("maxBytes", 268435456)) / 1048576.0]
 	var quota := _reading_label(storage, 24, G.GOLD, true)
 	quota.name = "ProfileSafetyQuota"
 	_body.add_child(quota)
-	_body.add_child(_reading_wrap("Aucune copie n’est effacée automatiquement. Si la limite est atteinte, supprimez une copie de votre choix avant de remplacer une carrière.", 20))
+	_body.add_child(_reading_wrap("Aucune copie n’est effacée automatiquement. Si la limite est atteinte, supprime une copie de ton choix avant de remplacer une carrière.", 20))
 	if not str(data.get("error", "")).is_empty():
 		_body.add_child(_reading_wrap(str(data.error), 22, G.ALERT))
 	if entries.is_empty():
-		var empty := _reading_wrap("Vous n’avez pas encore de copie de sécurité. Votre premier remplacement de carrière en conservera une avant de modifier votre profil.", 22)
+		var empty := _reading_wrap("Tu n’as pas encore de copie de sécurité. Ton premier remplacement de carrière en conservera une avant de modifier ton profil.", 22)
 		empty.name = "ProfileSafetyEmpty"
 		_body.add_child(empty)
 	for entry: Dictionary in entries:
@@ -148,12 +148,12 @@ func _render() -> void:
 		remove.disabled = _app.waiting or not _pending.is_empty()
 		actions.add_child(remove)
 		_buttons.append(remove)
-	_status = _reading_wrap("L’intégrité de la copie et la carrière sont contrôlées avant toute reprise. Rien n’est chargé sans votre confirmation.", 20)
+	_status = _reading_wrap("L’intégrité de la copie et la carrière sont contrôlées avant toute reprise. Rien n’est chargé sans ta confirmation.", 20)
 	_status.name = "ProfileSafetyStatus"
 	_body.add_child(_status)
 
 func _confirm_restore(entry: Dictionary) -> void:
-	_confirm("Reprendre cette copie ?", "La carrière actuelle sera conservée dans une nouvelle copie avant remplacement.\n\nVous reprendrez %s, saison %s. Les matchs en cours seront remis en pause. Si les vérifications ou l'écriture échouent, votre carrière actuelle restera intacte." % [str(entry.get("club", "cette carrière")), G.season_label(entry.get("season", 0))], "REPRENDRE", "restore_checkpoint", str(entry.id))
+	_confirm("Reprendre cette copie ?", "La carrière actuelle sera conservée dans une nouvelle copie avant remplacement.\n\nTu reprendras %s, saison %s. Les matchs en cours seront remis en pause. Si les vérifications ou l'écriture échouent, ta carrière actuelle restera intacte." % [str(entry.get("club", "cette carrière")), G.season_label(entry.get("season", 0))], "REPRENDRE", "restore_checkpoint", str(entry.id))
 
 func _confirm_remove(entry: Dictionary) -> void:
 	_confirm("Supprimer cette copie ?", "Seule la copie sélectionnée sera supprimée : %s.\n\nLa carrière actuelle et les autres copies seront conservées. Cette suppression est définitive." % str(entry.get("club", "copie indisponible")), "SUPPRIMER", "remove_checkpoint", str(entry.id))
@@ -206,7 +206,7 @@ func _on_model(model: Dictionary) -> void:
 		queue_free()
 		return
 	_render()
-	_status.text = "Copie supprimée. Votre carrière actuelle est conservée."
+	_status.text = "Copie supprimée. Ta carrière actuelle est conservée."
 
 func _on_failure(message: String) -> void:
 	if _pending.is_empty(): return

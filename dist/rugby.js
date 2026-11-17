@@ -298,7 +298,7 @@ function inspectPlayer(id){inspectCareerPlayer(id)}
 // retentissement d'un match ordinaire. Règles copiées au coup d'envoi (derbyVersion) : une rencontre commencée
 // avant cette version garde ses règles.
 const DERBYS={version:1,seuil:60,
- rivalites:[[0,9,70],[0,17,65],[5,15,85],[4,5,65],[1,2,65],[3,8,62],[6,16,75],[6,25,65],[10,11,80],[12,14,70],[12,22,70],[14,22,75],[7,18,62],[7,20,62],[23,27,65],[26,98,80],[9,97,65],[101,22,70],[89,90,70],[99,18,62],[30,31,75],[31,33,70],[35,37,80],[40,41,70],[40,42,65],[41,43,65],[44,45,80],[46,47,70],[48,49,80],[50,51,65],[53,55,80]],
+ rivalites:[[0,9,70],[0,17,65],[0,23,65],[5,15,85],[4,5,65],[1,2,65],[3,8,62],[6,16,75],[6,25,65],[10,11,80],[12,14,70],[12,22,70],[14,22,75],[7,18,62],[7,20,62],[23,27,65],[26,98,80],[9,97,65],[101,22,70],[89,90,70],[99,18,62],[30,31,75],[30,33,70],[31,33,70],[35,37,80],[40,41,80],[40,42,65],[41,43,65],[44,45,80],[46,47,70],[48,49,80],[50,51,65],[53,55,80]],
  match:{fautes:1.12,carton:.02,domicile:1.25},
  apres:{victoire:{moral:3,confiance:2,supporters:4,pression:-3},defaite:{moral:-3,confiance:-2,supporters:-4,pression:4},nul:{moral:0,confiance:0,supporters:-1,pression:1}}};
 function derbySeed(a,b){for(const [x,y,t] of DERBYS.rivalites)if(x===a&&y===b||x===b&&y===a)return t;return 0}

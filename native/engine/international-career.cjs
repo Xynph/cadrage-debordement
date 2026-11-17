@@ -88,7 +88,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
   const dates = ' Du ' + dateLabel.format(Date.parse(host.opens)) + ' au ' + dateLabel.format(Date.parse(host.ends)) + '.';
   const body = (host.countries.length === 1 ? 'Pays hôte' : 'Pays hôtes') + ' · ' + countries + '.' + dates + location;
   const prefix = guide ? 'host-guide/' : 'host/';
-  const title = guide ? 'Votre guide · ' + edition.name : 'Accueil · ' + edition.name;
+  const title = guide ? 'Ton guide · ' + edition.name : 'Accueil · ' + edition.name;
   return message(prefix + edition.id, 'international_host', title, body, date);
  }
 
@@ -213,12 +213,12 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
    const key = campKey(camp);
    const nation = nations.get(camp.nation);
    if (camp.nation === managedNation) mail.push(message(
-    'camp/' + key, 'international_callup', 'Votre rassemblement international',
+    'camp/' + key, 'international_callup', 'Ton rassemblement international',
     'La sélection de ' + nation + ' est prête pour la fenêtre.', date, camp.nation
    ));
    const released = playerIds.filter(id => clubPlayerIds.has(id)).length;
    if (released) mail.push(message(
-    'club-release/' + key, 'international_release', 'Convocations de votre club',
+    'club-release/' + key, 'international_release', 'Convocations de ton club',
     released + (released === 1 ? ' joueur rejoint ' : ' joueurs rejoignent ') + nation + '.',
     date, camp.nation
    ));
@@ -438,7 +438,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
      const fixture = editions[i].fixtures.find(row => row.id === id);
      if (fixture.result) continue;
      if (managedNation !== null && involves(fixture, managedNation)) {
-      const error = Error('Jouez votre match international avant de changer de jour.');
+      const error = Error('Joue ton match international avant de changer de jour.');
       Object.assign(error, { code: 'INTERNATIONAL_MATCH_PENDING', date, fixtureId: fixture.id });
       throw error;
      }

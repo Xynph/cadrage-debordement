@@ -20,7 +20,7 @@ function factory(){
   const s=state(),g=groups();check(s&&g,'carrière absente');
   check(command==='academy_intake_confirm'&&shape(payload,['context','confirmed','keep','release'])&&shape(payload.context,['season','week','club'])&&payload.confirmed===true,'commande ou paramètres invalides');
   const now=context(s);check(Object.keys(now).every(k=>payload.context[k]===now[k]),'contexte périmé');
-  check(!s.live,'attendez la fin du match');
+  check(!s.live,'attends la fin du match');
   const before=JSON.stringify({academy:s.development.academy,intake:s.academyIntake});
   try{const result=g.confirmIntake(s,payload.keep,payload.release);return {academyIntake:result};}
   catch(error){const saved=JSON.parse(before);s.development.academy=saved.academy;if(saved.intake===undefined)delete s.academyIntake;else s.academyIntake=saved.intake;throw error;}

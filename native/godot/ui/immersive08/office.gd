@@ -273,7 +273,7 @@ static func build(app: Control) -> Control:
 	page.add_child(top)
 	var hero := _card(top, "OfficeFixture", "", 418, 1.56)
 	_fixture(hero, app)
-	var priorities := _card(top, "OfficeDecisions", "▦  Vos trois priorités", 418)
+	var priorities := _card(top, "OfficeDecisions", "▦  Tes trois priorités", 418)
 	_priorities(C.content(priorities), app)
 	# Keep the next decision visible while the secondary cards share the
 	# remaining workspace. Their natural minima can exceed a small window.
@@ -290,7 +290,7 @@ static func build(app: Control) -> Control:
 	reading.add_child(middle)
 	_group(C.content(_card(middle, "OfficeGroup", "♡  État du groupe", 448, .77)), app)
 	_standings(C.content(_card(middle, "OfficeStandings", "♜  Classement · " + P.league_name(app.model), 448, 1.25)), app)
-	_journal(C.content(_card(middle, "OfficeJournal", "✉  Dans votre Bureau", 448)), app)
+	_journal(C.content(_card(middle, "OfficeJournal", "✉  Dans ton Bureau", 448)), app)
 	_recruitment(C.content(_card(middle, "OfficeRecruitment", "⌕  Le profil à suivre", 448)), app)
 	_timeline(C.content(_card(reading, "OfficeTimeline", "▦  Prochains matchs", 226)), app)
 	var results := recent_results(app)
@@ -421,7 +421,7 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		elif preparation.is_empty():
 			left.add_child(C.label("LE PROCHAIN CHAPITRE", 21, C.GOLD))
 			left.add_child(C.wrap("La saison se termine." if app.model.meta.get("canAdvanceSeason", false) else "Le travail continue.", 42, C.IVORY, true))
-			left.add_child(C.wrap("Retrouvez les résultats et préparez la suite du projet.", 20))
+			left.add_child(C.wrap("Retrouve les résultats et prépare la suite du projet.", 20))
 		elif SeasonPreparation.is_champ(app.model.meta):
 			var fixture := P.next_scheduled_fixture(app.model)
 			if fixture.is_empty():
@@ -550,7 +550,7 @@ static func priority_description(item: Dictionary) -> String:
 
 static func _priorities(parent: VBoxContainer, app: Control) -> void:
 	var choices := priorities(app.model)
-	if choices.is_empty(): parent.add_child(C.wrap("Reprenez une carrière pour retrouver les décisions de votre club.",18,C.MUTED))
+	if choices.is_empty(): parent.add_child(C.wrap("Reprends une carrière pour retrouver les décisions de ton club.",18,C.MUTED))
 	for i in choices.size():
 		var choice: Dictionary = choices[i]
 		var tint := priority_color(choice)
@@ -695,7 +695,7 @@ static func standing_action(app: Control, club: Dictionary) -> Button:
 
 static func _journal(parent: VBoxContainer, app: Control) -> void:
 	var messages: Array = app.model.get("messages", [])
-	if messages.is_empty(): parent.add_child(C.wrap("Les nouvelles de votre carrière apparaîtront ici.", 21))
+	if messages.is_empty(): parent.add_child(C.wrap("Les nouvelles de ta carrière apparaîtront ici.", 21))
 	for index in mini(3, messages.size()):
 		parent.add_child(C.label("CARRIÈRE  ·  ÉVÉNEMENT %02d" % (index+1), 18, [C.BLUE, C.ALERT, C.GOLD][index]))
 		var note := C.wrap(Copy.news(str(messages[index])).replace("l’onglet Contrats", "les fiches joueurs"), 19)
@@ -796,7 +796,7 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 	parent.add_child(row)
 	var fixtures := upcoming_matches(app.model)
 	if fixtures.is_empty():
-		parent.add_child(C.wrap("Aucune rencontre programmée. Retrouvez les résultats dans le calendrier.", 21))
+		parent.add_child(C.wrap("Aucune rencontre programmée. Retrouve les résultats dans le calendrier.", 21))
 	for fixture: Dictionary in fixtures:
 		var tile := C.card()
 		tile.add_theme_stylebox_override("panel",C.box(UPCOMING_TILE,UPCOMING_BORDER,6,12))

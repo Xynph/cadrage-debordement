@@ -50,7 +50,7 @@ function factory(){
   s.youthDevelopment={version:1,policy:POLICY,activatedClubId:s.club,enabledSeason:s.season,enabledWeek:week(s),rows};return true;
  }
  function setPlan(s,playerId,plan,focus){
-  check(active(s),'activez le suivi');check(!s.live&&!s.trained&&s.phase==='league','révision avant la séance et hors match');
+  check(active(s),'active le suivi');check(!s.live&&!s.trained&&s.phase==='league','révision avant la séance et hors match');
   const entry=owned(s).find(x=>x.p.id===playerId),choice=PLANS.find(x=>x.key===plan);check(entry&&young(entry.p)&&choice,'joueur ou plan indisponible');
   const p=entry.p,source=annual(s,p);check(!source||plan!=='specialist','qualité ciblée indisponible pour la progression annuelle');
   const allowed=focusOptions(p);let selected=null;

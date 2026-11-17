@@ -93,7 +93,7 @@ func _preview(surface: Panel) -> void:
 	var open: bool = data.get("available", false)
 	D.text(surface, 30, 56, "LES PARCOURS DU CENTRE", 28, GOLD, 700, 1420)
 	D.text(surface, 28, 127, "Trois outils pour suivre la relève." if open else "La relève se prépare au centre.", 58, C.IVORY, 800, 1440)
-	var intro := Copy.notice("academy", data.get("description", "")) if open else "Détection, mentorat et compétition junior ouvriront avec le calendrier des Espoirs. D’ici là, la formation suit vos %s Espoirs : progression, promotions et spécialisations." % G.n(data.get("players", []).size())
+	var intro := Copy.notice("academy", data.get("description", "")) if open else "Détection, mentorat et compétition junior ouvriront avec le calendrier des Espoirs. D’ici là, la formation suit tes %s Espoirs : progression, promotions et spécialisations." % G.n(data.get("players", []).size())
 	_note(surface, Rect2(31, 152, 1450, 52), intro, 24)
 	var offers := [
 		["Detection", "Détection", "scouting", "search", "Mener la campagne de détection du centre pour préparer la prochaine génération."],
@@ -114,16 +114,16 @@ func _preview(surface: Panel) -> void:
 		_note(card, Rect2(21, 352, 435, 103), offer[4], 26)
 	if not open:
 		var follow := D.panel(surface, Rect2(25, 713, 1463, 267), "En attendant", "school", "", "CentreFollow")
-		D.text(follow, 24, 117, "Vos %s Espoirs restent au centre." % G.n(data.get("players", []).size()), 40, C.IVORY, 700, 900)
+		D.text(follow, 24, 117, "Tes %s Espoirs restent au centre." % G.n(data.get("players", []).size()), 40, C.IVORY, 700, 900)
 		_note(follow, Rect2(25, 143, 840, 85), "Leur progression, leurs promotions et leurs spécialisations se suivent dans Formation.", 25)
 		var go := D.button(follow, Rect2(918, 130, 513, 66), "Consulter les Espoirs", func(): app._navigate("Formation"), true, "arrow", false, ACCENT, "CentreUnavailableFormation")
 		go.add_theme_font_override("font", C.BOLD)
 		go.add_theme_font_size_override("font_size", C.px(31))
 		return
 	var activation := D.panel(surface, Rect2(25, 713, 1463, 267), "Avant d’activer", "school", "", "CentreActivation")
-	D.text(activation, 24, 117, "Vos %s Espoirs restent au centre." % G.n(data.get("players", []).size()), 40, C.IVORY, 700, 900)
+	D.text(activation, 24, 117, "Tes %s Espoirs restent au centre." % G.n(data.get("players", []).size()), 40, C.IVORY, 700, 900)
 	var locked: bool = data.get("locked", false)
-	var note := "L’activation est indisponible pendant un match ou après la clôture de la saison." if locked else "Les parcours s’ajoutent à votre suivi actuel dans cette carrière."
+	var note := "L’activation est indisponible pendant un match ou après la clôture de la saison." if locked else "Les parcours s’ajoutent à ton suivi actuel dans cette carrière."
 	_note(activation, Rect2(25, 143, 840, 85), note, 25)
 	var action := Academy._action(activation, app, data, "ACTIVER LES PARCOURS", "academy_activate", {}, 0)
 	action.set_meta("carnet_selected", true)

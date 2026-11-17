@@ -1,7 +1,7 @@
 extends SceneTree
 ## Retouches de cohérence (carrière Monde), dans le vrai jeu et le vrai moteur :
 ##  1. fiche club, XV type : aucun titulaire du XV type dans « remplaçants les plus utilisés » ;
-##  2. fiche club, « Vos confrontations » : prochain match entre les deux clubs (date, lieu, compétition) ;
+##  2. fiche club, « Tes confrontations » : prochain match entre les deux clubs (date, lieu, compétition) ;
 ##  3. Bureau, carnet de Gabi : la ligne « groupe » suit l'alerte fatigue (même source) ;
 ##  4. délégation : bouton « Déléguer le match » actif sur une feuille à 22, confirmation du match à 22 ;
 ##  5. finances : « Formation » n'est plus à 0 % dans la répartition des charges ;
@@ -77,16 +77,16 @@ func fiche_club() -> void:
 	var head: Dictionary = data.get("headToHead", {})
 	check(int(head.get("played", 0)) == 0 and head.get("upcoming") is Dictionary, "Aucune confrontation passée : le moteur publie le prochain match entre les deux clubs")
 	var panel := page.find_child("ClubSheetHeadToHead", true, false) as Control
-	check(panel != null, "Panneau « Vos confrontations »")
+	check(panel != null, "Panneau « Tes confrontations »")
 	if panel != null:
 		var text := texts(panel)
-		check(text.contains("PROCHAINE CONFRONTATION"), "Vos confrontations : annonce la prochaine confrontation : " + text.replace("\n", " | "))
+		check(text.contains("PROCHAINE CONFRONTATION"), "Tes confrontations : annonce la prochaine confrontation : " + text.replace("\n", " | "))
 		var upcoming: Dictionary = head.get("upcoming", {})
-		check(text.contains("À domicile" if upcoming.get("home", false) else "À l’extérieur"), "Vos confrontations : lieu (domicile ou extérieur)")
-		check(text.contains(ClubSheet._date(upcoming.get("date"))), "Vos confrontations : date du match")
-		check(not text.contains("date à fixer"), "Vos confrontations : date connue")
+		check(text.contains("À domicile" if upcoming.get("home", false) else "À l’extérieur"), "Tes confrontations : lieu (domicile ou extérieur)")
+		check(text.contains(ClubSheet._date(upcoming.get("date"))), "Tes confrontations : date du match")
+		check(not text.contains("date à fixer"), "Tes confrontations : date connue")
 		var competition: String = preload("res://ui/club_views.gd").competition_name(str(upcoming.get("competitionId", "")), app.model)
-		check(competition != "" and text.contains(competition), "Vos confrontations : compétition « %s »" % competition)
+		check(competition != "" and text.contains(competition), "Tes confrontations : compétition « %s »" % competition)
 	await capture("fiche-confrontations")
 	# Sans prochain match : une phrase utile courte.
 	var vide := ClubSheet.new()

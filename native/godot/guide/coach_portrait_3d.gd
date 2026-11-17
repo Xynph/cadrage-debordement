@@ -413,6 +413,16 @@ func _sync_visibility() -> void:
 	else:
 		_play_idle()
 
+## Préchauffage (ouverture du jeu, intro/intro_sequence.gd) : un seul rendu de la SubViewport, même caché, pour
+## que les shaders 3D de Gabi (scène, squelette, formes de bouche) soient compilés pendant que l'écran est encore
+## uni. Sans cache de shaders (tout premier lancement), ce rendu fige le fil principal 1 à 2 s ; fait plus tard,
+## au milieu du prologue, il donnait une seconde à 9 i/s. Rend true si un rendu a été demandé.
+func prechauffer() -> bool:
+	if _animations == null or not is_inside_tree(): return false
+	if _viewport.render_target_update_mode == SubViewport.UPDATE_DISABLED:
+		_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	return true
+
 func _can_animate() -> bool:
 	return _animations != null and is_visible_in_tree() and not reduced_motion
 

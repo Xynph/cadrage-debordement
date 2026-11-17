@@ -69,7 +69,7 @@ func run() -> void:
 	var rejected_draft: Dictionary = dialog.selected.duplicate(true)
 	await press(verify);await wait_refusal(dialog)
 	check(is_instance_valid(dialog) and dialog.visible and dialog.selected==rejected_draft,"Un vrai refus worker conserve dialogue et sélection")
-	check(dialog.result.text.contains("identifiants uniques de votre effectif"),"Le refus réel est présenté dans le brouillon")
+	check(dialog.result.text.contains("identifiants uniques de ton effectif"),"Le refus réel est présenté dans le brouillon")
 	check(app.last_error==previous_error and not app.connection_error,"Le refus consultatif ne crée pas une erreur métier")
 	dialog.choices[0].set_meta("player_id",original_id);dialog.selected=draft_before.duplicate(true)
 	await press(verify);await wait_preview(dialog)

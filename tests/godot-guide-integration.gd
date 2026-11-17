@@ -71,7 +71,7 @@ func menu_input(mouse: bool) -> void:
 			var event := InputEventKey.new(); event.keycode = KEY_ENTER; event.pressed = pressed
 			Input.parse_input_event(event); await process_frame
 	await settle()
-	check(app.get_children().any(func(child): return child is AcceptDialog and child.visible and child.title in ["Votre carrière", "Paramètres"]), "Accès aux paramètres ouvert par " + ("souris" if mouse else "Entrée") + " / " + str(root.size.x))
+	check(app.get_children().any(func(child): return child is AcceptDialog and child.visible and child.title in ["Ta carrière", "Paramètres"]), "Accès aux paramètres ouvert par " + ("souris" if mouse else "Entrée") + " / " + str(root.size.x))
 	app._clear_dialogs(); await settle()
 func ordinary_routes() -> void:
 	# No open_help between the render under test and geometry / input assertions.

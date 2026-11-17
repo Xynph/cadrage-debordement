@@ -83,7 +83,7 @@ func run() -> void:
 	confirmation.confirmed.emit()
 	await wait_response()
 	check(app.bridge.last_response_ok,"clôture acceptée")
-	check(view.local_message.text.contains("votre club"),"résultat réel affiché")
+	check(view.local_message.text.contains("ton club"),"résultat réel affiché")
 	view.queue_free()
 	await settle()
 	await ask("export")

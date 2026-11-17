@@ -28,16 +28,16 @@ function memberships(model) {
 }
 function project(model,payload) {
  const entered=memberships(model);
- if(!entered.length){if(payload!==undefined)throw Error('Votre club ne participe pas à une coupe européenne.');return null;}
+ if(!entered.length){if(payload!==undefined)throw Error('Ton club ne participe pas à une coupe européenne.');return null;}
  if(payload!==undefined&&(!payload||typeof payload!=='object'||Array.isArray(payload)||Object.keys(payload).some(k=>!['registeredIds','competitionId'].includes(k))))throw Error('Paramètres de préparation européenne invalides.');
  const competitionId=payload?.competitionId??(entered.includes(model.next?.competitionId)?model.next.competitionId:entered[0]);
- if(!entered.includes(competitionId))throw Error('Votre club ne participe pas à cette coupe européenne.');
+ if(!entered.includes(competitionId))throw Error('Ton club ne participe pas à cette coupe européenne.');
  // A playing position is not a club/Union attestation. The current career
  // schema has no certification field; never manufacture evidence from fam/pos.
  const candidates=model.squad.map(p=>({id:p.id,name:p.name,pos:p.pos,frontRow:null,qualificationKnown:false}));
  const owned=new Set(candidates.map(p=>p.id));
  const registeredIds=payload===undefined?candidates.map(p=>p.id):payload.registeredIds;
- if(!Array.isArray(registeredIds)||(payload!==undefined&&registeredIds.length>100)||registeredIds.some(id=>typeof id!=='string'||!id.length||id.length>256||!owned.has(id))||new Set(registeredIds).size!==registeredIds.length)throw Error('La liste proposée doit contenir des identifiants uniques de votre effectif (100 au maximum).');
+ if(!Array.isArray(registeredIds)||(payload!==undefined&&registeredIds.length>100)||registeredIds.some(id=>typeof id!=='string'||!id.length||id.length>256||!owned.has(id))||new Set(registeredIds).size!==registeredIds.length)throw Error('La liste proposée doit contenir des identifiants uniques de ton effectif (100 au maximum).');
  const registered=registeredIds.map(id=>candidates.find(p=>p.id===id));
  const selected=ids=>(ids||[]).map(id=>candidates.find(p=>p.id===id)||{id,frontRow:null});
  const startYear=2025+model.meta.season,season=startYear+'/'+String(startYear+1).slice(-2),options={season,competitionId};

@@ -9,7 +9,7 @@ static func entry(app: Control, parent: Node) -> void:
 	var b := G.button("NOUVELLE GÉNÉRATION · %d JEUNES À EXAMINER →" % data.players.size(), func(): open(app), true)
 	b.name = "AcademyIntakeOpen"
 	parent.add_child(b)
-	parent.add_child(G.wrap("Sans décision avant la première journée, le responsable de la formation choisira pour vous.", 13))
+	parent.add_child(G.wrap("Sans décision avant la première journée, le responsable de la formation choisira pour toi.", 13))
 
 static func _line(p: Dictionary) -> String:
 	var level := "niveau %s" % str(p.rating) if p.get("rating") != null else "niveau inconnu"
@@ -48,10 +48,10 @@ static func open(app: Control) -> AcceptDialog:
 		var everyone := int(data.get("academy", 0)) - release.size() + keep.size()
 		var limit := int(data.get("capacity", 75))
 		var full := total > cap or everyone > limit
-		counter.text = "Crabos après votre choix : %d / %d · centre : %d / %d%s" % [total, cap, everyone, limit, "  — faites de la place avant de valider" if full else ""]
+		counter.text = "Crabos après ton choix : %d / %d · centre : %d / %d%s" % [total, cap, everyone, limit, "  — fais de la place avant de valider" if full else ""]
 		dialog.get_ok_button().disabled = full
 	list.add_child(counter)
-	list.add_child(G.section("Les candidats", "Gardez ceux que vous voulez former. Les autres quittent le centre."))
+	list.add_child(G.section("Les candidats", "Garde ceux que tu veux former. Les autres quittent le centre."))
 	for p: Dictionary in data.players:
 		var box := CheckBox.new()
 		box.name = "Keep_" + str(p.id).replace("-", "_")

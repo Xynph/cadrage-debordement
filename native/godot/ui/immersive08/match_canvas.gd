@@ -207,13 +207,13 @@ func update_frame(value: Dictionary) -> void:
 		# la délégation reste possible, la fenêtre demande la confirmation du match à 22.
 		opening_delegate.visible=not fixture.is_empty()
 		opening_delegate.disabled=play.disabled
-		opening_delegate.tooltip_text=play.tooltip_text if play.disabled else "Feuille incomplète : la fenêtre vous propose d’appeler un espoir du centre ou, quand la règle le permet, de jouer à 22." if espoir else "L’adjoint joue le match à 22 joueurs (%s) : la fenêtre vous demande de le confirmer." % Present.reduced_bench_vacancy(Present.reduced_bench_number(value)).trim_suffix(".").to_lower() if reduced else "L’adjoint joue le match ; vous pouvez lui confier aussi la composition."
+		opening_delegate.tooltip_text=play.tooltip_text if play.disabled else "Feuille incomplète : la fenêtre te propose d’appeler un espoir du centre ou, quand la règle le permet, de jouer à 22." if espoir else "L’adjoint joue le match à 22 joueurs (%s) : la fenêtre te demande de le confirmer." % Present.reduced_bench_vacancy(Present.reduced_bench_number(value)).trim_suffix(".").to_lower() if reduced else "L’adjoint joue le match ; tu peux lui confier aussi la composition."
 		opening_status.add_theme_color_override("font_color",C.MINT if ready else C.AMBER)
 		return
 	if finished:
 		play.text="Terminé"
 		result_title.text=_decision_label(live.get("decision"),teams)
-		result_context.text="%s   %s   %s  ·  Consultez le journal ou validez la journée." % [GameSkin.club_abbr(teams[0]),score.text,GameSkin.club_abbr(teams[1])]
+		result_context.text="%s   %s   %s  ·  Consulte le journal ou valide la journée." % [GameSkin.club_abbr(teams[0]),score.text,GameSkin.club_abbr(teams[1])]
 	else:
 		var state := "MI-TEMPS" if live.get("atBreak",false) else "EN PAUSE" if live.get("paused",false) else "EN DIRECT"
 		broadcast_text.text="%s   ·   %s′" % [state,GameSkin.n(live.get("minute",0))]

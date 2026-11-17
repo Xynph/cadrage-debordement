@@ -95,7 +95,7 @@ static func open_target(app: Control, source: String, id: String, owner: Window)
 	terms.get_parent().name = "Contrat"
 	_contract(terms, person, source)
 	var squad := G.scroll(tabs)
-	squad.get_parent().name = "Votre effectif"
+	squad.get_parent().name = "Ton effectif"
 	_squad(squad, app.model.get("squad", []), person)
 	var close := func():
 		dialog.queue_free()
@@ -125,7 +125,7 @@ static func _profile(parent: Container, person: Dictionary, source: String) -> v
 		if person.has("matchingSlots"): parent.add_child(G.wrap("%d besoin(s) du club compatible(s) avec ce profil." % person.matchingSlots.size(), 14))
 	var reason := str(person.get("reason", ""))
 	if not reason.is_empty(): parent.add_child(G.wrap(Copy.notice("interclub" if source == "interclub" else "scouting", reason), 14, G.ALERT))
-	parent.add_child(G.wrap("Consultez les observations, les conditions connues et les joueurs de votre effectif au même poste avant de revenir au catalogue.", 14))
+	parent.add_child(G.wrap("Consulte les observations, les conditions connues et les joueurs de ton effectif au même poste avant de revenir au catalogue.", 14))
 
 static func _observation(parent: Container, person: Dictionary) -> void:
 	parent.add_child(G.section("Observation", Sort.report_label(person)))
@@ -162,9 +162,9 @@ static func _contract(parent: Container, person: Dictionary, source: String) -> 
 	parent.add_child(G.wrap("Ces conditions ne réservent pas le joueur. La consultation ne soumet aucune proposition.", 13))
 
 static func _squad(parent: Container, squad: Array, person: Dictionary) -> void:
-	parent.add_child(G.section("Vos joueurs au même poste"))
+	parent.add_child(G.section("Tes joueurs au même poste"))
 	var peers: Array = squad.filter(func(member: Dictionary): return str(member.get("pos", "")) == str(person.get("pos", "")))
-	if peers.is_empty(): parent.add_child(G.wrap("Aucun joueur de votre effectif n’occupe ce poste principal.", 14))
+	if peers.is_empty(): parent.add_child(G.wrap("Aucun joueur de ton effectif n’occupe ce poste principal.", 14))
 	for member: Dictionary in peers:
 		parent.add_child(G.section(str(member.get("name", "")), "%s ans · niveau %s" % [G.n(member.get("age", "—")), G.rating_text(member, true)]))
 		parent.add_child(G.wrap("Contrat jusqu’à la saison %s · %s" % [G.season_label(member.get("contractEnd", "—")), _salary(member.get("salary"))], 14))

@@ -62,6 +62,16 @@ func reach_ordinary() -> bool:
 		if app.model.get("meta", {}).get("calendarCadence", {}).get("matchReady", false): return false
 	return false
 
+## Courrier de la conférence en attente dans la Réception : ouvre le message et rend le bouton de réglage (ou null).
+func open_press_mail() -> Button:
+	app._reset_reception()
+	app.management_ui.reception = {"folder":0, "category":"Tous", "selected":"", "oldest_first":false, "marks":{}, "scroll":0}
+	app._navigate("Réception", false)
+	await settle(6)
+	check(app.Immersive.Reception.open_next_unread(app), "Réception : le courrier de la conférence s'ouvre")
+	await settle(8)
+	check(app.root_content.find_child("InboxOpenPressInvitation", true, false) != null, "Réception : « Ouvrir la conférence » présent")
+	return app.root_content.find_child("InboxPressPolicy", true, false) as Button
 func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	app = load("res://main.tscn").instantiate()
@@ -76,6 +86,9 @@ func run() -> void:
 	# L'arrivée est un grand moment : elle reste obligatoire en personne.
 	var arrival: Dictionary = press().get("conference", {})
 	check(arrival.get("moment") is Dictionary, "Conférence d'arrivée : grand moment")
+	var moment_mail := await open_press_mail()
+	check(moment_mail == null, "Réception : pas de bascule sur un grand moment (arrivée)")
+	check(app.root_content.find_child("InboxOpenPressInvitation", true, false) != null, "Réception : l'arrivée reste à ouvrir en personne")
 	var answers: Array[Dictionary] = []
 	for question: Dictionary in arrival.get("questions", []):
 		answers.append({"questionId": question.id, "answerId": question.answers[0].id})
@@ -84,6 +97,31 @@ func run() -> void:
 	# 1. Avant : Continuer s'arrête sur la conférence ordinaire de la semaine.
 	check(await reach_ordinary(), "Réglage « y aller » : Continuer s'arrête sur une conférence ordinaire (" + today() + ")")
 	if press().get("conference", {}).get("invitationId") == null: return finish()
+	# 1 bis. Le courrier de la conférence ordinaire propose la bascule (sans toucher à la conférence en cours).
+	var invitation_id = press().get("conference", {}).get("invitationId")
+	var toggle := await open_press_mail()
+	check(toggle != null and toggle.is_visible_in_tree(), "Réception : bascule présente sur une conférence ordinaire")
+	if toggle != null:
+		check(toggle.text == "Les prochaines fois, envoyer Gabi aux conférences ordinaires", "Réception : libellé « envoyer Gabi » (« %s »)" % toggle.text)
+		check(toggle.tooltip_text.contains("médias −2") and toggle.tooltip_text.contains("relation −1"), "Réception : infobulle du coût")
+		await settle(240) # laisse l'annonce « Rendez-vous obligatoire » se retirer
+		await capture("courrier-conference-adjoint")
+		toggle.pressed.emit()
+		await settle(2)
+		await wait_idle()
+		check(app.bridge.last_response_ok, "Worker réel · press_policy (courrier) · " + app.last_error)
+		check(press().get("policy", {}).get("ordinary") == "adjoint", "Courrier : le modèle passe à « adjoint »")
+		check(press().get("conference", {}).get("invitationId") == invitation_id and press().get("conference", {}).get("available", false), "Courrier : la conférence en cours reste à traiter")
+		var inverse := app.root_content.find_child("InboxPressPolicy", true, false) as Button
+		check(inverse != null and inverse.text == "Les prochaines fois, y aller moi-même", "Courrier : libellé inversé (« %s »)" % (inverse.text if inverse != null else "absent"))
+		if inverse != null:
+			inverse.pressed.emit()
+			await settle(2)
+			await wait_idle()
+			check(press().get("policy", {}).get("ordinary") == "moi", "Courrier : retour à « y aller moi-même »")
+			var back := app.root_content.find_child("InboxPressPolicy", true, false) as Button
+			check(back != null and back.text.begins_with("Les prochaines fois, envoyer Gabi"), "Courrier : libellé de départ rétabli")
+
 	# 2. Le choix est visible dans les Paramètres.
 	var dialog: AcceptDialog = Preferences.open(app, app.user_preferences)
 	check(dialog != null, "Paramètres ouverts")
