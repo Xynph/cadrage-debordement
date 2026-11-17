@@ -52,51 +52,106 @@ func talk() -> Dictionary:
 	var v: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 	return v if v is Dictionary else {}
 
-## Lignes du bloc météo de l'écran Match avant le coup d'envoi (section « LA MÉTÉO… » et ce qui la suit).
-func lignes_meteo() -> Array:
-	var ecran: Node = app.match_screen
-	if not is_instance_valid(ecran): return []
-	var section: Node = ecran.find_child("MeteoAvantMatch", true, false)
-	if section == null: return []
-	var lignes: Array = section.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
-	var parent := section.get_parent()
-	for i in range(section.get_index() + 1, parent.get_child_count()):
-		var suivant := parent.get_child(i)
-		if suivant is Label: lignes.append(suivant.text)
-		else: break
-	return lignes
+const TUILES := ["TuileForces", "TuileMeteo", "TuileFeuille", "TuileConfrontations", "TuileJoueurs", "TuileGabi"]
+const AvantMatch = preload("res://ui/immersive08/match_avant.gd")
 
-## Écran Match « AVANT-MATCH » le jour du match : météo annoncée la veille (vraie annonce du moteur), puis la
-## même annonce en grand vent pour le camp favorisé en 1re période ; courrier « Bulletin météo » reçu la veille.
+## Textes d'un nœud de l'écran Match (labels de toute la sous-arborescence).
+func textes_de(noeud: Node) -> String:
+	if noeud == null: return ""
+	var lignes: Array = noeud.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
+	if noeud is Label: lignes.push_front(noeud.text)
+	return " | ".join(lignes)
+
+## Tableau de bord d'avant-match : six tuiles présentes et visibles, rien ne déborde, tout tient dans la page 1080p.
+func controler_tableau(contexte: String) -> void:
+	var ecran: Node = app.match_screen
+	var tableau: Control = ecran.find_child("MatchOpening", true, false) if is_instance_valid(ecran) else null
+	verifier(tableau != null and tableau.is_visible_in_tree(), contexte + " : tableau de bord d'avant-match visible")
+	if tableau == null: return
+	for id in TUILES:
+		var tuile: Control = tableau.find_child(id, true, false)
+		verifier(tuile != null and tuile.is_visible_in_tree() and tuile.size.x > 200 and tuile.size.y > 150, contexte + " : tuile " + id + (" %s" % tuile.size if tuile != null else " absente"))
+	for id in ["MatchPoster", "MatchKickoff", "MatchOpenDelegation", "MatchFixtureVenue", "MatchFixtureWeather", "MatchOpenSheet", "MatchOpenPreparation", "MatchOpenPlaybook", "MatchOpenTalk"]:
+		var noeud: Control = tableau.find_child(id, true, false)
+		verifier(noeud != null and noeud.is_visible_in_tree(), contexte + " : " + id)
+	for echec in tableau.overflows(): verifier(false, contexte + " : débordement " + str(echec))
+	var page: Rect2 = app.body_scroll.get_global_rect()
+	var rect := tableau.get_global_rect()
+	verifier(rect.end.y <= page.end.y + 1 and rect.end.x <= page.end.x + 1, contexte + " : l'écran tient dans la page (%s dans %s)" % [rect, page])
+	verifier(app.body_scroll.get_v_scroll_bar().max_value <= app.body_scroll.size.y + 1, contexte + " : aucune barre de défilement")
+	for label: Label in tableau.find_children("*", "Label", true, false):
+		if not label.is_visible_in_tree() or label.clip_text or label.autowrap_mode != TextServer.AUTOWRAP_OFF: continue
+		var parent := label.get_parent() as Control
+		while parent != null and not parent.get_meta("prematch_tile", false): parent = parent.get_parent() as Control
+		if parent == null: continue
+		var dedans := parent.get_global_rect().grow(1).encloses(label.get_global_rect())
+		verifier(dedans, contexte + " : texte hors de sa tuile « %s » (%s)" % [label.text, parent.name])
+
+## Écran Match le jour du match : tableau de bord (maquette « Retenue »), météo annoncée la veille (vraie annonce du
+## moteur), données calculées par le moteur (clubLife.avantMatch), puis chaque ciel et sa photo, et le grand vent.
 func avant_match() -> void:
 	var annonce: Variant = app.model.get("next", {}).get("meteo")
 	verifier(annonce is Dictionary, "prochain match : météo annoncée dans le modèle natif")
-	var bulletin := (app.model.get("clubLife", {}).get("clubMail", {}).get("mails", []) as Array).filter(func(m): return m is Dictionary and m.get("type") == "meteo")
-	verifier(bulletin.size() == 1 and str(bulletin[0].get("ecran")) == "Composition", "un courrier « Bulletin météo » avec un lien vers la composition")
+	verifier(app.model.get("clubLife", {}).get("avantMatch") is Dictionary, "données d'avant-match du moteur (clubLife.avantMatch)")
+	var bulletins := (app.model.get("clubLife", {}).get("clubMail", {}).get("mails", []) as Array).filter(func(m): return m is Dictionary and m.get("type") == "meteo")
+	verifier(not bulletins.is_empty() and str(bulletins[-1].get("ecran")) == "Composition", "courrier « Bulletin météo » avec un lien vers la composition")
 	app._navigate("Match")
-	await poser(6)
-	if app.match_screen.tab == "Journal": app.match_screen._select_tab("Direct")
-	await poser(4)
-	var lignes := lignes_meteo()
-	textes.ecran_match = lignes
-	verifier(not lignes.is_empty() and str(lignes[0]).begins_with("LA MÉTÉO"), "écran Match : bloc météo « %s »" % str(lignes))
+	await poser(10)
+	controler_tableau("avant-match")
+	var tableau: Node = app.match_screen.find_child("MatchOpening", true, false)
+	var meteo: Node = tableau.find_child("TuileMeteo", true, false) if tableau != null else null
+	var texte_meteo := textes_de(meteo)
+	textes.ecran_match = texte_meteo
+	verifier(texte_meteo.begins_with("LA MÉTÉO"), "tuile météo : « %s »" % texte_meteo)
 	if annonce is Dictionary:
 		var ciel := str(annonce.get("libelle", ""))
-		verifier(" ".join(lignes).to_lower().contains(ciel.to_lower()), "écran Match : ciel annoncé « %s »" % ciel)
-	await capturer("meteo-ecran-match")
-	var vent: Dictionary = app.model.duplicate(true)
-	if vent.get("next") is Dictionary:
-		vent.next.meteo = {"libelle": "grand vent", "conseil": "Grand vent : le staff prévient que les tirs au but et le jeu au pied long deviennent aléatoires ; prenez les points faciles et jouez la touche.", "pluie": 0, "vent": 2, "chaleur": 0, "terrain": "souple", "ventDos": [1, 0], "date": str(app.model.meta.get("calendarToday", ""))}
-		app.match_screen.update_frame(vent)
-		await poser(4)
-		lignes = lignes_meteo()
-		textes.ecran_match_vent = lignes
-		var tout := " ".join(lignes)
-		verifier(tout.contains("LA MÉTÉO DU MATCH") and tout.contains("Grand vent") and tout.contains("dans le dos de") and tout.contains("première période") and tout.contains("staff"), "écran Match : vent dans le dos en 1re période « %s »" % tout)
-		var bandeau: Node = app.match_screen.find_child("MatchFixtureWeather", true, false)
-		textes.ecran_match_bandeau = bandeau.text if bandeau is Label else ""
-		verifier(bandeau is Label and bandeau.visible and bandeau.text.begins_with("MÉTÉO · GRAND VENT") and bandeau.text.ends_with("en 1re période"), "écran Match : ligne météo de l'avant-match « %s »" % textes.ecran_match_bandeau)
-		await capturer("meteo-ecran-match-vent", func(): app.match_screen.update_frame(vent))
+		verifier(texte_meteo.to_lower().contains(ciel.to_lower()), "tuile météo : ciel annoncé « %s »" % ciel)
+	var donnees: Dictionary = app.model.get("clubLife", {}).get("avantMatch", {})
+	var surveilles: Array = donnees.get("aSurveiller", {}).get("joueurs", [])
+	var texte_joueurs := textes_de(tableau.find_child("TuileJoueurs", true, false) if tableau != null else null)
+	for joueur: Dictionary in surveilles: verifier(texte_joueurs.contains(str(joueur.get("name", ""))), "joueur à surveiller affiché : " + str(joueur.get("name", "")))
+	textes.joueurs = texte_joueurs
+	textes.gabi = textes_de(tableau.find_child("TuileGabi", true, false) if tableau != null else null)
+	textes.forces = textes_de(tableau.find_child("TuileForces", true, false) if tableau != null else null)
+	for cle: Dictionary in donnees.get("gabi", {}).get("cles", []): verifier(str(textes.gabi).contains(str(cle.get("titre", ""))), "clé de Gabi affichée : " + str(cle.get("titre", "")))
+	await capturer("avant-match-ecran")
+	# Chaque ciel : photo du tunnel et tuile météo (variantes absentes : photo d'origine).
+	var ciels := {"sec": {"libelle": "temps sec", "pluie": 0, "vent": 0, "chaleur": 0, "terrain": "souple"},
+		"pluie": {"libelle": "pluie", "pluie": 1, "vent": 0, "chaleur": 0, "terrain": "souple"},
+		"forte-pluie": {"libelle": "forte pluie", "pluie": 2, "vent": 0, "chaleur": 0, "terrain": "lourd"},
+		"vent": {"libelle": "grand vent", "pluie": 0, "vent": 2, "chaleur": 0, "terrain": "souple", "ventDos": [1, 0]},
+		"chaleur": {"libelle": "forte chaleur", "pluie": 0, "vent": 0, "chaleur": 1, "terrain": "souple"},
+		"neutre": {}}
+	var photos := {}
+	for nom: String in ciels:
+		var copie: Dictionary = app.model.duplicate(true)
+		if not copie.get("next") is Dictionary: break
+		if ciels[nom].is_empty(): copie.next.erase("meteo")
+		else:
+			var m: Dictionary = ciels[nom].duplicate()
+			m.date = str(app.model.meta.get("calendarToday", ""))
+			m.conseil = "Le staff : conseil de test pour le ciel « %s », assez long pour tenir sur deux lignes dans la tuile météo de l'écran." % m.libelle
+			if not m.has("ventDos"): m.ventDos = null
+			copie.next.meteo = m
+		app.match_screen.update_frame(copie)
+		await poser(6)
+		controler_tableau("ciel " + nom)
+		var photo: Node = app.match_screen.find_child("MatchPosterPhoto", true, false)
+		photos[nom] = str(photo.get_meta("photo_meteo", "")) if photo != null else ""
+		verifier(photos[nom] == AvantMatch.photo_meteo(copie.next), "ciel %s : photo %s" % [nom, photos[nom]])
+		if nom == "vent":
+			var nous := 1 if app.model.next.get("away", {}).get("id") == app.model.club.get("id") else 0
+			var bandeau := textes_de(app.match_screen.find_child("MatchPosterWeather", true, false))
+			textes.ecran_match_bandeau = bandeau
+			verifier(bandeau.contains("GRAND VENT") and bandeau.contains("en 1re période") and bandeau.contains("après la pause"), "affiche : vent des deux périodes « %s »" % bandeau)
+			var p1 := textes_de(app.match_screen.find_child("MeteoPeriode1", true, false))
+			var p2 := textes_de(app.match_screen.find_child("MeteoPeriode2", true, false))
+			textes.ecran_match_vent = [p1, p2]
+			verifier(p1.contains("Dans le dos" if nous == 1 else "De face") and p2.contains("De face" if nous == 1 else "Dans le dos"), "tuile météo : vent par rapport à notre attaque « %s / %s »" % [p1, p2])
+		await capturer("meteo-ciel-" + nom, func(): app.match_screen.update_frame(copie))
+	textes.photos = photos
+	verifier(not textes_de(app.match_screen.find_child("TuileMeteo", true, false)).is_empty(), "tuile météo sans annonce")
+	app.match_screen.update_frame(app.model)
 	app._navigate("Réception")
 	await poser(6)
 

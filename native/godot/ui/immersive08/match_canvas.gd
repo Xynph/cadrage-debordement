@@ -5,18 +5,13 @@ const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const GameSkin = preload("res://ui/game_skin.gd")
 const Present = preload("res://ui/immersive08/projection.gd")
 const DelegationDialog = preload("res://ui/delegation_dialog.gd")
+const MatchAvant = preload("res://ui/immersive08/match_avant.gd")
 const ACTION_FONT_PIXELS = 12
 const ACTION_HEIGHT_PIXELS = 28
 const JOURNAL_CATEGORY_PIXELS = 104
 
-var opening: Control
-var opening_title: Label
-var opening_context: Label
-var opening_position: Label
-var opening_meteo: Label
-var opening_status: Label
-var opening_sheet: Button
-var opening_delegate: Button
+## Avant le coup d'envoi : tableau de bord en tuiles (maquette « Retenue », match_avant.gd) à la place du direct.
+var opening: MatchAvant
 var result_strip: PanelContainer
 var result_title: Label
 var result_context: Label
@@ -42,6 +37,9 @@ func _ready() -> void:
 	_caption.add_theme_color_override("font_color",C.MUTED)
 	_add_badges()
 	_add_pitch_overlays()
+	opening=MatchAvant.new()
+	opening.setup(app,_act,func():DelegationDialog.ouvrir(app))
+	add_child(opening)
 	for button in _bottom_controls.get_children():
 		if button is Button and button.text=="ADJOINT": delegation=button; break
 	for control in _tab_controls + _bottom_controls.get_children() + [journal.category,journal.search]:
@@ -105,52 +103,6 @@ func _add_pitch_overlays() -> void:
 	row.move_child(stack,0)
 	original.reparent(stack,false)
 	original.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	opening=Control.new()
-	opening.name="MatchOpening"
-	opening.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	stack.add_child(opening)
-	opening.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var photo := C.photo("match-tunnel")
-	opening.add_child(photo)
-	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	C.veil(opening)
-	var inset := C.margin(53)
-	inset.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	opening.add_child(inset)
-	inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var lines := C.v(9)
-	lines.alignment=BoxContainer.ALIGNMENT_END
-	lines.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	inset.add_child(lines)
-	lines.add_child(C.label("LE JOUR DE MATCH",24,C.GOLD,true,700))
-	opening_title=C.wrap("Avant le coup d’envoi",64,C.IVORY,true,800)
-	lines.add_child(opening_title)
-	opening_context=C.wrap("",25,C.IVORY)
-	opening_context.name="MatchFixtureVenue"
-	lines.add_child(opening_context)
-	opening_position=C.label("",21,C.GOLD,true,700)
-	opening_position.name="MatchFixturePosition"
-	lines.add_child(opening_position)
-	# Météo annoncée la veille (next.meteo) : le ciel et le camp qui a le vent dans le dos en 1re période.
-	opening_meteo=C.wrap("",21,C.IVORY,true,700)
-	opening_meteo.name="MatchFixtureWeather"
-	lines.add_child(opening_meteo)
-	opening_status=C.wrap("",23,C.MINT,true,700)
-	lines.add_child(opening_status)
-	var actions := C.h(12)
-	actions.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	lines.add_child(actions)
-	opening_sheet=C.button("Vérifier la feuille à 23",func():app._navigate("Composition"),false,app.accent)
-	opening_sheet.name="MatchOpenSheet"
-	actions.add_child(opening_sheet)
-	var prep := C.button("Dossier adverse",func():
-		if app.management_ui.get("preparation") is Dictionary:app.management_ui.preparation.tab=0
-		app._navigate("Préparation"),false,app.accent)
-	prep.name="MatchOpenPreparation"
-	actions.add_child(prep)
-	opening_delegate=C.button("Déléguer le match",func():DelegationDialog.ouvrir(app),false,app.accent)
-	opening_delegate.name="MatchOpenDelegation"
-	actions.add_child(opening_delegate)
 	broadcast=C.card("")
 	broadcast.name="ImmersiveMatchBroadcast"
 	broadcast.add_theme_stylebox_override("panel",C.box(Color(C.BG,.87),Color(C.GOLD,.7),6,9))
@@ -192,33 +144,22 @@ func update_frame(value: Dictionary) -> void:
 	broadcast.visible=active and not finished
 	result_strip.visible=finished
 	if is_instance_valid(delegation): delegation.disabled=not active or finished
+	# Avant le coup d'envoi, le tableau de bord prend toute la page ; le direct (tableau d'affichage, terrain, carnet,
+	# commandes) revient au coup d'envoi.
+	for part: Control in [_score_sheet,_notebook.get_parent(),_bottom_sheet,_caption]: part.visible=active
 	if not active:
-		var next_title := "Avant le coup d’envoi"
-		if fixture.is_empty(): next_title="Saison terminée" if value.meta.get("canAdvanceSeason",false) else "En attente de rencontre"
-		opening_title.text=next_title
-		var venue := Present.fixture_venue(fixture,false) if not fixture.is_empty() else ""
-		opening_context.text="  ·  ".join([str(fixture.get("label","Calendrier du club")),venue].filter(func(item:String):return not item.is_empty()))
-		opening_position.visible=not fixture.is_empty()
-		if opening_position.visible: opening_position.text=Present.fixture_position(fixture,value.get("club",{}).get("id"))
-		var annonce := MeteoTexte.annonce(fixture)
-		opening_meteo.visible=not annonce.is_empty()
-		if opening_meteo.visible:
-			var dos := MeteoTexte.camp_vent(annonce, 1)
-			opening_meteo.text="MÉTÉO · " + MeteoTexte.libelle(annonce).to_upper() + (("  ·  vent dans le dos de %s en 1re période" % MeteoTexte.nom_camp(annonce, dos)) if dos >= 0 else "")
 		var ready: bool = value.get("selection",{}).get("valid",false)
 		var reduced := Present.reduced_bench_number(value) != 0
 		var espoir := not Espoir.offer(value).is_empty()
-		opening_status.text="FEUILLE VALIDÉE" if ready else "COMPOSITION À VÉRIFIER"
-		if reduced: opening_status.text="FEUILLE À 22 DISPONIBLE"
-		if espoir: opening_status.text="FEUILLE INCOMPLÈTE · UN ESPOIR PEUT ÊTRE APPELÉ"
-		opening_sheet.text="Vérifier la feuille" if reduced or espoir else "Vérifier la feuille à 23"
-		opening_status.visible=not fixture.is_empty()
+		opening.status.text="" if fixture.is_empty() else "FEUILLE VALIDÉE" if ready else "COMPOSITION À VÉRIFIER"
+		if reduced and not fixture.is_empty(): opening.status.text="FEUILLE À 22 DISPONIBLE"
+		if espoir and not fixture.is_empty(): opening.status.text="FEUILLE INCOMPLÈTE · UN ESPOIR PEUT ÊTRE APPELÉ"
+		if fixture.is_empty(): opening.status.text="SAISON TERMINÉE" if value.meta.get("canAdvanceSeason",false) else "EN ATTENTE DE RENCONTRE"
+		opening.status.add_theme_color_override("font_color",C.MINT if ready else C.AMBER)
+		opening.refresh(value,play)
 		# Déléguer le match : mêmes conditions que le coup d'envoi (jour de match, presse réglée). Feuille à 22 :
 		# la délégation reste possible, la fenêtre demande la confirmation du match à 22.
-		opening_delegate.visible=not fixture.is_empty()
-		opening_delegate.disabled=play.disabled
-		opening_delegate.tooltip_text=play.tooltip_text if play.disabled else "Feuille incomplète : la fenêtre te propose d’appeler un espoir du centre ou, quand la règle le permet, de jouer à 22." if espoir else "L’adjoint joue le match à 22 joueurs (%s) : la fenêtre te demande de le confirmer." % Present.reduced_bench_vacancy(Present.reduced_bench_number(value)).trim_suffix(".").to_lower() if reduced else "L’adjoint joue le match ; tu peux lui confier aussi la composition."
-		opening_status.add_theme_color_override("font_color",C.MINT if ready else C.AMBER)
+		opening.delegate.tooltip_text=play.tooltip_text if play.disabled else "Feuille incomplète : la fenêtre te propose d’appeler un espoir du centre ou, quand la règle le permet, de jouer à 22." if espoir else "L’adjoint joue le match à 22 joueurs (%s) : la fenêtre te demande de le confirmer." % Present.reduced_bench_vacancy(Present.reduced_bench_number(value)).trim_suffix(".").to_lower() if reduced else "L’adjoint joue le match ; tu peux lui confier aussi la composition."
 		return
 	if finished:
 		play.text="Terminé"
@@ -245,34 +186,13 @@ func _update_badges(teams: Array) -> void:
 		crest.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 func _side() -> void:
+	# Avant le coup d'envoi, le carnet est masqué : le tableau de bord (match_avant.gd) montre tout.
+	if not model.get("live") is Dictionary: return
 	var tab_changed := _styled_tab!=tab
 	super._side()
-	if model.get("live")==null and tab=="Direct": _prematch_notes()
 	if tab_changed:
 		for button: Button in _tab_controls:
 			var selected: bool = button.get_meta("match_tab")==tab
 			var style := C.box(app.accent.darkened(.48) if selected else C.PANEL,Present.safe_accent(app.accent) if selected else C.LINE,5,8)
 			if selected: style.border_width_bottom=3
 			button.add_theme_stylebox_override("normal",style)
-
-func _prematch_notes() -> void:
-	var selection: Dictionary = model.get("selection",{})
-	var slots: Array = selection.get("slots",[])
-	var filled := slots.filter(func(slot:Dictionary):return slot.get("playerId")!=null).size()
-	var band := C.card("SÉLECTION ACTUELLE" if Present.reduced_bench_number(model) != 0 else "LES 23 RETENUS")
-	band.set_meta("immersive_style_applied",true)
-	side.add_child(band)
-	var content := C.content(band)
-	content.add_child(C.label("%d / %d" % [filled,slots.size()],37,C.MINT if selection.get("valid",false) else C.AMBER,true,700))
-	var group := Present.group(model)
-	content.add_child(C.wrap("%d disponibles  ·  %d blessés" % [group.available,group.injured],20,C.MUTED))
-	var tactics: Dictionary = model.get("tactics",{})
-	var playbook := C.card("LE PLAN DE JEU")
-	playbook.set_meta("immersive_style_applied",true)
-	side.add_child(playbook)
-	var plan := C.content(playbook)
-	for item in [["Attaque","attacks","attack"],["Défense","defenses","defense"]]:
-		var options: Array = tactics.get(item[1],[])
-		for choice: Dictionary in options:
-			if choice.get("id")==tactics.get(item[2]): plan.add_child(C.wrap(item[0]+" · "+str(choice.label),22,C.IVORY,true,600));break
-	plan.add_child(C.button("Ouvrir le plan de jeu",func():app._navigate("Plan de jeu"),false,app.accent))
