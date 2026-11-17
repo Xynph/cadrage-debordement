@@ -1,0 +1,3 @@
+tests/godot-carnet-ui.cjs
+tests/godot-delegue-composition.cjs
+tests/godot-retouches-coherence.cjs
