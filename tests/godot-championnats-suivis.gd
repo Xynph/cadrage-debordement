@@ -1,7 +1,7 @@
 extends SceneTree
 ## Championnats suivis dans le vrai jeu (profil préparé par tests/godot-championnats-suivis.cjs) :
 ## fenêtre de choix avec la « Vitesse de jeu estimée » en 5 étoiles aux couleurs d'état du
-## carnet, mise à jour en direct, bouton « Choix automatique selon votre PC », puis classement
+## carnet, mise à jour en direct, bouton « Choix automatique selon ton PC », puis classement
 ## d'un championnat en consultation (bandeau « CONSULTATION »). Captures 1920×1080.
 const LeagueDetail = preload("res://ui/league_detail_view.gd")
 const G = preload("res://ui/carnet_skin.gd")
@@ -98,7 +98,7 @@ func executer() -> void:
 	await capture("championnats-suivis-tout")
 	# Choix automatique : mêmes championnats que le moteur (league-detail.cjs autoChoice) pour cette machine.
 	var auto := dialogue.find_child("LeagueDetailAuto", true, false) as Button
-	verifier(auto != null and not auto.disabled, "bouton « Choix automatique selon votre PC »")
+	verifier(auto != null and not auto.disabled, "bouton « Choix automatique selon ton PC »")
 	if auto: auto.pressed.emit()
 	await poser(10)
 	var costs: Dictionary = LeagueDetail.benchmark(app).get("costs", {})

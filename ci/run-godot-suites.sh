@@ -59,6 +59,9 @@ declare -A suite_limits=(
   [tests/godot-finitions.cjs]=900
   # Mesure de la jauge de vitesse : deux carrières Monde (~4 min chacune), informative.
   [tests/mesure-vitesse-jeu.cjs]=1200
+  # Pont natif en carrière Monde (deux workers jumeaux, un match délégué, exports de ~20 Mo) puis le vrai pont Godot ;
+  # 151 s mesurées sur le PC de Léo le 16/11/2026 (Windows, Godot 4.7.2).
+  [tests/godot-engine.cjs]=600
 )
 # Suites INFORMATIVES : exécutées et journalisées, mais un échec n'empêche pas le job (avertissement + ligne
 # « informatif » dans le résumé). Une suite n'y reste que tant qu'elle est instable ; à retirer dès qu'elle est stabilisée.

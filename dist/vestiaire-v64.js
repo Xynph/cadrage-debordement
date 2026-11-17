@@ -62,7 +62,7 @@
  function panel(s,players){
   if(!s||!Array.isArray(players))return '';
   if(s.satisfactionVersion!==1||s.relationsVersion!==1)
-   return '<section class="card" aria-label="Vestiaire V64"><h2>Vestiaire · V64</h2><p>Activez le suivi V36/V37 dans les relations du club pour obtenir les echanges et leurs effets sur le collectif.</p></section>';
+   return '<section class="card" aria-label="Vestiaire V64"><h2>Vestiaire · V64</h2><p>Active le suivi V36/V37 dans les relations du club pour obtenir les echanges et leurs effets sur le collectif.</p></section>';
   const sorted=[...players].sort((a,b)=>(a.satisfaction?.score??65)-(b.satisfaction?.score??65)||String(a.name).localeCompare(String(b.name),'fr'));
   const mean=sorted.length?Math.round(sorted.reduce((n,p)=>n+(p.satisfaction?.score??65),0)/sorted.length):65;
   const unstable=sorted.filter(p=>(p.satisfaction?.score??65)<55).length;
@@ -72,7 +72,7 @@
   const options=[['ecouter','Écouter · +2 satisfaction'],['rassurer','Rassurer · +1 satisfaction, +1 moral collectif si premier entretien de la journée'],['clarifier','Clarifier · +1 confiance de direction si premier entretien de la journée']];
   return '<section class="card" aria-label="Vestiaire V64">'+
     '<div class="cardtitle"><h2>Vestiaire · Climat humain</h2><span class="tag">'+unstable+' joueur(s) sous tension</span></div>'+
-    '<p class="help">Moral collectif '+s.morale+'/100 (influe sur la force de votre XV) · satisfaction moyenne '+mean+'/100 · '+crisis+' crise(s). Les minutes reellement jouees et les promesses modifient la satisfaction ; les bilans hebdomadaires ajustent le moral. Aucune intervention possible pendant un match.</p>'+
+    '<p class="help">Moral collectif '+s.morale+'/100 (influe sur la force de ton XV) · satisfaction moyenne '+mean+'/100 · '+crisis+' crise(s). Les minutes reellement jouees et les promesses modifient la satisfaction ; les bilans hebdomadaires ajustent le moral. Aucune intervention possible pendant un match.</p>'+
     (weekly?'<p class="help">Effet collectif de l’entretien deja utilise cette journee. Les autres entretiens restent individuels.</p>':'')+
     '<details><summary>Ouvrir les entretiens et tensions de l’effectif</summary>'+
     '<div class="tablewrap"><table><thead><tr><th>Joueur</th><th>Satisfaction</th><th>Engagement</th><th>Entretien</th></tr></thead><tbody>'+

@@ -38,6 +38,9 @@ const UNTOUCHED = Object.freeze({
   scout_mission: except('clubs'), extend_contract: except('clubs'), press_conference: except('clubs'),
   recruit: except('clubs', 'aiRoster', 'potentialEvolution'), league_detail_set: except('worldMode'),
   train: except('clubs', 'aiRoster', 'potentialEvolution'),
+  // Réponse au courrier du club (club-mail.cjs, apply) : moral, confiance, presse, séance, caisse et journal (sections
+  // légères), joueur du club ou jeune promu dans l'effectif du club du manager seulement (contrôlé par tests/club-mail.cjs).
+  club_mail_reply: except('clubs'),
 });
 
 function untouched(command, payload) {
@@ -51,7 +54,7 @@ function untouched(command, payload) {
 // du manager dans `clubs` (S.clubs[S.club], S.club inchangé). Les autres clubs (~13,8 Mo) ne sont alors pas
 // resérialisés ; le club du manager l'est, joueur par joueur et champ par champ (voir SOURCE, parties de la section des
 // clubs). Vérifié en mode vérification (les autres clubs sont relus et comparés).
-const OWN_CLUB = Object.freeze(new Set(['set_player_load', 'set_development_focus', 'training_plan', 'extend_contract', 'staff_meeting', 'observe_player']));
+const OWN_CLUB = Object.freeze(new Set(['set_player_load', 'set_development_focus', 'training_plan', 'extend_contract', 'staff_meeting', 'observe_player', 'club_mail_reply']));
 const ownClubOnly = command => OWN_CLUB.has(command);
 
 // Commandes sans effet sur la note et les qualités des joueurs, même si elles touchent la section des clubs (consigne de
@@ -105,9 +108,19 @@ const SOURCE = `const nativeStateVersions=(()=>{
    out.set('clubs~p:'+sub,JSON.stringify(values.map(v=>obj(v)&&Object.hasOwn(v,k)?v[k]:undefined)));
   }
  }
+ // Sections de la sauvegarde encore exactes pour s (S inchangé depuis nativeSaveText) ; jamais en vérification.
+ function savedSections(s){
+  if(verifying||typeof nativeSectionsFresh==='undefined'||!nativeSectionsFresh||typeof nativeSaveSections==='undefined')return null;
+  return nativeSaveSections&&nativeSaveSections.state===s?nativeSaveSections:null;
+ }
  function clubParts(s,c,others){
   const out=new Map(),o=s.club,players=c.players;
-  if(others)out.set('clubs~others',JSON.stringify(s.clubs.map((x,i)=>i===o?0:x)));
+  if(others){
+   // Textes de la sauvegarde qui vient d'être assemblée (worker.cjs, nativeSaveText) : même carrière, même texte.
+   const saved=savedSections(s);
+   if(saved&&saved.clubs&&saved.clubs.length===s.clubs.length){const list=saved.clubs.slice();list[o]='0';out.set('clubs~others','['+list.join(',')+']');}
+   else out.set('clubs~others',JSON.stringify(s.clubs.map((x,i)=>i===o?0:x)));
+  }
   const shell={};for(const k of Object.keys(c))shell[k]=k==='players'?0:c[k];
   out.set('clubs~own',JSON.stringify([o,shell]));
   const keys=players.map(p=>Object.keys(p)),fields=new Set();for(const list of keys)for(const k of list)fields.add(k);
@@ -159,7 +172,7 @@ const SOURCE = `const nativeStateVersions=(()=>{
     }
    }
    if(SPLIT.has(key)&&!HEAVY.has(key)){put(key,objectParts(key,S[key]));continue;}
-   const text=JSON.stringify(S[key]);
+   const saved=savedSections(S),text=saved&&saved.texts.has(key)?saved.texts.get(key):JSON.stringify(S[key]);
    if(text===undefined){partsOf.delete(key);continue;}
    put(key,[[key,text]],keep?()=>true:null);dirty.delete(key);
   }

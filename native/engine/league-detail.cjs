@@ -271,7 +271,7 @@ function estimate({detailed,leagues=Object.keys(SEASON_MATCHES),machine={}}){
  const weekMs=seasonMs/WEEKS,level=LEVELS.find(l=>weekMs<l.belowWeekMs)||LEVELS[LEVELS.length-1];
  return {weekMs:Math.round(weekMs),seasonMs:Math.round(seasonMs),detailedMatches,quickMatches,level:level.id,label:level.label,stars:level.stars,state:level.state};
 }
-// Choix automatique selon la machine (bouton « Choix automatique selon votre PC », défaut des
+// Choix automatique selon la machine (bouton « Choix automatique selon ton PC », défaut des
 // nouvelles carrières) : le championnat du club, puis ceux de son pays, puis les autres dans
 // l'ordre du registre, chacun ajouté seulement si la vitesse estimée garde `target` étoiles.
 // Déterministe : même machine mesurée, même championnat du club -> même liste.

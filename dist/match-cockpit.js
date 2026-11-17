@@ -46,7 +46,7 @@ function matchCockpitRoster(l,side){
  const actions=mine?'<div class="v40-roster-actions"><button class="small" onclick="rugbyUseBench()" '+
   (!S.live?.paused||S.live.finished||presentationPending(S.live)?'disabled':'')+
   '>Changements conseillés par le staff</button></div>':'';
- return '<aside class="v40-roster card" aria-label="'+(mine?'Votre effectif en match':'Effectif adverse')+'">'+
+ return '<aside class="v40-roster card" aria-label="'+(mine?'Ton effectif en match':'Effectif adverse')+'">'+
  '<header><span class="eyebrow">'+(mine?'VOTRE XV':'ADVERSAIRE')+'</span><h2>'+visualEscape(clubName)+'</h2>'+
  '<small>'+active.size+' joueurs actuellement sur le terrain</small></header>'+
  '<div class="v40-roster-list">'+starters+'</div><details class="v40-bench" '+(mine?'open':'')+'><summary>Les remplaçants · '+benchIds.length+'/8</summary>'+
@@ -104,18 +104,18 @@ function matchCockpitCoachBrief(l){
  const margin=l.score[side]-l.score[other];
  const notes=[];
  if(poss===null)notes.push('La possession sera analysée après les premières séquences.');
- else if(poss<42)notes.push('Vous avez peu le ballon ('+poss+' %) : privilégiez des séquences de conservation.');
- else if(poss>58)notes.push('Vous contrôlez le ballon ('+poss+' %) : exploitez cette possession sans vous précipiter.');
+ else if(poss<42)notes.push('Tu as peu le ballon ('+poss+' %) : privilégie des séquences de conservation.');
+ else if(poss>58)notes.push('Tu contrôles le ballon ('+poss+' %) : exploite cette possession sans te précipiter.');
  else notes.push('Possession équilibrée ('+poss+' %) : chaque récupération peut faire la différence.');
  if(field!==null){
-  if(field<43)notes.push('Occupation défavorable ('+field+' %) : cherchez à sortir de votre camp.');
-  else if(field>57)notes.push('Vous occupez le terrain adverse ('+field+' %) : maintenez la pression.');
-  else notes.push('Occupation partagée ('+field+' %) : surveillez les renvois et les sorties de camp.');
+  if(field<43)notes.push('Occupation défavorable ('+field+' %) : cherche à sortir de ton camp.');
+  else if(field>57)notes.push('Tu occupes le terrain adverse ('+field+' %) : maintiens la pression.');
+  else notes.push('Occupation partagée ('+field+' %) : surveille les renvois et les sorties de camp.');
  }
- if(m.penalties>o.penalties+2)notes.push('Discipline : vous avez concédé '+(m.penalties-o.penalties)+' pénalités de plus que votre adversaire.');
- if(m.yellows>o.yellows)notes.push('Infériorité disciplinaire : surveillez vos joueurs sanctionnés.');
- if(margin<0)notes.push('Vous êtes menés de '+(-margin)+' points : adaptez votre gestion du risque au temps restant.');
- else if(margin>0)notes.push('Vous menez de '+margin+' points : protégez cet avantage sans abandonner le terrain.');
+ if(m.penalties>o.penalties+2)notes.push('Discipline : tu as concédé '+(m.penalties-o.penalties)+' pénalités de plus que ton adversaire.');
+ if(m.yellows>o.yellows)notes.push('Infériorité disciplinaire : surveille tes joueurs sanctionnés.');
+ if(margin<0)notes.push('Tu es mené de '+(-margin)+' points : adapte ta gestion du risque au temps restant.');
+ else if(margin>0)notes.push('Tu mènes de '+margin+' points : protège cet avantage sans abandonner le terrain.');
  else notes.push('Score à égalité : la prochaine séquence sera importante.');
  return '<section class="card v40-coach-brief" aria-label="Débrief tactique en direct"><div class="v40-panel-heading"><h2>Lecture du match</h2><small>'+matchClock(l)+'</small></div>'+
  '<ul>'+notes.map(note=>'<li>'+visualEscape(note)+'</li>').join('')+'</ul>'+
