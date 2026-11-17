@@ -557,6 +557,20 @@
         { "id": "rien", "libelle": "Rien de particulier", "effets": {}, "resultat": "Message classé." }
       ]
     },
+    "jalon_carriere": {
+      "categorie": "moments", "declencheur": "jalon_carriere", "priorite": 65, "arret": false, "ecran": "Effectif",
+      "expediteur": "Le service communication",
+      "seuils": { "caps": [50, 100, 150, 200, 250, 300] },
+      "formulations": [
+        { "sujet": "{joueur} atteint {n} matchs en carrière", "corps": "{joueur} vient de franchir la barre des {n} matchs en carrière. Le club prépare un petit mot pour marquer l'étape ; il attend simplement ton feu vert." },
+        { "sujet": "Cap des {n} matchs pour {joueur}", "corps": "{n} matchs au compteur pour {joueur}, un cap qui compte dans une carrière. Le vestiaire est au courant, et les supporters ne vont pas tarder à l'être." }
+      ],
+      "reponses": [
+        { "id": "feliciter", "libelle": "Le féliciter devant le groupe", "effets": { "satisfaction": 2, "moral": 1 }, "resultat": "Applaudissements au vestiaire : il est touché." },
+        { "id": "communique", "libelle": "Faire un message officiel du club", "effets": { "supporters": 1, "satisfaction": 1 }, "resultat": "Le club salue son parcours ; les supporters réagissent." },
+        { "id": "rien", "libelle": "Rien de particulier", "effets": {}, "resultat": "Message classé." }
+      ]
+    },
     "serie": {
       "categorie": "moments", "declencheur": "serie", "priorite": 41, "arret": false, "ecran": "Classements",
       "expediteur": "Le service communication",
