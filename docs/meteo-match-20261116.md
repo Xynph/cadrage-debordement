@@ -54,8 +54,17 @@ moins et une réussite au but en légère baisse ; le vent pèse surtout sur les
 Ce sont des estimations d'analyste, sans jeu de données Top 14 importé : à recaler si une
 source chiffrée est retenue (registre `docs/ressources-utiles.md`).
 
+## Vent par période (17/11/2026, rencontres avec `windVersion: 1`)
+
+- `l.meteo.sens` (0 ou 1) : camp qui a le vent dans le dos en première période, tiré de la même empreinte que la météo
+  (aucun tirage ajouté). Les équipes changent de côté à la mi-temps : le vent change de camp (`ventPour`, `dist/matchflow.js`).
+- Jeu au pied : −10 m par niveau de vent de face, +2 m de vent de dos (moyenne des deux camps = −4 m d'origine) ;
+  dispersion inchangée. Tir au but : −9 points par niveau de vent de face, −2 de vent de dos (moyenne −5,5 d'origine).
+  Réglages : `METEO_MATCH.piedVentSens`, `METEO_MATCH.butVentSens` ; interrupteur `WIND_DIRECTION_RULES`.
+- Le conseil du staff nomme le camp favorisé et annonce le changement à la mi-temps (`meteoConseil`).
+- Les rencontres commencées sans `windVersion` gardent la moyenne d'origine ; la sauvegarde valide `sens` et `windVersion`.
+- Test : `tests/meteo-vent-periodes.cjs`.
+
 ## Reste à faire
 
-- Vent de face / de dos par période (aujourd'hui moyenne + dispersion).
 - Annonce de la météo à l'avant-match (prévision du staff) si un écran l'accueille.
-- Tirs au but de la séance de départage (`world-knockout.cjs`) et `champ-match.cjs` gardent les forfaits d'origine.

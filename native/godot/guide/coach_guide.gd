@@ -240,9 +240,16 @@ func _save() -> bool:
 
 func _blocked() -> bool:
 	if not is_instance_valid(app) or app.closing or app.waiting: return true
+	# Intro à l'écran : rien ne s'ouvre dessous (le « bienvenue » serait vu nulle part et son premier affichage
+	# coûterait une image figée en pleine animation) ; main.gd réexamine le contexte à la fin de l'intro.
+	if intro_on_screen(app): return true
 	var live: Dictionary = app._live()
 	if not live.is_empty() and not live.get("paused", false) and not live.get("finished", false): return true
 	return _has_dialog(app)
+
+static func intro_on_screen(application: Node) -> bool:
+	var intro := application.get_node_or_null("IntroSequence")
+	return intro != null and not intro.is_queued_for_deletion()
 
 func _has_dialog(node: Node) -> bool:
 	for child in node.get_children():

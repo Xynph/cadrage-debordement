@@ -1811,28 +1811,29 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle='',limiteAmo
  }
  return finir({type,equipe:T,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle});
 }
+// Effectif de la mise en scène. La scène de départ venue d'avant le temps fort (`depart`) peut précéder un
+// changement d'effectif que le moteur journalise sans image : retour d'un carton jaune, remplacement. Les
+// faits du temps fort nomment alors un joueur qu'elle ne contient pas (« joueur d'étape absent »). L'effectif
+// est celui de la scène du premier fait ; chacun garde sa place de départ, et un entrant prend celle du joueur
+// qu'il remplace au même poste (sinon sa place dans la scène du fait).
+function effectifDuFait(depart,fait){
+ const base=p=>({id:p.id,side:p.side,slot:p.slot,x:p.x,y:p.y});
+ if(!fait||!Array.isArray(fait.players))return depart.players.map(base);
+ const avant=new Map(depart.players.map(p=>[String(p.id),p])),apres=new Set(fait.players.map(p=>String(p.id)));
+ if(avant.size===apres.size&&[...apres].every(id=>avant.has(id)))return depart.players.map(base);
+ return fait.players.map(q=>{
+  const p=avant.get(String(q.id));
+  if(p)return {...base(q),x:p.x,y:p.y};
+  const sorti=depart.players.find(r=>r.side===q.side&&r.slot===q.slot&&!apres.has(String(r.id)));
+  return sorti?{...base(q),x:sorti.x,y:sorti.y}:base(q);
+ });
+}
 function finir({type,equipe,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle,choisirBotteur,marqueur,choisirPorteur}){
  // Scène de départ : la remise en jeu formée, sinon la scène affichée juste avant le premier plan.
  const depart=ouverture&&ouverture.k!=='jeu'?plans[premier].scene:premier>0?plans[premier-1].scene:(avant||tf.depart);
  if(!depart||!Array.isArray(depart.players))return null;
  const mis=depart.players.find(p=>p.featured&&p.side===depart.possession);
- const joueurs=depart.players.map(p=>({id:p.id,side:p.side,slot:p.slot,x:p.x,y:p.y}));
- // Joueur qui entre en jeu après la scène de départ (retour de carton jaune, remplaçant) et dont le moteur nomme
- // un fait plus loin dans l'action : il est pris dans la première scène du temps fort où il figure, au poste qu'il y
- // tient, et prend la place de celui que cette entrée remplace (même équipe, même poste) s'il n'a aucun rôle.
- {
-  const presents=new Set(joueurs.map(p=>String(p.id))),requis=new Set(etapes.filter(s=>s.joueur!=null).map(s=>String(s.joueur)));
-  for(const id of requis){
-   if(presents.has(id))continue;
-   for(let i=premier;i<=dernier;i++){
-    const q=plans[i]?.scene?.players?.find(p=>String(p.id)===id);if(!q)continue;
-    const remplace=joueurs.findIndex(p=>p.side===q.side&&p.slot===q.slot&&!requis.has(String(p.id))&&String(p.id)!==String(vedette)&&String(p.id)!==String(marqueur)&&String(p.id)!==String(mis?.id));
-    const entree={id:q.id,side:q.side,slot:q.slot,x:q.x,y:q.y};
-    if(remplace>=0)joueurs[remplace]=entree;else joueurs.push(entree);
-    presents.add(id);break;
-   }
-  }
- }
+ const joueurs=effectifDuFait(depart,plans[premier]?.scene);
  if(choisirBotteur){
   // Botteur d'un coup de pied en touche : l'ouvreur, sinon l'arrière, sinon le demi (choix de mise en scène).
   const pick=[9,14,8].map(s=>joueurs.find(p=>p.side===equipe&&p.slot===s)).find(Boolean);
@@ -1855,7 +1856,7 @@ function finir({type,equipe,vedette,sens,ouverture,etapes,premier,dernier,tf,pla
  const defense=Array.isArray(r?.plans?.defence)?r.plans.defence.map(String):null;
  // Faits du moteur couverts par les pistes : chacun doit être montré.
  const jalonsAttendus=[];for(let i=premier;i<=dernier;i++)if(plans[i].kind!=='transformation')jalonsAttendus.push(i);
- const e={type,equipe,porteur:mis?mis.id:null,possession:[0,1].includes(depart.possession)?depart.possession:equipe,
+ const e={type,equipe,porteur:mis&&joueurs.some(j=>String(j.id)===String(mis.id))?mis.id:null,possession:[0,1].includes(depart.possession)?depart.possession:equipe,
   ballon:{x:depart.ball?.x??50,y:depart.ball?.y??35},joueurs,profils,etapes,ouverture:ouverture||{k:'jeu'},premier,dernier,plan:premier,jalonsAttendus,
   graine:hacher(cle+'|'+plans[dernier].index)};
  if(defense)e.defense=defense;

@@ -287,6 +287,8 @@ func _ready() -> void:
 		var intro: CanvasLayer = IntroSequence.new()
 		add_child(intro)
 		intro.setup(self, _profile_path())
+		# Gabi n'ouvre rien sous l'intro (coach_guide.gd) : son accueil attend l'écran révélé.
+		intro.finished.connect(func(): call_deferred("_refresh_coach"))
 	timer.start()
 	get_tree().auto_accept_quit = false
 	get_tree().root.close_requested.connect(request_quit)
