@@ -108,9 +108,19 @@ const SOURCE = `const nativeStateVersions=(()=>{
    out.set('clubs~p:'+sub,JSON.stringify(values.map(v=>obj(v)&&Object.hasOwn(v,k)?v[k]:undefined)));
   }
  }
+ // Sections de la sauvegarde encore exactes pour s (S inchangé depuis nativeSaveText) ; jamais en vérification.
+ function savedSections(s){
+  if(verifying||typeof nativeSectionsFresh==='undefined'||!nativeSectionsFresh||typeof nativeSaveSections==='undefined')return null;
+  return nativeSaveSections&&nativeSaveSections.state===s?nativeSaveSections:null;
+ }
  function clubParts(s,c,others){
   const out=new Map(),o=s.club,players=c.players;
-  if(others)out.set('clubs~others',JSON.stringify(s.clubs.map((x,i)=>i===o?0:x)));
+  if(others){
+   // Textes de la sauvegarde qui vient d'être assemblée (worker.cjs, nativeSaveText) : même carrière, même texte.
+   const saved=savedSections(s);
+   if(saved&&saved.clubs&&saved.clubs.length===s.clubs.length){const list=saved.clubs.slice();list[o]='0';out.set('clubs~others','['+list.join(',')+']');}
+   else out.set('clubs~others',JSON.stringify(s.clubs.map((x,i)=>i===o?0:x)));
+  }
   const shell={};for(const k of Object.keys(c))shell[k]=k==='players'?0:c[k];
   out.set('clubs~own',JSON.stringify([o,shell]));
   const keys=players.map(p=>Object.keys(p)),fields=new Set();for(const list of keys)for(const k of list)fields.add(k);
@@ -162,7 +172,7 @@ const SOURCE = `const nativeStateVersions=(()=>{
     }
    }
    if(SPLIT.has(key)&&!HEAVY.has(key)){put(key,objectParts(key,S[key]));continue;}
-   const text=JSON.stringify(S[key]);
+   const saved=savedSections(S),text=saved&&saved.texts.has(key)?saved.texts.get(key):JSON.stringify(S[key]);
    if(text===undefined){partsOf.delete(key);continue;}
    put(key,[[key,text]],keep?()=>true:null);dirty.delete(key);
   }

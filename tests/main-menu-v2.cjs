@@ -6,7 +6,7 @@ const check=(name,fn)=>{fn();console.log('PASS '+name)};
 check('guided creation launches a new active independent slot',()=>{
  assert.equal(g.run('entryScreen'),'menu');
  g.run('mainMenuNewCareer()');
- assert.match(g.app.innerHTML,/Choisissez votre univers/);
+ assert.match(g.app.innerHTML,/Choisis ton univers/);
  assert.equal(g.run("mainMenuChooseMode('fiction')"),true);
  assert.equal(g.run('entryScreen'),'clubs');
  g.run('start(0)');
