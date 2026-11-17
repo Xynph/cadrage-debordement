@@ -1,0 +1,59 @@
+::group::tests/godot-rendez-vous-arrivee.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+RENDEZ-VOUS ARRIVEE : 11 contrôles ; 0 échec(s)
+
+CD_CPU_PROFILE suite=tests/godot-rendez-vous-arrivee.cjs user_s=16.83 system_s=1.42 wall_s=14.81 cpu_pct=123% max_rss_kb=925156
+PASS tests/godot-rendez-vous-arrivee.cjs (15 s)
+::endgroup::
+::group::tests/godot-courrier-club.cjs
+TAP version 13
+# Subtest: Courrier du club : réponse en un clic, écran concerné ouvert, arrêts informatifs sur l’écran utile
+not ok 1 - Courrier du club : réponse en un clic, écran concerné ouvert, arrêts informatifs sur l’écran utile
+  ---
+  duration_ms: 27176.172379
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-courrier-club.cjs:13:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    COURRIER {"checks":160,"failures":["Pas de défilement inutile du mail · 1920x1080","Pas de défilement inutile du mail · 1280x720"]}
+    FAIL: Pas de défilement inutile du mail · 1920x1080
+    FAIL: Pas de défilement inutile du mail · 1280x720
+    
+    + actual - expected
+    
+    + [
+    +   'Pas de défilement inutile du mail · 1920x1080',
+    +   'Pas de défilement inutile du mail · 1280x720'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'Pas de défilement inutile du mail · 1920x1080'
+    1: 'Pas de défilement inutile du mail · 1280x720'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-courrier-club.cjs:28:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 27184.337574
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-courrier-club.cjs user_s=33.05 system_s=2.05 wall_s=27.22 cpu_pct=128% max_rss_kb=1629864
+::error file=tests/godot-courrier-club.cjs::Godot : ECHEC (1), durée 27 s, limite 300s
+::endgroup::
