@@ -111,6 +111,48 @@ static func renewal_reason(player: Dictionary, live: bool) -> String:
 	if quote.get("negotiation", {}).get("status") == "withdrawn": return "Échanges clos pour cette journée"
 	return "Prolongation accessible" if bool(quote.get("available", false)) else "Prolongation indisponible actuellement"
 
+## Délégation des prolongations au directeur sportif (mode Monde : la clé « contracts » n'existe qu'alors).
+func _delegation_staff(delegation: Dictionary) -> void:
+	var box := CheckBox.new()
+	box.name = "ContractDelegationStaff"
+	box.text = "Confier aussi les prolongations au staff"
+	box.button_pressed = bool(delegation.get("contracts", true))
+	box.tooltip_text = "Le directeur sportif tranche en mars les fins de contrat que tu n'as pas réglées, dans la masse salariale que le club s'autorise et sous le plafond de la ligue."
+	box.custom_minimum_size.y = 36
+	box.add_theme_font_size_override("font_size", maxi(16, C.px(20)))
+	box.disabled = not app._live().is_empty()
+	add_child(box)
+	# Largeur bornée : le texte revient à la ligne dans la zone visible au lieu de déborder à droite.
+	var detail := _label(delegation_detail(app.model, box.button_pressed), 16, C.MUTED, C.px(1650))
+	detail.name = "ContractDelegationDetail"
+	add_child(detail)
+	box.toggled.connect(func(value: bool):
+		# Même mécanisme que les autres réglages de délégation (staff_view.gd) : décision optimiste côté interface.
+		if app._command("set_delegation", {"key":"contracts", "enabled":value}):
+			detail.text = delegation_detail(app.model, value)
+		else:
+			box.set_pressed_no_signal(not value))
+
+## Texte sous la case selon l'état coché (testable sans interface).
+static func delegation_detail(model: Dictionary, enabled: bool) -> String:
+	if not enabled: return "Tu gères seul les prolongations : les contrats non prolongés partent à leur échéance."
+	var delegation: Dictionary = model.get("decisions", {}).get("delegation", {}) if model.get("decisions") is Dictionary and model.decisions.get("delegation") is Dictionary else {}
+	var text := "Le directeur sportif tranche en mars les échéances que tu n'as pas réglées, dans la masse que le club s'autorise et sous le plafond de la ligue ; chaque décision arrive au courrier, annulable."
+	var label := str(delegation.get("contractsPolicyLabel", ""))
+	if not label.is_empty(): text += " Consigne : %s." % label
+	var decided: Array = delegation.get("contractsDecided", []) if delegation.get("contractsDecided") is Array else []
+	if not decided.is_empty():
+		var kept := 0
+		var released := 0
+		for entry: Variant in decided:
+			if not entry is Dictionary: continue
+			# Annulée par le manager : il part ; « prolonger quand même » : il reste.
+			var state_name := str(entry.get("state", ""))
+			if state_name == "force" or (state_name == "actif" and str(entry.get("decision", "")) == "prolonge"): kept += 1
+			elif state_name == "annule" or str(entry.get("decision", "")) == "libere": released += 1
+		text += " Cette saison : %d prolongé%s, %d laissé%s partir." % [kept, "s" if kept > 1 else "", released, "s" if released > 1 else ""]
+	return text
+
 func _label(text: String, size: int = 18, color: Color = C.IVORY, width: float = 0) -> Label:
 	var label := Label.new()
 	label.text = text
@@ -157,6 +199,9 @@ func _build() -> void:
 	if not state.has("descending"): state.descending = false
 	add_child(_label("Les échéances de ton effectif", 26))
 	add_child(_label("Échéances classées par année de fin, sans présumer une urgence. Anticipe les fins de contrat et prépare les prolongations.", 17, C.MUTED))
+	var delegation: Variant = app.model.get("decisions", {}).get("delegation") if app.model.get("decisions") is Dictionary else null
+	if delegation is Dictionary and delegation.has("contracts"):
+		_delegation_staff(delegation)
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 10)
 	add_child(top)

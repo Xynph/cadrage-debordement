@@ -5,7 +5,7 @@
     "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; arretsParJour : mails qui arrêtent « Continuer » le même jour ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
     "arretsParJour": 2,
-    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "meteo": 2 },
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2 },
     "boite": 160,
     "projection": 80,
     "delaiReponse": 7,
@@ -21,6 +21,7 @@
     "competition": { "label": "Compétitions", "ecran": "Calendrier" },
     "formation": { "label": "Formation", "ecran": "Formation" },
     "moments": { "label": "Club", "ecran": "Effectif" },
+    "contrats": { "label": "Contrats", "ecran": "contrats" },
     "meteo": { "label": "Météo", "ecran": "Composition" }
   },
   "humeurs": {
@@ -301,8 +302,8 @@
       "expediteur": "Le directeur sportif",
       "intervalle": 27,
       "formulations": [
-        { "sujet": "{n} contrat(s) à échéance", "corps": "Pour rappel, coach : {n} contrat(s) arrivent à échéance en fin de saison : {liste}.\n\nLes agents commencent à appeler. Les meilleurs profils partent en premier, et à ce stade de la saison on négocie encore à prix correct.\n\nPasse par l'onglet Contrats et dis-moi qui on prolonge ; ceux qu'on laisse filer, j'aime autant le savoir tôt pour préparer le recrutement." },
-        { "sujet": "Les échéances de la saison", "corps": "État des lieux des fins de contrat : {liste}.\n\nOn est {classement}, donc on a des arguments pour retenir les cadres. Mais chaque semaine qui passe, un autre club peut se placer.\n\nDis-moi qui on prolonge. Je préparerai les dossiers et je te préviendrai si un joueur fait monter les enchères." }
+        { "sujet": "{n} contrat(s) à échéance", "corps": "Pour rappel, coach : {n} contrat(s) arrivent à échéance en fin de saison : {liste}.\n\nLes agents commencent à appeler. Les meilleurs profils partent en premier, et à ce stade de la saison on négocie encore à prix correct.\n\nPasse par l'onglet Contrats et dis-moi qui on prolonge ; ceux qu'on laisse filer, j'aime autant le savoir tôt pour préparer le recrutement.{relais}" },
+        { "sujet": "Les échéances de la saison", "corps": "État des lieux des fins de contrat : {liste}.\n\nOn est {classement}, donc on a des arguments pour retenir les cadres. Mais chaque semaine qui passe, un autre club peut se placer.\n\nDis-moi qui on prolonge. Je préparerai les dossiers et je te préviendrai si un joueur fait monter les enchères.{relais}" }
       ],
       "reponses": []
     },
@@ -647,6 +648,47 @@
       "reponses": [
         {"id":"vestiaire","libelle":"Afficher au vestiaire","effets":{"moral":1},"resultat":"Le groupe sait où en sont les concurrents."},
         {"id":"lu","libelle":"Lu","effets":{},"resultat":"Revue classée."}
+      ]
+    },
+    "ds_prolongation": {
+      "categorie":  "contrats", "declencheur":  "ds_contrats", "decision":  "prolonge", "priorite":  24, "arret":  true, "ecran":  "contrats",
+      "expediteur": "{signature}",
+      "formulations": [
+        {"sujet": "J'ai prolongé {joueur}", "corps": "Coach, comme convenu, j'ai réglé le contrat de {joueur} ({poste}, {age} ans) : il reste au club jusqu'à la fin de la saison {fin}, à {salaire} € par an à partir de la saison prochaine (il touche {ancien} € aujourd'hui).\n\n{raison}\n\nSi tu n'es pas d'accord, dis-le moi maintenant : j'annule, il partira libre à la fin de son contrat et on récupère la prime. Et si tu veux que je serre davantage les cordons de la bourse, je m'adapterai pour les suivants."},
+        {"sujet": "{joueur} prolonge", "corps": "C'est signé pour {joueur} : jusqu'à la fin de la saison {fin}, {salaire} € par an dès la saison prochaine. Il demandait une revalorisation, je la lui ai accordée dans les limites que le club s'autorise (il est à {ancien} € aujourd'hui).\n\n{raison}\n\nTu as le dernier mot : si tu préfères le laisser filer, j'annule l'accord tant que la saison n'est pas finie."}
+      ],
+      "reponses": [
+        {"id": "ok", "libelle": "Bonne décision", "effets": {}, "resultat": "Le directeur sportif poursuit avec les autres échéances."},
+        {"id": "annuler", "libelle": "Annuler cette prolongation", "effets": {"contratDS": "annuler"}, "resultat": "Prolongation annulée : il quittera le club à la fin de son contrat, la prime est remboursée."},
+        {"id": "econome", "libelle": "Consigne : sois plus économe", "effets": {"consigneDS": "econome"}, "resultat": "Le directeur sportif gardera une marge sous la masse salariale autorisée pour les prochaines échéances."},
+        {"id": "equilibre", "libelle": "Consigne : reviens à l'équilibre", "effets": {"consigneDS": "equilibre"}, "resultat": "Le directeur sportif reprend sa ligne habituelle pour les prochaines échéances."}
+      ]
+    },
+    "ds_depart": {
+      "categorie":  "contrats", "declencheur":  "ds_contrats", "decision":  "libere", "priorite":  25, "arret":  true, "ecran":  "contrats",
+      "expediteur": "{signature}",
+      "formulations": [
+        {"sujet": "Je laisse partir {joueur}", "corps": "Coach, je ne prolongerai pas {joueur} ({poste}, {age} ans). Son contrat s'achève en fin de saison et il partira libre.\n\n{raison}\n\nSi tu tiens à lui, je peux encore le prolonger au salaire qu'il demande, tant que le plafond de la ligue le permet. Tu peux aussi me demander de miser davantage sur les jeunes pour les prochaines échéances."},
+        {"sujet": "Pas de prolongation pour {joueur}", "corps": "J'ai tranché pour {joueur} : on ne le prolonge pas, il quittera le club à la fin de la saison.\n\n{raison}\n\nC'est mon avis, pas une vérité : si tu le vois autrement, dis-le et je le prolonge quand même. Et si tu veux que je donne plus de place aux jeunes, je le ferai pour les suivants."}
+      ],
+      "reponses": [
+        {"id": "ok", "libelle": "D'accord, qu'il parte", "effets": {}, "resultat": "Il quittera le club à la fin de son contrat."},
+        {"id": "garder", "libelle": "Le prolonger quand même", "effets": {"contratDS": "forcer"}, "resultat": "Le directeur sportif le prolonge au salaire qu'il demande."},
+        {"id": "jeunes", "libelle": "Consigne : mise sur les jeunes", "effets": {"consigneDS": "jeunes"}, "resultat": "Le directeur sportif favorisera les jeunes prometteurs pour les prochaines échéances."},
+        {"id": "equilibre", "libelle": "Consigne : reviens à l'équilibre", "effets": {"consigneDS": "equilibre"}, "resultat": "Le directeur sportif reprend sa ligne habituelle pour les prochaines échéances."}
+      ]
+    },
+    "ds_staff": {
+      "categorie":  "staff", "declencheur":  "ds_staff", "priorite":  26, "arret":  true, "ecran":  "Club",
+      "expediteur": "{signature}",
+      "formulations": [
+        {"sujet": "Le staff : ce que j'ai réglé", "corps": "Coach, comme convenu, je me suis occupé des contrats du staff.\n\n{resume}\n\nJ'ai visé ce qui est à la portée du club. Si tu veux que je serre davantage les cordons de la bourse, dis-le moi ; tu gardes la main dans l'écran du staff pour engager ou libérer qui tu veux."},
+        {"sujet": "Mouvements dans le staff", "corps": "Point rapide sur l'encadrement.\n\n{resume}\n\nC'est mon jugement, pas une vérité : l'écran du staff te permet de revenir sur un choix. Et si tu préfères que je dépense moins, donne-moi la consigne."}
+      ],
+      "reponses": [
+        {"id": "ok", "libelle": "Bien reçu", "effets": {}, "resultat": "Le directeur sportif continue de veiller sur le staff."},
+        {"id": "econome", "libelle": "Consigne : sois plus économe", "effets": {"consigneDS": "econome"}, "resultat": "Le directeur sportif visera des profils moins exigeants et gardera une marge sur la masse salariale."},
+        {"id": "equilibre", "libelle": "Consigne : reviens à l'équilibre", "effets": {"consigneDS": "equilibre"}, "resultat": "Le directeur sportif reprend sa ligne habituelle."}
       ]
     }
   }

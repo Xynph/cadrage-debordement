@@ -132,6 +132,14 @@ function run(o){
   console.log('ECO '+JSON.stringify({label,user:{cash:row.user.cash,payroll:row.user.payroll,players:row.user.players,budget:row.user.budget},peersCash:{min:pm[0],median:median(pm),max:pm.at(-1)},
    peersPayrollMedian:median(row.user.peers.map(x=>x.payroll)),ledger:row.userLedger,overCap:capOver,overRevenueRule:row.overRevenueRule?.length??null,debtClubs:row.debtClubs,interclub:row.interclub,
    tally:row.directions?.tally?Object.fromEntries(Object.entries(row.directions.tally).filter(([k])=>k.startsWith(String(s.season))).slice(0,40)):null}));
+ // Staff du club joué en fin de saison : membres par rôle (5 rôles suivis) et activité du directeur sportif (staffDesk).
+  if(label.startsWith('end-')){
+   const roles=['coach','assistant','formation','scout','analyst'],par=Object.fromEntries(roles.map(r=>[r,0]));
+   for(const p of (s.staffCareer?.people||[]).flat())if(p.clubId===s.club&&roles.includes(p.role))par[p.role]++;
+   const desk=s.manager?.staffDesk,lots=desk?.lots||[];
+   console.log('STAFF '+JSON.stringify({label,season:s.season,...par,total:roles.reduce((n,r)=>n+par[r],0),
+    desk:desk?{decisions:(desk.decisions||[]).length,prolonges:lots.reduce((n,l)=>n+(l.prolonges?.length||0),0),arrivees:lots.reduce((n,l)=>n+(l.recrues?.length||0),0)}:null}));
+  }
   console.log('INV '+JSON.stringify({label,...row.investissements}));
   if(o.keep){fs.mkdirSync(o.keep,{recursive:true});fs.copyFileSync(profile,path.join(o.keep,label+'.json'));}
   save();

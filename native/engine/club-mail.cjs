@@ -43,7 +43,7 @@ function factory() {
   const pending = s => typeof CDPreseason !== 'undefined' && !!CDPreseason.pending(s);
   const todayOf = s => { try { return CDWorldCareer.calendarToday(s); } catch { return null; } };
   const STATUS = ['nouveau', 'repondu', 'classe', 'info'];
-  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'orientation'];
+  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'consigneDS', 'orientation'];
   const ORIENTATION_LABELS = { equilibre: 'répartition proposée', installations: 'priorité aux installations', staff: 'priorité au staff', accueil: 'priorité à l’accueil' };
   const PLAN_LABELS = { repos: 'repos', normal: 'charge allégée', intense: 'charge intense', collective: 'séance collective' };
   const MODE_LABELS = { repos: 'récupération', normal: 'normal', intense: 'intense' };
@@ -264,11 +264,39 @@ function factory() {
       if (!p) return [];
       return [{ key: String(p.id), player: String(p.id), vars: { ...playerVars(p), salaire: euros(Number(p.salary) || 0) } }];
     },
+    // Décisions du directeur sportif sur les fins de contrat (prolongations-staff.cjs) : une par mail.
+    ds_contrats(F, t) {
+      const desk = F.s.manager?.contractDesk;
+      if (!desk || desk.season !== F.s.season || !Array.isArray(desk.decisions)) return [];
+      const d = F.s.clubDirections?.clubs?.[F.s.club]?.director, signature = d && typeof d.name === 'string' && d.name ? d.name + ', directeur sportif' : 'Le directeur sportif';
+      const raisons = typeof nativeProlongations !== 'undefined' ? nativeProlongations.RAISONS : {};
+      return desk.decisions.filter(x => x.d === t.decision && !x.final && x.etat === 'actif' && x.date && x.date <= F.d).map(x => {
+        const p = F.byId.get(x.id) || null;
+        return { key: x.id + ':' + desk.season + ':' + x.d, player: x.id, vars: { ...(p ? playerVars(p) : { joueur: x.name, poste: x.pos, age: x.age }), signature, raison: raisons[x.raison] || '', salaire: euros(x.salary * 52), fin: typeof libelleSaison === 'function' ? libelleSaison(x.end) : String(x.end), ancien: euros(x.oldSalary * 52) } };
+      });
+    },
+    // Staff renouvelé par le directeur sportif (staff-renouvellement.cjs) : un courrier par série de décisions.
+    ds_staff(F) {
+      const desk = F.s.manager?.staffDesk;
+      if (!desk || !Array.isArray(desk.lots)) return [];
+      const d = F.s.clubDirections?.clubs?.[F.s.club]?.director, signature = d && typeof d.name === 'string' && d.name ? d.name + ', directeur sportif' : 'Le directeur sportif';
+      const raisons = typeof nativeStaffRenouvellement !== 'undefined' ? nativeStaffRenouvellement.RAISONS : {};
+      const saison = x => typeof libelleSaison === 'function' ? libelleSaison(x + 1) : String(x + 1);
+      return desk.lots.filter(l => l.date && l.date <= F.d && l.date >= shift(F.d, -14)).map(l => {
+        const lignes = [];
+        if (l.prolonges.length) lignes.push('Prolongés : ' + l.prolonges.map(x => x.name + ' (' + x.role + ', jusqu’à la fin de la saison ' + saison(x.fin) + ')').join(', ') + '.');
+        if (l.departs.length) lignes.push('Je laisse partir en fin de saison : ' + l.departs.map(x => x.name + ' (' + x.role + ' : ' + (raisons[x.raison] || '') + ')').join(', ') + '.');
+        if (l.recrues.length) lignes.push('Arrivés au club : ' + l.recrues.map(x => x.name + ' (' + x.role + ')').join(', ') + '.');
+        if (l.refus) lignes.push(l.refus + ' signature' + (l.refus > 1 ? 's' : '') + ' n’ont pas pu se faire, faute de moyens.');
+        return { key: l.id, vars: { signature, resume: lignes.join('\n\n'), n: l.prolonges.length + l.departs.length + l.recrues.length } };
+      });
+    },
     contrats(F) {
       if (F.dow !== 4 || !(F.s.round >= 6)) return [];
       const list = F.players.filter(p => p.contractEnd === F.s.season).sort((a, b) => b.rating - a.rating);
       if (!list.length) return [];
-      return [{ key: F.d.slice(0, 7), vars: { n: list.length, liste: list.slice(0, 5).map(p => p.name + ' (' + p.pos + ')').join(', ') + (list.length > 5 ? ' et ' + (list.length - 5) + ' autre(s)' : '') } }];
+      const relais = typeof dsContratsActif === 'function' && dsContratsActif() ? ' Comme convenu, ceux que tu n’auras pas réglés d’ici mars, je les trancherai moi-même et je te tiendrai au courant.' : '';
+      return [{ key: F.d.slice(0, 7), vars: { relais, n: list.length, liste: list.slice(0, 5).map(p => p.name + ' (' + p.pos + ')').join(', ') + (list.length > 5 ? ' et ' + (list.length - 5) + ' autre(s)' : '') } }];
     },
     prolongation(F) {
       if (!(F.s.round >= 8) || F.dow !== 1) return [];
@@ -548,6 +576,9 @@ function factory() {
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; out.push('Frais ' + euros(sx.frais || 1500) + ' € ; amende annulée ou portée à ' + euros(sx.alourdie || 7500) + ' €'); }
     if (e.orientation) out.push('Investissements : ' + (ORIENTATION_LABELS[e.orientation] || e.orientation));
     if (e.suite) out.push('Suite dans ' + e.suite.jours + ' jours');
+    if (e.contratDS === 'annuler') out.push('Il partira à la fin de son contrat ; prime remboursée');
+    if (e.contratDS === 'forcer') out.push('Prolongation au salaire demandé');
+    if (e.consigneDS) out.push('Consigne : ' + ({ econome: 'économe', jeunes: 'miser sur les jeunes', equilibre: 'équilibre' }[e.consigneDS] || e.consigneDS));
     return out.join(' · ');
   }
   // Raison pour laquelle une réponse n'est pas possible aujourd'hui ('' : possible).
@@ -563,6 +594,11 @@ function factory() {
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; if ((club.cash ?? 0) < (sx.frais || 1500) + (sx.alourdie || 7500)) return 'Trésorerie insuffisante pour un appel.'; }
     if (e.promesse) {
       if (typeof satisfactionActive !== 'function' || !satisfactionActive() || s.phase !== 'league' || s.round > 23 || Object.keys(s.economy?.talks || {}).length || p.injury || p.satisfaction?.promise) return 'Promesse impossible : phase régulière, joueur apte et sans promesse en cours.';
+    }
+    if (e.contratDS || e.consigneDS) {
+      if (typeof dsContratsRefus !== 'function') return 'Le directeur sportif ne gère pas les contrats.';
+      const raison = dsContratsRefus(e.contratDS || e.consigneDS, m.player);
+      if (raison) return raison;
     }
     if (e.promouvoir) {
       const y = (s.development?.academy || []).find(x => x.id === m.player);
@@ -614,6 +650,8 @@ function factory() {
     if (e.focus) s.collectiveFocus = e.focus;
     if (e.promesse) check(makePlayingPromise(p.id, e.promesse) === true, 'promesse refusée');
     if (e.promouvoir) check(promoteYouth(m.player) === true, 'promotion refusée');
+    if (e.contratDS) check(dsContratsAction(e.contratDS, m.player) === true, 'décision refusée');
+    if (e.consigneDS) check(dsContratsAction(e.consigneDS, m.player) === true, 'consigne refusée');
     if (e.orientation) check(investOrienter(e.orientation) === true, 'répartition refusée');
     if (Number.isFinite(e.caisse) && e.caisse) ledgerEntry('Courrier · ' + render(m).sujet.slice(0, 60), e.caisse);
     if (e.appel) {
