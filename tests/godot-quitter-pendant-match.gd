@@ -56,7 +56,7 @@ func run() -> void:
 	var dialog := quit_dialog()
 	check(dialog!=null,"« Quitter » du menu demande confirmation pendant le match")
 	if dialog != null:
-		check(dialog.dialog_text.contains("Le match est en cours") and dialog.dialog_text.contains("vous reprendrez avant le coup d’envoi"),"Texte clair du point de vue du manager : "+dialog.dialog_text)
+		check(dialog.dialog_text.contains("Le match est en cours") and dialog.dialog_text.contains("tu reprendras avant le coup d’envoi"),"Texte clair du point de vue du manager : "+dialog.dialog_text)
 		check(dialog.get_cancel_button().has_focus(),"« Annuler » a le focus par défaut")
 	await dismiss()
 	check(quit_dialog()==null,"Annuler referme la confirmation")
