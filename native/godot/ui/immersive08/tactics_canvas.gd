@@ -65,6 +65,7 @@ static func build(app:Control) -> Control:
 	auto.add_theme_stylebox_override("normal",C.box(Color("101719"),Color.TRANSPARENT,0,0))
 	D.photo(composition,"tactics-briefing",Rect2(23,72,1024,160),.5)
 	var pitch:=Pitch.new();composition.add_child(pitch);D.place(pitch,Rect2(24,245,1022,626))
+	var advice := _staff_advice(composition,app)
 	_nationale_qualification(composition,app.model.get("selection",{}))
 	if not Roles.view(app.model).is_empty():
 		var roles:=D.button(composition,Rect2(790,190,254,30),"TIREURS ET LANCEUR",func():Roles.open(app),false,"ball",true,app.accent,"LineupRoles")
@@ -92,6 +93,7 @@ static func build(app:Control) -> Control:
 		var button:=Selection.PlayerButton.new()
 		button.name="LineupSlot%02d" % (slot+1)
 		button.tooltip_text=_player_hint(app,person,slot)
+		if advice.has(slot):button.tooltip_text+="\n"+str(advice[slot])
 		button.accessibility_name=button.tooltip_text
 		button.add_theme_stylebox_override("normal",C.box(Color("16422f") if selected else Color("0c251d"),C.GOLD if selected else Color("789384"),4,0))
 		button.add_theme_stylebox_override("hover",C.box(Color("26543c"),C.MINT,4,0))
@@ -109,6 +111,7 @@ static func build(app:Control) -> Control:
 		D.chip(button,Rect2(108,8,51,28),Selection.rating_text(app.model,person,slot),_note_color(note)).name="TacticsPositionRating%02d" % (slot+1)
 		D.text(button,112,52,"AU POSTE",12,C.MUTED,500,90,HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(button,84,78,_slot_name(person),19,C.IVORY,600,158,HORIZONTAL_ALIGNMENT_CENTER)
+		if advice.has(slot):D.chip(button,Rect2(8,60,24,22),"!",C.AMBER).name="TacticsStaffAdviceMark%02d" % (slot+1)
 		button.pressed.connect(func():_choose_slot(app,slot))
 	var group:=P.group(app.model)
 	var condition := "Condition · XV %s · Groupe %d %%" % [P.lineup_condition(app.model), group.condition]
@@ -142,6 +145,35 @@ static func build(app:Control) -> Control:
 	D.text(vigilance,24,131 if watched.is_empty() else 135,"Consulter l’effectif pour ajuster les charges individuelles.",19,C.MUTED,400,514,HORIZONTAL_ALIGNMENT_LEFT,true)
 	_restore_focus.call_deferred(app)
 	return page
+
+## Avis du staff sur la feuille (moteur : selection.staffAdvice, match-actions.js lot 3), dans le bandeau
+## de briefing : au plus quatre postes où le staff composerait autrement, avec sa raison. Le staff peut se
+## tromper : c'est sa perception. Rend {poste: texte complet} pour signaler les postes concernés sur le terrain.
+static func _staff_advice(composition: Panel,app: Control) -> Dictionary:
+	var marks := {}
+	var data: Variant = app.model.get("selection",{}).get("staffAdvice")
+	if not (data is Dictionary):
+		return marks
+	var box := Panel.new()
+	box.name = "TacticsStaffAdvice"
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_stylebox_override("panel",C.box(Color(0.03,0.07,0.06,0.82),Color.TRANSPARENT,0,0))
+	composition.add_child(box)
+	D.place(box,Rect2(23,72,752,160))
+	D.text(box,18,32,"AVIS DU STAFF",17,C.GOLD,700,300)
+	var tips: Array = data.get("conseils",[])
+	if tips.is_empty():
+		D.text(box,18,68,"Ton staff valide ta feuille.",19,C.MINT,600,700).name = "TacticsStaffAdviceAgree"
+		return marks
+	for i in mini(tips.size(),4):  # 4 lignes au plus (moteur : avis.max)
+		var tip: Dictionary = tips[i]
+		var line := D.text(box,18,64+i*29,"• "+str(tip.get("court",tip.get("texte",""))),20,C.IVORY,500,716)
+		line.name = "TacticsStaffAdvice%d" % i
+		line.tooltip_text = str(tip.get("texte",""))
+		line.mouse_filter = Control.MOUSE_FILTER_PASS
+		marks[int(tip.get("slot",-1))] = str(tip.get("texte",""))
+	box.mouse_filter = Control.MOUSE_FILTER_PASS
+	return marks
 
 static func _nationale_qualification(parent: Panel, selection: Dictionary) -> void:
 	var qualification: Dictionary = selection.get("nationaleQualification",{})

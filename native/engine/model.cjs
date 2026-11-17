@@ -52,6 +52,8 @@ module.exports=function nativeModel(){
  }))};
  // Alerte de fatigue (Gabi) : titulaires de la feuille du prochain match sous 70 % de condition et remplaçants frais.
  if(!errors.length&&!l&&pair&&S.phase!=='ended'&&typeof nativePositionAptitudes!=='undefined'){const advice=nativePositionAptitudes.fatigueAdvice(own,S.lineup,S.reserves,70);if(advice)selection.fatigue=advice;}
+ // Avis du staff sur la feuille (match-actions.js, lot 3) : postes où il composerait autrement, avec sa raison.
+ if(!errors.length&&!l&&pair&&typeof staffSheetAdvice==='function'){const avis=staffSheetAdvice();if(avis)selection.staffAdvice=avis;}
  if(errors.length&&!l&&S.phase!=='ended'){
   const team={...own,players:own.players.map(p=>({...p}))};
   const sheet=buildSheet(team,S.lineup,S.reserves);

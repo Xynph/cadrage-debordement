@@ -122,3 +122,31 @@ match serrées. Confiance après 9 semaines : moyenne 0,1, 10e-90e centiles −7
 fréquents avec un staff faible, fenêtre (avis, confiance, fourchettes 11/9/5), confiance
 (surprise, borne, retour, sauvegarde), anciennes rencontres, mesures déterministes.
 `tests/godot-consignes-individuelles.gd` : affichage des détails dans la fenêtre.
+
+## Lot 3 — avis du staff sur la feuille de match (17/11/2026)
+
+Deux faiblesses du lot 2 : les erreurs d'un staff faible étaient presque invisibles et le manager ne voyait
+pas l'avis de son staff.
+
+- **Cause de l'invisibilité** : `native/engine/position-aptitudes.cjs` réattribuait la première ligne
+  (`reserveFront`), les postes 4 à 15 (algorithme hongrois) et le banc avec les vraies notes, effaçant la
+  perception du staff. La perception (erreur + penchant) s'ajoute désormais à ces trois attributions, pour la
+  feuille du club du manager seulement (`staffSheetJudges`). Clubs de l'IA inchangés.
+- **Penchant du staff** (`STAFF_JUDGEMENT.composition`) : sous le niveau 70, chaque membre a un penchant stable
+  tiré de son identité, l'expérience (âge) ou la forme récente (notes de match), de poids croissant quand le
+  niveau baisse (7 points au niveau 45). L'expérience pèse ×1,5 avant un derby ou contre un adversaire plus
+  fort. Même erreur d'une semaine à l'autre ; la feuille reste toujours valide (seul l'ordre de préférence change).
+- **Apprentissage** : `S.staffJudgement.connu[joueur] = [membre, matchs]` ; chaque match joué au moins 20 minutes
+  sous les ordres du membre qui le juge réduit erreur et penchant de 6 %, jusqu'à 40 %. Un nouveau membre repart
+  de zéro. Champ facultatif de la sauvegarde (validé dans `saves.js`).
+- **Moteur versionné** : `staffJudgementSubs` passe à 2 au coup d'envoi (remplacements du staff avec penchant et
+  apprentissage) ; une rencontre commencée en version 1 garde `perceivedFitV1`.
+- **Avis affiché** : `staffSheetAdvice()` → `selection.staffAdvice` (projection), au plus 4 postes où le staff
+  composerait autrement (écart perçu ≥ 1,5 point), avec la raison qui pèse le plus : fraîcheur, forme,
+  expérience, adversaire ou niveau. Écran Composition : bandeau « Avis du staff » dans le briefing, repère « ! »
+  et texte complet en info-bulle sur le poste. Le staff peut se tromper : c'est sa perception.
+
+Mesures (12 staffs par niveau, club 102, `tests/avis-staff-feuille.cjs`) : staff à 45 → 4,3 titulaires
+différents de l'optimum, 0,7 en première ligne, 14 points de note au poste perdus sur le XV (≈ 1,5 %) ; staff
+à 85 → aucun en première ligne, 0,3 point perdu (permutations de valeur égale). Après dix matchs sous ses
+ordres, le staff faible ne perd plus que 3,9 points.

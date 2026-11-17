@@ -145,12 +145,18 @@ module.exports=function positionAptitudes(){
  // trois places de banc), chacun au meilleur joueur qui laisse un jumelage complet possible aux
  // places suivantes. Un joueur n'est donc jamais déplacé du XV vers le banc pour servir une place
  // de banc : le meilleur pilier gauche, talonneur ou pilier droit dispo ouvre le match.
+ // Jugement du staff (match-actions.js, lot 3) : pour la feuille du club du manager, la perception du staff
+ // (erreur et penchant, déjà pondérés par la condition) s'ajoute aux notes de l'attribution des postes, sinon
+ // l'attribution optimale (première ligne, postes 4 à 15, banc) effaçait ses erreurs. Clubs de l'IA : rien.
+ let perception=null;
+ function perceptionFor(team){try{return typeof staffSheetJudges==='function'&&typeof perceivedParts==='function'?staffSheetJudges(team):null;}catch(e){return null;}}
+ function perceived(p,f){if(!perception)return 0;const x=perceivedParts(perception,p,f);return x.erreur+x.penchant;}
  function reserveFront(team,preferred,bench){
   const prefs=Array.from({length:23},(_,i)=>i<15?preferred[i]:bench[i-15]),frontSlots=[0,1,2,15,16,17],assigned=new Map();
   const pool=availablePool(team);
   const fixedOther=new Set(prefs.filter((id,i)=>id&&!frontSlots.includes(i)));
   // Même pondération par la condition que fitScore : un pilier épuisé ne passe pas devant un pilier frais.
-  const notes=new Map(),weighted=p=>{let w=notes.get(p);if(w===undefined){w=baseNote(p)*(.5+p.condition*.005);notes.set(p,w);}return w;};
+  const notes=new Map(),weighted=p=>{let w=notes.get(p);if(w===undefined){w=baseNote(p)*(.5+p.condition*.005)+perceived(p,p.fam);notes.set(p,w);}return w;};
   const options=new Map(frontSlots.map(slot=>[slot,pool.filter(p=>!fixedOther.has(p.id)&&(slot<15?baseSlot(p,slot):baseBench(p,slot-15)))
    .sort((a,b)=>Number(b.id===prefs[slot])-Number(a.id===prefs[slot])||weighted(b)-weighted(a)||compareId(a,b))]));
   // Taille du plus grand jumelage places/joueurs sur ces places, sans les joueurs déjà retenus.
@@ -222,7 +228,7 @@ module.exports=function positionAptitudes(){
      let bestValue=-Infinity;
      for(const q of pool){
       if(q.injury||used.has(q.id)||!eligible(q,slot))continue;
-      const value=rating(q,slot)*(.5+q.condition*.005);
+      const value=rating(q,slot)*(.5+q.condition*.005)+perceived(q,q.fam);
       if(!p||value>bestValue||value===bestValue&&compareId(q,p)<0){p=q;bestValue=value;}
      }
     }
@@ -243,7 +249,7 @@ module.exports=function positionAptitudes(){
    for(const p of availablePool(team)){
     if(fixed.has(p.id))continue;
     const ok=slots.map(i=>eligible(p,i));
-    if(ok.some(Boolean)){const notes=derive(p).positionRatings,weight=.5+p.condition*.005;candidates.push({p,ok,value:slots.map(i=>-(notes[positionNumber(i)]??0)*weight)});}
+    if(ok.some(Boolean)){const notes=derive(p).positionRatings,weight=.5+p.condition*.005;candidates.push({p,ok,value:slots.map(i=>-((notes[positionNumber(i)]??0)*weight+perceived(p,FAMILIES[i])))});}
    }
    candidates.sort((a,b)=>compareId(a.p,b.p));
    const cols=candidates.map(c=>c.p);
@@ -300,7 +306,7 @@ module.exports=function positionAptitudes(){
   }
   function reservedBuild(fn,team,preferred=[],bench=[],...args){
    if(reservations)return fn(team,preferred,bench,...args);
-   reservations=reserveFront(team,preferred,bench);
+   perception=perceptionFor(team);reservations=reserveFront(team,preferred,bench);
    try{
     let sheet=fn(team,preferred,bench,...args);
     // Une feuille choisie à la main (postes préférés) n'est jamais réattribuée.
@@ -310,12 +316,12 @@ module.exports=function positionAptitudes(){
     sheet=improveBench(team,sheet,bench);
     // Règle JIFF : appliquée en dernier, sur la feuille définitive, en tenant compte des postes.
     return !preferred.some(Boolean)&&!bench.some(Boolean)?jiffFit(team,sheet):sheet;
-   }finally{reservations=null;}
+   }finally{reservations=null;perception=null;}
   }
   buildSheet=(team,preferred=[],bench=[])=>reservedBuild(oldBuild,team,preferred,bench);
   managerSheet=(team,...args)=>{
    if(reservations)return oldManager(team,...args);
-   reservations=reserveFront(team,[],[]);try{return jiffFit(team,improveBench(team,oldManager(team,...args)));}finally{reservations=null;}
+   perception=perceptionFor(team);reservations=reserveFront(team,[],[]);try{return jiffFit(team,improveBench(team,oldManager(team,...args)));}finally{reservations=null;perception=null;}
   };
   unit=(live,side,key,filter)=>{
    // Une seule passe sans objets intermédiaires (appelée des dizaines de fois par action) : mêmes joueurs retenus,
