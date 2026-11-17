@@ -648,6 +648,19 @@
         {"id": "jeunes", "libelle": "Consigne : mise sur les jeunes", "effets": {"consigneDS": "jeunes"}, "resultat": "Le directeur sportif favorisera les jeunes prometteurs pour les prochaines échéances."},
         {"id": "equilibre", "libelle": "Consigne : reviens à l'équilibre", "effets": {"consigneDS": "equilibre"}, "resultat": "Le directeur sportif reprend sa ligne habituelle pour les prochaines échéances."}
       ]
+    },
+    "ds_staff": {
+      "categorie":  "staff", "declencheur":  "ds_staff", "priorite":  26, "arret":  true, "ecran":  "Club",
+      "expediteur": "{signature}",
+      "formulations": [
+        {"sujet": "Le staff : ce que j'ai réglé", "corps": "Coach, comme convenu, je me suis occupé des contrats du staff.\n\n{resume}\n\nJ'ai visé ce qui est à la portée du club. Si tu veux que je serre davantage les cordons de la bourse, dis-le moi ; tu gardes la main dans l'écran du staff pour engager ou libérer qui tu veux."},
+        {"sujet": "Mouvements dans le staff", "corps": "Point rapide sur l'encadrement.\n\n{resume}\n\nC'est mon jugement, pas une vérité : l'écran du staff te permet de revenir sur un choix. Et si tu préfères que je dépense moins, donne-moi la consigne."}
+      ],
+      "reponses": [
+        {"id": "ok", "libelle": "Bien reçu", "effets": {}, "resultat": "Le directeur sportif continue de veiller sur le staff."},
+        {"id": "econome", "libelle": "Consigne : sois plus économe", "effets": {"consigneDS": "econome"}, "resultat": "Le directeur sportif visera des profils moins exigeants et gardera une marge sur la masse salariale."},
+        {"id": "equilibre", "libelle": "Consigne : reviens à l'équilibre", "effets": {"consigneDS": "equilibre"}, "resultat": "Le directeur sportif reprend sa ligne habituelle."}
+      ]
     }
   }
 }

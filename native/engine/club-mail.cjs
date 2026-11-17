@@ -274,6 +274,22 @@ function factory() {
         return { key: x.id + ':' + desk.season + ':' + x.d, player: x.id, vars: { ...(p ? playerVars(p) : { joueur: x.name, poste: x.pos, age: x.age }), signature, raison: raisons[x.raison] || '', salaire: euros(x.salary * 52), fin: typeof libelleSaison === 'function' ? libelleSaison(x.end) : String(x.end), ancien: euros(x.oldSalary * 52) } };
       });
     },
+    // Staff renouvelé par le directeur sportif (staff-renouvellement.cjs) : un courrier par série de décisions.
+    ds_staff(F) {
+      const desk = F.s.manager?.staffDesk;
+      if (!desk || !Array.isArray(desk.lots)) return [];
+      const d = F.s.clubDirections?.clubs?.[F.s.club]?.director, signature = d && typeof d.name === 'string' && d.name ? d.name + ', directeur sportif' : 'Le directeur sportif';
+      const raisons = typeof nativeStaffRenouvellement !== 'undefined' ? nativeStaffRenouvellement.RAISONS : {};
+      const saison = x => typeof libelleSaison === 'function' ? libelleSaison(x + 1) : String(x + 1);
+      return desk.lots.filter(l => l.date && l.date <= F.d && l.date >= shift(F.d, -14)).map(l => {
+        const lignes = [];
+        if (l.prolonges.length) lignes.push('Prolongés : ' + l.prolonges.map(x => x.name + ' (' + x.role + ', jusqu’à la fin de la saison ' + saison(x.fin) + ')').join(', ') + '.');
+        if (l.departs.length) lignes.push('Je laisse partir en fin de saison : ' + l.departs.map(x => x.name + ' (' + x.role + ' : ' + (raisons[x.raison] || '') + ')').join(', ') + '.');
+        if (l.recrues.length) lignes.push('Arrivés au club : ' + l.recrues.map(x => x.name + ' (' + x.role + ')').join(', ') + '.');
+        if (l.refus) lignes.push(l.refus + ' signature' + (l.refus > 1 ? 's' : '') + ' n’ont pas pu se faire, faute de moyens.');
+        return { key: l.id, vars: { signature, resume: lignes.join('\n\n'), n: l.prolonges.length + l.departs.length + l.recrues.length } };
+      });
+    },
     contrats(F) {
       if (F.dow !== 4 || !(F.s.round >= 6)) return [];
       const list = F.players.filter(p => p.contractEnd === F.s.season).sort((a, b) => b.rating - a.rating);

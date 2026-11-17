@@ -241,6 +241,9 @@ function createBridge(options={}){
   // Prolongations confiées au directeur sportif (prolongations-staff.cjs) : réglages et décisions vérifiés à la sauvegarde.
   ctx.nativeProlongations=require('./prolongations-staff.cjs');
   run('{const dsValidationV1=validateCareer;validateCareer=function(s){const r=dsValidationV1(s);if(s&&typeof s==="object"&&s.manager)nativeProlongations.valider(s.manager,s.season);return r;};}');
+  // Staff du club joué renouvelé par le directeur sportif (staff-renouvellement.cjs) : bureau vérifié à la sauvegarde.
+  ctx.nativeStaffRenouvellement=require('./staff-renouvellement.cjs');
+  run('{const dsStaffValidationV1=validateCareer;validateCareer=function(s){const r=dsStaffValidationV1(s);if(s&&typeof s==="object"&&s.manager)nativeStaffRenouvellement.valider(s.manager,s.season);return r;};}');
   ctx.nativeWorldRegistryText=JSON.stringify(worldRegistry);
   if(pacificRegistry)ctx.nativeWorldPacificRegistryText=JSON.stringify(pacificRegistry);
   if(japanRegistry)ctx.nativeWorldJapanRegistryText=JSON.stringify(japanRegistry);
@@ -911,7 +914,7 @@ function createBridge(options={}){
     let command=request.command,restoring=null;
     // Budget réaliste des carrières aux salaires liés au niveau : branché avant toute commande,
     // y compris le premier snapshot en lecture seule après une reprise (plancher et prévision).
-    if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);run(ctx.nativeProlongations.BRANCHEMENT);}
+    if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);run(ctx.nativeProlongations.BRANCHEMENT);run(ctx.nativeStaffRenouvellement.BRANCHEMENT);}
     const syncedAtStart=versionsSynced;
     if(!READ_ONLY.has(command)){peek('nativeSectionsFresh=false');stateEpoch++;versionsSynced=false;}
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
@@ -1228,7 +1231,7 @@ function createBridge(options={}){
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
      // Courrier du club (club-mail.cjs) : une réception par jour de calendrier ; seule la boîte est écrite.
      // Prolongations confiées au directeur sportif (mars à juin) : décisions du jour, avant le courrier qui les annonce.
-     run("if(typeof dsContratsObserver==='function')dsContratsObserver();");
+     run("if(typeof dsContratsObserver==='function')dsContratsObserver();if(typeof dsStaffObserver==='function')dsStaffObserver();");
      run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »

@@ -121,6 +121,8 @@
       "tests/staff-completion.cjs": 2,
       "tests/staff-contract-quality-audit.cjs": 2,
       "tests/staff-packs.cjs": 25,
+      "tests/staff-renouvellement.cjs": 20,
+      "tests/prolongations-staff.cjs": 20,
       "tests/tactical-plans.cjs": 28,
       "tests/v28-collective-preparation.cjs": 3,
       "tests/v29-focused-development.cjs": 5,
