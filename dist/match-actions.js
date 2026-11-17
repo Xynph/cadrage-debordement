@@ -144,7 +144,15 @@ const STAFF_JUDGEMENT={
  // Un buteur qui réussit ce qu'on attend de lui reste en moyenne à 0.
  confiance:{borne:20,ecart:6,ecartDecisif:10,retour:.75,but:.002,jugement:1/3},
  // Révélation du sang-froid : observations nécessaires et largeur de la fourchette affichée.
- revelation:{paliers:[2,5,10],largeurs:[11,9,5],rapport:3}
+ revelation:{paliers:[2,5,10],largeurs:[11,9,5],rapport:3},
+ // Composition (avis du staff, 17/11/2026, docs/jugement-staff-20261116.md § Lot 3). Un staff sous `seuil` a un
+ // penchant stable (tiré de l'identité du membre) : l'expérience (âge) ou la forme récente (notes de match).
+ // Poids en points de note au poste au niveau minimal, nul à `seuil` ; ×`adversaire` pour l'expérience avant un
+ // derby ou contre plus fort. Le staff apprend à connaître un joueur : erreur et penchant diminuent de
+ // `apprentissage` par match joué (au moins `minutes`) sous ses ordres, jusqu'à `plancher`. Avis affiché :
+ // au plus `max` conseils, écart perçu d'au moins `ecart` points, fraîcheur citée à `fraicheur` points de condition.
+ composition:{seuil:70,penchant:7,penchants:['experience','forme'],adversaire:1.5,apprentissage:.06,plancher:.4,minutes:20,
+  avis:{max:4,ecart:1.5,fraicheur:10,forme:6.5,formeBasse:5.8}}
 };
 const SJ_SPECIALITES={avants:/avant|melee|scrum|touche|line.?out|forward|conquete/,arrieres:/arriere|attaque|attack|back|jeu au pied|kick|trois.quarts|3\/4/};
 function sjHash(x){let h=2166136261;for(const c of String(x))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0}
@@ -209,7 +217,7 @@ function judgedOrder(clubId,judges,players,key,l=null){return [...players].map(p
 function judgedBest(l,side,players,key){return judgedOrder(l.pair[side],l.staffJudges[side],players,key,l)[0]||null}
 function initializeStaffJudgement(l){
  if(!STAFF_JUDGEMENT_RULES)return;
- l.staffJudgementVersion=1;l.staffJudgementSubs=1;l.staffJudges=l.pair.map(ci=>staffJudges(ci));l.sjConfiance={};l.sjVu={};l.sjDecisif=false;
+ l.staffJudgementVersion=1;l.staffJudgementSubs=2;l.staffJudges=l.pair.map(ci=>staffJudges(ci));l.sjConfiance={};l.sjVu={};l.sjDecisif=false;
 }
 // Moment décisif pour l'équipe `side` (extra : points déjà acquis avant le tir, l'essai pour une transformation).
 function decisiveMoment(l,side,extra=0){const D=STAFF_JUDGEMENT.decisif;return staffJudgementRules(l)&&l.minute>=D.minute&&Math.abs(l.score[side]+extra-l.score[1-side])<=D.ecart}
@@ -244,6 +252,7 @@ function commitStaffJudgement(l){
  for(const [id,c] of Object.entries(l.sjConfiance)){if(c)st.confiance[id]=c;else delete st.confiance[id]}
  if(l.pair.includes(S.club)){
   pruneStaffJudgement();
+  if(l.staffJudgementSubs===2)learnStaffJudgement(l,st);
   if(l.sjDecisif)for(const sh of l.sheets)for(const id of sh.on)if(id)st.vu[id]=Math.min(99,(st.vu[id]||0)+1);
   for(const [id,n] of Object.entries(l.sjVu))st.vu[id]=Math.min(99,(st.vu[id]||0)+n);
  }
@@ -251,14 +260,14 @@ function commitStaffJudgement(l){
 // Nettoyage (fin de saison, chargement) : seulement les joueurs encore présents dans un effectif.
 function pruneStaffJudgement(){
  const st=staffJudgementStore();if(!st)return;const ids=new Set(S.clubs.flatMap(c=>(c.players||[]).map(p=>p.id)));
- for(const map of [st.confiance,st.vu])for(const id of Object.keys(map))if(!ids.has(id))delete map[id];
+ for(const map of [st.confiance,st.vu,st.connu||{}])for(const id of Object.keys(map))if(!ids.has(id))delete map[id];
 }
 // Lot 2 (composition, remplaçants, match délégué) : le staff du club du manager note chaque joueur à un poste
 // d'après sa perception de la note au poste (erreur fixe par couple membre du staff / joueur / famille de poste,
 // spécialiste des avants pour les familles 0-3, des arrières sinon), condition comprise comme la vraie note.
 // Les clubs de l'IA gardent la vraie note (performance, stabilité des résultats). Les choix explicites du
 // manager ne passent jamais par là : seules les places laissées au staff sont concernées.
-function staffSheetJudges(c){return STAFF_JUDGEMENT_RULES&&c&&S&&c.id===S.club?staffJudges(c.id):null}
+function staffSheetJudges(c){if(!(STAFF_JUDGEMENT_RULES&&c&&S&&c.id===S.club))return null;const j=staffJudges(c.id);j.ctx=sheetContext();return j}
 // La perception s'ajoute à la note du moteur (fitScore, éventuellement remplacée par les aptitudes au poste) : elle ne
 // change que l'ordre de préférence, jamais la base de calcul ni l'admissibilité.
 // Perception d'un joueur pour la feuille de match. L'erreur du staff est déjà bornée par son niveau
@@ -266,10 +275,73 @@ function staffSheetJudges(c){return STAFF_JUDGEMENT_RULES&&c&&S&&c.id===S.club?s
 // mesure (poussée, chrono de mêlée) : un entraîneur des avants au moins moyen (niveau >= defaut) ne s'y trompe pas, le
 // meilleur disponible pondéré par la condition ouvre le match (tests/world-composition-staff.cjs) ; un staff faible
 // ou les autres postes gardent l'erreur (tests/jugement-staff-lot2.cjs).
-function perceivedFit(judges,p,f=p.fam){const j=f<=3?judges.avants:judges.arrieres;if(f<=1&&j.level>=STAFF_JUDGEMENT.niveau.defaut)return fitScore(p,f);return fitScore(p,f)+judgementError(j,p.id,'poste'+f)*(.5+p.condition*.005)}
+function perceivedFitV1(judges,p,f=p.fam){const j=f<=3?judges.avants:judges.arrieres;if(f<=1&&j.level>=STAFF_JUDGEMENT.niveau.defaut)return fitScore(p,f);return fitScore(p,f)+judgementError(j,p.id,'poste'+f)*(.5+p.condition*.005)}
 // Remplacements décidés par le staff en match (match délégué, « faire les changements ») : seulement pour le
 // club du manager et les rencontres commencées avec ces règles (`staffJudgementSubs`, copié au coup d'envoi).
-function staffSubsFit(l,side){if(!(l?.staffJudgementSubs===1&&l.pair?.[side]===S.club&&l.staffJudges?.[side]))return fitScore;const j=l.staffJudges[side];return (p,f=p.fam)=>perceivedFit(j,p,f)}
+// Version 1 (#825) : erreur seule ; version 2 (lot 3) : penchant du staff et apprentissage, sans contexte d'adversaire.
+function staffSubsFit(l,side){const v=l?.staffJudgementSubs;if(!((v===1||v===2)&&l.pair?.[side]===S.club&&l.staffJudges?.[side]))return fitScore;const j=l.staffJudges[side];return v===1?(p,f=p.fam)=>perceivedFitV1(j,p,f):(p,f=p.fam)=>perceivedFit(j,p,f)}
+// ---- Lot 3 : penchant du staff, apprentissage, avis sur la feuille de match (17/11/2026) ----
+// Faiblesse du staff (0 = fiable, 1 = niveau minimal) pour le penchant de composition.
+function sjWeakness(level){const {seuil}=STAFF_JUDGEMENT.composition,{min}=STAFF_JUDGEMENT.niveau;return clamp((seuil-level)/(seuil-min),0,1)}
+function judgePenchant(j){const P=STAFF_JUDGEMENT.composition.penchants;return P[sjHash(j.id+'|penchant')%P.length]}
+// Forme récente (moyenne des dernières notes de match, sur 10) ; null sans match noté.
+function recentForm(p){const f=S?.matchNotes?.joueurs?.[p.id]?.f;return Array.isArray(f)&&f.length?f.reduce((a,b)=>a+b,0)/f.length/10:null}
+function penchantSignal(p,kind){if(kind==='experience')return clamp(((p.age||26)-26)/5,-1,1);const f=recentForm(p);return f===null?0:clamp((f-6)/1.2,-1,1)}
+function judgeTag(j){return sjHash(j.id)%1000000}
+// Connaissance d'un joueur par le membre du staff qui le juge : matchs joués sous ses ordres (remis à zéro si le membre change).
+function staffKnowledge(j,p){const C=STAFF_JUDGEMENT.composition,e=staffJudgementStore()?.connu?.[p.id];const n=Array.isArray(e)&&e[0]===judgeTag(j)?e[1]:0;return Math.max(C.plancher,1-n*C.apprentissage)}
+// Contexte du prochain match du manager : derby ou adversaire plus fort (moyenne des 15 meilleures notes).
+function sheetContext(){
+ try{const pair=typeof nextMatch==='function'?nextMatch():null;if(!pair)return {adversaire:false};const opp=S.clubs[pair[0]===S.club?pair[1]:pair[0]];if(!opp)return {adversaire:false};
+  const top=c=>[...(c.players||[])].map(p=>p.rating||0).sort((a,b)=>b-a).slice(0,15).reduce((a,b)=>a+b,0)/15;
+  const derby=typeof isDerby==='function'&&isDerby(S,S.club,opp.id);return {adversaire:!!derby||top(opp)>top(club())+2,derby:!!derby,name:opp.name}}catch(e){return {adversaire:false}}
+}
+// Parts de la perception d'un joueur à une famille de poste (club du manager) : erreur et penchant, déjà pondérés
+// par la condition (même base que fitScore) et par la connaissance du joueur.
+function perceivedParts(judges,p,f=p.fam){
+ const j=f<=3?judges.avants:judges.arrieres;if(f<=1&&j.level>=STAFF_JUDGEMENT.niveau.defaut)return {judge:j,erreur:0,penchant:0,kind:null};
+ const C=STAFF_JUDGEMENT.composition,w=(.5+p.condition*.005)*staffKnowledge(j,p),kind=judgePenchant(j);
+ const boost=kind==='experience'&&judges.ctx?.adversaire?C.adversaire:1;
+ return {judge:j,erreur:judgementError(j,p.id,'poste'+f)*w,penchant:sjWeakness(j.level)*C.penchant*penchantSignal(p,kind)*w*boost,kind};
+}
+// Perception d'un joueur pour la feuille de match (lot 3). La perception ne change que l'ordre de préférence,
+// jamais l'admissibilité : buildSheet garde ses filtres (blessure, poste).
+function perceivedFit(judges,p,f=p.fam){const x=perceivedParts(judges,p,f);return fitScore(p,f)+x.erreur+x.penchant}
+// Fin de match : chaque joueur du manager qui a joué assez longtemps est mieux connu du membre qui le juge.
+function learnStaffJudgement(l,st){
+ const side=l.pair.indexOf(S.club),judges=l.staffJudges?.[side],sh=l.sheets?.[side];if(side<0||!judges||!sh)return;
+ const C=STAFF_JUDGEMENT.composition;st.connu=st.connu||{};
+ for(const p of S.clubs[S.club]?.players||[]){if((sh.minutes?.[p.id]||0)<C.minutes)continue;const tag=judgeTag(p.fam<=3?judges.avants:judges.arrieres),e=st.connu[p.id];
+  st.connu[p.id]=[tag,Math.min(99,(Array.isArray(e)&&e[0]===tag?e[1]:0)+1)]}
+}
+// Avis du staff sur la feuille du manager : feuille que le staff composerait (sa perception, sans les choix du
+// manager) comparée à la feuille actuelle, poste par poste. Seulement les postes litigieux (écart perçu), avec
+// la raison qui pèse le plus dans l'avis du staff ; le staff peut se tromper (sa perception, pas la vérité).
+function staffSheetAdvice(){
+ if(!STAFF_JUDGEMENT_RULES||!S||S.live||S.phase==='ended')return null;
+ const own=club(),judges=staffSheetJudges(own);if(!judges)return null;
+ const A=STAFF_JUDGEMENT.composition.avis,staff=buildSheet(own),mine=[...S.lineup,...S.reserves],theirs=[...staff.lineup,...staff.bench],xv=new Set(S.lineup.filter(Boolean));
+ const P=id=>own.players.find(p=>p.id===id),cond=p=>Math.round(p.condition);
+ const de=n=>(/^[aeiouyhàâéèêîôû]/i.test(n)?'d’':'de ')+n;const who=j=>j?.name?`Ton ${String(j.roleLabel||'adjoint').toLowerCase()}, ${j.name},`:'Ton staff';
+ const conseils=[];
+ for(let i=0;i<23;i++){
+  const x=P(theirs[i]),y=P(mine[i]);if(!x||!y||x.id===y.id)continue;
+  if(i<15?xv.has(x.id):mine.includes(x.id))continue;
+  const f=i<15?FAMILIES[i]:x.fam,px=perceivedParts(judges,x,f),py=perceivedParts(judges,y,f);
+  const ecart=perceivedFit(judges,x,f)-perceivedFit(judges,y,f);if(ecart<A.ecart)continue;
+  const ctx=judges.ctx||{},bias=px.penchant-py.penchant;let raison,motif;
+  if(x.condition-y.condition>=A.fraicheur){raison='fraicheur';motif=`${x.name} est plus frais (${cond(x)} % contre ${cond(y)} %)`}
+  else if(px.kind&&bias>=ecart*.5&&px.kind==='experience'){raison=ctx.adversaire?'adversaire':'experience';motif=ctx.adversaire?(ctx.derby?`pour un derby, il veut de l’expérience`:`contre ${ctx.name}, il veut de l’expérience`):`il fait confiance à l’expérience ${de(x.name)}`}
+  else if(px.kind&&bias>=ecart*.5){const fx=recentForm(x),fy=recentForm(y);raison='forme';motif=fx!==null&&fx>=A.forme?`${x.name} sort de bons matchs`:fy!==null&&fy<A.formeBasse?`${y.name} n’est pas dans le coup en ce moment`:`il trouve ${x.name} plus en forme`}
+  else{raison='niveau';motif=`il voit ${x.name} plus solide à ce poste`}
+  const poste=i<15?`au poste ${/^[aeéiou]/i.test(POS[i])?'d’':'de '}${POS[i].toLowerCase()}`:`sur le banc (${BENCH_LABELS[i-15].toLowerCase()})`;
+  conseils.push({slot:i,label:i<15?POS[i]:BENCH_LABELS[i-15],staffId:x.id,staffName:x.name,chosenId:y.id,chosenName:y.name,raison,ecart:Math.round(ecart*10)/10,
+   court:`${x.name} plutôt que ${y.name} (${(i<15?POS[i]:BENCH_LABELS[i-15]).toLowerCase()}${i<15?'':', banc'}) · ${{fraicheur:'plus frais',forme:'en forme',experience:'expérience',adversaire:'expérience pour ce match',niveau:'plus solide'}[raison]}`,
+   texte:`${who(px.judge)} préfère ${x.name} à ${y.name} ${poste} : ${motif}.`});
+ }
+ conseils.sort((a,b)=>b.ecart-a.ecart||a.slot-b.slot);
+ return {conseils:conseils.slice(0,A.max),total:conseils.length};
+}
 // Pour l'interface hors match : choix du staff du club du manager parmi `players` (attribut `key`).
 function staffPickOutsideMatch(players,key){if(!STAFF_JUDGEMENT_RULES)return null;return judgedOrder(S.club,staffJudges(S.club),players,key)[0]||null}
 // Lecture pour l'interface : pour chaque rôle, choix du staff, joueur désigné et candidats du XV

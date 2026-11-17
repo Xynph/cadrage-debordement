@@ -213,6 +213,8 @@
       "tests/world-reprise-preparation.cjs": 99,
       "tests/world-reprise.cjs": 41,
       "tests/godot-objectif-bureau.cjs": 120,
+      "tests/godot-avis-staff.cjs": 120,
+      "tests/avis-staff-feuille.cjs": 60,
       "tests/world-stades-retours.cjs": 75,
       "tests/youth-development-plan.cjs": 15,
       "tests/youth-development-review.cjs": 14,

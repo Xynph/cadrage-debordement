@@ -51,7 +51,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -89,6 +89,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/match-rendu"
     phase "captures rendu de match" captures-match-rendu.log \
       env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" CD_MATCH_RENDU_PASSES=actuel CD_MATCH_RENDU_TAILLES=1280x720 node tests/godot-match-rendu-capture.cjs
+  fi
+  if veut avis-staff; then
+    mkdir -p "$cap/avis-staff"
+    phase "captures avis du staff (Composition, 1080p)" captures-avis-staff.log \
+      env CD_AVIS_GRAPHICS=1 CD_AVIS_OUTPUT="$cap/avis-staff" node tests/godot-avis-staff.cjs
   fi
   if veut comparateur; then
     mkdir -p "$cap/comparateur"

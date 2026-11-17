@@ -16,7 +16,9 @@ const MESURE = `var mesure=(niveau)=>{const orig=staffJudges,rules=STAFF_JUDGEME
   if(niveau!==null)staffJudges=id=>{const j=orig(id);for(const k of Object.keys(j))j[k]={...j[k],id:j[k].id+':'+niveau,level:niveau};return j};
   autoLineup();const a=[...S.lineup,...S.reserves];autoLineup();const b=[...S.lineup,...S.reserves];
   const val=ids=>ids.slice(0,15).reduce((s,id,i)=>s+fitScore(player(id),FAMILIES[i]),0);
-  return {ecarts:a.filter((id,i)=>id!==[...opt.lineup,...opt.bench][i]).length,perte:val(opt.lineup)-val(a),stable:a.join()===b.join()}}
+  const o23=new Set([...opt.lineup,...opt.bench]),oxv=new Set(opt.lineup);
+  // Joueurs retenus autrement (XV ou groupe), pas les permutations entre postes de même valeur (lot 3).
+  return {ecarts:a.slice(0,15).filter(id=>!oxv.has(id)).length+a.slice(15).filter(id=>!o23.has(id)).length,perte:val(opt.lineup)-val(a),stable:a.join()===b.join()}}
  finally{staffJudges=orig;STAFF_JUDGEMENT_RULES=rules}}`;
 
 test('Composition confiée au staff : proche de l’optimum avec un bon staff, écarts stables avec un staff faible', () => {
@@ -41,6 +43,6 @@ test('Choix explicites du manager respectés ; IA et matchs anciens inchangés',
    delete l.staffJudgementSubs;const ancien=staffSubsFit(l,own)===fitScore;
    const iaSheet=(()=>{const c=S.clubs[pair[ai]];const a=buildSheet(c);STAFF_JUDGEMENT_RULES=0;const b=buildSheet(c);STAFF_JUDGEMENT_RULES=1;return a.lineup.join()===b.lineup.join()})();
    return {garde,complet,coupEnvoi,ia,moi,ancien,iaSheet,version:createRugbyMatch(pair).staffJudgementSubs}})())`));
-  assert.deepEqual(r, {garde: true, complet: true, coupEnvoi: true, ia: true, moi: true, ancien: true, iaSheet: true, version: 1});
+  assert.deepEqual(r, {garde: true, complet: true, coupEnvoi: true, ia: true, moi: true, ancien: true, iaSheet: true, version: 2});
   assert.equal(h.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'), true, 'sauvegarde valide');
 });
