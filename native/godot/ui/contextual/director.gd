@@ -45,6 +45,22 @@ func _meeting() -> Dictionary:
 		return value if outcome is Dictionary and outcome.get("invitationId") == origin and outcome.get("context") == value.get("context") else {}
 	return value if press.get("context") == value.get("context") and press.get("conference", {}).get("invitationId") == origin else {}
 
+## Rendez-vous du club obligatoire qui bloque les autres actions (en cours ou premier de la file), vide sinon.
+func blocking_meeting() -> Dictionary:
+	var meetings: Dictionary = app.model.get("clubLife", {}).get("clubMeetings", {})
+	var scene: Variant = meetings.get("scene")
+	if scene is Dictionary: return scene
+	var queue: Array = meetings.get("queue", [])
+	return queue[0] if not queue.is_empty() and queue[0] is Dictionary else {}
+
+## Nom d'un rendez-vous du club pour le joueur : « la conférence de presse », « le point médical »…
+static func meeting_label(meeting: Dictionary) -> String:
+	match str(meeting.get("kind", "")):
+		"press": return "la conférence de presse"
+		"medical": return "le point médical"
+		"board": return "le rendez-vous avec la direction"
+	return "le rendez-vous du club"
+
 func _talk() -> Dictionary:
 	var value: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 	return value if value is Dictionary else {}

@@ -36,7 +36,7 @@ const COMMAND_WAIT_MESSAGES := {
 	"population_enable": "Mise à jour de la base de joueurs…",
 	"academy_groups_enable": "Mise à jour des centres de formation…",
 	"national_play_match": "Simulation de la rencontre internationale…",
-	"league_benchmark": "Mesure de votre machine…"
+	"league_benchmark": "Mesure de ta machine…"
 }
 ## Seuls les vrais chargements ont un panneau (décision de Léo, 16/11/2026) : ouverture du jeu, création ou reprise de
 ## carrière, coup d’envoi, avance du calendrier (Continuer, sauvegarde automatique comprise), fichiers et packs.
@@ -519,7 +519,7 @@ func _screen_current() -> bool:
 	return _screen_stamp.content == now.content and _screen_stamp.route == now.route and _screen_stamp.day == now.day
 
 func _screen_state() -> Dictionary:
-	return ScreenRefresh.stamp(root_content.get_instance_id() if is_instance_valid(root_content) else 0, route, waiting, model, last_error, connection_error, _status_has_error())
+	return ScreenRefresh.stamp(root_content.get_instance_id() if is_instance_valid(root_content) else 0, route, waiting, model, last_error, connection_error, _status_has_error(), _storage_has_error())
 
 ## Après une réponse acceptée : rendu complet, sauf si l'écran affiché ne lit aucune section changée
 ## (table ui/screen_refresh.json) et a été construit dans le même état (hors attente, même jour, même erreur). Les
@@ -730,6 +730,28 @@ func _reset_reception(selected: String = "") -> void:
 func _show_press_inbox() -> void:
 	_reset_reception()
 	_navigate("Réception", false)
+
+## Bouton « Conf. de presse » (et accès depuis les invitations bloquées) : ouvre directement la conférence attendue,
+## son courrier sélectionné et lu en Réception, au lieu de laisser la Réception sur un autre courrier
+## (recette native du 16/11/2026). Sans conférence ouverte : la Réception, comme avant.
+func _open_press_conference() -> void:
+	var id := _pending_press_invitation()
+	if id.is_empty():
+		_show_press_inbox()
+		return
+	# Le refus « Rendez-vous du club : … » demandait justement cette conférence : il ne reste pas affiché dans la salle.
+	if str(last_error).begins_with("Rendez-vous du club"): last_error = ""
+	_reset_reception(id)
+	var inbox: Dictionary = Immersive.Reception._state(self)
+	inbox.press_opened = id
+	_navigate("Réception", false)
+	_open_press_invitation(id)
+
+## Identifiant du courrier de la conférence de presse ouverte cette semaine, vide s'il n'y en a pas.
+func _pending_press_invitation() -> String:
+	var conference: Dictionary = model.get("clubLife", {}).get("press", {}).get("conference", {})
+	if not conference.get("available", false): return ""
+	return str(conference.get("invitationId", "")) if conference.get("invitationId") != null else ""
 
 func _open_press_invitation(id: String) -> void:
 	var inbox: Dictionary = management_ui.get("reception", {})
@@ -1020,6 +1042,11 @@ func _autosave_alert() -> bool:
 	var info: Variant = model.get("meta",{}).get("autosave")
 	return info is Dictionary and info.get("notice") is Dictionary and bool(info.notice.get("alert",false))
 
+## Voyant « Stockage à vérifier » : seulement un vrai problème d'écriture (sauvegarde, sauvegarde automatique,
+## préférences), jamais une décision refusée par les règles du jeu (recette native du 16/11/2026).
+func _storage_has_error() -> bool:
+	return model.get("meta",{}).get("saveError",false) or _autosave_alert() or (user_preferences != null and not user_preferences.last_error.is_empty())
+
 func _status_has_error() -> bool:
 	return not last_error.is_empty() or model.get("meta",{}).get("saveError",false) or _autosave_alert() or (user_preferences != null and not user_preferences.last_error.is_empty()) or (is_instance_valid(soundscape) and not soundscape.last_error.is_empty())
 
@@ -1191,7 +1218,21 @@ func _update_live_bar() -> void:
 			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
 		if connection_error and bridge.child_pid <= 0 and primary_button.name == "ImmersiveContinue": primary_button.text = "Relancer"
 		primary_button.tooltip_text = primary_tooltip()
+		fit_button_text(primary_button)
 	if waiting and SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, true)
+
+## Bouton à texte rogné (clip_text) : réduit la police jusqu'à ce que le libellé tienne en entier, icône comprise
+## (recette native du 16/11/2026 : « Décision attendue » s'affichait « Décision attendu »). Plancher : 12 px.
+static func fit_button_text(button: Button) -> void:
+	if not is_instance_valid(button) or button.size.x <= 0: return
+	if not button.has_meta("fit_base_font_size"): button.set_meta("fit_base_font_size", button.get_theme_font_size("font_size"))
+	var size_px := int(button.get_meta("fit_base_font_size"))
+	var font := button.get_theme_font("font")
+	var style := button.get_theme_stylebox("normal")
+	var room := button.size.x - style.get_margin(SIDE_LEFT) - style.get_margin(SIDE_RIGHT)
+	if button.icon != null: room -= button.get_theme_constant("icon_max_width") + button.get_theme_constant("h_separation")
+	while size_px > 12 and font.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x > room: size_px -= 1
+	button.add_theme_font_size_override("font_size", size_px)
 
 func _press_required() -> bool:
 	return not Immersive.Selections.nation_only(model) and CareerProgression.press_required(model)
@@ -1215,7 +1256,7 @@ func primary_text() -> String:
 		if live.get("finished",false): return "VALIDER LE RÉSULTAT  →"
 		if route == "Préparation" and live.get("paused",false): return "RETOUR AU MATCH  →"
 		return "RETOUR AU DIRECT  →"
-	if _press_required(): return "OUVRIR LA RÉCEPTION  →"
+	if _press_required(): return "OUVRIR LA CONFÉRENCE DE PRESSE  →" if not _pending_press_invitation().is_empty() else "OUVRIR LA RÉCEPTION  →"
 	if not Immersive.Selections.current_fixture(model).is_empty(): return "OUVRIR LE COURRIER DE MATCH  →"
 	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
 	var daily := _daily_progression()
@@ -1236,7 +1277,7 @@ func primary_action() -> void:
 		else: _navigate("Match")
 		return
 	if _press_required():
-		_show_press_inbox()
+		_open_press_conference()
 		return
 	var international_fixture := Immersive.Selections.current_fixture(model)
 	if not international_fixture.is_empty():

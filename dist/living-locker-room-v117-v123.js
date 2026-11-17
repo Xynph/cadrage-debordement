@@ -116,7 +116,7 @@
    '<div class="cardtitle"><h2>Monde vivant · Vie du vestiaire</h2><span class="tag">'+(event?'DECISION A PRENDRE':'SUIVI DU GROUPE')+'</span></div>'+
    (event?'<h3>'+esc(event.title)+'</h3><p><strong>'+esc(p?.name||'Joueur')+'</strong> · '+esc(event.trait)+
     ' · leadership '+event.leadership+'/100</p><p>'+esc(event.context)+'</p><p class="help">Une décision maximum par semaine, sans événement aléatoire gratuit. Les profils restent stables dans la carriere.</p><div class="row">'+buttons+'</div>':
-    '<p>Votre entretien de cette semaine a ete traite. Les consequences restent dans la sauvegarde.</p>')+
+    '<p>Ton entretien de cette semaine a ete traite. Les consequences restent dans la sauvegarde.</p>')+
    '<details><summary>Suivi des engagements ('+pending.length+') et décisions ('+latest.length+')</summary><ul>'+
    pending.slice(-5).map(x=>'<li>Engagement : '+esc(roster(s).find(p=>p.id===x.playerId)?.name||'Joueur parti')+' · '+x.target+' minutes avant semaine '+x.dueWeek+'</li>').join('')+
    latest.map(x=>'<li>'+(typeof libelleSaison==='function'?libelleSaison:String)(x.season)+' / semaine '+x.week+' : '+esc(x.title)+' — '+esc(CHOICES[x.choice]?.label||x.choice)+'</li>').join('')+

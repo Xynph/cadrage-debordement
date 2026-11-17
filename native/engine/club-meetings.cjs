@@ -25,7 +25,15 @@ module.exports={
   // Réglage « Conférences ordinaires : y aller / envoyer l'adjoint » (press_policy) : préférence de carrière, sans effet immédiat.
   const presentationCommands=['pack_inspect','pack_install','pack_select','club_follow','press_policy'];
   const passive=command=>readCommands.includes(command)||presentationCommands.includes(command);
-  const pending='terminez le rendez-vous en attente, dans votre courrier, en Réception, avant de poursuivre';
+  // Refus d'une action pendant un rendez-vous obligatoire : nommer CE rendez-vous et dire où le trouver (recette native
+  // du 16/11/2026 : le message générique laissait le joueur sans piste en début de carrière).
+  function pending(st,e){
+   if(!st.current)return 'terminez d’abord l’entretien ouvert, puis le rendez-vous qui vous attend en Réception';
+   if(e.completed)return 'le rendez-vous est terminé : cliquez sur « Continuer » dans sa salle pour le clore avant de poursuivre';
+   if(e.kind==='press')return 'la conférence de presse vous attend ; ouvrez-la avec le bouton « Conf. de presse » (en haut à droite) ou depuis son courrier en Réception, avant de poursuivre';
+   if(e.kind==='medical'){const p=roster().find(p=>p.id===e.playerId);return 'le point médical'+(p?.name?' de '+p.name:'')+' vous attend en Réception, avant de poursuivre';}
+   return 'le rendez-vous avec la direction vous attend en Réception, avant de poursuivre';
+  }
   const stage=p=>p.medicalV68?.stage||null;
   const medicalAvailable=s=>!s.live&&!s.trained&&s.phase==='league';
   const priority=s=>s.v105to110?.priority||'stabilite';
@@ -150,8 +158,10 @@ module.exports={
    // The hook captures only a real clock transition, never a guessed advance.
    const previous=st.observed||(transition?{context:transition.from,players:[],objectives:[],warning:'none'}:null),c=context(),scope=previous&&previous.context.season===c.season&&previous.context.club===c.club;
    const advanced=!!previous&&!same(previous.context,c),fresh=command==='new_career'||!!previous&&!scope;
-   const press=projectDomain('press'),strategy=projectDomain('clubStrategy');
-   if((command==='new_career'||advanced)&&press?.conference?.available&&same(press.context,c))add(st,'press',reasons.press,'press:'+c.season+':'+c.club+':'+c.week);
+   // Presse projetée seulement quand elle peut ouvrir un rendez-vous (création, jour qui avance) : projection pure,
+   // inutile pour une consigne ou un réglage (~5 ms par commande).
+   const pressDue=command==='new_career'||advanced,press=pressDue?projectDomain('press'):null,strategy=projectDomain('clubStrategy');
+   if(pressDue&&press?.conference?.available&&same(press.context,c))add(st,'press',reasons.press,'press:'+c.season+':'+c.club+':'+c.week);
    const oldPlayers=new Map((scope?previous.players:[]).map(p=>[p.id,p]));
    const players=roster().map(p=>{const old=oldPlayers.get(p.id),injured=p.injury>0;return {id:p.id,injured,stage:stage(p),episode:(old?.episode||0)+(injured&&!old?.injured?1:0)};});
    const support=nativeSystems.domain('clubSupport');
@@ -182,7 +192,7 @@ module.exports={
    // A pre-existing private conversation gets to finish before queued rooms.
    if(!st.current&&S.sceneInvitations?.activeId&&['scene_invitation_reply','scene_invitation_close'].includes(command)&&payload.id===S.sceneInvitations.activeId)return true;
    if(['club_meeting_ack','club_meeting_continue'].includes(command))return true;
-   if(!st.current||e.completed)check(false,pending);
+   if(!st.current||e.completed)check(false,pending(st,e));
    check(!S.live&&same(e.context,context()),'contexte périmé');
    if(e.kind==='press'&&['press_conference','press_delegate'].includes(command)){check(same(payload.context,e.context),'contexte de presse périmé');return true;}
    if(e.kind==='medical'&&['medical_protocol','medical_return'].includes(command)){
@@ -195,7 +205,7 @@ module.exports={
     check(payload.playerId===e.playerId&&p&&p.injury<=0&&stage(p)==='reprise'&&!S.trained&&S.phase!=='ended'&&['collective','repos','normal','intense'].includes(payload.mode),'charge de reprise indisponible pour ce joueur');return true;
    }
    if(e.kind==='board'&&['club_board_priority','club_board_project','club_board_objective'].includes(command)){check(same(payload.context,e.context),'contexte de direction périmé');return true;}
-   check(false,pending);
+   check(false,pending(st,e));
   }
   function execute(command,payload){
    check(!!S,'carrière absente');check(hasClub(),'mandat en club absent');validate(S);

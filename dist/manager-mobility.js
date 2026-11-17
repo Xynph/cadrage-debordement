@@ -1,7 +1,7 @@
 'use strict';
 // V58 : mobilite native, volontaire et limitee a l'intersaison.
 // S.club reste le seul titulaire du poste joueur. Aucun second salaire.
-const MOBILITY_REASONS={offer:'La direction accepte votre candidature pour la saison suivante.',stable:'La direction souhaite conserver son technicien.',finances:'La situation financiere ne permet pas ce changement.',reputation:'Votre parcours ne correspond pas encore aux attentes de ce club.',declined:'Vous avez refuse cette offre.',cancelled:'Vous avez annule cette prise de poste.',expired:'La fenetre de cette intersaison est terminee.',completed:'Prise de poste effectuee.'};
+const MOBILITY_REASONS={offer:'La direction accepte ta candidature pour la saison suivante.',stable:'La direction souhaite conserver son technicien.',finances:'La situation financiere ne permet pas ce changement.',reputation:'Ton parcours ne correspond pas encore aux attentes de ce club.',declined:'Tu as refuse cette offre.',cancelled:'Tu as annule cette prise de poste.',expired:'La fenetre de cette intersaison est terminee.',completed:'Prise de poste effectuee.'};
 function managerMobilityActive(){return S?.managerMobilityVersion===1&&S?.managerMobility?.version===1}
 function managerMobilityWindow(){return managerMobilityActive()&&S.phase==='ended'&&!S.live}
 function managerMobilityEnable(){
@@ -54,8 +54,8 @@ function managerMobilityConfirm(id){
  const a=S.managerMobility.applications.find(x=>x.id===id&&x.status==='offered');if(!a)return false;
  modal='<div class="modalback"><section class="modal" role="dialog" aria-modal="true" aria-label="Changer de club">'+
  '<h2>Rejoindre '+visualEscape(S.clubs[a.clubId].name)+' ?</h2>'+
- '<p>La prise de poste intervient au passage a la saison suivante. Les joueurs, espoirs, budgets et installations restent dans leurs clubs. Vous ne transfererez ni argent ni joueur.</p>'+
- '<p>Le bilan de la saison actuelle reste celui de votre club de depart. Vos dossiers de recrutement actifs sont clos lors du changement de bureau. Aucun salaire de manager ni indemnite ne sont factures dans cette premiere version.</p>'+
+ '<p>La prise de poste intervient au passage a la saison suivante. Les joueurs, espoirs, budgets et installations restent dans leurs clubs. Tu ne transfereras ni argent ni joueur.</p>'+
+ '<p>Le bilan de la saison actuelle reste celui de ton club de depart. Tes dossiers de recrutement actifs sont clos lors du changement de bureau. Aucun salaire de manager ni indemnite ne sont factures dans cette premiere version.</p>'+
  '<div class="row"><button onclick="closeModal()">Rester sur cette page</button><button class="primary" onclick="managerMobilityAccept(\''+a.id+'\')">Confirmer la prise de poste</button></div></section></div>';
  render();return true;
 }
@@ -86,7 +86,7 @@ function managerMobilityOnSeasonStart(){
  m.history.push({fromClub:oldId,toClub:S.club,departureSeason:p.season,arrivalSeason:S.season,offerId:p.offerId});m.history=m.history.slice(-30);m.currentFrom=S.season;
  const accepted=m.applications.find(a=>a.id===p.offerId);accepted.status='completed';accepted.reason='completed';m.pending=null;m.applications=m.applications.filter(a=>a.season>=S.season-2);
  autoLineup();club().players.forEach(ensureSatisfaction);careerRecord('manager','Prise de poste a '+club().abbr,S.club,'mobilite');
- news('Vous rejoignez '+club().name+'. Les comptes, effectifs et espoirs de chaque club sont conserves.');return true;
+ news('Tu rejoins '+club().name+'. Les comptes, effectifs et espoirs de chaque club sont conserves.');return true;
 }
 function validateManagerMobility(s){
  if(s.managerMobilityVersion===undefined&&s.managerMobility===undefined)return;
@@ -113,15 +113,15 @@ function validateManagerMobility(s){
 }
 function managerMobilityPanel(){
  if(!S)return '';
- if(!managerMobilityActive())return '<section class="card"><h2>Carriere du manager</h2><p>Activez les candidatures volontaires et la mobilite entre clubs a l\'intersaison. Aucun changement automatique de club ni nouveau salaire.</p><button class="small dark" onclick="managerMobilityEnable()" '+(!worldActive()||!careerIntegrated()||!aiRosterActive()||S.live?'disabled':'')+'>Activer la mobilite</button><p class="help">Necessite les systemes carriere, monde et effectifs IA deja integres. Activation facultative, compatible avec les anciennes carrieres.</p></section>';
+ if(!managerMobilityActive())return '<section class="card"><h2>Carriere du manager</h2><p>Active les candidatures volontaires et la mobilite entre clubs a l\'intersaison. Aucun changement automatique de club ni nouveau salaire.</p><button class="small dark" onclick="managerMobilityEnable()" '+(!worldActive()||!careerIntegrated()||!aiRosterActive()||S.live?'disabled':'')+'>Activer la mobilite</button><p class="help">Necessite les systemes carriere, monde et effectifs IA deja integres. Activation facultative, compatible avec les anciennes carrieres.</p></section>';
  const m=S.managerMobility;
  const statuses=['offered','rejected','accepted','declined','cancelled','expired','completed'];
  const thisSeason=m.applications.filter(a=>a.season===S.season);
  const counts=Object.fromEntries(statuses.map(s=>[s,thisSeason.filter(a=>a.status===s).length]));
- const progress='<div class="notice" aria-label="Suivi des candidatures"><strong>Suivi de vos candidatures — saison '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season)+'</strong><p>'+thisSeason.length+' candidature(s) · '+counts.offered+' offre(s) à examiner · '+counts.rejected+' refus · '+counts.accepted+' acceptée(s)</p>'+(m.pending?'<p>Prochain club : '+visualEscape(S.clubs[m.pending.toClub].name)+' (saison '+(S.season+1)+')</p>':'')+'</div>';
+ const progress='<div class="notice" aria-label="Suivi des candidatures"><strong>Suivi de tes candidatures — saison '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season)+'</strong><p>'+thisSeason.length+' candidature(s) · '+counts.offered+' offre(s) à examiner · '+counts.rejected+' refus · '+counts.accepted+' acceptée(s)</p>'+(m.pending?'<p>Prochain club : '+visualEscape(S.clubs[m.pending.toClub].name)+' (saison '+(S.season+1)+')</p>':'')+'</div>';
  const rows=managerMobilityWindow()?CDCoachOpportunities.snapshot(S.clubs,S.worldManagement.clubInfo,S.club).map(c=>{
   const a=m.applications.find(x=>x.season===S.season&&x.clubId===c.id);
   return '<div class="row"><span>'+visualEscape(c.name)+' <small>Risque V48 : '+c.risk+'/100</small></span>'+(a?'<span>'+visualEscape(MOBILITY_REASONS[a.reason])+'</span>'+(a.status==='offered'&&!m.pending?'<button onclick="managerMobilityConfirm(\''+a.id+'\')">Examiner l\'offre</button><button onclick="managerMobilityDecline(\''+a.id+'\')">Refuser</button>':''):'<button onclick="managerMobilityApply('+c.id+')" '+(m.pending?'disabled':'')+'>Candidater</button>')+'</div>';
  }).join(''):'<p>Les candidatures ouvrent apres la finale, avant le passage a la saison suivante. Un risque eleve ne constitue pas a lui seul un poste vacant.</p>';
- return '<section class="card"><h2>Votre parcours de manager</h2>'+progress+(m.pending?'<div class="notice">Prise de poste prevue a '+visualEscape(S.clubs[m.pending.toClub].name)+' en saison '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season+1)+' au lancement de la prochaine saison. <button onclick="managerMobilityCancel()">Annuler</button></div>':'')+rows+'<p class="help">Decisions de simulation fondees sur le classement reel, la reputation, la confiance et les finances. Pas de garantie de recrutement. Les sommes et joueurs ne suivent jamais le manager.</p><h3>Clubs entraines</h3>'+(m.history.length?m.history.slice().reverse().map(h=>'<p>Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(h.arrivalSeason)+' : '+visualEscape(S.clubs[h.fromClub].name)+' vers '+visualEscape(S.clubs[h.toClub].name)+'</p>').join(''):'<p>Premier mandat dans cette carriere.</p>')+'</section>';
+ return '<section class="card"><h2>Ton parcours de manager</h2>'+progress+(m.pending?'<div class="notice">Prise de poste prevue a '+visualEscape(S.clubs[m.pending.toClub].name)+' en saison '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season+1)+' au lancement de la prochaine saison. <button onclick="managerMobilityCancel()">Annuler</button></div>':'')+rows+'<p class="help">Decisions de simulation fondees sur le classement reel, la reputation, la confiance et les finances. Pas de garantie de recrutement. Les sommes et joueurs ne suivent jamais le manager.</p><h3>Clubs entraines</h3>'+(m.history.length?m.history.slice().reverse().map(h=>'<p>Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(h.arrivalSeason)+' : '+visualEscape(S.clubs[h.fromClub].name)+' vers '+visualEscape(S.clubs[h.toClub].name)+'</p>').join(''):'<p>Premier mandat dans cette carriere.</p>')+'</section>';
 }
