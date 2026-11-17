@@ -496,7 +496,7 @@ function simuler(e,phases,graine){
   }
   const lanceur=J.find(j=>j.side===sL&&j.slot===1)||demiDe(sL);
   const v=ouverture.sauteur?parId.get(String(ouverture.sauteur)):null;
-  const sauteur=v&&v.side===T&&v.slot>=2&&v.slot<8&&v.slot!==1?v:J.find(j=>j.side===T&&j.slot===4);
+  const sauteur=v&&v.side===T&&v.slot>=2&&v.slot<8&&v.slot!==1?v:J.find(j=>j.side===T&&j.slot===4)||J.filter(j=>j.side===T&&j.slot>=2&&j.slot<8&&debout(j)).sort((a,b)=>a.slot-b.slot)[0]||J.filter(j=>j.side===T&&j.slot>=2&&j.slot<8).sort((a,b)=>a.slot-b.slot)[0]||lanceur;
   const k=ordre.indexOf(sauteur.slot),voisins=[ordre[k-1],ordre[k+1]].filter(s=>s!=null&&s!==1).map(s=>J.find(j=>j.side===T&&j.slot===s)).filter(Boolean);
   tenir(lanceur);ballon.x=lanceur.x;ballon.y=lanceur.y;ballon.h=2.0;
   d.sp={k:'touche',L,yT,ty,sL,lanceur,sauteur,leveurs:voisins,etape:0,prochain:prochainDe(demiDe(T)),ligne:L.x-sens*10.4};
