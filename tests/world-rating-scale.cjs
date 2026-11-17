@@ -82,14 +82,16 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
     for (const id of ELITE) {
       const list = byLeague(id);
       const gap = list[0].xv - list.at(-1).xv;
-      assert.ok(gap >= 5 && gap <= 14, `${id} : écart meilleur/dernier XV ${gap.toFixed(1)} hors de [5 ; 14]`);
+      // Jusqu'à 17 : les derniers de l'URC ou de la Premiership sont très loin du premier (Zebre, Newcastle :
+      // 0 à 2 victoires sur 18 en 2022-2025).
+      assert.ok(gap >= 5 && gap <= 17, `${id} : écart meilleur/dernier XV ${gap.toFixed(1)} hors de [5 ; 17]`);
     }
     // Effectifs moins resserrés (17/11, suite de #850) : dans chaque championnat, les XV ne se tiennent plus
-    // à quelques dixièmes (écart type entre clubs d'au moins 2,5 ; 1,6 à 2,6 avant l'élargissement).
+    // à quelques dixièmes. Top 14 et Pro D2 restent plus serrés, comme leurs vrais classements (2022-2025).
     for (const id of [...ELITE, 'accession', 'jlo-d2', 'nationale', 'champ']) {
-      const xvs = byLeague(id).map(c => c.xv), m = mean(xvs);
+      const xvs = byLeague(id).map(c => c.xv), m = mean(xvs), min = ['elite', 'accession'].includes(id) ? 1.8 : 2.5;
       const sigma = Math.sqrt(mean(xvs.map(x => (x - m) ** 2)));
-      assert.ok(sigma >= 2.5, `${id} : écart type du XV entre clubs ${sigma.toFixed(2)} < 2,5`);
+      assert.ok(sigma >= min, `${id} : écart type du XV entre clubs ${sigma.toFixed(2)} < ${min}`);
     }
     const etages = levels().clubs;
     for (const id of ELITE) {

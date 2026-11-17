@@ -51,7 +51,9 @@ test('Match : intensité bornée, mesurée à graine fixe', () => {
   console.log('# mesures derby', JSON.stringify({derby: {...m.derby, sig: undefined}, ordinaire: {...m.ordinaire, sig: undefined}}));
   assert.equal(m.ordinaire.sig, m.ordinaire2.sig, 'déterminisme');
   const ratio = m.derby.pen / m.ordinaire.pen;
-  assert.ok(ratio >= 1.1 && ratio <= 1.2, 'pénalités ×' + ratio.toFixed(3));
+  // DERBYS.match.fautes (×1,12) ne vaut que pour les fautes de jeu (~60 % des pénalités sifflées) : ×1,06-1,08
+  // sur 160 matchs, sur main comme après le barème du 17/11. L'ancienne borne 1,1-1,2 ne passait que par le tirage.
+  assert.ok(ratio >= 1.03 && ratio <= 1.15, 'pénalités ×' + ratio.toFixed(3));
   assert.ok(m.derby.cartons - m.ordinaire.cartons > 0 && m.derby.cartons - m.ordinaire.cartons <= 1, 'cartons ' + m.derby.cartons + ' / ' + m.ordinaire.cartons);
 });
 

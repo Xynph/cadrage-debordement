@@ -245,57 +245,82 @@ test `homme-du-match-postes` (moyenne générale inchangée, 6,61), parts d'homm
 Limites : un seul club (102) et une seule graine pour les captures (les matchs de toute la planète sont notés, pas
 seulement ceux du club) ; l'échantillon du test varie de ±0,1 sur la moyenne d'un maillot.
 
-### 7.4 Effectifs moins resserrés dans tous les championnats, potentiels compris (17/11, suite de #850)
+### 7.4 Effectifs étagés comme les vrais classements, potentiels compris (17/11, suite de #850)
 
 Demande de Léo (17/11) : les notes restaient trop resserrées ; étendre #850 (Angleterre) à tous les championnats,
-potentiels compris. Nouvelles carrières Monde seulement (barème V2), aucune sauvegarde recalculée.
+potentiels compris, puis vérifier contre les classements réels des dernières saisons. Nouvelles carrières Monde
+seulement (barème V2), aucune sauvegarde recalculée.
 
-**Changements** (`native/engine/world-rating-scale.json`, `native/engine/senior-calibration.cjs`)
-- `etageScale` dans chaque championnat : Top 14 2, Premiership 3,5, URC 2,5, Super Rugby 2, League One D1 2,25,
-  Pro D2 3, League One D2 2,5, Nationale 2, Championship 3 (réglés pour un écart type de XV ≈ 2,7-3,1 partout ;
-  le Top 14 reste le moins élargi : à 2,75, son leader finissait à 112 points, 24 victoires sur 26). Bonus d'étage
-  arrondi à l'entier ; un joueur de moins de 23 ans garde l'étage simple (son niveau est d'abord le sien ; sinon
-  les jeunes du Top 14 à potentiel 85+ passaient de 24 à 51).
+**Classements réels** (saisons régulières 2021-22 à 2024-25, Wikipédia et league-one.jp ; budgets Top 14 : LNR, rapports
+CCCP/A2R ; points par match pour comparer des formats différents)
+
+| Championnat | 1er : points par match (victoires) | Dernier : points par match (victoires) | Lecture |
+|---|---|---|---|
+| Top 14 | 2,9-3,5 (16-18/26) | 1,3-1,4 (7/26) | serré ; Spearman budget/rang 0,73 / 0,67 / 0,38 ; Toulouse (1er budget) 1er trois fois |
+| Pro D2 | 3,2-3,7 (20-23/30) | 1,1-1,6 (5-9/30) | serré en bas |
+| Nationale | 3,7-4,0 (18-21/26) | — (forfaits, retraits) | bas de tableau inexploitable |
+| Premiership | 3,3-4,0 (12-14/18) | 0,3-0,7 (0-2/18), 1,55 en 2022-23 | dernier très faible (Newcastle) |
+| URC | 3,7-4,4 (13-16/18) | 0,5-0,8 (0-1/18) | dernier très faible (Zebre, Dragons) |
+| Super Rugby | 3,6-4,2 (11-13/14) | 0,6-1,4 (1-3/14) | |
+| League One D1 | 3,9-4,7 (14-16/16-18) | 0,3-0,8 (1-3) | très étagé |
+| League One D2 | 3,7-4,6 | 0,4-0,8 | très étagé |
+| Championship | 4,0-4,5 (16-20/20-22) | 0,5-1,0 (1-3) | très étagé |
+
+Constat sur le premier réglage de #868 (étage élargi partout, Top 14 ×2, Pro D2 ×3) : Top 14 et Pro D2 trop étagés
+(leader du Top 14 à 3,7-3,8 points par match, dernier de Pro D2 à 0,5-0,9), derniers de l'URC, de la Premiership et du
+Japon trop forts (1,1 à 1,8 point par match contre 0,3 à 0,8).
+
+**Réglage retenu** (`native/engine/world-rating-scale.json`, `native/engine/senior-calibration.cjs`)
+- `etageScale` (haut de tableau) : Top 14 1,25, Premiership 3,5, URC 2,5, Super Rugby 2, League One D1 2,25, Pro D2 2,
+  League One D2 2,5, Nationale 2, Championship 3.
+- `etageScaleBas` (nouveau, étages « bas » et « relégable ») : Pro D2 1, Premiership 5, URC 5,5, League One D1 et D2 5,
+  Championship 4,5 (ailleurs, celui du haut).
+- Bonus d'étage arrondi à l'entier ; un joueur de moins de 23 ans garde l'étage simple (sinon les jeunes du Top 14 à
+  potentiel 85+ passaient de 24 à 51).
 - Écart propre au joueur élargi : `residual.known` 1,5 → 2, `unknown` 2,2 → 2,8, `limit` 5 → 7. Hors élite, un
   non-international plafonne à 84 (`residual.outsideEliteCeiling`), comme avant implicitement.
-- Potentiels : au-delà des 4 meilleurs 88+ par génération (`per90Generation` 5 → 4), les suivants s'étagent dans
-  leur ordre de 87 à 84 (`belowGenerationSteps` 3) au lieu d'un pic à 87 ; la variation de carrière (±5) portait
-  sinon trop de ces 87 à 90+. Potentiels du centre : suivent l'étage élargi (`youthPotential`, comme #850).
+- Potentiels : au-delà des 4 meilleurs 88+ par génération (`per90Generation` 5 → 4), les suivants s'étagent dans leur
+  ordre de 87 à 84 (`belowGenerationSteps` 3) au lieu d'un pic à 87. Centre de formation : étage élargi (`youthPotential`).
+- Tests : écart 1er-dernier XV jusqu'à 17 dans les championnats d'élite (URC 16,5) ; écart type du XV entre clubs ≥ 2,5
+  (≥ 1,8 en Top 14 et Pro D2). `tests/derbys-monde.cjs` : borne des pénalités de derby 1,1-1,2 → 1,03-1,15
+  (`DERBYS.match.fautes` ×1,12 ne touche que les fautes de jeu ; mesuré ×1,083 sur `main` et ×1,061 ici sur 160 matchs :
+  l'ancienne borne ne passait que par le tirage à 40 matchs).
 
-**Mesure de la base Monde** (`scripts/mesure-notes-championnats.cjs`, carrière neuve, graine 20261114, avant → après)
+**Base Monde** (`scripts/mesure-notes-championnats.cjs`, carrière neuve, graine 20261114, `main` → réglage retenu)
 
 | Championnat | σ XV entre clubs | Écart 1er-dernier XV | Notes p10–p90 | σ des notes | σ des potentiels | Potentiel p90 du centre |
 |---|---|---|---|---|---|---|
-| Top 14 | 2,37 → 2,69 | 10,1 → 11,8 | 67–82 → 67–83 | 5,5 → 5,9 | 4,5 → 4,8 | 84 → 84 |
-| Premiership | 2,58 → 2,89 | 9,1 → 10,5 | 67–83 → 66–83 | 6 → 6,4 | 5,6 → 5,7 | 84 → 85 |
-| URC | 2,35 → 3,01 | 9,7 → 12,7 | 67–81 → 67–81 | 5,4 → 5,7 | 5,3 → 5,6 | 80 → 80 |
+| Top 14 | 2,37 → 2,4 | 10,1 → 10,1 | 67–82 → 67–82 | 5,5 → 5,7 | 4,5 → 4,7 | 84 → 84 |
+| Premiership | 2,58 → 3,34 | 9,1 → 12,1 | 67–83 → 66–83 | 6 → 6,7 | 5,6 → 6,1 | 84 → 85 |
+| URC | 2,35 → 3,83 | 9,7 → 16,5 | 67–81 → 65–81 | 5,4 → 6,4 | 5,3 → 6,5 | 80 → 80 |
 | Super Rugby | 2,8 → 3,09 | 9,6 → 10,4 | 69–87 → 69–87 | 6 → 6,2 | 6,1 → 6,2 | 80 → 81 |
-| League One D1 | 1,91 → 3,02 | 5,9 → 9,1 | 67–76 → 66–79 | 4,1 → 5,1 | 4,4 → 5,3 | 78 → 79 |
-| Pro D2 | 1,6 → 2,9 | 5,2 → 10,3 | 64–74 → 62–77 | 4,7 → 5,5 | 4,6 → 5,5 | 76 → 77 |
-| League One D2 | 2,46 → 3,06 | 7,7 → 9,6 | 61–69 → 60–71 | 4 → 4,7 | 4,4 → 5 | 71 → 72 |
+| League One D1 | 1,91 → 4,57 | 5,9 → 13,8 | 67–76 → 62–79 | 4,1 → 6,6 | 4,4 → 6,8 | 78 → 79 |
+| Pro D2 | 1,6 → 1,87 | 5,2 → 6,2 | 64–74 → 63–76 | 4,7 → 5,1 | 4,6 → 4,9 | 76 → 77 |
+| League One D2 | 2,46 → 4,93 | 7,7 → 14,1 | 61–69 → 55–71 | 4 → 6,2 | 4,4 → 6,5 | 71 → 71 |
 | Nationale | 1,92 → 2,87 | 6,3 → 9 | 58–68 → 57–69 | 4,1 → 4,8 | 4,9 → 5,4 | 70 → 71 |
-| Championship | 2,12 → 2,9 | 8,4 → 11,3 | 55–67 → 54–68 | 4,9 → 5,6 | 5,4 → 6 | 70 → 71 |
+| Championship | 2,12 → 3,24 | 8,4 → 12,8 | 55–67 → 53–68 | 4,9 → 5,8 | 5,4 → 6,2 | 70 → 71 |
 
-Ensemble : σ des notes 7,2 → 7,6, 85+ 146 → 164, 90+ 20 → 20, potentiels 85+ 456 → 512, 90+ 94 → 88 (au plus 7
-par génération, 8 avant).
+Ensemble : σ des notes 7,2 → 7,9, 85+ 146 → 157, 90+ 20 → 20, σ des potentiels 7,3 → 8,0, potentiels 90+ 94 → 86
+(au plus 7 par génération, 8 avant).
 
-**Saison complète** (`scripts/mesure-essais-monde.cjs`, club 102, graines 4242 / 7, avant → après)
+**Saison complète** (`scripts/mesure-essais-monde.cjs`, club 102 ; graines 4242 / 7 ; points du 1er – du dernier)
 
-| Championnat | Spearman rang / effectif | Rang du mieux armé | Points 1er-dernier |
+| Championnat | `main` | Réglage retenu | Réel (ramené au format du jeu) |
 |---|---|---|---|
-| Top 14 | 0,82 / 0,66 → 0,82 / 0,76 | 1 / 1 → 1 / 1 | 87-40 / 96-29 → 97-29 / 99-24 |
-| Premiership | 0,70 / −0,03 → 0,35 / 0,49 | 3 / 8 → 4 / 1 | 76-34 / 65-29 → 73-18 / 74-25 |
-| URC | 0,53 / 0,45 → 0,76 / 0,51 | 3 / 1 → 2 / 1 | 69-17 / 75-17 → 77-16 / 87-23 |
-| Super Rugby | 0,64 / 0,50 → 0,38 / 0,89 | 6 / 9 → 5 / 3 | 66-25 / 65-23 → 58-13 / 61-19 |
-| League One D1 | 0,69 / 0,77 → 0,76 / 0,50 | 1 / 3 → 2 / 2 | 72-24 / 81-23 → 78-20 / 78-26 |
-| Pro D2 | 0,68 / 0,71 → 0,89 / 0,89 | 2 / 8 → 2 / 1 | 95-40 / 108-18 → 104-16 / 108-26 |
-| League One D2 | 0,31 / 0,12 → 0,79 / 0,52 | 3 / 4 → 1 / 2 | 59-22 / 49-25 → 63-25 / 55-25 |
-| Nationale | 0,39 / 0,66 → 0,82 / 0,69 | 5 / 3 → 2 / 1 | 81-44 / 84-24 → 97-26 / 93-21 |
-| Championship | 0,47 / 0,52 → 0,72 / 0,76 | 2 / 3 → 1 / 6 | 92-20 / 96-27 → 100-28 / 98-30 |
+| Top 14 (26) | 87-40 / 96-29 | 91-33 / 103-22 | 76-90 / 34-36 |
+| Pro D2 (30) | 95-40 / 108-18 | 93-24 / 105-35 | 95-111 / 32-48 |
+| Premiership (18) | 76-34 / 65-29 | 79-19 / 84-25 | 60-72 / 5-28 |
+| URC (18) | 69-17 / 75-17 | 70-18 / 73-13 | 67-79 / 9-15 |
+| Super Rugby (16) | 66-25 / 65-23 | 63-23 / 72-24 | 58-67 / 9-23 |
+| League One D1 (18) | 72-24 / 81-23 | 82-13 / 72-21 | 71-84 / 6-16 |
+| League One D2 (14) | 59-22 / 49-25 | 57-21 / 53-14 | 52-64 / 6-11 |
+| Nationale (26) | 81-44 / 84-24 | 90-22 / 92-17 | 96-104 / — |
+| Championship (26) | 92-20 / 96-27 | 111-28 / 98-26 | 104-118 / 14-27 |
 
-Moyenne (championnats de 8 clubs ou plus) 0,58 / 0,48 → 0,70 / 0,67 ; favori à 5 points d'écart ou plus 64 / 61 %
-→ 72 / 71 % sur 178 / 175 → 309 / 331 matchs ; victoire à domicile inchangée (60 / 58 %).
+Spearman rang final / effectif (championnats de 8 clubs ou plus) : 0,58 / 0,48 (`main`) → 0,67 / 0,78.
 
-Limites : deux graines ; Premiership et Super Rugby (10 clubs) restent très bruités d'une graine à l'autre ;
-le haut des notes individuelles s'étale peu (classes d'international inchangées) : l'élargissement porte surtout
-entre clubs et dans le bas des effectifs.
+Lecture : URC, Super Rugby, League One D1 et D2, Championship et Pro D2 (haut) dans les fourchettes réelles. Écarts
+restants : **leader du Top 14 trop dominant** (19-22 victoires sur 26 contre 16-18 ; déjà le cas sur `main`, effectif
+de tête porté par ses internationaux : à traiter dans le moteur, pas par l'étage) ; leader de Premiership un peu fort
+(79-84 contre 60-72) ; derniers de Premiership et de Pro D2 encore un peu forts / faibles selon la graine. Deux
+graines : bruit important à 10 clubs.

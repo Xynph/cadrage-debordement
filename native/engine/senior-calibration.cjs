@@ -171,8 +171,14 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
   // Étage du club, élargi par championnat (scale.etageScale, absent = 1) pour que les effectifs d'un même
   // championnat ne se tiennent pas à quelques dixièmes. Un jeune (moins de 23 ans) garde l'étage simple :
   // son niveau actuel est d'abord le sien, le club le tire moins qu'un senior établi. Valeur entière.
-  const etageBonus = (clubId, leagueId, young = false) =>
-    Math.round((scale.etages[etageOf(clubId)] ?? 0) * (young ? 1 : scale.etageScale?.[leagueId] ?? 1));
+  // Le bas de tableau a son propre facteur (scale.etageScaleBas, sinon etageScale) : dans les championnats
+  // anglais, celtes et japonais, les derniers sont bien plus faibles que les premiers ne sont forts.
+  const etageBonus = (clubId, leagueId, young = false) => {
+    const etage = scale.etages[etageOf(clubId)] ?? 0;
+    if (young) return etage;
+    const factor = (etage < 0 ? scale.etageScaleBas?.[leagueId] : null) ?? scale.etageScale?.[leagueId] ?? 1;
+    return Math.round(etage * factor);
+  };
   const statsByRegistry = new WeakMap();
   const band = age => (age < scale.age.seniorFrom ? 'jeune' : 'senior');
 
