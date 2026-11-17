@@ -364,17 +364,23 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  }
  function result(l){return{pair:l.pair.slice(),score:l.score.slice(),tries:l.tries.slice(),stats:copy(l.stats),weather:l.weather,duration:l.minute,...(l.winner!==undefined?{winner:l.winner,decision:copy(l.decision)}:{}),...(l.worldContext?.competitionId==='srp'?CDWorldSRPMatch.historyFields(l):JP&&CDWorldJapanMatch.isFixture(l.worldContext)?CDWorldJapanMatch.historyFields(l):CH&&CDWorldChampMatch.isFixture(l.worldContext)?CDWorldChampMatch.historyFields(l):N&&typeof CDWorldNationaleMatch!=='undefined'?CDWorldNationaleMatch.historyFields(l):{})};}
  // Rencontre de l'IA : moteur complet, ou suivi de loin selon les championnats suivis (league-detail.cjs).
- function simulate(f){const full=()=>{const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);const l=createRugbyMatch(pair,null,true);for(let n=0;!l.finished;n++){check(n<=600,'limite de simulation atteinte.');l.paused=false;advanceRugby(l);}applyMatchInjuries(l);return result(l);};return typeof CDLeagueDetail!=='undefined'?CDLeagueDetail.play(S,f,full):full();}
+ // `watch(l)` (déroulé anticipé du multiplex, match-multiplex.cjs) : appelé après chaque minute jouée.
+ // Sans `watch`, une rencontre dont le déroulé a été montré garde ce résultat (CDMultiplex.official).
+ function simulate(f,watch=null){const full=()=>{const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);const l=createRugbyMatch(pair,null,true);for(let n=0;!l.finished;n++){check(n<=600,'limite de simulation atteinte.');l.paused=false;advanceRugby(l);if(watch)watch(l);}applyMatchInjuries(l);return result(l);};const play=()=>typeof CDLeagueDetail!=='undefined'?CDLeagueDetail.play(S,f,full):full();return !watch&&typeof CDMultiplex!=='undefined'?CDMultiplex.official(S,f,play):play();}
+ const fixtureEntry=(s,f,r)=>({...r,fixtureId:f.id,competitionId:f.competitionId,leagueId:f.competitionId,season:s.season,round:s.round,competitionRound:f.round,week:s.round,date:f.date,phase:f.phase,poolId:f.poolId??null,neutral:f.neutral});
+ // Multiplex : rencontre jouée comme à la validation, ligne d'historique, résultat du direct et
+ // classement avec des résultats provisoires, par la même fonction de table que rows().
+ const multiplex=s=>({simulate:(f,watch)=>simulate(f,watch),entry:(f,r)=>fixtureEntry(s,f,r),live:()=>result(s.live),rows:(id,extra)=>rows({...s,history:s.history.concat(extra)},id)});
  function finishWeek(){
   check(active(S)&&S.round<WEEKS&&!(S.live&&!S.live.finished),'semaine indisponible.');
   trainWeek();captureReport();const results=[],ownFixture=userFixture(S);
   for(const f of fixtures(S)){
    check(!S.history.some(r=>r.fixtureId===f.id),'rencontre déjà enregistrée.');
    const r=S.live&&[f.homeId,f.awayId].includes(S.club)?result(S.live):simulate(f);
-   const entry={...r,fixtureId:f.id,competitionId:f.competitionId,leagueId:f.competitionId,season:S.season,round:S.round,competitionRound:f.round,week:S.round,date:f.date,phase:f.phase,poolId:f.poolId??null,neutral:f.neutral};
+   const entry=fixtureEntry(S,f,r);
    S.history.push(entry);updateOppositionMorale(entry);worldRecordResult(entry);results.push(entry);
   }
-  const own=results.find(r=>r.pair.includes(S.club)),won=CDFranceCareer.recordOwnOutcome(own);
+  const own=results.find(r=>r.pair.includes(S.club)),won=CDFranceCareer.recordOwnOutcome(own);if(own&&typeof derbyAftermath==='function')derbyAftermath(S,own);
   financeWeek(ownFixture&&!ownFixture.neutral?[ownFixture.homeId,ownFixture.awayId]:null,won);worldWeeklyEconomy(results);careerBoardWeekReview();recordSatisfactionRound(S.live);recordIndividualObjectivesRound(S.live);
   S.live=null;S.trained=false;S.worldMode.week++;
   if(S.worldMode.day!==undefined){
@@ -568,5 +574,5 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   };
  }
  // Aliases prevent named inner functions shadowing the globals they replace.
- return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,nextOpening,clubReleaseOn,enableDaily,dailyStatus,advanceDay,label:worldLabel,context,start,finishWeek,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
+ return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,nextOpening,clubReleaseOn,enableDaily,dailyStatus,advanceDay,label:worldLabel,context,start,finishWeek,multiplex,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
 };

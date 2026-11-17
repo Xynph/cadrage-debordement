@@ -130,6 +130,7 @@ func run() -> void:
 				var button: Button = view.find_child("PressAnswer_" + str(question.id) + "_" + str(answer.id), true, false)
 				check(button != null and button.text == answer.text, "permitted answer text and ID retained")
 			check(view.find_children("*", "OptionButton", true, false).is_empty(), "no independent tone selector")
+			check(view.room.asking_journalist() == posmod(index, 7), "the asking journalist of the 3D room follows the question (%d)" % index)
 		await capture("press-room-" + str(resolution.x))
 	view._select_question(0)
 	var first: Dictionary = questions[0]
