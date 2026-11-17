@@ -233,7 +233,7 @@ func apply_preferences() -> void:
 	if is_instance_valid(_quality_control): _quality_control.select(["economy", "balanced", "detail"].find(quality))
 	for button: Button in _camera_controls:
 		button.disabled = bool(preferences.data.reduced_motion)
-		button.tooltip_text = "Mode calme : caméra tactique fixe. Vous pouvez modifier ce réglage dans Paramètres." if button.disabled else "Choix conservé pour les prochains matchs."
+		button.tooltip_text = "Mode calme : caméra tactique fixe. Tu peux modifier ce réglage dans Paramètres." if button.disabled else "Choix conservé pour les prochains matchs."
 
 func update_frame(value:Dictionary) -> void:
 	model=value
@@ -256,7 +256,7 @@ func update_frame(value:Dictionary) -> void:
 		var press_due := CareerProgression.press_required(value)
 		var kickoff_today := CareerProgression.kickoff_allowed(value.meta)
 		play.disabled=next.is_empty() or press_due or not kickoff_today
-		play.tooltip_text = "Ouvrez l’invitation dans la Réception." if press_due else "Le coup d’envoi s’ouvre le jour de la rencontre." if not kickoff_today else ""
+		play.tooltip_text = "Ouvre l’invitation dans la Réception." if press_due else "Le coup d’envoi s’ouvre le jour de la rencontre." if not kickoff_today else ""
 		var season_done:bool=value.meta.get("canAdvanceSeason",false) or (value.meta.get("mode") not in ["france30","common"] and value.meta.get("phase")=="ended")
 		finish.disabled=not next.is_empty() or season_done
 		if next.is_empty():
@@ -360,7 +360,7 @@ func _side() -> void:
 		child.queue_free()
 	if live.is_empty():
 		side.add_child(G.section("L'AVANT-MATCH"))
-		var guidance := "Feuille incomplète : appelez un espoir du centre ou jouez à 22, puis vérifiez vos consignes." if not Espoir.offer(model).is_empty() else "Vérifiez votre feuille et vos consignes avant le coup d’envoi." if MatchProjection.reduced_bench_number(model) != 0 else "Vérifiez votre feuille à 23 et vos consignes avant le coup d’envoi."
+		var guidance := "Feuille incomplète : appelle un espoir du centre ou joue à 22, puis vérifie tes consignes." if not Espoir.offer(model).is_empty() else "Vérifie ta feuille et tes consignes avant le coup d’envoi." if MatchProjection.reduced_bench_number(model) != 0 else "Vérifie ta feuille à 23 et tes consignes avant le coup d’envoi."
 		side.add_child(G.wrap(guidance,14))
 		side.add_child(G.button("VÉRIFIER LA FEUILLE",func():app._navigate("Composition")))
 		preload("res://ui/decision_views.gd").match_notes(app,side,model)
@@ -388,7 +388,7 @@ func _side() -> void:
 				side.add_child(G.wrap(_decision_label(live.decision,live.get("teams",[]),"Rencontre terminée"),15,G.GOLD))
 			var tries:Array=live.get("tries",[0,0])
 			side.add_child(G.label("ESSAIS   %s — %s"%[G.n(tries[0]),G.n(tries[1])],14,G.GOLD))
-			if live.get("paused",false):side.add_child(G.wrap("Le jeu est en pause. Vos changements et vos consignes restent accessibles.",12,G.GOOD))
+			if live.get("paused",false):side.add_child(G.wrap("Le jeu est en pause. Tes changements et tes consignes restent accessibles.",12,G.GOOD))
 			var events:Array=live.get("events",[])
 			for event in events.slice(maxi(0,events.size()-5)):
 				var text:=str(event.get("text","")) if event is Dictionary else str(event)
@@ -427,14 +427,14 @@ func _update_bench_feedback(live: Dictionary, selected: bool, out: Variant, choi
 	if live.get("finished", false):
 		_bench_status.text = "Match terminé. Les remplacements sont fermés."
 	elif not live.get("paused", false):
-		_bench_status.text = "Mettez le match en pause pour effectuer un remplacement."
+		_bench_status.text = "Mets le match en pause pour effectuer un remplacement."
 	elif not selected:
-		_bench_status.text = "Sélectionnez le joueur à remplacer."
+		_bench_status.text = "Sélectionne le joueur à remplacer."
 	elif choice.get("inIds", []).is_empty():
 		var other_choice := options.any(func(option: Dictionary): return option.get("slot") != selected_slot and not option.get("inIds", []).is_empty())
-		_bench_status.text = "Aucun remplaçant autorisé pour ce poste. " + ("Sélectionnez un autre joueur." if other_choice else "Reprenez le match pour continuer.")
+		_bench_status.text = "Aucun remplaçant autorisé pour ce poste. " + ("Sélectionne un autre joueur." if other_choice else "Reprends le match pour continuer.")
 	else:
-		_bench_status.text = "Choisissez un remplaçant dans « Faire entrer » sous le XV."
+		_bench_status.text = "Choisis un remplaçant dans « Faire entrer » sous le XV."
 	_bench_feedback.show()
 
 func _bench(live:Dictionary) -> void:

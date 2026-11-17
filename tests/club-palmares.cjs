@@ -32,7 +32,7 @@ test('Club sans historique : état vide en langage de club, jamais « 0 »', () 
   assert.equal(p.totalTitles, 0);
   assert.equal(p.headline, 'Palmarès vierge');
   assert.match(p.emptyText, /Les Écureuils/);
-  assert.match(p.emptyText, /s’écrit avec vous/);
+  assert.match(p.emptyText, /s’écrit avec toi/);
   assert.doesNotMatch(p.headline + p.emptyText, /\b0\b|archiv/i);
   assert.equal(P.build({ clubId: 3 }).vide, true, 'club absent du fichier');
 });

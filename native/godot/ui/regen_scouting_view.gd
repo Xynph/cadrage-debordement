@@ -125,7 +125,7 @@ func _redraw() -> void:
 	for person: Dictionary in people.slice(start,start+PAGE_SIZE): _person(person,data)
 	if people.is_empty(): list.add_child(G.wrap("Aucun profil dans cette sélection.",14))
 	counter.text = "%d profils · %d / %d suivis au total" % [people.size(),data.get("shortlist",[]).size(),int(data.get("shortlistLimit",30))]
-	if int(state.minAge)>int(state.maxAge): counter.text = "Âge minimum supérieur au maximum : ajustez les filtres."
+	if int(state.minAge)>int(state.maxAge): counter.text = "Âge minimum supérieur au maximum : ajuste les filtres."
 	previous.disabled = start == 0
 	next.disabled = start+PAGE_SIZE >= people.size()
 	page_label.text = "%d / %d" % [int(state.page)+1,maxi(1,ceili(float(people.size())/PAGE_SIZE))]

@@ -77,7 +77,7 @@ function factory(){
  function auction(p){
   check(shape(p,['playerId','sellerId','fee','salary','sourceSalary','contractEnd','context','expectedWinner','expectedFee','expectedSalary','confirmed'])&&p.confirmed===true&&integer(p.expectedWinner,0,S.clubs.length-1)&&integer(p.expectedFee,20000,1000000000)&&integer(p.expectedSalary,1000,100000),'clôture invalide');
   const {expectedWinner,expectedFee,expectedSalary,confirmed,...offer}=p,result=negotiate(offer),win=result.winner;
-  check(win&&win.clubId===expectedWinner&&win.fee===expectedFee&&win.salary===expectedSalary,'devis concurrent devenu périmé ; vérifiez à nouveau');
+  check(win&&win.clubId===expectedWinner&&win.fee===expectedFee&&win.salary===expectedSalary,'devis concurrent devenu périmé ; vérifie à nouveau');
   const seller=S.clubs[p.sellerId],buyer=S.clubs[win.clubId],player=seller.players.find(q=>q.id===p.playerId);
   seller.players=seller.players.filter(q=>q.id!==player.id);buyer.players.push(player);seller.cash+=win.fee;
   if(buyer.id===S.club)ledgerEntry('Libération anticipée négociée : '+player.name,-win.fee);else buyer.cash-=win.fee;

@@ -67,7 +67,7 @@ func _hero() -> void:
 	D.line(hero, Vector2(404, 37), Vector2(547, 37), C.GOLD, 2)
 	D.text(hero, 22, 127, "La mémoire des duels.", 86, C.IVORY, 800, 1125)
 	D.text(hero, 28, 168, G.club_name(own) + "  ·  Saison " + G.season_label(app.model.meta.get("season")), 31, C.IVORY, 600, 1046)
-	D.text(hero, 28, 205, "Les confrontations et les réactions enregistrées au fil de votre carrière.", 26, C.MUTED, 500, 1088)
+	D.text(hero, 28, 205, "Les confrontations et les réactions enregistrées au fil de ta carrière.", 26, C.MUTED, 500, 1088)
 	var pairs: Array = data.get("pairs", [])
 	var club_pairs := pairs.filter(func(pair: Dictionary): return own.get("id") in [pair.get("a"), pair.get("b")])
 	for i in 3:
@@ -156,7 +156,7 @@ func _upcoming() -> Array:
 	return result
 
 func _first_fixtures(panel: Panel) -> void:
-	D.text(panel, 26, 150, "Les duels s’écrivent à chaque rencontre. Vos premières affiches :", 28, C.IVORY, 600, LEFT - 49)
+	D.text(panel, 26, 150, "Les duels s’écrivent à chaque rencontre. Tes premières affiches :", 28, C.IVORY, 600, LEFT - 49)
 	var upcoming := _upcoming()
 	for i in upcoming.size():
 		var fixture: Dictionary = upcoming[i]
@@ -200,7 +200,7 @@ func _duel(pair: Dictionary) -> void:
 	image.tooltip_text = "Le territoire du club"
 	if pair.is_empty():
 		var first: Array = _upcoming()
-		D.text(panel, 23, 292, "Votre première affiche" if not first.is_empty() else "Les duels de la saison", 35, C.IVORY, 800, RIGHT - 46)
+		D.text(panel, 23, 292, "Ta première affiche" if not first.is_empty() else "Les duels de la saison", 35, C.IVORY, 800, RIGHT - 46)
 		if not first.is_empty():
 			var fixture: Dictionary = first[0]
 			var home: Dictionary = fixture.get("home", {})

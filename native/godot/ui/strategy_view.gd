@@ -56,7 +56,7 @@ static func build(app: Control) -> Control:
 	if data.is_empty():
 		page.add_child(G.wrap("Les décisions du club seront disponibles avec une carrière ouverte.", 17))
 		return page
-	G.chapter(paper, "15", "Les moyens de vos ambitions", "Financer, donner un cap, fédérer la ville.", app.accent)
+	G.chapter(paper, "15", "Les moyens de tes ambitions", "Financer, donner un cap, fédérer la ville.", app.accent)
 	var tabs := TabContainer.new()
 	tabs.name = "StrategyTabs"
 	tabs.custom_minimum_size.y = 280
@@ -130,10 +130,10 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 	for project: Dictionary in b.projectOptions:
 		_action_row(app, projects, project.label, G.euros(project.cost) + (" · ENGAGÉ" if project.used else " · paiement unique"), "club_board_project", {"kind":project.id}, locked or project.used or data.finance.cash < project.cost, "Financer %s pour %s ?" % [project.label, G.euros(project.cost)])
 	var objectives := G.panel(page)
-	objectives.add_child(G.section("Les rendez-vous du conseil", "Objectifs suivis depuis les résultats de votre carrière."))
+	objectives.add_child(G.section("Les rendez-vous du conseil", "Objectifs suivis depuis les résultats de ta carrière."))
 	for goal: Dictionary in b.objectives:
 		objectives.add_child(G.wrap("%s · cible %s · semaine %d · %s" % [goal.type, G.n(goal.target), goal.deadline, {"pending":"À suivre","met":"Atteint","missed":"Manqué","unverified":"Non vérifiable"}.get(goal.status, goal.status)], 14))
-	if b.objectives.is_empty(): objectives.add_child(G.wrap("Fixez un premier jalon. Les objectifs servent au suivi du projet ; la confiance du président dépend du bilan du club.", 14))
+	if b.objectives.is_empty(): objectives.add_child(G.wrap("Fixe un premier jalon. Les objectifs servent au suivi du projet ; la confiance du président dépend du bilan du club.", 14))
 	var goal_row := G.h(10)
 	objectives.add_child(goal_row)
 	var kind := OptionButton.new()
@@ -159,9 +159,9 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 
 static func _fans(app: Control, page: Container, data: Dictionary, locked: bool) -> void:
 	var f: Dictionary = data.fans
-	G.photo_note(page, app.model.club, "Le territoire", "Une ville derrière vous", "city", 140)
+	G.photo_note(page, app.model.club, "Le territoire", "Une ville derrière toi", "city", 140)
 	var card := G.panel(page)
-	card.add_child(G.section("Une ville derrière vous", "L’accueil et l’ancrage local se construisent toute la saison."))
+	card.add_child(G.section("Une ville derrière toi", "L’accueil et l’ancrage local se construisent toute la saison."))
 	var metrics := G.h(18)
 	card.add_child(metrics)
 	_amount(metrics, "SENTIMENT", "%d / 100" % f.sentiment, G.GOLD)

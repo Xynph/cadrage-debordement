@@ -110,7 +110,7 @@ test('Délégation : Jour suivant et « Confier à Gabi » appliquent le choix p
   for (let i = 0; i < 30 && m.meta.calendarToday <= REPRISE; i++) m = j.go('advance_day', { fromDate: j.regler(m).meta.calendarToday });
   let s = j.etat();
   assert.deepEqual(s.reprise.program, { id: 'equilibre', staff: true }, 'Gabi a arrêté le programme');
-  assert.ok(s.news.some(n => /Gabi a arrêté le programme des matchs amicaux à votre place/.test(typeof n === 'string' ? n : n.text || '')), 'délégation annoncée');
+  assert.ok(s.news.some(n => /Gabi a arrêté le programme des matchs amicaux à ta place/.test(typeof n === 'string' ? n : n.text || '')), 'délégation annoncée');
   m = continuer(j, m, 'match');
   s = j.etat();
   const rep = s.reprise.report, [choix] = bilan;

@@ -78,7 +78,7 @@ static func _profile(app: Control, parent: Container, person: Dictionary) -> voi
 	var events: Array = app.model.get("clubLife", {}).get("staffCareer", {}).get("history", []).filter(func(event: Dictionary):
 		return str(event.get("id", "")) == str(person.id))
 	if not events.is_empty():
-		list.add_child(G.section("Parcours dans votre carrière"))
+		list.add_child(G.section("Parcours dans ta carrière"))
 		var labels := {"reference-already-retired":"Retraite", "player-conversion":"Reconversion dans le staff", "retirement":"Retraite", "voluntary-retirement":"Départ à la retraite", "contract-ended":"Fin de contrat", "ai-renewal":"Prolongation", "ai-hire":"Arrivée au club", "hire":"Arrivée au club", "renew":"Prolongation", "release":"Départ du club"}
 		for event: Dictionary in events:
 			list.add_child(G.wrap("Saison %s · %s" % [G.season_label(event.get("season", "—")), str(labels.get(event.get("kind", ""), "Évolution du parcours"))], 14))
@@ -99,7 +99,7 @@ static func build(app: Control) -> Control:
 	page.name = "CarnetStaff"
 	G.fill(page, true)
 	var left := G.panel(page, .72)
-	G.chapter(left, "09", "Autour de vous", "Les responsabilités restent vos choix.", app.accent)
+	G.chapter(left, "09", "Autour de toi", "Les responsabilités restent tes choix.", app.accent)
 	var duties := G.scroll(left)
 	var decisions: Dictionary = app.model.get("decisions", {})
 	var delegation: Dictionary = decisions.get("delegation", {})
@@ -117,7 +117,7 @@ static func build(app: Control) -> Control:
 	var selection := G.button("DEMANDER UNE SÉLECTION", func(): app._command("auto_lineup"))
 	selection.disabled = not app._live().is_empty() or app.model.meta.get("phase") == "ended"
 	duties.add_child(selection)
-	duties.add_child(G.wrap("Les identités du staff ne modifient ni ses capacités ni les résultats. Les signatures restent à confirmer par vous.", 12))
+	duties.add_child(G.wrap("Les identités du staff ne modifient ni ses capacités ni les résultats. Les signatures restent à confirmer par toi.", 12))
 	duties.add_child(G.button("RECRUTEMENT →", func(): app._navigate("Recrutement")))
 	var right := G.panel(page, 1.9)
 	var target := person_by_id(app.model, str(reading(app).get("navigation_id", "")))
@@ -126,7 +126,7 @@ static func build(app: Control) -> Control:
 		return page
 	var career: Dictionary = app.model.get("clubLife", {}).get("staffCareer", {})
 	if career.get("active", false):
-		G.chapter(right, "10", "Les carrières du staff", "Contrats, candidats et reconversions dans votre partie.", app.accent)
+		G.chapter(right, "10", "Les carrières du staff", "Contrats, candidats et reconversions dans ta partie.", app.accent)
 		Career.build(app, right, career)
 		return page
 	G.chapter(right, "10", "Les visages du club", "Les membres de l’encadrement et leurs responsabilités.", app.accent)
@@ -179,7 +179,7 @@ static func build(app: Control) -> Control:
 		if shown == 0: list.add_child(G.wrap("Aucun membre ne correspond à cette recherche.", 15))
 	search.text_changed.connect(func(query: String): reading(app).search = query; redraw.call(query))
 	redraw.call(search.text)
-	right.add_child(G.wrap("Retrouvez les fonctions de chaque membre de l’encadrement.", 12))
+	right.add_child(G.wrap("Retrouve les fonctions de chaque membre de l’encadrement.", 12))
 	return page
 
 static func _person(app: Control, parent: VBoxContainer, person: Dictionary) -> void:

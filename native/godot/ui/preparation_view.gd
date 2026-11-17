@@ -97,7 +97,7 @@ func _consigne(parent: Control) -> void:
 	for pair in [["attack","attacks","03","Avec le ballon","Attack"],["defense","defenses","04","Sans le ballon","Defense"]]:
 		var card := G.panel(row)
 		G.fill(card.get_parent(), true)
-		G.chapter(card, pair[2], pair[3], "Votre intention de jeu pour la rencontre", app.accent)
+		G.chapter(card, pair[2], pair[3], "Ton intention de jeu pour la rencontre", app.accent)
 		var list := G.scroll(card)
 		var scroll: ScrollContainer = list.get_parent()
 		scroll.name = "Preparation" + pair[4] + "Scroll"

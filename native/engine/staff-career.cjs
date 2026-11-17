@@ -218,13 +218,13 @@ function factory(){
   return {active:true,enabled:true,canEnable:false,reason:'',version:1,context:context(s),policy:POLICY,financialPolicy:FINANCE,maxYears:3,roles:copy(LABELS),
    teams:s.clubs.map(c=>({id:c.id,name:c.name,members:people(st).filter(p=>p.clubId===c.id).map(display)})),
    candidates,market:copy(candidates),history,retired,archives:copy(retired),
-   costs:{salary:0,signingFee:0},notice:'Suivez les contrats, les candidatures et les départs du staff. Un recruteur actif de niveau 70 ou plus réduit l’observation ciblée de deux semaines à une.'};
+   costs:{salary:0,signingFee:0},notice:'Suis les contrats, les candidatures et les départs du staff. Un recruteur actif de niveau 70 ou plus réduit l’observation ciblée de deux semaines à une.'};
  }
  function execute(command,payload){
   check(typeof S!=='undefined'&&!!S,'carrière absente');
   const specific=command==='staff_hire'?['candidateId','years']:command==='staff_renew'?['staffId','years']:['staff_release','staff_retire'].includes(command)?['staffId']:[];
   check(['staff_career_enable','staff_hire','staff_renew','staff_release','staff_retire'].includes(command)&&shape(payload,['context','confirmed',...specific])&&shape(payload.context,['season','week','club'])&&payload.confirmed===true,'commande ou paramètres invalides');
-  const now=context(S);check(Object.keys(now).every(k=>payload.context[k]===now[k]),'contexte périmé');check(!S.live,'terminez le match avant de gérer le staff');validate(S);
+  const now=context(S);check(Object.keys(now).every(k=>payload.context[k]===now[k]),'contexte périmé');check(!S.live,'termine le match avant de gérer le staff');validate(S);
   if(command==='staff_career_enable'){check(!active(S),'cycle déjà actif');check(initialize(S),'édition sans staff de référence');return {staffCareerAction:{command,financialPolicy:FINANCE}};}
   check(active(S),'activation du cycle requise');
   const st=S.staffCareer,id=payload.candidateId??payload.staffId;check(identity(id),'identifiant invalide');

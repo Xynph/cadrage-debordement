@@ -116,7 +116,7 @@ func _decisions() -> void:
 	app.pause_menu()
 	await _wait()
 	dialogs = _dialogs()
-	_check(app.model.live.paused and dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Votre carrière", "Menu retry pauses the real match and shows one usable career menu")
+	_check(app.model.live.paused and dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Ta carrière", "Menu retry pauses the real match and shows one usable career menu")
 	_dismiss_errors()
 	await _command("pause", {"paused":false})
 	app._command("tick", {"steps":1})
@@ -162,7 +162,7 @@ func _decisions() -> void:
 	app.bridge.stop()
 	app.pause_menu()
 	dialogs = _dialogs()
-	_check(not app.waiting and dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Votre décision n'a pas été appliquée" and app.last_error.contains("fermé"), "Synchronous closed-transport refusal also prevents a second career modal")
+	_check(not app.waiting and dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Ta décision n'a pas été appliquée" and app.last_error.contains("fermé"), "Synchronous closed-transport refusal also prevents a second career modal")
 
 func _press_key(code: Key, shift: bool = false) -> void:
 	for pressed in [true, false]:

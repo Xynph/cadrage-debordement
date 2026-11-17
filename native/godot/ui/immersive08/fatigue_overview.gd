@@ -137,7 +137,7 @@ static func load_blocker(app: Control) -> String:
 	var meta: Dictionary = app.model.get("meta", {})
 	if not app._live().is_empty(): return "Charge indisponible avant la fin et la validation du match."
 	if meta.get("phase") == "ended": return "Saison clôturée : les charges restent consultables."
-	if meta.get("trained", false): return "Séance déjà effectuée : ajustez à la prochaine séance."
+	if meta.get("trained", false): return "Séance déjà effectuée : ajuste à la prochaine séance."
 	return ""
 
 static func build(app: Control, parent: Control, state: Dictionary) -> void:

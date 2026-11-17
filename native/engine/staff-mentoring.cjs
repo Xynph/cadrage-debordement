@@ -36,7 +36,7 @@ function factory(){
   const s=state(),specific=command==='staff_mentor_assign'?['staffId','playerId','focus']:command==='staff_mentor_remove'?['staffId']:[];
   check(s&&['staff_mentoring_enable','staff_mentor_assign','staff_mentor_remove'].includes(command)&&shape(p,['context','confirmed',...specific])&&p.confirmed===true&&shape(p.context,['season','week','club']),'paramètres invalides');
   check(Object.keys(context(s)).every(k=>p.context[k]===context(s)[k]),'contexte périmé');check(!locked(s),'gestion avant la séance et hors match');validate(s);
-  check(s.staffCareer?.version===1,'activez les carrières du staff');
+  check(s.staffCareer?.version===1,'active les carrières du staff');
   if(command==='staff_mentoring_enable'){check(!active(s)&&s.staffMentoring===undefined,'mentorat déjà actif');s.staffMentoring={version:1,policy:POLICY,enabledSeason:s.season,assignments:[],experience:[]};}
   else{
    check(active(s),'activer le mentorat');const st=s.staffMentoring;

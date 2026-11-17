@@ -168,8 +168,8 @@ module.exports={
   function guard(command,payload={}){
    const r=S?.contextualMatch?.current,p=r&&matches(S,r)?pending(r):null;
    if(!p||delegating)return;
-   if((p.phase==='pre'||p.phase==='half')&&(command==='tick'||command==='pause'&&payload.paused===false))throw Error('Terminez ou passez la causerie avant de reprendre le match.');
-   if(command==='finish_round')throw Error('Terminez ou passez le débrief avant de valider la journée.');
+   if((p.phase==='pre'||p.phase==='half')&&(command==='tick'||command==='pause'&&payload.paused===false))throw Error('Termine ou passe la causerie avant de reprendre le match.');
+   if(command==='finish_round')throw Error('Termine ou passe le débrief avant de valider la journée.');
   }
   function execute(command,payload){
    check(!!S,'carrière absente');validate(S);
@@ -185,7 +185,7 @@ module.exports={
     p.decision={choiceId:choice.id,text:choice.text,tone:choice.tone,intent:choice.intent,audience:payload.audience,playerIds:ids,reactions:feedback,moraleBefore:before,moraleAfter:after,moraleDelta:after-before};
     S.morale=after;
    }else{
-    check(payload.skip===undefined||typeof payload.skip==='boolean','passage invalide');check(p.decision||payload.skip===true,'confirmez une déclaration ou passez explicitement');
+    check(payload.skip===undefined||typeof payload.skip==='boolean','passage invalide');check(p.decision||payload.skip===true,'confirme une déclaration ou passe explicitement');
     close(r,p,'skipped');
     if(p.phase==='post'){
      check(S.live.finished,'match non terminé');

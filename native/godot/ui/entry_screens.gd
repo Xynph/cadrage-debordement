@@ -92,7 +92,7 @@ static func home(app: Control) -> Control:
 	var choices := G.panel(row)
 	choices.get_parent().custom_minimum_size.x=380
 	choices.get_parent().size_flags_horizontal=Control.SIZE_SHRINK_END
-	choices.add_child(G.section("Ouvrir le carnet","Votre prochain chapitre commence ici."))
+	choices.add_child(G.section("Ouvrir le carnet","Ton prochain chapitre commence ici."))
 	choices.add_child(G.separator())
 	if not club.is_empty():
 		var national: bool = app.Immersive.Selections.nation_only(app.model)
@@ -104,8 +104,8 @@ static func home(app: Control) -> Control:
 		G.fill(current)
 		identity.add_child(current)
 		current.add_child(G.label("CARNET EN COURS", 11, G.GOLD))
-		current.add_child(G.wrap("Sélection nationale" if national else str(G.identity(club).get("city", "Votre territoire")), 18, G.INK))
-		choices.add_child(G.label("VOTRE CARRIÈRE", 12, G.GOLD))
+		current.add_child(G.wrap("Sélection nationale" if national else str(G.identity(club).get("city", "Ton territoire")), 18, G.INK))
+		choices.add_child(G.label("TA CARRIÈRE", 12, G.GOLD))
 		choices.add_child(G.wrap(str(team.get("name", "Sélection")) if national else G.club_name(club), 26, G.INK))
 		choices.add_child(G.label("Saison %s · %s" % [G.season_label(app.model.meta.get("season", 1)), app.model.meta.get("roundLabel", "Journée " + G.n(int(app.model.meta.get("round", 0)) + 1))], 12, G.MUTED))
 		choices.add_child(G.button("REPRENDRE LA CARRIÈRE  →", func(): app._navigate("Réception"), true))
@@ -234,7 +234,7 @@ static func _competition_summary(app: Control, parent: VBoxContainer, division: 
 		parent.add_child(C.rule())
 		parent.add_child(C.label("FORMAT ET ENJEUX", 21, Editorial.BRASS))
 		for detail: String in format: parent.add_child(C.wrap(detail, 23, C.IVORY))
-	parent.add_child(C.wrap("Choisissez un club pour découvrir son stade et son effectif.", 21))
+	parent.add_child(C.wrap("Choisis un club pour découvrir son stade et son effectif.", 21))
 
 static func _rating(roster: Dictionary) -> String:
 	return String.num(float(roster.get("average", 0)), 1).replace(".", ",")
@@ -582,7 +582,7 @@ static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 		if app._command("new_career", payload) and is_instance_valid(app.entry_scroll):
 			_show_creation_waiting(app, app.entry_scroll)
 	if app._has_career():
-		app.confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Vous pouvez l’exporter depuis le menu pour la conserver.", action, true)
+		app.confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Tu peux l’exporter depuis le menu pour la conserver.", action, true)
 	else:
 		action.call()
 
@@ -590,13 +590,13 @@ static func _choose_role(app: Control, teams: Array) -> void:
 	var roles := ["club", "dual", "nation"]
 	var dialog := ConfirmationDialog.new()
 	dialog.name = "CreationRoleDialog"
-	dialog.title = "Votre rôle"
+	dialog.title = "Ton rôle"
 	app._prepare_dialog(dialog, 630)
 	dialog.get_ok_button().text = "Confirmer"
 	dialog.get_cancel_button().text = "Annuler"
 	var fields := G.v()
 	dialog.add_child(fields)
-	fields.add_child(G.wrap("Choisissez la responsabilité avec laquelle vous commencez."))
+	fields.add_child(G.wrap("Choisis la responsabilité avec laquelle tu commences."))
 	var roles_list := OptionButton.new()
 	roles_list.name = "CreationCareerRole"
 	for title: String in ["Club", "Club et sélection", "Sélection seule"]: roles_list.add_item(title)
@@ -631,7 +631,7 @@ static func creation(app: Control) -> Control:
 	page.add_child(top)
 	var back := G.button("← ACCUEIL", func(): app._navigate("Accueil"))
 	top.add_child(back)
-	var title := G.label("Choisissez votre histoire", 36, G.WHITE, true) if not modern else C.label("", 23, C.MUTED)
+	var title := G.label("Choisis ton histoire", 36, G.WHITE, true) if not modern else C.label("", 23, C.MUTED)
 	G.fill(title)
 	top.add_child(title)
 	var mode: String = app.pack_manager.mode("creation")
@@ -720,7 +720,7 @@ static func creation(app: Control) -> Control:
 		G.fill(photo, true, 0.95)
 		row.add_child(photo)
 		var over: VBoxContainer = photo.get_meta("content")
-		over.add_child(G.label("VOTRE FUTUR CLUB", 14, G.WHITE))
+		over.add_child(G.label("TON FUTUR CLUB", 14, G.WHITE))
 		if is_champ:
 			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2026-2027", 22, G.WHITE, true))
 		if is_nationale:
@@ -744,7 +744,7 @@ static func creation(app: Control) -> Control:
 	if modern:
 		Editorial.surface(list.get_parent(), Color.TRANSPARENT, Color.TRANSPARENT, 0)
 	else:
-		G.chapter(list,"01","Prendre les rênes","Choisissez les identités puis votre club.",app.accent)
+		G.chapter(list,"01","Prendre les rênes","Choisis les identités puis ton club.",app.accent)
 	var installed: Array = app.pack_manager.installed("creation")
 	var pack_name := "JEU DE BASE"
 	for pack: Dictionary in installed:
@@ -970,7 +970,7 @@ static func creation(app: Control) -> Control:
 	var world_info := "%s joueurs · %d clubs jouables" % [G.n(database.get("startingPlayerCount", database.get("playerCount", 0))), playable.size()]
 	if not modern: list.add_child(G.wrap(world_info, 12))
 	var caption := "CHOISISSEZ UN CLUB" if selected.is_empty() else "PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →"
-	if modern: caption = "Choisissez un club" if selected.is_empty() else "Prendre les rênes  →"
+	if modern: caption = "Choisis un club" if selected.is_empty() else "Prendre les rênes  →"
 	if mode.begins_with("world"): LeagueDetail.summary(app, dossier if modern else list, str(selected.get("division", division)), candidates)
 	_career_variation_controls(app,dossier if modern else list,modern)
 	if mode == "world-champ" and role != "nation": _career_start_controls(app,dossier if modern else list,modern,selected)
@@ -1006,10 +1006,10 @@ static func _nation_creation(app: Control, page: Control, mode: String, preferre
 	identity.add_child(app.Immersive.Selections.nation_badge(nation, C.px(82)))
 	var details := G.v()
 	identity.add_child(details)
-	var nation_name := str(nation.get("name", "Votre sélection"))
+	var nation_name := str(nation.get("name", "Ta sélection"))
 	details.add_child(C.label("MANDAT INTERNATIONAL", 24, C.GOLD, true, 700))
 	details.add_child(C.label(nation_name, 48, C.IVORY, true, 700))
-	panel.add_child(C.wrap("Vous dirigez cette sélection. Retrouvez vos convocations, votre calendrier et vos résultats dans la Réception et l’espace Sélections.", 26, C.IVORY))
+	panel.add_child(C.wrap("Tu diriges cette sélection. Retrouve tes convocations, ton calendrier et tes résultats dans la Réception et l’espace Sélections.", 26, C.IVORY))
 	var installed: Array = app.pack_manager.installed("creation")
 	var missing := preferred != "base" and not installed.any(func(pack: Dictionary): return str(pack.id) == preferred)
 	_career_variation_controls(app,panel,modern)
@@ -1066,8 +1066,8 @@ static func _career_start_sentence(app: Control, start: String, selected: Dictio
 	var club_day := preload("res://ui/reprise_view.gd").day_text(known) if known != "" else "à la date habituelle du club"
 	match start:
 		"club":
-			return "Vous arrivez le jour de la reprise de votre club (%s) : la date est fixée, vous gérez le groupe, les jeunes convoqués et les amicaux." % club_day
+			return "Tu arrives le jour de la reprise de ton club (%s) : la date est fixée, tu gères le groupe, les jeunes convoqués et les amicaux." % club_day
 		"veille":
-			return "Vous arrivez la veille de la 1re journée : le staff a mené la préparation à la date habituelle du club, amicaux et jeunes compris."
+			return "Tu arrives la veille de la 1re journée : le staff a mené la préparation à la date habituelle du club, amicaux et jeunes compris."
 		_:
-			return "Vous arrivez le lundi 13 juillet 2026, avec les premiers clubs : vous choisissez la date de reprise, les jeunes à convoquer, et vivez toute la préparation."
+			return "Tu arrives le lundi 13 juillet 2026, avec les premiers clubs : tu choisis la date de reprise, les jeunes à convoquer, et vis toute la préparation."

@@ -112,7 +112,7 @@ func _request_target(target: String) -> void:
 	if target != _target and (not _pending.is_empty() or _editor.text != _source):
 		for index in _picker.item_count:
 			if _picker.get_item_metadata(index) == _target: _picker.select(index)
-		_status.text = "Enregistrez ou annulez la saisie avant de changer de dossier."
+		_status.text = "Enregistre ou annule la saisie avant de changer de dossier."
 		return
 	_load_target(target)
 
@@ -159,12 +159,12 @@ func _save_note() -> void:
 
 func _send(command: String, payload: Dictionary) -> void:
 	if _app.waiting or _app.closing:
-		_status.text = "Une décision est en cours. Votre brouillon est conservé ; réessayez après sa réponse."
+		_status.text = "Une décision est en cours. Ton brouillon est conservé ; réessaie après sa réponse."
 		return
 	_pending = {"command":command,"target":payload.target,"context":payload.context.duplicate(true),"text":payload.get("text", "")}
 	_status.text = "Enregistrement en cours…" if command == "coach_note_save" else "Suppression en cours…"
 	_changed()
-	if not _app._command(command, payload) and not _pending.is_empty(): _on_failure("Commande non transmise. Votre saisie est conservée.")
+	if not _app._command(command, payload) and not _pending.is_empty(): _on_failure("Commande non transmise. Ta saisie est conservée.")
 
 func _confirm_remove() -> void:
 	if _remove_button.disabled: return

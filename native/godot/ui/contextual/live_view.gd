@@ -481,7 +481,7 @@ func _bench_presence(live: Dictionary) -> Array:
 
 func _tactics(live: Dictionary) -> void:
 	var allowed: bool = live.get("paused", false) and not live.get("finished", false)
-	if not allowed: drawer_body.add_child(S.wrap("Mettez le match en pause pour modifier vos consignes.", 14, S.GOLD))
+	if not allowed: drawer_body.add_child(S.wrap("Mets le match en pause pour modifier tes consignes.", 14, S.GOLD))
 	var tactics: Dictionary = model.get("tactics", {})
 	for pair in [["attack", "attacks", "Avec le ballon"], ["defense", "defenses", "Sans le ballon"]]:
 		drawer_body.add_child(S.label(pair[2], 18, S.GOLD))
@@ -533,14 +533,14 @@ func _update_bench_feedback(live: Dictionary, selected: bool, out: Variant, choi
 	if live.get("finished", false):
 		_bench_status.text = "Match terminé. Les remplacements sont fermés."
 	elif not live.get("paused", false):
-		_bench_status.text = "Mettez le match en pause pour effectuer un remplacement."
+		_bench_status.text = "Mets le match en pause pour effectuer un remplacement."
 	elif not selected:
-		_bench_status.text = "Sélectionnez le joueur à remplacer."
+		_bench_status.text = "Sélectionne le joueur à remplacer."
 	elif choice.get("inIds", []).is_empty():
 		var other_choice := options.any(func(option: Dictionary): return option.get("slot") != selected_slot and not option.get("inIds", []).is_empty())
-		_bench_status.text = "Aucun remplaçant autorisé pour ce poste. " + ("Sélectionnez un autre joueur." if other_choice else "Reprenez le match pour continuer.")
+		_bench_status.text = "Aucun remplaçant autorisé pour ce poste. " + ("Sélectionne un autre joueur." if other_choice else "Reprends le match pour continuer.")
 	else:
-		_bench_status.text = "Choisissez un remplaçant dans « Faire entrer » sous le XV."
+		_bench_status.text = "Choisis un remplaçant dans « Faire entrer » sous le XV."
 	_bench_feedback.visible = drawer_tab == "Banc" and drawer.visible
 
 func _bench(live: Dictionary) -> void:

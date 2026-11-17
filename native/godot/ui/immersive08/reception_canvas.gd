@@ -20,9 +20,9 @@ const ROUTES = {"Staff":"Préparation", "Médical":"Effectif", "Direction":"Club
 const PORTRAITS = {"Médical":"mail-medical", "Direction":"mail-direction", "Recrutement":"mail-recruitment", "Formation":"academy-player", "Compétitions":"mail-trainer"}
 # Trois formes : singulier et pluriel accordés (moteur actuel) et la forme historique « contrat(s) expire(nt) » des anciennes carrières.
 const SEASON_EXPIRY_MAILS := [
-	"%d contrat expire à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs.",
-	"%d contrats expirent à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs.",
-	"%d contrat(s) expire(nt) à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs.",
+	"%d contrat expire à la fin de cette saison. Consulte l'onglet Contrats pour anticiper les départs.",
+	"%d contrats expirent à la fin de cette saison. Consulte l'onglet Contrats pour anticiper les départs.",
+	"%d contrat(s) expire(nt) à la fin de cette saison. Consulte l'onglet Contrats pour anticiper les départs.",
 ]
 
 static func _state(app: Control) -> Dictionary:
@@ -86,10 +86,10 @@ static func _messages(app: Control) -> Array[Dictionary]:
 		var previous_date := P.fixture_date({"date":notice.fromDate})
 		var new_date := P.fixture_date({"date":notice.toDate})
 		var opponent := str(notice.opponent)
-		var fixture := "Votre rencontre" if opponent.is_empty() else "Votre rencontre contre " + opponent
+		var fixture := "Ta rencontre" if opponent.is_empty() else "Ta rencontre contre " + opponent
 		var text := "%s, initialement prévue le %s, aura lieu le %s." % [fixture, previous_date, new_date]
 		match notice.status:
-			"pending": text += "\n\nVous pouvez recaler les séances à venir sur la nouvelle date ou conserver la préparation prévue."
+			"pending": text += "\n\nTu peux recaler les séances à venir sur la nouvelle date ou conserver la préparation prévue."
 			"recalibrated": text += "\n\nLa préparation a été recalée."
 			"kept": text += "\n\nLa préparation prévue a été conservée."
 			"superseded": text += "\n\nUn courrier plus récent indique la nouvelle date."
@@ -112,8 +112,8 @@ static func _messages(app: Control) -> Array[Dictionary]:
 		}.get(invitation.kind, "Invitation de presse")
 		var detail := "%s · Saison %s · Semaine %d." % [Press._club(app, context.club), SeasonLabel.label(context.season), int(context.week) + 1]
 		match invitation.status:
-			"pending": detail += "\n\nLes journalistes vous attendent. Publiez vos réponses pour poursuivre."
-			"published": detail += "\n\nVos réponses ont été publiées."
+			"pending": detail += "\n\nLes journalistes t’attendent. Publie tes réponses pour poursuivre."
+			"published": detail += "\n\nTes réponses ont été publiées."
 			"expired": detail += "\n\nCe rendez-vous est passé."
 		messages.push_front({
 			"id":invitation.id, "subject":subject, "text":detail, "category":"Compétitions",
@@ -223,7 +223,7 @@ static func _tasks(app: Control) -> Array:
 
 static func heading(row: Control, app: Control) -> Label:
 	var state := _state(app)
-	D.text(row,1,19,"LE COURRIER DE VOTRE CARRIÈRE",17,C.GOLD,600,780)
+	D.text(row,1,19,"LE COURRIER DE TA CARRIÈRE",17,C.GOLD,600,780)
 	var title := D.text(row,-1,57,"Réception.",28,C.IVORY,700,777)
 	var counts := Reading.counts(_messages(app),app.model)
 	D.text(row,1,82,"%d courriers · %d urgences vérifiables" % [counts.all,counts.urgent],17,C.MUTED,500,730)
@@ -396,7 +396,7 @@ static func _context(card: Panel, app: Control, state: Dictionary, message: Dict
 		D.text(panel,18,97,P.fixture_date(next),18,C.MUTED,500,850)
 		D.button(panel,Rect2(910,53,183,34),"Préparation",_open_related.bind(app,message,Callable(app,"_navigate").bind("Préparation")),false,"tactic",false,app.accent,"InboxContextPreparation")
 	else:
-		D.text(panel,18,70,"Calendrier et archives de votre carrière",20,C.IVORY,600,850)
+		D.text(panel,18,70,"Calendrier et archives de ta carrière",20,C.IVORY,600,850)
 		D.button(panel,Rect2(910,53,183,34),"Calendrier",_open_related.bind(app,message,Callable(app,"_navigate").bind("Calendrier")),false,"calendar",false,app.accent,"InboxContextCalendar")
 	D.line(panel,Vector2(18,116),Vector2(1094,116))
 	var others: Array = _messages(app).filter(func(item: Dictionary): return item.id != message.get("id", ""))
@@ -467,7 +467,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 	mark_all.add_theme_font_size_override("font_size",C.px(18))
 	mark_all.disabled = markable.is_empty()
 	mark_all.accessibility_name = "Tout marquer comme lu : %d courrier(s) d'information" % markable.size()
-	mark_all.tooltip_text = ("Marque comme lus les %d courriers d'information affichés. Les courriers qui attendent votre décision restent non lus." % markable.size()) if not markable.is_empty() else "Aucun courrier d'information non lu dans cette vue. Les courriers qui attendent votre décision restent à traiter."
+	mark_all.tooltip_text = ("Marque comme lus les %d courriers d'information affichés. Les courriers qui attendent ta décision restent non lus." % markable.size()) if not markable.is_empty() else "Aucun courrier d'information non lu dans cette vue. Les courriers qui attendent votre décision restent à traiter."
 	D.text(card,25,78,"↑ ↓ choisir · Entrée ouvrir le courrier",17,C.MUTED,500,700)
 	D.line(card,Vector2(1,94),Vector2(748,94))
 	var scroll := ScrollContainer.new()
@@ -482,7 +482,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 	scroll.add_child(rows)
 	if messages.is_empty():
 		D.text(card,28,150,"Aucun message dans cette vue.",27,C.MUTED,600,690)
-		D.text(card,28,190,"Choisissez un autre dossier ou filtre.",21,C.MUTED,400,690,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(card,28,190,"Choisis un autre dossier ou filtre.",21,C.MUTED,400,690,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var list_entries: Array[Dictionary] = []
 	for group: Dictionary in Reading.groups(messages):
 		var linked: Array = group.messages

@@ -452,8 +452,8 @@ func _gauche(equipe: Dictionary) -> void:
 	_entraineur(equipe)
 	var mien := _boite(scene, Rect2(28, 880, 408, 84), Color("0f1d17"), 12, Tableau.VERT if not nous.is_empty() else TRAIT, 3 if not nous.is_empty() else 2)
 	mien.name = "EquipeTypeManager"
-	var phrase := "Aucun joueur de votre club cette fois." if nous.is_empty() else "%d joueur%s de %s : %s" % [nous.size(), "s" if nous.size() > 1 else "", club_manager, (", ".join(nous.slice(0, 2)) + " et " + nous[2]) if nous.size() == 3 else (", ".join(nous.slice(0, 3)) + " et %d autre%s" % [nous.size() - 3, "s" if nous.size() > 4 else ""] if nous.size() > 3 else " et ".join(nous))]
-	if mode == "saison" and nous.is_empty(): phrase = "Aucun joueur de votre club dans le XV de la saison."
+	var phrase := "Aucun joueur de ton club cette fois." if nous.is_empty() else "%d joueur%s de %s : %s" % [nous.size(), "s" if nous.size() > 1 else "", club_manager, (", ".join(nous.slice(0, 2)) + " et " + nous[2]) if nous.size() == 3 else (", ".join(nous.slice(0, 3)) + " et %d autre%s" % [nous.size() - 3, "s" if nous.size() > 4 else ""] if nous.size() > 3 else " et ".join(nous))]
+	if mode == "saison" and nous.is_empty(): phrase = "Aucun joueur de ton club dans le XV de la saison."
 	_paragraphe(mien, Rect2(16, 6, 376, 72), phrase, 17, Tableau.VERT if not nous.is_empty() else Tableau.FAIBLE).name = "ManagerTexte"
 	var regle := "Un joueur par poste, sur la note du match (40 minutes jouées au moins) ; à égalité : minutes, essais." if mode == "journee" else "Moyenne de la saison régulière, la moitié des journées au moins ; à égalité : sélections en XV de la journée, puis matchs."
 	_paragraphe(scene, Rect2(28, 972, 408, 84), regle, 17, Tableau.FAIBLE, HORIZONTAL_ALIGNMENT_LEFT)
@@ -578,7 +578,7 @@ func _legende(zone: Rect2) -> void:
 	_texte(cadre, Rect2(68, y, 320, 32), "Joueur de la journée" if mode == "journee" else "Meilleure moyenne", 18, Tableau.IVOIRE)
 	y += 40
 	_boite(cadre, Rect2(16, y + 3, 40, 26), Color.TRANSPARENT, 6, Tableau.VERT, 3)
-	_texte(cadre, Rect2(68, y, 320, 32), "Joueur de votre club", 18, Tableau.IVOIRE)
+	_texte(cadre, Rect2(68, y, 320, 32), "Joueur de ton club", 18, Tableau.IVOIRE)
 	y += 40
 	_texte(cadre, Rect2(16, y, 372, 28), "Survol d'une carte : détail du joueur.", 15, Tableau.FAIBLE)
 

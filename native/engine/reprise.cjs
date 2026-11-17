@@ -292,7 +292,7 @@ function factory(){
  function record(s,key,id,staff){
   upgrade(s.reprise);s.reprise[DECISIONS[key].field]={id,staff};
   // Seule la délégation est annoncée : le choix du manager est visible dans « La reprise ».
-  if(staff&&typeof news==='function')news(`Gabi a arrêté ${key==='amicaux'?'le programme des matchs amicaux':'l’orientation du stage'} à votre place : ${DECISIONS[key].options[id].label.toLowerCase()}.`);
+  if(staff&&typeof news==='function')news(`Gabi a arrêté ${key==='amicaux'?'le programme des matchs amicaux':'l’orientation du stage'} à ta place : ${DECISIONS[key].options[id].label.toLowerCase()}.`);
  }
  // ------------------------------------------------------------ éléments « À noter » (courrier de pré-saison)
  // Façon FM : des éléments informatifs arrivent en Réception le jour où ils se produisent ; « Continuer » s'arrête
@@ -526,7 +526,7 @@ function factory(){
   const t=target(s);if(t===null)throw Error('Le groupe de préparation est déjà constitué.');
   if(t!==st.season){retarget(st,t);st.choice=null;}
   const ids=payload?.playerIds;
-  if(!Array.isArray(ids)||ids.length>YOUTH_MAX||new Set(ids).size!==ids.length)throw Error(`Convoquez au plus ${YOUTH_MAX} jeunes.`);
+  if(!Array.isArray(ids)||ids.length>YOUTH_MAX||new Set(ids).size!==ids.length)throw Error(`Convoque au plus ${YOUTH_MAX} jeunes.`);
   const allowed=new Set(youthCandidates(s,s.club).map(p=>p.id));
   if(!ids.every(id=>allowed.has(id)))throw Error('Jeune non convocable (Espoirs et -18 de 17 ans, valides).');
   st.youth=ids.slice();return {reprise:{youth:st.youth.length}};
