@@ -25,7 +25,7 @@ const VM_SOURCE = String.raw`globalThis.__bancCourbe=function(o){
    const fortSlot=slots[(i>>1)%2],faibleSlot=slots[1-(i>>1)%2];
    S.clubs[faibleSlot]=copie(faibleSlot,'a',0);S.clubs[fortSlot]=copie(fortSlot,'b',o.k);
    const strongHome=i%2===0,pair=strongHome?[fortSlot,faibleSlot]:[faibleSlot,fortSlot];
-   const f={id:'banc-courbe-'+i,week:S.round,date,homeId:pair[0],awayId:pair[1],competitionId:o.competitionId||'elite',phase:'league',round:1,neutral:!!o.neutral};
+   const f={id:'banc-courbe-'+i,week:S.round,date,homeId:pair[0],awayId:pair[1],competitionId:o.competitionId||'urc',phase:'league',round:1,neutral:!!o.neutral};
    let score,tries;
    if(o.mode==='rapide'){const r=CDLeagueDetail.simulate(S,f);score=r.score;tries=r.tries;}
    else{S.worldMode.fixtures.push(f);
@@ -88,7 +88,9 @@ function tableau(titre, resumes, fit) {
 }
 
 // Série complète : pour chaque écart, n matchs dans le mode demandé.
-function mesurer(h, { mode, ecarts, n, base = 4, slots = [7, 11], competitionId = 'elite' }) {
+// Championnat du banc : URC, à l'avantage du terrain commun (TERRAIN_CHAMPIONNAT de dist/rugby.js vaut 1) ; le Top 14 et
+// la Pro D2 renforcent le terrain (×1,7, 17/11/2026) et ne mesurent donc pas la courbe commune.
+function mesurer(h, { mode, ecarts, n, base = 4, slots = [7, 11], competitionId = 'urc' }) {
   installer(h);
   const series = ecarts.map(k => ({ k, matchs: jouer(h, { mode, k, n, base, slots, competitionId }) }));
   return { series, resumes: series.map(s => resume(s.k, s.matchs)), fit: ajuster(series) };

@@ -1,5 +1,6 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
+const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 const STARTER_POSITIONS = ["Pilier gauche", "Talonneur", "Pilier droit", "Deuxième ligne", "Deuxième ligne", "Troisième ligne aile", "Troisième ligne aile", "Troisième ligne centre", "Demi de mêlée", "Demi d’ouverture", "Ailier", "Centre", "Centre", "Ailier", "Arrière"]
 var director: Node
 var app: Control
@@ -20,7 +21,7 @@ func _ready() -> void:
 func update_frame(value: Dictionary, data: Dictionary) -> void:
 	model = value
 	scene = data
-	var fingerprint := JSON.stringify([data, value.get("squad", []), value.get("club", {})])
+	var fingerprint := JSON.stringify([data, value.get("squad", []), value.get("club", {}), value.get("live", {}).get("meteo") if value.get("live") is Dictionary else null])
 	if fingerprint == _fingerprint: return
 	_fingerprint = fingerprint
 	_draw()
@@ -52,6 +53,7 @@ func _draw() -> void:
 	air.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.G.fill(air, true)
 	middle.add_child(air)
+	if phase in ["pre", "half"] and not live.is_empty(): _meteo(middle, live, phase)
 	var declarations := S.panel(middle, 12)
 	var decision: Variant = scene.get("decision")
 	if decision is Dictionary:
@@ -215,3 +217,15 @@ func _continue(skip: bool = false) -> void:
 	var payload := {"key":scene.get("key"), "phase":scene.get("phase")}
 	if skip: payload.skip = true
 	director.command("match_talk_continue", payload)
+
+## La météo du match vue du vestiaire : ciel et terrain, camp qui a le vent dans le dos, conseil du staff.
+func _meteo(parent: Control, live: Dictionary, phase: String) -> void:
+	var titre := Meteo.libelle(live)
+	if titre.is_empty(): return
+	var cadre := S.panel(parent, 10)
+	cadre.name = "TalkWeather"
+	cadre.add_child(S.label("LA MÉTÉO  ·  " + titre.to_upper(), 13, S.GOLD))
+	var vent := Meteo.phrase_vent(live, phase)
+	if not vent.is_empty(): cadre.add_child(S.wrap(vent, 16, S.TEXT))
+	var conseil := Meteo.conseil(live)
+	if not conseil.is_empty(): cadre.add_child(S.wrap(conseil, 13))

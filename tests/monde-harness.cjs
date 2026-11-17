@@ -13,7 +13,7 @@ const live=new Set();
 process.on('exit',()=>{for(const h of live)h.close();});
 function context(seed=827381,options={}){
  const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-monde-harness-'));
- const bridge=createBridge({dataDir,seed:seed>>>0,now:options.now??NOW,testVm:true,...(options.bridge||{})});
+ const bridge=createBridge({dataDir,seed:seed>>>0,now:options.now??NOW,testVm:true,...(options.selections===true?{dailyCalendar:true}:{}),...(options.bridge||{})});
  const vm=bridge.vm,ctx=vm.ctx;
  if(options.console!==false)ctx.console=console;
  const run=(source,timeout)=>vm.run(source,timeout);
@@ -30,12 +30,27 @@ function context(seed=827381,options={}){
  // que l'avance rapide et les matchs ne dépendent pas de décisions de gestion ; leurs suites dédiées
  // passent par le worker.
  const meetings=options.meetings===true;
- function start(club=0,extra={}){command('new_career',{mode:'world-champ',club,...extra});if(!meetings)run('delete S.clubMeetings;validateCareer(S)');return h;}
+ // options.selections : calendrier quotidien et carrière internationale comme dans le jeu (worker lancé par Godot :
+ // dailyCalendar et internationalCareer). Les convocations retirent alors les internationaux des feuilles de leur club
+ // pendant les fenêtres internationales ; sans cette option, aucun joueur ne part jamais en sélection.
+ const selections=options.selections===true;
+ const national=selections?require('../native/engine/international-native.cjs')(run,ctx,require('../native/engine/worker.cjs').nationalFacts,true):null;
+ function start(club=0,extra={}){command('new_career',{mode:'world-champ',club,...extra});if(!meetings)run('delete S.clubMeetings;validateCareer(S)');if(national)national.initialize(seed>>>0);return h;}
+ // Carrière internationale avancée jour par jour jusqu'au dernier match de la journée de club (camps ouverts avant).
+ function avancerSelections(){
+  if(!national||run("S.phase==='ended'"))return;
+  const cible=run("(()=>{const d=S.worldMode.fixtures.filter(f=>f.week===S.round).map(f=>f.date).sort();return d.at(-1)||CDWorldCareer.calendarToday(S)})()");
+  for(let i=0;i<40;i++){const p=national.read();if(!p||p.career.date>=cible)break;national.advance(p.career.date);}
+  // Club du joueur joué automatiquement : dans le jeu, une feuille incomplète après les convocations demande au manager
+  // de la compléter ; ici le renfort d'urgence des clubs IA la complète (sinon la semaine s'arrête sur une erreur).
+  run('CDFranceCareer.ensureAISheet(S.clubs[S.club],{allowAnchor:true})');
+ }
  // Avance rapide : finishRound() du moteur (journée complète, match du club compris), puis les
  // observations du worker (presse, rendez-vous, connaissance, profondeur pro, attributs).
  function week(n=1,{validate=true}={}){
   for(let i=0;i<n;i++){
    if(run("S.phase==='ended'"))break;
+   avancerSelections();
    run(`{const pressBefore=nativeSystems.domain('press').context(S),knowledgeBefore=nativeKnowledge.before(S),attributes=nativeAttributeStore.before(S,false);
     finishRound();
     nativeSystems.domain('press').observeInvitation(pressBefore,false);

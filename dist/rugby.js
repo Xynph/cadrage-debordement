@@ -134,6 +134,12 @@ return l}
 const MATCH_LEVEL_CURVE=Object.freeze({version:2,cible:Object.freeze({pente:.183,terrain:.64}),forme:Object.freeze([.57,.0043]),complet:Object.freeze({parPoint:.005,terrain:.036,piege:2.8}),rapide:Object.freeze({diviseur:7.5,essais:.42,terrain:3.3,borne:3}),piege:Object.freeze({seuil:10,parPoint:.04,max:.3,part:.4})});
 // Décalage d'écart du match piège (points de niveau, du point de vue du camp 0) pour un écart `gap`
 // (niveau du camp 0 − niveau du camp 1). 0 sans tirage en deçà du seuil.
+// Avantage du terrain par championnat (17/11/2026) : multiplie `complet.terrain` et `rapide.terrain` pour les matchs
+// de ce championnat (coupes, sélections et autres championnats : 1). Top 14 et Pro D2 : la victoire à domicile y est
+// la règle et les succès à l'extérieur rares, nettement plus qu'en Premiership ou en URC ; à 1, le Top 14 mesuré ne
+// donnait que 56-61 % de victoires à domicile et un leader à 21-23 victoires sur 26 (docs/top14-dispute-20261117.md).
+const TERRAIN_CHAMPIONNAT=Object.freeze({elite:1.7,accession:1.7});
+function terrainFactor(competitionId){return TERRAIN_CHAMPIONNAT[competitionId]??1}
 function matchTrapOffset(gap,rnd=Math.random){const c=MATCH_LEVEL_CURVE.piege,d=Math.abs(Number(gap)||0),q=Math.min(c.max,c.parPoint*(d-c.seuil));if(!(q>0)||rnd()>=q)return 0;return -Math.sign(gap)*c.part*d}
 function teamLevel(players){const c=MATCH_LEVEL_CURVE.forme,list=(players||[]).filter(Boolean);return list.length?mean(list.map(p=>(Number(p.rating)||50)*(c[0]+clamp(Number(p.condition)||80,0,100)*c[1]))):40}
 function matchLevelEdge(l,side){return MATCH_LEVEL_CURVE.complet.parPoint*(teamLevel(activePlayers(l,side))-teamLevel(activePlayers(l,1-side))+(Number(l.levelTrap)||0)*(side===0?1:-1))}
@@ -141,7 +147,7 @@ function teamEdge(l,side,kind){const opp=1-side,t=l.tactics[side],weather=l.weat
 // V19: wider attack exposes an outnumbered backline; possession sides with extra players can exploit width.
 if(l.advantageModel===2&&kind==='attack'&&t==='large')b+=(on.length-activePlayers(l,opp).length)*.018;
 if(kind==='attack'&&!tacticalRules(l)){if(t==='large')b+=(unit(l,side,'pass',p=>p.fam>=4)-(l.balanceVersion===2?75:65))*(l.balanceVersion===2?.003:.006)+(l.balanceVersion===2?.015:.035);if(t==='conquete')b+=(unit(l,side,'power',p=>p.fam<=3)-(l.balanceVersion===2?75:65))*(l.balanceVersion===2?.002:.004);if(weather==='Pluie'&&t==='large')b-=.075;if(weather==='Vent'&&t==='occupation')b-=.025}
-b+=matchLevelEdge(l,side);if(l.franceContext?!l.franceContext.neutral:l.worldContext?!l.worldContext.neutral:S.phase!=='semi'&&S.phase!=='final')b+=(side===0?1:-1)*MATCH_LEVEL_CURVE.complet.terrain*(derbyRules(l)?DERBYS.match.domicile:1);if(l.balanceVersion===2)b+=(clubMorale(l.pair[side])-70)*.001;else if(l.pair[side]===S.club)b+=(S.morale-70)*.001;if(kind==='attack')b-=collectivePreparationBonus(l,opp,'defence');return b}
+b+=matchLevelEdge(l,side);if(l.franceContext?!l.franceContext.neutral:l.worldContext?!l.worldContext.neutral:S.phase!=='semi'&&S.phase!=='final')b+=(side===0?1:-1)*MATCH_LEVEL_CURVE.complet.terrain*terrainFactor(l.worldContext?.competitionId)*(derbyRules(l)?DERBYS.match.domicile:1);if(l.balanceVersion===2)b+=(clubMorale(l.pair[side])-70)*.001;else if(l.pair[side]===S.club)b+=(S.morale-70)*.001;if(kind==='attack')b-=collectivePreparationBonus(l,opp,'defence');return b}
 function changePossession(l){if(restartRules(l))ballPossession(l,1-l.possession);else l.possession=1-l.possession}
 // The field is modelled as 70 m wide (y=0..70), with the posts at y=35.
 // These are game-balance coefficients, not measured professional kick percentages.

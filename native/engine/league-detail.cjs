@@ -155,7 +155,7 @@ function factory(){
   const pair=[f.homeId,f.awayId],away=released(s,f),teams=pair.map(id=>squad(s,s.clubs[id],away));
   // Courbe de niveau commune au moteur complet (MATCH_LEVEL_CURVE de dist/rugby.js, tests/match-rating-curve.cjs) :
   // écart de puissance + bonus du terrain (sauf terrain neutre), ramené à l'échelle des essais.
-  const curve=MATCH_LEVEL_CURVE.rapide,home=f.neutral?0:curve.terrain;
+  const curve=MATCH_LEVEL_CURVE.rapide,home=f.neutral?0:curve.terrain*(typeof terrainFactor==='function'?terrainFactor(f.competitionId):1);
   // Match piège (MATCH_LEVEL_CURVE.piege) : même tirage que le moteur complet, au-delà du seuil d'écart.
   const gap=teams[0].power-teams[1].power,trap=typeof matchTrapOffset==='function'?matchTrapOffset(gap,roll):0;
   const edge=clamp((gap+trap+home)/curve.diviseur,-curve.borne,curve.borne);
