@@ -1,6 +1,6 @@
 'use strict';
 function flowRules(l){return restartRules(l)&&l.flowVersion===1}
-function initializeMatchFlow(l){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false};if(QUICK_TAP_RULES)l.quickTapVersion=1;if(SET_PIECE_FATIGUE_RULES)l.setPieceFatigueVersion=1;if(WEATHER_RULES){l.weatherVersion=1;l.meteo=tirerMeteo(l);if(WIND_DIRECTION_RULES)l.windVersion=1}}
+function initializeMatchFlow(l,fixee=null){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false};if(QUICK_TAP_RULES)l.quickTapVersion=1;if(SET_PIECE_FATIGUE_RULES)l.setPieceFatigueVersion=1;if(WEATHER_RULES){l.weatherVersion=1;l.meteo=fixee?{pluie:fixee.pluie,vent:fixee.vent,chaleur:fixee.chaleur,terrain:fixee.terrain,sens:fixee.sens}:tirerMeteo(l);if(WIND_DIRECTION_RULES)l.windVersion=1}}
 function periodBoundary(l){return l.flow.period===1?40:l.flow.fullEnd}
 function atHalftime(l){return flowRules(l)?l.flow.atBreak:l.minute===40&&l.paused&&!l.finished}
 function matchMinute(l){if(!flowRules(l)||l.flow.period===1)return l.minute;return 40+l.minute-l.flow.firstEnd}
@@ -141,6 +141,9 @@ function ventBut(l,side){const s=ventPour(l,side);return s===0?METEO_MATCH.but.v
 function ventNomCamp(l){const side=periodeVent(l)===1?l.meteo.sens:1-l.meteo.sens;return S.clubs[l.pair[side]].abbr}
 function meteoActive(l){return l?.weatherVersion===1&&!!l.meteo}
 function meteoNiveau(l,k){return meteoActive(l)?l.meteo[k]||0:0}
+// Météo annoncée la veille du match du club (carrière Monde, world-career.cjs `meteoMatch`) : {weather, pluie, vent,
+// chaleur, terrain, sens} ou null (rencontre non annoncée : tirage du coup d'envoi).
+function meteoAnnonceePour(pair){try{return typeof CDWorldCareer!=='undefined'&&typeof CDWorldCareer.meteoMatch==='function'&&typeof S!=='undefined'&&S?CDWorldCareer.meteoMatch(S,pair):null}catch(e){return null}}
 function tirerMeteo(l){const t=METEO_MATCH.tirage,cle=[...l.pair,S.season??'',S.round??'',S.week??'',l.weather].join('|');let h=2166136261;for(let i=0;i<cle.length;i++)h=Math.imul(h^cle.charCodeAt(i),16777619)>>>0;
  const u=(h%10007)/10007,v=((h>>>14)%10007)/10007,pluie=l.weather==='Pluie'?(u<t.pluieForte?2:1):0;
  return{pluie,vent:l.weather==='Vent'?(u<t.ventFort?2:1):0,chaleur:l.weather==='Sec'&&v<t.chaleurSec?1:0,terrain:pluie===2?'lourd':'souple',sens:(h>>>9)&1}}

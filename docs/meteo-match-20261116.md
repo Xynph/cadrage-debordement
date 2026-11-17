@@ -65,6 +65,20 @@ source chiffrée est retenue (registre `docs/ressources-utiles.md`).
 - Les rencontres commencées sans `windVersion` gardent la moyenne d'origine ; la sauvegarde valide `sens` et `windVersion`.
 - Test : `tests/meteo-vent-periodes.cjs`.
 
-## Reste à faire
+## Météo connue la veille (17/11/2026, carrière Monde)
 
-- Annonce de la météo à l'avant-match (prévision du staff) si un écran l'accueille.
+- La veille du match du club (calendrier journalier), le ciel, l'intensité et le sens du vent sont fixés et gardés dans
+  la sauvegarde (`worldMode.meteo` : rencontre, date, `weather`, `pluie`, `vent`, `chaleur`, `terrain`, `sens`) par
+  `fixerMeteo` (`native/engine/world-career.cjs`), appelé à chaque jour suivant et après chaque commande du worker
+  (fin d'avant-saison, reprise, chargement). Jamais pendant un match ; effacée à la clôture de la semaine du match.
+- Tirage sans aléa (`meteoPrevue`) : empreinte de la carrière (graine de variation) et de la rencontre ; même loi que le
+  coup d'envoi (Sec 1/2, Pluie 1/4, Vent 1/4, intensités `METEO_MATCH.tirage`). Aucun `Math.random` consommé.
+- Coup d'envoi : `createRugbyMatch` reprend l'annonce telle quelle (`meteoAnnonceePour`, `dist/matchflow.js`) avant la
+  composition des feuilles IA (qui lisent le ciel) ; le tirage `rand(0,3)` du ciel reste fait pour ne pas décaler les
+  suivants. Les rencontres non annoncées (cadence hebdomadaire, autres modes) gardent le tirage du coup d'envoi.
+- Modèle natif : `next.meteo` (même format que `live.meteo`, plus `date`), présent dès la veille.
+- Interface : écran Match « AVANT-MATCH » (bloc « La météo de demain / du match » : ciel, camp qui a le vent dans le dos
+  en 1re période, conseil du staff ; sinon « Bulletin météo la veille du match ») ; courrier « Bulletin météo » du staff,
+  une fois par match, qui arrête « Continuer » et ouvre la composition. Le mail de la pelouse suit la météo annoncée
+  (glissante sous la pluie, lourde sous forte pluie).
+- Tests : `tests/meteo-veille.cjs` (moteur et modèle), `tests/godot-meteo-vent.*` (écran Match dans le vrai Godot).

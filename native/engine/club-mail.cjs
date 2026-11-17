@@ -411,9 +411,22 @@ function factory() {
       if (!last || last.date !== F.yesterday || ![4, 6, 8, 10].includes(n)) return [];
       return [{ key: F.s.season + ':' + n, vars: { n } }];
     },
+    // Bulletin météo de la veille (world-career.cjs, météo fixée la veille et reprise au coup d'envoi) : une fois par
+    // match, le jour où l'annonce tombe (la veille ; le jour même si la carrière n'est arrivée qu'alors).
+    meteo(F) {
+      const m = annonceMeteo(F);
+      if (!m) return [];
+      const camp = id => F.name(id) || 'l’adversaire';
+      const nous = F.next.homeId === F.s.club ? 0 : 1, pair = [F.next.homeId, F.next.awayId];
+      const ciel = String(m.libelle || '').trim();
+      const vent = m.ventDos ? ' Le vent soufflera dans le dos de ' + camp(pair[m.ventDos[0]]) + ' en première période' + (m.ventDos[0] === nous ? ' : à nous d’en profiter avant la pause.' : ', puis dans le nôtre après la pause.') : '';
+      return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), quand: F.next.date === F.d ? 'aujourd’hui' : 'demain', ciel: ciel.charAt(0).toUpperCase() + ciel.slice(1), ciel_bas: ciel, vent, conseil: m.conseil || '' } }];
+    },
     pelouse(F) {
       if (!F.next || F.next.date !== shift(F.d, 1) || F.next.homeId !== F.s.club) return [];
-      const m = Number(F.d.slice(5, 7)), band = m >= 6 && m <= 8 ? 'ete' : m >= 9 && m <= 11 ? 'automne' : m === 12 || m <= 2 ? 'hiver' : 'printemps';
+      // Pelouse cohérente avec la météo annoncée : pluie (glissante), forte pluie (lourde), sinon la saison.
+      const mt = annonceMeteo(F), month = Number(F.d.slice(5, 7)), season = month >= 6 && month <= 8 ? 'ete' : month >= 9 && month <= 11 ? 'automne' : month === 12 || month <= 2 ? 'hiver' : 'printemps';
+      const band = mt && mt.pluie === 2 ? 'deluge' : mt && mt.pluie ? 'pluie' : mt && mt.chaleur ? 'ete' : season;
       return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), pelouse: pick(D.pelouses?.[band], F.next.id) } }];
     },
   };
@@ -454,6 +467,15 @@ function factory() {
     if (s.youthNational?.played?.[String(s.season)] && Object.keys(s.youthNational.played[String(s.season)]).length) m.youth = s.season;
   }
 
+  // Météo annoncée du prochain match (format du modèle natif : libellé, conseil, ventDos, pluie…), ou null. Celle
+  // gardée dans la carrière, sinon la même prévision recalculée (la réception peut précéder l'enregistrement).
+  function annonceMeteo(F) {
+    const f = F.next;
+    if (!f || (f.date !== F.d && f.date !== shift(F.d, 1)) || typeof CDWorldCareer === 'undefined' || typeof CDWorldCareer.meteoPrevue !== 'function' || F.s.worldMode?.day === undefined || typeof meteoLibelle !== 'function') return null;
+    const kept = F.s.worldMode.meteo, m = kept && kept.fixtureId === f.id ? kept : CDWorldCareer.meteoPrevue(F.s, f);
+    const l = { pair: [f.homeId, f.awayId], weather: m.weather, weatherVersion: 1, windVersion: typeof WIND_DIRECTION_RULES !== 'undefined' && WIND_DIRECTION_RULES ? 1 : undefined, meteo: { pluie: m.pluie, vent: m.vent, chaleur: m.chaleur, terrain: m.terrain, sens: m.sens } };
+    return { libelle: meteoLibelle(l), conseil: meteoConseilBase(l, l.meteo), ventDos: ventSensActif(l) ? [m.sens, 1 - m.sens] : null, pluie: m.pluie, chaleur: m.chaleur };
+  }
   function receive(s, d) {
     const st = ensure(s), F = facts(s, d);
     // Première réception (nouvelle carrière, ancienne sauvegarde) : mémoire seule, aucun mail.

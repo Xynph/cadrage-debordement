@@ -13,6 +13,7 @@ var opening: Control
 var opening_title: Label
 var opening_context: Label
 var opening_position: Label
+var opening_meteo: Label
 var opening_status: Label
 var opening_sheet: Button
 var opening_delegate: Button
@@ -130,6 +131,10 @@ func _add_pitch_overlays() -> void:
 	opening_position=C.label("",21,C.GOLD,true,700)
 	opening_position.name="MatchFixturePosition"
 	lines.add_child(opening_position)
+	# Météo annoncée la veille (next.meteo) : le ciel et le camp qui a le vent dans le dos en 1re période.
+	opening_meteo=C.wrap("",21,C.IVORY,true,700)
+	opening_meteo.name="MatchFixtureWeather"
+	lines.add_child(opening_meteo)
 	opening_status=C.wrap("",23,C.MINT,true,700)
 	lines.add_child(opening_status)
 	var actions := C.h(12)
@@ -195,6 +200,11 @@ func update_frame(value: Dictionary) -> void:
 		opening_context.text="  ·  ".join([str(fixture.get("label","Calendrier du club")),venue].filter(func(item:String):return not item.is_empty()))
 		opening_position.visible=not fixture.is_empty()
 		if opening_position.visible: opening_position.text=Present.fixture_position(fixture,value.get("club",{}).get("id"))
+		var annonce := MeteoTexte.annonce(fixture)
+		opening_meteo.visible=not annonce.is_empty()
+		if opening_meteo.visible:
+			var dos := MeteoTexte.camp_vent(annonce, 1)
+			opening_meteo.text="MÉTÉO · " + MeteoTexte.libelle(annonce).to_upper() + (("  ·  vent dans le dos de %s en 1re période" % MeteoTexte.nom_camp(annonce, dos)) if dos >= 0 else "")
 		var ready: bool = value.get("selection",{}).get("valid",false)
 		var reduced := Present.reduced_bench_number(value) != 0
 		var espoir := not Espoir.offer(value).is_empty()
