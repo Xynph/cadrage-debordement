@@ -122,7 +122,8 @@ func _delegation_staff(delegation: Dictionary) -> void:
 	box.add_theme_font_size_override("font_size", maxi(16, C.px(20)))
 	box.disabled = not app._live().is_empty()
 	add_child(box)
-	var detail := _label(delegation_detail(app.model, box.button_pressed), 16, C.MUTED)
+	# Largeur bornée : le texte revient à la ligne dans la zone visible au lieu de déborder à droite.
+	var detail := _label(delegation_detail(app.model, box.button_pressed), 16, C.MUTED, C.px(1650))
 	detail.name = "ContractDelegationDetail"
 	add_child(detail)
 	box.toggled.connect(func(value: bool):
@@ -136,7 +137,7 @@ func _delegation_staff(delegation: Dictionary) -> void:
 static func delegation_detail(model: Dictionary, enabled: bool) -> String:
 	if not enabled: return "Tu gères seul les prolongations : les contrats non prolongés partent à leur échéance."
 	var delegation: Dictionary = model.get("decisions", {}).get("delegation", {}) if model.get("decisions") is Dictionary and model.decisions.get("delegation") is Dictionary else {}
-	var text := "Le directeur sportif tranche en mars les fins de contrat que tu n'as pas réglées, selon son jugement : il prolonge les joueurs utiles dans la masse salariale que le club s'autorise, jamais au-dessus du plafond de la ligue. Chaque décision arrive au courrier, annulable."
+	var text := "Le directeur sportif tranche en mars les échéances que tu n'as pas réglées, dans la masse que le club s'autorise et sous le plafond de la ligue ; chaque décision arrive au courrier, annulable."
 	var label := str(delegation.get("contractsPolicyLabel", ""))
 	if not label.is_empty(): text += " Consigne : %s." % label
 	var decided: Array = delegation.get("contractsDecided", []) if delegation.get("contractsDecided") is Array else []
