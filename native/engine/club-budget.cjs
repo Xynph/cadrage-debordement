@@ -588,6 +588,12 @@ aiRosterWageLimit=function(c){
  const l=budgetLimites(S.season===1).get(c.id);
  return l?Math.round(l.limite/52):aiRosterWageLimitV1(c);
 };
+// Plafond de la ligue d'un club géré (crédit de formation compris, comme sa limite) et plancher de contrat :
+// les arrivées, renouvellements et retours de prêt s'y arrêtent avant que la retenue forcée ne serve.
+const budgetPlafondAnnuel=c=>{const l=budgetLigue(c.id),p=nativeClubBudget.PLAFOND_SALARIAL[l];return p?p+nativeClubBudget.creditAcademie(l,c.players,c.id):null;};
+const aiRosterLeagueCapV1=aiRosterLeagueCap,aiRosterFloorWageV1=aiRosterFloorWage;
+aiRosterLeagueCap=function(c){const p=budgetActif()&&c.id!==S.club?budgetPlafondAnnuel(c):null;return p?Math.floor(p/52):aiRosterLeagueCapV1(c);};
+aiRosterFloorWage=function(c){return budgetActif()?nativeStartingSalaries.plancherHebdo(S,budgetLigue(c.id)):aiRosterFloorWageV1(c);};
 const budgetValeur=p=>{if(budgetActif()&&p&&typeof p.id==='string'&&Number.isFinite(p.rating)){p.salary=nativeStartingSalaries.marche(p);p.price=Math.max(0,Math.round(p.salary*2/1000)*1000);}return p;};
 aiRosterSmallClubPlayer=function(slot,index){return budgetValeur(aiRosterSmallClubPlayerV1(slot,index));};
 aiRosterPoolEntry=function(p,origin,clubId=null){if(budgetActif()&&origin!=='released')budgetValeur(p);return aiRosterPoolEntryV1(p,origin,clubId);};
@@ -618,7 +624,7 @@ function budgetConformite(){
  let touche=false;
  for(const c of S.clubs){
   if(c.id===S.club)continue;
-  const plafond=nativeClubBudget.PLAFOND_SALARIAL[budgetLigue(c.id)];
+  const plafond=budgetPlafondAnnuel(c);
   if(!plafond)continue;
   const masse=budgetMasse(c)*52;
   if(masse<=plafond)continue;
@@ -652,6 +658,18 @@ function budgetProfondeur(){
    if(autres+nouveaux.reduce((n,p)=>n+p.salary,0)>limite){
     const plancher=nativeStartingSalaries.plancherHebdo(S,budgetLigue(c.id)),part=Math.floor((limite-autres)/nouveaux.length/10)*10;
     for(const p of nouveaux)p.salary=Math.max(plancher,Math.min(p.salary,part));
+   }
+   // Même au plancher, le complément ferait franchir le plafond : le club libère un joueur cher et non
+   // indispensable, remplacé par un complément au plancher (au plus trois fois).
+   const plafond=aiRosterLeagueCap(c),plancher=aiRosterFloorWage(c);
+   for(let n=0;n<3&&budgetMasse(c)>plafond&&typeof nativeProfessionalDepth!=='undefined';n++){
+    if(!aiRosterMakeRoom(c,budgetMasse(c)-plafond,new Set(nouveaux.map(p=>p.id)),plancher))break;
+    const occupes=new Set([...S.clubs.flatMap(x=>x.players),...S.market,...S.economy.freeAgents,...(S.development?.academy??[]),...(S.development?.retired??[]),...(S.aiRoster?.academies??[]).flatMap(a=>a.players)].map(p=>p.id));
+    for(const p of nativeProfessionalDepth.additions(c.id,c.players,S.season,occupes)){
+     p.salary=plancher;p.joinedSeason=S.season;p.joinedRound=S.round;if(S.phase==='ended')p.contractEnd=S.season+1;
+     c.players.push(p);nouveaux.push(p);
+    }
+    if(typeof nativeClubDirections!=='undefined')nativeClubDirections.tally('plafond:complement-remplace',c.id);
    }
   }
  });

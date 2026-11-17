@@ -80,6 +80,55 @@ function aiRosterWageLimit(c){
  if(goal===37||!c.players.length)return limit;
  return Math.max(limit,Math.round(aiRosterPayroll(c)/c.players.length*goal));
 }
+// Plafond salarial de la ligue (masse hebdomadaire) et salaire plancher d'un contrat : aucun plafond
+// ici ; le budget de saison (club-budget.cjs) les remplace pour les carrières marquées.
+function aiRosterLeagueCap(c){return Infinity}
+function aiRosterFloorWage(c){return 1000}
+function aiRosterCapTally(kind,c){if(typeof nativeClubDirections!=='undefined')nativeClubDirections.tally('plafond:'+kind,c.id)}
+// Un joueur peut partir sans découvrir un poste : chaque poste qu'il tient garde au moins trois autres titulaires possibles.
+function aiRosterReleasable(c,p,gone){
+ for(let slot=0;slot<15;slot++)if(slotEligible(p,slot)&&
+  c.players.filter(q=>q.id!==p.id&&!gone.has(q.id)&&slotEligible(q,slot)).length<3)return false;
+ return true;
+}
+// Faire de la place sous le plafond, comme un vrai club : libérer (au plus deux) joueurs parmi les moins
+// utiles et bien payés, sans découvrir de poste. replaceCost : salaire de qui les remplace. Rien n'est fait
+// si la place obtenue ne suffit pas.
+function aiRosterMakeRoom(c,needed,keep=new Set(),replaceCost=0){
+ if(!(needed>0))return true;
+ const floor=aiRosterFloorWage(c),loaned=new Set((S.clubDirections?.loans||[]).map(l=>l.playerId));
+ const pool=c.players.filter(p=>!keep.has(p.id)&&!loaned.has(p.id)&&p.salary>Math.max(floor*2,replaceCost))
+  .sort((a,b)=>aiRosterPriority(c,a)-aiRosterPriority(c,b)||b.salary-a.salary||a.id.localeCompare(b.id));
+ const gone=new Set(),picks=[];let freed=0;
+ for(const p of pool){
+  if(picks.length>=2||freed>=needed)break;
+  if(!aiRosterReleasable(c,p,gone))continue;
+  gone.add(p.id);picks.push(p);freed+=p.salary-replaceCost;
+ }
+ if(freed<needed)return false;
+ c.players=c.players.filter(p=>!gone.has(p.id));
+ for(const p of picks){
+  p.formerClub=c.name;p.price=Math.round(p.salary*2/1000)*1000;p.contractEnd=null;p.condition=100;p.injury=0;
+  if(p.population)p.population.availableSince=S.season;
+  S.economy.freeAgents.push(p);aiRosterEvent(c.id,'release',p);aiRosterCapTally('liberation',c);
+ }
+ return true;
+}
+// Arrivée d'un joueur chez un club géré : sous sa limite, rien ne change. En urgence (poste non couvert),
+// l'espoir ou le renfort signe au plancher ou à ce qui reste sous la limite ; le club peut frôler sa
+// propre limite (compté), libère un joueur moins utile s'il le faut, et ne franchit jamais le plafond.
+function aiRosterFitWage(c,p,urgent=false){
+ const payroll=aiRosterPayroll(c),limit=aiRosterWageLimit(c),cap=aiRosterLeagueCap(c),own=Math.min(limit,cap);
+ if(payroll+p.salary<=own)return true;
+ if(!urgent)return false;
+ // Sans plafond de ligue (politique historique), l'urgence passe comme avant.
+ if(!Number.isFinite(cap))return true;
+ const wage=Math.min(p.salary,Math.max(aiRosterFloorWage(c),Math.floor((own-payroll)/10)*10));
+ if(payroll+wage>cap&&!aiRosterMakeRoom(c,payroll+wage-cap,new Set([p.id]))){aiRosterCapTally('urgence-refusee',c);return false}
+ if(wage<p.salary){p.salary=wage;aiRosterCapTally('contrat-plancher',c)}
+ if(aiRosterPayroll(c)+p.salary>limit)aiRosterCapTally('urgence-limite-club',c);
+ return true;
+}
 function aiRosterContracts(){
  if(!aiRosterActive()||S.aiRoster.lastContracts===S.season)return false;
  S.aiRoster.lastContracts=S.season;
@@ -92,16 +141,34 @@ function aiRosterContracts(){
   const maxRelease=Math.min(5,Math.max(1,Math.floor(expiry.length*.45)));
   const releasedIds=new Set();
   for(const p of expiry){
-   const salary=clamp(Math.round(p.salary*(p.age>=32?.97:p.age<=27?1.04:1.01)/100)*100,1000,100000);
+   let salary=clamp(Math.round(p.salary*(p.age>=32?.97:p.age<=27?1.04:1.01)/100)*100,1000,100000);
    const fee=Math.round(p.salary*2/1000)*1000;
    const essential=c.players.length-releasedIds.size<=aiRosterTarget(c)-9||
     [0,1,2].some(slot=>slotEligible(p,slot)&&
       c.players.filter(q=>!releasedIds.has(q.id)&&q.id!==p.id&&q.contractEnd>S.season&&slotEligible(q,slot)).length<2);
    const merit=aiRosterPriority(c,p)>=c.base-4;
    const funded=c.cash>=fee+350000;
-   const maintain=essential||released>=maxRelease||
-     (merit&&payroll-p.salary+salary<=aiRosterWageLimit(c));
-   if(maintain&&funded&&p.age+1<p.dev.retireAge){
+   // Un joueur accepte au plus 15 % de baisse pour rester ; jamais sous le plancher.
+   const others=payroll-p.salary,lowest=Math.min(salary,Math.max(aiRosterFloorWage(c),Math.round(p.salary*.85/100)*100));
+   const own=Math.min(aiRosterWageLimit(c),aiRosterLeagueCap(c));
+   const capped=Number.isFinite(aiRosterLeagueCap(c));
+   const maintain=essential||released>=maxRelease||(merit&&others+(capped?lowest:salary)<=(capped?own:aiRosterWageLimit(c)));
+   let keepIt=maintain&&funded&&p.age+1<p.dev.retireAge;
+   // Ligue plafonnée (budget de saison) seulement : la politique historique reste à l'identique.
+   if(capped&&keepIt&&others+salary>own){
+    if(others+lowest<=own){salary=Math.max(lowest,Math.floor((own-others)/100)*100);if(salary<p.salary)aiRosterCapTally('renouvellement-baisse',c)}
+    else if(!essential)keepIt=false;
+    else{
+     // Indispensable (poste ou effectif à découvert) : la limite du club peut être frôlée, le plafond jamais.
+     const cap=aiRosterLeagueCap(c),keep=new Set([...expiry.map(q=>q.id),...releasedIds]);
+     if(others+lowest>cap&&aiRosterMakeRoom(c,others+lowest-cap,keep))payroll=aiRosterPayroll(c)-[...releasedIds].reduce((n,id)=>n+(c.players.find(q=>q.id===id)?.salary||0),0)+p.salary;
+     const rest=payroll-p.salary;
+     if(rest+lowest<=cap){salary=Math.max(lowest,Math.min(salary,Math.floor((cap-rest)/100)*100));
+      if(rest+salary>aiRosterWageLimit(c))aiRosterCapTally('urgence-limite-club',c);}
+     else{keepIt=false;aiRosterCapTally('renouvellement-refuse',c)}
+    }
+   }
+   if(keepIt){
     c.cash-=fee;payroll+=salary-p.salary;p.salary=salary;p.contractEnd=S.season+(p.age<30?2:1);
     aiRosterEvent(c.id,'renew',p,fee);
    }else{
@@ -138,7 +205,7 @@ function aiRosterPromote(c,slot,emergency=false){
  const eligible=a.players.filter(p=>p.age>=18&&slotEligible(p,slot))
   .sort((x,y)=>fitScore(y,FAMILIES[slot])-fitScore(x,FAMILIES[slot])||x.id.localeCompare(y.id));
  const p=eligible[0];if(!p)return false;
- if(!emergency&&aiRosterPayroll(c)+p.salary>aiRosterWageLimit(c))return false;
+ if(!aiRosterFitWage(c,p,emergency))return false;
  a.players=a.players.filter(x=>x.id!==p.id);
  p.academy=false;p.contractEnd=S.season+2;p.joinedSeason=S.season;p.joinedRound=S.round;
  c.players.push(p);aiRosterEvent(c.id,'promote',p);
@@ -199,6 +266,7 @@ function aiRosterYouthIntake(){
    const p=academyPlayer(c.id,target,S.season,100+serial++,true);
    p.rating=clamp(c.base-15+seedHash(p.id)%9,54,82);
    delete p.skills;ensureSkills(p);delete p.dev;ensureDevelopment(p);
+   if(!aiRosterFitWage(c,p,true))continue;
    p.contractEnd=S.season+2;p.academy=false;c.players.push(p);
    aiRosterEvent(c.id,'emergency',p);sh=buildSheet(c);
   }
@@ -530,6 +598,7 @@ function aiRosterPopulationYouthIntake(){
    const p=academyPlayer(c.id,target,S.season,100+serial++,true);
    p.rating=clamp(c.base-15+seedHash(p.id)%9,54,82);
    delete p.skills;ensureSkills(p);delete p.dev;ensureDevelopment(p);
+   if(!aiRosterFitWage(c,p,true))continue;
    p.contractEnd=S.season+Math.min(2,Math.max(1,p.dev.retireAge-p.age-1));p.academy=false;
    p.joinedSeason=S.season;p.joinedRound=S.round;c.players.push(p);aiRosterEvent(c.id,'emergency',p);sheet=buildSheet(c);
   }
