@@ -407,7 +407,7 @@ func _meteo_avant_match() -> void:
 	var section := G.section(bloc.titre)
 	section.name = "MeteoAvantMatch"
 	side.add_child(section)
-	if not str(bloc.ciel).is_empty(): side.add_child(G.label(bloc.ciel, 18, G.GOLD, true))
+	if not str(bloc.ciel).is_empty(): side.add_child(G.label(bloc.ciel, 24, G.GOLD, true))
 	if not str(bloc.vent).is_empty(): side.add_child(G.wrap(bloc.vent, 13, G.INK))
 	if not str(bloc.conseil).is_empty(): side.add_child(G.wrap(bloc.conseil, 13 if str(bloc.ciel).is_empty() else 12, G.MUTED if str(bloc.ciel).is_empty() else G.INK))
 

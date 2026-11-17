@@ -93,6 +93,9 @@ func avant_match() -> void:
 		textes.ecran_match_vent = lignes
 		var tout := " ".join(lignes)
 		verifier(tout.contains("LA MÉTÉO DU MATCH") and tout.contains("Grand vent") and tout.contains("dans le dos de") and tout.contains("première période") and tout.contains("staff"), "écran Match : vent dans le dos en 1re période « %s »" % tout)
+		var bandeau: Node = app.match_screen.find_child("MatchFixtureWeather", true, false)
+		textes.ecran_match_bandeau = bandeau.text if bandeau is Label else ""
+		verifier(bandeau is Label and bandeau.visible and bandeau.text.begins_with("MÉTÉO · GRAND VENT") and bandeau.text.ends_with("en 1re période"), "écran Match : ligne météo de l'avant-match « %s »" % textes.ecran_match_bandeau)
 		await capturer("meteo-ecran-match-vent", func(): app.match_screen.update_frame(vent))
 	app._navigate("Réception")
 	await poser(6)
