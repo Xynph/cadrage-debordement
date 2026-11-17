@@ -36,7 +36,8 @@ test('Ouverture avec excédents : réinvestissement, dividende de l’entreprise
  for(const type of ['mecene','entreprise','association']){
   const id=parType[type],clubs=forces.map(f=>f.id===id?riche(id):{id:f.id,cash:0,masse:1e7});
   const c=B.ouverture({forces,saison:2,clubs,excedents:true}).clubs[id],surplus=c.depart+c.dividende-c.reserve;
-  assert.ok(c.reserve>=recettes.get(id)*0.1-5000&&c.reserve<=recettes.get(id)*0.2+5000,'réserve entre 10 et 20 % des recettes');
+  const r=recettes.get(id),base=Math.min(r,20e6),plus=0.05*Math.max(0,r-20e6);
+  assert.ok(c.reserve>=base*0.1+plus-5000&&c.reserve<=base*0.2+plus+5000,'réserve : 10 à 20 % des 20 premiers M€, 5 % au-delà');
   assert.ok(c.investissement>0,type+' réinvestit');
   if(type==='entreprise'){assert.ok(c.dividende>0);assert.equal(c.depart,riche(id).cash-c.dividende,'depart = cash - dividende');}
   else{assert.equal(c.dividende,0,type);assert.equal(c.depart,riche(id).cash);}
@@ -115,5 +116,62 @@ test('Moteur Monde : création sans dividende ni investissement, jokers au vrai 
    return {type:cb.type,dividende:cb.dividende,avant,apres:club().cash,ecr:S.ledger.slice(n).filter(e=>/Dividende versé au groupe actionnaire/.test(JSON.stringify(e))).map(e=>e.amount??e.delta??e.value)};})()`);
   assert.equal(d.type,'entreprise');assert.ok(d.dividende>0);
   assert.equal(d.ecr.length,1);assert.equal(d.ecr[0],-d.dividende);assert.equal(d.apres,d.avant-d.dividende);
+  // 5. Recettes imprévues (vrai budgetSemaine du moteur) : phase finale à domicile du club joué et d'un club géré.
+  const f=lire(`(()=>{const forces=budgetForces(),repere=budgetRepere(),c=club(),autre=S.clubs.find(x=>x.id!==c.id),out={};
+   for(const x of [c,autre]){const cpt=S.clubBudget.clubs[x.id];cpt.imprevu=0;cpt.fraisMatch=0;
+    const e=budgetSemaine(forces,repere,x,{pair:[x.id,x.id===c.id?autre.id:c.id],neutral:false,phase:'semi'},x.id===c.id?'Demi':'');
+    const g=e.filter(l=>/phase finale|Boutique/.test(l.title)).reduce((n,l)=>n+l.amount,0),fr=e.filter(l=>/Frais de match et primes de résultats/.test(l.title));
+    out[x.id===c.id?'joue':'gere']={guichet:g,frais:fr.map(l=>l.amount),compte:[cpt.imprevu,cpt.fraisMatch]};}
+   return out;})()`);
+  for(const [qui,x] of Object.entries(f)){
+   assert.equal(x.frais.length,1,qui+' : une ligne de frais');assert.ok(Math.abs(-x.frais[0]-0.5*x.guichet)<=200,qui+' : 50 % de la recette de phase finale');
+   assert.equal(x.compte[0],x.guichet,qui+' : toute la recette de phase finale est imprévue');assert.equal(x.compte[1],-x.frais[0],qui+' : frais comptés');
+  }
  }finally{jeu.fermer();}
+});
+
+// Suite de #875 : clubs riches (réserve dégressive, excédent qui ne dort plus, recettes de guichet imprévues).
+test('Réserve dégressive : un club à 45 M€ garde moins de 13 % de ses recettes, un club à 15 M€ garde 10 à 20 %',()=>{
+ for(let id=0;id<40;id++){
+  const petit=B.reserveCible(15e6,id),grand=B.reserveCible(45e6,id);
+  assert.ok(petit>=1.5e6-5000&&petit<=3e6+5000,'15 M€ : '+petit);
+  assert.ok(grand<=45e6*0.13&&grand>=2e6+1.25e6-5000,'45 M€ : '+grand);
+  assert.equal(grand-B.reserveCible(20e6,id),Math.round(1.25e6/1e4)*1e4,'5 % au-delà de 20 M€');
+ }
+});
+test('Excédent : la part du propriétaire, mais jamais plus d’une demi-réserve qui dort',()=>{
+ for(const type of ['mecene','entreprise','association']){
+  const regle=B.EXCEDENTS[type],part=regle.investi+regle.dividende,reserve=4e6;
+  const petit=B.engagement(1e6,reserve,type);// petit excédent : part habituelle
+  assert.ok(Math.abs(petit.investissement-1e6*regle.investi)<=100&&Math.abs(petit.dividende-1e6*regle.dividende)<=100,type+' petit');
+  const gros=B.engagement(12e6,reserve,type),engage=gros.investissement+gros.dividende;
+  assert.ok(Math.abs(engage-(12e6-B.EXCEDENT_DORMANT*reserve))<=200,type+' : il reste une demi-réserve, pas plus ('+engage+')');
+  assert.ok(engage>=12e6*part-200,type+' : jamais moins que la part habituelle');
+  if(regle.dividende>0)assert.ok(Math.abs(gros.dividende/engage-regle.dividende/part)<0.001,'mêmes proportions');
+  assert.deepEqual(B.engagement(0,reserve,type),{investissement:0,dividende:0});
+ }
+});
+test('Guichet imprévu : rien pour un match moyen, tout pour une phase finale, frais de 70 % sur le cumul',()=>{
+ const id=parType.mecene,opts={forces,clubId:id,receptions:13};
+ const moyen=B.semaine({forces,clubId:id,masseHebdo:2e5,semaines:46,domicile:true,alea:0.5,libelle:'J1',resultats:['V','D'],receptions:13});
+ assert.ok(Math.abs(B.recettesImprevues(moyen,opts))<=300,'affluence moyenne : rien d’imprévu');
+ const serie=B.semaine({forces,clubId:id,masseHebdo:2e5,semaines:46,domicile:true,alea:0.9,libelle:'J2',resultats:['V','V','V','V','V'],receptions:13});
+ const plus=B.recettesImprevues(serie,opts);assert.ok(plus>0,'cinq victoires : guichet au-dessus de l’attendu');
+ const accueilli=B.semaine({forces,clubId:id,masseHebdo:2e5,semaines:46,domicile:true,alea:0.5,libelle:'J3',resultats:['V','D'],receptions:13,accueil:1.05});
+ assert.ok(Math.abs(B.recettesImprevues(accueilli,{...opts,accueil:1.05}))<=300,'l’accueil du stade fait partie de l’attendu : son gain reste au club');
+ const finale=B.semaine({forces,clubId:id,masseHebdo:2e5,semaines:46,domicile:true,alea:0.5,libelle:'Demi',resultats:['V'],receptions:13,phase:'semi'});
+ const guichet=finale.filter(e=>/Billetterie de phase finale|Boutique/.test(e.title)).reduce((n,e)=>n+e.amount,0);
+ assert.ok(Math.abs(B.recettesImprevues(finale,opts)-guichet)<=100,'phase finale : toute la recette est imprévue');
+ const exterieur=B.semaine({forces,clubId:id,masseHebdo:2e5,semaines:46,domicile:false,libelle:'J4',resultats:['V'],receptions:13});
+ assert.equal(B.recettesImprevues(exterieur,opts),0);
+ // Cumul : une défaite compense une victoire ; on paie 70 % du cumul positif, une seule fois.
+ let compte={};const pas=[1e6,-4e5,-8e5,5e5];const payes=[];
+ for(const e of pas){const f=B.fraisDeMatch(compte,e);payes.push(f.montant);compte={imprevu:f.imprevu,fraisMatch:f.fraisMatch};}
+ assert.deepEqual(payes,[5e5,0,0,0],'après 1 M€ puis 1,2 M€ de manque, rien de plus à payer');
+ const f=B.fraisDeMatch(compte,1e6);assert.equal(f.montant,Math.round((0.5*(1e6+1e6-4e5-8e5+5e5)-5e5)/100)*100);
+ // Budget voté dans le rouge (1,5 M€ de perte prévue) : l'imprévu bouche d'abord le trou.
+ assert.equal(B.fraisDeMatch({},1e6,1.5e6).montant,0,'tout va au trou prévu');
+ assert.equal(B.fraisDeMatch({},2.5e6,1.5e6).montant,5e5,'50 % de ce qui dépasse');
+ assert.equal(B.deficitPrevu(forces,id,1e6),0,'petite masse : budget excédentaire');
+ const r=B.recettes(forces).get(id);assert.equal(B.deficitPrevu(forces,id,r),Math.round((r*1.4-r*(1-B.FONCTIONNEMENT))/100)*100);
 });
