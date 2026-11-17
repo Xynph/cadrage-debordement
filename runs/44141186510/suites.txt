@@ -1,0 +1,3 @@
+tests/meteo-affichage-modele.cjs
+tests/meteo-vent-periodes.cjs
+tests/godot-meteo-vent.cjs
