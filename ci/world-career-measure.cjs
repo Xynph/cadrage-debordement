@@ -123,11 +123,13 @@ function run(o){
    for(let week=model.meta.week,guard=0;model.meta.phase!=='ended'&&guard<80;week++,guard++){
     if(model.next){if(!model.selection.valid)go('auto_lineup');if(!model.selection.valid)go('promote_cover',{confirmed:true});go('begin_match');go('delegate');}
     settleClubMeetings(go('finish_round'),go);
+    // Grand livre du club joué (100 lignes au plus dans la carrière) : relevé chaque semaine dans le modèle, sans lire l'état.
+    if(Array.isArray(model.ledger))ledger({ledger:model.ledger});
     // Pas de lecture hebdomadaire de l'état : la machine est partagée (mémoire).
     // Les mouvements se lisent aux points de mesure (clichés et rapports de saison).
    }
    capture('end-S'+season);
-   settleClubMeetings(go('next_season',{confirmed:true}),go);capture('after-S'+season);
+   settleClubMeetings(go('next_season',{confirmed:true}),go);if(Array.isArray(model.ledger))ledger({ledger:model.ledger});capture('after-S'+season);
   }
   report.status='completed';
  }catch(e){report.status='failed';report.failure=String(e.stack||e);console.error(e.stack);}
