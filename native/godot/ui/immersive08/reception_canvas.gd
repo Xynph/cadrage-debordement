@@ -743,6 +743,11 @@ static func _detail_layout(app: Control, state: Dictionary, message: Dictionary,
 	C.fill(body)
 	var pixels := body.get_theme_font_size("font_size")
 	var text_height := body.get_theme_font("font").get_multiline_string_size(body.text,HORIZONTAL_ALIGNMENT_LEFT,C.px(width-80),pixels,-1,TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE).y / C.density
+	# Mails de plusieurs paragraphes : la mesure de police ignore l'interligne du Label ; on prend aussi
+	# le nombre de lignes réellement coupées à la largeur du texte (barre de défilement comprise).
+	body.size = Vector2(C.px(width-68-16), 0)
+	var spacing := body.get_theme_constant("line_spacing")
+	text_height = maxf(text_height, body.get_line_count() * (body.get_line_height() + spacing) / C.density)
 	var room := footer_max - 252 - 18 - attachments - 20
 	var body_height := clampf(text_height+18,52,maxf(52,room))
 	var footer_top := minf(252 + body_height + 18 + attachments + 20, maxf(footer_max, 252 + 52 + 18 + attachments + 20))
