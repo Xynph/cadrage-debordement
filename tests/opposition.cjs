@@ -4,6 +4,9 @@ assert.equal(run('S.difficulty'),'classique');run('setDifficulty("expert")');ass
 run('var a=club().players.find(p=>p.pos==="Pilier gauche"),b=club().players.find(p=>p.pos==="Pilier gauche"&&p.id!==a.id);a.condition=30;b.condition=100');assert.equal(run('managerSheet(club(),S.clubs[13],"Sec","expert").lineup[0]'),run('b.id'));
 run('start(0);var beforeUser=[...S.lineup];S.difficulty="expert";var fixture=createRugbyMatch([0,1])');assert.equal(run('fixture.sheets[0].initial.join()'),run('beforeUser.join()'));assert.equal(run('fixture.aiLevel'),'expert');assert.equal(run('fixture.balanceVersion'),2);
 run('var previousMood=clubMorale(1);updateOppositionMorale({pair:[1,2],score:[10,20]})');assert.equal(run('clubMorale(1)'),run('previousMood-5'));
+// Carrière Monde : le moral des clubs IA revient vers 75 (un quart de l'écart) avant le résultat (+4 / −4), sans saturer.
+run('var savedWorld=S.worldMode;S.worldMode={};S.clubs[1].morale=95;updateOppositionMorale({pair:[1,2],score:[10,20]});var m1=S.clubs[1].morale;S.clubs[1].morale=95;for(let i=0;i<20;i++)updateOppositionMorale({pair:[1,2],score:[30,20]});var m2=S.clubs[1].morale;S.worldMode=savedWorld');
+assert.equal(run('m1'),86);assert.equal(run('m2'),93);
 // Difficulty has no direct influence on physics when choices are held fixed.
 run('fixture.tactics=["equilibre","equilibre"];var edge=teamEdge(fixture,1,"attack"),goal=goalChance(fixture,1);fixture.aiLevel="decouverte"');assert.equal(run('teamEdge(fixture,1,"attack")'),run('edge'));assert.equal(run('goalChance(fixture,1)'),run('goal'));
 // Wet conditions can alter a manager's plan; late scoreline changes its priorities.

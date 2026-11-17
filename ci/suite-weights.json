@@ -213,6 +213,7 @@
       "tests/club-mail-enseignements.cjs": 45,
       "tests/meteo-vent-periodes.cjs": 25,
       "tests/meteo-affichage-modele.cjs": 25,
+      "tests/meteo-veille.cjs": 110,
       "tests/godot-meteo-vent.cjs": 130,
       "tests/club-mail-jalons.cjs": 20,
       "tests/world-reprise-decisions.cjs": 118,

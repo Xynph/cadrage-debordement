@@ -92,7 +92,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   fi
   if veut meteo; then
     mkdir -p "$cap/meteo"
-    phase "captures météo et vent (vestiaire, bandeau, mi-temps, 1080p)" captures-meteo.log \
+    phase "captures météo et vent (écran Match avant-match, vestiaire, bandeau, mi-temps, 1080p)" captures-meteo.log \
       env CD_METEO_GRAPHICS=1 CD_METEO_OUTPUT="$cap/meteo" node tests/godot-meteo-vent.cjs
   fi
   if veut avis-staff; then

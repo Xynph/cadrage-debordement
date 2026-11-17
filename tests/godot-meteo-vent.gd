@@ -1,6 +1,6 @@
 extends SceneTree
 ## Météo et vent montrés au manager (profil Monde préparé par tests/godot-meteo-vent.cjs, jour de match) :
-## vestiaire d'avant-match (météo, camp favorisé en 1re période, conseil du staff), bandeau du direct
+## écran Match avant le coup d'envoi (météo annoncée la veille, courrier « Bulletin météo »), vestiaire d'avant-match (météo, camp favorisé en 1re période, conseil du staff), bandeau du direct
 ## (camp favorisé par période) et mi-temps (changement de camp). La météo tirée par le moteur est remplacée,
 ## à l'écran seulement, par un grand vent orienté : le moteur est vérifié par tests/meteo-affichage-modele.cjs.
 var app: Control
@@ -52,12 +52,61 @@ func talk() -> Dictionary:
 	var v: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 	return v if v is Dictionary else {}
 
+## Lignes du bloc météo de l'écran Match avant le coup d'envoi (section « LA MÉTÉO… » et ce qui la suit).
+func lignes_meteo() -> Array:
+	var ecran: Node = app.match_screen
+	if not is_instance_valid(ecran): return []
+	var section: Node = ecran.find_child("MeteoAvantMatch", true, false)
+	if section == null: return []
+	var lignes: Array = section.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
+	var parent := section.get_parent()
+	for i in range(section.get_index() + 1, parent.get_child_count()):
+		var suivant := parent.get_child(i)
+		if suivant is Label: lignes.append(suivant.text)
+		else: break
+	return lignes
+
+## Écran Match « AVANT-MATCH » le jour du match : météo annoncée la veille (vraie annonce du moteur), puis la
+## même annonce en grand vent pour le camp favorisé en 1re période ; courrier « Bulletin météo » reçu la veille.
+func avant_match() -> void:
+	var annonce: Variant = app.model.get("next", {}).get("meteo")
+	verifier(annonce is Dictionary, "prochain match : météo annoncée dans le modèle natif")
+	var bulletin := (app.model.get("clubLife", {}).get("clubMail", {}).get("mails", []) as Array).filter(func(m): return m is Dictionary and m.get("type") == "meteo")
+	verifier(bulletin.size() == 1 and str(bulletin[0].get("ecran")) == "Composition", "un courrier « Bulletin météo » avec un lien vers la composition")
+	app._navigate("Match")
+	await poser(6)
+	if app.match_screen.tab == "Journal": app.match_screen._select_tab("Direct")
+	await poser(4)
+	var lignes := lignes_meteo()
+	textes.ecran_match = lignes
+	verifier(not lignes.is_empty() and str(lignes[0]).begins_with("LA MÉTÉO"), "écran Match : bloc météo « %s »" % str(lignes))
+	if annonce is Dictionary:
+		var ciel := str(annonce.get("libelle", ""))
+		verifier(" ".join(lignes).to_lower().contains(ciel.to_lower()), "écran Match : ciel annoncé « %s »" % ciel)
+	await capturer("meteo-ecran-match")
+	var vent: Dictionary = app.model.duplicate(true)
+	if vent.get("next") is Dictionary:
+		vent.next.meteo = {"libelle": "grand vent", "conseil": "Grand vent : le staff prévient que les tirs au but et le jeu au pied long deviennent aléatoires ; prenez les points faciles et jouez la touche.", "pluie": 0, "vent": 2, "chaleur": 0, "terrain": "souple", "ventDos": [1, 0], "date": str(app.model.meta.get("calendarToday", ""))}
+		app.match_screen.update_frame(vent)
+		await poser(4)
+		lignes = lignes_meteo()
+		textes.ecran_match_vent = lignes
+		var tout := " ".join(lignes)
+		verifier(tout.contains("LA MÉTÉO DU MATCH") and tout.contains("Grand vent") and tout.contains("dans le dos de") and tout.contains("première période") and tout.contains("staff"), "écran Match : vent dans le dos en 1re période « %s »" % tout)
+		var bandeau: Node = app.match_screen.find_child("MatchFixtureWeather", true, false)
+		textes.ecran_match_bandeau = bandeau.text if bandeau is Label else ""
+		verifier(bandeau is Label and bandeau.visible and bandeau.text.begins_with("MÉTÉO · GRAND VENT") and bandeau.text.ends_with("en 1re période"), "écran Match : ligne météo de l'avant-match « %s »" % textes.ecran_match_bandeau)
+		await capturer("meteo-ecran-match-vent", func(): app.match_screen.update_frame(vent))
+	app._navigate("Réception")
+	await poser(6)
+
 func executer() -> void:
 	root.size = Vector2i(1920, 1080)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	await attendre("ouverture")
 	director = app.find_child("ContextualDirector", true, false)
+	await avant_match()
 	await demander("begin_match")
 	verifier(app.model.get("live") is Dictionary and app.model.live.get("meteo") is Dictionary, "météo du direct dans le modèle natif")
 	if director != null and director.view != null and director.view.has_method("_meteo") and not talk().is_empty():

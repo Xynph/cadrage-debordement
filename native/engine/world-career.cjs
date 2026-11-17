@@ -34,6 +34,40 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  const fixtures=s=>s.worldMode.fixtures.filter(f=>f.week===s.round);
  const userFixture=s=>fixtures(s).find(f=>f.homeId===s.club||f.awayId===s.club)||null;
  const hasClubRole=s=>s.national?.role?.club!==false;
+ // Météo annoncée la veille (17/11/2026, docs/meteo-match-20261116.md « Météo connue la veille ») : le ciel, son
+ // intensité et le sens du vent du match du club sont fixés dès la veille et gardés dans `worldMode.meteo`, puis
+ // repris tels quels au coup d'envoi (une météo annoncée est celle du match). Tirage sans aléa (aucun Math.random :
+ // l'ordre des tirages du moteur ne change pas), même loi que le tirage du coup d'envoi (Sec 1/2, Pluie 1/4, Vent 1/4,
+ // intensités de METEO_MATCH.tirage), propre à la carrière (graine de variation) et à la rencontre.
+ const METEO_KEYS=['fixtureId','date','weather','pluie','vent','chaleur','terrain','sens'];
+ const fnv=t=>{let h=2166136261;for(let i=0;i<t.length;i++)h=Math.imul(h^t.charCodeAt(i),16777619)>>>0;return h;};
+ function meteoPrevue(s,f){
+  const t=typeof METEO_MATCH!=='undefined'?METEO_MATCH.tirage:{pluieForte:.4,ventFort:.4,chaleurSec:1/6};
+  const cle=['meteo',s.careerVariation?.seed??s.commonDatabase?.id??s.worldMode?.catalogue??'legacy',s.season,f.id,f.date,f.homeId,f.awayId].join('|');
+  const ciel=(fnv(cle+'|ciel')%10007)/10007,h=fnv(cle),u=(h%10007)/10007,v=((h>>>14)%10007)/10007;
+  const weather=ciel<.5?'Sec':ciel<.75?'Pluie':'Vent',pluie=weather==='Pluie'?(u<t.pluieForte?2:1):0;
+  return {fixtureId:f.id,date:f.date,weather,pluie,vent:weather==='Vent'?(u<t.ventFort?2:1):0,chaleur:weather==='Sec'&&v<t.chaleurSec?1:0,terrain:pluie===2?'lourd':'souple',sens:(h>>>9)&1};
+ }
+ const daysTo=(s,date)=>Math.round((Date.parse(date)-Date.parse(calendarToday(s)))/86400000);
+ // Fixe la météo du prochain match du club à partir de la veille (calendrier journalier). Rien pendant un match.
+ function fixerMeteo(s){
+  if(!active(s)||s.worldMode.day===undefined||s.live||!hasClubRole(s))return null;
+  const f=userFixture(s);
+  if(!f||daysTo(s,f.date)>1||daysTo(s,f.date)<0)return null;
+  if(s.worldMode.meteo?.fixtureId!==f.id)s.worldMode.meteo=meteoPrevue(s,f);
+  return s.worldMode.meteo;
+ }
+ // Météo annoncée du prochain match du club (null avant la veille ou sans annonce) : lecture seule.
+ function meteoAnnoncee(s){
+  if(!active(s)||!hasClubRole(s))return null;
+  const f=userFixture(s),m=s.worldMode.meteo;
+  return f&&m&&m.fixtureId===f.id?copy(m):null;
+ }
+ // Météo à reprendre au coup d'envoi de cette affiche (createRugbyMatch) : seulement la rencontre annoncée.
+ function meteoMatch(s,pair){
+  const m=meteoAnnoncee(s),f=m&&userFixture(s);
+  return f&&f.homeId===pair[0]&&f.awayId===pair[1]?m:null;
+ }
  const callups=s=>s.national?.career?.callups??[];
  const during=(call,date)=>call.from<=date&&date<=call.through;
  const releasedIds=(s,date)=>new Set(callups(s).filter(call=>during(call,date)).flatMap(call=>call.playerIds));
@@ -67,9 +101,11 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   if(!status.canAdvance)throw Error(s.live?'Termine et valide le résultat avant de continuer.':'Joue la rencontre prévue aujourd’hui avant de continuer.');
   if(status.day===6){
    finishWeek();
+   fixerMeteo(s);
    return true;
   }
   s.worldMode.day++;
+  fixerMeteo(s);
   return false;
  }
  const previousRanksFor=(standings,partition)=>Object.fromEntries(IDS.flatMap(id=>standings[id].map((cid,i)=>[cid,i+1]).filter(([cid])=>partition[id].includes(cid))));
@@ -396,6 +432,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    delete S.worldMode.resultConfirmed;
    delete S.worldMode.multiplex;
   }
+  if(S.worldMode.meteo&&S.history.some(r=>r.fixtureId===S.worldMode.meteo.fixtureId))delete S.worldMode.meteo;
   planStages(S);sync(S);
   if(S.phase==='ended'){check(S.worldMode.movement&&(!JP||S.worldMode.japan?.movement)&&(!N||S.worldMode.nationale?.movement?.status==='ready')&&IDS.every(id=>S.worldMode.leagues[id].champion!==null)&&['champions','challenge'].every(id=>S.worldMode.europe[id].champion!==null),'saison terminée sans titres et mouvements.');const titleLeague=edition.version>=2?leagueId(S):'elite';S.ending=S.clubs[S.worldMode.leagues[titleLeague].champion].name+' remporte '+(edition.version>=2?REG.leagues.find(l=>l.id===titleLeague).name:'le championnat')+'. La prochaine campagne se prépare déjà.';S.worldManagement.champion=S.worldMode.leagues.elite.champion;for(const id of IDS)careerRecord('trophy',REG.leagues.find(l=>l.id===id).name,S.worldMode.leagues[id].champion,'world-'+id);news(S.ending);}
   refreshMarket();repairSheet();save();view='dashboard';
@@ -421,8 +458,9 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  function validate(s){
   check(active(s),'édition de base inconnue.');const w=s.worldMode,V=CDWorldValidation;
   if(s.seniorCalibrationVersion!==undefined)check((seniorCalibration?.versions??[seniorCalibration?.version]).includes(s.seniorCalibrationVersion),'barème senior inconnu.');
-  check(V.keys(w,['version','catalogue','rules','startYear','week','leagues','fixtures','yearbook','movement','europe','draws','previousRanks','qualification',...(JP?['japan']:[]),...(N?['nationale']:[]),...(CH?['champ']:[]),...(w.access===undefined?[]:['access']),...(w.day===undefined?[]:['day']),...(w.resultConfirmed===undefined?[]:['resultConfirmed']),...(w.calendarPolicy===undefined?[]:['calendarPolicy']),...(w.multiplex===undefined?[]:['multiplex'])]),'métadonnées de compétition non reconnues.');
+  check(V.keys(w,['version','catalogue','rules','startYear','week','leagues','fixtures','yearbook','movement','europe','draws','previousRanks','qualification',...(JP?['japan']:[]),...(N?['nationale']:[]),...(CH?['champ']:[]),...(w.access===undefined?[]:['access']),...(w.day===undefined?[]:['day']),...(w.resultConfirmed===undefined?[]:['resultConfirmed']),...(w.calendarPolicy===undefined?[]:['calendarPolicy']),...(w.multiplex===undefined?[]:['multiplex']),...(w.meteo===undefined?[]:['meteo'])]),'métadonnées de compétition non reconnues.');
   check(w.multiplex===undefined||w.multiplex&&typeof w.multiplex.key==='string'&&w.multiplex.results&&typeof w.multiplex.results==='object'&&!Array.isArray(w.multiplex.results)&&V.keys(w.multiplex,['key','results']),'multiplex de la journée invalide.');
+  check(w.meteo===undefined||w.meteo&&typeof w.meteo==='object'&&V.keys(w.meteo,METEO_KEYS)&&['string','number'].includes(typeof w.meteo.fixtureId)&&typeof w.meteo.date==='string'&&['Sec','Pluie','Vent'].includes(w.meteo.weather)&&[0,1,2].includes(w.meteo.pluie)&&[0,1,2].includes(w.meteo.vent)&&[0,1].includes(w.meteo.chaleur)&&w.meteo.terrain===(w.meteo.pluie===2?'lourd':'souple')&&[0,1].includes(w.meteo.sens)&&(w.meteo.weather==='Pluie')===(w.meteo.pluie>0)&&(w.meteo.weather==='Vent')===(w.meteo.vent>0)&&(w.meteo.weather==='Sec'||w.meteo.chaleur===0),'météo annoncée invalide.');
   check(w.calendarPolicy===undefined||lnrOpening(s)&&s.season===1&&w.day!==undefined,'politique de calendrier inconnue.');
   if(CH)check(eq(w.champ,champBoundary()),'frontières du Champ modifiées.');
   check(w.rules===edition.rules&&w.startYear===2026,'profil de règles inconnu.');
@@ -584,5 +622,5 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   };
  }
  // Aliases prevent named inner functions shadowing the globals they replace.
- return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,previewFixtures,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,nextOpening,clubReleaseOn,enableDaily,dailyStatus,advanceDay,label:worldLabel,context,start,finishWeek,multiplex,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
+ return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,previewFixtures,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,nextOpening,clubReleaseOn,enableDaily,dailyStatus,advanceDay,fixerMeteo,meteoAnnoncee,meteoMatch,meteoPrevue,label:worldLabel,context,start,finishWeek,multiplex,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
 };

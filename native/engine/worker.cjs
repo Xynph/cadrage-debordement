@@ -1229,6 +1229,9 @@ function createBridge(options={}){
      ctx.nativeKnowledgeVerify=stablePlayers==='verify';
      run(`if(nativeKnowledge.observe(S,nativeKnowledgeBefore,nativeKnowledgeCommand,nativePayload,{observedPlayerIds:nativeKnowledgeCommand==='academy_center_scout'?(nativeSystems.domain('academyPathways').project().centers||[]).find(c=>c.id===nativePayload.centerId)?.candidates.map(p=>p.id)||[]:[]})&&nativeKnowledgeVerify)throw Error('Commande déclarée sans effet sur les joueurs : connaissance nouvelle ('+nativeKnowledgeCommand+').');`);
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
+     // Météo du prochain match du club fixée dès la veille (world-career.cjs), quelle que soit la commande qui y
+     // mène (jour suivant, fin d'avant-saison, reprise choisie, chargement) ; jamais pendant un match.
+     run("if(S&&typeof CDWorldCareer!=='undefined'&&typeof CDWorldCareer.fixerMeteo==='function')CDWorldCareer.fixerMeteo(S);");
      // Courrier du club (club-mail.cjs) : une réception par jour de calendrier ; seule la boîte est écrite.
      // Prolongations confiées au directeur sportif (mars à juin) : décisions du jour, avant le courrier qui les annonce.
      run("if(typeof dsContratsObserver==='function')dsContratsObserver();if(typeof dsStaffObserver==='function')dsStaffObserver();");

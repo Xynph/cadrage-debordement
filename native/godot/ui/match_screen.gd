@@ -4,6 +4,7 @@ const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const MatchProjection = preload("res://ui/immersive08/projection.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
+const MeteoTexte = preload("res://ui/contextual/meteo_texte.gd")
 var app: Control
 var stage: Node3D
 var clock: Label
@@ -363,6 +364,7 @@ func _side() -> void:
 		var guidance := "Feuille incomplète : appelle un espoir du centre ou joue à 22, puis vérifie tes consignes." if not Espoir.offer(model).is_empty() else "Vérifie ta feuille et tes consignes avant le coup d’envoi." if MatchProjection.reduced_bench_number(model) != 0 else "Vérifie ta feuille à 23 et tes consignes avant le coup d’envoi."
 		side.add_child(G.wrap(guidance,14))
 		side.add_child(G.button("VÉRIFIER LA FEUILLE",func():app._navigate("Composition")))
+		_meteo_avant_match()
 		preload("res://ui/decision_views.gd").match_notes(app,side,model)
 		return
 	match tab:
@@ -396,6 +398,18 @@ func _side() -> void:
 				side.add_child(G.wrap(text,13,G.INK))
 				side.add_child(G.separator())
 			preload("res://ui/decision_views.gd").match_notes(app,side,model)
+
+## Météo annoncée la veille (ciel, camp qui a le vent dans le dos en 1re période, conseil du staff).
+func _meteo_avant_match() -> void:
+	var next: Dictionary = model.next if model.get("next") is Dictionary else {}
+	if next.is_empty(): return
+	var bloc := MeteoTexte.avant_match(next, str(model.get("meta", {}).get("calendarToday", "")))
+	var section := G.section(bloc.titre)
+	section.name = "MeteoAvantMatch"
+	side.add_child(section)
+	if not str(bloc.ciel).is_empty(): side.add_child(G.label(bloc.ciel, 24, G.GOLD, true))
+	if not str(bloc.vent).is_empty(): side.add_child(G.wrap(bloc.vent, 13, G.INK))
+	if not str(bloc.conseil).is_empty(): side.add_child(G.wrap(bloc.conseil, 13 if str(bloc.ciel).is_empty() else 12, G.MUTED if str(bloc.ciel).is_empty() else G.INK))
 
 func _restore_bench_focus(previous_focus: String) -> void:
 	var target: Button

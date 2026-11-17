@@ -5,7 +5,7 @@
     "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; arretsParJour : mails qui arrêtent « Continuer » le même jour ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
     "arretsParJour": 2,
-    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10 },
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2 },
     "boite": 160,
     "projection": 80,
     "delaiReponse": 7,
@@ -21,7 +21,8 @@
     "competition": { "label": "Compétitions", "ecran": "Calendrier" },
     "formation": { "label": "Formation", "ecran": "Formation" },
     "moments": { "label": "Club", "ecran": "Effectif" },
-    "contrats": { "label": "Contrats", "ecran": "contrats" }
+    "contrats": { "label": "Contrats", "ecran": "contrats" },
+    "meteo": { "label": "Météo", "ecran": "Composition" }
   },
   "humeurs": {
     "haut": ["le groupe vit bien, ça rigole à la muscu et ça bosse dur", "l'ambiance est au beau fixe, les jeunes suivent les anciens", "on sent une vraie envie, personne ne traîne aux séances"],
@@ -32,7 +33,9 @@
     "ete": ["sèche et rapide, on a arrosé ce matin", "dure et un peu jaunie par la chaleur", "rase et rapide, idéale pour jouer large"],
     "automne": ["grasse par endroits, les mêlées vont glisser", "souple, elle a bien bu la pluie de la semaine", "correcte, un peu lourde côté tribune"],
     "hiver": ["lourde, les crampons vont s'enfoncer", "gelée tôt le matin, on a bâché les en-buts", "boueuse devant les poteaux, ça va être un combat d'avants"],
-    "printemps": ["belle et régulière, elle a repoussé", "rapide, on a tondu court", "en bon état malgré les dernières averses"]
+    "printemps": ["belle et régulière, elle a repoussé", "rapide, on a tondu court", "en bon état malgré les dernières averses"],
+    "pluie": ["glissante, la pluie est annoncée, les appuis vont fuir", "humide et grasse, on a laissé l'herbe un peu plus haute", "souple mais glissante, gare aux ballons qui fusent"],
+    "deluge": ["gorgée d'eau, ça va être lourd devant", "lourde et boueuse, les mêlées vont s'enfoncer", "détrempée, on a passé la herse mais elle va souffrir"]
   },
   "profilsArbitre": [
     "très pointilleux au sol : il siffle vite les mains dans le ruck",
@@ -582,6 +585,18 @@
       "reponses": [
         { "id": "feliciter", "libelle": "Féliciter le groupe", "effets": { "moral": 1 }, "resultat": "Le groupe savoure." },
         { "id": "concentration", "libelle": "Rappeler l'exigence", "effets": { "medias": 1 }, "resultat": "Ton discours d'exigence plaît aux observateurs." }
+      ]
+    },
+    "meteo": {
+      "categorie": "meteo", "declencheur": "meteo", "priorite": 8, "arret": true, "ecran": "Composition",
+      "expediteur": "Le staff technique",
+      "formulations": [
+        { "sujet": "Bulletin météo : {ciel}", "corps": "Les prévisions pour {quand} contre {adversaire} sont tombées : {ciel_bas}.{vent} {conseil} Regarde ta feuille et tes consignes en conséquence." },
+        { "sujet": "Bulletin météo avant {adversaire}", "corps": "Point météo pour {quand} : {ciel_bas}.{vent} {conseil} À toi de voir si la composition doit bouger." }
+      ],
+      "reponses": [
+        { "id": "composition", "libelle": "Revoir la composition", "effets": {}, "resultat": "La composition s'ouvre : adapte ta feuille à la météo.", "ouvrir": true },
+        { "id": "rien", "libelle": "Rien à changer", "effets": {}, "resultat": "Feuille et consignes inchangées." }
       ]
     },
     "pelouse": {
