@@ -452,6 +452,7 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		tags.add_child(stage)
 		var location: String = "NEUTRE" if next.get("neutral", false) else "À DOMICILE" if next.get("home", {}).get("id") == app.model.club.id else "À L’EXTÉRIEUR"
 		tags.add_child(C.chip(location, C.GOLD))
+		if P.is_derby(app.model): tags.add_child(C.derby_chip())
 		var teams := C.h(16)
 		left.add_child(teams)
 		teams.add_child(reading_control(app, G.crest(next.get("home", {}), C.px(82)), club_reading_target(app, next.get("home", {})), "OfficeNextHomeClubCrest", G.club_name(next.get("home", {}))))

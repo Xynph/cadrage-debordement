@@ -149,6 +149,7 @@ static func _fixture(card: Panel, app: Control, w: int = 1360) -> void:
 	Office.describe_fixture(chip,match_label)
 	var location := "NEUTRE" if next.get("neutral",false) else "À DOMICILE" if next.get("home",{}).get("id")==app.model.club.id else "EXTÉRIEUR"
 	D.chip(card,Rect2(505,22,164,29),location,C.GOLD)
+	if P.is_derby(app.model): D.derby_chip(card,Rect2(681,22,98,29))
 	_crest(card,next.get("home",{}),Rect2(27,72,64,64))
 	_crest(card,next.get("away",{}),Rect2(27,151,64,64))
 	Office.reading_overlay(app,card,Rect2(27,72,64,64),Office.club_reading_target(app,next.get("home",{})),"OfficeNextHomeClubCrest",G.club_name(next.get("home",{})))

@@ -46,12 +46,12 @@ fi
 #    Pas de séquence d'intro dédiée dans le dépôt : l'écran d'entrée n'a pas de suite de capture.
 if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   # CD_EL_CAPTURES_QUOI : liste séparée par des virgules ou espaces parmi intro, finitions, fiche-club,
-  # feuille-espoir, match-rendu, comparateur, audio, reception ; vide ou « toutes » = intro, finitions, fiche-club, feuille-espoir ; match-rendu (40 passes, 57 min sous llvmpipe :
+  # feuille-espoir, match-rendu, comparateur, audio, reception, creation, derby ; vide ou « toutes » = intro, finitions, fiche-club, feuille-espoir ; match-rendu (40 passes, 57 min sous llvmpipe :
   # à demander explicitement ; sans GPU, Forward+ n'existe pas, donc seules les passes « actuel » en 1280x720). comparateur et audio : aussi à demander explicitement.
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -99,6 +99,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/creation"
     phase "captures création (choix du club, options de carrière ; 1080p)" captures-creation.log \
       env CD_REPRISE_UI_GRAPHICS=1 CD_REPRISE_UI_OUTPUT="$cap/creation" node --test tests/godot-reprise.cjs
+  fi
+  if veut derby; then
+    mkdir -p "$cap/derby"
+    phase "captures étiquette Derby (Bureau, Composition, Préparation ; 1080p)" captures-derby.log \
+      env CD_DERBY_GRAPHICS=1 CD_DERBY_OUTPUT="$cap/derby" node tests/godot-derby-etiquette.cjs
   fi
   if veut audio; then
     mkdir -p "$cap/audio"

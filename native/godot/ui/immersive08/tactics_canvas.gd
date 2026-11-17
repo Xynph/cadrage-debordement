@@ -57,6 +57,7 @@ static func build(app:Control) -> Control:
 			app.Immersive.open_preparation(app,0 if i==3 else 1),i==0,"",true,app.accent,"TacticsTab"+str(i))
 	var fixture := P.next_fixture_caption(app.model,"Aucun prochain match")
 	D.text(page,2248,30,fixture.to_upper(),22,C.MUTED,500,1100,HORIZONTAL_ALIGNMENT_RIGHT)
+	if P.is_derby(app.model): D.derby_chip(page,Rect2(1030,8,98,29))
 	var preparation: Variant = app.model.get("decisions",{}).get("preparation")
 	var domains: Array = preparation.get("domains",[]) if preparation is Dictionary else []
 	var composition:=_card(page,Rect2(280,264,1070,906),"COMPOSITION · ÉQUIPE PREMIÈRE","tactic","TacticsPitch")

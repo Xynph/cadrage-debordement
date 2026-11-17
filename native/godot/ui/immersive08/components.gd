@@ -193,6 +193,17 @@ static func chip(text: String, color: Color = MINT) -> PanelContainer:
 	frame.add_child(caption)
 	return frame
 
+## Pastille dorée « DERBY » (Bureau, Préparation, Composition) : fond ambre sombre, liseré et texte or.
+static func derby_chip() -> PanelContainer:
+	var frame := PanelContainer.new()
+	frame.name = "DerbyTag"
+	frame.add_theme_stylebox_override("panel", box(Color("43361c"), GOLD, 5, 8))
+	var caption := label("DERBY", 21, AMBER, true, 700)
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	frame.add_child(caption)
+	frame.tooltip_text = "Derby : une rivalité ancienne, plus de tension sur le terrain et dans les tribunes."
+	return frame
+
 static func gauge(value: float, color: Color = MINT, height: int = 7) -> ProgressBar:
 	var control := ProgressBar.new()
 	control.value = clampf(value, 0, 100)
