@@ -1053,7 +1053,10 @@ static func _career_options(app: Control, page: Control, selected: Dictionary, m
 	var sections := G.scroll(options)
 	(sections.get_parent() as ScrollContainer).name = "CreationCareerOptionsScroll"
 	sections.add_theme_constant_override("separation", C.px(16))
-	if mode.begins_with("world"): LeagueDetail.summary(app, sections, str(selected.get("division", division)), candidates)
+	if mode.begins_with("world") and LeagueDetail.leagues(app, candidates).size() >= 2:
+		# Même section sombre que les autres réglages ; la carte claire de l'ancien écran détonnait (retour de Léo, 17/11).
+		var choose := LeagueDetail.summary(app, _option_section(sections, "CreationLeagueDetail", "Championnats suivis"), str(selected.get("division", division)), candidates, true)
+		if choose != null: Editorial.action(choose, false, false, maxi(34, C.px(52)))
 	_career_variation_controls(app, _option_section(sections, "CreationLevelSection", "Niveau de départ"), true)
 	if mode == "world-champ" and role != "nation":
 		_career_start_controls(app, _option_section(sections, "CreationArrivalSection", ""), true, selected)
