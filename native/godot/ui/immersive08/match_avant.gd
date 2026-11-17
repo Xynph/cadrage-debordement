@@ -71,6 +71,9 @@ static func photo_meteo(next: Dictionary) -> String:
 
 func _init() -> void:
 	name = "MatchOpening"
+	# Style propre à l'écran : la passe de style héritée (legacy_style.gd) ne doit ni repeindre les pastilles ni
+	# agrandir les textes ; elle s'arrête à ce nœud.
+	set_meta("immersive_style_applied", true)
 	add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -814,7 +817,7 @@ func _joueurs(data: Dictionary) -> Control:
 		numero.add_theme_stylebox_override("panel", style)
 		numero.custom_minimum_size = Vector2(M(36), M(36))
 		numero.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		var n := texte(str(joueur.get("numero", "")), 18, C.IVORY, true, 700)
+		var n := texte(str(int(joueur.get("numero", 0))) if joueur.get("numero") != null else "—", 18, C.IVORY, true, 700)
 		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		n.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		numero.add_child(n)
