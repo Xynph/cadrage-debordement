@@ -1,6 +1,6 @@
 extends RefCounted
-## Météo et vent du match, en mots de manager : bandeau du direct (3D et entracte 2D), vestiaire
-## d'avant-match et de mi-temps. Lit `live.meteo` (native/engine/model.cjs) : libellé, conseil du
+## Météo et vent du match, en mots de manager : écran Match avant le coup d'envoi (météo annoncée la
+## veille, `next.meteo`), bandeau du direct (3D et entracte 2D), vestiaire d'avant-match et de mi-temps. Lit `live.meteo` (native/engine/model.cjs) : libellé, conseil du
 ## staff, et `ventDos` = [camp qui a le vent dans le dos en 1re période, en 2e période], null sinon.
 
 const G = preload("res://ui/carnet_skin.gd")
@@ -46,3 +46,19 @@ static func phrase_vent(live: Dictionary, phase: String) -> String:
 static func conseil(live: Dictionary) -> String:
 	var texte: Variant = meteo(live).get("conseil")
 	return str(texte) if texte is String else ""
+
+## Prochain match vu comme un direct ({meteo, teams}) : mêmes textes avant le coup d'envoi, à partir de
+## `next.meteo` (même format que `live.meteo`, présent dès la veille) ; vide sans météo annoncée.
+static func annonce(next: Dictionary) -> Dictionary:
+	if not next.get("meteo") is Dictionary: return {}
+	return {"meteo": next.meteo, "teams": [next.get("home", {}), next.get("away", {})]}
+
+## Bloc « La météo » de l'écran Match avant le coup d'envoi : [titre, ciel, vent, conseil] (lignes vides omises
+## par l'écran). Sans annonce : quand elle tombera.
+static func avant_match(next: Dictionary, aujourd_hui: String) -> Dictionary:
+	var live := annonce(next)
+	if live.is_empty():
+		return {"titre": "LA MÉTÉO", "ciel": "", "vent": "", "conseil": "Bulletin météo la veille du match."}
+	var jour := str(next.meteo.get("date", ""))
+	return {"titre": "LA MÉTÉO DU MATCH" if jour == aujourd_hui or jour.is_empty() else "LA MÉTÉO DE DEMAIN",
+		"ciel": libelle(live), "vent": phrase_vent(live, "pre"), "conseil": conseil(live)}
