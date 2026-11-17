@@ -43,7 +43,8 @@ function factory() {
   const pending = s => typeof CDPreseason !== 'undefined' && !!CDPreseason.pending(s);
   const todayOf = s => { try { return CDWorldCareer.calendarToday(s); } catch { return null; } };
   const STATUS = ['nouveau', 'repondu', 'classe', 'info'];
-  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel'];
+  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'orientation'];
+  const ORIENTATION_LABELS = { equilibre: 'répartition proposée', installations: 'priorité aux installations', staff: 'priorité au staff', accueil: 'priorité à l’accueil' };
   const PLAN_LABELS = { repos: 'repos', normal: 'charge allégée', intense: 'charge intense', collective: 'séance collective' };
   const MODE_LABELS = { repos: 'récupération', normal: 'normal', intense: 'intense' };
   const FOCUS_LABELS = { aucune: 'aucune', conquete: 'conquête', defence: 'défense', pied: 'jeu au pied' };
@@ -310,6 +311,11 @@ function factory() {
       const c = Math.round(F.s.trust ?? 50), band = c >= 70 ? 'haute' : c >= 45 ? 'moyenne' : 'basse';
       return [{ key: F.d, vars: { confiance: c, niveau: { haute: 'solide', moyenne: 'réelle mais conditionnelle', basse: 'entamée' }[band], message: pick(t.variantes?.[band], F.d) } }];
     },
+    // Investissements des excédents (club-investments.cjs) : une fois par saison, tant que le manager n'a pas orienté.
+    investissements(F) {
+      const v = typeof investCourrier === 'function' ? investCourrier() : null;
+      return v ? [{ key: 'investissements:' + F.s.season, vars: v }] : [];
+    },
     supporters_derby(F, t) {
       const g = F.playedOn(F.yesterday); if (!g || !F.derby(g.result.opp)) return [];
       const o = F.outcome(g.result), band = o === 'V' ? 'victoire' : o === 'D' ? 'defaite' : 'nul';
@@ -540,6 +546,7 @@ function factory() {
     if (e.promouvoir) out.push('Premier contrat professionnel');
     if (Number.isFinite(e.caisse) && e.caisse) out.push((e.caisse > 0 ? 'Recette ' : 'Coût ') + euros(Math.abs(e.caisse)) + ' €');
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; out.push('Frais ' + euros(sx.frais || 1500) + ' € ; amende annulée ou portée à ' + euros(sx.alourdie || 7500) + ' €'); }
+    if (e.orientation) out.push('Investissements : ' + (ORIENTATION_LABELS[e.orientation] || e.orientation));
     if (e.suite) out.push('Suite dans ' + e.suite.jours + ' jours');
     return out.join(' · ');
   }
@@ -552,6 +559,7 @@ function factory() {
     if ((e.entrainement || e.focus) && s.trained) return 'La séance de la semaine est déjà faite.';
     if (e.focus && s.collectivePrepVersion !== 1) return 'Préparation collective indisponible.';
     if (Number.isFinite(e.caisse) && e.caisse < 0 && (club.cash ?? 0) < -e.caisse) return 'Trésorerie insuffisante.';
+    if (e.orientation && !(typeof investCourrier === 'function' && investCourrier())) return 'La répartition de cette saison est déjà arrêtée.';
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; if ((club.cash ?? 0) < (sx.frais || 1500) + (sx.alourdie || 7500)) return 'Trésorerie insuffisante pour un appel.'; }
     if (e.promesse) {
       if (typeof satisfactionActive !== 'function' || !satisfactionActive() || s.phase !== 'league' || s.round > 23 || Object.keys(s.economy?.talks || {}).length || p.injury || p.satisfaction?.promise) return 'Promesse impossible : phase régulière, joueur apte et sans promesse en cours.';
@@ -606,6 +614,7 @@ function factory() {
     if (e.focus) s.collectiveFocus = e.focus;
     if (e.promesse) check(makePlayingPromise(p.id, e.promesse) === true, 'promesse refusée');
     if (e.promouvoir) check(promoteYouth(m.player) === true, 'promotion refusée');
+    if (e.orientation) check(investOrienter(e.orientation) === true, 'répartition refusée');
     if (Number.isFinite(e.caisse) && e.caisse) ledgerEntry('Courrier · ' + render(m).sujet.slice(0, 60), e.caisse);
     if (e.appel) {
       const sx = TYPES.discipline?.seuils || {}, favorable = hash(m.id + ':' + s.club + ':appel') % 2 === 0;

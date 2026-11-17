@@ -199,11 +199,11 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
 //   domicile : le club reçoit ; neutre : match sur terrain neutre ; phase : 'league' ou une phase finale ;
 //   resultats : derniers résultats du club ('V', 'N', 'D') ; alea dans [0;1] (tiré du club et de la date par défaut) ;
 //   receptions : matchs de saison régulière à domicile ; gere : club géré par le jeu.
-function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0 }) {
+function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1 }) {
   const { force, regle, annuel } = regleDe(forces, clubId);
   if (!Number.isInteger(semaines) || semaines < 1) throw Error('Budget de club : nombre de semaines invalide.');
   const salaires = rond(masseHebdo * 52 / semaines), matchs = Math.max(1, receptions ?? Math.round(semaines / 2));
-  const hasard = Number.isFinite(alea) ? alea : unite('affluence|' + clubId + '|' + repere), public_ = affluence(forme(resultats), hasard);
+  const hasard = Number.isFinite(alea) ? alea : unite('affluence|' + clubId + '|' + repere), public_ = affluence(forme(resultats), hasard) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1);
   const billetterie = annuel * regle.billetterie, finale = phase !== 'league';
   const ecritures = [
     { title: libelle + ' · Partenaires', amount: rond(annuel * regle.partenaires / semaines) },
@@ -215,7 +215,7 @@ function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle
     ecritures.push(finale
       ? { title: libelle + ' · Billetterie de phase finale', amount: rond(billetterie / matchs * GUICHET_PHASE_FINALE * public_) }
       : { title: libelle + ' · Billetterie', amount: rond(billetterie * (1 - PART_ABONNEMENTS) / matchs * public_) });
-    ecritures.push({ title: libelle + ' · Boutique et buvettes', amount: rond(annuel * regle.boutique / matchs * (finale ? GUICHET_PHASE_FINALE : 1) * (0.9 + 0.2 * hasard)) });
+    ecritures.push({ title: libelle + ' · Boutique et buvettes', amount: rond(annuel * regle.boutique / matchs * (finale ? GUICHET_PHASE_FINALE : 1) * (0.9 + 0.2 * hasard) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1)) });
   } else if (neutre) {
     ecritures.push({ title: libelle + ' · Part de recette de phase finale', amount: rond(regle.moyenne * regle.billetterie / matchs * PART_TERRAIN_NEUTRE) });
   }
@@ -264,7 +264,7 @@ function ouverture({ forces, saison, clubs, types = null, excedents = false }) {
   }) };
 }
 const annonceDividende = montant => `Le groupe actionnaire a fait remonter ${euros(montant)} de la trésorerie du club : la réserve reste intacte, le surplus lui revient.`;
-const annonceInvestissement = (montant, reserve) => `La trésorerie dépasse la réserve que le club se fixe (${euros(reserve)}). Les dirigeants réinvestiront ${euros(montant)} cette saison : staff, installations, déplacements, accueil.`;
+const annonceInvestissement = (montant, reserve) => `La trésorerie dépasse la réserve que le club se fixe (${euros(reserve)}). Les dirigeants réinvestiront ${euros(montant)} cette saison dans les installations, le staff et l’accueil : le président t’écrit pour en parler.`;
 // Ajoute les écritures d'une semaine au compteur d'un club ; classement : {division, rang, taille} du moment.
 function compter(compte, ecritures, masseAnnuelle, classement = null) {
   for (const e of ecritures) {
@@ -501,7 +501,9 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
   // Même train de vie pour le club joué que pour les clubs gérés (décision de Léo du 12 novembre) :
   // l'excédent de l'exercice est réinvesti à 70 % dans le staff et le fonctionnement, un déficit
   // au-delà de l'enveloppe du propriétaire est réduit par des économies.
-  repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle,formation:budgetCentre(c),investissement:b.clubs[c.id].investissement||0}));
+  repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle,formation:budgetCentre(c),investissement:b.clubs[c.id].investissement||0,
+  // Accueil du stade relevé par les investissements des excédents (club-investments.cjs).
+  accueil:typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1}));
  nativeClubBudget.compter(b.clubs[c.id],ecritures,masse*52,repere.classement[c.id]||null);
  return ecritures;
 }
