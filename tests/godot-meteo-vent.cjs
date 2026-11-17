@@ -1,6 +1,7 @@
 'use strict';
-// Météo et vent montrés au manager : carrière world-champ (club 102) amenée au jour de match, puis le vrai Godot
-// lance le coup d'envoi : vestiaire d'avant-match (météo, camp favorisé en 1re période, conseil du staff), bandeau
+// Météo et vent montrés au manager : carrière world-champ (club 102), deux matchs joués puis amenée au jour du
+// match suivant ; le vrai Godot contrôle l'écran Match avant le coup d'envoi (tableau de bord en tuiles, chaque
+// ciel et sa photo, rien ne déborde en 1080p), puis lance le coup d'envoi : vestiaire d'avant-match (météo, camp favorisé en 1re période, conseil du staff), bandeau
 // du direct et changement de camp à la mi-temps. Captures (affichage graphique) : CD_METEO_GRAPHICS=1 CD_METEO_OUTPUT=<dossier>.
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
@@ -15,7 +16,8 @@ test('Météo et vent : avant-match, bandeau du direct, mi-temps', { skip: !godo
   try {
     const jeu = M.ouvrir({ dataDir: profil, mandatoryPress: false });
     try {
-      let m = M.jusquAuMatch(jeu, M.creer(jeu, 102));
+      // Deux matchs joués d'abord : forme, forces en présence et joueurs à surveiller ont de vraies statistiques.
+      let m = M.jusquAuMatch(jeu, M.jouer(jeu, M.creer(jeu, 102), 2));
       if (!m.selection.valid) m = jeu.call('auto_lineup');
       if (!m.selection.valid) m = jeu.call('promote_cover', { confirmed: true });
       jeu.call('save');
