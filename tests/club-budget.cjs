@@ -160,7 +160,7 @@ test('Moteur, carrière marquée : la fin de saison remplace les 2,5 M€ par pr
  const avant=h.lire('({comptes:S.clubBudget.clubs,cash:S.clubs.map(c=>c.cash)})'),prime=B.primeClassement('accession',9,16);
  h.run("ledgerEntry('Financement de début de saison',2500000)");let S=h.lire('S');
  assert.ok(!S.ledger.some(e=>e.amount===2500000),'plus de versement identique pour tous');
- const apport=Math.min(avant.comptes[29].enveloppe,800000-prime);
+ const apport=Math.min(avant.comptes[29].enveloppe,Math.min(800000-prime,Math.max(0,avant.comptes[29].reserve-(avant.cash[29]+prime))));// le propriétaire ne comble que ce qui passe sous la réserve
  assert.deepEqual(S.ledger.slice(0,apport>0?2:1).map(e=>e.amount).sort((a,b)=>a-b),(apport>0?[prime,apport]:[prime]).sort((a,b)=>a-b));
  if(apport>0)assert.equal(S.ledger[0].title,'Apport du propriétaire');
  assert.equal(S.clubs[29].cash,avant.cash[29]+prime+apport);

@@ -148,9 +148,6 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
   });
  }
 
- // Jours de repos ajoutés à la dernière période de mise à disposition d'une compétition (hors Coupe du monde).
- const REPOS_APRES_FENETRE = 7, REPOS = /^(six-nations|nations-championship|autumn)/;
-
  function windows(editions) {
   return editions.flatMap(edition => edition.teams.flatMap(team => {
    const forTeam = edition.fixtures.filter(fixture => involves(fixture, team.id));
@@ -165,10 +162,6 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
      periods[0].through = through;
     }
    }
-   // Semaine de repos après le Tournoi et les tests de novembre (convention FFR-LNR ; Toulouse a joué la journée
-   // suivant le Tournoi 2025 sans aucun de ses internationaux) : retour en club une semaine après le dernier test.
-   // Pas après les tournées d'été (le repos tombe dans l'intersaison) ni la Coupe du monde.
-   if (REPOS.test(edition.id) && periods.length) periods.at(-1).through = shift(periods.at(-1).through, REPOS_APRES_FENETRE);
    return periods.map(period => ({ competitionId: edition.id, nation: team.id, ...period }));
   })).sort((a, b) => compare(a.from, b.from) || compare(campKey(a), campKey(b)));
  }

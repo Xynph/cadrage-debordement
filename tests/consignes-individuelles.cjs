@@ -124,7 +124,12 @@ test('Effets sans tirage : réussite au pied, touche et longueur du jeu au pied 
   assert.equal(h.run('occupationKicker(l,0).id===l.playerRoles[0].pied'), true, 'le botteur désigné est nommé');
   h.run('l.playerRoles[0]={buteur:staffRolePlayer(l,0,"buteur").id,lanceur:staffRolePlayer(l,0,"lanceur").id,pied:staffRolePlayer(l,0,"pied").id}');
   assert.equal(h.run('goalChance(l,0)'), staff, 'désigner le choix du staff ne change rien');
-  assert.equal(h.run('lineoutThrowEdge(l,0)+occupationKickEdge(l,0)'), 0);
+  // Avec le jugement du staff, le staff peut mal classer ses botteurs : l'écart au meilleur réel existe déjà sans
+  // désignation (« jamais de gain sur le meilleur réel »). Désigner son choix ne doit donc rien changer à cet écart.
+  const ecartStaff = h.run('l.playerRoles[0]={};lineoutThrowEdge(l,0)+occupationKickEdge(l,0)');
+  h.run('l.playerRoles[0]={buteur:staffRolePlayer(l,0,"buteur").id,lanceur:staffRolePlayer(l,0,"lanceur").id,pied:staffRolePlayer(l,0,"pied").id}');
+  assert.equal(h.run('lineoutThrowEdge(l,0)'), 0, 'lanceur du staff désigné : aucun écart');
+  assert.equal(h.run('lineoutThrowEdge(l,0)+occupationKickEdge(l,0)'), ecartStaff, 'botteur du staff désigné : même écart que sans désignation');
   h.run('tirages=0;for(let i=0;i<20;i++){goalKicker(l,0);goalChance(l,0);lineoutThrowEdge(l,0);occupationKickEdge(l,0);occupationKicker(l,0);staffRolePlayer(l,0,"pied")}');
   assert.equal(h.run('tirages'), 0, 'aucun tirage consommé');
   h.run('Math.random=alea');
