@@ -1,0 +1,2 @@
+tests/godot-reprise.cjs
+tests/godot-immersive08.cjs
