@@ -230,8 +230,9 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	Editorial.divider(rail)
 	var nation_creation := creation and page.find_child("CreationNationalDossier", true, false) != null
 	var step_names := ["01  Réalité", "02  Sélection" if nation_creation else "02  Club", "03  Carrière"]
+	var options_step := creation and page.find_child("CreationCareerOptions", true, false) != null
 	for index in step_names.size():
-		var active := index == (1 if creation else 0)
+		var active := index == ((2 if options_step else 1) if creation else 0)
 		var step := C.v(5)
 		step.alignment = BoxContainer.ALIGNMENT_CENTER
 		rail.add_child(step)
@@ -275,7 +276,7 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	C.fill(heading)
 	header.add_child(heading)
 	if creation:
-		heading.add_child(C.label("Choisir sa sélection" if nation_creation else "Choisir son club", 74, C.IVORY, true, 700))
+		heading.add_child(C.label("Options de carrière" if options_step else "Choisir sa sélection" if nation_creation else "Choisir son club", 74, C.IVORY, true, 700))
 		var underline := ColorRect.new()
 		underline.color = Editorial.RAIL_GOLD
 		underline.custom_minimum_size = Vector2(C.px(100), C.px(5))

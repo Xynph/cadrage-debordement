@@ -37,6 +37,7 @@ func run() -> void:
 	var clubs := app.find_child("CreationClubGrid",true,false) as GridContainer
 	check(clubs!=null and clubs.get_child_count()>0,"Vrais clubs disponibles")
 	await press(clubs.get_child(0) as Button)
+	await press(app.find_child("CreationNext",true,false) as Button)
 	var choice := app.find_child("CreationStartChoice",true,false) as OptionButton
 	check(choice!=null and choice.item_count==3,"Trois départs proposés")
 	check(choice.selected==0 and choice.get_item_text(0).contains("13 juillet"),"Départ par défaut : reprise des premiers clubs")

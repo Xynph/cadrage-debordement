@@ -27,6 +27,11 @@ func _run() -> void:
 		await _finish()
 		return
 	await _capture("02-creation")
+	if app.find_child("CreationNext",true,false) != null:
+		if not await _activate("CreationNext"):
+			await _finish()
+			return
+		await _capture("02b-options-carriere")
 	if not await _activate("CreationStart") or not await _wait():
 		await _finish()
 		return
