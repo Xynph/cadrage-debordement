@@ -51,8 +51,16 @@ func executer() -> void:
 	verifier(lu.contains("Travaux du niveau") or lu.contains("Installations au maximum"), "état des travaux")
 	await capturer("investissements-infrastructures.png")
 	app._navigate("Finances"); await poser(20)
-	var finances := textes(app.body)
-	verifier(finances.contains("Investissements"), "lignes « Investissements » visibles dans Finances")
+	# Flux récents : huit écritures par page, les plus récentes d'abord ; on tourne les pages comme le manager.
+	var page := 0
+	var ledger := app.find_child("FinanceLedger", true, false)
+	while ledger != null and not textes(ledger).contains("Investissements") and page < 12:
+		var suivant := app.find_child("FinanceNext_summary", true, false) as Button
+		if suivant == null or suivant.disabled: break
+		suivant.emit_signal("pressed"); await poser(12); page += 1
+		ledger = app.find_child("FinanceLedger", true, false)
+	var lignes := textes(ledger) if ledger != null else ""
+	verifier(lignes.contains("Investissements : installations") and lignes.contains("Investissements : staff"), "lignes « Investissements » dans Flux récents (page %d) : « %s »" % [page + 1, lignes.left(600)])
 	await capturer("investissements-finances.png")
 	print("INVESTISSEMENTS ", JSON.stringify({"controles": controles, "failures": echecs, "bloc": lu}))
 	app.closing = true

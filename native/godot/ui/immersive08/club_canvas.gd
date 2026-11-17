@@ -660,26 +660,26 @@ static func _president_projects(projects: Panel, inv: Variant) -> void:
 	var inst: Dictionary = inv.get("installations", {})
 	var acc: Dictionary = inv.get("accueil", {})
 	var staff: Dictionary = inv.get("staff", {})
-	D.text(box, 0, 30, "Excédents réinvestis · " + G.euros(inv.get("montant", 0)), 26, C.GOLD, 700, 474)
+	D.text(box, 0, 28, "Excédents réinvestis · " + G.euros(inv.get("montant", 0)), 26, C.GOLD, 700, 474)
 	var travaux := "Installations au maximum"
 	if inst.get("devis") != null:
 		travaux = "Travaux du niveau %s · %s %% financés" % [G.n(int(inst.get("niveau", 0)) + 1), G.n(roundi(100.0 * float(inst.get("avancement", 0))))]
 	if int(inst.get("achevesCetteSaison", 0)) > 0:
 		var faits := int(inst.get("achevesCetteSaison", 0))
 		travaux += " · %s achevé%s" % [G.n(faits), "s" if faits > 1 else ""]
-	D.text(box, 0, 72, travaux, 23, C.IVORY, 600, 474)
-	D.rect(box, Rect2(0, 84, 474, 10), Color("2a3735"), 3)
-	D.rect(box, Rect2(0, 84, 474.0 * clampf(float(inst.get("avancement", 0)), 0.0, 1.0), 10), C.MINT, 3)
+	D.text(box, 0, 64, travaux, 23, C.IVORY, 600, 474)
+	D.rect(box, Rect2(0, 75, 474, 10), Color("2a3735"), 3)
+	D.rect(box, Rect2(0, 75, 474.0 * clampf(float(inst.get("avancement", 0)), 0.0, 1.0), 10), C.MINT, 3)
 	var accueil := "Accueil du stade · niveau %s / %s" % [G.n(acc.get("niveau", 0)), G.n(acc.get("max", 5))]
 	if float(acc.get("effet", 0)) > 0.0: accueil += " · guichet +%s %%" % ("%.1f" % (100.0 * float(acc.get("effet", 0)))).replace(".", ",")
 	if acc.get("degrade", false) == true: accueil += " · en recul"
-	D.text(box, 0, 128, accueil, 23, C.IVORY, 600, 474)
+	D.text(box, 0, 114, accueil, 23, C.IVORY, 600, 474)
 	for segment in int(acc.get("max", 5)):
-		D.rect(box, Rect2(segment * 96, 140, 90, 10), C.MINT if segment < int(acc.get("niveau", 0)) else Color("2a3735"), 3)
+		D.rect(box, Rect2(segment * 96, 125, 90, 10), C.MINT if segment < int(acc.get("niveau", 0)) else Color("2a3735"), 3)
 	var points := int(staff.get("points", 0))
 	var staff_txt := "Staff · aucune progression pour l’instant" if points == 0 else "Staff · %s point%s gagné%s par %s membre%s" % [G.n(points), "s" if points > 1 else "", "s" if points > 1 else "", G.n(staff.get("personnes", 0)), "s" if int(staff.get("personnes", 0)) > 1 else ""]
-	D.text(box, 0, 184, staff_txt, 23, C.IVORY, 600, 474)
-	D.text(box, 0, 210, "Dépensé : %s sur %s" % [G.euros(inv.get("depense", 0)), G.euros(inv.get("montant", 0))], 20, C.MUTED, 500, 474)
+	D.text(box, 0, 164, staff_txt, 23, C.IVORY, 600, 474)
+	D.text(box, 0, 194, "Dépensé : %s sur %s" % [G.euros(inv.get("depense", 0)), G.euros(inv.get("montant", 0))], 20, C.MUTED, 500, 474)
 
 static func _infrastructure_detail(app: Control, canvas: Control) -> void:
 	var data := U.strategy(app.model)
