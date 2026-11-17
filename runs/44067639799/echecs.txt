@@ -1,0 +1,5 @@
+== suites (1) (code 1)
+not ok 1 - Réception : Tout marquer comme lu ne touche que les informations
+    FAIL: « Tout marquer comme lu » ne recouvre pas le tri
+  name: 'AssertionError'
+::error file=tests/godot-reception-tout-lu.cjs::Godot : ECHEC (1), durée 20 s, limite 300s
