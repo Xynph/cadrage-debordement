@@ -47,7 +47,7 @@ assert.deepEqual(run({variants: [
 assert.deepEqual(run({scope: 'followup'}), {failed: false, calls: 2}, 'Followup executes its manifest without default suites');
 // Mode Monde uniquement : une recette qui porte le drapeau des anciens modes n'est jamais lancée, et le lanceur
 // ne l'exporte pas par défaut.
-assert.deepEqual(run({suites: ['tests/godot-engine.cjs', 'tests/probe.cjs']}), {failed: false, calls: 1}, 'Legacy-mode suite is excluded');
+assert.deepEqual(run({suites: ['tests/godot-lifecycle.cjs', 'tests/probe.cjs']}), {failed: false, calls: 1}, 'Legacy-mode suite is excluded');
 assert.ok(!new RegExp('CD_MODES_' + 'HERITES\\s*:').test(source), 'No default legacy-modes flag for the suites');
 console.log(JSON.stringify({controllerUnit: true, cases: rejected.length + 4,
   passed: true, realGodotExecuted: false}));
