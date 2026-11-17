@@ -60,7 +60,7 @@ module.exports = function makeFranceCalendarCadence(userFixture) {
     if (!current || state.phase === 'ended') throw Error('Pas journalier indisponible.');
     if (fromDate !== current.calendarToday) throw Error('La date de carrière a changé.');
     const {day, canAdvance, resultConfirmed} = current.calendarCadence;
-    if (!canAdvance) throw Error('Jouez la rencontre et confirmez son résultat avant de continuer.');
+    if (!canAdvance) throw Error('Joue la rencontre et confirme son résultat avant de continuer.');
     if (day === LAST_DAY) return {closeWeek: true, calendar: {day: 0}};
     return {closeWeek: false, calendar: {day: day + 1, ...(resultConfirmed ? {resultConfirmed} : {})}};
   }

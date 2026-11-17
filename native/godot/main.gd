@@ -1474,7 +1474,7 @@ func _credits() -> void:
 ## d'envoi à la validation du résultat (direct, entracte, causeries), quitter fait reprendre la carrière avant le coup
 ## d'envoi : le manager le confirme d'abord. Une fermeture imposée par le système n'est jamais bloquée (le moteur
 ## reprend alors de lui-même avant le match).
-const QUIT_DURING_MATCH_TEXT := "Le match est en cours. Si vous quittez maintenant, vous reprendrez avant le coup d’envoi et ce match sera à rejouer."
+const QUIT_DURING_MATCH_TEXT := "Le match est en cours. Si tu quittes maintenant, tu reprendras avant le coup d’envoi et ce match sera à rejouer."
 
 func match_in_progress() -> bool:
 	if _live().is_empty(): return false

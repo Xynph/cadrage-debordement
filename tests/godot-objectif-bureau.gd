@@ -41,7 +41,11 @@ func executer() -> void:
 			verifier(carte.get_global_rect().encloses(zone), "pastille dans la carte")
 			for l: Node in carte.get_children():
 				if l is Label and (l as Label).text.begins_with("CLASSEMENT"):
-					verifier(not (l as Label).get_global_rect().intersects(zone) or (l as Label).get_minimum_size().x + (l as Label).global_position.x <= zone.position.x, "titre non chevauché")
+					# Largeur réelle du texte (le titre est tronqué par une ellipse : sa taille minimale ne dit rien).
+					var titre := l as Label
+					var echelle := titre.get_global_transform().get_scale().x
+					var largeur := titre.get_theme_font("font").get_string_size(titre.text, HORIZONTAL_ALIGNMENT_LEFT, -1, titre.get_theme_font_size("font_size")).x * echelle
+					verifier(titre.global_position.x + largeur <= zone.position.x and titre.global_position.x + titre.size.x * echelle <= zone.position.x, "titre non chevauché (%s)" % titre.text)
 	await poser(14)
 	if DisplayServer.get_name() != "headless" and not sortie.is_empty():
 		verifier(root.get_texture().get_image().save_png(sortie.path_join("bureau-objectif.png")) == OK, "capture")

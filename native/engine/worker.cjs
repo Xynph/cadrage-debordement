@@ -708,7 +708,7 @@ function createBridge(options={}){
   // Ancienne sauvegarde écrite en plein match (avant cette règle) sans l'état d'avant le coup d'envoi : lue telle quelle,
   // match repris en pause, et le manager en est informé.
   const legacyMatchNotice=()=>matchOpenNow()?{kind:'en-match',text:'Cette carrière a été enregistrée pendant un match par une version précédente du jeu : l’état d’avant le coup d’envoi n’y figure pas. Le match reprend donc en pause, à la minute enregistrée.'}:null;
-  const PRE_MATCH_NOTICE={kind:'avant-match',text:'Le match en cours n’avait pas été terminé : votre carrière reprend avant le coup d’envoi.'};
+  const PRE_MATCH_NOTICE={kind:'avant-match',text:'Le match en cours n’avait pas été terminé : ta carrière reprend avant le coup d’envoi.'};
   // Texte d'avant le coup d'envoi validé une fois (validation complète) avant sa première écriture.
   const preMatchStore=()=>{
    if(!preMatch.validated){ctx.nativePreMatchText=preMatch.text;try{run('validateCareer(JSON.parse(nativePreMatchText))');}finally{delete ctx.nativePreMatchText;}preMatch.validated=true;}
