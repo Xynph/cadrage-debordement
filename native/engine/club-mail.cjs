@@ -278,7 +278,7 @@ function factory() {
       if (F.dow !== 4 || !(F.s.round >= 6)) return [];
       const list = F.players.filter(p => p.contractEnd === F.s.season).sort((a, b) => b.rating - a.rating);
       if (!list.length) return [];
-      const relais = typeof dsContratsActif === 'function' && dsContratsActif() ? '\n\nComme convenu, ceux que tu n’auras pas réglés d’ici mars, je les trancherai moi-même et je te tiendrai au courant.' : '';
+      const relais = typeof dsContratsActif === 'function' && dsContratsActif() ? ' Comme convenu, ceux que tu n’auras pas réglés d’ici mars, je les trancherai moi-même et je te tiendrai au courant.' : '';
       return [{ key: F.d.slice(0, 7), vars: { relais, n: list.length, liste: list.slice(0, 5).map(p => p.name + ' (' + p.pos + ')').join(', ') + (list.length > 5 ? ' et ' + (list.length - 5) + ' autre(s)' : '') } }];
     },
     prolongation(F) {
