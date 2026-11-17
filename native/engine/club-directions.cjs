@@ -663,6 +663,8 @@ module.exports=function clubDirections(T,N){
   ok(d.marks&&typeof d.marks==='object');
   return true;
  }
- return {VERSION,STRATEGIES,active,create,openWindow,weekly,profile,validate,estimate,scores,situation,needs,profileText,
+ // Compteur public (club-budget.cjs : retenues de conformité au plafond), sans effet hors des carrières dirigées.
+ const tally=(kind,clubId,n=1)=>{if(active())count(kind,clubId,n);};
+ return {VERSION,STRATEGIES,active,create,openWindow,weekly,profile,validate,estimate,scores,situation,needs,profileText,tally,
   _internal:{seasonReview,plansFor,returnLoans,medicalJokers,count}};
 };

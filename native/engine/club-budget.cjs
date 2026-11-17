@@ -626,6 +626,8 @@ function budgetConformite(){
   // Retenue calculée sur la part au-dessus du plancher, arrondie vers le bas.
   const libre=c.players.reduce((n,p)=>n+Math.max(0,p.salary-plancher),0)*52,retenue=libre>0?Math.max(0,1-(masse-plafond)/libre):0;
   for(const p of c.players)if(p.salary>plancher)p.salary=Math.max(plancher,Math.floor((plancher+(p.salary-plancher)*retenue)/10)*10);
+  // Filet de dernier recours : chaque passage est compté (mesure), il ne doit presque jamais servir.
+  if(typeof nativeClubDirections!=='undefined')nativeClubDirections.tally('plafond:retenue-forcee',c.id);
   touche=true;
  }
  return touche;
