@@ -676,6 +676,38 @@ test('Entrées invalides refusées ; essai sur ballon porté ou mêlée non mis 
   assert.equal(e.plan, 1);
 });
 
+// Régression du 17/11 (carrière Monde, club 102, graine 7, 80+1′) : « joueur d’étape absent ». Le retour d’un carton jaune
+// et les remplacements sont journalisés sans image : la scène d’avant le temps fort (`tf.depart`) ne contenait pas le porteur
+// que les faits du temps fort nomment. L’effectif de la mise en scène est celui de la scène du premier fait.
+test('Effectif changé entre la scène d’avant et le temps fort (retour de carton, remplacement) : le porteur nommé est en scène', () => {
+  const { entree } = COMPOSES[0], T = entree.equipe, fin = entree.essai.x;
+  const plein = entree.joueurs.map(({ id, side, slot, x, y }) => ({ id, side, slot, x, y }));
+  const porteur = plein.find(j => j.side === T && j.slot === 5);
+  assert.ok(porteur && String(porteur.id) !== String(entree.marqueur));
+  const scene = (players, ball, kind) => ({ kind, players, ball, possession: T });
+  const events = [{ scene: { kind: 'carry', team: T, actor: porteur.id, from: { x: fin === 0 ? 40 : 60, y: 35 }, to: { x: fin === 0 ? 20 : 80, y: 35 } } },
+    { scene: { kind: 'try', team: T, actor: entree.marqueur, origin: 'open' } }];
+  const plans = [{ kind: 'carry', index: 0, scene: scene(plein, entree.ballon, 'carry') }, { kind: 'try', index: 1, scene: scene(plein, { x: fin, y: 35 }, 'try') }];
+  const sorti = { id: 'sorti-17-11', side: T, slot: porteur.slot, x: porteur.x + 3, y: porteur.y - 2 };
+  const cas = {
+    'porteur au carton jaune, absent de la scène d’avant': plein.filter(j => j !== porteur),
+    'porteur entré au poste d’un joueur sorti': plein.map(j => j === porteur ? sorti : j),
+  };
+  for (const [nom, depart] of Object.entries(cas)) {
+    const e = C.entreeDepuisTempsFort({ cle: 'regression-1711', plans, depart: { players: depart, ball: entree.ballon, possession: T } }, events);
+    assert.equal(e.type, 'essai_jeu_courant', nom);
+    assert.deepEqual(e.joueurs.map(j => String(j.id)).sort(), plein.map(j => String(j.id)).sort(), `${nom} : l’effectif est celui des faits`);
+    const c = C.composer(e);
+    assert.ok(c.duree >= C.DUREE_MIN && c.duree <= c.dureeMax, `${nom} : mise en scène composée`);
+    const place = e.joueurs.find(j => String(j.id) === String(porteur.id));
+    const attendu = depart.find(j => j.slot === porteur.slot && j.side === T);
+    if (attendu) assert.deepEqual([place.x, place.y], [attendu.x, attendu.y], `${nom} : l’entrant part de la place du sorti`);
+  }
+  // L’effectif inchangé n’est pas touché (cas courant).
+  const e = C.entreeDepuisTempsFort({ cle: 'regression-1711', plans, depart: { players: plein.map(j => ({ ...j, x: j.x + 1 })), ball: entree.ballon, possession: T } }, events);
+  assert.deepEqual(e.joueurs.map(j => [j.id, j.x]), plein.map(j => [j.id, j.x + 1]));
+});
+
 // Régressions du 15/11 (carrière Monde, club 102, graine 7) : trois franchissements enchaînés plus longs que les
 // 6 s accordées par fait (mise en scène acceptée jusqu'au plafond), et coup d'envoi repris par l'équipe qui botte
 // (le receveur désigné suivait la chasse et s'arrêtait à distance du ballon).

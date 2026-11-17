@@ -46,7 +46,7 @@ static func home(app: Control) -> Control:
 	D.photo(masthead,"brand",Rect2(83,22,274,120))
 	D.line(masthead,Vector2(400,48),Vector2(400,114),Color(C.GOLD,.68))
 	D.text(masthead,430,76,"CARRIÈRE DE MANAGER",22,C.GOLD,700,520)
-	D.text(masthead,430,111,"Rugby à XV  /  Édition Windows",25,C.IVORY,500,840)
+	D.text(masthead,430,111,"Rugby à XV  /  Édition %s" % OS.get_name(),25,C.IVORY,500,840)
 	D.line(masthead,Vector2(0,165),Vector2(2560,165),Color(C.LINE,.75))
 	D.button(masthead,Rect2(2196,57,278,52),"Crédits",app._credits,false,"info",true,GREEN,"EntryCredits")
 	D.line(content,Vector2(108,490),Vector2(198,490),C.GOLD,3)
@@ -70,7 +70,7 @@ static func home(app: Control) -> Control:
 	_choices(D.panel(content,Rect2(1642,248,827,1008),"","","","EntryCareerCard"),app,club,meta,accent)
 	D.rect(content,Rect2(0,1332,2560,108),Color(C.BG,.87))
 	D.line(content,Vector2(84,1332),Vector2(2475,1332),Color(C.LINE,.64))
-	D.text(content,88,1399,"APPLICATION WINDOWS NATIVE  ·  CARRIÈRE LOCALE",23,C.IVORY,600,1180)
+	D.text(content,88,1399,"APPLICATION %s NATIVE  ·  CARRIÈRE LOCALE" % OS.get_name().to_upper(),23,C.IVORY,600,1180)
 	D.text(content,2468,1399,"RUGBY LEGACY 27",23,C.GOLD,700,340,HORIZONTAL_ALIGNMENT_RIGHT)
 	return page
 
