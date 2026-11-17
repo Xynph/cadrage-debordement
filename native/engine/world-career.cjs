@@ -298,12 +298,20 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  }
  // Capacité du stade (données factuelles par identifiant de club) ; absente : le module supporters retombe sur 12 000.
  const stadiumCapacity=id=>typeof CDWorldStadiumCapacities!=='undefined'&&Number.isInteger(CDWorldStadiumCapacities[id])?CDWorldStadiumCapacities[id]:undefined;
- function previewRoster(id){
+ // full : recalage complet (notes, attributs et potentiel de départ), comme à la création ; sinon les notes seules.
+ function previewRoster(id,full=false){
   const players=initialRoster(REG.clubs[id]);
   players.push(...nativeProfessionalDepth.additions(id,players,1));
   // Aperçu (catalogue des clubs) : seules les notes sont lues.
-  if(seniorCalibration)seniorCalibration.apply(players,SOURCES,{clubId:id,leagueId:REG.clubs[id].leagueId,registry:REG},{ratingsOnly:true});
+  if(seniorCalibration)seniorCalibration.apply(players,SOURCES,{clubId:id,leagueId:REG.clubs[id].leagueId,registry:REG},{ratingsOnly:!full});
   return players;
+ }
+ // Aperçu de création (club_preview, aucune carrière) : rencontres initiales de la saison 1, celles que
+ // newSeason(S,true,dailyCalendar) installe à la création (même construction, sans état ni tirage).
+ function previewFixtures(dailyCalendar=false){
+  const s={season:1,worldMode:dailyCalendar?{calendarPolicy:lnrPolicy}:{}};
+  const partition=Object.fromEntries(IDS.map(id=>[id,REG.clubs.filter(c=>c.leagueId===id).map(c=>c.id)]));
+  return baseFixtures(s,partition,REG.initialEurope).map(f=>({...f,week:weekOf(s,f.date)}));
  }
  function start(id,dailyCalendar=false){
   check(playable.has(id),'club jouable invalide.');
@@ -576,5 +584,5 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   };
  }
  // Aliases prevent named inner functions shadowing the globals they replace.
- return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,nextOpening,clubReleaseOn,enableDaily,dailyStatus,advanceDay,label:worldLabel,context,start,finishWeek,multiplex,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
+ return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,previewFixtures,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,nextOpening,clubReleaseOn,enableDaily,dailyStatus,advanceDay,label:worldLabel,context,start,finishWeek,multiplex,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
 };
