@@ -107,6 +107,7 @@ function aiRosterContracts(){
    }else{
     releasedIds.add(p.id);released++;payroll-=p.salary;
     p.formerClub=c.name;p.price=fee;p.contractEnd=null;p.condition=100;p.injury=0;
+    if(p.population)p.population.availableSince=S.season;
     e.freeAgents.push(p);
     aiRosterEvent(c.id,'release',p);
    }
@@ -408,6 +409,15 @@ function aiRosterTrimFreeAgents(){
   seen.add(p.id);
   if(!p.population)p.population={version:1,origin:'released',season:S.season,clubId:null,availableSince:S.season};
   p.contractEnd=null;pool.push(p);
+ }
+ // Comme dans FM : un trentenaire resté libre une saison prend sa retraite, et tout joueur
+ // libre depuis deux saisons part (étranger, divisions inférieures). Les petits clubs remplacent.
+ const unsigned=pool.filter(p=>S.season-p.population.availableSince>=2||(p.age>=32&&S.season-p.population.availableSince>=1));
+ if(unsigned.length){
+  const gone=new Set(unsigned.map(p=>p.id));
+  pool.splice(0,pool.length,...pool.filter(p=>!gone.has(p.id)));
+  S.market=S.market.filter(p=>!gone.has(p.id));
+  aiRosterPopulationReport().departed+=unsigned.length;
  }
  const limit=aiRosterFreeAgentLimit(),remove=Math.max(0,pool.length-limit);
  if(remove){
