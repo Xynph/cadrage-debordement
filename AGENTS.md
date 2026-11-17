@@ -30,6 +30,10 @@
   d'une réservation non résolue. Si la CI est rouge, la PR attend : corriger.
 - Expliquer chaque phase en une phrase, rendre le résultat, le lien de PR et
   la prochaine étape. Messages courts.
+- **Réponses à Léo : courtes et côté jeu** (consigne permanente du 17/11/2026) :
+  dire ce qui change à l'écran ou dans la partie, ce qui marche, ce qui reste à
+  voir. Pas de noms de fichiers, fonctions, commits, runs ni chiffres de tests
+  sauf demande ; le détail technique va dans la PR et sur #591.
 
 - Évolution de gameplay ou d'interface : appliquer la
   [boucle courte](docs/developpement-jeu-boucle-courte.md) (décision de manager,

@@ -25,8 +25,52 @@ func capture(name: String) -> void:
 	if DisplayServer.get_name()=="headless": return
 	await RenderingServer.frame_post_draw
 	check(root.get_texture().get_image().save_png(output.path_join(name+".png"))==OK,"Capture "+name)
+## Attend la fin des lectures moteur de l'écran Options (mesure de la machine, aperçu du club).
+func idle() -> void:
+	var deadline := Time.get_ticks_msec()+120000
+	var calm := 0
+	while calm<30 and Time.get_ticks_msec()<deadline:
+		calm = 0 if app.waiting else calm+1
+		await process_frame
+	await settle()
+## Taille de fenêtre (CD_REPRISE_UI_SIZE, ex. « 1600x900 ») : 1920×1080 par défaut.
+func window_size() -> Vector2i:
+	var parts := OS.get_environment("CD_REPRISE_UI_SIZE").split("x")
+	if parts.size()==2 and parts[0].is_valid_int() and parts[1].is_valid_int(): return Vector2i(int(parts[0]),int(parts[1]))
+	return Vector2i(1920,1080)
+## Écran Options : six blocs, logos des championnats, aucun chevauchement, aucun défilement dès 1600×900.
+func check_options_layout() -> void:
+	var blocks := ["CreationOptionsClub","CreationSeasonTimeline","CreationGabiNote","CreationPresidentWord","CreationRivals","CreationLeagueDetail","CreationSquadFaces","CreationAppointments","CreationOptionsActions"]
+	var rects: Array[Rect2] = []
+	var names: Array[String] = []
+	for id in blocks:
+		var block := app.find_child(id,true,false) as Control
+		check(block!=null and block.is_visible_in_tree(),"Bloc présent : "+id)
+		if block==null: continue
+		rects.append(block.get_global_rect()); names.append(id)
+		for label: Label in block.find_children("*","Label",true,false):
+			if not label.is_visible_in_tree() or label.text.is_empty(): continue
+			check(block.get_global_rect().grow(1).encloses(label.get_global_rect()),"Texte « %s » contenu dans %s" % [label.text.left(40),id])
+	for a in rects.size():
+		for b in range(a+1,rects.size()):
+			check(not rects[a].grow(-1).intersects(rects[b].grow(-1)),"Pas de chevauchement : %s / %s" % [names[a],names[b]])
+	var state := str((app.find_child("CreationCareerOptions",true,false) as Control).get_meta("preview_state",""))
+	check(state in ["ready","fallback"],"Aperçu du club reçu ou repli : "+state)
+	print("APERÇU DU CLUB : ",state)
+	var cards := app.find_children("CreationLeagueCard_*","Button",true,false)
+	check(cards.size()>=2,"Championnats suivis affichés (%d)" % cards.size())
+	for card: Button in cards:
+		var id := str(card.name).trim_prefix("CreationLeagueCard_")
+		var logo := card.find_child("CreationLeagueLogo_"+id,true,false) as TextureRect
+		check(logo!=null and logo.texture!=null and logo.is_visible_in_tree(),"Logo ou trophée du championnat "+id)
+	check(app.find_child("CreationLeagueCard_elite",true,false)!=null and app.find_child("CreationLeagueCountry_FR",true,false).find_child("CreationLeagueFlag_fr",true,false)!=null,"Championnats regroupés par pays, drapeau compris")
+	if root.size.y>=900:
+		var visible := root.get_visible_rect().grow(1)
+		for rect in rects: check(visible.encloses(rect),"Bloc dans la fenêtre à %dx%d" % [root.size.x,root.size.y])
+		for scroll: ScrollContainer in app.find_child("CarnetCreation",true,false).find_children("*","ScrollContainer",true,false):
+			check(not scroll.get_v_scroll_bar().visible,"Aucun défilement vertical (%s) à %dx%d" % [scroll.name,root.size.x,root.size.y])
 func run() -> void:
-	root.size=Vector2i(1920,1080)
+	root.size=window_size()
 	app=load("res://main.tscn").instantiate(); root.add_child(app)
 	var deadline := Time.get_ticks_msec()+90000
 	while app.model.is_empty() and Time.get_ticks_msec()<deadline: await process_frame
@@ -34,6 +78,10 @@ func run() -> void:
 	app.timer.stop()
 	check(app.model.get("meta",{}).get("repriseCreation",{}).get("elite",{}).get("0","")=="2026-07-27","Dates de reprise de l’Élite exposées à la création")
 	Entry.begin_creation(app); await settle()
+	# Options de carrière jamais sans club choisi, même si l'étape est demandée.
+	app.management_ui[Entry.CREATION_STEP]="carriere"; app._render(); await settle()
+	check(app.find_child("CreationCareerOptions",true,false)==null and app.find_child("CreationClubGrid",true,false)!=null,"Écran Options inaccessible sans club choisi")
+	app.management_ui.erase(Entry.CREATION_STEP); app._render(); await settle()
 	var clubs := app.find_child("CreationClubGrid",true,false) as GridContainer
 	check(clubs!=null and clubs.get_child_count()>0,"Vrais clubs disponibles")
 	await press(clubs.get_child(0) as Button)
@@ -43,18 +91,60 @@ func run() -> void:
 	var next := app.find_child("CreationNext",true,false) as Button
 	check(next!=null and not next.disabled,"Options de carrière accessibles après le choix du club")
 	await press(next)
+	await idle()
 	check(app.find_child("CreationCareerOptions",true,false)!=null and app.find_child("CreationClubGrid",true,false)==null,"Écran dédié aux options de carrière")
+	check_options_layout()
 	check(app.find_child("CreationLeagueDetail",true,false)!=null and app.find_child("CreationVaryCurrent",true,false)!=null,"Championnats suivis et niveau de départ sur l’écran des options")
+	var suivis := app.find_child("CreationLeagueDetailCount",true,false) as Label
+	check(suivis!=null and suivis.text.contains("en détail complet sur"),"Championnats suivis : compte affiché")
+	check(app.find_child("CreationLeagueDetailNames",true,false)==null and app.find_child("CreationLeagueDetailOpen",true,false)==null,"Anciens nœuds de la liste de noms retirés")
+	var pays := 0
+	for code in ["FR","GB","URC","SRP","JP"]:
+		if app.find_child("CreationLeagueCountry_"+code,true,false)!=null: pays += 1
+	check(pays>=3,"Au moins 3 blocs pays (%d)" % pays)
+	var mine := app.find_child("CreationLeagueCard_elite",true,false) as Button
+	var mine_state := mine.find_child("CreationLeagueCardState",true,false) as Label if mine!=null else null
+	check(mine_state!=null and mine_state.text.contains("Ton championnat"),"Vignette du championnat du club : « Ton championnat »")
+	var count_before := suivis.text if suivis!=null else ""
+	var other := app.find_child("CreationLeagueCard_prem",true,false) as Button
+	var other_state := other.find_child("CreationLeagueCardState",true,false) as Label if other!=null else null
+	var state_before := other_state.text if other_state!=null else ""
+	check(other!=null and not other.disabled and state_before!="","Vignette d’un autre championnat disponible")
+	if other != null:
+		await press(other)
+		var count_after := app.find_child("CreationLeagueDetailCount",true,false) as Label
+		var other_after := app.find_child("CreationLeagueCard_prem",true,false) as Button
+		var state_after := (other_after.find_child("CreationLeagueCardState",true,false) as Label).text if other_after!=null else ""
+		check(count_after!=null and count_after.text!=count_before,"Un clic sur une vignette change le compte : "+count_before+" → "+(count_after.text if count_after else ""))
+		check(state_after!=state_before,"Un clic sur une vignette change son état : "+state_before+" → "+state_after)
+		if other_after != null:
+			await press(other_after)
+		var count_back := app.find_child("CreationLeagueDetailCount",true,false) as Label
+		var other_back := app.find_child("CreationLeagueCard_prem",true,false) as Button
+		var state_back := (other_back.find_child("CreationLeagueCardState",true,false) as Label).text if other_back!=null else ""
+		check(count_back!=null and count_back.text==count_before and state_back==state_before,"Un second clic remet le championnat comme avant")
 	await capture("creation-2-options-carriere")
 	var choice := app.find_child("CreationStartChoice",true,false) as OptionButton
 	check(choice!=null and choice.item_count==3,"Trois départs proposés")
 	check(choice.selected==0 and choice.get_item_text(0).contains("13 juillet"),"Départ par défaut : reprise des premiers clubs")
 	var sentence := app.find_child("CreationStartSentence",true,false) as Label
 	check(sentence!=null and sentence.text.contains("13 juillet 2026"),"Phrase claire des conséquences")
+	var arrival := app.find_child("CreationSeasonArrival",true,false) as Control
+	check(arrival!=null and app.find_child("CreationSeasonStep_first",true,false).is_ancestor_of(arrival),"Frise : arrivée avec les premiers clubs")
 	choice.select(1); choice.item_selected.emit(1); await settle()
 	check(sentence.text.contains("reprise de ton club"),"La phrase suit le choix")
+	arrival = app.find_child("CreationSeasonArrival",true,false) as Control
+	check(arrival!=null and app.find_child("CreationSeasonStep_club",true,false).is_ancestor_of(arrival),"La frise suit le départ : arrivée à la reprise du club")
+	var gabi := app.find_child("CreationGabiSpeech",true,false) as Label
+	check(gabi!=null and gabi.text.contains("jour de la reprise") and gabi.text.length()<=181,"La bulle de Gabi suit le départ (≤ 181 caractères)")
+	choice.select(2); choice.item_selected.emit(2); await settle()
+	check(app.find_child("CreationSeasonStep_eve",true,false)!=null,"Départ veille : étape de la veille dans la frise")
 	choice.select(0); choice.item_selected.emit(0); await settle()
 	await capture("reprise-creation")
+	if root.size != Vector2i(1920,1080):
+		# Autres tailles (1600×900, 1280×720) : l'écran Options seulement ; la suite (Préparation) est calée sur 1920×1080.
+		await finish()
+		return
 	var start := app.find_child("CreationStart",true,false) as Button
 	check(start!=null and not start.disabled,"Création disponible")
 	await press(start); await response()
@@ -117,7 +207,9 @@ func run() -> void:
 	if scroll != null and block != null: scroll.ensure_control_visible(block)
 	await settle()
 	await capture("reprise-decisions-preparation")
+	await finish()
+func finish() -> void:
 	var result := FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
-	result.store_string(JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name()},"  ")); result.close()
+	result.store_string(JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name(),"size":[root.size.x,root.size.y]},"  ")); result.close()
 	print("REPRISE UI : %d contrôles ; %d échecs" % [checks,failures.size()])
 	await app._close(0 if failures.is_empty() else 1)

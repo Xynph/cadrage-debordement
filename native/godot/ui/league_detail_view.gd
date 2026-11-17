@@ -5,6 +5,7 @@ extends RefCounted
 ## moteur fournit le banc d'essai, le tableau des coûts et le choix automatique ;
 ## l'interface additionne seulement ce tableau quand on coche ou décoche.
 const G = preload("res://ui/carnet_skin.gd")
+const C = preload("res://ui/immersive08/components.gd")
 const Club = preload("res://ui/club_views.gd")
 const SELECTION := "creation_detailed_leagues"
 const CUSTOM := "creation_detailed_custom"
@@ -105,29 +106,54 @@ static func duration(milliseconds: float) -> String:
 	return "%d h %02d" % [int(minutes / 60.0), minutes % 60]
 
 ## Couleur d'état du carnet (succès, alerte, danger) : aucune couleur propre à la jauge.
-static func state_color(level: Dictionary) -> Color:
+## `dark` : mêmes états aux couleurs du thème sombre (écran Options de carrière).
+static func state_color(level: Dictionary, dark: bool = false) -> Color:
 	match str(level.get("state", "")):
-		"succes": return G.GOOD
-		"alerte": return G.GOLD
-		"danger": return G.ALERT
-	return G.MUTED
+		"succes": return C.MINT if dark else G.GOOD
+		"alerte": return C.GOLD if dark else G.GOLD
+		"danger": return C.ALERT if dark else G.ALERT
+	return C.MUTED if dark else G.MUTED
 
 ## Jauge « Vitesse de jeu estimée » : 5 étoiles (5 = rapide) aux couleurs d'état du carnet,
 ## libellé du cran et durée estimée d'une semaine et d'une saison sur cette machine.
-static func gauge(parent: Node, app: Control, ids: Array) -> void:
+## `compact` (thème sombre seulement) : une seule ligne, étoiles, cran et durées (écran Options de carrière).
+static func gauge(parent: Node, app: Control, ids: Array, dark: bool = false, compact: bool = false) -> void:
 	var bench := benchmark(app)
 	var costs: Dictionary = bench.get("costs", {})
 	var result := estimate(costs, ids)
-	var block := G.v(5)
+	if dark and compact:
+		_compact_gauge(parent, result)
+		return
+	var block := C.v(6) if dark else G.v(5)
 	block.name = "LeagueDetailGauge"
 	parent.add_child(block)
-	block.add_child(G.label("VITESSE DE JEU ESTIMÉE", 11, G.MUTED))
+	block.add_child(C.label("Vitesse de jeu estimée", 20, C.GOLD, true, 700) if dark else G.label("VITESSE DE JEU ESTIMÉE", 11, G.MUTED))
 	if result.is_empty():
-		block.add_child(G.wrap("Mesure de ta machine en cours… La jauge s’affiche dans un instant.", 13, G.MUTED))
+		block.add_child(C.wrap("Mesure de ta machine en cours… La jauge s’affiche dans un instant.", 20, C.MUTED) if dark else G.wrap("Mesure de ta machine en cours… La jauge s’affiche dans un instant.", 13, G.MUTED))
 		return
 	var level: Dictionary = result.level
-	var tint := state_color(level)
+	var tint := state_color(level, dark)
 	var stars := int(result.stars)
+	if dark:
+		var line := C.h(16)
+		block.add_child(line)
+		var dark_row := C.h(3)
+		dark_row.name = "LeagueDetailStars"
+		dark_row.set_meta("stars", stars)
+		dark_row.tooltip_text = "%d étoile%s sur 5 : plus il y a d’étoiles, plus le jeu avance vite." % [stars, "s" if stars > 1 else ""]
+		line.add_child(dark_row)
+		for i in 5:
+			var dark_star := C.label("★" if i < stars else "☆", 38, tint if i < stars else Color(C.MUTED, .55), true, 700)
+			dark_star.name = "Star%d" % (i + 1)
+			dark_row.add_child(dark_star)
+		var dark_verdict := C.label(str(level.get("label", "")), 30, tint, true, 700)
+		dark_verdict.name = "LeagueDetailVerdict"
+		dark_verdict.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		line.add_child(dark_verdict)
+		var dark_timing := C.wrap("≈ %s par semaine de jeu · ≈ %s par saison" % [duration(result.weekMs), duration(result.seasonMs)], 22, C.IVORY)
+		dark_timing.name = "LeagueDetailTiming"
+		block.add_child(dark_timing)
+		return
 	var head := G.h(10)
 	block.add_child(head)
 	var row := G.h(2)
@@ -148,6 +174,42 @@ static func gauge(parent: Node, app: Control, ids: Array) -> void:
 	timing.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(timing)
 
+static func _compact_gauge(parent: Node, result: Dictionary) -> void:
+	var line := C.h(10)
+	line.name = "LeagueDetailGauge"
+	parent.add_child(line)
+	var caption := C.label("Vitesse estimée", 19, C.GOLD, true, 700)
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	line.add_child(caption)
+	if result.is_empty():
+		var pending := C.label("Mesure de ta machine en cours…", 18, C.MUTED, false)
+		pending.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		line.add_child(pending)
+		return
+	var level: Dictionary = result.level
+	var tint := state_color(level, true)
+	var stars := int(result.stars)
+	var row := C.h(1)
+	row.name = "LeagueDetailStars"
+	row.set_meta("stars", stars)
+	row.tooltip_text = "%d étoile%s sur 5 : plus il y a d’étoiles, plus le jeu avance vite." % [stars, "s" if stars > 1 else ""]
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	line.add_child(row)
+	for i in 5:
+		var star := C.label("★" if i < stars else "☆", 26, tint if i < stars else Color(C.MUTED, .55), true, 700)
+		star.name = "Star%d" % (i + 1)
+		row.add_child(star)
+	var verdict := C.label(str(level.get("label", "")), 23, tint, true, 700)
+	verdict.name = "LeagueDetailVerdict"
+	verdict.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	line.add_child(verdict)
+	var timing := C.label("≈ %s par semaine · ≈ %s par saison" % [duration(result.weekMs), duration(result.seasonMs)], 18, C.MUTED, false)
+	timing.name = "LeagueDetailTiming"
+	timing.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	timing.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	timing.clip_text = true
+	line.add_child(C.fill(timing))
+
 static func machine_line(app: Control) -> String:
 	var bench := benchmark(app)
 	if bench.is_empty(): return "Ta machine : mesure en cours."
@@ -158,11 +220,29 @@ static func machine_line(app: Control) -> String:
 	return "Ta machine : " + " · ".join(parts) + "."
 
 ## Encart de la page de création : résumé, jauge et accès au choix détaillé.
-static func summary(app: Control, parent: Node, own: String, catalogue: Array) -> void:
+## `dark` : contenu posé directement dans `parent` (section sombre de l'écran Options de carrière),
+## textes du thème sombre ; le bouton rend la main à l'appelant pour son style.
+static func summary(app: Control, parent: Node, own: String, catalogue: Array, dark: bool = false) -> Button:
 	var all := leagues(app, catalogue)
-	if all.size() < 2: return
+	if all.size() < 2: return null
 	request_benchmark(app)
 	var ids := selected(app, own, all)
+	if dark:
+		var names := PackedStringArray()
+		for league: Dictionary in all:
+			if league.id in ids: names.append(str(league.name))
+		var count := C.label("%d en détail complet sur %d · les autres en consultation" % [ids.size(), all.size()], 22, C.IVORY, false, 600)
+		count.name = "CreationLeagueDetailCount"
+		parent.add_child(count)
+		var followed := C.wrap("En détail : " + ", ".join(names) + ".", 19, C.MUTED)
+		followed.name = "CreationLeagueDetailNames"
+		parent.add_child(followed)
+		gauge(parent, app, ids, true)
+		var choose := G.button("Choisir les championnats…", func(): open(app, own, catalogue))
+		choose.name = "CreationLeagueDetailOpen"
+		choose.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		parent.add_child(choose)
+		return choose
 	var box := G.card(parent, G.GOLD)
 	box.name = "CreationLeagueDetail"
 	box.add_child(G.label("CHAMPIONNATS SUIVIS", 11, G.MUTED))
@@ -171,6 +251,30 @@ static func summary(app: Control, parent: Node, own: String, catalogue: Array) -
 	var open_button := G.button("Choisir les championnats…", func(): open(app, own, catalogue))
 	open_button.name = "CreationLeagueDetailOpen"
 	box.add_child(open_button)
+	return open_button
+
+## Écran Options de carrière : bascule un championnat entre détail complet et consultation
+## (le championnat du club reste toujours en détail), puis reconstruit la page.
+static func toggle(app: Control, own: String, catalogue: Array, id: String) -> void:
+	if id == own: return
+	var all := leagues(app, catalogue)
+	var ids := selected(app, own, all)
+	if id in ids: ids.erase(id)
+	else: ids.append(id)
+	app.management_ui[SELECTION] = ordered(ids, all)
+	app.management_ui[CUSTOM] = true
+	app._render(false)
+
+## Raccourcis de l'écran Options : « auto » (choix selon le PC), « all » (tout en détail), « own » (seulement le club).
+static func preset(app: Control, own: String, catalogue: Array, kind: String) -> void:
+	var all := leagues(app, catalogue)
+	if kind == "auto":
+		app.management_ui.erase(CUSTOM)
+		app.management_ui.erase(SELECTION)
+	else:
+		app.management_ui[SELECTION] = all.map(func(league: Dictionary): return str(league.id)) if kind == "all" else ([own] if not own.is_empty() else [])
+		app.management_ui[CUSTOM] = true
+	app._render(false)
 
 ## Liste envoyée à new_career (le moteur ajoute de toute façon le championnat du club).
 static func payload(app: Control, own: String, catalogue: Array) -> Array:

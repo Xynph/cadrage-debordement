@@ -249,4 +249,4 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
  }
  return {inspect,install,get,project,installed};
 }
-module.exports={createStore,analyse,readZip,imageInfo,crc32,LIMITS,WORLD_LIMITS};
+module.exports={createStore,playerIdentity,analyse,readZip,imageInfo,crc32,LIMITS,WORLD_LIMITS};

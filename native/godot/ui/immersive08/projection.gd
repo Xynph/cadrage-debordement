@@ -60,6 +60,14 @@ static func next_fixture_caption(model: Dictionary, empty_text: String) -> Strin
 	if fixture.is_empty(): return empty_text
 	return G.club_name(fixture.get("home",{})) + " – " + G.club_name(fixture.get("away",{})) + " · " + str(fixture.get("label",""))
 
+## Derby : tension de la rivalité avec l'adversaire de la prochaine rencontre (moteur : next.derby), 0 pour un match ordinaire.
+static func derby_tension(model: Dictionary) -> int:
+	var derby: Variant = next_fixture(model).get("derby")
+	return int(derby.get("tension", 0)) if derby is Dictionary else 0
+
+static func is_derby(model: Dictionary) -> bool:
+	return derby_tension(model) > 0
+
 static func plural(count: int, one: String, many: String) -> String:
 	return "%d %s" % [count, one if absi(count) <= 1 else many]
 
