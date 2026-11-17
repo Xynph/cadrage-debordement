@@ -59,6 +59,8 @@ declare -A suite_limits=(
   [tests/godot-prolongations-staff.cjs]=120
   # Même case dans le vrai jeu : carrière Monde côté Node (Toulouse), puis Godot avec le vrai moteur.
   [tests/godot-prolongations-staff-carriere.cjs]=900
+  # Excédents réinvestis : carrière Monde côté Node (Toulouse, trois matchs), puis Godot (Club > Infrastructures, Finances).
+  [tests/godot-investissements-excedents.cjs]=1200
   # Finitions critiques : carrière Monde (création, un match, jour de match suivant) côté Node puis un passage Godot ; ~4 min en local.
   [tests/godot-finitions.cjs]=900
   # Mesure de la jauge de vitesse : deux carrières Monde (~4 min chacune), informative.

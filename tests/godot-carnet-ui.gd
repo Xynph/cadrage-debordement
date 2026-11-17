@@ -175,7 +175,10 @@ func readability() -> void:
 	var rail: Control = named(app,"MatchNotebook")
 	var pitches: Array = app.match_screen.find_children("*","SubViewportContainer",true,false)
 	var pitch := pitches[0] as Control if not pitches.is_empty() else null
-	check(rail!=null and pitch!=null and pitch.get_global_rect().size.x>rail.get_global_rect().size.x,"Le carnet de match laisse la priorité au vrai terrain")
+	# Avant le coup d'envoi en 1080p, le tableau de bord d'avant-match (match_avant.gd) remplace terrain et carnet.
+	var avant: Control = app.match_screen.find_child("MatchOpening",true,false)
+	if avant!=null and avant.is_visible_in_tree(): check(rail!=null and not rail.is_visible_in_tree(),"Avant le coup d'envoi : le tableau de bord remplace le carnet")
+	else: check(rail!=null and pitch!=null and pitch.get_global_rect().size.x>rail.get_global_rect().size.x,"Le carnet de match laisse la priorité au vrai terrain")
 func state() -> Dictionary:
 	await command("export")
 	return JSON.parse_string(app.model.meta.exportText).state

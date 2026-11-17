@@ -75,7 +75,7 @@ function moteur(){
  // nulle par équipe, borné) s'ajoute à l'impact brut : la note suit la ligne de stats sans déplacer
  // la base 6,5 ni l'étalonnage par poste.
  const DE_LA_FEUILLE={essais:'essais',plaquages:'plaquages',manques:'plaquagesManques',metres:'metres',courses:'courses',franchissements:'franchissements',recuperations:'recuperations',pertes:'ballonsPerdus',penalites:'penalitesConcedees'};
- const EN_PLUS=['passes','offloads','defenseursBattus','points','soutiensRuck','coupsDePied'];
+ const EN_PLUS=['passes','offloads','defenseursBattus','points','soutiensRuck','coupsDePied','transformations','transformationsTentees','penalitesReussies','penalitesTentees'];
  function feuilleDansNotes(joueurs,feuille,apports){
   for(const [id,n] of Object.entries(joueurs)){
    const f=feuille.joueurs[id];
@@ -200,7 +200,9 @@ function moteur(){
 // État `S.matchNotes` (version 2 ; la version 1 est migrée au premier usage) :
 //  saison  : saison en cours ;
 //  joueurs : {id:{s:[matchs, somme des notes ×10, minutes, essais, plaquages, mètres, hommes du match,
-//            passes, franchissements, plaquages manqués, points], f:[5 dernières notes ×10]}} (7 totaux avant le 14/11/2026)
+//            passes, franchissements, plaquages manqués, points, ballons récupérés (grattages), buts réussis, buts tentés],
+//            f:[5 dernières notes ×10]}} (7 totaux avant le 14/11/2026, 11 avant le 17/11/2026 ; buts = transformations
+//            et pénalités, pour la réussite au but de l'écran d'avant-match, native/engine/avant-match.cjs)
 //            pour chaque joueur ayant joué (tous les clubs) ;
 //  detail  : {id:[[semaine, adversaire, compétition, minutes, note×10, essais, plaquages, mètres, homme du match (0/1),
 //            courses, passes, franchissements, plaquages manqués, défenseurs battus, offloads, ballons récupérés,
@@ -223,7 +225,7 @@ function factory(){
  // Totaux de saison (tous les joueurs du monde, ~4 000) : 4 champs de plus, stockés en entiers dans le
  // même tableau ; détail (effectif du manager seulement) : 10 champs de plus par match. Les anciennes
  // lignes (7 totaux, détail à 9 champs, saison passée à 6) restent valides et s'affichent « — ».
- const TOTAUX=11,DETAIL_EN_PLUS=['courses','passes','franchissements','manques','defenseursBattus','offloads','recuperations','pertes','points','penalites'];
+ const TOTAUX=14,DETAIL_EN_PLUS=['courses','passes','franchissements','manques','defenseursBattus','offloads','recuperations','pertes','points','penalites'];
  const VERSION=2,MAX_DETAIL=60,MAX_PASSEES=8,MAX_RECOMPENSES=40,CONFIANCE_MAX=6,MAX_SAISONS=40,MAX_SEMAINE=4000;
  const calc=CDMatchNotesMoteur;
  const state=()=>typeof S==='undefined'?null:S;
@@ -370,9 +372,10 @@ function factory(){
    if(n.minutes<=0)continue;
    const note10=Math.round(n.note*10),hdm=r.hommeDuMatch===id?1:0;
    const j=st.joueurs[id]||(st.joueurs[id]={s:Array(TOTAUX).fill(0),f:[]});
-   while(j.s.length<TOTAUX)j.s.push(0); // ancienne sauvegarde : 7 totaux, complétés à zéro
+   while(j.s.length<TOTAUX)j.s.push(0); // ancienne sauvegarde : 7 ou 11 totaux, complétés à zéro
    j.s[0]++;j.s[1]+=note10;j.s[2]+=n.minutes;j.s[3]+=n.essais;j.s[4]+=n.plaquages;j.s[5]+=n.metres;j.s[6]+=hdm;
    j.s[7]+=n.passes|0;j.s[8]+=n.franchissements|0;j.s[9]+=n.manques|0;j.s[10]+=n.points|0;
+   j.s[11]+=n.recuperations|0;j.s[12]+=(n.transformations|0)+(n.penalitesReussies|0);j.s[13]+=(n.transformationsTentees|0)+(n.penalitesTentees|0);
    j.f.push(note10);if(j.f.length>5)j.f.shift();
    if(n.cote===user){const d=st.detail[id]||(st.detail[id]=[]);d.push([w,clubIdDe(l,1-n.cote),comp,n.minutes,note10,n.essais,n.plaquages,n.metres,hdm,...DETAIL_EN_PLUS.map(k=>n[k]|0)]);if(d.length>MAX_DETAIL)d.shift();}
    if(reg){
@@ -562,7 +565,7 @@ function factory(){
   const st=s.matchNotes;
   check(obj(st)&&(st.version===VERSION||st.version===1)&&int(st.saison,1,s.season)&&obj(st.joueurs)&&obj(st.detail)&&obj(st.passees)&&obj(st.confiance)&&Array.isArray(st.recompenses)&&st.recompenses.length<=MAX_RECOMPENSES,'schéma invalide');
   const nombres=(a,n)=>Array.isArray(a)&&a.length===n&&a.every(x=>int(x,0,1e7));
-  for(const j of Object.values(st.joueurs))check(obj(j)&&(nombres(j.s,7)||nombres(j.s,TOTAUX))&&Array.isArray(j.f)&&j.f.length<=5&&j.f.every(x=>int(x,10,100))&&j.s[1]<=j.s[0]*100,'joueur invalide');
+  for(const j of Object.values(st.joueurs))check(obj(j)&&(nombres(j.s,7)||nombres(j.s,11)||nombres(j.s,TOTAUX))&&Array.isArray(j.f)&&j.f.length<=5&&j.f.every(x=>int(x,10,100))&&j.s[1]<=j.s[0]*100,'joueur invalide');
   for(const d of Object.values(st.detail))check(Array.isArray(d)&&d.length<=MAX_DETAIL&&d.every(r=>Array.isArray(r)&&(r.length===9||r.length===9+DETAIL_EN_PLUS.length)&&int(r[0],0,100)&&int(r[1],-1,100000)&&typeof r[2]==='string'&&r[2].length<=40&&int(r[3],0,240)&&int(r[4],10,100)&&[5,6,7].every(k=>int(r[k],0,100000))&&(r[8]===0||r[8]===1)&&r.slice(9).every(x=>int(x,0,100000))),'détail invalide');
   for(const d of Object.values(st.passees))check(Array.isArray(d)&&d.length<=MAX_PASSEES&&d.every(r=>Array.isArray(r)&&(r.length===6||r.length===8)&&int(r[0],1,s.season)&&int(r[1],-1,100000)&&int(r[2],1,500)&&int(r[3],10,100)&&int(r[4],0,10000)&&int(r[5],0,500)&&r.slice(6).every(x=>int(x,0,1e7))),'saison passée invalide');
   for(const v of Object.values(st.confiance))check(int(v,-CONFIANCE_MAX,CONFIANCE_MAX),'confiance invalide');

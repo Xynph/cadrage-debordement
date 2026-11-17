@@ -120,7 +120,7 @@ test('Saison Monde : stats de la fiche réalistes par poste, essais des joueurs 
     const agg = {}, inconnus = new Set();
     for (const [id, j] of Object.entries(etat.matchNotes.joueurs)) {
       const [m, , minutes, essais, plaquages, metres] = j.s;
-      if (m < Math.min(5, JOURNEES - 1) || minutes / m < 55 || j.s.length !== 11) continue;
+      if (m < Math.min(5, JOURNEES - 1) || minutes / m < 55 || j.s.length < 11) continue;
       const g = groupe(pos.get(id)); if (!g) { inconnus.add(pos.get(id)); continue; }
       const a = agg[g] || (agg[g] = { joueurs: 0, minutes: 0, matchs: 0, essais: 0, plaquages: 0, metres: 0, manques: 0, passes: 0 });
       a.joueurs++; a.minutes += minutes; a.matchs += m; a.essais += essais; a.plaquages += plaquages; a.metres += metres; a.passes += j.s[7]; a.manques += j.s[9];

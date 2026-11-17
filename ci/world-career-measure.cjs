@@ -64,6 +64,25 @@ function directions(s){
  return {strategies,byLeague,traits:Object.fromEntries(Object.entries(traits).map(([k,v])=>[k,{median:median(v),min:Math.min(...v),max:Math.max(...v)}])),
   tally:d.tally||null,news:(d.feed||[]).slice(0,25)};
 }
+// Investissements des excédents (club-investments.cjs) : installations, staff, accueil et chantiers aboutis du club joué,
+// des clubs de son championnat (médiane et maximum) et des trois plus riches (trésorerie) de ce championnat.
+function investissements(s,userLeague){
+ const info=id=>s.worldManagement?.clubInfo?.[id]??null,staff=Array.isArray(s.staffCareer?.people)?s.staffCareer.people.flat():[];
+ const CORE=['coach','assistant','formation','scout','analyst'];
+ const niveauStaff=id=>median(staff.filter(p=>p&&p.clubId===id&&CORE.includes(p.role)&&Number.isFinite(p.level)).map(p=>p.level));
+ const accueil=id=>s.clubInvest?.clubs?.[id]?.accueil??null;
+ const ligne=c=>({id:c.id,cash:round(c.cash/1e6,3),installations:info(c.id)?.facilities??null,staffMedian:niveauStaff(c.id),accueil:accueil(c.id),
+  investi:s.clubInvest?.clubs?.[c.id]?round(s.clubInvest.clubs[c.id].montant/1e6,3):null});
+ const ligue=s.clubs.filter(c=>leagueOf(s,c)===userLeague),fac=ligue.map(c=>info(c.id)?.facilities).filter(Number.isFinite),st=ligue.map(c=>niveauStaff(c.id)).filter(Number.isFinite),ac=ligue.map(c=>accueil(c.id)).filter(Number.isFinite);
+ const tally=s.clubDirections?.tally||{},chantiers=kind=>Object.entries(tally).filter(([k])=>k.split('|')[0]===String(s.season)&&k.split('|')[2]===kind),
+  parLigue=kind=>Object.fromEntries(chantiers(kind).map(([k,v])=>[k.split('|')[1],v])),
+  total=kind=>chantiers(kind).reduce((n,[,v])=>n+v,0);
+ return {season:s.season,actif:!!s.clubInvest,user:ligne(s.clubs[s.club]),
+  league:{key:userLeague,installations:{median:median(fac),max:fac.length?Math.max(...fac):null},staffMedian:median(st),accueil:{median:median(ac),max:ac.length?Math.max(...ac):null}},
+  richest:ligue.slice().sort((a,b)=>b.cash-a.cash||a.id-b.id).slice(0,3).map(ligne),
+  chantiers:{travaux:{total:total('investissements:travaux'),parChampionnat:parLigue('investissements:travaux'),userLeague:parLigue('investissements:travaux')[userLeague]??0},
+   staff:{total:total('investissements:staff'),parChampionnat:parLigue('investissements:staff'),userLeague:parLigue('investissements:staff')[userLeague]??0}}};
+}
 function observe(label,s,storeText,profileBytes,exportResult,events,elapsedMs){
  const leagues={};
  for(const c of s.clubs){
@@ -86,7 +105,7 @@ function observe(label,s,storeText,profileBytes,exportResult,events,elapsedMs){
  return {label,season:s.season,phase:s.phase,elapsedMs,byLeague,user,overRevenueRule:ratio,
   professionals:s.clubs.reduce((n,c)=>n+c.players.length,0),academies,freeAgents:s.economy.freeAgents.length,market:s.market.length,
   retired:s.development?.retired?.length,userCash:round(s.clubs[s.club].cash/1e6),userPayroll:round(s.clubs[s.club].players.reduce((n,p)=>n+p.salary,0)*52/1e6),
-  budget,debtClubs:debt,userLedger:s.__ledger,
+  budget,debtClubs:debt,userLedger:s.__ledger,investissements:investissements(s,userLeague),
   stateBytes:Buffer.byteLength(storeText),profileBytes,stateSizes:sizes(storeText,s),export:exportResult,events,
   interclub:(s.economy?.transfers||[]).filter(t=>/ achète | prête | rapatrie | engage /.test(t.text||'')).length,directions:directions(s)};
 }
@@ -121,6 +140,7 @@ function run(o){
    console.log('STAFF '+JSON.stringify({label,season:s.season,...par,total:roles.reduce((n,r)=>n+par[r],0),
     desk:desk?{decisions:(desk.decisions||[]).length,prolonges:lots.reduce((n,l)=>n+(l.prolonges?.length||0),0),arrivees:lots.reduce((n,l)=>n+(l.recrues?.length||0),0)}:null}));
   }
+  console.log('INV '+JSON.stringify({label,...row.investissements}));
   if(o.keep){fs.mkdirSync(o.keep,{recursive:true});fs.copyFileSync(profile,path.join(o.keep,label+'.json'));}
   save();
  };
