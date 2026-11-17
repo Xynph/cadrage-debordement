@@ -405,6 +405,20 @@
         { "id": "rien", "libelle": "Rien de spécial", "effets": {}, "resultat": "La relation suit son cours." }
       ]
     },
+    "investissements": {
+      "categorie": "direction", "declencheur": "investissements", "priorite": 20, "intervalle": 330, "arret": true, "ecran": "Finances",
+      "expediteur": "Le président",
+      "formulations": [
+        {"sujet": "Ce que nous faisons de l'excédent", "corps": "Coach, la saison dernière nous a laissé plus que la réserve que le club se fixe. Le conseil a décidé de réinvestir {montant} pendant la saison, semaine après semaine, plutôt que de laisser dormir l'argent.\n\nVoici ce que je propose :\n- installations : {installations}. {travaux}\n- staff : {staff}. {staff_etat}\n- accueil et billetterie : {accueil}. {accueil_etat}\n\nRien n'arrive d'un coup : les travaux se paient au fil des semaines et l'entretien augmentera ensuite. Si tu veux mettre l'accent ailleurs, dis-le-moi maintenant ; sinon je garde cette répartition."},
+        {"sujet": "Réinvestir l'excédent", "corps": "Le conseil a tranché : {montant} de l'excédent seront réinvestis dans le club au fil de la saison.\n\nMa proposition :\n- installations : {installations}. {travaux}\n- staff : {staff}. {staff_etat}\n- accueil et billetterie : {accueil}. {accueil_etat}\n\nC'est toi qui vis le quotidien du groupe : si une priorité te paraît plus utile, je t'écoute. Je ne reviendrai pas sur la répartition en cours de saison."}
+      ],
+      "reponses": [
+        {"id": "equilibre", "libelle": "Valider la répartition proposée", "effets": {"orientation": "equilibre", "confiance": 1}, "resultat": "Le président garde sa répartition."},
+        {"id": "installations", "libelle": "Mettre l'accent sur les installations", "effets": {"orientation": "installations"}, "resultat": "Les travaux passent en priorité : la majorité de l'enveloppe ira aux installations."},
+        {"id": "staff", "libelle": "Mettre l'accent sur le staff", "effets": {"orientation": "staff"}, "resultat": "Formations et adjoints d'abord : la majorité de l'enveloppe ira au staff."},
+        {"id": "accueil", "libelle": "Mettre l'accent sur l'accueil du public", "effets": {"orientation": "accueil", "supporters": 1}, "resultat": "Billetterie, buvettes et hospitalités d'abord : la majorité de l'enveloppe ira à l'accueil."}
+      ]
+    },
     "president": {
       "categorie": "direction", "declencheur": "president", "priorite": 24, "arret": true, "ecran": "Club",
       "expediteur": "Le président",
