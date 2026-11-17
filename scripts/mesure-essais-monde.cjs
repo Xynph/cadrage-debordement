@@ -18,6 +18,9 @@ const opt = (nom, def) => { const i = args.indexOf(nom); return i >= 0 ? args[i 
 const libres = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && args[i - 1].startsWith('--')));
 const graine = Number(libres[0] ?? 4242), club = Number(libres[1] ?? 102);
 const semaines = Number(opt('--semaines', 80)), sortie = opt('--json', null), ancien = args.includes('--ancien');
+// Sélections : convocations internationales comme dans le jeu (calendrier quotidien, carrière internationale), par défaut
+// depuis le 17/11 ; --sans-selections reproduit les mesures d'avant (aucun international ne quitte son club).
+const selections = !args.includes('--sans-selections');
 
 // Crochets en lecture seule : aucun tirage, aucun état de partie modifié (seulement des champs `__mesure`
 // sur le match, jamais sauvegardé puisque les matchs IA ne sont pas conservés).
@@ -63,8 +66,8 @@ function niveau(h) {
   return JSON.parse(h.run(`JSON.stringify(Object.fromEntries(S.clubs.map(c=>[c.id,(()=>{const n=c.players.filter(p=>!p.injury).map(p=>roleNote(p)).sort((a,b)=>b-a).slice(0,23);return n.reduce((a,b)=>a+b,0)/Math.max(1,n.length);})()])))`));
 }
 
-function mesurer({ graine = 4242, club = 102, semaines = 80, ancien = false, journal = false, reglage = '' } = {}) {
-  const h = context(graine, { console: false });
+function mesurer({ graine = 4242, club = 102, semaines = 80, ancien = false, journal = false, reglage = '', selections = true } = {}) {
+  const h = context(graine, { console: false, selections });
   if (ancien) h.run('ESSAIS_RULES=0');
   if (reglage) h.run(reglage);
   h.start(club);
@@ -196,7 +199,7 @@ function tableau(rows, cols) {
 
 if (require.main === module) {
   const relire = opt('--analyser', null);
-  const d = relire ? JSON.parse(fs.readFileSync(relire, 'utf8')).brut : mesurer({ graine, club, semaines, ancien, journal: true, reglage: opt('--regler', '') });
+  const d = relire ? JSON.parse(fs.readFileSync(relire, 'utf8')).brut : mesurer({ graine, club, semaines, ancien, journal: true, reglage: opt('--regler', ''), selections });
   const a = analyser(d);
   if (sortie && !relire) fs.writeFileSync(sortie, JSON.stringify({ analyse: a, brut: d }));
   console.log(`Graine ${a.graine}, club ${a.club}${d.ancien ? ' (coefficients d’avant)' : ''} : ${a.matchs} matchs au moteur complet.`);

@@ -28,7 +28,8 @@ test('opens camp once, warns only for the managed nation and own club and blocks
   const game = create();
   const initial = game.initial('2026-12-01', 42);
   const opening = advance(game, initial, '2027-01-31');
-  const france = opening.state.callups.find(camp => camp.nation === 'FRA');
+  // Le camp de novembre (semaine de repos comprise, jusqu'au 6 décembre) est aussi actif au départ du 1er décembre.
+  const france = opening.state.callups.find(camp => camp.nation === 'FRA' && camp.competitionId.startsWith('six-nations'));
   assert.equal(france.from, '2027-01-31');
   assert.ok(france.playerIds.includes('lnr:hook'));
   assert.ok(!france.playerIds.includes('lnr:foreign'));
