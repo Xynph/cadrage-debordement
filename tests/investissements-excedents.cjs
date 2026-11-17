@@ -220,10 +220,12 @@ test('Moteur Monde : trois lignes pour un montant, chantiers aboutis, trésoreri
       const gerees=S.clubs.filter(x=>x.id!==c.id).slice(0,40).map(x=>x.id);
       const avantGeres=gerees.map(id=>({id,fac:worldClub(id).facilities,niv:investStaff(id).reduce((s,x)=>s+x.level,0),cash:S.clubs[id].cash}));
       let ecartAutres=0,ecartRecettes=0,pires=0,depenses=0,attendu=0,cashJoue=0,cashBase=0,maxLignes=0;
-      const total=l=>l.reduce((s,x)=>s+x.amount,0),hors=l=>l.filter(x=>!/Billetterie|Boutique|Investissements/.test(x.title)).map(x=>[x.title,x.amount]);
+      const total=l=>l.reduce((s,x)=>s+x.amount,0),hors=l=>l.filter(x=>!/Billetterie|Boutique|Investissements|Frais de match/.test(x.title)).map(x=>[x.title,x.amount]);
       for(let w=0;w<${ouv.semaines};w++){
         const rc={pair:w%2?[c.id,autre]:[autre,c.id],neutral:false,phase:'league'};
-        const k=[p.accueil,e.saison];e.saison=-1;p.accueil=0;const base=budgetSemaine(forces,repere,c,rc,'S');e.saison=k[1];p.accueil=k[0];
+        // Les frais de match (recettes imprévues) se cumulent dans le compteur : la semaine de comparaison ne doit pas les compter deux fois.
+        const cpt=S.clubBudget.clubs[c.id],f0=[cpt.imprevu,cpt.fraisMatch];
+        const k=[p.accueil,e.saison];e.saison=-1;p.accueil=0;const base=budgetSemaine(forces,repere,c,rc,'S');e.saison=k[1];p.accueil=k[0];[cpt.imprevu,cpt.fraisMatch]=f0;
         const reel=budgetSemaine(forces,repere,c,rc,'S');
         maxLignes=Math.max(maxLignes,reel.filter(x=>/Investissements/.test(x.title)).length);
         if(JSON.stringify(hors(base))!==JSON.stringify(hors(reel)))ecartAutres++;

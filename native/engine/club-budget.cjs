@@ -60,13 +60,29 @@ const TOLERANCE_DEFICIT = 0.02;   // en part des recettes : en dessous, personne
 // garde une réserve de 10 à 20 % de ses recettes, propre à lui. Le propriétaire ne comble plus des pertes
 // que la réserve peut absorber (fin de l'effet cliquet), et au-delà de la réserve, l'excédent ne dort pas :
 // il est réinvesti dans le club la saison suivante, ou remonte en partie à l'actionnaire.
-const RESERVE = Object.freeze({ min: 0.1, ecart: 0.1 });
+// Suite de #875 : la réserve est dégressive. Un club la compte sur ses 20 premiers M€ de recettes
+// (10 à 20 %), puis 5 % au-delà : un coussin pensé pour payer les salaires et passer une mauvaise
+// passe, pas pour thésauriser. Le Stade Toulousain réel (47 M€ de chiffre d'affaires, résultat net de
+// 0,2 à 1,5 M€ par an) ou les clubs anglais (tous en perte) n'empilent pas des dizaines de M€.
+const RESERVE = Object.freeze({ min: 0.1, ecart: 0.1, seuil: 20e6, auDela: 0.05 });
+// Au-delà de la moitié de la réserve, l'excédent ne dort plus : il est engagé en entier la saison
+// suivante (investissements et, pour un groupe actionnaire, dividende), dans les mêmes proportions.
+const EXCEDENT_DORMANT = 0.5;
 const EXCEDENTS = Object.freeze({
   mecene: Object.freeze({ investi: 0.6, dividende: 0 }),
   entreprise: Object.freeze({ investi: 0.35, dividende: 0.35 }),
   association: Object.freeze({ investi: 0.5, dividende: 0 }),
 });
-const reserveCible = (annuel, clubId) => Math.round(annuel * (RESERVE.min + RESERVE.ecart * unite('reserve|' + clubId)) / 10000) * 10000;
+const reserveCible = (annuel, clubId) => Math.round(((RESERVE.min + RESERVE.ecart * unite('reserve|' + clubId)) * Math.min(annuel, RESERVE.seuil) +
+  RESERVE.auDela * Math.max(0, annuel - RESERVE.seuil)) / 10000) * 10000;
+// Part de l'excédent engagée à l'ouverture : la part propre au propriétaire, ou davantage pour qu'il
+// ne reste pas plus d'une demi-réserve qui dort.
+function engagement(surplus, reserve, type) {
+  const regle = EXCEDENTS[type], part = regle.investi + regle.dividende;
+  if (!(surplus > 0) || !(part > 0)) return { investissement: 0, dividende: 0 };
+  const engage = Math.min(surplus, Math.max(surplus * part, surplus - EXCEDENT_DORMANT * reserve));
+  return { investissement: rond(engage * regle.investi / part), dividende: rond(engage * regle.dividende / part) };
+}
 const cibleDe = compte => Number.isFinite(compte?.reserve) ? compte.reserve : Infinity;
 // Ce que le propriétaire verse à la clôture : il comble les pertes, dans la limite promise, mais seulement
 // ce qui fait passer la caisse sous la réserve du club. fin : caisse avant son versement.
@@ -161,9 +177,10 @@ const affluence = (formeClub, alea) => 0.78 + 0.36 * formeClub + 0.08 * alea;
 // Ce qu'un club géré par le jeu ajuste dans son fonctionnement, sur l'année : il réduit
 // ses dépenses quand son déficit dépasse ce que le propriétaire comble, et il réinvestit
 // l'essentiel de ses excédents. Positif = dépense en plus.
+const TRAIN_DE_VIE = 0.7;
 function ajustement(annuel, masseAnnuelle, enveloppe) {
   const resultat = annuel * (1 - FONCTIONNEMENT) - masseAnnuelle * (1 + COTISATIONS);
-  if (resultat > 0) return 0.7 * resultat;
+  if (resultat > 0) return TRAIN_DE_VIE * resultat;
   const economies = Math.min(0.15 * annuel, 0.7 * Math.max(0, -resultat - enveloppe));
   return economies > 0 ? -economies : 0;
 }
@@ -258,13 +275,41 @@ function ouverture({ forces, saison, clubs, types = null, excedents = false }) {
   return { version: 1, saison, semaines: 0, alertes: {}, clubs: clubs.map(club => {
     const p = proprietaire(forces, club.id, types?.[club.id]), division = forces.find(force => force.id === club.id).division, taille = Math.max(2, tailles.get(division));
     const reserve = reserveCible(annuels.get(club.id), club.id), surplus = excedents ? Math.max(0, club.cash - reserve) : 0;
-    const dividende = rond(surplus * EXCEDENTS[p.type].dividende), investissement = rond(surplus * EXCEDENTS[p.type].investi);
+    const { dividende, investissement } = engagement(surplus, reserve, p.type);
     return { type: p.type, enveloppe: p.enveloppe, depart: club.cash - dividende, recettes: 0, charges: 0, salaires: 0, masse: Math.round(club.masse), division, rang: Math.ceil(taille / 2), taille,
       reserve, investissement, dividende };
   }) };
 }
 const annonceDividende = montant => `Le groupe actionnaire a fait remonter ${euros(montant)} de la trésorerie du club : la réserve reste intacte, le surplus lui revient.`;
 const annonceInvestissement = (montant, reserve) => `La trésorerie dépasse la réserve que le club se fixe (${euros(reserve)}). Les dirigeants réinvestiront ${euros(montant)} cette saison dans les installations, le staff et l’accueil : le président t’écrit pour en parler.`;
+// Recettes de guichet imprévues (suite de #875). Le train de vie d'un club suit le budget voté : 70 % de
+// l'excédent prévu y retourne (ajustement). Mais une série de victoires remplit le stade, une phase finale
+// à domicile rapporte une recette entière en plus, et ces recettes-là tombaient intégralement en caisse :
+// le meneur gagnait 4 à 5 M€ de plus par saison. Dans un vrai club, elles s'accompagnent de primes de
+// victoire et de qualification, d'accueil, de sécurité et de déplacements : 70 % en repartent aussi.
+// Écart de la semaine entre le guichet encaissé et le guichet attendu d'un match moyen (affluence 1, accueil
+// du club compris) ; une phase finale n'est jamais attendue. Négatif après une série de défaites.
+function recettesImprevues(ecritures, { forces, clubId, receptions, accueil = 1 }) {
+  const { regle, annuel } = regleDe(forces, clubId), matchs = Math.max(1, receptions ?? 13), facteur = Number.isFinite(accueil) && accueil > 0 ? accueil : 1;
+  const titre = e => e.title.slice(e.title.lastIndexOf(' · ') + 3);
+  const finale = ecritures.some(e => ['Billetterie de phase finale', 'Part de recette de phase finale'].includes(titre(e)));
+  let ecart = 0;
+  for (const e of ecritures) {
+    const t = titre(e);
+    if (t === 'Billetterie de phase finale' || t === 'Part de recette de phase finale') ecart += e.amount;
+    else if (t === 'Billetterie') ecart += e.amount - annuel * regle.billetterie * (1 - PART_ABONNEMENTS) / matchs * facteur;
+    else if (t === 'Boutique et buvettes') ecart += e.amount - (finale ? 0 : annuel * regle.boutique / matchs * facteur);
+  }
+  return rond(ecart);
+}
+// Ce que coûtent ces recettes imprévues, cumulées sur la saison (une défaite à domicile compense une
+// victoire) : 70 % du cumul positif, moins ce qui a déjà été payé. compte : compteur du club.
+function fraisDeMatch(compte, ecart) {
+  const imprevu = (Number.isFinite(compte?.imprevu) ? compte.imprevu : 0) + (Number.isFinite(ecart) ? ecart : 0);
+  const deja = Number.isFinite(compte?.fraisMatch) ? compte.fraisMatch : 0, montant = Math.max(0, rond(TRAIN_DE_VIE * imprevu - deja));
+  return { montant, imprevu, fraisMatch: deja + montant };
+}
+const LIBELLE_FRAIS_MATCH = 'Frais de match et primes de résultats';
 // Ajoute les écritures d'une semaine au compteur d'un club ; classement : {division, rang, taille} du moment.
 function compter(compte, ecritures, masseAnnuelle, classement = null) {
   for (const e of ecritures) {
@@ -504,6 +549,13 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
   repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle,formation:budgetCentre(c),investissement:b.clubs[c.id].investissement||0,
   // Accueil du stade relevé par les investissements des excédents (club-investments.cjs).
   accueil:typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1}));
+ // Mode Monde : les recettes de guichet imprévues (série de victoires, phase finale) coûtent aussi des primes et des frais.
+ if(!budgetFrance()){
+  const compte=b.clubs[c.id],accueil=typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1;
+  const frais=nativeClubBudget.fraisDeMatch(compte,nativeClubBudget.recettesImprevues(ecritures,{forces,clubId:c.id,receptions:repere.receptions[c.id]||12,accueil}));
+  compte.imprevu=frais.imprevu;compte.fraisMatch=frais.fraisMatch;
+  if(frais.montant>0)ecritures.push({title:libelle+' · '+nativeClubBudget.LIBELLE_FRAIS_MATCH,amount:-frais.montant});
+ }
  nativeClubBudget.compter(b.clubs[c.id],ecritures,masse*52,repere.classement[c.id]||null);
  return ecritures;
 }
@@ -782,5 +834,6 @@ const VALIDATION = `{
 }`;
 
 module.exports = Object.freeze({ PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
-  RESERVE, EXCEDENTS, reserveCible, apportProprietaire, annonceDividende, annonceInvestissement,
+  RESERVE, EXCEDENTS, EXCEDENT_DORMANT, TRAIN_DE_VIE, reserveCible, engagement, apportProprietaire, annonceDividende, annonceInvestissement,
+  recettesImprevues, fraisDeMatch, LIBELLE_FRAIS_MATCH,
   recettes, semaine, proprietaire, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros });
