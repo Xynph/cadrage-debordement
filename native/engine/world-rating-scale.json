@@ -16,8 +16,9 @@
   "guest": { "titulaire": 72, "rotation": 69, "reserviste": 67 }
  },
  "etages": { "cador": 2, "haut": 1, "milieu": 0, "bas": -1, "releguable": -2 },
- "etageScale": { "prem": 3, "champ": 2, "jlo-d2": 2 },
- "residual": { "known": 1.5, "unknown": 2.2, "limit": 5, "classCenter": 0.4, "classSpread": 0.2, "youngInternational": 2 },
+ "etageScale": { "elite": 1.25, "prem": 3.5, "urc": 2.5, "srp": 2, "jlo-d1": 2.25, "accession": 2, "jlo-d2": 2.5, "nationale": 2, "champ": 3 },
+ "etageScaleBas": { "accession": 1, "prem": 5, "urc": 5.5, "jlo-d1": 5, "jlo-d2": 5, "champ": 4.5 },
+ "residual": { "known": 2, "unknown": 2.8, "limit": 7, "outsideEliteCeiling": 84, "classCenter": 0.4, "classSpread": 0.2, "youngInternational": 2 },
  "age": { "seniorFrom": 23, "youngPerYear": 1.5, "veteranFrom": 33, "veteranPerYear": 1 },
  "potential": {
   "margins": [[19, 10], [22, 7], [25, 4], [28, 2], [30, 1], [99, 0]],
@@ -30,8 +31,9 @@
   "lowerTiers": ["nationale", "champ", "jlo-d2"],
   "spread": 2,
   "maxMargin": 12,
-  "per90Generation": 5,
+  "per90Generation": 4,
   "belowGeneration": 87,
+  "belowGenerationSteps": 3,
   "eliteLeagues": ["elite", "prem", "urc", "srp", "jlo-d1"],
   "outsideEliteCeiling": 87
  },
