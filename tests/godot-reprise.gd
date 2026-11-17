@@ -44,6 +44,8 @@ func run() -> void:
 	await press(next)
 	check(app.find_child("CreationCareerOptions",true,false)!=null and app.find_child("CreationClubGrid",true,false)==null,"Écran dédié aux options de carrière")
 	check(app.find_child("CreationLeagueDetail",true,false)!=null and app.find_child("CreationVaryCurrent",true,false)!=null,"Championnats suivis et niveau de départ sur l’écran des options")
+	var suivis := app.find_child("CreationLeagueDetailNames",true,false) as Label
+	check(suivis!=null and suivis.text.begins_with("En détail : ") and app.find_child("CreationLeagueDetailCount",true,false)!=null and app.find_child("CreationLeagueDetailOpen",true,false)!=null,"Championnats suivis : nombre, noms et choix détaillé dans la section sombre")
 	var choice := app.find_child("CreationStartChoice",true,false) as OptionButton
 	check(choice!=null and choice.item_count==3,"Trois départs proposés")
 	check(choice.selected==0 and choice.get_item_text(0).contains("13 juillet"),"Départ par défaut : reprise des premiers clubs")
