@@ -47,6 +47,17 @@ test('Carrière Monde : cap de matchs en carrière franchi → un courrier, une 
     const cent = recevoir();
     assert.equal(cent.length, 1);
     assert.equal(cent[0].n, 100);
+    // Plafond hebdomadaire de la catégorie « moments » atteint : le cap n'est pas perdu, il sort dès qu'une place se libère.
+    const joueur = vm.run(`(()=>{const p=S.clubs[S.club].players[2];ensureDevelopment(p);p.dev.history=[{season:2025,appearances:149}];p.dev.appearances=0;S.clubMail.memo.careerApps[p.id]=149;return p.id})()`);
+    vm.run(`(()=>{const d=CDWorldCareer.calendarToday(S);S.clubMail.mails.push({id:'x1',type:'serie',date:d,f:0,vars:{n:4},player:null,status:'info',choice:null},{id:'x2',type:'serie',date:d,f:0,vars:{n:6},player:null,status:'info',choice:null});S.clubs[S.club].players.find(p=>p.id==='${joueur}').dev.appearances=1})()`);
+    assert.deepEqual(recevoir().filter(x => x.player === joueur), [], 'plafond atteint : pas de courrier');
+    vm.run(`S.clubMail.mails=S.clubMail.mails.filter(m=>m.type!=='serie'&&m.type!=='jalon_carriere')`);
+    const rattrape = recevoir().filter(x => x.player === joueur);
+    assert.equal(rattrape.length, 1, 'cap rattrapé quand la place se libère');
+    assert.equal(rattrape[0].n, 150);
+    // Historique tronqué (12 saisons) : le total ne régresse pas, pas de courrier en double.
+    vm.run(`(()=>{const p=S.clubs[S.club].players.find(p=>p.id==='${joueur}');p.dev.history=[];p.dev.appearances=1})()`);
+    assert.deepEqual(recevoir().filter(x => x.player === joueur), [], 'total qui baisse : aucun courrier');
     // Réponse du manager : décision ordinaire.
     const mail = JSON.parse(vm.run(`JSON.stringify(S.clubMail.mails.filter(m=>m.type==='jalon_carriere').pop())`));
     const r = jeu.brut('club_mail_reply', { id: mail.id, choice: 'feliciter' });
