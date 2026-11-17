@@ -1,0 +1,18 @@
+TAP version 13
+# Prolongations (Godot) : {"controles":15,"detail":"Le directeur sportif tranche en mars les échéances que tu n'as pas réglées, dans la masse que le club s'autorise et sous le plafond de la ligue ; chaque décision arrive au courrier, annulable. Consigne : équilibre. Cette saison : 9 prolongés, 14 laissés partir.","failures":[]}
+# Captures : /home/runner/work/_temp/resultats/captures/prolongations-staff
+# Subtest: Contrats : case des prolongations au staff dans le vrai jeu
+ok 1 - Contrats : case des prolongations au staff dans le vrai jeu
+  ---
+  duration_ms: 46329.025918
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 46828.627739

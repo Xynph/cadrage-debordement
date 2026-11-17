@@ -1,0 +1,8 @@
+::group::tests/godot-prolongations-staff.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PROLONGATIONS_STAFF 17 controles, 0 echec
+
+CD_CPU_PROFILE suite=tests/godot-prolongations-staff.cjs user_s=0.38 system_s=0.05 wall_s=0.65 cpu_pct=66% max_rss_kb=124156
+PASS tests/godot-prolongations-staff.cjs (0 s)
+::endgroup::
