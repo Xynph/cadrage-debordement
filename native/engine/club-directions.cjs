@@ -604,6 +604,18 @@ module.exports=function clubDirections(T,N){
    if(l.until>=S.season)return true;
    const host=S.clubs[l.to],home=S.clubs[l.from],p=host?.players.find(q=>q.id===l.playerId);
    if(!p||!home||home.id===S.club||host.id===S.club)return false;
+   // Retour sous le plafond de la ligue : le club prolonge le prêt si l'hôte le garde dans sa limite,
+   // sinon libère un joueur moins utile ; à défaut, le contrat du prêté est résilié.
+   const cap=typeof aiRosterLeagueCap==='function'?aiRosterLeagueCap(home):Infinity,over=aiRosterPayroll(home)+p.salary-cap;
+   if(over>0){
+    if(aiRosterPayroll(host)>aiRosterWageLimit(host)){
+     if(!(typeof aiRosterMakeRoom==='function'&&aiRosterMakeRoom(home,over,new Set([p.id])))){
+      host.players=host.players.filter(q=>q.id!==p.id);
+      p.formerClub=home.name;p.price=Math.round(p.salary*2/1000)*1000;p.contractEnd=null;
+      S.economy.freeAgents.push(p);count('plafond:retour-pret-libere',home.id);return false;
+     }
+    }else{l.until=S.season;count('plafond:pret-prolonge',home.id);return true;}
+   }
    host.players=host.players.filter(q=>q.id!==p.id);home.players.push(p);
    p.joinedSeason=S.season;p.joinedRound=S.round;
    if(p.contractEnd==null||p.contractEnd<S.season)p.contractEnd=S.season+1;
@@ -663,6 +675,8 @@ module.exports=function clubDirections(T,N){
   ok(d.marks&&typeof d.marks==='object');
   return true;
  }
- return {VERSION,STRATEGIES,active,create,openWindow,weekly,profile,validate,estimate,scores,situation,needs,profileText,
+ // Compteur public (club-budget.cjs : retenues de conformité au plafond), sans effet hors des carrières dirigées.
+ const tally=(kind,clubId,n=1)=>{if(active())count(kind,clubId,n);};
+ return {VERSION,STRATEGIES,active,create,openWindow,weekly,profile,validate,estimate,scores,situation,needs,profileText,tally,
   _internal:{seasonReview,plansFor,returnLoans,medicalJokers,count}};
 };

@@ -75,7 +75,15 @@ function observe(label,s,storeText,profileBytes,exportResult,events,elapsedMs){
  const budget=b?.clubs?{user:b.clubs[s.club],peers:Object.fromEntries(['recettes','charges','salaires','masse','enveloppe','depart'].map(k=>[k,round(median(b.clubs.filter((x,i)=>i!==s.club&&leagueOf(s,s.clubs[i])===userLeague).map(x=>x[k]??0))/1e6)]))}:null;
  const debt=Object.values(s.worldManagement?.clubInfo||{}).filter(x=>x.debt>0).length;
  const academies=(s.aiRoster?.academies||[]).reduce((n,a)=>n+a.players.length,0);
- return {label,season:s.season,phase:s.phase,elapsedMs,byLeague,
+ // Club joué face aux clubs gérés de son championnat : trésorerie, masse, dette (mesure de l'enrichissement).
+ const masse=c=>c.players.reduce((n,p)=>n+p.salary,0)*52;
+ const peers=s.clubs.filter(c=>c.id!==s.club&&leagueOf(s,c)===userLeague);
+ const user={id:s.club,name:s.clubs[s.club].name,league:userLeague,cash:round(s.clubs[s.club].cash/1e6,3),payroll:round(masse(s.clubs[s.club])/1e6,3),players:s.clubs[s.club].players.length,
+  budget:b?.clubs?.[s.club]?{recettes:round(b.clubs[s.club].recettes/1e6,3),charges:round(b.clubs[s.club].charges/1e6,3),type:b.clubs[s.club].type,enveloppe:round(b.clubs[s.club].enveloppe/1e6,3)}:null,
+  peers:peers.map(c=>({id:c.id,cash:round(c.cash/1e6,3),payroll:round(masse(c)/1e6,3),debt:round((s.worldManagement?.clubInfo?.find?.(i=>i.id===c.id)?.debt??0)/1e6,3)}))};
+ // Clubs gérés au-dessus de 52 % de leurs recettes (championnats français) : à lire en fin de saison (« end-S… »), recettes de l'exercice complet.
+ const ratio=b?.clubs?s.clubs.filter(c=>c.id!==s.club&&leagueEconomy?.CHAMPIONNATS?.[leagueOf(s,c)]?.ratio&&b.clubs[c.id]?.recettes>0).map(c=>({id:c.id,league:leagueOf(s,c),part:round(masse(c)/b.clubs[c.id].recettes,3)})).filter(x=>x.part>0.52):null;
+ return {label,season:s.season,phase:s.phase,elapsedMs,byLeague,user,overRevenueRule:ratio,
   professionals:s.clubs.reduce((n,c)=>n+c.players.length,0),academies,freeAgents:s.economy.freeAgents.length,market:s.market.length,
   retired:s.development?.retired?.length,userCash:round(s.clubs[s.club].cash/1e6),userPayroll:round(s.clubs[s.club].players.reduce((n,p)=>n+p.salary,0)*52/1e6),
   budget,debtClubs:debt,userLedger:s.__ledger,
@@ -91,7 +99,7 @@ function run(o){
  const state=()=>{const raw=fs.readFileSync(profile,'utf8');const text=JSON.parse(raw).store['bdt-v1'];return {text,bytes:Buffer.byteLength(raw)};};
  let prevLedger=[],ledgerSum={},prevPlaces=null;
  const ledger=s=>{const now=s.ledger||[];let n=now.length;if(prevLedger.length){const head=JSON.stringify(prevLedger[0]);for(let i=0;i<now.length;i++){if(JSON.stringify(now[i])===head&&JSON.stringify(now.slice(i,i+3))===JSON.stringify(prevLedger.slice(0,3))){n=i;break;}}}
-  for(const e of now.slice(0,n)){const k=String(e.title).replace(/ · .*/,'').replace(/\d+/g,'#');ledgerSum[k]=round((ledgerSum[k]||0)+e.amount/1e6,3);}prevLedger=now;};
+  for(const e of now.slice(0,n)){const t=String(e.title),k=(t.includes(' · ')?t.slice(t.lastIndexOf(' · ')+3):t).replace(/\d[\d\s.,]*/g,'#').slice(0,60);ledgerSum[k]=round((ledgerSum[k]||0)+e.amount/1e6,3);}prevLedger=now;};
  const track=s=>{for(const e of s.aiRoster?.events||[]){const k=JSON.stringify(e);if(seen.has(k))continue;seen.add(k);const lg=leagueOf(s,s.clubs[e.clubId]||{id:e.clubId});const key=e.kind;counts[key]??={};counts[key][lg]=(counts[key][lg]||0)+1;}};
  const save=()=>{fs.mkdirSync(path.dirname(o.out),{recursive:true});fs.writeFileSync(o.out,JSON.stringify(report,null,1));};
  const capture=label=>{
@@ -100,6 +108,11 @@ function run(o){
   const row=observe(label,s,text,bytes,exp,counts,Date.now()-started);counts={};
   const now=placements(s);row.movements=movements(prevPlaces,now);prevPlaces=now;report.observations.push(row);
   console.log(JSON.stringify({label,elapsed:Math.round(row.elapsedMs/1000),stateMB:round(row.stateBytes/1048576),export:!exp?null:exp.ok?round(exp.bytes/1048576):exp.error,elite:row.byLeague.elite,events:row.events,strategies:row.directions?.strategies}));
+  // Résumé économique lisible dans le journal du job (les artefacts ne sont pas toujours accessibles).
+  const pm=row.user.peers.map(x=>x.cash).sort((a,b)=>a-b),capOver=Object.fromEntries(Object.entries(row.byLeague).filter(([,l])=>l.overCap).map(([k,l])=>[k,l.overCap]));
+  console.log('ECO '+JSON.stringify({label,user:{cash:row.user.cash,payroll:row.user.payroll,players:row.user.players,budget:row.user.budget},peersCash:{min:pm[0],median:median(pm),max:pm.at(-1)},
+   peersPayrollMedian:median(row.user.peers.map(x=>x.payroll)),ledger:row.userLedger,overCap:capOver,overRevenueRule:row.overRevenueRule?.length??null,debtClubs:row.debtClubs,interclub:row.interclub,
+   tally:row.directions?.tally?Object.fromEntries(Object.entries(row.directions.tally).filter(([k])=>k.startsWith(String(s.season))).slice(0,40)):null}));
   if(o.keep){fs.mkdirSync(o.keep,{recursive:true});fs.copyFileSync(profile,path.join(o.keep,label+'.json'));}
   save();
  };
@@ -110,11 +123,13 @@ function run(o){
    for(let week=model.meta.week,guard=0;model.meta.phase!=='ended'&&guard<80;week++,guard++){
     if(model.next){if(!model.selection.valid)go('auto_lineup');if(!model.selection.valid)go('promote_cover',{confirmed:true});go('begin_match');go('delegate');}
     settleClubMeetings(go('finish_round'),go);
+    // Grand livre du club joué (100 lignes au plus dans la carrière) : relevé chaque semaine dans le modèle, sans lire l'état.
+    if(Array.isArray(model.ledger))ledger({ledger:model.ledger});
     // Pas de lecture hebdomadaire de l'état : la machine est partagée (mémoire).
     // Les mouvements se lisent aux points de mesure (clichés et rapports de saison).
    }
    capture('end-S'+season);
-   settleClubMeetings(go('next_season',{confirmed:true}),go);capture('after-S'+season);
+   settleClubMeetings(go('next_season',{confirmed:true}),go);if(Array.isArray(model.ledger))ledger({ledger:model.ledger});capture('after-S'+season);
   }
   report.status='completed';
  }catch(e){report.status='failed';report.failure=String(e.stack||e);console.error(e.stack);}
