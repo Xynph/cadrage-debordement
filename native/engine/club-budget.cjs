@@ -197,7 +197,13 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
     const regle = ECONOMIE.CHAMPIONNATS[force.division];
     if (!regle) continue;
     const annuel = annuels.get(force.id), p = proprietaire(forces, force.id, types?.[force.id]);
-    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) + p.enveloppe + 0.15 * annuel) / (1 + COTISATIONS)]];
+    // Deuxième division française (encadrement) : la masse ne s'appuie que sur les recettes et ce que le propriétaire
+    // comble. Sans cela, chaque club visait ~40 % de ses recettes en salaires (point mort : 30 %), comptait sur 15 % d'économies
+    // que le train de vie ne rend qu'en partie, et la Pro D2 entière finissait dans le rouge, caisse vidée en trois saisons.
+    // Repère réel (A2R/CCCP 2024-2025) : salaires des joueurs à 30 % des produits en moyenne ; 2 clubs sur 16 en bénéfice,
+    // 5 ou 6 proches de l'équilibre (Charente -0,07 M€, Valence -0,13), les autres en perte, comblée par les actionnaires.
+    const economies = regle.encadrement ? 0 : 0.15 * annuel;
+    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) + p.enveloppe + economies) / (1 + COTISATIONS)]];
     const credit = credits?.[force.id] ?? 0;
     if (regle.plafond !== null) bornes.push(['plafond', regle.plafond + credit]);
     if (regle.ratio) bornes.push(['recettes', annuel * RATIO_SALAIRES]);
