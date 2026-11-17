@@ -313,7 +313,8 @@ static func objective_status(model: Dictionary, rows: Array) -> Dictionary:
 		if league is Dictionary and league.get("id") == model.get("meta", {}).get("leagueId"): size = maxi(size, league.get("rows", []).size())
 	var target := 0
 	var label := ""
-	var board: Dictionary = U.strategy(model).get("board", {}) if U.strategy(model).get("board") is Dictionary else {}
+	var strategy: Variant = model.get("clubLife", {}).get("clubStrategy", {})
+	var board: Dictionary = strategy.get("board", {}) if strategy is Dictionary and strategy.get("board") is Dictionary else {}
 	for goal in board.get("objectives", []):
 		if goal is Dictionary and str(goal.get("type", "")) == "rank" and str(goal.get("status", "pending")) == "pending" and goal.get("target") != null:
 			target = int(goal.get("target"))
