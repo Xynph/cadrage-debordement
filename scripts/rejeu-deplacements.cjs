@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 'use strict';
-// Rejeu des déplacements d'un club en saison de carrière Monde (docs/top14-dispute-20261117.md §8).
+// Rejeu des déplacements d'un club en saison de carrière Monde (docs/top14-dispute-20261117.md §8 et §9).
 // Au moment où la saison crée le match (feuilles de match, bancs, condition, moral, choix de l'IA déjà faits),
 // le même match est recréé et joué N fois dans plusieurs variantes, puis le curseur de tirage est remis où il était :
 // la saison continue exactement comme sans rejeu. Comparé à la courbe de niveau du banc (pente 0,206, terrain 0,95
 // pour le Top 14, sur l'écart de niveau joué), cela dit si le surplus d'un club naît de l'état au coup d'envoi.
 // Variantes : reel (tel quel), moral (les deux moraux à 75), forme (condition pleine des 23), neutre (terrain neutre),
 // buteur (pied au but des deux camps plafonné à 80),
-// creation (feuille du match de la saison reprise telle quelle, seuls les tirages du match changent).
+// creation (feuille du match de la saison reprise telle quelle, seuls les tirages du match changent),
+// copie, copie1, avants, arrieres, lisse (effectif de la cible remanié à niveau égal, voir remanier()).
 // Usage : node --max-old-space-size=1400 scripts/rejeu-deplacements.cjs [graine=7] [--cible TCX] [--comp elite] [--n 100]
-//         [--variantes reel,moral,forme] [--domicile] [--tous] [--json fichier] [--regler code]
+//         [--variantes reel,moral,forme] [--domicile] [--tous] [--json fichier] [--regler code] [--ref ABR,ABR]
+//         [--hisse points] [--pente .177 --terrain .87] (courbe commune des rejeux du Top 14, §8)
 // --tous : tous les matchs du championnat (point de vue du recevant), pour comparer la saison à ses rejeux sur la courbe.
 const fs = require('node:fs');
 const { context } = require('../tests/monde-harness.cjs');
@@ -29,11 +31,14 @@ const membres = JSON.parse(h.run(`JSON.stringify(S.worldMode.leagues[${JSON.stri
 const force = JSON.parse(h.run(`JSON.stringify(S.clubs.map(c=>{const n=c.players.filter(p=>!p.injury).map(p=>roleNote(p)).sort((a,b)=>b-a).slice(0,23);return n.reduce((a,b)=>a+b,0)/Math.max(1,n.length)}))`));
 const cible = opt('--cible', null) ? noms.indexOf(opt('--cible')) : [...membres].sort((a, b) => force[b] - force[a])[0];
 if (cible < 0) throw Error('club cible inconnu');
+// Clubs de référence (profil d'un club moyen) : les plus proches de la médiane du championnat, hors cible.
+const parForce = [...membres].filter(id => id !== cible).sort((a, b) => force[a] - force[b]);
+const refs = opt('--ref', null) ? opt('--ref').split(',').map(a => noms.indexOf(a)) : [...parForce].sort((a, b) => Math.abs(parForce.indexOf(a) - (parForce.length - 1) / 2) - Math.abs(parForce.indexOf(b) - (parForce.length - 1) / 2));
 h.ctx.__curseur = () => h.seed();
 h.ctx.__remettre = v => h.setSeed(v);
 
 h.run(`globalThis.__rejeux=[];(()=>{
- const CIBLE=${tous ? -1 : cible},COMP=${JSON.stringify(comp)},N=${N},VARIANTES=${JSON.stringify(variantes)},DOM=${domicile};
+ const REFS=${JSON.stringify(refs)},CIBLE=${tous ? -1 : cible},COMP=${JSON.stringify(comp)},N=${N},VARIANTES=${JSON.stringify(variantes)},DOM=${domicile};
  const cree=createRugbyMatch;let occupe=false;
  const niveau=l=>[teamLevel(activePlayers(l,0)),teamLevel(activePlayers(l,1))];
  function jouer(l){const n=[0,0],c=niveau(l);let pas=0;for(let k=0;!l.finished;k++){if(k>600)throw Error('rejeu sans fin');l.paused=false;const v=niveau(l);n[0]+=v[0];n[1]+=v[1];pas++;advanceRugby(l);}
@@ -47,6 +52,30 @@ h.run(`globalThis.__rejeux=[];(()=>{
    if(v&&typeof v==='object'&&cible[k]&&typeof cible[k]==='object'&&Array.isArray(v)===Array.isArray(cible[k]))remettre(cible[k],v);else cible[k]=v;}
  }
  const etat=pair=>({clubs:pair.map(id=>S.clubs[id]),ecoles:pair.map(id=>S.aiRoster?.academies?.[id]).filter(Boolean)});
+ const REMANIER=['copie','copie1','avants','arrieres','lisse','hisse','greffe'];let refFeuille=null;
+ const avant=p=>p.fam<=3,moy=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+ // Feuille du club de référence au moment du match (club rétabli ensuite : seule la lecture compte).
+ function feuilleRef(pair){
+  const ids=REFS.filter(id=>!pair.includes(id));if(!ids.length)return null;const c=S.clubs[ids[0]],avantSel=JSON.stringify(c);
+  try{const f=buildSheet(c),by=new Map(c.players.map(p=>[p.id,p]));return {on:f.lineup.map(i=>JSON.parse(JSON.stringify(by.get(i)))),bench:f.bench.map(i=>i&&JSON.parse(JSON.stringify(by.get(i))))};}
+  finally{remettre(c,JSON.parse(avantSel));}
+ }
+ function remanier(l,nom){
+  const s=${domicile ? 0 : 1},f=l.sheets[s],on=f.on.map(id=>matchPlayer(l,s,id)),bench=f.bench.map(id=>id&&matchPlayer(l,s,id));
+  // Moyennes calculées avant toute retouche (les objets joueurs sont modifiés sur place).
+  const m0=[true,false].map(g=>moy(on.filter(p=>p&&avant(p)===g).map(p=>p.rating))),cible=g=>m0[g?0:1];
+  if(nom==='hisse'){for(const p of [...on,...bench].filter(Boolean))p.rating+=${Number(opt('--hisse', 0))};return;}
+  if(nom==='lisse'){for(const p of on.filter(Boolean))p.rating=cible(avant(p));return;}
+  const ref=refFeuille;if(!ref)return;
+  const garder=p=>(nom==='avants'&&avant(p))||(nom==='arrieres'&&!avant(p));
+  // Décalage : par groupe (sur les titulaires de la cible) ou global (copie1).
+  const refOn=ref.on.filter(Boolean),dec=g=>cible(g)-moy(refOn.filter(q=>avant(q)===g).map(q=>q.rating));
+  const dGlobal=moy(on.filter(Boolean).map(p=>p.rating))-moy(refOn.map(q=>q.rating));// (avant retouche)
+  const poser=(p,q)=>{if(!p||!q||garder(p))return;const cond=p.condition,id=p.id,name=p.name;
+   for(const k of Object.keys(p))if(!(k in q))delete p[k];Object.assign(p,JSON.parse(JSON.stringify(q)));p.id=id;p.name=name;p.condition=cond;
+   p.rating+=nom==='greffe'?0:nom==='copie1'?dGlobal:dec(avant(q));};
+  on.forEach((p,i)=>poser(p,ref.on[i]));bench.forEach((p,i)=>poser(p,ref.bench[i]));
+ }
  let photo='';function variante(nom,pair,modele){
   // Moral et terrain se règlent sur l'état de la partie (rétabli après) ; condition et feuille sur le match créé.
   const moraux=pair.map(id=>S.clubs[id].morale),moralJoueur=S.morale;
@@ -57,6 +86,14 @@ h.run(`globalThis.__rejeux=[];(()=>{
    if(nom==='neutre')l.worldContext={...l.worldContext,neutral:true};
    // buteur : pied au but des 23 des deux camps plafonné à 80 (médiane des meilleurs buteurs du Top 14).
    if(nom==='buteur')for(const s of [0,1])for(const id of [...l.sheets[s].on,...l.sheets[s].bench].filter(Boolean)){const p=matchPlayer(l,s,id);if(p&&p.skills){const b=p.rating-(p.skillBase??p.rating);p.skills.goal=Math.min(p.skills.goal,80-b);}}
+   // Effectif de la cible remanié (même feuille, mêmes conditions ; ratings décalés pour garder son niveau) :
+   // copie = 23 du club de référence (profil moyen) à la place des siens, décalés groupe par groupe (avants, arrières)
+   // sur les moyennes des titulaires de la cible ; copie1 = même chose avec un seul décalage (équilibre avants/arrières
+   // du club de référence) ; avants / arrieres = la cible garde ses avants / ses arrières, l'autre groupe vient du club
+   // de référence ; lisse = titulaires de la cible, notes ramenées à la moyenne de leur groupe (dispersion supprimée, banc inchangé) ;
+   // greffe = 23 du club de référence (--ref) tels quels, sans décalage (joueurs d'un autre club, identité de la cible) ;
+   // hisse = les 23 de la cible décalés de --hisse points (même club, autre écart de niveau).
+   if(REMANIER.includes(nom))remanier(l,nom);
    if(nom==='forme')for(const s of [0,1])for(const id of [...l.sheets[s].on,...l.sheets[s].bench].filter(Boolean)){const p=matchPlayer(l,s,id);if(p)p.condition=100;}
    return jouer(l);
   }finally{remettre(etat(pair),JSON.parse(photo));pair.forEach((id,i)=>{S.clubs[id].morale=moraux[i];});S.morale=moralJoueur;}
@@ -67,6 +104,7 @@ h.run(`globalThis.__rejeux=[];(()=>{
   if(occupe||!automated||!wc||wc.competitionId!==COMP||wc.phase!=='league'||(CIBLE>=0&&pair[DOM?0:1]!==CIBLE))return l;
   occupe=true;const curseur=__curseur(),empreinte=JSON.stringify(S).length,modele=JSON.stringify(l);photo=JSON.stringify(etat(pair));
   try{
+   refFeuille=VARIANTES.some(v=>REMANIER.includes(v))?feuilleRef(pair):null;
    const r={semaine:S.round,pair:pair.slice(),moral:pair.map(clubMorale),feuille:niveau(l),variantes:{}};
    for(const v of VARIANTES){r.variantes[v]=[];for(let i=0;i<N;i++)r.variantes[v].push(variante(v,pair,modele));}
    r.etatModifie=JSON.stringify(S).length!==empreinte;r.matchModifie=JSON.stringify(l)!==modele;
@@ -119,7 +157,8 @@ for (const r of rejeux) {
     const g = xs.reduce((a, x) => a + issue(x.s), 0) / xs.length, a = xs.reduce((s, x) => s + attendu(x.niv, v === 'neutre'), 0) / xs.length;
     const ecart = xs.reduce((s, x) => s + (x.niv[cote] - x.niv[1 - cote]), 0) / xs.length;
     ligne[v] = `${Math.round(g * 100)} % / ${Math.round(a * 100)} % (${ecart >= 0 ? '+' : ''}${ecart.toFixed(1)})`;
-    const t = total[v] ||= { g: 0, a: 0, n: 0 }; t.g += g; t.a += a; t.n++;
+    const c0 = xs.reduce((s, x) => s + (x.coup[cote] - x.coup[1 - cote]), 0) / xs.length;
+    const t = total[v] ||= { g: 0, a: 0, n: 0, e: 0, c: 0 }; t.g += g; t.a += a; t.n++; t.e += ecart; t.c += c0;
     if (v === 'reel') saisonAtt += a;
   }
   lignes.push(ligne);
@@ -128,5 +167,5 @@ console.log(`Graine ${graine}, ${noms[cible]} ${domicile ? 'à domicile' : 'à l
 console.log(`Saison : ${saison} victoires (nuls 0,5) pour ${saisonAtt.toFixed(1)} attendues (courbe sur le niveau joué des rejeux « reel »).`);
 const cols = ['semaine', 'adversaire', 'saison', 'moraux', ...variantes, 'etat'];
 console.log(['| ' + cols.join(' | ') + ' |', '|' + cols.map(() => '---').join('|') + '|', ...lignes.map(l => '| ' + cols.map(c => l[c] ?? '').join(' | ') + ' |')].join('\n'));
-for (const [v, t] of Object.entries(total)) console.log(`${v} : ${(t.g).toFixed(1)} victoires rejouées pour ${(t.a).toFixed(1)} attendues sur ${t.n} matchs`);
+for (const [v, t] of Object.entries(total)) console.log(`${v} : ${(t.g).toFixed(1)} victoires rejouées pour ${(t.a).toFixed(1)} attendues sur ${t.n} matchs (écart joué ${(t.e / t.n).toFixed(2)}, au coup d'envoi ${(t.c / t.n).toFixed(2)})`);
 if (opt('--json', null)) fs.writeFileSync(opt('--json', null), JSON.stringify({ graine, cible, comp, domicile, N, noms, rejeux }));

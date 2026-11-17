@@ -158,7 +158,8 @@ function factory(){
   const curve=MATCH_LEVEL_CURVE.rapide,home=f.neutral?0:curve.terrain*(typeof terrainFactor==='function'?terrainFactor(f.competitionId):1);
   // Match piège (MATCH_LEVEL_CURVE.piege) : même tirage que le moteur complet, au-delà du seuil d'écart.
   const gap=teams[0].power-teams[1].power,trap=typeof matchTrapOffset==='function'?matchTrapOffset(gap,roll):0;
-  const edge=clamp((gap+trap+home)/curve.diviseur,-curve.borne,curve.borne);
+  const ecart=typeof levelGapChampionnat==='function'?levelGapChampionnat(gap+trap,f.competitionId):gap+trap;
+  const edge=clamp((ecart+home)/curve.diviseur,-curve.borne,curve.borne);
   const tries=[poisson(clamp(2.75*Math.exp(curve.essais*edge),.5,8)),poisson(clamp(2.75*Math.exp(-curve.essais*edge),.5,8))];
   const stats=[sideStats(tries[0],edge),sideStats(tries[1],-edge)];
   const points=i=>tries[i]*5+stats[i].conversions*2+stats[i].goals*3;
