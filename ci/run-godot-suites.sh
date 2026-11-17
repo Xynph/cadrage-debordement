@@ -57,6 +57,8 @@ declare -A suite_limits=(
   [tests/godot-delegue-composition.cjs]=900
   # Finitions critiques : carrière Monde (création, un match, jour de match suivant) côté Node puis un passage Godot ; ~4 min en local.
   [tests/godot-finitions.cjs]=900
+  # Mesure de la jauge de vitesse : deux carrières Monde (~4 min chacune), informative.
+  [tests/mesure-vitesse-jeu.cjs]=1200
   # Pont natif en carrière Monde (deux workers jumeaux, un match délégué, exports de ~20 Mo) puis le vrai pont Godot ;
   # 151 s mesurées sur le PC de Léo le 16/11/2026 (Windows, Godot 4.7.2).
   [tests/godot-engine.cjs]=600
