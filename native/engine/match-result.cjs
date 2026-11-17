@@ -8,6 +8,7 @@ module.exports=function nativeConfirmMatchResult(){
   if(S.worldMode.resultConfirmed)throw Error('Le résultat est déjà confirmé.');
   if(!S.live?.finished)throw Error('Termine le match avant de valider le résultat.');
   S.worldMode.resultConfirmed=true;view='dashboard';
+  if(typeof CDMultiplex!=='undefined'&&CDMultiplex.persist)CDMultiplex.persist(S);
  }else{
   if(!(S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())))throw Error('Termine le match avant de valider la journée.');
   finishRound();

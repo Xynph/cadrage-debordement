@@ -8,7 +8,7 @@ const temp=fs.realpathSync(os.tmpdir());
 const root=fs.mkdtempSync(path.join(temp,'oval-nationale-22-'));
 const now=Date.UTC(2026,9,16);
 // Carrière Monde (world-champ), cadence hebdomadaire : un match = begin_match, delegate, finish_round.
-const open=dir=>createBridge({dataDir:dir,seed:410,now,dailyCalendar:false,mandatoryPress:false,internationalCareer:false});
+const open=dir=>createBridge({dataDir:dir,seed:410,now,dailyCalendar:false,mandatoryPress:false,internationalCareer:false,testVm:true});
 const issue=(b,command,payload={})=>b.handle({id:1,command,payload});
 function good(b,command,payload){
  const result=issue(b,command,payload);
@@ -78,14 +78,21 @@ try{
    assert.equal(talk.participants.length,22);
    assert.deepEqual(talk.participants.map(p=>p.number),Array.from({length:23},(_,i)=>i+1).filter(n=>n!==16+index));
    assert.deepEqual(talk.participants.map(p=>p.id),[...waiting.lineup,...waiting.reserves].filter(Boolean));
+   // Reprise avant le match (16/11/2026) : pendant le match, l'export et le profil décrivent la carrière d'avant le coup
+   // d'envoi ; les feuilles du direct se lisent dans la carrière en mémoire (harnais testVm).
+   const live=JSON.parse(b.vm.run('JSON.stringify({sheets:S.live.sheets.map(sh=>sh.nominated.length),uncontested:S.live.uncontestedScrums,reserves:S.reserves.length})'));
+   assert.deepEqual(live.sheets.sort(),[22,23]);
+   assert.deepEqual(live.uncontested,[0,0]);
+   assert.equal(live.reserves,8);
    const exported=good(b,'export').meta.exportText;
-   const {state}=JSON.parse(exported);
-   assert.deepEqual(state.live.sheets.map(sh=>sh.nominated.length).sort(),[22,23]);
-   assert.deepEqual(state.live.uncontestedScrums,[0,0]);
-   assert.equal(state.reserves.length,8);
+   assert.ok(!JSON.parse(exported).state.live);
+   // Rechargement (et import de l'export) : avant le coup d'envoi, banc réduit toujours proposé, puis rejoué à 22.
    b.close();b=open(dir);
-   assert.equal(good(b,'snapshot').live.paused,true);
-   assert.equal(good(b,'import',{text:exported}).live.nominationSize,22);
+   const resumed=good(b,'snapshot');
+   assert.equal(resumed.live,null);
+   assert.deepEqual(resumed.selection.reducedBench,{size:22,vacantNumber:16+index});
+   assert.deepEqual(good(b,'import',{text:exported}).selection.reducedBench,{size:22,vacantNumber:16+index});
+   assert.equal(good(b,'begin_match',{reducedBench:true}).live.nominationSize,22);
    if(index===1){
     assert.equal(good(b,'delegate').live.finished,true);
     const next=good(b,'finish_round');
