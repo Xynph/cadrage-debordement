@@ -477,10 +477,10 @@ function budgetPrevoir(forces,repere){
 const budgetLisible=b=>!!b&&b.version===1&&Number.isInteger(b.saison)&&Number.isInteger(b.semaines)&&b.semaines>=0&&!!b.alertes&&typeof b.alertes==='object'&&!Array.isArray(b.alertes)&&Array.isArray(b.clubs)&&b.clubs.length===S.clubs.length&&
  b.clubs.every(c=>!!c&&Object.hasOwn(nativeClubBudget.PROPRIETAIRES,c.type)&&[c.enveloppe,c.depart,c.recettes,c.charges,c.salaires,c.masse].every(Number.isFinite)&&c.enveloppe>=0&&
   typeof c.division==='string'&&Object.hasOwn(nativeClubBudget.DIVISIONS,c.division)&&Number.isInteger(c.taille)&&c.taille>=2&&Number.isInteger(c.rang)&&c.rang>=1&&c.rang<=c.taille);
-function budgetOuvrir(annoncer){
+function budgetOuvrir(annoncer,nouvelleSaison=false){
  const forces=budgetForces(),types=budgetLisible(S.clubBudget)?S.clubBudget.clubs.map(c=>c.type):null;
  // Nouvelle saison seulement : l'excédent au-dessus de la réserve est réinvesti ou remonte à l'actionnaire.
- S.clubBudget=budgetCopie(nativeClubBudget.ouverture({forces,saison:S.season,types,excedents:annoncer===true,clubs:S.clubs.map(c=>({id:c.id,cash:c.cash,masse:budgetMasse(c)*52}))}));
+ S.clubBudget=budgetCopie(nativeClubBudget.ouverture({forces,saison:S.season,types,excedents:nouvelleSaison===true,clubs:S.clubs.map(c=>({id:c.id,cash:c.cash,masse:budgetMasse(c)*52}))}));
  for(const c of S.clubs){
   const compte=S.clubBudget.clubs[c.id];if(!(compte.dividende>0))continue;
   if(c.id===S.club)ledgerEntryV1('Dividende versé au groupe actionnaire',-compte.dividende);else c.cash-=compte.dividende;
@@ -583,7 +583,7 @@ worldNewSeason=function(fundingAlreadyPaid){
  nativeStartingSalaries.recaler(S,budgetForces(),nativeLeagueEconomy,{saufClub:S.club,mouvements,limites:limitesRecalage});
  const sens=mouvements.get(S.club)||0;
  if(sens){const r=nativeStartingSalaries.clauses(S,S.club,sens);if(r.touches)news(nativeClubBudget.annonceClauses(sens,r.avant,r.apres,r.touches));}
- budgetOuvrir(true);
+ budgetOuvrir(true,true);
  return actif;
 };
 // Forces des clubs pour les demandes salariales : une projection en interroge des centaines d'affilée (marché, contrats).
@@ -666,7 +666,9 @@ function budgetJoker(slot,exclus){
 }
 const promoteCoverV1=promoteCover;
 promoteCover=function(){
- if(!budgetActif()||!budgetMonde())return promoteCoverV1();
+ if(!budgetActif())return promoteCoverV1();
+ // Carrières France marquées : ancien renfort, au plancher de la règle.
+ if(!budgetMonde()){const avant=new Set(club().players.map(p=>p.id)),r=promoteCoverV1(),salaire=budgetPlancherHebdo();for(const p of club().players)if(!avant.has(p.id))p.salary=salaire;return r;}
  if(S.live)return;
  repairSheet();
  const vides=[...S.lineup,...S.reserves].filter(id=>!id).length;
