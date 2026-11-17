@@ -4,6 +4,8 @@ module.exports=function nativeGestion(command,p){
  const requireThat=(ok,message)=>{if(!ok)throw Error(message);};
  if(command==='set_collective_focus'){requireThat(setCollectiveFocus(p.focus),'Préparation collective indisponible : séance appliquée, match en cours ou option inconnue.');return;}
  if(command==='set_opponent_level'){requireThat(!S.live&&S.phase!=='ended'&&Object.hasOwn(DIFFICULTIES,p.level),'Niveau adverse indisponible.');setDifficulty(p.level);return;}
+ // « Confier aussi les prolongations au staff » (prolongations-staff.cjs) : réglable aussi entre deux saisons, mode Monde.
+ if(command==='set_delegation'&&p.key==='contracts'){requireThat(!S.live&&typeof p.enabled==='boolean'&&typeof dsContratsMonde==='function'&&dsContratsMonde(),'Délégation des prolongations indisponible.');S.manager.delegation.contracts=p.enabled;save();render();return;}
  if(command==='set_delegation'){requireThat(!S.live&&S.phase!=='ended'&&['lineup','training'].includes(p.key)&&typeof p.enabled==='boolean','Délégation indisponible ou invalide.');setDelegation(p.key,p.enabled);return;}
  if(command==='set_development_focus'){
   const target=club().players.find(x=>x.id===p.playerId)||S.development.academy.find(x=>x.id===p.playerId);
