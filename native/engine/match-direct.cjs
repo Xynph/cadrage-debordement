@@ -10,6 +10,7 @@ const choregraphe=require('./match-choregraphe.cjs');
 const notesMatch=require('./match-notes.cjs');
 const feuilleStats=require('./match-stats.cjs');
 const pourquoi=require('./match-pourquoi.cjs');
+const {zone22}=require('./match-zone22.cjs');
 
 const NIVEAUX=Object.freeze(Object.keys(selection.NIVEAUX));
 const LIBELLES=Object.freeze({aucun:'Commentaire seul',resume:'Résumé',cles:'Temps forts clés',etendus:'Temps forts étendus',dynamique:'Dynamique',integral:'Match complet'});
@@ -94,11 +95,29 @@ function choregraphier(tf,plans,events,lire){
   const idx=plans[0].index;
   for(let i=idx-1;i>=0&&avant===null;i--){const e=events[i];if(e?.scene&&!['advantage','card','break','end'].includes(e.scene.kind))avant=lire.scenes([i])[0]}
  }
- const base=choregraphe.entreeDepuisTempsFort({...tf,plans},events,{avant,cle:tf.cle});
+ let base=choregraphe.entreeDepuisTempsFort({...tf,plans},events,{avant,cle:tf.cle});
  if(!base){CHOREGRAPHIES.set(cle,null);return null}
  const ids=base.joueurs.map(p=>p.id),bruts=typeof lire.profils==='function'?lire.profils(ids):{},profils={};
  for(const p of base.joueurs)profils[p.id]=choregraphe.profil(p.slot,bruts[p.id]?.vitesse);
- const c=choregraphe.composer({...base,profils});
+ let c=null;
+ try{c=choregraphe.composer({...base,profils});}
+ catch(error){
+  // Longue action (remise en jeu puis nombreux temps de jeu) : même la mise en scène la plus courte dépasse le plafond
+  // de durée. Plutôt que de ne rien montrer, l'action est reprise plus tard (un fait de moins en amont à chaque essai),
+  // depuis la scène affichée juste avant le premier fait gardé ; le fait clé et sa suite restent montrés.
+  const duree=e=>e instanceof RangeError&&/durée voulue/.test(e.message);
+  const amont=base.etapes.filter(s=>!s.cle&&s.plan!==undefined&&s.plan<base.dernier).length;
+  if(!duree(error)||amont<1)throw error;
+  for(let limite=amont-1;limite>=0&&!c;limite--){
+   const court=choregraphe.entreeDepuisTempsFort({...tf,plans},events,{avant,cle:tf.cle,limiteAmont:limite});
+   if(!court)break;
+   const manquants=court.joueurs.filter(p=>!profils[p.id]).map(p=>p.id),autres=manquants.length&&typeof lire.profils==='function'?lire.profils(manquants):{};
+   for(const p of court.joueurs)if(!profils[p.id])profils[p.id]=choregraphe.profil(p.slot,autres[p.id]?.vitesse);
+   try{c=choregraphe.composer({...court,profils});base=court;}
+   catch(retry){if(!duree(retry))throw retry;}
+  }
+  if(!c)throw error;
+ }
  // Outil de test (options.choregraphe === 'entrees') : l'entrée est jointe, pour en faire un jeu d'essai.
  Object.defineProperty(c,'entree',{value:{...base,profils},enumerable:false});
  CHOREGRAPHIES.set(cle,c);
@@ -356,7 +375,9 @@ function project(model,niveau,lire,options={}){
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
   fil,traces,reperes,chiffres,elan,echantillon:{minutes:minuteVue,suffisant:!court,seuil:ECHANTILLON_MINUTES},cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
   borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],
-  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1,contexteNotes),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel,contexteNotes),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
+  tableau,domination:domination(vues),
+  // Entrées dans les 22 adverses, points et secondes qui en découlent (faits montrés seulement).
+  zone22:zone22(vues),notes:notesDuMatch(vues,events,etat.camp??-1,contexteNotes),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel,contexteNotes),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null,hommeDuMatch:null};
  // Homme du match (résumé d'après-match) : désigné quand tout le journal a été montré, par le
  // calcul de la note enregistrée (match-notes.cjs).
@@ -414,7 +435,25 @@ function project(model,niveau,lire,options={}){
     direct.arret={cle:'carton-'+i,raison:'carton',rouge:l.cause==='red',pourNous:l.equipe!==direct.camp,texte:nommer(events[i].text),horloge:horloge(l)};
   }
  }
+ // Multiplex des autres matchs de la journée et classement « si ça finit ainsi » (match-multiplex.cjs),
+ // à la minute du dernier fait montré : jamais au-delà de ce que le joueur a vu.
+ if(typeof lire.journee==='function'){
+  try{
+   const fini=live.finished===true&&borne>=events.length,vue=vues.at(-1);
+   const j=lire.journee(minuteVue,fini,direct.score,vue?vue.essaisApres:[0,0]);
+   direct.journee=j?habillerJournee(j,model):null;
+  }catch(error){direct.journee=null;direct.journeeErreur=String(error?.message||error);}
+ }
  return direct;
+}
+
+// Noms et sigles affichés (identité du club, presentation) des clubs du multiplex et du classement.
+function habillerJournee(j,model){
+ const fiches=new Map();
+ for(const c of [...(Array.isArray(model.league)?model.league:[]),...(Array.isArray(model.live?.teams)?model.live.teams:[])])if(c&&c.id!==undefined)fiches.set(c.id,c);
+ const nom=(id,x)=>{const c=fiches.get(id);return c?{abbr:c.presentation?.abbr||c.abbr||x.abbr,nom:c.presentation?.name||c.name||x.nom}:{abbr:x.abbr,nom:x.nom};};
+ return {...j,matchs:j.matchs.map(m=>({...m,home:{...m.home,...nom(m.home.id,m.home)},away:{...m.away,...nom(m.away.id,m.away)}})),
+  classement:j.classement.map(r=>({...r,...nom(r.clubId,r)}))};
 }
 
 module.exports=Object.freeze({NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX,ECHANTILLON_MINUTES});

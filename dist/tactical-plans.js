@@ -111,7 +111,7 @@ function adaptDefence(l,side){
  addEvent(l,`${S.clubs[l.pair[side]].abbr} choisit une défense ${DEFENCES[next][0].toLowerCase()} (${choice?choice.reason:'selon le score et la fraîcheur'}).`,'tactic',{team:side});
 }
 function setDefence(plan){if(S.live||!Object.keys(DEFENCES).includes(plan))return;S.defence=plan;save();render()}
-function setLiveDefence(plan){const l=S.live;if(!l||!tacticalRules(l)||!l.paused||l.finished||presentationPending(l)||!Object.keys(DEFENCES).includes(plan))return;l.defences[l.userSide]=plan;S.defence=plan;addEvent(l,`Votre défense : ${DEFENCES[plan][0]}. ${DEFENCES[plan][1]}`,'tactic',{team:l.userSide});syncMatchPresentation(l);save();render()}
+function setLiveDefence(plan){const l=S.live;if(!l||!tacticalRules(l)||!l.paused||l.finished||presentationPending(l)||!Object.keys(DEFENCES).includes(plan))return;l.defences[l.userSide]=plan;S.defence=plan;addEvent(l,`Ta défense : ${DEFENCES[plan][0]}. ${DEFENCES[plan][1]}`,'tactic',{team:l.userSide});syncMatchPresentation(l);save();render()}
 function defencePreparation(){return `<div class="card"><div class="cardtitle"><h2>02 / Organisation défensive</h2><span class="tag">PROCHAIN MATCH</span></div><div class="options defence-options">${Object.entries(DEFENCES).map(([key,[title,desc]])=>`<button class="option ${(S.defence||'equilibre')===key?'selected':''}" onclick="setDefence('${key}')">${title}<small>${desc}</small></button>`).join('')}</div><p class="help">Ces choix modifient la réussite adverse, les mètres concédés, les risques de pénalité et la fatigue. Le même calcul s’applique aux adversaires.</p></div>`}
 function liveDefenceControls(l){if(!tacticalRules(l))return '<p class="help">Cette rencontre conserve son ancien moteur tactique. Les nouvelles consignes défensives seront disponibles au prochain match.</p>';const side=l.userSide;return `<label class="eyebrow" for="live-defence">VOTRE DÉFENSE</label><select id="live-defence" ${!l.paused||l.finished?'disabled':''} onchange="setLiveDefence(this.value)">${Object.entries(DEFENCES).map(([key,[title]])=>`<option value="${key}" ${l.defences[side]===key?'selected':''}>${title}</option>`).join('')}</select><p class="help">${DEFENCES[l.defences[side]][1]}</p><p class="help">Défense adverse : <strong>${DEFENCES[l.defences[1-side]][0]}</strong>.</p>`}
 function tacticalMetrics(l){if(!l.tacticalStats)return '';const a=l.tacticalStats[0],b=l.tacticalStats[1];return `<div class="matchstats"><div class="statcomparison"><b>${S.clubs[l.pair[0]].abbr}</b><span>JEU COURANT</span><b>${S.clubs[l.pair[1]].abbr}</b></div>${[['Progressions réussies',`${a.advances} / ${a.carries}`,`${b.advances} / ${b.carries}`],['Mètres gagnés en portant',Math.round(a.metres),Math.round(b.metres)],['Fautes de main',a.handErrors,b.handErrors],['Coups de pied en jeu',a.kicks,b.kicks],['Récupérations après plaquage',a.recoveries,b.recoveries]].map(([label,x,y])=>`<div class="statcomparison"><strong>${x}</strong><span>${label}</span><strong>${y}</strong></div>`).join('')}</div>`}
@@ -119,10 +119,10 @@ function halftimeAdvice(l){
  const side=l.userSide,other=1-side,a=l.tacticalStats?.[side],b=l.tacticalStats?.[other];if(!a||!b)return null;
  const tired=activePlayers(l,side).filter(p=>p.condition<70).sort((a,b)=>a.condition-b.condition).slice(0,3),notes=[],suggestions=[];
  notes.push(`${a.advances} progressions réussies sur ${a.carries} tentatives, pour ${Math.round(a.metres)} mètres gagnés en portant le ballon. ${a.handErrors} faute(s) de main.`);
- notes.push(`En face : ${b.advances} progressions sur ${b.carries}, ${Math.round(b.metres)} mètres gagnés. Votre équipe a concédé ${l.stats[side].penalties} pénalité(s).`);
+ notes.push(`En face : ${b.advances} progressions sur ${b.carries}, ${Math.round(b.metres)} mètres gagnés. Ton équipe a concédé ${l.stats[side].penalties} pénalité(s).`);
  if(l.tactics[side]==='large'&&l.weather==='Pluie'&&a.handErrors>=2)suggestions.push({kind:'attack',value:'conquete',reason:`${a.handErrors} fautes de main sous la pluie : rapprocher le jeu réduit le risque de manipulation, avec des gains plus courts.`});
- else if(a.carries>=5&&a.advances/a.carries<.4){const next=unit(l,side,'power',p=>p.fam<=3)>=unit(l,side,'pass',p=>p.fam>=4)?'conquete':'large';if(next!==l.tactics[side])suggestions.push({kind:'attack',value:next,reason:`Seulement ${a.advances} attaques progressent sur ${a.carries}. Essayez un plan adapté aux qualités des joueurs présents.`})}
- if(l.defences[side]==='pression'&&(l.stats[side].penalties>=3||mean(activePlayers(l,side).map(p=>p.condition))<72))suggestions.push({kind:'defence',value:'prudente',reason:'Réduire la pression aiderait à limiter la dépense physique et le risque de pénalité ; vous accepterez davantage de petites avancées adverses.'});
+ else if(a.carries>=5&&a.advances/a.carries<.4){const next=unit(l,side,'power',p=>p.fam<=3)>=unit(l,side,'pass',p=>p.fam>=4)?'conquete':'large';if(next!==l.tactics[side])suggestions.push({kind:'attack',value:next,reason:`Seulement ${a.advances} attaques progressent sur ${a.carries}. Essaie un plan adapté aux qualités des joueurs présents.`})}
+ if(l.defences[side]==='pression'&&(l.stats[side].penalties>=3||mean(activePlayers(l,side).map(p=>p.condition))<72))suggestions.push({kind:'defence',value:'prudente',reason:'Réduire la pression aiderait à limiter la dépense physique et le risque de pénalité ; tu accepteras davantage de petites avancées adverses.'});
  if(!suggestions.length)notes.push('Pas de changement tactique évident à recommander sur ces seules données. Le score et la fraîcheur restent à surveiller.');
  return {notes,suggestions,tired};
 }
@@ -166,7 +166,7 @@ function numericalStaffAdvice(l){
  if(yellows.length)clockNote='Carton jaune : fin d’exclusion dans '+Math.min(...yellows)+' minute(s) de jeu au plus tôt.';
  else if(replaceable.length)clockNote='Rouge remplaçable : remplacement envisageable dans '+Math.min(...replaceable)+' minute(s) de jeu au plus tôt, si un joueur éligible est disponible.';
  else if((sh.redCards||[]).some(c=>c.until===null))clockNote='Rouge définitif : aucun remplacement autorisé pour cette exclusion.';
- const scoreNote=margin>0?'vous menez de '+margin+' point(s)':margin<0?'vous êtes menés de '+(-margin)+' point(s)':'le score est à égalité';
+ const scoreNote=margin>0?'tu mènes de '+margin+' point(s)':margin<0?'tu es mené de '+(-margin)+' point(s)':'le score est à égalité';
  const recommended=[
   {kind:'attack',value:attack,reason:attackWhy},
   {kind:'defence',value:defence,reason:defenceWhy}
@@ -255,7 +255,7 @@ function numericalAdviceZoneControls(l,suggestion){
    <p class="help">${action[0].toUpperCase()+action.slice(1)} locale : ${options[current][0]} ; le staff conseille ${options[suggestion.value][0]}. Cette priorité locale neutralise le conseil dans cette zone.</p></div>
    <button class="small" onclick="applyNumericalZoneAdvice('${suggestion.kind}','${zone}','${suggestion.value}')" ${canApply?'':'disabled'}>Adapter cette zone</button></div>`;
  }).join('')
- +`<p class="help">Chaque bouton modifie uniquement la consigne locale indiquée, après votre clic. Le plan principal et les autres zones ne changent pas.</p></div>`;
+ +`<p class="help">Chaque bouton modifie uniquement la consigne locale indiquée, après ton clic. Le plan principal et les autres zones ne changent pas.</p></div>`;
 }
 // V24 : comparaison simultanée et sans mutation des quatre zones du terrain.
 // Les points repères sont au milieu de chaque secteur depuis notre propre en-but.
@@ -280,11 +280,11 @@ function fourZoneTacticalPanel(l){
  const index=n=>n.toFixed(2).replace('.',',');
  const points=n=>(n>0?'+':n<0?'−':'')+Math.abs(n*100).toFixed(1).replace('.',',')+' pt';
  return `<div class="four-zone-preview" aria-label="Comparaison tactique des quatre zones">
- <h3>Votre plan sur les quatre zones</h3>
- <p class="help">Aperçu comparatif en lecture seule, calculé à 12, 36, 64 et 90 m de votre en-but. Une consigne locale prioritaire est signalée. Les chiffres proviennent du moteur fictif, sans prédire le résultat.</p>
+ <h3>Ton plan sur les quatre zones</h3>
+ <p class="help">Aperçu comparatif en lecture seule, calculé à 12, 36, 64 et 90 m de ton en-but. Une consigne locale prioritaire est signalée. Les chiffres proviennent du moteur fictif, sans prédire le résultat.</p>
  <div class="four-zone-scroll"><table><thead><tr><th scope="col">Zone</th><th scope="col">Attaque</th><th scope="col">Défense</th></tr></thead><tbody>
  ${zones.map(z=>`<tr class="${z.current?'four-zone-current':''}">
-  <th scope="row">${z.label}${z.current?' · ballon ici':''}<small>Repère : ${z.own} m depuis votre en-but</small></th>
+  <th scope="row">${z.label}${z.current?' · ballon ici':''}<small>Repère : ${z.own} m depuis ton en-but</small></th>
   <td><strong>${TACTICS[z.attack.actual][0]}</strong> <small>${z.attackLocal?'Consigne locale':'Plan général'}</small>
    <span>Gain si progression réussie : ${z.attack.minimum}–${z.attack.maximum} m</span>
    <span>Faute de main / séquence : ${percent(z.attack.handling)}</span>
@@ -297,7 +297,7 @@ function fourZoneTacticalPanel(l){
  </tr>`).join('')}</tbody></table></div>
  ${fourZoneWhatIfPanel(l)}
  ${fourZoneDoubleWhatIfPanel(l)}
- <p class="help">Les valeurs correspondent à quatre situations représentatives indépendantes : vous attaquez avec le ballon, ou vous défendez face à la possession adverse. Elles peuvent varier selon le territoire exact, la météo et les joueurs. Modifier une tactique exige toujours une action explicite dans le carnet de jeu.</p>
+ <p class="help">Les valeurs correspondent à quatre situations représentatives indépendantes : tu attaques avec le ballon, ou tu défends face à la possession adverse. Elles peuvent varier selon le territoire exact, la météo et les joueurs. Modifier une tactique exige toujours une action explicite dans le carnet de jeu.</p>
  </div>`;
 }
 // V25 : sélection locale éphémère pour un scénario de comparaison, jamais sauvegardée.
@@ -367,8 +367,8 @@ function fourZoneWhatIfPanel(l){
  ]):[];
  const same=rows.length&&rows.every(row=>row[1]===row[2]);
  return `<section class="four-zone-whatif" aria-label="Comparaison avant après d'une consigne alternative">
-  <h4>Et si vous changiez une seule zone ?</h4>
-  <p class="help">Comparez une hypothèse pour l'attaque ou la défense, sans toucher à votre match ni à la carrière.</p>
+  <h4>Et si tu changeais une seule zone ?</h4>
+  <p class="help">Compare une hypothèse pour l'attaque ou la défense, sans toucher à ton match ni à la carrière.</p>
   <div class="four-zone-whatif-selects">
    <label>Zone à comparer<select aria-label="Zone à comparer" onchange="setFourZonePreviewChoice('zone',this.value)">
     ${Object.entries(FIELD_ZONES).map(([k,label])=>`<option value="${k}" ${zone===k?'selected':''}>${label}</option>`).join('')}</select></label>
@@ -384,7 +384,7 @@ function fourZoneWhatIfPanel(l){
    <div class="four-zone-scroll"><table class="four-zone-whatif-table"><thead><tr><th scope="col">Effet du moteur</th><th scope="col">Avant</th><th scope="col">Après (aperçu)</th></tr></thead><tbody>
     ${rows.map(([label,before,after])=>`<tr><th scope="row">${label}</th><td>${before}</td><td>${after}</td></tr>`).join('')}</tbody></table></div>
    ${same?'<p class="help">Aucun écart : les deux scénarios produisent les mêmes effets pour cette zone.</p>':''}`:
-   '<p class="help">Choisissez une consigne alternative pour afficher ses effets, sans modification réelle.</p>'}
+   '<p class="help">Choisis une consigne alternative pour afficher ses effets, sans modification réelle.</p>'}
   <p class="help">Indices et coefficients du moteur fictif, à situation identique : ce ne sont ni des statistiques observées ni une prédiction de score. Aucun scénario n'est appliqué automatiquement ; les consignes réelles se modifient dans le carnet de jeu par action explicite.</p>
  </section>`;
 }
@@ -476,7 +476,7 @@ function fourZoneDoubleWhatIfPanel(l){
  }):[];
  return `<section class="four-zone-double" aria-label="Aperçu de deux ajustements tactiques combinés">
   <h4>Deux ajustements, deux zones</h4>
-  <p class="help">Choisissez d’abord la première hypothèse ci-dessus, puis une deuxième zone distincte. Les deux consignes sont évaluées ensemble sur une copie temporaire du carnet de jeu.</p>
+  <p class="help">Choisis d’abord la première hypothèse ci-dessus, puis une deuxième zone distincte. Les deux consignes sont évaluées ensemble sur une copie temporaire du carnet de jeu.</p>
   <div class="four-zone-whatif-selects">
    <label>Deuxième zone<select aria-label="Deuxième zone" onchange="setFourZoneSecondChoice('zone',this.value)">
     ${zones.map(key=>`<option value="${key}" ${zone===key?'selected':''}>${FIELD_ZONES[key]}</option>`).join('')}</select></label>
@@ -497,8 +497,8 @@ function fourZoneDoubleWhatIfPanel(l){
    </article>`).join('')}</div>
    <div class="four-zone-double-tradeoffs"><strong>Compromis dans les deux secteurs</strong>
     ${tradeoffs.map(line=>`<p class="help">${line}</p>`).join('')}</div>`:
-   `<p class="help">${!first?'Choisissez d’abord une première consigne alternative.':'Choisissez une deuxième consigne alternative pour voir le scénario à deux zones.'}</p>`}
-  <p class="help">Les zones sont distinctes : les risques et indices de fatigue ne sont pas additionnés en une probabilité ou un résultat global. Les valeurs proviennent du moteur fictif à des positions représentatives. Aucune sélection ne modifie vos tactiques ni votre sauvegarde.</p>
+   `<p class="help">${!first?'Choisis d’abord une première consigne alternative.':'Choisis une deuxième consigne alternative pour voir le scénario à deux zones.'}</p>`}
+  <p class="help">Les zones sont distinctes : les risques et indices de fatigue ne sont pas additionnés en une probabilité ou un résultat global. Les valeurs proviennent du moteur fictif à des positions représentatives. Aucune sélection ne modifie tes tactiques ni ta sauvegarde.</p>
  </section>`;
 }
 function numericalAdvicePanel(l){
@@ -511,9 +511,9 @@ function numericalAdvicePanel(l){
   ${advice.suggestions.length?advice.suggestions.map(s=>`<div class="staff-suggestion">
    <div><strong>${s.kind==='attack'?'Attaque':'Défense'} : ${s.kind==='attack'?TACTICS[s.value][0]:DEFENCES[s.value][0]}</strong><p>${s.reason}</p>${numericalAdviceComparison(l,s)}${numericalAdviceZoneControls(l,s)}</div>
    <button class="small" onclick="applyNumericalAdvice('${s.kind}','${s.value}')" ${canApply?'':'disabled'}>Appliquer cette consigne</button>
-  </div>`).join(''):'<p class="help">Vos consignes générales correspondent déjà aux recommandations du staff.</p>'}
-  ${(advice.zoneSuggestions||[]).filter(s=>!advice.suggestions.some(a=>a.kind===s.kind)).map(s=>`<div class="staff-suggestion"><div><strong>${s.kind==='attack'?'Attaque':'Défense'} : votre plan principal correspond au conseil du staff.</strong>${numericalAdviceZoneControls(l,s)}</div></div>`).join('')}
-  <p class="help">${canApply?'À vous de choisir.':'Mettez le match en pause pour appliquer une recommandation.'} Les consignes par zone du carnet de jeu restent prioritaires. Aucun ajustement automatique.</p>
+  </div>`).join(''):'<p class="help">Tes consignes générales correspondent déjà aux recommandations du staff.</p>'}
+  ${(advice.zoneSuggestions||[]).filter(s=>!advice.suggestions.some(a=>a.kind===s.kind)).map(s=>`<div class="staff-suggestion"><div><strong>${s.kind==='attack'?'Attaque':'Défense'} : ton plan principal correspond au conseil du staff.</strong>${numericalAdviceZoneControls(l,s)}</div></div>`).join('')}
+  <p class="help">${canApply?'À toi de choisir.':'Mets le match en pause pour appliquer une recommandation.'} Les consignes par zone du carnet de jeu restent prioritaires. Aucun ajustement automatique.</p>
  </section>`;
 }
 function applyNumericalAdvice(kind,value){

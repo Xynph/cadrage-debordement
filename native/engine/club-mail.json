@@ -5,7 +5,7 @@
     "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; arretsParJour : mails qui arrêtent « Continuer » le même jour ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
     "arretsParJour": 2,
-    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 3, "recrutement": 2, "presse": 2, "direction": 2, "competition": 3, "formation": 2, "moments": 2 },
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2 },
     "boite": 160,
     "projection": 80,
     "delaiReponse": 7,
@@ -577,6 +577,34 @@
         { "sujet": "La pelouse pour demain", "corps": "Petit point terrain avant {adversaire} : {pelouse}." }
       ],
       "reponses": []
+    },
+    "bilan_match": {
+      "categorie": "staff", "declencheur": "bilan_match", "priorite": 22, "arret": true, "ecran": "Préparation",
+      "expediteur": "Gabi, ton adjoint",
+      "formulations": [
+        {"sujet":"Trois enseignements contre {adversaire}","corps":"Coach, j'ai revu le match ({score}, {resultat}). Ce que je retiens : un, {un} ; deux, {deux} ; trois, {trois}. Je proposerais d'axer la semaine sur {axe}."},
+        {"sujet":"À froid, après {adversaire}","corps":"{score} contre {adversaire}. Trois choses à garder en tête : {un}, puis {deux}, et enfin {trois}. Pour moi la priorité de la semaine, c'est {axe}. Tu tranches ?"},
+        {"sujet":"Débrief : {adversaire}","corps":"Le staff a décortiqué {resultat} ({score}). Premier point : {un}. Deuxième : {deux}. Troisième : {trois}. On oriente la préparation sur {axe} ?"}
+      ],
+      "reponses": [
+        {"id":"conquete","libelle":"Axer la semaine sur la conquête","effets":{"focus":"conquete"},"resultat":"Préparation collective orientée mêlée et touche."},
+        {"id":"defense","libelle":"Axer sur la défense et la discipline","effets":{"focus":"defence"},"resultat":"Préparation collective orientée organisation défensive et discipline."},
+        {"id":"pied","libelle":"Axer sur le jeu au pied","effets":{"focus":"pied"},"resultat":"Préparation collective orientée occupation et tirs au but."},
+        {"id":"plan","libelle":"Garder notre plan","effets":{},"resultat":"Préparation inchangée."}
+      ]
+    },
+    "tour_championnats": {
+      "categorie": "competition", "declencheur": "tour_championnats", "priorite": 30, "arret": false, "ecran": "Classements",
+      "expediteur": "Le service communication",
+      "formulations": [
+        {"sujet":"Le tour du championnat","corps":"Ce qu'il fallait retenir de la semaine chez nos concurrents. Le carton : {carton}. La surprise : {surprise}. En tête : {leader}. Et {serie}."},
+        {"sujet":"La semaine chez les autres","corps":"Petit tour des terrains : {carton}, voilà le score qui marque. Côté surprise, {surprise}. Le leader reste {leader} ; {serie}."},
+        {"sujet":"Revue du week-end","corps":"En tête, {leader}. Le résultat le plus net : {carton}. Côté surprise, {surprise}, et {serie}. De quoi suivre le classement de près."}
+      ],
+      "reponses": [
+        {"id":"vestiaire","libelle":"Afficher au vestiaire","effets":{"moral":1},"resultat":"Le groupe sait où en sont les concurrents."},
+        {"id":"lu","libelle":"Lu","effets":{},"resultat":"Revue classée."}
+      ]
     }
   }
 }

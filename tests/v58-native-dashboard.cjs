@@ -6,7 +6,7 @@ const source=fs.readFileSync('dist/manager-mobility.js','utf8');
 const start=source.indexOf('function managerMobilityPanel(){');
 assert.ok(start>=0);
 const section=source.slice(start);
-assert.match(section,/Suivi de vos candidatures/);
+assert.match(section,/Suivi de tes candidatures/);
 assert.match(section,/thisSeason\.filter\(a=>a\.status===s\)/);
 assert.match(section,/managerMobilityWindow\(\)/);
 assert.match(section,/visualEscape\(S\.clubs\[m\.pending\.toClub\]\.name\)/);
