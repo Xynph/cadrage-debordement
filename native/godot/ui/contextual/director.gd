@@ -324,7 +324,7 @@ func install_entrypoints() -> void:
 			var notice := _invitation_card("ContextualInvitationsBlocked", INVITATION_GOLD)
 			list.add_child(notice.card)
 			banner = notice.card
-			var why := _invitation_text("Après " + meeting_label(blocking) + " : terminez ce rendez-vous pour ouvrir les invitations.", _invitation_reason_size(), INVITATION_REASON)
+			var why := _invitation_text("Après " + meeting_label(blocking) + " : termine ce rendez-vous pour ouvrir les invitations.", _invitation_reason_size(), INVITATION_REASON)
 			why.name = "ContextualInvitationsBlockedText"
 			S.G.fill(why)
 			notice.row.add_child(why)

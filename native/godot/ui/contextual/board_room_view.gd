@@ -129,7 +129,7 @@ func _draw() -> void:
 		var button := S.button(str(project.get("label","Projet"))+" · "+_display(project.get("cost"),true)+( " · engagé" if project.get("used",false) else ""),func():_request_project(str(project.get("id",""))),enabled)
 		button.name="BoardProject_"+str(project.get("id",""));list.add_child(button)
 	_build_objective_form(list,strategy)
-	var close := S.button("REVENIR À LA GESTION" if meeting_data.get("completed",false) else "CONFIRMEZ TA DÉCISION POUR TERMINER",_close_meeting,bool(meeting_data.get("completed",false)) and not app.waiting);close.name="BoardRoomClose";frame.add_child(close)
+	var close := S.button("REVENIR À LA GESTION" if meeting_data.get("completed",false) else "CONFIRME TA DÉCISION POUR TERMINER",_close_meeting,bool(meeting_data.get("completed",false)) and not app.waiting);close.name="BoardRoomClose";frame.add_child(close)
 	director._refresh_controls()
 
 func _close_meeting() -> void:

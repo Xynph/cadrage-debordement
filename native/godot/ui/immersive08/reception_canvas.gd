@@ -467,7 +467,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 	mark_all.add_theme_font_size_override("font_size",C.px(18))
 	mark_all.disabled = markable.is_empty()
 	mark_all.accessibility_name = "Tout marquer comme lu : %d courrier(s) d'information" % markable.size()
-	mark_all.tooltip_text = ("Marque comme lus les %d courriers d'information affichés. Les courriers qui attendent ta décision restent non lus." % markable.size()) if not markable.is_empty() else "Aucun courrier d'information non lu dans cette vue. Les courriers qui attendent votre décision restent à traiter."
+	mark_all.tooltip_text = ("Marque comme lus les %d courriers d'information affichés. Les courriers qui attendent ta décision restent non lus." % markable.size()) if not markable.is_empty() else "Aucun courrier d'information non lu dans cette vue. Les courriers qui attendent ta décision restent à traiter."
 	D.text(card,25,78,"↑ ↓ choisir · Entrée ouvrir le courrier",17,C.MUTED,500,700)
 	D.line(card,Vector2(1,94),Vector2(748,94))
 	var scroll := ScrollContainer.new()
@@ -712,7 +712,7 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 ## Bascule discrète du réglage « conférences ordinaires » (commande press_policy, comme dans les Paramètres) ; la conférence en cours reste à traiter.
 static func _press_policy_toggle(card: Panel, app: Control, rectangle: Rect2) -> void:
 	var toggle := D.button(card,rectangle,_press_policy_caption(app),_press_policy_choose.bind(app, card),false,"",true,app.accent,"InboxPressPolicy")
-	toggle.tooltip_text = "Gabi tient les conférences ordinaires à votre place, sur un ton prudent : médias −2 et relation −1 avec chaque journaliste présent. Vous restez convoqué aux grands rendez-vous (arrivée, phase finale, bilan de saison, derby, crise). La conférence ouverte reste à traiter."
+	toggle.tooltip_text = "Gabi tient les conférences ordinaires à ta place, sur un ton prudent : médias −2 et relation −1 avec chaque journaliste présent. Tu restes convoqué aux grands rendez-vous (arrivée, phase finale, bilan de saison, derby, crise). La conférence ouverte reste à traiter."
 	toggle.disabled = app.waiting
 
 static func _press_policy_current(app: Control) -> String:

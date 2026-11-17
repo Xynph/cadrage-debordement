@@ -184,9 +184,12 @@ function factory() {
       return [{ key: last.fixtureId || last.date, vars: { adversaire: F.name(last.opp), score: last.us + '-' + last.them, resultat: res, un: top[0].texte, deux: top[1].texte, trois: top[2].texte, axe: axe ? AXES[axe] : 'notre plan de jeu' } }];
     },
     // Lundi : le tour du championnat du club (résultats marquants de la semaine passée, série en cours, leader).
+    // Un lundi déjà plein (trois mails par jour au plus, souvent le bilan du match et un mail plus prioritaire) le
+    // repousse au mardi ou au mercredi : clé de la semaine, la semaine passée reste celle d'avant le lundi.
     tour_championnats(F) {
-      if (F.dow !== 0) return [];
-      const from = shift(F.d, -7), week = F.hist.filter(r => r.date && r.date >= from && r.date < F.d && !r.pair.includes(F.s.club));
+      if (F.dow > 2) return [];
+      const lundi = shift(F.d, -F.dow);
+      const from = shift(lundi, -7), week = F.hist.filter(r => r.date && r.date >= from && r.date < lundi && !r.pair.includes(F.s.club));
       const members = new Set((F.s.worldMode?.leagues?.[F.lid]?.members || []).map(String));
       const inLeague = r => !members.size || (members.has(String(r.pair[0])) && members.has(String(r.pair[1])));
       const games = week.filter(inLeague);
@@ -202,7 +205,7 @@ function factory() {
       if (!leader) return [];
       const runs = [...members].map(id => { let n = 0; const mine = F.hist.filter(r => r.pair.map(String).includes(id)); for (let i = mine.length - 1; i >= 0; i--) { const k = mine[i].pair.map(String).indexOf(id); if (mine[i].score[k] > mine[i].score[1 - k]) n++; else break; } return { id, n }; }).filter(x => x.n >= 3 && String(x.id) !== String(F.s.club)).sort((a, b) => b.n - a.n || a.id.localeCompare(b.id));
       const serie = runs[0] ? F.name(Number.isNaN(Number(runs[0].id)) ? runs[0].id : Number(runs[0].id)) || F.name(runs[0].id) : '';
-      return [{ key: F.d, vars: { carton, surprise, leader, serie: serie ? serie + ' enchaîne ' + runs[0].n + ' victoires de suite' : 'aucune équipe ne s’envole' } }];
+      return [{ key: lundi, vars: { carton, surprise, leader, serie: serie ? serie + ' enchaîne ' + runs[0].n + ' victoires de suite' : 'aucune équipe ne s’envole' } }];
     },
     analyste(F) {
       if (!F.next || F.next.date !== shift(F.d, 2)) return [];

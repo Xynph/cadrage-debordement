@@ -344,6 +344,16 @@ static func _objective(card: Panel, app: Control, rows: Array, w: int) -> void:
 	var chip := D.chip(card, Rect2(w-262,16,242,30), "%s%s · %s" % [str(status.label), place, status.trend], tone)
 	chip.name = "OfficeBoardObjective"
 	chip.tooltip_text = "Objectif du conseil : %s (place visée : %d)" % [str(status.label), int(status.target)]
+	# Bloc étroit (à côté de Gabi) : le titre complet passerait sous la pastille ; il se réduit à « CLASSEMENT »
+	# et le championnat passe dans l'infobulle.
+	var heading := card.get_node_or_null("CardTitle") as Label
+	if heading == null: return
+	var room := chip.position.x - C.px(10) - heading.position.x
+	if C.font(700).get_string_size(heading.text, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(26))).x > room:
+		chip.tooltip_text += " · " + P.league_name(app.model)
+		heading.text = "CLASSEMENT"
+		heading.tooltip_text = "CLASSEMENT · " + P.league_name(app.model)
+	heading.size.x = minf(heading.size.x, room)
 
 static func _journal(card: Panel, app: Control, w: int = 548) -> void:
 	var text_w := w - 68

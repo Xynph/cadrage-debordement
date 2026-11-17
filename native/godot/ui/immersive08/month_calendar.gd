@@ -566,7 +566,7 @@ func _absence_chip(events: Array[Dictionary], expanded: bool = false) -> PanelCo
 	panel.accessibility_name = " · ".join(captions)+" · "+" ; ".join(names)
 	panel.tooltip_text = panel.accessibility_name
 	if expanded:
-		body.add_child(C.wrap("Convocations confirmées et dates de retour publiées. Consultez la fiche au retour pour la condition physique.",18,C.MUTED))
+		body.add_child(C.wrap("Convocations confirmées et dates de retour publiées. Consulte la fiche au retour pour la condition physique.",18,C.MUTED))
 		body.add_child(_action("Consulter les disponibilités",_open_absences,"CalendarOpenAbsences"))
 	return panel
 
@@ -908,7 +908,7 @@ func _templates(body: VBoxContainer) -> void:
 	var chooser := OptionButton.new()
 	chooser.name = "CalendarTemplate"
 	chooser.accessibility_name = "Modèle de semaine"
-	chooser.tooltip_text = "Choisissez une semaine type pour rendre le bouton Appliquer disponible."
+	chooser.tooltip_text = "Choisis une semaine type pour rendre le bouton Appliquer disponible."
 	chooser.add_theme_font_override("font", C.DISPLAY)
 	chooser.add_theme_font_size_override("font_size", maxi(16,C.px(18)))
 	chooser.custom_minimum_size.y = C.px(32)
@@ -934,7 +934,7 @@ func _templates(body: VBoxContainer) -> void:
 	var apply := _action("Appliquer au prochain match", func():
 		if chooser.selected > 0:
 			app._command("calendar_template", {"fixtureId":fixture_id,"template":chooser.get_item_metadata(chooser.selected)})
-	, "CalendarApplyTemplate", "Choisissez un modèle de semaine avant de l’appliquer.")
+	, "CalendarApplyTemplate", "Choisis un modèle de semaine avant de l’appliquer.")
 	apply.disabled = chooser.selected < 1 or chooser.is_item_disabled(chooser.selected)
 	chooser.item_selected.connect(func(index: int):
 		var selected_id: Variant = chooser.get_item_metadata(index)
