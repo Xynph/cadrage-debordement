@@ -216,6 +216,7 @@
       "tests/godot-avis-staff.cjs": 120,
       "tests/avis-staff-feuille.cjs": 60,
       "tests/world-stades-retours.cjs": 75,
+      "tests/world-youth-history-promotion.cjs": 20,
       "tests/youth-development-plan.cjs": 15,
       "tests/youth-development-review.cjs": 14,
       "tests/youth-identity.cjs": 12,
