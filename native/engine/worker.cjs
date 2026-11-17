@@ -914,7 +914,6 @@ function createBridge(options={}){
     let command=request.command,restoring=null;
     // Budget réaliste des carrières aux salaires liés au niveau : branché avant toute commande,
     // y compris le premier snapshot en lecture seule après une reprise (plancher et prévision).
-    if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);run(ctx.nativeProlongations.BRANCHEMENT);run(ctx.nativeStaffRenouvellement.BRANCHEMENT);}
     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);ctx.nativeClubInvestments=require('./club-investments.cjs');run(ctx.nativeClubInvestments.BRANCHEMENT);run(ctx.nativeProlongations.BRANCHEMENT);run(ctx.nativeStaffRenouvellement.BRANCHEMENT);}
     const syncedAtStart=versionsSynced;
     if(!READ_ONLY.has(command)){peek('nativeSectionsFresh=false');stateEpoch++;versionsSynced=false;}
