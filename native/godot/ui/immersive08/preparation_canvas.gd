@@ -163,6 +163,7 @@ func _heading() -> void:
 		if not venue_name.is_empty():
 			D.text(location,16,61,venue_name,24,C.IVORY,600,780).name = "PreparationFixtureVenue"
 	D.text(hero, 29, 143, context, 25, C.IVORY, 500, 1220)
+	if P.is_derby(app.model) and preparation.is_empty(): D.derby_chip(hero, Rect2(2106, 28, 98, 30))
 	var tabbar := Control.new()
 	tabbar.name = "PreparationTabs"
 	tabbar.mouse_filter = Control.MOUSE_FILTER_IGNORE

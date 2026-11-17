@@ -135,6 +135,14 @@ static func chip(parent: Node, rectangle: Rect2, caption: String, color: Color =
 	text(frame,rectangle.size.x/2,rectangle.size.y/2+7,caption,19,color,600,rectangle.size.x-(4 if rectangle.size.x<=60 else 12),HORIZONTAL_ALIGNMENT_CENTER)
 	return frame
 
+## Pastille « DERBY » posée dans un rectangle de la page (Bureau, Préparation, Composition).
+static func derby_chip(parent: Node, rectangle: Rect2) -> Panel:
+	var frame := rect(parent,rectangle,Color("43361c"),5,C.GOLD)
+	frame.name = "DerbyTag"
+	text(frame,rectangle.size.x/2,rectangle.size.y/2+7,"DERBY",19,C.AMBER,700,rectangle.size.x-12,HORIZONTAL_ALIGNMENT_CENTER)
+	frame.tooltip_text = "Derby : une rivalité ancienne, plus de tension sur le terrain et dans les tribunes."
+	return frame
+
 static func tab_state(control: Button, dimensions: Vector2, selected: bool, icon: String) -> void:
 	var top := Color("1a6744") if selected else Color("182426")
 	var bottom := Color("0b3928") if selected else Color("101819")
