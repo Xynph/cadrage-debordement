@@ -116,10 +116,14 @@ static func state_color(level: Dictionary, dark: bool = false) -> Color:
 
 ## Jauge « Vitesse de jeu estimée » : 5 étoiles (5 = rapide) aux couleurs d'état du carnet,
 ## libellé du cran et durée estimée d'une semaine et d'une saison sur cette machine.
-static func gauge(parent: Node, app: Control, ids: Array, dark: bool = false) -> void:
+## `compact` (thème sombre seulement) : une seule ligne, étoiles, cran et durées (écran Options de carrière).
+static func gauge(parent: Node, app: Control, ids: Array, dark: bool = false, compact: bool = false) -> void:
 	var bench := benchmark(app)
 	var costs: Dictionary = bench.get("costs", {})
 	var result := estimate(costs, ids)
+	if dark and compact:
+		_compact_gauge(parent, result)
+		return
 	var block := C.v(6) if dark else G.v(5)
 	block.name = "LeagueDetailGauge"
 	parent.add_child(block)
@@ -169,6 +173,42 @@ static func gauge(parent: Node, app: Control, ids: Array, dark: bool = false) ->
 	G.fill(timing)
 	timing.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(timing)
+
+static func _compact_gauge(parent: Node, result: Dictionary) -> void:
+	var line := C.h(10)
+	line.name = "LeagueDetailGauge"
+	parent.add_child(line)
+	var caption := C.label("Vitesse estimée", 19, C.GOLD, true, 700)
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	line.add_child(caption)
+	if result.is_empty():
+		var pending := C.label("Mesure de ta machine en cours…", 18, C.MUTED, false)
+		pending.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		line.add_child(pending)
+		return
+	var level: Dictionary = result.level
+	var tint := state_color(level, true)
+	var stars := int(result.stars)
+	var row := C.h(1)
+	row.name = "LeagueDetailStars"
+	row.set_meta("stars", stars)
+	row.tooltip_text = "%d étoile%s sur 5 : plus il y a d’étoiles, plus le jeu avance vite." % [stars, "s" if stars > 1 else ""]
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	line.add_child(row)
+	for i in 5:
+		var star := C.label("★" if i < stars else "☆", 26, tint if i < stars else Color(C.MUTED, .55), true, 700)
+		star.name = "Star%d" % (i + 1)
+		row.add_child(star)
+	var verdict := C.label(str(level.get("label", "")), 23, tint, true, 700)
+	verdict.name = "LeagueDetailVerdict"
+	verdict.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	line.add_child(verdict)
+	var timing := C.label("≈ %s par semaine · ≈ %s par saison" % [duration(result.weekMs), duration(result.seasonMs)], 18, C.MUTED, false)
+	timing.name = "LeagueDetailTiming"
+	timing.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	timing.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	timing.clip_text = true
+	line.add_child(C.fill(timing))
 
 static func machine_line(app: Control) -> String:
 	var bench := benchmark(app)

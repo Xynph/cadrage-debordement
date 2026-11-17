@@ -22,6 +22,15 @@ func key(button: BaseButton, code: Key=KEY_SPACE) -> void:
 	Input.parse_input_event(event); await process_frame
 	event=InputEventKey.new(); event.keycode=code; event.physical_keycode=code; event.pressed=false
 	Input.parse_input_event(event); await settle()
+## Lectures moteur de l'écran Options (mesure de la machine, aperçu du club) : ni sauvegarde ni génération.
+const READS := ["league_benchmark","club_preview"]
+func idle() -> void:
+	var deadline := Time.get_ticks_msec()+120000
+	var calm := 0
+	while calm<30 and Time.get_ticks_msec()<deadline:
+		calm = 0 if app.waiting else calm+1
+		await process_frame
+	await settle()
 func capture(name: String) -> void:
 	if DisplayServer.get_name()=="headless": return
 	await RenderingServer.frame_post_draw
@@ -45,6 +54,9 @@ func run() -> void:
 	check(next!=null and not next.disabled,"Options de carrière accessibles après le choix du club")
 	await key(next)
 	check(app.find_child("CreationCareerOptions",true,false)!=null and app.find_child("CreationClubGrid",true,false)==null,"Écran dédié aux options de carrière")
+	await idle()
+	check(app.bridge._next_id==serial or app.last_command in READS,"Écran Options : seulement des lectures moteur")
+	serial=app.bridge._next_id
 	var option := app.find_child("CreationVaryCurrent",true,false) as CheckBox
 	check(option!=null and option.button_pressed,"Niveau variable coché par défaut")
 	check(option.text=="Faire légèrement varier le niveau actuel","Libellé explicite")
@@ -53,6 +65,7 @@ func run() -> void:
 	await key(app.find_child("CreationBackToClubs",true,false) as Button)
 	check(app.find_child("CreationClubGrid",true,false)!=null,"Retour au choix du club")
 	await key(app.find_child("CreationNext",true,false) as Button)
+	await idle()
 	option=app.find_child("CreationVaryCurrent",true,false)
 	check(not option.button_pressed,"L’aller-retour vers le club conserve l’option décochée")
 	check(app.bridge._next_id==serial,"Case et choix de club ne commandent ni sauvegarde ni génération")
@@ -70,9 +83,10 @@ func run() -> void:
 	check(app.find_child("CreationClubGrid",true,false)!=null,"Une nouvelle ouverture repart du choix du club")
 	await key((app.find_child("CreationClubGrid",true,false) as GridContainer).get_child(0) as Button)
 	await key(app.find_child("CreationNext",true,false) as Button)
+	await idle()
 	option=app.find_child("CreationVaryCurrent",true,false)
 	check(option.button_pressed,"Une nouvelle ouverture remet le défaut coché")
-	check(FileAccess.get_sha256(profile)==before and app.bridge._next_id==serial,"Ouvrir l’écran suivant préserve la carrière existante")
+	check(FileAccess.get_sha256(profile)==before and (app.bridge._next_id==serial or app.last_command in READS),"Ouvrir l’écran suivant préserve la carrière existante")
 	await capture("creation-variation-active-par-defaut-1440")
 	# The legacy creation presentation uses the same control and payload contract.
 	app.pack_manager.creation_mode="common"; app._render(); await settle()

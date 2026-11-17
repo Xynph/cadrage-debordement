@@ -242,7 +242,8 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 		underline.custom_minimum_size.y = 2
 		step.add_child(underline)
 	var banner := Control.new()
-	banner.custom_minimum_size.y = clampf(size.y * (.128 if creation else .15), 88, 215)
+	# Options de carrière : bandeau resserré, la page tient sans défilement en 1920×1080.
+	banner.custom_minimum_size.y = clampf(size.y * .07, 52, 120) if options_step else clampf(size.y * (.128 if creation else .15), 88, 215)
 	column.add_child(banner)
 	var photo := C.photo("maquette-onglets-banner" if creation else "maquette-reality-banner", Vector2.ZERO, true, .5)
 	banner.add_child(photo)
@@ -260,8 +261,8 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	banner.add_child(shade)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var padding := C.margin(57 if creation else 48)
-	padding.add_theme_constant_override("margin_top", C.px(30))
-	padding.add_theme_constant_override("margin_bottom", C.px(30))
+	padding.add_theme_constant_override("margin_top", C.px(12 if options_step else 30))
+	padding.add_theme_constant_override("margin_bottom", C.px(12 if options_step else 30))
 	banner.add_child(padding)
 	padding.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var header := C.h(29)
@@ -276,10 +277,10 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	C.fill(heading)
 	header.add_child(heading)
 	if creation:
-		heading.add_child(C.label("Options de carrière" if options_step else "Choisir sa sélection" if nation_creation else "Choisir son club", 74, C.IVORY, true, 700))
+		heading.add_child(C.label("Options de carrière" if options_step else "Choisir sa sélection" if nation_creation else "Choisir son club", 58 if options_step else 74, C.IVORY, true, 700))
 		var underline := ColorRect.new()
 		underline.color = Editorial.RAIL_GOLD
-		underline.custom_minimum_size = Vector2(C.px(100), C.px(5))
+		underline.custom_minimum_size = Vector2(C.px(100), C.px(4 if options_step else 5))
 		underline.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		heading.add_child(underline)
 	else:
