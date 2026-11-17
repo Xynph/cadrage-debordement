@@ -48,7 +48,7 @@ equals(['tests/missing-test.cjs'],allTests.slice());
 
 // Le code de gameplay sélectionne les dépendances critiques (sauvegardes incluses).
 equals(['dist/tactical-plans.js'],[
- 'tests/match-regles.cjs','tests/tactical-plans.cjs','tests/v20-numerical-ai.cjs',
+ 'tests/match-regles.cjs','tests/meteo-match.cjs','tests/tactical-plans.cjs','tests/v20-numerical-ai.cjs',
  'tests/v21-numerical-advice.cjs','tests/v22-tactical-comparison.cjs','tests/v23-local-zones.cjs','tests/v24-four-zones.cjs','tests/v25-whatif.cjs','tests/v26-dual-whatif.cjs','tests/saves.cjs'
 ]);
 const rugby=selectTests(['dist/rugby.js']);
@@ -58,7 +58,7 @@ for(const test of ['tests/rugby.cjs','tests/frontrow.cjs','tests/discipline.cjs'
 equals(['dist/saves.js'],[
  'tests/manager-mobility.cjs',
  'tests/saves.cjs','tests/v20-numerical-ai.cjs','tests/v21-numerical-advice.cjs','tests/v22-tactical-comparison.cjs','tests/v23-local-zones.cjs','tests/v24-four-zones.cjs','tests/v25-whatif.cjs','tests/v26-dual-whatif.cjs','tests/v27-physical-load.cjs','tests/v28-collective-preparation.cjs','tests/v29-focused-development.cjs','tests/v30-recruitment-intelligence.cjs','tests/v32-succession-planning.cjs','tests/v33-contract-renewals.cjs','tests/v34-counteroffers.cjs','tests/v35-salary-demand.cjs','tests/v36-satisfaction.cjs','tests/v38-individual-objectives.cjs','tests/v39-team-dynamics.cjs','tests/career-integration.cjs','tests/world-career.cjs','tests/ai-roster-cycle.cjs',
- 'tests/frontrow.cjs','tests/match-rules.cjs'
+ 'tests/frontrow.cjs','tests/match-rules.cjs','tests/meteo-match.cjs'
 ]);
 equals(['tests/v21-numerical-advice.cjs'],['tests/v21-numerical-advice.cjs']);
 equals(['tests/v22-tactical-comparison.cjs'],['tests/v22-tactical-comparison.cjs']);
