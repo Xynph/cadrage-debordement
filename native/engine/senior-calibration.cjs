@@ -168,8 +168,11 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
   const levelOf = id => levels?.joueurs?.[id] || NONE;
   const etageOf = clubId => levels?.clubs?.[clubId] ?? 'milieu';
   const leagueScale = leagueId => scale.leagues[leagueId] || scale.leagues.guest;
-  // Étage du club, élargi dans les championnats aux effectifs resserrés (scale.etageScale, absent = 1).
-  const etageBonus = (clubId, leagueId) => (scale.etages[etageOf(clubId)] ?? 0) * (scale.etageScale?.[leagueId] ?? 1);
+  // Étage du club, élargi par championnat (scale.etageScale, absent = 1) pour que les effectifs d'un même
+  // championnat ne se tiennent pas à quelques dixièmes. Un jeune (moins de 23 ans) garde l'étage simple :
+  // son niveau actuel est d'abord le sien, le club le tire moins qu'un senior établi. Valeur entière.
+  const etageBonus = (clubId, leagueId, young = false) =>
+    Math.round((scale.etages[etageOf(clubId)] ?? 0) * (young ? 1 : scale.etageScale?.[leagueId] ?? 1));
   const statsByRegistry = new WeakMap();
   const band = age => (age < scale.age.seniorFrom ? 'jeune' : 'senior');
 
@@ -228,7 +231,7 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     const young = player.age < A.seniorFrom;
     const spread = known ? deviation(player, player.rating, context, statut) * R.known
       : young ? z * R.unknown : (context.club?.get(player.fam)?.(player.rating) ?? z) * R.unknown;
-    let value = base + etageBonus(context.clubId, context.leagueId) + clamp(spread, -R.limit, R.limit);
+    let value = base + etageBonus(context.clubId, context.leagueId, young) + clamp(spread, -R.limit, R.limit);
     if (young) value -= (A.seniorFrom - player.age) * A.youngPerYear * (statut === 'titulaire' ? 0.5 : 1);
     // L'écart dans l'effectif d'un senior au statut inconnu contient déjà son âge.
     if (known && player.age >= A.veteranFrom) value -= (player.age - A.veteranFrom + 1) * A.veteranPerYear;
@@ -238,6 +241,9 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
       if (player.age < A.seniorFrom) international -= (A.seniorFrom - player.age) * R.youngInternational;
       if (player.age > A.veteranFrom) international -= player.age - A.veteranFrom;
       value = Math.max(value, international);
+    } else if (!scale.potential.eliteLeagues.includes(context.leagueId)) {
+      // Hors élite, un non-international reste sous le niveau des internationaux (85) malgré l'étage élargi.
+      value = Math.min(value, R.outsideEliteCeiling ?? 95);
     }
     return Math.round(clamp(value, 40, 95));
   }
@@ -359,7 +365,12 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     for (const list of byAge.values()) {
       list.sort((a, b) => b.dev.potential - a.dev.potential || b.rating - a.rating || compareId(a.id, b.id));
       // Les suivants restent de très bons espoirs, assez loin de 90 pour que la variation de carrière l'atteigne rarement.
-      for (const p of list.slice(scale.potential.per90Generation)) p.dev.potential = Math.max(p.rating, scale.potential.belowGeneration);
+      // Ils s'étagent dans leur ordre de 87 à 87 − belowGenerationSteps (au lieu d'un pic à 87) : les potentiels restent distincts.
+      const rest = list.slice(scale.potential.per90Generation), steps = scale.potential.belowGenerationSteps ?? 0;
+      rest.forEach((p, i) => {
+        const ceiling = scale.potential.belowGeneration - Math.floor(i * (steps + 1) / rest.length);
+        p.dev.potential = Math.max(p.rating, Math.min(p.dev.potential, ceiling));
+      });
     }
   }
 

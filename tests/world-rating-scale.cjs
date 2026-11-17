@@ -84,6 +84,13 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
       const gap = list[0].xv - list.at(-1).xv;
       assert.ok(gap >= 5 && gap <= 14, `${id} : écart meilleur/dernier XV ${gap.toFixed(1)} hors de [5 ; 14]`);
     }
+    // Effectifs moins resserrés (17/11, suite de #850) : dans chaque championnat, les XV ne se tiennent plus
+    // à quelques dixièmes (écart type entre clubs d'au moins 2,5 ; 1,6 à 2,6 avant l'élargissement).
+    for (const id of [...ELITE, 'accession', 'jlo-d2', 'nationale', 'champ']) {
+      const xvs = byLeague(id).map(c => c.xv), m = mean(xvs);
+      const sigma = Math.sqrt(mean(xvs.map(x => (x - m) ** 2)));
+      assert.ok(sigma >= 2.5, `${id} : écart type du XV entre clubs ${sigma.toFixed(2)} < 2,5`);
+    }
     const etages = levels().clubs;
     for (const id of ELITE) {
       const list = byLeague(id), top = list.filter(c => etages[c.id] === 'cador'), low = list.filter(c => etages[c.id] === 'releguable');
