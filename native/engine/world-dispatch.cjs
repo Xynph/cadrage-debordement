@@ -30,6 +30,8 @@ module.exports=function worldDispatcher(editions,makeCareer){
   nextOpening:onState('nextOpening'),clubReleaseOn:onState('clubReleaseOn'),
   enableDaily:s=>{if(edition(s))current(s).enableDaily(s);},
   dailyStatus:onState('dailyStatus'),advanceDay:onState('advanceDay'),
+  // Météo annoncée la veille du match du club (world-career.cjs) ; null hors carrière Monde.
+  ...Object.fromEntries(['fixerMeteo','meteoAnnoncee','meteoMatch','meteoPrevue'].map(name=>[name,(s,...args)=>s&&edition(s)?current(s)[name](s,...args):null])),
   label:onState('label'),validate:onState('validate'),multiplex:onState('multiplex'),finishWeek:()=>current(S).finishWeek(),
  });
 };
