@@ -1,0 +1,82 @@
+name: macOS — application et presse fictive
+on:
+  pull_request:
+    types: [labeled]
+permissions:
+  contents: read
+concurrency:
+  group: macos-receipt-${{ github.event.pull_request.number }}-${{ github.event.label.name }}
+  cancel-in-progress: true
+jobs:
+  receive:
+    if: >-
+      github.event.label.name == 'macos-receipt' &&
+      github.event.repository.private == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            architecture: arm64
+          - runner: macos-15-intel
+            architecture: x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    env:
+      SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Vérifier la machine native
+        env:
+          EXPECTED: ${{ matrix.architecture }}
+        run: |
+          python -c 'import os,platform; assert platform.system()=="Darwin"; assert platform.machine()=={"x64":"x86_64","arm64":"arm64"}[os.environ["EXPECTED"]]'
+          echo "BUILD_DIR=$RUNNER_TEMP/oval-macos" >> "$GITHUB_ENV"
+      - name: Construire le bundle avec Node embarqué
+        run: python ci/build-macos.py --source-commit "$SOURCE_COMMIT" --output "$BUILD_DIR"
+      - name: Démarrer, importer la presse fictive, sauvegarder et reprendre
+        run: python ci/receive-macos.py --build "$BUILD_DIR"
+      - name: Conserver le jeu et ses preuves fictives
+        id: artifacts
+        continue-on-error: true # Storage availability is distinct from native validation.
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: OvalLegacy27-macOS-${{ matrix.architecture }}-${{ env.SOURCE_COMMIT }}
+          path: |
+            ${{ env.BUILD_DIR }}/OvalLegacy27-macOS-*.zip
+            ${{ env.BUILD_DIR }}/build.json
+            ${{ env.BUILD_DIR }}/receipt/receipt.json
+            ${{ env.BUILD_DIR }}/receipt/*-report.json
+            ${{ env.BUILD_DIR }}/receipt/*.png
+            ${{ env.BUILD_DIR }}/receipt/*.log
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0
+      - name: Rapports et diagnostics publics (données fictives seulement)
+        if: always()
+        env:
+          ARCHIVE_STATUS: ${{ steps.artifacts.outcome }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          root = Path(os.environ['BUILD_DIR'])
+          for name in ('import.log','export.log','receipt/fresh.log','receipt/resume.log','receipt/receipt.json'):
+              path = root / name
+              if path.is_file():
+                  print('::group::' + name)
+                  print(path.read_text(errors='replace')[-18000:])
+                  print('::endgroup::')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as file:
+              file.write('macOS natif : ' + os.environ['SOURCE_COMMIT'] + '\n')
+              file.write('Archivage Actions : ' + os.environ['ARCHIVE_STATUS'] + '\n')
+              report = root / 'receipt/receipt.json'
+              file.write(report.read_text() if report.exists() else 'Recette interrompue ; consulter les journaux.')
+          PY
