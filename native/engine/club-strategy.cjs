@@ -69,20 +69,20 @@ function factory(){
  function receipt(label,before){const delta=own(S).cash-before;if(delta){S.ledger.unshift({title:label,amount:delta});S.ledger=S.ledger.slice(0,100);}}
  function execute(command,p){
   if(world(S)&&own(S).stadiumCapacity===undefined&&knownCapacity(S)!==undefined)own(S).stadiumCapacity=knownCapacity(S);
-  requireThat(p&&p.context&&p.context.season===S.season&&p.context.week===week(S)&&p.context.club===S.club,'Cette décision est périmée : actualisez le carnet.');
+  requireThat(p&&p.context&&p.context.season===S.season&&p.context.week===week(S)&&p.context.club===S.club,'Cette décision est périmée : actualise le carnet.');
   requireThat(!S.live&&S.phase!=='ended','Décision indisponible pendant le match ou en fin de saison.');
   const save=()=>true,before=own(S).cash;let ok=false,label='Décision du club';
-  if(command==='club_academy_investment'){requireThat(p.confirmed===true,'Confirmez l’engagement hebdomadaire.');if(!careerIntegrated())requireThat(careerEnable(),'Gestion intégrée indisponible.');ok=careerSetAcademyInvestment(p.amount);}
-  else if(command==='club_facility_upgrade'){requireThat(p.confirmed===true,'Confirmez le coût des installations.');if(!worldActive())requireThat(worldEnable(),'Installations indisponibles.');const q=worldFacilityQuote(S.club);requireThat(q&&p.cost===q.cost&&p.level===worldClub(S.club).facilities,'Le devis des installations a changé.');ok=worldUpgradeFacility();}
-  else if(command==='club_sponsor_sign'){requireThat(p.confirmed===true,'Confirmez les conditions du sponsor.');if(!careerIntegrated())requireThat(careerEnable(),'Gestion intégrée indisponible.');ok=careerSponsorPick(p.key);}
+  if(command==='club_academy_investment'){requireThat(p.confirmed===true,'Confirme l’engagement hebdomadaire.');if(!careerIntegrated())requireThat(careerEnable(),'Gestion intégrée indisponible.');ok=careerSetAcademyInvestment(p.amount);}
+  else if(command==='club_facility_upgrade'){requireThat(p.confirmed===true,'Confirme le coût des installations.');if(!worldActive())requireThat(worldEnable(),'Installations indisponibles.');const q=worldFacilityQuote(S.club);requireThat(q&&p.cost===q.cost&&p.level===worldClub(S.club).facilities,'Le devis des installations a changé.');ok=worldUpgradeFacility();}
+  else if(command==='club_sponsor_sign'){requireThat(p.confirmed===true,'Confirme les conditions du sponsor.');if(!careerIntegrated())requireThat(careerEnable(),'Gestion intégrée indisponible.');ok=careerSponsorPick(p.key);}
   else if(command==='club_board_priority')ok=CDSportingDirectorV105V110.priority(S,p.key,save);
   else if(command==='club_board_assignment')ok=CDSportingDirectorV105V110.delegate(S,p.department,p.mission,save);
-  else if(command==='club_board_project'){requireThat(p.confirmed===true,'Confirmez le coût du projet.');ok=CDSportingDirectorV105V110.invest(S,p.kind,save);label='Projet : '+(projects[p.kind]?.label||'');if(ok)receipt(label,before);}
-  else if(command==='club_board_mitigation'){requireThat(p.confirmed===true,'Confirmez la mesure de prévention.');ok=CDSportingDirectorV105V110.mitigate(S,p.kind,p.action,save);if(ok)receipt('Prévention : '+p.kind,before);}
+  else if(command==='club_board_project'){requireThat(p.confirmed===true,'Confirme le coût du projet.');ok=CDSportingDirectorV105V110.invest(S,p.kind,save);label='Projet : '+(projects[p.kind]?.label||'');if(ok)receipt(label,before);}
+  else if(command==='club_board_mitigation'){requireThat(p.confirmed===true,'Confirme la mesure de prévention.');ok=CDSportingDirectorV105V110.mitigate(S,p.kind,p.action,save);if(ok)receipt('Prévention : '+p.kind,before);}
   else if(command==='club_board_objective'){requireThat(['wins','points','rank','cash'].includes(p.type)&&isInt(p.deadline,week(S)+1,weeks(S))&&Number.isFinite(p.target)&&p.target>=0&&p.target<=1e9,'Objectif invalide.');let b=S.nativeBoardCalendar;if(!b)b=CDBoardCalendar.create('club-'+S.club,S.season);requireThat(b.season===S.season&&b.objectives.length<8,'Feuille de route complète.');S.nativeBoardCalendar=CDBoardCalendar.objective(b,{id:'goal:'+S.season+':'+S.club+':'+p.type,type:p.type,target:p.target,deadline:p.deadline,weight:1});ok=true;}
   else if(command==='club_fans_price')ok=CDFanExperienceV111V116.setPrice(S,p.key,save);
-  else if(['club_fans_campaign','club_fans_community','club_fans_service'].includes(command)){requireThat(p.confirmed===true,'Confirmez le coût de cette action.');const kind=command.slice('club_fans_'.length);ok=CDFanExperienceV111V116[kind](S,p.key,save);if(ok)receipt('Supporters : '+({campaign:campaigns,community,service:services}[kind][p.key]?.label||p.key),before);}
-  requireThat(ok,'Décision refusée : vérifiez la phase, les fonds et les actions déjà engagées.');return {clubDecision:{command,cashChange:own(S).cash-before}};
+  else if(['club_fans_campaign','club_fans_community','club_fans_service'].includes(command)){requireThat(p.confirmed===true,'Confirme le coût de cette action.');const kind=command.slice('club_fans_'.length);ok=CDFanExperienceV111V116[kind](S,p.key,save);if(ok)receipt('Supporters : '+({campaign:campaigns,community,service:services}[kind][p.key]?.label||p.key),before);}
+  requireThat(ok,'Décision refusée : vérifie la phase, les fonds et les actions déjà engagées.');return {clubDecision:{command,cashChange:own(S).cash-before}};
  }
  let installed=false;
  function installHooks(){if(installed)return;installed=true;

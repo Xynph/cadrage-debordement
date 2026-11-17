@@ -68,7 +68,7 @@ static func _journal(app: Control, data: Dictionary) -> Control:
 		var ranking := G.v(10)
 		G.fill(ranking)
 		columns.add_child(ranking)
-		G.photo_note(news, app.model.club, "Le journal de votre carrière", "Les faits du terrain", "stadium", 170)
+		G.photo_note(news, app.model.club, "Le journal de ta carrière", "Les faits du terrain", "stadium", 170)
 		news.add_child(G.section("Les résultats conservés"))
 		if division.results.is_empty(): news.add_child(G.wrap("Aucun résultat enregistré dans cette division. Le premier coup d’envoi ouvrira le journal.", 12))
 		for result: Dictionary in division.results:
@@ -133,11 +133,11 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 				feedback.add_child(G.wrap("%s · relation %+.0f → %+.0f (%+.0f)" % [identity, exchange.before, exchange.after, exchange.delta], 12, G.GOOD if float(exchange.delta) >= 0 else G.ALERT))
 		list.add_child(G.separator())
 	if not conference.available or origin != conference.get("invitationId"):
-		var explanation := "Ouvrez l’invitation dans Réception." if conference.available else str(conference.reason)
+		var explanation := "Ouvre l’invitation dans Réception." if conference.available else str(conference.reason)
 		list.add_child(G.wrap(explanation, 13, G.INK))
 		return tab
-	list.add_child(G.wrap("Cinq tons. Tabulation pour parcourir les choix, Espace pour sélectionner. Publier valide toutes vos réponses.", 12, G.INK))
-	var memory_notice := G.wrap("Les relances reprennent vos échanges précédents avec ce journaliste, dans ce club et cette saison.", 12)
+	list.add_child(G.wrap("Cinq tons. Tabulation pour parcourir les choix, Espace pour sélectionner. Publier valide toutes tes réponses.", 12, G.INK))
+	var memory_notice := G.wrap("Les relances reprennent tes échanges précédents avec ce journaliste, dans ce club et cette saison.", 12)
 	memory_notice.name = "PressMemoryNotice"
 	list.add_child(memory_notice)
 	var choices := _conference_draft(app, data)
@@ -161,7 +161,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 		provenance.name = "PressIdentity_" + str(question.id)
 		identity.add_child(provenance)
 		interview.add_child(G.wrap("Style d’entretien : %s · %s" % [question.journalist.styleLabel, question.journalist.personality], 12))
-		var relation := G.wrap("%s · relation %+.0f / 100 · %d échange(s) avec vous" % [question.relation.label, question.relation.score, question.relation.encounters], 12, G.GOLD)
+		var relation := G.wrap("%s · relation %+.0f / 100 · %d échange(s) avec toi" % [question.relation.label, question.relation.score, question.relation.encounters], 12, G.GOLD)
 		relation.name = "PressRelation_" + str(question.id)
 		interview.add_child(relation)
 		if question.get("followUp") is Dictionary:
@@ -206,7 +206,7 @@ static func _history(app: Control, data: Dictionary) -> Control:
 	var tab := G.v(12)
 	tab.name = "Historique"
 	var list := G.scroll(tab)
-	if data.history.is_empty(): list.add_child(G.wrap("Vous n’avez encore publié aucune conférence.", 13))
+	if data.history.is_empty(): list.add_child(G.wrap("Tu n’as encore publié aucune conférence.", 13))
 	var rows: Array = data.history.duplicate()
 	rows.reverse()
 	for row: Dictionary in rows:

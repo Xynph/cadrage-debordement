@@ -102,13 +102,28 @@ function factory(){
  }
  // Validation : résultat officiel = déroulé affiché ; la rencontre est rejouée sur la vraie
  // carrière avec le même flux pour en appliquer les effets une fois.
+ // Le résultat montré est d'abord lu dans la carrière (`worldMode.multiplex`, noté à la validation de notre
+ // match, voir persist) : une carrière rechargée ou un journal rejoué joue la journée comme la session d'origine.
  function official(s,f,run){
-  const own=ownFixture(s);
-  if(!cache||!own||cache.key!==keyOf(s,own)||!cache.matchs.has(f.id))return run();
-  const x=cache.matchs.get(f.id);cache.matchs.delete(f.id);if(!cache.matchs.size)cache=null;
+  const own=ownFixture(s),key=own?keyOf(s,own):null,saved=s?.worldMode?.multiplex;
+  let expected;
+  if(saved){
+   if(saved.key!==key)delete s.worldMode.multiplex;
+   else if(Object.prototype.hasOwnProperty.call(saved.results,String(f.id))){expected=saved.results[f.id];delete saved.results[f.id];if(!Object.keys(saved.results).length)delete s.worldMode.multiplex;}
+  }
+  if(cache&&key&&cache.key===key&&cache.matchs.has(f.id)){const x=cache.matchs.get(f.id);cache.matchs.delete(f.id);if(!cache.matchs.size)cache=null;if(expected===undefined)expected=x.result;}
+  if(expected===undefined)return run();
   const r=withStream(seedOf(s,f),run);
-  if(JSON.stringify(r)===JSON.stringify(x.result)){counters.consumed++;return r;}
-  counters.divergences++;return copy(x.result);
+  if(JSON.stringify(r)===JSON.stringify(expected)){counters.consumed++;return r;}
+  counters.divergences++;return copy(expected);
+ }
+ // Validation de notre match (calendrier journalier) : les résultats montrés des autres rencontres de la journée
+ // entrent dans la carrière, donc dans la sauvegarde ; sinon un rechargement les rejouerait autrement.
+ function persist(s){
+  const own=ownFixture(s);
+  if(!cache||!own||cache.key!==keyOf(s,own)||!cache.matchs.size)return;
+  const results={};for(const [id,x] of cache.matchs)results[id]=copy(x.result);
+  s.worldMode.multiplex={key:cache.key,results};
  }
  function stateAt(rows,minute){let row=rows[0];for(const r of rows){if(r[0]<=minute)row=r;else break;}return row;}
  // Multiplex et classement à la minute montrée de notre match (`minute`, `score`, `essais` lus
@@ -132,15 +147,20 @@ function factory(){
   if(c.phase==='league'&&Object.hasOwn(s.worldMode.leagues,c.competitionId)){
    const ours=[Math.max(0,score?.[0]|0),Math.max(0,score?.[1]|0)],ourTries=[Math.max(0,essais?.[0]|0),Math.max(0,essais?.[1]|0)];
    provisional.push(W.entry(own,{...W.live(),score:ours,tries:ourTries}));
-   const before=new Map(CDWorldCareer.rows(s,c.competitionId).map((r,i)=>[r.clubId,i+1]));
+   // Classement officiel d'avant la journée : rang (flèches) et cumuls de bonus. Avant tout match joué, l'ordre
+   // officiel n'est que l'ordre initial : pas de rang officiel, pas de flèche.
+   const officiel=CDWorldCareer.rows(s,c.competitionId),avant=new Map(officiel.map((r,i)=>[r.clubId,{rang:i+1,row:r}]));
+   const classe=officiel.some(r=>(r.played|0)>0);
+   // Bonus « si ça finit ainsi » pris CETTE journée (cumul en direct − cumul officiel), pas les cumuls de la saison.
+   const jour=(r,k)=>{const n=(r[k]|0)-(avant.get(r.clubId)?.row?.[k]|0);return n>0?n:0;};
    classement=W.rows(c.competitionId,provisional).map((r,i)=>({rang:i+1,clubId:r.clubId,abbr:club(r.clubId).abbr,nom:club(r.clubId).nom,joues:r.played,points:r.points,diff:r.diff??(r.pf-r.pa),
-    bonusOff:r.offensiveBonus??null,bonusDef:r.defensiveBonus??null,rangOfficiel:before.get(r.clubId)??null,delta:before.has(r.clubId)?before.get(r.clubId)-(i+1):0,nous:r.clubId===s.club}));
+    bonusOff:jour(r,'offensiveBonus'),bonusDef:jour(r,'defensiveBonus'),rangOfficiel:classe?avant.get(r.clubId)?.rang??null:null,delta:classe&&avant.has(r.clubId)?avant.get(r.clubId).rang-(i+1):0,nous:r.clubId===s.club}));
   }
   return {minute:m,matchs,classement};
  }
  return {
   project(){return null;},validate(){return true;},execute(){throw Error('Multiplex : aucune commande.');},installHooks(){return true;},
-  prepare,official,journee,preparing(){return preparing;},
+  prepare,official,persist,journee,preparing(){return preparing;},
   // Essais et mesures : interrupteur (référence « sans multiplex ») et compteurs.
   setEnabled(value){if(typeof value!=='boolean')throw Error('Multiplex : drapeau invalide.');enabled=value;if(!value)cache=null;},
   counters(){return {...counters,cached:cache?cache.matchs.size:0};}

@@ -73,7 +73,7 @@ function build({history=null,archives=null,clubId,clubName=''}={}){
   founded:Number.isSafeInteger(history?.founded)?history.founded:null,
   // Chiffre de tête de l'écran : titres au palmarès (connus + carrière), jamais « 0 » sec.
   headline:vide?'Palmarès vierge':totalTitles>0?plural(totalTitles,'titre','titres')+' au palmarès':'Aucun titre pour l’instant',
-  emptyText:vide?`${name} n’a encore rien inscrit à son palmarès : la première page de son histoire s’écrit avec vous.`:'',
+  emptyText:vide?`${name} n’a encore rien inscrit à son palmarès : la première page de son histoire s’écrit avec toi.`:'',
  };
 }
 

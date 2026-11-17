@@ -55,9 +55,9 @@ func _draw() -> void:
 	var declarations := S.panel(middle, 12)
 	var decision: Variant = scene.get("decision")
 	if decision is Dictionary:
-		declarations.add_child(S.label("Votre message a été prononcé", 19, S.GOLD))
+		declarations.add_child(S.label("Ton message a été prononcé", 19, S.GOLD))
 		declarations.add_child(S.wrap(str(decision.get("text", "")), 19, S.TEXT))
-		declarations.add_child(S.wrap("Les réactions de vos destinataires apparaissent sur leurs cartes.", 13))
+		declarations.add_child(S.wrap("Les réactions de tes destinataires apparaissent sur leurs cartes.", 13))
 	else:
 		var recipient_row := S.G.h(6)
 		declarations.add_child(recipient_row)
@@ -66,7 +66,7 @@ func _draw() -> void:
 			S.G.fill(button)
 			if audience == item[0]: S.selected(button, S.GOLD)
 			recipient_row.add_child(button)
-		declarations.add_child(S.label("À qui vous adressez-vous ?" if audience != "players" else "%d joueur(s) sélectionné(s) · cliquez sur leurs cartes" % selected_ids.size(), 12))
+		declarations.add_child(S.label("À qui t’adresses-tu ?" if audience != "players" else "%d joueur(s) sélectionné(s) · clique sur leurs cartes" % selected_ids.size(), 12))
 		options_grid = GridContainer.new()
 		options_grid.name = "TalkDeclarations"
 		options_grid.columns = 3

@@ -91,6 +91,11 @@ func run() -> void:
 		check(sequence != null, "Introduction présente au lancement")
 		if sequence == null: await finish(); return
 		check(sequence.get_node("IntroRoot/IntroGround").color.a == 1.0, "Fond du thème posé dès la première image (pas d'écran noir)")
+		if phase != "court":
+			# Tout premier lancement sans cache : les shaders de Gabi et des cartes se compilaient en plein prologue (9 i/s).
+			check(sequence.get_node_or_null("IntroPrechauffage") != null and sequence._warming, "Shaders de Gabi et des cartes préchauffés dès la première image, horloges retenues")
+			await until(func(): return not sequence._warming, 5.0)
+			check(not sequence._warming and sequence.current.is_processing(), "Préchauffage terminé : carte 1 en marche")
 		watch_overlap()
 		if phase == "film":
 			for moment in [["prologue", 3.2, "v3-1-prologue"], ["stade", 4.5, "v3-2-stade"], ["titre", 2.6, "v3-3-titre-revelation"]]:

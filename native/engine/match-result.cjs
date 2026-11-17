@@ -6,10 +6,11 @@ module.exports=function nativeConfirmMatchResult(){
   S.franceCalendar=nativeFranceCalendar.confirm(S);view='dashboard';
  }else if(S.worldMode?.day!==undefined){
   if(S.worldMode.resultConfirmed)throw Error('Le résultat est déjà confirmé.');
-  if(!S.live?.finished)throw Error('Terminez le match avant de valider le résultat.');
+  if(!S.live?.finished)throw Error('Termine le match avant de valider le résultat.');
   S.worldMode.resultConfirmed=true;view='dashboard';
+  if(typeof CDMultiplex!=='undefined'&&CDMultiplex.persist)CDMultiplex.persist(S);
  }else{
-  if(!(S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())))throw Error('Terminez le match avant de valider la journée.');
+  if(!(S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())))throw Error('Termine le match avant de valider la journée.');
   finishRound();
  }
  return !S.live||S.franceCalendar?.resultConfirmed===true||S.worldMode?.resultConfirmed===true;

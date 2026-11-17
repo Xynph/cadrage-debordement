@@ -192,7 +192,7 @@ func _show_event() -> void:
 		show_pitch.disabled = true
 		show_summary.disabled = true
 		facts.text = ""
-		action.text = "Désactivez le filtre pour retrouver tous les faits du journal."
+		action.text = "Désactive le filtre pour retrouver tous les faits du journal."
 		coordinates.text = "Position non renseignée."
 		return
 	timeline.disabled = false

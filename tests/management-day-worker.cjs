@@ -11,7 +11,8 @@ const {advanceToNextMatch} = require('./helpers/monde-matchs.cjs');
 
 function profile(t, dailyCalendar = true) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-management-day-'));
-  const options = {dataDir, seed: 327, now: 1794178800000, dailyCalendar};
+  // testVm : graine de la carrière en mémoire (pendant un match, le profil garde celle d'avant le coup d'envoi).
+  const options = {dataDir, seed: 327, now: 1794178800000, dailyCalendar, testVm: true};
   let bridge = createBridge(options);
   let id = 0;
   t.after(() => {
@@ -31,6 +32,7 @@ function profile(t, dailyCalendar = true) {
       const ready = settleClubMeetings(model, good);
       return good('advance_day', {fromDate: ready.meta.calendarToday});
     },
+    seed() { return bridge.vm.seed(); },
     disk() {
       return JSON.parse(fs.readFileSync(path.join(dataDir, 'PrototypeGodot', 'donnees.json'), 'utf8'));
     },
@@ -88,7 +90,9 @@ test('le jour du match bloque le calendrier et le résultat confirmé reste disp
   skipMatchTalk(begun, game.good);
   assert.equal(game.request('advance_day', {fromDate: first.date}).ok, false);
   const played = game.good('delegate');
-  const before = game.disk();
+  // Reprise avant le match (16/11/2026) : pendant le match, le profil garde la graine d'avant le coup d'envoi ; la
+  // validation du résultat enregistre la carrière réelle, sans tirage de plus que le match joué.
+  const before = {seed: game.seed()};
   model = game.good('finish_round');
   assert.equal(model.meta.calendarToday, first.date);
   assert.equal(model.meta.calendarCadence.resultConfirmed, true);
@@ -128,7 +132,9 @@ test('la reprise d’une ancienne sauvegarde garde son calendrier et sa date de 
   assert.deepEqual(upgraded.calendar, legacy.calendar);
   assert.equal(upgraded.meta.calendarCadence.canAdvance, true);
   assert.deepEqual(game.disk(), stored);
-  game.restart();
+  // Ancienne sauvegarde écrite en plein match : seule une version d'avant la reprise avant le match (matchResume:false)
+  // pouvait la produire. Sa relecture, elle, passe par le comportement actuel (lue telle quelle, match en pause).
+  game.restart({matchResume: false});
   const live = game.good('begin_match');
   assert.equal(live.live.finished, false);
   const liveExport = game.good('export').meta.exportText;
@@ -136,6 +142,7 @@ test('la reprise d’une ancienne sauvegarde garde son calendrier et sa date de 
   assert.equal(resumed.meta.calendarToday, legacy.next.date);
   assert.equal(resumed.meta.calendarCadence.canAdvance, false);
   assert.equal(resumed.live.paused, true);
+  assert.equal(resumed.meta.matchResumeNotice?.kind, 'en-match');
   const imported = game.good('import', {text: liveExport});
   assert.equal(imported.meta.calendarToday, legacy.next.date);
   assert.deepEqual(imported.calendar, upgraded.calendar);

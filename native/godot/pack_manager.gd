@@ -79,7 +79,7 @@ func preview() -> Dictionary:
 
 func open(target_scope: String) -> void:
 	if app.waiting:
-		app._refuse_action("Une décision est en cours. Ouvrez les packs après sa réponse.")
+		app._refuse_action("Une décision est en cours. Ouvre les packs après sa réponse.")
 		return
 	scope = target_scope
 	return_route = app.route
@@ -101,14 +101,14 @@ func choose_creation_file() -> void:
 
 func choose_file() -> void:
 	if app.waiting:
-		app._refuse_action("Attendez la fin de l’analyse en cours.")
+		app._refuse_action("Attends la fin de l’analyse en cours.")
 		return
 	picker.current_file = ""
 	picker.popup_centered_ratio(0.7)
 
 func inspect(path: String) -> void:
 	if app.waiting:
-		app._refuse_action("Une analyse est déjà en cours. Réessayez après sa réponse.")
+		app._refuse_action("Une analyse est déjà en cours. Réessaie après sa réponse.")
 		return
 	if app.route == "Création":
 		open("creation")
@@ -128,6 +128,6 @@ func select(id: String, target_scope: String = "") -> void:
 
 func back() -> void:
 	if app.waiting:
-		app._refuse_action("L’opération n’est pas terminée. Attendez sa réponse.")
+		app._refuse_action("L’opération n’est pas terminée. Attends sa réponse.")
 		return
 	app._navigate(return_route)

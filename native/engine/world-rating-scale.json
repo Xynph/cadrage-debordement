@@ -16,6 +16,7 @@
   "guest": { "titulaire": 72, "rotation": 69, "reserviste": 67 }
  },
  "etages": { "cador": 2, "haut": 1, "milieu": 0, "bas": -1, "releguable": -2 },
+ "etageScale": { "prem": 3, "champ": 2, "jlo-d2": 2 },
  "residual": { "known": 1.5, "unknown": 2.2, "limit": 5, "classCenter": 0.4, "classSpread": 0.2, "youngInternational": 2 },
  "age": { "seniorFrom": 23, "youngPerYear": 1.5, "veteranFrom": 33, "veteranPerYear": 1 },
  "potential": {

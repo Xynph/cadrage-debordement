@@ -44,7 +44,7 @@ func _build() -> void:
 	C.fill(body,true)
 	scroll.add_child(body)
 	body.add_child(C.label(app.pack_manager.competition(str(preview.get("competitionId", "")), "career").get("name", "Coupe d’Europe") + " · " + str(preview.get("season","")),26,C.GOLD))
-	var notice := C.wrap("Préparez une liste pour vérifier ses limites et la présence de votre feuille actuelle. Ce brouillon ne vaut pas inscription officielle et sera effacé à la fermeture.",18,C.IVORY)
+	var notice := C.wrap("Prépare une liste pour vérifier ses limites et la présence de ta feuille actuelle. Ce brouillon ne vaut pas inscription officielle et sera effacé à la fermeture.",18,C.IVORY)
 	notice.name = "EpcrPreparationNotice"
 	body.add_child(notice)
 	var detail := C.wrap(str(preview.get("notice","Les qualifications de première ligne, contrats et inscriptions restent à confirmer.")),17,C.MUTED)
@@ -111,7 +111,7 @@ func _ids() -> Array:
 
 func _changed() -> void:
 	count.text = "%d joueurs dans le brouillon · plafond initial : 42" % selected.size()
-	result.text = "Brouillon modifié : relancez la vérification."
+	result.text = "Brouillon modifié : relance la vérification."
 
 func _select_all(value: bool) -> void:
 	if pending: return
@@ -124,7 +124,7 @@ func _select_all(value: bool) -> void:
 func _verify() -> void:
 	if pending: return
 	if app.waiting:
-		result.text = "Une action est en cours. Réessayez après sa réponse."
+		result.text = "Une action est en cours. Réessaie après sa réponse."
 		return
 	requested_ids = _ids()
 	pending = true
@@ -132,7 +132,7 @@ func _verify() -> void:
 	for box in choices: box.disabled = true
 	result.text = "Vérification du brouillon…"
 	if not app._command("epcr_preview",{"registeredIds":requested_ids,"competitionId":preview.get("competitionId","")}):
-		_on_failure("La vérification n’a pas pu démarrer. Réessayez.")
+		_on_failure("La vérification n’a pas pu démarrer. Réessaie.")
 
 func _on_model(value: Dictionary) -> void:
 	if not pending or not app.bridge.last_response_ok or app.last_command != "epcr_preview": return

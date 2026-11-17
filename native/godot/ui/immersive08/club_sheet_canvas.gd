@@ -117,7 +117,7 @@ func _build() -> void:
 		_hero_identity_only()
 		var waiting := D.panel(self, Rect2(0, 396, WIDTH, 300), "Fiche du club", "shield", "", "ClubSheetLoading")
 		var failed: bool = app.get_meta("club_sheet_requested", "") == "%d|%s" % [club_id, stamp(app)] and not app.waiting
-		D.text(waiting, 40, 150, "La fiche n’a pas pu être préparée. Réessayez." if failed else "Préparation de la fiche du club…", 30, C.MUTED, 600, 1600)
+		D.text(waiting, 40, 150, "La fiche n’a pas pu être préparée. Réessaie." if failed else "Préparation de la fiche du club…", 30, C.MUTED, 600, 1600)
 		if failed: D.button(waiting, Rect2(40, 200, 300, 56), "Réessayer", func(): app.remove_meta("club_sheet_requested"); request(app, club_id), true, "arrow", false, app.accent, "ClubSheetRetry")
 		else: request(app, club_id)
 		return
@@ -267,7 +267,7 @@ func _tabs() -> void:
 	for action: Array in actions:
 		var width := 236 if action[1] != "ClubSheetFollow" else 262
 		var button := D.button(self, Rect2(x, 320, width - 12, 58), action[0], action[3], false, action[2], true, app.accent, action[1])
-		button.tooltip_text = {"ClubSheetFollow":"Les résultats d’un club suivi arrivent dans vos actualités.", "ClubSheetCalendar":"Calendrier de la saison de ce club : résultats et matchs à venir.", "ClubSheetCompare":"Comparer ce club au vôtre.", "ClubSheetRecruit":"Ouvrir le marché entre clubs sur cet effectif."}[action[1]]
+		button.tooltip_text = {"ClubSheetFollow":"Les résultats d’un club suivi arrivent dans tes actualités.", "ClubSheetCalendar":"Calendrier de la saison de ce club : résultats et matchs à venir.", "ClubSheetCompare":"Comparer ce club au tien.", "ClubSheetRecruit":"Ouvrir le marché entre clubs sur cet effectif."}[action[1]]
 		x += width
 
 func _select(index: int) -> void:
@@ -469,7 +469,7 @@ static func _date(value: Variant) -> String:
 	var months := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 	return "%d %s %s" % [int(text.substr(8, 2)), months[clampi(int(text.substr(5, 2)) - 1, 0, 11)], text.substr(0, 4)]
 
-## Panneau « Vos confrontations » sans match passé : le prochain match entre les deux clubs (date, lieu,
+## Panneau « Tes confrontations » sans match passé : le prochain match entre les deux clubs (date, lieu,
 ## compétition), sinon une phrase courte. Évite un cadre quasi vide.
 func _upcoming_meeting(panel: Control, upcoming: Variant) -> void:
 	D.text(panel, 24, 110, "Aucune confrontation enregistrée.", 24, C.MUTED, 500, 690)
@@ -489,7 +489,7 @@ func _upcoming_meeting(panel: Control, upcoming: Variant) -> void:
 
 func _rivalry_panel() -> void:
 	var own: Dictionary = app.model.get("club", {})
-	var panel := D.panel(workspace, Rect2(1508, 0, 740, 430), "Vos confrontations", "tactic", G.club_abbr(own), "ClubSheetHeadToHead")
+	var panel := D.panel(workspace, Rect2(1508, 0, 740, 430), "Tes confrontations", "tactic", G.club_abbr(own), "ClubSheetHeadToHead")
 	D.text(panel, 24, 400, "Bilan de %s face à ce club, toutes saisons conservées." % G.club_name(own), 22, C.MUTED, 500, 690)
 	var h2h: Dictionary = data.get("headToHead", {})
 	var played := int(h2h.get("played", 0))
@@ -550,7 +550,7 @@ func _open_dossier(p: Dictionary) -> void:
 # ---- Effectif -----------------------------------------------------------------------------------
 
 func _squad() -> void:
-	var panel := D.panel(workspace, Rect2(0, 0, WIDTH, 844), "Effectif · %d joueurs" % int(data.get("squadSize", 0)), "people", "Selon vos observations", "ClubSheetSquad")
+	var panel := D.panel(workspace, Rect2(0, 0, WIDTH, 844), "Effectif · %d joueurs" % int(data.get("squadSize", 0)), "people", "Selon tes observations", "ClubSheetSquad")
 	var sort_key := str(state.get("sort", "fam"))
 	var descending := bool(state.get("descending", false))
 	for column: Array in COLUMNS:

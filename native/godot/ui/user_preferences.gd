@@ -55,28 +55,28 @@ func _validated(candidate: Variant) -> Dictionary:
 		return {}
 	var screen: Variant = candidate.get("display_screen",AUTOMATIC_SCREEN)
 	if not (typeof(screen) in [TYPE_INT,TYPE_FLOAT]) or not is_finite(float(screen)) or screen < AUTOMATIC_SCREEN or screen > MAX_SCREEN_INDEX or float(screen) != floor(float(screen)):
-		_fail("Écran refusé : choisissez Automatique ou un numéro d’écran valide.")
+		_fail("Écran refusé : choisis Automatique ou un numéro d’écran valide.")
 		return {}
 	var stadium: Variant = candidate.get("stadium", DEFAULTS.stadium)
 	if not stadium is String or stadium not in ["day","evening"]:
-		_fail("Éclairage du stade refusé : choisissez Jour ou Soirée.")
+		_fail("Éclairage du stade refusé : choisis Jour ou Soirée.")
 		return {}
 	var salary_period: Variant = candidate.get("salary_period",DEFAULTS.salary_period)
 	if not salary_period is String or salary_period not in ["weekly","monthly","annual"]:
-		_fail("Affichage des salaires refusé : choisissez Hebdomadaire, Mensuel ou Annuel.")
+		_fail("Affichage des salaires refusé : choisis Hebdomadaire, Mensuel ou Annuel.")
 		return {}
 	var match_highlights: Variant = candidate.get("match_highlights",DEFAULTS.match_highlights)
 	if not match_highlights is String or match_highlights not in MATCH_HIGHLIGHTS:
-		_fail("Niveau des temps forts refusé : choisissez un niveau proposé pendant le match.")
+		_fail("Niveau des temps forts refusé : choisis un niveau proposé pendant le match.")
 		return {}
 	var continue_messages: Variant = candidate.get("continue_messages",DEFAULTS.continue_messages)
 	var continue_injuries: Variant = candidate.get("continue_injuries",DEFAULTS.continue_injuries)
 	if not continue_messages is String or continue_messages not in CONTINUE_MESSAGES or not continue_injuries is String or continue_injuries not in CONTINUE_INJURIES:
-		_fail("Arrêts de « Continuer » refusés : choisissez un réglage proposé.")
+		_fail("Arrêts de « Continuer » refusés : choisis un réglage proposé.")
 		return {}
 	var autosave: Variant = candidate.get("autosave",DEFAULTS.autosave)
 	if not autosave is String or autosave not in AUTOSAVE:
-		_fail("Fréquence de sauvegarde refusée : choisissez chaque jour, chaque semaine ou chaque mois.")
+		_fail("Fréquence de sauvegarde refusée : choisis chaque jour, chaque semaine ou chaque mois.")
 		return {}
 	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium,"salary_period":salary_period,"match_highlights":match_highlights,"continue_messages":continue_messages,"continue_injuries":continue_injuries,"autosave":autosave}
 
@@ -87,13 +87,13 @@ func load_profile(directory: String) -> bool:
 	_directory = directory.simplify_path()
 	if not DirAccess.dir_exists_absolute(_directory):
 		var made := DirAccess.make_dir_recursive_absolute(_directory)
-		if made != OK: return _fail("Dossier des préférences inaccessible. Vérifiez son emplacement et les droits d’accès.")
+		if made != OK: return _fail("Dossier des préférences inaccessible. Vérifie son emplacement et les droits d’accès.")
 	if not DirAccess.dir_exists_absolute(_directory): return _fail("Dossier des préférences inaccessible : ce chemin ne désigne pas un dossier.")
 	var path := _directory.path_join("interface.json")
 	var candidate: Dictionary = DEFAULTS.duplicate(true)
 	if FileAccess.file_exists(path) or DirAccess.dir_exists_absolute(path):
 		var file := FileAccess.open(path,FileAccess.READ)
-		if file == null: return _fail("Lecture des préférences impossible. Vérifiez les droits d’accès ; le fichier original est conservé.")
+		if file == null: return _fail("Lecture des préférences impossible. Vérifie les droits d’accès ; le fichier original est conservé.")
 		if file.get_length() > MAX_BYTES:
 			file.close()
 			return _fail("Préférences trop volumineuses : 16 Kio maximum. Le fichier original est conservé.")
@@ -120,13 +120,13 @@ func _save(candidate: Dictionary) -> bool:
 	var path := _directory.path_join("interface.json")
 	var temporary := path + ".tmp"
 	var file := FileAccess.open(temporary,FileAccess.WRITE)
-	if file == null: return _fail("Écriture du fichier temporaire refusée. Vérifiez le dossier et les droits d’accès. Les réglages précédents sont conservés.")
+	if file == null: return _fail("Écriture du fichier temporaire refusée. Vérifie le dossier et les droits d’accès. Les réglages précédents sont conservés.")
 	file.store_string(JSON.stringify(candidate,"  ") + "\n")
 	file.flush()
 	var written := file.get_error(); file.close()
 	if written != OK:
 		DirAccess.remove_absolute(temporary)
-		return _fail("Écriture des préférences interrompue. Vérifiez le stockage et l’espace disponible. Les réglages précédents sont conservés.")
+		return _fail("Écriture des préférences interrompue. Vérifie le stockage et l’espace disponible. Les réglages précédents sont conservés.")
 	# Même dossier / même volume : ne jamais supprimer l'original avant rename.
 	var replacement_error := Atomic.replace_staged(temporary,path)
 	if not replacement_error.is_empty():

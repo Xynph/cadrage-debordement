@@ -10,7 +10,7 @@ static func status(message: Dictionary, model: Dictionary) -> Dictionary:
 		var conference: Dictionary = model.get("clubLife", {}).get("press", {}).get("conference", {})
 		if conference.get("invitationId") == invitation.get("id"):
 			if conference.get("available", false):
-				return {"key":"todo", "label":"À faire", "urgent":bool(conference.get("required", false)), "reason":"Vos réponses sont attendues."}
+				return {"key":"todo", "label":"À faire", "urgent":bool(conference.get("required", false)), "reason":"Tes réponses sont attendues."}
 			if conference.has("available") and conference.available == false and not str(conference.get("reason", "")).is_empty():
 				return {"key":"waiting", "label":"En attente", "urgent":false, "reason":str(conference.reason)}
 	var mail: Dictionary = message.get("club_mail", {})
@@ -18,11 +18,11 @@ static func status(message: Dictionary, model: Dictionary) -> Dictionary:
 		return {"key":"todo", "label":"Réponse attendue", "urgent":bool(mail.get("arret", false)), "reason":"Choisis une réponse : elle a des conséquences."}
 	var notice: Dictionary = message.get("calendar_notice", {})
 	if notice.get("status") == "pending":
-		return {"key":"todo", "label":"À décider", "urgent":false, "reason":"Choisir de recaler ou de conserver votre préparation."}
+		return {"key":"todo", "label":"À décider", "urgent":false, "reason":"Choisir de recaler ou de conserver ta préparation."}
 	var event: Dictionary = message.get("international_event", {})
 	var fixture: Variant = model.get("international", {}).get("currentManagedFixture")
 	if fixture is Dictionary and event.get("id", "") == "match-day/" + str(fixture.get("id", "")):
-		return {"key":"todo", "label":"Jour de match", "urgent":true, "reason":"La rencontre de votre sélection attend votre décision."}
+		return {"key":"todo", "label":"Jour de match", "urgent":true, "reason":"La rencontre de ta sélection attend ta décision."}
 	return {"key":"info", "label":"Information", "urgent":false, "reason":"À consulter ; aucune décision en attente n'est indiquée par ce courrier."}
 
 static func thread_key(message: Dictionary) -> String:

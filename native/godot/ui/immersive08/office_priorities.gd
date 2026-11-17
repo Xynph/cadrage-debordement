@@ -49,31 +49,31 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 	if not live.is_empty():
 		var finished: bool = live.get("finished",false)
 		result.append(_item("OfficeLivePriorityAction","Consulter le résultat" if finished else "Revenir au direct",
-			"Le résultat attend votre validation dans le match." if finished else "Le match est en cours. Retrouvez le score et les décisions du direct.",
+			"Le résultat attend ta validation dans le match." if finished else "Le match est en cours. Retrouve le score et les décisions du direct.",
 			"Résultat en attente" if finished else "Maintenant","trophy","match","urgent"))
 	if bool(model.get("clubLife",{}).get("press",{}).get("conference",{}).get("required",false)):
 		result.append(_item("OfficePressPriorityAction","Répondre à la presse",
-			"L’invitation est dans la Réception. Vos réponses sont attendues pour poursuivre.",
+			"L’invitation est dans la Réception. Tes réponses sont attendues pour poursuivre.",
 			"Avant de continuer","mail","press","urgent"))
 	if ended:
 		result.append(_item("OfficeFinalStandingsAction","Consulter le classement final",
-			"La saison %s est clôturée. Faites le bilan avant de préparer la suivante." % G.season_label(season),
+			"La saison %s est clôturée. Fais le bilan avant de préparer la suivante." % G.season_label(season),
 			"Avant la saison suivante","trophy","standings","important"))
 	elif not next.is_empty() and not bool(model.get("selection",{}).get("valid",false)) and live.is_empty():
 		var errors: Array = model.get("selection",{}).get("errors",[])
-		var detail := str(errors[0]) if not errors.is_empty() else "La feuille projetée n’est pas valide. Consultez les postes à compléter."
+		var detail := str(errors[0]) if not errors.is_empty() else "La feuille projetée n’est pas valide. Consulte les postes à compléter."
 		result.append(_item("OfficeSelectionPriorityAction","Compléter la feuille de match",detail,
 			"Avant le prochain match","people","selection","urgent"))
 	var cash: Variant = model.get("finance",{}).get("cash",model.club.get("cash"))
 	if cash is float or cash is int:
 		if float(cash) < 0:
 			result.append(_item("OfficeFinancePriorityAction","Examiner la trésorerie",
-				"La trésorerie de jeu est négative. Consultez les flux et les engagements avant de décider.",
+				"La trésorerie de jeu est négative. Consulte les flux et les engagements avant de décider.",
 				"Avant un nouvel engagement","money","finance","urgent"))
 	var match_today := not today.is_empty() and str(next.get("date","")) == today
 	if not ended and live.is_empty() and match_today:
 		result.append(_item("OfficeMatchPriorityAction","Préparer le match du jour",
-			"La rencontre est prévue aujourd’hui. Consultez l’adversaire et vérifiez vos choix avant le coup d’envoi.",
+			"La rencontre est prévue aujourd’hui. Consulte l’adversaire et vérifie tes choix avant le coup d’envoi.",
 			"Aujourd’hui","trophy","preparation","important"))
 	var international: Dictionary = model.get("international") if model.get("international") is Dictionary else {}
 	var availability: Dictionary = international.get("availability") if international.get("availability") is Dictionary else {}
@@ -81,13 +81,13 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 	if bool(availability.get("clubManaged",false)) and absent > 0:
 		var return_date := str(availability.get("nextReturn",""))
 		result.append(_item("OfficeInternationalPriorityAction","Anticiper %d absence%s internationale%s" % [absent,"s" if absent > 1 else "","s" if absent > 1 else ""],
-			"Ces joueurs du club sont convoqués. Consultez les postes concernés et les retours annoncés.",
+			"Ces joueurs du club sont convoqués. Consulte les postes concernés et les retours annoncés.",
 			"Retour à partir du " + _date(return_date) if not return_date.is_empty() else "Pendant la fenêtre internationale",
 			"calendar","international","important"))
 	var injured: Array = model.get("squad",[]).filter(func(player: Dictionary): return float(player.get("injury",0)) > 0)
 	if not injured.is_empty() and not ended:
 		result.append(_item("OfficeMedicalPriorityAction","Adapter le groupe aux blessures",
-			"%d joueur%s blessé%s. Vérifiez les solutions disponibles dans l’effectif." % [injured.size(),"s" if injured.size() > 1 else "","s" if injured.size() > 1 else ""],
+			"%d joueur%s blessé%s. Vérifie les solutions disponibles dans l’effectif." % [injured.size(),"s" if injured.size() > 1 else "","s" if injured.size() > 1 else ""],
 			"Avant la composition","heart","squad","important"))
 	# Une seule définition : les échéances de la saison en cours (celles du courrier de fin de saison et de
 	# Recrutement). Sans échéance cette saison, les contrats de la saison suivante sont à anticiper.
@@ -113,21 +113,21 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 	if not ended and live.is_empty() and not next.is_empty() and not match_today:
 		var when := str(next.get("date",""))
 		result.append(_item("OfficeMatchPriorityAction","Préparer le prochain match",
-			"Consultez l’adversaire et les choix de préparation avant de composer l’équipe.",
+			"Consulte l’adversaire et les choix de préparation avant de composer l’équipe.",
 			"Aujourd’hui" if when == today and not today.is_empty() else "Le " + _date(when) if not when.is_empty() else "Prochaine rencontre",
 			"trophy","preparation","important" if when == today and not today.is_empty() else "normal"))
 	if not ended:
 		var trained: bool = meta.get("trained",false)
 		var training: Dictionary = model.get("decisions",{}).get("training",{})
 		result.append(_item("OfficeTrainingAction","Revoir la préparation" if trained else "Préparer l’entraînement",
-			"La séance a été effectuée. Les réglages restent consultables." if trained else str(training.get("advice","Consultez les choix collectifs et la charge du groupe.")),
+			"La séance a été effectuée. Les réglages restent consultables." if trained else str(training.get("advice","Consulte les choix collectifs et la charge du groupe.")),
 			"Cette semaine","train","training","normal"))
 	var market: Array = model.get("market",[])
 	var offers := market.filter(func(player: Dictionary): return player.get("available",false)).size()
 	result.append(_item("OfficeRecruitmentAction","Examiner le recrutement",
-		"%d piste%s · %d offre%s possible%s dans le marché publié." % [market.size(),"s" if market.size() > 1 else "",offers,"s" if offers > 1 else "","s" if offers > 1 else ""] if model.has("market") else "Consultez les pistes et les conditions du marché.",
+		"%d piste%s · %d offre%s possible%s dans le marché publié." % [market.size(),"s" if market.size() > 1 else "",offers,"s" if offers > 1 else "","s" if offers > 1 else ""] if model.has("market") else "Consulte les pistes et les conditions du marché.",
 		"À anticiper","search","recruitment","normal"))
 	result.append(_item("OfficeSquadPriorityAction","Consulter le groupe",
-		"Retrouvez les joueurs, leurs contrats et leur condition dans l’effectif.",
+		"Retrouve les joueurs, leurs contrats et leur condition dans l’effectif.",
 		"Pour préparer la suite","people","squad","normal"))
 	return result.slice(0,3)

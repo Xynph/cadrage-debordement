@@ -46,7 +46,7 @@ function factory(){
    check(id(payload.fixtureId)&&(int(payload.slot,0,22)||payload.slot===null&&payload.playerId===null)&&(payload.playerId===null||id(payload.playerId)),'case invalide');
    if(payload.playerId!==null){const player=S.clubs[S.club].players.find(x=>x.id===payload.playerId);check(player&&(payload.slot<15?slotEligible(player,payload.slot):benchEligible(player,payload.slot-15)),'poste non qualifié ou joueur absent');}
    let row=p.lineups.find(l=>l.fixtureId===payload.fixtureId);
-   if(!row){check(p.lineups.length<3,'retirez une ancienne composition avant d’en préparer une autre');row={fixtureId:payload.fixtureId,slots:Array(23).fill(null)};p.lineups.push(row);}
+   if(!row){check(p.lineups.length<3,'retire une ancienne composition avant d’en préparer une autre');row={fixtureId:payload.fixtureId,slots:Array(23).fill(null)};p.lineups.push(row);}
    if(payload.slot===null)row.slots.fill(null);else row.slots[payload.slot]=payload.playerId;
    if(row.slots.every(x=>x===null))p.lineups=p.lineups.filter(l=>l!==row);
   }else if(command==='manager_plan_scenario')p.scenario=copy(payload.operations);

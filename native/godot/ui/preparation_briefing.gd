@@ -14,7 +14,7 @@ static func project(model: Dictionary) -> Dictionary:
 	var report: Dictionary = model.get("decisions", {}).get("preparation", {}) if model.get("decisions", {}).get("preparation") is Dictionary else {}
 	var ended: bool = meta.get("phase") == "ended"
 	if not live.is_empty():
-		result.append(_check("live", "Résultat à consulter" if live.get("finished", false) else "Le match est en cours", "Reprenez la rencontre pour retrouver le score et les décisions du direct.", "match", "Retour au match", "important"))
+		result.append(_check("live", "Résultat à consulter" if live.get("finished", false) else "Le match est en cours", "Reprends la rencontre pour retrouver le score et les décisions du direct.", "match", "Retour au match", "important"))
 	if ended and live.is_empty():
 		result.append(_check("ended", "La saison est clôturée", "Les décisions de préparation reprendront avec la prochaine saison.", "calendar", "Consulter le calendrier"))
 	elif live.is_empty():
@@ -24,23 +24,23 @@ static func project(model: Dictionary) -> Dictionary:
 		var selection: Dictionary = model.get("selection", {})
 		if not fixture.is_empty() and not selection.get("valid", false):
 			var reasons: Array = selection.get("errors", [])
-			result.append(_check("selection", "Compléter la feuille", str(reasons[0]) if not reasons.is_empty() else "Vérifiez les postes et le banc dans la composition.", "selection", "Vérifier la composition", "urgent"))
+			result.append(_check("selection", "Compléter la feuille", str(reasons[0]) if not reasons.is_empty() else "Vérifie les postes et le banc dans la composition.", "selection", "Vérifier la composition", "urgent"))
 		if not fixture.is_empty() and meta.get("calendarCadence", {}).get("matchReady", false):
 			result.append(_check("day", "C’est le jour du match", "Le calendrier autorise la préparation du coup d’envoi aujourd’hui.", "match", "Ouvrir le jour de match", "important"))
 		var availability: Dictionary = model.get("international", {}).get("availability", {})
 		var absent := int(availability.get("absentCount", 0))
 		if availability.get("clubManaged", false) and absent > 0:
-			var detail := "%d joueur%s convoqué%s. Vérifiez les postes exposés." % [absent, "s" if absent > 1 else "", "s" if absent > 1 else ""]
+			var detail := "%d joueur%s convoqué%s. Vérifie les postes exposés." % [absent, "s" if absent > 1 else "", "s" if absent > 1 else ""]
 			if availability.get("nextReturn") is String: detail += " Premier retour prévu : " + P.fixture_date({"date":availability.nextReturn}) + "."
 			result.append(_check("international", "Absences internationales", detail, "international", "Voir les joueurs et retours", "important"))
 		var injured: Array = model.get("squad", []).filter(func(player: Dictionary): return float(player.get("injury", 0)) > 0)
 		if not injured.is_empty():
-			result.append(_check("injuries", "%d joueur%s blessé%s" % [injured.size(), "s" if injured.size() > 1 else "", "s" if injured.size() > 1 else ""], "Consultez les indisponibilités et les solutions de remplacement dans votre effectif.", "squad", "Ouvrir l’effectif", "important"))
+			result.append(_check("injuries", "%d joueur%s blessé%s" % [injured.size(), "s" if injured.size() > 1 else "", "s" if injured.size() > 1 else ""], "Consulte les indisponibilités et les solutions de remplacement dans ton effectif.", "squad", "Ouvrir l’effectif", "important"))
 		if not fixture.is_empty() and selection.get("valid", false):
-			result.append(_check("sheet", "Feuille projetée valide", "La feuille est valide. Vérifiez les titulaires, le banc et les choix individuels.", "selection", "Consulter la composition"))
+			result.append(_check("sheet", "Feuille projetée valide", "La feuille est valide. Vérifie les titulaires, le banc et les choix individuels.", "selection", "Consulter la composition"))
 		if not fixture.is_empty():
 			var when := P.fixture_date(fixture, true)
-			result.append(_check("calendar", "Vérifier le rendez-vous", when if not when.is_empty() else "Date non publiée : consultez le calendrier de la carrière.", "calendar", "Ouvrir le calendrier"))
+			result.append(_check("calendar", "Vérifier le rendez-vous", when if not when.is_empty() else "Date non publiée : consulte le calendrier de la carrière.", "calendar", "Ouvrir le calendrier"))
 		result.append(_check("tactics", "Vérifier les consignes", "Attaque et défense dans Consignes ; choix par zone dans le carnet de jeu.", "consignes", "Revoir les consignes"))
 	return {"checks":result,"reportAvailable":not report.is_empty(),"domains":report.get("domains", []).size(),"recent":report.get("recent", []).size(),"threats":report.get("threats", []).size()}
 

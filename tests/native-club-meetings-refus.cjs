@@ -20,7 +20,7 @@ try{
  assert.match(press,/^Rendez-vous du club : /,press);
  assert.match(press,/conférence de presse/i,'Le refus nomme la conférence de presse : '+press);
  assert.match(press,/« Conf\. de presse »/,'Le refus indique le bouton qui l’ouvre : '+press);
- assert.doesNotMatch(press,/terminez le rendez-vous en attente/,'Plus de message générique');
+ assert.doesNotMatch(press,/termine le rendez-vous en attente/,'Plus de message générique');
  if(invitation){
   const open=refused('scene_invitation_open',{id:invitation.id});
   assert.match(open,/conférence de presse/i,'Ouvrir une invitation est refusé avec le même rendez-vous nommé : '+open);
