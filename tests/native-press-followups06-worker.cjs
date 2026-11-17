@@ -46,9 +46,9 @@ try{
  fs.writeFileSync(path.join(root,'apres-conference.json'),text);
  assert.deepEqual(good('import',{text}).clubLife.press.history,expected);good('shutdown');open();m=good('snapshot');
  assert.deepEqual(m.clubLife.press.history,expected);assert.deepEqual(m.decisions.recruitment.reports,reports);assert.equal(good('export').meta.exportText,text);
- const legacy=JSON.parse(text);for(const h of legacy.state.pressConference.history){delete h.questionText;delete h.answerText;}m=good('import',{text:signed(legacy)});assert.ok(m.clubLife.press.history.every(h=>h.question===null&&h.answer===null));
- // Une sauvegarde Monde pèse bien plus que l'ancienne France 30 : le quota de copies de sécurité (256 Mio) est atteint ; on supprime explicitement les copies, comme le fait un joueur, avant de recommencer.
+ // Une sauvegarde Monde pèse bien plus que l'ancienne France 30 : le quota de copies de sécurité (256 Mio) est atteint ; on supprime explicitement les copies, comme le fait un joueur, avant l'import de l'ancienne archive et la nouvelle carrière.
  for(const e of good('snapshot').meta.profileSafety.entries)good('remove_checkpoint',{id:e.id,confirmed:true});
+ const legacy=JSON.parse(text);for(const h of legacy.state.pressConference.history){delete h.questionText;delete h.answerText;}m=good('import',{text:signed(legacy)});assert.ok(m.clubLife.press.history.every(h=>h.question===null&&h.answer===null));
  m=good('new_career',{mode:'world-champ',club:0});assert.equal(m.clubLife.press.history.length,0);assert.ok(m.clubLife.press.conference.questions.every(q=>!q.followUp));assert.equal(m.decisions.recruitment.reports.length,0);
  console.log('Presse/recrutement06 vrai worker PASS : mission5000/deux journées, lecture pure, relance exacte Unicode, refus disque/rollback, export/import/reprise, anciennes archives et nouvelle carrière. Profil : '+root);
 }finally{b?.close();}

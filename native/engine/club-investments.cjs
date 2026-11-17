@@ -127,6 +127,20 @@ const PRESIDENT = Object.freeze({
   degrade: n => `Faute d'entretien la saison passée, l'accueil du stade recule au niveau ${n}/${ACCUEIL.max}.`,
 });
 
+// Résumé lisible d'un plan (écran Club > Infrastructures) : où va l'argent et où en sont les chantiers.
+function resume(p, { installations }) {
+  const n = Number.isInteger(installations) ? installations : 0, devis = coutInstallations(n), depense = PARTS.reduce((s, k) => s + p.depense[k], 0);
+  return {
+    montant: p.montant, depense: Math.min(p.montant, depense), orientation: p.orientation || null,
+    parts: { ...p.parts }, depenseParPart: { ...p.depense },
+    installations: { niveau: n, max: NIVEAU_MAX_INSTALLATIONS, devis: n < NIVEAU_MAX_INSTALLATIONS ? devis : null,
+      avancement: n < NIVEAU_MAX_INSTALLATIONS ? Math.max(0, Math.min(1, p.cagnotte.installations / devis)) : 1, achevesCetteSaison: p.travaux },
+    accueil: { niveau: p.accueil, max: ACCUEIL.max, degrade: !!p.degrade, gagnesCetteSaison: p.accueilGagne,
+      avancement: p.accueil < ACCUEIL.max ? Math.max(0, Math.min(1, p.cagnotte.accueil / coutAccueil(p.accueil))) : 1, effet: facteurAccueil(p.accueil) - 1 },
+    staff: { points: p.points, personnes: Object.keys(p.gains).length },
+  };
+}
+
 function valide(etat, nbClubs) {
   return !!etat && etat.version === 1 && Number.isInteger(etat.saison) && Array.isArray(etat.clubs) && etat.clubs.length === nbClubs &&
     etat.clubs.every((p, i) => !!p && p.id === i && Number.isFinite(p.montant) && p.montant >= 0 && !!p.parts && !!p.cagnotte && !!p.depense &&
@@ -189,6 +203,13 @@ function investOrienter(orientation){
  nativeClubInvestments.orienter(e.clubs[S.club],orientation,{installations:worldClub(c.id).facilities,staffDisponible:investStaff(c.id).some(p=>nativeClubInvestments.STAFF.roles.includes(p.role))});
  return true;
 }
+// État des chantiers du président pour l'écran Club > Infrastructures (null hors Monde ou sans excédent cette saison).
+function investResume(){
+ const e=investActif()?investEtat():null;
+ if(!e||e.saison!==S.season)return null;
+ const p=e.clubs[S.club];if(!(p.montant>0))return null;
+ return nativeClubInvestments.resume(p,{installations:worldClub(S.club).facilities});
+}
 function investCourrier(){
  const e=investActif()?investEtat():null;
  if(!e||e.saison!==S.season)return null;
@@ -199,4 +220,4 @@ function investCourrier(){
 `;
 
 module.exports = Object.freeze({ PARTS, REPARTITION, ORIENTATIONS, LIBELLES, STAFF, ACCUEIL, PRESIDENT, BRANCHEMENT,
-  coutInstallations, coutAccueil, facteurAccueil, repartition, decouper, plan, semaine, orienter, courrier, valide, euros });
+  coutInstallations, coutAccueil, facteurAccueil, repartition, decouper, plan, semaine, orienter, courrier, resume, valide, euros });

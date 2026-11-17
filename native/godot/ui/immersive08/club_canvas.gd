@@ -647,6 +647,40 @@ static func _territory(app: Control, canvas: Control) -> void:
 	D.button(links, Rect2(1415,80,373,59), "Crédits et licences", app._credits, false, "info", false, U.GREEN, "ClubAtlasCredits")
 	D.button(links, Rect2(1804,80,420,59), "Revenir à la vue d’ensemble", func(): _tab(app, "overview", "ClubTab_overview"), true, "arrow", false, U.GREEN, "ClubAtlasBack")
 
+# Excédents réinvestis par le président (carrière Monde) : où en sont les travaux, l'accueil du stade et le staff.
+# Colonne de droite du panneau « Les moyens du club », à côté du devis du manager ; rien sans excédent cette saison.
+static func _president_projects(projects: Panel, inv: Variant) -> void:
+	if not inv is Dictionary: return
+	var box := Control.new()
+	box.name = "ClubPresidentProjects"
+	box.position = Vector2(800, 74) * C.density
+	box.size = Vector2(474, 214) * C.density
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	projects.add_child(box)
+	var inst: Dictionary = inv.get("installations", {})
+	var acc: Dictionary = inv.get("accueil", {})
+	var staff: Dictionary = inv.get("staff", {})
+	D.text(box, 0, 30, "Excédents réinvestis · " + G.euros(inv.get("montant", 0)), 26, C.GOLD, 700, 474)
+	var travaux := "Installations au maximum"
+	if inst.get("devis") != null:
+		travaux = "Travaux du niveau %s · %s %% financés" % [G.n(int(inst.get("niveau", 0)) + 1), G.n(roundi(100.0 * float(inst.get("avancement", 0))))]
+	if int(inst.get("achevesCetteSaison", 0)) > 0:
+		var faits := int(inst.get("achevesCetteSaison", 0))
+		travaux += " · %s achevé%s" % [G.n(faits), "s" if faits > 1 else ""]
+	D.text(box, 0, 72, travaux, 23, C.IVORY, 600, 474)
+	D.rect(box, Rect2(0, 84, 474, 10), Color("2a3735"), 3)
+	D.rect(box, Rect2(0, 84, 474.0 * clampf(float(inst.get("avancement", 0)), 0.0, 1.0), 10), C.MINT, 3)
+	var accueil := "Accueil du stade · niveau %s / %s" % [G.n(acc.get("niveau", 0)), G.n(acc.get("max", 5))]
+	if float(acc.get("effet", 0)) > 0.0: accueil += " · guichet +%s %%" % ("%.1f" % (100.0 * float(acc.get("effet", 0)))).replace(".", ",")
+	if acc.get("degrade", false) == true: accueil += " · en recul"
+	D.text(box, 0, 128, accueil, 23, C.IVORY, 600, 474)
+	for segment in int(acc.get("max", 5)):
+		D.rect(box, Rect2(segment * 96, 140, 90, 10), C.MINT if segment < int(acc.get("niveau", 0)) else Color("2a3735"), 3)
+	var points := int(staff.get("points", 0))
+	var staff_txt := "Staff · aucune progression pour l’instant" if points == 0 else "Staff · %s point%s gagné%s par %s membre%s" % [G.n(points), "s" if points > 1 else "", "s" if points > 1 else "", G.n(staff.get("personnes", 0)), "s" if int(staff.get("personnes", 0)) > 1 else ""]
+	D.text(box, 0, 184, staff_txt, 23, C.IVORY, 600, 474)
+	D.text(box, 0, 210, "Dépensé : %s sur %s" % [G.euros(inv.get("depense", 0)), G.euros(inv.get("montant", 0))], 20, C.MUTED, 500, 474)
+
 static func _infrastructure_detail(app: Control, canvas: Control) -> void:
 	var data := U.strategy(app.model)
 	var finance: Dictionary = data.get("finance",{})
@@ -664,6 +698,7 @@ static func _infrastructure_detail(app: Control, canvas: Control) -> void:
 		elif not quote.affordable: reason = "La trésorerie disponible est insuffisante pour ce devis."
 		D.text(projects, 24, 269, reason, 24, C.MUTED, 500, 1228)
 	else: D.text(projects, 24, 126, "Aucun devis d’installations disponible.", 31, C.MUTED, 600, 1228)
+	_president_projects(projects, finance.get("investissements"))
 	D.line(projects, Vector2(24,296), Vector2(1274,296))
 	D.text(projects, 24, 346, "Centre de formation", 36, C.IVORY, 700, 1228)
 	D.text(projects, 24, 385, "L’investissement hebdomadaire suit la séance de formation.", 24, C.MUTED, 500, 1228)

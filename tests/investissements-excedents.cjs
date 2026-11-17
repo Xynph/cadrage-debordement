@@ -143,6 +143,21 @@ test('Orienter et courrier : parts mises à jour, orientation inconnue refusée,
   assert.match(I.courrier(unPlan({ installations: 10 }), { installations: 10, saison: 3 }).travaux, /plus haut niveau/);
 });
 
+test('Résumé pour Club > Infrastructures : avancement des travaux et de l’accueil, dépense bornée, staff', () => {
+  const p = unPlan();
+  const vide = I.resume(p, { installations: 2 });
+  assert.equal(vide.depense, 0); assert.equal(vide.installations.devis, I.coutInstallations(2)); assert.equal(vide.installations.avancement, 0);
+  assert.equal(vide.accueil.niveau, 0); assert.equal(vide.accueil.effet, 0); assert.equal(vide.staff.points, 0);
+  const staff = [{ id: 'a', role: 'coach', level: 50 }, { id: 'b', role: 'scout', level: 60 }];
+  for (let w = 0; w < 10; w++) I.semaine(p, 250000, { installations: 2, staff });
+  const r = I.resume(p, { installations: 2 });
+  assert.equal(r.depense, 2500000); assert.ok(r.installations.avancement >= 0 && r.installations.avancement <= 1);
+  assert.ok(r.accueil.niveau > 0 && r.accueil.effet > 0); assert.equal(r.staff.personnes, 2); assert.ok(r.staff.points > 0 && r.staff.points <= 6);
+  assert.equal(I.resume(p, { installations: 10 }).installations.devis, null);
+  assert.equal(I.resume(p, { installations: 10 }).installations.avancement, 1);
+  for (const v of JSON.stringify(r).match(/-?\d+(\.\d+)?/g)) assert.ok(Number.isFinite(Number(v)));
+});
+
 // --- Budget ---
 const forces = [...Array.from({ length: 14 }, (_, i) => ({ id: i, division: 'elite', base: 70 + i })), ...Array.from({ length: 16 }, (_, i) => ({ id: 14 + i, division: 'accession', base: 60 + i }))];
 test('Budget de club : l’accueil relève seulement billetterie et boutique d’un match à domicile', () => {
@@ -283,6 +298,10 @@ test('Courrier : une seule fois par saison, une orientation, la seconde refusée
     // Excédent : le courrier arrive.
     run(`(()=>{S.clubInvest.saison=0;club().cash=S.clubBudget.clubs[S.club].reserve+30e6;budgetOuvrir(true,true);})()`);
     const v = lire('investCourrier()'); assert.ok(v && /€/.test(v.montant));
+    // Écran Club > Infrastructures : le même état passe dans le modèle (finance.investissements) envoyé à Godot.
+    const vu = jeu.call('snapshot').clubLife.clubStrategy.finance.investissements;
+    assert.ok(vu && vu.montant === lire('S.clubInvest.clubs[S.club].montant') && vu.montant > 0, JSON.stringify(vu));
+    assert.equal(vu.installations.niveau, lire('worldClub(S.club).facilities'));
     let mails = recevoir(1, 2);
     assert.equal(mails.length, 1, 'le courrier arrive'); assert.equal(mails[0].status, 'nouveau');
     // Une seule fois dans la saison, même sans réponse, au-delà de la mémoire des sujets (150 jours).

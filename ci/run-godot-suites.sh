@@ -55,6 +55,8 @@ declare -A suite_limits=(
   [tests/native-club-support-ui.cjs]=600
   # Délégation de la composition : carrière Monde hebdomadaire jouée côté Node jusqu'à l'alerte de fatigue (feuille gardée), puis le vrai jeu.
   [tests/godot-delegue-composition.cjs]=900
+  # Excédents réinvestis : carrière Monde côté Node (Toulouse, trois matchs), puis Godot (Club > Infrastructures, Finances).
+  [tests/godot-investissements-excedents.cjs]=1200
   # Finitions critiques : carrière Monde (création, un match, jour de match suivant) côté Node puis un passage Godot ; ~4 min en local.
   [tests/godot-finitions.cjs]=900
   # Mesure de la jauge de vitesse : deux carrières Monde (~4 min chacune), informative.

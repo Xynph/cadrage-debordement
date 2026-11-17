@@ -51,7 +51,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|investissements) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -94,6 +94,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/avis-staff"
     phase "captures avis du staff (Composition, 1080p)" captures-avis-staff.log \
       env CD_AVIS_GRAPHICS=1 CD_AVIS_OUTPUT="$cap/avis-staff" node tests/godot-avis-staff.cjs
+  fi
+  if veut investissements; then
+    mkdir -p "$cap/investissements"
+    phase "captures excédents réinvestis (Club > Infrastructures, Finances ; 1080p)" captures-investissements.log \
+      env CD_INVEST_GRAPHICS=1 CD_INVEST_OUTPUT="$cap/investissements" node --test tests/godot-investissements-excedents.cjs
   fi
   if veut comparateur; then
     mkdir -p "$cap/comparateur"
