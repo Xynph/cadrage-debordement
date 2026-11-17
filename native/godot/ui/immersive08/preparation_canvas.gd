@@ -341,6 +341,7 @@ func _recent(section: Control) -> void:
 	var panel := D.panel(section, Rect2(0, 614, 900, 352), "Les faits récents", "calendar", "", "PreparationRecent")
 	var recent: Array = reports.get("recent", [])
 	var opponent := _opponent()
+	_form_chips(panel, recent)
 	if recent.is_empty():
 		D.text(panel, 24, 93, "Résultats adverses non publiés dans ce dossier." if reports.is_empty() else "Aucun résultat adverse enregistré cette saison.", 19, C.MUTED, 500, 850)
 		var club := _opponent()
@@ -367,6 +368,24 @@ func _recent(section: Control) -> void:
 		D.text(panel,25+index*288,302,stages[index][0],17,GOLD,700,270)
 		D.text(panel,25+index*288,329,stages[index][1],16,C.MUTED,500,270)
 	_sheet_map(section)
+
+## Forme de l'adversaire en pastilles V/N/D (mêmes rencontres et même ordre que la liste).
+func _form_chips(panel: Panel, recent: Array) -> void:
+	var results: Array[String] = []
+	for i in mini(5, recent.size()):
+		var result: Dictionary = recent[i]
+		var score: Array = result.get("score", [])
+		if score.size() != 2: continue
+		var side := int(result.get("side", 0))
+		var us := int(score[side])
+		var them := int(score[1 - side])
+		results.append("V" if us > them else "D" if us < them else "N")
+	if results.is_empty(): return
+	var x0 := 880 - results.size() * 40
+	D.text(panel, x0 - 92, 44, "FORME", 16, C.MUTED, 600, 84, HORIZONTAL_ALIGNMENT_RIGHT)
+	for i in results.size():
+		var chip := D.chip(panel, Rect2(x0 + i * 40, 22, 32, 30), results[i], C.ALERT if results[i] == "D" else C.GOLD if results[i] == "N" else C.MINT)
+		if chip != null: chip.name = "PreparationOpponentForm%d" % i
 
 func _sheet_map(section: Control) -> void:
 	var panel := D.panel(section,Rect2(917,614,427,352),"Ton XV projeté","people","","PreparationSheetMap")
