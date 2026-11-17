@@ -209,6 +209,7 @@
       "tests/godot-derby-etiquette.cjs": 120,
       "tests/presse-derby-monde.cjs": 40,
       "tests/club-mail-enseignements.cjs": 45,
+      "tests/meteo-vent-periodes.cjs": 25,
       "tests/club-mail-jalons.cjs": 20,
       "tests/world-reprise-decisions.cjs": 118,
       "tests/world-reprise-preparation.cjs": 99,
