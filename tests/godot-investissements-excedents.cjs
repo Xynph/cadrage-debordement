@@ -21,7 +21,13 @@ test('Excédents réinvestis : chantiers du président visibles dans le vrai jeu
       const lire = s => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + s + ')'));
       // Une bonne saison laisse 4 M€ au-dessus de la réserve : la saison d'investissements est rouverte comme à la bascule.
       lire(`(()=>{S.clubInvest.saison=0;club().cash=S.clubBudget.clubs[S.club].reserve+4e6;budgetOuvrir(true,true);return 1;})()`);
-      model = M.jouer(jeu, model, 3);
+      model = M.jouer(jeu, model, 2);
+      // Recettes de guichet imprévues (suite de #875) : comme après un quart de finale à domicile, 1,6 M€ de plus qu'un
+      // match moyen sont encaissés ; le club en reverse 70 % en primes et frais la semaine suivante (ligne du grand livre).
+      lire(`(()=>{const c=S.clubBudget.clubs[S.club];c.imprevu=(c.imprevu||0)+1.6e6;return 1;})()`);
+      model = M.jouer(jeu, model, 1);
+      const frais = lire(`S.ledger.filter(e=>/Frais de match et primes de résultats/.test(e.title)).map(e=>e.amount)`);
+      assert.ok(frais.length >= 1 && frais[0] <= -1e6, 'frais de match payés : ' + JSON.stringify(frais));
       attendu = lire('investResume()');
       assert.ok(attendu && attendu.montant > 0 && attendu.depense > 0, 'chantiers en cours : ' + JSON.stringify(attendu));
       jeu.call('save');
@@ -42,7 +48,7 @@ test('Excédents réinvestis : chantiers du président visibles dans le vrai jeu
     console.log('Investissements (Godot) : ' + JSON.stringify(rapport) + ' · moteur : ' + JSON.stringify(attendu));
     assert.deepEqual(rapport.failures, []);
     assert.equal(r.status, 0, journal.slice(-3000));
-    if (graphique) for (const f of ['investissements-infrastructures.png', 'investissements-finances.png']) assert.ok(fs.existsSync(path.join(sortie, f)), 'capture ' + f);
+    if (graphique) for (const f of ['investissements-infrastructures.png', 'investissements-finances.png', 'frais-de-match-finances.png']) assert.ok(fs.existsSync(path.join(sortie, f)), 'capture ' + f);
     console.log('Captures : ' + sortie);
   } finally { fs.rmSync(profil, { recursive: true, force: true }); }
 });

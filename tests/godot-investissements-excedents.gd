@@ -62,6 +62,19 @@ func executer() -> void:
 	var lignes := textes(ledger) if ledger != null else ""
 	verifier(lignes.contains("Investissements : installations") and lignes.contains("Investissements : staff"), "lignes « Investissements » dans Flux récents (page %d) : « %s »" % [page + 1, lignes.left(600)])
 	await capturer("investissements-finances.png")
+	# Recettes de guichet imprévues : la ligne « Frais de match et primes de résultats » est une charge (catégorie Matchs).
+	app._navigate("Finances"); await poser(20)
+	page = 0
+	ledger = app.find_child("FinanceLedger", true, false)
+	while ledger != null and not textes(ledger).contains("Frais de match") and page < 12:
+		var suivant_frais := app.find_child("FinanceNext_summary", true, false) as Button
+		if suivant_frais == null or suivant_frais.disabled: break
+		suivant_frais.emit_signal("pressed"); await poser(12); page += 1
+		ledger = app.find_child("FinanceLedger", true, false)
+	var frais := textes(ledger) if ledger != null else ""
+	verifier(frais.contains("Frais de match et primes de résultats"), "ligne « Frais de match et primes de résultats » dans Flux récents (page %d) : « %s »" % [page + 1, frais.left(600)])
+	verifier(frais.contains("Matchs"), "catégorie « Matchs » de la ligne de frais : « %s »" % frais.left(600))
+	await capturer("frais-de-match-finances.png")
 	print("INVESTISSEMENTS ", JSON.stringify({"controles": controles, "failures": echecs, "bloc": lu}))
 	app.closing = true
 	app.bridge.stop()
