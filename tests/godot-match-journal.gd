@@ -48,7 +48,7 @@ func open_journal() -> bool:
 	await settle()
 	return bind_journal()
 func tactics_button() -> Button:
-	return button_text("TACTIQUE" if match_surface().has_method("_toggle_drawer") else "CONSIGNES")
+	return button_text("ÉQUIPE" if match_surface().has_method("_toggle_drawer") else "CONSIGNES")
 func key(code: Key) -> void:
 	for down in [true, false]:
 		var event := InputEventKey.new()
@@ -154,7 +154,7 @@ func cases() -> void:
 			check((Color("faf6ed").srgb_to_linear().get_luminance() + 0.05) / (ink.srgb_to_linear().get_luminance() + 0.05) >= 4.5, "Recherche : contraste du texte supérieur à 4,5:1")
 		check(journal.search.get_global_rect().end.x <= app.size.x and journal.search.get_global_rect().position.x >= 0 and journal.scroll.size.y > 80 and journal.scroll.get_global_rect().end.y <= app.size.y, "Journal et recherche visibles à " + str(resolution))
 		check(button_text("PAUSE") != null or button_text("REPRENDRE") != null, "Pause toujours accessible")
-		check(tactics_button() != null and button_text("BANC") != null, "Consignes et banc accessibles")
+		check(tactics_button() != null, "Fenêtre Équipe (consignes et banc) accessible")
 		await choose(1)
 		check(journal.visible_events.all(func(e): return e is Dictionary and e.get("scene",{}).get("kind","") in ["try","goal"]), "Scores issus des métadonnées")
 		await choose(0)
@@ -209,9 +209,9 @@ func cases() -> void:
 	journal.search.text = "emile"
 	journal.search.text_changed.emit("emile")
 	await choose(2)
-	await keyboard(button_text("BANC"))
+	await keyboard(button_text("STATS"))
 	await open_journal()
-	check(journal.category.selected == 2 and journal.search.text == "emile", "Aller-retour Banc conserve les filtres")
+	check(journal.category.selected == 2 and journal.search.text == "emile", "Aller-retour Stats conserve les filtres")
 	var journal_id := journal.get_instance_id()
 	app._navigate("Préparation")
 	await settle()
@@ -334,7 +334,7 @@ func round_one() -> void:
 			if str(entry.name).begins_with("JournalEvent") and journal.scroll.get_global_rect().encloses(entry.get_global_rect()): complete += 1
 		check(complete >= 3, "Journal 1:1 " + str(resolution) + " : au moins trois faits complets réellement visibles, obtenu " + str(complete))
 		check(journal.scroll.size.y >= 200, "Journal 1:1 : vraie hauteur de lecture >=200, obtenu " + str(journal.scroll.size.y))
-		var controls: Array = [button_text("REPRENDRE"), tactics_button(), button_text("BANC")]
+		var controls: Array = [button_text("REPRENDRE"), tactics_button()]
 		controls.append_array(match_surface()._camera_controls)
 		check(match_surface()._camera_controls.size() == 3, "Les trois caméras du vrai direct restent accessibles")
 		for control: Button in controls:

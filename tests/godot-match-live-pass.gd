@@ -118,7 +118,12 @@ func run() -> void:
 	advance(view, 0.08)
 	check(view._ball_attached and view._ball.global_position.distance_to(anchor(receiver)) < 0.45,
 		"Le porteur reprend la tenue normale après la passe.")
-	advance(view, 0.6)
+	# Le porteur court du point de prise au point canonique sans dépasser l'allure de pointe
+	# (Motion.ALLURE_MAX) : on lui laisse la durée de sa course.
+	var motion: GDScript = load("res://match_motion.gd")
+	check(is_equal_approx(float(receiver.duree), float(motion.duree(receiver.from, receiver.target))),
+		"Après la passe, la course du porteur dure selon la distance qui lui reste.")
+	advance(view, maxf(0.6, float(receiver.duree) - float(receiver.elapsed) + 0.05))
 	var final_position := Vector3(float(scene.ball.x) - 50.0, 0.0, float(scene.ball.y) - 35.0)
 	check(receiver.node.position.is_equal_approx(final_position), "Le porteur termine au point canonique du moteur.")
 

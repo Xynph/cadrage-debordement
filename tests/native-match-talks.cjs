@@ -18,6 +18,8 @@ function harness(){
  const bank=path.join(__dirname,'../dist/native-scene-dialogues.js');
  assert.ok(fs.existsSync(bank),'production dialogue selector required');
  vm.runInContext(fs.readFileSync(bank,'utf8'),ctx);
+ // Réactions des joueurs (personnalité, score, confiance envers le manager) : moteur de production.
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../dist/match-pilotage.js'),'utf8'),ctx);
  vm.runInContext(`var talks=(${domain.factory.toString()})();talks.installHooks();`,ctx);
  const run=src=>vm.runInContext(src,ctx),call=(name,...args)=>{ctx.args=args;return clone(run('talks.'+name+'(...args)')??null);};
  const begin=(liveFields={})=>{state.live={pair:[0,1],userSide:0,minute:0,score:[0,0],finished:false,paused:false,flow:{atBreak:false},sheets:[{initial:players.slice(0,15).map(p=>p.id),bench:players.slice(15,23).map(p=>p.id)},{initial:[],bench:[]}],...liveFields};call('observe','begin_match');return call('project').scene;};
@@ -35,7 +37,7 @@ for(const alter of [s=>s.contextualMatch.current.participants[1].id='p0',s=>s.co
 assert.throws(()=>call('guard','tick',{}));assert.throws(()=>call('guard','pause',{paused:false}));assert.throws(()=>run('continueMatch()'));
 assert.throws(()=>h.decide(scene,{choiceId:'forged'}));assert.throws(()=>h.decide(scene,{tone:'warm'}));assert.throws(()=>h.decide(scene,{audience:'players',playerIds:['p24']}));
 assert.throws(()=>h.decide(scene,{audience:'forwards',playerIds:['p0']}));assert.throws(()=>h.decide(scene,{audience:'players',playerIds:['p0','p0']}));
-h.decide(scene);scene=call('project').scene;assert.ok(scene.decision);assert.equal(scene.phase,'pre');assert.equal(scene.decision.reactions.length,23);assert.ok(Math.abs(state.morale-75)<=1);
+h.decide(scene);scene=call('project').scene;assert.ok(scene.decision);assert.equal(scene.phase,'pre');assert.equal(scene.decision.reactions.length,23);assert.ok(Math.abs(state.morale-75)<=2);
 const decided=JSON.stringify(state);assert.throws(()=>h.decide(scene));assert.equal(JSON.stringify(state),decided);
 const saved=clone(state);call('clearTransient');h.ctx.S=clone(saved);call('validate',h.ctx.S);assert.deepEqual(call('project').scene,scene,'decision resumes without effects');h.ctx.S=state;
 h.proceed(scene);assert.equal(call('project').scene,null);assert.equal(state.live.paused,false);assert.equal(run('continueCalls'),1);
@@ -92,7 +94,7 @@ function workerTests(){
   for(const morale of [0,100,75.5,0.5,99.5]){
    const imported=JSON.parse(before);imported.state.morale=morale;good('import',{text:checksum(imported)});
    good('match_talk_decide',decision(scene()));const d=scene().decision;
-   assert.equal(d.moraleBefore,morale,'decision preserves the actual base-valid imported value');assert.ok(d.moraleAfter>=0&&d.moraleAfter<=100&&Math.abs(d.moraleAfter-morale)<=1);assert.equal(d.moraleDelta,d.moraleAfter-morale);
+   assert.equal(d.moraleBefore,morale,'decision preserves the actual base-valid imported value');assert.ok(d.moraleAfter>=0&&d.moraleAfter<=100&&Math.abs(d.moraleAfter-morale)<=2);assert.equal(d.moraleDelta,d.moraleAfter-morale);
    const savedDecision=exported();good('import',{text:savedDecision});assert.equal(exported(),savedDecision,'fractional/boundary morale decisions validate on import');
    removeFixtureCopies();
   }

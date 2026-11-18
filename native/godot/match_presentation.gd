@@ -9,8 +9,22 @@ static func rig_for(model: Node3D) -> Skeleton3D:
 		return child as Skeleton3D
 	return null
 
+## Porteur désigné par place (slot) quand la scène n'en nomme pas : mêlée = demi de mêlée (qui
+## introduit) puis n°8 ; mise en place de touche = talonneur lanceur sur la ligne, à défaut le
+## sauteur (même 2e ligne que match_gestes.gd, n° 5 puis n° 4) puis le demi. Après le lancer, la
+## touche gagnée suit le porteur que le moteur désigne (sauteur, puis demi ou ballon porté).
+const PORTEURS_PAR_PLACE := {"scrum": [8, 7], "lineout": [1, 4, 3, 8]}
+
 static func carrier_id(scene: Dictionary) -> String:
-	if str(scene.get("kind", "")) not in ["carry", "reception", "turnover", "setpiece-win", "setpiece-loss"]:
+	var kind := str(scene.get("kind", ""))
+	if PORTEURS_PAR_PLACE.has(kind):
+		var camp := int(scene.get("possession", scene.get("team", -2)))
+		for slot: int in PORTEURS_PAR_PLACE[kind]:
+			for player: Dictionary in scene.get("players", []):
+				if int(player.get("side", -1)) == camp and int(player.get("slot", -1)) == slot:
+					return str(player.get("id", ""))
+		return ""
+	if kind not in ["carry", "reception", "turnover", "setpiece-win", "setpiece-loss", "quick-tap"]:
 		return ""
 	for player: Dictionary in scene.get("players", []):
 		if player.get("featured", false) and int(player.get("side", -1)) == int(scene.get("possession", -2)):

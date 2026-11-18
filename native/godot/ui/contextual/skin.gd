@@ -92,14 +92,6 @@ static func person(model: Dictionary, id: Variant) -> Dictionary:
 			if str(member.get("id", "")) == str(id) or str(member.get("sourceId", member.get("sourceStaffId", ""))) == str(id): return member
 	return {}
 
-static func reactions(decision: Dictionary, id: Variant) -> String:
-	var rows: Variant = decision.get("reactions", [])
-	if rows is Array:
-		for reaction: Variant in rows:
-			if reaction is Dictionary and str(reaction.get("id", reaction.get("playerId", ""))) == str(id):
-				return str(reaction.get("label", reaction.get("text", reaction.get("reaction", ""))))
-	return ""
-
 static func heading(parent: Node, club: Dictionary, title: String, subtitle: String) -> void:
 	var row := G.h(14)
 	parent.add_child(row)
