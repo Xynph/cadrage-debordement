@@ -109,6 +109,8 @@ func avant_match() -> void:
 	var donnees: Dictionary = app.model.get("clubLife", {}).get("avantMatch", {})
 	var surveilles: Array = donnees.get("aSurveiller", {}).get("joueurs", [])
 	var texte_joueurs := textes_de(tableau.find_child("TuileJoueurs", true, false) if tableau != null else null)
+	# Avec un plan adverse, la tuile garde les deux premiers joueurs à surveiller (la place va au plan).
+	if donnees.get("planAdverse") is Dictionary: surveilles = surveilles.slice(0, 2)
 	for joueur: Dictionary in surveilles: verifier(texte_joueurs.contains(str(joueur.get("name", ""))), "joueur à surveiller affiché : " + str(joueur.get("name", "")))
 	textes.joueurs = texte_joueurs
 	# Plan de jeu probable de l'adversaire (avant-match.cjs planAdverse) : en tête de la tuile adversaire, dans les
