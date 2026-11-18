@@ -1,0 +1,75 @@
+TAP version 13
+# Santé financière (Godot) : {"clubs":16,"controles":30,"failures":["« ton club » dans le classement : SANTÉ FINANCIÈRE DES CLUBS · DIVISION D’ACCESSION FRANÇAISE\\nDu plus solide au plus fragile, d’après la trésorerie de chaque club rapportée à la réserve qu’il se fixe.\\n\#\\nClub\\nSanté\\nPropriétaire\\nTrois dernières saisons\\n1\\nSaine\\nGroupe actionnaire\\n-2--1 : en perte · -1-0 : dans le vert · 0-1 : dans le vert\\n2\\nSaine\\nGroupe actionnaire\\n-2--1 : en perte · -1-0 : en perte · 0-1 : à l’équilibre\\n3\\nSaine\\nGrou"]} · moteur : [[22,"saine","entreprise",3],[19,"saine","entreprise",3],[29,"saine","entreprise",3],[15,"saine","association",3],[16,"saine","entreprise",3],[21,"correcte","mecene",3],[26,"correcte","mecene",3],[23,"correcte","entreprise",3],[27,"correcte","entreprise",3],[18,"correcte","mecene",3],[25,"correcte","association",3],[14,"correcte","mecene",3],[20,"correcte","mecene",3],[17,"correcte","entreprise",3],[28,"correcte","association",3],[24,"correcte","association",3]]
+# Subtest: Santé financière : classement financier et fiche club dans le vrai jeu
+not ok 1 - Santé financière : classement financier et fiche club dans le vrai jeu
+  ---
+  duration_ms: 39798.431805
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-sante-financiere.cjs:15:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + [
+    +   '« ton club » dans le classement : SANTÉ FINANCIÈRE DES CLUBS · DIVISION D’ACCESSION FRANÇAISE\n' +
+    +     'Du plus solide au plus fragile, d’après la trésorerie de chaque club rapportée à la réserve qu’il se fixe.\n' +
+    +     '#\n' +
+    +     'Club\n' +
+    +     'Santé\n' +
+    +     'Propriétaire\n' +
+    +     'Trois dernières saisons\n' +
+    +     '1\n' +
+    +     'Saine\n' +
+    +     'Groupe actionnaire\n' +
+    +     '-2--1 : en perte · -1-0 : dans le vert · 0-1 : dans le vert\n' +
+    +     '2\n' +
+    +     'Saine\n' +
+    +     'Groupe actionnaire\n' +
+    +     '-2--1 : en perte · -1-0 : en perte · 0-1 : à l’équilibre\n' +
+    +     '3\n' +
+    +     'Saine\n' +
+    +     'Grou'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: |-
+      « ton club » dans le classement : SANTÉ FINANCIÈRE DES CLUBS · DIVISION D’ACCESSION FRANÇAISE
+      Du plus solide au plus fragile, d’après la trésorerie de chaque club rapportée à la réserve qu’il se fixe.
+      #
+      Club
+      Santé
+      Propriétaire
+      Trois dernières saisons
+      1
+      Saine
+      Groupe actionnaire
+      -2--1 : en perte · -1-0 : dans le vert · 0-1 : dans le vert
+      2
+      Saine
+      Groupe actionnaire
+      -2--1 : en perte · -1-0 : en perte · 0-1 : à l’équilibre
+      3
+      Saine
+      Grou
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-sante-financiere.cjs:45:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 40281.910207

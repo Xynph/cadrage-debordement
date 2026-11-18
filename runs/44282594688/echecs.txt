@@ -1,0 +1,3 @@
+== captures santé financière (Finances > Classement, fiche club ; 1080p) (code 1)
+not ok 1 - Santé financière : classement financier et fiche club dans le vrai jeu
+  name: 'AssertionError'
