@@ -47,31 +47,34 @@ func _labels(node: Node) -> Array[Label]:
 	for child in node.get_children(): result.append_array(_labels(child))
 	return result
 
+## Banc : la fenêtre Équipe du direct (médaillons du XV, tuiles du banc ; choix de Léo du 18/11/2026).
 func _pick_slot(slot: int) -> bool:
 	var surface: Control = app.match_screen
-	if surface.drawer_tab != "Banc" or not surface.drawer.visible: surface._toggle_drawer("Banc")
-	var buttons := _buttons(surface.drawer_body).filter(func(button: Button): return str(button.get_meta("match_bench_focus", "")).begins_with("sortant:"))
-	_check(buttons.size() == 15, "Les quinze postes réels restent sélectionnables, y compris les postes vacants")
-	for button: Button in buttons:
-		if button.get_meta("match_bench_focus") == "sortant:%d" % slot:
-			button.pressed.emit()
-			return true
-	return false
+	if not surface.equipe.visible: surface.ouvrir_equipe()
+	_check(surface.equipe.medaillons.size() == 15, "Les quinze postes réels restent sélectionnables, y compris les postes vacants")
+	if not surface.equipe.medaillons.has(slot): return false
+	if surface.equipe.poste_choisi != slot: surface.equipe.choisir_poste(slot)
+	return surface.equipe.poste_choisi == slot
+
+func _tuile(id: String) -> Button:
+	return app.match_screen.equipe.tuiles.get(id)
+
+func _eligible(id: String) -> bool:
+	var tuile := _tuile(id)
+	return tuile != null and bool(tuile.get_meta("eligible", false))
 
 func _incoming_permissions(slot: int) -> void:
 	var live: Dictionary = app.model.live
 	var allowed: Array = live.substitutions[slot].inIds
 	for player in live.reserves:
 		if not player is Dictionary: continue
-		var button := _button(app.match_screen.drawer_body, player.name)
-		_check(button != null and button.disabled == (player.id not in allowed), "Entrant permission follows native slot: " + player.name)
+		_check(_tuile(str(player.id)) != null and _eligible(str(player.id)) == (player.id in allowed), "Entrant permission follows native slot: " + player.name)
 
 func _bench() -> void:
 	await _command("import", {"text":fixtures.before20.text})
 	app._navigate("Match")
 	var panel: Node = app.match_screen
 	_check(panel.has_method("_toggle_drawer"), "Le banc appartient au direct contextuel actuel")
-	panel._toggle_drawer("Banc")
 	if _pick_slot(8): _incoming_permissions(8)
 	await _command("import", {"text":fixtures.after20.text})
 	panel = app.match_screen
@@ -81,17 +84,17 @@ func _bench() -> void:
 		var name: String = ""
 		for player in app.model.live.reserves:
 			if player is Dictionary and player.id == incoming: name = player.name
-		var button := _button(panel.drawer_body, name)
+		var button := _tuile(incoming)
 		button.grab_focus()
 		await _command("snapshot")
-		_check(_button(panel.drawer_body, name) == button and button.has_focus(), "Unchanged bench keeps actual controls and focus")
+		_check(_tuile(incoming) == button and button.has_focus(), "Unchanged bench keeps actual controls and focus · " + name)
 		await _command("pause", {"paused":false})
 		# Depuis #587 le direct peut se remettre en pause de lui-même sur un temps fort (minute 21 ici) : la permission suit alors
 		# l’état réel du match (désactivée seulement tant qu'il tourne), ce que le tiroir du banc doit refléter.
-		_check(_button(panel.drawer_body, name).disabled == (not bool(app.model.live.get("paused", false))), "Running match disables selected vacant entrant · paused=" + str(app.model.live.get("paused")) + " finished=" + str(app.model.live.get("finished")) + " minute=" + str(app.model.live.get("minute")))
+		_check(_eligible(incoming) == bool(app.model.live.get("paused", false)), "Running match disables selected vacant entrant · paused=" + str(app.model.live.get("paused")) + " finished=" + str(app.model.live.get("finished")) + " minute=" + str(app.model.live.get("minute")))
 		await _command("pause", {"paused":true})
-		_check(not _button(panel.drawer_body, name).disabled and panel.drawer_tab == "Banc", "Pause restores selected vacant slot permission and tab")
-		_button(panel.drawer_body, name).pressed.emit()
+		_check(_eligible(incoming) and panel.equipe.visible and panel.equipe.poste_choisi == 8, "Pause restores selected vacant slot permission and window")
+		_tuile(incoming).pressed.emit()
 		await _wait()
 		_check(app.last_error.is_empty() and app.model.live.lineup[8] is Dictionary and app.model.live.lineup[8].id == incoming, "Vacant bench button sends a successful real native change")
 	await _command("import", {"text":fixtures.twoVacancies.text})
@@ -102,7 +105,7 @@ func _bench() -> void:
 		var name: String = ""
 		for player in app.model.live.reserves:
 			if player is Dictionary and player.id == incoming: name = player.name
-		_button(panel.drawer_body, name).pressed.emit()
+		_tuile(incoming).pressed.emit()
 		await _wait()
 		_check(app.last_error.is_empty() and app.model.live.lineup[5] == null and app.model.live.lineup[6] is Dictionary and app.model.live.lineup[6].id == incoming, "Second vacancy is filled through the UI without changing the first")
 

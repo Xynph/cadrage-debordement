@@ -2,6 +2,8 @@ extends Control
 const S = preload("res://ui/contextual/skin.gd")
 const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
+const Pilotage = preload("res://ui/contextual/match_consignes.gd")
+const FenetreEquipe = preload("res://ui/contextual/match_equipe.gd")
 var director: Node
 ## Régie du match en temps forts (mode de base ; absente avec CD_MATCH_TEMPS_FORTS=0).
 var regie: Node
@@ -25,13 +27,13 @@ var drawer: PanelContainer
 var drawer_body: VBoxContainer
 var journal: VBoxContainer
 var _journal_shell: PanelContainer
-var _bench_feedback: VBoxContainer
-var _bench_context: Label
-var _bench_status: Label
+## Tiroir des statistiques et du journal (menu Plus) ; composition et consignes sont dans la fenêtre Équipe.
 var drawer_tab := ""
-var selected_slot := -1
+## Fenêtre « Équipe » (match_equipe.gd) : composition, banc, cris, consignes ; elle met le match en pause.
+var equipe: Control
+## Consignes en direct envoyées et pas encore confirmées par le moteur (axe → cran).
+var _envois_consignes: Dictionary = {}
 var _drawer_key := ""
-var _bench_focus_key := ""
 var _camera_controls: Array[Button] = []
 var _applied_camera := ""
 var _applied_quality := ""
@@ -155,7 +157,11 @@ func _ready() -> void:
 	barre_commandes = controls.get_parent().get_parent()
 	var bar := S.G.h(7)
 	controls.add_child(bar)
-	for title in ["Tactique", "Banc", "Stats", "Journal"]:
+	var bouton_equipe := S.button("ÉQUIPE", func(): ouvrir_equipe())
+	bouton_equipe.name = "MatchTeamButton"
+	bouton_equipe.tooltip_text = "Composition, banc, cris de la touche et consignes (le match se met en pause)."
+	bar.add_child(bouton_equipe)
+	for title in ["Stats", "Journal"]:
 		bar.add_child(S.button(title.to_upper(), func(): _toggle_drawer(title)))
 	for pair in [["tv", "TV"], ["tactical", "VUE DE DESSUS"], ["action", "CONTACT"]]:
 		var button := S.button(pair[1], func(): _choose_camera(pair[0]))
@@ -191,7 +197,7 @@ func _ready() -> void:
 	drawer.offset_left = -450
 	drawer.offset_right = -18
 	drawer.offset_top = 100
-	# En temps forts, le tiroir s'ouvre sous la bande de commandes : Tactique, Banc, Paramètres
+	# En temps forts, le tiroir s'ouvre sous la bande de commandes : Équipe, Paramètres
 	# et Plus restent cliquables tiroir ouvert.
 	if bande_temps_forts != null:
 		var caler := func():
@@ -208,15 +214,6 @@ func _ready() -> void:
 	var drawer_column := S.G.v(8)
 	drawer_margin.add_child(drawer_column)
 	drawer_column.add_child(S.button("FERMER  ×", _fermer_tiroir))
-	_bench_feedback = S.G.v(2)
-	_bench_context = S.wrap("", 14, S.TEXT)
-	_bench_context.name = "MatchBenchContext"
-	_bench_status = S.wrap("", 13, S.GOLD)
-	_bench_status.name = "MatchBenchStatus"
-	_bench_feedback.add_child(_bench_context)
-	_bench_feedback.add_child(_bench_status)
-	_bench_feedback.hide()
-	drawer_column.add_child(_bench_feedback)
 	drawer_body = S.G.scroll(drawer_column)
 	S.G.fill(drawer_body.get_parent(), true)
 	_journal_shell = PanelContainer.new()
@@ -230,6 +227,10 @@ func _ready() -> void:
 	journal_margin.add_child(journal)
 	_journal_shell.hide()
 	drawer.hide()
+	equipe = FenetreEquipe.new()
+	equipe.view = self
+	equipe.app = app
+	add_child(equipe)
 	app.match_view = stage
 	app.pause_button = play
 	app.match_finish = finish
@@ -301,7 +302,21 @@ func update_frame(value: Dictionary) -> void:
 		regie.receive(model, live)
 		if live.get("direct") is Dictionary: montrer_reglages_temps_forts(live.direct, regie)
 	_update_drawer()
+	if is_instance_valid(equipe): equipe.update_frame(model)
 	apply_preferences()
+	director._refresh_controls()
+
+## Fenêtre « Équipe » (choix de Léo, 18/11/2026 : un seul bouton à la place de Tactique et Banc) :
+## plein écran, le match se met en pause à l'ouverture et repart avec « Valider et reprendre ».
+## `onglet` : « composition » ou « consignes » ; `poste` : joueur du XV déjà choisi (0 à 14).
+func ouvrir_equipe(onglet: String = "composition", poste: int = -1) -> void:
+	if not is_instance_valid(equipe) or _live().get("finished", false): return
+	if drawer.visible: _fermer_tiroir()
+	equipe.update_frame(model)
+	equipe.ouvrir(onglet, poste)
+	director._refresh_controls()
+
+func equipe_fermee() -> void:
 	director._refresh_controls()
 
 ## Le journal du moteur nomme les clubs par leur sigle interne (« FDG ») ; l'écran affiche le
@@ -413,10 +428,10 @@ func apply_preferences() -> void:
 		button.tooltip_text = "Mode calme : caméra tactique fixe." if preferences.data.reduced_motion else "Caméra conservée pour les prochains matchs."
 
 func _toggle_drawer(title: String) -> void:
-	if drawer_tab == "Banc":
-		var focused := get_viewport().gui_get_focus_owner()
-		if focused != null and drawer_body.is_ancestor_of(focused):
-			_bench_focus_key = str(focused.get_meta("match_bench_focus", ""))
+	# Composition, banc et consignes : la fenêtre Équipe (anciens onglets Tactique et Banc compris).
+	if title in ["Équipe", "Banc", "Tactique"]:
+		ouvrir_equipe("consignes" if title == "Tactique" else "composition")
+		return
 	if title == drawer_tab and drawer.visible:
 		_fermer_tiroir()
 		return
@@ -424,11 +439,7 @@ func _toggle_drawer(title: String) -> void:
 	drawer.show()
 	_drawer_key = ""
 	_update_drawer()
-	# Entre deux temps forts : la tactique ou le banc ouverts mettent le match en pause (les
-	# changements ne se font qu'en pause) ; le prochain temps fort attend leur fermeture.
-	if regie != null:
-		if title in ["Tactique", "Banc"]: regie.tiroir_ouvert()
-		else: regie.tiroir_ferme()
+	if regie != null: regie.tiroir_ferme()
 
 func _fermer_tiroir() -> void:
 	drawer_tab = ""
@@ -436,7 +447,6 @@ func _fermer_tiroir() -> void:
 	if regie != null: regie.tiroir_ferme()
 
 func _update_drawer() -> void:
-	_bench_feedback.visible = drawer_tab == "Banc" and drawer.visible
 	_journal_shell.visible = drawer_tab == "Journal"
 	drawer_body.get_parent().visible = drawer_tab != "Journal"
 	if drawer_tab.is_empty(): return
@@ -444,35 +454,15 @@ func _update_drawer() -> void:
 	if drawer_tab == "Journal":
 		journal.update_frame(regie.montre(live) if regie != null else live)
 		return
-	var presence: Array = [drawer_tab, selected_slot, live.get("paused"), live.get("finished")]
-	match drawer_tab:
-		"Banc": presence.append(_bench_presence(live))
-		"Stats": presence.append(_stats(live))
-		"Tactique":
-			presence.append(model.get("tactics", {}))
-			presence.append(model.get("decisions", {}).get("liveAdvice"))
-			presence.append(model.get("decisions", {}).get("report"))
-	var key := JSON.stringify(presence)
+	var key := JSON.stringify([drawer_tab, _stats(live), live.get("finished")])
 	if key == _drawer_key: return
 	_drawer_key = key
-	var bench_focus := _bench_focus_key
-	if drawer_tab == "Banc":
-		var focused := get_viewport().gui_get_focus_owner()
-		if focused != null and drawer_body.is_ancestor_of(focused):
-			bench_focus = str(focused.get_meta("match_bench_focus", ""))
-			_bench_focus_key = bench_focus
 	S.clear(drawer_body)
 	drawer_body.add_child(S.label(drawer_tab, 23, S.GOLD))
-	match drawer_tab:
-		"Banc":
-			_bench(live)
-			if not bench_focus.is_empty(): _restore_bench_focus(bench_focus)
-		"Stats":
-			for stat: Dictionary in _stats(live):
-				drawer_body.add_child(S.label(str(stat.get("label", "")), 13))
-				drawer_body.add_child(S.label("%s    —    %s" % [str(stat.get("home", "")), str(stat.get("away", ""))], 23, S.GOLD))
-			if _stats(live).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14))
-		"Tactique": _tactics(live)
+	for stat: Dictionary in _stats(live):
+		drawer_body.add_child(S.label(str(stat.get("label", "")), 13))
+		drawer_body.add_child(S.label("%s    —    %s" % [str(stat.get("home", "")), str(stat.get("away", ""))], 23, S.GOLD))
+	if _stats(live).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14))
 	director._refresh_controls()
 
 ## Chiffres du tiroir : entre deux temps forts, ceux d'avant la borne du moteur (rien d'un temps fort à venir).
@@ -480,116 +470,8 @@ func _stats(live: Dictionary) -> Array:
 	if regie != null and regie.etat != regie.JEU and live.get("direct") is Dictionary and live.direct.has("statsRows"): return live.direct.statsRows
 	return live.get("statsRows", [])
 
-func _bench_presence(live: Dictionary) -> Array:
-	# Condition and spatial presentation change on every tick. Rebuild controls
-	# only when their identities, availability or substitution permissions change.
-	var presence: Array = []
-	for group in [live.get("lineup", []), live.get("reserves", [])]:
-		var players: Array = []
-		for player: Variant in group:
-			players.append([player.get("id"), player.get("name"), player.get("pos"), player.get("injury", 0)] if player is Dictionary else null)
-		presence.append(players)
-	var permissions: Array = []
-	for option: Dictionary in live.get("substitutions", []):
-		permissions.append([option.get("slot"), option.get("outId"), option.get("label", ""), option.get("inIds", [])])
-	presence.append(permissions)
-	return presence
-
-func _tactics(live: Dictionary) -> void:
-	var allowed: bool = live.get("paused", false) and not live.get("finished", false)
-	if not allowed: drawer_body.add_child(S.wrap("Mets le match en pause pour modifier tes consignes.", 14, S.GOLD))
-	var tactics: Dictionary = model.get("tactics", {})
-	for pair in [["attack", "attacks", "Avec le ballon"], ["defense", "defenses", "Sans le ballon"]]:
-		drawer_body.add_child(S.label(pair[2], 18, S.GOLD))
-		for option: Dictionary in tactics.get(pair[1], []):
-			var button := S.button(str(option.get("label", "")), func():
-				var current: Dictionary = app.model.get("tactics", {})
-				var payload := {"attack":current.get("attack", "equilibre"), "defense":current.get("defense", "equilibre")}
-				payload[pair[0]] = option.get("id")
-				director.command("set_tactics", payload), allowed)
-			if tactics.get(pair[0]) == option.get("id"): S.selected(button, S.GOLD)
-			drawer_body.add_child(button)
-			drawer_body.add_child(S.wrap(str(option.get("description", "")), 13))
-	# Consigne sur pénalité : tir au but, pénaltouche, jouer vite à la main, ou selon le contexte.
-	if not tactics.get("penalties", []).is_empty():
-		drawer_body.add_child(S.label("Sur pénalité", 18, S.GOLD))
-		for option: Dictionary in tactics.get("penalties", []):
-			var bouton := S.button(str(option.get("label", "")), func(): director.command("set_penalty_policy", {"policy":option.get("id")}), allowed)
-			if tactics.get("penalty") == option.get("id"): S.selected(bouton, S.GOLD)
-			drawer_body.add_child(bouton)
-	var notes := S.G.panel(drawer_body)
-	preload("res://ui/decision_views.gd").match_notes(app, notes, model)
-
-func _restore_bench_focus(previous_focus: String) -> void:
-	var target: Button
-	var fallback: Button
-	var selected_key := "sortant:%d" % selected_slot
-	for child in drawer_body.get_children():
-		if not child is Button or child.disabled: continue
-		var key := str(child.get_meta("match_bench_focus", ""))
-		if key == previous_focus:
-			target = child
-			break
-		if key == selected_key: fallback = child
-	if target == null: target = fallback
-	if target == null: return
-	await get_tree().process_frame
-	if not is_instance_valid(target) or not target.is_visible_in_tree(): return
-	target.grab_focus()
-	_bench_focus_key = str(target.get_meta("match_bench_focus", ""))
-	(drawer_body.get_parent() as ScrollContainer).ensure_control_visible(target)
-
-func _update_bench_feedback(live: Dictionary, selected: bool, out: Variant, choice: Dictionary, options: Array) -> void:
-	_bench_context.visible = selected
-	if selected:
-		var position := str(choice.get("label", ""))
-		var player_name := str(out.get("name", "Joueur")) if out is Dictionary else "Poste vacant"
-		_bench_context.text = "%d · %s" % [selected_slot + 1, player_name]
-		if not position.is_empty(): _bench_context.text = "%d · %s · %s" % [selected_slot + 1, position, player_name]
-	if live.get("finished", false):
-		_bench_status.text = "Match terminé. Les remplacements sont fermés."
-	elif not live.get("paused", false):
-		_bench_status.text = "Mets le match en pause pour effectuer un remplacement."
-	elif not selected:
-		_bench_status.text = "Sélectionne le joueur à remplacer."
-	elif choice.get("inIds", []).is_empty():
-		var other_choice := options.any(func(option: Dictionary): return option.get("slot") != selected_slot and not option.get("inIds", []).is_empty())
-		_bench_status.text = "Aucun remplaçant autorisé pour ce poste. " + ("Sélectionne un autre joueur." if other_choice else "Reprends le match pour continuer.")
-	else:
-		_bench_status.text = "Choisis un remplaçant dans « Faire entrer » sous le XV."
-	_bench_feedback.visible = drawer_tab == "Banc" and drawer.visible
-
-func _bench(live: Dictionary) -> void:
-	var players: Array = live.get("lineup", [])
-	var options: Array = live.get("substitutions", [])
-	var slot_to_replace := selected_slot
-	var selected := slot_to_replace >= 0 and slot_to_replace < players.size()
-	var out: Variant = players[slot_to_replace] if selected else null
-	var out_id: Variant = out.get("id") if out is Dictionary else null
-	var choice: Dictionary = {}
-	for option: Dictionary in options:
-		if option.get("slot") == slot_to_replace and option.get("outId") == out_id:
-			choice = option
-			break
-	_update_bench_feedback(live, selected, out, choice, options)
-	for slot in players.size():
-		var player: Variant = players[slot]
-		var title := str(player.get("name", "Joueur")) if player is Dictionary else "Poste vacant"
-		var button := S.button("%d · %s" % [slot + 1, title], func(): selected_slot = slot; _drawer_key = ""; _update_drawer())
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		button.tooltip_text = button.text
-		button.set_meta("match_bench_focus", "sortant:%d" % slot)
-		for option: Dictionary in options:
-			if option.get("slot") == slot: button.tooltip_text = "%s\n%d · %s" % [title, slot + 1, option.get("label", "")]
-		if selected_slot == slot: S.selected(button, S.GOLD)
-		drawer_body.add_child(button)
-	if not selected: return
-	var allowed: Array = choice.get("inIds", [])
-	drawer_body.add_child(S.label("Faire entrer", 18, S.GOLD))
-	for player: Dictionary in live.get("reserves", []):
-		var button := S.button(str(player.get("name", "Joueur")), func(): director.command("substitute", {"slot":slot_to_replace, "outId":out_id, "inId":player.get("id")}), player.get("id") in allowed and live.get("paused", false) and not live.get("finished", false))
-		button.set_meta("match_bench_focus", "entrant:%s" % str(player.get("id")))
-		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		button.tooltip_text = str(player.get("name", "Joueur"))
-		drawer_body.add_child(button)
+## Consigne en direct (fenêtre Équipe, onglet Consignes) : sans pause, gardée à l'écran jusqu'à la réponse.
+func _envoyer_consigne(axe: String, valeur: String) -> void:
+	_envois_consignes[axe] = valeur
+	if regie != null: regie.envoyer_consigne(axe, valeur)
+	else: app._command(Pilotage.COMMANDE, Pilotage.charge(axe, valeur))

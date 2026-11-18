@@ -17,6 +17,7 @@
       "assertive",
       "calm",
       "demanding",
+      "furious",
       "protective",
       "reflective",
       "warm"
@@ -3744,6 +3745,276 @@
       },
       "text": "Dis-moi comment nous pourrons faire le point sur nos choix et les ajuster.",
       "topic": "staff_disagreement"
+    },
+    {
+      "id": "pre_061",
+      "phase": "pre_match",
+      "tone": "furious",
+      "intent": "accountability",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "neutral"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Je ne supporterai pas un match à moitié. Chacun rend des comptes."
+    },
+    {
+      "id": "pre_062",
+      "phase": "pre_match",
+      "tone": "furious",
+      "intent": "raise_standards",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "neutral"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Ce que j’ai vu cette semaine ne suffit pas. Montrez-moi autre chose."
+    },
+    {
+      "id": "pre_063",
+      "phase": "pre_match",
+      "tone": "furious",
+      "intent": "discipline",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "home"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "À domicile, on ne se cherche pas d’excuses. Je veux du caractère."
+    },
+    {
+      "id": "pre_064",
+      "phase": "pre_match",
+      "tone": "furious",
+      "intent": "challenge",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "away"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "On se déplace pour gagner, pas pour subir. Soyez durs dès le coup d’envoi."
+    },
+    {
+      "id": "pre_065",
+      "phase": "pre_match",
+      "tone": "furious",
+      "intent": "raise_standards",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "favorite"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Favoris ? Alors jouez comme tels, ou je serai furieux à la pause."
+    },
+    {
+      "id": "pre_066",
+      "phase": "pre_match",
+      "tone": "furious",
+      "intent": "challenge",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "underdog"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "On nous enterre déjà. Faites-moi taire ces gens-là, tout de suite."
+    },
+    {
+      "id": "half_061",
+      "phase": "half_time",
+      "tone": "furious",
+      "intent": "accountability",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "neutral"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Ce n’est pas acceptable. Qui prend ses responsabilités, là, maintenant ?"
+    },
+    {
+      "id": "half_062",
+      "phase": "half_time",
+      "tone": "furious",
+      "intent": "focus",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "neutral"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Trop d’erreurs bêtes. Reprenez-vous et jouez simple, sinon je change."
+    },
+    {
+      "id": "half_063",
+      "phase": "half_time",
+      "tone": "furious",
+      "intent": "accountability",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "losing"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Menés à ce point, c’est une faute collective. On répare, immédiatement."
+    },
+    {
+      "id": "half_064",
+      "phase": "half_time",
+      "tone": "furious",
+      "intent": "challenge",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "losing"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Vous méritez mieux que ça, alors montrez-le. Je veux de la révolte."
+    },
+    {
+      "id": "half_065",
+      "phase": "half_time",
+      "tone": "furious",
+      "intent": "raise_standards",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "drawing"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "À égalité, c’est déjà trop peu. Je veux l’intensité que j’attends."
+    },
+    {
+      "id": "half_066",
+      "phase": "half_time",
+      "tone": "furious",
+      "intent": "discipline",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "winning"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "On mène, mais c’est brouillon. Si ça continue, ça se paiera."
+    },
+    {
+      "id": "post_061",
+      "phase": "post_match",
+      "tone": "furious",
+      "intent": "accountability",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "neutral"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Ce soir, personne ne se cache. On regarde ce qui n’a pas été fait."
+    },
+    {
+      "id": "post_062",
+      "phase": "post_match",
+      "tone": "furious",
+      "intent": "raise_standards",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "neutral"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Je suis en colère, et vous savez pourquoi. Lundi, on parlera vrai."
+    },
+    {
+      "id": "post_063",
+      "phase": "post_match",
+      "tone": "furious",
+      "intent": "accountability",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "result_loss"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Perdre ainsi, c’est un manque d’exigence. Je veux des réponses lundi."
+    },
+    {
+      "id": "post_064",
+      "phase": "post_match",
+      "tone": "furious",
+      "intent": "discipline",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "result_loss"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Cette défaite, on se l’est offerte. Plus jamais ce relâchement."
+    },
+    {
+      "id": "post_065",
+      "phase": "post_match",
+      "tone": "furious",
+      "intent": "raise_standards",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "result_draw"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "Un nul qu’on a laissé filer. Je suis furieux de ce manque d’appétit."
+    },
+    {
+      "id": "post_066",
+      "phase": "post_match",
+      "tone": "furious",
+      "intent": "raise_standards",
+      "audience": "team",
+      "conditions": {
+        "all": [
+          "result_win"
+        ],
+        "any": [],
+        "none": []
+      },
+      "text": "On a gagné, oui, mais c’était négligé. Ce relâchement, je n’en veux plus."
     }
   ],
   "editorial_revision": "native-concise-2026-11-10"

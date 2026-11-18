@@ -245,49 +245,38 @@ func _bench() -> void:
 	var incoming: Dictionary = {}
 	for player in app.model.live.reserves:
 		if player.id == option.inIds[0]: incoming = player; break
-	panel._toggle_drawer("Banc")
-	panel.selected_slot = int(option.slot)
-	panel._drawer_key = ""
-	app._update_match()
-	_check(not _named_button(panel.drawer_body, incoming.name).disabled, "Paused bench enables a permitted entrant")
-	_named_button(panel, "JOURNAL").pressed.emit()
-	_check(panel.drawer_tab == "Journal" and panel.drawer.is_visible_in_tree() and _bench_message(panel, "MatchBenchStatus").is_empty(), "Journal hides the bench feedback")
-	_named_button(panel, "BANC").pressed.emit()
-	_check(panel.selected_slot == int(option.slot) and not _bench_message(panel, "MatchBenchContext").is_empty(), "Returning from the journal restores the selected bench context")
-	_named_button(panel, "STATS").pressed.emit()
-	_check(panel.drawer_tab == "Stats" and _bench_message(panel, "MatchBenchStatus").is_empty(), "Stats hides the bench feedback")
-	_named_button(panel, "BANC").pressed.emit()
-	_check(panel.selected_slot == int(option.slot) and not _bench_message(panel, "MatchBenchContext").is_empty(), "Returning from stats restores the selected bench context")
+	# Banc : fenêtre Équipe du direct (choix de Léo du 18/11/2026), ouverte sur le poste à remplacer.
+	var fenetre: Control = panel.equipe
+	var eligible := func(id: Variant) -> bool:
+		var tuile: Control = fenetre.tuiles.get(str(id))
+		return tuile != null and bool(tuile.get_meta("eligible", false))
+	var statut := func() -> String: return _bench_message(fenetre, "TeamStatus")
+	panel.ouvrir_equipe("composition", int(option.slot))
+	for i in 3: await process_frame
+	_check(fenetre.visible and eligible.call(incoming.id), "Paused bench enables a permitted entrant")
 	await _command("pause", {"paused":false})
-	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Resume disables entrant without a tab or selection click")
-	_check(_bench_message(panel, "MatchBenchStatus").contains("pause"), "Running bench explains the pause requirement")
-	var stable_button := _named_button(panel.drawer_body, incoming.name)
-	await _command("tick", {"steps":1})
-	_check(_named_button(panel.drawer_body, incoming.name) == stable_button, "Unchanged running bench retains controls across ticks")
+	_check(fenetre.visible and not eligible.call(incoming.id), "Resume disables entrant without a tab or selection click")
+	_check(statut.call().contains("arrêté"), "Running bench explains the pause requirement · " + statut.call())
 	await _command("pause", {"paused":true})
-	_check(not _named_button(panel.drawer_body, incoming.name).disabled, "Pause re-enables entrant without a tab or selection click")
-	_check(panel.drawer_tab == "Banc" and panel.selected_slot == int(option.slot), "Pause and resume retain the bench tab and selected outgoing position")
+	_check(eligible.call(incoming.id), "Pause re-enables entrant without a tab or selection click")
+	_check(fenetre.visible and fenetre.poste_choisi == int(option.slot), "Pause and resume retain the window and selected outgoing position")
 	# Permission-only projection change, keeping actual players and pause unchanged.
 	var actual: Dictionary = app.model
 	var restricted: Dictionary = actual.duplicate(true)
 	restricted.live.substitutions = []
 	var outgoing_name: String = str(actual.live.lineup[int(option.slot)].name)
-	var outgoing_button := _named_button(panel.drawer_body, "%d · %s" % [int(option.slot) + 1, outgoing_name])
-	outgoing_button.grab_focus()
 	panel.update_frame(restricted)
 	await process_frame
 	await process_frame
-	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Permission-only change immediately disables the entrant")
-	_check(_bench_message(panel, "MatchBenchStatus").contains("Aucun remplaçant autorisé"), "Blocked bench explains that no replacement is available")
-	_check(_bench_message(panel, "MatchBenchContext").contains(outgoing_name), "Blocked bench retains the selected outgoing player's context")
-	_check(root.gui_get_focus_owner() == _named_button(panel.drawer_body, "%d · %s" % [int(option.slot) + 1, outgoing_name]), "Permission-only change retains the outgoing button's focus")
+	_check(not eligible.call(incoming.id), "Permission-only change immediately disables the entrant")
+	_check(statut.call().contains("aucun remplaçant autorisé"), "Blocked bench explains that no replacement is available · " + statut.call())
+	_check(statut.call().contains(fenetre.nom_court(outgoing_name)), "Blocked bench retains the selected outgoing player's context")
 	panel.update_frame(actual)
-	_check(not _named_button(panel.drawer_body, incoming.name).disabled, "Restored permission re-enables the entrant")
-	_check(not _bench_message(panel, "MatchBenchStatus").contains("Aucun remplaçant autorisé"), "Restored permission clears the blocked reason")
+	await process_frame
+	_check(eligible.call(incoming.id), "Restored permission re-enables the entrant")
+	_check(not statut.call().contains("aucun remplaçant autorisé"), "Restored permission clears the blocked reason")
 	await _command("delegate")
-	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Finished match disables entrant without another selection")
-	_check(_bench_message(panel, "MatchBenchStatus").contains("Match terminé"), "Finished bench explains that the match is over")
-	_check(panel.drawer_tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
+	_check(not fenetre.visible, "Finished match closes the team window")
 	await _command("finish_round")
 	await ContextualFlow.settle_club_meetings(app, self, _check)
 	var first_date: String = app.header_date.text
@@ -442,12 +431,14 @@ func _focus() -> void:
 		return
 	await _command("pause", {"paused":true})
 	var panel: Node = app.match_screen
-	panel._toggle_drawer("Banc")
-	panel.selected_slot = int(app.model.live.substitutions[0].slot)
-	panel._drawer_key = ""
-	app._update_match()
+	panel.ouvrir_equipe("composition", int(app.model.live.substitutions[0].slot))
 	for i in 5: await process_frame
-	await _scroll_focus(panel.drawer_body.get_parent(), "Bench")
+	var tuiles: Array = panel.equipe.tuiles.values()
+	_check(not tuiles.is_empty(), "Bench has an accessible focus target")
+	if not tuiles.is_empty():
+		(tuiles[-1] as Button).grab_focus()
+		await process_frame
+		_check(root.gui_get_focus_owner() == tuiles[-1] and Rect2(Vector2.ZERO, Vector2(root.size)).encloses((tuiles[-1] as Control).get_global_rect()), "Bench focus target fully visible")
 
 func _run() -> void:
 	var mode := OS.get_environment("CD_GODOT_REGRESSION")
