@@ -142,13 +142,13 @@ func layout(view: Control, size: Vector2i) -> void:
 	# Les commandes communes sont dans la bande sous le score (la même qu'en 3D).
 	var bande: Control = view.get("bande_temps_forts")
 	check(bande != null and bande.is_visible_in_tree() and bande.get_global_rect().position.y >= view.clock.get_global_rect().end.y - 1.0 and bande.get_global_rect().end.y <= between.get_global_rect().position.y + 1.0, label + " : bande de commandes sous le score, au-dessus de l'entracte")
-	for nom in ["MatchBetweenTactics", "MatchBetweenBench", "MatchBetweenSettings", "MatchBetweenMore"]:
+	for nom in ["MatchBetweenTeam", "MatchBetweenSettings", "MatchBetweenMore"]:
 		var noeud: Control = view.find_child(nom, true, false)
 		check(noeud != null and noeud.is_visible_in_tree() and bande != null and bande.is_ancestor_of(noeud) and inside(screen, noeud.get_global_rect()), label + " : commande " + nom)
 	check(not view.find_children("*", "OptionButton", true, false).any(func(o: OptionButton): return o.is_visible_in_tree()), label + " : pas de sélecteur « Horloge … » dans la bande (vitesse dans Paramètres)")
 	check(between.domination.is_visible_in_tree() and between.domination.size.y >= between.px(120), label + " : frise du match visible (%d px)" % int(between.domination.size.y))
 	check(not between.adjoint_cadre.visible or between.adjoint_cadre.is_visible_in_tree(), label + " : carte de Gabi à l'écran")
-	# Les faits marquants restent à l'écran, même avec le pilotage ; les consignes en direct sont dans le tiroir Tactique.
+	# Les faits marquants restent à l'écran, même avec le pilotage ; les consignes en direct sont dans la fenêtre Équipe.
 	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, label + " : faits marquants")
 	check(between.find_child("MatchBetweenConsignes", true, false) == null and between.find_children("Consigne_*", "BoxContainer", true, false).is_empty(), label + " : pas de consignes sur l'écran 2D")
 	# Maquette du 16 novembre 2026 : le terrain 2D en grand au centre, plus large que Notre XV et que le duel.
@@ -498,12 +498,12 @@ func interval(view: Control) -> void:
 	# Secondes qui roulent (« 12:41 ») ; l'horloge sans secondes du bandeau 3D peut apparaître à la bascule.
 	var roulantes: Array = horloges.keys().filter(func(h: String): return ":" in h)
 	check(roulantes.size() >= 3, "L'horloge défile en 2D entre deux temps forts (%d valeurs, ex. %s)" % [roulantes.size(), str(horloges.keys().filter(func(h: String): return not ":" in h).slice(0, 4))])
-	# Deuxième entracte : la tactique ouverte met le match en pause, la consigne passe, rien ne part.
+	# Deuxième entracte : la fenêtre Équipe ouverte met le match en pause, la consigne passe, rien ne part.
 	check(await until(func(): return regie.etat == regie.INTER, 120000), "Retour en 2D")
 	await until(func(): return not app.waiting, 30000)
 	var avant: Dictionary = app.model.get("tactics", {}).duplicate()
-	view._toggle_drawer("Tactique")
-	check(await until(func(): return app.model.live.paused and not app.waiting, 30000), "Tactique ouverte pendant l'entracte : le match se met en pause")
+	view.ouvrir_equipe("consignes")
+	check(await until(func(): return app.model.live.paused and not app.waiting, 30000), "Fenêtre Équipe ouverte pendant l'entracte : le match se met en pause")
 	var horloge_figee: String = view.clock.text
 	await settle(2)
 	var options: Array = app.model.get("tactics", {}).get("attacks", [])
@@ -511,17 +511,17 @@ func interval(view: Control) -> void:
 	for option: Dictionary in options:
 		if option.get("id") != avant.get("attack"): autre = str(option.get("id")); break
 	check(not autre.is_empty(), "Une autre consigne offensive est proposée")
-	var boutons: Array = view.drawer_body.find_children("*", "Button", true, false).filter(func(b: Button): return not b.disabled)
+	var boutons: Array = view.equipe.find_children("*", "Button", true, false).filter(func(b: Button): return not b.disabled)
 	check(boutons.size() >= 2, "Les consignes sont modifiables pendant la pause de l'entracte (%d boutons actifs)" % boutons.size())
 	await command("set_tactics", {"attack": autre, "defense": avant.get("defense", "equilibre")})
 	check(str(app.model.get("tactics", {}).get("attack", "")) == autre, "La consigne choisie pendant l'entracte est prise en compte : " + autre)
 	var temps_forts: int = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size()
 	var t0 := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - t0 < 4000: await process_frame
-	check(regie.etat != regie.JEU and regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size() == temps_forts, "Tiroir ouvert : aucun temps fort ne part")
+	check(regie.etat != regie.JEU and regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size() == temps_forts, "Fenêtre Équipe ouverte : aucun temps fort ne part")
 	check(view.clock.text == horloge_figee, "Pause : l'horloge est figée (%s → %s)" % [horloge_figee, view.clock.text])
-	view._toggle_drawer("Tactique")
-	check(await until(func(): return not app.model.live.paused and not app.waiting, 30000), "Tactique fermée : le match reprend")
+	view.equipe.fermer()
+	check(await until(func(): return not app.model.live.paused and not app.waiting, 30000), "Valider et reprendre : le match reprend")
 	# La consigne vaut pour la suite du match, comme une consigne donnée en pause aujourd'hui.
 	check(await until(func(): return app.model.live.minute > 0 and str(app.model.get("tactics", {}).get("attack", "")) == autre, 30000), "La consigne reste en place après la reprise")
 	check(await until(func(): return regie.etat == regie.JEU, 180000), "Temps fort suivant")
@@ -803,7 +803,7 @@ func player_path() -> Array:
 	check(not view.find_children("*", "OptionButton", true, false).any(func(option: OptionButton): return option.is_visible_in_tree()), "Pas de sélecteur « Horloge normale » dans la barre, en 3D")
 	var screen := Rect2(Vector2.ZERO, Vector2(root.size))
 	var bar: Control = view.get("bande_temps_forts")
-	check(bar != null and bar.is_visible_in_tree() and not view.barre_commandes.is_visible_in_tree() and view.find_child("MatchBetweenTactics", true, false).is_visible_in_tree(), "En 3D : la bande Tactique / Banc / Paramètres / Plus est là, seule")
+	check(bar != null and bar.is_visible_in_tree() and not view.barre_commandes.is_visible_in_tree() and view.find_child("MatchBetweenTeam", true, false).is_visible_in_tree(), "En 3D : la bande Équipe / Paramètres / Plus est là, seule")
 	var plus_3d: MenuButton = view.find_child("MatchBetweenMore", true, false)
 	var entrees: Array = []
 	for n in plus_3d.get_popup().item_count: entrees.append(plus_3d.get_popup().get_item_text(n))
@@ -1124,8 +1124,8 @@ func terrain2d(view: Control) -> void:
 	between.joueur_choisi.connect(noter)
 	(cases[3] as Button).pressed.emit()
 	between.joueur_choisi.disconnect(noter)
-	check(choisis == [3] and view.drawer.visible and view.drawer_tab == "Banc" and view.selected_slot == 3, "Vue Terrain : un clic sur le 4 ouvre le banc sur lui (%s, poste %d)" % [str(choisis), view.selected_slot])
-	if view.drawer.visible: view._fermer_tiroir()
+	check(choisis == [3] and view.equipe.visible and view.equipe.poste_choisi == 3, "Vue Terrain : un clic sur le 4 ouvre la fenêtre Équipe sur lui (%s, poste %d)" % [str(choisis), view.equipe.poste_choisi])
+	if view.equipe.visible: view.equipe.fermer()
 	await settle(2)
 	# Carte Changement : blessé d'abord, sinon l'énergie la plus basse, sous le seuil de fatigue ; les sanctionnés à part.
 	var sanctionnes := {}
@@ -1207,9 +1207,9 @@ func terrain2d(view: Control) -> void:
 			phrases[cle] = true
 	check(redites == 0, "L'adjoint ne répète pas une phrase : " + str(adjoint_textes))
 	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
-	# Accès directs : remplacements depuis l'adjoint, et un joueur de Mon XV ouvre le banc sur lui.
-	var banc: Button = view.find_child("MatchBetweenBench", true, false)
-	check(banc != null and banc.is_visible_in_tree() and view.find_child("MatchBetweenTactics", true, false) != null, "Tactique et remplacements accessibles depuis l'écran")
+	# Accès directs : remplacements depuis l'adjoint, et un joueur de Mon XV ouvre la fenêtre Équipe sur lui.
+	var bouton_equipe: Button = view.find_child("MatchBetweenTeam", true, false)
+	check(bouton_equipe != null and bouton_equipe.is_visible_in_tree() and view.find_child("MatchBetweenTactics", true, false) == null and view.find_child("MatchBetweenBench", true, false) == null, "Un seul bouton Équipe (ni Tactique ni Banc) depuis l'écran")
 	if regie.has_meta("bande_3d"): check(view.bande_temps_forts.get_global_rect().is_equal_approx(regie.get_meta("bande_3d")), "La bande de commandes ne bouge pas entre la 3D et l'entracte")
 	# Colonnes « Plaq. » et « Mètres » : la feuille de statistiques (match-stats.cjs) ; le total d'équipe est la
 	# somme des joueurs de la feuille et le chiffre du tableau de bord.
@@ -1258,8 +1258,8 @@ func terrain2d(view: Control) -> void:
 	var rangs_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
 	(rangs_xv[9] as Button).pressed.emit()
 	await settle(4)
-	check(view.drawer.visible and view.drawer_tab == "Banc" and view.selected_slot == 9, "Un joueur de Mon XV ouvre le banc sur lui (poste %d)" % view.selected_slot)
-	view._fermer_tiroir()
+	check(view.equipe.visible and view.equipe.poste_choisi == 9, "Un joueur de Mon XV ouvre la fenêtre Équipe sur lui (poste %d)" % view.equipe.poste_choisi)
+	view.equipe.fermer()
 	var menu: MenuButton = view.find_child("MatchBetweenMore", true, false)
 	check(menu != null and menu.get_popup().get_item_text(0) == "Statistiques", "Tous les chiffres du moteur restent dans le tiroir Statistiques (menu Plus)")
 	await layout(view, Vector2i(1280, 720))
@@ -1302,7 +1302,7 @@ func consignes_fictives(view: Control, direct: Dictionary) -> void:
 	between.update_frame(copie, copie.live, direct, func(_c: Dictionary): pass)
 	await settle(4)
 	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, "Pilotage : les faits marquants restent à l'écran")
-	check(between.find_child("MatchBetweenConsignes", true, false) == null and between.find_children("Consigne_*", "BoxContainer", true, false).is_empty(), "Pilotage : aucune consigne sur l'écran 2D (elles sont dans le tiroir Tactique)")
+	check(between.find_child("MatchBetweenConsignes", true, false) == null and between.find_children("Consigne_*", "BoxContainer", true, false).is_empty(), "Pilotage : aucune consigne sur l'écran 2D (elles sont dans la fenêtre Équipe)")
 	# Mon XV : l'état après la causerie, coloré selon son sens.
 	var cases: Array = between.formation.cases
 	var attendus := [["Galvanisé", W.VERT], ["Indifférent", Color("aeb9b3")], ["Vexé", W.ALERTE]]
@@ -1324,7 +1324,7 @@ func consignes_fictives(view: Control, direct: Dictionary) -> void:
 	await settle(2)
 	check(between.faits.is_visible_in_tree(), "Sans pilotage : faits marquants")
 
-## Carrière Monde réelle : un clic sur un cran du tiroir Tactique (ouvert, le match se met en pause) envoie
+## Carrière Monde réelle : un clic sur un cran de la fenêtre Équipe (ouvert, le match se met en pause) envoie
 ## la consigne au vrai moteur, qui la projette dans `live.pilotage` ; l'écran 2D n'a pas de consignes et garde ses faits marquants.
 func consigne_reelle(regie: Node) -> void:
 	var between: Control = regie.between
@@ -1333,22 +1333,21 @@ func consigne_reelle(regie: Node) -> void:
 	if not p is Dictionary: return
 	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, "Faits marquants à l'écran 2D pendant le match du manager")
 	var vue: Control = regie.view
-	vue._toggle_drawer("Tactique")
+	vue.ouvrir_equipe("consignes")
 	await settle(4)
 	var actuel := str(p.get("consignes", {}).get("rythme", ""))
 	var voulu := "lent" if actuel == "rapide" else "rapide"
-	var bouton: Button = vue.drawer_body.find_child("Consigne_rythme_" + voulu, true, false)
-	check(bouton != null, "Consignes (tiroir Tactique) : cran « %s » du rythme" % voulu)
+	var bouton: Button = vue.equipe.find_child("Consigne_rythme_" + voulu, true, false)
+	check(bouton != null, "Consignes (fenêtre Équipe) : cran « %s » du rythme" % voulu)
 	if bouton == null:
-		vue._toggle_drawer("Tactique")
+		vue.equipe.fermer()
 		return
 	var pauses: int = regie.suivi.size()
-	bouton.button_pressed = true
 	bouton.pressed.emit()
 	var recu: bool = await until(func() -> bool: return app.model.live.get("pilotage") is Dictionary and str(app.model.live.pilotage.get("consignes", {}).get("rythme", "")) == voulu, 30000)
 	check(recu, "Consignes : le moteur applique « %s » (%s)" % [voulu, str(app.model.live.get("pilotage", {}).get("consignes", {}) if app.model.live.get("pilotage") is Dictionary else null)])
 	check(regie.suivi.slice(pauses).any(func(e: Dictionary) -> bool: return e.evenement == "consigne" and e.get("valeur") == voulu), "Consignes : envoyée par la régie")
-	if vue.drawer.visible: vue._toggle_drawer("Tactique")
+	if vue.equipe.visible: vue.equipe.fermer()
 
 ## Mode « multiplex » : carrière world-champ réelle. Le moteur projette la journée (`direct.journee`)
 ## dès le coup d'envoi : au moins une carte de multiplex et notre club dans le classement en direct ;
