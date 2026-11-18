@@ -59,7 +59,10 @@ function clubCountry(club){
 }
 const factClubs=Object.fromEntries(referenceClubs.map(club=>[club.id,clubCountry(club)]));
 const factOrigins=Object.fromEntries(referenceClubs.flatMap(club=>club.players.map(player=>[player.id,factClubs[club.id]])));
-const nationalFacts=makePlayerFacts(playerFactsCatalogue,factOrigins,factClubs);
+// Éligibilité anglaise (EQP) des joueurs non documentés, club par club : native/engine/eqp_eligibilite.json.
+const eqpEligibilite=JSON.parse(fs.readFileSync(path.join(__dirname,'eqp_eligibilite.json'),'utf8'));
+const factHomes=Object.fromEntries(referenceClubs.flatMap(club=>club.players.map(player=>[player.id,club.id])));
+const nationalFacts=makePlayerFacts(playerFactsCatalogue,factOrigins,factClubs,{regles:eqpEligibilite,homes:factHomes});
 const portraitLooks=makePortraitLooks(nationalFacts);
 const MODULES=['season-label.js','storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
 MODULES.splice(MODULES.indexOf('game.js'),0,...systems.files.filter(name=>!MODULES.includes(name)));
@@ -298,7 +301,7 @@ function createBridge(options={}){
     if(nativeVerifySections&&JSON.stringify(root)!==nativeSaveSections.whole)throw Error('Sections de sauvegarde périmées avant la validation.');
     return {texts:nativeSaveSections.texts,cache:nativeSafeTreeCache};
    }
-   function nativeValidateSaved(full){nativeSafeTreeArmed=full?null:S;try{return validateCareer(S);}finally{nativeSafeTreeArmed=null;}}validatingStartup=false;const nativeCareerVariation=(${careerVariation.toString()})();const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)});
+   function nativeValidateSaved(full){nativeSafeTreeArmed=full?null:S;try{return validateCareer(S);}finally{nativeSafeTreeArmed=null;}}validatingStartup=false;const nativeCareerVariation=(${careerVariation.toString()})();const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)},${JSON.stringify({regles:eqpEligibilite,homes:factHomes})});
    const nativeCallups=(${internationalCallups.toString()})();
    const nativeInternationalStatus=new WeakMap();
    const nativePlayerAttributes=p=>{
