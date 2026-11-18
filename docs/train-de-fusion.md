@@ -58,3 +58,4 @@ Actions to create and approve pull requests ». Ni le ruleset ni `tests.yml` ne 
   elle-même rendait « Validation CI » en attente : la fusion lancée sur la batterie
   séparée était bloquée. Correctif : la PR du train est ouverte d'abord et sa propre
   batterie fait foi.
+- 18/11/2026 : 3e passage — lot de test refait sur un main à jour.
