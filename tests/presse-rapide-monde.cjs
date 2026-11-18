@@ -4,7 +4,7 @@
 // ni chaque lundi : une rentrée s'ouvre le lundi de la semaine du 1er match, puis des conférences d'événement.
 //   1. Grand moment (arrivée, atteinte en avançant) : 4 questions, en personne ; l'adjoint est refusé.
 //   2. Conférence ordinaire (l'après-match du 1er match, 2 ou 3 questions) : « Envoyer mon adjoint » (press_delegate)
-//      répond sur le ton prudent avec un léger coût (médias −2, relation −1 avec chaque journaliste), archive et reçu.
+//      répond sur le ton prudent au coût fixe annoncé (médias −2, relation −1 avec chaque journaliste, rien d'autre), archive et reçu.
 //   3. Réglage « Conférences ordinaires : envoyer l'adjoint » (press_policy) : l'après-match est tenu par Gabi dès la
 //      validation du résultat, « Continuer » ne s'arrête plus dessus, compte rendu de routine en Réception ; avec le
 //      réglage « y aller », l'après-match laissé sans réponse est pris par Gabi quand le manager poursuit.
@@ -115,20 +115,15 @@ test('Conférence ordinaire (après-match) : 3 questions au plus, adjoint au lé
     assert.equal(conf.moment, null, 'conférence ordinaire');
     assert.ok(conf.questions.length >= 2 && conf.questions.length <= 3, '3 questions au plus');
     assert.equal(conf.delegation.allowed, true);
-    // Effets attendus du ton prudent (aperçu) puis coût de la délégation.
-    const medias = conf.questions.map(q => q.answers.find(a => a.tone === 'cautious')).reduce((n, a) => n + a.effects.media, 0);
+    // Coût fixe et annoncé de la délégation (18/11/2026) : médias −2, relation −1 par journaliste, rien d'autre.
     const avant = press.metrics;
     model = jeu.call('press_delegate', { context: press.context, invitationId: conf.invitationId });
     const issue = model.clubLife.press.lastOutcome;
     assert.equal(issue.delegated, true);
-    const attendu = Math.max(0, Math.min(100, avant.mediaTrust + medias)) - 2;
-    assert.equal(issue.after.mediaTrust, Math.max(0, attendu), 'médias : effet prudent puis −2');
-    for (const e of issue.exchanges) {
-      const q = conf.questions.find(q => q.journalist.id === e.journalistId);
-      const prudent = q.answers.find(a => a.tone === 'cautious');
-      const fois = conf.questions.filter(x => x.journalist.id === e.journalistId).length;
-      if (fois === 1) assert.equal(e.delta, prudent.effects.relation - 1, 'relation : effet prudent puis −1');
-    }
+    assert.equal(issue.after.mediaTrust, Math.max(0, avant.mediaTrust - 2), 'médias : exactement −2');
+    assert.equal(issue.delta.fanTrust, 0, 'supporters inchangés');
+    assert.equal(issue.delta.morale, 0, 'moral inchangé');
+    for (const e of issue.exchanges) assert.equal(e.delta, e.before > -100 ? -1 : 0, 'relation : exactement −1');
     // Archive : les réponses prudentes de l'après-match, marquées comme tenues par l'adjoint.
     const archives = model.clubLife.press.history.filter(h => h.season === press.context.season && h.week === press.context.week && h.slot === 'apres');
     assert.equal(archives.length, conf.questions.length);
