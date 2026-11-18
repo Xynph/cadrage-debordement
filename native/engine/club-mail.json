@@ -688,6 +688,20 @@
         { "id": "rien", "libelle": "Rien à changer", "effets": {}, "resultat": "Feuille et consignes inchangées." }
       ]
     },
+    "plan_adverse": {
+      "_doc": "Veille du match (avant-match.cjs planAdverse) : le plan de jeu probable de l'adversaire lu par l'analyste vidéo (à défaut l'adjoint), qui peut se tromper ; réponses : ouvrir la composition ou les consignes.",
+      "categorie": "staff", "declencheur": "plan_adverse", "priorite": 9, "arret": true, "ecran": "Composition",
+      "expediteur": "Gabi, ton adjoint",
+      "formulations": [
+        { "sujet": "{adversaire} : {titre_bas} ?", "corps": "Coach, {lecteur} a décortiqué les derniers matchs de {adversaire}. Sa lecture pour {quand} : {titre_bas}, parce que {raison}. {confiance} Mon conseil : {conseil}." },
+        { "sujet": "Leur plan de jeu pour {quand}", "corps": "On a regardé {adversaire} à la vidéo. Pour {quand}, {lecteur} pense qu'{titre_bas} : {raison}. {confiance} À ta place : {conseil}." }
+      ],
+      "reponses": [
+        { "id": "composition", "libelle": "Ouvrir la composition", "effets": {}, "resultat": "La composition s'ouvre : prépare ta feuille contre leur plan.", "ouvrir": true },
+        { "id": "consignes", "libelle": "Régler les consignes", "effets": {}, "resultat": "Le plan de jeu s'ouvre : ajuste tes consignes.", "ouvrir": true, "ecran": "Plan de jeu" },
+        { "id": "rien", "libelle": "Garder notre plan", "effets": {}, "resultat": "Feuille et consignes inchangées." }
+      ]
+    },
     "pelouse": {
       "categorie": "moments", "declencheur": "pelouse", "priorite": 64, "arret": false, "ecran": "Composition",
       "expediteur": "Le responsable de la pelouse",
