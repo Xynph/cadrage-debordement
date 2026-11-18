@@ -35,9 +35,6 @@ signal levier_choisi(route: String)
 signal score_joue(score: Array)
 ## Caméra du direct 3D choisie dans le menu Plus (« tv », « tactical », « action »).
 signal camera_demandee(mode: String)
-## Consigne en direct choisie dans la tuile Consignes (axe, cran) : la régie envoie `set_consignes`
-## tout de suite, sans pause.
-signal consigne_choisie(axe: String, valeur: String)
 ## Bande de la vue du match (sous le score) qui porte la barre de commandes, la même en 3D et
 ## pendant l'entracte ; sans elle, la barre reste en haut de l'écran intermédiaire.
 var hote_barre: Control
@@ -128,18 +125,9 @@ var classement_lignes: VBoxContainer
 var _tuiles_droite: Array = []
 var multiplex: PanelContainer
 var multiplex_cartes: GridContainer
-## Tuile Consignes (pilotage du match, `live.pilotage`) : à la place des faits marquants tant que le
-## match du manager se joue (le dernier fait reste en bandeau, le journal dans le menu Plus).
-var consignes_tuile: PanelContainer
-var consignes_cadre: VBoxContainer
-var consignes_arbitre: Label
-var tuile_faits: Control
-var _consignes_cle := ""
-## Pilotage reçu du moteur (états des joueurs pour Mon XV), crans envoyés pas encore confirmés.
+## Pilotage reçu du moteur (`live.pilotage`) : sert aux états des joueurs (Galvanisé, Vexé…) de Mon XV.
+## Les consignes en direct ne sont pas sur cet écran (tiroir Tactique de la vue du match).
 var _pilotage: Dictionary = {}
-var _envois: Dictionary = {}
-var _envois_minute := 0
-var _minute_pilotage := 0
 var multiplex_precision: Label
 ## Dernière journée montrée (null sans multiplex) et sa clé (rien n'est reconstruit sans changement).
 var journee_vue: Variant = null
@@ -589,7 +577,6 @@ func _construire() -> void:
 		enfant.queue_free()
 	_cle = ""
 	_journee_cle = ""
-	_consignes_cle = ""
 	terrain = ancien if ancien != null else Terrain2D.new()
 	terrain.densite = _densite
 	terrain.legende = false
@@ -871,19 +858,13 @@ func _page() -> void:
 	photo_faits.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	photo_faits.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	photo_faits.modulate = Color(1, 1, 1, 0.3)
-	tuile_faits = cadre_faits.get_parent().get_parent()
-	tuile_faits.name = "MatchBetweenHighlightsTile"
+	var tuile_faits: Control = cadre_faits.get_parent().get_parent()
 	tuile_faits.clip_contents = true
 	tuile_faits.add_child(photo_faits)
 	tuile_faits.move_child(photo_faits, 0)
 	cadre_faits.add_child(_titre("Faits marquants"))
 	cadre_faits.add_child(faits)
-	consignes_cadre = _panneau(droite, px(14))
-	consignes_tuile = consignes_cadre.get_parent().get_parent()
-	consignes_tuile.name = "MatchBetweenConsignes"
-	consignes_cadre.add_theme_constant_override("separation", px(8))
-	consignes_tuile.visible = false
-	_tuiles_droite = [cadre_chiffres.get_parent(), cadre_classement.get_parent(), cadre_faits.get_parent(), consignes_cadre.get_parent()]
+	_tuiles_droite = [cadre_chiffres.get_parent(), cadre_classement.get_parent(), cadre_faits.get_parent()]
 	# Bas : la carte de Gabi en largeur, le multiplex des autres matchs à côté.
 	var bas := S.G.h(px(20))
 	bas.name = "MatchBetweenBottom"
@@ -1107,7 +1088,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.alimenter(direct.get("deroule", []), mini(live.get("events", []).size(), int(direct.get("borne", live.get("events", []).size()))))
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
-	_remplir_consignes(live)
+	_pilotage = Pilotage.pilotage(live)
 	_remplir_journee(model, direct, equipes)
 	_niveaux = direct.get("niveaux", [])
 	var voulu := niveau_regie if not niveau_regie.is_empty() else str(direct.get("niveau", ""))
@@ -1194,7 +1175,10 @@ func _remplir_fil() -> void:
 	# Faits marquants : les derniers faits joués, le plus récent en haut.
 	if is_instance_valid(faits):
 		S.clear(faits)
-		var nombre := 3 if _densite < 0.6 else 4
+		# 1280×720 : deux faits (le premier sur deux lignes, le suivant sur une) pour que la colonne de droite
+		# tienne avec Gabi en bas sans rien couper.
+		var petit := _densite < 0.6
+		var nombre := 2 if petit else 4
 		# Classement en direct sous le duel : les faits marquants se resserrent (le dernier fait
 		# reste en bandeau sur le terrain ; en 1280×720, une ligne par fait, le texte en infobulle).
 		var serre := _journee_montree()
@@ -1203,10 +1187,11 @@ func _remplir_fil() -> void:
 		recents.reverse()
 		for n in recents.size():
 			var ligne_fait := _ligne_fil(recents[n], n == 0, false)
-			if serre:
+			if serre or petit:
 				for etiquette: Label in ligne_fait.find_children("*", "Label", true, false):
-					etiquette.max_lines_visible = 1
+					etiquette.max_lines_visible = 1 if serre or n > 0 else 2
 					etiquette.tooltip_text = etiquette.text
+			if serre:
 				for icone: Control in ligne_fait.find_children("*", "Control", true, false):
 					if icone is Icone: icone.custom_minimum_size = Vector2(px(30), px(30))
 			faits.add_child(ligne_fait)
@@ -1382,88 +1367,13 @@ func _resserrer(direct: Dictionary) -> void:
 	var serre := _journee_montree()
 	for n in _tuiles_droite.size():
 		var marge: MarginContainer = _tuiles_droite[n]
-		for bord in ["left", "top", "right", "bottom"]: marge.add_theme_constant_override("margin_" + bord, px(10 if serre else [16, 14, 14, 14][n]))
+		for bord in ["left", "top", "right", "bottom"]: marge.add_theme_constant_override("margin_" + bord, px(10 if serre else [16, 14, 14][n]))
 		(marge.get_child(0) as VBoxContainer).add_theme_constant_override("separation", mini(8, px(6 if serre else 10)))
 	_remplir_chiffres(direct, {})
 	_remplir_fil()
-	# Consignes resserrées avec le classement.
-	_consignes_cle = ""
-	if _dernier.size() == 4: _remplir_consignes(_dernier[1])
 
 func _journee_montree() -> bool:
 	return is_instance_valid(classement_tuile) and classement_tuile.visible
-
-## Lignes du classement en direct : moins avec la tuile Consignes (la colonne de droite la porte aussi).
-func capacite_classement() -> int:
-	return CLASSEMENT_LIGNES if _densite >= 0.6 and not consignes_montrees() else 7
-
-func consignes_montrees() -> bool:
-	return is_instance_valid(consignes_tuile) and consignes_tuile.visible
-
-## Bas de la colonne de droite à l'écran : la tuile Consignes, sinon les faits marquants.
-func bas_droite_visible() -> bool:
-	if consignes_montrees(): return consignes_tuile.is_visible_in_tree() and consignes_cadre.find_children("Consigne_*", "BoxContainer", true, false).size() >= 1
-	return is_instance_valid(faits) and faits.is_visible_in_tree() and faits.get_child_count() >= 1
-
-## Tuile Consignes (`live.pilotage`, match du manager en carrière Monde) : rappel de l'arbitre, cinq axes à
-## trois crans (un clic envoie la consigne sans pause), puis les bilans et le journal du staff. Elle prend la
-## place des faits marquants tant que le match n'est pas fini ; sans pilotage, rien ne change.
-func _remplir_consignes(live: Dictionary) -> void:
-	if not is_instance_valid(consignes_tuile): return
-	var p := Pilotage.pilotage(live)
-	_minute_pilotage = int(live.get("minute", 0))
-	Pilotage.confirmer(p, _envois)
-	# Consigne refusée par le moteur : le modèle reprend la main après deux minutes.
-	if not _envois.is_empty() and _minute_pilotage - _envois_minute >= 2: _envois.clear()
-	_pilotage = p
-	var montre := not p.is_empty() and not bool(live.get("finished", false))
-	var cle := JSON.stringify([p.get("consignes"), p.get("axes"), p.get("bilans"), p.get("journal"), p.get("arbitre"), _envois, montre, _journee_montree(), _densite])
-	if cle == _consignes_cle: return
-	_consignes_cle = cle
-	consignes_tuile.visible = montre
-	if is_instance_valid(tuile_faits): tuile_faits.visible = not montre
-	S.clear(consignes_cadre)
-	consignes_arbitre = null
-	if montre: _construire_consignes(Pilotage.avec_envois(p, _envois))
-
-func _construire_consignes(p: Dictionary) -> void:
-	var serre := _journee_montree()
-	var tete := S.G.h(px(10))
-	consignes_cadre.add_child(tete)
-	tete.add_child(_texte("CONSIGNES", 22, FAIBLE, false, true))
-	var arbitre := Pilotage.arbitre_texte(p.get("arbitre"))
-	if not arbitre.is_empty():
-		consignes_arbitre = _texte(arbitre, 20, FAIBLE)
-		consignes_arbitre.name = "MatchBetweenReferee"
-		consignes_arbitre.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		consignes_arbitre.clip_text = true
-		consignes_arbitre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		consignes_arbitre.tooltip_text = arbitre
-		consignes_arbitre.mouse_filter = Control.MOUSE_FILTER_PASS
-		S.G.fill(consignes_arbitre)
-		tete.add_child(consignes_arbitre)
-	var rangs := S.G.v(px(4 if serre else 6))
-	rangs.name = "MatchBetweenConsignesRows"
-	consignes_cadre.add_child(rangs)
-	Pilotage.lignes(rangs, p, _choisir_consigne, _style_consignes(serre))
-	for note: Dictionary in Pilotage.notes(p, 1 if serre else 2):
-		var ligne := _texte(str(note.texte), 20, IVOIRE if note.staff else DOUX)
-		ligne.name = "MatchBetweenConsigneNote"
-		ligne.clip_text = true
-		ligne.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		ligne.tooltip_text = str(note.texte)
-		ligne.mouse_filter = Control.MOUSE_FILTER_PASS
-		consignes_cadre.add_child(ligne)
-
-## Crans de la tuile à l'échelle de l'écran (charte : relief sombre, or pour le cran en place).
-func _style_consignes(serre: bool) -> Dictionary:
-	return {"taille": px(19), "taille_libelle": px(20), "hauteur": px(38 if serre else 44), "libelle": px(150), "ecart": px(6),
-		"rayon": maxi(4, px(8)), "marge": px(8), "police": TITRES, "or": OR, "texte": IVOIRE, "doux": DOUX, "fond": RELIEF, "survol": SURVOL}
-
-func _choisir_consigne(axe: String, valeur: String) -> void:
-	_envois[axe] = valeur
-	_envois_minute = _minute_pilotage
-	consigne_choisie.emit(axe, valeur)
 
 ## Couleur de chaque club connu du modèle (tableaux des ligues, notre club, les deux équipes du
 ## match), par identifiant ; un club sans couleur reste neutre.
@@ -1508,7 +1418,7 @@ func _remplir_classement(classement: Array, teintes: Dictionary) -> void:
 	classement_tuile.visible = not classement.is_empty()
 	if classement.is_empty(): return
 	# En 1280×720, notre voisinage seul (± 3 places) ; plus grand, le haut du tableau en plus.
-	for k: int in lignes_classement(classement, capacite_classement()):
+	for k: int in lignes_classement(classement, CLASSEMENT_LIGNES if _densite >= 0.6 else 7):
 		if k < 0:
 			var ellipse := _texte("…", 22, FAIBLE)
 			ellipse.name = "MatchBetweenLiveTableGap"

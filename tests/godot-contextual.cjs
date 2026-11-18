@@ -15,7 +15,7 @@ for (const [name,script] of [
   ['match-club-branding','godot-match-club-branding.gd'],
   ['shutdown','helpers/contextualqa-shutdown.gd'],
   ['flow','godot-contextual-flow.gd']
-]) test('Native contextual '+name+': real Godot '+(name==='flow'?'career and match integration':'rendering contract'), {
+].filter(([name])=>!process.env.CD_CONTEXTUAL_ONLY||process.env.CD_CONTEXTUAL_ONLY.split(',').includes(name))) test('Native contextual '+name+': real Godot '+(name==='flow'?'career and match integration':'rendering contract'), {
   skip:!godot && 'SDK Godot requis (CD_GODOT_EXECUTABLE)',
   timeout:300000
 }, () => {
@@ -26,7 +26,7 @@ for (const [name,script] of [
     : path.join(temporary,'artifacts');
   fs.mkdirSync(artifacts,{recursive:true});
   const graphics = process.env.CD_CONTEXTUAL_GRAPHICS === '1';
-  const result = spawnSync(godot,[...(graphics?[]:['--headless']),
+  const result = spawnSync(godot,[...(graphics?['--display-driver','x11','--rendering-method','gl_compatibility','--windowed']:['--headless']),
     '--audio-driver','Dummy','--max-fps','120','--log-file',path.join(artifacts,'runtime.log'),
     '--path',path.join(repository,'native/godot'),'--script',path.join(__dirname,script)],{
     cwd:repository,
