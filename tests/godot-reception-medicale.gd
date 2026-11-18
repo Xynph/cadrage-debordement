@@ -107,6 +107,15 @@ func run() -> void:
 		check(cells.size() >= 2, "Blessure « " + label + " » dans le tableau et dans « Concerné » · " + tag)
 		for cell: Label in cells:
 			check(not cell.clip_text and cell.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING and cell.get_minimum_size().y <= cell.size.y + 1.0, "Blessure entièrement visible : " + cell.text + " · " + tag)
+		# Le tableau est sous le texte : la zone de lecture défile jusqu'à lui pour la capture.
+		var reading := node("InboxReadingScroll") as ScrollContainer
+		if reading != null and table != null:
+			reading.scroll_vertical = maxi(0, int(table.get_global_rect().position.y - reading.get_global_rect().position.y) + reading.scroll_vertical - 40)
+			await settle(4)
+		check(node("InboxInfirmaryRow_0") != null, "Au moins une ligne dans le tableau de l'infirmerie · " + tag)
+		for reply: Node in app.root_content.find_children("InboxClubMailReply_*", "Button", true, false):
+			for part: Node in reply.find_children("*", "Label", true, false):
+				check(not (part as Label).clip_text and (part as Label).text_overrun_behavior != TextServer.OVERRUN_TRIM_ELLIPSIS, "Carte de réponse sans ellipse : " + (part as Label).text + " · " + tag)
 		shot("reception-medicale-" + tag)
 		await crop(table, "reception-medicale-infirmerie-" + tag)
 		await crop(node("InboxConcerne"), "reception-medicale-concerne-" + tag)

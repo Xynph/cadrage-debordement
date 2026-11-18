@@ -1152,6 +1152,10 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 	return paper
 
 ## Colonnes du tableau de l'infirmerie [titre, part de la largeur] ; « BLESSURE » est la plus large (noms longs).
+## Hauteur maximale (px de mise en page) des lignes du tableau avant défilement sous l'en-tête figé.
+const INFIRMARY_MAX_ROWS := 460.0
+## Marge à droite du texte de chaque colonne du tableau (px de mise en page), pour ne jamais coller la colonne voisine.
+const INFIRMARY_GUTTER := 16.0
 const INFIRMARY_COLUMNS := [["JOUEUR", .22], ["POSTE", .14], ["BLESSURE", .32], ["RETOUR ESTIMÉ", .16], ["PROCHAIN MATCH", .16]]
 
 ## Tableau de l'infirmerie (données réelles de la partie) : joueurs blessés et en reprise, retour estimé et statut
@@ -1191,7 +1195,7 @@ static func wrapped_height(label: Label) -> float:
 	var font := label.get_theme_font("font")
 	var size := label.get_theme_font_size("font_size")
 	var flags := TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE | TextServer.BREAK_MANDATORY
-	var lines := font.get_multiline_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, label.custom_minimum_size.x, size, -1, flags).y
+	var lines := font.get_multiline_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, label.custom_minimum_size.x - C.px(INFIRMARY_GUTTER), size, -1, flags).y
 	return ceilf(lines) + C.px(10)
 
 static func _infirmary(app: Control, width: float) -> Control:
@@ -1211,23 +1215,33 @@ static func _infirmary(app: Control, width: float) -> Control:
 		var cell := C.label(column[0], 16, C.FAINT.lightened(.15), true, 700)
 		cell.custom_minimum_size = Vector2(C.px(width * float(column[1])), C.px(36))
 		cell.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		cell.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		header.add_child(cell)
 	table.add_child(header)
 	var tones := {"alert":C.ALERT, "gold":C.GOLD, "mint":C.MINT}
+	# En-tête figé ; les lignes défilent dessous si elles dépassent INFIRMARY_MAX_ROWS (px de mise en page), aucune n'est masquée.
+	var body := C.v(0)
+	body.name = "InboxInfirmaryRows"
+	var body_height := 0.0
 	for index in rows.size():
 		var data: Dictionary = rows[index]
 		var line := ColorRect.new()
 		line.color = Color(C.LINE,.5)
 		line.custom_minimum_size.y = 1
-		table.add_child(line)
+		body.add_child(line)
+		body_height += 1.0
 		var row := C.h(0)
 		row.name = "InboxInfirmaryRow_%d" % index
+		var row_height := 0.0
 		row.set_meta("player_id", data.id)
 		var values := [[data.name, C.IVORY, 700], [data.pos, C.MUTED, 500], [data.injury, C.MUTED, 500], [data.back, C.IVORY, 500], [data.status, tones[data.tone], 700]]
 		for column in values.size():
 			var cell := C.label(values[column][0], 21, values[column][1], column != 2 and column != 1, values[column][2])
 			cell.custom_minimum_size = Vector2(C.px(width * float(columns[column][1])), C.px(48))
 			cell.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			var gutter := StyleBoxEmpty.new()
+			gutter.content_margin_right = C.px(INFIRMARY_GUTTER)
+			cell.add_theme_stylebox_override("normal", gutter)
 			# Retour à la ligne plutôt que coupure : la hauteur de la ligne suit le texte le plus long de la rangée.
 			cell.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			cell.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
@@ -1235,7 +1249,16 @@ static func _infirmary(app: Control, width: float) -> Control:
 			cell.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			if column == 4: cell.name = "InboxInfirmaryStatus"
 			row.add_child(cell)
-		table.add_child(row)
+			row_height = maxf(row_height, cell.custom_minimum_size.y)
+		body.add_child(row)
+		body_height += row_height
+	var scroll := ScrollContainer.new()
+	scroll.name = "InboxInfirmaryScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size.y = minf(body_height, C.px(INFIRMARY_MAX_ROWS))
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(body)
+	table.add_child(scroll)
 	return table
 
 ## Conséquences d'une réponse, tirées de ses effets réels (texte du moteur « Moral +2 · Coût 5 000 € ») :
@@ -1277,16 +1300,33 @@ static func _reply_layout(app: Control, message: Dictionary, width: float) -> Di
 	if options.is_empty(): return {}
 	var columns := options.size() if options.size() <= 3 else 2
 	var card_width := (width - 14.0 * (columns - 1)) / columns
-	var font := C.font(700)
 	var label_lines := 1
-	var effect_lines := 1
+	var effect_height := 24.0
 	for option: Dictionary in options:
-		var span := font.get_string_size(str(option.get("libelle", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(21))).x / C.density
-		label_lines = maxi(label_lines, mini(2, ceili(span / maxf(1.0, card_width - 36))))
-		effect_lines = maxi(effect_lines, mini(4, consequences(str(option.get("effets", ""))).size() + (0 if option.get("disponible", false) else 1)))
-	var card_height := 22.0 + 28.0 * label_lines + 8.0 + 24.0 * effect_lines + 14.0
+		label_lines = maxi(label_lines, wrapped_lines(str(option.get("libelle", "")), 21, card_width - 36, C.font(700)))
+		effect_height = maxf(effect_height, _effects_height(option, card_width - 36))
+	var card_height := 22.0 + 28.0 * label_lines + 8.0 + effect_height + 14.0
 	var rows := ceili(options.size() / float(columns))
 	return {"options":options, "columns":columns, "card_width":card_width, "card_height":card_height, "label_lines":label_lines, "height":rows * card_height + (rows - 1) * 12.0}
+
+## Nombre de lignes d'un texte à retour à la ligne (police et taille du jeu, largeur en unités de mise en page).
+static func wrapped_lines(text: String, font_size: int, width: float, font: Font = C.BODY) -> int:
+	var pixels := maxi(12, C.px(font_size))
+	var flags := TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE | TextServer.BREAK_MANDATORY
+	var size := font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, maxf(1.0, C.px(width)), pixels, -1, flags)
+	return maxi(1, roundi(size.y / maxf(1.0, font.get_height(pixels))))
+
+## Lignes de conséquences affichées pour une réponse : [symbole, texte, couleur], indisponibilité en tête.
+static func _effect_lines(option: Dictionary) -> Array:
+	var lines := consequences(str(option.get("effets", "")))
+	if not option.get("disponible", false): lines = [["×", str(option.get("raison", "Indisponible")), C.FAINT]] + lines
+	return lines.slice(0, 4)
+
+## Hauteur des conséquences d'une réponse : chaque ligne passe à la ligne au besoin (22 par ligne de texte, 2 d'écart).
+static func _effects_height(option: Dictionary, width: float) -> float:
+	var total := 0.0
+	for effect: Array in _effect_lines(option): total += 22.0 * wrapped_lines("%s %s" % [effect[0], effect[1]], 17, width) + 2.0
+	return total
 
 ## Chaque réponse est une carte-bouton : libellé, puis ses conséquences (▲ / ▼ / =).
 static func _reply_cards(card: Panel, app: Control, message: Dictionary, layout: Dictionary, top: float) -> void:
@@ -1311,17 +1351,19 @@ static func _reply_cards(card: Panel, app: Control, message: Dictionary, layout:
 		reply.accessibility_name = reply.tooltip_text
 		var title := C.wrap(str(option.get("libelle","")), 21, C.IVORY if not reply.disabled else C.FAINT, true, 700)
 		title.name = "InboxReplyLabel"
-		title.max_lines_visible = int(layout.label_lines)
-		title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		title.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 		reply.add_child(title)
 		D.place(title, Rect2(18, 14, float(layout.card_width) - 36, 28.0 * int(layout.label_lines) + 4))
 		var y := 22.0 + 28.0 * int(layout.label_lines) + 8.0
-		var lines := consequences(detail)
-		if not option.get("disponible", false): lines = [["×", str(option.get("raison","Indisponible")), C.FAINT]] + lines
-		for effect: Array in lines.slice(0, 4):
+		for effect: Array in _effect_lines(option):
 			var effect_label := D.text(reply, 18, y + 16, "%s %s" % [effect[0], effect[1]], 17, effect[2], 600, float(layout.card_width) - 36, HORIZONTAL_ALIGNMENT_LEFT, true)
 			effect_label.name = "InboxReplyEffect"
-			y += 24.0
+			# Retour à la ligne, jamais d'ellipse : la carte a été dimensionnée pour la réponse la plus longue.
+			var count := wrapped_lines(effect_label.text, 17, float(layout.card_width) - 36)
+			effect_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			effect_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+			effect_label.size.y = C.px(22.0 * count + 2.0)
+			y += 22.0 * count + 2.0
 
 
 ## Pièces liées sous le texte (rencontre concernée, dossier de préparation, priorités de la semaine).
@@ -1423,7 +1465,12 @@ static func _side(card: Panel, app: Control, message: Dictionary, data: Dictiona
 		sheet.add_child(portrait); D.place(portrait,Rect2(20,20,80,80))
 		D.text(sheet,116,52,str(player.get("name","")),25,C.IVORY,700,width-116-90).name = "InboxConcernedName"
 		var age: Variant = player.get("age")
-		D.text(sheet,116,84,str(player.get("pos","")) + (" · %d ans" % int(age) if age is int or age is float else ""),18,C.MUTED,500,width-116-90,HORIZONTAL_ALIGNMENT_LEFT,true)
+		var identity := D.text(sheet,116,84,str(player.get("pos","")) + (" · %d ans" % int(age) if age is int or age is float else ""),18,C.MUTED,500,width-116-90,HORIZONTAL_ALIGNMENT_LEFT,true)
+		identity.name = "InboxConcernedIdentity"
+		# Poste et âge à la ligne plutôt que coupés (largeur réduite à 1280×720).
+		identity.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		identity.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+		identity.size.y = C.px(24.0 * wrapped_lines(identity.text, 18, width-116-90))
 		D.text(sheet,width-20,74,Portraits.rating_text(player,true),44,C.GOLD,800,90,HORIZONTAL_ALIGNMENT_RIGHT).name = "InboxConcernedRating"
 		var satisfaction: Variant = null
 		for member: Dictionary in app.model.get("clubLife",{}).get("relationships",{}).get("players",[]):

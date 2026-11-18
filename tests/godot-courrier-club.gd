@@ -150,6 +150,24 @@ func injury_name_fits() -> void:
 			check(needed.y <= cell.size.y + 1.0 and needed.x <= cell.size.x + 1.0, "Blessure entièrement visible (min %s, alloué %s) : %s%s" % [needed, cell.size, cell.text, tag])
 			var lines := cell.get_line_count()
 			check(lines * cell.get_line_height() <= cell.size.y + 1.0, "Hauteur de ligne qui suit (%d lignes) : %s%s" % [lines, cell.text, tag])
+		# Tableau : une ligne par joueur de l'infirmerie, en-tête figé au-dessus des lignes, première ligne visible.
+		var rows := app.root_content.find_children("InboxInfirmaryRow_*", "", true, false)
+		check(rows.size() == Reception.infirmary_rows(app.model).size() and rows.size() > 0, "Toutes les lignes de l'infirmerie présentes (%d)%s" % [rows.size(), tag])
+		var scroller := node("InboxInfirmaryScroll") as ScrollContainer
+		check(scroller != null and not rows.is_empty() and scroller.get_global_rect().grow(1.0).encloses((rows[0] as Control).get_global_rect()), "Première ligne de l'infirmerie visible" + tag)
+		if scroller != null and node("InboxInfirmary") != null:
+			var header := (node("InboxInfirmary") as Control).get_child(1) as Control
+			check(header.get_global_rect().end.y <= scroller.get_global_rect().position.y + 1.0, "En-tête du tableau figé au-dessus des lignes" + tag)
+			check(scroller.get_v_scroll_bar().max_value <= scroller.get_v_scroll_bar().page + 2.0 or scroller.size.y >= Reception.INFIRMARY_MAX_ROWS * C.density - 2.0, "Lignes toutes visibles ou défilement sous l'en-tête figé" + tag)
+		# Cartes de réponse : ni clip ni ellipse, texte entier dans la carte.
+		for reply: Node in app.root_content.find_children("InboxClubMailReply_*", "Button", true, false):
+			var box := (reply as Control).get_global_rect()
+			for part: Node in reply.find_children("*", "Label", true, false):
+				var part_label := part as Label
+				check(not part_label.clip_text and part_label.text_overrun_behavior != TextServer.OVERRUN_TRIM_ELLIPSIS and part_label.max_lines_visible < 0, "Carte de réponse sans clip ni ellipse : " + part_label.text + tag)
+				check(part_label.get_minimum_size().y <= part_label.size.y + 1.0 and part_label.get_global_rect().end.y <= box.end.y + 1.0, "Texte de carte entièrement dans la carte : " + part_label.text + tag)
+		var identity := node("InboxConcernedIdentity") as Label
+		check(identity != null and identity.get_minimum_size().y <= identity.size.y + 1.0 and identity.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING, "Poste et âge du panneau « Concerné » entiers" + tag)
 
 ## Arrêts informatifs : écran utile préparé pour la réponse de « Continuer ».
 func info_stops() -> void:
