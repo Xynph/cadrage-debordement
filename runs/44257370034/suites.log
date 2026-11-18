@@ -1,0 +1,87 @@
+::group::tests/godot-meteo-vent.cjs
+Météo (Godot) : {"controles":505,"failures":[],"textes":{"avant":["LA MÉTÉO  ·  GRAND VENT","Le vent souffle dans le dos de Hawthorn College XV en première période ; il changera de camp à la mi-temps.","Grand vent : le staff prévient que les tirs au but et le jeu au pied long deviennent aléatoires ; prenez les points faciles et jouez la touche."],"direct":"Grand vent · dans le dos de Hawthorn College XV en 1re période","ecran_match":"LA MÉTÉO DU MATCH | Vent | Sec, pelouse souple | sens de notre attaque  ▸ | 1re période | Dans le dos | 2e période | De face | Du vent : tirs au but un peu moins sûrs, jeu au pied plus court.","ecran_match_bandeau":"GRAND VENT | dans notre dos en 1re période, dans le leur après la pause","ecran_match_vent":["1re période | Dans le dos","2e période | De face"],"forces":"FORCES EN PRÉSENCE | HAWTHORN COLLEGE XV | ALDER FEN XV | 3,0 | Essais marqués / match | 4,5 | 21,0 | Points encaissés / match | 33,0 | 52 % | Touches gagnées | 73 % | 86 % | Mêlées gagnées | 69 % | Moyennes sur 2 matchs · saison en cours","gabi":"LE MOT DE GABI | « Ils sont 8es et prennent 21 points par match. Trois clés pour moi : » | Marquer tôt avec le vent | il est dans notre dos en 1re période | Fermer les extérieurs | ils marquent 3,0 essais par match | Tenir après la pause | le vent nous fera face en 2e période","joueurs":"JOUEURS À SURVEILLER | 7 | Hector CLOUGH | troisième ligne aile · franchissements | 0,5 / m | 5 | Zachary HOLLAND | deuxième ligne · grattages | 1,0 / m | 6 | Ieuan QUARMBY | troisième ligne aile · plaquages | 15,5 / m","mi_temps":"Mi-temps · changement de camp : le vent passe dans le dos de Alder Fen XV","photos":{"chaleur":"match-tunnel-chaleur","forte-pluie":"match-tunnel-forte-pluie","jour-pluie":"stade-pelouse-pluie-jour","jour-sec":"stade-pelouse-sec-jour","neutre":"match-tunnel-neutre","pluie":"match-tunnel","sec":"match-tunnel-sec","vent":"match-tunnel-vent"}}}
+Captures : /tmp/tmp.6owNLTt5Uw/suite.3LU6MM/rl27-meteo-captures-UlbZ0y
+TAP version 13
+# Subtest: Météo et vent : avant-match, bandeau du direct, mi-temps
+ok 1 - Météo et vent : avant-match, bandeau du direct, mi-temps
+  ---
+  duration_ms: 110146.774483
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 110153.141772
+CD_CPU_PROFILE suite=tests/godot-meteo-vent.cjs user_s=116.67 system_s=13.33 wall_s=111.02 cpu_pct=117% max_rss_kb=2875808
+PASS tests/godot-meteo-vent.cjs (111 s)
+::endgroup::
+::group::tests/godot-immersive08.cjs
+Illustrations immersive08 : 66 PNG vérifiés, treize références, empreintes et provenance.
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-13" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-14" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-15" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-16" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-17" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-18" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-19" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-20" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-21" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-22" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-23" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-24" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-25" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-26" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-27" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-28" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-29" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-30" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-31" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-01" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-02" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-03" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-04" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-05" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-06" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-07" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-08" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-09" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-10" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-11" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-12" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-13" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-14" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-15" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-16" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-17" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-18" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-19" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-20" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-21" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-22" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-23" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-24" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-25" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-26" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-27" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-28" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-29" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-30" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-31" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-01" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-02" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-03" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-04" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-05" }
+DIAG journal : clic sans effet, bouton [P: (18.0, 18.0), S: (69.0, 38.0)] visible=false désactivé=false onglet= fenêtre=(2560, 1440)
+immersive08 : 721 contrôles, 0 échecs
+Preuves immersive08 : /tmp/tmp.6owNLTt5Uw/suite.JumfQ5/oval-immersive08-dGB6r3
+CD_CPU_PROFILE suite=tests/godot-immersive08.cjs user_s=99.42 system_s=9.00 wall_s=110.77 cpu_pct=97% max_rss_kb=1706904
+PASS tests/godot-immersive08.cjs (111 s)
+::endgroup::
