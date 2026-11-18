@@ -18,6 +18,7 @@
       "tests/match-pilotage.cjs": 260,
       "tests/arbitre-veille.cjs": 120,
       "tests/cartons-realistes.cjs": 150,
+      "tests/plan-adverse.cjs": 120,
       "tests/homme-du-match-postes.cjs": 120,
       "tests/fiche-club-monde.cjs": 200,
       "tests/world-nouvelle-saison-rapide.cjs": 420,

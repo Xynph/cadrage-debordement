@@ -470,6 +470,20 @@ function factory() {
       const conseil = sev.length ? 'À intégrer dans les consignes : ' + sev.map(x => x[1]).join(', ') + '.' : 'Rien de marquant : joue ton match, les consignes en direct feront le reste.';
       return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire, arbitre: a.nom + ' (' + a.pays + ')', tendances, resume: a.resume, conseil, profil: a.resume } }];
     },
+    // Veille du match (avec la météo, dont il dépend) : plan de jeu probable de l'adversaire lu par notre staff
+    // (avant-match.cjs planAdverse : même calcul que le choix de l'IA au coup d'envoi, lecture faillible).
+    plan_adverse(F) {
+      const f = F.next;
+      if (!f || (f.date !== F.d && f.date !== shift(F.d, 1)) || F.s.worldMode?.day === undefined || typeof CDWorldCareer === 'undefined' || typeof CDWorldCareer.meteoPrevue !== 'function') return [];
+      const kept = F.s.worldMode.meteo, m = kept && kept.fixtureId === f.id ? kept : CDWorldCareer.meteoPrevue(F.s, f);
+      let plan = null;
+      try { plan = nativeSystems.domain('avantMatch').planAdverse(F.s, f, m.weather); } catch (e) { plan = null; }
+      if (!plan) return [];
+      const l = plan.lecteur || {}, lecteur = l.nom ? l.nom + ', notre ' + l.role + ',' : 'le staff';
+      const confiance = { sure: 'La lecture est nette.', probable: 'C’est le scénario le plus probable.', incertaine: 'La lecture reste incertaine : ne mets pas tout sur cette carte.' }[plan.confiance] || '';
+      const bas = plan.titre.charAt(0).toLowerCase() + plan.titre.slice(1);
+      return [{ key: f.id, club: F.opponent(f), vars: { adversaire: F.name(F.opponent(f)), quand: f.date === F.d ? 'aujourd’hui' : 'demain', lecteur, titre_bas: bas, raison: plan.raison, confiance, conseil: plan.conseil, style: plan.style } }];
+    },
     rivaux(F) {
       const g = F.playedOn(shift(F.d, -2)); if (!g || g.fixture.competitionId !== F.lid) return [];
       const rows = F.rows(), i = rows.findIndex(r => r.clubId === F.s.club);
@@ -835,7 +849,7 @@ function factory() {
     m.status = 'repondu';
     m.choice = r.id;
     validate(S);
-    return { clubMailReply: { id: m.id, choice: r.id, resultat: m.verdict ? r.resultat + ' ' + m.verdict : r.resultat, ouvrir: !!r.ouvrir, ecran: TYPES[m.type].ecran || null, joueur: m.player } };
+    return { clubMailReply: { id: m.id, choice: r.id, resultat: m.verdict ? r.resultat + ' ' + m.verdict : r.resultat, ouvrir: !!r.ouvrir, ecran: r.ecran || TYPES[m.type].ecran || null, joueur: m.player } };
   }
 
   // Après chaque commande : une réception par jour de calendrier (carrière Monde journalière, saison ouverte).

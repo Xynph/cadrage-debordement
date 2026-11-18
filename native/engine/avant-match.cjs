@@ -12,7 +12,10 @@
 //  - aSurveiller : 3 adversaires du XV type (club-sheet.cjs), choisis sur leurs totaux de saison
 //    (`S.matchNotes`, match-notes.cjs) : réussite au but, franchissements, ballons grattés, plaquages, essais ;
 //    début de saison sans statistiques : leur XV probable (source « probable »), sans chiffre inventé ;
-//  - gabi : une phrase et trois clés du match, tirées de la météo annoncée, des forces et des joueurs à surveiller.
+//  - planAdverse : dès la veille, le style d'attaque probable de l'adversaire et sa raison principale, lu par notre
+//    staff (peut se tromper) ; null avant l'annonce météo ;
+//  - gabi : une phrase et trois clés du match, tirées du plan adverse, de la météo annoncée, des forces et des
+//    joueurs à surveiller.
 const files=Object.freeze([]),commands=Object.freeze([]);
 function factory(){
  const state=()=>typeof S==='undefined'?null:S;
@@ -107,9 +110,103 @@ function factory(){
   if(typeof arbitreDuMatch!=='function')return null;
   try{const a=arbitreDuMatch(f.id,f.competitionId);return a?{nom:a.nom,civilite:a.civilite||'M.',pays:a.pays,rucks:a.rucks,melee:a.melee,horsJeu:a.horsJeu,cartons:a.cartons,resume:a.resume}:null;}catch(e){return null;}
  }
+ // ---- Plan de jeu probable de l'adversaire (18/11/2026, suite de #906, docs/top14-dispute-20261117.md §16) ----
+ // Dès la veille (météo annoncée), le staff lit le style d'attaque que l'IA adverse choisira au coup d'envoi : même
+ // calcul que le moteur (opposition.js : managerSheet, styleScores, chooseManagerStyle), avec notre feuille actuelle
+ // en face et ses internationaux retenus. La lecture peut se tromper, comme un vrai staff : l'analyste vidéo (à
+ // défaut l'adjoint) se trompe d'autant plus souvent qu'il est peu compétent, que les deux meilleurs styles sont
+ // proches, et en Classique (en Expert, l'IA est cohérente donc lisible) : de 42 % (analyste faible, choix serré) à
+ // 1 % (très bon analyste, choix net, Expert). Erreur = annonce du deuxième style, tirée
+ // d'une empreinte (analyste, rencontre) : stable d'une projection à l'autre, sans aléa du jeu. Rien n'est annoncé
+ // pendant le match (fixture() rend null dès S.live).
+ const PLAN=Object.freeze({
+  erreur:{max:.3,min:.08,niveauMin:45,niveauMax:85,expert:.25,serre:2,serreFacteur:1.4,net:5,netFacteur:.5},
+  confiance:{sur:5,probable:2,niveauSur:65},
+  titres:{conquete:'Ils vont jouer au près',large:'Ils vont jouer au large',occupation:'Ils vont occuper au pied',equilibre:'Ils vont varier le jeu'},
+  raisons:{
+   conquete:{duel:'leur pack domine le nôtre',meteo:'la pluie annoncée les pousse devant',contexte:'en outsiders, ils fermeront le jeu',identite:'c’est l’identité de leur club',qualites:'leurs avants sont leur point fort'},
+   large:{duel:'leurs trois-quarts prennent le dessus sur notre défense',contexte:'favoris, ils voudront mettre du rythme',identite:'c’est l’identité de leur club',qualites:'leurs arrières vont vite'},
+   occupation:{duel:'leur jeu au pied est meilleur que le nôtre',meteo:'la pluie annoncée ferme le jeu à la main',contexte:'en outsiders, ils joueront dans notre camp',usure:'leur XV est fatigué, ils économiseront les courses',europe:'ils sortent d’une semaine européenne et ménagent leurs jambes',identite:'c’est l’identité de leur club',qualites:'ils ont du pied et du sang-froid'},
+   equilibre:{meteo:'le vent annoncé gêne leur jeu au pied',identite:'c’est l’identité de leur club',qualites:'aucun rapport de forces net, ils varieront'}
+  },
+  contres:{
+   conquete:{conseil:'aligne ta meilleure première ligne et tes sauteurs',action:'composition',libelle:'Ouvrir la composition'},
+   large:{conseil:'une défense glissée prudente protège les extérieurs',action:'consignes',libelle:'Régler les consignes'},
+   occupation:{conseil:'un arrière et des ailiers sûrs sous les ballons hauts',action:'composition',libelle:'Ouvrir la composition'},
+   equilibre:{conseil:'garde ton plan et gagne les collisions',action:'consignes',libelle:'Régler les consignes'}
+  }
+ });
+ const empreinte=x=>{let h=2166136261;for(const c of String(x))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
+ // Lecteur du match : meilleur analyste vidéo du club, à défaut l'adjoint, à défaut un staff moyen (sans nom).
+ function lecteur(s,own){
+  const gens=s.staffCareer?.version===1&&Array.isArray(s.staffCareer.people)?s.staffCareer.people.flat():[];
+  const actifs=gens.filter(p=>p&&p.clubId===own&&Number.isFinite(p.level)&&(p.contractEnd==null||p.contractEnd>=s.season));
+  const meilleur=role=>actifs.filter(p=>p.role===role).sort((a,b)=>b.level-a.level||(a.id<b.id?-1:a.id>b.id?1:0))[0];
+  const p=meilleur('analyst')||meilleur('assistant');
+  return p?{id:String(p.id),nom:p.name||null,role:p.role==='analyst'?'analyste vidéo':'adjoint',niveau:p.level}:{id:'club:'+own,nom:null,role:'staff',niveau:60};
+ }
+ const pret=()=>typeof managerSheet==='function'&&typeof styleScores==='function'&&typeof chooseManagerStyle==='function'&&typeof managerStyle==='function'&&typeof buildSheet==='function';
+ // weather : libellé du moteur (« Pluie », « Vent »…) ; par défaut, la météo annoncée de cette rencontre. controle
+ // (tests, mesures) : ajoute `reel`, le style que l'IA retiendrait si notre feuille ne bouge plus ; jamais projeté.
+ function planAdverse(s,f,weather,controle=false){
+  try{if(!s||!f||s.live||!pret())return null;}catch(e){return null;}
+  const own=s.club,pair=[f.homeId,f.awayId];if(!pair.includes(own))return null;
+  const adv=pair.find(id=>id!==own),base=s.clubs[adv],nous=s.clubs[own];if(!base||!nous)return null;
+  if(weather===undefined){const m=meteo(s,f);if(!m)return null;weather=m.weather;}
+  const level=s.difficulty||'classique';
+  try{
+   const libere=id=>{try{return typeof CDWorldCareer!=='undefined'&&typeof CDWorldCareer.clubReleaseOn==='function'&&!!CDWorldCareer.clubReleaseOn(s,id,f.date);}catch(e){return false;}};
+   const c={...base,players:base.players.filter(p=>!libere(p.id))};
+   const notreXV=(Array.isArray(s.lineup)?s.lineup:[]).filter(Boolean);
+   const cond=(club,ids)=>{const ps=ids.map(id=>club.players.find(p=>p.id===id)).filter(Boolean);return ps.length?ps.reduce((n,p)=>n+(p.condition??100),0)/ps.length:100;};
+   const europe=typeof europeAutour==='function'?!!europeAutour(f,adv):false;
+   const ctxDe=ids=>({opp:nous,oppIds:notreXV,gap:(c.base??0)-(nous.base??0),fatigue:cond(c,ids)-cond(nous,notreXV),europe});
+   const feuille=managerSheet(c,nous,weather,level,europe,ctxDe(buildSheet(c).lineup));
+   const ids=feuille.lineup.filter(Boolean),ctx=ctxDe(ids);
+   const style=chooseManagerStyle(c,ids,weather,level,ctx);
+   const notes=level==='decouverte'?null:styleScores(c,ids,weather,ctx,level);
+   const classe=notes?Object.entries(notes).sort((a,b)=>b[1]-a[1]):[[style,0]];
+   const ecart=classe.length>1?classe[0][1]-classe[1][1]:99;
+   // Lecture du staff : fiable en Découverte (identité fixe), presque en Expert, moins sûre en Classique.
+   const qui=lecteur(s,own),E=PLAN.erreur;
+   let chance=0;
+   if(level!=='decouverte'&&classe.length>1){
+    const t=Math.min(1,Math.max(0,(qui.niveau-E.niveauMin)/(E.niveauMax-E.niveauMin)));
+    chance=(E.max+(E.min-E.max)*t)*(ecart<E.serre?E.serreFacteur:ecart>=E.net?E.netFacteur:1)*(level==='expert'?E.expert:1);
+   }
+   const trompe=chance>0&&empreinte(qui.id+'|'+f.id+'|plan')/4294967296<chance;
+   const annonce=trompe?classe[1][0]:style;
+   // Raison : le facteur dont le retrait creuse le plus l'avance du style annoncé (contrefactuel du même calcul).
+   const avance=n=>n[annonce]-Math.max(...Object.entries(n).filter(([k])=>k!==annonce).map(([,v])=>v));
+   let raison='qualites';
+   if(level==='decouverte')raison='identite';
+   else{
+    const ref=avance(notes),poids={};
+    poids.duel=ref-avance(styleScores(c,ids,weather,{...ctx,oppIds:[]},level));
+    poids.meteo=ref-avance(styleScores(c,ids,null,ctx,level));
+    poids.contexte=ref-avance(styleScores(c,ids,weather,{...ctx,gap:0},level));
+    const usure=ref-avance(styleScores(c,ids,weather,{...ctx,fatigue:0,europe:false},level));
+    poids[ctx.europe?'europe':'usure']=usure;
+    poids.identite=managerStyle(c.id)===annonce?5:0;
+    const R=PLAN.raisons[annonce];
+    const top=Object.entries(poids).filter(([k,v])=>R[k]&&v>.5).sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1))[0];
+    if(top)raison=top[0];
+   }
+   const C=PLAN.confiance;
+   const confiance=level==='decouverte'||ecart>=C.sur&&(qui.niveau>=C.niveauSur||level==='expert')?'sure':ecart>=C.probable?'probable':'incertaine';
+   const contre=PLAN.contres[annonce];
+   const out={style:annonce,titre:PLAN.titres[annonce],raison:PLAN.raisons[annonce][raison],cle:raison,confiance,
+    lecteur:{nom:qui.nom,role:qui.role},conseil:contre.conseil,action:contre.action,libelle:contre.libelle};
+   if(controle)Object.assign(out,{reel:style,chance:Math.round(chance*1000)/1000,ecart:Math.round(ecart*100)/100});
+   return out;
+  }catch(e){return null;}
+ }
  function gabi(s,f,own,adv,data){
   const nous=[f.homeId,f.awayId].indexOf(own),eux=1-nous,cles=[];
   const ajoute=(id,priorite,titre,detail)=>cles.push({id,priorite,titre,detail});
+  const plan=data.planAdverse;
+  // Le plan probable passe avant tout sauf un vent fort : c'est ce que le manager doit préparer.
+  if(plan)ajoute('plan-adverse',90,plan.titre,plan.raison+(plan.confiance==='incertaine'?' (lecture incertaine)':''));
   const m=meteo(s,f);
   if(ventOriente(m)){
    const fort=m.vent===2?10:0;
@@ -168,6 +265,7 @@ function factory(){
   const adv=pair.find(id=>id!==own);
   const data={fixtureId:f.id,forme:pair.map(id=>forme(s,id)),forces:forces(s,pair),confrontations:confrontations(s,own,adv),aSurveiller:aSurveiller(s,adv),rangs:rangs(s,pair)};
   data.arbitre=arbitre(f);
+  data.planAdverse=planAdverse(s,f);
   data.gabi=gabi(s,f,own,adv,data);
   delete data.rangs;
   return data;
@@ -175,6 +273,6 @@ function factory(){
  function validate(){return true;}
  function execute(){throw Error('Avant-match : aucune commande.');}
  function installHooks(){return true;}
- return {project,validate,execute,installHooks,forme,forces,confrontations,aSurveiller,gabi};
+ return {project,validate,execute,installHooks,forme,forces,confrontations,aSurveiller,gabi,planAdverse,PLAN};
 }
 module.exports={files,commands,factory};
