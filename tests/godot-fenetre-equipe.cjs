@@ -31,7 +31,10 @@ test('Fenêtre Équipe : un bouton, pause, composition, banc, consignes', { skip
     const r = spawnSync(commande, complet, { cwd: racine, encoding: 'utf8', timeout: 600000, env: { ...process.env, CD_GODOT_SELF_TEST: '0', CD_GODOT_GUIDE_MODULE_TEST: '1', CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_DATA_DIR: profil, CD_EQUIPE_OUTPUT: sortie } });
     const journal = (r.stdout || '') + (r.stderr || '');
     if (r.error) throw r.error;
-    assert.doesNotMatch(journal, /SCRIPT ERROR|Parse Error/, journal.slice(-4000));
+    // Premières erreurs de script en tête du message (la fin du journal ne montre que leurs conséquences).
+    const lignes = journal.split('\n');
+    const premieres = lignes.map((l, i) => /SCRIPT ERROR/.test(l) ? l + '\n' + (lignes[i + 1] || '') : null).filter(Boolean).slice(0, 6).join('\n');
+    assert.doesNotMatch(journal, /SCRIPT ERROR|Parse Error/, premieres + '\n…\n' + journal.slice(-2500));
     const ligne = journal.split('\n').find(l => l.startsWith('EQUIPE '));
     assert.ok(ligne, 'rapport Godot : ' + journal.slice(-4000));
     const rapport = JSON.parse(ligne.slice('EQUIPE '.length));
