@@ -334,6 +334,29 @@ function factory(){
   // Un adversaire différent à chaque amical (rang dans le programme), point de départ tiré de la saison.
   return list.length?list[(hash('amical-adversaire:'+s.season+':'+s.club)+note.index)%list.length]:null;
  }
+ // Score d'un amical (déterministe : graine de la saison et de l'élément), partagé par le courrier et le résumé.
+ function amicalScore(s,note){
+  const st=s.reprise,name=s.clubs[s.club].name,program=st.program?.id||PRUDENT,opp=friendlyOpponent(s,note,program),home=program==='rodage'||program===PRUDENT&&note.index%2===0;
+  const gap=opp?opp.d:0,h=k=>hash('amical-score:'+s.season+':'+note.id+':'+k);
+  let us=10+h(0)%24,them=10+h(1)%24;const edge=Math.round(clamp(-gap*1.5+(home?3:-3),-18,18));if(edge>0)us+=edge;else them-=edge;
+  const other=opp?opp.c.name:'un club invité';
+  return {home,us,them,other,score:home?`${name} ${us}-${them} ${other}`:`${other} ${them}-${us} ${name}`};
+ }
+ // Résumé d'un élément en quelques mots, pour l'arrêt hebdomadaire de « Continuer » (une ligne par élément).
+ function noteBrief(s,note){
+  if(note.kind==='retour'){const n=note.players.length,names=[...note.players].sort((a,b)=>b.rating-a.rating).slice(0,2).map(p=>p.name).join(', ');return `${n} ${n>1?'internationaux de retour':'international de retour'} (${names}${n>2?'…':''})`;}
+  if(note.kind==='amical'){const r=amicalScore(s,note);return `amical ${note.index+1}/${note.count} ${r.us>r.them?'gagné':r.us<r.them?'perdu':'nul'} ${r.us}-${r.them} ${r.home?'contre':'chez'} ${r.other}`;}
+  if(note.kind==='stage')return `${DECISIONS.stage.options[s.reprise.camp?.id||PRUDENT].label.toLowerCase()} terminé`;
+  if(note.kind==='recrutement'){let needs=[];try{needs=typeof recruitmentNeeds==='function'?recruitmentNeeds(JSON.parse(JSON.stringify(s.clubs[s.club]))).filter(x=>x.need).slice(0,3):[];}catch(e){needs=[];}return needs.length?'à renforcer : '+needs.map(x=>x.pos).join(', '):'effectif complet, rien d’urgent au recrutement';}
+  const f=s.worldMode.fixtures.find(x=>(x.homeId===s.club||x.awayId===s.club)&&x.date===iso(note.first)),opp=f?s.clubs[f.homeId===s.club?f.awayId:f.homeId]?.name:null;
+  return '1re journée demain'+(opp?(f.homeId===s.club?' : réception de ':' : déplacement à ')+opp:'');
+ }
+ // Résumés des éléments déjà envoyés dont la date est dans [from, to] (ISO) : {id: résumé}.
+ function notesBrief(s,from,to){
+  const st=s?.reprise;if(!active(s)||!st||!Array.isArray(st.notes))return {};
+  const out={};for(const note of schedule(s)){const d=iso(note.day);if(d>=from&&d<=to&&st.notes.includes(note.id))out[note.id]=noteBrief(s,note);}
+  return out;
+ }
  function noteText(s,note){
   const st=s.reprise,club=s.clubs[s.club],name=club.name,day=d=>iso(d).slice(8,10)+'/'+iso(d).slice(5,7);
   if(note.kind==='retour'){
@@ -341,13 +364,10 @@ function factory(){
    return `Retour de tournée : ${n} ${n>1?'internationaux':'international'} rejoi${n>1?'gnent':'nt'} le groupe (${names}${n>4?'…':''}). Le staff les remet en route progressivement.`;
   }
   if(note.kind==='amical'){
-   const program=st.program?.id||PRUDENT,opp=friendlyOpponent(s,note,program),home=program==='rodage'||program===PRUDENT&&note.index%2===0;
-   const gap=opp?opp.d:0,h=k=>hash('amical-score:'+s.season+':'+note.id+':'+k);
-   let us=10+h(0)%24,them=10+h(1)%24;const edge=Math.round(clamp(-gap*1.5+(home?3:-3),-18,18));if(edge>0)us+=edge;else them-=edge;
+   const {home,score}=amicalScore(s,note);
    const m=mods(s,s.club),ids=st.youth!==null?st.youth:suggestYouth(s,s.club,tourists(s)).map(p=>p.id);
    const youths=ids.map(x=>academyOf(s,s.club).find(p=>p.id===x)).filter(p=>p&&!p.injury).map(p=>{const base=25+hash('amical:'+s.season+':'+p.id+':'+note.day)%31;return {p,minutes:m.youth===1?base:Math.round(clamp(base*m.youth,10,80))};});
-   const hurt=club.players.filter(p=>p.injury>0).length,other=opp?opp.c.name:'un club invité';
-   const score=home?`${name} ${us}-${them} ${other}`:`${other} ${them}-${us} ${name}`;
+   const hurt=club.players.filter(p=>p.injury>0).length;
    return `Match amical ${note.index+1}/${note.count} : ${score}${home?' (à domicile)':' (à l’extérieur)'}. `+
     (youths.length?`Jeunes du centre : ${youths.slice(0,5).map(y=>y.p.name+' '+y.minutes+' min').join(', ')}${youths.length>5?` et ${youths.length-5} autre${youths.length>6?'s':''}`:''}. `:'')+
     `Infirmerie : ${hurt?hurt+' joueur'+(hurt>1?'s':'')+' indisponible'+(hurt>1?'s':''):'aucun indisponible'}.`;
@@ -699,7 +719,7 @@ function factory(){
    return {id:p.id,name:p.name,pos:p.pos,nation:x.nation,from:iso(dayOf(year(s)+'-'+(NC.has(x.nation)?'07-04':'06-27'))+shift),through:iso(x.back+shift-1),returnDate:iso(x.back+shift)};
   }).sort((a,b)=>a.returnDate.localeCompare(b.returnDate)||(a.id<b.id?-1:1));
  }
- const api=Object.freeze({create,sync,pending,today,project,absentees,validate,creation,preview,handover,tourists,clubDefault,options,effectsFor,STARTS,due,nextDecision,notesSeen,nextNotes});
+ const api=Object.freeze({create,sync,pending,today,project,absentees,validate,creation,preview,handover,tourists,clubDefault,options,effectsFor,STARTS,due,nextDecision,notesSeen,nextNotes,notesBrief});
  g.CDReprise=api;
  return {project,validate,execute,installHooks,create,sync,pending,creation};
 }
