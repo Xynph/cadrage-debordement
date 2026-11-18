@@ -1405,6 +1405,9 @@ func _celebrer() -> void:
 	if _fin_essai or not view.has_method("jouer_geste"):
 		return
 	_fin_essai = true
+	# Sans aucun clip lancé, l'appel se répète à chaque image : l'instant du relevé procédural
+	# (_apres_essai) ne doit pas être repoussé à chaque fois, sinon le marqueur reste couché.
+	var avant := _celebre_a
 	_celebre_a = time
 	var lances := 0
 	if view.jouer_geste(carrier, "se_relever", 0.2, 1.75, true, [["joie_poing", 0.3, 2.4]]):
@@ -1438,6 +1441,8 @@ func _celebrer() -> void:
 		if view.jouer_geste(pair[1], "deception", 0.3, 3.0, true):
 			lances += 1
 	_fin_essai = lances > 0
+	if not _fin_essai:
+		_celebre_a = avant
 
 
 ## Scène d'après-essai (voir APRES_DEPART) : partenaires vers le marqueur, défense vers son en-but,

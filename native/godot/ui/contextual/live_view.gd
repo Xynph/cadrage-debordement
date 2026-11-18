@@ -319,8 +319,8 @@ static func etat_bandeau(live: Dictionary, regie_active: bool, action_3d: bool, 
 		"pause_possible": not fini and not (joue and arrete)}
 
 func _etat_bandeau() -> Dictionary:
-	var action := regie != null and regie.etat == regie.JEU
-	var attente := regie != null and regie.etat == regie.ATTENTE
+	var action: bool = regie != null and regie.etat == regie.JEU
+	var attente: bool = regie != null and regie.etat == regie.ATTENTE
 	return etat_bandeau(_live(), temps_forts_actifs(), action, action and bool(regie.gel), attente)
 
 func _process(_delta: float) -> void:
