@@ -186,6 +186,13 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 			option.button_pressed = choices.get(question.id, "") == answer.id
 			interview.add_child(option)
 	list.add_child(submit)
+	# Après-match et conférences d'événement (18/11/2026) : l'adjoint peut répondre à la place du manager.
+	var delegation: Dictionary = conference.get("delegation", {})
+	if bool(delegation.get("allowed", false)):
+		var delegate := G.button("LAISSER GABI RÉPONDRE", func(): app._command("press_delegate", {"context":data.context, "invitationId":origin}))
+		delegate.name = "PressDelegate"
+		delegate.tooltip_text = str(delegation.get("reason", ""))
+		list.add_child(delegate)
 	return tab
 
 static func _conference_draft(app: Control, data: Dictionary) -> Dictionary:
