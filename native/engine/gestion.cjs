@@ -54,6 +54,16 @@ module.exports=function nativeGestion(command,p){
   if(typeof CONSIGNES_PLAN!=='undefined'&&Object.hasOwn(CONSIGNES_PLAN,p.axe)){requireThat(S.live.paused&&!presentationPending(S.live),'Mets le match en pause pour changer le plan de jeu.');requireThat(setPlan(S.live,p.axe,p.valeur),'Réglage inconnu.');return;}
   requireThat(setConsigne(S.live,p.axe,p.valeur),'Consigne inconnue.');return;
  }
+ if(command==='appliquer_staff'){
+  // Avis du staff (match-pilotage.js) : ses consignes en attente, d'un coup, sans pause.
+  requireThat(S.live&&!S.live.finished&&typeof appliquerAvisStaff==='function'&&S.live.pilotage,'Consignes indisponibles pour ce match.');
+  requireThat(appliquerAvisStaff(S.live),'Le staff n’a rien à proposer.');return;
+ }
+ if(command==='set_role_direct'){
+  // Rôles en direct (match-actions.js) : buteur, secours, lanceur, botteur parmi les joueurs sur le terrain.
+  requireThat(S.live&&!S.live.finished&&typeof setPlayerRoleLive==='function','Rôles indisponibles pour ce match.');
+  requireThat(setPlayerRoleLive(S.live,p.role,p.id??null),'Rôle inconnu ou joueur absent du terrain.');return;
+ }
  if(command==='cri'){
   // Cri de la touche (match-pilotage.js) : sans pause, effet court qui s'use si on le répète.
   requireThat(S.live&&!S.live.finished&&typeof crier==='function'&&S.live.pilotage,'Cris indisponibles pour ce match.');
