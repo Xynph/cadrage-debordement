@@ -250,6 +250,16 @@ func cases() -> void:
 	check(journal.scroll.scroll_vertical == actual_scroll, "Vrai tick worker : défilement inspecté préservé")
 	check(journal.new_events.visible, "Vrai tick worker : indicateur de nouveaux faits")
 
+## Filtres d'ancienne lecture : posés dans le journal du direct s'il est ouvert, sinon directement dans le magasin de l'interface\r\n## (une carrière neuve n'a plus de direct : l'écran Match est le carnet, journal caché).
+func garnir_filtres(texte: String, categorie: int) -> void:
+	if is_instance_valid(journal) and journal.is_visible_in_tree():
+		journal.search.text = texte
+		journal.search.text_changed.emit(texte)
+		if categorie > 0: await choose(categorie)
+		return
+	app.management_ui["match_journal_search"] = texte
+	app.management_ui["match_journal_category"] = categorie
+
 func round_one() -> void:
 	await command("pause", {"paused":true})
 	journal.search.text = ""
@@ -281,9 +291,7 @@ func round_one() -> void:
 		check(journal.visible_events.size() == app.model.live.events.size(), "Import " + fixture + " : seul le nouvel historique est lu")
 	# A reset while leaving Match must not be undone by the old journal exit hook.
 	for club in [0, 1]:
-		journal.search.text = "filtre abandonné"
-		journal.search.text_changed.emit(journal.search.text)
-		await choose(2)
+		await garnir_filtres("filtre abandonné", 2)
 		await command("new_career", {"club":club,"mode":"fiction"})
 		await ContextualFlow.settle_club_meetings(app, self, check)
 		app.timer.stop()
@@ -292,12 +300,12 @@ func round_one() -> void:
 		check(not app.management_ui.has("match_journal_search") or str(app.management_ui.match_journal_search).is_empty(), "Nouvelle carrière club " + str(club) + " : sortie ancienne UI ne repollue pas les filtres")
 		app._navigate("Match")
 		await settle()
-		await open_journal()
-		bind_journal()
-		check(journal.search.text.is_empty() and journal.category.selected == 0 and not journal.new_events.visible, "Nouveau contexte sans filtres ni compteur hérités")
+		# Sans match en direct (carrière neuve), l'écran Match est le carnet : son journal reste caché, aucun filtre hérité à lire.
+		var surface := match_surface()
+		var reste: Control = surface.find_child("MatchJournal", true, false) if surface != null else null
+		check(reste == null or not reste.is_visible_in_tree() or (reste.search.text.is_empty() and reste.category.selected == 0 and not reste.new_events.visible), "Nouveau contexte sans filtres ni compteur hérités")
 	# A live import resets the old reading store while the director owns its route.
-	journal.search.text = "autre ancien filtre"
-	journal.search.text_changed.emit(journal.search.text)
+	await garnir_filtres("autre ancien filtre", 0)
 	app._command("import", {"text":FileAccess.get_file_as_string(proof.path_join("live.json"))}, "Bureau")
 	var deadline := Time.get_ticks_msec() + 30000
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
