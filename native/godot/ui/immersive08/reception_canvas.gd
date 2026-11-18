@@ -693,12 +693,12 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 	var right := 28.0 if is_unread else 0.0
 	var service := _service(message).to_upper()
 	var hour := str(message.get("hour", ""))
-	var meta_width := (64.0 if not hour.is_empty() else 0.0) + (30.0 if mark.get("favorite", false) else 0.0) + (54.0 if count > 1 else 0.0)
+	var meta_width := (84.0 if not hour.is_empty() else 0.0) + (30.0 if mark.get("favorite", false) else 0.0) + (54.0 if count > 1 else 0.0)
 	D.text(row,text_x,32,service + " · " + _sender(app,message),17,C.MUTED,600,width-text_x-20-right-meta_width)
 	var meta_x := width - 20 - right
 	if not hour.is_empty():
-		D.text(row,meta_x,32,hour,16,C.FAINT.lightened(.2),500,60,HORIZONTAL_ALIGNMENT_RIGHT,true).name = "InboxRowHour"
-		meta_x -= 66
+		D.text(row,meta_x,32,hour,16,C.FAINT.lightened(.2),500,80,HORIZONTAL_ALIGNMENT_RIGHT,true).name = "InboxRowHour"
+		meta_x -= 86
 	if mark.get("favorite",false):
 		_icon(row,"star",Rect2(meta_x-18,15,18,18),C.GOLD)
 		meta_x -= 28
@@ -950,7 +950,8 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 		if message.get("category") == "Médical" and not national: column.add_child(_infirmary(app, reading_width))
 		content = column
 	C.fill(content)
-	var body_height := clampf(_measure(content, C.px(content_width - (14 if not press.is_empty() else 0))) / C.density + 26, 80.0, room)
+	var natural := _clipping_height(content, C.px(_w-2*PAD-14)) if not press.is_empty() else _measure(content, C.px(content_width))
+	var body_height := clampf(natural / C.density + 26, 80.0, room)
 	var scroll := ScrollContainer.new()
 	scroll.name = "InboxReadingScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -975,6 +976,36 @@ static func _measure(control: Control, width: float) -> float:
 		control.size = Vector2(width, 0)
 		_sort_now(control)
 	return control.get_combined_minimum_size().y
+
+## Hauteur (px) de la coupure de presse : somme de ses blocs, chaque texte mesuré à sa vraie largeur.
+static func _clipping_height(paper: Control, width: float) -> float:
+	var pad := C.px(34)
+	var inner := width - 2.0 * pad
+	var column := paper.get_child(0) as Container
+	var gap := float(column.get_theme_constant("separation"))
+	var total := 2.0 * pad + gap * maxf(0.0, column.get_child_count() - 1)
+	for block: Node in column.get_children():
+		if block.name == "InboxPressColumns":
+			var texts: Array = block.get_children().filter(func(n: Node): return n is Label)
+			var photo := block.find_child("InboxPressPhoto", false, false) as Control
+			var spacing := float((block as Container).get_theme_constant("separation"))
+			var photo_width := photo.custom_minimum_size.x if photo != null else 0.0
+			var share := (inner - photo_width - spacing * maxf(0.0, block.get_child_count() - 1)) / maxf(1.0, texts.size())
+			var tallest := photo.custom_minimum_size.y if photo != null else 0.0
+			for text: Label in texts: tallest = maxf(tallest, _label_height(text, share))
+			total += tallest
+		elif block is Label: total += _label_height(block, inner)
+		elif block is HBoxContainer:
+			var tallest := 0.0
+			for part: Node in block.get_children(): if part is Label: tallest = maxf(tallest, _label_height(part, inner / 2.0 if part.autowrap_mode != TextServer.AUTOWRAP_OFF else inner))
+			total += tallest
+		else: total += (block as Control).get_combined_minimum_size().y
+	return total + C.px(8)
+
+static func _label_height(label: Label, width: float) -> float:
+	if label.autowrap_mode == TextServer.AUTOWRAP_OFF: return label.get_minimum_size().y
+	label.size = Vector2(width, 0)
+	return label.get_minimum_size().y
 
 static func _sort_now(node: Node) -> void:
 	if node is Container: node.notification(Container.NOTIFICATION_SORT_CHILDREN)

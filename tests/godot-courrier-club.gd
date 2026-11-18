@@ -315,7 +315,7 @@ func invitations_in_list(mail: Dictionary) -> void:
 	var ids: Array = rows().map(func(item: Button) -> String: return str(item.get_meta("message_id")))
 	check(ids == display_order() and ids.has("invitation:qa-invitation"), "Invitations dans l'ordre d'affichage (Espace = prochain non lu)")
 	var marks: Dictionary = app.management_ui.reception.marks
-	for id: String in ids: marks[id] = {"read":true}
+	for item: Dictionary in Reception._messages(app): marks[item.id] = {"read":true}
 	marks.erase("invitation:qa-invitation")
 	check(str(Reception.next_unread(app).get("id", "")) == "invitation:qa-invitation", "Espace ouvre l'invitation non lue")
 	app.model = original
