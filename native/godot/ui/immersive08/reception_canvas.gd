@@ -175,6 +175,7 @@ static func photo_resultat(texte: String) -> String:
 	elif f.begins_with("victoire"): id = "resultat-finale-gagnee" if "finale" in f else ("resultat-bonus-offensif" if "bonus offensif" in f else "resultat-victoire")
 	elif f.begins_with("defaite"): id = "resultat-finale-perdue" if "finale" in f else "resultat-defaite"
 	elif f.begins_with("match nul"): id = "resultat-nul"
+	if id.is_empty(): id = BanqueImages.courrier(texte)
 	return id if not id.is_empty() and BanqueImages.texture(id) != null else "mail-pitch"
 
 static func _category(message: String) -> String:

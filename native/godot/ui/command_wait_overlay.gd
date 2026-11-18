@@ -54,6 +54,8 @@ var _context: Dictionary = {}
 var _notes: Array[Dictionary] = []
 var _note_index := 0
 var _note_clock := 0.0
+## Photo plein écran derrière le panneau (banque d'images, « chargement-0N ») pour les vrais chargements longs.
+var _photo: Texture2D
 
 
 func _ready() -> void:
@@ -96,6 +98,11 @@ func set_context(context: Dictionary) -> void:
 	for note: Variant in context.get("notes", []):
 		if note is Dictionary and not str(note.get("text", "")).is_empty(): _notes.append(note)
 	_note_index = int(context.get("note_seed", 0)) % maxi(1, _notes.size())
+	_photo = null
+	if context.get("photo", false):
+		var B = load("res://ui/banque_images.gd")
+		var id: String = B.choisir("chargement", {}, int(context.get("note_seed", 0)))
+		if not id.is_empty(): _photo = B.texture(id)
 	_note_clock = 0.0
 	_apply_note()
 	queue_redraw()
@@ -282,6 +289,10 @@ func _accent() -> Color:
 func _draw() -> void:
 	if not visible or not _frame.visible:
 		return
+	if _photo != null:
+		var echelle := maxf(size.x / _photo.get_width(), size.y / _photo.get_height())
+		var taille := _photo.get_size() * echelle
+		draw_texture_rect(_photo, Rect2((size - taille) * 0.5, taille), false, Color(1, 1, 1, _alpha))
 	draw_rect(Rect2(Vector2.ZERO, size), Color(SCRIM, SCRIM.a * _alpha))
 	var rise := (1.0 - _alpha) * 10.0
 	draw_set_transform(_origin + Vector2(0, rise), 0, Vector2.ONE * _scale)

@@ -113,7 +113,7 @@ func lot5() -> void:
 	verifier(AvantMatch.photo_meteo({"kickoffLocal": "15:00", "date": "2026-10-03", "capacity": 33000, "meteo": {"pluie": 1}}).begins_with("match-tunnel"), "grand stade sous la pluie : tunnel")
 	verifier(AvantMatch.photo_meteo({"kickoffLocal": "21:05", "date": "2026-10-03", "capacity": 33000, "meteo": sec}).begins_with("match-tunnel"), "grand stade le soir : tunnel validé")
 	for cas: Array in [["Victoire 27-13 face à Vannes.", "resultat-victoire"], ["Victoire avec le bonus offensif à Pau.", "resultat-bonus-offensif"], ["Défaite en finale face à Toulouse.", "resultat-finale-perdue"],
-			["Match nul 9-9 à Brive.", "resultat-nul"], ["Le club est sacré champion : le titre est à vous !", "resultat-titre-trophee-leve"], ["Le club est relégué en Pro D2.", "resultat-relegation"], ["Point sur la trésorerie.", "mail-pitch"]]:
+			["Match nul 9-9 à Brive.", "resultat-nul"], ["Le club est sacré champion : le titre est à vous !", "resultat-titre-trophee-leve"], ["Le club est relégué en Pro D2.", "resultat-relegation"], ["Point sur la trésorerie.", "mail-finances"], ["Bonne nouvelle du jour.", "mail-pitch"]]:
 		verifier(Reception.photo_resultat(cas[0]) == cas[1], "courrier « %s » : %s (%s)" % [cas[0], Reception.photo_resultat(cas[0]), cas[1]])
 	verifier(Between.occasion_fin({"finale": true, "camp": 0}, "victoire") == "finale" and Between.occasion_fin({"essais": [5, 1], "camp": 0}, "victoire") == "bonus" and Between.occasion_fin({"essais": [5, 1], "camp": 1}, "defaite") == "championnat", "fin de match : finale, bonus, championnat")
 	var club := {"id": 7, "slug": "club-7", "name": "Club 7", "abbr": "C7", "color": "#8c2f39"}
@@ -124,6 +124,32 @@ func lot5() -> void:
 		planche.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 		await capturer("tenue-complete")
 		planche.queue_free()
+
+func lot6() -> void:
+	verifier(BanqueImages.region({"country": "FR", "city": "Toulouse", "slug": "toulouse"}).begins_with("sol-sud-ouest"), "Toulouse : Sud-Ouest")
+	verifier(BanqueImages.region({"country": "FR", "city": "Toulon", "slug": "toulon"}).begins_with("sol-mediterranee"), "Toulon : Méditerranée")
+	verifier(BanqueImages.region({"country": "FR", "city": "Clermont-Ferrand", "slug": "clermont"}).begins_with("sol-est"), "Clermont : Est")
+	verifier(BanqueImages.region({"country": "IE", "slug": "urc-munster"}) == "sol-irlande" and BanqueImages.region({"country": "JP", "slug": "jlo-club-68"}) == "", "Irlande ; Japon sans paysage")
+	verifier(BanqueImages.region({"country": "GB", "slug": "prem-bath"}) == BanqueImages.region({"country": "GB", "slug": "prem-bath"}), "même club, même paysage")
+	verifier(BanqueImages.type_competition("epcr-champions") == "coupe-europe" and BanqueImages.type_competition("elite") == "championnat" and BanqueImages.type_competition("elite", "final") == "finale", "types de compétition")
+	verifier(BanqueImages.niveau_centre(0) == 1 and BanqueImages.niveau_centre(10) == 4 and BanqueImages.niveau_centre(null) == 0, "niveau du centre d'entraînement")
+	for cas: Array in [["Point sur la trésorerie du club.", "mail-finances"], ["Le sponsor maillot veut vous voir.", "mail-sponsor"], ["Commission de discipline : trois semaines de suspension.", "mail-discipline"],
+			["Convocation en sélection pour deux joueurs.", "mail-selection-nationale"], ["Alerte météo : grand vent samedi.", "mail-meteo-alerte"], ["Bonne nouvelle du jour.", ""]]:
+		verifier(BanqueImages.courrier(cas[0]) == cas[1], "courrier « %s » : %s" % [cas[0], BanqueImages.courrier(cas[0])])
+	verifier(Reception.photo_resultat("Le sponsor maillot veut vous voir.") == "mail-sponsor" and Reception.photo_resultat("Victoire 20-3.") == "resultat-victoire", "en-tête : résultat d'abord, puis thème")
+	var Identite = preload("res://ui/contextual/rooms/room_identity.gd")
+	verifier(Identite.secondary({"slug": "toulouse", "color": "#d43e47"}).to_html(false) == "1b1d20", "Toulouse : rouge et noir")
+	verifier(Identite.secondary({"slug": "inconnu", "color": "#d43e47"}) == Identite.contrast(Color("d43e47")), "club inconnu : encre de contraste")
+	var Attente = preload("res://ui/command_wait_overlay.gd")
+	var attente: Control = Attente.new()
+	root.add_child(attente)
+	attente.set_context({"kicker": "Ouverture", "photo": true, "note_seed": 3, "notes": [{"title": "Au club", "text": "Objectif : le maintien."}]})
+	verifier(attente.get("_photo") != null, "chargement long : photo plein écran")
+	attente.present("Ouverture du bureau du manager…", false)
+	await capturer("chargement-photo")
+	attente.set_context({"kicker": "Passage au jour suivant", "photo": false})
+	verifier(attente.get("_photo") == null, "jour suivant : pas de photo")
+	attente.queue_free()
 
 func ecran_entre_temps_forts() -> void:
 	var hote := Control.new()
@@ -160,5 +186,6 @@ func executer() -> void:
 	await stades()
 	await tenues()
 	await lot5()
+	await lot6()
 	print("BANQUE " + JSON.stringify({"controles": controles, "failures": failures}))
 	quit(0 if failures.is_empty() else 1)

@@ -2,6 +2,7 @@ extends Control
 ## Classements, phases finales, calendrier et résultats de la carrière native.
 const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -230,7 +231,8 @@ func _header() -> void:
 	D.place(scenery, Rect2(1066, 0, 1182, 253))
 	var ground := P.fixture_ground({"leagueId":league.id},"stadium")
 	D.photo(scenery, ground, Rect2(0, 0, 784, 253),.5 if ground!="stadium" else 0.0)
-	var trophy := D.photo(scenery, "trophy", Rect2(475, 0, 707, 253))
+	var comp := "comp-" + BanqueImages.type_competition(str(league.get("id", "")))
+	var trophy := D.photo(scenery, comp if BanqueImages.existe(comp) else "trophy", Rect2(475, 0, 707, 253))
 	var blend := Shader.new()
 	blend.code = "shader_type canvas_item; void fragment() { vec4 art = texture(TEXTURE, UV); COLOR = vec4(art.rgb, art.a * smoothstep(0.0, 0.23, UV.x)); }"
 	var material := ShaderMaterial.new()

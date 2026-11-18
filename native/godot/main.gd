@@ -661,7 +661,9 @@ func _command_wait_context(command: String) -> Dictionary:
 		"accent": accent if _has_career() else Color("d43e47"),
 		"club": str(club.get("abbr", "")),
 		"notes": notes,
-		"note_seed": Time.get_ticks_msec() / 4600
+		"note_seed": Time.get_ticks_msec() / 4600,
+		# Vrais chargements longs : photo plein écran de la banque d'images derrière le panneau.
+		"photo": command in ["snapshot", "new_career", "import", "restore_checkpoint", "next_season", "begin_match", "national_play_match"]
 	}
 
 func _refuse_action(message: String) -> void:

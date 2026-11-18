@@ -121,3 +121,61 @@ static func niveau_stade(capacite: Variant) -> int:
 	if capacite < 12000: return 3
 	if capacite < 20000: return 4
 	return 5
+
+## Paysage régional d'un club (`sol-*`) d'après son pays et, en France, sa ville ; "" sans correspondance.
+## Deux variantes quand la banque en a (v1, v2) : le club garde toujours la même.
+const _VILLES_FR := {
+	"sud-ouest": ["toulouse", "bordeaux", "la rochelle", "pau", "bayonne", "castres", "biarritz", "brive", "colomiers", "agen", "angouleme", "aurillac", "dax", "montauban", "mont-de-marsan", "tarbes", "auch", "perigueux", "soyaux"],
+	"mediterranee": ["toulon", "montpellier", "perpignan", "beziers", "nice", "aix", "narbonne", "carcassonne", "marseille", "nimes", "hyeres", "provence"],
+	"est": ["clermont", "lyon", "grenoble", "oyonnax", "valence", "nevers", "bourgoin", "chambery", "dijon", "nancy", "strasbourg", "macon", "bourg-en-bresse", "vienne"],
+	"nord": ["paris", "nanterre", "massy", "vannes", "rouen", "lille", "rennes", "nantes", "orleans", "tours", "caen", "chartres", "le havre"]}
+const _PAYS := {"GB": "iles-britanniques", "EN": "iles-britanniques", "SC": "iles-britanniques", "WA": "iles-britanniques", "IE": "irlande", "IT": "italie",
+	"ZA": "hemisphere-sud-vert", "NZ": "hemisphere-sud-vert", "AU": "hemisphere-sud-vert", "FJ": "hemisphere-sud-vert", "SA": "hemisphere-sud-vert", "WS": "hemisphere-sud-vert", "TO": "hemisphere-sud-vert",
+	"AR": "argentine", "UY": "argentine", "CL": "argentine", "GE": "georgie-roumanie", "RO": "georgie-roumanie", "PT": "georgie-roumanie", "ES": "mediterranee"}
+
+static func region(identite: Dictionary) -> String:
+	var pays := str(identite.get("country", "")).to_upper()
+	var nom := ""
+	if pays == "FR":
+		var ville := str(identite.get("city", "")).to_lower().replace("é", "e").replace("è", "e").replace("ê", "e").replace("ô", "o")
+		for cle: String in _VILLES_FR:
+			for v: String in _VILLES_FR[cle]:
+				if ville.begins_with(v): nom = cle
+		if nom.is_empty() and not ville.is_empty(): nom = "sud-ouest"
+	else: nom = str(_PAYS.get(pays, ""))
+	if nom.is_empty(): return ""
+	var ids: Array[String] = []
+	for id: String in ["sol-" + nom, "sol-" + nom + "-v2"]:
+		if existe(id): ids.append(id)
+	if ids.is_empty(): return ""
+	return ids[absi(hash(str(identite.get("slug", identite.get("name", ""))))) % ids.size()]
+
+## Type de compétition d'après l'identifiant de la ligue (photo de la compétition).
+static func type_competition(id: String, phase: String = "") -> String:
+	var x := id.to_lower()
+	if phase == "final": return "finale"
+	if phase in ["semi", "quarter", "barrage", "playoff"]: return "barrages"
+	if "world" in x or "rwc" in x or "coupe-du-monde" in x: return "coupe-du-monde"
+	if "nation" in x or "six" in x or "tournoi" in x or "rugby-championship" in x or "test" in x: return "tournoi-nations"
+	if "epcr" in x or "europ" in x or "champions" in x or "challenge" in x: return "coupe-europe"
+	if "cup" in x or "coupe" in x: return "coupe-nationale"
+	return "championnat"
+
+## Niveau 1 à 4 du centre d'entraînement d'après le niveau des installations (0 à 10) ; 0 si inconnu.
+static func niveau_centre(niveau: Variant) -> int:
+	if not (niveau is int or niveau is float): return 0
+	return clampi(1 + int(niveau) / 3, 1, 4)
+
+## En-tête d'un courrier selon son thème (texte du message) ; "" : rien de propre au thème.
+static func courrier(texte: String) -> String:
+	var f := texte.to_lower()
+	for paire: Array in [[["tresorerie", "trésorerie", "budget", "finances", "billetterie", "recettes"], "mail-finances"], [["sponsor", "partenaire", "mécène"], "mail-sponsor"],
+			[["supporters", "abonnés", "tribunes"], "mail-supporters"], [["presse", "journal", "rumeur", "conférence", "polémique"], "mail-presse-polemique"],
+			[["suspension", "commission", "discipline", "carton"], "mail-discipline"], [["sélection", "convocation", "international"], "mail-selection-nationale"],
+			[["transfert", "recrue", "signé", "signe", "arrivée"], "mail-transfert-signe"], [["blessure", "blessé", "indisponib", "opér"], "mail-blessure-grave"],
+			[["contrat", "prolongation", "salaire"], "mail-contrat"], [["espoir", "formation", "jeune", "crabos"], "mail-jeunes"],
+			[["météo", "vent", "pluie", "orage", "chaleur"], "mail-meteo-alerte"], [["trêve", "vacances", "repos"], "mail-calendrier-treve"],
+			[["anniversaire", "histoire du club", "centenaire"], "mail-anniversaire-club"], [["derby", "rival"], "mail-rivalite"]]:
+		for mot: String in paire[0]:
+			if mot in f: return paire[1] if existe(paire[1]) else ""
+	return ""
