@@ -1,0 +1,49 @@
+::group::tests/godot-premiere-heure.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PHASE defis
+PHASE accueil
+PHASE apres-14-jours
+PHASE connu
+PREMIERE_HEURE 54 controles, 2 echecs
+FAIL: « Je connais déjà » enregistré
+FAIL: « Je connais déjà » : pas d'explication
+
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PHASE defis
+PHASE accueil
+PHASE apres-14-jours
+PHASE connu
+PREMIERE_HEURE 54 controles, 2 echecs
+FAIL: « Je connais déjà » enregistré
+FAIL: « Je connais déjà » : pas d'explication
+
+
+1 !== 0
+
+    at Object.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-premiere-heure.cjs:20:8)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-premiere-heure.cjs user_s=27.74 system_s=2.97 wall_s=28.58 cpu_pct=107% max_rss_kb=1577772
+::error file=tests/godot-premiere-heure.cjs::Godot : ECHEC (1), durée 28 s, limite 300s
+::endgroup::
