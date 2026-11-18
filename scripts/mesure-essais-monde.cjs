@@ -87,13 +87,15 @@ function mesurer({ graine = 4242, club = 102, semaines = 80, ancien = false, jou
   const membres = JSON.parse(h.run('JSON.stringify(Object.fromEntries(Object.entries(S.worldMode.leagues).map(([k,v])=>[k,v.members])))'));
   const noms = JSON.parse(h.run('JSON.stringify(S.clubs.map(c=>c.abbr))'));
   h.run(CROCHETS);
+  // Résultat rapide : niveau joué (note × forme des titulaires) de chaque rencontre suivie de loin, par identifiant.
+  if (suiviDeLoin) h.run(`globalThis.__rapide={};globalThis.__mesureRapide=(f,p)=>{__rapide[f.id]=p.map(x=>Math.round(x*1000)/1000)};0`);
   const t0 = Date.now();
   for (let w = 0; w < semaines && h.run("S.phase!=='ended'"); w++) {
     h.week(1, { validate: false });
     if (journal && w % 5 === 0) process.stderr.write(`semaine ${w + 1} : ${h.run('__mesure.length')} matchs, ${Math.round((Date.now() - t0) / 1000)} s\n`);
   }
   const matchs = JSON.parse(h.run('JSON.stringify(__mesure)'));
-  const histoire = JSON.parse(h.run(`JSON.stringify(S.history.filter(r=>r.season===S.season).map(r=>({c:r.competitionId,ph:r.phase,pair:r.pair,score:r.score,tries:r.tries})))`));
+  const histoire = JSON.parse(h.run(`JSON.stringify(S.history.filter(r=>r.season===S.season).map(r=>({c:r.competitionId,ph:r.phase,pair:r.pair,score:r.score,tries:r.tries,niv:typeof __rapide==='object'?__rapide[r.fixtureId]:undefined})))`));
   h.close();
   return { graine, club, ancien, niveaux, membres, noms, matchs, histoire };
 }

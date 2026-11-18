@@ -105,25 +105,56 @@ function factory(){
   if(typeof CDWorldCareer==='undefined'||typeof CDWorldCareer.clubReleaseOn!=='function')return ()=>false;
   return id=>{try{return !!CDWorldCareer.clubReleaseOn(s,id,f.date);}catch{return false;}};
  }
- // Effectif allégé : les 23 meilleurs disponibles (note et forme), sans feuille de match
- // détaillée ni règles de première ligne ; les postes ne sont pas contrôlés.
- // Rotation autour de la Coupe d'Europe (ROTATION_EUROPE, dist/opposition.js, comme le moteur complet) : un club dont
- // une rencontre européenne tombe à ±1 semaine ménage ses joueurs très utilisés ; le malus ne joue que sur le classement,
- // la puissance de l'équipe reste celle des joueurs alignés.
- function squad(s,id,away,f){
+ // Feuille de match (18/11/2026, docs/top14-dispute-20261117.md §14 quater) : la même que le moteur complet, `managerSheet`
+ // de l'IA avec tous ses crochets (postes et première ligne, quotas du Japon, liste de Nationale, JIFF, style, fatigue,
+ // repos face à un adversaire plus faible, rotation autour de la Coupe d'Europe), sur les joueurs disponibles.
+ // Avant : les 23 meilleurs (note et forme) sans contrôle des postes ni des quotas ; le classement suivait alors trop
+ // l'effectif dans les divisions basses (Spearman rang/effectif Japon D2 0,73 → 0,88, Nationale 0,75 → 0,84).
+ // La puissance reste celle du moteur complet (teamLevel : note × forme des 15 titulaires).
+ const form=()=>MATCH_LEVEL_CURVE.forme;
+ const score=p=>(Number(p.rating)||50)*(form()[0]+clamp(Number(p.condition)||80,0,100)*form()[1]);
+ function squad(s,id,away,f,opponentId,weather){
   const club=s.clubs[id];
   const pool=club.players.filter(p=>!p.injury&&!(p.suspension>0)&&!away(p.id));
-  const form=MATCH_LEVEL_CURVE.forme,score=p=>(Number(p.rating)||50)*(form[0]+clamp(Number(p.condition)||80,0,100)*form[1]);
-  const rotation=f&&typeof europeAutour==='function'&&typeof rotationEuropeMalus==='function'&&europeAutour(f,id),level=s.difficulty||'classique';
-  const pick=rotation?p=>score(p)-rotationEuropeMalus(p,level):score;
-  const ranked=pool.slice().sort((a,b)=>pick(b)-pick(a)||String(a.id).localeCompare(String(b.id))).slice(0,23);
-  const starters=ranked.slice(0,15),bench=ranked.slice(15);
+  const level=s.difficulty||'classique',europe=!!(f&&typeof europeAutour==='function'&&europeAutour(f,id));
+  let starters,bench;
+  if(typeof managerSheet==='function'){
+   const view=pool.length===club.players.length?club:{...club,players:pool},byId=new Map(pool.map(p=>[p.id,p]));
+   // Note au poste mémorisée le temps du choix : la feuille la recalcule plusieurs fois par joueur et par poste
+   // (style, titulaires, banc), sur des joueurs qui ne changent pas pendant le choix. Résultat identique, ≈ 2× moins cher.
+   const prior=typeof roleNote==='function'?roleNote:null,memo=new Map();
+   if(prior)roleNote=function(p,fam=p?.fam){if(!p)return 0;let row=memo.get(p);if(!row){row=new Map();memo.set(p,row);}let v=row.get(fam);if(v===undefined){v=prior(p,fam);row.set(fam,v);}return v;};
+   let sheet;try{sheet=managerSheet(view,s.clubs[opponentId],weather,level,europe);}finally{if(prior)roleNote=prior;}
+   starters=(sheet.lineup||[]).map(x=>byId.get(x)).filter(Boolean);bench=(sheet.bench||[]).map(x=>byId.get(x)).filter(Boolean);
+  }else{
+   // Hors moteur (outils isolés) : ancien tirage des 23 meilleurs.
+   const pick=europe&&typeof rotationEuropeMalus==='function'?p=>score(p)-rotationEuropeMalus(p,level):score;
+   const ranked=pool.slice().sort((a,b)=>pick(b)-pick(a)||String(a.id).localeCompare(String(b.id))).slice(0,23);
+   starters=ranked.slice(0,15);bench=ranked.slice(15);
+  }
   const power=(starters.length?starters.reduce((n,p)=>n+score(p),0)/starters.length:40)-(15-starters.length)*4;
   return {starters,bench,power};
  }
- function sideStats(tries,edge){
+ // Volume de jeu par championnat (18/11/2026, docs/top14-dispute-20261117.md §14 quater) : multiplicateurs des essais
+ // attendus et des tentatives de pénalité, calés sur le moteur complet (scripts/mesure-essais-monde.cjs, graines 1 et 2,
+ // tous championnats détaillés : essais et points de pénalité par match) contre le résultat rapide d'avant (≈ 5,9 essais
+ // et 13,8 points de pénalité partout). Le moteur complet ouvre le jeu selon le championnat (OUVERTURE_CHAMPIONNATS,
+ // dist/tactical-plans.js) : 8,6 essais en Premiership, 8,9 en Super Rugby, 8,8 en Japon D1 ; le résultat rapide en
+ // restait à 5,9, d'où 34 % de bonus offensifs au lieu de 61 à 68 % et un leader à 3-7 points de moins.
+ // Troisième et quatrième valeurs : poids de l'écart de niveau et du terrain dans l'avantage du match. Calés sur la même
+ // mesure (10 graines au résultat rapide contre 8 au moteur complet) : pente de l'écart de score sur l'écart d'effectif,
+ // rapportée au bruit du score, et écart de score moyen à domicile. Avec autant d'essais, le résultat rapide départageait
+ // trop nettement (Premiership, Super Rugby, Japon : 0,13-0,16 contre 0,10 au complet) et le terrain y pesait 1,5 à 1,8 fois
+ // trop (Japon D2 : +8 points à domicile contre +4,3). Championship : jamais mesuré de loin (club du banc de mesure),
+ // réglé comme les championnats aussi ouverts ; coupes d'Europe non mesurées : écart et terrain inchangés. Autres : 1.
+ const VOLUME=Object.freeze({elite:[1.06,.87,1.1,.63],accession:[.95,.85,.88,.72],nationale:[.99,.9,.87,.56],prem:[1.45,.49,.73,.64],
+  champ:[1.39,.56,.75,.6],urc:[1.17,.55,1,.75],srp:[1.55,.39,.67,.55],'jlo-d1':[1.47,.52,.74,.58],'jlo-d2':[1.28,.6,.71,.54],
+  champions:[1.24,.67,1,1],challenge:[1.2,.69,1,1]});
+ const volume=id=>VOLUME[id]||[1,1,1,1];
+ function sideStats(tries,edge,competitionId){
   const stats=typeof makeStats==='function'?makeStats():{conversions:0,conversionAttempts:0,goalAttempts:0,goals:0};
-  const conversions=binomial(tries,.7+edge*.02),goalAttempts=poisson(clamp(3.1-edge*.25,1.5,4.5)),goals=binomial(goalAttempts,.74);
+  const pen=volume(competitionId)[1];
+  const conversions=binomial(tries,.7+edge*.02),goalAttempts=poisson(clamp((3.1-edge*.25)*pen,.5,4.5)),goals=binomial(goalAttempts,.74);
   Object.assign(stats,{conversions,conversionAttempts:tries,goalAttempts,goals});
   if('possession' in stats){
    stats.possession=Math.round(clamp(50+edge*4+(roll()-.5)*12,30,70));stats.territory=Math.round(clamp(50+edge*5+(roll()-.5)*14,28,72));
@@ -158,7 +189,13 @@ function factory(){
   }
  }
  function simulate(s,f){
-  const pair=[f.homeId,f.awayId],away=released(s,f),teams=pair.map(id=>squad(s,id,away,f));
+  // Météo connue avant les feuilles, comme au moteur complet (le style et la feuille de l'IA en dépendent) ; tirée d'une
+  // empreinte de la rencontre, sans prendre de tirage au flux du match (scores inchangés pour une même feuille).
+  const pair=[f.homeId,f.awayId],away=released(s,f);
+  let w=mix('meteo|'+s.season+'|'+f.id+'|'+f.competitionId)/4294967296,weather='Sec';for(const [name,p] of WEATHER){if(w<p){weather=name;break;}w-=p;}
+  const teams=pair.map((id,i)=>squad(s,id,away,f,pair[1-i],weather));
+  // Crochet de mesure en lecture seule (scripts/mesure-essais-monde.cjs --suivi-de-loin) : niveau joué des deux camps.
+  if(typeof __mesureRapide==='function')__mesureRapide(f,teams.map(t=>t.power));
   // Courbe de niveau commune au moteur complet (MATCH_LEVEL_CURVE de dist/rugby.js, tests/match-rating-curve.cjs) :
   // écart de puissance + bonus du terrain (sauf terrain neutre), ramené à l'échelle des essais.
   const curve=MATCH_LEVEL_CURVE.rapide,home=f.neutral?0:curve.terrain*(typeof terrainFactor==='function'?terrainFactor(f.competitionId):1);
@@ -172,14 +209,15 @@ function factory(){
    const d=Math.abs(gap),fav=gap>0?0:1,r=relachementProbabilite(d,relachementProMoyen(teams[fav].starters));
    if(r>0&&relachementTire('relachement:'+f.id+':'+pair.join('-')+':'+s.season+':'+s.round,r))ecartJour+=(fav===0?-1:1)*relachementPoints(d);
   }
-  const edge=clamp((ecartJour+home)/curve.diviseur,-curve.borne,curve.borne);
-  const tries=[poisson(clamp(2.75*Math.exp(curve.essais*edge),.5,8)),poisson(clamp(2.75*Math.exp(-curve.essais*edge),.5,8))];
-  const stats=[sideStats(tries[0],edge),sideStats(tries[1],-edge)];
+  const [,,poidsEcart,poidsTerrain]=volume(f.competitionId);
+  const edge=clamp((ecartJour*poidsEcart+home*poidsTerrain)/curve.diviseur,-curve.borne,curve.borne);
+  const vol=volume(f.competitionId)[0];
+  const tries=[poisson(clamp(2.75*vol*Math.exp(curve.essais*edge),.5,10)),poisson(clamp(2.75*vol*Math.exp(-curve.essais*edge),.5,10))];
+  const stats=[sideStats(tries[0],edge,f.competitionId),sideStats(tries[1],-edge,f.competitionId)];
   const points=i=>tries[i]*5+stats[i].conversions*2+stats[i].goals*3;
   let score=[points(0),points(1)];
   // Super Rugby Pacific : pas de nul en saison régulière (le moteur complet joue le point en or).
   if(score[0]===score[1]&&f.competitionId==='srp'){const side=edge>=0?0:1;stats[side].goalAttempts++;stats[side].goals++;score=[points(0),points(1)];}
-  let w=roll(),weather='Sec';for(const [name,p] of WEATHER){if(w<p){weather=name;break;}w-=p;}
   pair.forEach((id,i)=>playerEffects(s,s.clubs[id],teams[i]));
   return {pair,score,tries,stats,weather,duration:80};
  }
@@ -240,6 +278,9 @@ function factory(){
 // - seul le championnat du club suivi en détail : 11,7 s (dont 9,9 s de réponses) ;
 // - tous suivis en détail : 14,2 s (dont 12,2 s de réponses) ; semaine sans match du club : 6 à 7,8 s ;
 // - rencontre de l'IA suivie en détail : ≈ 110 ms ramenés à la référence (de loin : moins de 1 ms, compté 1 ms).
+// 18/11/2026 : le résultat rapide prend la vraie feuille de l'IA (managerSheet, §14 quater) : ≈ 9 ms par rencontre sur
+// la machine cloud partagée (facteur calcul ≈ 1,17), soit 8 ms ramenés à la référence ; ≈ 0,25 s de plus par semaine
+// quand tout est suivi de loin, toujours ≈ 16 fois moins qu'une rencontre suivie en détail.
 // Seconde mesure le 17/11/2026, PC de Léo (Windows 11, 32 cœurs, 62 Go, Node 26 ; banc d'essai à froid ≈ 6,3 ms + 20,1 ms,
 // soit facteurs 0,252 série et 0,379 calcul) : club seul 7,07 s (médiane de 3 semaines) ; tous suivis 8,26 s (médiane
 // de 10 semaines, deux pics isolés à 12,5 s écartés par la médiane) -> base ≈ 25 800 à 27 100 ms, ≈ 130 à 160 ms par
@@ -249,7 +290,7 @@ function factory(){
 // Les valeurs sont ramenées à la référence comme estimate() (÷ facteur du banc d'essai, hors contention).
 const REFERENCE=Object.freeze({
  benchmarkMs:Object.freeze({serial:25,compute:53}),
- baseWeekMs:26000,detailedMatchMs:130,quickMatchMs:1,seasonExtraMs:0,
+ baseWeekMs:26000,detailedMatchMs:130,quickMatchMs:8,seasonExtraMs:0,
 });
 // Matchs de saison régulière et de poules européennes par saison et par championnat
 // (formats de la saison 2026-27 ; poules européennes réparties entre Top 14, Premiership et URC).

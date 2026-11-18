@@ -62,7 +62,8 @@ test('Choix automatique selon le PC : déterministe, vise 4 étoiles, pays du cl
  const extra=all.filter(id=>!first.includes(id));
  for(const id of extra)assert.ok(leagueDetail.estimate({detailed:[...first,id],machine:mid}).stars<4,'ajouter '+id+' passerait sous 4 étoiles');
  // Valeur figée (seuils et coûts de référence actuels) : le Championship (même pays) passe avant les autres.
- assert.deepEqual(first,['elite','prem','champ','srp','jlo-d2']);
+ // 18/11/2026 : résultat rapide à 8 ms (vraie feuille de l'IA) au lieu de 1 ms ; la Japon D2 ne tient plus sous la cible.
+ assert.deepEqual(first,['elite','prem','champ','srp']);
  // L'interface lit le même choix dans le tableau des coûts.
  const table=leagueDetail.costTable(mid);
  assert.deepEqual(table.auto.prem,first);assert.equal(table.autoTarget,4);assert.deepEqual(table.auto[''],leagueDetail.autoChoice({own:'',machine:mid}));
