@@ -46,12 +46,12 @@ fi
 #    Pas de séquence d'intro dédiée dans le dépôt : l'écran d'entrée n'a pas de suite de capture.
 if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   # CD_EL_CAPTURES_QUOI : liste séparée par des virgules ou espaces parmi intro, finitions, fiche-club,
-  # feuille-espoir, match-rendu, comparateur, audio, reception, creation, derby ; vide ou « toutes » = intro, finitions, fiche-club, feuille-espoir ; match-rendu (40 passes, 57 min sous llvmpipe :
+  # feuille-espoir, match-rendu, comparateur, audio, reception, reception-medicale, creation, derby ; vide ou « toutes » = intro, finitions, fiche-club, feuille-espoir ; match-rendu (40 passes, 57 min sous llvmpipe :
   # à demander explicitement ; sans GPU, Forward+ n'existe pas, donc seules les passes « actuel » en 1280x720). comparateur et audio : aussi à demander explicitement.
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|reception-medicale|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -84,6 +84,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/reception"
     phase "captures Réception (1920x1080, 1280x720)" captures-reception.log \
       env CD_COURRIER_CAPTURES="$cap/reception" node tests/godot-courrier-club.cjs
+  fi
+  if veut reception-medicale; then
+    mkdir -p "$cap/reception-medicale"
+    phase "captures Réception médicale (vraie carrière, vrai courrier de blessure ; 1920x1080, 1280x720)" captures-reception-medicale.log \
+      env CD_RECEPTION_MEDICALE_OUTPUT="$cap/reception-medicale" node --test tests/godot-reception-medicale.cjs
   fi
   if veut match-rendu; then
     mkdir -p "$cap/match-rendu"
