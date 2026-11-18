@@ -554,19 +554,24 @@ function factory(){
    archived.answerText=q.answers.find(a=>a.id===answers[index].answerId).text;
   }
   if(delegation){
-   // Léger coût : la presse attendait le manager. Médias −2, relation −1 avec chaque journaliste présent
-   // (sans dépasser l'écart de ±6 par échange conservé dans la mémoire du journaliste).
-   S.pressRelations.mediaTrust=Math.max(0,S.pressRelations.mediaTrust+delegationCost.mediaTrust);
-   // Gabi ne gagne rien : les réponses prudentes ne rapportent ni moral ni confiance de la direction (seules les
-   // baisses éventuelles restent). Le manager qui « fuit » la presse paie : à partir de la 3e conférence de suite
-   // déléguée, la confiance de la direction baisse (−1, puis −2 dès la 4e).
-   S.morale=Math.min(S.morale,gauges.morale);S.trust=Math.min(S.trust,gauges.trust);
-   S.pressRelations.morale=Math.min(S.pressRelations.morale,gauges.pressMorale);S.pressRelations.boardPressure=Math.max(S.pressRelations.boardPressure,gauges.boardPressure);
+   // Coût fixe et annoncé (décision de Léo, 18/11/2026) : la presse attendait le manager, médias −2 et relation −1
+   // avec chaque journaliste présent ; rien d'autre ne bouge. Les réponses prudentes de Gabi ne rapportent rien et ne
+   // coûtent rien de plus (avant : leurs effets s'ajoutaient, jusqu'à −6 en relation presse pour un après-match).
+   // Le manager qui « fuit » la presse paie : dès la 3e conférence de suite déléguée, confiance de la direction −1,
+   // puis −2 dès la 4e.
+   S.morale=before.morale;S.trust=before.trust;
+   S.pressRelations.mediaTrust=Math.max(0,before.mediaTrust+delegationCost.mediaTrust);
+   S.pressRelations.fanTrust=before.fanTrust;S.pressRelations.boardPressure=before.boardPressure;
+   if(Number.isFinite(gauges.pressMorale))S.pressRelations.morale=gauges.pressMorale;
    penalty=delegationPenalty(runBefore);
    if(penalty){S.trust=Math.max(0,S.trust-penalty);S.pressRelations.boardPressure=Math.min(100,S.pressRelations.boardPressure+penalty);}
+   const asked=new Set(questions.map(q=>q.id)),here=e=>e.season===S.season&&e.week===weekOf(S)&&e.club===S.club&&asked.has(e.questionId);
    for(const id of new Set(questions.map(q=>q.journalist.id))){
-    const c=S.pressPeople.contacts[id],last=c.memory[c.memory.length-1],start=scores.find(e=>e.journalistId===id).before;
-    if(c.score>-100&&last.delta>-6&&c.score-1-start>=-6){c.score--;last.delta--;}
+    const c=S.pressPeople.contacts[id],start=scores.find(e=>e.journalistId===id).before,target=Math.max(-100,start+delegationCost.relation);
+    const mine=c.memory.filter(here);
+    for(const e of mine)e.delta=0;
+    if(mine.length)mine[mine.length-1].delta=target-start;
+    c.score=target;
    }
    const own=S.pressDelegation&&typeof S.pressDelegation==='object'?S.pressDelegation:{version:1,ordinary:'moi',delegated:[]};
    S.pressDelegation={version:1,ordinary:own.ordinary,delegated:[...own.delegated,{...context(S),auto:delegation.auto===true}].slice(-delegationLimit)};
