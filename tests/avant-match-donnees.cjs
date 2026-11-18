@@ -119,7 +119,9 @@ test('Météo annoncée : la clé du vent suit le sens réel', () => {
   run("S.worldMode.meteo={fixtureId:CDWorldCareer.userFixture(S).id,date:CDWorldCareer.userFixture(S).date,weather:'Vent',pluie:0,vent:2,chaleur:0,terrain:'souple',sens:" + (1 - pair.indexOf(S.club)) + "};validateCareer(S)");
   const g = jeu.call('snapshot').clubLife.avantMatch.gabi;
   assert.equal(g.cles[0].titre, 'Tenir le score face au vent');
-  assert.ok(g.cles.some(c => c.titre === 'Accélérer après la pause'));
+  // Trois clés au plus : le plan probable de l'adversaire et « Pas de relâchement » (gros favori) passent devant la clé de 2e période
+  // du vent (18/11/2026). On vérifie donc le sens : aucune clé du vent dans le dos en 1re période.
+  assert.ok(!g.cles.some(c => c.titre === 'Marquer tôt avec le vent'), 'vent de face : pas de clé « Marquer tôt »');
   run('delete S.worldMode.meteo');
 });
 

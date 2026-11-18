@@ -346,6 +346,9 @@ static func composition(model: Dictionary) -> Dictionary:
 	var selection: Dictionary = model.get("selection", {}) if model.get("selection") is Dictionary else {}
 	var slots: Array = selection.get("slots", []) if selection.get("slots") is Array else []
 	if slots.is_empty(): return _resultat("Pas de feuille de match à regarder pour l'instant. Reviens me voir quand le prochain match approche.", "consigne", NEUTRE)
+	# Quota du championnat (JIFF, EQP) sous la trajectoire de la moyenne exigée : la règle passe avant les gains de note.
+	var alerte_quota := quota(model)
+	if not alerte_quota.is_empty(): return alerte_quota
 	var starters := {}
 	for assignment: Variant in slots:
 		if assignment is Dictionary and int(_nombre(assignment.get("slot"), 99)) < 15 and assignment.get("playerId") is String:
@@ -402,6 +405,50 @@ static func buteur_mediocre(model: Dictionary) -> Dictionary:
 	var texte := "Tu as confié les tirs à %s (%d au but). %s tire à %d : je lui rendrais les tirs, chaque pénalité manquée coûte trois points." % [str(alerte.get("name", "")), int(_nombre(alerte.get("value"))), str(alerte.get("staffName", "")), int(_nombre(alerte.get("staffValue")))]
 	return _resultat(texte, "mise_en_garde", NEUTRE)
 
+## Alerte de quota (JIFF en Top 14 / Pro D2, EQP en Premiership) : la feuille du prochain match de championnat aligne moins
+## de qualifiés que la trajectoire de la moyenne exigée. Le moteur (selection.quota, position-aptitudes.cjs) propose pour chaque
+## manque un échange concret (un non qualifié sort, un qualifié du même poste et de niveau proche entre) ; « Suivre le conseil »
+## les fait avec les commandes set_lineup du conseil de composition. Vide : rien à signaler.
+const QUOTA_CHANGEMENTS_MAX := 4
+
+static func quota_donnees(model: Dictionary) -> Dictionary:
+	var selection: Variant = model.get("selection")
+	var data: Variant = selection.get("quota") if selection is Dictionary else null
+	return data if data is Dictionary and not (data as Dictionary).is_empty() else {}
+
+static func quota(model: Dictionary) -> Dictionary:
+	var data := quota_donnees(model)
+	if data.is_empty(): return {}
+	var label := str(data.get("label", "JIFF"))
+	var cible := int(_nombre(data.get("target"), 16))
+	var need := int(_nombre(data.get("need"), cible))
+	var current := int(_nombre(data.get("current"), 0))
+	var changes: Array = []
+	for change: Variant in data.get("changes", []) if data.get("changes") is Array else []:
+		if change is Dictionary and change.get("playerId") is String and change.get("sortant") is String and changes.size() < QUOTA_CHANGEMENTS_MAX:
+			changes.append(change)
+	var doublon := int(_nombre(data.get("doublon"), 0))
+	var situation := "%s : %d sur la feuille" % [label, current - doublon]
+	if doublon > 0: situation += " et %d convoqué%s en équipe de France" % [doublon, "s" if doublon > 1 else ""]
+	var moyenne := ""
+	if data.get("average") != null: moyenne = " (moyenne de la saison %s)" % _virgule(float(data.average))
+	var perdu := bool(data.get("outOfReach", false))
+	var court := "%s, il en faut %d à ce match pour tenir les %d de moyenne%s." % [situation, need, cible, moyenne]
+	if perdu: court = "%s, mais même une feuille pleine ne tiendrait plus les %d de moyenne%s. Limite la casse." % [situation, cible, moyenne]
+	if changes.is_empty():
+		var sans := _resultat(court + " Je n'ai personne de qualifié et disponible au bon poste : il faudra aller chercher un joueur.", "mise_en_garde", NEGATIF)
+		sans["plus"] = sans.texte
+		return sans
+	var phrases := PackedStringArray()
+	for change: Dictionary in changes:
+		var entrant := _nom(joueur(model, str(change.playerId)))
+		var sortant := _nom(joueur(model, str(change.sortant)))
+		var poste := _poste_du_slot(model, int(_nombre(change.get("slot"), -1)))
+		phrases.append("%s à la place %s%s (note au poste %d contre %d)" % [entrant, _de(sortant), " en " + poste if not poste.is_empty() else "", int(_nombre(change.get("rating"), 0)), int(_nombre(change.get("sortantRating"), 0))])
+	var resultat := _resultat("%s Je propose %d changement%s de niveau proche." % [court, changes.size(), "s" if changes.size() > 1 else ""], "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes.map(func(c: Dictionary) -> Dictionary: return {"slot": int(c.slot), "playerId": str(c.playerId), "sortant": str(c.sortant)}), "libelle": "Suivre le conseil"})
+	resultat["plus"] = "%s Je mettrais : %s." % [court, "; ".join(phrases)]
+	return resultat
+
 ## Version courte du conseil de composition (carnet de la semaine et bulle du Bureau le jour de match : une seule source).
 static func composition_courte(model: Dictionary, action: Dictionary) -> String:
 	var parts := PackedStringArray()
@@ -427,6 +474,8 @@ static func _de(nom: String) -> String:
 ## Bureau (« Ton avis, Gabi ? », fil du bandeau) disent exactement la même chose ce jour-là.
 static func conseil_jour_de_match(model: Dictionary) -> Dictionary:
 	if not _jour_de_match(model): return {}
+	var bleus := repos_bleus(model)
+	if not bleus.is_empty(): return bleus
 	var repos := fatigue(model)
 	var cash := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
 	if cash >= 0 and not repos.is_empty():
@@ -447,6 +496,25 @@ static func fatigue_courte(model: Dictionary, avis: Dictionary) -> String:
 	if parts.size() > 2: return "Je ferais souffler %s : %s et %d autre%s." % [qui, ", ".join(parts.slice(0, 2)), parts.size() - 2, "s" if parts.size() > 3 else ""]
 	return "Je ferais souffler les fatigués : %s." % " ; ".join(parts)
 
+
+## Protocole des Bleus : des joueurs de la liste de 33 sont sur la feuille alors qu'ils doivent souffler ce week-end
+## (au moins 2 repos sur 8 matchs). Le moteur (clubLife.doublons) propose le remplaçant au poste ; « Suivre le
+## conseil » applique les mêmes commandes set_lineup que le conseil de composition. Vide : rien à signaler.
+static func repos_bleus(model: Dictionary) -> Dictionary:
+	var data: Variant = model.get("clubLife", {}).get("doublons") if model.get("clubLife") is Dictionary else null
+	if not data is Dictionary or not bool(data.get("applies", false)) or not data.get("reposer") is Array or (data.reposer as Array).is_empty(): return {}
+	var noms: Array = []
+	for item: Variant in data.reposer:
+		if item is Dictionary: noms.append(_nom(joueur(model, str(item.get("playerId", "")))))
+	if noms.is_empty(): return {}
+	var changes: Array = []
+	for change: Variant in data.get("changes", []) if data.get("changes") is Array else []:
+		if change is Dictionary and change.get("playerId") is String and change.get("sortant") is String:
+			changes.append({"slot": int(_nombre(change.get("slot"), 0)), "playerId": str(change.playerId), "sortant": str(change.sortant)})
+	var verbe := "doit" if noms.size() == 1 else "doivent"
+	var texte := "%s %s souffler ce week-end (protocole des Bleus)." % [_liste(noms), verbe]
+	if changes.is_empty(): return _resultat(texte + " Je n'ai personne pour le remplacer au poste.", "mise_en_garde", NEUTRE)
+	return _resultat(texte + " Je mets un remplaçant à sa place.", "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes, "libelle": "Suivre le conseil"})
 
 ## Alerte de fatigue : des titulaires de la feuille du prochain match sont sous 70 % de condition.
 ## Le moteur (selection.fatigue, position-aptitudes.cjs) propose pour chacun le meilleur remplaçant frais au
@@ -546,9 +614,25 @@ static func _argument(model: Dictionary, proposal: Dictionary) -> String:
 	elif int(_nombre(entrant.get("age"), 30)) <= AGE_JEUNE: texte = texte.trim_suffix(".") + " ; il est jeune, protège-le."
 	return texte
 
+## Titulaire qui rejoue le jour du match après son protocole commotion (retour depuis 10 jours au plus), ou {}.
+static func retour_commotion(model: Dictionary) -> Dictionary:
+	if not _jour_de_match(model): return {}
+	var today := str(model.get("meta", {}).get("calendarToday", ""))
+	if today.length() != 10: return {}
+	var limite := Time.get_date_string_from_unix_time(Time.get_unix_time_from_datetime_string(today) - 10 * 86400)
+	for assignment: Variant in model.get("selection", {}).get("slots", []) if model.get("selection") is Dictionary else []:
+		if not assignment is Dictionary or int(_nombre(assignment.get("slot"), 99)) >= 15: continue
+		var person := joueur(model, str(assignment.get("playerId", "")))
+		var c: Variant = person.get("commotion")
+		if c is Dictionary and not c.get("enCours", false) and str(c.get("retour", "")) <= today and str(c.get("retour", "")) >= limite: return person
+	return {}
+
 static func _composition_validee(model: Dictionary, vacant: int) -> Dictionary:
 	if vacant > 0:
 		return _resultat("Il manque encore %d titulaire%s sur la feuille. Complète-la, ou laisse le staff proposer : je regarderai après." % [vacant, "s" if vacant > 1 else ""], "mise_en_garde", NEUTRE)
+	var retour := retour_commotion(model)
+	if not retour.is_empty():
+		return _resultat("%s rejoue après sa commotion : le médecin l'a libéré, protocole complet. Je garderai un œil sur lui au premier impact." % _nom(retour), "approbation", NEUTRE)
 	var low := {}
 	for assignment: Variant in model.get("selection", {}).get("slots", []):
 		if not assignment is Dictionary or int(_nombre(assignment.get("slot"), 99)) >= 15: continue
@@ -573,6 +657,15 @@ static func _moyenne_poste(model: Dictionary, pos: String) -> Variant:
 
 ## Avis sur une cible du marché, à partir de ce que le club en sait (note connue, fourchette observée,
 ## ou rien). {texte, categorie, ton, action {type: "recrutement", verdict: fonce|a_suivre|passe, playerId}}.
+## La piste compte pour le quota du club (JIFF, EQP) et ce quota est menacé (moteur : market[].quota).
+static func _quota_utile(cible: Dictionary) -> bool:
+	var badge: Variant = cible.get("quota")
+	return badge is Dictionary and bool(badge.get("useful", false))
+
+static func _quota_mot(cible: Dictionary) -> String:
+	if not _quota_utile(cible): return ""
+	return "Il compte pour notre quota %s, et il nous en manque. " % str(cible.quota.get("label", "JIFF"))
+
 static func recrutement(model: Dictionary, cible: Dictionary) -> Dictionary:
 	var id := str(cible.get("id", ""))
 	var pos := str(cible.get("pos", ""))
@@ -614,6 +707,7 @@ static func recrutement(model: Dictionary, cible: Dictionary) -> Dictionary:
 		action.annees = years
 		var texte := "%s est noté %s, au-dessus de notre moyenne au poste (%d). " % [nom, range_text, int(average)]
 		texte += "Il comble le trou qu'on a là. " if need else ""
+		texte += _quota_mot(cible)
 		texte += "Propose-lui %d an%s à %s, sans surenchérir." % [years, "s" if years > 1 else "", G.salary(salary)]
 		return _resultat(texte, "approbation", POSITIF, action.merged({"libelle": "Suivre le conseil"}))
 	if young_promise:
@@ -622,6 +716,9 @@ static func recrutement(model: Dictionary, cible: Dictionary) -> Dictionary:
 	if need and average != null and ecart >= -2:
 		action.verdict = "a_suivre"
 		return _resultat("%s (%s) ferait un renfort honnête là où on manque. Garde-le dans ta liste, et cherche mieux avant de signer." % [nom, range_text], "question", NEUTRE, action.merged({"libelle": "Suivre le conseil"}))
+	if _quota_utile(cible) and average != null and ecart >= -2:
+		action.verdict = "a_suivre"
+		return _resultat("%s (%s) n'est pas un grand renfort, mais il compte pour notre quota %s et il nous en manque. Garde-le dans ta liste." % [nom, range_text, str(cible.quota.get("label", "JIFF"))], "question", NEUTRE, action.merged({"libelle": "Suivre le conseil"}))
 	action.verdict = "passe"
 	var comparaison := " ; notre moyenne au poste est de %d" % int(average) if average != null else ""
 	return _resultat("%s est noté %s%s. Il n'apporterait rien de plus : passe ton chemin." % [nom, range_text, comparaison], "mise_en_garde", NEUTRE, action.merged({"libelle": "Passer mon chemin"}))

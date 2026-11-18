@@ -28,9 +28,11 @@ module.exports=function nativeModel(){
   const renewal={available:!S.live&&!withdrawn&&p.contractEnd<contractBase()+2&&careerContractYears(p)>=Math.max(1,p.contractEnd-contractBase()+2),
    salary:askingWage(p,'renew'),fee:contractFee(p,'renew'),minYears:Math.max(1,p.contractEnd-contractBase()+2),maxYears:Math.min(3,careerContractYears(p)),
    ...(negotiation?{negotiation}:{}),...(withdrawn?{reason:withdrawnReason}:{})};
-  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),rosterProfile:p.rosterProfile??null,...(p.espoirLoan?{calledUp:true}:{}),id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,physicalLoad:physicalLoadValue(p),loadPlan:physicalPlan(p),injury:p.injury,...(p.injury>0&&p.injuryType?{injuryType:p.injuryType,...(p.injuryCause?{injuryCause:p.injuryCause}:{}),...(p.injuryDate?{injuryDate:p.injuryDate}:{})}:{}),salary:p.salary,marketValue:typeof transferValue==='function'?Math.round(transferValue(JSON.parse(JSON.stringify(source)))):null,contractEnd:p.contractEnd??null,renewal,contractLabel:p.espoirLoan?'Appelé du centre de formation':p.contractEnd==null?'Sans contrat professionnel':contractLabel(p),minutes:p.dev?.minutes??0,appearances:p.dev?.appearances??0,status:p.injury?'Blessé':index>=0?'Titulaire':bench>=0?'Remplaçant':'Hors groupe',shirtNumber:index>=0?index+1:bench>=0?bench+16:null,...nativePlayerAttributes(p),attributes:Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(p,k)])),portraitIndex:nativeId?Number(nativeId[1])%32:(hash>>>0)%32};
+  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),rosterProfile:p.rosterProfile??null,...(p.espoirLoan?{calledUp:true}:{}),id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,physicalLoad:physicalLoadValue(p),loadPlan:physicalPlan(p),injury:p.injury,...(p.injury>0&&p.injuryType?{injuryType:p.injuryType,...(p.injuryCause?{injuryCause:p.injuryCause}:{}),...(p.injuryDate?{injuryDate:p.injuryDate}:{})}:{}),...(p.commotion?{commotion:{n:p.commotion.n,derniere:p.commotion.hist[p.commotion.hist.length-1].date,retour:p.commotion.protocole?.retour??p.commotion.hist[p.commotion.hist.length-1].retour,enCours:!!p.commotion.protocole}}:{}),salary:p.salary,marketValue:typeof transferValue==='function'?Math.round(transferValue(JSON.parse(JSON.stringify(source)))):null,contractEnd:p.contractEnd??null,renewal,contractLabel:p.espoirLoan?'Appelé du centre de formation':p.contractEnd==null?'Sans contrat professionnel':contractLabel(p),minutes:p.dev?.minutes??0,appearances:p.dev?.appearances??0,status:p.injury?'Blessé':index>=0?'Titulaire':bench>=0?'Remplaçant':'Hors groupe',shirtNumber:index>=0?index+1:bench>=0?bench+16:null,...nativePlayerAttributes(p),attributes:Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(p,k)])),portraitIndex:nativeId?Number(nativeId[1])%32:(hash>>>0)%32};
  });
  const places=professionalPlaces(own),cash=own.cash;
+ // Statut JIFF / EQP de la piste pour le club du manager (null hors championnat à quota).
+ const quotaBadge=p=>typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.marketBadge==='function'&&S.jiff?.version===1?CDJiff.marketBadge(S,p):null;
  const market=S.market.map(source=>{
   const p=JSON.parse(JSON.stringify(source));
   const negotiation=currentNegotiation(p.id,'recruit'),maxYears=Math.min(3,careerContractYears(p));
@@ -38,7 +40,7 @@ module.exports=function nativeModel(){
   const reason=S.live?'Match en cours':places<=0?'Effectif complet':cash<p.price?'Trésorerie insuffisante':maxYears<1?'Retraite prévue':withdrawn?withdrawnReason:'';
   const available=!S.live&&places>0&&cash>=p.price&&maxYears>=1&&!withdrawn;
   return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,...nativePlayerAttributes(p),
-   salary:askingWage(p,'recruit'),fee:contractFee(p,'recruit'),minYears:1,maxYears,available,reason,...(negotiation?{negotiation}:{})};
+   salary:askingWage(p,'recruit'),fee:contractFee(p,'recruit'),minYears:1,maxYears,available,reason,...(negotiation?{negotiation}:{}),...(quotaBadge(p)?{quota:quotaBadge(p)}:{})};
  });
  const pair=nextMatch(),l=S.live;
  // Météo vue par le manager : libellé, conseil du staff (sans la phrase du vent, composée par l'écran avec
@@ -62,6 +64,8 @@ module.exports=function nativeModel(){
  }))};
  // Alerte de fatigue (Gabi) : titulaires de la feuille du prochain match sous 70 % de condition et remplaçants frais.
  if(!errors.length&&!l&&pair&&S.phase!=='ended'&&typeof nativePositionAptitudes!=='undefined'){const advice=nativePositionAptitudes.fatigueAdvice(own,S.lineup,S.reserves,70);if(advice)selection.fatigue=advice;}
+ // Alerte de quota (Gabi) : JIFF (Top 14, Pro D2) ou EQP (Premiership) sous la trajectoire de la moyenne exigée.
+ if(!errors.length&&!l&&pair&&S.phase==='league'&&typeof nativePositionAptitudes!=='undefined'&&typeof nativePositionAptitudes.quotaAdvice==='function'){const advice=nativePositionAptitudes.quotaAdvice(own,S.lineup,S.reserves);if(advice)selection.quota=advice;}
  // Avis du staff sur la feuille (match-actions.js, lot 3) : postes où il composerait autrement, avec sa raison.
  if(!errors.length&&!l&&pair&&typeof staffSheetAdvice==='function'){const avis=staffSheetAdvice();if(avis)selection.staffAdvice=avis;}
  if(errors.length&&!l&&S.phase!=='ended'){
