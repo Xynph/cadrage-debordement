@@ -73,7 +73,9 @@ static func build(app: Control, canvas: Control) -> void:
 ## Bandeau du club : onglet Infrastructures -> le stade du club à sa taille (banque d'images, d'après la capacité),
 ## sinon la vue habituelle.
 static func photo_entete(model: Dictionary, tab: String) -> String:
-	if tab != "infrastructure": return "club-forest"
+	if tab != "infrastructure":
+		var sol := BanqueImages.region(G.identity(model.get("club", {})))
+		return sol if not sol.is_empty() and BanqueImages.texture(sol) != null else "club-forest"
 	var fans: Variant = U.strategy(model).get("fans", {})
 	var niveau := BanqueImages.niveau_stade(fans.get("capacity") if fans is Dictionary else null)
 	var id := BanqueImages.choisir("infrastructures", {"categorie_image": "stade", "niveau_infrastructure": niveau}) if niveau > 0 else ""
@@ -506,7 +508,7 @@ static func _staff_detail(app: Control, canvas: Control) -> void:
 
 static func _history(app: Control, canvas: Control) -> void:
 	var card := D.panel(canvas, Rect2(0,214,610,612), "Les archives du club", "trophy", "", "ClubHistorySummary")
-	D.photo(card, "club-forest", Rect2(20,69,570,164))
+	D.photo(card, "ceremonie-remise-trophee" if BanqueImages.existe("ceremonie-remise-trophee") else "club-forest", Rect2(20,69,570,164))
 	var data := History.project(app.model,int(app.model.club.id))
 	var international: bool = app.model.meta.get("mode") == "world"
 	if international: data.seasons = History.world_seasons(app,int(app.model.club.id))
@@ -714,7 +716,7 @@ static func _infrastructure_detail(app: Control, canvas: Control) -> void:
 	D.text(projects, 24, 385, "L’investissement hebdomadaire suit la séance de formation.", 24, C.MUTED, 500, 1228)
 	D.button(projects, Rect2(24,411,450,51), "Ouvrir le centre de formation", func(): app._navigate("Centre"), false, "arrow", false, U.GREEN, "ClubAcademyFacilities")
 	D.line(projects, Vector2(24,488), Vector2(735,488))
-	D.photo(projects, "medical-recovery", Rect2(757, 319, 500, 350), .4)
+	D.photo(projects, "club-salle-recuperation-bains" if BanqueImages.existe("club-salle-recuperation-bains") else "medical-recovery", Rect2(757, 319, 500, 350), .4)
 	D.text(projects, 24, 537, "Cellule médicale", 36, C.IVORY, 700, 1228)
 	D.text(projects, 24, 576, "Protocoles et décisions de retour des joueurs suivis.", 24, C.MUTED, 500, 1228)
 	D.button(projects, Rect2(24,602,450,51), "Ouvrir le travail du club", func(): app._navigate("Travail du club"), false, "arrow", false, U.GREEN, "ClubFacilityMedical")

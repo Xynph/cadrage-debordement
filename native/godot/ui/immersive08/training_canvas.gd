@@ -1,6 +1,7 @@
 extends Control
 ## Vue de la semaine. Les repères organisent les décisions d’une seule séance simulée.
 const C = preload("res://ui/immersive08/components.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -196,7 +197,7 @@ func _week(fixture: Dictionary) -> void:
 	_selection(selected)
 	var art := D.panel(self, Rect2(4, 840, 1020, 377), "", "", "", "TrainingPhoto")
 	art.clip_contents = true
-	D.photo(art, "training-session", Rect2(2, 2, 1016, 373))
+	D.photo(art, photo_centre(app.model), Rect2(2, 2, 1016, 373))
 	_axes(D.panel(self, Rect2(1039, 840, 560, 341), "Axes individuels", "star", "", "TrainingAxes"))
 	_staff_cards(D.panel(self, Rect2(1614, 840, 634, 341), "Encadrement", "people", "", "TrainingStaff"))
 	D.text(self, 2244, 1217, "Charges et condition issues de ta carrière", 17, C.MUTED, 500, 622, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -360,7 +361,7 @@ func _groups() -> void:
 		D.text(tile, 25, 141, "%s récupération  ·  %s normal ou collectif  ·  %s intensif" % [G.n(counts.get("repos", 0)), G.n(int(counts.get("normal", 0)) + int(counts.get("collective", 0))), G.n(counts.get("intense", 0))], 24, GREEN, 600, 1090)
 		var apply := _action(tile, Rect2(1230, 110, 438, 50), "Appliquer le plan", func(): app._command("training_plan", {"context":support.context, "plan":plan.key}), true, "arrow", "SupportTraining_" + str(plan.key))
 		apply.disabled = not data.get("available", false)
-	D.photo(section, "training-session", Rect2(24, 747, 1689, 178))
+	D.photo(section, photo_centre(app.model), Rect2(24, 747, 1689, 178))
 	_chart()
 	_vigilance()
 
@@ -410,7 +411,7 @@ func _staff_tab() -> void:
 		action.disabled = locked or not decisions.has("delegation")
 	_action(tile, Rect2(24, 382, 822, 58), "Réunions, briefing et suivi médical", func(): app._navigate("Travail du club"), false, "arrow", "TrainingOpenSupport")
 	_action(tile, Rect2(864, 382, 848, 58), "Ouvrir l’annuaire du staff", func(): app._navigate("Staff"), false, "arrow", "TrainingOpenStaff")
-	D.photo(self, "training-session", Rect2(4, 805, 1740, 381))
+	D.photo(self, photo_centre(app.model), Rect2(4, 805, 1740, 381))
 	_staff_cards(D.panel(self, Rect2(1760, 260, 488, 341), "Encadrement", "people", "", "TrainingStaffCompact"))
 
 func _open_tab(index: int) -> void:
@@ -578,3 +579,12 @@ func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, fallback: String =
 
 func _action(parent: Node, rectangle: Rect2, caption: String, callback: Callable, primary: bool, icon: String, id: String) -> Button:
 	return D.button(parent, rectangle, caption, callback, primary, icon, false, Color("09673e"), id)
+
+
+## Centre d'entraînement du club à son niveau (banque d'images, d'après les installations), sinon la séance habituelle.
+static func photo_centre(model: Dictionary) -> String:
+	var finance: Variant = preload("res://ui/immersive08/club_ui.gd").strategy(model).get("finance", {})
+	var facility: Variant = finance.get("facility") if finance is Dictionary else null
+	var niveau := BanqueImages.niveau_centre(facility.get("level") if facility is Dictionary else null)
+	var id := "club-centre-entrainement-niveau-%d" % niveau
+	return id if niveau > 0 and BanqueImages.existe(id) else "training-session"

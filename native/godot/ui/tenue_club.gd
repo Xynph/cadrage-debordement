@@ -1,7 +1,7 @@
 extends RefCounted
 ## Maillots et écussons de la banque d'images recolorés aux couleurs d'un club (shaders/recoloration.gdshader).
-## Couleur de base : la couleur du club ; motif : l'encre neutre de contraste (comme la salle 3D du vestiaire,
-## aucune seconde couleur de club n'est inventée). Motif et forme d'écusson : stables pour un même club.
+## Couleur de base : la couleur du club ; motif : sa deuxième couleur (ui/couleurs_clubs.json, repli sur l'encre de
+## contraste). Motif et forme d'écusson : stables pour un même club.
 
 const BanqueImages = preload("res://ui/banque_images.gd")
 const RoomIdentity = preload("res://ui/contextual/rooms/room_identity.gd")
@@ -19,7 +19,7 @@ static func _graine(club: Dictionary) -> int:
 
 static func couleurs(club: Dictionary) -> Array[Color]:
 	var base := RoomIdentity.primary(_identite(club))
-	return [base, RoomIdentity.contrast(base)]
+	return [base, RoomIdentity.secondary(_identite(club), base)]
 
 static func motif(club: Dictionary) -> String: return MOTIFS[_graine(club) % MOTIFS.size()]
 static func forme_ecusson(club: Dictionary) -> String: return ECUSSONS[(_graine(club) / 7) % ECUSSONS.size()]

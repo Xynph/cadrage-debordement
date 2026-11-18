@@ -1,6 +1,7 @@
 extends Control
 ## Coque illustrée du Centre, autour des mêmes parcours et contrôles métier.
 const Copy = preload("res://ui/management_copy.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -40,7 +41,8 @@ func _build() -> void:
 func _hero() -> void:
 	var hero := D.panel(self, Rect2(0, 0, 2248, 200), "", "", "", "CentreHero")
 	hero.clip_contents = true
-	D.photo(hero, "club-forest", Rect2(1300, 1, 946, 198))
+	var sol := BanqueImages.region(G.identity(app.model.get("club", {})))
+	D.photo(hero, sol if BanqueImages.existe(sol) else "club-forest", Rect2(1300, 1, 946, 198))
 	D.fade_photo_edges(D.photo(hero, "academy-training", Rect2(998, 1, 790, 198)))
 	D.text(hero, 26, 36, "LE CENTRE DE FORMATION", 28, GOLD, 700, 1120)
 	app.heading = D.text(hero, 25, 111, "Les chemins de la progression.", 68, C.IVORY, 800, 1140)

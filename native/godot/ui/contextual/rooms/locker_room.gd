@@ -31,7 +31,7 @@ func configure(identity: Dictionary, texture: Texture2D) -> void:
 func _ready() -> void:
 	green = mat(Color("484c44"))
 	kit_material = mat(primary_color)
-	kit_trim = mat(contrast_color)
+	kit_trim = mat(RoomIdentity.secondary(get_meta("identity", {}), primary_color))
 	deep_green = mat(Color("242d29"))
 	wood = mat(Color("594431"))
 	wood_light = mat(Color("af875c"))

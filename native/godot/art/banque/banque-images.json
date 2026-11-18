@@ -2002,6 +2002,1116 @@
    "part_blanche": 0.148,
    "synthetique": true,
    "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "chargement-01",
+   "categorie": "chargement",
+   "fichier": "chargement/chargement-01.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 155626,
+   "sha256": "f2b90a6a0991d4e7b5d1112daef2c6e0da9a8cbc2005a69bd4a652b3a32cc18e",
+   "source_sha256": "7e811c8327d6589fb4a45c960f2a04b499406dc7ba9c722e659d773667fd35fb",
+   "source_octets": 2045384,
+   "repli": "chargement-01",
+   "etiquettes": {
+    "ecrans": [
+     "chargement"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "chargement-02",
+   "categorie": "chargement",
+   "fichier": "chargement/chargement-02.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 189662,
+   "sha256": "2f3ad5a8e29556d52e66161ad54e029bd9ce63083f7611d5dba87adfc88aa05c",
+   "source_sha256": "0163efb2976b87d219820a3db63d7f6469d34a3c7538c37da4625b0f11f51e9a",
+   "source_octets": 2253792,
+   "repli": "chargement-01",
+   "etiquettes": {
+    "ecrans": [
+     "chargement"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "chargement-03",
+   "categorie": "chargement",
+   "fichier": "chargement/chargement-03.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 113980,
+   "sha256": "8f13e137489349d0d13f090dd599d468c1633f8b2682cffc1f2808eda60a8e46",
+   "source_sha256": "f7d542e7b1e10ae031b47024433ac97c453802872646eda72773dc29f28171d7",
+   "source_octets": 1916185,
+   "repli": "chargement-01",
+   "etiquettes": {
+    "ecrans": [
+     "chargement"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "chargement-04",
+   "categorie": "chargement",
+   "fichier": "chargement/chargement-04.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 213102,
+   "sha256": "88a8d6f4136890f7ea20e6dd30d28932930a93277b9b760c161058eaaa01b9fb",
+   "source_sha256": "c8e612c881f8447403a8dc3c0efdc890614f49180c1d7aefabfa1c59cb82ad22",
+   "source_octets": 2311122,
+   "repli": "chargement-01",
+   "etiquettes": {
+    "ecrans": [
+     "chargement"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "chargement-05",
+   "categorie": "chargement",
+   "fichier": "chargement/chargement-05.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 201708,
+   "sha256": "eb757c89fa5302f4384a51a02f53be1506e1fae6ec823d9f0781e94d8c83b559",
+   "source_sha256": "beb497343edf18d87b1d7c76dbdcbf34da95db3d378d1dd364f54c655a262993",
+   "source_octets": 2371418,
+   "repli": "chargement-01",
+   "etiquettes": {
+    "ecrans": [
+     "chargement"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "chargement-06",
+   "categorie": "chargement",
+   "fichier": "chargement/chargement-06.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 101194,
+   "sha256": "cb6743a9c26018d2e55b71d5c902d06aa838950b8e81dcb615ecb9cabb62126c",
+   "source_sha256": "4aa225a590868f441bcb0094ce32821adcd10c08d34a51e2dd3a8e6cf50ed194",
+   "source_octets": 1964671,
+   "repli": "chargement-01",
+   "etiquettes": {
+    "ecrans": [
+     "chargement"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "chargement-07",
+   "categorie": "chargement",
+   "fichier": "chargement/chargement-07.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 308252,
+   "sha256": "4fce9f0dda266936f52ddab84a0b05bf5c39acef26b6bf63bd3b15009bf1cb64",
+   "source_sha256": "2f29580043e770973a8a41c44f50557fab091c70994812557a4c5b18992197e4",
+   "source_octets": 2754333,
+   "repli": "chargement-01",
+   "etiquettes": {
+    "ecrans": [
+     "chargement"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "chargement-08",
+   "categorie": "chargement",
+   "fichier": "chargement/chargement-08.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 155288,
+   "sha256": "78286085c6dd7ee8622d7f130906e61986147fe018067c8bc62f5574f24568f4",
+   "source_sha256": "d9ee96cb21f10f7703e5f0fb1cf136e84aaae74fbe1c7766d6c203afec030308",
+   "source_octets": 2226119,
+   "repli": "chargement-01",
+   "etiquettes": {
+    "ecrans": [
+     "chargement"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-finances",
+   "categorie": "mails",
+   "fichier": "mails/mail-finances.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 93512,
+   "sha256": "4bea0d758fbabfe91ae0f2afd69cbd246989efccf6c4c77a16129addb715cbc4",
+   "source_sha256": "1d44d0356f2a94eeb86c56b506d66b86e16c7b7542b00410576d31cc8a4d192f",
+   "source_octets": 1900453,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-sponsor",
+   "categorie": "mails",
+   "fichier": "mails/mail-sponsor.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 101180,
+   "sha256": "8d16acb9eaec9aba490b237de2ca27c5d029f2c67d70988a9f61b071ecea7cfd",
+   "source_sha256": "0bedfc7a8fd7c8f6a7faa1af2e4a3caf182ebc4865ffac6dcbef9ca2d16f9e16",
+   "source_octets": 1876258,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-supporters",
+   "categorie": "mails",
+   "fichier": "mails/mail-supporters.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 123288,
+   "sha256": "3c19ec1c19b327eb95d8efcdcf3abd0819c7de68a186d3dee20713fc3ed9845d",
+   "source_sha256": "34cc8b130cc4b931dc6d6460a38311cc3b6ffb492da65a027563755f69456e9d",
+   "source_octets": 1979557,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-presse-polemique",
+   "categorie": "mails",
+   "fichier": "mails/mail-presse-polemique.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 73486,
+   "sha256": "1ee0062cf13e7ebb3cf23637a31358a36726e15728469c01ed1c7461e2aa8028",
+   "source_sha256": "0308a405c30065a1b1bf02cec77168516852a633338805edda11dc760819e0f2",
+   "source_octets": 1754627,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-discipline",
+   "categorie": "mails",
+   "fichier": "mails/mail-discipline.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 107682,
+   "sha256": "1316da5a4d5bb059cb5f0419cc361b58669427cb9ed0173ccec4dfd8378093fb",
+   "source_sha256": "7516f86100f7a13ad29c3cfff7da256ee33ee21ac2e69816dad00270f275737d",
+   "source_octets": 1901454,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-selection-nationale",
+   "categorie": "mails",
+   "fichier": "mails/mail-selection-nationale.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 124650,
+   "sha256": "365a038a66f7a93de3150bc4266631b3756696aaa517e61e65d7393c1d75ee24",
+   "source_sha256": "3a72017e28766b88ae343d3835ecc758a61f6061f363fe8177df40b4f6f62516",
+   "source_octets": 2026148,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-transfert-signe",
+   "categorie": "mails",
+   "fichier": "mails/mail-transfert-signe.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 121406,
+   "sha256": "49856a2335d6c79c9bcf4b26955c9cc513857b3e0108af784965309eb5f97718",
+   "source_sha256": "1d93cbe35fb8d8dec31f61fb255b65bb958657d8b0f1791fdb910c4340ae4d59",
+   "source_octets": 2033146,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-blessure-grave",
+   "categorie": "mails",
+   "fichier": "mails/mail-blessure-grave.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 122376,
+   "sha256": "79edcbc8aa35815dc47e69a176cec12861c45241b1b98e588ab461cb10548e91",
+   "source_sha256": "11416b0a6db91ede0c0bdaaab67f97456c0dbcfe6252b46b87f95b31ff467de5",
+   "source_octets": 1957716,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-contrat",
+   "categorie": "mails",
+   "fichier": "mails/mail-contrat.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 102804,
+   "sha256": "ff769604aba7d04f73b383abbc6d59d655643e4bea017a1f434348ded061de12",
+   "source_sha256": "60ac8a1631291ff09309ab33a436fd8e470ede12093ea9455290fb0bffa4cfc8",
+   "source_octets": 1919743,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-jeunes",
+   "categorie": "mails",
+   "fichier": "mails/mail-jeunes.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 290228,
+   "sha256": "6fb2e3f97c94d6612590c139fc5dd05e38023531701ca011bf58b5dc4c64f50f",
+   "source_sha256": "dea3b36c3dc1fa3a9b7e138118c8cbf91702a932e602de92de2c72ec79f06530",
+   "source_octets": 2570962,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-meteo-alerte",
+   "categorie": "mails",
+   "fichier": "mails/mail-meteo-alerte.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 205792,
+   "sha256": "0806ab3e9d78163cf660b192ae5033f41ef8ea73f2a47d994b39edac474d16f8",
+   "source_sha256": "a3cde830599bde4196eb6d42d285663eeb7a63c2827caa8af4a165e28f363b3e",
+   "source_octets": 2472048,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-calendrier-treve",
+   "categorie": "mails",
+   "fichier": "mails/mail-calendrier-treve.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 190454,
+   "sha256": "ad55f9a312ca929095b92b4ab7f696562f72c24ec036f9b67a85e2e27826311c",
+   "source_sha256": "fb7598583d34242a071c228b2cc92da024279782ea062c0fc7fd669c28ab4416",
+   "source_octets": 2307342,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-anniversaire-club",
+   "categorie": "mails",
+   "fichier": "mails/mail-anniversaire-club.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 122592,
+   "sha256": "bc1627b165deb11cb24b80c54889a480fc199ec86a05e0c78b2b33b708aadb42",
+   "source_sha256": "38250371f3102b91e5f6b500f90e6b8436753b4fe590f0a5f79d893deed7b158",
+   "source_octets": 2022851,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "mail-rivalite",
+   "categorie": "mails",
+   "fichier": "mails/mail-rivalite.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 115806,
+   "sha256": "83385b0bda45b057c11d5169b6872265a9809d5d1aca559614a55ac7396d595d",
+   "source_sha256": "52a47d55b077051c9e0d26fa134e3138900af6d988ffed49f30e05862a4b2fbf",
+   "source_octets": 1902256,
+   "repli": "mail-finances",
+   "etiquettes": {
+    "ecrans": [
+     "messagerie"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-sud-ouest",
+   "categorie": "regions",
+   "fichier": "regions/sol-sud-ouest.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 347410,
+   "sha256": "ef16c1d0c6b210b422d1cfaa1b7784acbcb80fc94de69e2c693cbadf7d170561",
+   "source_sha256": "c292b0e384b07ac22e8152d8ae488ad2cc63296bec9eec7a034abd12d4f4de84",
+   "source_octets": 2833967,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-mediterranee",
+   "categorie": "regions",
+   "fichier": "regions/sol-mediterranee.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 260694,
+   "sha256": "e98d64fdf58f930f85340a15f315d8663cb33517786f94ffe59cb3e1f746a370",
+   "source_sha256": "9454ff1604a789f9889def50bb5268b1839904745622082f0d63ccdf68063ae9",
+   "source_octets": 2651771,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-nord",
+   "categorie": "regions",
+   "fichier": "regions/sol-nord.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 200592,
+   "sha256": "4a2037e9f8ad1380bd9acccc520b8c9507441b56ec8544ef8f890255e45386dd",
+   "source_sha256": "c548d085780e6a7af6fa7e30b072b72c5db6950a1bffe1d129f2332c6e260d5b",
+   "source_octets": 2378236,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-est",
+   "categorie": "regions",
+   "fichier": "regions/sol-est.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 211184,
+   "sha256": "ab686a2fb601d73e7d87d5451ef082452ee5a0df28510f4a756ad3f091771879",
+   "source_sha256": "fe9dc87b23ff92e74ba3abd0cb2e1aeff76a821acce38af5d083c04e9decd14a",
+   "source_octets": 2463468,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-iles-britanniques",
+   "categorie": "regions",
+   "fichier": "regions/sol-iles-britanniques.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 265466,
+   "sha256": "d72e0cad1b56bc16eb8f535c9f061825f2cef495e1791990a2fc6bdb78ebd661",
+   "source_sha256": "aeb2a8950c47499efac89f3f43124ba8963aa3dfa58da31ee541a5d939aa5ac4",
+   "source_octets": 2585198,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-irlande",
+   "categorie": "regions",
+   "fichier": "regions/sol-irlande.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 243954,
+   "sha256": "b4385931ce8ec5e58c9278326cf6859d28655e0acd39146191c156133ded86c8",
+   "source_sha256": "286116ce250d6f5eb692689529f5b1856a9439648334956390bb7e153596a482",
+   "source_octets": 2647772,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-hemisphere-sud-vert",
+   "categorie": "regions",
+   "fichier": "regions/sol-hemisphere-sud-vert.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 289498,
+   "sha256": "6dca7619a5de702479f43fbf3985ea94a2284db59c44c713f11a5adb8ffead5e",
+   "source_sha256": "e3c90449a8539acfdc28dd7d0a1735fcbecc55946520bfe9f22c74498653542b",
+   "source_octets": 2648723,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-argentine",
+   "categorie": "regions",
+   "fichier": "regions/sol-argentine.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 236692,
+   "sha256": "5321502ec8b45fff4a28dce9050837114b4fcbe8d4f1d997070c272de8ec35cd",
+   "source_sha256": "d971cb5725702acdf8f05352d0dd77920c91306aad1aac9c33349972727bc2e7",
+   "source_octets": 2449783,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-georgie-roumanie",
+   "categorie": "regions",
+   "fichier": "regions/sol-georgie-roumanie.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 200682,
+   "sha256": "b4fba32945f853cbb3403fa642cf06756025f6b3e6f08286d9e15d8dc9957ecd",
+   "source_sha256": "b4fa48233144a3e904776987986b5db7f794f99d54798be0fae9800dd05766c2",
+   "source_octets": 2386094,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-italie",
+   "categorie": "regions",
+   "fichier": "regions/sol-italie.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 250600,
+   "sha256": "59e503ee5142c7ddce7ca90cde9260eb07ecb92dc191dddc81bbe01179c9e25f",
+   "source_sha256": "afc7e6ae1c4d807ccf10ddaeac298039abf79e5317d2a058bb7ede5c7825f459",
+   "source_octets": 2502196,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-mediterranee-v2",
+   "categorie": "regions",
+   "fichier": "regions/sol-mediterranee-v2.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 263620,
+   "sha256": "aec27e5bc43d576ff4f6a33d38878f9b9d2d64c9a7ca0a78c17691aab4b7f29a",
+   "source_sha256": "8ee489d5f555d59f9c682ebcd3ae8858217c878a8cd24c5038f0a71a2381123c",
+   "source_octets": 2592789,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-nord-v2",
+   "categorie": "regions",
+   "fichier": "regions/sol-nord-v2.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 227630,
+   "sha256": "0fe0adb1bad213ff04d560a46284b3dc7c283d28b68951d883715488dda99e1f",
+   "source_sha256": "cd59f5cc72aa226aca859a81ccb02557526ab8d8cbe23460ccc0e5b3f63a69b0",
+   "source_octets": 2455162,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-est-v2",
+   "categorie": "regions",
+   "fichier": "regions/sol-est-v2.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 211838,
+   "sha256": "e1270f02ecc684f15b6e11259ac8dbc3c1ef9743566526c8e6d60f838600ced1",
+   "source_sha256": "1939cdf373389a423cbe73cd254c2953722f565b549bd2823f25c1f33acc5a99",
+   "source_octets": 2481217,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-hemisphere-sud-vert-v2",
+   "categorie": "regions",
+   "fichier": "regions/sol-hemisphere-sud-vert-v2.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 254960,
+   "sha256": "15d50d5e456d5cd25c50f1084aa3467a4a3369cf157951338bbe347ed4176e85",
+   "source_sha256": "1846c6dce36366c5a8eef9fe49018291828f9b800556cec25ae372c151dcdf74",
+   "source_octets": 2531181,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-iles-britanniques-v2",
+   "categorie": "regions",
+   "fichier": "regions/sol-iles-britanniques-v2.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 243990,
+   "sha256": "1b3c6d2a1af9fb1895a17836b8c4a639be04b9c279a7ccbec75a34da39acf096",
+   "source_sha256": "da9010248950ac2840da42d1b8b864f05e3c11afc5f975be00d3f9ab88f98012",
+   "source_octets": 2526269,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sol-italie-v2",
+   "categorie": "regions",
+   "fichier": "regions/sol-italie-v2.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 284556,
+   "sha256": "2fdee7eca7c3c4b72e5a26593c230d7c2930b5cb49cd6a22b5ce90c6dbb8d767",
+   "source_sha256": "e3f2ad33f71569391e9eb4ae38f4dcc8764d73b857a65ec4c61fd84d7928ec12",
+   "source_octets": 2717724,
+   "repli": "sol-sud-ouest",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "fiche-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "comp-championnat",
+   "categorie": "competitions",
+   "fichier": "competitions/comp-championnat.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 260156,
+   "sha256": "177b960602a00a658bf161c228b80b735817c7ed5574c25f5c7fab565a4373c3",
+   "source_sha256": "1ad242bd8511be483a10a5f5a7b1a710fd78a9166cfb54695d23b7bae4bd1ca8",
+   "source_octets": 2463939,
+   "repli": "comp-championnat",
+   "etiquettes": {
+    "ecrans": [
+     "competitions",
+     "calendrier"
+    ],
+    "resultat": "neutre",
+    "competition_type": "championnat"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "comp-coupe-europe",
+   "categorie": "competitions",
+   "fichier": "competitions/comp-coupe-europe.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 185916,
+   "sha256": "c695a0c615e96155e6649792c128153aaf31511b876e8b601c6f957149673293",
+   "source_sha256": "41409cf311678eea9a1731f36e404d017cf2a94e2032209842f2338d10a08751",
+   "source_octets": 2227084,
+   "repli": "comp-championnat",
+   "etiquettes": {
+    "ecrans": [
+     "competitions",
+     "calendrier"
+    ],
+    "resultat": "neutre",
+    "competition_type": "coupe-europe"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "comp-coupe-nationale",
+   "categorie": "competitions",
+   "fichier": "competitions/comp-coupe-nationale.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 145850,
+   "sha256": "70ef8b9479dc54a296841c2a41ba55d29819570ac0e8d01db5e3e9837a81d62f",
+   "source_sha256": "347708d90e57c7f364a0c7c4f3b9eabc7f50ad244492dbe82c84b13d560eca3c",
+   "source_octets": 2042002,
+   "repli": "comp-championnat",
+   "etiquettes": {
+    "ecrans": [
+     "competitions",
+     "calendrier"
+    ],
+    "resultat": "neutre",
+    "competition_type": "coupe-nationale"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "comp-phases-de-poules",
+   "categorie": "competitions",
+   "fichier": "competitions/comp-phases-de-poules.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 185616,
+   "sha256": "c44af6e07ed19bd4f44a8cef1a838701a58ccf3a1abcf30e852283086ddc1a31",
+   "source_sha256": "0e552b7ea04e1737dd8333205c9d2f77e49297ea3c41861231b616a4fe5cce92",
+   "source_octets": 2256068,
+   "repli": "comp-championnat",
+   "etiquettes": {
+    "ecrans": [
+     "competitions",
+     "calendrier"
+    ],
+    "resultat": "neutre",
+    "competition_type": "phases-de-poules"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "comp-barrages",
+   "categorie": "competitions",
+   "fichier": "competitions/comp-barrages.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 187752,
+   "sha256": "639af87235bb39ad9f169a793b5c7aa6f21e404ad395284c2f8e28fd6a77f0a1",
+   "source_sha256": "1c3b52c6260ba8306324454837df703191365323faa219a093301578a18ef3cf",
+   "source_octets": 2294653,
+   "repli": "comp-championnat",
+   "etiquettes": {
+    "ecrans": [
+     "competitions",
+     "calendrier"
+    ],
+    "resultat": "neutre",
+    "competition_type": "barrages"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "comp-finale",
+   "categorie": "competitions",
+   "fichier": "competitions/comp-finale.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 136682,
+   "sha256": "1ed3db86a01c58291ed27a3b1997796d1ea651f1940ba6fed2fb7722981c9325",
+   "source_sha256": "2ff3a745b0606f85ec2cbbda68ebe0f817677f319887df5844520000e9cbfd60",
+   "source_octets": 1988152,
+   "repli": "comp-championnat",
+   "etiquettes": {
+    "ecrans": [
+     "competitions",
+     "calendrier"
+    ],
+    "resultat": "neutre",
+    "competition_type": "finale"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "comp-tournoi-nations",
+   "categorie": "competitions",
+   "fichier": "competitions/comp-tournoi-nations.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 212094,
+   "sha256": "d1a033e9022b28bda3b8cce56f7d9f9b228184d4f5c1f0828ae2f94435a8300b",
+   "source_sha256": "245107b8969713ac73e0a32ade830a8a4f9ff7afae9abfadeaea68784ed0c8d8",
+   "source_octets": 2321450,
+   "repli": "comp-championnat",
+   "etiquettes": {
+    "ecrans": [
+     "competitions",
+     "calendrier"
+    ],
+    "resultat": "neutre",
+    "competition_type": "tournoi-nations"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "comp-coupe-du-monde",
+   "categorie": "competitions",
+   "fichier": "competitions/comp-coupe-du-monde.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 253620,
+   "sha256": "49385e974d0b073fd149b3a6ce23aa626bf4cf3f0db6c959fee651cc677e01c6",
+   "source_sha256": "c6ef3e0b782a5c3675bf16ffb7cf8baf044941068dc698748fbdbec61d21b133",
+   "source_octets": 2453683,
+   "repli": "comp-championnat",
+   "etiquettes": {
+    "ecrans": [
+     "competitions",
+     "calendrier"
+    ],
+    "resultat": "neutre",
+    "competition_type": "coupe-du-monde"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "club-centre-entrainement-niveau-1",
+   "categorie": "infrastructures",
+   "fichier": "infrastructures/club-centre-entrainement-niveau-1.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 258662,
+   "sha256": "6cfe6a075b631ffd4b921eefe2ba29307cf4d3a96c93d680e1ac9fec940d02d0",
+   "source_sha256": "e7e68d2aa538de70586b2c86574abc42018655486947ae3bafba75b8796d7945",
+   "source_octets": 2528576,
+   "repli": "club-centre-entrainement-niveau-2",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "infrastructures"
+    ],
+    "moment": "jour",
+    "resultat": "neutre",
+    "niveau_infrastructure": 1
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "club-centre-entrainement-niveau-2",
+   "categorie": "infrastructures",
+   "fichier": "infrastructures/club-centre-entrainement-niveau-2.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 276404,
+   "sha256": "d412859a71987baedc5caa6735fb5e3333c78026ff25a8e7c838d449a77e6b4b",
+   "source_sha256": "12a8ce591cc05fd7a34d6027cf66ab4ba5a6eef70a04ab49e15948869b505ef2",
+   "source_octets": 2405854,
+   "repli": "club-centre-entrainement-niveau-2",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "infrastructures"
+    ],
+    "moment": "jour",
+    "resultat": "neutre",
+    "niveau_infrastructure": 2
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "club-centre-entrainement-niveau-3",
+   "categorie": "infrastructures",
+   "fichier": "infrastructures/club-centre-entrainement-niveau-3.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 275512,
+   "sha256": "273bc80f2be409a4b67bcf08168837b5413d9329b6858535b2019f0d92fc4395",
+   "source_sha256": "fcd6c915af70f1320bc4a035252a9aa649e98958f38ed22cc3e12bafea457bd7",
+   "source_octets": 2526831,
+   "repli": "club-centre-entrainement-niveau-2",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "infrastructures"
+    ],
+    "moment": "jour",
+    "resultat": "neutre",
+    "niveau_infrastructure": 3
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "club-centre-entrainement-niveau-4",
+   "categorie": "infrastructures",
+   "fichier": "infrastructures/club-centre-entrainement-niveau-4.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 268250,
+   "sha256": "cab9bab2330297ccea13dddcd3a38a9bf7af2d6f88447d3a03bfc2ab336d9d59",
+   "source_sha256": "ce8d8e90ac11438fc95a143775d85e805fc3ce2ded7215a2c7c2667d816b9ca0",
+   "source_octets": 2523309,
+   "repli": "club-centre-entrainement-niveau-2",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "infrastructures"
+    ],
+    "moment": "jour",
+    "resultat": "neutre",
+    "niveau_infrastructure": 4
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "ceremonie-remise-trophee",
+   "categorie": "ceremonies",
+   "fichier": "ceremonies/ceremonie-remise-trophee.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 124328,
+   "sha256": "ea519274a910382430594e97fc12f0ac858210f8e1a9908d8dab0fcad0375341",
+   "source_sha256": "a4acf8b1937befaddb8e349dcab326844a30d7cee35b2b6c25a967be9c953ffe",
+   "source_octets": 2073150,
+   "repli": "ceremonie-remise-trophee",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "palmares",
+     "match"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "club-salle-recuperation-bains",
+   "categorie": "club",
+   "fichier": "club/club-salle-recuperation-bains.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 203196,
+   "sha256": "59754bb12fe7a546cfbce3f04a23c75bc98a1d5f5ab28718b5ec4fff331db518",
+   "source_sha256": "01d9cdf6e5f8007b466d3c447855ec34bd859280d48328bbf6125543f0125112",
+   "source_octets": 2423426,
+   "repli": "ceremonie-remise-trophee",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "infrastructures"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "presse-journaliste",
+   "categorie": "portraits",
+   "fichier": "portraits/presse-journaliste.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 49424,
+   "sha256": "6103ab51b5c1bea09a35567a88f88d9abc1b0322729842f7f37200b077ea2c1c",
+   "source_sha256": "ad26576a0346c66bc7e4432b2c1edeb08f1772d16ce1bfb3295f5ba96c53d8e7",
+   "source_octets": 803331,
+   "repli": "ceremonie-remise-trophee",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "presse-journaliste"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
   }
  ]
 }
