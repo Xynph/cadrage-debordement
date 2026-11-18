@@ -44,6 +44,26 @@ var game_clock := Callable()
 const REACTION_WINDOW_MS := 350
 ## Importance d'une réaction : essai > transformation > tentative manquée > sifflets de pénalité.
 const REACTION_PRIORITY := {"stadium-try": 4, "stadium-goal": 3, "stadium-miss": 2, "crowd-whistle": 1}
+## Clameur (19/11/2026) : une seconde couche de l'ambiance, plus aiguë, dont le gain suit l'intensité
+## de la foule (match_foule.gd) : rumeur au repos, enfle dans les 22 mètres, explose à l'essai, retombe.
+## La couche d'ambiance d'origine (_bed) garde exactement son gain.
+const Foule = preload("res://match_foule.gd")
+const CLAMEUR_PITCH := 1.18
+## Sifflet de l'arbitre à chaque arrêt de jeu : joué seulement si ce son existe dans les ressources.
+## Aucun n'existe au 19/11/2026 (crowd-whistle.wav est un sifflet de foule) : l'arrêt est alors
+## seulement noté dans la trace (« arret-sans-sifflet »).
+const SIFFLET_ARBITRE := "res://audio/assets/referee-whistle.wav"
+const TRACE_MAX := 64
+var _clameur: AudioStreamPlayer
+var _sifflet: AudioStreamPlayer
+var _clameur_gain := 0.0
+## Foule suivie : celle de la vue 3D (régie des temps forts, suivre_foule) ; sinon celle du direct
+## d'origine, nourrie par observe_model.
+var _foule_vue: Foule
+var _foule_direct: Foule = Foule.new()
+## Sons décidés depuis la dernière lecture (etat_foule) : réactions et arrêts, même son coupé
+## (le match filmé tourne sans son).
+var _trace_sons: Array[String] = []
 var _signature := ""
 var _history: Array[String] = []
 var _seen: Dictionary = {}
@@ -86,6 +106,16 @@ func setup(app: Control) -> bool:
 	bed_stream.loop_begin = 0
 	bed_stream.loop_end = bed_stream.data.size() / (4 if bed_stream.stereo else 2)
 	_bed.stream = bed_stream
+	_clameur = _player("StadiumClameur", "Stade")
+	_clameur.stream = bed_stream
+	_clameur.pitch_scale = CLAMEUR_PITCH
+	_clameur.volume_db = -80.0
+	_sifflet = _player("RefereeWhistle", "Stade")
+	if ResourceLoader.exists(SIFFLET_ARBITRE) or FileAccess.file_exists(SIFFLET_ARBITRE):
+		var sifflet: AudioStreamWAV = AudioStreamWAV.load_from_file(SIFFLET_ARBITRE) if FileAccess.file_exists(SIFFLET_ARBITRE) else ResourceLoader.load(SIFFLET_ARBITRE) as AudioStreamWAV
+		if sifflet != null:
+			_streams["referee-whistle"] = sifflet
+	_brancher_foule(_foule_direct)
 	preferences.changed.connect(apply_preferences)
 	preferences.error_changed.connect(_preference_error)
 	apply_preferences()
@@ -131,8 +161,11 @@ func apply_preferences() -> void:
 	if not _profile_ready or preferences.get_value("stadium_volume") == 0 or not preferences.get_flag("match_sounds"):
 		_bed.stop()
 		_reaction.stop()
+		_clameur.stop()
+		_sifflet.stop()
 		_bed_gain = 0.0
 		_reaction_gain = 0.0
+		_clameur_gain = 0.0
 
 func _node_added(node: Node) -> void:
 	if node is BaseButton:
@@ -209,7 +242,62 @@ func set_presenting(value: bool) -> void:
 ## « team » : camp (0 domicile, 1 extérieur) qui marque, tire ou obtient la pénalité ; -1 si inconnu (réaction neutre).
 func play_shown(kind: String, team: int = -1) -> bool:
 	var cue := _crowd_cue(kind, team)
+	if not cue.is_empty():
+		_tracer(cue.id)
 	return not cue.is_empty() and _play_reaction(cue.id, cue.mood)
+
+## Foule de la vue 3D (match_view.gd `foule`) : l'intensité de la clameur et les sifflets d'arrêt
+## suivent alors les images montrées. null : retour à la foule du direct d'origine.
+func suivre_foule(foule: Foule) -> void:
+	if foule == _foule_vue:
+		return
+	# Une foule qui n'est plus suivie peut encore émettre : _arret_de_jeu l'ignore.
+	_foule_vue = foule
+	if foule != null:
+		_brancher_foule(foule)
+
+func _brancher_foule(foule: Foule) -> void:
+	var reaction := _arret_de_jeu.bind(foule)
+	if not foule.arret.is_connected(reaction):
+		foule.arret.connect(reaction)
+
+## Foule qui pilote le son : celle de la vue quand une régie l'a confiée, sinon celle du direct.
+func foule_active() -> Foule:
+	return _foule_vue if _foule_vue != null else _foule_direct
+
+func _arret_de_jeu(_kind: String, foule: Foule) -> void:
+	if foule != foule_active():
+		return
+	if not _streams.has("referee-whistle"):
+		_tracer("arret-sans-sifflet")
+		return
+	_tracer("sifflet-arbitre")
+	if not _registered or not _active or not _profile_ready or preferences.get_value("stadium_volume") == 0 or not preferences.get_flag("match_sounds"):
+		return
+	_sifflet.stop()
+	_sifflet.stream = _streams["referee-whistle"]
+	_sifflet.volume_db = linear_to_db(0.55 if _voice_active else 0.8)
+	_sifflet.play()
+	cue_played.emit("referee-whistle")
+
+func _tracer(id: String) -> void:
+	_trace_sons.append(id)
+	if _trace_sons.size() > TRACE_MAX:
+		_trace_sons.remove_at(0)
+
+## Trace vérifiable (match filmé) : intensité de la foule (0 à 1), part du public debout (en %),
+## sons décidés depuis la lecture précédente (vidés si `vider`), gain de la clameur.
+func etat_foule(vider: bool = true) -> Dictionary:
+	var etat := foule_active().etat()
+	etat["sons"] = _trace_sons.duplicate()
+	etat["clameur"] = snappedf(_clameur_gain, 0.001)
+	if vider:
+		_trace_sons.clear()
+	return etat
+
+## Gain visé de la clameur pour une intensité : nul à la rumeur du repos, plein à l'essai.
+static func gain_clameur(intensite: float) -> float:
+	return smoothstep(Foule.CALME, Foule.ESSAI, intensite)
 
 ## Foule du stade = camp domicile (0). Essai ou transformation à domicile : montée ; adverse : déception ;
 ## pénalité accordée à l'extérieur (donc contre le domicile) : sifflets. Renvoie {} sans réaction.
@@ -242,6 +330,17 @@ func _process(delta: float) -> void:
 	_reaction.volume_db = linear_to_db(_reaction_gain) if _reaction_gain > 0.0 else -80.0
 	if not enabled and _reaction_gain == 0.0:
 		_reaction.stop()
+	# La foule du direct d'origine avance ici ; celle de la vue avance avec la vue (match_view.gd).
+	if _foule_vue == null:
+		_foule_direct.avancer(delta)
+	var clameur := gain_clameur(foule_active().intensite) * (0.45 if _voice_active else 0.85) if enabled else 0.0
+	# Suit l'intensité (déjà lissée) ; coupe franche quand le stade se tait.
+	_clameur_gain = move_toward(_clameur_gain, clameur, delta / 0.25)
+	if enabled and _clameur_gain > 0.0 and not _clameur.playing:
+		_clameur.play()
+	_clameur.volume_db = linear_to_db(_clameur_gain) if _clameur_gain > 0.0 else -80.0
+	if _clameur_gain == 0.0 and _clameur.playing:
+		_clameur.stop()
 
 func _match_signature(model: Dictionary, live: Dictionary) -> String:
 	var meta: Dictionary = model.get("meta", {})
@@ -282,6 +381,9 @@ func observe_model(model: Dictionary, route: String, command: String = "snapshot
 	var live: Dictionary = model.get("live", {}) if model.get("live") is Dictionary else {}
 	_live_active = not live.is_empty() and not live.get("paused", false) and not live.get("atBreak", false) and not live.get("finished", false)
 	if live.is_empty(): _presenting = false
+	# Foule : celle de la vue est oubliée hors match ; le direct d'origine nourrit la sienne.
+	if live.is_empty(): suivre_foule(null)
+	elif not live.get("direct") is Dictionary: _foule_direct.observer(live)
 	refresh_visibility(route, live_visible)
 	if live.is_empty():
 		_signature = ""
@@ -322,6 +424,7 @@ func observe_model(model: Dictionary, route: String, command: String = "snapshot
 	_history = history
 	_cursor = current
 	if not cue.is_empty():
+		_tracer(cue.id)
 		_play_reaction(cue.id, cue.mood)
 
 func _play_reaction(id: String, mood: String = "joie") -> bool:
@@ -355,7 +458,7 @@ func dispose() -> void:
 		_app_owners.erase(_app.get_instance_id())
 	if is_inside_tree() and get_tree().node_added.is_connected(_node_added):
 		get_tree().node_added.disconnect(_node_added)
-	for node in [_ui, _bed, _reaction]:
+	for node in [_ui, _bed, _reaction, _clameur, _sifflet]:
 		if is_instance_valid(node):
 			node.stop()
 			node.stream = null

@@ -443,6 +443,7 @@ func apply_frame(live: Dictionary) -> void:
 	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours (et à la sortie).
 	arreter_choregraphie()
 	sortie = false
+	foule.observer(live) # Public : l'image montrée (22 mètres, essai, arrêt de jeu).
 	var scene: Dictionary = live.get("scene", {})
 	if scene.is_empty() or not scene.get("players", null) is Array:
 		_clear_presence()
@@ -786,6 +787,7 @@ func set_camera(mode: String) -> void:
 
 
 func _process(delta: float) -> void:
+	_animer_foule(delta) # Le public vit en temps réel, même pendant le ralenti.
 	# Ralenti de l'essai : tout ce que la vue anime avance moins vite (présentation seule).
 	delta *= ralenti
 	if not _pass_plan.is_empty():
@@ -1956,16 +1958,20 @@ func _flush_venue_boxes() -> void:
 	_venue_batches.clear()
 
 
-func _instance_batch(label: String, mesh: Mesh, material: Material, transforms: Array, colors: Array[Color] = []) -> void:
+func _instance_batch(label: String, mesh: Mesh, material: Material, transforms: Array, colors: Array[Color] = [], customs: Array[Color] = []) -> void:
 	var batch := MultiMesh.new()
 	batch.transform_format = MultiMesh.TRANSFORM_3D
 	batch.use_colors = not colors.is_empty()
+	# Public animé : phase, tribu, rang et tenue de chaque spectateur (shaders/foule.gdshader).
+	batch.use_custom_data = not customs.is_empty()
 	batch.mesh = mesh
 	batch.instance_count = transforms.size()
 	for i in transforms.size():
 		batch.set_instance_transform(i, transforms[i])
 		if batch.use_colors:
 			batch.set_instance_color(i, colors[i])
+		if batch.use_custom_data:
+			batch.set_instance_custom_data(i, customs[i])
 	var instance := MultiMeshInstance3D.new()
 	instance.name = label
 	instance.multimesh = batch
@@ -1973,20 +1979,28 @@ func _instance_batch(label: String, mesh: Mesh, material: Material, transforms: 
 	# Crowd and seats are subpixel details; avoid their thousands of shadow casters.
 	if label == "VenueSeats" or label.begins_with("Spectators"):
 		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if label.begins_with("Spectators"):
+		# Spectateurs levés et bras en l'air : au-dessus de la boîte calculée sur les places assises.
+		instance.extra_cull_margin = 1.0
 	add_child(instance)
 
 
 func _build_spectators(positions: Array[Vector3], rotations: Array[float], rng: RandomNumberGenerator) -> void:
-	# Static seated silhouettes with heads/shoulders, kept outside sporting presence.
-	# Three bounded MultiMeshes; no per-spectator nodes, physics or animation.
+	# Seated silhouettes with heads/shoulders, kept outside sporting presence.
+	# Four bounded MultiMeshes animated by one shader (shaders/foule.gdshader): no per-spectator
+	# nodes, physics or scripts. Supporters of each club (home majority, away block in one end
+	# terrace) wear its shirt or wave its scarf; the crowd state comes from `foule` (match_foule.gd).
 	var torsos: Array[Transform3D] = []
 	var heads: Array[Transform3D] = []
 	var legs: Array[Transform3D] = []
+	var arms: Array[Transform3D] = []
 	var clothes: Array[Color] = []
 	var skins: Array[Color] = []
 	var trousers: Array[Color] = []
+	var customs: Array[Color] = []
 	var palette := [Color("243238"), Color("567078"), Color("92968c"), Color("b4b2a4"), Color("735252"), Color("46584f"), Color("38464f")]
 	var skin_palette := [Color("c09a7b"), Color("986c50"), Color("d3b398"), Color("77533f")]
+	var tribus := [0, 0, 0]
 	for i in positions.size():
 		var height := rng.randf_range(0.88, 1.12)
 		var basis := Basis().rotated(Vector3.UP, rotations[i])
@@ -1995,10 +2009,28 @@ func _build_spectators(positions: Array[Vector3], rotations: Array[float], rng: 
 		heads.append(Transform3D(basis.scaled(Vector3.ONE * rng.randf_range(0.92, 1.08)), p + Vector3(0, 0.73 * height, 0)))
 		legs.append(Transform3D(basis * Basis.from_scale(Vector3(0.35, 0.18, 0.58)), p + basis * Vector3(0, -0.12, 0.22)))
 		clothes.append(palette[rng.randi_range(0, palette.size() - 1)])
-		skins.append(skin_palette[rng.randi_range(0, skin_palette.size() - 1)])
+		var skin: Color = skin_palette[rng.randi_range(0, skin_palette.size() - 1)]
+		skins.append(skin)
 		trousers.append(Color("293136"))
-	var coloured := _material(Color.WHITE)
-	coloured.vertex_color_use_as_albedo = true
+		# Tribu : bloc des visiteurs dans la tribune d'en-but côté x > 0, ailleurs le club qui reçoit.
+		var tirage := rng.randf()
+		var tribu := 2
+		if p.x > 60.0:
+			tribu = 1 if tirage < FOULE_VISITEURS_BLOC else (0 if tirage < FOULE_VISITEURS_BLOC + 0.2 else 2)
+		else:
+			tribu = 0 if tirage < FOULE_DOMICILE else (1 if tirage < FOULE_DOMICILE + 0.04 else 2)
+		tribus[tribu] += 1
+		var tenue := 0
+		var habit := rng.randf()
+		if tribu < 2:
+			tenue = 1 if habit < FOULE_MAILLOTS else (2 if habit < FOULE_MAILLOTS + FOULE_ECHARPES else 0)
+		if tenue > 0:
+			foule_compte.tenues += 1
+		var echarpe := tenue == 2
+		# Bras levés (deux mains au-dessus de la tête) ou écharpe tendue, repliés au repos par le shader.
+		arms.append(Transform3D(basis * Basis.from_scale(Vector3(0.78, 0.13, 0.04) if echarpe else Vector3(0.5, 0.3, 0.09)),
+			p + Vector3(0, (0.73 + (0.36 if echarpe else 0.3)) * height, 0)))
+		customs.append(Color(rng.randf(), float(tribu), rng.randf(), float(tenue)))
 	var torso := BoxMesh.new()
 	torso.size = Vector3.ONE
 	var head := SphereMesh.new()
@@ -2006,9 +2038,48 @@ func _build_spectators(positions: Array[Vector3], rotations: Array[float], rng: 
 	head.height = 0.32
 	head.radial_segments = 6
 	head.rings = 3
-	_instance_batch("SpectatorsTorso", torso, coloured, torsos, clothes)
-	_instance_batch("SpectatorsHead", head, coloured, heads, skins)
-	_instance_batch("SpectatorsSeatedLegs", torso, coloured, legs, trousers)
+	_foule_matieres.clear()
+	for partie in 4:
+		var matiere := ShaderMaterial.new()
+		matiere.shader = load(FOULE_SHADER) as Shader
+		matiere.set_shader_parameter("partie", partie)
+		_foule_matieres.append(matiere)
+	_instance_batch("SpectatorsTorso", torso, _foule_matieres[0], torsos, clothes, customs)
+	_instance_batch("SpectatorsHead", head, _foule_matieres[1], heads, skins, customs)
+	_instance_batch("SpectatorsSeatedLegs", torso, _foule_matieres[2], legs, trousers, customs)
+	_instance_batch("SpectatorsArms", torso, _foule_matieres[3], arms, skins, customs)
+	var total := maxf(1.0, float(positions.size()))
+	var repartition: Array[float] = [tribus[0] / total, tribus[1] / total, tribus[2] / total]
+	foule.repartition = repartition
+	foule_compte.total = positions.size()
+	foule_compte.domicile = tribus[0]
+	foule_compte.visiteurs = tribus[1]
+	foule_compte.neutres = tribus[2]
+	_animer_foule(0.0)
+
+
+## Public du stade (19/11/2026) : état de la foule tiré des images montrées, rendu par les matières
+## des spectateurs. Parts de tribus et de tenues aux couleurs des clubs.
+const FOULE_SHADER := "res://shaders/foule.gdshader"
+const Foule = preload("res://match_foule.gd")
+const FOULE_DOMICILE := 0.62
+const FOULE_VISITEURS_BLOC := 0.6
+const FOULE_MAILLOTS := 0.32
+const FOULE_ECHARPES := 0.22
+var foule: Foule = Foule.new()
+## Composition du public construite (contrôle, tests) : spectateurs par tribu, tenues aux couleurs.
+var foule_compte := {"total": 0, "domicile": 0, "visiteurs": 0, "neutres": 0, "tenues": 0}
+var _foule_matieres: Array[ShaderMaterial] = []
+
+
+func _animer_foule(delta: float) -> void:
+	foule.avancer(delta)
+	for matiere in _foule_matieres:
+		matiere.set_shader_parameter("debout", Vector3(foule.debout[0], foule.debout[1], foule.debout[2]))
+		matiere.set_shader_parameter("bras", Vector3(foule.bras[0], foule.bras[1], foule.bras[2]))
+		matiere.set_shader_parameter("agitation", foule.intensite)
+		matiere.set_shader_parameter("couleur_domicile", _team_colors[0])
+		matiere.set_shader_parameter("couleur_exterieur", _team_colors[1])
 
 
 ## Lisibilité du ballon à la distance de la caméra TV (lot 5, 16 novembre 2026) : un peu plus

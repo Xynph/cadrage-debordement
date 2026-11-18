@@ -36,6 +36,7 @@ func run() -> void:
 	check(moments.erreurs.is_empty() and is_equal_approx(moments.options.cadence_moments, 0.25), "--cadence-moments lu : " + str(moments.erreurs))
 	check(not outil.lire_options(PackedStringArray(["--sortie", sortie, "--export", carriere, "--cadence-moments", "0.1"])).erreurs.is_empty(), "--cadence-moments trop court refusé")
 	check(outil.ETATS.size() == 4 and outil.ETATS[3] == "sortie", "État « sortie » de la régie nommé dans le rapport")
+	check(outil.foule_de(null) == {}, "Sans gestionnaire sonore : champ foule vide")
 	var faux := GDScript.new()
 	faux.source_code = "extends Node\nvar etat := 1\nvar index := 0\nvar tf := {\"plans\": [{\"kind\": \"try\"}, {\"kind\": \"transformation\"}]}\nvar _live := {}\nvar en_sortie := false\nvar titre := \"\"\nfunc sortie_en_cours() -> bool:\n\treturn en_sortie\nfunc bandeau_affiche() -> Dictionary:\n\treturn {\"visible\": not titre.is_empty(), \"titre\": titre}\n"
 	check(faux.reload() == OK, "Régie factice")
