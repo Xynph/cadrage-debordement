@@ -387,11 +387,14 @@ function factory(){
   const ok=qualifier(s,q)(p),pr=ok?pressure(s,s.club):0;
   return {label:q.label,ok,useful:ok&&pr>0,note:ok?(pr>0?`${q.label} : compte pour tes ${q.target} par feuille, il t'en manque`:`${q.label} : compte pour tes ${q.target} par feuille`):`Hors ${q.label}`};
  }
+ // La feuille de la journée est comptée avant que la journée ne se termine.
+ function beforeWeek(s){if(!s)return;if(!active(s)&&frenchClubs(s).length)initialize(s);
+  if(active(s)&&s.phase==='league'&&!(s.live&&!s.live.finished))recordWeek(s);}
  function installHooks(){
   if(typeof finishRound==='function'&&!finishRound.__jiff){
-   const original=finishRound,wrapped=function(){const s=state();if(s&&!active(s)&&frenchClubs(s).length)initialize(s);
-    // La feuille de la journée est comptée avant que la journée ne se termine.
-    if(s&&active(s)&&s.phase==='league'&&!(s.live&&!s.live.finished))recordWeek(s);
+   // Carrière Monde : la semaine se clôt par finishWeek (world-career.cjs), qui appelle beforeWeek, y compris en
+   // calendrier journalier (advanceDay ne passe pas par finishRound) ; ce crochet ne sert donc qu'aux autres modes.
+   const original=finishRound,wrapped=function(){const s=state();if(s&&!worldActive(s))beforeWeek(s);
     return original.apply(this,arguments);};
    Object.assign(wrapped,original);wrapped.__jiff=true;finishRound=wrapped;
   }
@@ -415,6 +418,6 @@ function factory(){
   }
   return true;
  }
- return {target:TARGET,project,validate,execute,installHooks,initialize,openSeason,getStatus,setStatus,recordWeek,closeSeason,comply,isJiff,isEqp,qualifierFor,deduction,deductionsFor,deductionFor,bonusFor,fineFor,fineEuros,subjectLeagues,quotaLeagues,quota,qualifies,standing,doublon,advise,pressure,recruitBonus,marketBadge,frenchClubs};
+ return {target:TARGET,beforeWeek,project,validate,execute,installHooks,initialize,openSeason,getStatus,setStatus,recordWeek,closeSeason,comply,isJiff,isEqp,qualifierFor,deduction,deductionsFor,deductionFor,bonusFor,fineFor,fineEuros,subjectLeagues,quotaLeagues,quota,qualifies,standing,doublon,advise,pressure,recruitBonus,marketBadge,frenchClubs};
 }
 module.exports={files,commands,factory};
