@@ -1,0 +1,3 @@
+tests/godot-courrier-club.cjs
+tests/godot-immersive08.cjs
+tests/godot-reception-medicale.cjs

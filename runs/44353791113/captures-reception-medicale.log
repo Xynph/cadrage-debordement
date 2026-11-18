@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: Réception médicale : vrai courrier de blessure, tableau et panneau « Concerné » sans coupure
+ok 1 - Réception médicale : vrai courrier de blessure, tableau et panneau « Concerné » sans coupure
+  ---
+  duration_ms: 72825.018177
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 72864.366606
