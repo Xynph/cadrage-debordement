@@ -1,0 +1,55 @@
+::group::tests/mesure-chrono-arrets.cjs
+## Top 14, vrais effectifs, IA contre IA
+{
+ "matchs": 600,
+ "chrono": false,
+ "points": 53.6,
+ "essais": 6.45,
+ "penalitesReussies": 3.73,
+ "penalitesTentees": 4.77,
+ "fautes": 17,
+ "jaunes": 2.36,
+ "rouges": 0.44,
+ "domicile": 72,
+ "actions": 82.8,
+ "dureeMinutes": 81.2,
+ "premiereMiTemps": 41.7,
+ "apresPenalite": "1 min 00",
+ "apresEssai": "1 min 00",
+ "arretsMinutes": {}
+}
+## Styles contre « Équilibré » (XV identiques, consignes figées)
+style | matchs | victoires % | points | encaissés | essais | actions
+equilibre | 200 | 49.8 | 27.5 | 27.5 | 2.86 | 82.7
+large | 200 | 47.5 | 28.7 | 29.3 | 3.14 | 82.8
+conquete | 200 | 57.5 | 26.8 | 24.9 | 3.59 | 83
+occupation | 200 | 47.3 | 23 | 25.2 | 2.05 | 82.4
+## Courbe de niveau (moteur complet)
+complet, club de base 4
+écart | matchs | victoires du plus fort | à domicile | à l’extérieur | points/match | essais/match | écart moyen
++0 | 150 | 51.0 % | 65.3 % | 36.7 % | 52.8 | 6.63 | 12.9
++15 | 150 | 92.0 % | 98.7 % | 85.3 % | 60.1 | 7.71 | 27.0
+## Mené de 8 à la 60e (400 fins de match par consigne)
+consigne | V | N | D | BD | pts | essais + | essais −
+base | 0.28 | 0.01 | 0.71 | 0.3 | 1.46 | 1.31 | 0.7
+defensif | 0.29 | 0.01 | 0.7 | 0.34 | 1.51 | 1.02 | 0.61
+victoire | 0.31 | 0 | 0.69 | 0.31 | 1.55 | 1.54 | 0.66
+TAP version 13
+# Subtest: Mesure du chrono des arrêts de jeu (à la demande en ligne)
+ok 1 - Mesure du chrono des arrêts de jeu (à la demande en ligne)
+  ---
+  duration_ms: 441310.244739
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 441318.454871
+CD_CPU_PROFILE suite=tests/mesure-chrono-arrets.cjs user_s=694.91 system_s=59.30 wall_s=441.35 cpu_pct=170% max_rss_kb=1787876
+PASS tests/mesure-chrono-arrets.cjs (442 s)
+::endgroup::
