@@ -49,7 +49,7 @@ func _ready() -> void:
 func update_frame(value: Dictionary, projection: Dictionary = {}) -> void:
 	model = value
 	data = projection if projection.get("conference") is Dictionary else value.get("clubLife", {}).get("press", {})
-	meeting = projection if projection.has("meetingId") else {}
+	meeting = projection if projection.has("meetingId") or projection.has("postmatch") else {}
 	if meeting.is_empty():
 		var active: Variant = value.get("clubLife", {}).get("clubMeetings", {}).get("scene")
 		if active is Dictionary and active.get("kind") == "press":
@@ -77,7 +77,7 @@ func _available() -> bool:
 	return not meeting.get("completed", false) and data.get("conference", {}).get("available", false) and _questions().size() >= 2 and _questions().size() <= 4
 
 func _context_key(value: Dictionary) -> String:
-	return "%d:%d:%d" % [int(value.get("season", -1)), int(value.get("week", -1)), int(value.get("club", -1))]
+	return "%d:%d:%d:%s" % [int(value.get("season", -1)), int(value.get("week", -1)), int(value.get("club", -1)), str(value.get("slot", ""))]
 
 func _current_outcome() -> Dictionary:
 	var outcome: Variant = data.get("lastOutcome")
@@ -98,7 +98,8 @@ func _render_ui() -> void:
 	var heading := S.G.v(0)
 	S.G.fill(heading)
 	top.add_child(heading)
-	S.heading(heading, model.get("club", {}), "La conférence de presse", "Saison %s · semaine %d" % [SeasonLabel.label(context.get("season", 0)), int(context.get("week", 0)) + 1])
+	var title := "Conférence d’après-match" if meeting.get("postmatch", false) else "La conférence de presse"
+	S.heading(heading, model.get("club", {}), title, "Saison %s · semaine %d" % [SeasonLabel.label(context.get("season", 0)), int(context.get("week", 0)) + 1])
 	if _available(): _render_moment(top)
 	_render_promise_banner(column)
 	if _available(): _render_conference(column)
@@ -396,7 +397,7 @@ func _render_outcome(column: VBoxContainer, outcome: Dictionary) -> void:
 		if before.has(metric) and after.has(metric) and delta.has(metric):
 			list.add_child(S.label("%s : %s → %s (%+.0f)" % [metrics[metric], S.G.n(before[metric]), S.G.n(after[metric]), float(delta[metric])], 14, S.GOLD))
 	for promise: Dictionary in _promises().get("active", []):
-		if "%d:%d:%d" % [int(promise.get("season", -1)), int(promise.get("week", -1)), int(promise.get("club", -1))] != _context: continue
+		if _context_key(promise) != _context: continue
 		var announce: Dictionary = promise.get("announce", {})
 		var line := S.wrap("Promesse publique : « %s » (%s) · supporters %+d · médias %+d · confiance %+d · pression %+d" % [str(promise.get("label", "")), str(promise.get("realismLabel", "")), int(announce.get("fanTrust", 0)), int(announce.get("mediaTrust", 0)), int(announce.get("trust", 0)), int(announce.get("boardPressure", 0))], 14, S.GOLD)
 		line.name = "PressPromiseAnnounced"
