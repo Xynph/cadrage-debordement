@@ -1,0 +1,3 @@
+tests/presse-derby-monde.cjs
+tests/presse-calendrier-fm.cjs
+tests/presse-dilemmes-monde.cjs
