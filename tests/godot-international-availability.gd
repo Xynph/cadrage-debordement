@@ -53,6 +53,19 @@ func run() -> void:
 		root.size = viewport_size
 		await settle()
 	check(app.model.get("international", {}).has("availability"), "Projection réelle des disponibilités exposée")
+	# Presse façon FM (18/11/2026) : plus de conférence à la création ; le rendez-vous d'accueil de la direction
+	# s'ouvre aussitôt. Il est réglé ici comme le ferait le manager avant d'aller au calendrier.
+	for index in 6:
+		var scene: Variant = app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")
+		if not scene is Dictionary: break
+		if not scene.get("completed", false) and scene.get("ackAllowed", false):
+			app._command("club_meeting_ack", {"meetingId":scene.get("id")})
+			check(await ready_for_input(), "Rendez-vous d'accueil lu")
+			scene = app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")
+		if scene is Dictionary and scene.get("completed", false):
+			app._command("club_meeting_continue", {"meetingId":scene.get("id")})
+			check(await ready_for_input(), "Rendez-vous d'accueil terminé")
+		else: break
 	app._navigate("Calendrier")
 	await settle()
 	var summary := app.find_child("InternationalAvailabilityOpen", true, false) as Button

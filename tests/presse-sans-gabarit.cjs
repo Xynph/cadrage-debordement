@@ -50,10 +50,14 @@ test('Tirages : toutes les questions générables, dans toutes les presses', () 
 
 test('Vraie conférence en carrière Monde : questions contextuelles comprises', { timeout: 170000 }, () => {
   const Monde = require('./helpers/carriere-monde.cjs');
+  const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
   const jeu = Monde.ouvrir();
   try {
     let model = jeu.call('new_career', { mode: 'world-champ', club: 0, start: 'premiers-clubs' });
     for (let i = 0; i < 40 && !model.clubLife?.press?.conference?.questions?.length; i++) {
+      // Rentrée façon FM (18/11/2026) : plus de conférence à la création ; les autres rendez-vous sont réglés d'abord.
+      model = settleClubMeetings(model, jeu.call);
+      if (model.clubLife?.press?.conference?.questions?.length) break;
       for (const decision of model?.clubLife?.reprise?.due || []) model = jeu.call('reprise_decide', { decision, option: 'equilibre' });
       const r = jeu.brut('advance_until_event', { fromDate: model.meta.calendarToday });
       if (!r.ok) break;

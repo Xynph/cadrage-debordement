@@ -63,12 +63,13 @@ function capture() {
     for (let i = 0; i < 4; i++) assert.deepEqual(call('snapshot').live.scene, live.scene);
     assert.equal(call('export').meta.exportText, exported);
     assert.equal(fs.readFileSync(savePath, 'utf8'), saved, 'La projection ne modifie ni carrière ni curseur aléatoire');
-    assert.ok(JSON.parse(exported).state.live.events.every(item => !Object.hasOwn(item.scene ?? {}, 'cut')));
+    // Une carrière n'est jamais reprise en plein match (décision du 16/11/2026) : ni l'export ni le profil ne gardent le direct,
+    // donc aucune indication de présentation n'y figure et la carrière repart avant le coup d'envoi.
+    assert.ok((JSON.parse(exported).state.live?.events ?? []).every(item => !Object.hasOwn(item.scene ?? {}, 'cut')));
+    assert.ok(!JSON.parse(saved).store?.['bdt-v1']?.includes?.('\"cut\"'), 'Aucune indication de présentation sauvegardée');
     bridge.close();
     bridge = createBridge(options);
-    const resumed = call('snapshot').live;
-    assert.equal(resumed.paused, true, 'Un match restauré revient en pause');
-    assert.deepEqual(resumed.scene.cut, live.scene.cut, 'La même action se projette depuis une sauvegarde ordinaire');
+    assert.ok(!call('snapshot').live, 'Une carrière rechargée repart avant le coup d\u2019envoi');
     return samples;
   } finally {
     bridge?.close();

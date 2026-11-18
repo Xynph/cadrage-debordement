@@ -76,22 +76,40 @@ construire() {
   done
 }
 
-# tester <branche> : batterie complète ; renvoie 0 si « Validation CI » est vert.
-RUN_URL=""
+# tester <branche> : pousse le lot, ouvre AUSSITÔT la PR du train (échec immédiat si GitHub
+# refuse), puis attend la batterie complète que cette PR déclenche elle-même (tests.yml en
+# pull_request, mêmes règles qu'une PR ordinaire). Repli : workflow_dispatch si aucune exécution
+# n'apparaît. Renvoie 0 si « Validation CI » est vert, 1 si rouge, 2 si impossible.
+RUN_URL=""; TRAIN_PR=""
 tester() {
-  local branche="$1" id="" debut=$SECONDS etat conclusion
+  local branche="$1" id="" debut=$SECONDS etat conclusion liste sha evt="pull_request"
   [[ "$ESSAI" == "true" ]] && { log "(essai) batterie non lancée"; return 1; }
   git push -q -f origin "$branche" || { log "push impossible"; return 2; }
-  gh workflow run tests.yml --repo "$REPO" --ref "$branche" || return 2
-  for _ in $(seq 1 30); do
+  sha=$(git rev-parse HEAD)
+  liste=$(printf '#%s, ' "${INCLUSES[@]}"); liste="${liste%, }"
+  TRAIN_PR=$(gh api "repos/$REPO/pulls" -f title="Train de fusion $STAMP : $liste" -f head="$branche" -f base=main \
+    -f body="Lot du train de fusion $STAMP : $liste. Fusion en rebase (un commit par PR) dès que « Validation CI » est vert. Voir docs/train-de-fusion.md." --jq .number) \
+    || { log "création de la PR du train refusée (réglage « Allow GitHub Actions to create and approve pull requests » ?)"; return 2; }
+  log "PR du train : #$TRAIN_PR"
+  for _ in $(seq 1 18); do
     sleep 10
-    id=$(gh run list --repo "$REPO" --workflow tests.yml --branch "$branche" --event workflow_dispatch \
-      --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+    id=$(gh run list --repo "$REPO" --workflow tests.yml --branch "$branche" --event pull_request \
+      --limit 1 --json databaseId,headSha --jq '.[] | select(.headSha=="'"$sha"'") | .databaseId')
     [[ -n "$id" ]] && break
   done
+  if [[ -z "$id" ]]; then
+    log "aucune batterie déclenchée par la PR : repli sur workflow_dispatch"; evt="workflow_dispatch"
+    gh workflow run tests.yml --repo "$REPO" --ref "$branche" || return 2
+    for _ in $(seq 1 30); do
+      sleep 10
+      id=$(gh run list --repo "$REPO" --workflow tests.yml --branch "$branche" --event workflow_dispatch \
+        --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+      [[ -n "$id" ]] && break
+    done
+  fi
   [[ -n "$id" ]] || { log "exécution introuvable"; return 2; }
   RUN_URL="https://github.com/$REPO/actions/runs/$id"
-  log "batterie : $RUN_URL"
+  log "batterie ($evt) : $RUN_URL"
   while (( SECONDS - debut < ATTENTE_MAX_S )); do
     sleep 60
     etat=$(gh run view "$id" --repo "$REPO" --json status --jq .status)
@@ -102,23 +120,26 @@ tester() {
   [[ "$conclusion" == "success" ]]
 }
 
-# fusionner <branche> : PR train → main, fusion en rebase (un commit par PR), clôture des PR d'origine.
+# fusionner : fusion en rebase de la PR du train (un commit par PR), clôture des PR d'origine.
 fusionner() {
-  local branche="$1" liste corps pr etat sha i
+  local liste pr="$TRAIN_PR" etat="" sha="" i ref
   liste=$(printf '#%s, ' "${INCLUSES[@]}"); liste="${liste%, }"
-  corps="Lot du train de fusion $STAMP : $liste.
-Batterie complète verte sur ce commit : $RUN_URL
-Fusion en rebase : un commit par PR dans main."
-  pr=$(gh api "repos/$REPO/pulls" -f title="Train de fusion $STAMP : $liste" -f head="$branche" -f base=main -f body="$corps" --jq .number) \
-    || { log "création de la PR du train refusée (réglage « Allow GitHub Actions to create and approve pull requests » ?)"; return 1; }
-  for i in $(seq 1 20); do
+  # L'état de fusion se recalcule après la fin de la batterie : attendre « clean » ou « unstable »
+  # (contrôle non obligatoire rouge, fusion permise), jusqu'à 5 min.
+  for i in $(seq 1 30); do
     etat=$(gh api "repos/$REPO/pulls/$pr" --jq '.mergeable_state')
-    [[ "$etat" != "unknown" && -n "$etat" ]] && break
-    sleep 6
+    [[ "$etat" == "clean" || "$etat" == "unstable" || "$etat" == "has_hooks" ]] && break
+    sleep 10
   done
-  sha=$(gh api -X PUT "repos/$REPO/pulls/$pr/merge" -f merge_method=rebase --jq .sha) \
-    || { log "fusion de #$pr refusée (état : $etat)"; commenter "$pr" "Fusion refusée par GitHub (état : $etat)."; return 1; }
+  for i in 1 2 3; do
+    sha=$(gh api -X PUT "repos/$REPO/pulls/$pr/merge" -f merge_method=rebase --jq .sha 2>/tmp/fusion.err) && break
+    sha=""; log "fusion de #$pr refusée (état : $etat) : $(cat /tmp/fusion.err)"; sleep 30
+  done
+  [[ -n "$sha" ]] || { commenter "$pr" "Fusion refusée par GitHub (état : $etat) : $(cat /tmp/fusion.err)"; return 1; }
   log "fusionné : #$pr → $sha"
+  gh api -X PATCH "repos/$REPO/pulls/$pr" -f body="Lot du train de fusion $STAMP : $liste.
+Batterie complète verte : $RUN_URL
+Fusion en rebase : un commit par PR dans main." >/dev/null || true
   for i in "${INCLUSES[@]}"; do
     commenter "$i" "🚂 Fusionné dans main par le train [#$pr](https://github.com/$REPO/pull/$pr) (\`${sha:0:8}\`), batterie complète : $RUN_URL"
     gh api -X PATCH "repos/$REPO/pulls/$i" -f state=closed >/dev/null || true
@@ -143,7 +164,7 @@ while (( ${#LOT[@]} > 0 )); do
   log "lot $essai : ${INCLUSES[*]}"
   tester "$branche"; verdict=$?
   if (( verdict == 0 )); then
-    fusionner "$branche" || { resume "❌ Lot vert mais fusion impossible : ${INCLUSES[*]} (voir le journal)."; git push -q origin --delete "$branche" 2>/dev/null; exit 1; }
+    fusionner || { resume "❌ Lot vert mais fusion impossible : ${INCLUSES[*]} — PR du train #$TRAIN_PR laissée ouverte pour une fusion à la main."; exit 1; }
     break
   fi
   [[ "$ESSAI" != "true" ]] && git push -q origin --delete "$branche" 2>/dev/null

@@ -1,6 +1,6 @@
 extends SceneTree
 ## Promesses publiques dans le vrai jeu (Godot réel + worker réel, carrière Monde au 13 juillet 2026) :
-## conférence d'arrivée, question d'objectif facultative (vraisemblance et réactions affichées, second clic = annuler),
+## conférence d'arrivée (ouverte le lundi de la semaine du 1er match, atteinte en avançant : rien à la création), question d'objectif facultative (vraisemblance et réactions affichées, second clic = annuler),
 ## publication avec la promesse, bilan, bandeau des promesses en cours, puis suivi sur l'écran Club (Objectifs).
 ## CD_PRESSE_CAPTURES=<dossier> : captures 1920×1080 (rendu fenêtré requis).
 const Flow = preload("helpers/contextual_flow.gd")
@@ -83,6 +83,10 @@ func run() -> void:
 	app.timer.stop()
 	await command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"})
 	if is_instance_valid(app.coach): app.coach.close()
+	check(not press().get("conference", {}).get("available", false), "Aucune conférence à la création de la carrière")
+	var arrived: bool = await Flow.reach_press_conference(app, self, check)
+	check(arrived, "La conférence d'arrivée s'ouvre en avançant (" + str(app.model.get("meta", {}).get("calendarToday", "")) + ")")
+	if not arrived: return finish()
 	var conference: Dictionary = press().get("conference", {})
 	var offer: Variant = conference.get("promise")
 	check(offer is Dictionary and not offer.get("options", []).is_empty(), "Question d'objectif proposée à l'arrivée")
