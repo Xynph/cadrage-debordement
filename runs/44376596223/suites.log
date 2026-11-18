@@ -1,0 +1,1284 @@
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/deepen-match.cjs
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/deepen-analytics.cjs
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/native-reference-harness.cjs
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/potential-evolution-season.cjs
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/world-save-runtime.cjs
+::group::tests/aleas-favoris.cjs
+TAP version 13
+# Subtest: Aléa des favoris : styles, complaisance, causerie, rotation européenne
+ok 1 - Aléa des favoris : styles, complaisance, causerie, rotation européenne
+  ---
+  duration_ms: 6294.74359
+  type: 'test'
+  ...
+# Subtest: Résultat rapide : complaisance du favori et rotation européenne
+ok 2 - Résultat rapide : complaisance du favori et rotation européenne
+  ---
+  duration_ms: 6899.623739
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13199.70373
+CD_CPU_PROFILE suite=tests/aleas-favoris.cjs user_s=16.43 system_s=0.85 wall_s=14.10 cpu_pct=122% max_rss_kb=1393412
+PASS tests/aleas-favoris.cjs (14 s)
+::endgroup::
+::group::tests/avis-staff-feuille.cjs
+Staff 45 / 85 : [{"xv":5.333333333333333,"pl":0.6666666666666666,"perte":16.666666666666668},{"xv":0.9166666666666666,"pl":0,"perte":0.6666666666666666}]
+Avis : Ton entraîneur adjoint, Graham Penrose, préfère Arthur NORTH à Pete SLINGSBY au poste de troisième ligne : il fait confiance à l’expérience d’Arthur NORTH. | Ton entraîneur adjoint, Graham Penrose, préfère David BLAKELEY à Linden SIMMONS sur le banc (pilier gauche) : il fait confiance à l’expérience de David BLAKELEY. | Ton entraîneur adjoint, Graham Penrose, préfère Alasdair MCCULLOCH à Arthur BLOOMFIELD au poste de numéro 8 : il fait confiance à l’expérience d’Alasdair MCCULLOCH. | Ton entraîneur de l’attaque, Aleki Afamasaga, préfère Glenn DEARDEN à Isileli ULA au poste d’ailier : il fait confiance à l’expérience de Glenn DEARDEN.
+Perte avant / après 10 matchs : 16.67 5.33
+TAP version 13
+# Subtest: Staff faible : erreurs visibles dans le XV et en première ligne ; staff excellent fiable
+ok 1 - Staff faible : erreurs visibles dans le XV et en première ligne ; staff excellent fiable
+  ---
+  duration_ms: 390.343302
+  type: 'test'
+  ...
+# Subtest: Feuille toujours valide, même choix d’une semaine à l’autre, IA inchangée
+ok 2 - Feuille toujours valide, même choix d’une semaine à l’autre, IA inchangée
+  ---
+  duration_ms: 111.110371
+  type: 'test'
+  ...
+# Subtest: Avis du staff : conseils par poste litigieux, raison et tutoiement ; rien quand le staff est d’accord
+ok 3 - Avis du staff : conseils par poste litigieux, raison et tutoiement ; rien quand le staff est d’accord
+  ---
+  duration_ms: 148.05444
+  type: 'test'
+  ...
+# Subtest: Le staff apprend à connaître ses joueurs : erreurs corrigées avec le temps
+ok 4 - Le staff apprend à connaître ses joueurs : erreurs corrigées avec le temps
+  ---
+  duration_ms: 3214.469894
+  type: 'test'
+  ...
+# Subtest: Moteur versionné : rencontres nouvelles en version 2, anciennes inchangées
+ok 5 - Moteur versionné : rencontres nouvelles en version 2, anciennes inchangées
+  ---
+  duration_ms: 141.718767
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4017.413435
+CD_CPU_PROFILE suite=tests/avis-staff-feuille.cjs user_s=23.68 system_s=1.08 wall_s=19.32 cpu_pct=128% max_rss_kb=1567500
+PASS tests/avis-staff-feuille.cjs (19 s)
+::endgroup::
+::group::tests/bonus-fin-de-match.cjs
+# offensif, 100 fins de match : {"base":{"victoire":0.8,"nul":0,"defaite":0.2,"bonusOffensif":0.45,"bonusDefensif":0.14,"points":3.79,"essaisMarques":0.97,"essaisEncaisses":0.63,"ballonsPerdus":1.57,"actions":19.61},"viser":{"victoire":0.84,"nul":0,"defaite":0.16,"bonusOffensif":0.62,"bonusDefensif":0.11,"points":4.09,"essaisMarques":1.49,"essaisEncaisses":0.6,"ballonsPerdus":1.66,"actions":19.55},"securiser":{"victoire":0.77,"nul":0.02,"defaite":0.21,"bonusOffensif":0.39,"bonusDefensif":0.16,"points":3.67,"essaisMarques":0.74,"essaisEncaisses":0.6,"ballonsPerdus":1.3,"actions":20.27}}
+TAP version 13
+# Subtest: barème du bonus lu dans les classements, situations et choix de l’IA
+ok 1 - barème du bonus lu dans les classements, situations et choix de l’IA
+  ---
+  duration_ms: 26173.241007
+  type: 'test'
+  ...
+# Subtest: consignes de fin de match : gain et risque mesurés
+ok 2 - consignes de fin de match : gain et risque mesurés
+  ---
+  duration_ms: 52724.746331
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 78904.719553
+CD_CPU_PROFILE suite=tests/bonus-fin-de-match.cjs user_s=99.41 system_s=5.24 wall_s=79.29 cpu_pct=131% max_rss_kb=2789528
+PASS tests/bonus-fin-de-match.cjs (79 s)
+::endgroup::
+::group::tests/commotion-hia.cjs
+TAP version 13
+# Subtest: En match : HIA avec remplacement temporaire, sortie définitive, fil du match, sauvegarde valide, déterminisme
+ok 1 - En match : HIA avec remplacement temporaire, sortie définitive, fil du match, sauvegarde valide, déterminisme
+  ---
+  duration_ms: 78568.679974
+  type: 'test'
+  ...
+# Subtest: Après le match : diagnostic, 12 jours jour par jour, feuilles du club et de l’IA, antécédents, satisfaction
+ok 2 - Après le match : diagnostic, 12 jours jour par jour, feuilles du club et de l’IA, antécédents, satisfaction
+  ---
+  duration_ms: 37330.857464
+  type: 'test'
+  ...
+# Subtest: Exception à 7 jours : sans antécédent seulement, avis du spécialiste par le courrier ou d’office pour l’IA
+ok 3 - Exception à 7 jours : sans antécédent seulement, avis du spécialiste par le courrier ou d’office pour l’IA
+  ---
+  duration_ms: 4375.389755
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 120320.070685
+CD_CPU_PROFILE suite=tests/commotion-hia.cjs user_s=128.14 system_s=13.19 wall_s=120.65 cpu_pct=117% max_rss_kb=2971252
+PASS tests/commotion-hia.cjs (121 s)
+::endgroup::
+::group::tests/consignes-individuelles.cjs
+TAP version 13
+# Subtest: Commande set_tactics : désignation, retour au staff, refus et sauvegarde
+ok 1 - Commande set_tactics : désignation, retour au staff, refus et sauvegarde
+  ---
+  duration_ms: 6222.255995
+  type: 'test'
+  ...
+# Subtest: Coup d’envoi : les désignations du manager sont copiées, l’IA garde le choix du staff
+ok 2 - Coup d’envoi : les désignations du manager sont copiées, l’IA garde le choix du staff
+  ---
+  duration_ms: 1524.410021
+  type: 'test'
+  ...
+# Subtest: Buteur de secours : il prend les tirs quand le buteur désigné n’est plus sur le terrain
+ok 3 - Buteur de secours : il prend les tirs quand le buteur désigné n’est plus sur le terrain
+  ---
+  duration_ms: 108.533747
+  type: 'test'
+  ...
+# Subtest: Effets sans tirage : réussite au pied, touche et longueur du jeu au pied suivent le joueur choisi
+ok 4 - Effets sans tirage : réussite au pied, touche et longueur du jeu au pied suivent le joueur choisi
+  ---
+  duration_ms: 122.901797
+  type: 'test'
+  ...
+# Subtest: Délégation identique au calcul d’avant, déterminisme et stats IA contre IA
+ok 5 - Délégation identique au calcul d’avant, déterminisme et stats IA contre IA
+  ---
+  duration_ms: 10734.190773
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18722.789261
+CD_CPU_PROFILE suite=tests/consignes-individuelles.cjs user_s=40.91 system_s=1.71 wall_s=34.23 cpu_pct=124% max_rss_kb=2123420
+PASS tests/consignes-individuelles.cjs (34 s)
+::endgroup::
+::group::tests/frontrow.cjs
+{"passed":true,"checks":["all three specialist roles","next-scrum timing","ten actual playing minutes","cover outside tactical quota","temporary nominated-player lock","uncontested 8-a-side consequences","12-13-14 red-card matrix","return to contested scrums","nominated player already reused","both teams","reload/import during carence","hostile front-row data","version-seven fixture preserved"]}
+CD_CPU_PROFILE suite=tests/frontrow.cjs user_s=1.38 system_s=0.07 wall_s=1.06 cpu_pct=136% max_rss_kb=164344
+PASS tests/frontrow.cjs (1 s)
+::endgroup::
+::group::tests/derbys-monde.cjs
+# mesures derby {"derby":{"pen":20.308333333333334,"cartons":3.6333333333333333,"dom":25.808333333333334,"ext":20.416666666666668},"ordinaire":{"pen":19.141666666666666,"cartons":3.2333333333333334,"dom":26.375,"ext":22.875}}
+# presse {"avant":null,"apres":null,"dispo":false}
+TAP version 13
+# Subtest: Données : rivalités et bornes
+ok 1 - Données : rivalités et bornes
+  ---
+  duration_ms: 1.453613
+  type: 'test'
+  ...
+# Subtest: Détection : rivalité semée dès la première saison
+ok 2 - Détection : rivalité semée dès la première saison
+  ---
+  duration_ms: 0.75903
+  type: 'test'
+  ...
+# Subtest: Match : intensité bornée, mesurée à graine fixe
+ok 3 - Match : intensité bornée, mesurée à graine fixe
+  ---
+  duration_ms: 13999.644913
+  type: 'test'
+  ...
+# Subtest: Retentissement plus fort qu’un match ordinaire
+ok 4 - Retentissement plus fort qu’un match ordinaire
+  ---
+  duration_ms: 159.106001
+  type: 'test'
+  ...
+# Subtest: Presse : conférence de derby contre le rival semé
+ok 5 - Presse : conférence de derby contre le rival semé
+  ---
+  duration_ms: 3900.082548
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18071.918906
+CD_CPU_PROFILE suite=tests/derbys-monde.cjs user_s=34.41 system_s=1.17 wall_s=29.55 cpu_pct=120% max_rss_kb=1613824
+PASS tests/derbys-monde.cjs (30 s)
+::endgroup::
+::group::tests/fatigue-phases-arretees.cjs
+[{"nu":97,"points":"100:97→97 90:92.1→96 80:87.3→95.1 70:82.5→94.1 60:77.6→93.1 50:72.8→92.1 40:67.9→91.2 30:63.1→90.2 20:58.2→89.2 11:53.8→88.4 0:48.5→87.3"},{"nu":89.4,"points":"100:89.4→89.4 90:84.9→88.5 80:80.5→87.6 70:76→86.7 60:71.5→85.8 50:67.1→84.9 40:62.6→84 30:58.1→83.1 20:53.6→82.2 11:49.6→81.4 0:44.7→80.5"},{"nu":88.80000000000001,"points":"100:88.8→88.8 90:84.4→87.9 80:79.9→87 70:75.5→86.1 60:71→85.2 50:66.6→84.4 40:62.2→83.5 30:57.7→82.6 20:53.3→81.7 11:49.3→80.9 0:44.4→79.9"},{"nu":85.5,"points":"100:85.5→85.5 90:81.2→84.6 80:77→83.8 70:72.7→82.9 60:68.4→82.1 50:64.1→81.2 40:59.8→80.4 30:55.6→79.5 20:51.3→78.7 11:47.5→77.9 0:42.8→77"},{"nu":84.6,"points":"100:84.6→84.6 90:80.4→83.8 80:76.1→82.9 70:71.9→82.1 60:67.7→81.2 50:63.4→80.4 40:59.2→79.5 30:55→78.7 20:50.8→77.8 11:47→77.1 0:42.3→76.1"}]
+{"apres":[{"tranche":"0-9","tentatives":371,"reussite":76.3,"probabilite":75.5,"condition":93.2,"but":68.2},{"tranche":"10-19","tentatives":391,"reussite":74.7,"probabilite":74.8,"condition":89.3,"but":67.9},{"tranche":"20-29","tentatives":411,"reussite":72.7,"probabilite":74.7,"condition":84.8,"but":67.4},{"tranche":"30-39","tentatives":425,"reussite":72.5,"probabilite":74.3,"condition":80.3,"but":68},{"tranche":"40-49","tentatives":413,"reussite":69,"probabilite":74.1,"condition":76.2,"but":67.2},{"tranche":"50-59","tentatives":421,"reussite":74.6,"probabilite":74.3,"condition":73.5,"but":67.6},{"tranche":"60-69","tentatives":419,"reussite":74.2,"probabilite":73.1,"condition":73.4,"but":66.7},{"tranche":"70-79","tentatives":407,"reussite":74.9,"probabilite":73.3,"condition":76.7,"but":67.5},{"tranche":"80-89","tentatives":98,"reussite":72.4,"probabilite":73,"condition":78.1,"but":67.5}],"avant":[{"tranche":"0-9","tentatives":181,"reussite":73.5,"probabilite":75,"condition":93.2,"but":66.1},{"tranche":"10-19","tentatives":214,"reussite":75.7,"probabilite":74.1,"condition":88.8,"but":64.8},{"tranche":"20-29","tentatives":209,"reussite":73.2,"probabilite":73.6,"condition":84.8,"but":63.2},{"tranche":"30-39","tentatives":208,"reussite":69.7,"probabilite":72.6,"condition":80.8,"but":62.6},{"tranche":"40-49","tentatives":215,"reussite":66.5,"probabilite":72.2,"condition":77.4,"but":60.7},{"tranche":"50-59","tentatives":206,"reussite":70.4,"probabilite":71.7,"condition":74.8,"but":60.2},{"tranche":"60-69","tentatives":214,"reussite":72.9,"probabilite":70.5,"condition":75.3,"but":59.4},{"tranche":"70-79","tentatives":208,"reussite":74,"probabilite":71.2,"condition":79.7,"but":61.5},{"tranche":"80-89","tentatives":41,"reussite":61,"probabilite":71.8,"condition":83,"but":62.6}],"reussite":[71.7,73.5],"pointsParMatch":[53.4,53.5],"touche":[75.9,75.8]}
+TAP version 13
+# Subtest: Courbe : la compétence au but ne s’effondre plus avec la fatigue ; le jeu courant garde la sienne
+ok 1 - Courbe : la compétence au but ne s’effondre plus avec la fatigue ; le jeu courant garde la sienne
+  ---
+  duration_ms: 112.807957
+  type: 'test'
+  ...
+# Subtest: Réussite au but par tranche de 10 minutes sur 300 matchs IA contre IA : presque stable en fin de match
+not ok 2 - Réussite au but par tranche de 10 minutes sur 300 matchs IA contre IA : presque stable en fin de match
+  ---
+  duration_ms: 18666.922275
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/fatigue-phases-arretees.cjs:56:1'
+  failureType: 'testCodeFailure'
+  error: 'baisse divisée par plus de deux (avant 3.59, après 1.97)'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/fatigue-phases-arretees.cjs:64:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Déterminisme, compatibilité des rencontres commencées et sauvegarde
+ok 3 - Déterminisme, compatibilité des rencontres commencées et sauvegarde
+  ---
+  duration_ms: 3007.825693
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21800.572727
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/fatigue-phases-arretees.cjs user_s=43.33 system_s=1.01 wall_s=37.13 cpu_pct=119% max_rss_kb=1639260
+::error file=tests/fatigue-phases-arretees.cjs::Godot : ECHEC (1), durée 37 s, limite 300s
+::endgroup::
+::group::tests/hierarchie-penalites-monde.cjs
+{"sifflees":16.2,"jeu":10,"attaque":2.6,"melee":2.6,"touche":1,"points":53.9,"essais":6.59,"partPen":19.1,"reussite":77.6}
+{"ecartMoyen":15.1,"favori":82.1,"favoriExterieur":67.5,"surprises":23,"domicile":76.3}
+{"pente":0.161,"terrain":1.33}
+TAP version 13
+# Subtest: Hiérarchie et pénalités sur de vrais effectifs Monde (moteur complet)
+ok 1 - Hiérarchie et pénalités sur de vrais effectifs Monde (moteur complet)
+  ---
+  duration_ms: 23812.616637
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23817.146105
+CD_CPU_PROFILE suite=tests/hierarchie-penalites-monde.cjs user_s=27.78 system_s=1.04 wall_s=24.12 cpu_pct=119% max_rss_kb=1332744
+PASS tests/hierarchie-penalites-monde.cjs (24 s)
+::endgroup::
+::group::tests/japan-quota-card-return.cjs
+{"initial":{"a1":8,"others":7},"red":true,"yellow":true,"beforeReplacement":{"a1":7,"others":6},"replacement":false,"beforeYellowReturn":{"a1":7,"others":6},"afterYellowReturn":{"a1":7,"others":7},"minute":25}
+CD_CPU_PROFILE suite=tests/japan-quota-card-return.cjs user_s=59.97 system_s=1.66 wall_s=53.28 cpu_pct=115% max_rss_kb=2705484
+PASS tests/japan-quota-card-return.cjs (54 s)
+::endgroup::
+::group::tests/jugement-staff-lot2.cjs
+Composition du staff : {"fort":{"ecarts":3,"perte":2,"stable":true},"faible":{"ecarts":5,"perte":5,"stable":true},"reel":{"ecarts":7,"perte":8,"stable":true}}
+TAP version 13
+# Subtest: Composition confiée au staff : proche de l’optimum avec un bon staff, écarts stables avec un staff faible
+ok 1 - Composition confiée au staff : proche de l’optimum avec un bon staff, écarts stables avec un staff faible
+  ---
+  duration_ms: 164.001028
+  type: 'test'
+  ...
+# Subtest: Choix explicites du manager respectés ; IA et matchs anciens inchangés
+ok 2 - Choix explicites du manager respectés ; IA et matchs anciens inchangés
+  ---
+  duration_ms: 2602.678287
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2774.600814
+CD_CPU_PROFILE suite=tests/jugement-staff-lot2.cjs user_s=22.33 system_s=1.04 wall_s=18.19 cpu_pct=128% max_rss_kb=1434792
+PASS tests/jugement-staff-lot2.cjs (18 s)
+::endgroup::
+::group::tests/league-detail.cjs
+{"points":49.91111111111111,"tries":5.711111111111111,"homeWins":0.5777777777777777,"injured":0.07389937106918239,"played":0.45440251572327045}
+TAP version 13
+# Subtest: Estimation : plus de championnats détaillés, jamais plus rapide
+ok 1 - Estimation : plus de championnats détaillés, jamais plus rapide
+  ---
+  duration_ms: 2.12271
+  type: 'test'
+  ...
+# Subtest: Vitesse estimée : seuils en données, 5 étoiles ≤ 3 s, 1 étoile ≥ 15 s par semaine
+ok 2 - Vitesse estimée : seuils en données, 5 étoiles ≤ 3 s, 1 étoile ≥ 15 s par semaine
+  ---
+  duration_ms: 0.379383
+  type: 'test'
+  ...
+# Subtest: Choix automatique selon le PC : déterministe, vise 4 étoiles, pays du club d’abord
+ok 3 - Choix automatique selon le PC : déterministe, vise 4 étoiles, pays du club d’abord
+  ---
+  duration_ms: 0.7015
+  type: 'test'
+  ...
+# Subtest: Banc d’essai : mesure positive et stable
+ok 4 - Banc d’essai : mesure positive et stable
+  ---
+  duration_ms: 76.364861
+  type: 'test'
+  ...
+# Subtest: Carrière Monde : choix enregistré, validé, résultats rapides cohérents sur une saison
+ok 5 - Carrière Monde : choix enregistré, validé, résultats rapides cohérents sur une saison
+  ---
+  duration_ms: 51973.317972
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 52060.001804
+CD_CPU_PROFILE suite=tests/league-detail.cjs user_s=57.29 system_s=5.28 wall_s=52.40 cpu_pct=119% max_rss_kb=2860816
+PASS tests/league-detail.cjs (52 s)
+::endgroup::
+::group::tests/japan-match.cjs
+TAP version 13
+# Subtest: Play-off D1, essai décisif réel à cinq points et preuve de scène
+ok 1 - Play-off D1, essai décisif réel à cinq points et preuve de scène
+  ---
+  duration_ms: 152.019937
+  type: 'test'
+  ...
+# Subtest: Marque décisive IA : une seule scène et userSide inchangé
+ok 2 - Marque décisive IA : une seule scène et userSide inchangé
+  ---
+  duration_ms: 116.881224
+  type: 'test'
+  ...
+# Subtest: Bronze : cinq joueurs puis première position à la sixième tentative
+ok 3 - Bronze : cinq joueurs puis première position à la sixième tentative
+  ---
+  duration_ms: 126.67586
+  type: 'test'
+  ...
+# Subtest: Chronomètre effectif et match complet sans mutation de la durée du règlement
+not ok 4 - Chronomètre effectif et match complet sans mutation de la durée du règlement
+  ---
+  duration_ms: 6273.595642
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/japan-match.cjs:69:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(h.run('l.finished && l.japanExtra && l.stats.reduce((n,s)=>n+s.possession,0)===l.minute'))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/japan-match.cjs:84:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Le nul reste valide en championnat et dans chaque manche de barrage
+ok 5 - Le nul reste valide en championnat et dans chaque manche de barrage
+  ---
+  duration_ms: 270.503787
+  type: 'test'
+  ...
+# Subtest: SRP : prolongation propre à la compétition, sans état japonais
+ok 6 - SRP : prolongation propre à la compétition, sans état japonais
+  ---
+  duration_ms: 131.410865
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7080.422351
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/japan-match.cjs user_s=68.64 system_s=2.21 wall_s=60.04 cpu_pct=118% max_rss_kb=2709684
+::error file=tests/japan-match.cjs::Godot : ECHEC (1), durée 60 s, limite 300s
+::endgroup::
+::group::tests/japan-quota-frontrow.cjs
+TAP version 13
+# Subtest: Retour de jaune et rouge temporisés en première ligne sans dépasser les quotas
+ok 1 - Retour de jaune et rouge temporisés en première ligne sans dépasser les quotas
+  ---
+  duration_ms: 53116.57979
+  type: 'test'
+  ...
+# Subtest: Retour du jaune après carence en première ligne valide au chargement
+ok 2 - Retour du jaune après carence en première ligne valide au chargement
+  ---
+  duration_ms: 123.181829
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 53248.748313
+CD_CPU_PROFILE suite=tests/japan-quota-frontrow.cjs user_s=62.80 system_s=1.64 wall_s=53.56 cpu_pct=120% max_rss_kb=2126780
+PASS tests/japan-quota-frontrow.cjs (54 s)
+::endgroup::
+::group::tests/lnr05-match-simulation-propagation.cjs
+{"passed":true,"fixture":[0,4],"selected":"lnr:696","matchLineupConsumed":true,"saveCompatible":true}
+TAP version 13
+# Subtest: LNR: une rotation valide est utilisée par rugbySimulate, pas seulement stockée
+ok 1 - LNR: une rotation valide est utilisée par rugbySimulate, pas seulement stockée
+  ---
+  duration_ms: 176.802823
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 185.008829
+CD_CPU_PROFILE suite=tests/lnr05-match-simulation-propagation.cjs user_s=0.26 system_s=0.02 wall_s=0.21 cpu_pct=134% max_rss_kb=97292
+PASS tests/lnr05-match-simulation-propagation.cjs (0 s)
+::endgroup::
+::group::tests/lnr05-rest-policy-audit.cjs
+{"passed":true,"observational":true,"seed":0,"mode":"persistent","rounds":29,"assigned":24,"restPlayerWeeks":414,"newInjuries":10,"minutes":33810,"checkpoints":1,"beforeCondition":91.251,"afterTrainingCondition":99.265,"afterMatchCondition":91.125,"beforeLoad":5.89,"afterTrainingLoad":0.869,"afterMatchLoad":6.086,"final":{"condition":91.2796804,"load":5.68,"injured":3},"wins":18}
+TAP version 13
+# Subtest: repos persistant versus repos ponctuel: suivi et veritable reprise native
+ok 1 - repos persistant versus repos ponctuel: suivi et veritable reprise native
+  ---
+  duration_ms: 5303.51835
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5308.044964
+CD_CPU_PROFILE suite=tests/lnr05-rest-policy-audit.cjs user_s=6.54 system_s=0.10 wall_s=5.34 cpu_pct=124% max_rss_kb=171112
+PASS tests/lnr05-rest-policy-audit.cjs (5 s)
+::endgroup::
+::group::tests/jugement-staff.cjs
+Choix du buteur contredits par le meilleur réel : {"faible":{"total":116,"contredits":11,"part":0.09482758620689655,"ecartMoyen":6.591133346290909},"reel":{"total":116,"contredits":3,"part":0.02586206896551724,"ecartMoyen":4.087958345511119},"fort":{"total":116,"contredits":0,"part":0,"ecartMoyen":0},"piedFaible":{"total":116,"contredits":50,"part":0.43103448275862066,"ecartMoyen":3.320059189966396},"piedFort":{"total":116,"contredits":7,"part":0.0603448275862069,"ecartMoyen":0.4705560325714698}}
+Mesures (72 affiches par cas) : {"faible":{"but":0.734,"points":31.1,"encaisses":22.9,"victoires":51,"decisifs":{"bas":"6/11","milieu":"15/16","haut":"6/7"}},"reel":{"but":0.748,"points":31.1,"encaisses":23.2,"victoires":52,"decisifs":{"bas":"9/14","milieu":"16/17","haut":"5/6"}},"fort":{"but":0.757,"points":31.1,"encaisses":23.3,"victoires":52,"decisifs":{"bas":"7/12","milieu":"17/18","haut":"5/6"}}}
+TAP version 13
+# Subtest: Erreur d’estimation : fixe par couple, décroissante avec le niveau, staff réel des clubs
+ok 1 - Erreur d’estimation : fixe par couple, décroissante avec le niveau, staff réel des clubs
+  ---
+  duration_ms: 107.783049
+  type: 'test'
+  ...
+# Subtest: Choix du staff : imparfaits, plus souvent contredits avec un staff faible
+ok 2 - Choix du staff : imparfaits, plus souvent contredits avec un staff faible
+  ---
+  duration_ms: 1333.784405
+  type: 'test'
+  ...
+# Subtest: Fenêtre « Tireurs et lanceur » : avis du staff, estimation, confiance et sang-froid révélé
+ok 3 - Fenêtre « Tireurs et lanceur » : avis du staff, estimation, confiance et sang-froid révélé
+  ---
+  duration_ms: 4377.664799
+  type: 'test'
+  ...
+# Subtest: Confiance : suit la surprise, bornée, revient vers la normale ; sauvegarde et anciennes rencontres
+ok 4 - Confiance : suit la surprise, bornée, revient vers la normale ; sauvegarde et anciennes rencontres
+  ---
+  duration_ms: 3839.891016
+  type: 'test'
+  ...
+# Subtest: Mesures IA contre IA : staff faible contre bon staff, sang-froid dans les moments décisifs
+ok 5 - Mesures IA contre IA : staff faible contre bon staff, sang-froid dans les moments décisifs
+  ---
+  duration_ms: 12260.046278
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21927.772913
+CD_CPU_PROFILE suite=tests/jugement-staff.cjs user_s=42.87 system_s=1.57 wall_s=37.24 cpu_pct=119% max_rss_kb=2038204
+PASS tests/jugement-staff.cjs (38 s)
+::endgroup::
+::group::tests/lnr05-multiseason-strategies.cjs
+{"passed":true,"kind":"observational; minutes are native recorded match minutes","results":[{"seed":0,"mode":"temoin","matches":116,"rotations":0,"recovery":0,"minutes":123700,"years":[{"season":1,"rounds":29,"trained":29,"proposed":0,"starting":{"condition":94.94,"load":0,"injured":0,"wins":0},"ending":{"condition":89.32667489600007,"load":14.7,"injured":0,"wins":7}},{"season":2,"rounds":29,"trained":29,"proposed":0,"starting":{"condition":100,"load":0,"injured":0,"wins":0},"ending":{"condition":84.15600189333333,"load":23.966666666666665,"injured":0,"wins":6}},{"season":3,"rounds":29,"trained":29,"proposed":0,"starting":{"condition":100,"load":0,"injured":0,"wins":0},"ending":{"condition":74.2534796307692,"load":28.884615384615383,"injured":0,"wins":3}},{"season":4,"rounds":29,"trained":29,"proposed":0,"starting":{"condition":100,"load":0,"injured":0,"wins":0},"ending":{"condition":73.17514130434785,"load":28.434782608695652,"injured":0,"wins":1}}]}]}
+TAP version 13
+# Subtest: LNR quatre strategies, quatre saisons, deux graines, entrainement et rencontres natives
+ok 1 - LNR quatre strategies, quatre saisons, deux graines, entrainement et rencontres natives
+  ---
+  duration_ms: 20157.672848
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20162.217561
+CD_CPU_PROFILE suite=tests/lnr05-multiseason-strategies.cjs user_s=23.33 system_s=0.30 wall_s=20.19 cpu_pct=117% max_rss_kb=202924
+PASS tests/lnr05-multiseason-strategies.cjs (20 s)
+::endgroup::
+::group::tests/match-penalite-main.cjs
+{"matchs":1394,"penalitesParMatch":17.48,"jouéesALaMainParMatch":0.81,"part":4.6,"partPresDeLaLigne":10.1,"partMenePresDeLaLigne":16.5,"issues":{"gain":686,"essai":80,"percee":109,"en-avant":99,"gratte":123,"tenu":5},"essais":[4.97,4.92],"points":[49.02,49.33]}
+TAP version 13
+# Subtest: Les nouvelles rencontres connaissent la pénalité jouée à la main ; les anciennes non
+ok 1 - Les nouvelles rencontres connaissent la pénalité jouée à la main ; les anciennes non
+  ---
+  duration_ms: 97.580412
+  type: 'test'
+  ...
+# Subtest: Décision : consigne du manager, contexte, aucun tirage sans pénalité jouée
+ok 2 - Décision : consigne du manager, contexte, aucun tirage sans pénalité jouée
+  ---
+  duration_ms: 30.529579
+  type: 'test'
+  ...
+# Subtest: Effets : essai, gain, percée, ballon perdu, avec les faits du moteur (tirage balayé, aucun seuil codé en dur)
+ok 3 - Effets : essai, gain, percée, ballon perdu, avec les faits du moteur (tirage balayé, aucun seuil codé en dur)
+  ---
+  duration_ms: 3411.948494
+  type: 'test'
+  ...
+# Subtest: Fréquence réaliste et équilibre du jeu sur 1 500 matchs
+ok 4 - Fréquence réaliste et équilibre du jeu sur 1 500 matchs
+  ---
+  duration_ms: 85249.496024
+  type: 'test'
+  ...
+# Subtest: Temps forts : la pénalité jouée à la main est montrée avec son coup de sifflet et sa suite
+ok 5 - Temps forts : la pénalité jouée à la main est montrée avec son coup de sifflet et sa suite
+  ---
+  duration_ms: 3.504664
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 88804.97145
+CD_CPU_PROFILE suite=tests/match-penalite-main.cjs user_s=92.15 system_s=0.41 wall_s=88.83 cpu_pct=104% max_rss_kb=177328
+PASS tests/match-penalite-main.cjs (89 s)
+::endgroup::
+::group::tests/match-rules.cjs
+{"passed":true,"checks":["four returns independent of unused bench","twelve tactical changes","quota reload/import","ten actual playing minutes and halftime","second yellow and twenty-minute boundary","red replacement outside tactical quota","permanent red","AI restoration","hostile rule snapshots","legacy live fixture preservation"]}
+CD_CPU_PROFILE suite=tests/match-rules.cjs user_s=0.89 system_s=0.07 wall_s=0.72 cpu_pct=133% max_rss_kb=151008
+PASS tests/match-rules.cjs (0 s)
+::endgroup::
+::group::tests/match-regles.cjs
+TAP version 13
+# Subtest: Règles du jeu : score, transformations, effectifs et journal cohérents sur 36 matchs complets
+ok 1 - Règles du jeu : score, transformations, effectifs et journal cohérents sur 36 matchs complets
+  ---
+  duration_ms: 7990.705067
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7995.299262
+CD_CPU_PROFILE suite=tests/match-regles.cjs user_s=10.49 system_s=0.47 wall_s=8.28 cpu_pct=132% max_rss_kb=874008
+PASS tests/match-regles.cjs (9 s)
+::endgroup::
+::group::tests/matchflow.cjs
+{"passed":true,"checks":["benefit and original-fault return","single penalty count","most favorable repeated fault","unsafe play excluded","live-ball overrun","penalty-touch exception","pre-horn advantage restart","missed penalty dead after horn","conversion after horn","separate forty-minute halves","playing-time exclusions","overrun/advantage reload and import","hostile flow data","version-nine preservation"]}
+CD_CPU_PROFILE suite=tests/matchflow.cjs user_s=1.36 system_s=0.07 wall_s=1.05 cpu_pct=137% max_rss_kb=159684
+PASS tests/matchflow.cjs (1 s)
+::endgroup::
+::group::tests/meteo-match.cjs
+{"sec":{"enAvant":15.3,"butPct":75.2,"essais":6.89,"essaisPortes":0.9,"melees":8.9,"pieds":3.1,"points":54.6,"condition":74.7,"metresParAvancee":15.3},"pluie":{"enAvant":21.3,"butPct":72.4,"essais":5.61,"essaisPortes":1.38,"melees":12.4,"pieds":6.8,"points":46.9,"condition":75.2,"metresParAvancee":12.8},"vent":{"enAvant":15,"butPct":67.8,"essais":7.04,"essaisPortes":0.97,"melees":8.7,"pieds":2.6,"points":53.5,"condition":74.5,"metresParAvancee":15.4},"chaleur":{"enAvant":15.5,"butPct":75.7,"essais":6.88,"essaisPortes":0.97,"melees":9,"pieds":3.2,"points":54.6,"condition":72.3,"metresParAvancee":15.2},"secAvant":{"enAvant":15.5,"butPct":74.5,"essais":6.77,"essaisPortes":1.01,"melees":9.1,"pieds":3.4,"points":53.4,"condition":74.8,"metresParAvancee":15},"pluieAvant":{"enAvant":19.7,"butPct":72.9,"essais":6.36,"essaisPortes":1.02,"melees":11.1,"pieds":5.2,"points":51.5,"condition":75.1,"metresParAvancee":14.5},"ventAvant":{"enAvant":15.4,"butPct":66.6,"essais":6.89,"essaisPortes":1.06,"melees":9,"pieds":2.5,"points":52.4,"condition":74.7,"metresParAvancee":15.2}}
+TAP version 13
+# Subtest: Sec, pluie forte, grand vent, chaleur : écarts crédibles et modérés (même affiches, même graine)
+ok 1 - Sec, pluie forte, grand vent, chaleur : écarts crédibles et modérés (même affiches, même graine)
+  ---
+  duration_ms: 46894.627898
+  type: 'test'
+  ...
+# Subtest: Météo tirée par le moteur : déterministe, sans tirage supplémentaire, intensités cohérentes avec l’étiquette
+ok 2 - Météo tirée par le moteur : déterministe, sans tirage supplémentaire, intensités cohérentes avec l’étiquette
+  ---
+  duration_ms: 3377.348376
+  type: 'test'
+  ...
+# Subtest: Rencontre commencée sans la version : anciennes règles ; sauvegarde validée
+ok 3 - Rencontre commencée sans la version : anciennes règles ; sauvegarde validée
+  ---
+  duration_ms: 107.903013
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 50393.789454
+CD_CPU_PROFILE suite=tests/meteo-match.cjs user_s=72.83 system_s=1.38 wall_s=65.92 cpu_pct=112% max_rss_kb=2000456
+PASS tests/meteo-match.cjs (66 s)
+::endgroup::
+::group::tests/meteo-vent-periodes.cjs
+TAP version 13
+# Subtest: Rencontre neuve : sens du vent tiré avec la météo, stable, valide
+ok 1 - Rencontre neuve : sens du vent tiré avec la météo, stable, valide
+  ---
+  duration_ms: 109.344184
+  type: 'test'
+  ...
+# Subtest: Vent par période : de dos pour un camp, de face pour l’autre, inversé en seconde période
+ok 2 - Vent par période : de dos pour un camp, de face pour l’autre, inversé en seconde période
+  ---
+  duration_ms: 113.636078
+  type: 'test'
+  ...
+# Subtest: Effets : tir au but et jeu au pied suivent le sens ; moyenne d’origine conservée
+ok 3 - Effets : tir au but et jeu au pied suivent le sens ; moyenne d’origine conservée
+  ---
+  duration_ms: 106.706684
+  type: 'test'
+  ...
+# Subtest: Jeu au pied : longueur moyenne plus courte vent de face que de dos
+ok 4 - Jeu au pied : longueur moyenne plus courte vent de face que de dos
+  ---
+  duration_ms: 156.26499
+  type: 'test'
+  ...
+# Subtest: Annonce du staff : camp favorisé, changement à la mi-temps
+ok 5 - Annonce du staff : camp favorisé, changement à la mi-temps
+  ---
+  duration_ms: 102.248613
+  type: 'test'
+  ...
+# Subtest: Match entier par grand vent : joué jusqu’au bout, sauvegarde valide à chaque période
+ok 6 - Match entier par grand vent : joué jusqu’au bout, sauvegarde valide à chaque période
+  ---
+  duration_ms: 148.299801
+  type: 'test'
+  ...
+# Subtest: Sauvegarde : sens invalide ou version inconnue refusés
+ok 7 - Sauvegarde : sens invalide ou version inconnue refusés
+  ---
+  duration_ms: 105.12451
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 850.666766
+CD_CPU_PROFILE suite=tests/meteo-vent-periodes.cjs user_s=20.79 system_s=0.86 wall_s=16.40 cpu_pct=131% max_rss_kb=1390104
+PASS tests/meteo-vent-periodes.cjs (16 s)
+::endgroup::
+::group::tests/native-position-match.cjs
+{"scenario":"live substitution and exact replay","matchReplayMs":1825,"seed":827381}
+CD_CPU_PROFILE suite=tests/native-position-match.cjs user_s=15.78 system_s=0.84 wall_s=12.42 cpu_pct=133% max_rss_kb=1287596
+PASS tests/native-position-match.cjs (13 s)
+::endgroup::
+::group::tests/opposition.cjs
+{"passed":true,"neutralIdenticalTeams":{"sample":400,"firstSideWinRate":0.5475,"averageTotal":53.45},"unequalTeams":{"sample":800,"strongSideWinRate":0.90125,"draws":5,"upsetsHomeAway":[61,13],"averageTotal":57.92},"checks":["eligible rotation","no attribute mutation","no difficulty modifier in physics","weather-aware tactics","score-aware penalty decisions","paced legal substitutions","user lineup preserved","saved match level locked","legacy match compatibility"]}
+CD_CPU_PROFILE suite=tests/opposition.cjs user_s=29.97 system_s=0.19 wall_s=27.72 cpu_pct=108% max_rss_kb=184980
+PASS tests/opposition.cjs (27 s)
+::endgroup::
+::group::tests/playbook.cjs
+{"passed":true,"checks":["zone boundaries both directions","inheritance and paused editing","persistence","frozen scene plans","actual zone-dependent kicking","scrum possession/gain tradeoffs","lineout possession/gain tradeoffs","short/long restart distance and retention both directions","older fixture preserved"]}
+CD_CPU_PROFILE suite=tests/playbook.cjs user_s=3.53 system_s=0.08 wall_s=2.71 cpu_pct=133% max_rss_kb=153496
+PASS tests/playbook.cjs (3 s)
+::endgroup::
+::group::tests/premium-editorial-matchday.cjs
+Matchday : préférences, séquences, arrêts et mesures réelles OK
+Matchday natif : 8 simulations appariées, adjoint, exports, secondes, pauses et file persistante OK
+Matchday : dernière séquence multi-événements et cinq vitesses linéaires OK
+CD_CPU_PROFILE suite=tests/premium-editorial-matchday.cjs user_s=2.71 system_s=0.09 wall_s=1.84 cpu_pct=152% max_rss_kb=180932
+PASS tests/premium-editorial-matchday.cjs (2 s)
+::endgroup::
+::group::tests/preparation.cjs
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+40 !== 35
+
+    at Object.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/preparation.cjs:16:200)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 40,
+  expected: 35,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/preparation.cjs user_s=0.20 system_s=0.02 wall_s=0.16 cpu_pct=133% max_rss_kb=86064
+::error file=tests/preparation.cjs::Godot : ECHEC (1), durée 0 s, limite 300s
+::endgroup::
+::group::tests/restarts.cjs
+evalmachine.<anonymous>:14
+function saveError(message){throw new Error(message)}
+                            ^
+
+Error: Le fichier contient des données de carrière incohérentes.
+    at saveError (evalmachine.<anonymous>:14:35)
+    at saveCheck (evalmachine.<anonymous>:15:99)
+    at validatePreparation (evalmachine.<anonymous>:238:2)
+    at validateCareer (evalmachine.<anonymous>:423:5153)
+    at createSaveDocument (evalmachine.<anonymous>:508:2)
+    at evalmachine.<anonymous>:1:3
+    at Script.runInContext (node:vm:149:12)
+    at Object.runInContext (node:vm:301:6)
+    at run (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/harness.cjs:3:2759)
+    at valid (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/restarts.cjs:3:34)
+
+Node.js v22.23.4
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/restarts.cjs user_s=0.61 system_s=0.05 wall_s=0.52 cpu_pct=127% max_rss_kb=126608
+::error file=tests/restarts.cjs::Godot : ECHEC (1), durée 1 s, limite 300s
+::endgroup::
+::group::tests/rugby.cjs
+{"passed":true,"simulationSample":250,"averageCombinedScore":58.648,"strongSideWinRate":0.92,"seasons":2,"checks":["23-player eligibility","front-row specialists","substitution limits","tactical re-entry","yellow card expiry","live save restoration","v1 migration incl halftime","training injury cover","same engine AI and live","league and playoffs"]}
+CD_CPU_PROFILE suite=tests/rugby.cjs user_s=39.71 system_s=2.09 wall_s=36.17 cpu_pct=115% max_rss_kb=259448
+PASS tests/rugby.cjs (36 s)
+::endgroup::
+::group::tests/tactical-plans.cjs
+{"passed":true,"games":840,"attack":{"balanced":{"games":80,"advanceRate":0.616,"metresPerAdvance":17.29,"errorsPerGame":7.99,"kicksPerGame":1.16,"pointsPerGame":26.98,"winRate":0.425,"defenderPenaltiesPerGame":7.72,"defenderFinalCondition":70.05},"wide":{"games":80,"advanceRate":0.611,"metresPerAdvance":19.8,"errorsPerGame":9.07,"kicksPerGame":0.72,"pointsPerGame":27.41,"winRate":0.425,"defenderPenaltiesPerGame":7.89,"defenderFinalCondition":70.16},"close":{"games":80,"advanceRate":0.614,"metresPerAdvance":12.4,"errorsPerGame":6.75,"kicksPerGame":0.68,"pointsPerGame":25.14,"winRate":0.3875,"defenderPenaltiesPerGame":8.15,"defenderFinalCondition":70.07},"kicking":{"games":80,"advanceRate":0.619,"metresPerAdvance":13.99,"errorsPerGame":6.38,"kicksPerGame":9.7,"pointsPerGame":25.13,"winRate":0.425,"defenderPenaltiesPerGame":8.74,"defenderFinalCondition":70.36},"wetWide":{"games":80,"advanceRate":0.531,"metresPerAdvance":19.79,"errorsPerGame":10.55,"kicksPerGame":0.63,"pointsPerGame":22.45,"winRate":0.2875,"defenderPenaltiesPerGame":8.32,"defenderFinalCondition":70.16},"wetClose":{"games":80,"advanceRate":0.615,"metresPerAdvance":12.43,"errorsPerGame":6.61,"kicksPerGame":0.68,"pointsPerGame":25.11,"winRate":0.4,"defenderPenaltiesPerGame":8.13,"defenderFinalCondition":70.07}},"defence":{"rush":{"games":180,"advanceRate":0.614,"metresPerAdvance":17.39,"errorsPerGame":8.24,"kicksPerGame":1.1,"pointsPerGame":27.37,"winRate":0.46111111111111114,"defenderPenaltiesPerGame":9.2,"defenderFinalCondition":67.38},"drift":{"games":180,"advanceRate":0.641,"metresPerAdvance":14.29,"errorsPerGame":7.54,"kicksPerGame":1.22,"pointsPerGame":25.08,"winRate":0.40555555555555556,"defenderPenaltiesPerGame":7.61,"defenderFinalCondition":71.91}},"checks":["independent attack/defence choices","paused changes only","portable plans and hostile data","frozen action formations","measured halftime advice","legacy match preservation","840 controlled comparisons","gain/error/kick/pressure/penalty/fitness tradeoffs"]}
+CD_CPU_PROFILE suite=tests/tactical-plans.cjs user_s=20.75 system_s=0.16 wall_s=18.73 cpu_pct=111% max_rss_kb=181640
+PASS tests/tactical-plans.cjs (18 s)
+::endgroup::
+::group::tests/ui05-live-collective.cjs
+{"passed":true,"checks":["real tactics UI render","four native choices and one selected","staff advice and load","responsive theme CSS","no career, save or random mutation on reading","native focus action and save roundtrip","native training and match locks","full and historical career","unchanged native fatigue cost and effects"]}
+CD_CPU_PROFILE suite=tests/ui05-live-collective.cjs user_s=0.34 system_s=0.03 wall_s=0.27 cpu_pct=137% max_rss_kb=106196
+PASS tests/ui05-live-collective.cjs (1 s)
+::endgroup::
+::group::tests/v28-collective-preparation.cjs
+{"passed":true,"comparisons":{"aucune":{"conquete":0,"defence":0,"pied":0,"power":1},"conquete":{"conquete":0.0392,"defence":0,"pied":0,"power":0.98},"defence":{"conquete":0,"defence":0.0245,"pied":0,"power":0.98},"pied":{"conquete":0,"defence":0,"pied":2.94,"power":0.98}},"exploratory":{"aucune":{"matches":20,"points":463,"scrums":106,"scrumsWon":58,"lineouts":185,"lineoutsWon":124,"meanPoints":23.15},"conquete":{"matches":20,"points":418,"scrums":99,"scrumsWon":54,"lineouts":177,"lineoutsWon":130,"meanPoints":20.9},"defence":{"matches":20,"points":410,"scrums":97,"scrumsWon":61,"lineouts":173,"lineoutsWon":118,"meanPoints":20.5},"pied":{"matches":20,"points":466,"scrums":106,"scrumsWon":63,"lineouts":174,"lineoutsWon":116,"meanPoints":23.3}},"cases":["explicit decisions and idempotent cost","AI physical fairness","frozen snapshot","fatigue-dependent intensity","scrum result before/after","defensive edge","open-play kick distance","portable report","legacy running match","hostile snapshots"]}
+CD_CPU_PROFILE suite=tests/v28-collective-preparation.cjs user_s=5.11 system_s=0.12 wall_s=3.48 cpu_pct=150% max_rss_kb=172656
+PASS tests/v28-collective-preparation.cjs (3 s)
+::endgroup::
+::group::tests/v27-physical-load.cjs
+{"passed":true,"cases":["training modes","unique weekly application","planning guard","match minutes","AI recovery","old live saves","validated exports","season rollover"]}
+CD_CPU_PROFILE suite=tests/v27-physical-load.cjs user_s=0.43 system_s=0.03 wall_s=0.34 cpu_pct=134% max_rss_kb=118584
+PASS tests/v27-physical-load.cjs (1 s)
+::endgroup::
+::group::tests/v39-team-dynamics.cjs
+{"passed":true,"checks":["audit and idempotence","medical history","recovery","relationships","leadership","locker meeting","save roundtrip","legacy opt-in","paused match","invalid data"]}
+CD_CPU_PROFILE suite=tests/v39-team-dynamics.cjs user_s=0.53 system_s=0.04 wall_s=0.42 cpu_pct=136% max_rss_kb=114280
+PASS tests/v39-team-dynamics.cjs (0 s)
+::endgroup::
+::group::tests/v70-relations-duos.cjs
+TAP version 13
+# Subtest: V70 : risque de rivalite argumente par satisfaction et meme poste, leader identifiable
+ok 1 - V70 : risque de rivalite argumente par satisfaction et meme poste, leader identifiable
+  ---
+  duration_ms: 6.175318
+  type: 'test'
+  ...
+# Subtest: V70 : mediation effective, verrou hebdomadaire, sauvegarde en JSON
+ok 2 - V70 : mediation effective, verrou hebdomadaire, sauvegarde en JSON
+  ---
+  duration_ms: 0.479572
+  type: 'test'
+  ...
+# Subtest: V70 : mentorat reserve au leader, cout de charge, invalidations
+ok 3 - V70 : mentorat reserve au leader, cout de charge, invalidations
+  ---
+  duration_ms: 0.82256
+  type: 'test'
+  ...
+# Subtest: V70 : rollback exact en cas de sauvegarde impossible
+ok 4 - V70 : rollback exact en cas de sauvegarde impossible
+  ---
+  duration_ms: 0.198691
+  type: 'test'
+  ...
+# Subtest: V70 : rivalite potentielle presente au coup d envoi sans intervention
+ok 5 - V70 : rivalite potentielle presente au coup d envoi sans intervention
+  ---
+  duration_ms: 0.356381
+  type: 'test'
+  ...
+# Subtest: V70 : incidence sur la feuille et le terrain, pas sur banc, plafonds, matchs historiques
+ok 6 - V70 : incidence sur la feuille et le terrain, pas sur banc, plafonds, matchs historiques
+  ---
+  duration_ms: 0.173843
+  type: 'test'
+  ...
+# Subtest: V70 : installation idempotente et vraie incidence dans teamEdge
+ok 7 - V70 : installation idempotente et vraie incidence dans teamEdge
+  ---
+  duration_ms: 0.40442
+  type: 'test'
+  ...
+# Subtest: V70 : moteur natif, export/import et ancienne sauvegarde sans nouveau champ
+ok 8 - V70 : moteur natif, export/import et ancienne sauvegarde sans nouveau champ
+  ---
+  duration_ms: 117.759119
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 137.066637
+CD_CPU_PROFILE suite=tests/v70-relations-duos.cjs user_s=0.18 system_s=0.01 wall_s=0.16 cpu_pct=121% max_rss_kb=90744
+PASS tests/v70-relations-duos.cjs (0 s)
+::endgroup::
+::group::tests/v69-briefing-strategique.cjs
+V69: choix, contexte, moteur, verrouillage, sauvegarde et compatibilite PASS
+CD_CPU_PROFILE suite=tests/v69-briefing-strategique.cjs user_s=0.20 system_s=0.02 wall_s=0.17 cpu_pct=134% max_rss_kb=84396
+PASS tests/v69-briefing-strategique.cjs (0 s)
+::endgroup::
+::group::tests/world-champ-match.cjs
+TAP version 13
+# Subtest: Deux périodes jouées, reprises inversées et import du direct indépendant de S
+ok 1 - Deux périodes jouées, reprises inversées et import du direct indépendant de S
+  ---
+  duration_ms: 129.770274
+  type: 'test'
+  ...
+# Subtest: Essais, puis tirs seulement après la deuxième prolongation
+not ok 2 - Essais, puis tirs seulement après la deuxième prolongation
+  ---
+  duration_ms: 131.894632
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/world-champ-match.cjs:57:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    '21,25' !== '21,21'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '21,21'
+  actual: '21,25'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/world-champ-match.cjs:65:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Six tirs par équipe complets à 6–0, puis horloge et score rugby inchangés
+ok 3 - Six tirs par équipe complets à 6–0, puis horloge et score rugby inchangés
+  ---
+  duration_ms: 115.07987
+  type: 'test'
+  ...
+# Subtest: Mort subite au point 4 avec un tir de chaque côté et preuve de terrain
+ok 4 - Mort subite au point 4 avec un tir de chaque côté et preuve de terrain
+  ---
+  duration_ms: 119.387292
+  type: 'test'
+  ...
+# Subtest: Relecture du match réel à partir de JSON dans les deux périodes
+not ok 5 - Relecture du match réel à partir de JSON dans les deux périodes
+  ---
+  duration_ms: 1223.4102
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/world-champ-match.cjs:100:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/world-champ-match.cjs:121:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Phase et édition exactes
+ok 6 - Phase et édition exactes
+  ---
+  duration_ms: 590.738026
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 4
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2319.37772
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/world-champ-match.cjs user_s=22.38 system_s=1.03 wall_s=17.68 cpu_pct=132% max_rss_kb=1731468
+::error file=tests/world-champ-match.cjs::Godot : ECHEC (1), durée 18 s, limite 300s
+::endgroup::
+::group::tests/world-championnats-suivis.cjs
+TAP version 13
+# Subtest: Tout suivre en détail : même carrière, même flux de hasard que sans réglage
+ok 1 - Tout suivre en détail : même carrière, même flux de hasard que sans réglage
+  ---
+  duration_ms: 23144.311576
+  type: 'test'
+  ...
+# Subtest: Réglage par défaut, déterminisme entre réglages et migration de la version 1
+ok 2 - Réglage par défaut, déterminisme entre réglages et migration de la version 1
+  ---
+  duration_ms: 32208.584742
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 55359.448747
+CD_CPU_PROFILE suite=tests/world-championnats-suivis.cjs user_s=70.23 system_s=2.81 wall_s=55.66 cpu_pct=131% max_rss_kb=2372160
+PASS tests/world-championnats-suivis.cjs (56 s)
+::endgroup::
+::group::tests/world-international-duty.cjs
+TAP version 13
+# Subtest: the club match keeps the selected club and opposition players released to their unions
+ok 1 - the club match keeps the selected club and opposition players released to their unions
+  ---
+  duration_ms: 9547.065106
+  type: 'test'
+  ...
+# Subtest: selection-only career advances over the anchor match and records its AI result
+ok 2 - selection-only career advances over the anchor match and records its AI result
+  ---
+  duration_ms: 2490.290085
+  type: 'test'
+  ...
+# Subtest: the technical anchor can add injury cover without leaving invalid AI roster reports
+ok 3 - the technical anchor can add injury cover without leaving invalid AI roster reports
+  ---
+  duration_ms: 2381.598804
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14428.563325
+CD_CPU_PROFILE suite=tests/world-international-duty.cjs user_s=19.49 system_s=0.86 wall_s=14.73 cpu_pct=138% max_rss_kb=1364856
+PASS tests/world-international-duty.cjs (14 s)
+::endgroup::
+::group::tests/world-nationale-match.cjs
+TAP version 13
+# Subtest: Deux périodes de dix minutes, reprise en sens inverse et score causal conservé
+ok 1 - Deux périodes de dix minutes, reprise en sens inverse et score causal conservé
+  ---
+  duration_ms: 103.90654
+  type: 'test'
+  ...
+# Subtest: Le départage par essais attend la fin de la seconde prolongation
+not ok 2 - Le départage par essais attend la fin de la seconde prolongation
+  ---
+  duration_ms: 108.504027
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/world-nationale-match.cjs:52:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    '21,25' !== '21,21'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '21,21'
+  actual: '21,25'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/world-nationale-match.cjs:61:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Cinq tirs complets, relance avec autres joueurs et validation après sérialisation
+ok 3 - Cinq tirs complets, relance avec autres joueurs et validation après sérialisation
+  ---
+  duration_ms: 91.542607
+  type: 'test'
+  ...
+# Subtest: Horloge de match réelle avec seconde période et reprise depuis JSON
+not ok 4 - Horloge de match réelle avec seconde période et reprise depuis JSON
+  ---
+  duration_ms: 9902.281141
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/world-nationale-match.cjs:82:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(h.run('l.stats.reduce((n,s)=>n+s.possession,0)===l.minute && l.minute>=100'))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/world-nationale-match.cjs:102:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Le contexte est limité aux phases KO de Nationale
+ok 5 - Le contexte est limité aux phases KO de Nationale
+  ---
+  duration_ms: 308.377627
+  type: 'test'
+  ...
+# Subtest: La première série FFR continue jusqu’à cinq tirs par côté même avec un écart acquis
+ok 6 - La première série FFR continue jusqu’à cinq tirs par côté même avec un écart acquis
+  ---
+  duration_ms: 102.239893
+  type: 'test'
+  ...
+# Subtest: Une séance terminée se vérifie avec le profil v3 présent en mémoire
+ok 7 - Une séance terminée se vérifie avec le profil v3 présent en mémoire
+  ---
+  duration_ms: 77.912715
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 5
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10706.4639
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/world-nationale-match.cjs user_s=22.33 system_s=1.46 wall_s=17.67 cpu_pct=134% max_rss_kb=2522328
+::error file=tests/world-nationale-match.cjs::Godot : ECHEC (1), durée 18 s, limite 300s
+::endgroup::
+::group::tests/world-nationale-squad.cjs
+TAP version 13
+# Subtest: La feuille tactique incomplète est réparée avant un vrai coup d’envoi de la carrière Monde
+ok 1 - La feuille tactique incomplète est réparée avant un vrai coup d’envoi de la carrière Monde
+  ---
+  duration_ms: 10180.226309
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10184.824808
+CD_CPU_PROFILE suite=tests/world-nationale-squad.cjs user_s=13.61 system_s=0.59 wall_s=10.50 cpu_pct=135% max_rss_kb=1089416
+PASS tests/world-nationale-squad.cjs (11 s)
+::endgroup::
+::group::tests/world-save.cjs
+TAP version 13
+# Subtest: Monde : 58 clubs et calendrier variable répété délégués, export/import borné
+ok 1 - Monde : 58 clubs et calendrier variable répété délégués, export/import borné
+  ---
+  duration_ms: 554.840948
+  type: 'test'
+  ...
+# Subtest: Monde : marqueurs, identités, limites et doublons restent stricts
+ok 2 - Monde : marqueurs, identités, limites et doublons restent stricts
+  ---
+  duration_ms: 791.373612
+  type: 'test'
+  ...
+# Subtest: Monde : historique européen et contexte live reconnus, validation spécialisée exigée
+ok 3 - Monde : historique européen et contexte live reconnus, validation spécialisée exigée
+  ---
+  duration_ms: 534.87597
+  type: 'test'
+  ...
+# Subtest: Monde : préparation et instantanés utilisent la borne mondiale de semaine
+ok 4 - Monde : préparation et instantanés utilisent la borne mondiale de semaine
+  ---
+  duration_ms: 25.470754
+  type: 'test'
+  ...
+# Subtest: Monde : un contexte de compétition forgé ne peut pas détourner la fin de match
+ok 5 - Monde : un contexte de compétition forgé ne peut pas détourner la fin de match
+  ---
+  duration_ms: 11342.831076
+  type: 'test'
+  ...
+# Subtest: Monde : capacité de 1,5 million de nœuds isolée, tailles et anciennes VMs conservées
+ok 6 - Monde : capacité de 1,5 million de nœuds isolée, tailles et anciennes VMs conservées
+  ---
+  duration_ms: 158.326129
+  type: 'test'
+  ...
+# Subtest: Monde : import/export 16Mio réservé au marqueur mondial exact, anciennes limites 8Mio conservées
+ok 7 - Monde : import/export 16Mio réservé au marqueur mondial exact, anciennes limites 8Mio conservées
+  ---
+  duration_ms: 1383.31587
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14797.974211
+CD_CPU_PROFILE suite=tests/world-save.cjs user_s=18.36 system_s=0.90 wall_s=14.86 cpu_pct=129% max_rss_kb=1131816
+PASS tests/world-save.cjs (15 s)
+::endgroup::
+::group::tests/world-urc-shootout-v5.cjs
+TAP version 13
+# Subtest: v5 URC : six séries même à 6–0, sans avance de l’horloge ni changement du score
+ok 1 - v5 URC : six séries même à 6–0, sans avance de l’horloge ni changement du score
+  ---
+  duration_ms: 131.430261
+  type: 'test'
+  ...
+# Subtest: v5 URC : mort subite par paires, rotation des buteurs à la position 4
+ok 2 - v5 URC : mort subite par paires, rotation des buteurs à la position 4
+  ---
+  duration_ms: 136.926596
+  type: 'test'
+  ...
+# Subtest: Les autres compétitions v5 gardent leur arrêt historique
+ok 3 - Les autres compétitions v5 gardent leur arrêt historique
+  ---
+  duration_ms: 451.261987
+  type: 'test'
+  ...
+# Subtest: v5 URC : nul de phase régulière et buteur exclu
+ok 4 - v5 URC : nul de phase régulière et buteur exclu
+  ---
+  duration_ms: 219.296904
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 947.367171
+CD_CPU_PROFILE suite=tests/world-urc-shootout-v5.cjs user_s=22.74 system_s=0.99 wall_s=18.45 cpu_pct=128% max_rss_kb=1539268
+PASS tests/world-urc-shootout-v5.cjs (18 s)
+::endgroup::
