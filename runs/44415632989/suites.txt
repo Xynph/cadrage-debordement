@@ -1,0 +1,3 @@
+tests/presse-rapide-monde.cjs
+tests/native-press-invitations.cjs
+tests/presse-promesses-monde.cjs
