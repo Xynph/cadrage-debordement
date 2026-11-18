@@ -195,7 +195,7 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 	for filter in filter_row: check(absf(filter.get_global_rect().position.y - filter_row[0].get_global_rect().position.y) < 2.0, "Filtres sur une seule rangée · " + str(filter.name) + " · " + tag)
 	var filter_buttons: Array = list.find_children("Inbox*", "Button", true, false).filter(func(b: Button) -> bool: return str(b.name).begins_with("InboxFolder") or str(b.name).begins_with("InboxActivity_") or str(b.name).begins_with("InboxCategory"))
 	check(filter_buttons.size() == 3, "Trois boutons de filtre (Tous · Non lus · À faire), pas davantage · " + tag + " (" + str(filter_buttons.size()) + ")")
-	check(node("InboxSort") != null and l.encloses(node("InboxSort").get_global_rect()), "Tri en tête de liste · " + tag)
+	check(node("InboxSort") == null and node("InboxMarkAllRead") == null, "Plus de boutons « Tout marquer comme lu » ni de tri au-dessus de la liste · " + tag)
 	var menu := node("InboxSubject") as OptionButton
 	if menu != null:
 		var labels: Array = []
@@ -231,8 +231,12 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 			if item.is_visible_in_tree() and item.get_global_rect().end.y < first_top - 1.0: content_bottom = maxf(content_bottom, item.get_global_rect().end.y)
 		var gap := first_top - content_bottom
 		check(gap <= .25 * d.size.y, "Pas de vide entre le contenu du mail et ses actions · %s (%.0f px sur %.0f)" % [tag, gap, d.size.y])
-		var below := d.end.y - last_bottom
-		check(below <= .25 * d.size.y, "Pas de vide sous les actions · %s (%.0f px sur %.0f)" % [tag, below, d.size.y])
+	# Les réponses viennent juste sous le contenu (demande de Léo, 18/11) : pas de grand vide au-dessus de « TA RÉPONSE ».
+	var reading := node("InboxReadingScroll")
+	var heading := node("InboxReplyHeading")
+	if reading != null and heading != null:
+		var hole := heading.get_global_rect().position.y - reading.get_global_rect().end.y
+		check(hole <= .08 * d.size.y, "Réponses juste sous le contenu · %s (%.0f px sur %.0f)" % [tag, hole, d.size.y])
 	for i in actions.size():
 		check(d.encloses(actions[i].get_global_rect().grow(-1)), "Action dans le mail · " + str(actions[i].name) + " · " + tag)
 		for j in range(i + 1, actions.size()):
@@ -337,11 +341,22 @@ func direction_a(mail: Dictionary) -> void:
 		"corps":"Selon nos informations, deux clubs se renseignent sur le joueur.\n\nLe dossier pèse lourd dans un effectif qui peut difficilement se passer d'un titulaire.\n\nOn publie demain. Un démenti rassurera les tribunes.",
 		"reponses":[{"id":"dementir", "libelle":"Démentir fermement", "effets":"Supporters +2 · Moral −1", "disponible":true, "raison":""},
 			{"id":"laisser", "libelle":"Laisser dire", "effets":"Médias +1", "disponible":true, "raison":""}]}
+	var rivals: Array = []
+	for division: Dictionary in app.model.get("leagues", []):
+		for row: Dictionary in division.get("rows", []):
+			if str(row.get("id")) != str(app.model.club.get("id")): rivals.append(row)
+	if not rivals.is_empty(): press.club = int(rivals[0].id)
 	var medical := {"id":"mail-990002", "type":"kine_bilan", "categorie":"infirmerie", "date":yesterday, "expediteur":"Le kiné du club",
 		"sujet":"Bilan de l'infirmerie", "status":"lu", "ecran":"infirmerie", "arret":false, "corps":"Point sur les soins de la semaine.", "reponses":[]}
 	if not app.model.clubLife.has("clubMail") or not app.model.clubLife.clubMail is Dictionary: app.model.clubLife.clubMail = {"mails":[], "reponses":{}}
 	var box: Dictionary = app.model.clubLife.clubMail
-	box.mails = [press, medical] + (box.get("mails", []) as Array)
+	var same_a := {"id":"mail-990003", "type":"kine_bilan", "categorie":"infirmerie", "date":yesterday, "expediteur":"Le kiné du club",
+		"sujet":"Point des soins", "status":"info", "ecran":"infirmerie", "arret":false, "corps":"Soins de routine.", "reponses":[]}
+	var same_b := same_a.duplicate(true)
+	same_b.id = "mail-990004"
+	var weather := {"id":"mail-990005", "type":"meteo", "categorie":"meteo", "date":today, "expediteur":"L'intendant", "sujet":"Bulletin météo : vent fort",
+		"status":"nouveau", "ecran":"Composition", "arret":true, "corps":"Vent fort annoncé.", "reponses":[{"id":"rien", "libelle":"Rien à changer", "effets":"", "disponible":true, "raison":""}]}
+	box.mails = [weather, same_b, same_a, press, medical] + (box.get("mails", []) as Array)
 	app._reset_reception("mail-990001")
 	app._navigate("Réception", false)
 	await settle(8)
@@ -361,7 +376,21 @@ func direction_a(mail: Dictionary) -> void:
 		check(yesterday_at < position.call("mail-990002"), "Mail de la veille sous « HIER »")
 	var press_row := node("InboxClubMail_mail_990001")
 	check(press_row != null and press_row.find_child("InboxTodoTag", true, false) != null, "Étiquette « À FAIRE · échéance » sur un mail qui attend une réponse")
-	# Gabarit presse : coupure de journal.
+	# Courriers identiques consécutifs : une ligne « ×2 », ouverte sur le plus récent ; l'autre n'a pas de ligne.
+	var twin := node("InboxClubMail_mail_990004")
+	check(twin != null and twin.find_child("InboxRowCount", true, false) != null and int(twin.get_meta("message_count", 1)) == 2, "Deux courriers identiques réunis en une ligne ×2")
+	check(node("InboxClubMail_mail_990003") == null, "Le doublon plus ancien n'a pas sa propre ligne")
+	check(not display_order().has("mail-990003"), "Espace ne vise pas le doublon réuni")
+	# Météo : sa catégorie et son icône, jamais « URGENT ».
+	var weather_message: Array = Reception._messages(app).filter(func(item: Dictionary) -> bool: return str(item.id) == "mail-990005")
+	check(not weather_message.is_empty() and weather_message[0].category == "Météo" and not Reception.Reading.status(weather_message[0], app.model).urgent, "Bulletin météo : catégorie Météo, jamais urgent")
+	var weather_row := node("InboxClubMail_mail_990005")
+	var weather_tag: Label = null if weather_row == null or weather_row.find_child("InboxTodoTag", true, false) == null else weather_row.find_child("InboxTodoTag", true, false).get_child(0) as Label
+	check(weather_tag == null or not weather_tag.text.begins_with("URGENT"), "Pas d'étiquette URGENT sur la météo")
+	check(press_row != null and press_row.find_child("InboxRowHour", true, false) != null, "Heure de réception affichée")
+	# Gabarit presse : coupure de journal ; l'en-tête ne répète pas le nom du journal.
+	var sender := node("InboxSenderName") as Label
+	check(sender != null and sender.text == "Presse", "En-tête du mail de presse : « Presse », sans le nom du journal (" + (sender.text if sender != null else "?") + ")")
 	check(node("InboxPressClipping") != null, "Mail de presse rendu en coupure de journal")
 	var media := node("InboxPressMedia") as Label
 	check(media != null and media.text == "Le quotidien régional", "Nom du média en tête de la coupure")
@@ -376,6 +405,12 @@ func direction_a(mail: Dictionary) -> void:
 	var who := node("InboxConcernedName") as Label
 	check(who != null and who.text == str(star.name), "Mini-fiche du joueur lié")
 	check(node("InboxConcernedOpen") != null and node("InboxDeadline") != null, "Bouton « Ouvrir la fiche » et encadré « ÉCHÉANCE »")
+	check(star.get("marketValue") is int or star.get("marketValue") is float, "Valeur du joueur projetée par le moteur")
+	if not rivals.is_empty(): check(node("InboxConcernedClub") != null, "Club lié : carte cliquable vers sa fiche")
+	var reading_box := node("InboxReadingScroll")
+	var reply_heading := node("InboxReplyHeading")
+	if reading_box != null and reply_heading != null and node("InboxDetail") != null:
+		check(reply_heading.get_global_rect().position.y - reading_box.get_global_rect().end.y <= .08 * node("InboxDetail").size.y, "Coupure de presse : réponses juste dessous")
 	var with_side := node("InboxDetail").size.x if node("InboxDetail") != null else 0.0
 	if side != null and node("InboxDetail") != null: check(node("InboxDetail").get_global_rect().end.x <= side.get_global_rect().position.x, "Panneau à droite du mail, sans chevauchement")
 	# Réponses : cartes et conséquences tirées des effets réels.

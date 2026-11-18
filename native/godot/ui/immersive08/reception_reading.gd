@@ -15,7 +15,7 @@ static func status(message: Dictionary, model: Dictionary) -> Dictionary:
 				return {"key":"waiting", "label":"En attente", "urgent":false, "reason":str(conference.reason)}
 	var mail: Dictionary = message.get("club_mail", {})
 	if not mail.is_empty() and ClubMail.awaiting(model, mail):
-		return {"key":"todo", "label":"Réponse attendue", "urgent":bool(mail.get("arret", false)), "reason":"Choisis une réponse : elle a des conséquences."}
+		return {"key":"todo", "label":"Réponse attendue", "urgent":bool(mail.get("arret", false)) and str(mail.get("categorie", "")) != "meteo", "reason":"Choisis une réponse : elle a des conséquences."}
 	var scene: Dictionary = message.get("scene_invitation", {})
 	if scene.get("status") == "pending":
 		return {"key":"todo", "label":"À faire", "urgent":false, "reason":"Le club t'attend : ouvre l'invitation pour y répondre."}

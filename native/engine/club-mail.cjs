@@ -135,7 +135,7 @@ function factory() {
       if (!F.next || F.next.date !== shift(F.d, 1)) return [];
       const list = F.lineup.filter(p => !(p.injury > 0) && conditionOf(p) < (t.seuils?.condition ?? 72) && conditionOf(p) >= (t.seuils?.conditionMin ?? 45)).sort((a, b) => conditionOf(a) - conditionOf(b) || String(a.id).localeCompare(String(b.id)));
       const p = list[0]; if (!p) return [];
-      return [{ key: F.next.id, player: p.id, vars: { ...playerVars(p), condition: conditionOf(p), adversaire: F.name(F.opponent(F.next)) } }];
+      return [{ key: F.next.id, player: p.id, club: F.opponent(F.next), vars: { ...playerVars(p), condition: conditionOf(p), adversaire: F.name(F.opponent(F.next)) } }];
     },
     moral_groupe(F) {
       if (F.dow !== 2) return [];
@@ -193,7 +193,7 @@ function factory() {
       const top = notes.slice(0, 3), axe = top[0].poids > 0 ? top[0].axe : null;
       const AXES = { conquete: 'la conquête', defence: 'la défense et la discipline', pied: 'le jeu au pied' };
       const res = last.us > last.them ? 'la victoire' : last.us < last.them ? 'la défaite' : 'le nul';
-      return [{ key: last.fixtureId || last.date, vars: { adversaire: F.name(last.opp), score: last.us + '-' + last.them, resultat: res, un: top[0].texte, deux: top[1].texte, trois: top[2].texte, axe: axe ? AXES[axe] : 'notre plan de jeu' } }];
+      return [{ key: last.fixtureId || last.date, club: last.opp, vars: { adversaire: F.name(last.opp), score: last.us + '-' + last.them, resultat: res, un: top[0].texte, deux: top[1].texte, trois: top[2].texte, axe: axe ? AXES[axe] : 'notre plan de jeu' } }];
     },
     // Lundi : le tour du championnat du club (résultats marquants de la semaine passée, série en cours, leader).
     // Un lundi déjà plein (trois mails par jour au plus, souvent le bilan du match et un mail plus prioritaire) le
@@ -225,7 +225,7 @@ function factory() {
       const sum = k => recent.reduce((a, x) => a + (Number(x[k]) || 0), 0);
       const scrum = sum('scrums') ? sum('scrumsWon') / sum('scrums') : 1, touche = sum('lineouts') ? sum('lineoutsWon') / sum('lineouts') : 1, pens = recent.length ? sum('penalties') / recent.length : 0;
       const faiblesse = scrum < 0.7 ? 'leur mêlée, qui recule sous la pression' : touche < 0.8 ? 'leur alignement en touche' : pens >= 10 ? 'leur discipline, ils concèdent beaucoup de pénalités' : 'leur défense sur les extérieurs';
-      return [{ key: F.next.id, vars: { adversaire: F.name(opp), forme: F.form(opp) || 'inconnue', faiblesse } }];
+      return [{ key: F.next.id, club: opp, vars: { adversaire: F.name(opp), forme: F.form(opp) || 'inconnue', faiblesse } }];
     },
     tests_physiques(F) {
       if (F.dow !== 0 || Number(F.d.slice(8)) > 7) return [];
@@ -307,7 +307,7 @@ function factory() {
     article(F, t) {
       const g = F.playedOn(F.yesterday); if (!g) return [];
       const r = g.result, o = F.outcome(r), band = o === 'V' ? 'victoire' : o === 'D' ? 'defaite' : 'nul';
-      return [{ key: g.fixture.id, vars: { adversaire: F.name(r.opp), score: r.us + '-' + r.them, titre: pick(t.variantes?.[band], g.fixture.id) } }];
+      return [{ key: g.fixture.id, club: r.opp, vars: { adversaire: F.name(r.opp), score: r.us + '-' + r.them, titre: pick(t.variantes?.[band], g.fixture.id) } }];
     },
     rumeur(F) {
       if (F.dow !== 5 || !(F.s.round >= 4)) return [];
@@ -322,12 +322,12 @@ function factory() {
     },
     une_derby(F) {
       if (!F.next || F.next.date !== shift(F.d, 4) || !F.derby(F.opponent(F.next))) return [];
-      return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)) } }];
+      return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire: F.name(F.opponent(F.next)) } }];
     },
     affluence(F, t) {
       const g = F.playedOn(F.yesterday); if (!g || !g.result.home) return [];
       const fans = F.s.pressRelations?.fanTrust ?? 50, band = fans >= 60 ? 'plein' : fans >= 40 ? 'moyen' : 'faible';
-      return [{ key: g.fixture.id, vars: { adversaire: F.name(g.result.opp), capacite: euros(Number(F.club.stadiumCapacity) || 0), ambiance: pick(t.variantes?.[band], g.fixture.id) } }];
+      return [{ key: g.fixture.id, club: g.result.opp, vars: { adversaire: F.name(g.result.opp), capacite: euros(Number(F.club.stadiumCapacity) || 0), ambiance: pick(t.variantes?.[band], g.fixture.id) } }];
     },
     sponsor(F) {
       if (F.dow !== 4 || F.season.length < 3) return [];
@@ -360,11 +360,11 @@ function factory() {
     supporters_derby(F, t) {
       const g = F.playedOn(F.yesterday); if (!g || !F.derby(g.result.opp)) return [];
       const o = F.outcome(g.result), band = o === 'V' ? 'victoire' : o === 'D' ? 'defaite' : 'nul';
-      return [{ key: g.fixture.id, vars: { adversaire: F.name(g.result.opp), reaction: pick(t.variantes?.[band], g.fixture.id) } }];
+      return [{ key: g.fixture.id, club: g.result.opp, vars: { adversaire: F.name(g.result.opp), reaction: pick(t.variantes?.[band], g.fixture.id) } }];
     },
     arbitre(F) {
       if (!F.next || F.next.date !== shift(F.d, 3)) return [];
-      return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), profil: pick(D.profilsArbitre, F.next.id) } }];
+      return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire: F.name(F.opponent(F.next)), profil: pick(D.profilsArbitre, F.next.id) } }];
     },
     rivaux(F) {
       const g = F.playedOn(shift(F.d, -2)); if (!g || g.fixture.competitionId !== F.lid) return [];
@@ -455,14 +455,14 @@ function factory() {
       const nous = F.next.homeId === F.s.club ? 0 : 1, pair = [F.next.homeId, F.next.awayId];
       const ciel = String(m.libelle || '').trim();
       const vent = m.ventDos ? ' Le vent soufflera dans le dos de ' + camp(pair[m.ventDos[0]]) + ' en première période' + (m.ventDos[0] === nous ? ' : à nous d’en profiter avant la pause.' : ', puis dans le nôtre après la pause.') : '';
-      return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), quand: F.next.date === F.d ? 'aujourd’hui' : 'demain', ciel: ciel.charAt(0).toUpperCase() + ciel.slice(1), ciel_bas: ciel, vent, conseil: m.conseil || '' } }];
+      return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire: F.name(F.opponent(F.next)), quand: F.next.date === F.d ? 'aujourd’hui' : 'demain', ciel: ciel.charAt(0).toUpperCase() + ciel.slice(1), ciel_bas: ciel, vent, conseil: m.conseil || '' } }];
     },
     pelouse(F) {
       if (!F.next || F.next.date !== shift(F.d, 1) || F.next.homeId !== F.s.club) return [];
       // Pelouse cohérente avec la météo annoncée : pluie (glissante), forte pluie (lourde), sinon la saison.
       const mt = annonceMeteo(F), month = Number(F.d.slice(5, 7)), season = month >= 6 && month <= 8 ? 'ete' : month >= 9 && month <= 11 ? 'automne' : month === 12 || month <= 2 ? 'hiver' : 'printemps';
       const band = mt && mt.pluie === 2 ? 'deluge' : mt && mt.pluie ? 'pluie' : mt && mt.chaleur ? 'ete' : season;
-      return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), pelouse: pick(D.pelouses?.[band], F.next.id) } }];
+      return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire: F.name(F.opponent(F.next)), pelouse: pick(D.pelouses?.[band], F.next.id) } }];
     },
   };
   function promiseOutcome(F, status) {
@@ -556,7 +556,7 @@ function factory() {
       counts[cat] = (counts[cat] || 0) + 1;
       if (c.player) players.add(c.player);
       received++;
-      st.mails.push({ id: 'mail-' + (++st.seq), type: c.type, date: d, f, vars: sanitize(c.vars || {}), player: c.player ? String(c.player) : null, status: (t.reponses || []).length ? 'nouveau' : 'info', choice: null });
+      st.mails.push({ id: 'mail-' + (++st.seq), type: c.type, date: d, f, vars: sanitize(c.vars || {}), player: c.player ? String(c.player) : null, ...(c.club != null && c.club !== '' ? { club: c.club } : {}), status: (t.reponses || []).length ? 'nouveau' : 'info', choice: null });
     }
     remember(s, st, F);
     st.memo.season = s.season;
@@ -640,7 +640,7 @@ function factory() {
         const t = TYPES[m.type] || {}, r = render(m), cat = D.categories?.[t.categorie] || {};
         const chosen = (t.reponses || []).find(x => x.id === m.choice);
         return { id: m.id, type: m.type, date: m.date, categorie: t.categorie || 'moments', categorieLabel: cat.label || 'Club', expediteur: r.expediteur, sujet: r.sujet, corps: r.corps,
-          arret: !!t.arret, ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
+          arret: !!t.arret, ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, club: m.club ?? null, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
           reponses: m.status === 'nouveau' ? (t.reponses || []).map(x => { const raison = unavailable(S, m, x); return { id: x.id, libelle: x.libelle, effets: effectText(x.effets || {}), disponible: !raison, raison, ouvrir: !!x.ouvrir }; }) : [] };
       }),
       reponses, attente: st.mails.filter(m => m.status === 'nouveau').length,
@@ -734,6 +734,7 @@ function factory() {
       check(obj(m) && /^mail-\d{1,9}$/.test(m.id) && !ids.has(m.id) && Number(m.id.slice(5)) <= st.seq && TYPES[m.type] !== undefined && date(m.date) && int(m.f, 0, 20) && obj(m.vars) && (m.player === null || text(m.player, 180)) && STATUS.includes(m.status), 'mail invalide');
       check(m.status === 'repondu' ? (TYPES[m.type].reponses || []).some(x => x.id === m.choice) : m.choice === null, 'réponse enregistrée invalide');
       check(m.verdict === undefined || text(m.verdict, 200), 'verdict invalide');
+      check(m.club === undefined || int(m.club, 0, 1e9) || text(m.club, 40), 'club du mail invalide');
       for (const v of Object.values(m.vars)) check(typeof v === 'number' ? Number.isFinite(v) : text(v, 400), 'variable invalide');
       ids.add(m.id);
     }

@@ -8,7 +8,7 @@ extends RefCounted
 const U = preload("res://ui/management_state.gd")
 
 ## Catégorie du moteur -> rubrique de la Réception (filtres, icônes et couleurs existants).
-const CATEGORY := {"infirmerie":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Recrutement", "presse":"Club", "direction":"Direction", "contrats":"Direction", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Compétitions"}
+const CATEGORY := {"infirmerie":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Recrutement", "presse":"Club", "direction":"Direction", "contrats":"Direction", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Météo"}
 ## Écrans que le courrier et les arrêts peuvent ouvrir (routes de main.gd) ; « infirmerie », « contrats » et
 ## « fiche » sont des vues préparées (Effectif filtré, fiche d'un joueur).
 const ROUTES := ["Composition", "Effectif", "Classements", "Recrutement", "Préparation", "Vestiaire", "Presse", "Club", "Finances", "Formation", "Calendrier", "Réception", "Bureau"]

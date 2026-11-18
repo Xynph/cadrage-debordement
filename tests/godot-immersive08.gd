@@ -533,7 +533,7 @@ func reception() -> void:
 	var expected_total: int = preload("res://ui/immersive08/reception_canvas.gd")._messages(app).size()
 	check(expected_total >= app.model.messages.size(), "La boîte contient au moins chaque message du moteur")
 	list = await expand_threads()
-	check(message_rows(list).size() == expected_total, "Chaque message reçu du moteur est consultable")
+	check(represented(list) == expected_total, "Chaque message reçu du moteur est consultable (lignes « ×N » comprises)")
 	# Direction A (18/11) : plus de bandeau photo ; l'en-tête du mail porte l'icône du service expéditeur.
 	check(app.find_child("InboxDetail", true, false) != null and app.find_child("Art_mail_staff", true, false) == null, "Mail ouvert en grand, sans bandeau photo")
 	await capture("05-reception-2560x1440")
@@ -544,6 +544,7 @@ func reception() -> void:
 	list = app.find_child("InboxMessageRows", true, false)
 	var last: Button = message_rows(list)[message_rows(list).size()-1]
 	var unread: String = last.get_meta("message_text")
+	var last_count := int(last.get_meta("message_count", 1))
 	last.pressed.emit()
 	await settle()
 	check(app.find_child("InboxMessageText", true, false).text == unread, "Un message sélectionné reste lisible dans les non lus")
@@ -551,7 +552,7 @@ func reception() -> void:
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
 	list = await expand_threads()
-	check(message_rows(list).size() == expected_total-1, "Le marquage explicite retire le message des non lus")
+	check(represented(list) == expected_total-last_count, "Le marquage explicite retire le message des non lus")
 	app.find_child("InboxFolder0", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
@@ -583,7 +584,7 @@ func reception() -> void:
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
 	list = await expand_threads()
-	check(message_rows(list).size() == expected_total, "Réouvrir restaure le message dans la boîte")
+	check(represented(list) == expected_total, "Réouvrir restaure le message dans la boîte")
 	# Le changement de dossier ne garantit pas que l'alerte contrat reste le message sélectionné (la boîte
 	# réaffiche aussi les avis du calendrier) : on la rouvre par son texte avant d'activer « ouvrir ».
 	for row: Button in message_rows(list):
@@ -607,6 +608,12 @@ func choose_subject(prefix: String) -> void:
 			await settle()
 			return
 	check(false, "Entrée de menu Sujet introuvable : " + prefix)
+
+## Courriers représentés par la liste : une ligne « ×N » réunit N courriers identiques consécutifs.
+func represented(list: Node) -> int:
+	var total := 0
+	for row: Node in message_rows(list): total += int(row.get_meta("message_count", 1))
+	return total
 
 func message_rows(list: Node) -> Array:
 	return list.get_children().filter(func(node: Node): return node.has_meta("message_id"))

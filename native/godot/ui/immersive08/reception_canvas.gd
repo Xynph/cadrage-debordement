@@ -18,11 +18,11 @@ const Reading = preload("res://ui/immersive08/reception_reading.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
 
 const CATEGORIES = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Compétitions"]
-const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail"}
-const COLORS = {"Staff":C.MINT, "Médical":C.ALERT, "Direction":C.GOLD, "Recrutement":C.BLUE, "Formation":C.MINT, "Compétitions":C.GOLD, "Club":C.MUTED, "Presse":C.GOLD, "Sélections":C.GOLD, "Calendrier":C.GOLD, "Invitation":C.GOLD}
-const ROUTES = {"Staff":"Préparation", "Médical":"Effectif", "Direction":"Club", "Recrutement":"Recrutement", "Formation":"Formation", "Compétitions":"Calendrier", "Club":"Bureau"}
+const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail", "Météo":"cloud"}
+const COLORS = {"Staff":C.MINT, "Médical":C.ALERT, "Direction":C.GOLD, "Recrutement":C.BLUE, "Formation":C.MINT, "Compétitions":C.GOLD, "Club":C.MUTED, "Presse":C.GOLD, "Sélections":C.GOLD, "Calendrier":C.GOLD, "Invitation":C.GOLD, "Météo":C.BLUE}
+const ROUTES = {"Staff":"Préparation", "Médical":"Effectif", "Direction":"Club", "Recrutement":"Recrutement", "Formation":"Formation", "Compétitions":"Calendrier", "Club":"Bureau", "Météo":"Composition"}
 ## Expéditeur affiché dans la liste et en tête du mail ouvert (le moteur ne signe que le courrier du club).
-const SENDERS = {"Staff":"Staff technique", "Médical":"Service médical", "Direction":"Direction du club", "Recrutement":"Cellule de recrutement", "Formation":"Centre de formation", "Compétitions":"Organisateur des compétitions", "Club":"Secrétariat du club"}
+const SENDERS = {"Staff":"Staff technique", "Médical":"Service médical", "Direction":"Direction du club", "Recrutement":"Cellule de recrutement", "Formation":"Centre de formation", "Compétitions":"Organisateur des compétitions", "Club":"Secrétariat du club", "Météo":"Intendance du club"}
 ## Gabarit 2248 × 1124 (coordonnées 2560 × 1440 du jeu) : liste ≈ 25 %, mail au centre, panneau « Concerné » ≈ 21 %.
 const PAGE := Vector2(2248, 1124)
 ## Hauteur minimale du gabarit quand la fenêtre est basse.
@@ -35,9 +35,9 @@ const DETAIL_WIDTH := 2248.0 - 560.0 - 18.0
 ## Marge intérieure du mail et largeur maximale de la colonne de lecture (≈ 700 px de la maquette).
 const PAD := 44.0
 const READING_MAX := 1100.0
-const SUBJECTS = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Formation", "Compétitions", "Club"]
+const SUBJECTS = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Formation", "Compétitions", "Météo", "Club"]
 ## Icône du service expéditeur (palette existante) ; un portrait n'est montré que pour une personne identifiée.
-const SERVICE_ICONS = {"Presse":"globe", "Sélections":"flag", "Calendrier":"calendar", "Invitation":"people", "Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"home"}
+const SERVICE_ICONS = {"Presse":"globe", "Sélections":"flag", "Calendrier":"calendar", "Invitation":"people", "Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"home", "Météo":"cloud"}
 ## Entrées du menu « Sujet » hors catégories : favoris, archives et états rares, pour qu'une seule rangée de filtres suffise.
 const SUBJECT_EXTRAS = [["favorites", "Favoris"], ["archives", "Archives"], ["waiting", "En attente"], ["info", "Infos"]]
 ## Délai avant qu'une demande du club sans réponse soit classée (club-mail.json, cadence.delaiReponse).
@@ -168,7 +168,31 @@ static func _messages(app: Control) -> Array[Dictionary]:
 			"text":str(event.get("body", "")), "category":"Compétitions",
 			"position":messages.size() + 1, "international_event":event
 		})
+	_assign_hours(messages)
 	return messages
+
+## Ordre d'arrivée dans une journée : courrier du club par numéro, puis les autres courriers datés (stable).
+static func _arrival(message: Dictionary) -> float:
+	if message.has("club_mail"): return float(str(message.id).trim_prefix("mail-").to_int())
+	return -1000.0 + float(absi(hash(str(message.id))) % 1000)
+
+## Heure de réception (heure de jeu plausible et stable) : les courriers d'un même jour s'échelonnent de 7 h 30
+## à 21 h 40 dans leur ordre d'arrivée ; quelques minutes dérivées de l'identifiant évitent les heures rondes.
+static func _assign_hours(messages: Array) -> void:
+	var days := {}
+	for message: Dictionary in messages:
+		var day := _day(message)
+		if day.is_empty(): continue
+		if not days.has(day): days[day] = []
+		days[day].append(message)
+	for day: String in days:
+		var list: Array = days[day]
+		list.sort_custom(func(a: Dictionary, b: Dictionary): return _arrival(a) < _arrival(b) or (_arrival(a) == _arrival(b) and str(a.id) < str(b.id)))
+		var step := minf(95.0, 830.0 / maxf(1.0, list.size()))
+		for index in list.size():
+			var minutes := mini(450 + roundi(index * step) + absi(hash(str(list[index].id))) % mini(25, maxi(1, roundi(step) - 1)), 21 * 60 + 40)
+			list[index].hour = "%02d:%02d" % [minutes / 60, minutes % 60]
+			list[index].arrival = index
 
 static func _is_season_expiry_mail(message: String) -> bool:
 	# Les courriers historiques du moteur ne contiennent ni type ni identifiants de joueurs.
@@ -265,27 +289,64 @@ static func _display_order(app: Control, visible: Array, state: Dictionary) -> D
 	if not state.get("oldest_first", false): days.reverse()
 	var ordered: Array = pinned.duplicate()
 	if state.get("oldest_first", false): ordered.append_array(undated)
-	for day in days: ordered.append_array(buckets[day])
+	for day in days:
+		var bucket: Array = buckets[day]
+		bucket.sort_custom(func(a: Dictionary, b: Dictionary): return int(a.get("arrival", 0)) < int(b.get("arrival", 0)) if state.get("oldest_first", false) else int(a.get("arrival", 0)) > int(b.get("arrival", 0)))
+		ordered.append_array(bucket)
 	if not state.get("oldest_first", false): ordered.append_array(undated)
 	return {"items":ordered, "pinned":pinned.size()}
 
-## Ordre d'affichage du dossier « Tous » (messages non archivés), fils regroupés : celui de la liste et de `next_unread`.
+## Lignes de la liste : fils regroupés, et courriers d'information identiques consécutifs (même expéditeur, même objet,
+## même jour) réunis en une ligne « ×N » représentée par le plus récent (`members` : identifiants réunis).
+static func _entries(app: Control, items: Array, pinned: int, oldest_first: bool) -> Array:
+	var pinned_ids := items.slice(0, pinned).map(func(message: Dictionary): return message.id)
+	var result: Array = []
+	for group: Dictionary in Reading.groups(items):
+		var linked: Array = group.messages
+		var section := _section(app, linked[0], linked[0].id in pinned_ids)
+		if linked.size() == 1 and not result.is_empty():
+			var last: Dictionary = result[-1]
+			if last.single and last.section == section and _same(app, last.messages[0], linked[0]):
+				last.messages.append(linked[0])
+				continue
+		result.append({"section":section, "key":group.key, "messages":linked.duplicate(), "single":linked.size() == 1})
+	for entry: Dictionary in result:
+		entry.collapsed = entry.single and entry.messages.size() > 1
+		if entry.collapsed:
+			var representative: Dictionary = entry.messages[-1] if oldest_first else entry.messages[0]
+			representative.members = entry.messages.map(func(message: Dictionary): return str(message.id))
+			entry.messages = [representative]
+	return result
+
+static func _same(app: Control, a: Dictionary, b: Dictionary) -> bool:
+	if Reading.status(a, app.model).key == "todo" or Reading.status(b, app.model).key == "todo": return false
+	return _sender(app, a) == _sender(app, b) and str(a.get("subject", _subject(str(a.text)))) == str(b.get("subject", _subject(str(b.text))))
+
+## Identifiants représentés par une ligne (elle-même, ou tous les courriers réunis sous « ×N »).
+static func members(message: Dictionary) -> Array:
+	return message.get("members", [str(message.get("id", ""))])
+
+static func _any_unread(marks: Dictionary, message: Dictionary) -> bool:
+	return members(message).any(func(id: String): return not marks.get(id, {}).get("read", false))
+
+## Ordre d'affichage du dossier « Tous » (messages non archivés), une entrée par ligne de la liste : celui de la liste
+## et de `next_unread` (raccourci Espace).
 static func display_order(app: Control) -> Array:
 	var state := _state(app)
 	var view := {"marks":state.marks, "oldest_first":state.oldest_first}
 	var visible := _messages(app).filter(func(message: Dictionary): return not state.marks.get(message.id, {}).get("archived", false))
 	if state.oldest_first: visible.reverse()
-	var ordered: Array = _display_order(app, visible, view).items
+	var order := _display_order(app, visible, view)
 	var result: Array = []
-	for group: Dictionary in Reading.groups(ordered): result.append_array(group.messages)
+	for entry: Dictionary in _entries(app, order.items, int(order.pinned), state.oldest_first): result.append_array(entry.messages)
 	return result
 
-## Prochain message non lu, dans l'ordre d'affichage de la boîte (tri choisi, priorités en tête, jours, fils regroupés).
+## Prochain message non lu, dans l'ordre d'affichage de la boîte (priorités en tête, jours, fils, lignes « ×N »).
 ## Dictionnaire vide s'il n'en reste aucun. Sert au raccourci Espace (ui/raccourcis_clavier.gd).
 static func next_unread(app: Control) -> Dictionary:
 	var marks: Dictionary = _state(app).marks
 	for message: Dictionary in display_order(app):
-		if not marks.get(message.id, {}).get("read", false): return message
+		if _any_unread(marks, message): return message
 	return {}
 
 ## Ouvre le prochain message non lu : même effet qu'un clic sur sa ligne (sélection, marqué lu), dossier et filtres remis à « Tous ».
@@ -300,9 +361,7 @@ static func open_next_unread(app: Control) -> bool:
 	state.press_opened = message.id if message.has("press_invitation") else ""
 	state.expanded_threads[Reading.thread_key(message)] = true
 	state.scroll = 0
-	var mark: Dictionary = state.marks.get(message.id, {})
-	mark.read = true
-	state.marks[message.id] = mark
+	_mark_members(state, message, "read", true)
 	if app.route == "Réception": app._render()
 	else: app._navigate("Réception")
 	return true
@@ -368,7 +427,11 @@ static func build(app: Control) -> Control:
 	var visible := unfiltered.filter(func(message: Dictionary): return state.activity_filter == "all" or Reading.status(message, app.model).key == state.activity_filter)
 	if state.oldest_first: visible.reverse()
 	var order := _display_order(app, visible, state)
-	visible = order.items
+	var entries := _entries(app, order.items, int(order.pinned), state.oldest_first)
+	visible = []
+	for entry: Dictionary in entries:
+		visible.append_array(entry.messages)
+		if entry.collapsed and state.selected in entry.messages[0].members: state.selected = entry.messages[0].id
 	if not visible.any(func(message: Dictionary): return message.id == state.selected):
 		var ordinary := visible.filter(func(message: Dictionary): return not message.has("press_invitation"))
 		state.selected = "" if ordinary.is_empty() else ordinary[0].id
@@ -379,7 +442,7 @@ static func build(app: Control) -> Control:
 	category_view.category = "Tous"
 	var list := _surface(page,Rect2(0,0,LIST_WIDTH,height),"InboxMessages")
 	_list_filters(list, app, state, messages.filter(func(item: Dictionary): return not state.marks.get(item.id, {}).get("archived", false)), messages.filter(func(item: Dictionary): return _visible(item,category_view)))
-	_list(list,app,state,visible,int(order.pinned))
+	_list(list,app,state,visible,entries)
 	var concerned := _concerned(app, current)
 	_w = DETAIL_WIDTH - (SIDE_WIDTH + GAP if not concerned.is_empty() else 0.0)
 	_detail(_surface(page,Rect2(LIST_WIDTH+GAP,0,_w,height),"InboxDetail"),app,state,current,height)
@@ -406,11 +469,10 @@ static func _surface(parent: Control, area: Rect2, id: String, darker: bool = fa
 static func _h(base: float) -> float:
 	return maxf(base, 32.0 / C.density)
 
-## Ordonnées de l'en-tête de liste : rangée de filtres, rangée « tout lu / tri », puis filet au-dessus des messages.
+## Ordonnées de l'en-tête de liste : rangée de filtres, puis filet au-dessus des messages.
 static func _header_rows() -> Array[float]:
 	var filters := 16.0
-	var tools := filters + _h(44) + 10
-	return [filters, tools, tools + _h(38) + 10]
+	return [filters, filters + _h(44) + 12]
 
 ## En tête de la liste : une seule rangée (Tous · Non lus · À faire) et un menu « Sujet » qui regroupe
 ## les services, les favoris, les archives et les états rares (En attente, Infos).
@@ -501,23 +563,8 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, active: 
 	subject.custom_minimum_size.x = C.px(120)
 	bar.add_child(subject)
 
-static func _list(card: Panel, app: Control, state: Dictionary, messages: Array, pinned: int) -> void:
-	var tools := _header_rows()[1]
-	# « Tout marquer comme lu » et le tri côte à côte, sans se recouvrir.
-	var markable := markable_read(app, messages)
-	var mark_all := D.button(card,Rect2(14,tools,320,_h(38)),"Tout marquer comme lu" + (" (%d)" % markable.size() if not markable.is_empty() else ""),func():
-		mark_all_read(app, messages)
-		_redraw(app,"InboxMarkAllRead"),false,"check",true,app.accent,"InboxMarkAllRead")
-	mark_all.add_theme_font_size_override("font_size",maxi(12,C.px(17)))
-	mark_all.disabled = markable.is_empty()
-	mark_all.accessibility_name = "Tout marquer comme lu : %d courrier(s) d'information" % markable.size()
-	mark_all.tooltip_text = ("Marque comme lus les %d courriers d'information affichés. Les courriers qui attendent ta décision restent non lus." % markable.size()) if not markable.is_empty() else "Aucun courrier d'information non lu dans cette vue. Les courriers qui attendent ta décision restent à traiter."
-	var sort := D.button(card,Rect2(344,tools,LIST_WIDTH-14-344,_h(38)),"Plus anciens" if state.oldest_first else "Plus récents",func():
-		state.oldest_first=not state.oldest_first
-		state.scroll=0
-		_redraw(app,"InboxSort"),false,"clock",true,app.accent,"InboxSort")
-	sort.add_theme_font_size_override("font_size",maxi(12,C.px(17)))
-	var top := _header_rows()[2]
+static func _list(card: Panel, app: Control, state: Dictionary, messages: Array, entries: Array) -> void:
+	var top := _header_rows()[1]
 	D.line(card,Vector2(0,top),Vector2(LIST_WIDTH,top),Color(C.LINE,.6))
 	var scroll := ScrollContainer.new()
 	scroll.name = "InboxMessageScroll"
@@ -533,27 +580,26 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array,
 	if messages.is_empty():
 		D.text(card,26,top+52,"Aucun message dans cette vue.",24,C.MUTED,600,LIST_WIDTH-52)
 		D.text(card,26,top+90,"Choisis un autre filtre.",19,C.MUTED,400,LIST_WIDTH-52,HORIZONTAL_ALIGNMENT_LEFT,true)
-	var pinned_ids := messages.slice(0, pinned).map(func(message: Dictionary): return message.id)
 	var section := ""
 	var sections := 0
-	for group: Dictionary in Reading.groups(messages):
-		var linked: Array = group.messages
-		var heading_text := _section(app, linked[0], linked[0].id in pinned_ids)
-		if heading_text != section:
-			section = heading_text
-			_day_heading(rows, heading_text, sections)
+	for entry: Dictionary in entries:
+		var linked: Array = entry.messages
+		if entry.section != section:
+			section = entry.section
+			_day_heading(rows, section, sections)
 			sections += 1
 		if linked.size() > 1:
 			var default_open: bool = linked.any(func(item: Dictionary): return item.id == state.selected or Reading.status(item, app.model).key == "todo")
-			var opened: bool = state.expanded_threads.get(group.key, default_open)
+			var opened: bool = state.expanded_threads.get(entry.key, default_open)
 			var title: String = str(linked[0].get("subject",linked[0].category))
 			var notice: Dictionary = linked[0].get("calendar_notice",{})
 			if not str(notice.get("opponent","")).is_empty(): title += " · " + str(notice.opponent)
 			var context: Dictionary = linked[0].get("press_invitation",{}).get("context",{})
 			if context.has_all(["season","week"]): title += " · %s / sem. %d" % [SeasonLabel.label(context.season),int(context.week)+1]
-			var group_id := "InboxThread_" + str(group.key).sha256_text().left(12)
+			var group_id := "InboxThread_" + str(entry.key).sha256_text().left(12)
+			var key: String = entry.key
 			var toggle := C.button(("▾ " if opened else "▸ ") + "%s · %d courriers" % [title,linked.size()], func():
-				state.expanded_threads[group.key] = not opened
+				state.expanded_threads[key] = not opened
 				_redraw(app, group_id), false, app.accent)
 			toggle.add_theme_font_size_override("font_size", maxi(12, C.px(17)))
 			toggle.custom_minimum_size.y = C.px(38)
@@ -561,7 +607,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array,
 			toggle.clip_text = true
 			toggle.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			toggle.name = group_id
-			toggle.set_meta("thread_key", group.key)
+			toggle.set_meta("thread_key", key)
 			toggle.tooltip_text = "Déplier ou réduire les courriers de la même rencontre, édition ou conférence"
 			toggle.add_theme_stylebox_override("normal", C.box(Color(C.PANEL, 0), Color(C.LINE, .35), 0, 16))
 			rows.add_child(toggle)
@@ -569,6 +615,14 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array,
 		for item: Dictionary in linked: _row(rows, app, state, item)
 	_blocking_notice(rows, app)
 	scroll.set_deferred("scroll_vertical",int(state.scroll))
+
+## Marque (lu, favori, archivé) tous les courriers représentés par une ligne.
+static func _mark_members(state: Dictionary, message: Dictionary, key: String, value: bool) -> void:
+	for id: String in members(message):
+		var mark: Dictionary = state.marks.get(id, {})
+		mark[key] = value
+		if key == "archived": mark.read = true
+		state.marks[id] = mark
 
 ## En-tête de jour dans la liste (« AUJOURD'HUI », « HIER », date).
 static func _day_heading(rows: Control, caption: String, index: int) -> void:
@@ -606,16 +660,15 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 	var id := _row_id(message)
 	var selected: bool = message.id==state.selected
 	var mark: Dictionary = state.marks.get(message.id,{})
-	var is_unread: bool = not mark.get("read",false)
+	var is_unread: bool = _any_unread(state.marks, message)
+	var count := members(message).size()
 	var reading := Reading.status(message, app.model)
 	var tagged: bool = reading.key == "todo" or reading.urgent
 	var height := 104.0 if tagged else 80.0
 	var row := C.button("",func():
 		state.selected=message.id
 		state.press_opened=message.id if message.has("press_invitation") else ""
-		if state.folder!=1:
-			mark.read=true
-			state.marks[message.id]=mark
+		if state.folder!=1: _mark_members(state, message, "read", true)
 		_redraw(app,id),false,app.accent)
 	row.name = id
 	row.gui_input.connect(_message_key.bind(app, message.id))
@@ -623,6 +676,7 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 	row.tooltip_text = message.text
 	row.set_meta("message_text",message.text)
 	row.set_meta("message_id", message.id)
+	row.set_meta("message_count", count)
 	row.accessibility_name = "%s%s · %s · %s" % ["Non lu · " if is_unread else "", reading.label, message.get("subject",message.category), message.text]
 	rows.add_child(row)
 	var base := C.RAISED.lightened(.06) if selected else Color(C.PANEL,0)
@@ -638,8 +692,20 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 	var text_x := 88.0
 	var right := 28.0 if is_unread else 0.0
 	var service := _service(message).to_upper()
-	D.text(row,text_x,32,service + " · " + _sender(app,message),17,C.MUTED,600,width-text_x-20-right-(110 if mark.get("favorite", false) else 0))
-	if mark.get("favorite",false): _icon(row,"star",Rect2(width-44-right,15,18,18),C.GOLD)
+	var hour := str(message.get("hour", ""))
+	var meta_width := (64.0 if not hour.is_empty() else 0.0) + (30.0 if mark.get("favorite", false) else 0.0) + (54.0 if count > 1 else 0.0)
+	D.text(row,text_x,32,service + " · " + _sender(app,message),17,C.MUTED,600,width-text_x-20-right-meta_width)
+	var meta_x := width - 20 - right
+	if not hour.is_empty():
+		D.text(row,meta_x,32,hour,16,C.FAINT.lightened(.2),500,60,HORIZONTAL_ALIGNMENT_RIGHT,true).name = "InboxRowHour"
+		meta_x -= 66
+	if mark.get("favorite",false):
+		_icon(row,"star",Rect2(meta_x-18,15,18,18),C.GOLD)
+		meta_x -= 28
+	if count > 1:
+		var badge := D.rect(row,Rect2(meta_x-48,12,46,24),Color(C.MUTED,.12),12,Color(C.MUTED,.5))
+		badge.name = "InboxRowCount"
+		D.text(badge,23,18,"×%d" % count,15,C.IVORY,700,44,HORIZONTAL_ALIGNMENT_CENTER)
 	if is_unread:
 		var dot := D.rect(row,Rect2(width-26,18,11,11),C.GOLD,6)
 		dot.name = "UnreadDot"
@@ -827,74 +893,92 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	var date := _day(message)
 	var when := _short_date(date, _today(app)) if not date.is_empty() else _date(message)
 	var tools_width := 3 * 150.0 + 2 * 10.0
-	D.text(card,PAD+82,56,_sender(app,message),23,C.IVORY,700,_w-2*PAD-82-tools_width-20)
-	D.text(card,PAD+82,86,_service(message) + ("" if when.is_empty() else " · " + when),19,C.MUTED,500,_w-2*PAD-82-tools_width-20)
+	var hour := str(message.get("hour", ""))
+	if not hour.is_empty() and not when.is_empty(): when += ", " + hour
+	# Presse : le nom du journal n'apparaît qu'une fois, sur la coupure ; l'en-tête dit seulement « Presse » et la date.
+	var headline := _service(message) if not _press_mail(message).is_empty() else _sender(app,message)
+	var subline := when if not _press_mail(message).is_empty() else _service(message) + ("" if when.is_empty() else " · " + when)
+	D.text(card,PAD+82,56,headline,23,C.IVORY,700,_w-2*PAD-82-tools_width-20).name = "InboxSenderName"
+	D.text(card,PAD+82,86,subline,19,C.MUTED,500,_w-2*PAD-82-tools_width-20)
 	var x := _w - PAD - tools_width
 	var favorite := D.button(card,Rect2(x,40,150,_h(44)),"Favori" if not mark.get("favorite",false) else "Favori ★",func():
-		mark.favorite=not mark.get("favorite",false)
-		state.marks[message.id]=mark
+		_mark_members(state, message, "favorite", not mark.get("favorite",false))
 		_redraw(app,"InboxToggleFavorite"),false,"star",true,app.accent,"InboxToggleFavorite")
 	favorite.tooltip_text = "Retirer des favoris" if mark.get("favorite",false) else "Ajouter aux favoris"
 	if not mark.get("archived",false):
 		var read_toggle := D.button(card,Rect2(x+160,40,150,_h(44)),"Non lu" if mark.get("read",false) else "Lu",func():
-			mark.read=not mark.get("read",false)
-			state.marks[message.id]=mark
+			_mark_members(state, message, "read", not mark.get("read",false))
 			_redraw(app,"InboxToggleRead"),false,"mail",true,app.accent,"InboxToggleRead")
 		read_toggle.tooltip_text = "Marquer non lu" if mark.get("read",false) else "Marquer lu"
 	var archive := D.button(card,Rect2(x+320,40,150,_h(44)),"Désarchiver" if mark.get("archived",false) else "Archiver",func():
-		mark.archived=not mark.get("archived",false)
-		mark.read=true
-		state.marks[message.id]=mark
+		_mark_members(state, message, "archived", not mark.get("archived",false))
 		_redraw(app,"InboxFolder"+str(state.folder)),false,"check",true,app.accent,"InboxToggleArchive")
 	archive.tooltip_text = "Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité et ranger dans les archives"
 	for tool: Button in [favorite, archive] + ([card.get_node_or_null("InboxToggleRead")] if card.get_node_or_null("InboxToggleRead") != null else []):
 		tool.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		tool.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 	var press := _press_mail(message)
-	# Pied du mail : rappel Espace, actions, réponses (cartes), mesuré de bas en haut.
+	# Contenu puis, juste dessous, pièces liées, « TA RÉPONSE » et actions ; rappel Espace en bas du mail.
 	var hint_base := height - 22
-	var actions_top := hint_base - 30 - _h(46)
 	var replies := _reply_layout(app, message, reading_width)
-	var footer_top := actions_top
-	if not replies.is_empty(): footer_top = actions_top - 16 - float(replies.height) - 40
 	var focused := message.has("press_invitation") or message.has("calendar_notice") or message.has("club_mail") or message.has("scene_invitation") or message.has("international_event")
 	var title_base := 156.0
 	var body_top := title_base + 34
-	var probe := Panel.new()
-	var attachments := _attachments(probe,app,state,message,0,focused,false,reading_width)
-	if footer_top - 20 - attachments - body_top < 200 and not focused:
-		focused = true
-		attachments = _attachments(probe,app,state,message,0,focused,false,reading_width)
-	probe.free()
-	# Grand titre (police titre du jeu) ; la coupure de presse porte son propre titre.
 	var title := str(message.get("subject",_subject(message.text)))
 	if press.is_empty(): D.text(card,PAD,title_base,title,46,C.IVORY,700,_w-2*PAD).name = "InboxTitle"
 	else: body_top = 118.0
-	var body_height := maxf(80.0, footer_top - 20 - attachments - body_top)
-	var scroll := ScrollContainer.new()
-	scroll.name = "InboxReadingScroll"
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	card.add_child(scroll)
-	D.place(scroll,Rect2(PAD,body_top,(_w-2*PAD) if not press.is_empty() else reading_width,body_height))
+	var footer := (40.0 + float(replies.height) + 18.0 if not replies.is_empty() else 0.0) + _h(46)
+	var probe := Panel.new()
+	var attachments := _attachments(probe,app,state,message,0,focused,false,reading_width)
+	if hint_base - 34 - footer - attachments - body_top < 200 and not focused:
+		focused = true
+		attachments = _attachments(probe,app,state,message,0,focused,false,reading_width)
+	probe.free()
+	var room := maxf(80.0, hint_base - 34 - footer - (attachments + 12 if attachments > 0 else 0.0) - 18 - body_top)
+	var content_width := (_w-2*PAD) if not press.is_empty() else reading_width
+	var content: Control
 	if not press.is_empty():
-		scroll.add_child(_clipping(app, message, press, _w-2*PAD-14))
+		content = _clipping(app, message, press, _w-2*PAD-14)
 	else:
 		var column := C.v(22)
 		column.name = "InboxReadingColumn"
-		C.fill(column)
-		scroll.add_child(column)
 		var body := C.wrap(str(message.get("text","")),24,Color(C.IVORY,.9))
 		body.name = "InboxMessageText"
 		body.add_theme_constant_override("line_spacing", C.px(9))
 		C.fill(body)
 		column.add_child(body)
 		if message.get("category") == "Médical" and not national: column.add_child(_infirmary(app, reading_width))
-	if attachments > 0: _attachments(card,app,state,message,body_top+body_height+12,focused,true,reading_width)
+		content = column
+	C.fill(content)
+	var body_height := clampf(_measure(content, C.px(content_width - (14 if not press.is_empty() else 0))) / C.density + 26, 80.0, room)
+	var scroll := ScrollContainer.new()
+	scroll.name = "InboxReadingScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	card.add_child(scroll)
+	D.place(scroll,Rect2(PAD,body_top,content_width,body_height))
+	scroll.add_child(content)
+	var y := body_top + body_height + 18
+	if attachments > 0:
+		_attachments(card,app,state,message,y,focused,true,reading_width)
+		y += attachments + 12
 	if not replies.is_empty():
-		D.text(card,PAD,footer_top+24,"TA RÉPONSE",19,C.GOLD,700,400).name = "InboxReplyHeading"
-		_reply_cards(card, app, message, replies, footer_top + 40)
-	_actions(card,app,state,message,int(actions_top))
+		D.text(card,PAD,y+24,"TA RÉPONSE",19,C.GOLD,700,400).name = "InboxReplyHeading"
+		_reply_cards(card, app, message, replies, y + 40)
+		y += 40 + float(replies.height) + 18
+	_actions(card,app,state,message,int(y))
 	D.text(card,PAD,hint_base,"Espace : message non lu suivant",16,C.FAINT.lightened(.1),500,reading_width).name = "InboxSpaceHint"
+
+## Hauteur (px) d'un contenu à largeur donnée, mesurée tout de suite (conteneurs triés hors de l'arbre) :
+## les réponses se placent juste sous le contenu, sans attendre une image.
+static func _measure(control: Control, width: float) -> float:
+	for attempt in 3:
+		control.size = Vector2(width, 0)
+		_sort_now(control)
+	return control.get_combined_minimum_size().y
+
+static func _sort_now(node: Node) -> void:
+	if node is Container: node.notification(Container.NOTIFICATION_SORT_CHILDREN)
+	for child in node.get_children(): _sort_now(child)
 
 ## Paragraphes aérés : une ligne vide entre deux paragraphes du moteur.
 static func _airy(text: String) -> String:
@@ -1198,9 +1282,23 @@ static func _concerned(app: Control, message: Dictionary) -> Dictionary:
 		var ids: Array = expiring.map(func(player: Dictionary): return str(player.id))
 		var players: Array = app.model.get("squad", []).filter(func(player: Dictionary): return str(player.id) in ids)
 		if not players.is_empty(): result.expiring = players
+	var club: Variant = mail.get("club")
+	if (club is int or club is float or (club is String and not club.is_empty())) and str(club) != str(app.model.get("club", {}).get("id", "")):
+		var row := _league_row(app.model, club)
+		if not row.is_empty(): result.club = row
 	var due := _deadline(app, message, true)
 	if not due.is_empty(): result.deadline = due
 	return result
+
+## Ligne du classement d'un club (nom, rang) ; {} s'il n'est dans aucune division projetée.
+static func _league_row(model: Dictionary, id: Variant) -> Dictionary:
+	for division: Dictionary in model.get("leagues", []):
+		var rows: Array = division.get("rows", [])
+		for index in rows.size():
+			var row: Dictionary = rows[index]
+			if str(row.get("id", "")).to_int() == str(id).to_int() and str(id).is_valid_int():
+				return {"id":str(id), "name":Press.G.club_name(row), "rank":index + 1, "division":str(division.get("name", division.get("label", "")))}
+	return {}
 
 ## Panneau « CONCERNÉ » : mini-fiche du joueur lié, joueurs en fin de contrat, encadré « ÉCHÉANCE ».
 static func _side(card: Panel, app: Control, message: Dictionary, data: Dictionary, height: float) -> void:
@@ -1210,7 +1308,9 @@ static func _side(card: Panel, app: Control, message: Dictionary, data: Dictiona
 	var y := 66.0
 	if data.has("player"):
 		var player: Dictionary = data.player
-		var sheet := D.rect(card,Rect2(x,y,width,372),C.RAISED,10)
+		var value: Variant = player.get("marketValue")
+		var sheet_height := 446.0 if value is int or value is float else 372.0
+		var sheet := D.rect(card,Rect2(x,y,width,sheet_height),C.RAISED,10)
 		sheet.name = "InboxConcernedPlayer"
 		sheet.mouse_filter = Control.MOUSE_FILTER_PASS
 		var portrait := Portraits.portrait(int(player.get("portraitIndex",0)),C.px(80),player)
@@ -1236,16 +1336,34 @@ static func _side(card: Panel, app: Control, message: Dictionary, data: Dictiona
 			["TEMPS DE JEU", ("%d min" % int(minutes)) if minutes is int or minutes is float else "—", C.IVORY],
 			["DISPONIBILITÉ", ("Blessé · %d sem." % ceili(injury)) if injury > 0 else ("En reprise" if P.player_in_recovery(app.model, str(player.get("id",""))) else "Apte"), C.ALERT if injury > 0 else C.MINT],
 		]
+		if value is int or value is float: facts.append(["VALEUR", _money(float(value)), C.GOLD])
 		for index in facts.size():
 			var fx := 20.0 + (index % 2) * (width - 40) / 2.0
 			var fy := 128.0 + (index / 2) * 74.0
 			D.text(sheet,fx,fy+18,facts[index][0],15,C.FAINT.lightened(.15),700,(width-60)/2.0)
 			D.text(sheet,fx,fy+48,facts[index][1],20,facts[index][2],600,(width-60)/2.0,HORIZONTAL_ALIGNMENT_LEFT,true)
-		var open := D.button(sheet,Rect2(20,296,width-40,_h(52)),"Ouvrir la fiche",_open_related.bind(app,message,_open_current_player.bind(app,str(player.get("id","")))),false,"arrow",true,app.accent,"InboxConcernedOpen")
+		var open := D.button(sheet,Rect2(20,sheet_height-76,width-40,_h(52)),"Ouvrir la fiche",_open_related.bind(app,message,_open_current_player.bind(app,str(player.get("id","")))),false,"arrow",true,app.accent,"InboxConcernedOpen")
 		open.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		open.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
 		open.accessibility_name = "Ouvrir la fiche de " + str(player.get("name",""))
-		y += 372 + 18
+		y += sheet_height + 18
+	if data.has("club"):
+		var club: Dictionary = data.club
+		var tile := C.button("", _open_related.bind(app, message, _open_club.bind(app, str(club.id))), false, app.accent)
+		tile.name = "InboxConcernedClub"
+		tile.custom_minimum_size = Vector2.ZERO
+		tile.add_theme_stylebox_override("normal", C.box(C.RAISED, Color.TRANSPARENT, 10, 0))
+		tile.tooltip_text = "Ouvrir la fiche de " + str(club.name)
+		tile.accessibility_name = tile.tooltip_text
+		card.add_child(tile); D.place(tile, Rect2(x,y,width,88))
+		var crest := D.rect(tile,Rect2(16,18,52,52),C.BG,26,Color(C.LINE,.8))
+		var words := str(club.name).split(" ", false)
+		var initials := "".join(PackedStringArray(words.slice(0, 2).map(func(w: String): return w.left(1).to_upper())))
+		D.text(crest,26,34,initials,19,C.MUTED,700,48,HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(tile,84,40,str(club.name),22,C.IVORY,700,width-84-80).name = "InboxConcernedClubName"
+		D.text(tile,84,68,"%s du classement%s" % [("1er" if int(club.rank) == 1 else "%de" % int(club.rank)), "" if str(club.division).is_empty() else " · " + str(club.division)],17,C.MUTED,500,width-84-80,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(tile,width-18,52,"Fiche",19,C.GOLD,700,70,HORIZONTAL_ALIGNMENT_RIGHT)
+		y += 88 + 18
 	if data.has("expiring"):
 		var players: Array = data.expiring
 		D.text(card,x,y+22,"FIN DE CONTRAT · %s" % P.plural(players.size(), "joueur", "joueurs"),17,C.GOLD,700,width)
@@ -1283,6 +1401,15 @@ static func _side(card: Panel, app: Control, message: Dictionary, data: Dictiona
 		box.position = Vector2(x, y) * C.density
 		box.custom_minimum_size.x = C.px(width)
 		box.size = Vector2(C.px(width), 0)
+
+static func _open_club(app: Control, club_id: String) -> void:
+	app.navigation_controller.open_entity({"kind":"club","id":club_id})
+
+## Montant compact : « 1,2 M€ », « 850 k€ ».
+static func _money(amount: float) -> String:
+	if absf(amount) >= 1000000.0: return ("%.1f M€" % (amount / 1000000.0)).replace(".", ",")
+	if absf(amount) >= 1000.0: return "%d k€" % roundi(amount / 1000.0)
+	return "%d €" % roundi(amount)
 
 static func _open_current_player(app: Control, player_id: String) -> void:
 	app.navigation_controller.open_entity({"kind":"player","id":player_id,"section":"contract"})
