@@ -12,6 +12,7 @@
 // Une seule carrière en mémoire (~1,2 Go) : ne pas lancer deux mesures à la fois sur la machine partagée.
 const fs = require('node:fs');
 const { context } = require('../tests/monde-harness.cjs');
+const ORDRE_REEL = require('../native/engine/world-niveaux-v2.json').ordre || {};
 
 const args = process.argv.slice(2);
 const opt = (nom, def) => { const i = args.indexOf(nom); return i >= 0 ? args[i + 1] : def; };
@@ -190,6 +191,8 @@ function analyser(d) {
     tableaux.push({ comp, clubs: t.length, premier: t[0].pts, dernier: t.at(-1).pts, ecartPoints: t[0].pts - t.at(-1).pts,
       rangMieuxArme: t.findIndex(e => e.id === ordre[0]) + 1, rang2: t.findIndex(e => e.id === ordre[1]) + 1,
       spearmanEffectif: r2(spearman(t.map(e => -d.niveaux[e.id]), t.map((e, i) => i))),
+      // Classement final contre le rang réel des clubs (world-niveaux-v2.json → ordre), quand il est connu (18/11).
+      spearmanReel: ORDRE_REEL[comp] ? r2(spearman(t.map(e => ORDRE_REEL[comp].indexOf(e.id)), t.map((e, i) => i))) : '-',
       champion: d.noms[t[0].id] + ' (n° ' + (ordre.indexOf(t[0].id) + 1) + ' effectif)' });
   }
   const surprises = ligue.filter(m => Math.abs(d.niveaux[m.pair[0]] - d.niveaux[m.pair[1]]) >= 3).filter(m => { const k = d.niveaux[m.pair[0]] > d.niveaux[m.pair[1]] ? 0 : 1; return m.score[k] < m.score[1 - k]; }).length;
@@ -218,7 +221,7 @@ if (require.main === module) {
   console.log(tableau(a.lignes, ['comp', 'sifflees', 'parPhase', 'melees', 'ptsPenMatch']));
   console.log(tableau(a.detail.tranches, ['tranche', 'matchs', 'favori', 'favoriDomicile', 'favoriExterieur']));
   console.log(`Favori (effectif) toutes tranches : ${a.detail.favoriGlobal} % ; surprises (écart ≥ 3 perdu) : ${a.detail.surprises3} sur ${a.detail.matchsLigue} matchs de championnat`);
-  console.log(tableau(a.detail.tableaux, ['comp', 'clubs', 'premier', 'dernier', 'ecartPoints', 'rangMieuxArme', 'rang2', 'spearmanEffectif', 'champion']));
+  console.log(tableau(a.detail.tableaux, ['comp', 'clubs', 'premier', 'dernier', 'ecartPoints', 'rangMieuxArme', 'rang2', 'spearmanEffectif', 'spearmanReel', 'champion']));
   console.log(tableau(a.hierarchie, ['comp', 'spearman', 'favori2', 'favori5', 'effectif1', 'effectif3', 'domicile', 'meilleurRang', 'victoiresTete', 'victoiresDernier', 'tete']));
 }
 module.exports = { mesurer, analyser, classement };
