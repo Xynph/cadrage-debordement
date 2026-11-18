@@ -8,7 +8,7 @@ extends RefCounted
 const U = preload("res://ui/management_state.gd")
 
 ## Catégorie du moteur -> rubrique de la Réception (filtres, icônes et couleurs existants).
-const CATEGORY := {"infirmerie":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Recrutement", "presse":"Club", "direction":"Direction", "contrats":"Direction", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Compétitions"}
+const CATEGORY := {"infirmerie":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Recrutement", "presse":"Club", "direction":"Direction", "contrats":"Direction", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Météo"}
 ## Écrans que le courrier et les arrêts peuvent ouvrir (routes de main.gd) ; « infirmerie », « contrats » et
 ## « fiche » sont des vues préparées (Effectif filtré, fiche d'un joueur).
 const ROUTES := ["Composition", "Effectif", "Classements", "Recrutement", "Préparation", "Vestiaire", "Presse", "Club", "Finances", "Formation", "Calendrier", "Réception", "Bureau"]
@@ -108,3 +108,12 @@ static func after_reply(app: Control) -> void:
 	var receipt: Variant = app.model.get("meta", {}).get("clubMailReply")
 	if receipt is Dictionary and receipt.get("ouvrir", false):
 		open_screen(app, str(receipt.get("ecran", "")), str(receipt.get("joueur", "")) if receipt.get("joueur") is String else "")
+
+## Type de blessure d'un joueur (moteur : club-mail.cjs, données « blessures ») ; « Blessure » si inconnu
+## (ancienne sauvegarde, joueur rétabli).
+static func injury_label(model: Dictionary, player: Dictionary) -> String:
+	var key: Variant = player.get("injuryType")
+	var labels: Variant = model.get("clubLife", {}).get("clubMail", {}).get("blessures")
+	if key is String and labels is Dictionary and labels.get(key) is String: return str(labels[key])
+	return "Blessure"
+

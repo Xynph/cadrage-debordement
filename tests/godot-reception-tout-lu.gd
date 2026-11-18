@@ -1,5 +1,5 @@
 extends SceneTree
-## Réception : « Tout marquer comme lu » (carrière Monde world-champ, départ « veille »).
+## Réception : marquage en bloc « tout lu » (fonction ; boutons retirés de la liste le 18/11) (carrière Monde world-champ, départ « veille »).
 ## Marque lus uniquement les courriers d'information du filtre affiché ; les courriers qui attendent
 ## une réponse restent non lus et visibles ; état d'interface, aucune commande moteur.
 ## Captures (fenêtre réelle seulement) : CD_RECEPTION_CAPTURES=<dossier> -> reception-tout-lu-{avant,apres}.png.
@@ -87,30 +87,20 @@ func run() -> void:
 	var before := counts()
 	check(before.info >= 2, "Avant : plusieurs informations non lues (%d)" % before.info)
 	check(before.todo >= 1, "Avant : au moins un courrier à action non lu (%d)" % before.todo)
-	var button := app.root_content.find_child("InboxMarkAllRead", true, false) as Button
-	check(button != null, "Bouton « Tout marquer comme lu » présent")
-	if button == null: return finish()
-	check(not button.disabled, "Bouton actif tant que des informations sont non lues")
-	check(button.text.contains("(%d)" % before.info), "Compteur du bouton : %d (« %s »)" % [before.info, button.text])
-	check(not button.tooltip_text.is_empty(), "Infobulle présente")
-	# Capture CI du 17/11 : « Tout marquer comme lu (12) » recouvrait le tri « Plus récents ».
-	var sort := app.root_content.find_child("InboxSort", true, false) as Button
-	check(sort != null and not button.get_global_rect().intersects(sort.get_global_rect()), "« Tout marquer comme lu » ne recouvre pas le tri")
-	if sort != null:
-		var font := sort.get_theme_font("font")
-		var needed := font.get_string_size(sort.text, HORIZONTAL_ALIGNMENT_LEFT, -1, sort.get_theme_font_size("font_size")).x
-		check(sort.size.x >= needed, "Libellé du tri entier (« %s »)" % sort.text)
+	# Direction A (18/11) : Léo a retiré les boutons « Tout marquer comme lu » et de tri au-dessus de la liste ;
+	# la fonction reste (marquage en bloc des seules informations), vérifiée ici directement.
+	check(app.root_content.find_child("InboxMarkAllRead", true, false) == null, "Plus de bouton « Tout marquer comme lu » au-dessus de la liste")
+	check(app.root_content.find_child("InboxSort", true, false) == null, "Plus de bouton de tri au-dessus de la liste")
 	await capture("avant")
-	button.pressed.emit()
+	var marked: int = app.Immersive.Reception.mark_all_read(app, app.Immersive.Reception._messages(app))
+	check(marked == before.info, "Marquage en bloc : %d informations (%d attendues)" % [marked, before.info])
+	app._render()
 	await settle()
 	var after := counts()
 	check(after.info == 0, "Après : toutes les informations sont lues (%d restantes)" % after.info)
 	check(after.todo == before.todo and after.todo_ids == before.todo_ids, "Après : les courriers à action restent non lus")
 	var visible := row_ids()
 	for id: String in after.todo_ids: check(id in visible, "Courrier à action toujours visible : " + id.left(12))
-	var again := app.root_content.find_child("InboxMarkAllRead", true, false) as Button
-	check(again != null and again.disabled, "Bouton désactivé ensuite")
-	check(again != null and not again.tooltip_text.is_empty() and not again.text.contains("("), "Désactivé : infobulle, pas de compteur")
 	check(app.bridge._next_id == sequence, "Aucune commande moteur")
 	await capture("apres")
 	# Le filtre « Informations » ne contient plus rien à marquer ; « À faire » ne marque jamais de décision.

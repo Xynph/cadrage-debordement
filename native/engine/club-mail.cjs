@@ -21,7 +21,7 @@ const prelude = 'const nativeClubMailData=JSON.parse(' + JSON.stringify(JSON.str
 
 function factory() {
   const D = typeof nativeClubMailData !== 'undefined' ? nativeClubMailData : { types: {}, cadence: {}, categories: {} };
-  const C = D.cadence || {}, TYPES = D.types || {};
+  const C = D.cadence || {}, TYPES = D.types || {}, BL = D.blessures || {};
   const DAY = 86400000;
   const copy = x => JSON.parse(JSON.stringify(x)), obj = x => !!x && typeof x === 'object' && !Array.isArray(x);
   const int = (x, a, b) => Number.isSafeInteger(x) && x >= a && x <= b;
@@ -43,6 +43,38 @@ function factory() {
   const pending = s => typeof CDPreseason !== 'undefined' && !!CDPreseason.pending(s);
   const todayOf = s => { try { return CDWorldCareer.calendarToday(s); } catch { return null; } };
   const STATUS = ['nouveau', 'repondu', 'classe', 'info'];
+  const CAUSES = ['match', 'entrainement'];
+  const fold = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // Type de blessure (données « blessures ») : parmi ceux dont la durée couvre l'indisponibilité, au poids de la ligne,
+  // par empreinte stable du joueur et du jour (aucun tirage dans le flux de hasard du moteur).
+  function injuryKind(p, s, d) {
+    const weeks = Number(p.injury) || 0, types = BL.types || {};
+    const line = (BL.avants || []).some(w => fold(p.pos).includes(w)) ? 'avants' : 'arrieres';
+    let pool = Object.entries(types).filter(([, t]) => weeks >= t.semaines[0] && weeks <= t.semaines[1] && (t.poids?.[line] ?? 1) > 0);
+    if (!pool.length) pool = Object.entries(types).filter(([, t]) => (t.poids?.[line] ?? 1) > 0).sort((a, b) => Math.abs(a[1].semaines[1] - weeks) - Math.abs(b[1].semaines[1] - weeks)).slice(0, 1);
+    if (!pool.length) return null;
+    const total = pool.reduce((a, [, t]) => a + (t.poids?.[line] ?? 1), 0);
+    let roll = hash('blessure:' + p.id + ':' + (s.season ?? 0) + ':' + d) % total;
+    for (const [key, t] of pool) { roll -= t.poids?.[line] ?? 1; if (roll < 0) return key; }
+    return pool[0][0];
+  }
+  // Après chaque commande et à chaque réception : type, cause et date des blessures nouvelles ; effacés à la guérison.
+  function typeInjuries(s, d) {
+    if (!s || !s.clubs || !date(d)) return;
+    const own = s.clubs[s.club], news = Array.isArray(s.news) ? s.news.slice(0, 12).map(String) : [];
+    for (const club of Object.values(s.clubs)) for (const p of club?.players || []) {
+      if (!(p.injury > 0)) { if (p.injuryType !== undefined || p.injuryCause !== undefined || p.injuryDate !== undefined) { delete p.injuryType; delete p.injuryCause; delete p.injuryDate; } continue; }
+      if (p.injuryType !== undefined) continue;
+      const kind = injuryKind(p, s, d);
+      if (!kind) continue;
+      p.injuryType = kind; p.injuryDate = d;
+      if (club === own) {
+        const line = news.find(n => n.includes(String(p.name)) && /bless/i.test(n));
+        if (line) p.injuryCause = /entra[iî]nement/i.test(line) ? 'entrainement' : 'match';
+      }
+    }
+  }
+  const injuryLabel = key => BL.types?.[key]?.libelle || 'Blessure';
   const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation', 'a2r', 'reprise'];
   const ORIENTATION_LABELS = { equilibre: 'répartition proposée', installations: 'priorité aux installations', staff: 'priorité au staff', accueil: 'priorité à l’accueil' };
   const PLAN_LABELS = { repos: 'repos', normal: 'charge allégée', intense: 'charge intense', collective: 'séance collective' };
@@ -121,6 +153,28 @@ function factory() {
       if (!hurt.length) return [];
       return [{ key: F.d, vars: { n: hurt.length, liste: hurt.slice(0, 4).map(p => p.name + ' (' + p.injury + ' sem.)').join(', ') + (hurt.length > 4 ? ' et ' + (hurt.length - 4) + ' autre(s)' : '') } }];
     },
+    // Bulletin du médecin sur une blessure nouvelle : type, cause (rencontre ou entraînement), pronostic, conseil,
+    // effet sur la prochaine rencontre et état de l'infirmerie.
+    blessure(F) {
+      const fresh = F.players.filter(p => p.injury > 0 && p.injuryType && date(p.injuryDate) && p.injuryDate >= F.yesterday).sort((a, b) => b.injury - a.injury || String(a.id).localeCompare(String(b.id)));
+      const hurt = F.players.filter(p => p.injury > 0).sort((a, b) => b.injury - a.injury);
+      return fresh.map(p => {
+        const label = injuryLabel(p.injuryType), weeks = Number(p.injury) || 1;
+        let cause = '';
+        if (p.injuryCause === 'entrainement') cause = "Il s'est blessé à l'entraînement le " + shortDate(p.injuryDate) + '.';
+        else if (p.injuryCause === 'match') {
+          const r = [...F.results].filter(x => !x.date || x.date <= F.d).pop();
+          cause = r ? 'Il est sorti touché du match contre ' + F.name(r.opp) + ' (' + r.us + '-' + r.them + (r.date ? ', le ' + shortDate(r.date) : '') + ').' : 'Il est sorti touché lors du dernier match.';
+        }
+        let impact = '';
+        if (F.next) {
+          const days = dayNumber(F.next.date) - dayNumber(F.d), opp = F.name(F.opponent(F.next));
+          impact = weeks * 7 > days ? 'Il manquera le prochain match contre ' + opp + ' (' + shortDate(F.next.date) + ') : prévois son remplaçant dans la composition.' : 'Il devrait être rétabli pour le prochain match contre ' + opp + ' (' + shortDate(F.next.date) + ').';
+        }
+        const list = hurt.slice(0, 5).map(x => x.name + ' (' + injuryLabel(x.injuryType).toLowerCase() + ', ' + x.injury + ' sem.)').join(', ') + (hurt.length > 5 ? ' et ' + (hurt.length - 5) + ' autre(s)' : '');
+        return { key: p.id + ':' + p.injuryDate, player: p.id, vars: { ...playerVars(p), blessure: label, blessure_bas: label.charAt(0).toLowerCase() + label.slice(1), cause, duree: weeks > 1 ? weeks + ' semaines' : 'une semaine', retour: shortDate(shift(F.d, weeks * 7)), conseil: BL.types?.[p.injuryType]?.conseil || 'Reprise progressive conseillée.', impact, infirmerie: list || p.name } };
+      });
+    },
     retour_blesse(F, t, st) {
       const back = (st.memo.injured || []).map(id => F.byId.get(id)).filter(p => p && !(p.injury > 0));
       return back.slice(0, 1).map(p => ({ key: p.id + ':' + F.d, player: p.id, vars: playerVars(p) }));
@@ -135,7 +189,7 @@ function factory() {
       if (!F.next || F.next.date !== shift(F.d, 1)) return [];
       const list = F.lineup.filter(p => !(p.injury > 0) && conditionOf(p) < (t.seuils?.condition ?? 72) && conditionOf(p) >= (t.seuils?.conditionMin ?? 45)).sort((a, b) => conditionOf(a) - conditionOf(b) || String(a.id).localeCompare(String(b.id)));
       const p = list[0]; if (!p) return [];
-      return [{ key: F.next.id, player: p.id, vars: { ...playerVars(p), condition: conditionOf(p), adversaire: F.name(F.opponent(F.next)) } }];
+      return [{ key: F.next.id, player: p.id, club: F.opponent(F.next), vars: { ...playerVars(p), condition: conditionOf(p), adversaire: F.name(F.opponent(F.next)) } }];
     },
     moral_groupe(F) {
       if (F.dow !== 2) return [];
@@ -193,7 +247,7 @@ function factory() {
       const top = notes.slice(0, 3), axe = top[0].poids > 0 ? top[0].axe : null;
       const AXES = { conquete: 'la conquête', defence: 'la défense et la discipline', pied: 'le jeu au pied' };
       const res = last.us > last.them ? 'la victoire' : last.us < last.them ? 'la défaite' : 'le nul';
-      return [{ key: last.fixtureId || last.date, vars: { adversaire: F.name(last.opp), score: last.us + '-' + last.them, resultat: res, un: top[0].texte, deux: top[1].texte, trois: top[2].texte, axe: axe ? AXES[axe] : 'notre plan de jeu' } }];
+      return [{ key: last.fixtureId || last.date, club: last.opp, vars: { adversaire: F.name(last.opp), score: last.us + '-' + last.them, resultat: res, un: top[0].texte, deux: top[1].texte, trois: top[2].texte, axe: axe ? AXES[axe] : 'notre plan de jeu' } }];
     },
     // Lundi : le tour du championnat du club (résultats marquants de la semaine passée, série en cours, leader).
     // Un lundi déjà plein (trois mails par jour au plus, souvent le bilan du match et un mail plus prioritaire) le
@@ -225,7 +279,7 @@ function factory() {
       const sum = k => recent.reduce((a, x) => a + (Number(x[k]) || 0), 0);
       const scrum = sum('scrums') ? sum('scrumsWon') / sum('scrums') : 1, touche = sum('lineouts') ? sum('lineoutsWon') / sum('lineouts') : 1, pens = recent.length ? sum('penalties') / recent.length : 0;
       const faiblesse = scrum < 0.7 ? 'leur mêlée, qui recule sous la pression' : touche < 0.8 ? 'leur alignement en touche' : pens >= 10 ? 'leur discipline, ils concèdent beaucoup de pénalités' : 'leur défense sur les extérieurs';
-      return [{ key: F.next.id, vars: { adversaire: F.name(opp), forme: F.form(opp) || 'inconnue', faiblesse } }];
+      return [{ key: F.next.id, club: opp, vars: { adversaire: F.name(opp), forme: F.form(opp) || 'inconnue', faiblesse } }];
     },
     tests_physiques(F) {
       if (F.dow !== 0 || Number(F.d.slice(8)) > 7) return [];
@@ -307,7 +361,7 @@ function factory() {
     article(F, t) {
       const g = F.playedOn(F.yesterday); if (!g) return [];
       const r = g.result, o = F.outcome(r), band = o === 'V' ? 'victoire' : o === 'D' ? 'defaite' : 'nul';
-      return [{ key: g.fixture.id, vars: { adversaire: F.name(r.opp), score: r.us + '-' + r.them, titre: pick(t.variantes?.[band], g.fixture.id) } }];
+      return [{ key: g.fixture.id, club: r.opp, vars: { adversaire: F.name(r.opp), score: r.us + '-' + r.them, titre: pick(t.variantes?.[band], g.fixture.id) } }];
     },
     rumeur(F) {
       if (F.dow !== 5 || !(F.s.round >= 4)) return [];
@@ -322,12 +376,12 @@ function factory() {
     },
     une_derby(F) {
       if (!F.next || F.next.date !== shift(F.d, 4) || !F.derby(F.opponent(F.next))) return [];
-      return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)) } }];
+      return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire: F.name(F.opponent(F.next)) } }];
     },
     affluence(F, t) {
       const g = F.playedOn(F.yesterday); if (!g || !g.result.home) return [];
       const fans = F.s.pressRelations?.fanTrust ?? 50, band = fans >= 60 ? 'plein' : fans >= 40 ? 'moyen' : 'faible';
-      return [{ key: g.fixture.id, vars: { adversaire: F.name(g.result.opp), capacite: euros(Number(F.club.stadiumCapacity) || 0), ambiance: pick(t.variantes?.[band], g.fixture.id) } }];
+      return [{ key: g.fixture.id, club: g.result.opp, vars: { adversaire: F.name(g.result.opp), capacite: euros(Number(F.club.stadiumCapacity) || 0), ambiance: pick(t.variantes?.[band], g.fixture.id) } }];
     },
     sponsor(F) {
       if (F.dow !== 4 || F.season.length < 3) return [];
@@ -370,11 +424,11 @@ function factory() {
     supporters_derby(F, t) {
       const g = F.playedOn(F.yesterday); if (!g || !F.derby(g.result.opp)) return [];
       const o = F.outcome(g.result), band = o === 'V' ? 'victoire' : o === 'D' ? 'defaite' : 'nul';
-      return [{ key: g.fixture.id, vars: { adversaire: F.name(g.result.opp), reaction: pick(t.variantes?.[band], g.fixture.id) } }];
+      return [{ key: g.fixture.id, club: g.result.opp, vars: { adversaire: F.name(g.result.opp), reaction: pick(t.variantes?.[band], g.fixture.id) } }];
     },
     arbitre(F) {
       if (!F.next || F.next.date !== shift(F.d, 3)) return [];
-      return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), profil: pick(D.profilsArbitre, F.next.id) } }];
+      return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire: F.name(F.opponent(F.next)), profil: pick(D.profilsArbitre, F.next.id) } }];
     },
     rivaux(F) {
       const g = F.playedOn(shift(F.d, -2)); if (!g || g.fixture.competitionId !== F.lid) return [];
@@ -465,14 +519,14 @@ function factory() {
       const nous = F.next.homeId === F.s.club ? 0 : 1, pair = [F.next.homeId, F.next.awayId];
       const ciel = String(m.libelle || '').trim();
       const vent = m.ventDos ? ' Le vent soufflera dans le dos de ' + camp(pair[m.ventDos[0]]) + ' en première période' + (m.ventDos[0] === nous ? ' : à nous d’en profiter avant la pause.' : ', puis dans le nôtre après la pause.') : '';
-      return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), quand: F.next.date === F.d ? 'aujourd’hui' : 'demain', ciel: ciel.charAt(0).toUpperCase() + ciel.slice(1), ciel_bas: ciel, vent, conseil: m.conseil || '' } }];
+      return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire: F.name(F.opponent(F.next)), quand: F.next.date === F.d ? 'aujourd’hui' : 'demain', ciel: ciel.charAt(0).toUpperCase() + ciel.slice(1), ciel_bas: ciel, vent, conseil: m.conseil || '' } }];
     },
     pelouse(F) {
       if (!F.next || F.next.date !== shift(F.d, 1) || F.next.homeId !== F.s.club) return [];
       // Pelouse cohérente avec la météo annoncée : pluie (glissante), forte pluie (lourde), sinon la saison.
       const mt = annonceMeteo(F), month = Number(F.d.slice(5, 7)), season = month >= 6 && month <= 8 ? 'ete' : month >= 9 && month <= 11 ? 'automne' : month === 12 || month <= 2 ? 'hiver' : 'printemps';
       const band = mt && mt.pluie === 2 ? 'deluge' : mt && mt.pluie ? 'pluie' : mt && mt.chaleur ? 'ete' : season;
-      return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), pelouse: pick(D.pelouses?.[band], F.next.id) } }];
+      return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire: F.name(F.opponent(F.next)), pelouse: pick(D.pelouses?.[band], F.next.id) } }];
     },
   };
   function promiseOutcome(F, status) {
@@ -522,6 +576,7 @@ function factory() {
     return { libelle: meteoLibelle(l), conseil: meteoConseilBase(l, l.meteo), ventDos: ventSensActif(l) ? [m.sens, 1 - m.sens] : null, pluie: m.pluie, chaleur: m.chaleur };
   }
   function receive(s, d) {
+    typeInjuries(s, d);
     const st = ensure(s), F = facts(s, d);
     // Première réception (nouvelle carrière, ancienne sauvegarde) : mémoire seule, aucun mail.
     const first = st.last === null;
@@ -566,7 +621,7 @@ function factory() {
       counts[cat] = (counts[cat] || 0) + 1;
       if (c.player) players.add(c.player);
       received++;
-      st.mails.push({ id: 'mail-' + (++st.seq), type: c.type, date: d, f, vars: sanitize(c.vars || {}), player: c.player ? String(c.player) : null, status: (t.reponses || []).length ? 'nouveau' : 'info', choice: null });
+      st.mails.push({ id: 'mail-' + (++st.seq), type: c.type, date: d, f, vars: sanitize(c.vars || {}), player: c.player ? String(c.player) : null, ...(c.club != null && c.club !== '' ? { club: c.club } : {}), status: (t.reponses || []).length ? 'nouveau' : 'info', choice: null });
     }
     remember(s, st, F);
     st.memo.season = s.season;
@@ -648,7 +703,7 @@ function factory() {
   }
 
   function project() {
-    if (typeof S === 'undefined' || !S || !obj(S.clubMail)) return { mails: [], reponses: {}, attente: 0 };
+    if (typeof S === 'undefined' || !S || !obj(S.clubMail)) return { mails: [], reponses: {}, attente: 0, blessures: Object.fromEntries(Object.entries(BL.types || {}).map(([k, t]) => [k, t.libelle])) };
     const st = S.clubMail, list = st.mails.slice(-(C.projection ?? 80)).reverse();
     const reponses = {};
     for (const m of st.mails) if (m.choice) reponses[m.id] = m.choice;
@@ -657,10 +712,11 @@ function factory() {
         const t = TYPES[m.type] || {}, r = render(m), cat = D.categories?.[t.categorie] || {};
         const chosen = (t.reponses || []).find(x => x.id === m.choice);
         return { id: m.id, type: m.type, date: m.date, categorie: t.categorie || 'moments', categorieLabel: cat.label || 'Club', expediteur: r.expediteur, sujet: r.sujet, corps: r.corps,
-          arret: !!t.arret, ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
+          arret: !!t.arret, ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, club: m.club ?? null, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
           reponses: m.status === 'nouveau' ? (t.reponses || []).map(x => { const raison = unavailable(S, m, x); return { id: x.id, libelle: x.libelle, effets: effectText(x.effets || {}), disponible: !raison, raison, ouvrir: !!x.ouvrir }; }) : [] };
       }),
       reponses, attente: st.mails.filter(m => m.status === 'nouveau').length,
+      blessures: Object.fromEntries(Object.entries(BL.types || {}).map(([k, t]) => [k, t.libelle])),
     };
   }
 
@@ -739,6 +795,7 @@ function factory() {
   function observe() {
     if (typeof S === 'undefined' || !S || !world(S) || pending(S) || S.phase === 'ended') return false;
     const d = todayOf(S);
+    typeInjuries(S, d);
     if (!date(d) || S.clubMail?.last === d) return false;
     receive(S, d);
     return true;
@@ -753,8 +810,14 @@ function factory() {
       check(obj(m) && /^mail-\d{1,9}$/.test(m.id) && !ids.has(m.id) && Number(m.id.slice(5)) <= st.seq && TYPES[m.type] !== undefined && date(m.date) && int(m.f, 0, 20) && obj(m.vars) && (m.player === null || text(m.player, 180)) && STATUS.includes(m.status), 'mail invalide');
       check(m.status === 'repondu' ? (TYPES[m.type].reponses || []).some(x => x.id === m.choice) : m.choice === null, 'réponse enregistrée invalide');
       check(m.verdict === undefined || text(m.verdict, 200), 'verdict invalide');
+      check(m.club === undefined || int(m.club, 0, 1e9) || text(m.club, 40), 'club du mail invalide');
       for (const v of Object.values(m.vars)) check(typeof v === 'number' ? Number.isFinite(v) : text(v, 400), 'variable invalide');
       ids.add(m.id);
+    }
+    for (const club of Object.values(s.clubs || {})) for (const p of club?.players || []) {
+      check(p.injuryType === undefined || (text(p.injuryType, 40) && BL.types?.[p.injuryType] !== undefined), 'type de blessure invalide');
+      check(p.injuryCause === undefined || CAUSES.includes(p.injuryCause), 'cause de blessure invalide');
+      check(p.injuryDate === undefined || date(p.injuryDate), 'date de blessure invalide');
     }
     for (const su of st.suites) check(obj(su) && TYPES[su.type] !== undefined && date(su.date) && text(su.key, 200) && (su.player === null || su.player === undefined || text(su.player, 180)) && obj(su.vars), 'suite invalide');
     for (const [k, v] of Object.entries(st.sent)) check(text(k, 300) && date(v), 'mémoire invalide');
@@ -762,7 +825,7 @@ function factory() {
   }
 
   // `recevoir(s, d)` : réception sur un état donné (tests : une réception n'écrit que la boîte).
-  return { project, validate, execute, observe, stops, installHooks() { return true; }, recevoir: (s, d) => receive(s, d) };
+  return { project, validate, execute, observe, stops, installHooks() { return true; }, recevoir: (s, d) => receive(s, d), blessures: { typer: typeInjuries, type: injuryKind } };
 }
 
 module.exports = { files, commands, factory, prelude, DATA };
