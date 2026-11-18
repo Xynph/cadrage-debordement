@@ -51,7 +51,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres|pilotage) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres|pilotage|vestiaire) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -97,8 +97,13 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   fi
   if veut pilotage; then
     mkdir -p "$cap/pilotage"
-    phase "captures pilotage du match (écran 2D : consignes, arbitre, états des joueurs)" captures-pilotage.log \
-      env CD_MATCH_TEMPS_FORTS_CAPTURES="$cap/pilotage" CD_MATCH_TEMPS_FORTS_MODES=terrain2d,multiplex node tests/godot-match-temps-forts.cjs
+    phase "captures pilotage du match (écran 2D : faits marquants, états des joueurs, 720p/1080p/1440p)" captures-pilotage.log \
+      env CD_MATCH_TEMPS_FORTS_CAPTURES="$cap/pilotage" CD_MATCH_TEMPS_FORTS_MODES=terrain2d node tests/godot-match-temps-forts.cjs
+  fi
+  if veut vestiaire; then
+    mkdir -p "$cap/vestiaire"
+    phase "captures vestiaire (causerie avant la décision, six tons ; après, réactions colorées ; 1080p et 720p)" captures-vestiaire.log \
+      env CD_CONTEXTUAL_GRAPHICS=1 CD_CONTEXTUAL_ONLY=ui CD_CONTEXTUAL_ARTIFACTS="$cap/vestiaire/artefacts" CD_VESTIAIRE_OUTPUT="$cap/vestiaire" node tests/godot-contextual.cjs
   fi
   if veut banque-images; then
     mkdir -p "$cap/banque-images"

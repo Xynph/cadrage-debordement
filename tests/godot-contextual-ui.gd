@@ -31,6 +31,17 @@ func check(value: bool, message: String) -> void:
 	if not value: failures += 1; printerr("FAIL ", message)
 func settle() -> void:
 	for i in 4: await process_frame
+## Captures du vestiaire (CD_VESTIAIRE_OUTPUT : dossier ; rendu fenêtré seulement) : la fenêtre prend la taille voulue.
+func taille(resolution: Vector2i) -> void:
+	root.size = resolution
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(resolution)
+	await settle()
+func photographier(nom: String) -> void:
+	var sortie := OS.get_environment("CD_VESTIAIRE_OUTPUT")
+	if DisplayServer.get_name() == "headless" or sortie.is_empty(): return
+	await RenderingServer.frame_post_draw
+	var image := root.get_texture().get_image()
+	check(image != null and image.save_png(sortie.path_join("vestiaire-" + nom + ".png")) == OK, "capture vestiaire-" + nom)
 func _initialize() -> void: call_deferred("run")
 func run() -> void:
 	var host := Host.new()
@@ -70,6 +81,9 @@ func run() -> void:
 	var furious: Button = director.view.options_grid.find_child("TalkChoice_furious", true, false)
 	check(furious != null and furious.get_meta("choice_id") == "test:choice:3" and furious.find_child("TalkChoiceText", true, false).text == "Une déclaration courte 3.", "furious declaration keeps its sentence under the tone")
 	check(director.view.tone_label({"tone":"furious"}) == "Furieux" and director.view.tone_label({"tone":"warm","toneLabel":"Encourageant"}) == "Encourageant", "tone label falls back on the six French tones")
+	# Captures : causerie avant la décision (six cartes de ton), en 1080p puis en 720p.
+	await taille(Vector2i(1920,1080)); await photographier("avant-1920x1080")
+	await taille(Vector2i(1280,720)); await photographier("avant-1280x720")
 	check(director.overlay.get_global_rect().size == host.size, "overlay covers full viewport")
 	var photos := director.view.find_children("ParticipantPortrait", "TextureRect", true, false)
 	check(photos.size() == 23, "all 23 actual projected participants have portraits")
@@ -118,6 +132,9 @@ func run() -> void:
 		reactions.append({"id":participants[k].id,"score":state[3],"etat":state[0],"label":state[1],"delta":state[2]})
 	scene.decision = {"choiceId":"test:choice:3","text":"Message prononcé","tone":"furious","toneLabel":"Furieux","intent":"focus","audience":"group","playerIds":participants.map(func(p: Dictionary): return p.id),"reactions":reactions,"moraleBefore":60,"moraleAfter":61,"moraleDelta":1,"par":"manager"}
 	director.sync(); await settle()
+	await photographier("apres-1280x720")
+	await taille(Vector2i(1920,1080)); await photographier("apres-1920x1080")
+	await taille(Vector2i(1280,720))
 	var palette := preload("res://ui/contextual/match_tableau_widgets.gd")
 	var expected_colors := [palette.VERT, Color("c0c9b5"), palette.ALERTE]
 	var reaction_cards := 0
