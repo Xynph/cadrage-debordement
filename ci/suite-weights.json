@@ -15,7 +15,7 @@
       "tests/defis-depart.cjs": 25,
       "tests/feuille-espoirs.cjs": 458,
       "tests/ai-roster-cycle.cjs": 59,
-      "tests/match-pilotage.cjs": 200,
+      "tests/match-pilotage.cjs": 260,
       "tests/arbitre-veille.cjs": 120,
       "tests/cartons-realistes.cjs": 150,
       "tests/homme-du-match-postes.cjs": 120,

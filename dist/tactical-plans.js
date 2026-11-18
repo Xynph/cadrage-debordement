@@ -37,8 +37,9 @@ function penaliteConquete(l,side,kind,a,b){
  // une prolongation à mort subite sans durée (play-offs du Japon, finales Monde).
  if(!penalitesRules(l)||l.restartLog?.some(r=>r.kind==='kickoff'&&r.minute===l.minute))return false;
  const melee=kind==='scrum';
- if(Math.random()>=(melee?PENALITES.melee*(typeof pilotageScrumPenalty==='function'?pilotageScrumPenalty(l):1):PENALITES.touche))return false;
- const pourLanceur=melee?clamp(.55+(a-b)*PENALITES.meleeDominant,.2,.9):.65;
+ const pm=melee&&l.pilotage&&typeof pilotageMelee==='function'?pilotageMelee(l,side,a,b):{freq:1,biais:0};
+ if(Math.random()>=(melee?PENALITES.melee*(typeof pilotageScrumPenalty==='function'?pilotageScrumPenalty(l):1)*pm.freq:PENALITES.touche))return false;
+ const pourLanceur=melee?clamp(.55+(a-b)*PENALITES.meleeDominant+pm.biais,.2,.9):.65;
  const beneficiaire=Math.random()<pourLanceur?side:1-side;
  awardPenalty(l,beneficiaire,{phase:melee?'melee':'touche',incident:melee?'scrum':'maul'});
  return true;

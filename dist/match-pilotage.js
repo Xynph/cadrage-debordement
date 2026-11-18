@@ -55,17 +55,49 @@ function arbitreResume(a){
 // Facteur multiplicatif d'une sévérité (3 = neutre).
 const pilSev=(s,k)=>1+k*((Number(s)||3)-3);
 
-// Consignes en direct : trois crans par axe, le cran du milieu est neutre.
+// Consignes en direct, rangées comme les phases du jeu (attaque, défense, conquête, adversaire), sur le modèle des
+// consignes par phase de FM26/FM27. Trois crans par axe ; `neutre` = le cran sans effet (le cran du milieu sauf mention).
+// Libellés courts : la fenêtre Équipe doit rester lisible en 1280×720.
+const CONSIGNES_GROUPES=[['attaque','Attaque'],['defense','Défense'],['conquete','Conquête'],['adversaire','Adversaire']];
 const CONSIGNES={
- // Libellés courts : la tuile Consignes doit rester lisible en 1280×720 (capture du 18/11).
- piedJeu:{label:'Jeu au pied',valeurs:[['moins','Garder'],['normal','Équilibré'],['plus','Occuper']]},
- rucks:{label:'Rucks',valeurs:[['prudente','Prudence'],['normale','Normale'],['agressive','Contester']]},
- discipline:{label:'Discipline',valeurs:[['stricte','Zéro faute'],['normale','Normale'],['limite','À la limite']]},
- rythme:{label:'Rythme',valeurs:[['lent','Ralentir'],['normal','Normal'],['rapide','Accélérer']]},
- touche:{label:'Touche',valeurs:[['sure','Sûre'],['normale','Normale'],['risquee','Risquée']]}
+ piedJeu:{groupe:'attaque',label:'Jeu au pied',aide:'Garder le ballon en main ou occuper le terrain.',valeurs:[['moins','Garder'],['normal','Équilibré'],['plus','Occuper']]},
+ rythme:{groupe:'attaque',label:'Rythme',aide:'Accélérer use plus vite et fait perdre plus de ballons.',valeurs:[['lent','Ralentir'],['normal','Normal'],['rapide','Accélérer']]},
+ relance:{groupe:'attaque',label:'Relance',aide:'Depuis notre camp : dégager au pied ou relancer à la main.',valeurs:[['degager','Dégager'],['selon','Selon'],['relancer','Relancer']]},
+ finDeMatch:{groupe:'attaque',label:'Fin de match',aide:'À partir de la 70e : jouer la montre ou tout tenter.',valeurs:[['montre','Jouer la montre'],['normal','Normal'],['tout','Tout tenter']]},
+ rucks:{groupe:'defense',label:'Rucks',aide:'Contester chaque ruck arrache des ballons mais coûte des pénalités.',valeurs:[['prudente','Prudence'],['normale','Normale'],['agressive','Contester']]},
+ discipline:{groupe:'defense',label:'Discipline',aide:'Zéro faute défend moins fort ; à la limite, l’arbitre veille.',valeurs:[['stricte','Zéro faute'],['normale','Normale'],['limite','À la limite']]},
+ touche:{groupe:'conquete',label:'Touche',aide:'Lancer court et sûr, ou fond d’alignement pour une meilleure plateforme.',valeurs:[['sure','Sûre'],['normale','Normale'],['risquee','Risquée']]},
+ maul:{groupe:'conquete',label:'Ballon porté',aide:'Après une touche gagnée près de leur ligne.',valeurs:[['jamais','Jamais'],['selon','Selon'],['souvent','Souvent']]},
+ melee:{groupe:'conquete',label:'Mêlée',aide:'Pousser pour la pénalité : plus de coups de sifflet, pour ou contre nous.',valeurs:[['vite','Sortir vite'],['normale','Normale'],['pousser','Pousser']]},
+ coupsEnvoi:{groupe:'conquete',label:'Coups d’envoi',aide:'Courts pour récupérer le ballon, longs pour occuper.',valeurs:[['longs','Longs'],['normaux','Normaux'],['courts','Courts']]},
+ cible:{groupe:'adversaire',label:'Point faible',aide:'L’effet s’émousse : l’adversaire s’adapte en 20 à 30 minutes.',neutre:'aucune',valeurs:[['aucune','Aucun'],['aile','Leur aile faible'],['ouvreur','Presser l’ouvreur']]}
 };
-const CONSIGNES_NEUTRES=Object.fromEntries(Object.entries(CONSIGNES).map(([k,c])=>[k,c.valeurs[1][0]]));
+const CONSIGNES_NEUTRES=Object.fromEntries(Object.entries(CONSIGNES).map(([k,c])=>[k,c.neutre||c.valeurs[1][0]]));
 function consigneLabel(axe,valeur){return CONSIGNES[axe]?.valeurs.find(v=>v[0]===valeur)?.[1]||valeur}
+// Plan de jeu d'avant le match, réglable aussi dans la fenêtre Équipe (match en pause) : mêmes commandes qu'avant.
+const CONSIGNES_PLAN={
+ planAttaque:{groupe:'attaque',label:'Plan de jeu',aide:'Le style d’attaque de l’équipe.'},
+ systemeDefense:{groupe:'defense',label:'Système',aide:'Montée agressive ou glissée prudente.'},
+ penalites:{groupe:'conquete',label:'Pénalités',aide:'Ce que fait le capitaine sur une pénalité obtenue.'}
+};
+function planOptions(axe){
+ if(axe==='planAttaque'&&typeof TACTICS!=='undefined')return Object.entries(TACTICS).map(([id,t])=>({id,label:t[0]}));
+ if(axe==='systemeDefense'&&typeof DEFENCES!=='undefined')return Object.entries(DEFENCES).map(([id,t])=>({id,label:t[0]}));
+ if(axe==='penalites'&&typeof PENALTY_POLICIES!=='undefined')return Object.entries(PENALTY_POLICIES).map(([id,t])=>({id,label:t}));
+ return [];
+}
+function planValeur(l,axe){
+ const u=l.userSide;
+ return axe==='planAttaque'?l.tactics?.[u]:axe==='systemeDefense'?(l.defences?.[u]||'equilibre'):(l.penaltyPolicies?.[u]||'auto');
+}
+// Applique un réglage du plan de jeu (match en pause, comme avant) ; rend vrai si la valeur est prise.
+function setPlan(l,axe,valeur){
+ if(axe==='planAttaque'&&typeof setLiveTactic==='function')setLiveTactic(valeur);
+ else if(axe==='systemeDefense'&&typeof setLiveDefence==='function')setLiveDefence(valeur);
+ else if(axe==='penalites'&&typeof setPenaltyPolicy==='function')setPenaltyPolicy(valeur);
+ else return false;
+ return planValeur(l,axe)===valeur;
+}
 
 // États des joueurs après une causerie : bonus en points d'attribut pendant le match.
 // `tous` s'applique à chaque geste ; les autres clés s'ajoutent pour ce geste précis.
@@ -91,7 +123,8 @@ function initPilotage(l){
 function pilotageReleve(l,u=l.userSide){
  const o=1-u,s=l.stats[u],t=l.tacticalStats?.[u]||{},to=l.tacticalStats?.[o]||{};
  return {minute:l.minute,penalites:s.penalties||0,cartons:(s.yellows||0)+(s.reds||0),coups:t.kicks||0,porteurs:t.carries||0,avancees:t.advances||0,metres:t.metres||0,
-  pertes:t.handErrors||0,arraches:to.handErrors||0,touches:s.lineouts||0,touchesGagnees:s.lineoutsWon||0,penalitesAdverses:l.stats[o].penalties||0};
+  pertes:t.handErrors||0,arraches:to.handErrors||0,touches:s.lineouts||0,touchesGagnees:s.lineoutsWon||0,penalitesAdverses:l.stats[o].penalties||0,
+  melees:s.scrums||0,meleesGagnees:s.scrumsWon||0,points:l.score[u]||0,encaisses:l.score[o]||0,essais:l.tries?.[u]||0,ev:l.events?.length||0};
 }
 function setConsigne(l,axe,valeur,auteur='manager'){
  if(!pilotageActif(l)||l.finished)return false;
@@ -140,7 +173,10 @@ function pilotageFoul(l,fautif,kind){
  }else{
   if(y==='rapide')f*=1.15;else if(y==='lent')f*=.9;
   if(d==='stricte')f*=.85;else if(d==='limite')f*=1.1;
+  if(finDeMatch(l,fautif)==='montre')f*=.9;
  }
+ // Presser leur ouvreur : quelques plaquages en retard sifflés contre nous.
+ if(kind==='jeu'&&pilConsigne(l,fautif,'cible')==='ouvreur')f*=1+.06*cibleForce(l,fautif);
  return f;
 }
 function pilotageScrumPenalty(l){return pilotageActif(l)?pilSev(l.pilotage.arbitre.melee,.12):1}
@@ -149,17 +185,58 @@ function pilotageCard(l){return pilotageActif(l)?pilSev(l.pilotage.arbitre.carto
 function pilotageHandFault(l,side){
  if(!pilotageActif(l))return 0;
  const y=pilConsigne(l,side,'rythme'),r=pilConsigne(l,1-side,'rucks'),d=pilConsigne(l,1-side,'discipline');
- return (y==='rapide'?.02:y==='lent'?-.015:0)+(r==='agressive'?.025:r==='prudente'?-.01:0)+(d==='limite'?.01:d==='stricte'?-.005:0);
+ const rel=enCampPropre(l,side)?pilConsigne(l,side,'relance'):null,f=finDeMatch(l,side),c=pilConsigne(l,1-side,'cible');
+ return (y==='rapide'?.02:y==='lent'?-.015:0)+(r==='agressive'?.025:r==='prudente'?-.01:0)+(d==='limite'?.01:d==='stricte'?-.005:0)
+  +(rel==='relancer'?.012:0)+(f==='montre'?-.025:f==='tout'?.025:0)
+  // Presser leur ouvreur : plus de ballons perdus chez l'attaquant, tant qu'il ne s'est pas adapté.
+  +(c==='ouvreur'?.014*cibleForce(l,1-side):0);
 }
 // Avantage du porteur `side` (kind 'attack') : rythme, pression adverse sur les rucks, plateforme de touche.
 function pilotageEdge(l,side,kind){
  if(!pilotageActif(l)||kind!=='attack')return 0;
  const y=pilConsigne(l,side,'rythme'),r=pilConsigne(l,1-side,'rucks'),d=pilConsigne(l,1-side,'discipline'),p=l.pilotage.plateforme;
- return (y==='rapide'?.02:y==='lent'?-.02:0)+(r==='agressive'?-.012:r==='prudente'?.012:0)+(d==='stricte'?.012:d==='limite'?-.008:0)+(p&&p.side===side&&l.minute-p.minute<=1?.05:0);
+ const rel=enCampPropre(l,side)?pilConsigne(l,side,'relance'):null,f=finDeMatch(l,side),c=pilConsigne(l,side,'cible');
+ return (y==='rapide'?.02:y==='lent'?-.02:0)+(r==='agressive'?-.012:r==='prudente'?.012:0)+(d==='stricte'?.012:d==='limite'?-.008:0)+(p&&p.side===side&&l.minute-p.minute<=1?.05:0)
+  +(rel==='relancer'?.022:0)+(f==='montre'?-.012:f==='tout'?.025:0)
+  // Attaquer leur aile la plus faible : l'écart de plaquage avec le reste de leur ligne, jusqu'à ce qu'ils s'adaptent.
+  +(c==='aile'?aileFaible(l,1-side)*cibleForce(l,side):0);
+}
+// Notre camp (là où « Relance » joue) et fin de match (dès la 70e) pour le côté `side`.
+function enCampPropre(l,side){return side===0?l.territory<50:l.territory>50}
+function finDeMatch(l,side){const f=pilConsigne(l,side,'finDeMatch');return l.minute>=70&&f&&f!=='normal'?f:null}
+// Effet d'un point faible visé : plein au début, nul 30 minutes après (l'adversaire corrige).
+function cibleForce(l,side){const d=side===l.userSide?l.pilotage.depuis?.cible:null;return Number.isFinite(d)?Math.max(0,1-(l.minute-d)/30):1}
+function aileFaible(l,defenseur){
+ if(typeof activePlayers!=='function')return 0;
+ const ligne=activePlayers(l,defenseur),ailes=ligne.filter(p=>[11,14].includes(l.sheets[defenseur].on.indexOf(p.id)+1));
+ if(!ailes.length||!ligne.length)return 0;
+ const moyenne=ligne.reduce((n,p)=>n+skill(p,'tackle'),0)/ligne.length,faible=Math.min(...ailes.map(p=>skill(p,'tackle')));
+ return Math.max(.008,Math.min(.035,(moyenne-faible)*.002));
 }
 function pilotageKick(l,side){
- const k=pilConsigne(l,side,'piedJeu'),y=pilConsigne(l,side,'rythme');
- return (k==='moins'?.55:k==='plus'?1.55:1)*(y==='lent'?1.1:1);
+ const k=pilConsigne(l,side,'piedJeu'),y=pilConsigne(l,side,'rythme'),rel=enCampPropre(l,side)?pilConsigne(l,side,'relance'):null,f=finDeMatch(l,side);
+ return (k==='moins'?.55:k==='plus'?1.55:1)*(y==='lent'?1.1:1)*(rel==='degager'?1.4:rel==='relancer'?.6:1)*(f==='montre'?.6:f==='tout'?.8:1);
+}
+// Ballon porté après une touche gagnée près de leur ligne : chance d'essai (rugby.js, contestSetPiece).
+function pilotageMaul(l,side,kind){
+ if(kind!=='lineout')return 0;const m=pilConsigne(l,side,'maul');
+ return m==='souvent'?.07:m==='jamais'?-.08:0;
+}
+// Mêlée : « Pousser » fait siffler plus souvent et penche vers le pack dominant ; « Sortir vite » apaise la mêlée.
+// Rend {freq, biais} pour la mêlée introduite par `side` (tactical-plans.js, penaliteConquete) ; `a`, `b` : packs.
+function pilotageMelee(l,side,a,b){
+ if(!pilotageActif(l))return {freq:1,biais:0};
+ const u=l.userSide,m=pilConsigne(l,u,'melee'),dom=(side===u?a-b:b-a);
+ if(m==='pousser')return {freq:1.5,biais:(side===u?1:-1)*Math.max(-.15,Math.min(.15,dom*.012))};
+ if(m==='vite')return {freq:.65,biais:0};
+ return {freq:1,biais:0};
+}
+// Mêlée gagnée en sortant vite : meilleure plateforme pour l'action suivante (comme la touche risquée).
+function pilotageScrumWon(l,side){if(pilConsigne(l,side,'melee')==='vite')l.pilotage.plateforme={side,minute:l.minute}}
+// Coups d'envoi : {distance (facteur), garde (probabilité ajoutée de récupérer le ballon)} pour l'équipe qui botte.
+function pilotageRenvoi(l,team){
+ const c=pilConsigne(l,team,'coupsEnvoi');
+ return c==='courts'?{distance:.6,garde:.12}:c==='longs'?{distance:1.45,garde:-.07}:{distance:1,garde:0};
 }
 function pilotageLineout(l,side){const t=pilConsigne(l,side,'touche');return t==='sure'?.06:t==='risquee'?-.06:0}
 // Touche gagnée en fond d'alignement : meilleure plateforme pour l'action suivante.
@@ -396,14 +473,25 @@ function pilotageAdversaire(l){
 // --- Projection pour l'écran 2D ---
 function pilotageBilan(l,axe){
  const v=l.pilotage.consignes[axe],r=l.pilotage.releves[axe];if(!r||v===CONSIGNES_NEUTRES[axe])return null;
- const m=pilotageReleve(l),d=k=>m[k]-r[k],pl=(n,s,p)=>n+' '+(n>1?p:s);
+ const u=l.userSide,m=pilotageReleve(l),d=k=>m[k]-(r[k]||0),pl=(n,s,p)=>n+' '+(n>1?p:s);
+ // Faits du moteur depuis le changement (essais sur ballon porté, coups d'envoi repris).
+ const ev=(l.events||[]).slice(r.ev||0);
+ const maulTries=ev.filter(e=>e.type==='try'&&e.scene?.team===u&&e.scene?.origin==='maul').length;
+ let envois=0,repris=0;
+ ev.forEach((e,i)=>{if(e.type==='restart'&&e.scene?.team===u){envois++;const n=ev[i+1];if(n?.scene?.kind==='reception'&&n.scene.team===u)repris++}});
  const morceaux={
   rucks:[pl(d('penalites'),'pénalité','pénalités'),pl(d('arraches'),'ballon arraché','ballons arrachés')],
   discipline:[pl(d('penalites'),'pénalité','pénalités'),pl(d('cartons'),'carton','cartons')],
   piedJeu:[pl(d('coups'),'coup de pied','coups de pied'),pl(d('metres'),'mètre gagné','mètres gagnés')],
   rythme:[pl(d('porteurs'),'temps de jeu','temps de jeu'),pl(d('pertes'),'ballon perdu','ballons perdus')],
-  touche:[`${d('touchesGagnees')}/${d('touches')} touche${d('touches')>1?'s':''} gagnée${d('touchesGagnees')>1?'s':''}`]
- }[axe];
+  relance:[pl(d('coups'),'coup de pied','coups de pied'),pl(d('metres'),'mètre gagné','mètres gagnés'),pl(d('pertes'),'ballon perdu','ballons perdus')],
+  finDeMatch:[`${d('points')} point${d('points')>1?'s':''} marqué${d('points')>1?'s':''}, ${d('encaisses')} encaissé${d('encaisses')>1?'s':''}`,pl(d('pertes'),'ballon perdu','ballons perdus')],
+  touche:[`${d('touchesGagnees')}/${d('touches')} touche${d('touches')>1?'s':''} gagnée${d('touchesGagnees')>1?'s':''}`],
+  maul:[`${d('touchesGagnees')} touche${d('touchesGagnees')>1?'s':''} gagnée${d('touchesGagnees')>1?'s':''}`,pl(maulTries,'essai sur ballon porté','essais sur ballon porté')],
+  melee:[`${d('meleesGagnees')}/${d('melees')} mêlée${d('melees')>1?'s':''} gagnée${d('meleesGagnees')>1?'s':''}`,pl(d('penalitesAdverses'),'pénalité adverse','pénalités adverses'),pl(d('penalites'),'pénalité contre nous','pénalités contre nous')],
+  coupsEnvoi:[`${repris}/${envois} coup${envois>1?'s':''} d’envoi récupéré${repris>1?'s':''}`],
+  cible:[pl(d('essais'),'essai','essais'),pl(d('metres'),'mètre gagné','mètres gagnés'),v==='ouvreur'?pl(d('arraches'),'ballon perdu chez eux','ballons perdus chez eux'):`effet ${Math.round(cibleForce(l,u)*100)} %`]
+ }[axe]||[];
  return {axe,valeur:v,depuis:l.pilotage.depuis[axe],texte:`${CONSIGNES[axe].label} « ${consigneLabel(axe,v)} » depuis ${l.pilotage.depuis[axe]}′ : ${morceaux.join(', ')}.`};
 }
 function pilotageProjection(l){
@@ -414,7 +502,11 @@ function pilotageProjection(l){
  return {
   arbitre:{...p.arbitre},
   consignes:{...p.consignes},
-  axes:Object.entries(CONSIGNES).map(([id,c])=>({id,label:c.label,valeur:p.consignes[id],options:c.valeurs.map(([v,t])=>({id:v,label:t}))})),
+  // Toutes les consignes de la fenêtre Équipe, par groupe : plan de jeu (match en pause) puis consignes en direct.
+  groupes:CONSIGNES_GROUPES.map(([id,label])=>({id,label})),
+  axes:[...Object.entries(CONSIGNES_PLAN).map(([id,c])=>({id,groupe:c.groupe,label:c.label,aide:c.aide,pause:true,valeur:planValeur(l,id),options:planOptions(id)})).filter(a=>a.options.length),
+   ...Object.entries(CONSIGNES).map(([id,c])=>({id,groupe:c.groupe,label:c.label,aide:c.aide,pause:false,valeur:p.consignes[id]??CONSIGNES_NEUTRES[id],options:c.valeurs.map(([v,t])=>({id:v,label:t}))}))]
+   .sort((a,b)=>CONSIGNES_GROUPES.findIndex(g=>g[0]===a.groupe)-CONSIGNES_GROUPES.findIndex(g=>g[0]===b.groupe)),
   bilans:Object.keys(CONSIGNES).map(a=>pilotageBilan(l,a)).filter(Boolean),
   joueurs,
   journal:p.journal.slice(-8),
@@ -425,4 +517,4 @@ function pilotageProjection(l){
    causeries:Object.fromEntries(Object.entries(p.adversaire?.causeries||{}).map(([ph,t])=>[ph,{ton:t,label:TONS_LABELS[t]||t}]))}
  };
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={ARBITRES,arbitreDuMatch,arbitreResume,CONSIGNES,CRIS,TONS_CAUSERIE,TONS_LABELS,PILOTAGE_ETATS};
+if(typeof module!=='undefined'&&module.exports)module.exports={ARBITRES,arbitreDuMatch,arbitreResume,CONSIGNES,CONSIGNES_GROUPES,CONSIGNES_PLAN,CRIS,TONS_CAUSERIE,TONS_LABELS,PILOTAGE_ETATS};

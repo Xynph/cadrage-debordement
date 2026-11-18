@@ -96,3 +96,22 @@ mesure le banc adverse actif sur 60 matchs (~2,9 changements de consigne par mat
 - Conseil de Gabi (`live.pilotage.conseilChangement`) : le joueur qui passera sous 55 % dans 10 minutes, remplacé par le
   remplaçant éligible le mieux noté et frais (≥ 85 %).
 - Corps arbitral : trois arbitres femmes (accords dans le résumé, le mail et le mot de Gabi).
+
+## Consignes en 4 groupes (décision de Léo, 18/11)
+
+Organisation inspirée des consignes par phase de FM26/FM27 et des phases du rugby : **Attaque** (plan de jeu, jeu au
+pied, rythme, relance, fin de match), **Défense** (système, rucks, discipline), **Conquête** (touche, ballon porté, mêlée,
+coups d'envoi, pénalités), **Adversaire** (point faible). Le plan de jeu (attaque, défense, pénalités) passe par la même
+commande `set_consignes` mais reste réglable seulement match en pause, comme avant.
+
+| Consigne | Crans | Effet |
+|---|---|---|
+| Relance (notre camp) | Dégager / Selon / Relancer | jeu au pied × 1,4 / × 0,6 ; relancer : avance + 0,022, en-avant + 0,012 |
+| Fin de match (dès 70′) | Jouer la montre / Normal / Tout tenter | montre : moins de jeu au pied et de pertes, moins d'avance ; tout tenter : + avance, + pertes |
+| Ballon porté | Jamais / Selon / Souvent | essai sur ballon porté après touche près de la ligne − 0,08 / + 0,07 |
+| Mêlée | Sortir vite / Normale / Pousser | pousser : pénalités de mêlée × 1,5 penchant vers le pack dominant ; vite : × 0,65 et meilleure plateforme |
+| Coups d'envoi | Longs / Normaux / Courts | distance × 1,45 / × 0,6 ; ballon repris − 7 / + 12 points |
+| Point faible | Aucun / Leur aile / Presser l'ouvreur | aile : avance selon l'écart de plaquage de leur aile la plus faible ; ouvreur : leurs pertes + 0,014, nos fautes × 1,06 ; effet décroissant sur 30 minutes |
+
+Mesures (`tests/match-pilotage.cjs`, 100 matchs par réglage) : coups d'envoi repris 23 % (courts) / 13 % / 2 % (longs) ;
+pénalités de mêlée 2,5 → 3,9 en poussant ; essais sur ballon porté 0,16 / 0,48 / 0,75 par match.
