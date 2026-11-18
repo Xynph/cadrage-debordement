@@ -112,7 +112,7 @@ func run() -> void:
 	root.size = Vector2i(1280, 720)
 	between.size = Vector2(1280, 620)
 	for i in 4: await process_frame
-	var cadre := between.bonus_tuile.get_global_rect()
+	var cadre: Rect2 = between.bonus_tuile.get_global_rect()
 	check(cadre.size.x > 0 and cadre.end.x <= 1281.0 and cadre.end.y <= 721.0, "Tuile Bonus visible en 1280×720 (" + str(cadre) + ")")
 	fin["bonus"] = null
 	between.update_frame({}, live, fin, func(_c: Variant): pass)

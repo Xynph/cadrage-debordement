@@ -79,10 +79,11 @@ func ecran_entracte() -> void:
 	between.queue_free()
 	await process_frame
 
-## Gabi parle d'office à l'arrivée sur un écran : sa bulle masquerait la page, on la referme avant la capture.
+## Gabi parle d'office à la première visite d'un écran : sa bulle masquerait la page (quota, onglets), on la coupe pour les captures.
 func fermer_gabi() -> void:
 	var coach = app.coach
 	if coach == null: return
+	coach.profile.data.enabled = false
 	coach.close()
 	coach._attente.clear()
 	await settle(8)
@@ -119,6 +120,7 @@ func run() -> void:
 	await wait_engine()
 	app.timer.stop()
 	check(str(app.model.get("meta", {}).get("mode")) == "world", "Carrière Monde importée")
+	await fermer_gabi()
 	# 2. Feuille de match : quota JIFF et liste des 33.
 	check(bool(app.model.get("clubLife", {}).get("jiff", {}).get("applies", false)), "Le championnat impose un quota JIFF")
 	app._navigate("Composition")
@@ -129,7 +131,6 @@ func run() -> void:
 	for p: Dictionary in app.model.get("squad", []):
 		if p.get("playerFacts", {}).get("listeElite", false): liste += 1
 	check(liste > 0, "Des joueurs de la liste des 33 dans l'effectif (%d)" % liste)
-	await fermer_gabi()
 	await capture("2-feuille-match-quota-liste-bleus")
 	# 3. Infirmerie : onglet Médical de « Travail du club ».
 	app.management_ui["immersive08_support_tab"] = 1
@@ -140,7 +141,6 @@ func run() -> void:
 	await settle(10)
 	var carte := app.find_children("Concussion_*", "", true, false)
 	check(not carte.is_empty(), "Médical : un joueur sous protocole commotion")
-	await fermer_gabi()
 	await capture("3-infirmerie-commotion-hia")
 	fin()
 

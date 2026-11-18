@@ -20,8 +20,17 @@ static func build(app: Control) -> Control:
 	tabs.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	tabs.add_theme_color_override("font_selected_color", G.INK)
 	tabs.add_theme_color_override("font_unselected_color", G.MUTED)
-	tabs.add_theme_stylebox_override("tab_selected", G.T.box(G.PAPER, 2, G.LINE))
-	tabs.add_theme_stylebox_override("tab_unselected", G.T.box(Color("e5dccb"), 2, G.LINE))
+	var onglet_actif: StyleBoxFlat = G.T.box(G.PAPER, 2, G.LINE)
+	var onglet_inactif: StyleBoxFlat = G.T.box(Color("e5dccb"), 2, G.LINE)
+	# Onglets assez larges et hauts pour être cliqués en 720p (ils tenaient sur 12 px de texte).
+	for onglet: StyleBoxFlat in [onglet_actif, onglet_inactif]:
+		onglet.content_margin_left = 18
+		onglet.content_margin_right = 18
+		onglet.content_margin_top = 8
+		onglet.content_margin_bottom = 8
+	tabs.add_theme_font_size_override("font_size", 16)
+	tabs.add_theme_stylebox_override("tab_selected", onglet_actif)
+	tabs.add_theme_stylebox_override("tab_unselected", onglet_inactif)
 	G.fill(tabs, true)
 	paper.add_child(tabs)
 	_staff(tabs, app, data)

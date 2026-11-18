@@ -892,6 +892,8 @@ func _page() -> void:
 	bonus_regle.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	S.G.fill(bonus_regle)
 	tete_bonus.add_child(bonus_regle)
+	# Le titre ne prend que sa place : la règle du championnat reçoit le reste de la ligne (elle était coupée en deux).
+	tete_bonus.get_child(0).size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	cadre_bonus.add_child(tete_bonus)
 	bonus_etat = S.G.h(px(16))
 	bonus_etat.name = "MatchBetweenBonusState"
