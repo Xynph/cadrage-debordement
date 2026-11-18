@@ -176,9 +176,8 @@ func avant_match() -> void:
 		var tuile_a: Node = app.match_screen.find_child("TuileMeteo", true, false)
 		var bloc: Node = tuile_a.find_child("MatchArbitre", true, false) if tuile_a != null else null
 		var nom: Label = bloc.find_child("MatchArbitreNom", true, false) if bloc != null else null
-		var resume: Label = bloc.find_child("MatchArbitreResume", true, false) if bloc != null else null
 		verifier(nom != null and nom.text == "Arbitre : Julien Castaing" and nom.is_visible_in_tree(), "arbitre %s : nom dans la tuile des conditions" % variante)
-		verifier(resume != null and resume.text == str(arbitre.resume), "arbitre %s : profil en une ligne" % variante)
+		verifier(nom != null and nom.tooltip_text == str(arbitre.resume), "arbitre %s : profil en infobulle du nom" % variante)
 		var niveaux: Array = []
 		for libelle: String in ["Rucks", "Mêlée", "Hors-jeu", "Cartons"]:
 			var jauge: Node = bloc.find_child("ArbitreJauge_" + libelle, true, false) if bloc != null else null

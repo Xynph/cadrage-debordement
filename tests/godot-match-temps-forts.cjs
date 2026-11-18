@@ -49,7 +49,7 @@ function run(mode,dossier=mode){
  if(mode==='multiplex'){Object.assign(env,{CD_MATCH_TEMPS_FORTS_HORLOGE:'rapide',CD_MATCH_TEMPS_FORTS_VITESSE:'4',CD_GODOT_SEED:'7'});delete env.CD_MODES_HERITES;}
  // CD_MATCH_TEMPS_FORTS_CAPTURES=<dossier> : rendu fenêtré (pas headless) et captures de l'écran intermédiaire.
  const fenetre=!!process.env.CD_MATCH_TEMPS_FORTS_CAPTURES;
- const result=spawnSync(godot,[...(fenetre?[]:['--headless']),'--max-fps','60','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts.gd')],{env,encoding:'utf8',windowsHide:true,timeout:600000});
+ const result=spawnSync(godot,[...(fenetre?['--display-driver','x11','--rendering-method','gl_compatibility','--windowed']:['--headless']),'--audio-driver','Dummy','--max-fps','60','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts.gd')],{env,encoding:'utf8',windowsHide:true,timeout:600000});
  const output=(result.stdout||'')+(result.stderr||'');fs.writeFileSync(path.join(directory,'godot-'+mode+'.log'),output);console.log(output);
  if(result.error)throw result.error;assert.equal(result.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:/);
  return JSON.parse(fs.readFileSync(path.join(directory,'report-'+mode+'.json'),'utf8'));

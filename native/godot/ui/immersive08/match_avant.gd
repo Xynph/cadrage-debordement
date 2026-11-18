@@ -668,13 +668,12 @@ func _arbitre(column: VBoxContainer, arbitre: Dictionary) -> void:
 	tete.add_child(nom)
 	for axe: Array in [["rucks", "Rucks"], ["melee", "Mêlée"], ["horsJeu", "Hors-jeu"], ["cartons", "Cartons"]]:
 		tete.add_child(jauge_arbitre(str(axe[1]), arbitre.get(axe[0])))
+	# Profil en infobulle seulement : la ligne de résumé faisait déborder l'écran en 1080p (capture du 18/11) ;
+	# les jauges disent l'essentiel et Gabi rappelle une manie marquée (rucks).
 	var resume := str(arbitre.get("resume", "")).strip_edges()
 	if not resume.is_empty():
-		var profil := lignes(resume, 13, C.MUTED, 1)
-		profil.name = "MatchArbitreResume"
-		profil.tooltip_text = resume
-		profil.mouse_filter = Control.MOUSE_FILTER_PASS
-		bloc.add_child(profil)
+		nom.tooltip_text = resume
+		nom.mouse_filter = Control.MOUSE_FILTER_PASS
 
 ## Jauge compacte d'une sévérité d'arbitre (1 à 5, 3 neutre) : libellé au-dessus de cinq crans.
 static func jauge_arbitre(libelle: String, valeur: Variant) -> Control:
