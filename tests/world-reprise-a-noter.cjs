@@ -43,19 +43,22 @@ test('À noter : arrêts informatifs regroupés par jour, Continuer repart sans 
   console.log('Arrêts :', JSON.stringify(arrets));
   const notes = arrets.filter(x => x[1] === 'a_noter');
   const s = j.etat();
-  assert.ok(notes.some(x => x[0] === '2026-08-07' && /bilan du stage/.test(x[2])), 'bilan du stage');
-  const amical = notes.find(x => /compte rendu de match amical/.test(x[2]));
-  assert.ok(amical, 'compte rendu d’amical');
-  // Tous les éléments arrêtent l'avance (pas de niveaux, décision de Léo du 16/11), retour des internationaux compris.
+  // Un seul arrêt par semaine qui résume tout (décision de Léo, 18/11/2026) ; chaque courrier arrive à son jour.
+  const resume = notes.map(x => x[2]).join(' | ');
+  assert.ok(notes.every(x => /^Ta semaine de préparation : /.test(x[2])), resume);
+  assert.match(resume, /stage [a-zé-]+ terminé/, 'bilan du stage');
+  assert.match(resume, /amical 1\/\d (gagné|perdu|nul) \d+-\d+ /, 'compte rendu d’amical');
   const retour = s.reprise.notes.find(x => x.startsWith('retour:'));
   assert.ok(retour, JSON.stringify(s.reprise.notes));
-  assert.ok(notes.some(x => x[0] === retour.slice(7) && /retour des internationaux/.test(x[2])), 'arrêt sur le retour des internationaux');
+  assert.match(resume, /internationa(l|ux) de retour/, 'retour des internationaux résumé');
   assert.ok(s.news.some(n => /^Match amical 1\/\d : /.test(n)) && s.news.some(n => /^Retour de tournée : \d+ internationa/.test(n)));
   const veille = notes.at(-1);
   assert.equal(veille[0], '2026-09-05', 'veille de la 1re journée');
-  assert.match(veille[2], /^2 éléments en Réception : dernier point recrutement, veille de la 1re journée/, 'plusieurs éléments le même jour : un seul arrêt');
+  assert.match(veille[2], /1re journée demain/);
   assert.ok(s.news.some(n => /^Dernier point recrutement avant la 1re journée/.test(n)) && s.news.some(n => /^Veille de la 1re journée/.test(n)));
-  assert.equal(new Set(notes.map(x => x[0])).size, notes.length, 'un seul arrêt par jour, tous les éléments regroupés');
+  const jours = notes.map(x => Date.parse(x[0]) / 86400000);
+  assert.ok(jours.every((d, i) => i === 0 || d - jours[i - 1] >= 1), 'un seul arrêt par jour');
+  assert.ok(notes.length < s.reprise.notes.length, 'moins d’arrêts que d’éléments : ' + notes.length + ' / ' + s.reprise.notes.length);
   assert.equal(arrets.at(-1)[1], 'match');
   // Sauvegarde : éléments déjà envoyés gardés, jamais renvoyés.
   const text = j.go('export').meta.exportText;

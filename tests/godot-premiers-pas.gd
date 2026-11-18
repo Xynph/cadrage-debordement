@@ -47,7 +47,9 @@ func run() -> void:
 	check(str(app.model.meta.get("mode")) == "world", "Carrière Monde")
 	var coach: Control = app.coach
 	var liste: Array = PremiersPas.objectifs(app.model, coach.profile.data)
-	check(liste.size() >= 3 and liste.size() <= 4, "Trois à quatre objectifs (%d)" % liste.size())
+	check(liste.size() >= 3 and liste.size() <= 5, "Trois à cinq objectifs (%d)" % liste.size())
+	var avec_amicaux := liste.any(func(o: Dictionary) -> bool: return o.cle == "amicaux")
+	check(avec_amicaux, "Les matchs amicaux font partie des objectifs")
 	check(liste.any(func(o: Dictionary) -> bool: return o.cle == "stage"), "Le stage de préparation fait partie des objectifs")
 	await bureau()
 	check(carte() != null, "Carte « Premiers pas » présente au début de la carrière")
@@ -67,10 +69,16 @@ func run() -> void:
 	check(app._command("reprise_decide", {"decision": "stage", "option": "staff"}), "Commande de stage envoyée")
 	await wait_model(); await settle()
 	check(faits() == 2, "Stage arrêté : deuxième objectif coché")
+	# Amicaux : cochés par la décision réelle du moteur.
+	if avec_amicaux:
+		check(app._command("reprise_decide", {"decision": "amicaux", "option": "staff"}), "Commande des amicaux envoyée")
+		await wait_model(); await settle()
+		check(faits() == 3, "Amicaux arrêtés : troisième objectif coché")
+	var base := faits()
 	# Composition : coché par la commande acceptée.
 	check(app._command("auto_lineup", {}), "Commande de composition envoyée")
 	await wait_model(); await settle()
-	check(faits() == 3, "Composition acceptée : troisième objectif coché")
+	check(faits() == base + 1, "Composition acceptée : objectif coché")
 	await bureau()
 	check(carte() != null, "Un objectif reste : la carte est encore là")
 	app._navigate("Recrutement"); await settle()

@@ -179,6 +179,15 @@ function run(o){
     desk:desk?{decisions:(desk.decisions||[]).length,prolonges:lots.reduce((n,l)=>n+(l.prolonges?.length||0),0),arrivees:lots.reduce((n,l)=>n+(l.recrues?.length||0),0)}:null}));
   }
   console.log('INV '+JSON.stringify({label,...row.investissements}));
+  // Règles financières françaises (a2r.cjs, president-reprise.cjs) : décisions de l'A2R et interventions du président
+  // de la saison, par championnat, et ce que le club joué en a reçu (doit rester rare).
+  if(label.startsWith('end-')){
+   const regles={};
+   for(const [k,v] of Object.entries(s.clubDirections?.tally||{})){const [saison,lg,kind]=k.split('|');if(saison===String(s.season)&&/^(a2r|president):/.test(kind||''))(regles[kind]??={})[lg]=v;}
+   const mails=(s.clubMail?.mails||[]).filter(m=>/^(a2r_|reprise_president)/.test(m.type)).map(m=>({type:m.type,date:m.date,choix:m.choice}));
+   row.regles={season:s.season,audition:s.a2r?{saison:s.a2r.saison,date:s.a2r.date,examens:s.a2r.examens||null,niveaux:Object.fromEntries(Object.entries(s.a2r.decisions||{}).map(([id,d])=>[id,d.initial+'>'+d.niveau]))}:null,compteurs:regles,user:{a2r:s.a2r?.decisions?.[s.club]??null,president:s.presidentReprise?.clubs?.[s.club]??null,mails}};
+   console.log('REGLES '+JSON.stringify({label,...row.regles}));
+  }
   if(label.startsWith('end-')){row.resultatsParLigue=resultatsParLigue(s);console.log('LIGUES '+JSON.stringify({label,ligues:row.resultatsParLigue}));}
   if(o.keep){fs.mkdirSync(o.keep,{recursive:true});fs.copyFileSync(profile,path.join(o.keep,label+'.json'));}
   save();
