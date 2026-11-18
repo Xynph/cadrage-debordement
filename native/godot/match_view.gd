@@ -18,6 +18,7 @@ const Gestes = preload("res://match_gestes.gd")
 const Rendu = preload("res://match_rendu.gd")
 const Animations = preload("res://match_animations.gd")
 const Choregraphie = preload("res://match_choregraphie.gd")
+const Impacts = preload("res://match_impacts.gd")
 const CUT_SECONDS := 0.30
 ## Nombre de joueurs à l'image, chacun à plus de Motion.TRAJET_REPLACEMENT de sa place, à partir
 ## duquel la vue coupe pour les replacer (équipe qui se reforme) au lieu de les faire courir.
@@ -81,6 +82,8 @@ var _ground_meshes: Array[MeshInstance3D] = []
 ## Poses tenues après une liaison (mêlée liée) : id -> {pitch, lift, poids, base, lache}.
 var _tenues: Dictionary = {}
 var _tenue_cle := ""
+## Plaquage, ruck et joie d'essai avec les clips du modèle (match_impacts.gd).
+var _impacts: RefCounted = Impacts.new(self)
 ## Compteurs de contrôle (tests, capture) : joueurs replacés au lieu de courir, et coupes posées pour cela.
 var replacements := 0
 var replacements_coupes := 0
@@ -223,6 +226,7 @@ func jouer_choregraphie(pistes: Dictionary, vitesse: float = 1.0) -> bool:
 	_stop_live_pass()
 	_pass_plan = {}
 	_contact_plan = {}
+	_impacts.annuler()
 	if _gestes:
 		_gestes.cancel()
 	if not _choregraphie.charger(pistes):
@@ -316,7 +320,7 @@ func essai_aplati() -> bool:
 
 
 func is_presenting_extended_pass() -> bool:
-	return _pass_plan.get("duration", 0.0) == Pass.LIVE_SECONDS or (_gestes != null and _gestes.holding_tick())
+	return _pass_plan.get("duration", 0.0) == Pass.LIVE_SECONDS or (_gestes != null and _gestes.holding_tick()) or _impacts.tient()
 
 
 func apply_frame(live: Dictionary) -> void:
@@ -358,6 +362,8 @@ func apply_frame(live: Dictionary) -> void:
 		for tenue: Dictionary in _tenues.values():
 			tenue.lache = true
 	var new_action := key != _action_key
+	# Plaqueur et ruck : placés à leur place de contact dans la scène projetée.
+	scene = _impacts.observer(scene, new_action, _action_motion and not _paused and has_ball and _live_cadence == 1)
 	var play_action := (_action_motion and not _paused and has_ball and _ball.visible
 		and not _action_key.is_empty() and not key.is_empty())
 	_action_key = key
@@ -481,7 +487,7 @@ func _replacer_longs(new_action: bool) -> void:
 	for id: String in _actors:
 		var entry: Dictionary = _actors[id]
 		# Seulement un trajet qui vient d'être fixé, et jamais un joueur mis en scène ailleurs.
-		if float(entry.elapsed) > 0.0 or _is_pass_player(id) or (_gestes != null and _gestes.stages(id)) or (_choregraphie != null and _choregraphie.stages(id)):
+		if float(entry.elapsed) > 0.0 or _is_pass_player(id) or (_gestes != null and _gestes.stages(id)) or (_choregraphie != null and _choregraphie.stages(id)) or _impacts.occupe(id):
 			continue
 		var at: Vector3 = (entry.node as Node3D).position
 		var target: Vector3 = entry.target
@@ -534,7 +540,7 @@ func deplacement_restant(rayon: float = 25.0) -> float:
 	var ballon := Vector2(_ball_target.x, _ball_target.z)
 	for id: String in _actors:
 		var entry: Dictionary = _actors[id]
-		if _is_pass_player(id) or (_gestes != null and _gestes.stages(id)) or (_choregraphie != null and _choregraphie.stages(id)):
+		if _is_pass_player(id) or (_gestes != null and _gestes.stages(id)) or (_choregraphie != null and _choregraphie.stages(id)) or _impacts.occupe(id):
 			continue
 		var target: Vector3 = entry.target
 		if Vector2(target.x, target.z).distance_to(ballon) > rayon:
@@ -653,9 +659,14 @@ func _process(delta: float) -> void:
 				animation.play(oneshot.clip, 0.2)
 				animation.seek(float(oneshot.t), false)
 			animation.speed_scale = 1.0
-			animation.advance(delta)
-			oneshot.t = float(oneshot.t) + delta
-			if float(oneshot.t) >= float(oneshot.fin):
+			# « vitesse » (match_impacts.gd) : clip lu à une autre allure, ou à l'envers (relevé).
+			var vitesse := float(oneshot.get("vitesse", 1.0))
+			if vitesse == 1.0:
+				animation.advance(delta)
+			oneshot.t = float(oneshot.t) + delta * vitesse
+			if vitesse != 1.0:
+				animation.seek(maxf(0.0, float(oneshot.t)), true)
+			if float(oneshot.t) >= float(oneshot.fin) if vitesse >= 0.0 else float(oneshot.t) <= float(oneshot.fin):
 				var suite: Array = oneshot.suite
 				entry.geste = {}
 				if not suite.is_empty():
@@ -709,6 +720,7 @@ func _process(delta: float) -> void:
 					Cut.apply_live(actor, entry.rig, entry.cut_direction, cut_progress, entry.cut_pose, entry.cut_plant)
 				else:
 					Cut.apply(actor, entry.rig, entry.cut_direction, cut_progress, entry.cut_pose, entry.cut_plant)
+	_impacts.avancer(delta)
 	_update_contact(delta)
 	# Poses des pistes avant le ballon : les mains du porteur sont à leur place quand il y est mis.
 	if choregraphie_active():
@@ -743,6 +755,7 @@ func _process(delta: float) -> void:
 				_porter_ballon(id, entry, delta)
 		elif rig:
 			_bras_hors_ballon(id, entry)
+	_impacts.poser_ballon()
 	if not _pass_plan.is_empty() and _pass_elapsed >= _pass_plan.duration:
 		_stop_live_pass(true)
 	# Repère au sol du ballon : seulement dans la vue de dessus, où le ballon est minuscule ;
@@ -1056,6 +1069,7 @@ func _clear_presence() -> void:
 	_pass_plan.clear()
 	_pass_elapsed = 0.0
 	_contact_plan = {}
+	_impacts.annuler()
 	_ball_attached = false
 	_camera_cut = true
 	_fit_camera(0.0, true)
