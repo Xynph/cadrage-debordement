@@ -189,7 +189,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 	return tab
 
 static func _conference_draft(app: Control, data: Dictionary) -> Dictionary:
-	var draft_key := "%d:%d:%d" % [data.context.season, data.context.week, data.context.club]
+	var draft_key := "%d:%d:%d:%s" % [data.context.season, data.context.week, data.context.club, str(data.context.get("slot", ""))]
 	if data.conference.get("invitationId") is String: draft_key = data.conference.invitationId
 	if app.get_meta("press_draft_context", "") != draft_key:
 		app.set_meta("press_draft_context", draft_key)

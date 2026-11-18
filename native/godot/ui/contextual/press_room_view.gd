@@ -396,7 +396,7 @@ func _render_outcome(column: VBoxContainer, outcome: Dictionary) -> void:
 		if before.has(metric) and after.has(metric) and delta.has(metric):
 			list.add_child(S.label("%s : %s → %s (%+.0f)" % [metrics[metric], S.G.n(before[metric]), S.G.n(after[metric]), float(delta[metric])], 14, S.GOLD))
 	for promise: Dictionary in _promises().get("active", []):
-		if "%d:%d:%d" % [int(promise.get("season", -1)), int(promise.get("week", -1)), int(promise.get("club", -1))] != _context: continue
+		if _context_key(promise) != _context: continue
 		var announce: Dictionary = promise.get("announce", {})
 		var line := S.wrap("Promesse publique : « %s » (%s) · supporters %+d · médias %+d · confiance %+d · pression %+d" % [str(promise.get("label", "")), str(promise.get("realismLabel", "")), int(announce.get("fanTrust", 0)), int(announce.get("mediaTrust", 0)), int(announce.get("trust", 0)), int(announce.get("boardPressure", 0))], 14, S.GOLD)
 		line.name = "PressPromiseAnnounced"
