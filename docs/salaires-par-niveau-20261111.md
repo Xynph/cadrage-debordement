@@ -284,7 +284,7 @@ divisions japonaises, 2 clubs invités.
 | Deuxième division française | 70 | 3,2 M€ | 10,7 M€ | aucun | Relevé |
 | Clubs invités | 70 | 4,0 M€ | 13 M€ | aucun | **Estimation** |
 | Deuxième division japonaise | 52 | 2,0 M€ | 6,6 M€ | aucun | **Estimation** |
-| Troisième division française | 50 | 1,4 M€ | 4,6 M€ | aucun | Estimation à partir de la fourchette de salaires |
+| Troisième division française | 50 | 1,4 M€ | 4,6 M€ | aucun | Rapport réel (A2R, bilans 2022-2023 : budget moyen 3,73 M€, salaires des joueurs 1,11 M€ = 30 %) ; niveaux 2026-2027 estimés ; masse encadrée, réserve de 45 à 60 % (Nationale, 18/11/2026) |
 | Deuxième division anglaise | 48 | 1,1 M€ | 3,6 M€ | aucun | Salaire moyen relevé ; recettes estimées |
 
 La réputation est un choix de jeu : la première division française est la
