@@ -1422,6 +1422,7 @@ func _legender_essai() -> void:
 	if phase != "jeu" or _essai_montre or index < 0 or index >= tf.plans.size(): return
 	if _essai_attendu(tf.plans[index]): return
 	_essai_montre = true
+	if is_instance_valid(stage) and "essai_attendu_regie" in stage: stage.essai_attendu_regie = false
 	_sonner("try", _camp_du_plan(tf.plans[index]))
 	# L'essai est aplati et légendé : le bandeau du score passe au nouveau score (+5) au même instant.
 	_score = tf.plans[index].get("score", _score)
