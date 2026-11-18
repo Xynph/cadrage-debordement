@@ -1,7 +1,9 @@
 'use strict';
 // Sifflets de foule d'Oval Legacy 27 : synthèse déterministe locale, sans échantillon,
 // enregistrement ni paquet tiers. Fichier séparé de build-native-sounds.cjs (dont les
-// sons sont figés par tests/godot-soundscape06-assets.cjs).
+// sons sont figés par tests/godot-soundscape06-assets.cjs). Les bruits de match (arbitre,
+// rumeur, « oooh », applaudissements, impacts, ballon frappé) sont des enregistrements
+// depuis le 18/11/2026 : voir native/godot/audio/assets/match/manifest.json.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const RATE=24000,TAU=2*Math.PI,DURATION=1.4;
 function random(seed){let s=seed>>>0;return()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296;};}

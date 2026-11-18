@@ -1,0 +1,292 @@
+{
+  "date": "2026-11-18T12:56:53.006Z",
+  "fournisseur": "ElevenLabs Sound Effects (API text-to-sound)",
+  "offre": "Starter — usage commercial autorisé",
+  "modele": "eleven_text_to_sound_v3",
+  "retenus": [
+    "sifflet-court-v2.mp3",
+    "sifflet-fin-v2.mp3",
+    "foule-essai-v1.mp3",
+    "foule-rumeur-v2.mp3",
+    "foule-decue-v1.mp3",
+    "applaudissements-v1.mp3",
+    "plaquage-v3.mp3",
+    "melee-v1.mp3",
+    "coup-de-pied-v1.mp3",
+    "ambiance-stade-v1.mp3",
+    "ambiance-stade-v3.mp3"
+  ],
+  "traitement": "scripts/prepare-bruits-match.py → native/godot/audio/assets/match",
+  "sons": [
+    {
+      "file": "sifflet-court-v1.mp3",
+      "text": "single short sharp referee whistle blast, outdoor rugby stadium",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "sifflet-court-v2.mp3",
+      "text": "one quick referee whistle toot, rugby match, crowd faint in background",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "sifflet-court-v3.mp3",
+      "text": "short firm referee whistle blow stopping play, rugby pitch",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "sifflet-fin-v1.mp3",
+      "text": "referee whistle, two short blasts then one long blast, end of rugby match",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 3,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "sifflet-fin-v2.mp3",
+      "text": "rugby referee blows full time: short, short, long whistle",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 3,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "sifflet-fin-v3.mp3",
+      "text": "end of half whistle in a rugby stadium, two quick blasts and a long final blast",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 3,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "foule-essai-v1.mp3",
+      "text": "large rugby stadium crowd erupting in loud cheers after a try",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 4,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "foule-essai-v2.mp3",
+      "text": "packed stadium crowd explodes with joy, roaring and clapping, rugby try scored",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 4,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "foule-essai-v3.mp3",
+      "text": "huge crowd roar and cheering rising suddenly, rugby stadium celebration",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 4,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "foule-rumeur-v1.mp3",
+      "text": "stadium crowd anticipation building, rising murmur, attack close to the try line",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 5,
+      "promptInfluence": 0.5,
+      "loop": true,
+      "statut": "ok"
+    },
+    {
+      "file": "foule-rumeur-v2.mp3",
+      "text": "rugby crowd growing louder with excitement, tense rising noise, no cheering yet",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 5,
+      "promptInfluence": 0.5,
+      "loop": true,
+      "statut": "ok"
+    },
+    {
+      "file": "foule-rumeur-v3.mp3",
+      "text": "excited stadium murmur swelling as the home team attacks, rugby",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 5,
+      "promptInfluence": 0.5,
+      "loop": true,
+      "statut": "ok"
+    },
+    {
+      "file": "foule-decue-v1.mp3",
+      "text": "disappointed stadium crowd groan, collective oooh",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 2.5,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "foule-decue-v2.mp3",
+      "text": "large rugby crowd sighing in disappointment after a missed kick",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 2.5,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "foule-decue-v3.mp3",
+      "text": "stadium crowd groaning aww, missed chance",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 2.5,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "applaudissements-v1.mp3",
+      "text": "polite stadium crowd applause, rugby",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 3,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "applaudissements-v2.mp3",
+      "text": "warm applause from a rugby stadium crowd, moderate",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 3,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "applaudissements-v3.mp3",
+      "text": "crowd clapping steadily in an outdoor stadium",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 3,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "plaquage-v1.mp3",
+      "text": "heavy body tackle impact on grass, rugby players colliding",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "plaquage-v2.mp3",
+      "text": "dull thud of a rugby tackle, bodies hitting the turf, short grunt",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "plaquage-v3.mp3",
+      "text": "hard shoulder hit and fall on wet grass, rugby tackle",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "melee-v1.mp3",
+      "text": "rugby scrum engagement, two packs of forwards colliding, grunts, no words",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1.5,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "melee-v2.mp3",
+      "text": "eight against eight rugby scrum crash, heavy bodies binding, strained grunting",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1.5,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "melee-v3.mp3",
+      "text": "loud collision of a rugby scrum engaging, thump and effort sounds",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1.5,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "coup-de-pied-v1.mp3",
+      "text": "rugby ball kicked hard, clean leather thump",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "coup-de-pied-v2.mp3",
+      "text": "punt of an oval rugby ball, solid boot on leather, outdoor",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "coup-de-pied-v3.mp3",
+      "text": "place kick of a rugby ball, crisp deep thump",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 1,
+      "promptInfluence": 0.5,
+      "loop": false,
+      "statut": "ok"
+    },
+    {
+      "file": "ambiance-stade-v1.mp3",
+      "text": "background ambience of a rugby stadium crowd during play, steady, no music, no announcer",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 10,
+      "promptInfluence": 0.5,
+      "loop": true,
+      "statut": "ok"
+    },
+    {
+      "file": "ambiance-stade-v2.mp3",
+      "text": "continuous murmur of a medium size stadium crowd watching rugby, occasional distant shouts, no music",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 10,
+      "promptInfluence": 0.5,
+      "loop": true,
+      "statut": "ok"
+    },
+    {
+      "file": "ambiance-stade-v3.mp3",
+      "text": "outdoor stadium crowd ambience, steady chatter and noise during a match, loopable, no music",
+      "modelId": "eleven_text_to_sound_v3",
+      "durationSeconds": 10,
+      "promptInfluence": 0.5,
+      "loop": true,
+      "statut": "ok"
+    }
+  ]
+}

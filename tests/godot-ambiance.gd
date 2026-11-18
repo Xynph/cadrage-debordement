@@ -79,6 +79,129 @@ var clock_ms := [0]
 func advance_ms(ms: int) -> void:
 	clock_ms[0] += ms
 
+## Avance l'horloge de jeu puis laisse passer une image : les bruits différés partent.
+func tick_ms(ms: int) -> void:
+	advance_ms(ms)
+	await process_frame
+
+## Bruits de match (18/11/2026) : chaque fait montré déclenche les bons identifiants, avec délais et anti-rebond.
+func match_noises(audio) -> void:
+	var effects: Array[String] = []
+	audio.effect_played.connect(func(id: String): effects.append(id))
+	await tick_ms(5000)
+	effects.clear()
+	# Coup d'envoi : sifflet tout de suite, frappe du ballon 450 ms plus tard.
+	audio.play_shown("kickoff", 0)
+	check(effects == ["referee-whistle"], "Coup d'envoi : coup de sifflet immédiat " + str(effects))
+	await tick_ms(300)
+	check(effects == ["referee-whistle"], "Coup d'envoi : pas encore de frappe à 300 ms")
+	await tick_ms(200)
+	check(effects == ["referee-whistle", "kick-pock"], "Coup d'envoi : frappe du ballon après le sifflet " + str(effects))
+	# Pénalité : sifflet de l'arbitre ; un second sifflet trop proche n'est pas empilé.
+	await tick_ms(1000)
+	effects.clear()
+	check(not audio.play_shown("penalty", 0) and effects == ["referee-whistle"], "Pénalité pour le domicile : sifflet d'arbitre, pas de sifflets de foule")
+	await tick_ms(300)
+	audio.play_shown("hand-fault", 1)
+	check(effects == ["referee-whistle"], "Deux sifflets à 300 ms : un seul joué")
+	await tick_ms(500)
+	var crowd_before: int = cues.size()
+	check(audio.play_shown("hand-fault", 0) and effects.back() == "referee-whistle" and cues.back() == "crowd-groan" and moods.back() == "deception", "En-avant du domicile : sifflet et « oooh »")
+	check(audio._reaction.stream == audio._streams["crowd-groan"], "« Oooh » : le son déçu est joué")
+	# Plaquages : anti-rebond court, hauteur variée d'un coup à l'autre.
+	await tick_ms(1000)
+	effects.clear()
+	var pitches: Array[float] = []
+	for n in 4:
+		audio.play_shown("tackle")
+		var player: AudioStreamPlayer = audio._impacts[(audio._impact_next + audio._impacts.size() - 1) % audio._impacts.size()]
+		pitches.append(player.pitch_scale)
+		await tick_ms(100)
+	check(effects == ["impact-tackle", "impact-tackle"], "Plaquages toutes les 100 ms : anti-rebond de 250 ms, pas de rafale " + str(effects))
+	check(abs(pitches[0] - pitches[3]) > 0.0001 and pitches.all(func(p: float): return absf(p - 1.0) <= 0.12), "Plaquages : hauteur légèrement variée " + str(pitches))
+	# Mêlée : impact du pack à l'engagement, après la mise en place.
+	await tick_ms(1000)
+	effects.clear()
+	audio.play_shown("scrum", 0, 50.0)
+	await tick_ms(500)
+	check(effects == ["impact-scrum"], "Mêlée : impact du pack à l'engagement " + str(effects))
+	# Tirs : frappe ; manqué du domicile = « oooh », de l'adversaire = soulagement.
+	await tick_ms(1000)
+	effects.clear()
+	audio.play_shown("kick", 1)
+	check(effects == ["kick-pock"], "Jeu au pied : « pock » du ballon")
+	check(audio._crowd_cue("miss", 0).mood == "deception" and audio._crowd_cue("miss", 1).mood == "joie", "Tir manqué : déception à domicile, soulagement contre l'adversaire")
+	check(audio._crowd_cue("turnover", 0).id == "crowd-applause" and audio._crowd_cue("turnover", 1).is_empty(), "Ballon récupéré par le domicile : applaudissements")
+	# Rumeur : monte près de la ligne, pas au milieu du terrain, retombe au jeu au pied.
+	await tick_ms(1000)
+	effects.clear()
+	audio.play_shown("carry", 0, 40.0)
+	check(audio._murmur_target == 0.0 and effects.is_empty(), "Course au milieu du terrain : pas de rumeur")
+	audio.play_shown("carry", 0, 5.0)
+	check(audio._murmur_target > 0.8 and effects == ["crowd-murmur"], "Attaque à 5 m de la ligne : la rumeur monte")
+	audio.play_shown("tackle")
+	audio.play_shown("setpiece-win", 0, 3.0)
+	check(effects.count("crowd-murmur") == 1 and audio._murmur_target > 0.8, "Rumeur déjà là : pas relancée, le plaquage ne la coupe pas")
+	for n in 4: await process_frame
+	check(audio._murmur.playing and audio._murmur_gain > 0.0, "Rumeur en lecture, en fondu entrant")
+	audio.play_shown("kick", 0)
+	check(audio._murmur_target == 0.0, "Ballon dégagé au pied : la rumeur retombe")
+	# Essai à domicile : clameur puis applaudissements en relais ; essai adverse : pas de relais.
+	await tick_ms(2000)
+	var before_try: int = cues.size()
+	check(audio.play_shown("try", 0), "Essai à domicile : clameur")
+	await tick_ms(1300)
+	check(cues.slice(before_try) == ["stadium-try", "crowd-applause"], "Essai à domicile : applaudissements en relais " + str(cues.slice(before_try)))
+	check(audio._reaction_out.playing and audio._reaction.stream == audio._streams["crowd-applause"], "La clameur s'efface en fondu sous les applaudissements, sans coupure")
+	await tick_ms(2000)
+	before_try = cues.size()
+	audio.play_shown("try", 1)
+	await tick_ms(1300)
+	check(cues.slice(before_try) == ["stadium-try"], "Essai adverse : pas d'applaudissements")
+	# Mi-temps : direct arrêté mais Match affiché → long coup de sifflet, puis applaudissements.
+	await tick_ms(4000)
+	effects.clear()
+	before_try = cues.size()
+	audio.set_presenting(false)
+	audio._live_active = false
+	audio.refresh_visibility("Match", true)
+	audio.play_shown("break")
+	check(effects == ["referee-whistle-long"], "Mi-temps : long coup de sifflet " + str(effects))
+	await tick_ms(1000)
+	check(cues.slice(before_try) == ["crowd-applause"], "Mi-temps : applaudissements après le sifflet")
+	# Match masqué, sons décochés : rien.
+	await tick_ms(4000)
+	effects.clear()
+	audio.refresh_visibility("Bureau", false)
+	audio.play_shown("end")
+	audio.play_shown("kickoff")
+	await tick_ms(1000)
+	check(effects.is_empty(), "Match masqué : ni arbitre ni ballon")
+	audio.refresh_visibility("Match", true)
+	audio.set_presenting(true)
+	check(audio.preferences.set_value("match_sounds", false), "Sons de match décochés")
+	audio.play_shown("kickoff")
+	audio.play_shown("tackle")
+	check(effects.is_empty() and not audio._murmur.playing, "Sons de match décochés : aucun bruit de match")
+	check(audio.preferences.set_value("match_sounds", true), "Sons de match recochés")
+	# Direct d'origine (sans temps forts) : le passage à la mi-temps siffle, l'ouverture d'un match déjà arrêté non.
+	await tick_ms(4000)
+	effects.clear()
+	var live := {"pair": [0, 1], "paused": false, "finished": false, "atBreak": false, "events": [], "scene": {}}
+	var model := {"club": {"id": 0}, "meta": {"dataDir": "x", "season": 1, "round": 0, "phase": "league", "mode": "world-champ"}, "live": live}
+	audio.observe_model(model, "Match", "tick", true)
+	var stopped: Dictionary = model.duplicate(true)
+	stopped.live.atBreak = true
+	audio.observe_model(stopped, "Match", "tick", true)
+	check(effects == ["referee-whistle-long"], "Direct d'origine : long sifflet à la mi-temps " + str(effects))
+	await tick_ms(4000)
+	effects.clear()
+	audio.observe_model({}, "Match", "snapshot", true)
+	audio.observe_model(stopped, "Match", "tick", true)
+	check(effects.is_empty(), "Match rouvert déjà à la mi-temps : silence")
+	audio.observe_model({}, "Match", "snapshot", true)
+	await tick_ms(4000)
+
 func run() -> void:
 	var directory := proof.path_join("profil")
 	DirAccess.make_dir_recursive_absolute(directory)
@@ -89,6 +212,16 @@ func run() -> void:
 	var audio = load("res://audio/soundscape.gd").new()
 	app.add_child(audio)
 	check(audio.setup(app), "Setup du gestionnaire sonore")
+	# Enregistrements (18/11/2026) : OGG décodables, rumeur en boucle, nappe = deux prises en fondu enchaîné.
+	for id in audio.RECORDED:
+		var recorded: AudioStream = audio._streams.get(id)
+		check(recorded is AudioStreamOggVorbis and recorded.get_length() > 0.2, "Enregistrement décodé : " + str(id))
+	var murmur_loop = audio._murmur.stream
+	check(murmur_loop is AudioStreamOggVorbis and murmur_loop.loop and murmur_loop.get_length() > 4.0, "Rumeur : boucle enregistrée")
+	var bed = audio._bed.stream
+	check(bed is AudioStreamPlaylist and bed.loop and bed.stream_count == 2 and is_equal_approx(bed.fade_time, audio.BED_FADE_S), "Nappe : deux prises en boucle, fondu enchaîné")
+	check(bed is AudioStreamPlaylist and bed.get_list_stream(0) != bed.get_list_stream(1) and not bed.get_list_stream(0).loop and not bed.get_list_stream(1).loop and bed.get_list_stream(0).get_length() > 9.0, "Nappe : prises distinctes, non bouclées seules")
+	check(not audio._streams.has("stadium-bed"), "Ancienne nappe synthétisée non chargée")
 	check(audio.load_profile(directory) and audio.preferences.data == {"version": 1, "interface_volume": 35, "stadium_volume": 25, "match_sounds": true}, "Ancien sound.json avec champs de musique accepté, champs ignorés")
 	var master := AudioServer.get_bus_index("Master")
 	for label in ["Interface", "Stade"]:
@@ -149,6 +282,7 @@ func run() -> void:
 		check(audio.play_shown("penalty", 1) and moods.back() == "sifflets" and cues.back() == "crowd-whistle", "Réaction jouée : sifflets (tour %d)" % round)
 		advance_ms(450)
 		check(not audio.play_shown("penalty", 0), "Pénalité pour le domicile : pas de sifflets (tour %d)" % round)
+	await match_noises(audio)
 	# Même chemin via le journal moteur.
 	var scene_try := {"kind": "try", "team": 1, "to": [1, 2]}
 	var event := {"min": 12, "text": "Essai adverse", "scene": scene_try}
@@ -161,7 +295,7 @@ func run() -> void:
 	# Les lecteurs encore en lecture ont un objet de lecture libéré de façon asynchrone par le mixeur :
 	# on le suit pour que rien ne reste vivant à la sortie.
 	var pending: Array[WeakRef] = []
-	for player in [audio._ui, audio._bed, audio._reaction]:
+	for player in audio.players():
 		if player.playing:
 			pending.append(weakref(player.get_stream_playback()))
 	reloaded = null

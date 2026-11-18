@@ -17,6 +17,7 @@ const Between = preload("res://ui/contextual/match_between.gd")
 const Cadrage = preload("res://match_cadrage.gd")
 const Liaison = preload("res://match_liaison.gd")
 const Arbitre = preload("res://match_arbitre.gd")
+const MatchSound = preload("res://audio/soundscape.gd")
 
 enum { INTER, JEU, ATTENTE }
 const NIVEAUX := ["aucun", "resume", "cles", "etendus", "dynamique", "integral"]
@@ -265,9 +266,30 @@ func _presenter(valeur: bool) -> void:
 	var sons: Variant = app.get("soundscape") if is_instance_valid(app) else null
 	if is_instance_valid(sons) and sons.has_method("set_presenting"): sons.set_presenting(valeur)
 
-func _sonner(kind: String, camp: int = -1) -> void:
-	var sons: Variant = app.get("soundscape")
-	if is_instance_valid(sons) and sons.has_method("play_shown"): sons.play_shown(kind, camp)
+func _sonner(kind: String, camp: int = -1, distance: float = -1.0) -> void:
+	var sons: Variant = app.get("soundscape") if is_instance_valid(app) else null
+	if is_instance_valid(sons) and sons.has_method("play_shown"): sons.play_shown(kind, camp, distance)
+
+## Plans dont le début est une frappe de balle (le résultat d'un tir sonne plus tard, à l'écran).
+const FRAPPES := ["goal", "miss", "transformation", "kick", "drop22", "goalLine"]
+
+## Bruits du plan qui commence à l'écran : sifflet, frappe, mêlée, rumeur près de la ligne.
+## L'essai et le résultat d'un tir ont leur propre instant (aplati, ballon passé).
+func _sonner_plan(plan: Dictionary) -> void:
+	var kind := str(plan.get("kind", ""))
+	var scene: Variant = plan.get("scene")
+	var distance: float = MatchSound.scene_distance(scene) if scene is Dictionary else -1.0
+	if kind in FRAPPES: _sonner("kick", _camp_du_plan(plan))
+	# Course vers l'en-but : la rumeur monte pendant la course, la clameur part à l'aplati.
+	elif kind == "try": _sonner("carry", -1, distance)
+	else: _sonner(kind, _camp_du_plan(plan), distance)
+
+## Mi-temps ou fin montrée à l'écran intermédiaire : « ? » tant que rien n'a été vu (ouverture silencieuse).
+var _fin_sonnee := "?"
+
+func _sonner_fin(etat_fin: String) -> void:
+	if etat_fin != _fin_sonnee and _fin_sonnee == "" and not etat_fin.is_empty(): _sonner(etat_fin)
+	_fin_sonnee = etat_fin
 
 ## Camp (0 domicile, 1 extérieur) du fait montré, -1 si le plan ne le dit pas.
 func _camp_du_plan(plan: Dictionary) -> int:
@@ -881,6 +903,10 @@ func _lire_choregraphie(reel: float) -> void:
 			_score = tf.plans[index].get("score", _score)
 			index = k
 		_jalon_montre = true
+		# Jalon montré (ballon gagné, porteur plaqué, réception) : ses bruits ; tirs et essai ont les leurs ci-dessous.
+		var kind_jalon := str(tf.plans[index].get("kind", ""))
+		if not kind_jalon in ["try", "goal", "miss", "transformation"]: _sonner_plan(tf.plans[index])
+		if kind_jalon == "carry" and not (index + 1 < tf.plans.size() and str(tf.plans[index + 1].get("kind", "")) == "try"): _sonner("tackle")
 		if str(tf.plans[index].get("kind", "")) == "try":
 			_sonner("try", _camp_du_plan(tf.plans[index]))
 			# Essai aplati et annoncé : le bandeau passe aussitôt au nouveau score (+5).
@@ -924,7 +950,7 @@ func _jouer(plan: Dictionary) -> void:
 	# La clameur et la légende de l'essai partent quand l'essai est à l'écran : fin de la course,
 	# ou geste d'essai de la vue aplati (course, ballon porté), voir _essai_attendu.
 	_essai_montre = str(plan.get("kind", "")) != "try"
-	if str(plan.get("kind", "")) == "penalty": _sonner("penalty", _camp_du_plan(plan))
+	_sonner_plan(plan)
 	if float(plan.get("mouvement", 0.0)) > 0.0:
 		_depuis = _derniers.duplicate()
 		stage.apply_frame(_image(_interpole(scene, clampf(PAS / float(plan.mouvement), 0.0, 1.0)), false, int(plan.index)))
@@ -974,6 +1000,8 @@ func _lire(delta: float, reel: float) -> void:
 			stage.apply_frame(_image(_interpole(plan.scene, clampf(temps / mouvement, 0.0, 1.0)), false, int(plan.index)))
 	if mouvement > 0.0 and temps >= mouvement and not _plaque:
 		_plaque = true
+		# Contact en fin de course (pas quand l'essai suit) : coup sourd, avec ou sans animation de plaquage.
+		if str(plan.get("kind", "")) == "carry" and not (index + 1 < tf.plans.size() and str(tf.plans[index + 1].get("kind", "")) == "try"): _sonner("tackle")
 		_plaquer(plan)
 	if temps < float(plan.get("duree", 1.0)): return
 	_score = plan.get("score", _score)
@@ -1099,6 +1127,8 @@ func _habiller() -> void:
 		if _live.get("finished", false) and _retenu.is_empty(): view.clock.text = "TERMINÉ"
 		elif montre_live.get("atBreak", false): view.clock.text = "MI-TEMPS"
 		elif not heure.is_empty(): view.clock.text = heure
+		# Long coup de sifflet quand « MI-TEMPS » ou « TERMINÉ » apparaît, pas à l'ouverture d'un match déjà arrêté.
+		_sonner_fin("end" if _live.get("finished", false) and _retenu.is_empty() else ("break" if montre_live.get("atBreak", false) else ""))
 		_habiller_horloge()
 		_valider(_live.get("finished", false) and _retenu.is_empty())
 		if not voile.visible:
