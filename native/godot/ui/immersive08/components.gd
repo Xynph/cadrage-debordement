@@ -1,6 +1,7 @@
 extends RefCounted
 ## Grammaire visuelle des compositions approuvées ; aucune donnée de carrière.
 
+const BanqueImages = preload("res://ui/banque_images.gd")
 const Base = preload("res://ui/game_skin.gd")
 const BG = Color("0b1012")
 const PANEL = Color("111a1c")
@@ -217,8 +218,10 @@ static func texture(id: String) -> Texture2D:
 	if _textures.has(id): return _textures[id]
 	if not id.is_valid_filename() or id.contains("."): return null
 	var path := "res://art/immersive08/" + id + ".png"
-	if not FileAccess.file_exists(path) and not ResourceLoader.exists(path): return null
-	var value: Texture2D = load(path)
+	var value: Texture2D = null
+	if FileAccess.file_exists(path) or ResourceLoader.exists(path): value = load(path)
+	elif BanqueImages.existe(id): value = BanqueImages.texture(id)
+	else: return null
 	if value != null: _textures[id] = value
 	return value
 
