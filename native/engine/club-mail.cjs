@@ -763,7 +763,8 @@ function factory() {
 
   // Nature d'un type de courrier (club-mail.json) et rang d'importance dans la journée : réponse attendue d'abord,
   // puis information, puis routine ; à nature égale, la priorité du type (plus petite = plus importante).
-  function nature(type) { const n = TYPES[type]?.nature; return n === 'action' || n === 'info' ? n : 'routine'; }
+  // Repli pour un type encore écrit avec l'ancien drapeau `arret` (branche antérieure) : arret → action, sinon routine.
+  function nature(type) { const t = TYPES[type] || {}, n = t.nature; return n === 'action' || n === 'info' || n === 'routine' ? n : t.arret ? 'action' : 'routine'; }
   function rang(type) { return ({ action: 3, info: 2, routine: 1 })[nature(type)] * 1000 - Math.min(999, TYPES[type]?.priorite ?? 99); }
 
   function project() {
