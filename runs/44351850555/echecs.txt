@@ -1,0 +1,8 @@
+== suites (2) (code 1)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "cadre" variable because the value doesn't have a set type.
+ERROR: Failed to load script "/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-echantillon.gd" with error "Parse error".
+  throw new AssertionError(obj);
+AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+SCRIPT ERROR: Parse Error: Cannot infer the type of "cadre" variable because the value doesn't have a set type.
+ERROR: Failed to load script "/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-echantillon.gd" with error "Parse error".
+::error file=tests/godot-match-echantillon.cjs::Godot : ECHEC (1), durée 0 s, limite 300s
