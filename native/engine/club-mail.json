@@ -695,8 +695,8 @@
       "categorie": "direction", "declencheur": "pret_actionnaire", "priorite": 18, "intervalle": 300, "arret": true, "ecran": "Finances",
       "expediteur": "Le président",
       "formulations": [
-        {"sujet": "Je comble, mais tu me rembourseras", "corps": "Coach, la saison s'est terminée dans le rouge. Le groupe a comblé la perte, comme promis : {montant}. Mais cette fois, ce n'est pas un cadeau. C'est un prêt au club.\n\nLe club doit aujourd'hui {encours} à l'actionnaire. On remboursera {annuite} par saison, pendant {saisons} saisons : autant d'argent qui n'ira pas aux salaires.\n\n{proposition}\n\nÀ toi de me dire."},
-        {"sujet": "Le chèque de l'actionnaire est un prêt", "corps": "Le conseil a voté : l'actionnaire couvre les pertes de la saison passée ({montant}), mais sous forme de prêt. Le club lui doit {encours}, remboursés à raison de {annuite} par saison.\n\nConcrètement, ta marge pour les salaires sera plus courte pendant {saisons} saisons.\n\n{proposition}\n\nJe garde l'échéancier si tu ne dis rien."}
+        {"sujet": "Je comble, mais tu me rembourseras", "corps": "Coach, la saison s'est terminée dans le rouge. Le propriétaire a comblé la perte, comme promis : {montant}. Mais cette fois, ce n'est pas un cadeau. C'est un prêt au club.\n\nLe club doit aujourd'hui {encours} à l'actionnaire. On remboursera {annuite} par saison, pendant {saisons} saisons : autant d'argent qui n'ira pas aux salaires.\n\n{proposition}\n\nÀ toi de me dire."},
+        {"sujet": "Le chèque de l'actionnaire est un prêt", "corps": "Le conseil a voté : le propriétaire couvre les pertes de la saison passée ({montant}), mais sous forme de prêt. Le club lui doit {encours}, remboursés à raison de {annuite} par saison.\n\nConcrètement, ta marge pour les salaires sera plus courte pendant {saisons} saisons.\n\n{proposition}\n\nJe garde l'échéancier si tu ne dis rien."}
       ],
       "reponses": [
         {"id": "accepter", "libelle": "Accepter le prêt et rembourser sur la durée", "effets": {"pret": "accepter"}, "resultat": "Le prêt est signé : le club remboursera chaque saison, et le président le rappellera au moment des recrues."},
