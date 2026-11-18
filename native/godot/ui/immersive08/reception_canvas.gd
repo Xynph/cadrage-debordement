@@ -952,7 +952,7 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 		if message.get("category") == "Médical" and not national: column.add_child(_infirmary(app, reading_width))
 		content = column
 	C.fill(content)
-	var natural := _clipping_height(content, C.px(_w-2*PAD-14)) if not press.is_empty() else _measure(content, C.px(content_width))
+	var natural := _clipping_height(content, C.px(_w-2*PAD-14)) if not press.is_empty() else _column_height(content, C.px(content_width))
 	var body_height := clampf(natural / C.density + 26, 80.0, room)
 	var scroll := ScrollContainer.new()
 	scroll.name = "InboxReadingScroll"
@@ -1003,6 +1003,14 @@ static func _clipping_height(paper: Control, width: float) -> float:
 			total += tallest
 		else: total += (block as Control).get_combined_minimum_size().y
 	return total + C.px(8)
+
+## Hauteur (px) de la colonne de lecture : texte mesuré à sa largeur, tableau sans retour à la ligne.
+static func _column_height(column: Control, width: float) -> float:
+	var total := float((column as Container).get_theme_constant("separation")) * maxf(0.0, column.get_child_count() - 1)
+	for block: Node in column.get_children():
+		if block is Label: total += _label_height(block, width)
+		else: total += (block as Control).get_combined_minimum_size().y
+	return total + C.px(6)
 
 static func _label_height(label: Label, width: float) -> float:
 	if label.autowrap_mode == TextServer.AUTOWRAP_OFF: return label.get_minimum_size().y
