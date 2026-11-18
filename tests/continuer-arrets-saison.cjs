@@ -2,7 +2,8 @@
 // Arrêts informatifs de « Continuer » pendant la saison (décision de Léo, 16/11/2026) : façon Football Manager,
 // l'avance s'arrête aussi sur des moments sans décision (veille et lendemain de match, rapport médical, mi-saison,
 // fin de phase, marché, recruteur), avec parcimonie, et plusieurs fois le même jour si besoin.
-//   1. Règle pure (continuer.cjs + continuer-arrets.json) : types toujours actifs, priorité, plafond par jour, regroupement.
+//   1. Règle pure (continuer.cjs + continuer-arrets.json) : types toujours actifs, priorité, un arrêt d'info par jour,
+//      un arrêt par courrier à réponse, routine rangée.
 //   2. CI de PR (rapide) : carrière Monde (`world-champ`, calendrier journalier) partie de la veille de la saison,
 //      jouée à « Continuer » sur une fenêtre courte : veille, lendemain, rapport médical, un jour à plusieurs arrêts,
 //      arrêt du même jour sans avancer ; puis même graine sans arrêts informatifs : état identique en fin de fenêtre.
@@ -42,24 +43,55 @@ test('Règle : types informatifs toujours actifs, priorité, plusieurs arrêts l
   assert.deepEqual(r.queue, []);
   assert.equal(C.arrets({ ...hier, veille }, { ...base, veille }, opts()).stop, null, 'déjà vu la veille : pas de nouvel arrêt');
   assert.equal(C.arrets(base, { ...base, veille }, opts()).stop, null, 'même jour : rien de neuf');
-  // Plusieurs éléments le même jour : un arrêt chacun, dans l'ordre de priorité.
+  // Plusieurs éléments d'info le même jour (décision de Léo, 18/11/2026) : un seul arrêt, le plus important en tête,
+  // les autres rangés dedans (types gardés dans l'ordre de priorité par informatifs()).
   const jour = { ...base, veille, longInjured: ['r1'], injured: ['r1'], injuryWeeks: { r1: 6 }, round: 12, phases: { champ: { phase: 'league', champion: null } } };
   r = C.arrets({ ...hier, round: 11 }, jour, opts());
-  assert.deepEqual([r.stop.type, ...r.queue.map(x => x.type)], ['veille', 'medical', 'mercato'], JSON.stringify(r));
-  assert.match(r.queue[0].detail, /^Absence longue : Remplaçant \(6 sem\.\)/);
-  assert.match(r.queue[1].detail, /marché dans une semaine/);
-  // Ancien réglage de niveau (`flux`) ignoré : mêmes arrêts ; « info » ignoré (outils, essais) : rien.
+  assert.deepEqual(r.queue, [], JSON.stringify(r));
+  assert.equal(r.stop.type, 'groupe');
+  assert.equal(r.stop.label, 'Veille de match');
+  assert.equal(r.stop.elements, 3);
+  assert.match(r.stop.detail, /^Demain, réception de Rivaux .* · Rapport médical : Absence longue : Remplaçant \(6 sem\.\).* · Marché des transferts : .*marché dans une semaine/);
+  assert.equal(r.stop.ecran, 'Composition', 'sans courrier : écran du plus important');
+  // Ancien réglage de niveau (`flux`) ignoré : mêmes éléments ; « info » ignoré (outils, essais) : rien.
   for (const flux of ['allege', 'equilibre', 'complet'])
     assert.deepEqual(C.informatifs({ ...hier, round: 11 }, jour, opts({ flux })).map(x => x.type), ['veille', 'medical', 'mercato'], flux);
   assert.deepEqual(C.informatifs({ ...hier, round: 11 }, jour, opts({ ignorer: ['info'] })), []);
-  // Arrêt principal (obligatoire ou existant) d'abord, puis les éléments du jour ; plafond par jour, reste regroupé.
-  const plafond = C.ARRETS.maxParJour;
+  // Arrêt principal (obligatoire ou existant) d'abord, puis l'arrêt d'info du jour (un seul).
   const charge = { ...jour, meeting: { kind: 'board', id: 'b' }, missions: [{ id: 'mission-1', n: 2 }], lendemain: { id: 'x', opponent: 'Autres', home: false, us: 20, them: 13, injured: 1 } };
   r = C.arrets({ ...hier, round: 11 }, charge, opts());
   assert.equal(r.stop.kind, 'rendez_vous');
-  assert.equal(1 + r.queue.length, plafond, 'au plus ' + plafond + ' arrêts le même jour');
-  assert.equal(r.queue.at(-1).type, 'groupe');
-  assert.match(r.queue.at(-1).detail, /Rapport de recruteur : 2 profils proposés/);
+  assert.equal(r.queue.length, 1, 'un seul arrêt d\'info le même jour');
+  assert.equal(r.queue[0].type, 'groupe');
+  assert.match(r.queue[0].detail, /Rapport de recruteur : 2 profils proposés/);
+  // Courrier du jour selon sa nature : chaque courrier à réponse a son arrêt ; les courriers d'info et de routine sont
+  // rangés dans l'arrêt d'info du jour (veille), la Réception s'ouvrant sur le plus important ; de la routine seule
+  // n'arrête jamais l'avance. Rien ne disparaît : `mails` liste tous les courriers rangés.
+  const mail = (id, nature, priorite, sujet) => ({ id, nature, priorite, type: 't', sujet, expediteur: 'Exp', ecran: 'Bureau' });
+  const courrier = [mail('mail-1', 'routine', 8, 'Bulletin météo'), mail('mail-2', 'action', 12, 'Une gêne'), mail('mail-3', 'routine', 66, 'Leur plan'), mail('mail-4', 'info', 30, 'Retour')];
+  r = C.arrets(hier, { ...base, veille, courrier }, opts());
+  assert.deepEqual([r.stop.type, ...r.queue.map(x => x.type)], ['groupe', 'courrier'], JSON.stringify(r));
+  assert.equal(r.stop.label, 'Veille de match');
+  assert.deepEqual(r.stop.mails, ['mail-4', 'mail-1', 'mail-3']);
+  assert.equal(r.stop.mail, 'mail-4');
+  assert.equal(r.stop.ecran, 'Réception');
+  assert.match(r.stop.detail, /^Demain, .* · Exp : Retour · Exp : Bulletin météo · Exp : Leur plan$/);
+  assert.equal(r.queue[0].mail, 'mail-2');
+  assert.equal(r.queue[0].nature, 'action');
+  // Veille avec seulement de la routine : arrêt « veille » (pas « groupe ») qui ouvre toujours la composition, la
+  // routine rangée dedans et lisible en Réception.
+  r = C.arrets(hier, { ...base, veille, courrier: [courrier[0], courrier[2]] }, opts());
+  assert.equal(r.stop.type, 'veille');
+  assert.equal(r.stop.ecran, 'Composition');
+  assert.match(r.stop.detail, / · Exp : Bulletin météo · Exp : Leur plan$/);
+  assert.deepEqual(r.stop.mails, ['mail-1', 'mail-3']);
+  assert.deepEqual(r.queue, []);
+  // Routine seule : aucun arrêt. Info seule : un arrêt. Deux infos : un seul arrêt.
+  assert.equal(C.arrets(hier, { ...base, courrier: [courrier[0]] }, opts()).stop, null);
+  r = C.arrets(hier, { ...base, courrier: [courrier[3], mail('mail-5', 'info', 40, 'Rumeur'), courrier[0]] }, opts());
+  assert.equal(r.stop.mail, 'mail-4');
+  assert.deepEqual(r.stop.mails, ['mail-4', 'mail-5', 'mail-1']);
+  assert.deepEqual(r.queue, []);
   // Fin de phase et mi-saison.
   const fin = { ...base, phases: { champ: { phase: 'semi', champion: null } }, standing: { rank: 2, points: 70, played: 26, size: 14 } };
   r = C.arrets(hier, fin, opts());
@@ -115,7 +147,7 @@ function parcours(origine, { ignorer = [], repere = null, fin = null } = {}) {
       }
       m = r.model;
       const a = m.meta.advanceUntilEvent;
-      if (a.stop.kind !== 'limite') arrets.push([m.meta.calendarToday, a.stop.kind, a.stop.type || null, a.stop.detail, a.days]);
+      if (a.stop.kind !== 'limite') arrets.push([m.meta.calendarToday, a.stop.kind, a.stop.type || null, a.stop.detail, a.days, a.stop.nature || null]);
       if (a.stop.kind === 'blocage') {
         if (/terminée/.test(a.stop.detail || '')) break;
         assert.fail('blocage : ' + JSON.stringify(a.stop));
@@ -136,7 +168,10 @@ function bilan(arrets) {
   console.log(arrets.length, 'arrêts dont', infos.length, 'informatifs · par type', JSON.stringify(types), '· par mois', JSON.stringify(parMois));
   console.log('Jours à plusieurs arrêts :', JSON.stringify(multiples));
   for (const x of infos.slice(0, 10)) console.log('  ', x[0], x[2], '·', x[3]);
-  for (const [d, n] of Object.entries(parJour)) assert.ok(n <= C.ARRETS.maxParJour, d + ' : ' + n + ' arrêts');
+  // Un seul arrêt d'info par jour (hors courriers à réponse, qui ont chacun le leur).
+  const infoParJour = {};
+  for (const x of infos.filter(x => !(x[2] === 'courrier' && x[5] === 'action'))) infoParJour[x[0]] = (infoParJour[x[0]] || 0) + 1;
+  for (const [d, n] of Object.entries(infoParJour)) assert.equal(n, 1, d + ' : ' + n + ' arrêts d\'info');
   assert.ok(multiples.length > 0, 'au moins un jour à plusieurs arrêts');
   assert.ok(arrets.some(x => x[4] === 0 && x[1] === 'info'), 'arrêt du même jour sans avancer');
   return { infos, types, parMois };

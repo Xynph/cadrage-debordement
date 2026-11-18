@@ -177,7 +177,11 @@ static func _messages(app: Control) -> Array[Dictionary]:
 
 ## Ordre d'arrivée dans une journée : courrier du club par numéro, puis les autres courriers datés (stable).
 static func _arrival(message: Dictionary) -> float:
-	if message.has("club_mail"): return float(str(message.id).trim_prefix("mail-").to_int())
+	# Courrier du club : le plus important du jour en tête (réponse attendue, puis info, puis routine ; moteur :
+	# club-mail.cjs « importance »), puis l'ordre d'arrivée.
+	if message.has("club_mail"):
+		var mail: Dictionary = message.club_mail
+		return float(int(mail.get("importance", 0))) * 1000000.0 + float(str(message.id).trim_prefix("mail-").to_int())
 	return -1000.0 + float(absi(hash(str(message.id))) % 1000)
 
 ## Heure de réception (heure de jeu plausible et stable) : les courriers d'un même jour s'échelonnent de 7 h 30

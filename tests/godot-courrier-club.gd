@@ -180,6 +180,15 @@ func info_stops() -> void:
 	if not mails.is_empty():
 		check(ClubMail.stop_route(app, {"kind":"info", "type":"courrier", "ecran":"Réception", "mail":str(mails[0].id)}) == "Réception", "Courrier : Réception")
 		check(str(app.management_ui.reception.selected) == str(mails[0].id), "Courrier : le mail est sélectionné")
+		# Arrêt d'info du jour qui range plusieurs courriers (18/11/2026) : Réception sur le plus important.
+		var ids: Array = mails.map(func(m: Dictionary) -> String: return str(m.id))
+		check(ClubMail.stop_route(app, {"kind":"info", "type":"groupe", "ecran":"Réception", "mail":ids[-1], "mails":ids}) == "Réception", "Arrêt d'info groupé : Réception")
+		check(str(app.management_ui.reception.selected) == str(ids[-1]), "Arrêt d'info groupé : le plus important sélectionné")
+	# Le plus important du jour en tête de la Réception : réponse attendue avant info, info avant routine.
+	var action := {"id":"mail-1", "club_mail":{"importance":2988}}
+	var info := {"id":"mail-3", "club_mail":{"importance":1970}}
+	var routine := {"id":"mail-2", "club_mail":{"importance":992}}
+	check(Reception._arrival(action) > Reception._arrival(info) and Reception._arrival(info) > Reception._arrival(routine), "Réception : le plus important du jour en tête")
 
 func node(name: String) -> Control:
 	return app.root_content.find_child(name, true, false) as Control if is_instance_valid(app.root_content) else null
