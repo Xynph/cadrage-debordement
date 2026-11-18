@@ -225,7 +225,9 @@ func run() -> void:
 			var playing: Dictionary = view._actors["0-9"].geste
 			if not playing.is_empty() and not chain.has(playing.nom): chain.append(playing.nom)
 		check(chain == ["plaque_cote", "se_relever"], "Chute puis relevé : %s" % [chain])
-		for i in 60:
+		# Relevé, il court jusqu'à sa place (près de 20 m ici) sans dépasser l'allure de pointe
+		# (Motion.ALLURE_MAX) : on laisse filer la durée de sa course, plus une marge.
+		for i in 60 + ceili(float(view._actors["0-9"].duree) / STEP):
 			view._process(STEP)
 		check(view._actors["0-9"].geste.is_empty() and (view._actors["0-9"].node.position as Vector3).distance_to(view._world({"x": 55, "y": 30})) < 0.3, "Relevé, il rejoint sa place de la scène")
 		# Pénalité frappée et réception d'un jeu au pied.

@@ -735,6 +735,7 @@ func _process(delta: float) -> void:
 			# Geste au sol ou sur place : le joueur reste où il est ; il rejoindra sa place ensuite.
 			entry.from = actor.position
 			entry.elapsed = 0.0
+			entry.duree = Motion.duree(actor.position, entry.target)
 			entry.velocity = Vector3.ZERO
 			entry.tangent = Vector3.ZERO
 		elif not in_pass and not staged:
@@ -966,7 +967,12 @@ func _stop_live_pass(completed: bool = false) -> void:
 		return
 	for id: String in [_pass_plan.passer, _pass_plan.receiver]:
 		if _actors.has(id):
-			_actors[id].from = _actors[id].node.position
+			# Nouveau trajet depuis la marque de la passe : sa durée suit la distance qui reste
+			# (celle fixée avant la passe, depuis l'ancienne place, ralentirait le porteur).
+			var entry: Dictionary = _actors[id]
+			entry.from = entry.node.position
+			entry.duree = Motion.duree(entry.from, entry.target)
+			entry.elapsed = 0.0
 	if not completed:
 		_ball_from = _ball.global_position
 		_ball_from_basis = _ball.global_basis
