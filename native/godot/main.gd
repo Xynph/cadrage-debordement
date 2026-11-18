@@ -412,6 +412,7 @@ func _receive_model(value: Dictionary) -> void:
 		if is_instance_valid(status):
 			status.text = _settled_status_text()
 			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
+			_refit_status()
 		if is_instance_valid(root_content) and decision_feedback != null:
 			var feedback_button: Button = root_content.find_child("DecisionFeedbackButton", true, false)
 			if feedback_button != null: feedback_button.disabled = decision_feedback.receipts().is_empty()
@@ -709,6 +710,7 @@ func _failed(message: String) -> void:
 		if is_instance_valid(status):
 			status.text = _settled_status_text()
 			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
+			_refit_status()
 		return
 	last_error = message
 	if is_instance_valid(status):
@@ -809,6 +811,7 @@ func _sound_error(message: String) -> void:
 	if is_instance_valid(status):
 		status.text = _settled_status_text()
 		status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
+		_refit_status()
 	if not message.is_empty(): call_deferred("_show_sound_error",message)
 
 func _show_sound_error(message: String) -> void:
@@ -1030,6 +1033,10 @@ func _refresh_coach() -> void:
 
 func _observe_navigation() -> void:
 	if is_instance_valid(navigation_controller): navigation_controller.observe(route, selected_player, selected_staff_club)
+
+## Le pied de page immersif ajuste la ligne d'état à la place libre (shell.gd, _fit_status) après chaque changement de texte.
+func _refit_status() -> void:
+	if is_instance_valid(status) and status.has_meta("refit"): (status.get_meta("refit") as Callable).call()
 
 func _settled_status_text() -> String:
 	if not last_error.is_empty(): return "ACTION NON EFFECTUÉE · " + last_error

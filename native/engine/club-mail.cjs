@@ -66,8 +66,8 @@ function factory() {
       if (!(p.injury > 0)) {
         // Guérison d'un joueur suivi par le médecin (réponse au bulletin) : tirage de rechute par empreinte stable,
         // au risque fixé par les réponses (données « blessures.rechute »).
-        if (club === own && p.injuryRelapse !== undefined && relapses(p, s, d)) { p.injury = Math.max(1, Number(BL.rechute?.semaines) || 2); p.injuryCause = 'rechute'; p.injuryDate = d; delete p.injuryRelapse; continue; }
-        if (p.injuryType !== undefined || p.injuryCause !== undefined || p.injuryDate !== undefined || p.injuryRelapse !== undefined) { delete p.injuryType; delete p.injuryCause; delete p.injuryDate; delete p.injuryRelapse; }
+        if (club === own && p.injuryRelapse !== undefined && relapses(p, s, d)) { p.injury = Math.max(1, Number(BL.rechute?.semaines) || 2); p.injuryCause = 'rechute'; p.injuryOrigin = { type: 'rechute', season: s.season ?? null, round: s.round ?? null }; p.injuryDate = d; delete p.injuryRelapse; continue; }
+        if (p.injuryType !== undefined || p.injuryCause !== undefined || p.injuryOrigin !== undefined || p.injuryDate !== undefined || p.injuryRelapse !== undefined) { delete p.injuryType; delete p.injuryCause; delete p.injuryOrigin; delete p.injuryDate; delete p.injuryRelapse; }
         continue;
       }
       if (p.injuryType !== undefined) continue;
@@ -75,8 +75,15 @@ function factory() {
       if (!kind) continue;
       p.injuryType = kind; p.injuryDate = d;
       if (club === own) {
-        const line = news.find(n => n.includes(String(p.name)) && /bless/i.test(n));
-        if (line) p.injuryCause = /entra[iî]nement/i.test(line) ? 'entrainement' : 'match';
+        // L'origine a été enregistrée sur la blessure quand elle est survenue (installHooks : match, entraînement,
+        // reprise) ; le journal ne sert plus qu'aux blessures d'une ancienne sauvegarde, sans origine enregistrée.
+        const origin = p.injuryOrigin;
+        if (obj(origin) && CAUSES.includes(origin.type)) p.injuryCause = origin.type;
+        else if (p.medicalV68?.stage === 'termine') p.injuryCause = 'rechute';
+        else {
+          const line = news.find(n => n.includes(String(p.name)) && /bless/i.test(n));
+          if (line) p.injuryCause = /entra[iî]nement/i.test(line) ? 'entrainement' : 'match';
+        }
       }
     }
   }
@@ -95,6 +102,9 @@ function factory() {
   // Origine de la blessure dans le bulletin : entraînement, rechute, ou rencontre (adversaire nommé, domicile ou
   // extérieur, notre score d'abord) ; la rencontre est la dernière jouée au plus tard le jour de la blessure.
   function causeText(p, results, name, d) {
+    const origin = obj(p.injuryOrigin) && CAUSES.includes(p.injuryOrigin.type) ? p.injuryOrigin : null;
+    if (origin?.type === 'match') return matchCause(origin, results, name);
+    if (origin && !p.injuryCause) p = { ...p, injuryCause: origin.type };
     if (p.injuryCause === 'entrainement') return "Il s'est blessé à l'entraînement, le " + shortDate(p.injuryDate) + '.';
     if (p.injuryCause === 'rechute') return "Il a rechuté à l'entraînement, le " + shortDate(p.injuryDate) + ', à son retour de blessure.';
     if (p.injuryCause !== 'match') return '';
@@ -102,6 +112,18 @@ function factory() {
     if (!r) return 'Il est sorti touché lors du dernier match.';
     const opp = name(r.opp) || "l'adversaire";
     return 'Il est sorti touché ' + (r.home ? 'à domicile contre ' + opp : 'sur le terrain de ' + opp) + ' (' + r.us + '-' + r.them + (r.date ? ', le ' + shortDate(r.date) : '') + ').';
+  }
+  // Rencontre enregistrée sur la blessure (id de la rencontre, adversaire, lieu, score) : l'adversaire se nomme par
+  // son identifiant dans la base du monde, puis par le nom gardé à la blessure (club hors base du championnat,
+  // rencontre de coupe d'Europe ou amicale), puis par le résultat archivé de la même rencontre.
+  function matchCause(o, results, name) {
+    const archived = o.fixtureId ? results.find(x => x.fixtureId === o.fixtureId) : null;
+    const opp = (o.opp !== undefined && o.opp !== null && name(o.opp)) || (typeof o.oppName === 'string' && o.oppName) || (archived && name(archived.opp)) || "l'adversaire";
+    const home = typeof o.home === 'boolean' ? o.home : archived?.home;
+    const us = Number.isFinite(o.us) ? o.us : archived?.us, them = Number.isFinite(o.them) ? o.them : archived?.them;
+    const when = o.date || archived?.date;
+    const where = home === undefined || o.neutral === true ? 'contre ' + opp : home ? 'à domicile contre ' + opp : 'sur le terrain de ' + opp;
+    return 'Il est sorti touché ' + where + (Number.isFinite(us) && Number.isFinite(them) ? ' (' + us + '-' + them + (when ? ', le ' + shortDate(when) : '') + ')' : '') + '.';
   }
   const injuryLabel = key => BL.types?.[key]?.libelle || 'Blessure';
   const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation', 'a2r', 'reprise', 'rechute', 'retour'];
@@ -878,6 +900,7 @@ function factory() {
     for (const club of Object.values(s.clubs || {})) for (const p of club?.players || []) {
       check(p.injuryType === undefined || (text(p.injuryType, 40) && BL.types?.[p.injuryType] !== undefined), 'type de blessure invalide');
       check(p.injuryCause === undefined || CAUSES.includes(p.injuryCause), 'cause de blessure invalide');
+      check(p.injuryOrigin === undefined || (obj(p.injuryOrigin) && CAUSES.includes(p.injuryOrigin.type) && (p.injuryOrigin.fixtureId === undefined || p.injuryOrigin.fixtureId === null || text(String(p.injuryOrigin.fixtureId), 120)) && (p.injuryOrigin.oppName === undefined || p.injuryOrigin.oppName === null || text(p.injuryOrigin.oppName, 120))), 'origine de blessure invalide');
       check(p.injuryDate === undefined || date(p.injuryDate), 'date de blessure invalide');
       check(p.injuryRelapse === undefined || int(p.injuryRelapse, 0, 100), 'risque de rechute invalide');
     }
@@ -887,7 +910,42 @@ function factory() {
   }
 
   // `recevoir(s, d)` : réception sur un état donné (tests : une réception n'écrit que la boîte).
-  return { project, validate, execute, observe, stops, installHooks() { return true; }, recevoir: (s, d) => receive(s, d), blessures: { typer: typeInjuries, type: injuryKind, risque: relapseRisk, effets: effectText, cause: causeText } };
+  // Origine de la blessure, enregistrée sur le joueur AU MOMENT où elle survient (demande de Léo, 18/11/2026) :
+  // le bulletin la lit là (causeText), sans dépendre du journal du club. Entraînement hebdomadaire (trainWeek) et
+  // rencontre jouée (applyMatchInjuries : id de la rencontre, adversaire, lieu, score) ; la rechute se pose dans
+  // typeInjuries. Seul le club géré est suivi ; les moteurs de match et d'entraînement ne sont pas modifiés.
+  function matchOrigin(st, l, side) {
+    const opp = l.pair[1 - side];
+    const fx = (st.worldMode?.fixtures || []).find(f => f.homeId === l.pair[0] && f.awayId === l.pair[1] && f.week === st.round) || null;
+    const named = st.clubs?.[opp]?.name || fx?.[side === 0 ? 'awayName' : 'homeName'] || null;
+    return { type: 'match', fixtureId: fx?.id ?? null, opp, oppName: named, home: side === 0, neutral: !!fx?.neutral, us: Number(l.score?.[side]) || 0, them: Number(l.score?.[1 - side]) || 0, date: date(fx?.date) ? fx.date : null, season: st.season ?? null, round: st.round ?? null };
+  }
+  function installHooks() {
+    const ownState = () => { const st = typeof S === 'undefined' ? null : S; return st && st.clubs?.[st.club]?.players ? st : null; };
+    const healthy = st => new Map(st.clubs[st.club].players.map(p => [p.id, !(Number(p.injury) > 0)]));
+    const recordNew = (st, before, origin) => { for (const p of st.clubs[st.club].players) if (Number(p.injury) > 0 && before.get(p.id) === true) p.injuryOrigin = { ...origin }; };
+    if (typeof trainWeek === 'function' && !trainWeek.__injuryOrigin) {
+      const prior = trainWeek, wrapped = function () {
+        const st = ownState(), before = st && !st.trained ? healthy(st) : null;
+        const result = prior.apply(this, arguments);
+        if (before && st === ownState()) recordNew(st, before, { type: 'entrainement', season: st.season ?? null, round: st.round ?? null });
+        return result;
+      };
+      Object.assign(wrapped, prior); wrapped.__injuryOrigin = true; trainWeek = wrapped;
+    }
+    if (typeof applyMatchInjuries === 'function' && !applyMatchInjuries.__injuryOrigin) {
+      const prior = applyMatchInjuries, wrapped = function (l) {
+        const st = ownState(), side = st && l && Array.isArray(l.pair) && !l.injuriesApplied ? l.pair.indexOf(st.club) : -1;
+        const before = side >= 0 ? healthy(st) : null;
+        const result = prior.apply(this, arguments);
+        if (before && st === ownState()) recordNew(st, before, matchOrigin(st, l, side));
+        return result;
+      };
+      Object.assign(wrapped, prior); wrapped.__injuryOrigin = true; applyMatchInjuries = wrapped;
+    }
+    return true;
+  }
+  return { project, validate, execute, observe, stops, installHooks, recevoir: (s, d) => receive(s, d), blessures: { typer: typeInjuries, type: injuryKind, risque: relapseRisk, effets: effectText, cause: causeText } };
 }
 
 module.exports = { files, commands, factory, prelude, DATA };
