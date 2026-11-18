@@ -40,7 +40,7 @@ const STOPS = Object.freeze({
   fatigue: { mandatory: false, label: 'Gabi : titulaires fatigués' },
   reprise: { mandatory: false, label: 'Reprise de l’entraînement' },
   // Éléments informatifs de la pré-saison (reprise.cjs, courrier en Réception) : arrêt sans réponse attendue ; un
-  // nouvel appui sur Continuer repart. Tous les éléments du jour sont regroupés.
+  // nouvel appui sur Continuer repart. Un seul arrêt par semaine, qui résume tous les éléments de la semaine.
   a_noter: { mandatory: false, label: 'À noter' },
   // Moments de la saison sans décision (veille et lendemain de match, rapport médical, mi-saison, fin de phase,
   // marché, recruteur) : arrêts informatifs réglés par continuer-arrets.json, toujours actifs ; plusieurs le même jour
@@ -104,6 +104,8 @@ const SIGNAL_SOURCE = `(function(){
   decisionNext:typeof CDReprise!=='undefined'?CDReprise.nextDecision(s):null,
   notes:typeof CDReprise!=='undefined'?CDReprise.notesSeen(s):[],
   notesNext:typeof CDReprise!=='undefined'?CDReprise.nextNotes(s):[],
+  // Résumés des éléments des 7 derniers jours, lus seulement les jours où un élément arrive (arrêt hebdomadaire).
+  notesBrief:typeof CDReprise!=='undefined'&&today&&(s.reprise?.notes||[]).some(id=>id.endsWith(':'+today))?CDReprise.notesBrief(s,new Date(Date.parse(today)-6*86400000).toISOString().slice(0,10),today):{},
   preseason:!!pre,
   courrier:(()=>{try{return nativeSystems.domain('clubMail').stops(s);}catch(e){return [];}})(),
   ...(world&&today?saison(s,today,fixtures,next,name,byId,players):{})};
@@ -172,6 +174,35 @@ function validate(payload) {
 }
 
 const routine = title => ROUTINE.some(r => r.test(title));
+const noteDate = id => String(id).split(':')[1] || '';
+const plusDays = (iso, n) => new Date(Date.parse(iso) + n * 86400000).toISOString().slice(0, 10);
+// Éléments « À noter » de la préparation (décision de Léo, 18/11/2026) : un seul arrêt par semaine qui résume tout.
+// Chaque courrier arrive en Réception le jour où il se produit, sans arrêter l'avance. Les éléments sont regroupés
+// en semaines glissantes : une semaine commence au premier élément pas encore résumé et couvre 7 jours ; l'arrêt
+// tombe le jour de son dernier élément et les cite tous. Les décisions restent des arrêts à part.
+function noteWeeks(seen, next) {
+  const dates = [...new Set([...(seen || []).map(noteDate), ...(next || []).map(n => n.date)])].filter(Boolean).sort();
+  const weeks = [];
+  for (const d of dates) { const w = weeks[weeks.length - 1]; if (w && d < plusDays(w.from, 7)) w.to = d; else weeks.push({ from: d, to: d }); }
+  return weeks;
+}
+function noteDigest(before, after) {
+  const fresh = added(before.notes || [], after.notes || []);
+  if (!fresh.length || !after.today) return false;
+  const week = noteWeeks(after.notes, after.notesNext).find(w => w.to === after.today);
+  if (!week) return false;
+  const ids = (after.notes || []).filter(id => noteDate(id) >= week.from && noteDate(id) <= week.to)
+    .sort((a, b) => noteDate(a) < noteDate(b) ? -1 : noteDate(a) > noteDate(b) ? 1 : 0);
+  const items = ids.map(id => after.notesBrief?.[id] || NOTE_LABELS[id.split(':')[0]] || 'élément de préparation');
+  return items.length ? 'Ta semaine de préparation : ' + items.join(' · ') + '.' : false;
+}
+// Arrêt hebdomadaire prévu : fin de la prochaine semaine d'éléments.
+function nextDigest(seen, notesNext, today) {
+  const week = noteWeeks(seen, notesNext).find(w => w.to > today);
+  if (!week) return null;
+  const kinds = (notesNext || []).filter(n => n.date >= week.from && n.date <= week.to).map(n => NOTE_LABELS[n.kind] || 'élément de préparation');
+  return { date: week.to, detail: [...new Set(kinds)].join(', ') };
+}
 // Décisions de la préparation attendues (clés de reprise.cjs) : motif d'arrêt ou de refus, vu du manager.
 const DECISION_TEXT = { amicaux: 'le programme des matchs amicaux', stage: 'l’orientation du stage de préparation' };
 function decisionText(keys) {
@@ -212,13 +243,7 @@ function detect(before, after, settings, repriseDate = null) {
       const days = Math.round((Date.parse(after.next.date) - Date.parse(after.today)) / 86400000);
       return days >= 0 && days <= 7 && (after.names[tired[0]] || 'Un titulaire') + ' est sous 70 % de condition avant le match du ' + shortDate(after.next.date) + '.';
     }],
-    ['a_noter', () => {
-      const fresh = added(before.notes || [], after.notes || []).map(id => id.split(':')[0]);
-      if (!fresh.length) return false;
-      // Tous les éléments arrivés ce jour-là sont cités (ils sont tous en Réception).
-      const what = [...new Set(fresh)].map(k => NOTE_LABELS[k] || 'élément de préparation');
-      return (fresh.length > 1 ? fresh.length + ' éléments en Réception : ' : 'En Réception : ') + what.join(', ') + '.';
-    }],
+    ['a_noter', () => noteDigest(before, after)],
     ['reprise', () => repriseDate && after.today === repriseDate && before.today !== repriseDate && 'Le groupe reprend l’entraînement aujourd’hui.'],
     ['ouverture', () => before.preseason && !after.preseason && 'Le calendrier de la saison est ouvert.'],
     ['message', () => {
@@ -338,8 +363,8 @@ function plan(after, repriseDate = null, ignorer = []) {
   if (after.next && after.next.date >= after.today) candidates.push({ kind: 'match', date: after.next.date, opponent: after.next.opponent });
   // Une décision due le jour de la reprise passe avant elle (tri stable).
   if (after.decisionNext && after.decisionNext.date > after.today) candidates.push({ kind: 'decision', date: after.decisionNext.date, detail: after.decisionNext.detail });
-  const note = ign.includes('a_noter') ? null : (after.notesNext || []).find(n => n.date > after.today);
-  if (note) candidates.push({ kind: 'a_noter', date: note.date, detail: NOTE_LABELS[note.kind] || 'élément de préparation' });
+  const note = ign.includes('a_noter') ? null : nextDigest(after.notes, after.notesNext, after.today);
+  if (note) candidates.push({ kind: 'a_noter', date: note.date, detail: note.detail });
   if (repriseDate && repriseDate > after.today) candidates.push({ kind: 'reprise', date: repriseDate });
   if (after.meeting && !after.meeting.completed) {
     const label = ({ press: 'Conférence de presse', medical: 'Point médical', board: 'Rendez-vous avec la direction' })[after.meeting.kind] || 'Rendez-vous du club';
