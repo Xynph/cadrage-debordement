@@ -785,6 +785,135 @@
         {"id": "rassurer", "libelle": "Rassurer le vestiaire", "effets": {"moral": 3}, "resultat": "Le groupe reste concentré sur le terrain."},
         {"id": "garanties", "libelle": "Demander des garanties au nouveau bureau", "effets": {"confiance": 2, "pression": 2}, "resultat": "Le bureau s'engage sur le budget de la saison, et attend des résultats en retour."}
       ]
+    },
+    "quota_retrait": {
+      "categorie": "competition",
+      "declencheur": "quota_retrait",
+      "priorite": 24,
+      "intervalle": 300,
+      "arret": true,
+      "ecran": "Classements",
+      "expediteur": "La ligue",
+      "formulations": [
+        {
+          "sujet": "Quota JIFF : retrait de points",
+          "corps": "Ta saison s'est terminée avec une moyenne de {moyenne} JIFF par feuille sur {feuilles} journées de {ligue}, sous les {objectif} exigés. Le règlement est net : {points} point(s) de pénalité à valoir sur le classement de cette saison.\n\nLe retrait figure déjà au classement. Pour ne plus le subir, il faudra plus de joueurs issus de nos filières de formation sur la feuille, et les recruter ou les former à temps."
+        },
+        {
+          "sujet": "Commission des quotas : pénalité",
+          "corps": "Moyenne de {moyenne} JIFF par feuille sur {feuilles} journées de {ligue}, pour {objectif} attendus : la commission nous retire {points} point(s) cette saison.\n\nIl nous manquait des joueurs formés en France sur les feuilles de match. Regarde le classement, et pense à ta politique de jeunes avant la prochaine fenêtre de recrutement."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "classement",
+          "libelle": "Voir le classement",
+          "effets": {},
+          "resultat": "Le classement s'ouvre : le retrait de points y figure déjà.",
+          "ouvrir": true
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Planifier plus de jeunes",
+          "effets": {
+            "consigneDS": "jeunes",
+            "confiance": 1
+          },
+          "resultat": "Consigne passée au directeur sportif : il privilégiera les jeunes du centre et les joueurs formés en France pour les prochains contrats."
+        },
+        {
+          "id": "lu",
+          "libelle": "Pris note",
+          "effets": {},
+          "resultat": "Courrier de la ligue classé."
+        }
+      ]
+    },
+    "quota_amende": {
+      "categorie": "competition",
+      "declencheur": "quota_amende",
+      "priorite": 24,
+      "intervalle": 300,
+      "arret": true,
+      "ecran": "Finances",
+      "expediteur": "La ligue",
+      "formulations": [
+        {
+          "sujet": "Quota EQP : amende de la ligue",
+          "corps": "Sur la saison de {ligue}, nos feuilles de match ont compté {moyenne} joueurs sélectionnables pour l'Angleterre en moyenne, pour {objectif} exigés. La ligue nous inflige une amende de {montant}, déjà prélevée sur la trésorerie. Pas de retrait de points : c'est une sanction financière.\n\nSi l'effectif ne change pas, elle se reproduira."
+        },
+        {
+          "sujet": "Les EQP : la ligue nous sanctionne",
+          "corps": "La moyenne de {moyenne} EQP par feuille sur {feuilles} journées de {ligue} est sous le seuil de {objectif}. Amende : {montant}, prélevée sur le compte du club.\n\nAvant la prochaine saison, il faut des joueurs du cru dans le groupe, au recrutement comme au centre de formation."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "finances",
+          "libelle": "Voir les finances",
+          "effets": {},
+          "resultat": "Les finances s'ouvrent : l'amende y est inscrite.",
+          "ouvrir": true
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Planifier plus de jeunes",
+          "effets": {
+            "consigneDS": "jeunes",
+            "confiance": 1
+          },
+          "resultat": "Consigne passée au directeur sportif : il privilégiera les jeunes du centre et les joueurs du cru pour les prochains contrats."
+        },
+        {
+          "id": "lu",
+          "libelle": "Pris note",
+          "effets": {},
+          "resultat": "Courrier de la ligue classé."
+        }
+      ]
+    },
+    "quota_prime": {
+      "categorie": "competition",
+      "declencheur": "quota_prime",
+      "priorite": 24,
+      "intervalle": 300,
+      "arret": true,
+      "ecran": "Finances",
+      "expediteur": "La ligue",
+      "formulations": [
+        {
+          "sujet": "Fonds JIFF : la prime est versée",
+          "corps": "Moyenne de {moyenne} JIFF par feuille sur {feuilles} journées de {ligue} : le quota est tenu et le fonds JIFF verse {prime} au club.\n\nLa formation locale paie. On continue ?"
+        },
+        {
+          "sujet": "Prime du fonds JIFF",
+          "corps": "Tu as aligné {moyenne} JIFF en moyenne sur la saison de {ligue}, au-dessus des {objectif} exigés : le fonds JIFF nous verse {prime}.\n\nC'est le bon moment pour décider quoi faire de ce coup de pouce."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "finances",
+          "libelle": "Voir les finances",
+          "effets": {},
+          "resultat": "Les finances s'ouvrent : la prime y est inscrite.",
+          "ouvrir": true
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Planifier plus de jeunes",
+          "effets": {
+            "consigneDS": "jeunes",
+            "confiance": 1
+          },
+          "resultat": "Consigne passée au directeur sportif : il continuera de miser sur les jeunes du centre."
+        },
+        {
+          "id": "lu",
+          "libelle": "Pris note",
+          "effets": {},
+          "resultat": "Courrier de la ligue classé."
+        }
+      ]
     }
   }
 }

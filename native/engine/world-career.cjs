@@ -417,6 +417,8 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  const multiplex=s=>({simulate:(f,watch)=>simulate(f,watch),entry:(f,r)=>fixtureEntry(s,f,r),live:()=>result(s.live),rows:(id,extra)=>rows({...s,history:s.history.concat(extra)},id)});
  function finishWeek(){
   check(active(S)&&S.round<WEEKS&&!(S.live&&!S.live.finished),'semaine indisponible.');
+  // Quotas JIFF/EQP (jiff.cjs) : feuilles de la semaine comptées ici, aussi en calendrier journalier.
+  if(typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.beforeWeek==='function')CDJiff.beforeWeek(S);
   trainWeek();captureReport();const results=[],ownFixture=userFixture(S);
   for(const f of fixtures(S)){
    check(!S.history.some(r=>r.fixtureId===f.id),'rencontre déjà enregistrée.');
