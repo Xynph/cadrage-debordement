@@ -4,9 +4,9 @@ extends SceneTree
 ## 1. Grand moment (la rentrée, ouverte le lundi de la semaine du 1er match, atteinte par « Continuer ») : 4 questions,
 ##    tons et effets visibles, adjoint refusé ; un clic par question (la suivante s'affiche d'elle-même), « Publier »,
 ##    bilan des trois conséquences, « Continuer ».
-## 2. Conférence ordinaire : l'après-match du 1er match (3 questions au plus, page « Presse » ouverte par le jeu dès le
-##    résultat), cinq tons aux conséquences différentes, réglage « Envoyer l'adjoint », puis « Continuer » : Gabi tient
-##    l'après-match laissé sans réponse.
+## 2. Conférence ordinaire : l'après-match du 1er match (3 questions au plus, salle de presse ouverte par le jeu dès le
+##    résultat), cinq tons aux conséquences différentes, réglage « Envoyer l'adjoint », « Envoyer mon adjoint » d'un
+##    clic, bilan, « Continuer » qui ramène en Réception.
 ## CD_PRESSE_CAPTURES=<dossier> : captures 1920×1080 (rendu fenêtré requis).
 const Flow = preload("helpers/contextual_flow.gd")
 var app: Control
@@ -135,20 +135,21 @@ func run() -> void:
 	if not conference.get("available", false): return finish()
 	questions = conference.get("questions", [])
 	check(not conference.get("moment") is Dictionary and questions.size() >= 2 and questions.size() <= 3, "Ordinaire : 3 questions au plus (%d)" % questions.size())
-	# L'après-match n'est pas un rendez-vous du club : le jeu ouvre la page « Presse » dès la validation du résultat
-	# (« Ouvrir la conférence » du courrier), sans salle contextuelle ni bouton « Envoyer mon adjoint ».
-	app._open_press_conference()
+	# L'après-match s'ouvre de lui-même dans la salle de presse dès la validation du résultat (18/11/2026), sans
+	# passer par la Réception ni par un arrêt de « Continuer ».
 	await settle(8)
 	await wait_idle()
-	check(app.route == "Presse", "Après-match : la page Presse s'ouvre (" + str(app.route) + ")")
+	check(view() != null, "Après-match : la salle de presse s'ouvre d'elle-même")
+	if view() == null: return finish()
 	await capture("presse-apres-ordinaire")
 	# Dilemmes : les cinq tons n'affichent pas les mêmes conséquences, et aucun n'est meilleur sur tous les axes.
-	var shown_q: Dictionary = questions[0]
+	var shown_q: Dictionary = questions[view().question_index]
 	var rows := {}
 	for answer: Dictionary in shown_q.get("answers", []):
-		var card := app.root_content.find_child("PressAnswer_%s_%s" % [shown_q.id, answer.id], true, false) as Button
-		check(card != null, "Réponse affichée sur la page Presse : " + str(answer.id))
-		rows[str(answer.tone)] = card.text if card != null else ""
+		var card := node("PressAnswer_%s_%s" % [shown_q.id, answer.id]) as Button
+		check(card != null, "Réponse affichée dans la salle : " + str(answer.id))
+		var effects := card.find_child("PressEffects", true, false) as RichTextLabel if card != null else null
+		rows[str(answer.tone)] = effects.get_parsed_text() if effects != null else ""
 	check(rows.size() == 5 and _distinct(rows.values()), "Cinq tons, cinq profils d'effets différents")
 	var best := 0
 	for answer: Dictionary in shown_q.get("answers", []):
@@ -161,22 +162,28 @@ func run() -> void:
 		if better_than_all: best += 1
 	check(best == 0, "Aucun ton n'est meilleur ou égal sur tous les axes")
 	await capture("presse-dilemmes")
-	# Réglage de carrière depuis la page Presse.
-	var toggle := app.root_content.find_child("PressPolicy_adjoint", true, false) as Button
-	check(toggle != null and toggle.is_visible_in_tree(), "Réglage « Envoyer l'adjoint » proposé sur la page Presse")
+	# Réglage de carrière depuis la salle : il vaut pour les prochains après-matchs.
+	var toggle := node("PressPolicy_adjoint") as Button
+	check(toggle != null and toggle.is_visible_in_tree(), "Réglage « Envoyer l'adjoint » proposé dans la salle")
 	if toggle != null:
 		toggle.pressed.emit()
 		await settle(3)
 		await wait_idle()
 		check(press().get("policy", {}).get("ordinary") == "adjoint", "Réglage « envoyer l'adjoint » enregistré")
 	check(press().get("conference", {}).get("available", false), "La conférence en cours reste à traiter après le réglage")
-	# Le manager poursuit sans répondre : un clic sur « Continuer », Gabi tient l'après-match (coût annoncé en Réception).
-	check(await command("advance_until_event", {"fromDate": str(app.model.get("meta", {}).get("calendarToday", ""))}), "« Continuer » accepté avec un après-match en attente")
+	# Après-match ordinaire : « Envoyer mon adjoint » d'un clic, puis « Continuer » referme la salle.
+	var send := node("PressDelegate") as Button
+	check(send != null and not send.disabled, "Après-match : l'adjoint est proposé")
+	await click("PressDelegate")
 	await settle(8)
 	var outcome: Dictionary = press().get("lastOutcome", {})
 	check(outcome.get("delegated", false), "Conférence tenue par Gabi")
 	check(str(outcome.get("context", {}).get("slot", "")) == "apres", "Après-match tenu par Gabi")
+	check(view() != null and node("PressReturn") != null, "Bilan affiché, « Continuer » proposé")
 	await capture("presse-apres-adjoint")
+	await click("PressReturn")
+	await settle(8)
+	check(app.route == "Réception", "Retour en Réception après l'après-match")
 	check(view() == null, "Aucune salle de presse restée ouverte")
 	finish()
 

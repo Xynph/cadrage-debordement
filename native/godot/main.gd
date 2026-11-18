@@ -377,7 +377,7 @@ func _receive_model(value: Dictionary) -> void:
 			route = "Réception"
 			# Après-match façon FM (18/11/2026) : la conférence courte s'ouvre dès la validation du résultat, sans
 			# arrêt de « Continuer » en plus.
-			if received_command == "finish_round" and _press_required(): call_deferred("_open_press_conference")
+			if received_command == "finish_round" and _press_required(): call_deferred("_open_postmatch_press")
 		# Arrêt « À noter » de « Continuer » (façon FM) : tous les éléments du jour sont en Réception, le plus récent en tête.
 		elif received_command == CareerProgression.CONTINUE_COMMAND and _stop_kind(model) == "a_noter":
 			_reset_reception()
@@ -757,6 +757,15 @@ func _open_press_conference() -> void:
 	inbox.press_opened = id
 	_navigate("Réception", false)
 	_open_press_invitation(id)
+
+## Après-match (18/11/2026) : la salle de presse s'ouvre directement sur la conférence d'après-match ; sans elle
+## (ancienne carrière, autre créneau), le courrier de la conférence comme avant.
+func _open_postmatch_press() -> void:
+	var id := _pending_press_invitation()
+	if id.is_empty(): return
+	set_meta("press_mail_origin", id)
+	if is_instance_valid(contextual_director) and contextual_director.sync("postmatch_press", true): return
+	_open_press_conference()
 
 ## Identifiant du courrier de la conférence de presse ouverte cette semaine, vide s'il n'y en a pas.
 func _pending_press_invitation() -> String:

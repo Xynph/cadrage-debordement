@@ -14,8 +14,12 @@ const godot = process.env.CD_GODOT_EXECUTABLE;
 test('Conférence de presse rapide dans le jeu', { skip: !godot && 'SDK Godot requis : CD_GODOT_EXECUTABLE absent', timeout: 900000 }, () => {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-presse-rapide-'));
   try {
-    const fenetre = process.env.CD_PRESSE_CAPTURES ? [] : ['--headless'];
-    const result = spawnSync(godot, [...fenetre, '--audio-driver', 'Dummy', '--max-fps', '120', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-presse-rapide.gd')], {
+    const graphique = !!process.env.CD_PRESSE_CAPTURES;
+    const fenetre = graphique ? ['--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '1920x1080'] : ['--headless'];
+    const args = [...fenetre, '--audio-driver', 'Dummy', '--max-fps', '120', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-presse-rapide.gd')];
+    // Captures sans écran (CI) : serveur X virtuel, comme les captures météo.
+    const commande = graphique && !process.env.DISPLAY ? 'xvfb-run' : godot;
+    const result = spawnSync(commande, commande === 'xvfb-run' ? ['-a', '-s', '-screen 0 1920x1080x24', godot, ...args] : args, {
       env: { ...process.env, CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_SELF_TEST: '0', CD_GODOT_DATA_DIR: profile }, encoding: 'utf8', windowsHide: true, timeout: 840000,
     });
     const output = (result.stdout || '') + (result.stderr || '');

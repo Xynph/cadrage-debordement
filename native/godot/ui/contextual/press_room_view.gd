@@ -49,7 +49,7 @@ func _ready() -> void:
 func update_frame(value: Dictionary, projection: Dictionary = {}) -> void:
 	model = value
 	data = projection if projection.get("conference") is Dictionary else value.get("clubLife", {}).get("press", {})
-	meeting = projection if projection.has("meetingId") else {}
+	meeting = projection if projection.has("meetingId") or projection.has("postmatch") else {}
 	if meeting.is_empty():
 		var active: Variant = value.get("clubLife", {}).get("clubMeetings", {}).get("scene")
 		if active is Dictionary and active.get("kind") == "press":
@@ -98,7 +98,8 @@ func _render_ui() -> void:
 	var heading := S.G.v(0)
 	S.G.fill(heading)
 	top.add_child(heading)
-	S.heading(heading, model.get("club", {}), "La conférence de presse", "Saison %s · semaine %d" % [SeasonLabel.label(context.get("season", 0)), int(context.get("week", 0)) + 1])
+	var title := "Conférence d’après-match" if meeting.get("postmatch", false) else "La conférence de presse"
+	S.heading(heading, model.get("club", {}), title, "Saison %s · semaine %d" % [SeasonLabel.label(context.get("season", 0)), int(context.get("week", 0)) + 1])
 	if _available(): _render_moment(top)
 	_render_promise_banner(column)
 	if _available(): _render_conference(column)

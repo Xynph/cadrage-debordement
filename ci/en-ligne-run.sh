@@ -51,7 +51,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|presse|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -89,6 +89,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/match-rendu"
     phase "captures rendu de match" captures-match-rendu.log \
       env CD_MATCH_RENDU_CAPTURES="$cap/match-rendu" CD_MATCH_RENDU_PASSES=actuel CD_MATCH_RENDU_TAILLES=1280x720 node tests/godot-match-rendu-capture.cjs
+  fi
+  if veut presse; then
+    mkdir -p "$cap/presse"
+    phase "captures salle de presse (rentrée, bilan, après-match, adjoint ; 1080p)" captures-presse.log \
+      env CD_PRESSE_CAPTURES="$cap/presse" node tests/godot-presse-rapide.cjs
   fi
   if veut meteo; then
     mkdir -p "$cap/meteo"
