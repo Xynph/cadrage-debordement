@@ -77,7 +77,7 @@ func _available() -> bool:
 	return not meeting.get("completed", false) and data.get("conference", {}).get("available", false) and _questions().size() >= 2 and _questions().size() <= 4
 
 func _context_key(value: Dictionary) -> String:
-	return "%d:%d:%d" % [int(value.get("season", -1)), int(value.get("week", -1)), int(value.get("club", -1))]
+	return "%d:%d:%d:%s" % [int(value.get("season", -1)), int(value.get("week", -1)), int(value.get("club", -1)), str(value.get("slot", ""))]
 
 func _current_outcome() -> Dictionary:
 	var outcome: Variant = data.get("lastOutcome")

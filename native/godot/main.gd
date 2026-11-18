@@ -375,6 +375,9 @@ func _receive_model(value: Dictionary) -> void:
 			_reset_reception(reception_id)
 			if has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 			route = "Réception"
+			# Après-match façon FM (18/11/2026) : la conférence courte s'ouvre dès la validation du résultat, sans
+			# arrêt de « Continuer » en plus.
+			if received_command == "finish_round" and _press_required(): call_deferred("_open_press_conference")
 		# Arrêt « À noter » de « Continuer » (façon FM) : tous les éléments du jour sont en Réception, le plus récent en tête.
 		elif received_command == CareerProgression.CONTINUE_COMMAND and _stop_kind(model) == "a_noter":
 			_reset_reception()
