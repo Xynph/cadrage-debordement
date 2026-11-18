@@ -64,6 +64,12 @@ const ACTION_CHAMP := 36.0
 const TOIT_Z := 54.6
 const TOIT_Y := 13.0
 const CHAMP_MAX := 64.0
+## Plongée du bas de l'image (inclinaison + demi-angle de champ, degrés), TV et contact. 18 novembre
+## 2026 (nuit) : près de la touche proche, l'axe restait sous INCLINAISON_MAX mais la caméra qui
+## avançait sous le toit ouvrait son angle jusqu'à CHAMP_MAX : le bas de l'image plongeait à 70° et
+## les joueurs proches étaient vus du dessus. L'angle s'ouvre désormais au plus jusqu'à cette
+## plongée ; au-delà, la caméra avance à angle constant (hauteur visible un peu plus serrée).
+const PLONGEE_MAX := 56.0
 ## Hauteur visible (m) au point visé de la caméra de base (hors temps fort). Le cadrage des temps
 ## forts (match_cadrage.gd) la règle ensuite selon les joueurs utiles.
 const TV_TAILLE := 30.0
@@ -1317,6 +1323,10 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			if _cadrage:
 				# Temps fort : le cadrage du geste garde lui aussi le ballon dans le champ.
 				look = _cadrage.garder_ballon(look, size, offset, screen.x / maxf(screen.y, 1.0))
+		if _camera_mode == "action":
+			# Caméra au contact : point visé toujours ramené dans l'aire de jeu (essai en coin : le
+			# terrain, pas la tribune) ; le ballon reste gardé à l'image plus bas.
+			look = borner_visee(look, VISEE_CONTACT)
 		# Jamais de champ dégénéré, quel que soit le recadrage.
 		if not is_finite(size) or size < 2.0 or not look.is_finite() or not offset.is_finite():
 			look = _camera_focus
@@ -1381,7 +1391,17 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 
 ## Direction de la caméra suivie pour un point visé à `profondeur` (z) : celle de base, relevée
 ## progressivement près de la touche proche (caméra-grue, voir GRUE_*). Continue : pas d'à-coup.
-func offset_suivi(base: Vector3, profondeur: float) -> Vector3:
+## Caméra de biais (contact) : son lacet est rendu progressivement symétrique quand le point suivi
+## (`largeur`, x ; par défaut celui de la caméra) approche du bout du terrain vers lequel elle
+## regarderait (|x| de PIVOT_DEBUT à PIVOT_FIN) : elle se place alors derrière l'en-but et regarde
+## vers l'intérieur du terrain, jamais vers la tribune du bout du terrain.
+func offset_suivi(base: Vector3, profondeur: float, largeur: float = NAN) -> Vector3:
+	if absf(base.x) > 0.0001:
+		var x := _camera_focus.x if is_nan(largeur) else largeur
+		# La caméra regarde vers -offset : le bout du terrain regardé est du côté de -base.x.
+		var symetrie := smoothstep(PIVOT_DEBUT, PIVOT_FIN, -x * signf(base.x))
+		if symetrie > 0.0:
+			base = base.rotated(Vector3.UP, -2.0 * symetrie * atan2(base.x, base.z))
 	var k := smoothstep(GRUE_DEBUT, GRUE_FIN, profondeur)
 	if k <= 0.0:
 		return base
@@ -1418,8 +1438,12 @@ func borner_pivot(look: Vector3, offset: Vector3, suivi: Vector3) -> Vector3:
 	return suivi.normalized().rotated(Vector3.UP, permis) * offset.length()
 
 
-func borner_visee(look: Vector3) -> Vector3:
-	return Vector3(borne_douce(look.x, VISEE_GESTE.x), look.y, borne_douce(look.z, VISEE_GESTE.y))
+## Caméra au contact, en permanence : point visé à |x| <= VISEE_CONTACT.x et |z| <= VISEE_CONTACT.y.
+const VISEE_CONTACT := Vector2(47.0, 30.0)
+
+
+func borner_visee(look: Vector3, limites: Vector2 = VISEE_GESTE) -> Vector3:
+	return Vector3(borne_douce(look.x, limites.x), look.y, borne_douce(look.z, limites.y))
 
 
 ## Borne sans à-coup : identité jusqu'à `limite - VISEE_GENOU`, puis approche progressive de la limite
@@ -1504,11 +1528,24 @@ func pose_camera(look: Vector3, size: float, offset: Vector3) -> Array:
 	var distance := demi / tan(deg_to_rad(champ * 0.5))
 	if direction.z > 0.05 and _sous_le_toit(look, direction, distance, demi):
 		# Le bas de l'image passerait sous le toit de la tribune proche : la caméra avance (et
-		# ouvre son angle) juste assez pour le franchir.
-		var a := demi / tan(deg_to_rad(CHAMP_MAX * 0.5))
+		# ouvre son angle) juste assez pour le franchir, sans que le bas de l'image dépasse PLONGEE_MAX.
+		var inclinaison := rad_to_deg(asin(clampf(direction.y, -1.0, 1.0)))
+		var ouverture := clampf(2.0 * (PLONGEE_MAX - inclinaison), champ, CHAMP_MAX)
+		var pente := tan(deg_to_rad(ouverture * 0.5))
+		var a := demi / pente
 		var b := distance
 		if _sous_le_toit(look, direction, a, demi):
-			distance = a
+			# Angle plafonné : la caméra avance à angle constant jusqu'à passer devant le toit
+			# (plus près = plus dégagé) ; la hauteur visible se resserre d'autant.
+			var proche := 1.0
+			var loin := a
+			for i in 10:
+				var m := (proche + loin) * 0.5
+				if _sous_le_toit(look, direction, m, m * pente):
+					loin = m
+				else:
+					proche = m
+			return [look + direction * proche, ouverture]
 		else:
 			for i in 8:
 				var m := (a + b) * 0.5
