@@ -151,7 +151,7 @@ func injury_name_fits() -> void:
 			var lines := cell.get_line_count()
 			check(lines * cell.get_line_height() <= cell.size.y + 1.0, "Hauteur de ligne qui suit (%d lignes) : %s%s" % [lines, cell.text, tag])
 		# Tableau : une ligne par joueur de l'infirmerie, en-tête figé au-dessus des lignes, première ligne visible.
-		var rows := app.root_content.find_children("InboxInfirmaryRow_*", "", true, false)
+		var rows: Array = app.root_content.find_children("InboxInfirmaryRow_*", "", true, false)
 		check(rows.size() == Reception.infirmary_rows(app.model).size() and rows.size() > 0, "Toutes les lignes de l'infirmerie présentes (%d)%s" % [rows.size(), tag])
 		var scroller := node("InboxInfirmaryScroll") as ScrollContainer
 		check(scroller != null and not rows.is_empty() and scroller.get_global_rect().grow(1.0).encloses((rows[0] as Control).get_global_rect()), "Première ligne de l'infirmerie visible" + tag)
