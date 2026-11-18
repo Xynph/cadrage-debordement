@@ -1,0 +1,2 @@
+tests/godot-rendez-vous-arrivee.cjs
+tests/rafraichissement-ecrans-table.cjs

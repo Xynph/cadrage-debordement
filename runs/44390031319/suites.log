@@ -1,0 +1,40 @@
+::group::tests/godot-rendez-vous-arrivee.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+RENDEZ-VOUS ARRIVEE : 11 contrôles ; 0 échec(s)
+
+CD_CPU_PROFILE suite=tests/godot-rendez-vous-arrivee.cjs user_s=19.08 system_s=1.38 wall_s=17.03 cpu_pct=120% max_rss_kb=1033348
+PASS tests/godot-rendez-vous-arrivee.cjs (17 s)
+::endgroup::
+::group::tests/rafraichissement-ecrans-table.cjs
+TAP version 13
+# Subtest: la table du rafraîchissement par écran se lit et nomme des écrans existants
+ok 1 - la table du rafraîchissement par écran se lit et nomme des écrans existants
+  ---
+  duration_ms: 1.659119
+  type: 'test'
+  ...
+# Subtest: sous-sections du moteur connues du module Godot
+ok 2 - sous-sections du moteur connues du module Godot
+  ---
+  duration_ms: 0.119059
+  type: 'test'
+  ...
+# Subtest: chaque section de la table a exactement les lecteurs notés (sinon revoir ses écrans)
+ok 3 - chaque section de la table a exactement les lecteurs notés (sinon revoir ses écrans)
+  ---
+  duration_ms: 11.877878
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24.849296
+CD_CPU_PROFILE suite=tests/rafraichissement-ecrans-table.cjs user_s=0.07 system_s=0.01 wall_s=0.07 cpu_pct=115% max_rss_kb=67628
+PASS tests/rafraichissement-ecrans-table.cjs (0 s)
+::endgroup::
