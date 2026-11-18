@@ -21,6 +21,7 @@ const Choregraphie = preload("res://match_choregraphie.gd")
 const Formations = preload("res://match_formations.gd")
 const Impacts = preload("res://match_impacts.gd")
 const Tactique = preload("res://match_tactique.gd")
+const ApresEssai = preload("res://match_apres_essai.gd")
 const CUT_SECONDS := 0.30
 ## Nombre de joueurs à l'image, chacun à plus de Motion.TRAJET_REPLACEMENT de sa place, à partir
 ## duquel la vue coupe pour les replacer (équipe qui se reforme) au lieu de les faire courir.
@@ -348,6 +349,19 @@ func jouer_clip_natif(id: String, suffixe: String, debut: float = 0.0, fin: floa
 func arreter_geste(id: String) -> void:
 	if _actors.has(id):
 		_actors[id].geste = {}
+
+
+## Durée du trajet du ballon vers sa nouvelle place (s) : un tir au but vole plus longtemps
+## qu'une transition ordinaire (BLEND_SECONDS), le temps de le suivre jusqu'aux perches.
+func duree_vol() -> float:
+	if _tir_au_but():
+		return ApresEssai.duree_vol(_ball_from, _ball_target)
+	return BLEND_SECONDS
+
+
+## Ballon d'un tir au but en route vers la ligne de but visée (pas la pose « prêt » sur la marque).
+func _tir_au_but() -> bool:
+	return _kind in ["goal", "miss"] and _carrier_id.is_empty() and absf(_ball_target.x) >= 49.0
 
 
 ## Suit les pistes du chorégraphe (moteur Node) : positions, caps et états des joueurs,
@@ -1201,7 +1215,12 @@ func _update_ball(delta: float) -> void:
 		return
 	if not _pass_plan.is_empty() and _update_live_pass():
 		return
-	_ball_travel = minf(1.0, _ball_travel + delta / BLEND_SECONDS)
+	_ball_travel = minf(1.0, _ball_travel + delta / duree_vol())
+	if _tir_au_but():
+		# Tir au but : au-dessus de la barre, puis le ballon retombe dans l'en-but (match_apres_essai.gd).
+		_ball_attached = false
+		_ball.position = ApresEssai.vol(_ball_from, _ball_target, _ball_travel)
+		return
 	if not _carrier_id.is_empty() and _actors.has(_carrier_id) and _actors[_carrier_id].rig:
 		var entry: Dictionary = _actors[_carrier_id]
 		var anchor := Presentation.ball_anchor(entry.node, entry.rig)
@@ -1309,6 +1328,13 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			look = close[0]
 			size = close[1]
 			offset = close[2]
+			if _cadrage.has_method("dans_l_axe") and _cadrage.dans_l_axe():
+				# Tir au but filmé dans l'axe (match_cadrage.gd) : posé tel quel, sans recadrage de geste
+				# ni bornes de la caméra de tribune.
+				if _gestes:
+					_gestes.reset_framing()
+				_poser_camera(look, size, offset)
+				return
 		if _gestes:
 			# Pendant un geste : rapprochement amorti (et léger pivot lent en TV), puis retour.
 			var framed: Array = _gestes.frame_camera(look, size, offset, screen.x / maxf(screen.y, 1.0), _camera_mode, delta)

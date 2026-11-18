@@ -28,6 +28,12 @@ const HORLOGES := {"lente": 3.0, "normale": 1.5, "rapide": 0.6, "eclair": 0.25}
 ## Pose « prêt » après une coupe : tireur face aux poteaux, équipes en place au renvoi.
 const PRET := {"goal": 1.2, "miss": 1.2, "transformation": 1.2, "kickoff": 0.8, "drop22": 0.8, "goalLine": 0.8}
 const DEPART_BALLON := ["goal", "miss", "transformation", "kickoff", "drop22", "goalLine"]
+## Tirs au but (19 novembre 2026) : toujours une coupe sur la pose « prêt », gestes ou non ; buteur
+## posé quelques pas derrière le ballon (élan), places de la loi 8 pour la transformation, caméra dans
+## l'axe (match_cadrage.gd) ; il s'élance PRET_ELAN s avant la frappe (match_apres_essai.gd).
+const ApresEssai = preload("res://match_apres_essai.gd")
+const TIRS_AU_BUT := ["goal", "miss", "transformation"]
+const PRET_ELAN := 0.6
 ## Intervalle des positions intermédiaires d'une course balle en main.
 const PAS := 0.2
 ## Délai entre la frappe d'un tir au but et l'affichage de son résultat.
@@ -116,6 +122,9 @@ var _resultat_sonne := false
 var _essai_montre := false
 ## Plaquage de fin de course déjà joué pour le plan en cours (animations adaptées seulement).
 var _plaque := false
+## Tir au but en pose « prêt » : le buteur s'est-il déjà élancé ? L'arbitre est-il placé pour le tir ?
+var _elan := true
+var _arbitre_au_tir := false
 ## Nombre d'actions du journal déjà connues du joueur quand le temps fort a commencé.
 var _vus := 0
 ## Pistes du chorégraphe en cours : le fait du plan courant est-il déjà à l'écran (jalon passé) ?
@@ -914,11 +923,17 @@ func _lire_liaison(reel: float) -> void:
 
 func _commencer_plan() -> void:
 	var plan: Dictionary = tf.plans[index]
+	if str(plan.get("kind", "")) == "transformation" and plan.get("scene") is Dictionary and not plan.get("loi_8", false):
+		# Transformation (loi 8) : défense derrière sa ligne de but, équipe du buteur derrière le ballon.
+		plan.scene = ApresEssai.transformation(plan.scene)
+		plan["loi_8"] = true
 	var scene: Dictionary = plan.scene
+	var tir := tir_au_but(plan)
 	temps = 0.0
 	sous_image = 0.0
 	_tenu = 0.0
 	phase = "jeu"
+	_elan = not tir
 	_image_posee(int(plan.get("index", -1)))
 	if cadrage != null:
 		cadrage.regler(true, str(plan.get("kind", "")), float(plan.get("mouvement", 0.0)) >= 2.5)
@@ -927,12 +942,16 @@ func _commencer_plan() -> void:
 		var legende: Control = view.events.get_parent().get_parent().get_parent()
 		cadrage.couvrir(view.clock.get_global_rect().end.y / hauteur + 0.03, (hauteur - legende.get_global_rect().position.y) / hauteur + 0.02)
 		if plan.get("coupe", false) and not _sans_coupe: cadrage.couper()
+		# Tir au but : caméra dans l'axe, derrière le buteur, les deux poteaux au fond.
+		if tir and cadrage.has_method("viser_poteaux"): cadrage.viser_poteaux(stage._world(scene.origin), ApresEssai.poteaux_x(scene) - 50.0, ApresEssai.buteur(scene))
+	_placer_arbitre_tir(plan if tir else {})
 	_sans_coupe = false
 	if _jouer_choregraphie(plan):
 		return
-	if plan.get("coupe", false) and not _gestes_actifs():
-		# Coupe franche : la phase est montrée déjà en place.
-		var pret := scene.duplicate()
+	if plan.get("coupe", false) and (not _gestes_actifs() or tir):
+		# Coupe franche : la phase est montrée déjà en place (tir au but : buteur à quelques pas derrière
+		# le ballon, qui s'élance ensuite ; la vue ne coupe pas d'elle-même vers un tir).
+		var pret := ApresEssai.elan(scene, ApresEssai.ELAN) if tir else scene.duplicate()
 		pret.key = str(scene.get("key", "")) + ":pret"
 		if str(plan.get("kind", "")) in DEPART_BALLON and scene.get("origin") is Dictionary: pret.ball = scene.origin
 		stage.apply_frame(_image(pret, true, int(plan.index) - 1))
@@ -943,6 +962,30 @@ func _commencer_plan() -> void:
 			_habiller()
 			return
 	_jouer(plan)
+
+## Plan de tir au but (transformation, pénalité tentée) avec sa marque et son buteur.
+static func tir_au_but(plan: Dictionary) -> bool:
+	var scene: Variant = plan.get("scene")
+	if str(plan.get("kind", "")) not in TIRS_AU_BUT or not scene is Dictionary: return false
+	var origine: Variant = scene.get("origin")
+	return origine is Dictionary and origine.has("x") and origine.has("y") and not ApresEssai.buteur(scene).is_empty()
+
+## Tir au but : l'arbitre est déjà placé, devant la marque et sur le côté (coupe) ; il reprend
+## le suivi du ballon au plan suivant.
+func _placer_arbitre_tir(plan: Dictionary) -> void:
+	if arbitre == null: return
+	if plan.is_empty():
+		if _arbitre_au_tir:
+			_arbitre_au_tir = false
+			arbitre.dirige = false
+		return
+	var scene: Dictionary = plan.scene
+	var marque: Vector3 = stage._world(scene.origin)
+	var poteaux := Vector3(ApresEssai.poteaux_x(scene) - 50.0, 0.0, 0.0)
+	_arbitre_au_tir = true
+	arbitre.dirige = true
+	arbitre.signal_bras = ""
+	arbitre.placer(ApresEssai.place_arbitre_tir(marque, poteaux.x), marque)
 
 ## Pistes continues du chorégraphe pour ce plan (moteur Node, CD_MATCH_CHOREGRAPHE=1) :
 ## la vue les suit à la place de l'interpolation et des gestes du plan. Sans pistes, ou
@@ -1086,6 +1129,12 @@ func _lire(delta: float, reel: float) -> void:
 	var plan: Dictionary = tf.plans[index]
 	temps += delta
 	if phase == "pret":
+		if not _elan and temps >= float(PRET.get(str(plan.get("kind", "")), 0.0)) - PRET_ELAN:
+			# Tir au but : le buteur s'élance vers le ballon (même image, aucun nouveau fait).
+			_elan = true
+			var elan := ApresEssai.elan(plan.scene, ApresEssai.FRAPPE)
+			elan.key = str(plan.scene.get("key", "")) + ":pret"
+			stage.apply_frame(_image(elan, false, int(plan.index) - 1))
 		if temps >= float(PRET.get(str(plan.get("kind", "")), 0.0)): _jouer(plan)
 		return
 	# Le résultat d'un tir s'affiche après la frappe, pas avant.
