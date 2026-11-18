@@ -182,6 +182,12 @@ static func crest(club: Dictionary, width: int = 56) -> Control:
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		image.tooltip_text = "Blason fourni par le pack" if provided else "Blason de Rugby Legacy 27"
 		return image
+	# Sans blason : écusson de la banque d'images aux couleurs du club, initiales dessus.
+	var recolore: Control = load("res://ui/tenue_club.gd").ecusson(club, width)
+	if recolore != null:
+		recolore.custom_minimum_size = Vector2(width, width)
+		recolore.tooltip_text = "Blason de Rugby Legacy 27"
+		return recolore
 	var w := W.new()
 	w.initials = str(c.get("abbr", "XV"))
 	w.accent = Color(c.get("color", "#b94850"))

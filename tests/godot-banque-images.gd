@@ -4,6 +4,7 @@ extends SceneTree
 
 const BanqueImages = preload("res://ui/banque_images.gd")
 const Between = preload("res://ui/contextual/match_between.gd")
+const Tenue = preload("res://ui/tenue_club.gd")
 const ClubCanvas = preload("res://ui/immersive08/club_canvas.gd")
 
 var failures: Array = []
@@ -68,6 +69,41 @@ func stades() -> void:
 	await capturer("stades-selon-capacite")
 	planche.queue_free()
 
+func tenues() -> void:
+	var grille := GridContainer.new()
+	grille.columns = 8
+	root.add_child(grille)
+	grille.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var teintes := ["8c2f39", "1f5c43", "1b3f8b", "e0b35a", "111418", "f2ecdc", "6b2d7a", "d9622b"]
+	for n in 8:
+		var club := {"id": n, "name": "Club %d" % n, "abbr": "C%d" % n, "color": "#" + teintes[n]}
+		var c := Tenue.couleurs(club)
+		var shirt := Tenue.image("maillot-%s-face" % Tenue.MOTIFS[n], c[0], c[1], Vector2(200, 200))
+		verifier(shirt != null and shirt.material is ShaderMaterial, "maillot %s recolorable" % Tenue.MOTIFS[n])
+		if shirt: grille.add_child(shirt)
+	for n in 8:
+		var club := {"id": n, "name": "Club %d" % n, "abbr": "ABC", "color": "#" + teintes[n]}
+		var c := Tenue.couleurs(club)
+		var ecu := Tenue.image("ecusson-%s" % Tenue.ECUSSONS[n], c[0], c[1], Vector2(200, 200))
+		verifier(ecu != null, "écusson %s recolorable" % Tenue.ECUSSONS[n])
+		if ecu: grille.add_child(ecu)
+	for n in 8:
+		var club := {"id": 100 + n, "slug": "club-%d" % n, "name": "Club %d" % n, "abbr": "RL%d" % n, "color": "#" + teintes[n]}
+		var kit := Tenue.maillot(club, Vector2(200, 200))
+		verifier(kit != null and Tenue.maillot(club) .get_meta("banque_image") == kit.get_meta("banque_image"), "même club, même motif")
+		grille.add_child(kit)
+	for n in 8:
+		var club := {"id": 100 + n, "slug": "club-%d" % n, "name": "Club %d" % n, "abbr": "RL%d" % n, "color": "#" + teintes[n]}
+		var ecu := Tenue.ecusson(club, 180)
+		verifier(ecu != null, "écusson du club %d" % n)
+		grille.add_child(ecu)
+	var sans_blason: Control = preload("res://ui/game_skin.gd").crest({"id": 990, "name": "Club sans blason", "abbr": "CSB", "color": "#1b3f8b"}, 64)
+	verifier(sans_blason.name == "ClubCrestRecolored", "club sans blason : écusson recoloré (%s)" % sans_blason.name)
+	sans_blason.free()
+	verifier(preload("res://ui/immersive08/club_sheet_canvas.gd") != null, "fiche club chargée")
+	await capturer("tenues-recolorees")
+	grille.queue_free()
+
 func ecran_entre_temps_forts() -> void:
 	var hote := Control.new()
 	root.add_child(hote)
@@ -101,5 +137,6 @@ func executer() -> void:
 	regles()
 	await ecran_entre_temps_forts()
 	await stades()
+	await tenues()
 	print("BANQUE " + JSON.stringify({"controles": controles, "failures": failures}))
 	quit(0 if failures.is_empty() else 1)

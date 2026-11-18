@@ -578,6 +578,694 @@
    },
    "synthetique": true,
    "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "maillot-uni-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-uni-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 160880,
+   "sha256": "77186b49e554bc021b771cf105eeda8643dbd327078aefb1e193f58c5d3194f6",
+   "source_sha256": "8eaebdbd2b8bf0c3daa1a4165194ea7a38943b17b17996ccb023ddfd4a09c268",
+   "source_octets": 749595,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.467,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-cerceaux-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-cerceaux-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 164344,
+   "sha256": "2f8ee2775e34b8d2d98d36c6d83975feea77eff697f745f52e3c45f1836e41de",
+   "source_sha256": "b72b1883a882861b39fa05543dd2eaec7a08ee1c66fe6861414419329fc3f685",
+   "source_octets": 749718,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.45,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-bandes-verticales-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-bandes-verticales-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 164514,
+   "sha256": "3d0c8802ea6daa41a73bfdc788c501b74527591d922402fbe8e77ff36ee62554",
+   "source_sha256": "4ec198c59423c373dd6059c8dea18c1503928ecc4bb96e09f582dd6841a5e42e",
+   "source_octets": 749617,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.452,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-quartiers-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-quartiers-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 164240,
+   "sha256": "301bb711160f7a776bc0016a0554917b7a105ec06a47f1bc9a219bd4df89d7a2",
+   "source_sha256": "21449cbec0def47ba7bfe336def89a73232a290d49467444337ebf44dd0f1c54",
+   "source_octets": 749753,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.455,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-chevron-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-chevron-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 164332,
+   "sha256": "956bc61783e7bf59f2bb92a15a43167d8523b7e2a2fb9135a30896143819650c",
+   "source_sha256": "2272f258c8bbf0f3fd15d9fc3d5ec6bce0eb90da9a51999f8f167ba2f6f51046",
+   "source_octets": 749780,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.446,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-ceinture-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-ceinture-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 164270,
+   "sha256": "4c7f96db6de2e54fd98a9c5a2391c9caf4117544091905049b74c02320c172d7",
+   "source_sha256": "aab061d27f16e4fe427351c6d9875bdfae6c37ae8938e1c024cb440675cad8af",
+   "source_octets": 749497,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.447,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-manches-contrastees-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-manches-contrastees-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 161354,
+   "sha256": "b182a706b479cc2331e9dd9d03b30618815c7b73e98a4076d6f555ada937ae71",
+   "source_sha256": "20d58fdb5e7c8d150ee25596ebcede4405f27fb91d641f3df1dd2cf6f3429cc3",
+   "source_octets": 749634,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.448,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-col-poignets-contrastes-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-col-poignets-contrastes-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 160940,
+   "sha256": "c3210332f4969dc98401994e8d9639f734e6ae43bf63f6df2c17b50fed246225",
+   "source_sha256": "e7d375cdcb5d4ba1f2b8ef85c6c9afb87cb552242ba6a09f77d5c9efbae7a843",
+   "source_octets": 749624,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.446,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "ecusson-bouclier-classique",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-bouclier-classique.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 8370,
+   "sha256": "dd52a42af525d9c13e05d3fa1a42817d1a22271bb2f428fc47e503191650d860",
+   "source_sha256": "9a24c501a944bd88efbed1a9c8c94240318ff8e24490ff11c31b108ba81951d2",
+   "source_octets": 213543,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-bouclier-moderne",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-bouclier-moderne.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 8754,
+   "sha256": "52314cc836713ea25ae60d4035e71a021a2bea1baff6a8513163d00bbf03a552",
+   "source_sha256": "c023a2bf1d10e6af6fb5a9dbfff741d6705df5f4647ce46ca7c2f9f68c84a2a5",
+   "source_octets": 214904,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-blason-banniere",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-blason-banniere.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 7274,
+   "sha256": "c63f007387a3a2222007e4d532d5623997083764e51b2b791a35a7fb6b5115ba",
+   "source_sha256": "ecb4c446e5ce1002583bfaf8f67788a9858b14065fa42154af4427d4a2d46ae9",
+   "source_octets": 210957,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-rond",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-rond.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 9238,
+   "sha256": "2577facdf93e8d900a33de35aad2aaad3efa29a5be7764837cfb619419135624",
+   "source_sha256": "e1b218bee043f2f8927c17504350352de2fd362639d56de243b91c9ae924e1cd",
+   "source_octets": 217718,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-ovale",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-ovale.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 9468,
+   "sha256": "703daf186b452ff796e725e7351c82f0f23673449aa0bf348e4ccbb9f9547ebe",
+   "source_sha256": "3f3c7f165210886e92f958e1e0e67f2c5130b0dd163d4108b70d2d72b827775c",
+   "source_octets": 218145,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-hexagone",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-hexagone.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 7136,
+   "sha256": "235e7ed41fe661822abf5f18e6362f0917026f34e219fdba91ba903e2db5133b",
+   "source_sha256": "69e980b2f06329c85a1a7d105a39ec2d014f5203de4c0a7349604a8dd5d7db61",
+   "source_octets": 214094,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-losange",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-losange.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 6536,
+   "sha256": "6829351d8f77f2e57a947e07e80ef41f667a767f8dfb1ba1966496f87eb69ff6",
+   "source_sha256": "4879474f6141bbe306ad1867099ef756545044164a084200dd8406730eef31f5",
+   "source_octets": 222512,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-etoile",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-etoile.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 7626,
+   "sha256": "2e0b38e97d6b5ebdb92f1a75b11881d71d4e2589a2c43614aa3ce0cf23d78abf",
+   "source_sha256": "b1a4722029d1665e2f4fd39d04b7186b898fb93a3d2cbbf94d5e61782c490e94",
+   "source_octets": 220775,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "maillot-uni-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-uni-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1878,
+   "sha256": "852394b5968f5bd87f6829b5f5329c4a9e09f78c457730631e4fb3a8e5c51b58",
+   "source_sha256": "0b0f7a342aff6fbb235f8a8d986d5d04e41985c4fdbbcb895f486005dea0452f",
+   "source_octets": 6049,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 1.0,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-cerceaux-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-cerceaux-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 430,
+   "sha256": "7a1a9766624f00ee11a44cbb688bf222a9da2d870f11144e34c438dfd3e61f7f",
+   "source_sha256": "dc376fec7313d6b49272638cd2d58f0d05d849f0df32fe9dd743b25d75533651",
+   "source_octets": 2110,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.292,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-bandes-verticales-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-bandes-verticales-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 208,
+   "sha256": "49ce06f5f452530d07701817ef8a8fc5732e568ae355b4bea2b98bea7d097a28",
+   "source_sha256": "8ec37b798c57614d0a8a0c69c5dbd2f3c214864b1511c3d3c81d579023491035",
+   "source_octets": 2637,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.358,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-quartiers-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-quartiers-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 904,
+   "sha256": "f11150d4c2a9069334def3614d96196f5b49a53c0a95324416dce4a8a28dfab0",
+   "source_sha256": "8760609213ba135b6bd109fdde2d21fbb2dc18fd4acab8071b9fe30a19726e3c",
+   "source_octets": 4460,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.498,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-chevron-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-chevron-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1016,
+   "sha256": "ccf583bf911dd8a02ce931b2a6ed8f565dda4816a8fba554652b8eacd0569621",
+   "source_sha256": "3cff8b969fd27d255c277e6e821172b34b409516817468096e4ace48e509148f",
+   "source_octets": 2977,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.1,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-ceinture-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-ceinture-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 254,
+   "sha256": "d9e7374a872a4d4725fb686033230d8c5c675f324be7682863eb9d40ad00c0d9",
+   "source_sha256": "fd8e6ed125b0c5781c39f831ef45ae0b7242c2103d89c02eb828096336e2c461",
+   "source_octets": 1597,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.149,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-manches-contrastees-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-manches-contrastees-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 2000,
+   "sha256": "52a6bd591b5347edd33e4fdf3dbe044277bdb757eccbc5ac362727488ae6f91a",
+   "source_sha256": "2c7ba501a69262c64c2430a188594646e7607a89e0beb1bdc9dabfc2931b52fe",
+   "source_octets": 5137,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.176,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-col-poignets-contrastes-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-col-poignets-contrastes-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1338,
+   "sha256": "5b0b9ad541cc836eaa2e47c85bd516ce4f880964071087787b203400fda9430d",
+   "source_sha256": "6449c77217b084540cd3c8b6f032801cce763d06f55fa4074dbb30409d1ba4c4",
+   "source_octets": 3881,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.115,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "ecusson-bouclier-classique-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-bouclier-classique-masque.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 562,
+   "sha256": "4c7307bdc12e4e0672f43a23324976c9f85cc3f3fa3d87a78ef27c3508e31411",
+   "source_sha256": "999f3a62e887bdac8b359f84c6ea0af7f928765a5871a50debcaf72c79f1bd72",
+   "source_octets": 1844,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-bouclier-moderne-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-bouclier-moderne-masque.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 590,
+   "sha256": "30e7a0578ceec99367a95cd61ef94e3171e921d278f49778faaaeb5b703886e5",
+   "source_sha256": "afa7dad7e8be8b1e2f1eaf68416c8a8e127d6982b2a873074bb3497e90c08bca",
+   "source_octets": 1923,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-blason-banniere-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-blason-banniere-masque.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 362,
+   "sha256": "29bd4856e9eb7da5c2cfe756c5a849b9f05029304c10df14ceaacea251920e4b",
+   "source_sha256": "855a635b80cdf4ba38778b91db26a98d67309792bca05a455cbcd8c73efc3488",
+   "source_octets": 1367,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-rond-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-rond-masque.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 726,
+   "sha256": "3cbc731451892ae4d34a90f36c6e4cdeac8afb2a529b36a48ba96cdc08b67cc3",
+   "source_sha256": "47aca65c440253a1edd69c007062ca28301b33a32015a1efa8e435f13b5b4857",
+   "source_octets": 2096,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-ovale-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-ovale-masque.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 668,
+   "sha256": "2847a1ab3ed2323831e0a2122dd81fb013db623f265ed9ad2e5033e684938167",
+   "source_sha256": "a98a31047381637860f5cb085ad9484a0b06268294c038d10492f8113b97eff9",
+   "source_octets": 2167,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-hexagone-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-hexagone-masque.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 604,
+   "sha256": "caa32c113f46426a6bf80a4f552b04a1d8ce89632dabe9f5ba84a40767fab908",
+   "source_sha256": "f418d69c3fb3de885b9cb3561ddf74f2a20ce16b4feeb3d42e9c29400c013f92",
+   "source_octets": 1896,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-losange-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-losange-masque.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 986,
+   "sha256": "2ad4454473cbf269ab8f83aeeee47ded092f1f14640e80e336c325a3b61cc9d2",
+   "source_sha256": "8873ab2a7bb0f033ed2e464bdaf6e5075535e70a99e0ffd7207ae043e67be559",
+   "source_octets": 2604,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "ecusson-etoile-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/ecusson-etoile-masque.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 644,
+   "sha256": "a373c3008052741d0fee5f7ba3ea3bcafad0a001cbbaef4479fd0b9eb77517b4",
+   "source_sha256": "d94d20a37805c01aa7e5dc9c25428f604ca6f9e56c1ea33549721dbee8190521",
+   "source_octets": 1939,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Pillow et NumPy, rendu procédural"
   }
  ]
 }

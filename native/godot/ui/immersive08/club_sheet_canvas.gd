@@ -14,6 +14,7 @@ const Knowledge = preload("res://ui/player_knowledge_text.gd")
 const EquipeType = preload("res://ui/equipe_type_view.gd")
 const Notes = preload("res://ui/notes_match.gd")
 const Palmares = preload("res://ui/immersive08/palmares_text.gd")
+const Tenue = preload("res://ui/tenue_club.gd")
 const ROUTE := "Fiche club"
 const WIDTH := 2248
 const HEIGHT := 1240
@@ -403,6 +404,13 @@ func _overview() -> void:
 		D.text(club, 280, y, str(row[1]) if row[1] != null and str(row[1]) != "" else "—", 26, C.IVORY, 600, 400)
 		D.line(club, Vector2(24, y + 22), Vector2(676, y + 22), Color(C.LINE, .35))
 		y += 58
+	# Tenue du club : maillot de la banque d'images aux couleurs du club, en haut à droite du panneau.
+	var kit := Tenue.maillot(_identity(club_id))
+	if kit != null:
+		kit.tooltip_text = "Tenue du club"
+		kit.mouse_filter = Control.MOUSE_FILTER_PASS
+		club.add_child(kit)
+		D.place(kit, Rect2(586, 4, 96, 92))
 	_palmares(club, 700)
 	_season_panel()
 	_rivalry_panel()
