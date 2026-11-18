@@ -34,6 +34,122 @@ func comfort(view, message: String) -> void:
 	var normalized: Vector2 = point / view.get_viewport().get_visible_rect().size
 	check(normalized.x > 0.15 and normalized.x < 0.85 and normalized.y > 0.15 and normalized.y < 0.85, message + str(normalized))
 
+## Part de l'image (grille de 32 x 18 rayons) qui montre le terrain et ses abords immédiats (3 m).
+func pitch_share(view) -> float:
+	var camera: Camera3D = view._camera
+	var size: Vector2 = view.get_viewport().get_visible_rect().size
+	var on := 0
+	for i in 32:
+		for j in 18:
+			var pixel := Vector2((i + 0.5) / 32.0 * size.x, (j + 0.5) / 18.0 * size.y)
+			var origin := camera.project_ray_origin(pixel)
+			var normal := camera.project_ray_normal(pixel)
+			if normal.y < -0.001:
+				var hit := origin + normal * (-origin.y / normal.y)
+				if absf(hit.x) <= 58.0 and absf(hit.z) <= 38.0:
+					on += 1
+	return on / 576.0
+
+func on_screen(view, point: Vector3, margin: float = 0.0) -> bool:
+	var camera: Camera3D = view._camera
+	if camera.is_position_behind(point):
+		return false
+	var p: Vector2 = camera.unproject_position(point) / view.get_viewport().get_visible_rect().size
+	return p.x >= margin and p.x <= 1.0 - margin and p.y >= margin and p.y <= 1.0 - margin
+
+func settle(view, frame: Dictionary, seconds: float = 2.0) -> void:
+	view.apply_frame(frame)
+	for i in int(seconds * 60.0):
+		view._process(1.0 / 60.0)
+
+## Caméras de retransmission (18 novembre 2026) : terrain dans le cadre près des touches, coup de
+## pied avec son point de chute, mêlée cadrée serrée, plan large en fin de match.
+func broadcast_checks(view) -> Dictionary:
+	var result := {}
+	var Cadrage = load("res://match_cadrage.gd")
+	var cadrage = Cadrage.new(view)
+	view.set_cadrage(cadrage)
+	view.set_camera("tv")
+	check(view._camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "TV camera is a perspective broadcast camera")
+	# Porteur collé à la touche lointaine puis à la touche proche : le terrain remplit l'image.
+	for touch in [Vector2(50, 1), Vector2(30, 69), Vector2(97, 2)]:
+		cadrage.regler(true, "carry")
+		cadrage.couper()
+		settle(view, fixture(touch.x, touch.y))
+		var share := pitch_share(view)
+		result["tv_pitch_share_%d_%d" % [int(touch.x), int(touch.y)]] = snappedf(share, 0.01)
+		check(share >= 0.7, "TV near the touchline %s: the pitch fills at least 70%% of the picture (%.2f)" % [touch, share])
+		comfort(view, "TV near the touchline: ball stays comfortable ")
+		result["tv_size_%d_%d" % [int(touch.x), int(touch.y)]] = snappedf(view._camera.size, 0.1)
+		check(view._camera.size <= Cadrage.HAUTEUR.tv[1] + 0.01, "TV zoom follows the useful players, not the whole pitch: " + str(view._camera.size))
+	# Coup de pied en caméra action : le ballon et son point de chute restent dans le cadre, le
+	# cadrage s'élargit, la caméra glisse sans téléportation.
+	view.set_camera("action")
+	cadrage.regler(true, "carry")
+	cadrage.couper()
+	settle(view, fixture(30, 35), 1.0)
+	cadrage.regler(true, "kick")
+	var kick := fixture(74, 18)
+	kick.scene.kind = "kick"
+	view.apply_frame(kick)
+	var landing: Vector3 = view._ball_target
+	var widest := 0.0
+	var ball_seen := true
+	var landing_seen := true
+	var max_step := 0.0
+	for frame in 90:
+		var previous: Vector3 = view._camera.position
+		view._process(1.0 / 60.0)
+		max_step = maxf(max_step, previous.distance_to(view._camera.position))
+		if previous.distance_to(view._camera.position) > 3.0 or not on_screen(view, view._ball.global_position):
+			printerr("KICK frame %d cam %s size %.1f look %s ball %s focus %s" % [frame, view._camera.position, view._camera.size, view._camera_look, view._ball.global_position, view._camera_focus])
+		widest = maxf(widest, view._camera.size)
+		ball_seen = ball_seen and on_screen(view, view._ball.global_position)
+		if frame >= 45:
+			landing_seen = landing_seen and on_screen(view, landing, 0.03)
+	result["action_kick_widest"] = snappedf(widest, 0.1)
+	result["action_kick_max_step"] = snappedf(max_step, 0.01)
+	check(ball_seen, "Action kick: the ball never leaves the picture")
+	check(landing_seen, "Action kick: the landing point is in the picture")
+	check(widest > Cadrage.HAUTEUR.action[1] + 2.0, "Action kick widens beyond the contact framing: " + str(widest))
+	check(max_step < 3.0, "Action kick: no camera teleport (largest step %.2f m)" % max_step)
+	# Ballon qui réapparaît près du point visé : la caméra glisse.
+	var hidden := fixture(56, 30)
+	hidden.scene.ball = {}
+	view.apply_frame(hidden)
+	view._process(1.0 / 60.0)
+	var before: Vector3 = view._camera.position
+	view.apply_frame(fixture(58, 32))
+	view._process(1.0 / 60.0)
+	check(before.distance_to(view._camera.position) < 2.0, "Ball reappearing nearby: the camera glides, no jump")
+	# Mêlée en caméra action : cadrage serré sur le paquet et les demis.
+	var scrum := fixture(60, 30)
+	scrum.scene.kind = "scrum"
+	scrum.scene.key = "melee-1"
+	cadrage.regler(true, "scrum")
+	cadrage.couper()
+	settle(view, scrum, 5.0)
+	result["action_scrum_size"] = snappedf(view._camera.size, 0.1)
+	result["scrum_group"] = view.regroupement().size()
+	check(view.regroupement().size() >= 16, "Scrum group holds both packs: " + str(view.regroupement().size()))
+	check(view._camera.size <= Cadrage.SERRE.action[1] + 0.01, "Action scrum framing is tight on the pack: " + str(view._camera.size))
+	# Mi-temps et fin de match : plan large de tout le terrain.
+	view.set_camera("tv")
+	cadrage.regler(false)
+	var final := fixture(80, 2)
+	final.finished = true
+	settle(view, final, 0.5)
+	var corners := true
+	for corner in [Vector3(-55, 0, -35), Vector3(55, 0, -35), Vector3(-55, 0, 35), Vector3(55, 0, 35)]:
+		corners = corners and on_screen(view, corner)
+	check(corners, "Full time: wide shot of the whole pitch")
+	result["final_pitch_share"] = snappedf(pitch_share(view), 0.01)
+	final.finished = false
+	settle(view, final, 0.5)
+	check(not view._plan_large, "Play resumes after the wide shot")
+	view.set_cadrage(null)
+	return result
+
 func run() -> void:
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	root.size = Vector2i(1280, 720)
@@ -54,18 +170,20 @@ func run() -> void:
 		var missing := fixture(73, 49)
 		missing.scene.ball = absent_ball
 		var missing_before := missing.duplicate(true)
+		var held_focus: Vector3 = view._camera_focus
 		view.apply_frame(missing)
 		check(view._carrier_id.is_empty() and not carrier.holding, "Valid carrier identity with absent ball cannot hold anything")
 		view._process(0.25)
 		check(float(carrier.grip) == 0.0, "Absent ball releases the old grip through its normal transition")
 		check(not view._ball.visible and not view._ball_marker.is_visible_in_tree(), "Absent ball also hides its presentation ring")
-		check(view._camera_focus == Vector3.ZERO, "Absent ball with valid identity returns camera to neutral")
+		# 18 novembre 2026 : plus de saut au centre du terrain quand le ballon disparaît.
+		check(view._camera_focus.is_equal_approx(held_focus), "Absent ball keeps the camera where it was (no jump to the centre)")
 		check(missing == missing_before, "Missing-ball presentation preserves every input field")
 		var returned := fixture(73, 49)
 		var returned_before := returned.duplicate(true)
 		view.apply_frame(returned)
 		view._process(1.0 / 60.0)
-		check(view._camera_focus.is_equal_approx(view._ball.global_position), "Ball return cuts camera to the current visible position")
+		check(view._camera_focus.distance_to(view._ball.global_position) < 1.5, "Ball return: camera on the ball (cut when far, glide when near) %s %s" % [view._camera_focus, view._ball.global_position])
 		comfort(view, "Returned ball is immediately comfortable: ")
 		for frame in 30: view._process(1.0 / 60.0)
 		check(view._carrier_id == "0-0" and carrier.holding and float(carrier.grip) == 1.0, "Valid carry and grip restore when ball returns")
@@ -172,9 +290,10 @@ func run() -> void:
 				var refused := fixture()
 				refused.scene.players[0].id = ""
 				refused.scene.ball = {}
+				var aim: Vector3 = view._camera_focus
 				view.apply_frame(refused)
 				view._process(1.0 / 60.0)
-				check(view._camera_focus == Vector3.ZERO and view._carrier_id.is_empty(), "Missing ball and refused ID return to neutral without a false carrier")
+				check(view._camera_focus.is_equal_approx(aim) and view._carrier_id.is_empty(), "Missing ball and refused ID hold the camera without a false carrier")
 				view.apply_frame({"scene": {}})
 				view._process(1.0)
 				check(not view._ball.visible and view._carrier_id.is_empty(), "Empty scene leaves no false ball or carrier")
@@ -191,6 +310,10 @@ func run() -> void:
 		check(heights.tv > heights.tactical * 1.6, "TV makes bodies appreciably larger than tactical")
 		check(heights.action > heights.tv * 1.7, "Action makes bodies appreciably larger than TV")
 		metrics.append({"viewport": str(size), "body_height_px": heights})
+	root.size = Vector2i(1280, 720)
+	root.content_scale_size = root.size
+	await process_frame
+	metrics.append(await broadcast_checks(view))
 	print("MATCH_FRAMING_CHECKS ", JSON.stringify({"failures": failures, "projections": metrics}))
 	view.queue_free()
 	await process_frame

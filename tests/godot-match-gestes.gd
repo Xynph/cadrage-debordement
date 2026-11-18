@@ -8,7 +8,7 @@ const Gestes = preload("res://match_gestes.gd")
 const Regie = preload("res://ui/contextual/match_temps_forts.gd")
 const STEP := 1.0 / 30.0
 const TV_OFFSET := View.TV_OFFSET  # caméra TV de la vue (plus haute depuis le 12 novembre 2026)
-const ACTION_OFFSET := Vector3(5.0, 12.0, 18.0)
+const ACTION_OFFSET := View.ACTION_OFFSET
 const TICK := 0.32
 ## Allure de pointe crédible d'un ballon porté qui avance, en m/s (valeur choisie : un ballon porté
 ## d'élite avance à 1,5 à 2,5 m/s ; le paquet ne sprinte pas).
@@ -51,7 +51,8 @@ func hands(view, id: String) -> float:
 ## La caméra suivie applique exactement la formule d'origine : point suivi + décalage fixe, taille fixe.
 func camera_plain(view, offset: Vector3, size: float) -> bool:
 	var camera: Camera3D = view._camera
-	return camera.position.is_equal_approx(view._camera_focus + offset) and is_equal_approx(camera.size, size) and camera.global_basis.is_equal_approx(Basis.looking_at(-offset, Vector3.UP))
+	# Caméras en perspective (18 novembre 2026) : position déduite du point visé final, de la hauteur visible et de la direction.
+	return camera.position.is_equal_approx(view.pose_camera(view._camera_look, size, offset)[0]) and is_equal_approx(camera.size, size) and camera.global_basis.is_equal_approx(Basis.looking_at(-offset, Vector3.UP))
 
 func make_view(gestes: bool):
 	var view = View.new()
