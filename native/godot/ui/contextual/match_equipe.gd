@@ -1585,7 +1585,13 @@ func debordements() -> Array[String]:
 		if not c.is_visible_in_tree() or c.size.x <= 0.0: continue
 		if c.name == "Portrait" or c.get_parent().name == "Portrait": continue
 		var r := c.get_global_rect()
-		if not cadre.encloses(r): echecs.append("%s hors fenêtre %s" % [c.name, r])
+		# Contenu d'une zone qui défile : jugé par la zone elle-même (il peut dépasser, il défile).
+		var defile := false
+		var parent := c.get_parent()
+		while parent != null and parent != self:
+			if parent is ScrollContainer: defile = true
+			parent = parent.get_parent()
+		if not defile and not cadre.encloses(r): echecs.append("%s hors fenêtre %s" % [c.name, r])
 		if c is Label and not (c as Label).clip_text and (c as Label).autowrap_mode == TextServer.AUTOWRAP_OFF:
 			var l := c as Label
 			var police: Font = l.get_theme_font("font")
