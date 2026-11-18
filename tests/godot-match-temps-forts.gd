@@ -16,6 +16,7 @@ extends SceneTree
 ## rejouent les faits du moteur, possession suivie, pause qui fige, rien d'inventé) et le
 ## tableau de bord (domination, chiffres, Mon XV, adjoint) est alimenté par les vraies données.
 const Pilotage = preload("res://ui/contextual/match_consignes.gd")
+const VueMatch = preload("res://match_view.gd")
 const W = preload("res://ui/contextual/match_tableau_widgets.gd")
 var app: Control
 var failures: Array[String] = []
@@ -238,6 +239,19 @@ func run() -> void:
 		if vue_s != null and vue_s.regie != null:
 			await scoring(vue_s)
 			followed = vue_s.regie.suivi
+	elif mode == "grands_moments":
+		# Carrière Monde arrêtée à la causerie d'avant-match (godot-match-grands-moments.cjs).
+		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("monde.json"))})
+		await settle()
+		var limite_g := Time.get_ticks_msec() + 120000
+		while Time.get_ticks_msec() < limite_g and (surface() == null or surface().regie == null):
+			var scene_g: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+			if scene_g is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene_g.key, "phase": scene_g.phase, "skip": true})
+			await settle(2)
+		var vue_g := surface()
+		check(vue_g != null and vue_g.regie != null, "Carrière Monde : le direct en temps forts s'ouvre")
+		if vue_g != null and vue_g.regie != null:
+			followed = await grands_moments(vue_g)
 	elif mode == "multiplex":
 		# Carrière world-champ arrêtée au coup d'envoi de son premier match (godot-match-temps-forts.cjs).
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("multiplex.json"))})
@@ -374,6 +388,149 @@ func scoring(view: Control) -> void:
 	check(faux.is_empty(), "Bandeau du score : ancien score jusqu'à l'aplati, nouveau score ensuite : " + str(faux))
 	check(inter == 0 or inter_faux.is_empty(), "Bandeau 2D de l'entracte cohérent avec le score montré (%d images) : %s" % [inter, str(inter_faux)])
 	print("Score pendant l'essai : ", avant, " images avant, ", apres, " après ; transformation ", transfo_avant, "/", transfo_apres, " ; entracte ", inter)
+
+## Grands moments sur une vraie carrière Monde (godot-match-grands-moments.cjs), match entier :
+## essai joué en 3D (bandeau « ESSAI » qui nomme le marqueur et son équipe, sous le score ; ralenti
+## puis image tenue : la transformation attend), mi-temps et fin de match (plan large, joueurs qui
+## marchent vers le tunnel, bandeau « MI-TEMPS » / « FIN DU MATCH ») ; la causerie de mi-temps et
+## le débrief ne s'ouvrent qu'après la sortie, une seule sortie par moment.
+func grands_moments(view: Control) -> Array:
+	var director: Node = app.contextual_director
+	var regie: Node = view.regie
+	var suivi_courant: Array = regie.suivi
+	var anciens: Array = []
+	var limite := int(OS.get_environment("CD_GRANDS_MOMENTS_LIMITE")) if OS.get_environment("CD_GRANDS_MOMENTS_LIMITE").is_valid_int() else 1200
+	var deadline := Time.get_ticks_msec() + limite * 1000
+	var essai := {"debut": 0, "cle": "", "plan": -1, "ecart": -1.0, "bandeau": {}, "texte": "", "ralenti": 1.0, "vitesse": 1.0, "calme": false, "cadre": Rect2(), "score_bas": 0.0, "bande_bas": 0.0, "ecran": Rect2()}
+	var sorties := {}
+	var relance := 0
+	var apres_fin := 0
+	var sonde := 0
+	while Time.get_ticks_msec() < deadline:
+		await process_frame
+		watch()
+		sonde += 1
+		var scene := talk()
+		if director.kind == "locker" and not scene.is_empty():
+			var phase_c := str(scene.get("phase", ""))
+			var moment_c := str({"half": "mi-temps", "post": "fin"}.get(phase_c, ""))
+			if not moment_c.is_empty() and not sorties.has(moment_c + "_causerie"):
+				sorties[moment_c + "_causerie"] = true
+				var s_c: Dictionary = sorties.get(moment_c, {})
+				# La causerie ne s'ouvre que quand la régie ne retient plus : la sortie est finie.
+				check(int(s_c.get("marche", 0)) > 0, "Causerie « %s » ouverte après le plan large et la marche vers le tunnel : %s" % [phase_c, str(s_c.get("images", 0))])
+			if phase_c == "post": break
+			if not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+			continue
+		var vue := surface()
+		if vue == null or vue.regie == null:
+			if not app.model.get("live") is Dictionary: break
+			continue
+		if vue.regie != regie:
+			# Vue recréée après la causerie : le journal de la régie précédente est gardé.
+			anciens.append_array(suivi_courant)
+			regie = vue.regie
+			view = vue
+		suivi_courant = regie.suivi
+		var live: Dictionary = app.model.live if app.model.get("live") is Dictionary else {}
+		if live.is_empty(): break
+		if sonde % 600 == 0: print("sonde grands moments : minute ", live.get("minute"), " état ", regie.etat, " essai ", essai.debut > 0, " sorties ", sorties.keys())
+		# Le match attend le manager (coup d'envoi, reprise de seconde période) : il reprend comme avec le bouton.
+		if live.get("paused", false) and not live.get("finished", false) and not live.get("atBreak", false) and regie.etat == regie.INTER and regie.arret.is_empty() and not app.waiting and Time.get_ticks_msec() > relance:
+			relance = Time.get_ticks_msec() + 2000
+			app._command("pause", {"paused": false})
+		_observer_essai(view, regie, essai)
+		_observer_sortie(view, regie, live, sorties)
+		# Fin de match sans débrief : l'écran de fin suit la sortie.
+		if live.get("finished", false) and sorties.has("fin") and regie.etat == regie.INTER:
+			apres_fin += 1
+			if apres_fin > 60: break
+	var tous: Array = anciens + suivi_courant
+	# Essai.
+	check(int(essai.debut) > 0, "Un essai est joué en 3D pendant le match")
+	if int(essai.debut) > 0:
+		var b: Dictionary = essai.bandeau
+		var attendu: String = regie.marqueur_essai(str(essai.texte))
+		check(bool(b.get("visible", false)) and str(b.get("titre", "")) == "ESSAI", "Bandeau « ESSAI » dès que l'essai est aplati : " + str(b))
+		check(str(b.get("nom", "")) == attendu and (not attendu.is_empty() or not str(essai.texte).contains("Essai de")), "Le bandeau nomme le marqueur (« %s », légende « %s »)" % [str(b.get("nom", "")), str(essai.texte)])
+		check(not str(b.get("equipe", "")).is_empty(), "Le bandeau nomme l'équipe qui marque : " + str(b))
+		var voulu: float = 0.9 * float(regie.ESSAI_MOMENT) / maxf(float(essai.vitesse), 0.01)
+		check(float(essai.ecart) >= voulu, "Pause d'essai : la suite attend %.2f s (%.2f s au moins à ×%.0f)" % [float(essai.ecart), voulu, float(essai.vitesse)])
+		check(bool(essai.calme) or float(essai.ralenti) <= 0.6, "Ralenti de la vue à l'essai (%.2f de la vitesse réelle)" % float(essai.ralenti))
+		var cadre: Rect2 = essai.cadre
+		check(cadre.size.x > 0.0 and cadre.position.y >= maxf(float(essai.score_bas), float(essai.bande_bas)) - 1.0, "Le bandeau ne masque pas le score (%s, score jusqu'à %.0f, bande jusqu'à %.0f)" % [str(cadre), float(essai.score_bas), float(essai.bande_bas)])
+		var ecran: Rect2 = essai.ecran
+		check(ecran.grow(1.0).encloses(cadre), "Bandeau entier dans l'image : %s dans %s" % [str(cadre), str(ecran)])
+	# Mi-temps et fin de match.
+	for moment: String in ["mi-temps", "fin"]:
+		var s: Dictionary = sorties.get(moment, {})
+		check(not s.is_empty(), "Sortie des joueurs à la " + moment)
+		if s.is_empty(): continue
+		check(int(s.large) == int(s.images), "%s : plan large pendant toute la sortie (%d sur %d images)" % [moment, int(s.large), int(s.images)])
+		check(int(s.visible) > 0, "%s : l'image 3D est à l'écran pendant la sortie (%d images)" % [moment, int(s.visible)])
+		check(int(s.bandeau) > 0, "%s : bandeau « %s »" % [moment, "FIN DU MATCH" if moment == "fin" else "MI-TEMPS"])
+		var rapproches := 0
+		for id: String in s.departs:
+			var d0 := Vector2(s.departs[id].x - VueMatch.TUNNEL.x, s.departs[id].z - VueMatch.TUNNEL.z).length()
+			var d1 := Vector2(s.derniers[id].x - VueMatch.TUNNEL.x, s.derniers[id].z - VueMatch.TUNNEL.z).length()
+			if d1 < d0 - 0.3 or d1 < 5.0: rapproches += 1
+		var n: int = maxi(1, (s.departs as Dictionary).size())
+		check(int(s.marche) > 0 and rapproches >= int(n * 0.8), "%s : les joueurs marchent vers le tunnel (%d images, %d sur %d se rapprochent)" % [moment, int(s.marche), rapproches, n])
+	if sorties.has("mi-temps"): check(int(sorties["mi-temps"].retenue) > 0, "Mi-temps : la causerie attend la fin de la sortie")
+	check(sorties.has("mi-temps_causerie"), "La causerie de mi-temps s'ouvre après la sortie")
+	for moment: String in ["mi-temps", "fin"]:
+		var n_sorties := tous.filter(func(e: Dictionary) -> bool: return str(e.get("evenement", "")) == "sortie" and str(e.get("moment", "")) == moment).size()
+		check(n_sorties == 1, "Une seule sortie de %s, même après la causerie (%d)" % [moment, n_sorties])
+	print("Grands moments : essai ", essai.bandeau, " pause ", snappedf(float(essai.ecart), 0.01), " s, ralenti ", snappedf(float(essai.ralenti), 0.01),
+		" ; sorties ", sorties.keys().filter(func(k: String) -> bool: return not k.ends_with("_causerie")).map(func(k: String) -> String: return "%s %d images (marche %d)" % [k, int(sorties[k].images), int(sorties[k].marche)]))
+	return tous
+
+## Premier essai joué en 3D : bandeau au début du moment, pause mesurée jusqu'au plan suivant.
+func _observer_essai(view: Control, regie: Node, essai: Dictionary) -> void:
+	var en_jeu: bool = regie.etat == regie.JEU and regie.index >= 0 and regie.index < (regie.tf.get("plans", []) as Array).size()
+	if int(essai.debut) > 0 and float(essai.ecart) < 0.0:
+		# Fin du moment : le plan suivant (transformation) ou la fin du temps fort, jamais avant.
+		if not en_jeu or str(regie.tf.get("cle", "")) != str(essai.cle) or regie.index != int(essai.plan) or float(regie._moment_essai) <= 0.0:
+			essai.ecart = (Time.get_ticks_msec() - int(essai.debut)) / 1000.0
+			essai.ralenti = float(regie.ralenti_min)
+			if regie.bandeau != null and regie.bandeau.visible:
+				essai.cadre = (regie.bandeau as Control).get_global_rect()
+				essai.score_bas = view.score.get_global_rect().end.y
+				var bande: Control = view.get("bande_temps_forts")
+				essai.bande_bas = bande.get_global_rect().end.y if bande != null and bande.is_visible_in_tree() else 0.0
+				essai.ecran = view.get_global_rect()
+		return
+	if int(essai.debut) > 0 or not en_jeu: return
+	var plan: Dictionary = regie.tf.plans[regie.index]
+	if str(plan.get("kind", "")) != "try" or float(regie._moment_essai) <= 0.0: return
+	essai.debut = Time.get_ticks_msec()
+	essai.cle = str(regie.tf.get("cle", ""))
+	essai.plan = regie.index
+	essai.texte = str(plan.get("texte", ""))
+	essai.bandeau = regie.bandeau_affiche()
+	essai.vitesse = float(regie.vitesse)
+	essai.calme = bool(regie._calme())
+	print("Essai en 3D : ", essai.texte, " · bandeau ", essai.bandeau)
+
+## Sortie des joueurs en cours : plan large, bandeau, causerie retenue, positions des joueurs.
+func _observer_sortie(view: Control, regie: Node, live: Dictionary, sorties: Dictionary) -> void:
+	if regie.etat != regie.SORTIE: return
+	var moment := "fin" if live.get("finished", false) else "mi-temps"
+	if not sorties.has(moment): sorties[moment] = {"images": 0, "large": 0, "visible": 0, "marche": 0, "retenue": 0, "bandeau": 0, "departs": {}, "derniers": {}}
+	var s: Dictionary = sorties[moment]
+	s.images += 1
+	var stage: Node3D = view.stage
+	if stage.plan_large(): s.large += 1
+	if not regie.voile.visible or regie.voile.modulate.a < 0.5: s.visible += 1
+	if app.contextual_director.kind == "live" and view.retient_la_causerie(live): s.retenue += 1
+	var b: Dictionary = regie.bandeau_affiche()
+	if bool(b.get("visible", false)) and str(b.get("titre", "")) == ("FIN DU MATCH" if moment == "fin" else "MI-TEMPS"): s.bandeau += 1
+	if stage.sortie:
+		s.marche += 1
+		for id: String in stage._actors:
+			var at: Vector3 = (stage._actors[id].node as Node3D).position
+			if not s.departs.has(id): s.departs[id] = at
+			s.derniers[id] = at
 
 func inactive(view: Control) -> void:
 	check(view.regie == null and not view.temps_forts_actifs(), "Repli (CD_MATCH_TEMPS_FORTS=0) : aucune régie")
