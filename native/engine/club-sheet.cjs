@@ -187,6 +187,8 @@ function factory(){
    capacity:Number.isFinite(club.stadiumCapacity)?club.stadiumCapacity:(capacites?.[clubId]??null),
    reputation:Number.isFinite(club.base)?club.base:null,cash:Number.isFinite(club.cash)?club.cash:null,goal:club.goal||null,
    leagueId:lg,leagueName:lg?nomLigue(s,lg):null,
+   // Santé financière (club-finance-health.cjs) : étiquette, propriétaire, résultats des trois dernières saisons.
+   finances:typeof santeFiche==='function'&&typeof budgetActif==='function'&&budgetActif()?santeFiche(clubId):null,
    coach:d?.coach?.name||null,president:d?.president?.name||null,director:d?.director?.name||null,strategy:d?.strategy||null,
    wageBill:club.players.reduce((a,p)=>a+(Number(p.salary)||0),0),squadSize:club.players.length,
    averageAge:club.players.length?Math.round(club.players.reduce((a,p)=>a+(Number(p.age)||0),0)/club.players.length*10)/10:null,

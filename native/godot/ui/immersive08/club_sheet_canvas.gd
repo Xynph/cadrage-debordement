@@ -6,6 +6,7 @@ extends Control
 ## cache par club et par instant de carrière ; la connaissance des joueurs (niveau, potentiel) est
 ## déjà appliquée par le moteur. Coordonnées de référence 2248 × 1240 (gabarit immersif).
 const C = preload("res://ui/immersive08/components.gd")
+const Health = preload("res://ui/immersive08/finance_health.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const Club = preload("res://ui/club_views.gd")
@@ -395,13 +396,16 @@ func _overview() -> void:
 	var rows := [
 		["Entraîneur", data.get("coach")], ["Président", data.get("president")], ["Directeur sportif", data.get("director")],
 		["Stade", data.get("stadium")], ["Capacité", ("%s places" % _thousands(data.capacity)) if data.get("capacity") is float or data.get("capacity") is int else null],
-		["Réputation", _reputation_text()], ["Trésorerie estimée", ("≈ " + G.euros(snappedf(float(data.cash), 100000.0))) if data.get("cash") is float or data.get("cash") is int else null],
+		["Réputation", _reputation_text()], ["Finances", null],
 		["Masse salariale estimée", _wage_text(data.get("wageBill"))], ["Objectif", data.get("goal")], ["Stratégie", _strategy(data.get("strategy"))],
 	]
 	var y := 104
 	for row: Array in rows:
 		D.text(club, 24, y, str(row[0]), 24, C.MUTED, 500, 250)
-		D.text(club, 280, y, str(row[1]) if row[1] != null and str(row[1]) != "" else "—", 26, C.IVORY, 600, 400)
+		if str(row[0]) == "Finances" and data.get("finances") is Dictionary:
+			_health_row(club, y)
+		else:
+			D.text(club, 280, y, str(row[1]) if row[1] != null and str(row[1]) != "" else "—", 26, C.IVORY, 600, 400)
 		D.line(club, Vector2(24, y + 22), Vector2(676, y + 22), Color(C.LINE, .35))
 		y += 58
 	# Tenue du club : maillot de la banque d'images aux couleurs du club, en haut à droite du panneau.
@@ -432,6 +436,13 @@ func _tenue_complete(identite: Dictionary) -> void:
 	dialog.confirmed.connect(dialog.queue_free)
 	dialog.canceled.connect(dialog.queue_free)
 	dialog.popup_centered(Vector2i(C.px(1400), C.px(440)))
+
+## Santé financière : étiquette, propriétaire et mini-courbe des trois dernières saisons, sans montant.
+func _health_row(panel: Control, y: int) -> void:
+	var health: Dictionary = data.finances
+	Health.chip(panel, 280, y - 30, health, 138, "ClubSheetHealth")
+	D.text(panel, 432, y, Health.owner(health), 21, C.IVORY, 600, 170).name = "ClubSheetOwner"
+	Health.sparkline(panel, Rect2(606, y - 34, 70, 44), health, "ClubSheetHealthCurve")
 
 ## Palmarès connu dès le premier jour (titres et dernières saisons), état vide en langage de club.
 func _palmares(panel: Control, width: int) -> void:

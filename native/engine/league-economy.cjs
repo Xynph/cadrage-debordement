@@ -34,6 +34,12 @@
 // pas une trésorerie qu'il n'a pas, et un relégué de Pro D2 (5 à 7 M€ de recettes, 2 à 3,6 M€ en caisse) garde son
 // matelas ; marge de prudence de 2,5 % des recettes : la saison coûtait ~5 % de plus que le budget voté et
 // presque aucun club ne finissait dans le vert (réel : le meilleur à +0,02 M€, le jeu en garde quelques-uns).
+// aideRelegue : aide de la ligue à un club qui descend du championnat `depuis` : montant versé chaque saison suivant la
+//              descente (versé avec la ligue, chaque semaine). Repère réel (LNR, redistribution 2025-2026, publiée le
+//              25/08/2026) : le RC Vannes, relégué du Top 14, touche une part de solidarité de 2 M€ en Pro D2, quand le
+//              socle des autres clubs est de 1,4 M€ en moyenne (1,4 à 1,7) : environ 0,6 M€ de plus la première saison.
+//              La règle au-delà d'une saison n'est pas publiée : la deuxième saison (0,3 M€) est une estimation de jeu,
+//              pour une aide dégressive qui laisse le temps aux contrats de l'élite d'arriver à échéance.
 // reputation : attrait sportif aux yeux des joueurs, 100 pour le championnat de référence.
 // pays       : zone du championnat, pour les joueurs qui tiennent à rester chez eux.
 // source     : 'relevé' quand le chiffre vient d'une publication, 'estimation' sinon
@@ -47,7 +53,7 @@ const CHAMPIONNATS = Object.freeze({
   'jlo-d1': Object.freeze({ libelle: 'Première division japonaise', pays: 'japon', reputation: 78, masse: 6.0e6, recettes: 20e6, bas: 0.7, haut: 1.5, ...parts(0.70, 0.08, 0.10, 0.04, 0.08), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   accession: Object.freeze({ libelle: 'Deuxième division française', pays: 'france', reputation: 70, masse: 3.2e6, recettes: 10.7e6, bas: 0.62, haut: 1.55, ...parts(0.48, 0.22, 0.08, 0.04, 0.18), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.2, ecart: 0.1 }),
     gestion: Object.freeze({ association: Object.freeze({ min: 0.02, ecart: 0.04 }), entreprise: Object.freeze({ min: 0, ecart: 0.6 }), mecene: Object.freeze({ min: 0.8, ecart: 0.2 }) }),
-    engagementMax: 0.02, espoir: 'accession', source: 'relevé' }),
+    engagementMax: 0.02, aideRelegue: Object.freeze({ depuis: 'elite', montants: Object.freeze([600000, 300000]) }), espoir: 'accession', source: 'relevé' }),
   guest: Object.freeze({ libelle: 'Clubs invités', pays: 'autre', reputation: 70, masse: 4.0e6, recettes: 13e6, bas: 0.9, haut: 1.1, ...parts(0.40, 0.25, 0.18, 0.06, 0.11), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   'jlo-d2': Object.freeze({ libelle: 'Deuxième division japonaise', pays: 'japon', reputation: 52, masse: 2.0e6, recettes: 6.6e6, bas: 0.7, haut: 1.4, ...parts(0.72, 0.06, 0.08, 0.04, 0.10), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   nationale: Object.freeze({ libelle: 'Troisième division française', pays: 'france', reputation: 50, masse: 1.4e6, recettes: 4.6e6, bas: 0.6, haut: 1.6, ...parts(0.50, 0.10, 0.08, 0.04, 0.28), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.3, ecart: 0.15 }), prudence: 0.025, espoir: 'accession', source: 'relevé (A2R 2022-2023), niveaux 2026-2027 estimés' }),
