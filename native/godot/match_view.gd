@@ -20,6 +20,7 @@ const Animations = preload("res://match_animations.gd")
 const Choregraphie = preload("res://match_choregraphie.gd")
 const Formations = preload("res://match_formations.gd")
 const Impacts = preload("res://match_impacts.gd")
+const Tactique = preload("res://match_tactique.gd")
 const CUT_SECONDS := 0.30
 ## Nombre de joueurs à l'image, chacun à plus de Motion.TRAJET_REPLACEMENT de sa place, à partir
 ## duquel la vue coupe pour les replacer (équipe qui se reforme) au lieu de les faire courir.
@@ -58,6 +59,7 @@ var _kind := ""
 var _quality := "balanced"
 var _sun: DirectionalLight3D
 var _ball_marker: Node3D
+var _ball_beacon: Node3D
 var _ball_attached := false
 var _ball_travel := 1.0
 var _grass: ShaderMaterial
@@ -377,6 +379,7 @@ func apply_frame(live: Dictionary) -> void:
 		Athlete.clear_palette()
 		for entry: Dictionary in _actors.values():
 			_recolor(entry.model, entry.side)
+			Tactique.colorer(entry.node, _kits[entry.side].marker)
 	_paused = live.get("paused", false) or live.get("finished", false) or live.get("atBreak", false)
 	var key := str(scene.get("key", ""))
 	# Pose tenue d'une liaison (mêlée liée) : relâchée au fait suivant (le ballon sort).
@@ -415,6 +418,7 @@ func apply_frame(live: Dictionary) -> void:
 		var target: Vector3 = _formations.place(id, _world(player))
 		if not _actors.has(id):
 			_actors[id] = _make_actor(id, side, target)
+			Tactique.poser_repere(_actors[id].node, player, _kits[side].marker)
 		var entry: Dictionary = _actors[id]
 		entry.holding = id == _carrier_id
 		var can_cut: bool = carry_cut and entry.holding
@@ -792,6 +796,9 @@ func _process(delta: float) -> void:
 	# Repère au sol du ballon : seulement dans la vue de dessus, où le ballon est minuscule ;
 	# jamais dans les vues de retransmission (pas de cercle aux pieds du porteur).
 	_ball_marker.visible = _camera_mode == "tactical"
+	# Vue de dessus seulement : disques et numéros des joueurs, balise jaune du ballon.
+	Tactique.mettre_a_jour(_actors, _carrier_id, _camera_mode == "tactical")
+	_ball_beacon.visible = _camera_mode == "tactical" and _ball.visible
 	if _ball.visible:
 		_ball_marker.global_position = Vector3(_ball.global_position.x, 0.028, _ball.global_position.z)
 		# Ballon tenu par un joueur : anneau plus grand et plus brillant ; au sol : anneau discret.
@@ -1564,4 +1571,5 @@ func _build_ball() -> void:
 	halo.mesh = ring
 	halo.material_override = _material(Color("e9bf5a"), true)
 	_ball.add_child(halo)
+	_ball_beacon = Tactique.construire_balise(_ball)
 	_ball.visible = false
