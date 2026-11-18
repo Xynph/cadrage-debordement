@@ -212,6 +212,16 @@ func run() -> void:
 	var audio = load("res://audio/soundscape.gd").new()
 	app.add_child(audio)
 	check(audio.setup(app), "Setup du gestionnaire sonore")
+	# Enregistrements (18/11/2026) : OGG décodables, rumeur en boucle, nappe = deux prises en fondu enchaîné.
+	for id in audio.RECORDED:
+		var recorded: AudioStream = audio._streams.get(id)
+		check(recorded is AudioStreamOggVorbis and recorded.get_length() > 0.2, "Enregistrement décodé : " + str(id))
+	var murmur_loop = audio._murmur.stream
+	check(murmur_loop is AudioStreamOggVorbis and murmur_loop.loop and murmur_loop.get_length() > 4.0, "Rumeur : boucle enregistrée")
+	var bed = audio._bed.stream
+	check(bed is AudioStreamPlaylist and bed.loop and bed.stream_count == 2 and is_equal_approx(bed.fade_time, audio.BED_FADE_S), "Nappe : deux prises en boucle, fondu enchaîné")
+	check(bed is AudioStreamPlaylist and bed.get_list_stream(0) != bed.get_list_stream(1) and not bed.get_list_stream(0).loop and not bed.get_list_stream(1).loop and bed.get_list_stream(0).get_length() > 9.0, "Nappe : prises distinctes, non bouclées seules")
+	check(not audio._streams.has("stadium-bed"), "Ancienne nappe synthétisée non chargée")
 	check(audio.load_profile(directory) and audio.preferences.data == {"version": 1, "interface_volume": 35, "stadium_volume": 25, "match_sounds": true}, "Ancien sound.json avec champs de musique accepté, champs ignorés")
 	var master := AudioServer.get_bus_index("Master")
 	for label in ["Interface", "Stade"]:

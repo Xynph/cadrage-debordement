@@ -9,46 +9,6 @@
       "file": "crowd-whistle.wav",
       "bytes": 134444,
       "sha256": "5a2c50a7506529ca4725e1fb19e2b1019a76e6808b3a295fbe55ed42ee67e9fd"
-    },
-    {
-      "file": "referee-whistle.wav",
-      "bytes": 16844,
-      "sha256": "ce496fdb0c0238ae8ffe47d1e4ac619176ad802902b626dcca75c2a4454cf6f6"
-    },
-    {
-      "file": "referee-whistle-long.wav",
-      "bytes": 73484,
-      "sha256": "f47cd8a435f25e77d23f2417aefcb5896530426920fed7b850b82114964a792b"
-    },
-    {
-      "file": "crowd-murmur.wav",
-      "bytes": 192044,
-      "sha256": "6bcdacd08fcff818e0a99c977851dda05084cd95ab3399e34cdd74d50b680ece"
-    },
-    {
-      "file": "crowd-groan.wav",
-      "bytes": 52844,
-      "sha256": "bac931cff9175831ea01aec4ac396e793a9f42c75aae10e2122b9db2ab568d60"
-    },
-    {
-      "file": "crowd-applause.wav",
-      "bytes": 153644,
-      "sha256": "fff66c1e3be3d2d8cad81e91eccce964f42f12213513825b21ef4b9f682bdc95"
-    },
-    {
-      "file": "impact-tackle.wav",
-      "bytes": 10604,
-      "sha256": "e9010aef4bdc15e034b9f38839a80b651ad12e5f17290903edc2c3a777b33581"
-    },
-    {
-      "file": "impact-scrum.wav",
-      "bytes": 24044,
-      "sha256": "42016b29a160f6c9ffe4477d79a7e379d0c4add9551dc14b1d9b8cbec5144581"
-    },
-    {
-      "file": "kick-pock.wav",
-      "bytes": 6764,
-      "sha256": "be3e716ef8d846cc7912d24879a5465815b744fb3f23b9300c0bd792cd65659c"
     }
   ]
 }

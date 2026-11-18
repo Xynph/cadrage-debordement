@@ -9,19 +9,31 @@ const ASSETS := {
 	"ui-tap": "ui-tap.wav", "ui-error": "ui-error.wav", "stadium-bed": "stadium-bed.wav",
 	"stadium-try": "stadium-try.wav", "stadium-goal": "stadium-goal.wav", "stadium-miss": "stadium-miss.wav"
 }
-## Sifflets de foule et bruits de match (scripts/build-native-crowd.cjs), hors ASSETS : l'ensemble figé
-## des six sons d'origine reste inchangé.
-const EXTRA := {"crowd-whistle": "crowd-whistle.wav", "crowd-groan": "crowd-groan.wav", "crowd-applause": "crowd-applause.wav",
-	"crowd-murmur": "crowd-murmur.wav", "referee-whistle": "referee-whistle.wav", "referee-whistle-long": "referee-whistle-long.wav",
-	"impact-tackle": "impact-tackle.wav", "impact-scrum": "impact-scrum.wav", "kick-pock": "kick-pock.wav"}
+## Sifflets de foule (scripts/build-native-crowd.cjs), hors ASSETS : l'ensemble figé des six sons d'origine
+## reste inchangé (interface ; l'ambiance et les clameurs WAV ne servent plus qu'à la carte du stade).
+const EXTRA := {"crowd-whistle": "crowd-whistle.wav"}
+## Bruits de match enregistrés (audio/assets/match, OGG Vorbis, provenance dans son manifest.json) : ils
+## remplacent les clameurs WAV d'ASSETS pour le direct. Les identifiants restent ceux de cue_played.
+## Le but réussi et le tir adverse manqué (soulagement du public) sont applaudis ; la déception joue crowd-groan.
+const RECORDED := {
+	"stadium-try": "match/foule-essai.ogg", "stadium-goal": "match/applaudissements.ogg", "stadium-miss": "match/applaudissements.ogg",
+	"crowd-groan": "match/foule-decue.ogg", "crowd-applause": "match/applaudissements.ogg", "crowd-murmur": "match/foule-rumeur.ogg",
+	"referee-whistle": "match/sifflet-court.ogg", "referee-whistle-long": "match/sifflet-fin.ogg",
+	"impact-tackle": "match/plaquage.ogg", "impact-scrum": "match/melee.ogg", "kick-pock": "match/coup-de-pied.ogg"}
+## Fond sonore du stade : deux prises de 9,5 s jouées l'une après l'autre en fondu enchaîné (BED_FADE_S),
+## dans un ordre tiré à chaque reprise de l'ambiance, pour que la nappe ne se répète pas.
+const BED_VARIANTS: Array[String] = ["match/ambiance-stade-1.ogg", "match/ambiance-stade-2.ogg"]
+const BED_FADE_S := 1.5
 ## Bruits de match hors foule (bus Stade) : gain relatif, anti-rebond en temps de jeu (ms), écarts aléatoires
 ## de hauteur et de volume (± part) pour que deux plaquages ne sonnent jamais à l'identique.
+## Les fichiers sont calés à -16 dBFS de crête (fenêtre de 50 ms) ; la nappe est à -39 dBFS (RMS actif).
+## Gains : sifflets -8 dB (crête -24 dBFS, nettement au-dessus de la foule), impacts -12 à -15 dB (discrets).
 const EFFECTS := {
-	"referee-whistle": {"gain": 0.8, "cooldown": 700, "pitch": 0.03, "volume": 0.08},
-	"referee-whistle-long": {"gain": 0.85, "cooldown": 3000, "pitch": 0.0, "volume": 0.0},
-	"impact-tackle": {"gain": 0.85, "cooldown": 250, "pitch": 0.12, "volume": 0.2},
-	"impact-scrum": {"gain": 1.0, "cooldown": 1500, "pitch": 0.06, "volume": 0.12},
-	"kick-pock": {"gain": 0.9, "cooldown": 250, "pitch": 0.08, "volume": 0.15},
+	"referee-whistle": {"gain": 0.4, "cooldown": 700, "pitch": 0.03, "volume": 0.08},
+	"referee-whistle-long": {"gain": 0.4, "cooldown": 3000, "pitch": 0.0, "volume": 0.0},
+	"impact-tackle": {"gain": 0.18, "cooldown": 250, "pitch": 0.12, "volume": 0.2},
+	"impact-scrum": {"gain": 0.22, "cooldown": 1500, "pitch": 0.06, "volume": 0.12},
+	"kick-pock": {"gain": 0.25, "cooldown": 250, "pitch": 0.08, "volume": 0.15},
 }
 ## Fait de match montré → bruits : [identifiant, délai en ms de jeu]. « kick » : frappe de balle
 ## (tir au but, transformation, renvoi, jeu au pied) ; « tackle » : fin d'une course plaquée ;
@@ -72,6 +84,9 @@ var _effect_last: Dictionary = {}
 var _pending: Array[Dictionary] = []
 ## Hasard des seules variations de hauteur/volume : graine fixe, jamais le RNG du jeu.
 var _rng := RandomNumberGenerator.new()
+## Ordre des prises de la nappe, tiré à chaque reprise (graine fixe à part : les variations restent stables).
+var _bed_rng := RandomNumberGenerator.new()
+var _bed_takes: Array[AudioStream] = []
 ## Dernier état « mi-temps / fin » vu par le direct d'origine (hors temps forts).
 var _last_stop := "?"
 var _registered := false
@@ -111,13 +126,22 @@ func setup(app: Control) -> bool:
 	if _app_owners.has(app_id) and _app_owners[app_id].get_ref() != null:
 		return _fail("Un gestionnaire sonore est déjà actif pour cet écran.")
 	_app = app
-	for table in [ASSETS, EXTRA]:
-		for id in table:
-			var path := "res://audio/assets/" + str(table[id])
-			var stream: AudioStreamWAV = AudioStreamWAV.load_from_file(path) if FileAccess.file_exists(path) else ResourceLoader.load(path) as AudioStreamWAV
-			if stream == null:
-				return _fail("Son local illisible : " + str(table[id]) + ". Aucun son de remplacement.")
-			_streams[id] = stream
+	var files := {}
+	for table: Dictionary in [ASSETS, EXTRA, RECORDED]:
+		files.merge(table, true)
+	# Nappe WAV d'origine remplacée par les prises enregistrées : inutile de la charger.
+	files.erase("stadium-bed")
+	for id in files:
+		var stream := _load_stream(str(files[id]))
+		if stream == null:
+			return _fail("Son local illisible : " + str(files[id]) + ". Aucun son de remplacement.")
+		_streams[id] = stream
+	var bed_takes: Array[AudioStream] = []
+	for file in BED_VARIANTS:
+		var take := _load_stream(file)
+		if take == null:
+			return _fail("Son local illisible : " + file + ". Aucun son de remplacement.")
+		bed_takes.append(take)
 	if _bus_users == 0:
 		_created_buses.clear()
 		for label in ["Interface", "Stade"]:
@@ -138,17 +162,20 @@ func setup(app: Control) -> bool:
 	_whistle = _player("RefereeWhistle", "Stade")
 	_impacts = [_player("MatchImpactA", "Stade"), _player("MatchImpactB", "Stade")]
 	_murmur = _player("CrowdMurmur", "Stade")
-	var murmur_stream := (_streams["crowd-murmur"] as AudioStreamWAV).duplicate() as AudioStreamWAV
-	murmur_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-	murmur_stream.loop_begin = 0
-	murmur_stream.loop_end = murmur_stream.data.size() / (4 if murmur_stream.stereo else 2)
-	_murmur.stream = murmur_stream
+	# Rumeur : boucle sans couture (raccord en fondu préparé dans le fichier).
+	_murmur.stream = _looped(_streams["crowd-murmur"], true)
 	_rng.seed = 272730
-	var bed_stream := (_streams["stadium-bed"] as AudioStreamWAV).duplicate() as AudioStreamWAV
-	bed_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-	bed_stream.loop_begin = 0
-	bed_stream.loop_end = bed_stream.data.size() / (4 if bed_stream.stereo else 2)
-	_bed.stream = bed_stream
+	_bed_rng.seed = 272731
+	# Nappe : liste de lecture en boucle, prises non bouclées, fondu enchaîné à chaque passage.
+	_bed_takes.assign(bed_takes.map(func(take: AudioStream) -> AudioStream: return _looped(take, false)))
+	var playlist := AudioStreamPlaylist.new()
+	playlist.loop = true
+	playlist.shuffle = false
+	playlist.fade_time = BED_FADE_S
+	playlist.stream_count = _bed_takes.size()
+	for index in _bed_takes.size():
+		playlist.set_list_stream(index, _bed_takes[index])
+	_bed.stream = playlist
 	preferences.changed.connect(apply_preferences)
 	preferences.error_changed.connect(_preference_error)
 	apply_preferences()
@@ -156,6 +183,36 @@ func setup(app: Control) -> bool:
 		get_tree().node_added.connect(_node_added)
 		_wire_tree(_app)
 	return true
+
+## WAV ou OGG Vorbis local ; fichier brut lu directement s'il est présent (éditeur, tests), ressource
+## importée sinon (jeu exporté).
+func _load_stream(file: String) -> AudioStream:
+	var path := "res://audio/assets/" + file
+	if file.get_extension() == "ogg":
+		return AudioStreamOggVorbis.load_from_file(path) if FileAccess.file_exists(path) else ResourceLoader.load(path) as AudioStream
+	return AudioStreamWAV.load_from_file(path) if FileAccess.file_exists(path) else ResourceLoader.load(path) as AudioStreamWAV
+
+## Copie du flux avec la boucle voulue (le réglage d'import ne vaut pas pour un fichier lu directement).
+func _looped(stream: AudioStream, loop: bool) -> AudioStream:
+	var copy := stream.duplicate() as AudioStream
+	if copy is AudioStreamOggVorbis:
+		var ogg := copy as AudioStreamOggVorbis
+		ogg.loop = loop
+		ogg.loop_offset = 0.0
+	elif copy is AudioStreamWAV:
+		var wav := copy as AudioStreamWAV
+		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD if loop else AudioStreamWAV.LOOP_DISABLED
+		wav.loop_begin = 0
+		wav.loop_end = wav.data.size() / (4 if wav.stereo else 2)
+	return copy
+
+## Nappe qui (re)part : l'ordre des deux prises est tiré, la première n'est pas toujours la même.
+func _start_bed() -> void:
+	var playlist := _bed.stream as AudioStreamPlaylist
+	var first := _bed_rng.randi_range(0, _bed_takes.size() - 1)
+	for index in _bed_takes.size():
+		playlist.set_list_stream(index, _bed_takes[(first + index) % _bed_takes.size()])
+	_bed.play()
 
 func _player(label: String, bus: String) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
@@ -380,7 +437,7 @@ func _process(delta: float) -> void:
 	var desired := (0.35 if _voice_active else 1.0) if enabled else 0.0
 	_bed_gain = move_toward(_bed_gain, desired, delta / 0.22)
 	if enabled and not _bed.playing:
-		_bed.play()
+		_start_bed()
 	_bed.volume_db = linear_to_db(_bed_gain) if _bed_gain > 0.0 else -80.0
 	if not enabled and _bed_gain == 0.0:
 		_bed.stop()
@@ -552,7 +609,8 @@ func _play_reaction(id: String, mood: String = "joie", live_only: bool = true) -
 	_reaction.stop()
 	# Déception : un « oooh » qui retombe, un peu plus grave et plus bas.
 	_reaction.stream = _streams["crowd-groan" if mood == "deception" else id]
-	_reaction.pitch_scale = 0.92 if mood == "deception" else 1.0
+	# Enregistrement réel : abaissé de 4 % seulement (au-delà, le public sonne ralenti).
+	_reaction.pitch_scale = 0.96 if mood == "deception" else 1.0
 	_reaction_scale = 0.75 if mood == "deception" else 1.0
 	_reaction_gain = (0.55 if _voice_active else 1.0) * _reaction_scale
 	_reaction.volume_db = linear_to_db(_reaction_gain)
@@ -580,6 +638,7 @@ func dispose() -> void:
 			node.stream = null
 			node.queue_free()
 	_streams.clear()
+	_bed_takes.clear()
 	if preferences.changed.is_connected(apply_preferences):
 		preferences.changed.disconnect(apply_preferences)
 	if preferences.error_changed.is_connected(_preference_error):
