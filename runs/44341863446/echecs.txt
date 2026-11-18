@@ -1,0 +1,23 @@
+== captures pilotage du match (écran 2D : consignes, arbitre, états des joueurs) (code 1)
+FAIL: 1280×720 (Tableau) : @VBoxContainer@638 n'est pas coupé ([P: (18.0, 197.0), S: (1244.0, 525.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : MatchBetweenBottom n'est pas coupé ([P: (18.0, 660.0), S: (1244.0, 62.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @PanelContainer@697 n'est pas coupé ([P: (18.0, 660.0), S: (1244.0, 62.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @MarginContainer@698 n'est pas coupé ([P: (26.0, 664.0), S: (1228.0, 54.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @VBoxContainer@699 n'est pas coupé ([P: (33.0, 671.0), S: (1214.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : MatchBetweenAdvice n'est pas coupé ([P: (33.0, 671.0), S: (1214.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @HBoxContainer@7470 n'est pas coupé ([P: (33.0, 671.0), S: (1214.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @TextureRect@7471 n'est pas coupé ([P: (33.0, 671.0), S: (40.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @VBoxContainer@7472 n'est pas coupé ([P: (81.0, 671.0), S: (1158.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @Label@7474 n'est pas coupé ([P: (81.0, 690.0), S: (1158.0, 17.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @VBoxContainer@12295 n'est pas coupé ([P: (18.0, 197.0), S: (1244.0, 525.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : MatchBetweenBottom n'est pas coupé ([P: (18.0, 660.0), S: (1244.0, 62.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @PanelContainer@12353 n'est pas coupé ([P: (18.0, 660.0), S: (1244.0, 62.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @MarginContainer@12354 n'est pas coupé ([P: (26.0, 664.0), S: (1228.0, 54.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Tableau) : @VBoxContainer@12355 n'est pas coupé ([P: (33.0, 671.0), S: (1214.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+== captures vestiaire (causerie avant la décision, six tons ; après, réactions colorées ; 1080p et 720p) (code 1)
+ERROR: Texture with GL ID of 24: leaked 349524 bytes.
+ERROR: Texture with GL ID of 25: leaked 349524 bytes.
+not ok 1 - Native contextual ui: real Godot rendering contract
+  name: 'AssertionError'
+    ERROR: Texture with GL ID of 24: leaked 349524 bytes.
+    ERROR: Texture with GL ID of 25: leaked 349524 bytes.
