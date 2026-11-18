@@ -74,6 +74,8 @@ func run() -> void:
 	check(but != null and "Maintien" in str(but.get_child(0).text if but.get_child_count() > 0 and but.get_child(0) is Label else ""), "Le président annonce le maintien")
 	check(find("CreationPresidentChallenge") != null, "Le défi est rappelé dans le mot du président")
 	check(find("CreationGabiConnu") is CheckBox, "Case « Je connais déjà » à la création")
+	# L'aperçu du club est demandé au moteur juste après l'affichage : on attend sa réponse avant de créer.
+	await settle(); await wait_model(); await settle()
 	var demarrer: Button = find("CreationStart")
 	check(demarrer != null and not demarrer.disabled, "Bouton « Prendre les rênes »")
 	if demarrer != null: demarrer.pressed.emit()
@@ -81,6 +83,9 @@ func run() -> void:
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	await settle()
 	check(app._has_career() and str(app.model.club.get("goal", "")) == "Maintien", "Carrière créée avec l'objectif du défi")
+	if not app._has_career():
+		print("PREMIERE_HEURE ", checks, " controles, ", failures.size(), " echecs (création impossible)")
+		quit(1); return
 	print("PHASE accueil")
 	# --- Deux premières semaines ---
 	var coach: Control = app.coach
