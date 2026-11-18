@@ -422,8 +422,11 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, active: 
 		["Non lus %d" % unread(app), "InboxFolder1", 1, "all", "Messages non lus"],
 		["À faire %d" % todo, "InboxActivity_todo", 0, "todo", Reading.LABELS.todo + ". Les messages sans décision explicite restent des informations."],
 	]
-	var widths := [84, 126, 126]
-	var x := 14
+	# Pastilles à la taille de leur texte, menu « Sujet » sur le reste de la rangée (aucun recouvrement en petite fenêtre).
+	var bar := C.h(8)
+	bar.name = "InboxFilterRow"
+	card.add_child(bar)
+	D.place(bar, Rect2(14,_header_rows()[0],LIST_WIDTH-28,_h(44)))
 	for index in filters.size():
 		var filter: Array = filters[index]
 		var folder: int = filter[2]
@@ -440,16 +443,13 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, active: 
 		action.name = id
 		action.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		action.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
-		action.custom_minimum_size = Vector2.ZERO
-		var needed: float = C.BOLD.get_string_size(str(filter[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(19))).x / C.density + 30.0
-		widths[index] = maxf(float(widths[index]), needed)
-		var pill := C.box(C.readable_primary_fill(app.accent) if chosen else Color(C.PANEL, 0), app.accent.lightened(.3) if chosen else C.LINE, 22, 10)
-		pill.content_margin_top = 0; pill.content_margin_bottom = 0
-		action.add_theme_stylebox_override("normal", pill)
+		action.custom_minimum_size = Vector2(C.px(84), 0)
+		for look in ["normal", "hover", "pressed", "focus"]:
+			var pill := C.box(C.readable_primary_fill(app.accent) if chosen and look != "focus" else (C.RAISED if look == "hover" else Color(C.PANEL, 0)), C.GOLD if look == "focus" else (app.accent.lightened(.3) if chosen else C.LINE), 22, 16)
+			pill.content_margin_top = 0; pill.content_margin_bottom = 0
+			action.add_theme_stylebox_override(look, pill)
 		action.tooltip_text = filter[4]
-		card.add_child(action)
-		D.place(action, Rect2(x,_header_rows()[0],widths[index],_h(44)))
-		x += int(widths[index]) + 8
+		bar.add_child(action)
 	var subject := OptionButton.new()
 	subject.name = "InboxSubject"
 	subject.fit_to_longest_item = false
@@ -497,8 +497,9 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, active: 
 				state.selected = ""
 		state.scroll = 0
 		_redraw(app,"InboxSubject"))
-	card.add_child(subject)
-	D.place(subject,Rect2(x,_header_rows()[0],LIST_WIDTH-14-x,_h(44)))
+	subject.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	subject.custom_minimum_size.x = C.px(120)
+	bar.add_child(subject)
 
 static func _list(card: Panel, app: Control, state: Dictionary, messages: Array, pinned: int) -> void:
 	var tools := _header_rows()[1]
