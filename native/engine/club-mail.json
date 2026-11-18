@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "_doc": "Courrier du club (club-mail.cjs), façon Football Manager : chaque jour de calendrier, des interlocuteurs du club écrivent au manager (tutoiement) selon l'état de la carrière. Recevoir un mail ne change rien au monde : seule la réponse du manager a un effet (commande club_mail_reply, notée au journal d'actions). Contenu en données : types, expéditeurs, formulations (une par réception, jamais deux fois de suite la même pour un type), réponses et effets, seuils et cadence. Effets possibles d'une réponse : moral (moral du groupe), confiance (direction), supporters, medias, pression (relations presse), satisfaction, fatigue, condition, plan (charge individuelle), entrainement (séance collective), focus (préparation collective), promesse (temps de jeu promis), promouvoir (jeune du centre), caisse (euros), suite (mail de suivi), appel (commission de discipline). Placeholders entre accolades : variables calculées par le moteur à la réception.",
+  "_doc": "Courrier du club (club-mail.cjs), façon Football Manager : chaque jour de calendrier, des interlocuteurs du club écrivent au manager (tutoiement) selon l'état de la carrière. Recevoir un mail ne change rien au monde : seule la réponse du manager a un effet (commande club_mail_reply, notée au journal d'actions). Contenu en données : types, expéditeurs, formulations (une par réception, jamais deux fois de suite la même pour un type), réponses et effets, seuils et cadence. Effets possibles d'une réponse : moral (moral du groupe), confiance (direction), supporters, medias, pression (relations presse), satisfaction, fatigue, condition, plan (charge individuelle), entrainement (séance collective), focus (préparation collective), promesse (temps de jeu promis), promouvoir (jeune du centre), caisse (euros), suite (mail de suivi), appel (commission de discipline), specialiste (avis du spécialiste indépendant sur une commotion : retour au 7e jour possible, sans garantie). Une réponse « ouvrir » mène à l'écran du type, ou à son propre « ecran » s'il est donné. Placeholders entre accolades : variables calculées par le moteur à la réception.",
   "cadence": {
     "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; arretsParJour : mails qui arrêtent « Continuer » le même jour ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
     "arretsParJour": 2,
-    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2 },
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2, "commotion": 6 },
     "boite": 160,
     "projection": 80,
     "delaiReponse": 7,
@@ -22,7 +22,8 @@
     "formation": { "label": "Formation", "ecran": "Formation" },
     "moments": { "label": "Club", "ecran": "Effectif" },
     "contrats": { "label": "Contrats", "ecran": "contrats" },
-    "meteo": { "label": "Météo", "ecran": "Composition" }
+    "meteo": { "label": "Météo", "ecran": "Composition" },
+    "commotion": { "label": "Médical", "ecran": "infirmerie" }
   },
   "humeurs": {
     "haut": ["le groupe vit bien, ça rigole à la muscu et ça bosse dur", "l'ambiance est au beau fixe, les jeunes suivent les anciens", "on sent une vraie envie, personne ne traîne aux séances"],
@@ -1004,6 +1005,93 @@
             "repos_liste": "ignorer"
           },
           "resultat": "La cellule consigne que tu passes outre ; s'il joue, la relation avec la fédération en souffrira."
+        }
+      ]
+    },
+    "commotion": {
+      "categorie": "commotion",
+      "declencheur": "commotion",
+      "priorite": 10,
+      "arret": true,
+      "ecran": "infirmerie",
+      "expediteur": "Le médecin du club",
+      "formulations": [
+        {
+          "sujet": "Commotion confirmée : {joueur}",
+          "corps": "Le protocole commotion a tranché pour {joueur} ({poste}) après le match du {match} : {motif}.\n\nC'est la règle de World Rugby, il n'y a rien à négocier : {jours} jours de repos au minimum, avec une reprise par paliers. Il ne pourra pas rejouer avant le {retour}. {antecedents}\n\nPrépare son remplacement pour {prochain}, je te tiens au courant à chaque palier."
+        },
+        {
+          "sujet": "{joueur} au repos : protocole commotion",
+          "corps": "Les tests HIA sont formels pour {joueur} : {motif} lors du match du {match}.\n\n{antecedents} Il reste au repos jusqu'au {retour} au moins. C'est une décision médicale, ni lui ni nous n'avons la main dessus.\n\nIl va bien et il est suivi chaque jour. Pense à sa place dans le groupe d'ici là."
+        },
+        {
+          "sujet": "Point médical : {joueur} (commotion)",
+          "corps": "Je te fais le point sur {joueur} ({poste}) : {motif} (match du {match}).\n\nProtocole commotion classique : repos, reprise progressive, et pas de terrain avant le {retour}, soit {jours} jours. {antecedents}\n\nOn le récupère frais et en sécurité, c'est tout ce qui compte."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "infirmerie",
+          "libelle": "Voir l'infirmerie",
+          "effets": {},
+          "resultat": "Son protocole est suivi à l'infirmerie, jour après jour.",
+          "ouvrir": true,
+          "ecran": "infirmerie"
+        },
+        {
+          "id": "remplacant",
+          "libelle": "Préparer son remplaçant",
+          "effets": {},
+          "resultat": "Tu prépares la feuille sans lui.",
+          "ouvrir": true,
+          "ecran": "Composition"
+        }
+      ]
+    },
+    "commotion_exception": {
+      "categorie": "commotion",
+      "declencheur": "commotion",
+      "priorite": 9,
+      "arret": true,
+      "ecran": "infirmerie",
+      "expediteur": "Le médecin du club",
+      "seuils": {
+        "exception": true
+      },
+      "formulations": [
+        {
+          "sujet": "{joueur} : retour au 7e jour envisageable",
+          "corps": "Commotion confirmée pour {joueur} ({poste}) après le match du {match} : {motif}.\n\nPas d'antécédent récent et un HIA3 revenu à la normale : le règlement permet alors un retour dès le 7e jour ({septieme}), seulement si un spécialiste indépendant donne son accord. Sans cet avis, c'est 12 jours de repos, retour le {retour}.\n\nJe peux lui envoyer le dossier. C'est lui qui tranche, je ne te promets rien."
+        },
+        {
+          "sujet": "Commotion de {joueur} : on demande un avis ?",
+          "corps": "{joueur} a passé son HIA3 sans symptôme après sa commotion du {match} ({motif}). {antecedents}\n\nDans ce cas précis, World Rugby autorise un retour au 7e jour ({septieme}) avec l'accord d'un spécialiste indépendant. Sinon, il rejoue au plus tôt le {retour}.\n\nVeux-tu que je sollicite le spécialiste ? Son avis sera sans appel, dans un sens comme dans l'autre."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "specialiste",
+          "libelle": "Demander l'avis du spécialiste indépendant",
+          "effets": {
+            "specialiste": true
+          },
+          "resultat": "Le dossier est parti chez le spécialiste indépendant."
+        },
+        {
+          "id": "remplacant",
+          "libelle": "Garder les 12 jours et préparer son remplaçant",
+          "effets": {},
+          "resultat": "Il observera les 12 jours ; tu prépares la feuille sans lui.",
+          "ouvrir": true,
+          "ecran": "Composition"
+        },
+        {
+          "id": "infirmerie",
+          "libelle": "Voir l'infirmerie",
+          "effets": {},
+          "resultat": "Son protocole est suivi à l'infirmerie, jour après jour.",
+          "ouvrir": true,
+          "ecran": "infirmerie"
         }
       ]
     }

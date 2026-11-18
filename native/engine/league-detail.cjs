@@ -92,6 +92,8 @@ function factory(){
  }
  // Point d'entrée du monde pour chaque rencontre de l'IA. `full` joue le moteur complet.
  function play(s,f,full){
+  // Joueurs en protocole commotion : disponibilité recalée au jour de la rencontre (club-support.cjs).
+  if(world(s)&&f?.date)commotion()?.syncAt(s,f.date,[f.homeId,f.awayId]);
   if(!active(s)||!world(s))return full();
   // Changement prévu dans les Paramètres : appliqué au début de la journée suivante.
   if(s.leagueDetail.pending)applyPending(s);
@@ -156,7 +158,10 @@ function factory(){
    p.condition=Math.round(clamp((Number(p.condition)||80)-.3*m*(1+(70-stamina)*.009),12,100));
    if(Math.random()<(p.condition<55?.07:.025)*m/80)p.injury=1+Math.floor(roll()*4);
   }
+  return minutes;
  }
+ // Protocole commotion (club-support.cjs) : mêmes règles que le moteur complet, tirages sans aléa du moteur.
+ const commotion=()=>typeof nativeSystems!=='undefined'?nativeSystems.domain('clubSupport')?.commotion||null:null;
  function simulate(s,f){
   const pair=[f.homeId,f.awayId],away=released(s,f),teams=pair.map(id=>squad(s,id,away,f));
   // Courbe de niveau commune au moteur complet (MATCH_LEVEL_CURVE de dist/rugby.js, tests/match-rating-curve.cjs) :
@@ -180,7 +185,7 @@ function factory(){
   // Super Rugby Pacific : pas de nul en saison régulière (le moteur complet joue le point en or).
   if(score[0]===score[1]&&f.competitionId==='srp'){const side=edge>=0?0:1;stats[side].goalAttempts++;stats[side].goals++;score=[points(0),points(1)];}
   let w=roll(),weather='Sec';for(const [name,p] of WEATHER){if(w<p){weather=name;break;}w-=p;}
-  pair.forEach((id,i)=>playerEffects(s,s.clubs[id],teams[i]));
+  pair.forEach((id,i)=>{const minutes=playerEffects(s,s.clubs[id],teams[i]);commotion()?.quickMatch(s,f,id,minutes);});
   return {pair,score,tries,stats,weather,duration:80};
  }
  function applyPending(s){

@@ -614,9 +614,25 @@ static func _argument(model: Dictionary, proposal: Dictionary) -> String:
 	elif int(_nombre(entrant.get("age"), 30)) <= AGE_JEUNE: texte = texte.trim_suffix(".") + " ; il est jeune, protège-le."
 	return texte
 
+## Titulaire qui rejoue le jour du match après son protocole commotion (retour depuis 10 jours au plus), ou {}.
+static func retour_commotion(model: Dictionary) -> Dictionary:
+	if not _jour_de_match(model): return {}
+	var today := str(model.get("meta", {}).get("calendarToday", ""))
+	if today.length() != 10: return {}
+	var limite := Time.get_date_string_from_unix_time(Time.get_unix_time_from_datetime_string(today) - 10 * 86400)
+	for assignment: Variant in model.get("selection", {}).get("slots", []) if model.get("selection") is Dictionary else []:
+		if not assignment is Dictionary or int(_nombre(assignment.get("slot"), 99)) >= 15: continue
+		var person := joueur(model, str(assignment.get("playerId", "")))
+		var c: Variant = person.get("commotion")
+		if c is Dictionary and not c.get("enCours", false) and str(c.get("retour", "")) <= today and str(c.get("retour", "")) >= limite: return person
+	return {}
+
 static func _composition_validee(model: Dictionary, vacant: int) -> Dictionary:
 	if vacant > 0:
 		return _resultat("Il manque encore %d titulaire%s sur la feuille. Complète-la, ou laisse le staff proposer : je regarderai après." % [vacant, "s" if vacant > 1 else ""], "mise_en_garde", NEUTRE)
+	var retour := retour_commotion(model)
+	if not retour.is_empty():
+		return _resultat("%s rejoue après sa commotion : le médecin l'a libéré, protocole complet. Je garderai un œil sur lui au premier impact." % _nom(retour), "approbation", NEUTRE)
 	var low := {}
 	for assignment: Variant in model.get("selection", {}).get("slots", []):
 		if not assignment is Dictionary or int(_nombre(assignment.get("slot"), 99)) >= 15: continue
