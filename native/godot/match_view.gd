@@ -35,21 +35,22 @@ const ACTION_OFFSET := Vector3(0.24, 0.5, 0.832)
 ## Angle de champ vertical (degrés) : téléobjectif de retransmission en TV, plus ouvert au contact.
 const TV_CHAMP := 24.0
 const ACTION_CHAMP := 36.0
-## La caméra ne recule pas au-delà de ce z (devant la tribune proche, dont le toit cacherait le bas
-## de l'image) : elle avance alors en ouvrant son angle, jusqu'à CHAMP_MAX ; la hauteur visible au
-## point visé ne change pas.
-const RECUL_MAX := 50.0
+## La caméra recule librement, sauf si le bas de l'image passerait sous le bord avant du toit de la
+## tribune proche (TOIT_Z, TOIT_Y) : elle avance alors en ouvrant son angle, jusqu'à CHAMP_MAX ; la
+## hauteur visible au point visé ne change pas.
+const TOIT_Z := 54.6
+const TOIT_Y := 13.0
 const CHAMP_MAX := 64.0
 ## Hauteur visible (m) au point visé de la caméra de base (hors temps fort). Le cadrage des temps
 ## forts (match_cadrage.gd) la règle ensuite selon les joueurs utiles.
-const TV_TAILLE := 40.0
-const ACTION_TAILLE := 20.0
+const TV_TAILLE := 30.0
+const ACTION_TAILLE := 16.0
 ## Mi-temps et fin de match : plan large de tout le terrain, vu de haut au-dessus de la tribune
 ## proche (rayons au-dessus de son toit) : direction, point visé, recul (m) et angle de champ.
 const PLAN_LARGE_OFFSET := Vector3(0.0, 0.64, 0.77)
 const PLAN_LARGE_VISE := Vector3(0.0, 0.0, 4.0)
-const PLAN_LARGE_RECUL := 150.0
-const PLAN_LARGE_CHAMP := 34.0
+const PLAN_LARGE_RECUL := 125.0
+const PLAN_LARGE_CHAMP := 36.0
 ## Recentrage borné (TV et action) : la touche lointaine, la touche proche et les lignes de ballon
 ## mort, plus TERRAIN_MARGE m, restent près des bords de l'image (BORD_*, en part de l'image) : la
 ## tribune n'en occupe qu'une bande. Le ballon reste toujours dans la zone sûre (BALLON_SUR des bords).
@@ -62,7 +63,7 @@ const BALLON_SUR := 0.2
 ## Le recentrage borné est amorti (secondes) ; seule une sortie du ballon hors de BALLON_LIMITE
 ## des bords est corrigée d'emblée.
 const BORNE_LISSAGE := 0.35
-const BALLON_LIMITE := 0.04
+const BALLON_LIMITE := 0.16
 ## Retard maximal du point visé sur le ballon, en part de la hauteur visible de base. Un ballon qui
 ## réapparaît plus loin que ce retard du point visé fait couper la caméra ; plus près, elle glisse.
 const RETARD_MAX := 0.3
@@ -85,8 +86,11 @@ var _ball_target := Vector3.ZERO
 var _camera_mode := "tv"
 ## Point visé final de la caméra suivie (après cadrage, gestes et bornes du terrain).
 var _camera_look := Vector3.ZERO
-## Mi-temps ou fin de match : plan large du terrain.
+## Mi-temps ou fin de match : plan large du terrain (annoncé par l'image du direct, ou par la
+## régie des temps forts une fois le dernier temps fort fini).
 var _plan_large := false
+var _plan_large_direct := false
+var _plan_large_regie := false
 ## Décalage amorti du recentrage borné, et sa vitesse.
 var _borne := Vector3.ZERO
 var _borne_vitesse := Vector3.ZERO
@@ -421,10 +425,8 @@ func apply_frame(live: Dictionary) -> void:
 			_recolor(entry.model, entry.side)
 			Tactique.colorer(entry.node, _kits[entry.side].marker)
 	_paused = live.get("paused", false) or live.get("finished", false) or live.get("atBreak", false)
-	var large := bool(live.get("finished", false)) or bool(live.get("atBreak", false))
-	if large != _plan_large:
-		_plan_large = large
-		_camera_cut = true
+	_plan_large_direct = bool(live.get("finished", false)) or bool(live.get("atBreak", false))
+	_maj_plan_large()
 	var key := str(scene.get("key", ""))
 	# Pose tenue d'une liaison (mêlée liée) : relâchée au fait suivant (le ballon sort).
 	if not _tenues.is_empty() and key != _tenue_cle:
@@ -654,6 +656,19 @@ func _gestes_du_fait(scene: Dictionary, previous_kind: String) -> void:
 			var nom := "reception_haute" if previous_kind in ["kick", "kickoff", "drop22", "goalLine", "touch"] else "reception"
 			var cle := instant_geste(nom)
 			jouer_geste(featured, nom, maxf(0.0, cle - 0.5), cle + 0.3)
+
+
+## Régie des temps forts : mi-temps ou fin de match, plus rien à rejouer.
+func set_plan_large(on: bool) -> void:
+	_plan_large_regie = on
+	_maj_plan_large()
+
+
+func _maj_plan_large() -> void:
+	var large := _plan_large_direct or _plan_large_regie
+	if large != _plan_large:
+		_plan_large = large
+		_camera_cut = true
 
 
 func set_camera(mode: String) -> void:
@@ -1188,9 +1203,34 @@ func pose_camera(look: Vector3, size: float, offset: Vector3) -> Array:
 	var demi := size * 0.5
 	var champ := ACTION_CHAMP if _camera_mode == "action" else TV_CHAMP
 	var distance := demi / tan(deg_to_rad(champ * 0.5))
-	if direction.z > 0.05 and look.z + direction.z * distance > RECUL_MAX:
-		distance = maxf((RECUL_MAX - look.z) / direction.z, demi / tan(deg_to_rad(CHAMP_MAX * 0.5)))
+	if direction.z > 0.05 and _sous_le_toit(look, direction, distance, demi):
+		# Le bas de l'image passerait sous le toit de la tribune proche : la caméra avance (et
+		# ouvre son angle) juste assez pour le franchir.
+		var a := demi / tan(deg_to_rad(CHAMP_MAX * 0.5))
+		var b := distance
+		if _sous_le_toit(look, direction, a, demi):
+			distance = a
+		else:
+			for i in 8:
+				var m := (a + b) * 0.5
+				if _sous_le_toit(look, direction, m, demi):
+					b = m
+				else:
+					a = m
+			distance = a
 	return [look + direction * distance, rad_to_deg(2.0 * atan(demi / distance))]
+
+
+## Le rayon du bas de l'image passe sous le bord avant du toit de la tribune proche.
+func _sous_le_toit(look: Vector3, direction: Vector3, distance: float, demi: float) -> bool:
+	var camera := look + direction * distance
+	if camera.z <= TOIT_Z:
+		return false
+	var vue := Basis.looking_at(-direction, Vector3.UP)
+	var rayon := -vue.z - vue.y * (demi / distance)
+	if rayon.z >= -0.0001:
+		return true
+	return camera.y + rayon.y * ((TOIT_Z - camera.z) / rayon.z) < TOIT_Y
 
 
 ## Coordonnées d'écran (0 à 1, origine en haut à gauche) d'un point vu par la caméra posée sur
@@ -1212,10 +1252,15 @@ func _borner(look: Vector3, size: float, offset: Vector3, aspect: float) -> Vect
 	var ballon := _ball.global_position if _ball.visible else look
 	var haut_sur := BALLON_SUR
 	var bas_sur := 1.0 - BALLON_SUR
+	var bord_haut := BORD_HAUT
+	var bord_bas := BORD_BAS
 	if _cadrage:
-		# L'interface du direct couvre le haut et le bas : le ballon reste dans la partie visible.
+		# L'interface du direct couvre le haut et le bas : le ballon reste dans la partie visible,
+		# et ce qui est sous le bandeau ou la légende ne compte pas comme tribune à l'image.
 		haut_sur = maxf(haut_sur, float(_cadrage.couvert_haut) + 0.08)
 		bas_sur = minf(bas_sur, 1.0 - float(_cadrage.couvert_bas) - 0.08)
+		bord_haut = maxf(bord_haut, float(_cadrage.couvert_haut) + 0.02)
+		bord_bas = minf(bord_bas, 1.0 - float(_cadrage.couvert_bas) - 0.02)
 	var loin := -TERRAIN.y - TERRAIN_MARGE
 	var pres := TERRAIN.y + TERRAIN_MARGE
 	var bout := TERRAIN.x + TERRAIN_MARGE
@@ -1225,8 +1270,8 @@ func _borner(look: Vector3, size: float, offset: Vector3, aspect: float) -> Vect
 	# Profondeur : touche lointaine en haut, touche proche en bas.
 	var axe := Vector3(vue.z.x, 0.0, vue.z.z).normalized()
 	var bornes := Vector2(
-		_seuil(look, size, offset, aspect, axe, Vector3(look.x, 0.0, loin), 1, BORD_HAUT, true).x,
-		_seuil(look, size, offset, aspect, axe, Vector3(look.x, 0.0, pres), 1, BORD_BAS, false).y)
+		_seuil(look, size, offset, aspect, axe, Vector3(look.x, 0.0, loin), 1, bord_haut, true).x,
+		_seuil(look, size, offset, aspect, axe, Vector3(look.x, 0.0, pres), 1, bord_bas, false).y)
 	var s := clampf(0.0, bornes.x, bornes.y) if bornes.x <= bornes.y else (bornes.x + bornes.y) * 0.5
 	s = _garder_ballon(s, look, size, offset, aspect, axe, ballon, 1, haut_sur, bas_sur)
 	look += axe * s
@@ -1267,7 +1312,7 @@ func _seuil(look: Vector3, size: float, offset: Vector3, aspect: float, axe: Vec
 			return Vector2(-INF, INF)
 		# Rien de valable dans la plage : la borne extrême du bon côté.
 		return Vector2(-INF, -DECALAGE_MAX) if valable_bas else Vector2(DECALAGE_MAX, INF)
-	for i in 16:
+	for i in 11:
 		var m := (a + b) * 0.5
 		var fm: float = ecran_camera(point, look + axe * m, size, offset, aspect)[c]
 		if (fm <= cible) == (fa <= cible):

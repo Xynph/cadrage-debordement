@@ -82,6 +82,13 @@ func broadcast_checks(view) -> Dictionary:
 		comfort(view, "TV near the touchline: ball stays comfortable ")
 		result["tv_size_%d_%d" % [int(touch.x), int(touch.y)]] = snappedf(view._camera.size, 0.1)
 		check(view._camera.size <= Cadrage.HAUTEUR.tv[1] + 0.01, "TV zoom follows the useful players, not the whole pitch: " + str(view._camera.size))
+	# Coût du cadrage (recentrage borné, toit de la tribune) : négligeable à 144 images par seconde.
+	var started := Time.get_ticks_usec()
+	for i in 300:
+		view._fit_camera(1.0 / 60.0)
+	var cost_ms := (Time.get_ticks_usec() - started) / 300.0 / 1000.0
+	result["fit_camera_ms"] = snappedf(cost_ms, 0.001)
+	check(cost_ms < 0.5, "Camera framing stays cheap: %.3f ms per frame" % cost_ms)
 	# Coup de pied en caméra action : le ballon et son point de chute restent dans le cadre, le
 	# cadrage s'élargit, la caméra glisse sans téléportation.
 	view.set_camera("action")
@@ -144,6 +151,7 @@ func broadcast_checks(view) -> Dictionary:
 		corners = corners and on_screen(view, corner)
 	check(corners, "Full time: wide shot of the whole pitch")
 	result["final_pitch_share"] = snappedf(pitch_share(view), 0.01)
+	check(pitch_share(view) >= 0.4, "Full time: the pitch fills the wide shot (%.2f)" % pitch_share(view))
 	final.finished = false
 	settle(view, final, 0.5)
 	check(not view._plan_large, "Play resumes after the wide shot")
@@ -246,11 +254,13 @@ func run() -> void:
 			view.apply_frame(fixture())
 			view._process(1.0)
 			var camera: Camera3D = view._camera
-			var outline := Rect2(camera.unproject_position(Vector3.ZERO), Vector2.ZERO)
+			# Caméras en perspective (18 novembre 2026) : silhouette mesurée au point visé, au centre de l'image.
+			var centre: Vector3 = Vector3(view._camera_look.x, 0.0, view._camera_look.z)
+			var outline := Rect2(camera.unproject_position(centre), Vector2.ZERO)
 			for x in [-0.45, 0.45]:
 				for y in [0.0, 1.9]:
 					for z in [-0.25, 0.25]:
-						outline = outline.expand(camera.unproject_position(Vector3(x, y, z)))
+						outline = outline.expand(camera.unproject_position(centre + Vector3(x, y, z)))
 			heights[mode] = outline.size.y
 			var basis := camera.global_basis
 			var max_step := 0.0
@@ -305,7 +315,7 @@ func run() -> void:
 				view.apply_frame(flight)
 				for frame in 40:
 					view._process(1.0 / 60.0)
-					comfort(view, "Long released flight stays comfortable including visual arc: ")
+					comfort(view, "Long released flight stays comfortable including visual arc (%s, frame %d): " % [mode, frame])
 				check(view._carrier_id.is_empty(), "Released flight never invents a carrier")
 		check(heights.tv > heights.tactical * 1.6, "TV makes bodies appreciably larger than tactical")
 		check(heights.action > heights.tv * 1.7, "Action makes bodies appreciably larger than TV")
