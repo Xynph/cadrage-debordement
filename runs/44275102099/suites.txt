@@ -1,0 +1,5 @@
+tests/godot-banque-images.cjs
+tests/godot-meteo-vent.cjs
+tests/godot-fiche-club.cjs
+tests/godot-immersive-reception.cjs
+tests/avant-match-donnees.cjs
