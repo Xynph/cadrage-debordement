@@ -415,6 +415,273 @@
     "poste-ailier",
     "poste-arriere"
    ]
+  },
+  {
+   "lot": "lot-8 photos aux tenues neutres (recolorées aux couleurs des clubs, banque lot-13)",
+   "repli": "action-essai-neutre",
+   "ids": [
+    "action-essai-neutre",
+    "action-transformation-neutre",
+    "action-coup-de-pied-but-neutre",
+    "action-carton-jaune-neutre",
+    "action-carton-rouge-neutre",
+    "action-melee-neutre",
+    "action-touche-neutre",
+    "action-ballon-perdu-neutre",
+    "action-franchissement-neutre",
+    "action-arbitrage-video-neutre",
+    "action-blessure-soins-neutre",
+    "action-remplacement-neutre",
+    "resultat-victoire-neutre",
+    "resultat-defaite-neutre",
+    "resultat-nul-neutre",
+    "resultat-bonus-offensif-neutre",
+    "resultat-finale-gagnee-neutre",
+    "resultat-finale-perdue-neutre",
+    "resultat-titre-trophee-leve-neutre",
+    "resultat-relegation-neutre",
+    "vestiaire-avant-match-neutre",
+    "vestiaire-mi-temps-neutre",
+    "vestiaire-victoire-neutre",
+    "vestiaire-defaite-neutre",
+    "match-tunnel-sec-neutre",
+    "match-tunnel-forte-pluie-neutre",
+    "match-tunnel-vent-neutre",
+    "match-tunnel-chaleur-neutre",
+    "match-tunnel-neutre-neutre",
+    "match-tunnel-neutre"
+   ],
+   "etiquettes": {
+    "action-essai-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-transformation-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-coup-de-pied-but-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-carton-jaune-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-carton-rouge-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-melee-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-touche-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-ballon-perdu-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-franchissement-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-arbitrage-video-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-blessure-soins-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "action-remplacement-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "resultat-victoire-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "resultat-defaite-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "resultat-nul-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "resultat-bonus-offensif-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "resultat-finale-gagnee-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "resultat-finale-perdue-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "resultat-titre-trophee-leve-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "resultat-relegation-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "vestiaire-avant-match-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "vestiaire-mi-temps-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "vestiaire-victoire-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "vestiaire-defaite-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "match-tunnel-sec-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "match-tunnel-forte-pluie-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "match-tunnel-vent-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "match-tunnel-chaleur-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "match-tunnel-neutre-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    },
+    "match-tunnel-neutre": {
+     "ecrans": [
+      "recolorable"
+     ]
+    }
+   }
+  },
+  {
+   "lot": "lot-8 masques des photos recolorables (sans perte)",
+   "repli": "action-essai-neutre-masque-nous",
+   "sans_perte": true,
+   "ids": [
+    "action-essai-neutre-masque-nous",
+    "action-essai-neutre-masque-eux",
+    "action-transformation-neutre-masque-nous",
+    "action-transformation-neutre-masque-eux",
+    "action-coup-de-pied-but-neutre-masque-nous",
+    "action-carton-jaune-neutre-masque-nous",
+    "action-carton-rouge-neutre-masque-nous",
+    "action-melee-neutre-masque-nous",
+    "action-melee-neutre-masque-eux",
+    "action-touche-neutre-masque-nous",
+    "action-touche-neutre-masque-eux",
+    "action-ballon-perdu-neutre-masque-nous",
+    "action-ballon-perdu-neutre-masque-eux",
+    "action-franchissement-neutre-masque-nous",
+    "action-franchissement-neutre-masque-eux",
+    "action-arbitrage-video-neutre-masque-nous",
+    "action-blessure-soins-neutre-masque-nous",
+    "action-remplacement-neutre-masque-nous",
+    "resultat-victoire-neutre-masque-nous",
+    "resultat-defaite-neutre-masque-nous",
+    "resultat-nul-neutre-masque-nous",
+    "resultat-nul-neutre-masque-eux",
+    "resultat-bonus-offensif-neutre-masque-nous",
+    "resultat-finale-gagnee-neutre-masque-nous",
+    "resultat-finale-perdue-neutre-masque-nous",
+    "resultat-titre-trophee-leve-neutre-masque-nous",
+    "resultat-relegation-neutre-masque-nous",
+    "vestiaire-avant-match-neutre-masque-nous",
+    "vestiaire-mi-temps-neutre-masque-nous",
+    "vestiaire-victoire-neutre-masque-nous",
+    "vestiaire-defaite-neutre-masque-nous",
+    "match-tunnel-sec-neutre-masque-nous",
+    "match-tunnel-forte-pluie-neutre-masque-nous",
+    "match-tunnel-vent-neutre-masque-nous",
+    "match-tunnel-chaleur-neutre-masque-nous",
+    "match-tunnel-neutre-neutre-masque-nous",
+    "match-tunnel-neutre-masque-nous"
+   ]
+  },
+  {
+   "lot": "lot-8 grande enceinte, soir et pluie (avant-match)",
+   "repli": "stade-grand-interieur-plein-jour",
+   "ids": [
+    "stade-grand-interieur-plein-soir",
+    "stade-grand-interieur-plein-pluie-jour",
+    "stade-grand-interieur-plein-pluie-nuit"
+   ],
+   "etiquettes": {
+    "stade-grand-interieur-plein-soir": {
+     "ecrans": [
+      "avant-match"
+     ],
+     "taille": "grand",
+     "meteo": "sec",
+     "moment": "soir"
+    },
+    "stade-grand-interieur-plein-pluie-jour": {
+     "ecrans": [
+      "avant-match"
+     ],
+     "taille": "grand",
+     "meteo": "pluie",
+     "moment": "jour"
+    },
+    "stade-grand-interieur-plein-pluie-nuit": {
+     "ecrans": [
+      "avant-match"
+     ],
+     "taille": "grand",
+     "meteo": "pluie",
+     "moment": "nuit"
+    }
+   }
   }
  ]
 }

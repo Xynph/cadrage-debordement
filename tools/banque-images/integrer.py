@@ -56,11 +56,19 @@ def main() -> int:
                 elif not sans_perte: im = im.convert("RGBA" if im.mode in ("RGBA", "LA", "PA") or "transparency" in im.info else "RGB")
                 if sans_perte: im.save(dest, "WEBP", lossless=True, method=6)
                 else: im.save(dest, "WEBP", quality=QUALITE, method=6)
-            gris = None
+            gris = gris_eux = None
             if src.get("type_rendu") == "carte-ombres":  # luminance moyenne du tissu : neutre pour le shader
                 im2 = Image.open(chemin_src).convert("RGBA").resize((128, 128))
                 px = [(0.299 * r + 0.587 * g + 0.114 * b) / 255 for r, g, b, a in (im2.get_flattened_data() if hasattr(im2, "get_flattened_data") else im2.getdata()) if a > 200]
                 gris = round(sum(px) / len(px), 3) if px else None
+            if src.get("type_rendu") == "photo-recolorable":  # gris moyen des tenues (pixels du masque « nous », peu saturés)
+                def gris_de(mid):
+                    if mid not in par_id: return None
+                    ph = Image.open(chemin_src).convert("RGB").resize((256, 128)); mk = Image.open(os.path.join(a.banque, par_id[mid]["fichier"])).convert("L").resize((256, 128))
+                    lum = sorted((0.299 * r + 0.587 * g + 0.114 * b_) / 255 for (r, g, b_), m in zip(ph.getdata(), mk.getdata()) if m > 127 and max(r, g, b_) - min(r, g, b_) < 18)
+                    return round(lum[int(len(lum) * 0.6)], 3) if len(lum) > 20 else None  # 60e centile : le tissu éclairé, pas les ombres
+                gris = gris_de(ident + "-masque-nous")
+                gris_eux = gris_de(ident + "-masque-eux")
             part = None
             if src.get("type_rendu") == "masque-binaire":  # part du masque en blanc (zones du club)
                 mk = Image.open(chemin_src).convert("L").resize((128, 128))
@@ -77,6 +85,7 @@ def main() -> int:
                 "repli": groupe.get("repli", src.get("repli_neutre") or ident),
                 "etiquettes": {k: v for k, v in et.items() if v not in (None, [], "")},
                 **({"gris_moyen": gris} if gris else {}),
+                **({"gris_eux": gris_eux} if gris_eux else {}),
                 **({"part_blanche": part} if part is not None else {}),
                 "synthetique": bool(src.get("synthetique", True)), "outil": src.get("outil"),
             })

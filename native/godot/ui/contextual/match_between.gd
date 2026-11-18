@@ -1217,14 +1217,21 @@ static func photo_du_fait(kind: String, texte: String) -> String:
 func _photo_faits(visibles: Array) -> void:
 	if not is_instance_valid(photo_faits): return
 	var id := ""
+	# Équipe au premier plan de la photo : celle du fait (ou la nôtre pour le résultat), recolorée à ses couleurs.
+	var equipe := int(_fin.get("camp", -1))
 	if _fin.get("fini", false):
 		var r := BanqueImages.resultat(_fin.get("score"), int(_fin.get("camp", -1)))
 		if not r.is_empty(): id = BanqueImages.choisir("apres-match", {"resultat": r, "occasion": occasion_fin(_fin, r)})
 	else:
 		for n in range(visibles.size() - 1, maxi(-1, visibles.size() - 6), -1):
 			id = photo_du_fait(str(visibles[n].get("kind", "")), str(visibles[n].get("texte", "")))
-			if not id.is_empty(): break
+			if not id.is_empty():
+				if visibles[n].get("equipe") != null and int(visibles[n].get("equipe")) in [0, 1]: equipe = int(visibles[n].get("equipe"))
+				break
 	photo_faits.texture = BanqueImages.texture(id) if not id.is_empty() else null
+	photo_faits.material = null
+	if not id.is_empty() and equipe in [0, 1] and terrain.couleurs.size() == 2:
+		BanqueImages.recolorer(photo_faits, id, terrain.couleurs[equipe], terrain.couleurs[1 - equipe])
 	photo_faits.set_meta("photo", id)
 
 func _ligne_fil(entree: Dictionary, dernier: bool, en_bandeau: bool) -> Control:

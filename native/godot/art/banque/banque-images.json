@@ -1,6 +1,6 @@
 {
  "schema": "rugby-legacy-banque-images-jeu-v1",
- "source": "Xynph/rugby-legacy-banque-images@lot-12",
+ "source": "Xynph/rugby-legacy-banque-images@lot-13",
  "usage": "Illustrations fictives générées par IA (aucun vrai nom, logo ni visage réel). Choix par ui/banque_images.gd.",
  "qualite_webp": 88,
  "images": [
@@ -4143,6 +4143,1566 @@
     ],
     "resultat": "neutre",
     "poste": "arriere"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-essai-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-essai-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 217708,
+   "sha256": "451e50214eee56f8243bb305b09eb2291314614e9845cc4c3ffd069d370c5eae",
+   "source_sha256": "10b97bf3419df6a04b2f83b9fc19d05cc4a70b3befde7a389fd69364fc5ab0f5",
+   "source_octets": 2256440,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.478,
+   "gris_eux": 0.825,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-transformation-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-transformation-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 148292,
+   "sha256": "aa92ac6c9b698c31b8967d3dd24db5c981d3c8fba5abeda563c0a0d23dc2d47a",
+   "source_sha256": "7cb3f6d2e8682a6e424d3b02197d400a0ebf5e1f91a4e1351aeef4560a2f3ff0",
+   "source_octets": 1993389,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.459,
+   "gris_eux": 0.813,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-coup-de-pied-but-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-coup-de-pied-but-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 124774,
+   "sha256": "5b13eb1c3d0f8473148e3ff62d3679625ce0ae11e4af8349b5a0ea88941627cf",
+   "source_sha256": "1806b5ab091ce51829859cbdeab5696bbfc7da068f159e2eed9aff0da4ebf6f2",
+   "source_octets": 1830757,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-carton-jaune-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-carton-jaune-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 80458,
+   "sha256": "938275d653bd651ac44201f0c765fc4f8f3a841e5ad71bcdf65ed4a529b85d92",
+   "source_sha256": "ac73aa95c4b33469887d1805f20b8e51d1be0adf1b75fa72fd54815650ce6f33",
+   "source_octets": 1653936,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.458,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-carton-rouge-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-carton-rouge-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 78704,
+   "sha256": "b318ed588e1a9030f91da04d6a9dce4edce0d81c423cd6adef6ef62e00ed9a75",
+   "source_sha256": "9ea8c685ebcfbe09a10ff101e12e73d53b161b1c106b0b53b8bce87b64242f9b",
+   "source_octets": 1707297,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.459,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-melee-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-melee-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 132722,
+   "sha256": "82e14f70d38de3c53c58c47febcfd5dd8a929bbf7d6a5c474a0686a614697b37",
+   "source_sha256": "7c59e1ca310f58e232076620d5649a0ca25085018006e0a3cc14743b0103e3f0",
+   "source_octets": 1781875,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.471,
+   "gris_eux": 0.796,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-touche-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-touche-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 117838,
+   "sha256": "149b708dec8be01f3b2cdf0387df2f759fd673bfd3202e5582a70db7f938fa67",
+   "source_sha256": "c79c446e72844be0ce0b86b513662471183f0279b1ba5f36fbe3c88009dc851f",
+   "source_octets": 1829070,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.459,
+   "gris_eux": 0.796,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-ballon-perdu-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-ballon-perdu-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 150232,
+   "sha256": "c4248dee90d72a301682fd1a83703442d4c00029d70607d11a7671f113ecceeb",
+   "source_sha256": "2a88b00dd4b45f88afd64f1cdfa36d8d1917ea6233fa2a175a95c2994cb57ce1",
+   "source_octets": 1913667,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.467,
+   "gris_eux": 0.788,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-franchissement-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-franchissement-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 191230,
+   "sha256": "e9b8299d6db4bd09fb9ecc58bbc5b3c25d1a56b5739fcacdbc633dc5f57e74bb",
+   "source_sha256": "58d91a769284cc90be7bc2ec884276e704c461e63e01a3d445861009901001cd",
+   "source_octets": 2157296,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.459,
+   "gris_eux": 0.796,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-arbitrage-video-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-arbitrage-video-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 95702,
+   "sha256": "acb5d936db02a78a8db1860e7b31f3bc50905bf487a669dded60974d851c7075",
+   "source_sha256": "8efcaf8c101b5930f6422005c213caa01d4690efef804f4fe234ee51ed742072",
+   "source_octets": 1886709,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Composition directe depuis le PNG de référence"
+  },
+  {
+   "id": "action-blessure-soins-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-blessure-soins-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 187404,
+   "sha256": "0ba14b4ba33eea0d3bc724538dd8099c3661d66264189818c3e6550488343e68",
+   "source_sha256": "b3fc8527ca2f6d2d189dec99ba86e31b86f2f5ac214c9fa2681cde9328cfa166",
+   "source_octets": 2096236,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-remplacement-neutre",
+   "categorie": "actions",
+   "fichier": "actions/action-remplacement-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 162910,
+   "sha256": "53f9d540b24dc5a77a6c1b79f58428f39ecfdc7786bced13c2c346576cfced3a",
+   "source_sha256": "93e07c35a084fa8284b4078b315303037cb3a5c11533d38069197c702e270f1f",
+   "source_octets": 1938546,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.481,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-victoire-neutre",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-victoire-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 163192,
+   "sha256": "4d74e9f7a8d524c38567b6ec79eb392e2a94b67250ef6a2d0e921863bcee6bc4",
+   "source_sha256": "9d0babda7cdee4d2d80b120f665adc2dc417e0a0ce2d773c9815fe8297d52a3d",
+   "source_octets": 1850592,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "moment": "projecteurs",
+    "resultat": "victoire"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-defaite-neutre",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-defaite-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 160594,
+   "sha256": "fe15c0b9c403150f93134ccb4e07da3ddbd843f2fb582b19738c9f1959c80c76",
+   "source_sha256": "b624bf60d410b87c5e39edb967f61ee0173d50cd8df98d4ca536022d194c0a31",
+   "source_octets": 1988833,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "moment": "projecteurs",
+    "resultat": "defaite"
+   },
+   "gris_moyen": 0.459,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-nul-neutre",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-nul-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 102820,
+   "sha256": "894e80e0777262a9fb277796763da046808f9e1e8dfad0dba50800367e55d0e2",
+   "source_sha256": "f084acb3b19433202cb720e962c727848b06a4581fd75d2a25ac4bf2963e040f",
+   "source_octets": 1694455,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "nul"
+   },
+   "gris_moyen": 0.464,
+   "gris_eux": 0.796,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-bonus-offensif-neutre",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-bonus-offensif-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 153562,
+   "sha256": "536fa86dbfd4364874b116d3b598d64ca9cba5fa822fe48ddf8fbfef3d562061",
+   "source_sha256": "1ed2d9195caf8735bb025c4a59d9e1de9ff1f975991607bfa1bcc62a111b7d04",
+   "source_octets": 1916033,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "moment": "soir",
+    "resultat": "victoire"
+   },
+   "gris_moyen": 0.459,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-finale-gagnee-neutre",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-finale-gagnee-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 142594,
+   "sha256": "4736be8d566d119293e7340f0c4cf6187bc5d1a83f190c5f22c8e279fa9deb01",
+   "source_sha256": "89773fdee3f8069aac1a9fccf42685e0132f0eb79a313c3e065a3df905e0d14d",
+   "source_octets": 1820804,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "moment": "projecteurs",
+    "resultat": "victoire"
+   },
+   "gris_moyen": 0.459,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-finale-perdue-neutre",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-finale-perdue-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 162068,
+   "sha256": "87e8b1b72f8c081122650440b1196cc0bfb220e77eb7d98a02947600a667e2c7",
+   "source_sha256": "e314f4706ba4a53efbe7a9489d7c776feb96423ae20d9419b69df927eafe1827",
+   "source_octets": 1954764,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "moment": "projecteurs",
+    "resultat": "defaite"
+   },
+   "gris_moyen": 0.459,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-titre-trophee-leve-neutre",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-titre-trophee-leve-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 142546,
+   "sha256": "805664409e68ddd8e6d145cfcbe4d0605a7ec54a1f64a34a8fe1d11f441908e5",
+   "source_sha256": "83e7d857c139bc0ce238b6fd29b8a799e68c8b19373c987f69c13b754e4e8c15",
+   "source_octets": 1830091,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "moment": "projecteurs",
+    "resultat": "victoire"
+   },
+   "gris_moyen": 0.467,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-relegation-neutre",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-relegation-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 186428,
+   "sha256": "ca22ff1ac9067b04edae999ea55368599f02e96ffca9bcbd593b041747a9e8de",
+   "source_sha256": "4897e320da6eeb6ddeab91e0d5ecd399dc046cbdd678e8f99ff30c35fe266a26",
+   "source_octets": 2103941,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "moment": "soir",
+    "resultat": "defaite"
+   },
+   "gris_moyen": 0.459,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "vestiaire-avant-match-neutre",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-avant-match-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 132548,
+   "sha256": "a05cb549a2e36493e91d8652b15abec8819e40e2f06a546cde5a78ae98653a84",
+   "source_sha256": "cdda9c71ef948af1c4a47bd8dc96b96547233c6aa0cb65a98b5046a8bb297cce",
+   "source_octets": 1928224,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "vestiaire-mi-temps-neutre",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-mi-temps-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 156000,
+   "sha256": "172fb87e4ed04e987077ec59472ffba94ebdb1f80d76916b4023546c77781717",
+   "source_sha256": "8bc5057c996116161b17cf37413dc4b048fe7fc819fc767cf0b380b6f69fe405",
+   "source_octets": 1989979,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "vestiaire-victoire-neutre",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-victoire-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 138536,
+   "sha256": "e0badf989f2a1b8abca089115e64eda75ecdda47a45f94a968ab857dac597fc7",
+   "source_sha256": "303bf3c37fa32de53cc0db42313364fd0d15dba0f4138dc8b67482c8d50877b6",
+   "source_octets": 1884427,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "victoire"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "vestiaire-defaite-neutre",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-defaite-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 117996,
+   "sha256": "560f7b0ce1ebbccf5096d0b08307b2c740b4f7e8eb19a7445b75729ea366170e",
+   "source_sha256": "e8fc4681ea826524b18e59e4d5fa09897f8effbe0866ba34544de4d6296f6f54",
+   "source_octets": 1827941,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "resultat": "defaite"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-sec-neutre",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-sec-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 178064,
+   "sha256": "2a95589ee4924d1311e40ee839ccf828728b8a005181515a4382af24787aec41",
+   "source_sha256": "bbcb3c894c9335b3a36360bea18cce2dd224b98cfcec0f3e34b56deced166421",
+   "source_octets": 1974359,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "meteo": "sec",
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-forte-pluie-neutre",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-forte-pluie-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 210408,
+   "sha256": "be5b1d0cc8237e09ab1371789b67d922265e67d409e3f10a9282076285f6e6fc",
+   "source_sha256": "db72d4be5ac01c9531ad95f200d51a5b61bda74716215735dcff77e11a49ef1c",
+   "source_octets": 2061688,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "meteo": "forte-pluie",
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-vent-neutre",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-vent-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 181562,
+   "sha256": "d4cb2579ab74851cd14e5cf9c91e550560e0531d5c8093702dd1d9d2c6369aba",
+   "source_sha256": "88cc8ecc22604b8790edbf75a7407d1a3f63272400c0c030afefabe239c239dc",
+   "source_octets": 1996096,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "meteo": "vent",
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.467,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-chaleur-neutre",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-chaleur-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 165864,
+   "sha256": "85b584ef2e552403e930797179467c47800a056179b20a3755ae86edf5c44620",
+   "source_sha256": "3050f0c53fa8ddad1b090b4c488d6b9ffcdad5b8b2445bafe9ab4aea5f5b53f4",
+   "source_octets": 1851604,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "meteo": "chaleur",
+    "moment": "soir",
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-neutre-neutre",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-neutre-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 137216,
+   "sha256": "75c04d72f589a4cbd8d2801c146cd24d2776d28f87e1aa649168eab350bbd0e2",
+   "source_sha256": "c799d4c3b331a813fffe5545ae41d35a7ba3e1f55fa4fe25a58388bd9e386afd",
+   "source_octets": 1829745,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "moment": "soir",
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-neutre",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-neutre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 184850,
+   "sha256": "087d1401e492a95ae2c912263d1a6edd7860e5a24970c360b07a2f07565dfae9",
+   "source_sha256": "b7a1dac864ff2a0bc7a538b92b1feb086047fa7e0ad05a7a0b32cec0ef46f63c",
+   "source_octets": 1979830,
+   "repli": "action-essai-neutre",
+   "etiquettes": {
+    "ecrans": [
+     "recolorable"
+    ],
+    "meteo": "pluie",
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.463,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-essai-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-essai-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2202,
+   "sha256": "4b79b19b7cde695c4a253ca8240b3336759d584b9caa6fe484c4de980e328fd3",
+   "source_sha256": "23a21ae34771d7ce2ca9d860fc90a35fbd34717a681ba268121d2f22c9754cb7",
+   "source_octets": 6330,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.096,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-essai-neutre-masque-eux",
+   "categorie": "actions",
+   "fichier": "actions/action-essai-neutre-masque-eux.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1232,
+   "sha256": "12054e97d29e6ceaa0d1325d5e24645004ee3549250e7dc9ce6993eb4e5086f3",
+   "source_sha256": "f565b050442fa58c9c1277a91b5e6c2fb36af231b81456976cf90f5273f63153",
+   "source_octets": 4511,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.042,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-transformation-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-transformation-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2502,
+   "sha256": "c6a1dd8dcc1a963b26ca589177d3871811735b1c67c156f7ae481f61ce9c8970",
+   "source_sha256": "f704d6aa45e55a76d52c646df5afd8cb48ef5c716a03ca728ea468306869d497",
+   "source_octets": 6724,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.052,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-transformation-neutre-masque-eux",
+   "categorie": "actions",
+   "fichier": "actions/action-transformation-neutre-masque-eux.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 492,
+   "sha256": "93cae0b3083d690dda58b8b23b6c83e0b8c7f26c984391c9539bf9d4fa14c054",
+   "source_sha256": "d5052e4031599acd72bf65d57f1c632255d08cc70ad93d54c1ed990a37197d07",
+   "source_octets": 2407,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.003,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-coup-de-pied-but-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-coup-de-pied-but-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1188,
+   "sha256": "96b58650b558f8d72ea5a439efef2d7b675be0e5cdf04cb48bf2640f57a01c19",
+   "source_sha256": "b1399d80011c66f4d6ff40f0366d75c0da59b29daff3f89525b93c85544eed0e",
+   "source_octets": 4473,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.033,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-carton-jaune-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-carton-jaune-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2342,
+   "sha256": "414de05cf0e74252ce22672e6f6b177b58d5a9a5b7d723320efc9b84bef999c5",
+   "source_sha256": "2b5a73ce70688b533ff95c0f700eec47e2454d1aa124dce3fd07c978430700c5",
+   "source_octets": 6505,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.071,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-carton-rouge-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-carton-rouge-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 846,
+   "sha256": "87a7dd640b53c713017929a7463de5acdcd68bde23b471deee8ed3a5135aae54",
+   "source_sha256": "a2d329605ab21025c042e068e2078846651962cb798dc3130751805858f1e3f9",
+   "source_octets": 3833,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.035,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-melee-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-melee-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 5204,
+   "sha256": "50a314be4eff6d6c968c0c21dc85ca839fcf0cd66b19b94c12e64580300142e3",
+   "source_sha256": "e4deb42d07034716dbbbb6df059afeb7731ba5626b9e130411ad9082bec2bd57",
+   "source_octets": 11583,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.175,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-melee-neutre-masque-eux",
+   "categorie": "actions",
+   "fichier": "actions/action-melee-neutre-masque-eux.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1946,
+   "sha256": "5419ab95dfea691ad459f0b26b827f1b357825cde3e98fa53b9538fd06806c18",
+   "source_sha256": "a7e3aa42cdbaca4e4c85d45c884a90fecaec769f629759f6bbc87d58873c7c30",
+   "source_octets": 5514,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.034,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-touche-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-touche-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1792,
+   "sha256": "4776c78d9826d2518c4b7553949c11456060164f31db3e42a199c51ed6b34a90",
+   "source_sha256": "ea088f3a7441b34819f543a0d2504d226f984a066579419571374eb432b1fa6d",
+   "source_octets": 5788,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.061,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-touche-neutre-masque-eux",
+   "categorie": "actions",
+   "fichier": "actions/action-touche-neutre-masque-eux.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2242,
+   "sha256": "46fd5732beb0d1d18c5229a541d982d96fe3653fb0aebf7c9586c54528e8f8f5",
+   "source_sha256": "2d2389281e4640b230f7808398bd76ca442693febcde107bd864b7d44ee08b7b",
+   "source_octets": 6143,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.075,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-ballon-perdu-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-ballon-perdu-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2182,
+   "sha256": "2a8c03266dddcf70c22b721c2ef8563b2f7c8a0387a9b950663c1486a75ffb18",
+   "source_sha256": "eedd6554c0bdb488c229022c7026c8a87f7f3d28e51d666c5d9a3f6d6769a8a9",
+   "source_octets": 6599,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.1,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-ballon-perdu-neutre-masque-eux",
+   "categorie": "actions",
+   "fichier": "actions/action-ballon-perdu-neutre-masque-eux.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1152,
+   "sha256": "5f60968b85df054ea6c9e76818c1ed61cd2463323dd7a6998baee8329f62feb5",
+   "source_sha256": "67a48c2cf8d39ce0fe44a694f6bb9b55bf2da73b91c65cbed4b2c88d2954b0b0",
+   "source_octets": 4284,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.026,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-franchissement-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-franchissement-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1036,
+   "sha256": "2dc51e39135058129e3c35938db955abca2df0f54975a933052ff55bd90827fb",
+   "source_sha256": "177c1ce016e693f53e45a324a408c6d78ea854c0527ecdf4642023d5a5410c6a",
+   "source_octets": 4126,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.032,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-franchissement-neutre-masque-eux",
+   "categorie": "actions",
+   "fichier": "actions/action-franchissement-neutre-masque-eux.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2382,
+   "sha256": "0cc384c863c72e7fda6783bda4d49bd9f43bbc5d434c7754021ae42b24ab35c6",
+   "source_sha256": "caa78112b59cb65a673cf521e837aab45d5d238393aa24efda0a10c53ad17a69",
+   "source_octets": 6400,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.057,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-arbitrage-video-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-arbitrage-video-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 108,
+   "sha256": "fdae3ed0809b5bfb981cc84a7fee7bfcac7e31ff586f10b77d7b4a483c01c17f",
+   "source_sha256": "b4da72977673e0905307030c101727ad2b1e5aecff2e8866654c1fcd7288e876",
+   "source_octets": 1605,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.0,
+   "synthetique": true,
+   "outil": "Composition directe depuis le PNG de référence"
+  },
+  {
+   "id": "action-blessure-soins-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-blessure-soins-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1464,
+   "sha256": "67554088273019de387244c1cc99e85588b6f052af8d922b9dee7303d14d0558",
+   "source_sha256": "b73a1d5975c0301862df392529766f9f97db0aca18240bc0b7d41c05327a5f25",
+   "source_octets": 4985,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.095,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "action-remplacement-neutre-masque-nous",
+   "categorie": "actions",
+   "fichier": "actions/action-remplacement-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2470,
+   "sha256": "e2aa8e0c0d6617a29e67cb21a99564d1afb29cc5ac32b3d58ead21f841015dac",
+   "source_sha256": "dc2895ccb8649e33319aed9c8aae696fc19bb07ea3e01a8b8f948bf83ead8e7a",
+   "source_octets": 6754,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.099,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-victoire-neutre-masque-nous",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-victoire-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 4662,
+   "sha256": "fa22add83b6f66f008837a4c4a81609fc0b30df7c86c896d5f14e6c68c37578b",
+   "source_sha256": "dd2262309a4bf944076a02357279066e61179ca7a2979412345f4d445760b435",
+   "source_octets": 10967,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "projecteurs",
+    "resultat": "victoire"
+   },
+   "part_blanche": 0.23,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-defaite-neutre-masque-nous",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-defaite-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1556,
+   "sha256": "bc14e2a14bc8b69f5edc2812194f2c977d627596ead2ae5134751a7dcd974389",
+   "source_sha256": "c877899b043b7a9cc2a10cab23728c41be7bbafea6bdb1dcde96b6b89f91c147",
+   "source_octets": 5383,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "projecteurs",
+    "resultat": "defaite"
+   },
+   "part_blanche": 0.099,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-nul-neutre-masque-nous",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-nul-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1558,
+   "sha256": "4252baf2a947da191f2eaf8c93fbdd617690d0c2df805337d0297de822794681",
+   "source_sha256": "41a4f9b78c78eca959dd5fb536a3d49246303dcb6368fd00088ee4a432433816",
+   "source_octets": 5473,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "resultat": "nul"
+   },
+   "part_blanche": 0.125,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-nul-neutre-masque-eux",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-nul-neutre-masque-eux.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1400,
+   "sha256": "da8eb6496788e27f6136e071b07e3197f96492c43406075bd50363492a90cab9",
+   "source_sha256": "9282d3e025ade981b4afdae2fe588dce34ceffe1d5d6402338754c857d4bc139",
+   "source_octets": 5243,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "resultat": "nul"
+   },
+   "part_blanche": 0.099,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-bonus-offensif-neutre-masque-nous",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-bonus-offensif-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 4438,
+   "sha256": "15c0a6f6ff7bfd20ebd6d033c27e0484432f4b95fcc7369ad1ca091f52a3cd82",
+   "source_sha256": "f78dede64b383e063a0ba874ddf27587faafc26dde12bd6e4d63648305e696b3",
+   "source_octets": 10296,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "soir",
+    "resultat": "victoire"
+   },
+   "part_blanche": 0.217,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-finale-gagnee-neutre-masque-nous",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-finale-gagnee-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 3970,
+   "sha256": "2e777c7e4aa9e06b57d56c14d938d188ac7a5d60d969efac60f730873a658138",
+   "source_sha256": "f2335a5edbdea336928e7c472f487ee65b603f31f0e5077f484b39ca20db9340",
+   "source_octets": 9661,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "projecteurs",
+    "resultat": "victoire"
+   },
+   "part_blanche": 0.197,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-finale-perdue-neutre-masque-nous",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-finale-perdue-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2074,
+   "sha256": "f798c9b6964f901214b0b242fea2907dfe9fab1dd9dc5ecbb0cdf132e875e7e4",
+   "source_sha256": "98753825e6204ab4f140ce8294aa6cd9703b0773d267ebe65c2b00315c9ad579",
+   "source_octets": 6040,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "projecteurs",
+    "resultat": "defaite"
+   },
+   "part_blanche": 0.074,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-titre-trophee-leve-neutre-masque-nous",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-titre-trophee-leve-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2684,
+   "sha256": "981045cc8b266f5b346975cfc2ed5ada47f2b9576b742bba6f33dd550a3a2552",
+   "source_sha256": "b6bf82ac7e1613778bfb48ea048e30d79d1547c586a6aa3293658dc40ac32011",
+   "source_octets": 7061,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "projecteurs",
+    "resultat": "victoire"
+   },
+   "part_blanche": 0.208,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "resultat-relegation-neutre-masque-nous",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-relegation-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1084,
+   "sha256": "bfe4caeb1343bf754272c089908a747e8737c5e4cc1dba770ee5ab77b27ac307",
+   "source_sha256": "0c237c9ebefbb0a34356760ccf03bffb27842c40c35b6ee6063c625a7552b6e9",
+   "source_octets": 4350,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "soir",
+    "resultat": "defaite"
+   },
+   "part_blanche": 0.042,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "vestiaire-avant-match-neutre-masque-nous",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-avant-match-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1162,
+   "sha256": "c109f384e1f9af7b96b71f7324b45c766656dec552bc37e67cded6dd594db2ea",
+   "source_sha256": "9b121fcc61f10c6ca6395d07a3faa2165dce1b4e9fb50ad29d993c970c34420c",
+   "source_octets": 4022,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "vestiaire"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.042,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "vestiaire-mi-temps-neutre-masque-nous",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-mi-temps-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2526,
+   "sha256": "7d754e6c3c3bc0c926431d588614014973ea200f567993d2dd463ad7964fc994",
+   "source_sha256": "5c4a26aef50c11f11e92ca8d17728adf9b3bf882191ff2060756df321cf55b9f",
+   "source_octets": 7022,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "vestiaire"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.083,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "vestiaire-victoire-neutre-masque-nous",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-victoire-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1878,
+   "sha256": "47bf93ea421ab6a5adc617f3d021875d979fc957fb50aacf42de86e52768bd84",
+   "source_sha256": "f9ea033400f37aa0050eb8ae4d9fe6896ee69167068f8906a69eab252ca808b2",
+   "source_octets": 5427,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "vestiaire"
+    ],
+    "resultat": "victoire"
+   },
+   "part_blanche": 0.056,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "vestiaire-defaite-neutre-masque-nous",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-defaite-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 1692,
+   "sha256": "52f6a1aa0975a1734e609cc92089e3eb4dfd775f8674101a5292d649e834e581",
+   "source_sha256": "d9d8d5fb5f8d4505b1f133b016d98686f65525fb3aa205843a00dc6994abcf0f",
+   "source_octets": 4993,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "vestiaire"
+    ],
+    "resultat": "defaite"
+   },
+   "part_blanche": 0.05,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-sec-neutre-masque-nous",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-sec-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2600,
+   "sha256": "9ac76829c222c8560f6b15430f743ee5d591ecf822bd3432eb7a1e922bd42a64",
+   "source_sha256": "468028aef65d505e8441b7d09df6c37156b19886eb94be38d79ea0811d9beb28",
+   "source_octets": 7455,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "avant-match"
+    ],
+    "meteo": "sec",
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.242,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-forte-pluie-neutre-masque-nous",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-forte-pluie-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2908,
+   "sha256": "352dbf1a1fccb82dfd7aa65f2d89d7993f51121b88887226c45144d4b4835bf7",
+   "source_sha256": "21f160e9a6765a0ffd22ca2578be0c53c217847a9afc832e2d07b09ae4645ec9",
+   "source_octets": 8045,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "avant-match"
+    ],
+    "meteo": "forte-pluie",
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.244,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-vent-neutre-masque-nous",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-vent-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2544,
+   "sha256": "0c15cc6cb074fc9d11f11f8fe24859de972191dfa84469404f0847ef400b8717",
+   "source_sha256": "c3f918c94b18aef6f44c8ca15202bdf17de6e1b45c98186613ec373aeadb3873",
+   "source_octets": 7422,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "avant-match"
+    ],
+    "meteo": "vent",
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.242,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-chaleur-neutre-masque-nous",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-chaleur-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2682,
+   "sha256": "2ff0b85cc1cc9943cd5398a3e09ec8fc3df726f97d9321b2757865fad1f29f08",
+   "source_sha256": "99319d490c61ff9709ecb438d7a5c530ba5d28951bffa5d5380dd6c676f0ce14",
+   "source_octets": 7610,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "avant-match"
+    ],
+    "meteo": "chaleur",
+    "moment": "soir",
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.242,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-neutre-neutre-masque-nous",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-neutre-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2460,
+   "sha256": "219a458ea2d9fc4dd67d7b104d53ebcc86978a7319af5794d8914ce0532f89b7",
+   "source_sha256": "cde4d26f9d6e4b7145f0f767a3e0d7b4387f238128be9d4293e41e18692a9296",
+   "source_octets": 7252,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "avant-match"
+    ],
+    "moment": "soir",
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.241,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "match-tunnel-neutre-masque-nous",
+   "categorie": "tunnel",
+   "fichier": "tunnel/match-tunnel-neutre-masque-nous.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 2566,
+   "sha256": "5d0cd95959d62ef4c6a2c8c2c01a99e7466aa1e3d33c2f91e51d2cac267e6dc2",
+   "source_sha256": "ccb8bd6d20db05835f545daea9689487d3a663fe436555d52c5cc9b86b4e42fb",
+   "source_octets": 7442,
+   "repli": "action-essai-neutre-masque-nous",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "avant-match"
+    ],
+    "meteo": "pluie",
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.244,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, masquage binaire et traitement colorimétrique"
+  },
+  {
+   "id": "stade-grand-interieur-plein-soir",
+   "categorie": "stades",
+   "fichier": "stades/stade-grand-interieur-plein-soir.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 464408,
+   "sha256": "f57cf3f3664ba5fbe7bed15c17d29ccbd292c8aaeef55cef62262c2673972869",
+   "source_sha256": "206010580218992e2952b4897d1c7ab24ee8b7561a3e03ffe150eabb5dd87023",
+   "source_octets": 3257737,
+   "repli": "stade-grand-interieur-plein-jour",
+   "etiquettes": {
+    "ecrans": [
+     "avant-match"
+    ],
+    "meteo": "sec",
+    "moment": "soir",
+    "resultat": "neutre",
+    "taille": "grand"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "stade-grand-interieur-plein-pluie-jour",
+   "categorie": "stades",
+   "fichier": "stades/stade-grand-interieur-plein-pluie-jour.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 472734,
+   "sha256": "eb23c157c9ed98d07f515ebb703464c7bd897f2fae7eb683e5de2edff0ebe6a5",
+   "source_sha256": "f5d60eccd0f7500b4f7ca1f420ae4310ee96c8c235f7c3143178c04d720da5f8",
+   "source_octets": 3432599,
+   "repli": "stade-grand-interieur-plein-jour",
+   "etiquettes": {
+    "ecrans": [
+     "avant-match"
+    ],
+    "meteo": "pluie",
+    "moment": "jour",
+    "resultat": "neutre",
+    "taille": "grand"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "stade-grand-interieur-plein-pluie-nuit",
+   "categorie": "stades",
+   "fichier": "stades/stade-grand-interieur-plein-pluie-nuit.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 446938,
+   "sha256": "bb927f61b31db05fdd86d4971e33b1e2b1185eeb7f50f23a8da21dc7284f10ca",
+   "source_sha256": "6ded47e326aa7289c1c5ee9f13af89f3fdcd87f5bdf6fab4136cec8d3a3920e1",
+   "source_octets": 3284746,
+   "repli": "stade-grand-interieur-plein-jour",
+   "etiquettes": {
+    "ecrans": [
+     "avant-match"
+    ],
+    "meteo": "pluie",
+    "moment": "nuit",
+    "resultat": "neutre",
+    "taille": "grand"
    },
    "synthetique": true,
    "outil": "OpenAI ImageGen"

@@ -30,7 +30,10 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	var hero := D.panel(canvas,Rect2(0,0,2248,227),"","","","LockerHero")
 	hero.clip_contents = true
 	var art := _art(app.model)
-	D.photo(hero,art,Rect2(986,1,1261,225))
+	var photo := D.photo(hero,art,Rect2(986,1,1261,225))
+	var identite := G.identity(app.model.get("club", {}))
+	var RI = preload("res://ui/contextual/rooms/room_identity.gd")
+	BanqueImages.recolorer(photo, art, RI.primary(identite), RI.secondary(identite))
 	U.art_fade(hero,Rect2(986,1,1261,225))
 	U.italic(D.text(hero,26,43,"LE VESTIAIRE",30,C.GOLD,700,375),700)
 	D.line(hero,Vector2(237,28),Vector2(661,28),Color(C.GOLD,.65))
