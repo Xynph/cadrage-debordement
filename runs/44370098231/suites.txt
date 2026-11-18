@@ -1,0 +1,5 @@
+tests/godot-match-temps-forts.cjs
+tests/godot-match-liaison-monde.cjs
+tests/godot-match-journal.cjs
+tests/godot-match-score-essai.cjs
+tests/godot-match-complet-regression.cjs
