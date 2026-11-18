@@ -1,0 +1,3 @@
+== captures fenêtre Équipe du match (Composition et Consignes ; 1080p et 720p, contrôles en 1440p) (code 1)
+not ok 1 - Fenêtre Équipe : un bouton, pause, composition, banc, consignes
+  name: 'AssertionError'
