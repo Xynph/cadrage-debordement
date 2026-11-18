@@ -1,0 +1,6 @@
+tests/godot-presse-rapide.cjs
+tests/godot-presse-promesses.cjs
+tests/godot-reglage-conferences.cjs
+tests/presse-rapide-monde.cjs
+tests/presse-dilemmes-monde.cjs
+tests/presse-derby-monde.cjs
