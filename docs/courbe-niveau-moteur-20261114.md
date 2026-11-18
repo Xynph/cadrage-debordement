@@ -17,7 +17,7 @@ au moteur complet et au résultat rapide (championnats en « résultats rapides 
   `0,005 × (niveau du camp − niveau adverse)` (`matchLevelEdge`, recalculé chaque minute : la fatigue,
   les cartons et les remplacements comptent) et ±0,036 à domicile (auparavant ±0,018 ; ±0,045 du 14/11
   jusqu'au recalage sur les effectifs du barème V2, voir plus bas).
-- Résultat rapide : `avantage = (Δpuissance + 3,3 à domicile) / 7,5` (auparavant `(Δ + 2,5) / 8`),
+- Résultat rapide : `avantage = (Δpuissance + 2,77 à domicile) / 6,3` (18/11/2026, après l'ajout de la complaisance du favori ; 3,3 / 7,5 avant, `(Δ + 2,5) / 8` à l'origine),
   essais tirés selon une loi de Poisson de moyenne `2,75 × e^(±0,42 × avantage)` (inchangé).
 - Terrain neutre : plus d'avantage du terrain pour une rencontre Monde marquée `neutral`
   (moteur complet via `l.worldContext.neutral`, résultat rapide via `fixture.neutral`). Avant, une

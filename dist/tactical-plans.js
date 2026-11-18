@@ -69,9 +69,14 @@ function chooseDefence(l,side){
 // Tirage déterministe (empreinte de la rencontre, aucun tirage aléatoire consommé). Club du manager : une causerie
 // d'avant-match exigeante (intentions ci-dessous) annule le jour sans (match-talks.cjs) ; Gabi prévient (avant-match.cjs).
 const RELACHEMENT=Object.freeze({seuil:3,parPoint:.06,max:.35,part:.5,intentions:Object.freeze(['focus','raise_standards','respect_opposition','challenge'])});
-function relachementPro(l,side){const on=activePlayers(l,side);if(!on.length)return 60;return on.reduce((t,p)=>t+(typeof nativePotentialEvolution!=='undefined'&&nativePotentialEvolution.traits?nativePotentialEvolution.traits(p).professionalism:Number(p.hiddenTraitsV2?.professionalism??60)),0)/on.length}
-function relachementRisque(l){const g=teamLevel(activePlayers(l,0))-teamLevel(activePlayers(l,1)),d=Math.abs(g),fav=g>0?0:1,R=RELACHEMENT;const p=Math.min(R.max,R.parPoint*(d-R.seuil))*clamp(1.4-relachementPro(l,fav)/100,.4,1.4);return {favori:fav,ecart:d,probabilite:p>0?Math.round(p*1000)/1000:0}}
-function initializeRelachement(l){if(!S?.worldMode||l.relachementVersion)return;l.relachementVersion=1;l.relachement=[0,0];const r=relachementRisque(l);if(!(r.probabilite>0))return;const u=(seedHash('relachement:'+(l.worldContext?.id||'')+':'+l.pair.join('-')+':'+S.season+':'+S.round)%10000)/10000;l.relachementRisque=r;if(u<r.probabilite)l.relachement[r.favori]=r.ecart*RELACHEMENT.part*MATCH_LEVEL_CURVE.complet.parPoint}
+function relachementProMoyen(players){if(!players.length)return 60;return players.reduce((t,p)=>t+(typeof nativePotentialEvolution!=='undefined'&&nativePotentialEvolution.traits?nativePotentialEvolution.traits(p).professionalism:Number(p.hiddenTraitsV2?.professionalism??60)),0)/players.length}
+function relachementPro(l,side){return relachementProMoyen(activePlayers(l,side))}
+// Formules partagées avec le résultat rapide (native/engine/league-detail.cjs) : probabilité, tirage déterministe, points de niveau perdus par le favori.
+function relachementProbabilite(d,pro){const R=RELACHEMENT;return Math.min(R.max,R.parPoint*(d-R.seuil))*clamp(1.4-pro/100,.4,1.4)}
+function relachementTire(cle,probabilite){return (seedHash(cle)%10000)/10000<probabilite}
+function relachementPoints(d){return d*RELACHEMENT.part}
+function relachementRisque(l){const g=teamLevel(activePlayers(l,0))-teamLevel(activePlayers(l,1)),d=Math.abs(g),fav=g>0?0:1,R=RELACHEMENT;const p=relachementProbabilite(d,relachementPro(l,fav));return {favori:fav,ecart:d,probabilite:p>0?Math.round(p*1000)/1000:0}}
+function initializeRelachement(l){if(!S?.worldMode||l.relachementVersion)return;l.relachementVersion=1;l.relachement=[0,0];const r=relachementRisque(l);if(!(r.probabilite>0))return;l.relachementRisque=r;if(relachementTire('relachement:'+(l.worldContext?.id||'')+':'+l.pair.join('-')+':'+S.season+':'+S.round,r.probabilite))l.relachement[r.favori]=relachementPoints(r.ecart)*MATCH_LEVEL_CURVE.complet.parPoint}
 function relachementEdge(l,side){return l.relachementVersion===1&&!l.relachementAnnule?.[side]?-(l.relachement?.[side]||0):0}
 function initializeTacticalPlans(l){initializeRelachement(l);l.tacticalVersion=1;if(ESSAIS_RULES)l.essaisVersion=1;if(ESSAIS_RULES&&PENALITES_RULES)l.penalitesVersion=1;l.defences=['equilibre','equilibre'];l.tacticalStats=[emptyTacticalStats(),emptyTacticalStats()];for(let side=0;side<2;side++)l.defences[side]=side===l.userSide?(S.defence||'equilibre'):chooseDefence(l,side)}
 function defensivePlan(l,side){return tacticalRules(l)?effectiveDefence(l,side):'equilibre'}
