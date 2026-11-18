@@ -1,0 +1,16 @@
+== suites (17) (code 1)
+not ok 1 - Arrivée : grand moment, 4 questions, en personne
+  name: 'AssertionError'
+not ok 2 - Conférence ordinaire : 3 questions au plus, adjoint au léger coût
+  name: 'AssertionError'
+not ok 3 - Réglage « envoyer l’adjoint » : Continuer ne s’arrête plus sur une conférence ordinaire
+  name: 'AssertionError'
+::error file=tests/presse-rapide-monde.cjs::Godot : ECHEC (1), durée 166 s, limite 300s
+not ok 3 - Échantillon de conférences : aucun ton dominant, délégation sans gain, malus de la série
+  name: 'AssertionError'
+::error file=tests/presse-dilemmes-monde.cjs::Godot : ECHEC (1), durée 11 s, limite 300s
+not ok 1 - Presse : question de derby avant un derby, jamais avant un match ordinaire
+  name: 'AssertionError'
+::error file=tests/presse-derby-monde.cjs::Godot : ECHEC (1), durée 10 s, limite 300s
+not ok 2 - Fenêtre de saison : veille, lendemain, plusieurs arrêts le même jour, monde inchangé
+  name: 'AssertionError'

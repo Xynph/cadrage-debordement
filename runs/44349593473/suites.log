@@ -1,0 +1,631 @@
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/native-press-invitations.cjs
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/world-press-projection.cjs
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/native-press-season.cjs
+::group::tests/presse-calendrier-fm.cjs
+TAP version 13
+# Subtest: Champ Rugby : une seule conférence avant le 1er match, puis un après-match court
+ok 1 - Champ Rugby : une seule conférence avant le 1er match, puis un après-match court
+  ---
+  duration_ms: 61203.041863
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61210.549471
+CD_CPU_PROFILE suite=tests/presse-calendrier-fm.cjs user_s=64.29 system_s=8.63 wall_s=61.52 cpu_pct=118% max_rss_kb=2704940
+PASS tests/presse-calendrier-fm.cjs (61 s)
+::endgroup::
+::group::tests/presse-sans-gabarit.cjs
+TAP version 13
+# Subtest: Banque : 500 questions écrites une à une, 5 réponses chacune, sans gabarit
+ok 1 - Banque : 500 questions écrites une à une, 5 réponses chacune, sans gabarit
+  ---
+  duration_ms: 16.499535
+  type: 'test'
+  ...
+# Subtest: Tirages : toutes les questions générables, dans toutes les presses
+ok 2 - Tirages : toutes les questions générables, dans toutes les presses
+  ---
+  duration_ms: 329.459227
+  type: 'test'
+  ...
+# Subtest: Vraie conférence en carrière Monde : questions contextuelles comprises
+ok 3 - Vraie conférence en carrière Monde : questions contextuelles comprises
+  ---
+  duration_ms: 23796.389679
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24147.962047
+CD_CPU_PROFILE suite=tests/presse-sans-gabarit.cjs user_s=26.65 system_s=3.45 wall_s=24.26 cpu_pct=124% max_rss_kb=2719104
+PASS tests/presse-sans-gabarit.cjs (25 s)
+::endgroup::
+::group::tests/presse-rapide-monde.cjs
+conférence ordinaire le 2026-09-14 : 4 questions, moment {"kind":"arrivee","label":"Arrivée au club"}
+conférences tenues par Gabi : 1 · arrêts presse (grands moments) : 2 · 108 jours
+TAP version 13
+# Subtest: Arrivée : grand moment, 4 questions, en personne
+not ok 1 - Arrivée : grand moment, 4 questions, en personne
+  ---
+  duration_ms: 3729.0698
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/presse-rapide-monde.cjs:53:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    la conférence d’arrivée est ouverte
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/presse-rapide-monde.cjs:58:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Conférence ordinaire : 3 questions au plus, adjoint au léger coût
+not ok 2 - Conférence ordinaire : 3 questions au plus, adjoint au léger coût
+  ---
+  duration_ms: 25914.131847
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/presse-rapide-monde.cjs:73:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    conférence ordinaire
+    + actual - expected
+    
+    + {
+    +   kind: 'arrivee',
+    +   label: 'Arrivée au club'
+    + }
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    kind: 'arrivee'
+    label: 'Arrivée au club'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/presse-rapide-monde.cjs:80:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Réglage « envoyer l’adjoint » : Continuer ne s’arrête plus sur une conférence ordinaire
+not ok 3 - Réglage « envoyer l’adjoint » : Continuer ne s’arrête plus sur une conférence ordinaire
+  ---
+  duration_ms: 129906.39065
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/presse-rapide-monde.cjs:112:1'
+  failureType: 'testCodeFailure'
+  error: 'reçu du rendez-vous de presse'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/presse-rapide-monde.cjs:139:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 0
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 166365.407912
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/presse-rapide-monde.cjs user_s=182.20 system_s=17.96 wall_s=166.67 cpu_pct=120% max_rss_kb=3202416
+::error file=tests/presse-rapide-monde.cjs::Godot : ECHEC (1), durée 166 s, limite 300s
+::endgroup::
+::group::tests/presse-promesses-monde.cjs
+TAP version 13
+# Subtest: la conférence pose une question d’objectif facultative, avec vraisemblance et réactions
+ok 1 - la conférence pose une question d’objectif facultative, avec vraisemblance et réactions
+  ---
+  duration_ms: 7722.36777
+  type: 'test'
+  ...
+# Subtest: promesse tenue : supporters, direction et crédibilité (réputation du manager) progressent
+ok 2 - promesse tenue : supporters, direction et crédibilité (réputation du manager) progressent
+  ---
+  duration_ms: 11285.381587
+  type: 'test'
+  ...
+# Subtest: promesse irréaliste : presse et direction réagissent, puis la promesse ratée coûte cher
+ok 3 - promesse irréaliste : presse et direction réagissent, puis la promesse ratée coûte cher
+  ---
+  duration_ms: 22909.429375
+  type: 'test'
+  ...
+# Subtest: refuser de promettre : médias −1, question close pour la saison
+ok 4 - refuser de promettre : médias −1, question close pour la saison
+  ---
+  duration_ms: 10572.993689
+  type: 'test'
+  ...
+# Subtest: objectif du conseil : une promesse en dessous de sa place le froisse, sans créer d’objectif en double
+ok 5 - objectif du conseil : une promesse en dessous de sa place le froisse, sans créer d’objectif en double
+  ---
+  duration_ms: 14382.174436
+  type: 'test'
+  ...
+# Subtest: sauvegarde, rechargement et validateur
+ok 6 - sauvegarde, rechargement et validateur
+  ---
+  duration_ms: 16626.641552
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 83517.742544
+CD_CPU_PROFILE suite=tests/presse-promesses-monde.cjs user_s=92.03 system_s=6.94 wall_s=84.69 cpu_pct=116% max_rss_kb=2925828
+PASS tests/presse-promesses-monde.cjs (85 s)
+::endgroup::
+::group::tests/presse-promesses-saison.cjs
+victoires à domicile : 9 / 11 → broken · rappels mi-saison, sprint
+rang final : 10
+maintien : kept · division elite → elite · crédibilité 45
+TAP version 13
+# Subtest: saison complète : rappels, verdicts aux échéances, sauvegarde
+ok 1 - saison complète : rappels, verdicts aux échéances, sauvegarde
+  ---
+  duration_ms: 124036.284532
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 124044.552848
+CD_CPU_PROFILE suite=tests/presse-promesses-saison.cjs user_s=142.20 system_s=4.26 wall_s=130.57 cpu_pct=112% max_rss_kb=2831152
+PASS tests/presse-promesses-saison.cjs (131 s)
+::endgroup::
+::group::tests/presse-dilemmes-monde.cjs
+contexte neutre    confident 0 % · honest 0 % · aggressive 0 % · cautious 0 % · humour 0 %
+contexte defaites  confident 0 % · honest 0 % · aggressive 0 % · cautious 0 % · humour 0 %
+contexte victoires confident 0 % · honest 0 % · aggressive 0 % · cautious 0 % · humour 0 %
+contexte derby     confident 0 % · honest 0 % · aggressive 0 % · cautious 0 % · humour 0 %
+TAP version 13
+# Subtest: Balayage de la banque : aucun ton dominant, quel que soit le contexte
+ok 1 - Balayage de la banque : aucun ton dominant, quel que soit le contexte
+  ---
+  duration_ms: 55.811631
+  type: 'test'
+  ...
+# Subtest: Chaque ton a une signature lisible
+ok 2 - Chaque ton a une signature lisible
+  ---
+  duration_ms: 0.451313
+  type: 'test'
+  ...
+# Subtest: Échantillon de conférences : aucun ton dominant, délégation sans gain, malus de la série
+not ok 3 - Échantillon de conférences : aucun ton dominant, délégation sans gain, malus de la série
+  ---
+  duration_ms: 3686.916757
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/presse-dilemmes-monde.cjs:109:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - 'arrivee'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'arrivee'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/presse-dilemmes-monde.cjs:119:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10669.953744
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/presse-dilemmes-monde.cjs user_s=13.63 system_s=0.94 wall_s=10.98 cpu_pct=132% max_rss_kb=1457808
+::error file=tests/presse-dilemmes-monde.cjs::Godot : ECHEC (1), durée 11 s, limite 300s
+::endgroup::
+::group::tests/presse-derby-monde.cjs
+TAP version 13
+# Subtest: Presse : question de derby avant un derby, jamais avant un match ordinaire
+not ok 1 - Presse : question de derby avant un derby, jamais avant un match ordinaire
+  ---
+  duration_ms: 3958.255049
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/presse-derby-monde.cjs:19:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + {
+    +   kind: 'arrivee',
+    +   label: 'Arrivée au club'
+    + }
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    kind: 'arrivee'
+    label: 'Arrivée au club'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/presse-derby-monde.cjs:23:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3999.513473
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/presse-derby-monde.cjs user_s=13.07 system_s=0.62 wall_s=9.95 cpu_pct=137% max_rss_kb=1079292
+::error file=tests/presse-derby-monde.cjs::Godot : ECHEC (1), durée 10 s, limite 300s
+::endgroup::
+::group::tests/native-press.cjs
+Presse native : lecture pure, semaines34/26, effets, contexte, historique strict, divisions et faits futurs exclus PASS.
+CD_CPU_PROFILE suite=tests/native-press.cjs user_s=0.04 system_s=0.00 wall_s=0.04 cpu_pct=102% max_rss_kb=58960
+PASS tests/native-press.cjs (0 s)
+::endgroup::
+::group::tests/continuer-arrets-saison.cjs
+TAP version 13
+# Subtest: Règle : types informatifs toujours actifs, priorité, plusieurs arrêts le même jour
+ok 1 - Règle : types informatifs toujours actifs, priorité, plusieurs arrêts le même jour
+  ---
+  duration_ms: 3.087403
+  type: 'test'
+  ...
+# Subtest: Fenêtre de saison : veille, lendemain, plusieurs arrêts le même jour, monde inchangé
+not ok 2 - Fenêtre de saison : veille, lendemain, plusieurs arrêts le même jour, monde inchangé
+  ---
+  duration_ms: 27777.809681
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/continuer-arrets-saison.cjs:150:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    press_conference : Conférence invalide
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    call (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/helpers/carriere-monde.cjs:27:86)
+    apresMatch (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/helpers/carriere-monde.cjs:35:12)
+    Object.regler (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/helpers/carriere-monde.cjs:37:54)
+    Object.jouerLeMatch (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/helpers/carriere-monde.cjs:75:14)
+    parcours (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/continuer-arrets-saison.cjs:108:65)
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/continuer-arrets-saison.cjs:153:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: Saison complète : arrêts informatifs répartis, monde inchangé au 15/12
+ok 3 - Saison complète : arrêts informatifs répartis, monde inchangé au 15/12 # SKIP
+  ---
+  duration_ms: 0.150049
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 27787.023765
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/continuer-arrets-saison.cjs user_s=34.51 system_s=2.21 wall_s=28.12 cpu_pct=130% max_rss_kb=2428636
+::error file=tests/continuer-arrets-saison.cjs::Godot : ECHEC (1), durée 28 s, limite 300s
+::endgroup::
+::group::tests/continuer-evenement-monde.cjs
+13/07 → premier match en une commande : 68 jours, 20676 ms · Rencontre contre Meadowbridge Rovers aujourd’hui.
+arrêts : [["2026-07-20","decision"],["2026-07-27","decision"],["2026-08-03","a_noter"],["2026-08-15","a_noter"],["2026-08-16","arret"]] · tranches partielles : 29
+TAP version 13
+# Subtest: Règle d’arrêt : obligatoires jamais ignorés, réglages des messages et des blessures
+ok 1 - Règle d’arrêt : obligatoires jamais ignorés, réglages des messages et des blessures
+  ---
+  duration_ms: 3.263585
+  type: 'test'
+  ...
+# Subtest: Une seule commande : du 13/07 au jour du premier match
+not ok 2 - Une seule commande : du 13/07 au jour du premier match
+  ---
+  duration_ms: 33787.215638
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/continuer-evenement-monde.cjs:128:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    press_conference : Conférence invalide
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    call (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/helpers/carriere-monde.cjs:27:86)
+    apresMatch (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/helpers/carriere-monde.cjs:35:12)
+    Object.regler (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/helpers/carriere-monde.cjs:37:54)
+    Object.jouerLeMatch (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/helpers/carriere-monde.cjs:75:14)
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/continuer-evenement-monde.cjs:160:15)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Arrêt sur un rendez-vous obligatoire, refus tant qu’il n’est pas réglé
+ok 3 - Arrêt sur un rendez-vous obligatoire, refus tant qu’il n’est pas réglé
+  ---
+  duration_ms: 29775.688082
+  type: 'test'
+  ...
+# Subtest: Même graine : état et profil identiques à N « Jour suivant » successifs
+ok 4 - Même graine : état et profil identiques à N « Jour suivant » successifs
+  ---
+  duration_ms: 28953.893037
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 3
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 100602.54397
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/continuer-evenement-monde.cjs user_s=108.56 system_s=15.59 wall_s=100.94 cpu_pct=122% max_rss_kb=3143704
+::error file=tests/continuer-evenement-monde.cjs::Godot : ECHEC (1), durée 101 s, limite 300s
+::endgroup::
+::group::tests/godot-presse-rapide.cjs
+FAIL: Conférence d'arrivée : grand moment
+FAIL: Grand moment : 4 questions (0)
+FAIL: Salle de presse ouverte
+TAP version 13
+# Subtest: Conférence de presse rapide dans le jeu
+not ok 1 - Conférence de presse rapide dans le jeu
+  ---
+  duration_ms: 10490.842822
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-presse-rapide.cjs:14:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    FAIL: Conférence d'arrivée : grand moment
+    FAIL: Grand moment : 4 questions (0)
+    FAIL: Salle de presse ouverte
+    Presse rapide Godot · 3 échec(s) sur 5
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-presse-rapide.cjs:24:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10496.297903
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-presse-rapide.cjs user_s=12.03 system_s=0.91 wall_s=10.52 cpu_pct=123% max_rss_kb=919000
+::error file=tests/godot-presse-rapide.cjs::Godot : ECHEC (1), durée 10 s, limite 300s
+::endgroup::
+::group::tests/godot-presse-promesses.cjs
+FAIL: Question d'objectif proposée à l'arrivée
+TAP version 13
+# Subtest: Promesses publiques dans le jeu
+not ok 1 - Promesses publiques dans le jeu
+  ---
+  duration_ms: 10210.464748
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-presse-promesses.cjs:13:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    FAIL: Question d'objectif proposée à l'arrivée
+    Promesses publiques Godot · 1 échec(s) sur 2
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-presse-promesses.cjs:23:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10216.075174
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-presse-promesses.cjs user_s=11.79 system_s=0.84 wall_s=10.24 cpu_pct=123% max_rss_kb=927812
+::error file=tests/godot-presse-promesses.cjs::Godot : ECHEC (1), durée 10 s, limite 300s
+::endgroup::
+::group::tests/godot-reglage-conferences.cjs
+CD_REGLAGE avant clic : waiting=true dernière commande=league_benchmark
+CD_REGLAGE après clic : dialogue valide=true erreur= politique={ "ordinary": "adjoint", "notice": "Après-match et conférences d’événement : avec l’adjoint, Gabi les tient à ta place, sans arrêter l’avance. Rentrée, affiches, phases finales, bilan de saison et crise restent les tiennes." }
+CD_REGLAGE dialogue @FileDialog@153 
+CD_REGLAGE dialogue PreferencesDialog 
+FAIL: Conférence d'arrivée : grand moment
+FAIL: Réception : « Ouvrir la conférence » présent
+FAIL: Réception : l'arrivée reste à ouvrir en personne
+FAIL: Worker réel · press_conference · Rendez-vous du club : le rendez-vous avec la direction t’attend en Réception, avant de poursuivre.
+FAIL: Réglage « y aller » : Continuer s'arrête sur une conférence ordinaire (2026-09-14)
+FAIL: Réception : bascule présente sur une conférence ordinaire
+FAIL: Worker réel · press_delegate · Arrivée au club : la presse attend le manager en personne.
+FAIL: Avec l'adjoint : une conférence ordinaire tenue par Gabi pendant l'avance (0)
+TAP version 13
+# Subtest: Réglage des conférences ordinaires dans les Paramètres
+not ok 1 - Réglage des conférences ordinaires dans les Paramètres
+  ---
+  duration_ms: 38208.961828
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-reglage-conferences.cjs:13:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    SDK_CALENDAR_COMMAND reprise_decide { "decision": "amicaux", "option": "staff" }
+    SDK_CALENDAR_COMMAND reprise_decide { "decision": "stage", "option": "staff" }
+    CD_REGLAGE avant clic : waiting=true dernière commande=league_benchmark
+    CD_REGLAGE après clic : dialogue valide=true erreur= politique={ "ordinary": "adjoint", "notice": "Après-match et conférences d’événement : avec l’adjoint, Gabi les tient à ta place, sans arrêter l’avance. Rentrée, affiches, phases finales, bilan de saison et crise restent les tiennes." }
+    CD_REGLAGE dialogue @FileDialog@153 
+    CD_REGLAGE dialogue PreferencesDialog 
+    FAIL: Conférence d'arrivée : grand moment
+    FAIL: Réception : « Ouvrir la conférence » présent
+    FAIL: Réception : l'arrivée reste à ouvrir en personne
+    FAIL: Worker réel · press_conference · Rendez-vous du club : le rendez-vous avec la direction t’attend en Réception, avant de poursuivre.
+    FAIL: Réglage « y aller » : Continuer s'arrête sur une conférence ordinaire (2026-09-14)
+    FAIL: Réception : bascule présente sur une conférence ordinaire
+    FAIL: Worker réel · press_delegate · Arrivée au club : la presse attend le manager en personne.
+    FAIL: Avec l'adjoint : une conférence ordinaire tenue par Gabi pendant l'avance (0)
+    Réglage conférences Godot · 8 échec(s) sur 59
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-reglage-conferences.cjs:23:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38214.597078
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-reglage-conferences.cjs user_s=47.48 system_s=4.11 wall_s=38.24 cpu_pct=134% max_rss_kb=1740792
+::error file=tests/godot-reglage-conferences.cjs::Godot : ECHEC (1), durée 39 s, limite 300s
+::endgroup::
+::group::tests/godot-continuer.cjs
+Parcours quotidien Godot · 25 contrôles réussis
+CD_CONTINUER premier arrêt : {"days":7.0,"from":"2026-07-13","pressDelegated":0.0,"queued":0.0,"stop":{"detail":"Gabi attend le programme des matchs amicaux : choisis dans « La reprise » ou confie-la-lui.","kind":"decision","label":"Décision attendue"},"to":"2026-07-20"} en 557 ms
+Continuer Godot · 36 contrôles réussis
+ERROR: The process 27808 does not exist or is not a child of the calling process.
+TAP version 13
+# Subtest: Bouton principal « Continuer » et « Jour suivant » (règles d’interface)
+ok 1 - Bouton principal « Continuer » et « Jour suivant » (règles d’interface)
+  ---
+  duration_ms: 153.836005
+  type: 'test'
+  ...
+# Subtest: « Continuer » dans le jeu : panneau, arrêt motivé, « Arrêter », « Jour suivant » encore là
+ok 2 - « Continuer » dans le jeu : panneau, arrêt motivé, « Arrêter », « Jour suivant » encore là
+  ---
+  duration_ms: 22857.998129
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23016.880956
+CD_CPU_PROFILE suite=tests/godot-continuer.cjs user_s=23.70 system_s=2.37 wall_s=23.04 cpu_pct=113% max_rss_kb=1539580
+PASS tests/godot-continuer.cjs (23 s)
+::endgroup::
