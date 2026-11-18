@@ -1450,6 +1450,8 @@ func _lire_sortie(pas: float) -> void:
 	_sortie_t += pas
 	if avant < SORTIE_LARGE and _sortie_t >= SORTIE_LARGE and stage.has_method("sortir_du_terrain"):
 		stage.sortir_du_terrain(true)
+		# Coupe sur le plan serré : le bandeau descend sur la même image.
+		if bandeau != null and bandeau.visible: _placer_bandeau()
 		_noter_sortie({"marche_ms": Time.get_ticks_msec(), "plan_serre": bool(stage.get("plan_sortie"))})
 	if _sortie_t >= SORTIE_LARGE + SORTIE_MARCHE: _finir_sortie(false)
 
@@ -1603,10 +1605,16 @@ func montrer_bandeau(titre: String, nom: String, equipe: String, duree: float) -
 	_placer_bandeau()
 
 ## Sous le bandeau du score et la bande de commandes (zone libre de l'image), centré.
+## Sortie des joueurs en plan serré (18/11/2026, nuit) : le tunnel est en haut de l'image, sous la
+## tribune ; le bandeau descend dans la pelouse vide du bas (BANDEAU_SORTIE_BAS de la hauteur) pour
+## laisser voir les joueurs rentrer.
+const BANDEAU_SORTIE_BAS := 0.70
 func _placer_bandeau() -> void:
 	var hauteur := maxf(1.0, view.size.y)
 	var haut: float = (_espace.get_global_rect().position.y if is_instance_valid(_espace) else view.clock.get_global_rect().end.y) - view.get_global_rect().position.y + hauteur * 0.03
 	bandeau.reset_size()
+	if etat == SORTIE and _sortie_t >= SORTIE_LARGE:
+		haut = maxf(haut, hauteur * BANDEAU_SORTIE_BAS - bandeau.size.y * 0.5)
 	bandeau.position = Vector2(roundf((view.size.x - bandeau.size.x) * 0.5), roundf(haut))
 
 func _animer_bandeau(delta: float) -> void:

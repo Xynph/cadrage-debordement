@@ -487,6 +487,7 @@ func grands_moments(view: Control) -> Array:
 		var n: int = maxi(1, (s.departs as Dictionary).size())
 		check(int(s.marche) > 0 and rapproches >= int(n * 0.8), "%s : les joueurs marchent vers le tunnel (%d images, %d sur %d se rapprochent)" % [moment, int(s.marche), rapproches, n])
 		check(int(s.get("serre", 0)) == int(s.marche), "%s : la marche est montrée en plan serré qui suit les joueurs (%d sur %d images)" % [moment, int(s.get("serre", 0)), int(s.marche)])
+		check(int(s.get("bandeau_haut", 0)) == 0, "%s : pendant la marche, le bandeau ne cache pas le tunnel (%d images avec le bandeau en haut)" % [moment, int(s.get("bandeau_haut", 0))])
 	if sorties.has("mi-temps"): check(int(sorties["mi-temps"].retenue) > 0, "Mi-temps : la causerie attend la fin de la sortie")
 	check(sorties.has("mi-temps_causerie"), "La causerie de mi-temps s'ouvre après la sortie")
 	for moment: String in ["mi-temps", "fin"]:
@@ -539,6 +540,9 @@ func _observer_sortie(view: Control, regie: Node, live: Dictionary, sorties: Dic
 	if stage.sortie:
 		s.marche += 1
 		if bool(stage.get("plan_sortie")): s.serre = int(s.get("serre", 0)) + 1
+		# Plan serré : le bandeau descend dans la pelouse du bas, le tunnel (haut de l'image) reste visible.
+		if regie.bandeau != null and regie.bandeau.visible and (regie.bandeau as Control).get_global_rect().position.y < view.get_global_rect().position.y + view.size.y * 0.5:
+			s.bandeau_haut = int(s.get("bandeau_haut", 0)) + 1
 		for id: String in stage._actors:
 			var at: Vector3 = (stage._actors[id].node as Node3D).position
 			if not s.departs.has(id): s.departs[id] = at
