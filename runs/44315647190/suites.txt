@@ -1,0 +1,2 @@
+tests/godot-premiere-heure.cjs
+tests/godot-premiers-pas.cjs
