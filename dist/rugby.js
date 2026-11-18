@@ -191,13 +191,20 @@ function selectDisciplineIncident(roll=Math.random()){
  for(const incident of DISCIPLINE_INCIDENTS){threshold-=incident.weight;if(threshold<0)return incident}
  return DISCIPLINE_INCIDENTS.at(-1);
 }
+// Cartons (docs/cartons-realistes-20261118.md) : un Top 14 compte ~0,6 à 0,8 jaune par équipe et par match (~1,3 par
+// match) et un rouge tous les ~8 matchs. Avant : tout plaquage dangereux (10 % des pénalités) donnait un carton, et
+// trois fautes depuis le dernier carton ajoutaient 18 % à chaque pénalité suivante, sans oubli : ~2,6 jaunes par équipe.
+// Désormais : plaquage dangereux carton dans ~1 cas sur 5 (rouge pour ~1 sur 3 d'entre eux) ; fautes répétées = au moins
+// trois pénalités sans dix minutes de répit (avertissement de l'arbitre). Un seul tirage, comme avant.
+const CARTONS={dangereux:.22,rouge:.35,base:.006,discipline:.0005,repetees:.05};
 function disciplineDecision(l,foul,incident){
  const discipline=unit(l,foul,'discipline');
  const history=l.disciplineHistory?.[foul]||{count:0,recent:0};
  const repeated=history.recent>=3;
- const carte=typeof pilotageCard==='function'?pilotageCard(l):1,risk=clamp((.045+(65-discipline)*.0015+(repeated?.18:0)+(derbyRules(l)?DERBYS.match.carton:0))*carte,.02,.35);
- const sanction=incident.serious?(Math.random()<.18*carte?'red':'yellow'):(Math.random()<risk?'yellow':null);
- return {sanction,repeated};
+ const carte=typeof pilotageCard==='function'?pilotageCard(l):1,u=Math.random();
+ if(incident.serious){const p=CARTONS.dangereux*carte;return {sanction:u<p*CARTONS.rouge?'red':u<p?'yellow':null,repeated}}
+ const risk=clamp((CARTONS.base+(65-discipline)*CARTONS.discipline+(repeated?CARTONS.repetees:0)+(derbyRules(l)?DERBYS.match.carton:0))*carte,.005,.3);
+ return {sanction:u<risk?'yellow':null,repeated};
 }
 /* `options.incident` (pénalités réalistes) : faute de mêlée, de touche ou de l'attaquant au sol, au lieu de l'incident tiré ; `options.phase` sert à la mesure. Le bénéficiaire reprend le ballon s'il ne l'avait pas. */
 function awardPenalty(l,side,options={}){
@@ -208,6 +215,9 @@ function awardPenalty(l,side,options={}){
   const incident=PENALITES_INCIDENTS[options.incident]||selectDisciplineIncident(((l.minute*17+l.stats[foul].penalties*31)%100)/100);
   if(!l.disciplineHistory)l.disciplineHistory=[{count:0,recent:0},{count:0,recent:0}];
   const history=l.disciplineHistory[foul];
+  // Fautes répétées : dix minutes sans pénalité effacent l'avertissement.
+  if(Number.isFinite(history.last)&&l.minute-history.last>=10)history.recent=0;
+  history.last=l.minute;
   const decision=disciplineDecision(l,foul,incident);
   history.count++;history.recent++;
   addEvent(l,`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side,cause:incident.id});

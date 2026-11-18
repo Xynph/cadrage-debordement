@@ -102,6 +102,8 @@ budget() {
     tests/godot-engine.cjs) echo 600s ;;
     # Pilotage du match (#912) : carrière Monde + 11 séries de 160 matchs rejoués, 125-150 s en local ; 180 s dépassées en CI.
     tests/match-pilotage.cjs) echo 480s ;;
+    # Cartons réalistes (#912) : carrière Monde + 80 matchs rejoués, ~90 s en local.
+    tests/cartons-realistes.cjs) echo 420s ;;
     # Pénalité jouée à la main : 148 s de poids, au ras du cap de 180 s ; le crochet du pilotage dans skill() coûte ~5-10 % (#912).
     tests/match-penalite-main.cjs) echo 300s ;;
     # Fluidité des commandes (#711) : six carrières Monde au worker, 129 s de sous-tests + création ; 180 s dépassées en CI (PR #716).
