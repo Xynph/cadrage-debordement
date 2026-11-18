@@ -172,10 +172,14 @@ function factory(){
   const ecart=typeof levelGapChampionnat==='function'?levelGapChampionnat(gap+trap,f.competitionId):gap+trap;
   // Complaisance du favori (RELACHEMENT, dist/tactical-plans.js, comme le moteur complet) : au-delà de 3 points d'écart,
   // jour sans possible, tirage déterministe par rencontre ; le favori perd alors la moitié de l'écart (après compression).
+  // Même poids que dans le moteur complet (18/11/2026) : le résultat rapide réagit ×2,8 plus fort à un même écart de niveau
+  // (MATCH_LEVEL_CURVE.complet.piege, l'équivalence déjà retenue pour le match piège). À plein, il ajoutait 5 points de
+  // surprises à 15 points d'écart (9,9 % contre 4,9 % sans), quand le moteur complet n'en gagne que 0,6 (6,3 → 6,9 %,
+  // 3 000 matchs) : les deux moteurs ne suivaient plus la même courbe.
   let ecartJour=ecart;
   if(typeof RELACHEMENT!=='undefined'&&typeof relachementProbabilite==='function'){
    const d=Math.abs(gap),fav=gap>0?0:1,r=relachementProbabilite(d,relachementProMoyen(teams[fav].starters));
-   if(r>0&&relachementTire('relachement:'+f.id+':'+pair.join('-')+':'+s.season+':'+s.round,r))ecartJour+=(fav===0?-1:1)*relachementPoints(d);
+   if(r>0&&relachementTire('relachement:'+f.id+':'+pair.join('-')+':'+s.season+':'+s.round,r))ecartJour+=(fav===0?-1:1)*relachementPoints(d)/MATCH_LEVEL_CURVE.complet.piege;
   }
   const edge=clamp((ecartJour+home)/curve.diviseur,-curve.borne,curve.borne);
   const tries=[poisson(clamp(2.75*Math.exp(curve.essais*edge),.5,8)),poisson(clamp(2.75*Math.exp(-curve.essais*edge),.5,8))];

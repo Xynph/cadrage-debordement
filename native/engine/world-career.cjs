@@ -640,6 +640,10 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    if(!active(S))return oldCreate(pair,legacy,automated,preparation);
    const fixture=context(pair),match=createClubMatch(oldCreate,fixture,pair,legacy,automated,preparation);
    match.worldContext=fixture;
+   // Relâchement du favori (dist/tactical-plans.js) : tiré à la création, avant que la rencontre connaisse son
+   // calendrier ; la clé n'avait pas l'identifiant du match (même tirage pour toutes les affiches d'une paire et d'une
+   // journée, différent de celui du résultat rapide). On le retire une fois la rencontre rattachée à son match.
+   if(match.relachementVersion===1&&typeof initializeRelachement==='function'){delete match.relachementVersion;delete match.relachementRisque;initializeRelachement(match);}
    return match;
   };
  }
