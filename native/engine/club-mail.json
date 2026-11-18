@@ -690,6 +690,42 @@
         {"id": "econome", "libelle": "Consigne : sois plus économe", "effets": {"consigneDS": "econome"}, "resultat": "Le directeur sportif visera des profils moins exigeants et gardera une marge sur la masse salariale."},
         {"id": "equilibre", "libelle": "Consigne : reviens à l'équilibre", "effets": {"consigneDS": "equilibre"}, "resultat": "Le directeur sportif reprend sa ligne habituelle."}
       ]
+    },
+    "pret_actionnaire": {
+      "categorie": "direction", "declencheur": "pret_actionnaire", "priorite": 18, "intervalle": 300, "arret": true, "ecran": "Finances",
+      "expediteur": "Le président",
+      "formulations": [
+        {"sujet": "Je comble, mais tu me rembourseras", "corps": "Coach, la saison s'est terminée dans le rouge. Le groupe a comblé la perte, comme promis : {montant}. Mais cette fois, ce n'est pas un cadeau. C'est un prêt au club.\n\nLe club doit aujourd'hui {encours} à l'actionnaire. On remboursera {annuite} par saison, pendant {saisons} saisons : autant d'argent qui n'ira pas aux salaires.\n\n{proposition}\n\nÀ toi de me dire."},
+        {"sujet": "Le chèque de l'actionnaire est un prêt", "corps": "Le conseil a voté : l'actionnaire couvre les pertes de la saison passée ({montant}), mais sous forme de prêt. Le club lui doit {encours}, remboursés à raison de {annuite} par saison.\n\nConcrètement, ta marge pour les salaires sera plus courte pendant {saisons} saisons.\n\n{proposition}\n\nJe garde l'échéancier si tu ne dis rien."}
+      ],
+      "reponses": [
+        {"id": "accepter", "libelle": "Accepter le prêt et rembourser sur la durée", "effets": {"pret": "accepter"}, "resultat": "Le prêt est signé : le club remboursera chaque saison, et le président le rappellera au moment des recrues."},
+        {"id": "vendre", "libelle": "Vendre le joueur proposé pour rembourser tout de suite", "effets": {"pret": "vendre", "confiance": 2}, "resultat": "La vente est conclue : son prix rembourse le prêt de l'actionnaire, le président apprécie."}
+      ]
+    },
+    "proprietaire_arrivee": {
+      "categorie": "direction", "declencheur": "proprietaire_arrivee", "priorite": 16, "intervalle": 300, "arret": true, "ecran": "Club",
+      "expediteur": "Le nouvel actionnaire",
+      "formulations": [
+        {"sujet": "Le club change de mains", "corps": "Coach, je suis le nouveau propriétaire du club. J'ai racheté les parts du {ancien} et je compte investir sur ma fortune : le club devient un club de mécène.\n\nJe ne suis pas venu pour la Pro D2. Je veux voir le club grandir, et vite. Ma confiance, tu l'as pour l'instant ; elle se gagnera sur le terrain.\n\nDis-moi comment tu vois la suite."},
+        {"sujet": "Un nouveau propriétaire pour le club", "corps": "Coach, c'est signé : je rachète le club au {ancien}. À partir d'aujourd'hui, c'est mon argent qui couvrira les coups durs.\n\nJe n'ai pas investi pour regarder la Pro D2 depuis les tribunes. Je veux un club qui joue la montée. Tu gardes ma confiance, mais je jugerai sur pièces.\n\nQuel cap veux-tu qu'on affiche ?"}
+      ],
+      "reponses": [
+        {"id": "ambition", "libelle": "Partager l'ambition de la montée", "effets": {"confiance": 3, "pression": 3}, "resultat": "Le nouveau propriétaire repart conquis. La barre est placée haut."},
+        {"id": "patience", "libelle": "Demander du temps pour construire", "effets": {"confiance": -1, "pression": -2}, "resultat": "Il accepte, sans enthousiasme. Il attend des signes rapides."}
+      ]
+    },
+    "proprietaire_depart": {
+      "categorie": "direction", "declencheur": "proprietaire_depart", "priorite": 16, "intervalle": 300, "arret": true, "ecran": "Finances",
+      "expediteur": "Le président",
+      "formulations": [
+        {"sujet": "Le mécène se retire", "corps": "Coach, je préfère te l'annoncer moi-même : notre mécène se retire après {raison}. Le club passe à un {nouveau}.\n\nConcrètement, plus personne ne comblera les grosses pertes comme avant. Le budget de la saison sera tenu au plus juste et le conseil regardera chaque dépense.\n\nLe vestiaire va l'apprendre par la presse. Comment veux-tu qu'on gère ça ?"},
+        {"sujet": "Notre mécène s'en va", "corps": "Coach, mauvaise nouvelle : notre mécène se retire, après {raison}. Le club passe à un {nouveau}.\n\nFini les pertes comblées en fin de saison. Chaque euro compte désormais, et le conseil le fera savoir à chaque recrue.\n\nLes joueurs vont l'entendre ce soir. Que fait-on ?"}
+      ],
+      "reponses": [
+        {"id": "rassurer", "libelle": "Rassurer le vestiaire", "effets": {"moral": 3}, "resultat": "Le groupe reste concentré sur le terrain."},
+        {"id": "garanties", "libelle": "Demander des garanties au nouveau bureau", "effets": {"confiance": 2, "pression": 2}, "resultat": "Le bureau s'engage sur le budget de la saison, et attend des résultats en retour."}
+      ]
     }
   }
 }

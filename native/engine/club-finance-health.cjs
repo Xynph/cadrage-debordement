@@ -22,12 +22,13 @@ const HISTORIQUE = 3;
 
 const fini = x => typeof x === 'number' && Number.isFinite(x);
 
-function etiquette({ tresorerie, depart = tresorerie, reserve, dette = 0 }) {
+// pret : part de la dette due à l'actionnaire (club-owner.cjs) : elle pèse sur la caisse nette, sans rendre fragile à elle seule.
+function etiquette({ tresorerie, depart = tresorerie, reserve, dette = 0, pret = 0 }) {
   if (!fini(tresorerie)) return null;
   const caisse = Math.min(tresorerie, fini(depart) ? depart : tresorerie), d = fini(dette) && dette > 0 ? dette : 0;
   if (tresorerie < 0) return 'fragile';
   if (!(fini(reserve) && reserve > 0)) return caisse - d > 0 ? 'correcte' : 'fragile';
-  if (d > DETTE_TOLEREE * reserve) return 'fragile';
+  if (d - (fini(pret) && pret > 0 ? Math.min(pret, d) : 0) > DETTE_TOLEREE * reserve) return 'fragile';
   const r = (caisse - d) / reserve;
   return r >= SEUILS.riche ? 'riche' : r >= SEUILS.saine ? 'saine' : r >= SEUILS.correcte ? 'correcte' : 'fragile';
 }
@@ -40,8 +41,8 @@ function historiser(liste, saison, resultat) {
 }
 
 // Fiche d'un club pour l'interface : rien d'autre que l'étiquette, le propriétaire et la courbe.
-function fiche({ tresorerie, depart, reserve, dette, type, historique }) {
-  const e = etiquette({ tresorerie, depart, reserve, dette });
+function fiche({ tresorerie, depart, reserve, dette, pret, type, historique }) {
+  const e = etiquette({ tresorerie, depart, reserve, dette, pret });
   return {
     etiquette: e, libelle: e ? ETIQUETTES[e] : null,
     proprietaire: Object.hasOwn(PROPRIETAIRES, type ?? '') ? { type, libelle: PROPRIETAIRES[type] } : null,
@@ -64,7 +65,7 @@ function santeHistoriser(id,resultat,saison=S.season){if(!Number.isFinite(result
 function santeEntrees(id){
  const c=S.clubs[id],b=typeof budgetLisible==='function'&&budgetLisible(S.clubBudget)?S.clubBudget.clubs[id]:null;
  const info=typeof worldClub==='function'?worldClub(id):null;
- return {tresorerie:c?.cash,depart:b?.depart,reserve:b?.reserve,dette:info?.debt||0,type:b?.type,historique:S.clubFinances?.clubs?.[id]||[]};
+ return {tresorerie:c?.cash,depart:b?.depart,reserve:b?.reserve,dette:info?.debt||0,pret:typeof pretRestant==='function'?pretRestant(id):0,type:b?.type,historique:S.clubFinances?.clubs?.[id]||[]};
 }
 function santeFiche(id){return S&&S.clubs[id]?nativeClubHealth.fiche(santeEntrees(id)):null;}
 // Classement financier du championnat d'un club : du plus solide au plus fragile.

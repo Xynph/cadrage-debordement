@@ -43,7 +43,7 @@ function factory() {
   const pending = s => typeof CDPreseason !== 'undefined' && !!CDPreseason.pending(s);
   const todayOf = s => { try { return CDWorldCareer.calendarToday(s); } catch { return null; } };
   const STATUS = ['nouveau', 'repondu', 'classe', 'info'];
-  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'consigneDS', 'orientation'];
+  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation'];
   const ORIENTATION_LABELS = { equilibre: 'répartition proposée', installations: 'priorité aux installations', staff: 'priorité au staff', accueil: 'priorité à l’accueil' };
   const PLAN_LABELS = { repos: 'repos', normal: 'charge allégée', intense: 'charge intense', collective: 'séance collective' };
   const MODE_LABELS = { repos: 'récupération', normal: 'normal', intense: 'intense' };
@@ -344,6 +344,19 @@ function factory() {
       const v = typeof investCourrier === 'function' ? investCourrier() : null;
       return v ? [{ key: 'investissements:' + F.s.season, vars: v }] : [];
     },
+    // L'argent du propriétaire (club-owner.cjs) : prêt de l'actionnaire, changement de propriétaire du club joué.
+    pret_actionnaire(F) {
+      const v = typeof pretCourrier === 'function' ? pretCourrier() : null;
+      return v ? [{ key: 'pret:' + F.s.season, vars: v }] : [];
+    },
+    proprietaire_arrivee(F) {
+      const v = typeof proprietaireCourrier === 'function' ? proprietaireCourrier() : null;
+      return v && v.arrivee === 'oui' ? [{ key: 'arrivee:' + F.s.season, vars: v }] : [];
+    },
+    proprietaire_depart(F) {
+      const v = typeof proprietaireCourrier === 'function' ? proprietaireCourrier() : null;
+      return v && v.arrivee === 'non' ? [{ key: 'depart:' + F.s.season, vars: v }] : [];
+    },
     supporters_derby(F, t) {
       const g = F.playedOn(F.yesterday); if (!g || !F.derby(g.result.opp)) return [];
       const o = F.outcome(g.result), band = o === 'V' ? 'victoire' : o === 'D' ? 'defaite' : 'nul';
@@ -579,6 +592,8 @@ function factory() {
     if (Number.isFinite(e.caisse) && e.caisse) out.push((e.caisse > 0 ? 'Recette ' : 'Coût ') + euros(Math.abs(e.caisse)) + ' €');
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; out.push('Frais ' + euros(sx.frais || 1500) + ' € ; amende annulée ou portée à ' + euros(sx.alourdie || 7500) + ' €'); }
     if (e.orientation) out.push('Investissements : ' + (ORIENTATION_LABELS[e.orientation] || e.orientation));
+    if (e.pret === 'vendre') out.push('Vente immédiate, prix affecté au remboursement');
+    if (e.pret === 'accepter') out.push('Remboursement sur plusieurs saisons');
     if (e.suite) out.push('Suite dans ' + e.suite.jours + ' jours');
     if (e.contratDS === 'annuler') out.push('Il partira à la fin de son contrat ; prime remboursée');
     if (e.contratDS === 'forcer') out.push('Prolongation au salaire demandé');
@@ -595,6 +610,8 @@ function factory() {
     if (e.focus && s.collectivePrepVersion !== 1) return 'Préparation collective indisponible.';
     if (Number.isFinite(e.caisse) && e.caisse < 0 && (club.cash ?? 0) < -e.caisse) return 'Trésorerie insuffisante.';
     if (e.orientation && !(typeof investCourrier === 'function' && investCourrier())) return 'La répartition de cette saison est déjà arrêtée.';
+    if (e.pret === 'vendre') { const raison = typeof pretVenteRefus === 'function' ? pretVenteRefus() : 'Vente impossible.'; if (raison) return raison; }
+    if (e.pret === 'accepter' && !(typeof pretCourrier === 'function' && pretCourrier())) return 'Le président a déjà tranché.';
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; if ((club.cash ?? 0) < (sx.frais || 1500) + (sx.alourdie || 7500)) return 'Trésorerie insuffisante pour un appel.'; }
     if (e.promesse) {
       if (typeof satisfactionActive !== 'function' || !satisfactionActive() || s.phase !== 'league' || s.round > 23 || Object.keys(s.economy?.talks || {}).length || p.injury || p.satisfaction?.promise) return 'Promesse impossible : phase régulière, joueur apte et sans promesse en cours.';
@@ -657,6 +674,7 @@ function factory() {
     if (e.contratDS) check(dsContratsAction(e.contratDS, m.player) === true, 'décision refusée');
     if (e.consigneDS) check(dsContratsAction(e.consigneDS, m.player) === true, 'consigne refusée');
     if (e.orientation) check(investOrienter(e.orientation) === true, 'répartition refusée');
+    if (e.pret) check(pretRepondre(e.pret) === true, 'réponse au prêt refusée');
     if (Number.isFinite(e.caisse) && e.caisse) ledgerEntry('Courrier · ' + render(m).sujet.slice(0, 60), e.caisse);
     if (e.appel) {
       const sx = TYPES.discipline?.seuils || {}, favorable = hash(m.id + ':' + s.club + ':appel') % 2 === 0;

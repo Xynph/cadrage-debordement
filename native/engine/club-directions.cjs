@@ -207,7 +207,7 @@ module.exports=function clubDirections(T,N){
   const young=c.players.filter(p=>p.age<=22).length/Math.max(1,c.players.length);
   const cashMedian=Math.max(1,median(peers.map(x=>x.cash)));
   return {lg,n:peers.length,played,rank,gap:rank-(d.objective??rank),losses,wins,cash:c.cash,cashRatio:c.cash/cashMedian,payroll,limit,room:(limit-payroll)/Math.max(1,limit),
-   debt:info.debt||0,facilities:info.facilities??2,coreAge,young,repGap:reputation(c)-median(peers.map(reputation)),
+   debt:(typeof detteDeCrise==='function'?detteDeCrise(c.id):info.debt)||0,facilities:info.facilities??2,coreAge,young,repGap:reputation(c)-median(peers.map(reputation)),
    promoted:d.moved===1&&d.movedSeason===S.season,relegated:d.moved===-1&&d.movedSeason===S.season,danger:played>=5&&rank>=peers.length-1};
  }
  // Score de chaque stratégie : situation réelle × traits de la direction.
@@ -257,7 +257,7 @@ module.exports=function clubDirections(T,N){
    if(c.id===S.club)continue;
    syncCoach(c,x);
    // Président : reprise après une crise, ou passage de relais.
-   const crisis=(worldClub(c.id)?.debt||0)>0||c.cash<500000;
+   const crisis=(typeof detteDeCrise==='function'?detteDeCrise(c.id):(worldClub(c.id)?.debt||0))>0||c.cash<500000;
    const takeover=crisis?roll('takeover',c.id,S.season)<.3:roll('takeover',c.id,S.season)<.04+(x.confidence<25?.08:0);
    if(takeover&&S.season>1){
     const investor=roll('investor',c.id,S.season)<(crisis?.35:.5);
