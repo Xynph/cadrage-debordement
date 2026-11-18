@@ -991,8 +991,8 @@ static func _settle_reading(scroll: ScrollContainer, footer: Control, limit: flo
 	if not is_instance_valid(scroll) or not is_instance_valid(footer) or scroll.get_child_count() == 0: return
 	var content := scroll.get_child(0) as Control
 	var missing := content.get_combined_minimum_size().y + 4.0 - scroll.size.y
-	var free := limit - (footer.position.y + footer.size.y)
-	var grow := minf(missing, free)
+	var spare := limit - (footer.position.y + footer.size.y)
+	var grow := minf(missing, spare)
 	if grow <= 0.5: return
 	scroll.size.y += grow
 	footer.position.y += grow
