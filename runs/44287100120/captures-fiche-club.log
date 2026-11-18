@@ -1,0 +1,17 @@
+Fiche club (Godot) : 1080p {"effectif":52,"effectif_textes":210,"stats_textes":184,"vue_textes":111,"xv":15,"xv_textes":152} · 720p {"effectif":52,"effectif_textes":210,"stats_textes":184,"vue_textes":111,"xv":15,"xv_textes":152} · captures : /home/runner/work/_temp/resultats/captures/fiche-club
+TAP version 13
+# Subtest: Fiche club (Godot, Monde) : classement et recherche, onglets, XV type, club du manager, 1080p et 720p
+ok 1 - Fiche club (Godot, Monde) : classement et recherche, onglets, XV type, club du manager, 1080p et 720p
+  ---
+  duration_ms: 111637.427476
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 111645.966469
