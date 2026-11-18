@@ -143,7 +143,7 @@ if (process.env.CD_AVANT_MATCH_DUMP) console.log(JSON.stringify({ premier, am },
 test('Arbitre : désigné avec les mêmes fixtureId et competitionId que le direct, clé de Gabi seulement si ruck 4/5 ou plus', () => {
   const attendu = etat(`arbitreDuMatch(${JSON.stringify(S.fixture.id)},${JSON.stringify(S.fixture.competitionId)})`);
   assert.ok(am.arbitre, 'arbitre présent');
-  assert.deepEqual(am.arbitre, { nom: attendu.nom, pays: attendu.pays, rucks: attendu.rucks, melee: attendu.melee, horsJeu: attendu.horsJeu, cartons: attendu.cartons, resume: attendu.resume });
+  assert.deepEqual(am.arbitre, { nom: attendu.nom, civilite: attendu.civilite, pays: attendu.pays, rucks: attendu.rucks, melee: attendu.melee, horsJeu: attendu.horsJeu, cartons: attendu.cartons, resume: attendu.resume });
   assert.equal(am.gabi.cles.length, 3);
   if (attendu.rucks < 4) assert.ok(!am.gabi.cles.some(c => /siffle beaucoup les rucks/.test(c.titre)), 'pas de clé arbitre sans tendance forte');
 });
