@@ -19,7 +19,8 @@
  "etageScale": { "elite": 2.5, "prem": 3.5, "urc": 2.5, "srp": 2, "jlo-d1": 2.25, "accession": 2, "jlo-d2": 2.5, "nationale": 2, "champ": 3 },
  "rangEtage": 1,
  "rangEtageNote": "Rang réel du club dans son championnat (world-niveaux-v2.json → ordre) : les clubs d’un même étage s’étalent sur toute la largeur de l’étage (1 = un point d’étage), du plus fort au plus faible, avant le facteur etageScale (18/11/2026).",
- "etageScaleBas": { "accession": 1, "prem": 5, "urc": 5.5, "jlo-d1": 5, "jlo-d2": 5, "champ": 4.5 },
+ "etageScaleBas": { "accession": 2, "prem": 7, "urc": 5.5, "jlo-d1": 5, "jlo-d2": 5, "champ": 4.5 },
+ "etageScaleBasNote": "Bas de tableau (étages bas et relégable) : Pro D2 1 → 2 et Premiership 5 → 7 le 18/11/2026 (docs/top14-dispute-20261117.md §15) ; derniers à 8,5 et 3,4 victoires sur 10 saisons, contre 7 (Pro D2 2024-25) et 0 à 2 (Premiership).",
  "residual": { "known": 2, "unknown": 2.8, "limit": 7, "outsideEliteCeiling": 84, "classCenter": 0.4, "classSpread": 0.2, "youngInternational": 2 },
  "age": { "seniorFrom": 23, "youngPerYear": 1.5, "veteranFrom": 33, "veteranPerYear": 1 },
  "potential": {

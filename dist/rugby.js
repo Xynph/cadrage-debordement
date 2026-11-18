@@ -140,7 +140,9 @@ const MATCH_LEVEL_CURVE=Object.freeze({version:2,cible:Object.freeze({pente:.183
 // de ce championnat (coupes, sélections et autres championnats : 1). Top 14 et Pro D2 : la victoire à domicile y est
 // la règle et les succès à l'extérieur rares, nettement plus qu'en Premiership ou en URC ; à 1, le Top 14 mesuré ne
 // donnait que 56-61 % de victoires à domicile et un leader à 21-23 victoires sur 26 (docs/top14-dispute-20261117.md).
-const TERRAIN_CHAMPIONNAT=Object.freeze({elite:1.7,accession:1.7});
+// Top 14 ×2,1 depuis le 18/11/2026 (§15) : 74 % de victoires à domicile comme en 2024-25 (×1,7 : 67 %) ; le leader perd
+// enfin à l'extérieur (Toulouse 7,2 → 5,8 victoires en déplacement sur 13).
+const TERRAIN_CHAMPIONNAT=Object.freeze({elite:2.1,accession:1.7});
 function terrainFactor(competitionId){return TERRAIN_CHAMPIONNAT[competitionId]??1}
 function matchTrapOffset(gap,rnd=Math.random){const c=MATCH_LEVEL_CURVE.piege,d=Math.abs(Number(gap)||0),q=Math.min(c.max,c.parPoint*(d-c.seuil));if(!(q>0)||rnd()>=q)return 0;return -Math.sign(gap)*c.part*d}
 function teamLevel(players){const c=MATCH_LEVEL_CURVE.forme,list=(players||[]).filter(Boolean);return list.length?mean(list.map(p=>(Number(p.rating)||50)*(c[0]+clamp(Number(p.condition)||80,0,100)*c[1]))):40}
