@@ -6,8 +6,14 @@ const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
 const Kit = preload("res://ui/creation_options/kit.gd")
+const Defis = preload("res://ui/creation_options/defis.gd")
 
 static func build(app: Control, parent: Node, selected: Dictionary, data: Dictionary, state: String) -> void:
+	# Défi de départ choisi : le président fixe l'objectif du défi (le moteur le posera à la création).
+	var defi := Defis.choix(app, int(selected.get("id", -1)))
+	if not defi.is_empty():
+		selected = selected.duplicate()
+		selected.goal = str(defi.objectif)
 	var column := Kit.block(parent, "CreationPresidentWord", "", 1.0, false, Kit.SURFACE, 0)
 	column.add_theme_constant_override("separation", C.px(10))
 	# Bandeau photo : bureau de la direction, titre en haut, silhouette et nom du président en bas.
@@ -82,6 +88,13 @@ static func build(app: Control, parent: Node, selected: Dictionary, data: Dictio
 	mark.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	quote.add_child(mark)
 	var welcome := C.wrap(welcome_text(selected), 20, C.IVORY)
+	if not defi.is_empty():
+		var bandeau := C.label("Défi · %s   %s %s" % [defi.titre, Defis.etoiles(int(defi.difficulte)), defi.niveau], 18, Editorial.RAIL_GOLD, true, 700)
+		bandeau.name = "CreationPresidentChallenge"
+		bandeau.tooltip_text = str(defi.raison)
+		bandeau.mouse_filter = Control.MOUSE_FILTER_PASS
+		text.add_child(bandeau)
+		text.move_child(bandeau, 0)
 	welcome.name = "CreationPresidentWelcome"
 	quote.add_child(C.fill(welcome))
 	text.add_child(C.rule())
@@ -124,6 +137,8 @@ static func welcome_text(club: Dictionary) -> String:
 		"Top 6": parts.append("Une place dans les six qualifiés, voilà ce qu’attend le conseil.")
 		"Top 8": parts.append("Viser la première moitié du tableau, et faire grandir le groupe.")
 		"Maintien": parts.append("D’abord le maintien. Le reste viendra, avec du travail.")
+		"Viser la montée": parts.append("Ici, on veut monter. Pas dans trois ans : cette saison.")
+		"Phases finales": parts.append("Les phases finales, voilà le cap. Avec nos moyens, il faudra être malins.")
 		_: parts.append("Le conseil compte sur toi pour faire grandir le projet sportif.")
 	if base >= 82: parts.append("On sait recevoir, alors fais honneur à la maison.")
 	elif base > 0 and base <= 68: parts.append("On n’a pas les moyens des gros, on aura le cœur.")

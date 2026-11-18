@@ -47,6 +47,17 @@ static func build(app: Control, parent: Node, selected: Dictionary, choosable: b
 	var speech := C.wrap("", 20, C.IVORY)
 	speech.name = "CreationGabiSpeech"
 	bubble.add_child(speech)
+	# « Je connais déjà » : pas d'explications d'écran pendant les deux premières semaines (guide/gabi_accueil.gd).
+	var connu := CheckBox.new()
+	connu.name = "CreationGabiConnu"
+	connu.text = "Je connais déjà le jeu : pas d’explications au premier passage"
+	connu.button_pressed = bool(app.management_ui.get("creation_connu", false))
+	connu.tooltip_text = "Sinon, les deux premières semaines, je t’explique chaque écran clé en deux phrases, avec un bouton pour agir."
+	connu.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
+	connu.add_theme_color_override("font_color", C.MUTED)
+	connu.add_theme_color_override("font_pressed_color", C.IVORY)
+	connu.toggled.connect(func(valeur: bool) -> void: app.management_ui["creation_connu"] = valeur)
+	side.add_child(connu)
 	var own := str(selected.get("division", ""))
 	var refresh := func(start: String) -> void:
 		speech.text = text(app, own, catalogue, start if choosable else "", bool(app.management_ui.get("creation_vary_current", true)))

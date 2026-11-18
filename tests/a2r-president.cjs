@@ -187,6 +187,18 @@ test('Moteur Monde : audition de juin, mesures, courrier, apport, appel, échéa
   } finally { jeu.fermer(); }
 });
 
+test('Président : tempérament des clubs gérés (4 à 8 mois entre deux interventions)', () => {
+  const v = Array.from({ length: 116 }, (_, i) => P.espacement(i));
+  assert.ok(v.every(x => x >= 120 && x <= 240)); assert.ok(new Set(v).size > 20);
+  assert.equal(P.espacement(7), P.espacement(7));
+  const base = { avant: 2e6, apres: 0.5e6, reserve: 1e6, date: '2027-03-01', derniere: '2026-10-01' };
+  assert.equal(P.declenche(base), true);
+  assert.equal(P.declenche({ ...base, delai: 240 }), false);
+  const joueurs = Array.from({ length: 20 }, (_, i) => ({ id: 'p' + i, note: 80 - i, salaire: 1000 + i, valeur: 1000, bloque: false }));
+  assert.equal(P.designer(joueurs, { manque: 1e9, max: P.DESIGNES_IA }).length, 2);
+  assert.equal(P.designer(joueurs, { manque: 1e9 }).length, 3);
+});
+
 test('Moteur Monde : le président désigne des ventes, un seul courrier, vend à l’échéance ou renonce', { timeout: 170000 }, () => {
   const jeu = ouvrir({ hebdomadaire: true, testVm: true });
   try {
@@ -230,9 +242,16 @@ test('Moteur Monde : le président désigne des ventes, un seul courrier, vend �
       return {e0,e1:S.presidentReprise.clubs[c.id].echeance,r1:r1.ok,r2:repriseRefus('delai')};})()`);
     assert.equal(d.e1, P.decaler(d.e0, P.RALLONGE)); assert.equal(d.r1, true); assert.match(d.r2, /déjà accordé/);
     // Club géré : même règle, la direction passe en « vente » tant que le président attend.
-    const ia = lire(`(()=>{const c=S.clubs.find(x=>x.id!==S.club&&budgetLigue(x.id)==='elite');const res=S.clubBudget.clubs[c.id].reserve;c.cash=res-2e6;
-      const ok=repriseApresAchat(c,res+1e6);return {ok,vente:repriseIAVente(c.id),joue:repriseIAVente(S.club)};})()`);
-    assert.deepEqual(ia, { ok: true, vente: true, joue: false });
+    // Allègement : un club géré seulement un peu sous sa réserve (pas « Fragile ») se débrouille seul.
+    const epargne = lire(`(()=>{const c=S.clubs.filter(x=>x.id!==S.club&&budgetLigue(x.id)==='elite')[1];const res=S.clubBudget.clubs[c.id].reserve;
+      c.cash=res*0.9;const ok=repriseApresAchat(c,res*1.2);return {ok,etiquette:santeFiche(c.id).etiquette};})()`);
+    assert.equal(epargne.ok, false); assert.notEqual(epargne.etiquette, 'fragile');
+    // Club « Fragile » : la direction passe en « vente » tant que le président attend ; au plus deux joueurs désignés.
+    const ia = lire(`(()=>{const c=S.clubs.find(x=>x.id!==S.club&&budgetLigue(x.id)==='elite');const res=S.clubBudget.clubs[c.id].reserve;c.cash=-5e5;
+      const ok=repriseApresAchat(c,res+1e6);return {ok,vente:repriseIAVente(c.id),joue:repriseIAVente(S.club),n:S.presidentReprise.clubs[c.id]?.joueurs.length,id:c.id,
+        retour:(()=>{const p=S.presidentReprise.clubs[c.id];p.etat='vendu';c.cash=-6e5;return repriseApresAchat(c,res);})()};})()`);
+    assert.equal(ia.ok, true); assert.equal(ia.vente, true); assert.equal(ia.joue, false);
+    assert.ok(ia.n >= 1 && ia.n <= P.DESIGNES_IA); assert.equal(ia.retour, false, 'tempérament : pas de retour avant 4 à 8 mois');
     assert.equal(lire('nativePresidentReprise.valide(S.presidentReprise)'), true);
   } finally { jeu.fermer(); }
 });

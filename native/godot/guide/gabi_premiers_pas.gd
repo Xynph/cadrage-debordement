@@ -2,6 +2,7 @@ extends RefCounted
 ## « Premiers pas » : pendant la pré-saison d'une carrière Monde, Gabi propose quelques objectifs concrets, un à la
 ## fois, chacun avec un bouton qui mène au bon écran. Chaque objectif se coche quand le joueur a réellement agi :
 ##  - « conseil » : il a ouvert le Club (objectifs de la saison) ;
+##  - « amicaux » : le programme des matchs amicaux est arrêté (par lui, ou confié à Gabi) — lu dans le modèle ;
 ##  - « stage » : le stage de préparation est arrêté (par lui, ou confié à Gabi) — lu dans le modèle ;
 ##  - « composition » : une vraie commande de composition a été acceptée (set_lineup, auto_lineup) ;
 ##  - « recrutement » : il a ouvert le Recrutement.
@@ -13,7 +14,7 @@ const Avis = preload("res://guide/gabi_avis.gd")
 const Semaine = preload("res://guide/gabi_semaine.gd")
 
 const CLE := "premiers_pas"
-const ORDRE := ["conseil", "stage", "composition", "recrutement"]
+const ORDRE := ["conseil", "amicaux", "stage", "composition", "recrutement"]
 ## Objectifs dont l'événement est observé dans l'interface (le stage se lit dans le modèle).
 const VUS := ["conseil", "composition", "recrutement"]
 const FINS := ["", "termine", "masque"]
@@ -58,11 +59,11 @@ static func avant_premiere_journee(model: Dictionary) -> bool:
 static func visible(model: Dictionary, donnees: Dictionary) -> bool:
 	return str(etat(donnees).fin).is_empty() and avant_premiere_journee(model)
 
-static func _stage(model: Dictionary) -> Variant:
+static func _stage(model: Dictionary, cle: String = "stage") -> Variant:
 	var reprise: Variant = model.get("clubLife", {}).get("reprise") if model.get("clubLife") is Dictionary else null
 	if not reprise is Dictionary or not reprise.get("decisions") is Array: return null
 	for decision: Variant in reprise.decisions:
-		if decision is Dictionary and decision.get("key") == "stage": return decision
+		if decision is Dictionary and decision.get("key") == cle: return decision
 	return null
 
 static func _poste_faible(model: Dictionary) -> String:
@@ -86,6 +87,15 @@ static func objectifs(model: Dictionary, donnees: Dictionary) -> Array:
 				objectif.texte = "Avant de toucher à quoi que ce soit, regarde ce que le conseil attend de toi cette saison. C'est au Club."
 				objectif.libelle = "Voir les objectifs"
 				objectif.action = {"type": "ecran", "route": "Club"}
+			"amicaux":
+				var programme: Variant = _stage(model, "amicaux")
+				if programme == null: continue
+				fait = programme.get("selected") != null
+				objectif.fait = fait
+				objectif.titre = "Les matchs amicaux"
+				objectif.texte = "Avant la reprise, on fixe les amicaux : peu, pour garder du jus, ou beaucoup, pour lancer les jeunes. Choisis, ou laisse-moi faire."
+				objectif.libelle = "Choisir les amicaux"
+				objectif.action = {"type": "reprise"}
 			"stage":
 				var decision: Variant = _stage(model)
 				if decision == null: continue

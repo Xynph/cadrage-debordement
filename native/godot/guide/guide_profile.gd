@@ -1,6 +1,7 @@
 extends RefCounted
 const Content = preload("res://guide/guide_content.gd")
 const PremiersPas = preload("res://guide/gabi_premiers_pas.gd")
+const Accueil = preload("res://guide/gabi_accueil.gd")
 const AtomicFileStore = preload("res://atomic_file.gd")
 const LIMIT := 65536
 var data: Dictionary = {"version":1,"enabled":true,"muted":false,"voice":"","rate":1.0,"step":"bienvenue","completed":[],"seen":[],"events":[]}
@@ -46,6 +47,7 @@ func _valid(value: Variant) -> bool:
 		if not id is String or id not in Content.CONTEXT_PAGES or seen.has(id): return false
 		seen[id] = true
 	if value.has(PremiersPas.CLE) and not PremiersPas.valide(value[PremiersPas.CLE]): return false
+	if value.has(Accueil.CLE) and not Accueil.valide(value[Accueil.CLE]): return false
 	if not value.get("events", []) is Array or value.get("events", []).size() > EVENT_LIMIT: return false
 	seen.clear()
 	var pattern := RegEx.new()
