@@ -35,8 +35,28 @@ function ouvrir(options = {}) {
     return call('press_conference', { context: press.context, answers: c.questions.map(q => ({ questionId: q.id, answerId: (q.answers.find(a => a.tone === 'cautious') || q.answers[0]).id })), ...(typeof c.invitationId === 'string' ? { invitationId: c.invitationId } : {}) });
   };
   const regler = model => confier(settleClubMeetings(apresMatch(model), call));
+  // Comme `regler`, mais laisse intacte la conférence de presse (ouverte ou en rendez-vous) : pour les tests qui
+  // doivent la tenir eux-mêmes. Règle les décisions de reprise et les rendez-vous direction / médical qui la précèdent.
+  const reglerSaufPresse = model => {
+    for (let n = 0; n < 40; n++) {
+      model = confier(model);
+      const scene = model?.clubLife?.clubMeetings?.scene;
+      if (!scene || scene.kind === 'press') return model;
+      if (!scene.completed) {
+        if (scene.ackAllowed) model = call('club_meeting_ack', { meetingId: scene.id });
+        else {
+          const medical = model.clubLife.clubSupport?.medical, player = medical?.players.find(row => row.id === scene.playerId);
+          assert.ok(medical?.available && player, 'rendez-vous médical : joueur blessé attendu');
+          model = call('medical_protocol', { context: scene.context, id: player.id, protocol: player.protocol });
+        }
+      }
+      const fait = model.clubLife?.clubMeetings?.scene;
+      if (fait?.completed) model = call('club_meeting_continue', { meetingId: fait.id });
+    }
+    assert.fail('rendez-vous du club hors presse : file trop longue');
+  };
   return {
-    brut, call, regler, dataDir, bridge,
+    brut, call, regler, reglerSaufPresse, dataDir, bridge,
     fermer: () => { try { bridge.close(); } catch (e) { /* déjà fermé */ } if (!options.dataDir) fs.rmSync(dataDir, { recursive: true, force: true }); },
   };
 }

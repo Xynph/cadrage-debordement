@@ -1,9 +1,11 @@
 extends SceneTree
 ## Conférence de presse rapide dans le vrai jeu (Godot réel + worker réel, carrière Monde au 13 juillet 2026).
-## 1. Grand moment (arrivée) : 4 questions, tons et effets visibles, adjoint refusé ; un clic par question (la
-##    suivante s'affiche d'elle-même), « Publier », bilan des trois conséquences, « Continuer ».
-## 2. Conférence ordinaire suivante (atteinte par « Continuer ») : 3 questions au plus, réglage « Envoyer l'adjoint »,
-##    puis « Envoyer mon adjoint » : deux clics en tout (adjoint, Continuer).
+## Calendrier de presse façon FM (18/11/2026) : aucune conférence à la création de la carrière.
+## 1. Grand moment (la rentrée, ouverte le lundi de la semaine du 1er match, atteinte par « Continuer ») : 4 questions,
+##    tons et effets visibles, adjoint refusé ; un clic par question (la suivante s'affiche d'elle-même), « Publier »,
+##    bilan des trois conséquences, « Continuer ».
+## 2. Conférence ordinaire : l'après-match du 1er match (3 questions au plus), réglage « Envoyer l'adjoint », puis
+##    « Envoyer mon adjoint » : deux clics en tout (adjoint, Continuer).
 ## CD_PRESSE_CAPTURES=<dossier> : captures 1920×1080 (rendu fenêtré requis).
 const Flow = preload("helpers/contextual_flow.gd")
 var app: Control
@@ -85,7 +87,11 @@ func run() -> void:
 	app.timer.stop()
 	await command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"})
 	if is_instance_valid(app.coach): app.coach.close()
-	# 1. Arrivée : grand moment.
+	# 1. Arrivée : grand moment, ouverte en avançant jusqu'à la semaine du 1er match (rien à la création de la carrière).
+	check(not press().get("conference", {}).get("available", false), "Aucune conférence à la création de la carrière")
+	var arrived: bool = await Flow.reach_press_conference(app, self, check)
+	check(arrived, "La conférence d'arrivée s'ouvre en avançant (" + str(app.model.get("meta", {}).get("calendarToday", "")) + ")")
+	if not arrived: return finish()
 	var conference: Dictionary = press().get("conference", {})
 	check(conference.get("available", false) and conference.get("moment") is Dictionary, "Conférence d'arrivée : grand moment")
 	var questions: Array = conference.get("questions", [])
@@ -119,17 +125,13 @@ func run() -> void:
 	if await click("PressReturn"): clicks += 1
 	check(clicks == questions.size() + 2, "Parcours complet en %d clics (questions + publier + continuer)" % clicks)
 	print("CD_PRESSE grand moment : ", clicks, " clics pour ", questions.size(), " questions")
-	# 2. Conférence ordinaire suivante, atteinte avec « Continuer ».
-	var reached := false
-	for attempt in 12:
-		await Flow.settle_club_meetings(app, self, check, "press")
-		if press().get("conference", {}).get("available", false): reached = true; break
-		if not await command("advance_until_event", {"fromDate": str(app.model.get("meta", {}).get("calendarToday", ""))}): break
-		var cadence: Dictionary = app.model.get("meta", {}).get("calendarCadence", {})
-		if cadence.get("matchReady", false): break
-	check(reached, "Une conférence ordinaire s'ouvre (" + str(app.model.get("meta", {}).get("calendarToday", "")) + ")")
-	if not reached: return finish()
-	conference = press().conference
+	# 2. Conférence ordinaire : l'après-match du 1er match, ouvert dès la validation du résultat.
+	var played: bool = await Flow.play_to_result(app, self, check)
+	check(played, "Le 1er match est joué jusqu'au résultat (" + str(app.model.get("meta", {}).get("calendarToday", "")) + ")")
+	if not played: return finish()
+	conference = press().get("conference", {})
+	check(conference.get("available", false) and str(press().get("context", {}).get("slot", "")) == "apres", "Une conférence d'après-match s'ouvre (" + str(app.model.get("meta", {}).get("calendarToday", "")) + ")")
+	if not conference.get("available", false): return finish()
 	questions = conference.get("questions", [])
 	check(not conference.get("moment") is Dictionary and questions.size() >= 2 and questions.size() <= 3, "Ordinaire : 3 questions au plus (%d)" % questions.size())
 	if not await open_room(): return finish()
