@@ -22,6 +22,7 @@ const Avis = preload("res://guide/gabi_avis.gd")
 const Semaine = preload("res://guide/gabi_semaine.gd")
 const Medaillon = preload("res://guide/gabi_medaillon.gd")
 const PremiersPas = preload("res://guide/gabi_premiers_pas.gd")
+const Accueil = preload("res://guide/gabi_accueil.gd")
 const ACCENT = Color("176e49")
 const FOND = Color("10241b")
 ## Bulle spontanée (première visite d'un écran, conseil de composition) : au plus une par jour de jeu.
@@ -94,6 +95,8 @@ var _ecartes: Dictionary = {}
 var _contexte_examine := ""
 ## Moment clé affiché (clé du profil) : rendu s'il est interrompu par une fenêtre ou un écran bloquant.
 var _moment_courant := ""
+## Deux premières semaines (gabi_accueil.gd) : réexamen périodique de l'écran quand la bulle est libre.
+var _accueil_attente := 0.0
 
 func _make_portrait() -> TextureRect:
 	var model := GabiPortrait.load_model()
@@ -512,7 +515,18 @@ func _montrer(contenu: Dictionary) -> void:
 			row.remove_child(child); child.queue_free()
 	_bulle_suivre = null
 	var action: Dictionary = contenu.get("action", {}) if contenu.get("action") is Dictionary else {}
-	if not action.is_empty():
+	var actions: Array = contenu.get("actions", []) if contenu.get("actions") is Array else []
+	# Deux premières semaines : actions directes de l'écran, puis « Compris ».
+	if contenu.get("genre") == "accueil":
+		for index in actions.size():
+			var une: Dictionary = actions[index]
+			var bouton := _button(_bulle_actions, str(une.get("libelle", "Allons-y")), "GabiAccueilAction%d" % index, suivre_conseil.bind(une))
+			_primary(bouton, index == 0)
+			bouton.disabled = app.waiting
+			if index == 0: _bulle_suivre = bouton
+		var compris := _button(_bulle_actions, "Compris", "GabiAccueilCompris", fermer_bulle)
+		_primary(compris, actions.is_empty())
+	elif not action.is_empty():
 		_bulle_suivre = _button(_bulle_actions, str(action.get("libelle", "Suivre le conseil")), "GabiSuivreConseil", suivre_conseil)
 		_primary(_bulle_suivre, true)
 		_bulle_suivre.disabled = app.waiting or not app._live().is_empty()
@@ -528,7 +542,9 @@ func _montrer(contenu: Dictionary) -> void:
 			_layout_bulle()
 			call_deferred("_layout_bulle"))
 	_bulle_actions.visible = _bulle_actions.get_child_count() > 0
-	if contenu.get("genre") != "fait":
+	if contenu.get("genre") == "accueil":
+		_button(_bulle_menu, "Aide de l'écran", "GabiMenuAide", func(): fermer_bulle(); open_help())
+	elif contenu.get("genre") != "fait":
 		# « Ton avis, Gabi ? » sur chaque écran : sans avis propre à l'écran, Gabi répond par sa visite guidée.
 		if contenu.get("genre") != "avis":
 			_button(_bulle_menu, "Ton avis, Gabi ?", "GabiMenuAvis", demander_avis)
@@ -538,7 +554,7 @@ func _montrer(contenu: Dictionary) -> void:
 	_bulle_menu.get_parent().get_node("GabiBulleTrait").visible = _bulle_menu.visible and _bulle_actions.visible
 	var was_open := _bulle.visible
 	_bulle.show()
-	_bulle_reste = (BULLE_DUREE + _bulle_texte.text.length() * BULLE_PAR_CARACTERE) * (BULLE_ACTION if not action.is_empty() else 1.0)
+	_bulle_reste = (BULLE_DUREE + _bulle_texte.text.length() * BULLE_PAR_CARACTERE) * (BULLE_ACTION if not action.is_empty() or not actions.is_empty() else 1.0)
 	_layout_bulle()
 	call_deferred("_layout_bulle")
 	if not was_open: _descendre()
@@ -733,6 +749,19 @@ func suivre_conseil(action_: Dictionary = {}) -> void:
 	if action.is_empty() or app.waiting or not app._live().is_empty(): return
 	_file.clear()
 	match str(action.get("type", "")):
+		"courrier":
+			fermer_bulle()
+			if str(app.route) != "Réception": app._navigate("Réception")
+			if not load("res://ui/immersive08/reception_canvas.gd").open_next_unread(app):
+				_montrer({"genre": "fait", "titre": "GABI", "texte": "Plus rien à lire. Continue, le temps avance.", "categorie": "approbation", "ton": Avis.POSITIF})
+			else: app._render()
+			return
+		"commande":
+			_file.append({"command": str(action.get("command", "")), "payload": (action.get("payload", {}) as Dictionary).duplicate(true) if action.get("payload") is Dictionary else {}})
+			_file_message = str(action.get("message", "C'est fait."))
+			fermer_bulle()
+			_suite_file()
+			return
 		"ecran":
 			fermer_bulle()
 			var route := str(action.get("route", ""))
@@ -795,6 +824,14 @@ func _process(delta: float) -> void:
 		if not context.is_empty() and context + "|" + str(app.route) != _contexte_examine:
 			_contexte_examine = context + "|" + str(app.route)
 			consider_context(str(app.route), app.model, "", true)
+	# Deux premières semaines : l'explication de l'écran attend que la bulle soit libre.
+	_accueil_attente -= delta
+	if _accueil_attente <= 0.0:
+		_accueil_attente = 0.5
+		if app._has_career() and not app.waiting and Accueil.observer(profile, app.model, "", true, bool(app.get_meta("creation_connu", false))):
+			if bool(app.get_meta("creation_connu", false)): _sans_accueil(app.model)
+		if not app.waiting and not expanded and _adjoint_actif() and not _bulle.visible and app._has_career():
+			_accueil(str(app.route), app.model)
 	if is_instance_valid(_bulle_suivre) and _bulle.visible: _bulle_suivre.disabled = app.waiting or not app._live().is_empty()
 	if _adjoint_actif():
 		_maj_remarque()
@@ -913,6 +950,7 @@ func observer_premiers_pas(route: String, model: Dictionary, command: String, re
 ## (gabi_premiers_pas.gd). Masquable ; disparaît une fois fini ou à la 1re journée. Renvoie la hauteur prise (0 : rien).
 func carte_premiers_pas(page: Control, rect: Rect2) -> float:
 	if not PremiersPas.visible(app.model, profile.data): return 0.0
+	if bool(Accueil.etat(profile.data).get("connu", false)) and str(Accueil.etat(profile.data).get("club", "")) == str(app.model.get("club", {}).get("id", "")): return 0.0
 	var liste := PremiersPas.objectifs(app.model, profile.data)
 	var objectif := PremiersPas.courant(liste)
 	if objectif.is_empty(): return 0.0
@@ -1030,6 +1068,9 @@ class Bulle extends PanelContainer:
 # --- Contexte : moments clés, première visite, humeur, indice ----------------------------------------
 
 func consider_context(route: String, model: Dictionary, command: String, response_ok: bool) -> void:
+	# Nouvelle carrière : les deux semaines de Gabi repartent du jour de la création (« je connais déjà » les coupe).
+	if is_instance_valid(app) and Accueil.observer(profile, model, command, response_ok, bool(app.get_meta("creation_connu", false))):
+		if bool(app.get_meta("creation_connu", false)): _sans_accueil(model)
 	if is_instance_valid(_bulle) and is_instance_valid(app) and app._has_career() and profile.data.enabled and route not in ["Accueil", "Création", "Packs"] and not _adjoint_actif():
 		# Écran de carrière dont le bandeau n'est pas encore construit : on attend qu'il le soit (_process)
 		# plutôt que d'ouvrir l'ancienne bulle flottante.
@@ -1045,10 +1086,37 @@ func consider_context(route: String, model: Dictionary, command: String, respons
 	_humeur(model)
 	if _blocked(): return
 	if _moment_cle(model): return
+	if _accueil(route, model):
+		_maj_indice()
+		return
 	super.consider_context(route, model, command, response_ok)
 	_conseil_composition(route, model)
 	_alerte_fatigue(model)
 	_maj_indice()
+
+## « Je connais déjà » : pas d'accueil en grand ni de carte des premiers pas pour cette carrière.
+func _sans_accueil(model: Dictionary) -> void:
+	var context := _career_context(model)
+	if context.is_empty(): return
+	var parts := context.split(":")
+	var cle := "debut:%s:%s:0:" % [parts[0], parts[1]]
+	if cle not in profile.data.events:
+		profile.data.events.append(cle)
+		while profile.data.events.size() > Profile.EVENT_LIMIT: profile.data.events.pop_front()
+		profile.save_profile(profile.data)
+
+## Deux premières semaines : explication courte au premier passage sur un écran clé, hors limite quotidienne,
+## y compris sur la composition et avant le coup d'envoi (jamais pendant le direct ni sur une fenêtre ouverte).
+func _accueil(route: String, model: Dictionary) -> bool:
+	var dit := Accueil.a_dire(route, model, profile.data)
+	if dit.is_empty() or _has_dialog(app): return false
+	var live: Dictionary = app._live()
+	if not live.is_empty() and not live.get("paused", false) and not live.get("finished", false): return false
+	# Une bulle déjà ouverte sur cet écran (accueil du club, conseil) n'est pas écrasée : on repassera.
+	if _bulle.visible and _contenu.get("genre") != "fait": return false
+	_montrer({"genre": "accueil", "titre": str(dit.titre), "texte": str(dit.texte), "actions": dit.actions, "categorie": "consigne", "ton": Avis.NEUTRE, "route": route})
+	Accueil.marquer(profile, str(dit.cle))
+	return true
 
 ## Moments clés (mode grand, écran assombri) : une seule fois chacun (clé dans le profil du guide).
 func _moment_cle(model: Dictionary) -> bool:

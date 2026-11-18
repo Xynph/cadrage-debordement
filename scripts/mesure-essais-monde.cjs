@@ -9,6 +9,9 @@
 // --regler "PENALITES_RULES=0;ESSAIS.finition=.47" : moteur d'avant les pénalités réalistes (docs/hierarchie-penalites-20261114.md).
 // Hiérarchie détaillée et pénalités sifflées par phase ajoutées le 14/11 (favori par tranche d'écart, surprises, écart 1er-dernier).
 // --ancien : coefficients d'avant (ESSAIS_RULES=0), pour le tableau avant/après sur la même graine.
+// --suivi-de-loin : tous les championnats sauf celui du club suivis de loin (résultat rapide, native/engine/league-detail.cjs), pour comparer
+// les classements à ceux du moteur complet (docs/top14-dispute-20261117.md §14 ter) ; seul le détail de hiérarchie (`detail`) reste lisible,
+// les crochets du moteur complet ne voient pas les matchs rapides.
 // Une seule carrière en mémoire (~1,2 Go) : ne pas lancer deux mesures à la fois sur la machine partagée.
 const fs = require('node:fs');
 const { context } = require('../tests/monde-harness.cjs');
@@ -74,22 +77,25 @@ function niveau(h) {
   return JSON.parse(h.run(`JSON.stringify(Object.fromEntries(S.clubs.map(c=>[c.id,(()=>{const n=c.players.filter(p=>!p.injury).map(p=>roleNote(p)).sort((a,b)=>b-a).slice(0,23);return n.reduce((a,b)=>a+b,0)/Math.max(1,n.length);})()])))`));
 }
 
-function mesurer({ graine = 4242, club = 102, semaines = 80, ancien = false, journal = false, reglage = '', selections = true } = {}) {
+function mesurer({ graine = 4242, club = 102, semaines = 80, ancien = false, journal = false, reglage = '', selections = true, suiviDeLoin = false } = {}) {
   const h = context(graine, { console: false, selections });
   if (ancien) h.run('ESSAIS_RULES=0');
   if (reglage) h.run(reglage);
   h.start(club);
+  if (suiviDeLoin) h.command('league_detail_set', { detailed: [] });
   const niveaux = niveau(h);
   const membres = JSON.parse(h.run('JSON.stringify(Object.fromEntries(Object.entries(S.worldMode.leagues).map(([k,v])=>[k,v.members])))'));
   const noms = JSON.parse(h.run('JSON.stringify(S.clubs.map(c=>c.abbr))'));
   h.run(CROCHETS);
+  // Résultat rapide : niveau joué (note × forme des titulaires) de chaque rencontre suivie de loin, par identifiant.
+  if (suiviDeLoin) h.run(`globalThis.__rapide={};globalThis.__mesureRapide=(f,p)=>{__rapide[f.id]=p.map(x=>Math.round(x*1000)/1000)};0`);
   const t0 = Date.now();
   for (let w = 0; w < semaines && h.run("S.phase!=='ended'"); w++) {
     h.week(1, { validate: false });
     if (journal && w % 5 === 0) process.stderr.write(`semaine ${w + 1} : ${h.run('__mesure.length')} matchs, ${Math.round((Date.now() - t0) / 1000)} s\n`);
   }
   const matchs = JSON.parse(h.run('JSON.stringify(__mesure)'));
-  const histoire = JSON.parse(h.run(`JSON.stringify(S.history.filter(r=>r.season===S.season).map(r=>({c:r.competitionId,ph:r.phase,pair:r.pair,score:r.score,tries:r.tries})))`));
+  const histoire = JSON.parse(h.run(`JSON.stringify(S.history.filter(r=>r.season===S.season).map(r=>({c:r.competitionId,ph:r.phase,pair:r.pair,score:r.score,tries:r.tries,niv:typeof __rapide==='object'?__rapide[r.fixtureId]:undefined})))`));
   h.close();
   return { graine, club, ancien, niveaux, membres, noms, matchs, histoire };
 }
@@ -207,9 +213,29 @@ function tableau(rows, cols) {
   return ['| ' + cols.join(' | ') + ' |', '|' + cols.map(() => '---').join('|') + '|', ...rows.map(r => '| ' + cols.map(c => String(r[c])).join(' | ') + ' |')].join('\n');
 }
 
-if (require.main === module) {
+// --analyser-dossier <dossier> : agrège les JSON d'un dossier (une graine chacun, --json) par championnat : Spearman moyen
+// rang/effectif et, sur les matchs de saison régulière, régression de l'écart de score sur l'écart d'effectif avec constante.
+// `pente/bruit` = pente ÷ écart-type du résidu : à comparer entre résultat rapide et moteur complet (docs/top14-dispute-20261117.md §14 quinquies).
+function analyserDossier(dossier) {
+  const par = {};
+  for (const f of fs.readdirSync(dossier).filter(n => n.endsWith('.json'))) {
+    const j = JSON.parse(fs.readFileSync(dossier + '/' + f, 'utf8')), d = j.brut;
+    for (const tb of j.analyse.detail.tableaux) (par[tb.comp] ??= { rho: [], pts: [] }).rho.push(tb.spearmanEffectif);
+    for (const m of d.histoire) if (m.ph === 'league') par[m.c]?.pts.push([d.niveaux[m.pair[0]] - d.niveaux[m.pair[1]], m.score[0] - m.score[1]]);
+  }
+  return Object.entries(par).map(([comp, { rho, pts }]) => {
+    const n = pts.length, mx = moy(pts.map(p => p[0])), my = moy(pts.map(p => p[1]));
+    const b = pts.reduce((s, p) => s + (p[0] - mx) * (p[1] - my), 0) / pts.reduce((s, p) => s + (p[0] - mx) ** 2, 0), c = my - b * mx;
+    const sd = Math.sqrt(pts.reduce((s, p) => s + (p[1] - c - b * p[0]) ** 2, 0) / n);
+    return { comp, graines: rho.length, matchs: n, spearmanEffectif: r2(moy(rho)), pente: r2(b), terrain: r1(c), bruit: r1(sd), 'pente/bruit': Math.round(b / sd * 1000) / 1000 };
+  });
+}
+
+if (require.main === module && opt('--analyser-dossier', null)) {
+  console.log(tableau(analyserDossier(opt('--analyser-dossier', null)), ['comp', 'graines', 'matchs', 'spearmanEffectif', 'pente', 'terrain', 'bruit', 'pente/bruit']));
+} else if (require.main === module) {
   const relire = opt('--analyser', null);
-  const d = relire ? JSON.parse(fs.readFileSync(relire, 'utf8')).brut : mesurer({ graine, club, semaines, ancien, journal: true, reglage: opt('--regler', ''), selections });
+  const d = relire ? JSON.parse(fs.readFileSync(relire, 'utf8')).brut : mesurer({ graine, club, semaines, ancien, journal: true, reglage: opt('--regler', ''), selections, suiviDeLoin: args.includes('--suivi-de-loin') });
   const a = analyser(d);
   if (sortie && !relire) fs.writeFileSync(sortie, JSON.stringify({ analyse: a, brut: d }));
   console.log(`Graine ${a.graine}, club ${a.club}${d.ancien ? ' (coefficients d’avant)' : ''} : ${a.matchs} matchs au moteur complet.`);
@@ -224,4 +250,4 @@ if (require.main === module) {
   console.log(tableau(a.detail.tableaux, ['comp', 'clubs', 'premier', 'dernier', 'ecartPoints', 'rangMieuxArme', 'rang2', 'spearmanEffectif', 'spearmanReel', 'champion']));
   console.log(tableau(a.hierarchie, ['comp', 'spearman', 'favori2', 'favori5', 'effectif1', 'effectif3', 'domicile', 'meilleurRang', 'victoiresTete', 'victoiresDernier', 'tete']));
 }
-module.exports = { mesurer, analyser, classement };
+module.exports = { mesurer, analyser, analyserDossier, classement };

@@ -145,8 +145,9 @@ function factory(eligibility){
    }
    return {lineup:ids.slice(0,15),bench:ids.slice(15)};
   };
-  managerSheet=function(c,opponent,weather,level){
-   const proposed=originalManager(c,opponent,weather,level);
+  // `rest` : arguments suivants (semaine européenne, ROTATION_EUROPE de dist/opposition.js), transmis tels quels.
+  managerSheet=function(c,opponent,weather,level,...rest){
+   const proposed=originalManager(c,opponent,weather,level,...rest);
    if(!activeClub(S,c.id)||c.id===S.club||nominations(S,c,proposed.lineup,proposed.bench))return proposed;
    // Keep the tactical preferences where the quota-aware builder can use them.
    const adjusted=buildSheet(c,proposed.lineup,proposed.bench);

@@ -6,6 +6,7 @@ const Club = preload("res://ui/club_views.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
 const LeagueDetail = preload("res://ui/league_detail_view.gd")
+const Defis = preload("res://ui/creation_options/defis.gd")
 const CREATION_SELECTION := "creation_selection"
 ## Étape de la création (accueil moderne) : « club » (choix du club) puis « carriere » (écran des options :
 ## championnats suivis, niveau de départ, départ de la partie), qui porte l'action de création.
@@ -174,6 +175,8 @@ static func begin_creation(app: Control) -> void:
 	app.management_ui.erase("creation_nation")
 	app.management_ui.erase("creation_vary_current")
 	app.management_ui.erase("creation_start")
+	app.management_ui.erase(Defis.CHOIX)
+	app.management_ui.erase("creation_connu")
 	app._navigate("Création")
 
 static func _creation_country(club: Dictionary) -> String:
@@ -578,13 +581,20 @@ static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	var payload := {"mode":mode,"varyCurrent":bool(app.management_ui.get("creation_vary_current",true))}
 	if mode == "world-champ" and role != "nation": payload.start = str(app.management_ui.get("creation_start", "premiers-clubs"))
 	if role != "nation": payload.club = int(selected.id)
+	# Défi de départ choisi pour ce club : objectif du président et du conseil fixés par le moteur.
+	if mode == "world-champ" and role != "nation":
+		var defi := Defis.charge(app, int(selected.id))
+		if not defi.is_empty(): payload.challenge = defi
 	# Championnats suivis en détail (les autres suivis de loin) : carrière Monde seulement.
 	if mode.begins_with("world"):
 		payload.detailedLeagues = LeagueDetail.payload(app, str(selected.get("division", "")) if role != "nation" else "", app.pack_manager.creation_catalogue())
 	if role in ["dual", "nation"]:
 		payload.nationalRole = role
 		payload.nation = app.management_ui.get("creation_nation", "")
+	# « Je connais déjà » (options de carrière) : lu par Gabi à la création (l'état d'écran peut être rejoué par l'historique).
+	var connu := bool(app.management_ui.get("creation_connu", false)) and role != "nation"
 	var action := func():
+		app.set_meta("creation_connu", connu)
 		if app._command("new_career", payload) and is_instance_valid(app.entry_scroll):
 			_show_creation_waiting(app, app.entry_scroll)
 	if app._has_career():
@@ -700,6 +710,9 @@ static func creation(app: Control) -> Control:
 			selected = club
 			break
 	if not modern: app.selected_club = int(selected.id)
+	# Défis de départ : bandeau en tête du choix du club (carrière Monde, rôle club).
+	if modern and champ and role != "nation" and str(app.management_ui.get(CREATION_STEP, "club")) != "carriere":
+		Defis.build(app, page, playable)
 	# Étape 03 : écran dédié aux options de carrière, une fois le club choisi.
 	if modern and not selected.is_empty() and str(app.management_ui.get(CREATION_STEP, "club")) == "carriere":
 		_career_options(app, page, selected, mode, role, nation, candidates, preferred, division)

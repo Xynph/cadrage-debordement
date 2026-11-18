@@ -12,14 +12,8 @@ assert.equal(bank.journalists.filter(j=>j.fictional).length,78);
 assert.ok(bank.journalists.every(j=>j.source===undefined),'aucune page d’auteur réelle dans la base');
 assert.equal(Object.keys(bank.legacyJournalistIds).length,10);
 assert.equal(new Set(bank.questions.map(q=>q.id)).size,500);
-assert.equal(new Set(bank.questions.flatMap(q=>q.variants)).size,1500);
-for(const q of bank.questions){assert.equal(q.answers.length,5);assert.equal(new Set(q.answers.map(a=>a.text)).size,5);}
-const secondary=bank.questions.flatMap(q=>q.variants.slice(1));
-assert.equal(secondary.length,1000,'two alternative formulations per question');
-assert.equal(new Set(secondary).size,1000,'secondary formulations stay distinct across the 500 questions');
-assert.ok(secondary.every(text=>text.length>32&&text.endsWith('?')&&(text.match(/\?/g)||[]).length===1),'secondary prompts read as complete single questions');
-assert.ok(secondary.every(text=>!text.includes('{s}')&&!text.includes('Comment évalues-tu la situation concernant')&&!text.includes('Assumes-tu personnellement les choix autour')),'secondary prompts avoid legacy generic boilerplate');
-for(const q of bank.questions){assert.equal(new Set(q.variants).size,3,'no repeated question within an entry');}
+// Une seule formulation par question, écrite pour son sujet (18/11/2026) : plus de reformulations-gabarits.
+assert.ok(bank.questions.every(q=>q.variants.length===1),'one authored question per entry');
 const primary=bank.questions.map(q=>q.variants[0]);
 assert.equal(new Set(primary).size,500,'500 distinct first-hand editorial prompts');
 assert.ok(primary.every(text=>text.length>30&&text.endsWith('?')&&(text.match(/\?/g)||[]).length===1),'one coherent question per lead');
@@ -37,9 +31,8 @@ assert.equal(new Set(bank.questions.flatMap(q=>q.answers.map(a=>a.id))).size,5,'
 const samples=Array.from({length:25},(_,week)=>bank.pick({season:3,week,count:4,seed:19}));
 const sampleTotal=samples.flat();
 assert.equal(sampleTotal.length,100);
-assert.ok(sampleTotal.filter(q=>q.variant===0).length>=75,'bespoke questions dominate live interviews');
+assert.ok(sampleTotal.every(q=>q.variant===0),'only authored questions in live interviews');
 assert.ok(samples.every(batch=>batch.some(q=>q.variant===0)),'every conference contains authored editorial material');
-assert.ok(samples.some(batch=>batch.some(q=>q.variant===1||q.variant===2)),'alternate formulations remain reachable');
 const chosen=bank.pick({season:2,week:8,count:4,context:{themes:['defaite','crise','vestiaire','direction']},seed:7});
 assert.equal(chosen.length,4);
 assert.ok(chosen.every(q=>['defaite','crise','vestiaire','direction'].includes(q.theme)));
@@ -47,5 +40,5 @@ const history=bank.appendHistory([],chosen[0],2,8,'r1');
 assert.ok(!bank.pick({season:2,week:9,count:4,context:{themes:['defaite','crise','vestiaire','direction']},history,seed:7}).some(q=>q.id===chosen[0].id));
 assert.ok(bank.pick({season:2,week:20,count:4,context:{themes:['defaite','crise','vestiaire','direction']},history,seed:7}).length===4);
 assert.throws(()=>bank.appendHistory([],chosen[0],2,8,'r9'));
-console.log('PASS V60 bank: 25 themes, 500 prompts, 1500 variants, 5 responses, 12-week exclusion');
+console.log('PASS V60 bank: 25 themes, 500 authored prompts, 5 responses each, 12-week exclusion');
 const conference=bank.pick({season:3,week:9,count:4,seed:5});assert.equal(new Set(conference.map(q=>q.journalist.outlet)).size,4,'one journalist per outlet at each conference');

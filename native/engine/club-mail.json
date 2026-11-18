@@ -44,6 +44,22 @@
     "sévère en mêlée fermée, il pénalise la première poussée illicite",
     "il communique beaucoup avec les capitaines, la discipline paie avec lui"
   ],
+  "blessures": {
+    "_doc": "Type de blessure tiré quand un joueur se blesse (match, entraînement, simulation) : parmi les types dont la durée (semaines) couvre l'indisponibilité, au poids selon la ligne (avants, arrières), par empreinte stable (ni hasard du moteur, ni dépendance à l'ordre). Commotion : protocole de retour progressif World Rugby (pas de reprise avant la fin du protocole, au moins 12 jours hors cas particuliers). « conseil » : recommandation du médecin dans le bulletin. Sauvegarde : p.injuryType (clé), p.injuryCause (match | entrainement), p.injuryDate ; type absent : « Blessure ».",
+    "avants": ["pilier", "talonneur", "deuxieme ligne", "troisieme ligne", "numero 8", "flanker", "3e ligne", "2e ligne"],
+    "types": {
+      "contusion": {"libelle": "Contusion musculaire", "semaines": [1, 1], "poids": {"avants": 3, "arrieres": 3}, "conseil": "Glace, soins et une semaine sans contact : pas de risque particulier si on respecte le délai."},
+      "commotion": {"libelle": "Commotion cérébrale (protocole)", "semaines": [1, 2], "poids": {"avants": 2, "arrieres": 2}, "conseil": "Il suit le protocole commotion : reprise par paliers, aucun contact tant que tous les tests ne sont pas validés. On ne raccourcit rien."},
+      "cheville": {"libelle": "Entorse de la cheville", "semaines": [1, 3], "poids": {"avants": 2, "arrieres": 3}, "conseil": "Strapping et proprioception ; on surveille la stabilité avant de le relancer au contact."},
+      "ischios": {"libelle": "Lésion des ischio-jambiers", "semaines": [2, 4], "poids": {"avants": 1, "arrieres": 3}, "conseil": "Muscle à reconstruire : reprise progressive des courses. Revenir trop vite, c'est s'exposer à une rechute plus longue."},
+      "mollet": {"libelle": "Lésion du mollet", "semaines": [1, 3], "poids": {"avants": 2, "arrieres": 2}, "conseil": "Renforcement et reprise de course graduée ; une rechute du mollet coûte souvent le double."},
+      "epaule": {"libelle": "Blessure à l'épaule", "semaines": [2, 6], "poids": {"avants": 3, "arrieres": 2}, "conseil": "Pas de plaquage ni de mêlée avant la fin de la rééducation : l'épaule doit retrouver toute sa force."},
+      "cotes": {"libelle": "Côtes fêlées", "semaines": [2, 4], "poids": {"avants": 2, "arrieres": 1}, "conseil": "Repos des contacts, protection à la reprise ; la douleur guide le retour."},
+      "genou": {"libelle": "Entorse du genou", "semaines": [2, 6], "poids": {"avants": 2, "arrieres": 2}, "conseil": "Ligament à protéger : reprise progressive, appuis et changements de direction en dernier."},
+      "cou": {"libelle": "Douleur cervicale", "semaines": [1, 2], "poids": {"avants": 2, "arrieres": 0}, "conseil": "Examens rassurants ; pas de mêlée ni de ruck tant que la mobilité n'est pas complète."},
+      "croises": {"libelle": "Rupture des ligaments croisés", "semaines": [16, 40], "poids": {"avants": 1, "arrieres": 1}, "conseil": "Opération et longue rééducation : la saison est compromise, on prendra le temps qu'il faut."}
+    }
+  },
   "types": {
     "kine_bilan": {
       "categorie": "infirmerie", "declencheur": "bilan_kine", "priorite": 40, "arret": false, "ecran": "infirmerie",
@@ -423,6 +439,65 @@
         {"id": "accueil", "libelle": "Mettre l'accent sur l'accueil du public", "effets": {"orientation": "accueil", "supporters": 1}, "resultat": "Billetterie, buvettes et hospitalités d'abord : la majorité de l'enveloppe ira à l'accueil."}
       ]
     },
+    "a2r_conditions": {
+      "categorie": "direction", "declencheur": "a2r", "niveau": 1, "priorite": 6, "arret": true, "ecran": "Finances",
+      "expediteur": "L’A2R (Autorité de régulation du rugby)",
+      "formulations": [
+        {"sujet":"A2R : autorisé sous conditions","corps":"Monsieur le manager,\n\nLa commission de contrôle de gestion de l’A2R a auditionné le club. {constat}\n\nDécision : le club est autorisé à s’engager pour la saison {saison}, sous conditions. Sa masse salariale est encadrée jusqu’à la fin du mercato d’été : pas au-delà de {masse} par an. Des recrues restent possibles si des départs leur font de la place.\n\nAucune autre mesure."},
+        {"sujet":"Décision de l’A2R : masse salariale encadrée","corps":"Monsieur le manager,\n\nÀ l’issue de l’audition de juin, la commission de contrôle de gestion de l’A2R a rendu sa décision. {constat}\n\nDécision : le club est autorisé à s’engager pour la saison {saison}, sous conditions. Sa masse salariale est encadrée jusqu’à la fin du mercato d’été : pas au-delà de {masse} par an. Des recrues restent possibles si des départs leur font de la place.\n\nAucune autre mesure."}
+      ],
+      "reponses": []
+    },
+    "a2r_homologation": {
+      "categorie": "direction", "declencheur": "a2r", "niveau": 2, "priorite": 6, "arret": true, "ecran": "Finances",
+      "expediteur": "L’A2R (Autorité de régulation du rugby)",
+      "formulations": [
+        {"sujet":"A2R : contrats des recrues non homologués","corps":"Monsieur le manager,\n\nLa commission de contrôle de gestion de l’A2R a auditionné le club. {constat}\n\nDécision : les contrats des nouvelles recrues ne seront pas homologués tant que les comptes ne seront pas rétablis. Dès que le trou est comblé (ventes, économies), la commission homologue de nouveau, avec une masse salariale encadrée jusqu’à la fin du mercato d’été.\n\nLe club peut faire appel ({frais} de frais)."},
+        {"sujet":"Décision de l’A2R : pas d’homologation des recrues","corps":"Monsieur le manager,\n\nÀ l’issue de l’audition de juin, la commission de contrôle de gestion de l’A2R a rendu sa décision. {constat}\n\nDécision : les contrats des nouvelles recrues ne seront pas homologués tant que les comptes ne seront pas rétablis. Dès que le trou est comblé (ventes, économies), la commission homologue de nouveau, avec une masse salariale encadrée jusqu’à la fin du mercato d’été.\n\nLe club peut faire appel ({frais} de frais)."}
+      ],
+      "reponses": [
+        {"id":"appel","libelle":"Faire appel de la décision","effets":{"a2r":"appel"},"resultat":"Le club fait appel."},
+        {"id":"acte","libelle":"Prendre acte","effets":{"a2r":"acte"},"resultat":"Il faudra rétablir les comptes avant de recruter."}
+      ]
+    },
+    "a2r_apport": {
+      "categorie": "direction", "declencheur": "a2r", "niveau": 3, "priorite": 6, "arret": true, "ecran": "Finances",
+      "expediteur": "L’A2R (Autorité de régulation du rugby)",
+      "formulations": [
+        {"sujet":"A2R : apport de l’actionnaire exigé avant le 30 juin","corps":"Monsieur le manager,\n\nLa commission de contrôle de gestion de l’A2R a auditionné le club. {constat}\n\nDécision : la commission demande à l’actionnaire un apport de {montant} avant le {echeance}. D’ici là, aucune recrue ne sera homologuée. Sans apport ni comptes rétablis à cette date, le club sera interdit de recruter jusqu’au début de la saison prochaine.\n\nLe club peut faire appel ({frais} de frais)."},
+        {"sujet":"Décision de l’A2R : {montant} à trouver avant le 30 juin","corps":"Monsieur le manager,\n\nÀ l’issue de l’audition de juin, la commission de contrôle de gestion de l’A2R a rendu sa décision. {constat}\n\nDécision : la commission demande à l’actionnaire un apport de {montant} avant le {echeance}. D’ici là, aucune recrue ne sera homologuée. Sans apport ni comptes rétablis à cette date, le club sera interdit de recruter jusqu’au début de la saison prochaine.\n\nLe club peut faire appel ({frais} de frais)."}
+      ],
+      "reponses": [
+        {"id":"apport","libelle":"Demander l’apport au propriétaire","effets":{"a2r":"apport"},"resultat":"Tu transmets la demande au propriétaire."},
+        {"id":"appel","libelle":"Faire appel de la décision","effets":{"a2r":"appel"},"resultat":"Le club fait appel."},
+        {"id":"acte","libelle":"Prendre acte","effets":{"a2r":"acte"},"resultat":"Il faudra vendre ou économiser avant le 30 juin."}
+      ]
+    },
+    "a2r_interdiction": {
+      "categorie": "direction", "declencheur": "a2r", "niveau": 4, "priorite": 6, "arret": true, "ecran": "Finances",
+      "expediteur": "L’A2R (Autorité de régulation du rugby)",
+      "formulations": [
+        {"sujet":"A2R : interdiction de recruter","corps":"Monsieur le manager,\n\nLa commission de contrôle de gestion de l’A2R a auditionné le club. {constat}\n\nDécision : interdiction de recruter jusqu’au début de la saison prochaine (fin du mercato d’été). Seuls les jokers indispensables pour compléter une feuille de match restent autorisés.\n\nLe club peut faire appel ({frais} de frais)."},
+        {"sujet":"Décision de l’A2R : le club ne pourra pas recruter cet été","corps":"Monsieur le manager,\n\nÀ l’issue de l’audition de juin, la commission de contrôle de gestion de l’A2R a rendu sa décision. {constat}\n\nDécision : interdiction de recruter jusqu’au début de la saison prochaine (fin du mercato d’été). Seuls les jokers indispensables pour compléter une feuille de match restent autorisés.\n\nLe club peut faire appel ({frais} de frais)."}
+      ],
+      "reponses": [
+        {"id":"appel","libelle":"Faire appel de la décision","effets":{"a2r":"appel"},"resultat":"Le club fait appel."},
+        {"id":"acte","libelle":"Prendre acte","effets":{"a2r":"acte"},"resultat":"Le club fera sans recrue cet été."}
+      ]
+    },
+    "reprise_president": {
+      "categorie": "direction", "declencheur": "reprise_president", "priorite": 9, "arret": true, "ecran": "Effectif",
+      "expediteur": "Le président",
+      "formulations": [
+        {"sujet":"Il faut vendre avant le {echeance}","corps":"Coach, je sors des comptes. Avec les dernières arrivées, la trésorerie est tombée à {tresorerie}, sous la réserve que le club s’impose ({reserve}). Il manque {manque}.\n\nJe ne laisserai pas le club vivre au-dessus de ses moyens. Voici les joueurs que je veux voir partir avant le {echeance} : {liste}.\n\nSi la caisse repasse au-dessus de la réserve d’ici là, par ces ventes ou autrement, je n’insisterai pas. Sinon, je les vendrai moi-même, au prix d’une vente pressée."},
+        {"sujet":"La réserve du club est entamée","corps":"Coach, les achats de ces derniers jours ont fait tomber la trésorerie à {tresorerie}. La réserve que nous nous imposons, c’est {reserve} : il manque {manque}.\n\nJ’ai regardé l’effectif avec le directeur sportif. Ceux-là doivent partir avant le {echeance} : {liste}.\n\nSi tu trouves l’argent autrement d’ici là, tant mieux. Sinon, je m’en chargerai, et je ne négocierai pas longtemps."}
+      ],
+      "reponses": [
+        {"id":"lister","libelle":"Les mettre sur la liste des transferts","effets":{"reprise":"lister"},"resultat":"Les joueurs désignés sont proposés aux autres clubs. Les offres arriveront dans les prochains jours."},
+        {"id":"confier","libelle":"Le laisser les vendre tout de suite","effets":{"reprise":"confier"},"resultat":"Le président s’en occupe dès cette semaine."},
+        {"id":"delai","libelle":"Plaider pour deux semaines de plus","effets":{"reprise":"delai","confiance":-3},"resultat":"Le président accepte, à contrecœur."}
+      ]
+    },
     "president": {
       "categorie": "direction", "declencheur": "president", "priorite": 24, "arret": true, "ecran": "Club",
       "expediteur": "Le président",
@@ -725,6 +800,23 @@
       "reponses": [
         {"id": "rassurer", "libelle": "Rassurer le vestiaire", "effets": {"moral": 3}, "resultat": "Le groupe reste concentré sur le terrain."},
         {"id": "garanties", "libelle": "Demander des garanties au nouveau bureau", "effets": {"confiance": 2, "pression": 2}, "resultat": "Le bureau s'engage sur le budget de la saison, et attend des résultats en retour."}
+      ]
+    },
+    "blessure": {
+      "categorie": "infirmerie",
+      "declencheur": "blessure",
+      "priorite": 28,
+      "arret": false,
+      "ecran": "infirmerie",
+      "expediteur": "Le médecin du club",
+      "formulations": [
+        {"sujet": "{joueur} : {blessure}", "corps": "Coach, mauvaise nouvelle pour {joueur} ({poste}). {cause} Diagnostic : {blessure_bas}. Il est indisponible {duree}, retour estimé vers le {retour}.\n\n{conseil}\n\n{impact} À l'infirmerie en ce moment : {infirmerie}."},
+        {"sujet": "Bulletin médical : {joueur}", "corps": "Point médical sur {joueur}. {cause} Les examens confirment le diagnostic, {blessure_bas} : {duree} d'arrêt, reprise envisagée vers le {retour}.\n\n{conseil}\n\n{impact} Pour mémoire, l'infirmerie compte : {infirmerie}."}
+      ],
+      "reponses": [
+        {"id": "progressif", "libelle": "Le ménager à son retour", "effets": {"plan": "normal"}, "resultat": "Charge individuelle allégée : sa reprise se fera par paliers."},
+        {"id": "repos", "libelle": "Le laisser au repos complet", "effets": {"plan": "repos", "satisfaction": -1}, "resultat": "Repos complet jusqu'à nouvel ordre ; il trouve le temps long."},
+        {"id": "presser", "libelle": "Le relancer vite dans le groupe", "effets": {"plan": "collective", "satisfaction": 2, "fatigue": 5}, "resultat": "Il suit la séance collective dès que possible ; il apprécie, mais sa charge monte."}
       ]
     }
   }
