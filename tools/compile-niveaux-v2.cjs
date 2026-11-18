@@ -122,7 +122,7 @@ function publicRegistry() {
 }
 
 function compile(prive, niveauxDir) {
-  const players = {}, clubs = {}, coverage = {};
+  const players = {}, clubs = {}, coverage = {}, ordre = {};
   const registry = publicRegistry();
   const { minutes } = lnrMinutes(prive);
   const sources = {};
@@ -141,6 +141,15 @@ function compile(prive, niveauxDir) {
       const id = int(c.club_id), etage = fold(c.etage_club).replace(/ /g, '');
       if (id === null || !ETAGES.includes(etage)) throw Error(`Étage de club invalide (${league}) : ${c.club_id}`);
       clubs[id] = etage;
+    }
+    // Rang réel du club dans son championnat (1 = le plus fort ; colonne facultative rang_club) : ordre fin
+    // à l'intérieur des étages, publié par identifiants seulement.
+    if (clubRows.some(c => c.rang_club)) {
+      const rangs = clubRows.map(c => [int(c.club_id), int(c.rang_club)]);
+      const vus = new Set(rangs.map(([, r]) => r));
+      if (rangs.some(([, r]) => !Number.isInteger(r) || r < 1 || r > rangs.length) || vus.size !== rangs.length)
+        throw Error(`Rangs de clubs invalides (${league}) : un rang de 1 à ${rangs.length} par club, sans doublon`);
+      ordre[league] = rangs.sort((a, b) => a[1] - b[1]).map(([id]) => id);
     }
     const info = new Map(roster.map(r => [r.id, { age: r.age, club: r.club_id }]));
     // Rang du joueur dans son club, aux minutes 2025-26 (Top 14 et PRO D2).
@@ -188,16 +197,17 @@ function compile(prive, niveauxDir) {
     couverture: coverage,
     joueurs: sorted(players),
     clubs: Object.fromEntries(Object.entries(clubs).sort(([a], [b]) => Number(a) - Number(b))),
+    ordre,
   };
   return { table, sources };
 }
 
 function serialize(table) {
   // Une ligne par joueur : lisible en revue et stable en différence.
-  const head = { ...table }; delete head.joueurs; delete head.clubs;
+  const head = { ...table }; delete head.joueurs; delete head.clubs; delete head.ordre;
   const lines = Object.entries(table.joueurs).map(([id, v]) => ` ${JSON.stringify(id)}:${JSON.stringify(v)}`);
   const body = JSON.stringify(head, null, 1).replace(/\n}$/, '');
-  return body + ',\n "clubs": ' + JSON.stringify(table.clubs) + ',\n "joueurs": {\n' + lines.join(',\n') + '\n }\n}\n';
+  return body + ',\n "clubs": ' + JSON.stringify(table.clubs) + ',\n "ordre": ' + JSON.stringify(table.ordre) + ',\n "joueurs": {\n' + lines.join(',\n') + '\n }\n}\n';
 }
 
 function main(argv) {

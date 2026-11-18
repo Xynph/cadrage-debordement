@@ -8,7 +8,7 @@ const seniorCalibration=require('./senior-calibration.cjs');
 const roleAttributePriors=require('./role-attribute-priors.json');
 const ratingScale=require('./world-rating-scale.json');
 // Niveau réel compilé sans nom (tools/compile-niveaux-v2.cjs), livré avec le moteur.
-const ratingLevels=(t=>({joueurs:t.joueurs,clubs:t.clubs}))(require('./world-niveaux-v2.json'));
+const ratingLevels=(t=>({joueurs:t.joueurs,clubs:t.clubs,ordre:t.ordre||{}}))(require('./world-niveaux-v2.json'));
 const initialContracts=require('./world-initial-contracts.json');
 const stadiumCapacities=require('./world-stadium-capacities.json');
 const lnrCalendar=require('./lnr-calendar-2026-27.json');

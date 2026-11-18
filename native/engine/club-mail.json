@@ -665,7 +665,7 @@
       ]
     },
     "ds_depart": {
-      "categorie":  "contrats", "declencheur":  "ds_contrats", "decision":  "libere", "priorite":  25, "arret":  true, "ecran":  "contrats",
+      "categorie":  "contrats", "declencheur":  "ds_contrats", "decision":  "libere", "priorite":  24, "arret":  true, "ecran":  "contrats",
       "expediteur": "{signature}",
       "formulations": [
         {"sujet": "Je laisse partir {joueur}", "corps": "Coach, je ne prolongerai pas {joueur} ({poste}, {age} ans). Son contrat s'achève en fin de saison et il partira libre.\n\n{raison}\n\nSi tu tiens à lui, je peux encore le prolonger au salaire qu'il demande, tant que le plafond de la ligue le permet. Tu peux aussi me demander de miser davantage sur les jeunes pour les prochaines échéances."},
