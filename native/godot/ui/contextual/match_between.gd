@@ -87,6 +87,10 @@ var _dernier_fait := -1
 var _rangs: Array = []
 ## Faits marquants (les derniers faits joués).
 var faits: VBoxContainer
+## Les faits défilent sans barre : autant de faits (deux lignes chacun) que la tuile en tient, le plus récent d'abord.
+var faits_defile: ScrollContainer
+var faits_titre: Control
+var colonne_droite: VBoxContainer
 ## Photo d'ambiance des faits marquants (banque d'images) : le dernier grand fait joué, puis le résultat.
 var photo_faits: TextureRect
 var _fin := {}
@@ -136,6 +140,8 @@ var bonus_situation: Label
 var bonus_choix: HBoxContainer
 var _bonus_cle := ""
 var multiplex_cartes: GridContainer
+## Une seule rangée de cartes ; au-delà de la largeur, défilement horizontal (molette ou glisser).
+var multiplex_defile: ScrollContainer
 ## Pilotage reçu du moteur (`live.pilotage`) : sert aux états des joueurs (Galvanisé, Vexé…) de Mon XV.
 ## Les consignes en direct ne sont pas sur cet écran (fenêtre Équipe de la vue du match).
 var _pilotage: Dictionary = {}
@@ -150,6 +156,10 @@ var _scores_cour: Dictionary = {}
 var _scores_prec: Dictionary = {}
 ## Lignes du classement en direct : notre voisinage (± 3 places) et le haut du tableau.
 const CLASSEMENT_LIGNES := 9
+## Lignes montrées à l'écran : notre voisinage (± 3 places) ; ± 2 en 1280×720. Avec le duel, les faits
+## marquants et la bande du bas, la colonne de droite tient ainsi dans l'écran (1080p comme 720p).
+const CLASSEMENT_ECRAN := 7
+const CLASSEMENT_ECRAN_720 := 5
 const VERT_SCORE := Color("65b081")
 const MONTEE := Color("65b081")
 const DESCENTE := Color("e2876f")
@@ -549,6 +559,7 @@ func _ready() -> void:
 	_densite = densite_pour(get_viewport_rect().size)
 	_construire()
 	resized.connect(_a_l_echelle)
+	resized.connect(_largeur_multiplex)
 	visibility_changed.connect(_apparaitre)
 
 ## Apparition en fondu (0,25 s), sauf si le joueur a demandé de réduire les animations.
@@ -744,7 +755,8 @@ func _composants() -> void:
 	domination = Domination.new()
 	domination.name = "MatchBetweenMomentum"
 	domination.densite = _densite
-	domination.custom_minimum_size = Vector2(0, px(180))
+	# Frise un peu plus basse (180 → 150) : le dernier fait passe au-dessus du terrain sans le rétrécir.
+	domination.custom_minimum_size = Vector2(0, px(150))
 	domination.tooltip_text = "Qui domine, minute par minute (occupation, possession, points, franchissements), et les essais, tirs réussis et cartons déjà vus."
 	domination.mouse_filter = Control.MOUSE_FILTER_PASS
 	S.G.fill(domination, true)
@@ -813,11 +825,15 @@ func _cellule(texte: String, largeur: int, couleur: Color, taille: float = 26, c
 ## Tableau de bord (maquette validée par Léo, 16 novembre 2026) : la barre de commandes, trois
 ## colonnes, puis Gabi en largeur. Gauche : Notre XV (onglets Terrain, Tableau, XV adverse), tuile
 ## principale au liseré or, et la carte Changement dessous. Centre : le terrain 2D en grand (dernier
-## fait en bandeau par-dessus), puis momentum, anneaux possession et occupation, tuile « Dans les
-## 22 ». Droite : le duel (chiffres comparés), puis les faits marquants.
+## fait en bandeau juste au-dessus), puis momentum, anneaux possession et occupation, tuile « Dans les
+## 22 ». Droite : le duel (chiffres comparés), puis les faits marquants. Tout tient dans l'écran de
+## 1280×720 à 2560×1440, avec une marge basse (19 novembre 2026).
 func _page() -> void:
 	var page := S.G.v(px(14))
+	page.name = "MatchBetweenPage"
 	S.full(page)
+	# Marge basse : la bande du bas ne touche jamais le bord de l'écran.
+	page.offset_bottom = -px(12)
 	add_child(page)
 	var barre: Control
 	if is_instance_valid(hote_barre):
@@ -836,6 +852,7 @@ func _page() -> void:
 	_colonne_centre(grille)
 	# Droite : le duel (chiffres comparés), puis les faits marquants.
 	var droite := S.G.v(px(20))
+	colonne_droite = droite
 	droite.name = "MatchBetweenColumn"
 	droite.custom_minimum_size.x = px(560)
 	grille.add_child(droite)
@@ -870,8 +887,22 @@ func _page() -> void:
 	tuile_faits.clip_contents = true
 	tuile_faits.add_child(photo_faits)
 	tuile_faits.move_child(photo_faits, 0)
-	cadre_faits.add_child(_titre("Faits marquants"))
-	cadre_faits.add_child(faits)
+	faits_titre = _titre("Faits marquants")
+	cadre_faits.add_child(faits_titre)
+	# Les faits ne poussent pas la colonne : la tuile prend la place restante et montre autant de faits
+	# (deux lignes chacun) qu'elle en tient ; elle en garde toujours un.
+	S.G.fill(tuile_faits, true)
+	faits_defile = ScrollContainer.new()
+	faits_defile.name = "MatchBetweenHighlightsScroll"
+	faits_defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	faits_defile.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	faits_defile.mouse_filter = Control.MOUSE_FILTER_PASS
+	faits_defile.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	S.G.fill(faits_defile, true)
+	cadre_faits.add_child(faits_defile)
+	S.G.fill(faits)
+	faits_defile.add_child(faits)
+	faits_defile.resized.connect(_ajuster_faits)
 	_tuiles_droite = [cadre_chiffres.get_parent(), cadre_classement.get_parent(), cadre_faits.get_parent()]
 	# Bas : la carte de Gabi en largeur, le multiplex des autres matchs à côté.
 	var bas := S.G.h(px(20))
@@ -913,7 +944,8 @@ func _page() -> void:
 	bonus_choix.name = "MatchBetweenBonusChoices"
 	cadre_bonus.add_child(bonus_choix)
 	bonus_tuile.visible = false
-	# Multiplex : titre et minute à gauche, une rangée de cartes (la bande garde la hauteur de Gabi).
+	# Multiplex : titre et minute à gauche, une seule rangée de cartes (la bande garde la hauteur de
+	# Gabi) ; les cartes qui ne tiennent pas dans la largeur se font défiler (molette ou glisser).
 	var cadre_multiplex := _panneau(bas, px(14 if _densite >= 0.6 else 10))
 	multiplex = cadre_multiplex.get_parent().get_parent()
 	multiplex.name = "MatchBetweenMultiplex"
@@ -932,8 +964,17 @@ func _page() -> void:
 	multiplex_cartes.name = "MatchBetweenMultiplexCards"
 	multiplex_cartes.add_theme_constant_override("h_separation", px(10))
 	multiplex_cartes.add_theme_constant_override("v_separation", px(8))
-	multiplex_cartes.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	rangee_multiplex.add_child(multiplex_cartes)
+	multiplex_defile = ScrollContainer.new()
+	multiplex_defile.name = "MatchBetweenMultiplexScroll"
+	multiplex_defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	multiplex_defile.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	multiplex_defile.mouse_filter = Control.MOUSE_FILTER_PASS
+	multiplex_defile.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	multiplex_defile.tooltip_text = "Les autres matchs de la journée : molette ou glisser pour voir la suite."
+	S.G.fill(multiplex_defile)
+	multiplex_defile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	rangee_multiplex.add_child(multiplex_defile)
+	multiplex_defile.add_child(multiplex_cartes)
 	multiplex.visible = false
 
 ## Colonne gauche : Notre XV, onglets Terrain (par défaut), Tableau et XV adverse ; la carte
@@ -991,23 +1032,17 @@ func _colonne_xv(grille: Control) -> void:
 	cadre_changement.add_child(changement)
 	_montrer_vue_xv()
 
-## Colonne centrale : le terrain 2D en grand, le dernier fait en bandeau par-dessus ; dessous,
+## Colonne centrale : le terrain 2D en grand, le dernier fait en bandeau au-dessus ; dessous,
 ## momentum, anneaux possession et occupation, tuile « Dans les 22 ».
 func _colonne_centre(grille: Control) -> void:
 	var centre := S.G.v(px(20))
 	S.G.fill(centre, false, 1.0)
 	grille.add_child(centre)
-	var cadre_terrain := _panneau(centre, px(14))
+	var cadre_terrain := _panneau(centre, px(12))
 	cadre_terrain.get_parent().get_parent().name = "MatchBetweenPitchTile"
 	S.G.fill(cadre_terrain.get_parent().get_parent(), true)
-	var scene := Control.new()
-	scene.name = "MatchBetweenScene"
-	scene.clip_contents = true
-	scene.custom_minimum_size = Vector2(px(560), px(300))
-	S.G.fill(scene, true)
-	cadre_terrain.add_child(scene)
-	S.full(terrain)
-	scene.add_child(terrain)
+	# Le dernier fait en bandeau au-dessus du terrain (il masquait le haut du terrain et ses pastilles).
+	cadre_terrain.add_theme_constant_override("separation", px(8))
 	bandeau = PanelContainer.new()
 	bandeau.name = "MatchBetweenBanner"
 	var style := S.G.T.box(Color(FOND, 0.72), maxi(4, px(8)))
@@ -1019,14 +1054,18 @@ func _colonne_centre(grille: Control) -> void:
 	style.content_margin_bottom = px(4)
 	bandeau.add_theme_stylebox_override("panel", style)
 	bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bandeau.anchor_right = 1.0
-	bandeau.offset_left = px(12)
-	bandeau.offset_right = -px(12)
-	bandeau.offset_top = px(10)
-	bandeau.offset_bottom = px(10)
-	scene.add_child(bandeau)
+	S.G.fill(bandeau)
+	cadre_terrain.add_child(bandeau)
 	bandeau.add_child(fil)
 	S.G.fill(fil)
+	var scene := Control.new()
+	scene.name = "MatchBetweenScene"
+	scene.clip_contents = true
+	scene.custom_minimum_size = Vector2(px(560), px(300))
+	S.G.fill(scene, true)
+	cadre_terrain.add_child(scene)
+	S.full(terrain)
+	scene.add_child(terrain)
 	var rangee := S.G.h(px(20))
 	rangee.name = "MatchBetweenGauges"
 	centre.add_child(rangee)
@@ -1219,28 +1258,72 @@ func _remplir_fil() -> void:
 	# Faits marquants : les derniers faits joués, le plus récent en haut.
 	if is_instance_valid(faits):
 		S.clear(faits)
-		# 1280×720 : deux faits (le premier sur deux lignes, le suivant sur une) pour que la colonne de droite
-		# tienne avec Gabi en bas sans rien couper.
-		var petit := _densite < 0.6
-		var nombre := 2 if petit else 4
-		# Classement en direct sous le duel : les faits marquants se resserrent (le dernier fait
-		# reste en bandeau sur le terrain ; en 1280×720, une ligne par fait, le texte en infobulle).
+		# Chaque fait sur deux lignes au plus (texte entier en infobulle) ; la tuile en montre autant
+		# qu'elle en tient (_ajuster_faits), le plus récent en haut, jamais un fait coupé.
 		var serre := _journee_montree()
-		if serre: nombre = 1 if _densite < 0.6 else 2
-		var recents := visibles.slice(maxi(0, visibles.size() - nombre))
+		var recents := visibles.slice(maxi(0, visibles.size() - FAITS_MAX))
 		recents.reverse()
 		for n in recents.size():
 			var ligne_fait := _ligne_fil(recents[n], n == 0, false)
-			if serre or petit:
-				for etiquette: Label in ligne_fait.find_children("*", "Label", true, false):
-					etiquette.max_lines_visible = 1 if serre or n > 0 else 2
-					etiquette.tooltip_text = etiquette.text
+			ligne_fait.name = "MatchBetweenHighlight%d" % n
+			var texte_fait: Label = ligne_fait.get_child(0).get_child(2)
+			texte_fait.max_lines_visible = 2
+			texte_fait.tooltip_text = texte_fait.text
+			texte_fait.mouse_filter = Control.MOUSE_FILTER_PASS
+			# Largeur connue après la mise en page : une ou deux lignes réservées selon le texte.
+			texte_fait.resized.connect(_ajuster_faits)
 			if serre:
 				for icone: Control in ligne_fait.find_children("*", "Control", true, false):
 					if icone is Icone: icone.custom_minimum_size = Vector2(px(30), px(30))
 			faits.add_child(ligne_fait)
 		if recents.is_empty(): faits.add_child(_texte("Aucun fait marquant pour l’instant.", 24, FAIBLE))
+		_ajuster_faits.call_deferred()
 	_photo_faits(visibles)
+
+## Faits marquants montrés au plus (deux lignes chacun) ; la hauteur de la tuile décide du reste.
+const FAITS_MAX := 4
+
+## Hauteur d'une étiquette pour montrer `lignes` lignes entières (police, interligne et style compris).
+static func hauteur_lignes(etiquette: Label, lignes: int) -> float:
+	var police: Font = etiquette.get_theme_font("font")
+	var taille := etiquette.get_theme_font_size("font_size")
+	var interligne := float(etiquette.get_theme_constant("line_spacing"))
+	var style: StyleBox = etiquette.get_theme_stylebox("normal")
+	var marges := style.get_minimum_size().y if style != null else 0.0
+	return ceilf(police.get_height(taille) * lignes + interligne * maxi(0, lignes - 1) + marges + 1.0)
+
+## Montre les faits qui tiennent entiers dans la tuile, du plus récent au plus ancien ; le premier
+## reste toujours (la tuile lui réserve sa hauteur).
+func _ajuster_faits() -> void:
+	if not is_instance_valid(faits_defile) or not is_instance_valid(faits): return
+	var lignes: Array = faits.get_children().filter(func(n: Node): return not n.is_queued_for_deletion())
+	if lignes.is_empty(): return
+	var ecart := float(faits.get_theme_constant("separation"))
+	var dispo := faits_defile.size.y
+	var cumul := 0.0
+	var plein := false
+	for n in lignes.size():
+		var ligne: Control = lignes[n]
+		# Un texte à la ligne avec points de suspension ne réserve qu'une ligne : on lui en réserve deux
+		# quand il ne tient pas sur une seule (largeur réelle, ou estimée avant la première mise en page).
+		var rang: Node = ligne.get_child(0) if ligne.get_child_count() > 0 else null
+		if rang is HBoxContainer and rang.get_child_count() >= 3 and rang.get_child(2) is Label:
+			var texte: Label = rang.get_child(2)
+			var largeur := texte.size.x
+			if largeur <= 1.0: largeur = faits_defile.size.x - px(56) - px(38) - 2 * px(14) - 2 * px(6)
+			var police: Font = texte.get_theme_font("font")
+			var long := police.get_string_size(texte.text, HORIZONTAL_ALIGNMENT_LEFT, -1, texte.get_theme_font_size("font_size")).x
+			var voulu := hauteur_lignes(texte, 2 if long > largeur else 1)
+			if not is_equal_approx(texte.custom_minimum_size.y, voulu): texte.custom_minimum_size.y = voulu
+		var hauteur := ligne.get_combined_minimum_size().y
+		if n == 0:
+			ligne.visible = true
+			cumul = hauteur
+			if not is_equal_approx(faits_defile.custom_minimum_size.y, hauteur): faits_defile.custom_minimum_size.y = hauteur
+			continue
+		plein = plein or cumul + ecart + hauteur > dispo + 0.5
+		ligne.visible = not plein
+		if not plein: cumul += ecart + hauteur
 
 ## Occasion de la photo de fin de match : finale, victoire bonifiée selon la règle du championnat (`fin.bonus`,
 ## calculé par le moteur : 3 essais d'écart en Top 14, 4 essais marqués en Premiership et URC…), sinon championnat.
@@ -1316,11 +1399,11 @@ func _ligne_fil(entree: Dictionary, dernier: bool, en_bandeau: bool) -> Control:
 	icone.kind = kind
 	icone.teinte = teinte
 	icone.rouge = str(entree.get("texte", "")).to_lower().contains("rouge")
-	icone.custom_minimum_size = Vector2(px(38), px(38))
-	icone.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	icone.custom_minimum_size = Vector2(px(30), px(30)) if en_bandeau else Vector2(px(38), px(38))
+	icone.size_flags_vertical = Control.SIZE_SHRINK_CENTER if en_bandeau else Control.SIZE_SHRINK_BEGIN
 	rang.add_child(icone)
 	var texte := _texte(str(entree.get("texte", "")), 28 if en_bandeau or essai else 26, IVOIRE if dernier or points else DOUX, not en_bandeau, essai)
-	texte.max_lines_visible = 1 if en_bandeau else (3 if dernier or essai else 2)
+	texte.max_lines_visible = 1 if en_bandeau else 2
 	texte.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	if en_bandeau: texte.clip_text = true
 	S.G.fill(texte)
@@ -1461,6 +1544,10 @@ func _resserrer(direct: Dictionary) -> void:
 		var marge: MarginContainer = _tuiles_droite[n]
 		for bord in ["left", "top", "right", "bottom"]: marge.add_theme_constant_override("margin_" + bord, px(10 if serre else [16, 14, 14][n]))
 		(marge.get_child(0) as VBoxContainer).add_theme_constant_override("separation", mini(8, px(6 if serre else 10)))
+	if is_instance_valid(colonne_droite): colonne_droite.add_theme_constant_override("separation", px(12 if serre else 20))
+	# En 1280×720 avec le classement, la tuile des faits perd son titre (le fait, sa minute et son
+	# pictogramme suffisent) : la colonne de droite tient avec Gabi et le multiplex en bas.
+	if is_instance_valid(faits_titre): faits_titre.visible = not (serre and _densite < 0.6)
 	_remplir_chiffres(direct, {})
 	_remplir_fil()
 
@@ -1495,7 +1582,8 @@ static func lignes_classement(classement: Array, capacite: int = CLASSEMENT_LIGN
 		if classement[k] is Dictionary and bool(classement[k].get("nous", false)): nous = k
 	if nous < 0: return range(capacite)
 	var fenetre := mini(7, capacite)
-	var debut := clampi(nous - 3, 0, n - fenetre)
+	# Notre club au milieu de la fenêtre (± 3 places sur sept, ± 2 sur cinq).
+	var debut := clampi(nous - floori(fenetre / 2.0), 0, n - fenetre)
 	var fin := debut + fenetre
 	var restants := capacite - fenetre
 	if debut <= restants: return range(maxi(capacite, fin))
@@ -1509,8 +1597,8 @@ func _remplir_classement(classement: Array, teintes: Dictionary) -> void:
 	S.clear(classement_lignes)
 	classement_tuile.visible = not classement.is_empty()
 	if classement.is_empty(): return
-	# En 1280×720, notre voisinage seul (± 3 places) ; plus grand, le haut du tableau en plus.
-	for k: int in lignes_classement(classement, CLASSEMENT_LIGNES if _densite >= 0.6 else 7):
+	# Notre voisinage (± 3 places) ; en 1280×720, ± 2 places : la colonne de droite tient dans l'écran.
+	for k: int in lignes_classement(classement, CLASSEMENT_ECRAN if _densite >= 0.6 else CLASSEMENT_ECRAN_720):
 		if k < 0:
 			var ellipse := _texte("…", 22, FAIBLE)
 			ellipse.name = "MatchBetweenLiveTableGap"
@@ -1606,8 +1694,8 @@ func _remplir_multiplex(journee: Dictionary, teintes: Dictionary) -> void:
 	multiplex.visible = not matchs.is_empty()
 	if matchs.is_empty(): return
 	multiplex_precision.text = "%d′" % minute if not matchs.all(func(m: Variant): return m is Dictionary and bool(m.get("fini", false))) else "terminé"
-	# Une seule rangée jusqu'à huit matchs (championnat de seize clubs), deux au-delà.
-	multiplex_cartes.columns = matchs.size() if matchs.size() <= 8 else ceili(matchs.size() / 2.0)
+	# Une seule rangée, quel que soit le nombre de matchs : ce qui dépasse la largeur défile.
+	multiplex_cartes.columns = maxi(1, matchs.size())
 	for m: Variant in matchs:
 		if not m is Dictionary: continue
 		var id := str(m.get("id", ""))
@@ -1615,6 +1703,17 @@ func _remplir_multiplex(journee: Dictionary, teintes: Dictionary) -> void:
 		var carte := _carte_match(m, change, teintes)
 		carte.name = "MatchBetweenMultiplexMatch%d" % multiplex_cartes.get_child_count()
 		multiplex_cartes.add_child(carte)
+	_largeur_multiplex()
+	_largeur_multiplex.call_deferred()
+
+## Largeur du multiplex : celle de sa rangée de cartes, sans dépasser environ 60 % de la bande du bas
+## (Gabi garde le reste) ; au-delà, les cartes défilent.
+func _largeur_multiplex() -> void:
+	if not is_instance_valid(multiplex_defile) or not is_instance_valid(multiplex_cartes): return
+	var voulu := multiplex_cartes.get_combined_minimum_size().x
+	var plafond := maxf(float(px(360)), size.x * 0.6 - float(px(150)))
+	var largeur := minf(voulu, plafond)
+	if not is_equal_approx(multiplex_defile.custom_minimum_size.x, largeur): multiplex_defile.custom_minimum_size.x = largeur
 
 func _carte_match(m: Dictionary, change: bool, teintes: Dictionary) -> Control:
 	var carte := PanelContainer.new()
@@ -2224,17 +2323,25 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	portrait.texture = image
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	portrait.custom_minimum_size = Vector2(px(80), px(80))
+	# Carte de hauteur bornée (celle du portrait) : « Gabi, ton adjoint » à côté du portrait, pas
+	# au-dessus de la phrase, et la phrase sur deux lignes au plus (le reste en infobulle).
+	portrait.custom_minimum_size = Vector2(px(72), px(72))
 	portrait.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var matte := ShaderMaterial.new()
 	matte.shader = MATTE
 	portrait.material = matte
 	carte.add_child(portrait)
+	var signature := S.G.v(0)
+	signature.name = "MatchBetweenAdviceName"
+	signature.add_theme_constant_override("separation", 0)
+	signature.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	signature.add_child(_texte("Gabi", 26, OR, false, true))
+	signature.add_child(_texte("ton adjoint", 20, FAIBLE))
+	carte.add_child(signature)
 	var colonne := S.G.v(px(8))
 	S.G.fill(colonne)
 	carte.add_child(colonne)
-	colonne.add_child(_texte("Gabi, ton adjoint", 22, FAIBLE))
 	var graves := alertes_xv.filter(func(a: Dictionary): return a.alerte != "fatigué")
 	var fatigues := alertes_xv.filter(func(a: Dictionary): return a.alerte == "fatigué")
 	var phrases: Array = []
@@ -2267,12 +2374,15 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	if phrases.is_empty() and parlantes.is_empty(): phrases.append([_lecture_generale(direct), DOUX])
 	if phrases.is_empty() and not raisons.is_empty(): phrases.append([_phrase_forte(raisons), IVOIRE])
 	for phrase: Array in phrases:
-		var etiquette := _texte(str(phrase[0]), 28 if phrase[1] == DOUX else 32, phrase[1], true, true)
-		etiquette.max_lines_visible = 3
+		var etiquette := _texte(str(phrase[0]), 26, phrase[1], true, true)
+		etiquette.max_lines_visible = 2 if phrases.size() == 1 else 1
 		etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		etiquette.tooltip_text = "\n".join(raisons) if not raisons.is_empty() else str(phrase[0])
 		etiquette.mouse_filter = Control.MOUSE_FILTER_PASS
 		colonne.add_child(etiquette)
+		# Lignes réservées (un texte à la ligne tronqué n'en réserve qu'une) : la carte garde la hauteur
+		# du portrait et la phrase n'est jamais coupée à mi-hauteur.
+		etiquette.custom_minimum_size.y = hauteur_lignes(etiquette, etiquette.max_lines_visible)
 	# Les actions à droite de la carte (Gabi en largeur, sous le tableau de bord).
 	var actions := S.G.h(px(10))
 	actions.size_flags_vertical = Control.SIZE_SHRINK_CENTER

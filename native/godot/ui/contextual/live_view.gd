@@ -127,6 +127,8 @@ func _ready() -> void:
 	S.G.fill(away)
 	banner.add_child(away)
 	play = S.button("PAUSE", _pause)
+	play.name = "MatchPauseButton"
+	_habiller_pause(play)
 	banner.add_child(play)
 	meteo_ligne = S.label("", 18, S.MUTED)
 	meteo_ligne.name = "MatchWeather"
@@ -238,6 +240,23 @@ func _ready() -> void:
 	_mettre_a_l_echelle()
 	get_viewport().size_changed.connect(_mettre_a_l_echelle)
 	apply_preferences()
+
+## Bouton PAUSE / REPRENDRE du bandeau : même famille que les boutons Équipe et Paramètres de la
+## bande de commandes (Barlow Condensed demi-gras, capitales, fond sapin à plat, survol or).
+const POLICE_PAUSE = preload("res://fonts/BarlowCondensed-SemiBold.ttf")
+static func _habiller_pause(bouton: Button) -> void:
+	bouton.add_theme_font_override("font", POLICE_PAUSE)
+	for etat in ["normal", "hover", "pressed"]:
+		var style := S.G.T.box(Color("18231f") if etat == "normal" else Color("1f2e2b"), 10)
+		style.set_border_width_all(0)
+		style.content_margin_left = 22
+		style.content_margin_right = 22
+		bouton.add_theme_stylebox_override(etat, style)
+	var focus := S.G.T.box(Color.TRANSPARENT, 10, Color("e0b35a"))
+	focus.set_border_width_all(2)
+	bouton.add_theme_stylebox_override("focus", focus)
+	bouton.add_theme_color_override("font_color", Color("f2ecdc"))
+	for couleur in ["font_hover_color", "font_pressed_color", "font_focus_color"]: bouton.add_theme_color_override(couleur, Color("e0b35a"))
 
 ## Échelle de l'écran : 1 jusqu'en 1080p, puis proportionnelle à la hauteur (1,33 en 1440p).
 static func echelle_pour(hauteur: float) -> float:
