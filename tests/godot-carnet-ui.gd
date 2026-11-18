@@ -112,6 +112,9 @@ func press_match_drawer(caption: String, expected: String) -> void:
 		root.push_input(event,true);await process_frame
 	await settle()
 	check(control.has_focus(),"Focus réel du bouton du direct : "+caption)
+	if expected=="Équipe":
+		check(screen.equipe.visible,"Le vrai clic ouvre la fenêtre Équipe")
+		return
 	check(screen.drawer_tab==expected and screen.drawer.visible,"Le vrai clic ouvre le tiroir contextuel : "+expected)
 func bounds(route: String) -> void:
 	var page := page_for(route)
@@ -404,14 +407,16 @@ func decisions() -> void:
 			if p is Dictionary:p.name="Joueur de réception au nom particulièrement long pour éprouver le banc et les remplacements"
 	app.model=long_names
 	await render("Match")
-	await press_match_drawer("BANC","Banc")
+	await press_match_drawer("ÉQUIPE","Équipe")
 	bounds("Match")
+	for echec in app.match_screen.equipe.debordements(): check(false,"Fenêtre Équipe, noms longs : "+echec)
 	await capture("match-banc-projection-long")
+	app.match_screen.equipe.fermer(false)
 	app.model=actual
 	await render("Match")
 	await press_match_drawer("STATS","Stats")
 	await capture("match-statistiques-1440")
-	await press_match_drawer("BANC","Banc")
+	await press_match_drawer("ÉQUIPE","Équipe")
 	await capture("match-banc-1440")
 	var screen: Control=app.match_screen
 	var incoming: Dictionary={}
@@ -419,14 +424,16 @@ func decisions() -> void:
 		if not sub.get("inIds",[]).is_empty(): incoming=sub;break
 	if not incoming.is_empty():
 		check(app.model.live.lineup[int(incoming.slot)].id == incoming.outId,"Le poste publié désigne le vrai joueur sortant")
-		await activate_bench(bench_control(screen,"sortant:"+str(int(incoming.slot))),"sortant:"+str(int(incoming.slot)))
+		screen.equipe.choisir_poste(int(incoming.slot))
+		await settle()
 		for player: Dictionary in app.model.live.reserves:
-			var candidate := bench_control(screen,"entrant:"+str(player.id))
-			check(candidate != null and candidate.disabled == (not player.id in incoming.inIds),"Le banc respecte les aptitudes publiées et refuse les positions interdites : "+str(player.id))
+			var candidate: Control = screen.equipe.tuiles.get(str(player.id))
+			check(candidate != null and bool(candidate.get_meta("eligible", false)) == (player.id in incoming.inIds),"Le banc respecte les aptitudes publiées et refuse les positions interdites : "+str(player.id))
 		var reserve: Dictionary=app.model.live.reserves.filter(func(p):return p is Dictionary and p.id==incoming.inIds[0])[0]
-		await activate_bench(bench_control(screen,"entrant:"+str(reserve.id)),"entrant:"+str(reserve.id))
+		(screen.equipe.tuiles[str(reserve.id)] as Button).pressed.emit()
 		await wait_model()
 		check(app.bridge.last_response_ok and app.model.live.lineup.any(func(p):return p is Dictionary and p.id==reserve.id),"Remplacement réel depuis le banc")
+	screen.equipe.fermer(false)
 	await command("delegate")
 	await render("Effectif")
 	check(app.route=="Match" and app.contextual_director.kind=="live" and not app.root_content.is_visible_in_tree(),"La gestion reste verrouillée avant validation du résultat")
