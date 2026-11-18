@@ -1,0 +1,16 @@
+== captures fenêtre Équipe du match (Composition et Consignes ; 1080p et 720p, contrôles en 1440p) (code 1)
+not ok 1 - Fenêtre Équipe : un bouton, pause, composition, banc, consignes
+    SCRIPT ERROR: Parse Error: Could not preload resource script "res://ui/contextual/match_equipe.gd".
+    SCRIPT ERROR: Parse Error: Could not resolve script "res://ui/contextual/match_equipe.gd".
+    SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+    ERROR: Failed to load script "res://ui/contextual/director.gd" with error "Compilation failed".
+    SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+    SCRIPT ERROR: Invalid call. Nonexistent function 'update_frame' in base 'Nil'.
+    SCRIPT ERROR: Invalid call. Nonexistent function 'update_frame' in base 'Nil'.
+    FAIL: direct ouvert avec la fenêtre Équipe
+  name: 'AssertionError'
+    SCRIPT ERROR: Parse Error: Could not preload resource script "res://ui/contextual/match_equipe.gd".
+    SCRIPT ERROR: Parse Error: Could not resolve script "res://ui/contextual/match_equipe.gd".
+    SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+    ERROR: Failed to load script "res://ui/contextual/director.gd" with error "Compilation failed".
+    SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.

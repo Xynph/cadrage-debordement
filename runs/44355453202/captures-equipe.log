@@ -1,0 +1,143 @@
+TAP version 13
+# Subtest: Fenêtre Équipe : un bouton, pause, composition, banc, consignes
+not ok 1 - Fenêtre Équipe : un bouton, pause, composition, banc, consignes
+  ---
+  duration_ms: 112515.08832
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.cjs:15:1'
+  failureType: 'testCodeFailure'
+  error: |-
+     bits)
+    
+    EQUIPE {"controles":4,"failures":["direct ouvert avec la fenêtre Équipe"],"rapport":{}}
+    libspeechd.so.2: cannot open shared object file: No such file or directory
+    WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+         at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+    SCRIPT ERROR: Parse Error: Could not preload resource script "res://ui/contextual/match_equipe.gd".
+              at: GDScript::reload (res://ui/contextual/live_view.gd:6)
+              GDScript backtrace (most recent call first):
+                  [0] _ready (res://main.gd:266)
+                  [1] executer (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:203)
+                  [2] taille (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:61)
+                  [3] poser (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:29)
+    SCRIPT ERROR: Parse Error: Could not resolve script "res://ui/contextual/match_equipe.gd".
+              at: GDScript::reload (res://ui/contextual/live_view.gd:6)
+              GDScript backtrace (most recent call first):
+                  [0] _ready (res://main.gd:266)
+                  [1] executer (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:203)
+                  [2] taille (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:61)
+                  [3] poser (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:29)
+    SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+              at: GDScript::reload (res://ui/contextual/director.gd:0)
+              GDScript backtrace (most recent call first):
+                  [0] _ready (res://main.gd:266)
+                  [1] executer (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:203)
+                  [2] taille (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:61)
+                  [3] poser (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:29)
+    ERROR: Failed to load script "res://ui/contextual/director.gd" with error "Compilation failed".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+       GDScript backtrace (most recent call first):
+           [0] _ready (res://main.gd:266)
+           [1] executer (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:203)
+           [2] taille (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:61)
+           [3] poser (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:29)
+    SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+              at: _open (res://ui/contextual/director.gd:144)
+              GDScript backtrace (most recent call first):
+                  [0] _open (res://ui/contextual/director.gd:144)
+                  [1] sync (res://ui/contextual/director.gd:111)
+                  [2] _receive_model (res://main.gd:391)
+    SCRIPT ERROR: Invalid call. Nonexistent function 'update_frame' in base 'Nil'.
+              at: sync (res://ui/contextual/director.gd:116)
+              GDScript backtrace (most recent call first):
+                  [0] sync (res://ui/contextual/director.gd:116)
+                  [1] _receive_model (res://main.gd:391)
+    SCRIPT ERROR: Invalid call. Nonexistent function 'update_frame' in base 'Nil'.
+              at: sync (res://ui/contextual/director.gd:116)
+              GDScript backtrace (most recent call first):
+                  [0] sync (res://ui/contextual/director.gd:116)
+                  [1] render_if_needed (res://ui/contextual/director.gd:127)
+                  [2] _render_screen (res://main.gd:854)
+                  [3] _render (res://main.gd:839)
+                  [4] _refresh_after_response (res://main.gd:538)
+                  [5] _receive_model (res://main.gd:404)
+    FAIL: direct ouvert avec la fenêtre Équipe
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.5 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+    
+    EQUIPE {"controles":4,"failures":["direct ouvert avec la fenêtre Équipe"],"rapport":{}}
+    libspeechd.so.2: cannot open shared object file: No such file or directory
+    WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+         at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+    SCRIPT ERROR: Parse Error: Could not preload resource script "res://ui/contextual/match_equipe.gd".
+              at: GDScript::reload (res://ui/contextual/live_view.gd:6)
+              GDScript backtrace (most recent call first):
+                  [0] _ready (res://main.gd:266)
+                  [1] executer (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:203)
+                  [2] taille (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:61)
+                  [3] poser (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:29)
+    SCRIPT ERROR: Parse Error: Could not resolve script "res://ui/contextual/match_equipe.gd".
+              at: GDScript::reload (res://ui/contextual/live_view.gd:6)
+              GDScript backtrace (most recent call first):
+                  [0] _ready (res://main.gd:266)
+                  [1] executer (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:203)
+                  [2] taille (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:61)
+                  [3] poser (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:29)
+    SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+              at: GDScript::reload (res://ui/contextual/director.gd:0)
+              GDScript backtrace (most recent call first):
+                  [0] _ready (res://main.gd:266)
+                  [1] executer (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:203)
+                  [2] taille (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:61)
+                  [3] poser (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:29)
+    ERROR: Failed to load script "res://ui/contextual/director.gd" with error "Compilation failed".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+       GDScript backtrace (most recent call first):
+           [0] _ready (res://main.gd:266)
+           [1] executer (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:203)
+           [2] taille (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:61)
+           [3] poser (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd:29)
+    SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+              at: _open (res://ui/contextual/director.gd:144)
+              GDScript backtrace (most recent call first):
+                  [0] _open (res://ui/contextual/director.gd:144)
+                  [1] sync (res://ui/contextual/director.gd:111)
+                  [2] _receive_model (res://main.gd:391)
+    SCRIPT ERROR: Invalid call. Nonexistent function 'update_frame' in base 'Nil'.
+              at: sync (res://ui/contextual/director.gd:116)
+              GDScript backtrace (most recent call first):
+                  [0] sync (res://ui/contextual/director.gd:116)
+                  [1] _receive_model (res://main.gd:391)
+    SCRIPT ERROR: Invalid call. Nonexistent function 'update_frame' in base 'Nil'.
+              at: sync (res://ui/contextual/director.gd:116)
+              GDScript backtrace (most recent call first):
+                  [0] sync (res://ui/contextual/director.gd:116)
+                  [1] render_if_needed (res://ui/contextual/director.gd:127)
+                  [2] _render_screen (res://main.gd:854)
+                  [3] _render (res://main.gd:839)
+                  [4] _refresh_after_response (res://main.gd:538)
+                  [5] _receive_model (res://main.gd:404)
+    FAIL: direct ouvert avec la fenêtre Équipe
+    
+  operator: 'doesNotMatch'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.cjs:34:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 113427.813908
