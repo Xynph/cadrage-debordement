@@ -51,7 +51,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres|pilotage) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres|pilotage|causerie) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -99,6 +99,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/pilotage"
     phase "captures pilotage du match (écran 2D : consignes, arbitre, états des joueurs)" captures-pilotage.log \
       env CD_MATCH_TEMPS_FORTS_CAPTURES="$cap/pilotage" node tests/godot-match-temps-forts.cjs
+  fi
+  if veut causerie; then
+    mkdir -p "$cap/causerie"
+    phase "captures causerie (vestiaire : tuiles, phrases, Continuer ; 1080p et 720p)" captures-causerie.log \
+      env CD_CAUSERIE_CAPTURES="$cap/causerie" "$CD_GODOT_EXECUTABLE" --audio-driver Dummy --display-driver x11 --rendering-method gl_compatibility --windowed --resolution 1920x1080 --path native/godot --script "$root/tests/godot-contextual-ui.gd"
   fi
   if veut banque-images; then
     mkdir -p "$cap/banque-images"
