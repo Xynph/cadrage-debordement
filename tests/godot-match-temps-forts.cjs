@@ -18,7 +18,7 @@ fs.writeFileSync(path.join(directory,'live.json'),source.run('JSON.stringify(cre
  const bridge=createBridge({dataDir,seed:7,now:1700000000000,dailyCalendar:true,mandatoryPress:true,internationalCareer:true});
  let id=0;const call=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+' : '+r.error);return r.model;};
  settleClubMeetings(call('new_career',{club:0}),call);
- assert.equal(call('begin_match').clubLife.matchTalks.scene.phase,'pre');
+ // Pas de reprise en plein match (décision du 16/11/2026) : export le jour du match, le test lance begin_match après l'import.
  fs.writeFileSync(path.join(directory,'causerie.json'),call('export').meta.exportText);
  bridge.close?.();fs.rmSync(dataDir,{recursive:true,force:true});
 }
@@ -111,7 +111,7 @@ if(veut('multiplex')){
  for(let day=0;day<150;day++){model=settleClubMeetings(model,call);if(model.meta.calendarCadence?.matchReady)break;model=call('advance_day',{fromDate:model.meta.calendarToday});}
  assert.equal(model.meta.calendarCadence?.matchReady,true,'jour du premier match atteint');
  model=settleClubMeetings(model,call);model=call('auto_lineup');if(!model.selection?.valid)call('promote_cover',{confirmed:true});
- assert.ok(call('begin_match').live,'match Monde commencé');
+ // Pas de reprise en plein match (décision du 16/11/2026) : export le jour du match, le test lance begin_match après l'import.
  fs.writeFileSync(path.join(directory,'multiplex.json'),call('export').meta.exportText);
  bridge.close?.();fs.rmSync(dataDir,{recursive:true,force:true});
  const journee=run('multiplex');

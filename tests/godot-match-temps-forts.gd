@@ -215,6 +215,8 @@ func run() -> void:
 		# Carrière Monde arrêtée à la causerie d'avant-match (godot-match-liaison-monde.cjs).
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("monde.json"))})
 		await settle()
+		await command("begin_match")
+		await settle()
 		var limite := Time.get_ticks_msec() + 120000
 		while Time.get_ticks_msec() < limite and (surface() == null or surface().regie == null):
 			var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
@@ -228,6 +230,8 @@ func run() -> void:
 	elif mode == "score_essai":
 		# Carrière Monde arrêtée à la causerie d'avant-match (godot-match-score-essai.cjs).
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("monde.json"))})
+		await settle()
+		await command("begin_match")
 		await settle()
 		var limite_s := Time.get_ticks_msec() + 120000
 		while Time.get_ticks_msec() < limite_s and (surface() == null or surface().regie == null):
@@ -256,6 +260,8 @@ func run() -> void:
 		# Carrière world-champ arrêtée au coup d'envoi de son premier match (godot-match-temps-forts.cjs).
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("multiplex.json"))})
 		await settle()
+		await command("begin_match")
+		await settle()
 		var limite_m := Time.get_ticks_msec() + 120000
 		while Time.get_ticks_msec() < limite_m and (surface() == null or surface().regie == null):
 			var scene_m: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
@@ -268,6 +274,8 @@ func run() -> void:
 			followed = vue_m.regie.suivi
 	elif mode == "defaut":
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("causerie.json"))})
+		await settle()
+		await command("begin_match")
 		await settle()
 		followed = await player_path()
 	else:
@@ -1301,13 +1309,13 @@ func terrain2d(view: Control) -> void:
 			elif float(j.condition) < float(a.condition): attendu_changement = poste
 	if attendu_changement >= 0 and int(lineup[attendu_changement].get("injury", 0)) <= 0 and float(lineup[attendu_changement].condition) >= between.FATIGUE: attendu_changement = -1
 	var action_changement: Button = between.find_child("MatchBetweenSwapAction", true, false)
-	check(between.changement_poste == attendu_changement and action_changement != null and action_changement.text == ("Préparer le changement" if attendu_changement >= 0 else "Ouvrir le banc"), "Carte Changement : poste %d attendu %d (%s)" % [between.changement_poste, attendu_changement, action_changement.text if action_changement != null else "sans bouton"])
+	check(between.changement_poste == attendu_changement and action_changement != null and action_changement.text == ("Préparer le changement" if attendu_changement >= 0 else "Ouvrir l’équipe"), "Carte Changement : poste %d attendu %d (%s)" % [between.changement_poste, attendu_changement, action_changement.text if action_changement != null else "sans bouton"])
 	# Tuile « Dans les 22 » : masquée sans `direct.zone22`, remplie avec une donnée injectée.
 	check(between.zone22.visible == (direct.get("zone22") is Dictionary), "Tuile « Dans les 22 » masquée sans sa donnée")
 	var avec_22: Dictionary = direct.duplicate()
 	avec_22["zone22"] = {"entrees": [3, 1], "points": [10, 0], "secondes": [200, 65]}
+	# Lecture tout de suite : la vue du direct rafraîchit l'écran intermédiaire à chaque image avec les vraies données.
 	between.update_frame(app.model, app.model.live, avec_22, func(_c: Dictionary): pass)
-	await settle(2)
 	var textes_22: Array = between.zone22.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
 	var carres := func(cote: int) -> int: return between.zone22.find_child("MatchBetweenZone22Entries%d" % cote, true, false).get_children().filter(func(c: Node): return c.get("teinte") != null).size()
 	check(between.zone22.is_visible_in_tree() and carres.call(0) == 3 and carres.call(1) == 1, "Dans les 22 : un carré par entrée (%d, %d)" % [carres.call(0), carres.call(1)])
