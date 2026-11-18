@@ -213,7 +213,27 @@ function tableau(rows, cols) {
   return ['| ' + cols.join(' | ') + ' |', '|' + cols.map(() => '---').join('|') + '|', ...rows.map(r => '| ' + cols.map(c => String(r[c])).join(' | ') + ' |')].join('\n');
 }
 
-if (require.main === module) {
+// --analyser-dossier <dossier> : agrège les JSON d'un dossier (une graine chacun, --json) par championnat : Spearman moyen
+// rang/effectif et, sur les matchs de saison régulière, régression de l'écart de score sur l'écart d'effectif avec constante.
+// `pente/bruit` = pente ÷ écart-type du résidu : à comparer entre résultat rapide et moteur complet (docs/top14-dispute-20261117.md §14 quinquies).
+function analyserDossier(dossier) {
+  const par = {};
+  for (const f of fs.readdirSync(dossier).filter(n => n.endsWith('.json'))) {
+    const j = JSON.parse(fs.readFileSync(dossier + '/' + f, 'utf8')), d = j.brut;
+    for (const tb of j.analyse.detail.tableaux) (par[tb.comp] ??= { rho: [], pts: [] }).rho.push(tb.spearmanEffectif);
+    for (const m of d.histoire) if (m.ph === 'league') par[m.c]?.pts.push([d.niveaux[m.pair[0]] - d.niveaux[m.pair[1]], m.score[0] - m.score[1]]);
+  }
+  return Object.entries(par).map(([comp, { rho, pts }]) => {
+    const n = pts.length, mx = moy(pts.map(p => p[0])), my = moy(pts.map(p => p[1]));
+    const b = pts.reduce((s, p) => s + (p[0] - mx) * (p[1] - my), 0) / pts.reduce((s, p) => s + (p[0] - mx) ** 2, 0), c = my - b * mx;
+    const sd = Math.sqrt(pts.reduce((s, p) => s + (p[1] - c - b * p[0]) ** 2, 0) / n);
+    return { comp, graines: rho.length, matchs: n, spearmanEffectif: r2(moy(rho)), pente: r2(b), terrain: r1(c), bruit: r1(sd), 'pente/bruit': Math.round(b / sd * 1000) / 1000 };
+  });
+}
+
+if (require.main === module && opt('--analyser-dossier', null)) {
+  console.log(tableau(analyserDossier(opt('--analyser-dossier', null)), ['comp', 'graines', 'matchs', 'spearmanEffectif', 'pente', 'terrain', 'bruit', 'pente/bruit']));
+} else if (require.main === module) {
   const relire = opt('--analyser', null);
   const d = relire ? JSON.parse(fs.readFileSync(relire, 'utf8')).brut : mesurer({ graine, club, semaines, ancien, journal: true, reglage: opt('--regler', ''), selections, suiviDeLoin: args.includes('--suivi-de-loin') });
   const a = analyser(d);
@@ -230,4 +250,4 @@ if (require.main === module) {
   console.log(tableau(a.detail.tableaux, ['comp', 'clubs', 'premier', 'dernier', 'ecartPoints', 'rangMieuxArme', 'rang2', 'spearmanEffectif', 'spearmanReel', 'champion']));
   console.log(tableau(a.hierarchie, ['comp', 'spearman', 'favori2', 'favori5', 'effectif1', 'effectif3', 'domicile', 'meilleurRang', 'victoiresTete', 'victoiresDernier', 'tete']));
 }
-module.exports = { mesurer, analyser, classement };
+module.exports = { mesurer, analyser, analyserDossier, classement };
