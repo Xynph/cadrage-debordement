@@ -12,8 +12,8 @@ const { ouvrir, creer } = require('./helpers/carriere-monde.cjs');
 const forces = ['elite', 'prem', 'urc', 'accession', 'nationale', 'srp'].flatMap((division, d) =>
   Array.from({ length: 16 }, (_, i) => ({ id: d * 16 + i, division, base: 62 + i })));
 
-test('Limites : seule la Pro D2 est encadrée, les autres championnats gardent leur borne', () => {
-  assert.deepEqual(Object.entries(E.CHAMPIONNATS).filter(([, c]) => c.encadrement).map(([k]) => k), ['accession']);
+test('Limites : Pro D2 (et Nationale, tests/nationale-equilibre.cjs) encadrées, les autres championnats gardent leur borne', () => {
+  assert.deepEqual(Object.entries(E.CHAMPIONNATS).filter(([, c]) => c.encadrement).map(([k]) => k), ['accession', 'nationale']);
   const R = B.recettes(forces);
   for (let saison = 1; saison <= 12; saison++) for (const [id, l] of B.limites(forces, saison)) {
     const f = forces[id], c = E.CHAMPIONNATS[f.division], p = B.proprietaire(forces, id), annuel = R.get(id);
@@ -36,7 +36,7 @@ test('Réserve : 20 à 30 % des recettes en Pro D2, règle générale ailleurs',
   for (const f of forces) {
     const r = B.reserveCible(R.get(f.id), f.id, f.division), general = B.reserveCible(R.get(f.id), f.id);
     if (f.division === 'accession') assert.ok(r >= 0.2 * R.get(f.id) - 1e4 && r <= 0.3 * R.get(f.id) + 1e4, 'Pro D2 ' + f.id + ' : ' + r);
-    else assert.equal(r, general, f.division + ' ' + f.id);
+    else if (f.division !== 'nationale') assert.equal(r, general, f.division + ' ' + f.id);
   }
 });
 

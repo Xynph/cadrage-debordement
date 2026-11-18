@@ -89,7 +89,7 @@ function investissements(s,userLeague){
 //   resultat = caisse + prime - amende - caisse de départ (transferts et primes de signature compris), avant l'apport du propriétaire.
 function resultatsParLigue(s){
  const b=s.clubBudget;if(!b?.clubs||!clubBudget)return null;
- const out={};
+ const out={},avant=s.worldMode?.yearbook?.at(-1)?.standings??{},depuis=id=>Object.keys(avant).find(lg=>avant[lg]?.includes?.(id))??null;
  for(const c of s.clubs){
   const k=b.clubs[c.id],lg=leagueOf(s,c);if(!k)continue;
   let prime=0,amende=0;try{prime=clubBudget.primeClassement(k.division,k.rang,k.taille);amende=clubBudget.regles({division:k.division,masseAnnuelle:k.masse,recettes:k.recettes+prime}).amende;}catch{}
@@ -100,12 +100,14 @@ function resultatsParLigue(s){
   if(Number.isFinite(jeunes))l.detail.centre.push(jeunes);
   const resultat=(c.cash+prime-amende-k.depart)/1e6,exploitation=(k.recettes+prime-k.charges-amende)/1e6;
   l.clubs++;if(resultat<0)l.enPerte++;if(exploitation<0)l.exploitationEnPerte++;
+  // Club arrivé d'une autre division cette saison (promu ou relégué) : son résultat et sa caisse, pour voir s'il survit.
+  const origine=depuis(c.id);if(origine&&origine!==lg)(l.arrivants??=[]).push({id:c.id,depuis:origine,resultat:round(resultat),caisse:round(c.cash/1e6),masse:round(k.masse/1e6),recettes:round(k.recettes/1e6)});
   l.resultats.push(resultat);l.exploitations.push(exploitation);l.caisses.push(c.cash/1e6);if(k.recettes>0)l.masseSurRecettes.push(k.masse/(k.recettes+prime));
  }
  return Object.fromEntries(Object.entries(out).map(([lg,l])=>[lg,{clubs:l.clubs,enPerte:l.enPerte,exploitationEnPerte:l.exploitationEnPerte,
   resultatMedian:round(median(l.resultats)),resultatMin:round(Math.min(...l.resultats)),resultatMax:round(Math.max(...l.resultats)),
   exploitationMediane:round(median(l.exploitations)),caisseMediane:round(median(l.caisses)),caisseMax:round(Math.max(...l.caisses)),masseSurRecettes:round(median(l.masseSurRecettes)),
-  medianes:Object.fromEntries(Object.entries(l.detail).filter(([,v])=>v.length).map(([cle,v])=>[cle,round(median(v))]))}]));
+  medianes:Object.fromEntries(Object.entries(l.detail).filter(([,v])=>v.length).map(([cle,v])=>[cle,round(median(v))])),...(l.arrivants?{arrivants:l.arrivants}:{})}]));
 }
 function observe(label,s,storeText,profileBytes,exportResult,events,elapsedMs){
  const leagues={};
