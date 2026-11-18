@@ -26,6 +26,7 @@ const professionalDepth=require('./professional-depth.cjs');
 const epcrPreparation=require('./epcr-preparation.cjs'),clubPreview=require('./club-preview.cjs');
 const competitionEditor=require('./competition-editor.cjs');
 const leagueDetail=require('./league-detail.cjs');
+const defisDepart=require('./defis-depart.cjs');
 const {calendarContext}=require('./calendar-clock.cjs');
 const franceCalendar=require('./france-calendar-cadence.cjs');
 const confirmMatchResult=require('./match-result.cjs');
@@ -81,6 +82,7 @@ const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_p
 COMMANDS.add('observe_player');
 COMMANDS.add('league_benchmark');
 COMMANDS.add('club_preview');
+COMMANDS.add('start_challenges');
 COMMANDS.add('restore_checkpoint');
 COMMANDS.add('remove_checkpoint');
 COMMANDS.add('calendar_template');
@@ -806,7 +808,7 @@ function createBridge(options={}){
   // décision est alors écrite d'abord, comme avant.
   const COALESCING=new Set([...PRESS_PROGRESSION,'save','advance_until_event']);
   // Lectures pures (aucune écriture de la carrière) : elles gardent le texte des sections de la projection précédente.
-  const READ_ONLY=new Set(['snapshot','club_sheet','epcr_preview','competition_editor_preview','club_preview']);
+  const READ_ONLY=new Set(['snapshot','club_sheet','epcr_preview','competition_editor_preview','club_preview','start_challenges']);
   let pendingCommit=null,pendingFailure=null,coalescing=null,undoPending=false,warmPending=false;
   // Relevés différés de la mémoire de projection (state-versions.cjs, memoTextLater) : faits après la réponse, en
   // dernière étape de l'écriture différée ; abandonnés si une commande arrive avant.
@@ -945,6 +947,12 @@ function createBridge(options={}){
       patchLook:process.env.CD_PORTRAIT_CARRURE!=='0'?face=>portraitLooks.patch(face,true):null,registry:champRegistry});
      return {id,ok:true,model};
     }
+    // Défis de départ (écran de création) : lecture seule, calculés sur le catalogue world-champ (defis-depart.cjs).
+    if(command==='start_challenges'){
+     if(Object.keys(payload).length)throw Error('Défis de départ : aucun paramètre attendu.');
+     const model=projectKnowledge(snapshotRaw());model.meta.startChallenges=defisDepart.proposer(model.meta.champCatalogue);
+     return {id,ok:true,model};
+    }
     if(command==='epcr_preview'){const model=snapshotRaw();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='pack_inspect'){packs.inspect(payload.path,edition(payload.mode??currentEdition()));return {id,ok:true,model:snapshot()};}
     if(command==='pack_install'){packs.install(payload.path,payload.digest,payload.mode===undefined?undefined:edition(payload.mode));return {id,ok:true,model:snapshot()};}
@@ -1013,6 +1021,13 @@ function createBridge(options={}){
       if(payload.varyCurrent!==undefined&&typeof payload.varyCurrent!=='boolean')throw Error('Option de variation du niveau actuel invalide.');
       if(payload.varyPotential!==undefined||payload.careerVariation!==undefined||payload.seed!==undefined)throw Error('Le potentiel varie à chaque nouvelle carrière ; paramètres de variation non autorisés.');
       if(payload.start!==undefined&&!repriseStarts.includes(payload.start))throw Error('Départ de partie invalide.');
+      // Défi de départ : {id, club}, recalculé sur le catalogue (jamais repris tel quel du client).
+      if(payload.challenge!==undefined){
+       const ch=payload.challenge;if(!ch||typeof ch!=='object'||Array.isArray(ch)||Object.keys(ch).length!==2||typeof ch.id!=='string'||!Number.isInteger(ch.club))throw Error('Défi de départ invalide.');
+       if(payload.mode!==WORLD_ONLY_MODE||payload.nationalRole==='nation'||ch.club!==payload.club)throw Error('Ce défi ne correspond pas au club choisi.');
+       ctx.nativeDefi=defisDepart.trouver(projectKnowledge(snapshotRaw()).meta.champCatalogue,ch.id,ch.club);
+       if(!ctx.nativeDefi)throw Error('Ce défi n’est pas proposé pour ce club.');
+      }else delete ctx.nativeDefi;
      }
      if(command!=='new_career'&&command!=='import'&&!peek('!!S'))throw Error('Crée ou importe une carrière.');
      ctx.nativeCommand=command;
@@ -1064,7 +1079,7 @@ function createBridge(options={}){
       run("nativeSystems.domain('customCompetition').create((({varyCurrent,...custom})=>custom)(nativePayload))");
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='new_career'){
-       const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode),selectedClub=payload.nationalRole==='nation'?0:payload.club;if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(selectedClub)||selectedClub<0||(worldEdition?!worldEdition.playable.includes(selectedClub):selectedClub>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');ctx.nativePayload.club=selectedClub;protectCurrent('nouvelle-carriere',priorSeed,priorClock);if(worldEdition)run('CDWorldCareer.start(nativePayload.club,nativePayload.mode,'+(options.dailyCalendar===true)+')');if(payload.detailedLeagues!==undefined){if(!worldEdition)throw Error('Championnats actifs : réservé à la carrière Monde.');run('CDLeagueDetail.create(S,nativePayload.detailedLeagues)');}else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimporte-le ou choisis Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
+       const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode),selectedClub=payload.nationalRole==='nation'?0:payload.club;if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(selectedClub)||selectedClub<0||(worldEdition?!worldEdition.playable.includes(selectedClub):selectedClub>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');ctx.nativePayload.club=selectedClub;protectCurrent('nouvelle-carriere',priorSeed,priorClock);if(worldEdition)run('CDWorldCareer.start(nativePayload.club,nativePayload.mode,'+(options.dailyCalendar===true)+')');if(payload.detailedLeagues!==undefined){if(!worldEdition)throw Error('Championnats actifs : réservé à la carrière Monde.');run('CDLeagueDetail.create(S,nativePayload.detailedLeagues)');}else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if(ctx.nativeDefi)run(defisDepart.VM_APPLIQUER);if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimporte-le ou choisis Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
       if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='train'){
