@@ -7,6 +7,7 @@ const BanqueImages = preload("res://ui/banque_images.gd")
 const RoomIdentity = preload("res://ui/contextual/rooms/room_identity.gd")
 const SHADER = preload("res://shaders/recoloration.gdshader")
 const MOTIFS := ["uni", "cerceaux", "bandes-verticales", "quartiers", "chevron", "ceinture", "manches-contrastees", "col-poignets-contrastes"]
+const BAS := ["uni", "bande", "deux-bandes"]
 const ECUSSONS := ["bouclier-classique", "bouclier-moderne", "blason-banniere", "rond", "ovale", "hexagone", "losange", "etoile"]
 
 static func _identite(club: Dictionary) -> Dictionary:
@@ -24,7 +25,7 @@ static func motif(club: Dictionary) -> String: return MOTIFS[_graine(club) % MOT
 static func forme_ecusson(club: Dictionary) -> String: return ECUSSONS[(_graine(club) / 7) % ECUSSONS.size()]
 
 ## TextureRect recoloré ; null si la banque n'a pas l'image ou son masque.
-static func image(id: String, base: Color, motif_couleur: Color, taille: Vector2 = Vector2.ZERO) -> TextureRect:
+static func image(id: String, base: Color, motif_couleur: Color, taille: Vector2 = Vector2.ZERO, dominer: bool = true) -> TextureRect:
 	var carte := BanqueImages.texture(id)
 	var masque := BanqueImages.texture(id + "-masque")
 	if carte == null or masque == null: return null
@@ -36,7 +37,7 @@ static func image(id: String, base: Color, motif_couleur: Color, taille: Vector2
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Le club doit dominer : si le blanc du masque (zones recolorables) n'est qu'un motif minoritaire
 	# (cerceaux, bandes, chevron…), la couleur du club passe sur le corps et l'encre sur le motif.
-	if float(BanqueImages.info(id + "-masque").get("part_blanche", 1.0)) < 0.4:
+	if dominer and float(BanqueImages.info(id + "-masque").get("part_blanche", 1.0)) < 0.4:
 		var echange := base
 		base = motif_couleur
 		motif_couleur = echange
@@ -74,3 +75,30 @@ static func ecusson(club: Dictionary, largeur: int = 56) -> Control:
 	initiales.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rect.add_child(initiales)
 	return rect
+
+## Short et chaussettes : short dans l'encre de contraste (liseré à la couleur du club), chaussettes à la
+## couleur du club (bandes dans l'encre). Variante stable par club.
+static func bas(club: Dictionary, piece: String, taille: Vector2 = Vector2.ZERO) -> TextureRect:
+	var c := couleurs(club)
+	var variante: String = BAS[(_graine(club) / 11) % BAS.size()]
+	var id := "%s-%s-face" % [piece, variante]
+	var rect: TextureRect
+	if piece == "short": rect = image(id, c[1] if variante == "uni" else c[0], c[1], taille, false)
+	else: rect = image(id, c[0], c[1], taille, true)
+	if rect != null: rect.name = "ClubKit" + piece.capitalize()
+	return rect
+
+## Planche de la tenue complète : maillot de face et de dos, short, chaussettes ; null sans images.
+static func planche(club: Dictionary, hauteur: float = 300.0) -> Control:
+	var face := maillot(club, Vector2(hauteur, hauteur))
+	if face == null: return null
+	var rangee := HBoxContainer.new()
+	rangee.name = "ClubKitBoard"
+	rangee.alignment = BoxContainer.ALIGNMENT_CENTER
+	rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var c := couleurs(club)
+	for piece: Control in [face, image("maillot-%s-dos" % motif(club), c[0], c[1], Vector2(hauteur, hauteur)), bas(club, "short", Vector2(hauteur * 0.8, hauteur * 0.8)), bas(club, "chaussettes", Vector2(hauteur * 0.6, hauteur * 0.8))]:
+		if piece != null:
+			piece.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			rangee.add_child(piece)
+	return rangee

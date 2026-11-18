@@ -131,4 +131,11 @@ test('Météo annoncée : sans vent, Gabi ne parle pas du vent et la tuile dit l
   run('delete S.worldMode.meteo');
 });
 
+test('Affiche : capacité du stade du club qui reçoit (photo d’avant-match à sa taille)', () => {
+  const snap = jeu.call('snapshot');
+  const attendu = etat('CDWorldStadiumCapacities[S.clubs[' + snap.next.pair[0] + '].id]');
+  assert.equal(snap.next.capacity, attendu);
+  assert.ok(Number.isInteger(snap.next.capacity) && snap.next.capacity > 0);
+});
+
 if (process.env.CD_AVANT_MATCH_DUMP) console.log(JSON.stringify({ premier, am }, null, 1));

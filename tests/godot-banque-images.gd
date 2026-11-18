@@ -5,6 +5,8 @@ extends SceneTree
 const BanqueImages = preload("res://ui/banque_images.gd")
 const Between = preload("res://ui/contextual/match_between.gd")
 const Tenue = preload("res://ui/tenue_club.gd")
+const AvantMatch = preload("res://ui/immersive08/match_avant.gd")
+const Reception = preload("res://ui/immersive08/reception_canvas.gd")
 const ClubCanvas = preload("res://ui/immersive08/club_canvas.gd")
 
 var failures: Array = []
@@ -104,6 +106,25 @@ func tenues() -> void:
 	await capturer("tenues-recolorees")
 	grille.queue_free()
 
+func lot5() -> void:
+	var sec := {"pluie": 0, "vent": 0, "chaleur": 0}
+	verifier(AvantMatch.photo_meteo({"kickoffLocal": "15:00", "date": "2026-10-03", "capacity": 33000, "meteo": sec}) == "stade-grand-interieur-plein-jour", "grand stade en journée, temps sec")
+	verifier(AvantMatch.photo_meteo({"kickoffLocal": "15:00", "date": "2026-10-03", "capacity": 9000, "meteo": sec}) == "stade-pelouse-sec-jour", "stade de club en journée")
+	verifier(AvantMatch.photo_meteo({"kickoffLocal": "15:00", "date": "2026-10-03", "capacity": 33000, "meteo": {"pluie": 1}}).begins_with("match-tunnel"), "grand stade sous la pluie : tunnel")
+	verifier(AvantMatch.photo_meteo({"kickoffLocal": "21:05", "date": "2026-10-03", "capacity": 33000, "meteo": sec}).begins_with("match-tunnel"), "grand stade le soir : tunnel validé")
+	for cas: Array in [["Victoire 27-13 face à Vannes.", "resultat-victoire"], ["Victoire avec le bonus offensif à Pau.", "resultat-bonus-offensif"], ["Défaite en finale face à Toulouse.", "resultat-finale-perdue"],
+			["Match nul 9-9 à Brive.", "resultat-nul"], ["Le club est sacré champion : le titre est à vous !", "resultat-titre-trophee-leve"], ["Le club est relégué en Pro D2.", "resultat-relegation"], ["Point sur la trésorerie.", "mail-pitch"]]:
+		verifier(Reception.photo_resultat(cas[0]) == cas[1], "courrier « %s » : %s (%s)" % [cas[0], Reception.photo_resultat(cas[0]), cas[1]])
+	verifier(Between.occasion_fin({"finale": true, "camp": 0}, "victoire") == "finale" and Between.occasion_fin({"essais": [5, 1], "camp": 0}, "victoire") == "bonus" and Between.occasion_fin({"essais": [5, 1], "camp": 1}, "defaite") == "championnat", "fin de match : finale, bonus, championnat")
+	var club := {"id": 7, "slug": "club-7", "name": "Club 7", "abbr": "C7", "color": "#8c2f39"}
+	var planche: Control = Tenue.planche(club, 300.0)
+	verifier(planche != null and planche.get_child_count() == 4, "tenue complète : 4 pièces")
+	if planche:
+		root.add_child(planche)
+		planche.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+		await capturer("tenue-complete")
+		planche.queue_free()
+
 func ecran_entre_temps_forts() -> void:
 	var hote := Control.new()
 	root.add_child(hote)
@@ -138,5 +159,6 @@ func executer() -> void:
 	await ecran_entre_temps_forts()
 	await stades()
 	await tenues()
+	await lot5()
 	print("BANQUE " + JSON.stringify({"controles": controles, "failures": failures}))
 	quit(0 if failures.is_empty() else 1)

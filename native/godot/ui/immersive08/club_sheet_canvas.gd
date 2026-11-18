@@ -407,13 +407,31 @@ func _overview() -> void:
 	# Tenue du club : maillot de la banque d'images aux couleurs du club, en haut à droite du panneau.
 	var kit := Tenue.maillot(_identity(club_id))
 	if kit != null:
-		kit.tooltip_text = "Tenue du club"
-		kit.mouse_filter = Control.MOUSE_FILTER_PASS
+		kit.tooltip_text = "Tenue du club · cliquer pour la voir en entier"
+		kit.mouse_filter = Control.MOUSE_FILTER_STOP
+		kit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		var identite := _identity(club_id)
+		kit.gui_input.connect(func(event: InputEvent):
+			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT: _tenue_complete(identite))
 		club.add_child(kit)
 		D.place(kit, Rect2(586, 4, 96, 92))
 	_palmares(club, 700)
 	_season_panel()
 	_rivalry_panel()
+
+## Tenue complète du club (maillot face et dos, short, chaussettes) dans une fenêtre.
+func _tenue_complete(identite: Dictionary) -> void:
+	var board := Tenue.planche(identite, 300.0 * C.density)
+	if board == null: return
+	var dialog := AcceptDialog.new()
+	dialog.name = "ClubKitDialog"
+	dialog.title = "Tenue · " + G.club_name(identite)
+	dialog.ok_button_text = "Fermer"
+	dialog.add_child(board)
+	app.add_child(dialog)
+	dialog.confirmed.connect(dialog.queue_free)
+	dialog.canceled.connect(dialog.queue_free)
+	dialog.popup_centered(Vector2i(C.px(1400), C.px(440)))
 
 ## Palmarès connu dès le premier jour (titres et dernières saisons), état vide en langage de club.
 func _palmares(panel: Control, width: int) -> void:

@@ -1101,7 +1101,8 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	if cle == _cle: return
 	_cle = cle
 	_lignes = direct.get("fil", [])
-	_fin = {"fini": live.get("finished", false), "score": live.get("score", []), "camp": int(direct.get("camp", -1))}
+	_fin = {"fini": live.get("finished", false), "score": live.get("score", []), "camp": int(direct.get("camp", -1)),
+		"finale": str(model.get("next", {}).get("phase", "") if model.get("next") is Dictionary else "") == "final", "essais": live.get("tries", [])}
 	_remplir_fil()
 	_remplir_chiffres(direct, live)
 	_remplir_xv(passe.lineup, direct)
@@ -1186,6 +1187,14 @@ func _remplir_fil() -> void:
 		if recents.is_empty(): faits.add_child(_texte("Aucun fait marquant pour l’instant.", 24, FAIBLE))
 	_photo_faits(visibles)
 
+## Occasion de la photo de fin de match : finale, victoire bonifiée (3 essais de plus), sinon championnat.
+static func occasion_fin(fin: Dictionary, resultat: String) -> String:
+	if fin.get("finale", false) and resultat != "nul": return "finale"
+	var essais: Variant = fin.get("essais")
+	var camp := int(fin.get("camp", -1))
+	if resultat == "victoire" and essais is Array and essais.size() == 2 and camp in [0, 1] and int(essais[camp]) - int(essais[1 - camp]) >= 3: return "bonus"
+	return "championnat"
+
 ## Image de la banque pour un fait du moteur ("" : fait sans photo).
 static func photo_du_fait(kind: String, texte: String) -> String:
 	match kind:
@@ -1210,7 +1219,7 @@ func _photo_faits(visibles: Array) -> void:
 	var id := ""
 	if _fin.get("fini", false):
 		var r := BanqueImages.resultat(_fin.get("score"), int(_fin.get("camp", -1)))
-		if not r.is_empty(): id = BanqueImages.choisir("apres-match", {"resultat": r, "occasion": "championnat"})
+		if not r.is_empty(): id = BanqueImages.choisir("apres-match", {"resultat": r, "occasion": occasion_fin(_fin, r)})
 	else:
 		for n in range(visibles.size() - 1, maxi(-1, visibles.size() - 6), -1):
 			id = photo_du_fait(str(visibles[n].get("kind", "")), str(visibles[n].get("texte", "")))

@@ -1,6 +1,7 @@
 extends RefCounted
 ## Le journal du moteur, accompagné de repères et d'actions réellement disponibles.
 const Copy = preload("res://ui/management_copy.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const SeasonLabel = preload("res://ui/season_label.gd")
 const Portraits = preload("res://ui/game_skin.gd")
@@ -163,6 +164,18 @@ static func _is_season_expiry_mail(message: String) -> bool:
 	for template: String in SEASON_EXPIRY_MAILS:
 		if normalized == (template % count): return true
 	return false
+
+## Photo d'en-tête d'un courrier : résultat du match, finale, titre ou relégation (banque d'images) ;
+## sinon la pelouse habituelle.
+static func photo_resultat(texte: String) -> String:
+	var f := U.fold(texte)
+	var id := ""
+	if "relegu" in f or "descente en" in f: id = "resultat-relegation"
+	elif "champion" in f and ("sacre" in f or "titre" in f): id = "resultat-titre-trophee-leve"
+	elif f.begins_with("victoire"): id = "resultat-finale-gagnee" if "finale" in f else ("resultat-bonus-offensif" if "bonus offensif" in f else "resultat-victoire")
+	elif f.begins_with("defaite"): id = "resultat-finale-perdue" if "finale" in f else "resultat-defaite"
+	elif f.begins_with("match nul"): id = "resultat-nul"
+	return id if not id.is_empty() and BanqueImages.texture(id) != null else "mail-pitch"
 
 static func _category(message: String) -> String:
 	if "blesse" in message or "indisponibilite" in message or "medical" in message: return "Médical"
@@ -762,7 +775,7 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 		_art_fade(card,Rect2(0,0,width-727+359,142))
 	else:
 		var pitch := width-1-523-588
-		D.photo(card,"mail-pitch",Rect2(pitch,1,588,140))
+		D.photo(card,photo_resultat(str(message.get("text",""))),Rect2(pitch,1,588,140))
 		_art_fade(card,Rect2(pitch,1,135,140))
 		_art_fade(card,Rect2(pitch,1,588,45),false)
 		D.photo(card,"mail-staff",Rect2(width-524,1,523,140))

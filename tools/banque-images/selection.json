@@ -1,5 +1,5 @@
 {
- "note": "Images de la banque intégrées au jeu, par lot d'écrans. Ajouter un groupe par lot ; relancer integrer.py. Écartées pour l'instant : pelouse neige et brouillard (le moteur ne simule ni neige ni brouillard : météo = sec, pluie, forte pluie, vent, chaleur). Pelouse soir et nuit non intégrées : le soir et la nuit, l'avant-match garde le tunnel éclairé de la maquette validée. Écartées des temps forts : plaquage, ruck, maul, passe longue (aucun fait du moteur ne les nomme) ; derby (ambiance d'avant-match, pas un résultat). Résultats de finale, titre, bonus et relégation pas encore branchés : à ajouter avec l'écran de fin de saison. Stades : le niveau 4 de la banque reste un stade de club ; au-delà de 20 000 places, la grande enceinte pleine. Centres d'entraînement, extérieurs et stades nuit/toit/brique pas encore branchés. Recolorables : maillots de face et écussons seulement (dos, shorts, chaussettes pas encore affichés).",
+ "note": "Images de la banque intégrées au jeu, par lot d'écrans. Ajouter un groupe par lot ; relancer integrer.py. Écartées pour l'instant : pelouse neige et brouillard (le moteur ne simule ni neige ni brouillard : météo = sec, pluie, forte pluie, vent, chaleur). Pelouse soir et nuit non intégrées : le soir et la nuit, l'avant-match garde le tunnel éclairé de la maquette validée. Écartées des temps forts : plaquage, ruck, maul, passe longue (aucun fait du moteur ne les nomme) ; derby (ambiance d'avant-match, pas un résultat). Stades : le niveau 4 de la banque reste un stade de club ; au-delà de 20 000 places, la grande enceinte pleine. Centres d'entraînement, extérieurs et stades nuit/toit/brique pas encore branchés.",
  "groupes": [
   {
    "lot": "lot-1 pelouse du match (avant-match)",
@@ -7,7 +7,15 @@
    "ids": [
     "stade-pelouse-sec-jour",
     "stade-pelouse-pluie-jour"
-   ]
+   ],
+   "etiquettes": {
+    "stade-pelouse-sec-jour": {
+     "taille": "club"
+    },
+    "stade-pelouse-pluie-jour": {
+     "taille": "club"
+    }
+   }
   },
   {
    "lot": "lot-1 vestiaires (avant-match, mi-temps, après-match)",
@@ -52,12 +60,17 @@
    ]
   },
   {
-   "lot": "lot-2 résultats (fin de match)",
+   "lot": "lot-2/5 résultats (fin de match, courriers de résultat, titre, relégation)",
    "repli": "resultat-nul",
    "ids": [
     "resultat-victoire",
     "resultat-defaite",
-    "resultat-nul"
+    "resultat-nul",
+    "resultat-bonus-offensif",
+    "resultat-finale-gagnee",
+    "resultat-finale-perdue",
+    "resultat-titre-trophee-leve",
+    "resultat-relegation"
    ],
    "etiquettes": {
     "resultat-victoire": {
@@ -68,6 +81,21 @@
     },
     "resultat-nul": {
      "occasion": "championnat"
+    },
+    "resultat-bonus-offensif": {
+     "occasion": "bonus"
+    },
+    "resultat-finale-gagnee": {
+     "occasion": "finale"
+    },
+    "resultat-finale-perdue": {
+     "occasion": "finale"
+    },
+    "resultat-titre-trophee-leve": {
+     "occasion": "titre"
+    },
+    "resultat-relegation": {
+     "occasion": "relegation"
     }
    }
   },
@@ -98,13 +126,16 @@
      "categorie_image": "stade",
      "niveau_infrastructure": 5,
      "ecrans": [
-      "infrastructures"
-     ]
+      "infrastructures",
+      "avant-match"
+     ],
+     "taille": "grand",
+     "meteo": "sec"
     }
    }
   },
   {
-   "lot": "lot-4 maillots recolorables (carte d'ombres, fiche club)",
+   "lot": "lot-4/5 tenues recolorables (cartes d'ombres : maillots face et dos, shorts, chaussettes, écussons)",
    "repli": "maillot-uni-face",
    "ids": [
     "maillot-uni-face",
@@ -122,7 +153,21 @@
     "ecusson-ovale",
     "ecusson-hexagone",
     "ecusson-losange",
-    "ecusson-etoile"
+    "ecusson-etoile",
+    "maillot-uni-dos",
+    "maillot-cerceaux-dos",
+    "maillot-bandes-verticales-dos",
+    "maillot-quartiers-dos",
+    "maillot-chevron-dos",
+    "maillot-ceinture-dos",
+    "maillot-manches-contrastees-dos",
+    "maillot-col-poignets-contrastes-dos",
+    "short-uni-face",
+    "short-bande-face",
+    "short-deux-bandes-face",
+    "chaussettes-uni-face",
+    "chaussettes-bande-face",
+    "chaussettes-deux-bandes-face"
    ]
   },
   {
@@ -145,7 +190,21 @@
     "ecusson-ovale-masque",
     "ecusson-hexagone-masque",
     "ecusson-losange-masque",
-    "ecusson-etoile-masque"
+    "ecusson-etoile-masque",
+    "maillot-uni-dos-masque",
+    "maillot-cerceaux-dos-masque",
+    "maillot-bandes-verticales-dos-masque",
+    "maillot-quartiers-dos-masque",
+    "maillot-chevron-dos-masque",
+    "maillot-ceinture-dos-masque",
+    "maillot-manches-contrastees-dos-masque",
+    "maillot-col-poignets-contrastes-dos-masque",
+    "short-uni-face-masque",
+    "short-bande-face-masque",
+    "short-deux-bandes-face-masque",
+    "chaussettes-uni-face-masque",
+    "chaussettes-bande-face-masque",
+    "chaussettes-deux-bandes-face-masque"
    ]
   }
  ]
