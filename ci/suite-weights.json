@@ -17,6 +17,7 @@
       "tests/ai-roster-cycle.cjs": 59,
       "tests/match-pilotage.cjs": 260,
       "tests/arbitre-veille.cjs": 120,
+      "tests/match-staff-roles.cjs": 90,
       "tests/cartons-realistes.cjs": 150,
       "tests/homme-du-match-postes.cjs": 120,
       "tests/fiche-club-monde.cjs": 200,
