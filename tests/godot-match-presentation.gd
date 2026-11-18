@@ -82,7 +82,25 @@ func run() -> void:
 		view.apply_frame(original)
 		view._process(1.0)
 		check(view._actors.is_empty() and not view._ball.visible, "No phantom carrier or ball after removal")
-	print("MATCH_PRESENTATION_CHECKS ", JSON.stringify({"failures": failures, "ball": str(view._ball.position)}))
+	# Phases avec possession : le ballon est attaché à un porteur désigné, jamais seul au sol.
+	view.set_process(true)
+	var attendus :={"scrum": "1-8", "lineout": "1-1", "carry": "1-0", "reception": "1-0"}
+	for kind: String in attendus:
+		var pl: Array = []
+		for side in 2:
+			for slot in 15:
+				pl.append({"id": "%d-%d" % [side, slot], "side": side, "slot": slot, "x": 40 + slot, "y": 10 + side * 20 + slot,
+					"featured": kind in ["carry", "reception"] and side == 1 and slot == 0})
+		var phase := {"scene": {"key": kind + "-poss", "kind": kind, "possession": 1, "team": 1,
+			"players": pl, "ball": {"x": 40, "y": 20}, "origin": {"x": 40, "y": 20}}}
+		view.apply_frame(phase)
+		for i in 150: await process_frame
+		check(view._carrier_id == attendus[kind], "Possession phase %s names a carrier (%s)" % [kind, attendus[kind]])
+		var porteur: Node3D = view._actors[attendus[kind]].node if view._actors.has(attendus[kind]) else null
+		check(view._ball_attached and porteur != null and view._ball.global_position.distance_to(porteur.global_position) < 1.6,
+			"Ball is in the carrier's hands during %s" % kind)
+		check(view._ball_marker.global_basis.get_scale().x > 1.2, "Carrier ring is enlarged during %s" % kind)
+	print("MATCH_PRESENTATION_CHECKS ",JSON.stringify({"failures": failures, "ball": str(view._ball.position)}))
 	view.queue_free()
 	await process_frame
 	quit(0 if failures.is_empty() else 1)

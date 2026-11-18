@@ -78,7 +78,11 @@ func observe_framing() -> void:
 	var legend: Control = view.events.get_parent().get_parent().get_parent()
 	var top: float = 0.5 - view.clock.get_global_rect().end.y / maxf(1.0, view.size.y)
 	var bottom: float = -0.5 + (view.size.y - legend.get_global_rect().position.y) / maxf(1.0, view.size.y)
-	if absf(local.x) > camera.size * screen.x / screen.y * 0.5 or local.y > camera.size * top or local.y < camera.size * bottom:
+	# Caméras en perspective depuis le 18 novembre 2026 : position réelle du ballon à l'écran (0,5 au centre).
+	var seen := camera.unproject_position(ball.global_position) / screen - Vector2(0.5, 0.5)
+	if camera.projection == Camera3D.PROJECTION_ORTHOGONAL:
+		seen = Vector2(local.x / (camera.size * screen.x / screen.y), -local.y / camera.size)
+	if camera.is_position_behind(ball.global_position) or absf(seen.x) > 0.5 or -seen.y > top or -seen.y < bottom:
 		if veiled: framing.hidden += 1
 		else:
 			framing.outside += 1

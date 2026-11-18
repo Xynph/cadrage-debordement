@@ -44,7 +44,7 @@ func run() -> void:
 		view.apply_frame(frame(50.8, 35.0 + side * 2.8))
 		view._process(0.14)
 		var expected := Motion.position_at(carrier.from, carrier.target, carrier.tangent,
-			float(carrier.elapsed) / MatchView.BLEND_SECONDS)
+			float(carrier.elapsed) / float(carrier.duree))
 		check(carrier.node.position.is_equal_approx(expected), "Trajectoire de présentation conservée")
 		check(not carrier.cut_pose.is_empty() and view._ball_attached, "Crochet et ballon tenu")
 		if not proof.is_empty():

@@ -83,7 +83,7 @@ func run() -> void:
 			lateral = (posed - baseline).dot(right)
 		check(lean > 0.10 and lateral * int(plan.side) > 0.06, "Inclinaison du buste dans le sens déclaré")
 		var expected := Motion.position_at(carrier.from, carrier.target, carrier.tangent,
-			Cut.live_travel(float(carrier.elapsed) / MatchView.BLEND_SECONDS))
+			Cut.live_travel(float(carrier.elapsed) / float(carrier.duree)))
 		check(actor.position.is_equal_approx(expected), "L’appui reste sur le trajet de la phase")
 		var anchor := Presentation.ball_anchor(actor, rig)
 		var gap := anchor.distance_to(view._ball.global_position)
