@@ -9,8 +9,20 @@ static func rig_for(model: Node3D) -> Skeleton3D:
 		return child as Skeleton3D
 	return null
 
+## Porteur désigné par place (slot) quand la scène n'en nomme pas : mêlée = demi de mêlée puis
+## n°8 ; touche = sauteur (2e ligne) puis demi de mêlée.
+const PORTEURS_PAR_PLACE := {"scrum": [8, 7], "lineout": [3, 8]}
+
 static func carrier_id(scene: Dictionary) -> String:
-	if str(scene.get("kind", "")) not in ["carry", "reception", "turnover", "setpiece-win", "setpiece-loss"]:
+	var kind := str(scene.get("kind", ""))
+	if PORTEURS_PAR_PLACE.has(kind):
+		var camp := int(scene.get("possession", scene.get("team", -2)))
+		for slot: int in PORTEURS_PAR_PLACE[kind]:
+			for player: Dictionary in scene.get("players", []):
+				if int(player.get("side", -1)) == camp and int(player.get("slot", -1)) == slot:
+					return str(player.get("id", ""))
+		return ""
+	if kind not in ["carry", "reception", "turnover", "setpiece-win", "setpiece-loss", "quick-tap"]:
 		return ""
 	for player: Dictionary in scene.get("players", []):
 		if player.get("featured", false) and int(player.get("side", -1)) == int(scene.get("possession", -2)):

@@ -782,7 +782,10 @@ func _process(delta: float) -> void:
 	_ball_marker.visible = _camera_mode == "tactical"
 	if _ball.visible:
 		_ball_marker.global_position = Vector3(_ball.global_position.x, 0.028, _ball.global_position.z)
-		_ball_marker.global_basis = Basis.IDENTITY
+		# Ballon tenu par un joueur : anneau plus grand et plus brillant ; au sol : anneau discret.
+		var tenu_en_main := not _carrier_id.is_empty() and _actors.has(_carrier_id)
+		_ball_marker.global_basis = Basis.IDENTITY.scaled(Vector3.ONE * (1.45 if tenu_en_main else 1.0))
+		((_ball_marker as MeshInstance3D).material_override as StandardMaterial3D).albedo_color = Color("ffe680") if tenu_en_main else Color("e9bf5a")
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
 
