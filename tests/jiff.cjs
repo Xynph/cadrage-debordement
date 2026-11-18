@@ -98,6 +98,8 @@ test('Carrière Monde : statuts initiaux, feuilles comptées en Top 14 / Pro D2,
 
 test('Carrière Monde : la composition automatique de l’ordinateur remonte vers 16 JIFF', () => {
   const c = career();
+  const hasTop14 = st => st.worldMode.fixtures.some(x => x.week === st.round && x.phase === 'league' && x.competitionId === 'elite' && ![x.homeId, x.awayId].includes(st.club));
+  for (let i = 0; i < 6 && !hasTop14(c.exported().state); i++) c.round();
   const doc = c.exported(), s = doc.state;
   // Un club de l'ordinateur qui joue une journée de Top 14 cette semaine.
   const f = s.worldMode.fixtures.find(x => x.week === s.round && x.phase === 'league' && x.competitionId === 'elite' && ![x.homeId, x.awayId].includes(s.club));
