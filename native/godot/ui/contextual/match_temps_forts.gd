@@ -1360,11 +1360,22 @@ func _tracer_legende() -> void:
 	var maintenant := Time.get_ticks_msec()
 	var plan: Dictionary = {}
 	if index >= 0 and index < tf.get("plans", []).size(): plan = tf.plans[index]
-	var trace := {"evenement": "legende", "texte": texte, "phase": phase, "kind": str(plan.get("kind", "")), "journal": int(plan.get("index", -1)),
-		"horloge": str(plan.get("horloge", "")), "texte_ms": maintenant, "image_ms": _image_ms, "image_journal": _image_journal,
+	var fait := meta_legende(phase, plan, liaison, _liaison_plan)
+	var trace := {"evenement": "legende", "texte": texte, "phase": phase, "kind": fait.kind, "journal": fait.journal,
+		"horloge": fait.horloge, "texte_ms": maintenant, "image_ms": _image_ms, "image_journal": _image_journal,
 		"ecart_ms": maintenant - _image_ms, "debut_ms": maintenant}
 	suivi.append(trace)
 	if OS.get_environment("CD_MATCH_TRACE_LEGENDE") == "1": print("LEGENDE_IMAGE ", JSON.stringify(trace))
+
+## Fait que dit la légende : en liaison, c'est l'arrêt de jeu qui clôt le temps fort précédent (essai, touche...),
+## pas le plan à venir (kind, journal et horloge du plan courant décriraient la suite, pas ce texte).
+## L'horloge d'un arrêt n'est pas connue ici : vide plutôt que celle de la suite.
+static func meta_legende(phase_: String, plan: Dictionary, lien: Dictionary, k: int) -> Dictionary:
+	if phase_ == "liaison" and not lien.is_empty():
+		var arrets: Array = lien.get("arrets", [])
+		var kinds: Array = lien.get("kinds", [])
+		return {"kind": str(kinds[k]) if k < kinds.size() else "", "journal": int(arrets[k]) if k < arrets.size() else int(lien.get("arret", -1)), "horloge": ""}
+	return {"kind": str(plan.get("kind", "")), "journal": int(plan.get("index", -1)), "horloge": str(plan.get("horloge", ""))}
 
 ## La phase courante commence à l'écran (plan, plan de liaison, jalon des pistes).
 func _image_posee(journal: int) -> void:
