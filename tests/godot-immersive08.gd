@@ -534,13 +534,8 @@ func reception() -> void:
 	check(expected_total >= app.model.messages.size(), "La boîte contient au moins chaque message du moteur")
 	list = await expand_threads()
 	check(message_rows(list).size() == expected_total, "Chaque message reçu du moteur est consultable")
-	var portrait := app.find_child("Art_mail_staff", true, false) as TextureRect
-	check(portrait != null, "Illustration de la Réception chargée en jeu")
-	if portrait != null:
-		var crop := portrait.texture as AtlasTexture
-		check(crop!=null and crop.atlas.resource_path.ends_with("mail-staff.png") and absf(crop.region.size.x/crop.region.size.y-portrait.size.x/portrait.size.y)<0.06 and absf(portrait.size.x-523.0)<1.0,"Le bandeau garde le portrait original à sa proportion approuvée · "+str(crop.region if crop!=null else null)+" "+str(portrait.size))
-		var pitch := app.find_child("Art_mail_pitch",true,false) as TextureRect
-		check(pitch!=null and pitch.texture!=null and absf(pitch.get_global_rect().end.x-portrait.get_global_rect().position.x)<1.0,"La scène originale d’entraînement rejoint le portrait sans espace")
+	# Direction A (18/11) : plus de bandeau photo ; l'en-tête du mail porte l'icône du service expéditeur.
+	check(app.find_child("InboxDetail", true, false) != null and app.find_child("Art_mail_staff", true, false) == null, "Mail ouvert en grand, sans bandeau photo")
 	await capture("05-reception-2560x1440")
 	var first: Button = message_rows(list)[0]
 	var original: String = first.get_meta("message_text")
@@ -565,8 +560,7 @@ func reception() -> void:
 	original = await select_actionable()
 	check(app.find_child("InboxMessageText", true, false).text == original, "La sélection affiche le texte complet reçu")
 	app.find_child("InboxToggleFavorite", true, false).pressed.emit()
-	app.find_child("InboxFolder2", true, false).pressed.emit()
-	await settle()
+	await choose_subject("Favoris")
 	list = app.find_child("InboxMessageRows", true, false)
 	check(message_rows(list).size() == 1, "Favoris limité au message épinglé")
 	# Le dossier Favoris n'a pas de sélection : on rouvre le message avant d'agir dessus.

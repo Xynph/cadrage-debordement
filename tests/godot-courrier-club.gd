@@ -10,9 +10,11 @@ extends SceneTree
 ##   hauteur, mail ouvert en grand (≥ 60 % de la largeur), plus de cartes de courriers liés en bas à droite,
 ##   réponses visibles en bas du mail, aucun chevauchement ni texte qui déborde ; ouverture, lu/non lu, ordre de
 ##   la liste identique à l'ordre d'affichage (raccourci Espace « prochain non lu »).
-## - Réception v2 (corrections de Léo 16/11) : une seule rangée de filtres (Tous · Non lus · À faire · Favoris + menu Sujet),
+## - Réception v2 (corrections de Léo 16/11) : une seule rangée de filtres (Tous · Non lus · À faire + menu Sujet, qui contient Favoris et Archives),
 ##   plus de bande « Les invitations du club » (les invitations sont des messages de la liste, à faire), icône de service
 ##   à la place d'un même visage, pas de vide au-dessus des réponses du mail ouvert.
+## - Direction A (maquette validée le 18/11) : liste groupée par jour, panneau « Concerné » affiché ou masqué, coupure de
+##   presse, tableau de l'infirmerie, conséquences des réponses, ordre du raccourci Espace.
 ## Captures (rendu graphique) : CD_COURRIER_CAPTURES=<dossier>.
 ## Imprime une ligne COURRIER {checks, failures}.
 const Flow = preload("helpers/contextual_flow.gd")
@@ -90,6 +92,7 @@ func reply_and_open() -> void:
 	await reception_layout(mail, Vector2i(1280, 720))
 	mail.reponses = original
 	await invitations_in_list(mail)
+	await direction_a(mail)
 	root.size = Vector2i(1600, 900)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 	app._reset_reception(str(mail.id))
@@ -135,6 +138,14 @@ func info_stops() -> void:
 func node(name: String) -> Control:
 	return app.root_content.find_child(name, true, false) as Control if is_instance_valid(app.root_content) else null
 
+## Texte lu dans le mail ouvert : corps du mail, ou colonnes de la coupure de presse.
+func reading_text() -> String:
+	var text := node("InboxMessageText") as Label
+	if text != null: return text.text
+	var clipping := node("InboxPressClipping")
+	if clipping == null: return ""
+	return " ".join(PackedStringArray(clipping.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)))
+
 func rows() -> Array:
 	var list := node("InboxMessageRows")
 	return [] if list == null else list.get_children().filter(func(item: Node) -> bool: return item.has_meta("message_id"))
@@ -177,23 +188,23 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 	check(app.root_content.find_children("InboxRelated_*", "", true, false).is_empty(), "Plus de cartes de courriers en bas à droite · " + tag)
 	# Une seule rangée de filtres, en tête de liste : quatre boutons et le menu Sujet, à la même hauteur.
 	var filter_row: Array[Control] = []
-	for name in ["InboxFolder0", "InboxFolder1", "InboxActivity_todo", "InboxFolder2", "InboxSubject"]:
+	for name in ["InboxFolder0", "InboxFolder1", "InboxActivity_todo", "InboxSubject"]:
 		var filter := node(name)
 		check(filter != null and l.encloses(filter.get_global_rect()), "Filtre en tête de liste · " + name + " · " + tag)
 		if filter != null: filter_row.append(filter)
 	for filter in filter_row: check(absf(filter.get_global_rect().position.y - filter_row[0].get_global_rect().position.y) < 2.0, "Filtres sur une seule rangée · " + str(filter.name) + " · " + tag)
 	var filter_buttons: Array = list.find_children("Inbox*", "Button", true, false).filter(func(b: Button) -> bool: return str(b.name).begins_with("InboxFolder") or str(b.name).begins_with("InboxActivity_") or str(b.name).begins_with("InboxCategory"))
-	check(filter_buttons.size() == 4, "Quatre boutons de filtre, pas davantage · " + tag + " (" + str(filter_buttons.size()) + ")")
+	check(filter_buttons.size() == 3, "Trois boutons de filtre (Tous · Non lus · À faire), pas davantage · " + tag + " (" + str(filter_buttons.size()) + ")")
 	check(node("InboxSort") != null and l.encloses(node("InboxSort").get_global_rect()), "Tri en tête de liste · " + tag)
 	var menu := node("InboxSubject") as OptionButton
 	if menu != null:
 		var labels: Array = []
 		for index in menu.item_count: labels.append(menu.get_item_text(index))
-		for wanted in ["Staff", "Médical", "Archives", "En attente", "Infos"]:
+		for wanted in ["Staff", "Médical", "Favoris", "Archives", "En attente", "Infos"]:
 			check(labels.any(func(text: String) -> bool: return text.begins_with(wanted)), "Menu Sujet : « " + wanted + " » accessible · " + tag)
 	# Le mail ouvert : texte lisible, réponses visibles en bas du mail, aucun chevauchement.
 	var text := node("InboxMessageText") as Label
-	check(text != null and text.text.contains(str(mail.get("corps", "")).left(30)), "Le mail sélectionné est ouvert · " + tag)
+	check(reading_text().contains(str(mail.get("corps", "")).split("\n")[0].left(30)), "Le mail sélectionné est ouvert · " + tag)
 	if text != null:
 		check(text.get_theme_font_size("font_size") >= maxi(12, roundi(20 * C.density)), "Texte du mail lisible (%d px) · %s" % [text.get_theme_font_size("font_size"), tag])
 		var scroll := text.get_parent() as ScrollContainer
@@ -259,26 +270,17 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 	other.pressed.emit()
 	await settle()
 	check(state.marks.get(other_id, {}).get("read", false), "Ouvert = lu · " + tag)
-	check((node("InboxMessageText") as Label).text == other_text, "Le mail cliqué s'ouvre en grand · " + tag)
+	check(reading_text() == other_text or reading_text().contains(str(Reception._messages(app).filter(func(item: Dictionary) -> bool: return str(item.id) == other_id)[0].get("club_mail", {}).get("corps", "")).split("\n")[0].left(30)), "Le mail cliqué s'ouvre en grand · " + tag)
 	var toggle := node("InboxToggleRead") as Button
 	check(toggle != null, "Marquer non lu proposé · " + tag)
 	if toggle != null:
 		toggle.pressed.emit(); await settle()
 		check(not state.marks.get(other_id, {}).get("read", false), "Marqué non lu · " + tag)
 
-## Ordre d'affichage de la boîte (dossier « Tous », plus récents d'abord) : invitations de presse en attente, urgences,
-## puis le reste, fils regroupés. C'est aussi l'ordre de `next_unread` (raccourci Espace, #765).
+## Ordre d'affichage de la boîte (dossier « Tous ») : priorités épinglées, puis jours (plus récents d'abord), fils
+## regroupés. C'est aussi l'ordre de `next_unread` (raccourci Espace, #765).
 func display_order() -> Array:
-	var marks: Dictionary = app.management_ui.reception.marks
-	var visible: Array = Reception._messages(app).filter(func(m: Dictionary) -> bool: return not marks.get(m.id, {}).get("archived", false))
-	var priority := Reception._priority_ids(app.model)
-	var mandatory := visible.filter(func(m: Dictionary) -> bool: return m.has("press_invitation") and m.id in priority)
-	var urgent := visible.filter(func(m: Dictionary) -> bool: return m.id in priority and not m.has("press_invitation") and (not m.has("international_event") or not marks.get(m.id, {}).get("read", false)))
-	var ordered: Array = mandatory + urgent + visible.filter(func(m: Dictionary) -> bool: return m not in mandatory and m not in urgent)
-	var result: Array = []
-	for group: Dictionary in Reception.Reading.groups(ordered):
-		for m: Dictionary in group.messages: result.append(str(m.id))
-	return result
+	return Reception.display_order(app).map(func(m: Dictionary) -> String: return str(m.id))
 
 ## Les invitations du club sont des messages de la liste (catégorie Club, à faire), sans bande ni bouton blanc au-dessus de la boîte.
 ## Fixture d'interface contrôlée : le produit lit la projection du moteur, ici on y ajoute une invitation en attente.
@@ -312,5 +314,110 @@ func invitations_in_list(mail: Dictionary) -> void:
 	for id: String in ids: marks[id] = {"read":true}
 	marks.erase("invitation:qa-invitation")
 	check(str(Reception.next_unread(app).get("id", "")) == "invitation:qa-invitation", "Espace ouvre l'invitation non lue")
+	app.model = original
+	app._reset_reception(str(mail.id))
+
+## Direction A (maquette « Bureau du manager », 18/11/2026) : liste groupée par jour, panneau « Concerné » affiché ou
+## masqué, coupure de presse, tableau de l'infirmerie construit des blessures réelles, ordre du raccourci Espace.
+## Fixture d'interface contrôlée : deux mails du club ajoutés à la projection (presse aujourd'hui, médical hier).
+func direction_a(mail: Dictionary) -> void:
+	var original: Dictionary = app.model.duplicate(true)
+	root.size = Vector2i(1920, 1080)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	var today := str(app.model.meta.calendarToday)
+	var yesterday := Reception._shift(today, -1)
+	var squad: Array = app.model.squad
+	check(squad.size() >= 2, "Effectif réel pour la direction A")
+	if squad.size() < 2: return
+	var star: Dictionary = squad[0]
+	var hurt: Dictionary = squad[1]
+	hurt.injury = 3
+	var press := {"id":"mail-990001", "type":"rumeur", "categorie":"presse", "date":today, "expediteur":"Le quotidien régional",
+		"sujet":"Rumeur : " + str(star.name) + " courtisé", "status":"nouveau", "ecran":"Presse", "joueur":str(star.id), "arret":false,
+		"corps":"Selon nos informations, deux clubs se renseignent sur le joueur.\n\nLe dossier pèse lourd dans un effectif qui peut difficilement se passer d'un titulaire.\n\nOn publie demain. Un démenti rassurera les tribunes.",
+		"reponses":[{"id":"dementir", "libelle":"Démentir fermement", "effets":"Supporters +2 · Moral −1", "disponible":true, "raison":""},
+			{"id":"laisser", "libelle":"Laisser dire", "effets":"Médias +1", "disponible":true, "raison":""}]}
+	var medical := {"id":"mail-990002", "type":"kine_bilan", "categorie":"infirmerie", "date":yesterday, "expediteur":"Le kiné du club",
+		"sujet":"Bilan de l'infirmerie", "status":"lu", "ecran":"infirmerie", "arret":false, "corps":"Point sur les soins de la semaine.", "reponses":[]}
+	if not app.model.clubLife.has("clubMail") or not app.model.clubLife.clubMail is Dictionary: app.model.clubLife.clubMail = {"mails":[], "reponses":{}}
+	var box: Dictionary = app.model.clubLife.clubMail
+	box.mails = [press, medical] + (box.get("mails", []) as Array)
+	app._reset_reception("mail-990001")
+	app._navigate("Réception", false)
+	await settle(8)
+	# Groupement par jour : en-têtes « AUJOURD'HUI » puis « HIER », chaque mail sous son jour.
+	var list := node("InboxMessageRows")
+	var headings: Array = [] if list == null else list.get_children().filter(func(n: Node) -> bool: return str(n.name).begins_with("InboxDay_"))
+	var titles: Array = headings.map(func(n: Node) -> String: return (n.find_child("InboxDayLabel", true, false) as Label).text)
+	check(titles.has("AUJOURD'HUI") and titles.has("HIER"), "Mails groupés par jour : " + str(titles))
+	if list != null and titles.has("AUJOURD'HUI") and titles.has("HIER"):
+		var position := func(id: String) -> int:
+			for child in list.get_children():
+				if child.has_meta("message_id") and str(child.get_meta("message_id")) == id: return child.get_index()
+			return -1
+		var today_at: int = headings[titles.find("AUJOURD'HUI")].get_index()
+		var yesterday_at: int = headings[titles.find("HIER")].get_index()
+		check(today_at < position.call("mail-990001") and position.call("mail-990001") < yesterday_at, "Mail du jour sous « AUJOURD'HUI »")
+		check(yesterday_at < position.call("mail-990002"), "Mail de la veille sous « HIER »")
+	var press_row := node("InboxClubMail_mail_990001")
+	check(press_row != null and press_row.find_child("InboxTodoTag", true, false) != null, "Étiquette « À FAIRE · échéance » sur un mail qui attend une réponse")
+	# Gabarit presse : coupure de journal.
+	check(node("InboxPressClipping") != null, "Mail de presse rendu en coupure de journal")
+	var media := node("InboxPressMedia") as Label
+	check(media != null and media.text == "Le quotidien régional", "Nom du média en tête de la coupure")
+	check(node("InboxPressHeadline") != null and node("InboxPressLead") != null and node("InboxPressRubrique") != null, "Grand titre, chapeau et rubrique")
+	var columns := node("InboxPressColumns")
+	check(columns != null and columns.find_children("InboxPressColumn", "Label", true, false).size() == 2, "Texte de presse sur deux colonnes")
+	var photo := node("InboxPressPhoto") as TextureRect
+	check(photo == null or photo.texture != null, "Pas de cadre photo vide")
+	# Panneau Concerné affiché : joueur lié et échéance.
+	var side := node("InboxConcerne")
+	check(side != null, "Panneau « Concerné » affiché pour un mail lié à un joueur")
+	var who := node("InboxConcernedName") as Label
+	check(who != null and who.text == str(star.name), "Mini-fiche du joueur lié")
+	check(node("InboxConcernedOpen") != null and node("InboxDeadline") != null, "Bouton « Ouvrir la fiche » et encadré « ÉCHÉANCE »")
+	var with_side := node("InboxDetail").size.x if node("InboxDetail") != null else 0.0
+	if side != null and node("InboxDetail") != null: check(node("InboxDetail").get_global_rect().end.x <= side.get_global_rect().position.x, "Panneau à droite du mail, sans chevauchement")
+	# Réponses : cartes et conséquences tirées des effets réels.
+	var reply := node("InboxClubMailReply_dementir")
+	var effects: Array = [] if reply == null else reply.find_children("InboxReplyEffect", "Label", true, false).map(func(l: Label) -> String: return l.text)
+	check(effects.has("▲ Supporters +2") and effects.has("▼ Moral −1"), "Conséquences de la réponse : " + str(effects))
+	check(node("InboxReplyHeading") != null and node("InboxSpaceHint") != null, "« TA RÉPONSE » et rappel Espace")
+	check(Reception.consequences("Pression +2")[0][0] == "▼" and Reception.consequences("Coût 1 000 €")[0][0] == "▼" and Reception.consequences("Charge individuelle : allégée")[0][0] == "=" and Reception.consequences("")[0][1] == "Sans effet chiffré", "Sens des conséquences (pression, coût, neutre)")
+	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
+		check(root.get_texture().get_image().save_png(capture_dir.path_join("reception-presse-1920x1080.png")) == OK, "Capture presse")
+	# Gabarit médical : tableau de l'infirmerie, panneau masqué et mail élargi.
+	app.management_ui.reception.selected = "mail-990002"
+	app._render()
+	await settle(8)
+	check(node("InboxConcerne") == null, "Panneau « Concerné » masqué sans élément lié")
+	check(node("InboxDetail") != null and node("InboxDetail").size.x > with_side + 10, "Le mail s'élargit sans le panneau")
+	check(node("InboxInfirmary") != null, "Tableau de l'infirmerie dans le mail médical")
+	var forfeit := false
+	for row: Node in app.root_content.find_children("InboxInfirmaryRow_*", "", true, false):
+		var status := row.find_child("InboxInfirmaryStatus", true, false) as Label
+		if str(row.get_meta("player_id")) == str(hurt.id) and status != null and status.text == "Forfait" and status.get_theme_color("font_color") == C.ALERT: forfeit = true
+	check(forfeit, "Joueur blessé : forfait en rouge, d'après les blessures réelles")
+	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
+		check(root.get_texture().get_image().save_png(capture_dir.path_join("reception-medical-1920x1080.png")) == OK, "Capture médical")
+	# Espace : prochain non lu dans l'ordre de la liste affichée.
+	var marks: Dictionary = app.management_ui.reception.marks
+	for item: Dictionary in Reception._messages(app): marks[item.id] = {"read":true}
+	marks.erase("mail-990001")
+	marks.erase("mail-990002")
+	app._render()
+	await settle()
+	await expand_threads()
+	var shown: Array = rows().map(func(row: Button) -> String: return str(row.get_meta("message_id")))
+	check(shown == display_order(), "Liste = ordre d'affichage (jours compris)")
+	var first_unread := ""
+	for id: String in shown:
+		if not marks.get(id, {}).get("read", false):
+			first_unread = id
+			break
+	check(first_unread == "mail-990001" and str(Reception.next_unread(app).get("id", "")) == first_unread, "Espace : premier non lu de la liste (" + first_unread + ")")
+	check(Reception.open_next_unread(app) and str(app.management_ui.reception.selected) == "mail-990001", "Espace ouvre le mail du jour")
+	await settle()
+	check(str(Reception.next_unread(app).get("id", "")) == "mail-990002", "Espace suivant : le mail de la veille")
 	app.model = original
 	app._reset_reception(str(mail.id))
