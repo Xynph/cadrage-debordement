@@ -881,11 +881,12 @@ func _page() -> void:
 	var cadre_bonus := _panneau(bas, px(14))
 	bonus_tuile = cadre_bonus.get_parent().get_parent()
 	bonus_tuile.name = "MatchBetweenBonus"
-	bonus_tuile.custom_minimum_size.x = px(640)
+	bonus_tuile.custom_minimum_size.x = px(780)
 	cadre_bonus.add_theme_constant_override("separation", px(6))
 	var tete_bonus := _titre("Bonus")
 	bonus_regle = _texte("", 22, FAIBLE)
 	bonus_regle.name = "MatchBetweenBonusRule"
+	bonus_regle.add_theme_font_size_override("font_size", maxi(px(22), 12))
 	bonus_regle.clip_text = true
 	bonus_regle.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	bonus_regle.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -897,6 +898,8 @@ func _page() -> void:
 	cadre_bonus.add_child(bonus_etat)
 	bonus_situation = _texte("", 26, IVOIRE, true, true)
 	bonus_situation.name = "MatchBetweenBonusDilemma"
+	# Sous 1440p, le dilemme et ses boutons gardent une taille lisible (réduits de moitié en 720p, ils tombaient à 13 et 26 px).
+	bonus_situation.add_theme_font_size_override("font_size", maxi(px(26), 15))
 	bonus_situation.max_lines_visible = 2
 	bonus_situation.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	bonus_situation.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -1392,6 +1395,7 @@ func _remplir_bonus(model: Dictionary, live: Dictionary, direct: Dictionary) -> 
 		elif bool(item.get("horsDePortee", false)): teinte = FAIBLE
 		elif str(item.get("statut", "")) == "perdu" or int(item.get("manque", 0) if item.get("manque") != null else 0) > 0: teinte = OR
 		var etiquette := _texte(str(item.texte), 24, teinte, false, true)
+		etiquette.add_theme_font_size_override("font_size", maxi(px(24), 14))
 		etiquette.name = "MatchBetweenBonus_" + cote
 		bonus_etat.add_child(etiquette)
 	S.clear(bonus_choix)
@@ -1407,8 +1411,8 @@ func _remplir_bonus(model: Dictionary, live: Dictionary, direct: Dictionary) -> 
 		var en_place := str(tactiques.get("attack", "")) == str(c.get("attack", "")) and str(tactiques.get("defense", "")) == str(c.get("defense", "")) and str(tactiques.get("penalty", "auto")) == str(c.get("penalty", ""))
 		var bouton := _bouton(str(c.get("label", "")), func(): consigne_bonus.emit(c), not live.get("finished", false), en_place)
 		bouton.name = "MatchBetweenBonusChoice_" + str(c.get("id", ""))
-		bouton.custom_minimum_size.y = px(52)
-		bouton.add_theme_font_size_override("font_size", px(24))
+		bouton.custom_minimum_size.y = maxi(px(52), 36)
+		bouton.add_theme_font_size_override("font_size", maxi(px(24), 15))
 		bouton.clip_text = true
 		bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		bouton.tooltip_text = str(c.get("aide", "")) + ("\nConsigne en place." if en_place else "\nLe match se met en pause le temps de la donner.")

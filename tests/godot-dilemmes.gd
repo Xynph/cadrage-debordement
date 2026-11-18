@@ -79,6 +79,14 @@ func ecran_entracte() -> void:
 	between.queue_free()
 	await process_frame
 
+## Gabi parle d'office à l'arrivée sur un écran : sa bulle masquerait la page, on la referme avant la capture.
+func fermer_gabi() -> void:
+	var coach = app.coach
+	if coach == null: return
+	coach.close()
+	coach._attente.clear()
+	await settle(8)
+
 func page_visible(noeud_nom: String) -> Control:
 	var n := app.find_child(noeud_nom, true, false) as Control
 	return n if n != null and n.is_visible_in_tree() else null
@@ -121,6 +129,7 @@ func run() -> void:
 	for p: Dictionary in app.model.get("squad", []):
 		if p.get("playerFacts", {}).get("listeElite", false): liste += 1
 	check(liste > 0, "Des joueurs de la liste des 33 dans l'effectif (%d)" % liste)
+	await fermer_gabi()
 	await capture("2-feuille-match-quota-liste-bleus")
 	# 3. Infirmerie : onglet Médical de « Travail du club ».
 	app.management_ui["immersive08_support_tab"] = 1
@@ -131,6 +140,7 @@ func run() -> void:
 	await settle(10)
 	var carte := app.find_children("Concussion_*", "", true, false)
 	check(not carte.is_empty(), "Médical : un joueur sous protocole commotion")
+	await fermer_gabi()
 	await capture("3-infirmerie-commotion-hia")
 	fin()
 

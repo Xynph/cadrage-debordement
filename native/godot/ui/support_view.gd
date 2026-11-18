@@ -152,10 +152,10 @@ static func _concussions(list: VBoxContainer, app: Control, medical: Dictionary)
 		var card := G.card(list, G.ALERT)
 		card.name = "Concussion_" + str(c.id).replace(":", "_")
 		var left: Variant = c.get("joursRestants")
-		var remaining := (" · encore %d jour%s" % [int(left), "s" if int(left) > 1 else ""]) if left != null and int(left) > 0 else ""
+		var remaining := (" · encore %d jour%s" % [int(left), "s" if int(left) > 1 else ""]) if left != null and int(left) > 0 and int(left) < int(c.jours) else ""
 		card.add_child(G.section(_name(app, c.id), "Commotion du %s · %s" % [_date(c.date), str(c.motif)]))
 		card.add_child(G.wrap("Retour possible le %s (%d jours)%s" % [_date(c.retour), int(c.jours), remaining], 16, G.INK))
-		var exception := {"possible":"Exception à 7 jours possible : avis du spécialiste à demander depuis le courrier du médecin.", "accordee":"Avis favorable du spécialiste indépendant : retour au 7e jour.", "refusee":"Avis défavorable du spécialiste indépendant : 12 jours.", "non":"Antécédent ou signes évidents : 12 jours, sans exception." if c.get("antecedent", false) or int(c.get("critere", 0)) == 1 else "HIA3 sans retour à la normale : 12 jours."}
+		var exception := {"possible":"Exception à 7 jours possible : avis du spécialiste à demander depuis le courrier du médecin.", "accordee":"Avis favorable du spécialiste indépendant : retour au 7e jour.", "refusee":"Avis défavorable du spécialiste indépendant : 12 jours.", "non":"Antécédent ou signes évidents : 12 jours, sans exception." if c.get("antecedent", false) or int(c.get("critere", 0)) == 1 else "Pas de retour à la normale au contrôle du lendemain : 12 jours, sans exception."}
 		card.add_child(G.wrap(str(exception.get(str(c.exception), "")), 14))
 	if not history.is_empty():
 		var lines := PackedStringArray()
