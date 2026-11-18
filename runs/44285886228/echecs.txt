@@ -1,0 +1,6 @@
+== suites (5) (code 1)
+FAIL: Le nouveau stade IA est chargé dans l’accueil
+  throw new AssertionError(obj);
+AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+FAIL: Le nouveau stade IA est chargé dans l’accueil
+::error file=tests/godot-immersive08.cjs::Godot : ECHEC (1), durée 145 s, limite 600s
