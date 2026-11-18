@@ -108,6 +108,24 @@ func check_model() -> void:
 	foule.observer(live(scene("carry", 1, 50.0, "i")))
 	foule.observer(live(scene("scrum", 1, 50.0, "j")))
 	check(arrets == ["penalty", "scrum"], "Mêlée : nouvel arrêt signalé (%s)" % str(arrets))
+	# Plan d'essai reçu avant la course (film du 19/11 : public debout 7 s avant l'aplati, rassis
+	# au moment de l'essai) : il monte comme près de la ligne, puis explose à l'aplati montré.
+	var attente := Foule.new()
+	attente.repartition = [0.62, 0.1, 0.28]
+	step(attente, 3.0)
+	attente.essai_suspendu = true
+	attente.observer(live(scene("try", 0, 101.0, "k", {"team": 0})))
+	step(attente, 6.0)
+	check(attente.essai_restant >= Foule.TENUE_ESSAI - 0.001, "Course vers l'en-but : la fête de l'essai n'est pas entamée (%.2f s)" % attente.essai_restant)
+	check(attente.intensite <= Foule.LIGNE + 0.001 and attente.debout[0] <= Foule.DEBOUT_22 + 0.001, "Course vers l'en-but : le public monte sans exploser (%.2f, %.2f debout)" % [attente.intensite, attente.debout[0]])
+	attente.essai_suspendu = false
+	step(attente, 2.0)
+	check(attente.debout[0] >= 0.85 and attente.intensite >= Foule.ESSAI - 0.001, "Aplati montré : le public se lève (%.2f)" % attente.debout[0])
+	var bornee := Foule.new()
+	bornee.essai_suspendu = true
+	bornee.observer(live(scene("try", 1, -1.0, "l", {"team": 1})))
+	step(bornee, Foule.SUSPENSION_MAX + 2.5)
+	check(bornee.debout[1] >= 0.85, "Attente de l'aplati bornée : l'essai finit par être fêté (%.2f)" % bornee.debout[1])
 
 
 func fixture_players() -> Array:

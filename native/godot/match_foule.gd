@@ -47,6 +47,10 @@ var debout: Array[float] = [0.0, 0.0, 0.0]
 var bras: Array[float] = [0.0, 0.0, 0.0]
 ## Part de chaque tribu dans le public (posée par la vue à la construction des tribunes).
 var repartition: Array[float] = [0.55, 0.15, 0.30]
+## Vrai tant que la vue montre encore la course vers l'en-but (match_view.gd, essai_aplati).
+var essai_suspendu := false
+const SUSPENSION_MAX := 15.0
+var _attente_essai := 0.0
 var _cle_essai := ""
 var _kind := ""
 var _arret_vu := false
@@ -103,13 +107,19 @@ func avancer(delta: float) -> void:
 	if delta <= 0.0:
 		return
 	_depuis_sifflet += delta
-	if essai_restant > 0.0:
+	# Plan de l'essai reçu mais course encore à l'écran : le public monte comme près de la ligne,
+	# l'explosion (et sa tenue) part à l'aplati montré.
+	# Attente bornée (SUSPENSION_MAX) : un essai reçu finit toujours par être fêté.
+	_attente_essai = _attente_essai + delta if essai_suspendu and essai_restant > 0.0 else 0.0
+	var suspendu := essai_suspendu and essai_restant > 0.0 and _attente_essai < SUSPENSION_MAX
+	if essai_restant > 0.0 and not suspendu:
 		essai_restant = maxf(0.0, essai_restant - delta)
-	var vise := ESSAI if essai_restant > 0.0 else cible
+	var vise := (LIGNE if suspendu else ESSAI) if essai_restant > 0.0 else cible
 	intensite = move_toward(intensite, vise, delta * (MONTEE if vise > intensite else DESCENTE))
 	var cibles_debout: Array[float] = [DEBOUT_REPOS, DEBOUT_REPOS, DEBOUT_REPOS]
 	var cibles_bras: Array[float] = [0.0, 0.0, 0.0]
-	if essai_restant > 0.0:
+	var offensif := essai_camp if suspendu else camp_offensif
+	if essai_restant > 0.0 and not suspendu:
 		if essai_camp in [0, 1]:
 			cibles_debout[essai_camp] = DEBOUT_ESSAI
 			cibles_bras[essai_camp] = BRAS_ESSAI
@@ -117,12 +127,12 @@ func avancer(delta: float) -> void:
 			cibles_debout[0] = DEBOUT_ESSAI_NEUTRES
 		cibles_debout[2] = DEBOUT_ESSAI_NEUTRES
 		cibles_bras[2] = BRAS_ESSAI * 0.3
-	elif camp_offensif in [0, 1]:
+	elif offensif in [0, 1]:
 		# Plus l'action approche de l'en-but, plus les supporters de l'attaque se lèvent.
 		var monte := clampf((intensite - CALME) / (LIGNE - CALME), 0.0, 1.0)
-		cibles_debout[camp_offensif] = maxf(DEBOUT_REPOS, DEBOUT_22 * monte)
+		cibles_debout[offensif] = maxf(DEBOUT_REPOS, DEBOUT_22 * monte)
 		cibles_debout[2] = maxf(DEBOUT_REPOS, DEBOUT_22 * 0.35 * monte)
-		cibles_bras[camp_offensif] = 0.12 * monte
+		cibles_bras[offensif] = 0.12 * monte
 	for t in 3:
 		debout[t] = move_toward(debout[t], cibles_debout[t], delta * (LEVER if cibles_debout[t] > debout[t] else RASSOIR))
 		bras[t] = move_toward(bras[t], minf(cibles_bras[t], debout[t]), delta * (LEVER * 1.5 if cibles_bras[t] > bras[t] else RASSOIR * 2.0))
@@ -137,4 +147,4 @@ func part_debout() -> float:
 	return total / poids if poids > 0.0 else 0.0
 
 func etat() -> Dictionary:
-	return {"intensite": snappedf(intensite, 0.001), "debout": snappedf(part_debout() * 100.0, 0.1), "essai": essai_restant > 0.0, "camp_offensif": camp_offensif}
+	return {"intensite": snappedf(intensite, 0.001), "debout": snappedf(part_debout() * 100.0, 0.1), "essai": essai_restant > 0.0 and not (essai_suspendu and _attente_essai < SUSPENSION_MAX), "camp_offensif": camp_offensif}

@@ -2198,9 +2198,14 @@ var foule: Foule = Foule.new()
 ## Composition du public construite (contrôle, tests) : spectateurs par tribu, tenues aux couleurs.
 var foule_compte := {"total": 0, "domicile": 0, "visiteurs": 0, "neutres": 0, "tenues": 0}
 var _foule_matieres: Array[ShaderMaterial] = []
+## Posé par la régie des temps forts : plan d'essai joué, essai pas encore aplati à l'écran.
+var essai_attendu_regie := false
 
 
 func _animer_foule(delta: float) -> void:
+	# Le plan de l'essai arrive avant la course : le public explose à l'aplati montré, pas avant
+	# (geste d'essai de la vue, ou plan d'essai des temps forts pas encore légendé).
+	foule.essai_suspendu = essai_attendu_regie or not essai_aplati()
 	foule.avancer(delta)
 	for matiere in _foule_matieres:
 		matiere.set_shader_parameter("debout", Vector3(foule.debout[0], foule.debout[1], foule.debout[2]))

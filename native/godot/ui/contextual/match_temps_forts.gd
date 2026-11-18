@@ -1416,6 +1416,9 @@ func _essai_attendu(plan: Dictionary) -> bool:
 
 ## Légende et clameur de l'essai du plan joué, à l'instant où il est aplati à l'écran.
 func _legender_essai() -> void:
+	# Public de la vue 3D : il attend l'aplati montré (même instant que la légende et la clameur).
+	if is_instance_valid(stage) and "essai_attendu_regie" in stage:
+		stage.essai_attendu_regie = phase == "jeu" and not _essai_montre and index >= 0 and index < tf.plans.size() and str(tf.plans[index].get("kind", "")) == "try"
 	if phase != "jeu" or _essai_montre or index < 0 or index >= tf.plans.size(): return
 	if _essai_attendu(tf.plans[index]): return
 	_essai_montre = true
