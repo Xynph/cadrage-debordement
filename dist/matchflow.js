@@ -124,8 +124,9 @@ function chronoArret(l,quoi){
  l.chrono.arret+=s;l.chrono.arrets[quoi]=(l.chrono.arrets[quoi]||0)+s;return s;
 }
 // Renvoi après des points ou un tir manqué : différé à l'action suivante quand le chrono compte les arrêts (temps
-// réglementaire déjà écoulé : joué tout de suite, ce qui termine la période).
-function relancer(l,kind,team,cause,by){if(chronoRules(l)&&l.minute<periodBoundary(l)){l.chrono.relance=[kind,team,cause,by];return true}return performKickRestart(l,kind,team,cause,by)}
+// réglementaire déjà écoulé : joué tout de suite, ce qui termine la période). Seulement pendant une action jouée par
+// chronoMinute : un appel direct (outil, test, autre module) garde le renvoi immédiat d'avant.
+function relancer(l,kind,team,cause,by){if(chronoRules(l)&&l.chrono.enCours&&l.minute<periodBoundary(l)){l.chrono.relance=[kind,team,cause,by];return true}return performKickRestart(l,kind,team,cause,by)}
 // Une minute de chrono : les actions dont le départ tombe dans la minute (0, 1 ou 2), chacune précédée du renvoi en
 // attente. Un renvoi dû après la fin du temps réglementaire termine la période dès que la minute y arrive.
 function chronoMinute(l){
@@ -136,7 +137,7 @@ function chronoMinute(l){
   if(c.relance){const r=c.relance;c.relance=null;performKickRestart(l,...r);if(l.finished||l.flow.atBreak)break}
   const observation=beginPlanObservation(l),side=l.possession;
   l.stats[side].possession++;l.stats[0].territory+=l.territory;l.stats[1].territory+=100-l.territory;
-  advanceFlowPlay(l);finishPlanObservation(l,observation);
+  c.enCours=true;try{advanceFlowPlay(l)}finally{delete c.enCours}finishPlanObservation(l,observation);
   c.actions++;c.prochaine=c.debut+dureeAction(l)+c.arret;c.arret=0;
  }
 }

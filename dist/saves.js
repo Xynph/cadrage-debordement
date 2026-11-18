@@ -235,7 +235,7 @@ function validatePreparation(r,s,live=false){
  const p=r.preparation,u=r.planUsage,side=r.pair.indexOf(s.club);
  saveCheck(side>=0&&saveObject(p)&&p.v===1&&saveInt(p.season,1,s.season)&&saveInt(p.round,0,saveRoundLimit(s))&&p.opponent===r.pair[1-side]&&saveInt(p.observed,0,5));
  saveCheck(Object.keys(TACTICS).includes(p.attack)&&Object.keys(TACTICS).includes(p.recommendedAttack)&&Object.keys(DEFENCES).includes(p.defence)&&Object.keys(DEFENCES).includes(p.recommendedDefence));validatePlaybook(p.playbook);
- saveCheck(saveObject(u)&&u.v===1&&saveInt(u.minutes,0,live?(r.chronoVersion===1?r.chrono?.actions??0:r.minute):240)&&saveObject(u.zones)&&saveObject(u.attack)&&saveObject(u.defence));
+ saveCheck(saveObject(u)&&u.v===1&&saveInt(u.minutes,0,live?(r.chronoVersion===1?Math.ceil(r.minute*1.5)+2:r.minute):240)&&saveObject(u.zones)&&saveObject(u.attack)&&saveObject(u.defence));
  const zones=Object.keys(FIELD_ZONES),attacks=Object.keys(TACTICS),defences=Object.keys(DEFENCES);let phases=0;
  saveCheck(Object.keys(u.zones).length===zones.length&&Object.keys(u.attack).length===attacks.length&&Object.keys(u.defence).length===defences.length);
  zones.forEach(k=>saveCheck(saveInt(u.zones[k],0,u.minutes)));saveCheck(zones.reduce((n,k)=>n+u.zones[k],0)===u.minutes);
