@@ -25,18 +25,21 @@ avec le lien), corriger, retirer `train-echec` et reposer `train`.
 2. Construit `train/<date>-<n>` = main + squash de chaque PR, dans l'ordre. PR en conflit,
    vide, ou qui modifie `.github/workflows/` (le jeton du dépôt ne peut pas les pousser) :
    retirée avec `train-echec` et un commentaire.
-3. Lance `tests.yml` en `workflow_dispatch` sur cette branche : batterie complète,
-   Godot obligatoire. Une seule batterie pour tout le lot.
-4. Vert : ouvre la PR « Train de fusion … », la fusionne **en rebase** (un commit
-   `titre (#n)` par PR, auteur d'origine conservé), ferme les PR d'origine, supprime
-   leurs branches, poste `FUSIONNÉ` sur #591 et relance la recette Windows RTX (les
-   fusions par le jeton du dépôt ne déclenchent pas les workflows « push sur main »).
+3. Ouvre aussitôt la PR « Train de fusion … » (si GitHub refuse, le train s'arrête en
+   une minute au lieu d'attendre la batterie). Cette PR déclenche elle-même la batterie
+   complète `tests.yml`, avec les règles d'une PR ordinaire ; repli en
+   `workflow_dispatch` si aucune exécution n'apparaît. Une seule batterie pour le lot.
+4. Vert : fusionne la PR du train **en rebase** (un commit `titre (#n)` par PR, auteur
+   d'origine conservé), ferme les PR d'origine, supprime leurs branches, poste
+   `FUSIONNÉ` sur #591 et relance la recette Windows RTX (les fusions par le jeton du
+   dépôt ne déclenchent pas les workflows « push sur main »). Si GitHub refuse quand
+   même la fusion, la PR du train reste ouverte pour une fusion à la main.
 5. Rouge : reteste la première moitié du lot. Verte, elle est fusionnée et le reste
    attend le train suivant ; rouge, on recoupe, jusqu'à une PR seule qui passe en
    `train-echec`.
 
-Le contrôle obligatoire « Validation CI » du ruleset est satisfait par la batterie
-lancée sur le commit exact de la PR du train : ni le ruleset ni `tests.yml` ne changent.
+Prérequis (coché par Léo le 18/11) : Settings → Actions → General → « Allow GitHub
+Actions to create and approve pull requests ». Ni le ruleset ni `tests.yml` ne changent.
 
 ## Limites connues
 
@@ -50,3 +53,8 @@ lancée sur le commit exact de la PR du train : ni le ruleset ni `tests.yml` ne 
   si c'est pressé.
 - La fusion classique (prête + fusion automatique) reste possible et prime pour un
   lot sensible ou urgent.
+- 18/11/2026 : 1er passage — batterie verte, création de la PR du train refusée (réglage
+  ci-dessus, coché ensuite). 2e passage — PR créée, mais la batterie déclenchée par la PR
+  elle-même rendait « Validation CI » en attente : la fusion lancée sur la batterie
+  séparée était bloquée. Correctif : la PR du train est ouverte d'abord et sa propre
+  batterie fait foi.
