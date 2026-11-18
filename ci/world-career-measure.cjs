@@ -10,6 +10,7 @@ vm.runInContext=(code,ctx,options)=>runInContext(code,ctx,{...options,timeout:Ma
 const {settleClubMeetings}=require('../tests/helpers/club-meetings.cjs');
 const {createBridge}=require('../native/engine/worker.cjs');
 let leagueEconomy=null;try{leagueEconomy=require('../native/engine/league-economy.cjs');}catch{}
+let clubBudget=null;try{clubBudget=require('../native/engine/club-budget.cjs');}catch{}
 
 function argumentsFor(argv){
  const o={mode:'world-champ',club:30,seasons:3,seed:27,out:null,keep:null};
@@ -83,6 +84,29 @@ function investissements(s,userLeague){
   chantiers:{travaux:{total:total('investissements:travaux'),parChampionnat:parLigue('investissements:travaux'),userLeague:parLigue('investissements:travaux')[userLeague]??0},
    staff:{total:total('investissements:staff'),parChampionnat:parLigue('investissements:staff'),userLeague:parLigue('investissements:staff')[userLeague]??0}}};
 }
+// Résultat de la saison de chaque club, par championnat (à lire en fin de saison, « end-S… », avant la clôture) :
+//   exploitation = recettes encaissées + prime de classement - charges du compteur - amende ;
+//   resultat = caisse + prime - amende - caisse de départ (transferts et primes de signature compris), avant l'apport du propriétaire.
+function resultatsParLigue(s){
+ const b=s.clubBudget;if(!b?.clubs||!clubBudget)return null;
+ const out={};
+ for(const c of s.clubs){
+  const k=b.clubs[c.id],lg=leagueOf(s,c);if(!k)continue;
+  let prime=0,amende=0;try{prime=clubBudget.primeClassement(k.division,k.rang,k.taille);amende=clubBudget.regles({division:k.division,masseAnnuelle:k.masse,recettes:k.recettes+prime}).amende;}catch{}
+  const l=out[lg]??={clubs:0,enPerte:0,exploitationEnPerte:0,resultats:[],exploitations:[],caisses:[],masseSurRecettes:[],detail:{recettes:[],charges:[],masse:[],investissement:[],fraisMatch:[],dividende:[],centre:[],horsBudget:[],reserve:[]}};
+  const jeunes=s.aiRoster?.academies?.find(a=>a.clubId===c.id)?.players?.length??(c.id===s.club?s.development?.academy?.length:null);
+  for(const [cle,v] of [['recettes',k.recettes],['charges',k.charges],['masse',k.masse],['investissement',k.investissement??0],['fraisMatch',k.fraisMatch??0],['dividende',k.dividende??0],['reserve',k.reserve??0],
+   ['horsBudget',c.cash-k.depart-(k.recettes-k.charges)]])l.detail[cle].push(v/1e6);
+  if(Number.isFinite(jeunes))l.detail.centre.push(jeunes);
+  const resultat=(c.cash+prime-amende-k.depart)/1e6,exploitation=(k.recettes+prime-k.charges-amende)/1e6;
+  l.clubs++;if(resultat<0)l.enPerte++;if(exploitation<0)l.exploitationEnPerte++;
+  l.resultats.push(resultat);l.exploitations.push(exploitation);l.caisses.push(c.cash/1e6);if(k.recettes>0)l.masseSurRecettes.push(k.masse/(k.recettes+prime));
+ }
+ return Object.fromEntries(Object.entries(out).map(([lg,l])=>[lg,{clubs:l.clubs,enPerte:l.enPerte,exploitationEnPerte:l.exploitationEnPerte,
+  resultatMedian:round(median(l.resultats)),resultatMin:round(Math.min(...l.resultats)),resultatMax:round(Math.max(...l.resultats)),
+  exploitationMediane:round(median(l.exploitations)),caisseMediane:round(median(l.caisses)),caisseMax:round(Math.max(...l.caisses)),masseSurRecettes:round(median(l.masseSurRecettes)),
+  medianes:Object.fromEntries(Object.entries(l.detail).filter(([,v])=>v.length).map(([cle,v])=>[cle,round(median(v))]))}]));
+}
 function observe(label,s,storeText,profileBytes,exportResult,events,elapsedMs){
  const leagues={};
  for(const c of s.clubs){
@@ -141,6 +165,7 @@ function run(o){
     desk:desk?{decisions:(desk.decisions||[]).length,prolonges:lots.reduce((n,l)=>n+(l.prolonges?.length||0),0),arrivees:lots.reduce((n,l)=>n+(l.recrues?.length||0),0)}:null}));
   }
   console.log('INV '+JSON.stringify({label,...row.investissements}));
+  if(label.startsWith('end-')){row.resultatsParLigue=resultatsParLigue(s);console.log('LIGUES '+JSON.stringify({label,ligues:row.resultatsParLigue}));}
   if(o.keep){fs.mkdirSync(o.keep,{recursive:true});fs.copyFileSync(profile,path.join(o.keep,label+'.json'));}
   save();
  };
@@ -165,4 +190,4 @@ function run(o){
  return report;
 }
 if(require.main===module)run(argumentsFor(process.argv.slice(2)));
-module.exports={argumentsFor,run};
+module.exports={argumentsFor,run,resultatsParLigue};

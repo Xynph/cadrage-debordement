@@ -73,8 +73,16 @@ const EXCEDENTS = Object.freeze({
   entreprise: Object.freeze({ investi: 0.35, dividende: 0.35 }),
   association: Object.freeze({ investi: 0.5, dividende: 0 }),
 });
-const reserveCible = (annuel, clubId) => Math.round(((RESERVE.min + RESERVE.ecart * unite('reserve|' + clubId)) * Math.min(annuel, RESERVE.seuil) +
-  RESERVE.auDela * Math.max(0, annuel - RESERVE.seuil)) / 10000) * 10000;
+// Deuxième division française : réserve de 20 à 30 % des recettes (league-economy.cjs, reserve). Ses clubs démarrent avec
+// 20 à 33 % de leurs recettes en caisse ; avec la réserve générale, cette trésorerie de départ était tout entière engagée
+// en investissements dès la deuxième saison et toute la division finissait dans le rouge (14 à 16 clubs sur 16).
+// Un club de Pro D2 garde un matelas plus large : une descente en troisième division coupe ses recettes de moitié,
+// et le contrôle de gestion lui demande des garanties.
+const reserveCible = (annuel, clubId, division = null) => {
+  const propre = ECONOMIE.CHAMPIONNATS[division]?.reserve, regle = propre ? { ...RESERVE, ...propre } : RESERVE;
+  return Math.round(((regle.min + regle.ecart * unite('reserve|' + clubId)) * Math.min(annuel, regle.seuil) +
+    regle.auDela * Math.max(0, annuel - regle.seuil)) / 10000) * 10000;
+};
 // Part de l'excédent engagée à l'ouverture : la part propre au propriétaire, ou davantage pour qu'il
 // ne reste pas plus d'une demi-réserve qui dort.
 function engagement(surplus, reserve, type) {
@@ -197,7 +205,13 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
     const regle = ECONOMIE.CHAMPIONNATS[force.division];
     if (!regle) continue;
     const annuel = annuels.get(force.id), p = proprietaire(forces, force.id, types?.[force.id]);
-    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) + p.enveloppe + 0.15 * annuel) / (1 + COTISATIONS)]];
+    // Deuxième division française (encadrement) : la masse ne s'appuie que sur les recettes et ce que le propriétaire
+    // comble. Sans cela, chaque club visait ~40 % de ses recettes en salaires (point mort : 30 %), comptait sur 15 % d'économies
+    // que le train de vie ne rend qu'en partie, et la Pro D2 entière finissait dans le rouge, caisse vidée en trois saisons.
+    // Repère réel (A2R/CCCP 2024-2025) : salaires des joueurs à 30 % des produits en moyenne ; 2 clubs sur 16 en bénéfice,
+    // 5 ou 6 proches de l'équilibre (Charente -0,07 M€, Valence -0,13), les autres en perte, comblée par les actionnaires.
+    const economies = regle.encadrement ? 0 : 0.15 * annuel;
+    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) + p.enveloppe + economies) / (1 + COTISATIONS)]];
     const credit = credits?.[force.id] ?? 0;
     if (regle.plafond !== null) bornes.push(['plafond', regle.plafond + credit]);
     if (regle.ratio) bornes.push(['recettes', annuel * RATIO_SALAIRES]);
@@ -274,7 +288,7 @@ function ouverture({ forces, saison, clubs, types = null, excedents = false }) {
   for (const force of forces) tailles.set(force.division, (tailles.get(force.division) ?? 0) + 1);
   return { version: 1, saison, semaines: 0, alertes: {}, clubs: clubs.map(club => {
     const p = proprietaire(forces, club.id, types?.[club.id]), division = forces.find(force => force.id === club.id).division, taille = Math.max(2, tailles.get(division));
-    const reserve = reserveCible(annuels.get(club.id), club.id), surplus = excedents ? Math.max(0, club.cash - reserve) : 0;
+    const reserve = reserveCible(annuels.get(club.id), club.id, division), surplus = excedents ? Math.max(0, club.cash - reserve) : 0;
     const { dividende, investissement } = engagement(surplus, reserve, p.type);
     return { type: p.type, enveloppe: p.enveloppe, depart: club.cash - dividende, recettes: 0, charges: 0, salaires: 0, masse: Math.round(club.masse), division, rang: Math.ceil(taille / 2), taille,
       reserve, investissement, dividende };

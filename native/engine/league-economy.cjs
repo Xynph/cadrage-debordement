@@ -7,6 +7,10 @@
 // parts      : d'où viennent les recettes (total 1).
 // plafond    : plafond salarial de la ligue, en euros, ou null.
 // ratio      : la ligue limite-t-elle les salaires à 52 % des recettes (règle française).
+// encadrement: le contrôle de gestion encadre la masse salariale : un club ne prévoit que les pertes que son
+//              propriétaire comblera, sans compter sur des économies de fonctionnement en cours de saison
+//              (deuxième division française, voir club-budget.cjs, limites).
+// reserve    : réserve de trésorerie propre au championnat ({min, ecart} en part des recettes), sinon la règle générale.
 // reputation : attrait sportif aux yeux des joueurs, 100 pour le championnat de référence.
 // pays       : zone du championnat, pour les joueurs qui tiennent à rester chez eux.
 // source     : 'relevé' quand le chiffre vient d'une publication, 'estimation' sinon
@@ -18,7 +22,7 @@ const CHAMPIONNATS = Object.freeze({
   urc: Object.freeze({ libelle: 'Championnat celte, italien et sud-africain', pays: 'celte', reputation: 90, masse: 5.4e6, recettes: 18e6, bas: 0.5, haut: 1.9, ...parts(0.30, 0.40, 0.18, 0.05, 0.07), plafond: null, ratio: false, espoir: 'elite', source: 'estimation à partir de trois repères' }),
   srp: Object.freeze({ libelle: 'Championnat du Pacifique', pays: 'pacifique', reputation: 86, masse: 2.3e6, recettes: 7.6e6, bas: 0.8, haut: 1.25, ...parts(0.28, 0.45, 0.15, 0.05, 0.07), plafond: 2.6e6, ratio: false, espoir: 'accession', source: 'plafond et salaire moyen relevés, recettes estimées' }),
   'jlo-d1': Object.freeze({ libelle: 'Première division japonaise', pays: 'japon', reputation: 78, masse: 6.0e6, recettes: 20e6, bas: 0.7, haut: 1.5, ...parts(0.70, 0.08, 0.10, 0.04, 0.08), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
-  accession: Object.freeze({ libelle: 'Deuxième division française', pays: 'france', reputation: 70, masse: 3.2e6, recettes: 10.7e6, bas: 0.62, haut: 1.55, ...parts(0.48, 0.22, 0.08, 0.04, 0.18), plafond: null, ratio: true, espoir: 'accession', source: 'relevé' }),
+  accession: Object.freeze({ libelle: 'Deuxième division française', pays: 'france', reputation: 70, masse: 3.2e6, recettes: 10.7e6, bas: 0.62, haut: 1.55, ...parts(0.48, 0.22, 0.08, 0.04, 0.18), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.2, ecart: 0.1 }), espoir: 'accession', source: 'relevé' }),
   guest: Object.freeze({ libelle: 'Clubs invités', pays: 'autre', reputation: 70, masse: 4.0e6, recettes: 13e6, bas: 0.9, haut: 1.1, ...parts(0.40, 0.25, 0.18, 0.06, 0.11), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   'jlo-d2': Object.freeze({ libelle: 'Deuxième division japonaise', pays: 'japon', reputation: 52, masse: 2.0e6, recettes: 6.6e6, bas: 0.7, haut: 1.4, ...parts(0.72, 0.06, 0.08, 0.04, 0.10), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   nationale: Object.freeze({ libelle: 'Troisième division française', pays: 'france', reputation: 50, masse: 1.4e6, recettes: 4.6e6, bas: 0.6, haut: 1.6, ...parts(0.50, 0.10, 0.08, 0.04, 0.28), plafond: null, ratio: true, espoir: 'accession', source: 'estimation à partir d’une fourchette de salaires relevée' }),
