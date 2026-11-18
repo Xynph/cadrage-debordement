@@ -72,17 +72,34 @@ test('Résultat rapide : complaisance du favori et rotation européenne', { time
     assert.ok(avec < sans - 2, `jour sans du favori au résultat rapide : ${avec.toFixed(1)} contre ${sans.toFixed(1)} points d’écart`);
 
     // Rotation : un titulaire très utilisé (série ≥ 2, 60 min) est ménagé la semaine d'un match européen, pas autrement.
-    const joue = (europe) => {
+    // Depuis le 18/11 (§14 quater), le résultat rapide prend la vraie feuille de l'IA (managerSheet : postes, style, repos) :
+    // tous les joueurs ont les mêmes compétences que la vedette, qui n'a que 2 points de note de plus ; elle reste titulaire
+    // sans match européen proche (repos éventuel face à un plus faible : −2), et passe derrière les autres avec le malus
+    // européen (−3). La série de feuilles (managerLoad.streak) dit si elle a commencé le match.
+    const titulaire = (europe) => {
       h.restore(cp);
       return h.run(`(()=>{const a=0,date=(S.worldMode.fixtures.find(f=>f.week===S.round)||S.worldMode.fixtures[0]).date,b=13;
-        S.clubs[a].players.forEach(p=>{p.rating=70;p.condition=100;p.injury=0;p.suspension=0;p.managerLoad={minutes:0,streak:0}});S.clubs[b].players.forEach(p=>{p.condition=100;p.injury=0});
-        const star=S.clubs[a].players[0];star.rating=71;star.managerLoad={minutes:80,streak:3};
+        const star=S.clubs[a].players[0];
+        S.clubs[a].players.forEach(p=>{p.rating=70;p.skillBase=star.skillBase;p.skills={...star.skills};delete p.physicalLoad;p.condition=100;p.injury=0;p.suspension=0;p.managerLoad={minutes:0,streak:0}});
+        S.clubs[b].players.forEach(p=>{p.condition=100;p.injury=0});
+        star.rating=72;star.managerLoad={minutes:80,streak:3};
         const prior=europeAutour;europeAutour=()=>${europe};
         try{CDLeagueDetail.simulate(S,{id:'t-rotation',week:S.round,date,homeId:a,awayId:b,competitionId:'elite',phase:'league',round:1,neutral:true})}finally{europeAutour=prior}
-        return star.managerLoad.minutes})()`);
+        return star.managerLoad.streak>0})()`);
     };
-    assert.ok(joue(false) > 0, 'sans match européen proche, le meilleur joueur joue');
-    assert.equal(joue(true), 0, 'la semaine d’un match européen, le joueur très utilisé est ménagé');
+    // Moteur complet : l'argument « semaine européenne » traverse toutes les enveloppes de managerSheet (quotas du Japon,
+    // liste de Nationale, postes) ; ces deux enveloppes le perdaient jusqu'au 18/11 et la rotation ne jouait jamais.
+    const feuille = (europe) => {
+      h.restore(cp);
+      return h.run(`(()=>{const c=S.clubs[0],star=c.players[0];
+        c.players.forEach(p=>{p.rating=70;p.skillBase=star.skillBase;p.skills={...star.skills};delete p.physicalLoad;p.condition=100;p.injury=0;p.suspension=0;p.managerLoad={minutes:0,streak:0}});
+        star.rating=72;star.managerLoad={minutes:80,streak:3};
+        return managerSheet(c,S.clubs[13],'Sec','classique',${europe}).lineup.includes(star.id)})()`);
+    };
+    assert.ok(feuille(false), 'moteur complet : sans Europe, la vedette est titulaire');
+    assert.ok(!feuille(true), 'moteur complet : la semaine d’un match européen, la vedette très utilisée est ménagée');
+    assert.ok(titulaire(false), 'sans match européen proche, le meilleur joueur est titulaire');
+    assert.ok(!titulaire(true), 'la semaine d’un match européen, le joueur très utilisé est ménagé');
   } finally {
     h.close();
   }
