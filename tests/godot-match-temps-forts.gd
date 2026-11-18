@@ -1269,11 +1269,11 @@ func terrain2d(view: Control) -> void:
 ## (rucks contestés depuis 52′), un bilan, une ligne du journal du staff, trois états de joueurs après la causerie.
 func pilotage_test(lineup: Array) -> Dictionary:
 	var axes: Array = []
-	for axe: Array in [["piedJeu", "Jeu au pied", "normal", [["moins", "Garder le ballon"], ["normal", "Équilibré"], ["plus", "Occuper au pied"]]],
-		["rucks", "Pression sur les rucks", "agressive", [["prudente", "Ne pas s’engager"], ["normale", "Normale"], ["agressive", "Contester chaque ruck"]]],
-		["discipline", "Discipline", "normale", [["stricte", "Zéro faute"], ["normale", "Normale"], ["limite", "Jouer à la limite"]]],
+	for axe: Array in [["piedJeu", "Jeu au pied", "normal", [["moins", "Garder"], ["normal", "Équilibré"], ["plus", "Occuper"]]],
+		["rucks", "Rucks", "agressive", [["prudente", "Prudence"], ["normale", "Normale"], ["agressive", "Contester"]]],
+		["discipline", "Discipline", "normale", [["stricte", "Zéro faute"], ["normale", "Normale"], ["limite", "À la limite"]]],
 		["rythme", "Rythme", "normal", [["lent", "Ralentir"], ["normal", "Normal"], ["rapide", "Accélérer"]]],
-		["touche", "Alignement en touche", "normale", [["sure", "Lancer court, sûr"], ["normale", "Normal"], ["risquee", "Fond d’alignement"]]]]:
+		["touche", "Touche", "normale", [["sure", "Sûre"], ["normale", "Normale"], ["risquee", "Risquée"]]]]:
 		axes.append({"id": axe[0], "label": axe[1], "valeur": axe[2], "options": (axe[3] as Array).map(func(o: Array) -> Dictionary: return {"id": o[0], "label": o[1]})})
 	var consignes := {}
 	for axe: Dictionary in axes: consignes[axe.id] = axe.valeur
@@ -1283,7 +1283,7 @@ func pilotage_test(lineup: Array) -> Dictionary:
 		if lineup[k] is Dictionary: joueurs[str(lineup[k].id)] = {"etat": etats[k][0], "label": etats[k][1], "phase": "pre", "confiance": 50}
 	return {"arbitre": {"id": "castaing", "nom": "Julien Castaing", "pays": "FR", "rucks": 4, "melee": 3, "horsJeu": 3, "cartons": 2, "resume": "Pointilleux sur les rucks, laisse vivre les cartons."},
 		"consignes": consignes, "axes": axes,
-		"bilans": [{"axe": "rucks", "valeur": "agressive", "depuis": 52, "texte": "Contester chaque ruck depuis 52′ : 3 pénalités concédées, 2 ballons arrachés."}],
+		"bilans": [{"axe": "rucks", "valeur": "agressive", "depuis": 52, "texte": "Rucks « Contester » depuis 52′ : 3 pénalités, 2 ballons arrachés."}],
 		"joueurs": joueurs, "journal": [{"minute": 55, "auteur": "staff", "texte": "Le staff passe « Rythme » sur « Accélérer »."}]}
 
 ## Tuile Consignes sur un pilotage injecté : cinq axes, cran en place en or, clic qui envoie la bonne consigne
@@ -1303,9 +1303,9 @@ func consignes_fictives(view: Control, direct: Dictionary) -> void:
 	check(lignes.size() == 5, "Consignes : cinq axes (%d)" % lignes.size())
 	var en_place: Button = tuile.find_child("Consigne_rucks_agressive", true, false)
 	var neutre: Button = tuile.find_child("Consigne_rucks_normale", true, false)
-	check(en_place != null and neutre != null and en_place.button_pressed and not neutre.button_pressed and en_place.text == "Contester chaque ruck", "Consignes : le cran en place est allumé")
+	check(en_place != null and neutre != null and en_place.button_pressed and not neutre.button_pressed and en_place.text == "Contester", "Consignes : le cran en place est allumé")
 	var textes: Array = tuile.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
-	check(textes.any(func(t: String) -> bool: return t.begins_with("Contester chaque ruck depuis 52′")), "Consignes : bilan de la consigne " + str(textes))
+	check(textes.any(func(t: String) -> bool: return t.begins_with("Rucks « Contester » depuis 52′")), "Consignes : bilan de la consigne " + str(textes))
 	check(textes.any(func(t: String) -> bool: return t.contains("55′") and t.contains("Le staff passe")), "Consignes : journal du staff " + str(textes))
 	var arbitre: Label = tuile.find_child("MatchBetweenReferee", true, false)
 	check(arbitre != null and arbitre.text.contains("Julien Castaing") and arbitre.text.contains("Pointilleux sur les rucks"), "Consignes : rappel de l'arbitre")

@@ -56,11 +56,12 @@ const pilSev=(s,k)=>1+k*((Number(s)||3)-3);
 
 // Consignes en direct : trois crans par axe, le cran du milieu est neutre.
 const CONSIGNES={
- piedJeu:{label:'Jeu au pied',valeurs:[['moins','Garder le ballon'],['normal','Équilibré'],['plus','Occuper au pied']]},
- rucks:{label:'Pression sur les rucks',valeurs:[['prudente','Ne pas s’engager'],['normale','Normale'],['agressive','Contester chaque ruck']]},
- discipline:{label:'Discipline',valeurs:[['stricte','Zéro faute'],['normale','Normale'],['limite','Jouer à la limite']]},
+ // Libellés courts : la tuile Consignes doit rester lisible en 1280×720 (capture du 18/11).
+ piedJeu:{label:'Jeu au pied',valeurs:[['moins','Garder'],['normal','Équilibré'],['plus','Occuper']]},
+ rucks:{label:'Rucks',valeurs:[['prudente','Prudence'],['normale','Normale'],['agressive','Contester']]},
+ discipline:{label:'Discipline',valeurs:[['stricte','Zéro faute'],['normale','Normale'],['limite','À la limite']]},
  rythme:{label:'Rythme',valeurs:[['lent','Ralentir'],['normal','Normal'],['rapide','Accélérer']]},
- touche:{label:'Alignement en touche',valeurs:[['sure','Lancer court, sûr'],['normale','Normal'],['risquee','Fond d’alignement']]}
+ touche:{label:'Touche',valeurs:[['sure','Sûre'],['normale','Normale'],['risquee','Risquée']]}
 };
 const CONSIGNES_NEUTRES=Object.fromEntries(Object.entries(CONSIGNES).map(([k,c])=>[k,c.valeurs[1][0]]));
 function consigneLabel(axe,valeur){return CONSIGNES[axe]?.valeurs.find(v=>v[0]===valeur)?.[1]||valeur}
@@ -260,13 +261,13 @@ function pilotageBilan(l,axe){
  const v=l.pilotage.consignes[axe],r=l.pilotage.releves[axe];if(!r||v===CONSIGNES_NEUTRES[axe])return null;
  const m=pilotageReleve(l),d=k=>m[k]-r[k],pl=(n,s,p)=>n+' '+(n>1?p:s);
  const morceaux={
-  rucks:[pl(d('penalites'),'pénalité concédée','pénalités concédées'),pl(d('arraches'),'ballon arraché','ballons arrachés')],
-  discipline:[pl(d('penalites'),'pénalité concédée','pénalités concédées'),pl(d('cartons'),'carton','cartons')],
+  rucks:[pl(d('penalites'),'pénalité','pénalités'),pl(d('arraches'),'ballon arraché','ballons arrachés')],
+  discipline:[pl(d('penalites'),'pénalité','pénalités'),pl(d('cartons'),'carton','cartons')],
   piedJeu:[pl(d('coups'),'coup de pied','coups de pied'),pl(d('metres'),'mètre gagné','mètres gagnés')],
   rythme:[pl(d('porteurs'),'temps de jeu','temps de jeu'),pl(d('pertes'),'ballon perdu','ballons perdus')],
   touche:[`${d('touchesGagnees')}/${d('touches')} touche${d('touches')>1?'s':''} gagnée${d('touchesGagnees')>1?'s':''}`]
  }[axe];
- return {axe,valeur:v,depuis:l.pilotage.depuis[axe],texte:`${consigneLabel(axe,v)} depuis ${l.pilotage.depuis[axe]}′ : ${morceaux.join(', ')}.`};
+ return {axe,valeur:v,depuis:l.pilotage.depuis[axe],texte:`${CONSIGNES[axe].label} « ${consigneLabel(axe,v)} » depuis ${l.pilotage.depuis[axe]}′ : ${morceaux.join(', ')}.`};
 }
 function pilotageProjection(l){
  if(!pilotageActif(l))return null;

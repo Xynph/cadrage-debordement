@@ -20,17 +20,17 @@ d'avant-match (`clubLife.avantMatch.arbitre`) et le direct (`live.pilotage.arbit
 
 Effets : pénalités de jeu × (1 + 0,04·(hors-jeu − 3)) × (1 + 0,04·(rucks − 3)) ; ballon non libéré × (1 + 0,08·(rucks − 3)) ;
 pénalités de mêlée × (1 + 0,12·(mêlée − 3)) ; risque de carton × (1 + 0,2·(cartons − 3)). Il amplifie
-« Contester chaque ruck ».
+« Rucks : Contester ».
 
 ## Consignes en direct (`set_consignes {axe, valeur}`, sans pause)
 
 | Axe | Crans | Effet principal |
 |---|---|---|
-| Jeu au pied | Garder le ballon / Équilibré / Occuper au pied | probabilité de jeu au pied × 0,55 / × 1,55 |
-| Pression sur les rucks | Ne pas s'engager / Normale / Contester chaque ruck | fautes × 0,85 / × 1,22+ (arbitre) ; ballons arrachés ; avance adverse |
-| Discipline | Zéro faute / Normale / Jouer à la limite | fautes × 0,78 / × 1,2 ; défense un peu moins / plus mordante |
+| Jeu au pied | Garder / Équilibré / Occuper | probabilité de jeu au pied × 0,55 / × 1,55 |
+| Rucks | Prudence / Normale / Contester | fautes × 0,85 / × 1,22+ (arbitre) ; ballons arrachés ; avance adverse |
+| Discipline | Zéro faute / Normale / À la limite | fautes × 0,78 / × 1,2 ; défense un peu moins / plus mordante |
 | Rythme | Ralentir / Normal / Accélérer | avance du porteur ∓ 0,02, en-avant ± , jeu au pied |
-| Alignement en touche | Lancer court, sûr / Normal / Fond d'alignement | touche ± 6 points ; touche risquée gagnée = meilleure plateforme |
+| Touche | Sûre (lancer court) / Normale / Risquée (fond d'alignement) | touche ± 6 points ; touche risquée gagnée = meilleure plateforme |
 
 Bilan affiché depuis le changement (pénalités concédées, ballons arrachés, coups de pied, touches gagnées…).
 

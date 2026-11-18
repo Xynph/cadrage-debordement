@@ -42,7 +42,7 @@ try {
   assert.equal(m.live.pilotage.consignes.rucks, 'agressive');
   m = jeu.call('tick', { steps: 15 });
   const bilan = m.live.pilotage.bilans.find(b => b.axe === 'rucks');
-  assert.ok(bilan && /Contester chaque ruck depuis \d+′ : \d+ pénalités? concédées?, \d+ ballons? arrachés?\./.test(bilan.texte), bilan?.texte);
+  assert.ok(bilan && /^Rucks « Contester » depuis \d+′ : \d+ pénalités?, \d+ ballons? arrachés?\.$/.test(bilan.texte), bilan?.texte);
 
   // Effets moyens : mêmes graines, un seul réglage change. Le match repart du coup d'envoi.
   vm.run('globalThis.__live=JSON.stringify(S.live);');
