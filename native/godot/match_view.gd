@@ -20,18 +20,60 @@ const Animations = preload("res://match_animations.gd")
 const Choregraphie = preload("res://match_choregraphie.gd")
 const Formations = preload("res://match_formations.gd")
 const Impacts = preload("res://match_impacts.gd")
+const Tactique = preload("res://match_tactique.gd")
 const CUT_SECONDS := 0.30
 ## Nombre de joueurs à l'image, chacun à plus de Motion.TRAJET_REPLACEMENT de sa place, à partir
 ## duquel la vue coupe pour les replacer (équipe qui se reforme) au lieu de les faire courir.
 const REFORMATION_MIN := 6
-## Caméra de retransmission (TV) : décalage depuis le point visé. Plus haute et plus en
-## surplomb qu'à l'origine ((0, 55, 75), 36°) : environ 41° au-dessus de l'horizon, ce qui
-## montre l'action d'un peu plus loin et cache mieux appuis et contacts approximatifs.
-const TV_OFFSET := Vector3(0, 60, 69)
-const ACTION_OFFSET := Vector3(5.0, 12.0, 18.0)
-## Hauteur visible (m) de la caméra de base. 12 novembre 2026 (soir) : TV 42 -> 64, action 16 -> 24 (vue retransmission large).
-const TV_TAILLE := 64.0
-const ACTION_TAILLE := 24.0
+## Caméras de retransmission (TV) et « au contact » (action), en perspective depuis le 18 novembre
+## 2026 (orthographiques avant, TV à 41° et 42 à 64 m de champ). Seule la direction de ces décalages
+## compte : la distance découle de la hauteur visible voulue au point visé et de l'angle de champ.
+## TV : plein travers, environ 28° au-dessus de l'horizon, comme la caméra principale d'une tribune ;
+## action : plus près, plus ouverte, un peu de biais.
+const TV_OFFSET := Vector3(0.0, 0.47, 0.883)
+const ACTION_OFFSET := Vector3(0.24, 0.5, 0.832)
+## Caméra-grue : quand le jeu approche de la touche proche (z du point visé entre GRUE_DEBUT et
+## GRUE_FIN), la caméra monte et plonge jusqu'à GRUE_ANGLE degrés de plus, comme la caméra
+## principale d'une tribune qui suit le jeu le long de sa touche : la tribune proche reste sous
+## l'image, au lieu de remplir le bas de l'écran.
+const GRUE_DEBUT := 4.0
+const GRUE_FIN := 30.0
+const GRUE_ANGLE := 18.0
+## Angle de champ vertical (degrés) : téléobjectif de retransmission en TV, plus ouvert au contact.
+const TV_CHAMP := 24.0
+const ACTION_CHAMP := 36.0
+## La caméra recule librement, sauf si le bas de l'image passerait sous le bord avant du toit de la
+## tribune proche (TOIT_Z, TOIT_Y) : elle avance alors en ouvrant son angle, jusqu'à CHAMP_MAX ; la
+## hauteur visible au point visé ne change pas.
+const TOIT_Z := 54.6
+const TOIT_Y := 13.0
+const CHAMP_MAX := 64.0
+## Hauteur visible (m) au point visé de la caméra de base (hors temps fort). Le cadrage des temps
+## forts (match_cadrage.gd) la règle ensuite selon les joueurs utiles.
+const TV_TAILLE := 30.0
+const ACTION_TAILLE := 16.0
+## Mi-temps et fin de match : plan large de tout le terrain, vu de haut au-dessus de la tribune
+## proche (rayons au-dessus de son toit) : direction, point visé, recul (m) et angle de champ.
+const PLAN_LARGE_OFFSET := Vector3(0.0, 0.64, 0.77)
+const PLAN_LARGE_VISE := Vector3(0.0, 0.0, 4.0)
+const PLAN_LARGE_RECUL := 125.0
+const PLAN_LARGE_CHAMP := 36.0
+## Recentrage borné (TV et action) : la touche lointaine, la touche proche et les lignes de ballon
+## mort, plus TERRAIN_MARGE m, restent près des bords de l'image (BORD_*, en part de l'image) : la
+## tribune n'en occupe qu'une bande. Le ballon reste toujours dans la zone sûre (BALLON_SUR des bords).
+const TERRAIN := Vector2(55.0, 35.0)
+const TERRAIN_MARGE := 3.0
+const BORD_HAUT := 0.12
+const BORD_BAS := 0.9
+const BORD_COTE := 0.04
+const BALLON_SUR := 0.2
+## Le recentrage borné est amorti (secondes) ; seule une sortie du ballon hors de BALLON_LIMITE
+## des bords est corrigée d'emblée.
+const BORNE_LISSAGE := 0.35
+const BALLON_LIMITE := 0.16
+## Retard maximal du point visé sur le ballon, en part de la hauteur visible de base. Un ballon qui
+## réapparaît plus loin que ce retard du point visé fait couper la caméra ; plus près, elle glisse.
+const RETARD_MAX := 0.3
 const STADIUM_EVENING_SCRIPT := "res://match_stadium_evening.gd"
 var _players: Node3D
 var _ball: Node3D
@@ -49,6 +91,16 @@ var _ball_from := Vector3.ZERO
 var _ball_from_basis := Basis.IDENTITY
 var _ball_target := Vector3.ZERO
 var _camera_mode := "tv"
+## Point visé final de la caméra suivie (après cadrage, gestes et bornes du terrain).
+var _camera_look := Vector3.ZERO
+## Mi-temps ou fin de match : plan large du terrain (annoncé par l'image du direct, ou par la
+## régie des temps forts une fois le dernier temps fort fini).
+var _plan_large := false
+var _plan_large_direct := false
+var _plan_large_regie := false
+## Décalage amorti du recentrage borné, et sa vitesse.
+var _borne := Vector3.ZERO
+var _borne_vitesse := Vector3.ZERO
 var _paused := false
 var _pending: Dictionary = {}
 var _has_pending := false
@@ -58,6 +110,7 @@ var _kind := ""
 var _quality := "balanced"
 var _sun: DirectionalLight3D
 var _ball_marker: Node3D
+var _ball_beacon: Node3D
 var _ball_attached := false
 var _ball_travel := 1.0
 var _grass: ShaderMaterial
@@ -128,7 +181,7 @@ func _ready() -> void:
 	_build_ball()
 	_camera = Camera3D.new()
 	_camera.name = "Camera"
-	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
 	_camera.keep_aspect = Camera3D.KEEP_HEIGHT
 	_camera.near = 0.5
 	_camera.far = 500.0
@@ -377,7 +430,10 @@ func apply_frame(live: Dictionary) -> void:
 		Athlete.clear_palette()
 		for entry: Dictionary in _actors.values():
 			_recolor(entry.model, entry.side)
+			Tactique.colorer(entry.node, _kits[entry.side].marker)
 	_paused = live.get("paused", false) or live.get("finished", false) or live.get("atBreak", false)
+	_plan_large_direct = bool(live.get("finished", false)) or bool(live.get("atBreak", false))
+	_maj_plan_large()
 	var key := str(scene.get("key", ""))
 	# Pose tenue d'une liaison (mêlée liée) : relâchée au fait suivant (le ballon sort).
 	if not _tenues.is_empty() and key != _tenue_cle:
@@ -415,6 +471,7 @@ func apply_frame(live: Dictionary) -> void:
 		var target: Vector3 = _formations.place(id, _world(player))
 		if not _actors.has(id):
 			_actors[id] = _make_actor(id, side, target)
+			Tactique.poser_repere(_actors[id].node, player, _kits[side].marker)
 		var entry: Dictionary = _actors[id]
 		entry.holding = id == _carrier_id
 		var can_cut: bool = carry_cut and entry.holding
@@ -473,7 +530,8 @@ func apply_frame(live: Dictionary) -> void:
 	if has_ball:
 		var next_target := _world(ball_data, 0.23)
 		var ball_changed := not _ball_target.is_equal_approx(next_target) or previous_carrier != _carrier_id
-		if not _ball.visible:
+		# Ballon qui réapparaît près du point visé : la caméra glisse jusqu'à lui ; loin, elle coupe.
+		if not _ball.visible and Vector2(next_target.x - _camera_focus.x, next_target.z - _camera_focus.z).length() > RETARD_MAX * (ACTION_TAILLE if _camera_mode == "action" else TV_TAILLE):
 			_camera_cut = true
 		# The first snapshot is a pose, not an invented pass from ground level.
 		_ball_attached = (_pass_plan.is_empty() and not _carrier_id.is_empty()
@@ -488,9 +546,9 @@ func apply_frame(live: Dictionary) -> void:
 			_ball_travel = 1.0
 		_ball.visible = true
 	else:
+		# Ballon absent de la scène : la caméra reste où elle est (pas de saut au centre du terrain).
 		_ball.visible = false
 		_ball_attached = false
-		_camera_cut = true
 	if _gestes:
 		_gestes.observe(live, scene, new_action, _action_motion and not _paused and has_ball and _live_cadence == 1)
 	if new_action and play_action and _animations_adaptees != null and _live_cadence == 1:
@@ -605,6 +663,19 @@ func _gestes_du_fait(scene: Dictionary, previous_kind: String) -> void:
 			var nom := "reception_haute" if previous_kind in ["kick", "kickoff", "drop22", "goalLine", "touch"] else "reception"
 			var cle := instant_geste(nom)
 			jouer_geste(featured, nom, maxf(0.0, cle - 0.5), cle + 0.3)
+
+
+## Régie des temps forts : mi-temps ou fin de match, plus rien à rejouer.
+func set_plan_large(on: bool) -> void:
+	_plan_large_regie = on
+	_maj_plan_large()
+
+
+func _maj_plan_large() -> void:
+	var large := _plan_large_direct or _plan_large_regie
+	if large != _plan_large:
+		_plan_large = large
+		_camera_cut = true
 
 
 func set_camera(mode: String) -> void:
@@ -792,6 +863,9 @@ func _process(delta: float) -> void:
 	# Repère au sol du ballon : seulement dans la vue de dessus, où le ballon est minuscule ;
 	# jamais dans les vues de retransmission (pas de cercle aux pieds du porteur).
 	_ball_marker.visible = _camera_mode == "tactical"
+	# Vue de dessus seulement : disques et numéros des joueurs, balise jaune du ballon.
+	Tactique.mettre_a_jour(_actors, _carrier_id, _camera_mode == "tactical")
+	_ball_beacon.visible = _camera_mode == "tactical" and _ball.visible
 	if _ball.visible:
 		_ball_marker.global_position = Vector3(_ball.global_position.x, 0.028, _ball.global_position.z)
 		# Ballon tenu par un joueur : anneau plus grand et plus brillant ; au sol : anneau discret.
@@ -1030,7 +1104,9 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 		return
 	_camera_framed = true
 	if _camera_mode != "tactical":
-		var desired := _ball.global_position if _ball.visible else Vector3.ZERO
+		var base := ACTION_TAILLE if _camera_mode == "action" else TV_TAILLE
+		# Ballon absent : la caméra garde son point visé.
+		var desired := _ball.global_position if _ball.visible else _camera_focus
 		if cut:
 			_camera_focus = desired
 		else:
@@ -1038,12 +1114,21 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			# Bound the follow delay during a long authored pass; the ball must
 			# stay in the comfortable middle area even at the in-goal corners.
 			var lag := _camera_focus - desired
-			_camera_focus = desired + lag.limit_length(3.0 if _camera_mode == "action" else 8.0)
-		var offset := ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET
+			_camera_focus = desired + lag.limit_length(base * RETARD_MAX)
+		var offset := offset_suivi(ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET, _camera_focus.z)
 		var look := _camera_focus
-		var size := ACTION_TAILLE if _camera_mode == "action" else TV_TAILLE
+		var size := base
 		var wide := size
 		var screen := get_viewport().get_visible_rect().size
+		if _plan_large:
+			# Mi-temps, fin de match : tout le terrain, sans recadrage.
+			var direction := PLAN_LARGE_OFFSET.normalized()
+			_camera_look = PLAN_LARGE_VISE
+			_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+			_camera.global_transform = Transform3D(Basis.looking_at(-direction, Vector3.UP), PLAN_LARGE_VISE + direction * PLAN_LARGE_RECUL)
+			_camera.fov = PLAN_LARGE_CHAMP
+			_camera.size = 2.0 * PLAN_LARGE_RECUL * tan(deg_to_rad(PLAN_LARGE_CHAMP * 0.5))
+			return
 		if _cadrage:
 			# Pendant un temps fort : l'action est cadrée de près, le ballon toujours dans le champ.
 			var close: Array = _cadrage.frame_camera(look, size, offset, screen.x / maxf(screen.y, 1.0), _camera_mode, delta, cut)
@@ -1063,14 +1148,35 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 		if not is_finite(size) or size < 2.0 or not look.is_finite() or not offset.is_finite():
 			look = _camera_focus
 			size = wide
-			offset = ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET
-		_camera.position = look + offset
-		_camera.look_at(look)
-		_camera.size = size
+			offset = offset_suivi(ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET, _camera_focus.z)
+		# Recentrage borné, amorti (pas d'à-coup quand une borne entre en jeu) ; le ballon ne sort
+		# jamais de l'image, même pendant l'amortissement.
+		var aspect := screen.x / maxf(screen.y, 1.0)
+		var borne := _borner(look, size, offset, aspect) - look
+		if cut or delta <= 0.0:
+			_borne = borne
+			_borne_vitesse = Vector3.ZERO
+		else:
+			var pas: Array = Gestes._damp3(_borne, borne, _borne_vitesse, delta, BORNE_LISSAGE)
+			_borne = pas[0]
+			_borne_vitesse = pas[1]
+		look += _borne
+		if _ball.visible:
+			var vue := Basis.looking_at(-offset, Vector3.UP)
+			var profondeur := Vector3(vue.z.x, 0.0, vue.z.z).normalized()
+			# Ni hors de l'image, ni sous le bandeau du score ou la légende du direct.
+			var haut := BALLON_LIMITE + (float(_cadrage.couvert_haut) if _cadrage else 0.0)
+			var bas := 1.0 - BALLON_LIMITE - (float(_cadrage.couvert_bas) if _cadrage else 0.0)
+			look += profondeur * _garder_ballon(0.0, look, size, offset, aspect, profondeur, _ball.global_position, 1, haut, bas)
+			var largeur := Vector3(vue.x.x, 0.0, vue.x.z).normalized()
+			look += largeur * _garder_ballon(0.0, look, size, offset, aspect, largeur, _ball.global_position, 0, BALLON_LIMITE, 1.0 - BALLON_LIMITE)
+		_poser_camera(look, size, offset)
 		return
 	if _gestes:
 		_gestes.reset_framing()
 	_camera_focus = Vector3.ZERO
+	_camera_look = Vector3.ZERO
+	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	_camera.position = Vector3(0, 150, 5)
 	_camera.look_at(Vector3.ZERO)
 	var viewport_size := get_viewport().get_visible_rect().size
@@ -1084,6 +1190,187 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			var point := _camera.to_local(Vector3(x, 0, z))
 			half_height = maxf(half_height, maxf(absf(point.y), absf(point.x) / aspect))
 	_camera.size = maxf(half_height * 2.16, 88.0)
+
+
+## Direction de la caméra suivie pour un point visé à `profondeur` (z) : celle de base, relevée
+## progressivement près de la touche proche (caméra-grue, voir GRUE_*). Continue : pas d'à-coup.
+func offset_suivi(base: Vector3, profondeur: float) -> Vector3:
+	var k := smoothstep(GRUE_DEBUT, GRUE_FIN, profondeur)
+	if k <= 0.0:
+		return base
+	var horizontal := Vector3(base.x, 0.0, base.z)
+	var elevation := atan2(base.y, horizontal.length()) + deg_to_rad(GRUE_ANGLE) * k
+	return (horizontal.normalized() * cos(elevation) + Vector3.UP * sin(elevation)) * base.length()
+
+
+## Caméra suivie en perspective : `size` est la hauteur visible (m) au point visé `look`, `offset`
+## la direction depuis ce point. `_camera.size` garde cette hauteur visible (régie, tests).
+func _poser_camera(look: Vector3, size: float, offset: Vector3) -> void:
+	var pose := pose_camera(look, size, offset)
+	_camera_look = look
+	_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	_camera.global_transform = Transform3D(Basis.looking_at(-offset, Vector3.UP), pose[0])
+	_camera.fov = pose[1]
+	_camera.size = size
+
+
+## Position de la caméra et angle de champ vertical (degrés) pour voir `size` m de haut au point
+## visé. Au-delà de RECUL_MAX (tribune proche), la caméra avance et ouvre son angle.
+func pose_camera(look: Vector3, size: float, offset: Vector3) -> Array:
+	var direction := offset.normalized()
+	var demi := size * 0.5
+	var champ := ACTION_CHAMP if _camera_mode == "action" else TV_CHAMP
+	var distance := demi / tan(deg_to_rad(champ * 0.5))
+	if direction.z > 0.05 and _sous_le_toit(look, direction, distance, demi):
+		# Le bas de l'image passerait sous le toit de la tribune proche : la caméra avance (et
+		# ouvre son angle) juste assez pour le franchir.
+		var a := demi / tan(deg_to_rad(CHAMP_MAX * 0.5))
+		var b := distance
+		if _sous_le_toit(look, direction, a, demi):
+			distance = a
+		else:
+			for i in 8:
+				var m := (a + b) * 0.5
+				if _sous_le_toit(look, direction, m, demi):
+					b = m
+				else:
+					a = m
+			distance = a
+	return [look + direction * distance, rad_to_deg(2.0 * atan(demi / distance))]
+
+
+## Le rayon du bas de l'image passe sous le bord avant du toit de la tribune proche.
+func _sous_le_toit(look: Vector3, direction: Vector3, distance: float, demi: float) -> bool:
+	var camera := look + direction * distance
+	if camera.z <= TOIT_Z:
+		return false
+	var vue := Basis.looking_at(-direction, Vector3.UP)
+	var rayon := -vue.z - vue.y * (demi / distance)
+	if rayon.z >= -0.0001:
+		return true
+	return camera.y + rayon.y * ((TOIT_Z - camera.z) / rayon.z) < TOIT_Y
+
+
+## Coordonnées d'écran (0 à 1, origine en haut à gauche) d'un point vu par la caméra posée sur
+## `look`. Un point derrière la caméra est rendu très bas (sous l'image).
+func ecran_camera(point: Vector3, look: Vector3, size: float, offset: Vector3, aspect: float) -> Vector2:
+	var pose := pose_camera(look, size, offset)
+	var local: Vector3 = Basis.looking_at(-offset, Vector3.UP).inverse() * (point - (pose[0] as Vector3))
+	var profondeur := -local.z
+	if profondeur < 0.05:
+		return Vector2(0.5, 10.0)
+	var pente := tan(deg_to_rad(float(pose[1]) * 0.5))
+	return Vector2(0.5 + 0.5 * local.x / (profondeur * pente * maxf(aspect, 0.1)), 0.5 - 0.5 * local.y / (profondeur * pente))
+
+
+## Recentrage borné : le point visé glisse (en profondeur, puis en largeur) juste assez pour que la
+## tribune et les abords n'occupent qu'une bande au bord de l'image, sans que le ballon quitte la
+## zone sûre. Si l'image est plus grande que le terrain, le terrain y est centré.
+func _borner(look: Vector3, size: float, offset: Vector3, aspect: float) -> Vector3:
+	var ballon := _ball.global_position if _ball.visible else look
+	var haut_sur := BALLON_SUR
+	var bas_sur := 1.0 - BALLON_SUR
+	var bord_haut := BORD_HAUT
+	var bord_bas := BORD_BAS
+	if _cadrage:
+		# L'interface du direct couvre le haut et le bas : le ballon reste dans la partie visible,
+		# et ce qui est sous le bandeau ou la légende ne compte pas comme tribune à l'image.
+		haut_sur = maxf(haut_sur, float(_cadrage.couvert_haut) + 0.08)
+		bas_sur = minf(bas_sur, 1.0 - float(_cadrage.couvert_bas) - 0.08)
+		bord_haut = maxf(bord_haut, float(_cadrage.couvert_haut) + 0.02)
+		bord_bas = minf(bord_bas, 1.0 - float(_cadrage.couvert_bas) - 0.02)
+	var loin := -TERRAIN.y - TERRAIN_MARGE
+	var pres := TERRAIN.y + TERRAIN_MARGE
+	var bout := TERRAIN.x + TERRAIN_MARGE
+	# Axes de la caméra au sol : un glissement en largeur ne change pas la hauteur à l'écran.
+	var vue := Basis.looking_at(-offset, Vector3.UP)
+	var largeur := Vector3(vue.x.x, 0.0, vue.x.z).normalized()
+	# Profondeur : touche lointaine en haut, touche proche en bas.
+	var axe := Vector3(vue.z.x, 0.0, vue.z.z).normalized()
+	var bornes := Vector2(
+		_seuil(look, size, offset, aspect, axe, Vector3(look.x, 0.0, loin), 1, bord_haut, true).x,
+		_seuil(look, size, offset, aspect, axe, Vector3(look.x, 0.0, pres), 1, bord_bas, false).y)
+	var s := clampf(0.0, bornes.x, bornes.y) if bornes.x <= bornes.y else (bornes.x + bornes.y) * 0.5
+	s = _garder_ballon(s, look, size, offset, aspect, axe, ballon, 1, haut_sur, bas_sur)
+	look += axe * s
+	# Largeur : lignes de ballon mort sur les bords.
+	axe = largeur
+	bornes = Vector2(
+		_seuil(look, size, offset, aspect, axe, Vector3(-bout, 0.0, look.z), 0, BORD_COTE, true).x,
+		_seuil(look, size, offset, aspect, axe, Vector3(bout, 0.0, look.z), 0, 1.0 - BORD_COTE, false).y)
+	s = clampf(0.0, bornes.x, bornes.y) if bornes.x <= bornes.y else (bornes.x + bornes.y) * 0.5
+	s = _garder_ballon(s, look, size, offset, aspect, axe, ballon, 0, BALLON_SUR, 1.0 - BALLON_SUR)
+	return look + axe * s
+
+
+## Décalage limité (ou imposé) pour que le ballon reste entre `bas` et `haut` sur la coordonnée
+## d'écran `c`, en vraie perspective (ballon haut et proche de la caméra compris).
+func _garder_ballon(s: float, look: Vector3, size: float, offset: Vector3, aspect: float, axe: Vector3, ballon: Vector3, c: int, bas: float, haut: float) -> float:
+	var a := _seuil(look, size, offset, aspect, axe, ballon, c, haut, true)
+	var b := _seuil(look, size, offset, aspect, axe, ballon, c, bas, false)
+	var permis := Vector2(maxf(a.x, b.x), minf(a.y, b.y))
+	return clampf(s, permis.x, permis.y) if permis.x <= permis.y else s
+
+
+const DECALAGE_MAX := 30.0
+## Intervalle [min, max] des décalages s du point visé le long de `axe` pour lesquels la coordonnée
+## d'écran `c` (0 : x, 1 : y) de `point` reste sous `cible` (`sous`) ou au-dessus.
+func _seuil(look: Vector3, size: float, offset: Vector3, aspect: float, axe: Vector3, point: Vector3, c: int, cible: float, sous: bool) -> Vector2:
+	var a := -DECALAGE_MAX
+	var b := DECALAGE_MAX
+	var fa: float = ecran_camera(point, look + axe * a, size, offset, aspect)[c]
+	var fb: float = ecran_camera(point, look + axe * b, size, offset, aspect)[c]
+	var croissant := fb > fa
+	# Partie valable : du côté où la coordonnée est sous la cible (ou au-dessus).
+	var valable_bas := sous == croissant
+	if (fa <= cible) == (fb <= cible):
+		# Pas de passage : tout ou rien.
+		var tout := (fa <= cible) == sous
+		if tout:
+			return Vector2(-INF, INF)
+		# Rien de valable dans la plage : la borne extrême du bon côté.
+		return Vector2(-INF, -DECALAGE_MAX) if valable_bas else Vector2(DECALAGE_MAX, INF)
+	for i in 11:
+		var m := (a + b) * 0.5
+		var fm: float = ecran_camera(point, look + axe * m, size, offset, aspect)[c]
+		if (fm <= cible) == (fa <= cible):
+			a = m
+			fa = fm
+		else:
+			b = m
+	var limite := (a + b) * 0.5
+	return Vector2(-INF, limite) if valable_bas else Vector2(limite, INF)
+
+
+## Regroupement en cours (mêlée, touche, ruck) : places du paquet et des demis, pour un cadrage serré
+## sur lui plutôt que sur les arrières écartés. Vide hors regroupement.
+func regroupement() -> Array[Vector3]:
+	var ids: Array = []
+	var formation: Dictionary = _formations.formation if _formations and _formations.active() else {}
+	var roles: Dictionary = formation.get("roles", {})
+	var retenus: Array = []
+	match str(formation.get("type", "")):
+		"melee", "sortie_melee":
+			retenus = ["pack", "demi_intro", "demi_adverse"]
+		"touche":
+			retenus = ["lanceur", "alignement", "sauteur", "demi"]
+	for id: String in roles:
+		if roles[id] in retenus:
+			ids.append(id)
+	if ids.is_empty() and not _impacts.ruck.is_empty():
+		ids = _impacts.ruck.keys()
+		for autre: String in [_impacts.porteur, _impacts.plaqueur]:
+			if not autre.is_empty() and autre not in ids:
+				ids.append(autre)
+	var centre := _ball.global_position if _ball.visible else _camera_focus
+	var places: Array[Vector3] = []
+	for id: String in ids:
+		if _actors.has(id):
+			var place: Vector3 = (_actors[id].node as Node3D).position
+			# Un demi resté loin (touche) ne fait pas partie du regroupement.
+			if Vector2(place.x - centre.x, place.z - centre.z).length() <= 18.0:
+				places.append(Vector3(place.x, 0.0, place.z))
+	return places
 
 
 func _world(point: Dictionary, height: float = 0.0) -> Vector3:
@@ -1105,6 +1392,8 @@ func _clear_presence() -> void:
 	_contact_plan = {}
 	_impacts.annuler()
 	_ball_attached = false
+	# Scène vide : plus rien à suivre, la caméra revient au centre du terrain.
+	_camera_focus = Vector3.ZERO
 	_camera_cut = true
 	_fit_camera(0.0, true)
 
@@ -1564,4 +1853,5 @@ func _build_ball() -> void:
 	halo.mesh = ring
 	halo.material_override = _material(Color("e9bf5a"), true)
 	_ball.add_child(halo)
+	_ball_beacon = Tactique.construire_balise(_ball)
 	_ball.visible = false

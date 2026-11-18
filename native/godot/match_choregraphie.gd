@@ -303,6 +303,21 @@ func ballon_piste(t: float = -1.0) -> Vector3:
 	return p
 
 
+## Point de chute (au sol) du ballon en vol : là où il retombe ou est reçu dans les `horizon`
+## prochaines secondes. null si un joueur le porte ou s'il ne retombe pas dans ce délai.
+func chute_ballon(horizon: float = 5.0) -> Variant:
+	if not actif or _ballon.is_empty() or not porteur().is_empty():
+		return null
+	var t := temps
+	var fin := minf(duree, temps + horizon)
+	while t < fin:
+		t = minf(fin, t + pas * 0.5)
+		if not porteur(t).is_empty() or _valeur(_ballon.h, t) < 0.4:
+			var p := ballon_piste(t)
+			return Vector3(p.x, 0.0, p.z)
+	return null
+
+
 ## Place et cap d'un joueur suivi ; appelé par la vue à la place de sa trajectoire.
 func place(id: String, actor: Node3D) -> void:
 	var p := _point(id, temps)

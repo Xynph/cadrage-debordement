@@ -1087,6 +1087,9 @@ func _montrer_jeu(visible_3d: bool) -> void:
 		# n'apportait qu'une économie et ajoutait un état de plus au moment des coupes.
 
 func _habiller() -> void:
+	# Mi-temps, fin de match : une fois le temps fort fini, la 3D restée à l'écran montre tout le terrain.
+	if is_instance_valid(stage) and stage.has_method("set_plan_large"):
+		stage.set_plan_large(etat != JEU and (bool(_live.get("atBreak", false)) or bool(_live.get("finished", false))))
 	# Le journal ouvert suit l'image, pas l'avance du moteur.
 	if view.drawer.visible and view.drawer_tab == "Journal": view._update_drawer()
 	# Pendant un temps fort, le bandeau montre l'instant rejoué, pas l'état du moteur.

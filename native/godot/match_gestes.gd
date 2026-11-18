@@ -90,8 +90,9 @@ const FRAME_MARGIN := 1.2
 const FRAME_LEAP := 40.0
 # Caméra TV seulement : léger pivot autour du point visé pendant le geste, pour
 # que les lignes de touche ne s'alignent plus sur l'axe de la caméra (le saut
-# se lit alors au-dessus de la ligne). 0,35 rad, soit 20°, en 1,5 s.
-const FRAME_YAW := {"tv": 0.35, "action": 0.0}
+# se lit alors au-dessus de la ligne). 0,25 rad, soit 14°, en 1,5 s (20° avant la caméra TV en
+# perspective du 18 novembre 2026, où un pivot plus fort montre la tribune proche).
+const FRAME_YAW := {"tv": 0.25, "action": 0.0}
 const ARMS := ["UpperArm.L", "LowerArm.L", "Palm.L", "UpperArm.R", "LowerArm.R", "Palm.R"]
 const LINE_Z := [-29.0, -23.2, -21.8, -20.4]
 const CONTEST := 0.7        # élévation du bloc adverse, battu
