@@ -14,8 +14,8 @@ try {
   assert.ok(p, 'pilotage projeté dans le match du joueur');
   assert.ok(p.arbitre.nom && p.arbitre.resume, 'arbitre nommé');
   for (const k of ['rucks', 'melee', 'horsJeu', 'cartons']) assert.ok(p.arbitre[k] >= 1 && p.arbitre[k] <= 5, k);
-  assert.equal(p.axes.length, 5);
-  assert.deepEqual(Object.values(p.consignes), ['normal', 'normale', 'normale', 'normal', 'normale']);
+  assert.equal(p.axes.length, 14, '11 consignes en direct + 3 réglages du plan de jeu');
+  assert.deepEqual(p.consignes, { piedJeu: 'normal', rythme: 'normal', relance: 'selon', finDeMatch: 'normal', rucks: 'normale', discipline: 'normale', touche: 'normale', maul: 'selon', melee: 'normale', coupsEnvoi: 'normaux', cible: 'aucune' });
   assert.deepEqual(p.adversaire.consignes, p.consignes, 'banc adverse : consignes neutres au coup d’envoi');
 
   // Causerie d'avant-match : six tons distincts, dont « Furieux » ; réaction visible et état pour le match.
@@ -56,6 +56,15 @@ try {
   assert.ok(JSON.parse(vm.run('S.live.pilotage.adversaire.minute')) >= 5, 'le banc adverse revoit ses consignes pendant le direct (tick)');
   assert.ok(bilan && /^Rucks « Contester » depuis \d+′ : \d+ pénalités?, \d+ ballons? arrachés?\.$/.test(bilan.texte), bilan?.texte);
 
+  // Plan de jeu dans la même commande que les consignes : seulement match en pause (comme avant).
+  assert.ok(m.live.pilotage.axes.some(a => a.id === 'planAttaque' && a.groupe === 'attaque' && a.pause), 'plan de jeu dans l’onglet Consignes');
+  assert.deepEqual(m.live.pilotage.groupes.map(g => g.id), ['attaque', 'defense', 'conquete', 'adversaire']);
+  if (!m.live.paused) assert.equal(jeu.brut('set_consignes', { axe: 'planAttaque', valeur: 'large' }).ok, false, 'plan de jeu : pause requise');
+  m = jeu.call('pause', { paused: true });
+  m = jeu.call('set_consignes', { axe: 'planAttaque', valeur: 'large' });
+  assert.equal(m.live.pilotage.axes.find(a => a.id === 'planAttaque').valeur, 'large');
+  m = jeu.call('set_consignes', { axe: 'planAttaque', valeur: 'equilibre' });
+  m = jeu.call('pause', { paused: false });
   // Cris de la touche : sans pause, effet sur les joueurs présents, usure si on répète ; projection pour la fenêtre Équipe.
   const pc = m.live.pilotage;
   assert.deepEqual(pc.cris.options.map(o => o.id), ['encourager', 'exiger', 'calmer', 'defense', 'toutDonner']);
@@ -78,19 +87,22 @@ try {
 
   // Effets moyens : mêmes graines, un seul réglage change. Le match repart du coup d'envoi.
   vm.run('globalThis.__live=JSON.stringify(S.live);');
-  const mesurer = (reglage, n = 160) => JSON.parse(vm.run(`(()=>{const acc={pen:0,jaunes:0,arraches:0,coups:0,touches:0,touchesG:0,ecart:0,matchs:0};
+  const mesurer = (reglage, n = 160) => JSON.parse(vm.run(`(()=>{const acc={pen:0,jaunes:0,arraches:0,coups:0,touches:0,touchesG:0,ecart:0,maul:0,envois:0,repris:0,penMelee:0,metres:0,pertes:0,matchs:0};
     for(let i=0;i<${n};i++){S.live=JSON.parse(__base);const l=S.live;
       ${reglage}
       let k=0;while(!l.finished&&k++<400){l.paused=false;advanceRugby(l)}
       const u=l.userSide,o=1-u;acc.pen+=l.stats[u].penalties;acc.jaunes+=l.stats[u].yellows||0;acc.arraches+=l.tacticalStats?.[o]?.handErrors||0;
-      acc.coups+=l.tacticalStats?.[u]?.kicks||0;acc.touches+=l.stats[u].lineouts;acc.touchesG+=l.stats[u].lineoutsWon;acc.ecart+=l.score[u]-l.score[o];acc.matchs++}
+      acc.coups+=l.tacticalStats?.[u]?.kicks||0;acc.touches+=l.stats[u].lineouts;acc.touchesG+=l.stats[u].lineoutsWon;acc.ecart+=l.score[u]-l.score[o];
+      acc.metres+=l.tacticalStats?.[u]?.metres||0;acc.pertes+=l.tacticalStats?.[u]?.handErrors||0;
+      l.events.forEach((e,j)=>{const sc=e.scene||{};if(e.type==='try'&&sc.team===u&&sc.origin==='maul')acc.maul++;if(e.type==='penalty'&&sc.cause==='scrum')acc.penMelee++;
+        if(e.type==='restart'&&sc.team===u){acc.envois++;const n=l.events[j+1]?.scene;if(n?.kind==='reception'&&n.team===u)acc.repris++}});acc.matchs++}
     for(const k of Object.keys(acc))if(k!=='matchs')acc[k]/=acc.matchs;return JSON.stringify(acc)})()`, 600000));
   // Mesures des consignes du manager : banc adverse figé (consignes absentes = règles d'avant), un seul réglage change.
   const figer = 'delete l.pilotage.consignesAdverses;delete l.pilotage.adversaire;';
   const neutre = figer + 'l.pilotage.consignes={piedJeu:"normal",rucks:"normale",discipline:"normale",rythme:"normal",touche:"normale"};l.pilotage.etats={};l.pilotage.arbitre={...l.pilotage.arbitre,rucks:3,melee:3,horsJeu:3,cartons:3};';
   const seed = s => `Math.random=(()=>{let x=${s};return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296}})();`;
   // Une graine par match, identique d'un réglage à l'autre.
-  const serie = reglage => mesurer(neutre + reglage + seed('(i*7919+17)>>>0'));
+  const serie = (reglage, n) => mesurer(neutre + reglage + seed('(i*7919+17)>>>0'), n);
   const base = serie('');
   const agressif = serie('l.pilotage.consignes.rucks="agressive";');
   const prudent = serie('l.pilotage.consignes.rucks="prudente";');
@@ -133,6 +145,19 @@ try {
   assert.ok(cartons.jaunes > base.jaunes, 'arbitre sévère : plus de cartons');
   assert.ok(pied.coups > base.coups && garder.coups < base.coups, 'jeu au pied suivi');
   assert.ok(toucheSure.touchesG / toucheSure.touches > base.touchesG / base.touches, 'lancer court plus sûr');
+  // Nouvelles consignes (attaque, conquête, adversaire), 100 matchs par réglage.
+  const relancer = serie('l.pilotage.consignes.relance="relancer";', 100), degager = serie('l.pilotage.consignes.relance="degager";', 100);
+  const courts = serie('l.pilotage.consignes.coupsEnvoi="courts";', 100), longs = serie('l.pilotage.consignes.coupsEnvoi="longs";', 100);
+  const pousser = serie('l.pilotage.consignes.melee="pousser";', 100), maulSouvent = serie('l.pilotage.consignes.maul="souvent";', 100), maulJamais = serie('l.pilotage.consignes.maul="jamais";', 100);
+  const aile = serie('l.pilotage.consignes.cible="aile";l.pilotage.depuis.cible=0;', 100), base100 = serie('', 100);
+  console.log('relance : coups de pied', r(degager.coups), '/', r(relancer.coups), '· mètres', r(degager.metres), '/', r(relancer.metres), '· pertes', r(degager.pertes), '/', r(relancer.pertes));
+  console.log('coups d’envoi repris : courts', r(courts.repris / courts.envois), '· base', r(base100.repris / base100.envois), '· longs', r(longs.repris / longs.envois));
+  console.log('pénalités de mêlée : base', r(base100.penMelee), '· pousser', r(pousser.penMelee), '| essais sur ballon porté : jamais', r(maulJamais.maul), '· base', r(base100.maul), '· souvent', r(maulSouvent.maul), '| point faible aile : écart', r(aile.ecart), 'contre', r(base100.ecart));
+  assert.ok(degager.coups > relancer.coups && relancer.pertes > degager.pertes, 'relance suivie');
+  assert.ok(courts.repris / courts.envois > base100.repris / base100.envois && longs.repris / longs.envois < base100.repris / base100.envois, 'coups d’envoi courts plus souvent repris');
+  assert.ok(pousser.penMelee > base100.penMelee * 1.2, 'pousser en mêlée fait siffler davantage');
+  assert.ok(maulSouvent.maul > base100.maul && maulJamais.maul < base100.maul, 'ballon porté suivi');
+  assert.ok(aile.ecart > base100.ecart, 'attaquer leur aile faible rapporte, au moins au début');
   assert.ok(galvanises.ecart > vexes.ecart + 2, 'l’état des joueurs pèse sur le match');
   assert.ok(vexes.pen > base.pen, 'des joueurs vexés concèdent plus de fautes');
   // Scénario construit : l'adversaire mené de 10 points à l'heure de jeu, staff vigilant → il accélère et garde le ballon.

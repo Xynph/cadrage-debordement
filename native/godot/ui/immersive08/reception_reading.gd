@@ -14,6 +14,9 @@ static func status(message: Dictionary, model: Dictionary) -> Dictionary:
 			if conference.has("available") and conference.available == false and not str(conference.get("reason", "")).is_empty():
 				return {"key":"waiting", "label":"En attente", "urgent":false, "reason":str(conference.reason)}
 	var mail: Dictionary = message.get("club_mail", {})
+	# Bulletin météo : information seulement (ni « À faire », ni urgence, ni échéance), même s'il propose une réponse.
+	if str(mail.get("categorie", "")) == "meteo":
+		return {"key":"info", "label":"Information", "urgent":false, "reason":"Bulletin météo : à consulter."}
 	if not mail.is_empty() and ClubMail.awaiting(model, mail):
 		return {"key":"todo", "label":"Réponse attendue", "urgent":bool(mail.get("arret", false)), "reason":"Choisis une réponse : elle a des conséquences."}
 	var scene: Dictionary = message.get("scene_invitation", {})

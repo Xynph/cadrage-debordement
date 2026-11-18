@@ -124,7 +124,7 @@ func _draw() -> void:
 		if fatigue is Dictionary: fatigue = fatigue.get("fatigue", "—")
 		facts_scroll.add_child(S.label("Charge cumulée : %s / 100" % str(fatigue), 16))
 		var injury := int(player.get("injury", 0))
-		facts_scroll.add_child(S.wrap("Indisponibilité enregistrée : %d %s." % [injury, "semaine" if injury == 1 else "semaines"] if injury > 0 else "Aucune indisponibilité enregistrée.", 16, S.TEXT))
+		facts_scroll.add_child(S.wrap("Indisponibilité enregistrée : %s, %d %s." % [preload("res://ui/club_mail.gd").injury_label(app.model, player).to_lower(), injury, "semaine" if injury == 1 else "semaines"] if injury > 0 else "Aucune indisponibilité enregistrée.", 16, S.TEXT))
 		var stage := str(_followup().get("stage", ""))
 		if not stage.is_empty():
 			facts_scroll.add_child(S.label("Suivi : " + str({"blesse":"indisponibilité", "reprise":"reprise à organiser", "progressif":"reprise progressive", "termine":"suivi terminé"}.get(stage, stage)), 14))

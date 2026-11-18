@@ -50,6 +50,8 @@ module.exports=function nativeGestion(command,p){
  if(command==='set_consignes'){
   // Consignes en direct (match-pilotage.js) : sans pause, effet dès la minute suivante.
   requireThat(S.live&&!S.live.finished&&typeof setConsigne==='function'&&S.live.pilotage,'Consignes indisponibles pour ce match.');
+  // Plan de jeu (attaque, défense, pénalités) : comme avant, seulement match en pause.
+  if(typeof CONSIGNES_PLAN!=='undefined'&&Object.hasOwn(CONSIGNES_PLAN,p.axe)){requireThat(S.live.paused&&!presentationPending(S.live),'Mets le match en pause pour changer le plan de jeu.');requireThat(setPlan(S.live,p.axe,p.valeur),'Réglage inconnu.');return;}
   requireThat(setConsigne(S.live,p.axe,p.valeur),'Consigne inconnue.');return;
  }
  if(command==='cri'){

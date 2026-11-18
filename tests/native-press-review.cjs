@@ -6,7 +6,7 @@ for(const file of press.files)run(fs.readFileSync(path.join(__dirname,'../dist',
 run(`S={season:1,round:2,club:1,morale:75,trust:70,live:null,clubs:[{id:0,name:'A',points:4,played:2,pf:30,pa:40,players:[]},{id:1,name:'B',points:4,played:2,pf:50,pa:30,players:[]}],history:[{leagueId:'elite',phase:'league',pair:[0,1],score:[20,10],tries:[2,1]}],franceMode:{version:1,catalogue:'france-territories-2026-10-31-v1',week:2,leagues:{elite:{members:[0,1]},accession:{members:[]}}}};const nativePress=(${press.factory.toString()})();`);
 const before=run('JSON.stringify(S)');assert.equal(run("JSON.stringify(nativePress.project().journal.divisions[0].standings.map(x=>x.clubId))"),run("JSON.stringify(CDFranceCompetition.ranked(S,'elite').map(c=>c.id))"),'Classement presse et départage canonique identiques.');assert.equal(run('JSON.stringify(S)'),before);
 run("S.franceMode=null;S.clubs[0].pf=30;S.clubs[0].pa=20;S.clubs[1].pf=50;S.clubs[1].pa=40;function ranked(){return [...S.clubs].sort((a,b)=>b.points-a.points||(b.pf-b.pa)-(a.pf-a.pa)||b.pf-a.pf||a.id-b.id)}");assert.equal(run("JSON.stringify(nativePress.project().journal.divisions[0].standings.map(x=>x.clubId))"),run('JSON.stringify(ranked().map(c=>c.id))'),'Départage historique par points marqués conservé.');
-for(const variant of [1,2]){
+for(const variant of [0]){ // une seule formulation par question depuis le 18/11/2026
  let found=false;
  for(let week=0;week<=34&&!found;week++)for(let club=0;club<30&&!found;club++){
   run(`S={season:1,round:${week},club:${club},morale:75,trust:70,live:null,clubs:Array.from({length:30},(_,id)=>({id,name:'Club '+id,points:0,played:0,pf:0,pa:0,players:[]})),history:[],franceMode:{version:1,catalogue:'france-territories-2026-10-31-v1',week:${week},leagues:{elite:{members:Array.from({length:14},(_,i)=>i)},accession:{members:Array.from({length:16},(_,i)=>i+14)}}}}`);
@@ -20,7 +20,7 @@ for(const variant of [1,2]){
  assert.ok(found,'Variante '+variant+' réellement préparée.');
 }
 const {createBridge}=require('../native/engine/worker.cjs');
-for(const [club,variant] of [[1,1],[6,2]]){
+for(const [club,variant] of [[1,0],[6,0]]){
  const root=fs.mkdtempSync(path.join(process.env.CD_PRESS_TEST_ROOT||require('node:os').tmpdir(),'cd-press-review-'));let b=createBridge({dataDir:root,seed:398,now:1700000000000}),n=0;
  const good=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
  try{

@@ -9,6 +9,9 @@
 // --regler "PENALITES_RULES=0;ESSAIS.finition=.47" : moteur d'avant les pénalités réalistes (docs/hierarchie-penalites-20261114.md).
 // Hiérarchie détaillée et pénalités sifflées par phase ajoutées le 14/11 (favori par tranche d'écart, surprises, écart 1er-dernier).
 // --ancien : coefficients d'avant (ESSAIS_RULES=0), pour le tableau avant/après sur la même graine.
+// --suivi-de-loin : tous les championnats sauf celui du club suivis de loin (résultat rapide, native/engine/league-detail.cjs), pour comparer
+// les classements à ceux du moteur complet (docs/top14-dispute-20261117.md §14 ter) ; seul le détail de hiérarchie (`detail`) reste lisible,
+// les crochets du moteur complet ne voient pas les matchs rapides.
 // Une seule carrière en mémoire (~1,2 Go) : ne pas lancer deux mesures à la fois sur la machine partagée.
 const fs = require('node:fs');
 const { context } = require('../tests/monde-harness.cjs');
@@ -74,11 +77,12 @@ function niveau(h) {
   return JSON.parse(h.run(`JSON.stringify(Object.fromEntries(S.clubs.map(c=>[c.id,(()=>{const n=c.players.filter(p=>!p.injury).map(p=>roleNote(p)).sort((a,b)=>b-a).slice(0,23);return n.reduce((a,b)=>a+b,0)/Math.max(1,n.length);})()])))`));
 }
 
-function mesurer({ graine = 4242, club = 102, semaines = 80, ancien = false, journal = false, reglage = '', selections = true } = {}) {
+function mesurer({ graine = 4242, club = 102, semaines = 80, ancien = false, journal = false, reglage = '', selections = true, suiviDeLoin = false } = {}) {
   const h = context(graine, { console: false, selections });
   if (ancien) h.run('ESSAIS_RULES=0');
   if (reglage) h.run(reglage);
   h.start(club);
+  if (suiviDeLoin) h.command('league_detail_set', { detailed: [] });
   const niveaux = niveau(h);
   const membres = JSON.parse(h.run('JSON.stringify(Object.fromEntries(Object.entries(S.worldMode.leagues).map(([k,v])=>[k,v.members])))'));
   const noms = JSON.parse(h.run('JSON.stringify(S.clubs.map(c=>c.abbr))'));
@@ -209,7 +213,7 @@ function tableau(rows, cols) {
 
 if (require.main === module) {
   const relire = opt('--analyser', null);
-  const d = relire ? JSON.parse(fs.readFileSync(relire, 'utf8')).brut : mesurer({ graine, club, semaines, ancien, journal: true, reglage: opt('--regler', ''), selections });
+  const d = relire ? JSON.parse(fs.readFileSync(relire, 'utf8')).brut : mesurer({ graine, club, semaines, ancien, journal: true, reglage: opt('--regler', ''), selections, suiviDeLoin: args.includes('--suivi-de-loin') });
   const a = analyser(d);
   if (sortie && !relire) fs.writeFileSync(sortie, JSON.stringify({ analyse: a, brut: d }));
   console.log(`Graine ${a.graine}, club ${a.club}${d.ancien ? ' (coefficients d’avant)' : ''} : ${a.matchs} matchs au moteur complet.`);

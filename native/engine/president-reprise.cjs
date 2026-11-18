@@ -13,11 +13,26 @@
 // direction passe en « vente » tant que le président attend, puis vente forcée à l'échéance).
 // Désignés : les mieux payés hors des douze meilleurs joueurs, sans les recrues trop récentes, les espoirs ni les prêtés.
 // Mode Monde uniquement ; aucun tirage au hasard.
+//
+// Allègement chez les clubs gérés (suite de #899, mesure : 3 à 6 interventions et 9 à 16 ventes par saison) :
+//   - le président d'un club géré n'intervient que si le club est « Fragile » après l'achat (club-finance-health.cjs :
+//     moins de la moitié de sa réserve, ou endetté) ; un club seulement un peu sous sa réserve se débrouille seul ;
+//   - chaque président a son tempérament : entre deux interventions, 4 à 8 mois selon le club (déterministe) ;
+//   - il désigne au plus deux joueurs.
+// Le club joué garde la règle d'origine (un courrier rare mais lisible, au plus tous les quatre mois).
 
 const DELAI = 21, RALLONGE = 14, ESPACEMENT = 120;   // jours
 const DECOTE = 0.8;                                   // vente pressée : 80 % de la valeur du joueur
 const NOYAU = 12;                                     // les douze meilleurs ne sont jamais désignés
 const CREUSE = 0.1;                                   // déjà sous la réserve : un achat qui la creuse de 10 % de plus
+const ESPACEMENT_MAX = 240;                           // clubs gérés : 4 à 8 mois entre deux interventions
+const DESIGNES_IA = 2;                                // clubs gérés : au plus deux joueurs désignés
+
+// Tempérament du président d'un club géré : délai entre deux interventions, de 120 à 240 jours, fixe pour un club.
+function espacement(id) {
+  const n = Math.abs(Math.trunc(Number(id) || 0));
+  return ESPACEMENT + ((n * 37 + 11) % (ESPACEMENT_MAX - ESPACEMENT + 1));
+}
 
 const DAY = 86400000;
 const decaler = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * DAY).toISOString().slice(0, 10);
@@ -25,20 +40,20 @@ const euros = n => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).
 const dateCourte = iso => Number(iso.slice(8, 10)) + ' ' + ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][Number(iso.slice(5, 7)) - 1];
 
 // Le président intervient-il après cet achat ? avant/apres : caisse avant et après ; derniere : date de sa dernière intervention.
-function declenche({ avant, apres, reserve, date, derniere = null }) {
+function declenche({ avant, apres, reserve, date, derniere = null, delai = ESPACEMENT }) {
   if (![avant, apres, reserve].every(Number.isFinite) || !(reserve > 0) || !(apres < reserve) || !(apres < avant)) return false;
-  if (derniere && date < decaler(derniere, ESPACEMENT)) return false;
+  if (derniere && date < decaler(derniere, delai)) return false;
   return avant >= reserve || avant - apres >= CREUSE * reserve;
 }
 
 // Joueurs désignés : {id, name, pos, note, salaire (hebdo), valeur, bloque}. manque : ce qui sépare la caisse de la réserve.
-function designer(joueurs, { manque }) {
+function designer(joueurs, { manque, max = 3 }) {
   const coeur = new Set(joueurs.slice().sort((a, b) => b.note - a.note || (a.id < b.id ? -1 : 1)).slice(0, NOYAU).map(p => p.id));
   const candidats = joueurs.filter(p => !coeur.has(p.id) && !p.bloque && p.valeur > 0)
     .sort((a, b) => b.salaire - a.salaire || b.valeur - a.valeur || (a.id < b.id ? -1 : 1));
   const out = []; let total = 0;
   for (const p of candidats) {
-    if (out.length >= 3 || out.length >= 2 && total >= manque) break;
+    if (out.length >= max || out.length >= 2 && total >= manque) break;
     out.push(p); total += p.valeur * DECOTE;
   }
   return out;
@@ -78,8 +93,12 @@ function repriseApresAchat(c,avant){
  if(!repriseActif()||!c||S.live)return false;
  const e=repriseEtat(),date=repriseJour(),reserve=repriseReserve(c.id);
  if(!date||reserve===null||e.clubs[c.id]?.etat==='en_cours')return false;
- if(!nativePresidentReprise.declenche({avant,apres:c.cash,reserve,date,derniere:e.derniere[c.id]||null}))return false;
- const joueurs=nativePresidentReprise.designer(repriseJoueurs(c),{manque:reserve-c.cash});
+ const joue=c.id===S.club;
+ if(!nativePresidentReprise.declenche({avant,apres:c.cash,reserve,date,derniere:e.derniere[c.id]||null,
+  delai:joue?nativePresidentReprise.ESPACEMENT:nativePresidentReprise.espacement(c.id)}))return false;
+ // Club géré : seulement s'il est « Fragile » après l'achat (étiquette de santé, quand elle est branchée).
+ if(!joue&&typeof santeFiche==='function'){let f=null;try{f=santeFiche(c.id);}catch(err){}if(f&&f.etiquette&&f.etiquette!=='fragile'){repriseTally('president:epargne',c.id);return false;}}
+ const joueurs=nativePresidentReprise.designer(repriseJoueurs(c),{manque:reserve-c.cash,max:joue?3:nativePresidentReprise.DESIGNES_IA});
  if(!joueurs.length)return false;
  e.clubs[c.id]={date,echeance:nativePresidentReprise.decaler(date,nativePresidentReprise.DELAI),joueurs:joueurs.map(j=>({id:j.id,name:j.name,pos:j.pos,salaire:j.salaire,valeur:j.valeur})),
   etat:'en_cours',saison:S.season,tresorerie:c.cash,reserve,delai:false,confie:false};
@@ -156,4 +175,4 @@ function repriseAction(action){
 }
 `;
 
-module.exports = Object.freeze({ DELAI, RALLONGE, ESPACEMENT, DECOTE, NOYAU, CREUSE, BRANCHEMENT, decaler, dateCourte, euros, declenche, designer, courrier, valide });
+module.exports = Object.freeze({ DELAI, RALLONGE, ESPACEMENT, ESPACEMENT_MAX, DESIGNES_IA, DECOTE, NOYAU, CREUSE, BRANCHEMENT, decaler, dateCourte, euros, espacement, declenche, designer, courrier, valide });
