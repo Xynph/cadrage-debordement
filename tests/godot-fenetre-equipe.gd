@@ -365,9 +365,14 @@ func executer() -> void:
 	verifier(not buteur.is_empty(), "rôle buteur dans le modèle")
 	if not buteur.is_empty():
 		var choix := ""
+		var numero := 0
 		for c: Variant in buteur.get("candidats", []):
-			if choix.is_empty() and c is Dictionary and str(c.id) != str(buteur.get("enJeu", {}).get("id", "")): choix = str(c.id)
-		var bouton_role: Button = fenetre.find_child("Role_buteur_" + choix, true, false)
+			if choix.is_empty() and c is Dictionary and str(c.id) != str(buteur.get("enJeu", {}).get("id", "")):
+				choix = str(c.id)
+				numero = int(c.num)
+		# Nœud nommé par le numéro du joueur (un identifiant peut contenir des caractères refusés dans un nom de nœud).
+		var bouton_role: Button = fenetre.find_child("Role_buteur_%d" % numero, true, false)
+		if bouton_role != null: verifier(str(bouton_role.get_meta("joueur", "")) == choix, "bouton du candidat lié au bon joueur")
 		verifier(bouton_role != null and not bouton_role.disabled, "candidat buteur cliquable")
 		if bouton_role != null:
 			bouton_role.pressed.emit()

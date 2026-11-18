@@ -96,8 +96,10 @@ function playerRolesLive(l){
  const side=l.userSide,on=activePlayers(l,side),fit=fitArrete(l),slot=id=>l.sheets[side].on.indexOf(id);
  const brief=(p,k)=>p?{id:p.id,name:p.name,pos:p.pos,num:slot(p.id)+1,value:Math.round(skill(p,k,k==='lineout'?fit:true))}:null;
  const roles=Object.entries(PLAYER_ROLES).map(([id,[label,k]])=>{
-  const designe=designatedPlayer(l,side,id),staff=staffRolePlayer(l,side,id);
-  const pool=id==='pied'?on.filter(p=>p.fam>=4):id==='lanceur'?on.filter(p=>p.fam<=3):on;
+  // Buteur de secours : le staff prend le meilleur après le buteur en charge (jamais le même joueur).
+  const premier=id==='secours'?goalKicker(l,side):null,sansPremier=on.filter(p=>p.id!==premier?.id);
+  const designe=designatedPlayer(l,side,id),staff=id!=='secours'?staffRolePlayer(l,side,id):staffJudgementRules(l)?judgedBest(l,side,sansPremier,'goal'):chooseScorer(S.clubs[l.pair[side]],sansPremier.map(p=>p.id),l);
+  const pool=id==='pied'?on.filter(p=>p.fam>=4):id==='lanceur'?on.filter(p=>p.fam<=3):id==='secours'?sansPremier:on;
   const candidats=[...pool].sort((a,b)=>skill(b,k,true)-skill(a,k,true)).slice(0,5);
   if(designe&&!candidats.some(p=>p.id===designe.id))candidats.push(designe);
   return {id,label,attribut:ATTR[k]||k,designe:brief(designe,k),staff:brief(staff,k),enJeu:brief(id==='buteur'?goalKicker(l,side):designe||staff,k),candidats:candidats.map(p=>brief(p,k))};

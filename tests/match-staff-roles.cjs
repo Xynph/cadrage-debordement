@@ -29,6 +29,9 @@ try {
     assert.ok(r.enJeu, r.id + ' : joueur en charge');
   }
   const buteur = roles.find(r => r.id === 'buteur');
+  const secours = roles.find(r => r.id === 'secours');
+  assert.notEqual(secours.staff.id, buteur.enJeu.id, 'le secours proposé par le staff n’est pas le buteur');
+  assert.ok(!secours.candidats.some(c => c.id === buteur.enJeu.id), 'le buteur en charge n’est pas candidat au secours');
   const autre = buteur.candidats.find(c => c.id !== buteur.enJeu.id);
   assert.ok(autre, 'un autre buteur possible');
   const banc = JSON.parse(vm.run('JSON.stringify(S.live.sheets[S.live.userSide].bench)'))[0];

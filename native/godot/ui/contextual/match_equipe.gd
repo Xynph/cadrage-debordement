@@ -1716,7 +1716,8 @@ func _carte_role(role: Dictionary) -> Control:
 
 ## Ligne d'un candidat : portrait, numéro et nom, note dans l'attribut ; cerclée d'or s'il est en charge.
 func _candidat(role: String, c: Dictionary, choisi: bool, du_staff: bool, occupe: bool) -> Button:
-	var bouton := _bouton("", choisir_role.bind(role, str(c.get("id", ""))), "or_cadre" if choisi else "cadre", 14, "Role_%s_%s" % [role, str(c.get("id", ""))])
+	var bouton := _bouton("", choisir_role.bind(role, str(c.get("id", ""))), "or_cadre" if choisi else "cadre", 14, "Role_%s_%d" % [role, int(c.get("num", 0))])
+	bouton.set_meta("joueur", str(c.get("id", "")))
 	bouton.custom_minimum_size.y = px(44)
 	bouton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bouton.disabled = occupe
