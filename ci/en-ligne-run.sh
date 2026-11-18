@@ -51,7 +51,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante|proprietaire) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante|proprietaire|pilotage) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -94,6 +94,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/meteo"
     phase "captures météo et vent (écran Match avant-match, vestiaire, bandeau, mi-temps, 1080p)" captures-meteo.log \
       env CD_METEO_GRAPHICS=1 CD_METEO_OUTPUT="$cap/meteo" node tests/godot-meteo-vent.cjs
+  fi
+  if veut pilotage; then
+    mkdir -p "$cap/pilotage"
+    phase "captures pilotage du match (écran 2D : consignes, arbitre, états des joueurs)" captures-pilotage.log \
+      env CD_MATCH_TEMPS_FORTS_CAPTURES="$cap/pilotage" node tests/godot-match-temps-forts.cjs
   fi
   if veut banque-images; then
     mkdir -p "$cap/banque-images"
