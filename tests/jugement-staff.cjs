@@ -11,7 +11,10 @@ const {context} = require('./monde-harness.cjs');
 const shared = context(827381, {club: 102}).toMatch(), base = shared.checkpoint();
 test.after(() => shared.close());
 const setup = () => shared.restore(base);
-const N = Math.max(12, Number(process.env.CD_JUGEMENT_MESURES) || 24);
+// 72 affiches par cas (au lieu de 24) depuis #906 : à 24, un simple changement de l'ordre des tirages (style d'attaque de
+// l'IA) faisait passer la réussite au but de 0,80 à 0,857, alors que 10 saisons Monde complètes donnent 74,4 % avant comme
+// après ; à 72, main 0,795 et #906 0,801 (≈ +12 s).
+const N = Math.max(12, Number(process.env.CD_JUGEMENT_MESURES) || 72);
 
 // Choix du staff contre meilleur choix réel, pour chaque club du Monde, XV proposé par l'IA ; niveau du staff
 // imposé (null : staff réel du club).
