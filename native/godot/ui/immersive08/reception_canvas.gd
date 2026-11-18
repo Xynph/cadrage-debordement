@@ -1097,9 +1097,9 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 		columns.add_child(text)
 	var photo_id := photo_resultat(str(mail.get("corps", "")) + " " + str(mail.get("sujet", "")))
 	if photo_id != "mail-pitch" and BanqueImages.texture(photo_id) != null:
-		var picture := C.photo(photo_id, Vector2(C.px(300), C.px(220)))
+		var picture := C.photo(photo_id, Vector2(C.px(220), C.px(160)))
 		picture.name = "InboxPressPhoto"
-		picture.custom_minimum_size = Vector2(C.px(300), C.px(220))
+		picture.custom_minimum_size = Vector2(C.px(220), C.px(160))
 		picture.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		columns.add_child(picture)
 	column.add_child(columns)
