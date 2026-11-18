@@ -74,7 +74,10 @@ func ecran_entracte() -> void:
 	for b: Button in [viser, securiser]:
 		if b == null: continue
 		var cadre := b.get_global_rect()
-		check(cadre.size.y >= 36.0 and cadre.end.x <= taille.x + 1.0 and cadre.end.y <= taille.y + 1.0, "Bouton « %s » assez grand et dans l'écran (%s)" % [b.text, str(cadre)])
+		# Dans l'écran 2D lui-même (son rectangle global) : en CI sans fenêtre, l'échelle d'affichage n'est pas 1280×720
+		# et comparer à `taille` faisait échouer un bouton bien placé (vu à 1353×887 dans un écran plus grand).
+		var ecran := between.get_global_rect().grow(1.0)
+		check(cadre.size.y >= 36.0 and ecran.encloses(cadre), "Bouton « %s » assez grand et dans l'écran (%s dans %s)" % [b.text, str(cadre), str(ecran)])
 	await capture("1-entracte-2d-bonus-70e")
 	between.queue_free()
 	await process_frame

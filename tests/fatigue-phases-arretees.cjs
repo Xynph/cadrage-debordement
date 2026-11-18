@@ -13,9 +13,12 @@ const setup = () => shared.restore(base);
 // Affiches IA contre IA de la semaine (hors club du manager), graine fixe par match, conditions et blessures
 // rétablies après chaque match. Pour chaque tentative au but : tranche de 10 minutes, probabilité, réussite
 // (le tirage qui suit goalChance est celui du tir), condition et compétence au but du buteur.
+// Seulement les tirs décidés par le buteur et son banc (consigne « auto ») : depuis le dilemme du bonus (#925), les clubs IA
+// mènent ou courent après le score avec la consigne « prendre les points », qui tire de plus loin en fin de match (réussite
+// 73,5 % au lieu de 74,7 % après la 70e). Ce choix de distance n'est pas de la fatigue et faussait la comparaison.
 const SIMULER = `var simuler=(n,regles)=>{const fx=CDWorldCareer.fixtures(S).filter(f=>f.homeId!==S.club&&f.awayId!==S.club),rng=Math.random,avant=SET_PIECE_FATIGUE_RULES,gc=goalChance;
  const b=Array.from({length:9},()=>({n:0,p:0,ok:0,cond:0,but:0})),acc={b,touches:0,touchesGagnees:0,points:0,matchs:0,signature:[]};let cur=null;
- goalChance=function(l,side){const p=gc.apply(this,arguments),k=chooseScorer(S.clubs[l.pair[side]],activePlayers(l,side).map(x=>x.id),l),i=Math.min(8,Math.floor(l.minute/10)),c=b[i];cur={i,p};c.n++;c.p+=p;c.cond+=k.condition;c.but+=skill(k,'goal',fitArrete(l));return p};
+ goalChance=function(l,side){const p=gc.apply(this,arguments);if((l.penaltyPolicies?.[side]||'auto')!=='auto')return p;const k=chooseScorer(S.clubs[l.pair[side]],activePlayers(l,side).map(x=>x.id),l),i=Math.min(8,Math.floor(l.minute/10)),c=b[i];cur={i,p};c.n++;c.p+=p;c.cond+=k.condition;c.but+=skill(k,'goal',fitArrete(l));return p};
  SET_PIECE_FATIGUE_RULES=regles;
  try{for(let k=0;k<n;k++){const f=fx[k%fx.length];let x=(k*2654435761+1)>>>0;
   Math.random=()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;const r=x/4294967296;if(cur){if(r<cur.p)b[cur.i].ok++;cur=null}return r};
