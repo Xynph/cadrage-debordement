@@ -602,7 +602,8 @@ function factory() {
   }
   // Raison pour laquelle une réponse n'est pas possible aujourd'hui ('' : possible).
   function unavailable(s, m, r) {
-    if (!s || s.live || s.phase === 'ended') return 'Indisponible pendant un match ou après la saison.';
+    // Match terminé et résultat confirmé (calendrier journalier : S.live reste jusqu'à la clôture de la semaine) : on répond.
+    if (!s || (s.live && !(s.live.finished && s.worldMode?.resultConfirmed)) || s.phase === 'ended') return 'Indisponible pendant un match ou après la saison.';
     const e = r.effets || {}, club = s.clubs[s.club], p = m.player ? club.players.find(x => x.id === m.player) : null;
     const playerEffects = ['satisfaction', 'fatigue', 'condition', 'plan', 'promesse'].some(k => e[k] !== undefined);
     if (playerEffects && !p) return 'Ce joueur ne fait plus partie de l’effectif.';

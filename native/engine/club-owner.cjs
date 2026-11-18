@@ -124,6 +124,7 @@ function pretVenteRefus(){
  const p=S.pretsActionnaires?.[S.club];if(!p||p.repondu)return 'Le président a déjà tranché.';
  const j=p.vente?club().players.find(x=>x.id===p.vente.joueur):null;if(!j)return 'Le joueur proposé ne fait plus partie de l’effectif.';
  if(typeof saleBlocked==='function'&&saleBlocked(j))return saleBlocked(j);
+ if(S.live)return 'La vente se fera une fois la journée de championnat close.';
  if(!pretAcheteur(j,p.vente.prix))return 'Aucun club n’a les moyens de l’acheter aujourd’hui.';
  return '';
 }
@@ -153,8 +154,7 @@ function proprietairesChanger(forces=null){
  const liste=Array.isArray(forces)?forces:nativeClubOwner.changements(clubs,S.season,reputation),etat=proprietairesEtat();
  for(const x of liste){
   const c=S.clubs[x.id];S.clubBudget.clubs[x.id].type=x.vers;
-  // Un nouveau propriétaire repart sans prêt de l'ancien : l'encours est soldé (racheté avec le club).
-  const p=S.pretsActionnaires?.[x.id];if(p){const info=worldClub(x.id);if(info)info.debt=Math.max(0,(info.debt||0)-p.restant);delete S.pretsActionnaires[x.id];}
+  // Un prêt en cours reste dû : le nouveau propriétaire reprend le compte courant de l'ancien, ou le partant réclame son argent.
   etat.historique.push({saison:S.season,id:x.id,de:x.de,vers:x.vers,raison:x.raison});
   const texte=nativeClubOwner.annonce(c.name,x);
   if(typeof transferEvent==='function')transferEvent(texte);

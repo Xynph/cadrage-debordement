@@ -1,7 +1,7 @@
 'use strict';
 // L'argent du propriétaire dans le vrai jeu (club-owner.cjs) : carrière Monde (Narbonne, club 22, Pro D2, départ « veille »)
 // préparée par le vrai moteur. Le test pose la situation (sinon il faut jouer une saison entière) : propriétaire devenu
-// arrivée d'un investisseur (mécène prêteur), puis perte de la saison passée comblée par un prêt. Le vrai
+// arrivée d'un investisseur (mécène prêteur) et perte de la saison passée comblée par un prêt. Le vrai
 // Godot ouvre la Réception sur le courrier du président (prêt) et sur celui du nouvel actionnaire.
 // Captures 1920×1080 en affichage graphique : CD_PROPRIO_GRAPHICS=1 CD_PROPRIO_OUTPUT=<dossier>.
 const assert = require('node:assert/strict');
@@ -19,20 +19,17 @@ test('Argent du propriétaire : courriers du prêt et du changement de propriét
     try {
       let model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: 22, start: 'veille' }));
       const lire = s => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + s + ')'));
-      // Arrivée d'un investisseur d'abord (un changement de propriétaire solde le prêt de l'ancien), puis, après le premier
-      // match, une perte de la saison passée comblée par un prêt du nouveau mécène.
-      const attendre = type => {
-        for (let j = 0; j < 12 && !model.clubLife?.clubMail?.mails?.some(m => m.type === type); j++) {
-          if (model.meta.calendarCadence?.matchReady && model.next) { model = M.jouerLeMatch(jeu, model); continue; }
-          model = jeu.regler(jeu.call('advance_day', { fromDate: model.meta.calendarToday }));
-        }
-        assert.ok(model.clubLife.clubMail.mails.some(m => m.type === type), 'courrier ' + type);
-      };
-      lire(`(()=>{proprietairesChanger([{id:S.club,de:S.clubBudget.clubs[S.club].type,vers:'mecene',raison:'ambition'}]);return 1;})()`);
-      attendre('proprietaire_arrivee');
-      if (model.meta.calendarCadence?.matchReady && model.next) model = M.jouerLeMatch(jeu, model);
-      lire(`(()=>{const k=S.clubBudget.clubs[S.club];k.enveloppe=900000;pretAccorder(S.club,k,700000,S.season-1);k.remboursement=nativeClubOwner.remboursementSaison(S.pretsActionnaires[S.club],S.season);return 1;})()`);
-      attendre('pret_actionnaire');
+      // Arrivée d'un investisseur (mécène prêteur) et perte de la saison passée comblée par un prêt : les deux courriers
+      // arrivent le lendemain, avant le coup d'envoi du premier match.
+      lire(`(()=>{proprietairesChanger([{id:S.club,de:S.clubBudget.clubs[S.club].type,vers:'mecene',raison:'ambition'}]);
+        const k=S.clubBudget.clubs[S.club];k.enveloppe=900000;pretAccorder(S.club,k,700000,S.season-1);
+        k.remboursement=nativeClubOwner.remboursementSaison(S.pretsActionnaires[S.club],S.season);return 1;})()`);
+      for (let j = 0; j < 3 && !['pret_actionnaire', 'proprietaire_arrivee'].every(t => model.clubLife?.clubMail?.mails?.some(m => m.type === t)); j++)
+        model = jeu.regler(jeu.call('advance_day', { fromDate: model.meta.calendarToday }));
+      for (const type of ['pret_actionnaire', 'proprietaire_arrivee']) {
+        const m = model.clubLife.clubMail.mails.find(x => x.type === type);
+        assert.ok(m && m.reponses.every(r => r.disponible), type + ' : réponses possibles ' + JSON.stringify(m?.reponses));
+      }
       jeu.call('save');
     } finally { jeu.fermer(); }
     const sortie = process.env.CD_PROPRIO_OUTPUT || fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-proprio-captures-'));
