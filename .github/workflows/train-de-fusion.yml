@@ -1,0 +1,46 @@
+name: Train de fusion
+# Regroupe les PR étiquetées `train` (brouillons acceptés) et lance UNE batterie complète
+# (tests.yml, Godot compris) sur main + le lot, puis fusionne tout en rebase (un commit par PR).
+# Rouge : dichotomie sur la première moitié. Détail : docs/train-de-fusion.md.
+on:
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+    inputs:
+      taille_max:
+        description: Nombre maximal de PR par lot
+        type: string
+        default: '6'
+      essai:
+        description: "Essai : construit le lot (conflits) sans rien pousser ni fusionner"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # pousser la branche train/* et fusionner
+  pull-requests: write   # créer la PR du train, commenter, fermer les PR d'origine
+  issues: write          # étiquettes et tableau #591
+  actions: write         # lancer tests.yml et la recette Windows RTX
+
+# Un seul train à la fois ; les déclenchements suivants attendent (au plus un en file).
+concurrency:
+  group: train-de-fusion
+  cancel-in-progress: false
+
+jobs:
+  train:
+    if: github.repository == 'Xynph/cadrage-debordement'
+    runs-on: ubuntu-24.04
+    # Attente de la batterie (≤ 100 min par lot) et jusqu'à 3 lots en dichotomie.
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Faire passer le train
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAILLE_MAX: ${{ inputs.taille_max || '6' }}
+          ESSAI: ${{ inputs.essai || 'false' }}
+        run: bash ci/train-de-fusion.sh

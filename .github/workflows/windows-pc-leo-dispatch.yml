@@ -3,6 +3,7 @@ name: Déclencher la recette Windows RTX
 on:
   push:
     branches: [main]
+  # Aussi lancé par le train de fusion (jeton du dépôt) : ses fusions ne déclenchent pas « push ».
   workflow_dispatch:
 
 permissions: {}
@@ -14,7 +15,8 @@ jobs:
       github.repository == 'Xynph/cadrage-debordement' &&
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' ||
-        (github.event_name == 'workflow_dispatch' && github.actor == 'Xynph' && github.triggering_actor == 'Xynph'))
+        (github.event_name == 'workflow_dispatch' && github.actor == 'Xynph' && github.triggering_actor == 'Xynph') ||
+        (github.event_name == 'workflow_dispatch' && github.actor == 'github-actions[bot]'))
     runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 5
     environment: recette-pc-leo

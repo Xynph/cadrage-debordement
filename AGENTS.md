@@ -19,7 +19,13 @@
   sautés sinon. Recette SDK ciblée : étiquette `godot-sdk`. Vérifications
   lourdes (SDK, économie, résilience, Windows) : créneau régulier sur `main`.
 - **PC de Léo indisponible** : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot) ; résultats lisibles via la branche `resultats-en-ligne` (`runs/<run_id>/`, extraits par `ci/en-ligne.sh` dans `/tmp/en-ligne/<run_id>/`), l'artefact étant bloqué ; `--captures intro,fiche-club` limite les captures ; ne jamais créer de branche `tmp/` ailleurs : le workflow supprime seul `en-ligne/*` et `tmp/*` (`bash ci/en-ligne.sh --menage`).
-- **Fusion automatique** (décision de Léo, 16/11/2026) : en passant une PR en
+- **Train de fusion** (décision de Léo, 18/11/2026, voie par défaut) : laisser la PR
+  en brouillon et poser l'étiquette `train` quand elle est prête ; le train regroupe
+  les PR, lance une seule batterie complète et fusionne le lot, puis poste `FUSIONNÉ`
+  sur #591 ([détail](docs/train-de-fusion.md)). `train-echec` : lire le commentaire,
+  corriger, reposer `train`. Ne pas surveiller le train en boucle.
+- **Fusion automatique classique** (16/11/2026) : seulement pour une PR qui touche
+  `.github/workflows/`, un lot urgent ou sensible ; en passant une PR en
   prête, activer la fusion auto de GitHub en squash
   (`gh api -X PUT repos/Xynph/cadrage-debordement/pulls/<n>/ccr/auto_merge -f merge_method=squash`
   depuis Claude Code, sinon `gh pr merge <n> --auto --squash`). GitHub fusionne
