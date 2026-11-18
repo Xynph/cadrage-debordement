@@ -256,7 +256,7 @@ static func _health(card:Panel,app:Control,player:Dictionary,injury:float,recove
 	D.text(card,348,149,"FATIGUE",22,C.MUTED,500,190)
 	D.line(card,Vector2(24,175),Vector2(538,175))
 	var available := "Disponible pour le groupe"
-	if injury > 0: available = "Indisponible · "+G.n(injury)+" sem."
+	if injury > 0: available = preload("res://ui/club_mail.gd").injury_label(app.model, player)+" · "+G.n(injury)+" sem."
 	elif recovering: available = "En reprise"
 	D.text(card,24,222,available,29,C.ALERT if injury>0 else C.GOLD if recovering else C.MINT,700,514).name = "PlayerAvailability"
 	var show_medical := injury > 0 or recovering

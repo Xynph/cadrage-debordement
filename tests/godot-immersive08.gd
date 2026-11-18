@@ -533,14 +533,9 @@ func reception() -> void:
 	var expected_total: int = preload("res://ui/immersive08/reception_canvas.gd")._messages(app).size()
 	check(expected_total >= app.model.messages.size(), "La boîte contient au moins chaque message du moteur")
 	list = await expand_threads()
-	check(message_rows(list).size() == expected_total, "Chaque message reçu du moteur est consultable")
-	var portrait := app.find_child("Art_mail_staff", true, false) as TextureRect
-	check(portrait != null, "Illustration de la Réception chargée en jeu")
-	if portrait != null:
-		var crop := portrait.texture as AtlasTexture
-		check(crop!=null and crop.atlas.resource_path.ends_with("mail-staff.png") and absf(crop.region.size.x/crop.region.size.y-portrait.size.x/portrait.size.y)<0.06 and absf(portrait.size.x-523.0)<1.0,"Le bandeau garde le portrait original à sa proportion approuvée · "+str(crop.region if crop!=null else null)+" "+str(portrait.size))
-		var pitch := app.find_child("Art_mail_pitch",true,false) as TextureRect
-		check(pitch!=null and pitch.texture!=null and absf(pitch.get_global_rect().end.x-portrait.get_global_rect().position.x)<1.0,"La scène originale d’entraînement rejoint le portrait sans espace")
+	check(represented(list) == expected_total, "Chaque message reçu du moteur est consultable (lignes « ×N » comprises)")
+	# Direction A (18/11) : plus de bandeau photo ; l'en-tête du mail porte l'icône du service expéditeur.
+	check(app.find_child("InboxDetail", true, false) != null and app.find_child("Art_mail_staff", true, false) == null, "Mail ouvert en grand, sans bandeau photo")
 	await capture("05-reception-2560x1440")
 	var first: Button = message_rows(list)[0]
 	var original: String = first.get_meta("message_text")
@@ -549,6 +544,7 @@ func reception() -> void:
 	list = app.find_child("InboxMessageRows", true, false)
 	var last: Button = message_rows(list)[message_rows(list).size()-1]
 	var unread: String = last.get_meta("message_text")
+	var last_count := int(last.get_meta("message_count", 1))
 	last.pressed.emit()
 	await settle()
 	check(app.find_child("InboxMessageText", true, false).text == unread, "Un message sélectionné reste lisible dans les non lus")
@@ -556,7 +552,7 @@ func reception() -> void:
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
 	list = await expand_threads()
-	check(message_rows(list).size() == expected_total-1, "Le marquage explicite retire le message des non lus")
+	check(represented(list) == expected_total-last_count, "Le marquage explicite retire le message des non lus")
 	app.find_child("InboxFolder0", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
@@ -565,8 +561,7 @@ func reception() -> void:
 	original = await select_actionable()
 	check(app.find_child("InboxMessageText", true, false).text == original, "La sélection affiche le texte complet reçu")
 	app.find_child("InboxToggleFavorite", true, false).pressed.emit()
-	app.find_child("InboxFolder2", true, false).pressed.emit()
-	await settle()
+	await choose_subject("Favoris")
 	list = app.find_child("InboxMessageRows", true, false)
 	check(message_rows(list).size() == 1, "Favoris limité au message épinglé")
 	# Le dossier Favoris n'a pas de sélection : on rouvre le message avant d'agir dessus.
@@ -589,7 +584,7 @@ func reception() -> void:
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
 	list = await expand_threads()
-	check(message_rows(list).size() == expected_total, "Réouvrir restaure le message dans la boîte")
+	check(represented(list) == expected_total, "Réouvrir restaure le message dans la boîte")
 	# Le changement de dossier ne garantit pas que l'alerte contrat reste le message sélectionné (la boîte
 	# réaffiche aussi les avis du calendrier) : on la rouvre par son texte avant d'activer « ouvrir ».
 	for row: Button in message_rows(list):
@@ -613,6 +608,12 @@ func choose_subject(prefix: String) -> void:
 			await settle()
 			return
 	check(false, "Entrée de menu Sujet introuvable : " + prefix)
+
+## Courriers représentés par la liste : une ligne « ×N » réunit N courriers identiques consécutifs.
+func represented(list: Node) -> int:
+	var total := 0
+	for row: Node in message_rows(list): total += int(row.get_meta("message_count", 1))
+	return total
 
 func message_rows(list: Node) -> Array:
 	return list.get_children().filter(func(node: Node): return node.has_meta("message_id"))
