@@ -85,10 +85,13 @@ const reserveCible = (annuel, clubId, division = null) => {
 };
 // Part de l'excédent engagée à l'ouverture : la part propre au propriétaire, ou davantage pour qu'il
 // ne reste pas plus d'une demi-réserve qui dort.
-function engagement(surplus, reserve, type) {
+// plafond : engagement maximal de la saison (championnat encadré, engagementMax) : un bon élève de Pro D2 qui a dégagé
+// +0,5 M€ ne les réinvestit plus tous la saison suivante (il repassait dans le rouge un an sur deux) ; il reconstitue
+// ses fonds propres et engage le reste au fil des saisons.
+function engagement(surplus, reserve, type, plafond = Infinity) {
   const regle = EXCEDENTS[type], part = regle.investi + regle.dividende;
   if (!(surplus > 0) || !(part > 0)) return { investissement: 0, dividende: 0 };
-  const engage = Math.min(surplus, Math.max(surplus * part, surplus - EXCEDENT_DORMANT * reserve));
+  const engage = Math.min(surplus, Math.max(surplus * part, surplus - EXCEDENT_DORMANT * reserve), Number.isFinite(plafond) && plafond >= 0 ? plafond : Infinity);
   return { investissement: rond(engage * regle.investi / part), dividende: rond(engage * regle.dividende / part) };
 }
 const cibleDe = compte => Number.isFinite(compte?.reserve) ? compte.reserve : Infinity;
@@ -310,7 +313,7 @@ function ouverture({ forces, saison, clubs, types = null, excedents = false }) {
   return { version: 1, saison, semaines: 0, alertes: {}, clubs: clubs.map(club => {
     const p = proprietaire(forces, club.id, types?.[club.id]), division = forces.find(force => force.id === club.id).division, taille = Math.max(2, tailles.get(division));
     const reserve = reserveCible(annuels.get(club.id), club.id, division), surplus = excedents ? Math.max(0, club.cash - reserve) : 0;
-    const { dividende, investissement } = engagement(surplus, reserve, p.type);
+    const { dividende, investissement } = engagement(surplus, reserve, p.type, ECONOMIE.CHAMPIONNATS[division]?.engagementMax * annuels.get(club.id));
     return { type: p.type, enveloppe: p.enveloppe, depart: club.cash - dividende, recettes: 0, charges: 0, salaires: 0, masse: Math.round(club.masse), division, rang: Math.ceil(taille / 2), taille,
       reserve, investissement, dividende };
   }) };

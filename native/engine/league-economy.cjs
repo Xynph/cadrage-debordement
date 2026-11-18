@@ -17,6 +17,8 @@
 //              association : excédent de min à min + ecart des recettes (le « bon élève » qui reconstitue ses fonds propres) ;
 //              entreprise, mécène : part de l'enveloppe du propriétaire que le club s'autorise à perdre (min à min + ecart).
 //              Propre à chaque club et stable d'une saison à l'autre (voir club-budget.cjs, cibleGestion).
+// engagementMax : part des recettes qu'un club engage au plus par saison sur sa trésorerie au-delà de sa réserve
+//              (investissements et dividende) ; le reste attend les saisons suivantes. Sinon, sans limite.
 //
 // Troisième division française (Nationale), repères réels (A2R, rapport statistiques 2023-2024, bilans 2022-2023,
 // 14 clubs) : budget moyen 3,73 M€ (1,66 à 6,68 ; prévisionnel 2023-2024 : 3,85 M€) ; salaires bruts des joueurs
@@ -44,7 +46,8 @@ const CHAMPIONNATS = Object.freeze({
   srp: Object.freeze({ libelle: 'Championnat du Pacifique', pays: 'pacifique', reputation: 86, masse: 2.3e6, recettes: 7.6e6, bas: 0.8, haut: 1.25, ...parts(0.28, 0.45, 0.15, 0.05, 0.07), plafond: 2.6e6, ratio: false, espoir: 'accession', source: 'plafond et salaire moyen relevés, recettes estimées' }),
   'jlo-d1': Object.freeze({ libelle: 'Première division japonaise', pays: 'japon', reputation: 78, masse: 6.0e6, recettes: 20e6, bas: 0.7, haut: 1.5, ...parts(0.70, 0.08, 0.10, 0.04, 0.08), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   accession: Object.freeze({ libelle: 'Deuxième division française', pays: 'france', reputation: 70, masse: 3.2e6, recettes: 10.7e6, bas: 0.62, haut: 1.55, ...parts(0.48, 0.22, 0.08, 0.04, 0.18), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.2, ecart: 0.1 }),
-    gestion: Object.freeze({ association: Object.freeze({ min: 0.02, ecart: 0.04 }), entreprise: Object.freeze({ min: 0.2, ecart: 0.8 }), mecene: Object.freeze({ min: 0.5, ecart: 0.5 }) }), espoir: 'accession', source: 'relevé' }),
+    gestion: Object.freeze({ association: Object.freeze({ min: 0.02, ecart: 0.04 }), entreprise: Object.freeze({ min: 0, ecart: 0.6 }), mecene: Object.freeze({ min: 0.8, ecart: 0.2 }) }),
+    engagementMax: 0.02, espoir: 'accession', source: 'relevé' }),
   guest: Object.freeze({ libelle: 'Clubs invités', pays: 'autre', reputation: 70, masse: 4.0e6, recettes: 13e6, bas: 0.9, haut: 1.1, ...parts(0.40, 0.25, 0.18, 0.06, 0.11), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   'jlo-d2': Object.freeze({ libelle: 'Deuxième division japonaise', pays: 'japon', reputation: 52, masse: 2.0e6, recettes: 6.6e6, bas: 0.7, haut: 1.4, ...parts(0.72, 0.06, 0.08, 0.04, 0.10), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   nationale: Object.freeze({ libelle: 'Troisième division française', pays: 'france', reputation: 50, masse: 1.4e6, recettes: 4.6e6, bas: 0.6, haut: 1.6, ...parts(0.50, 0.10, 0.08, 0.04, 0.28), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.3, ecart: 0.15 }), prudence: 0.025, espoir: 'accession', source: 'relevé (A2R 2022-2023), niveaux 2026-2027 estimés' }),
