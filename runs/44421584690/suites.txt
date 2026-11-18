@@ -1,0 +1,4 @@
+tests/fatigue-phases-arretees.cjs
+tests/match-rating-curve.cjs
+tests/tactical-plans.cjs
+tests/bonus-fin-de-match.cjs

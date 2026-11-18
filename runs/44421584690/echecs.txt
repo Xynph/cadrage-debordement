@@ -1,0 +1,5 @@
+== suites (4) (code 1)
+::error file=tests/match-rating-curve.cjs::Godot : ECHEC (124), durée 300 s, limite 300s
+not ok 2 - consignes de fin de match : gain et risque mesurés
+  name: 'AssertionError'
+::error file=tests/bonus-fin-de-match.cjs::Godot : ECHEC (1), durée 101 s, limite 300s
