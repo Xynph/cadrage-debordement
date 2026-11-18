@@ -64,6 +64,10 @@ func day_environment(view: NativeMatchView) -> Environment:
 func spectators_srgb(view: NativeMatchView) -> bool:
 	for child: Node in view.get_children():
 		if str(child.name).begins_with("Spectators"):
+			# Public animé : matière à shader (shaders/foule.gdshader), conversion par paramètre.
+			var anime := (child as MultiMeshInstance3D).material_override as ShaderMaterial
+			if anime:
+				return anime.get_shader_parameter("couleurs_srgb") == true
 			return ((child as MultiMeshInstance3D).material_override as StandardMaterial3D).vertex_color_is_srgb
 	return false
 

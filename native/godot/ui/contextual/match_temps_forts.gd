@@ -302,6 +302,7 @@ func _activer(direct: Dictionary) -> void:
 		stage.set_cadrage(cadrage)
 	# Gestes et coupes vers les remises en jeu font partie du mode de base.
 	if OS.get_environment("CD_MATCH_GESTES") != "0" and stage.has_method("set_gestes"): stage.set_gestes(true)
+	if is_instance_valid(app.get("soundscape")) and app.soundscape.has_method("suivre_foule") and stage.get("foule") != null: app.soundscape.suivre_foule(stage.foule) # Clameur : la foule des images montrées.
 	if view.has_method("montrer_reglages_temps_forts"): view.montrer_reglages_temps_forts(direct, self)
 	# Arbitre : seulement dans le mode temps forts (le direct d'origine reste tel quel).
 	if liaisons_actives() and stage.get("_athlete_scene") != null:

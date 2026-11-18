@@ -53,6 +53,14 @@ static func moment_de(regie: Node) -> String:
 	if int(regie.get("etat")) == 1 and index >= 0 and index < (tf.get("plans", []) as Array).size() and str(tf.plans[index].get("kind", "")) == "try": return "essai"
 	return ""
 
+## Foule à l'image (le film tourne sans son) : intensité d'ambiance (0 à 1), part du public debout
+## (%), sons décidés depuis l'image précédente (audio/soundscape.gd, etat_foule). {} sans gestionnaire.
+static func foule_de(jeu: Node) -> Dictionary:
+	var sons: Variant = jeu.get("soundscape") if jeu != null else null
+	if not is_instance_valid(sons) or not sons.has_method("etat_foule"): return {}
+	var etat: Dictionary = sons.etat_foule()
+	return {"intensite": etat.get("intensite", 0.0), "debout": etat.get("debout", 0.0), "sons": etat.get("sons", [])}
+
 ## Lit les arguments placés après « -- ». Renvoie {"options": {...}, "erreurs": [...]}.
 static func lire_options(args: PackedStringArray) -> Dictionary:
 	var o := defauts()
@@ -328,7 +336,7 @@ func run() -> void:
 		# La causerie n'est à l'écran qu'une fois ouverte (pendant la sortie, elle attend).
 		if causerie is Dictionary and app.contextual_director.kind == "locker": etat = "causerie"
 		report.images.append({"fichier": nom, "secondes": snappedf((maintenant - debut) / 1000.0, 0.1), "minute": int(live.get("minute", dernier.get("minute", 0))),
-			"score": live.get("score", dernier.get("score", [0, 0])), "etat": etat, "moment": moment, "luminance": lum})
+			"score": live.get("score", dernier.get("score", [0, 0])), "etat": etat, "moment": moment, "luminance": lum, "foule": foule_de(app)})
 	report["duree_s"] = snappedf((Time.get_ticks_msec() - debut) / 1000.0, 0.1)
 	report["score"] = dernier.get("score", [0, 0])
 	report["minute"] = dernier.get("minute", 0)
