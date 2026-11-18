@@ -11,6 +11,7 @@ const {settleClubMeetings}=require('../tests/helpers/club-meetings.cjs');
 const {createBridge}=require('../native/engine/worker.cjs');
 let leagueEconomy=null;try{leagueEconomy=require('../native/engine/league-economy.cjs');}catch{}
 let clubBudget=null;try{clubBudget=require('../native/engine/club-budget.cjs');}catch{}
+let clubHealth=null;try{clubHealth=require('../native/engine/club-finance-health.cjs');}catch{}
 
 function argumentsFor(argv){
  const o={mode:'world-champ',club:30,seasons:3,seed:27,out:null,keep:null};
@@ -102,6 +103,9 @@ function resultatsParLigue(s){
   l.clubs++;if(resultat<0)l.enPerte++;if(exploitation<0)l.exploitationEnPerte++;
   // Club arrivé d'une autre division cette saison (promu ou relégué) : son résultat et sa caisse, pour voir s'il survit.
   const origine=depuis(c.id);if(origine&&origine!==lg)(l.arrivants??=[]).push({id:c.id,depuis:origine,resultat:round(resultat),caisse:round(c.cash/1e6),masse:round(k.masse/1e6),recettes:round(k.recettes/1e6)});
+  // Santé financière (club-finance-health.cjs) et propriétaire : comptés par championnat ; aide de la ligue aux relégués.
+  if(clubHealth){const e=clubHealth.etiquette({tresorerie:c.cash,depart:k.depart,reserve:k.reserve,dette:s.worldManagement?.clubInfo?.[c.id]?.debt||0});l.sante??={fragile:0,correcte:0,saine:0,riche:0};if(e)l.sante[e]++;}
+  (l.proprietaires??={})[k.type]=(l.proprietaires[k.type]??0)+1;if(k.aideRelegation>0)(l.aides??=[]).push({id:c.id,aide:round(k.aideRelegation/1e6),resultat:round(resultat)});
   l.resultats.push(resultat);l.exploitations.push(exploitation);l.caisses.push(c.cash/1e6);if(k.recettes>0)l.masseSurRecettes.push(k.masse/(k.recettes+prime));
  }
  return Object.fromEntries(Object.entries(out).map(([lg,l])=>[lg,{clubs:l.clubs,enPerte:l.enPerte,exploitationEnPerte:l.exploitationEnPerte,
@@ -111,7 +115,8 @@ function resultatsParLigue(s){
   autourEquilibre:{vert:l.resultats.filter(r=>r>0.25).length,equilibre:l.resultats.filter(r=>Math.abs(r)<=0.25).length,perte:l.resultats.filter(r=>r<-0.25).length},
   resultatMedian:round(median(l.resultats)),resultatMin:round(Math.min(...l.resultats)),resultatMax:round(Math.max(...l.resultats)),
   exploitationMediane:round(median(l.exploitations)),caisseMediane:round(median(l.caisses)),caisseMax:round(Math.max(...l.caisses)),masseSurRecettes:round(median(l.masseSurRecettes)),
-  medianes:Object.fromEntries(Object.entries(l.detail).filter(([,v])=>v.length).map(([cle,v])=>[cle,round(median(v))])),...(l.arrivants?{arrivants:l.arrivants}:{})}]));
+  medianes:Object.fromEntries(Object.entries(l.detail).filter(([,v])=>v.length).map(([cle,v])=>[cle,round(median(v))])),...(l.arrivants?{arrivants:l.arrivants}:{}),
+  ...(l.sante?{sante:l.sante}:{}),...(l.proprietaires?{proprietaires:l.proprietaires}:{}),...(l.aides?{aides:l.aides}:{})}]));
 }
 function observe(label,s,storeText,profileBytes,exportResult,events,elapsedMs){
  const leagues={};

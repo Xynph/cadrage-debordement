@@ -6,11 +6,12 @@ const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const Link = preload("res://ui/entity_link.gd")
 const G = preload("res://ui/game_skin.gd")
+const Health = preload("res://ui/immersive08/finance_health.gd")
 const KEY = "immersive08_finance_tab"
 const PAGE_KEY_PREFIX = "immersive08_finance_page_"
 const LEDGER_SELECTION_KEY := "immersive08_finance_ledger_selection"
 const WAGES_SCOPE_KEY = "immersive08_finance_wages_due"
-const TABS = [["summary","Synthèse"],["cash","Trésorerie"],["wages","Salaires"],["transfers","Transferts"],["budget","Budget"]]
+const TABS = [["summary","Synthèse"],["cash","Trésorerie"],["wages","Salaires"],["transfers","Transferts"],["budget","Budget"],["clubs","Classement"]]
 const CHART_GREEN = Color("53cd75")
 const CHART_RED = Color("ee7970")
 
@@ -109,6 +110,7 @@ static func build(app: Control, canvas: Control) -> void:
 		"wages": _wages(app, canvas, finance)
 		"transfers": _transfers(app, canvas, ledger)
 		"budget": _budget(app, canvas, finance)
+		"clubs": _clubs(app, canvas, accounts)
 		_: _summary(app, canvas, finance, ledger)
 	_footer(app, canvas, finance)
 
@@ -139,7 +141,8 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 	for i in TABS.size():
 		var key: String = TABS[i][0]
 		var id := "FinanceTab_" + key
-		U.tab(canvas, Rect2(i*273,130,264,51), TABS[i][1], key == tab, func():
+		var step := 1365.0 / TABS.size()
+		U.tab(canvas, Rect2(i*step,130,step-9,51), TABS[i][1], key == tab, func():
 			if key == "wages": _open_wages(app, false)
 			else: U.select(app, KEY, key, id), id)
 
@@ -559,6 +562,33 @@ static func _transfers(app: Control, canvas: Control, ledger: Array) -> void:
 	D.text(card, 23, 345, "Contrats du groupe", 38, C.IVORY, 700, 785)
 	D.text(card, 23, 387, "Les prolongations se négocient depuis les dossiers joueurs.", 25, C.MUTED, 500, 785)
 	D.button(card, Rect2(23,412,787,55), "Consulter les salaires et les échéances", func(): _open_wages(app, false), false, "arrow", false, U.GREEN, "FinanceTransferContracts")
+
+# Classement financier du championnat (native/engine/club-finance-health.cjs) : du club le plus solide au plus fragile,
+# avec l’étiquette, le propriétaire et la courbe des trois dernières saisons. Aucun montant : un club ne publie pas sa caisse.
+static func _clubs(app: Control, canvas: Control, accounts: Dictionary) -> void:
+	var clubs: Array = accounts.get("clubs", [])
+	var panel := D.panel(canvas, Rect2(0,346,2248,783), "Santé financière des clubs · %s" % P.league_name(app.model), "money", "", "FinanceClubsHealth")
+	if clubs.is_empty():
+		D.text(panel, 25, 140, "Les comptes des clubs ne sont pas encore connus.", 28, C.MUTED, 500, 2190)
+		return
+	D.text(panel, 25, 98, "Du plus solide au plus fragile, d’après la trésorerie de chaque club rapportée à la réserve qu’il se fixe.", 22, C.MUTED, 500, 1500)
+	var head := [["#",25,60],["Club",95,700],["Santé",820,170],["Propriétaire",1020,360],["Trois dernières saisons",1400,420]]
+	for h: Array in head: D.text(panel, h[1], 138, h[0], 20, C.GOLD, 700, h[2])
+	var row_height := minf(38.0, 620.0 / maxf(1.0, clubs.size()))
+	for i in clubs.size():
+		var club: Dictionary = clubs[i]
+		var y := 150.0 + i * row_height
+		var own := bool(club.get("own", false))
+		if own: D.rect(panel, Rect2(14, y + 1, 2220, row_height - 2), Color(C.GOLD, .10), 4, Color(C.GOLD, .55))
+		elif i % 2 == 1: D.rect(panel, Rect2(14, y + 1, 2220, row_height - 2), Color(C.LINE, .12), 4)
+		var base := y + row_height * .72
+		D.text(panel, 25, base, str(i + 1), 21, C.MUTED, 600, 60)
+		var caption := G.club_name(club) + ("  · ton club" if own else "")
+		Link.name_link(app, panel, Rect2(95, y + 3, 700, row_height - 6), "club", str(int(club.get("id", -1))), caption, 22, C.GOLD if own else C.IVORY, "FinanceClubName" + str(i))
+		Health.chip(panel, 820, y + (row_height - 32) * .5, club, 150, "FinanceClubHealth" + str(i), 32)
+		D.text(panel, 1020, base, Health.owner(club), 21, C.IVORY, 500, 360)
+		Health.sparkline(panel, Rect2(1400, y + 3, 120, row_height - 6), club, "FinanceClubCurve" + str(i))
+		D.text(panel, 1545, base, Health.reading(club), 18, C.MUTED, 500, 680)
 
 static func _budget(app: Control, canvas: Control, finance: Dictionary) -> void:
 	_allocation(D.panel(canvas, Rect2(0,346,834,375), "Répartition des charges connues", "money", "", "FinanceAllocation"), finance)
