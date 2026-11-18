@@ -52,3 +52,38 @@ test('Aléa des favoris : styles, complaisance, causerie, rotation européenne',
     h.close();
   }
 });
+
+// Résultat rapide (championnats suivis de loin, native/engine/league-detail.cjs) : mêmes règles que le moteur complet.
+test('Résultat rapide : complaisance du favori et rotation européenne', { timeout: 600000 }, () => {
+  const h = context(4242, { club: 102, console: false });
+  try {
+    const cp = h.checkpoint();
+    // Complaisance : avec le jour sans forcé, le gros favori (+12) gagne de moins loin qu'avec le jour sans écarté.
+    const marge = (force) => {
+      h.restore(cp);
+      return h.run(`(()=>{const a=0,b=13,date=(S.worldMode.fixtures.find(f=>f.week===S.round)||S.worldMode.fixtures[0]).date;
+        S.clubs[a].players.forEach(p=>{p.rating+=12;p.condition=100;p.injury=0});S.clubs[b].players.forEach(p=>{p.condition=100;p.injury=0});
+        const prior=relachementTire,rand=Math.random;let x=987654321;Math.random=()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296};
+        relachementTire=()=>${force};let total=0;
+        try{for(let i=0;i<300;i++){const r=CDLeagueDetail.simulate(S,{id:'t-rapide-'+i,week:S.round,date,homeId:a,awayId:b,competitionId:'elite',phase:'league',round:1,neutral:true});total+=r.score[0]-r.score[1];S.clubs[a].players.forEach(p=>{p.condition=100;p.injury=0});S.clubs[b].players.forEach(p=>{p.condition=100;p.injury=0})}}
+        finally{relachementTire=prior;Math.random=rand}return total/300})()`);
+    };
+    const sans = marge(false), avec = marge(true);
+    assert.ok(avec < sans - 2, `jour sans du favori au résultat rapide : ${avec.toFixed(1)} contre ${sans.toFixed(1)} points d’écart`);
+
+    // Rotation : un titulaire très utilisé (série ≥ 2, 60 min) est ménagé la semaine d'un match européen, pas autrement.
+    const joue = (europe) => {
+      h.restore(cp);
+      return h.run(`(()=>{const a=0,date=(S.worldMode.fixtures.find(f=>f.week===S.round)||S.worldMode.fixtures[0]).date,b=13;
+        S.clubs[a].players.forEach(p=>{p.rating=70;p.condition=100;p.injury=0;p.suspension=0;p.managerLoad={minutes:0,streak:0}});S.clubs[b].players.forEach(p=>{p.condition=100;p.injury=0});
+        const star=S.clubs[a].players[0];star.rating=71;star.managerLoad={minutes:80,streak:3};
+        const prior=europeAutour;europeAutour=()=>${europe};
+        try{CDLeagueDetail.simulate(S,{id:'t-rotation',week:S.round,date,homeId:a,awayId:b,competitionId:'elite',phase:'league',round:1,neutral:true})}finally{europeAutour=prior}
+        return star.managerLoad.minutes})()`);
+    };
+    assert.ok(joue(false) > 0, 'sans match européen proche, le meilleur joueur joue');
+    assert.equal(joue(true), 0, 'la semaine d’un match européen, le joueur très utilisé est ménagé');
+  } finally {
+    h.close();
+  }
+});

@@ -107,10 +107,16 @@ function factory(){
  }
  // Effectif allégé : les 23 meilleurs disponibles (note et forme), sans feuille de match
  // détaillée ni règles de première ligne ; les postes ne sont pas contrôlés.
- function squad(s,club,away){
+ // Rotation autour de la Coupe d'Europe (ROTATION_EUROPE, dist/opposition.js, comme le moteur complet) : un club dont
+ // une rencontre européenne tombe à ±1 semaine ménage ses joueurs très utilisés ; le malus ne joue que sur le classement,
+ // la puissance de l'équipe reste celle des joueurs alignés.
+ function squad(s,id,away,f){
+  const club=s.clubs[id];
   const pool=club.players.filter(p=>!p.injury&&!(p.suspension>0)&&!away(p.id));
   const form=MATCH_LEVEL_CURVE.forme,score=p=>(Number(p.rating)||50)*(form[0]+clamp(Number(p.condition)||80,0,100)*form[1]);
-  const ranked=pool.slice().sort((a,b)=>score(b)-score(a)||String(a.id).localeCompare(String(b.id))).slice(0,23);
+  const rotation=f&&typeof europeAutour==='function'&&typeof rotationEuropeMalus==='function'&&europeAutour(f,id),level=s.difficulty||'classique';
+  const pick=rotation?p=>score(p)-rotationEuropeMalus(p,level):score;
+  const ranked=pool.slice().sort((a,b)=>pick(b)-pick(a)||String(a.id).localeCompare(String(b.id))).slice(0,23);
   const starters=ranked.slice(0,15),bench=ranked.slice(15);
   const power=(starters.length?starters.reduce((n,p)=>n+score(p),0)/starters.length:40)-(15-starters.length)*4;
   return {starters,bench,power};
@@ -152,14 +158,21 @@ function factory(){
   }
  }
  function simulate(s,f){
-  const pair=[f.homeId,f.awayId],away=released(s,f),teams=pair.map(id=>squad(s,s.clubs[id],away));
+  const pair=[f.homeId,f.awayId],away=released(s,f),teams=pair.map(id=>squad(s,id,away,f));
   // Courbe de niveau commune au moteur complet (MATCH_LEVEL_CURVE de dist/rugby.js, tests/match-rating-curve.cjs) :
   // écart de puissance + bonus du terrain (sauf terrain neutre), ramené à l'échelle des essais.
   const curve=MATCH_LEVEL_CURVE.rapide,home=f.neutral?0:curve.terrain*(typeof terrainFactor==='function'?terrainFactor(f.competitionId):1);
   // Match piège (MATCH_LEVEL_CURVE.piege) : même tirage que le moteur complet, au-delà du seuil d'écart.
   const gap=teams[0].power-teams[1].power,trap=typeof matchTrapOffset==='function'?matchTrapOffset(gap,roll):0;
   const ecart=typeof levelGapChampionnat==='function'?levelGapChampionnat(gap+trap,f.competitionId):gap+trap;
-  const edge=clamp((ecart+home)/curve.diviseur,-curve.borne,curve.borne);
+  // Complaisance du favori (RELACHEMENT, dist/tactical-plans.js, comme le moteur complet) : au-delà de 3 points d'écart,
+  // jour sans possible, tirage déterministe par rencontre ; le favori perd alors la moitié de l'écart (après compression).
+  let ecartJour=ecart;
+  if(typeof RELACHEMENT!=='undefined'&&typeof relachementProbabilite==='function'){
+   const d=Math.abs(gap),fav=gap>0?0:1,r=relachementProbabilite(d,relachementProMoyen(teams[fav].starters));
+   if(r>0&&relachementTire('relachement:'+f.id+':'+pair.join('-')+':'+s.season+':'+s.round,r))ecartJour+=(fav===0?-1:1)*relachementPoints(d);
+  }
+  const edge=clamp((ecartJour+home)/curve.diviseur,-curve.borne,curve.borne);
   const tries=[poisson(clamp(2.75*Math.exp(curve.essais*edge),.5,8)),poisson(clamp(2.75*Math.exp(-curve.essais*edge),.5,8))];
   const stats=[sideStats(tries[0],edge),sideStats(tries[1],-edge)];
   const points=i=>tries[i]*5+stats[i].conversions*2+stats[i].goals*3;

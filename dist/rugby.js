@@ -133,7 +133,7 @@ return l}
 // ce jour-là il joue avec `part` × l'écart en moins. Tiré une fois par match, mêmes réglages pour les deux
 // moteurs ; rien en deçà du seuil (cœur de la courbe et tirages inchangés). Sans lui, le moteur complet ne
 // laissait presque aucune surprise à l'extérieur à 15-16 points (0,4 %, contre 3,5 % au résultat rapide).
-const MATCH_LEVEL_CURVE=Object.freeze({version:2,cible:Object.freeze({pente:.183,terrain:.64}),forme:Object.freeze([.57,.0043]),complet:Object.freeze({parPoint:.005,terrain:.036,piege:2.8}),rapide:Object.freeze({diviseur:7.5,essais:.42,terrain:3.3,borne:3}),piege:Object.freeze({seuil:10,parPoint:.04,max:.3,part:.4})});
+const MATCH_LEVEL_CURVE=Object.freeze({version:2,cible:Object.freeze({pente:.183,terrain:.64}),forme:Object.freeze([.57,.0043]),complet:Object.freeze({parPoint:.005,terrain:.036,piege:2.8}),rapide:Object.freeze({diviseur:6.3,essais:.42,terrain:2.77,borne:3}),piege:Object.freeze({seuil:10,parPoint:.04,max:.3,part:.4})});
 // Décalage d'écart du match piège (points de niveau, du point de vue du camp 0) pour un écart `gap`
 // (niveau du camp 0 − niveau du camp 1). 0 sans tirage en deçà du seuil.
 // Avantage du terrain par championnat (17/11/2026) : multiplie `complet.terrain` et `rapide.terrain` pour les matchs
