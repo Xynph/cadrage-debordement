@@ -772,7 +772,7 @@ func _composants() -> void:
 
 ## Carte de Gabi (portrait, une phrase, l'action proposée) dans un panneau en relief.
 func _carte_gabi(parent: Control) -> void:
-	var cadre := _panneau(parent, px(14), Color(RELIEF, 0.97))
+	var cadre := _panneau(parent, px(14 if _densite >= 0.6 else 10), Color(RELIEF, 0.97))
 	adjoint_cadre = cadre.get_parent().get_parent()
 	cadre.add_child(adjoint)
 
@@ -873,7 +873,7 @@ func _page() -> void:
 	_carte_gabi(bas)
 	S.G.fill(adjoint_cadre)
 	# Multiplex : titre et minute à gauche, une rangée de cartes (la bande garde la hauteur de Gabi).
-	var cadre_multiplex := _panneau(bas, px(14))
+	var cadre_multiplex := _panneau(bas, px(14 if _densite >= 0.6 else 10))
 	multiplex = cadre_multiplex.get_parent().get_parent()
 	multiplex.name = "MatchBetweenMultiplex"
 	var rangee_multiplex := S.G.h(px(14))
@@ -898,7 +898,7 @@ func _page() -> void:
 ## Colonne gauche : Notre XV, onglets Terrain (par défaut), Tableau et XV adverse ; la carte
 ## Changement dessous.
 func _colonne_xv(grille: Control) -> void:
-	var gauche := S.G.v(px(20))
+	var gauche := S.G.v(px(20 if _densite >= 0.6 else 14))
 	gauche.name = "MatchBetweenSquadColumn"
 	gauche.custom_minimum_size.x = px(840)
 	grille.add_child(gauche)
@@ -1617,7 +1617,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 26, DOUX, true))
 		return
-	var hauteur := px(38)
+	var hauteur := px(38 if _densite >= 0.6 else 33)
 	for poste in joueurs.size():
 		var joueur: Variant = joueurs[poste]
 		var case := Button.new()
@@ -1984,7 +1984,7 @@ func _remplir_xv_adverse(direct: Dictionary) -> void:
 	if liste.is_empty():
 		xv.add_child(_texte("Composition adverse pas encore vue.", 26, DOUX, true))
 		return
-	var hauteur := px(38)
+	var hauteur := px(38 if _densite >= 0.6 else 33)
 	for poste in liste.size():
 		var j: Variant = liste[poste]
 		var case := Button.new()
