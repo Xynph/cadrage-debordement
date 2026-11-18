@@ -148,7 +148,7 @@ function teamLevel(players){const c=MATCH_LEVEL_CURVE.forme,list=(players||[]).f
 // chaque point d'écart ne compte que pour `pente`. Le moteur additionne beaucoup de petites actions : un gros écart y
 // pèse plus que dans un vrai Top 14, où même un leader très au-dessus (Toulouse, +5 sur la moyenne) plafonne à
 // 16-19 victoires sur 26. Mêmes réglages pour le moteur complet et le résultat rapide ; ailleurs : écart inchangé.
-const ECART_CHAMPIONNAT=Object.freeze({elite:Object.freeze({seuil:3,pente:.2})});
+const ECART_CHAMPIONNAT=Object.freeze({elite:Object.freeze({seuil:3,pente:.15})});
 function levelGapChampionnat(gap,competitionId){const c=ECART_CHAMPIONNAT[competitionId],a=Math.abs(gap);return c&&a>c.seuil?Math.sign(gap)*(c.seuil+(a-c.seuil)*c.pente):gap}
 function matchLevelEdge(l,side){return MATCH_LEVEL_CURVE.complet.parPoint*levelGapChampionnat(teamLevel(activePlayers(l,side))-teamLevel(activePlayers(l,1-side))+(Number(l.levelTrap)||0)*(side===0?1:-1),l.worldContext?.competitionId)}
 function teamEdge(l,side,kind){const opp=1-side,t=l.tactics[side],weather=l.weather;const on=activePlayers(l,side);const attack=unit(l,side,'pass')*.4+unit(l,side,'speed')*.35+unit(l,side,'power')*.25;const defense=unit(l,opp,'tackle')*.72+unit(l,opp,'mental')*.28;let b=(tacticalRules(l)?tacticalEdge(l,side):(attack-defense)*(l.balanceVersion===2?.004:.009))+(on.length-activePlayers(l,opp).length)*.055;
