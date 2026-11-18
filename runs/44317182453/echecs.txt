@@ -1,0 +1,16 @@
+== suites (4) (code 1)
+FAIL: Carrière créée avec l'objectif du défi
+FAIL: Accueil démarré le jour de la création
+FAIL: Effectif : Gabi explique au premier passage
+FAIL: Action directe proposée
+FAIL: L'action mène à la composition
+FAIL: Composition : explication même sur un écran de décision
+FAIL: « Le staff compose pour moi » envoie la composition
+FAIL: Toujours actif en préparation
+SCRIPT ERROR: Invalid access to property or key 'id' on a base object of type 'Nil'.
+FAIL: délai dépassé (route Accueil, attente false)
+  throw new AssertionError(obj);
+AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+FAIL: Carrière créée avec l'objectif du défi
+FAIL: Accueil démarré le jour de la création
+FAIL: Effectif : Gabi explique au premier passage
