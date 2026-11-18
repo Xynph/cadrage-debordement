@@ -18,6 +18,7 @@ const Gestes = preload("res://match_gestes.gd")
 const Rendu = preload("res://match_rendu.gd")
 const Animations = preload("res://match_animations.gd")
 const Choregraphie = preload("res://match_choregraphie.gd")
+const Formations = preload("res://match_formations.gd")
 const CUT_SECONDS := 0.30
 ## Nombre de joueurs à l'image, chacun à plus de Motion.TRAJET_REPLACEMENT de sa place, à partir
 ## duquel la vue coupe pour les replacer (équipe qui se reforme) au lieu de les faire courir.
@@ -74,6 +75,8 @@ var _club_branding: MultiMeshInstance3D
 var _gestes: RefCounted
 ## Pistes du chorégraphe de temps forts (CD_MATCH_CHOREGRAPHE=1) : la vue les suit à la place de son interpolation.
 var _choregraphie: RefCounted
+## Formations des phases arrêtées (mêlée liée, alignement de touche) : toujours actives.
+var _formations: RefCounted
 var _cadrage: RefCounted
 # Rendu moderne (Forward+ seulement, voir match_rendu.gd) ; null sous gl_compatibility.
 var _rendu: RefCounted
@@ -110,6 +113,7 @@ func _ready() -> void:
 			_animations_adaptees = adaptees
 	if OS.get_environment("CD_MATCH_GESTES") == "1":
 		set_gestes(true)
+	_formations = Formations.new(self)
 	_refresh_kits()
 	_build_environment()
 	_build_ground()
@@ -205,6 +209,24 @@ func geste_adapte(id: String, nom: String = "") -> bool:
 ## Instant clé d'un geste adapté dans son clip (0 sans bibliothèque).
 func instant_geste(nom: String) -> float:
 	return _animations_adaptees.instant_cle(nom) if _animations_adaptees != null else 0.0
+
+
+## Clip du modèle d'origine (« Man_Jump », « Man_Death », « Man_Clapping »…) joué une fois sur
+## un joueur, comme un geste adapté : de `debut` à `fin` secondes du clip (fin négative : jusqu'au
+## bout), à `vitesse`. Sans bibliothèque adaptée. Rend faux sans ce clip dans le modèle.
+func jouer_clip_natif(id: String, suffixe: String, debut: float = 0.0, fin: float = -1.0, ancre: bool = false, vitesse: float = 1.0) -> bool:
+	if not _actors.has(id) or _paused:
+		return false
+	var animation: AnimationPlayer = _actors[id].animation
+	if animation == null:
+		return false
+	for clip: StringName in animation.get_animation_list():
+		if str(clip).ends_with(suffixe):
+			var longueur := animation.get_animation(clip).length
+			_actors[id].geste = {"nom": suffixe, "clip": clip, "t": clampf(debut, 0.0, longueur), "fin": longueur if fin < 0.0 else minf(fin, longueur),
+				"ancre": ancre, "suite": [], "lance": false, "vitesse": maxf(vitesse, 0.05)}
+			return true
+	return false
 
 
 func arreter_geste(id: String) -> void:
@@ -358,6 +380,8 @@ func apply_frame(live: Dictionary) -> void:
 		for tenue: Dictionary in _tenues.values():
 			tenue.lache = true
 	var new_action := key != _action_key
+	# Mêlée, sortie de mêlée, touche : places et postures de la phase (match_formations.gd).
+	_formations.preparer(scene, new_action)
 	var play_action := (_action_motion and not _paused and has_ball and _ball.visible
 		and not _action_key.is_empty() and not key.is_empty())
 	_action_key = key
@@ -382,7 +406,7 @@ func apply_frame(live: Dictionary) -> void:
 		if id.is_empty() or side not in [0, 1] or present.size() >= 30:
 			continue
 		present[id] = true
-		var target := _world(player)
+		var target: Vector3 = _formations.place(id, _world(player))
 		if not _actors.has(id):
 			_actors[id] = _make_actor(id, side, target)
 		var entry: Dictionary = _actors[id]
@@ -595,11 +619,16 @@ func _process(delta: float) -> void:
 		_gestes.advance(delta)
 	if choregraphie_active():
 		_choregraphie.avancer(delta)
+	if _formations:
+		_formations.avancer(delta)
 	for id: String in _actors:
 		var entry: Dictionary = _actors[id]
 		var actor: Node3D = entry.node
 		var suivi: bool = _choregraphie != null and _choregraphie.stages(id)
 		var staged: bool = suivi or (_gestes != null and _gestes.stages(id))
+		# Postures rendues dans l'ordre inverse de leur pose : formation (posée en dernier), puis gestes.
+		if _formations:
+			_formations.restaurer(id, entry)
 		if _gestes:
 			_gestes.restore(id, entry)
 		if entry.rig:
@@ -653,8 +682,9 @@ func _process(delta: float) -> void:
 				animation.play(oneshot.clip, 0.2)
 				animation.seek(float(oneshot.t), false)
 			animation.speed_scale = 1.0
-			animation.advance(delta)
-			oneshot.t = float(oneshot.t) + delta
+			var cadence_geste := float(oneshot.get("vitesse", 1.0))
+			animation.advance(delta * cadence_geste)
+			oneshot.t = float(oneshot.t) + delta * cadence_geste
 			if float(oneshot.t) >= float(oneshot.fin):
 				var suite: Array = oneshot.suite
 				entry.geste = {}
@@ -717,6 +747,8 @@ func _process(delta: float) -> void:
 	if _gestes:
 		_gestes.pose()
 	_poser_tenues(delta)
+	if _formations:
+		_formations.poser(delta)
 	# Resolve upper-body contact after every source-animation update and after the
 	# ball's continuous trajectory. A new receiver never pulls it across the pitch.
 	for id: String in _actors:

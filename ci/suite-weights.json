@@ -251,6 +251,7 @@
       "tests/godot-international-availability.cjs": 17,
       "tests/godot-international-reception.cjs": 19,
       "tests/godot-match-framing.cjs": 3,
+      "tests/godot-match-formations.cjs": 3,
       "tests/godot-regen-bank-v2.cjs": 7,
       "tests/godot-ouverture-ecrans.cjs": 90,
       "tests/godot-portraits-progressifs.cjs": 3,
