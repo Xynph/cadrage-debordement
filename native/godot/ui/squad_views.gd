@@ -656,7 +656,10 @@ static func lineup(app:Control) -> Control:
 	# Quota du championnat : JIFF (Top 14, Pro D2) ou EQP (Premiership), même ligne (nom LineupJiffNotice conservé).
 	var quota: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
 	if bool(quota.get("applies", false)):
-		var quota_bloc := G.wrap(quota_line(quota), 11, G.ALERT if bool(quota.get("alert", false)) else G.MUTED)
+		# 13 px et couleur d'état (capture 1280×720 du 18/11 : à 11 px gris atténué, la ligne passait inaperçue) :
+		# rouge sous la trajectoire, vert quand la feuille atteint la moyenne exigée, gris sinon.
+		var quota_ok := int(quota.get("currentSheet", 0)) + int(quota.get("doublon", 0)) >= int(quota.get("target", 16))
+		var quota_bloc := G.wrap(quota_line(quota), 13, G.ALERT if bool(quota.get("alert", false)) else (G.GOOD if quota_ok else G.MUTED))
 		quota_bloc.name = "LineupJiffNotice"
 		quota_bloc.tooltip_text = quota_tooltip(quota)
 		side.add_child(quota_bloc)

@@ -84,12 +84,16 @@ function initializeTacticalPlans(l){initializeRelachement(l);l.tacticalVersion=1
 // l'adversaire relance contre une défense pas encore replacée. Avantage `CONTRE.large` et `CONTRE.metres` de course en
 // plus à la seule action qui suit la récupération (minute suivante), rencontres créées avec `contreVersion`. Aucun
 // tirage en plus. Pas de chiffre public sur les essais marqués en contre selon le style adverse : valeur de jeu,
-// étalonnée sur vingt dernières minutes à XV identiques (essais encaissés au large +24 % face au jeu au près prudent ;
+// étalonnée sur vingt dernières minutes à XV identiques (étalonnage initial : essais encaissés au large +24 % face au jeu au près prudent ;
 // à +0,06 et 10 m l'effet ne se distinguait pas du bruit). Coût mesuré sur le banc des styles (tests/tactical-plans.cjs,
 // 80 matchs) : jeu au large 0,39 → 0,35 de victoires, dans le bruit du banc ; à remesurer sur 1 200 matchs (§14 de
 // docs/top14-dispute-20261117.md).
 let CONTRE_RULES=1;
-const CONTRE=Object.freeze({large:.12,metres:15});
+// Remesuré le 18/11/2026 sur 1 200 matchs (Top 14, carrière Monde, XV identiques, jeu au large contre « Équilibré ») :
+// à .12 et 15 m le large tombait à 45,5 % de victoires (51,6 % sans contre, 4 écarts types) ; .06/10 m : 46,5 % ;
+// .03/5 m : 49,4 %, dans le bruit d'« Équilibré » (50 %). Le risque reste visible en fin de match (viser le bonus :
+// 32 % de défaites contre 14 % en sécurisant, tests/bonus-fin-de-match.cjs).
+const CONTRE=Object.freeze({large:.03,metres:5});
 function contreRules(l){return essaisRules(l)&&l.contreVersion===1}
 // Ballon perdu au sol par `perdant` : on note la relance possible de l'adversaire (rien si l'on ne jouait pas au large).
 function noterContre(l,perdant){if(!contreRules(l))return;if(effectiveAttack(l,perdant)==='large')l.contre={side:1-perdant,minute:l.minute};else delete l.contre}
