@@ -1,0 +1,18 @@
+CD_PRESSE grand moment : 6 clics pour 4 questions
+Presse rapide Godot · 127 contrôles réussis
+TAP version 13
+# Subtest: Conférence de presse rapide dans le jeu
+ok 1 - Conférence de presse rapide dans le jeu
+  ---
+  duration_ms: 182910.984262
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 182916.660961
