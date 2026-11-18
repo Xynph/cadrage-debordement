@@ -44,7 +44,7 @@ func aller(route: String) -> void:
 func creer(club: int, connu: bool) -> void:
 	app.coach.fermer_bulle()
 	await wait_model(); await settle()
-	app.management_ui["creation_connu"] = connu
+	app.set_meta("creation_connu", connu)
 	app._command("new_career", {"club": club, "mode": "world-champ", "start": "premiers-clubs"}); await wait_model()
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	await settle()
@@ -131,7 +131,7 @@ func run() -> void:
 	print("PHASE connu")
 	# --- « Je connais déjà » ---
 	await creer(1, true)
-	check(str(app.model.club.get("id", "")) == "1", "Nouvelle carrière créée (club %s)" % str(app.model.club.get("id", "")))
+	check(int(app.model.club.get("id", -1)) == 1, "Nouvelle carrière créée (club %s)" % str(app.model.club.get("id", "")))
 	print("ACCUEIL ", JSON.stringify(Accueil.etat(coach.profile.data)), " last=", app.last_command, " ", app.last_error)
 	check(bool(Accueil.etat(coach.profile.data).get("connu", false)), "« Je connais déjà » enregistré")
 	await aller("Effectif")

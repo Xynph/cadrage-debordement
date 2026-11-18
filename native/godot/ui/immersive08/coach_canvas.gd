@@ -828,8 +828,8 @@ func _process(delta: float) -> void:
 	_accueil_attente -= delta
 	if _accueil_attente <= 0.0:
 		_accueil_attente = 0.5
-		if app._has_career() and not app.waiting and Accueil.observer(profile, app.model, "", true, bool(app.management_ui.get("creation_connu", false))):
-			if bool(app.management_ui.get("creation_connu", false)): _sans_accueil(app.model)
+		if app._has_career() and not app.waiting and Accueil.observer(profile, app.model, "", true, bool(app.get_meta("creation_connu", false))):
+			if bool(app.get_meta("creation_connu", false)): _sans_accueil(app.model)
 		if not app.waiting and not expanded and _adjoint_actif() and not _bulle.visible and app._has_career():
 			_accueil(str(app.route), app.model)
 	if is_instance_valid(_bulle_suivre) and _bulle.visible: _bulle_suivre.disabled = app.waiting or not app._live().is_empty()
@@ -1069,8 +1069,8 @@ class Bulle extends PanelContainer:
 
 func consider_context(route: String, model: Dictionary, command: String, response_ok: bool) -> void:
 	# Nouvelle carrière : les deux semaines de Gabi repartent du jour de la création (« je connais déjà » les coupe).
-	if is_instance_valid(app) and Accueil.observer(profile, model, command, response_ok, bool(app.management_ui.get("creation_connu", false))):
-		if bool(app.management_ui.get("creation_connu", false)): _sans_accueil(model)
+	if is_instance_valid(app) and Accueil.observer(profile, model, command, response_ok, bool(app.get_meta("creation_connu", false))):
+		if bool(app.get_meta("creation_connu", false)): _sans_accueil(model)
 	if is_instance_valid(_bulle) and is_instance_valid(app) and app._has_career() and profile.data.enabled and route not in ["Accueil", "Création", "Packs"] and not _adjoint_actif():
 		# Écran de carrière dont le bandeau n'est pas encore construit : on attend qu'il le soit (_process)
 		# plutôt que d'ouvrir l'ancienne bulle flottante.

@@ -591,7 +591,10 @@ static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	if role in ["dual", "nation"]:
 		payload.nationalRole = role
 		payload.nation = app.management_ui.get("creation_nation", "")
+	# « Je connais déjà » (options de carrière) : lu par Gabi à la création (l'état d'écran peut être rejoué par l'historique).
+	var connu := bool(app.management_ui.get("creation_connu", false)) and role != "nation"
 	var action := func():
+		app.set_meta("creation_connu", connu)
 		if app._command("new_career", payload) and is_instance_valid(app.entry_scroll):
 			_show_creation_waiting(app, app.entry_scroll)
 	if app._has_career():
