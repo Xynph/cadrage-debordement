@@ -71,5 +71,30 @@ rejeu court ; les suites Monde complètes conservent la validation finale.
 Les sources de ces choix et leur état de vérification sont enregistrés dans
 [les ressources utiles](ressources-utiles.md).
 
+### Regarder un match 3D sans déranger le PC (match filmé)
+
+Sur un PC Windows occupé par quelqu'un, `scripts/match-filme.ps1` filme un vrai
+match sans fenêtre, sans son et sans clic :
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\match-filme.ps1 -Sortie E:\temp\film -Camera tv -Cadence 3 -Minutes 5
+```
+
+Le script prépare une carrière Monde de test dans un profil jetable
+(`tools/match-filme/preparer-carriere.cjs`, environ une minute ; `-Export` en
+reprend une déjà prête), puis lance le jeu sur un **bureau Windows séparé** : rien
+n'apparaît à l'écran ni dans la barre des tâches, le premier plan n'est jamais
+pris, le pilote audio est muet (`--audio-driver Dummy`) et le volume du profil à
+zéro. L'outil Godot (`tools/match-filme/match_filme.gd`, chargé seulement par
+`--script`) donne le coup d'envoi, passe les causeries et enregistre une image
+PNG toutes les `-Cadence` secondes, puis quitte à la fin du match, à la minute
+`-Minutes` ou après `-DureeMax` secondes. Le dossier contient les images,
+`planche.png` (planche-contact), `report.json` (minute, score et luminance de
+chaque image : `noires` doit valoir 0) et `surveillance.json`
+(`premier_plan_godot` et `fenetres_visibles_sur_le_bureau_utilisateur` doivent
+valoir 0). Une fenêtre hors écran (`--position`) ne suffit pas : Godot la ramène
+sur l'écran et prend le premier plan au démarrage. Paramètres complets en tête du
+script ; test : `tests/godot-match-filme.cjs`.
+
 Le bilan indique ce qui fonctionne, les fichiers, la PR, les tests et mesures
 observés, les vérifications non faites, les limites et la prochaine évolution.
