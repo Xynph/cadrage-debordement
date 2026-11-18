@@ -219,7 +219,8 @@ function cibleGestion(forces, clubId, typeConnu = null) {
 // de temps en temps, un club de mécène choisit de dépasser un peu la borne des recettes et de payer
 // l'amende, jamais le plafond de la ligue.
 // À la création, personne ne dépasse.
-function limites(forces, saison, { creation = false, types = null, credits = null } = {}) {
+// remboursements : {id: remboursement annuel du prêt de l'actionnaire} (club-owner.cjs) : autant de moins pour les salaires.
+function limites(forces, saison, { creation = false, types = null, credits = null, remboursements = null } = {}) {
   const annuels = recettes(forces), resultat = new Map();
   for (const force of forces) {
     const regle = ECONOMIE.CHAMPIONNATS[force.division];
@@ -234,7 +235,8 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
     // (recrues et jokers en cours de saison) ; un championnat encadré peut demander que la masse en tienne compte.
     // Suite (#885 → ici) : la borne suit la gestion propre du club (cibleGestion) au lieu de l'enveloppe entière du propriétaire.
     const economies = regle.encadrement ? 0 : 0.15 * annuel, prudence = (regle.prudence ?? 0) * annuel, aPerdre = regle.encadrement && regle.gestion ? -cibleGestion(forces, force.id, p.type) : p.enveloppe;
-    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) - prudence + aPerdre + economies) / (1 + COTISATIONS)]];
+    const rembourse = Number.isFinite(remboursements?.[force.id]) ? Math.max(0, remboursements[force.id]) : 0;
+    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) - prudence + aPerdre + economies - rembourse) / (1 + COTISATIONS)]];
     const credit = credits?.[force.id] ?? 0;
     if (regle.plafond !== null) bornes.push(['plafond', regle.plafond + credit]);
     if (regle.ratio) bornes.push(['recettes', annuel * RATIO_SALAIRES]);
@@ -254,7 +256,7 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
 //   resultats : derniers résultats du club ('V', 'N', 'D') ; alea dans [0;1] (tiré du club et de la date par défaut) ;
 //   receptions : matchs de saison régulière à domicile ; gere : club géré par le jeu.
 //   marge : excédent visé par le budget voté (cibleGestion), épargné par le train de vie ; 0 pour le club joué.
-function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0, aideRelegation: aide = 0 }) {
+function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0, aideRelegation: aide = 0, remboursement = 0 }) {
   const { force, regle, annuel } = regleDe(forces, clubId);
   if (!Number.isInteger(semaines) || semaines < 1) throw Error('Budget de club : nombre de semaines invalide.');
   const salaires = rond(masseHebdo * 52 / semaines), matchs = Math.max(1, receptions ?? Math.round(semaines / 2));
@@ -283,6 +285,8 @@ function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle
   ecritures.push({ title: libelle + ' · Centre de formation', amount: -rond(centre.cout / semaines) });
   if (centre.aide > 0) ecritures.push({ title: libelle + ' · ' + centre.libelleAide, amount: rond(centre.aide / semaines) });
   if (Number.isFinite(investissement) && investissement > 0) ecritures.push({ title: libelle + ' · Investissements (excédents réinvestis)', amount: -rond(investissement / semaines) });
+  // Prêt de l'actionnaire (club-owner.cjs) : remboursé au fil de la saison ; une sortie de caisse, pas une charge.
+  if (Number.isFinite(remboursement) && remboursement > 0) ecritures.push({ title: libelle + ' · ' + LIBELLE_REMBOURSEMENT, amount: -rond(remboursement / semaines) });
   return ecritures;
 }
 
@@ -329,6 +333,7 @@ function aideRelegation(division, depuis, saisonsDepuis) {
   return regle.montants[saisonsDepuis] ?? 0;
 }
 const LIBELLE_AIDE_RELEGATION = 'Aide de la ligue aux clubs relégués';
+const LIBELLE_REMBOURSEMENT = 'Remboursement du prêt de l’actionnaire';
 const annonceAideRelegation = (montant, premiere) => premiere
   ? `Descente : la ligue accompagne les clubs relégués. Le club touchera ${euros(montant)} de plus cette saison, versés avec la part de la ligue, puis une aide plus faible la saison prochaine.`
   : `Dernière saison de l’aide de la ligue aux relégués : ${euros(montant)}, versés avec la part de la ligue. Ensuite, le club vivra avec les seules recettes de sa division.`;
@@ -375,6 +380,7 @@ const LIBELLE_FRAIS_MATCH = 'Frais de match et primes de résultats';
 // Ajoute les écritures d'une semaine au compteur d'un club ; classement : {division, rang, taille} du moment.
 function compter(compte, ecritures, masseAnnuelle, classement = null) {
   for (const e of ecritures) {
+    if (e.title.endsWith(LIBELLE_REMBOURSEMENT)) { compte.rembourse = (Number.isFinite(compte.rembourse) ? compte.rembourse : 0) - e.amount; continue; }
     if (e.amount > 0) compte.recettes += e.amount; else compte.charges -= e.amount;
     if (e.title.endsWith('Salaires des joueurs')) compte.salaires -= e.amount;
   }
@@ -406,7 +412,8 @@ function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, r
   const fonctionnement = annuel * FONCTIONNEMENT + ajustement(annuel, masseHebdo * 52, compte.enveloppe) + (Number.isFinite(compte.investissement) ? compte.investissement : 0);
   const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + fonctionnement / semaines) * reste);
   // Transferts, primes de signature, travaux : tout ce qui a bougé la caisse hors du budget courant.
-  const horsBudget = rond(tresorerie - compte.depart - (compte.recettes - compte.charges));
+  const rembourse = Number.isFinite(compte.rembourse) ? compte.rembourse : 0, aRembourser = Math.max(0, (Number.isFinite(compte.remboursement) ? compte.remboursement : 0) - rembourse);
+  const horsBudget = rond(tresorerie - compte.depart - (compte.recettes - compte.charges) + rembourse);
   const ligue = regles({ division, masseAnnuelle, recettes: recettesPrevues });
   const resultatPrevu = rond(recettesPrevues - chargesPrevues + horsBudget - ligue.amende);
   const apportPrevu = apportProprietaire(compte, Math.max(0, -resultatPrevu), compte.depart + resultatPrevu).apport;
@@ -422,7 +429,7 @@ function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, r
     primeClassementPrevue: prime, rang,
     proprietaire: { type: compte.type, libelle: PROPRIETAIRES[compte.type].libelle, enveloppe: compte.enveloppe }, apportPrevu: rond(apportPrevu),
     masseSalariale: masseAnnuelle, plafondSalarial: ligue.plafond, limiteRecettes: ligue.limiteRecettes, margePlafond: ligue.margePlafond, margeRecettes: ligue.margeRecettes, amendePrevue: ligue.amende,
-    tresorerie: rond(tresorerie), tresoreriePrevue: rond(compte.depart + resultatPrevu + apportPrevu),
+    tresorerie: rond(tresorerie), tresoreriePrevue: rond(compte.depart + resultatPrevu + apportPrevu - rembourse - aRembourser), remboursementPret: rond(aRembourser + rembourse),
   } };
 }
 
@@ -439,7 +446,8 @@ function cloture({ division, compte, tresorerie, rang, taille, joue = false }) {
     ecritures.push({ title: 'Amende de la ligue (' + motif + ')', amount: -ligue.amende });
     if (joue) { confiance -= 6; messages.push(`La ligue sanctionne le club : ${euros(ligue.amende)} d’amende pour ${motif}. Tes dirigeants n’apprécient pas de voir le club épinglé.`); }
   }
-  const resultat = rond(tresorerie + prime - ligue.amende - compte.depart), deficit = Math.max(0, -resultat);
+  // Les remboursements du prêt de l'actionnaire (club-owner.cjs) sortent de la caisse sans être une perte.
+  const resultat = rond(tresorerie + prime - ligue.amende - compte.depart + (Number.isFinite(compte.rembourse) ? compte.rembourse : 0)), deficit = Math.max(0, -resultat);
   // Le propriétaire ne comble que ce qui ferait passer la caisse sous la réserve du club.
   const { apport, decouvert, absorbe } = apportProprietaire(compte, deficit, tresorerie + prime - ligue.amende);
   if (apport > 0) ecritures.push({ title: 'Apport du propriétaire', amount: apport });
@@ -543,7 +551,8 @@ const budgetLimites=creation=>{
  let bases=0;for(const c of S.clubs)bases+=c.base;
  const m=budgetLimitesMemo,premiere=creation===true;
  if(m&&m.etat===S&&m.saison===S.season&&m.creation===premiere&&m.bases===bases&&m.club===S.club)return m.valeur;
- budgetLimitesMemo={etat:S,saison:S.season,creation:premiere,bases,club:S.club,valeur:nativeClubBudget.limites(budgetForces(),S.season,{creation:premiere,types:budgetTypes(),credits:budgetCredits()})};
+ const remboursements={};if(typeof nativeClubOwner!=='undefined')for(const [id,p] of Object.entries(S.pretsActionnaires||{}))remboursements[id]=nativeClubOwner.remboursementSaison(p,S.season)||Math.min(p.restant||0,p.annuite||0);
+ budgetLimitesMemo={etat:S,saison:S.season,creation:premiere,bases,club:S.club,valeur:nativeClubBudget.limites(budgetForces(),S.season,{creation:premiere,types:budgetTypes(),credits:budgetCredits(),remboursements})};
  return budgetLimitesMemo.valeur;
 };
 const budgetPlancherHebdo=()=>nativeStartingSalaries.plancherHebdo(S,budgetLigue(S.club));
@@ -590,6 +599,8 @@ function budgetOuvrir(annoncer,nouvelleSaison=false){
  // Aide de la ligue aux relégués (S.aidesRelegation = {id:{depuis, saison}}, posée par worldNewSeason à la descente).
  const aides={};for(const [id,a] of Object.entries(S.aidesRelegation||{})){const v=nativeClubBudget.aideRelegation(budgetLigue(Number(id)),a?.depuis,S.season-a?.saison);if(v>0)aides[id]=v;}
  S.clubBudget=budgetCopie(nativeClubBudget.ouverture({forces,saison:S.season,types,excedents:nouvelleSaison===true,aides,clubs:S.clubs.map(c=>({id:c.id,cash:c.cash,masse:budgetMasse(c)*52}))}));
+ // Prêt de l'actionnaire (club-owner.cjs) : remboursé au fil de la saison qui suit le prêt.
+ if(typeof nativeClubOwner!=='undefined')for(const [id,p] of Object.entries(S.pretsActionnaires||{})){const k=S.clubBudget.clubs[id];if(k)k.remboursement=nativeClubOwner.remboursementSaison(p,S.season);}
  for(const c of S.clubs){
   const compte=S.clubBudget.clubs[c.id];if(!(compte.dividende>0))continue;
   if(c.id===S.club)ledgerEntryV1('Dividende versé au groupe actionnaire',-compte.dividende);else c.cash-=compte.dividende;
@@ -611,7 +622,7 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
   // Même train de vie pour le club joué que pour les clubs gérés (décision de Léo du 12 novembre) :
   // l'excédent de l'exercice est réinvesti à 70 % dans le staff et le fonctionnement, un déficit
   // au-delà de l'enveloppe du propriétaire est réduit par des économies.
-  repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle,formation:budgetCentre(c),investissement:b.clubs[c.id].investissement||0,aideRelegation:b.clubs[c.id].aideRelegation||0,
+  repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle,formation:budgetCentre(c),investissement:b.clubs[c.id].investissement||0,aideRelegation:b.clubs[c.id].aideRelegation||0,remboursement:b.clubs[c.id].remboursement||0,
   // Clubs gérés d'un championnat encadré : l'excédent que vise leur budget n'est pas dépensé (le club joué fait ses propres choix).
   marge:c.id===S.club?0:Math.max(0,nativeClubBudget.cibleGestion(forces,c.id,b.clubs[c.id].type)),
   // Accueil du stade relevé par les investissements des excédents (club-investments.cjs).
@@ -625,6 +636,7 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
   if(frais.montant>0)ecritures.push({title:libelle+' · '+nativeClubBudget.LIBELLE_FRAIS_MATCH,amount:-frais.montant});
  }
  nativeClubBudget.compter(b.clubs[c.id],ecritures,masse*52,repere.classement[c.id]||null);
+ if(typeof pretRembourser==='function')for(const e of ecritures)if(e.title.endsWith(nativeClubBudget.LIBELLE_REMBOURSEMENT))pretRembourser(c.id,-e.amount);
  return ecritures;
 }
 financeWeek=function(m,won){
@@ -657,6 +669,8 @@ function budgetCloturer(seulementGeres){
   if(compte.clos===true||(joue&&seulementGeres))continue;
   const r=budgetCopie(nativeClubBudget.cloture({division:compte.division,compte,tresorerie:c.cash,rang:compte.rang,taille:compte.taille,joue}));
   compte.clos=true;
+  // Propriétaire prêteur (club-owner.cjs) : l'apport devient un prêt, remboursé les saisons suivantes.
+  if(r.apport>0&&typeof pretAccorder==='function')pretAccorder(c.id,compte,r.apport,b.saison);
   // Santé financière (club-finance-health.cjs) : résultat de la saison avant l'apport du propriétaire.
   if(typeof santeHistoriser==='function')santeHistoriser(c.id,r.resultat,b.saison);
   if(joue){r.ecritures.forEach(e=>ledgerEntryV1(e.title,e.amount));if(r.confiance)S.trust=clamp(S.trust+r.confiance,0,100);r.messages.forEach(m=>news(m));}
@@ -692,8 +706,10 @@ worldNewSeason=function(fundingAlreadyPaid){
    if(c.id===S.club)continue;
    const info=worldClub(c.id);
    if(c.cash<0){info.debt+=-c.cash;c.cash=0}
-   const outcome=CDFinancialRecovery.annual({cash:c.cash,debt:info.debt,wageRoom:100000},{revenue:0,baseCosts:0,repayment:Math.min(250000,info.debt)});
-   c.cash=outcome.cash;info.debt=outcome.debt;
+   // Le prêt de l'actionnaire (club-owner.cjs) a son propre échéancier, sans intérêts : seule la dette de crise passe ici.
+   const pret=typeof pretRestant==='function'?Math.min(info.debt,pretRestant(c.id)):0,crise=info.debt-pret;
+   const outcome=CDFinancialRecovery.annual({cash:c.cash,debt:crise,wageRoom:100000},{revenue:0,baseCosts:0,repayment:Math.min(250000,crise)});
+   c.cash=outcome.cash;info.debt=outcome.debt+pret;
    if(info.facilities<7&&info.debt===0&&c.cash>4500000&&w.yearbook.at(-1)?.standings.find(x=>x.id===c.id)?.position<=7){
     const quote=worldFacilityQuote(c.id);
     if(quote?.affordable){c.cash-=quote.cost;info.facilities++;w.upgrades.push({season:S.season,id:c.id,level:info.facilities,cost:quote.cost});}
@@ -705,6 +721,8 @@ worldNewSeason=function(fundingAlreadyPaid){
  const mouvements=new Map(),E=nativeLeagueEconomy.CHAMPIONNATS;
  if(budgetLisible(S.clubBudget))for(const c of S.clubs){const avant=S.clubBudget.clubs[c.id].division,apres=budgetLigue(c.id);if(avant!==apres&&E[avant]&&E[apres]&&E[avant].reputation!==E[apres].reputation)mouvements.set(c.id,E[apres].reputation>E[avant].reputation?1:-1);}
  budgetPoserAidesRelegation();
+ // Mécènes qui arrivent et qui partent (club-owner.cjs) : avant le recalage, qui suit le nouveau propriétaire.
+ if(typeof proprietairesChanger==='function')proprietairesChanger();
  // Les clubs gérés remettent leurs contrats au niveau du marché, dans la limite de ce qu'ils s'autorisent.
  // Un club sous son effectif visé garde la place de ses recrues : sa masse recalée ne prend que la part
  // de sa limite qui correspond aux joueurs déjà sous contrat (sinon le recalage remplit toute la limite
@@ -914,7 +932,7 @@ const VALIDATION = `{
 }`;
 
 module.exports = Object.freeze({ PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
-  aideRelegation, annonceAideRelegation, LIBELLE_AIDE_RELEGATION,
+  aideRelegation, annonceAideRelegation, LIBELLE_AIDE_RELEGATION, LIBELLE_REMBOURSEMENT,
   RESERVE, EXCEDENTS, EXCEDENT_DORMANT, TRAIN_DE_VIE, reserveCible, engagement, apportProprietaire, annonceDividende, annonceInvestissement,
   recettesImprevues, fraisDeMatch, PART_FRAIS_IMPREVUS, deficitPrevu, LIBELLE_FRAIS_MATCH,
   recettes, semaine, proprietaire, cibleGestion, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros });

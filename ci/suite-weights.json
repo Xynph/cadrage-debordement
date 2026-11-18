@@ -277,6 +277,7 @@
       "tests/godot-prolongations-staff-carriere.cjs": 120,
       "tests/godot-investissements-excedents.cjs": 300,
       "tests/godot-sante-financiere.cjs": 120,
+      "tests/godot-argent-proprietaire.cjs": 120,
       "tests/godot-engine.cjs": 300,
       "tests/godot-salary-display.cjs": 2,
       "tests/godot-staff-mentoring.cjs": 2,

@@ -51,7 +51,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|creation|derby|avis-staff|meteo|banque-images|prolongations-staff|investissements|sante|proprietaire) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -119,6 +119,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/sante"
     phase "captures santé financière (Finances > Classement, fiche club ; 1080p)" captures-sante.log \
       env CD_SANTE_GRAPHICS=1 CD_SANTE_OUTPUT="$cap/sante" node --test tests/godot-sante-financiere.cjs
+  fi
+  if veut proprietaire; then
+    mkdir -p "$cap/proprietaire"
+    phase "captures argent du propriétaire (Réception : prêt, nouveau propriétaire ; Finances ; 1080p)" captures-proprietaire.log \
+      env CD_PROPRIO_GRAPHICS=1 CD_PROPRIO_OUTPUT="$cap/proprietaire" node --test tests/godot-argent-proprietaire.cjs
   fi
   if veut comparateur; then
     mkdir -p "$cap/comparateur"

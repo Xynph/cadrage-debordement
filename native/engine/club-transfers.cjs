@@ -39,7 +39,8 @@ module.exports=function clubTransfers(){
   const info=worldClub(c.id)||{reputation:c.base,facilities:2,debt:0};
   const limit=aiRosterWageLimit(c),payroll=aiRosterPayroll(c);
   const cashMedian=median(peers.map(x=>x.cash)),repMedian=median(peers.map(x=>worldClub(x.id)?.reputation??x.base));
-  if(info.debt>0||c.cash<900000||payroll>limit)return 'vente';
+  // Prêt de l'actionnaire (club-owner.cjs) : une dette à échéancier, pas une crise qui force la vente.
+  if((typeof detteDeCrise==='function'?detteDeCrise(c.id):info.debt)>0||c.cash<900000||payroll>limit)return 'vente';
   if(info.reputation>=repMedian+3&&c.cash>=Math.max(1500000,cashMedian*1.15)&&payroll<=limit*.95)return 'vedettes';
   const core=c.players.slice().sort((a,b)=>roleNote(b)-roleNote(a)).slice(0,30);
   const age=core.reduce((n,p)=>n+p.age,0)/Math.max(1,core.length);
