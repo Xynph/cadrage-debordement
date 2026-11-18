@@ -960,16 +960,42 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	card.add_child(scroll)
 	D.place(scroll,Rect2(PAD,body_top,content_width,body_height))
 	scroll.add_child(content)
-	var y := body_top + body_height + 18
+	# Pied (pièces liées, réponses, actions) dans un calque propre : il suit le contenu si celui-ci s'avère plus haut.
+	var top := body_top + body_height + 18
+	var footer := Panel.new()
+	footer.name = "InboxFooter"
+	footer.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(footer)
+	var y := 0.0
 	if attachments > 0:
-		_attachments(card,app,state,message,y,focused,true,reading_width)
+		_attachments(footer,app,state,message,y,focused,true,reading_width)
 		y += attachments + 12
 	if not replies.is_empty():
-		D.text(card,PAD,y+24,"TA RÉPONSE",19,C.GOLD,700,400).name = "InboxReplyHeading"
-		_reply_cards(card, app, message, replies, y + 40)
+		D.text(footer,PAD,y+24,"TA RÉPONSE",19,C.GOLD,700,400).name = "InboxReplyHeading"
+		_reply_cards(footer, app, message, replies, y + 40)
 		y += 40 + float(replies.height) + 18
-	_actions(card,app,state,message,int(y))
+	_actions(footer,app,state,message,int(y))
+	y += _h(46)
+	D.place(footer, Rect2(0, top, _w, y))
 	D.text(card,PAD,hint_base,"Espace : message non lu suivant",16,C.FAINT.lightened(.1),500,reading_width).name = "InboxSpaceHint"
+	_settle_reading.call_deferred(scroll, footer, (hint_base - 34) * C.density)
+
+## Une fois le contenu mis en page : si sa hauteur réelle dépasse la mesure, la zone de lecture grandit (dans la
+## place libre au-dessus du rappel Espace) et le pied descend d'autant ; aucun défilement inutile.
+static func _settle_reading(scroll: ScrollContainer, footer: Control, limit: float) -> void:
+	if not is_instance_valid(scroll) or not scroll.is_inside_tree(): return
+	var tree := scroll.get_tree()
+	await tree.process_frame
+	await tree.process_frame
+	if not is_instance_valid(scroll) or not is_instance_valid(footer) or scroll.get_child_count() == 0: return
+	var content := scroll.get_child(0) as Control
+	var missing := content.get_combined_minimum_size().y + 4.0 - scroll.size.y
+	var free := limit - (footer.position.y + footer.size.y)
+	var grow := minf(missing, free)
+	if grow <= 0.5: return
+	scroll.size.y += grow
+	footer.position.y += grow
 
 ## Hauteur (px) d'un contenu à largeur donnée, mesurée tout de suite (conteneurs triés hors de l'arbre) :
 ## les réponses se placent juste sous le contenu, sans attendre une image.
