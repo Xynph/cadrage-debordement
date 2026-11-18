@@ -53,9 +53,20 @@ def main() -> int:
                 os.makedirs(os.path.dirname(dest), exist_ok=True)
                 im = Image.open(chemin_src)
                 if sans_perte and im.mode not in ("RGB", "RGBA", "L"): im = im.convert("RGBA")
-                elif not sans_perte: im = im.convert("RGB")
+                elif not sans_perte: im = im.convert("RGBA" if im.mode in ("RGBA", "LA", "PA") or "transparency" in im.info else "RGB")
                 if sans_perte: im.save(dest, "WEBP", lossless=True, method=6)
                 else: im.save(dest, "WEBP", quality=QUALITE, method=6)
+            gris = None
+            if src.get("type_rendu") == "carte-ombres":  # luminance moyenne du tissu : neutre pour le shader
+                im2 = Image.open(chemin_src).convert("RGBA").resize((128, 128))
+                px = [(0.299 * r + 0.587 * g + 0.114 * b) / 255 for r, g, b, a in im2.getdata() if a > 200]
+                gris = round(sum(px) / len(px), 3) if px else None
+            part = None
+            if src.get("type_rendu") == "masque-binaire":  # part du masque en blanc (zones du club)
+                mk = Image.open(chemin_src).convert("L").resize((128, 128))
+                cle = Image.open(os.path.join(a.banque, par_id[src["masque_de"]]["fichier"])).convert("RGBA").resize((128, 128)) if src.get("masque_de") in par_id else None
+                vis = [m for m, px in zip(mk.getdata(), cle.getdata() if cle else [(0, 0, 0, 255)] * 16384) if px[3] > 200]
+                part = round(sum(1 for m in vis if m > 127) / len(vis), 3) if vis else None
             et = dict(src.get("etiquettes") or {})
             et.update(groupe.get("etiquettes", {}).get(ident, {}))
             if et.get("resultat") == "défaite": et["resultat"] = "defaite"  # clés sans accent côté code
@@ -65,6 +76,8 @@ def main() -> int:
                 "sha256": sha(dest), "source_sha256": sha_src, "source_octets": src.get("octets"),
                 "repli": groupe.get("repli", src.get("repli_neutre") or ident),
                 "etiquettes": {k: v for k, v in et.items() if v not in (None, [], "")},
+                **({"gris_moyen": gris} if gris else {}),
+                **({"part_blanche": part} if part is not None else {}),
                 "synthetique": bool(src.get("synthetique", True)), "outil": src.get("outil"),
             })
     if manquants:
