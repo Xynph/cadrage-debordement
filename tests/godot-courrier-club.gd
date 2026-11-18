@@ -123,6 +123,34 @@ func reply_and_open() -> void:
 	await settle()
 	if str(mail.ecran) != "fiche": check(app.route == expected, "Écran concerné ouvert : " + expected + " (actuel : " + app.route + ")")
 
+## Non-régression (18/11) : « Lésion des ischio-jambiers » coupé dans le tableau de l'infirmerie et le panneau « Concerné ».
+## Aux deux résolutions, aucun libellé de blessure n'est coupé : retour à la ligne actif, ni clip ni ellipse, taille minimale ≤ taille allouée.
+func injury_name_fits() -> void:
+	var longest := "Lésion des ischio-jambiers"
+	for size: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720)]:
+		root.size = size
+		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(size)
+		app._render()
+		await settle(10)
+		app._render()
+		await settle(8)
+		var tag := " · %dx%d" % [size.x, size.y]
+		var cells: Array = []
+		for row: Node in app.root_content.find_children("InboxInfirmaryRow_*", "", true, false):
+			for cell: Node in row.get_children():
+				if cell is Label and (cell as Label).text.contains(longest): cells.append(cell)
+		check(not cells.is_empty(), "Libellé de blessure le plus long présent dans le tableau" + tag)
+		var availability := node("InboxConcernedAvailability") as Label
+		check(availability != null and availability.text.contains(longest), "Libellé de blessure le plus long présent dans « Concerné »" + tag)
+		if availability != null: cells.append(availability)
+		for cell: Label in cells:
+			var needed := cell.get_minimum_size()
+			check(not cell.clip_text and cell.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING, "Blessure sans clip ni ellipse : " + cell.text + tag)
+			check(cell.autowrap_mode != TextServer.AUTOWRAP_OFF or needed.x <= cell.size.x + 1.0, "Blessure : retour à la ligne actif ou largeur suffisante : " + cell.text + tag)
+			check(needed.y <= cell.size.y + 1.0 and needed.x <= cell.size.x + 1.0, "Blessure entièrement visible (min %s, alloué %s) : %s%s" % [needed, cell.size, cell.text, tag])
+			var lines := cell.get_line_count()
+			check(lines * cell.get_line_height() <= cell.size.y + 1.0, "Hauteur de ligne qui suit (%d lignes) : %s%s" % [lines, cell.text, tag])
+
 ## Arrêts informatifs : écran utile préparé pour la réponse de « Continuer ».
 func info_stops() -> void:
 	check(ClubMail.stop_route(app, {"kind":"info", "type":"veille", "ecran":"Composition"}) == "Composition", "Veille de match : composition")
@@ -455,6 +483,7 @@ func direction_a(mail: Dictionary) -> void:
 	var cited := node("InboxConcernedName") as Label
 	check(cited != null and cited.text == str(hurt.name), "Panneau « Concerné » du joueur blessé")
 	check(node("InboxClubMailReply_progressif") != null and node("InboxClubMailReply_repos") != null, "Réponses du médecin proposées")
+	await injury_name_fits()
 	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
 		check(root.get_texture().get_image().save_png(capture_dir.path_join("reception-medical-1920x1080.png")) == OK, "Capture médical")
 		root.size = Vector2i(1280, 720)

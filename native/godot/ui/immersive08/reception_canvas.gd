@@ -42,6 +42,8 @@ const SERVICE_ICONS = {"Presse":"globe", "Sélections":"flag", "Calendrier":"cal
 const SUBJECT_EXTRAS = [["favorites", "Favoris"], ["archives", "Archives"], ["waiting", "En attente"], ["info", "Infos"]]
 ## Délai avant qu'une demande du club sans réponse soit classée (club-mail.json, cadence.delaiReponse).
 const DELAI_REPONSE := 7
+## Hauteur ajoutée à la fiche du panneau « Concerné » par ligne supplémentaire de « DISPONIBILITÉ ».
+const SIDE_LINE_EXTRA := 26.0
 ## Condition sous laquelle un joueur apte figure à l'infirmerie comme « incertain » pour le prochain match.
 const INCERTAIN := 65.0
 ## Rubrique du journal selon le type de courrier de presse (club-mail.json).
@@ -1149,6 +1151,9 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 			column.add_child(receipt)
 	return paper
 
+## Colonnes du tableau de l'infirmerie [titre, part de la largeur] ; « BLESSURE » est la plus large (noms longs).
+const INFIRMARY_COLUMNS := [["JOUEUR", .22], ["POSTE", .14], ["BLESSURE", .32], ["RETOUR ESTIMÉ", .16], ["PROCHAIN MATCH", .16]]
+
 ## Tableau de l'infirmerie (données réelles de la partie) : joueurs blessés et en reprise, retour estimé et statut
 ## pour la prochaine rencontre (forfait rouge, apte vert, risque doré).
 static func infirmary_rows(model: Dictionary) -> Array[Dictionary]:
@@ -1181,6 +1186,14 @@ static func infirmary_rows(model: Dictionary) -> Array[Dictionary]:
 	result.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.weeks) > float(b.weeks))
 	return result
 
+## Hauteur (px) d'un libellé à retour à la ligne, à sa largeur minimale : lignes réelles de la police, sans coupure.
+static func wrapped_height(label: Label) -> float:
+	var font := label.get_theme_font("font")
+	var size := label.get_theme_font_size("font_size")
+	var flags := TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE | TextServer.BREAK_MANDATORY
+	var lines := font.get_multiline_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, label.custom_minimum_size.x, size, -1, flags).y
+	return ceilf(lines) + C.px(10)
+
 static func _infirmary(app: Control, width: float) -> Control:
 	var table := C.v(0)
 	table.name = "InboxInfirmary"
@@ -1192,7 +1205,7 @@ static func _infirmary(app: Control, width: float) -> Control:
 		none.name = "InboxInfirmaryEmpty"
 		table.add_child(none)
 		return table
-	var columns := [["JOUEUR", .27], ["POSTE", .18], ["BLESSURE", .25], ["RETOUR ESTIMÉ", .15], ["PROCHAIN MATCH", .15]]
+	var columns := INFIRMARY_COLUMNS
 	var header := C.h(0)
 	for column: Array in columns:
 		var cell := C.label(column[0], 16, C.FAINT.lightened(.15), true, 700)
@@ -1215,8 +1228,10 @@ static func _infirmary(app: Control, width: float) -> Control:
 			var cell := C.label(values[column][0], 21, values[column][1], column != 2 and column != 1, values[column][2])
 			cell.custom_minimum_size = Vector2(C.px(width * float(columns[column][1])), C.px(48))
 			cell.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-			cell.clip_text = true
-			cell.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			# Retour à la ligne plutôt que coupure : la hauteur de la ligne suit le texte le plus long de la rangée.
+			cell.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			cell.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+			cell.custom_minimum_size.y = maxf(cell.custom_minimum_size.y, wrapped_height(cell))
 			cell.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			if column == 4: cell.name = "InboxInfirmaryStatus"
 			row.add_child(cell)
@@ -1387,7 +1402,11 @@ static func _side(card: Panel, app: Control, message: Dictionary, data: Dictiona
 	if data.has("player"):
 		var player: Dictionary = data.player
 		var value: Variant = player.get("marketValue")
-		var sheet_height := 446.0 if value is int or value is float else 372.0
+		var injury_weeks := float(player.get("injury", 0)) if (player.get("injury") is int or player.get("injury") is float) else 0.0
+		var availability := ("%s · %d sem." % [ClubMail.injury_label(app.model, player), ceili(injury_weeks)]) if injury_weeks > 0 else ("En reprise" if P.player_in_recovery(app.model, str(player.get("id",""))) else "Apte")
+		var fact_width := (width - 60.0) / 2.0
+		var extra_lines := maxf(0.0, ceilf(C.BODY.get_multiline_string_size(availability, HORIZONTAL_ALIGNMENT_LEFT, C.px(fact_width), maxi(12, C.px(20)), -1, TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE | TextServer.BREAK_MANDATORY).y / maxf(1.0, C.BODY.get_height(maxi(12, C.px(20))))) - 1.0)
+		var sheet_height := (446.0 if value is int or value is float else 372.0) + extra_lines * SIDE_LINE_EXTRA
 		var sheet := D.rect(card,Rect2(x,y,width,sheet_height),C.RAISED,10)
 		sheet.name = "InboxConcernedPlayer"
 		sheet.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -1412,14 +1431,20 @@ static func _side(card: Panel, app: Control, message: Dictionary, data: Dictiona
 			["CONTRAT", "Fin " + Portraits.contract_year(player.get("contractEnd")), C.IVORY],
 			["MORAL", moral, moral_tone],
 			["TEMPS DE JEU", ("%d min" % int(minutes)) if minutes is int or minutes is float else "—", C.IVORY],
-			["DISPONIBILITÉ", ("%s · %d sem." % [ClubMail.injury_label(app.model, player), ceili(injury)]) if injury > 0 else ("En reprise" if P.player_in_recovery(app.model, str(player.get("id",""))) else "Apte"), C.ALERT if injury > 0 else C.MINT],
+			["DISPONIBILITÉ", availability, C.ALERT if injury > 0 else C.MINT],
 		]
 		if value is int or value is float: facts.append(["VALEUR", _money(float(value)), C.GOLD])
 		for index in facts.size():
 			var fx := 20.0 + (index % 2) * (width - 40) / 2.0
 			var fy := 128.0 + (index / 2) * 74.0
 			D.text(sheet,fx,fy+18,facts[index][0],15,C.FAINT.lightened(.15),700,(width-60)/2.0)
-			D.text(sheet,fx,fy+48,facts[index][1],20,facts[index][2],600,(width-60)/2.0,HORIZONTAL_ALIGNMENT_LEFT,true)
+			var fact := D.text(sheet,fx,fy+48,facts[index][1],20,facts[index][2],600,fact_width,HORIZONTAL_ALIGNMENT_LEFT,true)
+			if facts[index][0] == "DISPONIBILITÉ":
+				# Nom de blessure long : retour à la ligne, la fiche grandit d'autant (aucune ellipse).
+				fact.name = "InboxConcernedAvailability"
+				fact.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				fact.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+				fact.size.y += extra_lines * C.px(SIDE_LINE_EXTRA)
 		var open := D.button(sheet,Rect2(20,sheet_height-76,width-40,_h(52)),"Ouvrir la fiche",_open_related.bind(app,message,_open_current_player.bind(app,str(player.get("id","")))),false,"arrow",true,app.accent,"InboxConcernedOpen")
 		open.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		open.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
