@@ -17,7 +17,9 @@ test('Limites : Pro D2 (et Nationale, tests/nationale-equilibre.cjs) encadrées,
   const R = B.recettes(forces);
   for (let saison = 1; saison <= 12; saison++) for (const [id, l] of B.limites(forces, saison)) {
     const f = forces[id], c = E.CHAMPIONNATS[f.division], p = B.proprietaire(forces, id), annuel = R.get(id);
-    const budget = (annuel * (0.42 - (c.prudence ?? 0)) + p.enveloppe + (c.encadrement ? 0 : 0.15 * annuel)) / 1.4;
+    // Championnat encadré : la borne suit la gestion propre du club (cibleGestion), ailleurs l'enveloppe entière.
+    const aPerdre = c.encadrement && c.gestion ? -B.cibleGestion(forces, id) : p.enveloppe;
+    const budget = (annuel * (0.42 - (c.prudence ?? 0)) + aPerdre + (c.encadrement ? 0 : 0.15 * annuel)) / 1.4;
     const bornes = [budget, c.plafond ?? Infinity, c.ratio ? annuel * 0.52 : Infinity];
     const attendu = Math.min(c.plafond ?? Infinity, Math.min(...bornes) * l.tolerance);
     assert.ok(Math.abs(l.limite - attendu) <= 100, f.division + ' ' + id + ' saison ' + saison + ' : ' + l.limite + ' au lieu de ' + Math.round(attendu));
@@ -26,8 +28,36 @@ test('Limites : Pro D2 (et Nationale, tests/nationale-equilibre.cjs) encadrées,
       // Une masse à la limite ne prévoit pas plus de pertes que ce que le propriétaire comble (audace d'un mécène : 5 % au plus).
       const resultat = annuel * 0.42 - l.limite * 1.4;
       assert.ok(resultat >= -p.enveloppe - 0.05 * l.limite * 1.4 - 100, 'Pro D2 ' + id + ' : perte prévue ' + Math.round(resultat));
-      if (p.type === 'association') assert.ok(resultat >= -100, 'une association vise l’équilibre');
+      if (p.type === 'association') assert.ok(resultat >= 0.02 * annuel * l.tolerance - 100, 'une association vise un excédent : ' + Math.round(resultat));
     }
+  }
+});
+
+test('Gestion propre à chaque club de Pro D2 : bons élèves, clubs à l’équilibre, clubs qui perdent', () => {
+  const R = B.recettes(forces), pro = forces.filter(f => f.division === 'accession');
+  for (const f of forces) if (f.division !== 'accession') assert.equal(B.cibleGestion(forces, f.id), 0, f.division + ' ' + f.id + ' : aucune cible hors Pro D2');
+  const cibles = pro.map(f => ({ ...B.proprietaire(forces, f.id), annuel: R.get(f.id), cible: B.cibleGestion(forces, f.id) }));
+  for (const c of cibles) {
+    // Stable d'une saison à l'autre (même club, même propriétaire) et jamais au-delà de ce que le propriétaire comble.
+    assert.ok(c.cible >= -c.enveloppe - 100, c.type + ' : ' + c.cible);
+    if (c.type === 'association') assert.ok(c.cible >= 0.02 * c.annuel - 100 && c.cible <= 0.06 * c.annuel + 100, 'association : excédent de 2 à 6 %');
+    else if (c.type === 'entreprise') assert.ok(c.cible <= 100 && c.cible >= -0.6 * c.enveloppe - 100, 'entreprise : 0 à 60 % de l’enveloppe');
+    else assert.ok(c.cible <= -0.8 * c.enveloppe + 100, 'mécène : 80 à 100 % de l’enveloppe');
+  }
+  assert.ok(new Set(cibles.map(c => c.type)).size === 3, 'les trois sortes de propriétaires en Pro D2');
+  // Train de vie : l'excédent visé n'est pas dépensé, seul ce qui le dépasse l'est.
+  assert.equal(B.ajustement(10e6, 2.72e6, 0, 0.4e6), 0, 'excédent prévu (0,39 M€) sous l’excédent visé (0,4) : le train de vie n’y touche pas');
+  assert.ok(Math.abs(B.ajustement(10e6, 2e6, 0, 0.4e6) - 0.7 * (1.4e6 - 0.4e6)) < 1, 'au-delà de l’excédent visé, 70 % repartent');
+  assert.ok(Math.abs(B.ajustement(10e6, 2e6, 0) - 0.7 * 1.4e6) < 1, 'sans marge (autres championnats, club joué) : règle inchangée');
+});
+
+test('Excédents d’un club de Pro D2 : 2 % des recettes engagés au plus par saison, sans limite ailleurs', () => {
+  const R = B.recettes(forces), riche = id => ({ id, cash: B.reserveCible(R.get(id), id, forces[id].division) + 3e6, masse: 2e6 });
+  const o = B.ouverture({ forces, saison: 2, clubs: forces.map(f => riche(f.id)), excedents: true });
+  for (const f of forces) {
+    const k = o.clubs[f.id], engage = k.investissement + k.dividende;
+    if (f.division === 'accession') assert.ok(engage <= 0.02 * R.get(f.id) + 200, 'Pro D2 ' + f.id + ' : ' + engage);
+    else assert.ok(engage >= 1.5e6, f.division + ' ' + f.id + ' : règle générale (' + engage + ')');
   }
 });
 
@@ -62,7 +92,7 @@ test('Moteur Monde : aucun club de Pro D2 ne vote une perte que son propriétair
       const ordre=clubs.slice().sort((a,b)=>b.base-a.base||a.id-b.id);
       return clubs.map(c=>{const compte=JSON.parse(JSON.stringify(S.clubBudget.clubs[c.id])),rang=ordre.indexOf(c)+1,forme=rang<=5?'VVVDV':rang<=11?'VDVDN':'DDVDD';
         let caisse=c.cash;for(let w=0;w<n;w++){const e=nativeClubBudget.semaine({forces:f,clubId:c.id,masseHebdo:budgetMasse(c),semaines:n,receptions:repere.receptions[c.id]||15,domicile:w%2===0,
-          resultats:forme.split(''),repere:'test|'+w,gere:true,formation:budgetCentre(c)});
+          resultats:forme.split(''),repere:'test|'+w,gere:true,formation:budgetCentre(c),marge:Math.max(0,nativeClubBudget.cibleGestion(f,c.id,compte.type))});
           const fr=nativeClubBudget.fraisDeMatch(compte,nativeClubBudget.recettesImprevues(e,{forces:f,clubId:c.id,receptions:repere.receptions[c.id]||15}),nativeClubBudget.deficitPrevu(f,c.id,budgetMasse(c)*52));
           compte.imprevu=fr.imprevu;compte.fraisMatch=fr.fraisMatch;if(fr.montant>0)e.push({title:'frais',amount:-fr.montant});
           nativeClubBudget.compter(compte,e,budgetMasse(c)*52);caisse+=e.reduce((s,x)=>s+x.amount,0);}
