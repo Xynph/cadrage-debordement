@@ -46,6 +46,7 @@
   ],
   "blessures": {
     "_doc": "Type de blessure tiré quand un joueur se blesse (match, entraînement, simulation) : parmi les types dont la durée (semaines) couvre l'indisponibilité, au poids selon la ligne (avants, arrières), par empreinte stable (ni hasard du moteur, ni dépendance à l'ordre). Commotion : protocole de retour progressif World Rugby (pas de reprise avant la fin du protocole, au moins 12 jours hors cas particuliers). « conseil » : recommandation du médecin dans le bulletin. Sauvegarde : p.injuryType (clé), p.injuryCause (match | entrainement), p.injuryDate ; type absent : « Blessure ».",
+    "rechute": { "_doc": "Risque de rechute (%) à la guérison d'un blessé suivi par le médecin : base, modifiée par l'effet « rechute » (points) des réponses au bulletin ; tirage par empreinte stable du joueur et du jour ; rechute = nouvelle indisponibilité de « semaines ». Effet « retour » : semaines d'indisponibilité en plus ou en moins (au moins une). Sauvegarde : p.injuryRelapse.", "base": 12, "semaines": 2 },
     "avants": ["pilier", "talonneur", "deuxieme ligne", "troisieme ligne", "numero 8", "flanker", "3e ligne", "2e ligne"],
     "types": {
       "contusion": {"libelle": "Contusion musculaire", "semaines": [1, 1], "poids": {"avants": 3, "arrieres": 3}, "conseil": "Glace, soins et une semaine sans contact : pas de risque particulier si on respecte le délai."},
@@ -814,9 +815,9 @@
         {"sujet": "Bulletin médical : {joueur}", "corps": "Point médical sur {joueur}. {cause} Les examens confirment le diagnostic, {blessure_bas} : {duree} d'arrêt, reprise envisagée vers le {retour}.\n\n{conseil}\n\n{impact} Pour mémoire, l'infirmerie compte : {infirmerie}."}
       ],
       "reponses": [
-        {"id": "progressif", "libelle": "Le ménager à son retour", "effets": {"plan": "normal"}, "resultat": "Charge individuelle allégée : sa reprise se fera par paliers."},
-        {"id": "repos", "libelle": "Le laisser au repos complet", "effets": {"plan": "repos", "satisfaction": -1}, "resultat": "Repos complet jusqu'à nouvel ordre ; il trouve le temps long."},
-        {"id": "presser", "libelle": "Le relancer vite dans le groupe", "effets": {"plan": "collective", "satisfaction": 2, "fatigue": 5}, "resultat": "Il suit la séance collective dès que possible ; il apprécie, mais sa charge monte."}
+        {"id": "progressif", "libelle": "Le ménager à son retour", "effets": {"plan": "normal", "rechute": -8}, "resultat": "Charge individuelle allégée : sa reprise se fera par paliers, le risque de rechute baisse."},
+        {"id": "repos", "libelle": "Le laisser au repos complet", "effets": {"plan": "repos", "satisfaction": -1, "rechute": -12, "retour": 1}, "resultat": "Repos complet : une semaine d'arrêt de plus, presque aucun risque de rechute ; il trouve le temps long."},
+        {"id": "presser", "libelle": "Le relancer vite dans le groupe", "effets": {"plan": "collective", "satisfaction": 2, "rechute": 15, "retour": -1}, "resultat": "Il revient une semaine plus tôt et apprécie, mais le risque de rechute monte."}
       ]
     }
   }

@@ -352,13 +352,14 @@ func direction_a(mail: Dictionary) -> void:
 		for row: Dictionary in division.get("rows", []):
 			if str(row.get("id")) != str(app.model.club.get("id")): rivals.append(row)
 	if not rivals.is_empty(): press.club = int(rivals[0].id)
+	var rival_name := str(rivals[0].get("name", "Stade Toulousain")) if not rivals.is_empty() else "Stade Toulousain"
 	# Bulletin du médecin tel que le moteur le rédige (type « blessure » de club-mail.json).
 	var medical := {"id":"mail-990002", "type":"blessure", "categorie":"infirmerie", "date":yesterday, "expediteur":"Le médecin du club",
 		"sujet":str(hurt.name) + " : Lésion des ischio-jambiers", "status":"nouveau", "ecran":"infirmerie", "arret":false, "joueur":str(hurt.id),
-		"corps":"Coach, mauvaise nouvelle pour " + str(hurt.name) + " (" + str(hurt.pos) + "). Il est sorti touché du match contre nos adversaires (24-17, le " + yesterday.substr(8, 2) + "/" + yesterday.substr(5, 2) + "). Diagnostic : lésion des ischio-jambiers. Il est indisponible 3 semaines.\n\nMuscle à reconstruire : reprise progressive des courses. Revenir trop vite, c'est s'exposer à une rechute plus longue.\n\nIl manquera le prochain match : prévois son remplaçant dans la composition.",
-		"reponses":[{"id":"progressif", "libelle":"Le ménager à son retour", "effets":"Charge individuelle : charge allégée", "disponible":true, "raison":""},
-			{"id":"repos", "libelle":"Le laisser au repos complet", "effets":"Satisfaction −1 · Charge individuelle : repos", "disponible":true, "raison":""},
-			{"id":"presser", "libelle":"Le relancer vite dans le groupe", "effets":"Satisfaction +2 · Charge +5 · Charge individuelle : séance collective", "disponible":true, "raison":""}]}
+		"corps":"Coach, mauvaise nouvelle pour " + str(hurt.name) + " (" + str(hurt.pos) + "). Il est sorti touché sur le terrain de " + rival_name + " (24-17, le " + yesterday.substr(8, 2) + "/" + yesterday.substr(5, 2) + "). Diagnostic : lésion des ischio-jambiers. Il est indisponible 3 semaines.\n\nMuscle à reconstruire : reprise progressive des courses. Revenir trop vite, c'est s'exposer à une rechute plus longue.\n\nIl manquera le prochain match : prévois son remplaçant dans la composition.",
+		"reponses":[{"id":"progressif", "libelle":"Le ménager à son retour", "effets":"Risque de rechute −8 (4 %) · Charge individuelle : charge allégée", "disponible":true, "raison":""},
+			{"id":"repos", "libelle":"Le laisser au repos complet", "effets":"Risque de rechute −12 (0 %) · Retour retardé au " + Reception._shift(today, 28).substr(8, 2) + "/" + Reception._shift(today, 28).substr(5, 2) + " · Satisfaction −1 · Charge individuelle : repos", "disponible":true, "raison":""},
+			{"id":"presser", "libelle":"Le relancer vite dans le groupe", "effets":"Risque de rechute +15 (27 %) · Retour avancé au " + Reception._shift(today, 14).substr(8, 2) + "/" + Reception._shift(today, 14).substr(5, 2) + " · Satisfaction +2 · Charge individuelle : séance collective", "disponible":true, "raison":""}]}
 	if not app.model.clubLife.has("clubMail") or not app.model.clubLife.clubMail is Dictionary: app.model.clubLife.clubMail = {"mails":[], "reponses":{}}
 	var box: Dictionary = app.model.clubLife.clubMail
 	var same_a := {"id":"mail-990003", "type":"kine_bilan", "categorie":"infirmerie", "date":yesterday, "expediteur":"Le kiné du club",
@@ -430,6 +431,7 @@ func direction_a(mail: Dictionary) -> void:
 	check(effects.has("▲ Supporters +2") and effects.has("▼ Moral −1"), "Conséquences de la réponse : " + str(effects))
 	check(node("InboxReplyHeading") != null and node("InboxSpaceHint") != null, "« TA RÉPONSE » et rappel Espace")
 	check(Reception.consequences("Pression +2")[0][0] == "▼" and Reception.consequences("Coût 1 000 €")[0][0] == "▼" and Reception.consequences("Charge individuelle : allégée")[0][0] == "=" and Reception.consequences("")[0][1] == "Sans effet chiffré", "Sens des conséquences (pression, coût, neutre)")
+	check(Reception.consequences("Risque de rechute +15 (27 %)")[0][0] == "▲" and Reception.consequences("Risque de rechute +15 (27 %)")[0][2] == C.ALERT and Reception.consequences("Risque de rechute −8 (4 %)")[0][0] == "▼" and Reception.consequences("Retour avancé au 04/10")[0][0] == "▲" and Reception.consequences("Retour retardé au 18/10")[0][0] == "▼", "Sens des conséquences médicales (rechute, retour)")
 	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
 		check(root.get_texture().get_image().save_png(capture_dir.path_join("reception-presse-1920x1080.png")) == OK, "Capture presse")
 	# Courrier sans élément lié : panneau masqué et mail élargi.
@@ -455,6 +457,17 @@ func direction_a(mail: Dictionary) -> void:
 	var cited := node("InboxConcernedName") as Label
 	check(cited != null and cited.text == str(hurt.name), "Panneau « Concerné » du joueur blessé")
 	check(node("InboxClubMailReply_progressif") != null and node("InboxClubMailReply_repos") != null, "Réponses du médecin proposées")
+	# Conséquences médicales réelles : risque de rechute (▲ hausse / ▼ baisse) et date de retour, pas seulement la charge.
+	var medical_effects := func(id: String) -> Array:
+		var card := node("InboxClubMailReply_" + id)
+		return [] if card == null else card.find_children("InboxReplyEffect*", "Label", true, false).map(func(l: Label) -> String: return l.text)
+	var soft: Array = medical_effects.call("progressif")
+	var rest: Array = medical_effects.call("repos")
+	var rush: Array = medical_effects.call("presser")
+	check(soft.has("▼ Risque de rechute −8 (4 %)") and soft.size() == 2, "Le ménager : rechute en baisse affichée : " + str(soft))
+	check(rest.size() == 4 and str(rest[1]).begins_with("▼ Retour retardé au "), "Repos : retour retardé avec sa date : " + str(rest))
+	check(rush.has("▲ Risque de rechute +15 (27 %)") and str(rush[1]).begins_with("▲ Retour avancé au "), "Relancer vite : rechute en hausse, retour avancé : " + str(rush))
+	check(node("InboxReadingScroll") == null or not str((node("InboxReadingScroll") as Control).find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)).contains("nos adversaires"), "Bulletin : l'adversaire est nommé")
 	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
 		check(root.get_texture().get_image().save_png(capture_dir.path_join("reception-medical-1920x1080.png")) == OK, "Capture médical")
 		root.size = Vector2i(1280, 720)

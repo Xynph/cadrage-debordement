@@ -1225,14 +1225,22 @@ static func _infirmary(app: Control, width: float) -> Control:
 
 ## Conséquences d'une réponse, tirées de ses effets réels (texte du moteur « Moral +2 · Coût 5 000 € ») :
 ## [symbole, texte, couleur] ; ▲ favorable, ▼ défavorable, = neutre. Pression et charge : une hausse est défavorable.
+## Risque de rechute : ▲ hausse (alerte), ▼ baisse ; date de retour : avancée favorable, retardée défavorable.
 static func consequences(effets: String) -> Array:
 	var result: Array = []
 	for part: String in effets.split(" · ", false):
 		var text := part.strip_edges()
 		if text.is_empty(): continue
 		var folded := U.fold(text)
+		# Risque de rechute : la flèche suit le sens du risque (▲ hausse, en alerte ; ▼ baisse, favorable).
+		if folded.begins_with("risque"):
+			var up := text.contains(" +")
+			result.append(["▲" if up else "▼", text, C.ALERT if up else C.MINT])
+			continue
 		var direction := 0
-		if folded.begins_with("cout") or folded.begins_with("frais"): direction = -1
+		if folded.begins_with("retour avance"): direction = 1
+		elif folded.begins_with("retour retarde"): direction = -1
+		elif folded.begins_with("cout") or folded.begins_with("frais"): direction = -1
 		elif folded.begins_with("recette"): direction = 1
 		elif not folded.begins_with("charge individuelle"):
 			var rise := text.contains(" +")
@@ -1260,7 +1268,7 @@ static func _reply_layout(app: Control, message: Dictionary, width: float) -> Di
 	for option: Dictionary in options:
 		var span := font.get_string_size(str(option.get("libelle", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(21))).x / C.density
 		label_lines = maxi(label_lines, mini(2, ceili(span / maxf(1.0, card_width - 36))))
-		effect_lines = maxi(effect_lines, mini(3, consequences(str(option.get("effets", ""))).size() + (0 if option.get("disponible", false) else 1)))
+		effect_lines = maxi(effect_lines, mini(4, consequences(str(option.get("effets", ""))).size() + (0 if option.get("disponible", false) else 1)))
 	var card_height := 22.0 + 28.0 * label_lines + 8.0 + 24.0 * effect_lines + 14.0
 	var rows := ceili(options.size() / float(columns))
 	return {"options":options, "columns":columns, "card_width":card_width, "card_height":card_height, "label_lines":label_lines, "height":rows * card_height + (rows - 1) * 12.0}
@@ -1295,7 +1303,7 @@ static func _reply_cards(card: Panel, app: Control, message: Dictionary, layout:
 		var y := 22.0 + 28.0 * int(layout.label_lines) + 8.0
 		var lines := consequences(detail)
 		if not option.get("disponible", false): lines = [["×", str(option.get("raison","Indisponible")), C.FAINT]] + lines
-		for effect: Array in lines.slice(0, 3):
+		for effect: Array in lines.slice(0, 4):
 			var effect_label := D.text(reply, 18, y + 16, "%s %s" % [effect[0], effect[1]], 17, effect[2], 600, float(layout.card_width) - 36, HORIZONTAL_ALIGNMENT_LEFT, true)
 			effect_label.name = "InboxReplyEffect"
 			y += 24.0

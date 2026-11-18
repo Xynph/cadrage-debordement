@@ -17,7 +17,7 @@ const DATA = require('../native/engine/club-mail.json');
 const M = require('./helpers/carriere-monde.cjs');
 const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 
-const EFFETS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'consigneDS', 'orientation', 'pret', 'a2r', 'reprise'];
+const EFFETS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'consigneDS', 'orientation', 'pret', 'a2r', 'reprise', 'rechute', 'retour'];
 
 test('Données : catalogue complet, formulations variées, effets connus', () => {
   const types = Object.entries(DATA.types);
@@ -35,6 +35,9 @@ test('Données : catalogue complet, formulations variées, effets connus', () =>
       for (const k of ['moral', 'confiance', 'supporters', 'medias', 'pression']) if (r.effets[k] !== undefined) assert.ok(Math.abs(r.effets[k]) <= 3, id + '/' + r.id + ' ' + k);
       if (r.effets.satisfaction !== undefined) assert.ok(Math.abs(r.effets.satisfaction) <= 8);
       if (r.effets.caisse !== undefined) assert.ok(Math.abs(r.effets.caisse) <= 20000);
+      // Médical : risque de rechute à ±20 points, date de retour à ±2 semaines.
+      if (r.effets.rechute !== undefined) assert.ok(Number.isInteger(r.effets.rechute) && Math.abs(r.effets.rechute) <= 20, id + '/' + r.id + ' rechute');
+      if (r.effets.retour !== undefined) assert.ok(Number.isInteger(r.effets.retour) && Math.abs(r.effets.retour) <= 2, id + '/' + r.id + ' retour');
     }
   }
 });
