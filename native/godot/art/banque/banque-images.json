@@ -137,6 +137,328 @@
    },
    "synthetique": true,
    "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-essai",
+   "categorie": "actions",
+   "fichier": "actions/action-essai.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 222354,
+   "sha256": "ce484aaf60b122d696fb70ab1f909ede5d9e028b198333b98a75151a6529ed06",
+   "source_sha256": "81b908f2fe5b76aa3efc9921e9cdbef941328a90b71f42cde04f6e6837598f15",
+   "source_octets": 2498790,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-transformation",
+   "categorie": "actions",
+   "fichier": "actions/action-transformation.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 144828,
+   "sha256": "181176741ebcd7c161c4b26e123f45927dbddcc02896803474a2e1ed16a880d4",
+   "source_sha256": "f7616c69ef427885ea0425edbfff55a99919676352d62c8c4bfdba75f04c4413",
+   "source_octets": 2156653,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-coup-de-pied-but",
+   "categorie": "actions",
+   "fichier": "actions/action-coup-de-pied-but.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 124906,
+   "sha256": "7736b648542e47a6e27011ea963ed72c4b10344bff2d9ad7c5e6effb16328da0",
+   "source_sha256": "92e3db7ce80f96cf8f794a900cb60bb5ed67800ce38176f7e5f72ba086079b00",
+   "source_octets": 1999634,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-carton-jaune",
+   "categorie": "actions",
+   "fichier": "actions/action-carton-jaune.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 76294,
+   "sha256": "4dc2e8e8c3313e00c44d01da043c6e02ca41fa0566d3d01902f1bd32c1c06438",
+   "source_sha256": "318518fed011a06280d3413f29e7df39419be5f13efda46d51a02002312c8773",
+   "source_octets": 1839492,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-carton-rouge",
+   "categorie": "actions",
+   "fichier": "actions/action-carton-rouge.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 76584,
+   "sha256": "720924dc8fe55eaf00dd79a925cc3f20cce7bb7200969616418d1dac85ebdced",
+   "source_sha256": "ee84b676235a69407e01a12a784283281987702eb50231cf038553adac428c57",
+   "source_octets": 1849112,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-melee",
+   "categorie": "actions",
+   "fichier": "actions/action-melee.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 127208,
+   "sha256": "73365ed1f74dcd9b4093f5de501f1a04252ed17a5800ad0b20bbd3c82ad89e10",
+   "source_sha256": "b0a216294a150a43d6416ac3f4d4c1685176be7f9b1e94c6b37249caefb69610",
+   "source_octets": 2096705,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-touche",
+   "categorie": "actions",
+   "fichier": "actions/action-touche.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 115048,
+   "sha256": "4d208b10034220e2e3ec6127eba3c50826eb2116d9bcda528764bd0160f67a9f",
+   "source_sha256": "3bd88aafa0ef3e3dbf903af7757e0c1c38690a244e50a11dcbf4e277d0d8514b",
+   "source_octets": 2053659,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-ballon-perdu",
+   "categorie": "actions",
+   "fichier": "actions/action-ballon-perdu.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 149536,
+   "sha256": "d67fd46376227522cd5f9c882e1d60760a2b14f1543ac21bd5b20a864cd371ba",
+   "source_sha256": "3e865d9d902f22ed4fcc660f816433751251beead9df9197838d4ff706cd7032",
+   "source_octets": 2102461,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-franchissement",
+   "categorie": "actions",
+   "fichier": "actions/action-franchissement.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 191112,
+   "sha256": "d043a5afe39691f767fa3a3274f299bf5fd1a7ca321b16a24c5de4403d63bcad",
+   "source_sha256": "5d9835506b76dfca538b644c749fa946005eb591df7915f17b1131d2f34f3fa5",
+   "source_octets": 2358588,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-arbitrage-video",
+   "categorie": "actions",
+   "fichier": "actions/action-arbitrage-video.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 95702,
+   "sha256": "acb5d936db02a78a8db1860e7b31f3bc50905bf487a669dded60974d851c7075",
+   "source_sha256": "c77486c36f8ba620755cbf50967188b3e8480a8d28b8d427ffad3812ac97810c",
+   "source_octets": 2026261,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-blessure-soins",
+   "categorie": "actions",
+   "fichier": "actions/action-blessure-soins.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 188862,
+   "sha256": "9b4b62e2957aea27df64bdcbfcc08f3d2fdb8a6d413d729a2c4f66b13c107df4",
+   "source_sha256": "ff523546a9eac72f2b0f26b03e2b0a92f22f919c704e13e80db3e253a3b96251",
+   "source_octets": 2251920,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "moment": "projecteurs",
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "action-remplacement",
+   "categorie": "actions",
+   "fichier": "actions/action-remplacement.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 167414,
+   "sha256": "796d929e1a9440423a46ad92461f4cd1fa1cea6866271128b23c772572c7b315",
+   "source_sha256": "40f14b10eca70d011e725c19afb3ffd3d2656a6e40bcffb4934ea4e898e75bc8",
+   "source_octets": 2203109,
+   "repli": "action-essai",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "temps-forts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "resultat-victoire",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-victoire.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 164116,
+   "sha256": "aebe3e7b19d95316bca76e105c5159f65611c9d0329ecdb0f1a051afbf132b50",
+   "source_sha256": "ce00a504af1a291ec739e30c31d1b3551228a946a0512fd25b7e87cebd4a31de",
+   "source_octets": 2132826,
+   "repli": "resultat-nul",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "projecteurs",
+    "resultat": "victoire",
+    "occasion": "championnat"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "resultat-defaite",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-defaite.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 162020,
+   "sha256": "03ebead71407cda329886ca7b0f7079b0f5b9ef087b340f76ccd1f55303ea3a4",
+   "source_sha256": "c661afe62a4fcc4c0ecbf15d6530af3f8f3a2a42e4d9e253e18ebed0f033b0bc",
+   "source_octets": 2161804,
+   "repli": "resultat-nul",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "projecteurs",
+    "resultat": "defaite",
+    "occasion": "championnat"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "resultat-nul",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-nul.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 108842,
+   "sha256": "1ffae65d8088304d872a454de9b74582b28556fdd03183d3dd6340cdeb7e3b5a",
+   "source_sha256": "661b07b486fb13f8fe31bf01b8a9a7b6ea737bd96f0001c711bfc18db5a595b9",
+   "source_octets": 1995603,
+   "repli": "resultat-nul",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "resultat": "nul",
+    "occasion": "championnat"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
   }
  ]
 }

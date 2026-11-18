@@ -215,6 +215,7 @@
       "tests/meteo-affichage-modele.cjs": 25,
       "tests/meteo-veille.cjs": 110,
       "tests/godot-meteo-vent.cjs": 130,
+      "tests/godot-banque-images.cjs": 25,
       "tests/club-mail-jalons.cjs": 20,
       "tests/world-reprise-decisions.cjs": 118,
       "tests/world-reprise-preparation.cjs": 99,

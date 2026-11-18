@@ -15,6 +15,7 @@ const S = preload("res://ui/contextual/skin.gd")
 const T = preload("res://theme.gd")
 const Terrain2D = preload("res://ui/contextual/match_terrain_2d.gd")
 const W = preload("res://ui/contextual/match_tableau_widgets.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 
 signal niveau_choisi(id: String)
 signal reprise_demandee
@@ -82,6 +83,9 @@ var _dernier_fait := -1
 var _rangs: Array = []
 ## Faits marquants (les derniers faits joués).
 var faits: VBoxContainer
+## Photo d'ambiance des faits marquants (banque d'images) : le dernier grand fait joué, puis le résultat.
+var photo_faits: TextureRect
+var _fin := {}
 ## Vue de la tuile principale : « terrain » (par défaut, les quinze à leur poste), « tableau »
 ## (Mon XV en tableau complet) ou « adverse » (le XV adverse, `direct.adversaire`).
 var vue_xv := "terrain"
@@ -842,6 +846,16 @@ func _page() -> void:
 	cadre_classement.add_child(classement_lignes)
 	classement_tuile.visible = false
 	var cadre_faits := _panneau(droite, px(14))
+	photo_faits = TextureRect.new()
+	photo_faits.name = "MatchBetweenHighlightsPhoto"
+	photo_faits.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	photo_faits.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	photo_faits.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	photo_faits.modulate = Color(1, 1, 1, 0.3)
+	var tuile_faits: Control = cadre_faits.get_parent().get_parent()
+	tuile_faits.clip_contents = true
+	tuile_faits.add_child(photo_faits)
+	tuile_faits.move_child(photo_faits, 0)
 	cadre_faits.add_child(_titre("Faits marquants"))
 	cadre_faits.add_child(faits)
 	_tuiles_droite = [cadre_chiffres.get_parent(), cadre_classement.get_parent(), cadre_faits.get_parent()]
@@ -1087,6 +1101,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	if cle == _cle: return
 	_cle = cle
 	_lignes = direct.get("fil", [])
+	_fin = {"fini": live.get("finished", false), "score": live.get("score", []), "camp": int(direct.get("camp", -1))}
 	_remplir_fil()
 	_remplir_chiffres(direct, live)
 	_remplir_xv(passe.lineup, direct)
@@ -1169,6 +1184,39 @@ func _remplir_fil() -> void:
 					if icone is Icone: icone.custom_minimum_size = Vector2(px(30), px(30))
 			faits.add_child(ligne_fait)
 		if recents.is_empty(): faits.add_child(_texte("Aucun fait marquant pour l’instant.", 24, FAIBLE))
+	_photo_faits(visibles)
+
+## Image de la banque pour un fait du moteur ("" : fait sans photo).
+static func photo_du_fait(kind: String, texte: String) -> String:
+	match kind:
+		"try": return "action-essai"
+		"transformation": return "action-transformation"
+		"goal", "penalty", "miss": return "action-coup-de-pied-but"
+		"card": return "action-carton-rouge" if texte.to_lower().contains("rouge") else "action-carton-jaune"
+		"scrum": return "action-melee"
+		"lineout": return "action-touche"
+		"turnover", "hand-fault": return "action-ballon-perdu"
+		"carry": return "action-franchissement"
+	var t := texte.to_lower()
+	if t.contains("vidéo") or t.contains("tmo"): return "action-arbitrage-video"
+	if t.contains("bless") or t.contains("soign"): return "action-blessure-soins"
+	if t.contains("remplac") or t.contains("entre en jeu"): return "action-remplacement"
+	return ""
+
+## Fond de la tuile : résultat vu de notre camp au coup de sifflet final, sinon le dernier fait avec photo
+## (seulement des faits déjà joués : rien n'annonce un temps fort à venir).
+func _photo_faits(visibles: Array) -> void:
+	if not is_instance_valid(photo_faits): return
+	var id := ""
+	if _fin.get("fini", false):
+		var r := BanqueImages.resultat(_fin.get("score"), int(_fin.get("camp", -1)))
+		if not r.is_empty(): id = BanqueImages.choisir("apres-match", {"resultat": r, "occasion": "championnat"})
+	else:
+		for n in range(visibles.size() - 1, maxi(-1, visibles.size() - 6), -1):
+			id = photo_du_fait(str(visibles[n].get("kind", "")), str(visibles[n].get("texte", "")))
+			if not id.is_empty(): break
+	photo_faits.texture = BanqueImages.texture(id) if not id.is_empty() else null
+	photo_faits.set_meta("photo", id)
 
 func _ligne_fil(entree: Dictionary, dernier: bool, en_bandeau: bool) -> Control:
 	var kind := str(entree.get("kind", ""))

@@ -1,5 +1,5 @@
 {
- "note": "Images de la banque intégrées au jeu, par lot d'écrans. Ajouter un groupe par lot ; relancer integrer.py. Écartées pour l'instant : pelouse neige et brouillard (le moteur ne simule ni neige ni brouillard : météo = sec, pluie, forte pluie, vent, chaleur). Pelouse soir et nuit non intégrées : le soir et la nuit, l'avant-match garde le tunnel éclairé de la maquette validée.",
+ "note": "Images de la banque intégrées au jeu, par lot d'écrans. Ajouter un groupe par lot ; relancer integrer.py. Écartées pour l'instant : pelouse neige et brouillard (le moteur ne simule ni neige ni brouillard : météo = sec, pluie, forte pluie, vent, chaleur). Pelouse soir et nuit non intégrées : le soir et la nuit, l'avant-match garde le tunnel éclairé de la maquette validée. Écartées des temps forts : plaquage, ruck, maul, passe longue (aucun fait du moteur ne les nomme) ; derby (ambiance d'avant-match, pas un résultat). Résultats de finale, titre, bonus et relégation pas encore branchés : à ajouter avec l'écran de fin de saison.",
  "groupes": [
   {
    "lot": "lot-1 pelouse du match (avant-match)",
@@ -30,6 +30,44 @@
     },
     "vestiaire-defaite": {
      "phase": "post"
+    }
+   }
+  },
+  {
+   "lot": "lot-2 temps forts (fond des faits marquants, entre deux temps forts)",
+   "repli": "action-essai",
+   "ids": [
+    "action-essai",
+    "action-transformation",
+    "action-coup-de-pied-but",
+    "action-carton-jaune",
+    "action-carton-rouge",
+    "action-melee",
+    "action-touche",
+    "action-ballon-perdu",
+    "action-franchissement",
+    "action-arbitrage-video",
+    "action-blessure-soins",
+    "action-remplacement"
+   ]
+  },
+  {
+   "lot": "lot-2 résultats (fin de match)",
+   "repli": "resultat-nul",
+   "ids": [
+    "resultat-victoire",
+    "resultat-defaite",
+    "resultat-nul"
+   ],
+   "etiquettes": {
+    "resultat-victoire": {
+     "occasion": "championnat"
+    },
+    "resultat-defaite": {
+     "occasion": "championnat"
+    },
+    "resultat-nul": {
+     "occasion": "championnat"
     }
    }
   }
