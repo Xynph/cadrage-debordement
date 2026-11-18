@@ -13,17 +13,15 @@ const P = require('../native/engine/president-reprise.cjs');
 const DATA = require('../native/engine/club-mail.json');
 const { ouvrir, creer } = require('./helpers/carriere-monde.cjs');
 
-test('A2R : niveaux par part des recettes, tolérance, récidive', () => {
+test('A2R : niveaux par part des recettes, tolérance, pas d’aggravation automatique', () => {
   const r = 10e6;
   assert.equal(A.examen({ trou: 0, recettes: r }).niveau, 0);
-  assert.equal(A.examen({ trou: 0.02 * r, recettes: r }).niveau, 0, 'tolérance de 2 %');
-  assert.equal(A.examen({ trou: 0.03 * r, recettes: r }).niveau, 1);
-  assert.equal(A.examen({ trou: 0.05 * r, recettes: r }).niveau, 2);
+  assert.equal(A.examen({ trou: 0.03 * r, recettes: r }).niveau, 0, 'tolérance de 3 %');
+  assert.equal(A.examen({ trou: 0.04 * r, recettes: r }).niveau, 1);
+  assert.equal(A.examen({ trou: 0.06 * r, recettes: r }).niveau, 2);
   assert.equal(A.examen({ trou: 0.1 * r, recettes: r }).niveau, 3);
   assert.equal(A.examen({ trou: 0.2 * r, recettes: r }).niveau, 4);
-  assert.equal(A.examen({ trou: 0.03 * r, recettes: r, recidive: true }).niveau, 2, 'récidive : un cran plus sévère');
-  assert.equal(A.examen({ trou: 0.2 * r, recettes: r, recidive: true }).niveau, 4);
-  assert.equal(A.examen({ trou: 0.01 * r, recettes: r, recidive: true }).niveau, 0, 'récidive sans trou : rien');
+  assert.equal(A.examen({ trou: 0.04 * r, recettes: r, recidive: true }).niveau, 1, 'la récidive n’aggrave pas');
 });
 
 test('A2R : situation de fin de saison avec le soutien promis du propriétaire, et la dette', () => {
@@ -117,12 +115,12 @@ test('Moteur Monde : audition de juin, mesures, courrier, apport, appel, échéa
     assert.equal(lire('budgetLigue(S.club)'), 'elite');
     recevoir('2027-06-13'); // première réception de la boîte : mémoire seule
     // Comptes de la saison simulés : 20 M€ de recettes partout ; club joué à −2 M€ (10 % : apport demandé) ; trois clubs
-    // gérés français à −5 M€ (25 % : interdiction), −0,6 M€ (3 % : conditions), −1 M€ (5 % : homologation). Pas d'enveloppe.
+    // gérés français à −5 M€ (25 % : interdiction), −0,8 M€ (4 % : conditions), −1,2 M€ (6 % : homologation). Pas d'enveloppe.
     const ids = lire(`(()=>{const fr=S.clubs.filter(c=>c.id!==S.club&&nativeA2R.DIVISIONS.includes(budgetLigue(c.id))).map(c=>c.id).slice(0,3);
       const etr=S.clubs.find(c=>!nativeA2R.DIVISIONS.includes(budgetLigue(c.id))).id;
       for(const c of S.clubs){const k=S.clubBudget.clubs[c.id];k.recettes=20e6;k.depart=Math.max(0,c.cash);}
       const rouge=(id,cash)=>{S.clubs[id].cash=cash;S.clubBudget.clubs[id].enveloppe=0;S.clubBudget.clubs[id].depart=0;};
-      rouge(S.club,-2e6);rouge(fr[0],-5e6);rouge(fr[1],-0.6e6);rouge(fr[2],-1e6);rouge(etr,-5e6);
+      rouge(S.club,-2e6);rouge(fr[0],-5e6);rouge(fr[1],-0.8e6);rouge(fr[2],-1.2e6);rouge(etr,-5e6);
       a2rAudition('2027-06-14');return {fr,etr};})()`);
     const dec = lire('S.a2r.decisions');
     assert.equal(dec[0].niveau, 3); assert.equal(dec[0].montant, 2e6);
@@ -178,9 +176,10 @@ test('Moteur Monde : audition de juin, mesures, courrier, apport, appel, échéa
     const fin = lire(`(()=>{const w=S.worldMode.week,e=S.a2r;for(const d of Object.values(e.decisions))d.saison=S.season-1;S.worldMode.week=3;
       const r={refus:a2rRefusRecrue(1e6),lim:aiRosterWageLimit(S.clubs[${ids.fr[0]}])===aiRosterWageLimitA2RV1(S.clubs[${ids.fr[0]}])};S.worldMode.week=1;r.avant=!!a2rDecision(${ids.fr[0]});S.worldMode.week=w;return r;})()`);
     assert.deepEqual(fin, { refus: '', lim: true, avant: true });
-    // Récidive : la saison suivante, le même trou vaut un cran de plus.
-    run(`(()=>{for(const d of Object.values(S.a2r.decisions))d.saison=S.season;S.a2r.historique[${ids.fr[1]}]=S.season-1;S.clubs[${ids.fr[1]}].cash=-0.6e6;S.a2r.saison=null;a2rAudition('2027-06-14');})()`);
-    assert.equal(lire(`S.a2r.decisions[${ids.fr[1]}].niveau`), 2);
+    // Récidive : mentionnée dans le courrier, sans aggraver la mesure.
+    run(`(()=>{for(const d of Object.values(S.a2r.decisions))d.saison=S.season;S.a2r.historique[${ids.fr[1]}]=S.season-1;S.clubs[${ids.fr[1]}].cash=-0.8e6;S.a2r.saison=null;a2rAudition('2027-06-14');})()`);
+    assert.equal(lire(`S.a2r.decisions[${ids.fr[1]}].niveau`), 1);
+    assert.equal(lire(`S.a2r.decisions[${ids.fr[1]}].recidive`), true);
     assert.equal(lire('nativeA2R.valide(S.a2r)'), true);
   } finally { jeu.fermer(); }
 });

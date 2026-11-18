@@ -18,15 +18,19 @@
 //
 // « Dans le rouge » : trou de fin de saison = caisse négative après le soutien promis du propriétaire, plus la dette.
 // Au-dessous de 2 % des recettes, personne ne s'en émeut (même tolérance que le budget de saison). Quand l'étiquette
-// de santé financière (chantier « économie façon FM ») sera dans main, le branchement la lira si elle est définie
-// (santeFinanciere(id).dette / .tresorerieFin) ; en attendant, il calcule la même chose à partir des comptes.
+// de santé financière (chantier « économie façon FM », santeFiche) est branchée, seuls les clubs « Fragile » sont
+// auditionnés ; le niveau suit toujours le trou calculé à partir des comptes.
 // Mode Monde uniquement ; décisions déterministes (empreinte par club et saison, jamais le flux de hasard du moteur).
 
 const { apportProprietaire } = require('./club-budget.cjs');
 
 const DIVISIONS = Object.freeze(['elite', 'accession', 'nationale']);
 // Parts des recettes de la saison : au-delà, le niveau de la mesure monte.
-const SEUILS = Object.freeze({ tolerance: 0.02, homologation: 0.04, apport: 0.08, interdiction: 0.15 });
+// Mesure du 18/11 (#899, 3 saisons) : avec 2 % de tolérance et un cran de plus en cas de récidive, 8 à 10 clubs français
+// sur 44 étaient sanctionnés certaines saisons, et les mêmes clubs de Pro D2 montaient d'un cran chaque année (trop
+// punitif, trop fréquent). Tolérance à 3 %, pas d'aggravation automatique : 2 à 5 décisions par saison, surtout des
+// encadrements de masse salariale ; l'apport et l'interdiction restent pour les vrais dérapages.
+const SEUILS = Object.freeze({ tolerance: 0.03, homologation: 0.05, apport: 0.08, interdiction: 0.15 });
 // Dates (mois-jour) : audition à partir du 10 juin, apport attendu au 30 juin ; fin des mesures : 3e semaine de la saison suivante.
 const CALENDRIER = Object.freeze({ audition: '06-10', echeance: '06-30', finMercato: 3 });
 const APPEL = Object.freeze({ frais: 15000, chance: 1 / 3 });
@@ -63,13 +67,12 @@ function situation({ tresorerie, depart, compte, dette = 0 }) {
     trou: rond(entame + Math.max(0, dette)) };
 }
 
-// Niveau de la décision (0 : pas convoqué). recidive : déjà sanctionné la saison passée (un cran plus sévère).
-function examen({ trou, recettes, recidive = false }) {
+// Niveau de la décision (0 : pas convoqué). Une récidive est seulement mentionnée dans le courrier : le niveau ne
+// dépend que du trou de la saison (un club qui se redresse n'est pas puni deux fois).
+function examen({ trou, recettes }) {
   const part = Math.max(0, trou) / Math.max(1, recettes);
   if (!(part > SEUILS.tolerance)) return { niveau: 0, part };
-  let niveau = part >= SEUILS.interdiction ? 4 : part >= SEUILS.apport ? 3 : part >= SEUILS.homologation ? 2 : 1;
-  if (recidive && niveau < 4) niveau++;
-  return { niveau, part };
+  return { niveau: part >= SEUILS.interdiction ? 4 : part >= SEUILS.apport ? 3 : part >= SEUILS.homologation ? 2 : 1, part };
 }
 
 // Réponse de l'actionnaire à l'apport demandé (club joué sur demande du manager, clubs gérés à l'échéance).
@@ -105,7 +108,7 @@ function limiteGeree(d, { limite, masseHebdo }) {
 function courrier(d, { saison }) {
   const pct = Math.max(1, Math.round(d.part * 100));
   const constat = `Les comptes présentés font apparaître un trou de ${euros(d.montant)} à la fin de la saison${d.dette > 0 ? ' (dette comprise)' : ''}, soit ${pct} % des recettes.`;
-  const recidive = d.recidive ? ' Le club avait déjà été épinglé la saison dernière : la commission s’est montrée plus sévère.' : '';
+  const recidive = d.recidive ? ' Le club avait déjà été épinglé la saison dernière : la commission le suivra de près.' : '';
   return { saison, montant: euros(d.montant), constat: constat + recidive, masse: euros(d.encadrement * 52), echeance: '30 juin', frais: euros(APPEL.frais) };
 }
 // Verdict d'un appel (déterministe par club et saison) : la mesure est ramenée à « autorisé sous conditions ».
@@ -137,7 +140,9 @@ function a2rSituation(c){
  if(!compte)return null;
  // Saison déjà clôturée (passage de saison) : le soutien du propriétaire est déjà dans la caisse.
  const s=nativeA2R.situation({tresorerie:c.cash,depart:compte.depart,compte:compte.clos===true?{...compte,enveloppe:0}:compte,dette:info?.debt||0});
- if(typeof santeFinanciere==='function'){try{const x=santeFinanciere(c.id);if(x&&Number.isFinite(x.tresorerieFin)&&Number.isFinite(x.dette))return {...s,caisseFin:x.tresorerieFin,dette:x.dette,trou:Math.max(s.entame,-x.tresorerieFin)+Math.max(0,x.dette)};}catch(e){}}
+ // Étiquette de santé financière (club-finance-health.cjs, quand elle est branchée) : seuls les clubs « Fragile »
+ // passent devant la commission ; les autres sont sains à ses yeux, quel que soit leur exercice.
+ if(typeof santeFiche==='function'){try{const f=santeFiche(c.id);if(f&&f.etiquette&&f.etiquette!=='fragile')return {...s,trou:0,etiquette:f.etiquette};}catch(e){}}
  return s;
 }
 const a2rRecettes=c=>Math.max(1,S.clubBudget?.clubs?.[c.id]?.recettes||0);
@@ -146,7 +151,7 @@ function a2rAudition(date){
  for(const c of S.clubs){
   if(!nativeA2R.DIVISIONS.includes(budgetLigue(c.id)))continue;
   const s=a2rSituation(c);if(!s)continue;
-  const recidive=e.historique[c.id]===S.season-1,ex=nativeA2R.examen({trou:s.trou,recettes:a2rRecettes(c),recidive});
+  const recidive=e.historique[c.id]===S.season-1,ex=nativeA2R.examen({trou:s.trou,recettes:a2rRecettes(c)});
   if(ex.part>0)e.examens[c.id]=Math.round(ex.part*1000)/1000;
   if(!ex.niveau){if(c.id===S.club)news('L’A2R a examiné les comptes du club : aucune mesure, le club recrutera librement cet été.');continue;}
   e.decisions[c.id]={niveau:ex.niveau,initial:ex.niveau,montant:Math.max(10000,Math.round(s.trou/10000)*10000),part:Math.round(ex.part*1000)/1000,dette:s.dette,
