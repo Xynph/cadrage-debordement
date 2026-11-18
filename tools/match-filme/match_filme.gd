@@ -221,6 +221,10 @@ func run() -> void:
 	var fin := 0.0
 	var dernier: Dictionary = {}
 	var minute_vue := -1
+	# Texte / image : chaque légende du temps fort, affichée à t= ; sa phase rendue à t= (suivi de la régie).
+	var legendes: Array = []
+	var regie_id := 0
+	var suivi_lu := 0
 	while true:
 		await process_frame
 		var maintenant := Time.get_ticks_msec()
@@ -229,6 +233,18 @@ func run() -> void:
 		var live: Dictionary = app.model.live if app.model.get("live") is Dictionary else {}
 		var vue := surface()
 		var regie: Node = vue.get("regie") if vue != null else null
+		if regie != null and regie.get("suivi") is Array:
+			if regie.get_instance_id() != regie_id:
+				regie_id = regie.get_instance_id()
+				suivi_lu = 0
+			var suivi: Array = regie.suivi
+			while suivi_lu < suivi.size():
+				var e: Dictionary = suivi[suivi_lu]
+				suivi_lu += 1
+				if str(e.get("evenement", "")) != "legende": continue
+				legendes.append({"texte": e.texte, "kind": e.kind, "phase": e.phase, "horloge": e.horloge,
+					"texte_s": snappedf((int(e.texte_ms) - debut) / 1000.0, 0.01), "image_s": snappedf((int(e.image_ms) - debut) / 1000.0, 0.01),
+					"ecart_ms": int(e.ecart_ms), "meme_fait": int(e.journal) == int(e.image_journal)})
 		if not live.is_empty():
 			dernier = {"score": live.get("score", [0, 0]).duplicate(), "minute": int(live.get("minute", 0)), "termine": bool(live.get("finished", false))}
 			if dernier.minute != minute_vue:
@@ -271,6 +287,7 @@ func run() -> void:
 	report["score"] = dernier.get("score", [0, 0])
 	report["minute"] = dernier.get("minute", 0)
 	report["termine"] = dernier.get("termine", false)
+	report["legendes"] = legendes
 	if o.planche and not report.images.is_empty():
 		var choisies: Array = []
 		for k in repartir(report.images.size(), 24): choisies.append(Image.load_from_file(str(o.sortie).path_join(report.images[k].fichier)))

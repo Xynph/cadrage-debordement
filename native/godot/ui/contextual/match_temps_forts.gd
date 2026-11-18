@@ -18,6 +18,7 @@ const Cadrage = preload("res://match_cadrage.gd")
 const Liaison = preload("res://match_liaison.gd")
 const Arbitre = preload("res://match_arbitre.gd")
 const Pilotage = preload("res://ui/contextual/match_consignes.gd")
+const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 
 enum { INTER, JEU, ATTENTE }
 const NIVEAUX := ["aucun", "resume", "cles", "etendus", "dynamique", "integral"]
@@ -140,6 +141,11 @@ var _places: Dictionary = {}
 var _saut_max := 0.0
 ## Secondes déjà attendues, à la fin du plan courant, pour que les joueurs finissent leur déplacement.
 var _attente_place := 0.0
+## Diagnostic texte / image : début à l'écran de la phase courante (ms, index du journal) et
+## dernière légende tracée au suivi.
+var _image_ms := 0
+var _image_journal := -1
+var _legende_tracee := ""
 
 static func enabled() -> bool:
 	return OS.get_environment("CD_MATCH_TEMPS_FORTS") != "0"
@@ -309,13 +315,60 @@ func montre(live: Dictionary) -> Dictionary:
 		var avant := live.duplicate()
 		avant["events"] = _events.slice(0, borne_liaison)
 		return avant
-	# Pendant les pistes du chorégraphe, chaque fait n'entre au journal qu'une fois montré.
-	var avance := 0 if phase == "choregraphie" and not _jalon_montre else 1
-	var jusque: int = maxi(int(tf.plans[index].index) + avance, _vus)
-	if jusque >= _events.size(): return live
+	# Un fait n'entre au journal qu'une fois à l'écran (même règle que la légende) : jalon des pistes,
+	# résultat d'un tir après la frappe, essai une fois aplati.
+	var plan: Dictionary = tf.plans[index]
+	var kind := str(plan.get("kind", ""))
+	var vu := fait_a_l_ecran(plan, phase, temps, _essai_montre, _jalon_montre)
+	# Transformation : son fait du journal est celui de l'essai (même index), déjà montré.
+	var avance := 1 if vu or (kind == "transformation" and phase != "choregraphie") else 0
+	var jusque: int = maxi(int(plan.index) + avance, _vus)
+	# Le texte brut de l'essai dit déjà la transformation et le score : jusqu'au résultat du tir,
+	# le journal garde la légende de l'essai (native/engine/match-direct.cjs, `legende`).
+	var tronquer: bool = (kind == "try" or (kind == "transformation" and not vu)) and int(plan.index) >= _vus and int(plan.index) < mini(jusque, _events.size())
+	if jusque >= _events.size() and not tronquer: return live
+	var journal: Array = _events.slice(0, jusque)
+	if tronquer and journal[int(plan.index)] is Dictionary:
+		var fait: Dictionary = (journal[int(plan.index)] as Dictionary).duplicate()
+		fait["text"] = sans_transformation(str(fait.get("text", "")))
+		journal[int(plan.index)] = fait
 	var copie := live.duplicate()
-	copie["events"] = _events.slice(0, jusque)
+	copie["events"] = journal
 	return copie
+
+## Le fait du plan est à l'écran : la légende et le journal peuvent le dire. Pistes : à leur jalon ;
+## tir au but : après la frappe (RESULTAT), jamais pendant la pose « prêt » ; essai : une fois aplati.
+## Jamais quand le moteur le calcule ou quand la régie le met en file.
+static func fait_a_l_ecran(plan: Dictionary, phase_plan: String, instant: float, essai_montre: bool, jalon_montre: bool) -> bool:
+	if phase_plan == "choregraphie": return jalon_montre
+	if plan.has("annonce") and (phase_plan == "pret" or instant < RESULTAT): return false
+	if phase_plan == "jeu" and str(plan.get("kind", "")) == "try" and not essai_montre: return false
+	return true
+
+## Texte d'un essai sans sa transformation ni le score (même coupe que `legende` de match-direct.cjs).
+static func sans_transformation(texte: String) -> String:
+	var coupe := texte.find(", transform")
+	return texte.substr(0, coupe) + "." if coupe > 0 else "Essai."
+
+## Bandeau du haut pendant un plan, quand le moteur a déjà atteint la mi-temps : l'équipe en
+## possession dans le plan montré (« Mi-temps » attend la fin de l'action).
+static func etat_du_plan(plan: Dictionary, equipes: Array) -> String:
+	var scene: Variant = plan.get("scene")
+	if not scene is Dictionary: return "Le match"
+	var camp: Variant = scene.get("possession", scene.get("team", -1))
+	if not (camp is int or camp is float) or int(camp) not in [0, 1] or int(camp) >= equipes.size() or not equipes[int(camp)] is Dictionary: return "Le match"
+	var texte := "%s a le ballon" % S.G.club_name(equipes[int(camp)])
+	var ballon: Variant = scene.get("ball")
+	if ballon is Dictionary and (ballon.get("x") is float or ballon.get("x") is int): texte += " " + Between._zone(float(ballon.x), int(camp))
+	return texte
+
+## Modèle tel que la ligne météo du bandeau peut le dire : pendant un temps fort, la mi-temps déjà
+## atteinte par le moteur attend la fin de l'action.
+static func meteo_montree(live: Dictionary, en_temps_fort: bool) -> Dictionary:
+	if not en_temps_fort or not bool(live.get("atBreak", false)): return live
+	var avant := live.duplicate()
+	avant["atBreak"] = false
+	return avant
 
 ## Vrai tant qu'un temps fort reste à montrer : la causerie et le débrief attendent sa fin.
 func retient(live: Dictionary) -> bool:
@@ -737,6 +790,8 @@ func _lancer_plan_liaison(k: int) -> bool:
 	phase = "liaison"
 	_liaison_plan = k
 	_liaison_t = 0.0
+	var arrets: Array = liaison.get("arrets", [])
+	_image_posee(int(arrets[k]) if k < arrets.size() else int(liaison.get("arret", -1)))
 	if cadrage != null:
 		# Plan A : large (le ballon qui sort, les joueurs autour) ; plan B : cadrage de la remise en jeu.
 		# (« penalty » : plan d'arrêt de jeu, large, sans les extrémités d'un vol de ballon déjà fini.)
@@ -805,6 +860,7 @@ func _commencer_plan() -> void:
 	sous_image = 0.0
 	_tenu = 0.0
 	phase = "jeu"
+	_image_posee(int(plan.get("index", -1)))
 	if cadrage != null:
 		cadrage.regler(true, str(plan.get("kind", "")), float(plan.get("mouvement", 0.0)) >= 2.5)
 		# Bandeau du score en haut, légende et commandes en bas : l'action est cadrée entre les deux.
@@ -889,6 +945,7 @@ func _lire_choregraphie(reel: float) -> void:
 			_score = tf.plans[index].get("score", _score)
 			index = k
 		_jalon_montre = true
+		_image_posee(int(tf.plans[index].get("index", -1)))
 		if str(tf.plans[index].get("kind", "")) == "try":
 			_sonner("try", _camp_du_plan(tf.plans[index]))
 			# Essai aplati et annoncé : le bandeau passe aussitôt au nouveau score (+5).
@@ -1097,9 +1154,16 @@ func _habiller() -> void:
 	if view.drawer.visible and view.drawer_tab == "Journal": view._update_drawer()
 	# Pendant un temps fort, le bandeau montre l'instant rejoué, pas l'état du moteur.
 	var legende: Control = view.events.get_parent().get_parent().get_parent()
-	# Hors liaison, le bandeau du haut revient à l'état du moteur.
-	if phase != "liaison" or etat != JEU: between.forcer_etat("")
+	# Hors liaison, le bandeau du haut revient à l'état du moteur, sauf la mi-temps déjà atteinte par
+	# le moteur pendant le dernier temps fort : elle attend la fin de l'action.
+	if phase != "liaison" or etat != JEU:
+		if etat == JEU and bool(_live.get("atBreak", false)) and index >= 0 and index < tf.get("plans", []).size():
+			between.forcer_etat(etat_du_plan(tf.plans[index], _teams))
+		else:
+			between.forcer_etat("")
+	_habiller_meteo()
 	if etat == INTER:
+		_legende_tracee = ""
 		legende.hide()
 		# Retour à l'état du moteur, avec la même écriture de l'horloge que pendant un
 		# temps fort (40+2′ en arrêts de jeu).
@@ -1138,6 +1202,7 @@ func _habiller() -> void:
 		between.forcer_etat(bandeau_liaison())
 		view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
 		legende.visible = not view.events.text.is_empty()
+		_tracer_legende()
 		return
 	view.clock.text = str(plan.get("horloge", ""))
 	if _score.size() >= 2: view.score.text = "%d — %d" % [int(_score[0]), int(_score[1])]
@@ -1151,6 +1216,38 @@ func _habiller() -> void:
 	if phase == "choregraphie" and not _jalon_montre: view.events.text = ""
 	view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
 	legende.visible = not view.events.text.is_empty()
+	_tracer_legende()
+
+## Diagnostic texte / image : chaque nouvelle légende entre au suivi de la régie avec l'instant où
+## elle s'affiche et celui où la phase correspondante a commencé à l'écran (report.json du match
+## filmé ; CD_MATCH_TRACE_LEGENDE=1 l'écrit aussi dans la sortie, préfixe LEGENDE_IMAGE).
+func _tracer_legende() -> void:
+	var texte := str(view.events.text)
+	if texte == _legende_tracee: return
+	_legende_tracee = texte
+	if texte.is_empty(): return
+	var maintenant := Time.get_ticks_msec()
+	var plan: Dictionary = {}
+	if index >= 0 and index < tf.get("plans", []).size(): plan = tf.plans[index]
+	var trace := {"evenement": "legende", "texte": texte, "phase": phase, "kind": str(plan.get("kind", "")), "journal": int(plan.get("index", -1)),
+		"horloge": str(plan.get("horloge", "")), "texte_ms": maintenant, "image_ms": _image_ms, "image_journal": _image_journal,
+		"ecart_ms": maintenant - _image_ms, "debut_ms": maintenant}
+	suivi.append(trace)
+	if OS.get_environment("CD_MATCH_TRACE_LEGENDE") == "1": print("LEGENDE_IMAGE ", JSON.stringify(trace))
+
+## La phase courante commence à l'écran (plan, plan de liaison, jalon des pistes).
+func _image_posee(journal: int) -> void:
+	_image_ms = Time.get_ticks_msec()
+	_image_journal = journal
+
+## Ligne météo du bandeau (posée par la vue avec l'état du moteur) : rien de la mi-temps avant la fin de l'action.
+func _habiller_meteo() -> void:
+	var ligne: Variant = view.get("meteo_ligne")
+	if not ligne is Label: return
+	var montre_live := meteo_montree(_live, etat == JEU)
+	(ligne as Label).text = Meteo.bandeau(montre_live)
+	(ligne as Label).visible = not (ligne as Label).text.is_empty()
+	(ligne as Label).add_theme_color_override("font_color", S.GOLD if montre_live.get("atBreak", false) else S.MUTED)
 
 ## Plan d'essai encore en mouvement à l'instant `instant` (secondes depuis le début du plan) :
 ## le ballon n'est pas encore aplati à l'écran.
