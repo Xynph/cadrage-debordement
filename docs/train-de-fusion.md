@@ -50,3 +50,7 @@ lancée sur le commit exact de la PR du train : ni le ruleset ni `tests.yml` ne 
   si c'est pressé.
 - La fusion classique (prête + fusion automatique) reste possible et prime pour un
   lot sensible ou urgent.
+
+## Historique
+
+- 18/11/2026 : mise en service ; premier passage réel avec une PR documentaire (#935 fusionnée).
