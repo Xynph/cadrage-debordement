@@ -122,8 +122,9 @@ function chronoArret(l,quoi){
  const s=quoi==='essai'?CHRONO.essai.avant+b+CHRONO.essai.renvoi:quoi==='penalite'?CHRONO.penalite.avant+b+CHRONO.penalite.renvoi:quoi==='penaltouche'?CHRONO.penaltouche:0;
  l.chrono.arret+=s;l.chrono.arrets[quoi]=(l.chrono.arrets[quoi]||0)+s;return s;
 }
-// Renvoi après des points ou un tir manqué : différé à l'action suivante quand le chrono compte les arrêts.
-function relancer(l,kind,team,cause,by){if(chronoRules(l)){l.chrono.relance=[kind,team,cause,by];return true}return performKickRestart(l,kind,team,cause,by)}
+// Renvoi après des points ou un tir manqué : différé à l'action suivante quand le chrono compte les arrêts (temps
+// réglementaire déjà écoulé : joué tout de suite, ce qui termine la période).
+function relancer(l,kind,team,cause,by){if(chronoRules(l)&&l.minute<periodBoundary(l)){l.chrono.relance=[kind,team,cause,by];return true}return performKickRestart(l,kind,team,cause,by)}
 // Une minute de chrono : les actions dont le départ tombe dans la minute (0, 1 ou 2), chacune précédée du renvoi en
 // attente. Un renvoi dû après la fin du temps réglementaire termine la période dès que la minute y arrive.
 function chronoMinute(l){

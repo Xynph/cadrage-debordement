@@ -9,7 +9,7 @@
 //   defensif : −8 (trois points à refaire pour le bonus défensif : une pénalité suffit) ;
 //   tenu     : −4 (bonus défensif en poche).
 // Sortie : victoires, nuls, défaites, bonus offensif et défensif obtenus, points de classement, essais marqués et
-// encaissés, ballons perdus (fautes de main) sur les vingt dernières minutes.
+// encaissés, ballons perdus (fautes de main) et actions de jeu (chrono des arrêts) sur les vingt dernières minutes.
 //
 // Usage : node scripts/mesure-bonus-fin-de-match.cjs [N=60] [--minute=60] [--contre=0] [--sans-miroir] [--situations=offensif,tenu]
 //         [--essai=securiser:conquete/prudente/points] (variantes de consignes séparées par « ; », pour l'étalonnage)
@@ -53,17 +53,17 @@ function mesurer(options = {}) {
       for (const id of ids) {
         resultats[nom][id] = JSON.parse(vm.run(`(()=>{
           const sit=${JSON.stringify(sit)},c=${JSON.stringify(consignes[id])},R=CDWorldCompetitions.rules('elite').bonus,reel=Math.random;
-          const t={victoire:0,nul:0,defaite:0,bonusOffensif:0,bonusDefensif:0,points:0,essaisMarques:0,essaisEncaisses:0,ballonsPerdus:0};
+          const t={victoire:0,nul:0,defaite:0,bonusOffensif:0,bonusDefensif:0,points:0,essaisMarques:0,essaisEncaisses:0,ballonsPerdus:0,actions:0};
           for(let k=0;k<${n};k++){
             S=JSON.parse(__mesureBonus);const l=S.live,u=l.userSide;l.paused=false;l.contreVersion=${avecContre ? 1 : 0};
             l.score[u]=sit.score[0];l.score[1-u]=sit.score[1];l.tries[u]=sit.essais[0];l.tries[1-u]=sit.essais[1];
             if(c){l.tactics[u]=c.attack;l.defences[u]=c.defense;l.penaltyPolicies[u]=c.penalty;}
-            const e0=l.tries.slice(),h0=l.tacticalStats[u].handErrors;
+            const e0=l.tries.slice(),h0=l.tacticalStats[u].handErrors,a0=l.chrono?l.chrono.actions:l.minute;
             let x=1234+k*7919;Math.random=()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296};
             try{let g=0;while(!l.finished&&g++<300){l.paused=false;if(l.flow?.atBreak)resumeFlowHalf(l);advanceRugby(l);}}finally{Math.random=reel}
             const m=l.score[u]-l.score[1-u],bo=CDWorldCompetitions.matchBonus('elite',l.score,l.tries)[u];
             t.victoire+=m>0;t.nul+=m===0;t.defaite+=m<0;t.bonusOffensif+=bo.bo;t.bonusDefensif+=bo.bd;t.points+=(m>0?4:m===0?2:0)+bo.bo+bo.bd;
-            t.essaisMarques+=l.tries[u]-e0[u];t.essaisEncaisses+=l.tries[1-u]-e0[1-u];t.ballonsPerdus+=l.tacticalStats[u].handErrors-h0;
+            t.essaisMarques+=l.tries[u]-e0[u];t.essaisEncaisses+=l.tries[1-u]-e0[1-u];t.ballonsPerdus+=l.tacticalStats[u].handErrors-h0;t.actions+=(l.chrono?l.chrono.actions:l.minute)-a0;
           }
           for(const k in t)t[k]=Math.round(t[k]/${n}*100)/100;return JSON.stringify(t)})()`));
       }

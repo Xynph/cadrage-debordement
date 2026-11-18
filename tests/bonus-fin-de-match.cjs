@@ -108,15 +108,17 @@ test('barème du bonus lu dans les classements, situations et choix de l’IA', 
 
 // Fins de match simulées (scripts/mesure-bonus-fin-de-match.cjs : XV identiques, 60e → fin, même hasard pour chaque
 // consigne) : viser le bonus rapporte des essais et le bonus offensif, au prix de ballons perdus et d'essais encaissés.
+// Chrono des arrêts (docs/chrono-arrets-de-jeu-20261118.md) : chaque essai marqué mange ≈ 2 min de jeu, donc des
+// actions pour les deux équipes. Ballons perdus et essais encaissés se comparent par action de jeu (taux), plus en
+// nombre sur vingt minutes ; 100 fins de match au lieu de 50 pour un taux stable (100 : viser 0,085 ballon perdu
+// par action contre 0,064, essais encaissés 0,031 contre 0,030 par action).
 test('consignes de fin de match : gain et risque mesurés', () => {
   const { mesurer } = require('../scripts/mesure-bonus-fin-de-match.cjs');
-  const r = mesurer({ n: 50, situations: ['offensif'] }).offensif, viser = r.viser, securiser = r.securiser;
-  console.log('# offensif, 50 fins de match :', JSON.stringify(r));
+  const r = mesurer({ n: 100, situations: ['offensif'] }).offensif, viser = r.viser, securiser = r.securiser;
+  console.log('# offensif, 100 fins de match :', JSON.stringify(r));
+  const parAction = (t, k) => t[k] / t.actions;
   assert.ok(viser.essaisMarques > securiser.essaisMarques + 0.2, 'viser : plus d’essais marqués');
   assert.ok(viser.bonusOffensif > securiser.bonusOffensif, 'viser : plus de bonus offensifs');
-  // Mesure à 200 fins de match (18/11/2026) : ballons perdus 1,93 (viser) contre 1,36 (sécuriser), soit +0,57 ; essais encaissés
-  // 0,61 des deux côtés (viser garde le ballon plus longtemps, ce qui compense la défense plus mince). À 50 matchs l'erreur
-  // type est de ≈ 0,2 : on vérifie le sens du risque (ballons perdus) et l'absence de gain défensif, pas un écart d'essais encaissés.
-  assert.ok(viser.ballonsPerdus > securiser.ballonsPerdus + 0.1, 'viser : plus de ballons perdus');
-  assert.ok(viser.essaisEncaisses >= securiser.essaisEncaisses - 0.15, 'viser : pas moins d’essais encaissés (le risque se paie)');
+  assert.ok(parAction(viser, 'ballonsPerdus') > parAction(securiser, 'ballonsPerdus') * 1.2, 'viser : plus de ballons perdus par action');
+  assert.ok(parAction(viser, 'essaisEncaisses') >= parAction(securiser, 'essaisEncaisses'), 'viser : au moins autant d’essais encaissés par action');
 });
