@@ -1,0 +1,187 @@
+::group::tests/godot-reprise.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+APERÇU DU CLUB : ready
+REPRISE UI : 270 contrôles ; 0 échecs
+
+Preuves reprise : /tmp/tmp.Q0WCszyb3n/suite.HHHGDK/oval-reprise-ui-XoGW9d
+TAP version 13
+# Subtest: Reprise : départ choisi à la création et décision de reprise dans la Préparation
+ok 1 - Reprise : départ choisi à la création et décision de reprise dans la Préparation
+  ---
+  duration_ms: 26249.939776
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 26257.163107
+CD_CPU_PROFILE suite=tests/godot-reprise.cjs user_s=22.81 system_s=2.62 wall_s=26.32 cpu_pct=96% max_rss_kb=1564748
+PASS tests/godot-reprise.cjs (26 s)
+::endgroup::
+::group::tests/godot-continuer.cjs
+Parcours quotidien Godot · 25 contrôles réussis
+CD_CONTINUER premier arrêt : {"days":7.0,"from":"2026-07-13","pressDelegated":0.0,"queued":0.0,"stop":{"detail":"Gabi attend le programme des matchs amicaux : choisis dans « La reprise » ou confie-la-lui.","kind":"decision","label":"Décision attendue"},"to":"2026-07-20"} en 791 ms
+Continuer Godot · 42 contrôles réussis
+ERROR: The process 3717 does not exist or is not a child of the calling process.
+TAP version 13
+# Subtest: Bouton principal « Continuer » et « Jour suivant » (règles d’interface)
+ok 1 - Bouton principal « Continuer » et « Jour suivant » (règles d’interface)
+  ---
+  duration_ms: 168.239875
+  type: 'test'
+  ...
+# Subtest: « Continuer » dans le jeu : panneau, arrêt motivé, « Arrêter », « Jour suivant » encore là
+ok 2 - « Continuer » dans le jeu : panneau, arrêt motivé, « Arrêter », « Jour suivant » encore là
+  ---
+  duration_ms: 31660.740238
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31836.049771
+CD_CPU_PROFILE suite=tests/godot-continuer.cjs user_s=33.28 system_s=4.14 wall_s=31.87 cpu_pct=117% max_rss_kb=1501412
+PASS tests/godot-continuer.cjs (32 s)
+::endgroup::
+::group::tests/godot-presse-rapide.cjs
+CD_PRESSE grand moment : 6 clics pour 4 questions
+Presse rapide Godot · 63 contrôles réussis
+TAP version 13
+# Subtest: Conférence de presse rapide dans le jeu
+ok 1 - Conférence de presse rapide dans le jeu
+  ---
+  duration_ms: 31729.558792
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31736.835775
+CD_CPU_PROFILE suite=tests/godot-presse-rapide.cjs user_s=36.73 system_s=4.43 wall_s=31.77 cpu_pct=129% max_rss_kb=1614560
+PASS tests/godot-presse-rapide.cjs (32 s)
+::endgroup::
+::group::tests/presse-sans-gabarit.cjs
+TAP version 13
+# Subtest: Banque : 500 questions écrites une à une, 5 réponses chacune, sans gabarit
+ok 1 - Banque : 500 questions écrites une à une, 5 réponses chacune, sans gabarit
+  ---
+  duration_ms: 22.4874
+  type: 'test'
+  ...
+# Subtest: Tirages : toutes les questions générables, dans toutes les presses
+ok 2 - Tirages : toutes les questions générables, dans toutes les presses
+  ---
+  duration_ms: 458.241507
+  type: 'test'
+  ...
+# Subtest: Vraie conférence en carrière Monde : questions contextuelles comprises
+ok 3 - Vraie conférence en carrière Monde : questions contextuelles comprises
+  ---
+  duration_ms: 9347.671249
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9840.857775
+CD_CPU_PROFILE suite=tests/presse-sans-gabarit.cjs user_s=11.73 system_s=0.86 wall_s=9.97 cpu_pct=126% max_rss_kb=883984
+PASS tests/presse-sans-gabarit.cjs (10 s)
+::endgroup::
+::group::tests/world-reprise-a-noter.cjs
+Arrêts : [["2026-07-27","reprise","Le groupe reprend l’entraînement aujourd’hui."],["2026-08-10","a_noter","Ta semaine de préparation : stage équilibré terminé · 19 internationaux de retour (Kilian BAILLET, Benjamin PICARD…)."],["2026-08-15","a_noter","Ta semaine de préparation : amical 1/2 perdu 17-24 contre Northampton Nene XV."],["2026-08-17","ouverture","Le calendrier de la saison est ouvert."],["2026-08-24","rendez_vous","Conférence de presse"],["2026-08-29","a_noter","Ta semaine de préparation : amical 2/2 gagné 33-11 chez Dublin Liffey XV."],["2026-08-31","rendez_vous","Conférence de presse"],["2026-09-02","info","Un agent de joueurs : Lucas Mercier pour ton club ?"],["2026-09-05","a_noter","Ta semaine de préparation : effectif complet, rien d’urgent au recrutement · 1re journée demain : déplacement à La Rochelle Océan XV."],["2026-09-05","info","Le staff technique : Bulletin météo : Vent"],["2026-09-06","match","Rencontre contre La Rochelle Océan XV aujourd’hui."]]
+TAP version 13
+# Subtest: À noter : arrêts informatifs regroupés par jour, Continuer repart sans réponse
+ok 1 - À noter : arrêts informatifs regroupés par jour, Continuer repart sans réponse
+  ---
+  duration_ms: 59426.316874
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 59433.735995
+CD_CPU_PROFILE suite=tests/world-reprise-a-noter.cjs user_s=60.67 system_s=8.72 wall_s=60.01 cpu_pct=115% max_rss_kb=2668480
+PASS tests/world-reprise-a-noter.cjs (60 s)
+::endgroup::
+::group::tests/continuer-evenement-monde.cjs
+13/07 → premier match en une commande : 68 jours, 30809 ms · Rencontre contre Meadowbridge Rovers aujourd’hui.
+après le match : 7 jours · match · Rencontre contre Trentwood Archers aujourd’hui.
+arrêts : [["2026-07-20","decision"],["2026-07-27","decision"],["2026-08-03","a_noter"],["2026-08-15","a_noter"],["2026-08-16","arret"]] · tranches partielles : 29
+TAP version 13
+# Subtest: Règle d’arrêt : obligatoires jamais ignorés, réglages des messages et des blessures
+ok 1 - Règle d’arrêt : obligatoires jamais ignorés, réglages des messages et des blessures
+  ---
+  duration_ms: 4.623488
+  type: 'test'
+  ...
+# Subtest: Une seule commande : du 13/07 au jour du premier match
+ok 2 - Une seule commande : du 13/07 au jour du premier match
+  ---
+  duration_ms: 56954.23628
+  type: 'test'
+  ...
+# Subtest: Arrêt sur un rendez-vous obligatoire, refus tant qu’il n’est pas réglé
+ok 3 - Arrêt sur un rendez-vous obligatoire, refus tant qu’il n’est pas réglé
+  ---
+  duration_ms: 25216.382799
+  type: 'test'
+  ...
+# Subtest: Même graine : état et profil identiques à N « Jour suivant » successifs
+ok 4 - Même graine : état et profil identiques à N « Jour suivant » successifs
+  ---
+  duration_ms: 41920.169601
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 138538.182287
+CD_CPU_PROFILE suite=tests/continuer-evenement-monde.cjs user_s=142.60 system_s=22.83 wall_s=139.05 cpu_pct=118% max_rss_kb=3218604
+PASS tests/continuer-evenement-monde.cjs (139 s)
+::endgroup::
+::group::tests/v60-question-bank.cjs
+PASS V60 bank: 25 themes, 500 authored prompts, 5 responses each, 12-week exclusion
+CD_CPU_PROFILE suite=tests/v60-question-bank.cjs user_s=0.04 system_s=0.02 wall_s=0.05 cpu_pct=116% max_rss_kb=58928
+PASS tests/v60-question-bank.cjs (0 s)
+::endgroup::
+::group::tests/native-press-contextual.cjs
+Presse contextuelle : calendrier, résultat orienté, indisponibilité, effets et archives exactes PASS.
+CD_CPU_PROFILE suite=tests/native-press-contextual.cjs user_s=0.08 system_s=0.02 wall_s=0.10 cpu_pct=110% max_rss_kb=61868
+PASS tests/native-press-contextual.cjs (0 s)
+::endgroup::
+::group::tests/native-press-review.cjs
+Revue presse : départages canoniques France/historique, variantes1/2 exactes, export/import/reprise du vrai worker et anciens libellés absents PASS.
+CD_CPU_PROFILE suite=tests/native-press-review.cjs user_s=70.25 system_s=8.10 wall_s=66.18 cpu_pct=118% max_rss_kb=3071352
+PASS tests/native-press-review.cjs (66 s)
+::endgroup::

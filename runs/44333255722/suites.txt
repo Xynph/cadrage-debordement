@@ -1,0 +1,9 @@
+tests/godot-reprise.cjs
+tests/godot-continuer.cjs
+tests/godot-presse-rapide.cjs
+tests/presse-sans-gabarit.cjs
+tests/world-reprise-a-noter.cjs
+tests/continuer-evenement-monde.cjs
+tests/v60-question-bank.cjs
+tests/native-press-contextual.cjs
+tests/native-press-review.cjs
