@@ -1,0 +1,18 @@
+Météo (Godot) : {"controles":917,"failures":[],"textes":{"arbitre_sans-annonce":"Arbitre : Julien Castaing | Rucks | Mêlée | Hors-jeu | Cartons","arbitre_vent":"Arbitre : Julien Castaing | Rucks | Mêlée | Hors-jeu | Cartons","avant":["LA MÉTÉO  ·  GRAND VENT","Le vent souffle dans le dos de Hawthorn College XV en première période ; il changera de camp à la mi-temps.","Grand vent : le staff prévient que les tirs au but et le jeu au pied long deviennent aléatoires ; prenez les points faciles et jouez la touche."],"direct":"Grand vent · dans le dos de Hawthorn College XV en 1re période","ecran_match":"LA MÉTÉO DU MATCH | Vent | Sec, pelouse souple | sens de notre attaque  ▸ | 1re période | Dans le dos | 2e période | De face | Du vent : tirs au but un peu moins sûrs, jeu au pied plus court. | Arbitre : Owen Pritchard-Lloyd | Rucks | Mêlée | Hors-jeu | Cartons","ecran_match_bandeau":"GRAND VENT | dans notre dos en 1re période, dans le leur après la pause","ecran_match_vent":["1re période | Dans le dos","2e période | De face"],"forces":"FORCES EN PRÉSENCE | HAWTHORN COLLEGE XV | ALDER FEN XV | 3,0 | Essais marqués / match | 4,5 | 19,5 | Points encaissés / match | 30,0 | 61 % | Touches gagnées | 82 % | 80 % | Mêlées gagnées | 63 % | Moyennes sur 2 matchs · saison en cours","gabi":"LE MOT DE GABI | « Ils sont 3es et prennent 20 points par match. Trois clés pour moi : » | Ils vont jouer au près | leur pack domine le nôtre (lecture incertaine) | Marquer tôt avec le vent | il est dans notre dos en 1re période | Zéro pénalité dans nos 40 | Patrick KENT réussit 75 % au but","joueurs":"L’ADVERSAIRE | PLAN PROBABLE | INCERTAIN | Ils vont jouer au près | Leur pack domine le nôtre | 9 | Patrick KENT | demi de mêlée · buteur | 75 % | 11 | Aled PRYDDERCH | ailier · franchissements | 0,5 / m","mi_temps":"Mi-temps · changement de camp : le vent passe dans le dos de Alder Fen XV","photos":{"chaleur":"match-tunnel-chaleur","forte-pluie":"match-tunnel-forte-pluie","jour-pluie":"stade-pelouse-pluie-jour","jour-sec":"stade-pelouse-sec-jour","neutre":"match-tunnel-neutre","pluie":"match-tunnel","sec":"match-tunnel-sec","vent":"match-tunnel-vent"},"plan":{"action":"composition","cle":"duel","confiance":"incertaine","conseil":"aligne ta meilleure première ligne et tes sauteurs","lecteur":{"nom":"Ben Franklin","role":"analyste vidéo"},"libelle":"Ouvrir la composition","raison":"leur pack domine le nôtre","style":"conquete","titre":"Ils vont jouer au près"}}}
+Captures : /home/runner/work/_temp/resultats/captures/meteo
+TAP version 13
+# Subtest: Météo et vent : avant-match, bandeau du direct, mi-temps
+ok 1 - Météo et vent : avant-match, bandeau du direct, mi-temps
+  ---
+  duration_ms: 275129.208409
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 275141.139107
