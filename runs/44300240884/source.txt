@@ -1,0 +1,3 @@
+mesure-monde
+ref=mesure-monde/avant2-20261118120301
+sha=3d055fb9e2fd7a6dbbd609f75425d463a5192b6c
