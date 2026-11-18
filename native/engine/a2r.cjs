@@ -137,9 +137,11 @@ function a2rDecision(id){
 // Situation de fin de saison : l'étiquette de santé financière si elle existe, sinon les comptes de la saison.
 function a2rSituation(c){
  const b=S.clubBudget,compte=b?.clubs?.[c.id],info=worldClub(c.id);
+ // Dette de crise (club-owner.cjs) : le prêt de l'actionnaire, remboursé selon un échéancier, n'en fait pas partie.
+ const dette=typeof detteDeCrise==='function'?detteDeCrise(c.id):info?.debt||0;
  if(!compte)return null;
  // Saison déjà clôturée (passage de saison) : le soutien du propriétaire est déjà dans la caisse.
- const s=nativeA2R.situation({tresorerie:c.cash,depart:compte.depart,compte:compte.clos===true?{...compte,enveloppe:0}:compte,dette:info?.debt||0});
+ const s=nativeA2R.situation({tresorerie:c.cash,depart:compte.depart,compte:compte.clos===true?{...compte,enveloppe:0}:compte,dette});
  // Étiquette de santé financière (club-finance-health.cjs, quand elle est branchée) : seuls les clubs « Fragile »
  // passent devant la commission ; les autres sont sains à ses yeux, quel que soit leur exercice.
  if(typeof santeFiche==='function'){try{const f=santeFiche(c.id);if(f&&f.etiquette&&f.etiquette!=='fragile')return {...s,trou:0,etiquette:f.etiquette};}catch(e){}}
