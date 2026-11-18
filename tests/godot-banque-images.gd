@@ -134,7 +134,7 @@ func lot6() -> void:
 	verifier(BanqueImages.type_competition("epcr-champions") == "coupe-europe" and BanqueImages.type_competition("elite") == "championnat" and BanqueImages.type_competition("elite", "final") == "finale", "types de compétition")
 	verifier(BanqueImages.niveau_centre(0) == 1 and BanqueImages.niveau_centre(10) == 4 and BanqueImages.niveau_centre(null) == 0, "niveau du centre d'entraînement")
 	for cas: Array in [["Point sur la trésorerie du club.", "mail-finances"], ["Le sponsor maillot veut vous voir.", "mail-sponsor"], ["Commission de discipline : trois semaines de suspension.", "mail-discipline"],
-			["Convocation en sélection pour deux joueurs.", "mail-selection-nationale"], ["Alerte météo : grand vent samedi.", "mail-meteo-alerte"], ["Bonne nouvelle du jour.", ""]]:
+			["Convocation en sélection pour deux joueurs.", "mail-selection-nationale"], ["Alerte météo : grand vent samedi.", "mail-meteo-alerte"], ["Bonne nouvelle du jour.", ""], ["Selon nos informations, la rubrique sport : un démenti rassurera les tribunes.", "mail-presse-polemique"]]:
 		verifier(BanqueImages.courrier(cas[0]) == cas[1], "courrier « %s » : %s" % [cas[0], BanqueImages.courrier(cas[0])])
 	verifier(Reception.photo_resultat("Le sponsor maillot veut vous voir.") == "mail-sponsor" and Reception.photo_resultat("Victoire 20-3.") == "resultat-victoire", "en-tête : résultat d'abord, puis thème")
 	var Identite = preload("res://ui/contextual/rooms/room_identity.gd")

@@ -170,7 +170,7 @@ static func niveau_centre(niveau: Variant) -> int:
 static func courrier(texte: String) -> String:
 	var f := texte.to_lower()
 	for paire: Array in [[["tresorerie", "trésorerie", "budget", "finances", "billetterie", "recettes"], "mail-finances"], [["sponsor", "partenaire", "mécène"], "mail-sponsor"],
-			[["supporters", "abonnés", "tribunes"], "mail-supporters"], [["presse", "journal", "rumeur", "conférence", "polémique"], "mail-presse-polemique"],
+			[["presse", "journal", "rumeur", "rubrique", "conférence", "polémique"], "mail-presse-polemique"], [["supporters", "abonnés", "tribunes"], "mail-supporters"],
 			[["suspension", "commission", "discipline", "carton"], "mail-discipline"], [["sélection", "convocation", "international"], "mail-selection-nationale"],
 			[["transfert", "recrue", "signé", "signe", "arrivée"], "mail-transfert-signe"], [["blessure", "blessé", "indisponib", "opér"], "mail-blessure-grave"],
 			[["contrat", "prolongation", "salaire"], "mail-contrat"], [["espoir", "formation", "jeune", "crabos"], "mail-jeunes"],
