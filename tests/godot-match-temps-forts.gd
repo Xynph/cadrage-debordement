@@ -307,6 +307,7 @@ func run() -> void:
 ## vitesse réelle (jamais d'accéléré, même quand les temps forts sont accélérés pour le test),
 ## coupe franche en deux plans quand la mise en place est longue, aucun saut de position dans un
 ## plan, et seulement entre deux temps forts contigus (jamais après l'écran intermédiaire 2D).
+const SAUT_MAX_LIAISON := 12.0
 func check_liaisons(followed: Array) -> void:
 	var liaisons: Array = followed.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison")
 	for e: Dictionary in liaisons:
@@ -314,7 +315,10 @@ func check_liaisons(followed: Array) -> void:
 		if not e.has("duree_reelle"): continue
 		check(float(e.duree_reelle) >= float(e.duree_prevue) - 0.2 and float(e.duree_reelle) <= float(e.duree_prevue) + 1.5,
 			"%s : jouée à vitesse réelle (%.2f s pour %.2f s prévues)" % [nom, float(e.duree_reelle), float(e.duree_prevue)])
-		check(float(e.get("saut_max", 0.0)) <= 10.0, "%s : aucun saut de position dans un plan (pointe %.1f m/s d'une image à l'autre)" % [nom, float(e.get("saut_max", 0.0))])
+		# Seuil (19/11/2026) : au-dessus d'un sprint (12 m/s) ; un vrai saut de place dépasse 20 m/s
+		# (35 cm en une image à 60 i/s). À 10 m/s, une seule image irrégulière d'un exécuteur de CI
+		# (pointe isolée à 10,5 m/s dans la mise en place d'une touche) faisait échouer le contrôle.
+		check(float(e.get("saut_max", 0.0)) <= SAUT_MAX_LIAISON, "%s : aucun saut de position dans un plan (pointe %.1f m/s d'une image à l'autre)" % [nom, float(e.get("saut_max", 0.0))])
 		var durees: Array = e.get("duree_plans", [])
 		if bool(e.coupe):
 			check(int(e.plans) == 2 and durees.size() == 2 and float(durees[0]) <= 3.4 and float(durees[1]) >= 1.0 and float(durees[1]) <= 2.1,
