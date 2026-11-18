@@ -46,8 +46,15 @@ function factory(){
   const own=ownId(s),pair=[own,rival].sort((a,b)=>a<b?-1:a>b?1:0),tension=s.interclubWorld?.pairs?.[pair[0]+':'+pair[1]]?.tension;
   return typeof isDerby==='function'?!!isDerby(s,own,rival):Number.isFinite(tension)&&tension>=60;
  };
- // Affiche de la semaine : phase finale, coupe d'Europe, derby, ou gros adversaire (un des trois plus forts effectifs du
- // championnat, nettement au-dessus du nôtre : moyenne des 15 meilleures notes supérieure d'au moins 3 points).
+ // Top 3 du championnat : le classement dès que le club a joué 3 matchs de championnat, les effectifs avant.
+ function top3(s,leagueId,members){
+  const played=(Array.isArray(s.history)?s.history:[]).filter(m=>(m.season??s.season)===s.season&&m.competitionId===leagueId&&Array.isArray(m.pair)&&m.pair.includes(s.club)).length;
+  if(played>=3){try{const rows=CDWorldCareer.ranked(s,leagueId);if(Array.isArray(rows)&&rows.length)return rows.slice(0,3).map(r=>r.id);}catch(e){}}
+  return members.map(id=>({id,v:top15(s.clubs[id])})).sort((a,b)=>b.v-a.v).slice(0,3).map(x=>x.id);
+ }
+ // Affiche de la semaine : phase finale, coupe d'Europe, derby, ou gros adversaire (règle choisie par Léo le 18/11/2026 :
+ // adversaire dans le top 3 du championnat, et pas nettement plus faible que nous — moyenne des 15 meilleures notes
+ // au plus 2 points sous la nôtre). Les chocs entre cadors comptent, comme les déplacements d'un petit chez un cador.
  function affiche(s){
   const f=weekFixture(s);if(!f)return null;
   const rival=opponentOf(s,f),name=s.clubs?.[rival]?.name||'ton adversaire';
@@ -55,10 +62,7 @@ function factory(){
   if(['champions','challenge'].includes(f.competitionId))return {kind:'europe',fixture:f,rival,name};
   if(derbyAgainst(s,rival))return {kind:'derby',fixture:f,rival,name};
   const members=s.worldMode?.leagues?.[f.competitionId]?.members;
-  if(Array.isArray(members)&&members.includes(rival)){
-   const giants=members.map(id=>({id,v:top15(s.clubs[id])})).sort((a,b)=>b.v-a.v).slice(0,3).map(x=>x.id);
-   if(giants.includes(rival)&&top15(s.clubs[rival])>=top15(s.clubs[s.club])+3)return {kind:'gros',fixture:f,rival,name};
-  }
+  if(Array.isArray(members)&&members.includes(rival)&&top3(s,f.competitionId,members).includes(rival)&&top15(s.clubs[rival])>=top15(s.clubs[s.club])-2)return {kind:'gros',fixture:f,rival,name};
   return null;
  }
  const daysToFixture=(s,f)=>s.worldMode?.day===undefined?0:Math.round((Date.parse(f.date)-Date.parse(CDWorldCareer.calendarToday(s)))/86400000);
