@@ -445,19 +445,48 @@ function causerieAdverse(l,phase,c,key){
 function reglesDuStaff(l,side,c,lv,graine,recent,maintenant,poser){
  const voit=k=>(pilotageHash(graine+l.minute+'|'+k)%100)<Math.round(25+(lv-45)*1.5);
  const a=l.pilotage.arbitre,ecart=l.score[side]-l.score[1-side];
- if(l.minute<=5&&a.rucks>=4&&voit('arbitre-rucks'))poser('rucks','prudente');
- if(maintenant.penalites-recent.penalites>=2&&c.discipline!=='stricte'&&voit('discipline'))poser('discipline','stricte');
+ const pl=(n,s,p)=>n+' '+(n>1?p:s);
+ if(l.minute<=5&&a.rucks>=4&&voit('arbitre-rucks'))poser('rucks','prudente',`${a.nom} siffle beaucoup les rucks.`);
+ const penalites=maintenant.penalites-recent.penalites;
+ if(penalites>=2&&c.discipline!=='stricte'&&voit('discipline'))poser('discipline','stricte',`${pl(penalites,'pénalité concédée','pénalités concédées')} en 5 minutes.`);
  const touchesPerdues=(maintenant.touches-recent.touches)-(maintenant.touchesGagnees-recent.touchesGagnees);
- if(touchesPerdues>=2&&c.touche!=='sure'&&voit('touche'))poser('touche','sure');
- if(l.minute>=55&&ecart<0&&voit('poursuite')){poser('rythme','rapide');poser('piedJeu','moins')}
- else if(l.minute>=65&&ecart>0&&ecart<=10&&voit('gestion')){poser('piedJeu','plus');poser('rythme','lent')}
+ if(touchesPerdues>=2&&c.touche!=='sure'&&voit('touche'))poser('touche','sure',`${pl(touchesPerdues,'touche perdue','touches perdues')} en 5 minutes.`);
+ if(l.minute>=55&&ecart<0&&voit('poursuite')){const r=`Mené de ${-ecart} : il faut garder le ballon et accélérer.`;poser('rythme','rapide',r);poser('piedJeu','moins',r)}
+ else if(l.minute>=65&&ecart>0&&ecart<=10&&voit('gestion')){const r=`${ecart} point${ecart>1?'s':''} d’avance à tenir : jouer dans leur camp.`;poser('piedJeu','plus',r);poser('rythme','lent',r)}
 }
-function pilotageStaff(l){
+// Avis du staff (fenêtre Équipe, bouton « Appliquer ces consignes ») : toutes les 5 minutes, en direct comme en
+// délégation, le staff relit le match avec sa compétence (il peut ne rien voir) et propose des consignes. Aucun
+// tirage : seulement le hachage du match. En délégation, il les applique lui-même (pilotageStaff).
+function pilotageStaffAvis(l){
  if(!pilotageActif(l)||l.finished||l.minute===l.pilotage.staffMinute||l.minute%5)return;
  l.pilotage.staffMinute=l.minute;
- const recent=l.pilotage.staffReleve||pilotageReleve(l),maintenant=pilotageReleve(l);
+ const recent=l.pilotage.staffReleve||pilotageReleve(l),maintenant=pilotageReleve(l),propositions=[];
  l.pilotage.staffReleve=maintenant;
- reglesDuStaff(l,l.userSide,l.pilotage.consignes,niveauStaff(),l.worldContext.id+'|',recent,maintenant,(axe,v)=>setConsigne(l,axe,v,'staff'));
+ reglesDuStaff(l,l.userSide,l.pilotage.consignes,niveauStaff(),l.worldContext.id+'|',recent,maintenant,(axe,valeur,raison)=>{
+  const i=propositions.findIndex(x=>x.axe===axe);const x={axe,valeur,raison};if(i>=0)propositions[i]=x;else propositions.push(x);
+ });
+ // Un avis chasse le précédent ; sans rien de neuf, l'avis en cours reste tant qu'il n'est pas appliqué.
+ if(propositions.length)l.pilotage.staffAvis={minute:l.minute,propositions};
+}
+function staffAvisEnAttente(l){
+ const a=l.pilotage?.staffAvis;if(!a)return [];
+ return a.propositions.filter(x=>l.pilotage.consignes[x.axe]!==x.valeur);
+}
+// Bouton « Appliquer ces consignes » : le manager prend l'avis du staff tel quel (une seule commande).
+function appliquerAvisStaff(l){
+ if(!pilotageActif(l)||l.finished)return false;
+ const a=staffAvisEnAttente(l);if(!a.length)return false;
+ for(const x of a)setConsigne(l,x.axe,x.valeur);
+ l.pilotage.journal.push({minute:l.minute,auteur:'manager',texte:`Tu suis l’avis du staff (${a.map(x=>consigneLabel(x.axe,x.valeur)).join(', ')}).`});
+ l.pilotage.journal=l.pilotage.journal.slice(-30);
+ l.pilotage.staffAvis=null;
+ return true;
+}
+function pilotageStaff(l){
+ pilotageStaffAvis(l);
+ const a=staffAvisEnAttente(l);if(!a.length)return;
+ for(const x of a)setConsigne(l,x.axe,x.valeur,'staff');
+ l.pilotage.staffAvis=null;
 }
 // Banc adverse : appelé après chaque minute du match du joueur (native/engine/match-delegation.cjs), en direct
 // comme en délégation.
@@ -511,6 +540,10 @@ function pilotageProjection(l){
   joueurs,
   journal:p.journal.slice(-8),
   cris:pilotageCrisProjection(l),
+  // Avis du staff en attente (bouton « Appliquer ces consignes ») et rôles en direct (onglet Rôles).
+  staff:(()=>{const a=staffAvisEnAttente(l);return {niveau:niveauStaff(),minute:p.staffAvis?.minute??null,
+   propositions:a.map(x=>({...x,label:CONSIGNES[x.axe].label,valeurLabel:consigneLabel(x.axe,x.valeur),actuelLabel:consigneLabel(x.axe,p.consignes[x.axe]??CONSIGNES_NEUTRES[x.axe])}))}})(),
+  roles:typeof playerRolesLive==='function'?playerRolesLive(l):null,
   ...(()=>{const prev=pilotagePrevision(l);return {fatigue:[...prev].sort((a,b)=>a.prevue-b.prevue).slice(0,4),conseilChangement:pilotageConseilChangement(l,prev)}})(),
   // Banc adverse : consignes en cours (ce que son jeu laisse voir), derniers changements, tons de ses causeries.
   adversaire:{consignes:{...CONSIGNES_NEUTRES,...(p.consignesAdverses||{})},derniers:(p.adversaire?.derniers||[]).slice(-5).map(x=>({...x})),
