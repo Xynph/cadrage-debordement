@@ -549,7 +549,7 @@ static func bilan_court(p: Dictionary, axe: String) -> String:
 			var texte := str(bilan.get("texte", ""))
 			var coupe := texte.find(" : ")
 			var morceaux := texte.substr(coupe + 3).trim_suffix(".") if coupe >= 0 else texte
-			return "%s depuis %d′" % [morceaux, int(bilan.get("depuis", 0))] if bilan.get("depuis") != null else morceaux
+			return "Depuis %d′ : %s" % [int(bilan.get("depuis", 0)), morceaux] if bilan.get("depuis") != null else morceaux
 	return ""
 
 # --- Onglet Composition ----------------------------------------------------------
@@ -1171,10 +1171,21 @@ func _choisir_cran(crans: Control, axe: String, valeur: String) -> void:
 # --- Onglet Consignes ------------------------------------------------------------
 
 ## Groupes de l'onglet Consignes (décision de Léo, 18/11/2026), dans cet ordre ; deux colonnes :
-## Attaque et Défense à gauche, Conquête et Adversaire à droite.
-const GROUPES := [["attaque", "ATTAQUE"], ["defense", "DÉFENSE"], ["conquete", "CONQUÊTE"], ["adversaire", "ADVERSAIRE"]]
-## Réglages du plan de jeu devenus des axes : le moteur ne les accepte que match arrêté.
-const AXES_EN_PAUSE := ["planAttaque", "systemeDefense", "penalites"]
+## Attaque et Défense à gauche, Conquête et Adversaire à droite. Libellés : `live.pilotage.groupes`.
+const GROUPES := [["attaque", "Attaque", "avec le ballon"], ["defense", "Défense", "sans le ballon"], ["conquete", "Conquête", "phases arrêtées"], ["adversaire", "Adversaire", "leurs points faibles"]]
+
+## Cran sans effet d'un axe : `neutre` du moteur, sinon le premier cran « équilibré / contexte / aucun »
+## pour le plan de jeu et le point faible, sinon le cran du milieu.
+static func cran_neutre(axe: Dictionary) -> String:
+	if not str(axe.get("neutre", "")).is_empty(): return str(axe.neutre)
+	var options: Array = axe.get("options", []) if axe.get("options") is Array else []
+	if options.is_empty(): return ""
+	if bool(axe.get("pause", false)) or str(axe.get("id", "")) == "cible":
+		for option: Variant in options:
+			var id := str(option.get("id", "")) if option is Dictionary else ""
+			if id.begins_with("equilibr") or id in ["contexte", "context", "aucune", "aucun", "normal"]: return id
+		return str(options[0].get("id", ""))
+	return str(options[1 if options.size() >= 3 else 0].get("id", ""))
 
 func _consignes() -> void:
 	var p := _pilotage()
@@ -1187,29 +1198,18 @@ func _consignes() -> void:
 	style.content_margin_right = px(20)
 	style.content_margin_top = px(16)
 	style.content_margin_bottom = px(16)
-	_poser(section, 24, 96, 1100, 708)
-	var colonne := _v(10)
-	section.add_child(colonne)
-	var tete := _h(8)
-	var titre := _titre("CONSIGNES", 30, C.IVORY)
-	titre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tete.add_child(titre)
-	var sous := _texte("effet dès la reprise · bilan depuis le dernier changement", 13, C.MUTED)
-	sous.size_flags_vertical = Control.SIZE_SHRINK_END
-	tete.add_child(sous)
-	colonne.add_child(tete)
+	_poser(section, 24, 96, 1110, 708)
 	var axes := Pilotage.axes(vue).filter(func(a: Variant) -> bool: return a is Dictionary)
 	# Une seule zone qui défile, et seulement si les groupes ne tiennent pas (petites fenêtres).
 	var defile := ScrollContainer.new()
 	defile.name = "TeamConsignesScroll"
 	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	defile.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	colonne.add_child(defile)
-	var deux := _h(18)
+	section.add_child(defile)
+	var deux := _h(24)
 	deux.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	defile.add_child(deux)
-	var gauche := _v(8)
-	var droite := _v(8)
+	var gauche := _v(6)
+	var droite := _v(6)
 	for c: VBoxContainer in [gauche, droite]:
 		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		deux.add_child(c)
@@ -1219,105 +1219,124 @@ func _consignes() -> void:
 		var rien := _texte("Les consignes en direct ne sont pas disponibles pour cette rencontre.", 14, C.MUTED)
 		rien.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		gauche.add_child(rien)
-	var groupes := axes.any(func(a: Dictionary) -> bool: return not str(a.get("groupe", "")).is_empty())
-	if groupes:
+	var libelles := {}
+	for g: Variant in p.get("groupes", []) if p.get("groupes") is Array else []:
+		if g is Dictionary: libelles[str(g.get("id", ""))] = str(g.get("label", ""))
+	if axes.any(func(a: Dictionary) -> bool: return not str(a.get("groupe", "")).is_empty()):
 		for n in GROUPES.size():
-			var membres := axes.filter(func(a: Dictionary) -> bool: return str(a.get("groupe", "")) == GROUPES[n][0])
+			var id_groupe: String = GROUPES[n][0]
+			var membres := axes.filter(func(a: Dictionary) -> bool: return str(a.get("groupe", "")) == id_groupe)
 			if membres.is_empty(): continue
 			var cible: VBoxContainer = gauche if n < 2 else droite
-			cible.add_child(_entete_groupe(GROUPES[n][1], "TeamGroup_" + str(GROUPES[n][0])))
-			for axe: Dictionary in membres: cible.add_child(_axe(vue, axe))
+			var bloc := _v(6)
+			bloc.name = "TeamGroup_" + id_groupe
+			cible.add_child(bloc)
+			bloc.add_child(_entete_groupe(str(libelles.get(id_groupe, GROUPES[n][1])).to_upper(), str(GROUPES[n][2])))
+			for axe: Dictionary in membres: bloc.add_child(_axe(vue, axe))
+			if n % 2 == 0: cible.add_child(_espace(8))
 		# Axe d'un groupe inconnu : en fin de colonne de droite, jamais perdu.
 		var connus: Array = GROUPES.map(func(g: Array) -> String: return g[0])
 		for axe: Dictionary in axes:
 			if not str(axe.get("groupe", "")) in connus: droite.add_child(_axe(vue, axe))
 	else:
 		# Moteur sans groupes : les axes sous un seul titre, le plan de jeu d'avant à droite.
-		gauche.add_child(_entete_groupe("EN DIRECT", "TeamGroup_direct"))
+		gauche.add_child(_entete_groupe("EN DIRECT", "sans arrêter le match"))
 		for axe: Dictionary in axes: gauche.add_child(_axe(vue, axe))
-		droite.add_child(_entete_groupe("PLAN DE JEU", "TeamGroup_plan"))
+		droite.add_child(_entete_groupe("PLAN DE JEU", "match arrêté"))
 		_plan_de_jeu(droite)
-	var journal: Array = p.get("journal") if p.get("journal") is Array else []
-	var staff: Array = journal.filter(func(e: Variant) -> bool: return e is Dictionary and str(e.get("auteur", "")) == "staff")
-	if not staff.is_empty():
-		droite.add_child(_encart("LE STAFF", "%d′ · %s" % [int(staff[-1].get("minute", 0)), str(staff[-1].get("texte", ""))], "TeamStaffNote"))
-	var aside := _v(12)
+	var aside := _v(14)
 	aside.name = "TeamConsignesAside"
-	_poser(aside, 1140, 96, 436, 708)
+	_poser(aside, 1150, 96, 426, 708)
 	_carte_arbitre(aside, p)
 	_carte_adversaire(aside, p, vue)
-	_carte_suivi(aside, p)
+	var vide := Control.new()
+	vide.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aside.add_child(vide)
+	_carte_staff(aside, p)
 	_pied(_pied_consignes, ["Retour à la composition", choisir_onglet.bind("composition"), "TeamToComposition"])
 
-func _entete_groupe(texte: String, nom: String) -> Control:
+func _espace(hauteur: float) -> Control:
+	var vide := Control.new()
+	vide.custom_minimum_size.y = px(hauteur)
+	vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return vide
+
+func _entete_groupe(texte: String, sous: String) -> Control:
+	var colonne := _v(4)
 	var rangee := _h(10)
-	rangee.name = nom
-	var t := _titre(texte, 19, C.GOLD, 800)
+	var t := _titre(texte, 22, C.GOLD, 800)
 	rangee.add_child(t)
+	var precision := _texte(sous, 11, C.MUTED)
+	precision.size_flags_vertical = Control.SIZE_SHRINK_END
+	rangee.add_child(precision)
+	colonne.add_child(rangee)
 	var filet := ColorRect.new()
-	filet.color = Color(C.GOLD, 0.35)
+	filet.color = C.LINE
 	filet.custom_minimum_size = Vector2(0, maxf(1.0, k))
-	filet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	filet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rangee.add_child(filet)
-	return rangee
+	colonne.add_child(filet)
+	return colonne
 
-func _pied_consignes(infos: HBoxContainer) -> void:
-	infos.add_child(_coupe(_texte("Les cris de la touche et le banc restent dans « Composition ».", 13, C.MUTED)))
-
-func _encart(titre: String, texte: String, nom: String) -> PanelContainer:
-	var cadre := _panneau(_boite(C.RAISED, Color.TRANSPARENT, 10, 0, 0))
-	cadre.name = nom
-	var style := cadre.get_theme_stylebox("panel") as StyleBoxFlat
-	style.content_margin_left = px(14)
-	style.content_margin_right = px(14)
-	style.content_margin_top = px(10)
-	style.content_margin_bottom = px(10)
-	var rangee := _h(12)
-	cadre.add_child(rangee)
-	var t := _texte(titre, 12, C.GOLD, _gras)
-	t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	rangee.add_child(t)
+## Conseil du staff (dernière entrée du staff dans le journal du pilotage), en bas de la colonne.
+func _carte_staff(parent: Control, p: Dictionary) -> void:
+	var journal: Array = p.get("journal") if p.get("journal") is Array else []
+	var staff: Array = journal.filter(func(e: Variant) -> bool: return e is Dictionary and str(e.get("auteur", "")) == "staff")
+	var conseil: Variant = p.get("conseilStaff")
+	var texte := ""
+	if conseil is Dictionary: texte = str(conseil.get("texte", ""))
+	elif conseil is String: texte = conseil
+	elif not staff.is_empty(): texte = "%d′ · %s" % [int(staff[-1].get("minute", 0)), str(staff[-1].get("texte", ""))]
+	if texte.is_empty(): return
+	var cadre := _panneau(_boite(C.PANEL, C.GOLD, 14, 1, 14))
+	cadre.name = "TeamStaffNote"
+	parent.add_child(cadre)
+	var colonne := _v(8)
+	cadre.add_child(colonne)
+	colonne.add_child(_texte("LE STAFF CONSEILLE" if conseil != null else "LE STAFF", 11, C.GOLD, _gras))
 	var corps := _texte(texte, 14, C.IVORY)
 	corps.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	corps.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	corps.max_lines_visible = 2
-	rangee.add_child(corps)
-	return cadre
+	corps.max_lines_visible = 4
+	colonne.add_child(corps)
 
+func _pied_consignes(infos: HBoxContainer) -> void:
+	infos.add_child(_coupe(_texte("Les consignes en direct s'appliquent dès la reprise ; le plan de jeu demande l'arrêt du match.", 13, C.MUTED)))
+
+## Ligne d'un axe : libellé (et « match en pause » pour le plan de jeu), crans ; fond relevé et bilan
+## dessous quand le cran en place n'est pas neutre.
 func _axe(p: Dictionary, axe: Dictionary) -> Control:
 	var id := str(axe.get("id", ""))
-	var cadre := _panneau(_boite(C.BG, Color.TRANSPARENT, 10, 0, 0))
+	var options: Array = axe.get("options", []) if axe.get("options") is Array else []
+	var actuel := Pilotage.cran(p, axe)
+	var modifie := not actuel.is_empty() and actuel != cran_neutre(axe)
+	var en_pause_seulement := bool(axe.get("pause", false)) or id in ["planAttaque", "systemeDefense", "penalites"]
+	var cadre := _panneau(_boite(C.RAISED if modifie else Color.TRANSPARENT, Color.TRANSPARENT, 8, 0, 0))
 	cadre.name = "Consigne_" + id
+	cadre.set_meta("modifie", modifie)
 	var style := cadre.get_theme_stylebox("panel") as StyleBoxFlat
-	style.content_margin_left = px(10)
+	style.content_margin_left = px(8)
 	style.content_margin_right = px(8)
 	style.content_margin_top = px(6)
 	style.content_margin_bottom = px(6)
+	var pile := _v(3)
+	cadre.add_child(pile)
 	var rangee := _h(10)
-	cadre.add_child(rangee)
+	pile.add_child(rangee)
 	var gauche := _v(0)
-	gauche.custom_minimum_size.x = px(128)
+	gauche.custom_minimum_size.x = px(112)
 	gauche.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var aide := str(axe.get("aide", ""))
-	var libelle := _coupe(_titre(str(axe.get("label", id)), 18, C.IVORY, 700))
+	var libelle := _coupe(_titre(str(axe.get("label", id)), 17, C.IVORY, 700))
 	libelle.tooltip_text = aide
 	libelle.mouse_filter = Control.MOUSE_FILTER_PASS
 	gauche.add_child(libelle)
-	var options: Array = axe.get("options", []) if axe.get("options") is Array else []
-	var actuel := Pilotage.cran(p, axe)
-	var bilan := bilan_court(p, id)
-	var texte_bas := bilan if not bilan.is_empty() else aide
-	if not texte_bas.is_empty():
-		var bas := _coupe(_texte(texte_bas, 11, C.GOLD if not bilan.is_empty() else C.MUTED))
-		bas.name = "ConsigneBilan" if not bilan.is_empty() else "ConsigneAide"
-		bas.tooltip_text = aide + ("\n" + bilan if not bilan.is_empty() and not aide.is_empty() else "")
-		bas.mouse_filter = Control.MOUSE_FILTER_PASS
-		gauche.add_child(bas)
+	if en_pause_seulement:
+		var note := _texte("match en pause", 10, C.MUTED)
+		note.name = "ConsignePause"
+		gauche.add_child(note)
 	cadre.tooltip_text = aide
 	rangee.add_child(gauche)
-	var crans := _h(5)
+	var crans := _h(4)
 	crans.name = "Consigne_%s_Crans" % id
 	crans.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	crans.set_meta("cran", actuel)
@@ -1328,25 +1347,41 @@ func _axe(p: Dictionary, axe: Dictionary) -> Control:
 		var valeur := str(option_v.get("id", ""))
 		var choisi := valeur == actuel
 		var texte := str(option_v.get("label", valeur))
-		var bouton := _bouton(texte, _choisir_cran.bind(crans, id, valeur), "or" if choisi else "cadre", 15 if options.size() > 3 else 16, "Consigne_%s_%s" % [id, valeur])
+		var bouton := _bouton(texte, _choisir_cran.bind(crans, id, valeur), "or" if choisi else "cadre", 15, "Consigne_%s_%s" % [id, valeur])
 		bouton.set_meta("axe", id)
 		bouton.set_meta("valeur", valeur)
 		bouton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bouton.custom_minimum_size = Vector2(0, px(36))
+		bouton.custom_minimum_size = Vector2(0, px(32))
 		bouton.clip_text = true
 		bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		bouton.tooltip_text = str(option_v.get("aide", option_v.get("description", texte)))
+		bouton.tooltip_text = texte + ("\n" + aide if not aide.is_empty() else "")
 		for etat: String in ["normal", "hover", "pressed", "disabled"]:
 			var boite := bouton.get_theme_stylebox(etat) as StyleBoxFlat
-			boite.content_margin_left = px(6)
-			boite.content_margin_right = px(6)
-			boite.content_margin_top = px(4)
-			boite.content_margin_bottom = px(4)
-		bouton.disabled = fini or (id in AXES_EN_PAUSE and not en_pause)
-		if id in AXES_EN_PAUSE and not en_pause: bouton.tooltip_text += "\nChangement possible match arrêté."
-		if not choisi: (bouton.get_theme_stylebox("normal") as StyleBoxFlat).bg_color = C.PANEL
+			boite.set_corner_radius_all(maxi(2, px(6)))
+			boite.content_margin_left = px(2)
+			boite.content_margin_right = px(2)
+			boite.content_margin_top = px(6)
+			boite.content_margin_bottom = px(6)
+		if not choisi:
+			var normal := bouton.get_theme_stylebox("normal") as StyleBoxFlat
+			normal.bg_color = C.BG
+			normal.border_color = C.LINE
+			normal.set_border_width_all(maxi(1, px(1)))
+		bouton.disabled = fini or (en_pause_seulement and not en_pause)
+		if en_pause_seulement and not en_pause: bouton.tooltip_text += "\nChangement possible match arrêté."
 		crans.add_child(bouton)
 	rangee.add_child(crans)
+	var bilan := bilan_court(p, id)
+	if modifie and not bilan.is_empty():
+		var ligne := _coupe(_texte(bilan, 12, C.GOLD))
+		ligne.name = "ConsigneBilan"
+		ligne.tooltip_text = bilan
+		ligne.mouse_filter = Control.MOUSE_FILTER_PASS
+		var decale := MarginContainer.new()
+		decale.add_theme_constant_override("margin_left", px(122))
+		decale.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		decale.add_child(ligne)
+		pile.add_child(decale)
 	return cadre
 
 ## Plan de jeu (tiroir Tactique d'avant) : avec le ballon, sans le ballon, sur pénalité, en une rangée.
@@ -1411,111 +1446,72 @@ func _choisir_plan(index: int, cle_plan: String, ids: Array) -> void:
 	if cle_plan == "penalty": app._command("set_penalty_policy", {"policy": ids[index]})
 	else: _plan(cle_plan, ids[index])
 
+## Carte de l'arbitre : photo à gauche, nom, quatre jauges de sévérité (1 à 5) et son profil.
 func _carte_arbitre(parent: Control, p: Dictionary) -> void:
 	var arbitre: Dictionary = p.get("arbitre") if p.get("arbitre") is Dictionary else {}
-	var cadre := Panel.new()
+	var cadre := PanelContainer.new()
 	cadre.name = "TeamReferee"
 	cadre.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
 	cadre.add_theme_stylebox_override("panel", _boite(C.PANEL, C.LINE, 14, 1, 0))
-	cadre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cadre.custom_minimum_size.y = px(330)
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
 	parent.add_child(cadre)
-	var colonne := _v(0)
-	S.full(colonne)
-	cadre.add_child(colonne)
-	var haut := Control.new()
-	haut.custom_minimum_size.y = px(150)
-	haut.clip_contents = true
-	haut.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	colonne.add_child(haut)
+	var rangee := _h(0)
+	cadre.add_child(rangee)
 	var nom := str(arbitre.get("nom", ""))
+	var cadre_photo := Control.new()
+	cadre_photo.custom_minimum_size = Vector2(px(130), px(190))
+	cadre_photo.clip_contents = true
+	cadre_photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rangee.add_child(cadre_photo)
 	if BanqueImages.texture("arbitre") != null:
-		var photo := C.photo("arbitre", Vector2.ZERO, true, 0.25)
+		var photo := C.photo("arbitre", Vector2.ZERO, true, 0.2)
 		photo.name = "TeamRefereePhoto"
 		photo.tooltip_text = ""
 		S.full(photo)
-		haut.add_child(photo)
+		cadre_photo.add_child(photo)
 	else:
 		var lettres := PackedStringArray()
 		for mot in nom.split(" ", false): lettres.append(mot.substr(0, 1))
-		var initiales := _titre("".join(lettres), 90, C.GOLD)
+		var initiales := _titre("".join(lettres), 48, C.GOLD)
 		initiales.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-		haut.add_child(initiales)
-	var voile := TextureRect.new()
-	var gradient := Gradient.new()
-	gradient.set_color(0, Color(C.PANEL, 0.0))
-	gradient.set_color(1, C.PANEL)
-	var degrade := GradientTexture2D.new()
-	degrade.gradient = gradient
-	degrade.fill_from = Vector2(0, 0)
-	degrade.fill_to = Vector2(0, 1)
-	voile.texture = degrade
-	voile.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	voile.stretch_mode = TextureRect.STRETCH_SCALE
-	voile.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	voile.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	voile.offset_top = -px(110)
-	haut.add_child(voile)
-	var legende := _v(0)
-	legende.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	legende.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	legende.offset_left = px(16)
-	legende.offset_bottom = -px(12)
-	legende.add_child(_texte("L'ARBITRE" if str(arbitre.get("civilite", "")) != "Mme" else "L'ARBITRE · MME", 12, C.GOLD, _gras))
-	var civilite := str(arbitre.get("civilite", ""))
-	var ligne_nom := _titre(nom if not nom.is_empty() else "Non désigné", 28, C.IVORY)
-	ligne_nom.tooltip_text = (civilite + " " + nom).strip_edges()
-	ligne_nom.name = "TeamRefereeName"
-	legende.add_child(ligne_nom)
-	haut.add_child(legende)
-	var corps := _v(6)
-	corps.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		cadre_photo.add_child(initiales)
 	var marge := MarginContainer.new()
-	for cote: String in ["left", "right", "bottom"]: marge.add_theme_constant_override("margin_" + cote, px(16))
-	marge.add_theme_constant_override("margin_top", px(6))
-	marge.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	for cote: String in ["left", "right"]: marge.add_theme_constant_override("margin_" + cote, px(14))
+	for cote: String in ["top", "bottom"]: marge.add_theme_constant_override("margin_" + cote, px(12))
+	marge.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	marge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rangee.add_child(marge)
+	var corps := _v(6)
 	marge.add_child(corps)
-	colonne.add_child(marge)
+	corps.add_child(_texte("L'ARBITRE", 11, C.GOLD, _gras))
+	var ligne_nom := _coupe(_titre(nom if not nom.is_empty() else "Non désigné", 24, C.IVORY))
+	ligne_nom.name = "TeamRefereeName"
+	ligne_nom.tooltip_text = (str(arbitre.get("civilite", "")) + " " + nom).strip_edges() + ("\n" + str(arbitre.get("resume", "")) if arbitre.has("resume") else "")
+	ligne_nom.mouse_filter = Control.MOUSE_FILTER_PASS
+	corps.add_child(ligne_nom)
 	for paire: Array in ARBITRE_AXES:
 		var niveau := clampi(int(arbitre.get(paire[0], 3)), 1, 5)
-		var rangee := _h(10)
-		rangee.name = "TeamRefereeGauge_" + str(paire[0])
-		rangee.set_meta("niveau", niveau)
-		var axe := _texte(paire[1], 14, C.MUTED)
-		axe.custom_minimum_size.x = px(74)
-		rangee.add_child(axe)
-		var crans := _h(3)
+		var jauge := _h(8)
+		jauge.name = "TeamRefereeGauge_" + str(paire[0])
+		jauge.set_meta("niveau", niveau)
+		var axe := _texte(paire[1], 12, C.MUTED)
+		axe.custom_minimum_size.x = px(58)
+		jauge.add_child(axe)
+		var crans := _h(2)
 		crans.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		for n in 5:
 			var cran := Panel.new()
-			cran.custom_minimum_size = Vector2(px(16), px(10))
+			cran.custom_minimum_size = Vector2(px(12), px(8))
 			cran.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			cran.add_theme_stylebox_override("panel", _boite(C.GOLD if n < niveau else C.LINE, Color.TRANSPARENT, 2, 0, 0))
 			crans.add_child(cran)
-		rangee.add_child(crans)
-		rangee.add_child(_coupe(_texte(ARBITRE_MOTS[niveau], 13, C.ALERT if niveau >= 4 else (C.MINT if niveau <= 2 else C.MUTED))))
-		corps.add_child(rangee)
-	var vide := Control.new()
-	vide.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	corps.add_child(vide)
-	var resume := _texte(str(arbitre.get("resume", "")), 13, C.GOLD)
+		jauge.add_child(crans)
+		jauge.add_child(_coupe(_texte(ARBITRE_MOTS[niveau], 12, C.ALERT if niveau >= 4 else (C.MINT if niveau <= 2 else C.MUTED))))
+		corps.add_child(jauge)
+	var resume := _texte(str(arbitre.get("resume", "")), 12, C.GOLD)
 	resume.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	resume.max_lines_visible = 2
 	corps.add_child(resume)
-
-func _carte(parent: Control, titre: String, nom: String) -> VBoxContainer:
-	var cadre := _panneau(_boite(C.PANEL, C.LINE, 14, 1, 16))
-	cadre.name = nom
-	cadre.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	cadre.clip_contents = true
-	parent.add_child(cadre)
-	var colonne := _v(10)
-	cadre.add_child(colonne)
-	colonne.add_child(_coupe(_titre(titre, 20, C.IVORY)))
-	return colonne
 
 func _carte_adversaire(parent: Control, p: Dictionary, vue: Dictionary) -> void:
 	var equipes: Array = _live().get("teams", [])
@@ -1524,9 +1520,15 @@ func _carte_adversaire(parent: Control, p: Dictionary, vue: Dictionary) -> void:
 	for equipe: Variant in equipes:
 		if equipe is Dictionary and str(equipe.get("id", "")) != club_id: adverse = equipe
 	var nom := S.G.club_name(adverse).to_upper() if not adverse.is_empty() else "L'ADVERSAIRE"
-	var colonne := _carte(parent, "CE QUE FAIT " + nom, "TeamOpponent")
+	var cadre := _panneau(_boite(C.PANEL, C.LINE, 14, 1, 14))
+	cadre.name = "TeamOpponent"
+	parent.add_child(cadre)
+	var colonne := _v(8)
+	cadre.add_child(colonne)
+	colonne.add_child(_coupe(_titre("CE QUE FAIT " + nom, 19, C.IVORY)))
 	var source: Dictionary = p.get("adversaire") if p.get("adversaire") is Dictionary else {}
 	var puces := HFlowContainer.new()
+	puces.name = "TeamOpponentChips"
 	puces.add_theme_constant_override("h_separation", px(6))
 	puces.add_theme_constant_override("v_separation", px(6))
 	puces.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1535,80 +1537,45 @@ func _carte_adversaire(parent: Control, p: Dictionary, vue: Dictionary) -> void:
 		for axe_v: Variant in Pilotage.axes(vue):
 			if not axe_v is Dictionary or not (consignes as Dictionary).has(str(axe_v.get("id", ""))): continue
 			var valeur := str(consignes[str(axe_v.id)])
-			var options: Array = axe_v.get("options", [])
-			if options.size() >= 3 and valeur == str(options[1].get("id", "")): continue
-			for option: Variant in options:
-				if option is Dictionary and str(option.get("id", "")) == valeur: puces.add_child(_puce("%s · %s" % [str(axe_v.label), str(option.label)], C.IVORY, C.LINE))
+			if valeur == cran_neutre(axe_v): continue
+			for option: Variant in axe_v.get("options", []):
+				if option is Dictionary and str(option.get("id", "")) == valeur:
+					var dur := str(axe_v.id) in ["rucks", "discipline", "melee"]
+					puces.add_child(_puce("%s · %s" % [str(axe_v.label), str(option.label)], C.ALERT if dur else C.IVORY, C.ALERT if dur else C.LINE, 12))
 	elif consignes is Array:
 		for c: Variant in consignes:
 			var texte := str(c.get("label", c.get("texte", ""))) if c is Dictionary else str(c)
-			if not texte.is_empty(): puces.add_child(_puce(texte))
-	if puces.get_child_count() > 0: colonne.add_child(puces)
-	var lignes: Array = []
+			if not texte.is_empty(): puces.add_child(_puce(texte, C.IVORY, C.LINE, 12))
 	var causeries: Variant = source.get("causeries")
 	if causeries is Dictionary:
-		for paire: Array in [["pre", "Vestiaire avant le match"], ["half", "Vestiaire à la pause"]]:
+		for paire: Array in [["pre", "Avant-match"], ["half", "Pause"]]:
 			var c: Variant = (causeries as Dictionary).get(paire[0])
-			if c is Dictionary and not str(c.get("label", "")).is_empty(): lignes.append("%s : discours %s." % [paire[1], str(c.label).to_lower()])
+			if c is Dictionary and not str(c.get("label", "")).is_empty(): puces.add_child(_puce("%s : discours %s" % [paire[1], str(c.label).to_lower()], C.IVORY, C.LINE, 12))
+	if puces.get_child_count() > 0: colonne.add_child(puces)
+	var lignes: Array = []
 	for cle: String in ["derniers", "journal", "lignes"]:
 		if source.get(cle) is Array:
-			for ligne: Variant in (source[cle] as Array).slice(maxi(0, (source[cle] as Array).size() - 3)):
-				if ligne is Dictionary and not str(ligne.get("texte", "")).is_empty(): lignes.append(("%d′ · " % int(ligne.minute) if ligne.get("minute") != null else "") + str(ligne.texte))
+			var liste: Array = source[cle]
+			for k_ in range(liste.size() - 1, -1, -1):
+				var ligne: Variant = liste[k_]
+				if ligne is Dictionary and not str(ligne.get("texte", "")).is_empty(): lignes.append(("%d′ " % int(ligne.minute) if ligne.get("minute") != null else "") + str(ligne.texte).trim_suffix("."))
 				elif ligne is String and not ligne.is_empty(): lignes.append(ligne)
 			break
-	for texte: String in lignes.slice(maxi(0, lignes.size() - 4)):
-		var l := _texte(texte, 13, C.MUTED)
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		l.max_lines_visible = 2
-		colonne.add_child(l)
-	if puces.get_child_count() == 0 and lignes.is_empty():
-		var rien := _texte("Le staff n'a rien repéré de marquant chez eux pour l'instant.", 13, C.MUTED)
-		rien.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		colonne.add_child(rien)
-	var lecture := str(source.get("lecture", source.get("conseil", "")))
-	if not lecture.is_empty():
-		var vide := Control.new()
-		vide.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		colonne.add_child(vide)
-		var l := _texte(lecture, 13, C.MINT)
+	if not lignes.is_empty():
+		var l := _texte(" · ".join(PackedStringArray(lignes.slice(0, 3))), 12, C.MUTED)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.max_lines_visible = 3
 		colonne.add_child(l)
-
-func _carte_suivi(parent: Control, p: Dictionary) -> void:
-	var colonne := _carte(parent, "QUI SUIT LA CONSIGNE", "TeamFollowers")
-	var lignes: Array = []
-	var lineup := _lineup()
-	for slot in lineup.size():
-		if not lineup[slot] is Dictionary: continue
-		var humeur := Pilotage.etat_joueur(p, lineup[slot].get("id"))
-		var sens := Pilotage.sens_etat(str(humeur.get("etat", "")))
-		if sens != 0: lignes.append([sens, slot, humeur])
-	lignes.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1]))
-	for ligne: Array in lignes.slice(0, 3):
-		var slot: int = ligne[1]
-		var joueur: Dictionary = lineup[slot]
-		var teinte := C.MINT if int(ligne[0]) > 0 else C.ALERT
-		var rangee := _h(10)
-		var anneau := _panneau(_boite(Color.TRANSPARENT, teinte, 20, 2, 2))
-		anneau.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		anneau.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		anneau.add_child(_portrait(joueur, px(36)))
-		rangee.add_child(anneau)
-		var mots := _v(0)
-		mots.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var haut := _h(6)
-		haut.add_child(_texte("%s (%d)" % [nom_court(str(joueur.get("name", ""))), slot + 1], 14, C.IVORY, _gras))
-		var niveau := _niveau(joueur)
-		if not niveau.is_empty(): haut.add_child(_titre(niveau, 15, C.GOLD, 700))
-		mots.add_child(haut)
-		mots.add_child(_coupe(_texte("%s · énergie %d %%" % [str(ligne[2].label), roundi(float(joueur.get("condition", 100)))], 12, teinte)))
-		rangee.add_child(mots)
-		colonne.add_child(rangee)
-	if lignes.is_empty():
-		var rien := _texte("Aucune réaction marquée après la causerie : le groupe suit.", 13, C.MUTED)
+	if puces.get_child_count() == 0 and lignes.is_empty():
+		var rien := _texte("Le staff n'a rien repéré de marquant chez eux pour l'instant.", 12, C.MUTED)
 		rien.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		colonne.add_child(rien)
+	var lecture := str(source.get("lecture", ""))
+	if not lecture.is_empty():
+		var l := _texte(lecture, 12, C.MINT)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.max_lines_visible = 3
+		colonne.add_child(l)
 
 ## Débordements : tout bloc visible reste dans la fenêtre et chaque texte non coupé dans son parent.
 func debordements() -> Array[String]:

@@ -173,11 +173,27 @@ func consignes_enrichies(contexte: String) -> void:
 	fenetre.choisir_onglet("consignes")
 	fenetre.update_frame(modele_enrichi())
 	await poser(8)
-	for nom in ["TeamConsignes", "TeamReferee", "TeamOpponent", "TeamFollowers", "TeamGamePlan"]:
+	for nom in ["TeamConsignes", "TeamReferee", "TeamOpponent"]:
 		var n: Control = fenetre.find_child(nom, true, false)
 		verifier(n != null and n.is_visible_in_tree(), contexte + " : bloc " + nom)
+	# Quatre groupes dans l'ordre de Léo (Attaque, Défense | Conquête, Adversaire) quand le moteur les donne.
+	var axes: Array = live().get("pilotage", {}).get("axes", [])
+	var attendu := 0
+	for axe: Variant in axes: attendu += (axe.get("options", []) as Array).size() if axe is Dictionary else 0
 	var crans := fenetre.find_children("Consigne_*_*", "Button", true, false).size()
-	verifier(crans == 15, contexte + " : 5 axes × 3 crans (%d)" % crans)
+	verifier(crans == attendu and attendu >= 15, contexte + " : un bouton par cran de chaque axe (%d/%d)" % [crans, attendu])
+	if axes.any(func(a: Variant) -> bool: return a is Dictionary and a.has("groupe")):
+		var gauche: Control = fenetre.find_child("TeamConsignesLeft", true, false)
+		var droite: Control = fenetre.find_child("TeamConsignesRight", true, false)
+		for paire: Array in [["attaque", gauche], ["defense", gauche], ["conquete", droite], ["adversaire", droite]]:
+			var g: Control = fenetre.find_child("TeamGroup_" + str(paire[0]), true, false)
+			verifier(g != null and paire[1] != null and (paire[1] as Control).is_ancestor_of(g), contexte + " : groupe %s dans sa colonne" % paire[0])
+		var ga: Control = fenetre.find_child("TeamGroup_attaque", true, false)
+		var gd: Control = fenetre.find_child("TeamGroup_defense", true, false)
+		verifier(ga != null and gd != null and ga.get_global_rect().position.y < gd.get_global_rect().position.y, contexte + " : Attaque au-dessus de Défense")
+		var defile: ScrollContainer = fenetre.find_child("TeamConsignesScroll", true, false)
+		rapport["defilement_" + contexte] = defile.get_v_scroll_bar().visible if defile != null else null
+		if contexte != "1280x720": verifier(defile != null and not defile.get_v_scroll_bar().visible, contexte + " : les quatre groupes tiennent sans défilement")
 	var jauges := fenetre.find_children("TeamRefereeGauge_*", "", true, false).size()
 	verifier(jauges == 4, contexte + " : 4 jauges de l'arbitre (%d)" % jauges)
 	await controler_mise_en_page(contexte + " consignes")
@@ -260,6 +276,27 @@ func executer() -> void:
 		verifier(app.last_command == "set_consignes", "clic sur un cran : set_consignes")
 		await attendre("set_consignes")
 		verifier(str(live().get("pilotage", {}).get("consignes", {}).get("rythme", "")) == "rapide", "consigne Rythme gardée par le moteur")
+		await poser(4)
+		var ligne: Control = fenetre.find_child("Consigne_rythme", true, false)
+		verifier(ligne != null and bool(ligne.get_meta("modifie", false)), "ligne Rythme relevée (cran non neutre)")
+	# Plan de jeu (axe « match en pause ») : la même commande, match arrêté.
+	var plan: Dictionary = {}
+	for axe: Variant in live().get("pilotage", {}).get("axes", []):
+		if axe is Dictionary and str(axe.get("id", "")) == "planAttaque": plan = axe
+	if not plan.is_empty():
+		var autre := ""
+		for option: Variant in plan.get("options", []):
+			if autre.is_empty() and str(option.id) != str(plan.get("valeur", "")): autre = str(option.id)
+		var bouton_plan: Button = fenetre.find_child("Consigne_planAttaque_" + autre, true, false)
+		verifier(bouton_plan != null and not bouton_plan.disabled and fenetre.find_child("ConsignePause", true, false) != null, "plan de jeu modifiable match arrêté")
+		if bouton_plan != null:
+			bouton_plan.pressed.emit()
+			await attendre("set_consignes plan")
+			var apres := ""
+			for axe: Variant in live().get("pilotage", {}).get("axes", []):
+				if axe is Dictionary and str(axe.get("id", "")) == "planAttaque": apres = str(axe.get("valeur", ""))
+			rapport.plan = [str(plan.get("valeur", "")), autre, apres, str(app.last_error)]
+			verifier(apres == autre, "plan de jeu gardé par le moteur (%s)" % str(rapport.plan))
 	# Cris de la touche : le bouton envoie `cri`.
 	fenetre.choisir_onglet("composition")
 	fenetre.update_frame(modele_enrichi())
