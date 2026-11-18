@@ -460,11 +460,11 @@ func grands_moments(view: Control) -> Array:
 	check(int(essai.debut) > 0, "Un essai est joué en 3D pendant le match")
 	if int(essai.debut) > 0:
 		var b: Dictionary = essai.bandeau
-		var attendu: String = regie.marqueur_essai(str(essai.texte))
+		var attendu: String = load("res://ui/contextual/match_temps_forts.gd").marqueur_essai(str(essai.texte))
 		check(bool(b.get("visible", false)) and str(b.get("titre", "")) == "ESSAI", "Bandeau « ESSAI » dès que l'essai est aplati : " + str(b))
 		check(str(b.get("nom", "")) == attendu and (not attendu.is_empty() or not str(essai.texte).contains("Essai de")), "Le bandeau nomme le marqueur (« %s », légende « %s »)" % [str(b.get("nom", "")), str(essai.texte)])
 		check(not str(b.get("equipe", "")).is_empty(), "Le bandeau nomme l'équipe qui marque : " + str(b))
-		var voulu: float = 0.9 * float(regie.ESSAI_MOMENT) / maxf(float(essai.vitesse), 0.01)
+		var voulu: float = 0.9 * float(load("res://ui/contextual/match_temps_forts.gd").ESSAI_MOMENT) / maxf(float(essai.vitesse), 0.01)
 		check(float(essai.ecart) >= voulu, "Pause d'essai : la suite attend %.2f s (%.2f s au moins à ×%.0f)" % [float(essai.ecart), voulu, float(essai.vitesse)])
 		check(bool(essai.calme) or float(essai.ralenti) <= 0.6, "Ralenti de la vue à l'essai (%.2f de la vitesse réelle)" % float(essai.ralenti))
 		var cadre: Rect2 = essai.cadre
