@@ -914,6 +914,98 @@
           "resultat": "Courrier de la ligue classé."
         }
       ]
+    },
+    "doublon": {
+      "categorie": "competition",
+      "declencheur": "doublon",
+      "priorite": 12,
+      "arret": true,
+      "ecran": "Composition",
+      "expediteur": "Le directeur sportif",
+      "seuils": {
+        "absents": 3,
+        "titulaires": 1
+      },
+      "formulations": [
+        {
+          "sujet": "Doublon face à {adversaire} : {n} internationaux manquent",
+          "corps": "Coach, le {jour} contre {adversaire}, la fenêtre internationale nous prend {n} joueurs ({joueurs}), dont {titulaires} de ton XV type. Postes touchés : {postes}. Ils rejoignent {nations}.\n\nTrois façons de voir les choses : faire tourner pour ménager les cadres restants qui accusent la fatigue, aligner la meilleure équipe possible malgré tout, ou profiter de l'occasion pour lancer des jeunes du centre. À toi de choisir ce que ce match vaut pour nous."
+        },
+        {
+          "sujet": "Match du {jour} : un groupe amputé",
+          "corps": "On joue {adversaire} le {jour} sans {n} joueurs partis en sélection ({joueurs}), dont {titulaires} titulaires habituels. Ça touche surtout : {postes}.\n\nOn peut ménager les cadres fatigués, serrer les rangs avec la meilleure feuille possible, ou donner leur chance à des jeunes du centre. Dis-moi ce que tu veux faire."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "rotation",
+          "libelle": "Faire tourner l'effectif",
+          "effets": {
+            "doublon": "rotation"
+          },
+          "resultat": "Les cadres fatigués passent en récupération jusqu'au match, puis reprennent leur charge."
+        },
+        {
+          "id": "forte",
+          "libelle": "Aligner l'équipe la plus forte possible",
+          "effets": {
+            "doublon": "forte"
+          },
+          "resultat": "La meilleure feuille possible sera posée pour ce match."
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Lancer des jeunes du centre",
+          "effets": {
+            "doublon": "jeunes"
+          },
+          "resultat": "Des jeunes du centre signent et sont lancés dans la feuille."
+        }
+      ]
+    },
+    "cellule_repos": {
+      "categorie": "competition",
+      "declencheur": "cellule",
+      "priorite": 18,
+      "arret": false,
+      "ecran": "Composition",
+      "expediteur": "La cellule FFR-LNR",
+      "formulations": [
+        {
+          "sujet": "Protocole des Bleus : {joueur} doit souffler",
+          "corps": "Selon les lignes directrices du protocole 2026-27, {joueur} ({poste}) ne compte que {repos} repos sur ses {matchs} derniers matchs : il doit être laissé hors de la feuille contre {adversaire} ({jour}).\n\nCe sont des lignes directrices, ajustables par accord entre staffs : tu peux demander un aménagement au staff des Bleus, sans garantie. Les passer sous silence est consigné."
+        },
+        {
+          "sujet": "{joueur} : repos attendu ce week-end",
+          "corps": "La cellule de suivi note que {joueur} ({poste}) n'a pas eu assez de repos récemment ({repos} sur {matchs} matchs). Nous lui en demandons un contre {adversaire}, le {jour}.\n\nTu peux le reposer, solliciter un aménagement auprès du staff des Bleus (accord possible, pas garanti), ou ignorer : ce sera noté dans nos échanges."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "reposer",
+          "libelle": "Le reposer ce week-end",
+          "effets": {
+            "repos_liste": "reposer"
+          },
+          "resultat": "Il quitte la feuille du match : la cellule en prend note."
+        },
+        {
+          "id": "amenagement",
+          "libelle": "Demander un aménagement au staff des Bleus",
+          "effets": {
+            "repos_liste": "amenagement"
+          },
+          "resultat": "Demande transmise au staff des Bleus."
+        },
+        {
+          "id": "ignorer",
+          "libelle": "Ignorer",
+          "effets": {
+            "repos_liste": "ignorer"
+          },
+          "resultat": "La cellule consigne que tu passes outre ; s'il joue, la relation avec la fédération en souffrira."
+        }
+      ]
     }
   }
 }

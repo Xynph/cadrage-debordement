@@ -113,6 +113,10 @@ static func build(app:Control,player:Dictionary) -> Control:
 		selection = "Titulaire" if int(shirt_number) <= 15 else "Remplaçant"
 	D.chip(hero, Rect2(670,263,210,46), availability, availability_color).name = "PlayerHeroAvailability"
 	D.chip(hero, Rect2(894,263,220,46), selection, C.AMBER).name = "PlayerHeroSelection"
+	if facts.get("listeElite", false):
+		var liste := D.chip(hero, Rect2(1128,263,220,46), "Liste des 33", C.GOLD)
+		liste.name = "PlayerHeroListeElite"
+		liste.tooltip_text = "Liste élite du XV de France (protocole FFR-LNR) : au moins 2 repos sur 8 matchs de club."
 	var rating := _slanted_badge(hero,Rect2(1710,43,236,160),Color("0a5735"),Color(C.MINT,.7))
 	ClubUI.italic(D.text(rating,118,129,G.rating_text(player,true),64,C.MINT,800,218,HORIZONTAL_ALIGNMENT_CENTER),800)
 	var potential := D.text(hero,2084,151,G.potential_text(player),64,G.POTENTIAL_COLOR,800,235,HORIZONTAL_ALIGNMENT_CENTER)
