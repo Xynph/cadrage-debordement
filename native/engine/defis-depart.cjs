@@ -23,7 +23,7 @@ const LIBELLES = ['', 'Accessible', 'Abordable', 'Exigeant', 'Difficile', 'Très
 const DEFIS = Object.freeze([
   { id: 'douceur', titre: 'Débuter en douceur', accroche: 'Un club sain, un effectif solide, du temps pour apprendre le métier.' },
   { id: 'promu', titre: 'Sauver un promu', accroche: 'Ils viennent de monter. Personne ne les voit rester. Toi, si.' },
-  { id: 'nationale', titre: 'Faire monter un club de Nationale', accroche: 'Petits moyens, grande faim : un seul billet pour l’étage au-dessus.' },
+  { id: 'nationale', titre: 'Faire monter un club de Nationale', accroche: 'Petits moyens, grande faim : un seul billet direct pour l’étage au-dessus.' },
   { id: 'petit-budget', titre: 'Gagner avec un petit budget', accroche: 'Moins d’argent que les autres, pas moins d’ambition.' },
   { id: 'geant', titre: 'Relancer un géant en crise', accroche: 'Un palmarès qui pèse lourd, un présent qui fait mal.' },
 ]);
@@ -84,7 +84,7 @@ function proposer(catalogue) {
       return club(c, ecart(i.effectif - i.regle.sur) + (i.argent > i.n * 2 / 3 ? 1 : 0), 'Maintien', i.regle.sur, `Monté la saison passée, effectif ${ordinal(i.effectif)} sur ${i.n}.`); })
       .sort((a, b) => b.difficulte - a.difficulte),
     nationale: (parDivision.get('nationale') || []).map(c => { const i = info.get(c.id);
-      return club(c, ecart(i.effectif - 2) + 1, 'Viser la montée', 2, `Effectif ${ordinal(i.effectif)} sur ${i.n} en Nationale ; seul le champion monte directement.`); })
+      return club(c, ecart(i.effectif - 2) + 1, 'Viser la montée', 2, `Effectif ${ordinal(i.effectif)} sur ${i.n} en 3e division ; seul le champion monte directement.`); })
       .sort((a, b) => a.difficulte - b.difficulte || info.get(a.club).effectif - info.get(b.club).effectif).slice(0, 3),
     'petit-budget': jouables.filter(c => { const i = info.get(c.id); return c.division !== 'nationale' && i.argent > i.n * 2 / 3 && i.effectif <= Math.ceil(i.n * 3 / 4) && !promu(c); })
       .map(c => { const i = info.get(c.id), r = i.regle.finale;

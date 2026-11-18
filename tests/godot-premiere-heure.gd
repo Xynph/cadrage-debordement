@@ -48,8 +48,14 @@ func creer(club: int, connu: bool) -> void:
 	await settle()
 
 func run() -> void:
+	# Garde-fou : un blocage rend la main avec les échecs plutôt qu'un dépassement muet de la CI.
+	create_timer(270.0).timeout.connect(func() -> void:
+		printerr("FAIL: délai dépassé (route ", app.route if app else "", ", attente ", app.waiting if app else "", ")")
+		print("PREMIERE_HEURE ", checks, " controles, ", failures.size() + 1, " echecs")
+		quit(1))
 	root.size = Vector2i(1920, 1080)
 	app = load("res://main.tscn").instantiate(); root.add_child(app); await wait_model(); app.timer.stop()
+	print("PHASE defis")
 	# --- Défis de départ ---
 	load("res://ui/entry_screens.gd").begin_creation(app)
 	await settle(); await wait_model(); await settle(12)
@@ -75,6 +81,7 @@ func run() -> void:
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	await settle()
 	check(app._has_career() and str(app.model.club.get("goal", "")) == "Maintien", "Carrière créée avec l'objectif du défi")
+	print("PHASE accueil")
 	# --- Deux premières semaines ---
 	var coach: Control = app.coach
 	var etat := Accueil.etat(coach.profile.data)
@@ -95,17 +102,26 @@ func run() -> void:
 	check(str(app.last_command) == "auto_lineup" and app.bridge.last_response_ok, "« Le staff compose pour moi » envoie la composition")
 	await aller("Effectif")
 	check(genre() != "accueil", "Pas de répétition au second passage")
-	# --- Après 14 jours ---
-	var vieux: Dictionary = Accueil.etat(coach.profile.data)
-	var jour := Time.get_unix_time_from_datetime_string(str(app.model.meta.calendarToday).substr(0, 10) + "T12:00:00") - 15 * 86400
-	vieux.debut = Time.get_datetime_string_from_unix_time(int(jour)).substr(0, 10)
-	coach.profile.data[Accueil.CLE] = vieux
-	await aller("Finances")
-	check(genre() != "accueil", "Après deux semaines : plus d'explication d'écran")
-	await aller("Réception")
-	check(genre() == "accueil" and coach._bulle_texte.text == Accueil.TEXTE_FIN, "Gabi se met en retrait, une fois")
-	await aller("Bureau")
-	check(genre() != "accueil", "Le mot de retrait n'est pas répété")
+	# --- Après le 1er match officiel + 14 jours (modèle simulé : un Continuer peut sauter des semaines) ---
+	print("PHASE apres-14-jours")
+	check(Accueil.actif(app.model, coach.profile.data), "Toujours actif en préparation")
+	var simule: Dictionary = app.model.duplicate(true)
+	var propre := str(simule.club.id)
+	var premier := ""
+	for f: Dictionary in simule.calendar:
+		if str(f.home.id) == propre or str(f.away.id) == propre:
+			f.played = true; premier = str(f.date).substr(0, 10); break
+	var plus_tard := Time.get_unix_time_from_datetime_string(premier + "T12:00:00")
+	simule.meta.calendarToday = Time.get_datetime_string_from_unix_time(int(plus_tard + 10 * 86400)).substr(0, 10)
+	check(Accueil.actif(simule, coach.profile.data), "10 jours après le 1er match : encore actif")
+	simule.meta.calendarToday = Time.get_datetime_string_from_unix_time(int(plus_tard + 15 * 86400)).substr(0, 10)
+	check(not Accueil.actif(simule, coach.profile.data), "15 jours après le 1er match : terminé")
+	check(Accueil.a_dire("Finances", simule, coach.profile.data).is_empty(), "Terminé : plus d'explication d'écran")
+	var fin := Accueil.a_dire("Réception", simule, coach.profile.data)
+	check(str(fin.get("texte", "")) == Accueil.TEXTE_FIN, "Gabi annonce qu'il se met en retrait")
+	Accueil.marquer(coach.profile, Accueil.FIN)
+	check(Accueil.a_dire("Réception", simule, coach.profile.data).is_empty(), "Le mot de retrait n'est dit qu'une fois")
+	print("PHASE connu")
 	# --- « Je connais déjà » ---
 	await creer(1, true)
 	check(bool(Accueil.etat(coach.profile.data).get("connu", false)), "« Je connais déjà » enregistré")

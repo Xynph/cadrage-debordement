@@ -1,8 +1,9 @@
 extends RefCounted
-## Gabi guide les deux premières semaines d'une carrière Monde : au premier passage sur chaque écran clé
+## Gabi guide les deux premières semaines de jeu d'une carrière Monde : toute la préparation (un Continuer peut
+## sauter 7 à 35 jours) puis les 14 jours qui suivent le 1er match officiel. Au premier passage sur chaque écran clé
 ## (Réception, Effectif, Composition, Match, Finances, Formation), une bulle courte (deux phrases) avec une ou
 ## deux actions directes. Pendant ces 14 jours, ces bulles ne comptent pas dans la limite d'une intervention
-## spontanée par jour. Le 15e jour, Gabi dit qu'il se met en retrait, puis il reprend son rythme normal.
+## spontanée par jour. Ensuite, Gabi dit qu'il se met en retrait, puis il reprend son rythme normal.
 ## « Je connais déjà » (création) coupe tout cela pour la carrière.
 ## État dans le profil du guide (guide.json, hors carrière) : {club, debut, vus, connu}. Aucune écriture de carrière.
 
@@ -10,6 +11,8 @@ const Semaine = preload("res://guide/gabi_semaine.gd")
 
 const CLE := "accueil"
 const DUREE_JOURS := 14
+## Garde-fou : au-delà, plus d'accueil même sans match officiel joué.
+const PLAFOND_JOURS := 150
 const FIN := "fin"
 const COMMANDES_NOUVELLE_CARRIERE := ["new_career"]
 
@@ -84,18 +87,36 @@ static func _concerne(model: Dictionary, donnees: Dictionary) -> bool:
 	var meta: Dictionary = model.get("meta", {}) if model.get("meta") is Dictionary else {}
 	return not cur.is_empty() and not bool(cur.connu) and meta.get("hasCareer", false) and str(meta.get("mode", "")) == "world" and str(cur.club) == _club(model)
 
+## Date du 1er match officiel joué par le club ("" si aucun).
+static func premier_match(model: Dictionary) -> String:
+	var propre := _club(model)
+	var premier := ""
+	for fixture: Variant in model.get("calendar", []) if model.get("calendar") is Array else []:
+		if not fixture is Dictionary or not fixture.get("played", false): continue
+		if str(fixture.get("home", {}).get("id", "")) != propre and str(fixture.get("away", {}).get("id", "")) != propre: continue
+		var date := str(fixture.get("date", "")).substr(0, 10)
+		if not date.is_empty() and (premier.is_empty() or date < premier): premier = date
+	return premier
+
+## Les deux premières semaines de jeu sont terminées (14 jours après le 1er match, ou plafond atteint).
+static func termine(model: Dictionary, donnees: Dictionary) -> bool:
+	var j := jours(model, donnees)
+	if j < 0: return false
+	if j >= PLAFOND_JOURS: return true
+	var premier := Semaine._unix(premier_match(model))
+	var aujourdhui := Semaine._unix(_aujourdhui(model))
+	return premier >= 0 and aujourdhui >= 0 and roundi((aujourdhui - premier) / 86400.0) >= DUREE_JOURS
+
 ## Les deux premières semaines sont en cours (et pas « je connais déjà »).
 static func actif(model: Dictionary, donnees: Dictionary) -> bool:
-	if not _concerne(model, donnees): return false
-	var j := jours(model, donnees)
-	return j >= 0 and j < DUREE_JOURS
+	return _concerne(model, donnees) and jours(model, donnees) >= 0 and not termine(model, donnees)
 
 ## Ce que Gabi dit sur cet écran maintenant : {cle, titre, texte, actions} ou {}.
 static func a_dire(route: String, model: Dictionary, donnees: Dictionary) -> Dictionary:
 	if not _concerne(model, donnees): return {}
 	var vus: Array = etat(donnees).vus
 	var j := jours(model, donnees)
-	if j >= DUREE_JOURS:
+	if termine(model, donnees):
 		# Une seule fois, sur un écran calme : Gabi se met en retrait.
 		if FIN in vus or route not in ["Réception", "Bureau"]: return {}
 		return {"cle": FIN, "titre": "GABI", "texte": TEXTE_FIN, "actions": []}

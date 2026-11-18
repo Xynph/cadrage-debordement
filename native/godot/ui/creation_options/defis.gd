@@ -71,6 +71,14 @@ static func _club(catalogue: Array, id: int) -> Dictionary:
 		if int(club.get("id", -1)) == id: return club
 	return {}
 
+## Titre du défi avec le nom de la 3e division de la réalité active (« Fédérale » dans le jeu de base).
+static func _titre(app: Control, defi: Dictionary) -> String:
+	var titre := str(defi.get("titre", ""))
+	if str(defi.get("id", "")) != "nationale" or not app.pack_manager.has_method("competition"): return titre
+	var identite: Dictionary = app.pack_manager.competition("nationale", "creation")
+	var nom := str(identite.get("shortName", identite.get("name", ""))).strip_edges()
+	return titre if nom.is_empty() else titre.replace("Nationale", nom)
+
 ## Bandeau des défis (rien tant que le moteur n'a pas répondu, ou s'il n'en propose aucun).
 static func build(app: Control, parent: Node, catalogue: Array) -> void:
 	var defis := liste(app)
@@ -82,8 +90,8 @@ static func build(app: Control, parent: Node, catalogue: Array) -> void:
 	parent.add_child(cadre)
 	var tete := C.h(12)
 	cadre.add_child(tete)
-	tete.add_child(Kit.caps("Défis de départ", 18))
-	var aide := C.label("Une histoire toute prête : choisis-en une, ou prends le club de ton choix.", 17, C.MUTED, false)
+	tete.add_child(Kit.caps("Défis de départ", 21))
+	var aide := C.label("Une histoire toute prête : choisis-en une, ou prends le club de ton choix.", 20, C.MUTED, false)
 	aide.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	tete.add_child(C.fill(aide))
 	var rangee := C.h(10)
@@ -102,9 +110,9 @@ static func build(app: Control, parent: Node, catalogue: Array) -> void:
 		carte.name = "CreationDefi_" + str(defi.id)
 		carte.focus_mode = Control.FOCUS_ALL
 		carte.disabled = app.waiting
-		carte.custom_minimum_size.y = C.px(118)
+		carte.custom_minimum_size.y = C.px(150)
 		carte.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		carte.tooltip_text = "%s\n%s\n%s" % [defi.titre, defi.accroche, principal.raison]
+		carte.tooltip_text = "%s\n%s\n%s" % [_titre(app, defi), defi.accroche, principal.raison]
 		var actif := choisi == int(principal.club)
 		var fond := C.box(Color("1d3328") if actif else Kit.SURFACE, Editorial.RAIL_GOLD if actif else Editorial.LINE, 6, 10)
 		fond.border_width_left = maxi(2, C.px(4)) if actif else 1
@@ -118,13 +126,13 @@ static func build(app: Control, parent: Node, catalogue: Array) -> void:
 		contenu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		carte.add_child(contenu)
 		contenu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, C.px(10))
-		var titre := C.label(str(defi.titre), 20, Editorial.RAIL_GOLD, true, 700)
+		var titre := C.label(_titre(app, defi), 25, Editorial.RAIL_GOLD, true, 700)
 		titre.clip_text = true
 		contenu.add_child(titre)
-		var nom := C.label(G.club_name(club), 22, C.IVORY, true, 700)
+		var nom := C.label(G.club_name(club), 28, C.IVORY, true, 700)
 		nom.clip_text = true
 		contenu.add_child(nom)
-		var ligne := C.label("%s  %s · %s" % [etoiles(int(principal.difficulte)), principal.niveau, principal.objectif], 16, C.MUTED, false)
+		var ligne := C.label("%s  %s · %s" % [etoiles(int(principal.difficulte)), principal.niveau, principal.objectif], 20, C.MUTED, false)
 		ligne.clip_text = true
 		contenu.add_child(ligne)
 		# Autres clubs du même défi : un clic les propose à la place.
@@ -140,7 +148,7 @@ static func build(app: Control, parent: Node, catalogue: Array) -> void:
 				puce.tooltip_text = "%s · %s · %s" % [G.club_name(autre), offre.niveau, offre.raison]
 				puce.flat = true
 				puce.disabled = app.waiting
-				puce.add_theme_font_size_override("font_size", maxi(11, C.px(15)))
+				puce.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
 				puce.add_theme_color_override("font_color", C.MUTED)
 				puce.add_theme_color_override("font_hover_color", C.IVORY)
 				puce.pressed.connect(choisir.bind(app, str(defi.id), autre))

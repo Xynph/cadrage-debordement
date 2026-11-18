@@ -122,9 +122,11 @@ const SIGNAL_SOURCE = `(function(){
   const nf=next&&next.date===tomorrow?fixtures.find(f=>f.date===tomorrow):null;
   if(nf){
    const opp=nf.homeId===s.club?nf.awayId:nf.homeId,sheet=[...(s.lineup||[]),...(s.reserves||[])];
+   // Classement seulement une fois la compétition lancée : avant la 1re journée, l'ordre est celui du départ.
+   const ranked=nf.phase==='league'&&(standing(nf.competitionId)?.played||0)>0;
    out.veille={id:nf.id,opponent:name(opp),home:nf.homeId===s.club,competitionId:nf.competitionId,phase:nf.phase,
     sheet:sheet.length,sheetInjured:sheet.filter(id=>(byId.get(id)?.injury||0)>0).length,form:form(opp),
-    rank:nf.phase==='league'?rankOf(nf.competitionId,opp):null,ownRank:nf.phase==='league'?rankOf(nf.competitionId,s.club):null};
+    rank:ranked?rankOf(nf.competitionId,opp):null,ownRank:ranked?rankOf(nf.competitionId,s.club):null};
   }
   const lf=fixtures.find(f=>f.date===yesterday),lr=lf?resultOf(lf):null;
   if(lr&&Array.isArray(lr.pair)){const i=lr.pair.indexOf(s.club);out.lendemain={id:lf.id,opponent:name(lr.pair[1-i]),home:i===0,us:lr.score[i],them:lr.score[1-i],injured:players.filter(p=>p.injury>0).length};}
