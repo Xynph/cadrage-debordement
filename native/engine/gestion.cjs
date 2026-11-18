@@ -52,6 +52,11 @@ module.exports=function nativeGestion(command,p){
   requireThat(S.live&&!S.live.finished&&typeof setConsigne==='function'&&S.live.pilotage,'Consignes indisponibles pour ce match.');
   requireThat(setConsigne(S.live,p.axe,p.valeur),'Consigne inconnue.');return;
  }
+ if(command==='cri'){
+  // Cri de la touche (match-pilotage.js) : sans pause, effet court qui s'use si on le répète.
+  requireThat(S.live&&!S.live.finished&&typeof crier==='function'&&S.live.pilotage,'Cris indisponibles pour ce match.');
+  requireThat(crier(S.live,p.id),'Cri inconnu ou pas encore possible.');return;
+ }
  if(command==='set_penalty_policy'){
   // Consigne sur pénalité pendant le match (tir au but, pénaltouche, jouer vite à la main, ou selon le contexte).
   requireThat(Object.hasOwn(PENALTY_POLICIES,p.policy),'Consigne sur pénalité inconnue.');

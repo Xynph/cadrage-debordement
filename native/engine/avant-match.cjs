@@ -105,7 +105,7 @@ function factory(){
  // Arbitre désigné : mêmes fixtureId et competitionId que le direct (`worldContext.id` / `.competitionId`).
  function arbitre(f){
   if(typeof arbitreDuMatch!=='function')return null;
-  try{const a=arbitreDuMatch(f.id,f.competitionId);return a?{nom:a.nom,pays:a.pays,rucks:a.rucks,melee:a.melee,horsJeu:a.horsJeu,cartons:a.cartons,resume:a.resume}:null;}catch(e){return null;}
+  try{const a=arbitreDuMatch(f.id,f.competitionId);return a?{nom:a.nom,civilite:a.civilite||'M.',pays:a.pays,rucks:a.rucks,melee:a.melee,horsJeu:a.horsJeu,cartons:a.cartons,resume:a.resume}:null;}catch(e){return null;}
  }
  function gabi(s,f,own,adv,data){
   const nous=[f.homeId,f.awayId].indexOf(own),eux=1-nous,cles=[];
@@ -138,7 +138,7 @@ function factory(){
   const leur=data.forme[eux]||[],victoires=leur.filter(x=>x==='V').length;
   if(leur.length>=4&&victoires>=4)ajoute('dynamique',48,'Casser leur dynamique',victoires+' victoires sur leurs '+leur.length+' derniers matchs');
   const ar=data.arbitre;
-  if(ar&&ar.rucks>=4)ajoute('arbitre-rucks',66,'M. '+ar.nom.split(' ').slice(1).join(' ')+' siffle beaucoup les rucks','on évite de contester chaque ruck');
+  if(ar&&ar.rucks>=4)ajoute('arbitre-rucks',66,(ar.civilite||'M.')+' '+ar.nom.split(' ').slice(1).join(' ')+' siffle beaucoup les rucks','on évite de contester chaque ruck');
   ajoute('collisions',20,'Gagner les collisions','avancer sur chaque impact');
   ajoute('plan',10,'Respecter le plan de jeu','patience et discipline');
   ajoute('depart',15,'Réussir les 20 premières minutes','le premier temps fort donne le ton');

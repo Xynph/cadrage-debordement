@@ -49,13 +49,50 @@ Le staff choisit le ton de chaque causerie (juste dans 25 à 90 % des cas selon 
 revoit les consignes toutes les 5 minutes (fautes, touches perdues, score), avec une vigilance liée à sa
 compétence ; ses changements sont notés dans le journal.
 
+## Adversaire
+
+L'entraîneur adverse n'est plus passif (demande de Léo, 18/11/2026). Seulement dans le match du joueur
+(`pilotageActif`), sans tirage aléatoire ajouté (tout passe par `pilotageHash`).
+
+- **Causeries** (avant-match, mi-temps) : quand la causerie du manager s'ouvre (`native/engine/match-talks.cjs` →
+  `causerieAdverse`), le staff adverse choisit son ton avec la même logique que le staff du manager (`tonDuStaff`),
+  dans le contexte vu de son côté (favori ↔ outsider, mené ↔ devant). Compétence : niveau réel de ses entraîneurs
+  (`staffJudges`), sinon le réglage « niveau adverse » (Découverte 50, Classique 60, Expert 72). Chaque joueur de
+  sa feuille réagit avec le même modèle (`reactionJoueur`), confiance neutre (50) envers son entraîneur et usure des
+  tons de ce match seulement ; l'état va dans `live.pilotage.etats` (marqué `adverse`). Confiance de la carrière
+  (`S.pilotage.confiance`) et moral inchangés. Journal : « Vestiaire de Pau : discours furieux à la mi-temps. »
+- **Consignes** : `live.pilotage.consignesAdverses` (celles du manager restent dans `consignes`). Le banc adverse les
+  revoit toutes les 5 minutes dès le coup d'envoi, en direct comme en délégation (`pilotageAdversaire`, branché
+  après chaque minute par `native/engine/match-delegation.cjs`), avec les règles du staff délégué (`reglesDuStaff`,
+  partagées) : arbitre pointilleux sur les rucks → Prudence ; deux pénalités en 5 minutes → Zéro faute ; deux
+  touches perdues → Sûre ; mené après 55′ → Accélérer et Garder ; devant de 10 points au plus après 65′ → Occuper
+  et Ralentir. Vigilance selon sa compétence. Journal, seulement ce qui se voit sur le terrain : « Pau accélère le
+  rythme. » (la minute est affichée par l'écran).
+- **Projection** : `live.pilotage.adversaire = {consignes, derniers, causeries}` (ajout ; `joueurs` ne contient
+  que le club joué, les états adverses restent cachés).
+- Rencontres créées avant ce chantier (sans `consignesAdverses`) : adversaire neutre, comme avant.
+
 ## Mesure (tests/match-pilotage.cjs, 160 matchs par réglage, mêmes graines)
 
 Voir la sortie du test : pénalités concédées, ballons arrachés, cartons, coups de pied, touches gagnées et écart
-de score selon chaque réglage.
+de score selon chaque réglage. Ces séries figent le banc adverse (une seule variable change) ; le test vérifie que
+des consignes adverses neutres donnent exactement les mêmes matchs qu'avant (20 matchs, mêmes graines), puis
+mesure le banc adverse actif sur 60 matchs (~2,9 changements de consigne par match).
 
 ## Limites connues
 
 - Le moteur donne déjà ~2,5 cartons jaunes par équipe et par match (bien au-dessus du Top 14) : antérieur à ce
   chantier, à corriger à part.
-- L'adversaire IA ne fait ni causerie ni consigne.
+- Les matchs IA contre IA n'ont ni causerie ni consigne (pilotage réservé au match du joueur).
+- Version web : sans le domaine natif `match-delegation`, le banc adverse ne revoit pas ses consignes en cours de match.
+
+## Cris de la touche, fatigue, conseil de changement (fenêtre Équipe)
+
+- Commande `cri {id}` sans pause : Encourager (+1, apaise Tendu/Vexé, 8 min), Exiger (+2, −3 discipline, 8 min),
+  Calmer (+6 discipline, apaise, 10 min), Serrer la défense (+4 plaquage, −2 passe, 10 min), Tout donner (+3, dès 65′,
+  use 15 % plus vite, 10 min). Un cri à la fois ; le même cri dans les 20 minutes porte moitié moins, puis plus du tout.
+- Fatigue : « Accélérer » use 12 % plus vite, « Ralentir » 8 % moins. Prévision à 10 minutes avec la formule du moteur
+  (`live.pilotage.fatigue`, les 4 joueurs les plus entamés).
+- Conseil de Gabi (`live.pilotage.conseilChangement`) : le joueur qui passera sous 55 % dans 10 minutes, remplacé par le
+  remplaçant éligible le mieux noté et frais (≥ 85 %).
+- Corps arbitral : trois arbitres femmes (accords dans le résumé, le mail et le mot de Gabi).
