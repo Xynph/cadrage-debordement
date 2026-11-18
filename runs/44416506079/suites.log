@@ -1,0 +1,140 @@
+::group::tests/continuer-arrets-saison.cjs
+Fenêtre 2026-10-02 · 63 s
+21 arrêts dont 15 informatifs · par type {"courrier":9,"lendemain":2,"groupe":2,"veille":2} · par mois {"2026-09":14,"2026-10":1}
+Jours à plusieurs arrêts : [["2026-09-19",3],["2026-09-20",2],["2026-09-21",3],["2026-09-25",2],["2026-09-28",3],["2026-09-29",2],["2026-10-01",2]]
+   2026-09-19 courrier · Le quotidien régional : Rumeur : Piers BICKERSTAFF courtisé · Le staff technique : Bulletin météo : Sec
+   2026-09-19 courrier · Le directeur du centre de formation : Une pépite chez les Espoirs : Romain Roumazet
+   2026-09-20 lendemain · Victoire 39-27 à Meadowbridge Rovers. Infirmerie : aucun indisponible. · Le quotidien régional : « Le collectif récompensé »
+   2026-09-20 courrier · Callum BOND : Besoin de te parler
+   2026-09-21 groupe · Gabi, ton adjoint : Débrief : Meadowbridge Rovers · Le médecin du club : Bulletin médical : Donal GANNON
+   2026-09-21 courrier · Le président : Un mot du président
+   2026-09-23 courrier · Un agent de joueurs : Lucas Mercier pour ton club ?
+   2026-09-25 veille · Demain, réception de Trentwood Archers : feuille de match complète (23). Adversaire : Trentwood Archers 8e, nous 4e, forme D. · Le staff technique : Bulletin météo avant Trentwood Archers · La commission des arbitres : Arbitre de demain contre Trentwood Archers
+   2026-09-25 courrier · Le médecin du club : Gêne pour Darcy BROOKS avant Trentwood Archers
+   2026-09-27 lendemain · Victoire 48-43 contre Trentwood Archers. Infirmerie : 1 indisponible. · Le quotidien régional : La presse après Trentwood Archers · Le responsable de la billetterie : Affluence contre Trentwood Archers
+Durée totale 84 s
+TAP version 13
+# Subtest: Règle : types informatifs toujours actifs, priorité, plusieurs arrêts le même jour
+ok 1 - Règle : types informatifs toujours actifs, priorité, plusieurs arrêts le même jour
+  ---
+  duration_ms: 3.676996
+  type: 'test'
+  ...
+# Subtest: Fenêtre de saison : veille, lendemain, plusieurs arrêts le même jour, monde inchangé
+ok 2 - Fenêtre de saison : veille, lendemain, plusieurs arrêts le même jour, monde inchangé
+  ---
+  duration_ms: 84337.249564
+  type: 'test'
+  ...
+# Subtest: Saison complète : arrêts informatifs répartis, monde inchangé au 15/12
+ok 3 - Saison complète : arrêts informatifs répartis, monde inchangé au 15/12 # SKIP
+  ---
+  duration_ms: 0.537785
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 84347.631123
+CD_CPU_PROFILE suite=tests/continuer-arrets-saison.cjs user_s=98.12 system_s=7.39 wall_s=85.25 cpu_pct=123% max_rss_kb=3142576
+PASS tests/continuer-arrets-saison.cjs (85 s)
+::endgroup::
+::group::tests/meteo-veille.cjs
+TAP version 13
+# Subtest: Rien avant la veille ; annonce la veille, gardée dans la sauvegarde
+ok 1 - Rien avant la veille ; annonce la veille, gardée dans la sauvegarde
+  ---
+  duration_ms: 627.849562
+  type: 'test'
+  ...
+# Subtest: Un seul courrier « Bulletin météo » (routine de la veille), qui ouvre la composition
+ok 2 - Un seul courrier « Bulletin météo » (routine de la veille), qui ouvre la composition
+  ---
+  duration_ms: 0.669304
+  type: 'test'
+  ...
+# Subtest: Tirage sans aléa : même prévision, aléa du moteur intact
+ok 3 - Tirage sans aléa : même prévision, aléa du moteur intact
+  ---
+  duration_ms: 26.905971
+  type: 'test'
+  ...
+# Subtest: Ancienne sauvegarde arrivée à la veille : l’annonce est fixée à la commande suivante
+ok 4 - Ancienne sauvegarde arrivée à la veille : l’annonce est fixée à la commande suivante
+  ---
+  duration_ms: 879.366747
+  type: 'test'
+  ...
+# Subtest: Coup d’envoi : la météo annoncée est celle du match, vent compris ; rien ne bouge ensuite
+ok 5 - Coup d’envoi : la météo annoncée est celle du match, vent compris ; rien ne bouge ensuite
+  ---
+  duration_ms: 3900.156686
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 47183.019849
+CD_CPU_PROFILE suite=tests/meteo-veille.cjs user_s=53.85 system_s=4.82 wall_s=48.25 cpu_pct=121% max_rss_kb=2806992
+PASS tests/meteo-veille.cjs (48 s)
+::endgroup::
+::group::tests/club-mail.cjs
+2026-10-14 · 54 mails · 26 types · 23 réponses · 26 arrêts informatifs · 93 s
+Types : meteo, pepite, rumeur, temps_de_jeu, article, bilan_match, president, blessure, tour_championnats, seance_adjoint, agent, moral_groupe, analyste, entraineur_avants, gene, arbitre, rapport_agent, affluence, surcharge, anniversaire, contrats, rapport_centre, plan_adverse, cadre_rdv, sponsor, prolongation
+Réponses : rumeur/dementir, pepite/progresser, meteo/composition, article/saluer, temps_de_jeu/plus_tard, blessure/progressif, president/bilan, bilan_match/conquete, moral_groupe/sortie, agent/rapport, seance_adjoint/garder, tour_championnats/vestiaire, arbitre/discipline, gene/medecin, entraineur_avants/conquete, analyste/conquete, affluence/operation, surcharge/alleger, anniversaire/feter, plan_adverse/composition, cadre_rdv/recevoir, sponsor/objectif, prolongation/reporter
+Durée totale 100 s {"creation":12969,"reponses":7858,"controles":5219,"partie":93126}
+TAP version 13
+# Subtest: Données : catalogue complet, formulations variées, effets connus
+ok 1 - Données : catalogue complet, formulations variées, effets connus
+  ---
+  duration_ms: 1.341941
+  type: 'test'
+  ...
+# Subtest: Carrière Monde : courrier varié, réponses enregistrées, monde inchangé à la réception, rejeu identique
+ok 2 - Carrière Monde : courrier varié, réponses enregistrées, monde inchangé à la réception, rejeu identique
+  ---
+  duration_ms: 100890.0062
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 100897.63836
+CD_CPU_PROFILE suite=tests/club-mail.cjs user_s=110.26 system_s=12.12 wall_s=101.22 cpu_pct=120% max_rss_kb=2931400
+PASS tests/club-mail.cjs (101 s)
+::endgroup::
+::group::tests/godot-courrier-club.cjs
+TAP version 13
+# Subtest: Courrier du club : réponse en un clic, écran concerné ouvert, arrêts informatifs sur l’écran utile
+ok 1 - Courrier du club : réponse en un clic, écran concerné ouvert, arrêts informatifs sur l’écran utile
+  ---
+  duration_ms: 20920.254204
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20925.912846
+CD_CPU_PROFILE suite=tests/godot-courrier-club.cjs user_s=25.60 system_s=1.38 wall_s=20.95 cpu_pct=128% max_rss_kb=1632924
+PASS tests/godot-courrier-club.cjs (21 s)
+::endgroup::

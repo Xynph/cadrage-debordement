@@ -1,0 +1,4 @@
+tests/continuer-arrets-saison.cjs
+tests/meteo-veille.cjs
+tests/club-mail.cjs
+tests/godot-courrier-club.cjs
