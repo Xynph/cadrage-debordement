@@ -630,6 +630,8 @@ function factory() {
     if (e.pret === 'accepter' && !(typeof pretCourrier === 'function' && pretCourrier())) return 'Le président a déjà tranché.';
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; if ((club.cash ?? 0) < (sx.frais || 1500) + (sx.alourdie || 7500)) return 'Trésorerie insuffisante pour un appel.'; }
     if (e.promesse) {
+      // makePlayingPromise refuse tant que le match reste ouvert (résultat confirmé, journée pas encore close).
+      if (s.live) return 'Promesse possible une fois la journée close.';
       if (typeof satisfactionActive !== 'function' || !satisfactionActive() || s.phase !== 'league' || s.round > 23 || Object.keys(s.economy?.talks || {}).length || p.injury || p.satisfaction?.promise) return 'Promesse impossible : phase régulière, joueur apte et sans promesse en cours.';
     }
     if (e.contratDS || e.consigneDS) {
