@@ -19,6 +19,9 @@ const Rendu = preload("res://match_rendu.gd")
 const Animations = preload("res://match_animations.gd")
 const Choregraphie = preload("res://match_choregraphie.gd")
 const CUT_SECONDS := 0.30
+## Nombre de joueurs à l'image, chacun à plus de Motion.TRAJET_REPLACEMENT de sa place, à partir
+## duquel la vue coupe pour les replacer (équipe qui se reforme) au lieu de les faire courir.
+const REFORMATION_MIN := 6
 ## Caméra de retransmission (TV) : décalage depuis le point visé. Plus haute et plus en
 ## surplomb qu'à l'origine ((0, 55, 75), 36°) : environ 41° au-dessus de l'horizon, ce qui
 ## montre l'action d'un peu plus loin et cache mieux appuis et contacts approximatifs.
@@ -78,6 +81,9 @@ var _ground_meshes: Array[MeshInstance3D] = []
 ## Poses tenues après une liaison (mêlée liée) : id -> {pitch, lift, poids, base, lache}.
 var _tenues: Dictionary = {}
 var _tenue_cle := ""
+## Compteurs de contrôle (tests, capture) : joueurs replacés au lieu de courir, et coupes posées pour cela.
+var replacements := 0
+var replacements_coupes := 0
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -285,6 +291,7 @@ func arreter_choregraphie() -> void:
 		entry.from = at
 		entry.target = at
 		entry.elapsed = BLEND_SECONDS
+		entry.duree = BLEND_SECONDS
 		entry.velocity = Vector3.ZERO
 		entry.tangent = Vector3.ZERO
 		entry.holding = false
@@ -393,14 +400,16 @@ func apply_frame(live: Dictionary) -> void:
 		if not (entry.target as Vector3).is_equal_approx(target):
 			var incoming: Vector3 = entry.velocity
 			if can_cut and incoming.is_zero_approx() and entry.cut_idle <= 0.3:
-				incoming = (entry.target - entry.from) / BLEND_SECONDS
+				incoming = (entry.target - entry.from) / float(entry.duree)
 			if entry.cut_beat < 0.0:
 				entry.cut_direction = Cut.direction(incoming, target - entry.node.position, BLEND_SECONDS) if can_cut else 0
 				entry.cut_plant.clear()
 			entry.cut_idle = 0.0
 			entry.from = entry.node.position
 			entry.target = target
-			entry.tangent = Motion.tangent(entry.velocity, target - entry.node.position, BLEND_SECONDS)
+			# Durée selon la distance : personne ne court plus vite qu'un sprint (Motion.ALLURE_MAX).
+			entry.duree = Motion.duree(entry.from, target)
+			entry.tangent = Motion.tangent(entry.velocity, target - entry.node.position, entry.duree)
 			entry.elapsed = 0.0
 		if entry.holding and cut_side != 0:
 			entry.cut_direction = cut_side
@@ -413,6 +422,7 @@ func apply_frame(live: Dictionary) -> void:
 			entry.velocity = Vector3.ZERO
 			entry.tangent = Vector3.ZERO
 			entry.elapsed = BLEND_SECONDS
+			entry.duree = BLEND_SECONDS
 			entry.cut_idle = BLEND_SECONDS
 			entry.feet.clear()
 			entry.grip = 1.0 if entry.holding else 0.0
@@ -455,6 +465,82 @@ func apply_frame(live: Dictionary) -> void:
 		_gestes.observe(live, scene, new_action, _action_motion and not _paused and has_ball and _live_cadence == 1)
 	if new_action and play_action and _animations_adaptees != null and _live_cadence == 1:
 		_gestes_du_fait(scene, previous_kind)
+	_replacer_longs(new_action)
+
+
+## Très grands déplacements (replacement après un essai, équipe qui se reforme, poursuivants
+## d'un long coup de pied) : plutôt qu'une course de plus de Motion.TRAJET_REPLACEMENT mètres, le
+## joueur est replacé à quelques pas de sa place. Quand au moins REFORMATION_MIN de ces joueurs
+## sont à l'image au début d'une nouvelle action, la caméra coupe et tous sont replacés pendant la
+## coupe ; sinon seuls ceux qui ne sont pas à l'image le sont (les autres courent au sprint).
+func _replacer_longs(new_action: bool) -> void:
+	if _paused:
+		return
+	var longs: Array[String] = []
+	var visibles := 0
+	for id: String in _actors:
+		var entry: Dictionary = _actors[id]
+		# Seulement un trajet qui vient d'être fixé, et jamais un joueur mis en scène ailleurs.
+		if float(entry.elapsed) > 0.0 or _is_pass_player(id) or (_gestes != null and _gestes.stages(id)) or (_choregraphie != null and _choregraphie.stages(id)):
+			continue
+		var at: Vector3 = (entry.node as Node3D).position
+		var target: Vector3 = entry.target
+		if Vector2(target.x - at.x, target.z - at.z).length() <= Motion.TRAJET_REPLACEMENT:
+			continue
+		longs.append(id)
+		if _a_l_image(at) or _a_l_image(target):
+			visibles += 1
+	if longs.is_empty():
+		return
+	var coupe := new_action and visibles >= REFORMATION_MIN
+	for id: String in longs:
+		var entry: Dictionary = _actors[id]
+		if not coupe and (entry.holding or _a_l_image((entry.node as Node3D).position) or _a_l_image(entry.target)):
+			continue
+		_replacer(entry)
+	if coupe:
+		_camera_cut = true
+		# Le ballon est déjà où l'action reprend.
+		_ball_from = _ball_target
+		_ball_travel = 1.0
+		replacements_coupes += 1
+
+
+func _replacer(entry: Dictionary) -> void:
+	var actor: Node3D = entry.node
+	var target: Vector3 = entry.target
+	var gap := Vector3(target.x - actor.position.x, 0.0, target.z - actor.position.z)
+	var pas := minf(Motion.DERNIERS_PAS, gap.length())
+	actor.position = target - gap.normalized() * pas if gap.length() > 0.01 else target
+	if gap.length() > 0.01:
+		actor.rotation.y = atan2(gap.x, gap.z)
+	entry.from = actor.position
+	entry.velocity = Vector3.ZERO
+	entry.tangent = Vector3.ZERO
+	entry.duree = Motion.duree(entry.from, target)
+	entry.elapsed = 0.0
+	entry.feet.clear()
+	replacements += 1
+
+
+func _a_l_image(point: Vector3) -> bool:
+	return is_instance_valid(_camera) and _camera.is_inside_tree() and _camera.is_position_in_frustum(point + Vector3(0.0, 1.0, 0.0))
+
+
+## Temps (s) qu'il faut encore aux joueurs proches du ballon pour finir leur déplacement à
+## l'écran : la régie ne passe pas à l'action suivante avant (avec une échéance).
+func deplacement_restant(rayon: float = 25.0) -> float:
+	var reste := 0.0
+	var ballon := Vector2(_ball_target.x, _ball_target.z)
+	for id: String in _actors:
+		var entry: Dictionary = _actors[id]
+		if _is_pass_player(id) or (_gestes != null and _gestes.stages(id)) or (_choregraphie != null and _choregraphie.stages(id)):
+			continue
+		var target: Vector3 = entry.target
+		if Vector2(target.x, target.z).distance_to(ballon) > rayon:
+			continue
+		reste = maxf(reste, float(entry.duree) - float(entry.elapsed))
+	return reste
 
 
 ## Gestes adaptés déclenchés par le fait affiché (bibliothèque CD_MATCH_ANIMATIONS
@@ -531,10 +617,12 @@ func _process(delta: float) -> void:
 		elif staged:
 			_gestes.place(id, actor)
 		else:
-			if entry.elapsed >= BLEND_SECONDS:
-				entry.cut_idle = minf(BLEND_SECONDS, entry.cut_idle + delta)
-			entry.elapsed = minf(BLEND_SECONDS, float(entry.elapsed) + delta)
-		var progress: float = entry.elapsed / BLEND_SECONDS
+			# Temps passé à l'arrêt, une fois la place atteinte (même au milieu de cette image).
+			var repos := float(entry.elapsed) + delta - float(entry.duree)
+			if repos > 0.0:
+				entry.cut_idle = minf(BLEND_SECONDS, entry.cut_idle + minf(delta, repos))
+			entry.elapsed = minf(float(entry.duree), float(entry.elapsed) + delta)
+		var progress: float = entry.elapsed / float(entry.duree)
 		var live_cut: bool = entry.cut_beat >= 0.0 and entry.cut_normal_speed
 		var oneshot: Dictionary = entry.get("geste", {})
 		if not in_pass and not staged and not oneshot.is_empty() and oneshot.ancre:
@@ -547,7 +635,7 @@ func _process(delta: float) -> void:
 			var travel := Cut.live_travel(progress) if live_cut else progress
 			actor.position = Motion.position_at(entry.from, entry.target, entry.tangent, travel)
 			entry.velocity = ((actor.position - previous) / maxf(delta, 0.001) if live_cut
-				else Motion.velocity_at(entry.from, entry.target, entry.tangent, progress, BLEND_SECONDS))
+				else Motion.velocity_at(entry.from, entry.target, entry.tangent, progress, entry.duree))
 		var movement := actor.position - previous
 		var speed := movement.length() / maxf(delta, 0.001)
 		# Allure lissée : elle décide du port du ballon (deux mains ou sous le bras).
@@ -1020,7 +1108,7 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 		if not idle.is_empty():
 			animation.play(idle)
 	return {"node": actor, "model": model, "side": side, "from": target, "target": target,
-		"elapsed": BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
+		"elapsed": BLEND_SECONDS, "duree": BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
 		"feet": {}, "cut_direction": 0, "cut_idle": BLEND_SECONDS, "cut_beat": -1.0, "cut_normal_speed": false, "cut_pose": {}, "cut_plant": {},
 		"contact_base": {}, "contact_weight": 0.0,
 		"animation": animation, "idle": idle, "run": run, "walk": walk, "adapted": adapted, "pace": -1, "geste": {}, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0,

@@ -20,6 +20,7 @@ extends RefCounted
 ## Tout est procédural sur le squelette CC0 existant : aucune ressource ajoutée.
 
 const Presentation = preload("res://match_presentation.gd")
+const Motion = preload("res://match_motion.gd")
 
 const FORM := 2.0          # instant du geste où l'alignement est en place ; la mise en place commence avant (temps négatif)
 const FORM_MIN := 1.2      # durée minimale d'une course de mise en place
@@ -296,6 +297,7 @@ func _release(id: String) -> void:
 	if member.get("staged", true):
 		entry.from = entry.node.position
 		entry.elapsed = 0.0
+		entry.duree = Motion.duree(entry.from, entry.target)
 		entry.tangent = Vector3.ZERO
 		entry.velocity = Vector3.ZERO
 		entry.feet.clear()

@@ -49,6 +49,9 @@ const ENTRACTE := 0.0
 ## Liaison entre deux temps forts contigus (match_liaison.gd) : toujours à vitesse réelle ;
 ## marge au-delà de sa durée avant de reprendre la main.
 const ECHEANCE_LIAISON := 3.0
+## Fin d'un plan : l'action suivante attend que les joueurs proches du ballon aient fini leur
+## déplacement à l'écran (allure plafonnée de la vue), au plus ECHEANCE_PLACE secondes de plus.
+const ECHEANCE_PLACE := 1.5
 
 var view: Control
 var app: Control
@@ -134,6 +137,8 @@ var arbitre: Node3D
 var _vitesses: Dictionary = {}
 var _places: Dictionary = {}
 var _saut_max := 0.0
+## Secondes déjà attendues, à la fin du plan courant, pour que les joueurs finissent leur déplacement.
+var _attente_place := 0.0
 
 static func enabled() -> bool:
 	return OS.get_environment("CD_MATCH_TEMPS_FORTS") != "0"
@@ -919,6 +924,7 @@ func _jouer(plan: Dictionary) -> void:
 	var scene: Dictionary = plan.scene
 	phase = "jeu"
 	temps = 0.0
+	_attente_place = 0.0
 	_resultat_sonne = false
 	_plaque = false
 	# La clameur et la légende de l'essai partent quand l'essai est à l'écran : fin de la course,
@@ -976,6 +982,10 @@ func _lire(delta: float, reel: float) -> void:
 		_plaque = true
 		_plaquer(plan)
 	if temps < float(plan.get("duree", 1.0)): return
+	# Le plan n'est fini qu'une fois joué à l'écran : les joueurs proches du ballon ont rejoint leur place.
+	if _attente_place < ECHEANCE_PLACE and stage.has_method("deplacement_restant") and stage.deplacement_restant() > 0.05:
+		_attente_place += reel
+		return
 	_score = plan.get("score", _score)
 	index += 1
 	if index < tf.plans.size():
