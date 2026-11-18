@@ -47,10 +47,10 @@ function career() {
   process.on('exit', () => shared.close());
   return shared;
 }
-// Feuilles de saison régulière Top 14 / Pro D2 jouées par chaque club avant la semaine courante.
+// Feuilles de saison régulière Top 14 / Pro D2 (JIFF) et Premiership (EQP) jouées par chaque club avant la semaine courante.
 function expectedSheets(s) {
   const out = {};
-  for (const f of s.worldMode.fixtures) if (f.week < s.round && f.phase === 'league' && ['elite', 'accession'].includes(f.competitionId))
+  for (const f of s.worldMode.fixtures) if (f.week < s.round && f.phase === 'league' && ['elite', 'accession', 'prem'].includes(f.competitionId))
     for (const c of [f.homeId, f.awayId]) out[c] = (out[c] || 0) + 1;
   return out;
 }
@@ -65,7 +65,7 @@ test('Carrière Monde : statuts initiaux, feuilles comptées en Top 14 / Pro D2,
   const c = career();
   // Le Top 14 et la Pro D2 commencent après les premières semaines du calendrier Monde.
   let model = c.round(), s = c.exported().state;
-  for (let i = 0; i < 14 && (Object.keys(expectedSheets(s)).length < 30 || Object.values(expectedSheets(s)).some(n => n < 2)); i++) { model = c.round(); s = c.exported().state; }
+  for (let i = 0; i < 14 && (Object.keys(expectedSheets(s)).length < 40 || Object.values(expectedSheets(s)).some(n => n < 2)); i++) { model = c.round(); s = c.exported().state; }
   assert.equal(s.jiff?.version, 1, 'le JIFF s’active en carrière Monde');
   const L = s.worldMode.leagues, french = new Set(['elite', 'accession', 'nationale'].flatMap(k => L[k].members));
   for (const k of ['elite', 'accession', 'nationale']) for (const ci of L[k].members) {
@@ -82,12 +82,12 @@ test('Carrière Monde : statuts initiaux, feuilles comptées en Top 14 / Pro D2,
     const centre = Math.max(0, Math.min(3, p.age - 16));
     assert.deepEqual(e, [centre >= 3 ? 1 : 0, centre, 0], p.id);
   }
-  // Une feuille par journée de saison régulière, uniquement pour le Top 14 et la Pro D2.
+  // Une feuille par journée de saison régulière, pour le Top 14 et la Pro D2 (JIFF) et la Premiership (EQP).
   const expected = expectedSheets(s), counts = sheets(s);
-  assert.equal(Object.keys(expected).length, 30, 'les 30 clubs du Top 14 et de la Pro D2 ont joué');
+  assert.equal(Object.keys(expected).length, 40, 'les 30 clubs du Top 14 et de la Pro D2 et les 10 de la Premiership ont joué');
   assert.deepEqual(Object.fromEntries(Object.entries(counts).map(([k, r]) => [k, r[0]])), Object.fromEntries(Object.entries(expected).map(([k, n]) => [k, n])));
-  // Feuilles de l'ordinateur conformes : au moins 16 JIFF en moyenne.
-  for (const [ci, [n, total]] of Object.entries(counts)) if (+ci !== s.club) assert.ok(total / n >= 16, `${s.clubs[ci].name} : ${total / n}`);
+  // Feuilles de l'ordinateur conformes : au moins 16 JIFF en moyenne (Top 14, Pro D2), 15 EQP en Premiership.
+  for (const [ci, [n, total]] of Object.entries(counts)) if (+ci !== s.club) assert.ok(total / n >= (s.worldMode.leagues.prem.members.includes(+ci) ? 15 : 16), `${s.clubs[ci].name} : ${total / n}`);
   const view = model.clubLife.jiff;
   assert.equal(view.applies, true);
   assert.equal(view.league, 'elite');

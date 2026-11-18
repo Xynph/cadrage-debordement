@@ -113,6 +113,15 @@ function factory() {
     return { classement, forme, prochain: F.next ? F.name(F.opponent(F.next)) : 'notre prochain adversaire' };
   };
 
+  // Bilan de la saison précédente du club du manager (s.jiff.results) -> variables du courrier de la ligue.
+  const quotaLigue = (F, keep) => {
+    const r = (F.s.jiff?.results || []).find(x => x.clubId === F.s.club && x.season === F.s.season - 1);
+    if (!r || !keep(r)) return [];
+    const ligue = { elite: 'le Top 14', accession: 'la Pro D2', prem: 'la Premiership' }[r.league] || 'ton championnat';
+    const eqp = r.league === 'prem';
+    return [{ key: 'quota:' + r.season, vars: { ligue, regle: eqp ? 'EQP' : 'JIFF', moyenne: String(r.average).replace('.', ','), objectif: eqp ? 15 : 16, points: r.deduction, montant: euros(r.fine || 0), prime: euros(r.bonus || 0), feuilles: r.sheets } }];
+  };
+
   // ------------------------------------------------------------------ déclencheurs : [{key, vars, player?}]
   const T = {
     bilan_kine(F) {
@@ -353,6 +362,11 @@ function factory() {
       const v = typeof proprietaireCourrier === 'function' ? proprietaireCourrier() : null;
       return v && v.arrivee === 'oui' ? [{ key: 'arrivee:' + F.s.season, vars: v }] : [];
     },
+    // Bilan du quota de joueurs formés localement (jiff.cjs) : courrier de la ligue au début de la saison suivante, quand la
+    // saison finie a coûté des points (JIFF), une amende (EQP) ou rapporté la prime du fonds JIFF. Rien si le quota est tenu.
+    quota_retrait(F) { return quotaLigue(F, r => r.deduction > 0); },
+    quota_amende(F) { return quotaLigue(F, r => r.fine > 0); },
+    quota_prime(F) { return quotaLigue(F, r => r.bonus > 0 && !(r.deduction > 0)); },
     proprietaire_depart(F) {
       const v = typeof proprietaireCourrier === 'function' ? proprietaireCourrier() : null;
       return v && v.arrivee === 'non' ? [{ key: 'depart:' + F.s.season, vars: v }] : [];
