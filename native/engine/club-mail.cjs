@@ -516,7 +516,11 @@ function factory() {
         for (const c of list) candidates.push({ type, ...c, vars: { ...context, ...(c.vars || {}) } });
       }
     }
-    candidates.sort((a, b) => (TYPES[a.type]?.priorite ?? 99) - (TYPES[b.type]?.priorite ?? 99) || (a.type < b.type ? -1 : a.type > b.type ? 1 : 0));
+    // Décisions du directeur sportif (prolongations, départs) : en alternance, à priorité égale, pour que le quota
+    // hebdomadaire des contrats ne soit pas pris tout entier par un seul type (18/11/2026).
+    const rang = {}, alterne = c => TYPES[c.type]?.declencheur === 'ds_contrats';
+    for (const c of candidates) if (alterne(c)) c.rang = rang[c.type] = (rang[c.type] ?? -1) + 1;
+    candidates.sort((a, b) => (TYPES[a.type]?.priorite ?? 99) - (TYPES[b.type]?.priorite ?? 99) || (a.rang ?? 0) - (b.rang ?? 0) || (a.type < b.type ? -1 : a.type > b.type ? 1 : 0));
     const week = monday(d), counts = {};
     for (const m of st.mails) if (m.date >= week) { const c = TYPES[m.type]?.categorie; counts[c] = (counts[c] || 0) + 1; }
     let received = 0;
