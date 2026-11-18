@@ -4,8 +4,9 @@ extends SceneTree
 ## pause ; quinze médaillons avec portrait et banc en tuiles ; un vrai remplacement (charge `substitute`
 ## {slot, outId, inId} lue par le vrai moteur) ; une consigne depuis l'onglet Consignes (`set_consignes`) ;
 ## les cris de la touche envoient `cri` ; rien ne déborde en 1280×720, 1920×1080 et 2560×1440 ;
-## « Valider et reprendre » relance le match. Champs du pilotage encore absents du moteur (cris, fatigue,
-## conseil de changement, adversaire, niveau) : ajoutés au modèle montré, pour l'écran seulement.
+## « Valider et reprendre » relance le match. Pour des captures proches de la maquette (match à peine commencé :
+## tout le monde frais), le modèle montré varie énergies, états et notes, et complète ce que le moteur n'a pas
+## encore à dire (conseil de changement, adversaire) ; les champs réels du moteur sont gardés quand ils existent.
 ## Captures (affichage graphique) : CD_EQUIPE_OUTPUT=<dossier>.
 var app: Control
 var director: Node
@@ -92,19 +93,36 @@ func modele_enrichi() -> Dictionary:
 	consignes["rucks"] = "agressive"
 	p["consignes"] = consignes
 	p["bilans"] = [{"axe": "rucks", "valeur": "agressive", "depuis": 41, "texte": "Rucks « Contester » depuis 41′ : 3 pénalités, 2 ballons arrachés."}]
-	p["cris"] = {"options": [{"id": "encourager", "label": "Encourager", "note": "Rassure les tendus", "disponible": true},
+	if not p.get("cris") is Dictionary: p["cris"] = {"options": [{"id": "encourager", "label": "Encourager", "note": "Rassure les tendus", "disponible": true},
 		{"id": "exiger", "label": "Exiger", "note": "Déjà crié à 41′ : s’use", "disponible": true},
 		{"id": "calmer", "label": "Calmer", "note": "Moins de fautes au sol", "disponible": true},
 		{"id": "defense", "label": "Serrer la défense", "note": "Ils attaquent large", "disponible": true},
 		{"id": "tout", "label": "Tout donner", "note": "Pour la fin de match", "disponible": false}], "actif": {"id": "calmer", "label": "Calmer", "jusqua": 58}}
 	if lineup.size() >= 7:
-		p["fatigue"] = [1, 2, 5, 6].map(func(n: int) -> Dictionary: return {"id": str(lineup[n].id), "condition": lineup[n].condition, "prevue": int(lineup[n].condition) - 7})
+		# Prévision : celle du moteur si elle existe (recalée sur les énergies montrées), sinon quatre joueurs.
+		var prevision: Array = p.get("fatigue") if p.get("fatigue") is Array and not (p.fatigue as Array).is_empty() else [1, 2, 5, 6].map(func(n: int) -> Dictionary: return {"id": str(lineup[n].id), "condition": 100, "prevue": 93})
+		for ligne: Variant in prevision:
+			for joueur: Variant in lineup:
+				if ligne is Dictionary and joueur is Dictionary and str(joueur.id) == str(ligne.id):
+					var baisse := float(ligne.condition) - float(ligne.prevue)
+					ligne["condition"] = joueur.condition
+					ligne["prevue"] = int(joueur.condition) - maxi(4, roundi(baisse))
+		p["fatigue"] = prevision
 		var entrant := ""
 		for option: Variant in l.get("substitutions", []):
 			if option is Dictionary and int(option.slot) == 1 and not (option.get("inIds", []) as Array).is_empty(): entrant = str(option.inIds[0])
 		if entrant.is_empty() and reserves.size() > 0: entrant = str(reserves[0].id)
-		p["conseilChangement"] = {"outId": str(lineup[1].id), "inId": entrant, "texte": "Le talonneur est à 52 %, deux lancers ratés. Le remplaçant est frais et veut se montrer."}
-	p["adversaire"] = {"consignes": {"rucks": "agressive", "piedJeu": "plus"}, "journal": ["Vestiaire adverse à la pause : discours exigeant."], "lecture": "Ils concèdent 2 pénalités par 10 minutes : jouer vite les ballons au sol les punit."}
+		if not p.get("conseilChangement") is Dictionary: p["conseilChangement"] = {"slot": 1, "outId": str(lineup[1].id), "inId": entrant, "texte": "Le talonneur est à 52 %, deux lancers ratés. Le remplaçant est frais et veut se montrer."}
+	var adversaire: Dictionary = p.get("adversaire") if p.get("adversaire") is Dictionary else {}
+	var leurs: Dictionary = adversaire.get("consignes", {}).duplicate() if adversaire.get("consignes") is Dictionary else {}
+	if leurs.values().all(func(v: Variant) -> bool: return str(v) in ["normal", "normale"]):
+		leurs["rucks"] = "agressive"
+		leurs["piedJeu"] = "plus"
+	adversaire["consignes"] = leurs
+	if not adversaire.get("derniers") is Array or (adversaire.derniers as Array).is_empty():
+		adversaire["derniers"] = [{"minute": 12, "texte": "Ils contestent chaque ruck."}, {"minute": 18, "texte": "Ils occupent au pied dès la sortie de leurs 22."}]
+	adversaire["lecture"] = "Ils concèdent des pénalités au sol : jouer vite les ballons les punit."
+	p["adversaire"] = adversaire
 	l["pilotage"] = p
 	return m
 
@@ -246,15 +264,26 @@ func executer() -> void:
 	fenetre.choisir_onglet("composition")
 	fenetre.update_frame(modele_enrichi())
 	await poser(4)
-	var cri: Button = fenetre.find_child("TeamShout_encourager", true, false)
-	verifier(cri != null and not cri.disabled, "cri « Encourager » disponible")
-	var actif: Button = fenetre.find_child("TeamShout_calmer", true, false)
-	verifier(actif != null and actif.disabled, "cri actif non relançable")
+	var cris_reels: Variant = live().get("pilotage", {}).get("cris")
+	rapport.cris_moteur = cris_reels is Dictionary
+	var id_cri := ""
+	if cris_reels is Dictionary:
+		for option: Variant in cris_reels.get("options", []):
+			if id_cri.is_empty() and option is Dictionary and bool(option.get("disponible", false)): id_cri = str(option.id)
+	else: id_cri = "encourager"
+	var cri: Button = fenetre.find_child("TeamShout_" + id_cri, true, false)
+	verifier(cri != null and not cri.disabled, "cri « %s » disponible" % id_cri)
 	if cri != null:
 		cri.pressed.emit()
 		verifier(app.last_command == "cri", "clic sur un cri : commande cri")
 		await jusqua(func() -> bool: return not app.waiting, 20000)
 		rapport.cri_reponse = str(app.last_error)
+		if cris_reels is Dictionary:
+			verifier(app.last_error.is_empty() and str(live().get("pilotage", {}).get("cris", {}).get("actif", {}).get("id", "") if live().get("pilotage", {}).get("cris", {}).get("actif") is Dictionary else "") == id_cri, "le moteur garde le cri actif")
+			fenetre.update_frame(app.model)
+			await poser(4)
+			var actif: Button = fenetre.find_child("TeamShout_" + id_cri, true, false)
+			verifier(actif != null and actif.disabled, "cri actif non relançable")
 	# Mise en page : trois tailles, deux onglets ; captures en 1080p et 720p.
 	for t: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(2560, 1440)]:
 		await taille(t.x, t.y)

@@ -631,7 +631,8 @@ func _cris(cris: Dictionary) -> void:
 		rangee.alignment = BoxContainer.ALIGNMENT_CENTER
 		bouton.add_child(rangee)
 		bouton.resized.connect(func(): rangee.size = Vector2(bouton.size.x - px(24), bouton.size.y))
-		var teinte := C.GOLD if est_actif else (C.MINT if disponible else C.FAINT)
+		var usure := clampf(float(option.get("usure", 0.0)), 0.0, 1.0)
+		var teinte := C.GOLD if est_actif else (C.FAINT if not disponible else (C.MINT if usure <= 0.0 else (C.GOLD if usure < 1.0 else C.ALERT)))
 		var rond := _panneau(_boite(teinte, Color.TRANSPARENT, 16, 0, 0))
 		rond.custom_minimum_size = Vector2(px(32), px(32))
 		rond.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -647,7 +648,7 @@ func _cris(cris: Dictionary) -> void:
 		mots.add_child(_coupe(_titre(libelle, 18, C.IVORY if disponible or est_actif else C.MUTED, 700)))
 		var note := str(option.get("note", ""))
 		if est_actif and actif.get("jusqua") != null: note = "Actif jusqu'à %s′" % str(actif.jusqua)
-		if not note.is_empty(): mots.add_child(_coupe(_texte(note, 11, C.GOLD if est_actif or not disponible else C.MUTED)))
+		if not note.is_empty(): mots.add_child(_coupe(_texte(note, 11, C.GOLD if est_actif or (usure > 0.0 and usure < 1.0) else (C.ALERT if usure >= 1.0 else C.MUTED))))
 		rangee.add_child(mots)
 		bouton.modulate.a = 1.0 if disponible or est_actif else 0.6
 		colonne.add_child(bouton)
@@ -727,34 +728,45 @@ class Medaillon extends Button:
 		mouse_exited.connect(queue_redraw)
 		focus_entered.connect(queue_redraw)
 		focus_exited.connect(queue_redraw)
+	## Rayon extérieur de l'anneau (unités de la maquette) : visages bien lisibles (demande de Léo).
+	const R := 37.0
 	func centre() -> Vector2:
-		return Vector2(size.x / 2.0, 39.0 * k)
+		return Vector2(size.x / 2.0, (R + 7.0) * k)
 	func _draw() -> void:
 		var c := centre()
-		if choisi: draw_circle(c, 40.0 * k, Color(C.GOLD, 0.95))
-		elif cible: draw_arc(c, 38.0 * k, 0, TAU, 64, C.MINT, 3.0 * k, true)
-		elif is_hovered() or has_focus(): draw_circle(c, 39.0 * k, Color(C.IVORY, 0.22 if is_hovered() else 0.0))
-		if has_focus() and not choisi: draw_arc(c, 39.0 * k, 0, TAU, 64, C.GOLD, 2.0 * k, true)
-		draw_circle(c, 33.0 * k, C.BG)
-		draw_arc(c, 31.0 * k, 0, TAU, 64, C.LINE, 4.0 * k, true)
-		if energie > 0.0: draw_arc(c, 31.0 * k, -PI / 2.0, -PI / 2.0 + TAU * clampf(energie / 100.0, 0.0, 1.0), 64, teinte, 4.0 * k, true)
-		draw_circle(c, 29.0 * k, C.BG)
+		# Ombre portée douce : le médaillon se détache de la pelouse.
+		draw_circle(c + Vector2(0, 3.0 * k), (R + 2.0) * k, Color(0, 0, 0, 0.28))
+		if choisi: draw_circle(c, (R + 7.0) * k, Color(C.GOLD, 0.95))
+		elif cible:
+			draw_circle(c, (R + 6.0) * k, Color(C.MINT, 0.18))
+			draw_arc(c, (R + 5.0) * k, 0, TAU, 64, C.MINT, 3.0 * k, true)
+		elif is_hovered(): draw_circle(c, (R + 6.0) * k, Color(C.IVORY, 0.24))
+		if has_focus() and not choisi: draw_arc(c, (R + 6.0) * k, 0, TAU, 64, C.GOLD, 2.0 * k, true)
+		draw_circle(c, R * k, C.BG)
+		draw_arc(c, (R - 2.5) * k, 0, TAU, 64, C.LINE, 5.0 * k, true)
+		if energie > 0.0: draw_arc(c, (R - 2.5) * k, -PI / 2.0, -PI / 2.0 + TAU * clampf(energie / 100.0, 0.0, 1.0), 64, teinte, 5.0 * k, true)
+		draw_circle(c, (R - 5.0) * k, C.BG)
 	func dessiner_badges() -> void:
 		var c := centre()
 		var police: Font = C.EXTRA_BOLD
-		var corps := maxi(10, roundi(15.0 * k))
-		var rond := c + Vector2(-33.0 + 7.0, 33.0 - 9.0) * k
-		calque.draw_circle(rond, 13.0 * k, C.BG)
-		calque.draw_arc(rond, 12.0 * k, 0, TAU, 32, C.GOLD, 2.0 * k, true)
+		var corps := maxi(10, roundi(16.0 * k))
+		var rond := c + Vector2(-R + 6.0, R - 8.0) * k
+		calque.draw_circle(rond, 14.0 * k, C.BG)
+		calque.draw_arc(rond, 13.0 * k, 0, TAU, 32, C.GOLD, 2.0 * k, true)
 		var largeur := police.get_string_size(numero, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x
 		calque.draw_string(police, rond + Vector2(-largeur / 2.0, (police.get_ascent(corps) - police.get_descent(corps)) / 2.0), numero, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, C.IVORY)
 		if niveau.is_empty(): return
-		var corps_n := maxi(10, roundi(16.0 * k))
+		var corps_n := maxi(11, roundi(18.0 * k))
 		var l := police.get_string_size(niveau, HORIZONTAL_ALIGNMENT_LEFT, -1, corps_n).x
-		var boite := Rect2(c + Vector2(33.0 + 10.0 - maxf(30.0, l / k + 8.0), -33.0 - 6.0) * k, Vector2(maxf(30.0 * k, l + 8.0 * k), 22.0 * k))
+		var large := maxf(34.0 * k, l + 10.0 * k)
+		var boite := Rect2(c + Vector2(R + 12.0, 0.0) * k - Vector2(large, (R + 7.0) * k), Vector2(large, 24.0 * k))
 		var style := StyleBoxFlat.new()
 		style.bg_color = C.GOLD
 		style.set_corner_radius_all(maxi(2, roundi(6.0 * k)))
+		style.border_color = C.BG
+		style.set_border_width_all(maxi(1, roundi(2.0 * k)))
+		style.shadow_color = Color(0, 0, 0, 0.35)
+		style.shadow_size = maxi(1, roundi(3.0 * k))
 		style.anti_aliasing = true
 		calque.draw_style_box(style, boite)
 		calque.draw_string(police, Vector2(boite.position.x + (boite.size.x - l) / 2.0, boite.position.y + (boite.size.y + police.get_ascent(corps_n) - police.get_descent(corps_n)) / 2.0), niveau, HORIZONTAL_ALIGNMENT_LEFT, -1, corps_n, C.BG)
@@ -795,11 +807,11 @@ func _terrain(centre: VBoxContainer) -> void:
 		medaillon.numero = str(slot + 1)
 		medaillon.choisi = poste_choisi == slot
 		medaillon.cible = slot in cibles
-		medaillon.custom_minimum_size.x = px(118)
+		medaillon.custom_minimum_size.x = px(128)
 		var pile := _v(3)
 		pile.alignment = BoxContainer.ALIGNMENT_BEGIN
-		pile.position = Vector2(0, px(76))
-		pile.size = Vector2(px(118), 0)
+		pile.position = Vector2(0, px(2.0 * Medaillon.R + 16.0))
+		pile.size = Vector2(px(128), 0)
 		medaillon.add_child(pile)
 		if joueur is Dictionary:
 			var d := W.donnees_joueur(joueur, notes, cartons)
@@ -807,8 +819,9 @@ func _terrain(centre: VBoxContainer) -> void:
 			medaillon.energie = float(d.energie)
 			medaillon.teinte = C.ALERT if bool(d.blesse) else teinte_energie(float(d.energie))
 			medaillon.niveau = _niveau(joueur)
-			var portrait := _portrait(joueur, px(54))
-			portrait.position = Vector2((px(118) - px(54)) / 2.0, px(39) - px(54) / 2.0)
+			var diametre := px(2.0 * (Medaillon.R - 6.0))
+			var portrait := _portrait(joueur, diametre)
+			portrait.position = Vector2((px(128) - diametre) / 2.0, px(Medaillon.R + 7.0) - diametre / 2.0)
 			medaillon.add_child(portrait)
 			var etiquette := _panneau(_boite(Color(C.BG, 0.85), Color.TRANSPARENT, 5, 0, 0))
 			var style_et := etiquette.get_theme_stylebox("panel") as StyleBoxFlat
@@ -818,9 +831,9 @@ func _terrain(centre: VBoxContainer) -> void:
 			etiquette.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			var ligne := _h(5)
 			etiquette.add_child(ligne)
-			ligne.add_child(_titre(nom_court(str(d.nom)), 16, C.IVORY, 700))
+			ligne.add_child(_titre(nom_court(str(d.nom)), 17, C.IVORY, 700))
 			if notes.has(id):
-				var note := _titre(("%.1f" % float(d.note)), 16, C.GOLD, 700)
+				var note := _titre(("%.1f" % float(d.note)), 17, C.GOLD, 800)
 				note.name = "TeamPlayerNote"
 				ligne.add_child(note)
 			pile.add_child(etiquette)
@@ -864,7 +877,7 @@ func _terrain(centre: VBoxContainer) -> void:
 		calque.draw.connect(medaillon.dessiner_badges)
 		medaillon.pressed.connect(func(): choisir_poste(slot))
 		if not entrant_choisi.is_empty() and not medaillon.cible: medaillon.modulate.a = 0.45
-		medaillon.custom_minimum_size.y = px(124)
+		medaillon.custom_minimum_size.y = px(2.0 * Medaillon.R + 16.0 + 50.0)
 		terrain.add_child(medaillon)
 		terrain.places[medaillon] = PLACES.get(slot + 1, Vector2(50, 50))
 		medaillons[slot] = medaillon
@@ -1036,7 +1049,7 @@ func _tuile(joueur: Dictionary, numero: int, eligible: bool, choisi: bool, conse
 	rangee.offset_top = px(8)
 	rangee.offset_bottom = -px(8)
 	tuile.add_child(rangee)
-	var portrait := _portrait(joueur, px(46), px(52), 8)
+	var portrait := _portrait(joueur, px(52), px(58), 8)
 	portrait.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rangee.add_child(portrait)
 	var mots := _v(2)
@@ -1098,6 +1111,9 @@ func _carte_conseil(colonne: VBoxContainer, conseil: Dictionary) -> void:
 	var out_id := str(conseil.get("outId", ""))
 	var in_id := str(conseil.get("inId", ""))
 	var slot := _poste_de(out_id)
+	# Poste donné par le moteur (`conseilChangement.slot`) s'il désigne bien le sortant.
+	var poste_moteur: Variant = conseil.get("slot")
+	if (poste_moteur is int or poste_moteur is float) and int(poste_moteur) >= 0 and int(poste_moteur) < _lineup().size() and _lineup()[int(poste_moteur)] is Dictionary and str(_lineup()[int(poste_moteur)].get("id", "")) == out_id: slot = int(poste_moteur)
 	var sortant: Dictionary = _lineup()[slot]
 	var entrant := _reserve(in_id)
 	var rangee := _h(12)
@@ -1462,10 +1478,19 @@ func _carte_adversaire(parent: Control, p: Dictionary, vue: Dictionary) -> void:
 			var texte := str(c.get("label", c.get("texte", ""))) if c is Dictionary else str(c)
 			if not texte.is_empty(): puces.add_child(_puce(texte))
 	if puces.get_child_count() > 0: colonne.add_child(puces)
-	var lignes: Array = source.get("journal", source.get("lignes", [])) if source.get("journal", source.get("lignes")) is Array else []
-	for ligne: Variant in lignes.slice(maxi(0, lignes.size() - 3)):
-		var texte := str(ligne.get("texte", "")) if ligne is Dictionary else str(ligne)
-		if texte.is_empty(): continue
+	var lignes: Array = []
+	var causeries: Variant = source.get("causeries")
+	if causeries is Dictionary:
+		for paire: Array in [["pre", "Vestiaire avant le match"], ["half", "Vestiaire à la pause"]]:
+			var c: Variant = (causeries as Dictionary).get(paire[0])
+			if c is Dictionary and not str(c.get("label", "")).is_empty(): lignes.append("%s : discours %s." % [paire[1], str(c.label).to_lower()])
+	for cle: String in ["derniers", "journal", "lignes"]:
+		if source.get(cle) is Array:
+			for ligne: Variant in (source[cle] as Array).slice(maxi(0, (source[cle] as Array).size() - 3)):
+				if ligne is Dictionary and not str(ligne.get("texte", "")).is_empty(): lignes.append(("%d′ · " % int(ligne.minute) if ligne.get("minute") != null else "") + str(ligne.texte))
+				elif ligne is String and not ligne.is_empty(): lignes.append(ligne)
+			break
+	for texte: String in lignes.slice(maxi(0, lignes.size() - 4)):
 		var l := _texte(texte, 13, C.MUTED)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.max_lines_visible = 2
