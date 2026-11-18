@@ -85,3 +85,14 @@ mesure le banc adverse actif sur 60 matchs (~2,9 changements de consigne par mat
   chantier, à corriger à part.
 - Les matchs IA contre IA n'ont ni causerie ni consigne (pilotage réservé au match du joueur).
 - Version web : sans le domaine natif `match-delegation`, le banc adverse ne revoit pas ses consignes en cours de match.
+
+## Cris de la touche, fatigue, conseil de changement (fenêtre Équipe)
+
+- Commande `cri {id}` sans pause : Encourager (+1, apaise Tendu/Vexé, 8 min), Exiger (+2, −3 discipline, 8 min),
+  Calmer (+6 discipline, apaise, 10 min), Serrer la défense (+4 plaquage, −2 passe, 10 min), Tout donner (+3, dès 65′,
+  use 15 % plus vite, 10 min). Un cri à la fois ; le même cri dans les 20 minutes porte moitié moins, puis plus du tout.
+- Fatigue : « Accélérer » use 12 % plus vite, « Ralentir » 8 % moins. Prévision à 10 minutes avec la formule du moteur
+  (`live.pilotage.fatigue`, les 4 joueurs les plus entamés).
+- Conseil de Gabi (`live.pilotage.conseilChangement`) : le joueur qui passera sous 55 % dans 10 minutes, remplacé par le
+  remplaçant éligible le mieux noté et frais (≥ 85 %).
+- Corps arbitral : trois arbitres femmes (accords dans le résumé, le mail et le mot de Gabi).

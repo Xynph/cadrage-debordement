@@ -385,7 +385,8 @@ function factory() {
         horsJeu: ['très pointilleux sur le hors-jeu', 'plutôt strict sur le hors-jeu', 'sans manie sur le hors-jeu', 'plutôt tolérant sur le hors-jeu', 'laisse vivre le hors-jeu'],
         cartons: ['sort vite les cartons', 'plutôt prompt à sortir les cartons', 'carton à dose normale', 'plutôt patient avant le carton', 'très patient avant le carton']
       };
-      const mot = k => mots[k][5 - Math.min(5, Math.max(1, Math.round(Number(a[k]) || 3)))] + ' (' + (Math.round(Number(a[k]) || 3)) + '/5)';
+      const accord = t => a.f ? t.replace(/pointilleux/g, 'pointilleuse').replace(/tolérant/g, 'tolérante').replace(/prompt/g, 'prompte') : t;
+      const mot = k => accord(mots[k][5 - Math.min(5, Math.max(1, Math.round(Number(a[k]) || 3)))]) + ' (' + (Math.round(Number(a[k]) || 3)) + '/5)';
       const tendances = ['rucks', 'melee', 'horsJeu', 'cartons'].map(mot).join(' ; ');
       const sev = [['rucks', 'ne conteste pas chaque ruck'], ['melee', 'soigne la première poussée en mêlée'], ['horsJeu', 'garde la ligne défensive bien alignée'], ['cartons', 'évite les fautes gratuites']].filter(([k]) => a[k] >= 4);
       const conseil = sev.length ? 'À intégrer dans les consignes : ' + sev.map(x => x[1]).join(', ') + '.' : 'Rien de marquant : joue ton match, les consignes en direct feront le reste.';

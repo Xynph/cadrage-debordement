@@ -56,6 +56,26 @@ try {
   assert.ok(JSON.parse(vm.run('S.live.pilotage.adversaire.minute')) >= 5, 'le banc adverse revoit ses consignes pendant le direct (tick)');
   assert.ok(bilan && /^Rucks « Contester » depuis \d+′ : \d+ pénalités?, \d+ ballons? arrachés?\.$/.test(bilan.texte), bilan?.texte);
 
+  // Cris de la touche : sans pause, effet sur les joueurs présents, usure si on répète ; projection pour la fenêtre Équipe.
+  const pc = m.live.pilotage;
+  assert.deepEqual(pc.cris.options.map(o => o.id), ['encourager', 'exiger', 'calmer', 'defense', 'toutDonner']);
+  assert.equal(pc.cris.options.find(o => o.id === 'toutDonner').disponible, false, 'Tout donner : seulement en fin de match');
+  assert.equal(jeu.brut('cri', { id: 'hurler' }).ok, false);
+  assert.equal(jeu.brut('cri', { id: 'toutDonner' }).ok, false);
+  assert.equal(pc.fatigue.length, 4);
+  assert.ok(pc.fatigue.every(f => f.prevue <= f.condition && f.prevue >= 12), JSON.stringify(pc.fatigue));
+  assert.ok(pc.conseilChangement === null || (pc.conseilChangement.outId && pc.conseilChangement.inId && pc.conseilChangement.texte), 'conseil de changement');
+  assert.ok(m.live.lineup.every(p => Number.isFinite(p.rating)), 'niveau de chaque joueur pour la fenêtre Équipe');
+  const vmc = jeu.bridge.vm;
+  const plaquage = () => vmc.run('(()=>{const p=activePlayers(S.live,S.live.userSide).find(x=>!(S.live.pilotage.etats[x.id]||{}).etat||S.live.pilotage.etats[x.id].etat==="indifferent");return p?skill(p,"tackle"):null})()');
+  const plaquageAvant = plaquage();
+  m = jeu.call('cri', { id: 'defense' });
+  assert.equal(m.live.pilotage.cris.actif.id, 'defense');
+  assert.equal(plaquage() - plaquageAvant, 4, 'Serrer la défense : +4 au plaquage pendant 10 minutes');
+  m = jeu.call('cri', { id: 'defense' });
+  assert.equal(m.live.pilotage.cris.actif.force, .5, 'cri répété : moitié moins');
+  assert.equal(plaquage() - plaquageAvant, 2);
+
   // Effets moyens : mêmes graines, un seul réglage change. Le match repart du coup d'envoi.
   vm.run('globalThis.__live=JSON.stringify(S.live);');
   const mesurer = (reglage, n = 160) => JSON.parse(vm.run(`(()=>{const acc={pen:0,jaunes:0,arraches:0,coups:0,touches:0,touchesG:0,ecart:0,matchs:0};
