@@ -7,7 +7,7 @@
 //   styles  : XV identiques (club de base copié des deux côtés), consignes figées : large, près (conquete), occupation
 //             contre « Équilibré », domicile alterné. Part de victoires et points.
 //   courbe  : banc de la courbe de niveau (tests/helpers/courbe-niveau.cjs) à 0 et +15 points : domicile, surprises.
-//   bonus   : mené de 8 à la 60e (scripts/mesure-bonus-fin-de-match.cjs, situation « defensif ») : bonus défensif
+//   bonus   : mené de 8 à la 60e et à la 72e (scripts/mesure-bonus-fin-de-match.cjs, situation « defensif ») : bonus défensif
 //             selon la consigne (pénalités tentées ou pénaltouche).
 // Crochets en lecture seule (aucun tirage ajouté).
 //
@@ -107,8 +107,11 @@ try {
 } finally { h.close(); }
 if (parties.includes('bonus')) {
   const { mesurer } = require('./mesure-bonus-fin-de-match.cjs');
-  resultat.bonus = mesurer({ n: N.bonus, situations: ['defensif'] }).defensif;
-  console.log(`## Mené de 8 à la 60e (${N.bonus} fins de match par consigne)\nconsigne | V | N | D | BD | pts | essais + | essais −`);
-  for (const [id, t] of Object.entries(resultat.bonus)) console.log([id, t.victoire, t.nul, t.defaite, t.bonusDefensif, t.points, t.essaisMarques, t.essaisEncaisses].join(' | '));
+  resultat.bonus = {};
+  for (const minute of [60, 72]) {
+    const r = resultat.bonus[minute] = mesurer({ n: N.bonus, minute, situations: ['defensif'] }).defensif;
+    console.log(`## Mené de 8 à la ${minute}e (${N.bonus} fins de match par consigne)\nconsigne | V | N | D | BD | pts | essais + | essais − | actions`);
+    for (const [id, t] of Object.entries(r)) console.log([id, t.victoire, t.nul, t.defaite, t.bonusDefensif, t.points, t.essaisMarques, t.essaisEncaisses, t.actions].join(' | '));
+  }
 }
 if (json) fs.writeFileSync(json, JSON.stringify(resultat, null, 1));
