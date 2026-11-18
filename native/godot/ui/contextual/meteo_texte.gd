@@ -8,8 +8,13 @@ const G = preload("res://ui/carnet_skin.gd")
 static func meteo(live: Dictionary) -> Dictionary:
 	return live.get("meteo", {}) if live.get("meteo") is Dictionary else {}
 
+## Libellés du moteur trop secs pour être compris seuls sous le score (« Sec » lu comme une
+## abréviation, film du 18 novembre 2026) : écrits en clair.
+const LIBELLES_CLAIRS := {"sec": "Temps sec"}
+
 static func libelle(live: Dictionary) -> String:
 	var texte := str(meteo(live).get("libelle", live.get("weather", ""))).strip_edges()
+	if LIBELLES_CLAIRS.has(texte.to_lower()): return LIBELLES_CLAIRS[texte.to_lower()]
 	return texte.substr(0, 1).to_upper() + texte.substr(1) if not texte.is_empty() else ""
 
 ## Camp (0 ou 1) qui a le vent dans le dos à la période donnée (1 ou 2), -1 sans vent orienté.
