@@ -441,13 +441,15 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, active: 
 		action.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		action.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
 		action.custom_minimum_size = Vector2.ZERO
+		var needed: float = C.BOLD.get_string_size(str(filter[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(19))).x / C.density + 30.0
+		widths[index] = maxf(float(widths[index]), needed)
 		var pill := C.box(C.readable_primary_fill(app.accent) if chosen else Color(C.PANEL, 0), app.accent.lightened(.3) if chosen else C.LINE, 22, 10)
 		pill.content_margin_top = 0; pill.content_margin_bottom = 0
 		action.add_theme_stylebox_override("normal", pill)
 		action.tooltip_text = filter[4]
 		card.add_child(action)
 		D.place(action, Rect2(x,_header_rows()[0],widths[index],_h(44)))
-		x += widths[index] + 8
+		x += int(widths[index]) + 8
 	var subject := OptionButton.new()
 	subject.name = "InboxSubject"
 	subject.fit_to_longest_item = false
@@ -939,14 +941,14 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 	var rubrique := C.label(RUBRIQUES.get(str(mail.get("type", "")), "SPORT"), 17, Color("8a2e1f"), true, 700)
 	rubrique.name = "InboxPressRubrique"
 	column.add_child(rubrique)
-	var headline := C.wrap(str(mail.get("sujet", message.get("subject", ""))), 50, ink, true, 800)
+	var headline := C.wrap(str(mail.get("sujet", message.get("subject", ""))), 54, ink, true, 800)
 	headline.name = "InboxPressHeadline"
 	column.add_child(headline)
 	var paragraphs: Array[String] = []
 	for part in str(mail.get("corps", "")).replace("\r", "").split("\n"):
 		if not part.strip_edges().is_empty(): paragraphs.append(part.strip_edges())
 	if paragraphs.size() > 1:
-		var lead := C.wrap(paragraphs[0], 22, Color(ink,.82), false, 500)
+		var lead := C.wrap(paragraphs[0], 24, Color(ink,.82), false, 500)
 		lead.name = "InboxPressLead"
 		var slanted := FontVariation.new()
 		slanted.base_font = C.BODY
@@ -972,7 +974,7 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 	columns.name = "InboxPressColumns"
 	for side: Array in [left, right]:
 		if side.is_empty(): continue
-		var text := C.wrap("\n\n".join(PackedStringArray(side)), 20, ink, false, 500)
+		var text := C.wrap("\n\n".join(PackedStringArray(side)), 22, ink, false, 500)
 		text.add_theme_constant_override("line_spacing", C.px(5))
 		C.fill(text)
 		text.name = "InboxPressColumn"
@@ -1019,7 +1021,7 @@ static func infirmary_rows(model: Dictionary) -> Array[Dictionary]:
 static func _infirmary(app: Control, width: float) -> Control:
 	var table := C.v(0)
 	table.name = "InboxInfirmary"
-	var heading := C.label("BILAN DE L'INFIRMERIE", 18, C.GOLD, true, 700)
+	var heading := C.label("BILAN DE L'INFIRMERIE", 20, C.GOLD, true, 700)
 	table.add_child(heading)
 	var rows := infirmary_rows(app.model)
 	if rows.is_empty():
@@ -1030,7 +1032,7 @@ static func _infirmary(app: Control, width: float) -> Control:
 	var columns := [["JOUEUR", .27], ["POSTE", .18], ["BLESSURE", .25], ["RETOUR ESTIMÉ", .15], ["PROCHAIN MATCH", .15]]
 	var header := C.h(0)
 	for column: Array in columns:
-		var cell := C.label(column[0], 15, C.FAINT.lightened(.15), true, 700)
+		var cell := C.label(column[0], 16, C.FAINT.lightened(.15), true, 700)
 		cell.custom_minimum_size = Vector2(C.px(width * float(column[1])), C.px(36))
 		cell.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		header.add_child(cell)
@@ -1047,8 +1049,8 @@ static func _infirmary(app: Control, width: float) -> Control:
 		row.set_meta("player_id", data.id)
 		var values := [[data.name, C.IVORY, 700], [data.pos, C.MUTED, 500], [data.injury, C.MUTED, 500], [data.back, C.IVORY, 500], [data.status, tones[data.tone], 700]]
 		for column in values.size():
-			var cell := C.label(values[column][0], 19, values[column][1], column != 2 and column != 1, values[column][2])
-			cell.custom_minimum_size = Vector2(C.px(width * float(columns[column][1])), C.px(42))
+			var cell := C.label(values[column][0], 21, values[column][1], column != 2 and column != 1, values[column][2])
+			cell.custom_minimum_size = Vector2(C.px(width * float(columns[column][1])), C.px(48))
 			cell.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			cell.clip_text = true
 			cell.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -1267,14 +1269,19 @@ static func _side(card: Panel, app: Control, message: Dictionary, data: Dictiona
 		if players.size() > shown: D.text(card,x,y+16,"+ %d dans Effectif" % (players.size() - shown),17,C.MUTED,500,width)
 		y += 34
 	if data.has("deadline"):
-		var due := C.wrap(str(data.deadline), 20, C.IVORY, false, 500)
-		var box := D.rect(card,Rect2(x,y,width,0),Color(C.GOLD,.06),10,Color(C.GOLD,.6))
+		var box := PanelContainer.new()
 		box.name = "InboxDeadline"
-		D.text(box,18,30,"ÉCHÉANCE",16,C.GOLD,700,width-36)
-		box.add_child(due)
-		var lines := maxi(1, ceili(C.BODY.get_string_size(due.text, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(20))).x / C.density / (width - 36)))
-		D.place(due, Rect2(18, 42, width - 36, 30 * lines))
-		D.place(box, Rect2(x, y, width, 60 + 30 * lines))
+		box.add_theme_stylebox_override("panel", C.box(Color(C.GOLD,.06), Color(C.GOLD,.9), 10, 18))
+		var column := C.v(6)
+		box.add_child(column)
+		column.add_child(C.label("ÉCHÉANCE", 16, C.GOLD, true, 700))
+		var due := C.wrap(str(data.deadline), 20, C.IVORY, false, 500)
+		due.custom_minimum_size.x = C.px(width - 36)
+		column.add_child(due)
+		card.add_child(box)
+		box.position = Vector2(x, y) * C.density
+		box.custom_minimum_size.x = C.px(width)
+		box.size = Vector2(C.px(width), 0)
 
 static func _open_current_player(app: Control, player_id: String) -> void:
 	app.navigation_controller.open_entity({"kind":"player","id":player_id,"section":"contract"})

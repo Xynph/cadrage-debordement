@@ -367,7 +367,7 @@ func direction_a(mail: Dictionary) -> void:
 	check(media != null and media.text == "Le quotidien régional", "Nom du média en tête de la coupure")
 	check(node("InboxPressHeadline") != null and node("InboxPressLead") != null and node("InboxPressRubrique") != null, "Grand titre, chapeau et rubrique")
 	var columns := node("InboxPressColumns")
-	check(columns != null and columns.find_children("InboxPressColumn", "Label", true, false).size() == 2, "Texte de presse sur deux colonnes")
+	check(columns != null and columns.find_children("InboxPressColumn*", "Label", true, false).size() == 2, "Texte de presse sur deux colonnes")
 	var photo := node("InboxPressPhoto") as TextureRect
 	check(photo == null or photo.texture != null, "Pas de cadre photo vide")
 	# Panneau Concerné affiché : joueur lié et échéance.
@@ -380,7 +380,7 @@ func direction_a(mail: Dictionary) -> void:
 	if side != null and node("InboxDetail") != null: check(node("InboxDetail").get_global_rect().end.x <= side.get_global_rect().position.x, "Panneau à droite du mail, sans chevauchement")
 	# Réponses : cartes et conséquences tirées des effets réels.
 	var reply := node("InboxClubMailReply_dementir")
-	var effects: Array = [] if reply == null else reply.find_children("InboxReplyEffect", "Label", true, false).map(func(l: Label) -> String: return l.text)
+	var effects: Array = [] if reply == null else reply.find_children("InboxReplyEffect*", "Label", true, false).map(func(l: Label) -> String: return l.text)
 	check(effects.has("▲ Supporters +2") and effects.has("▼ Moral −1"), "Conséquences de la réponse : " + str(effects))
 	check(node("InboxReplyHeading") != null and node("InboxSpaceHint") != null, "« TA RÉPONSE » et rappel Espace")
 	check(Reception.consequences("Pression +2")[0][0] == "▼" and Reception.consequences("Coût 1 000 €")[0][0] == "▼" and Reception.consequences("Charge individuelle : allégée")[0][0] == "=" and Reception.consequences("")[0][1] == "Sans effet chiffré", "Sens des conséquences (pression, coût, neutre)")
