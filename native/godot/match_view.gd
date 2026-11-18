@@ -148,6 +148,9 @@ var _club_crest: Texture2D
 var _club_branding: MultiMeshInstance3D
 ## Gestes de rugby (touche, ballon porté, essai) : posés par le match en temps forts (repli CD_MATCH_GESTES=0) ou par CD_MATCH_GESTES=1 dans le direct d'origine.
 var _gestes: RefCounted
+## Sans les gestes complets, la touche reste jouée (lancer du talonneur, saut porté) : la même
+## mise en scène de match_gestes.gd, réduite à la touche (18/11/2026).
+var _touche_directe: RefCounted = Gestes.new(self, true)
 ## Pistes du chorégraphe de temps forts (CD_MATCH_CHOREGRAPHE=1) : la vue les suit à la place de son interpolation.
 var _choregraphie: RefCounted
 ## Formations des phases arrêtées (mêlée liée, alignement de touche) : toujours actives.
@@ -250,7 +253,13 @@ func set_gestes(enabled: bool) -> void:
 		return
 	if _gestes:
 		_gestes.cancel()
+	_touche_directe.cancel()
 	_gestes = Gestes.new(self) if enabled else null
+
+
+## Gestes qui mettent des joueurs en scène : les gestes complets, sinon la touche du direct.
+func mise_en_scene() -> RefCounted:
+	return _gestes if _gestes != null else _touche_directe
 
 
 func set_action_motion(enabled: bool) -> void:
@@ -331,8 +340,7 @@ func jouer_choregraphie(pistes: Dictionary, vitesse: float = 1.0) -> bool:
 	_pass_plan = {}
 	_contact_plan = {}
 	_impacts.annuler()
-	if _gestes:
-		_gestes.cancel()
+	mise_en_scene().cancel()
 	if not _choregraphie.charger(pistes):
 		return false
 	_choregraphie.vitesse = vitesse
@@ -424,7 +432,7 @@ func essai_aplati() -> bool:
 
 
 func is_presenting_extended_pass() -> bool:
-	return _pass_plan.get("duration", 0.0) == Pass.LIVE_SECONDS or (_gestes != null and _gestes.holding_tick()) or _impacts.tient()
+	return _pass_plan.get("duration", 0.0) == Pass.LIVE_SECONDS or mise_en_scene().holding_tick() or _impacts.tient()
 
 
 func apply_frame(live: Dictionary) -> void:
@@ -579,8 +587,7 @@ func apply_frame(live: Dictionary) -> void:
 		# Ballon absent de la scène : la caméra reste où elle est (pas de saut au centre du terrain).
 		_ball.visible = false
 		_ball_attached = false
-	if _gestes:
-		_gestes.observe(live, scene, new_action, _action_motion and not _paused and has_ball and _live_cadence == 1)
+	mise_en_scene().observe(live, scene, new_action, _action_motion and not _paused and has_ball and _live_cadence == 1)
 	if new_action and play_action and _animations_adaptees != null and _live_cadence == 1:
 		_gestes_du_fait(scene, previous_kind)
 	_replacer_longs(new_action)
@@ -599,7 +606,7 @@ func _replacer_longs(new_action: bool) -> void:
 	for id: String in _actors:
 		var entry: Dictionary = _actors[id]
 		# Seulement un trajet qui vient d'être fixé, et jamais un joueur mis en scène ailleurs.
-		if float(entry.elapsed) > 0.0 or _is_pass_player(id) or (_gestes != null and _gestes.stages(id)) or (_choregraphie != null and _choregraphie.stages(id)) or _impacts.occupe(id):
+		if float(entry.elapsed) > 0.0 or _is_pass_player(id) or mise_en_scene().stages(id) or (_choregraphie != null and _choregraphie.stages(id)) or _impacts.occupe(id):
 			continue
 		var at: Vector3 = (entry.node as Node3D).position
 		var target: Vector3 = entry.target
@@ -652,7 +659,7 @@ func deplacement_restant(rayon: float = 25.0) -> float:
 	var ballon := Vector2(_ball_target.x, _ball_target.z)
 	for id: String in _actors:
 		var entry: Dictionary = _actors[id]
-		if _is_pass_player(id) or (_gestes != null and _gestes.stages(id)) or (_choregraphie != null and _choregraphie.stages(id)) or _impacts.occupe(id):
+		if _is_pass_player(id) or mise_en_scene().stages(id) or (_choregraphie != null and _choregraphie.stages(id)) or _impacts.occupe(id):
 			continue
 		var target: Vector3 = entry.target
 		if Vector2(target.x, target.z).distance_to(ballon) > rayon:
@@ -672,7 +679,7 @@ func _gestes_du_fait(scene: Dictionary, previous_kind: String) -> void:
 	for player: Dictionary in scene.get("players", []):
 		if player.get("featured", false) and int(player.get("side", -1)) == possession:
 			featured = str(player.get("id", ""))
-	if featured.is_empty() or not _actors.has(featured) or (_gestes != null and _gestes.stages(featured)):
+	if featured.is_empty() or not _actors.has(featured) or mise_en_scene().stages(featured):
 		return
 	var ball: Dictionary = scene.get("ball", {})
 	var origin: Variant = scene.get("origin")
@@ -785,8 +792,7 @@ func _process(delta: float) -> void:
 	if not _pass_plan.is_empty():
 		_pass_elapsed = minf(_pass_plan.duration, _pass_elapsed + delta)
 	var preparation := smoothstep(0.0, Pass.PREP_SECONDS, _pass_elapsed)
-	if _gestes:
-		_gestes.advance(delta)
+	mise_en_scene().advance(delta)
 	if choregraphie_active():
 		_choregraphie.avancer(delta)
 	if _formations:
@@ -795,12 +801,11 @@ func _process(delta: float) -> void:
 		var entry: Dictionary = _actors[id]
 		var actor: Node3D = entry.node
 		var suivi: bool = _choregraphie != null and _choregraphie.stages(id)
-		var staged: bool = suivi or (_gestes != null and _gestes.stages(id))
+		var staged: bool = suivi or mise_en_scene().stages(id)
 		# Postures rendues dans l'ordre inverse de leur pose : formation (posée en dernier), puis gestes.
 		if _formations:
 			_formations.restaurer(id, entry)
-		if _gestes:
-			_gestes.restore(id, entry)
+		mise_en_scene().restore(id, entry)
 		if entry.rig:
 			Presentation.restore_contact(entry.rig, entry.contact_base)
 			Cut.restore(entry.rig, entry.cut_pose)
@@ -814,7 +819,7 @@ func _process(delta: float) -> void:
 		elif suivi:
 			_choregraphie.place(id, actor)
 		elif staged:
-			_gestes.place(id, actor)
+			mise_en_scene().place(id, actor)
 		else:
 			# Temps passé à l'arrêt, une fois la place atteinte (même au milieu de cette image).
 			var repos := float(entry.elapsed) + delta - float(entry.duree)
@@ -920,15 +925,15 @@ func _process(delta: float) -> void:
 	if choregraphie_active():
 		_choregraphie.pose()
 	_update_ball(delta)
-	if _gestes:
-		_gestes.pose()
+	mise_en_scene().pose()
 	_poser_tenues(delta)
 	if _formations:
 		_formations.poser(delta)
 	# Resolve upper-body contact after every source-animation update and after the
 	# ball's continuous trajectory. A new receiver never pulls it across the pitch.
 	for id: String in _actors:
-		if _is_pass_player(id) or (_gestes != null and _gestes.stages(id)):
+		# Demi qui introduit en mêlée : il tient le ballon bas lui-même (match_formations.gd).
+		if _is_pass_player(id) or mise_en_scene().stages(id) or (_formations != null and _formations.tient_ballon(id)):
 			continue
 		var entry: Dictionary = _actors[id]
 		var actor: Node3D = entry.node
@@ -993,7 +998,7 @@ func _porter_ballon(id: String, entry: Dictionary, delta: float) -> void:
 		var vers_camera := _camera.global_position - actor.global_position if is_instance_valid(_camera) else Vector3.BACK
 		entry.cote_ballon = 1.0 if actor.global_basis.x.dot(Vector3(vers_camera.x, 0.0, vers_camera.z)) >= 0.0 else -1.0
 	var tenue: Array = Presentation.carry_ball(actor, entry.rig, float(entry.grip), float(entry.tuck), float(entry.cote_ballon), swing, toward)
-	var possede: bool = _ball_attached and _carrier_id == id and not (_gestes != null and _gestes.owns_ball())
+	var possede: bool = _ball_attached and _carrier_id == id and not mise_en_scene().owns_ball()
 	# Raccord en 0,2 s depuis la place donnée par la trajectoire (prise, passe reçue).
 	entry.porte = move_toward(float(entry.get("porte", 0.0)), 1.0 if possede else 0.0, delta * 5.0)
 	if possede and not _paused:
@@ -1132,7 +1137,7 @@ func _update_ball(delta: float) -> void:
 		return
 	if not _ball.visible:
 		return
-	if _gestes != null and _gestes.owns_ball():
+	if mise_en_scene().owns_ball():
 		return
 	if not _pass_plan.is_empty() and _update_live_pass():
 		return
@@ -1587,8 +1592,7 @@ func _clear_presence() -> void:
 	_ball.visible = false
 	_carrier_id = ""
 	_action_key = ""
-	if _gestes:
-		_gestes.cancel()
+	mise_en_scene().cancel()
 	_pass_plan.clear()
 	_pass_elapsed = 0.0
 	_contact_plan = {}
