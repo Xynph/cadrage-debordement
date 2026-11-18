@@ -1,0 +1,16 @@
+== captures pilotage du match (écran 2D : consignes, arbitre, états des joueurs) (code 1)
+FAIL: Le coup d'envoi est joué en 3D, écran intermédiaire masqué
+FAIL: Premier temps fort suivi
+FAIL: Le bandeau affiche l'horloge du plan rejoué : 0:00
+FAIL: La légende du plan est affichée : 0.0'  Tom Lefèvre (PBX) effectue le coup d’envoi.
+FAIL: Les plans du temps fort se sont succédé
+FAIL: 1280×720 (Terrain) : @VBoxContainer@638 n'est pas coupé ([P: (18.0, 197.0), S: (1244.0, 544.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Terrain) : MatchBetweenBottom n'est pas coupé ([P: (18.0, 679.0), S: (1244.0, 62.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Terrain) : @PanelContainer@700 n'est pas coupé ([P: (18.0, 679.0), S: (1244.0, 62.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Terrain) : @MarginContainer@701 n'est pas coupé ([P: (26.0, 683.0), S: (1228.0, 54.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Terrain) : @VBoxContainer@702 n'est pas coupé ([P: (33.0, 690.0), S: (1214.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Terrain) : MatchBetweenAdvice n'est pas coupé ([P: (33.0, 690.0), S: (1214.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Terrain) : @HBoxContainer@1100 n'est pas coupé ([P: (33.0, 690.0), S: (1214.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Terrain) : @TextureRect@1101 n'est pas coupé ([P: (33.0, 690.0), S: (40.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Terrain) : @VBoxContainer@1102 n'est pas coupé ([P: (81.0, 690.0), S: (1158.0, 40.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
+FAIL: 1280×720 (Terrain) : @Label@1103 n'est pas coupé ([P: (81.0, 690.0), S: (1158.0, 15.0)] hors de [P: (18.0, 197.0), S: (1244.0, 497.0)])
