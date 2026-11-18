@@ -690,7 +690,7 @@
     },
     "plan_adverse": {
       "_doc": "Veille du match (avant-match.cjs planAdverse) : le plan de jeu probable de l'adversaire lu par l'analyste vidéo (à défaut l'adjoint), qui peut se tromper ; réponses : ouvrir la composition ou les consignes.",
-      "categorie": "staff", "declencheur": "plan_adverse", "priorite": 9, "arret": true, "ecran": "Composition",
+      "categorie": "staff", "declencheur": "plan_adverse", "priorite": 66, "arret": false, "ecran": "Composition",
       "expediteur": "Gabi, ton adjoint",
       "formulations": [
         { "sujet": "{adversaire} : {titre_bas} ?", "corps": "Coach, {lecteur} a décortiqué les derniers matchs de {adversaire}. Sa lecture pour {quand} : {titre_bas}, parce que {raison}. {confiance} Mon conseil : {conseil}." },

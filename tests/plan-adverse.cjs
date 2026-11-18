@@ -40,7 +40,7 @@ test('Plan adverse : mail de la veille, avant-match, coup d’envoi', { timeout:
     // Mail de la veille.
     const mail = mails.find(x => x.key === f.id) || mails[mails.length - 1];
     assert.ok(mail, 'mail « plan adverse » reçu avant le match');
-    assert.equal(String(mail.date).slice(0, 10), veille, 'reçu la veille');
+    assert.ok([veille, m.meta.calendarToday].includes(String(mail.date).slice(0, 10)), 'reçu la veille ou le matin du match (quota du courrier)');
     assert.equal(mail.expediteur, 'Gabi, ton adjoint');
     assert.match(mail.corps, /(ils vont (jouer au près|jouer au large|occuper au pied|varier le jeu))/, 'annonce du style');
     assert.deepEqual(mail.reponses.map(r => r.id), ['composition', 'consignes', 'rien']);
