@@ -1,0 +1,6 @@
+== suites (6) (code 1)
+FAIL: Bilan : promesse publique et réactions
+not ok 1 - Promesses publiques dans le jeu
+    FAIL: Bilan : promesse publique et réactions
+  name: 'AssertionError'
+::error file=tests/godot-presse-promesses.cjs::Godot : ECHEC (1), durée 35 s, limite 300s
