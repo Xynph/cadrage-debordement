@@ -427,6 +427,8 @@ static func _de(nom: String) -> String:
 ## Bureau (« Ton avis, Gabi ? », fil du bandeau) disent exactement la même chose ce jour-là.
 static func conseil_jour_de_match(model: Dictionary) -> Dictionary:
 	if not _jour_de_match(model): return {}
+	var bleus := repos_bleus(model)
+	if not bleus.is_empty(): return bleus
 	var repos := fatigue(model)
 	var cash := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
 	if cash >= 0 and not repos.is_empty():
@@ -447,6 +449,25 @@ static func fatigue_courte(model: Dictionary, avis: Dictionary) -> String:
 	if parts.size() > 2: return "Je ferais souffler %s : %s et %d autre%s." % [qui, ", ".join(parts.slice(0, 2)), parts.size() - 2, "s" if parts.size() > 3 else ""]
 	return "Je ferais souffler les fatigués : %s." % " ; ".join(parts)
 
+
+## Protocole des Bleus : des joueurs de la liste de 33 sont sur la feuille alors qu'ils doivent souffler ce week-end
+## (au moins 2 repos sur 8 matchs). Le moteur (clubLife.doublons) propose le remplaçant au poste ; « Suivre le
+## conseil » applique les mêmes commandes set_lineup que le conseil de composition. Vide : rien à signaler.
+static func repos_bleus(model: Dictionary) -> Dictionary:
+	var data: Variant = model.get("clubLife", {}).get("doublons") if model.get("clubLife") is Dictionary else null
+	if not data is Dictionary or not bool(data.get("applies", false)) or not data.get("reposer") is Array or (data.reposer as Array).is_empty(): return {}
+	var noms: Array = []
+	for item: Variant in data.reposer:
+		if item is Dictionary: noms.append(_nom(joueur(model, str(item.get("playerId", "")))))
+	if noms.is_empty(): return {}
+	var changes: Array = []
+	for change: Variant in data.get("changes", []) if data.get("changes") is Array else []:
+		if change is Dictionary and change.get("playerId") is String and change.get("sortant") is String:
+			changes.append({"slot": int(_nombre(change.get("slot"), 0)), "playerId": str(change.playerId), "sortant": str(change.sortant)})
+	var verbe := "doit" if noms.size() == 1 else "doivent"
+	var texte := "%s %s souffler ce week-end (protocole des Bleus)." % [_liste(noms), verbe]
+	if changes.is_empty(): return _resultat(texte + " Je n'ai personne pour le remplacer au poste.", "mise_en_garde", NEUTRE)
+	return _resultat(texte + " Je mets un remplaçant à sa place.", "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes, "libelle": "Suivre le conseil"})
 
 ## Alerte de fatigue : des titulaires de la feuille du prochain match sont sous 70 % de condition.
 ## Le moteur (selection.fatigue, position-aptitudes.cjs) propose pour chacun le meilleur remplaçant frais au

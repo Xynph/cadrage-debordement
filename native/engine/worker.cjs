@@ -302,7 +302,7 @@ function createBridge(options={}){
     const career=S?.national?.career;
     if(career&&!nativeInternationalStatus.has(career))nativeInternationalStatus.set(career,nativeCallups.internationalStatus(career));
     const status=career&&nativeInternationalStatus.get(career);
-    return {...nativeAttributeStore.project(p),...nativePositionAptitudes.project(p),playerFacts:{...nativeFacts.project(p.id,status?.caps.get(p.id),p),onInternationalDuty:status?.released.has(p.id)??false}};
+    return {...nativeAttributeStore.project(p),...nativePositionAptitudes.project(p),playerFacts:{...nativeFacts.project(p.id,status?.caps.get(p.id),p),onInternationalDuty:status?.released.has(p.id)??false,listeElite:nativeSystems.domain('doublons').isListed(S,p.id)}};
    };
    const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel,(${publishedVenue.factory.toString()})(${JSON.stringify(publishedVenue.data)}),${JSON.stringify(clubHistory)});const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`,'native-bootstrap');
   ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...worldEditions.entries.map(e=>e.id)].map(id=>[id,staff.forDatabase(id).registry.clubs])));
@@ -1235,6 +1235,8 @@ function createBridge(options={}){
      // Courrier du club (club-mail.cjs) : une réception par jour de calendrier ; seule la boîte est écrite.
      // Prolongations confiées au directeur sportif (mars à juin) : décisions du jour, avant le courrier qui les annonce.
      run("if(typeof dsContratsObserver==='function')dsContratsObserver();if(typeof dsStaffObserver==='function')dsStaffObserver();");
+     // Liste élite des Bleus et plans de doublon en attente (doublons.cjs) : avant le courrier qui s'en sert.
+     run("nativeSystems.domain('doublons').observe();");
      run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »

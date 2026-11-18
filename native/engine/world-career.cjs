@@ -69,7 +69,12 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   return f&&f.homeId===pair[0]&&f.awayId===pair[1]?m:null;
  }
  const callups=s=>s.national?.career?.callups??[];
- const during=(call,date)=>call.from<=date&&date<=call.through;
+ // Mise à disposition des clubs : une sélection qui se réunit le dimanche (test le samedi suivant, six jours après)
+ // ne prive pas encore les clubs de leurs internationaux ce dimanche-là : les journées de championnat se terminent le
+ // dimanche et les calendriers LNR ne comptent aucun « doublon » ces week-ends (Top 14, 31 oct.-1er nov., 30-31 janv.
+ // et 27-28 fév. 2027). Le club libère donc ses joueurs à partir du lundi ; le rassemblement, lui, reste daté du dimanche.
+ const clubFrom=call=>{const monday=new Date(call.from+'T00:00:00Z').getUTCDay()===0?new Date(Date.parse(call.from+'T00:00:00Z')+86400000).toISOString().slice(0,10):call.from;return monday<=call.through?monday:call.from;};
+ const during=(call,date)=>clubFrom(call)<=date&&date<=call.through;
  const releasedIds=(s,date)=>new Set(callups(s).filter(call=>during(call,date)).flatMap(call=>call.playerIds));
  function clubReleaseOn(s,id,date=userFixture(s)?.date){
   return date ? callups(s).find(call=>during(call,date)&&call.playerIds.includes(id))??null : null;

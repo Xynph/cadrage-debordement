@@ -666,6 +666,20 @@ static func lineup(app:Control) -> Control:
 		jiff_bloc.name = "LineupJiffNotice"
 		jiff_bloc.tooltip_text = "Joueurs issus des filières de formation : 3 saisons en centre de formation français ou 5 saisons de licence en France avant 22 ans. Sous la moyenne de %d par feuille sur la saison, le club perd des points la saison suivante ; à partir de %d, le fonds JIFF verse une prime." % [target, int(jiff.get("bonusFrom", 17))]
 		side.add_child(jiff_bloc)
+	# Protocole des Bleus (liste de 33) : joueurs de la feuille qui doivent souffler ce week-end.
+	var bleus: Dictionary = app.model.get("clubLife", {}).get("doublons", {})
+	if bool(bleus.get("applies", false)):
+		var a_reposer: Array = bleus.get("reposer", [])
+		var noms: Array = []
+		for item: Variant in a_reposer:
+			if item is Dictionary:
+				for p: Variant in app.model.get("squad", []):
+					if p is Dictionary and str(p.get("id", "")) == str(item.get("playerId", "")): noms.append(str(p.get("name", "")))
+		if not noms.is_empty():
+			var bleus_bloc := G.wrap("BLEUS  ·  %s doit souffler ce week-end (protocole : 2 repos sur 8 matchs)" % ", ".join(noms), 11, G.ALERT)
+			bleus_bloc.name = "LineupBleusNotice"
+			bleus_bloc.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus."
+			side.add_child(bleus_bloc)
 	var auto:=G.button("SÉLECTION AUTOMATIQUE DU STAFF",func():app._command("auto_lineup"))
 	auto.name="LineupAutomatic"
 	auto.disabled=not app._live().is_empty()
@@ -681,6 +695,7 @@ static func lineup(app:Control) -> Control:
 	var eligible:Variant=selected.get("eligibleIds")
 	for p in app.model.get("squad",[]):
 		var identity := "%s · %s" % [p.name, p.pos]
+		if p.get("playerFacts", {}).get("listeElite", false): identity += " · Liste des 33"
 		var metrics := "Condition %s %% · Niveau %s" % [G.n(p.condition), G.rating_text(p,true)]
 		var b := G.button("",func():app._command("set_lineup",{"playerId":p.id,"slot":app.selected_slot}))
 		b.accessibility_name = identity + " · " + metrics

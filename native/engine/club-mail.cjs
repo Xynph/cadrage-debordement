@@ -43,7 +43,7 @@ function factory() {
   const pending = s => typeof CDPreseason !== 'undefined' && !!CDPreseason.pending(s);
   const todayOf = s => { try { return CDWorldCareer.calendarToday(s); } catch { return null; } };
   const STATUS = ['nouveau', 'repondu', 'classe', 'info'];
-  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation'];
+  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation', 'doublon', 'repos_liste'];
   const ORIENTATION_LABELS = { equilibre: 'répartition proposée', installations: 'priorité aux installations', staff: 'priorité au staff', accueil: 'priorité à l’accueil' };
   const PLAN_LABELS = { repos: 'repos', normal: 'charge allégée', intense: 'charge intense', collective: 'séance collective' };
   const MODE_LABELS = { repos: 'récupération', normal: 'normal', intense: 'intense' };
@@ -457,6 +457,22 @@ function factory() {
       const vent = m.ventDos ? ' Le vent soufflera dans le dos de ' + camp(pair[m.ventDos[0]]) + ' en première période' + (m.ventDos[0] === nous ? ' : à nous d’en profiter avant la pause.' : ', puis dans le nôtre après la pause.') : '';
       return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), quand: F.next.date === F.d ? 'aujourd’hui' : 'demain', ciel: ciel.charAt(0).toUpperCase() + ciel.slice(1), ciel_bas: ciel, vent, conseil: m.conseil || '' } }];
     },
+    // Doublon (doublons.cjs) : le prochain match de championnat du club tombe dans une fenêtre internationale. Un seul
+    // courrier par rencontre, une semaine avant au plus (dès que les convocations sont connues), jamais le jour même.
+    doublon(F, t) {
+      const f = F.next;
+      if (!f || f.phase !== 'league' || f.competitionId !== F.lid || F.d < shift(f.date, -7) || F.d >= f.date || typeof nativeSystems === 'undefined') return [];
+      const v = nativeSystems.domain('doublons').impact(F.s, f, t.seuils || {});
+      return v ? [{ key: f.id, vars: v }] : [];
+    },
+    // Protocole des Bleus (liste de 33) : un courrier de la cellule FFR-LNR par match, pour le joueur le mieux noté qui doit souffler.
+    cellule(F) {
+      const f = F.next;
+      if (!f || typeof nativeSystems === 'undefined' || F.d >= f.date || F.d < shift(f.date, -5) || F.d < monday(f.date)) return [];
+      const v = nativeSystems.domain('doublons').aMenager(F.s, f);
+      if (!v) return [];
+      return [{ key: f.id, player: v.player.id, vars: { ...playerVars(v.player), matchs: v.matchs, repos: v.repos, adversaire: v.opponent, jour: v.jour, rencontre: f.id } }];
+    },
     pelouse(F) {
       if (!F.next || F.next.date !== shift(F.d, 1) || F.next.homeId !== F.s.club) return [];
       // Pelouse cohérente avec la météo annoncée : pluie (glissante), forte pluie (lourde), sinon la saison.
@@ -591,6 +607,8 @@ function factory() {
     if (e.promouvoir) out.push('Premier contrat professionnel');
     if (Number.isFinite(e.caisse) && e.caisse) out.push((e.caisse > 0 ? 'Recette ' : 'Coût ') + euros(Math.abs(e.caisse)) + ' €');
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; out.push('Frais ' + euros(sx.frais || 1500) + ' € ; amende annulée ou portée à ' + euros(sx.alourdie || 7500) + ' €'); }
+    if (e.doublon) out.push({ rotation: 'Cadres fatigués en récupération jusqu’au match', forte: 'Meilleure feuille possible', jeunes: 'Jeunes du centre : premier contrat professionnel' }[e.doublon] || e.doublon);
+    if (e.repos_liste) out.push({ reposer: 'Il sort de la feuille', amenagement: 'Accord possible, pas garanti', ignorer: 'Relation avec la fédération −3' }[e.repos_liste] || e.repos_liste);
     if (e.orientation) out.push('Investissements : ' + (ORIENTATION_LABELS[e.orientation] || e.orientation));
     if (e.pret === 'vendre') out.push('Vente immédiate, prix affecté au remboursement');
     if (e.pret === 'accepter') out.push('Remboursement sur plusieurs saisons');
@@ -610,6 +628,11 @@ function factory() {
     if ((e.entrainement || e.focus) && s.trained) return 'La séance de la semaine est déjà faite.';
     if (e.focus && s.collectivePrepVersion !== 1) return 'Préparation collective indisponible.';
     if (Number.isFinite(e.caisse) && e.caisse < 0 && (club.cash ?? 0) < -e.caisse) return 'Trésorerie insuffisante.';
+    if (e.doublon || e.repos_liste) {
+      if (typeof nativeSystems === 'undefined') return 'Indisponible.';
+      const raison = nativeSystems.domain('doublons').refus(s, m, e.doublon || e.repos_liste);
+      if (raison) return raison;
+    }
     if (e.orientation && !(typeof investCourrier === 'function' && investCourrier())) return 'La répartition de cette saison est déjà arrêtée.';
     if (e.pret === 'vendre') { const raison = typeof pretVenteRefus === 'function' ? pretVenteRefus() : 'Vente impossible.'; if (raison) return raison; }
     if (e.pret === 'accepter' && !(typeof pretCourrier === 'function' && pretCourrier())) return 'Le président a déjà tranché.';
@@ -674,6 +697,7 @@ function factory() {
     if (e.promouvoir) check(promoteYouth(m.player) === true, 'promotion refusée');
     if (e.contratDS) check(dsContratsAction(e.contratDS, m.player) === true, 'décision refusée');
     if (e.consigneDS) check(dsContratsAction(e.consigneDS, m.player) === true, 'consigne refusée');
+    if (e.doublon || e.repos_liste) m.verdict = String(nativeSystems.domain('doublons').agir(s, m, e.doublon || e.repos_liste)).slice(0, 190);
     if (e.orientation) check(investOrienter(e.orientation) === true, 'répartition refusée');
     if (e.pret) check(pretRepondre(e.pret) === true, 'réponse au prêt refusée');
     if (Number.isFinite(e.caisse) && e.caisse) ledgerEntry('Courrier · ' + render(m).sujet.slice(0, 60), e.caisse);
