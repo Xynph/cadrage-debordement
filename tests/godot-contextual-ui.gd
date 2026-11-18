@@ -71,7 +71,7 @@ func run() -> void:
 	check(director.sync(), "talk opens")
 	await settle()
 	check(not host.root_content.visible and not host.coach.visible, "shell and coach hidden")
-	check(director.view.options_grid.columns == 3 and director.view.options_grid.get_child_count() == 6, "six declarations in three columns")
+	check(director.view.options_grid.columns == 2 and director.view.options_grid.get_child_count() == 6, "six declarations in two readable columns")
 	# Le ton d'abord (en or, en capitales), la phrase dessous ; le ton furieux est un choix comme les autres.
 	var tone_texts: Array = director.view.options_grid.find_children("TalkChoiceTone", "Label", true, false).map(func(l: Label) -> String: return l.text)
 	check(tone_texts == ["CALME","EXIGEANT","ENCOURAGEANT","FURIEUX","RASSURANT","AFFIRMÉ"], "tone label first on each declaration " + str(tone_texts))

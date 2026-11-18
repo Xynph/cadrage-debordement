@@ -72,7 +72,7 @@ func _draw() -> void:
 			style.set_border_width_all(2)
 			go_on.add_theme_stylebox_override(state, style)
 		declarations.add_child(go_on)
-		go_on.call_deferred("grab_focus")
+		call_deferred("_focus_continue", go_on)
 	else:
 		var recipient_row := S.G.h(8)
 		declarations.add_child(recipient_row)
@@ -99,7 +99,7 @@ func _draw() -> void:
 		for option: Dictionary in scene.get("options", []): options_grid.add_child(_choice_card(option, ready_to_speak))
 		var skip_row := S.G.h(8)
 		declarations.add_child(skip_row)
-		skip_row.add_child(S.G.spacer())
+		skip_row.add_child(_hspace())
 		var skip := S.button("SANS PRENDRE LA PAROLE", func(): _continue(true))
 		skip.name = "TalkSkip"
 		skip.custom_minimum_size = Vector2(260, 44)
@@ -109,7 +109,7 @@ func _draw() -> void:
 	var bench_head := S.G.h(12)
 	column.add_child(bench_head)
 	bench_head.add_child(S.label("REMPLAÇANTS", 14, S.GOLD))
-	bench_head.add_child(S.G.spacer())
+	bench_head.add_child(_hspace())
 	bench_head.add_child(S.label("AVANT-MATCH  /  MATCH  /  MI-TEMPS  /  DÉBRIEF", 13, S.MUTED))
 	var bench := S.G.h(8)
 	bench.name = "TalkBench"
@@ -117,6 +117,17 @@ func _draw() -> void:
 	for participant: Dictionary in scene.get("participants", []):
 		if int(participant.get("number", 0)) > 15: bench.add_child(_player_card(participant, true))
 	director._refresh_controls()
+
+## Focus clavier sur Continuer (Entrée/Espace), si le bouton est toujours affiché.
+func _focus_continue(button: Button) -> void:
+	if is_instance_valid(button) and button.is_inside_tree(): button.grab_focus()
+
+## Espace qui pousse le reste de la ligne à droite (le spacer du carnet est vertical).
+static func _hspace() -> Control:
+	var space := Control.new()
+	space.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return space
 
 func _roster(parent: Node, title: String, group: String) -> void:
 	var list := S.G.v(6)
@@ -200,6 +211,7 @@ func _choice_card(option: Dictionary, enabled: bool = true) -> Button:
 	S.full(margin)
 	card.add_child(margin)
 	var words := S.G.v(3)
+	words.alignment = BoxContainer.ALIGNMENT_CENTER
 	words.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_child(words)
 	var tone := S.label(tone_label(option).to_upper(), 18, S.GOLD)
