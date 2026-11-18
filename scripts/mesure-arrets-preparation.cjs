@@ -46,6 +46,14 @@ function mesurer(club) {
         }
         continue;
       }
+      // Conférence obligatoire hors rendez-vous : le manager y répond (première réponse), comme à l'après-match.
+      if (a.stop.kind === 'conference') {
+        const conf = model.clubLife?.press?.conference;
+        if (conf?.available && conf.questions?.length) {
+          const rp = jeu.brut('press_conference', { context: model.clubLife.press.context, answers: conf.questions.map(q => ({ questionId: q.id, answerId: q.answers[0].id })), ...(typeof conf.invitationId === 'string' ? { invitationId: conf.invitationId } : {}) });
+          if (rp.ok) model = rp.model;
+        }
+      }
       // Demande d'entretien d'un joueur : réponse la plus neutre, comme un joueur pressé.
       if (a.stop.kind === 'conversation') model = repondreEntretien(jeu, model);
     }

@@ -97,7 +97,7 @@ function factory(){
   if(kind==='weekly')return {themes:undefined,subjects:null};
   return {themes:baseThemes[kind],subjects:null};
  }
- const extraOf=(s,invitation)=>{const p=plan(s,invitation);return {derby:moment(s,invitation)?.kind==='derby',slot:slotOf(invitation?.context),...(p.subjects?{subjects:p.subjects}:{})};};
+ const extraOf=(s,invitation)=>{const p=plan(s,invitation);return {derby:moment(s,invitation)?.kind==='derby',slot:slotOf(invitation?.context??context(s)),...(p.subjects?{subjects:p.subjects}:{})};};
  const prepareBase=(s,invitation,count)=>{const p=plan(s,invitation);return CDV60RichPress.prepare(s,p.themes,count,slotOf(invitation?.context??(afterMatch(s)?{slot:'apres'}:null)),p.subjects);};
  // Grand moment : conférence obligatoire en personne et plus longue.
  function moment(s,invitation){

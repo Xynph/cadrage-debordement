@@ -160,7 +160,8 @@ module.exports={
    const advanced=!!previous&&!same(previous.context,c),fresh=command==='new_career'||!!previous&&!scope;
    // Presse projetée seulement quand elle peut ouvrir un rendez-vous (création, jour qui avance) : projection pure,
    // inutile pour une consigne ou un réglage (~5 ms par commande).
-   const pressDue=command==='new_career'||advanced,press=pressDue?projectDomain('press'):null,strategy=projectDomain('clubStrategy');
+   // Presse façon FM (18/11/2026) : avant-match et événements s'ouvrent aussi en milieu de semaine (jour suivant).
+   const pressDue=command==='new_career'||advanced||command==='advance_day'&&!!S.pressInvitations?.entries?.some(e=>e.status==='pending'),press=pressDue?projectDomain('press'):null,strategy=projectDomain('clubStrategy');
    if(pressDue&&press?.conference?.available&&same(press.context,c))add(st,'press',reasons.press,'press:'+c.season+':'+c.club+':'+c.week);
    const oldPlayers=new Map((scope?previous.players:[]).map(p=>[p.id,p]));
    const players=roster().map(p=>{const old=oldPlayers.get(p.id),injured=p.injury>0;return {id:p.id,injured,stage:stage(p),episode:(old?.episode||0)+(injured&&!old?.injured?1:0)};});
