@@ -32,6 +32,13 @@ const REFORMATION_MIN := 6
 ## action : plus près, plus ouverte, un peu de biais.
 const TV_OFFSET := Vector3(0.0, 0.47, 0.883)
 const ACTION_OFFSET := Vector3(0.24, 0.5, 0.832)
+## Caméra-grue : quand le jeu approche de la touche proche (z du point visé entre GRUE_DEBUT et
+## GRUE_FIN), la caméra monte et plonge jusqu'à GRUE_ANGLE degrés de plus, comme la caméra
+## principale d'une tribune qui suit le jeu le long de sa touche : la tribune proche reste sous
+## l'image, au lieu de remplir le bas de l'écran.
+const GRUE_DEBUT := 4.0
+const GRUE_FIN := 30.0
+const GRUE_ANGLE := 18.0
 ## Angle de champ vertical (degrés) : téléobjectif de retransmission en TV, plus ouvert au contact.
 const TV_CHAMP := 24.0
 const ACTION_CHAMP := 36.0
@@ -1108,7 +1115,7 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			# stay in the comfortable middle area even at the in-goal corners.
 			var lag := _camera_focus - desired
 			_camera_focus = desired + lag.limit_length(base * RETARD_MAX)
-		var offset := ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET
+		var offset := offset_suivi(ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET, _camera_focus.z)
 		var look := _camera_focus
 		var size := base
 		var wide := size
@@ -1141,7 +1148,7 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 		if not is_finite(size) or size < 2.0 or not look.is_finite() or not offset.is_finite():
 			look = _camera_focus
 			size = wide
-			offset = ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET
+			offset = offset_suivi(ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET, _camera_focus.z)
 		# Recentrage borné, amorti (pas d'à-coup quand une borne entre en jeu) ; le ballon ne sort
 		# jamais de l'image, même pendant l'amortissement.
 		var aspect := screen.x / maxf(screen.y, 1.0)
@@ -1183,6 +1190,17 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			var point := _camera.to_local(Vector3(x, 0, z))
 			half_height = maxf(half_height, maxf(absf(point.y), absf(point.x) / aspect))
 	_camera.size = maxf(half_height * 2.16, 88.0)
+
+
+## Direction de la caméra suivie pour un point visé à `profondeur` (z) : celle de base, relevée
+## progressivement près de la touche proche (caméra-grue, voir GRUE_*). Continue : pas d'à-coup.
+func offset_suivi(base: Vector3, profondeur: float) -> Vector3:
+	var k := smoothstep(GRUE_DEBUT, GRUE_FIN, profondeur)
+	if k <= 0.0:
+		return base
+	var horizontal := Vector3(base.x, 0.0, base.z)
+	var elevation := atan2(base.y, horizontal.length()) + deg_to_rad(GRUE_ANGLE) * k
+	return (horizontal.normalized() * cos(elevation) + Vector3.UP * sin(elevation)) * base.length()
 
 
 ## Caméra suivie en perspective : `size` est la hauteur visible (m) au point visé `look`, `offset`

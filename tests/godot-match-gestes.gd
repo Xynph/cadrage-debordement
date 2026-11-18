@@ -51,6 +51,8 @@ func hands(view, id: String) -> float:
 ## La caméra suivie applique exactement la formule d'origine : point suivi + décalage fixe, taille fixe.
 func camera_plain(view, offset: Vector3, size: float) -> bool:
 	var camera: Camera3D = view._camera
+	# Caméra-grue : direction relevée près de la touche proche (offset_suivi).
+	offset = view.offset_suivi(offset, view._camera_focus.z)
 	# Caméras en perspective (18 novembre 2026) : position déduite du point visé final, de la hauteur visible et de la direction.
 	return camera.position.is_equal_approx(view.pose_camera(view._camera_look, size, offset)[0]) and is_equal_approx(camera.size, size) and camera.global_basis.is_equal_approx(Basis.looking_at(-offset, Vector3.UP))
 
@@ -449,7 +451,7 @@ func run() -> void:
 	check(camera_plain(view, ACTION_OFFSET, View.ACTION_TAILLE), "Caméra action d'origine hors geste")
 	view.apply_frame(live(frames, at_lineout))
 	for frame in int(ceil(Gestes.FRAME_IN / STEP)) + 2: view._process(STEP)
-	check(gestes.zoom == 1.0 and camera.size < View.ACTION_TAILLE and camera.global_basis.is_equal_approx(Basis.looking_at(-ACTION_OFFSET, Vector3.UP)), "Caméra action : rapprochée, angle inchangé : " + str(camera.size))
+	check(gestes.zoom == 1.0 and camera.size < View.ACTION_TAILLE and camera.global_basis.is_equal_approx(Basis.looking_at(-view.offset_suivi(ACTION_OFFSET, view._camera_focus.z), Vector3.UP)), "Caméra action : rapprochée, angle inchangé : " + str(camera.size))
 	print("MATCH_GESTES_ACTION_TOUCHE_SIZE ", camera.size)
 	view.set_camera("tactical")
 	check(gestes.zoom == 0.0, "Vue tactique : aucun recadrage")

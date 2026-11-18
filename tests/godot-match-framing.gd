@@ -271,7 +271,9 @@ func run() -> void:
 					view._process(1.0 / 60.0)
 					max_step = maxf(max_step, camera.position.distance_to(previous))
 					if mode != "tactical": comfort(view, "%s %s ball remains in comfort: " % [size, mode])
-					check(camera.global_basis.is_equal_approx(basis), "Follow camera has no aim snap or roll")
+					# Caméra-grue (18 novembre 2026) : l'angle suit la profondeur du jeu, sans à-coup ni roulis.
+					check(absf(camera.global_basis.x.y) < 0.001 and camera.global_basis.z.angle_to(basis.z) < 0.05, "Follow camera has no aim snap or roll")
+					basis = camera.global_basis
 			check(max_step < 5.5, "No unrequested cut during the long corner-to-corner pass")
 			if mode == "tactical":
 				for corner in [Vector3(-55, 0, -35), Vector3(55, 0, -35), Vector3(-55, 0, 35), Vector3(55, 0, 35)]:
