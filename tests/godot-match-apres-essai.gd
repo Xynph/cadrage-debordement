@@ -189,8 +189,9 @@ func apres_essai() -> void:
 	await process_frame
 	var marqueur := "0-11"
 	var liste := joueurs(marqueur, Vector2(85, 40))
-	view.apply_frame(image(scene("carry", "[60,\"course\",\"carry\"]", liste, Vector2(85, 40), Vector2(80, 40))))
-	for k in 30: view._process(STEP)
+	# Image posée (en pause) : joueurs en place, ballon dans les mains du marqueur, aucun plaquage.
+	view.apply_frame(image(scene("carry", "[60,\"course\",\"carry\"]", liste, Vector2(85, 40), Vector2(80, 40)), true))
+	for k in 5: view._process(STEP)
 	var arbitre = Arbitre.new(view)
 	view.add_child(arbitre)
 	check(arbitre.preparer(), "Arbitre habillé")
