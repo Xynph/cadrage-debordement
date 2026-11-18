@@ -1,0 +1,5 @@
+tests/godot-premiere-heure.cjs
+tests/godot-premiers-pas.cjs
+tests/godot-gabi-bandeau.cjs
+tests/godot-gabi-adjoint.cjs
+tests/godot-gabi-composition.cjs
