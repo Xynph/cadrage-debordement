@@ -1,7 +1,11 @@
 'use strict';
 // Fictional simulation policies. These coefficients are not rugby law or real-life odds.
 const DEFENCES={equilibre:['Équilibrée','Un compromis entre pression, couverture et dépense physique.'],pression:['Montée agressive','Freine les attaques et provoque des erreurs, mais fatigue davantage et expose aux grands gains si la ligne est battue. Plus de risque de pénalité.'],prudente:['Glissée prudente','Cède plus facilement les premiers mètres, mais réduit les grands gains et protège la profondeur. Dépense physique et risque de pénalité réduits.']};
-const ATTACK_EFFECTS={equilibre:{gain:[12,25],error:0,load:.40,finish:0},conquete:{gain:[8,18],error:-.045,load:.46,finish:-.015},large:{gain:[14,29],error:.065,load:.53,finish:.025},occupation:{gain:[10,21],error:0,load:.34,finish:0}};
+// Équilibrage des styles (18/11/2026, docs/top14-dispute-20261117.md §14) : à niveau égal, contre « Équilibré », l'occupation
+// perdait 58 % de ses matchs (pluie comprise) et le jeu au large 56 %. Large : faute de main +0,065 → +0,03 ; conquête −0,045 → −0,035. Occupation :
+// coup de pied plus long (kickBonus mètres, plafond kickMax) et récupéré par le camp qui botte (recup, kick-chase, ballon
+// disputé) ; mesuré ensuite à 46-52 % pour chaque style (±3 de bruit à 1 200 matchs), l'occupation meilleure sous la pluie.
+const ATTACK_EFFECTS={equilibre:{gain:[12,25],error:0,load:.40,finish:0},conquete:{gain:[8,18],error:-.035,load:.46,finish:-.015},large:{gain:[14,29],error:.03,load:.53,finish:.025},occupation:{gain:[10,21],error:0,load:.34,finish:0,kickBonus:12,kickMax:55,recup:.25}};
 const TACTICAL_STAT_KEYS=['carries','advances','metres','handErrors','kicks','recoveries','longGains'];
 function tacticalRules(l){return l.tacticalVersion===1&&l.restartVersion===1&&l.balanceVersion===2}
 // Essais réalistes (docs/essais-realistes-20261114.md) : rencontres créées avec `essaisVersion` (les
