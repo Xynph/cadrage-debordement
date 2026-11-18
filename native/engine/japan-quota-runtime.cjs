@@ -145,6 +145,7 @@ function factory(eligibility){
    }
    return {lineup:ids.slice(0,15),bench:ids.slice(15)};
   };
+  // `rest` : arguments suivants (semaine européenne, ROTATION_EUROPE de dist/opposition.js), transmis tels quels.
   managerSheet=function(c,opponent,weather,level,...rest){
    const proposed=originalManager(c,opponent,weather,level,...rest);
    if(!activeClub(S,c.id)||c.id===S.club||nominations(S,c,proposed.lineup,proposed.bench))return proposed;

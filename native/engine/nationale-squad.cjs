@@ -48,6 +48,7 @@ module.exports=function installNationaleSquad(){
  };
  const strategy=managerSheet;
  const complete=sheet=>[...sheet.lineup,...sheet.bench].every(Boolean);
+ // `rest` : arguments suivants (semaine européenne, ROTATION_EUROPE de dist/opposition.js), transmis tels quels.
  managerSheet=function(c,opponent,weather,level,...rest){
   const proposed=strategy(c,opponent,weather,level,...rest);
   if((CDWorldEditions.forState(S)?.version??0)<4||complete(proposed))return proposed;
