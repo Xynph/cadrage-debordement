@@ -463,8 +463,8 @@
       "categorie": "competition", "declencheur": "arbitre", "priorite": 54, "arret": false, "ecran": "Préparation",
       "expediteur": "La commission des arbitres",
       "formulations": [
-        { "sujet": "Arbitre désigné contre {adversaire}", "corps": "L'arbitre de la rencontre contre {adversaire} est désigné. Profil : {profil}. À intégrer dans tes consignes." },
-        { "sujet": "Désignation arbitrale", "corps": "Pour {adversaire}, l'arbitre désigné est un habitué de la division : {profil}." }
+        { "sujet": "Arbitre de demain contre {adversaire}", "corps": "Demain contre {adversaire}, ce sera {arbitre}. Tendances : {tendances}. En résumé : {resume} {conseil}" },
+        { "sujet": "Désignation arbitrale", "corps": "Pour la rencontre contre {adversaire}, la commission désigne {arbitre}. Ses habitudes : {tendances}. {resume} {conseil}" }
       ],
       "reponses": [
         { "id": "discipline", "libelle": "Insister sur la discipline à l'entraînement", "effets": { "focus": "defence" }, "resultat": "Préparation collective orientée défense et discipline." },

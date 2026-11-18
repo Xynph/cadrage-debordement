@@ -47,6 +47,11 @@ module.exports=function nativeGestion(command,p){
   if(S.live){requireThat(tacticalRules(S.live)&&S.live.paused&&!S.live.finished&&!presentationPending(S.live),'Mets le match en pause pour changer les consignes.');setLiveTactic(p.attack);setLiveDefence(p.defense);}
   else{requireThat(S.phase!=='ended','Saison terminée.');S.tactic=p.attack;setDefence(p.defense);}return;
  }
+ if(command==='set_consignes'){
+  // Consignes en direct (match-pilotage.js) : sans pause, effet dès la minute suivante.
+  requireThat(S.live&&!S.live.finished&&typeof setConsigne==='function'&&S.live.pilotage,'Consignes indisponibles pour ce match.');
+  requireThat(setConsigne(S.live,p.axe,p.valeur),'Consigne inconnue.');return;
+ }
  if(command==='set_penalty_policy'){
   // Consigne sur pénalité pendant le match (tir au but, pénaltouche, jouer vite à la main, ou selon le contexte).
   requireThat(Object.hasOwn(PENALTY_POLICIES,p.policy),'Consigne sur pénalité inconnue.');

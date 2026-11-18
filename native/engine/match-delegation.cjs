@@ -23,6 +23,8 @@ function factory(){
   // Les fonctions du moteur ignorent le côté du manager : on le masque le temps de leur appel.
   l.userSide=-1;
   try{adaptManager(l,side);aiSubs(l,side);}finally{l.userSide=side;}
+  // Consignes en direct (match-pilotage.js) : le staff les ajuste, plus ou moins bien selon sa compétence.
+  if(typeof pilotageStaff==='function')pilotageStaff(l);
  }
  function installHooks(){
   if(installe||typeof advanceRugby!=='function'||typeof aiSubs!=='function'||typeof adaptManager!=='function')return true;

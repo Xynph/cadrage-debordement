@@ -13,7 +13,10 @@ module.exports={
   const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
   const check=(ok,detail)=>{if(!ok)throw Error('Causerie de match incohérente : '+detail+'.');};
   const phases=['pre','half','post'],bankPhases={pre:'pre_match',half:'half_time',post:'post_match'};
-  const tones=['assertive','calm','demanding','protective','reflective','warm'];
+  // Six tons de causerie (match-pilotage.js) : calme, exigeant, encourageant, furieux, rassurant, affirmé.
+  const tones=typeof TONS_CAUSERIE!=='undefined'?TONS_CAUSERIE:['calm','demanding','warm','furious','protective','assertive'];
+  const toneLabel=t=>typeof TONS_LABELS!=='undefined'&&TONS_LABELS[t]||t;
+  const etats=()=>typeof PILOTAGE_ETATS!=='undefined'?PILOTAGE_ETATS:{};
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
   const hash=x=>{let h=2166136261;for(const c of x)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
   let delegating=false,installed=false;
@@ -45,8 +48,8 @@ module.exports={
    return {result_win:c.result==='win',result_draw:c.result==='draw',result_loss:c.result==='loss'};
   }
   function options(key,p){
-   return CDSceneDialogues.select(bankPhases[p.phase],facts(p.phase,p.context),key+':'+p.phase)
-    .map(e=>({id:e.id,text:e.text,tone:e.tone,intent:e.intent}));
+   return CDSceneDialogues.byTone(bankPhases[p.phase],facts(p.phase,p.context),key+':'+p.phase,tones)
+    .map(e=>({id:e.id,text:e.text,tone:e.tone,toneLabel:toneLabel(e.tone),intent:e.intent}));
   }
   const pending=r=>r?.phases.find(p=>!p.closed)||null;
   function roster(s,r){return s.clubs[r.context.club].players;}
@@ -67,18 +70,13 @@ module.exports={
    else check(ids.length===0||equal(ids,eligible),'liste exacte du groupe');
    return audience==='players'?r.participants.filter(p=>ids.includes(p.id)).map(p=>p.id):eligible;
   }
-  // Personality convention, not measured psychology. The six intrinsic tones
-  // suit different players; no declaration promises a positive group outcome.
-  function reactions(ids,tone){
-   return ids.map(id=>{
-    const profile=hash(id)%6,preferred=tones.indexOf(tone);
-    const delta=profile===preferred?1:profile===(preferred+3)%6?-1:0;
-    return {id,delta,reaction:delta>0?'encouraged':delta<0?'unconvinced':'unchanged'};
-   });
+  // Réaction de chaque joueur (match-pilotage.js) : personnalité (traits cachés), score et enjeu, confiance envers
+  // le manager, usure d'un ton répété et part d'imprévu. Aucune déclaration ne garantit un effet positif.
+  function reactions(s,r,ids,tone,phase,context){
+   const people=new Map(roster(s,r).map(p=>[p.id,p]));
+   return ids.map(id=>reactionJoueur(people.get(id),tone,phase,context,r.key,ids.length===1));
   }
-  // At least two net responses are needed to move collective morale by one.
-  // A lone selected player cannot grant the entire team a sporting bonus.
-  const collectiveEffect=feedback=>clamp(Math.trunc(feedback.reduce((n,x)=>n+x.delta,0)/2),-1,1);
+  const reactionValide=(x,id)=>keys(x,['id','score','etat','label','delta'])&&x.id===id&&number(x.score,-3,3)&&Object.hasOwn(etats(),x.etat)&&x.label===etats()[x.etat].label&&[-1,0,1].includes(x.delta);
   function validateContext(s,c){
    check(keys(c,['season','round','club','pair','competitionPhase','fixture'])&&integer(c.season,1,s.season)&&integer(c.round,0,1000)&&integer(c.club,0,s.clubs.length-1)&&Array.isArray(c.pair)&&c.pair.length===2&&c.pair.every(id=>integer(id,0,s.clubs.length-1))&&c.pair[0]!==c.pair[1]&&c.pair.includes(c.club)&&text(c.competitionPhase,60)&&text(c.fixture,180),'identité rencontre');
    if(c.season===s.season&&c.competitionPhase===s.phase)check(c.round<=s.round,'journée future');
@@ -99,10 +97,10 @@ module.exports={
    for(const rec of st.receipts){
     check(keys(rec,['key','phase','context','phaseContext','status','choiceId','audience','playerIds','moraleDelta'])&&phases.includes(rec.phase)&&['decided','skipped','delegated'].includes(rec.status),'reçu');
     validateContext(s,rec.context);validatePhaseContext(rec.phaseContext,rec.phase,rec.context);
-    check(rec.key===matchKey(rec.context)&&!receiptKeys.has(rec.key+':'+rec.phase)&&number(rec.moraleDelta,-1,1)&&Array.isArray(rec.playerIds)&&rec.playerIds.length<=23&&rec.playerIds.every(id=>text(id))&&new Set(rec.playerIds).size===rec.playerIds.length,'unicité et bornes du reçu');
+    check(rec.key===matchKey(rec.context)&&!receiptKeys.has(rec.key+':'+rec.phase)&&number(rec.moraleDelta,-2,2)&&Array.isArray(rec.playerIds)&&rec.playerIds.length<=23&&rec.playerIds.every(id=>text(id))&&new Set(rec.playerIds).size===rec.playerIds.length,'unicité et bornes du reçu');
     receiptKeys.add(rec.key+':'+rec.phase);
-    if(rec.status==='decided')check(options(rec.key,{phase:rec.phase,context:rec.phaseContext}).some(o=>o.id===rec.choiceId)&&['group','forwards','backs','players'].includes(rec.audience)&&rec.playerIds.length>0,'choix du reçu');
-    else check(rec.choiceId===null&&rec.audience===null&&rec.playerIds.length===0&&rec.moraleDelta===0,'reçu sans parole');
+    if(rec.choiceId!==null)check(rec.status!=='skipped'&&options(rec.key,{phase:rec.phase,context:rec.phaseContext}).some(o=>o.id===rec.choiceId)&&['group','forwards','backs','players'].includes(rec.audience)&&rec.playerIds.length>0,'choix du reçu');
+    else check(rec.status!=='decided'&&rec.audience===null&&rec.playerIds.length===0&&rec.moraleDelta===0,'reçu sans parole');
    }
    const r=st.current;if(!r)return true;
    check(keys(r,['key','context','participants','phases'])&&Array.isArray(r.participants)&&r.participants.length===(s.live?.nationaleReducedBench?22:23)&&Array.isArray(r.phases)&&r.phases.length>=1&&r.phases.length<=3,'rencontre active');
@@ -125,13 +123,12 @@ module.exports={
     const offered=options(r.key,p);check(offered.length===6&&new Set(offered.map(o=>o.id)).size===6,'six déclarations');
     if(p.decision!==null){
      const d=p.decision,choice=offered.find(o=>o.id===d.choiceId);
-     check(keys(d,['choiceId','text','tone','intent','audience','playerIds','reactions','moraleBefore','moraleAfter','moraleDelta'])&&choice&&d.text===choice.text&&d.tone===choice.tone&&d.intent===choice.intent,'déclaration enregistrée');
-     const ids=audienceIds(r,d.audience,d.playerIds),expected=reactions(ids,choice.tone);
-     check(equal(ids,d.playerIds)&&equal(d.reactions,expected)&&number(d.moraleBefore,0,100)&&number(d.moraleAfter,0,100)&&number(d.moraleDelta,-1,1),'réactions enregistrées');
-     const effect=collectiveEffect(expected);
-     check(d.moraleAfter===clamp(d.moraleBefore+effect,0,100)&&d.moraleDelta===d.moraleAfter-d.moraleBefore,'effet borné');
+     check(keys(d,['choiceId','text','tone','toneLabel','intent','audience','playerIds','reactions','moraleBefore','moraleAfter','moraleDelta','par'])&&choice&&d.text===choice.text&&d.tone===choice.tone&&d.toneLabel===choice.toneLabel&&d.intent===choice.intent&&['manager','staff'].includes(d.par),'déclaration enregistrée');
+     const ids=audienceIds(r,d.audience,d.playerIds);
+     check(equal(ids,d.playerIds)&&Array.isArray(d.reactions)&&d.reactions.length===ids.length&&d.reactions.every((x,i)=>reactionValide(x,ids[i]))&&number(d.moraleBefore,0,100)&&number(d.moraleAfter,0,100)&&number(d.moraleDelta,-2,2),'réactions enregistrées');
+     check(d.moraleDelta===d.moraleAfter-d.moraleBefore&&(d.audience!=='players'||d.moraleDelta===0),'effet borné');
     }
-    check(!p.closed||p.status==='decided'===!!p.decision,'décision ou passage');
+    check(!p.closed||(p.status==='skipped'?!p.decision:p.status==='decided'?p.decision?.par==='manager':!p.decision||p.decision.par==='staff'),'décision ou passage');
     const receipt=st.receipts.find(x=>x.key===r.key&&x.phase===p.phase);
     check(p.closed?receipt&&equal(receipt.context,r.context)&&receipt.status===p.status&&equal(receipt.phaseContext,p.context)&&receipt.choiceId===(p.decision?.choiceId??null)&&receipt.audience===(p.decision?.audience??null)&&equal(receipt.playerIds,p.decision?.playerIds||[])&&receipt.moraleDelta===(p.decision?.moraleDelta??0):!receipt,'reçu atomique');
     check(p.context.venue===phaseContext(s,s.live,p.phase).venue&&p.context.score.every((score,side)=>score<=s.live.score[side]),'faits archivés de phase');
@@ -149,8 +146,17 @@ module.exports={
    const st=S?.contextualMatch,r=st?.current,p=r&&matches(S,r)?pending(r):null;
    return {scene:p?{key:r.key,phase:p.phase,context:{...copy(r.context),...copy(p.context)},participants:copy(r.participants),options:options(r.key,p),decision:copy(p.decision)}:null,receipts:copy(st?.receipts||[])};
   }
+  function decide(r,p,choice,audience,ids,par){
+   const feedback=reactions(S,r,ids,choice.tone,p.phase,p.context);
+   const effect=appliquerCauserie(p.phase,choice.tone,feedback,audience==='players');
+   const before=S.morale,after=clamp(before+effect,0,100);
+   p.decision={choiceId:choice.id,text:choice.text,tone:choice.tone,toneLabel:choice.toneLabel,intent:choice.intent,audience,playerIds:ids,reactions:feedback,moraleBefore:before,moraleAfter:after,moraleDelta:after-before,par};
+   S.morale=after;
+   // Causerie exigeante d'un favori : pas de jour sans pour ce match (complaisance, tactical-plans.js).
+   if(p.phase==='pre'&&typeof RELACHEMENT!=='undefined'&&RELACHEMENT.intentions.includes(choice.intent)&&S.live){S.live.relachementAnnule=S.live.relachementAnnule||[false,false];S.live.relachementAnnule[S.live.userSide]=true;}
+  }
   function close(r,p,status){
-   p.closed=true;p.status=p.decision?'decided':status;
+   p.closed=true;p.status=p.decision?(p.decision.par==='staff'?'delegated':'decided'):status;
    S.contextualMatch.receipts.push({key:r.key,phase:p.phase,context:copy(r.context),phaseContext:copy(p.context),status:p.status,choiceId:p.decision?.choiceId??null,audience:p.decision?.audience??null,playerIds:copy(p.decision?.playerIds||[]),moraleDelta:p.decision?.moraleDelta??0});
    S.contextualMatch.receipts=S.contextualMatch.receipts.slice(-48);
   }
@@ -171,7 +177,16 @@ module.exports={
    if(!p&&l.finished&&!r.phases.some(x=>x.phase==='post')){
     check(r.phases.some(x=>x.phase==='half'&&x.closed),'mi-temps non traitée');p={phase:'post',context:phaseContext(S,l,'post'),decision:null,closed:false,status:null};r.phases.push(p);
    }
-   if(p&&delegating)close(r,p,'delegated');
+   if(p&&delegating){
+    // Match confié au staff : il choisit lui-même le ton, plus ou moins juste selon sa compétence.
+    if(typeof tonDuStaff==='function'&&!p.decision){
+     const offered=options(r.key,p),ids=r.participants.map(x=>x.id),people=new Map(roster(S,r).map(x=>[x.id,x]));
+     const tone=tonDuStaff(ids.map(id=>people.get(id)),p.phase,p.context,r.key,offered.map(o=>o.tone));
+     const choice=offered.find(o=>o.tone===tone);
+     if(choice)decide(r,p,choice,'group',ids,'staff');
+    }
+    close(r,p,'delegated');
+   }
   }
   function guard(command,payload={}){
    const r=S?.contextualMatch?.current,p=r&&matches(S,r)?pending(r):null;
@@ -188,12 +203,7 @@ module.exports={
    if(command==='match_talk_decide'){
     check(!p.decision,'parole déjà prononcée');
     const choice=options(r.key,p).find(o=>o.id===payload.choiceId);check(!!choice,'déclaration non proposée');
-    const ids=audienceIds(r,payload.audience,payload.playerIds),feedback=reactions(ids,choice.tone);
-    const before=S.morale,effect=collectiveEffect(feedback),after=clamp(before+effect,0,100);
-    p.decision={choiceId:choice.id,text:choice.text,tone:choice.tone,intent:choice.intent,audience:payload.audience,playerIds:ids,reactions:feedback,moraleBefore:before,moraleAfter:after,moraleDelta:after-before};
-    S.morale=after;
-    // Causerie exigeante d'un favori : pas de jour sans pour ce match (complaisance, tactical-plans.js).
-    if(p.phase==='pre'&&typeof RELACHEMENT!=='undefined'&&RELACHEMENT.intentions.includes(choice.intent)&&S.live){S.live.relachementAnnule=S.live.relachementAnnule||[false,false];S.live.relachementAnnule[S.live.userSide]=true;}
+    decide(r,p,choice,payload.audience,audienceIds(r,payload.audience,payload.playerIds),'manager');
    }else{
     check(payload.skip===undefined||typeof payload.skip==='boolean','passage invalide');check(p.decision||payload.skip===true,'confirme une déclaration ou passe explicitement');
     close(r,p,'skipped');

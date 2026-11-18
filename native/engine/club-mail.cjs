@@ -362,9 +362,24 @@ function factory() {
       const o = F.outcome(g.result), band = o === 'V' ? 'victoire' : o === 'D' ? 'defaite' : 'nul';
       return [{ key: g.fixture.id, vars: { adversaire: F.name(g.result.opp), reaction: pick(t.variantes?.[band], g.fixture.id) } }];
     },
+    // La veille du match (comme la météo) : l'arbitre réellement désigné (match-pilotage.js, même fixtureId et même
+    // competitionId que le direct : `worldContext.id` / `worldContext.competitionId`), sinon le profil d'ambiance.
     arbitre(F) {
-      if (!F.next || F.next.date !== shift(F.d, 3)) return [];
-      return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), profil: pick(D.profilsArbitre, F.next.id) } }];
+      if (!F.next || F.next.date !== shift(F.d, 1)) return [];
+      const adversaire = F.name(F.opponent(F.next));
+      const a = typeof arbitreDuMatch === 'function' ? arbitreDuMatch(F.next.id, F.next.competitionId) : null;
+      if (!a) return [{ key: F.next.id, vars: { adversaire, arbitre: 'l’arbitre désigné', tendances: 'non communiquées', resume: 'Profil : ' + pick(D.profilsArbitre, F.next.id) + '.', conseil: 'À intégrer dans tes consignes.', profil: pick(D.profilsArbitre, F.next.id) } }];
+      const mots = {
+        rucks: ['très pointilleux sur les rucks', 'plutôt strict sur les rucks', 'sans manie sur les rucks', 'plutôt tolérant sur les rucks', 'laisse vivre les rucks'],
+        melee: ['très pointilleux en mêlée', 'plutôt strict en mêlée', 'sans manie en mêlée', 'plutôt tolérant en mêlée', 'laisse vivre la mêlée'],
+        horsJeu: ['très pointilleux sur le hors-jeu', 'plutôt strict sur le hors-jeu', 'sans manie sur le hors-jeu', 'plutôt tolérant sur le hors-jeu', 'laisse vivre le hors-jeu'],
+        cartons: ['sort vite les cartons', 'plutôt prompt à sortir les cartons', 'carton à dose normale', 'plutôt patient avant le carton', 'très patient avant le carton']
+      };
+      const mot = k => mots[k][5 - Math.min(5, Math.max(1, Math.round(Number(a[k]) || 3)))] + ' (' + (Math.round(Number(a[k]) || 3)) + '/5)';
+      const tendances = ['rucks', 'melee', 'horsJeu', 'cartons'].map(mot).join(' ; ');
+      const sev = [['rucks', 'ne conteste pas chaque ruck'], ['melee', 'soigne la première poussée en mêlée'], ['horsJeu', 'garde la ligne défensive bien alignée'], ['cartons', 'évite les fautes gratuites']].filter(([k]) => a[k] >= 4);
+      const conseil = sev.length ? 'À intégrer dans les consignes : ' + sev.map(x => x[1]).join(', ') + '.' : 'Rien de marquant : joue ton match, les consignes en direct feront le reste.';
+      return [{ key: F.next.id, vars: { adversaire, arbitre: a.nom + ' (' + a.pays + ')', tendances, resume: a.resume, conseil, profil: a.resume } }];
     },
     rivaux(F) {
       const g = F.playedOn(shift(F.d, -2)); if (!g || g.fixture.competitionId !== F.lid) return [];

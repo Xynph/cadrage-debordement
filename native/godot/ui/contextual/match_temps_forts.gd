@@ -17,6 +17,7 @@ const Between = preload("res://ui/contextual/match_between.gd")
 const Cadrage = preload("res://match_cadrage.gd")
 const Liaison = preload("res://match_liaison.gd")
 const Arbitre = preload("res://match_arbitre.gd")
+const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 
 enum { INTER, JEU, ATTENTE }
 const NIVEAUX := ["aucun", "resume", "cles", "etendus", "dynamique", "integral"]
@@ -190,6 +191,8 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 		if view.drawer.visible and view.drawer_tab == "Banc": view._update_drawer()
 		else: view._toggle_drawer("Banc"))
 	between.score_joue.connect(_score_joue)
+	# Consignes en direct : envoyées tout de suite, l'horloge continue (aucune pause).
+	between.consigne_choisie.connect(envoyer_consigne)
 	# « Pourquoi » d'après-match : l'action d'une raison ouvre l'écran de son levier.
 	between.levier_choisi.connect(func(route: String): app._navigate(route))
 	# Terrain 2D : il suit l'horloge de l'entracte et repart de la dernière image connue.
@@ -216,6 +219,12 @@ func _bande(live: Dictionary) -> void:
 	var active := live.get("direct") is Dictionary and not bool(live.get("finished", false))
 	bande.visible = active
 	if view.barre_commandes != null: view.barre_commandes.visible = not active
+
+## Consigne en direct (tuile Consignes, tiroir Tactique) : `set_consignes` sans pause ; pendant une minute
+## en cours, la commande attend sa réponse puis part.
+func envoyer_consigne(axe: String, valeur: String) -> void:
+	suivi.append({"evenement": "consigne", "axe": axe, "valeur": valeur, "horloge": str(_live.get("minute", "")), "debut_ms": Time.get_ticks_msec()})
+	app._command(Pilotage.COMMANDE, Pilotage.charge(axe, valeur))
 
 func choisir_horloge(valeur: String) -> void:
 	if not HORLOGES.has(valeur): return

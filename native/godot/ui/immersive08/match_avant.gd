@@ -197,7 +197,7 @@ func refresh(model: Dictionary, play: Button) -> void:
 		rangees.append(rangee)
 	var nous := _cote(model, next)
 	rangees[0].add_child(_forces(next, data, nous))
-	rangees[0].add_child(_meteo(model, next, nous))
+	rangees[0].add_child(_meteo(model, next, nous, data))
 	rangees[0].add_child(_feuille(model))
 	rangees[1].add_child(_confrontations(data))
 	rangees[1].add_child(_joueurs(data))
@@ -582,10 +582,12 @@ func _barre_double(left: Variant, right: Variant) -> Control:
 		bars.add_child(bar)
 	return bars
 
-func _meteo(model: Dictionary, next: Dictionary, nous: int) -> Control:
+## Conditions du match : la météo annoncée la veille, puis l'arbitre désigné (`clubLife.avantMatch.arbitre`).
+func _meteo(model: Dictionary, next: Dictionary, nous: int, data: Dictionary) -> Control:
 	var bloc := MeteoTexte.avant_match(next, str(model.get("meta", {}).get("calendarToday", "")))
 	var column := _tuile("TuileMeteo", str(bloc.titre))
 	var annonce := MeteoTexte.annonce(next)
+	var arbitre: Dictionary = data.get("arbitre") if data.get("arbitre") is Dictionary and not str(data.arbitre.get("nom", "")).is_empty() else {}
 	if annonce.is_empty():
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", M(14))
@@ -600,7 +602,10 @@ func _meteo(model: Dictionary, next: Dictionary, nous: int) -> Control:
 		C.fill(message)
 		row.add_child(message)
 		column.add_child(row)
-		column.add_child(lignes("Le staff fixe la météo et le sens du vent la veille ; un courrier te les annonce.", 14, C.MUTED, 2))
+		column.add_child(lignes("Le staff fixe la météo et le sens du vent la veille ; un courrier te les annonce.", 14, C.MUTED, 1 if not arbitre.is_empty() else 2))
+		if not arbitre.is_empty():
+			_pousse(column)
+			_arbitre(column, arbitre)
 		return _tile_of(column)
 	var meteo: Dictionary = next.meteo
 	var head := HBoxContainer.new()
@@ -634,11 +639,70 @@ func _meteo(model: Dictionary, next: Dictionary, nous: int) -> Control:
 			column.add_child(_piste(periode, dos == nous))
 	else:
 		column.add_child(texte("Pas de vent qui avantage un camp.", 14, C.MUTED, false, 500))
-	var conseil := lignes(MeteoTexte.conseil(annonce), 14, Color(C.IVORY, .9), 3)
+	# Avec l'arbitre, le conseil du staff tient sur une ligne (texte entier en infobulle) : la tuile garde sa taille.
+	var conseil := lignes(MeteoTexte.conseil(annonce), 14, Color(C.IVORY, .9), 1 if not arbitre.is_empty() else 3)
 	conseil.name = "MeteoConseil"
+	conseil.tooltip_text = conseil.text
+	conseil.mouse_filter = Control.MOUSE_FILTER_PASS
 	_pousse(column)
 	column.add_child(conseil)
+	if not arbitre.is_empty(): _arbitre(column, arbitre)
 	return _tile_of(column)
+
+## Arbitre du match : nom, profil en une ligne et quatre jauges de sévérité de 1 (laisse jouer) à 5 (pointilleux).
+func _arbitre(column: VBoxContainer, arbitre: Dictionary) -> void:
+	var bloc := VBoxContainer.new()
+	bloc.name = "MatchArbitre"
+	bloc.add_theme_constant_override("separation", M(3))
+	column.add_child(bloc)
+	var tete := HBoxContainer.new()
+	tete.add_theme_constant_override("separation", M(12))
+	bloc.add_child(tete)
+	var nom := texte("Arbitre : " + str(arbitre.get("nom", "")), 15, C.IVORY, false, 700)
+	nom.name = "MatchArbitreNom"
+	nom.add_theme_font_override("font", C.BODY)
+	nom.clip_text = true
+	nom.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	C.fill(nom)
+	tete.add_child(nom)
+	for axe: Array in [["rucks", "Rucks"], ["melee", "Mêlée"], ["horsJeu", "Hors-jeu"], ["cartons", "Cartons"]]:
+		tete.add_child(jauge_arbitre(str(axe[1]), arbitre.get(axe[0])))
+	var resume := str(arbitre.get("resume", "")).strip_edges()
+	if not resume.is_empty():
+		var profil := lignes(resume, 13, C.MUTED, 1)
+		profil.name = "MatchArbitreResume"
+		profil.tooltip_text = resume
+		profil.mouse_filter = Control.MOUSE_FILTER_PASS
+		bloc.add_child(profil)
+
+## Jauge compacte d'une sévérité d'arbitre (1 à 5, 3 neutre) : libellé au-dessus de cinq crans.
+static func jauge_arbitre(libelle: String, valeur: Variant) -> Control:
+	var niveau: int = clampi(int(valeur), 0, 5) if valeur is int or valeur is float else 0
+	var colonne := VBoxContainer.new()
+	colonne.name = "ArbitreJauge_" + libelle
+	colonne.add_theme_constant_override("separation", M(2))
+	colonne.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	colonne.tooltip_text = "%s : %s" % [libelle, ("%d sur 5" % niveau) if niveau > 0 else "non renseigné"]
+	colonne.mouse_filter = Control.MOUSE_FILTER_PASS
+	var titre := texte(libelle, 11, Color(C.IVORY, .75), false, 500)
+	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	colonne.add_child(titre)
+	var crans := HBoxContainer.new()
+	crans.add_theme_constant_override("separation", M(2))
+	crans.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	colonne.add_child(crans)
+	for i in 5:
+		var cran := Panel.new()
+		cran.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cran.custom_minimum_size = Vector2(M(8), M(8))
+		var style := StyleBoxFlat.new()
+		style.bg_color = C.GOLD if i < niveau else Color(C.IVORY, .2)
+		style.set_corner_radius_all(M(2))
+		cran.add_theme_stylebox_override("panel", style)
+		crans.add_child(cran)
+	colonne.set_meta("niveau", niveau)
+	return colonne
 
 func _jauge_vent(level: int) -> Control:
 	var gauge := HBoxContainer.new()
