@@ -105,7 +105,11 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   if(fromDate!==calendarToday(s))throw Error('La date de carrière a changé.');
   if(!status.canAdvance)throw Error(s.live?'Termine et valide le résultat avant de continuer.':'Joue la rencontre prévue aujourd’hui avant de continuer.');
   if(status.day===6){
-   finishWeek();
+   // Clôture de la semaine par la chaîne complète de finishRound, comme en cadence hebdomadaire : les crochets
+   // de fin de semaine des modules (centre de formation, espoirs, stratégie du club, fiche club, notes de
+   // match, promesses de presse, sélections jeunes, reprise…) tournent ainsi dans le vrai rythme du jeu ;
+   // en carrière Monde, la chaîne aboutit à finishWeek (installHooks), une seule fois.
+   if(weekChain)finishRound();else finishWeek();
    fixerMeteo(s);
    return true;
   }
@@ -614,6 +618,8 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   }
   return s;
  }
+ // Vrai quand finishRound (global) mène à finishWeek : advanceDay passe alors par la chaîne des crochets.
+ let weekChain=false;
  function installHooks(){
   const oldRanked=ranked,oldPairs=roundPairs,oldNext=nextMatch,oldLabel=label,oldFinish=finishRound,oldAdvance=advanceSeason,oldCreate=createRugbyMatch,oldFinishMatch=finishRugbyMatch;
   const oldBuild=buildSheet,oldBegin=rugbyBegin;
@@ -634,7 +640,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    return oldBegin(reducedBench);
   };
   label=function(){return active(S)?worldLabel(S):oldLabel();};
-  finishRound=function(){return active(S)?finishWeek():oldFinish();};advanceSeason=function(){return active(S)?advance():oldAdvance();};
+  finishRound=function(){return active(S)?finishWeek():oldFinish();};weekChain=true;advanceSeason=function(){return active(S)?advance():oldAdvance();};
   finishRugbyMatch=function(l){if(!active(S)||!l.worldContext)return oldFinishMatch(l);if(l.worldContext.competitionId==='srp'?CDWorldSRPMatch.finish(l):JP&&CDWorldJapanMatch.isFixture(l.worldContext)?CDWorldJapanMatch.finish(l):CH&&CDWorldChampMatch.applies(l)?CDWorldChampMatch.finish(l):N&&typeof CDWorldNationaleMatch!=='undefined'&&CDWorldNationaleMatch.applies(l)?CDWorldNationaleMatch.finish(l):!japanPromotion(l.worldContext.competitionId)&&CDWorldKnockout.finish(l,edition.version))return;l.finished=true;l.paused=false;addEvent(l,'Coup de sifflet final.','end');};
   createRugbyMatch=function(pair,legacy=null,automated=false,preparation=null){
    if(!active(S))return oldCreate(pair,legacy,automated,preparation);

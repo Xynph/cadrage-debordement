@@ -2,7 +2,7 @@
 // Courrier du club avec réponses (décision de Léo, 16/11/2026 ; native/engine/club-mail.cjs + club-mail.json).
 //   1. Données : catégories, déclencheurs, formulations (au moins deux par type), réponses et effets connus.
 //   2. Carrière Monde (`world-champ`, départ « veille », calendrier journalier, journal d'actions) jouée à « Continuer »
-//      sur quatre semaines, en répondant aux mails : au moins 25 types reçus, jamais deux fois de suite la même
+//      sur cinq semaines (fenêtre allongée le 18/11/2026 : certains courriers dépendent d'une série de défaites), en répondant aux mails : au moins 25 types reçus, jamais deux fois de suite la même
 //      formulation pour un type, une réception n'écrit que la boîte (monde et graine inchangés), une réponse ne se
 //      donne qu'une fois, et les mails qui le demandent arrêtent « Continuer » sur le bon écran.
 //   3. Journal : profil copié en cours de partie (arrêt imprévu), rouvert : les réponses rejouées donnent la même
@@ -41,7 +41,7 @@ test('Données : catalogue complet, formulations variées, effets connus', () =>
 
 // Choix du manager pendant la partie (sinon la première réponse possible).
 const CHOIX = { temps_de_jeu: 'plus_tard', relance_temps_de_jeu: 'promettre', agent: 'rapport', discipline: 'appel', gene: 'medecin', surcharge: 'alleger', president: 'bilan', cadre_rdv: 'recevoir', prolongation: 'reporter', pepite: 'progresser', moral_groupe: 'sortie', seance_adjoint: 'garder', analyste: 'conquete', kine_bilan: 'programme', critique: 'calme' };
-const FIN = '2026-10-14';
+const FIN = '2026-10-21';
 const sha = text => crypto.createHash('sha256').update(text, 'utf8').digest('hex');
 const ouvrir = dir => M.ouvrir({ dataDir: dir, deferredCommits: true, testVm: true, mandatoryPress: false, journal: true, savePolicy: 'semaine' });
 const etat = jeu => ({ texte: sha(jeu.bridge.vm.run('JSON.stringify(S)')), graine: jeu.bridge.vm.seed() });

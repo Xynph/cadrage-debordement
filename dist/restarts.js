@@ -30,8 +30,9 @@ function performKickRestart(l,kind,team,cause,by){
  if(!registerRestart(l,kind,team,at,cause,by))return false;
  const name=kind==='kickoff'?(cause==='start'?'coup d’envoi':cause==='second-half'?'coup d’envoi de la seconde période':'renvoi au centre'):kind==='drop22'?'renvoi aux 22 mètres':'drop de renvoi sur la ligne d’essai';
  const policy=kickoffPolicy(l,team,kind),kicker=actionPlayer(l,team,'kicker');addEvent(l,`${kicker?.name||S.clubs[l.pair[team]].abbr} (${S.clubs[l.pair[team]].abbr}) effectue le ${name}${cause==='score'?' après les points encaissés':''}${policy.choice!=='normal'?' · '+KICKOFF_MOVES[policy.choice][0].toLowerCase():''}.`,'restart',{kind,team,actor:kicker?.id||null,from:{x:at,y:35},to:{x:at,y:35},possession:team,move:policy.choice});
- const distance=policy.distance?rand(...policy.distance):kind==='kickoff'?rand(15,25):kind==='drop22'?rand(20,32):rand(18,30),landing=clamp(at+(team===0?1:-1)*distance,1,99);
- const retain=Math.random()<clamp(.12+policy.retain+(unit(l,team,'kick')-unit(l,1-team,'mental'))*.002,.05,.22);
+ const pr=l.pilotage&&typeof pilotageRenvoi==='function'?pilotageRenvoi(l,team):{distance:1,garde:0};
+ const distance=Math.round((policy.distance?rand(...policy.distance):kind==='kickoff'?rand(15,25):kind==='drop22'?rand(20,32):rand(18,30))*pr.distance),landing=clamp(at+(team===0?1:-1)*distance,1,99);
+ const retain=Math.random()<clamp(.12+policy.retain+pr.garde+(unit(l,team,'kick')-unit(l,1-team,'mental'))*.002,pr.garde<0?.03:.05,pr.garde>0?.36:.22);
  ballPossession(l,retain?team:1-team,landing);let receiver=actionPlayer(l,l.possession,'receiver');
  // Ballon repris par l'équipe qui botte : un partenaire qui a suivi le coup de pied, jamais le botteur lui-même
  // (il botte du centre, le ballon tombe 15 à 25 m plus loin ; le chorégraphe ne peut pas mettre en scène un botteur receveur).
@@ -111,12 +112,12 @@ function courseDecoupee(l,side,origin,finisseur){
  return x;
 }
 function advanceCausalPlay(l){
- const side=l.possession,opp=1-side,origin=l.territory,roll=Math.random(),penalites=penalitesRules(l),penaltyProb=clamp(.12+(penalites?PENALITES.jeu:0)+(70-unit(l,opp,'discipline'))*.002+tacticalPenaltyAdjustment(l,opp),tacticalRules(l)?.04:.06,tacticalRules(l)?.28:.23)*derbyFouls(l),handProb=handFaultProbability(l,side);
+ const side=l.possession,opp=1-side,origin=l.territory,roll=Math.random(),penalites=penalitesRules(l),penaltyProb=clamp(.12+(penalites?PENALITES.jeu:0)+(70-unit(l,opp,'discipline'))*.002+tacticalPenaltyAdjustment(l,opp),tacticalRules(l)?.04:.06,tacticalRules(l)?.28:.23)*derbyFouls(l)*(typeof pilotageFoul==='function'?pilotageFoul(l,opp,'jeu'):1),handProb=handFaultProbability(l,side);
  if(roll<penaltyProb)return awardPenalty(l,side);
  if(roll<penaltyProb+handProb)return handFault(l,side);
  if(roll<penaltyProb+handProb+.12)return resolveTouch(l,side,l.territory,{carried:true});
  // Pénalités réalistes : faute de l'attaquant au sol (ballon non libéré, scellement), plus rare chez les joueurs disciplinés.
- if(penalites&&roll<penaltyProb+handProb+.12+clamp(PENALITES.attaque+(70-unit(l,side,'discipline'))*.001,.02,.08))return awardPenalty(l,opp,{phase:'attaque',incident:roll*1000%2<1?'not-release':'sealing'});
+ if(penalites&&roll<penaltyProb+handProb+.12+clamp(PENALITES.attaque+(70-unit(l,side,'discipline'))*.001,.02,.08)*(typeof pilotageFoul==='function'?pilotageFoul(l,side,'attaque'):1))return awardPenalty(l,opp,{phase:'attaque',incident:roll*1000%2<1?'not-release':'sealing'});
  if((tacticalRules(l)||effectiveAttack(l,side)==='occupation')&&Math.random()<openKickProbability(l,side))return kickOpenPlay(l,side);
  tacticalCount(l,side,'carries');const edge=teamEdge(l,side,'attack'),essais=essaisRules(l),niveau=essais?(ESSAIS.ecart-1)*tacticalEdge(l,side):0,success=Math.random()<(essais?clamp(ESSAIS.porte+ouvertureJeu(l)+edge+niveau,.2,.9):clamp(.49+edge,.18,.84));
  if(success){

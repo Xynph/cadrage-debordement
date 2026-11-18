@@ -16,6 +16,7 @@ const T = preload("res://theme.gd")
 const Terrain2D = preload("res://ui/contextual/match_terrain_2d.gd")
 const W = preload("res://ui/contextual/match_tableau_widgets.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
+const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 
 signal niveau_choisi(id: String)
 signal reprise_demandee
@@ -134,6 +135,9 @@ var bonus_situation: Label
 var bonus_choix: HBoxContainer
 var _bonus_cle := ""
 var multiplex_cartes: GridContainer
+## Pilotage reçu du moteur (`live.pilotage`) : sert aux états des joueurs (Galvanisé, Vexé…) de Mon XV.
+## Les consignes en direct ne sont pas sur cet écran (tiroir Tactique de la vue du match).
+var _pilotage: Dictionary = {}
 var multiplex_precision: Label
 ## Dernière journée montrée (null sans multiplex) et sa clé (rien n'est reconstruit sans changement).
 var journee_vue: Variant = null
@@ -415,6 +419,8 @@ class Formation extends Control:
 	## Boutons des joueurs, dans l'ordre des postes, et leur anneau d'énergie.
 	var cases: Array[Button] = []
 	var anneaux: Array[Control] = []
+	## Une ligne d'état sous le nom (causeries, `live.pilotage.joueurs`) : l'anneau lui laisse la place.
+	var avec_etats := false
 
 	func _notification(what: int) -> void:
 		if what == NOTIFICATION_RESIZED: placer()
@@ -430,7 +436,7 @@ class Formation extends Control:
 		if zone.size.x <= 0.0 or zone.size.y <= 0.0: return
 		var hauteur := zone.size.y / float(RANGS)
 		var largeur := minf(zone.size.x / 4.0, hauteur * 2.6)
-		var texte := maxf(16.0, 34.0 * densite)
+		var texte := maxf(16.0, 34.0 * densite) + (maxf(20.0, 36.0 * densite) if avec_etats else 0.0)
 		var diametre := clampf(hauteur - texte - maxf(2.0, 6.0 * densite), maxf(18.0, 36.0 * densite), 92.0 * densite)
 		for n in mini(cases.size(), PLACES.size()):
 			var place: Array = PLACES[n]
@@ -777,7 +783,7 @@ func _composants() -> void:
 
 ## Carte de Gabi (portrait, une phrase, l'action proposée) dans un panneau en relief.
 func _carte_gabi(parent: Control) -> void:
-	var cadre := _panneau(parent, px(14), Color(RELIEF, 0.97))
+	var cadre := _panneau(parent, px(14 if _densite >= 0.6 else 10), Color(RELIEF, 0.97))
 	adjoint_cadre = cadre.get_parent().get_parent()
 	cadre.add_child(adjoint)
 
@@ -911,7 +917,7 @@ func _page() -> void:
 	cadre_bonus.add_child(bonus_choix)
 	bonus_tuile.visible = false
 	# Multiplex : titre et minute à gauche, une rangée de cartes (la bande garde la hauteur de Gabi).
-	var cadre_multiplex := _panneau(bas, px(14))
+	var cadre_multiplex := _panneau(bas, px(14 if _densite >= 0.6 else 10))
 	multiplex = cadre_multiplex.get_parent().get_parent()
 	multiplex.name = "MatchBetweenMultiplex"
 	var rangee_multiplex := S.G.h(px(14))
@@ -936,7 +942,7 @@ func _page() -> void:
 ## Colonne gauche : Notre XV, onglets Terrain (par défaut), Tableau et XV adverse ; la carte
 ## Changement dessous.
 func _colonne_xv(grille: Control) -> void:
-	var gauche := S.G.v(px(20))
+	var gauche := S.G.v(px(20 if _densite >= 0.6 else 14))
 	gauche.name = "MatchBetweenSquadColumn"
 	gauche.custom_minimum_size.x = px(840)
 	grille.add_child(gauche)
@@ -1126,6 +1132,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.alimenter(direct.get("deroule", []), mini(live.get("events", []).size(), int(direct.get("borne", live.get("events", []).size()))))
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
+	_pilotage = Pilotage.pilotage(live)
 	_remplir_journee(model, direct, equipes)
 	_remplir_bonus(model, live, direct)
 	_niveaux = direct.get("niveaux", [])
@@ -1142,7 +1149,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	var passe := _passe(model, live, direct)
 	var conseil: Variant = passe.conseil
 	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []), direct.get("feuille", {}).get("joueurs", {}) if direct.get("feuille") is Dictionary else {},
-		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs, direct.get("pourquoi"), direct.get("hommeDuMatch"), direct.get("zone22"), direct.get("echantillon")])
+		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs, direct.get("pourquoi"), direct.get("hommeDuMatch"), direct.get("zone22"), direct.get("echantillon"), _pilotage.get("joueurs")])
 	if cle == _cle: return
 	_cle = cle
 	_lignes = direct.get("fil", [])
@@ -1214,7 +1221,10 @@ func _remplir_fil() -> void:
 	# Faits marquants : les derniers faits joués, le plus récent en haut.
 	if is_instance_valid(faits):
 		S.clear(faits)
-		var nombre := 3 if _densite < 0.6 else 4
+		# 1280×720 : deux faits (le premier sur deux lignes, le suivant sur une) pour que la colonne de droite
+		# tienne avec Gabi en bas sans rien couper.
+		var petit := _densite < 0.6
+		var nombre := 2 if petit else 4
 		# Classement en direct sous le duel : les faits marquants se resserrent (le dernier fait
 		# reste en bandeau sur le terrain ; en 1280×720, une ligne par fait, le texte en infobulle).
 		var serre := _journee_montree()
@@ -1223,10 +1233,11 @@ func _remplir_fil() -> void:
 		recents.reverse()
 		for n in recents.size():
 			var ligne_fait := _ligne_fil(recents[n], n == 0, false)
-			if serre:
+			if serre or petit:
 				for etiquette: Label in ligne_fait.find_children("*", "Label", true, false):
-					etiquette.max_lines_visible = 1
+					etiquette.max_lines_visible = 1 if serre or n > 0 else 2
 					etiquette.tooltip_text = etiquette.text
+			if serre:
 				for icone: Control in ligne_fait.find_children("*", "Control", true, false):
 					if icone is Icone: icone.custom_minimum_size = Vector2(px(30), px(30))
 			faits.add_child(ligne_fait)
@@ -1700,7 +1711,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 26, DOUX, true))
 		return
-	var hauteur := px(38)
+	var hauteur := px(38 if _densite >= 0.6 else 33)
 	for poste in joueurs.size():
 		var joueur: Variant = joueurs[poste]
 		var case := Button.new()
@@ -1740,6 +1751,11 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		var note: float = d.note
 		var condition: float = d.energie
 		ligne.add_child(_cellule(_nom_court(str(d.nom)), 0, IVOIRE, 28))
+		var humeur := Pilotage.etat_joueur(_pilotage, id)
+		if not humeur.is_empty():
+			var cellule_etat := _etiquette_etat(humeur, px(22), false)
+			S.G.fill(cellule_etat, false, 0.8)
+			ligne.add_child(cellule_etat)
 		ligne.add_child(_cellule(poste_court(str(d.poste)), int(COLONNES_XV[2][1]), FAIBLE, 22))
 		# Note dans une pastille teintée, énergie en jauge, puis les chiffres du joueur.
 		var cadre_note := PanelContainer.new()
@@ -1801,8 +1817,10 @@ func _infos_xv(joueurs: Array, direct: Dictionary) -> Array:
 		var detail := "%d · %s · %s\nÉnergie %d %%, note %.1f (%d action%s du match), %d plaquage%s" % [poste + 1, str(joueur.get("pos", "")), str(joueur.get("name", "")), roundi(condition), float(d.note), int(fiche.get("faits", 0)), "s" if int(fiche.get("faits", 0)) > 1 else "", plaq, "s" if plaq > 1 else ""]
 		if not feuille.is_empty(): detail += " (%d manqué%s), %d course%s, %d passe%s" % [int(d.plaquages_manques), "s" if int(d.plaquages_manques) > 1 else "", int(d.courses), "s" if int(d.courses) > 1 else "", int(d.passes), "s" if int(d.passes) > 1 else ""]
 		if not alerte.is_empty(): detail += "\n" + alerte.capitalize()
+		var humeur := Pilotage.etat_joueur(_pilotage, id)
+		if not humeur.is_empty(): detail += "\nAprès la causerie : " + str(humeur.label).to_lower()
 		var info := d.duplicate()
-		info.merge({"alerte": alerte, "marque": marque, "carton": cartons.has(id), "detail": detail + "\nCliquer : ouvrir le banc sur ce joueur."}, true)
+		info.merge({"alerte": alerte, "marque": marque, "carton": cartons.has(id), "etat": humeur, "detail": detail + "\nCliquer : ouvrir le banc sur ce joueur."}, true)
 		infos.append(info)
 	return infos
 
@@ -1815,6 +1833,7 @@ func _remplir_formation(infos: Array) -> void:
 		enfant.queue_free()
 	formation.cases.clear()
 	formation.anneaux.clear()
+	formation.avec_etats = infos.any(func(i: Dictionary) -> bool: return i.get("etat") is Dictionary and not (i.etat as Dictionary).is_empty())
 	for poste in mini(infos.size(), Formation.PLACES.size()):
 		var info: Dictionary = infos[poste]
 		var case := Button.new()
@@ -1869,11 +1888,26 @@ func _remplir_formation(infos: Array) -> void:
 			note.add_theme_font_override("font", CHIFFRES_GRAS)
 			note.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			ligne.add_child(note)
+		var humeur: Dictionary = info.get("etat") if info.get("etat") is Dictionary else {}
+		if not humeur.is_empty(): pile.add_child(_etiquette_etat(humeur, maxi(13, px(22)), true))
 		formation.add_child(case)
 		formation.cases.append(case)
 		formation.anneaux.append(anneau)
 	formation.placer()
 	formation.queue_redraw()
+
+## État d'un joueur après la causerie (« Motivé », « Vexé »…) : vert s'il porte, rouge de l'alerte s'il
+## pèse, neutre sinon.
+func _etiquette_etat(humeur: Dictionary, taille: int, centre: bool) -> Label:
+	var etiquette := S.label(str(humeur.get("label", "")), taille, Pilotage.teinte(Pilotage.sens_etat(str(humeur.get("etat", ""))), DOUX))
+	etiquette.name = "MatchBetweenPlayerState"
+	etiquette.add_theme_font_size_override("font_size", taille)
+	etiquette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	etiquette.clip_text = true
+	etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	if centre: etiquette.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	else: etiquette.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return etiquette
 
 ## Carte Changement : le joueur du XV le plus en difficulté (blessé, sinon l'énergie la plus basse,
 ## les joueurs sanctionnés mis à part) s'il est blessé ou sous le seuil de fatigue ; le bouton ouvre
@@ -2044,7 +2078,7 @@ func _remplir_xv_adverse(direct: Dictionary) -> void:
 	if liste.is_empty():
 		xv.add_child(_texte("Composition adverse pas encore vue.", 26, DOUX, true))
 		return
-	var hauteur := px(38)
+	var hauteur := px(38 if _densite >= 0.6 else 33)
 	for poste in liste.size():
 		var j: Variant = liste[poste]
 		var case := Button.new()

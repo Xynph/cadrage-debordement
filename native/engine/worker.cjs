@@ -64,7 +64,7 @@ const eqpEligibilite=JSON.parse(fs.readFileSync(path.join(__dirname,'eqp_eligibi
 const factHomes=Object.fromEntries(referenceClubs.flatMap(club=>club.players.map(player=>[player.id,club.id])));
 const nationalFacts=makePlayerFacts(playerFactsCatalogue,factOrigins,factClubs,{regles:eqpEligibilite,homes:factHomes});
 const portraitLooks=makePortraitLooks(nationalFacts);
-const MODULES=['season-label.js','storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
+const MODULES=['season-label.js','storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match-pilotage.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
 MODULES.splice(MODULES.indexOf('game.js'),0,...systems.files.filter(name=>!MODULES.includes(name)));
 const SYSTEM_COMMANDS=new Set(systems.commands);
 const repriseStarts=require('./reprise.cjs').STARTS;
@@ -82,7 +82,7 @@ const LEGACY_PURGE_NOTICE='Les carrières des anciens modes de jeu ont été ret
 const CAREER_STATE_KEYS=['bdt-v1','bdt-backup-v1','bdt-before-import','bdt-recovery-invalid'];
 const CAREER_SIDE_KEYS=['bdt-backup-development','bdt-backup-economy','bdt-matchday-pending','bdt-exported-at'];
 const PRESS_PROGRESSION=new Set(['advance_day','begin_match','finish_round','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
-const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select','advance_until_event']);
+const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_consignes','cri','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select','advance_until_event']);
 COMMANDS.add('observe_player');
 COMMANDS.add('league_benchmark');
 COMMANDS.add('club_preview');
@@ -516,7 +516,7 @@ function createBridge(options={}){
   // internationale gardent leur présentation de la dernière réponse complète jusqu'au coup de sifflet final ou à la
   // première commande hors du direct. Les sections lourdes de la carrière touchées pendant le direct sont relues à
   // la projection complète suivante.
-  const LIVE_COMMANDS=new Set(['tick','pause','set_tactics','set_penalty_policy','substitute','match_talk_decide','match_talk_continue']);
+  const LIVE_COMMANDS=new Set(['tick','pause','set_tactics','set_penalty_policy','set_consignes','cri','substitute','match_talk_decide','match_talk_continue']);
   let projectionState=null,versionsSynced=false;
   // Versions des sections de la carrière pour cette projection (state-versions.cjs), avant toute lecture mémorisée.
   const refreshVersions=operation=>{
@@ -1214,7 +1214,7 @@ function createBridge(options={}){
       if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
      }
      let extra=ctx.nativeKnowledgeReceipt??null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
-     else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
+     else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_penalty_policy','set_consignes','cri','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
      if(command==='new_career'){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};

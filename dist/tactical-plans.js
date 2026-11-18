@@ -37,8 +37,9 @@ function penaliteConquete(l,side,kind,a,b){
  // une prolongation à mort subite sans durée (play-offs du Japon, finales Monde).
  if(!penalitesRules(l)||l.restartLog?.some(r=>r.kind==='kickoff'&&r.minute===l.minute))return false;
  const melee=kind==='scrum';
- if(Math.random()>=(melee?PENALITES.melee:PENALITES.touche))return false;
- const pourLanceur=melee?clamp(.55+(a-b)*PENALITES.meleeDominant,.2,.9):.65;
+ const pm=melee&&l.pilotage&&typeof pilotageMelee==='function'?pilotageMelee(l,side,a,b):{freq:1,biais:0};
+ if(Math.random()>=(melee?PENALITES.melee*(typeof pilotageScrumPenalty==='function'?pilotageScrumPenalty(l):1)*pm.freq:PENALITES.touche))return false;
+ const pourLanceur=melee?clamp(.55+(a-b)*PENALITES.meleeDominant+pm.biais,.2,.9):.65;
  const beneficiaire=Math.random()<pourLanceur?side:1-side;
  awardPenalty(l,beneficiaire,{phase:melee?'melee':'touche',incident:melee?'scrum':'maul'});
  return true;
@@ -107,12 +108,12 @@ function tacticalEdge(l,side){
  return (attack-defence)*.004+pressure+(l.weather==='Pluie'&&a==='large'?-.075:0)+(l.weather==='Vent'&&a==='occupation'?-.025:0)+relachementEdge(l,side)+contreEdge(l,side);
 }
 function tacticalPenaltyAdjustment(l,defender){return !tacticalRules(l)?0:defensivePlan(l,defender)==='pression'?.045:defensivePlan(l,defender)==='prudente'?-.02:0}
-function handFaultProbability(l,side){if(!tacticalRules(l))return .12;const a=effectiveAttack(l,side),d=defensivePlan(l,1-side);return clamp(.12+ATTACK_EFFECTS[a].error+(l.weather==='Pluie'&&a==='large'?.04:0)+(d==='pression'?.02:d==='prudente'?-.01:0)+clamp((70-unit(l,side,'pass'))*.0015,-.045,.045)+METEO_MATCH.enAvant.pluie*meteoNiveau(l,'pluie'),.04,.28)}
+function handFaultProbability(l,side){if(!tacticalRules(l))return .12;const a=effectiveAttack(l,side),d=defensivePlan(l,1-side);return clamp(.12+ATTACK_EFFECTS[a].error+(l.weather==='Pluie'&&a==='large'?.04:0)+(d==='pression'?.02:d==='prudente'?-.01:0)+clamp((70-unit(l,side,'pass'))*.0015,-.045,.045)+METEO_MATCH.enAvant.pluie*meteoNiveau(l,'pluie')+(typeof pilotageHandFault==='function'?pilotageHandFault(l,side):0),.04,.28)}
 function failedCarryError(l,side){const base=meteoActive(l)?METEO_MATCH.ballonPerdu.base+METEO_MATCH.ballonPerdu.pluie*l.meteo.pluie:l.weather==='Pluie'?.55:.3;return tacticalRules(l)?clamp(base+ATTACK_EFFECTS[effectiveAttack(l,side)].error,.1,.8):base}
 function carryGain(l,side){const g=carryGainBase(l,side)+(contreEdge(l,side)>0?CONTRE.metres:0);return meteoNiveau(l,'terrain')==='lourd'?Math.max(1,Math.round(g*METEO_MATCH.terrainLourd.gain)):g}
 function carryGainBase(l,side){if(!tacticalRules(l))return rand(12,25);const range=ATTACK_EFFECTS[effectiveAttack(l,side)].gain,d=defensivePlan(l,1-side),shift=d==='pression'?4:d==='prudente'?-4:0;return rand(Math.max(3,range[0]+shift),range[1]+shift)}
 function tacticalFinishAdjustment(l,side){return !tacticalRules(l)?0:ATTACK_EFFECTS[effectiveAttack(l,side)].finish+(defensivePlan(l,1-side)==='pression'?.04:defensivePlan(l,1-side)==='prudente'?-.055:0)}
-function openKickProbability(l,side){return clamp(openKickBase(l,side)*(1+METEO_MATCH.piedJeu.pluie*meteoNiveau(l,'pluie')),0,.85)}
+function openKickProbability(l,side){return clamp(openKickBase(l,side)*(1+METEO_MATCH.piedJeu.pluie*meteoNiveau(l,'pluie'))*(typeof pilotageKick==='function'&&l.pilotage?pilotageKick(l,side):1),0,.85)}
 function openKickBase(l,side){if(!tacticalRules(l))return l.tactics[side]==='occupation'?.5:0;const distance=Math.abs(attackingGoal(side)-l.territory),style=effectiveAttack(l,side);if(style==='occupation')return distance>50?.65:distance>22?.35:.08;return distance>50?(style==='conquete'?.04:style==='large'?.06:.08):distance>22?.025:.01}
 function tacticalLoad(l,side){if(!tacticalRules(l))return l.tactics[side]==='large'?.49:l.tactics[side]==='conquete'?.44:.39;return l.possession===side?ATTACK_EFFECTS[effectiveAttack(l,side)].load:defensivePlan(l,side)==='pression'?.53:defensivePlan(l,side)==='prudente'?.31:.37}
 function tacticalCount(l,side,key,n=1){if(tacticalRules(l))l.tacticalStats[side][key]+=n}

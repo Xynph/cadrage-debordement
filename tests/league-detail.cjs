@@ -62,7 +62,8 @@ test('Choix automatique selon le PC : déterministe, vise 4 étoiles, pays du cl
  const extra=all.filter(id=>!first.includes(id));
  for(const id of extra)assert.ok(leagueDetail.estimate({detailed:[...first,id],machine:mid}).stars<4,'ajouter '+id+' passerait sous 4 étoiles');
  // Valeur figée (seuils et coûts de référence actuels) : le Championship (même pays) passe avant les autres.
- assert.deepEqual(first,['elite','prem','champ','srp','jlo-d2']);
+ // 18/11/2026 : résultat rapide à 8 ms (vraie feuille de l'IA) au lieu de 1 ms ; la Japon D2 ne tient plus sous la cible.
+ assert.deepEqual(first,['elite','prem','champ','srp']);
  // L'interface lit le même choix dans le tableau des coûts.
  const table=leagueDetail.costTable(mid);
  assert.deepEqual(table.auto.prem,first);assert.equal(table.autoTarget,4);assert.deepEqual(table.auto[''],leagueDetail.autoChoice({own:'',machine:mid}));
@@ -125,7 +126,9 @@ test('Carrière Monde : choix enregistré, validé, résultats rapides cohérent
   console.log(JSON.stringify({points:season.points,tries:season.tries,homeWins:season.homeWins,injured:season.injured,played:season.played}));
   assert.equal(season.quick,true);assert.equal(season.matches,90);
   assert.ok(season.points>=35&&season.points<=65,'points par match : '+season.points);
-  assert.ok(season.tries>=4&&season.tries<=8,'essais par match : '+season.tries);
+  // Premiership : jeu ouvert, calé sur le moteur complet depuis le 18/11 (8,8 essais par match au complet, 7,96 en 2024-25 ;
+  // docs/top14-dispute-20261117.md §14 quater) ; l'ancienne borne de 8 datait d'un résultat rapide à 5,9 essais partout.
+  assert.ok(season.tries>=6&&season.tries<=10,'essais par match : '+season.tries);
   assert.ok(season.homeWins>=.45&&season.homeWins<=.85,'victoires à domicile : '+season.homeWins);
   assert.ok(season.injured<.2,'blessés en fin de saison : '+season.injured);
   assert.ok(season.played>.3,'progression : des joueurs gagnent du temps de jeu');

@@ -102,6 +102,11 @@ function factory(){
   try{const niveau=id=>{const c=s.clubs[id];if(!c)return null;const by=new Map(c.players.map(p=>[p.id,p]));const xv=buildSheet(c).lineup.map(x=>by.get(x)).filter(Boolean);return xv.length?teamLevel(xv):null;};
    const a=niveau(own),b=niveau(adv);return a===null||b===null?null:a-b;}catch(e){return null;}
  }
+ // Arbitre désigné : mêmes fixtureId et competitionId que le direct (`worldContext.id` / `.competitionId`).
+ function arbitre(f){
+  if(typeof arbitreDuMatch!=='function')return null;
+  try{const a=arbitreDuMatch(f.id,f.competitionId);return a?{nom:a.nom,civilite:a.civilite||'M.',pays:a.pays,rucks:a.rucks,melee:a.melee,horsJeu:a.horsJeu,cartons:a.cartons,resume:a.resume}:null;}catch(e){return null;}
+ }
  function gabi(s,f,own,adv,data){
   const nous=[f.homeId,f.awayId].indexOf(own),eux=1-nous,cles=[];
   const ajoute=(id,priorite,titre,detail)=>cles.push({id,priorite,titre,detail});
@@ -132,6 +137,8 @@ function factory(){
   if(ecart!==null&&typeof RELACHEMENT!=='undefined'&&ecart>=RELACHEMENT.seuil)ajoute('relachement',84,'Pas de relâchement','on est favoris : choisis une causerie exigeante avant le coup d’envoi');
   const leur=data.forme[eux]||[],victoires=leur.filter(x=>x==='V').length;
   if(leur.length>=4&&victoires>=4)ajoute('dynamique',48,'Casser leur dynamique',victoires+' victoires sur leurs '+leur.length+' derniers matchs');
+  const ar=data.arbitre;
+  if(ar&&ar.rucks>=4)ajoute('arbitre-rucks',66,(ar.civilite||'M.')+' '+ar.nom.split(' ').slice(1).join(' ')+' siffle beaucoup les rucks','on évite de contester chaque ruck');
   ajoute('collisions',20,'Gagner les collisions','avancer sur chaque impact');
   ajoute('plan',10,'Respecter le plan de jeu','patience et discipline');
   ajoute('depart',15,'Réussir les 20 premières minutes','le premier temps fort donne le ton');
@@ -160,6 +167,7 @@ function factory(){
   const own=s.club,pair=[f.homeId,f.awayId];if(!pair.includes(own))return null;
   const adv=pair.find(id=>id!==own);
   const data={fixtureId:f.id,forme:pair.map(id=>forme(s,id)),forces:forces(s,pair),confrontations:confrontations(s,own,adv),aSurveiller:aSurveiller(s,adv),rangs:rangs(s,pair)};
+  data.arbitre=arbitre(f);
   data.gabi=gabi(s,f,own,adv,data);
   delete data.rangs;
   return data;

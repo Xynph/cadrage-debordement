@@ -15,6 +15,8 @@ extends SceneTree
 ## Mode « terrain2d » : pendant l'entracte, le match continue sur le terrain 2D (pastilles qui
 ## rejouent les faits du moteur, possession suivie, pause qui fige, rien d'inventé) et le
 ## tableau de bord (domination, chiffres, Mon XV, adjoint) est alimenté par les vraies données.
+const Pilotage = preload("res://ui/contextual/match_consignes.gd")
+const W = preload("res://ui/contextual/match_tableau_widgets.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -142,7 +144,9 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(not view.find_children("*", "OptionButton", true, false).any(func(o: OptionButton): return o.is_visible_in_tree()), label + " : pas de sélecteur « Horloge … » dans la bande (vitesse dans Paramètres)")
 	check(between.domination.is_visible_in_tree() and between.domination.size.y >= between.px(120), label + " : frise du match visible (%d px)" % int(between.domination.size.y))
 	check(not between.adjoint_cadre.visible or between.adjoint_cadre.is_visible_in_tree(), label + " : carte de Gabi à l'écran")
+	# Les faits marquants restent à l'écran, même avec le pilotage ; les consignes en direct sont dans le tiroir Tactique.
 	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, label + " : faits marquants")
+	check(between.find_child("MatchBetweenConsignes", true, false) == null and between.find_children("Consigne_*", "BoxContainer", true, false).is_empty(), label + " : pas de consignes sur l'écran 2D")
 	# Maquette du 16 novembre 2026 : le terrain 2D en grand au centre, plus large que Notre XV et que le duel.
 	var colonne_xv: Control = between.find_child("MatchBetweenSquadColumn", true, false)
 	var column: Control = between.find_child("MatchBetweenColumn", true, false)
@@ -1257,9 +1261,90 @@ func terrain2d(view: Control) -> void:
 	await layout(view, Vector2i(1280, 720))
 	await layout(view, Vector2i(1920, 1080))
 	await layout(view, Vector2i(2560, 1440))
+	await consignes_fictives(view, direct)
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	print("TERRAIN2D ", JSON.stringify({"faits": ecarts.faits, "deplacement": deplacement, "ballons": ballons.size(), "minutes": minutes.size()}))
+
+## Pilotage du match (dist/match-pilotage.js, `live.pilotage`) pour une copie du direct : arbitre, cinq axes
+## (rucks contestés depuis 52′), un bilan, une ligne du journal du staff, trois états de joueurs après la causerie.
+func pilotage_test(lineup: Array) -> Dictionary:
+	var axes: Array = []
+	for axe: Array in [["piedJeu", "Jeu au pied", "normal", [["moins", "Garder"], ["normal", "Équilibré"], ["plus", "Occuper"]]],
+		["rucks", "Rucks", "agressive", [["prudente", "Prudence"], ["normale", "Normale"], ["agressive", "Contester"]]],
+		["discipline", "Discipline", "normale", [["stricte", "Zéro faute"], ["normale", "Normale"], ["limite", "À la limite"]]],
+		["rythme", "Rythme", "normal", [["lent", "Ralentir"], ["normal", "Normal"], ["rapide", "Accélérer"]]],
+		["touche", "Touche", "normale", [["sure", "Sûre"], ["normale", "Normale"], ["risquee", "Risquée"]]]]:
+		axes.append({"id": axe[0], "label": axe[1], "valeur": axe[2], "options": (axe[3] as Array).map(func(o: Array) -> Dictionary: return {"id": o[0], "label": o[1]})})
+	var consignes := {}
+	for axe: Dictionary in axes: consignes[axe.id] = axe.valeur
+	var joueurs := {}
+	var etats := [["galvanise", "Galvanisé"], ["indifferent", "Indifférent"], ["vexe", "Vexé"]]
+	for k in mini(3, lineup.size()):
+		if lineup[k] is Dictionary: joueurs[str(lineup[k].id)] = {"etat": etats[k][0], "label": etats[k][1], "phase": "pre", "confiance": 50}
+	return {"arbitre": {"id": "castaing", "nom": "Julien Castaing", "pays": "FR", "rucks": 4, "melee": 3, "horsJeu": 3, "cartons": 2, "resume": "Pointilleux sur les rucks, laisse vivre les cartons."},
+		"consignes": consignes, "axes": axes,
+		"bilans": [{"axe": "rucks", "valeur": "agressive", "depuis": 52, "texte": "Rucks « Contester » depuis 52′ : 3 pénalités, 2 ballons arrachés."}],
+		"joueurs": joueurs, "journal": [{"minute": 55, "auteur": "staff", "texte": "Le staff passe « Rythme » sur « Accélérer »."}]}
+
+## Pilotage injecté : les faits marquants restent à l'écran (pas de tuile Consignes), les états des joueurs
+## apparaissent dans Mon XV, et l'écran tient en 720p et 1440p ; sans pilotage, rien ne change.
+func consignes_fictives(view: Control, direct: Dictionary) -> void:
+	var regie: Node = view.regie
+	var between: Control = regie.between
+	var lineup: Array = between._passe(app.model, app.model.live, direct).lineup
+	var copie: Dictionary = app.model.duplicate(true)
+	copie.live["pilotage"] = pilotage_test(lineup)
+	between.update_frame(copie, copie.live, direct, func(_c: Dictionary): pass)
+	await settle(4)
+	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, "Pilotage : les faits marquants restent à l'écran")
+	check(between.find_child("MatchBetweenConsignes", true, false) == null and between.find_children("Consigne_*", "BoxContainer", true, false).is_empty(), "Pilotage : aucune consigne sur l'écran 2D (elles sont dans le tiroir Tactique)")
+	# Mon XV : l'état après la causerie, coloré selon son sens.
+	var cases: Array = between.formation.cases
+	var attendus := [["Galvanisé", W.VERT], ["Indifférent", Color("aeb9b3")], ["Vexé", W.ALERTE]]
+	for k in mini(3, cases.size()):
+		if not lineup[k] is Dictionary: continue
+		var etat: Label = (cases[k] as Node).find_child("MatchBetweenPlayerState", true, false)
+		check(etat != null and etat.text == attendus[k][0] and etat.get_theme_color("font_color").is_equal_approx(attendus[k][1]) and etat.get_theme_font_size("font_size") >= 13, "Mon XV (Terrain) : état « %s » du %d" % [attendus[k][0], k + 1])
+	check((cases[4] as Node).find_child("MatchBetweenPlayerState", true, false) == null, "Mon XV : pas d'état sans causerie reçue")
+	between.find_child("MatchBetweenTabOwn", true, false).pressed.emit()
+	await settle(2)
+	var ligne_xv: Node = between.xv.find_child("MatchBetweenPlayer3", true, false)
+	var etat_xv: Label = ligne_xv.find_child("MatchBetweenPlayerState", true, false) if ligne_xv != null else null
+	check(etat_xv != null and etat_xv.text == "Vexé", "Mon XV (Tableau) : état du 3")
+	between.find_child("MatchBetweenTabPitch", true, false).pressed.emit()
+	# Mise en page avec le pilotage (rien ne doit être coupé en 720p comme en 1440p).
+	await layout(view, Vector2i(1280, 720))
+	await layout(view, Vector2i(2560, 1440))
+	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
+	await settle(2)
+	check(between.faits.is_visible_in_tree(), "Sans pilotage : faits marquants")
+
+## Carrière Monde réelle : un clic sur un cran du tiroir Tactique (ouvert, le match se met en pause) envoie
+## la consigne au vrai moteur, qui la projette dans `live.pilotage` ; l'écran 2D n'a pas de consignes et garde ses faits marquants.
+func consigne_reelle(regie: Node) -> void:
+	var between: Control = regie.between
+	var p: Variant = app.model.live.get("pilotage")
+	check(p is Dictionary, "Carrière Monde : le moteur projette le pilotage du match (live.pilotage)")
+	if not p is Dictionary: return
+	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, "Faits marquants à l'écran 2D pendant le match du manager")
+	var vue: Control = regie.view
+	vue._toggle_drawer("Tactique")
+	await settle(4)
+	var actuel := str(p.get("consignes", {}).get("rythme", ""))
+	var voulu := "lent" if actuel == "rapide" else "rapide"
+	var bouton: Button = vue.drawer_body.find_child("Consigne_rythme_" + voulu, true, false)
+	check(bouton != null, "Consignes (tiroir Tactique) : cran « %s » du rythme" % voulu)
+	if bouton == null:
+		vue._toggle_drawer("Tactique")
+		return
+	var pauses: int = regie.suivi.size()
+	bouton.button_pressed = true
+	bouton.pressed.emit()
+	var recu: bool = await until(func() -> bool: return app.model.live.get("pilotage") is Dictionary and str(app.model.live.pilotage.get("consignes", {}).get("rythme", "")) == voulu, 30000)
+	check(recu, "Consignes : le moteur applique « %s » (%s)" % [voulu, str(app.model.live.get("pilotage", {}).get("consignes", {}) if app.model.live.get("pilotage") is Dictionary else null)])
+	check(regie.suivi.slice(pauses).any(func(e: Dictionary) -> bool: return e.evenement == "consigne" and e.get("valeur") == voulu), "Consignes : envoyée par la régie")
+	if vue.drawer.visible: vue._toggle_drawer("Tactique")
 
 ## Mode « multiplex » : carrière world-champ réelle. Le moteur projette la journée (`direct.journee`)
 ## dès le coup d'envoi : au moins une carte de multiplex et notre club dans le classement en direct ;
@@ -1274,6 +1359,8 @@ func journee_directe(view: Control) -> void:
 		elif app.model.live.get("paused", false) and not app.waiting and not app.model.live.get("finished", false): await command("pause", {"paused": false})
 		await process_frame
 	check(regie.etat == regie.INTER and between.visible, "Multiplex : l'écran intermédiaire s'ouvre")
+	await until(func(): return not app.waiting, 30000)
+	await consigne_reelle(regie)
 	await until(func(): return not app.waiting, 30000)
 	if not app.model.live.paused: await command("pause", {"paused": true})
 	await settle(6)
@@ -1340,6 +1427,7 @@ func journee_fictive(view: Control, direct: Dictionary) -> void:
 	# Classement : le leader, « … », puis notre voisinage (5e à 11e) ; rien de plus, sans défilement.
 	var lignes := _lignes_classement(between)
 	var rangs: Array = lignes.map(func(n: Node): return int(n.get_meta("rang")) if n.has_meta("rang") else -1)
+	# Sept lignes en 720p ; neuf sinon.
 	var attendus: Array = [5, 6, 7, 8, 9, 10, 11] if between._densite < 0.6 else [1, -1, 5, 6, 7, 8, 9, 10, 11]
 	check(between.classement_tuile.is_visible_in_tree() and rangs == attendus, "Classement fictif : notre voisinage (± 3), le leader si la hauteur le permet " + str(rangs))
 	# Règle de sélection, indépendante de la fenêtre : 1280×720 (sept lignes) et plus grand (neuf).

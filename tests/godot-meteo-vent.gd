@@ -158,6 +158,40 @@ func avant_match() -> void:
 			verifier(p1.contains("Dans le dos" if nous == 1 else "De face") and p2.contains("De face" if nous == 1 else "Dans le dos"), "tuile météo : vent par rapport à notre attaque « %s / %s »" % [p1, p2])
 		await capturer("meteo-ciel-" + nom, func(): app.match_screen.update_frame(copie))
 	textes.photos = photos
+	# Arbitre du match (clubLife.avantMatch.arbitre) dans la tuile des conditions : nom, profil d'une ligne et
+	# quatre jauges de 1 à 5 ; rien ne déborde, avec ou sans météo annoncée ; sans arbitre, aucun bloc.
+	var arbitre := {"nom": "Julien Castaing", "pays": "FR", "rucks": 4, "melee": 3, "horsJeu": 3, "cartons": 2, "resume": "Pointilleux sur les rucks, laisse vivre les cartons."}
+	for variante: String in ["vent", "sans-annonce"]:
+		var copie_a: Dictionary = app.model.duplicate(true)
+		if not copie_a.get("next") is Dictionary or not copie_a.get("clubLife", {}).get("avantMatch") is Dictionary: break
+		if variante == "vent":
+			copie_a.next.kickoffLocal = "21:05"
+			copie_a.next.meteo = {"libelle": "grand vent", "pluie": 0, "vent": 2, "chaleur": 0, "terrain": "souple", "ventDos": [1, 0], "date": str(app.model.meta.get("calendarToday", "")),
+				"conseil": "Le staff : conseil de test pour le grand vent, assez long pour tenir sur deux lignes dans la tuile météo de l'écran."}
+		else: copie_a.next.erase("meteo")
+		copie_a.clubLife.avantMatch["arbitre"] = arbitre
+		app.match_screen.update_frame(copie_a)
+		await poser(6)
+		controler_tableau("arbitre " + variante)
+		var tuile_a: Node = app.match_screen.find_child("TuileMeteo", true, false)
+		var bloc: Node = tuile_a.find_child("MatchArbitre", true, false) if tuile_a != null else null
+		var nom: Label = bloc.find_child("MatchArbitreNom", true, false) if bloc != null else null
+		verifier(nom != null and nom.text == "Arbitre : Julien Castaing" and nom.is_visible_in_tree(), "arbitre %s : nom dans la tuile des conditions" % variante)
+		verifier(nom != null and nom.tooltip_text == str(arbitre.resume), "arbitre %s : profil en infobulle du nom" % variante)
+		var niveaux: Array = []
+		for libelle: String in ["Rucks", "Mêlée", "Hors-jeu", "Cartons"]:
+			var jauge: Node = bloc.find_child("ArbitreJauge_" + libelle, true, false) if bloc != null else null
+			niveaux.append(int(jauge.get_meta("niveau", -1)) if jauge != null else -1)
+		verifier(niveaux == [4, 3, 3, 2], "arbitre %s : quatre jauges de sévérité %s" % [variante, str(niveaux)])
+		textes["arbitre_" + variante] = textes_de(bloc)
+		await capturer("avant-match-arbitre-" + variante, func(): app.match_screen.update_frame(copie_a))
+	var sans_arbitre: Dictionary = app.model.duplicate(true)
+	if sans_arbitre.get("clubLife", {}).get("avantMatch") is Dictionary:
+		sans_arbitre.clubLife.avantMatch.erase("arbitre")
+		app.match_screen.update_frame(sans_arbitre)
+		await poser(4)
+		verifier(app.match_screen.find_child("MatchArbitre", true, false) == null, "sans arbitre désigné : aucun bloc arbitre")
+		controler_tableau("sans arbitre")
 	verifier(not textes_de(app.match_screen.find_child("TuileMeteo", true, false)).is_empty(), "tuile météo sans annonce")
 	app.match_screen.update_frame(app.model)
 	app._navigate("Réception")

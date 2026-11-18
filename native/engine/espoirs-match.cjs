@@ -309,6 +309,9 @@ function factory(){
   const back=own.players.filter(p=>p.espoirLoan&&(which==='all'||(which==='stale'?typeof p.espoirLoan==='string'&&p.espoirLoan!==now:!sheet.has(p.id))));
   if(!back.length)return 0;
   if(s.live&&!s.live.finished&&s.live.pair?.includes(s.club))return 0;
+  // Matchs des jeunes joués jusqu'à aujourd'hui AVANT le retour : un jeune qui était avec les pros cette semaine
+  // ne joue pas aussi avec le centre le même week-end (calendrier journalier : ces matchs attendent la clôture).
+  if(!s.live&&typeof CDYouthMatches!=='undefined'&&CDYouthMatches&&typeof CDYouthMatches.process==='function')CDYouthMatches.process(s,CDYouthMatches.today(s));
   inReturn=true;
   try{
    const gone=new Set(back.map(p=>p.id));
