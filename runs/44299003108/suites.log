@@ -1,0 +1,62 @@
+::group::tests/a2r-president.cjs
+TAP version 13
+# Subtest: A2R : niveaux par part des recettes, tolérance, pas d’aggravation automatique
+ok 1 - A2R : niveaux par part des recettes, tolérance, pas d’aggravation automatique
+  ---
+  duration_ms: 0.789524
+  type: 'test'
+  ...
+# Subtest: A2R : situation de fin de saison avec le soutien promis du propriétaire, et la dette
+ok 2 - A2R : situation de fin de saison avec le soutien promis du propriétaire, et la dette
+  ---
+  duration_ms: 0.316261
+  type: 'test'
+  ...
+# Subtest: A2R : réponse de l’actionnaire (association, montant, déterminisme)
+ok 3 - A2R : réponse de l’actionnaire (association, montant, déterminisme)
+  ---
+  duration_ms: 1.405077
+  type: 'test'
+  ...
+# Subtest: A2R : homologation des recrues et masse des clubs gérés
+ok 4 - A2R : homologation des recrues et masse des clubs gérés
+  ---
+  duration_ms: 4.318223
+  type: 'test'
+  ...
+# Subtest: Président : déclenchement après un achat, joueurs désignés hors des douze meilleurs
+ok 5 - Président : déclenchement après un achat, joueurs désignés hors des douze meilleurs
+  ---
+  duration_ms: 1.042113
+  type: 'test'
+  ...
+# Subtest: Courrier : types, variables présentes, réponses
+ok 6 - Courrier : types, variables présentes, réponses
+  ---
+  duration_ms: 0.844942
+  type: 'test'
+  ...
+# Subtest: Moteur Monde : audition de juin, mesures, courrier, apport, appel, échéance, fin au mercato d’été
+ok 7 - Moteur Monde : audition de juin, mesures, courrier, apport, appel, échéance, fin au mercato d’été
+  ---
+  duration_ms: 19387.575002
+  type: 'test'
+  ...
+# Subtest: Moteur Monde : le président désigne des ventes, un seul courrier, vend à l’échéance ou renonce
+ok 8 - Moteur Monde : le président désigne des ventes, un seul courrier, vend à l’échéance ou renonce
+  ---
+  duration_ms: 13010.176662
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32415.220089
+CD_CPU_PROFILE suite=tests/a2r-president.cjs user_s=35.63 system_s=2.79 wall_s=32.85 cpu_pct=116% max_rss_kb=2519572
+PASS tests/a2r-president.cjs (33 s)
+::endgroup::

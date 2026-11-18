@@ -1,0 +1,18 @@
+TAP version 13
+# A2R (Godot) : {"a2r":"DIRECTION\\nJournal du club\\nDécision de l’A2R : 2 000 000 € à trouver avant le 30 juin\\nURGENT · Réponse attendue\\nDe : L’A2R (Autorité de régulation du rugby)  ·  17/08/2026\\nMonsieur le manager,\\n\\nÀ l’issue de l’audition de juin, la commission de contrôle de gestion de l’A2R a rendu sa décision. Les com","controles":17,"failures":[],"president":"DIRECTION\\nJournal du club\\nIl faut vendre avant le 7 septembre\\nURGENT · Réponse attendue\\nDe : Le président  ·  17/08/2026\\nCoach, je sors des comptes. Avec les dernières arrivées, la trésorerie est tombée à 3 650 000 €, sous la réserve que le club s’impose (5 050 000 €). Il manque 1 400 000 €.\\n\\nJe ne "} · moteur : {"date":"2026-08-17","niveau":3,"president":["Simon LECLERC","Lény LAFONT","Diego VERA"],"mails":[{"id":"mail-1","type":"a2r_apport"},{"id":"mail-2","type":"reprise_president"}]}
+# Captures : /home/runner/work/_temp/resultats/captures/regles-financieres
+# Subtest: A2R et président : courriers lisibles et réponses depuis le mail dans le vrai jeu
+ok 1 - A2R et président : courriers lisibles et réponses depuis le mail dans le vrai jeu
+  ---
+  duration_ms: 44473.072657
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 44893.784442
