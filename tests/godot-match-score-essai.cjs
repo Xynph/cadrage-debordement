@@ -15,7 +15,7 @@ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'cd-score-essai-'));
  let model=call('new_career',{mode:'world-champ',club:0});
  for(let day=0;day<120;day++){model=settleClubMeetings(model,call);if(model.meta.calendarCadence?.matchReady)break;model=call('advance_day',{fromDate:model.meta.calendarToday});}
  model=settleClubMeetings(model,call);model=call('auto_lineup');if(!model.selection?.valid)call('promote_cover',{confirmed:true});
- assert.ok(call('begin_match').live,'match Monde commencé');
+ // Pas de reprise en plein match (décision du 16/11/2026) : export le jour du match, le test lance begin_match après l'import.
  fs.writeFileSync(path.join(directory,'monde.json'),call('export').meta.exportText);
  bridge.close?.();fs.rmSync(dataDir,{recursive:true,force:true});
 }

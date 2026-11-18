@@ -135,20 +135,21 @@ test('refuser de promettre : médias −1, question close pour la saison', () =>
 
 test('objectif du conseil : une promesse en dessous de sa place le froisse, sans créer d’objectif en double', () => {
   nouvelle();
-  const m = modele();
-  h.command('club_board_objective', { context: m.clubLife.press.context, type: 'rank', target: 2, deadline: 30 });
+  // Le président fixe déjà un objectif de classement au départ (tout club joué) : on s'appuie dessus.
+  const cible = etat().nativeBoardCalendar.objectives.find(o => o.type === 'rank').target;
+  assert.equal(cible, 1, 'objectif de départ du président : le titre pour ce club');
   const objectifs = etat().nativeBoardCalendar.objectives.length;
   const offre = modele().clubLife.press.conference.promise;
   const prudente = offre.options.find(o => o.id === 'rank:4');
   const titre = offre.options.find(o => o.id === 'rank:1');
-  assert.match(prudente.boardNote, /En dessous de l’objectif du conseil \(2e place\)/);
+  assert.match(prudente.boardNote, /En dessous de l’objectif du conseil \(1re place\)/);
   assert.match(titre.boardNote, /Conforme à l’objectif du conseil/);
   const base = { modeste: -2, realiste: 1, ambitieux: 0, irrealiste: -3 };
   assert.equal(prudente.effects.trust, base[prudente.realism] - 2, 'malus de −2 sur la confiance');
   assert.equal(titre.effects.trust, base[titre.realism], 'aucun malus quand la promesse va au-delà');
   conference('rank:4');
   assert.equal(etat().nativeBoardCalendar.objectives.length, objectifs, 'aucun objectif du conseil créé');
-  assert.equal(promesses().promises[0].board, 2, 'objectif du conseil mémorisé');
+  assert.equal(promesses().promises[0].board, cible, 'objectif du conseil mémorisé');
   // Le verdict ne compte que pour moitié auprès du conseil, qui juge déjà son propre objectif.
   h.toMatch().week(1); // une journée jouée : le classement existe
   const trust = etat().trust;

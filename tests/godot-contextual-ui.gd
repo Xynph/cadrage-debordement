@@ -74,7 +74,7 @@ func run() -> void:
 	check(director.sync(), "talk opens")
 	await settle()
 	check(not host.root_content.visible and not host.coach.visible, "shell and coach hidden")
-	check(director.view.options_grid.columns == 3 and director.view.options_grid.get_child_count() == 6, "six declarations in three columns")
+	check(director.view.options_grid.columns == 2 and director.view.options_grid.get_child_count() == 6, "six declarations in two readable columns")
 	# Le ton d'abord (en or, en capitales), la phrase dessous ; le ton furieux est un choix comme les autres.
 	var tone_texts: Array = director.view.options_grid.find_children("TalkChoiceTone", "Label", true, false).map(func(l: Label) -> String: return l.text)
 	check(tone_texts == ["CALME","EXIGEANT","ENCOURAGEANT","FURIEUX","RASSURANT","AFFIRMÉ"], "tone label first on each declaration " + str(tone_texts))
@@ -109,11 +109,18 @@ func run() -> void:
 		for role: Label in director.view.find_children("ParticipantPosition", "Label", true, false):
 			check(Rect2(Vector2.ZERO, host.size).encloses(role.get_global_rect()), "position label stays visible at " + str(resolution))
 	var original := JSON.stringify(host.model)
+	director.view._set_audience("players")
+	var locked := true
+	for card in director.view.options_grid.get_children():
+		if not card.disabled: locked = false
+	check(locked, "players audience without a chosen player keeps the declarations locked")
 	director.view._select_choice(options[1])
+	check(host.sent.is_empty(), "a declaration cannot be pronounced to nobody")
 	director.view._toggle_player(participants[0].id)
-	check(host.sent.is_empty() and JSON.stringify(host.model) == original, "preview and selection remain local")
-	director.view._pronounce()
-	check(host.sent.size() == 1 and host.sent[0][0] == "match_talk_decide", "pronounce is sole decision command")
+	check(host.sent.is_empty() and JSON.stringify(host.model) == original, "recipient selection remains local")
+	director.view._select_choice(options[1])
+	check(host.sent.size() == 1 and host.sent[0][0] == "match_talk_decide", "clicking a declaration pronounces it without confirmation")
+	check(director.view.find_child("TalkPronounce", true, false) == null, "no separate Prononcer confirmation button")
 	check(host.sent[0][1].playerIds == [participants[0].id] and not host.sent[0][1].has("tone"), "real selected id and no caller-supplied tone")
 	for resolution in [Vector2i(1280,720),Vector2i(1920,1080),Vector2i(2560,1440)]:
 		root.size = resolution
@@ -121,7 +128,7 @@ func run() -> void:
 		for card in director.view.options_grid.get_children():
 			check(Rect2(Vector2.ZERO, host.size).encloses(card.get_global_rect()), "choice fits " + str(resolution))
 	host.waiting = true; director._refresh_controls()
-	check(director.view.find_child("TalkPronounce",true,false).disabled, "pending response disables duplicate command")
+	check(director.view.options_grid.get_child(0).disabled, "pending response disables duplicate command")
 	host.waiting = false
 	root.size = Vector2i(1280,720)
 	# Réactions visibles (match-talks.cjs) : libellé de l'état, couleur selon le sens (delta).
@@ -144,6 +151,9 @@ func run() -> void:
 		var shown: Label = card.find_child("ParticipantReaction", true, false)
 		if index >= 0 and shown != null and shown.text == states[index % 3][1] and shown.get_theme_color("font_color").is_equal_approx(expected_colors[index % 3]): reaction_cards += 1
 	check(reaction_cards == 23, "each player card shows his reaction label in the colour of its sign (%d/23)" % reaction_cards)
+	var go_on: Button = director.view.find_child("TalkContinue", true, false)
+	check(go_on != null and go_on.custom_minimum_size.y >= 70 and go_on.get_theme_font_size("font_size") >= 24, "Continuer is a large primary button after the talk")
+	if go_on != null: check(Rect2(Vector2.ZERO, host.size).encloses(go_on.get_global_rect()), "Continuer stays on screen at 720p")
 	var decision_title: Label = director.view.find_child("TalkDecisionTone", true, false)
 	check(decision_title != null and decision_title.text.contains("Furieux"), "decision recalls the tone")
 	var morale_label: Label = director.view.find_child("TalkDecisionMorale", true, false)

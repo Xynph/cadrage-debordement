@@ -162,6 +162,8 @@ function run(o){
  const capture=label=>{
   const {text,bytes}=state(),s=JSON.parse(text);track(s);ledger(s);s.__ledger=ledgerSum;ledgerSum={};
   let exp=null;const t=Date.now();if(label.startsWith('end-')||label==='after-S'+o.seasons)try{const r=bridge.handle({id:++serial,command:'export',payload:{}});exp=r.ok?{ok:true,bytes:Buffer.byteLength(r.model.meta.exportText),ms:Date.now()-t}:{ok:false,error:r.error};}catch(e){exp={ok:false,error:String(e.message)};}
+  // Objectif de classement du président (calendrier du conseil) : fixé à la création, revu en fin de saison, refixé à la suivante.
+  console.log('PRESIDENT '+JSON.stringify({label,saison:s.season,objectifs:(s.nativeBoardCalendar?.objectives||[]).map(o=>[o.id,o.target,o.status]),confiance:s.nativeBoardCalendar?.trust??null}));
   const row=observe(label,s,text,bytes,exp,counts,Date.now()-started);counts={};
   const now=placements(s);row.movements=movements(prevPlaces,now);prevPlaces=now;report.observations.push(row);
   console.log(JSON.stringify({label,elapsed:Math.round(row.elapsedMs/1000),stateMB:round(row.stateBytes/1048576),export:!exp?null:exp.ok?round(exp.bytes/1048576):exp.error,elite:row.byLeague.elite,events:row.events,strategies:row.directions?.strategies}));

@@ -109,8 +109,36 @@ func avant_match() -> void:
 	var donnees: Dictionary = app.model.get("clubLife", {}).get("avantMatch", {})
 	var surveilles: Array = donnees.get("aSurveiller", {}).get("joueurs", [])
 	var texte_joueurs := textes_de(tableau.find_child("TuileJoueurs", true, false) if tableau != null else null)
+	# Avec un plan adverse, la tuile garde les deux premiers joueurs à surveiller (la place va au plan).
+	if donnees.get("planAdverse") is Dictionary: surveilles = surveilles.slice(0, 2)
 	for joueur: Dictionary in surveilles: verifier(texte_joueurs.contains(str(joueur.get("name", ""))), "joueur à surveiller affiché : " + str(joueur.get("name", "")))
 	textes.joueurs = texte_joueurs
+	# Plan de jeu probable de l'adversaire (avant-match.cjs planAdverse) : en tête de la tuile adversaire, dans les
+	# clés de Gabi, avec l'action pour le contrer ; chaque style et chaque fiabilité tiennent dans la tuile.
+	var plan: Variant = donnees.get("planAdverse")
+	verifier(plan is Dictionary, "plan adverse calculé dès la veille (météo annoncée)")
+	if plan is Dictionary:
+		verifier(texte_joueurs.contains(str(plan.titre)) and texte_joueurs.begins_with("L’ADVERSAIRE"), "tuile adversaire : plan « %s »" % texte_joueurs)
+		verifier(str(textes.get("gabi", textes_de(tableau.find_child("TuileGabi", true, false)))).contains(str(plan.titre)) or (donnees.get("gabi", {}).get("cles", []) as Array).any(func(c): return str(c.get("titre")) == str(plan.titre)), "clé de Gabi : plan adverse")
+		verifier(tableau.find_child("MatchCounterPlan", true, false) != null, "action pour contrer le plan")
+		textes.plan = plan
+	var variantes := {"pres-sur": {"style": "conquete", "titre": "Ils vont jouer au près", "raison": "leur pack domine le nôtre", "confiance": "sure", "action": "composition", "libelle": "Ouvrir la composition", "conseil": "aligne ta meilleure première ligne et tes sauteurs", "lecteur": {"nom": "Benoît Lafargue-Montesquieu", "role": "analyste vidéo"}},
+		"large-incertain": {"style": "large", "titre": "Ils vont jouer au large", "raison": "leurs trois-quarts prennent le dessus sur notre défense", "confiance": "incertaine", "action": "consignes", "libelle": "Régler les consignes", "conseil": "une défense glissée prudente protège les extérieurs", "lecteur": {"nom": null, "role": "staff"}},
+		"pied-probable": {"style": "occupation", "titre": "Ils vont occuper au pied", "raison": "ils sortent d’une semaine européenne et ménagent leurs jambes", "confiance": "probable", "action": "composition", "libelle": "Ouvrir la composition", "conseil": "un arrière et des ailiers sûrs sous les ballons hauts", "lecteur": {"nom": "Ana Ruiz", "role": "adjoint"}}}
+	for nom_p: String in variantes:
+		var copie_p: Dictionary = app.model.duplicate(true)
+		if not copie_p.get("clubLife", {}).get("avantMatch") is Dictionary: break
+		copie_p.clubLife.avantMatch["planAdverse"] = variantes[nom_p]
+		app.match_screen.update_frame(copie_p)
+		await poser(6)
+		controler_tableau("plan " + nom_p)
+		var bloc_p: Node = app.match_screen.find_child("PlanAdverse", true, false)
+		var puce: Node = bloc_p.find_child("PlanAdverseConfiance", true, false) if bloc_p != null else null
+		verifier(puce != null and str(puce.get_meta("confiance", "")) == str(variantes[nom_p].confiance), "plan %s : fiabilité affichée" % nom_p)
+		verifier(textes_de(bloc_p).contains(str(variantes[nom_p].titre)), "plan %s : titre" % nom_p)
+		await capturer("avant-match-plan-" + nom_p, func(): app.match_screen.update_frame(copie_p))
+	app.match_screen.update_frame(app.model)
+	await poser(4)
 	textes.gabi = textes_de(tableau.find_child("TuileGabi", true, false) if tableau != null else null)
 	textes.forces = textes_de(tableau.find_child("TuileForces", true, false) if tableau != null else null)
 	for cle: Dictionary in donnees.get("gabi", {}).get("cles", []): verifier(str(textes.gabi).contains(str(cle.get("titre", ""))), "clé de Gabi affichée : " + str(cle.get("titre", "")))
