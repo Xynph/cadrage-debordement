@@ -20,9 +20,11 @@ const BanqueImages = preload("res://ui/banque_images.gd")
 ## Taille de la maquette : tout est écrit pour 1600×900 et mis à l'échelle (k) de la fenêtre.
 const REF := Vector2(1600, 900)
 ## Place de chaque numéro sur le terrain (% de la largeur, % de la hauteur), avants à gauche, attaque ▸.
-const PLACES := {1: Vector2(15, 20), 2: Vector2(15, 50), 3: Vector2(15, 80), 4: Vector2(26, 34), 5: Vector2(26, 66),
-	6: Vector2(37, 13), 7: Vector2(37, 87), 8: Vector2(37, 50), 9: Vector2(48, 50), 10: Vector2(58, 36),
-	11: Vector2(84, 9), 12: Vector2(67, 26), 13: Vector2(75, 18), 14: Vector2(84, 91), 15: Vector2(91, 50)}
+## Lignes de trois-quarts en colonnes (demis, centres, triangle du fond) : les médaillons agrandis ne se
+## chevauchent plus (capture du 18/11/2026, la diagonale de la maquette les empilait).
+const PLACES := {1: Vector2(14, 20), 2: Vector2(14, 50), 3: Vector2(14, 80), 4: Vector2(26, 34), 5: Vector2(26, 66),
+	6: Vector2(38, 14), 7: Vector2(38, 86), 8: Vector2(38, 50), 9: Vector2(51, 30), 10: Vector2(51, 70),
+	11: Vector2(77, 13), 12: Vector2(64, 30), 13: Vector2(64, 70), 14: Vector2(77, 87), 15: Vector2(89, 50)}
 const ARBITRE_AXES := [["rucks", "Rucks"], ["melee", "Mêlée"], ["horsJeu", "Hors-jeu"], ["cartons", "Cartons"]]
 const ARBITRE_MOTS := ["", "laisse jouer", "souple", "équilibré", "pointilleux", "très pointilleux"]
 
@@ -647,7 +649,7 @@ func _cris(cris: Dictionary) -> void:
 		mots.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		mots.add_child(_coupe(_titre(libelle, 18, C.IVORY if disponible or est_actif else C.MUTED, 700)))
 		var note := str(option.get("note", ""))
-		if est_actif and actif.get("jusqua") != null: note = "Actif jusqu'à %s′" % str(actif.jusqua)
+		if est_actif and actif.get("jusqua") != null: note = "Actif jusqu'à la %de" % int(actif.jusqua)
 		if not note.is_empty(): mots.add_child(_coupe(_texte(note, 11, C.GOLD if est_actif or (usure > 0.0 and usure < 1.0) else (C.ALERT if usure >= 1.0 else C.MUTED))))
 		rangee.add_child(mots)
 		bouton.modulate.a = 1.0 if disponible or est_actif else 0.6
@@ -784,9 +786,8 @@ func _terrain(centre: VBoxContainer) -> void:
 	S.full(terrain)
 	cadre.add_child(terrain)
 	var sens := _titre("SENS DE L'ATTAQUE ▸", 15, Color(C.IVORY, 0.7), 700)
-	sens.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	sens.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	sens.offset_right = -px(14)
+	sens.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	sens.offset_left = px(14)
 	sens.offset_top = px(10)
 	cadre.add_child(sens)
 	var lineup := _lineup()
@@ -957,16 +958,18 @@ func _fatigue(centre: VBoxContainer, p: Dictionary) -> void:
 		var mots := _v(4)
 		mots.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mots.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		var haut := _h(6)
-		haut.add_child(_coupe(_texte("%s (%d)" % [nom_court(str(joueur.get("name", ""))), slot + 1], 13, C.IVORY, _gras)))
-		haut.add_child(_texte("%d → %d %%" % [avant, apres], 13, teinte))
-		mots.add_child(haut)
+		mots.add_child(_coupe(_texte("%s (%d)" % [nom_court(str(joueur.get("name", ""))), slot + 1], 13, C.IVORY, _gras)))
+		var bas := _h(6)
 		var barre := Barre.new()
 		barre.avant = avant
 		barre.apres = apres
 		barre.teinte = teinte
 		barre.custom_minimum_size.y = px(6)
-		mots.add_child(barre)
+		barre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		barre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		bas.add_child(barre)
+		bas.add_child(_texte("%d → %d %%" % [avant, apres], 12, teinte))
+		mots.add_child(bas)
 		bloc.add_child(mots)
 		bloc.tooltip_text = "%s : énergie %d %% maintenant, %d %% prévue dans 10 minutes." % [str(joueur.get("name", "")), avant, apres]
 		rangee.add_child(bloc)
@@ -1034,7 +1037,7 @@ func _tuile(joueur: Dictionary, numero: int, eligible: bool, choisi: bool, conse
 	tuile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tuile.custom_minimum_size = Vector2(0, px(68))
 	tuile.clip_contents = true
-	var bord := C.GOLD if choisi or conseille else (C.MINT if eligible and poste_choisi >= 0 else C.LINE)
+	var bord := C.MINT if eligible and poste_choisi >= 0 else (C.GOLD if choisi or conseille else C.LINE)
 	var normal := _boite(C.RAISED if choisi else C.PANEL, bord, 10, 2 if choisi else 1, 8)
 	var survol := normal.duplicate() as StyleBoxFlat
 	survol.bg_color = C.RAISED
@@ -1347,13 +1350,17 @@ func _axe(p: Dictionary, axe: Dictionary) -> Control:
 		var valeur := str(option_v.get("id", ""))
 		var choisi := valeur == actuel
 		var texte := str(option_v.get("label", valeur))
-		var bouton := _bouton(texte, _choisir_cran.bind(crans, id, valeur), "or" if choisi else "cadre", 15, "Consigne_%s_%s" % [id, valeur])
+		var long := options.size() > 3
+		var bouton := _bouton(texte, _choisir_cran.bind(crans, id, valeur), "or" if choisi else "cadre", 13 if long else 15, "Consigne_%s_%s" % [id, valeur])
 		bouton.set_meta("axe", id)
 		bouton.set_meta("valeur", valeur)
 		bouton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bouton.custom_minimum_size = Vector2(0, px(32))
-		bouton.clip_text = true
-		bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		# Quatre crans aux libellés longs (pénalités, plan de jeu) : sur deux lignes plutôt que tronqués.
+		if long: bouton.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		else:
+			bouton.clip_text = true
+			bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		bouton.tooltip_text = texte + ("\n" + aide if not aide.is_empty() else "")
 		for etat: String in ["normal", "hover", "pressed", "disabled"]:
 			var boite := bouton.get_theme_stylebox(etat) as StyleBoxFlat
