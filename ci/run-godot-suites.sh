@@ -40,6 +40,8 @@ engine_skip='SDK Godot (requis|absent)|Godot SDK required|SKIP [^ ]+ : SDK absen
 # au cas par cas, jamais pour l'ensemble. Les assertions elles-mêmes ne changent pas.
 # (Les plafonds et suites informatives ci-dessous des suites exclues — CD_MODES_HERITES — sont conservés pour leur retour.)
 declare -A suite_limits=(
+  # Mesure du chrono des arrêts (à la demande en ligne seulement, sautée en CI) : ≈ 15 min sur runner.
+  [tests/mesure-chrono-arrets.cjs]=2100
   [tests/godot-art-direction.cjs]=600
   [tests/godot-match-temps-forts.cjs]=600
   [tests/godot-immersive08.cjs]=600
