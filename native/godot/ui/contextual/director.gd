@@ -45,6 +45,22 @@ func _meeting() -> Dictionary:
 		return value if outcome is Dictionary and outcome.get("invitationId") == origin and outcome.get("context") == value.get("context") else {}
 	return value if press.get("context") == value.get("context") and press.get("conference", {}).get("invitationId") == origin else {}
 
+## Après-match façon FM (18/11/2026) : la conférence courte d'après-match (créneau « apres ») n'est pas un rendez-vous
+## du club, mais elle se tient dans la même salle de presse, ouverte depuis son courrier ou juste après le résultat.
+## Vide sinon. `completed` : réponses publiées (par le manager ou Gabi), la salle attend « Continuer ».
+func postmatch_press() -> Dictionary:
+	var origin := str(app.get_meta("press_mail_origin", ""))
+	if origin.is_empty(): return {}
+	var press: Dictionary = app.model.get("clubLife", {}).get("press", {})
+	var context: Variant = press.get("context")
+	var conference: Dictionary = press.get("conference", {})
+	if conference.get("available", false) and conference.get("invitationId") == origin and context is Dictionary and context.get("slot") == "apres":
+		return {"postmatch":true, "completed":false, "invitationId":origin}
+	var outcome: Variant = press.get("lastOutcome")
+	if kind == "press" and outcome is Dictionary and outcome.get("invitationId") == origin and outcome.get("context", {}).get("slot") == "apres":
+		return {"postmatch":true, "completed":true, "invitationId":origin}
+	return {}
+
 ## Rendez-vous du club obligatoire qui bloque les autres actions (en cours ou premier de la file), vide sinon.
 func blocking_meeting() -> Dictionary:
 	var meetings: Dictionary = app.model.get("clubLife", {}).get("clubMeetings", {})
@@ -98,6 +114,10 @@ func sync(_received_command: String = "", _response_ok: bool = true) -> bool:
 		data = meeting.duplicate(true)
 		data["meetingId"] = meeting.get("id")
 		key = next + ":" + str(meeting.get("id", ""))
+	elif not postmatch_press().is_empty():
+		next = "press"
+		data = postmatch_press()
+		key = "press:apres:" + str(data.get("invitationId", ""))
 	elif training_open and app.model.get("club") is Dictionary:
 		next = "training"
 		key = "training"
@@ -198,6 +218,14 @@ func open_room(room_kind: String, _data: Dictionary = {}) -> void:
 	if not app.waiting and str(_meeting().get("kind", "")) == room_kind: sync()
 
 func close_room() -> void:
+	var postmatch := postmatch_press() if _meeting().is_empty() else {}
+	if not postmatch.is_empty():
+		if app.waiting or not postmatch.get("completed", false): return
+		app.remove_meta("press_mail_origin")
+		_close()
+		app.route = "Réception"
+		app._render(false)
+		return
 	var meeting := _meeting()
 	if app.waiting or not meeting.get("completed", false): return
 	command("club_meeting_continue", {"meetingId":meeting.get("id")})

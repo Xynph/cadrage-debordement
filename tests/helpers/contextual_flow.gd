@@ -86,3 +86,51 @@ static func _progression_command(app: Control, tree: SceneTree, check: Callable,
 	var ok: bool = not app.waiting and app.bridge.last_response_ok
 	check.call(ok, "Réponse réelle du calendrier : " + command + " · " + str(app.last_error))
 	return ok
+
+# --- Calendrier de presse façon FM (décision du 18/11/2026) --------------------------------------------------------
+# Plus de conférence à la création de la carrière ni chaque lundi : la rentrée (« Arrivée au club » dans une première
+# saison) s'ouvre le lundi de la semaine du 1er match ; l'après-match s'ouvre dès la validation du résultat.
+
+# Commande publique avec une attente longue (l'avance « Continuer » peut simuler plusieurs semaines de préparation).
+static func command_wait(app: Control, tree: SceneTree, check: Callable, command: String, payload: Dictionary = {}, limit_ms: int = 300000) -> bool:
+	var accepted: bool = app._command(command, payload)
+	check.call(accepted, "Commande acceptée · " + command)
+	if not accepted: return false
+	var deadline := Time.get_ticks_msec() + limit_ms
+	while app.waiting and Time.get_ticks_msec() < deadline: await tree.process_frame
+	app.timer.stop()
+	for frame in 5: await tree.process_frame
+	var ok: bool = not app.waiting and app.bridge.last_response_ok
+	check.call(ok, "Worker réel · " + command + " · " + str(app.last_error))
+	return ok
+
+# Avance avec « Continuer » (advance_until_event), décisions de la reprise et rendez-vous hors presse réglés, jusqu'à ce
+# qu'une conférence de presse soit ouverte (la rentrée, depuis la création de la carrière). La conférence reste à tenir.
+static func reach_press_conference(app: Control, tree: SceneTree, check: Callable, attempts: int = 40) -> bool:
+	for attempt in attempts:
+		if not await settle_club_meetings(app, tree, check, "press"): return false
+		if app.model.get("clubLife", {}).get("press", {}).get("conference", {}).get("available", false): return true
+		var cadence: Dictionary = app.model.get("meta", {}).get("calendarCadence", {})
+		if cadence.get("matchReady", false):
+			check.call(false, "Jour de match atteint sans conférence ouverte (" + str(app.model.get("meta", {}).get("calendarToday", "")) + ")")
+			return false
+		if not await command_wait(app, tree, check, "advance_until_event", {"fromDate": str(app.model.get("meta", {}).get("calendarToday", ""))}): return false
+	return false
+
+# Joue le prochain match du manager (délégué) jusqu'à la validation du résultat : l'après-match est alors ouvert
+# (clubLife.press.context.slot == "apres"). Les autres rendez-vous du club sont réglés en chemin.
+static func play_to_result(app: Control, tree: SceneTree, check: Callable) -> bool:
+	if not await prepare_match_day(app, tree, check): return false
+	if not await command_wait(app, tree, check, "auto_lineup"): return false
+	if not await command_wait(app, tree, check, "begin_match"): return false
+	await _skip_scene_talk(app, tree, check)
+	if not await command_wait(app, tree, check, "delegate"): return false
+	await _skip_scene_talk(app, tree, check)
+	if app.model.get("live") is Dictionary:
+		if not await command_wait(app, tree, check, "finish_round"): return false
+		await _skip_scene_talk(app, tree, check)
+	return true
+
+static func _skip_scene_talk(app: Control, tree: SceneTree, check: Callable) -> void:
+	var value: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+	if value is Dictionary: await skip_talk(app, tree, str(value.get("phase", "")), check)

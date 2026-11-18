@@ -1,8 +1,10 @@
 extends SceneTree
 ## Réglage « Conférences ordinaires : y aller / envoyer l'adjoint » dans les Paramètres (vrai Godot + vrai worker,
 ## carrière Monde « world-champ », club 102). Le choix n'existait que dans la salle de presse : ici il doit être
-## visible dans les Paramètres, envoyer la commande press_policy, se refléter dans le modèle, et « Continuer » ne
-## doit plus s'arrêter sur une conférence ordinaire (les grands moments restent obligatoires).
+## visible dans les Paramètres, envoyer la commande press_policy, se refléter dans le modèle ; avec l'adjoint, l'après-match
+## est tenu par Gabi dès la validation du résultat, sans arrêt de « Continuer » (les grands moments restent obligatoires).
+## Calendrier de presse façon FM (18/11/2026) : la seule conférence ordinaire de base est l'après-match ; la rentrée
+## (grand moment) s'ouvre le lundi de la semaine du 1er match.
 ## CD_REGLAGE_CAPTURES=<dossier> : capture du réglage (rendu fenêtré requis).
 const Flow = preload("helpers/contextual_flow.gd")
 const Progression = preload("res://ui/career_progression.gd")
@@ -52,15 +54,11 @@ func capture(name_: String) -> void:
 	var image := root.get_texture().get_image()
 	check(image != null and image.save_png(captures.path_join(name_ + ".png")) == OK, "Capture " + name_)
 
-## Avance « Continuer » jusqu'à une conférence ordinaire ouverte (Continuer s'arrête dessus tant que l'adjoint n'est pas choisi).
+## Joue le 1er match (ou le suivant) jusqu'à la validation du résultat : l'après-match, conférence ordinaire, s'ouvre alors.
 func reach_ordinary() -> bool:
-	for attempt in 12:
-		await Flow.settle_club_meetings(app, self, check, "press")
-		var conference: Dictionary = press().get("conference", {})
-		if conference.get("available", false) and not conference.get("moment") is Dictionary: return true
-		if not await command(Progression.CONTINUE_COMMAND, {"fromDate": today()}): return false
-		if app.model.get("meta", {}).get("calendarCadence", {}).get("matchReady", false): return false
-	return false
+	if not await Flow.play_to_result(app, self, check): return false
+	var conference: Dictionary = press().get("conference", {})
+	return conference.get("available", false) and not conference.get("moment") is Dictionary and str(press().get("context", {}).get("slot", "")) == "apres"
 
 ## Courrier de la conférence en attente dans la Réception : ouvre le message et rend le bouton de réglage (ou null).
 func open_press_mail() -> Button:
@@ -83,7 +81,12 @@ func run() -> void:
 	await command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"})
 	if is_instance_valid(app.coach): app.coach.close()
 	check(press().get("policy", {}).get("ordinary") == "moi", "Réglage de départ : y aller")
-	# L'arrivée est un grand moment : elle reste obligatoire en personne.
+	# Rien à la création de la carrière ; l'arrivée s'ouvre le lundi de la semaine du 1er match. C'est un grand moment :
+	# elle reste obligatoire en personne.
+	check(not press().get("conference", {}).get("available", false), "Aucune conférence à la création de la carrière")
+	var arrived: bool = await Flow.reach_press_conference(app, self, check)
+	check(arrived, "La conférence d'arrivée s'ouvre en avançant (" + today() + ")")
+	if not arrived: return finish()
 	var arrival: Dictionary = press().get("conference", {})
 	check(arrival.get("moment") is Dictionary, "Conférence d'arrivée : grand moment")
 	var moment_mail := await open_press_mail()
@@ -94,13 +97,13 @@ func run() -> void:
 		answers.append({"questionId": question.id, "answerId": question.answers[0].id})
 	await command("press_conference", {"context": press().context, "invitationId": arrival.invitationId, "answers": answers})
 	await Flow.settle_club_meetings(app, self, check)
-	# 1. Avant : Continuer s'arrête sur la conférence ordinaire de la semaine.
-	check(await reach_ordinary(), "Réglage « y aller » : Continuer s'arrête sur une conférence ordinaire (" + today() + ")")
+	# 1. Avant : avec « y aller », l'après-match du 1er match reste à tenir en personne (rien ne le délègue).
+	check(await reach_ordinary(), "Réglage « y aller » : l'après-match est une conférence ordinaire à tenir (" + today() + ")")
 	if press().get("conference", {}).get("invitationId") == null: return finish()
 	# 1 bis. Le courrier de la conférence ordinaire propose la bascule (sans toucher à la conférence en cours).
 	var invitation_id = press().get("conference", {}).get("invitationId")
 	var toggle := await open_press_mail()
-	check(toggle != null and toggle.is_visible_in_tree(), "Réception : bascule présente sur une conférence ordinaire")
+	check(toggle != null and toggle.is_visible_in_tree(), "Réception : bascule présente sur une conférence ordinaire (après-match)")
 	if toggle != null:
 		check(toggle.text == "Les prochaines fois, envoyer Gabi aux conférences ordinaires", "Réception : libellé « envoyer Gabi » (« %s »)" % toggle.text)
 		check(toggle.tooltip_text.contains("médias −2") and toggle.tooltip_text.contains("relation −1"), "Réception : infobulle du coût")
@@ -162,23 +165,40 @@ func run() -> void:
 	await capture("reglage-conferences")
 	dialog.queue_free()
 	await settle(4)
-	# 4. La conférence déjà ouverte reste à traiter : on la confie à Gabi, puis Continuer ne s'arrête plus sur l'ordinaire.
+	# 4. L'après-match déjà ouvert reste à traiter : on le confie à Gabi. Avec le réglage « adjoint », l'après-match suivant
+	#    est tenu par Gabi dès la validation du résultat, et « Continuer » ne s'arrête plus sur une conférence ordinaire.
 	var open_conference: Dictionary = press().get("conference", {})
 	if open_conference.get("available", false):
 		await command("press_delegate", {"context": press().context, "invitationId": open_conference.invitationId})
 	await Flow.settle_club_meetings(app, self, check)
 	var delegated := 0
 	var ordinary_stops := 0
-	for attempt in 12:
-		await Flow.settle_club_meetings(app, self, check, "press")
+	var played: bool = await Flow.play_to_result(app, self, check)
+	check(played, "Le match suivant est joué jusqu'au résultat (" + today() + ")")
+	var after_match: Dictionary = press().get("lastOutcome", {}) if played else {}
+	var crisis: bool = press().get("conference", {}).get("moment") is Dictionary
+	if played and crisis:
+		# Série de défaites : la crise est un grand moment, tenu en personne même avec l'adjoint (jamais délégué).
+		var rescue: Dictionary = press().get("conference", {})
+		var rescue_answers: Array[Dictionary] = []
+		for question: Dictionary in rescue.get("questions", []):
+			rescue_answers.append({"questionId": question.id, "answerId": question.answers[0].id})
+		await command("press_conference", {"context": press().context, "invitationId": rescue.invitationId, "answers": rescue_answers})
+	elif played:
+		check(not press().get("conference", {}).get("available", false), "Avec l'adjoint : plus d'après-match à tenir après le résultat")
+		check(after_match.get("delegated", false) and str(after_match.get("context", {}).get("slot", "")) == "apres", "Avec l'adjoint : une conférence ordinaire tenue par Gabi dès le résultat")
+		delegated += 1
+	await Flow.settle_club_meetings(app, self, check)
+	for attempt in 6:
 		if not await command(Progression.CONTINUE_COMMAND, {"fromDate": today()}): break
 		var advance: Dictionary = app.model.get("meta", {}).get("advanceUntilEvent", {})
 		delegated += int(advance.get("pressDelegated", 0))
 		var conference: Dictionary = press().get("conference", {})
 		if conference.get("available", false) and not conference.get("moment") is Dictionary: ordinary_stops += 1; break
-		if delegated >= 1 or app.model.get("meta", {}).get("calendarCadence", {}).get("matchReady", false): break
+		if app.model.get("meta", {}).get("calendarCadence", {}).get("matchReady", false): break
+		await Flow.settle_club_meetings(app, self, check)
 	check(ordinary_stops == 0, "Avec l'adjoint : Continuer ne s'arrête plus sur une conférence ordinaire")
-	check(delegated >= 1, "Avec l'adjoint : une conférence ordinaire tenue par Gabi pendant l'avance (%d)" % delegated)
+	check(delegated >= 1 or crisis, "Avec l'adjoint : une conférence ordinaire tenue par Gabi sans arrêt (%d)" % delegated)
 	finish()
 
 func finish() -> void:

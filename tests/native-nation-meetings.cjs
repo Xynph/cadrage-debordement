@@ -120,11 +120,9 @@ test('public worker: selector creation, role exit with queued club work, legacy 
   good('save');assert.deepEqual(disk(),advancedDisk,'Restart/read/save consumes no RNG and replaces no career values');
   good('advance_day',{fromDate:model.meta.calendarToday});noRooms();
 
-  good('new_career',{mode:'world-champ',club:0});assert.equal(room().scene.kind,'press');
-  const press=model.clubLife.press;
-  good('press_conference',{context:press.context,invitationId:press.conference.invitationId,answers:press.conference.questions.map(q=>({questionId:q.id,answerId:q.answers[0].id}))});
-  good('club_meeting_continue',{meetingId:room().scene.id});
-  assert.equal(room().scene.kind,'board');assert.equal(room().receipts.length,1);
+  // Presse façon FM (18/11/2026) : plus de conférence à la création ; l'accueil de la direction est le travail de club en attente.
+  good('new_career',{mode:'world-champ',club:0});
+  assert.equal(room().scene.kind,'board');assert.equal(model.clubLife.press.conference.available,false);assert.equal(room().receipts.length,0);
   const oldWork=plain(JSON.parse(exported()).state.clubMeetings);
   const beforeRejected=exported(),rejected=call('national_take_job',{role:'nation',nation:'XXX',confirmed:true});
   assert.equal(rejected.ok,false);good('snapshot');assert.equal(room().scene.kind,'board','Rejected role changes keep the club obligation');
