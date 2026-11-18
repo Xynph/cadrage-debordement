@@ -152,7 +152,9 @@ function factory() {
       const played = F.season.length;
       // Matchs manqués en protocole commotion : une absence médicale n'est pas un manque de temps de jeu.
       const missed = p => { const c = commotionApi(); return c ? c.missedMatches(F.s, p, F.season) : 0; };
-      const list = F.players.filter(p => !F.sheet.has(p.id) && !(p.injury > 0) && (p.age || 0) >= 20 && p.rating >= median - 2 && !p.satisfaction?.promise && (Number(p.dev?.appearances) || 0) <= Math.floor((played - missed(p)) / 3))
+      // Sans absence médicale : règle d'origine ; avec, on juge sur au moins trois matchs où il était disponible.
+      const deficit = p => { const m = missed(p), dispo = played - m; return (m === 0 || dispo >= 3) && (Number(p.dev?.appearances) || 0) <= Math.floor(dispo / 3); };
+      const list = F.players.filter(p => !F.sheet.has(p.id) && !(p.injury > 0) && (p.age || 0) >= 20 && p.rating >= median - 2 && !p.satisfaction?.promise && deficit(p))
         .sort((a, b) => b.rating - a.rating || String(a.id).localeCompare(String(b.id)));
       const p = list[0]; if (!p) return [];
       return [{ key: p.id + ':' + F.s.season + ':' + Math.floor(dayNumber(F.d) / 30), player: p.id, vars: { ...playerVars(p), minutes: Number(p.dev?.minutes) || 0 } }];

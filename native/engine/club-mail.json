@@ -5,7 +5,7 @@
     "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; arretsParJour : mails qui arrêtent « Continuer » le même jour ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
     "arretsParJour": 2,
-    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2 },
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2, "commotion": 6 },
     "boite": 160,
     "projection": 80,
     "delaiReponse": 7,
@@ -22,7 +22,8 @@
     "formation": { "label": "Formation", "ecran": "Formation" },
     "moments": { "label": "Club", "ecran": "Effectif" },
     "contrats": { "label": "Contrats", "ecran": "contrats" },
-    "meteo": { "label": "Météo", "ecran": "Composition" }
+    "meteo": { "label": "Météo", "ecran": "Composition" },
+    "commotion": { "label": "Médical", "ecran": "infirmerie" }
   },
   "humeurs": {
     "haut": ["le groupe vit bien, ça rigole à la muscu et ça bosse dur", "l'ambiance est au beau fixe, les jeunes suivent les anciens", "on sent une vraie envie, personne ne traîne aux séances"],
@@ -728,7 +729,7 @@
       ]
     },
     "commotion": {
-      "categorie": "infirmerie", "declencheur": "commotion", "priorite": 10, "arret": true, "ecran": "infirmerie",
+      "categorie": "commotion", "declencheur": "commotion", "priorite": 10, "arret": true, "ecran": "infirmerie",
       "expediteur": "Le médecin du club",
       "formulations": [
         {"sujet": "Commotion confirmée : {joueur}", "corps": "Le protocole commotion a tranché pour {joueur} ({poste}) après le match du {match} : {motif}.\n\nC'est la règle de World Rugby, il n'y a rien à négocier : {jours} jours de repos au minimum, avec une reprise par paliers. Il ne pourra pas rejouer avant le {retour}. {antecedents}\n\nPrépare son remplacement pour {prochain}, je te tiens au courant à chaque palier."},
@@ -741,7 +742,7 @@
       ]
     },
     "commotion_exception": {
-      "categorie": "infirmerie", "declencheur": "commotion", "priorite": 9, "arret": true, "ecran": "infirmerie",
+      "categorie": "commotion", "declencheur": "commotion", "priorite": 9, "arret": true, "ecran": "infirmerie",
       "expediteur": "Le médecin du club",
       "seuils": {"exception": true},
       "formulations": [

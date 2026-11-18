@@ -13,6 +13,7 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const M = require('./helpers/carriere-monde.cjs');
+const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 
 const API = "nativeSystems.domain('clubSupport').commotion";
 let jeu = null, vm = null;
@@ -23,6 +24,15 @@ const ouvrir = () => {
 };
 const run = source => vm.run(source);
 const json = source => JSON.parse(run('JSON.stringify(' + source + ')'));
+// Modèle à jour, semaine close si le match du jour est déjà joué.
+const present = j => {
+  let m = j.regler(j.call('snapshot'));
+  for (let i = 0; i < 8 && m.live; i++) {
+    m = m.live.finished && m.meta.calendarCadence?.resultConfirmed ? j.regler(j.call('advance_day', { fromDate: m.meta.calendarToday })) : j.regler(skipMatchTalk(j.call('finish_round'), j.call));
+  }
+  assert.equal(m.live, null, 'semaine close');
+  return m;
+};
 
 test('En match : HIA avec remplacement temporaire, sortie définitive, fil du match, sauvegarde valide, déterminisme', { timeout: 600000 }, () => {
   const j = ouvrir();
@@ -82,12 +92,11 @@ test('En match : HIA avec remplacement temporaire, sortie définitive, fil du ma
 
 test('Après le match : diagnostic, 12 jours jour par jour, feuilles du club et de l’IA, antécédents, satisfaction', { timeout: 600000 }, () => {
   const j = ouvrir();
-  let m = j.regler(j.call('auto_lineup'));
-  const today = m.meta.calendarToday;
+  let m = present(j);
   // Commotion confirmée (signes évidents) d'un titulaire du club la veille, et d'un cadre d'un club de l'IA.
   const info = json(`(() => {
     const api = ${API}, own = S.clubs[S.club], p = own.players.find(x => x.id === S.lineup[10]);
-    const f = CDWorldCareer.userFixture(S), ai = f.homeId === S.club ? f.awayId : f.homeId;
+    const f = CDWorldCareer.userFixture(S), ai = f ? (f.homeId === S.club ? f.awayId : f.homeId) : (S.club + 1) % S.clubs.length;
     const q = buildSheet(S.clubs[ai]).lineup.map(id => S.clubs[ai].players.find(x => x.id === id))[9];
     p.satisfaction = p.satisfaction || {version: 1, score: 65, season: S.season, baseline: p.dev?.minutes || 0, promise: null, history: []};
     const veille = api.shiftDate(CDWorldCareer.calendarToday(S), -1);
@@ -95,12 +104,14 @@ test('Après le match : diagnostic, 12 jours jour par jour, feuilles du club et 
     api.diagnose(S, ai, q, veille, 1, 'test-ia');
     return {id: p.id, ai, aiPlayer: q.id, veille, satisfaction: p.satisfaction.score, retour: p.commotion.protocole.retour, retourIa: q.commotion.protocole.retour};
   })()`);
+  // La feuille du jour est refaite sans lui (coup d'envoi refusé avec un joueur indisponible).
+  m = j.regler(j.call('auto_lineup'));
   assert.equal(info.retour, run(`${API}.shiftDate(${JSON.stringify(info.veille)}, 12)`), '12 jours de repos');
   assert.equal(info.retourIa, info.retour, 'même règle pour l’IA');
   assert.ok(run(`buildSheet(S.clubs[${info.ai}]).lineup.concat(buildSheet(S.clubs[${info.ai}]).bench).every(id => id !== ${JSON.stringify(info.aiPlayer)})`), 'l’IA ne l’aligne pas');
   // Rencontre de l'IA jouée en résultat rapide : le joueur en protocole ne joue pas.
   const minutesIa = run(`(() => { const q = S.clubs[${info.ai}].players.find(x => x.id === ${JSON.stringify(info.aiPlayer)}), before = q.dev?.minutes || 0;
-    const copy = JSON.parse(JSON.stringify(S)), real = S; S = copy; try { const f = CDWorldCareer.fixtures(S).find(x => x.homeId !== S.club && x.awayId !== S.club);
+    const copy = JSON.parse(JSON.stringify(S)), real = S; S = copy; try { const f = CDWorldCareer.fixtures(S).find(x => x.homeId !== S.club && x.awayId !== S.club) || S.worldMode.fixtures.find(x => x.homeId !== S.club && x.awayId !== S.club && x.phase === 'league');
       const c = S.clubs.findIndex(c => c.players.some(x => x.id === ${JSON.stringify(info.aiPlayer)}));
       const g = {...f, homeId: c, awayId: f.homeId === c ? f.awayId : f.homeId, id: 'test-rapide'}; CDLeagueDetail.simulate(S, g);
       return (S.clubs[c].players.find(x => x.id === ${JSON.stringify(info.aiPlayer)}).dev?.minutes || 0) - before; } finally { S = real; } })()`);
@@ -143,8 +154,8 @@ test('Après le match : diagnostic, 12 jours jour par jour, feuilles du club et 
 
 test('Exception à 7 jours : sans antécédent seulement, avis du spécialiste par le courrier ou d’office pour l’IA', { timeout: 600000 }, () => {
   const j = ouvrir();
-  let m = j.regler(M.jusquAuMatch(j, j.regler(j.call('auto_lineup'))));
-  if (m.meta.calendarCadence?.matchReady && m.next) m = M.jouerLeMatch(j, m);
+  let m = present(j);
+  if (m.meta.calendarCadence?.matchReady && m.next) m = present(M.jouerLeMatch(j, m));
   const r = json(`(() => {
     const api = ${API}, today = CDWorldCareer.calendarToday(S), veille = api.shiftDate(today, -1), club = S.clubs[S.club];
     const fresh = club.players.filter(p => !p.commotion && !p.injury);
@@ -170,7 +181,7 @@ test('Exception à 7 jours : sans antécédent seulement, avis du spécialiste p
   assert.equal(r.aiCase.jours, r.aiCase.exception === 'accordee' ? 7 : 12);
   // Le courrier du médecin arrive dans les jours qui suivent, avec la demande d'avis ; une seule réponse.
   let mail = null, other = null;
-  for (let i = 0; i < 4 && !(mail && other); i++) {
+  for (let i = 0; i < 6 && !(mail && other); i++) {
     m = j.regler(m);
     if (m.meta.calendarCadence?.matchReady && m.next) m = M.jouerLeMatch(j, m);
     m = j.regler(j.call('advance_day', { fromDate: m.meta.calendarToday }));
@@ -192,7 +203,7 @@ test('Exception à 7 jours : sans antécédent seulement, avis du spécialiste p
   // Composition : « Préparer son remplaçant » ouvre l'écran de la feuille.
   { const o = j.call('club_mail_reply', { id: other.id, choice: 'remplacant' }); assert.equal(o.meta.clubMailReply.ecran, 'Composition'); assert.equal(o.meta.clubMailReply.ouvrir, true); }
   // Décision médicale : aucun protocole générique ne s'applique à un joueur en protocole commotion.
-  const ctx = j.call('auto_lineup').clubLife.clubSupport.context;
+  const ctx = present(j).clubLife.clubSupport.context;
   assert.match(j.brut('medical_protocol', { context: ctx, id: r.open, protocol: 'accelere' }).error || '', /commotion|décision/i);
   run('validateCareer(S)');
 });
