@@ -247,6 +247,8 @@ func run() -> void:
 		# Carrière Monde arrêtée à la causerie d'avant-match (godot-match-grands-moments.cjs).
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("monde.json"))})
 		await settle()
+		await command("begin_match")
+		await settle()
 		var limite_g := Time.get_ticks_msec() + 120000
 		while Time.get_ticks_msec() < limite_g and (surface() == null or surface().regie == null):
 			var scene_g: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
@@ -561,7 +563,9 @@ func active(view: Control) -> void:
 	var between: Control = regie.between
 	check(app.model.live.direct.tempsFort is Dictionary and app.model.live.direct.tempsFort.type == "coup_d_envoi", "Le moteur projette le coup d'envoi")
 	check(regie.etat == regie.JEU and not between.visible, "Le coup d'envoi est joué en 3D, écran intermédiaire masqué")
-	check(regie.suivi.size() == 1 and regie.suivi[0].evenement == "temps_fort", "Premier temps fort suivi")
+	# Les traces « legende » (texte / image) ne sont pas des événements de la régie.
+	var faits: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement != "legende")
+	check(faits.size() == 1 and faits[0].evenement == "temps_fort", "Premier temps fort suivi")
 	var first_key := str(view.stage.get("_action_key"))
 	check(not first_key.is_empty() and view.stage.get("_actors").size() == 30, "La vue 3D montre les trente joueurs du plan")
 	check(view.clock.text.ends_with("′"), "Le bandeau affiche l'horloge du plan rejoué : " + view.clock.text)
@@ -585,7 +589,7 @@ func active(view: Control) -> void:
 	await command("pause", {"paused": false})
 	check(await until(func(): return app.model.live.minute > minute, 30000), "L'horloge accélérée avance seule")
 	check(app.model.live.events.size() > events_before, "Chaque pas simule une minute")
-	check(regie.etat != regie.JEU or regie.suivi.size() > 2, "Une minute sans action retenue reste sur l'écran intermédiaire")
+	check(regie.etat != regie.JEU or regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement != "legende").size() > 2, "Une minute sans action retenue reste sur l'écran intermédiaire")
 	var replayed := func(): return regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "temps_fort").size() >= 2 and regie.etat != regie.JEU
 	check(await until(replayed, 240000), "Un second temps fort est joué puis rendu à l'écran intermédiaire (minute %d)" % int(app.model.live.minute))
 	var played: Array = regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")
