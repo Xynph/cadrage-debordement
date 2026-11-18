@@ -101,6 +101,11 @@ function factory(){
  const roll=()=>Math.random();
  function poisson(mean){const limit=Math.exp(-mean);let k=0,p=1;do{k++;p*=roll();}while(p>limit&&k<40);return k-1;}
  function binomial(n,p){let k=0;for(let i=0;i<n;i++)if(roll()<p)k++;return k;}
+ // Essais d'un camp : loi binomiale sur ESSAIS_OCCASIONS occasions (moyenne `mean`), moins dispersée qu'une loi de Poisson,
+ // comme au moteur complet (variance ≈ 0,85 × moyenne, mesure du 18/11) ; la Poisson élargissait les écarts de score
+ // (Japon D2 : 19,9 points d'écart moyen contre 15,5) et privait les battus de bonus défensifs.
+ const ESSAIS_OCCASIONS=14;
+ const essais=mean=>binomial(ESSAIS_OCCASIONS,clamp(mean,.5,10)/ESSAIS_OCCASIONS);
  function released(s,f){
   if(typeof CDWorldCareer==='undefined'||typeof CDWorldCareer.clubReleaseOn!=='function')return ()=>false;
   return id=>{try{return !!CDWorldCareer.clubReleaseOn(s,id,f.date);}catch{return false;}};
@@ -147,8 +152,8 @@ function factory(){
  // trop nettement (Premiership, Super Rugby, Japon : 0,13-0,16 contre 0,10 au complet) et le terrain y pesait 1,5 à 1,8 fois
  // trop (Japon D2 : +8 points à domicile contre +4,3). Championship : jamais mesuré de loin (club du banc de mesure),
  // réglé comme les championnats aussi ouverts ; coupes d'Europe non mesurées : écart et terrain inchangés. Autres : 1.
- const VOLUME=Object.freeze({elite:[1.06,.87,1.1,.63],accession:[.95,.85,.88,.72],nationale:[.99,.9,.87,.56],prem:[1.45,.49,.73,.64],
-  champ:[1.39,.56,.75,.6],urc:[1.17,.55,1,.75],srp:[1.55,.39,.67,.55],'jlo-d1':[1.47,.52,.74,.58],'jlo-d2':[1.28,.6,.71,.54],
+ const VOLUME=Object.freeze({elite:[1.09,.87,1,.63],accession:[1,.85,.8,.72],nationale:[.99,.9,.8,.56],prem:[1.53,.49,.68,.64],
+  champ:[1.45,.56,.68,.6],urc:[1.22,.55,.92,.75],srp:[1.57,.39,.62,.55],'jlo-d1':[1.5,.52,.68,.58],'jlo-d2':[1.38,.6,.66,.54],
   champions:[1.24,.67,1,1],challenge:[1.2,.69,1,1]});
  const volume=id=>VOLUME[id]||[1,1,1,1];
  function sideStats(tries,edge,competitionId){
@@ -212,7 +217,7 @@ function factory(){
   const [,,poidsEcart,poidsTerrain]=volume(f.competitionId);
   const edge=clamp((ecartJour*poidsEcart+home*poidsTerrain)/curve.diviseur,-curve.borne,curve.borne);
   const vol=volume(f.competitionId)[0];
-  const tries=[poisson(clamp(2.75*vol*Math.exp(curve.essais*edge),.5,10)),poisson(clamp(2.75*vol*Math.exp(-curve.essais*edge),.5,10))];
+  const tries=[essais(2.75*vol*Math.exp(curve.essais*edge)),essais(2.75*vol*Math.exp(-curve.essais*edge))];
   const stats=[sideStats(tries[0],edge,f.competitionId),sideStats(tries[1],-edge,f.competitionId)];
   const points=i=>tries[i]*5+stats[i].conversions*2+stats[i].goals*3;
   let score=[points(0),points(1)];
