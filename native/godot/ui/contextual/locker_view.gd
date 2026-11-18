@@ -1,6 +1,9 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
+const Pilotage = preload("res://ui/contextual/match_consignes.gd")
+## Six tons de causerie (match-pilotage.js, TONS_LABELS) : libellé de repli quand le moteur n'en donne pas.
+const TONS := {"calm": "Calme", "demanding": "Exigeant", "warm": "Encourageant", "furious": "Furieux", "protective": "Rassurant", "assertive": "Affirmé"}
 const STARTER_POSITIONS = ["Pilier gauche", "Talonneur", "Pilier droit", "Deuxième ligne", "Deuxième ligne", "Troisième ligne aile", "Troisième ligne aile", "Troisième ligne centre", "Demi de mêlée", "Demi d’ouverture", "Ailier", "Centre", "Centre", "Ailier", "Arrière"]
 var director: Node
 var app: Control
@@ -56,10 +59,7 @@ func _draw() -> void:
 	if phase in ["pre", "half"] and not live.is_empty(): _meteo(middle, live, phase)
 	var declarations := S.panel(middle, 12)
 	var decision: Variant = scene.get("decision")
-	if decision is Dictionary:
-		declarations.add_child(S.label("Ton message a été prononcé", 19, S.GOLD))
-		declarations.add_child(S.wrap(str(decision.get("text", "")), 19, S.TEXT))
-		declarations.add_child(S.wrap("Les réactions de tes destinataires apparaissent sur leurs cartes.", 13))
+	if decision is Dictionary: _bilan_causerie(declarations, decision)
 	else:
 		var recipient_row := S.G.h(6)
 		declarations.add_child(recipient_row)
@@ -75,20 +75,11 @@ func _draw() -> void:
 		options_grid.add_theme_constant_override("h_separation", 7)
 		options_grid.add_theme_constant_override("v_separation", 7)
 		declarations.add_child(options_grid)
-		for option: Dictionary in scene.get("options", []):
-			var button := S.button(str(option.get("text", "")), func(): _select_choice(option))
-			button.set_meta("choice_id", option.get("id", ""))
-			button.custom_minimum_size = Vector2(0, 62)
-			button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			button.add_theme_font_size_override("font_size", 14)
-			S.G.fill(button)
-			if selected_choice == str(option.get("id", "")): S.selected(button, S.GOLD)
-			options_grid.add_child(button)
+		for option: Dictionary in scene.get("options", []): options_grid.add_child(_choice_card(option))
 		var selected: Dictionary = {}
 		for option: Dictionary in scene.get("options", []):
 			if str(option.get("id", "")) == selected_choice: selected = option
-		if not selected.is_empty(): declarations.add_child(S.wrap("Aperçu · « %s »" % str(selected.get("text", "")), 13, S.GOLD))
+		if not selected.is_empty(): declarations.add_child(S.wrap("Aperçu · %s · « %s »" % [tone_label(selected), str(selected.get("text", ""))], 13, S.GOLD))
 	_roster(body, "ARRIÈRES", "backs")
 	var bench := S.G.h(8)
 	bench.name = "TalkBench"
@@ -125,8 +116,8 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 	var text := str(player.get("name", "Identité indisponible"))
 	var position_text := _position_label(participant, player)
 	var decision: Dictionary = scene.get("decision", {}) if scene.get("decision") is Dictionary else {}
-	var reaction := S.reactions(decision, id)
-	var reaction_label: String = {"encouraged":"Encouragé", "unconvinced":"Peu convaincu", "unchanged":"Sans réaction visible"}.get(reaction, reaction)
+	var reaction := reaction_of(decision, id)
+	var reaction_label := str(reaction.get("label", ""))
 	var card := S.button("", func(): _toggle_player(id), decision.is_empty())
 	card.set_meta("participant_id", id)
 	card.tooltip_text = text + " · " + position_text + (" · " + reaction_label if not reaction_label.is_empty() else "")
@@ -162,12 +153,100 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 	position_label.tooltip_text = position_label.text
 	position_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	words.add_child(position_label)
-	if not reaction_label.is_empty(): words.add_child(S.label(reaction_label, 10, S.GOLD))
+	if not reaction_label.is_empty():
+		var reaction_text := S.label(reaction_label, 10, reaction_color(reaction))
+		reaction_text.name = "ParticipantReaction"
+		reaction_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		words.add_child(reaction_text)
 	elif audience == "players" and id in selected_ids: words.add_child(S.label("✓ Destinataire", 10, S.GOLD))
 	var addressed: bool = audience == "group" or (audience in ["forwards", "backs"] and participant.get("group") == audience) or (audience == "players" and id in selected_ids)
 	if not decision.is_empty(): addressed = id in decision.get("playerIds", [])
 	if addressed: S.selected(card, S.GOLD)
 	return card
+
+## Carte d'une déclaration : le ton d'abord (libellé en or), la phrase dessous.
+func _choice_card(option: Dictionary) -> Button:
+	var card := S.button("", func(): _select_choice(option))
+	card.name = "TalkChoice_" + str(option.get("tone", ""))
+	card.set_meta("choice_id", option.get("id", ""))
+	card.set_meta("tone", option.get("tone", ""))
+	card.tooltip_text = "%s · « %s »" % [tone_label(option), str(option.get("text", ""))]
+	card.custom_minimum_size = Vector2(0, 76)
+	S.G.fill(card)
+	if selected_choice == str(option.get("id", "")): S.selected(card, S.GOLD)
+	var margin := S.G.margin(7)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	S.full(margin)
+	card.add_child(margin)
+	var words := S.G.v(2)
+	words.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_child(words)
+	var tone := S.label(tone_label(option).to_upper(), 16, S.GOLD)
+	tone.name = "TalkChoiceTone"
+	tone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	words.add_child(tone)
+	var sentence := S.wrap(str(option.get("text", "")), 12, S.TEXT)
+	sentence.name = "TalkChoiceText"
+	sentence.max_lines_visible = 2
+	sentence.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	sentence.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	S.G.fill(sentence)
+	words.add_child(sentence)
+	return card
+
+## Libellé français du ton (`toneLabel` du moteur, sinon la table des six tons).
+static func tone_label(option: Dictionary) -> String:
+	var label := str(option.get("toneLabel", "")).strip_edges()
+	if not label.is_empty(): return label
+	var tone := str(option.get("tone", ""))
+	return str(TONS.get(tone, tone.capitalize()))
+
+## Réaction d'un joueur à la causerie ({id, score, etat, label, delta}), ou {}.
+static func reaction_of(decision: Dictionary, id: Variant) -> Dictionary:
+	var rows: Variant = decision.get("reactions", [])
+	if rows is Array:
+		for row: Variant in rows:
+			if row is Dictionary and str(row.get("id", "")) == str(id): return row
+	return {}
+
+## Couleur d'une réaction : vert si elle porte, rouge de l'alerte si elle braque, neutre sinon.
+static func reaction_color(reaction: Dictionary) -> Color:
+	var delta: Variant = reaction.get("delta", 0)
+	var direction: int = signi(int(delta)) if delta is int or delta is float else 0
+	return Pilotage.teinte(direction, S.MUTED)
+
+## Après la parole : ton et phrase, qui a parlé, effet sur le moral et répartition des réactions visibles.
+func _bilan_causerie(parent: VBoxContainer, decision: Dictionary) -> void:
+	var by_staff := str(decision.get("par", "manager")) == "staff"
+	var title := S.label(("Le staff a parlé · " if by_staff else "Ton message · ") + tone_label(decision), 19, S.GOLD)
+	title.name = "TalkDecisionTone"
+	parent.add_child(title)
+	parent.add_child(S.wrap("« %s »" % str(decision.get("text", "")), 17, S.TEXT))
+	var morale: int = int(decision.get("moraleDelta", 0)) if decision.get("moraleDelta") is int or decision.get("moraleDelta") is float else 0
+	if str(decision.get("audience", "")) != "players":
+		var morale_text := "Moral du groupe inchangé" if morale == 0 else "Moral du groupe %s%d" % ["+" if morale > 0 else "−", absi(morale)]
+		var morale_label := S.label(morale_text, 14, Pilotage.teinte(signi(morale), S.MUTED))
+		morale_label.name = "TalkDecisionMorale"
+		parent.add_child(morale_label)
+	var counts := {}
+	var order: Array = []
+	var colors := {}
+	var rows: Array = decision.get("reactions") if decision.get("reactions") is Array else []
+	for row: Variant in rows:
+		if not row is Dictionary or str(row.get("label", "")).is_empty(): continue
+		var label := str(row.label)
+		if not counts.has(label):
+			order.append(label)
+			counts[label] = 0
+			colors[label] = reaction_color(row)
+		counts[label] = int(counts[label]) + 1
+	if not order.is_empty():
+		var summary := S.G.h(10)
+		summary.name = "TalkDecisionReactions"
+		parent.add_child(summary)
+		for label: String in order:
+			summary.add_child(S.label("%d %s" % [int(counts[label]), label.to_lower()], 13, colors[label]))
+	parent.add_child(S.wrap("Chaque réaction visible apparaît sur la carte du joueur.", 12))
 
 func _position_label(participant: Dictionary, player: Dictionary) -> String:
 	var number := int(participant.get("number", 0))

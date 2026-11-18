@@ -2,6 +2,7 @@ extends Control
 const S = preload("res://ui/contextual/skin.gd")
 const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
+const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 var director: Node
 ## Régie du match en temps forts (mode de base ; absente avec CD_MATCH_TEMPS_FORTS=0).
 var regie: Node
@@ -29,6 +30,8 @@ var _bench_feedback: VBoxContainer
 var _bench_context: Label
 var _bench_status: Label
 var drawer_tab := ""
+## Consignes en direct envoyées depuis le tiroir et pas encore confirmées par le moteur (axe → cran).
+var _envois_consignes: Dictionary = {}
 var selected_slot := -1
 var _drawer_key := ""
 var _bench_focus_key := ""
@@ -449,6 +452,11 @@ func _update_drawer() -> void:
 		"Banc": presence.append(_bench_presence(live))
 		"Stats": presence.append(_stats(live))
 		"Tactique":
+			var pilotage := Pilotage.pilotage(live)
+			Pilotage.confirmer(pilotage, _envois_consignes)
+			# Plus rien en attente : un cran non confirmé a été refusé, le modèle reprend la main.
+			if not bool(app.waiting): _envois_consignes.clear()
+			presence.append([pilotage.get("consignes"), pilotage.get("axes"), live.get("finished", false)])
 			presence.append(model.get("tactics", {}))
 			presence.append(model.get("decisions", {}).get("liveAdvice"))
 			presence.append(model.get("decisions", {}).get("report"))
@@ -496,6 +504,7 @@ func _bench_presence(live: Dictionary) -> Array:
 	return presence
 
 func _tactics(live: Dictionary) -> void:
+	_consignes(live)
 	var allowed: bool = live.get("paused", false) and not live.get("finished", false)
 	if not allowed: drawer_body.add_child(S.wrap("Mets le match en pause pour modifier tes consignes.", 14, S.GOLD))
 	var tactics: Dictionary = model.get("tactics", {})
@@ -519,6 +528,26 @@ func _tactics(live: Dictionary) -> void:
 			drawer_body.add_child(bouton)
 	var notes := S.G.panel(drawer_body)
 	preload("res://ui/decision_views.gd").match_notes(app, notes, model)
+
+## Consignes en direct (même widget que la tuile du tableau de bord 2D) : elles se changent sans pause.
+func _consignes(live: Dictionary) -> void:
+	var pilotage := Pilotage.pilotage(live)
+	if pilotage.is_empty() or live.get("finished", false): return
+	drawer_body.add_child(S.label("Consignes en direct", 18, S.GOLD))
+	drawer_body.add_child(S.wrap("Effet dès la minute suivante, sans arrêter le match.", 12))
+	var rows := S.G.v(6)
+	rows.name = "MatchDrawerConsignes"
+	drawer_body.add_child(rows)
+	var style := {"taille": 13, "taille_libelle": 12, "hauteur": 34, "libelle": 0, "ecart": 4, "rayon": 4, "marge": 6,
+		"or": S.GOLD, "texte": S.TEXT, "doux": S.MUTED, "fond": Color("172a23"), "survol": Color("283e2d")}
+	Pilotage.lignes(rows, Pilotage.avec_envois(pilotage, _envois_consignes), _envoyer_consigne, style)
+	var arbitre := Pilotage.arbitre_texte(pilotage.get("arbitre"))
+	if not arbitre.is_empty(): drawer_body.add_child(S.wrap(arbitre, 12))
+
+func _envoyer_consigne(axe: String, valeur: String) -> void:
+	_envois_consignes[axe] = valeur
+	if regie != null: regie.envoyer_consigne(axe, valeur)
+	else: app._command(Pilotage.COMMANDE, Pilotage.charge(axe, valeur))
 
 func _restore_bench_focus(previous_focus: String) -> void:
 	var target: Button

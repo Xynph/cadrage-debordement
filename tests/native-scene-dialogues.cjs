@@ -20,7 +20,7 @@ const bank = load();
 const plain = value => JSON.parse(JSON.stringify(value));
 const ids = value => plain(value.map(e => e.id));
 const all = plain(bank.all());
-assert.equal(all.length, 228);
+assert.equal(all.length, 246);
 assert.deepEqual(all, JSON.parse(fs.readFileSync(path.join(__dirname, '../native/engine/scene-dialogues-bank.json'), 'utf8')).entries,
   'The portable literal must include the complete reviewable source bank');
 assert.equal(new Set(all.map(e => e.id)).size, all.length, 'IDs cannot collide in persisted decisions');

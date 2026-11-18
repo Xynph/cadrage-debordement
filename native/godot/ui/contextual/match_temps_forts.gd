@@ -17,6 +17,7 @@ const Between = preload("res://ui/contextual/match_between.gd")
 const Cadrage = preload("res://match_cadrage.gd")
 const Liaison = preload("res://match_liaison.gd")
 const Arbitre = preload("res://match_arbitre.gd")
+const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 
 enum { INTER, JEU, ATTENTE }
 const NIVEAUX := ["aucun", "resume", "cles", "etendus", "dynamique", "integral"]
@@ -216,6 +217,12 @@ func _bande(live: Dictionary) -> void:
 	var active := live.get("direct") is Dictionary and not bool(live.get("finished", false))
 	bande.visible = active
 	if view.barre_commandes != null: view.barre_commandes.visible = not active
+
+## Consigne en direct (tiroir Tactique) : `set_consignes` sans pause ; pendant une minute
+## en cours, la commande attend sa réponse puis part.
+func envoyer_consigne(axe: String, valeur: String) -> void:
+	suivi.append({"evenement": "consigne", "axe": axe, "valeur": valeur, "horloge": str(_live.get("minute", "")), "debut_ms": Time.get_ticks_msec()})
+	app._command(Pilotage.COMMANDE, Pilotage.charge(axe, valeur))
 
 func choisir_horloge(valeur: String) -> void:
 	if not HORLOGES.has(valeur): return
