@@ -23,8 +23,12 @@ function semaines(journalier, n) {
   try {
     const run = src => jeu.bridge.vm.run(src);
     run(INSTALLER_VM);
-    // Charge utile de l'écran de création du vrai jeu (départ « premiers clubs », par défaut).
-    let model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: 102, start: 'premiers-clubs', varyCurrent: true }));
+    // Charge utile de l'écran de création du vrai jeu (départ « premiers clubs », par défaut). En journalier, avec
+    // le premier défi de départ proposé : son objectif crée le calendrier du président, revu chaque semaine.
+    const defi = journalier ? JSON.stringify(jeu.brut('start_challenges', {})).match(/"id":"([a-z-]+)","titre"[^]*?"club":(\d+)/) : null;
+    if (journalier) assert.ok(defi, 'au moins un défi de départ proposé');
+    const club = defi ? Number(defi[2]) : 102;
+    let model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club, start: 'premiers-clubs', varyCurrent: true, ...(defi ? { challenge: { id: defi[1], club } } : {}) }));
     run("{const f=finishRound;finishRound=function(){__sonde('chaine:finishRound');return f.apply(this,arguments)};Object.assign(finishRound,f);}");
     run('__sondeLog.length=0');
     const vues = []; let semaine = run('S.worldMode.week');
@@ -39,7 +43,7 @@ function semaines(journalier, n) {
       if (w === semaine) continue;
       const comptes = {};
       for (const [k] of JSON.parse(run('JSON.stringify(__sondeLog.splice(0))'))) comptes[k] = (comptes[k] || 0) + 1;
-      vues.push({ semaine, comptes, annoncee: run('S.matchNotes?.semaine?.annoncee===true'), jiff: run('Object.values(S.jiff?.counts||{}).reduce((a,r)=>a+r[0],0)') });
+      vues.push({ semaine, comptes, president: run('S.nativeBoardCalendar?.week??null'), monde: w, annoncee: run('S.matchNotes?.semaine?.annoncee===true'), jiff: run('Object.values(S.jiff?.counts||{}).reduce((a,r)=>a+r[0],0)') });
       semaine = w;
     }
     assert.equal(vues.length, n, n + ' semaines closes');
@@ -52,6 +56,8 @@ for (const [mode, journalier, n] of [['journalier', true, 3], ['hebdomadaire', f
   for (const v of vues) {
     for (const k of UNE_FOIS) assert.equal(v.comptes[k] || 0, 1, `${mode}, semaine ${v.semaine} : ${k} doit tourner une fois (${JSON.stringify(v.comptes)})`);
     for (const k of AU_MOINS_UNE_FOIS) assert.ok((v.comptes[k] || 0) >= 1, `${mode}, semaine ${v.semaine} : ${k} n'a pas tourné`);
+    // Calendrier du président (défi de départ) : revu à chaque semaine close (avant le correctif : figé à 0).
+    if (journalier) assert.equal(v.president, v.monde, `${mode}, semaine ${v.semaine} : calendrier du président non revu`);
     // La journée est close (équipe-type annoncée) à la fin de sa semaine, pas au premier match de la suivante.
     assert.equal(v.comptes['match-notes:nouvelle-journee'] || 0, 0, `${mode}, semaine ${v.semaine} : journée close en retard`);
     assert.equal(v.annoncee, true, `${mode}, semaine ${v.semaine} : journée des notes de match non close`);
