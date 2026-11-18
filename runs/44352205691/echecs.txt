@@ -1,0 +1,9 @@
+== captures fenêtre Équipe du match (Composition et Consignes ; 1080p et 720p, contrôles en 1440p) (code 1)
+not ok 1 - Fenêtre Équipe : un bouton, pause, composition, banc, consignes
+    SCRIPT ERROR: Parse Error: Cannot infer the type of "niveaux" variable because the value doesn't have a set type.
+    SCRIPT ERROR: Parse Error: Cannot infer the type of "interdit" variable because the value doesn't have a set type.
+    ERROR: Failed to load script "/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd" with error "Parse error".
+  name: 'AssertionError'
+    SCRIPT ERROR: Parse Error: Cannot infer the type of "niveaux" variable because the value doesn't have a set type.
+    SCRIPT ERROR: Parse Error: Cannot infer the type of "interdit" variable because the value doesn't have a set type.
+    ERROR: Failed to load script "/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-fenetre-equipe.gd" with error "Parse error".
