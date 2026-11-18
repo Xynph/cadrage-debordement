@@ -336,6 +336,12 @@ func direction_a(mail: Dictionary) -> void:
 	var star: Dictionary = squad[0]
 	var hurt: Dictionary = squad[1]
 	hurt.injury = 3
+	hurt.injuryType = "ischios"
+	hurt.injuryCause = "match"
+	var doubtful: Dictionary = squad[2] if squad.size() > 2 else {}
+	if not doubtful.is_empty():
+		doubtful.injury = 0
+		doubtful.condition = 50
 	var press := {"id":"mail-990001", "type":"rumeur", "categorie":"presse", "date":today, "expediteur":"Le quotidien régional",
 		"sujet":"Rumeur : " + str(star.name) + " courtisé", "status":"nouveau", "ecran":"Presse", "joueur":str(star.id), "arret":false,
 		"corps":"Selon nos informations, deux clubs se renseignent sur le joueur.\n\nLe dossier pèse lourd dans un effectif qui peut difficilement se passer d'un titulaire.\n\nOn publie demain. Un démenti rassurera les tribunes.",
@@ -346,8 +352,13 @@ func direction_a(mail: Dictionary) -> void:
 		for row: Dictionary in division.get("rows", []):
 			if str(row.get("id")) != str(app.model.club.get("id")): rivals.append(row)
 	if not rivals.is_empty(): press.club = int(rivals[0].id)
-	var medical := {"id":"mail-990002", "type":"kine_bilan", "categorie":"infirmerie", "date":yesterday, "expediteur":"Le kiné du club",
-		"sujet":"Bilan de l'infirmerie", "status":"lu", "ecran":"infirmerie", "arret":false, "corps":"Point sur les soins de la semaine.", "reponses":[]}
+	# Bulletin du médecin tel que le moteur le rédige (type « blessure » de club-mail.json).
+	var medical := {"id":"mail-990002", "type":"blessure", "categorie":"infirmerie", "date":yesterday, "expediteur":"Le médecin du club",
+		"sujet":str(hurt.name) + " : Lésion des ischio-jambiers", "status":"nouveau", "ecran":"infirmerie", "arret":false, "joueur":str(hurt.id),
+		"corps":"Coach, mauvaise nouvelle pour " + str(hurt.name) + " (" + str(hurt.pos) + "). Il est sorti touché du match contre nos adversaires (24-17, le " + yesterday.substr(8, 2) + "/" + yesterday.substr(5, 2) + "). Diagnostic : lésion des ischio-jambiers. Il est indisponible 3 semaines.\n\nMuscle à reconstruire : reprise progressive des courses. Revenir trop vite, c'est s'exposer à une rechute plus longue.\n\nIl manquera le prochain match : prévois son remplaçant dans la composition.",
+		"reponses":[{"id":"progressif", "libelle":"Le ménager à son retour", "effets":"Charge individuelle : charge allégée", "disponible":true, "raison":""},
+			{"id":"repos", "libelle":"Le laisser au repos complet", "effets":"Satisfaction −1 · Charge individuelle : repos", "disponible":true, "raison":""},
+			{"id":"presser", "libelle":"Le relancer vite dans le groupe", "effets":"Satisfaction +2 · Charge +5 · Charge individuelle : séance collective", "disponible":true, "raison":""}]}
 	if not app.model.clubLife.has("clubMail") or not app.model.clubLife.clubMail is Dictionary: app.model.clubLife.clubMail = {"mails":[], "reponses":{}}
 	var box: Dictionary = app.model.clubLife.clubMail
 	var same_a := {"id":"mail-990003", "type":"kine_bilan", "categorie":"infirmerie", "date":yesterday, "expediteur":"Le kiné du club",
@@ -383,10 +394,10 @@ func direction_a(mail: Dictionary) -> void:
 	check(not display_order().has("mail-990003"), "Espace ne vise pas le doublon réuni")
 	# Météo : sa catégorie et son icône, jamais « URGENT ».
 	var weather_message: Array = Reception._messages(app).filter(func(item: Dictionary) -> bool: return str(item.id) == "mail-990005")
-	check(not weather_message.is_empty() and weather_message[0].category == "Météo" and not Reception.Reading.status(weather_message[0], app.model).urgent, "Bulletin météo : catégorie Météo, jamais urgent")
+	check(not weather_message.is_empty() and weather_message[0].category == "Météo" and Reception.Reading.status(weather_message[0], app.model).key == "info", "Bulletin météo : catégorie Météo, information seulement")
 	var weather_row := node("InboxClubMail_mail_990005")
 	var weather_tag: Label = null if weather_row == null or weather_row.find_child("InboxTodoTag", true, false) == null else weather_row.find_child("InboxTodoTag", true, false).get_child(0) as Label
-	check(weather_tag == null or not weather_tag.text.begins_with("URGENT"), "Pas d'étiquette URGENT sur la météo")
+	check(weather_tag == null, "Ni « À FAIRE » ni « URGENT » sur la météo")
 	check(press_row != null and press_row.find_child("InboxRowHour", true, false) != null, "Heure de réception affichée")
 	# Gabarit presse : coupure de journal ; l'en-tête ne répète pas le nom du journal.
 	var sender := node("InboxSenderName") as Label
@@ -421,20 +432,42 @@ func direction_a(mail: Dictionary) -> void:
 	check(Reception.consequences("Pression +2")[0][0] == "▼" and Reception.consequences("Coût 1 000 €")[0][0] == "▼" and Reception.consequences("Charge individuelle : allégée")[0][0] == "=" and Reception.consequences("")[0][1] == "Sans effet chiffré", "Sens des conséquences (pression, coût, neutre)")
 	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
 		check(root.get_texture().get_image().save_png(capture_dir.path_join("reception-presse-1920x1080.png")) == OK, "Capture presse")
-	# Gabarit médical : tableau de l'infirmerie, panneau masqué et mail élargi.
-	app.management_ui.reception.selected = "mail-990002"
+	# Courrier sans élément lié : panneau masqué et mail élargi.
+	app.management_ui.reception.selected = "mail-990004"
 	app._render()
 	await settle(8)
 	check(node("InboxConcerne") == null, "Panneau « Concerné » masqué sans élément lié")
 	check(node("InboxDetail") != null and node("InboxDetail").size.x > with_side + 10, "Le mail s'élargit sans le panneau")
+	# Bulletin médical : tableau complet de l'infirmerie (blessé avec son type, incertain), joueur cité, réponses.
+	app.management_ui.reception.selected = "mail-990002"
+	app._render()
+	await settle(8)
 	check(node("InboxInfirmary") != null, "Tableau de l'infirmerie dans le mail médical")
 	var forfeit := false
+	var uncertain := false
 	for row: Node in app.root_content.find_children("InboxInfirmaryRow_*", "", true, false):
 		var status := row.find_child("InboxInfirmaryStatus", true, false) as Label
-		if str(row.get_meta("player_id")) == str(hurt.id) and status != null and status.text == "Forfait" and status.get_theme_color("font_color") == C.ALERT: forfeit = true
-	check(forfeit, "Joueur blessé : forfait en rouge, d'après les blessures réelles")
+		var labels: String = " ".join(PackedStringArray(row.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)))
+		if str(row.get_meta("player_id")) == str(hurt.id) and status != null and status.text == "Forfait" and status.get_theme_color("font_color") == C.ALERT and labels.contains("ischio"): forfeit = true
+		if not doubtful.is_empty() and str(row.get_meta("player_id")) == str(doubtful.id) and status != null and status.text == "Incertain": uncertain = true
+	check(forfeit, "Joueur blessé : type de blessure et forfait en rouge, d'après les blessures de la partie")
+	if not doubtful.is_empty(): check(uncertain, "Joueur à condition basse : incertain dans le tableau")
+	var cited := node("InboxConcernedName") as Label
+	check(cited != null and cited.text == str(hurt.name), "Panneau « Concerné » du joueur blessé")
+	check(node("InboxClubMailReply_progressif") != null and node("InboxClubMailReply_repos") != null, "Réponses du médecin proposées")
 	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
 		check(root.get_texture().get_image().save_png(capture_dir.path_join("reception-medical-1920x1080.png")) == OK, "Capture médical")
+		root.size = Vector2i(1280, 720)
+		DisplayServer.window_set_size(root.size)
+		app._render()
+		await settle(10)
+		app._render()
+		await settle(8)
+		check(root.get_texture().get_image().save_png(capture_dir.path_join("reception-medical-1280x720.png")) == OK, "Capture médical 1280")
+		root.size = Vector2i(1920, 1080)
+		DisplayServer.window_set_size(root.size)
+		app._render()
+		await settle(8)
 	# Espace : prochain non lu dans l'ordre de la liste affichée.
 	var marks: Dictionary = app.management_ui.reception.marks
 	for item: Dictionary in Reception._messages(app): marks[item.id] = {"read":true}

@@ -42,6 +42,8 @@ const SERVICE_ICONS = {"Presse":"globe", "Sélections":"flag", "Calendrier":"cal
 const SUBJECT_EXTRAS = [["favorites", "Favoris"], ["archives", "Archives"], ["waiting", "En attente"], ["info", "Infos"]]
 ## Délai avant qu'une demande du club sans réponse soit classée (club-mail.json, cadence.delaiReponse).
 const DELAI_REPONSE := 7
+## Condition sous laquelle un joueur apte figure à l'infirmerie comme « incertain » pour le prochain match.
+const INCERTAIN := 65.0
 ## Rubrique du journal selon le type de courrier de presse (club-mail.json).
 const RUBRIQUES = {"article":"COMPTE RENDU", "rumeur":"MERCATO", "critique":"TRIBUNE", "une_derby":"DERBY"}
 const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
@@ -641,7 +643,7 @@ static func _day_heading(rows: Control, caption: String, index: int) -> void:
 static func _deadline(app: Control, message: Dictionary, long: bool = false) -> String:
 	var today := _today(app)
 	var mail: Dictionary = message.get("club_mail", {})
-	if not mail.is_empty() and ClubMail.awaiting(app.model, mail) and str(mail.get("date", "")).length() >= 10:
+	if not mail.is_empty() and ClubMail.awaiting(app.model, mail) and str(mail.get("categorie", "")) != "meteo" and str(mail.get("date", "")).length() >= 10:
 		var limit := _shift(str(mail.date).left(10), DELAI_REPONSE)
 		return ("Réponds avant le %s : sans réponse, le dossier sera classé." if long else "avant le %s") % _short_date(limit, today, long)
 	var notice: Dictionary = message.get("calendar_notice", {})
@@ -1126,12 +1128,22 @@ static func infirmary_rows(model: Dictionary) -> Array[Dictionary]:
 		var weeks := float(player.get("injury", 0)) if (player.get("injury") is int or player.get("injury") is float) else 0.0
 		var record: Dictionary = stages.get(str(player.get("id", "")), {})
 		var condition := float(player.get("condition", 100)) if (player.get("condition") is int or player.get("condition") is float) else 100.0
+		var row := {"id":str(player.id), "name":str(player.get("name", "")), "pos":str(player.get("pos", "")), "weeks":weeks}
 		if weeks > 0:
-			var back := "≈ " + _short_date(_shift(today, roundi(weeks * 7)), today, false) if today.length() >= 10 else "%d sem." % ceili(weeks)
-			result.append({"id":str(player.id), "name":str(player.get("name", "")), "pos":str(player.get("pos", "")), "injury":"Blessé · %s" % P.plural(ceili(weeks), "semaine", "semaines"), "back":back, "status":"Forfait", "tone":"alert", "weeks":weeks})
+			row.injury = "%s · %s" % [ClubMail.injury_label(model, player), P.plural(ceili(weeks), "semaine", "semaines")]
+			row.back = ("≈ " + _short_date(_shift(today, roundi(weeks * 7)), today, false)) if today.length() >= 10 else "%d sem." % ceili(weeks)
+			row.status = "Forfait"; row.tone = "alert"
 		elif str(record.get("stage", "")) == "reprise":
 			var risky := condition < 80.0
-			result.append({"id":str(player.id), "name":str(player.get("name", "")), "pos":str(player.get("pos", "")), "injury":"En reprise · condition %d %%" % roundi(condition), "back":"Rétabli", "status":"Risque" if risky else "Apte", "tone":"gold" if risky else "mint", "weeks":0.0})
+			row.injury = "En reprise · condition %d %%" % roundi(condition)
+			row.back = "Rétabli"
+			row.status = "Risque" if risky else "Apte"; row.tone = "gold" if risky else "mint"
+		elif condition < INCERTAIN:
+			row.injury = "Gêne · condition %d %%" % roundi(condition)
+			row.back = "À évaluer"
+			row.status = "Incertain"; row.tone = "gold"; row.weeks = -1.0
+		else: continue
+		result.append(row)
 	result.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.weeks) > float(b.weeks))
 	return result
 
@@ -1366,7 +1378,7 @@ static func _side(card: Panel, app: Control, message: Dictionary, data: Dictiona
 			["CONTRAT", "Fin " + Portraits.contract_year(player.get("contractEnd")), C.IVORY],
 			["MORAL", moral, moral_tone],
 			["TEMPS DE JEU", ("%d min" % int(minutes)) if minutes is int or minutes is float else "—", C.IVORY],
-			["DISPONIBILITÉ", ("Blessé · %d sem." % ceili(injury)) if injury > 0 else ("En reprise" if P.player_in_recovery(app.model, str(player.get("id",""))) else "Apte"), C.ALERT if injury > 0 else C.MINT],
+			["DISPONIBILITÉ", ("%s · %d sem." % [ClubMail.injury_label(app.model, player), ceili(injury)]) if injury > 0 else ("En reprise" if P.player_in_recovery(app.model, str(player.get("id",""))) else "Apte"), C.ALERT if injury > 0 else C.MINT],
 		]
 		if value is int or value is float: facts.append(["VALEUR", _money(float(value)), C.GOLD])
 		for index in facts.size():
