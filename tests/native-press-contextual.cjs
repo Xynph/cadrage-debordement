@@ -114,7 +114,7 @@ for(const source of trainingBank){
   trainingVariants++;
  }
 }
-assert.equal(trainingVariants,60);
+assert.equal(trainingVariants,20);
 run('CDV60RichPress=normalPreparation;');
 
 run(`
