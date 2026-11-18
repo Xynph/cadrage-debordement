@@ -977,7 +977,7 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 		var text := C.wrap("\n\n".join(PackedStringArray(side)), 22, ink, false, 500)
 		text.add_theme_constant_override("line_spacing", C.px(5))
 		C.fill(text)
-		text.name = "InboxPressColumn"
+		text.name = "InboxPressColumn%d" % columns.get_child_count()
 		columns.add_child(text)
 	var photo_id := photo_resultat(str(mail.get("corps", "")) + " " + str(mail.get("sujet", "")))
 	if photo_id != "mail-pitch" and BanqueImages.texture(photo_id) != null:
