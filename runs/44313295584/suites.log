@@ -1,0 +1,30 @@
+::group::tests/godot-premiere-heure.cjs
+::error file=tests/godot-premiere-heure.cjs::Godot : ECHEC (124), durée 300 s, limite 300s
+::endgroup::
+::group::tests/godot-premiers-pas.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PREMIERS_PAS 51 controles, 0 echec
+
+CD_CPU_PROFILE suite=tests/godot-premiers-pas.cjs user_s=33.02 system_s=3.32 wall_s=29.03 cpu_pct=125% max_rss_kb=1649360
+PASS tests/godot-premiers-pas.cjs (29 s)
+::endgroup::
+::group::tests/godot-gabi-bandeau.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+GABI_PHASE demarrage 6149
+GABI_PHASE creation_carriere 7280
+GABI_PHASE reunions_club 1305
+GABI_PHASE mise_en_page 288
+GABI_ZONES { "Réception": 44, "Effectif": 296, "Composition": 101, "Préparation": 49, "Recrutement": 111, "Club": 46, "Finances": 37, "Classements": 79, "Formation": 65 } legere=Finances
+GABI_PHASE bandeaux 2629
+GABI_BULLE_MS effectif=18.849 zones=296
+GABI_BULLE_RECOUVRE effectif=2
+GABI_PHASE bulle 1317
+GABI_PHASE bureau 425
+GABI_PHASE coupe 398
+GABI_BANDEAU 392 controles, 0 echec
+
+CD_CPU_PROFILE suite=tests/godot-gabi-bandeau.cjs user_s=21.04 system_s=1.95 wall_s=20.49 cpu_pct=112% max_rss_kb=1106720
+PASS tests/godot-gabi-bandeau.cjs (21 s)
+::endgroup::

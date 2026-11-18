@@ -1,0 +1,3 @@
+tests/godot-premiere-heure.cjs
+tests/godot-premiers-pas.cjs
+tests/godot-gabi-bandeau.cjs
