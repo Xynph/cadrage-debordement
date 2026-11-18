@@ -112,6 +112,15 @@ func run() -> void:
 	check(Meteo.bandeau(Regie.meteo_montree(pause, false)).begins_with("Mi-temps"), "Ligne météo après l'action : la mi-temps")
 	check(bool(pause.atBreak), "Le modèle du moteur n'est pas modifié")
 
+	# Trace des légendes : en liaison, le texte est celui de l'arrêt (essai) et non celui du plan à venir (touche).
+	var lien := {"arrets": [2, 3], "kinds": ["try", "lineout"], "arret": 3}
+	var suite := {"index": 4, "kind": "lineout", "horloge": "46′"}
+	var fait := Regie.meta_legende("liaison", suite, lien, 0)
+	check(fait.kind == "try" and fait.journal == 2 and fait.horloge == "", "Liaison, plan A : la trace porte l'essai, pas la touche à venir (" + str(fait) + ")")
+	fait = Regie.meta_legende("liaison", suite, lien, 1)
+	check(fait.kind == "lineout" and fait.journal == 3, "Liaison, plan B : la trace porte la remise en jeu (" + str(fait) + ")")
+	fait = Regie.meta_legende("jeu", suite, lien, 0)
+	check(fait.kind == "lineout" and fait.journal == 4 and fait.horloge == "46′", "Hors liaison : la trace garde le plan courant (" + str(fait) + ")")
 	regie.free()
 	print("MATCH_TEXTE_IMAGE %d controles, %d echec" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)
