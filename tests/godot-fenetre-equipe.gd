@@ -157,7 +157,7 @@ func composition_enrichie(contexte: String) -> void:
 		if m.find_child("Portrait", true, false) != null: portraits += 1
 		if terrain != null: verifier(terrain.get_global_rect().grow(2).encloses(m.get_global_rect()), contexte + " : médaillon %d dans le terrain" % (slot + 1))
 	verifier(portraits == 15, contexte + " : 15 portraits sur le terrain (%d)" % portraits)
-	var niveaux := fenetre.medaillons.values().filter(func(m: Variant) -> bool: return not str(m.get("niveau")).is_empty()).size()
+	var niveaux: int = fenetre.medaillons.values().filter(func(m: Variant) -> bool: return not str(m.get("niveau")).is_empty()).size()
 	verifier(niveaux == 15, contexte + " : badge de niveau sur les 15 (%d)" % niveaux)
 	var etats := fenetre.find_children("TeamPlayerState", "", true, false).size()
 	verifier(etats >= 5, contexte + " : états après causerie (%d)" % etats)
@@ -237,7 +237,7 @@ func executer() -> void:
 		verifier(fenetre.poste_choisi == slot, "joueur du XV choisi")
 		var tuile: Button = fenetre.tuiles.get(entrant)
 		verifier(tuile != null and bool(tuile.get_meta("eligible", false)), "remplaçant autorisé en clair")
-		var interdit := fenetre.tuiles.keys().filter(func(id: String) -> bool: return not bool(fenetre.tuiles[id].get_meta("eligible", true)))
+		var interdit: Array = fenetre.tuiles.keys().filter(func(id: String) -> bool: return not bool(fenetre.tuiles[id].get_meta("eligible", true)))
 		for id: String in interdit: verifier(fenetre.tuiles[id].modulate.a < 0.6, "remplaçant non autorisé atténué " + id)
 		if tuile != null: tuile.pressed.emit()
 		verifier(app.last_command == "substitute", "clic sur le remplaçant : commande substitute")
