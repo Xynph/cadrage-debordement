@@ -9,9 +9,11 @@ static func rig_for(model: Node3D) -> Skeleton3D:
 		return child as Skeleton3D
 	return null
 
-## Porteur désigné par place (slot) quand la scène n'en nomme pas : mêlée = demi de mêlée puis
-## n°8 ; touche = sauteur (2e ligne) puis demi de mêlée.
-const PORTEURS_PAR_PLACE := {"scrum": [8, 7], "lineout": [3, 8]}
+## Porteur désigné par place (slot) quand la scène n'en nomme pas : mêlée = demi de mêlée (qui
+## introduit) puis n°8 ; mise en place de touche = talonneur lanceur sur la ligne, à défaut le
+## sauteur (même 2e ligne que match_gestes.gd, n° 5 puis n° 4) puis le demi. Après le lancer, la
+## touche gagnée suit le porteur que le moteur désigne (sauteur, puis demi ou ballon porté).
+const PORTEURS_PAR_PLACE := {"scrum": [8, 7], "lineout": [1, 4, 3, 8]}
 
 static func carrier_id(scene: Dictionary) -> String:
 	var kind := str(scene.get("kind", ""))

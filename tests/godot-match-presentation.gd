@@ -84,7 +84,7 @@ func run() -> void:
 		check(view._actors.is_empty() and not view._ball.visible, "No phantom carrier or ball after removal")
 	# Phases avec possession : le ballon est attaché à un porteur désigné, jamais seul au sol.
 	view.set_process(true)
-	var attendus :={"scrum": "1-8", "lineout": "1-3", "carry": "1-0", "reception": "1-0"}
+	var attendus :={"scrum": "1-8", "lineout": "1-1", "carry": "1-0", "reception": "1-0"}
 	for kind: String in attendus:
 		var pl: Array = []
 		for side in 2:

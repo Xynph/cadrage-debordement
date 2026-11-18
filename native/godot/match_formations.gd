@@ -215,7 +215,8 @@ func active() -> bool:
 
 func _mis_en_scene(id: String) -> bool:
 	return ((view._gestes != null and view._gestes.stages(id)) or (view._choregraphie != null and view._choregraphie.stages(id))
-		or view._is_pass_player(id) or not (view._actors[id].get("geste", {}) as Dictionary).is_empty())
+		or view._is_pass_player(id) or not (view._actors[id].get("geste", {}) as Dictionary).is_empty()
+		or (view.get("_impacts") != null and view._impacts.occupe(id)))
 
 
 ## Temps de la formation ; à la fin de la sortie de mêlée, les avants rejoignent leurs places de la scène.
