@@ -1,0 +1,86 @@
+Graine 13, club 102 : 1425 matchs au moteur complet.
+| comp | matchs | essais | points | partEssais | partTransfo | partPen | ecart | ecart7 | ecart15 | bonus4 | bonus3 | zeroEssai |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| accession | 245 | 5.7 | 49.1 | 58.1 | 17.6 | 24.4 | 12.6 | 34.7 | 32.7 | 31.4 | 15.7 | 5.1 |
+| nationale | 187 | 5.59 | 49.2 | 56.8 | 17 | 26.2 | 11.9 | 34.2 | 31 | 31.3 | 12.8 | 5.3 |
+| elite | 187 | 6.41 | 54.5 | 58.7 | 18.7 | 22.6 | 14.3 | 40.6 | 38.5 | 37.7 | 17.6 | 3.5 |
+| champ | 187 | 8.57 | 63.7 | 67.2 | 19.7 | 13.1 | 16.7 | 30.5 | 46 | 60.2 | 18.4 | 2.4 |
+| urc | 151 | 7.04 | 53 | 66.4 | 20.3 | 13.3 | 13.2 | 39.7 | 37.1 | 47.7 | 15.9 | 2.6 |
+| jlo-d1 | 114 | 8.74 | 64.5 | 67.8 | 20.4 | 11.9 | 17.3 | 30.7 | 47.4 | 66.2 | 21.9 | 3.1 |
+| prem | 93 | 8.49 | 62.8 | 67.6 | 21.2 | 11.1 | 17.7 | 31.2 | 46.2 | 57.5 | 21.5 | 1.1 |
+| srp | 85 | 9.41 | 68.1 | 69.1 | 21.9 | 9 | 15 | 32.9 | 40 | 69.4 | 21.8 | 1.2 |
+| champions | 63 | 6.83 | 54.2 | 63 | 20.1 | 16.9 | 11 | 44.4 | 23.8 | 44.4 | 12.7 | 1.6 |
+| jlo-d2 | 56 | 6.91 | 52.6 | 65.7 | 19.1 | 15.2 | 15.4 | 25 | 35.7 | 42 | 16.1 | 2.7 |
+| challenge | 51 | 6.82 | 53.9 | 63.3 | 19.9 | 16.7 | 13.8 | 27.5 | 31.4 | 47.1 | 13.7 | 3.9 |
+| jlo-d1-d2 | 4 | 5.5 | 47.3 | 58.2 | 18 | 23.8 | 5.8 | 75 | 0 | 25 | 0 | 0 |
+| access-nationale | 1 | 4 | 36 | 55.6 | 11.1 | 33.3 | 18 | 0 | 100 | 50 | 50 | 50 |
+| access | 1 | 4 | 51 | 39.2 | 7.8 | 52.9 | 7 | 100 | 0 | 0 | 0 | 0 |
+| TOUS | 1425 | 7.08 | 55.9 | 63.3 | 19.3 | 17.4 | 14.3 | 34.7 | 37.5 | 46 | 17 | 3.4 |
+| comp | entrees22 | essaisParEntree | penalites | auxPoteaux | touche | aLaMain | reussiteButs | transfo | pertes |
+|---|---|---|---|---|---|---|---|---|---|
+| accession | 4.6 | 1.23 | 14.5 | 38 | 55.8 | 6.2 | 73.8 | 75.6 | 16.5 |
+| nationale | 4.4 | 1.27 | 16 | 38.3 | 56.5 | 5.2 | 72 | 75 | 14.8 |
+| elite | 4.7 | 1.35 | 13.9 | 39.2 | 55.1 | 5.7 | 77.3 | 79.5 | 15.2 |
+| champ | 4.8 | 1.78 | 15.5 | 25.4 | 69.7 | 4.9 | 73 | 73.3 | 11.3 |
+| urc | 5.1 | 1.38 | 14.1 | 23.9 | 68.4 | 7.8 | 72.4 | 76.3 | 14.3 |
+| jlo-d1 | 5.1 | 1.72 | 13.7 | 26.8 | 68 | 5.3 | 72.6 | 75.1 | 12.6 |
+| prem | 5.2 | 1.63 | 13.2 | 24.5 | 68.5 | 6.9 | 74.6 | 78.4 | 12.5 |
+| srp | 5.3 | 1.78 | 13.1 | 21.4 | 69.8 | 8.8 | 75.3 | 79.5 | 12.4 |
+| champions | 5 | 1.37 | 12.8 | 32.8 | 62.4 | 4.7 | 73.8 | 79.8 | 14.7 |
+| jlo-d2 | 4.9 | 1.42 | 15.7 | 24.3 | 71.6 | 4.1 | 71.6 | 72.9 | 12.1 |
+| challenge | 5.1 | 1.34 | 13.7 | 28.8 | 64.3 | 6.8 | 78.5 | 78.7 | 14.8 |
+| jlo-d1-d2 | 4 | 1.38 | 13 | 40.4 | 53.8 | 5.8 | 75 | 77.3 | 20.3 |
+| access-nationale | 2 | 2 | 10 | 60 | 40 | 0 | 66.7 | 50 | 9 |
+| access | 4 | 1 | 14 | 71.4 | 28.6 | 0 | 90 | 50 | 9 |
+| TOUS | 4.8 | 1.46 | 14.4 | 31.3 | 62.7 | 6 | 73.9 | 76.4 | 14 |
+Marqueurs par maillot (% des essais) : 1:1.6 2:8.3 3:1.4 4:2.6 5:2.5 6:6.1 7:6.1 8:8.1 9:7 10:3.8 11:13.7 12:7 13:7.8 14:13.9 15:10
+Groupes : {"avants":36.8,"premiereLigne":11.3,"troisiemeLigne":20.3,"charniere":10.8,"centres":14.8,"ailiers":27.6,"arriere":10} · origines : {"maul":1205,"open":8580,"scrum":300} · inconnus : 1
+Ailier titulaire : 0.49 essai par match
+| comp | sifflees | parPhase | melees | ptsPenMatch |
+|---|---|---|---|---|
+| accession | 17.8 | jeu 10.8, melee 2.9, touche 1.2, attaque 2.8 | 9.9 | 12 |
+| nationale | 19.7 | melee 3.1, jeu 11.7, attaque 3.6, touche 1.3 | 10.2 | 12.9 |
+| elite | 17.1 | touche 1.2, jeu 10.3, attaque 2.8, melee 2.8 | 9.4 | 12.3 |
+| champ | 19.9 | attaque 3.8, jeu 12, melee 2.6, touche 1.5 | 8.7 | 8.3 |
+| urc | 17.6 | jeu 10.6, melee 2.9, attaque 2.6, touche 1.5 | 9.4 | 7 |
+| jlo-d1 | 17.3 | jeu 10.5, attaque 3.1, melee 2.4, touche 1.3 | 8.2 | 7.7 |
+| prem | 16.8 | jeu 10.5, touche 1.6, attaque 2.4, melee 2.4 | 8.5 | 7 |
+| srp | 16.7 | attaque 2.8, jeu 10, melee 2.4, touche 1.5 | 7.8 | 6.1 |
+| champions | 16 | attaque 2.6, jeu 9.7, melee 2.6, touche 1.1 | 9.2 | 9.1 |
+| jlo-d2 | 20.1 | melee 2.9, touche 1.4, attaque 3.5, jeu 12.2 | 9 | 8 |
+| challenge | 17.1 | melee 3, attaque 2.8, jeu 10.1, touche 1.1 | 9.3 | 9 |
+| jlo-d1-d2 | 16.5 | jeu 11.3, attaque 2.8, touche 1, melee 1.5 | 8 | 11.3 |
+| access-nationale | 15 | jeu 11, attaque 3, melee 1 | 9 | 12 |
+| access | 17 | attaque 4, jeu 10, touche 1, melee 2 | 9 | 27 |
+| TOUS | 18 | melee 2.8, jeu 10.9, attaque 3, touche 1.3 | 9.2 | 9.7 |
+| tranche | matchs | favori | favoriDomicile | favoriExterieur |
+|---|---|---|---|---|
+| 0-1 | 190 | 51.8 | 68.3 | 36.3 |
+| 1-2 | 213 | 57.5 | 71.6 | 44 |
+| 2-3 | 211 | 61.6 | 73.8 | 49.5 |
+| 3-5 | 302 | 61.3 | 73 | 49.3 |
+| 5-+ | 348 | 80 | 88.9 | 70.9 |
+Favori (effectif) toutes tranches : 64.6 % ; surprises (écart ≥ 3 perdu) : 182 sur 1264 matchs de championnat
+| comp | clubs | premier | dernier | ecartPoints | rangMieuxArme | rang2 | spearmanEffectif | spearmanReel | champion |
+|---|---|---|---|---|---|---|---|---|---|
+| elite | 14 | 99 | 32 | 67 | 1 | 6 | 0.69 | 0.67 | TCX (n° 1 effectif) |
+| accession | 16 | 101 | 39 | 62 | 2 | 1 | 0.78 | 0.91 | OHX (n° 2 effectif) |
+| prem | 10 | 65 | 19 | 46 | 3 | 6 | 0.68 | 0.76 | LSR (n° 4 effectif) |
+| urc | 16 | 86 | 16 | 70 | 2 | 8 | 0.81 | 0.64 | CTB (n° 3 effectif) |
+| srp | 10 | 67 | 19 | 48 | 3 | 2 | 0.87 | 0.82 | VDB (n° 3 effectif) |
+| jlo-d1 | 12 | 69 | 11 | 58 | 5 | 1 | 0.89 | 0.91 | AKO (n° 2 effectif) |
+| jlo-d2 | 8 | 55 | 19 | 36 | 6 | 1 | 0.19 | 0.19 | FDH (n° 2 effectif) |
+| nationale | 14 | 80 | 35 | 45 | 5 | 2 | 0.83 | 0.78 | MSR (n° 4 effectif) |
+| champ | 14 | 95 | 21 | 74 | 3 | 7 | 0.74 | 0.73 | SCX (n° 4 effectif) |
+| comp | spearman | favori2 | favori5 | effectif1 | effectif3 | domicile | meilleurRang | victoiresTete | victoiresDernier | tete |
+|---|---|---|---|---|---|---|---|---|---|---|
+| elite | 0.48 | 63.2 (106) | 65 (40) | - | - | 66.5 | 1 | 22/26 | 7/26 | TCX 99 (74.7), MGX 81 (70.3), TRR 79 (71.2) |
+| accession | 0.67 | 60.4 (101) | 71.4 (7) | - | - | 67.1 | 6 | 22/30 | 7/30 | OHX 101 (64.6), APX 91 (64), ACX 90 (62.6) |
+| prem | 0.67 | 67.2 (61) | 73.1 (26) | - | - | 61.1 | 3 | 13/18 | 3/18 | LSR 65 (70.6), BEX 64 (70.6), NNX 63 (71.6) |
+| urc | 0.74 | 71 (93) | 84.2 (38) | - | - | 56.3 | 2 | 17/18 | 2/18 | CTB 86 (68.4), DLX 75 (71.2), PJX 59 (67.4) |
+| srp | 0.7 | 66.7 (48) | 76.5 (17) | - | - | 57.5 | 1 | 13/16 | 3/16 | VDB 67 (70.9), ALC 57 (68.3), GDD 54 (69.6) |
+| jlo-d1 | 0.89 | 71.6 (88) | 77.6 (58) | - | - | 59.3 | 1 | 13/18 | 1/18 | AKO 69 (69.2), SSM 66 (67.3), LDM 66 (66.7) |
+| jlo-d2 | 0.19 | 52.1 (48) | 53.3 (30) | - | - | 53.6 | 6 | 11/14 | 4/14 | FDH 55 (60.4), GDT 51 (59.4), TDK 33 (57.8) |
+| nationale | 0.82 | 62.4 (117) | 74.2 (31) | - | - | 57.1 | 5 | 17/26 | 7/26 | MSR 80 (58.2), CMX 74 (58.8), ORL 74 (56.1) |
+| champ | 0.79 | 65.7 (137) | 75.7 (74) | - | - | 60.4 | 3 | 19/26 | 4/26 | SCX 95 (56.8), MDS 92 (56.8), WMT 90 (61) |
+| TOUS | 0.72 (effectif) | 64.9 (901) | 74.4 (352) | 65.6 (1074) | 70.6 (650) | 60.8 | - | - | - | - |

@@ -1,0 +1,3 @@
+mesure-monde
+ref=mesure-monde/avant-style-ia-20261118111654
+sha=48003ce7d2d7315dae9c2eca3f0467cbcd5f0fd1
