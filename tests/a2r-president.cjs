@@ -127,6 +127,9 @@ test('Moteur Monde : audition de juin, mesures, courrier, apport, appel, échéa
     assert.equal(dec[ids.fr[0]].niveau, 4); assert.equal(dec[ids.fr[1]].niveau, 1); assert.equal(dec[ids.fr[2]].niveau, 2);
     assert.equal(dec[ids.etr], undefined, 'l’A2R ne contrôle que les clubs français');
     assert.equal(Object.keys(dec).length, 4, 'les clubs aux comptes sains ne sont pas convoqués');
+    // Étiquette de santé financière (club-finance-health.cjs) : seuls les clubs « Fragile » passent devant la commission.
+    assert.equal(lire('typeof santeFiche'), 'function');
+    assert.ok([0, ...ids.fr].every(id => lire(`santeFiche(${id}).etiquette`) === 'fragile'));
     // Mesures : club joué sans recrue ; club géré interdit = masse gelée ; encadré = masse du jour de l'audition.
     assert.match(lire('a2rRefusRecrue(1000)'), /30 juin/);
     const g = lire(`(()=>{const a=S.clubs[${ids.fr[0]}],b=S.clubs[${ids.fr[1]}];return {a:aiRosterWageLimit(a),am:Math.min(budgetMasse(a),aiRosterWageLimitA2RV1(a)),b:aiRosterWageLimit(b),be:S.a2r.decisions[${ids.fr[1]}].encadrement,bv:aiRosterWageLimitA2RV1(b)};})()`);
