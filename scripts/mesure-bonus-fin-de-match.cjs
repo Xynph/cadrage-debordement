@@ -11,7 +11,7 @@
 // Sortie : victoires, nuls, défaites, bonus offensif et défensif obtenus, points de classement, essais marqués et
 // encaissés, ballons perdus (fautes de main) sur les vingt dernières minutes.
 //
-// Usage : node scripts/mesure-bonus-fin-de-match.cjs [N=60] [--contre=0] [--sans-miroir] [--situations=offensif,tenu]
+// Usage : node scripts/mesure-bonus-fin-de-match.cjs [N=60] [--minute=60] [--contre=0] [--sans-miroir] [--situations=offensif,tenu]
 //         [--essai=securiser:conquete/prudente/points] (variantes de consignes séparées par « ; », pour l'étalonnage)
 // `--contre=0` : sans le ballon de contre (dist/tactical-plans.js, CONTRE), pour comparer.
 const { ouvrir, jusquAuMatch } = require('../tests/helpers/carriere-monde.cjs');
@@ -21,13 +21,15 @@ const B = require('../native/engine/match-bonus.cjs');
 const args = process.argv.slice(2);
 const N = Number(args.find(a => /^\d+$/.test(a)) || 60);
 const contre = !args.includes('--contre=0'), miroir = !args.includes('--sans-miroir');
+// --minute=72 : situation posée à la 72e au lieu de la 60e (fin de match serrée, docs/chrono-arrets-de-jeu-20261118.md).
+const MINUTE = Number((args.find(a => a.startsWith('--minute=')) || '--minute=60').slice(9));
 const choisies = (args.find(a => a.startsWith('--situations=')) || '').slice(13).split(',').filter(Boolean);
 // Variante de consigne à l'essai : --essai=securiser:conquete/prudente/points
 const essai = (args.find(a => a.startsWith('--essai=')) || '').slice(8);
 const SITUATIONS = { offensif: { score: [24, 21], essais: [4, 2] }, defensif: { score: [21, 29], essais: [2, 3] }, tenu: { score: [22, 26], essais: [2, 3] } };
 
 function mesurer(options = {}) {
-  const n = options.n ?? N, avecContre = options.contre ?? contre, avecMiroir = options.miroir ?? miroir;
+  const n = options.n ?? N, minute = options.minute ?? MINUTE, avecContre = options.contre ?? contre, avecMiroir = options.miroir ?? miroir;
   const situations = options.situations ?? (choisies.length ? choisies : Object.keys(SITUATIONS));
   const jeu = ouvrir({ testVm: true, hebdomadaire: true });
   try {
@@ -39,7 +41,7 @@ function mesurer(options = {}) {
     const vm = jeu.bridge.vm;
     // La 60e minute, jouée par le moteur sans présentation, tirages fixés.
     vm.run(`(()=>{const l=S.live,reel=Math.random;let x=20261118;Math.random=()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296};
-      try{let g=0;while(!l.finished&&matchMinute(l)<60&&g++<400){l.paused=false;if(l.flow?.atBreak)resumeFlowHalf(l);advanceRugby(l);}}finally{Math.random=reel}
+      try{let g=0;while(!l.finished&&matchMinute(l)<${minute}&&g++<400){l.paused=false;if(l.flow?.atBreak)resumeFlowHalf(l);advanceRugby(l);}}finally{Math.random=reel}
       if(${avecMiroir})for(let k=0;k<15;k++){const a=matchPlayer(l,0,l.sheets[0].on[k]),b=matchPlayer(l,1,l.sheets[1].on[k]);if(a&&b){b.skills=JSON.parse(JSON.stringify(a.skills));b.condition=a.condition;}}
       globalThis.__mesureBonus=JSON.stringify(S);})()`);
     const consignes = { base: null, ...B.CONSIGNES };
@@ -72,7 +74,7 @@ function mesurer(options = {}) {
 
 if (require.main === module) {
   const r = mesurer();
-  console.log(`# ${N} fins de match par consigne (60e → fin), Top 14, ${miroir ? 'XV identiques' : 'XV réels'}, ballon de contre ${contre ? 'actif' : 'coupé'}`);
+  console.log(`# ${N} fins de match par consigne (${MINUTE}e → fin), Top 14, ${miroir ? 'XV identiques' : 'XV réels'}, ballon de contre ${contre ? 'actif' : 'coupé'}`);
   for (const [sit, lignes] of Object.entries(r)) {
     console.log(`\n## ${sit} (${JSON.stringify(SITUATIONS[sit])})`);
     console.log('consigne   | V    | N    | D    | BO   | BD   | pts  | essais + | essais − | ballons perdus');

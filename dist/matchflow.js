@@ -1,6 +1,6 @@
 'use strict';
 function flowRules(l){return restartRules(l)&&l.flowVersion===1}
-function initializeMatchFlow(l,fixee=null){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false};if(QUICK_TAP_RULES)l.quickTapVersion=1;if(SET_PIECE_FATIGUE_RULES)l.setPieceFatigueVersion=1;if(WEATHER_RULES){l.weatherVersion=1;l.meteo=fixee?{pluie:fixee.pluie,vent:fixee.vent,chaleur:fixee.chaleur,terrain:fixee.terrain,sens:fixee.sens}:tirerMeteo(l);if(WIND_DIRECTION_RULES)l.windVersion=1}}
+function initializeMatchFlow(l,fixee=null){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false};if(QUICK_TAP_RULES)l.quickTapVersion=1;if(SET_PIECE_FATIGUE_RULES)l.setPieceFatigueVersion=1;if(CHRONO_RULES){l.chronoVersion=1;l.chrono={prochaine:60-CHRONO.action,debut:0,arret:0,relance:null,actions:0,arrets:{}}}if(WEATHER_RULES){l.weatherVersion=1;l.meteo=fixee?{pluie:fixee.pluie,vent:fixee.vent,chaleur:fixee.chaleur,terrain:fixee.terrain,sens:fixee.sens}:tirerMeteo(l);if(WIND_DIRECTION_RULES)l.windVersion=1}}
 function periodBoundary(l){return l.flow.period===1?40:l.flow.fullEnd}
 function atHalftime(l){return flowRules(l)?l.flow.atBreak:l.minute===40&&l.paused&&!l.finished}
 function matchMinute(l){if(!flowRules(l)||l.flow.period===1)return l.minute;return 40+l.minute-l.flow.firstEnd}
@@ -14,6 +14,7 @@ function endFlowPeriod(l){
 function resumeFlowHalf(l){
  if(!flowRules(l)||!l.flow.atBreak)return;
  l.flow.period=2;l.flow.atBreak=false;l.flow.fullEnd=l.minute+40;l.flow.ballDead=false;
+ if(chronoRules(l)){const c=l.chrono;c.relance=null;c.arret=0;c.prochaine=l.minute*60+60-CHRONO.action}
  performKickRestart(l,'kickoff',1-l.firstKickoff,'second-half',l.firstKickoff);
 }
 function clearAdvantage(l,message='Avantage terminé : bénéfice réel obtenu.'){
@@ -96,6 +97,49 @@ function eventClock(l,event){if(!flowRules(l)||event.period===undefined)return `
 // pénalité jouée à la main, la suite des tirages est celle d'avant. Coefficients choisis pour
 // le jeu (ordres de grandeur : minorité des pénalités, surtout près de la ligne quand on est
 // mené), non mesurés.
+// Temps réel des arrêts de jeu (docs/chrono-arrets-de-jeu-20261118.md). Avant : une action du moteur valait une minute
+// de chrono quoi qu'il arrive ; un essai transformé ou une pénalité tentée au but ne coûtaient qu'une minute avant
+// l'action suivante, si bien que prendre les points en fin de match ne mangeait pas de temps. Pour les rencontres créées
+// avec `chronoVersion: 1` (les matchs commencés avant gardent leurs règles), le chrono compte en secondes : chaque
+// action de jeu dure CHRONO.action secondes de match et les arrêts y ajoutent leur temps (tir au but dans le délai de
+// la loi 8 — 60 s, 45 s en Top 14 depuis 2026-2027 —, mise en place du renvoi, coup de pied en touche et alignement de
+// la pénaltouche). Le renvoi après des points (et le renvoi aux 22 après un tir manqué) est joué au début de l'action
+// suivante, au bon moment du chrono : s'il tombe après la fin du temps réglementaire, la période s'arrête (loi 5).
+// Une minute compte ainsi zéro, une ou deux actions ; la durée d'une action est calée pour garder en moyenne le même
+// nombre d'actions par match qu'avant (les scores ne chutent pas). Aucun tirage ajouté. Réglages de jeu.
+var CHRONO={
+ action:45,                        // secondes de match par action (calée : même nombre d'actions par match qu'avant)
+ buteur:{base:60,elite:45},        // délai pour buter, pénalité et transformation (loi 8 ; LNR, Top 14 2026-2027)
+ essai:{avant:15,renvoi:25},       // essai accordé et buteur en place ; mise en place du renvoi au centre
+ penalite:{avant:10,renvoi:25},    // annonce du tir et ballon posé ; renvoi (centre, 22) ou remise en jeu après le tir
+ penaltouche:30                    // coup de pied en touche et alignement formé (loi 18 : 30 s)
+};
+let CHRONO_RULES=1;
+function chronoRules(l){return flowRules(l)&&l.chronoVersion===1&&!!l.chrono}
+function delaiButeur(l){return l.worldContext?.competitionId==='elite'?CHRONO.buteur.elite:CHRONO.buteur.base}
+function chronoArret(l,quoi){
+ if(!chronoRules(l))return 0;const b=delaiButeur(l);
+ const s=quoi==='essai'?CHRONO.essai.avant+b+CHRONO.essai.renvoi:quoi==='penalite'?CHRONO.penalite.avant+b+CHRONO.penalite.renvoi:quoi==='penaltouche'?CHRONO.penaltouche:0;
+ l.chrono.arret+=s;l.chrono.arrets[quoi]=(l.chrono.arrets[quoi]||0)+s;return s;
+}
+// Renvoi après des points ou un tir manqué : différé à l'action suivante quand le chrono compte les arrêts.
+function relancer(l,kind,team,cause,by){if(chronoRules(l)){l.chrono.relance=[kind,team,cause,by];return true}return performKickRestart(l,kind,team,cause,by)}
+// Une minute de chrono : les actions dont le départ tombe dans la minute (0, 1 ou 2), chacune précédée du renvoi en
+// attente. Un renvoi dû après la fin du temps réglementaire termine la période dès que la minute y arrive.
+function chronoMinute(l){
+ const c=l.chrono,fin=l.minute*60;
+ if(c.relance&&l.minute>=periodBoundary(l)){const r=c.relance;c.relance=null;performKickRestart(l,...r);if(l.finished||l.flow.atBreak)return}
+ while(c.prochaine<fin&&!l.finished&&!l.flow.atBreak){
+  c.debut=c.prochaine;
+  if(c.relance){const r=c.relance;c.relance=null;performKickRestart(l,...r);if(l.finished||l.flow.atBreak)break}
+  const observation=beginPlanObservation(l),side=l.possession;
+  l.stats[side].possession++;l.stats[0].territory+=l.territory;l.stats[1].territory+=100-l.territory;
+  advanceFlowPlay(l);finishPlanObservation(l,observation);
+  c.actions++;c.prochaine=c.debut+CHRONO.action+c.arret;c.arret=0;
+ }
+}
+// Secondes écoulées dans le match au départ de l'action en cours (chrono des arrêts), sinon null.
+function chronoSecondes(l){return chronoRules(l)?l.chrono.debut:null}
 let QUICK_TAP_RULES=1;
 // Fatigue des phases arrêtées (docs/fatigue-phases-arretees-20261116.md). Avant : la fatigue retirait jusqu'à la moitié
 // de la compétence, quel que soit le geste (skill(p,k,true) = n × (0,5 + condition × 0,005)). Un coup de pied au but
