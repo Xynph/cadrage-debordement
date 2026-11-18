@@ -1,0 +1,86 @@
+name: Mesure Monde (10 graines)
+# Mesure d'une saison complète de carrière Monde (scripts/mesure-essais-monde.cjs, club 102) sur 10 graines en
+# parallèle, pour comparer un réglage du moteur avant/après sans occuper la machine de Claude ni le PC de Léo.
+# Déclencheur : push d'une branche `mesure-monde/<nom>` (le code mesuré est celui de la branche poussée, qui doit
+# contenir ce fichier) ; la branche est supprimée à la fin. Lancement et lecture : `bash ci/mesure-monde.sh`.
+# Résultats : partie « analyse » de chaque graine (g<graine>.json) et tableau de fin (g<graine>.txt), publiés par git
+# dans la branche `resultats-en-ligne` sous runs/<run_id>/ (même publication que « Tests en ligne à la demande »).
+run-name: "Mesure Monde ${{ github.ref_name }}"
+on:
+  push:
+    branches: ['mesure-monde/**']
+permissions:
+  contents: read
+concurrency:
+  group: mesure-monde-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  graine:
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        graine: [1, 2, 3, 4242, 7, 11, 12, 13, 14, 15]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - name: Saison Monde, graine ${{ matrix.graine }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/out"
+          node --max-old-space-size=1400 scripts/mesure-essais-monde.cjs ${{ matrix.graine }} 102 --json "$RUNNER_TEMP/brut.json" > "$RUNNER_TEMP/out/g${{ matrix.graine }}.txt"
+          node -e 'const fs=require("fs");fs.writeFileSync(process.argv[2],JSON.stringify(JSON.parse(fs.readFileSync(process.argv[1])).analyse))' "$RUNNER_TEMP/brut.json" "$RUNNER_TEMP/out/g${{ matrix.graine }}.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mesure-g${{ matrix.graine }}
+          path: ${{ runner.temp }}/out/
+
+  # Publication par git (seul job à écrire) : aucun code de la branche mesurée n'y est exécuté, le script vient de main.
+  publier:
+    needs: graine
+    if: ${{ always() }}
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    concurrency:
+      group: resultats-en-ligne-publication
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Récupérer les résultats
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: mesure-g*
+          merge-multiple: true
+          path: ${{ runner.temp }}/resultats
+      - name: Publier dans la branche resultats-en-ligne
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'mesure-monde\nref=%s\nsha=%s\n' "${{ github.ref_name }}" "${{ github.sha }}" > "$RUNNER_TEMP/resultats/source.txt"
+          mkdir "$RUNNER_TEMP/outil" && cd "$RUNNER_TEMP/outil" && git init -q
+          git fetch -q --no-tags --depth=1 "https://github.com/${{ github.repository }}.git" main
+          git show FETCH_HEAD:ci/en-ligne-publier.sh > "$RUNNER_TEMP/en-ligne-publier.sh"
+          b64="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::$b64"
+          export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.https://github.com/.extraheader" GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $b64"
+          cd "$RUNNER_TEMP"
+          bash en-ligne-publier.sh "$RUNNER_TEMP/resultats" "${{ github.run_id }}" "https://github.com/${{ github.repository }}.git"
+      - name: Supprimer la branche qui a déclenché la mesure
+        if: ${{ always() }}
+        shell: bash
+        env:
+          BRANCHE: ${{ github.ref_name }}
+        run: |
+          [[ "$BRANCHE" =~ ^mesure-monde/[A-Za-z0-9._-]+$ ]] || { echo "Branche $BRANCHE hors préfixe mesure-monde/ : rien supprimé."; exit 0; }
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$BRANCHE" && echo "Branche $BRANCHE supprimée."
