@@ -962,24 +962,24 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	scroll.add_child(content)
 	# Pied (pièces liées, réponses, actions) dans un calque propre : il suit le contenu si celui-ci s'avère plus haut.
 	var top := body_top + body_height + 18
-	var footer := Panel.new()
-	footer.name = "InboxFooter"
-	footer.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(footer)
+	var bottom := Panel.new()
+	bottom.name = "InboxFooter"
+	bottom.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(bottom)
 	var y := 0.0
 	if attachments > 0:
-		_attachments(footer,app,state,message,y,focused,true,reading_width)
+		_attachments(bottom,app,state,message,y,focused,true,reading_width)
 		y += attachments + 12
 	if not replies.is_empty():
-		D.text(footer,PAD,y+24,"TA RÉPONSE",19,C.GOLD,700,400).name = "InboxReplyHeading"
-		_reply_cards(footer, app, message, replies, y + 40)
+		D.text(bottom,PAD,y+24,"TA RÉPONSE",19,C.GOLD,700,400).name = "InboxReplyHeading"
+		_reply_cards(bottom, app, message, replies, y + 40)
 		y += 40 + float(replies.height) + 18
-	_actions(footer,app,state,message,int(y))
+	_actions(bottom,app,state,message,int(y))
 	y += _h(46)
-	D.place(footer, Rect2(0, top, _w, y))
+	D.place(bottom, Rect2(0, top, _w, y))
 	D.text(card,PAD,hint_base,"Espace : message non lu suivant",16,C.FAINT.lightened(.1),500,reading_width).name = "InboxSpaceHint"
-	_settle_reading.call_deferred(scroll, footer, (hint_base - 34) * C.density)
+	_settle_reading.call_deferred(scroll, bottom, (hint_base - 34) * C.density)
 
 ## Une fois le contenu mis en page : si sa hauteur réelle dépasse la mesure, la zone de lecture grandit (dans la
 ## place libre au-dessus du rappel Espace) et le pied descend d'autant ; aucun défilement inutile.
