@@ -6,6 +6,7 @@ const U = preload("res://ui/immersive08/club_ui.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Relations = preload("res://ui/relationships_view.gd")
 const G = preload("res://ui/game_skin.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 const KEY = "immersive08_locker_tab"
 const LOCKER_ART = "res://art/immersive08/lockerroom.png"
 const STATUSES = {"open":"À suivre", "honored":"Honoré", "broken":"Non tenu", "expired":"Clos sans pénalité"}
@@ -28,7 +29,7 @@ static func build(app: Control, canvas: Control) -> void:
 static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	var hero := D.panel(canvas,Rect2(0,0,2248,227),"","","","LockerHero")
 	hero.clip_contents = true
-	var art := _art()
+	var art := _art(app.model)
 	D.photo(hero,art,Rect2(986,1,1261,225))
 	U.art_fade(hero,Rect2(986,1,1261,225))
 	U.italic(D.text(hero,26,43,"LE VESTIAIRE",30,C.GOLD,700,375),700)
@@ -56,8 +57,27 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 static func _score(value: Variant) -> String:
 	return "%s / 100" % G.n(value) if value != null else "—"
 
-static func _art() -> String:
+## Vestiaire de la banque d'images selon le dernier résultat du club (victoire, défaite ; sinon avant-match),
+## puis l'ancienne illustration en repli.
+static func _art(model: Dictionary = {}) -> String:
+	var id := BanqueImages.choisir("vestiaire", {"phase": "post", "resultat": dernier_resultat(model)})
+	if id.is_empty() or dernier_resultat(model) in ["", "nul"]: id = BanqueImages.choisir("vestiaire", {"phase": "pre"})
+	if not id.is_empty() and BanqueImages.texture(id) != null: return id
 	return "lockerroom" if ResourceLoader.exists(LOCKER_ART) else "tactics-briefing"
+
+## Dernier résultat du club au classement (`form`, du plus ancien au plus récent ; lettres V/N/D ou W/D/L).
+static func dernier_resultat(model: Dictionary) -> String:
+	if model.is_empty() or not model.get("club") is Dictionary: return ""
+	for row: Variant in P.standings(model):
+		if not row is Dictionary or row.get("id") != model.club.get("id"): continue
+		var form: Array = row.get("form", []) if row.get("form") is Array else []
+		if form.is_empty(): return ""
+		var anglais := "W" in form or "L" in form
+		var x := str(form[-1])
+		if x in ["V", "W"]: return "victoire"
+		if x == "L" or (x == "D" and not anglais): return "defaite"
+		return "nul"
+	return ""
 
 static func _name(model: Dictionary, id: Variant) -> String:
 	if id == null: return "Aucun relais disponible"
@@ -101,7 +121,7 @@ static func _event(card: Panel, app: Control, data: Dictionary) -> void:
 			for j in notes.size(): D.text(card,489,y+26+j*24,notes[j],22,C.MUTED,500,812)
 		if not event.get("available",false): D.text(card,23,512,data.get("reason","Les choix sont indisponibles dans cette phase."),22,C.AMBER,600,1278)
 	else:
-		D.photo(card,_art(),Rect2(22,74,1283,222))
+		D.photo(card,_art(app.model),Rect2(22,74,1283,222))
 		D.text(card,23,358,"Aucun entretien hebdomadaire à traiter",38,C.IVORY,700,1278)
 		D.text(card,23,404,"Les entretiens individuels et les duos restent dans les dossiers du groupe.",24,C.MUTED,500,1278)
 		D.button(card,Rect2(23,433,484,57),"Consulter les dossiers du groupe",func(): U.select(app,KEY,"people","LockerTab_people"),true,"arrow",false,U.GREEN,"LockerOpenPeople")

@@ -11,6 +11,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/game_skin.gd")
 const Present = preload("res://ui/immersive08/projection.gd")
 const MeteoTexte = preload("res://ui/contextual/meteo_texte.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 const ROUGE := Color("df897d")
 const MOIS := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 const JOURS := ["DIM.", "LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM."]
@@ -57,8 +58,13 @@ static func mois_annee(iso: Variant) -> String:
 	if parts.size() != 3 or not parts[1].is_valid_int(): return "—"
 	return "%s %s" % [MOIS[clampi(int(parts[1]) - 1, 0, 11)], parts[0]]
 
-## Photo d'avant-match selon la météo annoncée (`next.meteo`).
+## Photo d'avant-match selon la météo annoncée (`next.meteo`) et l'heure du coup d'envoi : en journée, la
+## pelouse sous le ciel du jour (banque d'images) ; le soir et la nuit, l'entrée des joueurs par le tunnel
+## éclairé (photos de la maquette validée).
 static func photo_meteo(next: Dictionary) -> String:
+	if BanqueImages.moment(next.get("kickoffLocal"), next.get("date", "")) == "jour":
+		var pelouse := BanqueImages.choisir("avant-match", {"moment": "jour", "meteo": BanqueImages.meteo(next.get("meteo"))})
+		if not pelouse.is_empty() and BanqueImages.texture(pelouse) != null: return pelouse
 	var meteo: Variant = next.get("meteo")
 	var id := "match-tunnel-neutre"
 	if meteo is Dictionary:

@@ -1,0 +1,142 @@
+{
+ "schema": "rugby-legacy-banque-images-jeu-v1",
+ "source": "Xynph/rugby-legacy-banque-images@lot-12",
+ "usage": "Illustrations fictives générées par IA (aucun vrai nom, logo ni visage réel). Choix par ui/banque_images.gd.",
+ "qualite_webp": 88,
+ "images": [
+  {
+   "id": "stade-pelouse-sec-jour",
+   "categorie": "pelouse",
+   "fichier": "pelouse/stade-pelouse-sec-jour.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 322446,
+   "sha256": "49a82ace28d1e1396be22f8b96f879beb270b1a9172c59bb75c2abf6ec33e0f2",
+   "source_sha256": "223f9f62c5cb2f57831bdcfe9de5903195193324d05fe07f5dd1e3f7678d6e4e",
+   "source_octets": 2744417,
+   "repli": "stade-pelouse-sec-jour",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "avant-match"
+    ],
+    "meteo": "sec",
+    "moment": "jour",
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "stade-pelouse-pluie-jour",
+   "categorie": "pelouse",
+   "fichier": "pelouse/stade-pelouse-pluie-jour.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 320998,
+   "sha256": "0cb77b74a5a5de98e8a94c8a185f0ee8b045446f89c6a35aa7b26ab6ea128e66",
+   "source_sha256": "61170616ab15e420ae2ade75368a5cff9e75b836c45402e1ef38f8a396b070f8",
+   "source_octets": 2910875,
+   "repli": "stade-pelouse-sec-jour",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "avant-match"
+    ],
+    "meteo": "pluie",
+    "moment": "jour",
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "vestiaire-avant-match",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-avant-match.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 126044,
+   "sha256": "59adff6194c80f995056f86acf8b136ba14bd04ef1507c5d8ea5f0dbccf50fc1",
+   "source_sha256": "adfe0e775ab1488e8cffddea3b4a2dcd03fa99bb15faa0a2433bcb7165721809",
+   "source_octets": 2064402,
+   "repli": "vestiaire-avant-match",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "vestiaire"
+    ],
+    "resultat": "neutre",
+    "phase": "pre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "vestiaire-mi-temps",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-mi-temps.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 157236,
+   "sha256": "ba04950a18580115a11599f14c756af14312e2ad041d996fded122b632a98be1",
+   "source_sha256": "32e1fce3f6576817f6ca00fe2c8d7c14fe5e6c41e21074846f0cfd13ff191799",
+   "source_octets": 2160232,
+   "repli": "vestiaire-avant-match",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "vestiaire"
+    ],
+    "resultat": "neutre",
+    "phase": "half"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "vestiaire-victoire",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-victoire.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 139412,
+   "sha256": "54be98b3b603fa8bb20ad8e12d8671cdaa2e1aae266131350258f0c974a5d53a",
+   "source_sha256": "f2db5406ea8f4567090a94c1d5357503baf46fad2f27122bc0cd1545d650cff8",
+   "source_octets": 2018845,
+   "repli": "vestiaire-avant-match",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "vestiaire"
+    ],
+    "resultat": "victoire",
+    "phase": "post"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "vestiaire-defaite",
+   "categorie": "vestiaires",
+   "fichier": "vestiaires/vestiaire-defaite.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 116852,
+   "sha256": "89b84a6d02b4fc0d4b97a87524a22ac830ece401408b7456e4d1af2e9ed7fb72",
+   "source_sha256": "e07c9e063d24b6c275017f6ac555e60b83f25989924474b96b20b73c238a3a8d",
+   "source_octets": 1968687,
+   "repli": "vestiaire-avant-match",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "vestiaire"
+    ],
+    "resultat": "defaite",
+    "phase": "post"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  }
+ ]
+}

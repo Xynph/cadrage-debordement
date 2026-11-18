@@ -121,7 +121,9 @@ func avant_match() -> void:
 		"forte-pluie": {"libelle": "forte pluie", "pluie": 2, "vent": 0, "chaleur": 0, "terrain": "lourd"},
 		"vent": {"libelle": "grand vent", "pluie": 0, "vent": 2, "chaleur": 0, "terrain": "souple", "ventDos": [1, 0]},
 		"chaleur": {"libelle": "forte chaleur", "pluie": 0, "vent": 0, "chaleur": 1, "terrain": "souple"},
-		"neutre": {}}
+		"neutre": {},
+		"jour-sec": {"libelle": "sec", "pluie": 0, "vent": 0, "chaleur": 0, "terrain": "souple", "_heure": "15:00"},
+		"jour-pluie": {"libelle": "pluie", "pluie": 1, "vent": 0, "chaleur": 0, "terrain": "souple", "_heure": "14:30"}}
 	var photos := {}
 	for nom: String in ciels:
 		var copie: Dictionary = app.model.duplicate(true)
@@ -129,6 +131,8 @@ func avant_match() -> void:
 		if ciels[nom].is_empty(): copie.next.erase("meteo")
 		else:
 			var m: Dictionary = ciels[nom].duplicate()
+			copie.next.kickoffLocal = str(m.get("_heure", "21:05"))
+			m.erase("_heure")
 			m.date = str(app.model.meta.get("calendarToday", ""))
 			m.conseil = "Le staff : conseil de test pour le ciel « %s », assez long pour tenir sur deux lignes dans la tuile météo de l'écran." % m.libelle
 			if not m.has("ventDos"): m.ventDos = null
@@ -139,6 +143,10 @@ func avant_match() -> void:
 		var photo: Node = app.match_screen.find_child("MatchPosterPhoto", true, false)
 		photos[nom] = str(photo.get_meta("photo_meteo", "")) if photo != null else ""
 		verifier(photos[nom] == AvantMatch.photo_meteo(copie.next), "ciel %s : photo %s" % [nom, photos[nom]])
+		if nom.begins_with("jour-"):
+			verifier(photos[nom] == "stade-pelouse-%s-jour" % nom.substr(5), "coup d'envoi en journée : pelouse du jour (%s)" % photos[nom])
+		elif not ciels[nom].is_empty():
+			verifier(photos[nom].begins_with("match-tunnel"), "coup d'envoi le soir : tunnel (%s)" % photos[nom])
 		if nom == "vent":
 			var nous := 1 if app.model.next.get("away", {}).get("id") == app.model.club.get("id") else 0
 			var bandeau := textes_de(app.match_screen.find_child("MatchPosterWeather", true, false))

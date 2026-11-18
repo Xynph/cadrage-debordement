@@ -1,0 +1,37 @@
+{
+ "note": "Images de la banque intégrées au jeu, par lot d'écrans. Ajouter un groupe par lot ; relancer integrer.py. Écartées pour l'instant : pelouse neige et brouillard (le moteur ne simule ni neige ni brouillard : météo = sec, pluie, forte pluie, vent, chaleur). Pelouse soir et nuit non intégrées : le soir et la nuit, l'avant-match garde le tunnel éclairé de la maquette validée.",
+ "groupes": [
+  {
+   "lot": "lot-1 pelouse du match (avant-match)",
+   "repli": "stade-pelouse-sec-jour",
+   "ids": [
+    "stade-pelouse-sec-jour",
+    "stade-pelouse-pluie-jour"
+   ]
+  },
+  {
+   "lot": "lot-1 vestiaires (avant-match, mi-temps, après-match)",
+   "repli": "vestiaire-avant-match",
+   "ids": [
+    "vestiaire-avant-match",
+    "vestiaire-mi-temps",
+    "vestiaire-victoire",
+    "vestiaire-defaite"
+   ],
+   "etiquettes": {
+    "vestiaire-avant-match": {
+     "phase": "pre"
+    },
+    "vestiaire-mi-temps": {
+     "phase": "half"
+    },
+    "vestiaire-victoire": {
+     "phase": "post"
+    },
+    "vestiaire-defaite": {
+     "phase": "post"
+    }
+   }
+  }
+ ]
+}

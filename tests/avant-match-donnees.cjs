@@ -123,4 +123,12 @@ test('Météo annoncée : la clé du vent suit le sens réel', () => {
   run('delete S.worldMode.meteo');
 });
 
+test('Météo annoncée : sans vent, Gabi ne parle pas du vent et la tuile dit la même chose', () => {
+  run("S.worldMode.meteo={fixtureId:CDWorldCareer.userFixture(S).id,date:CDWorldCareer.userFixture(S).date,weather:'Pluie',pluie:1,vent:0,chaleur:0,terrain:'souple',sens:0};validateCareer(S)");
+  const snap = jeu.call('snapshot');
+  assert.equal(snap.next.meteo.vent, 0, 'écran Match : pas de vent annoncé');
+  assert.ok(!snap.clubLife.avantMatch.gabi.cles.some(c => /vent/i.test(c.titre + ' ' + c.detail)), JSON.stringify(snap.clubLife.avantMatch.gabi.cles));
+  run('delete S.worldMode.meteo');
+});
+
 if (process.env.CD_AVANT_MATCH_DUMP) console.log(JSON.stringify({ premier, am }, null, 1));
