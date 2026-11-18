@@ -50,11 +50,17 @@ function unite(texte) {
 
 // Situation de fin de saison d'un club : caisse après le soutien promis du propriétaire, et trou à combler.
 //   tresorerie : caisse du jour ; depart : caisse d'ouverture de la saison ; compte : {enveloppe, reserve} ; dette.
+// Trou = dette + la perte non comblée qui a entamé la réserve du club (au moins la caisse négative). Une perte que la caisse
+// absorbe en restant au-dessus de la réserve ne compte pas (club sain) ; un bénéfice non plus, même sous la réserve.
+// Première mesure (#899) : avec la seule caisse négative, aucun club n'était jamais convoqué en trois saisons
+// (les réserves amortissent tout) — l'A2R aurait été invisible.
 function situation({ tresorerie, depart, compte, dette = 0 }) {
   const deficit = Math.max(0, depart - tresorerie);
   const { apport } = apportProprietaire(compte, deficit, tresorerie);
-  const caisseFin = rond(tresorerie + apport);
-  return { caisseFin, apportPrevu: rond(apport), dette: rond(Math.max(0, dette)), trou: rond(Math.max(0, -caisseFin) + Math.max(0, dette)) };
+  const caisseFin = rond(tresorerie + apport), reserve = Number.isFinite(compte.reserve) ? compte.reserve : 0;
+  const perte = Math.max(0, depart - caisseFin), entame = Math.max(Math.min(perte, Math.max(0, reserve - caisseFin)), Math.max(0, -caisseFin));
+  return { caisseFin, apportPrevu: rond(apport), dette: rond(Math.max(0, dette)), perte: rond(perte), entame: rond(entame),
+    trou: rond(entame + Math.max(0, dette)) };
 }
 
 // Niveau de la décision (0 : pas convoqué). recidive : déjà sanctionné la saison passée (un cran plus sévère).
@@ -128,21 +134,20 @@ function a2rDecision(id){
 // Situation de fin de saison : l'étiquette de santé financière si elle existe, sinon les comptes de la saison.
 function a2rSituation(c){
  const b=S.clubBudget,compte=b?.clubs?.[c.id],info=worldClub(c.id);
- // Dette de crise (club-owner.cjs) : le prêt de l'actionnaire, remboursé selon un échéancier, n'en fait pas partie.
- const dette=typeof detteDeCrise==='function'?detteDeCrise(c.id):info?.debt||0;
  if(!compte)return null;
  // Saison déjà clôturée (passage de saison) : le soutien du propriétaire est déjà dans la caisse.
- const s=nativeA2R.situation({tresorerie:c.cash,depart:compte.depart,compte:compte.clos===true?{...compte,enveloppe:0}:compte,dette});
- if(typeof santeFinanciere==='function'){try{const x=santeFinanciere(c.id);if(x&&Number.isFinite(x.tresorerieFin)&&Number.isFinite(x.dette))return {...s,caisseFin:x.tresorerieFin,dette:x.dette,trou:Math.max(0,-x.tresorerieFin)+Math.max(0,x.dette)};}catch(e){}}
+ const s=nativeA2R.situation({tresorerie:c.cash,depart:compte.depart,compte:compte.clos===true?{...compte,enveloppe:0}:compte,dette:info?.debt||0});
+ if(typeof santeFinanciere==='function'){try{const x=santeFinanciere(c.id);if(x&&Number.isFinite(x.tresorerieFin)&&Number.isFinite(x.dette))return {...s,caisseFin:x.tresorerieFin,dette:x.dette,trou:Math.max(s.entame,-x.tresorerieFin)+Math.max(0,x.dette)};}catch(e){}}
  return s;
 }
 const a2rRecettes=c=>Math.max(1,S.clubBudget?.clubs?.[c.id]?.recettes||0);
 function a2rAudition(date){
- const e=a2rEtat();e.saison=S.season;e.date=date;e.decisions={};
+ const e=a2rEtat();e.saison=S.season;e.date=date;e.decisions={};e.examens={};
  for(const c of S.clubs){
   if(!nativeA2R.DIVISIONS.includes(budgetLigue(c.id)))continue;
   const s=a2rSituation(c);if(!s)continue;
   const recidive=e.historique[c.id]===S.season-1,ex=nativeA2R.examen({trou:s.trou,recettes:a2rRecettes(c),recidive});
+  if(ex.part>0)e.examens[c.id]=Math.round(ex.part*1000)/1000;
   if(!ex.niveau){if(c.id===S.club)news('L’A2R a examiné les comptes du club : aucune mesure, le club recrutera librement cet été.');continue;}
   e.decisions[c.id]={niveau:ex.niveau,initial:ex.niveau,montant:Math.max(10000,Math.round(s.trou/10000)*10000),part:Math.round(ex.part*1000)/1000,dette:s.dette,
    date,echeance:date.slice(0,4)+'-'+nativeA2R.CALENDRIER.echeance,encadrement:budgetMasse(c),saison:S.season,etat:'actif',recidive,apport:null,appel:null};

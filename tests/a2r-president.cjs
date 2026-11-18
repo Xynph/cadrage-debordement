@@ -28,14 +28,20 @@ test('A2R : niveaux par part des recettes, tolérance, récidive', () => {
 
 test('A2R : situation de fin de saison avec le soutien promis du propriétaire, et la dette', () => {
   const compte = { enveloppe: 1e6, reserve: 2e6 };
-  // Caisse à −0,5 M€ après 3 M€ de pertes : le propriétaire comble jusqu'à son enveloppe (1 M€) → caisse finale +0,5 M€.
+  // Caisse à −0,5 M€ après 3 M€ de pertes : le propriétaire comble jusqu'à son enveloppe (1 M€) → caisse finale +0,5 M€,
+  // soit 1,5 M€ sous la réserve de 2 M€ : la perte non comblée a entamé la réserve.
   let s = A.situation({ tresorerie: -0.5e6, depart: 2.5e6, compte });
-  assert.equal(s.apportPrevu, 1e6); assert.equal(s.caisseFin, 0.5e6); assert.equal(s.trou, 0);
+  assert.equal(s.apportPrevu, 1e6); assert.equal(s.caisseFin, 0.5e6); assert.equal(s.trou, 1.5e6);
   s = A.situation({ tresorerie: -2e6, depart: 2.5e6, compte });
-  assert.equal(s.caisseFin, -1e6); assert.equal(s.trou, 1e6);
+  assert.equal(s.caisseFin, -1e6); assert.equal(s.trou, 3e6);
+  // Perte absorbée en restant au-dessus de la réserve : club sain. Bénéfice sous la réserve : sain aussi.
+  assert.equal(A.situation({ tresorerie: 5e6, depart: 6e6, compte }).trou, 0);
+  assert.equal(A.situation({ tresorerie: 1e6, depart: 0.5e6, compte }).trou, 0);
+  // Perte qui fait passer de 2,5 à 1,2 M€ : 0,8 M€ sous la réserve.
+  assert.equal(A.situation({ tresorerie: 1.2e6, depart: 2.5e6, compte: { enveloppe: 0, reserve: 2e6 } }).trou, 0.8e6);
   s = A.situation({ tresorerie: 3e6, depart: 1e6, compte, dette: 0.4e6 });
   assert.equal(s.trou, 0.4e6, 'la dette compte');
-  assert.equal(A.situation({ tresorerie: -1e6, depart: 0, compte: { enveloppe: 0, reserve: 1e6 } }).trou, 1e6);
+  assert.equal(A.situation({ tresorerie: -1e6, depart: 0, compte: { enveloppe: 0, reserve: 1e6 } }).trou, 1e6, 'pas compté deux fois');
 });
 
 test('A2R : réponse de l’actionnaire (association, montant, déterminisme)', () => {

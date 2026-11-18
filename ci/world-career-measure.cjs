@@ -185,7 +185,7 @@ function run(o){
    const regles={};
    for(const [k,v] of Object.entries(s.clubDirections?.tally||{})){const [saison,lg,kind]=k.split('|');if(saison===String(s.season)&&/^(a2r|president):/.test(kind||''))(regles[kind]??={})[lg]=v;}
    const mails=(s.clubMail?.mails||[]).filter(m=>/^(a2r_|reprise_president)/.test(m.type)).map(m=>({type:m.type,date:m.date,choix:m.choice}));
-   row.regles={season:s.season,compteurs:regles,user:{a2r:s.a2r?.decisions?.[s.club]??null,president:s.presidentReprise?.clubs?.[s.club]??null,mails}};
+   row.regles={season:s.season,audition:s.a2r?{saison:s.a2r.saison,date:s.a2r.date,examens:s.a2r.examens||null,niveaux:Object.fromEntries(Object.entries(s.a2r.decisions||{}).map(([id,d])=>[id,d.initial+'>'+d.niveau]))}:null,compteurs:regles,user:{a2r:s.a2r?.decisions?.[s.club]??null,president:s.presidentReprise?.clubs?.[s.club]??null,mails}};
    console.log('REGLES '+JSON.stringify({label,...row.regles}));
   }
   if(label.startsWith('end-')){row.resultatsParLigue=resultatsParLigue(s);console.log('LIGUES '+JSON.stringify({label,ligues:row.resultatsParLigue}));}
