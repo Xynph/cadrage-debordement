@@ -160,6 +160,8 @@ module.exports={
    S.contextualMatch.receipts.push({key:r.key,phase:p.phase,context:copy(r.context),phaseContext:copy(p.context),status:p.status,choiceId:p.decision?.choiceId??null,audience:p.decision?.audience??null,playerIds:copy(p.decision?.playerIds||[]),moraleDelta:p.decision?.moraleDelta??0});
    S.contextualMatch.receipts=S.contextualMatch.receipts.slice(-48);
   }
+  // Le vestiaire adverse parle au même moment (match-pilotage.js) : ton choisi par son staff, état de ses joueurs.
+  const adverse=(l,phase,context,key)=>{if(typeof causerieAdverse==='function')causerieAdverse(l,phase,context,key);};
   function observe(command){
    if(!S)return;
    let st=S.contextualMatch,r=st?.current,l=S.live;
@@ -168,12 +170,13 @@ module.exports={
     const context=identity(S,l),key=matchKey(context);
     check(!st.receipts.some(x=>x.key===key),'rencontre déjà traitée');
     r=st.current={key,context,participants:initialParticipants(S,l),phases:[{phase:'pre',context:phaseContext(S,l,'pre'),decision:null,closed:false,status:null}]};l.paused=true;
+    adverse(l,'pre',r.phases[0].context,key);
    }
    if(!r)return;
    if(!l){check(r.phases.some(p=>p.phase==='post'&&p.closed),'rencontre disparue avant clôture');st.current=null;return;}
    check(matches(S,r),'contexte actif périmé');
    let p=pending(r);
-   if(!p&&atHalftime(l)&&!r.phases.some(x=>x.phase==='half')){p={phase:'half',context:phaseContext(S,l,'half'),decision:null,closed:false,status:null};r.phases.push(p);l.paused=true;}
+   if(!p&&atHalftime(l)&&!r.phases.some(x=>x.phase==='half')){p={phase:'half',context:phaseContext(S,l,'half'),decision:null,closed:false,status:null};r.phases.push(p);l.paused=true;adverse(l,'half',p.context,r.key);}
    if(!p&&l.finished&&!r.phases.some(x=>x.phase==='post')){
     check(r.phases.some(x=>x.phase==='half'&&x.closed),'mi-temps non traitée');p={phase:'post',context:phaseContext(S,l,'post'),decision:null,closed:false,status:null};r.phases.push(p);
    }

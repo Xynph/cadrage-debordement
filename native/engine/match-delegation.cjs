@@ -11,6 +11,8 @@
 // pour l'adversaire, qui fait 6 à 8 changements), et cette fatigue se reportait sur la semaine
 // suivante. Le même club géré par l'IA, lui, fait tourner son banc.
 //
+// Toujours actif (direct et délégation) : le banc adverse ajuste ses consignes (`pilotageAdversaire`).
+//
 // Pendant la seule commande `delegate` (le worker appelle `setActive(true)` puis `false`),
 // l'adjoint applique au club du joueur exactement les décisions d'un entraîneur IA du même niveau
 // (`l.aiLevel`, réglage « niveau adverse ») après chaque minute jouée. La feuille et la consigne de
@@ -32,7 +34,11 @@ function factory(){
   const avance=advanceRugby;
   advanceRugby=function(l){
    const result=avance.apply(this,arguments);
-   if(actif&&l&&typeof S!=='undefined'&&S&&l===S.live&&l.userSide>=0&&!l.finished)adjoint(l);
+   if(l&&typeof S!=='undefined'&&S&&l===S.live&&l.userSide>=0&&!l.finished){
+    // Banc adverse (match-pilotage.js) : il revoit ses consignes toutes les 5 minutes, en direct comme en délégation.
+    if(typeof pilotageAdversaire==='function')pilotageAdversaire(l);
+    if(actif)adjoint(l);
+   }
    return result;
   };
   Object.assign(advanceRugby,avance);
