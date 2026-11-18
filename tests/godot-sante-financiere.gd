@@ -31,7 +31,9 @@ func capturer(nom: String) -> void:
 
 func textes(noeud: Node) -> String:
 	var t := ""
-	for n in noeud.find_children("*", "Label", true, false): t += (n as Label).text + "\n"
+	for n in noeud.find_children("*", "", true, false):
+		if n is Label: t += (n as Label).text + "\n"
+		elif n is Button: t += (n as Button).text + "\n"
 	return t
 
 func executer() -> void:

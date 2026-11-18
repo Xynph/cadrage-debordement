@@ -47,7 +47,10 @@ static func reading(health: Variant) -> String:
 		var season := int(point.get("saison", 0))
 		var result := float(point.get("resultat", 0))
 		var verdict := "à l’équilibre" if absf(result) < 250000.0 else ("dans le vert" if result > 0.0 else "en perte")
-		parts.append("%d-%d : %s" % [season, season + 1, verdict])
+		var name := G.season_label(season)
+		# Saisons antérieures à la carrière (historique repris d’une base) : mêmes années que le moteur.
+		if season < 1: name = "%d-%d" % [G.SeasonLabel.start_year + season - 1, G.SeasonLabel.start_year + season]
+		parts.append("%s : %s" % [name, verdict])
 	return " · ".join(parts)
 
 static func sparkline(parent: Control, rectangle: Rect2, health: Variant, id: String = "") -> Control:
@@ -66,5 +69,5 @@ static func chip(parent: Control, x: float, y: float, health: Variant, width: fl
 	var tint := color(health)
 	var box := D.rect(parent, Rect2(x, y, width, height), Color(tint, .16), int(height * .5), Color(tint, .8))
 	if not id.is_empty(): box.name = id
-	D.text(box, 0, height * .5 + 8, label(health), 22 if height >= 36 else 19, tint, 700, width, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(box, width * .5, height * .5 + 8, label(health), 22 if height >= 36 else 19, tint, 700, width - 12, HORIZONTAL_ALIGNMENT_CENTER)
 	return box
