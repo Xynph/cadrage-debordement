@@ -151,6 +151,17 @@ func lot6() -> void:
 	verifier(attente.get("_photo") == null, "jour suivant : pas de photo")
 	attente.queue_free()
 
+func lot7() -> void:
+	var Shell = preload("res://ui/immersive08/shell.gd")
+	verifier(Shell.fond_ecran("Bureau") == "fond-bureau" and Shell.fond_ecran("Bureau", "offseason") == "fond-fin-de-saison" and Shell.fond_ecran("Match") == "", "fonds d'écran par route")
+	for cas: Array in [["Le président", "staff-president"], ["Le quotidien régional", "presse-journaliste"], ["Cellule médicale", "staff-medecin"], ["Inconnu", "mail-staff"]]:
+		verifier(Reception.portrait_expediteur(cas[0]) == cas[1], "expéditeur « %s » : %s" % [cas[0], Reception.portrait_expediteur(cas[0])])
+	verifier(BanqueImages.poste("Pilier gauche") == "poste-pilier" and BanqueImages.poste("Demi d’ouverture") == "poste-ouvreur" and BanqueImages.poste("Troisième ligne aile") == "poste-troisieme-ligne" and BanqueImages.poste("?") == "", "postes")
+	verifier(BanqueImages.tribune(80) == "tribune-pleine-jour" and BanqueImages.tribune(50) == "tribune-moitie" and BanqueImages.tribune(10) == "tribune-vide" and BanqueImages.tribune(null) == "", "tribunes")
+	for id in ["titre-principal", "titre-nouvelle-carriere", "trophee-coupe-haute", "voyage-aeroport"]:
+		verifier(BanqueImages.texture(id) != null, "image %s" % id)
+	verifier(preload("res://ui/immersive08/month_calendar.gd") != null and preload("res://ui/immersive08/player_canvas.gd") != null and preload("res://ui/immersive08/entry_canvas.gd") != null, "écrans chargés")
+
 func ecran_entre_temps_forts() -> void:
 	var hote := Control.new()
 	root.add_child(hote)
@@ -187,5 +198,6 @@ func executer() -> void:
 	await tenues()
 	await lot5()
 	await lot6()
+	await lot7()
 	print("BANQUE " + JSON.stringify({"controles": controles, "failures": failures}))
 	quit(0 if failures.is_empty() else 1)

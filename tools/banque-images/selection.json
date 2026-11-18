@@ -1,5 +1,5 @@
 {
- "note": "Images de la banque intégrées au jeu, par lot d'écrans. Ajouter un groupe par lot ; relancer integrer.py. Écartées pour l'instant : pelouse neige et brouillard (le moteur ne simule ni neige ni brouillard : météo = sec, pluie, forte pluie, vent, chaleur). Pelouse soir et nuit non intégrées : le soir et la nuit, l'avant-match garde le tunnel éclairé de la maquette validée. Écartées des temps forts : plaquage, ruck, maul, passe longue (aucun fait du moteur ne les nomme) ; derby (ambiance d'avant-match, pas un résultat). Stades : le niveau 4 de la banque reste un stade de club ; au-delà de 20 000 places, la grande enceinte pleine. Centres d'entraînement, extérieurs et stades nuit/toit/brique pas encore branchés. Lot 6 : non intégrés exprès : fonds d'écran (charte de la graphiste en cours), titres (intro validée), textures et accessoires (habillage = charte), tribunes (rendu artificiel), postes et portraits (le jeu a déjà ses portraits de joueurs et de staff), voyages, cérémonies autres que la remise de trophée, club (sauf récupération) et sélection (pas d'emplacement photo dans ces écrans).",
+ "note": "Images de la banque intégrées au jeu, par lot d'écrans. Ajouter un groupe par lot ; relancer integrer.py. Écartées pour l'instant : pelouse neige et brouillard (le moteur ne simule ni neige ni brouillard : météo = sec, pluie, forte pluie, vent, chaleur). Pelouse soir et nuit non intégrées : le soir et la nuit, l'avant-match garde le tunnel éclairé de la maquette validée. Écartées des temps forts : plaquage, ruck, maul, passe longue (aucun fait du moteur ne les nomme) ; derby (ambiance d'avant-match, pas un résultat). Stades : le niveau 4 de la banque reste un stade de club ; au-delà de 20 000 places, la grande enceinte pleine. Centres d'entraînement, extérieurs et stades nuit/toit/brique pas encore branchés. Lot 6 : non intégrés exprès : fonds d'écran (charte de la graphiste en cours), titres (intro validée), textures et accessoires (habillage = charte), tribunes (rendu artificiel), postes et portraits (le jeu a déjà ses portraits de joueurs et de staff), voyages, cérémonies autres que la remise de trophée, club (sauf récupération) et sélection (pas d'emplacement photo dans ces écrans). Lot 7 (demande de Léo : tout ce qui est faisable, corrections de la graphiste ensuite) : fonds, titres, portraits d'expéditeurs, trophées, tribunes, voyages, postes. Toujours écartés : textures et accessoires (aucun emplacement dans les écrans), fond des réglages (fenêtre), variantes de portraits, autres voyages et cérémonies, sélection.",
  "groupes": [
   {
    "lot": "lot-1 pelouse du match (avant-match)",
@@ -294,6 +294,126 @@
     "ceremonie-remise-trophee",
     "club-salle-recuperation-bains",
     "presse-journaliste"
+   ]
+  },
+  {
+   "lot": "lot-7 fonds d'écran (très atténués, par écran)",
+   "repli": "fond-bureau",
+   "ids": [
+    "fond-bureau",
+    "fond-effectif",
+    "fond-composition",
+    "fond-tactique",
+    "fond-transferts",
+    "fond-finances",
+    "fond-calendrier",
+    "fond-classements",
+    "fond-presse",
+    "fond-jeunes",
+    "fond-medical",
+    "fond-palmares",
+    "fond-fin-de-saison"
+   ]
+  },
+  {
+   "lot": "lot-7 titres (accueil, création de carrière)",
+   "repli": "titre-principal",
+   "ids": [
+    "titre-principal",
+    "titre-nouvelle-carriere"
+   ]
+  },
+  {
+   "lot": "lot-7 portraits des expéditeurs de courriers",
+   "repli": "staff-adjoint",
+   "ids": [
+    "staff-adjoint",
+    "staff-prepa-physique",
+    "staff-kine",
+    "staff-medecin",
+    "staff-analyste",
+    "staff-recruteur",
+    "staff-directeur-sportif",
+    "staff-president",
+    "staff-secretaire-general",
+    "presse-journaliste",
+    "presse-consultant-tv",
+    "supporter-ancien",
+    "arbitre",
+    "agent-joueur",
+    "sponsor-dirigeant"
+   ]
+  },
+  {
+   "lot": "lot-7 trophées (vitrine des archives du club)",
+   "repli": "trophee-coupe-haute",
+   "sans_perte": false,
+   "ids": [
+    "trophee-coupe-haute",
+    "trophee-bouclier-bois-argent",
+    "trophee-coupe-anses",
+    "trophee-plaque-or"
+   ]
+  },
+  {
+   "lot": "lot-7 tribunes (Vie du club, selon le sentiment des supporters)",
+   "repli": "tribune-moitie",
+   "ids": [
+    "tribune-pleine-jour",
+    "tribune-moitie",
+    "tribune-vide"
+   ],
+   "etiquettes": {
+    "tribune-pleine-jour": {
+     "ecrans": [
+      "vie-du-club"
+     ]
+    },
+    "tribune-moitie": {
+     "ecrans": [
+      "vie-du-club"
+     ]
+    },
+    "tribune-vide": {
+     "ecrans": [
+      "vie-du-club"
+     ]
+    }
+   }
+  },
+  {
+   "lot": "lot-7 voyages (calendrier, match à l'extérieur)",
+   "repli": "voyage-bus-equipe",
+   "ids": [
+    "voyage-bus-equipe",
+    "voyage-aeroport"
+   ],
+   "etiquettes": {
+    "voyage-bus-equipe": {
+     "ecrans": [
+      "calendrier"
+     ]
+    },
+    "voyage-aeroport": {
+     "ecrans": [
+      "calendrier"
+     ]
+    }
+   }
+  },
+  {
+   "lot": "lot-7 postes (fiche joueur, onglet développement)",
+   "repli": "poste-centre",
+   "ids": [
+    "poste-pilier",
+    "poste-talonneur",
+    "poste-deuxieme-ligne",
+    "poste-troisieme-ligne",
+    "poste-demi-de-melee",
+    "poste-ouvreur",
+    "poste-centre",
+    "poste-ailier",
+    "poste-arriere"
    ]
   }
  ]

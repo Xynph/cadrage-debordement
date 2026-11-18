@@ -3112,6 +3112,1040 @@
    },
    "synthetique": true,
    "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-bureau",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-bureau.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 77158,
+   "sha256": "169348a2667862ab528ec7cd203264bfb20e4d2af88ed2d6ed7369371903c7c9",
+   "source_sha256": "0455f4a43f87fc14285fa6d2cc15ebb664e73c4becbbf30478f30d7409fe6617",
+   "source_octets": 1835143,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "bureau"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-effectif",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-effectif.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 62650,
+   "sha256": "bbccfbed9b7a14220f826b6823898b05e93d47752f40d43a6de1e24cb1c75875",
+   "source_sha256": "0e744b4ec262b513d12c681015e975687623462e7714049e1231ef13f588efa2",
+   "source_octets": 1839954,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "effectif"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-composition",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-composition.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 70056,
+   "sha256": "909a7a4cacda1634bdcdb837f73a5ba11fb8e49beb156a4857c19cee1468eab5",
+   "source_sha256": "0ed4ba00540363486878359a147ab5150e0927746d311c5223d23edd8436ac57",
+   "source_octets": 1831171,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "composition"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-tactique",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-tactique.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 46854,
+   "sha256": "8a173cb4427d515dfe9fd21b9dbaeb0f5eafd2772e22f5020cc04b089ce55aec",
+   "source_sha256": "e1c923c55311ff16c7dabf7e6f5afcaa35d26ebb689c54353b6b048470fdaf72",
+   "source_octets": 1619870,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "tactique"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-transferts",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-transferts.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 51222,
+   "sha256": "e145029ef929f9dad8cba2db469628f46e2d2fe65982d62b9a328d22d2a86d4c",
+   "source_sha256": "f244b86cbdda9457e156ed0f49f6f12ae716d24c9205e01d42b4018f1a6f43af",
+   "source_octets": 1679726,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "transferts"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-finances",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-finances.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 69380,
+   "sha256": "b4b1cb2b3a40edca239c27fed43abbe1a5cb5ad608c60ff3108bd45a107e4885",
+   "source_sha256": "ba92d644f5471795d55033861dd5ebe6e2a267e364114ca6f86aed1a006b0788",
+   "source_octets": 1833649,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "finances"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-calendrier",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-calendrier.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 74616,
+   "sha256": "1ff3494acc9c5f371ec9a1826a6bc5d8ab9218113e6ae91381594e5ed210a8d2",
+   "source_sha256": "c6cdcb45f7d319520fc4a754d7906f653896c32b30493886b03ceb78c010746c",
+   "source_octets": 1777005,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "calendrier"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-classements",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-classements.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 57406,
+   "sha256": "26523026ab23e6c4ac156349b03054f5ce57d1de02aa0418d17f909d94fd5500",
+   "source_sha256": "db113114a08b5052de3cd3ec42d7975aace78a5c489e84f81ee27dc4eafa6d20",
+   "source_octets": 1650387,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "classements"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-presse",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-presse.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 42026,
+   "sha256": "e18a08794e180c0cfd3739c306186c274ef494bf327c2ba8aa058f1b31bf7410",
+   "source_sha256": "cae0e0ace2ab88dc1fe0206b726222270319c1788e887b3df1b996d8fcda5cc3",
+   "source_octets": 1717350,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "presse"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-jeunes",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-jeunes.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 115442,
+   "sha256": "f4fd66aacd6bf4a9e6a867a778608b8c0407547862849b37793f92d971cc142c",
+   "source_sha256": "9173c99d2ba9aa71a4890e1afbd0fa42c48f9d6f9b938935e81bf4198be6a1c5",
+   "source_octets": 2255067,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "jeunes"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-medical",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-medical.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 76102,
+   "sha256": "90f155259b316f8b72b6f2efe6c6f63283bbe7a7549ad3b0c90776ee67ef5e2a",
+   "source_sha256": "df7c2af1490a99bea50431923480e0db3fa6a8f8007cdab59e8ea74a35452c66",
+   "source_octets": 1993661,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "medical"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-palmares",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-palmares.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 50318,
+   "sha256": "bdc2b2884932ee4f63405ca5dd31ad9127c5fb0ba2677f48cf620fdb41e331d9",
+   "source_sha256": "43465c298be8524b3a85ff4898fea9a5d4639f669140da41a480c6ebfec834d6",
+   "source_octets": 1642639,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "palmares"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-fin-de-saison",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-fin-de-saison.webp",
+   "largeur": 1920,
+   "hauteur": 1080,
+   "octets": 56762,
+   "sha256": "8169895fca79a52aaa2646a631b3304520cac14e9b059d6287645cbaa6894e5c",
+   "source_sha256": "1120a401894f263a974e32eb155397e57c5598422a325bf5ba8102dda4ce8890",
+   "source_octets": 1548696,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "fin-de-saison"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "titre-principal",
+   "categorie": "chargement",
+   "fichier": "chargement/titre-principal.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 161792,
+   "sha256": "2f43101ee2f43c5fe402b1e382c30da96da4fa1c339116245a67fd6451d49b1a",
+   "source_sha256": "79155e7b3564a70e4a58920626d7a0199a6d3185d19f98b8804d68b9547c94b3",
+   "source_octets": 2188223,
+   "repli": "titre-principal",
+   "etiquettes": {
+    "ecrans": [
+     "titre"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "titre-nouvelle-carriere",
+   "categorie": "chargement",
+   "fichier": "chargement/titre-nouvelle-carriere.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 144126,
+   "sha256": "2b9952ea9a1b1a97b91b4016e5b44ea9c095914276e537d65dee482dde813cf2",
+   "source_sha256": "3f822feec9294eda7e71e4a0e1339c287e1640f1945a90352dd454a04ee356bd",
+   "source_octets": 2122724,
+   "repli": "titre-principal",
+   "etiquettes": {
+    "ecrans": [
+     "titre"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "staff-adjoint",
+   "categorie": "portraits",
+   "fichier": "portraits/staff-adjoint.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 50882,
+   "sha256": "0ef441ac48e90481c8e6c74a9f50d1c24e9427826e392f36df16e679031ed1bb",
+   "source_sha256": "803bc9a5aa246b840e38ecb5aebff307512541c150d387844c1c8e3685c1bab8",
+   "source_octets": 820709,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "staff-adjoint"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "staff-prepa-physique",
+   "categorie": "portraits",
+   "fichier": "portraits/staff-prepa-physique.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 41964,
+   "sha256": "490132401c31aabdea4423560304bd752fe4d82429d0cc4097294583c497147c",
+   "source_sha256": "519aa0adab8a51d4d6f9a30f5dd9e6c832d891417e2099a143112f4598c3eea6",
+   "source_octets": 785043,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "staff-prepa-physique"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "staff-kine",
+   "categorie": "portraits",
+   "fichier": "portraits/staff-kine.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 49598,
+   "sha256": "f9df0be1ac569d4e97c4e9ad597efdb0aac962dd7fba7b747fbcb6f881978c0e",
+   "source_sha256": "674ce81c98d3c97a77273b68cbc2c3e48aeb530c83757e1e9b5bb7eea48b3e12",
+   "source_octets": 825245,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "staff-kine"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "staff-medecin",
+   "categorie": "portraits",
+   "fichier": "portraits/staff-medecin.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 57684,
+   "sha256": "3de7b26ff266a866c017cb892fa1fb5c7c64a0077abf0d233195970b15866094",
+   "source_sha256": "cabd92a61feca75ab89d6a84f00548f29ea20d72fbbd880ccd057a1969c95a38",
+   "source_octets": 855377,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "staff-medecin"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "staff-analyste",
+   "categorie": "portraits",
+   "fichier": "portraits/staff-analyste.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 58184,
+   "sha256": "8ed307c143ad41ed5bf0284e1bb4a3298b893bdec4f3e80270e1c4f2b2b5b100",
+   "source_sha256": "8023eb2037f2436f389db239d8fe3a3550168245a73f983a959d13700bb79d6c",
+   "source_octets": 830541,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "staff-analyste"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "staff-recruteur",
+   "categorie": "portraits",
+   "fichier": "portraits/staff-recruteur.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 57906,
+   "sha256": "0ec993988ee1e7871e4b09b766a72f2ddbc9b5986a19b7eb747e5f83b558211d",
+   "source_sha256": "7b524c2dc5a1fd9d02c01a2885ce1bca99db6daeebc7cf998093ab3fc4a8df6f",
+   "source_octets": 845870,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "staff-recruteur"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "staff-directeur-sportif",
+   "categorie": "portraits",
+   "fichier": "portraits/staff-directeur-sportif.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 70564,
+   "sha256": "00921cf812698520d5a91efe2fd983bcb20d2a340bca96b996443c0f86b52fcb",
+   "source_sha256": "5da0f9860ae01425d7e767d97924a8bd1022d5fb748f289c76e52e8fb2ee3316",
+   "source_octets": 884947,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "staff-directeur-sportif"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "staff-president",
+   "categorie": "portraits",
+   "fichier": "portraits/staff-president.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 56440,
+   "sha256": "085da8611e117f1725908a8f99d7a7e91119ec1f4f736352cdbd4baf177d331f",
+   "source_sha256": "1fe962d95f953177db8fd30878cf7522a279474856db4ad5db6ed019b7f9c07e",
+   "source_octets": 839710,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "staff-president"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "staff-secretaire-general",
+   "categorie": "portraits",
+   "fichier": "portraits/staff-secretaire-general.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 59478,
+   "sha256": "239bd7936ce34e2e6d3306206b4e0346c371ab643cc60928acd343c66bcfb18c",
+   "source_sha256": "f5692adbdbfbba82f969daa1c8bae18bc3da2e572fbb4498177cd0e6572577bc",
+   "source_octets": 857052,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "staff-secretaire-general"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "presse-journaliste",
+   "categorie": "portraits",
+   "fichier": "portraits/presse-journaliste.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 49424,
+   "sha256": "6103ab51b5c1bea09a35567a88f88d9abc1b0322729842f7f37200b077ea2c1c",
+   "source_sha256": "ad26576a0346c66bc7e4432b2c1edeb08f1772d16ce1bfb3295f5ba96c53d8e7",
+   "source_octets": 803331,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "presse-journaliste"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "presse-consultant-tv",
+   "categorie": "portraits",
+   "fichier": "portraits/presse-consultant-tv.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 58240,
+   "sha256": "7cabde3c92c283f7f61fbc1e158fb3b49fbfae3b01d283dd22a27e02cb9efeec",
+   "source_sha256": "9ba705594ce485d95a0daa07d880056f7c43c46d80c95c6de98182dd93262a79",
+   "source_octets": 852833,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "presse-consultant-tv"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "supporter-ancien",
+   "categorie": "portraits",
+   "fichier": "portraits/supporter-ancien.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 84880,
+   "sha256": "d6e27e1ad4ba073b28115db80a9c1c9331f5534d64a284d33cb3808516d178c9",
+   "source_sha256": "4ef5547ea8d5015874ccbc54aa161e6a56a3a876a74a3fe8c5ffec08412d01cc",
+   "source_octets": 949452,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "supporter-ancien"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "arbitre",
+   "categorie": "portraits",
+   "fichier": "portraits/arbitre.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 42242,
+   "sha256": "9399648d4e79df8f64fba7715bd2164b69445ef59d64f83efd053ceb3e1e1f89",
+   "source_sha256": "dd56ae1ba7da04e396769ef7871ca5556a3fa6f79ad3ac211073df653af89e9d",
+   "source_octets": 757364,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "arbitre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "agent-joueur",
+   "categorie": "portraits",
+   "fichier": "portraits/agent-joueur.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 54868,
+   "sha256": "d9c82de20b2993bcd9870254e8868408d39255063510f6258f60992a16dccf99",
+   "source_sha256": "1ab01e9fdaf93c558f3df5dd6a6058aae989b58c385d5119047eb5dbff7dff93",
+   "source_octets": 833361,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "agent-joueur"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "sponsor-dirigeant",
+   "categorie": "portraits",
+   "fichier": "portraits/sponsor-dirigeant.webp",
+   "largeur": 768,
+   "hauteur": 768,
+   "octets": 67128,
+   "sha256": "76c35b6f05c32dc0e1f3d597e55cc1034c02de16b8456c8492039292aecdf6c1",
+   "source_sha256": "4a6134e020ee4b2edca6b182d3d7652468b348946b9b083ac66edff7f8d32471",
+   "source_octets": 881163,
+   "repli": "staff-adjoint",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "staff",
+     "presse"
+    ],
+    "resultat": "neutre",
+    "poste": "sponsor-dirigeant"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "trophee-coupe-haute",
+   "categorie": "trophees",
+   "fichier": "trophees/trophee-coupe-haute.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 20966,
+   "sha256": "06a46a9ed6fef6453da7d876d38a5fa4a9d364381afa0af2a961fbbf11b645d7",
+   "source_sha256": "2652c021839cf796a072dd2a7a1a09d17b78f9dd31c7525aab935cdfc63d767e",
+   "source_octets": 94432,
+   "repli": "trophee-coupe-haute",
+   "etiquettes": {
+    "ecrans": [
+     "palmares"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "trophee-bouclier-bois-argent",
+   "categorie": "trophees",
+   "fichier": "trophees/trophee-bouclier-bois-argent.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 46112,
+   "sha256": "8117a1b8a70b4e527000e4f93a51c0916a1bed92a2edac6a884b16bca8c883d4",
+   "source_sha256": "101e73c599e1ed3fdcb921799add343464a276b0e993160e37178ea3bdccf361",
+   "source_octets": 273115,
+   "repli": "trophee-coupe-haute",
+   "etiquettes": {
+    "ecrans": [
+     "palmares"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "trophee-coupe-anses",
+   "categorie": "trophees",
+   "fichier": "trophees/trophee-coupe-anses.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 44212,
+   "sha256": "fffc3044d265fdafe6dd7866906e1b9f152a5876b64d112be741fab5bc0f365b",
+   "source_sha256": "28c7f8446ee55b43202b6ef0bcc4d163ac8a48601d9f2f95eff62b6a5d3de4f6",
+   "source_octets": 231964,
+   "repli": "trophee-coupe-haute",
+   "etiquettes": {
+    "ecrans": [
+     "palmares"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "trophee-plaque-or",
+   "categorie": "trophees",
+   "fichier": "trophees/trophee-plaque-or.webp",
+   "largeur": 512,
+   "hauteur": 512,
+   "octets": 27116,
+   "sha256": "fb376c28acff7aa557e9fddc4168829b4c36e9183768c92b8f7e87b39c88c516",
+   "source_sha256": "29b43728b5d3385091ff982a4d00058ba044ed79b19dcb916d9f73549c9b9f7d",
+   "source_octets": 209839,
+   "repli": "trophee-coupe-haute",
+   "etiquettes": {
+    "ecrans": [
+     "palmares"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "tribune-pleine-jour",
+   "categorie": "tribunes",
+   "fichier": "tribunes/tribune-pleine-jour.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 368522,
+   "sha256": "575996d4b30ae26743b5ce2a5bbf36d39b90efe8eb4b857305c09dfed98fd6eb",
+   "source_sha256": "11ef4591a48126c286c920c4f78e08d65cca8b5ecf3f400f1357a52615d4beb4",
+   "source_octets": 2919952,
+   "repli": "tribune-moitie",
+   "etiquettes": {
+    "ecrans": [
+     "vie-du-club"
+    ],
+    "moment": "jour",
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "tribune-moitie",
+   "categorie": "tribunes",
+   "fichier": "tribunes/tribune-moitie.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 320722,
+   "sha256": "97cd80c4b303fa4cdd9239f6cdce9da2acb0fa61cd60f54bef5048bb4792ae26",
+   "source_sha256": "c25698c79bfb71b68721d1fcea1652cd69dc9b4a23c4387257419c1b67f84290",
+   "source_octets": 2635799,
+   "repli": "tribune-moitie",
+   "etiquettes": {
+    "ecrans": [
+     "vie-du-club"
+    ],
+    "moment": "jour",
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "tribune-vide",
+   "categorie": "tribunes",
+   "fichier": "tribunes/tribune-vide.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 237628,
+   "sha256": "b001ee314e7781441f652e6ac6356be8dbd39d5b9449bf62db11589a2da481c8",
+   "source_sha256": "ecb82839166ed7f9ebbab4a52bc2c8319660165ee067f9302183124e86c2e52b",
+   "source_octets": 2394752,
+   "repli": "tribune-moitie",
+   "etiquettes": {
+    "ecrans": [
+     "vie-du-club"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "voyage-bus-equipe",
+   "categorie": "voyages",
+   "fichier": "voyages/voyage-bus-equipe.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 135308,
+   "sha256": "f603b6132f0963b02af7463ae3d540ab2aa299bda2474248c029292b87f8e549",
+   "source_sha256": "dcf260e23a9cf270c1f40ed704c8782bea1d671da774d8b4602917a68e9ced8f",
+   "source_octets": 2086356,
+   "repli": "voyage-bus-equipe",
+   "etiquettes": {
+    "ecrans": [
+     "calendrier"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "voyage-aeroport",
+   "categorie": "voyages",
+   "fichier": "voyages/voyage-aeroport.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 145642,
+   "sha256": "8534a4d6633b9d5f92fd5bdb0a9b9cb90f14343455ffa6163fcbf588d7af9445",
+   "source_sha256": "576925c20eb8881acf01b1f782a51d2b445ce46bbf74db1350236841e37d3232",
+   "source_octets": 2035478,
+   "repli": "voyage-bus-equipe",
+   "etiquettes": {
+    "ecrans": [
+     "calendrier"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "poste-pilier",
+   "categorie": "postes",
+   "fichier": "postes/poste-pilier.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 260230,
+   "sha256": "cf310c4f10e4a913b4c14e13afee29ae4de3a7d373bcaf6cb44ff625c7273a3f",
+   "source_sha256": "0bba2106a051b9594bec60531c0dd5a4e79f5999084cf38e3c0f428054ede079",
+   "source_octets": 2575395,
+   "repli": "poste-centre",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "composition",
+     "match"
+    ],
+    "resultat": "neutre",
+    "poste": "pilier"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "poste-talonneur",
+   "categorie": "postes",
+   "fichier": "postes/poste-talonneur.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 140226,
+   "sha256": "44148107618bd59f542c88c6fa8ae53a9d609ddbb999bf2b55108b6cfc26535a",
+   "source_sha256": "bedf3151baa9a569c5854c4c13f073ec5e4131c374e33dbe6a41e152a1d43889",
+   "source_octets": 2290857,
+   "repli": "poste-centre",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "composition",
+     "match"
+    ],
+    "resultat": "neutre",
+    "poste": "talonneur"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "poste-deuxieme-ligne",
+   "categorie": "postes",
+   "fichier": "postes/poste-deuxieme-ligne.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 139160,
+   "sha256": "30474bc96961ce257c05476e0a14b118b7fc578b77dee63ca168681427ad8594",
+   "source_sha256": "6b7003a6d724a2c428e05953965ad84a0c839a6526d68649d64fe8f49a0ac245",
+   "source_octets": 2074063,
+   "repli": "poste-centre",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "composition",
+     "match"
+    ],
+    "resultat": "neutre",
+    "poste": "deuxieme-ligne"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "poste-troisieme-ligne",
+   "categorie": "postes",
+   "fichier": "postes/poste-troisieme-ligne.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 249922,
+   "sha256": "db71f46ac70f03b5ab52f65206aea1f90d7b24a3d61f220217a5c8664293e69a",
+   "source_sha256": "4743d44ab5f6ff2f5b0718dbce3e2da44486457c19e08b6040701dfaadef01e6",
+   "source_octets": 2465813,
+   "repli": "poste-centre",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "composition",
+     "match"
+    ],
+    "resultat": "neutre",
+    "poste": "troisieme-ligne"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "poste-demi-de-melee",
+   "categorie": "postes",
+   "fichier": "postes/poste-demi-de-melee.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 225978,
+   "sha256": "501fa2cc4d8062c78e800433cf6670868b45347265a222a5eecdabd9d9fcfce9",
+   "source_sha256": "f5a07c42a7fecd84776e4f50f28803cd568178ef1112fdd28434dbf8eac3cf61",
+   "source_octets": 2377790,
+   "repli": "poste-centre",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "composition",
+     "match"
+    ],
+    "resultat": "neutre",
+    "poste": "demi-de-melee"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "poste-ouvreur",
+   "categorie": "postes",
+   "fichier": "postes/poste-ouvreur.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 200024,
+   "sha256": "38d8f1a0c64ac73d5218a2f98f8cf82ef6f9ce7111964dd60438766cae572274",
+   "source_sha256": "9e6aba1cfac6a0456532e6b3064495e5ed5a42ac719f2b2be7393893cd7052b2",
+   "source_octets": 2277877,
+   "repli": "poste-centre",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "composition",
+     "match"
+    ],
+    "resultat": "neutre",
+    "poste": "ouvreur"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "poste-centre",
+   "categorie": "postes",
+   "fichier": "postes/poste-centre.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 208066,
+   "sha256": "7c105ce3f12b9d9e8bbb4cdcd8f2c62aa458987300c03fba342f02e4ac1c735b",
+   "source_sha256": "3b7d2cd190f75e3fed03c85151baf8567a6fb7ecfd927d2fd0c151ad436288e3",
+   "source_octets": 2322764,
+   "repli": "poste-centre",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "composition",
+     "match"
+    ],
+    "resultat": "neutre",
+    "poste": "centre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "poste-ailier",
+   "categorie": "postes",
+   "fichier": "postes/poste-ailier.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 245520,
+   "sha256": "fbf357863ebe7a9614f199a724c675a4e21dc90b9549b4fe95610340da2cd324",
+   "source_sha256": "e3bbaffedb023862bb2dfed637050e5adca58c384111306b27683272205bc5cb",
+   "source_octets": 2435007,
+   "repli": "poste-centre",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "composition",
+     "match"
+    ],
+    "resultat": "neutre",
+    "poste": "ailier"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "poste-arriere",
+   "categorie": "postes",
+   "fichier": "postes/poste-arriere.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 203958,
+   "sha256": "211da0a2b8e968d4eb20a1f6f3a353cf94a11062b24b45e408a14278cec7baae",
+   "source_sha256": "88bff0735c9c9094878b2d846143c24f371edef9cb8949faae3562597bbec2c6",
+   "source_octets": 2238027,
+   "repli": "poste-centre",
+   "etiquettes": {
+    "ecrans": [
+     "effectif",
+     "composition",
+     "match"
+    ],
+    "resultat": "neutre",
+    "poste": "arriere"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
   }
  ]
 }

@@ -390,6 +390,13 @@ static func _staff(card: Panel, app: Control) -> void:
 
 static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
 	var fans: Dictionary = strategy.get("fans", {})
+	# Tribune de la banque d'images selon le sentiment des supporters, très atténuée derrière le panneau.
+	var tribune := BanqueImages.tribune(fans.get("sentiment"))
+	if not tribune.is_empty():
+		card.clip_contents = true
+		var fond := D.photo(card, tribune, Rect2(1, 1, 794, 425), .5)
+		fond.modulate = Color(1, 1, 1, .14)
+		fond.name = "ClubLifeStands"
 	var sponsor: Dictionary = {}
 	for option: Dictionary in strategy.get("sponsors", []):
 		if option.get("selected",false): sponsor = option; break
@@ -519,6 +526,14 @@ static func _history(app: Control, canvas: Control) -> void:
 	if not palmares.is_empty():
 		# Palmarès connu dès le premier jour, fusionné aux saisons jouées en carrière.
 		rows = [["Titres au palmarès",Palmares.count_text(int(palmares.get("totalTitles",0)))],["Finales connues",Palmares.count_text(palmares.get("finals",[]).size())],["Saisons jouées avec toi",Palmares.count_text(int(palmares.get("careerSeasons",0)))]]
+	# Vitrine : quelques trophées de la banque d'images posés sur la photo quand le club a des titres.
+	var nb_titres := int(palmares.get("totalTitles", titles)) if not palmares.is_empty() else titles
+	var vitrine := ["trophee-coupe-haute", "trophee-bouclier-bois-argent", "trophee-coupe-anses", "trophee-plaque-or"]
+	for t in mini(nb_titres, vitrine.size()):
+		if BanqueImages.existe(vitrine[t]):
+			var coupe := D.photo(card, vitrine[t], Rect2(470 - t * 104, 129, 112, 112), 0.0)
+			coupe.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			coupe.name = "ClubHistoryTrophy%d" % t
 	for i in rows.size():
 		var y := 278+i*73
 		D.text(card, 24, y, rows[i][0], 29, C.IVORY, 600, 475)
