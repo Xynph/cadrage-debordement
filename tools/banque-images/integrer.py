@@ -59,13 +59,13 @@ def main() -> int:
             gris = None
             if src.get("type_rendu") == "carte-ombres":  # luminance moyenne du tissu : neutre pour le shader
                 im2 = Image.open(chemin_src).convert("RGBA").resize((128, 128))
-                px = [(0.299 * r + 0.587 * g + 0.114 * b) / 255 for r, g, b, a in im2.getdata() if a > 200]
+                px = [(0.299 * r + 0.587 * g + 0.114 * b) / 255 for r, g, b, a in (im2.get_flattened_data() if hasattr(im2, "get_flattened_data") else im2.getdata()) if a > 200]
                 gris = round(sum(px) / len(px), 3) if px else None
             part = None
             if src.get("type_rendu") == "masque-binaire":  # part du masque en blanc (zones du club)
                 mk = Image.open(chemin_src).convert("L").resize((128, 128))
                 cle = Image.open(os.path.join(a.banque, par_id[src["masque_de"]]["fichier"])).convert("RGBA").resize((128, 128)) if src.get("masque_de") in par_id else None
-                vis = [m for m, px in zip(mk.getdata(), cle.getdata() if cle else [(0, 0, 0, 255)] * 16384) if px[3] > 200]
+                vis = [m for m, px in zip((mk.get_flattened_data() if hasattr(mk, "get_flattened_data") else mk.getdata()), (cle.get_flattened_data() if hasattr(cle, "get_flattened_data") else cle.getdata()) if cle else [(0, 0, 0, 255)] * 16384) if px[3] > 200]
                 part = round(sum(1 for m in vis if m > 127) / len(vis), 3) if vis else None
             et = dict(src.get("etiquettes") or {})
             et.update(groupe.get("etiquettes", {}).get(ident, {}))

@@ -63,7 +63,9 @@ static func mois_annee(iso: Variant) -> String:
 ## éclairé (photos de la maquette validée).
 static func photo_meteo(next: Dictionary) -> String:
 	if BanqueImages.moment(next.get("kickoffLocal"), next.get("date", "")) == "jour":
-		var pelouse := BanqueImages.choisir("avant-match", {"moment": "jour", "meteo": BanqueImages.meteo(next.get("meteo"))})
+		# Grande enceinte (20 000 places et plus) par temps sec ; sinon la pelouse d'un stade de club.
+		var taille := "grand" if BanqueImages.niveau_stade(next.get("capacity")) >= 5 else "club"
+		var pelouse := BanqueImages.choisir("avant-match", {"moment": "jour", "meteo": BanqueImages.meteo(next.get("meteo")), "taille": taille})
 		if not pelouse.is_empty() and BanqueImages.texture(pelouse) != null: return pelouse
 	var meteo: Variant = next.get("meteo")
 	var id := "match-tunnel-neutre"

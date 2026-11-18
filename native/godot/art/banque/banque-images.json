@@ -22,7 +22,8 @@
     ],
     "meteo": "sec",
     "moment": "jour",
-    "resultat": "neutre"
+    "resultat": "neutre",
+    "taille": "club"
    },
    "synthetique": true,
    "outil": "OpenAI ImageGen"
@@ -45,7 +46,8 @@
     ],
     "meteo": "pluie",
     "moment": "jour",
-    "resultat": "neutre"
+    "resultat": "neutre",
+    "taille": "club"
    },
    "synthetique": true,
    "outil": "OpenAI ImageGen"
@@ -461,6 +463,121 @@
    "outil": "OpenAI ImageGen"
   },
   {
+   "id": "resultat-bonus-offensif",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-bonus-offensif.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 155774,
+   "sha256": "0b423e10d00c4740127a439ab1bf5b201a1b55b343bf005dd591ff359b65e8ac",
+   "source_sha256": "8afc8bd5734e8a409780079b9cbca29e87de114bbbb35acfc84650a5ff76c9a3",
+   "source_octets": 2179429,
+   "repli": "resultat-nul",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "soir",
+    "resultat": "victoire",
+    "occasion": "bonus"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "resultat-finale-gagnee",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-finale-gagnee.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 140728,
+   "sha256": "125ea0484e74aff536b4344db8a5aa43cc08f94fe365cddbfc75bf6aa54be0d5",
+   "source_sha256": "6de802097716d7bca0f0e9ecc90ddc1cee12bf7ffa7bbacd5421ce80ba007fd8",
+   "source_octets": 2072728,
+   "repli": "resultat-nul",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "projecteurs",
+    "resultat": "victoire",
+    "occasion": "finale"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "resultat-finale-perdue",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-finale-perdue.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 161122,
+   "sha256": "92f5b8fa6b0eac8965d46f8f0e358102064abe520e02a555fa7ee8de1da815eb",
+   "source_sha256": "9c892cca1e44a2af92b801a8d620a27019d037fcb89124b1aaa7995c9f8fe239",
+   "source_octets": 2111624,
+   "repli": "resultat-nul",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "projecteurs",
+    "resultat": "defaite",
+    "occasion": "finale"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "resultat-titre-trophee-leve",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-titre-trophee-leve.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 150220,
+   "sha256": "cf2a5b7ea0be7d2fe638b23847fc0383ae78c249856664e7b4df222d127d37ee",
+   "source_sha256": "e28d9e0379ff42906d654393b5edb550370014dcad5795539e2be67f94d6090b",
+   "source_octets": 2106605,
+   "repli": "resultat-nul",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "projecteurs",
+    "resultat": "victoire",
+    "occasion": "titre"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "resultat-relegation",
+   "categorie": "resultats",
+   "fichier": "resultats/resultat-relegation.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 187036,
+   "sha256": "e3a04c658c01b8a09f183268763697b49fb7d61aadd14b689e8b4668afa624a0",
+   "source_sha256": "3332c9ca90877b6b9597857a83751ed1465077a1940eec3802aa88c21c884935",
+   "source_octets": 2222251,
+   "repli": "resultat-nul",
+   "etiquettes": {
+    "ecrans": [
+     "match",
+     "apres-match"
+    ],
+    "moment": "soir",
+    "resultat": "defaite",
+    "occasion": "relegation"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
    "id": "club-stade-niveau-1",
    "categorie": "infrastructures",
    "fichier": "infrastructures/club-stade-niveau-1.webp",
@@ -569,12 +686,15 @@
    "repli": "club-stade-niveau-2",
    "etiquettes": {
     "ecrans": [
-     "infrastructures"
+     "infrastructures",
+     "avant-match"
     ],
+    "meteo": "sec",
     "moment": "jour",
     "resultat": "neutre",
     "niveau_infrastructure": 5,
-    "categorie_image": "stade"
+    "categorie_image": "stade",
+    "taille": "grand"
    },
    "synthetique": true,
    "outil": "OpenAI ImageGen"
@@ -924,6 +1044,314 @@
    "outil": "Pillow et NumPy, rendu procédural"
   },
   {
+   "id": "maillot-uni-dos",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-uni-dos.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 124244,
+   "sha256": "99c2f1b859632e8c923639cf8b7c34c33e71bb8081d689c4a6fadc23b61fd985",
+   "source_sha256": "c1f8e5d3c61bbfe17551137c4289e0d2fccbfbb13964e03be2d99788d77c23d4",
+   "source_octets": 647420,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.471,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-cerceaux-dos",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-cerceaux-dos.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 124212,
+   "sha256": "60a91eebc618928dd43b8eca3333dc7a72cbe34338a052a2b617fee7b8ffd7b6",
+   "source_sha256": "a6abd443d2de854d7de96d5e04b3922b37b7b70271db747f087803175166ce54",
+   "source_octets": 647283,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.454,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-bandes-verticales-dos",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-bandes-verticales-dos.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 124122,
+   "sha256": "b2a25ddafc8596f0a1f5d0e57011431cdab7c2b535a69d332eef46795346db09",
+   "source_sha256": "84035c149d75552059e957110ef1625e82d3155f7db5f9380049e5c4d071c408",
+   "source_octets": 647562,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.455,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-quartiers-dos",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-quartiers-dos.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 123706,
+   "sha256": "ea820594bd59082db8152e029d9458528f76148e880cae532bba0ff3d994b5df",
+   "source_sha256": "f2d3765a965b8b65799b7752a671660199e5abf0acd2b6f9317acfddfd6a8356",
+   "source_octets": 647491,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.459,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-chevron-dos",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-chevron-dos.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 124182,
+   "sha256": "35f0408a583ce3a5fc5676184f607d8547f262fc219e4a4d87f0192501b31b01",
+   "source_sha256": "e76aba2b14b03ec7f5db69b9353d5c91ea011d7a59e64d232173ba01b0bd5c2b",
+   "source_octets": 647476,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.45,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-ceinture-dos",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-ceinture-dos.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 124216,
+   "sha256": "a09a56e5b2652bf234ea23d05516f890b5cecf2b5259167a36a483f78a4419b9",
+   "source_sha256": "eae7d59603174310750654cb8dc3561572cd1bf746f6593762b34f0460a52612",
+   "source_octets": 647352,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.451,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-manches-contrastees-dos",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-manches-contrastees-dos.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 124236,
+   "sha256": "ce68cfee40731b246c25b108c32f1a4740c1c7886b5fcbc2eeeedafba4417f67",
+   "source_sha256": "c6fef5fb1beb949295fbb42e707dc4ad696311472aecaba0cc65d1fe21264a6a",
+   "source_octets": 647490,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.452,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-col-poignets-contrastes-dos",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-col-poignets-contrastes-dos.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 124544,
+   "sha256": "75da1c78b927ae085ca2940cf260077cb0037e260afea62502012533946ec404",
+   "source_sha256": "74852907fc53a71f26fdb2bca4c74b74e16ba4e5189698e37c94926e81d748db",
+   "source_octets": 647430,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.449,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "short-uni-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/short-uni-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 182622,
+   "sha256": "3b5d6d21f6a7e57e81f3cfcbf963b57097ce6ecb389b551e32a917648ec01ba3",
+   "source_sha256": "339267bf8a91c1af98c51355dbc302981b131c90e45583e9e2f90f02c435bdfa",
+   "source_octets": 768740,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.456,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "short-bande-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/short-bande-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 182750,
+   "sha256": "000250603d93240c442a053b17d27c5c66d7408e3ed238bc742b164a416a9272",
+   "source_sha256": "57acf9cd57097038dda8386d34501aabc317f595dc3957911052ef2fc3dc4216",
+   "source_octets": 768787,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.439,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "short-deux-bandes-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/short-deux-bandes-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 182620,
+   "sha256": "6ff1c9f1d87c91f6a58a155e354c1d6f0edf7a4f033e23bdb1de73a16a1c00df",
+   "source_sha256": "9934c7e9add6eb2c71c852e54f40be777ccd32420812fa07d4bff77f5eeccda6",
+   "source_octets": 768808,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.438,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "chaussettes-uni-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/chaussettes-uni-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 117642,
+   "sha256": "6bc2c9973b4c06a1c44f674cffabc67014d14a0fd769b8f8757a970f3bcc7ba4",
+   "source_sha256": "78fed0fc38a3ee05e5bad365713abcc0619c096d77d92691e0f0899bb9f04bcd",
+   "source_octets": 502244,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.446,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "chaussettes-bande-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/chaussettes-bande-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 117572,
+   "sha256": "7e507f9cb8263637c233a4808afc89477604a6a15560fb5eeb1b15728069ac59",
+   "source_sha256": "88d7c154820faf161592d0387374ef67aacac174b722e813d9c32c7c9fe753f8",
+   "source_octets": 502162,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.427,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "chaussettes-deux-bandes-face",
+   "categorie": "recolorables",
+   "fichier": "recolorables/chaussettes-deux-bandes-face.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 117600,
+   "sha256": "2cd412d5abb1225509e20be5fa17965e298195c21ce58d6b7142d3e0582a9da0",
+   "source_sha256": "d4098edbbc6a3d16a38f0b569b4953c67ec586c32194084328d1a9e6a8ec01bd",
+   "source_octets": 502100,
+   "repli": "maillot-uni-face",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "gris_moyen": 0.426,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
    "id": "maillot-uni-face-masque",
    "categorie": "recolorables",
    "fichier": "recolorables/maillot-uni-face-masque.webp",
@@ -1266,6 +1694,314 @@
    },
    "synthetique": true,
    "outil": "Pillow et NumPy, rendu procédural"
+  },
+  {
+   "id": "maillot-uni-dos-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-uni-dos-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1808,
+   "sha256": "04ea4eacc519a4b3f495594baf0a949744eb8e119d8afbd834e41771fe355df1",
+   "source_sha256": "46cbc949538828e55d34fe83ce566f0a752a528e2aef35c68bc875f0c6ee99b9",
+   "source_octets": 5945,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 1.0,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-cerceaux-dos-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-cerceaux-dos-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 408,
+   "sha256": "6ed5b88e0d9c0bc5c9b36ef82c20580bb663d41b6279ab0facf60f06b3c9a2cf",
+   "source_sha256": "04b96a8bc5a149cb4fade91292acee9ad2c7c0cdcc33cafc1866bfdf20e6a63f",
+   "source_octets": 2075,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.288,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-bandes-verticales-dos-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-bandes-verticales-dos-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 204,
+   "sha256": "221d4c6099c661bfda214bf41b4ac19537f23a4d6cccd332a593f5f8da3a764d",
+   "source_sha256": "8d4ed99b292c649832584baa9d31c8ef9fa3aa6f05662a98feda19dcee393b7a",
+   "source_octets": 2624,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.352,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-quartiers-dos-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-quartiers-dos-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 914,
+   "sha256": "9cd3796945a2c22570f63fc09bfeff28446b38ea9b2f067937f46e3fdea53a4c",
+   "source_sha256": "7715c983d41e1b67173fb4f0e1ef0511fefe9b9b23b29f4e2c833ccf56100ba8",
+   "source_octets": 4539,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.504,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-chevron-dos-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-chevron-dos-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1052,
+   "sha256": "9432d154f57a793762934df117ae61690b9fd0501ee5fe31c4bc2dfc6e265be5",
+   "source_sha256": "0ba97b939b220ed2d61023b084e5e14fb78b9023a51ef1db10537ce941eb588a",
+   "source_octets": 2966,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.096,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-ceinture-dos-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-ceinture-dos-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 218,
+   "sha256": "5f10a6efe629de6abf7863ac9eeb92552cac878c885b290db059effd6aa29a66",
+   "source_sha256": "a2351a29aaa558a3ed634cdabbe39714d10c5c1c7ff10a3a1e940d07faaf50d7",
+   "source_octets": 1548,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.149,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-manches-contrastees-dos-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-manches-contrastees-dos-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1992,
+   "sha256": "2cd91a1fb365e5f43101682069c9bd343a4aea9104f09cbaaedcb3388934e444",
+   "source_sha256": "683cdabb2d00e9b86e59712d5d8840849cabba7588e4456db040dd92dd14e879",
+   "source_octets": 5146,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.181,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "maillot-col-poignets-contrastes-dos-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/maillot-col-poignets-contrastes-dos-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1058,
+   "sha256": "497b825407b952dada2fb520f4b40afe5f9716b3cbb62ef2841de02e894a98e8",
+   "source_sha256": "3059e081301aa7a0b2e899de7e377f77c345d15bb4c386067e6cffeca2d68edd",
+   "source_octets": 2988,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.044,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "short-uni-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/short-uni-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1230,
+   "sha256": "def8ff538ffef186f84169e5c490a7705ec5348ce6a6a90a776a0ae509954bb2",
+   "source_sha256": "2b28d174331854deb0d3c0fec0f000e4c0f5f39de69accc086bdfbe9441d5a7f",
+   "source_octets": 4728,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 1.0,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "short-bande-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/short-bande-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1258,
+   "sha256": "7d2bf518259f78b0c589e5c54f188f2309967933094c3bae2f617d991384a596",
+   "source_sha256": "f7f71ea561ed334cd1124e6cca73a41826789472b51b8c51c94523366890c33c",
+   "source_octets": 3976,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.287,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "short-deux-bandes-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/short-deux-bandes-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1332,
+   "sha256": "600d5f904415bd1b4e7bec46f381fc03a27da06e6b562a13869686080a048ed7",
+   "source_sha256": "5bbcc99eb8f05352f4805d93aeef5933456cda911e816f04f48fd5be4b664a4b",
+   "source_octets": 3598,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.236,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "chaussettes-uni-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/chaussettes-uni-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 1204,
+   "sha256": "7350e95b19e26ffbfcea26cb5c9afed94c462d317cec4cb1bb2d6fbe5af75bb8",
+   "source_sha256": "aa6d929b057b63d51608f891701a05cb6c3862a4d12a79c2645dec8266f79755",
+   "source_octets": 4703,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 1.0,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "chaussettes-bande-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/chaussettes-bande-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 198,
+   "sha256": "f95758c681b69b57f6eb29c7ec884aa4b09dcaff334f31665f2a6a7d850ae690",
+   "source_sha256": "c350071e838583bdae638fff85e83d546922816727d64fb91a2ce13ae5e29abb",
+   "source_octets": 1462,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.16,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
+  },
+  {
+   "id": "chaussettes-deux-bandes-face-masque",
+   "categorie": "recolorables",
+   "fichier": "recolorables/chaussettes-deux-bandes-face-masque.webp",
+   "largeur": 1024,
+   "hauteur": 1024,
+   "octets": 212,
+   "sha256": "b4eb0df37ff70adf9092afe1f6d7df5c4c0909213e5a5a0aeedcf810d79cce6d",
+   "source_sha256": "879d0a7f91f571dc6e05c3af0d0412a6b48db4f6a758bd6b07c85305c9e7f862",
+   "source_octets": 1477,
+   "repli": "maillot-uni-face-masque",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "personnalisation"
+    ],
+    "resultat": "neutre"
+   },
+   "part_blanche": 0.148,
+   "synthetique": true,
+   "outil": "OpenAI ImageGen, tracé de masque et traitement PNG avec Pillow et NumPy"
   }
  ]
 }
