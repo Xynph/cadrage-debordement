@@ -1344,7 +1344,9 @@ func consignes_fictives(view: Control, direct: Dictionary) -> void:
 	between.find_child("MatchBetweenTabPitch", true, false).pressed.emit()
 	# Mise en page avec la tuile (le pilotage injecté reste le dernier relevé de l'écran).
 	await layout(view, Vector2i(1280, 720))
+	if OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES") != "": await _capture("1280x720", "consignes")
 	await layout(view, Vector2i(2560, 1440))
+	if OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES") != "": await _capture("2560x1440", "consignes")
 	# Sans pilotage (match hors carrière Monde) : les faits marquants reviennent.
 	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
 	await settle(2)

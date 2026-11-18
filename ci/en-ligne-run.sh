@@ -98,7 +98,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   if veut pilotage; then
     mkdir -p "$cap/pilotage"
     phase "captures pilotage du match (écran 2D : consignes, arbitre, états des joueurs)" captures-pilotage.log \
-      env CD_MATCH_TEMPS_FORTS_CAPTURES="$cap/pilotage" node tests/godot-match-temps-forts.cjs
+      env CD_MATCH_TEMPS_FORTS_CAPTURES="$cap/pilotage" CD_MATCH_TEMPS_FORTS_MODES=terrain2d,multiplex node tests/godot-match-temps-forts.cjs
   fi
   if veut banque-images; then
     mkdir -p "$cap/banque-images"
