@@ -93,6 +93,15 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
       const sigma = Math.sqrt(mean(xvs.map(x => (x - m) ** 2)));
       assert.ok(sigma >= min, `${id} : écart type du XV entre clubs ${sigma.toFixed(2)} < ${min}`);
     }
+    // Notes qui suivent le niveau réel (18/11, suite de #886) : les XV des clubs se rangent comme leur rang réel
+    // (étage affiné par l'ordre des clubs, world-niveaux-v2.json → ordre), pas seulement par étage.
+    const ordre = levels().ordre;
+    const rangs = list => { const r = []; list.map((x, i) => [x, i]).sort((a, b) => a[0] - b[0]).forEach(([, i], k) => { r[i] = k; }); return r; };
+    for (const id of [...ELITE, 'accession', 'jlo-d2', 'nationale', 'champ']) {
+      const list = byLeague(id), a = rangs(list.map(c => -c.xv)), b = rangs(list.map(c => ordre[id].indexOf(c.id))), n = list.length;
+      const rho = 1 - 6 * a.reduce((t, x, i) => t + (x - b[i]) ** 2, 0) / (n * (n * n - 1));
+      assert.ok(rho >= 0.75, `${id} : XV rangés comme le rang réel (Spearman ${rho.toFixed(2)} < 0,75)`);
+    }
     const etages = levels().clubs;
     for (const id of ELITE) {
       const list = byLeague(id), top = list.filter(c => etages[c.id] === 'cador'), low = list.filter(c => etages[c.id] === 'releguable');
@@ -182,7 +191,7 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
   test('Table publique du niveau réel : identifiants et classes seulement', () => {
     const file = path.join(repo, 'native/engine/world-niveaux-v2.json');
     const published = JSON.parse(fs.readFileSync(file, 'utf8'));
-    assert.deepEqual(Object.keys(published).sort(), ['champs', 'classes', 'clubs', 'couverture', 'etages', 'joueurs', 'note', 'schema', 'statuts', 'version']);
+    assert.deepEqual(Object.keys(published).sort(), ['champs', 'classes', 'clubs', 'couverture', 'etages', 'joueurs', 'note', 'ordre', 'schema', 'statuts', 'version']);
     const registry = new Set(created.clubs.flatMap(c => c.players.map(p => p.id)));
     for (const [id, value] of Object.entries(published.joueurs)) {
       assert.ok(registry.has(id), 'identifiant du registre : ' + id);
@@ -191,6 +200,13 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
     }
     assert.equal(Object.keys(published.clubs).length, 116);
     assert.ok(Object.values(published.clubs).every(e => published.etages.includes(e)));
+    // Rang réel des clubs : chaque championnat liste ses clubs une fois, du plus fort au plus faible, étages compris
+    // dans l'ordre (un club d'un étage plus haut n'est jamais classé derrière un club d'un étage plus bas).
+    for (const [league, ids] of Object.entries(published.ordre)) {
+      assert.equal(new Set(ids).size, ids.length, league);
+      const rank = ids.map(id => published.etages.indexOf(published.clubs[id]));
+      assert.deepEqual(rank, [...rank].sort((a, b) => a - b), 'étages dans l’ordre : ' + league);
+    }
     const { classe, tier } = require('../tools/compile-niveaux-v2.cjs');
     assert.deepEqual([tier('France'), tier('Écosse'), tier('Pays de Galles'), tier('Tonga'), tier('')], [5, 8, 12, 20, 0]);
     assert.equal(classe({ intl_nation: 'Nouvelle-Zélande', intl_caps_total: '60', distinctions: '' }, 28), 'S');

@@ -105,4 +105,16 @@ const cols = ['clubs', 'xvMoyen', 'xvSigma', 'xvEcart', 'noteP10', 'noteP50', 'n
 console.log(['ligue', ...cols].join('\t'));
 for (const id of ORDER) console.log([id, ...cols.map(c => out.leagues[id][c])].join('\t'));
 console.log(JSON.stringify(out.global));
+// --clubs : XV de chaque club par championnat, du plus fort au plus faible, et corrélation (Spearman) entre l'ordre
+// des XV et le rang réel des clubs (world-niveaux-v2.json → ordre), quand il est connu.
+const ordreReel = require(path.join(repo, 'native/engine/world-niveaux-v2.json')).ordre || {};
+const rangs = l => { const s = l.map((x, i) => [x, i]).sort((a, b) => a[0] - b[0]); const r = []; s.forEach(([, i], k) => { r[i] = k; }); return r; };
+const spearman = (a, b) => { const ra = rangs(a), rb = rangs(b), n = a.length; return 1 - 6 * ra.reduce((t, x, i) => t + (x - rb[i]) ** 2, 0) / (n * (n * n - 1)); };
+for (const id of ORDER) {
+  const list = clubs.filter(c => c.league === id).sort((a, b) => b.xv - a.xv);
+  out.leagues[id].xvClubs = list.map(c => [c.id, r1(c.xv)]);
+  const reel = ordreReel[id];
+  if (reel) out.leagues[id].spearmanReel = Math.round(spearman(list.map(c => -c.xv), list.map(c => reel.indexOf(c.id))) * 100) / 100;
+  if (args.includes('--clubs')) console.log(id + (reel ? ' (Spearman XV / rang réel ' + out.leagues[id].spearmanReel + ')' : '') + ' : ' + list.map(c => c.id + ' ' + r1(c.xv)).join(' · '));
+}
 if (opt('--json')) fs.writeFileSync(opt('--json'), JSON.stringify(out, null, 1));

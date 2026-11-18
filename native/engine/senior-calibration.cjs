@@ -168,16 +168,34 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
   const levelOf = id => levels?.joueurs?.[id] || NONE;
   const etageOf = clubId => levels?.clubs?.[clubId] ?? 'milieu';
   const leagueScale = leagueId => scale.leagues[leagueId] || scale.leagues.guest;
-  // Étage du club, élargi par championnat (scale.etageScale, absent = 1) pour que les effectifs d'un même
-  // championnat ne se tiennent pas à quelques dixièmes. Un jeune (moins de 23 ans) garde l'étage simple :
-  // son niveau actuel est d'abord le sien, le club le tire moins qu'un senior établi. Valeur entière.
+  // Niveau du club : son étage (cador +2 … relégable −2) affiné par son rang réel dans le championnat
+  // (levels.ordre, du plus fort au plus faible) : les clubs d'un même étage s'étalent sur la largeur de l'étage
+  // (scale.rangEtage, 1 = toute la bande d'un point) au lieu d'avoir tous le même niveau. Sans rang : l'étage seul.
+  const clubLevels = new Map();
+  const clubLevel = clubId => {
+    if (clubLevels.has(clubId)) return clubLevels.get(clubId);
+    const etage = etageOf(clubId);
+    let level = scale.etages[etage] ?? 0;
+    const spread = scale.rangEtage ?? 0;
+    const ids = spread ? Object.values(levels?.ordre || {}).find(list => list.includes(clubId)) : null;
+    if (ids) {
+      const same = ids.filter(id => etageOf(id) === etage);
+      if (same.length > 1) level += spread * (0.5 - (same.indexOf(clubId) + 0.5) / same.length);
+    }
+    clubLevels.set(clubId, level);
+    return level;
+  };
+  // Niveau du club, élargi par championnat (scale.etageScale, absent = 1) pour que les effectifs d'un même
+  // championnat ne se tiennent pas à quelques dixièmes. Un jeune (moins de 23 ans) garde le niveau simple :
+  // son niveau actuel est d'abord le sien, le club le tire moins qu'un senior établi.
   // Le bas de tableau a son propre facteur (scale.etageScaleBas, sinon etageScale) : dans les championnats
   // anglais, celtes et japonais, les derniers sont bien plus faibles que les premiers ne sont forts.
+  // Sans rang fin (scale.rangEtage absent), la valeur reste entière comme avant.
   const etageBonus = (clubId, leagueId, young = false) => {
-    const etage = scale.etages[etageOf(clubId)] ?? 0;
-    if (young) return etage;
-    const factor = (etage < 0 ? scale.etageScaleBas?.[leagueId] : null) ?? scale.etageScale?.[leagueId] ?? 1;
-    return Math.round(etage * factor);
+    const level = clubLevel(clubId);
+    if (young) return level;
+    const factor = ((scale.etages[etageOf(clubId)] ?? 0) < 0 ? scale.etageScaleBas?.[leagueId] : null) ?? scale.etageScale?.[leagueId] ?? 1;
+    return scale.rangEtage ? level * factor : Math.round(level * factor);
   };
   const statsByRegistry = new WeakMap();
   const band = age => (age < scale.age.seniorFrom ? 'jeune' : 'senior');
@@ -384,7 +402,7 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
   function youthPotential(s, club, player, weight = 0) {
     if (worldVersion !== 2 || !s?.worldMode?.leagues || !club) return null;
     const leagueId = Object.entries(s.worldMode.leagues).find(([, l]) => l.members?.includes(club.id))?.[0] ?? 'guest';
-    const Y = scale.academy, anchor = leagueScale(leagueId).titulaire + etageBonus(club.id, leagueId);
+    const Y = scale.academy, anchor = Math.round(leagueScale(leagueId).titulaire + etageBonus(club.id, leagueId));
     const draw = hashText(player.id + ':formation-v2'), percentile = (draw % 10000) / 100, variation = draw >>> 14;
     const elitePercent = Y.elitePercent + Y.elitePerWeight * weight, strong = Y.strongBase + weight;
     const index = percentile >= 100 - elitePercent ? 3 : percentile >= 100 - elitePercent - strong ? 2 : percentile >= 100 - elitePercent - strong - Y.promising ? 1 : 0;

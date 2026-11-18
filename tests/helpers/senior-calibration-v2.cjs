@@ -15,7 +15,7 @@ function roleTools() {
 
 function levels() {
   const table = JSON.parse(fs.readFileSync(path.join(root, 'native/engine/world-niveaux-v2.json'), 'utf8'));
-  return { joueurs: table.joueurs, clubs: table.clubs };
+  return { joueurs: table.joueurs, clubs: table.clubs, ordre: table.ordre || {} };
 }
 
 function createV2() {
