@@ -114,6 +114,21 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  const jiffDeductions=(s,id,season)=>(id==='elite'||id==='accession')&&typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.deductionsFor==='function'?{deductions:CDJiff.deductionsFor(s,season)}:{};
  function rows(s,id,season=s.season){if(id==='guest')return edition.guests.map(clubId=>({clubId,points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[]}));const ids=s.worldMode.leagues[id]?.members;if(!ids)return[];const options={season:(id==='srp'?2027:2026)+season-1,phase:'league',tieBreaks:{previousRank:s.worldMode.previousRanks||{},drawOrder:s.worldMode.draws?.['league:'+id]?.ranks},...jiffDeductions(s,id,season)};
  return (champLeague(id)?CH.table(ids,s.history.filter(r=>r.season===season),{fixtures:s.worldMode.fixtures.filter(f=>f.competitionId===id&&f.phase==='league'),tieBreaks:options.tieBreaks}):nationallyMutable(id)?N.table(ids,s.history.filter(r=>r.season===season),{fixtures:s.worldMode.fixtures.filter(f=>f.competitionId===id&&f.phase==='league'),tieBreaks:{drawOrder:s.worldMode.draws?.['league:'+id]?.ranks,previousRank:s.worldMode.previousRanks}}):japanLeague(id)?JP.table({id,members:ids,fixtures:s.worldMode.fixtures,results:s.history,season,drawOrder:s.worldMode.draws?.['league:'+id]?.order}):id==='srp'?SRP.table(ids,s.history.map(asResult),id,{...options,...srpOptions}):C.table(ids,s.history.map(asResult),id,options)).map(r=>({...r,form:r.form.map(x=>({W:'V',L:'D',D:'N'})[x])}));}
+ // Bonus d'une rencontre (dilemme de fin de match, match-bonus.cjs) : évaluateur (score, essais) → bonus offensif et
+ // défensif de chaque camp, par la fonction même du classement de la compétition ; null hors phase de classement
+ // (élimination directe, barrage, amical, sélection) : aucun bonus en jeu.
+ const pair=r=>({bo:!!r.bo,bd:!!r.bd});
+ function matchBonus(f){
+  if(!f||f.phase!=='league'||typeof f.competitionId!=='string')return null;const id=f.competitionId;
+  if(champLeague(id))return (score,tries)=>[0,1].map(side=>pair(CH.pointsFor(score,tries,side)));
+  if(nationallyMutable(id))return (score,tries)=>[0,1].map(side=>pair(N.pointsFor(score,tries,side)));
+  if(japanLeague(id))return JP.matchBonus;
+  if(id==='srp'&&SRP)return (score,tries)=>SRP.resultPoints(score,tries,SRP.referencePolicy).map(r=>({bo:!!r.attackingBonus,bd:!!r.losingBonus}));
+  let bonus=null;try{bonus=C.rules(id).bonus;}catch{return null;}
+  return bonus?(score,tries)=>C.matchBonus(id,score,tries):null;
+ }
+ // Places qualificatives de la phase de classement (enjeu d'un point de bonus pour l'IA) ; 0 si le profil ne le dit pas.
+ function qualifyingPlaces(id){try{if(id==='srp'&&SRP)return SRP.rules().playoffs|0;return C.rules(id).playoffs|0;}catch{return 0;}}
  const worldRanked=(s,id=leagueId(s))=>rows(s,id).map(r=>({...s.clubs[r.clubId],...r,id:r.clubId}));
  function worldLabel(s){if(s.phase==='ended')return'Saison terminée';const f=userFixture(s);return f?`${REG.leagues.find(l=>l.id===f.competitionId)?.name||({champions:'Coupe des champions',challenge:'Challenge européen',access:'Barrage d’accession','jlo-d1-d2':'Barrage Japon D1 / D2','access-nationale':'Barrage Pro D2 / Nationale'})[f.competitionId]||f.competitionId} · ${f.phase==='league'||f.phase==='pool'?'Journée '+(f.round+1):({barrage:'Barrages',elimination:'Match de barrage',quarter:'Quarts de finale',semi:'Demi-finales',final:'Finale',r16:'Huitièmes de finale',access:'Barrage d’accession','third-place':'Petite finale',promotion:'Manche '+(f.round+1)})[f.phase]||f.phase}`:'Semaine '+(s.round+1)+' · Préparation';}
  function installFixture(s,f){
@@ -622,5 +637,5 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   };
  }
  // Aliases prevent named inner functions shadowing the globals they replace.
- return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,previewFixtures,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,nextOpening,clubReleaseOn,enableDaily,dailyStatus,advanceDay,fixerMeteo,meteoAnnoncee,meteoMatch,meteoPrevue,label:worldLabel,context,start,finishWeek,multiplex,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
+ return Object.freeze({active,sizing,matchBonus,qualifyingPlaces,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,previewFixtures,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,nextOpening,clubReleaseOn,enableDaily,dailyStatus,advanceDay,fixerMeteo,meteoAnnoncee,meteoMatch,meteoPrevue,label:worldLabel,context,start,finishWeek,multiplex,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
 };

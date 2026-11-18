@@ -34,6 +34,8 @@ signal levier_choisi(route: String)
 signal score_joue(score: Array)
 ## Caméra du direct 3D choisie dans le menu Plus (« tv », « tactical », « action »).
 signal camera_demandee(mode: String)
+## Consigne de fin de match choisie dans la tuile Bonus ({attack, defense, penalty}, commandes existantes).
+signal consigne_bonus(consigne: Dictionary)
 ## Bande de la vue du match (sous le score) qui porte la barre de commandes, la même en 3D et
 ## pendant l'entracte ; sans elle, la barre reste en haut de l'écran intermédiaire.
 var hote_barre: Control
@@ -123,6 +125,14 @@ var classement_lignes: VBoxContainer
 ## Marges des trois tuiles de droite (duel, classement, faits), resserrées avec le classement.
 var _tuiles_droite: Array = []
 var multiplex: PanelContainer
+## Tuile Bonus (`direct.bonus`, moteur match-bonus.cjs) : règle du championnat, état du bonus offensif et défensif,
+## et à partir de la 65e minute le dilemme de fin de match avec ses deux consignes. Masquée sans bonus en jeu.
+var bonus_tuile: PanelContainer
+var bonus_regle: Label
+var bonus_etat: HBoxContainer
+var bonus_situation: Label
+var bonus_choix: HBoxContainer
+var _bonus_cle := ""
 var multiplex_cartes: GridContainer
 var multiplex_precision: Label
 ## Dernière journée montrée (null sans multiplex) et sa clé (rien n'est reconstruit sans changement).
@@ -571,6 +581,7 @@ func _construire() -> void:
 		enfant.queue_free()
 	_cle = ""
 	_journee_cle = ""
+	_bonus_cle = ""
 	terrain = ancien if ancien != null else Terrain2D.new()
 	terrain.densite = _densite
 	terrain.legende = false
@@ -866,6 +877,34 @@ func _page() -> void:
 	page.add_child(bas)
 	_carte_gabi(bas)
 	S.G.fill(adjoint_cadre)
+	# Bonus : à côté de Gabi, la décision de fin de match du manager.
+	var cadre_bonus := _panneau(bas, px(14))
+	bonus_tuile = cadre_bonus.get_parent().get_parent()
+	bonus_tuile.name = "MatchBetweenBonus"
+	bonus_tuile.custom_minimum_size.x = px(640)
+	cadre_bonus.add_theme_constant_override("separation", px(6))
+	var tete_bonus := _titre("Bonus")
+	bonus_regle = _texte("", 22, FAIBLE)
+	bonus_regle.name = "MatchBetweenBonusRule"
+	bonus_regle.clip_text = true
+	bonus_regle.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	bonus_regle.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	S.G.fill(bonus_regle)
+	tete_bonus.add_child(bonus_regle)
+	cadre_bonus.add_child(tete_bonus)
+	bonus_etat = S.G.h(px(16))
+	bonus_etat.name = "MatchBetweenBonusState"
+	cadre_bonus.add_child(bonus_etat)
+	bonus_situation = _texte("", 26, IVOIRE, true, true)
+	bonus_situation.name = "MatchBetweenBonusDilemma"
+	bonus_situation.max_lines_visible = 2
+	bonus_situation.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	bonus_situation.mouse_filter = Control.MOUSE_FILTER_PASS
+	cadre_bonus.add_child(bonus_situation)
+	bonus_choix = S.G.h(px(10))
+	bonus_choix.name = "MatchBetweenBonusChoices"
+	cadre_bonus.add_child(bonus_choix)
+	bonus_tuile.visible = false
 	# Multiplex : titre et minute à gauche, une rangée de cartes (la bande garde la hauteur de Gabi).
 	var cadre_multiplex := _panneau(bas, px(14))
 	multiplex = cadre_multiplex.get_parent().get_parent()
@@ -1083,6 +1122,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
 	_remplir_journee(model, direct, equipes)
+	_remplir_bonus(model, live, direct)
 	_niveaux = direct.get("niveaux", [])
 	var voulu := niveau_regie if not niveau_regie.is_empty() else str(direct.get("niveau", ""))
 	if niveau_libelle() != _libelle_niveau(voulu) or grille_niveaux.get_child_count() != _niveaux.size(): _remplir_niveaux(voulu)
@@ -1102,7 +1142,8 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_cle = cle
 	_lignes = direct.get("fil", [])
 	_fin = {"fini": live.get("finished", false), "score": live.get("score", []), "camp": int(direct.get("camp", -1)),
-		"finale": str(model.get("next", {}).get("phase", "") if model.get("next") is Dictionary else "") == "final", "essais": live.get("tries", [])}
+		"finale": str(model.get("next", {}).get("phase", "") if model.get("next") is Dictionary else "") == "final", "essais": live.get("tries", []),
+		"bonus": direct.get("bonus") if direct.get("bonus") is Dictionary else null}
 	_remplir_fil()
 	_remplir_chiffres(direct, live)
 	_remplir_xv(passe.lineup, direct)
@@ -1187,12 +1228,13 @@ func _remplir_fil() -> void:
 		if recents.is_empty(): faits.add_child(_texte("Aucun fait marquant pour l’instant.", 24, FAIBLE))
 	_photo_faits(visibles)
 
-## Occasion de la photo de fin de match : finale, victoire bonifiée (3 essais de plus), sinon championnat.
+## Occasion de la photo de fin de match : finale, victoire bonifiée selon la règle du championnat (`fin.bonus`,
+## calculé par le moteur : 3 essais d'écart en Top 14, 4 essais marqués en Premiership et URC…), sinon championnat.
+## Sans bonus en jeu (élimination directe, amical), jamais de victoire bonifiée.
 static func occasion_fin(fin: Dictionary, resultat: String) -> String:
 	if fin.get("finale", false) and resultat != "nul": return "finale"
-	var essais: Variant = fin.get("essais")
-	var camp := int(fin.get("camp", -1))
-	if resultat == "victoire" and essais is Array and essais.size() == 2 and camp in [0, 1] and int(essais[camp]) - int(essais[1 - camp]) >= 3: return "bonus"
+	var bonus: Variant = fin.get("bonus")
+	if resultat == "victoire" and bonus is Dictionary and bonus.get("offensif") is Dictionary and bool(bonus.offensif.get("acquis", false)): return "bonus"
 	return "championnat"
 
 ## Image de la banque pour un fait du moteur ("" : fait sans photo).
@@ -1327,6 +1369,52 @@ func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	_rangs = rangs
 	_remplir_anneaux(direct)
 	_remplir_zone22(direct)
+
+## Tuile Bonus : la règle du championnat, l'état vu de notre camp et, en fin de match, le dilemme et ses deux
+## consignes (la consigne en place est en or). Rien n'est calculé ici : tout vient de `direct.bonus`.
+func _remplir_bonus(model: Dictionary, live: Dictionary, direct: Dictionary) -> void:
+	if not is_instance_valid(bonus_tuile): return
+	var bonus: Variant = direct.get("bonus")
+	var tactiques: Dictionary = model.get("tactics", {}) if model.get("tactics") is Dictionary else {}
+	var cle := JSON.stringify([bonus, tactiques.get("attack"), tactiques.get("defense"), tactiques.get("penalty"), live.get("finished", false)])
+	if cle == _bonus_cle: return
+	_bonus_cle = cle
+	bonus_tuile.visible = bonus is Dictionary
+	if not bonus is Dictionary: return
+	bonus_regle.text = str(bonus.get("regle", ""))
+	bonus_regle.tooltip_text = "Règle du championnat : " + str(bonus.get("regle", ""))
+	S.clear(bonus_etat)
+	for cote: String in ["offensif", "defensif"]:
+		var item: Variant = bonus.get(cote)
+		if not item is Dictionary or str(item.get("texte", "")).is_empty(): continue
+		var teinte := DOUX
+		if bool(item.get("acquis", false)) or str(item.get("statut", "")) == "tenu": teinte = MONTEE
+		elif bool(item.get("horsDePortee", false)): teinte = FAIBLE
+		elif str(item.get("statut", "")) == "perdu" or int(item.get("manque", 0) if item.get("manque") != null else 0) > 0: teinte = OR
+		var etiquette := _texte(str(item.texte), 24, teinte, false, true)
+		etiquette.name = "MatchBetweenBonus_" + cote
+		bonus_etat.add_child(etiquette)
+	S.clear(bonus_choix)
+	var situation: Variant = bonus.get("situation")
+	bonus_situation.visible = situation is Dictionary
+	bonus_choix.visible = situation is Dictionary
+	if not situation is Dictionary: return
+	bonus_situation.text = str(situation.get("texte", ""))
+	bonus_situation.tooltip_text = bonus_situation.text
+	for consigne: Variant in situation.get("consignes", []):
+		if not consigne is Dictionary: continue
+		var c: Dictionary = consigne
+		var en_place := str(tactiques.get("attack", "")) == str(c.get("attack", "")) and str(tactiques.get("defense", "")) == str(c.get("defense", "")) and str(tactiques.get("penalty", "auto")) == str(c.get("penalty", ""))
+		var bouton := _bouton(str(c.get("label", "")), func(): consigne_bonus.emit(c), not live.get("finished", false), en_place)
+		bouton.name = "MatchBetweenBonusChoice_" + str(c.get("id", ""))
+		bouton.custom_minimum_size.y = px(52)
+		bouton.add_theme_font_size_override("font_size", px(24))
+		bouton.clip_text = true
+		bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		bouton.tooltip_text = str(c.get("aide", "")) + ("\nConsigne en place." if en_place else "\nLe match se met en pause le temps de la donner.")
+		bouton.set_meta("contextual_enabled", true)
+		S.G.fill(bouton)
+		bonus_choix.add_child(bouton)
 
 ## Journée en direct (`direct.journee`) : classement en direct et multiplex, masqués sans elle.
 func _remplir_journee(model: Dictionary, direct: Dictionary, equipes: Array) -> void:
