@@ -87,7 +87,10 @@ test('Trajectoire : besoin du prochain match (cas du dernier match à 18 JIFF)',
 
 test('Alerte : feuille sous la trajectoire, Gabi propose des échanges concrets non qualifié -> qualifié', () => {
   const h = world();
-  const r = JSON.parse(h.run(`(()=>{const own=S.clubs[S.club];S.jiff.counts[S.club]=[8,8*14];
+  const r = JSON.parse(h.run(`(()=>{const own=S.clubs[S.club];
+   // Retard calé sur la feuille du jour : il faudrait 2 JIFF de plus que la feuille actuelle au prochain match.
+   S.jiff.counts[S.club]=[8,8*16];const p0=CDJiff.project();
+   S.jiff.counts[S.club]=[8,16*(8+p0.remaining)-(p0.currentSheet+2)*p0.remaining];
    const p=CDJiff.project();const adv=nativePositionAptitudes.quotaAdvice(own,S.lineup,S.reserves);
    const ok=adv&&adv.changes.every(c=>!CDJiff.isJiff(S,own.players.find(x=>x.id===c.sortant))&&CDJiff.isJiff(S,own.players.find(x=>x.id===c.playerId)));
    S.jiff.counts[S.club]=[8,8*23];const calm=nativePositionAptitudes.quotaAdvice(own,S.lineup,S.reserves);
