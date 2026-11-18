@@ -12,8 +12,9 @@
 //    (moral, confiance de la direction, relations presse, satisfaction, promesse de temps de jeu, charge physique,
 //    séance collective, préparation collective, promotion d'un jeune, trésorerie) et restent mesurés.
 //  - Cadence : plafond par jour, par catégorie et par semaine, intervalle par type, mémoire des sujets déjà écrits ;
-//    les mails « arret » arrêtent « Continuer » (continuer.cjs, arrêt informatif « courrier »), les autres arrivent
-//    dans la boîte sans arrêt.
+//    chaque type a une nature (18/11/2026) : « action » (réponse attendue) arrête « Continuer » à lui seul ;
+//    « info » est rangé dans l'arrêt d'info du jour (un seul par jour) ; « routine » n'arrête jamais à lui seul
+//    (continuer.cjs). Rien ne disparaît : tout reste en Réception.
 const DATA = require('./club-mail.json');
 const files = Object.freeze([]), commands = Object.freeze(['club_mail_reply']);
 // Données injectées dans la VM avant les domaines (native-systems.cjs, bootstrap).
@@ -760,6 +761,11 @@ function factory() {
     return '';
   }
 
+  // Nature d'un type de courrier (club-mail.json) et rang d'importance dans la journée : réponse attendue d'abord,
+  // puis information, puis routine ; à nature égale, la priorité du type (plus petite = plus importante).
+  function nature(type) { const n = TYPES[type]?.nature; return n === 'action' || n === 'info' ? n : 'routine'; }
+  function rang(type) { return ({ action: 3, info: 2, routine: 1 })[nature(type)] * 1000 - Math.min(999, TYPES[type]?.priorite ?? 99); }
+
   function project() {
     if (typeof S === 'undefined' || !S || !obj(S.clubMail)) return { mails: [], reponses: {}, attente: 0, blessures: Object.fromEntries(Object.entries(BL.types || {}).map(([k, t]) => [k, t.libelle])) };
     const st = S.clubMail, list = st.mails.slice(-(C.projection ?? 80)).reverse();
@@ -770,7 +776,7 @@ function factory() {
         const t = TYPES[m.type] || {}, r = render(m), cat = D.categories?.[t.categorie] || {};
         const chosen = (t.reponses || []).find(x => x.id === m.choice);
         return { id: m.id, type: m.type, date: m.date, categorie: t.categorie || 'moments', categorieLabel: cat.label || 'Club', expediteur: r.expediteur, sujet: r.sujet, corps: r.corps,
-          arret: !!t.arret, ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, club: m.club ?? null, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
+          arret: nature(m.type) === 'action', nature: nature(m.type), importance: rang(m.type), ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, club: m.club ?? null, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
           reponses: m.status === 'nouveau' ? (t.reponses || []).map(x => { const raison = unavailable(S, m, x); return { id: x.id, libelle: x.libelle, effets: effectText(x.effets || {}, m.player ? S.clubs[S.club]?.players?.find(y => y.id === m.player) : null, todayOf(S) || m.date), disponible: !raison, raison, ouvrir: !!x.ouvrir }; }) : [] };
       }),
       reponses, attente: st.mails.filter(m => m.status === 'nouveau').length,
@@ -778,14 +784,15 @@ function factory() {
     };
   }
 
-  // Mails du jour qui arrêtent « Continuer » (continuer.cjs) : au plus `arretsParJour`, par priorité.
+  // Courrier du jour vu par « Continuer » (continuer.cjs), le plus important d'abord, avec sa nature (décision de
+  // Léo, 18/11/2026) : « action » arrête l'avance à lui seul, « info » est rangé dans l'arrêt d'info du jour,
+  // « routine » n'arrête jamais à lui seul. Tous restent en Réception, lisibles et avec leurs réponses.
   function stops(s) {
     if (!s || !obj(s.clubMail) || !world(s)) return [];
     const d = todayOf(s);
-    return s.clubMail.mails.filter(m => m.date === d && TYPES[m.type]?.arret && m.status === 'nouveau')
-      .sort((a, b) => (TYPES[a.type].priorite ?? 99) - (TYPES[b.type].priorite ?? 99))
-      .slice(0, C.arretsParJour ?? 2)
-      .map(m => { const r = render(m); return { id: m.id, type: m.type, sujet: r.sujet, expediteur: r.expediteur, ecran: TYPES[m.type].ecran || 'Bureau', joueur: m.player }; });
+    return s.clubMail.mails.filter(m => m.date === d && TYPES[m.type] && m.status === 'nouveau')
+      .sort((a, b) => rang(b.type) - rang(a.type) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+      .map(m => { const r = render(m); return { id: m.id, type: m.type, nature: nature(m.type), priorite: TYPES[m.type].priorite ?? 99, sujet: r.sujet, expediteur: r.expediteur, ecran: TYPES[m.type].ecran || 'Bureau', joueur: m.player }; });
   }
 
   // ------------------------------------------------------------------ réponse du manager (seul effet sur le monde)
