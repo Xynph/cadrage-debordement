@@ -2,6 +2,7 @@ extends RefCounted
 ## Le journal du moteur, accompagné de repères et d'actions réellement disponibles.
 const Copy = preload("res://ui/management_copy.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
+const RoomIdentityCouleurs = preload("res://ui/contextual/rooms/room_identity.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const SeasonLabel = preload("res://ui/season_label.gd")
 const Portraits = preload("res://ui/game_skin.gd")
@@ -776,10 +777,12 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 		_art_fade(card,Rect2(0,0,width-727+359,142))
 	else:
 		var pitch := width-1-523-588
-		D.photo(card,photo_resultat(str(message.get("text",""))),Rect2(pitch,1,588,140))
+		var entete := photo_resultat(str(message.get("text","")))
+		var photo_entete := D.photo(card,entete,Rect2(pitch,1,588,140))
+		BanqueImages.recolorer(photo_entete, entete, RoomIdentityCouleurs.primary(Portraits.identity(app.model.get("club",{}))), RoomIdentityCouleurs.secondary(Portraits.identity(app.model.get("club",{}))))
 		_art_fade(card,Rect2(pitch,1,135,140))
 		_art_fade(card,Rect2(pitch,1,588,45),false)
-		D.photo(card,"mail-staff",Rect2(width-524,1,523,140))
+		D.photo(card,portrait_expediteur(_sender(app,message)),Rect2(width-524,1,523,140))
 		var blend := _art_fade(card,Rect2(width-524,1,154,140))
 		blend.fill_from = Vector2(0,.23)
 		blend.fill_to = Vector2(.25,.59)
@@ -1043,3 +1046,19 @@ static func _redraw(app: Control, focus: String) -> void:
 
 static func _focus(action: Control) -> void:
 	if is_instance_valid(action) and action.is_inside_tree(): action.grab_focus()
+
+
+## Portrait de l'expéditeur d'un courrier (banque d'images, par fonction) ; sinon le staff habituel.
+static func portrait_expediteur(expediteur: String) -> String:
+	var f := U.fold(expediteur)
+	var id := ""
+	for paire: Array in [[["president"], "staff-president"], [["directeur sportif", "direction sportive"], "staff-directeur-sportif"],
+			[["secretariat", "secretaire"], "staff-secretaire-general"], [["medecin", "medical", "infirmerie"], "staff-medecin"],
+			[["kine"], "staff-kine"], [["preparat", "physique"], "staff-prepa-physique"], [["analys", "video"], "staff-analyste"],
+			[["recrut", "cellule de recrutement"], "staff-recruteur"], [["adjoint", "entraineur", "staff"], "staff-adjoint"],
+			[["quotidien", "journal", "presse", "redaction"], "presse-journaliste"], [["television", "tele", "consultant"], "presse-consultant-tv"],
+			[["supporter", "abonne", "tribune"], "supporter-ancien"], [["agent"], "agent-joueur"], [["sponsor", "partenaire"], "sponsor-dirigeant"],
+			[["arbitr", "ligue", "federation", "commission"], "arbitre"]]:
+		for mot: String in paire[0]:
+			if id.is_empty() and mot in f: id = paire[1]
+	return id if not id.is_empty() and BanqueImages.texture(id) != null else "mail-staff"

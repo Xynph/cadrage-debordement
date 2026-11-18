@@ -1,6 +1,7 @@
 extends RefCounted
 const CLUB_CHROME := Color("11191e")
 const C = preload("res://ui/immersive08/components.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Raccourcis = preload("res://ui/raccourcis_clavier.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -97,6 +98,19 @@ static func render(app: Control) -> bool:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	app.root_content.add_child(background)
+	# Fond photo très discret de l'écran (banque d'images « fond-* »), sous les panneaux.
+	var fond := fond_ecran(app.route, str(app.model.get("meta", {}).get("phase", "")))
+	if not fond.is_empty():
+		var photo := TextureRect.new()
+		photo.name = "ScreenBackdrop"
+		photo.texture = BanqueImages.texture(fond)
+		photo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		photo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		photo.modulate = Color(1, 1, 1, FOND_OPACITE)
+		photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		photo.set_meta("banque_image", fond)
+		app.root_content.add_child(photo)
 	var layout := Control.new()
 	layout.name = "ImmersiveLayout"
 	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -706,3 +720,16 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 			app.match_screen.update_frame(app.model)
 	if app.route == "Staff": ClubCanvas.style_staff(app.body.get_child(0), app.accent)
 	elif COMPACT_ART.has(app.route): Legacy.apply(app.body.get_child(0), app.accent)
+
+
+## Fonds d'écran de la banque d'images par route (très atténués : les panneaux restent la lecture).
+const FOND_OPACITE := 0.16
+const FONDS := {"Bureau":"fond-bureau", "Effectif":"fond-effectif", "Composition":"fond-composition", "Préparation":"fond-tactique",
+	"Plan de jeu":"fond-tactique", "Recrutement":"fond-transferts", "Finances":"fond-finances", "Calendrier":"fond-calendrier",
+	"Classements":"fond-classements", "Rivalités":"fond-palmares", "Presse":"fond-presse", "Formation":"fond-jeunes", "Centre":"fond-jeunes",
+	"Suivi des jeunes":"fond-jeunes", "Travail du club":"fond-medical", "Carrière":"fond-palmares"}
+
+static func fond_ecran(route: String, phase: String = "") -> String:
+	var id := str(FONDS.get(route, ""))
+	if route == "Bureau" and phase in ["offseason", "ended", "intersaison"]: id = "fond-fin-de-saison"
+	return id if not id.is_empty() and BanqueImages.texture(id) != null else ""

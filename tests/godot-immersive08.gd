@@ -87,8 +87,10 @@ func key(code: Key, ctrl: bool = false, alt: bool = false) -> void:
 
 func entry() -> void:
 	check(app.find_child("ImmersiveWelcome",true,false)!=null,"L’accueil natif utilise la composition immersive")
-	var art: TextureRect = app.find_child("Art_entry_ground",true,false)
-	check(art!=null and art.texture!=null,"Le nouveau stade IA est chargé dans l’accueil")
+	# Photo de titre de la banque d'images (lot 7) ; l'ancien stade reste le repli.
+	var art: TextureRect = app.find_child("Art_titre_principal",true,false)
+	if art == null: art = app.find_child("Art_entry_ground",true,false)
+	check(art!=null and art.texture!=null,"La photo de titre est chargée dans l’accueil")
 	check(app.find_child("EntryResume",true,false)==null,"Aucune reprise proposée sans carrière")
 	var world: Array = app.pack_manager.creation_catalogue()
 	if not world.is_empty():

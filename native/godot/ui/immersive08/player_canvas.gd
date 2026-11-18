@@ -1,5 +1,6 @@
 extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -166,7 +167,8 @@ static func build(app:Control,player:Dictionary) -> Control:
 			D.photo(page,"hospitality",Rect2(1444,430,804,520))
 		4:
 			_development(D.panel(page,Rect2(0,430,1670,550),"DÉVELOPPEMENT ET PROGRESSION","school"),app,player)
-			D.photo(page,"academy-player",Rect2(1686,430,562,550))
+			var poste := BanqueImages.poste(str(player.get("pos", "")))
+			D.photo(page,poste if not poste.is_empty() else "academy-player",Rect2(1686,430,562,550))
 		5:
 			_contexts(D.panel(page,Rect2(0,430,1498,806),"LE JOUEUR DANS LE GROUPE","people","","FullPlayerContexts"),app,player)
 			_sources(D.panel(page,Rect2(1514,430,734,520),"REPÈRES DE DÉPART","info","","FullPlayerSources"),app,player)

@@ -1,6 +1,7 @@
 extends RefCounted
 ## Les seuils de la carrière partagent la DA des menus et les actions existantes.
 const C = preload("res://ui/immersive08/components.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 const Club = preload("res://ui/club_views.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Entry = preload("res://ui/entry_screens.gd")
@@ -18,7 +19,7 @@ static func home(app: Control) -> Control:
 	_configure(app)
 	var page := Control.new()
 	page.name = "CarnetHome"
-	var photo := C.photo("entry-ground")
+	var photo := C.photo("titre-principal" if BanqueImages.existe("titre-principal") else "entry-ground")
 	page.add_child(photo)
 	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var shading := Gradient.new()
@@ -245,7 +246,7 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	# Options de carrière : bandeau resserré, la page tient sans défilement en 1920×1080.
 	banner.custom_minimum_size.y = clampf(size.y * .07, 52, 120) if options_step else clampf(size.y * (.128 if creation else .15), 88, 215)
 	column.add_child(banner)
-	var photo := C.photo("maquette-onglets-banner" if creation else "maquette-reality-banner", Vector2.ZERO, true, .5)
+	var photo := C.photo(("titre-nouvelle-carriere" if BanqueImages.existe("titre-nouvelle-carriere") else "maquette-onglets-banner") if creation else "maquette-reality-banner", Vector2.ZERO, true, .5)
 	banner.add_child(photo)
 	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	photo.anchor_left = 0.0 if creation else .31

@@ -1,6 +1,7 @@
 extends VBoxContainer
 ## Calendrier de carrière : la date simulée et le programme viennent du moteur.
 const FocusLater := preload("res://ui/focus_later.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 
 const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -253,7 +254,12 @@ func _heading(title: String, description: String, match_count: int, session_coun
 	var edge := C.box(ink, Color("50665e"), 8, 12)
 	edge.border_color = Color("50665e").lerp(app.accent, .35)
 	panel.add_theme_stylebox_override("panel", edge)
-	var photo := C.photo("stadium", Vector2.ZERO, true, .42)
+	# Prochain match à l'extérieur : le voyage de l'équipe (banque d'images) ; sinon le stade.
+	var next: Variant = app.model.get("next")
+	var dehors: bool = next is Dictionary and next.get("away", {}).get("id") == app.model.get("club", {}).get("id") and not next.get("neutral", false)
+	var loin: bool = dehors and str(next.get("home", {}).get("country", "")) != str(app.model.get("club", {}).get("country", next.get("home", {}).get("country", "")))
+	var voyage := "voyage-aeroport" if loin else "voyage-bus-equipe"
+	var photo := C.photo(voyage if dehors and BanqueImages.existe(voyage) else "stadium", Vector2.ZERO, true, .42)
 	panel.add_child(photo)
 	panel.move_child(photo, 0)
 	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

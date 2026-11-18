@@ -179,3 +179,58 @@ static func courrier(texte: String) -> String:
 		for mot: String in paire[0]:
 			if mot in f: return paire[1] if existe(paire[1]) else ""
 	return ""
+
+## Photo de poste (`poste-*`) d'après le libellé du poste d'un joueur ; "" si inconnu.
+static func poste(libelle: String) -> String:
+	var p := libelle.to_lower()
+	var id := ""
+	if "pilier" in p: id = "poste-pilier"
+	elif "talon" in p: id = "poste-talonneur"
+	elif "deuxi" in p: id = "poste-deuxieme-ligne"
+	elif "troisi" in p or "numéro 8" in p or "numero 8" in p or "flanker" in p: id = "poste-troisieme-ligne"
+	elif "mêlée" in p or "melee" in p: id = "poste-demi-de-melee"
+	elif "ouverture" in p or "ouvreur" in p: id = "poste-ouvreur"
+	elif "centre" in p: id = "poste-centre"
+	elif "ailier" in p: id = "poste-ailier"
+	elif "arri" in p: id = "poste-arriere"
+	return id if existe(id) else ""
+
+## Tribune selon le sentiment des supporters (0 à 100) : pleine, à moitié, clairsemée.
+static func tribune(sentiment: Variant) -> String:
+	if not (sentiment is int or sentiment is float): return ""
+	var id := "tribune-pleine-jour" if sentiment >= 65 else ("tribune-moitie" if sentiment >= 40 else "tribune-vide")
+	return id if existe(id) else ""
+
+## Version aux tenues neutres d'une photo (banque lot-13) : « <id>-neutre ». Le tunnel d'origine de la maquette
+## (« match-tunnel ») a pour version neutre « match-tunnel-neutre » de la banque ; « match-tunnel-neutre » (ciel
+## neutre) a « match-tunnel-neutre-neutre ».
+static func version_neutre(id: String) -> String:
+	var n := id + "-neutre"
+	return n if existe(n) and existe(n + "-masque-nous") else ""
+
+## Remplace la photo d'un TextureRect par sa version aux tenues neutres, recolorée : notre équipe à la couleur
+## `nous`, l'adversaire (s'il est sur la photo) à la couleur `eux`. Sans version neutre : rien ne change.
+## Exemple : BanqueImages.recolorer(photo, "action-essai", Color("d43e47"), Color("1f2f4f"))
+static func recolorer(rect: TextureRect, id: String, nous: Color, eux: Color = Color("e8e5dc")) -> bool:
+	var n := version_neutre(id)
+	if n.is_empty() or rect == null: return false
+	var tex := texture(n)
+	var masque := texture(n + "-masque-nous")
+	if tex == null or masque == null: return false
+	var materiau := ShaderMaterial.new()
+	materiau.shader = preload("res://shaders/recoloration_photo.gdshader")
+	materiau.set_shader_parameter("masque_nous", masque)
+	materiau.set_shader_parameter("couleur_nous", nous)
+	var masque_eux := texture(n + "-masque-eux") if existe(n + "-masque-eux") else null
+	materiau.set_shader_parameter("avec_eux", masque_eux != null)
+	if masque_eux != null: materiau.set_shader_parameter("masque_eux", masque_eux)
+	materiau.set_shader_parameter("couleur_eux", eux)
+	materiau.set_shader_parameter("gris_moyen", float(info(n).get("gris_moyen", 0.46)))
+	materiau.set_shader_parameter("gris_eux", float(info(n).get("gris_eux", info(n).get("gris_moyen", 0.46))))
+	rect.texture = tex
+	if rect.has_method("_fit"):  # ArtTexture (components.gd) : recadrage depuis sa source
+		rect.set("source", tex)
+		rect.call("_fit")
+	rect.material = materiau
+	rect.set_meta("banque_neutre", n)
+	return true

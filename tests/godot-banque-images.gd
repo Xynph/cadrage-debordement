@@ -110,7 +110,7 @@ func lot5() -> void:
 	var sec := {"pluie": 0, "vent": 0, "chaleur": 0}
 	verifier(AvantMatch.photo_meteo({"kickoffLocal": "15:00", "date": "2026-10-03", "capacity": 33000, "meteo": sec}) == "stade-grand-interieur-plein-jour", "grand stade en journée, temps sec")
 	verifier(AvantMatch.photo_meteo({"kickoffLocal": "15:00", "date": "2026-10-03", "capacity": 9000, "meteo": sec}) == "stade-pelouse-sec-jour", "stade de club en journée")
-	verifier(AvantMatch.photo_meteo({"kickoffLocal": "15:00", "date": "2026-10-03", "capacity": 33000, "meteo": {"pluie": 1}}).begins_with("match-tunnel"), "grand stade sous la pluie : tunnel")
+	verifier(AvantMatch.photo_meteo({"kickoffLocal": "15:00", "date": "2026-10-03", "capacity": 9000, "meteo": {"pluie": 1}}) == "stade-pelouse-pluie-jour", "stade de club sous la pluie")
 	verifier(AvantMatch.photo_meteo({"kickoffLocal": "21:05", "date": "2026-10-03", "capacity": 33000, "meteo": sec}).begins_with("match-tunnel"), "grand stade le soir : tunnel validé")
 	for cas: Array in [["Victoire 27-13 face à Vannes.", "resultat-victoire"], ["Victoire avec le bonus offensif à Pau.", "resultat-bonus-offensif"], ["Défaite en finale face à Toulouse.", "resultat-finale-perdue"],
 			["Match nul 9-9 à Brive.", "resultat-nul"], ["Le club est sacré champion : le titre est à vous !", "resultat-titre-trophee-leve"], ["Le club est relégué en Pro D2.", "resultat-relegation"], ["Point sur la trésorerie.", "mail-finances"], ["Bonne nouvelle du jour.", "mail-pitch"]]:
@@ -151,6 +151,39 @@ func lot6() -> void:
 	verifier(attente.get("_photo") == null, "jour suivant : pas de photo")
 	attente.queue_free()
 
+func lot7() -> void:
+	var Shell = preload("res://ui/immersive08/shell.gd")
+	verifier(Shell.fond_ecran("Bureau") == "fond-bureau" and Shell.fond_ecran("Bureau", "offseason") == "fond-fin-de-saison" and Shell.fond_ecran("Match") == "", "fonds d'écran par route")
+	for cas: Array in [["Le président", "staff-president"], ["Le quotidien régional", "presse-journaliste"], ["Cellule médicale", "staff-medecin"], ["Inconnu", "mail-staff"]]:
+		verifier(Reception.portrait_expediteur(cas[0]) == cas[1], "expéditeur « %s » : %s" % [cas[0], Reception.portrait_expediteur(cas[0])])
+	verifier(BanqueImages.poste("Pilier gauche") == "poste-pilier" and BanqueImages.poste("Demi d’ouverture") == "poste-ouvreur" and BanqueImages.poste("Troisième ligne aile") == "poste-troisieme-ligne" and BanqueImages.poste("?") == "", "postes")
+	verifier(BanqueImages.tribune(80) == "tribune-pleine-jour" and BanqueImages.tribune(50) == "tribune-moitie" and BanqueImages.tribune(10) == "tribune-vide" and BanqueImages.tribune(null) == "", "tribunes")
+	for id in ["titre-principal", "titre-nouvelle-carriere", "trophee-coupe-haute", "voyage-aeroport"]:
+		verifier(BanqueImages.texture(id) != null, "image %s" % id)
+	verifier(preload("res://ui/immersive08/month_calendar.gd") != null and preload("res://ui/immersive08/player_canvas.gd") != null and preload("res://ui/immersive08/entry_canvas.gd") != null, "écrans chargés")
+
+func lot8() -> void:
+	verifier(BanqueImages.version_neutre("action-essai") == "action-essai-neutre" and BanqueImages.version_neutre("match-tunnel") == "match-tunnel-neutre" and BanqueImages.version_neutre("fond-bureau") == "", "versions neutres")
+	var sec := {"pluie": 0, "vent": 0, "chaleur": 0}
+	verifier(AvantMatch.photo_meteo({"kickoffLocal": "18:30", "date": "2026-10-03", "capacity": 33000, "meteo": sec}) == "stade-grand-interieur-plein-soir", "grande enceinte au coucher du soleil")
+	verifier(AvantMatch.photo_meteo({"kickoffLocal": "21:00", "date": "2026-10-03", "capacity": 33000, "meteo": {"pluie": 1}}) == "stade-grand-interieur-plein-pluie-nuit", "grande enceinte sous la pluie de nuit")
+	verifier(AvantMatch.photo_meteo({"kickoffLocal": "15:00", "date": "2026-10-03", "capacity": 33000, "meteo": {"pluie": 1}}) == "stade-grand-interieur-plein-pluie-jour", "grande enceinte sous la pluie de jour")
+	var grille := GridContainer.new()
+	grille.columns = 3
+	root.add_child(grille)
+	grille.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var paires := [["action-essai", "d43e47", "1f2f4f"], ["action-melee", "1b3f8b", "efe9dc"], ["resultat-victoire", "d4b340", "1b1d20"], ["vestiaire-avant-match", "6b2d7a", "efe9dc"], ["match-tunnel-sec", "8c2f39", "1b1d20"], ["action-touche", "1f5c43", "d9822b"]]
+	for paire: Array in paires:
+		var photo := TextureRect.new()
+		photo.texture = BanqueImages.texture(paire[0])
+		photo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		photo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		photo.custom_minimum_size = Vector2(636, 356)
+		verifier(BanqueImages.recolorer(photo, paire[0], Color(paire[1]), Color(paire[2])) and photo.material is ShaderMaterial, "photo %s recolorée" % paire[0])
+		grille.add_child(photo)
+	await capturer("photos-recolorees")
+	grille.queue_free()
+
 func ecran_entre_temps_forts() -> void:
 	var hote := Control.new()
 	root.add_child(hote)
@@ -187,5 +220,7 @@ func executer() -> void:
 	await tenues()
 	await lot5()
 	await lot6()
+	await lot7()
+	await lot8()
 	print("BANQUE " + JSON.stringify({"controles": controles, "failures": failures}))
 	quit(0 if failures.is_empty() else 1)

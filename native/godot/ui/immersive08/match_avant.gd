@@ -62,7 +62,12 @@ static func mois_annee(iso: Variant) -> String:
 ## pelouse sous le ciel du jour (banque d'images) ; le soir et la nuit, l'entrée des joueurs par le tunnel
 ## éclairé (photos de la maquette validée).
 static func photo_meteo(next: Dictionary) -> String:
-	if BanqueImages.moment(next.get("kickoffLocal"), next.get("date", "")) == "jour":
+	var moment := BanqueImages.moment(next.get("kickoffLocal"), next.get("date", ""))
+	# Grande enceinte (20 000 places et plus) : soir sec et nuit pluvieuse aussi (banque lot-13).
+	if BanqueImages.niveau_stade(next.get("capacity")) >= 5 and moment in ["soir", "nuit"]:
+		var grand := BanqueImages.choisir("avant-match", {"moment": moment, "meteo": BanqueImages.meteo(next.get("meteo")), "taille": "grand"})
+		if not grand.is_empty() and BanqueImages.info(grand).get("etiquettes", {}).get("moment") == moment and BanqueImages.texture(grand) != null: return grand
+	if moment == "jour":
 		# Grande enceinte (20 000 places et plus) par temps sec ; sinon la pelouse d'un stade de club.
 		var taille := "grand" if BanqueImages.niveau_stade(next.get("capacity")) >= 5 else "club"
 		var pelouse := BanqueImages.choisir("avant-match", {"moment": "jour", "meteo": BanqueImages.meteo(next.get("meteo")), "taille": taille})
@@ -218,6 +223,10 @@ func _affiche(model: Dictionary, next: Dictionary, data: Dictionary) -> Control:
 	var photo := C.photo(id, Vector2.ZERO, true, .3)
 	photo.name = "MatchPosterPhoto"
 	photo.set_meta("photo_meteo", id)
+	# Joueurs du tunnel et des photos aux tenues neutres : à nos couleurs.
+	var RI = preload("res://ui/contextual/rooms/room_identity.gd")
+	var identite: Dictionary = G.identity(model.get("club", {}))
+	BanqueImages.recolorer(photo, id, RI.primary(identite), RI.secondary(identite))
 	photo.tooltip_text = ""
 	poster.add_child(photo)
 	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
