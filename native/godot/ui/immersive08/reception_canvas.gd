@@ -1357,8 +1357,8 @@ static func _side(card: Panel, app: Control, message: Dictionary, data: Dictiona
 		tile.accessibility_name = tile.tooltip_text
 		card.add_child(tile); D.place(tile, Rect2(x,y,width,88))
 		var crest := D.rect(tile,Rect2(16,18,52,52),C.BG,26,Color(C.LINE,.8))
-		var words := str(club.name).split(" ", false)
-		var initials := "".join(PackedStringArray(words.slice(0, 2).map(func(w: String): return w.left(1).to_upper())))
+		var initials := ""
+		for word: String in str(club.name).split(" ", false).slice(0, 2): initials += word.left(1).to_upper()
 		D.text(crest,26,34,initials,19,C.MUTED,700,48,HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(tile,84,40,str(club.name),22,C.IVORY,700,width-84-80).name = "InboxConcernedClubName"
 		D.text(tile,84,68,"%s du classement%s" % [("1er" if int(club.rank) == 1 else "%de" % int(club.rank)), "" if str(club.division).is_empty() else " · " + str(club.division)],17,C.MUTED,500,width-84-80,HORIZONTAL_ALIGNMENT_LEFT,true)
