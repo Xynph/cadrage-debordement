@@ -109,7 +109,8 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 
 static func _medical(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	var list := _tab(tabs, "Médical")
-	list.add_child(G.section("Disponibilité et retour", "Suivi générique de jeu : les protocoles agissent à la prochaine séance. Aucune accélération de commotion ou de HIA n’est modélisée."))
+	_concussions(list, app, data.medical)
+	list.add_child(G.section("Disponibilité et retour", "Suivi des autres blessures : les protocoles agissent à la prochaine séance."))
 	if data.medical.players.is_empty(): list.add_child(G.wrap("Aucun joueur à suivre actuellement.", 18))
 	for p: Dictionary in data.medical.players:
 		var identity: Dictionary = p
@@ -136,6 +137,32 @@ static func _medical(tabs: TabContainer, app: Control, data: Dictionary) -> void
 			_action(list, "REPRISE PROGRESSIVE", "MedicalReturnProgressive_" + str(p.id), data.medical.available, func(): app._command("medical_return", {"context":data.context,"id":p.id,"choice":"progressif"}))
 			_action(list, "RETOUR COMPLET À RISQUE", "MedicalReturnFull_" + str(p.id), data.medical.available, func(): app._command("medical_return", {"context":data.context,"id":p.id,"choice":"complet"}))
 		list.add_child(G.separator())
+
+## Protocole commotion (World Rugby) : décision du médecin, sans choix du staff ; antécédents de l'effectif.
+static func _date(iso: Variant) -> String:
+	var text := str(iso)
+	return text.substr(8, 2) + "/" + text.substr(5, 2) if text.length() == 10 else text
+
+static func _concussions(list: VBoxContainer, app: Control, medical: Dictionary) -> void:
+	var cases: Array = medical.get("commotions", [])
+	var history: Array = medical.get("antecedents", [])
+	if cases.is_empty() and history.is_empty(): return
+	list.add_child(G.section("Protocole commotion", "Règle de World Rugby : 12 jours de repos au moins, 7 jours seulement sans antécédent et avec l’avis favorable d’un spécialiste indépendant. Décision médicale."))
+	for c: Dictionary in cases:
+		var card := G.card(list, G.ALERT)
+		card.name = "Concussion_" + str(c.id).replace(":", "_")
+		var left: Variant = c.get("joursRestants")
+		var remaining := (" · encore %d jour%s" % [int(left), "s" if int(left) > 1 else ""]) if left != null and int(left) > 0 else ""
+		card.add_child(G.section(_name(app, c.id), "Commotion du %s · %s" % [_date(c.date), str(c.motif)]))
+		card.add_child(G.wrap("Retour possible le %s (%d jours)%s" % [_date(c.retour), int(c.jours), remaining], 16, G.INK))
+		var exception := {"possible":"Exception à 7 jours possible : avis du spécialiste à demander depuis le courrier du médecin.", "accordee":"Avis favorable du spécialiste indépendant : retour au 7e jour.", "refusee":"Avis défavorable du spécialiste indépendant : 12 jours.", "non":"Antécédent ou signes évidents : 12 jours, sans exception." if c.get("antecedent", false) or int(c.get("critere", 0)) == 1 else "HIA3 sans retour à la normale : 12 jours."}
+		card.add_child(G.wrap(str(exception.get(str(c.exception), "")), 14))
+	if not history.is_empty():
+		var lines := PackedStringArray()
+		for h: Dictionary in history:
+			lines.append("%s : %d commotion%s, dernière le %s%s" % [_name(app, h.id), int(h.commotions), "s" if int(h.commotions) > 1 else "", _date(h.derniere), " (en protocole)" if h.get("enCours", false) else ""])
+		list.add_child(G.section("Antécédents de commotion", "\n".join(lines)))
+	list.add_child(G.separator())
 
 static func _agents(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	var list := _tab(tabs, "Agents")

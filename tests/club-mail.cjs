@@ -17,7 +17,7 @@ const DATA = require('../native/engine/club-mail.json');
 const M = require('./helpers/carriere-monde.cjs');
 const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 
-const EFFETS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'consigneDS', 'orientation', 'pret'];
+const EFFETS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'consigneDS', 'orientation', 'pret', 'specialiste'];
 
 test('Données : catalogue complet, formulations variées, effets connus', () => {
   const types = Object.entries(DATA.types);

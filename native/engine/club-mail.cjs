@@ -33,6 +33,9 @@ function factory() {
   const dow = iso => (new Date(iso + 'T00:00:00Z').getUTCDay() + 6) % 7; // 0 = lundi
   const monday = iso => shift(iso, -dow(iso));
   const dayNumber = iso => Math.floor(Date.parse(iso + 'T00:00:00Z') / DAY);
+  const daysBetweenIso = (a, b) => dayNumber(b) - dayNumber(a);
+  // Protocole commotion (club-support.cjs) : disponibilités, antécédents, avis du spécialiste.
+  const commotionApi = () => typeof nativeSystems !== 'undefined' ? nativeSystems.domain('clubSupport')?.commotion || null : null;
   const shortDate = iso => iso.slice(8, 10) + '/' + iso.slice(5, 7);
   const euros = n => Math.round(n).toLocaleString('fr-FR').replace(/ | /g, ' ');
   const ordinal = n => n + (n === 1 ? 'er' : 'e');
@@ -43,7 +46,7 @@ function factory() {
   const pending = s => typeof CDPreseason !== 'undefined' && !!CDPreseason.pending(s);
   const todayOf = s => { try { return CDWorldCareer.calendarToday(s); } catch { return null; } };
   const STATUS = ['nouveau', 'repondu', 'classe', 'info'];
-  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation'];
+  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation', 'specialiste'];
   const ORIENTATION_LABELS = { equilibre: 'répartition proposée', installations: 'priorité aux installations', staff: 'priorité au staff', accueil: 'priorité à l’accueil' };
   const PLAN_LABELS = { repos: 'repos', normal: 'charge allégée', intense: 'charge intense', collective: 'séance collective' };
   const MODE_LABELS = { repos: 'récupération', normal: 'normal', intense: 'intense' };
@@ -147,7 +150,9 @@ function factory() {
       if (!(F.s.round >= 3) || F.dow === 5) return [];
       const ratings = F.players.map(p => p.rating).sort((a, b) => a - b), median = ratings[Math.floor(ratings.length / 2)] || 0;
       const played = F.season.length;
-      const list = F.players.filter(p => !F.sheet.has(p.id) && !(p.injury > 0) && (p.age || 0) >= 20 && p.rating >= median - 2 && !p.satisfaction?.promise && (Number(p.dev?.appearances) || 0) <= Math.floor(played / 3))
+      // Matchs manqués en protocole commotion : une absence médicale n'est pas un manque de temps de jeu.
+      const missed = p => { const c = commotionApi(); return c ? c.missedMatches(F.s, p, F.season) : 0; };
+      const list = F.players.filter(p => !F.sheet.has(p.id) && !(p.injury > 0) && (p.age || 0) >= 20 && p.rating >= median - 2 && !p.satisfaction?.promise && (Number(p.dev?.appearances) || 0) <= Math.floor((played - missed(p)) / 3))
         .sort((a, b) => b.rating - a.rating || String(a.id).localeCompare(String(b.id)));
       const p = list[0]; if (!p) return [];
       return [{ key: p.id + ':' + F.s.season + ':' + Math.floor(dayNumber(F.d) / 30), player: p.id, vars: { ...playerVars(p), minutes: Number(p.dev?.minutes) || 0 } }];
@@ -457,6 +462,18 @@ function factory() {
       const vent = m.ventDos ? ' Le vent soufflera dans le dos de ' + camp(pair[m.ventDos[0]]) + ' en première période' + (m.ventDos[0] === nous ? ' : à nous d’en profiter avant la pause.' : ', puis dans le nôtre après la pause.') : '';
       return [{ key: F.next.id, vars: { adversaire: F.name(F.opponent(F.next)), quand: F.next.date === F.d ? 'aujourd’hui' : 'demain', ciel: ciel.charAt(0).toUpperCase() + ciel.slice(1), ciel_bas: ciel, vent, conseil: m.conseil || '' } }];
     },
+    // Médecin du club : commotion confirmée (protocole World Rugby, club-support.cjs), une fois par commotion, dans les
+    // jours qui suivent le match. `seuils.exception` : courrier où l'exception à 7 jours peut être demandée.
+    commotion(F, t) {
+      const c = commotionApi(); if (!c) return [];
+      const wanted = !!t.seuils?.exception;
+      return F.players.filter(p => { const prot = c.protocol(p); return prot && prot.date < F.d && F.d <= shift(prot.date, 6) && F.d < prot.retour && (prot.exception === 'possible') === wanted; })
+        .sort((a, b) => String(a.id).localeCompare(String(b.id))).slice(0, 2).map(p => {
+          const prot = c.protocol(p), n = p.commotion.n;
+          const antecedents = prot.antecedent ? 'Il a des antécédents (' + n + ' commotion' + (n > 1 ? 's' : '') + ' en carrière, dont une récente) : 12 jours au minimum, sans exception possible.' : n > 1 ? 'C’est sa ' + n + 'e commotion en carrière.' : 'C’est sa première commotion.';
+          return { key: p.id + ':' + prot.date, player: p.id, vars: { ...playerVars(p), match: shortDate(prot.date), retour: shortDate(prot.retour), jours: daysBetweenIso(prot.date, prot.retour), motif: c.MOTIFS[prot.critere], antecedents, septieme: shortDate(c.shiftDate(prot.date, c.RULES.exception)) } };
+        });
+    },
     pelouse(F) {
       if (!F.next || F.next.date !== shift(F.d, 1) || F.next.homeId !== F.s.club) return [];
       // Pelouse cohérente avec la météo annoncée : pluie (glissante), forte pluie (lourde), sinon la saison.
@@ -595,6 +612,7 @@ function factory() {
     if (e.pret === 'vendre') out.push('Vente immédiate, prix affecté au remboursement');
     if (e.pret === 'accepter') out.push('Remboursement sur plusieurs saisons');
     if (e.suite) out.push('Suite dans ' + e.suite.jours + ' jours');
+    if (e.specialiste) out.push('Retour possible au 7e jour, sans garantie');
     if (e.contratDS === 'annuler') out.push('Il partira à la fin de son contrat ; prime remboursée');
     if (e.contratDS === 'forcer') out.push('Prolongation au salaire demandé');
     if (e.consigneDS) out.push('Consigne : ' + ({ econome: 'économe', jeunes: 'miser sur les jeunes', equilibre: 'équilibre' }[e.consigneDS] || e.consigneDS));
@@ -605,7 +623,7 @@ function factory() {
     // Match terminé et résultat confirmé (calendrier journalier : S.live reste jusqu'à la clôture de la semaine) : on répond.
     if (!s || (s.live && !(s.live.finished && s.worldMode?.resultConfirmed)) || s.phase === 'ended') return 'Indisponible pendant un match ou après la saison.';
     const e = r.effets || {}, club = s.clubs[s.club], p = m.player ? club.players.find(x => x.id === m.player) : null;
-    const playerEffects = ['satisfaction', 'fatigue', 'condition', 'plan', 'promesse'].some(k => e[k] !== undefined);
+    const playerEffects = ['satisfaction', 'fatigue', 'condition', 'plan', 'promesse', 'specialiste'].some(k => e[k] !== undefined);
     if (playerEffects && !p) return 'Ce joueur ne fait plus partie de l’effectif.';
     if ((e.entrainement || e.focus) && s.trained) return 'La séance de la semaine est déjà faite.';
     if (e.focus && s.collectivePrepVersion !== 1) return 'Préparation collective indisponible.';
@@ -621,6 +639,11 @@ function factory() {
       if (typeof dsContratsRefus !== 'function') return 'Le directeur sportif ne gère pas les contrats.';
       const raison = dsContratsRefus(e.contratDS || e.consigneDS, m.player);
       if (raison) return raison;
+    }
+    if (e.specialiste) {
+      const prot = p ? commotionApi()?.protocol(p) : null;
+      if (!prot) return 'Il a terminé son protocole commotion.';
+      if (prot.exception !== 'possible') return prot.exception === 'non' ? 'L’exception à 7 jours n’est pas ouverte : 12 jours de repos.' : 'Le spécialiste a déjà rendu son avis.';
     }
     if (e.promouvoir) {
       const y = (s.development?.academy || []).find(x => x.id === m.player);
@@ -676,6 +699,11 @@ function factory() {
     if (e.consigneDS) check(dsContratsAction(e.consigneDS, m.player) === true, 'consigne refusée');
     if (e.orientation) check(investOrienter(e.orientation) === true, 'répartition refusée');
     if (e.pret) check(pretRepondre(e.pret) === true, 'réponse au prêt refusée');
+    if (e.specialiste) {
+      const avis = commotionApi()?.specialistReview(s, p);
+      check(!!avis, 'avis du spécialiste indisponible');
+      m.verdict = avis.favorable ? 'Avis favorable du spécialiste indépendant : il pourra rejouer dès le ' + shortDate(avis.retour) + ' (7e jour).' : 'Avis défavorable du spécialiste indépendant : il observera les 12 jours, retour possible le ' + shortDate(avis.retour) + '.';
+    }
     if (Number.isFinite(e.caisse) && e.caisse) ledgerEntry('Courrier · ' + render(m).sujet.slice(0, 60), e.caisse);
     if (e.appel) {
       const sx = TYPES.discipline?.seuils || {}, favorable = hash(m.id + ':' + s.club + ':appel') % 2 === 0;
@@ -713,7 +741,7 @@ function factory() {
     m.status = 'repondu';
     m.choice = r.id;
     validate(S);
-    return { clubMailReply: { id: m.id, choice: r.id, resultat: m.verdict ? r.resultat + ' ' + m.verdict : r.resultat, ouvrir: !!r.ouvrir, ecran: TYPES[m.type].ecran || null, joueur: m.player } };
+    return { clubMailReply: { id: m.id, choice: r.id, resultat: m.verdict ? r.resultat + ' ' + m.verdict : r.resultat, ouvrir: !!r.ouvrir, ecran: r.ecran || TYPES[m.type].ecran || null, joueur: m.player } };
   }
 
   // Après chaque commande : une réception par jour de calendrier (carrière Monde journalière, saison ouverte).
@@ -721,6 +749,9 @@ function factory() {
     if (typeof S === 'undefined' || !S || !world(S) || pending(S) || S.phase === 'ended') return false;
     const d = todayOf(S);
     if (!date(d) || S.clubMail?.last === d) return false;
+    // Nouveau jour : le médecin recale d'abord les disponibilités des joueurs en protocole commotion (tous les clubs),
+    // puis le courrier du jour est reçu (la réception elle-même n'écrit que la boîte).
+    if (!(S.live && !S.live.finished)) commotionApi()?.syncAt(S, d);
     receive(S, d);
     return true;
   }
