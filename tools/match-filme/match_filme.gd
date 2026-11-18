@@ -10,7 +10,13 @@ extends SceneTree
 ##
 ##   godot --path native/godot --audio-driver Dummy --script tools/match-filme/match_filme.gd -- \
 ##     --match-filme --sortie <dossier> --export <carriere.json> [--camera tv|tactical|action] \
-##     [--cadence 2] [--duree-max 600] [--minutes 0] [--niveau dynamique] [--taille 1280x720] [--sans-planche]
+##     [--cadence 2] [--cadence-moments 0.5] [--duree-max 600] [--minutes 0] [--niveau dynamique] [--taille 1280x720] [--sans-planche]
+##
+## Grands moments (18/11/2026) : autour d'un essai (plan d'essai, bandeau « ESSAI », ralenti) et
+## pendant la sortie des joueurs de la mi-temps et de la fin de match (plan large, marche vers le
+## tunnel), une image toutes les --cadence-moments secondes ; la mi-temps n'est passée qu'une fois la
+## causerie ouverte, la fin attend la fin de la sortie. report.json liste ces moments (« moments »,
+## avec la première image de chacun) et marque chaque image (« moment »).
 ##
 ## CD_GODOT_DATA_DIR est obligatoire (profil jetable) : l'outil refuse de tourner sur le profil réel.
 ## Le jeu normal n'est pas touché : ce script n'est chargé qu'avec --script.
@@ -27,8 +33,25 @@ func _initialize() -> void:
 	call_deferred("run")
 
 static func defauts() -> Dictionary:
-	return {"sortie": "", "export": "", "camera": "tv", "cadence": 2.0, "duree_max": 600.0, "minutes": 0,
+	return {"sortie": "", "export": "", "camera": "tv", "cadence": 2.0, "cadence_moments": 0.5, "duree_max": 600.0, "minutes": 0,
 		"niveau": "dynamique", "taille": Vector2i(1280, 720), "planche": true}
+
+## États de la régie des temps forts, dans l'ordre de son enum (match_temps_forts.gd).
+const ETATS := ["intermediaire", "temps_fort", "attente", "sortie"]
+
+## Grand moment montré par la régie à cet instant : « essai » (plan d'essai en cours ou bandeau
+## « ESSAI »), « mi-temps » ou « fin » (sortie des joueurs), sinon vide.
+static func moment_de(regie: Node) -> String:
+	if regie == null: return ""
+	if regie.has_method("sortie_en_cours") and regie.sortie_en_cours():
+		return "fin" if bool(regie.get("_live").get("finished", false)) else "mi-temps"
+	if regie.has_method("bandeau_affiche"):
+		var bandeau: Dictionary = regie.bandeau_affiche()
+		if bandeau.get("visible", false) and str(bandeau.get("titre", "")) == "ESSAI": return "essai"
+	var tf: Dictionary = regie.get("tf") if regie.get("tf") is Dictionary else {}
+	var index: int = int(regie.get("index"))
+	if int(regie.get("etat")) == 1 and index >= 0 and index < (tf.get("plans", []) as Array).size() and str(tf.plans[index].get("kind", "")) == "try": return "essai"
+	return ""
 
 ## Lit les arguments placés après « -- ». Renvoie {"options": {...}, "erreurs": [...]}.
 static func lire_options(args: PackedStringArray) -> Dictionary:
@@ -43,7 +66,7 @@ static func lire_options(args: PackedStringArray) -> Dictionary:
 		if arg == "--sans-planche":
 			o.planche = false
 			continue
-		if not arg in ["--sortie", "--export", "--camera", "--cadence", "--duree-max", "--minutes", "--niveau", "--taille"]:
+		if not arg in ["--sortie", "--export", "--camera", "--cadence", "--cadence-moments", "--duree-max", "--minutes", "--niveau", "--taille"]:
 			erreurs.append("Argument inconnu : " + arg)
 			continue
 		i += 1
@@ -63,6 +86,9 @@ static func lire_options(args: PackedStringArray) -> Dictionary:
 			"--cadence":
 				if valeur.is_valid_float() and float(valeur) >= 0.2: o.cadence = float(valeur)
 				else: erreurs.append("--cadence : nombre de secondes, 0.2 au moins.")
+			"--cadence-moments":
+				if valeur.is_valid_float() and float(valeur) >= 0.2: o.cadence_moments = float(valeur)
+				else: erreurs.append("--cadence-moments : nombre de secondes, 0.2 au moins.")
 			"--duree-max":
 				if valeur.is_valid_float() and float(valeur) >= 10.0: o.duree_max = float(valeur)
 				else: erreurs.append("--duree-max : nombre de secondes, 10 au moins.")
@@ -207,10 +233,13 @@ func run() -> void:
 		return
 	couper_le_son()
 	print("MATCH_FILME direct ouvert")
-	var report := {"options": {"camera": o.camera, "cadence": o.cadence, "duree_max": o.duree_max, "minutes": o.minutes, "niveau": o.niveau, "taille": [o.taille.x, o.taille.y]},
+	var report := {"options": {"camera": o.camera, "cadence": o.cadence, "cadence_moments": o.cadence_moments, "duree_max": o.duree_max, "minutes": o.minutes, "niveau": o.niveau, "taille": [o.taille.x, o.taille.y]},
 		"pilote": RenderingServer.get_current_rendering_driver_name(), "carte": RenderingServer.get_video_adapter_name(), "audio": AudioServer.get_driver_name(),
 		"fenetre": {"taille": [DisplayServer.window_get_size().x, DisplayServer.window_get_size().y], "mode": DisplayServer.window_get_mode()},
-		"images": [], "noires": 0}
+		"images": [], "noires": 0, "moments": []}
+	var cadence_moments: float = minf(o.cadence_moments, o.cadence)
+	var moment_vu := ""
+	var regie_vue: Node = null
 	var debut := Time.get_ticks_msec()
 	var precedent := debut
 	var cadence: float = o.cadence
@@ -248,11 +277,27 @@ func run() -> void:
 				attente = 0.0
 				app._command("pause", {"paused": false})
 		else: attente = 0.0
+		# Grand moment en cours (essai, sortie des joueurs) : images rapprochées, notées dans le rapport.
+		if regie != regie_vue:
+			regie_vue = regie
+			moment_vu = ""
+		var moment := moment_de(regie)
+		if moment != moment_vu:
+			if not moment.is_empty():
+				var detail: Dictionary = regie.bandeau_affiche() if regie.has_method("bandeau_affiche") else {}
+				report.moments.append({"moment": moment, "secondes": snappedf((maintenant - debut) / 1000.0, 0.1), "minute": int(live.get("minute", dernier.get("minute", 0))),
+					"premiere_image": "image-%04d.png" % (report.images.size() + 1), "bandeau": detail})
+				print("MATCH_FILME moment=", moment, " minute=", int(live.get("minute", 0)), " image=", report.images.size() + 1)
+				# Première image du moment prise tout de suite.
+				depuis_capture = cadence
+			moment_vu = moment
+		var en_sortie: bool = regie != null and regie.has_method("sortie_en_cours") and regie.sortie_en_cours()
 		var termine: bool = live.is_empty() or bool(live.get("finished", false)) or (minutes > 0 and int(live.get("minute", 0)) >= minutes)
-		if termine and (regie == null or regie.etat != regie.JEU): fin += delta
+		# La fin de match se filme jusqu'au bout de la sortie des joueurs.
+		if termine and (regie == null or (regie.etat != regie.JEU and not en_sortie)): fin += delta
 		if fin >= 3.0 or maintenant - debut > duree_max * 1000.0: break
 		depuis_capture += delta
-		if depuis_capture < cadence: continue
+		if depuis_capture < (cadence_moments if not moment.is_empty() else cadence): continue
 		depuis_capture = 0.0
 		var image := root.get_texture().get_image()
 		if image == null: continue
@@ -263,10 +308,11 @@ func run() -> void:
 		var lum := snappedf(luminance(image), 0.001)
 		if lum < SEUIL_NOIR: report.noires += 1
 		var etat := "direct"
-		if regie != null: etat = ["intermediaire", "temps_fort", "attente"][regie.etat] if regie.etat in [0, 1, 2] else str(regie.etat)
-		if causerie is Dictionary: etat = "causerie"
+		if regie != null: etat = ETATS[regie.etat] if regie.etat >= 0 and regie.etat < ETATS.size() else str(regie.etat)
+		# La causerie n'est à l'écran qu'une fois ouverte (pendant la sortie, elle attend).
+		if causerie is Dictionary and app.contextual_director.kind == "locker": etat = "causerie"
 		report.images.append({"fichier": nom, "secondes": snappedf((maintenant - debut) / 1000.0, 0.1), "minute": int(live.get("minute", dernier.get("minute", 0))),
-			"score": live.get("score", dernier.get("score", [0, 0])), "etat": etat, "luminance": lum})
+			"score": live.get("score", dernier.get("score", [0, 0])), "etat": etat, "moment": moment, "luminance": lum})
 	report["duree_s"] = snappedf((Time.get_ticks_msec() - debut) / 1000.0, 0.1)
 	report["score"] = dernier.get("score", [0, 0])
 	report["minute"] = dernier.get("minute", 0)
@@ -276,10 +322,17 @@ func run() -> void:
 		for k in repartir(report.images.size(), 24): choisies.append(Image.load_from_file(str(o.sortie).path_join(report.images[k].fichier)))
 		var feuille := planche(choisies, 4, 400)
 		if feuille != null and feuille.save_png(str(o.sortie).path_join("planche.png")) == OK: report["planche"] = "planche.png"
+		# Planche des grands moments seuls (essais, mi-temps, fin), dans l'ordre du match.
+		var des_moments: Array = report.images.filter(func(i: Dictionary) -> bool: return not str(i.get("moment", "")).is_empty())
+		if not des_moments.is_empty():
+			var vues: Array = []
+			for k in repartir(des_moments.size(), 24): vues.append(Image.load_from_file(str(o.sortie).path_join(des_moments[k].fichier)))
+			var feuille_moments := planche(vues, 4, 400)
+			if feuille_moments != null and feuille_moments.save_png(str(o.sortie).path_join("planche-moments.png")) == OK: report["planche_moments"] = "planche-moments.png"
 	var fichier := FileAccess.open(str(o.sortie).path_join("report.json"), FileAccess.WRITE)
 	fichier.store_string(JSON.stringify(report, "  "))
 	fichier.close()
-	print("MATCH_FILME_FIN ", JSON.stringify({"images": report.images.size(), "noires": report.noires, "score": report.score, "minute": report.minute, "termine": report.termine, "secondes": report.duree_s, "pilote": report.pilote, "audio": report.audio}))
+	print("MATCH_FILME_FIN ", JSON.stringify({"images": report.images.size(), "noires": report.noires, "moments": report.moments.map(func(m: Dictionary) -> String: return "%s %d′ %s" % [m.moment, int(m.minute), m.premiere_image]), "score": report.score, "minute": report.minute, "termine": report.termine, "secondes": report.duree_s, "pilote": report.pilote, "audio": report.audio}))
 	app.closing = true
 	app.bridge.stop()
 	for k in 10: await process_frame

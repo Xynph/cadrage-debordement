@@ -58,6 +58,11 @@ const PLAN_LARGE_OFFSET := Vector3(0.0, 0.64, 0.77)
 const PLAN_LARGE_VISE := Vector3(0.0, 0.0, 4.0)
 const PLAN_LARGE_RECUL := 125.0
 const PLAN_LARGE_CHAMP := 36.0
+## Grands moments (18 novembre 2026) : à la mi-temps et en fin de match, sous le plan large, les
+## joueurs rentrent en marchant vers le tunnel, au milieu de la touche proche (sous la tribune
+## principale). Allure de marche (m/s) : sous le seuil du trot des clips (2,5 m/s).
+const TUNNEL := Vector3(0.0, 0.0, 40.0)
+const ALLURE_SORTIE := 1.9
 ## Recentrage borné (TV et action) : la touche lointaine, la touche proche et les lignes de ballon
 ## mort, plus TERRAIN_MARGE m, restent près des bords de l'image (BORD_*, en part de l'image) : la
 ## tribune n'en occupe qu'une bande. Le ballon reste toujours dans la zone sûre (BALLON_SUR des bords).
@@ -143,6 +148,11 @@ var _impacts: RefCounted = Impacts.new(self)
 ## Compteurs de contrôle (tests, capture) : joueurs replacés au lieu de courir, et coupes posées pour cela.
 var replacements := 0
 var replacements_coupes := 0
+## Ralenti de présentation (essai aplati, posé par la régie) : facteur appliqué au temps de la vue,
+## 1 hors ralenti. Les joueurs, le ballon, les gestes et la caméra ralentissent ensemble.
+var ralenti := 1.0
+## Sortie des joueurs en cours (mi-temps, fin de match) : jusqu'à la prochaine image du moteur.
+var sortie := false
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -403,8 +413,9 @@ func apply_frame(live: Dictionary) -> void:
 		_pending = live.duplicate(true)
 		_has_pending = true
 		return
-	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours.
+	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours (et à la sortie).
 	arreter_choregraphie()
+	sortie = false
 	var scene: Dictionary = live.get("scene", {})
 	if scene.is_empty() or not scene.get("players", null) is Array:
 		_clear_presence()
@@ -678,6 +689,67 @@ func _maj_plan_large() -> void:
 		_camera_cut = true
 
 
+func plan_large() -> bool:
+	return _plan_large
+
+
+## Ralenti de présentation posé par la régie (essai) : 1 rend la vitesse réelle.
+func set_ralenti(facteur: float) -> void:
+	ralenti = clampf(facteur, 0.05, 1.0) if is_finite(facteur) else 1.0
+
+
+## Mi-temps, fin de match (régie des temps forts) : chaque joueur quitte sa place et marche vers
+## le tunnel, à ALLURE_SORTIE ; le ballon est laissé au sol. Plus rien d'une action en cours (passe,
+## contact, geste, posture de mêlée) ne reste posé. La prochaine image du moteur reprend la main.
+func sortir_du_terrain() -> void:
+	if not is_node_ready():
+		return
+	arreter_choregraphie()
+	_stop_live_pass()
+	_pass_plan = {}
+	_contact_plan = {}
+	_impacts.annuler()
+	if _gestes:
+		_gestes.cancel()
+	_formations.preparer({}, true)
+	for tenue: Dictionary in _tenues.values():
+		tenue.lache = true
+	_paused = false
+	sortie = true
+	_kind = ""
+	_carrier_id = ""
+	_ball_attached = false
+	if _ball.visible:
+		_ball_from = _ball.position
+		_ball_from_basis = _ball.global_basis
+		_ball_target = Vector3(_ball.position.x, Impacts.BALLON_AU_SOL, _ball.position.z)
+		_ball_travel = 0.0
+	for id: String in _actors:
+		var entry: Dictionary = _actors[id]
+		var at: Vector3 = (entry.node as Node3D).position
+		var but := place_de_sortie(at, int(entry.side))
+		entry.holding = false
+		entry.geste = {}
+		entry.grip = 0.0
+		entry.cut_direction = 0
+		entry.cut_beat = -1.0
+		entry.cut_plant.clear()
+		entry.from = at
+		entry.target = but
+		entry.duree = maxf(Motion.DUREE_MIN, Vector2(but.x - at.x, but.z - at.z).length() / ALLURE_SORTIE)
+		entry.elapsed = 0.0
+		entry.tangent = Vector3.ZERO
+		entry.velocity = Vector3.ZERO
+		entry.feet.clear()
+
+
+## Point d'arrivée de la marche vers le tunnel : chaque camp sur sa moitié de l'entrée, les joueurs
+## étalés sur quelques mètres pour ne pas converger tous sur le même point.
+static func place_de_sortie(depuis: Vector3, camp: int) -> Vector3:
+	var cote := -1.0 if camp == 0 else 1.0
+	return TUNNEL + Vector3(cote * (1.0 + fposmod(depuis.x * 0.37 + depuis.z * 0.21, 3.0)), 0.0, 0.0)
+
+
 func set_camera(mode: String) -> void:
 	var selected := mode if mode in ["tactical", "action"] else "tv"
 	var changed := selected != _camera_mode
@@ -689,6 +761,8 @@ func set_camera(mode: String) -> void:
 
 
 func _process(delta: float) -> void:
+	# Ralenti de l'essai : tout ce que la vue anime avance moins vite (présentation seule).
+	delta *= ralenti
 	if not _pass_plan.is_empty():
 		_pass_elapsed = minf(_pass_plan.duration, _pass_elapsed + delta)
 	var preparation := smoothstep(0.0, Pass.PREP_SECONDS, _pass_elapsed)
