@@ -1,21 +1,26 @@
 extends RefCounted
 ## Cadrage des temps forts (mode de base du match ; repli CD_MATCH_TEMPS_FORTS=0). Pendant un temps fort, la caméra
 ## du jeu (TV ou contact) se rapproche de l'action : le ballon, son porteur et les
-## joueurs proches, à une hauteur visible de 28 à 42 m en TV (12 novembre 2026, soir : encore plus
-## loin, 16 à 24 m avant ; 12 à 18 m le matin ; vue retransmission large), plus large
-## pour un jeu au pied ou une longue course. Le ballon ne sort jamais du champ. Présentation seulement :
+## joueurs proches (hauteurs visibles : voir HAUTEUR), plus large pour un jeu au pied (le ballon et
+## son point de chute) ou une longue course, serré sur le paquet en mêlée, touche et ruck. Le
+## ballon ne sort jamais du champ. Présentation seulement :
 ## même amortissement que le recadrage des gestes (match_gestes.gd), qui s'applique
 ## par-dessus quand un geste est en cours. La vue tactique n'est jamais recadrée.
 const Gestes = preload("res://match_gestes.gd")
 
 const ENTREE := 1.0        # rapprochement, en secondes
 const SORTIE := 1.5        # retour au cadrage large
-## Hauteur visible minimale et maximale, en mètres.
-const HAUTEUR := {"tv": [28.0, 42.0], "action": [15.0, 24.0]}
-## Jeu au pied, longue course : hauteur visible maximale.
-const LARGE := {"tv": 54.0, "action": 40.0}
+## Hauteur visible minimale et maximale au point visé, en mètres (caméras en perspective depuis le
+## 18 novembre 2026 : TV 22 à 34 m selon la dispersion du porteur et des joueurs proches, au lieu
+## de 28 à 42 m en vue orthographique ; action 9 à 18 m).
+const HAUTEUR := {"tv": [22.0, 34.0], "action": [9.0, 18.0]}
+## Jeu au pied, longue course : hauteur visible maximale (le ballon et son point de chute).
+const LARGE := {"tv": 50.0, "action": 34.0}
+## Regroupement (mêlée, touche, ruck) : cadrage serré sur le paquet et les demis.
+const SERRE := {"tv": [18.0, 28.0], "action": [9.0, 14.0]}
 const MARGE := 1.25
 const PROCHES := 9.0       # rayon des joueurs concernés autour du ballon
+const TEMOINS_RAYON := 18.0  # rayon des témoins (joueurs les plus proches) quand peu de joueurs sont proches
 const SUR := 0.8           # part du demi-champ où le ballon doit rester
 const TAILLE_JOUEUR := 2.0
 const VOLS := ["kick", "kickoff", "drop22", "goalLine", "reception", "touch", "goal", "miss", "transformation"]
@@ -110,29 +115,51 @@ func _ballon(focus: Vector3) -> Vector3:
 
 
 ## Point visé au sol et hauteur visible qui contiennent l'action, vus sous l'angle de la caméra.
-func _but(basis: Basis, aspect: float, mode: String, base: float, focus: Vector3) -> Array:
+func _but(basis: Basis, aspect: float, mode: String, _base: float, focus: Vector3) -> Array:
 	var ballon := _ballon(focus)
 	var sol := Vector3(ballon.x, 0.0, ballon.z)
 	var points: Array[Vector3] = [sol, sol + Vector3.UP * maxf(TAILLE_JOUEUR, ballon.y)]
-	# Joueurs concernés : le porteur, ceux qui sont près du ballon ; au moins TEMOINS joueurs
-	# (les plus proches, 30 m au plus), pour qu'un plan ne montre jamais un terrain vide.
-	var distances: Array = []
-	for id: String in view._actors:
-		var place: Vector3 = view._actors[id].node.position
-		var ecart := Vector2(place.x - sol.x, place.z - sol.z).length()
-		distances.append([ecart, id])
-	distances.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
-	for rang in distances.size():
-		var id: String = distances[rang][1]
-		var ecart: float = distances[rang][0]
-		if id == view._carrier_id or ecart <= PROCHES or (rang < TEMOINS and ecart <= 30.0):
+	var bornes: Array = HAUTEUR[mode]
+	var plus_large := float(LARGE[mode]) if large else float(bornes[1])
+	# Mêlée, touche, ruck : le paquet et les demis seulement, pas les arrières écartés.
+	var groupe: Array = view.regroupement() if view.has_method("regroupement") else []
+	if not groupe.is_empty():
+		bornes = SERRE[mode]
+		plus_large = float(bornes[1])
+		for place: Vector3 in groupe:
+			points.append(place)
+			points.append(place + Vector3.UP * TAILLE_JOUEUR)
+	else:
+		# Joueurs concernés : le porteur, ceux qui sont près du ballon ; au moins TEMOINS joueurs
+		# (les plus proches, TEMOINS_RAYON m au plus), pour qu'un plan ne montre jamais un terrain vide.
+		var distances: Array = []
+		for id: String in view._actors:
 			var place: Vector3 = view._actors[id].node.position
-			points.append(Vector3(place.x, 0.0, place.z))
-			points.append(Vector3(place.x, TAILLE_JOUEUR, place.z))
-	if kind in VOLS and not view._ball_attached:
-		# Ballon en l'air : son départ et son arrivée restent à l'image.
-		for extremite: Vector3 in [view._ball_from, view._ball_target]:
-			if extremite.is_finite(): points.append(Vector3(extremite.x, 0.0, extremite.z))
+			var ecart := Vector2(place.x - sol.x, place.z - sol.z).length()
+			distances.append([ecart, id])
+		distances.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+		# Arrêt de jeu, ou presque personne autour du ballon : témoins cherchés jusqu'à 30 m.
+		var rayon := TEMOINS_RAYON
+		if kind in ARRETS or distances.size() < 2 or float(distances[1][0]) > TEMOINS_RAYON:
+			rayon = 30.0
+		for rang in distances.size():
+			var id: String = distances[rang][1]
+			var ecart: float = distances[rang][0]
+			if id == view._carrier_id or ecart <= PROCHES or (rang < TEMOINS and ecart <= rayon):
+				var place: Vector3 = view._actors[id].node.position
+				points.append(Vector3(place.x, 0.0, place.z))
+				points.append(Vector3(place.x, TAILLE_JOUEUR, place.z))
+	if kind in VOLS:
+		# Ballon en l'air : son départ et son point de chute restent à l'image ; le cadrage vise
+		# entre les deux et s'élargit (pistes du chorégraphe ou trajectoire du direct).
+		var chute: Variant = null
+		if view.has_method("choregraphie_active") and view.choregraphie_active() and view._choregraphie.has_method("chute_ballon"):
+			chute = view._choregraphie.chute_ballon()
+		if chute is Vector3:
+			points.append(chute)
+		elif not view._ball_attached:
+			for extremite: Vector3 in [view._ball_from, view._ball_target]:
+				if extremite.is_finite(): points.append(Vector3(extremite.x, 0.0, extremite.z))
 	var inverse := basis.inverse()
 	var bas := Vector2(INF, INF)
 	var haut := Vector2(-INF, -INF)
@@ -140,14 +167,13 @@ func _but(basis: Basis, aspect: float, mode: String, base: float, focus: Vector3
 		var local := inverse * point
 		bas = Vector2(minf(bas.x, local.x), minf(bas.y, local.y))
 		haut = Vector2(maxf(haut.x, local.x), maxf(haut.y, local.y))
-	var bornes: Array = HAUTEUR[mode]
-	var plus_large := float(LARGE[mode]) if large else float(bornes[1])
 	# Un geste de la vue choisit son propre cadrage, jamais plus large que celui-ci : on lui laisse la place.
 	var gestes: Variant = view.get("_gestes")
 	var plus_serre := float(bornes[1]) if gestes != null and gestes.active() else float(bornes[0])
 	var etendue := haut - bas
 	var visible := 1.0 - couvert_haut - couvert_bas
-	var taille := clampf(maxf(etendue.y / visible, etendue.x / maxf(aspect, 0.1)) * MARGE, plus_serre, minf(maxf(plus_large, plus_serre), base))
+	# Plafond : la hauteur voulue (jeu au pied compris), même au-delà du cadrage de base de la caméra.
+	var taille := clampf(maxf(etendue.y / visible, etendue.x / maxf(aspect, 0.1)) * MARGE, plus_serre, maxf(plus_large, plus_serre))
 	var milieu := (bas + haut) * 0.5
 	# L'action est centrée dans la partie de l'image que l'interface ne couvre pas.
 	milieu.y -= (couvert_bas - couvert_haut) * 0.5 * taille

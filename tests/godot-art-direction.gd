@@ -246,9 +246,12 @@ func run() -> void:
 	if not await send("pause", {"paused":true}): finish(); return
 	await capture("Match-direct")
 	var screen: Control = app.match_screen
-	for tab in ["Banc", "Stats"]:
-		screen._toggle_drawer(tab)
-		await capture("Match-" + tab)
+	# Banc et consignes : fenêtre Équipe (choix de Léo du 18/11/2026), puis le tiroir des statistiques.
+	screen.ouvrir_equipe()
+	await capture("Match-Equipe")
+	screen.equipe.fermer(false)
+	screen._toggle_drawer("Stats")
+	await capture("Match-Stats")
 	finish()
 func match_review() -> void:
 	if not await ContextualFlow.prepare_match_day(app,self,check): finish(); return

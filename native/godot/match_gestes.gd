@@ -20,6 +20,7 @@ extends RefCounted
 ## Tout est procédural sur le squelette CC0 existant : aucune ressource ajoutée.
 
 const Presentation = preload("res://match_presentation.gd")
+const Motion = preload("res://match_motion.gd")
 
 const FORM := 2.0          # instant du geste où l'alignement est en place ; la mise en place commence avant (temps négatif)
 const FORM_MIN := 1.2      # durée minimale d'une course de mise en place
@@ -89,11 +90,16 @@ const FRAME_MARGIN := 1.2
 const FRAME_LEAP := 40.0
 # Caméra TV seulement : léger pivot autour du point visé pendant le geste, pour
 # que les lignes de touche ne s'alignent plus sur l'axe de la caméra (le saut
-# se lit alors au-dessus de la ligne). 0,35 rad, soit 20°, en 1,5 s.
-const FRAME_YAW := {"tv": 0.35, "action": 0.0}
+# se lit alors au-dessus de la ligne). 0,25 rad, soit 14°, en 1,5 s (20° avant la caméra TV en
+# perspective du 18 novembre 2026, où un pivot plus fort montre la tribune proche).
+const FRAME_YAW := {"tv": 0.25, "action": 0.0}
 const ARMS := ["UpperArm.L", "LowerArm.L", "Palm.L", "UpperArm.R", "LowerArm.R", "Palm.R"]
 const LINE_Z := [-29.0, -23.2, -21.8, -20.4]
 const CONTEST := 0.7        # élévation du bloc adverse, battu
+# Clip « Man_Jump » du modèle : appel vers 0,33 s du clip, envol jusqu'à 0,63 s. Joué à ×0,4 depuis
+# 0,19 s, l'appel tombe à FORM + 0,35 s, quand les porteurs commencent la levée.
+const SAUT_DEBUT := 0.19
+const SAUT_VITESSE := 0.4
 
 var view
 var phase := ""
@@ -142,6 +148,7 @@ var giver_from := Vector3.ZERO
 var _holder := ""
 # Bibliothèque adaptée : lancer du clip en cours ; gestes de fin d'essai déjà lancés.
 var _lancer_adapte := false
+var _saut_lance := false
 var _fin_essai := false
 # Marqueur qui se relève (clip adapté) : sa pose de plongeon s'efface pendant le relevé.
 var _releve := ""
@@ -296,6 +303,7 @@ func _release(id: String) -> void:
 	if member.get("staged", true):
 		entry.from = entry.node.position
 		entry.elapsed = 0.0
+		entry.duree = Motion.duree(entry.from, entry.target)
 		entry.tangent = Vector3.ZERO
 		entry.velocity = Vector3.ZERO
 		entry.feet.clear()
@@ -596,6 +604,13 @@ func _pose_touche() -> void:
 		ball_from_basis = ball.global_basis
 		return
 	var lift := LIFT * smoothstep(FORM + 0.35, FORM + 0.95, time) * (1.0 - smoothstep(DOWN, DOWN + 0.45, time))
+	# Saut du modèle d'origine (« Man_Jump », 18/11/2026) sous la levée : appel, jambes groupées,
+	# réception. Ralenti (×SAUT_VITESSE) pour que l'appel tombe sur le début de la levée.
+	if not awaiting and not _saut_lance and time >= FORM and view.has_method("jouer_clip_natif"):
+		_saut_lance = true
+		for sauteur: String in jumpers:
+			if not sauteur.is_empty() and not view.geste_adapte(sauteur):
+				view.jouer_clip_natif(sauteur, "Man_Jump", SAUT_DEBUT, -1.0, false, SAUT_VITESSE)
 	_body(jumper, 0.0, lift)
 	var jump: Dictionary = view._actors[jumper]
 	var pitcher: Dictionary = view._actors[thrower]
@@ -973,6 +988,7 @@ func _align(scene: Dictionary, thrown_by: int) -> void:
 	maul_wanted = false
 	awaiting = true
 	_lancer_adapte = false
+	_saut_lance = false
 	var ball: Node3D = view._ball
 	ball_from = ball.global_position if ball.visible else spot[thrower]
 	ball_from_basis = ball.global_basis

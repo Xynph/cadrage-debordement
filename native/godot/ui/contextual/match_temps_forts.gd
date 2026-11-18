@@ -50,6 +50,9 @@ const ENTRACTE := 0.0
 ## Liaison entre deux temps forts contigus (match_liaison.gd) : toujours à vitesse réelle ;
 ## marge au-delà de sa durée avant de reprendre la main.
 const ECHEANCE_LIAISON := 3.0
+## Fin d'un plan : l'action suivante attend que les joueurs proches du ballon aient fini leur
+## déplacement à l'écran (allure plafonnée de la vue), au plus ECHEANCE_PLACE secondes de plus.
+const ECHEANCE_PLACE := 1.5
 
 var view: Control
 var app: Control
@@ -138,6 +141,8 @@ var arbitre: Node3D
 var _vitesses: Dictionary = {}
 var _places: Dictionary = {}
 var _saut_max := 0.0
+## Secondes déjà attendues, à la fin du plan courant, pour que les joueurs finissent leur déplacement.
+var _attente_place := 0.0
 
 static func enabled() -> bool:
 	return OS.get_environment("CD_MATCH_TEMPS_FORTS") != "0"
@@ -187,12 +192,8 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.camera_demandee.connect(func(mode: String): view.choisir_camera(mode))
 	# Une seule barre de commandes : celle de l'écran intermédiaire, pendant qu'il est affiché.
 	between.visibility_changed.connect(_barre_unique)
-	# Mon XV : un joueur choisi ouvre le banc sur lui (le match se met en pause).
-	between.joueur_choisi.connect(func(poste: int):
-		view.selected_slot = poste
-		view._drawer_key = ""
-		if view.drawer.visible and view.drawer_tab == "Banc": view._update_drawer()
-		else: view._toggle_drawer("Banc"))
+	# Mon XV : un joueur choisi ouvre la fenêtre Équipe sur lui (le match se met en pause).
+	between.joueur_choisi.connect(func(poste: int): view.ouvrir_equipe("composition", poste))
 	between.score_joue.connect(_score_joue)
 	between.consigne_bonus.connect(appliquer_consigne_bonus)
 	# « Pourquoi » d'après-match : l'action d'une raison ouvre l'écran de son levier.
@@ -203,7 +204,7 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.terrain.recaler(-1)
 
 ## Une seule barre de commandes, la même en 3D et pendant l'entracte : la bande sous le score
-## (Tactique, Banc, Paramètres, Plus) ; le match fini rend la barre du bas (« Valider la journée »).
+## (Équipe, Paramètres, Plus) ; le match fini rend la barre du bas (« Valider la journée »).
 func _barre_unique() -> void:
 	if view == null: return
 	var fini := bool(_live.get("finished", false))
@@ -222,7 +223,7 @@ func _bande(live: Dictionary) -> void:
 	bande.visible = active
 	if view.barre_commandes != null: view.barre_commandes.visible = not active
 
-## Consigne en direct (tiroir Tactique) : `set_consignes` sans pause ; pendant une minute
+## Consigne en direct (fenêtre Équipe, onglet Consignes) : `set_consignes` sans pause ; pendant une minute
 ## en cours, la commande attend sa réponse puis part.
 func envoyer_consigne(axe: String, valeur: String) -> void:
 	suivi.append({"evenement": "consigne", "axe": axe, "valeur": valeur, "horloge": str(_live.get("minute", "")), "debut_ms": Time.get_ticks_msec()})
@@ -931,6 +932,7 @@ func _jouer(plan: Dictionary) -> void:
 	var scene: Dictionary = plan.scene
 	phase = "jeu"
 	temps = 0.0
+	_attente_place = 0.0
 	_resultat_sonne = false
 	_plaque = false
 	# La clameur et la légende de l'essai partent quand l'essai est à l'écran : fin de la course,
@@ -988,6 +990,10 @@ func _lire(delta: float, reel: float) -> void:
 		_plaque = true
 		_plaquer(plan)
 	if temps < float(plan.get("duree", 1.0)): return
+	# Le plan n'est fini qu'une fois joué à l'écran : les joueurs proches du ballon ont rejoint leur place.
+	if _attente_place < ECHEANCE_PLACE and stage.has_method("deplacement_restant") and stage.deplacement_restant() > 0.05:
+		_attente_place += reel
+		return
 	_score = plan.get("score", _score)
 	index += 1
 	if index < tf.plans.size():
@@ -1089,6 +1095,9 @@ func _montrer_jeu(visible_3d: bool) -> void:
 		# n'apportait qu'une économie et ajoutait un état de plus au moment des coupes.
 
 func _habiller() -> void:
+	# Mi-temps, fin de match : une fois le temps fort fini, la 3D restée à l'écran montre tout le terrain.
+	if is_instance_valid(stage) and stage.has_method("set_plan_large"):
+		stage.set_plan_large(etat != JEU and (bool(_live.get("atBreak", false)) or bool(_live.get("finished", false))))
 	# Le journal ouvert suit l'image, pas l'avance du moteur.
 	if view.drawer.visible and view.drawer_tab == "Journal": view._update_drawer()
 	# Pendant un temps fort, le bandeau montre l'instant rejoué, pas l'état du moteur.

@@ -32,6 +32,7 @@ var _kit_swatch_colors: Array[Color] = []
 var _applied_camera := ""
 var _applied_quality := ""
 var _score_sheet: PanelContainer
+var _phase_notice: Label
 var _notebook: PanelContainer
 var _bottom_sheet: PanelContainer
 var _bottom_controls: HBoxContainer
@@ -86,6 +87,11 @@ func _ready() -> void:
 	_nomination_notice.name="MatchNominationNotice"
 	_nomination_notice.hide()
 	score_sheet.add_child(_nomination_notice)
+	_phase_notice=G.wrap("",15,Color("ddbd80"))
+	_phase_notice.name="MatchPhaseNotice"
+	_phase_notice.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	_phase_notice.hide()
+	score_sheet.add_child(_phase_notice)
 	var center:=G.h(13)
 	G.fill(center,true)
 	add_child(center)
@@ -248,6 +254,7 @@ func update_frame(value:Dictionary) -> void:
 	_nomination_notice.visible = not _nomination_notice.text.is_empty()
 	if live.is_empty():
 		stage.apply_frame({})
+		_phase_notice.text=""
 		var next:Dictionary=value.next if value.get("next") is Dictionary else {}
 		home.text=G.club_name(next.get("home",{}))
 		away.text=G.club_name(next.get("away",{}))
@@ -281,9 +288,11 @@ func update_frame(value:Dictionary) -> void:
 		play.tooltip_text = ""
 		finish.text="VALIDER LE RÉSULTAT  →"
 		finish.disabled=not live.get("finished",false)
+		_phase_notice.text=_possession_text(live,teams)
 		stage.set_live_cadence(app.tick_steps)
 		stage.apply_frame(live)
 		kit_colors = stage.alternative_kit_colors()
+	_phase_notice.visible=not _phase_notice.text.is_empty()
 	if kit_colors != _kit_swatch_colors:
 		_kit_swatch_colors = kit_colors
 		for side in _kit_swatches.size():
@@ -298,6 +307,23 @@ func _select_tab(value: String) -> void:
 	app.management_ui["match_journal_tab"] = value
 	presence_key = ""
 	_side()
+
+const PHASES := {"carry": "jeu courant", "reception": "jeu courant", "kick": "jeu au pied", "kickoff": "coup d'envoi",
+	"drop22": "renvoi aux 22 m", "goalLine": "renvoi en but", "touch": "touche", "lineout": "touche", "scrum": "mêlée",
+	"ruck": "ruck", "maul": "maul", "goal": "tentative de transformation", "miss": "tentative de transformation",
+	"turnover": "ballon récupéré", "quick-tap": "pénalité rapide", "penalty": "pénalité", "try": "essai"}
+
+## Équipe en possession et phase en cours, affichées sous le score ; vide si le moteur ne les donne pas.
+static func _possession_text(live: Dictionary, teams: Array) -> String:
+	if live.get("finished", false) or live.get("atBreak", false) or not live.get("scene") is Dictionary:
+		return ""
+	var scene: Dictionary = live.scene
+	var camp := int(scene.get("possession", scene.get("team", -1)))
+	var phase := str(PHASES.get(str(scene.get("kind", "")), ""))
+	if camp not in [0, 1] or camp >= teams.size() or not teams[camp] is Dictionary or phase.is_empty():
+		return ""
+	return "Possession : %s · %s" % [G.club_abbr(teams[camp]), phase]
+
 
 static func _decision_label(decision: Variant, teams: Array, fallback := "Rencontre terminée.") -> String:
 	if not decision is Dictionary:

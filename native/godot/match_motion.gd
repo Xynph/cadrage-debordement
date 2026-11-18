@@ -1,6 +1,23 @@
 extends RefCounted
 ## Interpolation de présentation uniquement. Les points du moteur restent intacts.
 
+## Durée la plus courte d'un déplacement (petit ajustement de place), en secondes.
+const DUREE_MIN := 0.55
+## Allure de pointe à l'écran, en m/s : un sprint d'ailier, jamais plus (même plafond que
+## les mises en place des gestes, match_gestes.gd PACE_BACK).
+const ALLURE_MAX := 7.5
+## Au-delà de ce trajet (m), un joueur n'est plus montré en train de courir : il est replacé
+## pendant une coupe (match_view.gd), ou hors champ s'il n'est pas à l'image.
+const TRAJET_REPLACEMENT := 22.0
+## Derniers pas d'un joueur replacé : il réapparaît à cette distance de sa place, en m.
+const DERNIERS_PAS := 1.2
+
+## Durée du trajet `from` -> `target` pour que l'allure de pointe ne dépasse jamais ALLURE_MAX :
+## la courbe de position_at culmine à (1 + 0,5 × poids de foulée) fois l'allure moyenne.
+static func duree(from: Vector3, target: Vector3) -> float:
+	var distance := Vector2(target.x - from.x, target.z - from.z).length()
+	return maxf(DUREE_MIN, distance * (1.0 + 0.5 * _stride_weight(from, target)) / ALLURE_MAX)
+
 static func tangent(velocity: Vector3, displacement: Vector3, duration: float) -> Vector3:
 	# A bounded Hermite tangent preserves a continuing stride without overshooting
 	# an authored endpoint. An axis reversal brakes before changing support.

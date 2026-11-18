@@ -85,6 +85,7 @@ const Entry = preload("res://ui/entry_screens.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const SquadViews = preload("res://ui/squad_views.gd")
 const MatchUI = preload("res://ui/match_screen.gd")
+const Rythme = preload("res://match_rythme.gd")
 const PackViews = preload("res://ui/pack_views.gd")
 const StaffViews = preload("res://ui/staff_view.gd")
 const DevelopmentViews = preload("res://ui/development_view.gd")
@@ -147,6 +148,10 @@ var last_refresh := ""
 var screen_renders := 0
 var last_command := "snapshot"
 var tick_steps := 1
+## Direct d'origine : fait montré (clé), secondes déjà passées à l'écran, attente des déplacements.
+var _rythme_cle := ""
+var _rythme_ecoule := 0.0
+var _rythme_place := 0.0
 var closing := false
 var file_dialog: FileDialog
 var import_mode := false
@@ -213,7 +218,8 @@ func _ready() -> void:
 	interface_layout.setup(self)
 	catalogue = JSON.parse_string(FileAccess.get_file_as_string("res://assets/clubs.json"))
 	timer = Timer.new()
-	timer.wait_time = 0.32
+	# Horloge du direct d'origine : elle surveille le rythme (match_rythme.gd), chaque fait reste à l'écran le temps d'être joué.
+	timer.wait_time = Rythme.SCRUTATION
 	timer.timeout.connect(_live_tick)
 	add_child(timer)
 	file_dialog = FileDialog.new()
@@ -1463,7 +1469,26 @@ func _live_tick() -> void:
 	# Match en temps forts (mode de base ; repli CD_MATCH_TEMPS_FORTS=0) : la régie de la vue demande elle-même chaque minute.
 	if is_instance_valid(match_screen) and match_screen.has_method("temps_forts_actifs") and match_screen.temps_forts_actifs(): return
 	var live := _live()
-	if not live.is_empty() and not live.get("paused",false) and not live.get("finished",false): _command("tick",{"steps":tick_steps})
+	if live.is_empty() or live.get("paused",false) or live.get("finished",false):
+		_rythme_ecoule = 0.0
+		return
+	# Rythme : le fait montré reste à l'écran selon son type (essai, mêlée, course…), divisé par la
+	# cadence choisie (×4, ×12) ; rien ne part avant qu'il ait été joué.
+	var scene: Dictionary = live.get("scene") if live.get("scene") is Dictionary else {}
+	var cle := str(scene.get("key", "")) + "|" + str((live.get("events", []) as Array).size())
+	if cle != _rythme_cle:
+		_rythme_cle = cle
+		_rythme_ecoule = 0.0
+		_rythme_place = 0.0
+	_rythme_ecoule += timer.wait_time
+	var suite := Rythme.prochain(str(scene.get("kind", "")), tick_steps)
+	if _rythme_ecoule < float(suite.secondes): return
+	# À ×1, les joueurs proches du ballon finissent d'abord leur déplacement (avec une échéance).
+	if tick_steps == 1 and _rythme_place < Rythme.ECHEANCE_PLACE and _match_visible() and is_instance_valid(match_screen.stage) and match_screen.stage.has_method("deplacement_restant") and match_screen.stage.deplacement_restant() > 0.05:
+		_rythme_place += timer.wait_time
+		return
+	_rythme_ecoule = 0.0
+	_command("tick",{"steps":int(suite.pas)})
 
 func _update_match() -> void:
 	if is_instance_valid(match_screen): match_screen.update_frame(model)

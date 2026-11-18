@@ -19,6 +19,67 @@ func fixture(x: float = 50.0, kind: String = "carry", id: String = "a") -> Dicti
 			{"id": "b", "side": 0, "featured": id == "b", "x": 56.0, "y": 35.0}],
 		"origin": {"x": 50.0, "y": 35.0}, "ball": {"x": x if id == "a" else 56.0, "y": 35.0}}}
 
+## Équipe de `n` joueurs alignés en x, au jeu courant (allure d'un déplacement : rythme du match 3D).
+func team(x: float, n: int, key: String) -> Dictionary:
+	var players: Array = []
+	for i in n:
+		players.append({"id": "t%d" % i, "side": i % 2, "featured": i == 0, "x": x, "y": 10.0 + i * 3.0})
+	return {"scene": {"key": key, "kind": "turnover", "possession": 0, "players": players, "ball": {"x": x, "y": 10.0}}}
+
+## Allure plafonnée (18/11/2026) : un joueur qui doit parcourir 15 m ne les avale plus en 0,55 s
+## (27 m/s) ; il court au plus à Motion.ALLURE_MAX et ses jambes suivent la distance parcourue.
+## Un très grand déplacement d'équipe (plus de 22 m pour au moins 6 joueurs à l'image) est un
+## replacement pendant une coupe, pas une glissade.
+func check_sprint_cap(view: Node3D) -> void:
+	var Motion = load("res://match_motion.gd")
+	view.apply_frame(team(40.0, 2, "cap-0"))
+	view._process(2.0)
+	var actor: Node3D = view._actors.t0.node
+	var start := actor.position
+	view.apply_frame(team(55.0, 2, "cap-1"))
+	var peak := 0.0
+	var seconds := 0.0
+	var previous := actor.position
+	for frame in 300:
+		view._process(1.0 / 60.0)
+		peak = maxf(peak, actor.position.distance_to(previous) * 60.0)
+		previous = actor.position
+		if actor.position.distance_to(start + Vector3(15.0, 0.0, 0.0)) > 0.01: seconds += 1.0 / 60.0
+	check(peak <= Motion.ALLURE_MAX + 0.3, "A 15 m move never exceeds sprint pace (peak %.1f m/s)" % peak)
+	check(seconds >= 15.0 / Motion.ALLURE_MAX, "A 15 m move lasts at least its sprint time (%.2f s)" % seconds)
+	check(view.deplacement_restant() <= 0.0001, "Nothing left to run once the move is over")
+	metrics.sprint_peak_mps = snappedf(peak, 0.01)
+	metrics.sprint_15m_seconds = snappedf(seconds, 0.01)
+	view.apply_frame(team(70.0, 2, "cap-2"))
+	check(view.deplacement_restant() >= 15.0 / Motion.ALLURE_MAX - 0.01, "The director can see the move still has to be played")
+	view._process(5.0)
+	# Équipe qui se reforme à 40 m (après un essai) : replacée pendant une coupe.
+	view.set_camera("tv")
+	view.apply_frame(team(50.0, 12, "reform-0"))
+	view._process(5.0)
+	await process_frame
+	var coupes: int = view.replacements_coupes
+	view.apply_frame(team(10.0, 12, "reform-1"))
+	var farthest := 0.0
+	for id: String in view._actors:
+		var entry: Dictionary = view._actors[id]
+		farthest = maxf(farthest, (entry.node as Node3D).position.distance_to(entry.target))
+	check(view.replacements_coupes == coupes + 1 and view._camera_cut, "A 40 m team reformation is a camera cut")
+	check(farthest <= Motion.DERNIERS_PAS + 0.01, "Reformed players reappear a few steps from their place (%.1f m)" % farthest)
+	metrics.reform_farthest_m = snappedf(farthest, 0.01)
+
+## Rythme du direct d'origine : chaque fait reste à l'écran selon son type ; la cadence est un multiplicateur.
+func check_rythme() -> void:
+	var Rythme = load("res://match_rythme.gd")
+	check(Rythme.prochain("try", 1).secondes >= 2.0 and Rythme.prochain("try", 1).pas == 1, "A try stays on screen for seconds at ×1")
+	check(is_equal_approx(Rythme.prochain("scrum", 1).secondes, 1.5), "A scrum lasts about 1.5 s at ×1")
+	check(Rythme.prochain("carry", 1).secondes >= 0.6, "A carry is no longer a 0.32 s flash")
+	for kind in ["try", "scrum", "carry", "ruck", "?"]:
+		for k in [1, 4, 12]:
+			var suite: Dictionary = Rythme.prochain(kind, k)
+			check(float(suite.secondes) >= Rythme.PAS_MIN - 0.0001 or k == 1, "%s ×%d: never faster than the engine round trip" % [kind, k])
+			check(is_equal_approx(float(suite.pas) / float(suite.secondes), float(k) / Rythme.duree(kind)), "%s ×%d keeps the cadence multiplier" % [kind, k])
+
 func run() -> void:
 	var view = load("res://match_view.gd").new()
 	root.add_child(view)
@@ -151,6 +212,8 @@ func run() -> void:
 	view.apply_frame(ambiguous)
 	view._process(1.0)
 	check(view._actors.size() == 2, "Ambiguous contest preserves exactly the transmitted presence")
+	await check_sprint_cap(view)
+	check_rythme()
 	print("MATCH_MOTION_CHECKS ", JSON.stringify({"failures": failures, "metrics": metrics}))
 	view.queue_free()
 	await process_frame

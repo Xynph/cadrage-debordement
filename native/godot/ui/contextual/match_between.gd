@@ -5,7 +5,8 @@ extends Control
 ## trente pastilles numérotées rejouent les faits du moteur pendant que l'horloge défile. Autour,
 ## un tableau de bord inspiré des écrans « match overview » des jeux de management de football,
 ## adapté au rugby : domination minute par minute, chiffres clés comparés, fil, Mon XV (note,
-## énergie, alertes), regard de l'adjoint et accès direct à la tactique et aux remplacements.
+## énergie, alertes), regard de l'adjoint et accès direct à la fenêtre Équipe (composition, banc,
+## consignes ; choix de Léo du 18/11/2026 : un seul bouton à la place de Tactique et Banc).
 ## Une seule mise en page (maquette validée par Léo, 16 novembre 2026) : Notre XV à gauche (tuile
 ## principale ; vue Terrain par défaut, Tableau, XV adverse ; carte Changement dessous), le terrain
 ## 2D en grand au centre avec momentum, anneaux possession et occupation et tuile « Dans les 22 »,
@@ -27,7 +28,7 @@ signal passer_demande
 signal horloge_choisie(valeur: String)
 ## « Confier la fin à l'adjoint », depuis le menu de la barre.
 signal delegation_demandee
-## Un joueur de Mon XV choisi : le banc s'ouvre sur lui.
+## Un joueur de Mon XV choisi : la fenêtre Équipe s'ouvre sur lui.
 signal joueur_choisi(poste: int)
 ## « Pourquoi » d'après-match : l'action d'une raison ouvre l'écran de son levier (route du jeu).
 signal levier_choisi(route: String)
@@ -63,8 +64,8 @@ var fil: VBoxContainer
 var chiffres: VBoxContainer
 var xv: GridContainer
 var adjoint: VBoxContainer
-var tactique: Button
-var banc: Button
+## Bouton « ÉQUIPE » : fenêtre plein écran (composition, banc, cris, consignes), match en pause.
+var equipe: Button
 var plus: MenuButton
 ## Horloge de l'entracte choisie (reprise de la régie à l'ouverture).
 var horloge := "normale"
@@ -136,7 +137,7 @@ var bonus_choix: HBoxContainer
 var _bonus_cle := ""
 var multiplex_cartes: GridContainer
 ## Pilotage reçu du moteur (`live.pilotage`) : sert aux états des joueurs (Galvanisé, Vexé…) de Mon XV.
-## Les consignes en direct ne sont pas sur cet écran (tiroir Tactique de la vue du match).
+## Les consignes en direct ne sont pas sur cet écran (fenêtre Équipe de la vue du match).
 var _pilotage: Dictionary = {}
 var multiplex_precision: Label
 ## Dernière journée montrée (null sans multiplex) et sa clé (rien n'est reconstruit sans changement).
@@ -601,7 +602,7 @@ func _construire() -> void:
 	if not _arret.is_empty(): montrer_arret(_arret)
 	if not terrain.fait_joue.is_connected(_fait_joue): terrain.fait_joue.connect(_fait_joue)
 
-## Commandes : où est le ballon, Tactique, Banc, Paramètres (vitesse
+## Commandes : où est le ballon, Équipe, Paramètres (vitesse
 ## de l'horloge, temps forts montrés) et Plus (statistiques, journal, délégation).
 func _commandes() -> void:
 	etat = _texte("", 34, IVOIRE, false, true)
@@ -612,14 +613,10 @@ func _commandes() -> void:
 	S.G.fill(etat)
 	# Pas de bouton « Passer » ni de compte à rebours (choix de Léo) : le match défile en 2D à
 	# la vitesse de l'horloge choisie dans les paramètres.
-	tactique = _bouton("TACTIQUE", func(): tiroir_demande.emit("Tactique"))
-	tactique.name = "MatchBetweenTactics"
-	tactique.tooltip_text = "Consignes d’attaque et de défense (le match se met en pause)."
-	tactique.set_meta("contextual_enabled", true)
-	banc = _bouton("BANC", func(): tiroir_demande.emit("Banc"))
-	banc.name = "MatchBetweenBench"
-	banc.tooltip_text = "Ouvrir le banc et faire un remplacement (le match se met en pause)."
-	banc.set_meta("contextual_enabled", true)
+	equipe = _bouton("ÉQUIPE", func(): tiroir_demande.emit("Équipe"), true, true)
+	equipe.name = "MatchBetweenTeam"
+	equipe.tooltip_text = "Composition, banc, cris de la touche et consignes (le match se met en pause)."
+	equipe.set_meta("contextual_enabled", true)
 	plus = MenuButton.new()
 	plus.name = "MatchBetweenMore"
 	plus.text = "PLUS  ▾"
@@ -830,7 +827,7 @@ func _page() -> void:
 		barre = S.G.h(px(12))
 		(barre as HBoxContainer).alignment = BoxContainer.ALIGNMENT_END
 		page.add_child(barre)
-	for noeud: Control in [etat, tactique, banc, parametres, plus]: barre.add_child(noeud)
+	for noeud: Control in [etat, equipe, parametres, plus]: barre.add_child(noeud)
 	var grille := S.G.h(px(20))
 	grille.name = "MatchBetweenTiles"
 	S.G.fill(grille, true)
@@ -1102,8 +1099,9 @@ func _arret_decision() -> void:
 	colonne.add_child(arret_texte)
 	var choix := S.G.h(px(16))
 	colonne.add_child(choix)
-	choix.add_child(_bouton("BANC", func(): tiroir_demande.emit("Banc")))
-	choix.add_child(_bouton("TACTIQUE", func(): tiroir_demande.emit("Tactique")))
+	var vers_equipe := _bouton("ÉQUIPE", func(): tiroir_demande.emit("Équipe"))
+	vers_equipe.name = "MatchBetweenStopTeam"
+	choix.add_child(vers_equipe)
 	choix.add_child(S.G.spacer())
 	choix.add_child(_bouton("REPRENDRE LE MATCH", func(): reprise_demandee.emit(), true, true))
 	arret.hide()
@@ -1820,7 +1818,7 @@ func _infos_xv(joueurs: Array, direct: Dictionary) -> Array:
 		var humeur := Pilotage.etat_joueur(_pilotage, id)
 		if not humeur.is_empty(): detail += "\nAprès la causerie : " + str(humeur.label).to_lower()
 		var info := d.duplicate()
-		info.merge({"alerte": alerte, "marque": marque, "carton": cartons.has(id), "etat": humeur, "detail": detail + "\nCliquer : ouvrir le banc sur ce joueur."}, true)
+		info.merge({"alerte": alerte, "marque": marque, "carton": cartons.has(id), "etat": humeur, "detail": detail + "\nCliquer : ouvrir la fenêtre Équipe sur ce joueur."}, true)
 		infos.append(info)
 	return infos
 
@@ -1959,12 +1957,12 @@ func _remplir_changement(infos: Array) -> void:
 		colonne.add_child(calme)
 	changement.add_child(colonne)
 	var poste := choisi
-	var bouton := _bouton("Préparer le changement", func(): joueur_choisi.emit(poste), true, true) if urgent else _bouton("Ouvrir le banc", func(): tiroir_demande.emit("Banc"))
+	var bouton := _bouton("Préparer le changement", func(): joueur_choisi.emit(poste), true, true) if urgent else _bouton("Ouvrir l’équipe", func(): tiroir_demande.emit("Équipe"))
 	bouton.name = "MatchBetweenSwapAction"
 	bouton.custom_minimum_size.y = px(56)
 	bouton.add_theme_font_size_override("font_size", px(26))
 	bouton.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	bouton.tooltip_text = "Ouvrir le banc sur ce joueur (le match se met en pause)." if urgent else "Ouvrir le banc (le match se met en pause)."
+	bouton.tooltip_text = "Ouvrir la fenêtre Équipe sur ce joueur (le match se met en pause)." if urgent else "Ouvrir la fenêtre Équipe (le match se met en pause)."
 	bouton.set_meta("contextual_enabled", true)
 	changement.add_child(bouton)
 
@@ -2287,7 +2285,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 		var bouton_remplacer := _bouton("Remplacer le %d" % (poste + 1), func(): joueur_choisi.emit(poste), true, true)
 		bouton_remplacer.name = "MatchBetweenReplace"
 		bouton_remplacer.custom_minimum_size.y = px(56)
-		bouton_remplacer.tooltip_text = "Ouvrir le banc sur ce joueur."
+		bouton_remplacer.tooltip_text = "Ouvrir la fenêtre Équipe sur ce joueur."
 		bouton_remplacer.set_meta("contextual_enabled", true)
 		actions.add_child(bouton_remplacer)
 	elif not fini and conseil is Dictionary and (conseil.get("attackChanged", false) or conseil.get("defenceChanged", false)):

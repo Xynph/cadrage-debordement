@@ -250,12 +250,15 @@ func run() -> void:
 	check(talk().get("phase") == "pre", "Refusal leaves original talk active")
 	await ask("snapshot")
 	var option: Dictionary = talk().options[0]
-	director.view._select_choice(option)
 	director.view._toggle_player(talk().participants[0].id)
-	var pronounce: Button = director.view.find_child("TalkPronounce", true, false)
-	check(pronounce != null and not pronounce.disabled, "Preview and real selected recipient enable Prononcer")
-	if pronounce != null: pronounce.pressed.emit()
-	check(app.waiting and app.last_command == "match_talk_decide", "Prononcer uses public command bookkeeping")
+	var choice_button: Button = null
+	var declarations: GridContainer = director.view.find_child("TalkDeclarations", true, false)
+	if declarations != null:
+		for button in declarations.get_children():
+			if str(button.get_meta("choice_id", "")) == str(option.id): choice_button = button
+	check(choice_button != null and not choice_button.disabled, "A real selected recipient enables the declarations")
+	if choice_button != null: choice_button.pressed.emit()
+	check(app.waiting and app.last_command == "match_talk_decide", "Clicking a declaration pronounces it at once (public command bookkeeping)")
 	var disabled_while_waiting := true
 	for button in director.overlay.find_children("*", "BaseButton", true, false):
 		if not button.disabled: disabled_while_waiting = false
