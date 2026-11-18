@@ -105,6 +105,8 @@ function resultatsParLigue(s){
   l.resultats.push(resultat);l.exploitations.push(exploitation);l.caisses.push(c.cash/1e6);if(k.recettes>0)l.masseSurRecettes.push(k.masse/(k.recettes+prime));
  }
  return Object.fromEntries(Object.entries(out).map(([lg,l])=>[lg,{clubs:l.clubs,enPerte:l.enPerte,exploitationEnPerte:l.exploitationEnPerte,
+  // Répartition de la saison (résultat avant apport du propriétaire) : dans le vert, proches de l'équilibre (-0,25 à 0 M€), en perte au-delà.
+  repartition:{vert:l.resultats.filter(r=>r>0).length,proches:l.resultats.filter(r=>r<=0&&r>=-0.25).length,perte:l.resultats.filter(r=>r<-0.25).length},
   resultatMedian:round(median(l.resultats)),resultatMin:round(Math.min(...l.resultats)),resultatMax:round(Math.max(...l.resultats)),
   exploitationMediane:round(median(l.exploitations)),caisseMediane:round(median(l.caisses)),caisseMax:round(Math.max(...l.caisses)),masseSurRecettes:round(median(l.masseSurRecettes)),
   medianes:Object.fromEntries(Object.entries(l.detail).filter(([,v])=>v.length).map(([cle,v])=>[cle,round(median(v))])),...(l.arrivants?{arrivants:l.arrivants}:{})}]));

@@ -185,12 +185,29 @@ const affluence = (formeClub, alea) => 0.78 + 0.36 * formeClub + 0.08 * alea;
 // Ce qu'un club géré par le jeu ajuste dans son fonctionnement, sur l'année : il réduit
 // ses dépenses quand son déficit dépasse ce que le propriétaire comble, et il réinvestit
 // l'essentiel de ses excédents. Positif = dépense en plus.
+// marge : excédent que le budget voté vise (championnat encadré, cibleGestion) : ce n'est pas un surplus imprévu,
+// le train de vie n'y touche pas ; seul ce qui le dépasse est réinvesti.
 const TRAIN_DE_VIE = 0.7;
-function ajustement(annuel, masseAnnuelle, enveloppe) {
+function ajustement(annuel, masseAnnuelle, enveloppe, marge = 0) {
   const resultat = annuel * (1 - FONCTIONNEMENT) - masseAnnuelle * (1 + COTISATIONS);
-  if (resultat > 0) return TRAIN_DE_VIE * resultat;
+  if (resultat > 0) return TRAIN_DE_VIE * Math.max(0, resultat - Math.max(0, Number.isFinite(marge) ? marge : 0));
   const economies = Math.min(0.15 * annuel, 0.7 * Math.max(0, -resultat - enveloppe));
   return economies > 0 ? -economies : 0;
+}
+
+// Championnat encadré (deuxième division française) : résultat annuel que vise le budget voté d'un club, en euros
+// (positif : excédent visé ; négatif : perte que le propriétaire comblera). Avant (#885), tous les clubs visaient la perte
+// que leur propriétaire comble : à masse moyenne réelle (3,2 M€, 30 % des recettes, le point mort), presque toute la division
+// finissait dans le rouge dès la troisième saison (12 à 14 clubs sur 16, réel : 14). Chaque club a maintenant sa propre
+// gestion, stable d'une saison à l'autre : une association « bon élève » reconstitue ses fonds propres (+2 à +6 % des
+// recettes, Aurillac +0,50 M€ en 2024-2025), une entreprise utilise 20 à 100 % de l'enveloppe de son actionnaire (Charente,
+// Valence, Colomiers près de l'équilibre), un mécène 50 à 100 % (Brive, Oyonnax). 0 hors des championnats encadrés.
+function cibleGestion(forces, clubId, typeConnu = null) {
+  const championnat = ECONOMIE.CHAMPIONNATS[forces.find(club => club.id === clubId)?.division];
+  if (!championnat?.encadrement || !championnat.gestion) return 0;
+  const { annuel } = regleDe(forces, clubId), p = proprietaire(forces, clubId, typeConnu), regle = championnat.gestion[p.type], u = unite('gestion|' + clubId);
+  if (!regle) return 0;
+  return p.type === 'association' ? rond(annuel * (regle.min + regle.ecart * u)) : -rond(p.enveloppe * (regle.min + regle.ecart * u));
 }
 
 // Masse salariale annuelle qu'un club s'autorise : la plus basse de trois bornes — le plafond de la
@@ -212,8 +229,9 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
     // 5 ou 6 proches de l'équilibre (Charente -0,07 M€, Valence -0,13), les autres en perte, comblée par les actionnaires.
     // Marge de prudence (prudence, part des recettes, league-economy.cjs) : la saison réelle coûte plus que le budget voté
     // (recrues et jokers en cours de saison) ; un championnat encadré peut demander que la masse en tienne compte.
-    const economies = regle.encadrement ? 0 : 0.15 * annuel, prudence = (regle.prudence ?? 0) * annuel;
-    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) - prudence + p.enveloppe + economies) / (1 + COTISATIONS)]];
+    // Suite (#885 → ici) : la borne suit la gestion propre du club (cibleGestion) au lieu de l'enveloppe entière du propriétaire.
+    const economies = regle.encadrement ? 0 : 0.15 * annuel, prudence = (regle.prudence ?? 0) * annuel, aPerdre = regle.encadrement && regle.gestion ? -cibleGestion(forces, force.id, p.type) : p.enveloppe;
+    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) - prudence + aPerdre + economies) / (1 + COTISATIONS)]];
     const credit = credits?.[force.id] ?? 0;
     if (regle.plafond !== null) bornes.push(['plafond', regle.plafond + credit]);
     if (regle.ratio) bornes.push(['recettes', annuel * RATIO_SALAIRES]);
@@ -232,7 +250,8 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
 //   domicile : le club reçoit ; neutre : match sur terrain neutre ; phase : 'league' ou une phase finale ;
 //   resultats : derniers résultats du club ('V', 'N', 'D') ; alea dans [0;1] (tiré du club et de la date par défaut) ;
 //   receptions : matchs de saison régulière à domicile ; gere : club géré par le jeu.
-function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1 }) {
+//   marge : excédent visé par le budget voté (cibleGestion), épargné par le train de vie ; 0 pour le club joué.
+function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0 }) {
   const { force, regle, annuel } = regleDe(forces, clubId);
   if (!Number.isInteger(semaines) || semaines < 1) throw Error('Budget de club : nombre de semaines invalide.');
   const salaires = rond(masseHebdo * 52 / semaines), matchs = Math.max(1, receptions ?? Math.round(semaines / 2));
@@ -252,7 +271,7 @@ function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle
   } else if (neutre) {
     ecritures.push({ title: libelle + ' · Part de recette de phase finale', amount: rond(regle.moyenne * regle.billetterie / matchs * PART_TERRAIN_NEUTRE) });
   }
-  const fonctionnement = annuel * FONCTIONNEMENT + (gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe) : 0);
+  const fonctionnement = annuel * FONCTIONNEMENT + (gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe, marge) : 0);
   ecritures.push({ title: libelle + ' · Salaires des joueurs', amount: -salaires });
   ecritures.push({ title: libelle + ' · Cotisations', amount: -rond(salaires * COTISATIONS) });
   const centre = centreFormation(annuel, force.division, formation);
@@ -574,6 +593,8 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
   // l'excédent de l'exercice est réinvesti à 70 % dans le staff et le fonctionnement, un déficit
   // au-delà de l'enveloppe du propriétaire est réduit par des économies.
   repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle,formation:budgetCentre(c),investissement:b.clubs[c.id].investissement||0,
+  // Clubs gérés d'un championnat encadré : l'excédent que vise leur budget n'est pas dépensé (le club joué fait ses propres choix).
+  marge:c.id===S.club?0:Math.max(0,nativeClubBudget.cibleGestion(forces,c.id,b.clubs[c.id].type)),
   // Accueil du stade relevé par les investissements des excédents (club-investments.cjs).
   accueil:typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1}));
  // Mode Monde : les recettes de guichet imprévues (série de victoires, phase finale) coûtent aussi des primes et des frais.
@@ -864,4 +885,4 @@ const VALIDATION = `{
 module.exports = Object.freeze({ PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
   RESERVE, EXCEDENTS, EXCEDENT_DORMANT, TRAIN_DE_VIE, reserveCible, engagement, apportProprietaire, annonceDividende, annonceInvestissement,
   recettesImprevues, fraisDeMatch, PART_FRAIS_IMPREVUS, deficitPrevu, LIBELLE_FRAIS_MATCH,
-  recettes, semaine, proprietaire, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros });
+  recettes, semaine, proprietaire, cibleGestion, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros });
