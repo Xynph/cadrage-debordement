@@ -96,6 +96,12 @@ function factory(){
   try{const m=CDWorldCareer.meteoAnnoncee(s);return m&&m.fixtureId===f.id?m:null;}catch(e){return null;}
  }
  const ventOriente=m=>!!m&&m.vent>0&&[0,1].includes(m.sens)&&(typeof WIND_DIRECTION_RULES==='undefined'||!!WIND_DIRECTION_RULES);
+ // Écart de niveau des XV probables (même mesure que la complaisance du moteur), null hors du moteur.
+ function ecartNiveau(s,own,adv){
+  if(typeof buildSheet!=='function'||typeof teamLevel!=='function')return null;
+  try{const niveau=id=>{const c=s.clubs[id];if(!c)return null;const by=new Map(c.players.map(p=>[p.id,p]));const xv=buildSheet(c).lineup.map(x=>by.get(x)).filter(Boolean);return xv.length?teamLevel(xv):null;};
+   const a=niveau(own),b=niveau(adv);return a===null||b===null?null:a-b;}catch(e){return null;}
+ }
  function gabi(s,f,own,adv,data){
   const nous=[f.homeId,f.awayId].indexOf(own),eux=1-nous,cles=[];
   const ajoute=(id,priorite,titre,detail)=>cles.push({id,priorite,titre,detail});
@@ -121,6 +127,9 @@ function factory(){
    if(a.melees!==null&&b.melees!==null&&a.melees-b.melees>=5)ajoute('melee',50,'Pousser en mêlée',a.melees+' % de mêlées gagnées contre '+b.melees+' %');
    if(a.melees!==null&&b.melees!==null&&b.melees-a.melees>=5)ajoute('melee-tenir',53,'Tenir en mêlée','leur mêlée gagne '+b.melees+' % de ses introductions');
   }
+  // Complaisance (tactical-plans.js, RELACHEMENT) : gros favori → risque de jour sans, qu'une causerie exigeante annule.
+  const ecart=ecartNiveau(s,own,adv);
+  if(ecart!==null&&typeof RELACHEMENT!=='undefined'&&ecart>=RELACHEMENT.seuil)ajoute('relachement',84,'Pas de relâchement','on est favoris : choisis une causerie exigeante avant le coup d’envoi');
   const leur=data.forme[eux]||[],victoires=leur.filter(x=>x==='V').length;
   if(leur.length>=4&&victoires>=4)ajoute('dynamique',48,'Casser leur dynamique',victoires+' victoires sur leurs '+leur.length+' derniers matchs');
   ajoute('collisions',20,'Gagner les collisions','avancer sur chaque impact');
