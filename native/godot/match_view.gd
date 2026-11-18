@@ -1354,7 +1354,17 @@ func borner_pivot(look: Vector3, offset: Vector3, suivi: Vector3) -> Vector3:
 
 
 func borner_visee(look: Vector3) -> Vector3:
-	return Vector3(clampf(look.x, -VISEE_GESTE.x, VISEE_GESTE.x), look.y, clampf(look.z, -VISEE_GESTE.y, VISEE_GESTE.y))
+	return Vector3(borne_douce(look.x, VISEE_GESTE.x), look.y, borne_douce(look.z, VISEE_GESTE.y))
+
+
+## Borne sans à-coup : identité jusqu'à `limite - VISEE_GENOU`, puis approche progressive de la limite
+## (vitesse continue) ; un ballon qui file vers le coin ne fait pas s'arrêter net le point visé.
+const VISEE_GENOU := 5.0
+static func borne_douce(valeur: float, limite: float) -> float:
+	var debut := limite - VISEE_GENOU
+	if absf(valeur) <= debut:
+		return valeur
+	return signf(valeur) * (debut + VISEE_GENOU * tanh((absf(valeur) - debut) / VISEE_GENOU))
 
 
 ## Un montant ou la barre des poteaux (élargis de POTEAU_MARGE) coupe le segment `depart` -> `arrivee`.
