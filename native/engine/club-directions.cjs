@@ -208,14 +208,16 @@ module.exports=function clubDirections(T,N){
   const cashMedian=Math.max(1,median(peers.map(x=>x.cash)));
   return {lg,n:peers.length,played,rank,gap:rank-(d.objective??rank),losses,wins,cash:c.cash,cashRatio:c.cash/cashMedian,payroll,limit,room:(limit-payroll)/Math.max(1,limit),
    debt:(typeof detteDeCrise==='function'?detteDeCrise(c.id):info.debt)||0,facilities:info.facilities??2,coreAge,young,repGap:reputation(c)-median(peers.map(reputation)),
-   promoted:d.moved===1&&d.movedSeason===S.season,relegated:d.moved===-1&&d.movedSeason===S.season,danger:played>=5&&rank>=peers.length-1};
+   promoted:d.moved===1&&d.movedSeason===S.season,relegated:d.moved===-1&&d.movedSeason===S.season,danger:played>=5&&rank>=peers.length-1,
+   president:typeof repriseIAVente==='function'&&repriseIAVente(c.id)};
  }
  // Score de chaque stratégie : situation réelle × traits de la direction.
  function scores(x,d){
   const p=d.president.traits,ds=d.director.traits,co=d.coach.traits;
   // Détresse : dette ou masse nettement au-dessus de sa limite (impératif), sinon caisse courte au regard de la masse.
   const weeks=x.cash/Math.max(1,x.payroll);
-  const distress=x.debt>0||x.payroll>x.limit*1.03?100:x.payroll>x.limit?35+p.prudence*.3:weeks<6?60+p.prudence*.25:x.cashRatio<.5?20+p.prudence*.3:0;
+  // Le président attend des ventes (president-reprise.cjs) : la direction assainit ses comptes.
+  const distress=x.president||x.debt>0||x.payroll>x.limit*1.03?100:x.payroll>x.limit?35+p.prudence*.3:weeks<6?60+p.prudence*.25:x.cashRatio<.5?20+p.prudence*.3:0;
   return {
    vente:distress,
    vedettes:x.cash<1500000||x.cashRatio<1.1&&x.repGap<2?0:p.ambition*.55+clamp(x.cashRatio-1,0,1.5)*35+clamp(x.room,0,.3)*80+clamp(x.repGap,-6,8)*2-ds.formation*.3-(x.gap>3&&p.patience<40?12:0),
@@ -467,6 +469,8 @@ module.exports=function clubDirections(T,N){
   p.joinedSeason=S.season;p.joinedRound=S.round;p.price=fee;
   buyer.players.push(p);
   aiRosterEvent(seller.id,'sell',p,fee);aiRosterEvent(buyer.id,'recruit',p,fee);
+  // Même règle que pour le club joué (president-reprise.cjs) : sous sa réserve après l'achat, le président désigne des ventes.
+  if(typeof repriseApresAchat==='function')repriseApresAchat(buyer,buyer.cash+fee);
   const abroad=leagueOf(seller.id)!==leagueOf(buyer.id);
   count(abroad?'transfert-etranger':'transfert',buyer.id);
   if(leagueOf(seller.id)==='elite'&&abroad)count('depart-top14',seller.id);

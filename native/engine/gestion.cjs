@@ -74,9 +74,14 @@ module.exports=function nativeGestion(command,p){
   requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
   const kind=command==='recruit'?'recruit':'renew',target=talkPlayer(p.playerId,kind);requireThat(target,'Joueur indisponible ou offre périmée.');
   requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||professionalPlaces()>0,'Effectif complet.');
+  // Contrôle de gestion (a2r.cjs) : une recrue que l'A2R n'homologue pas n'est même pas proposée.
+  const a2r=kind==='recruit'&&typeof a2rRefusRecrue==='function'?a2rRefusRecrue(p.salary):'';requireThat(!a2r,a2r);
+  const avant=club().cash;
   requireThat(negotiateContract(p.playerId,kind,p.salary,p.years),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');
+  // Le président reprend la main si l'achat fait passer la trésorerie sous la réserve (president-reprise.cjs).
+  if(kind==='recruit'&&talk.status==='signed'&&typeof repriseApresAchat==='function')repriseApresAchat(club(),avant);
   return {negotiation:{playerId:p.playerId,status:talk.status,message:talk.status==='signed'?'Contrat signé.':talk.message,fee:talk.fee,salary:talk.acceptedSalary,years:talk.years}};
  }
  if(command==='next_season'){requireThat(p.confirmed===true&&S.phase==='ended'&&!S.live,'Confirme le passage à la saison suivante après la fin des compétitions.');advanceSeason();return;}

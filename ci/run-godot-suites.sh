@@ -63,6 +63,8 @@ declare -A suite_limits=(
   [tests/godot-investissements-excedents.cjs]=1200
   [tests/godot-sante-financiere.cjs]=1200
   [tests/godot-argent-proprietaire.cjs]=1200
+  # A2R et président : carrière Monde côté Node (Toulouse, comptes simulés), puis Godot (deux courriers en Réception).
+  [tests/godot-a2r-president.cjs]=900
   # Finitions critiques : carrière Monde (création, un match, jour de match suivant) côté Node puis un passage Godot ; ~4 min en local.
   [tests/godot-finitions.cjs]=900
   # Mesure de la jauge de vitesse : deux carrières Monde (~4 min chacune), informative.
