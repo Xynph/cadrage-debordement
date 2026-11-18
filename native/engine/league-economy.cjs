@@ -12,6 +12,7 @@
 //              (deuxième division française sous la DNACG de la LNR, troisième sous celle de la FFR ; voir
 //              club-budget.cjs, limites).
 // reserve    : réserve de trésorerie propre au championnat ({min, ecart} en part des recettes), sinon la règle générale.
+// prudence   : part des recettes que la masse encadrée laisse aux dépenses de la saison non votées (recrues, jokers).
 //
 // Troisième division française (Nationale), repères réels (A2R, rapport statistiques 2023-2024, bilans 2022-2023,
 // 14 clubs) : budget moyen 3,73 M€ (1,66 à 6,68 ; prévisionnel 2023-2024 : 3,85 M€) ; salaires bruts des joueurs
@@ -21,8 +22,12 @@
 // niveaux de 2026-2027). Encadrement et réserve (suite de #885) : sans eux, chaque club visait ~41 % de ses
 // recettes en salaires et la trésorerie de départ (2,6 M€ partout, paramètre fictif : 43 à 115 % des recettes)
 // était engagée d'un coup en deuxième saison ; 14 clubs sur 14 finissaient dans le rouge, caisse médiane à zéro
-// en trois saisons. Réserve de 45 à 60 % des recettes : la trésorerie de départ n'est plus brûlée en une saison,
-// et un club relégué de Pro D2 (5 à 7 M€ de recettes en Nationale, 2 à 3,6 M€ en caisse) garde son matelas.
+// en trois saisons (#889). Suite : trésorerie de départ ramenée à 12-30 % des recettes de chaque club (0,4 à
+// 1,2 M€, world-nationale-extension.json ; situation nette réelle 0,54 M€ en moyenne) ; réserve de 30 à 45 % des
+// recettes (une descente en Nationale 2 divise le budget par plus de deux) : un club de Nationale ne réinvestit
+// pas une trésorerie qu'il n'a pas, et un relégué de Pro D2 (5 à 7 M€ de recettes, 2 à 3,6 M€ en caisse) garde son
+// matelas ; marge de prudence de 2,5 % des recettes : la saison coûtait ~5 % de plus que le budget voté et
+// presque aucun club ne finissait dans le vert (réel : le meilleur à +0,02 M€, le jeu en garde quelques-uns).
 // reputation : attrait sportif aux yeux des joueurs, 100 pour le championnat de référence.
 // pays       : zone du championnat, pour les joueurs qui tiennent à rester chez eux.
 // source     : 'relevé' quand le chiffre vient d'une publication, 'estimation' sinon
@@ -37,7 +42,7 @@ const CHAMPIONNATS = Object.freeze({
   accession: Object.freeze({ libelle: 'Deuxième division française', pays: 'france', reputation: 70, masse: 3.2e6, recettes: 10.7e6, bas: 0.62, haut: 1.55, ...parts(0.48, 0.22, 0.08, 0.04, 0.18), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.2, ecart: 0.1 }), espoir: 'accession', source: 'relevé' }),
   guest: Object.freeze({ libelle: 'Clubs invités', pays: 'autre', reputation: 70, masse: 4.0e6, recettes: 13e6, bas: 0.9, haut: 1.1, ...parts(0.40, 0.25, 0.18, 0.06, 0.11), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   'jlo-d2': Object.freeze({ libelle: 'Deuxième division japonaise', pays: 'japon', reputation: 52, masse: 2.0e6, recettes: 6.6e6, bas: 0.7, haut: 1.4, ...parts(0.72, 0.06, 0.08, 0.04, 0.10), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
-  nationale: Object.freeze({ libelle: 'Troisième division française', pays: 'france', reputation: 50, masse: 1.4e6, recettes: 4.6e6, bas: 0.6, haut: 1.6, ...parts(0.50, 0.10, 0.08, 0.04, 0.28), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.45, ecart: 0.15 }), espoir: 'accession', source: 'relevé (A2R 2022-2023), niveaux 2026-2027 estimés' }),
+  nationale: Object.freeze({ libelle: 'Troisième division française', pays: 'france', reputation: 50, masse: 1.4e6, recettes: 4.6e6, bas: 0.6, haut: 1.6, ...parts(0.50, 0.10, 0.08, 0.04, 0.28), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.3, ecart: 0.15 }), prudence: 0.025, espoir: 'accession', source: 'relevé (A2R 2022-2023), niveaux 2026-2027 estimés' }),
   champ: Object.freeze({ libelle: 'Deuxième division anglaise', pays: 'angleterre', reputation: 48, masse: 1.1e6, recettes: 3.6e6, bas: 0.7, haut: 1.5, ...parts(0.50, 0.06, 0.18, 0.10, 0.16), plafond: null, ratio: false, espoir: 'accession', source: 'salaire moyen relevé, recettes estimées' }),
 });
 // Seuls ces deux championnats gardent les salaires bruts de la règle : elle a été réglée sur eux.

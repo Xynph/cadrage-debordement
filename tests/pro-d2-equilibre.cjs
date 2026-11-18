@@ -17,7 +17,7 @@ test('Limites : Pro D2 (et Nationale, tests/nationale-equilibre.cjs) encadrées,
   const R = B.recettes(forces);
   for (let saison = 1; saison <= 12; saison++) for (const [id, l] of B.limites(forces, saison)) {
     const f = forces[id], c = E.CHAMPIONNATS[f.division], p = B.proprietaire(forces, id), annuel = R.get(id);
-    const budget = (annuel * 0.42 + p.enveloppe + (c.encadrement ? 0 : 0.15 * annuel)) / 1.4;
+    const budget = (annuel * (0.42 - (c.prudence ?? 0)) + p.enveloppe + (c.encadrement ? 0 : 0.15 * annuel)) / 1.4;
     const bornes = [budget, c.plafond ?? Infinity, c.ratio ? annuel * 0.52 : Infinity];
     const attendu = Math.min(c.plafond ?? Infinity, Math.min(...bornes) * l.tolerance);
     assert.ok(Math.abs(l.limite - attendu) <= 100, f.division + ' ' + id + ' saison ' + saison + ' : ' + l.limite + ' au lieu de ' + Math.round(attendu));

@@ -210,8 +210,10 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
     // que le train de vie ne rend qu'en partie, et la Pro D2 entière finissait dans le rouge, caisse vidée en trois saisons.
     // Repère réel (A2R/CCCP 2024-2025) : salaires des joueurs à 30 % des produits en moyenne ; 2 clubs sur 16 en bénéfice,
     // 5 ou 6 proches de l'équilibre (Charente -0,07 M€, Valence -0,13), les autres en perte, comblée par les actionnaires.
-    const economies = regle.encadrement ? 0 : 0.15 * annuel;
-    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) + p.enveloppe + economies) / (1 + COTISATIONS)]];
+    // Marge de prudence (prudence, part des recettes, league-economy.cjs) : la saison réelle coûte plus que le budget voté
+    // (recrues et jokers en cours de saison) ; un championnat encadré peut demander que la masse en tienne compte.
+    const economies = regle.encadrement ? 0 : 0.15 * annuel, prudence = (regle.prudence ?? 0) * annuel;
+    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) - prudence + p.enveloppe + economies) / (1 + COTISATIONS)]];
     const credit = credits?.[force.id] ?? 0;
     if (regle.plafond !== null) bornes.push(['plafond', regle.plafond + credit]);
     if (regle.ratio) bornes.push(['recettes', annuel * RATIO_SALAIRES]);
