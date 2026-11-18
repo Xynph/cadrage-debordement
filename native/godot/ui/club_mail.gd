@@ -54,6 +54,8 @@ static func caption(ecran: String) -> String:
 
 static func route_of(ecran: String) -> String:
 	if ecran in ["infirmerie", "contrats"]: return "Effectif"
+	# Consignes de match (réponse « Régler les consignes » du plan adverse de la veille).
+	if ecran == "Plan de jeu": return ecran
 	if ecran == "fiche": return "Recrutement"
 	return ecran if ecran in ROUTES else "Bureau"
 

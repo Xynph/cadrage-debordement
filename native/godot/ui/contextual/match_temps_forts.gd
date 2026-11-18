@@ -627,7 +627,8 @@ func _mesurer(delta: float) -> void:
 		if _places.has(id):
 			var pas: Vector3 = at - _places[id]
 			_vitesses[id] = (_vitesses.get(id, Vector3.ZERO) as Vector3).lerp(pas / delta, 0.5)
-			if phase == "liaison" and not coupe and not gel:
+			# Les deux premières images d'un plan reprennent la main sur le jeu : un petit recalage de groupe (~20 cm) n'est pas un saut.
+			if phase == "liaison" and not coupe and not gel and _liaison_t > 0.1:
 				# Allure d'une image à l'autre (m/s) : au-delà d'un sprint, ce serait un saut.
 				_saut_max = maxf(_saut_max, Vector2(pas.x, pas.z).length() / delta)
 		_places[id] = at
