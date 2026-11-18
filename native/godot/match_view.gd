@@ -36,9 +36,25 @@ const ACTION_OFFSET := Vector3(0.24, 0.5, 0.832)
 ## GRUE_FIN), la caméra monte et plonge jusqu'à GRUE_ANGLE degrés de plus, comme la caméra
 ## principale d'une tribune qui suit le jeu le long de sa touche : la tribune proche reste sous
 ## l'image, au lieu de remplir le bas de l'écran.
+## 18 novembre 2026 (soir) : 18° de grue rendaient la vue trop plongeante près de la touche proche
+## (joueurs vus du dessus) ; la grue monte de 10° au plus et l'inclinaison totale est plafonnée à
+## INCLINAISON_MAX degrés au-dessus de l'horizon, TV et contact : les joueurs restent vus de 3/4. Le
+## toit de la tribune proche est alors franchi par la caméra qui avance (pose_camera), pas qui plonge.
 const GRUE_DEBUT := 4.0
 const GRUE_FIN := 30.0
-const GRUE_ANGLE := 18.0
+const GRUE_ANGLE := 10.0
+const INCLINAISON_MAX := 38.0
+## Poteaux de but (montants en x = ±POTEAUX_X, z = ±POTEAUX_Z, hauts de POTEAU_HAUT m, barre à
+## BARRE_Y m) : la caméra au contact pivote autour du point visé (jusqu'à CONTOURNEMENT_MAX rad, par
+## pas de CONTOURNEMENT_PAS) quand un montant ou la barre, élargi de POTEAU_MARGE m, passe entre elle
+## et l'action. Le pivot est amorti (pas d'à-coup) et revient à zéro dès que la vue est dégagée.
+const POTEAUX_X := 50.0
+const POTEAUX_Z := 2.8
+const POTEAU_HAUT := 12.0
+const BARRE_Y := 3.0
+const POTEAU_MARGE := 0.6
+const CONTOURNEMENT_MAX := 0.7
+const CONTOURNEMENT_PAS := 0.05
 ## Angle de champ vertical (degrés) : téléobjectif de retransmission en TV, plus ouvert au contact.
 const TV_CHAMP := 24.0
 const ACTION_CHAMP := 36.0
@@ -132,6 +148,9 @@ var _choregraphie: RefCounted
 ## Formations des phases arrêtées (mêlée liée, alignement de touche) : toujours actives.
 var _formations: RefCounted
 var _cadrage: RefCounted
+## Pivot de contournement des poteaux (caméra au contact), en radians, et sa vitesse amortie.
+var _contournement := 0.0
+var _contournement_vitesse := 0.0
 # Rendu moderne (Forward+ seulement, voir match_rendu.gd) ; null sous gl_compatibility.
 var _rendu: RefCounted
 var _ground_meshes: Array[MeshInstance3D] = []
@@ -1147,6 +1166,11 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			look = framed[0]
 			size = framed[1]
 			offset = framed[2]
+			if float(_gestes.zoom) > 0.0:
+				# Essai dans un coin : pivot limité et point visé gardé dans l'aire de jeu (pas de tribune).
+				var suivi := offset_suivi(ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET, _camera_focus.z)
+				offset = borner_pivot(look, offset, suivi)
+				look = look.lerp(borner_visee(look), smoothstep(0.0, 1.0, float(_gestes.zoom)))
 			if _cadrage:
 				# Temps fort : le cadrage du geste garde lui aussi le ballon dans le champ.
 				look = _cadrage.garder_ballon(look, size, offset, screen.x / maxf(screen.y, 1.0))
@@ -1155,6 +1179,20 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			look = _camera_focus
 			size = wide
 			offset = offset_suivi(ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET, _camera_focus.z)
+		# Caméra au contact : pivot amorti autour du point visé quand un poteau masquerait l'action
+		# (cherché sur le point visé final de l'image précédente, déjà stable d'une image à l'autre).
+		var contournement := 0.0
+		if _camera_mode == "action":
+			contournement = contournement_poteaux(look if cut or delta <= 0.0 else _camera_look, size, offset)
+		if cut or delta <= 0.0:
+			_contournement = contournement
+			_contournement_vitesse = 0.0
+		else:
+			var pas_contournement: Array = Gestes._damp1(_contournement, contournement, _contournement_vitesse, delta)
+			_contournement = pas_contournement[0]
+			_contournement_vitesse = pas_contournement[1]
+		if absf(_contournement) > 0.0001:
+			offset = offset.rotated(Vector3.UP, _contournement)
 		# Recentrage borné, amorti (pas d'à-coup quand une borne entre en jeu) ; le ballon ne sort
 		# jamais de l'image, même pendant l'amortissement.
 		var aspect := screen.x / maxf(screen.y, 1.0)
@@ -1205,8 +1243,92 @@ func offset_suivi(base: Vector3, profondeur: float) -> Vector3:
 	if k <= 0.0:
 		return base
 	var horizontal := Vector3(base.x, 0.0, base.z)
-	var elevation := atan2(base.y, horizontal.length()) + deg_to_rad(GRUE_ANGLE) * k
+	var depart := atan2(base.y, horizontal.length())
+	# Plafond d'inclinaison (jamais sous l'angle de base) : pas de vue de dessus près de la touche.
+	var elevation := minf(depart + deg_to_rad(GRUE_ANGLE) * k, maxf(depart, deg_to_rad(INCLINAISON_MAX)))
 	return (horizontal.normalized() * cos(elevation) + Vector3.UP * sin(elevation)) * base.length()
+
+
+## Pivot des gestes (caméra TV) : jamais plus de PIVOT_MAX rad autour de la direction de suivi, et
+## rendu progressivement nul près d'une ligne de ballon mort (|x| de PIVOT_DEBUT à PIVOT_FIN) quand il
+## tourne la vue vers le bout du terrain : un essai dans un coin ne montre pas la tribune.
+const PIVOT_MAX := 0.2
+const PIVOT_DEBUT := 25.0
+const PIVOT_FIN := 42.0
+## Point visé pendant un geste : dans l'aire de jeu, à |x| <= VISEE_GESTE.x et |z| <= VISEE_GESTE.y.
+const VISEE_GESTE := Vector2(47.0, 28.0)
+
+
+func borner_pivot(look: Vector3, offset: Vector3, suivi: Vector3) -> Vector3:
+	var avant := Vector2(suivi.x, suivi.z)
+	var apres := Vector2(offset.x, offset.z)
+	if avant.length() < 0.001 or apres.length() < 0.001:
+		return offset
+	# Angle de lacet autour de l'axe vertical (même sens que Vector3.rotated(Vector3.UP, angle)).
+	var angle := wrapf(atan2(apres.x, apres.y) - atan2(avant.x, avant.y), -PI, PI)
+	var permis := clampf(angle, -PIVOT_MAX, PIVOT_MAX)
+	# La caméra regarde vers -offset : vers le bout du terrain le plus proche du point visé ?
+	if -offset.x * look.x > 0.0:
+		permis *= 1.0 - smoothstep(PIVOT_DEBUT, PIVOT_FIN, absf(look.x))
+	if absf(permis - angle) < 0.00001:
+		return offset
+	return suivi.normalized().rotated(Vector3.UP, permis) * offset.length()
+
+
+func borner_visee(look: Vector3) -> Vector3:
+	return Vector3(clampf(look.x, -VISEE_GESTE.x, VISEE_GESTE.x), look.y, clampf(look.z, -VISEE_GESTE.y, VISEE_GESTE.y))
+
+
+## Un montant ou la barre des poteaux (élargis de POTEAU_MARGE) coupe le segment `depart` -> `arrivee`.
+func poteau_entre(depart: Vector3, arrivee: Vector3, m: float = POTEAU_MARGE) -> bool:
+	for x in [-POTEAUX_X, POTEAUX_X]:
+		var boites: Array[AABB] = [
+			AABB(Vector3(x - m, 0.0, -POTEAUX_Z - m), Vector3(2.0 * m, POTEAU_HAUT + m, 2.0 * m)),
+			AABB(Vector3(x - m, 0.0, POTEAUX_Z - m), Vector3(2.0 * m, POTEAU_HAUT + m, 2.0 * m)),
+			AABB(Vector3(x - m, BARRE_Y - m, -POTEAUX_Z - m), Vector3(2.0 * m, 2.0 * m, 2.0 * POTEAUX_Z + 2.0 * m)),
+		]
+		for boite: AABB in boites:
+			if boite.intersects_segment(depart, arrivee) != null:
+				return true
+	return false
+
+
+## Cibles que la caméra au contact doit voir : le point visé (à hauteur d'homme) et le ballon.
+func _cibles_camera(look: Vector3) -> Array[Vector3]:
+	var cibles: Array[Vector3] = [Vector3(look.x, 1.0, look.z)]
+	if is_instance_valid(_ball) and _ball.visible:
+		cibles.append(_ball.global_position)
+	return cibles
+
+
+## Un poteau masque une des cibles pour la caméra posée sur `look` dans la direction `offset`.
+func poteau_masque(look: Vector3, size: float, offset: Vector3, marge: float = POTEAU_MARGE) -> bool:
+	var camera: Vector3 = pose_camera(look, size, offset)[0]
+	for cible: Vector3 in _cibles_camera(look):
+		if poteau_entre(camera, cible, marge):
+			return true
+	return false
+
+
+## Plus petit pivot (rad) qui dégage la vue des poteaux ; le sens déjà pris est essayé d'abord. Une
+## caméra déjà tournée ne revient que si la vue d'origine est dégagée avec POTEAU_RELACHE m de marge
+## (hystérésis : pas d'aller-retour quand le point visé glisse un peu en tournant).
+const POTEAU_RELACHE := 1.5
+func contournement_poteaux(look: Vector3, size: float, offset: Vector3) -> float:
+	# Loin des poteaux : rien à chercher (coût nul la plupart du temps).
+	if absf(absf(look.x) - POTEAUX_X) > 40.0:
+		return 0.0
+	var marge := POTEAU_RELACHE if absf(_contournement) > 0.01 else POTEAU_MARGE
+	if not poteau_masque(look, size, offset, marge):
+		return 0.0
+	var sens := -1.0 if _contournement < 0.0 else 1.0
+	var pas := int(round(CONTOURNEMENT_MAX / CONTOURNEMENT_PAS))
+	for k in range(1, pas + 1):
+		for signe: float in [sens, -sens]:
+			var angle := signe * k * CONTOURNEMENT_PAS
+			if not poteau_masque(look, size, offset.rotated(Vector3.UP, angle), marge):
+				return angle
+	return sens * CONTOURNEMENT_MAX
 
 
 ## Caméra suivie en perspective : `size` est la hauteur visible (m) au point visé `look`, `offset`
