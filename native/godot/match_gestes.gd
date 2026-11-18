@@ -249,7 +249,7 @@ func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: boo
 		if phase == "touche":
 			# Ballon porté : combinaison jouée, ou ballon porté formé après la prise (fait « porte » du moteur).
 			# Touche seule : jamais de ballon porté, le sauteur garde le ballon jusqu'au fait suivant.
-			var porte := not touche_seule and kind == "setpiece-win" and (str(record.get("move", "")) == "maul" or record.get("porte", false) == true)
+			var porte: bool = not touche_seule and kind == "setpiece-win" and (str(record.get("move", "")) == "maul" or record.get("porte", false) == true)
 			_resolve(scene, team, featured, porte, porte and record.get("porte", false) == true)
 		_velocity.clear()
 		return

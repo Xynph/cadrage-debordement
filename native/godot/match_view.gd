@@ -735,8 +735,7 @@ func sortir_du_terrain() -> void:
 	_pass_plan = {}
 	_contact_plan = {}
 	_impacts.annuler()
-	if _gestes:
-		_gestes.cancel()
+	mise_en_scene().cancel()
 	_formations.preparer({}, true)
 	for tenue: Dictionary in _tenues.values():
 		tenue.lache = true
