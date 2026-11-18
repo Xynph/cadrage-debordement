@@ -996,12 +996,22 @@ func player_path() -> Array:
 	# la réponse du moteur à la pause n'arrive.
 	var allure: float = regie.vitesse
 	regie.vitesse = 1.0
+	# Bandeau compact pendant l'action 3D (film du 18/11/2026 : la grande barre cachait ~20 % de
+	# l'image) ; bouton PAUSE tant que le match joue.
+	var coque: Control = view.get("_coque_score")
+	check(view.compact and view.play.text == "PAUSE", "Action 3D : bandeau compact et bouton PAUSE (%s, « %s »)" % [str(view.compact), view.play.text])
+	if coque != null:
+		var bloc := coque.get_global_rect()
+		check(bloc.size.y <= screen.size.y * 0.12 and bloc.size.x <= screen.size.x * 0.6 and bloc.position.x <= screen.size.x * 0.1, "Bloc compact en haut à gauche, petit : " + str(bloc))
+		check(not view.home.is_visible_in_tree() and (view.get("_sigles")[0] as Label).is_visible_in_tree() and view.clock.is_visible_in_tree() and view.score.is_visible_in_tree(), "Bloc compact : horloge, sigles et score, sans noms longs")
+		check(float(regie.cadrage.couvert_haut) <= view.clock.get_global_rect().end.y / maxf(1.0, view.size.y) + 0.031, "Cadrage : part cachée en haut ramenée au bloc compact (%.3f)" % float(regie.cadrage.couvert_haut))
 	view._pause()
 	await wait_command()
 	check(app.model.live.paused and regie.gel and regie.etat == regie.JEU, "La pause demandée pendant un temps fort fige l'image")
 	var frozen := [regie.index, regie.temps, regie.phase]
 	await settle(40)
 	check(frozen == [regie.index, regie.temps, regie.phase] and view.play.text == "REPRENDRE", "Rien n'avance pendant la pause")
+	check(not view.compact and view.home.is_visible_in_tree(), "Pause : la grande barre revient")
 	# Le journal ouvert pendant un temps fort ne devance pas l'image.
 	view._toggle_drawer("Journal")
 	await settle(2)
