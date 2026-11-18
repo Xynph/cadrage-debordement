@@ -1,7 +1,11 @@
 'use strict';
 // Fictional simulation policies. These coefficients are not rugby law or real-life odds.
 const DEFENCES={equilibre:['Équilibrée','Un compromis entre pression, couverture et dépense physique.'],pression:['Montée agressive','Freine les attaques et provoque des erreurs, mais fatigue davantage et expose aux grands gains si la ligne est battue. Plus de risque de pénalité.'],prudente:['Glissée prudente','Cède plus facilement les premiers mètres, mais réduit les grands gains et protège la profondeur. Dépense physique et risque de pénalité réduits.']};
-const ATTACK_EFFECTS={equilibre:{gain:[12,25],error:0,load:.40,finish:0},conquete:{gain:[8,18],error:-.045,load:.46,finish:-.015},large:{gain:[14,29],error:.065,load:.53,finish:.025},occupation:{gain:[10,21],error:0,load:.34,finish:0}};
+// Équilibrage des styles (18/11/2026, docs/top14-dispute-20261117.md §14) : à niveau égal, contre « Équilibré », l'occupation
+// perdait 58 % de ses matchs (pluie comprise) et le jeu au large 56 %. Large : faute de main +0,065 → +0,03 ; conquête −0,045 → −0,035. Occupation :
+// coup de pied plus long (kickBonus mètres, plafond kickMax) et récupéré par le camp qui botte (recup, kick-chase, ballon
+// disputé) ; mesuré ensuite à 46-52 % pour chaque style (±3 de bruit à 1 200 matchs), l'occupation meilleure sous la pluie.
+const ATTACK_EFFECTS={equilibre:{gain:[12,25],error:0,load:.40,finish:0},conquete:{gain:[8,18],error:-.035,load:.46,finish:-.015},large:{gain:[14,29],error:.03,load:.53,finish:.025},occupation:{gain:[10,21],error:0,load:.34,finish:0,kickBonus:12,kickMax:55,recup:.25}};
 const TACTICAL_STAT_KEYS=['carries','advances','metres','handErrors','kicks','recoveries','longGains'];
 function tacticalRules(l){return l.tacticalVersion===1&&l.restartVersion===1&&l.balanceVersion===2}
 // Essais réalistes (docs/essais-realistes-20261114.md) : rencontres créées avec `essaisVersion` (les
@@ -58,14 +62,25 @@ function chooseDefence(l,side){
  if(avg<68)return 'prudente';
  if(difficultyLevel(l)!=='decouverte'&&unit(l,side,'speed')>76&&unit(l,side,'tackle')>74&&avg>82)return 'pression';return 'equilibre';
 }
-function initializeTacticalPlans(l){l.tacticalVersion=1;if(ESSAIS_RULES)l.essaisVersion=1;if(ESSAIS_RULES&&PENALITES_RULES)l.penalitesVersion=1;l.defences=['equilibre','equilibre'];l.tacticalStats=[emptyTacticalStats(),emptyTacticalStats()];for(let side=0;side<2;side++)l.defences[side]=side===l.userSide?(S.defence||'equilibre'):chooseDefence(l,side)}
+// Complaisance du favori (18/11/2026, façon FM ; docs/top14-dispute-20261117.md §14) : en carrière Monde, un gros favori
+// (écart de niveau aligné au coup d'envoi au-delà de `seuil`) peut connaître un jour sans. Probabilité parPoint par point
+// au-delà du seuil (au plus `max`), modulée par le professionnalisme moyen du XV (trait caché : ×1,4 à 0 → ×0,6 à 80) ;
+// ce jour-là, il joue avec `part` de son écart en moins, hors atténuation du championnat (terme direct de tacticalEdge).
+// Tirage déterministe (empreinte de la rencontre, aucun tirage aléatoire consommé). Club du manager : une causerie
+// d'avant-match exigeante (intentions ci-dessous) annule le jour sans (match-talks.cjs) ; Gabi prévient (avant-match.cjs).
+const RELACHEMENT=Object.freeze({seuil:3,parPoint:.06,max:.35,part:.5,intentions:Object.freeze(['focus','raise_standards','respect_opposition','challenge'])});
+function relachementPro(l,side){const on=activePlayers(l,side);if(!on.length)return 60;return on.reduce((t,p)=>t+(typeof nativePotentialEvolution!=='undefined'&&nativePotentialEvolution.traits?nativePotentialEvolution.traits(p).professionalism:Number(p.hiddenTraitsV2?.professionalism??60)),0)/on.length}
+function relachementRisque(l){const g=teamLevel(activePlayers(l,0))-teamLevel(activePlayers(l,1)),d=Math.abs(g),fav=g>0?0:1,R=RELACHEMENT;const p=Math.min(R.max,R.parPoint*(d-R.seuil))*clamp(1.4-relachementPro(l,fav)/100,.4,1.4);return {favori:fav,ecart:d,probabilite:p>0?Math.round(p*1000)/1000:0}}
+function initializeRelachement(l){if(!S?.worldMode||l.relachementVersion)return;l.relachementVersion=1;l.relachement=[0,0];const r=relachementRisque(l);if(!(r.probabilite>0))return;const u=(seedHash('relachement:'+(l.worldContext?.id||'')+':'+l.pair.join('-')+':'+S.season+':'+S.round)%10000)/10000;l.relachementRisque=r;if(u<r.probabilite)l.relachement[r.favori]=r.ecart*RELACHEMENT.part*MATCH_LEVEL_CURVE.complet.parPoint}
+function relachementEdge(l,side){return l.relachementVersion===1&&!l.relachementAnnule?.[side]?-(l.relachement?.[side]||0):0}
+function initializeTacticalPlans(l){initializeRelachement(l);l.tacticalVersion=1;if(ESSAIS_RULES)l.essaisVersion=1;if(ESSAIS_RULES&&PENALITES_RULES)l.penalitesVersion=1;l.defences=['equilibre','equilibre'];l.tacticalStats=[emptyTacticalStats(),emptyTacticalStats()];for(let side=0;side<2;side++)l.defences[side]=side===l.userSide?(S.defence||'equilibre'):chooseDefence(l,side)}
 function defensivePlan(l,side){return tacticalRules(l)?effectiveDefence(l,side):'equilibre'}
 function tacticalEdge(l,side){
  const opp=1-side,a=effectiveAttack(l,side),d=defensivePlan(l,opp),backs=p=>p.fam>=4,forwards=p=>p.fam<=3;
  const attack=a==='large'?unit(l,side,'pass',backs)*.5+unit(l,side,'speed',backs)*.4+unit(l,side,'power')*.1:a==='conquete'?unit(l,side,'power',forwards)*.7+unit(l,side,'pass')*.15+unit(l,side,'speed')*.15:unit(l,side,'pass')*.4+unit(l,side,'speed')*.35+unit(l,side,'power')*.25;
  const defence=d==='pression'?unit(l,opp,'tackle')*.6+unit(l,opp,'speed')*.25+unit(l,opp,'mental')*.15:d==='prudente'?unit(l,opp,'tackle')*.6+unit(l,opp,'mental')*.3+unit(l,opp,'speed')*.1:unit(l,opp,'tackle')*.72+unit(l,opp,'mental')*.28;
  const pressure=d==='pression'?-.045:d==='prudente'?.025:0;
- return (attack-defence)*.004+pressure+(l.weather==='Pluie'&&a==='large'?-.075:0)+(l.weather==='Vent'&&a==='occupation'?-.025:0);
+ return (attack-defence)*.004+pressure+(l.weather==='Pluie'&&a==='large'?-.075:0)+(l.weather==='Vent'&&a==='occupation'?-.025:0)+relachementEdge(l,side);
 }
 function tacticalPenaltyAdjustment(l,defender){return !tacticalRules(l)?0:defensivePlan(l,defender)==='pression'?.045:defensivePlan(l,defender)==='prudente'?-.02:0}
 function handFaultProbability(l,side){if(!tacticalRules(l))return .12;const a=effectiveAttack(l,side),d=defensivePlan(l,1-side);return clamp(.12+ATTACK_EFFECTS[a].error+(l.weather==='Pluie'&&a==='large'?.04:0)+(d==='pression'?.02:d==='prudente'?-.01:0)+clamp((70-unit(l,side,'pass'))*.0015,-.045,.045)+METEO_MATCH.enAvant.pluie*meteoNiveau(l,'pluie'),.04,.28)}

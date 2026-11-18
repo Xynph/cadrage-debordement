@@ -29,10 +29,18 @@ module.exports={
    const diff=l.score[l.userSide]-l.score[1-l.userSide];
    const scoreState=diff>0?'winning':diff<0?'losing':'drawing';
    const result=phase==='post'?(l.winner===undefined?(diff>0?'win':diff<0?'loss':'draw'):l.winner===s.club?'win':'loss'):null;
-   return {venue,score:l.score.slice(),userSide:l.userSide,scoreState,result};
+   const out={venue,score:l.score.slice(),userSide:l.userSide,scoreState,result};
+   // Pronostic d'avant-match (18/11/2026) : favori ou outsider au-delà du seuil de complaisance (tactical-plans.js, RELACHEMENT).
+   if(phase==='pre'){const g=pronostic(l);if(g)out.pronostic=g;}
+   return out;
+  }
+  function pronostic(l){
+   if(typeof teamLevel!=='function'||typeof activePlayers!=='function'||!l?.sheets||!(l.userSide>=0))return null;
+   const g=teamLevel(activePlayers(l,l.userSide))-teamLevel(activePlayers(l,1-l.userSide)),seuil=typeof RELACHEMENT!=='undefined'?RELACHEMENT.seuil:3;
+   return g>=seuil?'favorite':g<=-seuil?'underdog':null;
   }
   function facts(phase,c){
-   if(phase==='pre')return c.venue==='neutral'?{}:{home:c.venue==='home',away:c.venue==='away'};
+   if(phase==='pre')return {...(c.venue==='neutral'?{}:{home:c.venue==='home',away:c.venue==='away'}),...(c.pronostic?{[c.pronostic]:true}:{})};
    if(phase==='half')return {winning:c.scoreState==='winning',drawing:c.scoreState==='drawing',losing:c.scoreState==='losing'};
    return {result_win:c.result==='win',result_draw:c.result==='draw',result_loss:c.result==='loss'};
   }
@@ -76,7 +84,7 @@ module.exports={
    if(c.season===s.season&&c.competitionPhase===s.phase)check(c.round<=s.round,'journée future');
   }
   function validatePhaseContext(c,phase,identityContext){
-   check(keys(c,['venue','score','userSide','scoreState','result'])&&['home','away','neutral'].includes(c.venue)&&Array.isArray(c.score)&&c.score.length===2&&c.score.every(n=>integer(n,0,1000))&&integer(c.userSide,0,1)&&identityContext.pair[c.userSide]===identityContext.club,'contexte sportif');
+   check(keys(c,['venue','score','userSide','scoreState','result','pronostic'])&&(c.pronostic===undefined||phase==='pre'&&['favorite','underdog'].includes(c.pronostic))&&['home','away','neutral'].includes(c.venue)&&Array.isArray(c.score)&&c.score.length===2&&c.score.every(n=>integer(n,0,1000))&&integer(c.userSide,0,1)&&identityContext.pair[c.userSide]===identityContext.club,'contexte sportif');
    const diff=c.score[c.userSide]-c.score[1-c.userSide];
    check(c.scoreState===(diff>0?'winning':diff<0?'losing':'drawing')&&(c.venue==='neutral'||c.venue===(c.userSide===0?'home':'away')),'score et lieu');
    check(phase==='post'?['win','loss','draw'].includes(c.result):c.result===null,'résultat de phase');
@@ -184,6 +192,8 @@ module.exports={
     const before=S.morale,effect=collectiveEffect(feedback),after=clamp(before+effect,0,100);
     p.decision={choiceId:choice.id,text:choice.text,tone:choice.tone,intent:choice.intent,audience:payload.audience,playerIds:ids,reactions:feedback,moraleBefore:before,moraleAfter:after,moraleDelta:after-before};
     S.morale=after;
+    // Causerie exigeante d'un favori : pas de jour sans pour ce match (complaisance, tactical-plans.js).
+    if(p.phase==='pre'&&typeof RELACHEMENT!=='undefined'&&RELACHEMENT.intentions.includes(choice.intent)&&S.live){S.live.relachementAnnule=S.live.relachementAnnule||[false,false];S.live.relachementAnnule[S.live.userSide]=true;}
    }else{
     check(payload.skip===undefined||typeof payload.skip==='boolean','passage invalide');check(p.decision||payload.skip===true,'confirme une déclaration ou passe explicitement');
     close(r,p,'skipped');
