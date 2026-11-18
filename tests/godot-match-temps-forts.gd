@@ -486,6 +486,7 @@ func grands_moments(view: Control) -> Array:
 			if d1 < d0 - 0.3 or d1 < 5.0: rapproches += 1
 		var n: int = maxi(1, (s.departs as Dictionary).size())
 		check(int(s.marche) > 0 and rapproches >= int(n * 0.8), "%s : les joueurs marchent vers le tunnel (%d images, %d sur %d se rapprochent)" % [moment, int(s.marche), rapproches, n])
+		check(int(s.get("serre", 0)) == int(s.marche), "%s : la marche est montrée en plan serré qui suit les joueurs (%d sur %d images)" % [moment, int(s.get("serre", 0)), int(s.marche)])
 	if sorties.has("mi-temps"): check(int(sorties["mi-temps"].retenue) > 0, "Mi-temps : la causerie attend la fin de la sortie")
 	check(sorties.has("mi-temps_causerie"), "La causerie de mi-temps s'ouvre après la sortie")
 	for moment: String in ["mi-temps", "fin"]:
@@ -537,6 +538,7 @@ func _observer_sortie(view: Control, regie: Node, live: Dictionary, sorties: Dic
 	if bool(b.get("visible", false)) and str(b.get("titre", "")) == ("FIN DU MATCH" if moment == "fin" else "MI-TEMPS"): s.bandeau += 1
 	if stage.sortie:
 		s.marche += 1
+		if bool(stage.get("plan_sortie")): s.serre = int(s.get("serre", 0)) + 1
 		for id: String in stage._actors:
 			var at: Vector3 = (stage._actors[id].node as Node3D).position
 			if not s.departs.has(id): s.departs[id] = at

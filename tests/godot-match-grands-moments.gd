@@ -3,7 +3,8 @@ extends SceneTree
 ##  - essai : marqueur lu dans la légende, bandeau « ESSAI » lisible en 720p et 1080p, ralenti qui
 ##    part bas et revient à la vitesse réelle avant la fin du moment (image tenue) ;
 ##  - mi-temps et fin de match : clé de sortie par rencontre, plan large de tout le terrain, puis
-##    les joueurs marchent vers le tunnel (jamais au sprint) et restent dans le plan large ;
+##    coupe sur un plan serré : les joueurs, partis près du tunnel, y rentrent au trot léger (jamais
+##    au sprint), suivis par la caméra, et la plupart l'atteignent ;
 ##  - ralenti de la vue : à 0,35, les joueurs avancent environ trois fois moins vite.
 ## Joueurs : le temps fort de la 75e minute (tests/fixtures/match-arret-75.json), 30 joueurs.
 ## Parcours réel (carrière Monde) : godot-match-temps-forts.gd, modes « score_essai » et « grands_moments ».
@@ -66,8 +67,10 @@ func essai_textes() -> void:
 	check(monotone, "Le ralenti ne fait que revenir vers la vitesse réelle")
 	check(Regie.ESSAI_MOMENT >= 1.5 and Regie.ESSAI_MOMENT <= 2.5, "Pause d'essai de 1,5 à 2,5 s avant la transformation (%.1f s)" % Regie.ESSAI_MOMENT)
 	check(Regie.ESSAI_BANDEAU >= Regie.ESSAI_MOMENT, "Le bandeau reste au moins le temps du moment d'essai")
+	check(Regie.ESSAI_BANDEAU >= 3.4 and Regie.ESSAI_BANDEAU <= 4.5, "Bandeau « ESSAI » lisible environ 3,5 s (%.1f s), au-delà de la pause d'essai" % Regie.ESSAI_BANDEAU)
 	var duree_sortie: float = Regie.SORTIE_LARGE + Regie.SORTIE_MARCHE
-	check(Regie.SORTIE_LARGE >= 1.0 and Regie.SORTIE_MARCHE >= 3.0 and duree_sortie <= 8.0, "Sortie : plan large puis marche, quelques secondes en tout (%.1f s)" % duree_sortie)
+	check(Regie.SORTIE_LARGE >= 1.0 and Regie.SORTIE_LARGE <= 2.0 and Regie.SORTIE_MARCHE >= 5.5 and duree_sortie <= 8.0, "Sortie : plan large court puis marche d'environ 6 s, 8 s au plus en tout (%.1f s)" % duree_sortie)
+	check(View.ALLURE_SORTIE >= 2.0 and View.ALLURE_SORTIE < 2.5, "Sortie à l'allure d'une marche rapide ou d'un trot léger (%.1f m/s)" % View.ALLURE_SORTIE)
 	var direct := {"rencontre": "2026:3:league:4-9"}
 	check(Regie.cle_sortie({"direct": direct, "atBreak": true}) == "2026:3:league:4-9|mi-temps", "Clé de la sortie de mi-temps")
 	check(Regie.cle_sortie({"direct": direct, "atBreak": true, "finished": true}) == "2026:3:league:4-9|fin", "Clé de la sortie de fin de match (prioritaire)")
@@ -126,10 +129,20 @@ func sortie(fixture: Dictionary) -> void:
 	var camera: Camera3D = view._camera
 	var attendu: Vector3 = View.PLAN_LARGE_VISE + View.PLAN_LARGE_OFFSET.normalized() * View.PLAN_LARGE_RECUL
 	check(view.plan_large() and is_equal_approx(camera.fov, View.PLAN_LARGE_CHAMP) and camera.global_position.distance_to(attendu) < 0.5, "Plan large : tout le terrain vu d'au-dessus de la tribune (%s)" % str(camera.global_position))
+	var places_jeu: Dictionary = {}
+	for id: String in view._actors: places_jeu[id] = (view._actors[id].node as Node3D).position
+	# Coupe sur la sortie montrée de près : joueurs rapprochés du tunnel, plan serré qui les suit.
+	view.sortir_du_terrain(true)
+	check(view.sortie and view.plan_sortie and view._carrier_id.is_empty() and not view._ball_attached, "Sortie : plus de porteur, ballon laissé au sol, plan serré")
 	var departs: Dictionary = {}
-	for id: String in view._actors: departs[id] = (view._actors[id].node as Node3D).position
-	view.sortir_du_terrain()
-	check(view.sortie and view._carrier_id.is_empty() and not view._ball_attached, "Sortie : plus de porteur, ballon laissé au sol")
+	var proches := 0
+	for id: String in view._actors:
+		departs[id] = (view._actors[id].node as Node3D).position
+		var ecart := distance_sol(departs[id], View.TUNNEL)
+		if ecart <= View.SORTIE_PROCHE_MAX + 2.0 and ecart <= distance_sol(places_jeu[id], View.TUNNEL) + 0.01 and (departs[id] as Vector3).z <= View.SORTIE_PROCHE_Z + 0.01: proches += 1
+	check(proches == view._actors.size(), "Les joueurs partent près du tunnel, dans le terrain (%d sur %d)" % [proches, view._actors.size()])
+	view._process(STEP)
+	check(not camera.global_position.is_equal_approx(attendu) and camera.global_position.distance_to(view._sortie_vise) < View.PLAN_SORTIE_RECUL + 0.5 and absf(camera.fov - View.PLAN_SORTIE_CHAMP) < 0.01, "Plan serré de sortie, plus le plan large (%s)" % str(camera.global_position))
 	var pointe := 0.0
 	var precedent: Dictionary = departs.duplicate()
 	var duree: float = Regie.SORTIE_MARCHE
@@ -142,15 +155,18 @@ func sortie(fixture: Dictionary) -> void:
 			pointe = maxf(pointe, distance_sol(at, precedent[id]) / STEP)
 			precedent[id] = at
 	var rapproches := 0
+	var arrives := 0
 	var de_face := 0
 	var parcouru := 0.0
 	var dans_le_plan := 0
 	for id: String in view._actors:
 		var entry: Dictionary = view._actors[id]
 		var at: Vector3 = (entry.node as Node3D).position
-		var but: Vector3 = View.place_de_sortie(departs[id], int(entry.side))
+		# Entrée du tunnel choisie depuis la place de jeu (avant le rapprochement).
+		var but: Vector3 = View.place_de_sortie(places_jeu[id], int(entry.side))
 		check(distance_sol(entry.target, but) < 0.01, "%s marche vers l'entrée du tunnel de son camp" % id)
 		if distance_sol(at, but) < distance_sol(departs[id], but) - 1.0 or distance_sol(at, but) < 0.5: rapproches += 1
+		if distance_sol(at, but) < 0.5: arrives += 1
 		parcouru += distance_sol(at, departs[id])
 		var vers := but - at
 		if vers.length() < 0.5 or absf(angle_difference((entry.node as Node3D).rotation.y, atan2(vers.x, vers.z))) < 0.6: de_face += 1
@@ -160,7 +176,8 @@ func sortie(fixture: Dictionary) -> void:
 	check(parcouru / n >= 4.0, "Les joueurs marchent vraiment (%.1f m en moyenne en %.1f s)" % [parcouru / n, duree])
 	check(pointe <= View.ALLURE_SORTIE * 1.5 + 0.3, "Marche, jamais de course (pointe %.2f m/s)" % pointe)
 	check(de_face >= int(n * 0.85), "Ils marchent face au tunnel (%d sur %d)" % [de_face, n])
-	check(dans_le_plan >= int(n * 0.9), "Ils restent dans le plan large (%d sur %d)" % [dans_le_plan, n])
+	check(dans_le_plan >= int(n * 0.9), "Ils restent dans le plan serré qui les suit (%d sur %d)" % [dans_le_plan, n])
+	check(arrives >= int(n * 0.7), "On les voit quitter le terrain : la plupart atteignent le tunnel (%d sur %d en %.1f s)" % [arrives, n, duree])
 	# La prochaine image du moteur reprend la main.
 	view.apply_frame(image(fixture, plan.scene, int(plan.index), false))
 	check(not view.sortie, "Une nouvelle image met fin à la sortie")

@@ -78,7 +78,20 @@ const PLAN_LARGE_CHAMP := 36.0
 ## joueurs rentrent en marchant vers le tunnel, au milieu de la touche proche (sous la tribune
 ## principale). Allure de marche (m/s) : sous le seuil du trot des clips (2,5 m/s).
 const TUNNEL := Vector3(0.0, 0.0, 40.0)
-const ALLURE_SORTIE := 1.9
+## 18/11/2026 (soir) : sous le plan large, les joueurs minuscules ne faisaient que 8 m loin du tunnel.
+## La sortie montrée part d'une coupe : chaque joueur reprend, dans la même direction depuis le
+## tunnel, à SORTIE_PROCHE_MIN à SORTIE_PROCHE_MAX m de lui (jamais au-delà de SORTIE_PROCHE_Z, dans
+## le terrain), puis rentre en marche rapide, trot léger (sous le seuil de course des clips, 2,5 m/s).
+const ALLURE_SORTIE := 2.4
+const SORTIE_PROCHE_MIN := 4.5
+const SORTIE_PROCHE_MAX := 10.0
+const SORTIE_PROCHE_Z := 34.0
+## Plan de la sortie : contrechamp depuis le terrain, tourné vers la tribune principale et le
+## tunnel, qui suit le groupe (direction, recul en m, angle de champ, lissage en s).
+const PLAN_SORTIE_OFFSET := Vector3(0.22, 0.42, -0.88)
+const PLAN_SORTIE_RECUL := 36.0
+const PLAN_SORTIE_CHAMP := 38.0
+const PLAN_SORTIE_LISSAGE := 0.6
 ## Recentrage borné (TV et action) : la touche lointaine, la touche proche et les lignes de ballon
 ## mort, plus TERRAIN_MARGE m, restent près des bords de l'image (BORD_*, en part de l'image) : la
 ## tribune n'en occupe qu'une bande. Le ballon reste toujours dans la zone sûre (BALLON_SUR des bords).
@@ -175,6 +188,9 @@ var replacements_coupes := 0
 var ralenti := 1.0
 ## Sortie des joueurs en cours (mi-temps, fin de match) : jusqu'à la prochaine image du moteur.
 var sortie := false
+## Sortie montrée de près (joueurs rapprochés du tunnel, plan qui suit le groupe) et point visé.
+var plan_sortie := false
+var _sortie_vise := Vector3.ZERO
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -442,7 +458,10 @@ func apply_frame(live: Dictionary) -> void:
 		return
 	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours (et à la sortie).
 	arreter_choregraphie()
+	if plan_sortie:
+		_camera_cut = true
 	sortie = false
+	plan_sortie = false
 	var scene: Dictionary = live.get("scene", {})
 	if scene.is_empty() or not scene.get("players", null) is Array:
 		_clear_presence()
@@ -727,7 +746,9 @@ func set_ralenti(facteur: float) -> void:
 ## Mi-temps, fin de match (régie des temps forts) : chaque joueur quitte sa place et marche vers
 ## le tunnel, à ALLURE_SORTIE ; le ballon est laissé au sol. Plus rien d'une action en cours (passe,
 ## contact, geste, posture de mêlée) ne reste posé. La prochaine image du moteur reprend la main.
-func sortir_du_terrain() -> void:
+## `rapprocher` : coupe sur la sortie montrée de près (plan_sortie) ; chaque joueur repart plus près
+## du tunnel (place_proche_du_tunnel), et la caméra suit le groupe jusqu'à l'entrée du tunnel.
+func sortir_du_terrain(rapprocher: bool = false) -> void:
 	if not is_node_ready():
 		return
 	arreter_choregraphie()
@@ -749,10 +770,19 @@ func sortir_du_terrain() -> void:
 		_ball_from_basis = _ball.global_basis
 		_ball_target = Vector3(_ball.position.x, Impacts.BALLON_AU_SOL, _ball.position.z)
 		_ball_travel = 0.0
+	plan_sortie = rapprocher
+	if rapprocher:
+		_camera_cut = true
 	for id: String in _actors:
 		var entry: Dictionary = _actors[id]
-		var at: Vector3 = (entry.node as Node3D).position
+		var actor: Node3D = entry.node
+		var at: Vector3 = actor.position
 		var but := place_de_sortie(at, int(entry.side))
+		if rapprocher:
+			# Coupe : le joueur reparaît plus près du tunnel, déjà tourné vers lui.
+			at = place_proche_du_tunnel(at)
+			actor.position = at
+			actor.rotation.y = atan2(but.x - at.x, but.z - at.z)
 		entry.holding = false
 		entry.geste = {}
 		entry.grip = 0.0
@@ -773,6 +803,31 @@ func sortir_du_terrain() -> void:
 static func place_de_sortie(depuis: Vector3, camp: int) -> Vector3:
 	var cote := -1.0 if camp == 0 else 1.0
 	return TUNNEL + Vector3(cote * (1.0 + fposmod(depuis.x * 0.37 + depuis.z * 0.21, 3.0)), 0.0, 0.0)
+
+
+## Départ de la sortie montrée de près : dans la direction du joueur vue du tunnel, à une distance
+## ramenée entre SORTIE_PROCHE_MIN et SORTIE_PROCHE_MAX m (l'ordre des distances est gardé : les plus
+## loin restent derrière), et jamais hors du terrain côté tunnel.
+static func place_proche_du_tunnel(depuis: Vector3) -> Vector3:
+	var ecart := Vector2(depuis.x - TUNNEL.x, depuis.z - TUNNEL.z)
+	var loin := ecart.length()
+	var direction := ecart / loin if loin > 0.01 else Vector2(0.0, -1.0)
+	# Toujours vers le terrain (z décroissant depuis le tunnel).
+	if direction.y > -0.35:
+		direction = Vector2(signf(direction.x) if absf(direction.x) > 0.001 else 1.0, -0.35 / 0.937).normalized()
+	var rayon := lerpf(SORTIE_PROCHE_MIN, SORTIE_PROCHE_MAX, clampf((loin - 5.0) / 60.0, 0.0, 1.0))
+	var p := Vector2(TUNNEL.x, TUNNEL.z) + direction * rayon
+	return Vector3(p.x, 0.0, minf(p.y, SORTIE_PROCHE_Z))
+
+
+## Point visé du plan de sortie : le groupe des joueurs, tiré vers le tunnel où il se dirige.
+func _vise_sortie() -> Vector3:
+	var somme := Vector3.ZERO
+	for entry: Dictionary in _actors.values():
+		somme += (entry.node as Node3D).position
+	var groupe := somme / maxf(1.0, float(_actors.size())) if not _actors.is_empty() else TUNNEL
+	var vise := groupe.lerp(TUNNEL, 0.3)
+	return Vector3(vise.x, 1.0, vise.z)
 
 
 func set_camera(mode: String) -> void:
@@ -1223,6 +1278,16 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 		var size := base
 		var wide := size
 		var screen := get_viewport().get_visible_rect().size
+		if sortie and plan_sortie:
+			# Sortie montrée de près : contrechamp qui suit le groupe vers le tunnel (prime sur le plan large).
+			var vise := _vise_sortie()
+			_sortie_vise = vise if cut or delta <= 0.0 else _sortie_vise.lerp(vise, 1.0 - exp(-delta / PLAN_SORTIE_LISSAGE))
+			var sens := PLAN_SORTIE_OFFSET.normalized()
+			_camera_look = _sortie_vise
+			_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+			_camera.global_transform = Transform3D(Basis.looking_at(-sens, Vector3.UP), _sortie_vise + sens * PLAN_SORTIE_RECUL)
+			_camera.fov = PLAN_SORTIE_CHAMP
+			return
 		if _plan_large:
 			# Mi-temps, fin de match : tout le terrain, sans recadrage.
 			var direction := PLAN_LARGE_OFFSET.normalized()

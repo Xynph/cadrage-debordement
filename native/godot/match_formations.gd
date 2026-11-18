@@ -4,7 +4,8 @@ extends RefCounted
 ## Présentation seule : le moteur décide qui introduit, qui gagne et où part le ballon. Ici,
 ## les avants prennent la place et la posture de la phase que la scène annonce :
 ##   - « scrum » (loi 19) : les deux paquets liés face à face en 3-4-1 autour du ballon, penchés,
-##     le demi de mêlée qui introduit accroupi au tunnel, le demi adverse de son côté du ballon,
+##     le demi de mêlée qui introduit accroupi au tunnel, le demi adverse de son côté du ballon
+##     (à l'extérieur des paquets),
 ##     les arrières à 5 m au moins derrière les pieds du n° 8 ;
 ##   - « setpiece-win » / « setpiece-loss » juste après une mêlée : les deux paquets restent liés
 ##     SORTIE secondes (le ballon sort), puis se délient vers leurs places de la scène ;
@@ -46,8 +47,12 @@ const DEMI_INTRO := Vector2(0.15, -1.8)
 const BALLON_DEVANT := 0.55
 const BALLON_BAS_MIN := 0.3
 const BALLON_BAS_MAX := 0.6
-## Demi adverse : de son côté du ballon (recul négatif), du même côté de la mêlée.
-const DEMI_ADVERSE := Vector2(-0.75, -1.35)
+## Demi adverse : de son côté du ballon (recul négatif), du même côté de la mêlée, nettement à
+## l'extérieur des paquets (18/11/2026 soir : à 1,35 m du centre, à demi penché contre le pilier
+## droit adverse, il passait à l'image pour un avant resté debout dans le paquet).
+const DEMI_ADVERSE := Vector2(-0.6, -2.4)
+## Écart latéral minimal (m) entre le demi adverse et l'avant le plus à l'extérieur.
+const DEMI_HORS_PAQUET := 0.8
 ## Hors-jeu de mêlée (loi 19) : arrières à 5 m au moins derrière les pieds du dernier avant.
 const HORS_JEU := 5.0
 const PIEDS_N8 := 0.6

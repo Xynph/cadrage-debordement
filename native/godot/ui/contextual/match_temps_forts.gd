@@ -61,12 +61,15 @@ const ECHEANCE_PLACE := 1.5
 ## réelle et la retrouve avant la fin du moment (aucun ralenti si le joueur a réduit les animations).
 const ESSAI_MOMENT := 2.2
 const ESSAI_RALENTI := 0.35
-const ESSAI_BANDEAU := 3.4
+## Bandeau « ESSAI » : lisible ESSAI_BANDEAU s (18/11/2026 soir : vu ~2 s au film), il déborde sur la
+## pose de la transformation et n'est plus effacé par un retour à l'écran intermédiaire (_vers_inter).
+const ESSAI_BANDEAU := 3.6
 ## Mi-temps et fin de match : plan large du terrain (SORTIE_LARGE s, joueurs encore à leur place),
-## puis les joueurs marchent vers le tunnel (SORTIE_MARCHE s), avant la causerie ou l'écran de fin.
+## puis coupe sur un plan serré qui suit les joueurs rentrant au tunnel, partis plus près de lui
+## (SORTIE_MARCHE s, match_view.gd sortir_du_terrain), avant la causerie ou l'écran de fin.
 ## Échap, Entrée, Espace ou un clic abrègent la séquence. Repli : CD_MATCH_SORTIE=0.
-const SORTIE_LARGE := 1.6
-const SORTIE_MARCHE := 4.4
+const SORTIE_LARGE := 1.5
+const SORTIE_MARCHE := 6.0
 ## Fondu d'entrée et de sortie du bandeau (s).
 const BANDEAU_FONDU := 0.25
 
@@ -165,6 +168,7 @@ var _espace: Control
 var bandeau: PanelContainer
 var _bandeau_duree := 0.0
 var _bandeau_reste := 0.0
+var _bandeau_titre := ""
 ## Plus petit ralenti posé pendant le dernier moment d'essai (contrôle des tests).
 var ralenti_min := 1.0
 ## Diagnostic texte / image : début à l'écran de la phase courante (ms, index du journal) et
@@ -1178,7 +1182,8 @@ func _vers_inter() -> void:
 	attente = 0.0
 	_moment_essai = 0.0
 	_regler_ralenti()
-	_cacher_bandeau()
+	# Le bandeau « ESSAI » finit sa durée même si l'écran intermédiaire revient entre l'essai et la transformation.
+	if _bandeau_titre != "ESSAI": _cacher_bandeau()
 	_presenter(false)
 	if cadrage != null: cadrage.regler(false)
 	_montrer_jeu(false)
@@ -1444,8 +1449,8 @@ func _lire_sortie(pas: float) -> void:
 	var avant := _sortie_t
 	_sortie_t += pas
 	if avant < SORTIE_LARGE and _sortie_t >= SORTIE_LARGE and stage.has_method("sortir_du_terrain"):
-		stage.sortir_du_terrain()
-		_noter_sortie({"marche_ms": Time.get_ticks_msec()})
+		stage.sortir_du_terrain(true)
+		_noter_sortie({"marche_ms": Time.get_ticks_msec(), "plan_serre": bool(stage.get("plan_sortie"))})
 	if _sortie_t >= SORTIE_LARGE + SORTIE_MARCHE: _finir_sortie(false)
 
 ## Fin de la sortie (à son terme ou abrégée) : écran intermédiaire, puis causerie ou écran de fin.
@@ -1590,6 +1595,7 @@ func bandeau_affiche() -> Dictionary:
 func montrer_bandeau(titre: String, nom: String, equipe: String, duree: float) -> void:
 	if bandeau == null or view == null: return
 	habiller_bandeau(bandeau, titre, nom, equipe, maxf(1.0, view.size.y))
+	_bandeau_titre = titre
 	_bandeau_duree = maxf(duree, 2.0 * BANDEAU_FONDU)
 	_bandeau_reste = _bandeau_duree
 	bandeau.modulate.a = 1.0 if _calme() else 0.0
@@ -1615,4 +1621,5 @@ func _animer_bandeau(delta: float) -> void:
 
 func _cacher_bandeau() -> void:
 	_bandeau_reste = 0.0
+	_bandeau_titre = ""
 	if bandeau != null: bandeau.hide()
