@@ -132,18 +132,27 @@ static func marquer(profile: Object, cle: String) -> bool:
 	profile.data[CLE] = cur
 	return profile.save_profile(profile.data)
 
-## Nouvelle carrière acceptée : les deux semaines repartent du jour de la création.
+## Nouvelle carrière : les deux semaines repartent du jour de la création. Détectée par la commande acceptée, ou,
+## quand une fenêtre (rendez-vous d'arrivée) a masqué cette réponse, par un club différent ou un retour en arrière
+## du calendrier, tant qu'aucun match officiel n'est joué (une ancienne carrière rechargée n'est pas « nouvelle »).
+## Rappelé à chaque rendu : idempotent. Renvoie true si le profil a été écrit.
 static func observer(profile: Object, model: Dictionary, command: String, reponse_ok: bool, connu: bool) -> bool:
-	if profile == null or not reponse_ok or command not in COMMANDES_NOUVELLE_CARRIERE: return false
+	if profile == null: return false
 	var meta: Dictionary = model.get("meta", {}) if model.get("meta") is Dictionary else {}
-	if not meta.get("hasCareer", false): return false
-	# main.gd rappelle ceci à chaque rendu tant que la dernière commande reste « new_career » : même club, même
-	# jour de départ = déjà fait (seul « je connais déjà » peut changer).
+	if not meta.get("hasCareer", false) or str(meta.get("mode", "")) != "world": return false
 	var cur := etat(profile.data)
-	if not cur.is_empty() and str(cur.club) == _club(model) and str(cur.debut) == _aujourdhui(model):
-		if bool(cur.connu) == connu: return false
-		cur.connu = connu
-		profile.data[CLE] = cur
-		return profile.save_profile(profile.data)
-	profile.data[CLE] = {"club": _club(model), "debut": _aujourdhui(model), "vus": [], "connu": connu}
+	var aujourdhui := _aujourdhui(model)
+	var club := _club(model)
+	var meme := not cur.is_empty() and str(cur.club) == club
+	var commande: bool = reponse_ok and command in COMMANDES_NOUVELLE_CARRIERE
+	var recul: bool = meme and Semaine._unix(aujourdhui) >= 0 and Semaine._unix(aujourdhui) < Semaine._unix(str(cur.debut))
+	var nouvelle: bool = (commande and not (meme and str(cur.debut) == aujourdhui)) or (premier_match(model).is_empty() and (not meme or recul))
+	if not nouvelle:
+		# Même création revue (même club, même jour) : seul « je connais déjà » peut changer.
+		if commande and meme and bool(cur.connu) != connu:
+			cur.connu = connu
+			profile.data[CLE] = cur
+			return profile.save_profile(profile.data)
+		return false
+	profile.data[CLE] = {"club": club, "debut": aujourdhui, "vus": [], "connu": connu}
 	return profile.save_profile(profile.data)
