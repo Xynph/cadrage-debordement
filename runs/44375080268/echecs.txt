@@ -1,0 +1,3 @@
+== captures météo et vent (écran Match avant-match, vestiaire, bandeau, mi-temps, 1080p) (code 1)
+not ok 1 - Météo et vent : avant-match, bandeau du direct, mi-temps
+  name: 'AssertionError'
