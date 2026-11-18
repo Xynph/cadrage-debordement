@@ -30,6 +30,7 @@ const {calendarContext}=require('./calendar-clock.cjs');
 const franceCalendar=require('./france-calendar-cadence.cjs');
 const confirmMatchResult=require('./match-result.cjs');
 const matchDirect=require('./match-direct.cjs');
+const matchBonus=require('./match-bonus.cjs');
 const calendarPlanning=require('./calendar-planning.cjs'),calendarMail=require('./calendar-mail.cjs');
 const jsonCopy=require('./json-copy.cjs'),worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),publishedVenue=require('./world-venues.cjs'),worldRegistry=require('./world-registry.json');
 const clubHistory=require('./club-history.json');
@@ -328,6 +329,8 @@ function createBridge(options={}){
    const nativeConfirmMatchResult=(${confirmMatchResult.toString()});`);
   // Match en temps forts (mode de base ; repli CD_MATCH_TEMPS_FORTS=0) : lecture seule du match en cours.
   run(`const nativeMatchDirect=(${matchDirect.lecteur.toString()})();`);
+  // Dilemme du bonus en fin de match (match-bonus.cjs) : barème lu dans les classements, décision des clubs IA.
+  run(`const nativeMatchBonus=(${matchBonus.factory.toString()})();nativeMatchBonus.installHooks();`);
   let matchHighlights=options.matchHighlights??null;
   // Chorégraphe des temps forts (présentation seule, éteint par défaut) : CD_MATCH_CHOREGRAPHE=1.
   const matchChoreography=options.matchChoreography??process.env.CD_MATCH_CHOREGRAPHE==='1';

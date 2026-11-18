@@ -32,6 +32,8 @@ module.exports=function worldDispatcher(editions,makeCareer){
   dailyStatus:onState('dailyStatus'),advanceDay:onState('advanceDay'),
   // Météo annoncée la veille du match du club (world-career.cjs) ; null hors carrière Monde.
   ...Object.fromEntries(['fixerMeteo','meteoAnnoncee','meteoMatch','meteoPrevue'].map(name=>[name,(s,...args)=>s&&edition(s)?current(s)[name](s,...args):null])),
+  // Bonus d'une rencontre (dilemme de fin de match, match-bonus.cjs) ; null hors carrière Monde.
+  matchBonus:(s,f)=>s&&edition(s)?current(s).matchBonus(f):null,qualifyingPlaces:(s,id)=>s&&edition(s)?current(s).qualifyingPlaces(id):0,
   label:onState('label'),validate:onState('validate'),multiplex:onState('multiplex'),finishWeek:()=>current(S).finishWeek(),
  });
 };

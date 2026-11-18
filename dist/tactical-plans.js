@@ -78,19 +78,34 @@ function relachementPoints(d){return d*RELACHEMENT.part}
 function relachementRisque(l){const g=teamLevel(activePlayers(l,0))-teamLevel(activePlayers(l,1)),d=Math.abs(g),fav=g>0?0:1,R=RELACHEMENT;const p=relachementProbabilite(d,relachementPro(l,fav));return {favori:fav,ecart:d,probabilite:p>0?Math.round(p*1000)/1000:0}}
 function initializeRelachement(l){if(!S?.worldMode||l.relachementVersion)return;l.relachementVersion=1;l.relachement=[0,0];const r=relachementRisque(l);if(!(r.probabilite>0))return;l.relachementRisque=r;if(relachementTire('relachement:'+(l.worldContext?.id||'')+':'+l.pair.join('-')+':'+S.season+':'+S.round,r.probabilite))l.relachement[r.favori]=relachementPoints(r.ecart)*MATCH_LEVEL_CURVE.complet.parPoint}
 function relachementEdge(l,side){return l.relachementVersion===1&&!l.relachementAnnule?.[side]?-(l.relachement?.[side]||0):0}
-function initializeTacticalPlans(l){initializeRelachement(l);l.tacticalVersion=1;if(ESSAIS_RULES)l.essaisVersion=1;if(ESSAIS_RULES&&PENALITES_RULES)l.penalitesVersion=1;l.defences=['equilibre','equilibre'];l.tacticalStats=[emptyTacticalStats(),emptyTacticalStats()];for(let side=0;side<2;side++)l.defences[side]=side===l.userSide?(S.defence||'equilibre'):chooseDefence(l,side)}
+function initializeTacticalPlans(l){initializeRelachement(l);l.tacticalVersion=1;if(ESSAIS_RULES)l.essaisVersion=1;if(ESSAIS_RULES&&CONTRE_RULES)l.contreVersion=1;if(ESSAIS_RULES&&PENALITES_RULES)l.penalitesVersion=1;l.defences=['equilibre','equilibre'];l.tacticalStats=[emptyTacticalStats(),emptyTacticalStats()];for(let side=0;side<2;side++)l.defences[side]=side===l.userSide?(S.defence||'equilibre'):chooseDefence(l,side)}
+// Ballon de contre (18/11/2026, dilemme du bonus en fin de match, mesure : scripts/mesure-bonus-fin-de-match.cjs) : une équipe
+// qui joue au large étale ses joueurs ; quand elle perd le ballon au sol (ballon gratté, pénalité jouée vite et perdue),
+// l'adversaire relance contre une défense pas encore replacée. Avantage `CONTRE.large` et `CONTRE.metres` de course en
+// plus à la seule action qui suit la récupération (minute suivante), rencontres créées avec `contreVersion`. Aucun
+// tirage en plus. Pas de chiffre public sur les essais marqués en contre selon le style adverse : valeur de jeu,
+// étalonnée sur vingt dernières minutes à XV identiques (essais encaissés au large +24 % face au jeu au près prudent ;
+// à +0,06 et 10 m l'effet ne se distinguait pas du bruit). Coût mesuré sur le banc des styles (tests/tactical-plans.cjs,
+// 80 matchs) : jeu au large 0,39 → 0,35 de victoires, dans le bruit du banc ; à remesurer sur 1 200 matchs (§14 de
+// docs/top14-dispute-20261117.md).
+let CONTRE_RULES=1;
+const CONTRE=Object.freeze({large:.12,metres:15});
+function contreRules(l){return essaisRules(l)&&l.contreVersion===1}
+// Ballon perdu au sol par `perdant` : on note la relance possible de l'adversaire (rien si l'on ne jouait pas au large).
+function noterContre(l,perdant){if(!contreRules(l))return;if(effectiveAttack(l,perdant)==='large')l.contre={side:1-perdant,minute:l.minute};else delete l.contre}
+function contreEdge(l,side){return contreRules(l)&&l.contre&&l.contre.side===side&&l.contre.minute===l.minute-1&&l.possession===side?CONTRE.large:0}
 function defensivePlan(l,side){return tacticalRules(l)?effectiveDefence(l,side):'equilibre'}
 function tacticalEdge(l,side){
  const opp=1-side,a=effectiveAttack(l,side),d=defensivePlan(l,opp),backs=p=>p.fam>=4,forwards=p=>p.fam<=3;
  const attack=a==='large'?unit(l,side,'pass',backs)*.5+unit(l,side,'speed',backs)*.4+unit(l,side,'power')*.1:a==='conquete'?unit(l,side,'power',forwards)*.7+unit(l,side,'pass')*.15+unit(l,side,'speed')*.15:unit(l,side,'pass')*.4+unit(l,side,'speed')*.35+unit(l,side,'power')*.25;
  const defence=d==='pression'?unit(l,opp,'tackle')*.6+unit(l,opp,'speed')*.25+unit(l,opp,'mental')*.15:d==='prudente'?unit(l,opp,'tackle')*.6+unit(l,opp,'mental')*.3+unit(l,opp,'speed')*.1:unit(l,opp,'tackle')*.72+unit(l,opp,'mental')*.28;
  const pressure=d==='pression'?-.045:d==='prudente'?.025:0;
- return (attack-defence)*.004+pressure+(l.weather==='Pluie'&&a==='large'?-.075:0)+(l.weather==='Vent'&&a==='occupation'?-.025:0)+relachementEdge(l,side);
+ return (attack-defence)*.004+pressure+(l.weather==='Pluie'&&a==='large'?-.075:0)+(l.weather==='Vent'&&a==='occupation'?-.025:0)+relachementEdge(l,side)+contreEdge(l,side);
 }
 function tacticalPenaltyAdjustment(l,defender){return !tacticalRules(l)?0:defensivePlan(l,defender)==='pression'?.045:defensivePlan(l,defender)==='prudente'?-.02:0}
 function handFaultProbability(l,side){if(!tacticalRules(l))return .12;const a=effectiveAttack(l,side),d=defensivePlan(l,1-side);return clamp(.12+ATTACK_EFFECTS[a].error+(l.weather==='Pluie'&&a==='large'?.04:0)+(d==='pression'?.02:d==='prudente'?-.01:0)+clamp((70-unit(l,side,'pass'))*.0015,-.045,.045)+METEO_MATCH.enAvant.pluie*meteoNiveau(l,'pluie'),.04,.28)}
 function failedCarryError(l,side){const base=meteoActive(l)?METEO_MATCH.ballonPerdu.base+METEO_MATCH.ballonPerdu.pluie*l.meteo.pluie:l.weather==='Pluie'?.55:.3;return tacticalRules(l)?clamp(base+ATTACK_EFFECTS[effectiveAttack(l,side)].error,.1,.8):base}
-function carryGain(l,side){const g=carryGainBase(l,side);return meteoNiveau(l,'terrain')==='lourd'?Math.max(1,Math.round(g*METEO_MATCH.terrainLourd.gain)):g}
+function carryGain(l,side){const g=carryGainBase(l,side)+(contreEdge(l,side)>0?CONTRE.metres:0);return meteoNiveau(l,'terrain')==='lourd'?Math.max(1,Math.round(g*METEO_MATCH.terrainLourd.gain)):g}
 function carryGainBase(l,side){if(!tacticalRules(l))return rand(12,25);const range=ATTACK_EFFECTS[effectiveAttack(l,side)].gain,d=defensivePlan(l,1-side),shift=d==='pression'?4:d==='prudente'?-4:0;return rand(Math.max(3,range[0]+shift),range[1]+shift)}
 function tacticalFinishAdjustment(l,side){return !tacticalRules(l)?0:ATTACK_EFFECTS[effectiveAttack(l,side)].finish+(defensivePlan(l,1-side)==='pression'?.04:defensivePlan(l,1-side)==='prudente'?-.055:0)}
 function openKickProbability(l,side){return clamp(openKickBase(l,side)*(1+METEO_MATCH.piedJeu.pluie*meteoNiveau(l,'pluie')),0,.85)}
