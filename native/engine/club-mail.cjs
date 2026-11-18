@@ -458,7 +458,7 @@ function factory() {
       const l = plan.lecteur || {}, lecteur = l.nom ? l.nom + ', notre ' + l.role + ',' : 'le staff';
       const confiance = { sure: 'La lecture est nette.', probable: 'C’est le scénario le plus probable.', incertaine: 'La lecture reste incertaine : ne mets pas tout sur cette carte.' }[plan.confiance] || '';
       const bas = plan.titre.charAt(0).toLowerCase() + plan.titre.slice(1);
-      return [{ key: f.id, vars: { adversaire: F.name(F.opponent(f)), quand: f.date === F.d ? 'aujourd’hui' : 'demain', lecteur, titre_bas: bas, raison: plan.raison, confiance, conseil: plan.conseil, style: plan.style } }];
+      return [{ key: f.id, club: F.opponent(f), vars: { adversaire: F.name(F.opponent(f)), quand: f.date === F.d ? 'aujourd’hui' : 'demain', lecteur, titre_bas: bas, raison: plan.raison, confiance, conseil: plan.conseil, style: plan.style } }];
     },
     rivaux(F) {
       const g = F.playedOn(shift(F.d, -2)); if (!g || g.fixture.competitionId !== F.lid) return [];
