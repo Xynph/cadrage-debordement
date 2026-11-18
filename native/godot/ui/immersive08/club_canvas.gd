@@ -1,5 +1,6 @@
 extends RefCounted
 const EntityLink = preload("res://ui/entity_link.gd")
+const BanqueImages = preload("res://ui/banque_images.gd")
 const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -69,8 +70,17 @@ static func build(app: Control, canvas: Control) -> void:
 				"territory": _territory(app, canvas)
 				_: _overview(app, canvas)
 
+## Bandeau du club : onglet Infrastructures -> le stade du club à sa taille (banque d'images, d'après la capacité),
+## sinon la vue habituelle.
+static func photo_entete(model: Dictionary, tab: String) -> String:
+	if tab != "infrastructure": return "club-forest"
+	var fans: Variant = U.strategy(model).get("fans", {})
+	var niveau := BanqueImages.niveau_stade(fans.get("capacity") if fans is Dictionary else null)
+	var id := BanqueImages.choisir("infrastructures", {"categorie_image": "stade", "niveau_infrastructure": niveau}) if niveau > 0 else ""
+	return id if not id.is_empty() and BanqueImages.texture(id) != null else "club-forest"
+
 static func _header(app: Control, canvas: Control, tab: String) -> void:
-	D.photo(canvas, "club-forest", Rect2(930,0,1318,196))
+	D.photo(canvas, photo_entete(app.model, tab), Rect2(930,0,1318,196))
 	U.art_fade(canvas, Rect2(930,0,1318,196))
 	var crest := G.crest(app.model.club, C.px(150))
 	canvas.add_child(crest)

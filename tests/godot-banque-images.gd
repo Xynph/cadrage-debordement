@@ -4,6 +4,7 @@ extends SceneTree
 
 const BanqueImages = preload("res://ui/banque_images.gd")
 const Between = preload("res://ui/contextual/match_between.gd")
+const ClubCanvas = preload("res://ui/immersive08/club_canvas.gd")
 
 var failures: Array = []
 var controles := 0
@@ -41,6 +42,32 @@ func regles() -> void:
 	verifier(BanqueImages.choisir("inconnu", {}) == "" and BanqueImages.texture("absent") == null, "écran ou image inconnus : rien")
 	verifier(Between.photo_du_fait("try", "") == "action-essai" and Between.photo_du_fait("card", "Carton rouge") == "action-carton-rouge" and Between.photo_du_fait("kick", "") == "", "faits du moteur -> photos")
 
+func stades() -> void:
+	var attendus := {3000: "club-stade-niveau-1", 10000: "club-stade-niveau-3", 16000: "club-stade-niveau-4", 33000: "stade-grand-interieur-plein-jour"}
+	var planche := HBoxContainer.new()
+	root.add_child(planche)
+	planche.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for capacite: int in attendus:
+		var id := BanqueImages.choisir("infrastructures", {"categorie_image": "stade", "niveau_infrastructure": BanqueImages.niveau_stade(capacite)})
+		verifier(id == attendus[capacite], "stade de %d places : %s (%s attendu)" % [capacite, id, attendus[capacite]])
+		var colonne := VBoxContainer.new()
+		colonne.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		planche.add_child(colonne)
+		var etiquette := Label.new()
+		etiquette.text = "%d places" % capacite
+		etiquette.add_theme_font_size_override("font_size", 30)
+		colonne.add_child(etiquette)
+		var image := TextureRect.new()
+		image.texture = BanqueImages.texture(id)
+		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		image.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		colonne.add_child(image)
+	verifier(ClubCanvas.photo_entete({}, "overview") == "club-forest", "bandeau du club hors Infrastructures : inchangé")
+	verifier(BanqueImages.niveau_stade(null) == 0 and BanqueImages.choisir("avant-match", {"moment": "jour"}) != "stade-grand-interieur-plein-jour", "grande enceinte réservée aux infrastructures")
+	await capturer("stades-selon-capacite")
+	planche.queue_free()
+
 func ecran_entre_temps_forts() -> void:
 	var hote := Control.new()
 	root.add_child(hote)
@@ -73,5 +100,6 @@ func executer() -> void:
 	manifeste()
 	regles()
 	await ecran_entre_temps_forts()
+	await stades()
 	print("BANQUE " + JSON.stringify({"controles": controles, "failures": failures}))
 	quit(0 if failures.is_empty() else 1)

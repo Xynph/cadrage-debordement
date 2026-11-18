@@ -111,3 +111,13 @@ static func resultat(score: Variant, camp: int) -> String:
 	var nous := int(score[camp])
 	var eux := int(score[1 - camp])
 	return "victoire" if nous > eux else ("defaite" if nous < eux else "nul")
+
+## Niveau d'un stade (1 à 5) d'après sa capacité ; 0 si inconnue. 1-4 : stades de club, de la tribune unique
+## aux quatre tribunes ; 5 : grande enceinte (20 000 places et plus, Top 14 et grands clubs).
+static func niveau_stade(capacite: Variant) -> int:
+	if not (capacite is int or capacite is float) or capacite <= 0: return 0
+	if capacite < 4000: return 1
+	if capacite < 8000: return 2
+	if capacite < 12000: return 3
+	if capacite < 20000: return 4
+	return 5

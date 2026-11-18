@@ -459,6 +459,125 @@
    },
    "synthetique": true,
    "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "club-stade-niveau-1",
+   "categorie": "infrastructures",
+   "fichier": "infrastructures/club-stade-niveau-1.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 300660,
+   "sha256": "c73007e97c580d14ef3da2e502ffe4e3afeda62e0ccfaf8f731e7db3c4be62dc",
+   "source_sha256": "ab389c043f65a3bf219dc7cce1bcd299ea5fa6dfb3a755a5970d5d833d8473ba",
+   "source_octets": 2735065,
+   "repli": "club-stade-niveau-2",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "infrastructures"
+    ],
+    "moment": "jour",
+    "resultat": "neutre",
+    "niveau_infrastructure": 1,
+    "categorie_image": "stade"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "club-stade-niveau-2",
+   "categorie": "infrastructures",
+   "fichier": "infrastructures/club-stade-niveau-2.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 264372,
+   "sha256": "8af0811688996dbf1bfb62c797e36e6913820230c6e48d84892caa207357ea2c",
+   "source_sha256": "29f3c45a96a478537d13a82b3c90a5567de2c3db462dd0df2fdbe71a66f46e60",
+   "source_octets": 2568155,
+   "repli": "club-stade-niveau-2",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "infrastructures"
+    ],
+    "moment": "jour",
+    "resultat": "neutre",
+    "niveau_infrastructure": 2,
+    "categorie_image": "stade"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "club-stade-niveau-3",
+   "categorie": "infrastructures",
+   "fichier": "infrastructures/club-stade-niveau-3.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 292794,
+   "sha256": "89bdf638a06e3f98da007b470801b02132e50a1b5571cda43583fce39de79b46",
+   "source_sha256": "e0e8e41834d47182693d8e5ea4c0dad9b3af01cc42e80d5c6393e95d53065a27",
+   "source_octets": 2710934,
+   "repli": "club-stade-niveau-2",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "infrastructures"
+    ],
+    "moment": "jour",
+    "resultat": "neutre",
+    "niveau_infrastructure": 3,
+    "categorie_image": "stade"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "club-stade-niveau-4",
+   "categorie": "infrastructures",
+   "fichier": "infrastructures/club-stade-niveau-4.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 295076,
+   "sha256": "b958bc9d9ad3f32247deeacefcffc1bc13f02a3ba9acf0b96efefb6a75584594",
+   "source_sha256": "bf8c05976494a092a340f3ea918ae3323c12afc581136a1967272b0521b054e3",
+   "source_octets": 2655934,
+   "repli": "club-stade-niveau-2",
+   "etiquettes": {
+    "ecrans": [
+     "club",
+     "infrastructures"
+    ],
+    "moment": "jour",
+    "resultat": "neutre",
+    "niveau_infrastructure": 4,
+    "categorie_image": "stade"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "stade-grand-interieur-plein-jour",
+   "categorie": "stades",
+   "fichier": "stades/stade-grand-interieur-plein-jour.webp",
+   "largeur": 1774,
+   "hauteur": 887,
+   "octets": 441070,
+   "sha256": "71dc1540ead01cc46e6ea3ff195bdee59847a710617705644002d554abddfbb2",
+   "source_sha256": "27c21a0147f1ef94203e290447f33fedc8958d503f41a1e6be3039625750d713",
+   "source_octets": 3221899,
+   "repli": "club-stade-niveau-2",
+   "etiquettes": {
+    "ecrans": [
+     "infrastructures"
+    ],
+    "moment": "jour",
+    "resultat": "neutre",
+    "niveau_infrastructure": 5,
+    "categorie_image": "stade"
+   },
+   "synthetique": true,
+   "outil": "OpenAI ImageGen"
   }
  ]
 }
