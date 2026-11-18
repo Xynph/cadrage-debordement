@@ -84,12 +84,27 @@ function factory(){
   else if(['club_fans_campaign','club_fans_community','club_fans_service'].includes(command)){requireThat(p.confirmed===true,'Confirme le coût de cette action.');const kind=command.slice('club_fans_'.length);ok=CDFanExperienceV111V116[kind](S,p.key,save);if(ok)receipt('Supporters : '+({campaign:campaigns,community,service:services}[kind][p.key]?.label||p.key),before);}
   requireThat(ok,'Décision refusée : vérifie la phase, les fonds et les actions déjà engagées.');return {clubDecision:{command,cashChange:own(S).cash-before}};
  }
+ // Objectif de classement du président pour le club géré, à chaque saison, avec ou sans défi de départ : la phrase
+ // d'objectif du club (« Top 6 ») si elle en donne un, sinon le rang de son effectif dans son championnat (les mieux
+ // dotés visent un cran au-dessus, les autres le maintien : jamais au-delà de la dernière place sûre). Un jalon de
+ // classement déjà fixé (défi, manager) n'est pas remplacé. Échéance : fin de la saison régulière.
+ function presidentObjective(){
+  const s=typeof S==='undefined'?null:S;if(!s||typeof CDWorldCareer==='undefined'||!CDWorldCareer.active(s)||s.phase==='ended'||s.live)return false;
+  const lid=CDWorldCareer.leagueId(s),members=s.worldMode?.leagues?.[lid]?.members;if(!Array.isArray(members)||members.length<4||!members.includes(s.club))return false;
+  let b=s.nativeBoardCalendar;if(!b||b.season!==s.season)b=CDBoardCalendar.create('club-'+s.club,s.season);
+  if(b.objectives.some(o=>o.type==='rank')){s.nativeBoardCalendar=b;return false;}
+  const fin=CDWorldCareer.sizing(s).maxRound;if(!(fin>b.week))return false;
+  const n=members.length,safe={elite:12,accession:14,nationale:13}[lid]??n-2,force=cid=>{const r=(s.clubs[cid]?.players||[]).map(p=>p.rating).sort((x,y)=>y-x).slice(0,23);return r.length?r.reduce((x,y)=>x+y,0)/r.length:0;};
+  const order=members.slice().sort((x,y)=>force(y)-force(x)||x-y),rank=order.indexOf(s.club)+1,top=/Top (\d+)/.exec(String(s.clubs[s.club]?.goal||''));
+  const target=Math.max(1,Math.min(top?+top[1]:rank<=Math.ceil(n/3)?rank-1:rank,Math.min(safe,n-1)));
+  s.nativeBoardCalendar=CDBoardCalendar.objective(b,{id:'pres:'+s.season+':'+s.club+':rank',type:'rank',target,deadline:fin,weight:2});return true;
+ }
  let installed=false;
  function installHooks(){if(installed)return;installed=true;
   const previousMobility=managerMobilityOnSeasonStart;managerMobilityOnSeasonStart=function(){const fields=['v105to110','v111to116','nativeBoardCalendar'],oldClub=S?.club,office={};if(S)for(const key of fields)if(S[key]!==undefined)office[key]=copy(S[key]);const result=previousMobility.apply(this,arguments);if(S&&S.club!==oldClub){if(!S.nativeStrategyOffices)S.nativeStrategyOffices={version:1,clubs:{}};S.nativeStrategyOffices.clubs[oldClub]=office;const restored=S.nativeStrategyOffices.clubs[S.club]||{};for(const key of fields){delete S[key];if(restored[key]!==undefined)S[key]=copy(restored[key]);}if(S.v105to110)CDSportingDirectorV105V110.rotate(S);if(S.v111to116)CDFanExperienceV111V116.rotate(S,()=>true);if(S.nativeBoardCalendar&&S.nativeBoardCalendar.season!==S.season)S.nativeBoardCalendar=CDBoardCalendar.create('club-'+S.club,S.season);}return result;};
   const previousFinish=finishRound;finishRound=function(){const oldSeason=S?.season,oldWeek=S?week(S):null,result=previousFinish.apply(this,arguments);if(S&&S.season===oldSeason&&week(S)!==oldWeek&&S.nativeBoardCalendar){const r=CDBoardCalendar.review(S.nativeBoardCalendar,{week:week(S),metrics:metrics()});S.nativeBoardCalendar=r.state;S.nativeBoardCalendar.meetings=S.nativeBoardCalendar.meetings.slice(-40);S.nativeBoardCalendar.history=S.nativeBoardCalendar.history.slice(-40);}if(S?.phase==='ended'){if(S.v105to110&&!S.v105to110.history.some(h=>h.season===S.season))CDSportingDirectorV105V110.closeSeason(S,()=>true);if(S.v111to116&&!S.v111to116.history.some(h=>h.season===S.season))CDFanExperienceV111V116.closeSeason(S,()=>true);}return result;};
-  const previousAdvance=advanceSeason;advanceSeason=function(){const oldSeason=S?.season;if(S?.phase==='ended'&&!S.live&&S.nativeBoardCalendar&&!S.nativeBoardReports?.some(r=>r.season===S.season&&r.clubId===S.club))S.nativeBoardReports=[...(S.nativeBoardReports||[]),{season:S.season,clubId:S.club,objectives:copy(S.nativeBoardCalendar.objectives)}].slice(-15);const result=previousAdvance.apply(this,arguments);if(S&&S.season!==oldSeason){if(S.v105to110)CDSportingDirectorV105V110.rotate(S);if(S.v111to116)CDFanExperienceV111V116.rotate(S,()=>true);if(S.nativeBoardCalendar)S.nativeBoardCalendar=CDBoardCalendar.create('club-'+S.club,S.season);}return result;};
+  const previousAdvance=advanceSeason;advanceSeason=function(){const oldSeason=S?.season;if(S?.phase==='ended'&&!S.live&&S.nativeBoardCalendar&&!S.nativeBoardReports?.some(r=>r.season===S.season&&r.clubId===S.club))S.nativeBoardReports=[...(S.nativeBoardReports||[]),{season:S.season,clubId:S.club,objectives:copy(S.nativeBoardCalendar.objectives)}].slice(-15);const result=previousAdvance.apply(this,arguments);if(S&&S.season!==oldSeason){if(S.v105to110)CDSportingDirectorV105V110.rotate(S);if(S.v111to116)CDFanExperienceV111V116.rotate(S,()=>true);if(S.nativeBoardCalendar)S.nativeBoardCalendar=CDBoardCalendar.create('club-'+S.club,S.season);presidentObjective();}return result;};
  }
- return {project,validate,execute,installHooks};
+ return {project,validate,execute,installHooks,presidentObjective};
 }
 module.exports={files,commands,factory};
