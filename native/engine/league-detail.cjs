@@ -152,8 +152,10 @@ function factory(){
  // trop nettement (Premiership, Super Rugby, Japon : 0,13-0,16 contre 0,10 au complet) et le terrain y pesait 1,5 à 1,8 fois
  // trop (Japon D2 : +8 points à domicile contre +4,3). Championship : jamais mesuré de loin (club du banc de mesure),
  // réglé comme les championnats aussi ouverts ; coupes d'Europe non mesurées : écart et terrain inchangés. Autres : 1.
- const VOLUME=Object.freeze({elite:[1.09,.87,1,.63],accession:[1,.85,.8,.72],nationale:[.99,.9,.8,.56],prem:[1.53,.49,.68,.64],
-  champ:[1.45,.56,.68,.6],urc:[1.22,.55,.92,.75],srp:[1.57,.39,.62,.55],'jlo-d1':[1.5,.52,.68,.58],'jlo-d2':[1.38,.6,.66,.54],
+ // §14 quinquies (18/11) : poids de l'écart de l'URC ×0,84, Premiership et Championship ×0,86, Japon D1 ×0,90, Japon D2 ×0,91
+ // (rapport pente du score / bruit, rapide contre complet, encore 10 à 16 % trop fort après §14 quater).
+ const VOLUME=Object.freeze({elite:[1.09,.87,1,.63],accession:[1,.85,.8,.72],nationale:[.99,.9,.8,.56],prem:[1.53,.49,.58,.64],
+  champ:[1.45,.56,.58,.6],urc:[1.22,.55,.77,.75],srp:[1.57,.39,.62,.55],'jlo-d1':[1.5,.52,.61,.58],'jlo-d2':[1.38,.6,.6,.54],
   champions:[1.24,.67,1,1],challenge:[1.2,.69,1,1]});
  const volume=id=>VOLUME[id]||[1,1,1,1];
  function sideStats(tries,edge,competitionId){
