@@ -12,6 +12,7 @@
     ],
     "weights": {
       "tests/finitions-critiques.cjs": 300,
+      "tests/defis-depart.cjs": 25,
       "tests/feuille-espoirs.cjs": 458,
       "tests/ai-roster-cycle.cjs": 59,
       "tests/homme-du-match-postes.cjs": 120,
@@ -266,6 +267,7 @@
       "tests/godot-gabi-composition.cjs": 2,
       "tests/godot-gabi-bandeau.cjs": 75,
       "tests/godot-premiers-pas.cjs": 20,
+      "tests/godot-premiere-heure.cjs": 40,
       "tests/godot-match-animations.cjs": 2,
       "tests/godot-match-choregraphie.cjs": 19,
       "tests/godot-match-entracte-2d-capture.cjs": 2,
