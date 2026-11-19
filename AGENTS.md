@@ -34,6 +34,12 @@
   [gate officiel](docs/chat-release-gate.md) reste pour un lot sensible.
   Aucun push direct sur `main`, jamais de contournement d'un contrôle rouge ou
   d'une réservation non résolue. Si la CI est rouge, la PR attend : corriger.
+- **Mode rapide et batterie horaire** (décision de Léo, 19/11/2026,
+  [détail](docs/fusion-rapide.md)) : une PR prête ne passe que les suites courtes et
+  celles qu'elle modifie (~10 min) ; étiquette `batterie-complete` pour tout lancer.
+  La batterie complète tourne chaque heure sur `main` ; rouge après une relance :
+  « MAIN ROUGE » sur #591 et retour arrière automatique si une seule PR est en cause.
+  Main rouge : le corriger avant toute autre fusion.
 - Expliquer chaque phase en une phrase, rendre le résultat, le lien de PR et
   la prochaine étape. Messages courts.
 - **Réponses à Léo : courtes et côté jeu** (consigne permanente du 17/11/2026) :

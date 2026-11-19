@@ -1,0 +1,6895 @@
+{
+ "source": "Durées murales (wall_s CD_CPU_PROFILE, arrondies ; 0 sous 5 s ; null si non mesurée) des runs verts de tests.yml du 19/11/2026, base des poids js de ci/suite-weights.json",
+ "runs": [
+  44482621754,
+  44482687265,
+  44483532636,
+  44489043151,
+  44491077492,
+  44491123642,
+  44492225342,
+  44492491377
+ ],
+ "suites": {
+  "tests/a2r-president.cjs": [
+   null,
+   null,
+   26,
+   42,
+   26,
+   25,
+   26,
+   26
+  ],
+  "tests/academy-follow-up-career.cjs": [
+   null,
+   null,
+   66,
+   42,
+   41,
+   42,
+   42,
+   43
+  ],
+  "tests/academy-follow-up.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/academy-intake.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/academy-planning.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/agent-skills-kit.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ai-merit-promotions.cjs": [
+   null,
+   null,
+   18,
+   18,
+   18,
+   15,
+   22,
+   17
+  ],
+  "tests/ai-roster-cycle.cjs": [
+   null,
+   null,
+   60,
+   79,
+   83,
+   103,
+   103,
+   77
+  ],
+  "tests/ai-transfer-competition.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/aleas-favoris.cjs": [
+   null,
+   null,
+   46,
+   32,
+   27,
+   43,
+   24,
+   43
+  ],
+  "tests/animation-pipeline-runner.cjs": [
+   null,
+   null,
+   7,
+   0,
+   0,
+   0,
+   0,
+   5
+  ],
+  "tests/animation-pipeline.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/animation-replay.cjs": [
+   null,
+   null,
+   30,
+   31,
+   31,
+   27,
+   38,
+   30
+  ],
+  "tests/arbitre-veille.cjs": [
+   null,
+   null,
+   67,
+   104,
+   68,
+   66,
+   68,
+   70
+  ],
+  "tests/argent-proprietaire.cjs": [
+   null,
+   null,
+   41,
+   55,
+   58,
+   67,
+   64,
+   52
+  ],
+  "tests/art-direction-v4.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/art-direction-v41-insights.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/art-direction-v41.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/audit-atlas-photos.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/audit-identity-pack.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/auto-release.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/avance-jour-differe.cjs": [
+   null,
+   null,
+   102,
+   160,
+   108,
+   165,
+   158,
+   103
+  ],
+  "tests/avant-match-donnees.cjs": [
+   null,
+   null,
+   172,
+   133,
+   104,
+   181,
+   119,
+   189
+  ],
+  "tests/avis-staff-feuille.cjs": [
+   null,
+   null,
+   20,
+   26,
+   20,
+   33,
+   26,
+   21
+  ],
+  "tests/base-names-leak.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/base-names.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/blessures-types.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/board-identity-pack.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/board-planning.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/bonus-fin-de-match.cjs": [
+   null,
+   null,
+   167,
+   104,
+   96,
+   103,
+   103,
+   106
+  ],
+  "tests/brand-name.cjs": [
+   null,
+   null,
+   20,
+   13,
+   12,
+   13,
+   12,
+   13
+  ],
+  "tests/budget-leviers.cjs": [
+   null,
+   null,
+   25,
+   39,
+   26,
+   40,
+   39,
+   24
+  ],
+  "tests/budget-realiste-defaut.cjs": [
+   null,
+   null,
+   38,
+   39,
+   38,
+   36,
+   48,
+   38
+  ],
+  "tests/calendar-mail.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/calendar-planning.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/calendrier01.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/calendrier02.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/calendrier04.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/career-history.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/career-integration.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/career-resilience.cjs": [
+   null,
+   null,
+   8,
+   9,
+   8,
+   7,
+   11,
+   8
+  ],
+  "tests/career-variation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/cartons-realistes.cjs": [
+   null,
+   null,
+   65,
+   40,
+   40,
+   40,
+   41,
+   41
+  ],
+  "tests/champ-portable-save.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/champion-budget-regression.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/chat-diagnose.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/chat-release.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-development-snapshot.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-godot-runner.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-godot-sdk-registry.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-godot-sdk.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-history-metrics.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-long-career-balance.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-matchday-browser-selector.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-modes-monde.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-p90-stress-guard.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-quick-check.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-report.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-run-metrics.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-runs-watchdog.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-selection.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-shard-profiles.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-sharding.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-test-coverage.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ci-ui-browser-selector.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/club-ai.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/club-directions.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/club-ecran-monde.cjs": [
+   null,
+   null,
+   36,
+   48,
+   48,
+   57,
+   53,
+   47
+  ],
+  "tests/club-mail-enseignements.cjs": [
+   null,
+   null,
+   105,
+   81,
+   66,
+   98,
+   65,
+   102
+  ],
+  "tests/club-mail-jalons.cjs": [
+   null,
+   null,
+   18,
+   19,
+   21,
+   19,
+   24,
+   19
+  ],
+  "tests/club-mail-tour-lundi-plein.cjs": [
+   null,
+   null,
+   53,
+   86,
+   49,
+   53,
+   53,
+   52
+  ],
+  "tests/club-mail.cjs": [
+   null,
+   null,
+   140,
+   177,
+   141,
+   221,
+   177,
+   143
+  ],
+  "tests/club-palmares.cjs": [
+   null,
+   null,
+   24,
+   16,
+   13,
+   22,
+   13,
+   21
+  ],
+  "tests/club-preview.cjs": [
+   null,
+   null,
+   41,
+   41,
+   41,
+   38,
+   51,
+   41
+  ],
+  "tests/club-transfers.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/coach-market.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/coach-ordinateur.cjs": [
+   null,
+   null,
+   null,
+   null,
+   95,
+   null,
+   null,
+   null
+  ],
+  "tests/coherence-chiffres-monde.cjs": [
+   null,
+   null,
+   39,
+   65,
+   38,
+   66,
+   65,
+   39
+  ],
+  "tests/commotion-hia.cjs": [
+   null,
+   null,
+   197,
+   124,
+   127,
+   129,
+   147,
+   134
+  ],
+  "tests/competition-editor.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/consignes-individuelles.cjs": [
+   null,
+   null,
+   84,
+   62,
+   50,
+   83,
+   48,
+   84
+  ],
+  "tests/continuer-arrets-saison.cjs": [
+   null,
+   null,
+   85,
+   111,
+   114,
+   133,
+   138,
+   108
+  ],
+  "tests/continuer-evenement-monde.cjs": [
+   null,
+   null,
+   159,
+   155,
+   227,
+   144,
+   171,
+   126
+  ],
+  "tests/data06-lnrbirthyears-runtime.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/decision-studio-v42.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/deepen-analytics-real-ui.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/deepen-staff-employment.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/deepen-staff-transport-ui.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/deepen-staff-ui.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/deepen-youth-window.cjs": [
+   null,
+   null,
+   9,
+   14,
+   9,
+   9,
+   9,
+   9
+  ],
+  "tests/defis-depart.cjs": [
+   null,
+   null,
+   12,
+   19,
+   12,
+   12,
+   12,
+   12
+  ],
+  "tests/delegue-composition-staff.cjs": [
+   null,
+   null,
+   244,
+   386,
+   244,
+   234,
+   249,
+   248
+  ],
+  "tests/delivery-readiness.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/demarrage-rapide.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/derbys-monde.cjs": [
+   null,
+   null,
+   43,
+   56,
+   44,
+   76,
+   55,
+   44
+  ],
+  "tests/dev-conductor.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/development.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/discipline.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/doublons-liste-elite.cjs": [
+   null,
+   null,
+   38,
+   61,
+   35,
+   36,
+   36,
+   36
+  ],
+  "tests/economy-audit.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/economy.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/epcr-eligibility.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/epcr-preparation-worker.cjs": [
+   null,
+   null,
+   83,
+   108,
+   84,
+   130,
+   106,
+   84
+  ],
+  "tests/eqp-eligibilite.cjs": [
+   null,
+   null,
+   18,
+   22,
+   18,
+   28,
+   31,
+   22
+  ],
+  "tests/essais-realistes.cjs": [
+   null,
+   null,
+   87,
+   111,
+   91,
+   144,
+   101,
+   80
+  ],
+  "tests/facilities.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/fatigue-phases-arretees.cjs": [
+   null,
+   null,
+   97,
+   55,
+   56,
+   56,
+   51,
+   55
+  ],
+  "tests/feuille-espoirs.cjs": [
+   null,
+   null,
+   196,
+   301,
+   191,
+   190,
+   195,
+   193
+  ],
+  "tests/fiche-club-monde.cjs": [
+   null,
+   null,
+   75,
+   100,
+   85,
+   116,
+   100,
+   95
+  ],
+  "tests/fictional-league.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/fin-de-periode.cjs": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   39,
+   null
+  ],
+  "tests/finance-planning.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/finance-v2-playable.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/finitions-critiques.cjs": [
+   null,
+   null,
+   130,
+   170,
+   123,
+   201,
+   167,
+   132
+  ],
+  "tests/formation-budget.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/formation-fees.cjs": [
+   null,
+   null,
+   43,
+   26,
+   26,
+   27,
+   26,
+   27
+  ],
+  "tests/france-calendar-cadence.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/france-clubs.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/frein-enrichissement.cjs": [
+   null,
+   null,
+   24,
+   13,
+   14,
+   14,
+   14,
+   14
+  ],
+  "tests/frontrow.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/gabi-personnalite06.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/gabi-repliques.cjs": [
+   null,
+   null,
+   48,
+   34,
+   27,
+   45,
+   36,
+   47
+  ],
+  "tests/goalkicking.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-a2r-president.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-ambiance.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-analysis-club-graphics.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-argent-proprietaire.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-assets.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-atomic-file-reader.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-atomic-file.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-avis-staff.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-ballon-texture.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-banque-images.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-centre-720.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-championnats-suivis.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-coherence-chiffres.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-comparateur-joueurs.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-confrontations-directes.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-consignes-individuelles.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-continuer.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-courrier-club.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-default-display.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-delegue-composition.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-depth-player-label.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-derby-etiquette.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-dilemmes.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-disquette-sauvegarde.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-ecran-club.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-ecrans-chargement.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-ecrans-filmes.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-engine.cjs": [
+   null,
+   null,
+   406,
+   251,
+   253,
+   248,
+   263,
+   260
+  ],
+  "tests/godot-entity-projections.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-equipe-type.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-fenetre-equipe.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-feuille-espoir.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-fiche-club.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-finitions.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-forme-adverse.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-gabi-adjoint.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-gabi-bandeau.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-gabi-clic-menu.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-gabi-composition.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-gabi-mixamo.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-gabi-repli.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-guide-voice.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-immersion-copy.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-immersive08.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-international-availability.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-international-reception.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-intro.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-investissements-excedents.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-management-reading-links.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-manager-planning-flow.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-manager-planning.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-animations.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-apres-essai.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-bandeau-compact.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-cadrage-arret.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-camera-retouches.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-choregraphie-capture.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-choregraphie.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-complet-regression.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-contacts.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-cut.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-echantillon.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-entracte-2d-capture.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-essai.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-filme.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-formations.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-foule.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-framing.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-gestes-adaptes.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-gestes-scenes.cjs": [
+   null,
+   null,
+   16,
+   21,
+   16,
+   26,
+   20,
+   20
+  ],
+  "tests/godot-match-gestes.cjs": [
+   null,
+   null,
+   17,
+   19,
+   17,
+   27,
+   26,
+   16
+  ],
+  "tests/godot-match-grands-moments.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-liaison.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-maillot-peau.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-motion.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-pass.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-pourquoi.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-presentation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-ralenti-essai.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-rendu-capture.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-rendu.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-silhouettes.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-stadium-evening.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-stats-capture.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-tactique.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-temps-forts-capture.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-match-texte-image.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-meteo-vent.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-national-reading-links.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-notes-match.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-objectif-bureau.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-ouverture-ecrans.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-person-name.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-player-knowledge-text.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-portraits-prechauffage.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-portraits-progressifs.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-premiere-heure.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-premiers-pas.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-preparation-tabs.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-presse-promesses.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-presse-rapide.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-prolongations-staff-carriere.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-prolongations-staff.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-prospect-profile.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-quitter-pendant-match.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-raccourcis-clavier.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-reactivite-interface.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-reader-history.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-reception-medicale.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-reception-tout-lu.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-recruitment06.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-regen-bank-v2.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-regen-portraits.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-reglage-conferences.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-rendez-vous-arrivee.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-reprise.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-resolutions.cjs": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   0
+  ],
+  "tests/godot-retouches-coherence.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-salary-display.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-sante-financiere.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-season-label.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-soundscape06-assets.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-soundscape06.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-staff-fictional-labels.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-staff-mentoring.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-voice-assets.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/godot-world-entity-targets.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/governance-exclusive.test.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/hierarchie-penalites-monde.cjs": [
+   null,
+   null,
+   30,
+   40,
+   27,
+   55,
+   43,
+   32
+  ],
+  "tests/homme-du-match-postes.cjs": [
+   null,
+   null,
+   113,
+   70,
+   68,
+   69,
+   75,
+   72
+  ],
+  "tests/import-rapide.cjs": [
+   null,
+   null,
+   56,
+   73,
+   52,
+   94,
+   80,
+   51
+  ],
+  "tests/integration-cloud-complete.cjs": [
+   null,
+   null,
+   219,
+   187,
+   143,
+   214,
+   155,
+   219
+  ],
+  "tests/interclub-world-v124-v130.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/international-availability.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/international-callups.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/international-career.cjs": [
+   null,
+   null,
+   12,
+   17,
+   17,
+   20,
+   19,
+   13
+  ],
+  "tests/international-competitions.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/international-host-announcements.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/international-hosts.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/international-manager.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/international-recurring.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/international-tests.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/investissements-excedents.cjs": [
+   null,
+   null,
+   94,
+   150,
+   88,
+   86,
+   87,
+   149
+  ],
+  "tests/japan-category-evidence.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/japan-eligibility.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/japan-match.cjs": [
+   null,
+   null,
+   74,
+   92,
+   75,
+   117,
+   93,
+   74
+  ],
+  "tests/japan-quota-card-return.cjs": [
+   null,
+   null,
+   58,
+   71,
+   60,
+   92,
+   73,
+   58
+  ],
+  "tests/japan-quota-frontrow.cjs": [
+   null,
+   null,
+   57,
+   71,
+   60,
+   95,
+   72,
+   58
+  ],
+  "tests/japan-quota-runtime.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/japan-rules.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/japan-season.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/japan-youth-categories.cjs": [
+   null,
+   null,
+   21,
+   26,
+   20,
+   32,
+   26,
+   20
+  ],
+  "tests/jeunes-centre-niveau.cjs": [
+   null,
+   null,
+   22,
+   13,
+   13,
+   12,
+   13,
+   13
+  ],
+  "tests/jiff.cjs": [
+   null,
+   null,
+   268,
+   218,
+   151,
+   261,
+   175,
+   264
+  ],
+  "tests/jugement-staff-lot2.cjs": [
+   null,
+   null,
+   27,
+   44,
+   27,
+   25,
+   25,
+   46
+  ],
+  "tests/jugement-staff.cjs": [
+   null,
+   null,
+   74,
+   56,
+   42,
+   85,
+   57,
+   43
+  ],
+  "tests/league-detail.cjs": [
+   null,
+   null,
+   54,
+   86,
+   55,
+   54,
+   55,
+   56
+  ],
+  "tests/league-economy.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lifecycle-native.cjs": [
+   null,
+   null,
+   142,
+   181,
+   142,
+   225,
+   184,
+   144
+  ],
+  "tests/lineout-approach.cjs": [
+   null,
+   null,
+   10,
+   12,
+   10,
+   15,
+   11,
+   10
+  ],
+  "tests/lineout-geometry.cjs": [
+   null,
+   null,
+   18,
+   20,
+   18,
+   26,
+   21,
+   18
+  ],
+  "tests/lineout-side.cjs": [
+   null,
+   null,
+   25,
+   17,
+   15,
+   23,
+   14,
+   25
+  ],
+  "tests/living-locker-room-v117-v123.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr-career-long.cjs": [
+   null,
+   null,
+   23,
+   40,
+   23,
+   40,
+   38,
+   22
+  ],
+  "tests/lnr-career.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr-catalogue-ages.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr-cross-season-recovery.cjs": [
+   null,
+   null,
+   24,
+   13,
+   13,
+   13,
+   13,
+   13
+  ],
+  "tests/lnr-loaded-birthyears-career.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr-multiclub-continuity.cjs": [
+   null,
+   null,
+   46,
+   33,
+   27,
+   45,
+   25,
+   46
+  ],
+  "tests/lnr-player-facts.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr-save-import-rollback-stress.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr-save-integrity-guards.cjs": [
+   null,
+   null,
+   9,
+   15,
+   9,
+   9,
+   9,
+   9
+  ],
+  "tests/lnr-save-resume-continuation.cjs": [
+   null,
+   null,
+   23,
+   17,
+   14,
+   24,
+   14,
+   24
+  ],
+  "tests/lnr05-evidence-long.cjs": [
+   null,
+   null,
+   41,
+   24,
+   24,
+   24,
+   23,
+   24
+  ],
+  "tests/lnr05-evidence.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr05-fatigue-scenarios.cjs": [
+   null,
+   null,
+   24,
+   30,
+   24,
+   40,
+   30,
+   24
+  ],
+  "tests/lnr05-match-simulation-propagation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr05-matchday-advice.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr05-matchday-decision.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr05-multiseason-strategies.cjs": [
+   null,
+   null,
+   41,
+   31,
+   24,
+   40,
+   23,
+   41
+  ],
+  "tests/lnr05-physical-propagation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/lnr05-rest-policy-audit.cjs": [
+   null,
+   null,
+   7,
+   6,
+   6,
+   6,
+   8,
+   6
+  ],
+  "tests/lnr05-rotation-audit.cjs": [
+   null,
+   null,
+   41,
+   24,
+   23,
+   24,
+   22,
+   24
+  ],
+  "tests/main-menu-v2.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/main-menu-v3.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/main-menu.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/management-day-worker.cjs": [
+   null,
+   null,
+   243,
+   200,
+   155,
+   235,
+   160,
+   238
+  ],
+  "tests/management-france-day-worker.cjs": [
+   null,
+   null,
+   108,
+   90,
+   68,
+   105,
+   73,
+   105
+  ],
+  "tests/manager-mobility.cjs": [
+   null,
+   null,
+   19,
+   26,
+   27,
+   33,
+   34,
+   25
+  ],
+  "tests/manager-planning.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/manager-season-pilotage.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/manager.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match-actions.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match-choregraphe.cjs": [
+   null,
+   null,
+   518,
+   322,
+   314,
+   330,
+   329,
+   335
+  ],
+  "tests/match-commentary-filters.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match-courses.cjs": [
+   null,
+   null,
+   7,
+   10,
+   10,
+   12,
+   13,
+   9
+  ],
+  "tests/match-direct.cjs": [
+   null,
+   null,
+   424,
+   265,
+   261,
+   273,
+   278,
+   276
+  ],
+  "tests/match-essai-visible.cjs": [
+   null,
+   null,
+   374,
+   289,
+   226,
+   359,
+   234,
+   367
+  ],
+  "tests/match-highlights.cjs": [
+   null,
+   null,
+   12,
+   17,
+   12,
+   19,
+   17,
+   12
+  ],
+  "tests/match-importance.cjs": [
+   null,
+   null,
+   8,
+   11,
+   12,
+   12,
+   11,
+   10
+  ],
+  "tests/match-notes.cjs": [
+   null,
+   null,
+   240,
+   382,
+   253,
+   393,
+   380,
+   240
+  ],
+  "tests/match-pass-live.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match-penalite-main.cjs": [
+   null,
+   null,
+   186,
+   135,
+   104,
+   184,
+   104,
+   185
+  ],
+  "tests/match-pilotage.cjs": [
+   null,
+   null,
+   204,
+   330,
+   195,
+   196,
+   199,
+   201
+  ],
+  "tests/match-pourquoi.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match-rating-curve.cjs": [
+   null,
+   null,
+   278,
+   349,
+   372,
+   430,
+   430,
+   339
+  ],
+  "tests/match-regles.cjs": [
+   null,
+   null,
+   9,
+   11,
+   9,
+   14,
+   11,
+   9
+  ],
+  "tests/match-rules.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match-staff-roles.cjs": [
+   null,
+   null,
+   63,
+   64,
+   61,
+   60,
+   78,
+   62
+  ],
+  "tests/match-stats-realistes.cjs": [
+   null,
+   null,
+   10,
+   12,
+   10,
+   16,
+   13,
+   10
+  ],
+  "tests/match-structured-facts.cjs": [
+   null,
+   null,
+   6,
+   11,
+   7,
+   7,
+   7,
+   7
+  ],
+  "tests/match-tactical-visual.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match-zone22.cjs": [
+   null,
+   null,
+   150,
+   146,
+   199,
+   131,
+   217,
+   176
+  ],
+  "tests/match2d.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-adapter.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-articulated-athletes-v19.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-asset-player-v20.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-asset-player-v22.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-athlete-rig.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-broadcast-pitch.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-camera.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-contact-animation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-contact-recovery.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-crowd-animation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-crowd.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-immersive-camera.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-impact-effects.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-jersey-numbers.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-player-model.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-premium-athletes-v17.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-premium-v23.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-premium.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-quaternius-v22.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-rugby-ball-model.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/match3d-stadium.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/matchday-center.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/matchday-lineup.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/matchday-matchplan.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/matchflow.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/memo-projection-monde.cjs": [
+   null,
+   null,
+   55,
+   87,
+   57,
+   90,
+   86,
+   55
+  ],
+  "tests/mesure-chrono-arrets.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/mesure-vitesse-jeu.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/meteo-affichage-modele.cjs": [
+   null,
+   null,
+   25,
+   40,
+   25,
+   24,
+   24,
+   25
+  ],
+  "tests/meteo-match.cjs": [
+   null,
+   null,
+   92,
+   96,
+   130,
+   81,
+   158,
+   115
+  ],
+  "tests/meteo-veille.cjs": [
+   null,
+   null,
+   93,
+   76,
+   60,
+   90,
+   63,
+   93
+  ],
+  "tests/meteo-vent-periodes.cjs": [
+   null,
+   null,
+   36,
+   29,
+   19,
+   33,
+   22,
+   33
+  ],
+  "tests/mode-monde-unique.cjs": [
+   null,
+   null,
+   26,
+   41,
+   25,
+   25,
+   26,
+   26
+  ],
+  "tests/monde-harness.cjs": [
+   null,
+   null,
+   44,
+   71,
+   47,
+   75,
+   70,
+   44
+  ],
+  "tests/multiplex-direct.cjs": [
+   null,
+   null,
+   352,
+   455,
+   342,
+   543,
+   472,
+   356
+  ],
+  "tests/nationale-equilibre.cjs": [
+   null,
+   null,
+   13,
+   17,
+   13,
+   20,
+   22,
+   13
+  ],
+  "tests/native-academy-appearance-bank.cjs": [
+   null,
+   null,
+   116,
+   155,
+   162,
+   183,
+   182,
+   154
+  ],
+  "tests/native-academy-groups.cjs": [
+   null,
+   null,
+   36,
+   55,
+   38,
+   57,
+   55,
+   36
+  ],
+  "tests/native-academy-potential.cjs": [
+   null,
+   null,
+   54,
+   42,
+   34,
+   52,
+   33,
+   54
+  ],
+  "tests/native-atomic-replace.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-capacity.cjs": [
+   null,
+   null,
+   15,
+   10,
+   9,
+   10,
+   9,
+   10
+  ],
+  "tests/native-club-meetings-packs.cjs": [
+   null,
+   null,
+   38,
+   49,
+   52,
+   59,
+   59,
+   48
+  ],
+  "tests/native-club-meetings-refus.cjs": [
+   null,
+   null,
+   19,
+   11,
+   12,
+   12,
+   12,
+   12
+  ],
+  "tests/native-club-meetings.cjs": [
+   null,
+   null,
+   172,
+   169,
+   167,
+   162,
+   220,
+   165
+  ],
+  "tests/native-club-strategy.cjs": [
+   null,
+   null,
+   801,
+   1240,
+   827,
+   778,
+   831,
+   822
+  ],
+  "tests/native-club-support-effects.cjs": [
+   null,
+   null,
+   58,
+   46,
+   36,
+   60,
+   36,
+   61
+  ],
+  "tests/native-club-support-training-forecast.cjs": [
+   null,
+   null,
+   95,
+   149,
+   94,
+   92,
+   96,
+   95
+  ],
+  "tests/native-club-support-ui.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-club-support.cjs": [
+   null,
+   null,
+   77,
+   122,
+   74,
+   126,
+   121,
+   76
+  ],
+  "tests/native-club-world.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-coach-notes06-pack.cjs": [
+   null,
+   null,
+   20,
+   33,
+   20,
+   37,
+   35,
+   20
+  ],
+  "tests/native-coach-notes06-worker.cjs": [
+   null,
+   null,
+   119,
+   186,
+   116,
+   115,
+   118,
+   120
+  ],
+  "tests/native-coach-notes06.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-decisions.cjs": [
+   null,
+   null,
+   109,
+   169,
+   111,
+   176,
+   168,
+   111
+  ],
+  "tests/native-international-mail.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-manager-career-pack.cjs": [
+   null,
+   null,
+   15,
+   15,
+   15,
+   14,
+   19,
+   15
+  ],
+  "tests/native-manager-career-projection.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-manager-career-reverse-offre.cjs": [
+   null,
+   null,
+   49,
+   61,
+   48,
+   79,
+   62,
+   51
+  ],
+  "tests/native-manager-career-reverse-saison.cjs": [
+   null,
+   null,
+   94,
+   128,
+   118,
+   147,
+   139,
+   124
+  ],
+  "tests/native-manager-planning-world.cjs": [
+   null,
+   null,
+   15,
+   19,
+   15,
+   24,
+   20,
+   15
+  ],
+  "tests/native-manager-planning.cjs": [
+   null,
+   null,
+   51,
+   40,
+   32,
+   49,
+   31,
+   51
+  ],
+  "tests/native-match-talks.cjs": [
+   null,
+   null,
+   343,
+   217,
+   210,
+   216,
+   227,
+   223
+  ],
+  "tests/native-melee-touche-geometrie.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-nation-meetings.cjs": [
+   null,
+   null,
+   48,
+   74,
+   46,
+   46,
+   47,
+   48
+  ],
+  "tests/native-nationale-reduced-bench.cjs": [
+   null,
+   null,
+   150,
+   94,
+   92,
+   94,
+   97,
+   98
+  ],
+  "tests/native-playbook.cjs": [
+   null,
+   null,
+   62,
+   62,
+   62,
+   57,
+   79,
+   61
+  ],
+  "tests/native-player-attributes.cjs": [
+   null,
+   null,
+   64,
+   51,
+   41,
+   61,
+   40,
+   63
+  ],
+  "tests/native-player-knowledge-capacity.cjs": [
+   null,
+   null,
+   20,
+   25,
+   20,
+   33,
+   26,
+   21
+  ],
+  "tests/native-player-knowledge-worker.cjs": [
+   null,
+   null,
+   87,
+   137,
+   93,
+   143,
+   139,
+   87
+  ],
+  "tests/native-player-knowledge.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-position-aptitudes.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-position-benchmark.cjs": [
+   null,
+   null,
+   14,
+   18,
+   13,
+   25,
+   17,
+   14
+  ],
+  "tests/native-position-editions.cjs": [
+   null,
+   null,
+   32,
+   50,
+   33,
+   53,
+   50,
+   32
+  ],
+  "tests/native-position-integration.cjs": [
+   null,
+   null,
+   31,
+   47,
+   31,
+   48,
+   48,
+   30
+  ],
+  "tests/native-position-japan-registration.cjs": [
+   null,
+   null,
+   10,
+   14,
+   10,
+   9,
+   9,
+   8
+  ],
+  "tests/native-position-match.cjs": [
+   null,
+   null,
+   13,
+   14,
+   13,
+   12,
+   17,
+   13
+  ],
+  "tests/native-presentation-persistence.cjs": [
+   null,
+   null,
+   96,
+   96,
+   95,
+   92,
+   121,
+   95
+  ],
+  "tests/native-press-contextual.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-press-followups06-worker.cjs": [
+   null,
+   null,
+   145,
+   119,
+   93,
+   141,
+   93,
+   144
+  ],
+  "tests/native-press-followups06.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-press-personalities.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-press-review.cjs": [
+   null,
+   null,
+   73,
+   59,
+   46,
+   70,
+   45,
+   73
+  ],
+  "tests/native-press-worker.cjs": [
+   null,
+   null,
+   67,
+   67,
+   67,
+   63,
+   87,
+   66
+  ],
+  "tests/native-press.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-professional-depth.cjs": [
+   null,
+   null,
+   19,
+   30,
+   19,
+   19,
+   19,
+   19
+  ],
+  "tests/native-projection-cache.cjs": [
+   null,
+   null,
+   13,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "tests/native-recruitment06.cjs": [
+   null,
+   null,
+   17,
+   12,
+   10,
+   16,
+   10,
+   17
+  ],
+  "tests/native-relationships-effects.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-relationships.cjs": [
+   null,
+   null,
+   170,
+   104,
+   101,
+   106,
+   104,
+   106
+  ],
+  "tests/native-save-hotpaths06.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-save-numeric-predicates.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-scene-dialogues.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/native-stats-melees.cjs": [
+   null,
+   null,
+   27,
+   16,
+   16,
+   16,
+   16,
+   17
+  ],
+  "tests/native-systems.cjs": [
+   null,
+   null,
+   23,
+   28,
+   22,
+   38,
+   30,
+   22
+  ],
+  "tests/noms-base-pack-monde.cjs": [
+   null,
+   null,
+   37,
+   48,
+   51,
+   58,
+   58,
+   46
+  ],
+  "tests/office-alerts.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/office-career-press.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/office-youth-review-reminders.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/offline.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/opponent-defensive-scout.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/opponent-tactical-ai.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/opposition.cjs": [
+   null,
+   null,
+   32,
+   42,
+   44,
+   55,
+   56,
+   42
+  ],
+  "tests/parallel-six-integration.cjs": [
+   null,
+   null,
+   30,
+   40,
+   42,
+   48,
+   47,
+   38
+  ],
+  "tests/performance-analysis.cjs": [
+   null,
+   null,
+   90,
+   142,
+   83,
+   87,
+   89,
+   90
+  ],
+  "tests/plafond-clubs-ia.cjs": [
+   null,
+   null,
+   21,
+   12,
+   13,
+   13,
+   13,
+   13
+  ],
+  "tests/plan-adverse.cjs": [
+   null,
+   null,
+   67,
+   106,
+   67,
+   67,
+   68,
+   71
+  ],
+  "tests/playbook.cjs": [
+   null,
+   null,
+   0,
+   7,
+   0,
+   0,
+   0,
+   7
+  ],
+  "tests/player-facts-projection.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/player-population-capacity.cjs": [
+   null,
+   null,
+   165,
+   104,
+   104,
+   106,
+   107,
+   108
+  ],
+  "tests/player-population-seasons.cjs": [
+   null,
+   null,
+   66,
+   85,
+   65,
+   112,
+   84,
+   66
+  ],
+  "tests/player-population-worker.cjs": [
+   null,
+   null,
+   50,
+   64,
+   48,
+   78,
+   65,
+   50
+  ],
+  "tests/player-population.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/player-real-facts.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/portrait-adverse-projection.cjs": [
+   null,
+   null,
+   43,
+   58,
+   59,
+   69,
+   70,
+   55
+  ],
+  "tests/potential-evolution-worker.cjs": [
+   null,
+   null,
+   59,
+   94,
+   62,
+   97,
+   97,
+   60
+  ],
+  "tests/potential-evolution.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/pr-leadtime.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/pr-overlap-evidence.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/pr-preflight.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/premium-editorial-matchday.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/premium-editorial.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/premium-manager-office.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/premium-squad.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/preparation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/press-identity-pack.cjs": [
+   null,
+   null,
+   39,
+   50,
+   52,
+   59,
+   59,
+   48
+  ],
+  "tests/press-regional-world.cjs": [
+   null,
+   null,
+   76,
+   120,
+   79,
+   125,
+   121,
+   76
+  ],
+  "tests/presse-calendrier-fm.cjs": [
+   null,
+   null,
+   76,
+   102,
+   73,
+   115,
+   100,
+   76
+  ],
+  "tests/presse-derby-monde.cjs": [
+   null,
+   null,
+   63,
+   84,
+   61,
+   96,
+   84,
+   63
+  ],
+  "tests/presse-dilemmes-monde.cjs": [
+   null,
+   null,
+   109,
+   171,
+   151,
+   177,
+   168,
+   109
+  ],
+  "tests/presse-promesses-monde.cjs": [
+   null,
+   null,
+   91,
+   116,
+   93,
+   145,
+   117,
+   92
+  ],
+  "tests/presse-promesses-saison.cjs": [
+   null,
+   null,
+   150,
+   241,
+   153,
+   148,
+   151,
+   149
+  ],
+  "tests/presse-rapide-monde.cjs": [
+   null,
+   null,
+   178,
+   230,
+   178,
+   278,
+   261,
+   176
+  ],
+  "tests/presse-sans-gabarit.cjs": [
+   null,
+   null,
+   38,
+   59,
+   36,
+   62,
+   37,
+   36
+  ],
+  "tests/pro-d2-equilibre.cjs": [
+   null,
+   null,
+   19,
+   11,
+   12,
+   11,
+   12,
+   12
+  ],
+  "tests/profile-safety.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/progression-multiseed-audit.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/progression-summary.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/projection-hot-paths.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/prolongations-staff.cjs": [
+   null,
+   null,
+   33,
+   33,
+   34,
+   32,
+   43,
+   33
+  ],
+  "tests/quota-formation.cjs": [
+   null,
+   null,
+   64,
+   77,
+   59,
+   100,
+   88,
+   58
+  ],
+  "tests/rafraichissement-ecrans-table.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/reactivite-projection-decisions.cjs": [
+   null,
+   null,
+   90,
+   89,
+   90,
+   86,
+   115,
+   89
+  ],
+  "tests/reactivite-projection-rapide-direct.cjs": [
+   null,
+   null,
+   121,
+   75,
+   75,
+   77,
+   75,
+   78
+  ],
+  "tests/reactivite-projection-rapide-semaines.cjs": [
+   null,
+   null,
+   126,
+   78,
+   77,
+   78,
+   79,
+   81
+  ],
+  "tests/reactivite-projection-rapide.cjs": [
+   null,
+   null,
+   33,
+   33,
+   33,
+   31,
+   42,
+   33
+  ],
+  "tests/reactivite-projection-refus.cjs": [
+   null,
+   null,
+   13,
+   22,
+   14,
+   23,
+   22,
+   13
+  ],
+  "tests/reactivite-projection-verification-direct.cjs": [
+   null,
+   null,
+   84,
+   109,
+   116,
+   132,
+   133,
+   107
+  ],
+  "tests/reactivite-projection-verification-semaines.cjs": [
+   null,
+   null,
+   100,
+   100,
+   101,
+   95,
+   128,
+   98
+  ],
+  "tests/reactivite-projection-verification.cjs": [
+   null,
+   null,
+   46,
+   70,
+   45,
+   44,
+   45,
+   46
+  ],
+  "tests/regen-portrait-persistence.cjs": [
+   null,
+   null,
+   38,
+   38,
+   37,
+   34,
+   48,
+   37
+  ],
+  "tests/regen-portraits-bank-v2.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/regen-portraits.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/release-gate.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/reprise-avant-match.cjs": [
+   null,
+   null,
+   154,
+   153,
+   211,
+   134,
+   237,
+   191
+  ],
+  "tests/reputation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/restarts.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/retouches-coherence.cjs": [
+   null,
+   null,
+   140,
+   214,
+   121,
+   216,
+   142,
+   136
+  ],
+  "tests/roster-foundation-data.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/rotation-choices.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/rugby-world.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/rugby.cjs": [
+   null,
+   null,
+   40,
+   41,
+   41,
+   35,
+   50,
+   41
+  ],
+  "tests/salary-floor-resume.cjs": [
+   null,
+   null,
+   20,
+   13,
+   12,
+   13,
+   12,
+   13
+  ],
+  "tests/sale-negotiation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/sante-financiere.cjs": [
+   null,
+   null,
+   11,
+   14,
+   10,
+   23,
+   18,
+   13
+  ],
+  "tests/sauvegarde-idempotente-match.cjs": [
+   null,
+   null,
+   82,
+   65,
+   50,
+   80,
+   50,
+   82
+  ],
+  "tests/sauvegarde-idempotente-reduit.cjs": [
+   null,
+   null,
+   55,
+   71,
+   73,
+   86,
+   85,
+   70
+  ],
+  "tests/sauvegarde-idempotente.cjs": [
+   null,
+   null,
+   22,
+   22,
+   21,
+   20,
+   27,
+   21
+  ],
+  "tests/sauvegarde-journal-monde.cjs": [
+   null,
+   null,
+   56,
+   36,
+   36,
+   38,
+   36,
+   37
+  ],
+  "tests/sauvegarde-journal-plantage-monde.cjs": [
+   null,
+   null,
+   66,
+   84,
+   91,
+   103,
+   102,
+   82
+  ],
+  "tests/save-copy-fast-paths.cjs": [
+   null,
+   null,
+   64,
+   40,
+   39,
+   40,
+   40,
+   42
+  ],
+  "tests/save-sections-incremental.cjs": [
+   null,
+   null,
+   41,
+   41,
+   41,
+   39,
+   54,
+   41
+  ],
+  "tests/saves.cjs": [
+   null,
+   null,
+   8,
+   14,
+   8,
+   14,
+   14,
+   9
+  ],
+  "tests/schedule-alternance.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/season-label.cjs": [
+   null,
+   null,
+   9,
+   11,
+   9,
+   14,
+   11,
+   9
+  ],
+  "tests/small-window-contracts.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/squad-depth-rotation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/squad-health-center.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/srp-world-calendar.cjs": [
+   null,
+   null,
+   18,
+   13,
+   11,
+   18,
+   10,
+   19
+  ],
+  "tests/staff-career.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/staff-completion.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/staff-contract-quality-audit.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/staff-mentoring.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/staff-packs.cjs": [
+   null,
+   null,
+   37,
+   48,
+   50,
+   57,
+   57,
+   46
+  ],
+  "tests/staff-registry.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/staff-renouvellement.cjs": [
+   null,
+   null,
+   18,
+   22,
+   23,
+   27,
+   27,
+   22
+  ],
+  "tests/stats-fiche-joueur.cjs": [
+   null,
+   null,
+   256,
+   205,
+   163,
+   271,
+   166,
+   256
+  ],
+  "tests/steam-preparation.cjs": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   0,
+   null,
+   null
+  ],
+  "tests/tactical-plans.cjs": [
+   null,
+   null,
+   26,
+   54,
+   29,
+   51,
+   54,
+   27
+  ],
+  "tests/transfer-planning.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui-habillage-commun.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui-native-centers.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui01-integration.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui01-interface.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui02-live-integration.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui02-player-components.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui02-player-data.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui03-scout-components.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui03-scout-data.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui04-academy-components.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui04-academy-data.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/ui05-live-collective.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/univers01.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v101-v104-espoirs-coaching.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v101-v116-combined.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v105-v110-sporting-director.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v111-v116-fan-experience.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v17-unified-pc.test.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v19-advantage.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v20-numerical-ai.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v21-numerical-advice.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v22-tactical-comparison.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v23-local-zones.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v24-career-depth.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v24-career-invariants.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v24-four-zones.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v25-whatif.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v26-dual-whatif.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v27-physical-load.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v28-collective-preparation.cjs": [
+   null,
+   null,
+   0,
+   5,
+   0,
+   7,
+   5,
+   0
+  ],
+  "tests/v29-focused-development.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v30-recruitment-intelligence.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v31-finance-forecasts.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v32-succession-planning.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v33-contract-renewals.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v34-counteroffers.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v35-salary-demand.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v36-satisfaction.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v37-relations.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v38-individual-objectives.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v39-team-dynamics.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v40-match-cockpit.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v46-advanced.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v46-multiseason.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v46-v51-contracts.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v47-advanced.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v47-multiseason.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v48-advanced.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v48-multiseason.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v49-advanced.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v49-multiseason.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v50-advanced.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v50-multiseason.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v51-checkpoint.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v51-financial-recovery.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v51-financial-regressions.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v51-transactions.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v51-world-audit.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v51-world-finance.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v51-world-simulation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v56-integration-readiness.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v57-native-functional.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v58-1-coach-negotiations.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v58-2-contract-cycle.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v58-coach-career.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v58-final-integration-audit.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v58-native-coach-opportunities.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v58-native-dashboard.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v60-interactive-conference.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v60-media-evidence.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v60-media-native-adapter.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v60-media-world.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v60-press-persistent.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v60-press-relations.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v60-question-bank.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v60-rugby-broadcast.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v61-board-calendar.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v61-match-advisor.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v62-native-integration-gates.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v62-prematch-scout.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v63-1-long-career.cjs": [
+   null,
+   null,
+   66,
+   66,
+   66,
+   59,
+   86,
+   65
+  ],
+  "tests/v63-2-stress-native.cjs": [
+   null,
+   null,
+   91,
+   91,
+   91,
+   82,
+   117,
+   90
+  ],
+  "tests/v63-adaptive-defence.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v63-native-career-transactions.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v64-vestiaire.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v65-staff-meeting.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v66-staff-advisor.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v67-training-plans.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v68-medical-decisions.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v69-briefing-strategique.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v70-relations-duos.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v71-bureau-agents.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v72-youth-pathways.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v73-espoirs-league.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v74-espoirs-accession.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v75-espoirs-movement.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v76-espoirs-scouting.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v77-espoirs-pro.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v78-v81-espoirs-parcours.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v82-v100-integration.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v82-v85-espoirs-career.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v86-v89-espoirs-followup.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v90-v94-espoirs-dynamics.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/v95-v100-espoirs-strategy.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/vitesse-commandes-monde.cjs": [
+   null,
+   null,
+   131,
+   166,
+   133,
+   176,
+   130,
+   168
+  ],
+  "tests/windows-package.cjs": [
+   null,
+   null,
+   5,
+   9,
+   5,
+   8,
+   8,
+   5
+  ],
+  "tests/windows-publication.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/windows-toolchain.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-career.cjs": [
+   null,
+   null,
+   56,
+   95,
+   56,
+   96,
+   95,
+   55
+  ],
+  "tests/world-catalog-r1.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-catalogue-dedup.cjs": [
+   null,
+   null,
+   66,
+   103,
+   65,
+   64,
+   65,
+   69
+  ],
+  "tests/world-challenge-future-pools.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-champ-match.cjs": [
+   null,
+   null,
+   37,
+   28,
+   23,
+   35,
+   22,
+   36
+  ],
+  "tests/world-champ-pack.cjs": [
+   null,
+   null,
+   36,
+   48,
+   51,
+   57,
+   56,
+   47
+  ],
+  "tests/world-champ-registry.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-champ-rules.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-champ-worker.cjs": [
+   null,
+   null,
+   77,
+   60,
+   54,
+   75,
+   48,
+   76
+  ],
+  "tests/world-championnats-suivis.cjs": [
+   null,
+   null,
+   62,
+   98,
+   63,
+   93,
+   56,
+   96
+  ],
+  "tests/world-competitions.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-composition-staff.cjs": [
+   null,
+   null,
+   54,
+   87,
+   55,
+   90,
+   86,
+   54
+  ],
+  "tests/world-debut-13-juillet-sequences.cjs": [
+   null,
+   null,
+   34,
+   55,
+   36,
+   57,
+   54,
+   34
+  ],
+  "tests/world-debut-13-juillet.cjs": [
+   null,
+   null,
+   36,
+   47,
+   37,
+   57,
+   48,
+   37
+  ],
+  "tests/world-domestic-venues.cjs": [
+   null,
+   null,
+   15,
+   20,
+   20,
+   23,
+   23,
+   19
+  ],
+  "tests/world-edition-dispatch.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-epcr-draw-budget.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-epcr-published-2026-27.cjs": [
+   null,
+   null,
+   9,
+   9,
+   9,
+   8,
+   10,
+   9
+  ],
+  "tests/world-finance-ko.cjs": [
+   null,
+   null,
+   20,
+   31,
+   19,
+   34,
+   32,
+   19
+  ],
+  "tests/world-identity-build.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-international-duty.cjs": [
+   null,
+   null,
+   36,
+   22,
+   22,
+   22,
+   22,
+   22
+  ],
+  "tests/world-japan-registry.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-nationale-match.cjs": [
+   null,
+   null,
+   11,
+   17,
+   10,
+   10,
+   10,
+   11
+  ],
+  "tests/world-nationale-qualification.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-nationale-registry.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-nationale-rules.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-nationale-squad.cjs": [
+   null,
+   null,
+   12,
+   18,
+   11,
+   11,
+   11,
+   12
+  ],
+  "tests/world-native-domains.cjs": [
+   null,
+   null,
+   25,
+   15,
+   14,
+   14,
+   15,
+   14
+  ],
+  "tests/world-nouvelle-saison-rapide.cjs": [
+   null,
+   null,
+   145,
+   143,
+   150,
+   124,
+   176,
+   139
+  ],
+  "tests/world-objectif-president.cjs": [
+   null,
+   null,
+   65,
+   63,
+   91,
+   98,
+   121,
+   98
+  ],
+  "tests/world-pacific-registry.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-rating-scale.cjs": [
+   null,
+   null,
+   19,
+   25,
+   26,
+   29,
+   29,
+   24
+  ],
+  "tests/world-registry.cjs": [
+   null,
+   null,
+   5,
+   0,
+   0,
+   5,
+   0,
+   5
+  ],
+  "tests/world-reprise-a-noter.cjs": [
+   null,
+   null,
+   44,
+   45,
+   44,
+   43,
+   57,
+   43
+  ],
+  "tests/world-reprise-decisions.cjs": [
+   null,
+   null,
+   77,
+   78,
+   78,
+   75,
+   102,
+   75
+  ],
+  "tests/world-reprise-preparation.cjs": [
+   null,
+   null,
+   63,
+   101,
+   63,
+   62,
+   63,
+   64
+  ],
+  "tests/world-reprise.cjs": [
+   null,
+   null,
+   27,
+   22,
+   16,
+   26,
+   17,
+   27
+  ],
+  "tests/world-save-references.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/world-save.cjs": [
+   null,
+   null,
+   22,
+   35,
+   21,
+   37,
+   34,
+   20
+  ],
+  "tests/world-semaine-quotidienne.cjs": [
+   null,
+   null,
+   65,
+   99,
+   63,
+   65,
+   68,
+   64
+  ],
+  "tests/world-stades-retours.cjs": [
+   null,
+   null,
+   37,
+   58,
+   37,
+   36,
+   37,
+   37
+  ],
+  "tests/world-urc-shootout-v5.cjs": [
+   null,
+   null,
+   28,
+   47,
+   29,
+   44,
+   41,
+   27
+  ],
+  "tests/world-venue-media.cjs": [
+   null,
+   null,
+   77,
+   48,
+   47,
+   49,
+   48,
+   49
+  ],
+  "tests/world-wage-forecast.cjs": [
+   null,
+   null,
+   16,
+   23,
+   16,
+   24,
+   20,
+   18
+  ],
+  "tests/world-worker-atomic.cjs": [
+   null,
+   null,
+   68,
+   42,
+   41,
+   42,
+   42,
+   42
+  ],
+  "tests/world-youth-history-promotion.cjs": [
+   null,
+   null,
+   41,
+   30,
+   23,
+   37,
+   23,
+   37
+  ],
+  "tests/youth-development-observation.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/youth-development-plan.cjs": [
+   null,
+   null,
+   13,
+   17,
+   18,
+   20,
+   20,
+   15
+  ],
+  "tests/youth-development-review.cjs": [
+   null,
+   null,
+   10,
+   15,
+   9,
+   9,
+   9,
+   9
+  ],
+  "tests/youth-identity.cjs": [
+   null,
+   null,
+   11,
+   15,
+   15,
+   18,
+   18,
+   13
+  ],
+  "tests/youth-matches-worker.cjs": [
+   null,
+   null,
+   109,
+   109,
+   105,
+   105,
+   143,
+   107
+  ],
+  "tests/youth-matches.cjs": [
+   null,
+   null,
+   42,
+   53,
+   41,
+   66,
+   52,
+   42
+  ],
+  "tests/youth-national.cjs": [
+   null,
+   null,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "tests/youth-portraits-origin.cjs": [
+   null,
+   null,
+   19,
+   12,
+   12,
+   12,
+   13,
+   12
+  ]
+ }
+}

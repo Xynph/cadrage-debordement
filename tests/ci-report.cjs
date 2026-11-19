@@ -14,8 +14,13 @@ assert.match(yaml,/EVENT_NAME: \$\{\{ github\.event_name \}\}/);
 assert.match(yaml,/CLASSIFICATION: \$\{\{ needs\.classification\.result \}\}/);
 assert.match(yaml,/SHARDS: \$\{\{ needs\.shards\.result \}\}/);
 assert.match(yaml,/COVERAGE: \$\{\{ needs\.classification\.outputs\.coverage \}\}/);
-// Verdict toujours publié, sauf sur créneau régulier (Godot seul, ignoré par les gates).
-assert.match(yaml,/if: \$\{\{ always\(\) && github\.event_name != 'schedule' \}\}/);
+// Verdict toujours publié, sauf créneau horaire déjà vert sur ce commit (19/11/2026 : batterie complète horaire).
+assert.match(yaml,/if: \$\{\{ always\(\) && needs\.classification\.outputs\.deja_vert != 'true' \}\}/);
+assert.match(yaml,/schedule:full:success/);
+// Mode rapide des PR prêtes (suites courtes et modifiées), forcé en batterie complète par l'étiquette ou une PR du train.
+assert.match(yaml,/rapide: \$\{\{ steps\.draft\.outputs\.rapide == 'true' \}\}/);
+assert.match(yaml,/grep -qx 'batterie-complete'/);
+assert.match(yaml,/"\$HEAD_REF" == train\/\*/);
 // Débit : brouillons en CI légère, batterie complète au passage en prête, annulation sur main.
 assert.match(yaml,/types: \[opened, synchronize, reopened, ready_for_review\]/);
 // État brouillon lu en direct (course push + passage en prête, #590).
@@ -29,7 +34,7 @@ assert.match(shardJob,/needs\.classification\.outputs\.draft != 'true'/);
 // Nombre de shards : une seule source (ci/ci-jobs.cjs) que la matrice doit refléter.
 const {SHARD_COUNT,SHARD_PARALLEL,GODOT_SHARD_COUNT,OFFICIAL_JOBS}=require('../ci/ci-jobs.cjs');
 const range=n=>Array.from({length:n},(_,i)=>i+1).join(', ');
-assert.equal(SHARD_COUNT,7);
+assert.equal(SHARD_COUNT,10);
 assert.equal(SHARD_PARALLEL,3);
 assert.equal(OFFICIAL_JOBS.length,SHARD_COUNT+2);
 assert.ok(yaml.includes('    name: Suites ${{ matrix.shard }}/'+SHARD_COUNT+'\n'));
@@ -42,13 +47,14 @@ const godot=yaml.split('\n  godot:\n')[1].split('\n  validation:\n')[0];
 assert.ok(godot.includes('    name: Godot ${{ matrix.shard }}/'+GODOT_SHARD_COUNT+'\n'));
 assert.ok(godot.includes('        shard: ['+range(GODOT_SHARD_COUNT)+']\n'));
 assert.ok(godot.includes('node ci/shard-tests.cjs "$SHARD" godot '+GODOT_SHARD_COUNT+' '));
-// Informatifs seulement sur le créneau régulier ; bloquants sur PR et workflow_dispatch.
-assert.match(godot,/continue-on-error: \$\{\{ github\.event_name == 'schedule' \}\}/);
-assert.doesNotMatch(godot,/continue-on-error: true/);
+// Bloquants partout (créneau horaire compris depuis le 19/11/2026).
+assert.doesNotMatch(godot,/continue-on-error/);
+assert.match(godot,/CD_RAPIDE: /);
 // PR prête dont le diff touche des fichiers Godot, workflow_dispatch et créneau régulier ; jamais à chaque fusion.
 assert.match(godot,/github\.event_name == 'workflow_dispatch' \|\| github\.event_name == 'schedule' \|\| \(github\.event_name == 'pull_request' && needs\.classification\.outputs\.draft != 'true' && needs\.classification\.outputs\.godot == 'true'\)/);
 assert.match(yaml,/godot: \$\{\{ steps\.diff\.outputs\.godot \}\}/);
-assert.match(shardJob,/github\.event_name != 'schedule'/);
+assert.match(shardJob,/needs\.classification\.outputs\.deja_vert != 'true'/);
+assert.match(shardJob,/CD_RAPIDE_TESTS: \$\{\{ needs\.classification\.outputs\.tests_modifies \}\}/);
 assert.match(godot,/GODOT_VERSION: 4\.7\.2-stable\n/);
 assert.match(godot,/GODOT_SHA256: [0-9a-f]{64}\n/);
 assert.match(godot,/sha256sum -c -/);
