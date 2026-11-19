@@ -51,6 +51,7 @@ var _message := ""
 var _message_teinte := C.MUTED
 var _conseil_ecarte := ""
 var _page: Control
+var _pied_ligne2: HBoxContainer  ## Seconde ligne du pied (arbitre) ; vide sur l'onglet Consignes.
 var _gras: FontVariation
 
 func _ready() -> void:
@@ -275,6 +276,14 @@ func _coupe(etiquette: Label) -> Label:
 	etiquette.clip_text = true
 	etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	etiquette.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return etiquette
+
+## Texte qui passe à la ligne (au plus `lignes`) plutôt que d'être coupé ; le contrôle vérifie « non tronqué ».
+func _sur_deux_lignes(etiquette: Label, lignes: int) -> Label:
+	etiquette.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	etiquette.max_lines_visible = lignes
+	etiquette.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	etiquette.custom_minimum_size.x = 1.0
 	return etiquette
 
 func _h(ecart: float) -> HBoxContainer:
@@ -506,10 +515,18 @@ func _pied(gauche: Callable, secondaire: Array) -> void:
 	hote.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hote.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rangee.add_child(hote)
+	var lignes := _v(0)
+	lignes.alignment = BoxContainer.ALIGNMENT_CENTER
+	S.full(lignes)
+	hote.add_child(lignes)
 	var infos := _h(10)
-	S.full(infos)
-	hote.add_child(infos)
+	infos.name = "TeamFooterLine1"
+	lignes.add_child(infos)
+	_pied_ligne2 = _h(10)
+	_pied_ligne2.name = "TeamFooterLine2"
+	lignes.add_child(_pied_ligne2)
 	gauche.call(infos)
+	if _pied_ligne2.get_child_count() == 0: _pied_ligne2.hide()
 	var bouton_secondaire := _bouton(str(secondaire[0]), secondaire[1], "or_cadre" if onglet == "composition" else "cadre", 18, str(secondaire[2]))
 	bouton_secondaire.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rangee.add_child(bouton_secondaire)
@@ -543,6 +560,15 @@ func _consignes_actives(p: Dictionary) -> Array[String]:
 		for option: Variant in options:
 			if option is Dictionary and str(option.get("id", "")) == cran: resultat.append("%s · %s" % [str(axe.get("label", "")), str(option.get("label", ""))])
 	return resultat
+
+const CRAN_TAILLE := 14.0
+const LIBELLES_COURTS := {"Chercher les points": "Points", "Chercher la pénaltouche": "Pénaltouche", "Jouer vite à la main": "Jeu rapide", "Selon le contexte": "Auto",
+	"Montée agressive": "Montée", "Glissée prudente": "Glissée", "Jeu au large": "Large", "Jeu au près": "Près", "Jouer la montre": "La montre",
+	"Presser l’ouvreur": "Ouvreur", "Leur aile faible": "Aile faible", "Sortir vite": "Vite"}
+
+## Libellé d'un cran sur une seule ligne (« Pénaltouche ») ; le texte complet reste en infobulle.
+static func libelle_court(texte: String) -> String:
+	return str(LIBELLES_COURTS.get(texte, texte))
 
 ## Bilan court d'un axe : ce qui suit « : » dans le bilan du moteur (« 3 pénalités, 2 ballons arrachés »).
 static func bilan_court(p: Dictionary, axe: String) -> String:
@@ -586,7 +612,7 @@ func _pied_composition(infos: HBoxContainer) -> void:
 		ligne.name = "TeamFooterReferee"
 		ligne.tooltip_text = arbitre
 		ligne.mouse_filter = Control.MOUSE_FILTER_PASS
-		infos.add_child(ligne)
+		_pied_ligne2.add_child(ligne)
 
 func _cris(cris: Dictionary) -> void:
 	var colonne := _v(8)
@@ -616,7 +642,7 @@ func _cris(cris: Dictionary) -> void:
 		bouton.focus_mode = Control.FOCUS_ALL
 		bouton.disabled = not disponible or est_actif
 		bouton.tooltip_text = str(option.get("note", ""))
-		bouton.custom_minimum_size.y = px(54)
+		bouton.custom_minimum_size.y = px(88)
 		var normal := _boite(C.PANEL, C.GOLD if est_actif else C.LINE, 10, 2 if est_actif else 1, 0)
 		normal.content_margin_left = px(12)
 		var survol := normal.duplicate() as StyleBoxFlat
@@ -629,7 +655,7 @@ func _cris(cris: Dictionary) -> void:
 		bouton.pressed.connect(func(): crier(id))
 		var rangee := _h(10)
 		rangee.position = Vector2(px(12), 0)
-		rangee.size = Vector2(px(200 - 24), px(54))
+		rangee.size = Vector2(px(200 - 24), px(88))
 		rangee.alignment = BoxContainer.ALIGNMENT_CENTER
 		bouton.add_child(rangee)
 		bouton.resized.connect(func(): rangee.size = Vector2(bouton.size.x - px(24), bouton.size.y))
@@ -647,10 +673,19 @@ func _cris(cris: Dictionary) -> void:
 		var mots := _v(1)
 		mots.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mots.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		mots.add_child(_coupe(_titre(libelle, 18, C.IVORY if disponible or est_actif else C.MUTED, 700)))
+		var etiquette := _titre(libelle, 17, C.IVORY if disponible or est_actif else C.MUTED, 700)
+		etiquette.name = "TeamShoutLabel"
+		_sur_deux_lignes(etiquette, 2)
+		mots.add_child(etiquette)
 		var note := str(option.get("note", ""))
+		var note_complete := note
 		if est_actif and actif.get("jusqua") != null: note = "Actif jusqu'à la %de" % int(actif.jusqua)
-		if not note.is_empty(): mots.add_child(_coupe(_texte(note, 11, C.GOLD if est_actif or (usure > 0.0 and usure < 1.0) else (C.ALERT if usure >= 1.0 else C.MUTED))))
+		if not note.is_empty():
+			var texte_note := _texte(note, 11, C.GOLD if est_actif or (usure > 0.0 and usure < 1.0) else (C.ALERT if usure >= 1.0 else C.MUTED))
+			texte_note.name = "TeamShoutNote"
+			_sur_deux_lignes(texte_note, 3)
+			mots.add_child(texte_note)
+		bouton.tooltip_text = libelle + ("\n" + note_complete if not note_complete.is_empty() else "") + ("\n" + note if note != note_complete else "")
 		rangee.add_child(mots)
 		bouton.modulate.a = 1.0 if disponible or est_actif else 0.6
 		colonne.add_child(bouton)
@@ -1252,6 +1287,7 @@ func _consignes() -> void:
 	_poser(aside, 1150, 96, 426, 708)
 	_carte_arbitre(aside, p)
 	_carte_adversaire(aside, p, vue)
+	_carte_match(aside, p)
 	var vide := Control.new()
 	vide.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1280,6 +1316,37 @@ func _entete_groupe(texte: String, sous: String) -> Control:
 	filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	colonne.add_child(filet)
 	return colonne
+
+## Point sur le match sous l'adversaire : score et temps, fatigue moyenne du XV, consignes en place.
+func _carte_match(parent: Control, p: Dictionary) -> void:
+	var cadre := _panneau(_boite(C.PANEL, C.LINE, 14, 1, 14))
+	cadre.name = "TeamMatchSummary"
+	parent.add_child(cadre)
+	var colonne := _v(8)
+	cadre.add_child(colonne)
+	colonne.add_child(_texte("OÙ EN EST LE MATCH", 11, C.GOLD, _gras))
+	var total := 0.0
+	var nombre := 0
+	for joueur: Variant in _lineup():
+		if joueur is Dictionary and joueur.get("condition") != null:
+			total += float(joueur.condition)
+			nombre += 1
+	var rangee := _h(10)
+	colonne.add_child(rangee)
+	var score := _titre("%s · %s" % [_score(), _horloge()], 22, C.IVORY, 800)
+	score.name = "TeamMatchScore"
+	rangee.add_child(_coupe(score))
+	if nombre > 0:
+		var moyenne := roundi(total / nombre)
+		var fatigue := _texte("Fatigue moyenne du XV : %d %%" % moyenne, 14, teinte_energie(float(moyenne)))
+		fatigue.name = "TeamMatchFatigue"
+		colonne.add_child(_coupe(fatigue))
+	var actives := _consignes_actives(p)
+	var consignes := _texte("Consignes : " + (", ".join(PackedStringArray(actives)) if not actives.is_empty() else "toutes au cran normal"), 12, C.MUTED)
+	consignes.name = "TeamMatchConsignes"
+	consignes.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	consignes.max_lines_visible = 4
+	colonne.add_child(consignes)
 
 ## Conseil du staff (dernière entrée du staff dans le journal du pilotage), en bas de la colonne.
 func _carte_staff(parent: Control, p: Dictionary) -> void:
@@ -1350,17 +1417,14 @@ func _axe(p: Dictionary, axe: Dictionary) -> Control:
 		var valeur := str(option_v.get("id", ""))
 		var choisi := valeur == actuel
 		var texte := str(option_v.get("label", valeur))
-		var long := options.size() > 3
-		var bouton := _bouton(texte, _choisir_cran.bind(crans, id, valeur), "or" if choisi else "cadre", 13 if long else 15, "Consigne_%s_%s" % [id, valeur])
+		# Même taille et une seule ligne pour tous les crans : libellé court, le complet en infobulle.
+		var bouton := _bouton(libelle_court(texte), _choisir_cran.bind(crans, id, valeur), "or" if choisi else "cadre", CRAN_TAILLE, "Consigne_%s_%s" % [id, valeur])
 		bouton.set_meta("axe", id)
 		bouton.set_meta("valeur", valeur)
 		bouton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bouton.custom_minimum_size = Vector2(0, px(32))
-		# Quatre crans aux libellés longs (pénalités, plan de jeu) : sur deux lignes plutôt que tronqués.
-		if long: bouton.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		else:
-			bouton.clip_text = true
-			bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		bouton.clip_text = true
+		bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		bouton.tooltip_text = texte + ("\n" + aide if not aide.is_empty() else "")
 		for etat: String in ["normal", "hover", "pressed", "disabled"]:
 			var boite := bouton.get_theme_stylebox(etat) as StyleBoxFlat
