@@ -299,6 +299,7 @@
       "tests/godot-gabi-mixamo.cjs": 2,
       "tests/godot-immersion-copy.cjs": 3,
       "tests/godot-match-cadrage-arret.cjs": 2,
+      "tests/godot-incident-arret.cjs": 3,
       "tests/godot-match-contacts.cjs": 2,
       "tests/godot-match-essai.cjs": 3,
       "tests/godot-match-grands-moments.cjs": 900,

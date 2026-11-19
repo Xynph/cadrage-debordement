@@ -76,6 +76,10 @@ var domination: Domination
 var arret: PanelContainer
 var arret_titre: Label
 var arret_texte: Label
+var arret_options: VBoxContainer
+var arret_reprendre: Button
+## Choix du manager déjà envoyé pour l'arrêt montré : {cle, id, nom} (vide sinon).
+var _choix_fait: Dictionary = {}
 var _niveaux: Array = []
 var _cle := ""
 var _densite := 0.5
@@ -1177,13 +1181,21 @@ func _arret_decision() -> void:
 	arret_texte = _texte("", 30, IVOIRE, true)
 	arret_texte.custom_minimum_size.x = px(840)
 	colonne.add_child(arret_texte)
+	# Remplacement forcé : une ligne par joueur possible (cinq au plus en pratique), en colonne
+	# pour tenir dans la largeur du panneau dès 1280×720.
+	arret_options = S.G.v(px(10))
+	arret_options.name = "MatchBetweenStopOptions"
+	arret_options.hide()
+	colonne.add_child(arret_options)
 	var choix := S.G.h(px(16))
 	colonne.add_child(choix)
 	var vers_equipe := _bouton("ÉQUIPE", func(): tiroir_demande.emit("Équipe"))
 	vers_equipe.name = "MatchBetweenStopTeam"
 	choix.add_child(vers_equipe)
 	choix.add_child(S.G.spacer())
-	choix.add_child(_bouton("REPRENDRE LE MATCH", func(): reprise_demandee.emit(), true, true))
+	arret_reprendre = _bouton("REPRENDRE LE MATCH", func(): reprise_demandee.emit(), true, true)
+	arret_reprendre.name = "MatchBetweenStopResume"
+	choix.add_child(arret_reprendre)
 	arret.hide()
 
 static func _zone(x: float, possession: int) -> String:
@@ -1257,6 +1269,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	var conseil: Variant = passe.conseil
 	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []), direct.get("feuille", {}).get("joueurs", {}) if direct.get("feuille") is Dictionary else {},
 		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs, direct.get("pourquoi"), direct.get("hommeDuMatch"), direct.get("zone22"), direct.get("echantillon"), _pilotage.get("joueurs")])
+	_suivre_choix(live)
 	if cle == _cle: return
 	_cle = cle
 	_lignes = direct.get("fil", [])
@@ -2610,7 +2623,115 @@ func montrer_arret(valeur: Dictionary) -> void:
 	if valeur.is_empty():
 		arret.hide()
 		return
-	var titre := "CARTON ROUGE" if valeur.get("rouge", false) else "CARTON JAUNE"
-	arret_titre.text = "%s · %s" % [titre, str(valeur.get("horloge", ""))]
-	arret_texte.text = str(valeur.get("texte", "")) + "\nLe match est en pause : réorganise ton équipe si besoin, puis reprends."
+	var cle := str(valeur.get("cle", ""))
+	if str(_choix_fait.get("cle", "")) != cle: _choix_fait = {}
+	arret_titre.text = "%s · %s" % [titre_arret(valeur), str(valeur.get("horloge", ""))]
+	var choix: Variant = valeur.get("choix")
+	var options: Array = choix.get("options", []) if choix is Dictionary and choix.get("options") is Array else []
+	for enfant in arret_options.get_children():
+		arret_options.remove_child(enfant)
+		enfant.queue_free()
+	arret_options.visible = options.size() > 1
+	if options.size() <= 1:
+		arret_texte.text = str(valeur.get("texte", "")) + "\nLe match est en pause : réorganise ton équipe si besoin, puis reprends."
+		arret.show()
+		return
+	var entrant := str(choix.get("type", "entrant")) != "sortant"
+	var staff: Dictionary = options[0]
+	for option: Variant in options:
+		if option is Dictionary and option.get("actuel", false): staff = option
+	var retenu: Variant = _choix_fait.get("id") if not _choix_fait.is_empty() else null
+	var focus: Button = null
+	for option: Variant in options:
+		if not option is Dictionary: continue
+		var id: Variant = option.get("id")
+		var bouton := _bouton(libelle_option(option), _choisir_option.bind(cle, id, str(option.get("nom", "")), entrant), retenu == null)
+		bouton.name = "MatchBetweenStopOption%d" % arret_options.get_child_count()
+		bouton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		bouton.custom_minimum_size.y = px(56)
+		bouton.set_meta("option_id", id)
+		var marque := (str(id) == str(retenu)) if retenu != null else bool(option.get("actuel", false))
+		if marque: _marquer_option(bouton)
+		if option == staff: focus = bouton
+		arret_options.add_child(bouton)
+	if retenu != null:
+		arret_texte.text = str(valeur.get("texte", "")) + "\n" + _phrase_choix(str(_choix_fait.get("nom", "")), entrant)
+		focus = arret_reprendre
+	else:
+		arret_texte.text = str(valeur.get("texte", "")) + "\nLe staff propose %s. Choisis qui %s :" % [_nom_initiale(str(staff.get("nom", ""))), "entre" if entrant else "sort"]
 	arret.show()
+	# Clavier et manette : le choix du staff a le focus (Entrée le confirme), puis Reprendre.
+	if focus != null: focus.call_deferred("grab_focus")
+
+## Titre du panneau d'arrêt selon le motif projeté par le moteur (`live.direct.arret.raison`).
+static func titre_arret(valeur: Dictionary) -> String:
+	match str(valeur.get("raison", "carton")):
+		"blessure": return "BLESSURE"
+		"saignement": return "SAIGNEMENT"
+		"hia", "commotion": return "CHOC À LA TÊTE"
+		"premiere-ligne": return "PREMIÈRE LIGNE"
+	return "CARTON ROUGE" if valeur.get("rouge", false) else "CARTON JAUNE"
+
+## « J. Dupont · Talonneur · 82 % » : nom, poste et énergie du joueur proposé.
+static func libelle_option(option: Dictionary) -> String:
+	var morceaux: Array[String] = [_nom_initiale(str(option.get("nom", "")))]
+	var poste := str(option.get("poste", "")).strip_edges()
+	if not poste.is_empty(): morceaux.append(poste.substr(0, 1).to_upper() + poste.substr(1))
+	morceaux.append("%d %%" % int(option.get("energie", 0)))
+	return " · ".join(morceaux)
+
+static func _nom_initiale(nom: String) -> String:
+	var morceaux := nom.strip_edges().split(" ", false)
+	if morceaux.size() < 2: return nom.strip_edges()
+	return "%s. %s" % [morceaux[0].substr(0, 1), " ".join(morceaux.slice(1))]
+
+static func _phrase_choix(nom: String, entrant: bool) -> String:
+	return "Choix enregistré : %s %s." % [_nom_initiale(nom), "entre" if entrant else "sort"]
+
+## Option retenue : liseré et texte or, comme le focus de l'écran.
+func _marquer_option(bouton: Button) -> void:
+	bouton.set_meta("retenue", true)
+	for etat in ["normal", "hover", "pressed", "disabled"]:
+		var style := S.G.T.box(SURVOL, maxi(4, px(10)), OR)
+		style.set_border_width_all(maxi(1, px(3)))
+		style.content_margin_left = px(22)
+		style.content_margin_right = px(22)
+		bouton.add_theme_stylebox_override(etat, style)
+	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]:
+		bouton.add_theme_color_override(couleur, OR)
+
+## L'écran n'a pas de référence au jeu : ses signaux sont branchés par la régie
+## (match_temps_forts.gd), qui ne relaie pas ce choix. On remonte donc les parents jusqu'au
+## premier nœud qui porte l'application (`app` avec `_command`, la vue du match), ou jusqu'à
+## l'application elle-même. Un test peut aussi poser `app_commandes` directement.
+var app_commandes: Object = null
+
+func _app() -> Object:
+	if app_commandes != null and is_instance_valid(app_commandes): return app_commandes
+	var noeud := get_parent()
+	while noeud != null:
+		var candidat: Variant = noeud.get("app")
+		if candidat is Object and is_instance_valid(candidat) and candidat.has_method("_command"): return candidat
+		if noeud.has_method("_command"): return noeud
+		noeud = noeud.get_parent()
+	return null
+
+func _choisir_option(cle: String, id: Variant, nom: String, entrant: bool) -> void:
+	if not _choix_fait.is_empty() or cle != str(_arret.get("cle", "")): return
+	var app: Object = _app()
+	if app == null or not app._command("match_incident_choice", {"cle": cle, "id": id}):
+		arret_texte.text = str(_arret.get("texte", "")) + "\nUne décision est déjà en cours : réessaie dans un instant."
+		return
+	_choix_fait = {"cle": cle, "id": id, "nom": nom}
+	montrer_arret(_arret)
+
+## Choix devenu impossible côté moteur (`live.incidentChoix` vide sans réponse du manager) :
+## le staff garde sa décision, les options se figent.
+func _suivre_choix(live: Dictionary) -> void:
+	if _arret.is_empty() or not _choix_fait.is_empty() or not _arret.get("choix") is Dictionary: return
+	if not live.has("incidentChoix") or live.incidentChoix != null: return
+	var cle := str(_arret.get("cle", ""))
+	if arret_options.get_child_count() == 0 or (arret_options.get_child(0) as Button).disabled: return
+	for bouton: Button in arret_options.get_children(): bouton.disabled = true
+	arret_texte.text = str(_arret.get("texte", "")) + "\nLe staff garde sa décision. Reprends quand tu veux."
+	if cle != "" and arret.visible: arret_reprendre.call_deferred("grab_focus")
