@@ -90,7 +90,13 @@ zéro. L'outil Godot (`tools/match-filme/match_filme.gd`, chargé seulement par
 PNG toutes les `-Cadence` secondes (toutes les `-CadenceMoments` secondes, 0,5 par
 défaut, autour d'un essai et pendant la sortie des joueurs à la mi-temps et en fin
 de match), puis quitte à la fin du match, à la minute
-`-Minutes` ou après `-DureeMax` secondes. Le dossier contient les images,
+`-Minutes` ou après `-DureeMax` secondes. Ces durées sont du temps de jeu : par
+défaut Godot tourne à pas fixe (`--fixed-fps 30 --disable-vsync`), chaque image
+avance de 1/30 s de jeu et le film se calcule aussi vite que le PC le permet, avec
+les mêmes images qu'en temps réel (`report.json` : `duree_s` en temps de jeu,
+`duree_reelle_s` à l'horloge) ; `-TempsReel` revient au film en temps réel et
+l'attente du moteur dure en jeu sa durée réelle, comme en partie (`-Attente figee`
+la gèle, `-Attente libre` la laisse filer à pas entier). Le dossier contient les images,
 `planche.png` (planche-contact), `planche-moments.png` (essais, mi-temps, fin),
 `report.json` (minute, score, état, grand moment et luminance de chaque image :
 `noires` doit valoir 0 ; `moments` donne la première image de chacun) et `surveillance.json`
