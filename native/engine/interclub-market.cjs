@@ -41,6 +41,9 @@ function factory(){
   // Calendrier des mutations (calendrier-mutations.cjs) : accord déjà conclu pour ce joueur (achat différé).
   const pending=typeof calAccordAchat==='function'?calAccordAchat(p.id):null;
   if(pending)reason='Accord conclu : il rejoindra ton club le '+nativeVenteJoueurs.dateFr(pending.date)+'.';
+  // Pré-contrat déjà signé avec le club joué : c'est la seule raison utile (pas « nouvelle recrue » ni les gardes du vendeur).
+  const signe=typeof calPre==='function'?calPre(p.id):null;
+  if(signe&&signe.etat==='signe'&&signe.sens==='arrivee'&&signe.clubId===S.club)reason='Pré-contrat signé : il rejoindra ton club le '+nativeVenteJoueurs.dateFr(signe.arrivee)+'.';
   // Pré-contrat (joueur en fin de contrat) : seulement pour les contrats qui s'achèvent cette saison.
   const pre=contractEnd===S.season&&typeof calPreContratDevis==='function'?calPreContratDevis(c,p,budget):null;
   return {id:p.id,name:p.name,clubId:c.id,club:c.name,pos:p.pos,family:p.fam,age:p.age,contractEnd,sourceSalary,fee,salary,available:!reason,reason,releaseReason,

@@ -234,7 +234,9 @@ test('Moteur Monde : recrutement libre, joueurs supplémentaires, achat différ�
     assert.deepEqual(lire(`({cash:club().cash,dep:S.budgetTransferts.depense,vendeur:S.clubs[${pc.clubId}].cash})`),
       { cash: avantPc.cash - pc.preContract.premium, dep: avantPc.dep + pc.preContract.premium, vendeur: avantPc.vendeur }, 'seule la prime, rien pour le club vendeur');
     assert.equal(lire(`S.clubs[${pc.clubId}].players.some(p=>p.id==='${pc.id}')`), true, 'il reste à son club jusqu’au 1er juillet');
-    const signe = marche().candidates.find(c => c.id === pc.id).preContract;
+    const candidatSigne = marche().candidates.find(c => c.id === pc.id);
+    assert.equal(candidatSigne.reason, 'Pré-contrat signé : il rejoindra ton club le 1er juillet 2027.', 'raison du marché pour un joueur déjà sous pré-contrat avec nous');
+    const signe = candidatSigne.preContract;
     assert.equal(signe.available, false); assert.equal(signe.signed.label, 'Rejoindra ' + lire('club().name') + ' le 1er juillet 2027.');
     assert.equal(r.model.mutations.preContracts.arrivals[0].playerId, pc.id);
 
