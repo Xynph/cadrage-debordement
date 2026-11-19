@@ -263,17 +263,18 @@ static func _group(card: Panel, app: Control, w: int = 422) -> void:
 	elif group.watched > 0:
 		var action := D.button(card,Rect2(25,337,w-50,36),U.watch_caption(group.watched),app.navigation_controller.open_watched_roster,false,"arrow",true,app.accent,"OfficeWatchedAction")
 		action.add_theme_color_override("font_color", C.AMBER)
-		if titulaires > 0:
+		var shown_player := false
+		for player: Dictionary in app.model.get("squad", []):
+			var reason := U.watch_reason(player)
+			if reason.is_empty(): continue
+			var example := D.text(card,25,399,str(player.name)+" · "+reason,21,C.MUTED,500,w-52)
+			example.tooltip_text = example.text
+			_label_reading(app,card,example,{"kind":"player","id":str(player.id)},"OfficeWatchedPlayer_"+str(player.id).validate_node_name(),str(player.name))
+			shown_player = true
+			break
+		if not shown_player and titulaires > 0:
 			var ligne := D.text(card,25,399,texte_fatigue,21,C.AMBER,500,w-52)
 			ligne.name = "OfficeFatigueLine"
-		else:
-			for player: Dictionary in app.model.get("squad", []):
-				var reason := U.watch_reason(player)
-				if reason.is_empty(): continue
-				var example := D.text(card,25,399,str(player.name)+" · "+reason,21,C.MUTED,500,w-52)
-				example.tooltip_text = example.text
-				_label_reading(app,card,example,{"kind":"player","id":str(player.id)},"OfficeWatchedPlayer_"+str(player.id).validate_node_name(),str(player.name))
-				break
 	else:
 		D.text(card,25,366,"Aucune alerte physique",22,C.MINT,600,w-52).name = "OfficeNoAlert"
 	D.button(card,Rect2(25,412,w-50,27),"Consulter le groupe",app.navigation_controller.open_roster_group,false,"arrow",true,app.accent,"OfficeSquadAction")
