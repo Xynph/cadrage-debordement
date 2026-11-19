@@ -10,7 +10,22 @@ extends SceneTree
 ##
 ##   godot --path native/godot --audio-driver Dummy --script tools/match-filme/match_filme.gd -- \
 ##     --match-filme --sortie <dossier> --export <carriere.json> [--camera tv|tactical|action] \
-##     [--cadence 2] [--cadence-moments 0.5] [--duree-max 600] [--minutes 0] [--niveau dynamique] [--taille 1280x720] [--sans-planche]
+##     [--cadence 2] [--cadence-moments 0.5] [--duree-max 600] [--minutes 0] [--niveau dynamique] [--taille 1280x720] \
+##     [--attente libre|figee] [--sans-planche]
+##   (ajouter --fixed-fps 30 --disable-vsync avant --script pour calculer le film au plus vite)
+##
+## Film calculé au plus vite (19/11/2026) : l'horloge du film est le temps de jeu simulé (somme des
+## deltas de process), pas l'horloge murale. Lancé avec `--fixed-fps 30 --disable-vsync`, Godot avance
+## chaque image de 1/30 s de jeu quelle que soit sa durée réelle : le rendu est le même image par
+## image, l'outil lève alors la limite d'images par seconde (Engine.max_fps = 0) et le film se
+## calcule aussi vite que le PC le permet. Sans --fixed-fps, 30 images/s en temps réel comme avant.
+## Cadence, attentes des causeries et des arrêts, fin, --duree-max et les « secondes » du rapport
+## sont en temps simulé ; les horodatages muraux de la régie (légendes, ralentis) sont convertis par
+## les échantillons (mur, simulé) relevés à chaque image. Pendant que le moteur Node calcule une
+## réponse, --attente reelle (défaut) fait durer l'attente en temps de jeu ce qu'elle dure vraiment,
+## comme en jeu (Engine.time_scale = durée murale de l'image / pas) ; figee la gèle (time_scale = 0) ;
+## libre n'y touche pas (à pas fixe, l'attente dure alors plus longtemps qu'en jeu).
+## Les attentes de préparation avant le direct (120 s, 180 s) restent en temps réel (garde-fous).
 ##
 ## Grands moments (18/11/2026) : autour d'un essai (plan d'essai, bandeau « ESSAI », ralenti) et
 ## pendant la sortie des joueurs de la mi-temps et de la fin de match (plan large, marche vers le
@@ -26,6 +41,7 @@ const NIVEAUX := ["aucun", "resume", "cles", "etendus", "dynamique", "integral"]
 ## Luminance moyenne sous laquelle une image est comptée comme noire.
 const SEUIL_NOIR := 0.03
 const TAILLE_MIN := Vector2i(1280, 720)
+const ATTENTES := ["reelle", "figee", "libre"]
 
 var app: Control
 
@@ -34,7 +50,46 @@ func _initialize() -> void:
 
 static func defauts() -> Dictionary:
 	return {"sortie": "", "export": "", "camera": "tv", "cadence": 2.0, "cadence_moments": 0.5, "duree_max": 600.0, "minutes": 0,
-		"niveau": "dynamique", "taille": Vector2i(1280, 720), "planche": true}
+		"niveau": "dynamique", "taille": Vector2i(1280, 720), "planche": true, "attente": "reelle"}
+
+## Vitesse du temps de jeu (Engine.time_scale) pour l'image suivante. Hors attente du moteur : 1.
+## Pendant l'attente : « figee » 0 ; « reelle » la durée murale de la dernière image rapportée au pas
+## fixe (l'attente dure en jeu ce qu'elle dure vraiment, bornée à 1) ; « libre » ou sans pas fixe : 1.
+static func echelle_attente(mode: String, attend: bool, image_ms: float, pas: int) -> float:
+	if not attend or mode == "libre": return 1.0
+	if mode == "figee": return 0.0
+	if pas <= 0: return 1.0
+	return clampf(image_ms / 1000.0 * pas, 0.0, 1.0)
+
+## Pas fixe de Godot lu dans ses arguments (`--fixed-fps N`, OS.get_cmdline_args) : N images par
+## seconde de jeu, 0 si absent ou invalide (le jeu suit alors l'horloge murale).
+static func pas_fixe(args: PackedStringArray) -> int:
+	var i := args.find("--fixed-fps")
+	if i < 0 or i + 1 >= args.size(): return 0
+	var valeur := args[i + 1]
+	return int(valeur) if valeur.is_valid_int() and int(valeur) > 0 else 0
+
+## Instant mural (Time.get_ticks_msec) converti en secondes de jeu simulées. `echantillons` vaut
+## [PackedInt64Array des ms murales croissantes, PackedFloat64Array des secondes simulées] : un couple
+## par image du direct. Interpolation linéaire entre les deux échantillons qui encadrent `ms`
+## (recherche dichotomique), saturée au premier et au dernier ; 0.0 sans échantillon.
+static func vers_simule(echantillons: Array, ms: int) -> float:
+	if echantillons.size() < 2 or not echantillons[0] is PackedInt64Array or not echantillons[1] is PackedFloat64Array: return 0.0
+	var murs: PackedInt64Array = echantillons[0]
+	var simules: PackedFloat64Array = echantillons[1]
+	var n := mini(murs.size(), simules.size())
+	if n == 0: return 0.0
+	if ms <= murs[0]: return simules[0]
+	if ms >= murs[n - 1]: return simules[n - 1]
+	var bas := 0
+	var haut := n - 1
+	while haut - bas > 1:
+		var milieu := (bas + haut) / 2
+		if murs[milieu] <= ms: bas = milieu
+		else: haut = milieu
+	var ecart := murs[haut] - murs[bas]
+	if ecart <= 0: return simules[haut]
+	return simules[bas] + (simules[haut] - simules[bas]) * float(ms - murs[bas]) / float(ecart)
 
 ## États de la régie des temps forts, dans l'ordre de son enum (match_temps_forts.gd).
 const ETATS := ["intermediaire", "temps_fort", "attente", "sortie"]
@@ -78,10 +133,14 @@ static func lire_options(args: PackedStringArray) -> Dictionary:
 		var valeur := args[i + 1] if i + 1 < args.size() else ""
 		i += 1
 		if arg == "--match-filme": continue
+		# Pas fixe r�p�t� apr�s � -- � (Godot ne le laisse pas dans ses propres arguments) : lu par pas_fixe.
+		if arg == "--fixed-fps":
+			i += 1
+			continue
 		if arg == "--sans-planche":
 			o.planche = false
 			continue
-		if not arg in ["--sortie", "--export", "--camera", "--cadence", "--cadence-moments", "--duree-max", "--minutes", "--niveau", "--taille"]:
+		if not arg in ["--sortie", "--export", "--camera", "--cadence", "--cadence-moments", "--duree-max", "--minutes", "--niveau", "--taille", "--attente"]:
 			erreurs.append("Argument inconnu : " + arg)
 			continue
 		i += 1
@@ -98,6 +157,9 @@ static func lire_options(args: PackedStringArray) -> Dictionary:
 			"--niveau":
 				if valeur in NIVEAUX: o.niveau = valeur
 				else: erreurs.append("Niveau de temps forts inconnu : " + valeur + ".")
+			"--attente":
+				if valeur in ATTENTES: o.attente = valeur
+				else: erreurs.append("--attente inconnue : " + valeur + " (reelle, figee ou libre).")
 			"--cadence":
 				if valeur.is_valid_float() and float(valeur) >= 0.2: o.cadence = float(valeur)
 				else: erreurs.append("--cadence : nombre de secondes, 0.2 au moins.")
@@ -160,6 +222,7 @@ static func planche(images: Array, colonnes: int, largeur: int) -> Image:
 
 func echouer(message: String, code := 2) -> void:
 	printerr("MATCH_FILME erreur : " + message)
+	Engine.time_scale = 1.0
 	if is_instance_valid(app):
 		app.closing = true
 		app.bridge.stop()
@@ -202,7 +265,10 @@ func run() -> void:
 	var reglages := FileAccess.open(profil().path_join("interface.json"), FileAccess.WRITE)
 	reglages.store_string(JSON.stringify({"version": 1, "volume": 0, "reduced_motion": false, "quality": "balanced", "camera": o.camera, "match_highlights": o.niveau}, "  "))
 	reglages.close()
-	Engine.max_fps = 30
+	# À pas fixe, chaque image vaut 1/N s de jeu quelle que soit sa durée réelle : aucune limite.
+	var pas: int = maxi(pas_fixe(OS.get_cmdline_args()), pas_fixe(OS.get_cmdline_user_args()))
+	Engine.max_fps = 0 if pas > 0 else 30
+	print("MATCH_FILME pas_fixe=", pas, " attente=", o.attente)
 	app = load("res://main.tscn").instantiate()
 	# Le jeu remet sa fenêtre en plein écran maximisé au démarrage : ici la fenêtre garde la taille
 	# demandée (le retour différé lit `closing` et ne fait rien pendant la première image).
@@ -248,7 +314,7 @@ func run() -> void:
 		return
 	couper_le_son()
 	print("MATCH_FILME direct ouvert")
-	var report := {"options": {"camera": o.camera, "cadence": o.cadence, "cadence_moments": o.cadence_moments, "duree_max": o.duree_max, "minutes": o.minutes, "niveau": o.niveau, "taille": [o.taille.x, o.taille.y]},
+	var report := {"options": {"camera": o.camera, "cadence": o.cadence, "cadence_moments": o.cadence_moments, "duree_max": o.duree_max, "minutes": o.minutes, "niveau": o.niveau, "taille": [o.taille.x, o.taille.y], "attente": o.attente},
 		"pilote": RenderingServer.get_current_rendering_driver_name(), "carte": RenderingServer.get_video_adapter_name(), "audio": AudioServer.get_driver_name(),
 		"fenetre": {"taille": [DisplayServer.window_get_size().x, DisplayServer.window_get_size().y], "mode": DisplayServer.window_get_mode()},
 		"images": [], "noires": 0, "moments": []}
@@ -256,7 +322,12 @@ func run() -> void:
 	var moment_vu := ""
 	var regie_vue: Node = null
 	var debut := Time.get_ticks_msec()
-	var precedent := debut
+	# Horloge du film : secondes de jeu simulées depuis l'ouverture du direct (somme des deltas de process).
+	var temps := 0.0
+	var images_rendues := 0
+	# Échantillons (ms murale, secondes simulées), un par image : conversion des horodatages de la régie.
+	var murs := PackedInt64Array([debut])
+	var simules := PackedFloat64Array([0.0])
 	var cadence: float = o.cadence
 	var duree_max: float = o.duree_max
 	var minutes: int = o.minutes
@@ -274,8 +345,14 @@ func run() -> void:
 	while true:
 		await process_frame
 		var maintenant := Time.get_ticks_msec()
-		var delta := (maintenant - precedent) / 1000.0
-		precedent = maintenant
+		# Delta de l'image qui vient d'être traitée (pas fixe et Engine.time_scale compris).
+		var delta: float = root.get_process_delta_time()
+		temps += delta
+		images_rendues += 1
+		murs.append(maintenant)
+		simules.append(temps)
+		# Attente du moteur Node : en temps de jeu, sa durée réelle (reelle), rien (figee) ou un pas entier par image (libre).
+		Engine.time_scale = echelle_attente(o.attente, app.waiting, float(maintenant - murs[murs.size() - 2]), pas)
 		var live: Dictionary = app.model.live if app.model.get("live") is Dictionary else {}
 		var vue := surface()
 		var regie: Node = vue.get("regie") if vue != null else null
@@ -292,9 +369,8 @@ func run() -> void:
 					ralentis.append(e)
 					continue
 				if str(e.get("evenement", "")) != "legende": continue
-				legendes.append({"texte": e.texte, "kind": e.kind, "phase": e.phase, "horloge": e.horloge,
-					"texte_s": snappedf((int(e.texte_ms) - debut) / 1000.0, 0.01), "image_s": snappedf((int(e.image_ms) - debut) / 1000.0, 0.01),
-					"ecart_ms": int(e.ecart_ms), "meme_fait": int(e.journal) == int(e.image_journal)})
+				# Horodatages muraux de la régie : convertis en temps simulé à la fin du direct.
+				legendes.append(e)
 		if not live.is_empty():
 			dernier = {"score": live.get("score", [0, 0]).duplicate(), "minute": int(live.get("minute", 0)), "termine": bool(live.get("finished", false))}
 			if dernier.minute != minute_vue:
@@ -332,7 +408,7 @@ func run() -> void:
 		if moment != moment_vu:
 			if not moment.is_empty():
 				var detail: Dictionary = regie.bandeau_affiche() if regie.has_method("bandeau_affiche") else {}
-				report.moments.append({"moment": moment, "secondes": snappedf((maintenant - debut) / 1000.0, 0.1), "minute": int(live.get("minute", dernier.get("minute", 0))),
+				report.moments.append({"moment": moment, "secondes": snappedf(temps, 0.1), "minute": int(live.get("minute", dernier.get("minute", 0))),
 					"premiere_image": "image-%04d.png" % (report.images.size() + 1), "bandeau": detail})
 				print("MATCH_FILME moment=", moment, " minute=", int(live.get("minute", 0)), " image=", report.images.size() + 1)
 				# Première image du moment prise tout de suite.
@@ -342,7 +418,7 @@ func run() -> void:
 		var termine: bool = live.is_empty() or bool(live.get("finished", false)) or (minutes > 0 and int(live.get("minute", 0)) >= minutes)
 		# La fin de match se filme jusqu'au bout de la sortie des joueurs.
 		if termine and (regie == null or (regie.etat != regie.JEU and not en_sortie)): fin += delta
-		if fin >= 3.0 or maintenant - debut > duree_max * 1000.0: break
+		if fin >= 3.0 or temps > duree_max: break
 		depuis_capture += delta
 		if depuis_capture < (cadence_moments if not moment.is_empty() else cadence): continue
 		depuis_capture = 0.0
@@ -361,17 +437,37 @@ func run() -> void:
 		# Ralenti de l'essai à l'image (vue au ralenti, caméra basse) et mention « RALENTI » affichée :
 		# les deux doivent aller ensemble.
 		var ralenti_vu: Dictionary = ralenti_de(regie)
-		report.images.append({"fichier": nom, "secondes": snappedf((maintenant - debut) / 1000.0, 0.1), "minute": int(live.get("minute", dernier.get("minute", 0))),
+		report.images.append({"fichier": nom, "secondes": snappedf(temps, 0.1), "minute": int(live.get("minute", dernier.get("minute", 0))),
 			"score": live.get("score", dernier.get("score", [0, 0])), "etat": etat, "moment": moment, "ralenti": ralenti_vu.ralenti, "mention_ralenti": ralenti_vu.mention,
 			"luminance": lum, "foule": foule_de(app)})
-	report["duree_s"] = snappedf((Time.get_ticks_msec() - debut) / 1000.0, 0.1)
+	Engine.time_scale = 1.0
+	var duree_murale := (Time.get_ticks_msec() - debut) / 1000.0
+	# duree_s : temps de jeu simulé ; duree_reelle_s : horloge murale du direct.
+	report["duree_s"] = snappedf(temps, 0.1)
+	report["duree_reelle_s"] = snappedf(duree_murale, 0.1)
+	report["pas_fixe"] = pas
+	report["attente"] = o.attente
+	report["images_rendues"] = images_rendues
+	report["images_par_seconde_reelles"] = snappedf(images_rendues / maxf(duree_murale, 0.001), 0.1)
 	report["score"] = dernier.get("score", [0, 0])
 	report["minute"] = dernier.get("minute", 0)
 	report["termine"] = dernier.get("termine", false)
-	report["legendes"] = legendes
-	report["ralentis"] = ralentis.map(func(e: Dictionary) -> Dictionary: return {"evenement": e.get("evenement"), "secondes": snappedf((int(e.get("debut_ms", debut)) - debut) / 1000.0, 0.1),
-		"plan": e.get("plan", -1), "duree_source": e.get("duree_source", 0.0), "duree_prevue": e.get("duree_prevue", 0.0), "duree_reelle": e.get("duree_reelle", -1.0),
-		"passe": e.get("passe", false), "hauteur_camera": e.get("hauteur_camera", 0.0), "gene_angle": e.get("gene_angle", -1.0), "retrait": e.get("retrait", -1.0),"ecart_restitution": e.get("ecart_restitution", -1.0)})
+	var echantillons: Array = [murs, simules]
+	report["legendes"] = legendes.map(func(e: Dictionary) -> Dictionary:
+		var texte_s := vers_simule(echantillons, int(e.texte_ms))
+		var image_s := vers_simule(echantillons, int(e.image_ms))
+		return {"texte": e.texte, "kind": e.kind, "phase": e.phase, "horloge": e.horloge,
+			"texte_s": snappedf(texte_s, 0.01), "image_s": snappedf(image_s, 0.01),
+			"ecart_ms": int(round((image_s - texte_s) * 1000.0)), "meme_fait": int(e.journal) == int(e.image_journal)})
+	# Ralentis : début et durée murale de la régie convertis en temps simulé (-1 si la durée manque).
+	report["ralentis"] = ralentis.map(func(e: Dictionary) -> Dictionary:
+		var debut_ms := int(e.get("debut_ms", debut))
+		var debut_s := vers_simule(echantillons, debut_ms)
+		var duree_mur := float(e.get("duree_reelle", -1.0))
+		var duree_sim: float = vers_simule(echantillons, debut_ms + int(round(duree_mur * 1000.0))) - debut_s if duree_mur >= 0.0 else -1.0
+		return {"evenement": e.get("evenement"), "secondes": snappedf(debut_s, 0.1),
+			"plan": e.get("plan", -1), "duree_source": e.get("duree_source", 0.0), "duree_prevue": e.get("duree_prevue", 0.0), "duree_reelle": duree_sim,
+			"passe": e.get("passe", false), "hauteur_camera": e.get("hauteur_camera", 0.0), "gene_angle": e.get("gene_angle", -1.0), "retrait": e.get("retrait", -1.0),"ecart_restitution": e.get("ecart_restitution", -1.0)})
 	report["images_ralenti"] = report.images.filter(func(i: Dictionary) -> bool: return bool(i.get("ralenti", false))).size()
 	if o.planche and not report.images.is_empty():
 		var choisies: Array = []
@@ -388,7 +484,7 @@ func run() -> void:
 	var fichier := FileAccess.open(str(o.sortie).path_join("report.json"), FileAccess.WRITE)
 	fichier.store_string(JSON.stringify(report, "  "))
 	fichier.close()
-	print("MATCH_FILME_FIN ", JSON.stringify({"images": report.images.size(), "noires": report.noires, "moments": report.moments.map(func(m: Dictionary) -> String: return "%s %d′ %s" % [m.moment, int(m.minute), m.premiere_image]), "score": report.score, "minute": report.minute, "termine": report.termine, "secondes": report.duree_s, "pilote": report.pilote, "audio": report.audio}))
+	print("MATCH_FILME_FIN ", JSON.stringify({"images": report.images.size(), "noires": report.noires, "moments": report.moments.map(func(m: Dictionary) -> String: return "%s %d′ %s" % [m.moment, int(m.minute), m.premiere_image]), "score": report.score, "minute": report.minute, "termine": report.termine, "secondes": report.duree_s, "duree_reelle_s": report.duree_reelle_s, "images_par_seconde_reelles": report.images_par_seconde_reelles, "pilote": report.pilote, "audio": report.audio}))
 	app.closing = true
 	app.bridge.stop()
 	for k in 10: await process_frame
