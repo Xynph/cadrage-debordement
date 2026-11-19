@@ -37,6 +37,8 @@ test('Vente de joueurs : offres reçues, confirmation, fiche, Effectif et courri
         S.economy.offers.push({id:'godot-spontanee',playerId:'${libres[3].id}',buyer:${riche[1]},fee:320000,expires:S.economy.week,spontaneous:true});
         S.economy.offers.push({id:'godot-fauche',playerId:'${proposeB.id}',buyer:${riche[2]},fee:900000,expires:S.economy.week+1});
         S.clubs[${riche[2]}].cash=100000;
+        // Carrière neuve : la boîte du club n'existe qu'après une première réception.
+        if(!S.clubMail)nativeSystems.domain('clubMail').recevoir(S,CDWorldCareer.calendarToday(S));
         const c=venteCourriers(S).find(x=>x.key==='godot-offre'),st=S.clubMail;
         st.mails.push({id:'mail-'+(++st.seq),type:'offre_transfert',date:CDWorldCareer.calendarToday(S),f:0,vars:c.vars,player:c.player,club:c.club,status:'info',choice:null});})()`);
       m = jeu.call('snapshot');
@@ -67,7 +69,7 @@ test('Vente de joueurs : offres reçues, confirmation, fiche, Effectif et courri
     assert.deepEqual(rapport.failures, []);
     assert.ok(rapport.controles >= 30, 'contrôles : ' + rapport.controles);
     assert.equal(r.status, 0, journal.slice(-3000));
-    if (graphique) for (const f of ['vente-recrutement.png', 'vente-offres.png', 'vente-confirmation.png', 'vente-fiche.png', 'vente-effectif.png']) assert.ok(fs.existsSync(path.join(sortie, f)), 'capture ' + f);
+    if (graphique) for (const f of ['vente-recrutement.png', 'vente-offres.png', 'vente-confirmation.png', 'vente-fiche.png', 'vente-fiche-accord.png', 'vente-effectif.png', 'vente-courrier.png']) assert.ok(fs.existsSync(path.join(sortie, f)), 'capture ' + f);
     console.log('Captures : ' + sortie);
   } finally { fs.rmSync(profil, { recursive: true, force: true }); }
 });

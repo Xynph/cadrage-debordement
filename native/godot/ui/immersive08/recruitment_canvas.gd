@@ -149,7 +149,8 @@ func _header(positions: Array) -> void:
 	var sales := D.button(self, Rect2(24, 163, 558, 52), SalesView.caption(app.model) + "  →", func(): SalesView.open(app), offers > 0, "money", false, PRIMARY, "OpenPlayerSales")
 	sales.add_theme_font_size_override("font_size", maxi(14, C.px(28)))
 	sales.tooltip_text = "Offres des autres clubs pour tes joueurs : accepter, demander plus ou refuser"
-	sales.accessibility_name = sales.text	for i in TABS.size():
+	sales.accessibility_name = sales.text
+	for i in TABS.size():
 		_tab(Rect2(624 + 206 * i, 190, 216, 65), TABS[i], i)
 	var compare := D.button(self, Rect2(1510, 181, 230, 61), "Comparer", _compare, false, "people", false, app.accent, "CompareMarket")
 	compare.tooltip_text = "Comparer deux pistes de recrutement"

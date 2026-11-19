@@ -6,8 +6,11 @@ extends AcceptDialog
 ## refuser ; retrait d'un joueur proposé. Hors période des mutations, accepter conclut un accord effectif à l'ouverture.
 ## Affichage seul : le moteur valide chaque réponse et rend la raison d'un refus, écrite telle quelle.
 const G = preload("res://ui/carnet_skin.gd")
-const TEXTE := 15
-const NOTE := 14
+const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+## Tailles demandées au thème carnet (game_skin.reading_size : 18 → 13 px, 23 → 16 px) ; lisible() relève le reste à 13 px.
+const TEXTE := 18
+const NOTE := 18
+const LISIBLE := 13
 var app: Control
 var rows: VBoxContainer
 var message: Label
@@ -78,7 +81,8 @@ func _build() -> void:
 	app.add_child(self)
 	app.bridge.model_changed.connect(_on_model)
 	app.bridge.command_failed.connect(_on_failure)
-	popup_centered(Vector2i(900, 600))
+	Dialogs.show_centered(self, Vector2i(900, 600))
+	lisible(body)
 
 func _clear() -> void:
 	for child in rows.get_children():
@@ -121,6 +125,23 @@ func _redraw() -> void:
 		remove.name = "SaleUnlist"
 		remove.disabled = app.waiting or pending
 		row.add_child(remove)
+	lisible(rows)
+
+## Textes et boutons à 13 px au moins (GDD vente-joueurs, 1280×720) : le style immersif des tuiles et des boîtes
+## (legacy_style.gd) repose les tailles à l'image suivante avec un plancher de 12 px ; on relève donc aussi après lui.
+static func lisible(node: Node) -> void:
+	_relever(node)
+	if node.is_inside_tree(): node.get_tree().process_frame.connect(func(): _relever(node), CONNECT_ONE_SHOT)
+	else: node.tree_entered.connect(func(): lisible(node), CONNECT_ONE_SHOT)
+
+static func _relever(node: Node) -> void:
+	if not is_instance_valid(node): return
+	var controls: Array[Node] = [node]
+	controls.append_array(node.find_children("*", "Label", true, false))
+	controls.append_array(node.find_children("*", "Button", true, false))
+	for n in controls:
+		if (n is Label or n is Button) and (n as Control).get_theme_font_size("font_size") < LISIBLE:
+			(n as Control).add_theme_font_size_override("font_size", LISIBLE)
 
 func _window_text(window: Dictionary) -> String:
 	if str(window.get("mode", "")) != "fenetres": return "Ventes possibles toute la saison, hors match."
@@ -142,7 +163,7 @@ func _offer_card(offer: Dictionary) -> void:
 	var id := str(offer.get("id", ""))
 	var card := G.card(rows)
 	card.name = "SaleOffer_" + id.validate_node_name()
-	card.add_child(G.label("%s · %s · %s ans" % [str(offer.get("name", "")), str(offer.get("pos", "")), G.n(offer.get("age", "—"))], 16, G.INK, true))
+	card.add_child(G.label("%s · %s · %s ans" % [str(offer.get("name", "")), str(offer.get("pos", "")), G.n(offer.get("age", "—"))], 23, G.INK, true))
 	var fee := G.wrap("%s propose %s · valeur estimée %s" % [str(offer.get("buyer", "")), G.euros(offer.get("fee", 0)), G.euros(offer.get("value", 0))], TEXTE, G.INK)
 	fee.name = "SaleOfferFee"
 	card.add_child(fee)
@@ -233,12 +254,27 @@ func _confirm(offer: Dictionary) -> void:
 		label.name = str(line.id)
 		content.add_child(label)
 	add_child(dialog)
+	lisible(content)
 	dialog.confirmed.connect(func():
 		_send("sale_answer", {"offerId":str(offer.get("id", "")), "action":"accept", "confirmed":true})
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)
-	dialog.popup_centered(Vector2i(640, 300))
+	# Fenêtre fille de la boîte des offres : popup_centered la centrerait dans la boîte (900 × 600), pas à l'écran.
+	dialog.popup_centered(Vector2i(680, 340))
+	_center_on_screen.call_deferred(dialog)
 	dialog.get_cancel_button().grab_focus()
+
+func _center_on_screen(dialog: Window) -> void:
+	for i in 3: await get_tree().process_frame
+	if not is_instance_valid(dialog) or not dialog.visible: return
+	var screen := Vector2i(get_tree().root.get_visible_rect().size)
+	var title_height := dialog.get_theme_constant("title_height", "Window")
+	# Hauteur au contenu : les lignes à la ligne mesurées trop étroites au premier passage ont pu l'allonger.
+	dialog.size = Vector2i(mini(680, screen.x - 28), 1)
+	await get_tree().process_frame
+	if not is_instance_valid(dialog): return
+	dialog.size = Vector2i(mini(dialog.size.x, screen.x - 28), mini(dialog.size.y, screen.y - 68))
+	dialog.position = (screen - dialog.size + Vector2i(0, title_height)) / 2
 
 func _send(command: String, payload: Dictionary) -> void:
 	if pending or app.waiting: return

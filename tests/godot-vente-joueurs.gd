@@ -71,7 +71,9 @@ func sans_chevauchement(cadre: Control, noms: Array, contexte: String) -> void:
 
 func executer() -> void:
 	attendu = JSON.parse_string(OS.get_environment("CD_VENTE_ATTENDU"))
-	root.size = Vector2i(1280, 720)
+	# CD_VENTE_SIZE (« 1920x1080 ») : autre taille de fenêtre pour les captures ; 1280×720 par défaut.
+	var demande := OS.get_environment("CD_VENTE_SIZE").split("x")
+	root.size = Vector2i(int(demande[0]), int(demande[1])) if demande.size() == 2 and int(demande[0]) > 0 else Vector2i(1280, 720)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 	app = load("res://main.tscn").instantiate(); root.add_child(app); await attendre_moteur()
 	if app.timer: app.timer.stop()
@@ -139,8 +141,10 @@ func executer() -> void:
 	# 4. Fiche joueur, onglet Contrat : carte « Marché des transferts ».
 	app.selected_player = str(attendu.propose)
 	app.management_ui.immersive_player_tab = 3
+	# _navigate("Effectif") revient à la liste : la fiche complète s'ouvre ensuite (comme « Ouvrir la fiche joueur »).
+	app._navigate("Effectif"); await poser(10)
 	app.set_meta("immersive08_full_player", true)
-	app._navigate("Effectif"); await poser(20)
+	app._render(); await poser(20)
 	var panneau := noeud(app, "PlayerSalePanel") as Control
 	verifier(panneau != null and panneau.is_visible_in_tree(), "carte Marché des transferts sur la fiche")
 	if panneau != null:
@@ -163,6 +167,7 @@ func executer() -> void:
 	if panneau != null:
 		verifier(texte(panneau, "PlayerSaleStatus").begins_with("Vente en attente : départ pour"), "vente en attente sur la fiche : " + texte(panneau, "PlayerSaleStatus"))
 		verifier((noeud(panneau, "PlayerSaleToggle") as Button).disabled, "pas de remise en vente d’un joueur déjà vendu")
+	await capturer("vente-fiche-accord.png")
 
 	# 5. Effectif : état de vente et boutons dans le dossier du joueur.
 	app.set_meta("immersive08_full_player", false)
@@ -187,6 +192,10 @@ func executer() -> void:
 	verifier(not courrier.is_empty(), "courrier « offre_transfert » en Réception")
 	verifier(str(courrier.get("nature", "")) == "info" and not bool(courrier.get("arret", true)), "courrier d’information, sans arrêt de « Continuer »")
 	verifier(ClubMail.caption(str(courrier.get("ecran", ""))) == "Ouvrir · Offres reçues", "lien : " + ClubMail.caption(str(courrier.get("ecran", ""))))
+	if not courrier.is_empty() and DisplayServer.get_name() != "headless":
+		app._reset_reception(str(courrier.id))
+		app._navigate("Réception", false); await poser(20)
+		await capturer("vente-courrier.png")
 	ClubMail.open_screen(app, str(courrier.get("ecran", "")), "")
 	await poser(24)
 	verifier(app.route == "Recrutement", "le lien ouvre Recrutement (route %s)" % str(app.route))

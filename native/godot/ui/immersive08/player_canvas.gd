@@ -430,8 +430,12 @@ static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	var reason := str(renewal.get("reason", ""))
 	D.text(card,24,113,G.salary(player.get("salary",0)),40,C.IVORY,700,515)
 	D.text(card,24,151,"Fin de contrat : " + G.contract_year(player.get("contractEnd")),27,C.MUTED,500,515)
+	# État de vente en version courte (« Départ prévu », « Offre reçue », « En vente ») : la phrase complète tient dans la
+	# carte Marché des transferts et dans l'info-bulle, pas dans les 515 unités de cette ligne.
 	var sale_status := Sales.status(player)
-	D.text(card,24,183,reason if not reason.is_empty() else sale_status if not sale_status.is_empty() else "Contrat du joueur",19,C.ALERT if not reason.is_empty() else C.GOLD if not sale_status.is_empty() else C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
+	var sale_short := Sales.short(player)
+	var line := D.text(card,24,183,reason if not reason.is_empty() else sale_short if not sale_short.is_empty() else "Contrat du joueur",19,C.ALERT if not reason.is_empty() else C.GOLD if not sale_short.is_empty() else C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
+	if reason.is_empty() and not sale_status.is_empty(): line.tooltip_text = sale_status
 	var offer:=D.button(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"arrow",true,app.accent,"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason
@@ -445,15 +449,15 @@ static func _sale(card:Panel,app:Control,player:Dictionary,width:float) -> void:
 	var blocked := str(sale.get("blocked",""))
 	var status := Sales.status(player)
 	if status.is_empty(): status = "Valeur estimée %s. Il n’est pas proposé aux autres clubs." % G.euros(sale.get("value",0))
-	D.text(card,24,98,status,28,C.GOLD if pending else C.IVORY,600,width-48).name = "PlayerSaleStatus"
+	D.text(card,24,94,status,28,C.GOLD if pending else C.IVORY,600,width-48).name = "PlayerSaleStatus"
 	if not blocked.is_empty() and not pending:
-		D.text(card,24,136,blocked,26,C.ALERT,500,width-48).name = "PlayerSaleReason"
+		D.text(card,24,142,blocked,26,C.ALERT,500,width-48).name = "PlayerSaleReason"
 	var half := (width-60)/2.0
-	var toggle := D.button(card,Rect2(24,156,half,52),"Retirer du marché" if listed else "Proposer aux autres clubs",func(): Sales.toggle(app,player),not listed,"money",false,app.accent,"PlayerSaleToggle")
+	var toggle := D.button(card,Rect2(24,162,half,52),"Retirer du marché" if listed else "Proposer aux autres clubs",func(): Sales.toggle(app,player),not listed,"money",false,app.accent,"PlayerSaleToggle")
 	toggle.add_theme_font_size_override("font_size",maxi(14,C.px(28)))
 	toggle.disabled = pending or (not listed and not blocked.is_empty()) or not app._live().is_empty()
 	if toggle.disabled: toggle.tooltip_text = blocked if not blocked.is_empty() else status
-	var offers := D.button(card,Rect2(36+half,156,half,52),Sales.caption(app.model),func(): Sales.open(app),false,"arrow",false,app.accent,"PlayerSaleOffers")
+	var offers := D.button(card,Rect2(36+half,162,half,52),Sales.caption(app.model),func(): Sales.open(app),false,"arrow",false,app.accent,"PlayerSaleOffers")
 	offers.add_theme_font_size_override("font_size",maxi(14,C.px(28)))
 static func _development(card:Panel,app:Control,player:Dictionary) -> void:
 	var player_id := str(player.id)

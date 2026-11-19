@@ -198,6 +198,9 @@ test('Moteur Monde : liste, blocages, offres, spontanées, réponses, garde, pé
     const acheteur = lire(`S.clubs.find(c=>c.id!==S.club&&professionalPlaces(c)>0&&c.cash>=2e6).id`);
     offrir(run, 'test-direct', d.id, acheteur, 150000);
     const avant = lire('({cash:club().cash,n:club().players.length})');
+    // Part rendue : 50 % de la vente, plafonnée par la règle du budget (enveloppe + report + reconstitué ≤ recettes × plafond).
+    const renduAttendu = require('../native/engine/budget-transferts.cjs').rendu(lire('S.budgetTransferts'), 150000, lire('budgetTransfertsEntrees().recettes'));
+    assert.ok(renduAttendu > 0 && renduAttendu <= 75000, 'part rendue : ' + renduAttendu);
     m = jeu.call('snapshot');
     const od = m.sales.offers.find(x => x.id === 'test-direct');
     assert.equal(od.deferred, null); assert.equal(od.squadAfter, avant.n - 1); assert.equal(od.cashAfter, avant.cash + 150000);
@@ -207,8 +210,9 @@ test('Moteur Monde : liste, blocages, offres, spontanées, réponses, garde, pé
     const sa = r.model.meta.saleAnswer;
     assert.equal(sa.deferred, undefined); assert.equal(sa.fee, 150000); assert.equal(sa.squadSize, avant.n - 1);
     assert.equal(lire('club().cash'), avant.cash + 150000);
-    assert.equal(sa.budgetReturn, 75000); assert.equal(lire('S.budgetTransferts.reconstitue'), 75000);
-    assert.match(sa.message, /rejoint .+ pour 150 000 €\. 75 000 € reviennent au budget de transferts\. Vérifie ta feuille à 23\.$/);
+    assert.equal(sa.budgetReturn, renduAttendu); assert.equal(lire('S.budgetTransferts.reconstitue'), renduAttendu);
+    const espaces = s => s.replace(/[\s  ]+/g, ' ');
+    assert.ok(espaces(sa.message).endsWith(`pour 150 000 €. ${renduAttendu.toLocaleString('fr-FR').replace(/[\s  ]+/g, ' ')} € reviennent au budget de transferts. Vérifie ta feuille à 23.`), sa.message);
     assert.equal(lire(`S.clubs[${acheteur}].players.some(p=>p.id==='${d.id}')`), true);
     assert.ok(lire('S.ledger').some(l => JSON.stringify(l).includes('Vente : ')), 'ligne de caisse');
 

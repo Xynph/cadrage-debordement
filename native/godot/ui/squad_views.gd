@@ -425,7 +425,7 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 		var blocked := str(sale.get("blocked",""))
 		var planned: bool = sale.get("pending") is Dictionary
 		var listed := bool(sale.get("listed",false))
-		var line := G.wrap(sale_status if not sale_status.is_empty() else blocked if not blocked.is_empty() else "Valeur estimée %s." % G.euros(sale.get("value",0)),14,G.ALERT if sale_status.is_empty() and not blocked.is_empty() else G.INK)
+		var line := G.wrap(sale_status if not sale_status.is_empty() else blocked if not blocked.is_empty() else "Valeur estimée %s." % G.euros(sale.get("value",0)),Sales.TEXTE,G.ALERT if sale_status.is_empty() and not blocked.is_empty() else G.INK)
 		line.name = "ProfileSaleStatus"
 		contracts.add_child(line)
 		var sell:=G.button("RETIRER DU MARCHÉ" if listed else "PROPOSER AUX AUTRES CLUBS",func(): Sales.toggle(app,p))
@@ -433,10 +433,13 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 		sell.disabled = planned or not app._live().is_empty() or (not listed and not blocked.is_empty())
 		if sell.disabled and not blocked.is_empty(): sell.tooltip_text = blocked
 		contracts.add_child(sell)
+		Sales.lisible(line)
+		Sales.lisible(sell)
 		if sale.get("offerId") is String or planned:
 			var offers:=G.button(Sales.caption(app.model).to_upper()+" →",func(): Sales.open(app))
 			offers.name = "ProfileSaleOffers"
 			contracts.add_child(offers)
+			Sales.lisible(offers)
 	contracts.add_child(G.label("CHARGE INDIVIDUELLE",13,G.MUTED))
 	var load_plan:=OptionButton.new()
 	var modes:Array=["collective","repos","normal","intense"]
