@@ -51,7 +51,8 @@ try {
   assert.equal(jeu.brut('set_consignes', { axe: 'tempo', valeur: 'rapide' }).ok, false);
   m = jeu.call('set_consignes', { axe: 'rucks', valeur: 'agressive' });
   assert.equal(m.live.pilotage.consignes.rucks, 'agressive');
-  m = jeu.call('tick', { steps: 15 });
+  // 20 pas : le banc adverse revoit ses consignes dès la 5e minute ; 15 pas n'y suffisaient plus selon le tirage (4e minute).
+  m = jeu.call('tick', { steps: 20 });
   const bilan = m.live.pilotage.bilans.find(b => b.axe === 'rucks');
   assert.ok(JSON.parse(vm.run('S.live.pilotage.adversaire.minute')) >= 5, 'le banc adverse revoit ses consignes pendant le direct (tick)');
   assert.ok(bilan && /^Rucks « Contester » depuis \d+′ : \d+ pénalités?, \d+ ballons? arrachés?\.$/.test(bilan.texte), bilan?.texte);
