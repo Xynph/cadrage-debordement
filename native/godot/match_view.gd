@@ -36,9 +36,25 @@ const ACTION_OFFSET := Vector3(0.24, 0.5, 0.832)
 ## GRUE_FIN), la caméra monte et plonge jusqu'à GRUE_ANGLE degrés de plus, comme la caméra
 ## principale d'une tribune qui suit le jeu le long de sa touche : la tribune proche reste sous
 ## l'image, au lieu de remplir le bas de l'écran.
+## 18 novembre 2026 (soir) : 18° de grue rendaient la vue trop plongeante près de la touche proche
+## (joueurs vus du dessus) ; la grue monte de 10° au plus et l'inclinaison totale est plafonnée à
+## INCLINAISON_MAX degrés au-dessus de l'horizon, TV et contact : les joueurs restent vus de 3/4. Le
+## toit de la tribune proche est alors franchi par la caméra qui avance (pose_camera), pas qui plonge.
 const GRUE_DEBUT := 4.0
 const GRUE_FIN := 30.0
-const GRUE_ANGLE := 18.0
+const GRUE_ANGLE := 10.0
+const INCLINAISON_MAX := 38.0
+## Poteaux de but (montants en x = ±POTEAUX_X, z = ±POTEAUX_Z, hauts de POTEAU_HAUT m, barre à
+## BARRE_Y m) : la caméra au contact pivote autour du point visé (jusqu'à CONTOURNEMENT_MAX rad, par
+## pas de CONTOURNEMENT_PAS) quand un montant ou la barre, élargi de POTEAU_MARGE m, passe entre elle
+## et l'action. Le pivot est amorti (pas d'à-coup) et revient à zéro dès que la vue est dégagée.
+const POTEAUX_X := 50.0
+const POTEAUX_Z := 2.8
+const POTEAU_HAUT := 12.0
+const BARRE_Y := 3.0
+const POTEAU_MARGE := 0.6
+const CONTOURNEMENT_MAX := 0.7
+const CONTOURNEMENT_PAS := 0.05
 ## Angle de champ vertical (degrés) : téléobjectif de retransmission en TV, plus ouvert au contact.
 const TV_CHAMP := 24.0
 const ACTION_CHAMP := 36.0
@@ -58,6 +74,11 @@ const PLAN_LARGE_OFFSET := Vector3(0.0, 0.64, 0.77)
 const PLAN_LARGE_VISE := Vector3(0.0, 0.0, 4.0)
 const PLAN_LARGE_RECUL := 125.0
 const PLAN_LARGE_CHAMP := 36.0
+## Grands moments (18 novembre 2026) : à la mi-temps et en fin de match, sous le plan large, les
+## joueurs rentrent en marchant vers le tunnel, au milieu de la touche proche (sous la tribune
+## principale). Allure de marche (m/s) : sous le seuil du trot des clips (2,5 m/s).
+const TUNNEL := Vector3(0.0, 0.0, 40.0)
+const ALLURE_SORTIE := 1.9
 ## Recentrage borné (TV et action) : la touche lointaine, la touche proche et les lignes de ballon
 ## mort, plus TERRAIN_MARGE m, restent près des bords de l'image (BORD_*, en part de l'image) : la
 ## tribune n'en occupe qu'une bande. Le ballon reste toujours dans la zone sûre (BALLON_SUR des bords).
@@ -127,11 +148,17 @@ var _club_crest: Texture2D
 var _club_branding: MultiMeshInstance3D
 ## Gestes de rugby (touche, ballon porté, essai) : posés par le match en temps forts (repli CD_MATCH_GESTES=0) ou par CD_MATCH_GESTES=1 dans le direct d'origine.
 var _gestes: RefCounted
+## Sans les gestes complets, la touche reste jouée (lancer du talonneur, saut porté) : la même
+## mise en scène de match_gestes.gd, réduite à la touche (18/11/2026).
+var _touche_directe: RefCounted = Gestes.new(self, true)
 ## Pistes du chorégraphe de temps forts (CD_MATCH_CHOREGRAPHE=1) : la vue les suit à la place de son interpolation.
 var _choregraphie: RefCounted
 ## Formations des phases arrêtées (mêlée liée, alignement de touche) : toujours actives.
 var _formations: RefCounted
 var _cadrage: RefCounted
+## Pivot de contournement des poteaux (caméra au contact), en radians, et sa vitesse amortie.
+var _contournement := 0.0
+var _contournement_vitesse := 0.0
 # Rendu moderne (Forward+ seulement, voir match_rendu.gd) ; null sous gl_compatibility.
 var _rendu: RefCounted
 var _ground_meshes: Array[MeshInstance3D] = []
@@ -143,6 +170,14 @@ var _impacts: RefCounted = Impacts.new(self)
 ## Compteurs de contrôle (tests, capture) : joueurs replacés au lieu de courir, et coupes posées pour cela.
 var replacements := 0
 var replacements_coupes := 0
+## Ralenti de présentation (essai aplati, posé par la régie) : facteur appliqué au temps de la vue,
+## 1 hors ralenti. Les joueurs, le ballon, les gestes et la caméra ralentissent ensemble.
+var ralenti := 1.0
+## Durée réelle (s, avant ralenti) de la dernière image animée par la vue : la régie, qui passe
+## avant la vue dans chaque image, mesure les déplacements de l'image précédente sur cette durée.
+var dernier_delta := 0.0
+## Sortie des joueurs en cours (mi-temps, fin de match) : jusqu'à la prochaine image du moteur.
+var sortie := false
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -221,7 +256,13 @@ func set_gestes(enabled: bool) -> void:
 		return
 	if _gestes:
 		_gestes.cancel()
+	_touche_directe.cancel()
 	_gestes = Gestes.new(self) if enabled else null
+
+
+## Gestes qui mettent des joueurs en scène : les gestes complets, sinon la touche du direct.
+func mise_en_scene() -> RefCounted:
+	return _gestes if _gestes != null else _touche_directe
 
 
 func set_action_motion(enabled: bool) -> void:
@@ -302,8 +343,7 @@ func jouer_choregraphie(pistes: Dictionary, vitesse: float = 1.0) -> bool:
 	_pass_plan = {}
 	_contact_plan = {}
 	_impacts.annuler()
-	if _gestes:
-		_gestes.cancel()
+	mise_en_scene().cancel()
 	if not _choregraphie.charger(pistes):
 		return false
 	_choregraphie.vitesse = vitesse
@@ -395,7 +435,7 @@ func essai_aplati() -> bool:
 
 
 func is_presenting_extended_pass() -> bool:
-	return _pass_plan.get("duration", 0.0) == Pass.LIVE_SECONDS or (_gestes != null and _gestes.holding_tick()) or _impacts.tient()
+	return _pass_plan.get("duration", 0.0) == Pass.LIVE_SECONDS or mise_en_scene().holding_tick() or _impacts.tient()
 
 
 func apply_frame(live: Dictionary) -> void:
@@ -403,8 +443,9 @@ func apply_frame(live: Dictionary) -> void:
 		_pending = live.duplicate(true)
 		_has_pending = true
 		return
-	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours.
+	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours (et à la sortie).
 	arreter_choregraphie()
+	sortie = false
 	var scene: Dictionary = live.get("scene", {})
 	if scene.is_empty() or not scene.get("players", null) is Array:
 		_clear_presence()
@@ -549,8 +590,7 @@ func apply_frame(live: Dictionary) -> void:
 		# Ballon absent de la scène : la caméra reste où elle est (pas de saut au centre du terrain).
 		_ball.visible = false
 		_ball_attached = false
-	if _gestes:
-		_gestes.observe(live, scene, new_action, _action_motion and not _paused and has_ball and _live_cadence == 1)
+	mise_en_scene().observe(live, scene, new_action, _action_motion and not _paused and has_ball and _live_cadence == 1)
 	if new_action and play_action and _animations_adaptees != null and _live_cadence == 1:
 		_gestes_du_fait(scene, previous_kind)
 	_replacer_longs(new_action)
@@ -569,7 +609,7 @@ func _replacer_longs(new_action: bool) -> void:
 	for id: String in _actors:
 		var entry: Dictionary = _actors[id]
 		# Seulement un trajet qui vient d'être fixé, et jamais un joueur mis en scène ailleurs.
-		if float(entry.elapsed) > 0.0 or _is_pass_player(id) or (_gestes != null and _gestes.stages(id)) or (_choregraphie != null and _choregraphie.stages(id)) or _impacts.occupe(id):
+		if float(entry.elapsed) > 0.0 or _is_pass_player(id) or mise_en_scene().stages(id) or (_choregraphie != null and _choregraphie.stages(id)) or _impacts.occupe(id):
 			continue
 		var at: Vector3 = (entry.node as Node3D).position
 		var target: Vector3 = entry.target
@@ -622,7 +662,7 @@ func deplacement_restant(rayon: float = 25.0) -> float:
 	var ballon := Vector2(_ball_target.x, _ball_target.z)
 	for id: String in _actors:
 		var entry: Dictionary = _actors[id]
-		if _is_pass_player(id) or (_gestes != null and _gestes.stages(id)) or (_choregraphie != null and _choregraphie.stages(id)) or _impacts.occupe(id):
+		if _is_pass_player(id) or mise_en_scene().stages(id) or (_choregraphie != null and _choregraphie.stages(id)) or _impacts.occupe(id):
 			continue
 		var target: Vector3 = entry.target
 		if Vector2(target.x, target.z).distance_to(ballon) > rayon:
@@ -642,7 +682,7 @@ func _gestes_du_fait(scene: Dictionary, previous_kind: String) -> void:
 	for player: Dictionary in scene.get("players", []):
 		if player.get("featured", false) and int(player.get("side", -1)) == possession:
 			featured = str(player.get("id", ""))
-	if featured.is_empty() or not _actors.has(featured) or (_gestes != null and _gestes.stages(featured)):
+	if featured.is_empty() or not _actors.has(featured) or mise_en_scene().stages(featured):
 		return
 	var ball: Dictionary = scene.get("ball", {})
 	var origin: Variant = scene.get("origin")
@@ -678,6 +718,66 @@ func _maj_plan_large() -> void:
 		_camera_cut = true
 
 
+func plan_large() -> bool:
+	return _plan_large
+
+
+## Ralenti de présentation posé par la régie (essai) : 1 rend la vitesse réelle.
+func set_ralenti(facteur: float) -> void:
+	ralenti = clampf(facteur, 0.05, 1.0) if is_finite(facteur) else 1.0
+
+
+## Mi-temps, fin de match (régie des temps forts) : chaque joueur quitte sa place et marche vers
+## le tunnel, à ALLURE_SORTIE ; le ballon est laissé au sol. Plus rien d'une action en cours (passe,
+## contact, geste, posture de mêlée) ne reste posé. La prochaine image du moteur reprend la main.
+func sortir_du_terrain() -> void:
+	if not is_node_ready():
+		return
+	arreter_choregraphie()
+	_stop_live_pass()
+	_pass_plan = {}
+	_contact_plan = {}
+	_impacts.annuler()
+	mise_en_scene().cancel()
+	_formations.preparer({}, true)
+	for tenue: Dictionary in _tenues.values():
+		tenue.lache = true
+	_paused = false
+	sortie = true
+	_kind = ""
+	_carrier_id = ""
+	_ball_attached = false
+	if _ball.visible:
+		_ball_from = _ball.position
+		_ball_from_basis = _ball.global_basis
+		_ball_target = Vector3(_ball.position.x, Impacts.BALLON_AU_SOL, _ball.position.z)
+		_ball_travel = 0.0
+	for id: String in _actors:
+		var entry: Dictionary = _actors[id]
+		var at: Vector3 = (entry.node as Node3D).position
+		var but := place_de_sortie(at, int(entry.side))
+		entry.holding = false
+		entry.geste = {}
+		entry.grip = 0.0
+		entry.cut_direction = 0
+		entry.cut_beat = -1.0
+		entry.cut_plant.clear()
+		entry.from = at
+		entry.target = but
+		entry.duree = maxf(Motion.DUREE_MIN, Vector2(but.x - at.x, but.z - at.z).length() / ALLURE_SORTIE)
+		entry.elapsed = 0.0
+		entry.tangent = Vector3.ZERO
+		entry.velocity = Vector3.ZERO
+		entry.feet.clear()
+
+
+## Point d'arrivée de la marche vers le tunnel : chaque camp sur sa moitié de l'entrée, les joueurs
+## étalés sur quelques mètres pour ne pas converger tous sur le même point.
+static func place_de_sortie(depuis: Vector3, camp: int) -> Vector3:
+	var cote := -1.0 if camp == 0 else 1.0
+	return TUNNEL + Vector3(cote * (1.0 + fposmod(depuis.x * 0.37 + depuis.z * 0.21, 3.0)), 0.0, 0.0)
+
+
 func set_camera(mode: String) -> void:
 	var selected := mode if mode in ["tactical", "action"] else "tv"
 	var changed := selected != _camera_mode
@@ -689,11 +789,13 @@ func set_camera(mode: String) -> void:
 
 
 func _process(delta: float) -> void:
+	dernier_delta = delta
+	# Ralenti de l'essai : tout ce que la vue anime avance moins vite (présentation seule).
+	delta *= ralenti
 	if not _pass_plan.is_empty():
 		_pass_elapsed = minf(_pass_plan.duration, _pass_elapsed + delta)
 	var preparation := smoothstep(0.0, Pass.PREP_SECONDS, _pass_elapsed)
-	if _gestes:
-		_gestes.advance(delta)
+	mise_en_scene().advance(delta)
 	if choregraphie_active():
 		_choregraphie.avancer(delta)
 	if _formations:
@@ -702,12 +804,11 @@ func _process(delta: float) -> void:
 		var entry: Dictionary = _actors[id]
 		var actor: Node3D = entry.node
 		var suivi: bool = _choregraphie != null and _choregraphie.stages(id)
-		var staged: bool = suivi or (_gestes != null and _gestes.stages(id))
+		var staged: bool = suivi or mise_en_scene().stages(id)
 		# Postures rendues dans l'ordre inverse de leur pose : formation (posée en dernier), puis gestes.
 		if _formations:
 			_formations.restaurer(id, entry)
-		if _gestes:
-			_gestes.restore(id, entry)
+		mise_en_scene().restore(id, entry)
 		if entry.rig:
 			Presentation.restore_contact(entry.rig, entry.contact_base)
 			Cut.restore(entry.rig, entry.cut_pose)
@@ -721,7 +822,7 @@ func _process(delta: float) -> void:
 		elif suivi:
 			_choregraphie.place(id, actor)
 		elif staged:
-			_gestes.place(id, actor)
+			mise_en_scene().place(id, actor)
 		else:
 			# Temps passé à l'arrêt, une fois la place atteinte (même au milieu de cette image).
 			var repos := float(entry.elapsed) + delta - float(entry.duree)
@@ -827,15 +928,15 @@ func _process(delta: float) -> void:
 	if choregraphie_active():
 		_choregraphie.pose()
 	_update_ball(delta)
-	if _gestes:
-		_gestes.pose()
+	mise_en_scene().pose()
 	_poser_tenues(delta)
 	if _formations:
 		_formations.poser(delta)
 	# Resolve upper-body contact after every source-animation update and after the
 	# ball's continuous trajectory. A new receiver never pulls it across the pitch.
 	for id: String in _actors:
-		if _is_pass_player(id) or (_gestes != null and _gestes.stages(id)):
+		# Demi qui introduit en mêlée : il tient le ballon bas lui-même (match_formations.gd).
+		if _is_pass_player(id) or mise_en_scene().stages(id) or (_formations != null and _formations.tient_ballon(id)):
 			continue
 		var entry: Dictionary = _actors[id]
 		var actor: Node3D = entry.node
@@ -900,7 +1001,7 @@ func _porter_ballon(id: String, entry: Dictionary, delta: float) -> void:
 		var vers_camera := _camera.global_position - actor.global_position if is_instance_valid(_camera) else Vector3.BACK
 		entry.cote_ballon = 1.0 if actor.global_basis.x.dot(Vector3(vers_camera.x, 0.0, vers_camera.z)) >= 0.0 else -1.0
 	var tenue: Array = Presentation.carry_ball(actor, entry.rig, float(entry.grip), float(entry.tuck), float(entry.cote_ballon), swing, toward)
-	var possede: bool = _ball_attached and _carrier_id == id and not (_gestes != null and _gestes.owns_ball())
+	var possede: bool = _ball_attached and _carrier_id == id and not mise_en_scene().owns_ball()
 	# Raccord en 0,2 s depuis la place donnée par la trajectoire (prise, passe reçue).
 	entry.porte = move_toward(float(entry.get("porte", 0.0)), 1.0 if possede else 0.0, delta * 5.0)
 	if possede and not _paused:
@@ -1039,7 +1140,7 @@ func _update_ball(delta: float) -> void:
 		return
 	if not _ball.visible:
 		return
-	if _gestes != null and _gestes.owns_ball():
+	if mise_en_scene().owns_ball():
 		return
 	if not _pass_plan.is_empty() and _update_live_pass():
 		return
@@ -1147,6 +1248,11 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			look = framed[0]
 			size = framed[1]
 			offset = framed[2]
+			if float(_gestes.zoom) > 0.0:
+				# Essai dans un coin : pivot limité et point visé gardé dans l'aire de jeu (pas de tribune).
+				var suivi := offset_suivi(ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET, _camera_focus.z)
+				offset = borner_pivot(look, offset, suivi)
+				look = look.lerp(borner_visee(look), smoothstep(0.0, 1.0, float(_gestes.zoom)))
 			if _cadrage:
 				# Temps fort : le cadrage du geste garde lui aussi le ballon dans le champ.
 				look = _cadrage.garder_ballon(look, size, offset, screen.x / maxf(screen.y, 1.0))
@@ -1155,6 +1261,20 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			look = _camera_focus
 			size = wide
 			offset = offset_suivi(ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET, _camera_focus.z)
+		# Caméra au contact : pivot amorti autour du point visé quand un poteau masquerait l'action
+		# (cherché sur le point visé final de l'image précédente, déjà stable d'une image à l'autre).
+		var contournement := 0.0
+		if _camera_mode == "action":
+			contournement = contournement_poteaux(look if cut or delta <= 0.0 else _camera_look, size, offset)
+		if cut or delta <= 0.0:
+			_contournement = contournement
+			_contournement_vitesse = 0.0
+		else:
+			var pas_contournement: Array = Gestes._damp1(_contournement, contournement, _contournement_vitesse, delta)
+			_contournement = pas_contournement[0]
+			_contournement_vitesse = pas_contournement[1]
+		if absf(_contournement) > 0.0001:
+			offset = offset.rotated(Vector3.UP, _contournement)
 		# Recentrage borné, amorti (pas d'à-coup quand une borne entre en jeu) ; le ballon ne sort
 		# jamais de l'image, même pendant l'amortissement.
 		var aspect := screen.x / maxf(screen.y, 1.0)
@@ -1205,8 +1325,102 @@ func offset_suivi(base: Vector3, profondeur: float) -> Vector3:
 	if k <= 0.0:
 		return base
 	var horizontal := Vector3(base.x, 0.0, base.z)
-	var elevation := atan2(base.y, horizontal.length()) + deg_to_rad(GRUE_ANGLE) * k
+	var depart := atan2(base.y, horizontal.length())
+	# Plafond d'inclinaison (jamais sous l'angle de base) : pas de vue de dessus près de la touche.
+	var elevation := minf(depart + deg_to_rad(GRUE_ANGLE) * k, maxf(depart, deg_to_rad(INCLINAISON_MAX)))
 	return (horizontal.normalized() * cos(elevation) + Vector3.UP * sin(elevation)) * base.length()
+
+
+## Pivot des gestes (caméra TV) : jamais plus de PIVOT_MAX rad autour de la direction de suivi, et
+## rendu progressivement nul près d'une ligne de ballon mort (|x| de PIVOT_DEBUT à PIVOT_FIN) quand il
+## tourne la vue vers le bout du terrain : un essai dans un coin ne montre pas la tribune.
+const PIVOT_MAX := 0.2
+const PIVOT_DEBUT := 25.0
+const PIVOT_FIN := 42.0
+## Point visé pendant un geste : dans l'aire de jeu, à |x| <= VISEE_GESTE.x et |z| <= VISEE_GESTE.y.
+const VISEE_GESTE := Vector2(47.0, 28.0)
+
+
+func borner_pivot(look: Vector3, offset: Vector3, suivi: Vector3) -> Vector3:
+	var avant := Vector2(suivi.x, suivi.z)
+	var apres := Vector2(offset.x, offset.z)
+	if avant.length() < 0.001 or apres.length() < 0.001:
+		return offset
+	# Angle de lacet autour de l'axe vertical (même sens que Vector3.rotated(Vector3.UP, angle)).
+	var angle := wrapf(atan2(apres.x, apres.y) - atan2(avant.x, avant.y), -PI, PI)
+	var permis := clampf(angle, -PIVOT_MAX, PIVOT_MAX)
+	# La caméra regarde vers -offset : vers le bout du terrain le plus proche du point visé ?
+	if -offset.x * look.x > 0.0:
+		permis *= 1.0 - smoothstep(PIVOT_DEBUT, PIVOT_FIN, absf(look.x))
+	if absf(permis - angle) < 0.00001:
+		return offset
+	return suivi.normalized().rotated(Vector3.UP, permis) * offset.length()
+
+
+func borner_visee(look: Vector3) -> Vector3:
+	return Vector3(borne_douce(look.x, VISEE_GESTE.x), look.y, borne_douce(look.z, VISEE_GESTE.y))
+
+
+## Borne sans à-coup : identité jusqu'à `limite - VISEE_GENOU`, puis approche progressive de la limite
+## (vitesse continue) ; un ballon qui file vers le coin ne fait pas s'arrêter net le point visé.
+const VISEE_GENOU := 5.0
+static func borne_douce(valeur: float, limite: float) -> float:
+	var debut := limite - VISEE_GENOU
+	if absf(valeur) <= debut:
+		return valeur
+	return signf(valeur) * (debut + VISEE_GENOU * tanh((absf(valeur) - debut) / VISEE_GENOU))
+
+
+## Un montant ou la barre des poteaux (élargis de POTEAU_MARGE) coupe le segment `depart` -> `arrivee`.
+func poteau_entre(depart: Vector3, arrivee: Vector3, m: float = POTEAU_MARGE) -> bool:
+	for x in [-POTEAUX_X, POTEAUX_X]:
+		var boites: Array[AABB] = [
+			AABB(Vector3(x - m, 0.0, -POTEAUX_Z - m), Vector3(2.0 * m, POTEAU_HAUT + m, 2.0 * m)),
+			AABB(Vector3(x - m, 0.0, POTEAUX_Z - m), Vector3(2.0 * m, POTEAU_HAUT + m, 2.0 * m)),
+			AABB(Vector3(x - m, BARRE_Y - m, -POTEAUX_Z - m), Vector3(2.0 * m, 2.0 * m, 2.0 * POTEAUX_Z + 2.0 * m)),
+		]
+		for boite: AABB in boites:
+			if boite.intersects_segment(depart, arrivee) != null:
+				return true
+	return false
+
+
+## Cibles que la caméra au contact doit voir : le point visé (à hauteur d'homme) et le ballon.
+func _cibles_camera(look: Vector3) -> Array[Vector3]:
+	var cibles: Array[Vector3] = [Vector3(look.x, 1.0, look.z)]
+	if is_instance_valid(_ball) and _ball.visible:
+		cibles.append(_ball.global_position)
+	return cibles
+
+
+## Un poteau masque une des cibles pour la caméra posée sur `look` dans la direction `offset`.
+func poteau_masque(look: Vector3, size: float, offset: Vector3, marge: float = POTEAU_MARGE) -> bool:
+	var camera: Vector3 = pose_camera(look, size, offset)[0]
+	for cible: Vector3 in _cibles_camera(look):
+		if poteau_entre(camera, cible, marge):
+			return true
+	return false
+
+
+## Plus petit pivot (rad) qui dégage la vue des poteaux ; le sens déjà pris est essayé d'abord. Une
+## caméra déjà tournée ne revient que si la vue d'origine est dégagée avec POTEAU_RELACHE m de marge
+## (hystérésis : pas d'aller-retour quand le point visé glisse un peu en tournant).
+const POTEAU_RELACHE := 1.5
+func contournement_poteaux(look: Vector3, size: float, offset: Vector3) -> float:
+	# Loin des poteaux : rien à chercher (coût nul la plupart du temps).
+	if absf(absf(look.x) - POTEAUX_X) > 40.0:
+		return 0.0
+	var marge := POTEAU_RELACHE if absf(_contournement) > 0.01 else POTEAU_MARGE
+	if not poteau_masque(look, size, offset, marge):
+		return 0.0
+	var sens := -1.0 if _contournement < 0.0 else 1.0
+	var pas := int(round(CONTOURNEMENT_MAX / CONTOURNEMENT_PAS))
+	for k in range(1, pas + 1):
+		for signe: float in [sens, -sens]:
+			var angle := signe * k * CONTOURNEMENT_PAS
+			if not poteau_masque(look, size, offset.rotated(Vector3.UP, angle), marge):
+				return angle
+	return sens * CONTOURNEMENT_MAX
 
 
 ## Caméra suivie en perspective : `size` est la hauteur visible (m) au point visé `look`, `offset`
@@ -1391,8 +1605,7 @@ func _clear_presence() -> void:
 	_ball.visible = false
 	_carrier_id = ""
 	_action_key = ""
-	if _gestes:
-		_gestes.cancel()
+	mise_en_scene().cancel()
 	_pass_plan.clear()
 	_pass_elapsed = 0.0
 	_contact_plan = {}

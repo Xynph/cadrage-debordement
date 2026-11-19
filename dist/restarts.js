@@ -69,7 +69,7 @@ function resolveInGoal(l,actor,scenario,kickOrigin=l.territory,depuis=null){
 }
 function missedGoal(l,side){
  const outcome=Math.random();
- if(outcome<.6){addEvent(l,'Le tir au but manqué devient mort au-delà de la ligne d’essai.','play',{kind:'miss',team:side,to:{x:attackingGoal(side),y:35}});return performKickRestart(l,'drop22',1-side,'missed-goal-dead',side)}
+ if(outcome<.6){addEvent(l,'Le tir au but manqué devient mort au-delà de la ligne d’essai.','play',{kind:'miss',team:side,to:{x:attackingGoal(side),y:35}});return relancer(l,'drop22',1-side,'missed-goal-dead',side)}
  if(outcome<.8){const at=side===0?95:5;addEvent(l,'Le tir au but manqué sort en touche : lancer à la défense.','play',{kind:'touch',team:side,cause:'missed-goal-touch',to:{x:at,y:0}});return grantSetPiece(l,'lineout',1-side,at,'missed-goal-touch',side)}
  const landing=side===0?rand(82,97):rand(3,18);ballPossession(l,1-side,landing);addEvent(l,`${S.clubs[l.pair[1-side]].abbr} récupère le tir manqué resté dans le champ de jeu.`,'play',{kind:'reception',team:1-side,actor:actionPlayer(l,1-side,'receiver')?.id||null,to:{x:landing,y:35}});return true;
 }

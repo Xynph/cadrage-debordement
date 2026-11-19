@@ -87,10 +87,13 @@ n'apparaît à l'écran ni dans la barre des tâches, le premier plan n'est jama
 pris, le pilote audio est muet (`--audio-driver Dummy`) et le volume du profil à
 zéro. L'outil Godot (`tools/match-filme/match_filme.gd`, chargé seulement par
 `--script`) donne le coup d'envoi, passe les causeries et enregistre une image
-PNG toutes les `-Cadence` secondes, puis quitte à la fin du match, à la minute
+PNG toutes les `-Cadence` secondes (toutes les `-CadenceMoments` secondes, 0,5 par
+défaut, autour d'un essai et pendant la sortie des joueurs à la mi-temps et en fin
+de match), puis quitte à la fin du match, à la minute
 `-Minutes` ou après `-DureeMax` secondes. Le dossier contient les images,
-`planche.png` (planche-contact), `report.json` (minute, score et luminance de
-chaque image : `noires` doit valoir 0) et `surveillance.json`
+`planche.png` (planche-contact), `planche-moments.png` (essais, mi-temps, fin),
+`report.json` (minute, score, état, grand moment et luminance de chaque image :
+`noires` doit valoir 0 ; `moments` donne la première image de chacun) et `surveillance.json`
 (`premier_plan_godot` et `fenetres_visibles_sur_le_bureau_utilisateur` doivent
 valoir 0). Une fenêtre hors écran (`--position`) ne suffit pas : Godot la ramène
 sur l'écran et prend le premier plan au démarrage. Paramètres complets en tête du

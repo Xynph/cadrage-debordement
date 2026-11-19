@@ -80,20 +80,71 @@ func run() -> void:
 	check(at_lineout >= 0 and at_try == at_lineout + 2 and kinds[at_lineout + 1] == "setpiece-win", "La séquence contient alignement, touche conservée puis essai")
 	check(at_try + 1 < frames.size(), "Une scène suit l'essai")
 
-	# Sans le drapeau : aucun geste, aucune attente, le jeu reste celui d'avant.
+	# Sans le drapeau : aucun geste complet ; seule la touche reste jouée (18/11/2026 : lancer du
+	# talonneur et saut porté, la mise en scène de match_gestes.gd réduite à la touche). Le direct
+	# n'attend que cette touche, la caméra garde sa formule d'origine.
 	var plain = make_view(false)
 	await process_frame
-	check(plain._gestes == null, "Sans CD_MATCH_GESTES la vue n'a pas de gestes")
+	check(plain._gestes == null, "Sans CD_MATCH_GESTES la vue n'a pas de gestes complets")
+	var directe: RefCounted = plain._touche_directe
+	check(directe != null and directe.touche_seule and plain.mise_en_scene() == directe, "Sans gestes complets, la touche du direct est mise en scène")
 	var plain_camera := true
+	var plain_bases := {}
+	var direct_thrower_overhead := false
+	var direct_thrower := ""
+	var direct_jumper := ""
+	var direct_peak := 0.0
+	var direct_ball_top := 0.0
+	var direct_caught := false
+	var direct_jump_clip := false
+	var direct_waited := 0.0
 	for index in frames.size():
 		plain.apply_frame(live(frames, index))
-		for frame in 12:
+		if index == 0:
+			plain._process(1.0)
+			for id: String in plain._actors:
+				plain_bases[id] = (plain._actors[id].model as Node3D).position.y
+		var steps := 0
+		while steps < 12 or (plain.is_presenting_extended_pass() and steps < 400):
 			plain._process(STEP)
+			steps += 1
 			plain_camera = plain_camera and camera_plain(plain, TV_OFFSET, View.TV_TAILLE)
-		check(not plain.is_presenting_extended_pass(), "Sans gestes le match n'attend jamais : " + str(kinds[index]))
+			if plain.is_presenting_extended_pass():
+				direct_waited += STEP
+			if directe.phase != "touche":
+				continue
+			if directe.awaiting and directe.done and plain._actors.has(directe.thrower):
+				direct_thrower = directe.thrower
+				direct_thrower_overhead = direct_thrower_overhead or (hands(plain, directe.thrower) < 0.3 and plain._ball.global_position.y > 1.9)
+			if not directe.awaiting and not str(directe.jumper).is_empty() and plain_bases.has(directe.jumper):
+				direct_jumper = directe.jumper
+				direct_peak = maxf(direct_peak, lift(plain, directe.jumper, plain_bases))
+				direct_ball_top = maxf(direct_ball_top, plain._ball.global_position.y)
+				var clip: String = str((plain._actors[directe.jumper].animation as AnimationPlayer).current_animation)
+				direct_jump_clip = direct_jump_clip or clip.ends_with("Man_Jump") or plain.geste_adapte(directe.jumper)
+				if absf(directe.time - (Gestes.CATCH + 0.1)) < STEP * 0.6:
+					direct_caught = hands(plain, directe.jumper) < 0.3 and plain._ball.global_position.y > 2.8
+		if kinds[index] not in ["lineout", "setpiece-win"]:
+			check(not plain.is_presenting_extended_pass(), "Sans gestes complets le match n'attend que la touche : " + str(kinds[index]))
+			check(not directe.active(), "Hors touche, rien n'est mis en scène sans gestes complets : " + str(kinds[index]))
 	check(plain_camera, "Sans gestes la caméra TV garde sa formule d'origine à chaque image")
+	var thrower_slot := -1
+	for player: Dictionary in frames[at_lineout].scene.players:
+		if str(player.id) == direct_thrower:
+			thrower_slot = int(player.slot)
+	check(thrower_slot == 1, "Direct : le talonneur (n° 2) lance : " + direct_thrower)
+	check(direct_thrower_overhead, "Direct : le talonneur tient le ballon au-dessus de la tête avant le lancer")
+	check(not direct_jumper.is_empty() and direct_jumper != direct_thrower, "Direct : un sauteur saute pour capter")
+	check(direct_peak > 0.95, "Direct : le sauteur est porté à plus de 95 cm : " + str(direct_peak))
+	check(direct_jump_clip, "Direct : le sauteur joue le saut du modèle (ou le geste adapté)")
+	check(direct_ball_top > 2.8, "Direct : le ballon lancé monte au sauteur : " + str(direct_ball_top))
+	check(direct_caught, "Direct : prise à deux mains au sommet")
+	check(direct_waited < 12.0, "Direct : la touche ne retient pas le match plus de 12 s : " + str(direct_waited))
+	print("MATCH_GESTES_DIRECT ", JSON.stringify({"lanceur": direct_thrower, "sauteur": direct_jumper, "levee_m": snappedf(direct_peak, 0.01), "ballon_haut_m": snappedf(direct_ball_top, 0.01), "attente_s": snappedf(direct_waited, 0.01)}))
+	for frame in 30:
+		plain._process(STEP)
 	for id: String in plain._actors:
-		check(is_zero_approx((plain._actors[id].model as Node3D).rotation.x), "Sans gestes aucun corps n'est incliné")
+		check(is_zero_approx((plain._actors[id].model as Node3D).rotation.x), "Sans gestes aucun corps ne reste incliné")
 	plain.queue_free()
 
 	var view = make_view(true)
