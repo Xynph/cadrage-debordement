@@ -18,7 +18,8 @@ const files=Object.freeze([]),commands=Object.freeze([]);
 //    Ce qui compte comme repos n'est pas public : on retient l'option la plus prudente, « absent de la feuille de
 //    match » alors que le joueur est apte et disponible (une absence pour blessure ou pour la sélection n'est pas un
 //    repos). Seule la saison 2026-27 est publique : la règle est reconduite chaque saison, faute d'autre information.
-//    Les clubs de l'ordinateur appliquent la même règle (feuille de match, comme comply() du JIFF).
+//    Les clubs de l'ordinateur et la sélection du staff appliquent la même règle (feuille de match, comme comply() du
+//    JIFF), en étalant les repos (rotation du staff, 19/11/2026).
 function factory(){
  const POLICY='bleus-33-2026-27-v1',NATION='FRA',LIST_SIZE=33,WINDOW=8,MIN_RESTS=2,KEEP=12,RELATION_START=60;
  // Répartition par famille de poste (international-callups.cjs : familles 0 à 8) : 33 joueurs, tous les postes couverts.
@@ -124,13 +125,33 @@ function factory(){
  }
  // Remplace sur la feuille les joueurs de la liste qui doivent souffler. Meilleur joueur disponible du poste (le statut
  // JIFF est conservé quand c'est possible) ; si personne ne convient, le joueur reste sur la feuille.
+ // Rotation du staff (décision de Léo du 19/11/2026) : un vrai staff étale les repos au lieu d'attendre que tous ses
+ // internationaux arrivent ensemble au bout de la fenêtre (capture du 19/11 : 9 Toulousains à faire souffler le même
+ // jour après 6 matchs pleins). Repos anticipé dès qu'il reste moins de ROTATION_AVANCE matchs de marge dans la
+ // fenêtre, au plus ROTATION_MAX par match (les plus pressés, puis les moins frais) ; les repos obligatoires passent
+ // toujours. 9 internationaux × 2 repos sur 8 matchs ≈ 2,25 repos par match : 3 suffisent à lisser.
+ const ROTATION_AVANCE=4,ROTATION_MAX=3;
+ function marge(s,pid){
+  const last=history(s,pid).slice(-(WINDOW-1));
+  return (WINDOW-last.length)-(MIN_RESTS-restCount(last));
+ }
+ function staffRest(s,c,fixture){
+  const list=ids(s),avail=c.players.filter(p=>list.has(p.id)&&!p.injury&&!released(s,p,fixture.date));
+  const must=avail.filter(p=>mustRest(s,p.id,fixture)).map(p=>p.id);
+  const anticipe=avail.filter(p=>!must.includes(p.id)&&!(s.doublons.waivers[p.id]===fixture.id)&&MIN_RESTS-restCount(history(s,p.id).slice(-(WINDOW-1)))>0&&marge(s,p.id)<ROTATION_AVANCE)
+   .sort((a,b)=>marge(s,a.id)-marge(s,b.id)||(conditionOf(a)-conditionOf(b))||(a.id<b.id?-1:1))
+   .slice(0,Math.max(0,ROTATION_MAX-must.length)).map(p=>p.id);
+  return new Set([...must,...anticipe]);
+ }
+ // Feuille du staff : clubs de l'ordinateur et, pour le club du joueur, « Sélection du staff » / composition confiée au
+ // staff (autoLineup → buildSheet). Une feuille choisie à la main n'est jamais modifiée (crochet ci-dessous).
  function comply(s,c,sheet){
-  if(!active(s)||!c||c.id===s.club||!Array.isArray(c.players)||!sheet)return sheet;
+  if(!active(s)||!c||!Array.isArray(c.players)||!sheet)return sheet;
   const list=ids(s);
   if(!c.players.some(p=>list.has(p.id)))return sheet;
   const fixture=fixtureOf(s,c.id);
   if(!fixture)return sheet;
-  const rest=new Set(c.players.filter(p=>list.has(p.id)&&mustRest(s,p.id,fixture)).map(p=>p.id));
+  const rest=staffRest(s,c,fixture);
   const lineup=sheet.lineup.slice(),bench=sheet.bench.slice(),used=new Set([...lineup,...bench].filter(Boolean));
   if(![...rest].some(x=>used.has(x)))return sheet;
   const byId=new Map(c.players.map(p=>[p.id,p]));
