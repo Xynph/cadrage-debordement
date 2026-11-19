@@ -48,7 +48,9 @@ test('Coupe d’Europe, carrière Monde : le bulletin nomme l’adversaire et l�
     model = jeu.regler(model);
     model = jeu.call('advance_day', { fromDate: model.meta.calendarToday });
     model = jeu.regler(model);
-    const blesses = JSON.parse(vm.run(`JSON.stringify(S.clubs[S.club].players.filter(p=>p.injury>0&&p.injuryOrigin&&p.injuryOrigin.type==='match').map(p=>({id:p.id,origin:p.injuryOrigin||null})))`));
+    const toutes = JSON.parse(vm.run(`JSON.stringify(S.clubs[S.club].players.filter(p=>p.injury>0&&p.injuryOrigin&&p.injuryOrigin.type==='match').map(p=>({id:p.id,origin:p.injuryOrigin||null})))`));
+    // Les blessures antérieures (matchs de championnat joués pour atteindre la coupe) ont leur propre origine : on ne garde que celles du match de coupe.
+    const blesses = toutes.filter(b => b.origin && b.origin.fixtureId === fixture.id);
     assert.ok(blesses.length >= 1 && blesses.length <= 6, 'des blessés du match de coupe (' + blesses.length + ')');
     for (const b of blesses) {
       assert.ok(b.origin, b.id + ' : origine enregistrée à la blessure');
