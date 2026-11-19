@@ -128,14 +128,15 @@ test('Prolongations : horloge 80′–100′, annonces de début et de fin, sir�
   h.run('l.minute=88');
   assert.equal(h.run('matchClock(l)'), '85′');
   // Ballon vivant à la fin de la première prolongation : sirène, la période continue.
-  h.run('l.minute=93;ballPossession(l,0,50);advanceFlowPlay(l)');
+  // Tirages imposés jusqu'à l'en-avant : sans eux, la possession et l'avantage dépendaient des effectifs du jour.
+  h.run('var __random=Math.random;Math.random=()=>.05;l.minute=93;ballPossession(l,0,50);advanceFlowPlay(l)');
   assert.equal(h.run('l.knockout.period'), 1);
   assert.equal(h.run('l.sirene'), 93);
   assert.match(h.run('l.events.find(e=>/sirène|temps est écoulé/i.test(e.text)&&e.min===93).text'), /première prolongation/);
   assert.equal(h.run('matchClock(l)'), '90′');
   // En-avant après la sirène : l'adversaire peut jouer l'avantage (loi 8) ; l'avantage rendu, la mêlée est due et la
   // période se termine sur l'arrêt de jeu qui suit.
-  h.run('l.minute=94;if(l.knockout.period===1){handFault(l,l.possession);if(l.flow.advantage)returnAdvantage(l)}');
+  h.run('l.minute=94;if(l.knockout.period===1){handFault(l,l.possession);if(l.flow.advantage)returnAdvantage(l)}Math.random=__random');
   assert.equal(h.run('l.knockout.period'), 2);
   assert.equal(h.run('l.knockout.firstEnd'), 94);
   assert.match(h.run('l.events.findLast(e=>e.type==="break").text'), /^Changement de camp : fin de la première prolongation/);
