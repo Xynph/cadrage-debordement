@@ -197,6 +197,9 @@ budget() {
     # Protocole commotion (carrière Monde, HIA en match puis repos jour par jour) : moteur JS seul, sans lien avec le lot du match 3D ;
     # 180 s dépassées sur la PR #943 (Suites 5/7, run 44436008167) avec le runner ~1,5 fois plus lent. Budget ≈ 3 fois, assertions inchangées.
     tests/commotion-hia.cjs) echo 420s ;;
+    # Incidents de match (blessures, saignements, choix du manager) : carrière Monde, deux matchs rejoués minute par
+    # minute puis un direct au worker ; 36 s en local. Budget ≈ 8 fois, comme les autres suites Monde du match.
+    tests/incidents-match.cjs) echo 300s ;;
     *) echo 180s ;;
   esac
 }

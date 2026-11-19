@@ -437,12 +437,21 @@ function project(model,niveau,lire,options={}){
  }
  // Arrêt-décision : un carton contre mon équipe, ou un rouge adverse, dans la dernière rafale.
  const rafale=bilan.decisions.at(-1)?.rafale;
+ let arretLigne=-1;
  if(rafale&&direct.camp>=0){
   for(let i=rafale[0];i<=rafale[1];i++){
    const l=lignes[i];
-   if(l.kind==='card'&&l.incident&&(l.equipe===direct.camp||l.cause==='red'))
-    direct.arret={cle:'carton-'+i,raison:'carton',rouge:l.cause==='red',pourNous:l.equipe!==direct.camp,texte:nommer(events[i].text),horloge:horloge(l)};
+   if(l.kind==='card'&&l.incident&&(l.equipe===direct.camp||l.cause==='red')){
+    direct.arret={cle:'carton-'+i,raison:'carton',rouge:l.cause==='red',pourNous:l.equipe!==direct.camp,texte:nommer(events[i].text),horloge:horloge(l)};arretLigne=i;}
   }
+ }
+ // Arrêt-incident (incidents-match.cjs) : remplacement forcé de mon équipe (blessure, saignement, HIA, commotion,
+ // couverture de première ligne) déjà montré ; le choix du manager y est joint s'il a plus d'une option. Un carton plus
+ // récent garde la main.
+ const incident=live.incidentChoix;
+ if(incident&&direct.camp>=0&&Number.isInteger(incident.evenement)&&incident.evenement<borne&&incident.evenement>arretLigne&&lignes[incident.evenement]){
+  const i=incident.evenement;
+  direct.arret={cle:incident.cle,raison:incident.kind,rouge:false,pourNous:false,texte:nommer(events[i].text),horloge:horloge(lignes[i]),...(incident.options.length>1?{choix:{type:incident.type,options:incident.options}}:{})};
  }
  // Multiplex des autres matchs de la journée et classement « si ça finit ainsi » (match-multiplex.cjs),
  // à la minute du dernier fait montré : jamais au-delà de ce que le joueur a vu.

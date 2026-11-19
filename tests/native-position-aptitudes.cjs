@@ -26,6 +26,13 @@ assert.equal(h.run('JSON.stringify(prop)'),before);assert.equal(h.seed(),seed);
 const main=value('apt.project(centre)');h.run('centre.condition=15;centre.injury=40');assert.deepEqual(value('apt.project(centre)'),main);
 h.run('delete prop.skills');const missing=h.run('JSON.stringify(prop)');h.run('apt.project(prop)');assert.equal(h.run('JSON.stringify(prop)'),missing,'missing skills read on private copy');
 console.log('Positional aptitude API: 12 checks passed');
+// Aptitudes durables : l'état du moment en match (causerie, pilotageSkillMod) n'entre pas dans les postes calculés,
+// sinon le résultat dépend du moment du premier calcul et un match rejoué depuis une sauvegarde diverge.
+// Deuxième ligne limite (plaquage 48) : galvanisé (+4), il « maîtrisait » la troisième ligne.
+const limite=etats=>value(`(()=>{const S0=S;S={...(S0||{}),live:{pilotageVersion:1,pilotage:{etats:${JSON.stringify(etats)}},minute:1}};
+ try{return apt.project(fixture(POS[3],2,{...excellent,tackle:48}))}finally{S=S0}})()`);
+assert.deepEqual(limite({['fixture-'+h.run('POS[3]')]:{etat:'galvanise',phase:'pre'}}),limite({}),'état du joueur en match : aptitudes aux postes inchangées');
+console.log('Positional aptitudes independent of in-match state: 1 check passed');
 h.run('apt.installHooks()');
 assert.equal(value('slotEligible(prop,9)'),true,'emergency prop at flyhalf is legal');
 assert.equal(value('slotEligible(centre,0)'),false,'centre never qualifies at loosehead');

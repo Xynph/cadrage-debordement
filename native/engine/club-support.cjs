@@ -127,12 +127,14 @@ function factory(){
   if(l?.hiaVersion!==1||l.finished)return null;
   const sh=l.sheets[side],p=matchPlayer(l,side,sh.on[slot]);
   if(!p||sh.cards.some(c=>c.id===p.id&&c.until>l.minute))return null;
-  const repl=eligibleChanges(l,side,slot).sort((a,b)=>fitScore(b,FAMILIES[slot])-fitScore(a,FAMILIES[slot])||String(a.id).localeCompare(String(b.id)))[0];
+  const options=eligibleChanges(l,side,slot).sort((a,b)=>fitScore(b,FAMILIES[slot])-fitScore(a,FAMILIES[slot])||String(a.id).localeCompare(String(b.id))),repl=options[0];
   if(!repl)return null;
   swap(l,side,slot,repl.id,evident?'commotion':'hia');
   const h={side,id:p.id,slot,minute:l.minute,kind:evident?'evident':'hia1',repl:repl.id,until:evident?null:l.minute+COMMOTION.evaluation,etat:evident?'definitif':'en_cours'};
   l.hia.push(h);
   addEvent(l,evident?`${abbrOf(l,side)} · Choc à la tête : ${p.name} présente des signes évidents de commotion. Sortie définitive, ${repl.name} le remplace.`:`${abbrOf(l,side)} · Choc à la tête : ${p.name} sort pour une évaluation HIA, ${repl.name} le remplace temporairement.`,'sub',{team:side,actor:p.id});
+  // Équipe du manager : il peut choisir un autre remplaçant que celui du staff (native/engine/incidents-match.cjs).
+  if(typeof nativeSystems!=='undefined')nativeSystems.domain('matchIncidents')?.offer(l,{type:'entrant',kind:evident?'commotion':'hia',side,slot,sortant:p.id,entrant:repl.id,options:options.map(q=>q.id)});
   return h;
  }
  // Après le match (HIA2 le soir, HIA3 à 36-48 h) : commotions confirmées, repos, antécédents.

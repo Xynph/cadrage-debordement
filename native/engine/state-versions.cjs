@@ -30,7 +30,7 @@ const UNTOUCHED = Object.freeze({
   // Réglages, consignes, rendez-vous, causeries : sections légères seulement.
   set_tactics: NONE, set_penalty_policy: NONE, set_consignes: NONE, appliquer_staff: NONE, set_role_direct: NONE, cri: NONE, set_collective_focus: NONE, set_opponent_level: NONE,
   set_delegation: NONE, press_policy: NONE, club_follow: NONE, set_lineup: NONE, auto_lineup: NONE,
-  club_meeting_ack: NONE, club_meeting_continue: NONE, pause: NONE, match_talk_decide: NONE,
+  club_meeting_ack: NONE, club_meeting_continue: NONE, pause: NONE, match_talk_decide: NONE, match_incident_choice: NONE,
   manager_recruitment_watch: NONE, regen_shortlist: NONE,
   // Décisions sur les joueurs du club : la section des clubs est relue.
   set_player_load: except('clubs'), set_development_focus: except('clubs'), training_plan: except('clubs'),

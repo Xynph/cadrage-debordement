@@ -237,6 +237,7 @@ Les paragraphes suivants décrivent chaque version au moment de sa livraison. Ce
 - Le banc affiche les effectifs actifs, la situation de mêlée et les absences désignées. Le rapport distingue les mêlées non disputées. Les deux équipes suivent les mêmes procédures automatiques. Import et rechargement valident et conservent exclusions, joueurs retenus hors terrain, postes, références aux rouges et effectif autorisé.
 - Les tests couvrent les trois postes, la mêlée suivante, les minutes réelles, les quotas épuisés, les jaunes simultanés, la matrice 12/13/14, les rouges permanents, les joueurs réutilisés ailleurs, les deux équipes, les données malveillantes et les anciens matchs. Les contrôles existants passent.
 - Le staff choisit automatiquement le joueur à faire sortir ; il n’existe pas de choix manuel. Blessures en cours de match, saignements, commotions et génération de rouges directs restent absents. À cette étape, les causes générales de reprise et l’autorisation sur ballon mort restent à traiter. Aucune conformité réglementaire complète n’est revendiquée.
+- Repris depuis (carrière Monde, novembre 2026) : commotions avec évaluation HIA, rouges directs sur les fautes dangereuses, blessures en cours de match (sortie définitive, indisponibilité de 1 à 8 semaines appliquée après le match), saignements (remplacement temporaire de 15 minutes de jeu au plus, puis retour du joueur). Sur chaque remplacement forcé de son équipe (blessure, saignement, choc à la tête, couverture de première ligne), le match s’arrête et le manager choisit qui entre, ou qui sort pour la première ligne ; le choix du staff reste proposé par défaut. Quand le match est confié au staff, et pour l’adversaire, le staff décide seul.
 
 ### Version 9 — causes des conquêtes et reprises de jeu
 
@@ -314,7 +315,7 @@ Comparaison contrôlée : 80 matchs par cas, qualités uniformes à 75, côté t
 
 ## Limites actuelles
 
-Joueurs et finances fictifs. Départages du championnat et prolongations simplifiés. Pas de blessures en cours de rencontre, protocole commotion, génération de rouges directs, compétitions européennes, règles JIFF ou promotion/relégation. La polyvalence au-delà de la famille de poste n’est pas simulée. Le terrain 2D illustre les actions sans simulation physique complète. Les sauvegardes restent locales au navigateur pour la version web, ou au dossier de données pour la version Windows, sans synchronisation en ligne.
+Joueurs et finances fictifs. Départages du championnat et prolongations simplifiés. Pas de compétitions européennes, règles JIFF ou promotion/relégation. La polyvalence au-delà de la famille de poste n’est pas simulée. Le terrain 2D illustre les actions sans simulation physique complète. Les sauvegardes restent locales au navigateur pour la version web, ou au dossier de données pour la version Windows, sans synchronisation en ligne.
 
 ### Épreuve Windows native Godot — novembre 2026
 
