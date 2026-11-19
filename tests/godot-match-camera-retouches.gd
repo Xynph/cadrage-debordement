@@ -96,6 +96,7 @@ func run() -> void:
 		plus_raide.tv = maxf(plus_raide.tv, elevation(view.offset_suivi(View.TV_OFFSET, float(z))))
 		plus_raide.action = maxf(plus_raide.action, elevation(view.offset_suivi(View.ACTION_OFFSET, float(z))))
 	report["inclinaison_max"] = plus_raide
+	check(float(plus_raide.tv) <= View.INCLINAISON_TV_MAX + 0.01, "Caméra TV : plafond propre plus bas près de la touche proche (%.1f° pour %.0f°)" % [plus_raide.tv, View.INCLINAISON_TV_MAX])
 	for mode in ["tv", "action"]:
 		check(float(plus_raide[mode]) <= View.INCLINAISON_MAX + 0.01, "Caméra %s : inclinaison plafonnée près de la touche proche (%.1f°)" % [mode, plus_raide[mode]])
 	check(elevation(view.offset_suivi(View.TV_OFFSET, 34.0)) >= elevation(View.TV_OFFSET) - 0.01, "La grue ne descend jamais sous l'angle de base")
@@ -104,7 +105,7 @@ func run() -> void:
 		settle(view, scene(Vector2(0.0, 34.0), {}), 2.0)
 		var vue := elevation(view._camera.global_basis.z)
 		report["inclinaison_touche_" + mode] = snappedf(vue, 0.1)
-		check(vue <= View.INCLINAISON_MAX + 0.5, "Caméra %s, porteur sur la touche proche : vue de 3/4, pas du dessus (%.1f°)" % [mode, vue])
+		check(vue <= view.inclinaison_max() + 0.5, "Caméra %s, porteur sur la touche proche : vue de 3/4, pas du dessus (%.1f°)" % [mode, vue])
 		check(view._camera.global_position.y > 0.0 and view._camera.global_position.z > 34.0, "Caméra %s : toujours devant l'action, côté tribune principale" % mode)
 	view.queue_free()
 	await process_frame
@@ -213,6 +214,8 @@ func run() -> void:
 	var pire := {"axe": 0.0, "plongee": 0.0}
 	for mode in ["tv", "action"]:
 		view.set_camera(mode)
+		var axe_max: float = view.inclinaison_max()
+		var plongee_max: float = view.plongee_max()
 		var base_offset: Vector3 = View.TV_OFFSET if mode == "tv" else View.ACTION_OFFSET
 		var tailles := [float(Gestes.FRAME_MIN[mode]) * 0.5, float(Gestes.FRAME_MIN[mode]), View.TV_TAILLE if mode == "tv" else View.ACTION_TAILLE, float(Cadrage.LARGE[mode])]
 		for z in range(-35, 36):
@@ -227,7 +230,7 @@ func run() -> void:
 						var plongee := axe + float(pose[1]) * 0.5
 						pire.axe = maxf(pire.axe, axe)
 						pire.plongee = maxf(pire.plongee, plongee)
-						if axe > View.INCLINAISON_MAX + 0.01 or plongee > View.PLONGEE_MAX + 0.01:
+						if axe > axe_max + 0.01 or plongee > plongee_max + 0.01:
 							check(false, "Caméra %s, point visé %s, taille %.1f, geste %.1f : axe %.1f°, bas de l'image %.1f°" % [mode, vise, taille, w, axe, plongee])
 	check(pire.axe <= View.INCLINAISON_MAX + 0.01 and pire.plongee <= View.PLONGEE_MAX + 0.01, "Inclinaison et plongée plafonnées partout, gestes compris (%.1f°, %.1f°)" % [pire.axe, pire.plongee])
 	report["plafond_gestes"] = {"axe": snappedf(pire.axe, 0.1), "plongee": snappedf(pire.plongee, 0.1)}
@@ -246,8 +249,8 @@ func run() -> void:
 				var axe := elevation(view._camera.global_basis.z)
 				var plongee := axe + float(view._camera.fov) * 0.5
 				essais["%d_%d_%d" % [int(bout), int(touche), possession]] = [snappedf(axe, 0.1), snappedf(plongee, 0.1)]
-				check(axe <= View.INCLINAISON_MAX + 0.5, "TV, essai en (%d, %d), sens %d : vue de 3/4 (%.1f°)" % [bout, touche, possession, axe])
-				check(plongee <= View.PLONGEE_MAX + 0.5, "TV, essai en (%d, %d), sens %d : bas de l'image pas vu du dessus (%.1f°)" % [bout, touche, possession, plongee])
+				check(axe <= View.INCLINAISON_TV_MAX + 0.5, "TV, essai en (%d, %d), sens %d : vue de 3/4 (%.1f°)" % [bout, touche, possession, axe])
+				check(plongee <= View.PLONGEE_TV_MAX + 0.5, "TV, essai en (%d, %d), sens %d : bas de l'image pas vu du dessus (%.1f°)" % [bout, touche, possession, plongee])
 	report["essais_tv"] = essais
 	view.set_cadrage(null)
 	view.queue_free()

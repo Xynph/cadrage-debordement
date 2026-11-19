@@ -489,7 +489,7 @@ static func plan_rejeu(ballon: Vector3, cote: Vector2, retrait: float = REJEU_RE
 ## et le ballon le cache d'autant plus qu'il est près de l'objectif ; un joueur à moins de
 ## REJEU_PRES m de la caméra et dans le champ remplit l'image même sans cacher le ballon.
 ## `places` : pieds de chaque personne (repère de la vue).
-const REJEU_PRES := 4.5
+const REJEU_PRES := 6.5
 const REJEU_CARRURE := 0.45
 static func gene_rejeu(plan: Dictionary, places: PackedVector3Array) -> float:
 	var camera: Vector3 = plan.camera
@@ -511,6 +511,32 @@ static func gene_rejeu(plan: Dictionary, places: PackedVector3Array) -> float:
 		# Tout près de l'objectif et dans le champ : un corps en gros plan.
 		if loin < REJEU_PRES and atan2(travers, loin) < demi_champ:
 			gene += 3.0 / maxf(loin, 1.0)
+	return gene
+
+
+## Gêne des poteaux pour un plan de ralenti : un montant (pied et protection, POTEAU_CARRURE m de large)
+## devant le ballon et près de la ligne de visée, ou tout près de l'objectif et dans le champ, passe au
+## premier plan (19/11/2026 : pied de poteau en gros plan à l'aplati).
+const POTEAU_CARRURE := 0.7
+static func gene_poteaux(plan: Dictionary) -> float:
+	var camera: Vector3 = plan.camera
+	var vise: Vector3 = plan.vise
+	var regard := Vector2(vise.x - camera.x, vise.z - camera.z)
+	var portee := regard.length()
+	if portee < 0.5: return 0.0
+	regard /= portee
+	var demi_champ := deg_to_rad(float(plan.get("champ", REJEU_CHAMP))) * 0.5 * 16.0 / 9.0
+	var gene := 0.0
+	for x: float in [-50.0, 50.0]:
+		for z: float in [-POTEAUX_Z, POTEAUX_Z]:
+			var rel := Vector2(x - camera.x, z - camera.z)
+			var loin := rel.dot(regard)
+			if loin <= 0.3: continue
+			var travers := absf(rel.x * regard.y - rel.y * regard.x)
+			if loin < portee - 0.5 and travers < POTEAU_CARRURE + loin / portee:
+				gene += 4.0 / maxf(loin, 1.0)
+			if loin < REJEU_PRES and atan2(travers, loin) < demi_champ:
+				gene += 3.0 / maxf(loin, 1.0)
 	return gene
 
 

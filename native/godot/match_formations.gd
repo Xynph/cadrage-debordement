@@ -4,7 +4,7 @@ extends RefCounted
 ## Présentation seule : le moteur décide qui introduit, qui gagne et où part le ballon. Ici,
 ## les avants prennent la place et la posture de la phase que la scène annonce :
 ##   - « scrum » (loi 19) : les deux paquets liés face à face en 3-4-1 autour du ballon, penchés,
-##     le demi de mêlée qui introduit accroupi au tunnel, le demi adverse de son côté du ballon
+##     le demi de mêlée qui introduit accroupi au tunnel côté caméra, le demi adverse de son côté du ballon
 ##     (à l'extérieur des paquets),
 ##     les arrières à 5 m au moins derrière les pieds du n° 8 ;
 ##   - « setpiece-win » / « setpiece-loss » juste après une mêlée : les deux paquets restent liés
@@ -39,9 +39,12 @@ const MELEE: Array[Vector2] = [
 const DECALAGE_TETES := 0.155
 ## Rayon de tête du modèle (m), pour l'écart minimal entre têtes adverses.
 const TETE_RAYON := 0.11
-## Demi de mêlée qui introduit : à côté du tunnel, du côté de son pilier gauche, hors du paquet
-## (le pilier gauche décalé vers l'extérieur).
+## Demi de mêlée qui introduit : à côté du tunnel, hors du paquet, à 1,8 m de la marque.
 const DEMI_INTRO := Vector2(0.15, -1.8)
+## Côté de l'introduction (signe en y de la scène) : le demi introduit du côté de la mêlée de son choix
+## (loi 19) ; il le fait toujours du côté de la caméra TV (touche proche, y croissants). 19/11/2026 :
+## introduit côté tribune opposée, le ballon tenu bas restait caché derrière les deux paquets.
+const COTE_INTRO := 1.0
 ## Ballon de l'introduction, dans le repère du demi : DEVANT m devant lui, à hauteur de genoux
 ## (bornée entre BAS_MIN et BAS_MAX m).
 const BALLON_DEVANT := 0.55
@@ -150,11 +153,13 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 		elif slot == 8 and not sortie and introduit in [0, 1]:
 			var si := 1.0 if introduit == 0 else -1.0
 			var d: Vector2 = DEMI_INTRO if side == introduit else DEMI_ADVERSE
-			var place := centre + Vector2(-si * d.x, si * d.y)
+			# Côté de l'introduction : celui de la caméra (tribune principale, y croissants), quelle que
+			# soit l'équipe ; le demi adverse se tient du même côté (voir COTE_INTRO).
+			var place := centre + Vector2(-si * d.x, COTE_INTRO * absf(d.y))
 			f.places[id] = place
 			if side == introduit:
 				# Tourné vers le tunnel : le ballon est introduit le long de la ligne médiane de la mêlée.
-				f.caps[id] = atan2(0.0, si)
+				f.caps[id] = atan2(0.0, -COTE_INTRO)
 				f.postures[id] = "introduction"
 				f.roles[id] = "demi_intro"
 			else:

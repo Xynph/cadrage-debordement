@@ -107,6 +107,34 @@ func angle() -> void:
 			gene_autre = minf(gene_autre, Cadrage.gene_rejeu(Cadrage.plan_rejeu(aplati, Vector2(cote_aplati.x, lateral), retrait), ligne))
 	check(gene_defaut > 1.0 and gene_autre < 0.2, "Ralenti : un angle sans défenseur entre caméra et marqueur existe (gêne %.2f → %.2f)" % [gene_defaut, gene_autre])
 	check(Cadrage.gene_rejeu(Cadrage.plan_rejeu(aplati, cote_aplati), PackedVector3Array()) == 0.0, "Ralenti : gêne nulle sans personne autour")
+	# Pied de poteau (19/11/2026) : essai au pied des poteaux, l'angle par défaut aligne un montant entre
+	# la caméra et le marqueur ; l'angle retenu l'évite.
+	var vide: Array = []
+	for k in 20: vide.append(pose_test(k * 0.1, aplati, {}))
+	var poteau_defaut := Cadrage.gene_poteaux(Cadrage.plan_rejeu(aplati, cote_aplati))
+	var choix: Dictionary = Rejeu.meilleur_angle(vide, 0.0, cote_aplati)
+	var poteau_choisi := Cadrage.gene_poteaux(Cadrage.plan_rejeu(aplati, choix.cote, choix.retrait))
+	check(poteau_defaut > 0.3 and poteau_choisi < poteau_defaut * 0.5, "Ralenti : pas de montant au premier plan (gêne %.2f → %.2f)" % [poteau_defaut, poteau_choisi])
+	# Défenseur au premier plan au DÉBUT du ralenti (puis parti) : toute la fenêtre rejouée compte, pas
+	# seulement la fin (avant le 19/11, seule la dernière 0,8 s était jugée et l'angle par défaut restait).
+	var loin_poteaux := Vector3(51.0, 0.3, -15.0)
+	var cote_loin := Cadrage.cote_rejeu(loin_poteaux)
+	var defaut_plan: Dictionary = Cadrage.plan_rejeu(loin_poteaux, cote_loin)
+	var devant: Vector3 = (defaut_plan.camera as Vector3).lerp(loin_poteaux, 0.3)
+	devant.y = 0.0
+	var clip_test: Array = []
+	for k in 20:
+		var t := k * 0.1
+		clip_test.append(pose_test(t, loin_poteaux, {"d": devant if t < 0.7 else Vector3(10.0, 0.0, 30.0)}))
+	var choix_debut: Dictionary = Rejeu.meilleur_angle(clip_test, 1.6 - Rejeu.AVANT, cote_loin)
+	check(not (choix_debut.cote == cote_loin and is_equal_approx(float(choix_debut.retrait), Cadrage.REJEU_RETRAIT)), "Ralenti : un défenseur au premier plan en début de ralenti écarte l'angle par défaut")
+
+
+## Pose du tampon du ralenti (format de match_rejeu.gd) : ballon et joueurs visibles.
+func pose_test(t: float, ballon: Vector3, joueurs: Dictionary) -> Dictionary:
+	var e := {}
+	for cle: String in joueurs: e[cle] = [Transform3D(Basis(), joueurs[cle]), null, true]
+	return {"t": t, "e": e, "b": [Transform3D(Basis(), ballon), true]}
 
 
 ## 3. Mention « RALENTI » : discrète, en haut à droite de la zone libre.
