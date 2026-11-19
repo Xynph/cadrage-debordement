@@ -482,6 +482,19 @@ func _choisir_angle() -> void:
 ## ENCOMBRE fois la pire part de l'image couverte par un joueur proche (`encombrement`, caméra du plan
 ## ou filmée, sur toute la fenêtre), plafonnée à ENCOMBRE_PLAFOND (sous VETO : un angle masqué à
 ## l'aplati perd toujours face à un angle propre encombré).
+## 19 novembre 2026, quatrième film (mfin/film4) : aplati net, mais (images 0361-0363, 0405, 0472-0478)
+## porteur caché par un montant, sa protection ou un défenseur dans la fin de course, quelques images
+## seulement (diluées dans ACTION_VETO) ; gros plans encore présents (0365, 0408, 0582 : joueur ou
+## protection de poteau à quelques mètres) ; caméra très reculée, porteur minuscule (0472, 0528).
+## Désormais :
+##  - fin de course (COURSE s avant l'aplati, jusqu'aux images clés) : la PIRE image masquée compte,
+##    COURSE_VETO fois un poids qui croît de 0 (COURSE s avant) à 1 (à l'aplati) ; ajoutée à l'action,
+##    toujours sous ACTION_PLAFOND (un angle masqué à l'aplati perd toujours) ;
+##  - `encombrement` compte aussi les poteaux (protection et montant) et un corps occupant
+##    ENCOMBRE_PLEINE de la hauteur de l'image compte pour toute sa largeur ;
+##  - porteur trop petit : LOIN_POIDS par mètre de distance horizontale caméra-ballon au-delà de
+##    LOIN_DEBUT (pire image de la fin de course), plafonné à LOIN_PLAFOND (retrait de 12 m : 0,8 ;
+##    de 16 m : 1,9).
 ## Aucun angle propre : le moins gêné reste retenu.
 const FIN := 0.6
 const FIN_POIDS := 1.5
@@ -492,8 +505,13 @@ const PROCHE_FENETRE := 1.0
 const ACTION_VETO := 12.0
 const ACTION_PROCHE := 3.0
 const ACTION_PLAFOND := 7.0
-const ENCOMBRE := 20.0
+const ENCOMBRE := 25.0
 const ENCOMBRE_PLAFOND := 4.0
+const COURSE := 1.5
+const COURSE_VETO := 6.0
+const LOIN_DEBUT := 14.0
+const LOIN_POIDS := 0.35
+const LOIN_PLAFOND := 2.5
 static func meilleur_angle(poses: Array, debut: float, cote_defaut: Vector2) -> Dictionary:
 	var prepa := _preparer(poses, debut)
 	var meilleur := {"cote": cote_defaut, "retrait": Cadrage.REJEU_RETRAIT, "gene": INF}
@@ -548,6 +566,8 @@ static func _gene(prepa: Dictionary, cote_defaut: Vector2, cote: Vector2, retrai
 	var veto := 0.0
 	var premier_plan := 0.0
 	var pire_encombre := 0.0
+	var pire_course := 0.0
+	var pire_portee := 0.0
 	# Reste de l'action (avant les images clés et avant la dernière seconde).
 	var action_images := 0
 	var action_masques := 0
@@ -573,6 +593,10 @@ static func _gene(prepa: Dictionary, cote_defaut: Vector2, cote: Vector2, retrai
 			action_premier_plan += avant_plan
 		pire_encombre = maxf(pire_encombre, maxf(encombrement(plan, places), encombrement(filme, places)))
 		var cache := masque_ralenti(plan, places) or masque_ralenti(filme, places)
+		var ballon: Vector3 = r.ballon
+		if t >= aplati - COURSE - 0.001:
+			for camera: Vector3 in [plan.camera, filmees[i]]:
+				pire_portee = maxf(pire_portee, Vector2(ballon.x - camera.x, ballon.z - camera.z).length())
 		if t >= aplati - CLE - 0.001 or i == i_aplati:
 			cles += 1
 			if cache:
@@ -583,12 +607,15 @@ static func _gene(prepa: Dictionary, cote_defaut: Vector2, cote: Vector2, retrai
 			action_images += 1
 			if cache:
 				action_masques += 1
+				if t >= aplati - COURSE - 0.001:
+					pire_course = maxf(pire_course, COURSE_VETO * clampf(1.0 - (aplati - t) / COURSE, 0.0, 1.0))
 	gene += maxf(somme / maxf(1.0, float(retenues.size())), FIN_POIDS * pire_fin)
 	gene += veto + VETO * float(masques) / maxf(1.0, float(cles)) + PROCHE * premier_plan
 	var action := ACTION_VETO * float(action_masques) / maxf(1.0, float(action_images))
 	action += ACTION_PROCHE * action_premier_plan / maxf(1.0, float(action_plans))
-	gene += minf(action, ACTION_PLAFOND)
+	gene += minf(action + pire_course, ACTION_PLAFOND)
 	gene += minf(ENCOMBRE * pire_encombre, ENCOMBRE_PLAFOND)
+	gene += minf(maxf(0.0, pire_portee - LOIN_DEBUT) * LOIN_POIDS, LOIN_PLAFOND)
 	return gene
 
 
@@ -636,8 +663,18 @@ static func _sous_la_visee(vu: Dictionary, places: PackedVector3Array) -> Packed
 ## de la hauteur de l'image qu'il occupe (corps de ENCOMBRE_TAILLE m, image qui plonge vers le point
 ## visé : un joueur tout près d'une caméra relevée sort par le bas) ; somme. Image 16/9 (ASPECT).
 ## 19/11/2026 (film2, image 0165) : un joueur à 2 ou 3 m d'une caméra à 1,1 m couvrait le tiers droit.
+## 19/11/2026 (film4, images 0365, 0408, 0475, 0582) : un joueur à 4 ou 5 m, 12 à 15 % de la largeur
+## sur la moitié de la hauteur, ou une protection de poteau au premier plan, pesaient trop peu. Un
+## objet qui occupe ENCOMBRE_PLEINE de la hauteur de l'image compte désormais pour toute sa largeur ;
+## les poteaux comptent aussi : protection (PROTECTION_DEMI m de demi-largeur vue en biais, haute de
+## PROTECTION_HAUT m) et montant au-dessus (MONTANT_DEMI m, jusqu'à MONTANT_HAUT m).
 const ENCOMBRE_LOIN := 6.5
 const ENCOMBRE_TAILLE := 1.85
+const ENCOMBRE_PLEINE := 0.4
+const PROTECTION_DEMI := 0.3
+const PROTECTION_HAUT := 1.6
+const MONTANT_DEMI := 0.12
+const MONTANT_HAUT := 12.0
 const ASPECT := 16.0 / 9.0
 static func encombrement(vu: Dictionary, places: PackedVector3Array) -> float:
 	var camera: Vector3 = vu.camera
@@ -647,22 +684,40 @@ static func encombrement(vu: Dictionary, places: PackedVector3Array) -> float:
 	if portee < 0.5: return 0.0
 	regard /= portee
 	var demi_v := deg_to_rad(float(vu.get("champ", Cadrage.REJEU_CHAMP))) * 0.5
-	var demi_h := atan(tan(demi_v) * ASPECT)
-	var tangage := atan2(camera.y - vise.y, portee)
+	var cadre := {"camera": camera, "regard": regard, "portee": portee, "demi_v": demi_v,
+		"demi_h": atan(tan(demi_v) * ASPECT), "tangage": atan2(camera.y - vise.y, portee)}
 	var somme := 0.0
 	for p: Vector3 in places:
-		var rel := Vector2(p.x - camera.x, p.z - camera.z)
-		var loin := rel.dot(regard)
-		if loin <= 0.3 or loin >= minf(ENCOMBRE_LOIN, portee - 1.5): continue
-		var centre := atan2(rel.x * regard.y - rel.y * regard.x, loin)
-		var demi_corps := atan2(Cadrage.REJEU_CARRURE, loin)
-		var largeur := maxf(0.0, minf(centre + demi_corps, demi_h) - maxf(centre - demi_corps, -demi_h)) / (2.0 * demi_h)
-		# Bas et haut de l'image à cette distance (regard qui plonge de `tangage`).
-		var bas := camera.y - loin * tan(tangage + demi_v)
-		var haut := camera.y - loin * tan(tangage - demi_v)
-		var hauteur := maxf(0.0, minf(ENCOMBRE_TAILLE, haut) - maxf(0.0, bas)) / maxf(haut - bas, 0.01)
-		somme += largeur * clampf(hauteur, 0.0, 1.0)
+		somme += _part_image(cadre, p, Cadrage.REJEU_CARRURE, 0.0, ENCOMBRE_TAILLE)
+	for x: float in [-50.0, 50.0]:
+		for z: float in [-Cadrage.POTEAUX_Z, Cadrage.POTEAUX_Z]:
+			var pied := Vector3(x, 0.0, z)
+			somme += _part_image(cadre, pied, PROTECTION_DEMI, 0.0, PROTECTION_HAUT)
+			somme += _part_image(cadre, pied, MONTANT_DEMI, PROTECTION_HAUT, MONTANT_HAUT)
 	return somme
+
+
+## Part de l'image couverte par un objet debout en `p` (pied), de `demi` m de demi-largeur, entre les
+## hauteurs `dessous` et `dessus` (m) : largeur dans le champ fois hauteur visible rapportée à
+## ENCOMBRE_PLEINE de l'image (au plus 1). 0 hors de ENCOMBRE_LOIN m ou à moins de 1,5 m du ballon.
+static func _part_image(cadre: Dictionary, p: Vector3, demi: float, dessous: float, dessus: float) -> float:
+	var camera: Vector3 = cadre.camera
+	var regard: Vector2 = cadre.regard
+	var portee: float = cadre.portee
+	var demi_v: float = cadre.demi_v
+	var demi_h: float = cadre.demi_h
+	var tangage: float = cadre.tangage
+	var rel := Vector2(p.x - camera.x, p.z - camera.z)
+	var loin := rel.dot(regard)
+	if loin <= 0.3 or loin >= minf(ENCOMBRE_LOIN, portee - 1.5): return 0.0
+	var centre := atan2(rel.x * regard.y - rel.y * regard.x, loin)
+	var demi_corps := atan2(demi, loin)
+	var largeur := maxf(0.0, minf(centre + demi_corps, demi_h) - maxf(centre - demi_corps, -demi_h)) / (2.0 * demi_h)
+	# Bas et haut de l'image à cette distance (regard qui plonge de `tangage`).
+	var bas := camera.y - loin * tan(tangage + demi_v)
+	var haut := camera.y - loin * tan(tangage - demi_v)
+	var hauteur := maxf(0.0, minf(dessus, haut) - maxf(dessous, bas)) / maxf(haut - bas, 0.01)
+	return largeur * clampf(hauteur / ENCOMBRE_PLEINE, 0.0, 1.0)
 
 
 ## Places de la caméra réellement filmée pour les poses `retenues` ({"t", "ballon"}) sous l'angle
