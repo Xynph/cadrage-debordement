@@ -62,3 +62,4 @@ ne changent.
   séparée était bloquée. Correctif : la PR du train est ouverte d'abord et sa propre
   batterie fait foi.
 - 19/11/2026 : fusion de la PR du train refusée avec le jeton du dépôt (CI de la PR en `action_required`) ; passage au jeton personnel `TRAIN_TOKEN`.
+- 19/11/2026 : 6e passage — test avec le jeton personnel.
