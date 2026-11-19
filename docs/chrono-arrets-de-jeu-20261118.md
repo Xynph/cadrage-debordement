@@ -96,6 +96,39 @@ hors Top 14.
 souvent le bonus défensif (essais encaissés 0,31 → 0,16 : l'adversaire n'a plus le temps), la pénaltouche garde plus de
 victoires : un vrai choix. À la 60e, il reste trop de temps pour que les trois points pèsent : normal.
 
+### Remesure après fusion (19/11, 1 200 matchs, `tests/mesure-chrono-1200.cjs`, run 44488746565)
+
+Sur `main` après #925 et #937 (contre recalé à .03/5 m), XV identiques.
+
+| Mesure | Avant le chrono (#925) | Après |
+| --- | --- | --- |
+| Jeu au large contre « Équilibré », victoires (1 200 matchs) | 49,4 % | 47,8 % (écart type ≈ 1,4 point : dans le bruit) |
+
+Mené de 8 à la 72e, 1 200 fins de match par consigne :
+
+| Consigne | Victoires | Bonus défensif | Points de classement | Essais encaissés |
+| --- | --- | --- | --- | --- |
+| Staff (« auto ») | 0,06 | 0,39 | 0,62 | 0,26 |
+| Pénalités tentées (« Aller chercher le bonus défensif ») | 0,05 | **0,44** | **0,66** | 0,23 |
+| Pénaltouche (« Tout pour la victoire ») | 0,04 | 0,36 | 0,51 | 0,23 |
+
+Garde-fous : `match-rating-curve` et `fatigue-phases-arretees` verts, seuils inchangés.
+
+Constat : taper au but rapporte désormais nettement plus de bonus défensif (0,44 contre 0,30 avant le chrono), et la
+pénaltouche ne gagne pas davantage de matchs à −8 (0,04 contre 0,05). C'est conforme au rugby réel : à −8, il faut deux
+scores pour gagner quelle que soit l'option, prendre les points est le choix courant.
+
+### Le dilemme là où il existe (19/11, `tests/mesure-bonus-1200.cjs`, run 44494782700, 1 200 rejeux par consigne, 72e)
+
+| Situation | Pénaltouche (« Tout pour la victoire ») V / BD / pts | Points (« défensif » ou « garder ») V / BD / pts |
+| --- | --- | --- |
+| −8 | 0,04 / 0,36 / 0,51 | 0,05 / **0,44** / **0,66** |
+| −6 (un essai transformé gagne) | **0,33** / 0,10 / **1,43** | 0,23 / 0,25 / 1,20 |
+| −4 (bonus en poche) | **0,37** / 0,40 / **1,98** | 0,26 / **0,53** / 1,66 |
+
+À −6 et −4, la pénaltouche gagne nettement plus (+10 et +11 points de victoires) au prix du bonus défensif : vrai choix.
+À −8, les points dominent : réaliste, aucun recalage du moteur.
+
 ## Limites
 
 - Le moteur ne distingue pas ballon vivant et ballon mort à l'intérieur d'une action : le temps de jeu effectif réel

@@ -16,7 +16,9 @@ const SORTIE := 1.5        # retour au cadrage large
 ## de 28 à 42 m en vue orthographique ; action 9 à 18 m). 19 novembre 2026 (soir) : vue TV plus basse
 ## (axe à 16°, match_view.gd) et plus serrée, TV 13 à 18 m (joueurs d'environ 75 à 100 px au point visé
 ## en 1280 x 720, au lieu de 35 à 55 px).
-const HAUTEUR := {"tv": [13.0, 18.0], "action": [9.0, 18.0]}
+## 19 novembre 2026 (nuit) : caméra au contact 8 à 12,5 m (9 à 18 m avant), nettement plus serrée que
+## la TV (voir SUIVI).
+const HAUTEUR := {"tv": [13.0, 18.0], "action": [8.0, 12.5]}
 ## Jeu au pied, longue course : hauteur visible maximale (le ballon et son point de chute). TV : 50 m
 ## jusqu'au 19 novembre 2026 (soir), 30 m avec la vue plus basse (53 m de large au point visé ; au-delà,
 ## la caméra basse passerait sous le toit de la tribune proche dès le milieu du terrain).
@@ -32,6 +34,18 @@ const SERRE := {"tv": [13.0, 24.0], "action": [9.0, 14.0]}
 ## qui ramasse derrière son n° 8 à la sortie. La caméra au contact garde SERRE.
 const SERRE_MELEE := {"tv": [7.5, 12.0]}
 const MELEES := ["melee", "sortie_melee"]
+## Touche (19 novembre 2026, nuit) : vue TV moins plongeante, de côté et de 3/4, sur l'alignement et le
+## lanceur. L'axe descend au plus à TOUCHE_INCLINAISON degrés au-dessus de l'horizon (16° hors touche) ;
+## près de la touche proche (z du ballon de TOUCHE_GRUE_DEBUT à TOUCHE_GRUE_FIN m), la grue reprend la
+## main comme ailleurs (sinon la caméra passerait sous le toit de la tribune proche et ouvrirait grand
+## son angle). Amorti en ENTREE / SORTIE secondes, posé d'un coup sur une coupe.
+## La caméra au contact garde ses 30° : à 20°, proche et basse, le haut de son image (2° sous l'horizon)
+## montrait toute la tribune d'en face ; pour la borner à BORD_HAUT, le recentrage reculait le point visé
+## à plus de 3 fois la hauteur visible de la touche lointaine (1,3 fois à 30°) et coupait le fond de
+## l'alignement (sauteurs à 14,5 m de la touche sous le bas de l'image).
+const TOUCHE_INCLINAISON := {"tv": 12.0}
+const TOUCHE_GRUE_DEBUT := 4.0
+const TOUCHE_GRUE_FIN := 30.0
 const MARGE := 1.25
 const PROCHES := 9.0       # rayon des joueurs concernés autour du ballon
 const TEMOINS_RAYON := 18.0  # rayon des témoins (joueurs les plus proches) quand peu de joueurs sont proches
@@ -52,7 +66,11 @@ const TEMOINS := 6
 ## 19 novembre 2026 (soir) : plan large TV de 15 à 19 m autour des 18 m de base (axe à 16°) ; à 19 m,
 ## jeu au milieu, un joueur au point visé fait environ 68 px (1280 x 720), 80 px dans la moitié proche
 ## de l'image, et le public d'en face prend 13 % du haut de l'image (5 à 8 % à 26-42 m sous 24°).
-const SUIVI := {"tv": [15.0, 19.0], "action": [13.0, 24.0]}
+## 19 novembre 2026 (nuit) : caméra au contact de 10 à 12,5 m autour des 12 m de base (13 à 24 m avant :
+## presque le plan TV). Son plafond reste sous CONTACT_PART fois le plancher TV (12,75 m) : joueurs au
+## point visé environ 1,35 fois plus grands qu'en TV, plan serré au cœur de l'action.
+const SUIVI := {"tv": [15.0, 19.0], "action": [10.0, 12.5]}
+const CONTACT_PART := 0.85
 const SUIVI_MARGE := 1.6
 const SUIVI_RAYON := 15.0
 const SUIVI_TEMOINS := 4
@@ -117,6 +135,8 @@ var _suivi_taille := 0.0
 var _suivi_taille_vitesse := Vector3.ZERO
 var _suivi_mode := ""
 var _suivi_pose := false
+## Part (0 à 1, amortie) de la vue de touche moins plongeante (TOUCHE_INCLINAISON).
+var _touche_poids := 0.0
 ## Tir au but filmé dans l'axe : {"marque": Vector3 (ballon sur le tee), "poteaux": Vector3 (milieu
 ## de la ligne de but visée), "buteur": id} ; vide hors tir. `_axe_actif` : la dernière image a été
 ## cadrée dans l'axe (la vue pose alors la caméra telle quelle). Caméra et point visé amortis.
@@ -173,7 +193,18 @@ func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, m
 	if not HAUTEUR.has(mode):
 		poids = 0.0
 		_suivi_mode = ""
+		_touche_poids = 0.0
 		return [focus, size, offset]
+	# Touche pendant un temps fort : axe moins plongeant (amorti), avant tout cadrage qui en dépend.
+	var en_touche := actif and tir.is_empty() and _en_touche()
+	if cut or _pose or delta <= 0.0:
+		_touche_poids = 1.0 if en_touche else 0.0
+	elif en_touche:
+		_touche_poids = minf(1.0, _touche_poids + delta / ENTREE)
+	else:
+		_touche_poids = maxf(0.0, _touche_poids - delta / SORTIE)
+	if _touche_poids > 0.0:
+		offset = incliner_touche(offset, focus.z, mode, smoothstep(0.0, 1.0, _touche_poids))
 	if actif and not tir.is_empty():
 		# Tir au but : plan dans l'axe, derrière le buteur (le plan suivant repart d'une coupe).
 		var axial := _cadrer_tir(aspect, mode, delta, cut or _pose)
@@ -301,6 +332,28 @@ func _en_melee() -> bool:
 	if formations == null or not formations.has_method("active") or not formations.active():
 		return false
 	return str((formations.formation as Dictionary).get("type", "")) in MELEES
+
+
+## Alignement de touche en place (formation « touche » de la vue).
+func _en_touche() -> bool:
+	if view == null:
+		return false
+	var formations: Variant = view.get("_formations")
+	if formations == null or not formations.has_method("active") or not formations.active():
+		return false
+	return str((formations.formation as Dictionary).get("type", "")) == "touche"
+
+
+## Direction de caméra `offset` abaissée vers TOUCHE_INCLINAISON[mode] (jamais relevée), pour la part
+## `w` ; sans effet près de la touche proche (grue, `profondeur` : z du ballon). Lacet et distance gardés.
+static func incliner_touche(offset: Vector3, profondeur: float, mode: String, w: float) -> Vector3:
+	var horizontal := Vector3(offset.x, 0.0, offset.z)
+	if horizontal.length() < 0.001 or not TOUCHE_INCLINAISON.has(mode) or w <= 0.0:
+		return offset
+	var depart := atan2(offset.y, horizontal.length())
+	var plafond := lerpf(deg_to_rad(float(TOUCHE_INCLINAISON[mode])), depart, smoothstep(TOUCHE_GRUE_DEBUT, TOUCHE_GRUE_FIN, profondeur))
+	var elevation := lerpf(depart, minf(depart, plafond), clampf(w, 0.0, 1.0))
+	return (horizontal.normalized() * cos(elevation) + Vector3.UP * sin(elevation)) * offset.length()
 
 
 ## Point visé au sol et hauteur visible qui contiennent l'action, vus sous l'angle de la caméra.

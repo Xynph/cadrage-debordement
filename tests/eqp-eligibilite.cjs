@@ -28,7 +28,8 @@ test('Premiership : ~70 % d’EQP, chaque club près de sa cible', () => {
     }
     assert.ok(eqp / n >= 0.66 && eqp / n <= 0.75, `Premiership : ${(100 * eqp / n).toFixed(1)} % d’EQP`);
     // Les trois voies existent : nés ailleurs devenus EQP par la résidence et par l'ascendance.
-    assert.ok(r.etrangers > 100 && r.residence > 10 && r.ascendance > 3, JSON.stringify({ e: r.etrangers, res: r.residence, asc: r.ascendance }));
+    // Depuis le 19/11/2026, 293 joueurs ont un statut établi (recherche) : il reste ~340 tirages, d'où ~80 nés ailleurs.
+    assert.ok(r.etrangers > 50 && r.residence > 10 && r.ascendance > 3, JSON.stringify({ e: r.etrangers, res: r.residence, asc: r.ascendance }));
     // Déterministe : mêmes profils dans une seconde carrière.
     const h2 = context(99, { club: 102, console: false });
     try {

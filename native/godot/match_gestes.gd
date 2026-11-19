@@ -89,7 +89,9 @@ const FRAME_SMOOTH := 0.6  # amortissement du centre et de la taille entre deux 
 # Hauteur visible minimale, en mètres (TV : 11 m, puis 15 m le 12 novembre 2026, 26 m avec la caméra en
 # perspective, 15 m le 19 novembre 2026 au soir avec la vue TV plus basse et plus serrée : égale au bas
 # du cadrage de base, SUIVI de match_cadrage.gd, comme avant).
-const FRAME_MIN := {"tv": 15.0, "action": 14.0}
+# Caméra au contact : 8 m depuis le 19 novembre 2026 (nuit), sous son cadrage de base resserré (10 à
+# 12,5 m) ; à 14 m, le geste aurait élargi le plan au lieu de le rapprocher.
+const FRAME_MIN := {"tv": 15.0, "action": 8.0}
 const FRAME_MARGIN := 1.2
 # Pendant le retour, si le suivi d'origine part en panoramique rapide (ballon
 # renvoyé au centre après un essai : 100 m/s), le recadrage cède aussitôt la place

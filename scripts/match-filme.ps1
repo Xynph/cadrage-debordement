@@ -9,7 +9,10 @@ Ce que fait le script :
      OpenGL produit quand même de vraies images ; pilote audio muet (--audio-driver Dummy) en plus
      du son coupé dans le jeu ;
   3. passe les causeries, enregistre une image PNG toutes les -Cadence secondes, puis quitte seul à
-     la fin du match, à la minute -Minutes ou après -DureeMax secondes ;
+     la fin du match, à la minute -Minutes ou après -DureeMax secondes ; ces durées sont du temps de
+     jeu : par défaut Godot tourne à pas fixe (--fixed-fps 30 --disable-vsync), chaque image avance
+     de 1/30 s de jeu et le film se calcule aussi vite que le PC le permet (mêmes images qu'en temps
+     réel) ; -TempsReel revient à l'ancien comportement (30 images/s à l'horloge murale) ;
   4. écrit dans -Sortie : image-0001.png…, planche.png (planche-contact de 24 images au plus),
      report.json (minute, score, état et luminance de chaque image ; « noires » doit valoir 0),
      surveillance.json (relevé toutes les 100 ms : « premier_plan_godot » et
@@ -28,7 +31,11 @@ Paramètres :
   -Cadence   secondes entre deux images (défaut 2)
   -CadenceMoments  secondes entre deux images pendant un grand moment : essai, sortie des joueurs à
              la mi-temps et en fin de match (défaut 0,5 ; report.json les liste dans « moments »)
-  -DureeMax  arrêt au plus tard après ces secondes de direct (défaut 600)
+  -DureeMax  arrêt au plus tard après ces secondes de direct, en temps de jeu (défaut 600)
+  -TempsReel Godot suit l'horloge murale (sans --fixed-fps 30 --disable-vsync) : film en temps réel
+  -Attente   reelle | figee | libre (défaut reelle) : pendant que le moteur calcule une réponse, le
+             temps de jeu avance de la durée réelle de ce calcul, comme en jeu (reelle), pas du tout
+             (figee) ou d'un pas entier par image, donc plus vite qu'en jeu (libre)
   -Minutes   arrêt à cette minute de match (défaut 0 : match entier)
   -Niveau    temps forts : aucun | resume | cles | etendus | dynamique | integral (défaut dynamique, le réglage du jeu)
   -Taille    LxH de la fenêtre et des images, 1280x720 au moins (défaut 1280x720)
@@ -57,6 +64,8 @@ param(
   [string]$Export = '',
   [switch]$GarderCarriere,
   [switch]$SansPlanche,
+  [switch]$TempsReel,
+  [ValidateSet('reelle', 'figee', 'libre')][string]$Attente = 'reelle',
   [string]$Godot = '',
   [string]$Node = '',
   [int]$AttenteGodot = 600
@@ -100,12 +109,16 @@ try {
   $env:CD_GODOT_SELF_TEST = $null
   $env:CD_GODOT_IMMERSIVE_SELF_TEST = $null
   $q = { param($v) ConvertTo-ArgumentCite $v }
-  $arguments = @('--path', (& $q $projet), '--rendering-driver', 'opengl3', '--audio-driver', 'Dummy', '--windowed', '--resolution', $Taille,
+  # Pas fixe (défaut) : chaque image vaut 1/30 s de jeu, le film se calcule au plus vite.
+  $pasFixe = if ($TempsReel) { @() } else { @('--fixed-fps', '30', '--disable-vsync') }
+  $arguments = @('--path', (& $q $projet), '--rendering-driver', 'opengl3', '--audio-driver', 'Dummy', '--windowed', '--resolution', $Taille) + $pasFixe + @(
     '--log-file', (& $q (Join-Path $Sortie 'godot.log')), '--script', (& $q $outil), '--',
     '--match-filme', '--sortie', (& $q $Sortie), '--export', (& $q $Export), '--camera', $Camera,
     '--cadence', $Cadence.ToString([Globalization.CultureInfo]::InvariantCulture),
-    '--cadence-moments', $CadenceMoments.ToString([Globalization.CultureInfo]::InvariantCulture), '--duree-max', $DureeMax, '--minutes', $Minutes, '--niveau', $Niveau, '--taille', $Taille)
+    '--cadence-moments', $CadenceMoments.ToString([Globalization.CultureInfo]::InvariantCulture), '--duree-max', $DureeMax, '--minutes', $Minutes, '--niveau', $Niveau, '--taille', $Taille, '--attente', $Attente)
   if ($SansPlanche) { $arguments += '--sans-planche' }
+  # Godot retire --fixed-fps de ses arguments visibles : l'outil reçoit le pas fixe après « -- ».
+  if (-not $TempsReel) { $arguments += @('--fixed-fps', '30') }
 
   $bilan = Invoke-GodotSurBureauCache -Godot $Godot -Arguments $arguments -Sortie $Sortie -Prefixe 'MatchFilme' -LimiteSecondes ($DureeMax + 900)
   $code = $bilan.code_sortie; $volS = $bilan.premier_plan_godot; $visibles = $bilan.fenetres_visibles_sur_le_bureau_utilisateur; $arret = $bilan.arret_force
@@ -115,7 +128,7 @@ try {
   if (Test-Path $rapport) {
     $r = Get-Content -Raw -Encoding utf8 $rapport | ConvertFrom-Json
     $images = @($r.images).Count; $noires = [int]$r.noires
-    Write-Host ("Match filmé : {0} images ({1} noires), minute {2}, score {3}, {4} s ; premier plan pris : {5} fois ; fenêtres visibles : {6}." -f $images, $noires, $r.minute, ($r.score -join ' – '), $r.duree_s, $volS, $visibles)
+    Write-Host ("Match filmé : {0} images ({1} noires), minute {2}, score {3}, {4} s de jeu en {5} s réelles ; premier plan pris : {6} fois ; fenêtres visibles : {7}." -f $images, $noires, $r.minute, ($r.score -join ' – '), $r.duree_s, $r.duree_reelle_s, $volS, $visibles)
   } else {
     Write-Warning "Aucun rapport : voir $(Join-Path $Sortie 'godot.log')"
   }

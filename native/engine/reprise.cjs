@@ -498,6 +498,8 @@ function factory(){
     const own=st.plan.players[pid],risk=(own?clamp(own[1]/3*.4+m.risk,0,2):base)/100*w.f*minutes/80;
     if(risk>0&&unit('reprise-blessure:'+s.season+':'+s.round+':'+l.pair.join('-')+':'+pid)<risk){
      p.injury=1+hash('reprise-duree:'+s.season+':'+pid)%3;
+     // Origine enregistrée sur la blessure, comme pour les autres rencontres (club-mail.cjs, installHooks).
+     if(id===s.club){const fx=(s.worldMode?.fixtures||[]).find(f=>f.homeId===l.pair[0]&&f.awayId===l.pair[1]&&f.week===s.round)||null,opp=l.pair[1-side];p.injuryOrigin={type:'match',fixtureId:fx?.id??null,opp,oppName:s.clubs?.[opp]?.name||null,home:side===0,neutral:!!fx?.neutral,us:Number(l.score?.[side])||0,them:Number(l.score?.[1-side])||0,date:/^\d{4}-\d{2}-\d{2}$/.test(fx?.date||'')?fx.date:null,season:s.season??null,round:s.round??null};}
      if(id===s.club&&typeof news==='function')news(`${p.name} se blesse en début de saison, encore court physiquement : ${p.injury} semaine(s) d’indisponibilité.`);
     }
    }

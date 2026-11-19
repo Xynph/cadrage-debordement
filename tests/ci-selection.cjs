@@ -35,6 +35,10 @@ for(const p of ['dist/rugby.js','dist/game.js','dist/saves.js'])assert.ok(select
 for(const p of ['dist/economy.js','dist/game.js','dist/saves.js'])assert.ok(selectTests([p]).includes('tests/v38-individual-objectives.cjs'),p);
 for(const p of ['dist/economy.js','dist/game.js','dist/saves.js','dist/development.js'])assert.ok(selectTests([p]).includes('tests/v36-satisfaction.cjs'),p);
 assert.ok(!allTests.includes('tests/harness.cjs'));
+// Arbitrage fin (dist/arbitrage.js) : suivi par sa suite dédiée, et par les modules qui l'appellent.
+assert.ok(allTests.includes('tests/arbitrage-fin.cjs'));
+for(const p of ['dist/arbitrage.js','dist/rugby.js','dist/restarts.js'])assert.ok(selectTests([p]).includes('tests/arbitrage-fin.cjs'),p);
+for(const test of ['cartons-realistes','discipline','saves'])assert.ok(selectTests(['dist/arbitrage.js']).includes('tests/'+test+'.cjs'),test);
 
 assert.ok(allTests.includes('tests/manager-mobility.cjs'));
 for(const file of ['dist/manager-mobility.js','dist/game.js','dist/saves.js','dist/index.html'])assert.ok(selectTests([file]).includes('tests/manager-mobility.cjs'),file);

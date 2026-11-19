@@ -32,7 +32,6 @@ const MatchCanvas = preload("res://ui/immersive08/match_canvas.gd")
 const MatchCompact = preload("res://ui/immersive08/match_compact.gd")
 const G = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
-const TACTICS_CANVAS_MIN_WIDTH := 1600
 ## Gabarits riches (référence 2560 × 1440) ouverts dès 1280 × 720 (densité 0,5). Les gabarits sont
 ## proportionnels (C.px, D.place) et tout texte passe par un plancher de 12 px (C.label, D.text) :
 ## à 1280 × 720 le plus petit texte rendu fait 12 × 0,977 ≈ 11,7 px (pied de page compris, voir _fit_layout).
@@ -571,6 +570,16 @@ static func _heading(parent: Node, app: Control) -> void:
 	if app.route=="Composition":
 		var selected:int=app.model.get("selection",{}).get("slots",[]).filter(func(slot:Dictionary):return slot.get("playerId")!=null).size()
 		D.chip(row,Rect2(1140,21,288,48),str(selected)+" joueurs sélectionnés",C.MINT)
+		# Quota du championnat (JIFF / EQP) avec les autres repères de la feuille (capture 1280 du 19/11 : en pied de carte,
+		# il chevauchait la condition du XV). Rouge sous la trajectoire, vert à la moyenne exigée, gris sinon.
+		var quota: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
+		if bool(quota.get("applies", false)):
+			var compte := int(quota.get("currentSheet", 0)) + int(quota.get("doublon", 0))
+			var cible := int(quota.get("target", 16))
+			var puce := D.chip(row,Rect2(904,21,220,48),"%s %d / %d" % [str(quota.get("label", "JIFF")), compte, cible],C.ALERT if bool(quota.get("alert", false)) else (C.MINT if compte >= cible else C.MUTED))
+			puce.name = "LineupJiffNotice"
+			puce.tooltip_text = app.SquadViews.quota_line(quota) + "\n" + app.SquadViews.quota_tooltip(quota)
+			puce.mouse_filter = Control.MOUSE_FILTER_PASS
 		D.chip(row,Rect2(1444,21,241,48),"Composition valide" if app.model.get("selection",{}).get("valid",false) else "À compléter",C.MINT if app.model.get("selection",{}).get("valid",false) else C.AMBER)
 		D.button(row,Rect2(1703,21,248,48),"Enregistrer le plan",func():app._command("save"),false,"save",true,app.accent,"TacticsSave")
 		D.button(row,Rect2(1967,21,281,48),"Valider les 23",func():TacticsCanvas.validate(app),true,"arrow",false,app.accent,"TacticsValidate")
@@ -623,7 +632,7 @@ static func _sync_office_props(match_status: Label) -> void:
 
 static func _subnavigation(parent: Node, app: Control) -> void:
 	if Selections.nation_only(app.model): return
-	if (app.route=="Composition" and app.get_window().size.x>=TACTICS_CANVAS_MIN_WIDTH) or (app.route=="Effectif" and app.get_window().size.x>=1600): return
+	if app.route=="Composition" or (app.route=="Effectif" and app.get_window().size.x>=1600): return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
 		var row := C.h(8)
@@ -647,6 +656,8 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	D.line(row,Vector2(0,-FOOTER_RISE),Vector2(2248,-FOOTER_RISE),Color(C.LINE,.7))
 	app.status = D.text(row,2,36,app._settled_status_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
 	app.status.name = "ImmersiveSaveStatus"
+	# Une seule ligne, jamais coupée : le texte se resserre au lieu de passer à la ligne (voir _fit_status).
+	app.status.autowrap_mode = TextServer.AUTOWRAP_OFF
 	# Rappel des raccourcis sur tous les écrans, Bureau compris : le pied de page est hors de la zone défilante
 	# (Gabi, blocs et frise y restent), donc il ne recouvre rien ; le bouton Continuer est dans le bandeau du haut.
 	var shortcuts := D.text(row,782,36-FOOTER_RISE,Raccourcis.pied_de_page(),17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
@@ -656,6 +667,8 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 		feedback.add_theme_font_override("font",C.DISPLAY)
 		row.add_child(feedback)
 	row.resized.connect(_position_footer.bind(row))
+	# Le texte change après chaque réponse du moteur (main.gd) : il redemande l'ajustement à ce pied de page.
+	app.status.set_meta("refit",_position_footer.bind(row))
 	_position_footer(row)
 
 static func _position_footer(row: Control) -> void:
@@ -674,12 +687,19 @@ static func _position_footer(row: Control) -> void:
 	var compact := C.px(24)*factor<14.0
 	var side_by_side := shortcuts != null and not compact and row.size.x*factor>=1650
 	var shortcuts_x := maxf(C.px(782),630.0/factor)
-	if side_by_side: right = minf(right,shortcuts_x-gap)
 	var pixels := maxi(C.px(17),ceili(14.0/factor))
 	var font := status.get_theme_font("font")
+	var smallest := maxi(12,ceili(11.0/factor))
+	# Côte à côte, la ligne d'état n'a que la place avant le pied de raccourcis : si son texte n'y tient pas
+	# même resserré, elle passe sous les raccourcis, sur toute la largeur (comme en fenêtre compacte).
+	if side_by_side and font.get_string_size(status.text,HORIZONTAL_ALIGNMENT_LEFT,-1,smallest).x > minf(right,shortcuts_x-gap)-status.position.x:
+		side_by_side = false
+		compact = true
+	if side_by_side: right = minf(right,shortcuts_x-gap)
 	status.add_theme_font_size_override("font_size",pixels)
 	status.position.y = row.size.y-C.px(8+FOOTER_RISE)-font.get_ascent(pixels)
 	status.size = Vector2(maxf(0.0,right-status.position.x),font.get_height(pixels))
+	_fit_status(status,pixels,smallest)
 	if shortcuts==null: return
 	shortcuts.visible=compact or side_by_side
 	var shortcut_font := C.MEDIUM if compact else C.BODY
@@ -694,6 +714,21 @@ static func _position_footer(row: Control) -> void:
 	else:
 		shortcuts.position=Vector2(shortcuts_x,C.px(36-FOOTER_RISE)-shortcut_font.get_ascent(shortcut_px))
 		shortcuts.size=Vector2(C.px(800),shortcut_height)
+
+## Ligne d'état du pied de page (« Conférence tenue · Moral collectif : 75 → 87 / 100 », erreurs, sauvegarde) :
+## toujours sur une seule ligne et entière. Si le texte dépasse la place libre, on réduit la taille jusqu'à
+## `smallest` (≈ 11 px écran) ; seulement ensuite le bout est remplacé par « … » (texte complet en infobulle).
+static func _fit_status(status: Label, pixels: int, smallest: int) -> void:
+	status.autowrap_mode = TextServer.AUTOWRAP_OFF
+	status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	var font := status.get_theme_font("font")
+	var chosen := pixels
+	while chosen > smallest and font.get_string_size(status.text,HORIZONTAL_ALIGNMENT_LEFT,-1,chosen).x > status.size.x: chosen -= 1
+	if chosen != pixels:
+		status.add_theme_font_size_override("font_size",chosen)
+		status.position.y += font.get_ascent(pixels)-font.get_ascent(chosen)
+		status.size.y = font.get_height(chosen)
+	status.tooltip_text = status.text
 
 static func _open_current_calendar(app: Control) -> void:
 	app.set_meta("calendar_table",false)
@@ -733,18 +768,9 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 				app.body.add_child(roster)
 				Legacy.apply(roster, app.accent)
 		"Composition":
-			if app.get_window().size.x>=TACTICS_CANVAS_MIN_WIDTH:
-				app.body.add_child(TacticsCanvas.build(app))
-			else:
-				var lineup: Control = app.SquadViews.lineup(app)
-				var remove := lineup.find_child("LineupRemove",true,false) as Button
-				var candidates := lineup.find_child("LineupCandidatesScroll",true,false) as ScrollContainer
-				# La libération reste au-dessus de la liste.
-				remove.get_parent().move_child(remove,candidates.get_index())
-				var selected := lineup.find_child("LineupSlot%02d" % (app.selected_slot+1),true,false) as Button
-				if selected != null: selected.set_meta("carnet_selected",true)
-				app.body.add_child(lineup)
-				Legacy.apply(lineup,app.accent)
+			# Décision de Léo (19/11/2026) : plus jamais l'ancienne feuille de match. L'écran de la maquette validée
+			# (proportionnel, plancher de 12 px) sert à toutes les tailles, 1280 × 720 compris.
+			app.body.add_child(TacticsCanvas.build(app))
 		"Préparation": app.body.add_child(Preparation.compact(app))
 		"Plan de jeu": app.body.add_child(app.PlaybookViews.build(app))
 		"Recrutement": app.body.add_child(app.SquadViews.market(app))

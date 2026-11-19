@@ -300,3 +300,26 @@ Sources : [loi 5 — Durée](https://passport.world.rugby/fr/les-regles-du-jeu/r
   mort de l'arbitre, prolongation « mort subite » des règlements qui en
   prévoient une hors Pacific et Japon, chemin hérité hors Monde (« prolongation
   simplifiée »). `tests/fin-de-periode.cjs`.
+
+## Arbitrage fin : touche, ruck, maul (19/11/2026)
+
+Rencontres créées avec `arbitrageVersion: 1` (`dist/arbitrage.js`) ; les autres gardent leurs textes et statistiques.
+Lois World Rugby en ligne relues pour le principe, numéros de sous-articles non recopiés ici.
+
+- Chaque pénalité garde l'incident déjà tiré (fréquence, carton et `serious` inchangés) et reçoit une cause
+  détaillée, choisie sans tirage, puis une famille comptée par équipe (`penaltyFamilies`, `penaltyCauses`) :
+  - ruck ([loi 15](https://passport.world.rugby/fr/les-regles-du-jeu/regles-du-jeu-par-numero/15-le-ruck/)) :
+    hors-jeu au ruck, entrée sur le côté, mains au sol (ballon joué à la main dans le ruck), ballon tenu une fois
+    le ruck formé, ballon non libéré par le porteur (loi 14), scellement ;
+  - maul ([loi 16](https://passport.world.rugby/fr/les-regles-du-jeu/regles-du-jeu-par-numero/16-le-maul/)) :
+    écroulement (jamais attribué à l'équipe qui lance), entrée illégale par le côté ;
+  - touche ([loi 18](https://passport.world.rugby/fr/les-regles-du-jeu/regles-du-jeu-par-numero/18-touche-remise-en-jeu-rapide-et-alignement/)) :
+    obstruction dans l'alignement ;
+  - mêlée (loi 19) : faute générique (écroulement, poussée non droite) ;
+  - jeu courant (lois 9 et 10) : hors-jeu hors regroupement, obstruction, plaquage dangereux.
+- Lancer pas droit (loi 18) : faute sans pénalité, l'adversaire choisit une touche ou une mêlée. Le moteur en fait
+  environ une touche perdue sur cinq (taux de touches perdues inchangé), compte `lineoutNotStraight` et rend le
+  ballon à l'adversaire sans rejouer de phase : il ne simule pas ce choix (une mêlée ajoutée changerait la
+  fréquence des pénalités de mêlée). Le commentaire dit « récupère l'introduction » ou « rend le ballon ».
+- Réserves : répartition entre causes fixée par le jeu (pas de statistique officielle par cause) ; la scène 3D
+  d'un lancer pas droit reste celle d'une touche perdue.

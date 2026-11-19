@@ -218,8 +218,8 @@ module.exports = function srpMatchFactory(rules) {
       } else {
         check(!isLast || finished, 'une période close doit déclencher la suivante ou finir le match.');
         witnessValid(p.end,p.firstScore?.kind === 'try' ? p.firstScore.side : null);
-        // Une marque peut tomber dès la minute du coup d'envoi (essai sur la première action) : la fin coïncide alors avec le début.
-        check(p.firstScore !== null ? p.end.minute >= p.start : p.end.minute >= p.limit, 'durée effective de prolongation invalide.');
+        // Moteur à la minute : une première marque peut tomber dans la minute même du coup d'envoi de la période.
+        check(p.firstScore !== null ? p.end.minute >= p.start : p.end.minute > p.start && p.end.minute >= p.limit, 'durée effective de prolongation invalide.');
         cumulative(previous,p.end);
         if (golden(p.kind)) goldenProof(previous,p.end,p.firstScore);
         if (isLast) {

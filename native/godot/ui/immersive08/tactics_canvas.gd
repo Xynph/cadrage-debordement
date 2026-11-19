@@ -71,6 +71,7 @@ static func build(app:Control) -> Control:
 	var pitch:=Pitch.new();composition.add_child(pitch);D.place(pitch,Rect2(24,245,1022,626))
 	var advice := _staff_advice(composition,app)
 	_nationale_qualification(composition,app.model.get("selection",{}))
+	var bleus_marques := _bleus(composition,app)
 	if not Roles.view(app.model).is_empty():
 		var roles:=D.button(composition,Rect2(790,190,254,30),"TIREURS ET LANCEUR",func():Roles.open(app),false,"ball",true,app.accent,"LineupRoles")
 		roles.tooltip_text="Désigner le buteur, son remplaçant, le lanceur en touche et le joueur au pied d’occupation."
@@ -116,6 +117,9 @@ static func build(app:Control) -> Control:
 		D.text(button,112,52,"AU POSTE",12,C.MUTED,500,90,HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(button,84,78,_slot_name(person),19,C.IVORY,600,158,HORIZONTAL_ALIGNMENT_CENTER)
 		if advice.has(slot):D.chip(button,Rect2(8,60,24,22),"!",C.AMBER).name="TacticsStaffAdviceMark%02d" % (slot+1)
+		if bleus_marques.has(slot):
+			D.chip(button,Rect2(2,2,30,20),"33",C.ALERT).name="TacticsBleusMark%02d" % (slot+1)
+			button.tooltip_text+="\nListe des 33 : doit souffler ce week-end."
 		button.pressed.connect(func():_choose_slot(app,slot))
 	var group:=P.group(app.model)
 	var condition := "Condition · XV %s · Groupe %d %%" % [P.lineup_condition(app.model), group.condition]
@@ -189,6 +193,32 @@ static func _nationale_qualification(parent: Panel, selection: Dictionary) -> vo
 	D.text(panel,17,32,notice.get("title",""),26,C.GOLD,700,698).name = "NationaleQualificationTitle"
 	D.text(panel,17,64,notice.get("summary",""),28,C.ALERT if alert else C.IVORY,700,698).name = "NationaleQualificationSummary"
 	D.text(panel,17,93,notice.get("detail",""),24,C.MUTED,500,698,HORIZONTAL_ALIGNMENT_LEFT,true).name = "NationaleQualificationDetail"
+
+## Protocole des Bleus (liste de 33) dans le bandeau de briefing, par-dessus l'avis du staff : capture du 19/11, l'alerte
+## n'existait que dans l'ancienne feuille (fenêtres de moins de 1600 px). Même action que là-bas (squad_views.bleus_resume).
+static func _bleus(parent: Panel, app: Control) -> Dictionary:
+	var marques := {}
+	var bleus: Dictionary = app.SquadViews.bleus_resume(app)
+	if bleus.is_empty(): return marques
+	for e: Dictionary in bleus.echanges: marques[int(e.slot)] = true
+	# Opaque (capture du 19/11 : l'avis du staff transparaissait dessous) et haute de 160 comme le bandeau de briefing.
+	var panel := D.rect(parent,Rect2(23,72,1024,160),Color("1d1012"),5,C.ALERT)
+	panel.name = "LineupBleusNotice"
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus.\n\nRemplaçants proposés par le staff :\n" + "\n".join(bleus.lignes)
+	D.text(panel,18,38,str(bleus.titre),26,C.ALERT,700,690).name = "LineupBleusTitle"
+	D.text(panel,18,78,"Au moins 2 repos sur 8 matchs de club. L’aligner quand même coûte la confiance du staff des Bleus.",20,C.IVORY,500,990)
+	var echanges: Array = bleus.echanges
+	var aide := "Marqués « 33 » sur le terrain. Le staff propose un remplaçant au même poste pour chacun (survol : le détail)." if echanges.size() > 1 else "Remplaçant proposé par le staff : " + str(bleus.lignes[0]) if echanges.size() == 1 else "Aucun remplaçant disponible au même poste."
+	var detail := D.text(panel,18,114,aide,19,C.MUTED,500,990)
+	detail.name = "LineupBleusChanges"
+	if echanges.is_empty(): return marques
+	var lot: Array = bleus.lot
+	var caption := "FAIRE SOUFFLER" if echanges.size() == 1 else "FAIRE SOUFFLER LES %d" % echanges.size()
+	var faire := D.button(panel,Rect2(706,12,302,44),caption,func():app._command("set_lineup",{"changes":lot}),true,"people",true,C.ALERT,"LineupBleusRestAll")
+	faire.tooltip_text = "\n".join(bleus.lignes)
+	faire.disabled = not Selection.editable(app)
+	return marques
 
 static func _identity(card:Panel,app:Control,domains:Array) -> void:
 	for i in 3:

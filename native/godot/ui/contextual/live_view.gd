@@ -583,6 +583,9 @@ func _update_drawer() -> void:
 	for stat: Dictionary in _stats(live):
 		drawer_body.add_child(S.label(str(stat.get("label", "")), 13))
 		drawer_body.add_child(S.label("%s    —    %s" % [str(stat.get("home", "")), str(stat.get("away", ""))], 23, S.GOLD))
+		# Détail par équipe sous le compte (pénalités par phase, lancers pas droits) : une ligne courte chacune.
+		if stat.get("detail") is Array:
+			for ligne: Variant in stat.detail: drawer_body.add_child(S.wrap(str(ligne), 12))
 	if _stats(live).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14))
 	director._refresh_controls()
 
