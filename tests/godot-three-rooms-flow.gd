@@ -210,9 +210,13 @@ func open_press_mail(invitation_id: String, completed: bool = false) -> bool:
 	var inbox_visible: bool = app.route == "Réception" and not director.active() and app.root_content.is_visible_in_tree()
 	check(inbox_visible, "A pending or published press appointment leaves Réception visible until its mail is opened")
 	if not inbox_visible: return false
+	# Coque commune : Presse s'ouvre depuis le rail (journal, archives), mais la conférence reste derrière son courrier.
 	app._navigate("Presse")
 	await settle()
-	check(app.route == "Réception" and not director.active(), "Direct navigation to Presse cannot bypass its mail")
+	check(app.route == "Presse" and not director.active(), "Direct navigation to Presse opens the press screen without starting the meeting")
+	check(app.body.find_child("PressSubmit", true, false) == null and app.body.find_child("PressAnswer_*", true, false) == null, "Direct navigation to Presse cannot bypass its mail")
+	app._navigate("Réception")
+	await settle()
 	check(app.body.find_child("InboxOpenPressInvitation", true, false) == null, "The conference action is absent before opening the mail")
 	var mail: Button
 	for row: Button in app.body.find_children("*", "Button", true, false):

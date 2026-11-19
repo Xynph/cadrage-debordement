@@ -62,14 +62,16 @@ func run() -> void:
 	if gestionnaire == null: return finish()
 	check(app.get_viewport().gui_get_focus_owner() == null or not (app.get_viewport().gui_get_focus_owner() is LineEdit), "Aucun champ de saisie au départ")
 
-	# Menus 1 à 9 : dans l'ordre affiché (Réception, Bureau, Effectif, Tactique…).
+	# Menus 1 à 9 : dans l'ordre affiché (Bureau, Réception, Effectif, Tactique…), sans numéro écrit devant.
 	var menus: Array = app.root_content.find_children("Nav_*", "Button", true, false)
 	check(menus.size() >= 9, "Au moins neuf menus à gauche (" + str(menus.size()) + ")")
-	check(menus[2].tooltip_text.contains("(3)") and menus[0].tooltip_text.contains("(1)"), "Info-bulles « (1) », « (3) » sur les menus")
+	check(menus[2].tooltip_text.contains("touche 3") and menus[0].tooltip_text.contains("touche 1") and not menus[0].text.substr(0, 1).is_valid_int(), "Info-bulles « touche 1 », « touche 3 » sur les menus, sans numéro affiché")
 	await key(KEY_3)
 	check(app.route == "Effectif", "Touche 3 : Effectif (" + app.route + ")")
 	await key(KEY_KP_2)
-	check(app.route == "Bureau", "Pavé numérique 2 : Bureau (" + app.route + ")")
+	check(app.route == "Réception", "Pavé numérique 2 : Réception (" + app.route + ")")
+	await key(KEY_1)
+	check(app.route == "Bureau", "Touche 1 : Bureau (" + app.route + ")")
 	await key(KEY_4)
 	check(app.route == "Composition", "Touche 4 : Tactique (" + app.route + ")")
 	await key(KEY_2, true)
@@ -99,15 +101,22 @@ func run() -> void:
 	check(not app.get_meta("immersive08_full_player", false) and app.route == "Effectif", "Échap referme la fiche joueur")
 	check(app.find_child("ImmersivePauseMenu", true, false) == null, "Échap sur la fiche : pas de menu de pause")
 
-	# Ctrl+F : l'accès rapide (seule recherche existante), refermé par Échap.
+	# Ctrl+F (comme Ctrl+K) : focus dans le champ « Rechercher » de la barre haute, aucune fenêtre ; Échap le rend.
 	await key(KEY_F, true)
-	var palette := app.find_child("NavigationPalette", true, false) as Window
-	check(palette != null and palette.visible, "Ctrl+F ouvre l'accès rapide")
+	var recherche := app.root_content.find_child("ImmersiveSearch", true, false) as LineEdit
+	check(recherche != null and recherche.has_focus() and app.find_child("NavigationPalette", true, false) == null, "Ctrl+F met le focus dans la recherche, sans fenêtre")
+	# Champ ciblé : les raccourcis du bureau restent muets.
+	await key(KEY_5)
+	check(app.route == "Effectif", "Recherche ciblée : touche 5 ignorée (" + app.route + ")")
+	await key(KEY_ESCAPE)
+	check(recherche != null and not recherche.has_focus() and app.find_child("ImmersivePauseMenu", true, false) == null, "Échap rend le focus sans ouvrir le menu")
 	# Dialogue ouvert : les raccourcis du bureau restent muets.
+	app.notice("Essai", "Fenêtre ouverte")
+	await settle()
 	await key(KEY_5)
 	check(app.route == "Effectif", "Dialogue ouvert : touche 5 ignorée (" + app.route + ")")
-	await key(KEY_ESCAPE)
-	check(palette != null and not palette.visible, "Échap referme l'accès rapide")
+	app._clear_dialogs()
+	await settle()
 
 	# Rappels : une seule table pour le pied de page, les paramètres et l'aide F1.
 	var Table = load("res://ui/raccourcis_clavier.gd")

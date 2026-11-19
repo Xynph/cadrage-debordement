@@ -65,7 +65,7 @@ func run() -> void:
 	var reading: Dictionary = app.management_ui.duplicate(true)
 	check(not nav.open_entity({"kind":"player", "id":"__absent__"}), "Identifiant inconnu refusé")
 	check(not nav.open_entity({"kind":"invented", "id":player_id}), "Type inconnu refusé")
-	check(not nav.open_entity({"kind":"menu", "route":"Presse"}), "La presse ne s’ouvre pas par une route générique")
+	check(not nav.open_entity({"kind":"menu", "route":"__absente__"}), "Route inconnue refusée")
 	check(app.route == route and app.management_ui == reading and app.last_command == previous_command, "Refus sans mutation de lecture ni commande")
 	check(nav.open_entity({"kind":"player", "id":player_id, "section":"contract"}), "Fiche contrat ouverte par ID")
 	await settle()

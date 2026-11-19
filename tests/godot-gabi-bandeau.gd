@@ -158,14 +158,18 @@ func bandeau(route: String) -> void:
 	if zone == null or topbar == null: return
 	var band := zone.get_global_rect()
 	check(topbar.get_global_rect().grow(1).encloses(band), "Zone de Gabi dans le bandeau du haut : " + route)
-	check(band.size.x >= 250.0, "Zone de Gabi assez large (%d px) : %s" % [band.size.x, route])
+	# Coque commune (charte §7.1) : médaillon seul (54 × 36 px à 1920) à côté de la touche « F1 » ; la remarque du
+	# moment ne défile plus dans la barre (son avis reste au clic, l'indice sur le médaillon).
+	check(zone.get_meta("compact", false) and band.size.y >= 24.0 and band.size.x <= 60.0, "Médaillon de Gabi compact (%d × %d px) : %s" % [band.size.x, band.size.y, route])
 	var face: Control = zone.find_child("GabiMedaillon", true, false)
 	check(face != null and face.is_visible_in_tree() and band.grow(1).encloses(face.get_global_rect()), "Visage de Gabi dans le bandeau : " + route)
 	var image: TextureRect = zone.find_child("GabiVisageImage", true, false)
 	check(image != null and image.texture != null, "Visage de Gabi rendu (texture du portrait) : " + route)
-	var remark: Label = zone.find_child("GabiRemarque", true, false)
-	check(remark != null and not remark.text.strip_edges().is_empty(), "Remarque du moment : " + route)
-	await fil_entier(coach, zone, route)
+	for id: String in ["GabiFil", "GabiBandeauTitre", "GabiPastille"]:
+		var node := zone.find_child(id, true, false) as Control
+		check(node == null or not node.is_visible_in_tree(), "Coque commune : %s retiré de la barre : %s" % [id, route])
+	var help := topbar.find_child("GabiF1", true, false) as Button
+	check(help != null and help.is_visible_in_tree() and help.get_global_rect().position.x >= band.end.x - 1.0, "Touche « F1 » à droite du médaillon : " + route)
 	check(coach._adjoint_actif(), "Gabi actif dans le bandeau : " + route)
 	var covered: Array = []
 	for item: Array in content([zone, coach]):
@@ -174,7 +178,7 @@ func bandeau(route: String) -> void:
 	var search: Control = topbar.find_child("ImmersiveSearch", true, false)
 	var date: Control = topbar.find_child("ImmersiveCalendarDate", true, false)
 	check(search != null and search.is_visible_in_tree() and not search.get_global_rect().intersects(band), "Recherche lisible, à côté de Gabi : " + route)
-	check(date != null and date.is_visible_in_tree() and not date.get_global_rect().intersects(band) and date.get_global_rect().position.x > band.end.x, "Date lisible, à droite de Gabi : " + route)
+	check(date != null and date.is_visible_in_tree() and not date.get_global_rect().intersects(band) and date.get_global_rect().end.x < band.position.x, "Date lisible, à gauche de Gabi : " + route)
 	check(app.header_date != null and not str(app.header_date.text).is_empty(), "Date affichée : " + route)
 	await capture("bandeau-" + route.to_lower())
 
@@ -212,8 +216,8 @@ func bandeau_bureau(zone: Control, topbar: Control) -> void:
 	check(coach._adjoint_actif(), "Bureau : Gabi reste actif (bulle, conseil) via Gabi en pied")
 	var search: Control = topbar.find_child("ImmersiveSearch", true, false)
 	var date: Control = topbar.find_child("ImmersiveCalendarDate", true, false)
-	check(search != null and search.is_visible_in_tree() and search.size.x > 440.0 * C.density * topbar.get_global_transform().get_scale().x, "Bureau : recherche élargie (%d px)" % search.size.x)
-	check(date != null and date.is_visible_in_tree() and date.get_global_rect().position.x > search.get_global_rect().end.x + 60.0, "Bureau : date lisible, à droite de la recherche")
+	check(search != null and search.is_visible_in_tree() and search.size.x >= 293.0 * C.density, "Bureau : recherche entière (%d px)" % search.size.x)
+	check(date != null and date.is_visible_in_tree() and date.get_global_rect().position.x > search.get_global_rect().end.x, "Bureau : date lisible, à droite de la recherche")
 	check(topbar.get_global_rect().grow(1).encloses(search.get_global_rect()) and topbar.get_global_rect().grow(1).encloses(date.get_global_rect()), "Bureau : recherche et date dans le bandeau")
 	check(app.header_date != null and not str(app.header_date.text).is_empty(), "Bureau : date affichée")
 	await capture("bandeau-bureau")

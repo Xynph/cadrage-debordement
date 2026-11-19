@@ -78,8 +78,9 @@ func run() -> void:
 	if root.focus_entered.is_connected(maximize):root.focus_entered.disconnect(maximize)
 	root.mode=Window.MODE_WINDOWED
 
+	# Coque commune : l'écran Presse s'ouvre depuis le rail, la conférence reste derrière son courrier.
 	app._navigate("Bureau"); app._navigate("Presse"); await settle()
-	check(app.route == "Bureau","La conférence s’ouvre depuis son courrier")
+	check(app.route == "Presse" and app.find_child("PressSubmit",true,false) == null,"La conférence s’ouvre depuis son courrier")
 	app._show_press_inbox(); await settle()
 	check(app.find_child("InboxOpenPressInvitation",true,false) == null,"Lire l’invitation avant de rejoindre la conférence")
 	await activate("InboxPressInvitation"); await activate("InboxOpenPressInvitation")
