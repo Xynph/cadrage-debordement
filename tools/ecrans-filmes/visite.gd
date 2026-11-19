@@ -1,0 +1,638 @@
+extends SceneTree
+## Tour des écrans filmé : capture tous les écrans de gestion du vrai jeu sans écran ni clic.
+##
+## Charge le vrai jeu (main.tscn) avec un profil temporaire, importe une carrière Monde
+## (tools/ecrans-filmes/preparer-carriere.cjs : jour de match, une rencontre déjà jouée), puis, pour
+## chaque taille demandée, ouvre chaque écran comme le ferait la navigation du jeu (app._navigate), ferme
+## les bulles de Gabi, attend que l'image ne bouge plus et l'enregistre (<ecran>-<largeur>.png). Écrans :
+## la liste ROUTES de tests/small-window-geometry.gd, puis fiche joueur, fiche d'un club adverse,
+## calendrier en semaine, options, et pour finir le direct et la fenêtre Équipe (coup d'envoi donné dans
+## le profil jetable). Écrit report.json (écrans réussis/échoués, débordements : contrôles hors de
+## l'écran, textes probablement tronqués) et une planche par taille (planche-<largeur>.png).
+## Point d'entrée habituel : scripts/ecrans-filmes.ps1 (bureau Windows séparé, pilote audio muet).
+##
+##   godot --path native/godot --audio-driver Dummy --script tools/ecrans-filmes/visite.gd -- \
+##     --ecrans-filmes --sortie <dossier> --export <carriere.json> [--tailles 1920x1080,1280x720] \
+##     [--ecrans reception,fiche-joueur,...] [--duree-max 900] [--sans-planche] [--sans-direct]
+##
+## CD_GODOT_DATA_DIR est obligatoire (profil jetable) : l'outil refuse de tourner sur le profil réel.
+## Le jeu normal n'est pas touché : ce script n'est chargé qu'avec --script.
+
+const TAILLE_MIN := Vector2i(1280, 720)
+const TAILLES_DEFAUT := "1920x1080,1280x720"
+## Copie de ROUTES (tests/small-window-geometry.gd), utilisée si ce fichier n'est pas lisible ;
+## tests/godot-ecrans-filmes.cjs vérifie que les deux listes restent identiques.
+const ROUTES_GEOMETRIE := ["Réception","Bureau","Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match","Recrutement","Formation","Centre","Suivi des jeunes","Club","Staff","Travail du club","Stratégie","Finances","Calendrier","Classements","Rivalités","Carrière","Sélections","Presse","Accueil","Création","Packs"]
+## Écrans hors carrière : visités après les écrans de gestion (ils ne changent rien à la carrière).
+const HORS_CARRIERE := ["Accueil", "Création", "Packs"]
+const EXTRAS := [
+	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
+	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
+	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
+	{"id": "options", "libelle": "Options", "type": "options"},
+]
+## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
+const EN_DIRECT := [
+	{"id": "direct", "libelle": "Match en direct", "type": "direct"},
+	{"id": "equipe-composition", "libelle": "Fenêtre Équipe · composition", "type": "equipe", "onglet": "composition"},
+	{"id": "equipe-consignes", "libelle": "Fenêtre Équipe · consignes", "type": "equipe", "onglet": "consignes"},
+]
+## Autres noms acceptés par --ecrans (forme normalisée par `slug`).
+const ALIAS := {"transferts": ["recrutement"], "classement": ["classements"], "equipe": ["equipe-composition", "equipe-consignes"],
+	"fenetre-equipe": ["equipe-composition", "equipe-consignes"], "joueur": ["fiche-joueur"], "preferences": ["options"], "reglages": ["options"], "semaine": ["calendrier-semaine"]}
+const SEUIL_NOIR := 0.03
+## Détails gardés par écran dans report.json (les totaux restent exacts).
+const MAX_DETAILS := 40
+
+var app: Control
+var vignettes: Dictionary = {}
+
+func _initialize() -> void:
+	call_deferred("run")
+
+# --- Logique pure (testée par tests/godot-ecrans-filmes.gd, sans rendu) ----------------------------
+
+## Nom de fichier d'un écran : minuscules, sans accents, mots reliés par des tirets (« Plan de jeu » → plan-de-jeu).
+static func slug(texte: String) -> String:
+	var accents := {"à": "a", "â": "a", "ä": "a", "á": "a", "ç": "c", "é": "e", "è": "e", "ê": "e", "ë": "e", "î": "i", "ï": "i", "í": "i",
+		"ô": "o", "ö": "o", "ó": "o", "ù": "u", "û": "u", "ü": "u", "ú": "u", "œ": "oe", "æ": "ae", "ÿ": "y", "ñ": "n"}
+	var sortie := ""
+	for c in texte.to_lower():
+		var lettre: String = accents.get(c, c)
+		var code := lettre.unicode_at(0)
+		if lettre.length() > 1 or (code >= 97 and code <= 122) or (code >= 48 and code <= 57): sortie += lettre
+		else: sortie += "-"
+	while sortie.contains("--"): sortie = sortie.replace("--", "-")
+	return sortie.trim_prefix("-").trim_suffix("-")
+
+static func nom_fichier(id: String, largeur: int) -> String:
+	return "%s-%d.png" % [id, largeur]
+
+static func nom_planche(largeur: int) -> String:
+	return "planche-%d.png" % largeur
+
+## ROUTES lues dans le texte de tests/small-window-geometry.gd ([] si introuvables).
+static func routes_depuis_texte(texte: String) -> Array:
+	var bloc := RegEx.create_from_string("const ROUTES\\s*=\\s*\\[([^\\]]*)\\]").search(texte)
+	var routes: Array = []
+	if bloc == null: return routes
+	for nom in RegEx.create_from_string("\"([^\"]*)\"").search_all(bloc.get_string(1)): routes.append(nom.get_string(1))
+	return routes
+
+## Liste complète, dans l'ordre de visite : écrans de gestion, compléments, écrans hors carrière, direct.
+static func liste_ecrans(routes: Array) -> Array:
+	var liste: Array = []
+	for route in routes:
+		if not str(route) in HORS_CARRIERE: liste.append({"id": slug(str(route)), "libelle": str(route), "type": "route", "route": str(route)})
+	for ecran: Dictionary in EXTRAS: liste.append(ecran.duplicate())
+	for route in routes:
+		if str(route) in HORS_CARRIERE: liste.append({"id": slug(str(route)), "libelle": str(route), "type": "route", "route": str(route)})
+	for ecran: Dictionary in EN_DIRECT: liste.append(ecran.duplicate())
+	return liste
+
+## Garde les écrans demandés (identifiant, libellé ou alias ; accents et majuscules indifférents).
+## Renvoie {"ecrans": [...], "inconnus": [...]} ; sans demande, toute la liste.
+static func filtrer(liste: Array, demandes: Array) -> Dictionary:
+	var inconnus: Array = []
+	if demandes.is_empty(): return {"ecrans": liste.duplicate(), "inconnus": inconnus}
+	var ids: Array = liste.map(func(e: Dictionary): return str(e.id))
+	var voulus := {}
+	for demande in demandes:
+		var cle := slug(str(demande))
+		if cle.is_empty(): continue
+		var cibles: Array = ALIAS.get(cle, [cle])
+		var trouve := false
+		for cible in cibles:
+			if cible in ids:
+				voulus[cible] = true
+				trouve = true
+		if not trouve: inconnus.append(str(demande).strip_edges())
+	return {"ecrans": liste.filter(func(e: Dictionary): return voulus.has(str(e.id))), "inconnus": inconnus}
+
+## « 1920x1080,1280x720 » → {"tailles": [Vector2i...], "erreurs": [...]} (doublons retirés, ordre gardé).
+static func lire_tailles(texte: String) -> Dictionary:
+	var tailles: Array = []
+	var erreurs: Array = []
+	for morceau in texte.split(",", false):
+		var parts := morceau.strip_edges().to_lower().split("x")
+		if parts.size() == 2 and parts[0].is_valid_int() and parts[1].is_valid_int() and int(parts[0]) >= TAILLE_MIN.x and int(parts[1]) >= TAILLE_MIN.y:
+			var taille := Vector2i(int(parts[0]), int(parts[1]))
+			if not taille in tailles: tailles.append(taille)
+		else: erreurs.append("--tailles : « %s » n'est pas LxH, %dx%d au moins." % [morceau.strip_edges(), TAILLE_MIN.x, TAILLE_MIN.y])
+	if tailles.is_empty() and erreurs.is_empty(): erreurs.append("--tailles : au moins une taille LxH.")
+	return {"tailles": tailles, "erreurs": erreurs}
+
+static func defauts() -> Dictionary:
+	return {"sortie": "", "export": "", "tailles": [Vector2i(1920, 1080), Vector2i(1280, 720)], "ecrans": [], "duree_max": 900.0, "planche": true, "direct": true}
+
+## Lit les arguments placés après « -- ». Renvoie {"options": {...}, "erreurs": [...]}.
+static func lire_options(args: PackedStringArray) -> Dictionary:
+	var o := defauts()
+	var erreurs: Array = []
+	var i := 0
+	while i < args.size():
+		var arg := args[i]
+		var valeur := args[i + 1] if i + 1 < args.size() else ""
+		i += 1
+		if arg == "--ecrans-filmes": continue
+		if arg == "--sans-planche":
+			o.planche = false
+			continue
+		if arg == "--sans-direct":
+			o.direct = false
+			continue
+		if not arg in ["--sortie", "--export", "--tailles", "--ecrans", "--duree-max"]:
+			erreurs.append("Argument inconnu : " + arg)
+			continue
+		i += 1
+		if valeur.is_empty() or valeur.begins_with("--"):
+			erreurs.append(arg + " attend une valeur.")
+			i -= 1
+			continue
+		match arg:
+			"--sortie": o.sortie = valeur
+			"--export": o.export = valeur
+			"--tailles":
+				var lu := lire_tailles(valeur)
+				erreurs.append_array(lu.erreurs)
+				if lu.erreurs.is_empty(): o.tailles = lu.tailles
+			"--ecrans":
+				var noms: Array = []
+				for nom in valeur.split(",", false):
+					if not nom.strip_edges().is_empty(): noms.append(nom.strip_edges())
+				o.ecrans = noms
+			"--duree-max":
+				if valeur.is_valid_float() and float(valeur) >= 30.0: o.duree_max = float(valeur)
+				else: erreurs.append("--duree-max : nombre de secondes, 30 au moins.")
+	if not str(o.sortie).is_absolute_path(): erreurs.append("--sortie : dossier absolu requis.")
+	if not str(o.export).is_absolute_path(): erreurs.append("--export : fichier absolu requis (carrière préparée).")
+	return {"options": o, "erreurs": erreurs}
+
+## Luminance moyenne (0 à 1) sur une grille de points : assez pour distinguer une image noire.
+static func luminance(image: Image) -> float:
+	if image == null or image.is_empty(): return 0.0
+	var total := 0.0
+	var n := 0
+	var pas := Vector2i(maxi(1, image.get_width() / 48), maxi(1, image.get_height() / 27))
+	for y in range(pas.y / 2, image.get_height(), pas.y):
+		for x in range(pas.x / 2, image.get_width(), pas.x):
+			total += image.get_pixel(x, y).get_luminance()
+			n += 1
+	return total / maxi(1, n)
+
+## Planche : vignettes déjà réduites en grille, de gauche à droite puis de haut en bas.
+static func planche(images: Array, colonnes: int) -> Image:
+	if images.is_empty(): return null
+	var premiere: Image = images[0]
+	var largeur := premiere.get_width()
+	var hauteur := premiere.get_height()
+	var marge := 6
+	var lignes := int(ceil(float(images.size()) / colonnes))
+	var colonnes_utiles := mini(colonnes, images.size())
+	var feuille := Image.create_empty(marge + colonnes_utiles * (largeur + marge), marge + lignes * (hauteur + marge), false, Image.FORMAT_RGB8)
+	feuille.fill(Color(0.08, 0.09, 0.1))
+	for k in images.size():
+		var petite: Image = images[k]
+		feuille.blit_rect(petite, Rect2i(Vector2i.ZERO, petite.get_size().min(Vector2i(largeur, hauteur))), Vector2i(marge + (k % colonnes) * (largeur + marge), marge + (k / colonnes) * (hauteur + marge)))
+	return feuille
+
+## Vignette de planche : copie RGB8 réduite à `largeur` pixels.
+static func vignette(image: Image, largeur: int) -> Image:
+	var copie := image.duplicate() as Image
+	copie.convert(Image.FORMAT_RGB8)
+	copie.resize(largeur, maxi(1, int(round(float(largeur) * image.get_height() / maxi(1, image.get_width())))), Image.INTERPOLATE_BILINEAR)
+	return copie
+
+## Dépassement d'un rectangle hors de `cadre` : [gauche, haut, droite, bas] en pixels.
+static func depassement(r: Rect2, cadre: Rect2) -> Array:
+	return [maxf(0, cadre.position.x - r.position.x), maxf(0, cadre.position.y - r.position.y), maxf(0, r.end.x - cadre.end.x), maxf(0, r.end.y - cadre.end.y)]
+
+static func arrondi(r: Rect2) -> Array:
+	return [roundi(r.position.x), roundi(r.position.y), roundi(r.size.x), roundi(r.size.y)]
+
+## Texte probablement tronqué : libellé plus large que sa place (coupé ou « … »), lignes masquées,
+## bouton à texte coupé. Approximation simple (marges du style retirées) : à confirmer sur l'image.
+static func texte_tronque(c: Control) -> bool:
+	if c.size.x < 4.0: return false
+	if c is Label:
+		var l: Label = c
+		var texte := l.text.to_upper() if l.uppercase else l.text
+		if texte.strip_edges().is_empty(): return false
+		if l.autowrap_mode != TextServer.AUTOWRAP_OFF: return l.get_line_count() > l.get_visible_line_count()
+		if not l.clip_text and l.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING: return false
+		var police: Font = l.get_theme_font("font")
+		if police == null: return false
+		var style: StyleBox = l.get_theme_stylebox("normal")
+		var marge := style.get_minimum_size().x if style != null else 0.0
+		return police.get_multiline_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, l.get_theme_font_size("font_size")).x > l.size.x - marge + 1.0
+	if c is Button:
+		var b: Button = c
+		if b.text.strip_edges().is_empty() or b.autowrap_mode != TextServer.AUTOWRAP_OFF: return false
+		if not b.clip_text and b.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING: return false
+		var police: Font = b.get_theme_font("font")
+		if police == null: return false
+		var style: StyleBox = b.get_theme_stylebox("normal")
+		var marge := style.get_minimum_size().x if style != null else 0.0
+		var icone := 0.0
+		if b.icon != null and not b.expand_icon: icone = b.icon.get_width() + b.get_theme_constant("h_separation")
+		return police.get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x + icone > b.size.x - marge + 1.0
+	return false
+
+static func utile(c: Control) -> bool:
+	return not c is ScrollBar and (c is BaseButton or c is LineEdit or c is TextEdit or c is Label or c is RichTextLabel or c is Range)
+
+# --- Tour dans le vrai jeu ------------------------------------------------------------------------
+
+func echouer(message: String, code := 2) -> void:
+	printerr("ECRANS_FILMES erreur : " + message)
+	if is_instance_valid(app):
+		app.closing = true
+		app.bridge.stop()
+	quit(code)
+
+func profil() -> String:
+	var dossier := OS.get_environment("CD_GODOT_DATA_DIR")
+	# Même normalisation que native/engine/worker.cjs.
+	if dossier.replace("\\", "/").trim_suffix("/").get_file() != "PrototypeGodot": dossier = dossier.path_join("PrototypeGodot")
+	return dossier
+
+func couper_le_son() -> void:
+	for bus in AudioServer.bus_count: AudioServer.set_bus_mute(bus, true)
+
+## ROUTES de tests/small-window-geometry.gd lues dans le dépôt, sinon la copie de ce script.
+func routes_geometrie() -> Dictionary:
+	var chemin := ProjectSettings.globalize_path("res://").path_join("../../tests/small-window-geometry.gd").simplify_path()
+	if FileAccess.file_exists(chemin):
+		var routes := routes_depuis_texte(FileAccess.get_file_as_string(chemin))
+		if not routes.is_empty(): return {"routes": routes, "source": "tests/small-window-geometry.gd"}
+	return {"routes": ROUTES_GEOMETRIE.duplicate(), "source": "copie de visite.gd"}
+
+## Laisse l'écran se construire : un court délai, quelques images, puis la fin de toute commande en cours.
+func stabiliser() -> void:
+	await create_timer(0.15).timeout
+	for k in 8: await process_frame
+	var limite := Time.get_ticks_msec() + 20000
+	while app.waiting and Time.get_ticks_msec() < limite: await process_frame
+
+## Ferme la bulle et le grand mode de Gabi (aide, visite) : ils masqueraient l'écran.
+func fermer_aide() -> void:
+	var coach: Variant = app.get("coach")
+	if not is_instance_valid(coach): return
+	if coach.has_method("fermer_bulle"): coach.fermer_bulle()
+	if coach.get("expanded") == true and coach.has_method("close"): coach.close()
+
+## Ferme les fenêtres (dialogues) restées ouvertes par l'écran précédent.
+func fermer_fenetres() -> void:
+	var fenetres: Array = []
+	for parent: Node in [app, root]:
+		for enfant in parent.get_children():
+			if enfant is Window and enfant != root and (enfant as Window).visible: fenetres.append(enfant)
+	for fenetre: Window in fenetres:
+		fenetre.hide()
+		if fenetre is AcceptDialog and fenetre != app.file_dialog: fenetre.queue_free()
+
+func appliquer_taille(taille: Vector2i) -> Dictionary:
+	root.mode = Window.MODE_WINDOWED
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	# Sans bordure : la zone de rendu fait exactement la taille demandée, même égale à celle de l'écran.
+	root.borderless = true
+	root.size = taille
+	DisplayServer.window_set_size(taille)
+	await create_timer(0.3).timeout
+	await stabiliser()
+	var fenetre := DisplayServer.window_get_size()
+	var rendu := Vector2i(root.get_texture().get_size())
+	return {"demandee": [taille.x, taille.y], "fenetre": [fenetre.x, fenetre.y], "rendu": [rendu.x, rendu.y], "conforme": rendu == taille}
+
+## Image de l'écran une fois stable : deux images identiques à 0,25 s d'écart (8 essais au plus ; les écrans
+## animés, comme le direct, gardent la dernière image avec « stable » faux).
+func image_stable() -> Dictionary:
+	var precedente: Image = null
+	for essai in 8:
+		await RenderingServer.frame_post_draw
+		var image := root.get_texture().get_image()
+		if image != null and precedente != null and image.get_size() == precedente.get_size() and image.get_data() == precedente.get_data():
+			return {"image": image, "stable": true, "essais": essai + 1}
+		if image != null: precedente = image
+		await create_timer(0.25).timeout
+	return {"image": precedente, "stable": false, "essais": 8}
+
+func chemin(noeud: Node) -> String:
+	return str(app.get_path_to(noeud)) if app.is_ancestor_of(noeud) else str(noeud.get_path())
+
+## Débordements de l'écran affiché : contrôles hors de l'écran (hors zone de défilement) et fenêtres
+## qui dépassent ; textes probablement tronqués.
+func analyser() -> Dictionary:
+	var resultat := {"debordements": [], "textes_tronques": [], "nombre_debordements": 0, "nombre_textes_tronques": 0}
+	parcourir(root, Rect2(Vector2.ZERO, Vector2(root.size)), Vector2.ZERO, false, resultat)
+	return resultat
+
+func parcourir(noeud: Node, vue: Rect2, decalage: Vector2, dans_defilement: bool, resultat: Dictionary) -> void:
+	if noeud is Node3D: return
+	if noeud is Viewport and noeud != root:
+		if not noeud is Window: return
+		var fenetre: Window = noeud
+		if not fenetre.visible: return
+		decalage = Vector2(fenetre.position)
+		var cadre := Rect2(decalage, Vector2(fenetre.size))
+		if depassement(cadre, vue).max() > 1.5:
+			resultat.nombre_debordements += 1
+			if resultat.debordements.size() < MAX_DETAILS: resultat.debordements.append({"chemin": chemin(fenetre), "fenetre": true, "rect": arrondi(cadre), "depassement": depassement(cadre, vue)})
+	if noeud is CanvasLayer and not (noeud as CanvasLayer).visible: return
+	if noeud is Control and not (noeud as Control).is_visible_in_tree(): return
+	# Sous un défilement ou un contrôle qui rogne son contenu (bandeau défilant de Gabi…), un enfant qui
+	# dépasse est coupé net : seul le cadre lui-même compte comme débordement.
+	var defile := dans_defilement or noeud is ScrollContainer or (noeud is Control and (noeud as Control).clip_contents)
+	if noeud is Control and utile(noeud):
+		var c: Control = noeud
+		var r := Rect2(c.get_global_rect().position + decalage, c.get_global_rect().size)
+		if not dans_defilement and r.size.x > 0.5 and r.size.y > 0.5 and depassement(r, vue).max() > 1.5:
+			resultat.nombre_debordements += 1
+			if resultat.debordements.size() < MAX_DETAILS: resultat.debordements.append({"chemin": chemin(c), "type": c.get_class(), "rect": arrondi(r), "depassement": depassement(r, vue)})
+		if vue.intersects(r) and texte_tronque(c):
+			resultat.nombre_textes_tronques += 1
+			if resultat.textes_tronques.size() < MAX_DETAILS: resultat.textes_tronques.append({"chemin": chemin(c), "texte": str(c.get("text")).left(80), "rect": arrondi(r)})
+	for enfant in noeud.get_children(): parcourir(enfant, vue, decalage, defile, resultat)
+
+func ident(valeur: Variant) -> String:
+	if valeur is int or valeur is float: return str(int(valeur))
+	return str(valeur) if valeur != null else ""
+
+## Un club adverse : l'adversaire du prochain match, sinon le premier club du catalogue.
+func club_adverse() -> String:
+	var club: Variant = app.model.get("club")
+	var propre := ident(club.get("id")) if club is Dictionary else ""
+	var prochain: Variant = app.model.get("next")
+	if prochain is Dictionary:
+		for cote in ["home", "away"]:
+			var equipe: Variant = prochain.get(cote)
+			if equipe is Dictionary and not ident(equipe.get("id")).is_empty() and ident(equipe.get("id")) != propre: return ident(equipe.get("id"))
+	for entree in app.catalogue:
+		if entree is Dictionary and not ident(entree.get("id")).is_empty() and ident(entree.get("id")) != propre: return ident(entree.get("id"))
+	return ""
+
+## La Presse ne s'ouvre que depuis un courrier (main._navigate) : la conférence de la semaine si elle
+## existe, sinon le courrier du club comme origine (ui/club_mail.gd).
+func preparer_presse() -> void:
+	var conference: Dictionary = app.model.get("clubLife", {}).get("press", {}).get("conference", {})
+	if conference.get("available", false) and conference.get("invitationId") is String:
+		app.set_meta("press_mail_origin", conference.invitationId)
+		app.management_ui.press_tab = 1
+	elif not app.has_meta("press_mail_origin"): app.set_meta("press_mail_origin", "courrier-club")
+
+## Ouvre un écran hors direct. Renvoie {"statut": ok|redirige|indisponible|echec, "route", "note"}.
+func ouvrir(ecran: Dictionary) -> Dictionary:
+	fermer_fenetres()
+	match str(ecran.type):
+		"route":
+			var route := str(ecran.route)
+			if route == "Presse": preparer_presse()
+			app._navigate(route)
+			await stabiliser()
+			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"calendrier_semaine":
+			app._navigate("Calendrier")
+			await stabiliser()
+			var mois: Node = app.find_child("CarnetCalendar", true, false)
+			if mois == null or not mois.has_method("_view_as"): return {"statut": "indisponible", "note": "calendrier mensuel absent"}
+			mois._view_as("week")
+			await stabiliser()
+		"joueur":
+			var effectif: Array = app.model.get("squad", [])
+			if effectif.is_empty(): return {"statut": "indisponible", "note": "effectif vide"}
+			app._navigate("Effectif")
+			await stabiliser()
+			var ouvert: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(effectif[0].get("id"))})
+			await stabiliser()
+			if not ouvert or app.route != "Effectif" or not bool(app.get_meta("immersive08_full_player", false)): return {"statut": "echec", "note": "fiche joueur non ouverte"}
+		"club":
+			var id := club_adverse()
+			if id.is_empty(): return {"statut": "indisponible", "note": "aucun club adverse connu"}
+			var ouvert: bool = app.navigation_controller.open_entity({"kind": "club", "id": id})
+			await stabiliser()
+			if not ouvert: return {"statut": "echec", "note": "fiche du club %s non ouverte" % id}
+		"options":
+			app._navigate("Bureau")
+			await stabiliser()
+			app.settings()
+			await stabiliser()
+			var dialogue: Node = app.get_node_or_null("PreferencesDialog")
+			if not dialogue is Window or not (dialogue as Window).visible: return {"statut": "echec", "note": "fenêtre des options non ouverte"}
+		_:
+			return {"statut": "echec", "note": "type d'écran inconnu : " + str(ecran.type)}
+	return {"statut": "ok"}
+
+## Remet l'écran dans son état ordinaire après la capture.
+func refermer(ecran: Dictionary) -> void:
+	if str(ecran.type) == "calendrier_semaine":
+		var mois: Node = app.find_child("CarnetCalendar", true, false)
+		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
+	fermer_fenetres()
+
+func surface() -> Control:
+	var director: Node = app.contextual_director
+	return director.view if director.active() and director.kind == "live" else null
+
+## Coup d'envoi comme le bouton du jeu, causeries passées comme le ferait un joueur (même logique que
+## tools/match-filme/match_filme.gd). Renvoie "" si le direct est ouvert, sinon la raison.
+func ouvrir_direct() -> String:
+	fermer_fenetres()
+	var limite := Time.get_ticks_msec() + 180000
+	var envois := 0
+	while Time.get_ticks_msec() < limite and surface() == null:
+		var causerie: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+		var pret: bool = app.model.get("meta", {}).get("calendarCadence", {}).get("matchReady", false)
+		if not app.waiting and causerie is Dictionary and app.contextual_director.kind == "locker":
+			app._command("match_talk_continue", {"key": causerie.key, "phase": causerie.phase, "skip": true})
+		elif not app.waiting and causerie == null and not app.model.get("live") is Dictionary and app.model.get("next") != null:
+			if not pret: return "pas de match ce jour dans la carrière importée"
+			if envois >= 3: return "coup d'envoi refusé : " + str(app.last_error)
+			envois += 1
+			print("ECRANS_FILMES coup d'envoi")
+			app._command("begin_match", {})
+		for k in 10: await process_frame
+	if surface() == null: return "le direct ne s'est pas ouvert : " + str(app.last_error)
+	couper_le_son()
+	# Laisse passer l'ouverture du direct (scène 3D, bandeau) avant la première image.
+	await create_timer(4.0).timeout
+	return ""
+
+func ouvrir_en_direct(ecran: Dictionary) -> Dictionary:
+	var vue: Control = surface()
+	if vue == null: return {"statut": "echec", "note": "direct fermé"}
+	var equipe: Variant = vue.get("equipe")
+	if str(ecran.type) == "direct":
+		if is_instance_valid(equipe) and equipe.visible: equipe.fermer(false)
+		await stabiliser()
+		return {"statut": "ok"}
+	if not is_instance_valid(equipe) or not vue.has_method("ouvrir_equipe"): return {"statut": "indisponible", "note": "fenêtre Équipe absente"}
+	if not equipe.visible: vue.ouvrir_equipe(str(ecran.get("onglet", "composition")))
+	else: equipe.choisir_onglet(str(ecran.get("onglet", "composition")))
+	await stabiliser()
+	if not equipe.visible: return {"statut": "echec", "note": "fenêtre Équipe non ouverte (match terminé ?)"}
+	return {"statut": "ok"}
+
+## Capture et analyse l'écran ouvert ; complète l'entrée du rapport.
+func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
+	fermer_aide()
+	await stabiliser()
+	fermer_aide()
+	var prise: Dictionary = await image_stable()
+	var image: Image = prise.image
+	if image == null:
+		entree.statut = "echec"
+		entree.note = "aucune image rendue"
+		return
+	var fichier := nom_fichier(str(entree.id), taille.x)
+	if image.save_png(str(o.sortie).path_join(fichier)) != OK:
+		entree.statut = "echec"
+		entree.note = "écriture impossible : " + fichier
+		return
+	entree.fichier = fichier
+	entree.stable = prise.stable
+	entree.luminance = snappedf(luminance(image), 0.001)
+	if entree.luminance < SEUIL_NOIR:
+		entree.statut = "echec"
+		entree.note = "image noire"
+	entree.merge(analyser())
+	if o.planche:
+		if not vignettes.has(taille.x): vignettes[taille.x] = []
+		vignettes[taille.x].append(vignette(image, 384))
+
+func run() -> void:
+	var lu := lire_options(OS.get_cmdline_user_args())
+	if not lu.erreurs.is_empty():
+		echouer("\n".join(PackedStringArray(lu.erreurs)))
+		return
+	var o: Dictionary = lu.options
+	var source := routes_geometrie()
+	var choix := filtrer(liste_ecrans(source.routes), o.ecrans)
+	if not choix.inconnus.is_empty():
+		echouer("Écrans inconnus : " + ", ".join(PackedStringArray(choix.inconnus)) + ". Connus : " + ", ".join(PackedStringArray(liste_ecrans(source.routes).map(func(e: Dictionary): return str(e.id)))))
+		return
+	var ecrans: Array = choix.ecrans
+	if OS.get_environment("CD_GODOT_DATA_DIR").is_empty() or not OS.get_environment("CD_GODOT_DATA_DIR").is_absolute_path():
+		echouer("CD_GODOT_DATA_DIR (profil jetable, chemin absolu) est obligatoire : aucune vraie carrière n'est utilisée.")
+		return
+	if DisplayServer.get_name() == "headless":
+		echouer("--headless ne rend aucune image : lancer avec un affichage (scripts/ecrans-filmes.ps1 le fait sur un bureau séparé).")
+		return
+	if not FileAccess.file_exists(o.export):
+		echouer("Carrière introuvable : " + str(o.export))
+		return
+	if DirAccess.make_dir_recursive_absolute(o.sortie) != OK:
+		echouer("Dossier de sortie inaccessible : " + str(o.sortie))
+		return
+	var debut := Time.get_ticks_msec()
+	var fin_au_plus_tard: float = debut + float(o.duree_max) * 1000.0
+	couper_le_son()
+	DirAccess.make_dir_recursive_absolute(profil())
+	var reglages := FileAccess.open(profil().path_join("interface.json"), FileAccess.WRITE)
+	reglages.store_string(JSON.stringify({"version": 1, "volume": 0, "reduced_motion": false, "quality": "balanced", "camera": "tv"}, "  "))
+	reglages.close()
+	Engine.max_fps = 30
+	app = load("res://main.tscn").instantiate()
+	# Le jeu remet sa fenêtre en plein écran maximisé au démarrage : ici la fenêtre garde la taille
+	# demandée (le retour différé lit `closing` et ne fait rien pendant la première image).
+	app.closing = true
+	root.add_child(app)
+	for signal_fenetre: Signal in [root.size_changed, root.focus_entered]:
+		if signal_fenetre.is_connected(app._keep_filled_display): signal_fenetre.disconnect(app._keep_filled_display)
+	await process_frame
+	app.closing = false
+	var limite := Time.get_ticks_msec() + 120000
+	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < limite: await process_frame
+	couper_le_son()
+	print("ECRANS_FILMES import")
+	if not app._command("import", {"text": FileAccess.get_file_as_string(o.export)}):
+		echouer("Import de la carrière refusé : " + str(app.last_error))
+		return
+	limite = Time.get_ticks_msec() + 180000
+	while app.waiting and Time.get_ticks_msec() < limite: await process_frame
+	if not app._has_career():
+		echouer("Aucune carrière après l'import : " + str(app.last_error))
+		return
+	# Rendez-vous du club en attente (carrière reprise telle quelle) : réglés comme dans les tests de géométrie,
+	# sinon la navigation reste bloquée sur le rendez-vous.
+	if app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene") is Dictionary:
+		var salles = load("res://qa_runner.gd")
+		await salles.settle_club_meetings(app, self, func(_ok: bool, _message: String): pass)
+		# settle_club_meetings arrête l'horloge du direct : elle repart pour le match filmé à la fin.
+		if app.timer.is_stopped(): app.timer.start()
+		await stabiliser()
+	var club: Dictionary = app.model.get("club", {})
+	var report := {"options": {"tailles": o.tailles.map(func(t: Vector2i): return "%dx%d" % [t.x, t.y]), "ecrans": o.ecrans, "duree_max": o.duree_max, "direct": o.direct},
+		"source_ecrans": source.source, "pilote": RenderingServer.get_current_rendering_driver_name(), "carte": RenderingServer.get_video_adapter_name(), "audio": AudioServer.get_driver_name(),
+		"carriere": {"club": str(club.get("name", "")), "date": str(app.model.get("meta", {}).get("calendarToday", ""))},
+		"tailles": [], "ecrans": [], "planches": []}
+	var hors_direct: Array = ecrans.filter(func(e: Dictionary): return not str(e.type) in ["direct", "equipe"])
+	var en_direct: Array = ecrans.filter(func(e: Dictionary): return str(e.type) in ["direct", "equipe"])
+	var delai_depasse := false
+	for taille: Vector2i in o.tailles:
+		var obtenue: Dictionary = await appliquer_taille(taille)
+		report.tailles.append(obtenue)
+		for ecran: Dictionary in hors_direct:
+			var entree := {"id": ecran.id, "libelle": ecran.libelle, "taille": "%dx%d" % [taille.x, taille.y]}
+			report.ecrans.append(entree)
+			if Time.get_ticks_msec() > fin_au_plus_tard:
+				delai_depasse = true
+				entree.statut = "non_visite"
+				continue
+			var ouvert: Dictionary = await ouvrir(ecran)
+			entree.merge(ouvert)
+			entree.route = app.route
+			if entree.statut == "ok": await capturer(entree, o, taille)
+			refermer(ecran)
+			print("ECRANS_FILMES ", entree.taille, " ", entree.id, " ", entree.statut, " debordements=", entree.get("nombre_debordements", 0), " tronques=", entree.get("nombre_textes_tronques", 0))
+	if not en_direct.is_empty():
+		var raison := "désactivé (--sans-direct)" if not o.direct else ("durée maximale atteinte" if Time.get_ticks_msec() > fin_au_plus_tard else "")
+		if raison.is_empty():
+			app._navigate("Bureau")
+			await stabiliser()
+			raison = await ouvrir_direct()
+		for taille: Vector2i in o.tailles:
+			if raison.is_empty(): await appliquer_taille(taille)
+			for ecran: Dictionary in en_direct:
+				var entree := {"id": ecran.id, "libelle": ecran.libelle, "taille": "%dx%d" % [taille.x, taille.y]}
+				report.ecrans.append(entree)
+				if not raison.is_empty():
+					entree.statut = "non_visite" if not o.direct or raison.begins_with("durée") else ("indisponible" if raison.begins_with("pas de match") else "echec")
+					entree.note = raison
+					continue
+				if Time.get_ticks_msec() > fin_au_plus_tard:
+					delai_depasse = true
+					entree.statut = "non_visite"
+					continue
+				var dans_le_direct: Dictionary = await ouvrir_en_direct(ecran)
+				entree.merge(dans_le_direct)
+				if entree.statut == "ok": await capturer(entree, o, taille)
+				print("ECRANS_FILMES ", entree.taille, " ", entree.id, " ", entree.statut)
+	if o.planche:
+		for largeur in vignettes:
+			var feuille := planche(vignettes[largeur], 5)
+			if feuille != null and feuille.save_png(str(o.sortie).path_join(nom_planche(largeur))) == OK: report.planches.append(nom_planche(largeur))
+	var compte := {"ok": 0, "echec": 0, "redirige": 0, "indisponible": 0, "non_visite": 0}
+	var debordements := 0
+	var tronques := 0
+	for entree: Dictionary in report.ecrans:
+		compte[entree.statut] = int(compte.get(entree.statut, 0)) + 1
+		debordements += int(entree.get("nombre_debordements", 0))
+		tronques += int(entree.get("nombre_textes_tronques", 0))
+	report.reussis = compte.ok
+	report.echecs = compte.echec
+	report.redirections = compte.redirige
+	report.indisponibles = compte.indisponible
+	report.non_visites = compte.non_visite
+	report.debordements = debordements
+	report.textes_tronques = tronques
+	report.ecrans_en_echec = report.ecrans.filter(func(e: Dictionary): return e.statut == "echec").map(func(e: Dictionary): return "%s-%s : %s" % [e.id, e.taille, e.get("note", "")])
+	report.delai_depasse = delai_depasse
+	report.duree_s = snappedf((Time.get_ticks_msec() - debut) / 1000.0, 0.1)
+	var fichier := FileAccess.open(str(o.sortie).path_join("report.json"), FileAccess.WRITE)
+	fichier.store_string(JSON.stringify(report, "  "))
+	fichier.close()
+	print("ECRANS_FILMES_FIN ", JSON.stringify({"reussis": report.reussis, "echecs": report.echecs, "redirections": report.redirections, "non_visites": report.non_visites, "debordements": debordements, "textes_tronques": tronques, "secondes": report.duree_s, "pilote": report.pilote, "audio": report.audio}))
+	app.closing = true
+	app.bridge.stop()
+	for k in 10: await process_frame
+	quit(0 if report.reussis > 0 and report.echecs == 0 and not delai_depasse else 3)

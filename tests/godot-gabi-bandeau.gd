@@ -165,6 +165,7 @@ func bandeau(route: String) -> void:
 	check(image != null and image.texture != null, "Visage de Gabi rendu (texture du portrait) : " + route)
 	var remark: Label = zone.find_child("GabiRemarque", true, false)
 	check(remark != null and not remark.text.strip_edges().is_empty(), "Remarque du moment : " + route)
+	await fil_entier(coach, zone, route)
 	check(coach._adjoint_actif(), "Gabi actif dans le bandeau : " + route)
 	var covered: Array = []
 	for item: Array in content([zone, coach]):
@@ -176,6 +177,28 @@ func bandeau(route: String) -> void:
 	check(date != null and date.is_visible_in_tree() and not date.get_global_rect().intersects(band) and date.get_global_rect().position.x > band.end.x, "Date lisible, à droite de Gabi : " + route)
 	check(app.header_date != null and not str(app.header_date.text).is_empty(), "Date affichée : " + route)
 	await capture("bandeau-" + route.to_lower())
+
+## Fil de la remarque (retours du 19 novembre 2026, 1280×720) : au départ d'un passage, le début du texte
+## est entier après une marge intérieure, sans fondu à gauche ; quand le texte défile, fondu à droite, puis
+## fondu à gauche dès qu'il a bougé (plus de lettre coupée net au bord).
+func fil_entier(coach: Control, zone: Control, route: String) -> void:
+	var fil: Control = zone.find_child("GabiFil", true, false)
+	var texte: Label = zone.find_child("GabiRemarque", true, false)
+	var droite: Control = zone.find_child("GabiFilFondu", true, false)
+	var gauche: Control = zone.find_child("GabiFilFonduGauche", true, false)
+	check(fil != null and texte != null and droite != null and gauche != null, "Fil de Gabi : texte et fondus des deux bords : " + route)
+	if fil == null or texte == null or droite == null or gauche == null: return
+	coach._fil_regle(true)
+	await process_frame
+	check(coach._fil_marge >= 4.0 and texte.position.x >= coach._fil_marge - 0.5 and texte.get_global_rect().position.x > fil.get_global_rect().position.x, "Fil de Gabi : marge intérieure gauche, début du texte entier au départ (%.1f px) : %s" % [texte.position.x, route])
+	check(not gauche.visible, "Fil de Gabi : pas de fondu à gauche au départ : " + route)
+	var defile: bool = coach._fil_largeur > 0.0
+	check(not defile or droite.visible, "Fil de Gabi : fondu à droite quand le texte défile : " + route)
+	if defile and not coach._survol and not coach._bulle.visible:
+		coach._fil_pause = 0.0
+		coach._defiler(0.5)
+		check(gauche.visible and texte.position.x < coach._fil_marge, "Fil de Gabi : en défilant, fondu à gauche (%.1f px) : %s" % [texte.position.x, route])
+		coach._fil_regle(true)
 
 ## Bureau : Gabi en pied est affiché, donc plus de visage ni de remarque dans le bandeau (une seule Gabi à l'écran).
 func bandeau_bureau(zone: Control, topbar: Control) -> void:

@@ -239,6 +239,31 @@ func check_competitions() -> void:
 	app._navigate("Centre")
 	await settle()
 	check(text_present(app, "Les compétitions Espoirs ne sont pas encore disponibles") and button("ACTIVER LES PARCOURS") == null, "Centre mondial · raison visible et activation absente")
+	# Centre en attente (1280 × 720) : chiffres du centre, trois parcours illustrés et chemin vers Formation, sans grand vide.
+	await settle()
+	check(app.heading != null and app.heading.is_visible_in_tree() and not app.heading.text.strip_edges().is_empty(), "Centre · titre de la page visible")
+	for id: String in ["AcademyPreviewFigures", "AcademyPreviewDetection", "AcademyPreviewMentoring", "AcademyPreviewJunior", "AcademyPreviewFollow"]:
+		var block := named(id) as Control
+		check(block != null and block.is_visible_in_tree(), "Centre · bloc visible " + id)
+	var pathway_photo: Array = named("AcademyPreviewDetection").find_children("Art_*", "TextureRect", true, false) if named("AcademyPreviewDetection") != null else []
+	check(not pathway_photo.is_empty() and (pathway_photo[0] as TextureRect).texture != null, "Centre · parcours illustré par la banque d’images")
+	check(text_present(app, "Espoirs suivis au centre"), "Centre · chiffre clé des Espoirs")
+	var centre_void := body_void_ratio(named("CarnetAcademyPathways") as Control)
+	check(centre_void <= .30, "Centre sans vide > 30 %% de la hauteur (%d %%)" % roundi(centre_void * 100))
+	await press(named("AcademyPreviewFormation") as BaseButton)
+	check(app.route == "Formation", "Centre · « Consulter les Espoirs » ouvre Formation")
+
+## Part de la hauteur visible laissée vide sous le dernier élément peint d'une page
+## (conteneurs de mise en page exclus : ils s'étirent sans rien dessiner ; les panneaux comptent).
+func body_void_ratio(page: Control) -> float:
+	if page == null or not is_instance_valid(app.body_scroll): return 1.0
+	var viewport: Rect2 = app.body_scroll.get_global_rect()
+	var bottom: float = viewport.position.y
+	for node: Node in page.find_children("*", "Control", true, false):
+		var control := node as Control
+		if (control is Container and not control is PanelContainer) or not control.is_visible_in_tree() or control.size.y <= 0: continue
+		bottom = maxf(bottom, control.get_global_rect().end.y)
+	return maxf(0.0, viewport.end.y - bottom) / maxf(1.0, viewport.size.y)
 
 func finish() -> void:
 	app.bridge.stop()

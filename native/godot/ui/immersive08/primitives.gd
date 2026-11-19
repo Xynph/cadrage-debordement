@@ -75,6 +75,49 @@ static func text(parent: Node, x: float, baseline: float, value: Variant, font_s
 	control.tooltip_text = str(value)
 	return control
 
+## Titre long (nom de club) : jusqu'à `max_lines` lignes coupées aux mots, puis taille réduite
+## jusqu'à ce que tout tienne dans `width` × `max_height` (unités du gabarit). Jamais de points de suspension
+## tant que la taille minimale suffit. Le bas du texte reste sur la ligne de base d'origine.
+## Exemple : `D.fit_title(D.text(rail,124,331,"VALENCE ROMANS DRÔME RUGBY",23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER),222,44)`.
+static func fit_title(label: Label, width: float, max_height: float, max_lines: int = 2, min_size: int = 13) -> Label:
+	var font: Font = label.get_theme_font("font")
+	var requested := label.get_theme_font_size("font_size")
+	var smallest := mini(requested, maxi(12, C.px(min_size)))
+	var bottom := label.position.y + label.size.y
+	var room := Vector2(C.px(width), C.px(max_height))
+	var chosen := smallest
+	var lines := title_lines(font, label.text, smallest, room.x)
+	for size in range(requested, smallest - 1, -1):
+		var count := title_lines(font, label.text, size, room.x)
+		if count <= max_lines and font.get_height(size) * count <= room.y + 0.5:
+			chosen = size
+			lines = count
+			break
+	label.add_theme_font_size_override("font_size", chosen)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.max_lines_visible = max_lines
+	label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	lines = mini(lines, max_lines)
+	label.size = Vector2(room.x, font.get_height(chosen) * lines)
+	label.position.y = bottom - label.size.y
+	label.set_meta("fit_title_size", chosen)
+	label.set_meta("fit_title_lines", lines)
+	return label
+
+## Nombre de lignes d'un titre coupé aux mots ; un mot plus large que la place compte comme débordement (99).
+static func title_lines(font: Font, value: String, font_size: int, width: float) -> int:
+	if value.strip_edges().is_empty(): return 1
+	var lines := 1
+	var current := ""
+	for word: String in value.split(" ", false):
+		if font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > width: return 99
+		var candidate := word if current.is_empty() else current + " " + word
+		if font.get_string_size(candidate, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x <= width: current = candidate
+		else:
+			lines += 1
+			current = word
+	return lines
+
 static func line(parent: Node, from: Vector2, to: Vector2, color: Color = C.LINE, thickness: float = 1) -> ColorRect:
 	var control := ColorRect.new()
 	control.color = color

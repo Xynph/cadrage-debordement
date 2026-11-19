@@ -79,6 +79,33 @@ function staffRolePlayer(l,side,role){
  if(role==='pied')return [...on.filter(p=>p.fam>=4)].sort((a,b)=>skill(b,'kick',true)-skill(a,'kick',true))[0]||null;
  return null;
 }
+// Rôles en direct (fenêtre Équipe, onglet Rôles) : le manager change son buteur, son buteur de secours, son
+// lanceur et son botteur pendant le match, parmi les joueurs sur le terrain. Seulement pour les rencontres à
+// désignations (`playerRolesVersion`). Aucun tirage : le choix suivant du moteur lit la nouvelle désignation.
+function setPlayerRoleLive(l,role,id){
+ if(!playerRolesRules(l)||l.finished||l.userSide<0||!Object.hasOwn(PLAYER_ROLES,role))return false;
+ const side=l.userSide,roles={...(l.playerRoles[side]||{})};
+ if(id===null)delete roles[role];
+ else{if(typeof id!=='string'||!activePlayers(l,side).some(p=>p.id===id))return false;roles[role]=id}
+ if(roles.secours&&roles.secours===roles.buteur)delete roles.secours;
+ l.playerRoles[side]=roles;
+ return true;
+}
+function playerRolesLive(l){
+ if(!playerRolesRules(l)||l.userSide<0)return null;
+ const side=l.userSide,on=activePlayers(l,side),fit=fitArrete(l),slot=id=>l.sheets[side].on.indexOf(id);
+ const brief=(p,k)=>p?{id:p.id,name:p.name,pos:p.pos,num:slot(p.id)+1,value:Math.round(skill(p,k,k==='lineout'?fit:true))}:null;
+ const roles=Object.entries(PLAYER_ROLES).map(([id,[label,k]])=>{
+  // Buteur de secours : le staff prend le meilleur après le buteur en charge (jamais le même joueur).
+  const premier=id==='secours'?goalKicker(l,side):null,sansPremier=on.filter(p=>p.id!==premier?.id);
+  const designe=designatedPlayer(l,side,id),staff=id!=='secours'?staffRolePlayer(l,side,id):staffJudgementRules(l)?judgedBest(l,side,sansPremier,'goal'):chooseScorer(S.clubs[l.pair[side]],sansPremier.map(p=>p.id),l);
+  const pool=id==='pied'?on.filter(p=>p.fam>=4):id==='lanceur'?on.filter(p=>p.fam<=3):id==='secours'?sansPremier:on;
+  const candidats=[...pool].sort((a,b)=>skill(b,k,true)-skill(a,k,true)).slice(0,5);
+  if(designe&&!candidats.some(p=>p.id===designe.id))candidats.push(designe);
+  return {id,label,attribut:ATTR[k]||k,designe:brief(designe,k),staff:brief(staff,k),enJeu:brief(id==='buteur'?goalKicker(l,side):designe||staff,k),candidats:candidats.map(p=>brief(p,k))};
+ });
+ return {roles};
+}
 // Buteur d'une tentative : le buteur désigné, à défaut le buteur de secours, à défaut le choix du staff.
 function goalKicker(l,side){return designatedPlayer(l,side,'buteur')||designatedPlayer(l,side,'secours')||staffRolePlayer(l,side,'buteur')}
 // Écart de réussite en touche dû au lanceur désigné (0 sans désignation : calcul d'avant).

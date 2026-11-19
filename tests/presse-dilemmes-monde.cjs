@@ -169,11 +169,14 @@ test('Échantillon de conférences : aucun ton dominant, délégation sans gain,
         model = jeu.call('press_delegate', { context: press.context, invitationId: conf.invitationId });
         const issue = model.clubLife.press.lastOutcome;
         assert.equal(issue.delegated, true);
-        assert.ok(issue.delta.morale <= 0, `Gabi ne donne pas de moral (${issue.delta.morale})`);
+        // Coût fixe et annoncé (18/11/2026) : médias −2, relation −1 par journaliste, rien d'autre.
+        assert.equal(issue.delta.morale, 0, `Gabi ne change pas le moral (${issue.delta.morale})`);
+        assert.equal(issue.delta.fanTrust, 0, `Gabi ne change pas l'opinion des supporters (${issue.delta.fanTrust})`);
+        assert.equal(issue.delta.mediaTrust, Math.max(-2, -avant.mediaTrust), 'coût médias exactement −2');
+        for (const e of issue.exchanges) assert.equal(e.delta, e.before > -100 ? -1 : 0, 'relation −1 par journaliste');
         const malus = serie >= 3 ? 2 : serie === 2 ? 1 : 0;
         assert.equal(issue.delta.trust, malus ? -malus : 0, `confiance de la direction : ${-malus} (série précédente ${serie})`);
-        assert.equal(issue.delta.mediaTrust <= -2 || avant.mediaTrust <= 2, true, 'coût médias conservé');
-        assert.ok(model.clubLife.press.metrics.boardPressure >= avant.boardPressure, 'pression du conseil jamais réduite par Gabi');
+        assert.equal(model.clubLife.press.metrics.boardPressure, Math.min(100, avant.boardPressure + malus), 'pression du conseil : seul le malus de série');
         resultats.push({ n, delegue: true, serie, malus });
         if (enPersonneFaite) apresPersonne = true;
       }

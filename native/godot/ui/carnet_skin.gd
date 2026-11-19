@@ -4,16 +4,16 @@ const Base = preload("res://ui/game_skin.gd")
 const POTENTIAL_COLOR = Base.POTENTIAL_COLOR
 const T = preload("res://theme.gd")
 const W = preload("res://visual_widgets.gd")
-const BG = Color("151b1f")
+const BG = Base.BG
 const PANEL = Color("f0f1ec")
 const PAPER = PANEL
 const LINE = Color("ccd2d0")
 const INK = Color("20282c")
 const MUTED = Color("5f6a6e")
-const GOLD = Color("82592e")
+const GOLD = Base.PAPER_GOLD
 const GOOD = Color("38664b")
 const ALERT = Color("963f32")
-const WHITE = Color("f5f4ec")
+const WHITE = Base.INK
 
 static func accent_ink(color: Color) -> Color:
 	var result := color
@@ -53,11 +53,11 @@ static func button(text: String, callback: Callable, primary: bool = false) -> B
 	b.custom_minimum_size.y = 28
 	b.add_theme_font_size_override("font_size", 12)
 	var background := INK if primary else Color("fcfcf8")
-	b.add_theme_stylebox_override("normal", T.box(background, 3, INK if primary else Color("b6bfbd")))
-	b.add_theme_stylebox_override("hover", T.box(Color("344349") if primary else Color("e3ebe8"), 3, Color("788b86")))
-	b.add_theme_stylebox_override("pressed", T.box(Color("44575b") if primary else Color("d1dfd9"), 3, Color("506a60")))
-	b.add_theme_stylebox_override("disabled", T.box(Color("e5e8e3"), 3, LINE))
-	var focus := T.box(Color.TRANSPARENT, 3, WHITE if primary else Color("345c57"))
+	b.add_theme_stylebox_override("normal", Base.box(background, "control", INK if primary else Color("b6bfbd")))
+	b.add_theme_stylebox_override("hover", Base.box(Color("344349") if primary else Color("e3ebe8"), "control", Color("788b86")))
+	b.add_theme_stylebox_override("pressed", Base.box(Color("44575b") if primary else Color("d1dfd9"), "control", Color("506a60")))
+	b.add_theme_stylebox_override("disabled", Base.box(Color("e5e8e3"), "control", LINE))
+	var focus := Base.box(Color.TRANSPARENT, "control", WHITE if primary else Color("345c57"))
 	focus.set_border_width_all(2)
 	b.add_theme_stylebox_override("focus", focus)
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: b.add_theme_color_override(key, WHITE if primary else INK)
@@ -71,7 +71,7 @@ static func selected(b: Button, accent: Color) -> void:
 	# Colour alone cannot identify the current player, club or tactic.
 	for state in ["normal", "hover", "pressed"]:
 		var strength := .12 if state == "normal" else .18 if state == "hover" else .23
-		var style := T.box(PAPER.lerp(Color(accent,1), strength), 3, accent_ink(accent))
+		var style := Base.box(PAPER.lerp(Color(accent,1), strength), "control", accent_ink(accent))
 		style.border_width_left = 4
 		b.add_theme_stylebox_override(state, style)
 
@@ -111,7 +111,7 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 	var p := PanelContainer.new()
 	fill(p, false, ratio)
 	p.theme = T.paper()
-	var style := T.box(color,3,LINE)
+	var style := Base.box(color,"panel",LINE)
 	style.shadow_color=Color(0,0,0,.10)
 	style.shadow_size=2
 	style.shadow_offset=Vector2(0,1)
@@ -131,7 +131,7 @@ static func section(title: String, subtitle: String = "") -> VBoxContainer:
 
 static func chapter(parent: Node, number: String, title: String, subtitle: String, accent: Color) -> void:
 	var band:=PanelContainer.new()
-	var band_style:=T.box(PAPER.lerp(Color(accent,1),.055),2,accent_ink(accent))
+	var band_style:=Base.box(PAPER.lerp(Color(accent,1),.055),"chip",accent_ink(accent))
 	band_style.set_border_width_all(0);band_style.border_width_left=3
 	band_style.content_margin_left=5;band_style.content_margin_right=5
 	band_style.content_margin_top=2;band_style.content_margin_bottom=2
@@ -142,7 +142,7 @@ static func chapter(parent: Node, number: String, title: String, subtitle: Strin
 	var marker:=PanelContainer.new()
 	marker.custom_minimum_size=Vector2(28,28)
 	marker.size_flags_vertical=Control.SIZE_SHRINK_CENTER
-	var style:=T.box(accent_ink(accent),2)
+	var style:=Base.box(accent_ink(accent),"chip")
 	style.content_margin_left=6;style.content_margin_right=6
 	style.content_margin_top=2;style.content_margin_bottom=2
 	marker.add_theme_stylebox_override("panel",style)
@@ -174,7 +174,7 @@ static func metric(number: Variant, caption: String, color: Color = INK) -> VBox
 # Editorial primitives: all quantities are supplied by the career projection.
 static func card(parent: Node, accent: Color = LINE) -> VBoxContainer:
 	var frame := PanelContainer.new()
-	var style := T.box(Color("fcfcf8"), 3, LINE)
+	var style := Base.box(Color("fcfcf8"), "control", LINE)
 	style.border_width_left = 3
 	style.border_color = accent
 	style.shadow_color=Color(0,0,0,.045)
@@ -202,7 +202,7 @@ static func gauge(parent: Node, caption: String, value: float, maximum: float = 
 	bar.value = value
 	bar.custom_minimum_size.y = 5
 	for key in ["background", "fill"]:
-		var style := T.box(LINE if key == "background" else color, 1)
+		var style := Base.box(LINE if key == "background" else color, "chip")
 		style.content_margin_left = 0; style.content_margin_right = 0
 		style.content_margin_top = 0; style.content_margin_bottom = 0
 		bar.add_theme_stylebox_override(key, style)
@@ -216,7 +216,7 @@ static func photo_note(parent: Node, club: Dictionary, title: String, subtitle: 
 	content.add_theme_constant_override("separation", 3)
 	for edge in ["left", "right"]: content.get_parent().add_theme_constant_override("margin_" + edge, 8)
 	for edge in ["top", "bottom"]: content.get_parent().add_theme_constant_override("margin_" + edge, 4)
-	var overline := Base.label(title.to_upper(), 12, Color("ddbd80"))
+	var overline := Base.label(title.to_upper(), 12, Base.GOLD)
 	var shade := StyleBoxFlat.new()
 	shade.bg_color = Color(0.02, 0.04, 0.06, .60)
 	shade.expand_margin_top = 4
