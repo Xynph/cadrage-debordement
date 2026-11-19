@@ -52,7 +52,8 @@ static func _spin(parent: Node, id: String, title: String, minimum: float, maxim
 	parent.add_child(control)
 	return control
 
-static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
+## `answer` : réponse du conseil à une demande de rallonge, affichée en tête quand le devis est rouvert après elle.
+static func open(app: Control, player: Dictionary, recruiting: bool, answer: String = "") -> void:
 	U.remember(app)
 	app._clear_dialogs()
 	var dialog := ConfirmationDialog.new()
@@ -93,6 +94,10 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	var progress := C.label(phase.progress,16,C.MUTED)
 	progress.name = "ContractNegotiationProgress"
 	body.add_child(progress)
+	if not answer.is_empty():
+		var reply := C.wrap(answer,18,C.MINT if answer.begins_with("Le conseil accorde") else C.ALERT,true,700)
+		reply.name = "ContractTransferBudgetAnswer"
+		body.add_child(reply)
 	var columns := C.h(16)
 	body.add_child(columns)
 	var demand := _card(columns,"DEMANDE ACTUELLE","ContractDemand",C.MINT)
@@ -157,11 +162,19 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	var action := C.wrap(phase.action,18,C.ALERT if phase.blocked else C.MINT)
 	action.name = "ContractNextAction"
 	body.add_child(action)
+	var transfer := Budget.data(app.model)
 	if blocked and not phase.blocked:
 		var reason := C.wrap(str(quote.get("reason","Cette offre ne peut pas être envoyée dans la situation actuelle.")),18,C.ALERT)
 		reason.name = "ContractBlockedReason"
 		body.add_child(reason)
-	var transfer := Budget.data(app.model)
+		# Refus d’enveloppe que la caisse permettrait : le manager peut demander le manquant au conseil (R3 bis).
+		var extension := Budget.extension_for_refusal(transfer, quote.get("fee"), quote.get("reason","")) if recruiting and not bool(quote.get("available",false)) else 0
+		if extension > 0:
+			var ask := C.button(Budget.extension_button(extension),func(): _ask_extension(app,dialog,player,transfer,extension))
+			ask.name = "ContractTransferBudgetExtension"
+			ask.add_theme_font_size_override("font_size",C.px(18))
+			ask.disabled = app.waiting or not app._live().is_empty()
+			body.add_child(ask)
 	if recruiting and not transfer.is_empty():
 		var share := C.wrap("%s : %s %s. La prime à la signature y est prélevée ; le salaire n’y entre pas." % [Budget.LABEL, Budget.remaining(transfer), Budget.allocated(transfer)],16,C.MUTED)
 		share.name = "ContractTransferBudget"
@@ -182,3 +195,21 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 		button.add_theme_font_size_override("font_size",C.px(18))
 		button.custom_minimum_size.y = C.px(40)
 	dialog.get_cancel_button().grab_focus()
+
+## Rallonge demandée au conseil depuis le refus : confirmation (focus sur Annuler), puis devis rouvert avec la réponse.
+static func _ask_extension(app: Control, dialog: ConfirmationDialog, player: Dictionary, transfer: Dictionary, amount: int) -> void:
+	var player_id := str(player.id)
+	# Réponse traitée à l’image suivante, après la mise à jour du modèle et de l’erreur éventuelle par main.gd.
+	var after := func(): _after_extension(app,player_id,player)
+	var next_frame := func(_value: Dictionary): app.get_tree().process_frame.connect(after,CONNECT_ONE_SHOT)
+	# Demande envoyée : l’ancienne fenêtre se ferme, le devis est rouvert avec la réponse (jamais deux fenêtres empilées).
+	Budget.confirm_extension(app,dialog,transfer,amount,func():
+		app.bridge.model_changed.connect(next_frame,CONNECT_ONE_SHOT)
+		dialog.queue_free())
+
+static func _after_extension(app: Control, player_id: String, previous: Dictionary) -> void:
+	if app.last_command != Budget.EXTENSION_COMMAND: return
+	var refreshed := previous
+	for candidate: Dictionary in app.model.get("market",[]):
+		if str(candidate.get("id","")) == player_id: refreshed = candidate
+	open(app,refreshed,true,Budget.extension_answer(app))

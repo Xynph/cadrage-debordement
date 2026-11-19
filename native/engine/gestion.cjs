@@ -119,6 +119,8 @@ module.exports=function nativeGestion(command,p){
   if(kind==='recruit'&&talk.status==='signed'&&typeof repriseApresAchat==='function'&&!(typeof budgetTransfertsExempte==='function'&&budgetTransfertsExempte()))repriseApresAchat(club(),avant);
   return {negotiation:{playerId:p.playerId,status:talk.status,message:talk.status==='signed'?'Contrat signé.':talk.message,fee:talk.fee,salary:talk.acceptedSalary,years:talk.years}};
  }
+ // Rallonge demandée au conseil (budget-transferts.cjs, R3 bis) : {amount, confirmed:true} ; réponse dans meta.transferBudgetExtension.
+ if(command==='transfer_budget_extension'){requireThat(typeof budgetTransfertsRallonge==='function','Budget de transferts indisponible.');return {transferBudgetExtension:budgetTransfertsRallonge(p)};}
  if(command==='next_season'){requireThat(p.confirmed===true&&S.phase==='ended'&&!S.live,'Confirme le passage à la saison suivante après la fin des compétitions.');advanceSeason();return;}
  if(command==='substitute'){
   const l=S.live;requireThat(l&&l.paused&&!l.finished&&!presentationPending(l),'Remplacement indisponible : mets le match en pause.');

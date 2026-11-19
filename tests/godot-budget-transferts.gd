@@ -1,8 +1,11 @@
 extends SceneTree
 ## Budget de transferts dans le vrai jeu (profil préparé par tests/godot-budget-transferts.cjs, vrai moteur) :
 ## en-têtes Recrutement et Finances (« Disponible pour les transferts » = finance.transferBudget.disponible),
-## puis une offre hors budget : bouton d'envoi grisé et raison écrite visible. Captures 1920×1080 en affichage graphique.
+## puis une offre hors budget : bouton d'envoi grisé et raison écrite visible ; la caisse le permettant, le bouton
+## « Demander X € au conseil » ouvre une confirmation (focus sur Annuler) ; la rallonge accordée rouvre le devis, signable.
+## Captures 1920×1080 en affichage graphique.
 const G = preload("res://ui/game_skin.gd")
+const Budget = preload("res://ui/transfer_budget.gd")
 const LIBELLE := "Disponible pour les transferts"
 var app: Control
 var sortie := OS.get_environment("CD_BUDGET_OUTPUT")
@@ -50,7 +53,7 @@ func executer() -> void:
 	verifier(budget is Dictionary and bool(budget.get("actif", false)), "budget de transferts actif dans le modèle : " + str(budget))
 	if not budget is Dictionary: budget = {}
 	var reste := G.euros(budget.get("disponible", 0))
-	var enveloppe := G.euros(budget.get("enveloppe", 0))
+	var enveloppe := G.euros(Budget.season_total(budget))
 	# 1. Recrutement : bandeau en tête, à côté de la priorité du poste.
 	app._navigate("Recrutement"); await poser(20)
 	verifier(app.find_child("CarnetMarket", true, false) != null, "écran Recrutement ouvert")
@@ -101,7 +104,32 @@ func executer() -> void:
 			verifier(visible_a_l_ecran("ContractBlockedReason"), "raison visible dans la fenêtre")
 			verifier(texte("ContractTransferBudget").contains(reste), "part du budget restant sous le formulaire : " + texte("ContractTransferBudget"))
 			await capturer("budget-offre-refusee.png")
-			dialogue.queue_free()
+			# Rallonge (R3 bis) : refus d’enveloppe, caisse suffisante → bouton de demande au conseil.
+			var montant := Budget.extension_amount(budget, hors_budget.get("fee"))
+			verifier(montant > 0 and montant == int(ceil((float(hors_budget.get("fee")) - float(budget.get("reste", 0))) / 1000.0)) * 1000, "rallonge possible et arrondie au millier : " + str(montant))
+			var demande := app.find_child("ContractTransferBudgetExtension", true, false) as Button
+			verifier(demande != null and demande.is_visible_in_tree() and not demande.disabled, "bouton de rallonge visible sur un refus de budget")
+			if demande != null:
+				verifier(demande.text == Budget.extension_button(montant), "libellé « %s »" % demande.text)
+				demande.pressed.emit(); await poser(8)
+				var confirmation := dialogue.find_child("TransferBudgetExtensionConfirm", true, false) as ConfirmationDialog
+				verifier(confirmation != null and confirmation.visible, "confirmation de la demande ouverte")
+				if confirmation != null:
+					verifier(confirmation.get_cancel_button().has_focus(), "focus par défaut sur Annuler")
+					verifier(confirmation.get_ok_button().text == Budget.extension_button(montant).to_upper(), "bouton de confirmation = action : " + confirmation.get_ok_button().text)
+					verifier(confirmation.dialog_text.contains("confiance"), "effet sur la confiance annoncé : " + confirmation.dialog_text)
+					await capturer("budget-rallonge-confirmation.png")
+					confirmation.get_ok_button().pressed.emit()
+					await poser(2); await attendre_moteur(); await poser(12)
+					var rouvert := app.find_child("ContractOffer", true, false) as ConfirmationDialog
+					verifier(rouvert != null and not is_instance_valid(dialogue), "devis rouvert après la réponse du conseil")
+					verifier(texte("ContractTransferBudgetAnswer").begins_with("Le conseil accorde une rallonge de " + G.euros(montant)), "réponse du conseil : « %s »" % texte("ContractTransferBudgetAnswer"))
+					if rouvert != null: verifier(not rouvert.get_ok_button().disabled, "offre possible après la rallonge accordée")
+					var apres: Variant = app.model.get("finance", {}).get("transferBudget")
+					verifier(apres is Dictionary and int(apres.get("rallonge", 0)) == montant, "rallonge inscrite au budget : " + str(apres))
+					await capturer("budget-rallonge-accordee.png")
+					if rouvert != null: rouvert.queue_free()
+			if is_instance_valid(dialogue): dialogue.queue_free()
 	print("BUDGET ", JSON.stringify({"controles": controles, "failures": echecs, "disponible": budget.get("disponible"), "joueur": str(hors_budget.get("name", ""))}))
 	app.closing = true
 	app.bridge.stop()

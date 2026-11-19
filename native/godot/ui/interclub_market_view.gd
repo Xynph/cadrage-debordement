@@ -14,6 +14,7 @@ var local_message: Label
 var close_button: Button
 var examine_button: Button
 var budget_note: Label
+var extension_button: Button
 var fee_input: SpinBox
 var salary_input: SpinBox
 var search_field: LineEdit
@@ -158,6 +159,11 @@ func _draw_negotiation() -> void:
 	budget_note = G.wrap("",13)
 	budget_note.name = "InterclubTransferBudget"
 	rows.add_child(budget_note)
+	# Rallonge demandée au conseil (R3 bis) : visible quand l’indemnité dépasse l’enveloppe mais que la caisse la permettrait.
+	extension_button = G.button("",_ask_extension)
+	extension_button.name = "InterclubTransferBudgetExtension"
+	extension_button.visible = false
+	rows.add_child(extension_button)
 	var examine := G.button("SOUMETTRE LES CONDITIONS",_negotiate)
 	examine.name = "InterclubNegotiate"
 	examine_button = examine
@@ -177,14 +183,30 @@ func _budget_check() -> void:
 	if not is_instance_valid(budget_note) or not is_instance_valid(examine_button): return
 	var transfer := Budget.data(app.model)
 	budget_note.visible = not transfer.is_empty()
+	var extension := Budget.extension_amount(transfer, offer_fee)
+	if is_instance_valid(extension_button):
+		extension_button.visible = extension > 0
+		extension_button.text = Budget.extension_button(extension).to_upper() if extension > 0 else ""
+		extension_button.set_meta("amount", extension)
+		extension_button.disabled = pending or app.waiting
 	if transfer.is_empty():
 		examine_button.disabled = false
 		return
 	var over := offer_fee > int(transfer.get("disponible", 0))
 	budget_note.text = "%s : %s %s." % [Budget.LABEL, Budget.remaining(transfer), Budget.allocated(transfer)]
-	if over: budget_note.text += " Indemnité supérieure au budget de transferts : baisse-la pour soumettre tes conditions."
+	if over and extension > 0: budget_note.text += " Indemnité supérieure au budget de transferts : baisse-la, ou demande une rallonge au conseil."
+	elif over and offer_fee > int(transfer.get("caisseLibre", 0)): budget_note.text += " La caisse ne permet pas cette indemnité : elle doit rester au-dessus de %s ; une rallonge du conseil n’y changerait rien." % G.euros(transfer.get("matelas", 0))
+	elif over: budget_note.text += " Indemnité supérieure au budget de transferts : baisse-la pour soumettre tes conditions."
 	budget_note.add_theme_color_override("font_color", G.ALERT if over else G.MUTED)
 	examine_button.disabled = over
+
+func _ask_extension() -> void:
+	var amount := int(extension_button.get_meta("amount", 0)) if is_instance_valid(extension_button) else 0
+	if pending or app.waiting or amount <= 0: return
+	Budget.confirm_extension(app, self, Budget.data(app.model), amount, func():
+		pending = true
+		extension_button.disabled = true
+		local_message.text = "Demande transmise au conseil…")
 
 func _invalidate_quote() -> void:
 	negotiation = {}
@@ -222,6 +244,11 @@ func _on_model(value: Dictionary) -> void:
 			close_button.disabled = false
 		else: lines.append("Aucune offre recevable : modifie tes conditions ou abandonne.")
 		local_message.text = "\n".join(lines)
+	elif app.last_command == Budget.EXTENSION_COMMAND:
+		pending = false
+		var answer: Variant = value.get("meta",{}).get("transferBudgetExtension")
+		local_message.text = (str(answer.get("message","")) if answer is Dictionary else "") + " Soumets à nouveau tes conditions."
+		_budget_check.call_deferred()
 	elif app.last_command == "interclub_auction":
 		pending = false
 		negotiation = {}
@@ -237,6 +264,7 @@ func _on_failure(message: String) -> void:
 	negotiation = {}
 	close_button.disabled = true
 	local_message.text = message + " Tes conditions sont conservées ; soumets-les à nouveau."
+	_budget_check()
 
 func _confirm_auction() -> void:
 	if pending or app.waiting or negotiation.is_empty(): return

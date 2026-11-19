@@ -3,7 +3,8 @@
 // préparée par le vrai moteur. Pour obtenir à coup sûr une piste hors budget, le test marque l’enveloppe comme presque
 // entièrement dépensée (R3) : il reste 6 000 € ; la caisse, intacte, ne limite pas.
 // Le vrai Godot vérifie les en-têtes Recrutement et Finances (« Disponible pour les transferts » = disponible
-// du modèle) puis une offre hors budget (bouton grisé, raison écrite).
+// du modèle) puis une offre hors budget (bouton grisé, raison écrite) et la rallonge demandée au conseil (R3 bis) :
+// confiance du président posée à 72 (au-dessus du seuil de 55) pour que la demande soit accordée.
 // Captures 1920×1080 en affichage graphique : CD_BUDGET_GRAPHICS=1 CD_BUDGET_OUTPUT=<dossier>.
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
@@ -25,7 +26,7 @@ test('Budget de transferts : en-têtes Recrutement et Finances, offre hors budge
       assert.ok(budget && budget.actif === true, 'budget de transferts actif : ' + JSON.stringify(budget));
       assert.ok(Number.isInteger(budget.matelas) && budget.matelas > 0, 'matelas exposé : ' + JSON.stringify(budget));
       const lire = s => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + s + ')'));
-      lire(`(()=>{const e=budgetTransfertsEtat(true);e.depense=e.enveloppe+e.reconstitue-${RESTE};return 1;})()`);
+      lire(`(()=>{const e=budgetTransfertsEtat(true);e.depense=e.enveloppe+e.reconstitue-${RESTE};S.trust=72;return 1;})()`);
       const apres = jeu.call('save');
       attendu = apres?.finance?.transferBudget;
       assert.equal(attendu?.disponible, RESTE, 'disponible = reste de l’enveloppe : ' + JSON.stringify(attendu));
@@ -50,7 +51,7 @@ test('Budget de transferts : en-têtes Recrutement et Finances, offre hors budge
     assert.deepEqual(rapport.failures, []);
     assert.equal(rapport.disponible, attendu.disponible, 'Godot lit le même disponible que le moteur');
     assert.equal(r.status, 0, journal.slice(-3000));
-    if (graphique) for (const f of ['budget-recrutement.png', 'budget-finances.png', 'budget-offre-refusee.png']) assert.ok(fs.existsSync(path.join(sortie, f)), 'capture ' + f);
+    if (graphique) for (const f of ['budget-recrutement.png', 'budget-finances.png', 'budget-offre-refusee.png', 'budget-rallonge-confirmation.png', 'budget-rallonge-accordee.png']) assert.ok(fs.existsSync(path.join(sortie, f)), 'capture ' + f);
     console.log('Captures : ' + sortie);
   } finally { fs.rmSync(profil, { recursive: true, force: true }); }
 });

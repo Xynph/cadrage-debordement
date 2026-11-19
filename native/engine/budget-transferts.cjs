@@ -4,6 +4,9 @@
 // gagnée) et en primes à la signature des recrues libres. Les prolongations, les salaires et les renforts n'y entrent pas.
 // Les ventes choisies en rendent la moitié ; les ventes imposées (président, prêt de l'actionnaire) ne rendent rien.
 // Le disponible ne dépasse jamais ce que la caisse permet sans entamer le matelas du club.
+// Rallonge (R3 bis) : sur un refus d'enveloppe que la caisse permettrait, le manager demande le montant manquant au
+// conseil ; réponse immédiate et déterministe (confiance, part de l'enveloppe, nombre de rallonges), coût en confiance.
+// Report (R5) : une part du reste non dépensé de la saison qui se termine s'ajoute à l'enveloppe suivante (même club).
 // Carrière Monde au budget de saison seulement (budgetActif) : ailleurs, règles inchangées.
 // Réglages : budget-transferts.json (lu à chaque calcul : changer le fichier change l'enveloppe sans toucher au code).
 const REGLAGES = require('./budget-transferts.json');
@@ -34,26 +37,64 @@ function enveloppe({ recettes, division, type, confiance, cash, reserve }, R = R
   return Math.max(0, Math.round(borne(brut, rec * R.plancher, rec * R.plafond) / pas) * pas);
 }
 
-// État enregistré : S.budgetTransferts = {version:1, saison, clubId, enveloppe, depense, reconstitue}.
+// État enregistré : S.budgetTransferts = {version:1, saison, clubId, enveloppe, depense, reconstitue, report, rallonge,
+// demandes, rallongesAccordees}. enveloppe = montant fixé par le conseil en début de saison ; report = part reportée de la
+// saison précédente ; rallonge = rallonges accordées en cours de saison. Les quatre derniers champs manquent dans les
+// sauvegardes antérieures : lus comme 0.
+const n0 = x => fini(x) && x >= 0 ? x : 0;
 const valide = e => !!e && typeof e === 'object' && !Array.isArray(e) && e.version === 1 && Number.isInteger(e.saison) && Number.isInteger(e.clubId) &&
-  [e.enveloppe, e.depense, e.reconstitue].every(x => fini(x) && x >= 0);
+  [e.enveloppe, e.depense, e.reconstitue].every(x => fini(x) && x >= 0) &&
+  [e.report, e.rallonge, e.demandes, e.rallongesAccordees].every(x => x === undefined || fini(x) && x >= 0);
 
-const reste = e => Math.max(0, e.enveloppe + e.reconstitue - e.depense);
+// Enveloppe de la saison : fixée + report + rallonges (le reconstitué s'y ajoute à part).
+const total = e => e.enveloppe + n0(e.report) + n0(e.rallonge);
+const reste = e => Math.max(0, total(e) + e.reconstitue - e.depense);
+const libre = (cash, mat) => Math.max(0, (fini(cash) ? cash : 0) - mat);
 // disponible = max(0, min(enveloppe + reconstitué − dépensé, caisse − matelas)).
 const disponible = (e, cash, mat) => Math.max(0, Math.min(reste(e), (fini(cash) ? cash : 0) - mat));
 
 // Raison d'un refus (texte affiché tel quel), ou null si le montant passe.
 function refus(e, montant, cash, mat) {
   if (!(montant > 0) || montant <= disponible(e, cash, mat)) return null;
-  const caisse = Math.max(0, (fini(cash) ? cash : 0) - mat);
+  const caisse = libre(cash, mat);
   if (caisse < reste(e)) return `La caisse ne permet plus de transfert : elle doit rester au-dessus de ${euros(mat)}.`;
-  return `Hors budget de transferts : il reste ${euros(reste(e))} sur l’enveloppe de ${euros(e.enveloppe)} fixée par le conseil.`;
+  const texte = `Hors budget de transferts : il reste ${euros(reste(e))} sur l’enveloppe de ${euros(total(e))} fixée par le conseil.`;
+  // Une rallonge ne servirait à rien : c'est la caisse qui limite au-delà du reste.
+  return montant > caisse ? texte + ` Une rallonge du conseil ne suffirait pas : la caisse doit rester au-dessus de ${euros(mat)}.` : texte;
+}
+
+// Rallonge à demander pour un montant refusé par l'enveloppe (0 si le montant passe, ou si la caisse limite) :
+// montant − reste, arrondi au millier supérieur (rallonge.arrondi). Possible seulement si reste < montant ≤ caisse − matelas.
+function demandeRallonge(e, montant, cash, mat, R = REGLAGES) {
+  const r = reste(e);
+  if (!(montant > r) || montant > libre(cash, mat)) return 0;
+  const pas = fini(R.rallonge.arrondi) && R.rallonge.arrondi > 0 ? R.rallonge.arrondi : 1;
+  return Math.ceil((montant - r) / pas) * pas;
+}
+
+// Réponse du président à une demande de rallonge : null = accordée, sinon la raison écrite du refus. Déterministe.
+//   accordée si rallonges déjà accordées < maxParSaison, confiance ≥ confianceMin, montant ≤ partEnveloppe × enveloppe fixée.
+function decisionRallonge(e, montant, confiance, R = REGLAGES) {
+  const Q = R.rallonge, t = Math.round(borne(fini(confiance) ? confiance : 50, 0, 100));
+  if (n0(e.rallongesAccordees) >= Q.maxParSaison) return `Le président refuse : le conseil a déjà accordé ${Q.maxParSaison} rallonge${Q.maxParSaison > 1 ? 's' : ''} cette saison.`;
+  if (t < Q.confianceMin) return `Le président refuse : sa confiance (${t}/100) est trop basse pour rouvrir l’enveloppe ; il en faut ${Q.confianceMin}.`;
+  const plafond = Math.floor(Q.partEnveloppe * e.enveloppe);
+  if (montant > plafond) return `Le président refuse : ${euros(montant)} dépassent ${Math.round(Q.partEnveloppe * 100)} % de l’enveloppe fixée en début de saison (${euros(plafond)} au plus).`;
+  return null;
+}
+
+// Report d'une saison sur la suivante (même club) : partReport × reste non dépensé de la saison précédente, arrondi au
+// millier inférieur, plafonné pour que enveloppe neuve + report ≤ recettes × plafond.
+function report(precedent, enveloppeNeuve, recettes, R = REGLAGES) {
+  const pas = fini(R.rallonge.arrondi) && R.rallonge.arrondi > 0 ? R.rallonge.arrondi : 1;
+  const place = Math.max(0, (fini(recettes) ? recettes : 0) * R.plafond - enveloppeNeuve);
+  return Math.max(0, Math.floor(Math.min(R.partReport * reste(precedent), place) / pas) * pas);
 }
 
 // Part d'une vente choisie rendue à l'enveloppe, plafonnée : enveloppe + reconstitué ≤ recettes × plafond.
 function rendu(e, montant, recettes, R = REGLAGES) {
   if (!(montant > 0)) return 0;
-  const place = Math.max(0, (fini(recettes) ? recettes : 0) * R.plafond - e.enveloppe - e.reconstitue);
+  const place = Math.max(0, (fini(recettes) ? recettes : 0) * R.plafond - e.enveloppe - n0(e.report) - e.reconstitue);
   return Math.round(Math.max(0, Math.min(R.partVentes * montant, place)));
 }
 
@@ -67,7 +108,12 @@ function budgetTransfertsEntrees(){
  return {recettes:nativeClubBudget.recettes(forces).get(S.club)||0,division:budgetLigue(S.club),
   type:k?.type??nativeClubBudget.proprietaire(forces,S.club).type,confiance:S.trust,cash:club().cash,reserve:Number.isFinite(k?.reserve)&&k.reserve>0?k.reserve:null};
 }
-function budgetTransfertsNeuf(x=budgetTransfertsEntrees()){return {version:1,saison:S.season,clubId:S.club,enveloppe:nativeBudgetTransferts.enveloppe(x,nativeBudgetTransferts.REGLAGES),depense:0,reconstitue:0};}
+// Report (R5) : seulement depuis l'enveloppe de la saison précédente du même club ; refixée dans la saison, le report est gardé.
+function budgetTransfertsNeuf(x=budgetTransfertsEntrees()){
+ const T=nativeBudgetTransferts,R=T.REGLAGES,enveloppe=T.enveloppe(x,R),p=S.budgetTransferts,meme=T.valide(p)&&p.clubId===S.club;
+ const report=meme&&p.saison===S.season-1?T.report(p,enveloppe,x.recettes,R):meme&&p.saison===S.season?Math.round(p.report||0):0;
+ return {version:1,saison:S.season,clubId:S.club,enveloppe,depense:0,reconstitue:0,report,rallonge:0,demandes:0,rallongesAccordees:0};
+}
 // Enveloppe de la saison et du club en cours ; recalculée à la volée sinon (carrière antérieure, autre saison, autre club).
 function budgetTransfertsEtat(ecrire=true){
  if(!budgetTransfertsActif())return null;
@@ -101,13 +147,39 @@ if(typeof acceptSale==='function'){
  const acceptSaleTransfertsV1=acceptSale;
  acceptSale=function(id){const o=S?.economy?.offers?.find(x=>x.id===id),fee=o?.fee;const r=acceptSaleTransfertsV1.apply(this,arguments);if(r===true&&fee>0)budgetTransfertsRecette(fee,true);return r;};
 }
-// Vue Finances / Recrutement (finance.transferBudget), en euros entiers ; lecture seule.
-function budgetTransfertsVue(){
+// Rallonge demandée au conseil (commande transfer_budget_extension {amount, confirmed:true}). Montant invalide, match en
+// cours ou caisse déjà limitante : erreur, rien n'est écrit. Sinon réponse immédiate et déterministe, enregistrée
+// (demandes, rallongesAccordees, rallonge), coût en confiance, ligne dans les nouvelles du club.
+function budgetTransfertsRallonge(p){
+ const T=nativeBudgetTransferts,R=T.REGLAGES,Q=R.rallonge,non=m=>{throw Error(m);};
+ if(!budgetTransfertsActif())non('Budget de transferts indisponible dans cette carrière.');
+ if(p?.confirmed!==true)non('Confirme la demande de rallonge au conseil.');
+ if(!Number.isInteger(p.amount)||p.amount<Q.arrondi||p.amount%Q.arrondi!==0||p.amount>1e9)non('Montant de rallonge invalide.');
+ if(S.live)non('Le conseil ne se réunit pas pendant un match.');
  const ctx=budgetTransfertsContexte();
- if(!ctx)return {actif:false,enveloppe:0,depense:0,reconstitue:0,disponible:0,matelas:0,saison:S?.season??null};
- const e=ctx.e;
- return {actif:true,enveloppe:e.enveloppe,depense:e.depense,reconstitue:e.reconstitue,disponible:Math.round(nativeBudgetTransferts.disponible(e,ctx.cash,ctx.matelas)),matelas:ctx.matelas,saison:e.saison};
+ if(T.reste(ctx.e)>=Math.max(0,ctx.cash-ctx.matelas))non('Pas de rallonge possible : c’est la caisse qui limite les transferts ; elle doit rester au-dessus de '+T.euros(ctx.matelas)+'.');
+ const e=budgetTransfertsEtat(true),raison=T.decisionRallonge(e,p.amount,S.trust,R),accordee=!raison,cout=accordee?Q.coutAccordee:Q.coutRefusee;
+ e.demandes=(e.demandes||0)+1;
+ if(accordee){e.rallonge=Math.round((e.rallonge||0)+p.amount);e.rallongesAccordees=(e.rallongesAccordees||0)+1;}
+ S.trust=Math.max(0,Math.min(100,(Number.isFinite(S.trust)?S.trust:50)-cout));
+ const message=accordee?'Le conseil accorde une rallonge de '+T.euros(p.amount)+' au budget de transferts.':raison;
+ if(typeof news==='function')news('Budget de transferts : '+(accordee?'le conseil accorde une rallonge de '+T.euros(p.amount)+'.':'demande de rallonge de '+T.euros(p.amount)+' refusée. '+raison));
+ return {accordee,montant:p.amount,message,confiance:S.trust,coutConfiance:cout};
+}
+// Vue Finances / Recrutement (finance.transferBudget), en euros entiers ; lecture seule.
+//   enveloppe : fixée par le conseil ; report : part reportée de la saison passée ; rallonge : rallonges accordées ;
+//   reste : enveloppe + report + rallonge + reconstitué − dépensé ; caisseLibre : caisse − matelas ;
+//   disponible : min(reste, caisseLibre). Rallonge possible pour un montant m si reste < m ≤ caisseLibre ; elle vaut
+//   m − reste arrondi au millier supérieur (rallongeArrondi) — calcul repris par ui/transfer_budget.gd.
+function budgetTransfertsVue(){
+ const ctx=budgetTransfertsContexte(),Q=nativeBudgetTransferts.REGLAGES.rallonge;
+ const regles={rallongeMax:Q.maxParSaison,rallongeArrondi:Q.arrondi,rallongeCout:{accordee:Q.coutAccordee,refusee:Q.coutRefusee}};
+ if(!ctx)return {actif:false,enveloppe:0,report:0,rallonge:0,depense:0,reconstitue:0,reste:0,caisseLibre:0,disponible:0,matelas:0,demandes:0,rallongesAccordees:0,...regles,saison:S?.season??null};
+ const e=ctx.e,T=nativeBudgetTransferts;
+ return {actif:true,enveloppe:e.enveloppe,report:Math.round(e.report||0),rallonge:Math.round(e.rallonge||0),depense:e.depense,reconstitue:e.reconstitue,
+  reste:Math.round(T.reste(e)),caisseLibre:Math.round(Math.max(0,ctx.cash-ctx.matelas)),disponible:Math.round(T.disponible(e,ctx.cash,ctx.matelas)),matelas:ctx.matelas,
+  demandes:e.demandes||0,rallongesAccordees:e.rallongesAccordees||0,...regles,saison:e.saison};
 }
 `;
 
-module.exports = Object.freeze({ REGLAGES, euros, matelas, enveloppe, valide, reste, disponible, refus, rendu, BRANCHEMENT });
+module.exports = Object.freeze({ REGLAGES, euros, matelas, enveloppe, valide, total, reste, disponible, refus, demandeRallonge, decisionRallonge, report, rendu, BRANCHEMENT });
