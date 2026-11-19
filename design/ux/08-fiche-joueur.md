@@ -2,8 +2,38 @@
 
 Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
 
+## Révision validée par Léo (19/11/2026, maquette `revue-20261119/apercus/08-fiche-joueur-retouche.png`)
+
+Ces règles priment sur la suite de la fiche quand elles la contredisent.
+
+- **Accès** : un clic sur le **nom** d'un joueur ouvre cette fiche en plein écran (comme Football Manager), depuis
+  Effectif, Recrutement, Formation et tout nom joueur branché sur `open_entity`. Survoler le nom ou le petit « i »
+  voisin montre la **mini-fiche** (voir `mini-fiche-joueur.md`), sans changer d'écran.
+- **Plus de petite fenêtre** pour montrer un joueur : le suivi individuel des Espoirs et des jeunes pros
+  (spécialisation, historique) vit dans l'onglet Développement ; les fiches fixes à droite d'Effectif et de
+  Formation disparaissent, le tableau prend la largeur. Recrutement garde provisoirement son panneau (actions
+  Suivre / Observer / Approcher) jusqu'à la refonte de l'étape 3.
+- **Barre haute de la fiche** : « ← Retour à {origine} · Échap », « ‹ précédent · 4 / 40 · tri : … · suivant › »
+  (Maj+← / Maj+→, liste d'origine, pas de bouclage), à droite « Comparer → », « Ma note → ».
+- **Bandeau** : vignette + n°, « FICHE JOUEUR · POSTE », NOM en capitales italiques, **drapeau en couleur**
+  (`art/flags/<flagCode>.svg`, sinon le code pays écrit) + pays · âge · taille · poids · sélections, autres postes,
+  verdict (statut · condition · contrat), à droite Niveau /100 et Potentiel. Chaque morceau qui ressemble à un lien
+  ouvre quelque chose (nation → Sélections, contrat → prolongation, adversaire → fiche du club).
+- **Onglets** : Vue d'ensemble · Performances · Contrat · Développement · Repères. **L'onglet Attributs disparaît** :
+  les 36 attributs sont sur la première page.
+- **Vue d'ensemble** : carte **Attributs** (4 familles réelles du jeu × 9 clés réelles de `attributesV2`, moyenne
+  par famille, légende du barème), carte **Postes** + courbe « note match par match » (notes enregistrées de la
+  saison, `NotesMatch.historique[].note`, moyenne en pointillé) ; colonne droite **Disponibilité**, **Valeur**
+  (3 points forts / 3 à travailler), **Contrat** (bouton prolonger).
+- **Barème des attributs** (jetons `Charte.ATTRIBUT_*`) : chiffre toujours écrit, couleur par palier —
+  0-39 #EE6F5F · 40-54 #F2A04A · 55-64 #EADB55 · 65-74 #A8D878 · 75-84 #4FCB78 · 85+ #3DEBB4. Légende visible.
+- **Attributs inconnus** (brouillard de connaissance) : « — » en ivoire-3 et « Fais-le observer pour connaître
+  ses attributs », cliquable vers l'observation du recrutement.
+- **Rien de figé** : toute valeur vient des données du joueur ; une donnée absente (date de retour, « au club
+  depuis ») est dérivée d'une vraie source ou la ligne est omise.
+
 > **Template**: UX Spec
-> **Statut** : proposé (ux-designer CCGS, 19/11/2026, mode autonome, rigueur `minimal`)
+> **Statut** : proposé (ux-designer CCGS, 19/11/2026, mode autonome, rigueur `minimal`) ; révision ci-dessus validée
 > **Écran** : `Fiche joueur` (lecteur ouvert depuis une liste ; titre « Fiche joueur : NOM ») · carrière Monde · souris + clavier
 > **Phases du parcours** : première heure (appropriation), semaine type, fin de saison (contrat)
 > **Palier d'accessibilité** : Standard
