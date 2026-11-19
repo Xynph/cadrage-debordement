@@ -292,7 +292,7 @@ func run() -> void:
 		app._navigate("Bureau"); await settle()
 		app.coach.disable(); await settle()
 		check(not app.coach.visible, "Désactivation persistée sans erreur")
-		app.settings(); await settle()
+		app.preferences_window(); await settle()
 		var dialogs := app.find_children("*", "AcceptDialog", false, false)
 		var settings: AcceptDialog
 		for dialog in dialogs:

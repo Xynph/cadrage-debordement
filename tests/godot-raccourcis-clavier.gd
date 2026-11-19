@@ -167,7 +167,8 @@ func run() -> void:
 	app.coach.close()
 	await settle(2)
 
-	# Espace : d'abord le prochain message non lu, puis seulement Continuer.
+	# Espace = Continuer et rien d'autre (coque commune : un raccourci garde un seul sens) ; même avec des non-lus,
+	# Espace n'ouvre jamais le courrier (le bouton « Courrier suivant non lu » de la Réception reste là pour ça).
 	var Reception = load("res://ui/immersive08/reception_canvas.gd")
 	app._navigate("Bureau")
 	await settle()
@@ -184,16 +185,16 @@ func run() -> void:
 		marques[cible.id] = {"read": false}
 		avant = Reception.unread(app)
 	check(avant > 0, "Au moins un message non lu au départ (" + str(avant) + ")")
-	var attendu: Dictionary = Reception.next_unread(app)
 	continuer.mouse_entered.emit()
-	check(continuer.tooltip_text.ends_with("Espace : prochain message"), "Info-bulle : prochain message (" + continuer.tooltip_text + ")")
+	check(continuer.tooltip_text.ends_with("Espace : continuer"), "Info-bulle avec non-lus : continuer (" + continuer.tooltip_text + ")")
 	continuer.mouse_entered.emit()
 	check(continuer.tooltip_text.count("Espace :") == 1, "Indication jamais doublée")
+	# Bouton rendu inactif le temps de la vérification : Espace ne doit ni avancer ni ouvrir le courrier.
+	continuer.disabled = true
 	await key(KEY_SPACE)
-	check(compteur[0] == 0, "Non lus restants : Espace ne déclenche pas Continuer")
-	check(app.route == "Réception", "Espace ouvre la Réception (" + app.route + ")")
-	check(app.management_ui.reception.selected == attendu.get("id", "?"), "Le prochain message non lu est sélectionné")
-	check(Reception.unread(app) == avant - 1, "Ce message est marqué lu (" + str(Reception.unread(app)) + " pour " + str(avant) + ")")
+	check(compteur[0] == 0 and app.route == "Bureau", "Non lus restants : Espace n'ouvre pas la Réception (" + app.route + ")")
+	check(Reception.unread(app) == avant, "Aucun message marqué lu par Espace (" + str(Reception.unread(app)) + " pour " + str(avant) + ")")
+	continuer.disabled = false
 	# Tout lire : Espace = Continuer.
 	var marques2: Dictionary = app.management_ui.reception.marks
 	for message: Dictionary in Reception._messages(app): marques2[message.id] = {"read": true}

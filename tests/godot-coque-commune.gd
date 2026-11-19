@@ -90,6 +90,7 @@ func run() -> void:
 	await breadcrumb()
 	await search()
 	await top_actions()
+	await polish()
 	await gold_once()
 	for size: Vector2i in [Vector2i(1280, 720), Vector2i(2560, 1440), Vector2i(1920, 1080)]:
 		await layout(size)
@@ -121,7 +122,13 @@ func rail() -> void:
 	app._navigate("Bureau"); await settle()
 	check(await press("ImmersiveClubHeader") and app.route == "Club", "En-tête du club : fiche du club (%s)" % app.route)
 	var context := named("ImmersiveClubContext") as Label
-	check(context != null and context.text == app.Immersive.club_context(app.model) and not context.text.is_empty(), "« Division · rang » lu dans les données du club (%s)" % (context.text if context != null else "?"))
+	check(context != null and str(context.get_meta("context_complet", "")) == app.Immersive.club_context(app.model) and not context.text.is_empty(), "« Division · rang » lu dans les données du club (%s)" % (context.text if context != null else "?"))
+	var rank: String = app.Immersive.P.rank_ordinal(app.model.club)
+	if context != null and rank != "—": check(context.text.ends_with("· " + rank) and context.get_line_count() <= 2, "Le rang n'est jamais perdu (%s, %d ligne(s))" % [context.text, context.get_line_count()])
+	# Même calcul partout : deux lignes, puis 12 px, puis la division raccourcie sans perdre « · rang ».
+	var long_name := "Division d'accession régionale du grand sud-ouest atlantique et pyrénéen · 12e"
+	var fitted: Array = app.Immersive.fit_context(long_name, "12e", app.Immersive.RAIL_WIDTH - 117.0)
+	check(str(fitted[0]).ends_with("· 12e") and int(fitted[2]) <= 2, "Division très longue : rang gardé (%s)" % str(fitted[0]))
 
 func footer() -> void:
 	app._navigate("Bureau"); await settle()
@@ -210,6 +217,74 @@ func top_actions() -> void:
 	var next_day := named("ImmersiveNextDay") as Button
 	if next_day != null: check(next_day.get_theme_color("font_color").is_equal_approx(app.Immersive.C.MUTED), "« +1 j » en texte discret, jamais en or")
 	check(named("GabiF1") != null and named("GabiBandeau") != null, "Médaillon de Gabi et touche F1 dans la barre")
+
+## Relectures croisées du 19/11/2026 (art, UX, accessibilité) : médaillon, Réglages, Espace, Continuer, journée,
+## « division · rang », une seule ligne de sauvegarde, Précédent / Suivant impossibles.
+func polish() -> void:
+	# 1. Médaillon de Gabi : ovale tracé, sans pastille, F1 avec lui, cibles ≥ 28 px réels, nom accessible.
+	app._navigate("Effectif"); await settle(); close_gabi()
+	var zone := named("GabiBandeau") as Control
+	var face := zone.find_child("GabiMedaillon", true, false) as Control if zone != null else null
+	var help := named("GabiF1") as Button
+	check(face != null and bool(face.get("ovale")) and absf(zone.size.x / zone.size.y - 1.5) < .05, "Médaillon de Gabi ovale 3:2 (%s)" % (str(zone.size) if zone != null else "?"))
+	check(zone != null and zone.get_global_rect().size.y >= 28.0 and help != null and help.is_visible_in_tree() and minf(help.get_global_rect().size.x, help.get_global_rect().size.y) >= 28.0, "Médaillon et « F1 » : cibles d'au moins 28 px")
+	check(zone != null and zone.accessibility_name.begins_with("Gabi") and not zone.tooltip_text.is_empty(), "Médaillon : nom accessible et infobulle (%s)" % (zone.accessibility_name if zone != null else "?"))
+	app._navigate("Bureau"); await settle(); close_gabi()
+	zone = named("GabiBandeau") as Control
+	help = named("GabiF1") as Button
+	var shown: bool = zone != null and zone.is_visible_in_tree() and not zone.get_meta("masque", false)
+	check(help != null and help.is_visible_in_tree() == shown, "« F1 » s'affiche avec le médaillon, jamais seul (médaillon %s)" % ("visible" if shown else "masqué"))
+	# 2. Réglages en carrière : l'écran de la coque, par le rail, par settings() et par le menu pause.
+	app.settings(); await settle()
+	check(app.route == "Réglages" and visible_windows().is_empty(), "settings() en carrière : écran Réglages, aucune fenêtre")
+	app._navigate("Bureau"); await settle()
+	app.pause_menu(); await settle()
+	var pause := app.get_node_or_null("ImmersivePauseMenu") as AcceptDialog
+	if pause != null:
+		pause.custom_action.emit("settings"); await settle()
+	check(app.route == "Réglages" and visible_windows().is_empty(), "Menu pause → Paramètres : écran Réglages, aucune fenêtre")
+	# 3. Espace = Continuer seulement : plus de rappel « Espace : message suivant » en Réception.
+	app._navigate("Réception"); await settle()
+	check(named("InboxSpaceHint") == null, "Réception : plus de rappel Espace")
+	check(not str(load("res://ui/raccourcis_clavier.gd").TABLE[0][2]).contains("message"), "Table des raccourcis : Espace = Continuer")
+	# 4. Continuer : « Espace » au repos, « ! » + raison si quelque chose l'arrête ; jamais inerte, jamais « … ».
+	app._navigate("Effectif"); await settle()
+	var continuer := named("ImmersiveContinue") as Button
+	var hint := continuer.get_node_or_null("ContinueHint") as Label
+	var block: String = app.continue_block()
+	check(hint != null and hint.text == ("Espace" if block.is_empty() else "! " + block), "Continuer : « %s » (arrêt : « %s »)" % [hint.text if hint != null else "?", block])
+	check(not continuer.disabled, "Continuer jamais désactivé dans la coque")
+	var due: Variant = app.model.get("meta", {}).get("decisionsDue")
+	app.model.meta.decisionsDue = [{"id":"qa-coque"}]
+	app._update_live_bar()
+	block = app.continue_block()
+	check(hint.text == ("Espace" if block.is_empty() else "! " + block) and block.length() <= 22, "Continuer bloqué : « ! » + raison courte (%s)" % hint.text)
+	for label: Label in [hint, continuer.get_node_or_null("ContinueLabel") as Label]:
+		check(label.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING and label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size")).x <= label.size.x + 1.0, "Continuer : « %s » entier" % label.text)
+	if due == null: app.model.meta.erase("decisionsDue")
+	else: app.model.meta.decisionsDue = due
+	app._update_live_bar()
+	# 5. Date + journée quand la donnée existe.
+	var caption: Array = app.Immersive.date_caption(app.model)
+	var round_label := named("ImmersiveRound") as Label
+	var label_text := str(app.Immersive.P.next_fixture(app.model).get("label", "")) + " " + str(app.model.meta.get("roundLabel", ""))
+	if label_text.to_lower().contains("journée"): check(str(caption[1]).begins_with("J") and round_label != null and round_label.text == "· " + str(caption[1]), "Journée affichée à côté de la date (%s)" % (round_label.text if round_label != null else "?"))
+	# 6. Fil d'Ariane : la page n'est jamais coupée tant que le plancher de 12 px suffit.
+	var last := named("ImmersiveCrumb2") as Button
+	if last != null: check(last.get_theme_font("font").get_string_size(last.text, HORIZONTAL_ALIGNMENT_LEFT, -1, last.get_theme_font_size("font_size")).x <= last.size.x, "Fil : « %s » entier" % last.text)
+	# 7. Une seule ligne de sauvegarde : celle du rail ; le pied de page ne la répète pas.
+	var status := named("ImmersiveSaveStatus") as Label
+	check(status != null and not status.text.begins_with("Sauvegarde automatique") and named("ImmersiveSaveLine") != null, "Une seule ligne de sauvegarde (pied : « %s »)" % (status.text if status != null else "?"))
+	# 8. Précédent / Suivant impossibles : même grisé, forme barrée, état dit en toutes lettres.
+	app.navigation_controller.reset()
+	app._navigate("Finances"); await settle()
+	for id: String in ["NavigationBack", "NavigationForward"]:
+		var arrow := named(id) as Button
+		check(arrow != null and arrow.disabled and arrow.tooltip_text.begins_with("Pas de page") and arrow.accessibility_name == arrow.tooltip_text, "%s impossible : désactivé et dit (%s)" % [id, arrow.tooltip_text if arrow != null else "?"])
+		var picto := arrow.find_child("Picto_*", true, false) if arrow != null else null
+		check(picto != null and picto.get("source") == arrow and (arrow.get_theme_stylebox("disabled") as StyleBoxFlat).border_color.is_equal_approx(app.Immersive.C.LINE), "%s : flèche barrée et contour grisé" % id)
+	app._navigate("Effectif"); await settle()
+	check(not (named("NavigationBack") as Button).disabled and (named("NavigationForward") as Button).disabled, "Après un écran : Précédent actif, Suivant toujours grisé")
 
 ## Aplat or : Incline, ColorRect, fond de StyleBoxFlat et texte couleur or dans le rail et la barre haute.
 func gold_once() -> void:

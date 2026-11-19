@@ -44,7 +44,7 @@ func run() -> void:
 	app.timer.stop(); await settle()
 	check(not app.model.is_empty() and app.route == "Accueil","Accueil réel chargé sans carrière")
 	await capture("accueil-plein-ecran")
-	app.settings(); await settle()
+	app.preferences_window(); await settle()
 	var dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
 	var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
 	check(tabs != null and tabs.get_tab_count() == 4,"Quatre rubriques de paramètres accessibles")

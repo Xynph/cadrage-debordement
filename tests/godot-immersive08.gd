@@ -1222,7 +1222,7 @@ func dialogs() -> void:
 		check(app.route=="Recherche" and result!=null,"Entrée ouvre l'écran Recherche avec ses résultats")
 		if result!=null: await click(result); await settle()
 		check(app.route=="Préparation" and app.find_child("ImmersiveTraining",true,false)!=null,"Le résultat ouvre le véritable menu Entraînement")
-	app.settings()
+	app.preferences_window()
 	await settle()
 	var preferences: AcceptDialog = app.get_node_or_null("PreferencesDialog")
 	check(preferences!=null and preferences.visible and preferences.find_child("PreferencesMotion",true,false)!=null,"Paramètres natifs et mode calme disponibles")

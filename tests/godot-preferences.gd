@@ -230,7 +230,7 @@ func dialog_cases() -> void:
 	var helper = load("res://ui/preferences_dialog.gd")
 	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
 		root.size = resolution; DisplayServer.window_set_size(resolution)
-		app.settings(); await settle()
+		app.preferences_window(); await settle()
 		var d: AcceptDialog = app.find_child("PreferencesDialog",true,false)
 		check(d.visible and d.size.x <= resolution.x and d.size.y <= resolution.y,"Dialogue contenu à "+str(resolution))
 		if OS.get_environment("CD_PREFERENCES_GRAPHICS") == "1":
@@ -319,7 +319,7 @@ func dialog_cases() -> void:
 	var day_energy: float = stage._sun.light_energy
 	check(stage.get_node_or_null("StadiumEvening") == null,"Le match de jour ne construit pas les projecteurs")
 	await capture_stadium("stade-jour-match")
-	app.settings(); await settle()
+	app.preferences_window(); await settle()
 	var display_dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
 	var display_tabs: TabContainer = display_dialog.find_child("PreferencesTabs",true,false)
 	display_tabs.current_tab = 2; await settle()
@@ -367,7 +367,7 @@ func dialog_cases() -> void:
 	check(app.match_screen._camera_controls.all(func(button): return button.disabled) and stage._actors.size() == 30,"Caméras verrouillées en mode calme et joueurs conservés")
 	check(JSON.stringify(app.model.live) == engine_before,"Confort ne change ni temps, ni positions moteur, ni RNG du vrai match")
 	if OS.get_environment("CD_PREFERENCES_GRAPHICS") == "1":
-		app.settings(); await settle(); await RenderingServer.frame_post_draw
+		app.preferences_window(); await settle(); await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(directory.path_join("preferences-match-calme.png"))
 		var calm_dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
 		calm_dialog.hide(); calm_dialog.queue_free(); await settle()
