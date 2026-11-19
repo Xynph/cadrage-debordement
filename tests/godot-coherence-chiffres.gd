@@ -149,6 +149,12 @@ func run() -> void:
 	forbidden_none(competitions, "Compétitions")
 	check(app.find_child("StandingsPaginationNext", true, false) == null and app.find_child("StandingsPagination", true, false) == null, "Classement de 14 clubs : une seule page")
 	check(app.find_children("StandingsRow_*", "Button", true, false).size() == 14, "Classement : les 14 clubs sont affichés")
+	# Zones du règlement (moteur) : légende et note dès l'avant-saison ; aucune ligne en zone tant que le classement n'est pas ouvert.
+	var zone_legend: Control = app.find_child("StandingsZoneLegend", true, false)
+	check(zone_legend != null and zone_legend.accessibility_name.contains("◆ 13 Barrage d’accession") and zone_legend.accessibility_name.contains("▼ 14 Relégation"), "Classement : légende des zones du Top 14 (moteur)")
+	var zone_note: Label = app.find_child("StandingsZoneNote", true, false)
+	check(zone_note != null and zone_note.text.contains("barrage d’accession"), "Classement : note du règlement sous la légende")
+	check(app.find_children("StandingsZoneMark", "Control", true, false).filter(func(mark: Control): return mark.get_parent().name.begins_with("StandingsRow_")).is_empty(), "Classement : aucune ligne en zone avant la 1re journée")
 	for tab: Button in app.find_children("StandingsDivision_*", "Button", true, false):
 		var style := tab.get_theme_stylebox("normal")
 		var room := tab.size.x - style.content_margin_left - style.content_margin_right

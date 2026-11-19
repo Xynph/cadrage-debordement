@@ -69,6 +69,8 @@ declare -A suite_limits=(
   # Excédents réinvestis : carrière Monde côté Node (Toulouse, trois matchs), puis Godot (Club > Infrastructures, Finances).
   [tests/godot-investissements-excedents.cjs]=1200
   [tests/godot-sante-financiere.cjs]=1200
+  # Budget de transferts : carrière Monde côté Node, puis Godot (Recrutement, Finances, offre hors budget).
+  [tests/godot-budget-transferts.cjs]=1200
   [tests/godot-argent-proprietaire.cjs]=1200
   # A2R et président : carrière Monde côté Node (Toulouse, comptes simulés), puis Godot (deux courriers en Réception).
   [tests/godot-a2r-president.cjs]=900

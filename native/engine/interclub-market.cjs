@@ -17,7 +17,7 @@ function factory(){
   return {kind:fiction?'historical-fiction-30':'reference-or-unknown',minimum:fiction?28:37,notice:fiction?'Effectif minimum : 28 professionnels après départ (23 de feuille et cinq couvertures), deux joueurs par famille et deux piliers de chaque côté.':'Effectif minimum : 37 professionnels après départ, deux joueurs par famille et deux piliers de chaque côté.'};
  }
  const loans=()=>[S.v78to81,...Object.values(S.nativeAcademy?.offices||{}).map(o=>o.v78to81)].flatMap(o=>o?.loans||[]).filter(l=>l.season===S.season);
- function quote(c,p,loanIds=new Set(loans().map(l=>l.id))){
+ function quote(c,p,loanIds=new Set(loans().map(l=>l.id)),budget=typeof budgetTransfertsContexte==='function'?budgetTransfertsContexte():null){
   const own=S.clubs[S.club],weeks=wageForecastWeeks(S),sourceSalary=p.salary,contractEnd=p.contractEnd;
   const fee=Math.max(20000,Math.ceil(sourceSalary*weeks*Math.max(1,contractEnd-S.season+1)/20000)*10000);
   const salary=Math.max(1000,Math.ceil(sourceSalary*1.05/100)*100);
@@ -34,6 +34,8 @@ function factory(){
   else if(own.cash<fee+400000)reason='Réserve de trésorerie de 400 000 € requise après indemnité';
   else if(salary>100000)reason='La demande salariale dépasse le plafond de 100 000 € par semaine';
   else if(own.cash-fee-400000<salary*Math.min(8,Math.max(0,weeks-week())))reason='Trésorerie insuffisante pour provisionner les huit prochaines semaines du nouveau salaire';
+  // Budget de transferts fixé par le conseil (budget-transferts.cjs) : l'indemnité entre dans l'enveloppe.
+  else if(budget&&typeof budgetTransfertsRefus==='function'&&budgetTransfertsRefus(fee,budget))reason=budgetTransfertsRefus(fee,budget);
   return {id:p.id,name:p.name,clubId:c.id,club:c.name,pos:p.pos,family:p.fam,age:p.age,contractEnd,sourceSalary,fee,salary,available:!reason,reason,releaseReason};
  }
  function project(){
@@ -41,8 +43,8 @@ function factory(){
   const base={available,releasePolicy:available?releasePolicy(S):null,context:available?context():null,candidates:[],notice:'Accord de libération anticipée. Indemnité intégralement versée au club vendeur ; salaire proposé +5 % (minimum 1 000 €/semaine), échéance conservée. La profondeur de libération dépend de l’univers et reste affichée ; deux joueurs de la famille et deux piliers de chaque côté sont conservés. Réserve de 400 000 € et provision des huit prochaines semaines du nouveau salaire ; aucune inscription réglementaire automatique.'};
   if(!available)return base;
   base.notice+=' '+base.releasePolicy.notice;
-  const loanIds=new Set(loans().map(l=>l.id));
-  base.candidates=S.clubs.filter(c=>c.id!==S.club).flatMap(c=>c.players.map(p=>quote(c,p,loanIds))).sort((a,b)=>a.clubId-b.clubId||a.contractEnd-b.contractEnd||a.name.localeCompare(b.name));
+  const loanIds=new Set(loans().map(l=>l.id)),budget=typeof budgetTransfertsContexte==='function'?budgetTransfertsContexte():null;
+  base.candidates=S.clubs.filter(c=>c.id!==S.club).flatMap(c=>c.players.map(p=>quote(c,p,loanIds,budget))).sort((a,b)=>a.clubId-b.clubId||a.contractEnd-b.contractEnd||a.name.localeCompare(b.name));
   return base;
  }
  // Quota de championnat (JIFF, EQP) : un club dont la moyenne est menacée enchérit davantage pour un joueur qui compte
@@ -66,7 +68,7 @@ function factory(){
   const q=quote(seller,player);check(!q.releaseReason,q.releaseReason);
   const sellerResponse={accepted:p.fee>=q.fee,counter:q.fee,reason:p.fee>=q.fee?'Le vendeur accepte cette indemnité.':'Le vendeur demande au moins '+money(q.fee)+'.'};
   const playerResponse={accepted:p.salary>=q.salary,counter:q.salary,reason:p.salary>=q.salary?'Le joueur accepte ce salaire.':'Le joueur demande au moins '+money(q.salary)+' par semaine.'};
-  const a2r=typeof a2rRefusRecrue==='function'?a2rRefusRecrue(p.salary):'',offers=[],humanReady=!a2r&&sellerResponse.accepted&&playerResponse.accepted&&affordable(S.clubs[S.club],p.fee,p.salary);
+  const a2r=typeof a2rRefusRecrue==='function'?a2rRefusRecrue(p.salary):'',horsBudget=typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(p.fee):null,offers=[],humanReady=!a2r&&!horsBudget&&sellerResponse.accepted&&playerResponse.accepted&&affordable(S.clubs[S.club],p.fee,p.salary);
   if(humanReady)offers.push({clubId:S.club,club:S.clubs[S.club].name,fee:p.fee,salary:p.salary,need:publicNeed(S.clubs[S.club],player),human:true});
   for(const c of S.clubs){
    if(c.id===S.club||c.id===seller.id)continue;
@@ -77,7 +79,7 @@ function factory(){
    offers.push({clubId:c.id,club:c.name,fee,salary,need,human:false});
   }
   offers.sort((a,b)=>b.salary-a.salary||b.fee-a.fee||b.need-a.need||a.clubId-b.clubId);
-  return {playerId:player.id,sellerId:seller.id,context:now,seller:sellerResponse,player:playerResponse,humanReady,humanReason:humanReady?'Offre recevable.':a2r?a2r:q.salary>100000?'La demande du joueur dépasse le plafond salarial de 100 000 € ; aucun accord possible.':!affordable(S.clubs[S.club],p.fee,p.salary)?'Effectif ou provision financière insuffisants.':'Indemnité ou salaire refusé.',offers,winner:offers[0]||null,notice:'Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation.'};
+  return {playerId:player.id,sellerId:seller.id,context:now,seller:sellerResponse,player:playerResponse,humanReady,humanReason:humanReady?'Offre recevable.':a2r?a2r:horsBudget?horsBudget:q.salary>100000?'La demande du joueur dépasse le plafond salarial de 100 000 € ; aucun accord possible.':!affordable(S.clubs[S.club],p.fee,p.salary)?'Effectif ou provision financière insuffisants.':'Indemnité ou salaire refusé.',offers,winner:offers[0]||null,notice:'Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation.'};
  }
  function auction(p){
   check(shape(p,['playerId','sellerId','fee','salary','sourceSalary','contractEnd','context','expectedWinner','expectedFee','expectedSalary','confirmed'])&&p.confirmed===true&&integer(p.expectedWinner,0,S.clubs.length-1)&&integer(p.expectedFee,20000,1000000000)&&integer(p.expectedSalary,1000,100000),'clôture invalide');
@@ -86,10 +88,10 @@ function factory(){
   const seller=S.clubs[p.sellerId],buyer=S.clubs[win.clubId],player=seller.players.find(q=>q.id===p.playerId);
   seller.players=seller.players.filter(q=>q.id!==player.id);buyer.players.push(player);seller.cash+=win.fee;
   const avant=buyer.cash;
-  if(buyer.id===S.club)ledgerEntry('Libération anticipée négociée : '+player.name,-win.fee);else buyer.cash-=win.fee;
+  if(buyer.id===S.club){ledgerEntry('Libération anticipée négociée : '+player.name,-win.fee);if(typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(win.fee);}else buyer.cash-=win.fee;
   player.salary=win.salary;player.joinedSeason=S.season;player.joinedRound=S.round;
   delete S.economy.listings[player.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==player.id);S.market=S.market.filter(x=>x.id!==player.id);S.economy.freeAgents=S.economy.freeAgents.filter(x=>x.id!==player.id);
-  if(buyer.id===S.club&&typeof repriseApresAchat==='function')repriseApresAchat(buyer,avant);
+  if(buyer.id===S.club&&typeof repriseApresAchat==='function'&&!(typeof budgetTransfertsExempte==='function'&&budgetTransfertsExempte()))repriseApresAchat(buyer,avant);
   transferEvent(player.name+' rejoint '+buyer.name+' après concurrence entre '+result.offers.length+' club(s), pour '+money(win.fee)+'.');
   return {interclubTransfer:{playerId:player.id,sellerId:seller.id,buyerId:buyer.id,fee:win.fee,salary:win.salary,contractEnd:player.contractEnd,competingClubs:result.offers.length,humanWon:buyer.id===S.club}};
  }
@@ -103,14 +105,15 @@ function factory(){
   check(player&&!buyer.players.some(q=>q.id===p.playerId),'joueur indisponible');
   const q=quote(seller,player);check(q.available,q.reason);check(player.salary===p.sourceSalary&&player.contractEnd===p.contractEnd,'contrat source modifié');
   check(p.fee>=q.fee,'le vendeur refuse cette indemnité');check(p.salary>=q.salary,'le joueur refuse ce salaire');
-  check(buyer.cash-p.fee>=400000,'réserve financière insuffisante');check(buyer.cash-p.fee-400000>=p.salary*Math.min(8,Math.max(0,wageForecastWeeks(S)-week())),'provision salariale insuffisante');
+  check(buyer.cash-p.fee>=400000,'réserve financière insuffisante');
+  const horsBudget=typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(p.fee):null;if(horsBudget)throw Error(horsBudget);check(buyer.cash-p.fee-400000>=p.salary*Math.min(8,Math.max(0,wageForecastWeeks(S)-week())),'provision salariale insuffisante');
   // All checks precede writes. The worker owns disk commit and rollback.
   seller.players=seller.players.filter(x=>x.id!==player.id);buyer.players.push(player);seller.cash+=p.fee;
-  const avant=buyer.cash;ledgerEntry('Libération anticipée : '+player.name,-p.fee);
+  const avant=buyer.cash;ledgerEntry('Libération anticipée : '+player.name,-p.fee);if(typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(p.fee);
   player.salary=p.salary;player.joinedSeason=S.season;player.joinedRound=S.round;
   delete S.economy.listings[player.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==player.id);
   S.market=S.market.filter(x=>x.id!==player.id);S.economy.freeAgents=S.economy.freeAgents.filter(x=>x.id!==player.id);
-  if(typeof repriseApresAchat==='function')repriseApresAchat(buyer,avant);
+  if(typeof repriseApresAchat==='function'&&!(typeof budgetTransfertsExempte==='function'&&budgetTransfertsExempte()))repriseApresAchat(buyer,avant);
   transferEvent(player.name+' rejoint '+buyer.name+' depuis '+seller.name+' : accord de '+money(p.fee)+', fin de contrat '+(typeof libelleSaison==='function'?libelleSaison:String)(player.contractEnd)+'.');
   return {interclubTransfer:{playerId:player.id,sellerId:seller.id,buyerId:buyer.id,fee:p.fee,salary:player.salary,contractEnd:player.contractEnd}};
  }

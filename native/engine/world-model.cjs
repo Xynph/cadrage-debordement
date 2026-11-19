@@ -108,6 +108,20 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
  }
  const startingCount=R=>R.clubs.reduce((count,club)=>count+Math.max(nativeProfessionalDepth.minimum,club.players.length),0);
  const database=R=>({id:R.id,version:R.version,snapshot:R.snapshot,playerCount:R.playerCount,startingPlayerCount:startingCount(R),clubCount:R.clubCount});
+ // Zones de classement (world-standings-zones.json, injecté par world-vm.cjs) : qualifiés, barrages, relégation.
+ // Rang dans la poule pour les coupes. Les zones de la compétition restent publiées avant la 1re journée (elles
+ // décrivent l'enjeu) ; projection seulement, rien n'entre dans la sauvegarde.
+ const zoneData=()=>typeof CDWorldStandingsZones==='undefined'?null:CDWorldStandingsZones;
+ function withZones(league){
+  const data=zoneData(),table=data?.competitions[league.id]||null;
+  league.zones=table?table.zones.map(z=>({from:z.from,to:z.to,kind:z.kind,label:z.label,symbol:data.symbols[z.kind]})):[];
+  league.zoneNote=table?.note??null;league.zoneShortNote=table?.shortNote??null;league.zoneScope=table?.scope??null;
+  for(const row of league.rows){
+   const rank=Number(row.rank),zone=Number.isInteger(rank)&&rank>0?league.zones.find(z=>rank>=z.from&&rank<=z.to):null;
+   row.zone=zone?{kind:zone.kind,label:zone.label,symbol:zone.symbol}:null;
+  }
+  return league;
+ }
  return function project(){
   const m=base(),old=CDWorldEditions.forMode('world').registry,pacific=CDWorldEditions.forMode('world-pacific')?.registry,japan=CDWorldEditions.forMode('world-japan')?.registry,nationale=CDWorldEditions.forMode('world-nationale')?.registry,champ=CDWorldEditions.forMode('world-champ')?.registry;
   m.meta.legacyCatalogue=m.meta.catalogue;m.meta.legacyDatabase={...m.meta.database,startingPlayerCount:startingCount(CDCommonRosters)};m.meta.worldDatabase=database(old);
@@ -136,6 +150,7 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   if(edition.version>=3){m.meta.competitionRules+=' · Japon D1/D2 '+years.join('-');m.japanPromotion=copy(S.worldMode.japan);CDWorldJapanQuota.project(S,m);}
   m.leagues=edition.leagueIds.map(id=>{const l=S.worldMode.leagues[id];return{id,name:R.leagues.find(x=>x.id===id).name,phase:l.phase,champion:l.champion===null?null:clubSummary(l.champion),finalist:l.finalist===null?null:clubSummary(l.finalist),rows:tables[id].map(tableRow)};});
   for(const [id,cup]of Object.entries(S.worldMode.europe)){const pools=W.cupTables(S,id).map((rows,i)=>({id:i,label:'Poule '+(i+1),rows:rows.map(r=>({...tableRow({...r,id:r.clubId,form:r.form.map(x=>({W:'V',L:'D',D:'N'})[x])}),rank:r.rank,poolId:i}))}));m.leagues.push({id,name:id==='champions'?'Coupe des champions':'Challenge européen',phase:cup.phase,champion:cup.champion===null?null:clubSummary(cup.champion),finalist:cup.finalist===null?null:clubSummary(cup.finalist),pools,rows:pools.flatMap(p=>p.rows),seeds:cup.seeds||[],transfers:cup.transfers||[]});}
+  m.leagues.forEach(withZones);
   const venue=f=>publishedVenue(f,S.season)??(f.venuePolicy==='centralised-super-round'?'Super Round · terrain commun':f.venueRegion==='Europe'?'Terrain désigné en Europe':f.venueDesignationPending||f.neutral?'Terrain désigné':S.clubs[f.homeId].stadium);
   m.calendar=S.worldMode.fixtures.filter(f=>f.homeId===S.club||f.awayId===S.club).map(f=>{const r=confirmedResult?.worldContext.id===f.id?confirmedResult:S.history.find(r=>r.fixtureId===f.id);return{id:f.id,label:(R.leagues.find(l=>l.id===f.competitionId)?.name||names[f.competitionId]||f.competitionId)+' · '+(f.phase==='league'||f.phase==='pool'?'J'+(f.round+1):f.phase==='promotion'?'Manche '+f.leg:phaseLabels[f.phase]||(f.competitionId==='champ'?champPhases[f.phase]:null)||f.phase),week:f.week,date:f.date,home:clubSummary(f.homeId),away:clubSummary(f.awayId),score:r?.score||null,played:!!r,phase:f.phase,leagueId:f.competitionId,competitionId:f.competitionId,neutral:f.neutral,competitionRound:f.round,venue:venue(f),winner:r?.winner??null,...dateProof(f)};}).sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
   // Derby : rivalité (tension >= seuil du moteur) entre les deux clubs de la rencontre ; champ absent sinon (jamais pour un match ordinaire).

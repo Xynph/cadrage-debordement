@@ -15,6 +15,7 @@ const World = preload("res://ui/immersive08/world_archive.gd")
 const Link = preload("res://ui/entity_link.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const EquipeType = preload("res://ui/equipe_type_view.gd")
+const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const WIDTH := 2248
 const LEFT := 1310
 const RIGHT := 922
@@ -323,20 +324,37 @@ func _standings() -> void:
 	body.name = "StandingsRows"
 	panel.add_child(body)
 	var body_y := table_y + 44
-	D.place(body, Rect2(1, body_y, LEFT - 2, 683-body_y))
+	# Pied du tableau Monde : légende des zones, note du règlement, champion ; une ligne chacun, sans chevauchement.
+	var zones: Array = league.get("zones", []) if international and league.get("zones") is Array else []
+	var zone_note := str(league.get("zoneNote", "")) if international and league.get("zoneNote") is String else ""
+	var footer_lines := 0
+	# Interligne du pied : 24 unités, au moins 14 px réels (la police ne descend jamais sous 12 px).
+	var footer_line := maxi(24, ceili(14.0 / C.density))
+	if international: footer_lines = int(not zones.is_empty()) + int(not zone_note.is_empty()) + int(league.get("champion") is Dictionary)
+	var rows_bottom := 683 if footer_lines <= 1 else 728 - 8 - footer_line * footer_lines
+	D.place(body, Rect2(1, body_y, LEFT - 2, rows_bottom-body_y))
 	var stride := 41 if rows.size() <= 14 else 33 if international else 36
 	# Un classement de 16 clubs ou moins tient sur une seule page : on resserre les lignes plutôt que de paginer.
-	if international and not rows.is_empty() and rows.size() <= 16: stride = mini(stride, maxi(33, floori(float(683-body_y)/rows.size())))
-	var capacity := maxi(1,mini(16,floori(float(683-body_y)/stride))) if international else 16
+	if international and not rows.is_empty() and rows.size() <= 16: stride = mini(stride, maxi(30, floori(float(rows_bottom-body_y)/rows.size())))
+	var capacity := maxi(1,mini(16,floori(float(rows_bottom-body_y)/stride))) if international else 16
 	var bounds := _pager(panel, "StandingsPagination", page_key, rows.size(), capacity, 685, 832)
 	for i in range(bounds.x, bounds.y):
 		_standings_row(body, rows[i], i - bounds.x, stride)
 	if rows.is_empty(): D.text(body, 25, 65, "Aucun classement renseigné pour cette division.", 29, C.MUTED, 500, LEFT - 50)
 	if not international: _division_choices(panel, 12, 686)
+	var footer_y := (rows_bottom + footer_line) if footer_lines > 1 else 711
+	if not zones.is_empty():
+		_zone_legend(panel, zones, 23, footer_y)
+		footer_y += footer_line
+	if not zone_note.is_empty():
+		var note := D.text(panel, 23, footer_y, zone_note, 19, C.MUTED, 500, LEFT - 46)
+		note.name = "StandingsZoneNote"
+		footer_y += footer_line
 	if league.get("champion") is Dictionary:
 		var name_text := "Champion : " + G.club_name(league.champion)
 		if league.get("finalist") is Dictionary: name_text += "   ·   Finaliste : " + G.club_name(league.finalist)
-		D.text(panel, 23 if international else 792, 711, name_text, 21, WARM, 600, 785 if international else 400, HORIZONTAL_ALIGNMENT_LEFT if international else HORIZONTAL_ALIGNMENT_RIGHT)
+		var champion := D.text(panel, 23 if international else 792, footer_y if international else 711, name_text, 21, WARM, 600, LEFT - 46 if international else 400, HORIZONTAL_ALIGNMENT_LEFT if international else HORIZONTAL_ALIGNMENT_RIGHT)
+		champion.name = "StandingsChampion"
 	elif not international and rows.size() <= capacity:
 		var label := "Vert : 1–6, phase finale" if rows.size() >= 6 else ""
 		if league.id == "elite" and rows.size() == 14 and str(app.model.meta.get("mode")) != "fictional14":
@@ -369,22 +387,35 @@ func _standings_row(parent: Node, club: Dictionary, index: int, stride: int) -> 
 	var rank := int(club.get("rank", 0)) if P.standings_open(club) else 0
 	var france: bool = str(app.model.meta.get("mode")) in ["common", "france30"]
 	var zone := Color.TRANSPARENT
-	# Les tableaux Monde exposent leurs rangs sans déduire des qualifications de coupe.
-	if not international:
+	# Monde : zone publiée par le moteur pour ce rang (règlement de la compétition), seulement une fois le classement ouvert.
+	var zone_info: Dictionary = club.zone if international and rank > 0 and club.get("zone") is Dictionary else {}
+	if international: zone = Zones.TINTS.get(str(zone_info.get("kind", "")), Color.TRANSPARENT)
+	else:
 		zone = WIN if rank > 0 and rank <= 6 else WARM if france and league.id == "elite" and rank == 13 else LOSS if france and league.id == "elite" and rank == 14 else Color.TRANSPARENT
 	var base := Color("111c1e") if index % 2 == 0 else Color("0e1719")
 	var fill := Color("0e5234") if mine else base.lerp(zone, .12) if zone.a > 0 else base
 	var row := Button.new()
 	row.name = "StandingsRow_" + str(club.id)
 	row.set_meta("club_id", club.id)
-	row.accessibility_name = G.club_name(club) + (" · " + S.count_text(club.get("rank")) + " au classement" if P.standings_open(club) else " · pas encore classé")
+	var standing := (" · " + S.count_text(club.get("rank")) + " au classement" if P.standings_open(club) else " · pas encore classé")
+	if not zone_info.is_empty():
+		standing += " · " + str(zone_info.get("label", ""))
+		row.set_meta("zone_kind", str(zone_info.get("kind", "")))
+		row.set_meta("zone_label", str(zone_info.get("label", "")))
 	row.add_theme_stylebox_override("normal", C.box(fill, Color.TRANSPARENT, 1, 0))
 	row.add_theme_stylebox_override("hover", C.box(Color("234538"), WIN, 3, 0))
 	row.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, WARM, 3, 0))
 	Link.bind(row, app, {"kind":"club", "id":str(club.id)}, "Ouvrir le club · " + G.club_name(club))
+	# Après le lien (qui pose « Ouvrir · … ») : la place et la zone restent annoncées.
+	row.accessibility_name += standing
 	parent.add_child(row)
 	D.place(row, Rect2(0, index * stride, LEFT - 2, stride))
-	if zone.a > 0: D.rect(row, Rect2(4, 1, 4, stride - 2), zone)
+	if zone.a > 0:
+		var edge := D.rect(row, Rect2(4, 1, 4, stride - 2), zone)
+		edge.name = "StandingsZoneEdge"
+	if not zone_info.is_empty():
+		var side := Zones.mark_side()
+		Zones.mark(row,str(zone_info.get("kind", "")), Rect2(25 - side, (stride - side) / 2.0, side, side), zone)
 	D.line(row, Vector2(9, stride - 1), Vector2(LEFT - 12, stride - 1), Color(C.LINE, .70))
 	var emblem := mini(34,stride-3)
 	_crest(row, club, Rect2(87, (stride - emblem) / 2.0, emblem, emblem))
@@ -1118,6 +1149,78 @@ static func _result_legend(parent: Node, x: float, y: float) -> void:
 		var code: String = ["V", "N", "D"][i]
 		_result_badge(parent, Rect2(x + i * 163, y, 25, 27), code)
 		D.text(parent, x + 34 + i * 163, y + 20, S.RESULTS[code].label, 21, C.IVORY, 500, 120)
+
+## Légende des zones Monde, toujours visible sous le tableau : forme + rangs + mot (« ★ 1–2 Demi-finale directe · … »).
+## Les symboles sont dessinés (aucune fonte du jeu n'a ★●▲◆▼○) ; le texte lu porte le symbole Unicode du moteur.
+static func _zone_legend(parent: Node, zones: Array, x: float, baseline: float) -> Control:
+	var group := Control.new()
+	group.name = "StandingsZoneLegend"
+	group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(group)
+	D.place(group, Rect2(x, baseline - 20, LEFT - 2 * x, 26))
+	var spoken: Array[String] = []
+	var cursor := 0.0
+	for i in zones.size():
+		var zone: Dictionary = zones[i]
+		var kind := str(zone.get("kind", ""))
+		var span := str(int(zone.get("from", 0))) if int(zone.get("from", 0)) == int(zone.get("to", 0)) else "%d–%d" % [int(zone.get("from", 0)), int(zone.get("to", 0))]
+		var caption := span + " " + str(zone.get("label", ""))
+		spoken.append(str(zone.get("symbol", "")) + " " + caption)
+		if i > 0:
+			D.text(group, cursor + 12, 20, "·", 19, C.MUTED, 600, 24, HORIZONTAL_ALIGNMENT_CENTER)
+			cursor += 24
+		var side := Zones.mark_side()
+		var mark := Zones.mark(group, kind, Rect2(cursor, 21 - side, side, side), Zones.tint(kind))
+		mark.name = "StandingsZoneLegendMark_" + kind
+		var label := D.text(group, cursor + side + 6, 20, caption, 19, C.IVORY, 600)
+		label.name = "StandingsZoneLegendItem_%d" % i
+		label.set_meta("zone_kind", kind)
+		cursor += side + 6 + label.size.x / C.density + 8
+	group.set_meta("legend_text", " · ".join(spoken))
+	group.accessibility_name = "Zones du classement : " + " · ".join(spoken)
+	group.tooltip_text = group.accessibility_name
+	return group
+
+## Côté d'un symbole de zone (unités du gabarit) : 9 px réels au moins, sans empiéter sur le rang.
+static func _mark_side() -> float:
+	return clampf(8.0 / C.density, 14.0, 16.0)
+
+## Symbole de zone dessiné : ★ exempté du 1er tour, ● qualifié, ▲ barrage de montée, ◆ barrage de maintien,
+## ▼ relégation, ○ repêchage possible. Formes distinctes : la zone se lit aussi en niveaux de gris.
+static func _zone_mark(parent: Node, kind: String, area: Rect2, color: Color) -> Control:
+	var holder := Control.new()
+	holder.name = "StandingsZoneMark"
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.set_meta("zone_kind", kind)
+	parent.add_child(holder)
+	D.place(holder, area)
+	var side := maxf(4.0, area.size.x * C.density)
+	var points := PackedVector2Array()
+	match kind:
+		"bye":
+			for k in 10:
+				var radius := 0.52 if k % 2 == 0 else 0.25
+				var angle := -PI / 2 + k * PI / 5
+				points.append(Vector2(0.5 + radius * cos(angle), 0.53 + radius * sin(angle)))
+		"promotion-playoff": points = PackedVector2Array([Vector2(0.5, 0.06), Vector2(0.96, 0.9), Vector2(0.04, 0.9)])
+		"relegation-playoff": points = PackedVector2Array([Vector2(0.5, 0), Vector2(1, 0.5), Vector2(0.5, 1), Vector2(0, 0.5)])
+		"relegation": points = PackedVector2Array([Vector2(0.04, 0.1), Vector2(0.96, 0.1), Vector2(0.5, 0.94)])
+		_:
+			for k in 20: points.append(Vector2(0.5 + 0.44 * cos(k * TAU / 20), 0.5 + 0.44 * sin(k * TAU / 20)))
+	for k in points.size(): points[k] *= side
+	if kind == "repechage":
+		var ring := Line2D.new()
+		ring.points = points
+		ring.closed = true
+		ring.width = maxf(1.5, side * 0.16)
+		ring.default_color = color
+		holder.add_child(ring)
+	else:
+		var shape := Polygon2D.new()
+		shape.polygon = points
+		shape.color = color
+		holder.add_child(shape)
+	return holder
 
 static func _recent_form(parent: Node, values: Variant, x: float, y: float) -> void:
 	var group := Control.new()

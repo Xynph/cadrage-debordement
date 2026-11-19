@@ -183,8 +183,12 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	match_sounds.toggled.connect(func(value: bool):
 		if sound_profile != null: sound_profile.set_value("match_sounds",value)
 		refresh.call())
-	var reset := G.button("Réinitialiser ces préférences",func(): profile.reset_defaults(); refresh.call())
-	reset.name = "PreferencesReset"; comfort.add_child(reset)
+	# Dans le pied, à côté de FERMER : la réinitialisation vaut pour tous les onglets et reste visible quand
+	# l'onglet Confort s'allonge en carrière (vitesse du monde, conférences ordinaires).
+	var reset := dialog.add_button("Réinitialiser ces préférences")
+	reset.name = "PreferencesReset"
+	reset.custom_minimum_size.y = dialog.get_ok_button().custom_minimum_size.y
+	reset.pressed.connect(func(): profile.reset_defaults(); refresh.call())
 	display.add_child(C.wrap("Le mode de fenêtre s’applique à cette session.",18,C.IVORY))
 	var display_row := G.h(8); display.add_child(display_row)
 	var fullscreen := G.button("Plein écran",app._set_display_mode.bind(Window.MODE_FULLSCREEN),true)

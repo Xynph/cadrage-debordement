@@ -135,7 +135,8 @@ function pretRepondre(choix){
   if(pretVenteRefus())return false;
   const j=club().players.find(x=>x.id===p.vente.joueur),acheteur=pretAcheteur(j,p.vente.prix),id='pret-'+S.season+'-'+j.id;
   S.economy.offers.push({id,playerId:j.id,buyer:acheteur.id,fee:p.vente.prix,expires:S.economy.week});
-  if(acceptSale(id)!==true)return false;
+  // Vente imposée pour rembourser le prêt : rien ne revient au budget de transferts (budget-transferts.cjs).
+  if((typeof budgetTransfertsImposee==='function'?budgetTransfertsImposee(()=>acceptSale(id)):acceptSale(id))!==true)return false;
   const rembourse=Math.min(p.restant,p.vente.prix);
   ledgerEntryV1('Remboursement anticipé du prêt de l’actionnaire',-rembourse);pretRembourser(S.club,rembourse,true);
  }

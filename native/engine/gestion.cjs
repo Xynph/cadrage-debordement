@@ -107,14 +107,20 @@ module.exports=function nativeGestion(command,p){
   requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||professionalPlaces()>0,'Effectif complet.');
   // Contrôle de gestion (a2r.cjs) : une recrue que l'A2R n'homologue pas n'est même pas proposée.
   const a2r=kind==='recruit'&&typeof a2rRefusRecrue==='function'?a2rRefusRecrue(p.salary):'';requireThat(!a2r,a2r);
+  // Budget de transferts (budget-transferts.cjs) : la prime d'une recrue entre dans l'enveloppe ; une prolongation, jamais.
+  const horsBudget=kind==='recruit'&&typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(contractFee(target,kind)):null;requireThat(!horsBudget,horsBudget);
   const avant=club().cash;
   requireThat(negotiateContract(p.playerId,kind,p.salary,p.years),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');
-  // Le président reprend la main si l'achat fait passer la trésorerie sous la réserve (president-reprise.cjs).
-  if(kind==='recruit'&&talk.status==='signed'&&typeof repriseApresAchat==='function')repriseApresAchat(club(),avant);
+  if(kind==='recruit'&&talk.status==='signed'&&typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(talk.fee);
+  // Le président reprend la main si l'achat fait passer la trésorerie sous la réserve (president-reprise.cjs),
+  // sauf pour un achat dans l'enveloppe de transferts fixée par le conseil.
+  if(kind==='recruit'&&talk.status==='signed'&&typeof repriseApresAchat==='function'&&!(typeof budgetTransfertsExempte==='function'&&budgetTransfertsExempte()))repriseApresAchat(club(),avant);
   return {negotiation:{playerId:p.playerId,status:talk.status,message:talk.status==='signed'?'Contrat signé.':talk.message,fee:talk.fee,salary:talk.acceptedSalary,years:talk.years}};
  }
+ // Rallonge demandée au conseil (budget-transferts.cjs, R3 bis) : {amount, confirmed:true} ; réponse dans meta.transferBudgetExtension.
+ if(command==='transfer_budget_extension'){requireThat(typeof budgetTransfertsRallonge==='function','Budget de transferts indisponible.');return {transferBudgetExtension:budgetTransfertsRallonge(p)};}
  if(command==='next_season'){requireThat(p.confirmed===true&&S.phase==='ended'&&!S.live,'Confirme le passage à la saison suivante après la fin des compétitions.');advanceSeason();return;}
  if(command==='substitute'){
   const l=S.live;requireThat(l&&l.paused&&!l.finished&&!presentationPending(l),'Remplacement indisponible : mets le match en pause.');
