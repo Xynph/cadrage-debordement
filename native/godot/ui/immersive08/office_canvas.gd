@@ -251,35 +251,42 @@ static func _group(card: Panel, app: Control, w: int = 422) -> void:
 	D.bar(card,Rect2(24,255,right-24,8),trust,C.GOLD)
 	D.text(card,24,299,"Moral du vestiaire",22,C.MUTED,500,255)
 	D.text(card,right,299,"%d / 100" % float(app.model.meta.get("morale",0)),25,C.MINT,600,120,HORIZONTAL_ALIGNMENT_RIGHT)
-	D.line(card,Vector2(22,321),Vector2(w-22,321))
+	D.line(card,Vector2(22,313),Vector2(w-22,313))
 	# Même source que l'alerte de fatigue de Gabi (selection.fatigue) : jamais « Aucune alerte » quand des titulaires
-	# du prochain match sont sous le seuil de condition.
+	# du prochain match sont sous le seuil de condition. Les deux alertes (surveillés, fatigue) restent visibles
+	# ensemble : bouton des surveillés, ligne cliquable des titulaires fatigués, puis l'exemple d'un joueur surveillé.
 	var fatigue := Avis.fatigue_resume(app.model)
 	var titulaires := int(fatigue.count)
 	var texte_fatigue := "%d titulaire%s du prochain match sous %d %%" % [titulaires, "s" if titulaires > 1 else "", int(fatigue.seuil)]
-	if titulaires > 0 and group.watched <= 0:
-		var feuille := D.button(card,Rect2(25,337,w-50,36),texte_fatigue,func(): app._navigate("Composition"),false,"arrow",true,app.accent,"OfficeFatigueAction")
-		feuille.add_theme_color_override("font_color", C.AMBER)
-		feuille.tooltip_text = "Ouvrir la composition : Gabi propose les changements."
-	elif group.watched > 0:
-		var action := D.button(card,Rect2(25,337,w-50,36),U.watch_caption(group.watched),app.navigation_controller.open_watched_roster,false,"arrow",true,app.accent,"OfficeWatchedAction")
+	var y_fatigue := 337
+	if group.watched > 0:
+		var action := D.button(card,Rect2(25,322,w-50,36),U.watch_caption(group.watched),app.navigation_controller.open_watched_roster,false,"arrow",true,app.accent,"OfficeWatchedAction")
 		action.add_theme_color_override("font_color", C.AMBER)
-		var shown_player := false
+		y_fatigue = 382
+	if titulaires > 0:
+		_fatigue_line(card, app, y_fatigue, w-50, texte_fatigue)
+	if group.watched > 0:
 		for player: Dictionary in app.model.get("squad", []):
 			var reason := U.watch_reason(player)
 			if reason.is_empty(): continue
-			var example := D.text(card,25,399,str(player.name)+" · "+reason,21,C.MUTED,500,w-52)
+			var example := D.text(card,25,403,str(player.name)+" · "+reason,21,C.MUTED,500,w-52)
 			example.tooltip_text = example.text
 			_label_reading(app,card,example,{"kind":"player","id":str(player.id)},"OfficeWatchedPlayer_"+str(player.id).validate_node_name(),str(player.name))
-			shown_player = true
 			break
-		if not shown_player and titulaires > 0:
-			var ligne := D.text(card,25,399,texte_fatigue,21,C.AMBER,500,w-52)
-			ligne.name = "OfficeFatigueLine"
-	else:
+	elif titulaires <= 0:
 		D.text(card,25,366,"Aucune alerte physique",22,C.MINT,600,w-52).name = "OfficeNoAlert"
 	D.button(card,Rect2(25,412,w-50,27),"Consulter le groupe",app.navigation_controller.open_roster_group,false,"arrow",true,app.accent,"OfficeSquadAction")
 
+## Ligne d'alerte « titulaires sous le seuil » : texte ambre sans cadre, cliquable (ouvre la composition).
+static func _fatigue_line(card: Panel, app: Control, baseline: float, width: float, caption: String) -> void:
+	var line := D.text(card,25,baseline,caption + "  →",20,C.AMBER,600,width)
+	line.name = "OfficeFatigueAction"
+	line.mouse_filter = Control.MOUSE_FILTER_STOP
+	line.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	line.tooltip_text = "Ouvrir la composition : Gabi propose les changements."
+	line.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			app._navigate("Composition"))
 static func _standings(card: Panel, app: Control, w: int = 684) -> void:
 	# Colonnes calées sur le bord droit : la largeur du club s'adapte au bloc.
 	var played_x := w - 223

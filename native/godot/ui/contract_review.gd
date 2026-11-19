@@ -3,6 +3,7 @@ extends VBoxContainer
 const C = preload("res://ui/immersive08/components.gd")
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
+const Sales = preload("res://ui/player_sales_view.gd")
 const STATUS_OPTIONS := ["Tous","Prolongation accessible","Discussion en cours","Échanges clos","Sans contrat renseigné"]
 var app: Control
 var state: Dictionary
@@ -23,6 +24,10 @@ static func build(owner_app: Control) -> Control:
 
 static func action_id(prefix: String, player_id: String) -> String:
 	return prefix + "_" + player_id.sha256_text().substr(0, 16)
+
+## État de vente court pour la colonne Statut ("" : pas de vente en cours).
+static func sale_caption(player: Dictionary) -> String:
+	return Sales.short(player)
 
 static func projected_mark(player: Dictionary, key: String) -> String:
 	return G.potential_text(player) if key == "potential" else G.rating_text(player,true)
@@ -308,6 +313,15 @@ func _build() -> void:
 	var sidebar := _panel(columns)
 	sidebar.get_parent().size_flags_stretch_ratio = 1.0
 	sidebar.get_parent().custom_minimum_size.x = 440
+	# Marché des transferts (vente-joueurs.cjs) : joueurs proposés, offres reçues, ventes en attente.
+	var sales := Sales.sales(app.model)
+	if not sales.is_empty():
+		sidebar.add_child(_label("Marché des transferts", 24))
+		var summary := _label("%d joueur(s) proposé(s) · %d offre(s) reçue(s) · %d vente(s) en attente" % [(sales.get("listed", []) as Array).size(), (sales.get("offers", []) as Array).size(), (sales.get("pending", []) as Array).size()], 16, C.MUTED)
+		summary.name = "ContractReviewSalesSummary"
+		sidebar.add_child(summary)
+		sidebar.add_child(_label("Pour proposer un joueur, ouvre sa fiche (onglet Contrat) ou son panneau dans la vue d’ensemble.", 16, C.MUTED))
+		sidebar.add_child(_button(Sales.caption(app.model) + "  →", "ContractReviewOpenSales", func(): Sales.open(app)))
 	sidebar.add_child(_label("Échéances et postes à anticiper", 24))
 	sidebar.add_child(_label("Postes principaux · aucun départ annoncé. Clique un poste pour filtrer.", 16, C.MUTED))
 	var side_scroll := ScrollContainer.new()
@@ -489,7 +503,13 @@ func _row(player: Dictionary) -> void:
 	salary_cell.name = action_id("ContractSalary",str(player.id))
 	line.add_child(_reading_cell(salary_cell, player, "ContractSalaryLink", "contract"))
 	line.add_child(_cell(G.n(player.minutes) if player.get("minutes") != null else "—", 95, C.MUTED))
-	line.add_child(_cell(str(player.get("status", "—")), 110, C.MUTED, 16))
+	# Vente (vente-joueurs.cjs) : « En vente », « Offre reçue » ou « Départ prévu » remplace le statut ; détail en infobulle.
+	var sale_short := sale_caption(player)
+	var status_cell := _cell(sale_short if not sale_short.is_empty() else str(player.get("status", "—")), 110, C.GOLD if not sale_short.is_empty() else C.MUTED, 16)
+	if not sale_short.is_empty():
+		status_cell.name = action_id("ContractSale", str(player.id))
+		status_cell.tooltip_text = Sales.status(player)
+	line.add_child(status_cell)
 	line.add_child(_cell(renewal_reason(player, not app._live().is_empty()), 190, C.MUTED, 16))
 	var actions := HBoxContainer.new()
 	actions.custom_minimum_size.x = 276

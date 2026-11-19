@@ -107,6 +107,24 @@ test('Clés de Gabi : une phrase et trois clés, sans doublon', () => {
   for (const c of am.gabi.cles) { assert.ok(c.titre.length > 0 && c.titre.length <= 40, c.titre); assert.ok(c.detail.length <= 60, c.detail); }
 });
 
+// Régression (19/11/2026) : la clé « Pas de relâchement » n'apparaît que si l'effectif fait de nous de gros favoris ; la
+// suite ci-dessus ne la voyait donc que selon l'effectif du club et sa phrase (69 signes) dépassait la ligne de 60.
+// On impose ici l'écart de niveau (rating de l'adversaire à 40, du nôtre à 90) au lieu de le laisser au hasard de l'effectif.
+test('Clés de Gabi : « Pas de relâchement » (gros favori) tient sur une ligne, quel que soit l’effectif', () => {
+  const sauve = run(`(()=>{const f=CDWorldCareer.userFixture(S),eux=f.homeId===S.club?f.awayId:f.homeId,r=[];
+    S.clubs[S.club].players.forEach(p=>{r.push([p,p.rating]);p.rating=90;});S.clubs[eux].players.forEach(p=>{r.push([p,p.rating]);p.rating=40;});
+    globalThis.__ratingsTri=r;return true;})()`);
+  try {
+    const cles = jeu.call('snapshot').clubLife.avantMatch.gabi.cles;
+    const relachement = cles.find(c => c.titre === 'Pas de relâchement');
+    assert.ok(relachement, 'gros favori : la clé est annoncée ' + JSON.stringify(cles));
+    assert.ok(relachement.detail.length <= 60, relachement.detail + ' (' + relachement.detail.length + ' signes)');
+  } finally {
+    run('globalThis.__ratingsTri.forEach(([p,v])=>{p.rating=v;});delete globalThis.__ratingsTri;');
+  }
+  assert.ok(sauve);
+});
+
 test('Lecture seule et déterministe : même projection, aucun aléa consommé', () => {
   const seed = jeu.bridge.vm.seed();
   const a = jeu.call('snapshot').clubLife.avantMatch, b = jeu.call('snapshot').clubLife.avantMatch;

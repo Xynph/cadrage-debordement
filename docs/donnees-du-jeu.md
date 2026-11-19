@@ -19,8 +19,10 @@ seulement, aucun nom ; sources et décisions dans le dépôt privé). Un poste c
 garde l'écart du joueur à la référence V12, transposé au poste confirmé, comme
 pour les postes officiels français. Une carrière commencée avant la correction ne
 se recharge plus si l'un de ses joueurs est concerné (carrières de test seulement,
-accord de Léo). Restent hors du fichier : 5 postes français (à porter dans la
-fondation d'effectif), 23 postes et 9 années incertains.
+accord de Léo). Les 5 postes français vérifiés (identifiants `lnr:`) sont portés
+dans la fondation d'effectif (246 postes officiels, source neutre `p3_01` :
+corrections vérifiées du 19/11/2026, dépôt privé) ; les anciennes carrières
+concernées ne se rechargent plus. Restent hors du fichier : 23 postes et 9 années incertains.
 
 ## Noms de la base — 11 novembre 2026
 

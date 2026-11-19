@@ -145,7 +145,7 @@ commande `set_consignes` mais reste réglable seulement match en pause, comme av
 | Ballon porté | Jamais / Selon / Souvent | essai sur ballon porté après touche près de la ligne − 0,08 / + 0,07 |
 | Mêlée | Sortir vite / Normale / Pousser | pousser : pénalités de mêlée × 1,5 penchant vers le pack dominant ; vite : × 0,65 et meilleure plateforme |
 | Coups d'envoi | Longs / Normaux / Courts | distance × 1,45 / × 0,6 ; ballon repris − 7 / + 12 points |
-| Point faible | Aucun / Leur aile / Presser l'ouvreur | aile : avance selon l'écart de plaquage de leur aile la plus faible ; ouvreur : leurs pertes + 0,014, nos fautes × 1,06 ; effet décroissant sur 30 minutes |
+| Point faible | Aucun / Leur aile / Presser l'ouvreur | aile (`AILE_FAIBLE`, 19/11) : avance + 0,015 par point de plaquage de retard de leur ailier le plus faible sur le reste de leurs trois-quarts au-delà de 2 (plafond 0,09) et + 5 m par temps de jeu réussi, réduits à 35 % en 30 minutes, moins un coût de jeu prévisible qui monte jusqu'à 0,015 (seul effet face à une aile solide) ; ouvreur : leurs pertes + 0,014, nos fautes × 1,06, effet nul après 30 minutes |
 
 Mesures (`tests/match-pilotage.cjs`, 100 matchs par réglage) : coups d'envoi repris 23 % (courts) / 13 % / 2 % (longs) ;
 pénalités de mêlée 2,5 → 3,9 en poussant ; essais sur ballon porté 0,16 / 0,48 / 0,75 par match.

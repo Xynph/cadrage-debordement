@@ -13,6 +13,7 @@ const Academy = preload("res://ui/immersive08/academy_canvas.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const Roster = preload("res://ui/immersive08/squad_canvas.gd")
 const NotesMatch = preload("res://ui/notes_match.gd")
+const Sales = preload("res://ui/player_sales_view.gd")
 
 class ConditionDial extends Control:
 	var condition := 0.0
@@ -175,6 +176,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 			_selection(D.panel(page,Rect2(1686,row2_y,562,row2_height),"SÉLECTION","flag","","PlayerSelectionNotes"),app,player)
 		3:
 			_contract(D.panel(page,Rect2(0,top,850,row2_height),"CONTRAT ET NÉGOCIATION","money"),app,player)
+			_sale(D.panel(page,Rect2(0,top+row2_height+16,850,row_height-row2_height-16),"MARCHÉ DES TRANSFERTS","money","","PlayerSalePanel"),app,player,850)
 			_health(D.panel(page,Rect2(866,top,562,row_height),"CHARGE INDIVIDUELLE","heart"),app,player,injury,recovering)
 			D.photo(page,"hospitality",Rect2(1444,top,804,row_height))
 		4:
@@ -428,11 +430,35 @@ static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	var reason := str(renewal.get("reason", ""))
 	D.text(card,24,113,G.salary(player.get("salary",0)),40,C.IVORY,700,515)
 	D.text(card,24,151,"Fin de contrat : " + G.contract_year(player.get("contractEnd")),27,C.MUTED,500,515)
-	D.text(card,24,183,"Contrat du joueur" if reason.is_empty() else reason,19,C.MUTED if reason.is_empty() else C.ALERT,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
+	# État de vente en version courte (« Départ prévu », « Offre reçue », « En vente ») : la phrase complète tient dans la
+	# carte Marché des transferts et dans l'info-bulle, pas dans les 515 unités de cette ligne.
+	var sale_status := Sales.status(player)
+	var sale_short := Sales.short(player)
+	var line := D.text(card,24,183,reason if not reason.is_empty() else sale_short if not sale_short.is_empty() else "Contrat du joueur",19,C.ALERT if not reason.is_empty() else C.GOLD if not sale_short.is_empty() else C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
+	if reason.is_empty() and not sale_status.is_empty(): line.tooltip_text = sale_status
 	var offer:=D.button(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"arrow",true,app.accent,"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason
 
+## Marché des transferts (vente-joueurs.cjs, `squad[].sale`) : état de vente, raison d'un blocage écrite en clair,
+## « Proposer aux autres clubs » / « Retirer du marché » (commande sale_list) et accès aux offres reçues.
+static func _sale(card:Panel,app:Control,player:Dictionary,width:float) -> void:
+	var sale: Dictionary = player.get("sale",{}) if player.get("sale") is Dictionary else {}
+	var pending: bool = sale.get("pending") is Dictionary
+	var listed := bool(sale.get("listed",false))
+	var blocked := str(sale.get("blocked",""))
+	var status := Sales.status(player)
+	if status.is_empty(): status = "Valeur estimée %s. Il n’est pas proposé aux autres clubs." % G.euros(sale.get("value",0))
+	D.text(card,24,94,status,28,C.GOLD if pending else C.IVORY,600,width-48).name = "PlayerSaleStatus"
+	if not blocked.is_empty() and not pending:
+		D.text(card,24,142,blocked,26,C.ALERT,500,width-48).name = "PlayerSaleReason"
+	var half := (width-60)/2.0
+	var toggle := D.button(card,Rect2(24,162,half,52),"Retirer du marché" if listed else "Proposer aux autres clubs",func(): Sales.toggle(app,player),not listed,"money",false,app.accent,"PlayerSaleToggle")
+	toggle.add_theme_font_size_override("font_size",maxi(14,C.px(28)))
+	toggle.disabled = pending or (not listed and not blocked.is_empty()) or not app._live().is_empty()
+	if toggle.disabled: toggle.tooltip_text = blocked if not blocked.is_empty() else status
+	var offers := D.button(card,Rect2(36+half,162,half,52),Sales.caption(app.model),func(): Sales.open(app),false,"arrow",false,app.accent,"PlayerSaleOffers")
+	offers.add_theme_font_size_override("font_size",maxi(14,C.px(28)))
 static func _development(card:Panel,app:Control,player:Dictionary) -> void:
 	var player_id := str(player.id)
 	var record := Academy.professional_progress(app, player_id)
