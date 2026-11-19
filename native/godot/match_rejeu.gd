@@ -33,7 +33,8 @@ const VISEE_LISSAGE := 0.12
 const MARGE := 1.0
 ## Angle du ralenti : retraits essayés (m en deçà du ballon), préférence pour l'angle par défaut (gêne
 ## ajoutée à l'autre côté ; un dixième par mètre de retrait en plus ou en moins). La gêne couvre toute
-## la fenêtre rejouée (AVANT s avant l'aplati) et pèse surtout l'aplati et l'image finale (voir
+## la fenêtre rejouée (AVANT s avant l'aplati : porteur masqué et premier plan compris depuis le
+## 19/11/2026) et pèse surtout l'aplati et l'image finale (voir
 ## `meilleur_angle`). Retrait négatif : caméra au-delà du ballon, dans l'en-but, qui regarde vers le
 ## terrain (essai au pied des poteaux : les montants restent derrière le marqueur). Retraits
 ## intermédiaires : un ballon à un mètre d'un montant est masqué sous presque tous les angles d'un
@@ -444,7 +445,17 @@ func _choisir_angle() -> void:
 ##  - VETO si le marqueur est masqué (Cadrage.masque_rejeu) à l'aplati ou sur l'image finale, plus
 ##    VETO fois la part des images masquées de CLE s avant l'aplati jusqu'à la fin ;
 ##  - PROCHE fois le pire premier plan (Cadrage.premier_plan_rejeu) de la dernière seconde ;
+##  - le reste de l'action (du début de la fenêtre jusqu'à CLE s avant l'aplati, ou jusqu'à la dernière
+##    seconde pour le premier plan) : ACTION_VETO fois la part des images où le marqueur est masqué,
+##    plus ACTION_PROCHE fois le premier plan moyen, le tout plafonné à ACTION_PLAFOND ;
 ##  - les préférences (autre côté, retrait différent).
+## 19 novembre 2026 : film mf3 (images 0041, 0152, 0198, 0320) : angle propre à l'aplati, mais au début
+## et au milieu du ralenti, la protection d'un poteau ou un défenseur en gros plan au bord de l'image
+## cachait le porteur ; ces images ne comptaient que dans la moyenne de gêne, trop faible face à la
+## préférence pour l'angle par défaut. L'action entière compte désormais, mais moins que l'aplati :
+## ACTION_PLAFOND reste sous VETO, un angle masqué à l'aplati perd toujours face à un angle propre à
+## l'aplati gêné plus tôt (à gênes de fin comparables). Un porteur masqué une image sur vingt ne coûte
+## que 0,2 : moins que la préférence d'angle, un défenseur qui croise la course ne fait pas changer.
 ## Aucun angle propre : le moins gêné reste retenu (la caméra au ras de la pelouse ne passe pas
 ## au-dessus d'un montant de 12 m : seuls le côté et le retrait changent la ligne de visée).
 const FIN := 0.6
@@ -453,6 +464,9 @@ const CLE := 0.2
 const VETO := 8.0
 const PROCHE := 4.0
 const PROCHE_FENETRE := 1.0
+const ACTION_VETO := 4.0
+const ACTION_PROCHE := 1.5
+const ACTION_PLAFOND := 6.0
 static func meilleur_angle(poses: Array, debut: float, cote_defaut: Vector2) -> Dictionary:
 	var aplati := debut + AVANT
 	var dernier := -INF
@@ -484,6 +498,11 @@ static func meilleur_angle(poses: Array, debut: float, cote_defaut: Vector2) -> 
 			var masques := 0
 			var veto := 0.0
 			var premier_plan := 0.0
+			# Reste de l'action (avant les images clés et avant la dernière seconde).
+			var action_images := 0
+			var action_masques := 0
+			var action_plans := 0
+			var action_premier_plan := 0.0
 			for i in retenues.size():
 				var r: Dictionary = retenues[i]
 				var t := float(r.t)
@@ -495,6 +514,9 @@ static func meilleur_angle(poses: Array, debut: float, cote_defaut: Vector2) -> 
 					pire_fin = maxf(pire_fin, g)
 				if t >= dernier - PROCHE_FENETRE - 0.001:
 					premier_plan = maxf(premier_plan, Cadrage.premier_plan_rejeu(plan, places))
+				else:
+					action_plans += 1
+					action_premier_plan += Cadrage.premier_plan_rejeu(plan, places)
 				if t >= aplati - CLE - 0.001 or i == i_aplati:
 					cles += 1
 					var cache := Cadrage.masque_rejeu(plan, places)
@@ -502,8 +524,15 @@ static func meilleur_angle(poses: Array, debut: float, cote_defaut: Vector2) -> 
 						masques += 1
 						if i == i_aplati or i == retenues.size() - 1:
 							veto += VETO
+				else:
+					action_images += 1
+					if Cadrage.masque_rejeu(plan, places):
+						action_masques += 1
 			gene += maxf(somme / maxf(1.0, float(retenues.size())), FIN_POIDS * pire_fin)
 			gene += veto + VETO * float(masques) / maxf(1.0, float(cles)) + PROCHE * premier_plan
+			var action := ACTION_VETO * float(action_masques) / maxf(1.0, float(action_images))
+			action += ACTION_PROCHE * action_premier_plan / maxf(1.0, float(action_plans))
+			gene += minf(action, ACTION_PLAFOND)
 			if gene < float(meilleur.gene) - 0.001:
 				meilleur = {"cote": cote, "retrait": retrait, "gene": gene}
 	return meilleur

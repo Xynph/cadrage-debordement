@@ -129,6 +129,55 @@ func angle() -> void:
 	var choix_debut: Dictionary = Rejeu.meilleur_angle(clip_test, 1.6 - Rejeu.AVANT, cote_loin)
 	check(not (choix_debut.cote == cote_loin and is_equal_approx(float(choix_debut.retrait), Cadrage.REJEU_RETRAIT)), "Ralenti : un défenseur au premier plan en début de ralenti écarte l'angle par défaut")
 	pied_de_poteau_en_fin()
+	course_devant_les_poteaux()
+
+
+## 19 novembre 2026 : film mf3 (images 0041, 0152, 0198) : angle propre à l'aplati, mais au début et au
+## milieu du ralenti la protection d'un poteau cache le porteur. Ici, le marqueur court dans l'en-but
+## parallèlement à la ligne de ballon mort (x = COURSE_X) de COURSE_DEPART_Z à COURSE_APLATI_Z et passe
+## derrière les deux montants. Avant ce jour, ces images ne pesaient que dans la gêne moyenne : l'angle
+## retenu (côté par défaut, retrait de 8 m) masquait le porteur six images sur vingt. L'angle retenu ne
+## doit le masquer à aucune image de l'action, aplati compris.
+const COURSE_X := 51.0
+const COURSE_DEPART_Z := 4.0
+const COURSE_APLATI_Z := -10.0
+func course_devant_les_poteaux() -> void:
+	var marque := Vector3(COURSE_X, 0.15, COURSE_APLATI_Z)
+	var depart := Vector3(COURSE_X, 1.0, COURSE_DEPART_Z)
+	var cote := Cadrage.cote_rejeu(marque)
+	var clip_test: Array = []
+	for k in 20:
+		var t := k * 0.1
+		var ballon := depart.lerp(marque, minf(t / Rejeu.AVANT, 1.0))
+		clip_test.append(pose_test(t, ballon, {"m": Vector3(ballon.x + 0.5, 0.0, ballon.z)}))
+	# Le cas reproduit bien le défaut : l'angle par défaut est propre à l'aplati (les 0,4 dernières
+	# secondes), mais un montant masque le porteur pendant la course.
+	var defaut_fin := 0
+	var defaut_course := 0
+	for k in 20:
+		var pose: Dictionary = clip_test[k]
+		var plan := Cadrage.plan_rejeu((pose.b[0] as Transform3D).origin, cote)
+		if Cadrage.masque_rejeu(plan, places_test(pose)):
+			if k >= 16: defaut_fin += 1
+			else: defaut_course += 1
+	check(defaut_fin == 0 and defaut_course >= 4, "Course devant les poteaux : l'angle par défaut est propre à l'aplati mais masque le porteur pendant la course (%d images, %d à l'aplati)" % [defaut_course, defaut_fin])
+	var choix: Dictionary = Rejeu.meilleur_angle(clip_test, 1.6 - Rejeu.AVANT, cote)
+	var masquees := PackedStringArray()
+	for k in 20:
+		var pose: Dictionary = clip_test[k]
+		var plan := Cadrage.plan_rejeu((pose.b[0] as Transform3D).origin, choix.cote, choix.retrait)
+		if Cadrage.masque_rejeu(plan, places_test(pose)):
+			masquees.append("%.1f s" % (k * 0.1))
+	mesures["course_devant_les_poteaux"] = {"cote": choix.cote.y, "retrait": choix.retrait, "gene": snappedf(float(choix.gene), 0.01)}
+	check(masquees.is_empty(), "Course devant les poteaux : porteur jamais masqué, du début du ralenti à l'aplati (côté %d, retrait %.0f m ; masqué à %s)" % [int(choix.cote.y), float(choix.retrait), ", ".join(masquees)])
+
+
+## Pieds des personnes visibles d'une pose de test (comme `meilleur_angle`).
+func places_test(pose: Dictionary) -> PackedVector3Array:
+	var places := PackedVector3Array()
+	for cle: String in pose.e:
+		if bool(pose.e[cle][2]): places.append((pose.e[cle][0] as Transform3D).origin)
+	return places
 
 
 ## Match filmé après la PR #962 (image-0218) : le marqueur court le long de l'en-but et aplatit à 1,1 m

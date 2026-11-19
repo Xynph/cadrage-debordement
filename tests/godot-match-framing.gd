@@ -320,7 +320,11 @@ func run() -> void:
 					comfort(view, "Long released flight stays comfortable including visual arc (%s, frame %d): " % [mode, frame])
 				check(view._carrier_id.is_empty(), "Released flight never invents a carrier")
 		check(heights.tv > heights.tactical * 1.6, "TV makes bodies appreciably larger than tactical")
-		check(heights.action > heights.tv * 1.7, "Action makes bodies appreciably larger than TV")
+		# 19 novembre 2026 (soir) : vue TV plus basse et plus serrée (18 m de hauteur visible, joueurs
+		# d'environ 70 px au lieu de 40) ; la caméra au contact (16 m) reste la plus proche, mais l'écart
+		# n'est plus que d'environ 10 % (x 1,7 auparavant).
+		check(heights.action > heights.tv * 1.02, "Action keeps bodies larger than TV")
+		check(heights.tv >= 0.09 * float(size.y), "TV broadcast shows players at least 9%% of the picture height (%.0f px)" % heights.tv)
 		metrics.append({"viewport": str(size), "body_height_px": heights})
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size

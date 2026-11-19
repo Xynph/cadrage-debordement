@@ -39,8 +39,12 @@ const MELEE: Array[Vector2] = [
 const DECALAGE_TETES := 0.155
 ## Rayon de tête du modèle (m), pour l'écart minimal entre têtes adverses.
 const TETE_RAYON := 0.11
-## Demi de mêlée qui introduit : à côté du tunnel, hors du paquet, à 1,8 m de la marque.
-const DEMI_INTRO := Vector2(0.15, -1.8)
+## Demi de mêlée qui introduit : à côté du tunnel, hors du paquet, à 1,8 m de la marque, décalé de
+## DEMI_INTRO.x m vers son propre paquet. 19 novembre 2026 : à 0,15 m, droit derrière le ballon, son
+## dos et sa tête penchés cachaient le ballon tenu bas à la caméra TV (qui plonge de 24° et plus
+## depuis la touche proche) ; décalé de 0,35 m, le ballon (ramené vers la ligne du tunnel, voir
+## BALLON_TUNNEL) se voit à côté de son épaule.
+const DEMI_INTRO := Vector2(0.35, -1.8)
 ## Côté de l'introduction (signe en y de la scène) : le demi introduit du côté de la mêlée de son choix
 ## (loi 19) ; il le fait toujours du côté de la caméra TV (touche proche, y croissants). 19/11/2026 :
 ## introduit côté tribune opposée, le ballon tenu bas restait caché derrière les deux paquets.
@@ -50,6 +54,9 @@ const COTE_INTRO := 1.0
 const BALLON_DEVANT := 0.55
 const BALLON_BAS_MIN := 0.3
 const BALLON_BAS_MAX := 0.6
+## 19 novembre 2026 : le ballon tenu glisse de BALLON_TUNNEL m au plus sur le côté du demi, vers la
+## ligne médiane de la mêlée (le tunnel) : hors de l'aplomb de son buste, visible depuis la caméra TV.
+const BALLON_TUNNEL := 0.3
 ## Demi adverse : de son côté du ballon (recul négatif), du même côté de la mêlée, nettement à
 ## l'extérieur des paquets (18/11/2026 soir : à 1,35 m du centre, à demi penché contre le pilier
 ## droit adverse, il passait à l'image pour un avant resté debout dans le paquet).
@@ -366,7 +373,13 @@ func _tenir_ballon(entry: Dictionary, w: float) -> void:
 			genoux += rig.to_global(rig.get_bone_global_pose(knee).origin).y
 			n += 1
 	var bas := actor.global_position + actor.global_basis.z.normalized() * BALLON_DEVANT
-	bas.y = clampf(genoux / n if n > 0 else BALLON_BAS_MIN, BALLON_BAS_MIN, BALLON_BAS_MAX)
+	# Vers la ligne du tunnel (x du centre de la mêlée), sur le côté du demi : voir BALLON_TUNNEL.
+	var centre: Variant = formation.get("centre")
+	var droite := Vector3(actor.global_basis.x.x, 0.0, actor.global_basis.x.z)
+	if centre is Vector2 and absf(droite.x) > 0.1:
+		droite = droite.normalized()
+		bas += droite * clampf((float(centre.x) - 50.0 - bas.x) / droite.x, -BALLON_TUNNEL, BALLON_TUNNEL)
+	bas.y =clampf(genoux / n if n > 0 else BALLON_BAS_MIN, BALLON_BAS_MIN, BALLON_BAS_MAX)
 	var ball: Node3D = view._ball
 	ball.global_position = ball.global_position.lerp(bas, w)
 	# Grand axe dans l'axe du tunnel, comme le ballon est introduit.
