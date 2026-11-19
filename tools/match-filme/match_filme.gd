@@ -53,6 +53,13 @@ static func moment_de(regie: Node) -> String:
 	if int(regie.get("etat")) == 1 and index >= 0 and index < (tf.get("plans", []) as Array).size() and str(tf.plans[index].get("kind", "")) == "try": return "essai"
 	return ""
 
+## Ralenti de l'essai à l'image (19/11/2026) : {"ralenti": la vue rejoue l'essai au ralenti sous la
+## caméra basse, "mention": la mention « RALENTI » est affichée}. Les deux vont ensemble.
+static func ralenti_de(regie: Node) -> Dictionary:
+	if regie == null: return {"ralenti": false, "mention": false}
+	return {"ralenti": regie.has_method("rejeu_en_cours") and bool(regie.rejeu_en_cours()),
+		"mention": regie.has_method("mention_affichee") and bool(regie.mention_affichee())}
+
 ## Foule à l'image (le film tourne sans son) : intensité d'ambiance (0 à 1), part du public debout
 ## (%), sons décidés depuis l'image précédente (audio/soundscape.gd, etat_foule). {} sans gestionnaire.
 static func foule_de(jeu: Node) -> Dictionary:
@@ -260,6 +267,8 @@ func run() -> void:
 	var minute_vue := -1
 	# Texte / image : chaque légende du temps fort, affichée à t= ; sa phase rendue à t= (suivi de la régie).
 	var legendes: Array = []
+	# Ralentis d'essai rejoués (suivi de la régie) : un par essai, sauf animations réduites.
+	var ralentis: Array = []
 	var regie_id := 0
 	var suivi_lu := 0
 	while true:
@@ -278,6 +287,10 @@ func run() -> void:
 			while suivi_lu < suivi.size():
 				var e: Dictionary = suivi[suivi_lu]
 				suivi_lu += 1
+				# Ralenti de l'essai : l'entrée du suivi est complétée à sa fin (durée, abrégé, état remis).
+				if str(e.get("evenement", "")) in ["rejeu", "rejeu_refuse"]:
+					ralentis.append(e)
+					continue
 				if str(e.get("evenement", "")) != "legende": continue
 				legendes.append({"texte": e.texte, "kind": e.kind, "phase": e.phase, "horloge": e.horloge,
 					"texte_s": snappedf((int(e.texte_ms) - debut) / 1000.0, 0.01), "image_s": snappedf((int(e.image_ms) - debut) / 1000.0, 0.01),
@@ -335,13 +348,21 @@ func run() -> void:
 		if regie != null: etat = ETATS[regie.etat] if regie.etat >= 0 and regie.etat < ETATS.size() else str(regie.etat)
 		# La causerie n'est à l'écran qu'une fois ouverte (pendant la sortie, elle attend).
 		if causerie is Dictionary and app.contextual_director.kind == "locker": etat = "causerie"
+		# Ralenti de l'essai à l'image (vue au ralenti, caméra basse) et mention « RALENTI » affichée :
+		# les deux doivent aller ensemble.
+		var ralenti_vu: Dictionary = ralenti_de(regie)
 		report.images.append({"fichier": nom, "secondes": snappedf((maintenant - debut) / 1000.0, 0.1), "minute": int(live.get("minute", dernier.get("minute", 0))),
-			"score": live.get("score", dernier.get("score", [0, 0])), "etat": etat, "moment": moment, "luminance": lum, "foule": foule_de(app)})
+			"score": live.get("score", dernier.get("score", [0, 0])), "etat": etat, "moment": moment, "ralenti": ralenti_vu.ralenti, "mention_ralenti": ralenti_vu.mention,
+			"luminance": lum, "foule": foule_de(app)})
 	report["duree_s"] = snappedf((Time.get_ticks_msec() - debut) / 1000.0, 0.1)
 	report["score"] = dernier.get("score", [0, 0])
 	report["minute"] = dernier.get("minute", 0)
 	report["termine"] = dernier.get("termine", false)
 	report["legendes"] = legendes
+	report["ralentis"] = ralentis.map(func(e: Dictionary) -> Dictionary: return {"evenement": e.get("evenement"), "secondes": snappedf((int(e.get("debut_ms", debut)) - debut) / 1000.0, 0.1),
+		"plan": e.get("plan", -1), "duree_source": e.get("duree_source", 0.0), "duree_prevue": e.get("duree_prevue", 0.0), "duree_reelle": e.get("duree_reelle", -1.0),
+		"passe": e.get("passe", false), "hauteur_camera": e.get("hauteur_camera", 0.0), "ecart_restitution": e.get("ecart_restitution", -1.0)})
+	report["images_ralenti"] = report.images.filter(func(i: Dictionary) -> bool: return bool(i.get("ralenti", false))).size()
 	if o.planche and not report.images.is_empty():
 		var choisies: Array = []
 		for k in repartir(report.images.size(), 24): choisies.append(Image.load_from_file(str(o.sortie).path_join(report.images[k].fichier)))

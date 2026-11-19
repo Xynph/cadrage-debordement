@@ -87,6 +87,18 @@ const BANDEAU_GLISSE := 0.04
 ## d'elle (sans légende connue : bas à BANDEAU_BAS_REPLI de la hauteur du bas de l'image).
 const BANDEAU_MARGE := 0.015
 const BANDEAU_BAS_REPLI := 0.11
+## Ralenti de l'essai (19 novembre 2026, idée validée par Léo) : à la fin du moment d'essai (célébration
+## de ESSAI_MOMENT s), la vue rejoue au ralenti (Rejeu.VITESSE) la fin de l'action jusqu'à l'aplati,
+## sous un autre angle (caméra latérale basse), avec la mention « RALENTI » en haut à droite, puis
+## revient à la vue normale : la célébration et la transformation reprennent où elles en étaient
+## (match_rejeu.gd). Seulement pour un essai, au plus REJEU_MAX s ajoutées ; abrégé comme la sortie
+## (Échap, Entrée, Espace, clic, « Passer ») ; jamais si le joueur a réduit les animations.
+const Rejeu = preload("res://match_rejeu.gd")
+const REJEU_MAX := 4.0
+## Mention « RALENTI » : coin haut droit de la zone libre (sous le score et les commandes), à
+## MENTION_MARGE de la hauteur des bords ; taille du texte en part de la hauteur de l'image.
+const MENTION_MARGE := 0.015
+const MENTION_TAILLE := 0.026
 
 var view: Control
 var app: Control
@@ -194,6 +206,11 @@ var _bandeau_titre := ""
 var _legende_rect := Rect2()
 ## Plus petit ralenti posé pendant le dernier moment d'essai (contrôle des tests).
 var ralenti_min := 1.0
+## Ralenti de l'essai : mention « RALENTI », ralenti dû à la fin du moment d'essai (essai repéré par
+## la vue), ralenti abrégé par le joueur.
+var mention: PanelContainer
+var _rejeu_du := false
+var _rejeu_passe := false
 ## Diagnostic texte / image : début à l'écran de la phase courante (ms, index du journal) et
 ## dernière légende tracée au suivi.
 var _image_ms := 0
@@ -240,6 +257,9 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	bandeau = construire_bandeau()
 	view.add_child(bandeau)
 	view.move_child(bandeau, voile.get_index() + 1)
+	mention = construire_mention()
+	view.add_child(mention)
+	view.move_child(mention, bandeau.get_index() + 1)
 	between = Between.new()
 	between.horloge = horloge
 	between.hote_barre = view.get("bande_temps_forts")
@@ -326,12 +346,18 @@ func _activer(direct: Dictionary) -> void:
 		if not arbitre.preparer():
 			arbitre.queue_free()
 			arbitre = null
+		elif stage.has_method("inscrire_rejeu"):
+			# Ralenti de l'essai : l'arbitre est rejoué et figé avec les joueurs.
+			stage.inscrire_rejeu(arbitre, arbitre.model, arbitre.rig)
+	if stage.has_signal("rejeu_fini") and not stage.is_connected("rejeu_fini", _rejeu_fini):
+		stage.connect("rejeu_fini", _rejeu_fini)
 
 ## Liaisons et arbitre actifs (repli : CD_MATCH_LIAISON=0, comportement d'avant).
 static func liaisons_actives() -> bool:
 	return OS.get_environment("CD_MATCH_LIAISON") != "0"
 
 func _exit_tree() -> void:
+	_finir_rejeu()
 	_presenter(false)
 
 ## Le son du stade suit ce qui est montré, pas l'avance du moteur.
@@ -570,11 +596,13 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 func _process(delta: float) -> void:
 	if view == null or not is_instance_valid(stage): return
 	_animer_bandeau(delta)
+	if is_instance_valid(mention) and mention.visible: _placer_mention()
 	_suivre_consigne_bonus()
 	if etat == SORTIE:
 		_lire_sortie(delta * vitesse)
 		return
-	if etat == JEU or etat == ATTENTE: _mesurer(delta)
+	# Pendant le ralenti, les joueurs montrent des poses passées : pas de vitesse mesurée sur elles.
+	if (etat == JEU or etat == ATTENTE) and not rejeu_en_cours(): _mesurer(delta)
 	if etat == JEU:
 		between.terrain.gel = true
 		_lire(delta * vitesse, delta)
@@ -622,6 +650,11 @@ func entracte_en_cours() -> bool:
 ## « Passer » : l'entracte s'abrège ; sans temps fort reçu, les minutes s'enchaînent sans
 ## attendre l'horloge jusqu'au prochain.
 func passer() -> void:
+	# Ralenti de l'essai : abrégé, la vue normale reprend (célébration, puis transformation).
+	if rejeu_en_cours():
+		_rejeu_passe = true
+		_finir_rejeu()
+		return
 	# Sortie des joueurs (mi-temps, fin de match) : abrégée, la causerie ou l'écran de fin suit.
 	if etat == SORTIE:
 		_finir_sortie(true)
@@ -811,6 +844,10 @@ func _demarrer(candidat: Dictionary, lien: Dictionary = {}) -> void:
 	_regler_ralenti()
 	between.montrer_entracte("", false)
 	tf = candidat
+	# Ralenti de l'essai : la vue enregistre ce qu'elle montre seulement pour un temps fort avec un essai.
+	_finir_rejeu()
+	_rejeu_du = false
+	if is_instance_valid(stage) and stage.has_method("enregistrer_rejeu"): stage.enregistrer_rejeu(rejeu_voulu(tf.get("plans", []), _calme()))
 	index = 0
 	etat = JEU
 	_debut_ms = Time.get_ticks_msec()
@@ -1121,9 +1158,13 @@ func _jouer(plan: Dictionary) -> void:
 
 func _lire(delta: float, reel: float) -> void:
 	if gel or index < 0 or index >= tf.plans.size(): return
+	# Ralenti de l'essai rejoué : la régie attend sa fin (rien n'avance, ni pistes, ni plan).
+	if rejeu_en_cours(): return
 	if _moment_essai > 0.0:
 		_moment_essai = maxf(0.0, _moment_essai - delta)
 		_regler_ralenti()
+		# Fin de la célébration : le ralenti de l'essai, sous un autre angle, avant la suite.
+		if _moment_essai <= 0.0 and _lancer_rejeu(): return
 		# Essai aplati : ralenti puis image tenue ; la suite (transformation) attend la fin du moment.
 		# Les pistes du chorégraphe continuent, au ralenti de la vue.
 		if phase != "choregraphie": return
@@ -1248,6 +1289,8 @@ func _vers_inter() -> void:
 	attente = 0.0
 	_moment_essai = 0.0
 	_regler_ralenti()
+	_finir_rejeu()
+	_rejeu_du = false
 	# Le bandeau « ESSAI » finit sa durée même si l'écran intermédiaire revient entre l'essai et la transformation.
 	if _bandeau_titre != "ESSAI": _cacher_bandeau()
 	_presenter(false)
@@ -1495,6 +1538,9 @@ func _debut_sortie() -> void:
 	app.management_ui["match_temps_forts_sortie"] = cle
 	_moment_essai = 0.0
 	_regler_ralenti()
+	# Mi-temps, fin de match : jamais de ralenti (ni rallongé, ni en cours).
+	_finir_rejeu()
+	_rejeu_du = false
 	if depuis_inter or stage._actors.is_empty():
 		var scene: Variant = _live.get("scene")
 		if scene is Dictionary and scene.get("players") is Array and not (scene.players as Array).is_empty():
@@ -1560,9 +1606,9 @@ func _noter_sortie(champs: Dictionary) -> void:
 			suivi[i].merge(champs, true)
 			return
 
-## Échap, Entrée, Espace ou un clic pendant la sortie : la séquence est abrégée.
+## Échap, Entrée, Espace ou un clic pendant la sortie ou le ralenti de l'essai : la séquence est abrégée.
 func _input(event: InputEvent) -> void:
-	if etat != SORTIE: return
+	if etat != SORTIE and not rejeu_en_cours(): return
 	var touche := event as InputEventKey
 	var souris := event as InputEventMouseButton
 	if touche != null and touche.pressed and not touche.echo and (touche.is_action("ui_accept") or touche.is_action("ui_cancel") or touche.keycode == KEY_SPACE):
@@ -1594,6 +1640,8 @@ func _celebrer_essai(plan: Dictionary) -> void:
 	_moment_essai = ESSAI_MOMENT
 	ralenti_min = 1.0
 	_regler_ralenti()
+	# Ralenti de l'essai : la vue cale sa fenêtre sur l'aplati ; il partira à la fin du moment.
+	_rejeu_du = not _calme() and is_instance_valid(stage) and stage.has_method("reperer_rejeu") and stage.reperer_rejeu()
 	var camp := _camp_du_plan(plan)
 	if camp not in [0, 1] and plan.get("scene") is Dictionary: camp = int(plan.scene.get("possession", -1))
 	var equipe := S.G.club_name(_teams[camp]) if camp in [0, 1] and camp < _teams.size() and _teams[camp] is Dictionary else ""
@@ -1606,6 +1654,105 @@ func _celebrer_essai(plan: Dictionary) -> void:
 func _calme() -> bool:
 	var preferences: Variant = app.get("user_preferences") if is_instance_valid(app) else null
 	return preferences != null and bool(preferences.data.get("reduced_motion", false))
+
+# --- Ralenti de l'essai ------------------------------------------------------
+
+## Le temps fort mérite l'enregistrement du ralenti : il contient un essai, animations non réduites.
+static func rejeu_voulu(plans: Array, calme: bool) -> bool:
+	if calme: return false
+	for plan: Variant in plans:
+		if plan is Dictionary and str(plan.get("kind", "")) == "try": return true
+	return false
+
+func rejeu_en_cours() -> bool:
+	return is_instance_valid(stage) and stage.has_method("rejeu_actif") and stage.rejeu_actif()
+
+## Ce que montre la mention « RALENTI » (tests, match filmé).
+func mention_affichee() -> bool:
+	return is_instance_valid(mention) and mention.visible
+
+## Fin du moment d'essai : le ralenti part s'il est dû (essai repéré, animations non réduites).
+func _lancer_rejeu() -> bool:
+	if not _rejeu_du: return false
+	_rejeu_du = false
+	if _calme() or not is_instance_valid(stage) or not stage.has_method("commencer_rejeu"): return false
+	if not stage.commencer_rejeu(Rejeu.VITESSE * vitesse):
+		suivi.append({"evenement": "rejeu_refuse", "cle": str(tf.get("cle", "")), "debut_ms": Time.get_ticks_msec()})
+		return false
+	var info: Dictionary = stage.rejeu_etat()
+	_rejeu_passe = false
+	montrer_mention()
+	suivi.append({"evenement": "rejeu", "cle": str(tf.get("cle", "")), "plan": index, "vitesse": Rejeu.VITESSE, "vitesse_regie": vitesse,
+		"duree_source": float(info.get("duree_source", 0.0)), "duree_prevue": float(info.get("duree_source", 0.0)) / Rejeu.VITESSE,
+		"hauteur_camera": float(info.get("hauteur_camera", 0.0)), "debut_ms": Time.get_ticks_msec()})
+	return true
+
+## Abrège le ralenti en cours (l'état d'avant est remis par la vue, puis `_rejeu_fini`).
+func _finir_rejeu() -> void:
+	if rejeu_en_cours(): stage.finir_rejeu()
+	elif mention_affichee(): _cacher_mention()
+
+## La vue a fini le ralenti (à son terme ou abrégé) : mention retirée sur la même image, durée notée.
+func _rejeu_fini() -> void:
+	_cacher_mention()
+	var info: Dictionary = stage.rejeu_etat() if is_instance_valid(stage) and stage.has_method("rejeu_etat") else {}
+	for i in range(suivi.size() - 1, -1, -1):
+		if str(suivi[i].get("evenement", "")) != "rejeu": continue
+		if not suivi[i].has("duree_reelle"):
+			suivi[i]["duree_reelle"] = (Time.get_ticks_msec() - int(suivi[i].get("debut_ms", 0))) / 1000.0
+			suivi[i]["duree_lue"] = float(info.get("ecoule", 0.0))
+			suivi[i]["passe"] = _rejeu_passe
+			# Écart entre l'état remis et l'état d'avant (0 : identique ; 999 : joueur ou ballon différent).
+			suivi[i]["ecart_restitution"] = minf(float(info.get("ecart_restitution", 999.0)), 999.0)
+		break
+	_rejeu_passe = false
+
+## Mention « RALENTI » des retransmissions : petit cartouche du style des bandeaux, sans animation.
+static func construire_mention() -> PanelContainer:
+	var cadre := PanelContainer.new()
+	cadre.name = "MatchRalenti"
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fond := S.G.T.box(Color(0.03, 0.08, 0.065, 0.85), 6, Color(S.GOLD, 0.7))
+	fond.content_margin_left = 12
+	fond.content_margin_right = 12
+	fond.content_margin_top = 2
+	fond.content_margin_bottom = 3
+	cadre.add_theme_stylebox_override("panel", fond)
+	var titre := S.label("RALENTI", 18, S.GOLD)
+	titre.name = "MatchRalentiTitre"
+	titre.add_theme_font_override("font", S.G.T.DISPLAY)
+	titre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.add_child(titre)
+	cadre.hide()
+	return cadre
+
+## Taille du texte de la mention pour une image de `hauteur` pixels : discrète, lisible.
+static func taille_mention(hauteur: float) -> int:
+	return clampi(roundi(hauteur * MENTION_TAILLE), 16, 40)
+
+## Place de la mention (repère de la vue) : coin haut droit de la zone libre qui commence à `haut_libre`.
+static func place_mention(ecran: Vector2, taille: Vector2, haut_libre: float) -> Vector2:
+	var marge := roundf(ecran.y * MENTION_MARGE)
+	return Vector2(roundf(maxf(0.0, ecran.x - taille.x - marge)), roundf(haut_libre + marge))
+
+func montrer_mention() -> void:
+	if not is_instance_valid(mention) or view == null: return
+	var titre: Label = mention.find_child("MatchRalentiTitre", true, false)
+	if titre != null: titre.add_theme_font_size_override("font_size", taille_mention(maxf(1.0, view.size.y)))
+	mention.reset_size()
+	mention.show()
+	_placer_mention()
+
+func _placer_mention() -> void:
+	if not is_instance_valid(mention) or view == null: return
+	var haut: float = (_espace.get_global_rect().position.y if is_instance_valid(_espace) else view.clock.get_global_rect().end.y) - view.get_global_rect().position.y
+	mention.reset_size()
+	mention.position = place_mention(Vector2(view.size.x, maxf(1.0, view.size.y)), mention.size, haut)
+
+func _cacher_mention() -> void:
+	if is_instance_valid(mention): mention.hide()
 
 func _regler_ralenti() -> void:
 	if not is_instance_valid(stage) or not stage.has_method("set_ralenti"): return

@@ -417,6 +417,7 @@ func grands_moments(view: Control) -> Array:
 	var deadline := Time.get_ticks_msec() + limite * 1000
 	var essai := {"debut": 0, "cle": "", "plan": -1, "ecart": -1.0, "bandeau": {}, "texte": "", "ralenti": 1.0, "vitesse": 1.0, "calme": false, "cadre": Rect2(), "score_bas": 0.0, "bande_bas": 0.0, "ecran": Rect2(), "legende": Rect2()}
 	var sorties := {}
+	var ralenti := {"images": 0, "ecarts": 0}
 	var relance := 0
 	var apres_fin := 0
 	var sonde := 0
@@ -455,6 +456,11 @@ func grands_moments(view: Control) -> Array:
 			app._command("pause", {"paused": false})
 		_observer_essai(view, regie, essai)
 		_observer_sortie(view, regie, live, sorties)
+		# Ralenti de l'essai : la mention « RALENTI » est à l'écran pendant et seulement pendant lui.
+		if regie.has_method("rejeu_en_cours"):
+			var en_ralenti: bool = regie.rejeu_en_cours()
+			if en_ralenti: ralenti.images += 1
+			if en_ralenti != bool(regie.mention_affichee()): ralenti.ecarts += 1
 		# Fin de match sans débrief : l'écran de fin suit la sortie.
 		if live.get("finished", false) and sorties.has("fin") and regie.etat == regie.INTER:
 			apres_fin += 1
@@ -479,6 +485,29 @@ func grands_moments(view: Control) -> Array:
 		var sous_titre: Rect2 = essai.get("legende", Rect2())
 		check(cadre.get_center().y >= ecran.position.y + ecran.size.y * 2.0 / 3.0, "Bandeau « ESSAI » dans le tiers inférieur (%s dans %s)" % [str(cadre), str(ecran)])
 		check(sous_titre.has_area() and not cadre.intersects(sous_titre), "Le bandeau « ESSAI » ne recouvre pas la légende (%s, légende %s)" % [str(cadre), str(sous_titre)])
+	# Ralenti de l'essai (19/11/2026) : un par essai au plus, jamais deux pour le même ; environ la moitié
+	# de la vitesse réelle, au plus REJEU_MAX s ajoutées (à la vitesse du test), caméra basse, état d'avant
+	# remis ; mention « RALENTI » seulement pendant lui ; aucun avec les animations réduites.
+	var regie_script = load("res://ui/contextual/match_temps_forts.gd")
+	var essais_vus := tous.filter(func(e: Dictionary) -> bool: return str(e.get("evenement", "")) == "essai_moment")
+	var ralentis := tous.filter(func(e: Dictionary) -> bool: return str(e.get("evenement", "")) == "rejeu")
+	var cles_ralentis := {}
+	for e: Dictionary in ralentis: cles_ralentis["%s|%s" % [str(e.get("cle", "")), str(e.get("plan", ""))]] = true
+	check(ralentis.size() <= essais_vus.size() and cles_ralentis.size() == ralentis.size(), "Un ralenti par essai au plus (%d ralentis, %d essais)" % [ralentis.size(), essais_vus.size()])
+	if bool(essai.calme):
+		check(ralentis.is_empty(), "Animations réduites : aucun ralenti")
+	elif int(essai.debut) > 0:
+		check(not ralentis.is_empty(), "Ralenti de l'essai joué en 3D (%d)" % ralentis.size())
+	for e: Dictionary in ralentis:
+		var nom := "Ralenti %s" % str(e.get("cle", ""))
+		check(absf(float(e.get("vitesse", 0.0)) - 0.5) <= 0.1, "%s : à %.2f de la vitesse réelle" % [nom, float(e.get("vitesse", 0.0))])
+		check(float(e.get("duree_prevue", 99.0)) <= float(regie_script.REJEU_MAX) + 0.15, "%s : %.2f s ajoutées au plus" % [nom, float(e.get("duree_prevue", 99.0))])
+		check(float(e.get("hauteur_camera", 99.0)) < 2.0, "%s : caméra au ras de la pelouse (%.2f m)" % [nom, float(e.get("hauteur_camera", 99.0))])
+		if not e.has("duree_reelle"): continue
+		var a_vitesse_reelle := float(e.duree_reelle) * maxf(float(e.get("vitesse_regie", 1.0)), 0.01)
+		check(bool(e.get("passe", false)) or a_vitesse_reelle <= float(regie_script.REJEU_MAX) + 0.6, "%s : %.2f s à vitesse réelle" % [nom, a_vitesse_reelle])
+		check(float(e.get("ecart_restitution", 999.0)) < 0.001, "%s : état d'avant remis à l'identique (écart %.5f)" % [nom, float(e.get("ecart_restitution", 999.0))])
+	check(int(ralenti.ecarts) == 0, "Mention « RALENTI » pendant et seulement pendant le ralenti (%d images en écart, %d images de ralenti)" % [int(ralenti.ecarts), int(ralenti.images)])
 	# Mi-temps et fin de match.
 	for moment: String in ["mi-temps", "fin"]:
 		var s: Dictionary = sorties.get(moment, {})

@@ -22,6 +22,7 @@ const Formations = preload("res://match_formations.gd")
 const Impacts = preload("res://match_impacts.gd")
 const Tactique = preload("res://match_tactique.gd")
 const ApresEssai = preload("res://match_apres_essai.gd")
+const Rejeu = preload("res://match_rejeu.gd")
 const CUT_SECONDS := 0.30
 ## Nombre de joueurs à l'image, chacun à plus de Motion.TRAJET_REPLACEMENT de sa place, à partir
 ## duquel la vue coupe pour les replacer (équipe qui se reforme) au lieu de les faire courir.
@@ -198,6 +199,10 @@ var sortie := false
 ## Sortie montrée de près (joueurs rapprochés du tunnel, plan qui suit le groupe) et point visé.
 var plan_sortie := false
 var _sortie_vise := Vector3.ZERO
+## Ralenti de l'essai (match_rejeu.gd) : enregistrement des poses montrées, puis lecture au ralenti
+## sous un autre angle pendant laquelle la vue est suspendue ; `rejeu_fini` à sa fin (ou abrégé).
+signal rejeu_fini
+var _rejeu: RefCounted = Rejeu.new(self)
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -476,7 +481,9 @@ func apply_frame(live: Dictionary) -> void:
 		_pending = live.duplicate(true)
 		_has_pending = true
 		return
-	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours (et à la sortie).
+	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours (et à la sortie),
+	# et au ralenti de l'essai (état d'avant remis d'abord).
+	finir_rejeu()
 	arreter_choregraphie()
 	if plan_sortie:
 		_camera_cut = true
@@ -744,6 +751,8 @@ func _gestes_du_fait(scene: Dictionary, previous_kind: String) -> void:
 
 ## Régie des temps forts : mi-temps ou fin de match, plus rien à rejouer.
 func set_plan_large(on: bool) -> void:
+	if on:
+		finir_rejeu()
 	_plan_large_regie = on
 	_maj_plan_large()
 
@@ -764,6 +773,49 @@ func set_ralenti(facteur: float) -> void:
 	ralenti = clampf(facteur, 0.05, 1.0) if is_finite(facteur) else 1.0
 
 
+## Ralenti de l'essai (régie des temps forts) : enregistrer les poses montrées pendant ce temps fort.
+func enregistrer_rejeu(on: bool) -> void:
+	finir_rejeu()
+	_rejeu.activer(on)
+
+
+## Essai aplati à l'écran : la fenêtre du ralenti se cale sur cet instant (faux sans enregistrement).
+func reperer_rejeu() -> bool:
+	return _rejeu.reperer()
+
+
+## Rejoue la fin de l'action au ralenti (`vitesse` : part de la vitesse réelle), sous l'angle du
+## ralenti. Faux sans fenêtre enregistrée, en vue de dessus, au plan large ou pendant la sortie.
+func commencer_rejeu(vitesse: float = Rejeu.VITESSE) -> bool:
+	if not is_node_ready() or _camera_mode == "tactical" or _plan_large or sortie:
+		return false
+	return _rejeu.commencer(vitesse)
+
+
+func rejeu_actif() -> bool:
+	return _rejeu.actif
+
+
+## Abrège le ralenti : l'état d'avant est remis aussitôt.
+func finir_rejeu() -> void:
+	if not _rejeu.actif:
+		return
+	_rejeu.finir()
+	rejeu_fini.emit()
+
+
+## Figurant (arbitre) enregistré et figé avec les joueurs pendant le ralenti.
+func inscrire_rejeu(noeud: Node3D, modele: Node3D, squelette: Skeleton3D) -> void:
+	_rejeu.inscrire(noeud, modele, squelette)
+
+
+## Contrôles du ralenti (régie, tests, match filmé).
+func rejeu_etat() -> Dictionary:
+	return {"actif": _rejeu.actif, "lecture": _rejeu.lecture, "duree_source": _rejeu.duree_source, "vitesse": _rejeu.vitesse,
+		"ecoule": _rejeu.ecoule, "hauteur_camera": _rejeu.hauteur_camera, "ecart_restitution": _rejeu.ecart_restitution,
+		"enregistre": _rejeu.enregistre, "poses": _rejeu.tampon.size(), "fenetre": _rejeu.clip.size()}
+
+
 ## Mi-temps, fin de match (régie des temps forts) : chaque joueur quitte sa place et marche vers
 ## le tunnel, à ALLURE_SORTIE ; le ballon est laissé au sol. Plus rien d'une action en cours (passe,
 ## contact, geste, posture de mêlée) ne reste posé. La prochaine image du moteur reprend la main.
@@ -772,6 +824,7 @@ func set_ralenti(facteur: float) -> void:
 func sortir_du_terrain(rapprocher: bool = false) -> void:
 	if not is_node_ready():
 		return
+	finir_rejeu()
 	arreter_choregraphie()
 	_stop_live_pass()
 	_pass_plan = {}
@@ -854,6 +907,9 @@ func _vise_sortie() -> Vector3:
 func set_camera(mode: String) -> void:
 	var selected := mode if mode in ["tactical", "action"] else "tv"
 	var changed := selected != _camera_mode
+	# Changement de caméra pendant le ralenti : il est abrégé (la vue reprend sous la caméra choisie).
+	if changed:
+		finir_rejeu()
 	_camera_mode = selected
 	if is_instance_valid(_camera) and (changed or not _camera_framed):
 		_fit_camera(0.0, true)
@@ -863,6 +919,12 @@ func set_camera(mode: String) -> void:
 
 func _process(delta: float) -> void:
 	_animer_foule(delta) # Le public vit en temps réel, même pendant le ralenti.
+	if _rejeu.actif:
+		# Ralenti de l'essai rejoué : la vue est suspendue, seules les poses enregistrées sont montrées ;
+		# à sa fin, l'état d'avant est remis tel quel.
+		if not _rejeu.lire(delta):
+			rejeu_fini.emit()
+		return
 	# Ralenti de l'essai : tout ce que la vue anime avance moins vite (présentation seule).
 	delta *= ralenti
 	if not _pass_plan.is_empty():
@@ -1047,6 +1109,8 @@ func _process(delta: float) -> void:
 		var tenu_en_main := not _carrier_id.is_empty() and _actors.has(_carrier_id)
 		_ball_marker.global_basis = Basis.IDENTITY.scaled(Vector3.ONE * (1.45 if tenu_en_main else 1.0))
 		((_ball_marker as MeshInstance3D).material_override as StandardMaterial3D).albedo_color = Color("ffe680") if tenu_en_main else Color("e9bf5a")
+	# Poses définitives de l'image : enregistrées pour le ralenti de l'essai (une coupe le recommence).
+	_rejeu.enregistrer(delta, _camera_cut)
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
 

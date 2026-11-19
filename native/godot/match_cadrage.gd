@@ -65,6 +65,19 @@ const TIR_LISSAGE := 0.15
 const POTEAUX_Z := 2.8
 const CHAMPS := {"tv": 24.0, "action": 36.0}
 const TIR_GENRES := ["goal", "miss", "transformation"]
+## Ralenti de l'essai (19 novembre 2026, match_rejeu.gd) : caméra latérale basse au bord du jeu, qui
+## suit le ballon (le marqueur), à REJEU_HAUTEUR m au-dessus de la pelouse (la vue TV est à plus de
+## 20 m), REJEU_RECUL m sur le côté du ballon et REJEU_RETRAIT m en deçà de lui (regard de biais vers
+## l'en-but où il plonge). Côté de la tribune principale (même sens gauche-droite que la vue TV), sauf
+## ballon trop près de la touche proche : contrechamp depuis l'autre côté. Jamais dans un panneau ni
+## une tribune (REJEU_BORNE), jamais collée à un montant (REJEU_POTEAU m au moins).
+const REJEU_HAUTEUR := 1.1
+const REJEU_RECUL := 11.0
+const REJEU_RETRAIT := 4.0
+const REJEU_CHAMP := 30.0
+const REJEU_VISEE := 0.9
+const REJEU_BORNE := Vector2(60.0, 39.0)
+const REJEU_POTEAU := 2.0
 
 var view
 var actif := false
@@ -448,6 +461,28 @@ func _placer_tir(points: Array[Vector3], marque: Vector3, axe: Vector3, hauteur:
 				return [camera, tangage, true]
 		recul += TIR_PAS
 	return [camera, tangage, false]
+
+
+## Ralenti d'un essai aplati en `ballon` (repère de la vue) : [sens de l'en-but (+1 : x = +50),
+## côté de la caméra (+1 : tribune principale, z > 0)], fixés pour tout le ralenti.
+static func cote_rejeu(ballon: Vector3) -> Vector2:
+	var sens := 1.0 if ballon.x >= 0.0 else -1.0
+	var cote := 1.0 if ballon.z + REJEU_RECUL <= REJEU_BORNE.y else -1.0
+	return Vector2(sens, cote)
+
+
+## Plan du ralenti quand le ballon est en `ballon` : {"camera", "vise", "champ"} (repère de la vue).
+static func plan_rejeu(ballon: Vector3, cote: Vector2) -> Dictionary:
+	var sens := 1.0 if cote.x >= 0.0 else -1.0
+	var lateral := 1.0 if cote.y >= 0.0 else -1.0
+	var camera := Vector3(ballon.x - sens * REJEU_RETRAIT, REJEU_HAUTEUR, ballon.z + lateral * REJEU_RECUL)
+	camera.x = clampf(camera.x, -REJEU_BORNE.x, REJEU_BORNE.x)
+	camera.z = clampf(camera.z, -REJEU_BORNE.y, REJEU_BORNE.y)
+	# Ballon dans l'en-but : la caméra pourrait frôler un montant ; elle reste alors dans le terrain.
+	for z: float in [-POTEAUX_Z, POTEAUX_Z]:
+		if Vector2(camera.x - sens * 50.0, camera.z - z).length() < REJEU_POTEAU:
+			camera.x = sens * (50.0 - REJEU_POTEAU)
+	return {"camera": camera, "vise": Vector3(ballon.x, REJEU_VISEE, ballon.z), "champ": REJEU_CHAMP}
 
 
 ## Déplace le point visé juste assez pour que le ballon reste dans la zone sûre de l'image.
