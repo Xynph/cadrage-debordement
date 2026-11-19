@@ -132,8 +132,17 @@ static func render(app: Control) -> bool:
 	app.workspace_inset = inset
 	inset.add_theme_constant_override("margin_top", C.px(22))
 	inset.item_rect_changed.connect(app._layout_coach)
-	C.fill(inset, true)
-	workspace.add_child(inset)
+	# Les gabarits des écrans sont dessinés pour une zone de travail de 2312 de large (rail de 248) ; le rail de la
+	# coque commune en fait 309 : la zone de contenu garde ses gabarits et se met à l'échelle de la place restante
+	# (0,974 à 16:9), sans toucher aux mesures du rail ni de la barre haute.
+	var stage := Control.new()
+	stage.name = "ImmersiveContentStage"
+	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	C.fill(stage, true)
+	workspace.add_child(stage)
+	stage.add_child(inset)
+	stage.resized.connect(_fit_content.bind(stage, inset))
+	_fit_content(stage, inset)
 	var content := C.v(16)
 	content.name = "CareerContent"
 	inset.add_child(content)
@@ -173,6 +182,17 @@ static func render(app: Control) -> bool:
 	app.call_deferred("_refresh_coach")
 	app.call_deferred("_observe_navigation")
 	return true
+
+## Largeur de référence des gabarits de contenu (2560 − rail historique de 248).
+const CONTENT_REFERENCE_WIDTH := 2312.0
+
+static func _fit_content(stage: Control, inset: Control) -> void:
+	var width := C.px(CONTENT_REFERENCE_WIDTH)
+	var factor := minf(1.0, stage.size.x / width) if stage.size.x > 0 and width > 0 else 1.0
+	if factor <= 0.0: return
+	inset.scale = Vector2.ONE * factor
+	inset.position = Vector2.ZERO
+	inset.size = stage.size / factor
 
 static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> void:
 	if root.size.x<=0 or root.size.y<=0: return
@@ -806,8 +826,10 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	gabi.set_meta("masque", gabi_en_pied)
 	gabi.set_meta("compact", true)
 	panel.add_child(gabi)
-	D.place(gabi, Rect2(right - square, sy, square, square))
-	right -= square + 27.0
+	# Médaillon (cible ≥ 24 px même quand la fenêtre passe de 2560 à 1280 sans reconstruction : 50 en référence).
+	var medallion := maxf(square, 50.0)
+	D.place(gabi, Rect2(right - medallion, (TOPBAR_HEIGHT - medallion) / 2.0, medallion, medallion))
+	right -= medallion + 27.0
 	# Date + journée : « mar. 17 nov. · J9 » ; clic : Calendrier (au jour courant).
 	var caption := date_caption(app.model)
 	var widest := maxf(_rw(Charte.texte_moyen(), caption[0], 17), _rw(Charte.texte_moyen(), "mer. 28 sept.", 17))
