@@ -79,7 +79,10 @@ static func cacher(app: Control, ancre: Control = null) -> void:
 	var fiche := actuelle(app)
 	if fiche == null: return
 	if ancre != null and fiche.get_meta("ancre", null) != ancre: return
-	app.remove_child(fiche)
+	# Pas de remove_child : la coque peut être en train de retirer ses enfants (nouveau rendu) ; la fiche est cachée,
+	# renommée (le nom reste libre pour la suivante) et libérée à la fin de l'image.
+	fiche.hide()
+	fiche.name = NOM + "Fermee"
 	fiche.queue_free()
 
 ## Sous le nom (au-dessus s'il manque la place), recalée dans l'écran.
@@ -169,7 +172,7 @@ static func construire(app: Control, player: Dictionary, source: String) -> Pane
 	D.line(fiche, Vector2(20, 250), Vector2(LARGEUR - 20, 250), Charte.FILET)
 	# Les 36 attributs (familles réelles du jeu), « — » s'ils sont inconnus.
 	var valeurs: Dictionary = commune.valeurs(player, source)
-	commune.grille_attributs(fiche, Vector2(26, 262), Vector2(808, 300), valeurs, "MiniFicheAttribut_", {"titre":15, "libelle":17, "valeur":19, "pas":28, "ecart":16, "corps":false})
+	commune.grille_attributs(fiche, Vector2(26, 262), Vector2(808, 300), valeurs, "MiniFicheAttribut_", {"titre":15, "libelle":17, "valeur":19, "pas":28, "ecart":16, "corps":false, "mot_moyenne":false})
 	D.line(fiche, Vector2(20, 566), Vector2(LARGEUR - 20, 566), Charte.FILET)
 	var lecture := "36 attributs, note de 1 à 100" if not valeurs.is_empty() else "Fais-le observer pour connaître ses attributs"
 	D.text(fiche, 26, 596, lecture, 17, Charte.IVOIRE_2 if not valeurs.is_empty() else Charte.IVOIRE_3, 500, 380, HORIZONTAL_ALIGNMENT_LEFT, true).name = "MiniFicheLecture"

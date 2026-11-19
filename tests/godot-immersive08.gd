@@ -918,8 +918,16 @@ func families() -> void:
 			var selected: String = app.management_ui.immersive_academy.get("player","")
 			var roster: Array = app.model.decisions.development.academy
 			var matches := roster.filter(func(p: Dictionary): return p.id==selected)
-			var general := app.find_child("AcademyGeneralRating",true,false) as Label
-			check(matches.size()==1 and general!=null and general.text=="Niveau général · %d aujourd’hui" % int(matches[0].rating),"La progression Formation distingue le vrai niveau général de la note au poste")
+			# Plus de dossier fixe à droite (19/11/2026) : le clic sur le nom ouvre la fiche complète de l'Espoir.
+			check(matches.size()==1 and app.find_child("AcademyImmersiveDossier",true,false)==null and app.find_child("AcademyName_"+str(selected).validate_node_name(),true,false)!=null,"Formation : nom de l'Espoir cliquable, sans dossier fixe")
+			if matches.size()==1 and app.navigation_controller.open_entity({"kind":"academy","id":str(selected)}):
+				await settle()
+				var general := app.find_child("PlayerGlobalRating",true,false) as Label
+				check(app.route=="Formation" and general!=null and general.text==str(int(matches[0].rating)),"La fiche d'un Espoir montre son vrai niveau général, pas la note au poste")
+				check(app.find_child("FullPlayerTab4",true,false)!=null,"Fiche d'un Espoir : onglet Développement (suivi individuel sans fenêtre)")
+				app._navigate("Formation")
+				await settle()
+			else: check(false,"La progression Formation distingue le vrai niveau général de la note au poste")
 		if item[0]=="Recrutement":
 			check(caption_fits(app.find_child("MarketSort_Niveau",true,false)),"Le libellé de tri par niveau reste entier en 1440p")
 		if view!=null: await capture(item[2]+"-2560x1440")
@@ -1156,8 +1164,9 @@ func navigation_flow() -> void:
 	await settle()
 	var player_id: String = app.selected_player
 	var open_full: Button = null
+	# Clic sur le nom du joueur = fiche complète (décision de Léo, 19/11/2026 ; plus de dossier fixe à droite).
 	for attempt in 40:
-		open_full = app.find_child("OpenPlayerFull",true,false) as Button
+		open_full = app.find_child("SquadOpenPlayer_"+player_id.validate_node_name(),true,false) as Button
 		if open_full != null: break
 		await process_frame
 	check(open_full != null, "L’effectif propose l’ouverture de la fiche joueur · route "+str(app.route)+" · fiche="+str(app.find_child("ImmersivePlayerFull",true,false)!=null)+" · tableau="+str(app.find_child("ImmersiveRosterTable",true,false)!=null)+" · taille "+str(root.size)+" · app "+str(app.size)+" · fenêtre "+str(app.get_window().size)+" · joueurs="+str(app.model.get("squad",[]).size())+" · corps="+str(app.body.get_child_count() if app.body!=null else -1)+" · enfants="+str(app.body.get_children().map(func(node: Node): return node.name) if app.body!=null else []))
@@ -1470,9 +1479,10 @@ func run() -> void:
 		var roster: Control = app.find_child("ImmersiveRosterTable", true, false)
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": check(roster != null, "Table Effectif dense de la référence 1440p")
 		if roster != null:
-			reference_rects({"ImmersiveRosterTable":Rect2(280,267,1704,1068), "PlayerDossier":Rect2(2000,207,528,1128),
-				"RosterTab0":Rect2(280,207,199,42), "RosterSearch":Rect2(298,283,355,40), "RosterSearchGlyph":Rect2(311,293,21,21),
-				"SelectedPlayerCard":Rect2(2000,207,528,432), "OpenPlayerFull":Rect2(2019,587,489,36)})
+			# Fiche fixe de droite retirée (19/11/2026) : le tableau prend toute la largeur du gabarit.
+			reference_rects({"ImmersiveRosterTable":Rect2(280,267,2248,1068),
+				"RosterTab0":Rect2(280,207,199,42), "RosterSearch":Rect2(298,283,355,40), "RosterSearchGlyph":Rect2(311,293,21,21)})
+			check(app.find_child("PlayerDossier",true,false) == null and app.find_child("SelectedPlayerCard",true,false) == null, "Plus de dossier fixe à droite de l'effectif")
 			var list: VBoxContainer = app.find_child("ImmersiveRosterRows", true, false)
 			var row_buttons: Array = list.get_children().filter(func(node:Node):return node is Button)
 			# La pagination à 24 lignes a été remplacée par une table complète à défilement interne
@@ -1493,7 +1503,7 @@ func run() -> void:
 			roster_scroll = app.find_child("SquadScroll",true,false) as ScrollContainer
 			check(roster_scroll != null and roster_scroll.scroll_vertical == saved_scroll, "Retour respecte le défilement volontaire sans révéler à nouveau le dossier")
 			list=app.find_child("ImmersiveRosterRows",true,false)
-			for id in ["RosterColumnSalary", "RosterColumnFatigue", "RosterColumnPotential", "PlayerDossier", "OpenPlayerFull", "OfferRenewal", "OpenComparison"]:
+			for id in ["RosterColumnSalary", "RosterColumnFatigue", "RosterColumnPotential", "OpenComparison", "SquadOpenPlayer_"+str(app.selected_player).validate_node_name(), "MiniFicheInfo_"+str(app.selected_player).validate_node_name()]:
 				check(app.find_child(id, true, false) != null, "Fonction Effectif : " + id)
 			var selected_before: String = app.selected_player
 			var target: Dictionary = app.model.squad[1]
@@ -1507,29 +1517,29 @@ func run() -> void:
 			person.pressed.emit()
 			await settle()
 			check(app.selected_player == str(target.id), "Sélection exacte par ID")
-			check(str(app.find_child("PlayerDossier", true, false).get_meta("player_id", "")) == str(target.id), "Dossier actualisé sans changer la carrière")
+			check(app.find_child("SquadOpenPlayer_"+str(target.id).validate_node_name(), true, false) != null, "Nom du joueur sélectionné cliquable vers sa fiche")
 			search.text = ""
 			search.text_changed.emit("")
 			await settle()
 			check(list.get_children().filter(func(node:Node):return node is Button).size() == app.model.squad.size(), "Effacer la recherche retrouve le groupe entier")
 			await capture("02-effectif-2560x1440")
-			app.find_child("OpenPlayerFull",true,false).pressed.emit()
+			app.find_child("SquadOpenPlayer_"+str(target.id).validate_node_name(),true,false).pressed.emit()
 			await settle()
 			var full:Control=app.find_child("ImmersivePlayerFull",true,false)
 			check(full!=null,"La fiche complète est une vraie page, pas un bouton inerte")
 			if full!=null:
 				var shirt: Label = full.find_child("FullPlayerNumber",true,false)
 				var expected_number := "—" if target.get("shirtNumber")==null else str(int(target.shirtNumber))
-				check(shirt!=null and shirt.text==expected_number and shirt.get_theme_font_size("font_size")==82,"Le cartouche reprend le vrai numéro à la taille du visuel")
+				check(shirt!=null and shirt.text==expected_number and shirt.get_theme_font_size("font_size")==120,"Le bandeau reprend le vrai numéro en filigrane (maquette du 19/11)")
 				var role_pitch: Control = full.find_child("PlayerRolePitch",true,false)
-				check(role_pitch!=null and role_pitch.is_visible_in_tree() and role_pitch.size==Vector2(432,350),"Le terrain du poste est redessiné en perspective à la taille de la fiche")
+				check(role_pitch!=null and role_pitch.is_visible_in_tree() and role_pitch.size==Vector2(316,190),"Le schéma des postes tient dans la carte Postes de la maquette")
 				var global_rating := full.find_child("PlayerGlobalRating",true,false) as Label
 				check(global_rating != null and global_rating.text.to_int() == int(target.rating), "Note globale exacte dans la fiche complète")
 				check(app.find_child("ProfilePlayerName",true,false).text.to_lower()==str(target.name).to_lower(),"Identité exacte dans la fiche complète")
 				check(app.find_child("OpenPlayerCoachNote",true,false)!=null,"Carnet personnel conservé sur la fiche")
 				await capture("04-fiche-joueur-2560x1440")
-				app.find_child("FullPlayerTab1",true,false).pressed.emit()
-				await settle()
+				# Les 36 attributs sont sur la première page (onglet Attributs supprimé, décision du 19/11/2026).
+				check(app.find_child("FullPlayerTab1",true,false) == null, "Plus d'onglet Attributs")
 				var attributes: Dictionary = target.get("attributesV2", {})
 				var detailed := app.find_child("PlayerDetailedAttributes",true,false) as Panel
 				check(detailed != null and attributes.size() == 36 and detailed.find_children("PlayerDetailedAttribute_*", "Label", true, false).size() == 36, "Les 36 attributs du joueur sont affichés")

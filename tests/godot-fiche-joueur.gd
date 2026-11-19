@@ -163,7 +163,7 @@ func run() -> void:
 	check_grid(full, "PlayerDetailedAttribute_", PlayerAttributes.detail(target, true), "Fiche complète, première page")
 	check(full.find_child("LegendeBaremeAttributs", true, false) != null, "Fiche complète : légende du barème")
 	for i in 4:
-		var moyenne := full.find_child("PlayerDetailedAttribute_Moyenne" + str(i), true, false) as Label
+		var moyenne := full.find_child("PlayerDetailedAttributeMoyenne" + str(i), true, false) as Label
 		check(moyenne != null and color_of(moyenne).is_equal_approx(Charte.couleur_attribut(int(moyenne.text))), "Moyenne colorée de la famille " + str(i))
 	var flag := full.find_child("PlayerOriginFlag", true, false) as TextureRect
 	check(flag != null and flag.texture != null, "Bandeau : drapeau du pays chargé")

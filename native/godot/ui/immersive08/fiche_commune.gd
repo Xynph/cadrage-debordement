@@ -145,13 +145,15 @@ static func grille_attributs(parent: Control, origine: Vector2, dimension: Vecto
 	for i in PlayerAttributes.GROUPS.size():
 		var group: Array = PlayerAttributes.GROUPS[i]
 		var x := origine.x + i * (colonne + ecart)
-		var entete := D.text(parent, x, origine.y + titre, str(group[0]).to_upper(), titre, Charte.IVOIRE, 700, colonne * .72)
-		entete.name = prefixe + "Famille" + str(i)
+		var mot_moy := bool(tailles.get("mot_moyenne", true))
+		var entete := D.text(parent, x, origine.y + titre, str(group[0]).to_upper(), titre, Charte.IVOIRE, 700, colonne - (100.0 if mot_moy else 40.0))
+		entete.name = prefixe.trim_suffix("_") + "Famille" + str(i)
+		entete.tooltip_text = str(group[0])
 		var moyenne: Variant = moyenne_famille(values, group[1])
 		if moyenne != null:
-			D.text(parent, x + colonne - 34, origine.y + titre, "moy.", titre - 3, Charte.IVOIRE_2, 500, 60, HORIZONTAL_ALIGNMENT_RIGHT)
+			if mot_moy: D.text(parent, x + colonne - 38, origine.y + titre, "moy.", titre - 3, Charte.IVOIRE_2, 500, 56, HORIZONTAL_ALIGNMENT_RIGHT)
 			var chiffre := D.text(parent, x + colonne, origine.y + titre, G.n(moyenne), titre + 2, Charte.couleur_attribut(moyenne), 700, 34, HORIZONTAL_ALIGNMENT_RIGHT)
-			chiffre.name = prefixe + "Moyenne" + str(i)
+			chiffre.name = prefixe.trim_suffix("_") + "Moyenne" + str(i)
 		D.line(parent, Vector2(x, origine.y + titre + 10), Vector2(x + colonne, origine.y + titre + 10), Color(Charte.FILET, .9))
 		var entries: Array = group[1]
 		for j in entries.size():

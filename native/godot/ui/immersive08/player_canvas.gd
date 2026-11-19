@@ -182,48 +182,59 @@ static func _touche(parent: Control, x: float, ligne: float, texte: String) -> f
 	D.text(parent,x+10,ligne-1,texte,17,Charte.IVOIRE_2,700,largeur-12)
 	return largeur
 
-## Lien texte de la barre (« ← Retour… », « Comparer → ») : bouton plat, focus visible.
+## Largeur (unités) d'un texte de lien en DM Sans 500.
+static func _largeur(texte: String, taille: int) -> float:
+	return Charte.texte_moyen().get_string_size(texte,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(taille))).x/C.density + 12
+
+## Lien texte (« ← Retour… », « Comparer → ») : bouton plat en DM Sans, focus visible ; largeur 0 = celle du texte.
 static func _lien(parent: Control, zone: Rect2, texte: String, action: Callable, id: String, taille: int = 21) -> Button:
+	if zone.size.x <= 0: zone.size.x = _largeur(texte,taille)
 	var bouton := Link.styled_button(parent,zone,texte,taille,Charte.IVOIRE,id)
+	bouton.add_theme_font_override("font",Charte.texte_moyen())
 	bouton.pressed.connect(action)
 	bouton.tooltip_text = texte
 	return bouton
 
 static func _barre(page: Control, app: Control, player: Dictionary, source: String) -> void:
-	var retour := _lien(page,Rect2(0,4,300,38),"← "+str(Commune.RETOURS.get(source,"Retour")),func():
+	var retour := _lien(page,Rect2(0,4,0,38),"← "+str(Commune.RETOURS.get(source,"Retour")),func():
 		app.set_meta("immersive08_full_player",false)
 		app.management_ui.erase("fiche_joueur")
 		app._navigate(str(Commune.ROUTES.get(source,"Effectif"))),"PlayerBackToSquad")
 	retour.tooltip_text = retour.text.trim_prefix("← ") + " · Échap"
-	var x := 310.0 + _touche(page,310,32,"Échap") + 30
+	var x := retour.size.x/C.density + 8
+	x += _touche(page,x,32,"Échap") + 36
 	var ids: Array[String] = Commune.liste(app,source)
 	var id := str(player.get("id",""))
 	var rang := ids.find(id)
 	var precedent := ids[rang-1] if rang > 0 else ""
 	var suivant := ids[rang+1] if rang >= 0 and rang < ids.size()-1 else ""
-	var voisin := func(cible: String, sens: String, zone: Rect2, nom: String) -> void:
+	var voisin := func(cible: String, sens: String, debut: float, nom: String) -> float:
 		var personne: Dictionary = Commune.trouver(app,cible,source).get("joueur",{})
-		var texte := ("‹ " + str(personne.get("name",""))) if sens=="‹" else (str(personne.get("name","")) + " ›")
-		var bouton := _lien(page,zone,texte if not cible.is_empty() else sens,func(): _ouvrir(app,cible,source),nom,20)
+		var texte := sens if cible.is_empty() else (("‹ " + str(personne.get("name",""))) if sens=="‹" else (str(personne.get("name","")) + " ›"))
+		var bouton := _lien(page,Rect2(debut,4,0,38),texte,func(): _ouvrir(app,cible,source),nom,20)
 		bouton.disabled = cible.is_empty()
 		bouton.tooltip_text = ("Joueur précédent" if sens=="‹" else "Joueur suivant") + (" · Maj+" + ("←" if sens=="‹" else "→") if not cible.is_empty() else " · début de la liste" if sens=="‹" else " · fin de la liste")
-	voisin.call(precedent,"‹",Rect2(x,4,240,38),"FichePrecedent")
-	x += 248
-	var position := D.text(page,x,32,("%d / %d · %s" % [rang+1,ids.size(),Commune.libelle_liste(app,source)]) if rang >= 0 else Commune.libelle_liste(app,source),19,Charte.IVOIRE_2,500,330,HORIZONTAL_ALIGNMENT_LEFT,true)
+		return bouton.size.x/C.density
+	x += voisin.call(precedent,"‹",x,"FichePrecedent") + 10
+	var rang_texte := ("%d / %d · %s" % [rang+1,ids.size(),Commune.libelle_liste(app,source)]) if rang >= 0 else Commune.libelle_liste(app,source)
+	var position := D.text(page,x,32,rang_texte,19,Charte.IVOIRE_2,500,_largeur(rang_texte,19),HORIZONTAL_ALIGNMENT_LEFT,true)
 	position.name = "FicheRangListe"
-	x += 340
-	voisin.call(suivant,"›",Rect2(x,4,240,38),"FicheSuivant")
-	x += 250
+	x += _largeur(rang_texte,19) + 10
+	x += voisin.call(suivant,"›",x,"FicheSuivant") + 8
 	_touche(page,x,32,"Maj ← →")
 	if source == "squad":
-		_lien(page,Rect2(1740,4,230,38),"Comparer →",func():
+		var note := "Ma note →"
+		var largeur_note := _largeur(note,21)
+		_lien(page,Rect2(2248-largeur_note,4,largeur_note,38),note,func():Notes.open(app,str(player.id)),"OpenPlayerCoachNote")
+		var comparer := "Comparer →"
+		var largeur_comparer := _largeur(comparer,21)
+		_lien(page,Rect2(2248-largeur_note-28-largeur_comparer,4,largeur_comparer,38),comparer,func():
 			# Le premier joueur est mémorisé ; si un autre est déjà en mémoire, il devient A et cette fiche B.
 			var memo:Array=app.management_ui.compare
 			if str(player.id) not in memo:
 				if memo.size()==1:memo.append(str(player.id))
 				else:memo.assign([str(player.id)])
 			app.SquadViews.comparison(app),"FullPlayerCompare")
-		_lien(page,Rect2(1990,4,258,38),"Ma note →",func():Notes.open(app,str(player.id)),"OpenPlayerCoachNote")
 
 ## Joueur voisin de la liste d'origine (Maj+← / Maj+→) : même historique que tout lien joueur.
 static func _ouvrir(app: Control, id: String, source: String) -> void:
@@ -273,7 +284,8 @@ static func _bandeau(page: Control, app: Control, player: Dictionary, source: St
 	hero.add_child(identite)
 	D.place(identite,Rect2(300,106,1220,34))
 	var autres := Roster.secondary_tooltip(player,app.model)
-	if autres != "—":
+	# Petite fenêtre : le plancher de 12 px ne laisse pas la place à cette ligne ; les postes restent dans la carte Postes.
+	if autres != "—" and not C.dense():
 		var noms: Array[String] = []
 		for ligne: String in autres.split("\n"): noms.append(ligne.get_slice(" · ",1))
 		D.text(hero,300,166,"Autres postes : "+", ".join(noms),19,Charte.IVOIRE_2,500,1220,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerOtherRoles"
@@ -316,8 +328,8 @@ static func _verdict(hero: Panel, app: Control, player: Dictionary, source: Stri
 		var x := 322.0 + (police.get_string_size(texte,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(22))).x/C.density if not texte.is_empty() else 0.0)
 		if not texte.is_empty():
 			D.text(hero,x+4,202,"·",22,Charte.IVOIRE,600,20)
-			x += 22
-		var lien := _lien(hero,Rect2(x,176,560,36),"contrat jusqu’en "+fin,func():
+			x += 18
+		var lien := _lien(hero,Rect2(x,172,0,36),"contrat jusqu’en "+fin,func():
 			app.management_ui.immersive_player_tab = 3
 			app._render()
 			ClubUI.focus(app,"FullPlayerTab3"),"PlayerVerdictContract",21)
@@ -503,8 +515,15 @@ static func _contrat_resume(card: Panel, app: Control, player: Dictionary) -> vo
 	var reason := str(renewal.get("reason", ""))
 	var etat := "Disponible" if renewal.get("available",false) else (reason if not reason.is_empty() else "Non ouverte")
 	_ligne(card,y,"Prolongation",etat,Charte.IVOIRE if renewal.get("available",false) else Charte.IVOIRE_2,"PlayerRenewalState")
-	var offer:=D.button(card,Rect2(24,y+30,440,48),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"",true,app.accent,"OfferRenewal")
+	var offer:=D.button(card,Rect2(24,y+30,440,48),"PROPOSER UNE PROLONGATION",func():app.SquadViews.contract(app,player,false),true,"",true,app.accent,"OfferRenewal")
 	offer.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# Bouton ivoire de la maquette (l'or reste réservé à Continuer).
+	offer.add_theme_font_override("font",Charte.TITRE_GRAS_ITALIQUE)
+	offer.add_theme_font_size_override("font_size",maxi(12,C.px(22)))
+	for mode: Array in [["normal",Charte.IVOIRE],["hover",Charte.IVOIRE_2],["pressed",Charte.IVOIRE_2],["disabled",Charte.PANNEAU_3]]:
+		offer.add_theme_stylebox_override(mode[0],C.box(mode[1],Color.TRANSPARENT,3,12))
+	for couleur in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]: offer.add_theme_color_override(couleur,Charte.FOND)
+	offer.add_theme_color_override("font_disabled_color",Charte.IVOIRE_3)
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason
 
