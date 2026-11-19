@@ -10,6 +10,9 @@ function worker(t){
  // Achats immédiats (période des mutations ouverte toute la saison) : ce test vérifie la profondeur du marché ; l'accord
  // différé hors période est vérifié par tests/calendrier-mutations.cjs.
  {const vente=path.join(engine,'vente-joueurs.json'),reglages=JSON.parse(fs.readFileSync(vente,'utf8'));reglages.fenetres.mode='saison';fs.writeFileSync(vente,JSON.stringify(reglages));}
+ // Transferts immédiats : réglage « semaines » (ancien comportement) ; l'accord exécuté au changement de saison (v2, décision
+ // de Léo du 19/11/2026) est vérifié par tests/calendrier-mutations.cjs et tests/clubs-geres-mutations.cjs.
+ {const cal=path.join(engine,'calendrier-mutations.json'),rc=JSON.parse(fs.readFileSync(cal,'utf8'));rc.clubsGeres.calendrier='semaines';fs.writeFileSync(cal,JSON.stringify(rc));}
  // Optional coordinator hook permits isolated review before custom is integrated.
  if(coordinator!==source){fs.copyFileSync(path.join(coordinator,'worker.cjs'),path.join(engine,'worker.cjs'));fs.copyFileSync(path.join(coordinator,'custom-competition.cjs'),path.join(engine,'custom-competition.cjs'));let manifest=fs.readFileSync(path.join(engine,'native-systems.cjs'),'utf8');if(!manifest.includes('customCompetition:'))manifest=manifest.replace('const domains={',"const domains={customCompetition:require('./custom-competition.cjs'),");fs.writeFileSync(path.join(engine,'native-systems.cjs'),manifest);}
  const b=require(path.join(engine,'worker.cjs')).createBridge({dataDir:path.join(root,'profile'),distDir:coordinator!==source?path.resolve(coordinator,'../../dist'):path.resolve(__dirname,'../dist'),seed:827381,now:1794178800000});let n=0;t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});const go=(command,payload={})=>{const x=b.handle({id:++n,command,payload});a.equal(x.ok,true,command+':'+x.error);return x.model;};return {go};
@@ -22,7 +25,9 @@ test('départ natif Monde (Top 14 et Champ): vrais achats sans injection de rost
   a.equal(market.releasePolicy.minimum,37);
   const p=market.candidates.find(p=>p.available);a(p,mode+' a une vraie cible');
   const before=JSON.parse(h.go('export').meta.exportText).state;
-  a(before.clubs.every(club=>club.players.length>=40),mode+' compte au moins 40 professionnels par club');
+  // Plancher de 40 gardé pour les clubs gérés ; le club joué n'en a plus (décision de Léo du 19/11/2026).
+  a(before.clubs.every(c=>c.id===before.club||c.players.length>=40),mode+' compte au moins 40 professionnels par club géré');
+  a(before.clubs[before.club].players.every(x=>!x.id.startsWith('depth-')),mode+' : club joué sans joueurs de complément');
   const bid={playerId:p.id,sellerId:p.clubId,fee:p.fee,salary:p.salary,sourceSalary:p.sourceSalary,contractEnd:p.contractEnd,context:market.context},q=h.go('interclub_negotiate',bid).meta.interclubNegotiation;a(q.winner);
   model=h.go('interclub_auction',{...bid,expectedWinner:q.winner.clubId,expectedFee:q.winner.fee,expectedSalary:q.winner.salary,confirmed:true});
   const state=JSON.parse(h.go('export').meta.exportText).state;

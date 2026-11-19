@@ -31,6 +31,11 @@
 module.exports=function clubDirections(T,N){
  const VERSION=1,FEED=30,WATCH=160,LOANS=120,TALLY_SEASONS=4,TALLY_KEYS=1900,CASH_FLOOR=400000;
  const MAX_BUYS=3,MAX_SALES=3,ROUNDS=3,MAX_LOANS_OUT=2;
+ // v2 (calendrier-mutations.cjs, décision de Léo du 19/11/2026) : achats conclus en accords exécutés au changement de
+ // saison (calIANouvelAccord) ; joueurs engagés ou en fin de contrat exclus ; place et masse de la saison suivante.
+ // Les prêts de jeunes et leurs retours restent à la semaine 0 (tour des semaines fixes).
+ let deferred=false;
+ const engaged=p=>typeof calIAIndisponible==='function'&&calIAIndisponible(p.id);
  const STRATEGIES=Object.freeze(['vedettes','formateur','rajeunissement','reconstruction','maintien','vente','equilibre']);
  // Pays et réputation de repli quand l'économie des ligues n'est pas chargée.
  const LEAGUES={elite:['france',100],accession:['france',70],nationale:['france',50],prem:['angleterre',92],champ:['angleterre',48],urc:['celte',90],srp:['pacifique',86],'jlo-d1':['japon',78],'jlo-d2':['japon',52],guest:['autre',70]};
@@ -366,7 +371,7 @@ module.exports=function clubDirections(T,N){
   if((reports.get(c.id)?.sold||0)>=MAX_SALES)return [];
   const goal=aiRosterTarget(c);
   if(c.players.length<=goal-3)return [];
-  const fresh=p=>p.joinedSeason===S.season||p.contractEnd==null||p.contractEnd<S.season||onLoan(p.id);
+  const fresh=p=>p.joinedSeason===S.season||p.contractEnd==null||p.contractEnd<S.season||onLoan(p.id)||deferred&&(p.contractEnd<=S.season||engaged(p));
   // L'effectif ne change pas pendant cette lecture : profondeur par poste et notes calculées une fois
   // (covered(c,slot,p.id) = profondeur du poste moins p lui-même s'il y compte ; identifiants uniques).
   const depth=new Map(),notes=new Map();
@@ -393,7 +398,7 @@ module.exports=function clubDirections(T,N){
   if(!cache.has(c.id)){
    const notes=new Map(c.players.map(p=>[p,roleNote(p)]));
    const order=c.players.slice().sort((a,b)=>notes.get(b)-notes.get(a)||a.id.localeCompare(b.id)),best=new Set(order.slice(0,3).map(p=>p.id));
-   cache.set(c.id,order.filter(p=>!best.has(p.id)&&p.joinedSeason!==S.season&&!onLoan(p.id)&&p.contractEnd!=null&&p.contractEnd>=S.season&&p.age<=30&&p.age<p.dev.retireAge-1&&
+   cache.set(c.id,order.filter(p=>!best.has(p.id)&&p.joinedSeason!==S.season&&!onLoan(p.id)&&p.contractEnd!=null&&p.contractEnd>=S.season&&!(deferred&&(p.contractEnd<=S.season||engaged(p)))&&p.age<=30&&p.age<p.dev.retireAge-1&&
     covered(c,primarySlot(p),p.id)>=Math.max(2,slotGoal(c,primarySlot(p))-1)).slice(0,4).map(p=>({p,seller:c,ask:Math.round(T.value(p)*(plans.get(c.id)==='vente'?1.1:1.5)/10000)*10000,listed:false})));
   }
   return cache.get(c.id);
@@ -446,13 +451,15 @@ module.exports=function clubDirections(T,N){
   if(ctx.panic&&p.age>=30)y+=1;
   return {years:y,long};
  }
- function affordable(buyer,fee,salary){
+ // next (v2) : effectif et masse de la saison suivante (calIASuivante), indemnités déjà promises déduites.
+ function affordable(buyer,fee,salary,next=null){
   const info=worldClub(buyer.id);
   if(info&&info.debt>=2000000)return false;
-  if(professionalPlaces(buyer)<=0)return false;
-  if(aiRosterPayroll(buyer)+salary>aiRosterWageLimit(buyer))return false;
+  if(next){if(!calIAPeutAcheter(buyer,salary,next))return false;}
+  else{if(professionalPlaces(buyer)<=0)return false;
+   if(aiRosterPayroll(buyer)+salary>aiRosterWageLimit(buyer))return false;}
   const prudence=state().clubs[buyer.id].president.traits.prudence;
-  return buyer.cash-fee-CASH_FLOOR*(.5+prudence/100)>=salary*8;
+  return buyer.cash-(next?next.engage:0)-fee-CASH_FLOOR*(.5+prudence/100)>=salary*8;
  }
  // Le joueur accepte-t-il ? Un championnat moins attirant le fait hésiter.
  function accepts(p,seller,buyer,salary){
@@ -465,6 +472,9 @@ module.exports=function clubDirections(T,N){
  function execute(buyer,offer,fee,salary,plan,need,w,ctx,yrs){
   const p=offer.p,seller=offer.seller,x=state().clubs[buyer.id];
   const trueNote=roleNote(p),young=p.age<=21,ageAtSale=p.age;
+  // v2 : accord conclu, exécuté au changement de saison (contrat à partir de la saison suivante, indemnité plafonnée).
+  if(deferred){fee=typeof calIndemnite==='function'?calIndemnite(p,fee):fee;calIANouvelAccord(buyer,seller,p,fee,salary,yrs.years);}
+  else{
   seller.players=seller.players.filter(q=>q.id!==p.id);
   seller.cash+=fee;buyer.cash-=fee;
   p.formerClub=seller.name;p.salary=salary;p.contractEnd=S.season+yrs.years-1+(week()>=13?1:0);
@@ -473,6 +483,7 @@ module.exports=function clubDirections(T,N){
   aiRosterEvent(seller.id,'sell',p,fee);aiRosterEvent(buyer.id,'recruit',p,fee);
   // Même règle que pour le club joué (president-reprise.cjs) : sous sa réserve après l'achat, le président désigne des ventes.
   if(typeof repriseApresAchat==='function')repriseApresAchat(buyer,buyer.cash+fee);
+  }
   const abroad=leagueOf(seller.id)!==leagueOf(buyer.id);
   count(abroad?'transfert-etranger':'transfert',buyer.id);
   if(leagueOf(seller.id)==='elite'&&abroad)count('depart-top14',seller.id);
@@ -481,15 +492,16 @@ module.exports=function clubDirections(T,N){
   if(ctx.panic&&salary>=1.15*Math.max(p.salary,1))count('erreur:surpaie-panique',buyer.id);
   if(p.age>=32&&yrs.years>=2)count('erreur:vieux-joueur',buyer.id);
   if(yrs.long)count('erreur:contrat-trop-long',buyer.id);
-  if(w.impulse||covered(buyer,primarySlot(p))>slotGoal(buyer,primarySlot(p))+2)count('erreur:doublon',buyer.id);
+  if(w.impulse||covered(buyer,primarySlot(p))+(deferred?1:0)>slotGoal(buyer,primarySlot(p))+2)count('erreur:doublon',buyer.id);
   if(young)state().watch=[{playerId:p.id,from:seller.id,season:S.season,note:trueNote,age:ageAtSale},...state().watch].slice(0,WATCH);
   if(p.age<=23)rememberFormed(seller,p);
   const why=w.homecoming?'retour au club formateur':ctx.panic?'renfort pressé':w.impulse?'occasion jugée trop belle':'besoin : '+need;
-  S.economy.transfers.unshift({season:S.season,round:S.round,text:buyer.name+' achète '+p.name+' à '+seller.name+' pour '+money(fee)+' ('+why+').'});
+  if(deferred)say(buyer.name+' s’engage avec '+p.name+' ('+seller.name+', '+money(fee)+', '+why+') : arrivée au changement de saison.',[buyer.id,seller.id],false);
+  else{S.economy.transfers.unshift({season:S.season,round:S.round,text:buyer.name+' achète '+p.name+' à '+seller.name+' pour '+money(fee)+' ('+why+').'});
   S.economy.transfers=S.economy.transfers.slice(0,80);
   if(fee>=600000||w.homecoming||ctx.panic&&fee>=200000)say(buyer.name+' recrute '+p.name+' ('+seller.name+') pour '+money(fee)+(w.homecoming?' : retour au club qui l’a formé.':ctx.panic?' : la direction veut une réaction immédiate.':'.'),[buyer.id,seller.id],true);
-  else say(buyer.name+' recrute '+p.name+' ('+seller.name+', '+money(fee)+').',[buyer.id,seller.id],false);
-  return {season:S.season,round:S.round,buyer:buyer.id,seller:seller.id,playerId:p.id,fee,salary,plan,sellerPlan:ctx.plans.get(seller.id),kind:abroad?'etranger':'national'};
+  else say(buyer.name+' recrute '+p.name+' ('+seller.name+', '+money(fee)+').',[buyer.id,seller.id],false);}
+  return {season:S.season,round:S.round,buyer:buyer.id,seller:seller.id,playerId:p.id,fee,salary,plan,sellerPlan:ctx.plans.get(seller.id),kind:abroad?'etranger':'national',...(deferred?{deferred:true}:{})};
  }
  // Joueurs lancés par un club (moins de 24 ans à leur départ) : un retour reste possible.
  function rememberFormed(seller,p){
@@ -514,36 +526,38 @@ module.exports=function clubDirections(T,N){
   }
   return plans;
  }
- function openWindow(){
-  const outer=[noteMemo,leagueMemo,evalMemo];noteMemo=new WeakMap();leagueMemo=new Map();evalMemo=new Map();
-  try{return openWindowNotes();}finally{[noteMemo,leagueMemo,evalMemo]=outer;}
+ // rounds : tours de marché de la semaine ; differe (v2) : accords exécutés au changement de saison.
+ function openWindow(rounds=ROUNDS,differe=false){
+  const outer=[noteMemo,leagueMemo,evalMemo];noteMemo=new WeakMap();leagueMemo=new Map();evalMemo=new Map();deferred=!!differe;
+  try{return openWindowNotes(rounds);}finally{[noteMemo,leagueMemo,evalMemo]=outer;deferred=false;}
  }
- function openWindowNotes(){
+ function openWindowNotes(rounds){
   const d=state(),done=[];
   if(week()===0)returnLoans();
   seasonReview();
   const plans=plansFor(),reports=new Map(),clubs=S.clubs.filter(c=>c.id!==S.club);
   for(const c of clubs){const r=aiRosterReport(c.id);r.strategy=plans.get(c.id);reports.set(c.id,r);}
   const order=p=>({maintien:0,vedettes:1,reconstruction:2,rajeunissement:3,equilibre:4,formateur:5,vente:6})[p];
-  for(let round=0;round<ROUNDS;round++){
+  for(let round=0;round<rounds;round++){
    const busy=new Set(),cache=new Map();
    const offers=clubs.flatMap(c=>listed(c,plans.get(c.id),reports));
-   const room=c=>aiRosterMayRecruit(c)||['vedettes','rajeunissement','reconstruction','maintien'].includes(plans.get(c.id))&&c.players.length<aiRosterTarget(c)+2&&professionalPlaces(c)>0;
+   const room=c=>deferred?calIAPeutAcheter(c,0):aiRosterMayRecruit(c)||['vedettes','rajeunissement','reconstruction','maintien'].includes(plans.get(c.id))&&c.players.length<aiRosterTarget(c)+2&&professionalPlaces(c)>0;
    const buyers=clubs.filter(c=>(reports.get(c.id).bought||0)<MAX_BUYS&&room(c))
     .sort((a,b)=>order(plans.get(a.id))-order(plans.get(b.id))||reputation(b)-reputation(a)||a.id-b.id);
    // Chaque acheteur choisit sa cible ; plusieurs clubs peuvent viser le même joueur.
    const bids=new Map();
    for(const buyer of buyers){
-    const plan=plans.get(buyer.id),x=d.clubs[buyer.id],ctx={plan,plans,panic:!!x.panic,needs:needs(buyer),starters:starters(buyer)};
+    const plan=plans.get(buyer.id),x=d.clubs[buyer.id],next=deferred?calIASuivante(buyer):null,ctx={plan,plans,panic:!!x.panic,needs:needs(buyer),starters:starters(buyer),next};
     const extra=['vedettes','maintien'].includes(plan)||ctx.panic?clubs.filter(c=>c.id!==buyer.id&&(reputation(c)<=reputation(buyer)-4||c.cash<buyer.cash*.5)).flatMap(c=>unlisted(c,plans,reports,cache)):[];
     const japan=['jlo-d1','jlo-d2'].includes(leagueOf(buyer.id));
     let best=null;
     for(const offer of offers.concat(extra)){
      if(offer.seller.id===buyer.id||!offer.seller.players.some(q=>q.id===offer.p.id))continue;
      if(japan!==['jlo-d1','jlo-d2'].includes(leagueOf(offer.seller.id)))continue;
+     if(next&&(next.postes.has(offer.p.pos)||engaged(offer.p)))continue;
      const w=wanted(buyer,plan,offer,ctx);if(!w)continue;
      const max=bid(buyer,offer,w,ctx),salary=salaryFor(buyer,offer,w,ctx);
-     if(!affordable(buyer,Math.min(max,offer.ask),salary))continue;
+     if(!affordable(buyer,Math.min(max,offer.ask),salary,next))continue;
      if(!best||w.score>best.w.score||w.score===best.w.score&&offer.p.id<best.offer.p.id)best={buyer,offer,w,max,salary,ctx};
     }
     if(best)(bids.get(best.offer.p.id)??bids.set(best.offer.p.id,[]).get(best.offer.p.id)).push(best);
@@ -561,7 +575,7 @@ module.exports=function clubDirections(T,N){
     if(win.max>=ask)fee=Math.min(win.max,Math.max(ask,second?second.max+10000:ask));
     else if(plans.get(seller.id)==='vente'&&win.max>=ask*.8)fee=Math.round((win.max+ask)/20000)*10000;
     if(fee==null){count('echec-negociation',win.buyer.id);if(ask>=500000)say('Les discussions entre '+win.buyer.name+' et '+seller.name+' pour '+win.offer.p.name+' n’aboutissent pas.',[win.buyer.id,seller.id],false);busy.add(win.buyer.id);continue;}
-    if(!affordable(win.buyer,fee,win.salary))continue;
+    if(!affordable(win.buyer,fee,win.salary,win.ctx.next))continue;
     if(!accepts(win.offer.p,seller,win.buyer,win.salary)){count('refus-joueur',win.buyer.id);say(win.offer.p.name+' refuse de rejoindre '+win.buyer.name+' : le championnat ne le tente pas.',[win.buyer.id,seller.id],false);busy.add(win.buyer.id);continue;}
     const yrs=years(win.buyer,win.offer.p,win.ctx);
     const row=execute(win.buyer,win.offer,fee,win.salary,plans.get(win.buyer.id),win.w.need,win.w,win.ctx,yrs);

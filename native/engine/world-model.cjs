@@ -106,7 +106,9 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   }
   return catalogues.get(R);
  }
- const startingCount=R=>R.clubs.reduce((count,club)=>count+Math.max(nativeProfessionalDepth.minimum,club.players.length),0);
+ // Effectifs de départ : clubs complétés à 40 là où le plancher s'applique (en carrière Monde, ni le club joué ni,
+ // avec CD_PLANCHER_CLUBS_GERES=0, les clubs gérés : professional-depth.cjs).
+ const startingCount=R=>R.clubs.reduce((count,club)=>count+(typeof S!=='undefined'&&S&&!nativeProfessionalDepth.applies(S,club.id)?club.players.length:Math.max(nativeProfessionalDepth.minimum,club.players.length)),0);
  const database=R=>({id:R.id,version:R.version,snapshot:R.snapshot,playerCount:R.playerCount,startingPlayerCount:startingCount(R),clubCount:R.clubCount});
  // Zones de classement (world-standings-zones.json, injecté par world-vm.cjs) : qualifiés, barrages, relégation.
  // Rang dans la poule pour les coupes. Les zones de la compétition restent publiées avant la 1re journée (elles

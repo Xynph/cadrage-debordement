@@ -14,8 +14,16 @@
 // quand la règle des salaires est active), sa réserve de trésorerie et ses places.
 // Choix déterministes (empreintes), sans tirage dans le générateur des matchs.
 // Le club du manager n'achète ni ne vend par ce chemin.
+// v2 (calendrier-mutations.cjs, décision de Léo du 19/11/2026) : les tours suivent le calendrier (semaines 0 et 13,
+// un tour toutes les quatre semaines de janvier à avril, chaque semaine de la période des mutations, deux la dernière) ;
+// un achat devient un accord (calIANouvelAccord) exécuté au changement de saison : le joueur reste au vendeur, l'acheteur
+// doit avoir place et masse de la saison suivante ; joueurs engagés ou en fin de contrat exclus ; indemnité plafonnée.
 module.exports=function clubTransfers(){
  const MAX_BUYS=3,MAX_SALES=3,ROUNDS=3,CASH_FLOOR=400000;
+ // Accords différés (v2) pendant la fenêtre en cours.
+ let deferred=false;
+ const engaged=p=>typeof calIAIndisponible==='function'&&calIAIndisponible(p.id);
+ const fee=(p,f)=>typeof calIndemnite==='function'?calIndemnite(p,f):f;
  const STRATEGIES=Object.freeze(['vedettes','formateur','rajeunissement','vente','equilibre']);
  const world=()=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
  const enabled=()=>world()&&typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive();
@@ -56,13 +64,13 @@ module.exports=function clubTransfers(){
   const age=p.age<=23?1.6:p.age<=26?1.3:p.age<=29?1:p.age<=31?.6:.3;
   // Notes de match (match-notes.cjs) : la moyenne de saison pèse sur la valeur, −8 % à +12 %.
   const forme=typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.valeur(p.id):1;
-  return Math.max(10000,Math.round(p.salary*52*years*age*forme/10000)*10000);
+  return fee(p,Math.max(10000,Math.round(p.salary*52*years*age*forme/10000)*10000));
  }
  function listed(c,plan,reports){
   if((reports.get(c.id)?.sold||0)>=MAX_SALES)return [];
   const goal=aiRosterTarget(c),floor=goal-3;
   if(c.players.length<=floor)return [];
-  const fresh=p=>p.joinedSeason===S.season||p.contractEnd==null||p.contractEnd<S.season;
+  const fresh=p=>p.joinedSeason===S.season||p.contractEnd==null||p.contractEnd<S.season||deferred&&(p.contractEnd<=S.season||engaged(p));
   const keep=p=>covered(c,primarySlot(p),p.id)<Math.max(2,slotGoal(c,primarySlot(p))-1);
   const pool=c.players.filter(p=>!fresh(p)&&!keep(p)&&p.age<p.dev.retireAge-1);
   const ranked=pool.slice().sort((a,b)=>estimate(c.id,b)-estimate(c.id,a)||a.id.localeCompare(b.id));
@@ -85,7 +93,7 @@ module.exports=function clubTransfers(){
   if(rs>rb-5||c.players.length<=aiRosterTarget(c)-3)return [];
   if(!ranked.has(c.id))ranked.set(c.id,c.players.slice().sort((a,b)=>estimate(c.id,b)-estimate(c.id,a)||a.id.localeCompare(b.id)));
   const order=ranked.get(c.id),best=new Set(order.slice(0,3).map(p=>p.id));
-  return order.filter(p=>!best.has(p.id)&&p.joinedSeason!==S.season&&p.contractEnd!=null&&p.contractEnd>=S.season&&p.age<=29&&p.age<p.dev.retireAge-1&&
+  return order.filter(p=>!best.has(p.id)&&p.joinedSeason!==S.season&&p.contractEnd!=null&&p.contractEnd>=S.season&&!(deferred&&(p.contractEnd<=S.season||engaged(p)))&&p.age<=29&&p.age<p.dev.retireAge-1&&
    covered(c,primarySlot(p),p.id)>=Math.max(2,slotGoal(c,primarySlot(p))-1)).slice(0,4)
    .map(p=>({p,seller:c,fee:Math.round(value(p)*1.5/10000)*10000,listed:false}));
  }
@@ -133,15 +141,18 @@ module.exports=function clubTransfers(){
   const quota=typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.recruitBonus==='function'?CDJiff.recruitBonus(S,buyer.id,p):0;
   return {score:(need?need.score:0)+upgrade*4+(plan==='vedettes'?est:0)-(offer.listed?0:10)-Math.round(offer.fee/200000)+quota,need:need?.pos||POS[slot],upgrade,quota};
  }
- function affordable(buyer,offer,salary){
+ // next (v2) : effectif et masse de la saison suivante (calIASuivante), indemnités déjà promises déduites.
+ function affordable(buyer,offer,salary,next=null){
   const info=worldClub(buyer.id);
   if(info&&info.debt>=2000000)return false;
+  if(next)return calIAPeutAcheter(buyer,salary,next)&&buyer.cash-next.engage-offer.fee-CASH_FLOOR>=salary*8;
   if(professionalPlaces(buyer)<=0)return false;
   if(aiRosterPayroll(buyer)+salary>aiRosterWageLimit(buyer))return false;
   return buyer.cash-offer.fee-CASH_FLOOR>=salary*8;
  }
  function execute(buyer,offer,salary,plan,sellerPlan,need){
   const p=offer.p,seller=offer.seller;
+  if(deferred){const f=fee(p,offer.fee);calIANouvelAccord(buyer,seller,p,f,salary,p.age<=27?3:2);return {season:S.season,round:S.round,buyer:buyer.id,seller:seller.id,playerId:p.id,fee:f,salary,plan,sellerPlan,deferred:true};}
   seller.players=seller.players.filter(x=>x.id!==p.id);
   seller.cash+=offer.fee;buyer.cash-=offer.fee;
   p.formerClub=seller.name;p.salary=salary;p.contractEnd=S.season+(p.age<=27?3:2);
@@ -152,38 +163,38 @@ module.exports=function clubTransfers(){
   S.economy.transfers=S.economy.transfers.slice(0,80);
   return {season:S.season,round:S.round,buyer:buyer.id,seller:seller.id,playerId:p.id,fee:offer.fee,salary,plan,sellerPlan};
  }
- function transferWindow(){
+ function transferWindow(rounds=ROUNDS,differe=false){
   if(!enabled())return [];
-  memo={};
-  try{return openWindow();}finally{memo={};}
+  memo={};deferred=!!differe;
+  try{return openWindow(rounds);}finally{memo={};deferred=false;}
  }
- function openWindow(){
+ function openWindow(rounds=ROUNDS){
   const rows=leagueRows(),plans=new Map(),reports=new Map(),done=[];
   for(const peers of Object.values(rows))for(const c of peers)plans.set(c.id,strategy(c,peers));
   for(const c of S.clubs)if(c.id!==S.club){const r=aiRosterReport(c.id);r.strategy=plans.get(c.id);reports.set(c.id,r);}
   const clubs=S.clubs.filter(c=>c.id!==S.club);
   const order=p=>({vedettes:0,rajeunissement:1,equilibre:2,formateur:3,vente:4})[p];
-  for(let round=0;round<ROUNDS;round++){
+  for(let round=0;round<rounds;round++){
    const busy=new Set();let signed=0;
    const offers=clubs.flatMap(c=>listed(c,plans.get(c.id),reports));
    // Un club « vedettes » ou qui rajeunit peut dépasser sa cible de deux places
    // pour un renfort : il cédera ensuite son surplus.
-   const room=c=>aiRosterMayRecruit(c)||['vedettes','rajeunissement'].includes(plans.get(c.id))&&c.players.length<aiRosterTarget(c)+2&&professionalPlaces(c)>0;
+   const room=c=>deferred?calIAPeutAcheter(c,0):aiRosterMayRecruit(c)||['vedettes','rajeunissement'].includes(plans.get(c.id))&&c.players.length<aiRosterTarget(c)+2&&professionalPlaces(c)>0;
    const ranked=new Map();
    const buyers=clubs.filter(c=>(reports.get(c.id).bought||0)<MAX_BUYS&&room(c))
     .sort((a,b)=>order(plans.get(a.id))-order(plans.get(b.id))||(worldClub(b.id)?.reputation??0)-(worldClub(a.id)?.reputation??0)||a.id-b.id);
    for(const buyer of buyers){
     if(busy.has(buyer.id))continue;
     const plan=plans.get(buyer.id);
-    const known=profile(buyer);
+    const known=profile(buyer),next=deferred?calIASuivante(buyer):null;
     const pool=offers.concat(plan==='vedettes'?clubs.flatMap(c=>poachable(buyer,c,plans,reports,ranked)):[])
-     .filter(o=>o.seller.id!==buyer.id&&!busy.has(o.seller.id)&&o.seller.players.some(x=>x.id===o.p.id)&&(!japanese(buyer.id)||japanese(o.seller.id)));
+     .filter(o=>o.seller.id!==buyer.id&&!busy.has(o.seller.id)&&o.seller.players.some(x=>x.id===o.p.id)&&(!japanese(buyer.id)||japanese(o.seller.id))&&!(next&&(next.postes.has(o.p.pos)||engaged(o.p))));
     let best=null;
     for(const offer of pool){
      const w=wanted(buyer,plan,offer,known);if(!w)continue;
-     if(aiRosterPayroll(buyer)+offer.p.salary>aiRosterWageLimit(buyer)||buyer.cash-offer.fee-CASH_FLOOR<0)continue;
+     if(!next&&aiRosterPayroll(buyer)+offer.p.salary>aiRosterWageLimit(buyer)||buyer.cash-(next?next.engage:0)-offer.fee-CASH_FLOOR<0)continue;
      const salary=clamp(Math.round(Math.max(offer.p.salary,demand(offer.p,offer.seller,buyer))*(plan==='vedettes'?1.08:1.03)/100)*100,270,100000);
-     if(!affordable(buyer,offer,salary))continue;
+     if(!affordable(buyer,offer,salary,next))continue;
      if(!best||w.score>best.w.score||w.score===best.w.score&&offer.p.id<best.offer.p.id)best={offer,w,salary};
     }
     if(!best)continue;
@@ -203,11 +214,15 @@ module.exports=function clubTransfers(){
   aiRosterRecruitmentWeek=function(){
    const week=S?.franceMode?.week??S?.round,windows=S?.franceMode?[0,15]:[0,13];
    const open=S&&aiRosterActive()&&!S.live&&S.phase==='league'&&windows.includes(week)&&!(S.season===1&&week===0)&&S.economy.aiRecruitmentWindow!==S.season+':'+week;
+   // Calendrier des transferts entre clubs (calendrier-mutations.cjs) : tours de la semaine, accords différés ou non ;
+   // sans lui, l'ancienne fenêtre (semaines 0 et 13, trois tours, transferts immédiats).
+   const cal=S&&aiRosterActive()&&typeof calClubsGeresTours==='function'?calClubsGeresTours(open):{tours:open?ROUNDS:0,differe:false,motif:null};
    // Carrières créées avec des directions de club : stratégie émergente (club-directions.cjs).
    const directed=typeof nativeClubDirections!=='undefined'&&nativeClubDirections.active();
    let moves=[];
-   if(directed){memo={};try{nativeClubDirections.weekly();if(open)moves=nativeClubDirections.openWindow();}finally{memo={};}}
-   else if(open)moves=transferWindow();
+   if(directed){memo={};try{nativeClubDirections.weekly();if(cal.tours)moves=nativeClubDirections.openWindow(cal.tours,cal.differe);}finally{memo={};}}
+   else if(cal.tours)moves=transferWindow(cal.tours,cal.differe);
+   if(S&&typeof calMercatoTempsForts==='function')calMercatoTempsForts(cal.motif);
    const count=previous.apply(this,arguments);
    if(directed&&open&&count)S.clubDirections.tally[S.season+'|monde|libre']=(S.clubDirections.tally[S.season+'|monde|libre']||0)+count;
    return count+moves.length;

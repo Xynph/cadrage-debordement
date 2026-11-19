@@ -10,6 +10,11 @@
 //  - pré-contrats, dans les deux sens, pour un joueur dont le contrat s'achève dans moins de six mois : arrivée au
 //    1er juillet (bascule de saison), sans indemnité, seulement une prime à la signature (budget de transferts) ;
 //    les autres clubs approchent les joueurs du club joué (courrier, délai pour proposer une prolongation).
+// v2 (décision de Léo du 19/11/2026, GDD § 3 bis – 3 quater) : tout transfert entre clubs (club joué compris : achats,
+// ventes, ventes imposées) se conclut toute l'année et prend effet au changement de saison ; les clubs gérés tiennent
+// leurs tours de marché selon le calendrier (calClubsGeresTours), signent des pré-contrats entre eux, la presse en parle
+// (actualités sans courrier) ; indemnité plafonnée aux salaires repris. Réglage clubsGeres.calendrier « semaines » (ou
+// CD_CLUBS_GERES_CALENDRIER=semaines, mesure) : ancien comportement ci-dessus.
 // Mode Monde. Réglages : calendrier-mutations.json (lu à chaque calcul). Aucun hasard hors des tirages déterministes.
 const REGLAGES = require('./calendrier-mutations.json');
 const VENTE = require('./vente-joueurs.cjs');
@@ -56,9 +61,55 @@ function libres(jour, dejaSupp = 0, R = REGLAGES) {
     raison: 'Recrutement des joueurs sans club fermé' + (finSupp ? ' depuis le ' + jourMois(finSupp) : '') + ' : réouverture le ' + reo + '.', court: 'Joueurs libres : fermé jusqu’au ' + jourMois(L.reouverture.slice(5)) };
 }
 
-// Joueurs sous contrat entre clubs (période des mutations de vente-joueurs.json, même source que la vente).
-function interclub(jour, RV = VENTE.REGLAGES) {
+// Transferts entre clubs (v2, décision de Léo du 19/11/2026) : « mutations » = accords toute l'année, arrivée à la bascule ;
+// « semaines » = ancien comportement (mesure). Surcharge de mesure : CD_CLUBS_GERES_CALENDRIER.
+function calendrierClubs(R = REGLAGES) {
+  const env = typeof process !== 'undefined' ? process.env.CD_CLUBS_GERES_CALENDRIER : undefined;
+  if (env === 'semaines' || env === 'mutations') return env;
+  return R.clubsGeres && R.clubsGeres.calendrier === 'semaines' ? 'semaines' : 'mutations';
+}
+// Indemnité plafonnée aux salaires que l'acheteur reprend (GDD § 3 quater) : salaire hebdomadaire × 52 × saisons de
+// contrat restantes après l'arrivée ; plancher plancherIndemnite. ex. 5 000 €/sem., contrat jusqu'à saison + 1 → ≤ 260 000 €.
+const plafondIndemnite = (salaire, contractEnd, saison) => Math.max(0, Math.round(salaire * 52 * Math.max(0, contractEnd - saison)));
+function indemnite(fee, salaire, contractEnd, saison, R = REGLAGES) {
+  const plancher = R.clubsGeres ? R.clubsGeres.plancherIndemnite : 10000;
+  return Math.max(plancher, Math.min(Math.round(fee), plafondIndemnite(salaire, contractEnd, saison)));
+}
+// Tours de marché des clubs gérés à cette clôture de semaine (calendrier « mutations ») : semaines fixes (0 et 13), hiver
+// (un tour toutes les n semaines comptées depuis le début de la période), période des mutations (un tour, deux la dernière
+// semaine). Rend {tours, motif:'semaine'|'hiver'|'mutations'|'derniere'|null, fin (fin de la période des mutations)}.
+function toursClubs(jour, semaine, saison, R = REGLAGES, RV = VENTE.REGLAGES) {
+  const G = R.clubsGeres, rien = { tours: 0, motif: null, fin: null };
+  if (!G || !isoValide(jour)) return rien;
   const f = VENTE.fenetre(jour, RV);
+  if (f.mode === 'fenetres' && f.ouverte) {
+    const fin = periode(jour, RV.fenetres.periodes).fin, derniere = decaler(jour, 7) > fin;
+    return { tours: derniere ? G.toursDerniereSemaine : G.toursParSemaine, motif: derniere ? 'derniere' : 'mutations', fin };
+  }
+  if ((G.semainesFixes || []).includes(semaine) && !(saison === 1 && semaine === 0)) return { tours: 1, motif: 'semaine', fin: null };
+  const h = periode(jour, (G.hiver || {}).periodes);
+  if (h.ouverte && (G.hiver.periodes || []).length) {
+    const p = G.hiver.periodes.find(x => dans(jour.slice(5), x)), an = Number(jour.slice(0, 4));
+    const debut = (p.debut <= p.fin || jour.slice(5) >= p.debut ? an : an - 1) + '-' + p.debut;
+    const n = Math.floor((Date.parse(jour) - Date.parse(debut)) / 86400000 / 7);
+    if (n % Math.max(1, G.hiver.toutesLesSemaines) === 0) return { tours: 1, motif: 'hiver', fin: null };
+  }
+  return rien;
+}
+
+// Joueurs sous contrat entre clubs (période des mutations de vente-joueurs.json, même source que la vente).
+// arrivee (v2, calendrier « mutations ») : date de la bascule ; les accords sont toujours différés jusque-là.
+function interclub(jour, RV = VENTE.REGLAGES, arrivee = null) {
+  const f = VENTE.fenetre(jour, RV);
+  if (arrivee && isoValide(jour)) {
+    const a = dateFr(arrivee);
+    if (f.mode !== 'fenetres' || f.ouverte) {
+      const p = f.mode === 'fenetres' ? periode(jour, RV.fenetres.periodes) : null;
+      return { ouverte: true, reouverture: null, raison: '', arrivee, note: (p ? 'Période des mutations jusqu’au ' + dateFr(p.fin) + ' : les autres clubs enchérissent aussi. ' : '') + 'Un transfert conclu maintenant prendra effet le ' + a + '.' };
+    }
+    const raison = 'Hors période des mutations : un accord conclu maintenant prendra effet le ' + a + ' ; les autres clubs n’enchérissent qu’à partir du ' + dateFr(f.reouverture) + '.';
+    return { ouverte: false, reouverture: f.reouverture, raison, note: raison, arrivee };
+  }
   if (f.mode !== 'fenetres' || !isoValide(jour)) return { ouverte: true, reouverture: null, raison: '', note: '' };
   if (f.ouverte) { const p = periode(jour, RV.fenetres.periodes); return { ouverte: true, reouverture: null, raison: '', note: 'Période des mutations ouverte jusqu’au ' + dateFr(p.fin) + ' : les accords entre clubs sont immédiats.' }; }
   const raison = 'Hors période des mutations : un accord conclu maintenant sera effectif le ' + dateFr(f.reouverture) + '.';
@@ -100,7 +151,18 @@ function calEtat(ecrire=false){
 }
 const calSupp=()=>{const s=calEtat().supplementaires;return s.saison===S.season?s.ids.length:0;};
 function calLibres(){return nativeCalendrierMutations.libres(calJour(),calSupp(),calR());}
-function calInterclub(){return nativeCalendrierMutations.interclub(calJour(),nativeVenteJoueurs.REGLAGES);}
+function calInterclub(){return nativeCalendrierMutations.interclub(calJour(),nativeVenteJoueurs.REGLAGES,calBascule()?calArrivee():null);}
+// v2 (décision de Léo du 19/11/2026) : transferts entre clubs conclus toute l'année, effectifs à la bascule de saison
+// (« 1er juillet »), pour tous les clubs. Faux avec le réglage « semaines » (ancien comportement, mesure).
+const calBascule=()=>calActif()&&nativeCalendrierMutations.calendrierClubs(calR())==='mutations';
+const calArrivee=()=>nativeCalendrierMutations.preContratDates(calAnneeFin(S.season),calR()).arrivee;
+// Fenêtre des accords du club joué (vente-joueurs.cjs venteFenetre) : toujours différés jusqu'à la bascule.
+function calFenetreAccords(){
+ if(!calBascule())return null;const a=calArrivee();
+ return {mode:'fenetres',ouverte:false,reouverture:a,bascule:true,raison:'Un transfert conclu maintenant prendra effet le '+calDateFr(a)+' (changement de saison).'};
+}
+// Indemnité plafonnée aux salaires que l'acheteur reprend (tous les clubs ; réglage « semaines » : inchangée).
+function calIndemnite(p,fee){return calBascule()?nativeCalendrierMutations.indemnite(fee,p.salary,p.contractEnd??S.season,S.season,calR()):fee;}
 // Recrue libre (commande recruit, model.market) : '' si permise, sinon la raison avec la date de réouverture.
 function calendrierRefusRecrue(){const l=calLibres();return l.ouverte?'':l.raison;}
 // Après la signature d'une recrue libre : un joueur supplémentaire de plus si on est en janvier.
@@ -124,6 +186,7 @@ function preContratRefusProlongation(id){const x=preContratSigne(id);return x&&x
 // Joueur d'un autre club : un pré-contrat est-il possible ? '' si oui.
 function calRaisonPreContrat(c,p){
  const P=calR().preContrats;if(!P.actifs||!calActif())return 'Pré-contrats indisponibles dans cette carrière.';
+ const ia=calIAReserve(p.id);if(ia)return ia;
  const x=calPre(p.id);
  if(x)return x.sens==='arrivee'&&x.clubId===S.club?'Pré-contrat signé : il rejoindra ton club le '+calDateFr(x.arrivee)+'.':'Il a déjà signé un pré-contrat avec un autre club.';
  if(S.live)return 'Match en cours : attends la fin de la journée.';
@@ -183,6 +246,7 @@ function calendrierApresProlongation(id){
 // prolongation) et, certaines semaines, nouvelle approche d'un autre club pour un joueur en fin de contrat.
 function calSemaine(){
  if(!calActif()||S.live)return;
+ calIAPreContrats();
  const P=calR().preContrats,A=P.approches,j=calJour();if(!P.actifs||!j)return;
  if(calEtatValide(S.calendrierMutations))for(const x of S.calendrierMutations.preContrats){
   if(x.sens!=='depart'||x.etat!=='approche')continue;
@@ -244,11 +308,204 @@ function calExecuterPreContrats(){
  }
  st.preContrats=st.preContrats.filter(x=>x.saison>=S.season-1).slice(-40);
 }
+// Bascule (v2) : pré-contrats du club joué, ses achats conclus, accords et pré-contrats des clubs gérés, puis le cycle des
+// contrats (départ des joueurs libres, prolongations et libérations des clubs gérés), enfin ses ventes conclues.
 const settleContractsCalV1=settleContracts;
 settleContracts=function(){
- if(S.economy&&S.economy.settled!==S.season&&calEtatValide(S.calendrierMutations)&&calActif())calExecuterPreContrats();
- return settleContractsCalV1.apply(this,arguments);
+ const du=!!S.economy&&S.economy.settled!==S.season&&calActif(),v2=du&&calBascule();let n=0;
+ if(du&&calEtatValide(S.calendrierMutations))calExecuterPreContrats();
+ if(v2){n+=venteExecuterAccords('achats')||0;n+=calIAExecuter();}
+ const r=settleContractsCalV1.apply(this,arguments);
+ if(v2){n+=venteExecuterAccords('ventes')||0;if(n){const t=n>1?n+' transferts entre clubs prennent effet en ce changement de saison.':'Un transfert entre clubs prend effet en ce changement de saison.';calActu(t);calMercatoLigne(calMercatoEtat(),'temps-fort',t,0);}}
+ return r;
 };
+
+// ---- Clubs gérés (v2) : accords différés, pré-contrats entre eux, rumeurs, temps forts du mercato ----
+// État (champs facultatifs de S.calendrierMutations, bornés, purgés à la bascule) :
+//  accordsIA : [{id,playerId,nom,pos,vendeurId,vendeur,acheteurId,acheteur,montant,salaire,annees,date,saison}] accords
+//    d'achat conclus par un club géré (entre clubs gérés, ou enchère gagnée sur le marché du club joué), en attente de la
+//    bascule (l'indemnité est payée à l'exécution, revérifiée) ;
+//  ia : [{id,playerId,nom,pos,vendeurId,vendeur,acheteurId,acheteur,salaire,annees,date,saison,etat:'signe'|'execute'|'tombe'}]
+//    pré-contrats entre clubs gérés ;
+//  rumeurs : [{id,playerId,nom,pos,clubId,club,interesseId,interesse,date,saison,suite:null|'signe'}] ;
+//  mercato : {saison,debut,fin,ouverture,derniere,bilan,n,top:[{texte,montant}],semaines:{[semaine]:[{type,texte,montant}]}}
+//    résumé lisible (courriers « Échos du mercato » / « Point mercato ») ; type 'accord' (transfert conclu, montant),
+//    'precontrat', 'rumeur', 'temps-fort' (ouverture, dernière semaine, bilan, bascule) ; dates AAAA-MM-JJ ou null ;
+//    n et top : transferts conclus pendant la période des mutations (bilan) ;
+//  clubsGeres : {cle:'saison:semaine'} dernière clôture où les clubs gérés ont tenu leurs tours ; iaSemaine : idem pour
+//    les pré-contrats ; actus : {cle, n} actualités d'accords de la semaine.
+const calG=()=>calR().clubsGeres;
+function calIAEtat(){const st=calEtat(true);st.accordsIA??=[];st.ia??=[];st.rumeurs??=[];return st;}
+const calIAListe=k=>calEtatValide(S.calendrierMutations)&&Array.isArray(S.calendrierMutations[k])?S.calendrierMutations[k]:[];
+const calIAAccord=id=>calIAListe('accordsIA').find(a=>a.playerId===id&&a.saison===S.season)||null;
+const calIAPre=id=>calIAListe('ia').find(x=>x.playerId===id&&x.etat==='signe'&&x.saison===S.season)||null;
+const calPoste=p=>String(p.pos||'').toLowerCase();
+const calJourMois=iso=>nativeCalendrierMutations.jourMois(iso.slice(5));
+// Joueur engagé par un club géré : raison, '' sinon.
+function calIAReserve(id){
+ const a=calIAAccord(id);if(a)return 'Transfert conclu avec '+a.acheteur+' : il le rejoindra le '+calDateFr(calArrivee())+'.';
+ const x=calIAPre(id);if(x)return 'A signé un pré-contrat avec '+x.acheteur+' pour la saison prochaine.';
+ return '';
+}
+// Plus achetable par un club géré : engagé ailleurs (clubs gérés, accord ou pré-contrat du club joué).
+const calIAIndisponible=id=>!!calIAReserve(id)||(typeof calAccordAchat==='function'&&!!calAccordAchat(id))||!!(calEtatValide(S.calendrierMutations)&&calPre(id));
+// Fil des transferts (sans courrier) et actualités (S.news, sans la boîte du manager).
+function calFil(text){if(!S.economy)return;S.economy.transfers.unshift({season:S.season,round:S.round,text});S.economy.transfers=S.economy.transfers.slice(0,80);}
+function calActu(text){if(!Array.isArray(S.news))S.news=[];S.news.unshift(text);S.news=S.news.slice(0,20);}
+// Effectif et masse de la saison suivante d'un club géré : contrats qui s'achèvent et départs conclus retirés,
+// arrivées conclues ajoutées. engage : indemnités déjà promises.
+function calIASuivante(c){
+ const acc=calIAListe('accordsIA').filter(a=>a.saison===S.season),pre=calIAListe('ia').filter(x=>x.etat==='signe'&&x.saison===S.season);
+ const out=new Set([...acc,...pre].filter(x=>x.vendeurId===c.id).map(x=>x.playerId)),inc=[...acc,...pre].filter(x=>x.acheteurId===c.id);
+ let masse=0,n=0;for(const p of c.players){if(out.has(p.id)||p.contractEnd!=null&&p.contractEnd<=S.season)continue;masse+=p.salary;n++;}
+ for(const x of inc){masse+=x.salaire;n++;}
+ return {masse,places:professionalCapacity(c)-n,engage:acc.filter(a=>a.acheteurId===c.id).reduce((s,a)=>s+a.montant,0),postes:new Set(inc.map(x=>x.pos))};
+}
+const calIAPeutAcheter=(c,salaire,s=calIASuivante(c))=>s.places>0&&s.masse+salaire<=aiRosterWageLimit(c);
+// Actualité d'un accord : au plus actusParSemaine par semaine (le fil des transferts et le résumé gardent tout).
+function calActuAccord(text){
+ const st=calIAEtat(),cle=S.season+':'+S.round;if(st.actus?.cle!==cle)st.actus={cle,n:0};
+ if(st.actus.n<(calG().actusParSemaine??4)){st.actus.n++;calActu(text);}
+}
+// Accord d'achat d'un club géré (b achète p à s) : le joueur reste à son club jusqu'à la bascule.
+function calIANouvelAccord(b,s,p,montant,salaire,annees){
+ const st=calIAEtat();st.seq++;
+ const a={id:'ia-'+st.seq,playerId:p.id,nom:p.name,pos:p.pos,vendeurId:s.id,vendeur:s.name,acheteurId:b.id,acheteur:b.name,montant,salaire,annees,date:calJour()||'',saison:S.season};
+ st.accordsIA.push(a);st.accordsIA=st.accordsIA.slice(-calG().accordsGardes);
+ const texte=b.name+' s’est mis d’accord avec '+s.name+' pour '+p.name+' ('+calPoste(p)+') : il arrivera le '+calJourMois(calArrivee())+'.';
+ calFil(texte.slice(0,-1)+' ('+money(montant)+').');calActuAccord(texte);calMercato('accord',texte,montant);
+ return a;
+}
+// ---- Résumé du mercato (temps forts, lignes de la semaine) ----
+function calMercatoEtat(){
+ const st=calIAEtat(),j=calJour()||'';let m=st.mercato;
+ if(m&&m.ouverture&&!m.bilan&&m.fin&&j>m.fin){
+  m.bilan=j;
+  const texte='Bilan du mercato : '+(m.n>1?m.n+' transferts entre clubs conclus':m.n===1?'un transfert entre clubs conclu':'aucun transfert entre clubs conclu')+' pendant la période des mutations.'+(m.top.length?' Les plus gros : '+m.top.map(t=>t.texte).join(' ; ')+'.':'');
+  calActu(texte);calMercatoLigne(m,'temps-fort',texte,0);
+ }
+ if(!m||m.saison!==S.season)m=st.mercato={saison:S.season,debut:null,fin:null,ouverture:null,derniere:null,bilan:null,n:0,top:[],semaines:{}};
+ // Période des mutations de cette saison (juillet à juin) : relue tant qu'elle n'est pas ouverte.
+ if(!m.ouverture){
+  const f=nativeVenteJoueurs.REGLAGES.fenetres||{},p=f.mode==='fenetres'&&Array.isArray(f.periodes)?f.periodes[0]:null,an=calAnneeFin(S.season),y=p&&p.debut>='07-01'?an-1:an;
+  m.debut=p?y+'-'+p.debut:null;m.fin=p?(p.fin<p.debut?y+1:y)+'-'+p.fin:null;
+ }
+ return m;
+}
+function calMercatoLigne(m,type,texte,montant){
+ const G=calG().mercato,w=String(S.round);(m.semaines[w]??=[]).push({type,texte,montant});m.semaines[w]=m.semaines[w].slice(-G.lignesParSemaine);
+ const ks=Object.keys(m.semaines).sort((a,b)=>Number(a)-Number(b));while(ks.length>G.semainesGardees)delete m.semaines[ks.shift()];
+}
+// Ligne de la semaine ; un accord conclu pendant la période compte pour le bilan (trois plus gros montants).
+function calMercato(type,texte,montant=0){
+ const m=calMercatoEtat(),j=calJour()||'';calMercatoLigne(m,type,texte,montant);
+ if(type==='accord'&&m.debut&&j>=m.debut&&j<=m.fin){m.n++;m.top.push({texte:texte.replace(/ : il arrivera.*$/,'')+', '+money(montant),montant});m.top.sort((a,b)=>b.montant-a.montant);m.top=m.top.slice(0,3);}
+}
+// Temps forts (après les tours de marché de la semaine) : ouverture, dernière semaine ; le bilan passe par calMercatoEtat.
+function calMercatoTempsForts(motif){
+ if(!calBascule())return;
+ const m=calMercatoEtat(),j=calJour();if(!j||!m.debut||j<m.debut||j>m.fin)return;
+ if(!m.ouverture){m.ouverture=j;const t='Ouverture de la période des mutations : les clubs ont jusqu’au '+calDateFr(m.fin)+' pour boucler leurs transferts, qui prendront effet le '+calDateFr(calArrivee())+'.';calActu(t);calMercatoLigne(m,'temps-fort',t,0);}
+ if(motif==='derniere'&&!m.derniere){m.derniere=j;const t='Dernière semaine du mercato : les clubs bouclent leurs derniers accords avant le '+calDateFr(m.fin)+'.'+(m.top.length?' Plus gros transferts conclus : '+m.top.map(x=>x.texte).join(' ; ')+'.':'');calActu(t);calMercatoLigne(m,'temps-fort',t,0);}
+}
+// Tours de marché des clubs gérés à cette clôture (club-transfers.cjs). ancien : fenêtre des semaines 0 et 13 ouverte.
+function calClubsGeresTours(ancien){
+ if(!calBascule())return {tours:ancien?3:0,differe:false,motif:null};
+ const j=calJour(),w=S.round;if(!j||S.live||S.phase!=='league')return {tours:0,differe:true,motif:null};
+ const st=calIAEtat(),cle=S.season+':'+w;if(st.clubsGeres?.cle===cle)return {tours:0,differe:true,motif:null};
+ st.clubsGeres={cle};
+ const t=nativeCalendrierMutations.toursClubs(j,w,S.season,calR(),nativeVenteJoueurs.REGLAGES);
+ return {tours:t.tours,differe:true,motif:t.motif};
+}
+// ---- Pré-contrats entre clubs gérés, rumeurs (clôture de semaine, calSemaine) ----
+function calIAPreContrats(){
+ const G=calG();if(!G||!calBascule()||S.phase!=='league')return;
+ const P=G.preContrats,Rm=G.rumeurs,j=calJour();if(!P.actifs||!j)return;
+ const d=nativeCalendrierMutations.preContratDates(calAnneeFin(S.season),calR());if(j<d.debut||j>d.fin)return;
+ const st=calIAEtat(),w=S.round,cle=S.season+':'+w;if(st.iaSemaine===cle)return;st.iaSemaine=cle;
+ const graine=venteGraine(),h=k=>seedHash(graine+':'+S.season+':'+w+':ia:'+k);
+ const achats=new Map(),departs=new Map();
+ for(const x of st.ia)if(x.saison===S.season){achats.set(x.acheteurId,(achats.get(x.acheteurId)||0)+1);departs.set(x.vendeurId,(departs.get(x.vendeurId)||0)+1);}
+ const prets=new Set((S.clubDirections?.loans||[]).map(l=>l.playerId)),ligue=new Map(),jlo=id=>{if(!ligue.has(id))ligue.set(id,['jlo-d1','jlo-d2'].includes(CDWorldCareer.leagueId(S,id)));return ligue.get(id);};
+ const clubs=S.clubs.filter(c=>c.id!==S.club),suivis=new Map(st.rumeurs.filter(r=>r.saison===S.season&&r.suite===null).map(r=>[r.playerId,r]));
+ let cands=[];
+ for(const c of clubs){
+  if((departs.get(c.id)||0)>=P.parVendeur)continue;
+  const top=new Set(c.players.slice().sort((a,b)=>roleNote(b)-roleNote(a)||(a.id<b.id?-1:1)).slice(0,P.meilleursProteges).map(p=>p.id));
+  for(const p of c.players)if(p.contractEnd===S.season&&!top.has(p.id)&&!prets.has(p.id)&&!p.espoirLoan&&(typeof careerContractYears!=='function'||careerContractYears(p)>=2)&&!calIAIndisponible(p.id))cands.push({p,c,k:h(p.id)});
+ }
+ cands=cands.sort((a,b)=>(suivis.has(b.p.id)?1:0)-(suivis.has(a.p.id)?1:0)||a.k-b.k||(a.p.id<b.p.id?-1:1)).slice(0,P.candidats);
+ const n=1+h('n')%Math.max(1,P.parSemaine),nr=Rm&&Rm.actives&&j.slice(5)<=Rm.fin?1+h('r')%Math.max(1,Rm.parSemaine):0;
+ let signes=0,rumeurs=0;
+ for(const {p,c,k} of cands){
+  if(signes>=n&&rumeurs>=nr)break;
+  if((departs.get(c.id)||0)>=P.parVendeur)continue;
+  const buyers=clubs.filter(b=>b.id!==c.id&&(achats.get(b.id)||0)<P.parAcheteur&&jlo(b.id)===jlo(c.id)).map(b=>({b,n:venteBesoin(b,p)})).filter(x=>x.n>=P.besoinMin)
+   .sort((x,y)=>y.n-x.n||Math.abs(x.b.base-p.rating)-Math.abs(y.b.base-p.rating)||x.b.id-y.b.id).slice(0,3);
+  const salaire=b=>Math.max(270,Math.min(100000,Math.round(Math.max(p.salary,nativeClubTransfers.demand(p,c,b))*P.majorationSalaire/100)*100));
+  const rumeur=suivis.get(p.id),ordre=rumeur?[...buyers.filter(x=>x.b.id===rumeur.interesseId),...buyers.filter(x=>x.b.id!==rumeur.interesseId)]:buyers.slice(k%Math.max(1,buyers.length)).concat(buyers.slice(0,k%Math.max(1,buyers.length)));
+  const pick=ordre.find(x=>calIAPeutAcheter(x.b,salaire(x.b)));if(!pick)continue;
+  const b=pick.b;
+  if(signes<n){
+   const sal=salaire(b),annees=Math.max(1,Math.min(p.age<=27?3:p.age<=30?2:1,typeof careerContractYears==='function'?careerContractYears(p)-1:3));st.seq++;
+   st.ia.push({id:'iapre-'+st.seq,playerId:p.id,nom:p.name,pos:p.pos,vendeurId:c.id,vendeur:c.name,acheteurId:b.id,acheteur:b.name,salaire:sal,annees,date:j,saison:S.season,etat:'signe'});
+   st.ia=st.ia.slice(-P.gardes);
+   achats.set(b.id,(achats.get(b.id)||0)+1);departs.set(c.id,(departs.get(c.id)||0)+1);signes++;
+   if(rumeur)rumeur.suite='signe';
+   const texte=b.name+' a signé '+p.name+' ('+calPoste(p)+' de '+c.name+') pour la saison prochaine.';
+   calFil(texte);calActu(texte);calMercato('precontrat',texte,0);continue;
+  }
+  if(rumeurs<nr&&!rumeur){
+   st.seq++;st.rumeurs.push({id:'rumeur-'+st.seq,playerId:p.id,nom:p.name,pos:p.pos,clubId:c.id,club:c.name,interesseId:b.id,interesse:b.name,date:j,saison:S.season,suite:null});
+   st.rumeurs=st.rumeurs.slice(-Rm.gardees);rumeurs++;
+   const texte='Selon la presse, '+b.name+' suit '+p.name+', '+calPoste(p)+' de '+c.name+' en fin de contrat.';
+   calActu(texte);calMercato('rumeur',texte,0);
+  }
+ }
+}
+// ---- Exécution à la bascule : accords et pré-contrats des clubs gérés (avant leurs prolongations et libérations) ----
+function calIAExecuter(){
+ if(!calEtatValide(S.calendrierMutations))return 0;
+ const st=calIAEtat();let n=0;
+ const placeSuivante=b=>professionalCapacity(b)-b.players.filter(q=>!(q.contractEnd!=null&&q.contractEnd<=S.season)).length;
+ const arriver=(p,s,b,salaire,annees,montant)=>{
+  s.players=s.players.filter(q=>q.id!==p.id);b.players.push(p);
+  if(montant>0){b.cash-=montant;s.cash+=montant;}
+  p.formerClub=s.name;p.salary=salaire;p.contractEnd=S.season+annees;p.joinedSeason=S.season+1;p.joinedRound=0;if(montant>0)p.price=montant;
+  if(typeof aiRosterEvent==='function'){aiRosterEvent(s.id,montant>0?'sell':'release',p,montant);aiRosterEvent(b.id,'recruit',p,montant);}
+ };
+ for(const a of st.accordsIA){
+  if(a.saison!==S.season)continue;
+  const s=S.clubs[a.vendeurId],b=S.clubs[a.acheteurId],p=s&&s.id!==S.club?s.players.find(q=>q.id===a.playerId):null;
+  const raison=!p?a.nom+' ne fait plus partie de '+a.vendeur:!b||b.id===S.club?a.acheteur+' ne gère plus son recrutement':b.cash<a.montant?a.acheteur+' n’a plus les moyens de payer l’indemnité':placeSuivante(b)<=0?a.acheteur+' n’a plus de place dans son effectif':'';
+  if(raison){const t='Le transfert de '+a.nom+' à '+a.acheteur+' tombe : '+raison+'.';calFil(t);calActu(t);continue;}
+  arriver(p,s,b,a.salaire,a.annees,a.montant);n++;
+  calFil(p.name+' rejoint '+b.name+' ('+money(a.montant)+' à '+s.name+') : transfert effectif au changement de saison.');
+ }
+ st.accordsIA=st.accordsIA.filter(a=>a.saison>S.season);
+ for(const x of st.ia){
+  if(x.saison!==S.season||x.etat!=='signe')continue;
+  const s=S.clubs[x.vendeurId],b=S.clubs[x.acheteurId],p=s&&s.id!==S.club?s.players.find(q=>q.id===x.playerId):null;
+  if(!p||p.contractEnd>S.season||!b||b.id===S.club||placeSuivante(b)<=0){x.etat='tombe';continue;}
+  arriver(p,s,b,x.salaire,x.annees,0);x.etat='execute';n++;
+  calFil(p.name+' rejoint '+b.name+' libre, comme prévu par son pré-contrat.');
+ }
+ st.ia=st.ia.filter(x=>x.saison>=S.season);st.rumeurs=st.rumeurs.filter(r=>r.saison>S.season);
+ return n;
+}
+// Offres reçues par le club joué (vente-joueurs.cjs, clôture de semaine) : indemnité plafonnée ; aucun club n'achète un
+// joueur dont le contrat s'achève cette saison (offres retirées, hors accords exécutés).
+function calOffresBascule(){
+ if(!calBascule()||!S.economy)return;
+ S.economy.offers=S.economy.offers.filter(o=>{
+  if(String(o.id).startsWith('accord-'))return true;
+  const p=player(o.playerId);if(!p)return true;
+  if(p.contractEnd!=null&&p.contractEnd<=S.season)return false;
+  if(!o.countered)o.fee=calIndemnite(p,o.fee);return true;
+ });
+}
+// Joueur du club joué en fin de contrat : plus de vente possible (v2).
+const calRaisonVenteFin=p=>calBascule()&&p.contractEnd!=null&&p.contractEnd<=S.season?'Son contrat s’achève cette saison : aucun club ne l’achètera, il partira libre s’il n’est pas prolongé.':'';
 // Le directeur sportif ne prolonge pas un joueur qui a signé ailleurs (prolongations-staff.cjs).
 if(typeof dsContratsCandidats==='function'){const dsCandidatsCalV1=dsContratsCandidats;dsContratsCandidats=function(){return dsCandidatsCalV1.apply(this,arguments).filter(p=>!preContratRefusProlongation(p.id));};}
 if(typeof dsContratsRefus==='function'){const dsRefusCalV1=dsContratsRefus;dsContratsRefus=function(kind,id){return kind==='forcer'&&preContratRefusProlongation(id)||dsRefusCalV1.apply(this,arguments);};}
@@ -291,4 +548,4 @@ function calCourriers(s,etat){
 }
 `;
 
-module.exports = Object.freeze({ REGLAGES, periode, libres, interclub, jokers, preContratDates, prime, approcheTiree, decaler, jourMois, BRANCHEMENT });
+module.exports = Object.freeze({ REGLAGES, periode, libres, interclub, jokers, preContratDates, prime, approcheTiree, decaler, jourMois, calendrierClubs, plafondIndemnite, indemnite, toursClubs, BRANCHEMENT });

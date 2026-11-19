@@ -42,7 +42,7 @@ try{
   for(const request of [null,{command:'snapshot'},{id:[],command:'snapshot'},{id:1,command:'eval',payload:{code:'process.exit()'}},{id:1,command:'snapshot',payload:[]}])assert.equal(b.handle(request).ok,false);
   assert.equal(good(b,'snapshot').club,null);
   assert.equal(call(b,'new_career',{club:0}).ok,false,'Ancien mode de carrière refusé');assert.equal(good(b,'snapshot').club,null);
-  const initial=both(x=>good(x,'new_career',MONDE));assert.equal(initial.protocol,1);assert.equal(initial.club.id,102);assert.equal(initial.league.length,14);assert.equal(initial.squad.length,40);assert.ok(initial.meta.catalogue.filter(c=>c.playable).length>=30);
+  const initial=both(x=>good(x,'new_career',MONDE));assert.equal(initial.protocol,1);assert.equal(initial.club.id,102);assert.equal(initial.league.length,14);assert.ok(initial.squad.length>=23&&initial.squad.every(p=>!p.id.startsWith('depth-')),'club joué : effectif réel, sans joueurs de complément (plus de plancher de 40, décision de Léo du 19/11/2026)');assert.ok(initial.meta.catalogue.filter(c=>c.playable).length>=30);
   assert.equal(Object.keys(initial.squad[0].attributesV2).length,36);assert.ok(Number.isInteger(initial.squad[0].portraitIndex));
   same('création Monde déterministe (même graine, même horloge)');
   const before=good(b,'export').meta.exportText;for(let i=0;i<6;i++)good(b,'snapshot');assert.equal(good(b,'export').meta.exportText,before,'snapshot/export ne consomment pas le RNG');

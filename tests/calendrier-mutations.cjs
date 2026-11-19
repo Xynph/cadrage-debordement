@@ -1,7 +1,7 @@
 'use strict';
 // Calendrier du recrutement (native/engine/calendrier-mutations.cjs, docs/gdd/calendrier-mutations.md) : dates limites
 // (joueurs sans club jusqu'au 31 décembre, deux joueurs supplémentaires en janvier, jokers jusqu'au 31 mars, période des
-// mutations du 1er mai au 30 juin), accord d'achat différé exécuté à l'ouverture, pré-contrats dans les deux sens
+// mutations du 1er mai au 30 juin), accord d'achat différé exécuté au changement de saison (v2), pré-contrats dans les deux sens
 // (arrivée au 1er juillet sans indemnité), approche d'un autre club (courrier, délai, prolongation qui l'annule), vente du
 // président différée, part des ventes rendue au budget sans plafond, temps de clôture de semaine.
 // Mode Monde uniquement (`world-champ`, club 102).
@@ -151,20 +151,22 @@ test('Moteur Monde : recrutement libre, joueurs supplémentaires, achat différ�
     const neg = jeu.call('interclub_negotiate', offre).meta.interclubNegotiation;
     assert.equal(neg.humanReady, true, neg.humanReason);
     assert.deepEqual(neg.offers.map(o => o.human), [true], 'hors période, les autres clubs n’enchérissent pas');
-    assert.equal(neg.deferred.dateLabel, '1er mai 2027');
+    assert.equal(neg.deferred.dateLabel, '1er juillet 2027', 'v2 : arrivée au changement de saison');
     const avantAchat = lire(`({cash:club().cash,n:club().players.length,dep:S.budgetTransferts.depense,vendeur:S.clubs[${cible.clubId}].cash})`);
     r = jeu.brut('interclub_auction', { ...offre, expectedWinner: neg.winner.clubId, expectedFee: neg.winner.fee, expectedSalary: neg.winner.salary, confirmed: true });
     assert.equal(r.ok, true, r.error);
     const recu = r.model.meta.interclubTransfer;
-    assert.equal(recu.deferred, true); assert.equal(recu.date, '2027-05-01'); assert.equal(recu.humanWon, true);
+    assert.equal(recu.deferred, true); assert.equal(recu.date, '2027-07-01'); assert.equal(recu.humanWon, true);
     assert.deepEqual(lire(`({cash:club().cash,n:club().players.length,dep:S.budgetTransferts.depense,vendeur:S.clubs[${cible.clubId}].cash})`),
       { ...avantAchat, dep: avantAchat.dep + cible.fee }, 'seule l’indemnité est engagée sur le budget');
     assert.deepEqual(r.model.mutations.purchases.map(a => a.playerId), [cible.id]);
-    assert.match(marche().candidates.find(c => c.id === cible.id).reason, /^Accord conclu : il rejoindra ton club le 1er mai 2027\.$/);
-    // Ouverture de la période : exécution à la clôture de semaine.
+    assert.match(marche().candidates.find(c => c.id === cible.id).reason, /^Accord conclu : il rejoindra ton club le 1er juillet 2027\.$/);
+    // v2 : rien à une clôture de semaine, même en période ; exécution au changement de saison (achats de settleContracts).
     mutationsOuvertes();
-    run(`S.venteJoueurs.accords.find(a=>a.sens==='achat').date=CDWorldCareer.calendarToday(S)`);
     m = semaine();
+    assert.equal(m.squad.some(p => p.id === cible.id), false, 'pas d’arrivée avant le changement de saison');
+    assert.equal(run(`venteExecuterAccords('achats')`), 1);
+    m = jeu.call('snapshot');
     assert.ok(m.squad.some(p => p.id === cible.id), 'le joueur a rejoint le club');
     assert.equal(lire(`S.clubs[${cible.clubId}].players.some(p=>p.id==='${cible.id}')`), false);
     assert.ok(lire(`S.ledger.some(l=>JSON.stringify(l).includes('Libération anticipée'))`), 'ligne de caisse');
@@ -173,29 +175,31 @@ test('Moteur Monde : recrutement libre, joueurs supplémentaires, achat différ�
     assert.equal(lire('S.budgetTransferts.depense'), avantAchat.dep + cible.fee, 'indemnité engagée une seule fois');
     restaurer();
 
-    // 5. Vente décidée par le président hors période : accord conclu, effectif le 1er mai, rien au budget.
+    // 5. Vente décidée par le président : accord conclu, effectif au changement de saison, rien au budget.
     const pres = lire(`(()=>{const c=club(),res=S.clubBudget.clubs[c.id].reserve;S.presidentReprise={version:1,clubs:{},derniere:{}};
       c.cash=res-1.5e6;const ok=repriseApresAchat(c,res+1e6);const p=S.presidentReprise.clubs[c.id];
       const courrier=repriseCourrier();p.echeance=CDWorldCareer.calendarToday(S);const n=c.players.length,cash=c.cash,r0=S.budgetTransferts.reconstitue;repriseSemaine();
       return {ok,etat:p.etat,mutations:courrier.vars.mutations,n,apres:c.players.length,cash,cashApres:c.cash,r0,accords:S.venteJoueurs.accords.filter(a=>a.imposee).map(a=>({id:a.id,playerId:a.playerId,fee:a.fee,date:a.date}))};})()`);
     jeu.call('save');
     assert.equal(pres.ok, true); assert.equal(pres.etat, 'vendu');
-    assert.match(pres.mutations, /^Nous sommes hors période des mutations : .+ le 1er mai 2027\.$/);
-    assert.equal(pres.apres, pres.n, 'le joueur reste jusqu’à l’ouverture'); assert.equal(pres.cashApres, pres.cash);
-    assert.ok(pres.accords.length >= 1 && pres.accords.every(a => a.date === '2027-05-01'));
+    assert.match(pres.mutations, /^Les transferts prennent effet au changement de saison : .+ le 1er juillet 2027\.$/);
+    assert.equal(pres.apres, pres.n, 'le joueur reste jusqu’au changement de saison'); assert.equal(pres.cashApres, pres.cash);
+    assert.ok(pres.accords.length >= 1 && pres.accords.every(a => a.date === '2027-07-01'));
     m = jeu.call('snapshot');
-    assert.match(m.sales.pending.find(a => a.id === pres.accords[0].id).label, /^Vente décidée par le président : départ pour .+ le 1er mai 2027/);
-    mutationsOuvertes();
-    run(`for(const a of S.venteJoueurs.accords)a.date=CDWorldCareer.calendarToday(S);for(const a of S.venteJoueurs.accords)S.clubs[a.buyer].cash=Math.max(S.clubs[a.buyer].cash,5e6);`);
+    assert.match(m.sales.pending.find(a => a.id === pres.accords[0].id).label, /^Vente décidée par le président : départ pour .+ le 1er juillet 2027/);
+    run(`for(const a of S.venteJoueurs.accords)S.clubs[a.buyer].cash=Math.max(S.clubs[a.buyer].cash,5e6);`);
     const r0 = lire('S.budgetTransferts.reconstitue'), cash0 = lire('club().cash');
-    m = semaine();
+    assert.ok(run(`venteExecuterAccords('ventes')`) >= 1);
+    m = jeu.call('snapshot');
     for (const a of pres.accords) assert.equal(m.squad.some(p => p.id === a.playerId), false, 'parti à l’ouverture');
     assert.equal(lire('S.budgetTransferts.reconstitue'), r0, 'vente imposée : rien au budget');
     assert.ok(lire('club().cash') > cash0 - 2e6, 'caisse créditée');
     restaurer();
 
-    // 6. Part d'une vente choisie rendue sans plafond (R4) : enveloppe déjà au plafond des recettes.
+    // 6. Part d'une vente choisie rendue sans plafond (R4) : enveloppe déjà au plafond des recettes (vente immédiate :
+    // réglage « semaines », ancien comportement, en période).
     run('club().cash=Math.max(club().cash,9e6)');
+    R.clubsGeres.calendrier = 'semaines';
     mutationsOuvertes();
     const acheteur = lire(`S.clubs.find(c=>c.id!==S.club&&professionalPlaces(c)>0&&c.cash>=2e6).id`);
     const vendu = jeu.call('snapshot').squad.find(p => !p.sale.blocked && !p.sale.pending && !p.preContract);
@@ -242,7 +246,7 @@ test('Moteur Monde : recrutement libre, joueurs supplémentaires, achat différ�
 
     // 8. Un autre club approche un joueur du club joué en fin de contrat : courrier, délai, prolongation qui l'annule.
     R.preContrats.approches.chanceSemaine = 1;
-    const fins = lire(`(()=>{const ids=club().players.slice().sort((a,b)=>roleNote(b)-roleNote(a)).slice(0,6).map(p=>p.id);for(const id of ids)player(id).contractEnd=S.season;return ids;})()`);
+    const fins = lire(`(()=>{const ids=club().players.slice().sort((a,b)=>roleNote(b)-roleNote(a)).slice(0,6).map(p=>p.id);for(const p of club().players)if(p.contractEnd===S.season&&!ids.includes(p.id))p.contractEnd=S.season+1;for(const id of ids)player(id).contractEnd=S.season;return ids;})()`);
     jeu.call('save');
     m = semaine();
     let approche = lire(`S.calendrierMutations.preContrats.filter(x=>x.sens==='depart')`);
