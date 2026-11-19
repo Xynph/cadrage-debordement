@@ -8,6 +8,7 @@
 //   --journees N : après le 1er match, continue jusqu'à N matchs officiels du club (match délégué, résultat confirmé,
 //                  conférence d'après-match répondue = arrêt 'presse-apres-match'). Défaut 0 : s'arrête au 1er match.
 //   --json : sortie JSON seule (pour comparer avant / après).
+// « même jour » : arrêts supplémentaires d'une date déjà arrêtée (appui sur Continuer sans avancer), matchs exclus.
 const Monde = require('../tests/helpers/carriere-monde.cjs');
 const { settleClubMeetings } = require('../tests/helpers/club-meetings.cjs');
 
@@ -31,7 +32,7 @@ function mesurer(club) {
       if (!r.ok) { arrets.push({ date: model.meta.calendarToday, kind: 'refus', detail: r.error }); break; }
       model = r.model;
       const a = model.meta.advanceUntilEvent;
-      arrets.push({ date: a.to || model.meta.calendarToday, kind: a.stop.kind, type: a.stop.type || null, detail: a.stop.detail });
+      arrets.push({ date: a.to || model.meta.calendarToday, kind: a.stop.kind, type: a.stop.type || null, nature: a.stop.nature || null, elements: a.stop.elements || 1, detail: a.stop.detail });
       if (a.stop.kind === 'match') {
         if (presseAvant1erMatch === null) presseAvant1erMatch = arrets.filter(estPresse).length;
         if (++matchs >= Math.max(JOURNEES, 1) || JOURNEES <= 0) break;
@@ -58,9 +59,14 @@ function mesurer(club) {
       if (a.stop.kind === 'conversation') model = repondreEntretien(jeu, model);
     }
     const parType = {};
-    for (const x of arrets) { const k = x.kind === 'info' ? 'info:' + x.type : x.kind; parType[k] = (parType[k] || 0) + 1; }
+    for (const x of arrets) { const k = x.kind === 'info' ? 'info:' + x.type + (x.type === 'courrier' && x.nature === 'info' ? '-info' : '') : x.kind; parType[k] = (parType[k] || 0) + 1; }
+    // Arrêts « même jour » : appuis sur Continuer qui rendent la main sans avancer (2e, 3e… arrêt d'une même date,
+    // matchs exclus) ; jours concernés.
+    const vus = {}; let memeJour = 0;
+    for (const x of arrets.filter(x => !['match', 'presse-apres-match', 'refus'].includes(x.kind))) { if (vus[x.date]) memeJour++; vus[x.date] = (vus[x.date] || 0) + 1; }
+    const joursMultiples = Object.values(vus).filter(n => n > 1).length;
     const presseSurNJournees = arrets.filter(estPresse).length;
-    return { club, nom, ligue: LIGUES[club] || '', total: arrets.filter(x => x.kind !== 'match').length, presseAvant1erMatch: presseAvant1erMatch ?? presseSurNJournees, presseSurNJournees, parType, arrets };
+    return { club, nom, ligue: LIGUES[club] || '', total: arrets.filter(x => x.kind !== 'match').length, memeJour, joursMultiples, presseAvant1erMatch: presseAvant1erMatch ?? presseSurNJournees, presseSurNJournees, parType, arrets };
   } finally { jeu.fermer(); }
 }
 
@@ -76,7 +82,7 @@ function repondreEntretien(jeu, model) {
 const resultats = (clubs.length ? clubs : [0, 88, 102]).map(mesurer);
 if (json) console.log(JSON.stringify(resultats.map(({ arrets, ...r }) => r)));
 else for (const r of resultats) {
-  console.log(`\n${r.nom} (${r.ligue}) : ${r.total} arrêts ${JOURNEES > 0 ? 'sur ' + JOURNEES + ' journée(s)' : 'avant le 1er match'} · presse : ${r.presseAvant1erMatch} avant le 1er match` + (JOURNEES > 0 ? `, ${r.presseSurNJournees} au total` : ''));
+  console.log(`\n${r.nom} (${r.ligue}) : ${r.total} arrêts ${JOURNEES > 0 ? 'sur ' + JOURNEES + ' journée(s)' : 'avant le 1er match'} · même jour : ${r.memeJour} (${r.joursMultiples} jours) · presse : ${r.presseAvant1erMatch} avant le 1er match` + (JOURNEES > 0 ? `, ${r.presseSurNJournees} au total` : ''));
   console.log('  ' + Object.entries(r.parType).map(([k, n]) => k + ' ' + n).join(' · '));
-  for (const a of r.arrets) console.log(`  ${a.date}  ${a.kind}${a.type ? ':' + a.type : ''}  ${String(a.detail).slice(0, 110)}`);
+  for (const a of r.arrets) console.log(`  ${a.date}  ${a.kind}${a.type ? ':' + a.type : ''}${a.nature === 'info' && a.type === 'courrier' ? '-info' : ''}${a.elements > 1 ? ' [' + a.elements + ']' : ''}  ${String(a.detail).slice(0, 110)}`);
 }
