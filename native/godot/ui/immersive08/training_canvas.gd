@@ -91,7 +91,7 @@ func _build() -> void:
 	_metrics(meta)
 	for i in TABS.size():
 		var tab := ClubUI.tab(self, Rect2(4 + i * 199, 169, 188, 58), TABS[i], i == active_tab, func(): _open_tab(i), "TrainingTab" + str(i))
-		tab.add_theme_font_size_override("font_size", C.px(30))
+		tab.add_theme_font_size_override("font_size", C.font_px(30))
 		var shape := tab.get_theme_stylebox("normal")
 		tab.add_theme_stylebox_override("pressed", shape)
 		var hover := shape.duplicate() as StyleBoxTexture
@@ -107,7 +107,7 @@ func _build() -> void:
 	var validate := _action(self, Rect2(1316, 166, 424, 58), "Séance effectuée" if trained else "Effectuer la séance", _validate, true, "arrow", "TrainingValidateWeek")
 	validate.tooltip_text = "Séance déjà effectuée cette semaine." if trained else "Séance indisponible pendant le match ou après la saison." if locked else "Une séance collective par semaine. Tu pourras choisir sa charge."
 	validate.disabled = trained or locked
-	validate.add_theme_font_size_override("font_size", C.px(33))
+	validate.add_theme_font_size_override("font_size", C.font_px(33))
 	D.line(self, Vector2(2, 234), Vector2(1741, 234))
 	match active_tab:
 		0: _week(opponent)
@@ -280,23 +280,29 @@ func _vigilance() -> void:
 		D.text(tile, 22, 92, "Aucune alerte physique", 24, GREEN, 600, 420)
 		D.text(tile, 22, 127, "Mêmes repères que l’Effectif", 24, C.MUTED, 500, 420)
 		return
-	for i in mini(3, watched.size()):
+	# Petite fenêtre : deux lignes plus hautes (cible minimale, deux lignes de texte lisibles) au lieu de trois ;
+	# le total reste dans le titre et la liste entière dans l'onglet Fatigue.
+	var dense := C.dense()
+	var row_height := C.reach(38)
+	var gap := 22.0 if dense else 17.0
+	for i in mini(2 if dense else 3, watched.size()):
 		var p: Dictionary = watched[i]
-		var y := 51 + i * 40
-		var button := _action(tile, Rect2(12, y, 464, 38), "", func(): _player_dialog(p), false, "", "TrainingRisk_" + str(i))
+		var y := 51 + i * (row_height + 2)
+		var button := _action(tile, Rect2(12, y, 464, row_height), "", func(): _player_dialog(p), false, "", "TrainingRisk_" + str(i))
 		var reasons := Watch.watch_reason(p).split(" · ")
 		var description := "%s · %s · %s" % [p.name, p.pos, " · ".join(reasons)]
 		button.accessibility_name = description
 		button.tooltip_text = description
 		button.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-		_icon(button, "people", Rect2(13, 9, 23, 23), C.IVORY)
-		D.text(button, 53, 17, str(p.name), 22, C.IVORY, 700, 205)
-		D.text(button, 53, 34, str(p.pos), 16, C.MUTED, 500, 205)
+		_icon(button, "people", Rect2(13, 9.0 + (row_height - 38.0) / 2.0, 23, 23), C.IVORY)
+		var top := 17.0 + (5.0 if dense else 0.0)
+		D.text(button, 53, top, str(p.name), 22, C.IVORY, 700, 205)
+		D.text(button, 53, top + gap, str(p.pos), 16, C.MUTED, 500, 205)
 		for line in reasons.size():
-			var baseline := 26 if reasons.size() == 1 else 17 + line * 17
+			var baseline := row_height / 2.0 + 7.0 if reasons.size() == 1 else top + line * gap
 			var reason := D.text(button, 452, baseline, reasons[line], 19, PALE_GOLD, 700, 183, HORIZONTAL_ALIGNMENT_RIGHT)
 			reason.name = "TrainingRiskReason%d" % line
-		_person_link(button,Rect2(47,0,214,38),"player",p,"TrainingRiskPlayer_"+str(p.get("id","")).validate_node_name())
+		_person_link(button,Rect2(47,0,214,row_height),"player",p,"TrainingRiskPlayer_"+str(p.get("id","")).validate_node_name())
 
 func _axes(tile: Panel) -> void:
 	var people: Array = app.model.get("decisions", {}).get("development", {}).get("professionals", [])
@@ -316,7 +322,7 @@ func _axes(tile: Panel) -> void:
 		D.line(hit, Vector2(1, 82), Vector2(530, 82), Color(C.LINE, .65))
 		var player_key := str(p.get("id","")).validate_node_name()
 		_person_link(hit,Rect2(3,3,81,73),"player",p,"TrainingAxisPlayerPortrait_"+player_key)
-		_person_link(hit,Rect2(103,0,375,42),"player",p,"TrainingAxisPlayerName_"+player_key)
+		_person_link(hit,Rect2(103,0,375,C.reach(42)),"player",p,"TrainingAxisPlayerName_"+player_key)
 
 # Identity zones are reading actions. The remainder of each training card
 # keeps its existing adjustment callback, including the current session guard.
@@ -345,7 +351,7 @@ func _staff_cards(tile: Panel) -> void:
 		D.line(tile, Vector2(17, y + 82), Vector2(width - 20, y + 82), Color(C.LINE, .65))
 		var person_key := str(tile.name)+"_"+str(person.get("id","")).validate_node_name()
 		_person_link(tile,Rect2(17,y+2,82,73),"staff",person,"TrainingStaffPortrait_"+person_key)
-		_person_link(tile,Rect2(121,y+3,width-306 if i < 2 else width-141,38),"staff",person,"TrainingStaffName_"+person_key)
+		_person_link(tile,Rect2(121,y+3,width-306 if i < 2 else width-141,C.reach(38)),"staff",person,"TrainingStaffName_"+person_key)
 
 func _groups() -> void:
 	var section := D.panel(self, Rect2(4, 260, 1740, 950), "Plans de travail", "people", "", "TrainingGroupPlans")
@@ -372,28 +378,32 @@ func _individuals() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	tile.add_child(scroll)
-	D.place(scroll, Rect2(17, 103, 1704, 821))
+	# Petite fenêtre : en-têtes de tri et lignes à la cible minimale (la liste défile un peu plus).
+	var header_height := C.reach(31)
+	var row_height := C.reach(32)
+	var lift := (row_height - 32.0) / 2.0
+	D.place(scroll, Rect2(17, 103 + maxf(0.0, header_height - 31 - 4), 1704, 821 - maxf(0.0, header_height - 31 - 4)))
 	var list := C.v(3)
 	C.fill(list)
 	scroll.add_child(list)
 	for column in [["JOUEUR", 60, 366, "name"], ["POSTE", 440, 330, "pos"], ["CONDITION", 800, 180, "condition"], ["CHARGE", 993, 170, "physicalLoad"], ["PLAN INDIVIDUEL", 1174, 420, "loadPlan"]]:
-		Fatigue.sort_header(app, tile, Rect2(column[1], 62, column[2], 31), column[0], column[3], state, "individual", "TrainingIndividualSort_" + str(column[3]))
+		Fatigue.sort_header(app, tile, Rect2(column[1], 62 - minf(4.0, header_height - 31), column[2], header_height), column[0], column[3], state, "individual", "TrainingIndividualSort_" + str(column[3]))
 	var ordered := Fatigue.sorted_players(squad, str(state.get("individual_sort", "priority")), state.get("individual_descending", false))
 	for p: Dictionary in ordered:
 		var row := C.button("", func(): _player_dialog(p))
 		row.name = "TrainingIndividual_" + str(p.id).replace(":", "_")
 		row.accessibility_name = str(p.name) + " · plan individuel"
 		row.set_meta("player_id", p.id)
-		row.custom_minimum_size.y = C.px(32)
+		row.custom_minimum_size.y = C.px(row_height)
 		Fatigue.compact_button(row, 18)
 		list.add_child(row)
-		var link := Fatigue.profile_link(app, row, Rect2(0, 0, 429, 32), p, "TrainingOpenPlayer_" + str(p.id).replace(":", "_"))
-		_portrait(link, p, Rect2(7, 2, 26, 28))
-		D.text(link, 63, 24, str(p.name), 20, C.IVORY, 700, 366)
-		D.text(row, 442, 24, str(p.pos), 18, C.MUTED, 500, 330)
-		D.text(row, 802, 24, Fatigue._number(p, "condition", " %"), 19, GREEN, 600, 160)
-		D.text(row, 993, 24, Fatigue._number(p, "physicalLoad", " / 100"), 19, PALE_GOLD if p in watched else C.IVORY, 600, 150)
-		D.text(row, 1174, 24, INDIVIDUAL.get(p.get("loadPlan", ""), "—"), 18, C.IVORY, 500, 420)
+		var link := Fatigue.profile_link(app, row, Rect2(0, 0, 429, row_height), p, "TrainingOpenPlayer_" + str(p.id).replace(":", "_"))
+		_portrait(link, p, Rect2(7, 2 + lift, 26, 28))
+		D.text(link, 63, 24 + lift, str(p.name), 20, C.IVORY, 700, 366)
+		D.text(row, 442, 24 + lift, str(p.pos), 18, C.MUTED, 500, 330)
+		D.text(row, 802, 24 + lift, Fatigue._number(p, "condition", " %"), 19, GREEN, 600, 160)
+		D.text(row, 993, 24 + lift, Fatigue._number(p, "physicalLoad", " / 100"), 19, PALE_GOLD if p in watched else C.IVORY, 600, 150)
+		D.text(row, 1174, 24 + lift, INDIVIDUAL.get(p.get("loadPlan", ""), "—"), 18, C.IVORY, 500, 420)
 	if squad.is_empty(): list.add_child(C.label("Aucun joueur dans l’effectif.", 24, C.MUTED))
 	_chart()
 	_vigilance()
@@ -540,7 +550,7 @@ func _choice(body: Node, caption: String, options: Dictionary, selected: Variant
 	var control := OptionButton.new()
 	control.custom_minimum_size.y = C.px(46)
 	control.add_theme_font_override("font", C.DISPLAY)
-	control.add_theme_font_size_override("font_size", C.px(23))
+	control.add_theme_font_size_override("font_size", C.font_px(23))
 	for key: Variant in options:
 		control.add_item(str(options[key]))
 		control.set_item_metadata(control.item_count - 1, key)

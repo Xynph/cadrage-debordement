@@ -97,7 +97,7 @@ static func sorted_players(source: Array, key: String, descending: bool) -> Arra
 	return overview({"squad":source}, FILTERS[4], key, descending).rows.map(func(row: Dictionary): return row.player)
 
 static func compact_button(button: Button, font_size: int) -> void:
-	button.add_theme_font_size_override("font_size", C.px(font_size))
+	button.add_theme_font_size_override("font_size", C.font_px(font_size))
 	for style_name in ["normal", "hover", "pressed", "disabled", "focus"]:
 		var compact_style := button.get_theme_stylebox(style_name).duplicate() as StyleBox
 		compact_style.content_margin_top = 0
@@ -163,11 +163,14 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 		D.text(hit, 9, 49, G.n(values[i]), 26, C.GOLD if values[i] > 0 else C.MINT, 700, 80)
 		if i == 2: D.text(hit, 59, 47, "%d non renseignés" % stats.suspension_unknown, 16, C.MUTED, 500, 175)
 	_distribution(app, parent, state)
+	# Petite fenêtre : filtres et en-têtes à la cible minimale (C.reach) ; le tableau descend d'autant.
+	var filter_height := C.reach(42)
+	var drop := filter_height - 42
 	for i in FILTERS.size():
-		var button := ClubUI.tab(parent, Rect2(4 + i * 307, 334, 294, 42), FILTERS[i], selected == FILTERS[i], func(): _filter(app, state, FILTERS[i]), "FatigueFilter" + str(i))
-		button.add_theme_font_size_override("font_size", C.px(20))
-	D.button(parent, Rect2(1575, 334, 669, 42), "Ouvrir la composition →", func(): app._navigate("Composition"), true, "people", false, app.accent, "FatigueOpenLineup").add_theme_font_size_override("font_size", C.px(20))
-	var panel := D.panel(parent, Rect2(4, 391, 2240, 814), "Rotation et charge individuelle", "heart", "", "FatigueTable")
+		var button := ClubUI.tab(parent, Rect2(4 + i * 307, 334, 294, filter_height), FILTERS[i], selected == FILTERS[i], func(): _filter(app, state, FILTERS[i]), "FatigueFilter" + str(i))
+		button.add_theme_font_size_override("font_size", C.font_px(20))
+	D.button(parent, Rect2(1575, 334, 669, filter_height), "Ouvrir la composition →", func(): app._navigate("Composition"), true, "people", false, app.accent, "FatigueOpenLineup").add_theme_font_size_override("font_size", C.font_px(20))
+	var panel := D.panel(parent, Rect2(4, 391 + drop, 2240, 814 - drop), "Rotation et charge individuelle", "heart", "", "FatigueTable")
 	var display_rows: Array = data.rows
 	var note := "Blessure, suspension et sélection restent distinctes. Repères de simulation, pas un diagnostic médical."
 	if selected_bin >= 0 and selected_bin < LOAD_LABELS.size():
@@ -176,14 +179,17 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 		display_rows = overview(app.model, FILTERS[4], key, descending).rows
 		note = "Aucun profil « %s » : effectif complet ci-dessous pour comparer les plans et préparer la rotation." % selected
 	D.text(panel, 18, 87, note, 17, C.MUTED, 500, 2180).name = "FatigueEmpty" if data.rows.is_empty() else "FatigueReadingGuide"
+	var header_height := C.reach(30)
+	var header_top := 95.0 if header_height <= 30 else 93.0
 	for column in [["JOUEUR", 32, 325, "name"], ["POSTE", 365, 210, "pos"], ["CONDITION", 587, 150, "condition"], ["CHARGE", 748, 155, "physicalLoad"], ["MIN.", 910, 105, "minutes"], ["BLESSURE", 1028, 175, "injury"], ["SÉLECTION", 1208, 210, "selection"], ["SUSPENSION", 1428, 175, "suspension"], ["PLAN", 1613, 275, "loadPlan"]]:
-		sort_header(app, panel, Rect2(column[1], 95, column[2], 30), column[0], column[3], state, "fatigue", "FatigueSort_" + str(column[3]))
+		sort_header(app, panel, Rect2(column[1], header_top, column[2], header_height), column[0], column[3], state, "fatigue", "FatigueSort_" + str(column[3]))
 	var scroll := ScrollContainer.new()
 	scroll.name = "FatigueScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	panel.add_child(scroll)
-	D.place(scroll, Rect2(15, 132, 2210, 636))
+	var scroll_top := header_top + header_height + 7.0
+	D.place(scroll, Rect2(15, scroll_top, 2210, 768.0 - scroll_top))
 	var list := C.v(1)
 	C.fill(list)
 	scroll.add_child(list)
@@ -229,40 +235,43 @@ static func _row(app: Control, list: VBoxContainer, row: Dictionary) -> void:
 	var item := Control.new()
 	item.name = "FatigueRow_" + identifier(str(player.id))
 	item.set_meta("player_id", player.id)
-	item.custom_minimum_size.y = C.px(29)
+	# Petite fenêtre : ligne à la cible minimale (C.reach), contenu recentré verticalement.
+	var height := C.reach(28)
+	var lift := (height - 28.0) / 2.0
+	item.custom_minimum_size.y = C.px(height + 1)
 	item.tooltip_text = str(player.get("name", "")) + " · " + " · ".join(row.reasons)
 	list.add_child(item)
-	D.rect(item, Rect2(0, 0, 2190, 28), C.RAISED if int(row.rank) < 4 else C.PANEL, 2)
-	var link := profile_link(app, item, Rect2(0, 0, 357, 28), player, "FatigueOpenPlayer_" + identifier(str(player.id)))
+	D.rect(item, Rect2(0, 0, 2190, height), C.RAISED if int(row.rank) < 4 else C.PANEL, 2)
+	var link := profile_link(app, item, Rect2(0, 0, 357, height), player, "FatigueOpenPlayer_" + identifier(str(player.id)))
 	var portrait := G.portrait(int(player.get("portraitIndex", 0)), 0, player)
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	link.add_child(portrait)
-	D.place(portrait, Rect2(1, 1, 25, 26))
-	D.text(link, 32, 22, player.get("name", "—"), 20, C.IVORY, 600, 325)
-	D.text(item, 365, 22, player.get("pos", "—"), 18, C.MUTED, 500, 205)
-	D.text(item, 587, 22, _number(player, "condition", "%"), 19, C.MINT, 600, 68)
-	if player.has("condition"): D.bar(item, Rect2(655, 12, 76, 5), float(player.condition), C.MINT)
-	D.text(item, 748, 22, _number(player, "physicalLoad", ""), 19, C.GOLD if not str(row.watch_reason).is_empty() else C.IVORY, 600, 65)
-	if player.has("physicalLoad"): D.bar(item, Rect2(816, 12, 76, 5), float(player.physicalLoad), C.GOLD)
-	D.text(item, 910, 22, _number(player, "minutes", ""), 18, C.IVORY, 500, 100)
-	if row.injured: _status_icon(item, "heart", 1028, C.ALERT)
-	D.text(item, 1050, 22, "%s sem." % G.n(player.get("injury", 0)) if row.injured else "Aucune projetée" if row.injury_known else "Non renseignée", 18, C.ALERT if row.injured else C.MUTED, 500, 148)
+	D.place(portrait, Rect2(1, 1 + lift, 25, 26))
+	D.text(link, 32, 22 + lift, player.get("name", "—"), 20, C.IVORY, 600, 325)
+	D.text(item, 365, 22 + lift, player.get("pos", "—"), 18, C.MUTED, 500, 205)
+	D.text(item, 587, 22 + lift, _number(player, "condition", "%"), 19, C.MINT, 600, 68)
+	if player.has("condition"): D.bar(item, Rect2(655, 12 + lift, 76, 5), float(player.condition), C.MINT)
+	D.text(item, 748, 22 + lift, _number(player, "physicalLoad", ""), 19, C.GOLD if not str(row.watch_reason).is_empty() else C.IVORY, 600, 65)
+	if player.has("physicalLoad"): D.bar(item, Rect2(816, 12 + lift, 76, 5), float(player.physicalLoad), C.GOLD)
+	D.text(item, 910, 22 + lift, _number(player, "minutes", ""), 18, C.IVORY, 500, 100)
+	if row.injured: _status_icon(item, "heart", 1028, C.ALERT, lift)
+	D.text(item, 1050, 22 + lift, "%s sem." % G.n(player.get("injury", 0)) if row.injured else "Aucune projetée" if row.injury_known else "Non renseignée", 18, C.ALERT if row.injured else C.MUTED, 500, 148)
 	var release: String = "En sélection" if row.called else "Non renseigné" if not row.selection_known else "Au club"
-	if row.called: _status_icon(item, "flag", 1208, C.BLUE)
-	D.text(item, 1230, 22, release, 18, C.BLUE if row.called else C.MUTED, 500, 178)
-	if row.suspended: _status_icon(item, "warning", 1428, C.ALERT)
-	D.text(item, 1450, 22, G.n(player.suspension) if row.suspended else "Aucune projetée" if row.suspension_known else "Non renseignée", 18, C.ALERT if row.suspended else C.MUTED, 500, 148)
-	D.text(item, 1613, 22, PLANS.get(player.get("loadPlan", ""), "Non renseigné"), 18, C.IVORY, 500, 265)
-	var button := D.button(item, Rect2(1910, 0, 260, 28), "Régler", func(): open_adjustment(app, player), false, "", false, app.accent, "FatigueAdjust_" + identifier(str(player.id)))
+	if row.called: _status_icon(item, "flag", 1208, C.BLUE, lift)
+	D.text(item, 1230, 22 + lift, release, 18, C.BLUE if row.called else C.MUTED, 500, 178)
+	if row.suspended: _status_icon(item, "warning", 1428, C.ALERT, lift)
+	D.text(item, 1450, 22 + lift, G.n(player.suspension) if row.suspended else "Aucune projetée" if row.suspension_known else "Non renseignée", 18, C.ALERT if row.suspended else C.MUTED, 500, 148)
+	D.text(item, 1613, 22 + lift, PLANS.get(player.get("loadPlan", ""), "Non renseigné"), 18, C.IVORY, 500, 265)
+	var button := D.button(item, Rect2(1910, 0, 260, height), "Régler", func(): open_adjustment(app, player), false, "", false, app.accent, "FatigueAdjust_" + identifier(str(player.id)))
 	button.set_meta("player_id", player.id)
 	button.accessibility_name = "Ajuster la charge de " + str(player.name)
 	compact_button(button, 18)
 	button.tooltip_text = load_blocker(app) if not load_blocker(app).is_empty() else item.tooltip_text + " · Choisir puis confirmer le plan"
 
-static func _status_icon(parent: Control, kind: String, left: float, tone: Color) -> void:
+static func _status_icon(parent: Control, kind: String, left: float, tone: Color, lift: float = 0.0) -> void:
 	var icon := C.icon(kind, 16, tone)
 	parent.add_child(icon)
-	D.place(icon, Rect2(left, 7, 16, 16))
+	D.place(icon, Rect2(left, 7 + lift, 16, 16))
 
 static func _number(player: Dictionary, key: String, suffix: String) -> String:
 	return G.n(player[key]) + suffix if player.has(key) and (player[key] is float or player[key] is int) else "—"
@@ -295,7 +304,7 @@ static func open_adjustment(app: Control, player: Dictionary) -> void:
 		button.name = "FatiguePlan_" + mode
 		button.set_meta("player_id", player.id)
 		button.disabled = not blocker.is_empty()
-		button.add_theme_font_size_override("font_size", C.px(20))
+		button.add_theme_font_size_override("font_size", C.font_px(20))
 		body.add_child(button)
 	dialog.confirmed.connect(dialog.queue_free)
 	dialog.canceled.connect(dialog.queue_free)

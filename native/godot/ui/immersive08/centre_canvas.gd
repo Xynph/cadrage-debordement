@@ -68,6 +68,7 @@ func _workbench() -> void:
 	var controls := Academy.build(app, str(state.tab))
 	viewport.add_child(controls)
 	Legacy.apply(controls, ACCENT)
+	C.reach_controls(controls)
 	var tabs := controls.find_child("AcademyTabs", true, false) as TabContainer
 	if tabs == null: return
 	_style_tabs(tabs)
@@ -120,7 +121,7 @@ func _preview(surface: Panel) -> void:
 		_note(follow, Rect2(25, 143, 840, 85), "Leur progression, leurs promotions et leurs spécialisations se suivent dans Formation.", 25)
 		var go := D.button(follow, Rect2(918, 130, 513, 66), "Consulter les Espoirs", func(): app._navigate("Formation"), true, "arrow", false, ACCENT, "CentreUnavailableFormation")
 		go.add_theme_font_override("font", C.BOLD)
-		go.add_theme_font_size_override("font_size", C.px(31))
+		go.add_theme_font_size_override("font_size", C.font_px(31))
 		return
 	var activation := D.panel(surface, Rect2(25, 713, 1463, 267), "Avant d’activer", "school", "", "CentreActivation")
 	D.text(activation, 24, 117, "Tes %s Espoirs restent au centre." % G.n(data.get("players", []).size()), 40, C.IVORY, 700, 900)
@@ -131,7 +132,7 @@ func _preview(surface: Panel) -> void:
 	action.set_meta("carnet_selected", true)
 	Legacy.apply(action, ACCENT)
 	action.add_theme_font_override("font", C.BOLD)
-	action.add_theme_font_size_override("font_size", C.px(31))
+	action.add_theme_font_size_override("font_size", C.font_px(31))
 	D.place(action, Rect2(918, 130, 513, 66))
 
 func _note(parent: Control, rectangle: Rect2, text: String, pixels: int) -> void:
@@ -142,13 +143,13 @@ func _note(parent: Control, rectangle: Rect2, text: String, pixels: int) -> void
 
 func _style_tabs(tabs: TabContainer) -> void:
 	tabs.add_theme_font_override("font", C.BOLD)
-	tabs.add_theme_font_size_override("font_size", C.px(24))
+	tabs.add_theme_font_size_override("font_size", C.font_px(24))
 	var selected := C.box(Color("0b5435"), GREEN, 6, 12)
 	var unselected := C.box(Color("152322"), C.LINE, 6, 12)
 	var hover := C.box(Color("204634"), GREEN, 6, 12)
 	for style: StyleBoxFlat in [selected, unselected, hover]:
-		style.content_margin_top = C.px(8)
-		style.content_margin_bottom = C.px(8)
+		style.content_margin_top = maxi(5, C.px(8))
+		style.content_margin_bottom = maxi(5, C.px(8))
 	tabs.add_theme_stylebox_override("tab_selected", selected)
 	tabs.add_theme_stylebox_override("tab_unselected", unselected)
 	tabs.add_theme_stylebox_override("tab_hovered", hover)

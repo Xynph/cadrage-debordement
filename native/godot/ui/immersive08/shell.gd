@@ -36,13 +36,15 @@ const TACTICS_CANVAS_MIN_WIDTH := 1600
 ## Gabarits riches (référence 2560 × 1440) ouverts dès 1280 × 720 (densité 0,5). Les gabarits sont
 ## proportionnels (C.px, D.place) et tout texte passe par un plancher de 12 px (C.label, D.text) :
 ## à 1280 × 720 le plus petit texte rendu fait 12 × 0,977 ≈ 11,7 px (pied de page compris, voir _fit_layout).
-## Les écrans absents de la liste gardent leur page simple sous 1920 × 1080 : Préparation, Entraînement,
-## Plan de jeu et Centre (commandes denses non revues à 0,5), Calendrier en tableau hors Nationale/Champ.
-## Le Match (avant le coup d'envoi) suit le même seuil RICH_MIN_SIZE ; le direct est l'écran contextuel.
+## Préparation (Entraînement compris), Plan de jeu et Centre en font partie : sous la densité 0,75, leurs commandes
+## serrées gardent une cible d'au moins 25 px de fenêtre (C.reach, C.reach_controls) et se réorganisent au besoin
+## (XV en colonnes, repères et vigilance sur des lignes plus hautes). Seul le Calendrier en tableau hors
+## Nationale/Champ garde sa page simple. Le Match (avant le coup d'envoi) suit le même seuil RICH_MIN_SIZE ;
+## le direct est l'écran contextuel.
 const RICH_MIN_SIZE := Vector2i(1280,720)
 const SIDEBAR_AUTOSAVE_CAPTION := "Sauvegarde auto"
 const RICH_FROM_720P := ["Rivalités","Classements","Finances","Recrutement","Club","Staff","Travail du club","Stratégie",
-	"Carrière","Presse","Vestiaire","Formation"]
+	"Carrière","Presse","Vestiaire","Formation","Préparation","Plan de jeu","Centre"]
 
 const FOOTER_RISE := 14
 const TOPBAR_ACTION_LEFT := 2067

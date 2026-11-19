@@ -63,6 +63,25 @@ func smallest_text(node: Node) -> Array:
 		if effective < result[0]: result = [effective, str(control.name), shown.left(40)]
 	return result
 
+## Plus petite commande visible, en pixels réellement affichés (côté le plus court du rectangle global) : [px, nœud, texte].
+func smallest_target(node: Node) -> Array:
+	var result: Array = [INF, "", ""]
+	for item: Node in node.find_children("*","BaseButton",true,false):
+		var control := item as Control
+		if not control.is_visible_in_tree(): continue
+		var bounds := control.get_global_rect()
+		var side := minf(bounds.size.x, bounds.size.y)
+		if side < result[0]: result = [side, str(control.name), (control as Button).text.left(40) if control is Button else ""]
+	return result
+
+## Page riche lisible et cliquable en 1280 × 720 : texte ≥ 11 px, commandes ≥ 24 px affichés.
+func rich_720_readable(view: Control, label: String) -> void:
+	var smallest := smallest_text(app.root_content)
+	check(smallest[0]>=11.0,"Aucun texte sous 11 px en 720p · %s · %.1f px · %s « %s »" % [label,smallest[0],smallest[1],smallest[2]])
+	if view==null: return
+	var target := smallest_target(view)
+	check(target[0]>=24.0,"Cibles d’au moins 24 px en 720p · %s · %.1f px · %s « %s »" % [label,target[0],target[1],target[2]])
+
 func caption_fits(button: Button) -> bool:
 	if button == null: return false
 	var font := button.get_theme_font("font")
@@ -970,7 +989,9 @@ func desktop_1080() -> void:
 	await settle()
 	# Gabarits riches ouverts dès 1280 × 720 (shell.gd, RICH_FROM_720P) ; les autres gardent le repli compact.
 	var rich_720: Array = app.Immersive.RICH_FROM_720P
-	check(rich_720.has("Classements") and rich_720.has("Finances") and rich_720.has("Recrutement") and not rich_720.has("Préparation"),"Liste explicite des gabarits riches dès 720p")
+	check(rich_720.has("Classements") and rich_720.has("Finances") and rich_720.has("Recrutement") and rich_720.has("Préparation") and rich_720.has("Plan de jeu") and rich_720.has("Centre"),"Liste explicite des gabarits riches dès 720p")
+	# open_training (ci-dessus) laisse la Préparation sur l'Entraînement : la boucle ouvre d'abord le Dossier.
+	if app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.tab = 0
 	for route: String in ["Finances","Calendrier","Formation","Plan de jeu","Centre","Préparation","Recrutement",
 		"Classements","Club","Staff","Travail du club","Stratégie","Presse","Rivalités","Vestiaire","Carrière"]:
 		if route=="Presse": app.set_meta("press_mail_origin","qa-presse")
@@ -981,8 +1002,13 @@ func desktop_1080() -> void:
 			var rich_view: Control = app.find_child("ImmersiveFinance" if route=="Finances" else family[1],true,false)
 			check(rich_view!=null and rich_view.is_visible_in_tree(),"Gabarit riche ouvert en 720p · "+route)
 			check(app.find_child("CompactRouteArt",true,false)==null,"Plus de repli compact en 720p · "+route)
-			var smallest := smallest_text(app.root_content)
-			check(smallest[0]>=11.0,"Aucun texte sous 11 px en 720p · %s · %.1f px · %s « %s »" % [route,smallest[0],smallest[1],smallest[2]])
+			if route in ["Préparation","Plan de jeu","Centre"]:
+				# Commandes denses revues pour la densité 0,5 (C.reach) : texte et cibles contrôlés.
+				rich_720_readable(rich_view,route)
+				if route=="Préparation": await capture("20-preparation-1280x720")
+			else:
+				var smallest := smallest_text(app.root_content)
+				check(smallest[0]>=11.0,"Aucun texte sous 11 px en 720p · %s · %.1f px · %s « %s »" % [route,smallest[0],smallest[1],smallest[2]])
 			if route=="Travail du club":
 				# « Voir l'entraînement » est posé dans le gabarit : il ne pousse plus la page ni n'ajoute de défilement.
 				var observe := app.find_child("ContextualObserveTraining",true,false) as Button
@@ -1017,9 +1043,41 @@ func desktop_1080() -> void:
 			else: check(first_action != null and first_action.get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route+" · "+(str(first_action.name)+" "+str(first_action.get_meta_list()) if first_action!=null else "aucune commande · boutons="+str(app.body.find_children("*","Button",true,false).map(func(b: Button): return "%s:%s:%s" % [b.name,b.text,b.is_visible_in_tree()]))+" · corps="+str(app.body.get_children().map(func(node: Node): return node.name))))
 		check(app.body.size.x<=app.body_scroll.size.x+1,"Le repli ne rogne pas la largeur utile · "+route)
 		if route=="Finances": await capture("12-finances-1280x720")
+	await rich_720_subpages()
 	root.size=Vector2i(2560,1440)
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await settle()
+
+## Sous-pages riches en 1280 × 720 : Consignes, les cinq onglets de l'Entraînement et les trois du Plan de jeu.
+func rich_720_subpages() -> void:
+	app.Immersive.open_preparation(app,1)
+	app._render()
+	await settle()
+	var consignes := app.find_child("PreparationConsignes",true,false) as Control
+	check(consignes!=null and consignes.is_visible_in_tree(),"Consignes ouvertes dans la Préparation riche en 720p")
+	rich_720_readable(app.find_child("ImmersivePreparation",true,false) as Control,"Préparation · Consignes")
+	app.management_ui.preparation.tab = 0
+	for tab in 5:
+		if not app.management_ui.get("immersive_training") is Dictionary: app.management_ui.immersive_training = {}
+		app.management_ui.immersive_training.tab = tab
+		app.Immersive.open_training(app)
+		app._render()
+		await settle()
+		var training := app.find_child("ImmersiveTraining",true,false) as Control
+		check(training!=null and training.is_visible_in_tree() and app.find_child("CompactRouteArt",true,false)==null,"Entraînement riche en 720p · onglet %d" % tab)
+		rich_720_readable(training,"Entraînement · onglet %d" % tab)
+		if tab in [0,4]: await capture("09-entrainement-%d-1280x720" % tab)
+	app.management_ui.immersive_training.tab = 0
+	app.management_ui.preparation.tab = 0
+	app._navigate("Plan de jeu")
+	for tab in 3:
+		app.management_ui.playbook_tab = tab
+		app._render()
+		await settle()
+		var playbook := app.find_child("ImmersivePlaybook",true,false) as Control
+		check(playbook!=null and playbook.is_visible_in_tree(),"Plan de jeu riche en 720p · onglet %d" % tab)
+		rich_720_readable(playbook,"Plan de jeu · onglet %d" % tab)
+	app.management_ui.playbook_tab = 0
 
 func navigation_flow() -> void:
 	app._navigate("Bureau")
@@ -1046,9 +1104,10 @@ func navigation_flow() -> void:
 	await settle()
 	await click(app.find_child("ImmersiveContinue",true,false))
 	await settle()
-	await click(app.find_child("PreparationTabEntrainement",true,false))
+	# Préparation riche dès 720p : l'Entraînement s'ouvre par la barre latérale (la Préparation garde aussi son onglet).
+	await click(app.find_child("Nav_Entraînement",true,false))
 	await settle()
-	check(app.route=="Préparation" and app.management_ui.preparation.tab==2,"Entraînement est sélectionné dans Préparation compacte")
+	check(app.route=="Préparation" and app.management_ui.preparation.tab==2 and app.find_child("ImmersiveTraining",true,false)!=null,"Entraînement riche sélectionné dans la Préparation en 720p")
 	command_id = app.bridge._next_id
 	await click(app.find_child("ImmersiveContinue",true,false))
 	await settle()
@@ -1058,8 +1117,10 @@ func navigation_flow() -> void:
 	check(match_smallest[0]>=11.0,"Aucun texte sous 11 px dans l’avant-match en 720p · %.1f px · %s « %s »" % [match_smallest[0],match_smallest[1],match_smallest[2]])
 	await key(KEY_LEFT,false,true)
 	check(app.route=="Préparation" and app.management_ui.preparation.tab==2,"Alt gauche retrouve l’onglet Entraînement sélectionné sur place")
-	await click(app.find_child("PreparationMatch",true,false))
-	await settle()
+	# Lien local de l'Entraînement riche : repère « Jour de match », puis son action.
+	if await edition_action("TrainingStep11"): await edition_action("TrainingEditSelected")
+	check(app.route=="Match","Le repère Jour de match de l’Entraînement ouvre l’avant-match en 720p")
+	app.management_ui.immersive_training.slot = 0
 	await key(KEY_LEFT,false,true)
 	check(app.route=="Préparation" and app.management_ui.preparation.tab==2 and app.bridge._next_id==command_id,"Le lien local conserve aussi l’onglet et la navigation reste sans commande")
 	root.size = original_size
