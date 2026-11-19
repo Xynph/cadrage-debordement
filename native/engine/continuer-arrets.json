@@ -1,7 +1,6 @@
 {
   "version": 1,
-  "_doc": "Arrêts informatifs de « Continuer » pendant la saison (continuer.cjs, kind « info »), toujours actifs (décision de Léo, 16/11/2026 : pas de niveaux). Aucun n'attend de réponse ; ils ne changent rien à la carrière (lecture seule). priorite : ordre des arrêts d'un même jour (plus petit d'abord). maxParJour : arrêts au plus le même jour, arrêt principal compris ; au-delà, le dernier arrêt regroupe le reste. ecran : écran que l'interface ouvre sur l'arrêt (« infirmerie » : Effectif filtré sur les blessés ; « fiche » : fiche du joueur concerné ; « Réception » : le mail). courrier : mails du club qui arrêtent l'avance (club-mail.cjs, au plus « arretsParJour » de club-mail.json).",
-  "maxParJour": 3,
+  "_doc": "Arrêts informatifs de « Continuer » pendant la saison (continuer.cjs, kind « info »), toujours actifs (décision de Léo, 16/11/2026 : pas de niveaux). Ils ne changent rien à la carrière (lecture seule). Un seul arrêt d'info par jour (décision de Léo, 18/11/2026) : il range tous les éléments du jour sans réponse attendue, le plus important en tête (priorite : plus petit d'abord) ; les courriers qui attendent une réponse ont chacun leur arrêt ; la routine n'arrête jamais à elle seule. ecran : écran que l'interface ouvre sur l'arrêt (« infirmerie » : Effectif filtré sur les blessés ; « fiche » : fiche du joueur concerné ; « Réception » : le mail). courrier : mails du club (club-mail.cjs), selon leur nature dans club-mail.json (action, info, routine).",
   "types": {
     "veille": {
       "label": "Veille de match",
