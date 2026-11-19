@@ -174,7 +174,9 @@ func run() -> void:
 	var cotes := [Vector2(-1.0, -1.0), Vector2(1.0, -1.0), Vector2(-1.0, 1.0), Vector2(1.0, 1.0)]
 	for i in groupe.size():
 		serre[groupe[i]] = Vector2(cotes[i].x * 2.0, cotes[i].y * 1.5)
-		ecarte[groupe[i]] = Vector2(cotes[i].x * 22.0, cotes[i].y * 1.0)
+		# 19 novembre 2026 (soir) : 28 m d'un bout à l'autre (44 m avant) ; le plan TV plus serré montre
+		# environ 34 m de large au point visé à son plafond.
+		ecarte[groupe[i]] = Vector2(cotes[i].x * 14.0, cotes[i].y * 1.0)
 	cadrage.couper()
 	settle(view, scene(Vector2.ZERO, serre), 3.0)
 	var taille_serree: float = view._camera.size
@@ -188,7 +190,10 @@ func run() -> void:
 	var taille_ecartee: float = view._camera.size
 	report["suivi_tv"] = {"serre": snappedf(taille_serree, 0.1), "ecarte": snappedf(taille_ecartee, 0.1), "plus_grand_pas": snappedf(plus_grand_pas, 0.001)}
 	check(taille_serree >= Cadrage.SUIVI.tv[0] - 0.01 and taille_serree <= 30.0, "Joueurs groupés : cadrage resserré (%.1f m)" % taille_serree)
-	check(taille_ecartee > taille_serree + 6.0, "Joueurs écartés : la hauteur visible s'élargit (%.1f -> %.1f m)" % [taille_serree, taille_ecartee])
+	# Vue TV plus serrée (19 novembre 2026, soir : 15 à 19 m au lieu de 26 à 42) : l'écart demandé suit la
+	# plage du cadrage adaptatif (6 m sur 16 auparavant), et les joueurs écartés la mènent à son plafond.
+	var plage: float = float(Cadrage.SUIVI.tv[1]) - float(Cadrage.SUIVI.tv[0])
+	check(taille_ecartee > taille_serree + 0.6 * plage and taille_ecartee >= float(Cadrage.SUIVI.tv[1]) - 0.5, "Joueurs écartés : la hauteur visible s'élargit (%.1f -> %.1f m)" % [taille_serree, taille_ecartee])
 	check(taille_ecartee <= Cadrage.SUIVI.tv[1] + 0.01, "Le cadrage adaptatif reste borné (%.1f m)" % taille_ecartee)
 	check(plus_grand_pas < 0.5, "Cadrage adaptatif lissé : pas d'à-coup (%.3f m par image au plus)" % plus_grand_pas)
 	# Les joueurs écartés restent à l'image.

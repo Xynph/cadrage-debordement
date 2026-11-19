@@ -245,6 +245,13 @@ func check_champ() -> void:
 		var en_haut := vues.filter(func(p: Vector2) -> bool: return p.y <= 0.25)
 		check(vues.size() >= 150, "TV, ballon en %s : public d'en face à l'image (%d têtes)" % [ballon, vues.size()])
 		check(en_haut.size() == vues.size(), "TV, ballon en %s : la tribune reste une bande en haut de l'image (%d / %d)" % [ballon, en_haut.size(), vues.size()])
+		# 19 novembre 2026 (soir) : vue TV plus basse (axe à 16°) ; la bande de public d'en face descend
+		# jusqu'à 9 % de l'image au moins (premier rang à 7 % du haut au milieu auparavant, sous 24° et
+		# 30 m de hauteur visible ; 10,4 % désormais à 18 m sous 16°, plus dans la moitié lointaine).
+		var bas_tribune := 0.0
+		for p: Vector2 in vues:
+			bas_tribune = maxf(bas_tribune, p.y)
+		check(bas_tribune >= 0.09,"TV, ballon en %s : le public d'en face occupe une vraie bande (jusqu'à %.0f %% de la hauteur)" % [ballon, bas_tribune * 100.0])
 	view.set_camera("tactical")
 	view._process(1.0 / 60.0)
 	var laterales: Array[Vector3] = []

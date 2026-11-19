@@ -441,7 +441,8 @@ func run() -> void:
 	check(waited > 6.0, "Le match attend la fin des gestes : " + str(waited))
 	check(kinds[index] == kinds[frames.size() - 1] and not gestes.active() and gestes.cast.is_empty(), "La scène suivante libère tous les joueurs")
 	check(not zoom_before_geste and geste_started_at > 0.0 and is_equal_approx(zoom_started_at, geste_started_at), "Le recadrage commence avec le geste : %s / %s" % [zoom_started_at, geste_started_at])
-	check(smallest_in.touche < 42.0 and smallest_in.maul < 27.0 and smallest_in.essai_maul < 34.0, "La caméra TV se rapproche pendant chaque geste : " + str(smallest_in))
+	# Seuils relatifs à la hauteur visible de base (42, 27 et 34 m pour 30 m jusqu'au 19 novembre 2026 au soir).
+	check(smallest_in.touche < View.TV_TAILLE * 1.4 and smallest_in.maul < View.TV_TAILLE * 0.9 and smallest_in.essai_maul < View.TV_TAILLE * 1.13, "La caméra TV se rapproche pendant chaque geste : " + str(smallest_in))
 	check(smallest >= Gestes.FRAME_MIN.tv - 0.001, "Jamais plus près que le minimum prévu : " + str(smallest))
 	check(size_step < 0.06, "Rapprochement progressif, sans coupe : %.4f par image" % size_step)
 	check(yaw_step < 0.02, "Pivot lent, sans rotation rapide : %.4f rad par image" % yaw_step)

@@ -13,14 +13,25 @@ const ENTREE := 1.0        # rapprochement, en secondes
 const SORTIE := 1.5        # retour au cadrage large
 ## Hauteur visible minimale et maximale au point visé, en mètres (caméras en perspective depuis le
 ## 18 novembre 2026 : TV 22 à 34 m selon la dispersion du porteur et des joueurs proches, au lieu
-## de 28 à 42 m en vue orthographique ; action 9 à 18 m).
-const HAUTEUR := {"tv": [22.0, 34.0], "action": [9.0, 18.0]}
-## Jeu au pied, longue course : hauteur visible maximale (le ballon et son point de chute).
-const LARGE := {"tv": 50.0, "action": 34.0}
+## de 28 à 42 m en vue orthographique ; action 9 à 18 m). 19 novembre 2026 (soir) : vue TV plus basse
+## (axe à 16°, match_view.gd) et plus serrée, TV 13 à 18 m (joueurs d'environ 75 à 100 px au point visé
+## en 1280 x 720, au lieu de 35 à 55 px).
+const HAUTEUR := {"tv": [13.0, 18.0], "action": [9.0, 18.0]}
+## Jeu au pied, longue course : hauteur visible maximale (le ballon et son point de chute). TV : 50 m
+## jusqu'au 19 novembre 2026 (soir), 30 m avec la vue plus basse (53 m de large au point visé ; au-delà,
+## la caméra basse passerait sous le toit de la tribune proche dès le milieu du terrain).
+const LARGE := {"tv": 30.0, "action": 34.0}
 ## Regroupement (mêlée, touche, ruck) : cadrage serré sur le paquet et les demis. 19/11/2026 : en TV,
 ## 18 m au moins de hauteur visible laissaient la mêlée en petite tache (un cinquième de la largeur) ;
 ## 13 m : les deux paquets et le demi occupent environ un tiers de l'image.
 const SERRE := {"tv": [13.0, 24.0], "action": [9.0, 14.0]}
+## Mêlée (préparation, introduction, poussée, sortie tenue par le demi) en vue TV. 19 novembre 2026 :
+## à 13 m, les deux paquets (6 m des talons d'un n° 8 à l'autre, environ 7 m de corps) ne prenaient
+## qu'un quart de la largeur du film en 16/9 et le demi et le ballon de l'introduction s'y perdaient ;
+## à 7,5 m (13,3 m de large), ils en prennent environ la moitié. Le plafond laisse la place au demi
+## qui ramasse derrière son n° 8 à la sortie. La caméra au contact garde SERRE.
+const SERRE_MELEE := {"tv": [7.5, 12.0]}
+const MELEES := ["melee", "sortie_melee"]
 const MARGE := 1.25
 const PROCHES := 9.0       # rayon des joueurs concernés autour du ballon
 const TEMOINS_RAYON := 18.0  # rayon des témoins (joueurs les plus proches) quand peu de joueurs sont proches
@@ -38,7 +49,10 @@ const TEMOINS := 6
 ## donne la hauteur visible, bornée par SUIVI (TV 26 à 42 m autour des 30 m de base, contact 13 à
 ## 24 m autour de 16 m) ; point visé rapproché du groupe de SUIVI_CENTRE (part de l'écart), le tout
 ## amorti en SUIVI_LISSAGE secondes pour éviter les à-coups.
-const SUIVI := {"tv": [26.0, 42.0], "action": [13.0, 24.0]}
+## 19 novembre 2026 (soir) : plan large TV de 15 à 19 m autour des 18 m de base (axe à 16°) ; à 19 m,
+## jeu au milieu, un joueur au point visé fait environ 68 px (1280 x 720), 80 px dans la moitié proche
+## de l'image, et le public d'en face prend 13 % du haut de l'image (5 à 8 % à 26-42 m sous 24°).
+const SUIVI := {"tv": [15.0, 19.0], "action": [13.0, 24.0]}
 const SUIVI_MARGE := 1.6
 const SUIVI_RAYON := 15.0
 const SUIVI_TEMOINS := 4
@@ -280,6 +294,15 @@ func _ballon(focus: Vector3) -> Vector3:
 	return ball.global_position if is_instance_valid(ball) and ball.visible else focus
 
 
+## Mêlée liée en cours (formation de la vue « melee » ou « sortie_melee », pas encore déliée) : cadrage
+## SERRE_MELEE au lieu de SERRE (touche et ruck gardent SERRE).
+func _en_melee() -> bool:
+	var formations: Variant = view.get("_formations")
+	if formations == null or not formations.has_method("active") or not formations.active():
+		return false
+	return str((formations.formation as Dictionary).get("type", "")) in MELEES
+
+
 ## Point visé au sol et hauteur visible qui contiennent l'action, vus sous l'angle de la caméra.
 func _but(basis: Basis, aspect: float, mode: String, _base: float, focus: Vector3) -> Array:
 	var ballon := _ballon(focus)
@@ -290,7 +313,7 @@ func _but(basis: Basis, aspect: float, mode: String, _base: float, focus: Vector
 	# Mêlée, touche, ruck : le paquet et les demis seulement, pas les arrières écartés.
 	var groupe: Array = view.regroupement() if view.has_method("regroupement") else []
 	if not groupe.is_empty():
-		bornes = SERRE[mode]
+		bornes = SERRE_MELEE[mode] if SERRE_MELEE.has(mode) and _en_melee() else SERRE[mode]
 		plus_large = float(bornes[1])
 		for place: Vector3 in groupe:
 			points.append(place)
