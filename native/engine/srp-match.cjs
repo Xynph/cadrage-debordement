@@ -218,7 +218,8 @@ module.exports = function srpMatchFactory(rules) {
       } else {
         check(!isLast || finished, 'une période close doit déclencher la suivante ou finir le match.');
         witnessValid(p.end,p.firstScore?.kind === 'try' ? p.firstScore.side : null);
-        check(p.end.minute > p.start && (p.firstScore !== null || p.end.minute >= p.limit), 'durée effective de prolongation invalide.');
+        // Une marque peut tomber dès la minute du coup d'envoi (essai sur la première action) : la fin coïncide alors avec le début.
+        check(p.firstScore !== null ? p.end.minute >= p.start : p.end.minute >= p.limit, 'durée effective de prolongation invalide.');
         cumulative(previous,p.end);
         if (golden(p.kind)) goldenProof(previous,p.end,p.firstScore);
         if (isLast) {
@@ -303,7 +304,10 @@ module.exports = function srpMatchFactory(rules) {
       actualRestarts[i].cause === causes[p.kind] && restartAllowed(actualRestarts[i],l)), 'reprises de prolongation manquantes ou incohérentes.');
     if (last.firstScore) {
       const mark = last.firstScore;
-      const scoringEvents = l.events.filter(e => ['try','goal'].includes(e.type) && e.min > last.start);
+      // À la minute du coup d'envoi, seule une marque qui dépasse le total réglementaire appartient à la prolongation.
+      const regulationTotal = l.srpExtra.regulation.score[0] + l.srpExtra.regulation.score[1];
+      const scoringEvents = l.events.filter(e => ['try','goal'].includes(e.type) && (e.min > last.start
+        || e.min === last.start && Array.isArray(e.scene?.score) && e.scene.score[0] + e.scene.score[1] > regulationTotal));
       check(scoringEvents.length === 1 && scoringEvents[0].type === mark.kind && scoringEvents[0].min === mark.minute
         && scoringEvents[0].scene?.team === mark.side && equal(scoringEvents[0].scene.score,l.score)
         && equal(scoringEvents[0].scene.tries,l.tries), 'première marque absente du journal causal.');
