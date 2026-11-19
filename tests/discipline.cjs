@@ -11,7 +11,8 @@ assert.equal(run('disciplineDecision(l,1,{serious:false}).repeated'),false);
 run('l.disciplineHistory=[{count:0,recent:0},{count:0,recent:0}];var old=executePenaltyChoice;executePenaltyChoice=function(){};awardPenalty(l,1)');
 assert.equal(run('l.disciplineHistory[0].count'),1);
 assert.equal(run('l.stats[0].penalties'),1);
-assert.ok(run('l.events.some(e=>e.text.includes("sanctionné pour"))'));
+// Arbitrage fin (dist/arbitrage.js) : le commentaire nomme la faute détaillée (« Hors-jeu au ruck de … »), plus « sanctionné pour ».
+assert.ok(run('l.events.some(e=>e.type==="penalty"&&(e.text.includes("sanctionné pour")||l.arbitrageVersion===1&&/pénalité pour/i.test(e.text)))'));
 const saved=run('JSON.parse(JSON.stringify(S))');
 assert.equal(context(saved).run('S.live.disciplineHistory[0].count'),1);
 // A portable save retains disciplinary history and existing cards.
