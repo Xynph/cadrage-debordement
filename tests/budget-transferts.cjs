@@ -52,7 +52,11 @@ test('Formule : exemple du GDD (Castres), plancher, plafond, matelas, refus et p
   assert.equal(T.refus(e, 100000, 1.9e6, 1.89e6), `La caisse ne permet plus de transfert : elle doit rester au-dessus de ${T.euros(1.89e6)}.`);
   assert.equal(T.disponible(e, 1e6, 1.89e6), 0, 'caisse sous le matelas : 0, jamais négatif');
   assert.equal(T.rendu({ enveloppe: 640000, reconstitue: 0 }, 300000, 29.6e6), Math.round(P.partVentes * 300000), 'part d’une vente choisie');
-  assert.equal(T.rendu({ enveloppe: 29.6e6 * P.plafond - 100000, reconstitue: 0 }, 1e6, 29.6e6), 100000, 'plafonné au plafond des recettes');
+  // R4 (décision de Léo, 19/11/2026) : plus de plafond d'enveloppe ; seule la caisse limite ensuite le disponible.
+  assert.equal(T.rendu({ enveloppe: 29.6e6 * P.plafond - 100000, reconstitue: 0 }, 1e6, 29.6e6), Math.round(P.partVentes * 1e6), 'non plafonné par les recettes');
+  const plein = { enveloppe: 29.6e6 * P.plafond, depense: 0, reconstitue: 29.6e6 * P.plafond };
+  assert.equal(T.rendu(plein, 400000, 29.6e6), Math.round(P.partVentes * 400000), 'enveloppe déjà au plafond : la part rentre quand même');
+  assert.equal(T.disponible({ ...plein, reconstitue: plein.reconstitue + T.rendu(plein, 400000, 29.6e6) }, 2e6, 1.89e6), 2e6 - 1.89e6, 'disponible = min(reste, caisse − matelas)');
 });
 
 test('Rallonge (R3 bis) et report (R5) : montant demandé, décision du président, caisse limitante, report plafonné', () => {
@@ -81,8 +85,8 @@ test('Rallonge (R3 bis) et report (R5) : montant demandé, décision du préside
   assert.equal(T.report(fin, 700000, 29.6e6), basPas(P.partReport * 420000));
   assert.equal(T.report(fin, 29.6e6 * P.plafond - 20000, 29.6e6), Math.min(basPas(P.partReport * 420000), 20000), 'plafond : enveloppe neuve + report ≤ plafond des recettes');
   assert.equal(T.report({ ...fin, depense: 2e6 }, 700000, 29.6e6), 0, 'rien à reporter');
-  // Le reconstitué reste plafonné en comptant le report.
-  assert.equal(T.rendu({ enveloppe: 29.6e6 * P.plafond - 150000, report: 50000, reconstitue: 0 }, 1e6, 29.6e6), Math.min(Math.round(P.partVentes * 1e6), 100000));
+  // Le reconstitué n'est plus plafonné, report compris (R4 du 19/11/2026).
+  assert.equal(T.rendu({ enveloppe: 29.6e6 * P.plafond - 150000, report: 50000, reconstitue: 0 }, 1e6, 29.6e6), Math.round(P.partVentes * 1e6));
   assert.equal(T.valide({ version: 1, saison: 1, clubId: 9, enveloppe: 1, depense: 0, reconstitue: 0 }), true, 'sauvegarde antérieure valide');
   assert.equal(T.valide({ version: 1, saison: 1, clubId: 9, enveloppe: 1, depense: 0, reconstitue: 0, rallonge: -1 }), false);
 });
@@ -101,6 +105,10 @@ test('Critère 9 : changer les valeurs du JSON change l’enveloppe sans modifie
 
 test('Moteur Monde : enveloppe, refus, débits, matelas, président, recettes, saison, carrière antérieure', { timeout: 300000 }, () => {
   const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  // Achats entre clubs immédiats (période des mutations ouverte toute la saison) : ce test vérifie le budget, pas le
+  // calendrier des mutations (tests/calendrier-mutations.cjs).
+  const VR = require('../native/engine/vente-joueurs.json'), modeAvant = VR.fenetres.mode;
+  VR.fenetres.mode = 'saison';
   try {
     let m = creer(jeu, CLUB);
     const { run, lire, vue, fixer } = outils(jeu);
@@ -246,7 +254,7 @@ test('Moteur Monde : enveloppe, refus, débits, matelas, président, recettes, s
     // Hors budget de saison (carrière non marquée) : règles inchangées, vue inactive.
     const hors = lire(`(()=>{const s=S.startingSalaries;delete S.startingSalaries;const r={v:budgetTransfertsVue(),refus:budgetTransfertsRefus(9e9)};S.startingSalaries=s;return r;})()`);
     assert.equal(hors.v.actif, false); assert.equal(hors.refus, null);
-  } finally { jeu.fermer(); }
+  } finally { VR.fenetres.mode = modeAvant; jeu.fermer(); }
 });
 
 test('Moteur Monde : rallonge accordée, refusée (confiance, part, plafond), caisse limitante, report et changement de club', { timeout: 300000 }, () => {

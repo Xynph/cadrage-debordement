@@ -7,6 +7,9 @@ test('les références communes conservent37, formes inconnues restent conservat
 function worker(t){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-market-depth-')),engine=path.join(root,'app/engine'),source=path.resolve(__dirname,'../native/engine'),coordinator=process.env.CD_MARKET_DEPTH_ENGINE||source;
  fs.mkdirSync(engine,{recursive:true});for(const f of fs.readdirSync(source))if(/\.(cjs|json)$/.test(f))fs.copyFileSync(path.join(source,f),path.join(engine,f));
+ // Achats immédiats (période des mutations ouverte toute la saison) : ce test vérifie la profondeur du marché ; l'accord
+ // différé hors période est vérifié par tests/calendrier-mutations.cjs.
+ {const vente=path.join(engine,'vente-joueurs.json'),reglages=JSON.parse(fs.readFileSync(vente,'utf8'));reglages.fenetres.mode='saison';fs.writeFileSync(vente,JSON.stringify(reglages));}
  // Optional coordinator hook permits isolated review before custom is integrated.
  if(coordinator!==source){fs.copyFileSync(path.join(coordinator,'worker.cjs'),path.join(engine,'worker.cjs'));fs.copyFileSync(path.join(coordinator,'custom-competition.cjs'),path.join(engine,'custom-competition.cjs'));let manifest=fs.readFileSync(path.join(engine,'native-systems.cjs'),'utf8');if(!manifest.includes('customCompetition:'))manifest=manifest.replace('const domains={',"const domains={customCompetition:require('./custom-competition.cjs'),");fs.writeFileSync(path.join(engine,'native-systems.cjs'),manifest);}
  const b=require(path.join(engine,'worker.cjs')).createBridge({dataDir:path.join(root,'profile'),distDir:coordinator!==source?path.resolve(coordinator,'../../dist'):path.resolve(__dirname,'../dist'),seed:827381,now:1794178800000});let n=0;t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});const go=(command,payload={})=>{const x=b.handle({id:++n,command,payload});a.equal(x.ok,true,command+':'+x.error);return x.model;};return {go};

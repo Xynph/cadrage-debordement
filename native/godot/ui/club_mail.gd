@@ -14,6 +14,9 @@ const CATEGORY := {"infirmerie":"Médical", "commotion":"Médical", "vestiaire":
 const ROUTES := ["Composition", "Effectif", "Classements", "Recrutement", "Préparation", "Vestiaire", "Presse", "Club", "Finances", "Formation", "Calendrier", "Réception", "Bureau"]
 ## « ventes » : Recrutement, offres reçues ouvertes (ui/player_sales_view.gd).
 const CAPTIONS := {"infirmerie":"Infirmerie", "contrats":"Contrats", "fiche":"Fiche du joueur", "ventes":"Offres reçues"}
+## « prolongation » : un autre club approche un joueur en fin de contrat (calendrier-mutations.cjs) ; le lien ouvre sa
+## fiche sur l'onglet Contrat pour lui proposer une prolongation.
+const PROLONGATION := "Proposer une prolongation"
 
 ## Mails du club projetés par le moteur, du plus ancien au plus récent.
 static func mails(model: Dictionary) -> Array:
@@ -51,13 +54,14 @@ static func messages(model: Dictionary) -> Array[Dictionary]:
 
 ## Libellé du bouton vers l'écran concerné.
 static func caption(ecran: String) -> String:
+	if ecran == "prolongation": return PROLONGATION
 	return "Ouvrir · " + str(CAPTIONS.get(ecran, ecran if ecran in ROUTES else "Bureau"))
 
 static func route_of(ecran: String) -> String:
 	if ecran in ["infirmerie", "contrats"]: return "Effectif"
 	# Consignes de match (réponse « Régler les consignes » du plan adverse de la veille).
 	if ecran == "Plan de jeu": return ecran
-	if ecran == "fiche" or ecran == "ventes": return "Recrutement"
+	if ecran == "fiche" or ecran == "ventes" or ecran == "prolongation": return "Recrutement"
 	return ecran if ecran in ROUTES else "Bureau"
 
 ## Prépare l'écran utile (filtres de l'effectif) et rend la route à ouvrir ; "" si une fiche de joueur a été ouverte.
@@ -79,9 +83,10 @@ static func prepare(app: Control, ecran: String, joueur: String, deferred: bool)
 		"ventes":
 			app.set_meta("open_player_sales", true)
 			return "Recrutement"
-		"fiche":
+		"fiche", "prolongation":
 			if joueur.is_empty() or not is_instance_valid(app.navigation_controller): return "Recrutement"
 			var target := {"kind":"player", "id":joueur}
+			if ecran == "prolongation": target.section = "contract"
 			if deferred: app.navigation_controller.call_deferred("open_entity", target)
 			else: app.navigation_controller.open_entity(target)
 			return ""
