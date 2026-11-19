@@ -343,7 +343,11 @@ func install_entrypoints() -> void:
 
 func _add_training_entry(parent: Node) -> void:
 	# Style de bouton du jeu (contour or, comme « Préparer le match »), plus le bouton blanc pleine largeur du thème Godot.
-	var button := Components.button("VOIR L’ENTRAÎNEMENT", open_training, true, app.accent)
+	# Fond sombre quel que soit l'accent du club (une couleur claire donnait un bouton presque blanc), contour or.
+	var button := Components.button("VOIR L’ENTRAÎNEMENT", open_training, false, app.accent)
+	var normal := (button.get_theme_stylebox("normal") as StyleBoxFlat).duplicate() as StyleBoxFlat
+	normal.border_color = Components.GOLD
+	button.add_theme_stylebox_override("normal", normal)
 	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	button.custom_minimum_size.x = Components.px(300)
 	button.name = "ContextualObserveTraining"

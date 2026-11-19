@@ -295,7 +295,7 @@ static func _roster_columns(width:float) -> Array:
 
 ## Libellé officiel du poste dans le jeu : le numéro 8 est la « troisième ligne centre » (comme fiche, vestiaire et contrats).
 static func position_label(pos:String,compact:bool=false) -> String:
-	var full:={"Numéro 8":"Troisième ligne centre","N° 8":"Troisième ligne centre","N°8":"Troisième ligne centre","Troisième ligne":"Troisième ligne aile"}.get(pos,pos)
+	var full:String={"Numéro 8":"Troisième ligne centre","N° 8":"Troisième ligne centre","N°8":"Troisième ligne centre","Troisième ligne":"Troisième ligne aile"}.get(pos,pos)
 	if not compact:return full
 	return {"Pilier gauche":"Pilier g.","Pilier droit":"Pilier d.","Deuxième ligne":"2e ligne","Troisième ligne aile":"3e l. aile","Troisième ligne centre":"3e l. centre","Demi de mêlée":"Demi mêlée","Demi d’ouverture":"Demi d’ouv.","Talonneur remplaçant":"Talon. rempl.","Pilier remplaçant":"Pilier rempl."}.get(full,full)
 

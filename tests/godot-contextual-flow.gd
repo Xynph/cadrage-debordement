@@ -223,7 +223,7 @@ func run() -> void:
 		check(observe != null and observe.is_visible_in_tree(), "Actual training route exposes Observe at " + str(resolution))
 		if observe != null:
 			var fond := observe.get_theme_stylebox("normal") as StyleBoxFlat
-			check(fond != null and fond.bg_color.get_luminance() < .3 and observe.size_flags_horizontal != Control.SIZE_EXPAND_FILL and observe.get_theme_stylebox("normal") != observe.get_theme_stylebox("normal", "Button"), "Observe : style de bouton du jeu, plus le bouton blanc pleine largeur")
+			check(fond != null and fond.bg_color.get_luminance() < .3 and observe.size_flags_horizontal != Control.SIZE_EXPAND_FILL and observe.has_theme_stylebox_override("normal"), "Observe : style de bouton du jeu, plus le bouton blanc pleine largeur")
 			observe.pressed.emit()
 		else: director.open_training()
 		await settle()
