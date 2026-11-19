@@ -113,8 +113,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri
+          sudo apt-get -o Acquire::Retries=5 update
+          sudo apt-get -o Acquire::Retries=5 install -y --fix-missing --no-install-recommends xvfb libgl1-mesa-dri
       - name: Cache de l'archive du SDK Godot
         uses: actions/cache@v4
         with:
@@ -220,7 +220,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pip install --quiet pillow || sudo apt-get install -y --no-install-recommends imagemagick
+          pip install --quiet pillow || sudo apt-get -o Acquire::Retries=5 install -y --fix-missing --no-install-recommends imagemagick
           mkdir "$RUNNER_TEMP/outil" && cd "$RUNNER_TEMP/outil" && git init -q
           git fetch -q --no-tags --depth=1 "https://github.com/${{ github.repository }}.git" main
           git show FETCH_HEAD:ci/en-ligne-publier.sh > "$RUNNER_TEMP/en-ligne-publier.sh"
