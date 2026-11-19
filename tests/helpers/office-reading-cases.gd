@@ -13,6 +13,17 @@ static func _next_fixture(model: Dictionary) -> Dictionary:
 	var announced := Office.P.next_nationale_fixture(model)
 	return announced if not announced.is_empty() else Office.P.next_scheduled_fixture(model)
 
+## Commandes envoyées au moteur depuis `requests` (valeur de bridge._next_id au départ).
+static func sent_since(app: Control, requests: int) -> PackedStringArray:
+	var count: int = int(app.bridge._next_id) - requests
+	if count <= 0: return PackedStringArray()
+	return app.bridge.sent_commands.slice(maxi(0, app.bridge.sent_commands.size() - count))
+
+## Un lien de lecture ne peut demander au moteur que des lectures déclarées sans effet (READ_ONLY_COMMANDS,
+## ex. la fiche d'un club) : aucune décision, aucune écriture.
+static func reads_only(app: Control, requests: int) -> bool:
+	return sent_since(app, requests).size() == int(app.bridge._next_id) - requests and sent_since(app, requests).all(func(command: String) -> bool: return command in app.READ_ONLY_COMMANDS)
+
 static func _unavailable(harness: SceneTree, id: String, reason: String) -> void:
 	harness.visits.append({"name":id,"scope":"office","available":false,"reason":reason})
 
@@ -106,4 +117,4 @@ static func run(harness: SceneTree, expected_fixture: String) -> void:
 		harness.check(is_instance_valid(score) and score.is_visible_in_tree() and score.has_focus() and app.body_scroll.scroll_vertical == before_scroll, "Bureau · retour exact au score, même instance et même défilement")
 	else:
 		_unavailable(harness, "OfficeRecentFixture", "La rencontre attendue n'est pas un résultat de calendrier unique et concordant dans les cinq résultats du Bureau")
-	harness.check(app.bridge._next_id == requests, "Bureau · aucune requête worker par les liens, sans action primaire ni préparation supplémentaire")
+	harness.check(reads_only(app, requests), "Bureau · aucune requête worker par les liens hors lectures déclarées, sans action primaire ni préparation supplémentaire " + str(sent_since(app, requests)))
