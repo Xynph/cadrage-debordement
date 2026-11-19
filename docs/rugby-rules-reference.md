@@ -245,3 +245,28 @@ appliquées aux 116 clubs (`native/engine/club-support.cjs`) :
 - Non suivis : récupération de plus de 21 jours, seuil d'impact abaissé,
   troubles psychologiques (autres cas d'antécédent du SCRM). Un joueur sans
   remplaçant éligible à son poste n'est pas tiré au sort pour un choc.
+
+## Chrono des arrêts de jeu (18/11/2026)
+
+Vérifié le 18/11/2026 ; détail et mesures dans `docs/chrono-arrets-de-jeu-20261118.md`.
+
+- Loi 8.21 ([loi 8](https://passport.world.rugby/laws-of-the-game/laws-by-number/8-scoring/)) :
+  pénalité tentée au but dans les 60 s (temps de jeu) après l'annonce du tir,
+  sinon tir refusé et mêlée.
+- Loi 8.8c : transformation dans les 60 s (temps de jeu) après l'essai accordé.
+  C'était 90 s jusqu'en 2024 ; 60 s est un essai mondial de World Rugby
+  ([essais du 1er janvier 2025](https://passport.world.rugby/laws-of-the-game/laws-news/2025-01-global-law-trials/)),
+  repris dans le texte en ligne des lois.
+- Top 14 2026-2027 (LNR) : 45 s pour pénalités et transformations, chrono lancé
+  au bras levé de l'arbitre (annonce du calendrier 2026-2027 et mesures LNR
+  pour le temps de jeu effectif). Pro D2 : non vérifié, gardé à 60 s.
+- Loi 18.12 : alignement formé dans les 30 s après la marque ; mêlée prête dans
+  les 30 s (directives de 2023).
+- Temps de jeu effectif réel (Opta, rapport World Rugby) : Top 14 ≈ 33,6 min en
+  2025-2026 (34,5 en 2023-2024), Premiership ≈ 36,3 min (37,9), Super Rugby
+  ≈ 36,8 min. Le moteur ne distingue pas encore ballon vivant et ballon mort
+  dans une action : il ne prétend pas reproduire ce chiffre.
+- Moteur (`chronoVersion: 1`) : tir au but et transformation comptés au délai
+  de la compétition, plus la mise en place du renvoi ; pénaltouche : coup de
+  pied en touche et alignement. Le renvoi après des points se joue au moment
+  dû ; dû après la fin du temps réglementaire, il termine la période (loi 5).
