@@ -94,7 +94,8 @@ func check_framing(label: String, highlights: int) -> void:
 	check(framing.frames >= 60, label + " : cadrage observé pendant les temps forts (%d images)" % framing.frames)
 	check(framing.outside == 0, label + " : le ballon ne sort jamais du champ visible (%d images : %s)" % [framing.outside, str(framing.where)])
 	# Caméra reculée (12 novembre 2026, soir) : 26 à 28 m au plus serré en TV, jamais plus près que 9 m (contact).
-	check(framing.smallest >= 9.0 and framing.smallest <= 42.5, label + " : l'action est cadrée, ni trop près ni trop loin (%.1f m au plus serré)" % framing.smallest)
+	# 19 novembre 2026 : la mêlée en TV se cadre jusqu'à 7,5 m (SERRE_MELEE, paquets sur la moitié de l'image).
+	check(framing.smallest >= 7.5 and framing.smallest <= 42.5, label + " : l'action est cadrée, ni trop près ni trop loin (%.1f m au plus serré)" % framing.smallest)
 	check(framing.wide == 0 and highlights > 0, label + " : jamais de plan large visible pendant un temps fort (%d images)" % framing.wide)
 
 func inside(outer: Rect2, inner: Rect2) -> bool:
