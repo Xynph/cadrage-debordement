@@ -30,6 +30,11 @@ func pure() -> void:
 	check(Squad.primary_caption({"pos":"Pilier gauche","primaryPositions":[1]})=="Pilier gauche","Pas de polyvalence automatique pour un seul côté")
 	check(Squad.primary_caption({"pos":"Troisième ligne","primaryPositions":[6,7]})=="Troisième ligne aile","Les 6–7 sont explicitement des troisièmes lignes aile")
 	check(Squad.primary_caption({"pos":"Numéro 8","primaryPositions":[8]})=="Troisième ligne centre","Le 8 est explicitement un troisième ligne centre")
+	# Liste Effectif : même libellé officiel que la fiche, en version courte quand la colonne Poste est étroite.
+	var Liste = load("res://ui/squad_views.gd")
+	check(Liste.position_label("Numéro 8")=="Troisième ligne centre" and Liste.position_label("Troisième ligne")=="Troisième ligne aile","Effectif : libellés officiels du 8 et des 6–7")
+	check(Liste.position_label("Numéro 8",true)=="3e l. centre" and Liste.position_label("Deuxième ligne",true)=="2e ligne" and Liste.position_label("Demi d’ouverture",true)=="Demi d’ouv.","Effectif compact : libellés courts")
+	check(Liste.position_label("Talonneur",true)=="Talonneur" and Liste.position_label("Arrière",true)=="Arrière","Effectif compact : postes courts inchangés")
 	var labels := {"selection":{"slots":[{"slot":10,"label":"Ailier gauche"},{"slot":13,"label":"Ailier droit"}]}}
 	var tip := Squad.secondary_tooltip({"secondaryPositions":[11,14]},labels)
 	check(tip.contains("AL · Ailier (11 et 14)"),"Infobulle explicite les abréviations et les numéros")

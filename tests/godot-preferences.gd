@@ -241,6 +241,20 @@ func dialog_cases() -> void:
 		var camera: OptionButton = d.find_child("PreferencesCamera",true,false)
 		var quality: OptionButton = d.find_child("PreferencesQuality",true,false)
 		check(volume != null and motion != null and camera != null and quality != null,"Contrôles natifs identifiables")
+		var onglets := d.find_child("PreferencesTabs",true,false) as TabContainer
+		var defile := false
+		var ancetre: Node = onglets.get_parent()
+		while ancetre != null and ancetre != d:
+			if ancetre is ScrollContainer: defile = true
+			ancetre = ancetre.get_parent()
+		check(not defile and onglets.get_child(0) is ScrollContainer,"Onglets fixes : seul le contenu de chaque onglet défile (%s)" % str(resolution))
+		check(d.get_theme_stylebox("embedded_border","Window") is StyleBoxFlat and d.has_meta("immersive_title_dressed"),"Barre de titre habillée aux couleurs du jeu")
+		var titres: Array[String] = []
+		for section: Node in onglets.get_child(0).find_children("*","Label",true,false):
+			if str((section as Label).text) in ["SON","CAMÉRA ET ACCESSIBILITÉ"]: titres.append((section as Label).text)
+		check(titres == ["SON","CAMÉRA ET ACCESSIBILITÉ"],"Volume global sous une section « Son » distincte de la caméra : %s" % str(titres))
+		check(motion.get_parent() is HBoxContainer and motion.text.is_empty() and (motion.get_parent().get_child(0) as Label).get_theme_font_size("font_size") == (volume.get_parent().get_child(0) as Label).get_theme_font_size("font_size"),"Mouvement réduit : même ligne et même taille de texte que les autres réglages")
+		check((d.get_ok_button().get_parent() as BoxContainer).alignment == BoxContainer.ALIGNMENT_END,"Bouton Fermer en pied de fenêtre")
 		if volume != null and motion != null:
 			volume.get_line_edit().grab_focus(); await settle(); await key(KEY_UP)
 			check(p.data.volume == int(volume.value) and p.data.volume > 0,"Volume clavier enregistré et affiché")
