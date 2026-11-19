@@ -1,0 +1,5 @@
+== captures dilemmes (entracte 2D à la 70e avec tuile Bonus, feuille de match JIFF et liste des 33, infirmerie HIA ; 1280x720) (code 1)
+FAIL: Après « Faire souffler », la bannière disparaît
+  throw new AssertionError(obj);
+AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+FAIL: Après « Faire souffler », la bannière disparaît
