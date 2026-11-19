@@ -83,9 +83,20 @@ func run() -> void:
 	for team: Dictionary in app.model.get("staff", {}).get("teams", []):
 		for member: Dictionary in team.get("members", []):
 			if str(member.get("role", "")) == "assistant" and adjoint.is_empty(): adjoint = member
-	if not adjoint.is_empty():
-		var lien := named("PreparationAdjointLink")
-		check(lien != null, "Adjoint lu dans le staff du club, jamais figé")
+	# Tableau détaillé de leur XV : sous-page avec la colonne « remarque de ton adjoint » et le nom de l'adjoint lu dans le staff.
+	var tableau := named("PreparationTheirXIAll") as Button
+	check(tableau != null, "Lien vers le tableau détaillé de leur XV")
+	if tableau != null:
+		if not adjoint.is_empty(): check(tableau.text.contains(str(adjoint.get("name", ""))), "Le nom de l'adjoint est lu dans le staff du club, jamais figé")
+		var ouverture := await press(tableau)
+		check(ouverture == "Préparation|0|xv" and named("PreparationTheirXITable") != null and open_windows().is_empty(), "Tableau détaillé : sous-page, pas une fenêtre (%s)" % ouverture)
+		for i in 240:
+			if not app.find_children("PreparationTheirXIName_*", "Button", true, false).is_empty(): break
+			await process_frame
+		check(app.find_children("PreparationTheirXIName_*", "Button", true, false).size() == 15, "Tableau détaillé : quinze noms cliquables")
+		if not adjoint.is_empty(): check(named("PreparationAdjointLink") != null, "Lien vers la fiche de l'adjoint")
+		await press(named("PreparationSubBack") as Button)
+	await reset()
 	check(gold_used(named("PreparationDossier")) == 0 and gold_used(named("PreparationTabs")) == 0, "Aucun or dans l'écran (réservé à Continuer)")
 	var sector_buttons := app.find_children("PreparationSector_*", "Button", true, false)
 	check(sector_buttons.size() >= 1, "Chaque secteur du rapport de force est cliquable")

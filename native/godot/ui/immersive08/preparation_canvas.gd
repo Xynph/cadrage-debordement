@@ -290,7 +290,7 @@ func _build() -> void:
 	fixture = app.model.get("next") if app.model.get("next") is Dictionary else {}
 	_heading()
 	var hauteur := 1230.0
-	if active_tab == 0: hauteur = maxf(hauteur, 257.0 + _dossier() + 40.0)
+	if active_tab == 0: hauteur = maxf(hauteur, 257.0 + _dossier() + 10.0)
 	else: _consignes()
 	var conteneur := get_parent() as Control
 	size.y = C.px(hauteur)
@@ -392,7 +392,7 @@ func _ligne_contexte(hero: Control, preparation: Dictionary, baseline: float) ->
 		var club: Dictionary = domicile if rang == 0 else exterieur
 		var nom := G.club_name(club)
 		var largeur := _largeur(nom, 20, true) + 14
-		Link.name_link(app, hero, Rect2(pose - 4, baseline - 26, largeur, 34), "club", str(int(club.get("id", -1))) if club.get("id") != null else "", nom, 20, Charte.IVOIRE, "PreparationContextClub" + ("Own" if club.get("id") == nous_id else "Opponent"))
+		Link.name_link(app, hero, C.reach_rect(Rect2(pose - 4, baseline - 26, largeur, 34)), "club", str(int(club.get("id", -1))) if club.get("id") != null else "", nom, 20, Charte.IVOIRE, "PreparationContextClub" + ("Own" if club.get("id") == nous_id else "Opponent"))
 		pose += largeur
 		if rang == 0:
 			_texte(hero, pose, baseline, "–", 20, Charte.IVOIRE_2, 24)
@@ -485,6 +485,7 @@ func _dossier() -> float:
 	match str(state.get("sub", "")):
 		"reperes": return _sous_reperes(section)
 		"conseils": return _sous_conseils(section)
+		"xv": return _sous_xv(section)
 	var opponent := _opponent()
 	var haut := 0.0
 	if reports.is_empty():
@@ -503,15 +504,16 @@ func _dossier() -> float:
 		_a_faire(section, Rect2(1361, 0, 887, 540))
 		haut = 556.0
 	else:
-		_danger(section, Rect2(0, 0, 2248, 84))
-		var hauteur_rapport := _rapport(section, Rect2(0, 100, 1344, 0))
-		_a_faire(section, Rect2(1361, 100, 887, hauteur_rapport))
-		haut = 100.0 + hauteur_rapport + 16.0
+		_danger(section, Rect2(0, 0, 2248, 76))
+		# Gabarit 1080p sans défilement (recette immersive08) : danger 76, rapport + repères ~440, forme + surveillés ~254, XV ~196.
+		var hauteur_rapport := maxf(108.0 + 6.0 * C.reach(44.0) + 44.0, 56.0 + 5.0 * C.reach(62.0) + 82.0)
+		_rapport(section, Rect2(0, 90, 1344, hauteur_rapport))
+		_a_faire(section, Rect2(1361, 90, 887, hauteur_rapport))
+		haut = 90.0 + hauteur_rapport + 14.0
 		var hauteur_bas := _forme(section, Rect2(0, haut, 900, 0))
 		_surveiller(section, Rect2(916, haut, 1332, hauteur_bas))
-		haut += hauteur_bas + 16.0
-	if not opponent.is_empty(): haut += _xv_adverse(section, Rect2(0, haut, 2248, 0), opponent) + 16.0
-	return haut
+		haut += hauteur_bas + 14.0
+	if not opponent.is_empty(): haut += _xv_bande(section, Rect2(0, haut, 2248, 0), opponent)
 
 ## Bandeau « Danger » : la menace principale, lue dans les vrais chiffres du dossier ; le plan conseillé mène aux conseils.
 func _danger(section: Control, rectangle: Rect2) -> void:
@@ -521,15 +523,14 @@ func _danger(section: Control, rectangle: Rect2) -> void:
 	section.add_child(bande)
 	D.place(bande, rectangle)
 	_barre(bande, Rect2(0, 0, 6, rectangle.size.y), Charte.club_trait(app.accent))
-	_etiquette(bande, 28, 51, "Danger", 110)
-	var phrase := _danger_phrase()
-	var texte := _texte(bande, 140, 52, phrase, 26, Charte.IVOIRE, 1340)
+	_etiquette(bande, 28, 46, "Danger", 110)
+	var texte := _texte(bande, 140, 48, _danger_phrase(), 24, Charte.IVOIRE, 1340)
 	texte.name = "PreparationDangerText"
 	var conseil: Dictionary = reports.get("advice", {})
 	if not conseil.is_empty():
 		var tactiques: Dictionary = app.model.get("tactics", {})
 		var plan := "Plan conseillé : %s · %s" % [_tactic_label(tactiques.get("attacks", []), conseil.get("attack")), _tactic_label(tactiques.get("defenses", []), conseil.get("defence"))]
-		_bouton(bande, Rect2(1520, 17, 708, 50), plan, func(): _ouvrir_sous("conseils"), "lien", "arrow", "PreparationPlanLink")
+		_bouton(bande, Rect2(1520, 13, 708, 50), plan, func(): _ouvrir_sous("conseils"), "lien", "arrow", "PreparationPlanLink")
 
 func _danger_phrase() -> String:
 	for signal_row: Dictionary in reports.get("signals", []):
@@ -559,12 +560,10 @@ func _agir(code: String) -> void:
 		"train": _choose(2)
 
 ## Rapport de force : nous (plein) face à eux (anneau), chiffres écrits, écart en mots ; chaque ligne mène à l'écran d'action.
-func _rapport(section: Control, rectangle: Rect2) -> float:
+func _rapport(section: Control, rectangle: Rect2) -> void:
 	var domaines: Array = reports.get("domains", [])
-	var pas := C.reach(54.0)
-	# La colonne « À faire avant le match » (cinq repères, trois liens) partage cette hauteur.
-	var hauteur := maxf(138.0 + maxf(1, domaines.size()) * pas + 56.0, 64.0 + 5.0 * C.reach(72.0) + 100.0)
-	var panneau := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, hauteur)), "Rapport de force", "PreparationComparison", "Évaluations sur 100 ajustées à la condition")
+	var pas := maxf(C.reach(44.0), (rectangle.size.y - 152.0) / 6.0)
+	var panneau := _panneau(section, rectangle, "Rapport de force", "PreparationComparison", "Évaluations sur 100 ajustées à la condition")
 	var nous: Dictionary = app.model.club
 	var eux := _opponent()
 	for i in 2:
@@ -577,18 +576,18 @@ func _rapport(section: Control, rectangle: Rect2) -> float:
 		plaque.name = "PreparationTagUs" if i == 0 else "PreparationTagThem"
 		plaque.add_theme_stylebox_override("panel", _style(Color(lisere, .28), Color.TRANSPARENT) if i == 0 else _style(Color.TRANSPARENT, lisere, 2))
 		panneau.add_child(plaque)
-		D.place(plaque, Rect2(x, 66, 360, 40))
-		if i == 0: _barre(panneau, Rect2(x, 66, 6, 40), lisere)
+		D.place(plaque, Rect2(x, 60, 360, 38))
+		if i == 0: _barre(panneau, Rect2(x, 60, 6, 38), lisere)
 		var nom := G.club_name(club)
-		var lien := Link.name_link(app, panneau, Rect2(x + 14, 66, 250, 40), "club", str(int(club.get("id", -1))) if club.get("id") != null else "", nom.to_upper(), 22, Charte.IVOIRE, "PreparationOwnLink" if i == 0 else "PreparationOpponentLink")
+		var lien := Link.name_link(app, panneau, C.reach_rect(Rect2(x + 14, 60, 250, 38)), "club", str(int(club.get("id", -1))) if club.get("id") != null else "", nom.to_upper(), 21, Charte.IVOIRE, "PreparationOwnLink" if i == 0 else "PreparationOpponentLink")
 		if lien is Label: (lien as Label).vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_texte(panneau, x + 346, 94, "nous" if i == 0 else "eux", 17, Charte.IVOIRE_2, 80, HORIZONTAL_ALIGNMENT_RIGHT)
+		_texte(panneau, x + 346, 86, "nous" if i == 0 else "eux", 17, Charte.IVOIRE_2, 80, HORIZONTAL_ALIGNMENT_RIGHT)
 	if domaines.is_empty():
 		_texte(panneau, 28, 190, "La comparaison par secteur n’est pas disponible.", 22, Charte.IVOIRE_2, 1270)
 	var echelle := 330.0
 	for i in domaines.size():
 		var domaine: Dictionary = domaines[i]
-		var y := 120.0 + pas * i
+		var y := 108.0 + pas * i
 		var code: String = SECTEURS.get(str(domaine.get("key", "")), "")
 		var libelle := str(domaine.get("label", "Secteur"))
 		if i % 2 == 1: _barre(panneau, Rect2(0, y, 1344, pas - 2), Charte.PANNEAU_2)
@@ -598,24 +597,19 @@ func _rapport(section: Control, rectangle: Rect2) -> float:
 		var centre := y + pas / 2.0
 		var propre: Variant = domaine.get("own")
 		var adverse: Variant = domaine.get("opponent")
-		_titre(panneau, 24, centre + 12, G.n(propre) if _nombre(propre) else "—", 36, Charte.IVOIRE, 70)
-		if _nombre(propre): _barre(panneau, Rect2(430.0 - echelle * clampf(float(propre) / 100.0, 0, 1), centre - 8, echelle * clampf(float(propre) / 100.0, 0, 1), 16), Charte.club_trait(app.accent))
-		_texte(panneau, 590, centre + (0 if code.is_empty() else -2), libelle, 21, Charte.IVOIRE, 300, HORIZONTAL_ALIGNMENT_CENTER).add_theme_font_override("font", Charte.TITRE_GRAS)
-		if not code.is_empty() and not C.dense(): _texte(panneau, 590, centre + 18, "agir : " + str(DESTINATIONS[code]).to_lower(), 15, Charte.IVOIRE_2, 300, HORIZONTAL_ALIGNMENT_CENTER)
-		if _nombre(adverse): _barre(panneau, Rect2(750, centre - 8, echelle * clampf(float(adverse) / 100.0, 0, 1), 16), Color(Charte.IVOIRE_2, .2), Charte.IVOIRE_2)
-		_titre(panneau, 1090, centre + 12, G.n(adverse) if _nombre(adverse) else "—", 36, Charte.IVOIRE, 70)
+		_titre(panneau, 24, centre + 11, G.n(propre) if _nombre(propre) else "—", 32, Charte.IVOIRE, 70)
+		if _nombre(propre): _barre(panneau, Rect2(430.0 - echelle * clampf(float(propre) / 100.0, 0, 1), centre - 7, echelle * clampf(float(propre) / 100.0, 0, 1), 14), Charte.club_trait(app.accent))
+		_texte(panneau, 590, centre + (0 if code.is_empty() or C.dense() else -3), libelle, 20, Charte.IVOIRE, 300, HORIZONTAL_ALIGNMENT_CENTER).add_theme_font_override("font", Charte.TITRE_GRAS)
+		if not code.is_empty() and not C.dense(): _texte(panneau, 590, centre + 14, "agir : " + str(DESTINATIONS[code]).to_lower(), 14, Charte.IVOIRE_2, 300, HORIZONTAL_ALIGNMENT_CENTER)
+		if _nombre(adverse): _barre(panneau, Rect2(750, centre - 7, echelle * clampf(float(adverse) / 100.0, 0, 1), 14), Color(Charte.IVOIRE_2, .2), Charte.IVOIRE_2)
+		_titre(panneau, 1090, centre + 11, G.n(adverse) if _nombre(adverse) else "—", 32, Charte.IVOIRE, 70)
 		if _nombre(propre) and _nombre(adverse):
 			var delta := int(propre) - int(adverse)
 			var mot := "+%d pour toi" % delta if delta > 0 else "−%d contre toi" % -delta if delta < 0 else "égalité"
 			var couleur_delta: Color = Charte.V if delta > 0 else Charte.D if delta < 0 else Charte.N
 			_marque(panneau, 1168, centre, 16, "haut" if delta > 0 else "bas" if delta < 0 else "egal", couleur_delta)
 			_texte(panneau, 1194, centre + 7, mot, 19, couleur_delta, 140).add_theme_font_override("font", C.font(700))
-	var pied := y_pied(138.0 + maxf(1, domaines.size()) * pas)
-	_texte(panneau, 24, pied, "Comparaison chiffrée indisponible" if domaines.is_empty() else "Écart toujours écrit en mots : « pour toi » ou « contre toi ». Clique un secteur pour agir : composition, plan de jeu ou entraînement.", 15, Charte.IVOIRE_2, 1300)
-	return hauteur
-
-func y_pied(bas: float) -> float:
-	return bas + 30.0
+	_texte(panneau, 24, rectangle.size.y - 14, "Comparaison chiffrée indisponible" if domaines.is_empty() else "Écart toujours écrit en mots : « pour toi » ou « contre toi ». Clique un secteur pour agir : composition, plan de jeu ou entraînement.", 15, Charte.IVOIRE_2, 1300)
 
 ## À faire avant le match : une ligne cliquable par repère, mêmes vraies données qu'avant.
 func _a_faire(section: Control, rectangle: Rect2) -> void:
@@ -623,36 +617,36 @@ func _a_faire(section: Control, rectangle: Rect2) -> void:
 	var verifs: Array = briefing.checks
 	var en_ordre := verifs.filter(func(check: Dictionary): return check.level == "info").size()
 	var panneau := _panneau(section, rectangle, "À faire avant le match", "PreparationRecommendation", "%d sur %d en ordre" % [en_ordre, verifs.size()])
-	var pas := C.reach(72.0)
+	var pas := C.reach(62.0)
 	var limite := mini(verifs.size(), 5)
 	for index in limite:
 		var check: Dictionary = verifs[index]
-		var y := 64.0 + pas * index
+		var y := 56.0 + pas * index
 		if index % 2 == 1: _barre(panneau, Rect2(0, y, rectangle.size.x, pas - 2), Charte.PANNEAU_2)
 		var zone := _zone(panneau, Rect2(0, y, rectangle.size.x, pas - 2), Briefing.open_action.bind(app, check.action, _choose.bind(1)), "PreparationBriefing_" + str(check.id), check.detail + "\n" + check.caption)
 		zone.accessibility_name = check.title + " · " + check.detail
 		var grave: bool = check.level in ["urgent", "important"]
 		var teinte: Color = Charte.D if check.level == "urgent" else Charte.N if check.level == "important" else Charte.V
-		if grave: _titre(panneau, 22, y + pas / 2.0 + 14, "!", 34, teinte, 26, HORIZONTAL_ALIGNMENT_CENTER)
+		if grave: _titre(panneau, 22, y + pas / 2.0 + 12, "!", 30, teinte, 26, HORIZONTAL_ALIGNMENT_CENTER)
 		else:
 			var coche := C.icon("check", 20, teinte)
 			panneau.add_child(coche)
 			D.place(coche, Rect2(22, y + pas / 2.0 - 10, 20, 20))
-		_etiquette(panneau, 62, y + pas / 2.0 + 6, str(REPERES.get(str(check.id), "REPÈRE")), 150)
-		var titre := _texte(panneau, 210, y + 27, str(check.title), 19, Charte.IVOIRE, 410)
+		_etiquette(panneau, 62, y + pas / 2.0 + 5, str(REPERES.get(str(check.id), "REPÈRE")), 150)
+		var titre := _texte(panneau, 210, y + 23, str(check.title), 18, Charte.IVOIRE, 410)
 		titre.name = "PreparationBriefingTitle_" + str(check.id)
 		titre.add_theme_font_override("font", C.font(700))
-		var lignes_detail := D.words(str(check.detail), 46, 2)
-		for ligne in lignes_detail.size(): _texte(panneau, 210, y + 48 + ligne * 19, lignes_detail[ligne], 15, Charte.IVOIRE_2, 410)
-		_texte(panneau, rectangle.size.x - 52, y + pas / 2.0 + 6, str(check.caption), 16, Charte.IVOIRE, 215, HORIZONTAL_ALIGNMENT_RIGHT)
+		var lignes_detail := D.words(str(check.detail), 48, 2)
+		for ligne in lignes_detail.size(): _texte(panneau, 210, y + 40 + ligne * 17, lignes_detail[ligne], 15, Charte.IVOIRE_2, 410)
+		_texte(panneau, rectangle.size.x - 52, y + pas / 2.0 + 5, str(check.caption), 16, Charte.IVOIRE, 215, HORIZONTAL_ALIGNMENT_RIGHT)
 		_marque(panneau, rectangle.size.x - 40, y + pas / 2.0, 14, "droite", Charte.IVOIRE_2)
-	var pied := 64.0 + pas * limite + 18.0
-	var tous := _bouton(panneau, Rect2(14, pied, 330, 46), "Tous les repères (%d)" % verifs.size(), func(): _ouvrir_sous("reperes"), "lien", "search", "PreparationBriefingAll")
+	var pied := 56.0 + pas * limite + 10.0
+	var tous := _bouton(panneau, Rect2(14, pied, 330, 44), "Tous les repères (%d)" % verifs.size(), func(): _ouvrir_sous("reperes"), "lien", "search", "PreparationBriefingAll")
 	tous.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	var conseil: Dictionary = reports.get("advice", {})
-	var detail := _bouton(panneau, Rect2(350, pied, 250, 46), "Conseils détaillés", func(): _ouvrir_sous("conseils"), "lien", "arrow", "OpenOppositionDossier")
+	var detail := _bouton(panneau, Rect2(350, pied, 250, 44), "Conseils détaillés", func(): _ouvrir_sous("conseils"), "lien", "arrow", "OpenOppositionDossier")
 	detail.disabled = reports.is_empty()
-	var adopter := _bouton(panneau, Rect2(rectangle.size.x - 14 - 280, pied, 280, 46), "Adopter le plan du staff", func(): app._command("set_tactics", {"attack":conseil.attack, "defense":conseil.defence}), "lien", "arrow", "PreparationAdoptPlan")
+	var adopter := _bouton(panneau, Rect2(rectangle.size.x - 14 - 280, pied, 280, 44), "Adopter le plan du staff", func(): app._command("set_tactics", {"attack":conseil.attack, "defense":conseil.defence}), "lien", "arrow", "PreparationAdoptPlan")
 	adopter.disabled = conseil.is_empty() or not app._live().is_empty() or app.model.meta.get("phase") == "ended"
 
 const REPERES := {"press":"PRESSE", "selection":"FEUILLE", "day":"JOUR J", "international":"ABSENCES", "injuries":"INFIRMERIE", "sheet":"FEUILLE", "calendar":"RENDEZ-VOUS", "tactics":"CONSIGNES", "live":"MATCH", "ended":"SAISON"}
@@ -669,38 +663,35 @@ func _issue(resultat: Dictionary) -> String:
 ## Forme récente : pastilles V/N/D, derniers résultats cliquables, confrontations directes. Renvoie la hauteur.
 func _forme(section: Control, rectangle: Rect2) -> float:
 	var recent: Array = reports.get("recent", [])
-	var pas := C.reach(32.0)
-	var hauteur := 124.0 + 5.0 * pas + 56.0
+	var pas := C.reach(26.0)
+	var hauteur := 100.0 + 4.0 * pas + 50.0
 	var panneau := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, hauteur)), "Forme récente", "PreparationRecent", "%d résultats observés" % recent.size() if not recent.is_empty() else "")
 	var adversaire := _opponent()
 	var nom := G.club_name(adversaire)
-	Link.name_link(app, panneau, Rect2(20, 62, 250, 40), "club", str(int(adversaire.get("id", -1))) if adversaire.get("id") != null else "", nom.to_upper(), 20, Charte.IVOIRE, "PreparationFormClub")
+	Link.name_link(app, panneau, C.reach_rect(Rect2(20, 54, 250, 36)), "club", str(int(adversaire.get("id", -1))) if adversaire.get("id") != null else "", nom.to_upper(), 19, Charte.IVOIRE, "PreparationFormClub")
 	var issues: Array[String] = []
 	for i in mini(5, recent.size()):
 		var issue := _issue(recent[i])
 		if issue.is_empty(): continue
 		issues.append(issue)
-		_pastille(panneau, Rect2(290 + (issues.size() - 1) * 48, 68, 40, 30), issue, "PreparationOpponentForm%d" % (issues.size() - 1))
+		_pastille(panneau, Rect2(290 + (issues.size() - 1) * 48, 58, 40, 28), issue, "PreparationOpponentForm%d" % (issues.size() - 1))
 	if not issues.is_empty():
-		var v := issues.count("V")
-		var n := issues.count("N")
-		var d := issues.count("D")
-		_texte(panneau, 880, 92, "%d V · %d N · %d D" % [v, n, d], 18, Charte.IVOIRE_2, 300, HORIZONTAL_ALIGNMENT_RIGHT)
+		_texte(panneau, 880, 80, "%d V · %d N · %d D" % [issues.count("V"), issues.count("N"), issues.count("D")], 17, Charte.IVOIRE_2, 300, HORIZONTAL_ALIGNMENT_RIGHT)
 	if recent.is_empty():
-		_texte(panneau, 24, 150, "Résultats adverses non publiés dans ce dossier." if reports.is_empty() else "Aucun résultat adverse enregistré cette saison.", 20, Charte.IVOIRE_2, 850)
-	for i in mini(5, recent.size()):
+		_texte(panneau, 24, 130, "Résultats adverses non publiés dans ce dossier." if reports.is_empty() else "Aucun résultat adverse enregistré cette saison.", 19, Charte.IVOIRE_2, 850)
+	for i in mini(4, recent.size()):
 		var resultat: Dictionary = recent[i]
 		var score: Array = resultat.get("score", [])
 		var cote := int(resultat.get("side", 0))
 		var autre := _club(resultat.get("opponentId"))
-		var y := 124.0 + pas * i
+		var y := 100.0 + pas * i
 		var etape := "J" + G.n(int(resultat.get("round", 0)) + 1) if resultat.get("phase") == "league" else str(resultat.get("phase", ""))
 		if i % 2 == 0: _barre(panneau, Rect2(0, y, 900, pas - 2), Charte.PANNEAU_2)
-		_texte(panneau, 24, y + pas / 2.0 + 6, etape, 17, Charte.IVOIRE_2, 110)
-		Link.name_link(app, panneau, Rect2(130, y, 420, pas - 2), "club", str(int(autre.get("id", -1))) if autre.get("id") != null else "", G.club_name(autre), 19, Charte.IVOIRE, "PreparationFormOpponent%d" % i)
-		_titre(panneau, 700, y + pas / 2.0 + 9, "%s–%s" % [G.n(score[cote]), G.n(score[1 - cote])] if score.size() == 2 else "—", 26, Charte.IVOIRE, 120, HORIZONTAL_ALIGNMENT_RIGHT)
-		_texte(panneau, 840, y + pas / 2.0 + 6, "dom." if cote == 0 else "ext.", 17, Charte.IVOIRE_2, 54, HORIZONTAL_ALIGNMENT_RIGHT)
-	_face_a_face(panneau, 124.0 + pas * 5.0 + 14.0)
+		_texte(panneau, 24, y + pas / 2.0 + 6, etape, 16, Charte.IVOIRE_2, 110)
+		Link.name_link(app, panneau, Rect2(130, y, 420, pas - 2), "club", str(int(autre.get("id", -1))) if autre.get("id") != null else "", G.club_name(autre), 18, Charte.IVOIRE, "PreparationFormOpponent%d" % i)
+		_titre(panneau, 700, y + pas / 2.0 + 8, "%s–%s" % [G.n(score[cote]), G.n(score[1 - cote])] if score.size() == 2 else "—", 24, Charte.IVOIRE, 120, HORIZONTAL_ALIGNMENT_RIGHT)
+		_texte(panneau, 840, y + pas / 2.0 + 6, "dom." if cote == 0 else "ext.", 16, Charte.IVOIRE_2, 54, HORIZONTAL_ALIGNMENT_RIGHT)
+	_face_a_face(panneau, 100.0 + 4.0 * pas + 8.0)
 	return hauteur
 
 ## Confrontations directes (cinq dernières rencontres entre les deux clubs) : pastilles V/N/D et dernier score.
@@ -725,9 +716,10 @@ func _ouvrir_club_xv(club_id: int) -> void:
 	app.navigation_controller.open_entity({"kind":"club", "id":str(club_id)})
 
 ## Nom de joueur adverse ou du club : clic = fiche (la sienne si elle existe, sinon l'XV de son club), survol = mini-fiche.
-func _lien_joueur(parent: Node, rectangle: Rect2, joueur: Dictionary, taille: int, id: String, club_id: int) -> Control:
+func _lien_joueur(parent: Node, rectangle: Rect2, joueur: Dictionary, taille: int, id: String, club_id: int, legende: String = "") -> Control:
 	var pid := str(joueur.get("id", ""))
-	var nom := str(joueur.get("name", "—"))
+	var nom := str(joueur.get("name", "—")) if legende.is_empty() else legende
+	rectangle = C.reach_rect(rectangle)
 	for genre: String in ["player", "market"]:
 		if Link.available(app, genre, pid):
 			var lien := Link.name_link(app, parent, rectangle, genre, pid, nom, taille, Charte.IVOIRE, id)
@@ -747,8 +739,9 @@ func _surveiller(section: Control, rectangle: Rect2) -> void:
 	var panneau := _panneau(section, rectangle, "Joueurs à surveiller", "PreparationThreats", "Clic : fiche du joueur")
 	var menaces: Array = reports.get("threats", [])
 	var club_id := int(_opponent().get("id", -1))
+	var haut_carte := rectangle.size.y - 58.0 - 52.0
 	if menaces.is_empty():
-		_texte(panneau, 24, 120, "Liste adverse non publiée dans le dossier." if reports.is_empty() else "Aucun joueur projeté à surveiller.", 22, Charte.IVOIRE_2, 1200)
+		_texte(panneau, 24, 110, "Liste adverse non publiée dans le dossier." if reports.is_empty() else "Aucun joueur projeté à surveiller.", 22, Charte.IVOIRE_2, 1200)
 	for i in mini(3, menaces.size()):
 		var menace: Dictionary = menaces[i]
 		var x := 20.0 + i * 436.0
@@ -757,39 +750,104 @@ func _surveiller(section: Control, rectangle: Rect2) -> void:
 		carte.name = "PreparationThreat%d" % i
 		carte.add_theme_stylebox_override("panel", _style(Charte.PANNEAU_2))
 		panneau.add_child(carte)
-		D.place(carte, Rect2(x, 66, 420, 190))
+		D.place(carte, Rect2(x, 58, 420, haut_carte))
 		if not str(menace.get("id", "")).is_empty():
 			var portrait := G.portrait(0, 0, menace)
 			portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			carte.add_child(portrait)
-			D.place(portrait, Rect2(10, 10, 130, 170))
+			D.place(portrait, Rect2(8, 8, 104, haut_carte - 16))
 		else:
-			var neutre := C.icon("people", 56, Charte.IVOIRE_3)
+			var neutre := C.icon("people", 48, Charte.IVOIRE_3)
 			carte.add_child(neutre)
-			D.place(neutre, Rect2(40, 60, 56, 56))
-		_lien_joueur(carte, Rect2(150, 8, 262, 36), menace, 22, "PreparationThreatName%d" % i, club_id)
+			D.place(neutre, Rect2(32, 40, 48, 48))
+		_lien_joueur(carte, Rect2(122, 4, 290, 34), menace, 21, "PreparationThreatName%d" % i, club_id)
 		var age := "  ·  %d ans" % int(menace.get("age", 0)) if _nombre(menace.get("age")) else ""
-		_texte(carte, 154, 66, "%s%s" % [str(menace.get("pos", "")), age], 17, Charte.IVOIRE_2, 260)
+		_texte(carte, 126, 60, "%s%s" % [str(menace.get("pos", "")), age], 16, Charte.IVOIRE_2, 285)
 		var note: Variant = menace.get("note")
-		if _nombre(note): _titre(carte, 154, 118, "%d au poste" % int(note), 28, Charte.couleur_attribut(note), 260)
-		elif note != null and str(note) != "": _texte(carte, 154, 112, str(note), 18, Charte.IVOIRE, 260)
-		_texte(carte, 154, 152, str(menace.get("role", "")), 17, Charte.IVOIRE, 260)
-		if _nombre(menace.get("fitness")): _texte(carte, 154, 178, "Condition %d %%" % int(menace.fitness), 16, Charte.IVOIRE_2, 260)
+		if _nombre(note): _titre(carte, 126, 92, "%d au poste" % int(note), 26, Charte.couleur_attribut(note), 285)
+		elif note != null and str(note) != "": _texte(carte, 126, 88, str(note), 17, Charte.IVOIRE, 285)
+		_texte(carte, 126, 112, str(menace.get("role", "")), 16, Charte.IVOIRE, 285)
+		if _nombre(menace.get("fitness")): _texte(carte, 126, 130, "Condition %d %%" % int(menace.fitness), 15, Charte.IVOIRE_2, 285)
 	var signaux: Array = reports.get("signals", [])
 	var phrase := "%d signal(aux) relevé(s) · détails dans les conseils" % signaux.size() if not signaux.is_empty() else "Observations adverses indisponibles." if reports.is_empty() else "Pas de signal robuste dans les observations disponibles."
-	var fin := _bouton(panneau, Rect2(14, rectangle.size.y - 62, 560, 46), phrase, func(): _ouvrir_sous("conseils"), "lien", "arrow", "PreparationSignalsLink")
+	var fin := _bouton(panneau, Rect2(14, rectangle.size.y - 48, 560, 44), phrase, func(): _ouvrir_sous("conseils"), "lien", "arrow", "PreparationSignalsLink")
 	fin.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	fin.disabled = reports.is_empty()
 
+## Leur XV probable, en bande de quinze cases : numéro, nom (fiche), poste, remarque de l'adjoint ; le tableau complet est une sous-page.
+func _xv_bande(section: Control, rectangle: Rect2, adversaire: Dictionary) -> float:
+	var club_id := int(adversaire.get("id", -1))
+	var donnees: Dictionary = ClubSheet.cached(app, club_id) if club_id >= 0 else {}
+	if donnees.is_empty():
+		var attente := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, 110)), "Leur XV probable", "PreparationTheirXI")
+		_texte(attente, 24, 90, "Le XV probable de %s se prépare…" % G.club_name(adversaire), 20, Charte.IVOIRE_2, 1500)
+		if club_id >= 0: ClubSheet.request(app, club_id)
+		return 110.0
+	var xv: Dictionary = donnees.get("xv", {})
+	var effectif := {}
+	for joueur: Dictionary in donnees.get("squad", []): effectif[str(joueur.get("id", ""))] = joueur
+	var menaces := {}
+	for menace: Dictionary in reports.get("threats", []): menaces[str(menace.get("id", ""))] = str(menace.get("role", ""))
+	var adjoint := _adjoint()
+	var hauteur_case := 128.0
+	var hauteur := 56.0 + hauteur_case + 12.0
+	var panneau := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, hauteur)), "Leur XV probable", "PreparationTheirXI")
+	var tableau := "Tableau détaillé · remarques de %s" % str(adjoint.get("name", "")) if not adjoint.is_empty() else "Tableau détaillé · remarques du staff"
+	_bouton(panneau, Rect2(rectangle.size.x - 20 - 760, 6, 760, 44), tableau, func(): _ouvrir_sous("xv"), "lien", "arrow", "PreparationTheirXIAll")
+	var largeur := 135.0
+	for index in 15:
+		var emplacement: Dictionary = {}
+		for candidat: Dictionary in xv.get("slots", []):
+			if int(candidat.get("jersey", 0)) == index + 1: emplacement = candidat
+		var joueur: Dictionary = effectif.get(str(emplacement.get("id", "")), {})
+		var x := 14.0 + index * (largeur + 14.0)
+		var cellule := Panel.new()
+		cellule.name = "PreparationTheirXICell%d" % (index + 1)
+		cellule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cellule.add_theme_stylebox_override("panel", _style(Charte.PANNEAU_2))
+		panneau.add_child(cellule)
+		D.place(cellule, Rect2(x, 56, largeur, hauteur_case))
+		_anneau(cellule, Rect2(8, 6, 40, 26), str(index + 1))
+		if joueur.is_empty():
+			_texte(cellule, 8, 64, "Non pourvu", 15, Charte.IVOIRE_2, largeur - 12)
+			continue
+		var menace := str(menaces.get(str(joueur.get("id", "")), ""))
+		if not menace.is_empty(): _marque(cellule, largeur - 24, 19, 14, "losange", Charte.IVOIRE)
+		var lien := _lien_joueur(cellule, Rect2(2, 34, largeur - 4, 28), joueur, 17, "PreparationTheirXIName_%d" % (index + 1), club_id, PersonName.surname(str(joueur.get("name", ""))))
+		lien.set_meta("jersey", index + 1)
+		_texte(cellule, 8, 80, str(joueur.get("pos", "")), 15, Charte.IVOIRE_2, largeur - 12)
+		var remarque := _remarque(joueur, menace)
+		var lignes_remarque := D.words(str(remarque[0]), 15, 2)
+		for ligne in lignes_remarque.size():
+			_texte(cellule, 8, 99 + ligne * 17, lignes_remarque[ligne], 15, Charte.D if remarque[1] else Charte.IVOIRE, largeur - 12)
+	return hauteur
+
+## Petit anneau numéroté (cases du XV) : jamais une couleur seule, le numéro est écrit.
+func _anneau(parent: Control, rectangle: Rect2, libelle: String) -> void:
+	var anneau := Panel.new()
+	anneau.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := _style(Color.TRANSPARENT, Charte.IVOIRE_2, 2)
+	style.set_corner_radius_all(maxi(1, C.px(rectangle.size.y / 2.0)))
+	anneau.add_theme_stylebox_override("panel", style)
+	parent.add_child(anneau)
+	D.place(anneau, rectangle)
+	D.text(anneau, rectangle.size.x / 2.0, rectangle.size.y / 2.0 + 6, libelle, 17, Charte.IVOIRE, 700, rectangle.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+
+func _sous_xv(section: Control) -> float:
+	_retour(section)
+	var adversaire := _opponent()
+	if adversaire.is_empty(): return 70.0
+	return 66.0 + _xv_tableau(section, Rect2(0, 66, 2248, 0), adversaire)
+
 ## Leur XV probable : tableau des 15 titulaires, note, matchs, essais, et remarque de l'adjoint dérivée des vraies statistiques.
-func _xv_adverse(section: Control, rectangle: Rect2, adversaire: Dictionary) -> float:
+func _xv_tableau(section: Control, rectangle: Rect2, adversaire: Dictionary) -> float:
 	var club_id := int(adversaire.get("id", -1))
 	var donnees: Dictionary = ClubSheet.cached(app, club_id) if club_id >= 0 else {}
 	var pas := C.reach(34.0)
 	var adjoint := _adjoint()
 	var legende := "Remarques de %s" % str(adjoint.get("name", "")) if not adjoint.is_empty() else "Remarques du staff"
 	if donnees.is_empty():
-		var attente := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, 150)), "Leur XV probable", "PreparationTheirXI")
+		var attente := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, 150)), "Leur XV probable", "PreparationTheirXITable")
 		_texte(attente, 24, 100, "Le XV probable de %s se prépare…" % G.club_name(adversaire), 22, Charte.IVOIRE_2, 1500)
 		if club_id >= 0: ClubSheet.request(app, club_id)
 		return 150.0
@@ -799,7 +857,7 @@ func _xv_adverse(section: Control, rectangle: Rect2, adversaire: Dictionary) -> 
 	var menaces := {}
 	for menace: Dictionary in reports.get("threats", []): menaces[str(menace.get("id", ""))] = str(menace.get("role", ""))
 	var hauteur := 100.0 + 15.0 * pas + 92.0
-	var panneau := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, hauteur)), "Leur XV probable", "PreparationTheirXI", "Entrée sur un joueur : sa fiche · losange : à surveiller")
+	var panneau := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, hauteur)), "Leur XV probable", "PreparationTheirXITable", "Entrée sur un joueur : sa fiche · losange : à surveiller")
 	var colonnes := [["N°", 24.0, 60.0, HORIZONTAL_ALIGNMENT_RIGHT], ["Joueur", 108.0, 420.0, HORIZONTAL_ALIGNMENT_LEFT], ["Poste", 548.0, 300.0, HORIZONTAL_ALIGNMENT_LEFT], ["Âge", 850.0, 70.0, HORIZONTAL_ALIGNMENT_RIGHT], ["Matchs", 1030.0, 90.0, HORIZONTAL_ALIGNMENT_RIGHT], ["Titul.", 1130.0, 90.0, HORIZONTAL_ALIGNMENT_RIGHT], ["Essais", 1230.0, 90.0, HORIZONTAL_ALIGNMENT_RIGHT], ["Note moy.", 1330.0, 110.0, HORIZONTAL_ALIGNMENT_RIGHT]]
 	# Le niveau n'est affiché que si le staff le connaît (données de la fiche du club) : jamais une colonne de tirets.
 	var niveau_connu: bool = effectif.values().any(func(p: Dictionary): return _nombre(p.get("rating")))
@@ -853,7 +911,7 @@ func _xv_adverse(section: Control, rectangle: Rect2, adversaire: Dictionary) -> 
 		pose += 1
 	if not adjoint.is_empty():
 		_texte(panneau, 24, hauteur - 14, "Remarques lues dans les statistiques du dossier par", 15, Charte.IVOIRE_2, 520)
-		Link.name_link(app, panneau, Rect2(520, hauteur - 40, 500, 34), "staff", str(adjoint.get("id", "")), "%s, %s" % [str(adjoint.get("name", "")), str(adjoint.get("roleLabel", "adjoint")).to_lower()], 17, Charte.IVOIRE, "PreparationAdjointLink")
+		Link.name_link(app, panneau, C.reach_rect(Rect2(520, hauteur - 40, 500, 34)), "staff", str(adjoint.get("id", "")), "%s, %s" % [str(adjoint.get("name", "")), str(adjoint.get("roleLabel", "adjoint")).to_lower()], 17, Charte.IVOIRE, "PreparationAdjointLink")
 	else: _texte(panneau, 24, hauteur - 14, legende + " : tirées des statistiques de la saison.", 15, Charte.IVOIRE_2, 1200)
 	return hauteur
 
