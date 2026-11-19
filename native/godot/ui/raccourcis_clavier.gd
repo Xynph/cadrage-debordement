@@ -58,6 +58,11 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed: _focus_clavier = false
 	var touche := _touche(event)
 	if touche == null: return
+	# Fiche joueur : Maj+← / Maj+→ passent au joueur précédent / suivant de la liste d'origine (avant le focus des flèches).
+	if touche.shift_pressed and not touche.ctrl_pressed and not touche.alt_pressed and not touche.meta_pressed and touche.keycode in [KEY_LEFT, KEY_RIGHT]:
+		if _joueur_voisin(touche.keycode == KEY_RIGHT):
+			get_viewport().set_input_as_handled()
+			return
 	if touche.keycode in [KEY_TAB, KEY_BACKTAB, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]: _focus_clavier = true
 	if _focus_clavier or not _est_continuer(touche) or not is_instance_valid(app): return
 	var focus := app.get_viewport().gui_get_focus_owner()
@@ -134,7 +139,8 @@ func _menu(rang: int) -> bool:
 func _retour() -> bool:
 	if not actif(): return false
 	var retour: Button = app.root_content.find_child("PlayerBackToSquad", true, false) as Button
-	if app.route == "Effectif" and app.get_meta("immersive08_full_player", false) and is_instance_valid(retour):
+	# Fiche joueur ouverte (effectif, piste du marché ou Espoir) : Échap revient à la liste d'origine.
+	if is_instance_valid(retour) and retour.is_visible_in_tree():
 		retour.pressed.emit()
 		return true
 	var navigation: Node = app.get("navigation_controller")
@@ -143,6 +149,14 @@ func _retour() -> bool:
 		else: app._navigate("Classements")
 		return true
 	return false
+
+## Joueur précédent / suivant d'une fiche joueur ouverte (boutons « ‹ » et « › » de sa barre).
+func _joueur_voisin(suivant: bool) -> bool:
+	if not actif(): return false
+	var bouton := app.root_content.find_child("FicheSuivant" if suivant else "FichePrecedent", true, false) as Button
+	if bouton == null or bouton.disabled or not bouton.is_visible_in_tree(): return false
+	bouton.pressed.emit()
+	return true
 
 ## Ctrl+F comme Ctrl+K : focus dans le champ « Rechercher » de la barre haute (aucune fenêtre) ;
 ## hors coque seulement, l'accès rapide.

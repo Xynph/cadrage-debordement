@@ -64,6 +64,11 @@ static func row(facts: Dictionary, size: int, color: Color, app: Control = null)
 				link.add_child(flag)
 				flag.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			else: body.add_child(flag)
+		elif not str(part.flag).is_empty():
+			# Pas de drapeau dessiné pour ce pays : son code reste écrit (jamais une case vide).
+			var code := C.label(str(part.flag).to_upper(), size, color)
+			code.name = "Player" + str(part.key) + "FlagCode"
+			body.add_child(code)
 		var label := C.label(part.text, size, color)
 		label.name = "Player" + str(part.key) + "Fact"
 		body.add_child(label)

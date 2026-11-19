@@ -13,6 +13,7 @@ const SquadCanvas = preload("res://ui/immersive08/squad_canvas.gd")
 const SocleEffectif = preload("res://ui/socle/ecran_effectif.gd")
 const TacticsCanvas = preload("res://ui/immersive08/tactics_canvas.gd")
 const PlayerCanvas = preload("res://ui/immersive08/player_canvas.gd")
+const FichePage = preload("res://ui/immersive08/fiche_page.gd")
 const Reception = preload("res://ui/immersive08/reception_canvas.gd")
 const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Academy = preload("res://ui/immersive08/academy_canvas.gd")
@@ -267,6 +268,8 @@ static func open_preparation(app: Control, tab: int) -> void:
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
 	# Fiche d'un club : gabarit à l'échelle, lisible dès 1280 × 720.
 	if app.route == ClubSheet.ROUTE: return ClubSheet
+	# Fiche complète d'une piste du marché ou d'un Espoir (clic sur le nom), à toutes les tailles.
+	if not FichePage.actuelle(app).is_empty(): return FichePage
 	if app.route == "Calendrier" and Selections.nation_only(app.model): return null
 	if app.route == "Calendrier" and not app.get_meta("calendar_table",false): return null
 	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId") in ["nationale","champ"]: return Competition
@@ -906,6 +909,8 @@ static func _crumbs(app: Control) -> Array:
 
 static func _page_caption(app: Control) -> String:
 	if app.route == "Effectif" and app.get_meta("immersive08_full_player", false): return "Fiche joueur : " + str(P.player(app.model, app.selected_player).get("name", ""))
+	var fiche := FichePage.actuelle(app)
+	if not fiche.is_empty(): return "Fiche joueur : " + str(fiche.joueur.get("name", ""))
 	if app.route == ClubSheet.ROUTE: return "Fiche club : " + ClubSheet.caption(app)
 	if _is_training(app): return "Entraînement"
 	if app.route == "Recherche":

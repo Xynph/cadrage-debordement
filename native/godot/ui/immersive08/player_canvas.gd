@@ -1,4 +1,8 @@
 extends RefCounted
+## Fiche joueur complète (design/ux/08-fiche-joueur.md, maquette validée du 19/11/2026) : barre de retour et de
+## précédent / suivant, bandeau d'identité, onglets ; la Vue d'ensemble montre les 36 attributs au barème de la charte.
+## Sources : effectif (« squad »), piste du marché (« market »), Espoir du centre (« academy ») ; toute valeur vient du
+## joueur projeté, une donnée absente est omise.
 const C = preload("res://ui/immersive08/components.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -13,6 +17,21 @@ const Academy = preload("res://ui/immersive08/academy_canvas.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const Roster = preload("res://ui/immersive08/squad_canvas.gd")
 const NotesMatch = preload("res://ui/notes_match.gd")
+const Charte = preload("res://ui/charte.gd")
+const Commune = preload("res://ui/immersive08/fiche_commune.gd")
+const Identity = preload("res://ui/player_identity.gd")
+const Link = preload("res://ui/entity_link.gd")
+const Observation = preload("res://ui/player_observation.gd")
+const Sort = preload("res://ui/recruitment_sort.gd")
+
+## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
+## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
+const ONGLETS := [[0, "Vue d’ensemble"], [2, "Performances"], [3, "Contrat"], [4, "Développement"], [5, "Repères"]]
+const HAUTEUR := 1296
+const HAUT := 332
+const GAUCHE := 1420
+const DROITE_X := 1440
+const DROITE := 808
 
 class ConditionDial extends Control:
 	var condition := 0.0
@@ -31,223 +50,531 @@ class PositionPitch extends Control:
 		Vector2(.12,.75), Vector2(.36,.75), Vector2(.64,.75), Vector2(.88,.75), Vector2(.5,.88)]
 	var primary_numbers: Array[int] = []
 	var secondary_numbers: Array[int] = []
+	var ink := Charte.CLUB_TRAIT
 
 	func _point(x: float, y: float) -> Vector2:
-		var margin := lerpf(.12,.025,y)
-		return Vector2(lerpf(margin,1.0-margin,x)*size.x,lerpf(.05,.95,y)*size.y)
+		return Vector2(lerpf(.04,.96,x)*size.x,lerpf(.05,.95,y)*size.y)
 
 	func _draw() -> void:
-		var factor := size.x/432.0
+		var factor := minf(size.x/432.0, size.y/350.0)
 		var stroke := maxf(1.0,factor)
 		var outline := PackedVector2Array([_point(0,0),_point(1,0),_point(1,1),_point(0,1)])
-		draw_colored_polygon(outline,Color("14452e"))
+		draw_colored_polygon(outline,Charte.PANNEAU_2)
 		outline.append(outline[0])
-		draw_polyline(outline,Color(C.IVORY,.85),stroke*1.5,true)
-		for row in [.13,.32,.50,.68,.87]:
-			draw_line(_point(0,row),_point(1,row),Color(C.IVORY,.48),stroke,true)
-		for row in [.23,.42,.58,.77]:
-			for segment in 12:
-				draw_line(_point(segment/12.0,row),_point((segment+.46)/12.0,row),Color(C.IVORY,.37),stroke,true)
-		for end in [0.0,1.0]:
-			var inside := .13 if end==0.0 else .87
-			for side in [.445,.555]: draw_line(_point(side,end),_point(side,inside),C.IVORY,stroke,true)
-			draw_line(_point(.445,lerpf(end,inside,.52)),_point(.555,lerpf(end,inside,.52)),C.IVORY,stroke,true)
+		draw_polyline(outline,Color(Charte.IVOIRE,.45),stroke,true)
+		for row in [.13,.5,.87]:
+			draw_line(_point(0,row),_point(1,row),Color(Charte.IVOIRE,.28),stroke,true)
 		for index in MARKS.size():
 			var mark: Vector2 = MARKS[index]
 			var center := _point(mark.x,mark.y)
-			if index+1 not in primary_numbers and index+1 not in secondary_numbers:
-				draw_circle(center,8*factor,C.IVORY,true,-1,true)
+			var primary := index+1 in primary_numbers
+			if not primary and index+1 not in secondary_numbers:
+				draw_circle(center,maxf(2.0,6*factor),Color(Charte.IVOIRE,.5),true,-1,true)
 				continue
-			var ink: Color = C.MINT if index+1 in primary_numbers else C.GOLD
-			for radius in [46,34,23]: draw_circle(center,radius*factor,Color(ink,.10),true,-1,true)
-			draw_circle(center,15*factor,ink,true,-1,true)
+			var radius := maxf(7.0, 17*factor)
+			if primary: draw_circle(center,radius,ink,true,-1,true)
+			else: draw_arc(center,radius,0,TAU,32,ink,stroke*1.5,true)
 			var number := str(index+1)
 			var font := C.font(700)
-			var font_size := maxi(10,roundi(20*factor))
+			var font_size := maxi(10,roundi(18*factor))
 			var width := font.get_string_size(number,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x
-			draw_string(font,center+Vector2(-width/2.0,6*factor),number,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size,C.BG)
+			draw_string(font,center+Vector2(-width/2.0,font_size*.36),number,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size,Charte.IVOIRE)
 
-static func build(app:Control,player:Dictionary) -> Control:
-	var page:=Control.new();page.name="ImmersivePlayerFull";page.custom_minimum_size=Vector2(2248,1236)*C.density;C.fill(page,true)
-	# Petite fenêtre (1280×720) : rangées resserrées pour que la fiche tienne sans masquer le bas (bouton Contrat compris).
-	var tight := C.density <= .56
-	var hero_height := 330 if tight else 350
-	var tabs_y := hero_height+12 if tight else 365
-	var top := tabs_y+56 if tight else 430
-	var row_height := 504 if tight else 520
-	var row2_y := top+row_height+8 if tight else 966
-	var row2_height := 252 if tight else 270
-	var hero:=D.panel(page,Rect2(0,0,2248,hero_height),"","","","FullPlayerHero")
+## Courbe des notes de match de la saison (notes enregistrées, 1 à 10), moyenne en pointillé.
+class NoteCurve extends Control:
+	var notes: Array[float] = []
+	var etiquettes: Array[String] = []
+	var moyenne := 6.5
+	var ink := Charte.CLUB_TRAIT
+
+	func _y(valeur: float, bas: float, haut: float) -> float:
+		var top := float(C.px(26))
+		var bottom := size.y - C.px(34)
+		return lerpf(bottom, top, inverse_lerp(bas, haut, valeur))
+
+	func _draw() -> void:
+		if notes.is_empty(): return
+		var font := C.font(600)
+		var pixels := maxi(12, C.px(18))
+		var bas := clampf(floorf(minf(notes.min(), moyenne) - .5), 1.0, 9.0)
+		var haut := clampf(ceilf(maxf(notes.max(), moyenne) + .5), bas + 1.0, 10.0)
+		var left := float(C.px(64))
+		var right := size.x - C.px(24)
+		for valeur: float in [haut, (haut + bas) / 2.0, bas]:
+			var y := _y(valeur, bas, haut)
+			draw_string(font, Vector2(0, y + pixels * .35), ("%.1f" % valeur).replace(".", ","), HORIZONTAL_ALIGNMENT_LEFT, -1, pixels, Charte.IVOIRE_2)
+			draw_line(Vector2(left, y), Vector2(right, y), Color(Charte.FILET, .7), 1.0)
+		var ya := _y(moyenne, bas, haut)
+		draw_dashed_line(Vector2(left, ya), Vector2(right, ya), Color(Charte.IVOIRE_2, .8), maxf(1.0, C.px(1.5)), C.px(8))
+		draw_string(font, Vector2(left + C.px(8), ya + pixels + C.px(2)), "moyenne " + ("%.1f" % moyenne).replace(".", ","), HORIZONTAL_ALIGNMENT_LEFT, -1, pixels, Charte.IVOIRE_2)
+		var points := PackedVector2Array()
+		for i in notes.size():
+			var fraction := float(i) / (notes.size() - 1) if notes.size() > 1 else .5
+			points.append(Vector2(lerpf(left + C.px(40), right - C.px(20), fraction), _y(notes[i], bas, haut)))
+		if points.size() > 1: draw_polyline(points, ink, maxf(1.5, C.px(3)), true)
+		for i in points.size():
+			draw_circle(points[i], maxf(3.0, C.px(6)), ink, true, -1, true)
+			var texte := ("%.1f" % notes[i]).replace(".", ",")
+			var largeur := font.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x
+			draw_string(font, points[i] + Vector2(-largeur / 2.0, -C.px(12)), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels, Charte.IVOIRE)
+			var mot := etiquettes[i] if i < etiquettes.size() else ""
+			var large := font.get_string_size(mot, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x
+			draw_string(font, Vector2(points[i].x - large / 2.0, size.y - C.px(6)), mot, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels, Charte.IVOIRE_2)
+
+static func build(app:Control,player:Dictionary,source:String="squad") -> Control:
+	var page:=Control.new();page.name="ImmersivePlayerFull";page.custom_minimum_size=Vector2(2248,HAUTEUR)*C.density;C.fill(page,true)
+	page.set_meta("player_id",str(player.get("id","")))
+	page.set_meta("fiche_source",source)
+	var detailed := Commune.valeurs(player,source)
+	_barre(page,app,player,source)
+	_bandeau(page,app,player,source)
+	var onglets: Array = ONGLETS if source=="squad" else ([[0,"Vue d’ensemble"],[4,"Développement"]] if source=="academy" else [[0,"Vue d’ensemble"]])
+	var active:=int(app.management_ui.get("immersive_player_tab",0))
+	if not onglets.any(func(o:Array): return int(o[0])==active): active=0
+	for k in onglets.size():
+		var index:int=onglets[k][0]
+		_onglet(page,app,Rect2(k*236,276,224,44),str(onglets[k][1]),index,active==index)
+	var top := HAUT
+	match active:
+		0:
+			_attributs(D.panel(page,Rect2(0,top,GAUCHE,430),"","","","PlayerDetailedAttributes"),app,player,source,detailed)
+			_postes(D.panel(page,Rect2(0,top+446,GAUCHE,HAUTEUR-top-446-50),"","","","PlayerPositionsCard"),app,player,source)
+			if source=="market":
+				_recrutement(D.panel(page,Rect2(DROITE_X,top,DROITE,500),"","","","PlayerRecruitmentCard"),app,player)
+				_valeur(D.panel(page,Rect2(DROITE_X,top+516,DROITE,210),"","","","PlayerValueCard"),detailed)
+			else:
+				_disponibilite(D.panel(page,Rect2(DROITE_X,top,DROITE,300),"","","","PlayerAvailabilityCard"),app,player,source)
+				_valeur(D.panel(page,Rect2(DROITE_X,top+316,DROITE,210),"","","","PlayerValueCard"),detailed)
+				if source=="squad": _contrat_resume(D.panel(page,Rect2(DROITE_X,top+542,DROITE,HAUTEUR-top-542-50),"","","","PlayerContractCard"),app,player)
+				else: _formation(D.panel(page,Rect2(DROITE_X,top+542,DROITE,HAUTEUR-top-542-50),"","","","PlayerAcademyCard"),app,player)
+		2:
+			_usage(D.panel(page,Rect2(0,top,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
+			_history(D.panel(page,Rect2(0,top+286,1670,420),"HISTORIQUE DES MATCHS","calendar","","PlayerMatchHistory"),app,player)
+			_health(D.panel(page,Rect2(1686,top,562,520),"DISPONIBILITÉ","heart"),app,player)
+			_selection(D.panel(page,Rect2(1686,top+536,562,270),"SÉLECTION","flag","","PlayerSelectionNotes"),app,player)
+		3:
+			_contract(D.panel(page,Rect2(0,top,850,270),"CONTRAT ET NÉGOCIATION","money"),app,player)
+			_health(D.panel(page,Rect2(866,top,562,520),"CHARGE INDIVIDUELLE","heart"),app,player)
+			D.photo(page,"hospitality",Rect2(1444,top,804,520))
+		4:
+			_development(D.panel(page,Rect2(0,top,1670,560),"DÉVELOPPEMENT ET PROGRESSION","school","","PlayerDevelopmentCard"),app,player,source)
+			var poste := BanqueImages.poste(str(player.get("pos", "")))
+			D.photo(page,poste if not poste.is_empty() else "academy-player",Rect2(1686,top,562,560))
+		5:
+			_contexts(D.panel(page,Rect2(0,top,1498,806),"LE JOUEUR DANS LE GROUPE","people","","FullPlayerContexts"),app,player)
+			_sources(D.panel(page,Rect2(1514,top,734,520),"REPÈRES DE DÉPART","info","","FullPlayerSources"),app,player)
+			D.photo(page,"scouting",Rect2(1514,top+536,734,270))
+	_pied(page,app,player,source)
+	return page
+
+## Titre de carte en capitales italiques, badge à droite, filet dessous (gabarit de la maquette).
+static func _titre(card: Panel, titre: String, badge: String = "") -> void:
+	var largeur := card.size.x / C.density
+	ClubUI.italic(D.text(card,24,40,titre,26,Charte.IVOIRE,800,largeur*.5),800).name = "CardTitle"
+	if not badge.is_empty(): D.text(card,largeur-24,38,badge,17,Charte.IVOIRE_2,700,largeur*.45,HORIZONTAL_ALIGNMENT_RIGHT)
+	D.line(card,Vector2(20,56),Vector2(largeur-20,56),Color(Charte.FILET,.9))
+
+## Touche de clavier dessinée (« Échap », « Maj ← → ») ; renvoie sa largeur en unités.
+static func _touche(parent: Control, x: float, ligne: float, texte: String) -> float:
+	var police := C.font(700)
+	var largeur := police.get_string_size(texte,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(17))).x/C.density+20
+	D.rect(parent,Rect2(x,ligne-22,largeur,30),Charte.PANNEAU_3,3)
+	D.text(parent,x+10,ligne-1,texte,17,Charte.IVOIRE_2,700,largeur-12)
+	return largeur
+
+## Lien texte de la barre (« ← Retour… », « Comparer → ») : bouton plat, focus visible.
+static func _lien(parent: Control, zone: Rect2, texte: String, action: Callable, id: String, taille: int = 21) -> Button:
+	var bouton := Link.styled_button(parent,zone,texte,taille,Charte.IVOIRE,id)
+	bouton.pressed.connect(action)
+	bouton.tooltip_text = texte
+	return bouton
+
+static func _barre(page: Control, app: Control, player: Dictionary, source: String) -> void:
+	var retour := _lien(page,Rect2(0,4,300,38),"← "+str(Commune.RETOURS.get(source,"Retour")),func():
+		app.set_meta("immersive08_full_player",false)
+		app.management_ui.erase("fiche_joueur")
+		app._navigate(str(Commune.ROUTES.get(source,"Effectif"))),"PlayerBackToSquad")
+	retour.tooltip_text = retour.text.trim_prefix("← ") + " · Échap"
+	var x := 310.0 + _touche(page,310,32,"Échap") + 30
+	var ids: Array[String] = Commune.liste(app,source)
+	var id := str(player.get("id",""))
+	var rang := ids.find(id)
+	var precedent := ids[rang-1] if rang > 0 else ""
+	var suivant := ids[rang+1] if rang >= 0 and rang < ids.size()-1 else ""
+	var voisin := func(cible: String, sens: String, zone: Rect2, nom: String) -> void:
+		var personne: Dictionary = Commune.trouver(app,cible,source).get("joueur",{})
+		var texte := ("‹ " + str(personne.get("name",""))) if sens=="‹" else (str(personne.get("name","")) + " ›")
+		var bouton := _lien(page,zone,texte if not cible.is_empty() else sens,func(): _ouvrir(app,cible,source),nom,20)
+		bouton.disabled = cible.is_empty()
+		bouton.tooltip_text = ("Joueur précédent" if sens=="‹" else "Joueur suivant") + (" · Maj+" + ("←" if sens=="‹" else "→") if not cible.is_empty() else " · début de la liste" if sens=="‹" else " · fin de la liste")
+	voisin.call(precedent,"‹",Rect2(x,4,240,38),"FichePrecedent")
+	x += 248
+	var position := D.text(page,x,32,("%d / %d · %s" % [rang+1,ids.size(),Commune.libelle_liste(app,source)]) if rang >= 0 else Commune.libelle_liste(app,source),19,Charte.IVOIRE_2,500,330,HORIZONTAL_ALIGNMENT_LEFT,true)
+	position.name = "FicheRangListe"
+	x += 340
+	voisin.call(suivant,"›",Rect2(x,4,240,38),"FicheSuivant")
+	x += 250
+	_touche(page,x,32,"Maj ← →")
+	if source == "squad":
+		_lien(page,Rect2(1740,4,230,38),"Comparer →",func():
+			# Le premier joueur est mémorisé ; si un autre est déjà en mémoire, il devient A et cette fiche B.
+			var memo:Array=app.management_ui.compare
+			if str(player.id) not in memo:
+				if memo.size()==1:memo.append(str(player.id))
+				else:memo.assign([str(player.id)])
+			app.SquadViews.comparison(app),"FullPlayerCompare")
+		_lien(page,Rect2(1990,4,258,38),"Ma note →",func():Notes.open(app,str(player.id)),"OpenPlayerCoachNote")
+
+## Joueur voisin de la liste d'origine (Maj+← / Maj+→) : même historique que tout lien joueur.
+static func _ouvrir(app: Control, id: String, source: String) -> void:
+	if id.is_empty(): return
+	var kind: String = {"squad":"player","market":"market","academy":"academy"}.get(source,"player")
+	app.navigation_controller.open_entity({"kind":kind,"id":id})
+
+static func _bandeau(page: Control, app: Control, player: Dictionary, source: String) -> void:
+	var hero:=D.panel(page,Rect2(0,52,2248,210),"","","","FullPlayerHero")
+	hero.clip_contents = true
 	var portrait: TextureRect
 	if not str(player.get("id","")).is_empty():
-		portrait = G.portrait(int(player.get("portraitIndex",0)),0,player)
+		portrait = G.portrait(int(player.get("portraitIndex",0)),C.px(210),player)
 	else:
 		portrait = C.photo("player-hero",Vector2.ZERO,false)
 		portrait.tooltip_text = "Portrait du joueur"
 	hero.add_child(portrait)
-	# Le portrait occupe aussi la marge à gauche des onglets.
-	D.place(portrait,Rect2(1,1,469,top-1))
-	hero.tooltip_text = portrait.tooltip_text
+	D.place(portrait,Rect2(1,1,208,208))
 	var shirt_number: Variant = player.get("shirtNumber")
 	var number := G.n(shirt_number) if shirt_number != null else "—"
-	var shirt := _slanted_badge(hero,Rect2(510,41,140,102),Color("102724"),Color(C.IVORY,.78))
+	var shirt := ClubUI.italic(D.text(hero,212,196,number,120,Color(Charte.IVOIRE,.16),800,120),800)
+	shirt.name="FullPlayerNumber"
 	shirt.mouse_filter = Control.MOUSE_FILTER_PASS
 	shirt.tooltip_text = "Numéro sur la feuille de match" if shirt_number != null else "Aucun numéro sur la feuille de match"
-	ClubUI.italic(D.text(shirt,70,82,number,82,C.IVORY,800,110,HORIZONTAL_ALIGNMENT_CENTER),800).name="FullPlayerNumber"
-	var heading:=ClubUI.italic(D.text(hero,668,123,str(player.name).to_upper(),88,C.IVORY,800,1030),800)
+	D.text(hero,300,36,"FICHE JOUEUR · "+Roster.primary_caption(player).to_upper(),17,Charte.IVOIRE_2,700,1200).name = "FullPlayerKicker"
+	var heading:=ClubUI.italic(D.text(hero,298,92,str(player.name).to_upper(),52,Charte.IVOIRE,800,1220),800)
 	heading.name="ProfilePlayerName"
-	D.text(hero,671,180,Roster.primary_caption(player).to_upper(),39,C.GOLD,700,1020)
-	var facts: Dictionary = player.get("playerFacts", {})
-	D.text(hero,671,231 if facts.is_empty() else 217,G.n(player.get("age","—"))+" ans  ·  Saison "+G.season_label(app.model.meta.get("season",1)),31 if facts.is_empty() else 28,C.IVORY,500,1020)
+	var facts: Dictionary = player.get("playerFacts", {}) if player.get("playerFacts") is Dictionary else {}
+	var identite: HBoxContainer
 	if not facts.is_empty():
-		var identity := preload("res://ui/player_identity.gd").row(facts,22,C.IVORY,app)
-		hero.add_child(identity)
-		D.place(identity,Rect2(671,228,1010,30))
-	var injury := float(player.get("injury", 0))
-	var recovering := injury <= 0 and P.player_in_recovery(app.model, str(player.id))
-	var availability := "Disponible"
-	var availability_color := C.MINT
-	if injury > 0:
-		availability = "Indisponible"
-		availability_color = C.ALERT
-	elif facts.get("onInternationalDuty", false):
-		availability = "En sélection"
-		availability_color = C.GOLD
-	elif recovering:
-		availability = "En reprise"
-		availability_color = C.AMBER
-	var selection := "Hors groupe"
-	if shirt_number != null:
-		selection = "Titulaire" if int(shirt_number) <= 15 else "Remplaçant"
-	D.chip(hero, Rect2(670,263,210,46), availability, availability_color).name = "PlayerHeroAvailability"
-	D.chip(hero, Rect2(894,263,220,46), selection, C.AMBER).name = "PlayerHeroSelection"
-	if facts.get("listeElite", false):
-		var liste := D.chip(hero, Rect2(1128,263,220,46), "Liste des 33", C.GOLD)
-		liste.name = "PlayerHeroListeElite"
-		liste.tooltip_text = "Liste élite du XV de France (protocole FFR-LNR) : au moins 2 repos sur 8 matchs de club."
-	var rating := _slanted_badge(hero,Rect2(1710,43,236,160),Color("0a5735"),Color(C.MINT,.7))
-	ClubUI.italic(D.text(rating,118,129,G.rating_text(player,true),64,C.MINT,800,218,HORIZONTAL_ALIGNMENT_CENTER),800)
-	var potential := D.text(hero,2084,151,G.potential_text(player),64,G.POTENTIAL_COLOR,800,235,HORIZONTAL_ALIGNMENT_CENTER)
-	ClubUI.italic(potential,800)
+		identite = Identity.row(facts,22,Charte.IVOIRE_2,app)
+	else:
+		identite = C.h(7)
+		identite.name = "PlayerIdentityFacts"
+	var age := C.label(G.n(player.get("age","—"))+" ans",22,Charte.IVOIRE_2)
+	age.name = "PlayerAgeFact"
+	identite.add_child(age)
+	# Ordre de la maquette : drapeau, pays, âge, taille, poids, sélections.
+	var origine := identite.get_node_or_null("PlayerOriginFact")
+	if origine != null:
+		var point := C.label("·",22,Charte.IVOIRE_2)
+		identite.add_child(point)
+		identite.move_child(point,origine.get_index()+1)
+		identite.move_child(age,origine.get_index()+2)
+		var pays := origine as Label
+		pays.add_theme_color_override("font_color",Charte.IVOIRE)
+	hero.add_child(identite)
+	D.place(identite,Rect2(300,106,1220,34))
+	var autres := Roster.secondary_tooltip(player,app.model)
+	if autres != "—":
+		var noms: Array[String] = []
+		for ligne: String in autres.split("\n"): noms.append(ligne.get_slice(" · ",1))
+		D.text(hero,300,166,"Autres postes : "+", ".join(noms),19,Charte.IVOIRE_2,500,1220,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerOtherRoles"
+	_verdict(hero,app,player,source)
+	# Niveau et potentiel, à droite du bandeau.
+	D.line(hero,Vector2(1600,22),Vector2(1601,188),Color(Charte.FILET,.9))
+	D.text(hero,1640,40,"NIVEAU",17,Charte.IVOIRE_2,700,200)
+	var niveau := ClubUI.italic(D.text(hero,1640,104,G.rating_text(player,Commune.notre_joueur(source)),56,Charte.IVOIRE,800,150),800)
+	niveau.name = "PlayerGlobalRating"
+	var largeur_niveau := C.font(800).get_string_size(niveau.text,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(56))).x/C.density
+	D.text(hero,1640+largeur_niveau+10,104,"/ 100",22,Charte.IVOIRE_2,500,80)
+	D.text(hero,1930,40,"POTENTIEL",17,Charte.IVOIRE_2,700,200)
+	var potential := ClubUI.italic(D.text(hero,1930,104,G.potential_text(player),56,Charte.IVOIRE,800,300),800)
+	potential.name = "PlayerGlobalPotential"
 	potential.mouse_filter = Control.MOUSE_FILTER_PASS
 	potential.tooltip_text = G.potential_tooltip(player)
-	D.text(hero,1828,234,"NIVEAU",23,C.MUTED,600,220,HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(hero,2084,234,"POTENTIEL",23,C.GOLD,600,235,HORIZONTAL_ALIGNMENT_CENTER)
-	D.button(hero,Rect2(1710,264,236,46),"Comparer",func():
-		# Le premier joueur est mémorisé ; si un autre est déjà en mémoire, il devient A et cette fiche B.
-		var memo:Array=app.management_ui.compare
-		if str(player.id) not in memo:
-			if memo.size()==1:memo.append(str(player.id))
-			else:memo.assign([str(player.id)])
-		app.SquadViews.comparison(app),false,"people",true,app.accent,"FullPlayerCompare")
-	D.button(hero,Rect2(1962,264,260,46),"Ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerCoachNote")
-	var active:=clampi(int(app.management_ui.get("immersive_player_tab",0)),0,5)
-	var detailed := PlayerAttributes.detail(player,true)
-	for i in 6:
-		var id := "FullPlayerTab"+str(i)
-		var caption: String = ["Vue d’ensemble","Attributs","Performances","Contrat","Développement","Repères"][i]
-		var tab := ClubUI.tab(page,Rect2(500+i*230,tabs_y,218,44),caption,active==i,func():
-			app.management_ui.immersive_player_tab=i
+	var dispo := Commune.disponibilite(app,player,source)
+	var etat := "Disponible" if dispo.etat == "apte" else str(dispo.texte)
+	D.text(hero,1640,150,etat,20,dispo.couleur,600,580,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerHeroAvailability"
+	if facts.get("listeElite", false):
+		var liste := D.text(hero,1640,182,"Liste des 33 · XV de France",19,Charte.IVOIRE_2,600,580,HORIZONTAL_ALIGNMENT_LEFT,true)
+		liste.name = "PlayerHeroListeElite"
+		liste.mouse_filter = Control.MOUSE_FILTER_PASS
+		liste.tooltip_text = "Liste élite du XV de France (protocole FFR-LNR) : au moins 2 repos sur 8 matchs de club."
+
+## Verdict en une ligne : statut de feuille · condition · contrat (le contrat ouvre l'onglet Contrat).
+static func _verdict(hero: Panel, app: Control, player: Dictionary, source: String) -> void:
+	D.rect(hero,Rect2(300,178,6,30),Charte.club_trait(app.accent),0)
+	var morceaux: Array[String] = []
+	var statut := Commune.statut_feuille(player,source)
+	if not statut.is_empty(): morceaux.append(statut.left(1).to_upper()+statut.substr(1))
+	var forme: Variant = Commune.condition(player)
+	if forme != null: morceaux.append("%d %%" % roundi(float(forme)))
+	var texte := " · ".join(morceaux)
+	var ligne := D.text(hero,322,202,texte,22,Charte.IVOIRE,600,700,HORIZONTAL_ALIGNMENT_LEFT,true)
+	ligne.name = "PlayerVerdict"
+	var fin := Commune.echeance(app,player)
+	if source == "squad" and fin != "—":
+		var police := C.BODY
+		var x := 322.0 + (police.get_string_size(texte,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(22))).x/C.density if not texte.is_empty() else 0.0)
+		if not texte.is_empty():
+			D.text(hero,x+4,202,"·",22,Charte.IVOIRE,600,20)
+			x += 22
+		var lien := _lien(hero,Rect2(x,176,560,36),"contrat jusqu’en "+fin,func():
+			app.management_ui.immersive_player_tab = 3
 			app._render()
-			ClubUI.focus(app,id),id)
-		tab.toggle_mode = true
-		tab.set_pressed_no_signal(active==i)
-		tab.add_theme_stylebox_override("pressed",tab.get_theme_stylebox("normal"))
-	D.button(page,Rect2(1900,tabs_y,348,44),"Retour à l’effectif",func():app.set_meta("immersive08_full_player",false);app._navigate("Effectif"),false,"",true,app.accent,"PlayerBackToSquad")
-	match active:
-		0:
-			_position(D.panel(page,Rect2(0,top,480,row_height),"POSTE PRINCIPAL","tactic"),app,player)
-			_evaluation(D.panel(page,Rect2(496,top,1174,row_height),"ÉVALUATION DU JOUEUR","star"),app,player,not detailed.is_empty())
-			_health(D.panel(page,Rect2(1686,top,562,row_height),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
-			_usage(D.panel(page,Rect2(0,row2_y,1670,row2_height),"PERFORMANCES DE LA SAISON","trophy"),app,player)
-			_contract(D.panel(page,Rect2(1686,row2_y,562,row2_height),"CONTRAT","money"),app,player)
-		1:
-			if detailed.is_empty():
-				_evaluation(D.panel(page,Rect2(0,top,1174,row_height),"ÉVALUATION DU JOUEUR","star"),app,player,false)
-				_position(D.panel(page,Rect2(1190,top,480,row_height),"POSTE PRINCIPAL","tactic"),app,player)
-				_health(D.panel(page,Rect2(1686,top,562,row_height),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
-			else:
-				_detailed_attributes(D.panel(page,Rect2(0,top,2248,590),"36 ATTRIBUTS DÉTAILLÉS","star","","PlayerDetailedAttributes"),detailed)
-		2:
-			_usage(D.panel(page,Rect2(0,top,1670,row2_height),"PERFORMANCES DE LA SAISON","trophy"),app,player)
-			_history(D.panel(page,Rect2(0,top+row2_height+16,1670,420),"HISTORIQUE DES MATCHS","calendar","","PlayerMatchHistory"),app,player)
-			_health(D.panel(page,Rect2(1686,top,562,row_height),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
-			_selection(D.panel(page,Rect2(1686,row2_y,562,row2_height),"SÉLECTION","flag","","PlayerSelectionNotes"),app,player)
-		3:
-			_contract(D.panel(page,Rect2(0,top,850,row2_height),"CONTRAT ET NÉGOCIATION","money"),app,player)
-			_health(D.panel(page,Rect2(866,top,562,row_height),"CHARGE INDIVIDUELLE","heart"),app,player,injury,recovering)
-			D.photo(page,"hospitality",Rect2(1444,top,804,row_height))
-		4:
-			_development(D.panel(page,Rect2(0,top,1670,550),"DÉVELOPPEMENT ET PROGRESSION","school"),app,player)
-			var poste := BanqueImages.poste(str(player.get("pos", "")))
-			D.photo(page,poste if not poste.is_empty() else "academy-player",Rect2(1686,top,562,550))
-		5:
-			_contexts(D.panel(page,Rect2(0,top,1498,806),"LE JOUEUR DANS LE GROUPE","people","","FullPlayerContexts"),app,player)
-			_sources(D.panel(page,Rect2(1514,top,734,row_height),"REPÈRES DE DÉPART","info","","FullPlayerSources"),app,player)
-			D.photo(page,"scouting",Rect2(1514,row2_y,734,row2_height))
-	if tight:
-		var page_end: int = [row2_y+row2_height,top+(row_height if detailed.is_empty() else 590),row2_y+row2_height,top+row_height,top+550,top+806][active]
-		page.custom_minimum_size.y = (page_end+4)*C.density
-	return page
+			ClubUI.focus(app,"FullPlayerTab3"),"PlayerVerdictContract",21)
+		lien.tooltip_text = "Ouvrir le contrat et la prolongation"
 
-static func _slanted_badge(parent: Control, area: Rect2, fill: Color, border: Color) -> Control:
-	var badge := Control.new()
-	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(badge)
-	D.place(badge, area)
-	var slope := float(C.px(21))
-	var stroke := maxf(1.0, C.px(2))
-	badge.draw.connect(func():
-		var size := badge.size
-		var outline := PackedVector2Array([Vector2(slope,1), Vector2(size.x-1,1), Vector2(size.x-slope,size.y-1), Vector2(1,size.y-1)])
-		badge.draw_colored_polygon(outline, fill)
-		outline.append(outline[0])
-		badge.draw_polyline(outline, border, stroke, true))
-	return badge
+static func _onglet(page: Control, app: Control, zone: Rect2, texte: String, index: int, choisi: bool) -> void:
+	var id := "FullPlayerTab"+str(index)
+	var tab := Button.new()
+	tab.name = id
+	tab.text = texte
+	tab.toggle_mode = true
+	tab.set_pressed_no_signal(choisi)
+	tab.focus_mode = Control.FOCUS_ALL
+	tab.add_theme_font_override("font",Charte.texte_moyen() if choisi else C.BODY)
+	tab.add_theme_font_size_override("font_size",maxi(12,C.px(21)))
+	for etat in ["font_color","font_hover_color","font_pressed_color","font_focus_color","font_hover_pressed_color"]:
+		tab.add_theme_color_override(etat,Charte.IVOIRE if choisi else Charte.IVOIRE_2)
+	var fond := C.box(Charte.PANNEAU_3 if choisi else Color.TRANSPARENT,Color.TRANSPARENT,3,0)
+	if choisi:
+		fond.border_color = Charte.IVOIRE
+		fond.border_width_bottom = maxi(2,C.px(3))
+	var survol := C.box(Charte.PANNEAU_2,Color.TRANSPARENT,3,0)
+	for etat in ["normal","pressed","hover_pressed"]: tab.add_theme_stylebox_override(etat,fond)
+	tab.add_theme_stylebox_override("hover",survol if not choisi else fond)
+	var focus := C.box(Color.TRANSPARENT,Charte.IVOIRE,3,0)
+	focus.set_border_width_all(2)
+	tab.add_theme_stylebox_override("focus",focus)
+	tab.pressed.connect(func():
+		app.management_ui.immersive_player_tab=index
+		app._render()
+		ClubUI.focus(app,id))
+	page.add_child(tab)
+	D.place(tab,zone)
 
-static func _position(card:Panel,app:Control,player:Dictionary) -> void:
+static func _attributs(card: Panel, app: Control, player: Dictionary, source: String, values: Dictionary) -> void:
+	_titre(card,"ATTRIBUTS")
+	Commune.legende(card,1110,40,20)
+	if values.is_empty():
+		var bouton := Button.new()
+		Observation.configure(bouton,app,player)
+		bouton.name = "PlayerObserveAttributes"
+		bouton.text = "Fais-le observer pour connaître ses attributs"
+		bouton.flat = true
+		bouton.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		bouton.add_theme_font_override("font",C.BODY)
+		bouton.add_theme_font_size_override("font_size",maxi(12,C.px(18)))
+		bouton.add_theme_color_override("font_color",Charte.IVOIRE)
+		bouton.add_theme_color_override("font_disabled_color",Charte.IVOIRE_3)
+		if not bouton.visible:
+			# Aucune mission possible (joueur sans dossier d'observation) : la phrase reste lisible et mène au recrutement.
+			bouton.visible = true
+			bouton.disabled = not app.navigation_controller.entity_available({"kind":"menu","route":"Recrutement"})
+			bouton.pressed.connect(func(): app.navigation_controller.open_entity({"kind":"menu","route":"Recrutement"}))
+			bouton.tooltip_text = "Confie une mission d’observation dans Recrutement"
+		card.add_child(bouton)
+		D.place(bouton,Rect2(1120,14,280,36))
+		bouton.custom_minimum_size = Vector2.ZERO
+		bouton.size = Vector2(280,36)*C.density
+		bouton.clip_text = true
+		bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	else:
+		D.text(card,1396,38,"36 ATTRIBUTS",17,Charte.IVOIRE_2,700,240,HORIZONTAL_ALIGNMENT_RIGHT)
+	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_")
+
+static func _postes(card: Panel, app: Control, player: Dictionary, source: String) -> void:
+	_titre(card,"POSTES","POSTE PRINCIPAL ET POLYVALENCES")
+	D.rect(card,Rect2(24,84,12,12),Charte.club_trait(app.accent),6)
+	D.text(card,46,98,Roster.primary_caption(player)+" (principal)",21,Charte.IVOIRE,600,700,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerPrimaryRole"
+	var autres := Roster.secondary_tooltip(player,app.model)
+	var y := 130.0
+	if autres != "—":
+		for ligne: String in autres.split("\n"):
+			D.rect(card,Rect2(24,y-14,12,12),Color.TRANSPARENT,6,Charte.club_trait(app.accent))
+			D.text(card,46,y,ligne.get_slice(" · ",1),21,Charte.IVOIRE,500,700,HORIZONTAL_ALIGNMENT_LEFT,true)
+			y += 32
 	var field := PositionPitch.new()
 	field.name = "PlayerRolePitch"
 	field.primary_numbers = Roster.primary_numbers(player)
 	field.secondary_numbers = Roster.secondary_numbers(player)
-	field.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	field.ink = Charte.club_trait(app.accent)
+	field.mouse_filter = Control.MOUSE_FILTER_PASS
+	field.tooltip_text = "Plein : poste principal · cerclé : autres postes maîtrisés"
 	card.add_child(field)
-	D.place(field,Rect2(24,78,432,350))
-	D.text(card,24,464,Roster.primary_caption(player),26,C.GOLD,700,428)
-	var other := D.text(card,24,496,"Autres : "+Roster.secondary_caption(player),18,C.MUTED,500,428)
-	other.name = "PlayerOtherRoles"; other.mouse_filter = Control.MOUSE_FILTER_PASS
-	other.tooltip_text = "Vert : poste principal · Or : autres postes maîtrisés\n"+Roster.secondary_tooltip(player,app.model)
+	D.place(field,Rect2(1080,70,316,190))
+	if source == "market": return
+	# Courbe des notes match par match (notes enregistrées de la saison, la plus ancienne à gauche).
+	var notes := NotesMatch.joueur(app.model,str(player.id))
+	var lignes: Array = notes.get("historique",[]) if notes.get("historique") is Array else []
+	var hauteur := card.size.y / C.density
+	if lignes.is_empty():
+		D.text(card,24,300,"NOTE MATCH PAR MATCH",17,Charte.IVOIRE_2,700,600)
+		D.text(card,24,344,"Aucun match noté cette saison. Chaque rencontre jouée est notée de 1 à 10.",20,Charte.IVOIRE_3,500,1300,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerNoteCurveEmpty"
+		return
+	var choisies := lignes.slice(0,12)
+	choisies.reverse()
+	var courbe := NoteCurve.new()
+	courbe.name = "PlayerNoteCurve"
+	courbe.ink = Charte.club_trait(app.accent)
+	for ligne: Variant in choisies:
+		if not ligne is Dictionary: continue
+		courbe.notes.append(float(ligne.get("note",6.5)))
+		courbe.etiquettes.append("S"+G.n(int(ligne.get("semaine",0))+1))
+	courbe.moyenne = float(notes.get("moyenne",6.5)) if notes.get("moyenne") != null else 6.5
+	courbe.mouse_filter = Control.MOUSE_FILTER_PASS
+	var resume: Array[String] = []
+	for ligne: Variant in choisies:
+		if ligne is Dictionary: resume.append("S%s %s : %s" % [G.n(int(ligne.get("semaine",0))+1),str(ligne.get("adversaire","")),NotesMatch.texte_note(ligne.get("note"))])
+	courbe.tooltip_text = "\n".join(resume)
+	D.text(card,24,292,"NOTE MATCH PAR MATCH · %s À %s" % [courbe.etiquettes[0],courbe.etiquettes[-1]],17,Charte.IVOIRE_2,700,900)
+	card.add_child(courbe)
+	D.place(courbe,Rect2(24,300,1372,hauteur-312))
 
-static func _evaluation(card: Panel, app: Control, player: Dictionary, has_details: bool) -> void:
-	D.text(card,30,121,"NIVEAU / 100",26,C.MUTED,700,500)
-	D.text(card,30,225,G.rating_text(player,true),88,C.MINT,800,360).name = "PlayerGlobalRating"
-	D.text(card,30,285,"Niveau actuel du joueur.",26,C.IVORY,500,900)
-	if has_details:
-		D.button(card,Rect2(30,332,465,60),"Voir les 36 attributs",func():
-			app.management_ui.immersive_player_tab = 1
-			app._render()
-			ClubUI.focus(app,"FullPlayerTab1"),true,"arrow",true,app.accent,"OpenDetailedPlayerAttributes")
-	else:
-		D.text(card,30,344,"Le détail à 36 attributs est indisponible pour ce profil.",25,C.MUTED,500,1080)
+## Colonne droite : condition, fatigue, plan de charge, satisfaction, blessure.
+static func _disponibilite(card: Panel, app: Control, player: Dictionary, source: String) -> void:
+	var dispo := Commune.disponibilite(app,player,source)
+	_titre(card,"DISPONIBILITÉ")
+	var forme: Variant = Commune.condition(player)
+	var y := 96.0
+	if forme != null:
+		_ligne(card,y,"Condition","%d %%" % roundi(float(forme)),Charte.IVOIRE,"PlayerConditionValue")
+		D.bar(card,Rect2(430,y-12,200,6),float(forme),Charte.V if float(forme) >= 85 else Charte.N)
+		y += 34
+	var charge: Variant = player.get("physicalLoad")
+	if charge is int or charge is float:
+		_ligne(card,y,"Fatigue (plus bas = mieux)",G.n(charge)+" / 100",Charte.IVOIRE,"PlayerFatigueValue")
+		D.bar(card,Rect2(430,y-12,200,6),float(charge),Charte.N)
+		y += 34
+	if source == "squad":
+		var plan: String = Training.INDIVIDUAL.get(player.get("loadPlan",""),"Non renseigné")
+		_ligne(card,y,"Plan de charge",plan,Charte.IVOIRE,"PlayerTrainingLoadPlan")
+		y += 34
+		var satisfaction: Variant = null
+		for member: Dictionary in app.model.get("clubLife",{}).get("relationships",{}).get("players",[]):
+			if member.get("id") == player.id:
+				satisfaction = member.get("score")
+				break
+		if satisfaction != null:
+			_ligne(card,y,"Satisfaction",G.n(satisfaction)+" / 100",Charte.IVOIRE,"PlayerSatisfaction")
+			y += 34
+	var etat := "aucune" if dispo.etat in ["apte","reprise"] else str(dispo.texte)
+	if dispo.etat == "reprise": etat = "en reprise"
+	_ligne(card,y,"Blessure" if dispo.etat in ["apte","reprise","blesse"] else "Disponibilité",etat,dispo.couleur if dispo.etat != "apte" else Charte.IVOIRE,"PlayerAvailability")
+	if source == "squad":
+		_lien(card,Rect2(18,246,420,38),"Régler la charge individuelle →",func():Tactics._individual(app,player),"PlayerLoad",20)
 
-static func _detailed_attributes(card: Panel, values: Dictionary) -> void:
-	D.text(card,24,88,PlayerAttributes.SUBTITLE,23,C.MUTED,500,600)
-	for i in PlayerAttributes.GROUPS.size():
-		var group: Array = PlayerAttributes.GROUPS[i]
-		var x := 24 + i * 554
-		D.rect(card,Rect2(x,108,538,448),Color("121c1c"),5,C.LINE)
-		D.rect(card,Rect2(x,108,538,46),Color("123629"),4)
-		D.text(card,x+16,141,group[0],25,C.IVORY,700,506)
-		var entries: Array = group[1]
-		for j in entries.size():
-			var pair: Array = entries[j]
-			var y := 192 + j * 41
-			D.text(card,x+16,y,pair[1],24,C.IVORY,500,425)
-			var number := D.text(card,x+522,y,PlayerAttributes.caption(values.get(pair[0])),26,C.GOLD,700,80,HORIZONTAL_ALIGNMENT_RIGHT)
-			number.name = "PlayerDetailedAttribute_" + str(pair[0])
-			D.line(card,Vector2(x+14,y+10),Vector2(x+524,y+10),Color(C.LINE,.45))
+static func _ligne(card: Panel, y: float, libelle: String, valeur: String, couleur: Color, id: String) -> Label:
+	var largeur := card.size.x / C.density
+	D.text(card,24,y,libelle,20,Charte.IVOIRE_2,500,400,HORIZONTAL_ALIGNMENT_LEFT,true)
+	var texte := D.text(card,largeur-24,y,valeur,20,couleur,600,largeur-460,HORIZONTAL_ALIGNMENT_RIGHT,true)
+	texte.name = id
+	return texte
 
-static func _health(card:Panel,app:Control,player:Dictionary,injury:float,recovering:bool) -> void:
+## Trois points forts et trois points à travailler sur les 36 attributs.
+static func _valeur(card: Panel, values: Dictionary) -> void:
+	_titre(card,"VALEUR","SUR 36 ATTRIBUTS")
+	var paires := Commune.points(values)
+	if values.is_empty():
+		D.text(card,24,110,"Attributs inconnus : fais-le observer.",20,Charte.IVOIRE_3,500,700,HORIZONTAL_ALIGNMENT_LEFT,true)
+		return
+	for k in 2:
+		var x := 24.0 + k * 392
+		D.text(card,x,88,["POINTS FORTS","À TRAVAILLER"][k],16,Charte.IVOIRE_2,700,360)
+		var liste: Array = paires[k]
+		for i in liste.size():
+			var entree: Array = liste[i]
+			var y := 124.0 + i * 30
+			D.text(card,x,y,str(entree[1]),19,Charte.IVOIRE,500,200,HORIZONTAL_ALIGNMENT_LEFT,true)
+			D.bar(card,Rect2(x+214,y-10,90,5),float(entree[2]),Charte.IVOIRE_2)
+			D.text(card,x+360,y,PlayerAttributes.caption(entree[2]),20,Charte.couleur_attribut(entree[2]),700,46,HORIZONTAL_ALIGNMENT_RIGHT).name = ("PlayerStrength_" if k == 0 else "PlayerWeakness_") + str(entree[0])
+
+## Contrat en résumé (Vue d'ensemble) : salaire, échéance, prolongation, action.
+static func _contrat_resume(card: Panel, app: Control, player: Dictionary) -> void:
+	var fin: Variant = player.get("contractEnd")
+	var echeance_saison: bool = fin != null and int(fin) <= int(app.model.get("meta",{}).get("season",1))
+	_titre(card,"CONTRAT","ÉCHÉANCE CETTE SAISON" if echeance_saison else "")
+	var y := 96.0
+	if player.get("salary") is int or player.get("salary") is float:
+		_ligne(card,y,"Salaire",G.salary(player.salary),Charte.IVOIRE,"PlayerSalaryValue")
+		y += 34
+	_ligne(card,y,"Fin de contrat",Commune.echeance(app,player),Charte.IVOIRE,"PlayerContractEndValue")
+	y += 34
+	var renewal: Dictionary = player.get("renewal", {}) if player.get("renewal") is Dictionary else {}
+	var reason := str(renewal.get("reason", ""))
+	var etat := "Disponible" if renewal.get("available",false) else (reason if not reason.is_empty() else "Non ouverte")
+	_ligne(card,y,"Prolongation",etat,Charte.IVOIRE if renewal.get("available",false) else Charte.IVOIRE_2,"PlayerRenewalState")
+	var offer:=D.button(card,Rect2(24,y+30,440,48),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"",true,app.accent,"OfferRenewal")
+	offer.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
+	if not reason.is_empty(): offer.tooltip_text = reason
+
+## Piste du marché : conditions connues et actions du recrutement (suivre, observer, approcher).
+static func _recrutement(card: Panel, app: Control, player: Dictionary) -> void:
+	_titre(card,"RECRUTEMENT",Sort.report_label(player).to_upper())
+	var player_id := str(player.get("id",""))
+	var y := 96.0
+	var fee: Variant = player.get("fee")
+	_ligne(card,y,"Prime d’acquisition",G.euros(fee) if fee is int or fee is float else "—",Charte.IVOIRE,"PlayerMarketFee")
+	y += 34
+	_ligne(card,y,"Salaire demandé",G.salary(player.get("salary")) if player.get("salary") is int or player.get("salary") is float else "—",Charte.IVOIRE,"PlayerMarketSalary")
+	y += 34
+	var max_years := int(player.get("maxYears",0))
+	if max_years > 0:
+		_ligne(card,y,"Durée proposée","%s à %s ans" % [G.n(player.get("minYears",1)),G.n(max_years)] if max_years > 1 else "1 an",Charte.IVOIRE,"PlayerMarketYears")
+		y += 34
+	var warning := str(player.get("reason",""))
+	if not warning.is_empty():
+		D.text(card,24,y,warning,19,Charte.D,500,760,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerMarketReason"
+		y += 34
+	var context: Variant = app.model.get("clubLife", {}).get("managerCareer", {}).get("context")
+	var can_track: bool = not app.waiting and app._live().is_empty() and app.model.get("meta",{}).get("phase", "") != "ended"
+	var suivi: bool = player_id in app.management_ui.get("shortlist",[])
+	var track := D.button(card,Rect2(24,y+20,370,46),"Retirer du suivi" if suivi else "Suivre cette piste",func():
+		app._command("manager_recruitment_watch", {"context": context.duplicate(true), "playerId": player_id}),false,"star",true,app.accent,"Follow"+player_id.replace(":","_"))
+	track.disabled = not can_track or not context is Dictionary
+	if player.get("scouting") is Dictionary:
+		var observer := D.button(card,Rect2(410,y+20,374,46),"",func(): pass,false,"search",true,app.accent,"ObserveRecruitment")
+		Observation.configure(observer,app,player)
+	var consultation_only: bool = player.get("negotiation",{}).get("status","") == "withdrawn"
+	var offer := D.button(card,Rect2(24,y+82,760,50),"Consulter la discussion" if consultation_only else "Approcher le joueur",func(): app.SquadViews.contract(app, player, true),true,"arrow",false,app.accent,"OfferRecruitment")
+	offer.set_meta("player_id",player_id)
+	offer.disabled = app.waiting or (not player.get("available", false) and not consultation_only) or not app._live().is_empty()
+	if not warning.is_empty(): offer.tooltip_text = warning
+
+## Espoir du centre : temps de jeu et suivi individuel (spécialisation dans l'onglet Développement).
+static func _formation(card: Panel, app: Control, player: Dictionary) -> void:
+	_titre(card,"FORMATION")
+	var y := 96.0
+	if player.get("minutes") is int or player.get("minutes") is float:
+		_ligne(card,y,"Temps de jeu",G.n(player.minutes)+" min",Charte.IVOIRE,"PlayerAcademyMinutes")
+		y += 34
+	var progress: Dictionary = player.get("development",{}) if player.get("development") is Dictionary else {}
+	var options := {}
+	for option: Variant in progress.get("options",[]):
+		if option is Dictionary: options[option.get("id")] = option.get("label")
+	if progress.get("focus") != null and options.has(progress.focus):
+		_ligne(card,y,"Spécialisation",str(options[progress.focus]),Charte.IVOIRE,"PlayerAcademyFocus")
+		y += 34
+	_lien(card,Rect2(18,y+6,520,38),"Suivi individuel et spécialisation →",func():
+		app.management_ui.immersive_player_tab = 4
+		app._render()
+		ClubUI.focus(app,"FullPlayerTab4"),"PlayerAcademyProgress",20)
+
+static func _pied(page: Control, app: Control, player: Dictionary, source: String) -> void:
+	var ids := Commune.liste(app,source)
+	var rang := ids.find(str(player.get("id","")))
+	var gauche := str(player.get("name","")) + ((" · %d / %d · %s" % [rang+1,ids.size(),Commune.libelle_liste(app,source)]) if rang >= 0 else "")
+	D.text(page,0,HAUTEUR-14,gauche,18,Charte.IVOIRE_2,500,1100,HORIZONTAL_ALIGNMENT_LEFT,true).name = "FichePied"
+	var x := 1500.0
+	x += _touche(page,x,HAUTEUR-12,"Maj ← →") + 8
+	D.text(page,x,HAUTEUR-14,"joueur précédent / suivant",18,Charte.IVOIRE_2,500,300,HORIZONTAL_ALIGNMENT_LEFT,true)
+	x += 300
+	x += _touche(page,x,HAUTEUR-12,"Échap") + 8
+	D.text(page,x,HAUTEUR-14,"Retour",18,Charte.IVOIRE_2,500,120,HORIZONTAL_ALIGNMENT_LEFT,true)
+
+static func _health(card:Panel,app:Control,player:Dictionary) -> void:
+	var injury := float(player.get("injury", 0))
+	var recovering := injury <= 0 and P.player_in_recovery(app.model, str(player.id))
 	var condition := clampf(float(player.get("condition", 0)), 0, 100)
 	var condition_color := C.AMBER if condition < 85 else C.MINT
 	var dial := ConditionDial.new()
@@ -338,6 +665,7 @@ static func _competition(model:Dictionary,ligne:Dictionary) -> String:
 ## Historique des matchs de la saison (note enregistrée, minutes, essais, plaquages, mètres, passes,
 ## franchissements : feuille réaliste du match, la même que l'écran de match), moyennes par match de la
 ## saison, puis le résumé des saisons passées. « — » : match d'une ancienne sauvegarde (champ absent).
+## L'adversaire est un lien vers la fiche de son club.
 static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 	var notes := NotesMatch.joueur(app.model,str(player.id))
 	var lignes: Array = notes.get("historique",[]) if notes.get("historique") is Array else []
@@ -359,9 +687,11 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 		rang.custom_minimum_size = Vector2(C.px(1630),C.px(36))
 		rang.name = "PlayerMatchRow"+str(i)
 		liste.add_child(rang)
-		if i%2==0: D.rect(rang,Rect2(0,0,1630,36),Color("141d1f"),3)
+		if i%2==0: D.rect(rang,Rect2(0,0,1630,36),Charte.PANNEAU_2,3)
 		D.text(rang,4,26,"S"+G.n(int(ligne.get("semaine",0))+1),20,C.MUTED,500,70)
-		D.text(rang,84,26,str(ligne.get("adversaire","")),21,C.IVORY,600,360)
+		var adversaire := str(ligne.get("adversaire",""))
+		var club: Variant = ligne.get("adversaireId")
+		Link.name_link(app,rang,Rect2(80,1,364,34),"club",str(int(club)) if club is int or club is float else "",adversaire,21,C.IVORY,"PlayerMatchOpponent"+str(i))
 		D.text(rang,454,26,_competition(app.model,ligne),19,C.MUTED,500,280)
 		D.text(rang,744,26,G.n(ligne.get("minutes",0))+"′",20,C.IVORY,500,70)
 		NotesMatch.pastille(rang,Rect2(820,3,72,30),float(ligne.get("note",6.5)),0.62)
@@ -433,23 +763,41 @@ static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason
 
-static func _development(card:Panel,app:Control,player:Dictionary) -> void:
+## Suivi individuel dans la fiche (plus de fenêtre « Progression ») : bilans annuels, progression de la saison et
+## spécialisation (commande `set_development_focus` du moteur, comme l'ancienne fenêtre).
+static func _development(card:Panel,app:Control,player:Dictionary,source:String="squad") -> void:
 	var player_id := str(player.id)
-	var record := Academy.professional_progress(app, player_id)
-	var development: Dictionary = record.get("development", {})
-	D.text(card,820,108,"POTENTIEL  "+G.potential_text(player),26,G.POTENTIAL_COLOR,700,700)
-	D.text(card,24,108,"NIVEAU ACTUEL  "+G.rating_text(player,true),26,C.MINT,700,700)
+	var record: Dictionary = player if source == "academy" else Academy.professional_progress(app, player_id)
+	var development: Dictionary = record.get("development", {}) if record.get("development") is Dictionary else {}
+	D.text(card,820,108,"POTENTIEL  "+G.potential_text(player),26,C.IVORY,700,700)
+	D.text(card,24,108,"NIVEAU ACTUEL  "+G.rating_text(player,true),26,C.IVORY,700,700)
 	if record.is_empty():
 		D.text(card,24,163,"Suivi individuel indisponible pour ce joueur.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true)
 		return
-	D.text(card,24,163,"Bilan et objectifs de ce joueur.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true)
-	var history:Array=development.get("history",[])
+	var bilan: Array[String] = []
+	if record.get("minutes") is int or record.get("minutes") is float: bilan.append(G.n(record.minutes) + " minutes")
+	if record.get("appearances") is int or record.get("appearances") is float: bilan.append(G.n(record.appearances) + " apparition(s)")
+	var start: Variant = development.get("seasonStart")
+	if (start is int or start is float) and (player.get("rating") is int or player.get("rating") is float):
+		var gain := roundi(float(player.rating) - float(start))
+		bilan.append(("+%d" % gain if gain > 0 else str(gain)) + " de progression cette saison")
+	D.text(card,24,163," · ".join(bilan) if not bilan.is_empty() else "Bilan et objectifs de ce joueur.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerDevelopmentSummary"
+	var history:Array=development.get("history",[]) if development.get("history") is Array else []
 	if history.is_empty():D.text(card,24,223,"Premier bilan annuel à venir.",25,C.MUTED,500,1550)
 	for i in mini(4,history.size()):
 		var year:Dictionary=history[history.size()-1-i]
 		D.text(card,24,223+i*42,"Saison %s · %s → %s · %s minutes" % [G.season_label(year.get("season","—")),G.n(year.get("start","—")),G.n(year.get("end","—")),G.n(year.get("minutes","—"))],24,C.IVORY,500,1500)
-	D.button(card,Rect2(24,352,520,42),"Ouvrir le suivi individuel",func():
-		Academy.open_professional_progress(app, player_id, "PlayerDevelopmentAction"),false,"school",true,app.accent,"PlayerDevelopmentAction")
+	var choices := {}
+	for option: Variant in development.get("options", []):
+		if option is Dictionary: choices[option.get("id")] = option.get("label")
+	if choices.is_empty(): return
+	D.text(card,24,420,"SPÉCIALISATION",18,C.MUTED,700,600)
+	var control := Academy._option("Focus" + player_id.replace(":", "_"), "Spécialisation", choices, development.get("focus"), func(value):
+		app._command("set_development_focus", {"playerId":record.get("id", player_id), "focus":value}))
+	control.disabled = not development.get("available", false)
+	card.add_child(control)
+	D.place(control,Rect2(24,436,760,48))
+	D.text(card,24,520,str(development.get("reason", "")) if control.disabled else "Changer d’axe remet à zéro l’expérience partielle non dépensée. Les qualités déjà acquises sont conservées.",19,C.MUTED,400,1600,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerDevelopmentFocusNote"
 
 static func _sources(card:Panel,_app:Control,player:Dictionary) -> void:
 	var profile:Dictionary=player.rosterProfile if player.get("rosterProfile") is Dictionary else {}

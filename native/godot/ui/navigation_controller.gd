@@ -3,6 +3,7 @@ extends Node
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
+const FicheCommune = preload("res://ui/immersive08/fiche_commune.gd")
 const HISTORY_LIMIT := 60
 const RESULT_LIMIT := 12
 var app: Control
@@ -51,6 +52,9 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 	if route == "Effectif": entry.full_player = app.get_meta("immersive08_full_player", false)
 	if route == "Préparation": entry.preparation_tab = int(app.management_ui.get("preparation", {}).get("tab", 0))
 	if route == "Recrutement": entry.market = str(app.management_ui.get("market", {}).get("navigation_id", ""))
+	# Fiche d'une piste ou d'un Espoir : une étape d'historique distincte de la liste.
+	var fiche: Variant = app.management_ui.get("fiche_joueur")
+	if route in ["Recrutement", "Formation"]: entry.fiche = str(fiche.get("id", "")) if fiche is Dictionary else ""
 	if cursor >= 0:
 		var previous := history[cursor]
 		var same_location := entry.keys().all(func(key: String): return previous.get(key) == entry[key])
@@ -570,6 +574,8 @@ func entity_available(target: Dictionary) -> bool:
 			return not id.is_empty() and ((_allowed_route("Effectif") and not _person("squad", id).is_empty()) or (_allowed_route("Recrutement") and not _person("market", id).is_empty()))
 		"market":
 			return not id.is_empty() and _allowed_route("Recrutement") and not _person("market", id).is_empty()
+		"academy":
+			return not id.is_empty() and _allowed_route("Formation") and not FicheCommune.trouver(app, id, "academy").is_empty()
 		"prospect":
 			var adapter := _prospect_adapter()
 			return _allowed_route("Recrutement") and adapter != null and adapter.target_available(app, str(target.get("source", "")), id)
@@ -634,7 +640,16 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 			if target.get("section", "") == "contract": app.management_ui.immersive_player_tab = 3
 		"market":
 			destination = "Recrutement"
-			_set_market_target(id, str(_person("market", id).get("name", "")))
+			# Clic sur le nom d'une piste = sa fiche complète (décision de Léo, 19/11/2026) ; « liste » révèle sa ligne.
+			if target.get("section", "") == "liste":
+				app.management_ui.erase("fiche_joueur")
+				_set_market_target(id, str(_person("market", id).get("name", "")))
+			else:
+				app.management_ui.fiche_joueur = {"id":id, "source":"market"}
+				app.management_ui.market.player_id = id
+		"academy":
+			destination = "Formation"
+			app.management_ui.fiche_joueur = {"id":id, "source":"academy"}
 		"report":
 			opened = app.Immersive.Recruitment.open_target(app, target.get("id"))
 		"nation":
