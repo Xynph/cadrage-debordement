@@ -124,12 +124,12 @@ Colonnes dans l'ordre, priorité d'affichage (1 = retirée en dernier) :
 | Vue | Colonnes ajoutées / remplaçantes (ordre) | Tri par défaut |
 |---|---|---|
 | Condition | Joueur, Poste, Condition, Fatigue (valeur + « plus bas = mieux »), Charge prévue, Absence (type, gravité, retour), Minutes, Matchs | Condition croissant |
-| Contrats | Joueur, Poste, Salaire/sem., Fin de contrat, Prolongation (Disponible / Refusée / Impossible), Marge, **Marché** (« — » · « Sur le marché » · « Offre reçue », mot + icône ; GDD `vente-joueurs.md`) | Fin de contrat croissant |
+| Contrats | Joueur, Poste, Salaire/sem., Fin de contrat, Prolongation (Disponible / Refusée / Impossible), Marge, **Marché** (« — » · « En vente » · « Offre reçue » · « Départ prévu », mot ; infobulle = phrase d'état ; GDD `vente-joueurs.md`) | Fin de contrat croissant |
 | Développement | Joueur, Âge, Niv., Pot. estimé, Marge, Minutes, Moy., Forme | Marge décroissant |
 
 ### 6.4 Panneau du joueur choisi
 
-Contenu (dans l'ordre) : photo, Prénom NOM, poste, âge ; niveau + potentiel ; statut (mot) ; condition (% + barre) et fatigue (n/100) ; **3 points forts** (attribut + valeur, mêmes clés que la carte « Points forts » de la fiche 08 ; « — » si indisponible) ; contrat (salaire/sem., fin) ; **Ouvrir la fiche** (principal) ; **Prolonger** (visible seulement si la prolongation est possible) ; **Proposer aux autres clubs** / **Retirer du marché** (secondaire ; grisé + raison si bloqué) ; Comparer.
+Contenu (dans l'ordre) : photo, Prénom NOM, poste, âge ; niveau + potentiel ; statut (mot) ; condition (% + barre) et fatigue (n/100) ; **3 points forts** (attribut + valeur, mêmes clés que la carte « Points forts » de la fiche 08 ; « — » si indisponible) ; contrat (salaire/sem., fin) ; **Ouvrir la fiche** (principal) ; **Prolonger** (visible seulement si la prolongation est possible) ; **Vente** dans le bloc contrat, en un seul bouton d'état : « **Proposer** » (« Proposer aux autres clubs » en infobulle) · « **Retirer** » (joueur proposé) · « **Voir l'offre** » (ouvre « Offres reçues ») · « **Départ prévu** » (accord conclu, grisé) ; grisé aussi pendant un match, avec la raison du blocage en infobulle (espoir de moins de 20 ans, recrue de moins de 3 journées, prêt) ; une ligne d'état sous le contrat dit « Proposé aux autres clubs · valeur estimée … », « Offre reçue : à traiter dans Offres reçues. » ou la vente en attente (« effectif au 1er mai ») ; Comparer. La vue « Contrats » porte en plus le bouton « Offres reçues · n » dans son encart « Marché des transferts » (résumé : joueurs proposés, offres, ventes en attente).
 Retirés : bloc « Équilibre du groupe » (Avants 21 / Arrières 19 / U21 11 : en infobulle du compteur « Aptes ») et le doublon « Disponibilité » + « Contrat & statut » en trois cartes (fusionnés en un seul bloc).
 
 ### 6.5 Sources de données
@@ -155,7 +155,7 @@ L'interface ne modifie aucune donnée : « Prolonger » et « Ouvrir la fiche »
 | Comparer | bouton, bouton de ligne | Maj+Espace sur une ligne (ajoute/retire, max 2) ; Entrée sur « Comparer (2/2) » | écran de comparaison |
 | Changer de vue | onglets | Ctrl+Tab / Ctrl+Maj+Tab (cycle), flèches ← → sur la rangée d'onglets | colonnes remplacées, tri de la vue appliqué |
 | Prolonger | bouton | Tab, Entrée | négociation (fenêtre) |
-| Mettre en vente / retirer | bouton du panneau | Tab, Entrée | commande `sale_list` ; colonne « Marché » et message au pied (« {Nom} proposé aux autres clubs. Les offres arrivent à la fin de la semaine. ») |
+| Mettre en vente / retirer | bouton « Proposer » / « Retirer » du panneau | Tab, Entrée | commande `sale_list` ; colonne « Marché » (« En vente ») et message du moteur dans la fenêtre « Offres reçues » ou en retour de commande ; si une offre existe, le bouton devient « Voir l'offre » et ouvre « Offres reçues » (fiche 09 §6.5) |
 | Clic droit sur une ligne | menu : Ouvrir la fiche · Comparer · Prolonger · Proposer aux autres clubs | touche Menu / Maj+F10 | motif « menu rapide » (manquant n°4) |
 
 Aucun raccourci à une lettre pendant la saisie (K5). Le focus d'un tableau et celui d'une ligne sont distingués (K2) : voir §9.
@@ -173,7 +173,9 @@ Aucun raccourci à une lettre pendant la saisie (K5). Le focus d'un tableau et c
 | Aucun joueur choisi | première ouverture sans sélection | panneau : « Choisis un joueur pour le voir ici » | focus sur la 1re ligne |
 | Donnée manquante | potentiel inconnu, photo absente | « — » ou silhouette neutre ; jamais de ligne vide | infobulle « Non communiqué » |
 | Erreur de lecture | état de carrière illisible | bandeau d'erreur en tête (« Les données du groupe n'ont pas pu être lues. Reviens au Bureau puis rouvre l'effectif. ») + Réessayer | tableau vide, pas de crash |
-| Moteur occupé (`app.waiting`) | Continuer | actions de contrat désactivées avec la raison en infobulle | lecture et tri restent libres |
+| Moteur occupé (`app.waiting`) | Continuer | actions de contrat et de vente désactivées avec la raison en infobulle | lecture et tri restent libres |
+| Vente bloquée | espoir < 20 ans, recrue < 3 journées, prêt, match en cours | bouton de vente grisé ; raison écrite en clair en infobulle et sur la ligne d'état | lecture libre |
+| Vente en attente | accord conclu hors période des mutations | bouton « Départ prévu » grisé ; colonne Marché « Départ prévu » ; le joueur reste dans l'effectif et joue jusqu'au 1er mai | exécutée à l'ouverture (courrier « vente exécutée ») ou annulée avec la raison |
 
 ## 9. Accessibilité (T1, C1, C3, D1, D3, D6, K1, K2, K6, K8, E1)
 
@@ -228,6 +230,7 @@ Aucun raccourci à une lettre pendant la saisie (K5). Le focus d'un tableau et c
 - [ ] Filtre sans résultat : message + bouton « Effacer les filtres » focalisé.
 - [ ] Retour depuis une fiche : même ligne, même tri, même défilement.
 - [ ] Aucune écriture directe dans l'état de carrière depuis cet écran.
+- [ ] Vente : le bouton du panneau suit l'état (« Proposer », « Retirer », « Voir l'offre », « Départ prévu ») ; la colonne « Marché » de la vue « Contrats » affiche « En vente », « Offre reçue » ou « Départ prévu » ; un joueur bloqué a le bouton grisé et sa raison écrite.
 
 ## 13. Questions ouvertes
 
