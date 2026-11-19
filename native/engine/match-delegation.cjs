@@ -37,6 +37,8 @@ function factory(){
    if(l&&typeof S!=='undefined'&&S&&l===S.live&&l.userSide>=0&&!l.finished){
     // Banc adverse (match-pilotage.js) : il revoit ses consignes toutes les 5 minutes, en direct comme en délégation.
     if(typeof pilotageAdversaire==='function')pilotageAdversaire(l);
+    // Avis du staff du club joué (bouton « Appliquer ces consignes ») ; en délégation il l'applique lui-même.
+    if(typeof pilotageStaffAvis==='function')pilotageStaffAvis(l);
     if(actif)adjoint(l);
    }
    return result;
