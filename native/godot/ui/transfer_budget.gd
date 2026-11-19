@@ -27,5 +27,5 @@ static func detail(budget: Dictionary, cash: Variant) -> String:
 		"Trésorerie du club : %s" % (G.euros(cash) if cash is int or cash is float else "—"),
 		"Dépensé en indemnités et primes : %s" % G.euros(budget.get("depense", 0)),
 		"Reconstitué par les ventes : %s" % G.euros(budget.get("reconstitue", 0)),
-		"Les salaires n’entrent pas dans ce budget : ils sont jugés par la masse salariale.",
+		"Les salaires n’entrent pas dans ce budget : ils restent dans la masse salariale · joueurs.",
 	]))
