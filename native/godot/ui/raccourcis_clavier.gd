@@ -144,6 +144,11 @@ func _retour() -> bool:
 	if is_instance_valid(retour) and retour.is_visible_in_tree():
 		retour.pressed.emit()
 		return true
+	# Sous-page de la Composition (tireurs et lanceur, espoir, renforts) : Échap revient à la composition.
+	var composition: Button = app.root_content.find_child("CompositionRetour", true, false) as Button
+	if is_instance_valid(composition) and composition.is_visible_in_tree():
+		composition.pressed.emit()
+		return true
 	var navigation: Node = app.get("navigation_controller")
 	if app.route == "Fiche club" and is_instance_valid(navigation):
 		if navigation._destination(-1) >= 0: navigation._travel(-1)
