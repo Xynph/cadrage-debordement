@@ -125,9 +125,10 @@ func run() -> void:
 		var dossier: Button = app.body.find_child("OpenOppositionDossier", true, false)
 		check(dossier != null and not dossier.disabled, "Accès au dossier adverse")
 		if not await click(dossier): quit(1); return
-		var dialog: Control = app.find_child("PreparationAdvice", true, false)
-		check(dialog != null and dialog.is_visible_in_tree() and contains_text(app.body, "JOUEURS PRESSENTIS"), "Vrai dossier avec menaces et limites, en sous-page")
-		if dialog == null or not dialog.is_visible_in_tree(): quit(1); return
+		var dialog: AcceptDialog = null
+		var advice_page: Control = app.find_child("PreparationAdvice", true, false)
+		check(advice_page != null and advice_page.is_visible_in_tree() and contains_text(app.body, "JOUEURS PRESSENTIS"), "Vrai dossier avec menaces et limites, en sous-page")
+		if advice_page == null or not advice_page.is_visible_in_tree(): quit(1); return
 		await capture("dossier-" + str(size.x))
 		check(await click(app.body.find_child("PreparationSubBack", true, false) as Button), "Retour au dossier adverse")
 		check(await click(app.body.find_child("PreparationTabEntrainement", true, false) as Button), "Ouvrir l’entraînement")

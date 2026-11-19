@@ -32,6 +32,9 @@ const EXTRAS := [
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "options", "libelle": "Options", "type": "options"},
+	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
+	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
+	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -434,6 +437,20 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var ouvert: bool = app.navigation_controller.open_entity({"kind": "club", "id": id})
 			await stabiliser()
 			if not ouvert: return {"statut": "echec", "note": "fiche du club %s non ouverte" % id}
+		"preparation_bas":
+			app._navigate("Préparation")
+			await stabiliser()
+			# Leur XV probable arrive par la lecture seule « club_sheet » : on laisse la page se reconstruire, puis on descend.
+			for _i in 90: await process_frame
+			await stabiliser()
+			if app.body_scroll != null: app.body_scroll.scroll_vertical = int(app.body_scroll.get_v_scroll_bar().max_value)
+			await stabiliser()
+		"preparation_sous":
+			app._navigate("Préparation")
+			await stabiliser()
+			app.management_ui.preparation.sub = str(ecran.sous)
+			app._render()
+			await stabiliser()
 		"options":
 			app._navigate("Bureau")
 			await stabiliser()
@@ -451,6 +468,7 @@ func refermer(ecran: Dictionary) -> void:
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
 	if str(ecran.type) == "mini_fiche": load("res://ui/immersive08/mini_fiche.gd").cacher(app)
+	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
 	fermer_fenetres()
 
 func surface() -> Control:
