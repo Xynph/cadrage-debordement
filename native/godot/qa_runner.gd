@@ -773,6 +773,16 @@ func _systems_reception() -> void:
 	_check(national_press.size() == 30 and european_only and press.people.size() == national_press.size() + league_press.size(), "Bundled press retains all thirty journalists")
 	if national_press.size() != 30 or not european_only or press.people.size() != national_press.size() + league_press.size():
 		printerr("QA press directory: national=", national_press.size(), " league=", league_press.size(), " total=", press.people.size())
+	# Rentrée façon FM (#928) : la conférence arrive la semaine du 1er match officiel, pas au changement de saison.
+	# On avance la pré-saison jour après jour, sans publier, jusqu'à cette vraie conférence.
+	var preseason_days := 0
+	while not press.conference.available and preseason_days < 60 and not (app.model.get("live") is Dictionary):
+		await _settle_required_meetings()
+		app._command("advance_day", {})
+		if not await _wait() or not app.bridge.last_response_ok: break
+		preseason_days += 1
+		press = app.model.clubLife.press
+	five_tones = press.conference.available
 	if press.conference.available:
 		for question: Dictionary in press.conference.questions:
 			five_tones = five_tones and question.answers.size() == 5 and question.answers.any(func(a: Dictionary): return str(a.id) == "r4" and str(a.toneLabel) == "Humour")
