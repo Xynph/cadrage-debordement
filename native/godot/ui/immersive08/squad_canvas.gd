@@ -12,6 +12,7 @@ const ROWS_PER_FRAME := 18
 const VISIBLE_MARGIN := 6
 const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Notes = preload("res://ui/notes_match.gd")
+const Sales = preload("res://ui/player_sales_view.gd")
 var app: Control
 var state: Dictionary
 var rows: VBoxContainer
@@ -541,6 +542,20 @@ func _profile() -> void:
 	var offer:=D.button(contract,Rect2(305,143,198,32),"Prolonger" if reason.is_empty() else "Négociation close",func():app.SquadViews.contract(app,player,false),false,"",true,app.accent,"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason
+	# Vente (vente-joueurs.cjs) : proposer / retirer, voir l'offre, ou départ prévu ; la raison d'un blocage en infobulle.
+	var sale: Dictionary = player.get("sale",{}) if player.get("sale") is Dictionary else {}
+	var sale_status := Sales.status(player)
+	var has_offer: bool = sale.get("offerId") is String
+	var planned: bool = sale.get("pending") is Dictionary
+	var listed := bool(sale.get("listed",false))
+	var sell:=D.button(contract,Rect2(24,143,265,32),"Départ prévu" if planned else "Voir l’offre" if has_offer else "Retirer" if listed else "Proposer",func():
+		if has_offer: Sales.open(app)
+		else: Sales.toggle(app,player),false,"",true,app.accent,"SquadSaleAction")
+	sell.add_theme_font_size_override("font_size",maxi(13,C.px(26)))
+	var blocked := str(sale.get("blocked",""))
+	sell.disabled = planned or not app._live().is_empty() or (not listed and not has_offer and not blocked.is_empty())
+	sell.tooltip_text = sale_status if not sale_status.is_empty() else blocked if not blocked.is_empty() else "Proposer ce joueur aux autres clubs"
+	sell.accessibility_name = sell.text + " · " + sell.tooltip_text
 	var contract_end: Variant = player.get("contractEnd")
 	var depth:=D.panel(dossier,Rect2(0,922,528,206),"L’ÉQUILIBRE DU GROUPE","people")
 	var source:Array=app.model.get("squad",[])

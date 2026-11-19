@@ -71,6 +71,8 @@ declare -A suite_limits=(
   [tests/godot-sante-financiere.cjs]=1200
   # Budget de transferts : carrière Monde côté Node, puis Godot (Recrutement, Finances, offre hors budget).
   [tests/godot-budget-transferts.cjs]=1200
+  # Vente de joueurs : carrière Monde côté Node (offres, accord en attente, courrier), puis Godot 1280×720 (Recrutement, offres, confirmation, fiche, Effectif).
+  [tests/godot-vente-joueurs.cjs]=1200
   [tests/godot-argent-proprietaire.cjs]=1200
   # A2R et président : carrière Monde côté Node (Toulouse, comptes simulés), puis Godot (deux courriers en Réception).
   [tests/godot-a2r-president.cjs]=900

@@ -121,6 +121,9 @@ module.exports=function nativeGestion(command,p){
  }
  // Rallonge demandée au conseil (budget-transferts.cjs, R3 bis) : {amount, confirmed:true} ; réponse dans meta.transferBudgetExtension.
  if(command==='transfer_budget_extension'){requireThat(typeof budgetTransfertsRallonge==='function','Budget de transferts indisponible.');return {transferBudgetExtension:budgetTransfertsRallonge(p)};}
+ // Vente de joueurs (vente-joueurs.cjs) : proposer / retirer un joueur ; répondre à une offre reçue.
+ if(command==='sale_list'){requireThat(typeof venteListe==='function'&&S.phase!=='ended','Vente de joueurs indisponible.');return venteListe(p);}
+ if(command==='sale_answer'){requireThat(typeof venteRepondre==='function'&&S.phase!=='ended','Vente de joueurs indisponible.');return venteRepondre(p);}
  if(command==='next_season'){requireThat(p.confirmed===true&&S.phase==='ended'&&!S.live,'Confirme le passage à la saison suivante après la fin des compétitions.');advanceSeason();return;}
  if(command==='substitute'){
   const l=S.live;requireThat(l&&l.paused&&!l.finished&&!presentationPending(l),'Remplacement indisponible : mets le match en pause.');
