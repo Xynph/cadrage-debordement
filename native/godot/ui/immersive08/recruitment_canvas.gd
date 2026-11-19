@@ -149,6 +149,10 @@ func _header(positions: Array) -> void:
 	var calendrier: Dictionary = app.model.get("mutations", {}) if app.model.get("mutations") is Dictionary else {}
 	if calendrier.get("available", false):
 		var libres: Dictionary = calendrier.get("freeAgents", {}) if calendrier.get("freeAgents") is Dictionary else {}
+		# Bandeau sombre sous la période : posée sur la photo de recrutement, elle était illisible (captures 19/11).
+		var bandeau := D.rect(self, Rect2(16, 126, 574, 36), Color(0.03, 0.08, 0.06, 0.9), 6, Color(0.03, 0.08, 0.06, 0.9))
+		bandeau.name = "RecruitmentWindowBand"
+		bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var fenetre := D.text(self, 24, 148,str(calendrier.get("summary", "")), 26, GREEN if libres.get("open", true) else C.ALERT, 700, 558)
 		fenetre.name = "RecruitmentWindow"
 		fenetre.tooltip_text = str(calendrier.get("detail", ""))

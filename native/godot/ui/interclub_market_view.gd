@@ -3,6 +3,8 @@ const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Prospect = preload("res://ui/prospect_profile.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
+## Textes à 13 px au moins en 1280×720 (même règle que les ventes : le style immersif repose un plancher de 12 px).
+const Sales = preload("res://ui/player_sales_view.gd")
 var app: Control
 var rows: VBoxContainer
 var query := ""
@@ -94,6 +96,7 @@ func _build() -> void:
 	app.bridge.model_changed.connect(_on_model)
 	app.bridge.command_failed.connect(_on_failure)
 	popup_centered(Vector2i(880,580))
+	Sales.lisible(body)
 
 func _redraw() -> void:
 	for child in rows.get_children():
@@ -137,6 +140,7 @@ func _redraw() -> void:
 		offer.disabled = app.waiting or not person.get("available",false)
 		card.add_child(offer)
 		_precontract_line(card, person)
+	Sales.lisible(rows)
 
 ## Pré-contrat (calendrier-mutations.cjs, `candidates[].preContract`) : signé (arrivée au 1er juillet), possible
 ## (bouton) ou pas encore (raison écrite).
@@ -197,7 +201,7 @@ func _precontract(person: Dictionary) -> void:
 	pre_premium = G.wrap("", 14)
 	pre_premium.name = "PreContractPremium"
 	rows.add_child(pre_premium)
-	local_message = G.wrap("Le joueur demande au moins %s. Il arrivera le %s." % [G.salary(pre.get("salary", 0)), str(pre.get("arrivalLabel", ""))], 14)
+	local_message = G.wrap("Le joueur demande au moins %s ; il arrivera le %s." % [G.salary(pre.get("salary", 0)), str(pre.get("arrivalLabel", ""))], 14)
 	local_message.name = "PreContractMessage"
 	rows.add_child(local_message)
 	pre_button = G.button("PROPOSER LE PRÉ-CONTRAT", _confirm_precontract)
@@ -207,6 +211,7 @@ func _precontract(person: Dictionary) -> void:
 		if pending: return
 		selected_person = {}; search_field.editable = true; _redraw()))
 	_precontract_check()
+	Sales.lisible(rows)
 
 func _precontract_salary() -> int:
 	return preload("res://ui/salary_display.gd").input_weekly(pre_salary) if is_instance_valid(pre_salary) else 0
@@ -240,7 +245,7 @@ func _confirm_precontract() -> void:
 	dialog.get_cancel_button().text = "ANNULER"
 	var content := G.v(8)
 	dialog.add_child(content)
-	var heading := G.wrap("%s rejoindra ton club le %s pour %d saison%s, à %s. Aucune indemnité pour %s." % [str(selected_person.get("name", "")), str(pre.get("arrivalLabel", "")), int(pre_years.value), "s" if int(pre_years.value) > 1 else "", G.salary(_precontract_salary()), str(selected_person.get("club", ""))], 14, G.INK)
+	var heading := G.wrap("%s rejoindra ton club le %s pour %d saison%s (salaire : %s). Aucune indemnité pour %s." % [str(selected_person.get("name", "")), str(pre.get("arrivalLabel", "")), int(pre_years.value), "s" if int(pre_years.value) > 1 else "", G.salary(_precontract_salary()), str(selected_person.get("club", ""))], 14, G.INK)
 	heading.name = "PreContractConfirmHeading"
 	content.add_child(heading)
 	var cost := G.wrap("Prime à la signature : %s, payée maintenant (budget de transferts). Il reste à %s jusqu’au 30 juin." % [G.euros(_precontract_premium()), str(selected_person.get("club", ""))], 14, G.INK)
@@ -254,8 +259,22 @@ func _confirm_precontract() -> void:
 		if not app._command("precontract_offer", payload): _on_failure("Pré-contrat indisponible.")
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)
+	Sales.lisible(dialog)
+	# Fenêtre fille du marché : centrée à l'écran et ajustée à son contenu (comme la confirmation de vente).
 	dialog.popup_centered(Vector2i(620, 260))
+	_center_on_screen.call_deferred(dialog)
 	dialog.get_cancel_button().grab_focus()
+
+func _center_on_screen(dialog: Window) -> void:
+	for i in 3: await get_tree().process_frame
+	if not is_instance_valid(dialog) or not dialog.visible: return
+	var screen := Vector2i(get_tree().root.get_visible_rect().size)
+	var title_height := dialog.get_theme_constant("title_height", "Window")
+	dialog.size = Vector2i(mini(620, screen.x - 28), 1)
+	await get_tree().process_frame
+	if not is_instance_valid(dialog): return
+	dialog.size = Vector2i(mini(dialog.size.x, screen.x - 28), mini(dialog.size.y, screen.y - 68))
+	dialog.position = (screen - dialog.size + Vector2i(0, title_height)) / 2
 
 func _offer(person: Dictionary) -> void:
 	if app.waiting: return
@@ -316,6 +335,7 @@ func _draw_negotiation() -> void:
 		if pending: return
 		selected_person={}; negotiation={}; search_field.editable=true; _redraw()))
 	_budget_check()
+	Sales.lisible(rows)
 
 ## Enveloppe du conseil (finance.transferBudget) : une indemnité au-delà du disponible ne peut pas être soumise.
 ## Le moteur la refuse de toute façon ; la raison est écrite avant l’envoi. Le salaire n’entre pas dans le budget.

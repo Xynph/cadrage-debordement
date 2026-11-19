@@ -434,8 +434,12 @@ static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	# carte Marché des transferts et dans l'info-bulle, pas dans les 515 unités de cette ligne.
 	var sale_status := Sales.status(player)
 	var sale_short := Sales.short(player)
-	var line := D.text(card,24,183,reason if not reason.is_empty() else sale_short if not sale_short.is_empty() else "Contrat du joueur",19,C.ALERT if not reason.is_empty() else C.GOLD if not sale_short.is_empty() else C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
+	# Parti libre sous pré-contrat : état court (« A signé à … : départ le 1er juillet »), la raison complète en info-bulle.
+	var pre: Dictionary = player.get("preContract",{}) if player.get("preContract") is Dictionary else {}
+	var shown := str(pre.get("short","")) if not reason.is_empty() and str(pre.get("state","")) == "signe" and not str(pre.get("short","")).is_empty() else reason
+	var line := D.text(card,24,183,shown if not reason.is_empty() else sale_short if not sale_short.is_empty() else "Contrat du joueur",19,C.ALERT if not reason.is_empty() else C.GOLD if not sale_short.is_empty() else C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
 	if reason.is_empty() and not sale_status.is_empty(): line.tooltip_text = sale_status
+	elif not reason.is_empty(): line.tooltip_text = reason
 	var offer:=D.button(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"arrow",true,app.accent,"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason
