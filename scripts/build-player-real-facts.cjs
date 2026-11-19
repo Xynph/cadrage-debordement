@@ -9,6 +9,7 @@ const target = path.join(root, 'native/engine/player-real-facts.json');
 const fields = new Set(['heightCm', 'weightKg', 'nationality', 'flagCode', 'seniorCaps', 'seniorNation', 'eligibilityNations']);
 // 19/11/2026 : éligibilité anglaise (EQP) des joueurs de Premiership, recherchée joueur par joueur ; le détail (naissance,
 // ascendance, résidence, sources) reste dans le dépôt privé rugby-reel-donnees (data/eqp/), seul le statut est publié ici.
+// Même relevé : sélections senior manquantes (portée caps-research : nombre de capes et nation, rien d'autre).
 const snapshot = '2026-11-19';
 const countryCode = /^[a-z]{2}$|^gb-(eng|sct|wls)$/;
 const teamCode = /^[A-Z]{3}$/;
@@ -43,7 +44,7 @@ function build(evidence = read('data/player-real-facts/observations.json')) {
   }
   for (const [id, source] of Object.entries(evidence.sources)) {
     if (!sourceCode.test(id) || !object(source) || !datePattern.test(source.observedOn) || source.observedOn > snapshot ||
-      typeof source.publisher !== 'string' || !['club-profile', 'league-profile', 'national-xv', 'eligibility-research'].includes(source.scope)) {
+      typeof source.publisher !== 'string' || !['club-profile', 'league-profile', 'national-xv', 'eligibility-research', 'caps-research'].includes(source.scope)) {
       throw Error(`Source des joueurs invalide : ${id}`);
     }
   }
@@ -54,7 +55,8 @@ function build(evidence = read('data/player-real-facts/observations.json')) {
     const [id, source, facts, sha256] = row;
     if (!ids.has(id) || !Object.hasOwn(evidence.sources, source) || !object(facts) || !validFacts(facts) ||
       (sha256 !== undefined && (typeof sha256 !== 'string' || !digest.test(sha256))) ||
-      ('seniorCaps' in facts && evidence.sources[source].scope !== 'national-xv') ||
+      ('seniorCaps' in facts && !['national-xv', 'caps-research'].includes(evidence.sources[source].scope)) ||
+      (evidence.sources[source].scope === 'caps-research' && Object.keys(facts).some(field => !['seniorCaps', 'seniorNation'].includes(field))) ||
       ('eligibilityNations' in facts && !['national-xv', 'eligibility-research'].includes(evidence.sources[source].scope)) ||
       (evidence.sources[source].scope === 'eligibility-research' && Object.keys(facts).some(field => field !== 'eligibilityNations'))) {
       throw Error(`Observation joueur invalide : ${id}`);
