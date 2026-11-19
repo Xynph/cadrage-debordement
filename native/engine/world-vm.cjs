@@ -10,6 +10,8 @@ const ratingScale=require('./world-rating-scale.json');
 // Niveau réel compilé sans nom (tools/compile-niveaux-v2.cjs), livré avec le moteur.
 const ratingLevels=(t=>({joueurs:t.joueurs,clubs:t.clubs,ordre:t.ordre||{}}))(require('./world-niveaux-v2.json'));
 const initialContracts=require('./world-initial-contracts.json');
+// Postes et années de naissance vérifiés, par identifiant seulement (aucun nom).
+const playerCorrections=require('./world-player-corrections.json');
 const stadiumCapacities=require('./world-stadium-capacities.json');
 const lnrCalendar=require('./lnr-calendar-2026-27.json');
 const dispatch=require('./world-dispatch.cjs');
@@ -46,10 +48,11 @@ function bootstrap(){
   `const CDWorldValidation=(${validation.toString()})();`,
   `const CDWorldKnockout=(${knockout.toString()})();`,
   `const CDWorldInitialContracts=${JSON.stringify(initialContracts)};`,
+  `const CDWorldPlayerCorrections=${JSON.stringify(playerCorrections)};`,
   `const CDWorldStadiumCapacities=${JSON.stringify(stadiumCapacities.capacities)};`,
   `const CDWorldLnrCalendar=${JSON.stringify(lnrCalendar)};`,
   `const CDWorldSeniorCalibration=(${seniorCalibration.toString()})(lnrProjectV12,roleNote,ROLE_WEIGHTS,${JSON.stringify(roleAttributePriors.roles)},${JSON.stringify(ratingScale)},${JSON.stringify(ratingLevels)});`,
-  `const CDWorldCareer=(${dispatch.toString()})(CDWorldEditions,(edition,active)=>(${career.toString()})(edition,active,CDWorldInitialContracts,CDWorldLnrCalendar,CDWorldSeniorCalibration));`,
+  `const CDWorldCareer=(${dispatch.toString()})(CDWorldEditions,(edition,active)=>(${career.toString()})(edition,active,CDWorldInitialContracts,CDWorldLnrCalendar,CDWorldSeniorCalibration,CDWorldPlayerCorrections));`,
   `CDWorldCareer.installHooks();if(CDWorldPacificRegistry)CDWorldSRPMatch.installHooks();if(CDWorldJapanRegistry){CDWorldJapanMatch.installHooks();CDWorldJapanQuota.installHooks();}const CDNationaleReducedBench=CDWorldNationaleRegistry?(${nationaleSquad.toString()})():null;`,
  ].join('');
 }
