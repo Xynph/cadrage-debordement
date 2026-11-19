@@ -744,8 +744,8 @@ test('Moteur natif : rien sans le drapeau ; avec, chaque essai en jeu courant (e
   const M = require('./helpers/carriere-monde.cjs');
   const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
   // Carrière Monde (club 102, cadence de la semaine), premier match du manager joué minute par minute.
-  const jouer = drapeau => {
-    const jeu = M.ouvrir({ hebdomadaire: true, seed: 7, matchChoreography: drapeau });
+  const jouer = (drapeau, seed = 7) => {
+    const jeu = M.ouvrir({ hebdomadaire: true, seed, matchChoreography: drapeau });
     try {
       let model = M.jouerLeMatch(jeu, M.jusquAuMatch(jeu, M.creer(jeu, 102)), { delegue: false });
       assert.equal(model.meta.edition, 'world-champ');
@@ -792,14 +792,21 @@ test('Moteur natif : rien sans le drapeau ; avec, chaque essai en jeu courant (e
   // Plaqueur nommé par le moteur (fait `tackler`) : c'est lui qui plaque à l'écran au bout du gain
   // (sauf relais s'il est distancé), le même joueur que la colonne Plaq. de l'entracte.
   let plaquages = 0, nommes = 0;
-  for (const tf of avec.tempsForts) {
-    const c = tf.choregraphie;if (!c) continue;
-    for (const p of tf.plans) {
-      const s = avec.live.events[p.index]?.scene;if (s?.kind !== 'carry' || s.tackler == null) continue;
-      const e = c.evenements.find(x => x.type === 'plaquage' && x.porteur === String(s.actor) && x.cible != null && Math.abs(x.cible - s.to.x) < 0.6);
-      if (!e) continue;plaquages++;if (e.plaqueur === String(s.tackler)) nommes++;
+  const compter = run => {
+    for (const tf of run.tempsForts) {
+      const c = tf.choregraphie;if (!c) continue;
+      for (const p of tf.plans) {
+        const s = run.live.events[p.index]?.scene;if (s?.kind !== 'carry' || s.tackler == null) continue;
+        const e = c.evenements.find(x => x.type === 'plaquage' && x.porteur === String(s.actor) && x.cible != null && Math.abs(x.cible - s.to.x) < 0.6);
+        if (!e) continue;plaquages++;if (e.plaqueur === String(s.tackler)) nommes++;
+      }
     }
-  }
+  };
+  compter(avec);
+  // Un seul match ne donne que 13 à 30 plaquages, et l'effectif du jour (corrections de postes du monde réel, 19/11/2026)
+  // suffit à faire passer 0,55 à 0,38 sans toucher au chorégraphe : on ajoute deux autres graines (même exigence,
+  // échantillon triplé) pour que le ratio mesure le chorégraphe et non le scénario d'une graine.
+  for (const seed of [8, 9]) compter(jouer(true, seed));
   // Seuil : la proportion dépend du scénario de la graine (relais quand le plaqueur est distancé).
   // Le jugement du staff (#803) change les choix de joueurs donc le match : 17/23 (0,74) contre ≥ 0,75 sans lui
   // (STAFF_JUDGEMENT_RULES=0, test vert) ; ce n'est pas une régression du chorégraphe.
