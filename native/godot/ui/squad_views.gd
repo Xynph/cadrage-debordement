@@ -682,16 +682,48 @@ static func lineup(app:Control) -> Control:
 	var bleus: Dictionary = app.model.get("clubLife", {}).get("doublons", {})
 	if bool(bleus.get("applies", false)):
 		var a_reposer: Array = bleus.get("reposer", [])
+		var noms_par_id := {}
+		for p: Variant in app.model.get("squad", []):
+			if p is Dictionary: noms_par_id[str(p.get("id", ""))] = str(p.get("name", ""))
 		var noms: Array = []
 		for item: Variant in a_reposer:
-			if item is Dictionary:
-				for p: Variant in app.model.get("squad", []):
-					if p is Dictionary and str(p.get("id", "")) == str(item.get("playerId", "")): noms.append(str(p.get("name", "")))
+			if item is Dictionary and noms_par_id.has(str(item.get("playerId", ""))): noms.append(noms_par_id[str(item.get("playerId", ""))])
 		if not noms.is_empty():
-			var bleus_bloc := G.wrap("BLEUS  ·  %s doit souffler ce week-end (protocole : 2 repos sur 8 matchs)" % ", ".join(noms), 11, G.ALERT)
-			bleus_bloc.name = "LineupBleusNotice"
-			bleus_bloc.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus."
-			side.add_child(bleus_bloc)
+			# Capture 1280×720 du 19/11 (8 matchs d'historique) : à 11 px en simple ligne de texte, l'alerte se perdait sous
+			# le quota (13 px) et n'offrait aucune action. Encadré rouge à 13 px, accord au pluriel et un bouton par joueur
+			# qui applique le remplaçant proposé par le staff (même calcul que le courrier de la cellule FFR-LNR).
+			var cadre := PanelContainer.new()
+			cadre.name = "LineupBleusNotice"
+			var fond := StyleBoxFlat.new()
+			fond.bg_color = Color(G.ALERT, 0.12)
+			fond.border_color = G.ALERT
+			fond.set_border_width_all(0)
+			fond.border_width_left = 4
+			fond.set_corner_radius_all(4)
+			fond.content_margin_left = 12; fond.content_margin_right = 10; fond.content_margin_top = 8; fond.content_margin_bottom = 8
+			cadre.add_theme_stylebox_override("panel", fond)
+			var pile := VBoxContainer.new()
+			pile.add_theme_constant_override("separation", 6)
+			cadre.add_child(pile)
+			var verbe := "doit" if noms.size() == 1 else "doivent"
+			var titre := G.wrap("BLEUS  ·  %s %s souffler ce week-end" % [", ".join(noms), verbe], 13, G.ALERT)
+			titre.name = "LineupBleusTitle"
+			pile.add_child(titre)
+			pile.add_child(G.wrap("Protocole de la liste des 33 : au moins 2 repos sur 8 matchs de club. L'aligner quand même coûte la confiance du staff des Bleus.", 12, G.MUTED))
+			cadre.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus."
+			for change: Variant in bleus.get("changes", []):
+				if not (change is Dictionary): continue
+				var sortant := str(noms_par_id.get(str(change.get("sortant", "")), ""))
+				var entrant := str(noms_par_id.get(str(change.get("playerId", "")), ""))
+				if sortant.is_empty() or entrant.is_empty(): continue
+				var slot := int(change.get("slot", 0))
+				var entrant_id: Variant = change.get("playerId")
+				var faire := G.button("FAIRE SOUFFLER %s  →  %s (%d %%)" % [sortant.to_upper(), entrant, int(change.get("entrantCondition", 0))], func(): app._command("set_lineup", {"playerId": entrant_id, "slot": slot}))
+				faire.name = "LineupBleusRest" + str(change.get("sortant", "")).replace(":", "_")
+				faire.tooltip_text = "Remplaçant proposé par le staff au même poste, hors feuille et disponible."
+				faire.disabled = not app._live().is_empty()
+				pile.add_child(faire)
+			side.add_child(cadre)
 	var auto:=G.button("SÉLECTION AUTOMATIQUE DU STAFF",func():app._command("auto_lineup"))
 	auto.name="LineupAutomatic"
 	auto.disabled=not app._live().is_empty()

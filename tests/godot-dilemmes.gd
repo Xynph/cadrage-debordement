@@ -145,6 +145,32 @@ func run() -> void:
 	var carte := app.find_children("Concussion_*", "", true, false)
 	check(not carte.is_empty(), "Médical : un joueur sous protocole commotion")
 	await capture("3-infirmerie-commotion-hia")
+	# 4. Bannière des Bleus (carrière avec ~8 matchs d'historique, captures seulement).
+	var bleus_save := OS.get_environment("CD_DILEMMES_BLEUS")
+	if not bleus_save.is_empty():
+		app._command("import", {"text": FileAccess.get_file_as_string(bleus_save)})
+		await wait_engine()
+		app.timer.stop()
+		await fermer_gabi()
+		check(not (app.model.get("clubLife", {}).get("doublons", {}).get("reposer", []) as Array).is_empty(), "Bleus : un titulaire doit souffler")
+		app._navigate("Composition")
+		await settle(30)
+		var banniere := page_visible("LineupBleusNotice")
+		check(banniere != null, "Feuille de match : la bannière des Bleus est visible")
+		if banniere != null:
+			var r := (banniere as Control).get_global_rect()
+			check(r.size.x > 0 and r.end.y <= taille.y + 0.5, "Bannière des Bleus dans l'écran 1280x720 (%s)" % str(r))
+			var boutons := (banniere as Node).find_children("LineupBleusRest*", "Button", true, false)
+			check(not boutons.is_empty(), "Bannière des Bleus : bouton « Faire souffler »")
+		await capture("4-feuille-match-banniere-bleus")
+		if banniere != null:
+			var bouton := (banniere as Node).find_children("LineupBleusRest*", "Button", true, false)
+			if not bouton.is_empty():
+				(bouton[0] as Button).pressed.emit()
+				await wait_engine()
+				await settle(20)
+				check(page_visible("LineupBleusNotice") == null, "Après « Faire souffler », la bannière disparaît")
+				await capture("5-feuille-match-bleus-apres-repos")
 	fin()
 
 func fin() -> void:
