@@ -9,7 +9,7 @@ assert.ok(all.length >= 81, 'Toutes les suites doivent être découvertes');
 assert.ok(all.includes('tests/saves.cjs'));
 const groups = planShards(all);
 assert.equal(groups.length, SHARD_COUNT);
-assert.equal(SHARD_COUNT, 7);
+assert.equal(SHARD_COUNT, 10);
 for (const group of groups) assert.ok(group.length, 'Groupe vide');
 assert.equal(new Set(groups.flat()).size, all.length, 'Suite dupliquée');
 assert.deepEqual(groups.flat().sort(), all.slice().sort(), 'Suite omise');
@@ -42,9 +42,9 @@ for (let shard = 1; shard <= SHARD_COUNT; shard++) {
   assert.equal(run.status, 0, run.stderr);
   listed.push(...run.stdout.trim().split('\n'));
 }
-assert.deepEqual(listed.sort(), all.slice().sort(), 'Les sept shards CLI couvrent toutes les suites');
-assert.equal(cli('8').status, 1);
-assert.match(cli('8').stderr, /hors de 1\.\.7/);
+assert.deepEqual(listed.sort(), all.slice().sort(), 'Les shards CLI couvrent toutes les suites');
+assert.equal(cli(String(SHARD_COUNT + 1)).status, 1);
+assert.match(cli(String(SHARD_COUNT + 1)).stderr, new RegExp('hors de 1\\.\\.' + SHARD_COUNT));
 for (const args of [[], ['0'], ['x'], ['1', 'full', '0'], ['1', 'full', '2', 'extra']]) {
   const run = cli(...args);
   assert.equal(run.status, 2, args.join(' '));
@@ -59,3 +59,17 @@ const scores = planShards(snapshot).map(group =>
 assert.ok(Math.max(...scores) - Math.min(...scores) <= 3,
   'Mauvais équilibre historique : ' + scores.join('/'));
 console.log('CI-sharding OK : ' + all.length + ' suites, sans exclusion');
+
+// Mode rapide (19/11/2026) : suites courtes (poids ≤ seuil) et suites modifiées quel que soit leur poids.
+{
+  const { rapideSuites, rapideOptions } = require('../ci/shard-tests.cjs');
+  const w = { 'tests/court.cjs': 10, 'tests/long.cjs': 900, 'tests/modifie.cjs': 900 };
+  assert.deepEqual(rapideSuites(Object.keys(w), w, 1, new Set(['tests/modifie.cjs']), 60), ['tests/court.cjs', 'tests/modifie.cjs']);
+  assert.deepEqual(rapideSuites(['tests/nouvelle.cjs'], w, 1, new Set(), 60), ['tests/nouvelle.cjs'], 'suite sans mesure côté JS : gardée');
+  assert.deepEqual(rapideSuites(['tests/nouvelle.cjs'], w, 30, new Set(), 20), [], 'suite Godot sans mesure : exclue');
+  assert.equal(rapideOptions({}), null);
+  assert.deepEqual([...rapideOptions({ CD_RAPIDE: '1', CD_RAPIDE_TESTS: 'tests/a.cjs  tests/b.cjs' }).modifiees], ['tests/a.cjs', 'tests/b.cjs']);
+  const rapide = spawnSync(process.execPath, [path.resolve(__dirname, '../ci/shard-tests.cjs'), '1', 'full', String(SHARD_COUNT)],
+    { encoding: 'utf8', env: { ...process.env, CD_RAPIDE: '1', CD_RAPIDE_TESTS: '' } });
+  assert.equal(rapide.status, 0, rapide.stderr);
+}

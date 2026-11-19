@@ -11,6 +11,7 @@ extends Control
 ## L'écran n'invente rien : tout vient du modèle (`live`, `live.pilotage`, `live.direct.notes`, `squad`) et
 ## chaque champ optionnel absent masque son bloc. Les règles du banc (première ligne, cartons) restent au
 ## moteur : un refus s'affiche en une ligne sous le terrain.
+const FocusLater = preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/game_skin.gd")
 const S = preload("res://ui/contextual/skin.gd")
@@ -86,7 +87,8 @@ func ouvrir(vers: String = "composition", poste: int = -1) -> void:
 	_cle = ""
 	_rafraichir()
 	var reprise: Control = find_child("TeamResume", true, false)
-	if reprise != null: reprise.grab_focus.call_deferred()
+	# Focus au tour suivant, seulement si le bouton est encore dans l'arbre (la page peut être reconstruite entre-temps).
+	if reprise != null: FocusLater.grab(reprise)
 
 ## « Valider et reprendre » : la fenêtre se ferme et le match repart.
 func fermer(reprendre: bool = true) -> void:
@@ -422,7 +424,7 @@ func _rafraichir() -> void:
 	else: _composition()
 	if not focus_nom.is_empty():
 		var retrouve: Control = find_child(focus_nom, true, false)
-		if retrouve != null and retrouve.focus_mode != Control.FOCUS_NONE: retrouve.grab_focus.call_deferred()
+		if retrouve != null and retrouve.focus_mode != Control.FOCUS_NONE: FocusLater.grab(retrouve)
 
 func _fond() -> void:
 	var gradient := Gradient.new()

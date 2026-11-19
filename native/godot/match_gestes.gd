@@ -86,7 +86,10 @@ const OUTRO := 0.45
 const FRAME_IN := 1.5      # rapprochement, en secondes
 const FRAME_OUT := 1.8     # retour au cadrage normal
 const FRAME_SMOOTH := 0.6  # amortissement du centre et de la taille entre deux temps du geste
-const FRAME_MIN := {"tv": 26.0, "action": 14.0}  # hauteur visible minimale, en mètres (TV : 15 m, 11 m avant le 12 novembre 2026)
+# Hauteur visible minimale, en mètres (TV : 11 m, puis 15 m le 12 novembre 2026, 26 m avec la caméra en
+# perspective, 15 m le 19 novembre 2026 au soir avec la vue TV plus basse et plus serrée : égale au bas
+# du cadrage de base, SUIVI de match_cadrage.gd, comme avant).
+const FRAME_MIN := {"tv": 15.0, "action": 14.0}
 const FRAME_MARGIN := 1.2
 # Pendant le retour, si le suivi d'origine part en panoramique rapide (ballon
 # renvoyé au centre après un essai : 100 m/s), le recadrage cède aussitôt la place

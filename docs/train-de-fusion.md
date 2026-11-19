@@ -1,5 +1,7 @@
 # Train de fusion (18/11/2026)
 
+> **Arrêté le 19/11/2026 (décision de Léo)** : un seul lot fusionné sur dix en 16 h. Voie par défaut : fusion automatique classique en squash (AGENTS.md). Ce document reste pour une éventuelle reprise.
+
 ## Pourquoi
 
 Le dépôt appartient à un compte personnel : la file de fusion native de GitHub (qui
@@ -12,7 +14,8 @@ simultanés du compte gratuit et tout attendait.
 1. Ouvrir la PR **en brouillon** (CI légère : 2 jobs < 1 min) et écrire la passation.
 2. Quand elle est prête : poser l'étiquette **`train`**. Ne pas la passer en prête, ne
    pas activer la fusion automatique.
-3. C'est tout. Le train passe toutes les 20 minutes (ou à la main : Actions →
+3. C'est tout. Le train part dès que l'étiquette est posée (s'il roule déjà, il
+   repart juste après), et toutes les 20 minutes en secours (ou à la main : Actions →
    « Train de fusion » → Run workflow) ; il commente la PR, la ferme une fois fusionnée
    et poste `FUSIONNÉ` sur #591.
 

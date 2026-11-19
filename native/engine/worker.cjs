@@ -95,7 +95,7 @@ const NATIONAL_COMMANDS=['national_take_job','national_leave_job','national_play
 NATIONAL_COMMANDS.forEach(command=>COMMANDS.add(command));
 const NATIONAL_ONLY_COMMANDS=new Set(['new_career','import','save','advance_day','next_season',...NATIONAL_COMMANDS]);
 const FULL_VALIDATION=new Set(['new_career','import','finish_round','next_season']);
-const BLOCKED_AFTER_RESULT=new Set(['begin_match','tick','pause','delegate','train','auto_lineup','substitute','next_season']);
+const BLOCKED_AFTER_RESULT=new Set(['begin_match','tick','pause','delegate','train','auto_lineup','substitute','next_season','match_incident_choice']);
 function applicationRoot(engineDirectory=__dirname){
  // The only supported layouts are repo/native/engine and bundle/engine/core.
  const isDevelopment=path.basename(path.dirname(engineDirectory))==='native'&&!fs.existsSync(path.join(engineDirectory,'core'));
@@ -516,7 +516,7 @@ function createBridge(options={}){
   // internationale gardent leur présentation de la dernière réponse complète jusqu'au coup de sifflet final ou à la
   // première commande hors du direct. Les sections lourdes de la carrière touchées pendant le direct sont relues à
   // la projection complète suivante.
-  const LIVE_COMMANDS=new Set(['tick','pause','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','substitute','match_talk_decide','match_talk_continue']);
+  const LIVE_COMMANDS=new Set(['tick','pause','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','substitute','match_talk_decide','match_talk_continue','match_incident_choice']);
   let projectionState=null,versionsSynced=false;
   // Versions des sections de la carrière pour cette projection (state-versions.cjs), avant toute lecture mémorisée.
   const refreshVersions=operation=>{

@@ -88,6 +88,8 @@ budget() {
     tests/continuer-evenement-monde.cjs|tests/retouches-coherence.cjs) echo 600s ;;
     # Dilemmes de presse (#727) : carrière Monde, 146 s sur le runner sur main (shard 7) et délai de 180 s dépassé sur la PR #730 (shard 4, même code) ; budget ≈ 3 fois.
     tests/presse-dilemmes-monde.cjs) echo 420s ;;
+    # Presse rapide (#928) : carrière Monde, 192 s en local sur main (19/11) et délai de 180 s dépassé dans le train 20261118-2307 ; budget ≈ 2 fois.
+    tests/presse-rapide-monde.cjs) echo 420s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
     tests/homme-du-match-postes.cjs) echo 600s ;;
     # Fiche club : carrière Monde hebdomadaire, 3 journées (293 s en local sous forte charge).
@@ -195,6 +197,9 @@ budget() {
     # Protocole commotion (carrière Monde, HIA en match puis repos jour par jour) : moteur JS seul, sans lien avec le lot du match 3D ;
     # 180 s dépassées sur la PR #943 (Suites 5/7, run 44436008167) avec le runner ~1,5 fois plus lent. Budget ≈ 3 fois, assertions inchangées.
     tests/commotion-hia.cjs) echo 420s ;;
+    # Incidents de match (blessures, saignements, choix du manager) : carrière Monde, deux matchs rejoués minute par
+    # minute puis un direct au worker ; 36 s en local. Budget ≈ 8 fois, comme les autres suites Monde du match.
+    tests/incidents-match.cjs) echo 300s ;;
     *) echo 180s ;;
   esac
 }

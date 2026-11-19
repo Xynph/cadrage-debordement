@@ -137,14 +137,16 @@ function setConsigne(l,axe,valeur,auteur='manager'){
 }
 // Consigne d'une équipe : celle du manager pour le club joué, celle du banc adverse sinon (absente des rencontres
 // créées avant : aucun effet, comme avant).
-const pilConsigne=(l,side,axe)=>!pilotageActif(l)?null:side===l.userSide?l.pilotage.consignes[axe]:l.pilotage.consignesAdverses?.[axe]??null;
+// Match entre deux clubs de l'ordinateur : chaque banc a ses propres consignes (`cotes`).
+const pilConsigne=(l,side,axe)=>!pilotageActif(l)?null:l.pilotage.cotes?l.pilotage.cotes[side]?.consignes[axe]??null:side===l.userSide?l.pilotage.consignes[axe]:l.pilotage.consignesAdverses?.[axe]??null;
 // Ce que le manager voit changer chez l'adversaire (le jeu sur le terrain, pas un ordre entendu).
 const CONSIGNES_ADVERSES_VUES={
  piedJeu:{moins:'garde le ballon en main',normal:'revient à un jeu au pied équilibré',plus:'occupe le terrain au pied'},
  rucks:{prudente:'ne conteste plus les rucks',normale:'conteste les rucks normalement',agressive:'conteste chaque ruck'},
  discipline:{stricte:'resserre sa discipline',normale:'relâche un peu sa discipline',limite:'joue à la limite'},
  rythme:{lent:'ralentit le jeu',normal:'revient à un rythme normal',rapide:'accélère le rythme'},
- touche:{sure:'assure ses lancers en touche',normale:'varie ses lancers en touche',risquee:'vise le fond d\'alignement'}
+ touche:{sure:'assure ses lancers en touche',normale:'varie ses lancers en touche',risquee:'vise le fond d\'alignement'},
+ finDeMatch:{montre:'joue la montre',normal:'revient à un jeu normal',tout:'tente le tout pour le tout'}
 };
 function nomAdverse(l){return S?.clubs?.[l.pair[1-l.userSide]]?.name||'L\'adversaire'}
 function setConsigneAdverse(l,axe,valeur){
@@ -226,6 +228,7 @@ function pilotageMaul(l,side,kind){
 // Rend {freq, biais} pour la mêlée introduite par `side` (tactical-plans.js, penaliteConquete) ; `a`, `b` : packs.
 function pilotageMelee(l,side,a,b){
  if(!pilotageActif(l))return {freq:1,biais:0};
+ if(!(l.userSide>=0))return {freq:1,biais:0};
  const u=l.userSide,m=pilConsigne(l,u,'melee'),dom=(side===u?a-b:b-a);
  if(m==='pousser')return {freq:1.5,biais:(side===u?1:-1)*Math.max(-.15,Math.min(.15,dom*.012))};
  if(m==='vite')return {freq:.65,biais:0};
@@ -245,8 +248,11 @@ function pilotageLineoutWon(l,side){if(pilConsigne(l,side,'touche')==='risquee')
 // Bonus d'attribut d'un joueur du club joué selon son état (causerie) et le cri de la touche en cours.
 // Lu à chaque geste : cache par état et par cri.
 let PILOTAGE_CACHE={src:null,cri:null,mods:null,ids:null};
+// Match en train de jouer sa minute (pilotageMinute) : un match de l'ordinateur simulé pendant le direct du joueur
+// (multiplex) lit les états de ses propres joueurs, pas ceux du direct.
+let PILOTAGE_EN_COURS=null;
 function pilotageSkillMod(p,k){
- const l=typeof S!=='undefined'&&S?S.live:null;
+ const l=PILOTAGE_EN_COURS||(typeof S!=='undefined'&&S?S.live:null);
  if(!l||l.pilotageVersion!==1||!l.pilotage)return 0;
  const etats=l.pilotage.etats,cri=l.pilotage.cri||null;
  if(PILOTAGE_CACHE.src!==etats||PILOTAGE_CACHE.cri!==cri){
@@ -291,10 +297,11 @@ function pilotageCrisProjection(l){
  return {actif,options:Object.entries(CRIS).map(([id,x])=>{const f=criForce(l,id),tot=l.minute>=(x.des||0);
   return {id,label:x.label,note:!tot?'À partir de la '+x.des+'e minute':f===1?x.note:f===.5?'Déjà crié : effet réduit de moitié':'Trop répété : ils n’écoutent plus',disponible:tot&&!l.finished,usure:1-f}})};
 }
-// Fatigue : le rythme et « Tout donner » usent plus vite (charge par minute, rugby.js).
+// Fatigue : le rythme et « Tout donner » usent plus vite (charge par minute, rugby.js). Même règle pour les deux
+// bancs : un adversaire qui accélère s'use aussi.
 function pilotageFatigue(l,side){
- if(!pilotageActif(l)||side!==l.userSide)return 1;
- const y=l.pilotage.consignes.rythme,c=l.pilotage.cri;
+ if(!pilotageActif(l))return 1;
+ const y=pilConsigne(l,side,'rythme'),c=side===l.userSide?l.pilotage.cri:null;
  return (y==='rapide'?1.12:y==='lent'?.92:1)*(c&&l.minute<c.jusqua&&CRIS[c.id].fatigue||1);
 }
 // Prévision à 10 minutes, même formule que le moteur (rugby.js, charge × endurance), au rythme actuel.
@@ -422,19 +429,37 @@ function contexteAdverse(c){
  return out;
 }
 function vestiaireDe(nom){return /^Les /.test(nom)?'des '+nom.slice(4):/^Le /.test(nom)?'du '+nom.slice(3):/^[AEIOUYÉÈÊÂÎÔ]/i.test(nom)?'d\''+nom:'de '+nom}
-function causerieAdverse(l,phase,c,key){
- if(!pilotageActif(l)||!l.pilotage.adversaire||(phase!=='pre'&&phase!=='half'))return null;
- const adv=l.pilotage.adversaire;adv.causeries=adv.causeries||{};
- if(adv.causeries[phase])return adv.causeries[phase];
- const o=1-l.userSide,sh=l.sheets?.[o]||{},effectif=new Map((S.clubs[l.pair[o]]?.players||[]).map(p=>[p.id,p]));
+// Causerie d'un banc de l'ordinateur (`banc` : niveau, tons déjà employés, causeries faites) devant les joueurs de sa
+// feuille, dans le contexte vu de son côté (`cx`). Mêmes règles que le staff du manager ; rend le ton choisi.
+function causerieDuBanc(l,side,banc,phase,cx,cle){
+ banc.causeries=banc.causeries||{};
+ if(banc.causeries[phase])return null;
+ const sh=l.sheets?.[side]||{},effectif=new Map((S.clubs[l.pair[side]]?.players||[]).map(p=>[p.id,p]));
  const joueurs=[...new Set([...(sh.initial||[]),...(sh.bench||[])])].map(id=>effectif.get(id)).filter(Boolean);
  if(!joueurs.length)return null;
- const cx=contexteAdverse(c||{}),ctx={confiance:50,tons:adv.tons||[],niveau:adv.niveau},cle='adverse:'+key;
+ const ctx={confiance:50,tons:banc.tons||[],niveau:banc.niveau};
  const tone=tonDuStaff(joueurs,phase,cx,cle,TONS_CAUSERIE,ctx);
  const etats={...l.pilotage.etats};
  for(const p of joueurs)etats[p.id]={etat:reactionJoueur(p,tone,phase,cx,cle,false,ctx).etat,phase,adverse:true};
  l.pilotage.etats=etats;
- adv.tons=[...(adv.tons||[]),tone];adv.causeries[phase]=tone;
+ banc.tons=[...(banc.tons||[]),tone];banc.causeries[phase]=tone;
+ return tone;
+}
+// Contexte d'une causerie vu du côté `side` : pronostic (même seuil que la causerie du manager) et score.
+function contexteDuBanc(l,side,phase){
+ const d=l.score[side]-l.score[1-side],out={scoreState:d>0?'winning':d<0?'losing':'drawing'};
+ if(phase==='pre'&&typeof teamLevel==='function'&&typeof activePlayers==='function'){
+  const g=teamLevel(activePlayers(l,side))-teamLevel(activePlayers(l,1-side)),seuil=typeof RELACHEMENT!=='undefined'?RELACHEMENT.seuil:3;
+  if(g>=seuil)out.pronostic='favorite';else if(g<=-seuil)out.pronostic='underdog';
+ }
+ return out;
+}
+function causerieAdverse(l,phase,c,key){
+ if(!pilotageActif(l)||!l.pilotage.adversaire||(phase!=='pre'&&phase!=='half'))return null;
+ const adv=l.pilotage.adversaire;adv.causeries=adv.causeries||{};
+ if(adv.causeries[phase])return adv.causeries[phase];
+ const tone=causerieDuBanc(l,1-l.userSide,adv,phase,contexteAdverse(c||{}),'adverse:'+key);
+ if(!tone)return null;
  l.pilotage.journal.push({minute:l.minute,auteur:'adversaire',texte:`Vestiaire ${vestiaireDe(nomAdverse(l))} : discours ${TONS_ADVERSES[tone]} ${phase==='pre'?'avant le match':'à la mi-temps'}.`});
  l.pilotage.journal=l.pilotage.journal.slice(-30);
  return tone;
@@ -453,6 +478,11 @@ function reglesDuStaff(l,side,c,lv,graine,recent,maintenant,poser){
  if(touchesPerdues>=2&&c.touche!=='sure'&&voit('touche'))poser('touche','sure',`${pl(touchesPerdues,'touche perdue','touches perdues')} en 5 minutes.`);
  if(l.minute>=55&&ecart<0&&voit('poursuite')){const r=`Mené de ${-ecart} : il faut garder le ballon et accélérer.`;poser('rythme','rapide',r);poser('piedJeu','moins',r)}
  else if(l.minute>=65&&ecart>0&&ecart<=10&&voit('gestion')){const r=`${ecart} point${ecart>1?'s':''} d’avance à tenir : jouer dans leur camp.`;poser('piedJeu','plus',r);poser('rythme','lent',r)}
+ // Dix dernières minutes : jouer la montre devant d'un score au plus, tout tenter mené de deux scores au plus.
+ if(l.minute>=70&&c.finDeMatch==='normal'){
+  if(ecart>0&&ecart<=7&&voit('montre'))poser('finDeMatch','montre',`${ecart} point${ecart>1?'s':''} d’avance : tuer le temps.`);
+  else if(ecart<0&&ecart>=-14&&voit('tout'))poser('finDeMatch','tout',`Mené de ${-ecart} : tout tenter.`);
+ }
 }
 // Avis du staff (fenêtre Équipe, bouton « Appliquer ces consignes ») : toutes les 5 minutes, en direct comme en
 // délégation, le staff relit le match avec sa compétence (il peut ne rien voir) et propose des consignes. Aucun
@@ -497,6 +527,56 @@ function pilotageAdversaire(l){
  const o=1-l.userSide,recent=adv.releve||pilotageReleve(l,o),maintenant=pilotageReleve(l,o);
  adv.releve=maintenant;
  reglesDuStaff(l,o,l.pilotage.consignesAdverses,adv.niveau,'adverse|'+l.worldContext.id+'|',recent,maintenant,(axe,v)=>setConsigneAdverse(l,axe,v));
+}
+
+// --- Matchs entre deux clubs de l'ordinateur (demande de Léo, 19/11/2026) ---
+// Chaque banc fait ce que fait le banc adverse du match du joueur : causerie d'avant-match et de mi-temps, consignes
+// revues toutes les 5 minutes (reglesDuStaff), avec la compétence de ses entraîneurs. Les remplacements selon la
+// fatigue et les révisions du plan de jeu restent ceux du moteur (manageSubstitutions, adaptManager). Arbitre désigné
+// comme pour le match du joueur. Aucun tirage aléatoire ajouté : tout passe par pilotageHash.
+function miTempsPassee(l){return typeof flowRules==='function'&&flowRules(l)?!!(l.flow?.atBreak||l.flow?.period===2):l.minute>=40}
+function initPilotageIA(l,f){
+ if(!PILOTAGE_RULES||!l||l.userSide!==-1||!f||f.id==null||l.pilotage)return;
+ const repli=NIVEAU_ADVERSE[l.aiLevel||S?.difficulty]||NIVEAU_ADVERSE.classique;
+ l.pilotageVersion=1;
+ l.pilotage={ia:true,fixtureId:String(f.id),arbitre:arbitreDuMatch(f.id,f.competitionId),consignes:{...CONSIGNES_NEUTRES},depuis:{},releves:{},etats:{},journal:[],
+  cotes:[0,1].map(side=>({consignes:{...CONSIGNES_NEUTRES},niveau:niveauStaff(l.pair[side],repli),minute:-1,releve:null,tons:[],causeries:{},changements:0}))};
+ coachOrdinateur(l);
+}
+function coachOrdinateur(l){
+ const p=l.pilotage;
+ for(const side of [0,1]){
+  const b=p.cotes[side],cle='ia:'+side+':'+p.fixtureId;
+  if(!b.causeries.pre)causerieDuBanc(l,side,b,'pre',contexteDuBanc(l,side,'pre'),cle);
+  if(!b.causeries.half&&miTempsPassee(l))causerieDuBanc(l,side,b,'half',contexteDuBanc(l,side,'half'),cle);
+  if(l.minute%5||l.minute===b.minute||l.minute===0)continue;
+  b.minute=l.minute;
+  const recent=b.releve||pilotageReleve(l,side),maintenant=pilotageReleve(l,side);b.releve=maintenant;
+  reglesDuStaff(l,side,b.consignes,b.niveau,cle+'|',recent,maintenant,(axe,v)=>{if(b.consignes[axe]!==v){b.consignes[axe]=v;b.changements++}});
+ }
+}
+// Après chaque minute jouée, quel que soit le match : bancs de l'ordinateur, et banc adverse du match du joueur (aussi
+// dans la version web, sans le domaine natif match-delegation). Causeries adverses faites ici si la causerie du manager
+// ne les a pas déjà déclenchées (match sans causerie, version web).
+function pilotageApresMinute(l){
+ if(!pilotageActif(l)||l.finished)return;
+ if(l.pilotage.cotes){coachOrdinateur(l);return}
+ if(!(l.userSide>=0)||!l.pilotage.adversaire||!l.worldContext)return;
+ const adv=l.pilotage.adversaire,u=l.userSide;
+ if(!adv.causeries?.pre)causerieAdverse(l,'pre',contexteDuBanc(l,u,'pre'),'moteur');
+ if(!adv.causeries?.half&&miTempsPassee(l))causerieAdverse(l,'half',contexteDuBanc(l,u,'half'),'moteur');
+ pilotageAdversaire(l);
+}
+function pilotageMinute(l,moteur){
+ const avant=PILOTAGE_EN_COURS;PILOTAGE_EN_COURS=l||null;
+ try{const r=moteur(l);if(l)pilotageApresMinute(l);return r}
+ finally{PILOTAGE_EN_COURS=avant}
+}
+// Branché sur la minute du moteur (rugby.js, chargé avant ce fichier).
+if(typeof advanceRugby==='function'&&!advanceRugby.pilotageMinute){
+ const moteurRugby=advanceRugby;
+ advanceRugby=function(l){return pilotageMinute(l,moteurRugby)};
+ Object.assign(advanceRugby,moteurRugby,{pilotageMinute:true});
 }
 
 // --- Projection pour l'écran 2D ---

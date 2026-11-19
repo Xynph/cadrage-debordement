@@ -310,6 +310,16 @@ func run() -> void:
 				app._command("match_talk_continue", {"key": causerie.key, "phase": causerie.phase, "skip": true})
 		elif live.get("paused", false) and not live.get("finished", false) and (regie == null or regie.etat != regie.JEU):
 			attente += delta
+			# Arrêt sur incident (blessure, saignement, choc, première ligne) : comme un joueur, choisir un
+			# autre joueur que celui proposé par le staff, une fois, avant de reprendre.
+			if attente >= 1.5 and regie != null:
+				var options: Node = regie.between.find_child("MatchBetweenStopOptions", true, false) if regie.get("between") != null else null
+				if options != null and options.is_visible_in_tree() and options.get_child_count() >= 2:
+					var bouton: Variant = options.get_child(1)
+					if bouton is Button and not bouton.disabled and not report.has("choix_incident"):
+						report["choix_incident"] = {"minute": int(live.get("minute", 0)), "option": bouton.text, "image": report.images.size() + 1}
+						print("MATCH_FILME choix_incident=", bouton.text)
+						bouton.pressed.emit()
 			if attente >= 3.0:
 				attente = 0.0
 				app._command("pause", {"paused": false})

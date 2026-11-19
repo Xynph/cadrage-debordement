@@ -39,7 +39,12 @@ module.exports=function positionAptitudes(){
   const qa=p.nationaleQualifications,qb=p.worldProfile?.position?.qualifications,qualifierSource={qa:Array.isArray(qa)?qa.slice():qa,qb:Array.isArray(qb)?qb.slice():qb,qv:p.worldRatingsVersion};
   // Legacy missing skills are deterministically generated on a detached object.
   const q=p.skills?p:{...p};ensureSkills(q);
-  const qualities=keys.map(k=>skill(q,k));
+  // Qualités durables seulement (même expression que roleNote) : ni l'état du moment en match (pilotageSkillMod,
+  // causerie, cri), ni la mémoire du pas de match (memoSkill). Sinon le résultat mis en cache, et la mémoire du match
+  // remplie au passage, dépendaient du moment du premier calcul : un rejeu depuis une sauvegarde (objets joueurs neufs,
+  // cache vide) ne redonnait pas le même match.
+  const quality=k=>clamp(q.skills[k]+q.rating-q.skillBase+focusedBonus(q,k),15,99);
+  const qualities=keys.map(quality);
   const front=[0,1,2].filter(i=>baseSlot(p,i)).map(i=>i+1);
   const key=[p.id,p.pos,p.fam,p.rating,p.skillBase,...qualities,...front].join('|');
   let result=cache.get(key);
@@ -51,7 +56,7 @@ module.exports=function positionAptitudes(){
     [[4,5],[6,7],[11,14],[12,13]].find(numbers=>numbers.includes(primary))??[primary];
    const main=baseNote(q),familyNotes=Array.from({length:9},(_,f)=>baseNote(q,f)),raw=FAMILIES.map(f=>familyNotes[f]);
    const candidates=(adjacent[p.fam]||[]).filter(f=>{
-    const value=familyNotes[f];return value>=Math.max(55,main*.90)&&critical[f].every(k=>skill(q,k)>=Math.max(50,main*.72));
+    const value=familyNotes[f];return value>=Math.max(55,main*.90)&&critical[f].every(k=>quality(k)>=Math.max(50,main*.72));
    }).sort((a,b)=>familyNotes[b]-familyNotes[a]||(adjacent[p.fam].indexOf(a)-adjacent[p.fam].indexOf(b)));
    const mastered=candidates[0],ratings={},secondary=[];
    for(let i=0;i<15;i++){

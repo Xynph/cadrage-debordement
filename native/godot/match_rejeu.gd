@@ -32,12 +32,14 @@ const VISEE_LISSAGE := 0.12
 ## Au-delà de la durée prévue, plus cette marge (s réelles), le ralenti s'arrête de lui-même.
 const MARGE := 1.0
 ## Angle du ralenti : retraits essayés (m en deçà du ballon), préférence pour l'angle par défaut (gêne
-## ajoutée à l'autre côté ; un dixième par mètre de retrait en plus ou en moins). La gêne est la
-## moyenne, sur toute la fenêtre rejouée (AVANT s avant l'aplati), des joueurs et des montants au
-## premier plan (19/11/2026 : seule la dernière 0,8 s comptait, un défenseur ou un pied de poteau
-## pouvait remplir le début du ralenti). Retrait négatif : caméra au-delà du ballon, dans l'en-but, qui
-## regarde vers le terrain (essai au pied des poteaux : les montants restent derrière le marqueur).
-const RETRAITS := [4.0, 8.0, 12.0, 0.0, -6.0]
+## ajoutée à l'autre côté ; un dixième par mètre de retrait en plus ou en moins). La gêne couvre toute
+## la fenêtre rejouée (AVANT s avant l'aplati : porteur masqué et premier plan compris depuis le
+## 19/11/2026) et pèse surtout l'aplati et l'image finale (voir
+## `meilleur_angle`). Retrait négatif : caméra au-delà du ballon, dans l'en-but, qui regarde vers le
+## terrain (essai au pied des poteaux : les montants restent derrière le marqueur). Retraits
+## intermédiaires : un ballon à un mètre d'un montant est masqué sous presque tous les angles d'un
+## même côté, chaque mètre de plus est une chance de passer à côté de la protection.
+const RETRAITS := [4.0, 8.0, 12.0, 0.0, -6.0, 6.0, 2.0, 16.0, -3.0]
 const PREFERENCE := 0.3
 
 var view: Node3D
@@ -72,7 +74,7 @@ var _process_avant: Array = []
 var _cibles: Dictionary = {}
 var _cote := Vector2.ONE
 var _retrait := Cadrage.REJEU_RETRAIT
-## Gêne de l'angle retenu (Cadrage.gene_rejeu cumulée ; contrôle des tests).
+## Gêne de l'angle retenu (`meilleur_angle` ; 8 ou plus : marqueur masqué à l'aplati ; contrôle des tests).
 var gene_angle := 0.0
 var _curseur := 0
 var _ballon := Vector3.ZERO
@@ -434,9 +436,65 @@ func _choisir_angle() -> void:
 	gene_angle = choix.gene
 
 
-## Meilleur angle pour les poses `poses` (format du tampon) à partir de `debut` (s de vue) : côté et
-## retrait qui minimisent la gêne moyenne (joueurs et montants) ; à gêne égale, l'angle par défaut.
+## Meilleur angle pour les poses `poses` (format du tampon) à partir de `debut` (s de vue ; l'aplati
+## est à `debut` + AVANT) : côté et retrait de moindre gêne ; à gêne égale, l'angle par défaut.
+## Gêne d'un angle (19/11/2026, film après PR #962 : marqueur aplati derrière la protection d'un
+## poteau, défenseur en gros plan sur l'image finale ; la moyenne sur 1,9 s diluait ces 0,3 s) :
+##  - la plus forte de la moyenne sur la fenêtre et de FIN_POIDS fois la pire image des FIN dernières
+##    secondes (joueurs et montants, Cadrage.gene_rejeu et gene_poteaux) ;
+##  - VETO si le marqueur est masqué (Cadrage.masque_rejeu) à l'aplati ou sur l'image finale, plus
+##    VETO fois la part des images masquées de CLE s avant l'aplati jusqu'à la fin ;
+##  - PROCHE fois le pire premier plan (Cadrage.premier_plan_rejeu) de la dernière seconde ;
+##  - le reste de l'action (du début de la fenêtre jusqu'à CLE s avant l'aplati, ou jusqu'à la dernière
+##    seconde pour le premier plan) : ACTION_VETO fois la part des images où le marqueur est masqué,
+##    plus ACTION_PROCHE fois le premier plan moyen, le tout plafonné à ACTION_PLAFOND ;
+##  - les préférences (autre côté, retrait différent).
+## 19 novembre 2026 : film mf3 (images 0041, 0152, 0198, 0320) : angle propre à l'aplati, mais au début
+## et au milieu du ralenti, la protection d'un poteau ou un défenseur en gros plan au bord de l'image
+## cachait le porteur ; ces images ne comptaient que dans la moyenne de gêne, trop faible face à la
+## préférence pour l'angle par défaut. L'action entière compte désormais, mais moins que l'aplati :
+## ACTION_PLAFOND reste sous VETO, un angle masqué à l'aplati perd toujours face à un angle propre à
+## l'aplati gêné plus tôt (à gênes de fin comparables).
+## 19 novembre 2026, second film (mfin, images 0142, 0146, 0338) : porteur encore caché en pleine course
+## par la protection d'un poteau (0,42 m de côté, haute de 1,6 m : POTEAU_PROTECTION la modélise déjà).
+## Deux causes : ACTION_VETO (4) trop faible (huit images masquées sur quarante coûtaient 0,8, autant
+## que deux pas de retrait ; essai entre les poteaux : caméra dans l'en-but et montant devant le
+## porteur) ; et la caméra réellement filmée, amortie (CAMERA_LISSAGE), traîne derrière son plan quand
+## le porteur court vite : la ligne de visée passe à côté de celle mesurée. Désormais ACTION_VETO vaut
+## 12 (une image masquée sur quarante coûte 0,3, la préférence d'angle), ACTION_PROCHE 3 (un joueur
+## à 4 m tout du long : 2,5) ; le marqueur est jugé masqué, et le premier plan mesuré, sous la caméra
+## du plan comme sous la caméra filmée (`cameras_filmees`) : on n'ajoute que des pénalités, les
+## garanties à l'aplati restent. ACTION_PLAFOND (7) reste sous VETO.
+## Aucun angle propre : le moins gêné reste retenu (la caméra au ras de la pelouse ne passe pas
+## au-dessus d'un montant de 12 m : seuls le côté et le retrait changent la ligne de visée).
+const FIN := 0.6
+const FIN_POIDS := 1.5
+const CLE := 0.2
+const VETO := 8.0
+const PROCHE := 4.0
+const PROCHE_FENETRE := 1.0
+const ACTION_VETO := 12.0
+const ACTION_PROCHE := 3.0
+const ACTION_PLAFOND := 7.0
 static func meilleur_angle(poses: Array, debut: float, cote_defaut: Vector2) -> Dictionary:
+	var aplati := debut + AVANT
+	var dernier := -INF
+	for pose: Dictionary in poses:
+		dernier = maxf(dernier, float(pose.t))
+	# Places de chaque pose retenue, une fois pour tous les angles.
+	var retenues: Array[Dictionary] = []
+	for pose: Dictionary in poses:
+		if float(pose.t) < debut: continue
+		var places := PackedVector3Array()
+		for cle: String in pose.e:
+			if bool(pose.e[cle][2]): places.append((pose.e[cle][0] as Transform3D).origin)
+		retenues.append({"t": float(pose.t), "ballon": (pose.b[0] as Transform3D).origin, "places": places})
+	# Image de l'aplati : la première à partir de l'aplati (la dernière si la fenêtre s'arrête avant).
+	var i_aplati := retenues.size() - 1
+	for i in retenues.size():
+		if float(retenues[i].t) >= aplati - 0.001:
+			i_aplati = i
+			break
 	var meilleur := {"cote": cote_defaut, "retrait": Cadrage.REJEU_RETRAIT, "gene": INF}
 	for lateral: float in [cote_defaut.y, -cote_defaut.y]:
 		for retrait: float in RETRAITS:
@@ -444,20 +502,76 @@ static func meilleur_angle(poses: Array, debut: float, cote_defaut: Vector2) -> 
 			var gene := 0.0 if lateral == cote_defaut.y else PREFERENCE
 			gene += absf(retrait - Cadrage.REJEU_RETRAIT) * PREFERENCE * 0.1
 			var somme := 0.0
-			var n := 0
-			for pose: Dictionary in poses:
-				if float(pose.t) < debut: continue
-				var ballon: Vector3 = (pose.b[0] as Transform3D).origin
-				var places := PackedVector3Array()
-				for cle: String in pose.e:
-					if bool(pose.e[cle][2]): places.append((pose.e[cle][0] as Transform3D).origin)
-				var plan := Cadrage.plan_rejeu(ballon, cote, retrait)
-				somme += Cadrage.gene_rejeu(plan, places) + Cadrage.gene_poteaux(plan)
-				n += 1
-			gene += somme / maxf(1.0, float(n))
+			var pire_fin := 0.0
+			var cles := 0
+			var masques := 0
+			var veto := 0.0
+			var premier_plan := 0.0
+			# Reste de l'action (avant les images clés et avant la dernière seconde).
+			var action_images := 0
+			var action_masques := 0
+			var action_plans := 0
+			var action_premier_plan := 0.0
+			var filmees := cameras_filmees(retenues, cote, retrait)
+			for i in retenues.size():
+				var r: Dictionary = retenues[i]
+				var t := float(r.t)
+				var places: PackedVector3Array = r.places
+				var plan := Cadrage.plan_rejeu(r.ballon, cote, retrait)
+				# Même plan, depuis la caméra amortie que le spectateur voit réellement.
+				var filme := {"camera": filmees[i], "vise": plan.vise, "champ": plan.champ}
+				var g := Cadrage.gene_rejeu(plan, places) + Cadrage.gene_poteaux(plan)
+				somme += g
+				if t >= dernier - FIN - 0.001:
+					pire_fin = maxf(pire_fin, g)
+				var avant_plan := maxf(Cadrage.premier_plan_rejeu(plan, places), Cadrage.premier_plan_rejeu(filme, places))
+				if t >= dernier - PROCHE_FENETRE - 0.001:
+					premier_plan = maxf(premier_plan, avant_plan)
+				else:
+					action_plans += 1
+					action_premier_plan += avant_plan
+				var cache := Cadrage.masque_rejeu(plan, places) or Cadrage.masque_rejeu(filme, places)
+				if t >= aplati - CLE - 0.001 or i == i_aplati:
+					cles += 1
+					if cache:
+						masques += 1
+						if i == i_aplati or i == retenues.size() - 1:
+							veto += VETO
+				else:
+					action_images += 1
+					if cache:
+						action_masques += 1
+			gene += maxf(somme / maxf(1.0, float(retenues.size())), FIN_POIDS * pire_fin)
+			gene += veto + VETO * float(masques) / maxf(1.0, float(cles)) + PROCHE * premier_plan
+			var action := ACTION_VETO * float(action_masques) / maxf(1.0, float(action_images))
+			action += ACTION_PROCHE * action_premier_plan / maxf(1.0, float(action_plans))
+			gene += minf(action, ACTION_PLAFOND)
 			if gene < float(meilleur.gene) - 0.001:
 				meilleur = {"cote": cote, "retrait": retrait, "gene": gene}
 	return meilleur
+
+
+## Places de la caméra réellement filmée pour les poses `retenues` ({"t", "ballon"}) sous l'angle
+## (`cote`, `retrait`) : posée sur le plan à la première, puis amortie comme dans `_filmer`
+## (CAMERA_LISSAGE en secondes réelles, lecture à VITESSE). 19 novembre 2026 : un porteur qui court vite
+## laisse la caméra un mètre ou plus derrière son plan, la protection masquait la vraie ligne de visée.
+static func cameras_filmees(retenues: Array, cote: Vector2, retrait: float) -> PackedVector3Array:
+	var places := PackedVector3Array()
+	var camera := Vector3.ZERO
+	var elan := Vector3.ZERO
+	var precedent := 0.0
+	for i in retenues.size():
+		var r: Dictionary = retenues[i]
+		var but: Vector3 = Cadrage.plan_rejeu(r.ballon, cote, retrait).camera
+		if i == 0:
+			camera = but
+		else:
+			var pas: Array = Gestes._damp3(camera, but, elan, maxf(float(r.t) - precedent, 0.0) / VITESSE, CAMERA_LISSAGE)
+			camera = pas[0]
+			elan = pas[1]
+		precedent = float(r.t)
+		places.append(camera)
+	return places
 
 
 ## Caméra du ralenti : basse, sur le côté, elle suit le ballon (amortie ; posée d'un coup au début).

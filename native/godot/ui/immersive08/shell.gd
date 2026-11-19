@@ -74,6 +74,8 @@ const GROUPS = [
 	["Carrière", "Carrière", ["Carrière"]]
 ]
 const TITLES = {"Bureau":"Ta semaine commence ici.", "Effectif":"Les hommes du projet.", "Composition":"Le XV de départ.", "Préparation":"La semaine se gagne ici.", "Plan de jeu":"Ton identité de jeu.", "Vestiaire":"Un groupe, une ambition.", "Recrutement":"Le prochain renfort.", "Club":"Un club. Un territoire.", "Finances":"Garder une longueur d’avance.", "Classements":"Chaque point compte.", "Calendrier":"Le fil de ta saison.", "Formation":"Le futur porte nos couleurs.", "Centre":"Les chemins de la progression.", "Suivi des jeunes":"Ils grandissent sous nos couleurs.", "Staff":"Le collectif derrière le collectif.", "Travail du club":"Des décisions qui engagent.", "Stratégie":"Construire dans la durée.", "Presse":"La voix du club.", "Rivalités":"Ta place dans le rugby.", "Carrière":"Une carrière à écrire.", "Match":"Le jour de match."}
+## Rapport largeur/hauteur maximal de la zone de travail (16:9) ; au-delà, elle est centrée.
+const LARGEUR_MAX_RATIO := 16.0/9.0
 const COMPACT_ART = {
 	"Finances":"finance-hospitality", "Calendrier":"stadium", "Formation":"academy-training",
 	"Plan de jeu":"lineout-analysis", "Centre":"academy-training", "Suivi des jeunes":"academy-training", "Préparation":"analysis-room",
@@ -193,6 +195,14 @@ static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> v
 		factor=minf(factor,(root.size.y-38.0)/(reference.y-base_footer))
 	layout.scale = Vector2.ONE*factor
 	layout.size = root.size/factor
+	# Écrans ultra-larges (21:9, 32:9) : les gabarits sont dessinés pour 16:9 au plus. Au-delà, la zone de
+	# travail garde la largeur 16:9 et se centre ; le fond photo remplit les côtés (comme le direct).
+	var largeur_max := ceilf(layout.size.y*LARGEUR_MAX_RATIO)
+	if layout.size.x > largeur_max+1.0:
+		layout.size.x = largeur_max
+		layout.position.x = roundf((root.size.x-largeur_max*factor)/2.0)
+	else:
+		layout.position.x = 0.0
 	if layout.has_meta("immersive_footer"):
 		var footer: Control = layout.get_meta("immersive_footer")
 		footer.custom_minimum_size.y=maxf(base_footer,38.0/factor)

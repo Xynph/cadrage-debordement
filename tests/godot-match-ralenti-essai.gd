@@ -128,6 +128,170 @@ func angle() -> void:
 		clip_test.append(pose_test(t, loin_poteaux, {"d": devant if t < 0.7 else Vector3(10.0, 0.0, 30.0)}))
 	var choix_debut: Dictionary = Rejeu.meilleur_angle(clip_test, 1.6 - Rejeu.AVANT, cote_loin)
 	check(not (choix_debut.cote == cote_loin and is_equal_approx(float(choix_debut.retrait), Cadrage.REJEU_RETRAIT)), "Ralenti : un défenseur au premier plan en début de ralenti écarte l'angle par défaut")
+	pied_de_poteau_en_fin()
+	course_devant_les_poteaux()
+
+
+## 19 novembre 2026 : film mf3 (images 0041, 0152, 0198) : angle propre à l'aplati, mais au début et au
+## milieu du ralenti la protection d'un poteau cache le porteur. Ici, le marqueur court dans l'en-but
+## parallèlement à la ligne de ballon mort (x = COURSE_X) de COURSE_DEPART_Z à COURSE_APLATI_Z et passe
+## derrière les deux montants. Avant ce jour, ces images ne pesaient que dans la gêne moyenne : l'angle
+## retenu (côté par défaut, retrait de 8 m) masquait le porteur six images sur vingt. L'angle retenu ne
+## doit le masquer à aucune image de l'action, aplati compris.
+const COURSE_X := 51.0
+const COURSE_DEPART_Z := 4.0
+const COURSE_APLATI_Z := -10.0
+func course_devant_les_poteaux() -> void:
+	var marque := Vector3(COURSE_X, 0.15, COURSE_APLATI_Z)
+	var depart := Vector3(COURSE_X, 1.0, COURSE_DEPART_Z)
+	var cote := Cadrage.cote_rejeu(marque)
+	var clip_test: Array = []
+	for k in 20:
+		var t := k * 0.1
+		var ballon := depart.lerp(marque, minf(t / Rejeu.AVANT, 1.0))
+		clip_test.append(pose_test(t, ballon, {"m": Vector3(ballon.x + 0.5, 0.0, ballon.z)}))
+	# Le cas reproduit bien le défaut : l'angle par défaut est propre à l'aplati (les 0,4 dernières
+	# secondes), mais un montant masque le porteur pendant la course.
+	var defaut_fin := 0
+	var defaut_course := 0
+	for k in 20:
+		var pose: Dictionary = clip_test[k]
+		var plan := Cadrage.plan_rejeu((pose.b[0] as Transform3D).origin, cote)
+		if Cadrage.masque_rejeu(plan, places_test(pose)):
+			if k >= 16: defaut_fin += 1
+			else: defaut_course += 1
+	check(defaut_fin == 0 and defaut_course >= 4, "Course devant les poteaux : l'angle par défaut est propre à l'aplati mais masque le porteur pendant la course (%d images, %d à l'aplati)" % [defaut_course, defaut_fin])
+	var choix: Dictionary = Rejeu.meilleur_angle(clip_test, 1.6 - Rejeu.AVANT, cote)
+	var masquees := PackedStringArray()
+	for k in 20:
+		var pose: Dictionary = clip_test[k]
+		var plan := Cadrage.plan_rejeu((pose.b[0] as Transform3D).origin, choix.cote, choix.retrait)
+		if Cadrage.masque_rejeu(plan, places_test(pose)):
+			masquees.append("%.1f s" % (k * 0.1))
+	mesures["course_devant_les_poteaux"] = {"cote": choix.cote.y, "retrait": choix.retrait, "gene": snappedf(float(choix.gene), 0.01)}
+	check(masquees.is_empty(), "Course devant les poteaux : porteur jamais masqué, du début du ralenti à l'aplati (côté %d, retrait %.0f m ; masqué à %s)" % [int(choix.cote.y), float(choix.retrait), ", ".join(masquees)])
+	essai_entre_les_poteaux()
+
+
+## 19 novembre 2026, second film (mfin, images 0142, 0146, 0338) : essai sous les poteaux, le porteur
+## court droit entre les deux montants (z = ENTRE_Z) à ENTRE_VITESSE m/s et aplatit ENTRE_PROFONDEUR m
+## derrière la ligne. Avec le premier correctif, l'action pesait trop peu (ACTION_VETO de 4) : l'angle
+## retenu (caméra dans l'en-but, retrait de -3 m) laissait la protection d'un poteau devant le porteur
+## sept images sur 58, en pleine course, propre à l'aplati. Poses à la cadence réelle (Rejeu.CADENCE).
+## L'angle retenu ne doit le masquer à aucune image, ni sous la caméra du plan ni sous la caméra
+## amortie réellement filmée (Rejeu.cameras_filmees).
+const ENTRE_Z := 1.0
+const ENTRE_VITESSE := 7.0
+const ENTRE_PROFONDEUR := 3.5
+const ENTRE_RETRAIT_EN_BUT := -3.0
+func essai_entre_les_poteaux() -> void:
+	var marque := Vector3(50.0 + ENTRE_PROFONDEUR, 0.15, ENTRE_Z)
+	var depart := Vector3(marque.x - ENTRE_VITESSE * Rejeu.AVANT, 1.0, ENTRE_Z)
+	var cote := Cadrage.cote_rejeu(marque)
+	var clip_test: Array = []
+	var retenues: Array = []
+	var n := int(round((Rejeu.AVANT + Rejeu.APRES) / Rejeu.CADENCE))
+	for k in n:
+		var t := k * Rejeu.CADENCE
+		var ballon := depart.lerp(marque, minf(t / Rejeu.AVANT, 1.0))
+		clip_test.append(pose_test(t, ballon, {"m": Vector3(ballon.x + 0.5, 0.0, ballon.z)}))
+		retenues.append({"t": t, "ballon": ballon})
+	# Le cas reproduit bien le défaut : sous l'angle du premier correctif (côté par défaut, caméra dans
+	# l'en-but), un montant masque le porteur pendant la course, pas à l'aplati (CLE s avant et après).
+	var avant_course := 0
+	var avant_fin := 0
+	for k in n:
+		var pose: Dictionary = clip_test[k]
+		var plan := Cadrage.plan_rejeu((pose.b[0] as Transform3D).origin, cote, ENTRE_RETRAIT_EN_BUT)
+		if Cadrage.masque_rejeu(plan, places_test(pose)):
+			if float(pose.t) >= Rejeu.AVANT - Rejeu.CLE - 0.001: avant_fin += 1
+			else: avant_course += 1
+	check(avant_fin == 0 and avant_course >= 5, "Essai entre les poteaux : caméra dans l'en-but propre à l'aplati mais protection devant le porteur pendant la course (%d images, %d à l'aplati)" % [avant_course, avant_fin])
+	var choix: Dictionary = Rejeu.meilleur_angle(clip_test, 1.6 - Rejeu.AVANT, cote)
+	var filmees: PackedVector3Array = Rejeu.cameras_filmees(retenues, choix.cote, choix.retrait)
+	var masquees := PackedStringArray()
+	for k in n:
+		var pose: Dictionary = clip_test[k]
+		var places := places_test(pose)
+		var plan := Cadrage.plan_rejeu((pose.b[0] as Transform3D).origin, choix.cote, choix.retrait)
+		var filme := {"camera": filmees[k], "vise": plan.vise, "champ": plan.champ}
+		if Cadrage.masque_rejeu(plan, places) or Cadrage.masque_rejeu(filme, places):
+			masquees.append("%.2f s" % float(pose.t))
+	mesures["essai_entre_les_poteaux"] = {"cote": choix.cote.y, "retrait": choix.retrait, "gene": snappedf(float(choix.gene), 0.01)}
+	check(masquees.is_empty(), "Essai entre les poteaux : porteur jamais derrière une protection, caméra du plan ou filmée (côté %d, retrait %.0f m ; masqué à %s)" % [int(choix.cote.y), float(choix.retrait), ", ".join(masquees)])
+
+
+## Pieds des personnes visibles d'une pose de test (comme `meilleur_angle`).
+func places_test(pose: Dictionary) -> PackedVector3Array:
+	var places := PackedVector3Array()
+	for cle: String in pose.e:
+		if bool(pose.e[cle][2]): places.append((pose.e[cle][0] as Transform3D).origin)
+	return places
+
+
+## Match filmé après la PR #962 (image-0218) : le marqueur court le long de l'en-but et aplatit à 1,1 m
+## derrière le pied d'un poteau, exactement dans l'axe caméra par défaut → montant ; un défenseur entre
+## dans le champ, à 5 m de cette caméra, pendant la dernière demi-seconde. La gêne moyenne sur 1,9 s
+## diluait ces images (angle par défaut ou retrait de 8 m gardés, tous deux masqués à l'aplati). L'angle
+## retenu ne laisse ni protection ni défenseur entre la caméra et le ballon, à l'aplati comme sur
+## l'image finale, et aucun défenseur à moins de 6 m de l'objectif.
+func pied_de_poteau_en_fin() -> void:
+	var poteau := Vector3(50.0, 0.0, -Cadrage.POTEAUX_Z)
+	# Ballon posé tel que le montant soit aux 9/10 du chemin caméra par défaut → ballon.
+	var depart := Vector3(50.0 - 3.6, Cadrage.REJEU_HAUTEUR, -Cadrage.POTEAUX_Z + 9.9)
+	var marque := Vector3(depart.x + Cadrage.REJEU_RETRAIT, 0.15, depart.z - Cadrage.REJEU_RECUL)
+	var cote := Cadrage.cote_rejeu(marque)
+	var defaut: Dictionary = Cadrage.plan_rejeu(marque, cote)
+	var camera_defaut: Vector3 = defaut.camera
+	var regard := Vector3(marque.x - camera_defaut.x, 0.0, marque.z - camera_defaut.z).normalized()
+	var gauche := Vector3(regard.z, 0.0, -regard.x)
+	var arrivee := Vector3(camera_defaut.x, 0.0, camera_defaut.z) + regard * 5.0 + gauche * 1.2
+	var loin := Vector3(40.0, 0.0, 15.0)
+	var clip_test: Array = []
+	for k in 20:
+		var t := k * 0.1
+		var avance := minf(t / 1.6, 1.0)
+		var ballon := Vector3(marque.x - 8.0 * (1.0 - avance), lerpf(1.0, marque.y, avance), marque.z)
+		var defenseur := loin.lerp(arrivee, clampf((t - 1.0) / 0.5, 0.0, 1.0))
+		clip_test.append(pose_test(t, ballon, {"m": Vector3(ballon.x - 0.5, 0.0, ballon.z), "d": defenseur}))
+	# Le cas reproduit bien le défaut : sous l'angle par défaut, montant devant le marqueur à l'aplati,
+	# défenseur à 5 m de l'objectif.
+	check(entre(camera_defaut, marque, poteau, 0.6) and sol(camera_defaut, arrivee) < 6.0, "Pied de poteau en fin : l'angle par défaut est masqué (montant et défenseur au premier plan)")
+	var choix: Dictionary = Rejeu.meilleur_angle(clip_test, 1.6 - Rejeu.AVANT, cote)
+	var propre := true
+	var detail := ""
+	for k: int in [16, 19]:
+		var pose: Dictionary = clip_test[k]
+		var ballon: Vector3 = (pose.b[0] as Transform3D).origin
+		var defenseur: Vector3 = (pose.e["d"][0] as Transform3D).origin
+		var camera: Vector3 = Cadrage.plan_rejeu(ballon, choix.cote, choix.retrait).camera
+		for x: float in [-50.0, 50.0]:
+			for z: float in [-Cadrage.POTEAUX_Z, Cadrage.POTEAUX_Z]:
+				if entre(camera, ballon, Vector3(x, 0.0, z), 0.6):
+					propre = false
+					detail += " montant (%d, %.1f) à %.1f s" % [int(x), z, k * 0.1]
+		if entre(camera, ballon, defenseur, 0.6):
+			propre = false
+			detail += " défenseur devant le ballon à %.1f s" % (k * 0.1)
+		if sol(camera, defenseur) < 6.0:
+			propre = false
+			detail += " défenseur à %.1f m de l'objectif à %.1f s" % [sol(camera, defenseur), k * 0.1]
+	mesures["pied_de_poteau"] = {"cote": choix.cote.y, "retrait": choix.retrait, "gene": snappedf(float(choix.gene), 0.01)}
+	check(propre, "Pied de poteau en fin : ni protection ni défenseur entre la caméra et le ballon à l'aplati et à la dernière image (côté %d, retrait %.0f m)%s" % [int(choix.cote.y), float(choix.retrait), detail])
+
+
+## L'obstacle `obstacle` (pied, repère de la vue) passe entre `camera` et `ballon` sur la pelouse : il se
+## projette sur le segment (ou jusqu'à `rayon` m au-delà du ballon, le corps du marqueur s'y étend) à
+## moins de `rayon` m de la ligne de visée.
+func entre(camera: Vector3, ballon: Vector3, obstacle: Vector3, rayon: float) -> bool:
+	var d := Vector2(ballon.x - camera.x, ballon.z - camera.z)
+	var longueur := d.length()
+	if longueur < 0.01: return false
+	var u := d / longueur
+	var rel := Vector2(obstacle.x - camera.x, obstacle.z - camera.z)
+	var avance := rel.dot(u)
+	if avance <= 0.0 or avance > longueur + rayon: return false
+	return absf(rel.x * u.y - rel.y * u.x) < rayon
 
 
 ## Pose du tampon du ralenti (format de match_rejeu.gd) : ballon et joueurs visibles.

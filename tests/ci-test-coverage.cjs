@@ -107,9 +107,9 @@ test('diff Git complet des parents réels, y compris un chemin déjà corrigé d
     });
     return fs.readFileSync(output, 'utf8');
   };
-  assert.equal(classifyCheckout('pull_request', { PR_BASE: base, PR_HEAD: head }), 'coverage=full\ngodot=false\n');
-  assert.equal(classifyCheckout('push', { BEFORE: base }), 'coverage=full\ngodot=false\n');
-  assert.equal(classifyCheckout('workflow_dispatch', {}), 'coverage=full\ngodot=false\n');
+  assert.equal(classifyCheckout('pull_request', { PR_BASE: base, PR_HEAD: head }), 'coverage=full\ngodot=false\ntests_modifies=\n');
+  assert.equal(classifyCheckout('push', { BEFORE: base }), 'coverage=full\ngodot=false\ntests_modifies=\n');
+  assert.equal(classifyCheckout('workflow_dispatch', {}), 'coverage=full\ngodot=false\ntests_modifies=\n');
 
   git('switch', '-c', 'renamed', fork);
   git('mv', 'docs/réception du jeu.md', 'docs/rapport.md');

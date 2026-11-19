@@ -30,9 +30,21 @@ const REFORMATION_MIN := 6
 ## Caméras de retransmission (TV) et « au contact » (action), en perspective depuis le 18 novembre
 ## 2026 (orthographiques avant, TV à 41° et 42 à 64 m de champ). Seule la direction de ces décalages
 ## compte : la distance découle de la hauteur visible voulue au point visé et de l'angle de champ.
-## TV : plein travers, environ 28° au-dessus de l'horizon, comme la caméra principale d'une tribune ;
+## TV : plein travers, 16° au-dessus de l'horizon, comme la caméra principale d'une tribune ;
 ## action : plus près, plus ouverte, un peu de biais.
-const TV_OFFSET := Vector3(0.0, 0.47, 0.883)
+## 19 novembre 2026 : à 28°, le haut de l'image (28° - 12° de demi-champ = 16° sous l'horizon)
+## passait à 2 m à peine au-dessus du premier rang de la tribune d'en face : le public n'apparaissait
+## que sur les coups de pied (caméra relevée vers le ballon haut). À 24°, les premiers rangs d'en face
+## bordent le haut de l'image dès que le jeu est au milieu ou dans la moitié lointaine ; près de la
+## touche proche, la grue relève toujours la vue jusqu'au même plafond (INCLINAISON_TV_MAX).
+## 19 novembre 2026 (soir) : à 24°, avec 26 à 42 m de hauteur visible, les joueurs ne faisaient que 40
+## à 60 px de haut (1280 x 720), vus de dessus, et la tribune d'en face 5 à 8 % de l'image au milieu.
+## Axe à 16° (caméra principale d'une tribune basse) et hauteur visible resserrée (TV_TAILLE, SUIVI et
+## HAUTEUR de match_cadrage.gd) : à 19 m de hauteur visible, jeu au milieu, caméra à 12 m de haut,
+## joueur au point visé d'environ 68 px, bas de l'image plongeant à 28°, haut de l'image à 4° sous
+## l'horizon : le pied de la tribune d'en face est à 13 % du haut (19 % dans la moitié lointaine).
+## Sur la touche proche, la grue monte à 26° au plus (bas de l'image sous PLONGEE_TV_MAX).
+const TV_OFFSET := Vector3(0.0, 0.2756, 0.9613)
 const ACTION_OFFSET := Vector3(0.24, 0.5, 0.832)
 ## Caméra-grue : quand le jeu approche de la touche proche (z du point visé entre GRUE_DEBUT et
 ## GRUE_FIN), la caméra monte et plonge jusqu'à GRUE_ANGLE degrés de plus, comme la caméra
@@ -75,8 +87,11 @@ const PLONGEE_MAX := 56.0
 ## 19 novembre 2026 : la vue TV restait un peu haute près de la touche proche (38° d'axe, bas de l'image
 ## à 56°). La caméra TV a ses propres plafonds, plus bas (retransmission vue de la tribune, joueurs de
 ## 3/4) ; la caméra au contact garde INCLINAISON_MAX et PLONGEE_MAX.
-const INCLINAISON_TV_MAX := 34.0
-const PLONGEE_TV_MAX := 50.0
+## 19 novembre 2026 (soir) : axe TV de base à 16° (TV_OFFSET), grue comprise 26° au plus ; plafonds
+## abaissés d'autant (28° d'axe, 44° pour le bas de l'image) : près de la touche proche, la caméra qui
+## avance sous le toit ouvre moins son angle et les joueurs proches restent vus de 3/4.
+const INCLINAISON_TV_MAX := 28.0
+const PLONGEE_TV_MAX := 44.0
 
 ## Plafonds de la caméra courante (TV ou contact).
 func inclinaison_max() -> float:
@@ -85,8 +100,9 @@ func inclinaison_max() -> float:
 func plongee_max() -> float:
 	return PLONGEE_MAX if _camera_mode == "action" else PLONGEE_TV_MAX
 ## Hauteur visible (m) au point visé de la caméra de base (hors temps fort). Le cadrage des temps
-## forts (match_cadrage.gd) la règle ensuite selon les joueurs utiles.
-const TV_TAILLE := 30.0
+## forts (match_cadrage.gd) la règle ensuite selon les joueurs utiles. 19 novembre 2026 (soir) : 30 m
+## laissaient des joueurs de 40 px ; 18 m (axe à 16°) : environ 70 px au point visé.
+const TV_TAILLE := 18.0
 const ACTION_TAILLE := 16.0
 ## Mi-temps et fin de match : plan large de tout le terrain, vu de haut au-dessus de la tribune
 ## proche (rayons au-dessus de son toit) : direction, point visé, recul (m) et angle de champ.
@@ -118,6 +134,16 @@ const PLAN_SORTIE_LISSAGE := 0.6
 const TERRAIN := Vector2(55.0, 35.0)
 const TERRAIN_MARGE := 3.0
 const BORD_HAUT := 0.12
+## Caméra TV : bande de tribune d'en face un peu plus haute en haut de l'image (public visible).
+## 19 novembre 2026 (soir) : avec l'axe à 16°, les abords lointains (touche à panneaux, 8 m) prennent
+## plus de place : à 0,2, la borne repoussait le point visé vers la touche proche dès le milieu du
+## terrain (et la caméra sous le toit, angle grand ouvert). À 0,28 : tribune d'en face jusqu'à environ
+## 20 % de l'image, le terrain et ses abords toujours plus de 70 %.
+const BORD_HAUT_TV := 0.28
+## Vue tactique (de dessus) : profondeur gardée de part et d'autre de l'axe (m). 41 m s'arrêtait
+## avant les tribunes latérales (premier rang à 46 m) ; 45 m (x 1,08 de marge) montre leurs deux
+## premiers rangs.
+const TACTIQUE_PROFONDEUR := 45.0
 const BORD_BAS := 0.9
 const BORD_COTE := 0.04
 const BALLON_SUR := 0.2
@@ -544,6 +570,10 @@ func apply_frame(live: Dictionary) -> void:
 	scene = _impacts.observer(scene, new_action, _action_motion and not _paused and has_ball and _live_cadence == 1)
 	# Mêlée, sortie de mêlée, touche : places et postures de la phase (match_formations.gd).
 	_formations.preparer(scene, new_action)
+	# Sortie de mêlée : le ballon reste dans les mains du demi qui ramasse (ou du n° 8 détaché), au
+	# lieu de partir seul vers le point du fait, loin du paquet (match_formations.gd, DEMI_SORTIE).
+	if has_ball:
+		_carrier_id = _formations.porteur(_carrier_id)
 	var play_action := (_action_motion and not _paused and has_ball and _ball.visible
 		and not _action_key.is_empty() and not key.is_empty())
 	_action_key = key
@@ -1489,9 +1519,10 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 		return
 	var aspect := viewport_size.x / viewport_size.y
 	var half_height := 0.0
-	# Tactical retains the entire pitch and its five-metre presentation apron.
+	# Tactical retains the entire pitch and its five-metre presentation apron, plus the first rows
+	# of both side stands (TACTIQUE_PROFONDEUR) : le public borde le terrain vu de dessus.
 	for x in [-56.0, 56.0]:
-		for z in [-41.0, 41.0]:
+		for z in [-TACTIQUE_PROFONDEUR, TACTIQUE_PROFONDEUR]:
 			var point := _camera.to_local(Vector3(x, 0, z))
 			half_height = maxf(half_height, maxf(absf(point.y), absf(point.x) / aspect))
 	_camera.size = maxf(half_height * 2.16, 88.0)
@@ -1696,7 +1727,7 @@ func _borner(look: Vector3, size: float, offset: Vector3, aspect: float) -> Vect
 	var ballon := _ball.global_position if _ball.visible else look
 	var haut_sur := BALLON_SUR
 	var bas_sur := 1.0 - BALLON_SUR
-	var bord_haut := BORD_HAUT
+	var bord_haut := BORD_HAUT if _camera_mode == "action" else BORD_HAUT_TV
 	var bord_bas := BORD_BAS
 	if _cadrage:
 		# L'interface du direct couvre le haut et le bas : le ballon reste dans la partie visible,
@@ -1717,6 +1748,8 @@ func _borner(look: Vector3, size: float, offset: Vector3, aspect: float) -> Vect
 		_seuil(look, size, offset, aspect, axe, Vector3(look.x, 0.0, loin), 1, bord_haut, true).x,
 		_seuil(look, size, offset, aspect, axe, Vector3(look.x, 0.0, pres), 1, bord_bas, false).y)
 	var s := clampf(0.0, bornes.x, bornes.y) if bornes.x <= bornes.y else (bornes.x + bornes.y) * 0.5
+	if _camera_mode != "action" and s > 0.0:
+		s = _sans_ouvrir(look, size, offset, axe, s)
 	s = _garder_ballon(s, look, size, offset, aspect, axe, ballon, 1, haut_sur, bas_sur)
 	look += axe * s
 	# Largeur : lignes de ballon mort sur les bords.
@@ -1727,6 +1760,27 @@ func _borner(look: Vector3, size: float, offset: Vector3, aspect: float) -> Vect
 	s = clampf(0.0, bornes.x, bornes.y) if bornes.x <= bornes.y else (bornes.x + bornes.y) * 0.5
 	s = _garder_ballon(s, look, size, offset, aspect, axe, ballon, 0, BALLON_SUR, 1.0 - BALLON_SUR)
 	return look + axe * s
+
+
+## Caméra TV (19 novembre 2026, soir) : le recentrage qui pousse le point visé vers la touche proche
+## (tribune d'en face trop présente) s'arrête avant que la caméra, qui recule avec lui, passe sous le toit
+## de la tribune proche et ouvre son angle (pose_camera). Sinon l'image plus ouverte montrerait encore
+## plus de tribune d'en face, la borne pousserait plus loin, jusqu'à DECALAGE_MAX : terrain vu de près,
+## grand angle, la moitié de l'image hors du terrain. Rend le plus grand décalage dans [0, s] qui garde
+## l'angle de champ de la pose sans décalage.
+func _sans_ouvrir(look: Vector3, size: float, offset: Vector3, axe: Vector3, s: float) -> float:
+	var champ := float(pose_camera(look, size, offset)[1]) + 0.01
+	if float(pose_camera(look + axe * s, size, offset)[1]) <= champ:
+		return s
+	var a := 0.0
+	var b := s
+	for i in 10:
+		var m := (a + b) * 0.5
+		if float(pose_camera(look + axe * m, size, offset)[1]) > champ:
+			b = m
+		else:
+			a = m
+	return a
 
 
 ## Décalage limité (ou imposé) pour que le ballon reste entre `bas` et `haut` sur la coordonnée
@@ -1777,7 +1831,7 @@ func regroupement() -> Array[Vector3]:
 	var retenus: Array = []
 	match str(formation.get("type", "")):
 		"melee", "sortie_melee":
-			retenus = ["pack", "demi_intro", "demi_adverse"]
+			retenus = ["pack", "demi_intro", "demi_adverse", "demi_sortie"]
 		"touche":
 			retenus = ["lanceur", "alignement", "sauteur", "demi"]
 	for id: String in roles:
@@ -2215,6 +2269,7 @@ func _build_spectators(positions: Array[Vector3], rotations: Array[float], rng: 
 		var p := positions[i]
 		torsos.append(Transform3D(basis * Basis.from_scale(Vector3(0.42, 0.62 * height, 0.31)), p + Vector3(0, 0.27 * height, 0)))
 		heads.append(Transform3D(basis.scaled(Vector3.ONE * rng.randf_range(0.92, 1.08)), p + Vector3(0, 0.73 * height, 0)))
+		foule_tetes.append(heads[-1].origin)
 		legs.append(Transform3D(basis * Basis.from_scale(Vector3(0.35, 0.18, 0.58)), p + basis * Vector3(0, -0.12, 0.22)))
 		clothes.append(palette[rng.randi_range(0, palette.size() - 1)])
 		var skin: Color = skin_palette[rng.randi_range(0, skin_palette.size() - 1)]
@@ -2277,6 +2332,9 @@ const FOULE_ECHARPES := 0.22
 var foule: Foule = Foule.new()
 ## Composition du public construite (contrôle, tests) : spectateurs par tribu, tenues aux couleurs.
 var foule_compte := {"total": 0, "domicile": 0, "visiteurs": 0, "neutres": 0, "tenues": 0}
+## Têtes des spectateurs (repère de la vue), gardées pour les contrôles de cadrage : le pilote
+## graphique factice (--headless) ne conserve pas les transformations des MultiMesh.
+var foule_tetes := PackedVector3Array()
 var _foule_matieres: Array[ShaderMaterial] = []
 ## Posé par la régie des temps forts : plan d'essai joué, essai pas encore aplati à l'écran.
 var essai_attendu_regie := false

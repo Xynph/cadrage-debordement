@@ -39,8 +39,12 @@ const MELEE: Array[Vector2] = [
 const DECALAGE_TETES := 0.155
 ## Rayon de tête du modèle (m), pour l'écart minimal entre têtes adverses.
 const TETE_RAYON := 0.11
-## Demi de mêlée qui introduit : à côté du tunnel, hors du paquet, à 1,8 m de la marque.
-const DEMI_INTRO := Vector2(0.15, -1.8)
+## Demi de mêlée qui introduit : à côté du tunnel, hors du paquet, à 1,8 m de la marque, décalé de
+## DEMI_INTRO.x m vers son propre paquet. 19 novembre 2026 : à 0,15 m, droit derrière le ballon, son
+## dos et sa tête penchés cachaient le ballon tenu bas à la caméra TV (qui plonge de 24° et plus
+## depuis la touche proche) ; décalé de 0,35 m, le ballon (ramené vers la ligne du tunnel, voir
+## BALLON_TUNNEL) se voit à côté de son épaule.
+const DEMI_INTRO := Vector2(0.35, -1.8)
 ## Côté de l'introduction (signe en y de la scène) : le demi introduit du côté de la mêlée de son choix
 ## (loi 19) ; il le fait toujours du côté de la caméra TV (touche proche, y croissants). 19/11/2026 :
 ## introduit côté tribune opposée, le ballon tenu bas restait caché derrière les deux paquets.
@@ -50,12 +54,22 @@ const COTE_INTRO := 1.0
 const BALLON_DEVANT := 0.55
 const BALLON_BAS_MIN := 0.3
 const BALLON_BAS_MAX := 0.6
+## 19 novembre 2026 : le ballon tenu glisse de BALLON_TUNNEL m au plus sur le côté du demi, vers la
+## ligne médiane de la mêlée (le tunnel) : hors de l'aplomb de son buste, visible depuis la caméra TV.
+const BALLON_TUNNEL := 0.3
 ## Demi adverse : de son côté du ballon (recul négatif), du même côté de la mêlée, nettement à
 ## l'extérieur des paquets (18/11/2026 soir : à 1,35 m du centre, à demi penché contre le pilier
 ## droit adverse, il passait à l'image pour un avant resté debout dans le paquet).
 const DEMI_ADVERSE := Vector2(-0.6, -2.4)
 ## Écart latéral minimal (m) entre le demi adverse et l'avant le plus à l'extérieur.
 const DEMI_HORS_PAQUET := 0.8
+## Sortie de mêlée (19/11/2026) : le demi du camp qui gagne le ballon le ramasse au pied de son n° 8,
+## côté caméra : [recul derrière les pieds du n° 8, écart vers la caméra], en mètres. Il porte le
+## ballon pendant la sortie, sauf si le moteur désigne un avant du paquet (n° 8 qui se détache).
+## Avant : le ballon partait seul vers le point du fait (5 à 11 m plus loin que la mêlée, « avance »)
+## et restait posé sur l'herbe, loin de tout joueur, quand le porteur désigné était un arrière
+## éloigné (ou absent).
+const DEMI_SORTIE := Vector2(0.9, 0.9)
 ## Hors-jeu de mêlée (loi 19) : arrières à 5 m au moins derrière les pieds du dernier avant.
 const HORS_JEU := 5.0
 const PIEDS_N8 := 0.6
@@ -97,7 +111,7 @@ func _init(owner: Node3D) -> void:
 
 
 static func _vide() -> Dictionary:
-	return {"type": "", "places": {}, "caps": {}, "postures": {}, "roles": {}}
+	return {"type": "", "places": {}, "caps": {}, "postures": {}, "roles": {}, "porteur": ""}
 
 
 ## Formation d'une scène du moteur, en coordonnées du terrain (x 0-100, y 0-70) :
@@ -132,6 +146,12 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 	for player: Dictionary in scene.get("players", []):
 		if player.get("featured", false) and int(player.get("side", -1)) == possession:
 			porteur = str(player.get("id", ""))
+	# Sortie : porteur du ballon pendant la sortie (avant détaché du paquet, sinon demi qui ramasse).
+	f.porteur = ""
+	for player: Dictionary in scene.get("players", []):
+		var slot_porteur := int(player.get("slot", -1))
+		if sortie and str(player.get("id", "")) == porteur and slot_porteur >= 0 and slot_porteur < 8:
+			f.porteur = porteur
 	for player: Dictionary in scene.get("players", []):
 		var id := str(player.get("id", ""))
 		var side := int(player.get("side", -1))
@@ -166,6 +186,13 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 				f.caps[id] = atan2(centre.x - place.x, centre.y - place.y)
 				f.postures[id] = "aguets"
 				f.roles[id] = "demi_adverse"
+		elif slot == 8 and sortie and side == possession:
+			# Demi qui ramasse au pied du n° 8, côté caméra, tourné vers ses arrières.
+			f.places[id] = centre + Vector2(-s * (MELEE[7].x + PIEDS_N8 + DEMI_SORTIE.x), COTE_INTRO * DEMI_SORTIE.y)
+			f.caps[id] = atan2(-s, 0.0)
+			f.roles[id] = "demi_sortie"
+			if str(f.porteur).is_empty():
+				f.porteur = id
 		elif not sortie and player.has("x") and player.has("y"):
 			# Arrières : places du moteur, ramenées derrière la ligne de hors-jeu si besoin.
 			var limite := MELEE[7].x + PIEDS_N8 + HORS_JEU
@@ -242,6 +269,15 @@ func place(id: String, moteur: Vector3) -> Vector3:
 
 func active() -> bool:
 	return not str(formation.type).is_empty() and not libere
+
+
+## Porteur du ballon montré pour cette image : à la sortie de mêlée, l'avant détaché ou le demi qui
+## ramasse (DEMI_SORTIE), jamais un porteur éloigné vers qui le ballon partirait seul ; sinon
+## `moteur`, le porteur de la scène. Fixé pour toute l'image : le demi garde le ballon en se replaçant.
+func porteur(moteur: String) -> String:
+	if str(formation.type) == "sortie_melee" and not str(formation.get("porteur", "")).is_empty():
+		return str(formation.porteur)
+	return moteur
 
 
 func _mis_en_scene(id: String) -> bool:
@@ -337,7 +373,13 @@ func _tenir_ballon(entry: Dictionary, w: float) -> void:
 			genoux += rig.to_global(rig.get_bone_global_pose(knee).origin).y
 			n += 1
 	var bas := actor.global_position + actor.global_basis.z.normalized() * BALLON_DEVANT
-	bas.y = clampf(genoux / n if n > 0 else BALLON_BAS_MIN, BALLON_BAS_MIN, BALLON_BAS_MAX)
+	# Vers la ligne du tunnel (x du centre de la mêlée), sur le côté du demi : voir BALLON_TUNNEL.
+	var centre: Variant = formation.get("centre")
+	var droite := Vector3(actor.global_basis.x.x, 0.0, actor.global_basis.x.z)
+	if centre is Vector2 and absf(droite.x) > 0.1:
+		droite = droite.normalized()
+		bas += droite * clampf((float(centre.x) - 50.0 - bas.x) / droite.x, -BALLON_TUNNEL, BALLON_TUNNEL)
+	bas.y =clampf(genoux / n if n > 0 else BALLON_BAS_MIN, BALLON_BAS_MIN, BALLON_BAS_MAX)
 	var ball: Node3D = view._ball
 	ball.global_position = ball.global_position.lerp(bas, w)
 	# Grand axe dans l'axe du tunnel, comme le ballon est introduit.

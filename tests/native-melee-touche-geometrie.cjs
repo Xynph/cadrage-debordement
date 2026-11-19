@@ -55,7 +55,11 @@ test('Mêlée : têtes des premières lignes en alternance, jamais l\'une dans l
 
 test('Mêlée : le demi accroupi tient le ballon bas, hors du paquet, à l\'entrée du tunnel', () => {
   const demi = {x: -DEMI.x, y: DEMI.y};
-  const ballon = {x: demi.x, y: demi.y + DEVANT};  // tourné vers le tunnel (+y pour le camp 0)
+  // Tourné vers le tunnel (+y pour le camp 0) ; 19/11/2026 : ballon ramené de BALLON_TUNNEL m au plus
+  // vers la ligne du tunnel (x = 0), sur le côté du demi, pour qu'il ne passe pas sous son buste.
+  const TUNNEL = constante('BALLON_TUNNEL');
+  const ballon = {x: demi.x + Math.min(TUNNEL, Math.abs(demi.x)) * Math.sign(-demi.x), y: demi.y + DEVANT};
+  assert.ok(Math.abs(ballon.x) < 0.1 && Math.abs(ballon.x - demi.x) >= 0.25, `ballon sur la ligne du tunnel, à côté du demi (${ballon.x.toFixed(2)} contre ${demi.x.toFixed(2)})`);
   const pilier = place(0, 0);
   assert.ok(demi.y < 0, 'introduction du côté du pilier gauche');
   assert.ok(ballon.y < pilier.y - 0.3, `ballon hors du corps du pilier gauche (${ballon.y.toFixed(2)} contre ${pilier.y.toFixed(2)})`);

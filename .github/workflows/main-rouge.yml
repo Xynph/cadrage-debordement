@@ -1,0 +1,40 @@
+name: Main rouge (batterie horaire)
+# Les PR fusionnent en mode rapide (suites courtes et modifiées) ; la batterie complète tourne chaque
+# heure sur main (tests.yml, schedule). Si elle est rouge :
+#  1. première tentative : relance UNE fois les seuls jobs en échec (délai dépassé sur runner lent) ;
+#  2. toujours rouge : alerte « MAIN ROUGE » sur #591 avec les PR fusionnées depuis la dernière batterie
+#     horaire verte ; si une seule PR est en cause, ouverture d'une PR de retour arrière (fusion
+#     automatique en squash). Plusieurs PR : pas de retour arrière automatique, l'alerte les liste.
+# Voir docs/fusion-rapide.md.
+on:
+  workflow_run:
+    workflows: ["Tests JavaScript"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-rouge
+  cancel-in-progress: false
+
+jobs:
+  main-rouge:
+    if: ${{ github.event.workflow_run.event == 'schedule' && github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          # Jeton personnel : une PR ouverte avec lui déclenche la CI (le jeton du dépôt ne le fait pas).
+          token: ${{ secrets.TRAIN_TOKEN }}
+      - name: Relance unique, puis alerte et retour arrière
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.TRAIN_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: bash ci/main-rouge.sh
