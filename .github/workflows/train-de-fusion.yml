@@ -38,9 +38,20 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+      - name: Vérifier le jeton du train
+        env:
+          TRAIN_TOKEN: ${{ secrets.TRAIN_TOKEN }}
+        run: |
+          if [ -z "$TRAIN_TOKEN" ]; then
+            echo "::error::Secret TRAIN_TOKEN absent : voir docs/train-de-fusion.md (jeton personnel limité au dépôt)."
+            echo "## ⛔ Train arrêté : secret TRAIN_TOKEN absent" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
       - name: Faire passer le train
         env:
-          GH_TOKEN: ${{ github.token }}
+          # Jeton personnel (et non github.token) : les PR ouvertes par le jeton du dépôt voient leur CI
+          # rester en « action_required » et GitHub refuse alors leur fusion (constaté le 19/11).
+          GH_TOKEN: ${{ secrets.TRAIN_TOKEN }}
           TAILLE_MAX: ${{ inputs.taille_max || '6' }}
           ESSAI: ${{ inputs.essai || 'false' }}
         run: bash ci/train-de-fusion.sh
