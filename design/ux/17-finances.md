@@ -179,6 +179,7 @@ Mode consultation : pas d'écriture. « Ajuster les engagements » mène à un �
 | Trésorerie | `finance.cash` | à chaque semaine, à chaque opération | euros | « — » |
 | Masse salariale | `finance.wage` | à chaque contrat | euros / semaine | « — » |
 | Disponible pour les transferts | `finance.transferBudget.disponible` (enveloppe : `enveloppe`, détail : `depense`, `reconstitue`) | à chaque dépense, vente ou mouvement de caisse | euros à l'euro + « sur X € alloués par le conseil » | `transferBudget` absent ou `actif` faux : tuile actuelle « Marché du recrutement » conservée (pas de « Budget non fixé ») |
+| Report et rallonge (19/11/2026) | `finance.transferBudget.report`, `rallonge`, `rallongesAccordees`, `rallongeMax` | passage de saison (report), réponse du conseil (rallonge) | « sur X € alloués » = enveloppe + report + rallonges ; infobulle : « Report de la saison passée : X € » et « Rallonges accordées par le conseil : X € (n sur m possibles) », lignes absentes si 0. La demande de rallonge se fait depuis Recrutement (fiche 09 §6.6), jamais depuis Finances | champs lus comme 0 (sauvegarde antérieure) |
 | Marge courante par semaine | revenus − charges connus | semaine | euros | « — » |
 | Répartition des charges | grand livre | semaine | % + euros | masquée |
 | Flux | grand livre | par opération | date, libellé, montant | « Aucun flux » |

@@ -32,6 +32,8 @@ const UNTOUCHED = Object.freeze({
   set_delegation: NONE, press_policy: NONE, club_follow: NONE, set_lineup: NONE, auto_lineup: NONE,
   club_meeting_ack: NONE, club_meeting_continue: NONE, pause: NONE, match_talk_decide: NONE, match_incident_choice: NONE,
   manager_recruitment_watch: NONE, regen_shortlist: NONE,
+  // Rallonge du conseil (budget-transferts.cjs) : budgetTransferts, confiance et nouvelles (sections légères).
+  transfer_budget_extension: NONE,
   // Décisions sur les joueurs du club : la section des clubs est relue.
   set_player_load: except('clubs'), set_development_focus: except('clubs'), training_plan: except('clubs'),
   staff_meeting: except('clubs'), relationship_conversation: except('clubs'), observe_player: except('clubs'),
