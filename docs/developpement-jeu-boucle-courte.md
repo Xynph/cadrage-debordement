@@ -96,5 +96,10 @@ valoir 0). Une fenêtre hors écran (`--position`) ne suffit pas : Godot la ram�
 sur l'écran et prend le premier plan au démarrage. Paramètres complets en tête du
 script ; test : `tests/godot-match-filme.cjs`.
 
+Même principe pour tous les écrans de gestion (tour des écrans filmé) :
+`scripts\ecrans-filmes.ps1 -Sortie E:\temp\ecrans [-Tailles 1920x1080,1280x720] [-Ecrans bureau,fiche-joueur] [-Export <carriere.json>]`
+donne `<ecran>-<largeur>.png`, une planche par taille et `report.json` (écrans en échec, contrôles hors
+de l'écran, textes tronqués) ; lanceur commun `scripts/bureau-cache.ps1`, test `tests/godot-ecrans-filmes.cjs`.
+
 Le bilan indique ce qui fonctionne, les fichiers, la PR, les tests et mesures
 observés, les vérifications non faites, les limites et la prochaine évolution.
