@@ -181,6 +181,15 @@ budget() {
     tests/reactivite-projection-verification.cjs|tests/reactivite-projection-rapide.cjs|tests/reactivite-projection-decisions.cjs) echo 540s ;;
     # Presse rapide Monde (#928) : carrière Monde + matchs joués au worker, 194 s de mur sur main (Tests JavaScript 44419838338) et 180 s dépassées sur main (44413663397, 44404301884) comme sur la PR #943 ; limite par défaut trop juste, sans lien avec le lot. Budget ≈ 3 fois, assertions inchangées.
     tests/presse-rapide-monde.cjs) echo 540s ;;
+    # Courrier du club (carrière Monde, plusieurs semaines) : 136-140 s sur main (runs 44419838338, 44424700419), 3 à 4 fois sous la limite
+    # de 180 s seulement ; sur la PR #943 le même shard tourne ~1,5 fois plus lentement (finitions-critiques 179 s contre 123-129 s,
+    # lifecycle-native 210 s contre 141 s), d'où 180 s dépassées. Bonus de fin de match : 150 s sur main. Budget ≈ 3 fois, assertions inchangées.
+    tests/club-mail.cjs|tests/bonus-fin-de-match.cjs) echo 420s ;;
+    # Suites Monde de 100 à 106 s sur main (mesures CD_CPU_PROFILE), exposées au même ralentissement du runner ; budget ≈ 3 fois.
+    tests/avance-jour-differe.cjs|tests/arbitre-veille.cjs|tests/plan-adverse.cjs|tests/world-reprise-preparation.cjs|tests/club-mail-enseignements.cjs|tests/world-championnats-suivis.cjs) echo 300s ;;
+    # Protocole commotion (carrière Monde, HIA en match puis repos jour par jour) : moteur JS seul, sans lien avec le lot du match 3D ;
+    # 180 s dépassées sur la PR #943 (Suites 5/7, run 44436008167) avec le runner ~1,5 fois plus lent. Budget ≈ 3 fois, assertions inchangées.
+    tests/commotion-hia.cjs) echo 420s ;;
     *) echo 180s ;;
   esac
 }
