@@ -656,6 +656,8 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	D.line(row,Vector2(0,-FOOTER_RISE),Vector2(2248,-FOOTER_RISE),Color(C.LINE,.7))
 	app.status = D.text(row,2,36,app._settled_status_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
 	app.status.name = "ImmersiveSaveStatus"
+	# Une seule ligne, jamais coupée : le texte se resserre au lieu de passer à la ligne (voir _fit_status).
+	app.status.autowrap_mode = TextServer.AUTOWRAP_OFF
 	# Rappel des raccourcis sur tous les écrans, Bureau compris : le pied de page est hors de la zone défilante
 	# (Gabi, blocs et frise y restent), donc il ne recouvre rien ; le bouton Continuer est dans le bandeau du haut.
 	var shortcuts := D.text(row,782,36-FOOTER_RISE,Raccourcis.pied_de_page(),17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
@@ -665,6 +667,8 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 		feedback.add_theme_font_override("font",C.DISPLAY)
 		row.add_child(feedback)
 	row.resized.connect(_position_footer.bind(row))
+	# Le texte change après chaque réponse du moteur (main.gd) : il redemande l'ajustement à ce pied de page.
+	app.status.set_meta("refit",_position_footer.bind(row))
 	_position_footer(row)
 
 static func _position_footer(row: Control) -> void:
@@ -683,12 +687,19 @@ static func _position_footer(row: Control) -> void:
 	var compact := C.px(24)*factor<14.0
 	var side_by_side := shortcuts != null and not compact and row.size.x*factor>=1650
 	var shortcuts_x := maxf(C.px(782),630.0/factor)
-	if side_by_side: right = minf(right,shortcuts_x-gap)
 	var pixels := maxi(C.px(17),ceili(14.0/factor))
 	var font := status.get_theme_font("font")
+	var smallest := maxi(12,ceili(11.0/factor))
+	# Côte à côte, la ligne d'état n'a que la place avant le pied de raccourcis : si son texte n'y tient pas
+	# même resserré, elle passe sous les raccourcis, sur toute la largeur (comme en fenêtre compacte).
+	if side_by_side and font.get_string_size(status.text,HORIZONTAL_ALIGNMENT_LEFT,-1,smallest).x > minf(right,shortcuts_x-gap)-status.position.x:
+		side_by_side = false
+		compact = true
+	if side_by_side: right = minf(right,shortcuts_x-gap)
 	status.add_theme_font_size_override("font_size",pixels)
 	status.position.y = row.size.y-C.px(8+FOOTER_RISE)-font.get_ascent(pixels)
 	status.size = Vector2(maxf(0.0,right-status.position.x),font.get_height(pixels))
+	_fit_status(status,pixels,smallest)
 	if shortcuts==null: return
 	shortcuts.visible=compact or side_by_side
 	var shortcut_font := C.MEDIUM if compact else C.BODY
@@ -703,6 +714,21 @@ static func _position_footer(row: Control) -> void:
 	else:
 		shortcuts.position=Vector2(shortcuts_x,C.px(36-FOOTER_RISE)-shortcut_font.get_ascent(shortcut_px))
 		shortcuts.size=Vector2(C.px(800),shortcut_height)
+
+## Ligne d'état du pied de page (« Conférence tenue · Moral collectif : 75 → 87 / 100 », erreurs, sauvegarde) :
+## toujours sur une seule ligne et entière. Si le texte dépasse la place libre, on réduit la taille jusqu'à
+## `smallest` (≈ 11 px écran) ; seulement ensuite le bout est remplacé par « … » (texte complet en infobulle).
+static func _fit_status(status: Label, pixels: int, smallest: int) -> void:
+	status.autowrap_mode = TextServer.AUTOWRAP_OFF
+	status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	var font := status.get_theme_font("font")
+	var chosen := pixels
+	while chosen > smallest and font.get_string_size(status.text,HORIZONTAL_ALIGNMENT_LEFT,-1,chosen).x > status.size.x: chosen -= 1
+	if chosen != pixels:
+		status.add_theme_font_size_override("font_size",chosen)
+		status.position.y += font.get_ascent(pixels)-font.get_ascent(chosen)
+		status.size.y = font.get_height(chosen)
+	status.tooltip_text = status.text
 
 static func _open_current_calendar(app: Control) -> void:
 	app.set_meta("calendar_table",false)
