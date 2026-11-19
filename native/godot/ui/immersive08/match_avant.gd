@@ -212,7 +212,8 @@ func _cote(model: Dictionary, next: Dictionary) -> int:
 func _affiche(model: Dictionary, next: Dictionary, data: Dictionary) -> Control:
 	var poster := Panel.new()
 	poster.name = "MatchPoster"
-	poster.custom_minimum_size.y = M(300)
+	# 1280 × 720 : affiche plus basse, pour que les tuiles du bas (plan de jeu, causerie) restent au-dessus du pied.
+	poster.custom_minimum_size.y = M(300 if C.density >= .6 else 240)
 	var frame := StyleBoxFlat.new()
 	frame.bg_color = C.BG
 	frame.set_corner_radius_all(M(12))
@@ -274,7 +275,8 @@ func _affiche(model: Dictionary, next: Dictionary, data: Dictionary) -> Control:
 	middle.add_child(_equipe(next.get("home", {}), 0, nous, forme[0] if forme.size() > 0 else [], next))
 	middle.add_child(_centre(next, data))
 	middle.add_child(_equipe(next.get("away", {}), 1, nous, forme[1] if forme.size() > 1 else [], next))
-	stack.add_child(_pastille_meteo(next, nous))
+	# La météo a sa tuile juste en dessous : en 1280 et 1366, l'affiche garde la place pour les noms.
+	if C.density >= .6: stack.add_child(_pastille_meteo(next, nous))
 	return poster
 
 func _equipe(club: Dictionary, side: int, nous: int, forme: Array, next: Dictionary) -> Control:

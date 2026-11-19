@@ -126,12 +126,13 @@ static func _choices(card: Panel, app: Control, club: Dictionary, meta: Dictiona
 	C.fill(_action(row,"Quitter",app.request_quit,"EntryQuit",accent))
 	# Le bas du carnet n'est jamais vide : une vignette de saison occupe la place restante.
 	choices.custom_minimum_size.y = 790.0*C.density
-	var season := C.card("",Vector2(0,150))
+	# 1280 × 720 : la vignette se contente de la place libre, sans faire défiler le carnet.
+	var season := C.card("",Vector2(0,150 if C.density >= .6 else 0))
 	season.name = "EntrySeasonCard"
 	C.fill(season,true)
 	choices.add_child(season)
 	var season_content := C.content(season)
-	var season_art := C.photo("training-session" if not club.is_empty() else "entry-ground",Vector2(0,90),true,.35)
+	var season_art := C.photo("training-session" if not club.is_empty() else "entry-ground",Vector2(0,90 if C.density >= .6 else 24),true,.35)
 	season_art.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	season_content.add_child(season_art)
 	if club.is_empty():
