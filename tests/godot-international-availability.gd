@@ -25,6 +25,18 @@ func ready_for_input() -> bool:
 	await settle()
 	return not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok
 
+## Part de la hauteur visible laissée vide sous le dernier élément peint d'une page
+## (conteneurs de mise en page exclus : ils s'étirent sans rien dessiner ; les panneaux comptent).
+func void_ratio(page: Control) -> float:
+	if page == null or not is_instance_valid(app.body_scroll): return 1.0
+	var viewport: Rect2 = app.body_scroll.get_global_rect()
+	var bottom: float = viewport.position.y
+	for node: Node in page.find_children("*", "Control", true, false):
+		var control := node as Control
+		if (control is Container and not control is PanelContainer) or not control.is_visible_in_tree() or control.size.y <= 0: continue
+		bottom = maxf(bottom, control.get_global_rect().end.y)
+	return maxf(0.0, viewport.end.y - bottom) / maxf(1.0, viewport.size.y)
+
 func capture(name: String) -> void:
 	if DisplayServer.get_name() == "headless": return
 	await RenderingServer.frame_post_draw
@@ -74,6 +86,17 @@ func run() -> void:
 	await settle()
 	check(app.route == "Sélections" and app.management_ui.international_section == "availability", "Le calendrier ouvre le bon onglet")
 	await capture("international-disponibilites-reelles-" + str(root.size.x))
+	# Sélections vivantes : en-tête illustré, chiffres clés, calendrier international ; aucun grand vide, titre lisible.
+	var hero_title := app.find_child("InternationalHeroTitle", true, false) as Label
+	check(hero_title != null and hero_title.is_visible_in_tree() and not hero_title.text.is_empty(), "Sélections · titre de l’en-tête visible")
+	check(app.heading != null and app.heading.is_visible_in_tree(), "Sélections · titre de la page visible")
+	var hero_photo := app.find_child("InternationalHeroPhoto", true, false) as TextureRect
+	check(hero_photo != null and hero_photo.texture != null, "Sélections · photo de la banque d’images")
+	for id: String in ["InternationalFigureCalled", "InternationalFigureReturn", "InternationalFigureEditions", "InternationalFigureJobs", "InternationalUpcoming", "InternationalNationLinks"]:
+		var block := app.find_child(id, true, false) as Control
+		check(block != null and block.is_visible_in_tree(), "Sélections · bloc visible " + id)
+	var selections_void := void_ratio(app.find_child("InternationalSelections", true, false) as Control)
+	check(selections_void <= .30, "Sélections sans vide > 30 %% de la hauteur (%d %%)" % roundi(selections_void * 100))
 	var profile: String = app.model.meta.dataDir.path_join("donnees.json")
 	var before := FileAccess.get_sha256(profile)
 	var own: Array = app.model.squad

@@ -221,6 +221,11 @@ func _tient(view: Control, between: Control, label: String, screen: Rect2) -> vo
 		check(cartes.all(func(c: Control): return absf(c.get_global_rect().position.y - (cartes[0] as Control).get_global_rect().position.y) < 1.0), label + " : cartes du multiplex alignées sur une rangée")
 		check(not cartes.is_empty() and inside(defile.get_global_rect(), (cartes[0] as Control).get_global_rect()), label + " : première carte du multiplex entière")
 		check(defile.get_global_rect().end.y <= bas.get_global_rect().end.y + 1.0 and between.multiplex.get_global_rect().end.y <= zone.end.y - between.px(12) + 1.0, label + " : multiplex au-dessus de la marge basse")
+		# Fondu du bord droit (et « › ») seulement quand la rangée dépasse et qu'il reste des cartes à droite.
+		var fondu: Control = between.multiplex_fondu
+		var reste_a_droite: bool = between.multiplex_deborde() and float(between.multiplex_defile.scroll_horizontal) + defile.size.x < between.multiplex_cartes.size.x - 1.0
+		check(fondu != null and fondu.visible == reste_a_droite, label + " : fondu du multiplex seulement s'il déborde (fondu %s, rangée %d px dans %d)" % [str(fondu.visible) if fondu != null else "?", int(between.multiplex_cartes.size.x), int(defile.size.x)])
+		if fondu != null and fondu.visible: check(absf(fondu.get_global_rect().end.x - defile.get_global_rect().end.x) <= 1.0 and fondu.size.y >= defile.size.y - 1.0, label + " : fondu sur le bord droit du multiplex (%s / %s)" % [str(fondu.get_global_rect()), str(defile.get_global_rect())])
 	# Faits marquants : le plus récent toujours là, chaque fait sur deux lignes au plus, entier dans sa tuile.
 	var lignes_faits: Array = between.faits.get_children().filter(func(n: Node): return not n.is_queued_for_deletion() and str(n.name).begins_with("MatchBetweenHighlight"))
 	var vus: Array = lignes_faits.filter(func(n: Control): return n.is_visible_in_tree())
@@ -1357,9 +1362,28 @@ func journee_injectee(view: Control, direct: Dictionary) -> void:
 		_pas_coupe(between, label)
 		_tient(view, between, label, ecran)
 		check(between.multiplex_cartes.size.x > between.multiplex_defile.size.x + 1.0, label + " : dix matchs, la rangée dépasse et défile (%d px dans %d)" % [int(between.multiplex_cartes.size.x), int(between.multiplex_defile.size.x)])
+		# La dernière carte visible n'est plus coupée net : fondu et « › » au bord droit, retirés au bout de la rangée.
+		var plus: Label = between.find_child("MatchBetweenMultiplexMore", true, false)
+		check(between.multiplex_fondu.is_visible_in_tree() and plus != null and plus.is_visible_in_tree() and plus.text == "›", label + " : dix matchs, fondu et « › » au bord droit du multiplex")
+		between.multiplex_defile.scroll_horizontal = int(between.multiplex_cartes.size.x)
+		await settle(3)
+		check(not between.multiplex_fondu.visible, label + " : au bout de la rangée, plus de fondu (défilement %d)" % between.multiplex_defile.scroll_horizontal)
+		between.multiplex_defile.scroll_horizontal = 0
+		await settle(3)
+		check(between.multiplex_fondu.visible, label + " : revenu au début, le fondu revient")
 		check(between.adjoint_cadre.is_visible_in_tree() and between.adjoint_cadre.size.x >= between.size.x * 0.3, label + " : Gabi garde sa place à côté du multiplex (%d px)" % int(between.adjoint_cadre.size.x))
 		check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, label + " : faits marquants avec le classement")
 		if proof != "" and OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES") != "": await _capture(label.replace(" ", "-"), "journee")
+	# Deux matchs seulement : la rangée tient, pas de fondu ni de « › ».
+	var courte := _journee_test(52, 14)
+	courte["matchs"] = (courte["matchs"] as Array).slice(0, 2)
+	var avec_courte: Dictionary = direct.duplicate()
+	avec_courte["journee"] = courte
+	between.update_frame(app.model, app.model.live, avec_courte, func(_c: Dictionary): pass)
+	await settle(6)
+	between.update_frame(app.model, app.model.live, avec_courte, func(_c: Dictionary): pass)
+	await settle(3)
+	check(_cartes_multiplex(between).size() == 2 and not between.multiplex_deborde() and not between.multiplex_fondu.visible, "Entracte avec deux matchs : la rangée tient, pas de fondu (%d cartes, rangée %d px dans %d)" % [_cartes_multiplex(between).size(), int(between.multiplex_cartes.size.x), int(between.multiplex_defile.size.x)])
 	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
@@ -1434,15 +1458,18 @@ func consigne_reelle(regie: Node) -> void:
 	var voulu := "lent" if actuel == "rapide" else "rapide"
 	var bouton: Button = vue.equipe.find_child("Consigne_rythme_" + voulu, true, false)
 	check(bouton != null, "Consignes (fenêtre Équipe) : cran « %s » du rythme" % voulu)
+	# Fermeture sans « Valider et reprendre » : fermer() relance le match quelques images plus tard (la
+	# fenêtre envoie la reprise dans son _process), et la régie enchaînait alors un temps fort qui masquait
+	# l'écran intermédiaire pendant les mesures du mode multiplex. Le test garde le match en pause.
 	if bouton == null:
-		vue.equipe.fermer()
+		vue.equipe.fermer(false)
 		return
 	var pauses: int = regie.suivi.size()
 	bouton.pressed.emit()
 	var recu: bool = await until(func() -> bool: return app.model.live.get("pilotage") is Dictionary and str(app.model.live.pilotage.get("consignes", {}).get("rythme", "")) == voulu, 30000)
 	check(recu, "Consignes : le moteur applique « %s » (%s)" % [voulu, str(app.model.live.get("pilotage", {}).get("consignes", {}) if app.model.live.get("pilotage") is Dictionary else null)])
 	check(regie.suivi.slice(pauses).any(func(e: Dictionary) -> bool: return e.evenement == "consigne" and e.get("valeur") == voulu), "Consignes : envoyée par la régie")
-	if vue.equipe.visible: vue.equipe.fermer()
+	if vue.equipe.visible: vue.equipe.fermer(false)
 
 ## Mode « multiplex » : carrière world-champ réelle. Le moteur projette la journée (`direct.journee`)
 ## dès le coup d'envoi : au moins une carte de multiplex et notre club dans le classement en direct ;
@@ -1462,11 +1489,13 @@ func journee_directe(view: Control) -> void:
 	await until(func(): return not app.waiting, 30000)
 	if not app.model.live.paused: await command("pause", {"paused": true})
 	await settle(6)
-	# La consigne a pu lancer un temps fort (il va à son terme malgré la pause) : attendre le retour à
-	# l'écran intermédiaire, sinon les mises en page suivantes mesurent un écran masqué.
+	# Un temps fort lancé avant la pause va à son terme (rien ne démarre pendant la pause : la régie ne
+	# demande pas de minute au moteur match en pause) : attendre le retour à l'écran intermédiaire.
 	var revenu: bool = await until(func() -> bool: return regie.etat == regie.INTER and between.visible and regie._retenu.is_empty(), 90000)
 	check(revenu, "Multiplex : retour à l'écran intermédiaire après la consigne (état %s, visible %s)" % [str(regie.etat), str(between.visible)])
 	await settle(4)
+	# Les mesures qui suivent supposent le match arrêté : rien ne doit l'avoir relancé (fenêtre Équipe fermée sans reprise).
+	check(bool(app.model.live.get("paused", false)) and not bool(view.equipe._veut_reprise),"Multiplex : match toujours en pause pour les mesures (pause %s)" % str(app.model.live.get("paused", false)))
 	var direct: Dictionary = regie._live_inter.get("direct", app.model.live.direct)
 	var journee: Variant = direct.get("journee")
 	check(journee is Dictionary, "Carrière world-champ : le moteur fournit la journée en direct")

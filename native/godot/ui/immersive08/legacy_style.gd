@@ -136,6 +136,13 @@ static func _button(button: Button, accent: Color) -> void:
 	button.end_bulk_theme_override()
 
 static func _button_overrides(button: Button, accent: Color) -> void:
+	# Lien de lecture (nom ou portrait du joueur dans le dossier) : ni fond ni bordure, seul l'anneau du focus clavier.
+	if button.get_meta("plain_link", false):
+		for state in ["normal","hover","pressed","hover_pressed","disabled"]: button.add_theme_stylebox_override(state,StyleBoxEmpty.new())
+		var anneau := C.box(Color.TRANSPARENT,C.GOLD,5,0)
+		anneau.set_border_width_all(2)
+		button.add_theme_stylebox_override("focus",anneau)
+		return
 	var original := button.get_theme_stylebox("normal")
 	var selected: bool = button.get_meta("carnet_selected",false)
 	var primary: bool = original is StyleBoxFlat and (original.bg_color==Paper.INK or button.get_theme_color("font_color")==C.BG)

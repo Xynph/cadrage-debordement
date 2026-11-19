@@ -142,6 +142,8 @@ var _bonus_cle := ""
 var multiplex_cartes: GridContainer
 ## Une seule rangée de cartes ; au-delà de la largeur, défilement horizontal (molette ou glisser).
 var multiplex_defile: ScrollContainer
+## Fondu du bord droit et « › » : la suite du multiplex est hors de vue (masqué quand tout tient ou en fin de rangée).
+var multiplex_fondu: TextureRect
 ## Pilotage reçu du moteur (`live.pilotage`) : sert aux états des joueurs (Galvanisé, Vexé…) de Mon XV.
 ## Les consignes en direct ne sont pas sur cet écran (fenêtre Équipe de la vue du match).
 var _pilotage: Dictionary = {}
@@ -973,8 +975,47 @@ func _page() -> void:
 	multiplex_defile.tooltip_text = "Les autres matchs de la journée : molette ou glisser pour voir la suite."
 	S.G.fill(multiplex_defile)
 	multiplex_defile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	rangee_multiplex.add_child(multiplex_defile)
+	# Le défilement et son fondu superposés (retours du 19 novembre 2026 : la dernière carte visible était
+	# coupée net, rien ne disait qu'il y avait une suite).
+	var pile_multiplex := MarginContainer.new()
+	pile_multiplex.name = "MatchBetweenMultiplexStack"
+	for cote in ["left", "right", "top", "bottom"]: pile_multiplex.add_theme_constant_override("margin_" + cote, 0)
+	pile_multiplex.mouse_filter = Control.MOUSE_FILTER_PASS
+	S.G.fill(pile_multiplex)
+	pile_multiplex.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	rangee_multiplex.add_child(pile_multiplex)
+	pile_multiplex.add_child(multiplex_defile)
 	multiplex_defile.add_child(multiplex_cartes)
+	multiplex_fondu = TextureRect.new()
+	multiplex_fondu.name = "MatchBetweenMultiplexFade"
+	multiplex_fondu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var degrade := Gradient.new()
+	degrade.set_color(0, Color(PANNEAU, 0.0))
+	degrade.set_color(1, Color(PANNEAU, 0.97))
+	degrade.add_point(0.55, Color(PANNEAU, 0.8))
+	var texture_fondu := GradientTexture2D.new()
+	texture_fondu.gradient = degrade
+	texture_fondu.width = 64
+	texture_fondu.height = 2
+	multiplex_fondu.texture = texture_fondu
+	multiplex_fondu.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	multiplex_fondu.stretch_mode = TextureRect.STRETCH_SCALE
+	multiplex_fondu.custom_minimum_size.x = px(72)
+	multiplex_fondu.size_flags_horizontal = Control.SIZE_SHRINK_END
+	multiplex_fondu.size_flags_vertical = Control.SIZE_FILL
+	var suite := _texte("›", 40, OR, false, true)
+	suite.name = "MatchBetweenMultiplexMore"
+	suite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	suite.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	suite.offset_right = -px(6)
+	suite.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	suite.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	multiplex_fondu.add_child(suite)
+	multiplex_fondu.visible = false
+	pile_multiplex.add_child(multiplex_fondu)
+	multiplex_defile.resized.connect(_fondu_multiplex)
+	multiplex_cartes.resized.connect(_fondu_multiplex)
+	multiplex_defile.get_h_scroll_bar().value_changed.connect(func(_v: float): _fondu_multiplex())
 	multiplex.visible = false
 
 ## Colonne gauche : Notre XV, onglets Terrain (par défaut), Tableau et XV adverse ; la carte
@@ -1724,6 +1765,17 @@ func _largeur_multiplex() -> void:
 		plafond = maxf(float(px(240)), minf(plafond, reste))
 	var largeur := minf(voulu, plafond)
 	if not is_equal_approx(multiplex_defile.custom_minimum_size.x, largeur): multiplex_defile.custom_minimum_size.x = largeur
+	_fondu_multiplex()
+
+## Fondu du bord droit du multiplex et « › » : seulement quand la rangée dépasse et qu'il reste des cartes
+## à droite (rien quand tout tient, rien une fois au bout de la rangée).
+func _fondu_multiplex() -> void:
+	if not is_instance_valid(multiplex_fondu) or not is_instance_valid(multiplex_defile) or not is_instance_valid(multiplex_cartes): return
+	multiplex_fondu.visible = multiplex_deborde() and float(multiplex_defile.scroll_horizontal) + multiplex_defile.size.x < multiplex_cartes.size.x - 1.0
+
+## Vrai quand la rangée de cartes du multiplex est plus large que sa zone de défilement.
+func multiplex_deborde() -> bool:
+	return is_instance_valid(multiplex_defile) and is_instance_valid(multiplex_cartes) and multiplex_cartes.size.x > multiplex_defile.size.x + 1.0
 
 func _carte_match(m: Dictionary, change: bool, teintes: Dictionary) -> Control:
 	var carte := PanelContainer.new()
