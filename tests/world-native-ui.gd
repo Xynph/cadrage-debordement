@@ -217,12 +217,20 @@ func check_competitions() -> void:
 		for i in range(4): await settle()
 		var league: Dictionary = app.model.leagues.filter(func(item: Dictionary): return item.id == competition[0])[0]
 		var ids: Array = league.pools[index].rows.map(func(item: Dictionary): return item.id)
-		var rows := app.find_children("StandingsRow_*", "PanelContainer", true, false)
+		# Classements ouvre son gabarit riche dès 1280 × 720 (lignes « StandingsRow_* » en boutons, tableau paginé
+		# dans « StandingsTableFrame ») ; l'ancien tableau (PanelContainer, « StandingsScroll ») reste accepté.
+		var rows: Array = app.find_children("StandingsRow_*", "Button", true, false)
+		if rows.is_empty(): rows = app.find_children("StandingsRow_*", "PanelContainer", true, false)
 		visible_pool_rows[competition[0]] = rows.size()
 		check(not rows.is_empty() and rows.all(func(row: Node): return row.get_meta("club_id") in ids), "Le classement n’affiche que la poule choisie")
-		var standings_scroll: ScrollContainer = named("StandingsScroll")
-		var bar := standings_scroll.get_v_scroll_bar()
-		check(scroll_fits("StandingsScroll"), "Classement paginé sans défilement vertical · %s · hauteur %.0f · contenu %.0f · page %.0f · lignes %d" % [competition[0], standings_scroll.size.y, bar.max_value, bar.page, rows.size()])
+		var standings_scroll := named("StandingsScroll") as ScrollContainer
+		if standings_scroll != null:
+			var bar := standings_scroll.get_v_scroll_bar()
+			check(scroll_fits("StandingsScroll"), "Classement paginé sans défilement vertical · %s · hauteur %.0f · contenu %.0f · page %.0f · lignes %d" % [competition[0], standings_scroll.size.y, bar.max_value, bar.page, rows.size()])
+		else:
+			var frame := named("StandingsTableFrame") as Control
+			var framed: bool = frame != null and named("StandingsPagination") != null and rows.all(func(row: Control): return frame.get_global_rect().grow(1).encloses(row.get_global_rect()))
+			check(framed, "Classement paginé tenu dans son cadre · %s · lignes %d" % [competition[0], rows.size()])
 	# Projection de palmarès. La simulation complète et l’archivage réels sont
 	# vérifiés séparément dans world-worker-season.cjs.
 	app.model.archives.seasons = [{"season":1,"champions":[{"leagueId":"urc","clubId":40}],"europe":{"champions":{"champion":30},"challenge":{"champion":31}}}]

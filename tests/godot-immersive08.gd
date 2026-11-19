@@ -44,6 +44,25 @@ func check(condition: bool, message: String) -> void:
 	checks += 1
 	if not condition: failures.append(message); printerr("FAIL: " + message)
 
+## Plus petit texte visible, en pixels réellement affichés (taille de police × échelle globale) : [px, nœud, texte].
+func smallest_text(node: Node) -> Array:
+	var result: Array = [INF, "", ""]
+	for item: Node in node.find_children("*","Control",true,false):
+		var control := item as Control
+		if not control.is_visible_in_tree(): continue
+		var font_size := 0
+		var shown := ""
+		if control is Label: font_size = control.get_theme_font_size("font_size"); shown = (control as Label).text
+		elif control is Button: font_size = control.get_theme_font_size("font_size"); shown = (control as Button).text
+		elif control is LineEdit:
+			font_size = control.get_theme_font_size("font_size")
+			shown = (control as LineEdit).text if not (control as LineEdit).text.is_empty() else (control as LineEdit).placeholder_text
+		elif control is RichTextLabel: font_size = control.get_theme_font_size("normal_font_size"); shown = (control as RichTextLabel).get_parsed_text()
+		if shown.strip_edges().is_empty() or font_size <= 0: continue
+		var effective := float(font_size) * control.get_global_transform().get_scale().y
+		if effective < result[0]: result = [effective, str(control.name), shown.left(40)]
+	return result
+
 func caption_fits(button: Button) -> bool:
 	if button == null: return false
 	var font := button.get_theme_font("font")
@@ -893,12 +912,23 @@ func desktop_1080() -> void:
 	root.size=Vector2i(1280,720)
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await settle()
+	# Gabarits riches ouverts dès 1280 × 720 (shell.gd, RICH_FROM_720P) ; les autres gardent le repli compact.
+	var rich_720: Array = app.Immersive.RICH_FROM_720P
+	check(rich_720.has("Classements") and rich_720.has("Finances") and rich_720.has("Recrutement") and not rich_720.has("Préparation"),"Liste explicite des gabarits riches dès 720p")
 	for route: String in ["Finances","Calendrier","Formation","Plan de jeu","Centre","Préparation","Recrutement",
 		"Classements","Club","Staff","Travail du club","Stratégie","Presse","Rivalités","Vestiaire","Carrière"]:
 		if route=="Presse": app.set_meta("press_mail_origin","qa-presse")
 		app._navigate(route)
 		await settle()
-		if route=="Calendrier":
+		if route!="Rivalités" and rich_720.has(route):
+			var family: Array = FAMILIES.filter(func(item: Array): return item[0]==route)[0]
+			var rich_view: Control = app.find_child("ImmersiveFinance" if route=="Finances" else family[1],true,false)
+			check(rich_view!=null and rich_view.is_visible_in_tree(),"Gabarit riche ouvert en 720p · "+route)
+			check(app.find_child("CompactRouteArt",true,false)==null,"Plus de repli compact en 720p · "+route)
+			var smallest := smallest_text(app.root_content)
+			check(smallest[0]>=11.0,"Aucun texte sous 11 px en 720p · %s · %.1f px · %s « %s »" % [route,smallest[0],smallest[1],smallest[2]])
+			if route in ["Classements","Recrutement","Club","Carrière"]: await capture(family[2]+"-1280x720")
+		elif route=="Calendrier":
 			check(app.find_child("CalendarMonthGrid",true,false)!=null,"Grille mensuelle visible en 720p")
 		elif route=="Rivalités":
 			var hero := app.find_child("RivalryHero",true,false) as Control
@@ -960,7 +990,10 @@ func navigation_flow() -> void:
 	command_id = app.bridge._next_id
 	await click(app.find_child("ImmersiveContinue",true,false))
 	await settle()
-	check(app.route=="Match" and app._live().is_empty() and app.bridge._next_id==command_id,"Continuer ouvre l’avant-match compact sans commande")
+	check(app.route=="Match" and app._live().is_empty() and app.bridge._next_id==command_id,"Continuer ouvre l’avant-match en 720p sans commande")
+	check(app.find_child("MatchPosterPhoto",true,false)!=null,"L’avant-match illustré s’ouvre aussi en 720p")
+	var match_smallest := smallest_text(app.root_content)
+	check(match_smallest[0]>=11.0,"Aucun texte sous 11 px dans l’avant-match en 720p · %.1f px · %s « %s »" % [match_smallest[0],match_smallest[1],match_smallest[2]])
 	await key(KEY_LEFT,false,true)
 	check(app.route=="Préparation" and app.management_ui.preparation.tab==2,"Alt gauche retrouve l’onglet Entraînement sélectionné sur place")
 	await click(app.find_child("PreparationMatch",true,false))

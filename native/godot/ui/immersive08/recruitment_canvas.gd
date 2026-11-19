@@ -344,8 +344,10 @@ func _sort_arrows() -> void:
 		button.text = str(button.get_meta("sort_caption")) + (" ↓" if _sort_descending() else " ↑") if active else str(button.get_meta("sort_caption")) + " ↕"
 		button.tooltip_text = "Trier par %s · %s · valeurs inconnues en dernier" % [column.to_lower(),"croissant au prochain clic" if active and _sort_descending() else "décroissant au prochain clic" if active else "activer le tri"]
 		button.accessibility_name = button.text + " · " + button.tooltip_text
-		var pixels := C.px(18)
-		while pixels > C.px(13) and C.DISPLAY.get_string_size(button.text,HORIZONTAL_ALIGNMENT_LEFT,-1,pixels).x > button.size.x-C.px(4): pixels -= 1
+		# Plancher lisible dès 1280 × 720 (densité 0,5) ; inchangé à partir de 1920 × 1080.
+		var smallest := C.px(13) if C.density >= .75 else 12
+		var pixels := maxi(smallest, C.px(18))
+		while pixels > smallest and C.DISPLAY.get_string_size(button.text,HORIZONTAL_ALIGNMENT_LEFT,-1,pixels).x > button.size.x-C.px(4): pixels -= 1
 		button.add_theme_font_size_override("font_size",pixels)
 
 func _refresh() -> void:

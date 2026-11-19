@@ -79,7 +79,8 @@ func run() -> void:
 						var same_pixels: bool=photo.texture!=null and expected!=null and photo.texture.get_image().get_size()==expected.get_image().get_size() and photo.texture.get_image().get_data()==expected.get_image().get_data()
 						if same_pixels and photo.material!=null:found=true
 			check(found,"Visage du vrai académicien "+group+" dans Formation "+str(resolution.x))
-		check((app.body.find_child("ImmersiveAcademy",true,false) != null) == (resolution.x == 1920), "Branches compact/immersif réellement exercées")
+		# Formation ouvre son gabarit riche dès 1280 × 720 (shell.gd, RICH_FROM_720P).
+		check(app.body.find_child("ImmersiveAcademy",true,false) != null, "Gabarit riche de Formation à " + str(resolution))
 		if DisplayServer.get_name() != "headless":
 			await RenderingServer.frame_post_draw
 			check(root.get_texture().get_image().save_png(OS.get_environment("CD_ACADEMY_CAPTURES").path_join("academy-%d.png" % resolution.x)) == OK, "Capture académie")

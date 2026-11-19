@@ -33,6 +33,16 @@ const MatchCompact = preload("res://ui/immersive08/match_compact.gd")
 const G = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const TACTICS_CANVAS_MIN_WIDTH := 1600
+## Gabarits riches (référence 2560 × 1440) ouverts dès 1280 × 720 (densité 0,5). Les gabarits sont
+## proportionnels (C.px, D.place) et tout texte passe par un plancher de 12 px (C.label, D.text) :
+## à 1280 × 720 le plus petit texte rendu fait 12 × 0,977 ≈ 11,7 px (pied de page compris, voir _fit_layout).
+## Les écrans absents de la liste gardent leur page simple sous 1920 × 1080 : Préparation, Entraînement,
+## Plan de jeu et Centre (commandes denses non revues à 0,5), Calendrier en tableau hors Nationale/Champ.
+## Le Match (avant le coup d'envoi) suit le même seuil RICH_MIN_SIZE ; le direct est l'écran contextuel.
+const RICH_MIN_SIZE := Vector2i(1280,720)
+const SIDEBAR_AUTOSAVE_CAPTION := "Sauvegarde auto"
+const RICH_FROM_720P := ["Rivalités","Classements","Finances","Recrutement","Club","Staff","Travail du club","Stratégie",
+	"Carrière","Presse","Vestiaire","Formation"]
 
 const FOOTER_RISE := 14
 const TOPBAR_ACTION_LEFT := 2067
@@ -137,7 +147,7 @@ static func render(app: Control) -> bool:
 	content.name = "CareerContent"
 	inset.add_child(content)
 	var canvas_script := _dedicated_page(app,physical)
-	var immersive_match: bool = app.route=="Match" and physical.x>=1920 and physical.y>=1080
+	var immersive_match: bool = app.route=="Match" and physical.x>=RICH_MIN_SIZE.x and physical.y>=RICH_MIN_SIZE.y
 	var monthly_calendar: bool = app.route=="Calendrier" and not Selections.nation_only(app.model) and not app.get_meta("calendar_table",false)
 	if canvas_script!=null or immersive_match or monthly_calendar or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
 		app.heading=null
@@ -244,7 +254,7 @@ static func _dedicated_page(app: Control, size: Vector2i) -> Script:
 	if app.route == "Calendrier" and not app.get_meta("calendar_table",false): return null
 	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId") in ["nationale","champ"]: return Competition
 	if size.x<1920 or size.y<1080:
-		return Rivalry if app.route=="Rivalités" and size.x>=1280 and size.y>=720 else null
+		if size.x<RICH_MIN_SIZE.x or size.y<RICH_MIN_SIZE.y or app.route not in RICH_FROM_720P: return null
 	if _is_training(app): return Training
 	match app.route:
 		"Préparation": return Preparation
@@ -342,7 +352,12 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	D.rect(dock,Rect2(0,220,247,75),Color("0b1614"))
 	var storage_error: bool = app._storage_has_error() if app.has_method("_storage_has_error") else app._status_has_error()
 	D.rect(dock,Rect2(21,245,8,8),C.ALERT if storage_error else C.MINT,4)
-	D.text(dock,39,255,"Stockage à vérifier" if storage_error else "Sauvegarde automatique",17,C.MUTED,500,198)
+	# Libellé court : « Sauvegarde automatique » était coupé dès 1280 × 720 (plancher de 12 px) et le pied de page
+	# donne déjà la phrase complète. L'infobulle garde la précision.
+	var storage_state := D.text(dock,39,255,"Stockage à vérifier" if storage_error else SIDEBAR_AUTOSAVE_CAPTION,17,C.MUTED,500,198)
+	storage_state.name = "ImmersiveSidebarStorage"
+	storage_state.mouse_filter = Control.MOUSE_FILTER_PASS
+	storage_state.tooltip_text = "Le stockage de la carrière demande une vérification." if storage_error else "Sauvegarde automatique activée (fréquence dans les Réglages)."
 	var profile := "Sélection nationale" if national else G.club_abbr(app.model.club)+" · Carrière principale"
 	D.text(dock,24,281,profile,17,C.FAINT,500,210)
 

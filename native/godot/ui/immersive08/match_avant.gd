@@ -492,7 +492,7 @@ func _lien(caption: String, callback: Callable, node_name: String) -> Button:
 	button.flat = true
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.add_theme_font_override("font", C.BODY)
-	button.add_theme_font_size_override("font_size", M(15))
+	button.add_theme_font_size_override("font_size", maxi(12, M(15)))
 	button.add_theme_color_override("font_color", C.GOLD)
 	button.add_theme_color_override("font_hover_color", C.IVORY)
 	button.add_theme_color_override("font_focus_color", C.IVORY)
@@ -830,7 +830,7 @@ class Barres extends Control:
 		resized.connect(queue_redraw)
 	func _draw() -> void:
 		var n := 15
-		var font_size := maxi(10, int(size.y * .22))
+		var font_size := maxi(12, int(size.y * .22))
 		var gap := maxf(2.0, size.x * .008)
 		var w := (size.x - gap * (n - 1)) / n
 		var h := size.y - font_size - 3.0
@@ -1042,7 +1042,7 @@ func _bouton_secondaire(caption: String, callback: Callable, node_name: String) 
 	C.fill(button)
 	button.custom_minimum_size.y = M(34)
 	button.add_theme_font_override("font", C.DISPLAY)
-	button.add_theme_font_size_override("font_size", M(17))
+	button.add_theme_font_size_override("font_size", maxi(12, M(17)))
 	for state in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color(C.IVORY, .08) if state == "hover" else Color.TRANSPARENT
