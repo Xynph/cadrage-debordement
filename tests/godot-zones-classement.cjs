@@ -1,6 +1,7 @@
 'use strict';
 // Zones de classement Monde dans le vrai écran Compétitions (tests/godot-zones-classement.gd) : liseré,
-// symbole dessiné, libellé accessible, légende, note et ligne « Champion » sans chevauchement.
+// symbole dessiné, libellé accessible, légende, note et ligne « Champion » sans chevauchement ; même langage
+// sur le classement court du Bureau (gabarits large et compact), légende limitée aux zones de l'extrait.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');

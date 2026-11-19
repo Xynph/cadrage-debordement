@@ -10,6 +10,7 @@ const Avis = preload("res://guide/gabi_avis.gd")
 const Office = preload("res://ui/immersive08/office.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
+const Zones = preload("res://ui/immersive08/standings_zones.gd")
 
 static func _card(page: Control, rectangle: Rect2, title: String, icon: String, id: String) -> Panel:
 	var local := rectangle
@@ -282,22 +283,36 @@ static func _group(card: Panel, app: Control, w: int = 422) -> void:
 static func _standings(card: Panel, app: Control, w: int = 684) -> void:
 	# Colonnes calées sur le bord droit : la largeur du club s'adapte au bloc.
 	var played_x := w - 223
-	for pair in [["#",26],["CLUB",78],["J",played_x],["DIFF.",w-142],["PTS",w-37]]: D.text(card,pair[1],90,pair[0],18,C.MUTED,500,35)
 	var rows := P.standings(app.model)
+	# Monde : zones du règlement présentes dans l'extrait (liseré + symbole + mot, légende courte dessous).
+	# Avec une légende, les lignes se resserrent (pas de 39 au lieu de 42) pour la loger au-dessus de la forme.
+	var zones := Zones.visible(rows)
+	var stride := 39 if not zones.is_empty() else 42
+	var rank_x := 58 if not zones.is_empty() else 36
+	for pair in [["#",rank_x-5 if not zones.is_empty() else 26],["CLUB",78],["J",played_x],["DIFF.",w-142],["PTS",w-37]]: D.text(card,pair[1],90,pair[0],18,C.MUTED,500,35)
 	for i in rows.size():
 		var club: Dictionary = rows[i]
-		var y := 105+i*42
+		var y := 105+i*stride
 		var own: bool = club.get("id")==app.model.club.id
-		if own: D.rect(card,Rect2(17,y-4,w-34,40),Color(app.accent,.32),4)
+		var box := Rect2(17,y-4,w-34,stride-2)
+		if own: D.rect(card,box,Color(app.accent,.32),4)
 		var hit := Office.standing_action(app,club)
 		card.add_child(hit)
-		D.place(hit,Rect2(17,y-4,w-34,40))
-		D.text(card,36,y+23,G.n(club.get("rank","—")) if P.standings_open(club) else "–",25,C.MINT if own else C.IVORY,600,30,HORIZONTAL_ALIGNMENT_CENTER)
+		D.place(hit,box)
+		var zone := Zones.of(club)
+		if not zone.is_empty():
+			var kind := str(zone.get("kind",""))
+			var edge := D.rect(hit,Rect2(0,1,4,stride-4),Zones.tint(kind))
+			edge.name = "StandingsZoneEdge"
+			var side := Zones.mark_side()
+			Zones.mark(hit,kind,Rect2(8,(stride-2-side)/2.0,side,side),Zones.tint(kind))
+		D.text(card,rank_x,y+23,G.n(club.get("rank","—")) if P.standings_open(club) else "–",25,C.MINT if own else C.IVORY,600,30,HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(card,80,y+23,G.club_name(club),23,C.IVORY,600,played_x-104)
 		D.text(card,played_x,y+23,G.n(club.get("played",0)),22,C.MUTED,500,32,HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(card,w-130,y+23,"%+d" % (int(club.get("pf",0))-int(club.get("pa",0))),23,C.MUTED,500,70,HORIZONTAL_ALIGNMENT_RIGHT)
 		D.text(card,w-37,y+23,G.n(club.get("points",0)),25,C.IVORY,700,60,HORIZONTAL_ALIGNMENT_RIGHT)
-		if not own: D.line(card,Vector2(20,y+33),Vector2(w-20,y+33),Color(C.LINE,.35))
+		if not own: D.line(card,Vector2(20,y+stride-9),Vector2(w-20,y+stride-9),Color(C.LINE,.35))
+	if not zones.is_empty(): _zone_legend(card, zones, _zone_note(app.model), 26, 105+rows.size()*stride+14, w-52)
 	_objective(card, app, rows, w)
 	D.text(card,26,392,"FORME",18,C.MUTED,500,75)
 	var form: Array = []
@@ -310,6 +325,45 @@ static func _standings(card: Panel, app: Control, w: int = 684) -> void:
 	var action := D.button(card,Rect2(w-324,403,300,32),"Classement complet",func():app._navigate("Classements"),false,"arrow",true,app.accent,"OfficeStandingsAction")
 	action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 	action.add_theme_color_override("font_color",C.GOLD)
+
+## Note du règlement de la ligue du club (« Pas de relégation cette saison. »), vide sinon.
+static func _zone_note(model: Dictionary) -> String:
+	for league in model.get("leagues", []):
+		if league is Dictionary and league.get("id") == model.get("meta", {}).get("leagueId") and league.get("zoneNote") is String: return str(league.zoneNote)
+	return ""
+
+## Légende courte, limitée aux zones de l'extrait : « ★ Demi-finale directe · ▼ Relégation » (symboles dessinés),
+## puis la note du règlement seulement si elle tient sur la même ligne.
+static func _zone_legend(card: Panel, zones: Array, note: String, x: float, baseline: float, width: float) -> Control:
+	var group := Control.new()
+	group.name = "StandingsZoneLegend"
+	group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(group)
+	D.place(group, Rect2(x, baseline - 18, width, 24))
+	var cursor := 0.0
+	var side := Zones.mark_side()
+	for i in zones.size():
+		var kind := str(zones[i].get("kind", ""))
+		if i > 0:
+			D.text(group, cursor + 10, 18, "·", 18, C.MUTED, 600, 20, HORIZONTAL_ALIGNMENT_CENTER)
+			cursor += 20
+		var mark := Zones.mark(group, kind, Rect2(cursor, 19 - side, side, side), Zones.tint(kind))
+		mark.name = "StandingsZoneLegendMark_" + kind
+		var label := D.text(group, cursor + side + 5, 18, str(zones[i].get("label", "")), 18, C.IVORY, 600)
+		label.name = "StandingsZoneLegendItem_%d" % i
+		label.set_meta("zone_kind", kind)
+		cursor += side + 5 + label.size.x / C.density
+	var spoken := Zones.legend_text(zones)
+	if not note.is_empty():
+		var room := width - cursor - 20
+		if C.font(500).get_string_size(note, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(18))).x / C.density <= room:
+			var written := D.text(group, cursor + 20, 18, note, 18, C.MUTED, 500)
+			written.name = "StandingsZoneNote"
+			spoken += ". " + note
+	group.set_meta("legend_text", spoken)
+	group.accessibility_name = "Zones du classement : " + spoken
+	group.tooltip_text = group.accessibility_name
+	return group
 
 ## Objectif du conseil en tête du classement : place visée, place actuelle et tendance.
 ## Jalon « place au classement » de la direction s'il existe, sinon l'objectif sportif du club (« Top 6 », « Maintien »…).

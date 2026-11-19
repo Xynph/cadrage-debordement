@@ -15,6 +15,7 @@ const World = preload("res://ui/immersive08/world_archive.gd")
 const Link = preload("res://ui/entity_link.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const EquipeType = preload("res://ui/equipe_type_view.gd")
+const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const WIDTH := 2248
 const LEFT := 1310
 const RIGHT := 922
@@ -26,8 +27,6 @@ const PRIMARY := Color("106d43")
 const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
 const JAPAN_COMPETITIONS := ["jlo-d1", "jlo-d2", "jlo-d1-d2"]
 const RESULT_TINTS := {"V": WIN, "N": DRAW, "D": LOSS}
-## Zones de classement Monde (world-standings-zones.json via le modèle) : liseré, forme et mot, jamais la couleur seule.
-const ZONE_TINTS := {"bye": WIN, "playoff": WIN, "promotion-playoff": WARM, "relegation-playoff": WARM, "repechage": WARM, "relegation": LOSS}
 const AFAR_HINT := "Championnat en consultation : scores, classement, blessures et évolution des joueurs, sans notes individuelles ni feuilles de match. À changer dans Paramètres › Championnats suivis, effet dès la semaine suivante."
 const TABLE_COLUMNS := [
 	["#", 41, 58, "rank"], ["J", 488, 52, "played"], ["V", 549, 50, "won"],
@@ -390,7 +389,7 @@ func _standings_row(parent: Node, club: Dictionary, index: int, stride: int) -> 
 	var zone := Color.TRANSPARENT
 	# Monde : zone publiée par le moteur pour ce rang (règlement de la compétition), seulement une fois le classement ouvert.
 	var zone_info: Dictionary = club.zone if international and rank > 0 and club.get("zone") is Dictionary else {}
-	if international: zone = ZONE_TINTS.get(str(zone_info.get("kind", "")), Color.TRANSPARENT)
+	if international: zone = Zones.TINTS.get(str(zone_info.get("kind", "")), Color.TRANSPARENT)
 	else:
 		zone = WIN if rank > 0 and rank <= 6 else WARM if france and league.id == "elite" and rank == 13 else LOSS if france and league.id == "elite" and rank == 14 else Color.TRANSPARENT
 	var base := Color("111c1e") if index % 2 == 0 else Color("0e1719")
@@ -415,8 +414,8 @@ func _standings_row(parent: Node, club: Dictionary, index: int, stride: int) -> 
 		var edge := D.rect(row, Rect2(4, 1, 4, stride - 2), zone)
 		edge.name = "StandingsZoneEdge"
 	if not zone_info.is_empty():
-		var side := _mark_side()
-		_zone_mark(row, str(zone_info.get("kind", "")), Rect2(25 - side, (stride - side) / 2.0, side, side), zone)
+		var side := Zones.mark_side()
+		Zones.mark(row,str(zone_info.get("kind", "")), Rect2(25 - side, (stride - side) / 2.0, side, side), zone)
 	D.line(row, Vector2(9, stride - 1), Vector2(LEFT - 12, stride - 1), Color(C.LINE, .70))
 	var emblem := mini(34,stride-3)
 	_crest(row, club, Rect2(87, (stride - emblem) / 2.0, emblem, emblem))
@@ -1170,8 +1169,8 @@ static func _zone_legend(parent: Node, zones: Array, x: float, baseline: float) 
 		if i > 0:
 			D.text(group, cursor + 12, 20, "·", 19, C.MUTED, 600, 24, HORIZONTAL_ALIGNMENT_CENTER)
 			cursor += 24
-		var side := _mark_side()
-		var mark := _zone_mark(group, kind, Rect2(cursor, 21 - side, side, side), ZONE_TINTS.get(kind, C.IVORY))
+		var side := Zones.mark_side()
+		var mark := Zones.mark(group, kind, Rect2(cursor, 21 - side, side, side), Zones.tint(kind))
 		mark.name = "StandingsZoneLegendMark_" + kind
 		var label := D.text(group, cursor + side + 6, 20, caption, 19, C.IVORY, 600)
 		label.name = "StandingsZoneLegendItem_%d" % i

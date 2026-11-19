@@ -3,9 +3,14 @@ extends SceneTree
 ## Les zones viennent de la donnée du moteur (native/engine/world-standings-zones.json), projetées comme
 ## world-model.cjs (zone de chaque ligne d'après son rang). Chaque ligne en zone porte liseré, symbole dessiné
 ## et libellé dans son nom accessible ; la légende, la note du règlement et la ligne « Champion » tiennent sous
-## le tableau sans se chevaucher, à 1280 × 720 et 1920 × 1080. Classements synthétiques : aucun résultat sportif.
+## le tableau sans se chevaucher, à 1280 × 720 et 1920 × 1080. Même langage sur le classement court du Bureau
+## (office_canvas.gd large, office.gd compact) : liseré, symbole, mot lu, légende des seules zones de l'extrait.
+## Classements synthétiques : aucun résultat sportif.
 const C = preload("res://ui/immersive08/components.gd")
 const Competition = preload("res://ui/immersive08/competition_canvas.gd")
+const OfficeCanvas = preload("res://ui/immersive08/office_canvas.gd")
+const OfficeCompact = preload("res://ui/immersive08/office.gd")
+const P = preload("res://ui/immersive08/projection.gd")
 class ReadingApp extends Control:
 	var model: Dictionary = {}
 	var accent := Color("cc4d57")
@@ -57,6 +62,11 @@ func run() -> void:
 	for height in [720.0, 1080.0]:
 		C.configure(height, height * 16.0 / 9.0)
 		for league: Dictionary in leagues: await screen(league, leagues, int(height))
+		# Bureau : classement court (club ± voisins) en haut et en bas de tableau, gabarit large (1920) et compact (1280).
+		for league: Dictionary in leagues:
+			for own_index in [1, league.rows.size() - 1]:
+				for w in [540, 684]: await office_canvas(league, leagues, own_index, w, int(height))
+				await office_compact(league, leagues, own_index, int(height))
 	C.configure(1440, 2560)
 	finish()
 
@@ -119,6 +129,107 @@ func screen(league: Dictionary, leagues: Array, height: int) -> void:
 			check(ink(stack[k - 1]).y <= ink(stack[k]).x + 1, "Pied sans chevauchement (%s / %s)%s" % [stack[k - 1].name, stack[k].name, where])
 		if not stack.is_empty(): check(ink(stack[-1]).y <= frame.get_global_rect().end.y, "Pied dans le cadre" + where)
 	check(app.commands == 0 and JSON.stringify(app.model) == before, "Affichage sans commande ni modification du modèle" + where)
+	app.queue_free()
+	await process_frame
+
+func office_app(league: Dictionary, leagues: Array, own_index: int) -> ReadingApp:
+	var app := ReadingApp.new()
+	app.route = "Bureau"
+	app.model = {"club": league.rows[own_index].duplicate(), "meta": {"mode": "world", "leagueId": league.id, "season": 1}, "league": league.rows, "leagues": leagues}
+	root.add_child(app)
+	return app
+
+## Zones attendues dans l'extrait du Bureau : celles des lignes affichées, dans l'ordre, chacune une fois.
+func expected_zones(app: ReadingApp) -> Array:
+	var seen := {}
+	var result: Array = []
+	for row: Dictionary in P.standings(app.model):
+		if row.zone is Dictionary and not seen.has(row.zone.kind):
+			seen[row.zone.kind] = true
+			result.append(row.zone)
+	return result
+
+## Lignes du classement court : liseré, symbole dessiné et libellé dit sur chaque ligne en zone, rien ailleurs.
+## `scope` rend le nœud qui porte liseré et symbole pour un bouton de ligne.
+func office_rows(app: ReadingApp, holder: Control, scope: Callable, where: String) -> void:
+	var shown := P.standings(app.model)
+	check(shown.size() == 6, "Six lignes dans l'extrait" + where)
+	for club: Dictionary in shown:
+		var hit: Button = holder.find_child("OfficeStandingRow_" + str(club.id), true, false)
+		check(hit != null, "Ligne du club %s%s" % [club.id, where])
+		if hit == null: continue
+		var area: Node = scope.call(hit)
+		var edge: Control = area.find_child("StandingsZoneEdge", true, false)
+		var mark: Control = area.find_child("StandingsZoneMark", true, false)
+		if club.zone is Dictionary:
+			check(edge != null and edge.visible and mark != null and str(mark.get_meta("zone_kind", "")) == club.zone.kind, "Bureau : liseré et symbole au rang %d%s" % [club.rank, where])
+			check(mark != null and mark.get_child_count() == 1 and (mark.get_child(0) is Polygon2D or mark.get_child(0) is Line2D), "Bureau : symbole dessiné au rang %d%s" % [club.rank, where])
+			check(hit.accessibility_name.contains(str(club.zone.label)) and str(hit.get_meta("zone_kind", "")) == club.zone.kind, "Bureau : « %s » annoncé au rang %d%s" % [club.zone.label, club.rank, where])
+		else:
+			check(edge == null and mark == null and not hit.has_meta("zone_kind"), "Bureau : aucune zone au rang %d%s" % [club.rank, where])
+
+## Légende : une forme et un mot par zone visible dans l'extrait (« ★ Demi-finale directe · ▼ Relégation »).
+func office_legend(app: ReadingApp, holder: Control, where: String) -> Control:
+	var zones := expected_zones(app)
+	var legend: Control = holder.find_child("StandingsZoneLegend", true, false)
+	if zones.is_empty():
+		check(legend == null, "Bureau : pas de légende sans zone dans l'extrait" + where)
+		return null
+	check(legend != null, "Bureau : légende sous le classement court" + where)
+	if legend == null: return null
+	var spoken: Array[String] = []
+	for zone: Dictionary in zones: spoken.append(str(zone.symbol) + " " + str(zone.label))
+	check(str(legend.get_meta("legend_text", "")).begins_with(" · ".join(spoken)) and legend.accessibility_name.contains(" · ".join(spoken)), "Bureau : légende « %s »%s" % [" · ".join(spoken), where])
+	var marks := legend.find_children("StandingsZoneLegendMark_*", "Control", true, false)
+	check(marks.size() == zones.size() and marks.all(func(m: Control): return m.get_child_count() == 1), "Bureau : un symbole dessiné par zone de la légende" + where)
+	var items := legend.find_children("StandingsZoneLegendItem_*", "Label", true, false)
+	check(items.size() == zones.size() and items.all(func(item: Label): return item.get_theme_font("font").get_string_size(item.text, HORIZONTAL_ALIGNMENT_LEFT, -1, item.get_theme_font_size("font_size")).x <= item.size.x + 1), "Bureau : libellés de légende entiers" + where)
+	check(items.all(func(item: Label): return item.get_theme_font_size("font_size") >= C.px(18)), "Bureau : légende à 18 au moins" + where)
+	return legend
+
+func office_canvas(league: Dictionary, leagues: Array, own_index: int, w: int, height: int) -> void:
+	var app := office_app(league, leagues, own_index)
+	var before := JSON.stringify(app.model)
+	var card := Panel.new()
+	app.add_child(card)
+	card.size = Vector2(w, 448) * C.density
+	OfficeCanvas._standings(card, app, w)
+	await process_frame
+	var where := " (Bureau large %d, %s, club %d, %d p)" % [w, league.id, own_index + 1, height]
+	office_rows(app, card, func(hit: Button): return hit, where)
+	var legend := office_legend(app, card, where)
+	if legend != null:
+		var bottom := 0.0
+		for row: Control in card.find_children("OfficeStandingRow_*", "Button", true, false): bottom = maxf(bottom, row.get_global_rect().end.y)
+		var labels: Array = legend.find_children("Standings*", "Label", true, false)
+		var right := 0.0
+		for label: Label in labels: right = maxf(right, label.get_global_rect().position.x + label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size")).x)
+		check(right <= card.get_global_rect().end.x - C.px(20), "Bureau : légende dans le bloc (%d / %d px)%s" % [roundi(right), roundi(card.get_global_rect().end.x - C.px(20)), where])
+		var first: Label = legend.find_child("StandingsZoneLegendItem_0", true, false)
+		check(first != null and ink(first).x >= bottom, "Bureau : légende sous la dernière ligne" + where)
+		var form_top := 370.0 * C.density + card.get_global_rect().position.y
+		check(first != null and ink(first).y <= form_top, "Bureau : légende au-dessus de la forme" + where)
+		var note: Label = legend.find_child("StandingsZoneNote", true, false)
+		if note != null: check(league.zoneNote is String and note.text == league.zoneNote, "Bureau : note du règlement exacte" + where)
+	check(app.commands == 0 and JSON.stringify(app.model) == before, "Bureau : affichage sans commande ni modification" + where)
+	app.queue_free()
+	await process_frame
+
+func office_compact(league: Dictionary, leagues: Array, own_index: int, height: int) -> void:
+	var app := office_app(league, leagues, own_index)
+	var before := JSON.stringify(app.model)
+	var box := VBoxContainer.new()
+	app.add_child(box)
+	box.size = Vector2(C.px(560), 0)
+	OfficeCompact._standings(box, app)
+	await process_frame
+	await process_frame
+	var where := " (Bureau compact, %s, club %d, %d p)" % [league.id, own_index + 1, height]
+	office_rows(app, box, func(hit: Button): return hit.get_parent(), where)
+	var legend := office_legend(app, box, where)
+	var action: Control = box.find_child("OfficeStandingsAction", true, false)
+	if legend != null: check(action != null and legend.get_global_rect().end.y <= action.get_global_rect().position.y + 1, "Bureau : légende avant le lien du classement complet" + where)
+	check(app.commands == 0 and JSON.stringify(app.model) == before, "Bureau : affichage sans commande ni modification" + where)
 	app.queue_free()
 	await process_frame
 

@@ -11,6 +11,7 @@ const World = preload("res://ui/immersive08/world_archive.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
 const EntityLink = preload("res://ui/entity_link.gd")
+const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const UPCOMING_TILE = Color("26231b")
 const UPCOMING_BORDER = Color("706042")
 ## Hauteur fixe des tuiles « Prochains matchs » (gabarit 2560 × 1440).
@@ -639,8 +640,11 @@ static func _group(parent: VBoxContainer, app: Control) -> void:
 
 static func _standings(parent: VBoxContainer, app: Control) -> void:
 	var rows := P.standings(app.model)
+	# Monde : zones du règlement présentes dans l'extrait (liseré + symbole + mot, légende courte dessous).
+	var zones := Zones.visible(rows)
 	var header := C.h(8)
 	parent.add_child(header)
+	if not zones.is_empty(): header.add_child(_zone_lead({}))
 	for pair in [["#", 30], ["CLUB", 0], ["J", 36], ["DIFF.", 55], ["PTS", 40]]:
 		var caption := C.label(pair[0], 18, C.MUTED)
 		if pair[1] == 0: C.fill(caption)
@@ -655,6 +659,7 @@ static func _standings(parent: VBoxContainer, app: Control) -> void:
 		var row := C.h(8)
 		row.mouse_filter=Control.MOUSE_FILTER_IGNORE
 		tile.add_child(row)
+		if not zones.is_empty(): row.add_child(_zone_lead(Zones.of(club)))
 		var values: Array = [G.n(club.get("rank", "—")) if P.standings_open(club) else "–", G.club_name(club), G.n(club.get("played", 0)), "%+d" % (int(club.get("pf", 0))-int(club.get("pa", 0))), G.n(club.get("points", 0))]
 		for i in values.size():
 			var cell := C.label(values[i], 23, C.MINT if own else C.IVORY)
@@ -664,7 +669,49 @@ static func _standings(parent: VBoxContainer, app: Control) -> void:
 			else: cell.custom_minimum_size.x = C.px([30, 0, 36, 55, 40][i])
 			row.add_child(cell)
 	if rows.is_empty(): parent.add_child(C.wrap("Le classement sera disponible lorsque le championnat sera ouvert.", 20))
+	if not zones.is_empty(): parent.add_child(_zone_legend(zones))
 	_link(parent, "OfficeStandingsAction", "Classement complet  →", app, "Classements")
+
+## Tête de ligne du classement court : liseré coloré et symbole dessiné de la zone (vide hors zone, même largeur).
+static func _zone_lead(zone: Dictionary) -> HBoxContainer:
+	var lead := C.h(4)
+	lead.name = "StandingsZoneLead"
+	lead.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var kind := str(zone.get("kind", ""))
+	var edge := ColorRect.new()
+	edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	edge.custom_minimum_size.x = C.px(4)
+	edge.color = Zones.tint(kind) if not kind.is_empty() else Color.TRANSPARENT
+	if not kind.is_empty(): edge.name = "StandingsZoneEdge"
+	lead.add_child(edge)
+	lead.add_child(Zones.mark_slot(kind))
+	return lead
+
+## Légende courte, limitée aux zones de l'extrait : « ★ Demi-finale directe · ▼ Relégation » (symboles dessinés).
+## La note du règlement passe dans l'infobulle et le nom lu : le bloc compact n'a pas la place de l'écrire.
+static func _zone_legend(zones: Array) -> HFlowContainer:
+	var legend := HFlowContainer.new()
+	legend.name = "StandingsZoneLegend"
+	legend.add_theme_constant_override("h_separation", C.px(6))
+	legend.add_theme_constant_override("v_separation", C.px(2))
+	for i in zones.size():
+		var kind := str(zones[i].get("kind", ""))
+		var item := C.h(5)
+		item.name = "StandingsZoneLegendEntry_%d" % i
+		item.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var slot := Zones.mark_slot(kind)
+		slot.get_child(0).name = "StandingsZoneLegendMark_" + kind
+		item.add_child(slot)
+		var label := C.label(str(zones[i].get("label", "")), 18, C.IVORY, true, 600)
+		label.name = "StandingsZoneLegendItem_%d" % i
+		label.set_meta("zone_kind", kind)
+		item.add_child(label)
+		if i > 0: legend.add_child(C.label("·", 18, C.MUTED))
+		legend.add_child(item)
+	legend.set_meta("legend_text", Zones.legend_text(zones))
+	legend.accessibility_name = "Zones du classement : " + Zones.legend_text(zones)
+	legend.tooltip_text = legend.accessibility_name
+	return legend
 
 static func final_standings_detail(model: Dictionary) -> String:
 	var club_id: Variant = model.get("club", {}).get("id")
@@ -689,6 +736,12 @@ static func standing_action(app: Control, club: Dictionary) -> Button:
 	action.set_meta("club_id",club.get("id"))
 	for key in ["won","drawn","lost"]: action.set_meta(key,S.count_text(club.get(key)))
 	action.tooltip_text="%s\nVictoires %s  ·  Nuls %s  ·  Défaites %s\nOuvrir le classement complet" % [G.club_name(club),action.get_meta("won"),action.get_meta("drawn"),action.get_meta("lost")]
+	var zone := Zones.of(club)
+	if not zone.is_empty():
+		# Monde : la zone du règlement est dite, pas seulement montrée (liseré et symbole posés par le Bureau).
+		action.set_meta("zone_kind",str(zone.get("kind","")))
+		action.set_meta("zone_label",str(zone.get("label","")))
+		action.tooltip_text=action.tooltip_text.replace("\nOuvrir","\n%s\nOuvrir" % str(zone.get("label","")))
 	action.accessibility_name=action.tooltip_text.replace("\n"," · ")
 	var focus := C.box(Color(C.MINT,.07),C.GOLD,4,0)
 	focus.set_border_width_all(2)
