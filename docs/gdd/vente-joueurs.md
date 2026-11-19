@@ -52,7 +52,7 @@ Mesure avant correction (club 102, cadence hebdomadaire, `testVm`) : un joueur l
    - à la première clôture de semaine à partir de l'ouverture : la garde d'effectif et les moyens de l'acheteur sont **revérifiés** ; si tout passe, la vente est exécutée (caisse, départ, budget +50 %) avec le courrier « vente_executee » ; sinon l'accord **tombe** avec le courrier « vente_annulee » qui dit pourquoi ;
    - un accord d'un ancien club (changement de club du manager) disparaît sans effet.
    Le réglage `fenetres.mode = "saison"` rétablit l'ancien comportement (vente immédiate toute la saison hors match).
-9. **Budget de transferts** (#1001, R4) : une vente acceptée par le manager est une **vente choisie** → 50 % du montant reviennent à l'enveloppe (plafonnée), au moment de l'exécution ; ventes du président ou du prêt de l'actionnaire : rien.
+9. **Budget de transferts** (#1001, R4) : une vente acceptée par le manager est une **vente choisie** → 50 % du montant reviennent à l'enveloppe (sans plafond d'enveloppe depuis le 19/11/2026, seule la caisse limite le disponible), au moment de l'exécution ; ventes du président ou du prêt de l'actionnaire : rien. Elles suivent aussi la période des mutations (hors période : accord imposé exécuté au 1er mai, voir `docs/gdd/calendrier-mutations.md`).
 10. **Conséquences d'un départ important** (décision de Léo, 19/11/2026) : légères, au départ effectif du joueur (immédiat ou à l'ouverture), sur des jauges **déjà présentes** ; annoncées dans la confirmation (« Ce départ touchera le vestiaire… »), valeurs dans `vente-joueurs.json` (`consequences`), déterministes :
     - coéquipiers liés au joueur par un duo positif (`S.v70Relations`, liens du vestiaire) : satisfaction −4 (bornes 20–95) ;
     - le joueur est le **leader du vestiaire** (`CDRelationsV70.leader`) : moral du groupe −2 (bornes 25–98) ;
@@ -76,7 +76,7 @@ spontanée   = semaine tirée : FNV(graine:saison:semaine:spontanee) mod 1000 < 
               joueur  = candidats[(h + k) mod n], candidats = meilleurs non proposés (note au poste ↓, id), k = 0, 1…
               montant = arrondi10k(valeur × (1,05 + (h mod 26)/100)), h = seedHash(graine:saison:semaine:joueur)
               acheteur = top3[h mod min(3, n)] des clubs (caisse ≥ montant + 350 000, place, besoin ≥ 20)
-retour budget = min(0,5 × montant, place sous le plafond de l'enveloppe)   // #1001
+retour budget = 0,5 × montant   // #1001, R4 sans plafond (19/11/2026)
 date d'effet  = prochaine ouverture de période (1er mai) si l'acceptation tombe hors période
 ```
 
@@ -110,11 +110,11 @@ Correction de coût (sans effet sur le résultat) : pendant `economyWeek`, `recr
 | `interclub-market.cjs` `releasePolicy` | amont | même seuil d'effectif minimum (37 en Monde) ; exporté par le domaine |
 | `professional-depth.cjs` | voisin | plancher de 40 après chaque commande : annoncé dans la confirmation |
 | Budget de transferts (#1001) | aval | enrobe `acceptSale` : +50 % à l'enveloppe ; ventes imposées via `budgetTransfertsImposee` |
-| `president-reprise.cjs`, `club-owner.cjs` | voisins | inchangés ; leurs ventes restent immédiates et imposées (hors période des mutations du manager : à trancher, voir Q3) |
+| `president-reprise.cjs`, `club-owner.cjs` | voisins | ventes imposées soumises à la période des mutations (accord imposé `imposee:true`, exécuté au 1er mai ; prêt remboursé à l'exécution) — `docs/gdd/calendrier-mutations.md` |
 | `club-mail.cjs` / `club-mail.json` | aval | catégorie « transferts », courriers « offre_transfert », « vente_executee », « vente_annulee » (nature info) |
 | Finances | aval | ligne de caisse « Vente : Nom » déjà écrite |
 | Vestiaire (`relations-duos-v70.js`, satisfaction), presse et supporters (`S.pressRelations`), président (`S.trust`) | aval | conséquences légères d'un départ important (§3 règle 10), bornes identiques aux réponses du courrier |
-| **Recrutement** (achats entre clubs, joueurs libres jusqu'au 31/12, deux supplémentaires jusqu'au 31/01, jokers) | voisin | **non modifié** : la période des mutations ne s'applique ici qu'à la vente ; le recrutement fera l'objet d'un chantier suivant (même source LNR) |
+| **Calendrier du recrutement** (`docs/gdd/calendrier-mutations.md`) | aval | réutilise la période (`fenetres`) et la liste des accords (`venteNouvelAccord`, sens « achat », ventes imposées) ; un joueur qui a signé un pré-contrat ailleurs ne peut plus être proposé ; les approches de pré-contrat tournent dans `economyWeek` sous la même mémoire des besoins |
 
 ## 7. Réglages (`native/engine/vente-joueurs.json`, lu à chaque calcul)
 
@@ -169,6 +169,6 @@ Correction de coût (sans effet sur le résultat) : pendant `economyWeek`, `recr
 
 - **Q1** (tranchée le 19/11/2026) : offres spontanées dès ce chantier.
 - **Q2** (tranchée le 19/11/2026) : période des mutations LNR pour la vente ; le réglage `fenetres` reste.
-- **Q3** : les ventes imposées (président, prêt de l'actionnaire) doivent-elles aussi attendre la période des mutations ? Aujourd'hui elles restent immédiates.
-- **Q4** : recrutement (achats entre clubs, joueurs libres jusqu'au 31/12, deux supplémentaires jusqu'au 31/01, jokers médicaux) : chantier suivant, même source.
+- **Q3** (tranchée le 19/11/2026) : les ventes imposées suivent la période des mutations (`docs/gdd/calendrier-mutations.md`).
+- **Q4** (tranchée le 19/11/2026) : calendrier du recrutement et pré-contrats, `docs/gdd/calendrier-mutations.md`.
 - **Q5** : le plancher de 40 professionnels (joueurs de complément signés automatiquement) rend la garde de 37 presque inatteignable ; faut-il l'aligner ?

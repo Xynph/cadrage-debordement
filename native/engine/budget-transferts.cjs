@@ -91,11 +91,12 @@ function report(precedent, enveloppeNeuve, recettes, R = REGLAGES) {
   return Math.max(0, Math.floor(Math.min(R.partReport * reste(precedent), place) / pas) * pas);
 }
 
-// Part d'une vente choisie rendue à l'enveloppe, plafonnée : enveloppe + reconstitué ≤ recettes × plafond.
+// Part d'une vente choisie rendue à l'enveloppe (décision de Léo du 19/11/2026) : partVentes × montant, sans plafond
+// d'enveloppe ; seule la caisse limite ensuite le disponible (min(reste, caisse − matelas)). `recettes` est gardé pour
+// la compatibilité des appels.
 function rendu(e, montant, recettes, R = REGLAGES) {
   if (!(montant > 0)) return 0;
-  const place = Math.max(0, (fini(recettes) ? recettes : 0) * R.plafond - e.enveloppe - n0(e.report) - e.reconstitue);
-  return Math.round(Math.max(0, Math.min(R.partVentes * montant, place)));
+  return Math.round(Math.max(0, R.partVentes * montant));
 }
 
 // Code exécuté dans le moteur (après club-budget.cjs, club-investments.cjs et president-reprise.cjs).

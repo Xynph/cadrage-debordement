@@ -791,8 +791,12 @@ static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	# carte Marché des transferts et dans l'info-bulle, pas dans les 515 unités de cette ligne.
 	var sale_status := Sales.status(player)
 	var sale_short := Sales.short(player)
-	var line := D.text(card,24,183,reason if not reason.is_empty() else sale_short if not sale_short.is_empty() else "Contrat du joueur",19,C.ALERT if not reason.is_empty() else C.GOLD if not sale_short.is_empty() else C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
+	# Parti libre sous pré-contrat : état court (« A signé à … : départ le 1er juillet »), la raison complète en info-bulle.
+	var pre: Dictionary = player.get("preContract",{}) if player.get("preContract") is Dictionary else {}
+	var shown := str(pre.get("short","")) if not reason.is_empty() and str(pre.get("state","")) == "signe" and not str(pre.get("short","")).is_empty() else reason
+	var line := D.text(card,24,183,shown if not reason.is_empty() else sale_short if not sale_short.is_empty() else "Contrat du joueur",19,C.ALERT if not reason.is_empty() else C.GOLD if not sale_short.is_empty() else C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
 	if reason.is_empty() and not sale_status.is_empty(): line.tooltip_text = sale_status
+	elif not reason.is_empty(): line.tooltip_text = reason
 	var offer:=D.button(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"arrow",true,app.accent,"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason
@@ -807,7 +811,15 @@ static func _sale(card:Panel,app:Control,player:Dictionary,width:float) -> void:
 	var status := Sales.status(player)
 	if status.is_empty(): status = "Valeur estimée %s. Il n’est pas proposé aux autres clubs." % G.euros(sale.get("value",0))
 	D.text(card,24,94,status,28,C.GOLD if pending else C.IVORY,600,width-48).name = "PlayerSaleStatus"
-	if not blocked.is_empty() and not pending:
+	# Pré-contrat (calendrier-mutations.cjs, `squad[].preContract`) : approché par un autre club (prolongation à proposer
+	# avant l'échéance) ou parti à la fin de son contrat ; remplace la raison de blocage, qui dit la même chose.
+	var pre: Dictionary = player.get("preContract",{}) if player.get("preContract") is Dictionary else {}
+	if not pre.is_empty():
+		var line := D.text(card,24,142,str(pre.get("short",pre.get("label",""))),26,C.GOLD if str(pre.get("state","")) == "approche" else C.ALERT,600,width-48)
+		line.name = "PlayerPreContract"
+		line.tooltip_text = str(pre.get("label",""))
+		line.mouse_filter = Control.MOUSE_FILTER_PASS
+	elif not blocked.is_empty() and not pending:
 		D.text(card,24,142,blocked,26,C.ALERT,500,width-48).name = "PlayerSaleReason"
 	var half := (width-60)/2.0
 	var toggle := D.button(card,Rect2(24,162,half,52),"Retirer du marché" if listed else "Proposer aux autres clubs",func(): Sales.toggle(app,player),not listed,"money",false,app.accent,"PlayerSaleToggle")

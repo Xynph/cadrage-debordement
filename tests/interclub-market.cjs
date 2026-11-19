@@ -15,6 +15,9 @@ test('refus atomiques: devis périmé, argent, effectif, profondeur, prêt et ma
 function workerFixture(t,mode="world-champ",club=0){
  const os=require('node:os'),root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-interclub-')),engine=path.join(root,'app/engine');fs.mkdirSync(engine,{recursive:true});
  for(const name of fs.readdirSync(path.resolve(__dirname,'../native/engine')))if(/\.(cjs|json)$/.test(name))fs.copyFileSync(path.resolve(__dirname,'../native/engine',name),path.join(engine,name));
+ // Achats immédiats (période des mutations ouverte toute la saison) : ces tests portent sur l'écriture atomique et la
+ // reprise ; l'accord différé hors période est vérifié par tests/calendrier-mutations.cjs.
+ const vente=path.join(engine,'vente-joueurs.json'),reglages=JSON.parse(fs.readFileSync(vente,'utf8'));reglages.fenetres.mode='saison';fs.writeFileSync(vente,JSON.stringify(reglages));
  const system=path.join(engine,'native-systems.cjs');fs.writeFileSync(system,fs.readFileSync(system,'utf8').replace('const domains={',"const domains={interclubMarket:require('./interclub-market.cjs'),"));
  const {createBridge}=require(path.join(engine,'worker.cjs')),opts={dataDir:path.join(root,'profile'),distDir:path.resolve(__dirname,'../dist'),seed:827381,now:1794178800000};let b=createBridge(opts),n=0;
  const raw=(command,payload={})=>b.handle({id:++n,command,payload}),go=(command,payload={})=>{const r=raw(command,payload);a.equal(r.ok,true,command+': '+r.error);return r.model;};

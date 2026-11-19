@@ -634,6 +634,8 @@ module.exports=function clubDirections(T,N){
  function medicalJokers(){
   const d=state(),wk=week();
   if(wk<2||[0,13].includes(wk))return;
+  // Calendrier du recrutement (calendrier-mutations.cjs) : jokers médicaux jusqu'au 31 mars.
+  if(typeof calendrierJokersOuverts==='function'&&!calendrierJokersOuverts())return;
   const pool=S.economy.freeAgents.filter(p=>p.age>=22&&p.age<=33&&p.age<p.dev.retireAge-1&&!(p.injury>0));
   if(!pool.length)return;
   for(const c of S.clubs){

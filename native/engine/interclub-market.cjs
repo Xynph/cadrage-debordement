@@ -1,5 +1,7 @@
 'use strict';
-// Immediate, consensual fictional releases. No registration or legal-window claim.
+// Consensual releases between clubs. Calendrier des mutations (calendrier-mutations.cjs, décision de Léo du 19/11/2026) :
+// immédiates pendant la période des mutations (1er mai – 30 juin), sinon accord conclu et exécuté à l'ouverture ;
+// pré-contrats des joueurs en fin de contrat (projection `preContract` de chaque candidat concerné).
 function factory(){
  const check=(ok,message)=>{if(!ok)throw Error('Marché entre clubs : '+message+'.');};
  const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -36,13 +38,26 @@ function factory(){
   else if(own.cash-fee-400000<salary*Math.min(8,Math.max(0,weeks-week())))reason='Trésorerie insuffisante pour provisionner les huit prochaines semaines du nouveau salaire';
   // Budget de transferts fixé par le conseil (budget-transferts.cjs) : l'indemnité entre dans l'enveloppe.
   else if(budget&&typeof budgetTransfertsRefus==='function'&&budgetTransfertsRefus(fee,budget))reason=budgetTransfertsRefus(fee,budget);
-  return {id:p.id,name:p.name,clubId:c.id,club:c.name,pos:p.pos,family:p.fam,age:p.age,contractEnd,sourceSalary,fee,salary,available:!reason,reason,releaseReason};
+  // Calendrier des mutations (calendrier-mutations.cjs) : accord déjà conclu pour ce joueur (achat différé).
+  const pending=typeof calAccordAchat==='function'?calAccordAchat(p.id):null;
+  if(pending)reason='Accord conclu : il rejoindra ton club le '+nativeVenteJoueurs.dateFr(pending.date)+'.';
+  // Pré-contrat déjà signé avec le club joué : c'est la seule raison utile (pas « nouvelle recrue » ni les gardes du vendeur).
+  const signe=typeof calPre==='function'?calPre(p.id):null;
+  if(signe&&signe.etat==='signe'&&signe.sens==='arrivee'&&signe.clubId===S.club)reason='Pré-contrat signé : il rejoindra ton club le '+nativeVenteJoueurs.dateFr(signe.arrivee)+'.';
+  // Pré-contrat (joueur en fin de contrat) : seulement pour les contrats qui s'achèvent cette saison.
+  const pre=contractEnd===S.season&&typeof calPreContratDevis==='function'?calPreContratDevis(c,p,budget):null;
+  return {id:p.id,name:p.name,clubId:c.id,club:c.name,pos:p.pos,family:p.fam,age:p.age,contractEnd,sourceSalary,fee,salary,available:!reason,reason,releaseReason,
+   ...(pending?{pending:{date:pending.date,dateLabel:nativeVenteJoueurs.dateFr(pending.date),fee:pending.fee}}:{}),...(pre?{preContract:pre}:{})};
  }
+ // Période des mutations (vente-joueurs.json, fenetres) : hors période, un accord est conclu et exécuté à l'ouverture.
+ const mutations=()=>typeof calInterclub==='function'?calInterclub():{ouverte:true,reouverture:null,raison:'',note:''};
  function project(){
   const available=typeof S!=='undefined'&&!!S?.economy&&!!S.clubs?.[S.club];
   const base={available,releasePolicy:available?releasePolicy(S):null,context:available?context():null,candidates:[],notice:'Accord de libération anticipée. Indemnité intégralement versée au club vendeur ; salaire proposé +5 % (minimum 1 000 €/semaine), échéance conservée. La profondeur de libération dépend de l’univers et reste affichée ; deux joueurs de la famille et deux piliers de chaque côté sont conservés. Réserve de 400 000 € et provision des huit prochaines semaines du nouveau salaire ; aucune inscription réglementaire automatique.'};
   if(!available)return base;
   base.notice+=' '+base.releasePolicy.notice;
+  const f=mutations();
+  base.window={open:f.ouverte,reopens:f.reouverture,reopensLabel:f.reouverture?nativeVenteJoueurs.dateFr(f.reouverture):'',reason:f.raison,note:f.note};
   const loanIds=new Set(loans().map(l=>l.id)),budget=typeof budgetTransfertsContexte==='function'?budgetTransfertsContexte():null;
   base.candidates=S.clubs.filter(c=>c.id!==S.club).flatMap(c=>c.players.map(p=>quote(c,p,loanIds,budget))).sort((a,b)=>a.clubId-b.clubId||a.contractEnd-b.contractEnd||a.name.localeCompare(b.name));
   return base;
@@ -70,7 +85,10 @@ function factory(){
   const playerResponse={accepted:p.salary>=q.salary,counter:q.salary,reason:p.salary>=q.salary?'Le joueur accepte ce salaire.':'Le joueur demande au moins '+money(q.salary)+' par semaine.'};
   const a2r=typeof a2rRefusRecrue==='function'?a2rRefusRecrue(p.salary):'',horsBudget=typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(p.fee):null,offers=[],humanReady=!a2r&&!horsBudget&&sellerResponse.accepted&&playerResponse.accepted&&affordable(S.clubs[S.club],p.fee,p.salary);
   if(humanReady)offers.push({clubId:S.club,club:S.clubs[S.club].name,fee:p.fee,salary:p.salary,need:publicNeed(S.clubs[S.club],player),human:true});
-  for(const c of S.clubs){
+  // Hors période des mutations, les autres clubs n'enchérissent pas (ils respectent le même calendrier) : seul l'accord
+  // différé du manager est possible.
+  const f=mutations();
+  for(const c of f.ouverte?S.clubs:[]){
    if(c.id===S.club||c.id===seller.id)continue;
    const base=publicNeed(c,player);if(base<=0)continue;
    const need=base+quotaNeed(c,player);
@@ -79,13 +97,51 @@ function factory(){
    offers.push({clubId:c.id,club:c.name,fee,salary,need,human:false});
   }
   offers.sort((a,b)=>b.salary-a.salary||b.fee-a.fee||b.need-a.need||a.clubId-b.clubId);
-  return {playerId:player.id,sellerId:seller.id,context:now,seller:sellerResponse,player:playerResponse,humanReady,humanReason:humanReady?'Offre recevable.':a2r?a2r:horsBudget?horsBudget:q.salary>100000?'La demande du joueur dépasse le plafond salarial de 100 000 € ; aucun accord possible.':!affordable(S.clubs[S.club],p.fee,p.salary)?'Effectif ou provision financière insuffisants.':'Indemnité ou salaire refusé.',offers,winner:offers[0]||null,notice:'Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation.'};
+  return {playerId:player.id,sellerId:seller.id,context:now,seller:sellerResponse,player:playerResponse,humanReady,humanReason:humanReady?'Offre recevable.':a2r?a2r:horsBudget?horsBudget:q.salary>100000?'La demande du joueur dépasse le plafond salarial de 100 000 € ; aucun accord possible.':!affordable(S.clubs[S.club],p.fee,p.salary)?'Effectif ou provision financière insuffisants.':'Indemnité ou salaire refusé.',offers,winner:offers[0]||null,
+   deferred:f.ouverte?null:{date:f.reouverture,dateLabel:nativeVenteJoueurs.dateFr(f.reouverture),note:f.raison},
+   notice:f.ouverte?'Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation.':f.raison+' Les autres clubs n’enchérissent qu’en période des mutations. Aucune transaction avant confirmation.'};
+ }
+ // Accord d'achat conclu hors période (vente-joueurs.cjs, liste des accords) : l'indemnité est engagée sur le budget de
+ // transferts tout de suite, l'argent et l'arrivée attendent l'ouverture.
+ function differer(seller,player,fee,salary,f){
+  const a=venteNouvelAccord({sens:'achat',playerId:player.id,joueur:player.name,seller:seller.id,vendeur:seller.name,fee,salary,date:f.reouverture,saison:S.season});
+  if(typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(fee);
+  transferEvent('Accord conclu avec '+seller.name+' : '+player.name+' rejoindra '+S.clubs[S.club].name+' le '+nativeVenteJoueurs.dateFr(a.date)+' pour '+money(fee)+'.');
+  return {interclubTransfer:{playerId:player.id,sellerId:seller.id,buyerId:S.club,fee,salary,contractEnd:player.contractEnd,humanWon:true,deferred:true,date:a.date,dateLabel:nativeVenteJoueurs.dateFr(a.date),competingClubs:1}};
+ }
+ // Exécution d'un accord d'achat à l'ouverture (appelée par vente-joueurs.cjs) : revérifié comme un accord immédiat,
+ // sinon il tombe avec la raison (l'indemnité engagée revient au budget de transferts de la même saison).
+ function executerAchat(a){
+  const seller=S.clubs[a.seller],buyer=S.clubs[S.club],player=seller?.players.find(x=>x.id===a.playerId);
+  let raison='';
+  if(!player)raison='Le joueur ne fait plus partie de l’effectif de '+(seller?.name||a.vendeur)+'.';
+  else{const q=quote(seller,player,new Set(loans().map(l=>l.id)),null);
+   if(q.releaseReason)raison=q.releaseReason+'.';
+   else if(professionalPlaces(buyer,S)<=0)raison='Ton effectif professionnel est complet.';
+   else if(buyer.cash-a.fee<400000)raison='La réserve de trésorerie de 400 000 € ne serait plus respectée après l’indemnité.';}
+  const st=S.venteJoueurs;st.seq++;
+  const ev={id:'vente-'+st.seq,date:typeof venteJour==='function'?venteJour()||'':'',type:raison?'achat_annule':'achat_execute',raison,joueur:a.joueur,acheteur:a.vendeur,montant:a.fee,playerId:a.playerId,buyerId:a.seller};
+  st.evenements.push(ev);st.evenements=st.evenements.slice(-20);
+  if(raison){
+   const e=S.budgetTransferts;if(e&&e.saison===a.saison&&e.clubId===S.club)e.depense=Math.max(0,Math.round(e.depense-a.fee));
+   transferEvent('L’accord avec '+(seller?.name||a.vendeur)+' pour '+a.joueur+' tombe : '+raison.replace(/\.$/,'')+'.');return false;
+  }
+  seller.players=seller.players.filter(x=>x.id!==player.id);buyer.players.push(player);seller.cash+=a.fee;
+  ledgerEntry('Libération anticipée : '+player.name,-a.fee);
+  player.salary=a.salary;player.joinedSeason=S.season;player.joinedRound=S.round;
+  delete S.economy.listings[player.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==player.id);
+  S.market=S.market.filter(x=>x.id!==player.id);S.economy.freeAgents=S.economy.freeAgents.filter(x=>x.id!==player.id);
+  if(typeof aiRosterEvent==='function')aiRosterEvent(seller.id,'sell',player,a.fee);
+  transferEvent(player.name+' rejoint '+buyer.name+' depuis '+seller.name+' : accord de '+money(a.fee)+' exécuté à l’ouverture des mutations.');
+  return true;
  }
  function auction(p){
   check(shape(p,['playerId','sellerId','fee','salary','sourceSalary','contractEnd','context','expectedWinner','expectedFee','expectedSalary','confirmed'])&&p.confirmed===true&&integer(p.expectedWinner,0,S.clubs.length-1)&&integer(p.expectedFee,20000,1000000000)&&integer(p.expectedSalary,1000,100000),'clôture invalide');
   const {expectedWinner,expectedFee,expectedSalary,confirmed,...offer}=p,result=negotiate(offer),win=result.winner;
   check(win&&win.clubId===expectedWinner&&win.fee===expectedFee&&win.salary===expectedSalary,'devis concurrent devenu périmé ; vérifie à nouveau');
   const seller=S.clubs[p.sellerId],buyer=S.clubs[win.clubId],player=seller.players.find(q=>q.id===p.playerId);
+  check(!(typeof calAccordAchat==='function'&&calAccordAchat(player.id)),'accord déjà conclu pour ce joueur');
+  const f=mutations();if(!f.ouverte&&f.reouverture)return differer(seller,player,win.fee,win.salary,f);
   seller.players=seller.players.filter(q=>q.id!==player.id);buyer.players.push(player);seller.cash+=win.fee;
   const avant=buyer.cash;
   if(buyer.id===S.club){ledgerEntry('Libération anticipée négociée : '+player.name,-win.fee);if(typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(win.fee);}else buyer.cash-=win.fee;
@@ -107,6 +163,8 @@ function factory(){
   check(p.fee>=q.fee,'le vendeur refuse cette indemnité');check(p.salary>=q.salary,'le joueur refuse ce salaire');
   check(buyer.cash-p.fee>=400000,'réserve financière insuffisante');
   const horsBudget=typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(p.fee):null;if(horsBudget)throw Error(horsBudget);check(buyer.cash-p.fee-400000>=p.salary*Math.min(8,Math.max(0,wageForecastWeeks(S)-week())),'provision salariale insuffisante');
+  // Hors période des mutations : accord conclu, exécuté à l'ouverture (calendrier-mutations.cjs).
+  const f=mutations();if(!f.ouverte&&f.reouverture)return differer(seller,player,p.fee,p.salary,f);
   // All checks precede writes. The worker owns disk commit and rollback.
   seller.players=seller.players.filter(x=>x.id!==player.id);buyer.players.push(player);seller.cash+=p.fee;
   const avant=buyer.cash;ledgerEntry('Libération anticipée : '+player.name,-p.fee);if(typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(p.fee);
@@ -118,6 +176,7 @@ function factory(){
   return {interclubTransfer:{playerId:player.id,sellerId:seller.id,buyerId:buyer.id,fee:p.fee,salary:player.salary,contractEnd:player.contractEnd}};
  }
  // releasePolicy : même effectif minimum pour la vente de joueurs du club joué (vente-joueurs.cjs).
- return {project,execute,validate:()=>true,installHooks:()=>true,releasePolicy};
+ // executerAchat : accords d'achat différés (calendrier-mutations.cjs), exécutés à l'ouverture par vente-joueurs.cjs.
+ return {project,execute,validate:()=>true,installHooks:()=>true,releasePolicy,executerAchat};
 }
 module.exports={files:[],commands:['interclub_transfer','interclub_negotiate','interclub_auction'],factory};

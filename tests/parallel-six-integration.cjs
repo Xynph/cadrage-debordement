@@ -3,6 +3,9 @@ const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 // Cross-domain production wiring, read purity, refused transactions and disk resume.
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
+// Achat immédiat (période des mutations ouverte toute la saison) : l'accord différé hors période est vérifié par
+// tests/calendrier-mutations.cjs.
+require('../native/engine/vente-joueurs.json').fenetres.mode='saison';
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'oval-six-'));let bridge,id=0;
 function request(command,payload={}){return bridge.handle({id:++id,command,payload});}
 function call(command,payload={}){const r=request(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;}

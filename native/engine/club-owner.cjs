@@ -116,13 +116,22 @@ function pretAcheteur(p,prix){
 function pretCourrier(){
  const p=S.pretsActionnaires?.[S.club];if(!p||p.saison!==S.season-1||p.repondu)return null;
  const j=p.vente?club().players.find(x=>x.id===p.vente.joueur):null;
+ const f=pretFenetre();
  const proposition=j?'Si tu préfères solder tout de suite, j’ai un acheteur pour '+j.name+' ('+j.pos+') : '+nativeClubBudget.euros(p.vente.prix)+'. Le prix de la vente irait directement au remboursement, et tu repartirais avec toute ta marge salariale.'
+  +(f?' Nous sommes hors période des mutations : la vente serait conclue tout de suite, mais il ne partirait et le prêt ne serait remboursé que le '+nativeVenteJoueurs.dateFr(f.reouverture)+'.':'')
   :'Je ne vois personne à vendre sans affaiblir le groupe : il faudra rembourser sur la durée.';
  return {montant:nativeClubBudget.euros(p.dernier),encours:nativeClubBudget.euros(p.restant),annuite:nativeClubBudget.euros(p.annuite),saisons:Math.max(1,Math.ceil(p.restant/p.annuite)),proposition,joueur:j?j.name:''};
+}
+// Période des mutations (calendrier-mutations, décision de Léo du 19/11/2026) : hors période, la vente pour le prêt est
+// conclue tout de suite et exécutée à l'ouverture (accord imposé de vente-joueurs.cjs), remboursement compris.
+function pretFenetre(){
+ if(typeof venteFenetre!=='function'||typeof venteNouvelAccord!=='function')return null;
+ const f=venteFenetre();return f.ouverte||!f.reouverture?null:f;
 }
 function pretVenteRefus(){
  const p=S.pretsActionnaires?.[S.club];if(!p||p.repondu)return 'Le président a déjà tranché.';
  const j=p.vente?club().players.find(x=>x.id===p.vente.joueur):null;if(!j)return 'Le joueur proposé ne fait plus partie de l’effectif.';
+ if(typeof venteAccord==='function'&&venteAccord(j.id))return 'Une vente est déjà conclue pour ce joueur.';
  if(typeof saleBlocked==='function'&&saleBlocked(j))return saleBlocked(j);
  if(S.live)return 'La vente se fera une fois la journée de championnat close.';
  if(!pretAcheteur(j,p.vente.prix))return 'Aucun club n’a les moyens de l’acheter aujourd’hui.';
@@ -133,7 +142,14 @@ function pretRepondre(choix){
  const p=S.pretsActionnaires?.[S.club];if(!p||p.repondu)return false;
  if(choix==='vendre'){
   if(pretVenteRefus())return false;
-  const j=club().players.find(x=>x.id===p.vente.joueur),acheteur=pretAcheteur(j,p.vente.prix),id='pret-'+S.season+'-'+j.id;
+  const j=club().players.find(x=>x.id===p.vente.joueur),acheteur=pretAcheteur(j,p.vente.prix),id='pret-'+S.season+'-'+j.id,f=pretFenetre();
+  if(f){
+   venteNouvelAccord({playerId:j.id,joueur:j.name,buyer:acheteur.id,acheteur:acheteur.name,fee:p.vente.prix,date:f.reouverture,imposee:true,pret:true});
+   delete S.economy.listings[j.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==j.id);
+   transferEvent('Vente conclue pour rembourser le prêt de l’actionnaire : '+j.name+' rejoindra '+acheteur.name+' le '+nativeVenteJoueurs.dateFr(f.reouverture)+' pour '+money(p.vente.prix)+'.');
+   const reste=S.pretsActionnaires?.[S.club];if(reste)reste.repondu=true;
+   return true;
+  }
   S.economy.offers.push({id,playerId:j.id,buyer:acheteur.id,fee:p.vente.prix,expires:S.economy.week});
   // Vente imposée pour rembourser le prêt : rien ne revient au budget de transferts (budget-transferts.cjs).
   if((typeof budgetTransfertsImposee==='function'?budgetTransfertsImposee(()=>acceptSale(id)):acceptSale(id))!==true)return false;
