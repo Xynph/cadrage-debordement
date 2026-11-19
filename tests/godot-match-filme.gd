@@ -36,12 +36,20 @@ func run() -> void:
 	check(moments.erreurs.is_empty() and is_equal_approx(moments.options.cadence_moments, 0.25), "--cadence-moments lu : " + str(moments.erreurs))
 	check(not outil.lire_options(PackedStringArray(["--sortie", sortie, "--export", carriere, "--cadence-moments", "0.1"])).erreurs.is_empty(), "--cadence-moments trop court refusé")
 	check(outil.ETATS.size() == 4 and outil.ETATS[3] == "sortie", "État « sortie » de la régie nommé dans le rapport")
+	check(outil.foule_de(null) == {}, "Sans gestionnaire sonore : champ foule vide")
 	var faux := GDScript.new()
-	faux.source_code = "extends Node\nvar etat := 1\nvar index := 0\nvar tf := {\"plans\": [{\"kind\": \"try\"}, {\"kind\": \"transformation\"}]}\nvar _live := {}\nvar en_sortie := false\nvar titre := \"\"\nfunc sortie_en_cours() -> bool:\n\treturn en_sortie\nfunc bandeau_affiche() -> Dictionary:\n\treturn {\"visible\": not titre.is_empty(), \"titre\": titre}\n"
+	faux.source_code = "extends Node\nvar etat := 1\nvar index := 0\nvar tf := {\"plans\": [{\"kind\": \"try\"}, {\"kind\": \"transformation\"}]}\nvar _live := {}\nvar en_sortie := false\nvar titre := \"\"\nfunc sortie_en_cours() -> bool:\n\treturn en_sortie\nfunc bandeau_affiche() -> Dictionary:\n\treturn {\"visible\": not titre.is_empty(), \"titre\": titre}\nvar rejeu := false\nfunc rejeu_en_cours() -> bool:\n\treturn rejeu\nfunc mention_affichee() -> bool:\n\treturn rejeu\n"
 	check(faux.reload() == OK, "Régie factice")
 	var regie: Node = faux.new()
 	check(outil.moment_de(null) == "", "Sans régie : aucun moment")
 	check(outil.moment_de(regie) == "essai", "Plan d'essai en cours : moment « essai »")
+	# Ralenti de l'essai : état « ralenti » et mention notés à chaque image.
+	check(outil.ralenti_de(null) == {"ralenti": false, "mention": false}, "Sans régie : ni ralenti ni mention")
+	check(outil.ralenti_de(regie) == {"ralenti": false, "mention": false}, "Hors ralenti : rien de noté")
+	regie.rejeu = true
+	check(outil.ralenti_de(regie) == {"ralenti": true, "mention": true}, "Pendant le ralenti : ralenti et mention notés")
+	check(outil.moment_de(regie) == "essai", "Pendant le ralenti : toujours le moment « essai » (images rapprochées)")
+	regie.rejeu = false
 	regie.index = 1
 	check(outil.moment_de(regie) == "", "Transformation sans bandeau : plus de moment")
 	regie.titre = "ESSAI"

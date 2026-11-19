@@ -131,6 +131,10 @@ func _init(view: Node3D) -> void:
 			var material := (child as MultiMeshInstance3D).material_override as StandardMaterial3D
 			if material and material.vertex_color_use_as_albedo:
 				material.vertex_color_is_srgb = true
+			# Public animé (shaders/foule.gdshader) : même conversion, faite par le shader.
+			var anime := (child as MultiMeshInstance3D).material_override as ShaderMaterial
+			if anime:
+				anime.set_shader_parameter("couleurs_srgb", true)
 	_texture_contact = _make_contact_texture()
 
 

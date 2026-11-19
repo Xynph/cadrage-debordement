@@ -471,8 +471,9 @@ func grands_moments(view: Control) -> Array:
 	var anciens: Array = []
 	var limite := int(OS.get_environment("CD_GRANDS_MOMENTS_LIMITE")) if OS.get_environment("CD_GRANDS_MOMENTS_LIMITE").is_valid_int() else 1200
 	var deadline := Time.get_ticks_msec() + limite * 1000
-	var essai := {"debut": 0, "cle": "", "plan": -1, "ecart": -1.0, "bandeau": {}, "texte": "", "ralenti": 1.0, "vitesse": 1.0, "calme": false, "cadre": Rect2(), "score_bas": 0.0, "bande_bas": 0.0, "ecran": Rect2()}
+	var essai := {"debut": 0, "cle": "", "plan": -1, "ecart": -1.0, "bandeau": {}, "texte": "", "ralenti": 1.0, "vitesse": 1.0, "calme": false, "cadre": Rect2(), "score_bas": 0.0, "bande_bas": 0.0, "ecran": Rect2(), "legende": Rect2()}
 	var sorties := {}
+	var ralenti := {"images": 0, "ecarts": 0}
 	var relance := 0
 	var apres_fin := 0
 	var sonde := 0
@@ -511,6 +512,11 @@ func grands_moments(view: Control) -> Array:
 			app._command("pause", {"paused": false})
 		_observer_essai(view, regie, essai)
 		_observer_sortie(view, regie, live, sorties)
+		# Ralenti de l'essai : la mention « RALENTI » est à l'écran pendant et seulement pendant lui.
+		if regie.has_method("rejeu_en_cours"):
+			var en_ralenti: bool = regie.rejeu_en_cours()
+			if en_ralenti: ralenti.images += 1
+			if en_ralenti != bool(regie.mention_affichee()): ralenti.ecarts += 1
 		# Fin de match sans débrief : l'écran de fin suit la sortie.
 		if live.get("finished", false) and sorties.has("fin") and regie.etat == regie.INTER:
 			apres_fin += 1
@@ -531,6 +537,33 @@ func grands_moments(view: Control) -> Array:
 		check(cadre.size.x > 0.0 and cadre.position.y >= maxf(float(essai.score_bas), float(essai.bande_bas)) - 1.0, "Le bandeau ne masque pas le score (%s, score jusqu'à %.0f, bande jusqu'à %.0f)" % [str(cadre), float(essai.score_bas), float(essai.bande_bas)])
 		var ecran: Rect2 = essai.ecran
 		check(ecran.grow(1.0).encloses(cadre), "Bandeau entier dans l'image : %s dans %s" % [str(cadre), str(ecran)])
+		# Façon retransmission : tiers inférieur, au-dessus de la légende sans la recouvrir.
+		var sous_titre: Rect2 = essai.get("legende", Rect2())
+		check(cadre.get_center().y >= ecran.position.y + ecran.size.y * 2.0 / 3.0, "Bandeau « ESSAI » dans le tiers inférieur (%s dans %s)" % [str(cadre), str(ecran)])
+		check(sous_titre.has_area() and not cadre.intersects(sous_titre), "Le bandeau « ESSAI » ne recouvre pas la légende (%s, légende %s)" % [str(cadre), str(sous_titre)])
+	# Ralenti de l'essai (19/11/2026) : un par essai au plus, jamais deux pour le même ; environ la moitié
+	# de la vitesse réelle, au plus REJEU_MAX s ajoutées (à la vitesse du test), caméra basse, état d'avant
+	# remis ; mention « RALENTI » seulement pendant lui ; aucun avec les animations réduites.
+	var regie_script = load("res://ui/contextual/match_temps_forts.gd")
+	var essais_vus := tous.filter(func(e: Dictionary) -> bool: return str(e.get("evenement", "")) == "essai_moment")
+	var ralentis := tous.filter(func(e: Dictionary) -> bool: return str(e.get("evenement", "")) == "rejeu")
+	var cles_ralentis := {}
+	for e: Dictionary in ralentis: cles_ralentis["%s|%s" % [str(e.get("cle", "")), str(e.get("plan", ""))]] = true
+	check(ralentis.size() <= essais_vus.size() and cles_ralentis.size() == ralentis.size(), "Un ralenti par essai au plus (%d ralentis, %d essais)" % [ralentis.size(), essais_vus.size()])
+	if bool(essai.calme):
+		check(ralentis.is_empty(), "Animations réduites : aucun ralenti")
+	elif int(essai.debut) > 0:
+		check(not ralentis.is_empty(), "Ralenti de l'essai joué en 3D (%d)" % ralentis.size())
+	for e: Dictionary in ralentis:
+		var nom := "Ralenti %s" % str(e.get("cle", ""))
+		check(absf(float(e.get("vitesse", 0.0)) - 0.5) <= 0.1, "%s : à %.2f de la vitesse réelle" % [nom, float(e.get("vitesse", 0.0))])
+		check(float(e.get("duree_prevue", 99.0)) <= float(regie_script.REJEU_MAX) + 0.15, "%s : %.2f s ajoutées au plus" % [nom, float(e.get("duree_prevue", 99.0))])
+		check(float(e.get("hauteur_camera", 99.0)) < 2.0, "%s : caméra au ras de la pelouse (%.2f m)" % [nom, float(e.get("hauteur_camera", 99.0))])
+		if not e.has("duree_reelle"): continue
+		var a_vitesse_reelle := float(e.duree_reelle) * maxf(float(e.get("vitesse_regie", 1.0)), 0.01)
+		check(bool(e.get("passe", false)) or a_vitesse_reelle <= float(regie_script.REJEU_MAX) + 0.6, "%s : %.2f s à vitesse réelle" % [nom, a_vitesse_reelle])
+		check(float(e.get("ecart_restitution", 999.0)) < 0.001, "%s : état d'avant remis à l'identique (écart %.5f)" % [nom, float(e.get("ecart_restitution", 999.0))])
+	check(int(ralenti.ecarts) == 0, "Mention « RALENTI » pendant et seulement pendant le ralenti (%d images en écart, %d images de ralenti)" % [int(ralenti.ecarts), int(ralenti.images)])
 	# Mi-temps et fin de match.
 	for moment: String in ["mi-temps", "fin"]:
 		var s: Dictionary = sorties.get(moment, {})
@@ -546,6 +579,8 @@ func grands_moments(view: Control) -> Array:
 			if d1 < d0 - 0.3 or d1 < 5.0: rapproches += 1
 		var n: int = maxi(1, (s.departs as Dictionary).size())
 		check(int(s.marche) > 0 and rapproches >= int(n * 0.8), "%s : les joueurs marchent vers le tunnel (%d images, %d sur %d se rapprochent)" % [moment, int(s.marche), rapproches, n])
+		check(int(s.get("serre", 0)) == int(s.marche), "%s : la marche est montrée en plan serré qui suit les joueurs (%d sur %d images)" % [moment, int(s.get("serre", 0)), int(s.marche)])
+		check(int(s.get("bandeau_haut", 0)) == 0, "%s : pendant la marche, le bandeau ne cache pas le tunnel (%d images avec le bandeau en haut)" % [moment, int(s.get("bandeau_haut", 0))])
 	if sorties.has("mi-temps"): check(int(sorties["mi-temps"].retenue) > 0, "Mi-temps : la causerie attend la fin de la sortie")
 	check(sorties.has("mi-temps_causerie"), "La causerie de mi-temps s'ouvre après la sortie")
 	for moment: String in ["mi-temps", "fin"]:
@@ -569,6 +604,8 @@ func _observer_essai(view: Control, regie: Node, essai: Dictionary) -> void:
 				var bande: Control = view.get("bande_temps_forts")
 				essai.bande_bas = bande.get_global_rect().end.y if bande != null and bande.is_visible_in_tree() else 0.0
 				essai.ecran = view.get_global_rect()
+				var legende: Rect2 = regie._legende_rect
+				essai.legende = Rect2(legende.position + view.get_global_rect().position, legende.size)
 		return
 	if int(essai.debut) > 0 or not en_jeu: return
 	var plan: Dictionary = regie.tf.plans[regie.index]
@@ -597,6 +634,10 @@ func _observer_sortie(view: Control, regie: Node, live: Dictionary, sorties: Dic
 	if bool(b.get("visible", false)) and str(b.get("titre", "")) == ("FIN DU MATCH" if moment == "fin" else "MI-TEMPS"): s.bandeau += 1
 	if stage.sortie:
 		s.marche += 1
+		if bool(stage.get("plan_sortie")): s.serre = int(s.get("serre", 0)) + 1
+		# Plan serré : le bandeau descend dans la pelouse du bas, le tunnel (haut de l'image) reste visible.
+		if regie.bandeau != null and regie.bandeau.visible and (regie.bandeau as Control).get_global_rect().position.y < view.get_global_rect().position.y + view.size.y * 0.5:
+			s.bandeau_haut = int(s.get("bandeau_haut", 0)) + 1
 		for id: String in stage._actors:
 			var at: Vector3 = (stage._actors[id].node as Node3D).position
 			if not s.departs.has(id): s.departs[id] = at
@@ -1046,12 +1087,22 @@ func player_path() -> Array:
 	# la réponse du moteur à la pause n'arrive.
 	var allure: float = regie.vitesse
 	regie.vitesse = 1.0
+	# Bandeau compact pendant l'action 3D (film du 18/11/2026 : la grande barre cachait ~20 % de
+	# l'image) ; bouton PAUSE tant que le match joue.
+	var coque: Control = view.get("_coque_score")
+	check(view.compact and view.play.text == "PAUSE", "Action 3D : bandeau compact et bouton PAUSE (%s, « %s »)" % [str(view.compact), view.play.text])
+	if coque != null:
+		var bloc := coque.get_global_rect()
+		check(bloc.size.y <= screen.size.y * 0.12 and bloc.size.x <= screen.size.x * 0.6 and bloc.position.x <= screen.size.x * 0.1, "Bloc compact en haut à gauche, petit : " + str(bloc))
+		check(not view.home.is_visible_in_tree() and (view.get("_sigles")[0] as Label).is_visible_in_tree() and view.clock.is_visible_in_tree() and view.score.is_visible_in_tree(), "Bloc compact : horloge, sigles et score, sans noms longs")
+		check(float(regie.cadrage.couvert_haut) <= view.clock.get_global_rect().end.y / maxf(1.0, view.size.y) + 0.031, "Cadrage : part cachée en haut ramenée au bloc compact (%.3f)" % float(regie.cadrage.couvert_haut))
 	view._pause()
 	await wait_command()
 	check(app.model.live.paused and regie.gel and regie.etat == regie.JEU, "La pause demandée pendant un temps fort fige l'image")
 	var frozen := [regie.index, regie.temps, regie.phase]
 	await settle(40)
 	check(frozen == [regie.index, regie.temps, regie.phase] and view.play.text == "REPRENDRE", "Rien n'avance pendant la pause")
+	check(not view.compact and view.home.is_visible_in_tree(), "Pause : la grande barre revient")
 	# Le journal ouvert pendant un temps fort ne devance pas l'image.
 	view._toggle_drawer("Journal")
 	await settle(2)

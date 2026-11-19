@@ -49,8 +49,18 @@ var bande_temps_forts: HBoxContainer
 ## agrandies avec la hauteur de l'écran (×1,33 en 1440p), jamais réduites en dessous.
 const BANDEAU_TAILLES := {"horloge": 32, "equipe": 32, "score": 60, "pause": 22, "legende": 24, "ecusson": 52, "meteo": 20}
 const LEGENDE_LARGEUR := 720
+## Bandeau compact pendant l'action 3D (film du 18/11/2026 : la grande barre cachait ~20 % de
+## l'image) : horloge, sigles et score dans un bloc en haut à gauche. La grande barre revient
+## aux arrêts de jeu, à la pause, à la mi-temps et à la fin.
+const BANDEAU_COMPACT := {"horloge": 22, "sigle": 22, "score": 34, "pause": 16}
 var echelle := 1.0
 var _legende: Control
+var _coque_score: PanelContainer
+var _meteo_boite: Control
+var _sigles: Array[Label] = []
+var compact := false
+## Images à attendre avant de redonner au cadrage la part d'image cachée (mise en page différée).
+var _recouvrir := 0
 
 func _ready() -> void:
 	name = "ContextualLiveMatch"
@@ -76,6 +86,8 @@ func _ready() -> void:
 	# club, score très grand en police d'affichage. L'élément le plus visible de l'écran.
 	var scoreboard := S.panel(frame, 8)
 	var coque_score: PanelContainer = scoreboard.get_parent().get_parent()
+	coque_score.name = "MatchScoreboard"
+	_coque_score = coque_score
 	var fond := S.G.T.box(Color(0.05, 0.11, 0.09, 0.94), 12, Color(S.GOLD, 0.28))
 	fond.shadow_color = Color(0, 0, 0, 0.3)
 	fond.shadow_size = 8
@@ -112,7 +124,15 @@ func _ready() -> void:
 	style_score.content_margin_top = 0
 	style_score.content_margin_bottom = 0
 	cadre_score.add_theme_stylebox_override("panel", style_score)
+	for cote in 2:
+		var sigle := S.label("", 22)
+		sigle.name = "MatchCompactAbbr%d" % cote
+		sigle.add_theme_font_override("font", S.G.T.DISPLAY)
+		sigle.hide()
+		_sigles.append(sigle)
+	banner.add_child(_sigles[0])
 	banner.add_child(cadre_score)
+	banner.add_child(_sigles[1])
 	score = S.label("", 46, S.GOLD)
 	score.add_theme_font_override("font", S.G.T.DISPLAY)
 	score.custom_minimum_size.x = 150
@@ -136,7 +156,12 @@ func _ready() -> void:
 	meteo_ligne.clip_text = true
 	meteo_ligne.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	meteo_ligne.hide()
-	scoreboard.add_child(meteo_ligne)
+	# Boîte propre à la ligne météo : le bandeau compact la masque sans lutter avec la régie,
+	# qui règle la visibilité de la ligne elle-même.
+	_meteo_boite = S.G.v(0)
+	_meteo_boite.name = "MatchWeatherBox"
+	scoreboard.add_child(_meteo_boite)
+	_meteo_boite.add_child(meteo_ligne)
 	if TempsForts.enabled():
 		bande_temps_forts = S.G.h(12)
 		bande_temps_forts.name = "MatchCommandBand"
@@ -268,19 +293,93 @@ func _mettre_a_l_echelle() -> void:
 	if not is_instance_valid(clock): return
 	echelle = echelle_pour(get_viewport().get_visible_rect().size.y)
 	var t := func(cle: String) -> int: return roundi(float(BANDEAU_TAILLES[cle]) * echelle)
-	clock.add_theme_font_size_override("font_size", t.call("horloge"))
-	clock.custom_minimum_size.x = roundi(104 * echelle)
 	for nom: Label in [home, away]: nom.add_theme_font_size_override("font_size", t.call("equipe"))
-	score.add_theme_font_size_override("font_size", t.call("score"))
-	score.custom_minimum_size.x = roundi(170 * echelle)
-	play.add_theme_font_size_override("font_size", t.call("pause"))
-	play.custom_minimum_size = Vector2(roundi(132 * echelle), roundi(46 * echelle))
+	_tailles_bandeau()
 	events.add_theme_font_size_override("font_size", t.call("legende"))
 	meteo_ligne.add_theme_font_size_override("font_size", t.call("meteo"))
 	events.add_theme_color_override("font_color", S.TEXT)
 	if is_instance_valid(_legende): _legende.custom_minimum_size.x = roundi(LEGENDE_LARGEUR * echelle)
 	_ecussons_cle = ""
 	_poser_ecussons(_live().get("teams", []))
+
+## Tailles de l'horloge, du score, des sigles et du bouton : grande barre ou bloc compact.
+func _tailles_bandeau() -> void:
+	var tailles: Dictionary = BANDEAU_COMPACT if compact else BANDEAU_TAILLES
+	clock.add_theme_font_size_override("font_size", roundi(float(tailles.horloge) * echelle))
+	clock.custom_minimum_size.x = roundi((80 if compact else 104) * echelle)
+	score.add_theme_font_size_override("font_size", roundi(float(tailles.score) * echelle))
+	score.custom_minimum_size.x = roundi((104 if compact else 170) * echelle)
+	for sigle: Label in _sigles: sigle.add_theme_font_size_override("font_size", roundi(float(BANDEAU_COMPACT.sigle) * echelle))
+	play.add_theme_font_size_override("font_size", roundi(float(tailles.pause) * echelle))
+	play.custom_minimum_size = Vector2(roundi((100 if compact else 132) * echelle), roundi((34 if compact else 46) * echelle))
+
+## État du bandeau et du bouton de pause, sans nœud (testable seul).
+## `regie_active` : la régie des temps forts cadence le match ; `action_3d` : un temps fort est
+## à l'écran ; `action_figee` : ce temps fort est figé par une pause du manager ; `attente` : la 3D
+## reste à l'écran entre deux temps forts contigus (le bandeau ne bat pas entre les deux).
+## Rend {compact, pause (libellé), pause_possible}.
+static func etat_bandeau(live: Dictionary, regie_active: bool, action_3d: bool, action_figee: bool, attente: bool = false) -> Dictionary:
+	var fini := bool(live.get("finished", false))
+	var arrete := bool(live.get("paused", false))
+	var joue: bool
+	var reduit: bool
+	if regie_active:
+		# Le moteur peut déjà être arrêté (mi-temps atteinte, pause d'avant l'action) pendant que le
+		# temps fort se joue encore à l'écran : c'est l'image qui dit si le match joue.
+		joue = (action_3d and not action_figee) or (not action_3d and not arrete)
+		reduit = (action_3d and not action_figee) or (attente and not arrete)
+	else:
+		joue = not arrete
+		reduit = not arrete and not bool(live.get("atBreak", false))
+	joue = joue and not fini
+	reduit = reduit and not fini and not live.is_empty()
+	# Action montrée alors que le moteur est déjà arrêté : rien à mettre en pause, elle se termine.
+	return {"compact": reduit, "pause": "PAUSE" if joue or (fini and not arrete) else "REPRENDRE",
+		"pause_possible": not fini and not (joue and arrete)}
+
+func _etat_bandeau() -> Dictionary:
+	var action: bool = regie != null and regie.etat == regie.JEU
+	var attente: bool = regie != null and regie.etat == regie.ATTENTE
+	return etat_bandeau(_live(), temps_forts_actifs(), action, action and bool(regie.gel), attente)
+
+func _process(_delta: float) -> void:
+	if not is_instance_valid(play) or not is_instance_valid(_coque_score): return
+	var etat := _etat_bandeau()
+	_poser_pause(etat)
+	if bool(etat.compact) != compact: _appliquer_bandeau(bool(etat.compact))
+	if _recouvrir > 0:
+		_recouvrir -= 1
+		if _recouvrir == 0: _recadrer()
+
+## Libellé et accès du bouton : « PAUSE » tant que le match joue à l'écran, « REPRENDRE » en pause.
+func _poser_pause(etat: Dictionary) -> void:
+	if play.text != str(etat.pause): play.text = str(etat.pause)
+	var possible: bool = bool(etat.pause_possible) and director._talk().is_empty()
+	var aide := "" if bool(etat.pause_possible) or bool(_live().get("finished", false)) else "Le match est déjà arrêté : l’action en cours se termine."
+	if play.tooltip_text != aide: play.tooltip_text = aide
+	if bool(play.get_meta("contextual_enabled", true)) != possible:
+		play.set_meta("contextual_enabled", possible)
+		director._refresh_controls()
+
+## Grande barre ↔ bloc compact en haut à gauche (horloge, sigles, score, bouton de pause).
+func _appliquer_bandeau(valeur: bool) -> void:
+	compact = valeur
+	_coque_score.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN if compact else Control.SIZE_FILL
+	for noeud: Control in [home, away, _ecussons[0], _ecussons[1], _meteo_boite]:
+		if is_instance_valid(noeud): noeud.visible = not compact
+	for sigle: Label in _sigles: sigle.visible = compact
+	_tailles_bandeau()
+	_recouvrir = 2
+
+## Le cadrage des temps forts tient compte de la part d'image cachée en haut et en bas : elle
+## change avec le bandeau. Même mesure que la régie au début de chaque plan.
+func _recadrer() -> void:
+	if regie == null or regie.etat != regie.JEU: return
+	var cadrage: Variant = regie.get("cadrage")
+	if cadrage == null or not is_instance_valid(clock): return
+	var hauteur := maxf(1.0, size.y)
+	var legende: Control = events.get_parent().get_parent().get_parent()
+	cadrage.couvrir(clock.get_global_rect().end.y / hauteur + 0.03, (hauteur - legende.get_global_rect().position.y) / hauteur + 0.02)
 
 func update_frame(value: Dictionary) -> void:
 	model = value
@@ -290,20 +389,18 @@ func update_frame(value: Dictionary) -> void:
 	if teams.size() >= 2:
 		home.text = S.G.club_name(teams[0])
 		away.text = S.G.club_name(teams[1])
+		for cote in 2: _sigles[cote].text = S.G.club_abbr(teams[cote]) if teams[cote] is Dictionary else ""
 		_poser_ecussons(teams)
 	var scores: Array = live.get("score", [0, 0])
 	score.text = "%d — %d" % [int(scores[0]), int(scores[1])]
 	clock.text = "%d min" % int(live.get("minute", 0))
 	if live.get("finished", false): clock.text = "TERMINÉ"
 	elif live.get("atBreak", false): clock.text = "MI-TEMPS"
-	play.text = "REPRENDRE" if live.get("paused", false) else "PAUSE"
 	meteo_ligne.text = Meteo.bandeau(live)
 	meteo_ligne.visible = not meteo_ligne.text.is_empty()
 	meteo_ligne.add_theme_color_override("font_color", S.GOLD if live.get("atBreak", false) else S.MUTED)
 	meteo_ligne.tooltip_text = Meteo.conseil(live)
 	meteo_ligne.mouse_filter = Control.MOUSE_FILTER_PASS if not meteo_ligne.tooltip_text.is_empty() else Control.MOUSE_FILTER_IGNORE
-	# Une causerie retenue par un temps fort : la reprise passera par elle.
-	play.set_meta("contextual_enabled", not live.get("finished", false) and director._talk().is_empty())
 	finish.visible = live.get("finished", false)
 	finish.set_meta("contextual_enabled", live.get("finished", false))
 	if stage.has_method("set_club_identity"): stage.set_club_identity(model.get("club", {}))
@@ -323,6 +420,11 @@ func update_frame(value: Dictionary) -> void:
 	_update_drawer()
 	if is_instance_valid(equipe): equipe.update_frame(model)
 	apply_preferences()
+	# Après la régie (elle dit si un temps fort se joue) : libellé et accès du bouton de pause ;
+	# une causerie retenue par un temps fort bloque aussi la reprise (elle passera par elle).
+	var etat := _etat_bandeau()
+	_poser_pause(etat)
+	if bool(etat.compact) != compact: _appliquer_bandeau(bool(etat.compact))
 	director._refresh_controls()
 
 ## Fenêtre « Équipe » (choix de Léo, 18/11/2026 : un seul bouton à la place de Tactique et Banc) :

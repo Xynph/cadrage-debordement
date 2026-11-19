@@ -6,6 +6,8 @@ extends SceneTree
 ## mi-temps atteinte par le moteur pendant la dernière action.
 const Regie = preload("res://ui/contextual/match_temps_forts.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
+const Between = preload("res://ui/contextual/match_between.gd")
+const Terrain2D = preload("res://ui/contextual/match_terrain_2d.gd")
 var checks := 0
 var failures: Array[String] = []
 
@@ -112,6 +114,60 @@ func run() -> void:
 	check(Meteo.bandeau(Regie.meteo_montree(pause, false)).begins_with("Mi-temps"), "Ligne météo après l'action : la mi-temps")
 	check(bool(pause.atBreak), "Le modèle du moteur n'est pas modifié")
 
+	# Ligne d'état du haut pendant un plan : le fait montré, jamais l'état du moteur.
+	# Essai pas encore aplati : la possession du porteur, rien de l'essai ; aplati : « Essai — … ».
+	var course := Regie.etat_montre(plans[1], "jeu", 1.0, false, false, equipes)
+	check(course == "Domicile XV a le ballon dans les 22 mètres adverses", "Ligne d'état, essai pas encore aplati : la course du porteur (" + course + ")")
+	var essai := Regie.etat_montre(plans[1], "jeu", 2.5, true, false, equipes)
+	check(essai == "Essai — Domicile XV" and not essai.contains("a le ballon"), "Ligne d'état, essai aplati : l'essai, pas la possession en retard (" + essai + ")")
+	check(Regie.etat_montre(plans[1], "choregraphie", 0.0, true, true, equipes) == "Essai — Domicile XV", "Ligne d'état, essai des pistes au jalon : l'essai")
+	check(Regie.etat_montre(plans[2], "pret", 0.2, true, false, equipes) == "Transformation — Domicile XV", "Ligne d'état, transformation : l'arrêt, sans le résultat")
+	# Touche pour l'autre équipe : la ligne nomme l'équipe qui lance, pas celle d'avant.
+	var touche_plan := {"index": 3, "kind": "lineout", "texte": "Touche pour Visiteurs XV.", "scene": {"possession": 1, "team": 1, "ball": {"x": 40.0, "y": 0.0}, "players": []}}
+	var touche := Regie.etat_montre(touche_plan, "jeu", 0.5, true, false, equipes)
+	check(touche == "Touche pour Visiteurs XV" and not touche.contains("Domicile"), "Ligne d'état, touche de l'autre équipe : « Touche pour » l'équipe qui lance (" + touche + ")")
+	check(Regie.etat_montre({"kind": "scrum", "scene": {"possession": 0, "ball": {"x": 50.0}}}, "jeu", 0.5, true, false, equipes) == "Mêlée pour Domicile XV", "Ligne d'état, mêlée : « Mêlée pour … »")
+
+	# Écran intermédiaire : le terrain 2D rejoue des faits en retard sur la borne du moteur ; la ligne
+	# d'état suit le dernier fait joué (celui du bandeau du fil), pas le dernier fait de la borne
+	# (constat du film : « Meadowbridge a le ballon dans son camp » sous une touche pour l'autre équipe).
+	var terrain = Terrain2D.new()
+	var deroule := [
+		{"i": 5, "minute": 3, "horloge": "3′", "kind": "turnover", "equipe": 0, "texte": "Ballon récupéré.", "scene": {"kind": "turnover", "possession": 0, "ballon": [30.0, 35.0], "origine": [30.0, 35.0], "joueurs": []}},
+		{"i": 6, "minute": 3, "horloge": "3′", "kind": "lineout", "equipe": 1, "texte": "Touche pour Visiteurs XV.", "scene": {"kind": "lineout", "possession": 1, "ballon": [60.0, 0.0], "origine": [60.0, 0.0], "joueurs": []}},
+	]
+	terrain.alimenter(deroule, 7)
+	terrain.avancer(10.0)
+	var entracte = Between.new()
+	entracte.terrain = terrain
+	entracte.etat = Label.new()
+	# Borne du moteur : son dernier fait est la touche pour les visiteurs.
+	var direct := {"possession": 1, "zone": {"x": 60.0, "kind": "lineout"}, "borne": 7}
+	var vu_live := {"teams": equipes, "events": events}
+	entracte._etat(vu_live, direct, equipes)
+	check(terrain.en_retard() and int(terrain.joue.get("i", -1)) == 5, "Fixture : le terrain montre le ballon récupéré, la touche attend")
+	check(entracte.etat.text == "Domicile XV a le ballon dans son camp", "Écran intermédiaire : la ligne suit le fait joué, pas la borne du moteur (" + entracte.etat.text + ")")
+	terrain.avancer(10.0)
+	entracte._etat(vu_live, direct, equipes)
+	check(not terrain.en_retard() and entracte.etat.text.begins_with("Visiteurs XV a le ballon"), "Écran intermédiaire, terrain à jour : l'état borné du moteur (" + entracte.etat.text + ")")
+	check(Between.etat_du_deroule(deroule[1], equipes) == "Touche pour Visiteurs XV", "Fait du terrain 2D : touche pour l'équipe qui lance")
+	# Régie qui impose un texte (liaison, plan 3D) : il prime sur le terrain 2D.
+	entracte.etat_force = "Touche pour Visiteurs XV"
+	entracte._etat(vu_live, direct, equipes)
+	check(entracte.etat.text == "Touche pour Visiteurs XV", "Texte imposé par la régie : prioritaire")
+	entracte.etat.free()
+	entracte.free()
+	terrain.free()
+
+	# Trace des légendes : en liaison, le texte est celui de l'arrêt (essai) et non celui du plan à venir (touche).
+	var lien := {"arrets": [2, 3], "kinds": ["try", "lineout"], "arret": 3}
+	var suite := {"index": 4, "kind": "lineout", "horloge": "46′"}
+	var fait := Regie.meta_legende("liaison", suite, lien, 0)
+	check(fait.kind == "try" and fait.journal == 2 and fait.horloge == "", "Liaison, plan A : la trace porte l'essai, pas la touche à venir (" + str(fait) + ")")
+	fait = Regie.meta_legende("liaison", suite, lien, 1)
+	check(fait.kind == "lineout" and fait.journal == 3, "Liaison, plan B : la trace porte la remise en jeu (" + str(fait) + ")")
+	fait = Regie.meta_legende("jeu", suite, lien, 0)
+	check(fait.kind == "lineout" and fait.journal == 4 and fait.horloge == "46′", "Hors liaison : la trace garde le plan courant (" + str(fait) + ")")
 	regie.free()
 	print("MATCH_TEXTE_IMAGE %d controles, %d echec" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)

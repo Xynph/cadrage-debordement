@@ -21,6 +21,8 @@ const Choregraphie = preload("res://match_choregraphie.gd")
 const Formations = preload("res://match_formations.gd")
 const Impacts = preload("res://match_impacts.gd")
 const Tactique = preload("res://match_tactique.gd")
+const ApresEssai = preload("res://match_apres_essai.gd")
+const Rejeu = preload("res://match_rejeu.gd")
 const CUT_SECONDS := 0.30
 ## Nombre de joueurs à l'image, chacun à plus de Motion.TRAJET_REPLACEMENT de sa place, à partir
 ## duquel la vue coupe pour les replacer (équipe qui se reforme) au lieu de les faire courir.
@@ -64,6 +66,12 @@ const ACTION_CHAMP := 36.0
 const TOIT_Z := 54.6
 const TOIT_Y := 13.0
 const CHAMP_MAX := 64.0
+## Plongée du bas de l'image (inclinaison + demi-angle de champ, degrés), TV et contact. 18 novembre
+## 2026 (nuit) : près de la touche proche, l'axe restait sous INCLINAISON_MAX mais la caméra qui
+## avançait sous le toit ouvrait son angle jusqu'à CHAMP_MAX : le bas de l'image plongeait à 70° et
+## les joueurs proches étaient vus du dessus. L'angle s'ouvre désormais au plus jusqu'à cette
+## plongée ; au-delà, la caméra avance à angle constant (hauteur visible un peu plus serrée).
+const PLONGEE_MAX := 56.0
 ## Hauteur visible (m) au point visé de la caméra de base (hors temps fort). Le cadrage des temps
 ## forts (match_cadrage.gd) la règle ensuite selon les joueurs utiles.
 const TV_TAILLE := 30.0
@@ -78,7 +86,20 @@ const PLAN_LARGE_CHAMP := 36.0
 ## joueurs rentrent en marchant vers le tunnel, au milieu de la touche proche (sous la tribune
 ## principale). Allure de marche (m/s) : sous le seuil du trot des clips (2,5 m/s).
 const TUNNEL := Vector3(0.0, 0.0, 40.0)
-const ALLURE_SORTIE := 1.9
+## 18/11/2026 (soir) : sous le plan large, les joueurs minuscules ne faisaient que 8 m loin du tunnel.
+## La sortie montrée part d'une coupe : chaque joueur reprend, dans la même direction depuis le
+## tunnel, à SORTIE_PROCHE_MIN à SORTIE_PROCHE_MAX m de lui (jamais au-delà de SORTIE_PROCHE_Z, dans
+## le terrain), puis rentre en marche rapide, trot léger (sous le seuil de course des clips, 2,5 m/s).
+const ALLURE_SORTIE := 2.4
+const SORTIE_PROCHE_MIN := 4.5
+const SORTIE_PROCHE_MAX := 10.0
+const SORTIE_PROCHE_Z := 34.0
+## Plan de la sortie : contrechamp depuis le terrain, tourné vers la tribune principale et le
+## tunnel, qui suit le groupe (direction, recul en m, angle de champ, lissage en s).
+const PLAN_SORTIE_OFFSET := Vector3(0.22, 0.42, -0.88)
+const PLAN_SORTIE_RECUL := 36.0
+const PLAN_SORTIE_CHAMP := 38.0
+const PLAN_SORTIE_LISSAGE := 0.6
 ## Recentrage borné (TV et action) : la touche lointaine, la touche proche et les lignes de ballon
 ## mort, plus TERRAIN_MARGE m, restent près des bords de l'image (BORD_*, en part de l'image) : la
 ## tribune n'en occupe qu'une bande. Le ballon reste toujours dans la zone sûre (BALLON_SUR des bords).
@@ -178,6 +199,13 @@ var ralenti := 1.0
 var dernier_delta := 0.0
 ## Sortie des joueurs en cours (mi-temps, fin de match) : jusqu'à la prochaine image du moteur.
 var sortie := false
+## Sortie montrée de près (joueurs rapprochés du tunnel, plan qui suit le groupe) et point visé.
+var plan_sortie := false
+var _sortie_vise := Vector3.ZERO
+## Ralenti de l'essai (match_rejeu.gd) : enregistrement des poses montrées, puis lecture au ralenti
+## sous un autre angle pendant laquelle la vue est suspendue ; `rejeu_fini` à sa fin (ou abrégé).
+signal rejeu_fini
+var _rejeu: RefCounted = Rejeu.new(self)
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -331,6 +359,19 @@ func arreter_geste(id: String) -> void:
 		_actors[id].geste = {}
 
 
+## Durée du trajet du ballon vers sa nouvelle place (s) : un tir au but vole plus longtemps
+## qu'une transition ordinaire (BLEND_SECONDS), le temps de le suivre jusqu'aux perches.
+func duree_vol() -> float:
+	if _tir_au_but():
+		return ApresEssai.duree_vol(_ball_from, _ball_target)
+	return BLEND_SECONDS
+
+
+## Ballon d'un tir au but en route vers la ligne de but visée (pas la pose « prêt » sur la marque).
+func _tir_au_but() -> bool:
+	return _kind in ["goal", "miss"] and _carrier_id.is_empty() and absf(_ball_target.x) >= 49.0
+
+
 ## Suit les pistes du chorégraphe (moteur Node) : positions, caps et états des joueurs,
 ## ballon. Rend faux sans pistes valides : la vue garde alors son interpolation.
 ## `vitesse` : facteur de lecture (la régie accélère les temps forts dans les tests).
@@ -443,9 +484,15 @@ func apply_frame(live: Dictionary) -> void:
 		_pending = live.duplicate(true)
 		_has_pending = true
 		return
-	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours (et à la sortie).
+	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours (et à la sortie),
+	# et au ralenti de l'essai (état d'avant remis d'abord).
+	finir_rejeu()
 	arreter_choregraphie()
+	if plan_sortie:
+		_camera_cut = true
 	sortie = false
+	plan_sortie = false
+	foule.observer(live) # Public : l'image montrée (22 mètres, essai, arrêt de jeu).
 	var scene: Dictionary = live.get("scene", {})
 	if scene.is_empty() or not scene.get("players", null) is Array:
 		_clear_presence()
@@ -707,6 +754,8 @@ func _gestes_du_fait(scene: Dictionary, previous_kind: String) -> void:
 
 ## Régie des temps forts : mi-temps ou fin de match, plus rien à rejouer.
 func set_plan_large(on: bool) -> void:
+	if on:
+		finir_rejeu()
 	_plan_large_regie = on
 	_maj_plan_large()
 
@@ -727,12 +776,58 @@ func set_ralenti(facteur: float) -> void:
 	ralenti = clampf(facteur, 0.05, 1.0) if is_finite(facteur) else 1.0
 
 
+## Ralenti de l'essai (régie des temps forts) : enregistrer les poses montrées pendant ce temps fort.
+func enregistrer_rejeu(on: bool) -> void:
+	finir_rejeu()
+	_rejeu.activer(on)
+
+
+## Essai aplati à l'écran : la fenêtre du ralenti se cale sur cet instant (faux sans enregistrement).
+func reperer_rejeu() -> bool:
+	return _rejeu.reperer()
+
+
+## Rejoue la fin de l'action au ralenti (`vitesse` : part de la vitesse réelle), sous l'angle du
+## ralenti. Faux sans fenêtre enregistrée, en vue de dessus, au plan large ou pendant la sortie.
+func commencer_rejeu(vitesse: float = Rejeu.VITESSE) -> bool:
+	if not is_node_ready() or _camera_mode == "tactical" or _plan_large or sortie:
+		return false
+	return _rejeu.commencer(vitesse)
+
+
+func rejeu_actif() -> bool:
+	return _rejeu.actif
+
+
+## Abrège le ralenti : l'état d'avant est remis aussitôt.
+func finir_rejeu() -> void:
+	if not _rejeu.actif:
+		return
+	_rejeu.finir()
+	rejeu_fini.emit()
+
+
+## Figurant (arbitre) enregistré et figé avec les joueurs pendant le ralenti.
+func inscrire_rejeu(noeud: Node3D, modele: Node3D, squelette: Skeleton3D) -> void:
+	_rejeu.inscrire(noeud, modele, squelette)
+
+
+## Contrôles du ralenti (régie, tests, match filmé).
+func rejeu_etat() -> Dictionary:
+	return {"actif": _rejeu.actif, "lecture": _rejeu.lecture, "duree_source": _rejeu.duree_source, "vitesse": _rejeu.vitesse,
+		"ecoule": _rejeu.ecoule, "hauteur_camera": _rejeu.hauteur_camera, "gene_angle": _rejeu.gene_angle, "retrait": _rejeu._retrait, "ecart_restitution": _rejeu.ecart_restitution,
+		"enregistre": _rejeu.enregistre, "poses": _rejeu.tampon.size(), "fenetre": _rejeu.clip.size()}
+
+
 ## Mi-temps, fin de match (régie des temps forts) : chaque joueur quitte sa place et marche vers
 ## le tunnel, à ALLURE_SORTIE ; le ballon est laissé au sol. Plus rien d'une action en cours (passe,
 ## contact, geste, posture de mêlée) ne reste posé. La prochaine image du moteur reprend la main.
-func sortir_du_terrain() -> void:
+## `rapprocher` : coupe sur la sortie montrée de près (plan_sortie) ; chaque joueur repart plus près
+## du tunnel (place_proche_du_tunnel), et la caméra suit le groupe jusqu'à l'entrée du tunnel.
+func sortir_du_terrain(rapprocher: bool = false) -> void:
 	if not is_node_ready():
 		return
+	finir_rejeu()
 	arreter_choregraphie()
 	_stop_live_pass()
 	_pass_plan = {}
@@ -752,10 +847,19 @@ func sortir_du_terrain() -> void:
 		_ball_from_basis = _ball.global_basis
 		_ball_target = Vector3(_ball.position.x, Impacts.BALLON_AU_SOL, _ball.position.z)
 		_ball_travel = 0.0
+	plan_sortie = rapprocher
+	if rapprocher:
+		_camera_cut = true
 	for id: String in _actors:
 		var entry: Dictionary = _actors[id]
-		var at: Vector3 = (entry.node as Node3D).position
+		var actor: Node3D = entry.node
+		var at: Vector3 = actor.position
 		var but := place_de_sortie(at, int(entry.side))
+		if rapprocher:
+			# Coupe : le joueur reparaît plus près du tunnel, déjà tourné vers lui.
+			at = place_proche_du_tunnel(at)
+			actor.position = at
+			actor.rotation.y = atan2(but.x - at.x, but.z - at.z)
 		entry.holding = false
 		entry.geste = {}
 		entry.grip = 0.0
@@ -778,9 +882,37 @@ static func place_de_sortie(depuis: Vector3, camp: int) -> Vector3:
 	return TUNNEL + Vector3(cote * (1.0 + fposmod(depuis.x * 0.37 + depuis.z * 0.21, 3.0)), 0.0, 0.0)
 
 
+## Départ de la sortie montrée de près : dans la direction du joueur vue du tunnel, à une distance
+## ramenée entre SORTIE_PROCHE_MIN et SORTIE_PROCHE_MAX m (l'ordre des distances est gardé : les plus
+## loin restent derrière), et jamais hors du terrain côté tunnel.
+static func place_proche_du_tunnel(depuis: Vector3) -> Vector3:
+	var ecart := Vector2(depuis.x - TUNNEL.x, depuis.z - TUNNEL.z)
+	var loin := ecart.length()
+	var direction := ecart / loin if loin > 0.01 else Vector2(0.0, -1.0)
+	# Toujours vers le terrain (z décroissant depuis le tunnel).
+	if direction.y > -0.35:
+		direction = Vector2(signf(direction.x) if absf(direction.x) > 0.001 else 1.0, -0.35 / 0.937).normalized()
+	var rayon := lerpf(SORTIE_PROCHE_MIN, SORTIE_PROCHE_MAX, clampf((loin - 5.0) / 60.0, 0.0, 1.0))
+	var p := Vector2(TUNNEL.x, TUNNEL.z) + direction * rayon
+	return Vector3(p.x, 0.0, minf(p.y, SORTIE_PROCHE_Z))
+
+
+## Point visé du plan de sortie : le groupe des joueurs, tiré vers le tunnel où il se dirige.
+func _vise_sortie() -> Vector3:
+	var somme := Vector3.ZERO
+	for entry: Dictionary in _actors.values():
+		somme += (entry.node as Node3D).position
+	var groupe := somme / maxf(1.0, float(_actors.size())) if not _actors.is_empty() else TUNNEL
+	var vise := groupe.lerp(TUNNEL, 0.3)
+	return Vector3(vise.x, 1.0, vise.z)
+
+
 func set_camera(mode: String) -> void:
 	var selected := mode if mode in ["tactical", "action"] else "tv"
 	var changed := selected != _camera_mode
+	# Changement de caméra pendant le ralenti : il est abrégé (la vue reprend sous la caméra choisie).
+	if changed:
+		finir_rejeu()
 	_camera_mode = selected
 	if is_instance_valid(_camera) and (changed or not _camera_framed):
 		_fit_camera(0.0, true)
@@ -790,6 +922,13 @@ func set_camera(mode: String) -> void:
 
 func _process(delta: float) -> void:
 	dernier_delta = delta
+	_animer_foule(delta) # Le public vit en temps réel, même pendant le ralenti.
+	if _rejeu.actif:
+		# Ralenti de l'essai rejoué : la vue est suspendue, seules les poses enregistrées sont montrées ;
+		# à sa fin, l'état d'avant est remis tel quel.
+		if not _rejeu.lire(delta):
+			rejeu_fini.emit()
+		return
 	# Ralenti de l'essai : tout ce que la vue anime avance moins vite (présentation seule).
 	delta *= ralenti
 	if not _pass_plan.is_empty():
@@ -974,6 +1113,8 @@ func _process(delta: float) -> void:
 		var tenu_en_main := not _carrier_id.is_empty() and _actors.has(_carrier_id)
 		_ball_marker.global_basis = Basis.IDENTITY.scaled(Vector3.ONE * (1.45 if tenu_en_main else 1.0))
 		((_ball_marker as MeshInstance3D).material_override as StandardMaterial3D).albedo_color = Color("ffe680") if tenu_en_main else Color("e9bf5a")
+	# Poses définitives de l'image : enregistrées pour le ralenti de l'essai (une coupe le recommence).
+	_rejeu.enregistrer(delta, _camera_cut)
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
 
@@ -1144,7 +1285,12 @@ func _update_ball(delta: float) -> void:
 		return
 	if not _pass_plan.is_empty() and _update_live_pass():
 		return
-	_ball_travel = minf(1.0, _ball_travel + delta / BLEND_SECONDS)
+	_ball_travel = minf(1.0, _ball_travel + delta / duree_vol())
+	if _tir_au_but():
+		# Tir au but : au-dessus de la barre, puis le ballon retombe dans l'en-but (match_apres_essai.gd).
+		_ball_attached = false
+		_ball.position = ApresEssai.vol(_ball_from, _ball_target, _ball_travel)
+		return
 	if not _carrier_id.is_empty() and _actors.has(_carrier_id) and _actors[_carrier_id].rig:
 		var entry: Dictionary = _actors[_carrier_id]
 		var anchor := Presentation.ball_anchor(entry.node, entry.rig)
@@ -1227,6 +1373,16 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 		var size := base
 		var wide := size
 		var screen := get_viewport().get_visible_rect().size
+		if sortie and plan_sortie:
+			# Sortie montrée de près : contrechamp qui suit le groupe vers le tunnel (prime sur le plan large).
+			var vise := _vise_sortie()
+			_sortie_vise = vise if cut or delta <= 0.0 else _sortie_vise.lerp(vise, 1.0 - exp(-delta / PLAN_SORTIE_LISSAGE))
+			var sens := PLAN_SORTIE_OFFSET.normalized()
+			_camera_look = _sortie_vise
+			_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+			_camera.global_transform = Transform3D(Basis.looking_at(-sens, Vector3.UP), _sortie_vise + sens * PLAN_SORTIE_RECUL)
+			_camera.fov = PLAN_SORTIE_CHAMP
+			return
 		if _plan_large:
 			# Mi-temps, fin de match : tout le terrain, sans recadrage.
 			var direction := PLAN_LARGE_OFFSET.normalized()
@@ -1242,6 +1398,13 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			look = close[0]
 			size = close[1]
 			offset = close[2]
+			if _cadrage.has_method("dans_l_axe") and _cadrage.dans_l_axe():
+				# Tir au but filmé dans l'axe (match_cadrage.gd) : posé tel quel, sans recadrage de geste
+				# ni bornes de la caméra de tribune.
+				if _gestes:
+					_gestes.reset_framing()
+				_poser_camera(look, size, offset)
+				return
 		if _gestes:
 			# Pendant un geste : rapprochement amorti (et léger pivot lent en TV), puis retour.
 			var framed: Array = _gestes.frame_camera(look, size, offset, screen.x / maxf(screen.y, 1.0), _camera_mode, delta)
@@ -1256,6 +1419,10 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			if _cadrage:
 				# Temps fort : le cadrage du geste garde lui aussi le ballon dans le champ.
 				look = _cadrage.garder_ballon(look, size, offset, screen.x / maxf(screen.y, 1.0))
+		if _camera_mode == "action":
+			# Caméra au contact : point visé toujours ramené dans l'aire de jeu (essai en coin : le
+			# terrain, pas la tribune) ; le ballon reste gardé à l'image plus bas.
+			look = borner_visee(look, VISEE_CONTACT)
 		# Jamais de champ dégénéré, quel que soit le recadrage.
 		if not is_finite(size) or size < 2.0 or not look.is_finite() or not offset.is_finite():
 			look = _camera_focus
@@ -1320,7 +1487,17 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 
 ## Direction de la caméra suivie pour un point visé à `profondeur` (z) : celle de base, relevée
 ## progressivement près de la touche proche (caméra-grue, voir GRUE_*). Continue : pas d'à-coup.
-func offset_suivi(base: Vector3, profondeur: float) -> Vector3:
+## Caméra de biais (contact) : son lacet est rendu progressivement symétrique quand le point suivi
+## (`largeur`, x ; par défaut celui de la caméra) approche du bout du terrain vers lequel elle
+## regarderait (|x| de PIVOT_DEBUT à PIVOT_FIN) : elle se place alors derrière l'en-but et regarde
+## vers l'intérieur du terrain, jamais vers la tribune du bout du terrain.
+func offset_suivi(base: Vector3, profondeur: float, largeur: float = NAN) -> Vector3:
+	if absf(base.x) > 0.0001:
+		var x := _camera_focus.x if is_nan(largeur) else largeur
+		# La caméra regarde vers -offset : le bout du terrain regardé est du côté de -base.x.
+		var symetrie := smoothstep(PIVOT_DEBUT, PIVOT_FIN, -x * signf(base.x))
+		if symetrie > 0.0:
+			base = base.rotated(Vector3.UP, -2.0 * symetrie * atan2(base.x, base.z))
 	var k := smoothstep(GRUE_DEBUT, GRUE_FIN, profondeur)
 	if k <= 0.0:
 		return base
@@ -1357,8 +1534,12 @@ func borner_pivot(look: Vector3, offset: Vector3, suivi: Vector3) -> Vector3:
 	return suivi.normalized().rotated(Vector3.UP, permis) * offset.length()
 
 
-func borner_visee(look: Vector3) -> Vector3:
-	return Vector3(borne_douce(look.x, VISEE_GESTE.x), look.y, borne_douce(look.z, VISEE_GESTE.y))
+## Caméra au contact, en permanence : point visé à |x| <= VISEE_CONTACT.x et |z| <= VISEE_CONTACT.y.
+const VISEE_CONTACT := Vector2(47.0, 30.0)
+
+
+func borner_visee(look: Vector3, limites: Vector2 = VISEE_GESTE) -> Vector3:
+	return Vector3(borne_douce(look.x, limites.x), look.y, borne_douce(look.z, limites.y))
 
 
 ## Borne sans à-coup : identité jusqu'à `limite - VISEE_GENOU`, puis approche progressive de la limite
@@ -1443,11 +1624,24 @@ func pose_camera(look: Vector3, size: float, offset: Vector3) -> Array:
 	var distance := demi / tan(deg_to_rad(champ * 0.5))
 	if direction.z > 0.05 and _sous_le_toit(look, direction, distance, demi):
 		# Le bas de l'image passerait sous le toit de la tribune proche : la caméra avance (et
-		# ouvre son angle) juste assez pour le franchir.
-		var a := demi / tan(deg_to_rad(CHAMP_MAX * 0.5))
+		# ouvre son angle) juste assez pour le franchir, sans que le bas de l'image dépasse PLONGEE_MAX.
+		var inclinaison := rad_to_deg(asin(clampf(direction.y, -1.0, 1.0)))
+		var ouverture := clampf(2.0 * (PLONGEE_MAX - inclinaison), champ, CHAMP_MAX)
+		var pente := tan(deg_to_rad(ouverture * 0.5))
+		var a := demi / pente
 		var b := distance
 		if _sous_le_toit(look, direction, a, demi):
-			distance = a
+			# Angle plafonné : la caméra avance à angle constant jusqu'à passer devant le toit
+			# (plus près = plus dégagé) ; la hauteur visible se resserre d'autant.
+			var proche := 1.0
+			var loin := a
+			for i in 10:
+				var m := (proche + loin) * 0.5
+				if _sous_le_toit(look, direction, m, m * pente):
+					loin = m
+				else:
+					proche = m
+			return [look + direction * proche, ouverture]
 		else:
 			for i in 8:
 				var m := (a + b) * 0.5
@@ -1960,16 +2154,20 @@ func _flush_venue_boxes() -> void:
 	_venue_batches.clear()
 
 
-func _instance_batch(label: String, mesh: Mesh, material: Material, transforms: Array, colors: Array[Color] = []) -> void:
+func _instance_batch(label: String, mesh: Mesh, material: Material, transforms: Array, colors: Array[Color] = [], customs: Array[Color] = []) -> void:
 	var batch := MultiMesh.new()
 	batch.transform_format = MultiMesh.TRANSFORM_3D
 	batch.use_colors = not colors.is_empty()
+	# Public animé : phase, tribu, rang et tenue de chaque spectateur (shaders/foule.gdshader).
+	batch.use_custom_data = not customs.is_empty()
 	batch.mesh = mesh
 	batch.instance_count = transforms.size()
 	for i in transforms.size():
 		batch.set_instance_transform(i, transforms[i])
 		if batch.use_colors:
 			batch.set_instance_color(i, colors[i])
+		if batch.use_custom_data:
+			batch.set_instance_custom_data(i, customs[i])
 	var instance := MultiMeshInstance3D.new()
 	instance.name = label
 	instance.multimesh = batch
@@ -1977,20 +2175,28 @@ func _instance_batch(label: String, mesh: Mesh, material: Material, transforms: 
 	# Crowd and seats are subpixel details; avoid their thousands of shadow casters.
 	if label == "VenueSeats" or label.begins_with("Spectators"):
 		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if label.begins_with("Spectators"):
+		# Spectateurs levés et bras en l'air : au-dessus de la boîte calculée sur les places assises.
+		instance.extra_cull_margin = 1.0
 	add_child(instance)
 
 
 func _build_spectators(positions: Array[Vector3], rotations: Array[float], rng: RandomNumberGenerator) -> void:
-	# Static seated silhouettes with heads/shoulders, kept outside sporting presence.
-	# Three bounded MultiMeshes; no per-spectator nodes, physics or animation.
+	# Seated silhouettes with heads/shoulders, kept outside sporting presence.
+	# Four bounded MultiMeshes animated by one shader (shaders/foule.gdshader): no per-spectator
+	# nodes, physics or scripts. Supporters of each club (home majority, away block in one end
+	# terrace) wear its shirt or wave its scarf; the crowd state comes from `foule` (match_foule.gd).
 	var torsos: Array[Transform3D] = []
 	var heads: Array[Transform3D] = []
 	var legs: Array[Transform3D] = []
+	var arms: Array[Transform3D] = []
 	var clothes: Array[Color] = []
 	var skins: Array[Color] = []
 	var trousers: Array[Color] = []
+	var customs: Array[Color] = []
 	var palette := [Color("243238"), Color("567078"), Color("92968c"), Color("b4b2a4"), Color("735252"), Color("46584f"), Color("38464f")]
 	var skin_palette := [Color("c09a7b"), Color("986c50"), Color("d3b398"), Color("77533f")]
+	var tribus := [0, 0, 0]
 	for i in positions.size():
 		var height := rng.randf_range(0.88, 1.12)
 		var basis := Basis().rotated(Vector3.UP, rotations[i])
@@ -1999,10 +2205,28 @@ func _build_spectators(positions: Array[Vector3], rotations: Array[float], rng: 
 		heads.append(Transform3D(basis.scaled(Vector3.ONE * rng.randf_range(0.92, 1.08)), p + Vector3(0, 0.73 * height, 0)))
 		legs.append(Transform3D(basis * Basis.from_scale(Vector3(0.35, 0.18, 0.58)), p + basis * Vector3(0, -0.12, 0.22)))
 		clothes.append(palette[rng.randi_range(0, palette.size() - 1)])
-		skins.append(skin_palette[rng.randi_range(0, skin_palette.size() - 1)])
+		var skin: Color = skin_palette[rng.randi_range(0, skin_palette.size() - 1)]
+		skins.append(skin)
 		trousers.append(Color("293136"))
-	var coloured := _material(Color.WHITE)
-	coloured.vertex_color_use_as_albedo = true
+		# Tribu : bloc des visiteurs dans la tribune d'en-but côté x > 0, ailleurs le club qui reçoit.
+		var tirage := rng.randf()
+		var tribu := 2
+		if p.x > 60.0:
+			tribu = 1 if tirage < FOULE_VISITEURS_BLOC else (0 if tirage < FOULE_VISITEURS_BLOC + 0.2 else 2)
+		else:
+			tribu = 0 if tirage < FOULE_DOMICILE else (1 if tirage < FOULE_DOMICILE + 0.04 else 2)
+		tribus[tribu] += 1
+		var tenue := 0
+		var habit := rng.randf()
+		if tribu < 2:
+			tenue = 1 if habit < FOULE_MAILLOTS else (2 if habit < FOULE_MAILLOTS + FOULE_ECHARPES else 0)
+		if tenue > 0:
+			foule_compte.tenues += 1
+		var echarpe := tenue == 2
+		# Bras levés (deux mains au-dessus de la tête) ou écharpe tendue, repliés au repos par le shader.
+		arms.append(Transform3D(basis * Basis.from_scale(Vector3(0.78, 0.13, 0.04) if echarpe else Vector3(0.5, 0.3, 0.09)),
+			p + Vector3(0, (0.73 + (0.36 if echarpe else 0.3)) * height, 0)))
+		customs.append(Color(rng.randf(), float(tribu), rng.randf(), float(tenue)))
 	var torso := BoxMesh.new()
 	torso.size = Vector3.ONE
 	var head := SphereMesh.new()
@@ -2010,9 +2234,53 @@ func _build_spectators(positions: Array[Vector3], rotations: Array[float], rng: 
 	head.height = 0.32
 	head.radial_segments = 6
 	head.rings = 3
-	_instance_batch("SpectatorsTorso", torso, coloured, torsos, clothes)
-	_instance_batch("SpectatorsHead", head, coloured, heads, skins)
-	_instance_batch("SpectatorsSeatedLegs", torso, coloured, legs, trousers)
+	_foule_matieres.clear()
+	for partie in 4:
+		var matiere := ShaderMaterial.new()
+		matiere.shader = load(FOULE_SHADER) as Shader
+		matiere.set_shader_parameter("partie", partie)
+		_foule_matieres.append(matiere)
+	_instance_batch("SpectatorsTorso", torso, _foule_matieres[0], torsos, clothes, customs)
+	_instance_batch("SpectatorsHead", head, _foule_matieres[1], heads, skins, customs)
+	_instance_batch("SpectatorsSeatedLegs", torso, _foule_matieres[2], legs, trousers, customs)
+	_instance_batch("SpectatorsArms", torso, _foule_matieres[3], arms, skins, customs)
+	var total := maxf(1.0, float(positions.size()))
+	var repartition: Array[float] = [tribus[0] / total, tribus[1] / total, tribus[2] / total]
+	foule.repartition = repartition
+	foule_compte.total = positions.size()
+	foule_compte.domicile = tribus[0]
+	foule_compte.visiteurs = tribus[1]
+	foule_compte.neutres = tribus[2]
+	_animer_foule(0.0)
+
+
+## Public du stade (19/11/2026) : état de la foule tiré des images montrées, rendu par les matières
+## des spectateurs. Parts de tribus et de tenues aux couleurs des clubs.
+const FOULE_SHADER := "res://shaders/foule.gdshader"
+const Foule = preload("res://match_foule.gd")
+const FOULE_DOMICILE := 0.62
+const FOULE_VISITEURS_BLOC := 0.6
+const FOULE_MAILLOTS := 0.32
+const FOULE_ECHARPES := 0.22
+var foule: Foule = Foule.new()
+## Composition du public construite (contrôle, tests) : spectateurs par tribu, tenues aux couleurs.
+var foule_compte := {"total": 0, "domicile": 0, "visiteurs": 0, "neutres": 0, "tenues": 0}
+var _foule_matieres: Array[ShaderMaterial] = []
+## Posé par la régie des temps forts : plan d'essai joué, essai pas encore aplati à l'écran.
+var essai_attendu_regie := false
+
+
+func _animer_foule(delta: float) -> void:
+	# Le plan de l'essai arrive avant la course : le public explose à l'aplati montré, pas avant
+	# (geste d'essai de la vue, ou plan d'essai des temps forts pas encore légendé).
+	foule.essai_suspendu = essai_attendu_regie or not essai_aplati()
+	foule.avancer(delta)
+	for matiere in _foule_matieres:
+		matiere.set_shader_parameter("debout", Vector3(foule.debout[0], foule.debout[1], foule.debout[2]))
+		matiere.set_shader_parameter("bras", Vector3(foule.bras[0], foule.bras[1], foule.bras[2]))
+		matiere.set_shader_parameter("agitation", foule.intensite)
+		matiere.set_shader_parameter("couleur_domicile", _team_colors[0])
+		matiere.set_shader_parameter("couleur_exterieur", _team_colors[1])
 
 
 ## Lisibilité du ballon à la distance de la caméra TV (lot 5, 16 novembre 2026) : un peu plus

@@ -626,7 +626,7 @@ func _meteo(model: Dictionary, next: Dictionary, nous: int, data: Dictionary) ->
 	ciel.name = "MeteoCiel"
 	noms.add_child(ciel)
 	var pluie := int(meteo.get("pluie", 0))
-	var etat := "Forte pluie" if pluie >= 2 else "Pluie" if pluie == 1 else "Chaleur" if int(meteo.get("chaleur", 0)) > 0 else "Sec"
+	var etat := "Forte pluie" if pluie >= 2 else "Pluie" if pluie == 1 else "Chaleur" if int(meteo.get("chaleur", 0)) > 0 else "Temps sec"
 	noms.add_child(texte("%s, pelouse %s" % [etat, "lourde" if str(meteo.get("terrain", "")) == "lourd" else "souple"], 14, Color(C.IVORY, .85), false, 500))
 	head.add_child(noms)
 	head.add_child(_jauge_vent(int(meteo.get("vent", 0))))

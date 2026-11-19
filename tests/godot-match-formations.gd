@@ -118,6 +118,12 @@ func check_scrum_formation() -> void:
 	var ballon := demi + Vector2(sin(float(f.caps.s0_8)), cos(float(f.caps.s0_8))) * Formations.BALLON_DEVANT
 	check(ballon.distance_to(Vector2(60.0, 35.0)) < 1.4 and ballon.y < (f.places.s0_0 as Vector2).y - 0.3, "The ball is held at the mouth of the tunnel (%.2f m from the mark)" % ballon.distance_to(Vector2(60.0, 35.0)))
 	check(f.roles.s1_8 == "demi_adverse" and (f.places.s1_8 as Vector2).x > 60.0, "The opposing scrum-half stays on his side of the ball")
+	# Demi adverse hors du paquet : nettement à l'extérieur de tous les avants (pas un avant à demi debout).
+	var dehors := INF
+	for side in 2:
+		for slot in 8:
+			dehors = minf(dehors, absf((f.places.s1_8 as Vector2).y - 35.0) - absf((f.places["s%d_%d" % [side, slot]] as Vector2).y - 35.0))
+	check(dehors >= Formations.DEMI_HORS_PAQUET - 0.01 and f.postures.s1_8 == "aguets", "The opposing scrum-half stands clear outside both packs (%.2f m)" % dehors)
 	# Arrières derrière la ligne de hors-jeu (5 m derrière les pieds du n° 8).
 	var limite: float = Formations.MELEE[7].x + Formations.PIEDS_N8 + Formations.HORS_JEU
 	var near := scrum(60.0, 0)
@@ -196,6 +202,18 @@ func check_view(view: Node3D) -> void:
 	for id: String in heads:
 		head_height = maxf(head_height, (heads[id] as Vector3).y)
 	check(head_height < 1.3, "Front-row heads are down at scrum height (%.2f m at most)" % head_height)
+	# Tout le paquet, des deux côtés : buste incliné et tête basse (aucun avant à demi debout).
+	var pack_head := 0.0
+	var upright := ""
+	for side in 2:
+		for slot in 8:
+			var id := "s%d_%d" % [side, slot]
+			var h: float = head_centre(view, id).y
+			pack_head = maxf(pack_head, h)
+			if h >= 1.35 or (view._actors[id].model as Node3D).rotation.x <= 0.4 or formations.posture_de(id)[0] not in ["premiere_ligne", "poussee"]:
+				upright += " %s (%.2f m)" % [id, h]
+	check(upright.is_empty(), "Every forward of both packs is bent over, head low (%.2f m at most);%s" % [pack_head, upright])
+	metrics.scrum_pack_head_max_m = snappedf(pack_head, 0.01)
 	metrics.scrum_head_gap_m = snappedf(head_gap, 0.001)
 	metrics.scrum_head_height_m = snappedf(head_height, 0.01)
 	# Introduction : le demi accroupi tient le ballon bas, à hauteur de genoux, à l'entrée du tunnel.

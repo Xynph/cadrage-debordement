@@ -3,7 +3,9 @@ extends SceneTree
 ## 1. inclinaison plafonnée près de la touche proche (TV et contact : joueurs vus de 3/4) ;
 ## 2. pivot des gestes borné et point visé dans l'aire de jeu sur un essai en coin ;
 ## 3. caméra au contact : aucun poteau entre elle et l'action ;
-## 4. hors temps fort, la hauteur visible s'élargit quand les joueurs concernés s'écartent, sans à-coup.
+## 4. hors temps fort, la hauteur visible s'élargit quand les joueurs concernés s'écartent, sans à-coup ;
+## 5. (nuit) essai près de chaque touche en TV, gestes compris : axe et bas de l'image plafonnés ;
+## 6. (nuit) caméra au contact, essai dans les quatre coins : visée dans l'aire de jeu, regard vers l'intérieur.
 
 const View = preload("res://match_view.gd")
 const Cadrage = preload("res://match_cadrage.gd")
@@ -59,6 +61,23 @@ func make_view(mode: String):
 
 func elevation(direction: Vector3) -> float:
 	return rad_to_deg(atan2(direction.y, Vector2(direction.x, direction.z).length()))
+
+
+## Part de l'image (grille de 32 x 18 rayons) qui montre le terrain et ses abords immédiats (3 m).
+func part_terrain(view) -> float:
+	var camera: Camera3D = view._camera
+	var taille: Vector2 = view.get_viewport().get_visible_rect().size
+	var dedans := 0
+	for i in 32:
+		for j in 18:
+			var pixel := Vector2((i + 0.5) / 32.0 * taille.x, (j + 0.5) / 18.0 * taille.y)
+			var origine := camera.project_ray_origin(pixel)
+			var normale := camera.project_ray_normal(pixel)
+			if normale.y < -0.001:
+				var sol := origine + normale * (-origine.y / normale.y)
+				if absf(sol.x) <= 58.0 and absf(sol.z) <= 38.0:
+					dedans += 1
+	return dedans / 576.0
 
 
 ## Lacet (rad) de `offset` autour de la verticale, mesuré depuis `reference`.
@@ -185,6 +204,82 @@ func run() -> void:
 		view._process(STEP)
 	check(cadrage.poids == 0.0 and absf(view._camera.size - taille_ecartee) < 1.0, "Après le temps fort, retour au cadrage adaptatif (%.1f m)" % view._camera.size)
 	view.set_cadrage(null)
+	view.queue_free()
+	await process_frame
+
+	# 5. Vue TV, essai près de chaque touche (gauche/droite, deux sens de jeu), gestes compris : l'axe reste
+	# sous INCLINAISON_MAX et le bas de l'image sous PLONGEE_MAX (pas d'angle grand ouvert sous le toit).
+	view = await make_view("tv")
+	var pire := {"axe": 0.0, "plongee": 0.0}
+	for mode in ["tv", "action"]:
+		view.set_camera(mode)
+		var base_offset: Vector3 = View.TV_OFFSET if mode == "tv" else View.ACTION_OFFSET
+		var tailles := [float(Gestes.FRAME_MIN[mode]) * 0.5, float(Gestes.FRAME_MIN[mode]), View.TV_TAILLE if mode == "tv" else View.ACTION_TAILLE, float(Cadrage.LARGE[mode])]
+		for z in range(-35, 36):
+			for x in [-52.0, -30.0, 0.0, 30.0, 52.0]:
+				var vise: Vector3 = view.borner_visee(Vector3(x, 0.0, float(z)))
+				var suivi: Vector3 = view.offset_suivi(base_offset, float(z), x)
+				for w in [0.0, 0.5, 1.0]:
+					var offset: Vector3 = view.borner_pivot(vise, suivi.rotated(Vector3.UP, float(Gestes.FRAME_YAW[mode]) * w), suivi)
+					for taille: float in tailles:
+						var pose: Array = view.pose_camera(vise, taille, offset)
+						var axe := elevation(offset)
+						var plongee := axe + float(pose[1]) * 0.5
+						pire.axe = maxf(pire.axe, axe)
+						pire.plongee = maxf(pire.plongee, plongee)
+						if axe > View.INCLINAISON_MAX + 0.01 or plongee > View.PLONGEE_MAX + 0.01:
+							check(false, "Caméra %s, point visé %s, taille %.1f, geste %.1f : axe %.1f°, bas de l'image %.1f°" % [mode, vise, taille, w, axe, plongee])
+	check(pire.axe <= View.INCLINAISON_MAX + 0.01 and pire.plongee <= View.PLONGEE_MAX + 0.01, "Inclinaison et plongée plafonnées partout, gestes compris (%.1f°, %.1f°)" % [pire.axe, pire.plongee])
+	report["plafond_gestes"] = {"axe": snappedf(pire.axe, 0.1), "plongee": snappedf(pire.plongee, 0.1)}
+	view.set_camera("tv")
+	var cadrage_essai = Cadrage.new(view)
+	view.set_cadrage(cadrage_essai)
+	var essais := {}
+	for touche in [34.0, -34.0]:
+		for bout in [44.0, -44.0]:
+			for possession in [0, 1]:
+				cadrage_essai.regler(true, "carry")
+				cadrage_essai.couper()
+				var frame := scene(Vector2(bout, touche), {})
+				frame["scene"]["possession"] = possession
+				settle(view, frame, 2.5)
+				var axe := elevation(view._camera.global_basis.z)
+				var plongee := axe + float(view._camera.fov) * 0.5
+				essais["%d_%d_%d" % [int(bout), int(touche), possession]] = [snappedf(axe, 0.1), snappedf(plongee, 0.1)]
+				check(axe <= View.INCLINAISON_MAX + 0.5, "TV, essai en (%d, %d), sens %d : vue de 3/4 (%.1f°)" % [bout, touche, possession, axe])
+				check(plongee <= View.PLONGEE_MAX + 0.5, "TV, essai en (%d, %d), sens %d : bas de l'image pas vu du dessus (%.1f°)" % [bout, touche, possession, plongee])
+	report["essais_tv"] = essais
+	view.set_cadrage(null)
+	view.queue_free()
+	await process_frame
+
+	# 6. Caméra au contact, essai dans les quatre coins : point visé dans l'aire de jeu, regard vers
+	# l'intérieur du terrain (jamais vers la tribune du bout), terrain qui remplit l'essentiel de l'image.
+	view = await make_view("action")
+	var coins := {}
+	for coin in [Vector2(-49.0, 32.0), Vector2(-49.0, -32.0), Vector2(49.0, 32.0), Vector2(49.0, -32.0)]:
+		for possession in [0, 1]:
+			var frame := scene(coin, {})
+			frame["scene"]["possession"] = possession
+			settle(view, frame, 3.0)
+			var vise: Vector3 = view._camera_look
+			var regard: Vector3 = -view._camera.global_basis.z
+			var part := part_terrain(view)
+			coins["%d_%d_%d" % [int(coin.x), int(coin.y), possession]] = {"vise": [snappedf(vise.x, 0.1), snappedf(vise.z, 0.1)], "regard_x": snappedf(regard.x, 0.01), "terrain": snappedf(part, 0.01)}
+			check(absf(vise.x) <= 50.0 and absf(vise.z) <= 30.0, "Contact, essai en coin %s : point visé dans l'aire de jeu %s" % [coin, vise])
+			check(regard.x * signf(coin.x) <= 0.02, "Contact, essai en coin %s : regard vers l'intérieur du terrain (%.2f)" % [coin, regard.x])
+			check(part >= 0.5, "Contact, essai en coin %s : tribune limitée, le terrain remplit l'image (%.2f)" % [coin, part])
+	report["coins_contact"] = coins
+	# Bascule de la caméra de biais près de l'en-but gauche : continue (pas d'à-coup de direction).
+	var precedent: Vector3 = view.offset_suivi(View.ACTION_OFFSET, 0.0, 0.0)
+	var plus_grand_ecart := 0.0
+	for i in range(1, 601):
+		var courant: Vector3 = view.offset_suivi(View.ACTION_OFFSET, 0.0, -0.1 * i)
+		plus_grand_ecart = maxf(plus_grand_ecart, courant.angle_to(precedent))
+		precedent = courant
+	check(plus_grand_ecart < 0.01, "Caméra au contact : bascule de biais progressive (%.4f rad par 10 cm)" % plus_grand_ecart)
+	check(is_equal_approx(view.offset_suivi(View.ACTION_OFFSET, 0.0, -50.0).x, -View.ACTION_OFFSET.x), "Au bout gauche, la caméra au contact est symétrique (derrière l'en-but)")
+	check(view.offset_suivi(View.ACTION_OFFSET, 0.0, 50.0).is_equal_approx(View.ACTION_OFFSET), "Au bout droit, la caméra au contact garde son biais")
 	view.queue_free()
 	await process_frame
 

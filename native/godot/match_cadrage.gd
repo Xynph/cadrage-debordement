@@ -7,6 +7,7 @@ extends RefCounted
 ## même amortissement que le recadrage des gestes (match_gestes.gd), qui s'applique
 ## par-dessus quand un geste est en cours. La vue tactique n'est jamais recadrée.
 const Gestes = preload("res://match_gestes.gd")
+const ApresEssai = preload("res://match_apres_essai.gd")
 
 const ENTREE := 1.0        # rapprochement, en secondes
 const SORTIE := 1.5        # retour au cadrage large
@@ -42,6 +43,41 @@ const SUIVI_TEMOINS := 4
 const SUIVI_TEMOINS_RAYON := 25.0
 const SUIVI_CENTRE := 0.35
 const SUIVI_LISSAGE := 1.2
+## Tir au but (transformation, pénalité tentée au but ; 19 novembre 2026) : caméra dans l'axe,
+## derrière le buteur et un peu en hauteur (TIR_HAUTEUR m), ballon sur le tee et les deux poteaux
+## au fond. Elle recule de TIR_RECUL[0] à TIR_RECUL[1] m derrière la marque, par pas de TIR_PAS m,
+## jusqu'à voir le buteur, le ballon, le pied des deux montants, la barre et TIR_MONTANT m de
+## montant, hors du bandeau et de la légende (marge TIR_MARGE). Pendant le vol, elle suit le
+## ballon vers les perches : le buteur quitte le cadre, le ballon et sa course à venir (TIR_AVANCE,
+## parts du vol) y entrent ; elle monte de TIR_MONTEE m. Amortie en TIR_LISSAGE s.
+## Jamais dans une tribune : |x| <= TIR_BORNE.x, |z| <= TIR_BORNE.y (panneaux à |z| = 41,2 m,
+## gradins à 45 m, tribunes d'en-but à 65 m).
+const TIR_HAUTEUR := 2.8
+const TIR_RECUL := [6.0, 45.0]
+const TIR_PAS := 0.25
+const TIR_MONTANT := 4.5
+const TIR_MARGE := 0.05
+const TIR_AVANCE := [0.15, 0.3]
+const TIR_MONTEE := 1.2
+const TIR_BORNE := Vector2(63.0, 44.0)
+const TIR_LISSAGE := 0.15
+## Montants des poteaux (repère de la vue) : x = ±50, z = ±POTEAUX_Z (match_view.gd).
+const POTEAUX_Z := 2.8
+const CHAMPS := {"tv": 24.0, "action": 36.0}
+const TIR_GENRES := ["goal", "miss", "transformation"]
+## Ralenti de l'essai (19 novembre 2026, match_rejeu.gd) : caméra latérale basse au bord du jeu, qui
+## suit le ballon (le marqueur), à REJEU_HAUTEUR m au-dessus de la pelouse (la vue TV est à plus de
+## 20 m), REJEU_RECUL m sur le côté du ballon et REJEU_RETRAIT m en deçà de lui (regard de biais vers
+## l'en-but où il plonge). Côté de la tribune principale (même sens gauche-droite que la vue TV), sauf
+## ballon trop près de la touche proche : contrechamp depuis l'autre côté. Jamais dans un panneau ni
+## une tribune (REJEU_BORNE), jamais collée à un montant (REJEU_POTEAU m au moins).
+const REJEU_HAUTEUR := 1.1
+const REJEU_RECUL := 11.0
+const REJEU_RETRAIT := 4.0
+const REJEU_CHAMP := 30.0
+const REJEU_VISEE := 0.9
+const REJEU_BORNE := Vector2(60.0, 39.0)
+const REJEU_POTEAU := 2.0
 
 var view
 var actif := false
@@ -65,6 +101,15 @@ var _suivi_taille := 0.0
 var _suivi_taille_vitesse := Vector3.ZERO
 var _suivi_mode := ""
 var _suivi_pose := false
+## Tir au but filmé dans l'axe : {"marque": Vector3 (ballon sur le tee), "poteaux": Vector3 (milieu
+## de la ligne de but visée), "buteur": id} ; vide hors tir. `_axe_actif` : la dernière image a été
+## cadrée dans l'axe (la vue pose alors la caméra telle quelle). Caméra et point visé amortis.
+var tir: Dictionary = {}
+var _axe_actif := false
+var _tir_camera := Vector3.ZERO
+var _tir_camera_vitesse := Vector3.ZERO
+var _tir_vise := Vector3.ZERO
+var _tir_vise_vitesse := Vector3.ZERO
 
 
 func _init(owner: Node3D) -> void:
@@ -72,10 +117,27 @@ func _init(owner: Node3D) -> void:
 
 
 ## Appelée par la régie à chaque plan. `longue` : course ou jeu au pied à cadrer plus large.
+## Un plan qui suit un tir au but filmé dans l'axe repart d'une coupe (retour à la caméra de la tribune).
 func regler(on: bool, plan_kind: String = "", longue: bool = false) -> void:
 	actif = on
 	kind = plan_kind
 	large = longue or plan_kind in VOLS or plan_kind in ARRETS
+	if not tir.is_empty():
+		tir = {}
+		couper()
+		if view != null and "_camera_cut" in view: view._camera_cut = true
+
+
+## Tir au but (transformation ou pénalité tentée) : caméra dans l'axe, derrière le buteur, jusqu'au
+## plan suivant. `marque` : ballon sur le tee ; `poteaux_x` : ligne de but visée (repère de la vue, ±50).
+func viser_poteaux(marque: Vector3, poteaux_x: float, buteur: String = "") -> void:
+	tir = {"marque": Vector3(marque.x, 0.0, marque.z), "poteaux": Vector3(poteaux_x, 0.0, 0.0), "buteur": buteur}
+	couper()
+
+
+## La dernière image est cadrée dans l'axe d'un tir au but (la vue la pose sans autre recadrage).
+func dans_l_axe() -> bool:
+	return _axe_actif and actif and not tir.is_empty()
 
 
 ## Parts de la hauteur d'image masquées par l'interface, données par la régie.
@@ -91,10 +153,19 @@ func couper() -> void:
 
 
 func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, mode: String, delta: float, cut: bool = false) -> Array:
+	_axe_actif = false
 	if not HAUTEUR.has(mode):
 		poids = 0.0
 		_suivi_mode = ""
 		return [focus, size, offset]
+	if actif and not tir.is_empty():
+		# Tir au but : plan dans l'axe, derrière le buteur (le plan suivant repart d'une coupe).
+		var axial := _cadrer_tir(aspect, mode, delta, cut or _pose)
+		if not axial.is_empty():
+			_pose = false
+			_axe_actif = true
+			poids = 1.0
+			return axial
 	var basis := Basis.looking_at(-offset, Vector3.UP)
 	# Cadrage de base adaptatif : point de départ du temps fort, et cadrage hors temps fort.
 	var suivi := _suivre(focus, basis, aspect, mode, delta, cut or _suivi_pose)
@@ -275,6 +346,172 @@ func _but(basis: Basis, aspect: float, mode: String, _base: float, focus: Vector
 	if absf(axe.y) > 0.01:
 		centre += axe * (-centre.y / axe.y)
 	return [Vector3(centre.x, 0.0, centre.z), taille]
+
+
+## Tir au but filmé dans l'axe : [point visé, hauteur visible, direction de la caméra] tels que la
+## vue (pose_camera) place la caméra derrière le buteur, un peu en hauteur, regard vers les poteaux.
+## Rend [] si le tir n'a pas d'axe (marque sur la ligne de but).
+func _cadrer_tir(aspect: float, mode: String, delta: float, pose: bool) -> Array:
+	var marque: Vector3 = tir.marque
+	var poteaux: Vector3 = tir.poteaux
+	var axe := Vector3(marque.x - poteaux.x, 0.0, marque.z - poteaux.z)
+	var distance := axe.length()
+	if distance < 1.0:
+		return []
+	axe /= distance
+	var devant := -axe
+	var pente := tan(deg_to_rad(float(CHAMPS.get(mode, 24.0))) * 0.5)
+	var ballon: Vector3 = marque
+	if is_instance_valid(view._ball) and view._ball.visible:
+		ballon = view._ball.global_position
+	# Essentiel : ballon, pied des montants, barre et montants ; en plus : la course à venir du ballon.
+	var essentiels: Array[Vector3] = [ballon]
+	for z: float in [-POTEAUX_Z, POTEAUX_Z]:
+		for h: float in [0.0, 3.0, TIR_MONTANT]:
+			essentiels.append(Vector3(poteaux.x, h, z))
+	# Part du vol déjà faite (0 sur le tee, 1 retombé) ; le tir part de la marque (pose « prêt » :
+	# ballon posé sur la marque, rien ne vole encore, course prévue vers le milieu des perches).
+	var depart: Vector3 = view._ball_from
+	var arrivee: Vector3 = view._ball_target
+	var en_vol: bool = str(view._kind) in ["goal", "miss"] and not bool(view._ball_attached) and depart.is_finite() and arrivee.is_finite() \
+		and Vector2(depart.x - marque.x, depart.z - marque.z).length() < 1.5 and Vector2(arrivee.x - marque.x, arrivee.z - marque.z).length() > 1.0
+	var vole: float = clampf(float(view._ball_travel), 0.0, 1.0) if en_vol else 0.0
+	if not en_vol:
+		depart = Vector3(marque.x, 0.23, marque.z)
+		arrivee = Vector3(poteaux.x, 0.23, 0.0)
+	var en_plus: Array[Vector3] = []
+	for avance: float in TIR_AVANCE:
+		en_plus.append(ApresEssai.vol(depart, arrivee, minf(1.0, vole + avance)))
+	if vole < 0.05:
+		# Le buteur (élan compris) et le ballon sur le tee, jusqu'à la frappe : essentiels eux aussi.
+		var pied := marque
+		var id := str(tir.get("buteur", ""))
+		if view._actors.has(id):
+			pied = (view._actors[id].node as Node3D).position
+		essentiels.append(Vector3(pied.x, 0.0, pied.z))
+		essentiels.append(Vector3(pied.x, TAILLE_JOUEUR, pied.z))
+		essentiels.append(Vector3(marque.x, 0.2, marque.z))
+	# Fenêtre sûre : sous le bandeau du score, au-dessus de la légende (angles depuis l'axe).
+	var fenetre := Vector3(atan((1.0 - 2.0 * (couvert_haut + TIR_MARGE)) * pente), atan((-1.0 + 2.0 * (couvert_bas + TIR_MARGE)) * pente), (1.0 - 2.0 * TIR_MARGE) * pente * maxf(aspect, 0.1))
+	var hauteur := TIR_HAUTEUR + TIR_MONTEE * vole
+	var tous: Array[Vector3] = essentiels.duplicate()
+	tous.append_array(en_plus)
+	var place := _placer_tir(tous, marque, axe, hauteur, fenetre)
+	if not bool(place[2]):
+		# Tout ne tient pas (stade trop proche) : d'abord le buteur, le ballon et les poteaux.
+		var essentielle := _placer_tir(essentiels, marque, axe, hauteur, fenetre)
+		if (essentielle[0] as Vector3).is_finite():
+			place = essentielle
+	var camera: Vector3 = place[0]
+	var tangage: float = place[1]
+	if not camera.is_finite():
+		return []
+	var regard := devant * cos(tangage) + Vector3.UP * sin(tangage)
+	var portee := clampf(camera.y / sin(-tangage), 8.0, 120.0) if tangage < -0.03 else 40.0
+	var vise := camera + regard * portee
+	if pose or delta <= 0.0 or not _tir_camera.is_finite() or _tir_camera == Vector3.ZERO:
+		_tir_camera = camera
+		_tir_vise = vise
+		_tir_camera_vitesse = Vector3.ZERO
+		_tir_vise_vitesse = Vector3.ZERO
+	else:
+		var pas_camera: Array = Gestes._damp3(_tir_camera, camera, _tir_camera_vitesse, delta, TIR_LISSAGE)
+		_tir_camera = pas_camera[0]
+		_tir_camera_vitesse = pas_camera[1]
+		var pas_vise: Array = Gestes._damp3(_tir_vise, vise, _tir_vise_vitesse, delta, TIR_LISSAGE)
+		_tir_vise = pas_vise[0]
+		_tir_vise_vitesse = pas_vise[1]
+	var direction := _tir_camera - _tir_vise
+	var recule := direction.length()
+	if recule < 1.0:
+		return []
+	return [_tir_vise, 2.0 * recule * pente, direction / recule]
+
+
+## Place de la caméra dans l'axe (derrière la marque, à `hauteur` m) qui montre tous les `points` :
+## [caméra, tangage (rad, positif vers le haut), vrai si tout tient dans la fenêtre sûre]. Elle
+## recule par pas de TIR_PAS m ; aux bornes du stade, la place la plus reculée, cadrage centré.
+## `fenetre` : angles haut et bas permis depuis l'axe, et demi-largeur permise (tangente).
+func _placer_tir(points: Array[Vector3], marque: Vector3, axe: Vector3, hauteur: float, fenetre: Vector3) -> Array:
+	var devant := -axe
+	var droite := Vector3(-devant.z, 0.0, devant.x)
+	var camera := Vector3.INF
+	var tangage := 0.0
+	var recul: float = TIR_RECUL[0]
+	while recul <= float(TIR_RECUL[1]) + 0.001:
+		var c := marque + axe * recul + Vector3.UP * hauteur
+		if absf(c.x) > TIR_BORNE.x or absf(c.z) > TIR_BORNE.y:
+			break
+		var e_min := INF
+		var e_max := -INF
+		var dedans := true
+		for p: Vector3 in points:
+			var d := p - c
+			var loin := d.x * devant.x + d.z * devant.z
+			if loin < 1.0 or absf((d.x * droite.x + d.z * droite.z) / loin) > fenetre.z:
+				dedans = false
+				break
+			var e := atan2(d.y, loin)
+			e_min = minf(e_min, e)
+			e_max = maxf(e_max, e)
+		if dedans:
+			camera = c
+			tangage = ((e_max - fenetre.x) + (e_min - fenetre.y)) * 0.5
+			if e_max - e_min <= fenetre.x - fenetre.y:
+				return [camera, tangage, true]
+		recul += TIR_PAS
+	return [camera, tangage, false]
+
+
+## Ralenti d'un essai aplati en `ballon` (repère de la vue) : [sens de l'en-but (+1 : x = +50),
+## côté de la caméra (+1 : tribune principale, z > 0)], fixés pour tout le ralenti.
+static func cote_rejeu(ballon: Vector3) -> Vector2:
+	var sens := 1.0 if ballon.x >= 0.0 else -1.0
+	var cote := 1.0 if ballon.z + REJEU_RECUL <= REJEU_BORNE.y else -1.0
+	return Vector2(sens, cote)
+
+
+## Plan du ralenti quand le ballon est en `ballon` : {"camera", "vise", "champ"} (repère de la vue).
+static func plan_rejeu(ballon: Vector3, cote: Vector2, retrait: float = REJEU_RETRAIT) -> Dictionary:
+	var sens := 1.0 if cote.x >= 0.0 else -1.0
+	var lateral := 1.0 if cote.y >= 0.0 else -1.0
+	var camera := Vector3(ballon.x - sens * retrait, REJEU_HAUTEUR, ballon.z + lateral * REJEU_RECUL)
+	camera.x = clampf(camera.x, -REJEU_BORNE.x, REJEU_BORNE.x)
+	camera.z = clampf(camera.z, -REJEU_BORNE.y, REJEU_BORNE.y)
+	# Ballon dans l'en-but : la caméra pourrait frôler un montant ; elle reste alors dans le terrain.
+	for z: float in [-POTEAUX_Z, POTEAUX_Z]:
+		if Vector2(camera.x - sens * 50.0, camera.z - z).length() < REJEU_POTEAU:
+			camera.x = sens * (50.0 - REJEU_POTEAU)
+	return {"camera": camera, "vise": Vector3(ballon.x, REJEU_VISEE, ballon.z), "champ": REJEU_CHAMP}
+
+
+## Gêne d'un plan de ralenti (0 : rien ne masque) : un joueur (ou l'arbitre) debout entre la caméra
+## et le ballon le cache d'autant plus qu'il est près de l'objectif ; un joueur à moins de
+## REJEU_PRES m de la caméra et dans le champ remplit l'image même sans cacher le ballon.
+## `places` : pieds de chaque personne (repère de la vue).
+const REJEU_PRES := 4.5
+const REJEU_CARRURE := 0.45
+static func gene_rejeu(plan: Dictionary, places: PackedVector3Array) -> float:
+	var camera: Vector3 = plan.camera
+	var vise: Vector3 = plan.vise
+	var regard := Vector2(vise.x - camera.x, vise.z - camera.z)
+	var portee := regard.length()
+	if portee < 0.5: return 0.0
+	regard /= portee
+	var demi_champ := deg_to_rad(float(plan.get("champ", REJEU_CHAMP))) * 0.5 * 16.0 / 9.0
+	var gene := 0.0
+	for p: Vector3 in places:
+		var rel := Vector2(p.x - camera.x, p.z - camera.z)
+		var loin := rel.dot(regard)
+		if loin <= 0.3: continue
+		var travers := absf(rel.x * regard.y - rel.y * regard.x)
+		# Devant le ballon (au moins 1,5 m avant lui) et sur la ligne de visée : le marqueur est caché.
+		if loin < portee - 1.5 and travers < REJEU_CARRURE + loin / portee:
+			gene += 4.0 / maxf(loin, 1.0)
+		# Tout près de l'objectif et dans le champ : un corps en gros plan.
+		if loin < REJEU_PRES and atan2(travers, loin) < demi_champ:
+			gene += 3.0 / maxf(loin, 1.0)
+	return gene
 
 
 ## Déplace le point visé juste assez pour que le ballon reste dans la zone sûre de l'image.

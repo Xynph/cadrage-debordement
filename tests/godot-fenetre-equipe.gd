@@ -152,6 +152,31 @@ func controler_mise_en_page(contexte: String) -> void:
 	var page: Control = fenetre.find_child("TeamPage", true, false)
 	verifier(page != null and ecran.grow(1).encloses(page.get_global_rect()), contexte + " : page de la maquette dans l'écran")
 
+## Textes non tronqués : les étiquettes qui passent à la ligne montrent toutes leurs lignes, celles d'une seule
+## ligne tiennent dans leur largeur ; les crans partagent une seule taille de police et ont l'infobulle complète.
+func controler_textes(contexte: String) -> void:
+	for nom in ["TeamShoutLabel", "TeamShoutNote", "TeamMatchConsignes"]:
+		for l: Label in fenetre.find_children(nom, "Label", true, false):
+			if not l.is_visible_in_tree(): continue
+			verifier(l.get_visible_line_count() >= l.get_line_count(), contexte + " : « %s » entier (%d/%d lignes)" % [l.text, l.get_visible_line_count(), l.get_line_count()])
+	var arbitre: Label = fenetre.find_child("TeamFooterReferee", true, false)
+	if arbitre != null:
+		var police: Font = arbitre.get_theme_font("font")
+		var besoin := police.get_string_size(arbitre.text, HORIZONTAL_ALIGNMENT_LEFT, -1, arbitre.get_theme_font_size("font_size")).x
+		verifier(besoin <= arbitre.size.x + 1.0, contexte + " : ligne arbitre du pied entière (%d > %d)" % [roundi(besoin), roundi(arbitre.size.x)])
+		verifier(arbitre.get_parent().name == "TeamFooterLine2", contexte + " : arbitre sur sa propre ligne")
+	var tailles := {}
+	for b: Button in fenetre.find_children("Consigne_*_*", "Button", true, false):
+		if not b.has_meta("axe"): continue
+		tailles[b.get_theme_font_size("font_size")] = true
+		var largeur := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
+		verifier(largeur <= b.size.x - 2.0, contexte + " : cran « %s » non tronqué (%d > %d)" % [b.text, roundi(largeur), roundi(b.size.x)])
+		verifier(b.tooltip_text.begins_with(b.text) or b.tooltip_text.length() > b.text.length(), contexte + " : infobulle du cran « %s »" % b.text)
+		verifier(b.autowrap_mode == TextServer.AUTOWRAP_OFF, contexte + " : cran « %s » sur une ligne" % b.text)
+	if not tailles.is_empty(): verifier(tailles.size() == 1, contexte + " : crans à une seule taille de police (%s)" % str(tailles.keys()))
+	var plan: Button = fenetre.find_child("Consigne_penalites_touch", true, false)
+	if plan != null: verifier(plan.text == "Pénaltouche" and plan.tooltip_text.begins_with("Chercher la pénaltouche"), contexte + " : « Pénaltouche » court, libellé complet en infobulle")
+
 func composition_enrichie(contexte: String) -> void:
 	fenetre.choisir_onglet("composition")
 	fenetre.update_frame(modele_enrichi())
@@ -174,6 +199,7 @@ func composition_enrichie(contexte: String) -> void:
 	for nom in ["TeamShouts", "TeamFatigue", "TeamAdvice", "TeamFooterReferee"]:
 		var n: Control = fenetre.find_child(nom, true, false)
 		verifier(n != null and n.is_visible_in_tree(), contexte + " : bloc " + nom)
+	controler_textes(contexte + " composition")
 	await controler_mise_en_page(contexte + " composition")
 
 func consignes_enrichies(contexte: String) -> void:
@@ -203,6 +229,8 @@ func consignes_enrichies(contexte: String) -> void:
 		if contexte != "1280x720": verifier(defile != null and not defile.get_v_scroll_bar().visible, contexte + " : les quatre groupes tiennent sans défilement")
 	var jauges := fenetre.find_children("TeamRefereeGauge_*", "", true, false).size()
 	verifier(jauges == 4, contexte + " : 4 jauges de l'arbitre (%d)" % jauges)
+	verifier(fenetre.find_child("TeamMatchSummary", true, false) != null, contexte + " : colonne de droite comblée (point sur le match)")
+	controler_textes(contexte + " consignes")
 	await controler_mise_en_page(contexte + " consignes")
 
 func roles_enrichis(contexte: String) -> void:
