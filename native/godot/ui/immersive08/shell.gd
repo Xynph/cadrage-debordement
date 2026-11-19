@@ -560,6 +560,16 @@ static func _heading(parent: Node, app: Control) -> void:
 	if app.route=="Composition":
 		var selected:int=app.model.get("selection",{}).get("slots",[]).filter(func(slot:Dictionary):return slot.get("playerId")!=null).size()
 		D.chip(row,Rect2(1140,21,288,48),str(selected)+" joueurs sélectionnés",C.MINT)
+		# Quota du championnat (JIFF / EQP) avec les autres repères de la feuille (capture 1280 du 19/11 : en pied de carte,
+		# il chevauchait la condition du XV). Rouge sous la trajectoire, vert à la moyenne exigée, gris sinon.
+		var quota: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
+		if bool(quota.get("applies", false)):
+			var compte := int(quota.get("currentSheet", 0)) + int(quota.get("doublon", 0))
+			var cible := int(quota.get("target", 16))
+			var puce := D.chip(row,Rect2(904,21,220,48),"%s %d / %d" % [str(quota.get("label", "JIFF")), compte, cible],C.ALERT if bool(quota.get("alert", false)) else (C.MINT if compte >= cible else C.MUTED))
+			puce.name = "LineupJiffNotice"
+			puce.tooltip_text = app.SquadViews.quota_line(quota) + "\n" + app.SquadViews.quota_tooltip(quota)
+			puce.mouse_filter = Control.MOUSE_FILTER_PASS
 		D.chip(row,Rect2(1444,21,241,48),"Composition valide" if app.model.get("selection",{}).get("valid",false) else "À compléter",C.MINT if app.model.get("selection",{}).get("valid",false) else C.AMBER)
 		D.button(row,Rect2(1703,21,248,48),"Enregistrer le plan",func():app._command("save"),false,"save",true,app.accent,"TacticsSave")
 		D.button(row,Rect2(1967,21,281,48),"Valider les 23",func():TacticsCanvas.validate(app),true,"arrow",false,app.accent,"TacticsValidate")
