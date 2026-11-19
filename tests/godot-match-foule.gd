@@ -193,6 +193,80 @@ func check_view() -> void:
 	view.queue_free()
 
 
+## Têtes des spectateurs (repère du monde). Lues dans `foule_tetes` : sous --headless, le pilote
+## factice ne garde pas les transformations des MultiMesh (get_instance_transform rend l'identité).
+func tetes(view: Node3D) -> Array[Vector3]:
+	var points: Array[Vector3] = []
+	for tete: Vector3 in view.foule_tetes:
+		points.append(view.global_transform * tete)
+	return points
+
+
+## Têtes à l'image (coordonnées 0 à 1, origine en haut à gauche), avec `marge` sous le haut de l'image.
+func tetes_a_l_image(view: Node, points: Array[Vector3], marge: float) -> Array[Vector2]:
+	var camera: Camera3D = view._camera
+	var taille: Vector2 = view.get_viewport().get_visible_rect().size
+	var vues: Array[Vector2] = []
+	for point in points:
+		if camera.is_position_behind(point):
+			continue
+		var p: Vector2 = camera.unproject_position(point) / taille
+		if p.x >= 0.0 and p.x <= 1.0 and p.y >= marge and p.y <= 1.0:
+			vues.append(p)
+	return vues
+
+
+## Public dans le champ des plans larges habituels (19/11/2026) : il ne se voyait presque que sur les
+## coups de pied. Caméra TV, jeu au milieu du terrain : les premiers rangs de la tribune d'en face
+## bordent le haut de l'image (sans l'envahir) ; vue tactique : les premiers rangs des deux tribunes
+## latérales bordent le terrain. Projection des têtes dans le cadre, sans rendu.
+func check_champ() -> void:
+	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
+	root.size = Vector2i(1280, 720)
+	var view: NativeMatchView = View.new()
+	root.add_child(view)
+	await process_frame
+	view.set_process(false)
+	var points := tetes(view)
+	check(points.size() == int(view.foule_compte.total), "Une tête par spectateur (%d)" % points.size())
+	var players := fixture_players()
+	# Tribune latérale d'en face (la caméra TV est côté z > 0).
+	var en_face: Array[Vector3] = []
+	for point in points:
+		if point.z < -45.0:
+			en_face.append(point)
+	check(en_face.size() > 800, "Tribune d'en face garnie (%d)" % en_face.size())
+	view.set_camera("tv")
+	# Moteur : x 0..100, y 0..70 (vue : x - 50, z = y - 35). Milieu, moitié lointaine, côté gauche.
+	for ballon in [Vector2(50.0, 35.0), Vector2(50.0, 22.0), Vector2(20.0, 30.0)]:
+		view.apply_frame(live(scene("carry", 0, ballon.x, "champ-%d-%d" % [int(ballon.x), int(ballon.y)], {"ball": {"x": ballon.x, "y": ballon.y}}), players))
+		for k in 60: view._process(1.0 / 60.0)
+		var vues := tetes_a_l_image(view, en_face, 0.02)
+		var en_haut := vues.filter(func(p: Vector2) -> bool: return p.y <= 0.25)
+		check(vues.size() >= 150, "TV, ballon en %s : public d'en face à l'image (%d têtes)" % [ballon, vues.size()])
+		check(en_haut.size() == vues.size(), "TV, ballon en %s : la tribune reste une bande en haut de l'image (%d / %d)" % [ballon, en_haut.size(), vues.size()])
+	view.set_camera("tactical")
+	view._process(1.0 / 60.0)
+	var laterales: Array[Vector3] = []
+	for point in points:
+		if absf(point.z) > 45.0:
+			laterales.append(point)
+	var vues_tactique := tetes_a_l_image(view, laterales, 0.0)
+	var cotes := [0, 0]
+	var camera: Camera3D = view._camera
+	for point in laterales:
+		if not camera.is_position_behind(point):
+			var p: Vector2 = camera.unproject_position(point) / view.get_viewport().get_visible_rect().size
+			if p.x >= 0.0 and p.x <= 1.0 and p.y >= 0.0 and p.y <= 1.0:
+				cotes[0 if point.z < 0.0 else 1] += 1
+	check(vues_tactique.size() >= 200 and cotes[0] > 50 and cotes[1] > 50, "Vue tactique : premiers rangs des deux tribunes latérales à l'image (%d têtes, %s)" % [vues_tactique.size(), str(cotes)])
+	for coin in [Vector3(-55, 0, -35), Vector3(55, 0, -35), Vector3(-55, 0, 35), Vector3(55, 0, 35)]:
+		var c: Vector2 = camera.unproject_position(coin) / view.get_viewport().get_visible_rect().size
+		check(c.x >= 0.0 and c.x <= 1.0 and c.y >= 0.0 and c.y <= 1.0, "Vue tactique : tout le terrain reste à l'image (%s)" % str(coin))
+	view.queue_free()
+	await process_frame
+
+
 func check_sound() -> void:
 	if proof.is_empty():
 		check(false, "CD_FOULE_PROOF absent")
@@ -259,6 +333,7 @@ func check_sound() -> void:
 func run() -> void:
 	check_model()
 	check_view()
+	await check_champ()
 	await check_sound()
 	await process_frame
 	print("MATCH_FOULE ", JSON.stringify({"checks": checks, "failures": failures}))

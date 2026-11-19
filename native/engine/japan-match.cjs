@@ -74,7 +74,11 @@ module.exports = function japanMatchFactory(rules) {
   function decide(l,side,method,shootout) {
     l.winner=l.pair[side];
     l.decision={method,extraTime:Boolean(l.japanExtra),redCards:l.sheets.map(sh=>sh.redCards.length),...(shootout?{shootout}:{})};
-    if (shootout) addEvent(l,`${S.clubs[l.winner].abbr} remporte la séance de tirs au but.`,'end');
+    // Commentaire tir par tir : texte seul, après coup, sans tirage (world-knockout.cjs).
+    if (shootout) {
+      if (typeof CDWorldKnockout!=='undefined') CDWorldKnockout.commentShootout(l,shootout.attempts,5);
+      addEvent(l,`${S.clubs[l.winner].abbr} remporte la séance de tirs au but (${shootout.score[0]} – ${shootout.score[1]}).`,'end');
+    }
   }
 
   function finish(l) {

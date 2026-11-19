@@ -127,6 +127,11 @@ func inspect(path: String) -> void:
 	inspected_mode = mode()
 	app._command("pack_inspect", {"path":path,"mode":inspected_mode})
 
+## Packs installés par le Steam Workshop (même format ZIP que l'import manuel, validés par le moteur via inspect).
+## Toujours vide tant que Steamworks et le Workshop ne sont pas activés dans res://steam/steam.json.
+func workshop_packs() -> Array:
+	return preload("res://steam/steam_service.gd").workshop_packs()
+
 func install() -> void:
 	var inspected := preview()
 	if inspected.is_empty(): return
