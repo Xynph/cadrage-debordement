@@ -111,12 +111,19 @@ func check_scrum_formation() -> void:
 	var demi: Vector2 = f.places.s0_8
 	check(f.roles.s0_8 == "demi_intro" and f.postures.s0_8 == "introduction", "The put-in scrum-half introduces")
 	check(demi.distance_to(Vector2(60.0, 35.0)) < 2.0, "The put-in scrum-half stands at the tunnel (%.2f m)" % demi.distance_to(Vector2(60.0, 35.0)))
-	check(demi.y < 35.0, "He feeds from his loosehead side")
-	# Hors du paquet : à l'extérieur de son pilier gauche (décalé vers l'extérieur avec les têtes).
-	check(demi.y < (f.places.s0_0 as Vector2).y - 0.6, "The scrum-half crouches outside his loosehead")
+	# Côté de la caméra TV (touche proche, y croissants), pour les deux équipes : le ballon tenu bas
+	# n'est jamais caché derrière les deux paquets (19/11/2026).
+	check(demi.y > 35.0, "He feeds from the camera side")
+	var bord := -INF
+	for side in 2:
+		for slot in 3: bord = maxf(bord, (f.places["s%d_%d" % [side, slot]] as Vector2).y)
+	# Hors du paquet : à l'extérieur des premières lignes de son côté.
+	check(demi.y > bord + 0.6, "The scrum-half crouches outside the front rows")
 	# Le ballon tenu devant lui (BALLON_DEVANT, vers le tunnel) arrive à l'entrée du tunnel.
 	var ballon := demi + Vector2(sin(float(f.caps.s0_8)), cos(float(f.caps.s0_8))) * Formations.BALLON_DEVANT
-	check(ballon.distance_to(Vector2(60.0, 35.0)) < 1.4 and ballon.y < (f.places.s0_0 as Vector2).y - 0.3, "The ball is held at the mouth of the tunnel (%.2f m from the mark)" % ballon.distance_to(Vector2(60.0, 35.0)))
+	check(ballon.distance_to(Vector2(60.0, 35.0)) < 1.4 and ballon.y > bord + 0.3, "The ball is held at the mouth of the tunnel (%.2f m from the mark)" % ballon.distance_to(Vector2(60.0, 35.0)))
+	var autre: Dictionary = Formations.calculer(scrum(60.0, 1))
+	check(str(autre.roles.get("s1_8", "")) == "demi_intro" and (autre.places.s1_8 as Vector2).y > bord + 0.6 and absf(angle_difference(float(autre.caps.s1_8), float(f.caps.s0_8))) < 0.01, "The other team also feeds from the camera side, facing the tunnel")
 	check(f.roles.s1_8 == "demi_adverse" and (f.places.s1_8 as Vector2).x > 60.0, "The opposing scrum-half stays on his side of the ball")
 	# Demi adverse hors du paquet : nettement à l'extérieur de tous les avants (pas un avant à demi debout).
 	var dehors := INF

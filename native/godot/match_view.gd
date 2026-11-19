@@ -72,6 +72,18 @@ const CHAMP_MAX := 64.0
 ## les joueurs proches étaient vus du dessus. L'angle s'ouvre désormais au plus jusqu'à cette
 ## plongée ; au-delà, la caméra avance à angle constant (hauteur visible un peu plus serrée).
 const PLONGEE_MAX := 56.0
+## 19 novembre 2026 : la vue TV restait un peu haute près de la touche proche (38° d'axe, bas de l'image
+## à 56°). La caméra TV a ses propres plafonds, plus bas (retransmission vue de la tribune, joueurs de
+## 3/4) ; la caméra au contact garde INCLINAISON_MAX et PLONGEE_MAX.
+const INCLINAISON_TV_MAX := 34.0
+const PLONGEE_TV_MAX := 50.0
+
+## Plafonds de la caméra courante (TV ou contact).
+func inclinaison_max() -> float:
+	return INCLINAISON_MAX if _camera_mode == "action" else INCLINAISON_TV_MAX
+
+func plongee_max() -> float:
+	return PLONGEE_MAX if _camera_mode == "action" else PLONGEE_TV_MAX
 ## Hauteur visible (m) au point visé de la caméra de base (hors temps fort). Le cadrage des temps
 ## forts (match_cadrage.gd) la règle ensuite selon les joueurs utiles.
 const TV_TAILLE := 30.0
@@ -1504,7 +1516,7 @@ func offset_suivi(base: Vector3, profondeur: float, largeur: float = NAN) -> Vec
 	var horizontal := Vector3(base.x, 0.0, base.z)
 	var depart := atan2(base.y, horizontal.length())
 	# Plafond d'inclinaison (jamais sous l'angle de base) : pas de vue de dessus près de la touche.
-	var elevation := minf(depart + deg_to_rad(GRUE_ANGLE) * k, maxf(depart, deg_to_rad(INCLINAISON_MAX)))
+	var elevation := minf(depart + deg_to_rad(GRUE_ANGLE) * k, maxf(depart, deg_to_rad(inclinaison_max())))
 	return (horizontal.normalized() * cos(elevation) + Vector3.UP * sin(elevation)) * base.length()
 
 
@@ -1626,7 +1638,7 @@ func pose_camera(look: Vector3, size: float, offset: Vector3) -> Array:
 		# Le bas de l'image passerait sous le toit de la tribune proche : la caméra avance (et
 		# ouvre son angle) juste assez pour le franchir, sans que le bas de l'image dépasse PLONGEE_MAX.
 		var inclinaison := rad_to_deg(asin(clampf(direction.y, -1.0, 1.0)))
-		var ouverture := clampf(2.0 * (PLONGEE_MAX - inclinaison), champ, CHAMP_MAX)
+		var ouverture := clampf(2.0 * (plongee_max() - inclinaison), champ, CHAMP_MAX)
 		var pente := tan(deg_to_rad(ouverture * 0.5))
 		var a := demi / pente
 		var b := distance
