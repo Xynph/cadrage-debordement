@@ -122,6 +122,13 @@ func _check(value:bool,message:String) -> void:
 func _settle() -> void:
 	for i in 5:await get_tree().process_frame
 
+# Comme un joueur devant « Mesure de ta machine… » : rien n'est cliqué tant qu'une commande moteur est en cours.
+func _settle_idle(limit_ms: int = 60000) -> void:
+	await _settle()
+	var deadline := Time.get_ticks_msec() + limit_ms
+	while app.waiting and Time.get_ticks_msec() < deadline: await get_tree().process_frame
+	await _settle()
+
 func _resolutions(historical: Array) -> Array:
 	var requested := OS.get_environment("QA_RESOLUTION")
 	if requested.is_empty(): return historical
@@ -503,6 +510,7 @@ func _run() -> void:
 	if app.find_child("CreationNext",true,false) != null:
 		_press_named("CreationNext")
 		await _settle()
+	await _settle_idle()
 	_press_named("CreationStart")
 	await _wait(180000) # la base Monde (5 962 joueurs) se génère plus lentement que l'ancienne base à 30 clubs
 	_check(str(app.model.get("meta",{}).get("mode","")).begins_with("world") and int(app.model.club.id)==chosen_club,"Actual Monde career created through UI")
@@ -765,6 +773,18 @@ func _systems_reception() -> void:
 	_check(national_press.size() == 30 and european_only and press.people.size() == national_press.size() + league_press.size(), "Bundled press retains all thirty journalists")
 	if national_press.size() != 30 or not european_only or press.people.size() != national_press.size() + league_press.size():
 		printerr("QA press directory: national=", national_press.size(), " league=", league_press.size(), " total=", press.people.size())
+	# Rentrée façon FM (#928) : la conférence arrive la semaine du 1er match officiel, pas au changement de saison.
+	# Comme le joueur : avant-saison, rendez-vous du club (point médical…), puis un jour à la fois ; arrêt dès
+	# que la conférence de rentrée est proposée, avant que l'avance suivante ne la publie.
+	if not press.conference.available and await _advance_preseason():
+		press = app.model.clubLife.press
+		for day in range(120):
+			if press.conference.available or not await _settle_required_meetings(): break
+			press = app.model.clubLife.press
+			if press.conference.available or app.model.meta.get("calendarCadence", {}).get("matchReady", false): break
+			if not await _advance_world_day(): break
+			press = app.model.clubLife.press
+	five_tones = press.conference.available
 	if press.conference.available:
 		for question: Dictionary in press.conference.questions:
 			five_tones = five_tones and question.answers.size() == 5 and question.answers.any(func(a: Dictionary): return str(a.id) == "r4" and str(a.toneLabel) == "Humour")
@@ -943,6 +963,7 @@ func _world_creation(club_id: int, league: String, edition: String = "world") ->
 	if app.find_child("CreationNext",true,false) != null:
 		if not _press_named("CreationNext"): return false
 		await _settle()
+	await _settle_idle()
 	if not _press_named("CreationStart"): return false
 	if replacing:
 		await _settle()
