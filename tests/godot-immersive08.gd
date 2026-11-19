@@ -481,9 +481,39 @@ func champ(compact: bool) -> void:
 	var count := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
 	var badge := app.find_child("EntryWorldCount",true,false) as Panel
 	check(badge!=null and badge.get_child(0).text=="Monde · %d clubs jouables" % count,"Accueil compte les clubs jouables de Champ Rugby")
+	check(app.pack_manager.playable_club_count("creation")==count,"Une seule source pour le nombre de clubs jouables")
+	var career_card := app.find_child("EntryCareerCard",true,false) as Control
+	var season_card := app.find_child("EntrySeasonCard",true,false) as Control
+	check(career_card!=null and season_card!=null and career_card.get_global_rect().encloses(season_card.get_global_rect()) and season_card.size.y>0.0,"Accueil : une vignette de saison remplit le bas du carnet")
+	if career_card!=null and season_card!=null:
+		check(career_card.get_global_rect().end.y-season_card.get_global_rect().end.y<=career_card.size.y*.12,"Accueil : plus de grand vide sous le menu")
+	# Packs : même police de titre que le choix du club, et le même nombre de clubs que l'accueil.
+	app.pack_manager.open("creation")
+	await settle()
+	var reality_title: Label = null
+	for label: Label in app.find_children("*","Label",true,false):
+		if label.is_visible_in_tree() and label.text=="Choisir sa réalité": reality_title=label
+	check(reality_title!=null and reality_title.get_theme_font("font").resource_path.ends_with("BarlowCondensed-Bold.ttf"),"Packs : titre en police condensée de l'écran suivant")
+	var pack_numbers: Array = []
+	for label: Label in app.find_children("*","Label",true,false):
+		if label.is_visible_in_tree(): pack_numbers.append(label.text)
+	check(("%d" % count) in pack_numbers and ("Clubs jouables" in pack_numbers),"Packs : « %d Clubs jouables », comme à l'accueil" % count)
+	var registry_total := int(app.model.meta.get("champDatabase",{}).get("clubCount",count))
+	check(registry_total==count or not (("%d" % registry_total) in pack_numbers),"Packs : le total du registre (%d, clubs invités compris) n'est pas affiché" % registry_total)
+	app._navigate("Accueil")
+	await settle()
 	if not await edition_action("EntryNewCareer"): return
 	if not await edition_action("CreationCountry_GB"): return
 	if not await edition_action("CreationDivision_champ"): return
+	# Création : Gabi (« Gabi · ? », « Visite ») ne recouvre aucun bouton de la page.
+	var guide := app.coach as Control
+	if guide!=null and guide.visible and not guide.expanded:
+		guide._avoid_primary_controls()
+		var guide_zone := guide.get_global_rect()
+		for creation_button: Button in app.root_content.find_children("*","Button",true,false):
+			if creation_button.is_visible_in_tree() and creation_button.get_parent()!=guide._compact and not guide.is_ancestor_of(creation_button) and not creation_button.text.is_empty():
+				check(not guide_zone.intersects(creation_button.get_global_rect().intersection(Rect2(Vector2.ZERO,Vector2(root.size)))),"Création à %s : Gabi ne recouvre pas « %s »" % [dimensions,creation_button.text.left(30)])
+		check(app.find_child("CreationGabiSlot",true,false)!=null,"Création : emplacement réservé à Gabi dans le bandeau")
 	var scroll := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
 	for id in range(102,116):
 		var club := app.find_child("CreationClub%d" % id,true,false) as Button

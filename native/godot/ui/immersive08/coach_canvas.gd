@@ -1373,7 +1373,19 @@ func disable() -> void:
 func _avoid_primary_controls() -> void:
 	# Mode grand : une courte scène, écran assombri ; Gabi reste sous le bandeau.
 	if is_instance_valid(_bulle) and _adjoint_actif(): return
+	if _place_in_creation_slot(): return
 	super._avoid_primary_controls()
+
+## Création : les boutons compacts occupent l'emplacement réservé du bandeau du haut (aucun recouvrement).
+func _place_in_creation_slot() -> bool:
+	if expanded or _error_panel.visible or not is_instance_valid(app) or str(app.route) != "Création": return false
+	if not is_instance_valid(app.root_content): return false
+	var slot := app.root_content.find_child("CreationGabiSlot", true, false) as Control
+	if slot == null or not slot.is_visible_in_tree(): return false
+	var rect := slot.get_global_rect()
+	if rect.size.x < size.x or rect.position.y >= app.size.y * .5: return false
+	global_position = rect.position + (rect.size - size) / 2.0
+	return true
 
 func destroy() -> void:
 	if is_instance_valid(_voile): _voile.queue_free()
