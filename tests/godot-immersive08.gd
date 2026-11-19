@@ -509,7 +509,7 @@ func champ(compact: bool) -> void:
 	if pack_guide!=null and pack_guide.visible and not pack_guide.expanded and pack_slot!=null:
 		pack_guide._avoid_primary_controls()
 		# Le pied de page commence sous son filet (séparation de la colonne) : Gabi y reste entièrement.
-		var footer_top := pack_slot.get_parent().get_global_rect().position.y
+		var footer_top: float = (pack_slot.get_parent() as Control).get_global_rect().position.y
 		check(pack_guide.get_global_rect().position.y >= footer_top - .5,"Packs à %s : Gabi et Visite laissent une marge sous le filet du pied de page" % dimensions)
 	app._navigate("Accueil")
 	await settle()
