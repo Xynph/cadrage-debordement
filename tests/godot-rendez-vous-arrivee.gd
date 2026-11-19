@@ -97,7 +97,9 @@ func run() -> void:
 	app._render()
 	await frames()
 	var dock_texts := texts(app)
-	check(not dock_texts.has("Stockage à vérifier") and dock_texts.has("Sauvegarde auto"), "Barre latérale : « Sauvegarde auto », pas « Stockage à vérifier »")
+	# Coque commune : la ligne de sauvegarde du rail dit « Sauvegardé <date> ».
+	var saved_line := dock_texts.any(func(t): return str(t).begins_with("Sauvegardé"))
+	check(not dock_texts.has("Stockage à vérifier") and saved_line, "Barre latérale : « Sauvegardé … », pas « Stockage à vérifier »")
 
 	# 2. Invitations du club pendant la conférence.
 	app._show_press_inbox()
