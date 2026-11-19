@@ -108,7 +108,7 @@ func _preview(surface: Panel) -> void:
 		var card := D.panel(surface, Rect2(25 + i * 490, 222, 483, 469), "", "", "", "CentreOffer" + str(offer[0]))
 		card.clip_contents = true
 		D.photo(card, offer[2], Rect2(13, 13, 457, 236), .4)
-		if not open: D.chip(card, Rect2(27, 27, 238, 30), "AU CALENDRIER DES ESPOIRS", GOLD)
+		if not open: _chip_fitted(card, Vector2(27, 27), "AU CALENDRIER DES ESPOIRS", GOLD, 423)
 		D.line(card, Vector2(15, 271), Vector2(468, 271))
 		var icon := C.icon(offer[3], 32, GOLD)
 		card.add_child(icon)
@@ -134,6 +134,14 @@ func _preview(surface: Panel) -> void:
 	action.add_theme_font_override("font", C.BOLD)
 	action.add_theme_font_size_override("font_size", C.font_px(31))
 	D.place(action, Rect2(918, 130, 513, 66))
+
+## Pastille dont la largeur suit son texte à la densité réelle (plancher de police 12 px en 1280 × 720) :
+## jamais de points de suspension, au plus `limit` unités du gabarit.
+func _chip_fitted(parent: Control, at: Vector2, caption: String, color: Color, limit: float) -> Panel:
+	var pixels := C.font_px(19)
+	var measured := C.font(600).get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x
+	var width := clampf(ceilf(measured / maxf(C.density, .01)) + 30.0, 238.0, limit)
+	return D.chip(parent, Rect2(at.x, at.y, width, 30), caption, color)
 
 func _note(parent: Control, rectangle: Rect2, text: String, pixels: int) -> void:
 	var label := C.wrap("", pixels, C.MUTED)
@@ -186,17 +194,21 @@ func _summary() -> void:
 		D.place(icon, Rect2(15, 27, 32, 32))
 		D.text(tile, 61, 35, entry[0], 21, C.MUTED, 700, 265)
 		D.text(tile, 61, 75, entry[1], 35, entry[3], 700, 262)
-	D.line(panel, Vector2(17, 293), Vector2(699, 293))
-	D.text(panel, 22, 339, "SAISON JUNIOR", 24, GOLD, 700, 660)
+	# Une seule rangée de chiffres (Espoirs, enveloppe) : le bloc « Saison junior » remonte d'autant
+	# au lieu de laisser une bande vide sous les tuiles ; le bouton reste au pied du panneau.
+	var rows := maxi(1, ceili(facts.size() / 2.0))
+	var dy := (rows - 2) * 108 if rows < 2 else 0
+	D.line(panel, Vector2(17, 293 + dy), Vector2(699, 293 + dy))
+	D.text(panel, 22, 339 + dy, "SAISON JUNIOR", 24, GOLD, 700, 660)
 	var round := _pathway_status()
 	if active:
 		round = "%s / %s périodes" % [G.n(data.get("juniorRound", "—")), G.n(data.get("totalRounds", "—"))]
-	D.text(panel, 22, 394, round, 39, C.IVORY, 700, 672)
+	D.text(panel, 22, 394 + dy, round, 39, C.IVORY, 700, 672)
 	var note := Copy.notice("academy", data.get("description", "Le centre est disponible dans une carrière active."))
 	if not active:
 		note = "L’activation ouvre le calendrier et les résultats juniors." if data.get("available", false) else "Détection, mentorat et compétition junior ouvriront avec le calendrier des Espoirs."
 	var lines := D.words(note, 69, 3)
-	for i in lines.size(): D.text(panel, 23, 439 + i * 27, lines[i], 23, C.MUTED, 500, 675)
+	for i in lines.size(): D.text(panel, 23, 439 + dy + i * 27, lines[i], 23, C.MUTED, 500, 675)
 	D.button(panel, Rect2(21, 522, 676, 55), "Consulter les Espoirs", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreOpenAcademy")
 	var lower := D.panel(self, Rect2(1531, 832, 717, 391), "De l’académie à l’équipe première", "trophy", "", "CentreDevelopment")
 	D.photo(lower, "academy-training", Rect2(14, 70, 689, 211))
