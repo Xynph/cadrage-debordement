@@ -451,7 +451,7 @@ function factory(geometry) {
   }
 
   return Object.freeze({
-    LEAGUE, ACCESS, FROZEN_MODEL, calendarFixtures, terrainPoints, table, playoffSeeds,
+    LEAGUE, ACCESS, FROZEN_MODEL, calendarFixtures, terrainPoints, pointsFor, table, playoffSeeds,
     knockoutFixtures, knockoutWinner, finalOutcome, accessPlan, combineFrenchMovements, lineupCards,
   });
 }

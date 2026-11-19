@@ -85,5 +85,37 @@ func run() -> void:
 	check(Regie.enchaine_essai(porte, 1), "Ballon porté puis essai : la durée de la conquête est un plancher")
 	check(not Regie.enchaine_essai(porte, 0) and not Regie.enchaine_essai(porte, 2) and not Regie.enchaine_essai(porte, 3), "Autres plans : durée inchangée")
 	check(not Regie.enchaine_essai([{"kind": "setpiece-win"}, {"kind": "carry"}], 0), "Conquête sans essai : durée inchangée")
+	# Tuile Bonus (`direct.bonus`, match-bonus.cjs) : règle, état et dilemme de fin de match avec deux consignes.
+	var fin := direct(75)
+	check(not between.bonus_tuile.visible, "Sans bonus en jeu : pas de tuile Bonus")
+	fin["bonus"] = {"version": 1, "regle": "3 essais d’écart · défaite de 5 pts ou moins",
+		"offensif": {"acquis": false, "manque": 1, "horsDePortee": false, "texte": "Bonus offensif à 1 essai"},
+		"defensif": {"statut": "sans-objet", "manque": null, "texte": ""},
+		"situation": {"cle": "offensif", "texte": "+6 à la 75e, 2 essais d’écart : viser le bonus offensif ou sécuriser la victoire ?",
+			"consignes": [{"id": "viser", "label": "Viser le bonus", "attack": "large", "defense": "equilibre", "penalty": "touch", "aide": "Jeu au large."},
+				{"id": "securiser", "label": "Sécuriser", "attack": "conquete", "defense": "prudente", "penalty": "points", "aide": "Jeu au près."}]}}
+	var recus: Array = []
+	between.consigne_bonus.connect(func(c: Dictionary): recus.append(c))
+	between.update_frame({"tactics": {"attack": "conquete", "defense": "prudente", "penalty": "points"}}, live, fin, func(_c: Variant): pass)
+	for i in 2: await process_frame
+	check(between.bonus_tuile.visible and between.bonus_regle.text.contains("3 essais"), "Tuile Bonus : règle du championnat")
+	check(between.bonus_situation.visible and between.bonus_situation.text.begins_with("+6 à la 75e"), "Tuile Bonus : dilemme affiché")
+	var viser := between.find_child("MatchBetweenBonusChoice_viser", true, false) as Button
+	var securiser := between.find_child("MatchBetweenBonusChoice_securiser", true, false) as Button
+	check(viser != null and securiser != null and viser.text == "Viser le bonus", "Tuile Bonus : deux consignes")
+	if viser != null:
+		viser.pressed.emit()
+		check(recus.size() == 1 and recus[0].get("attack") == "large" and recus[0].get("penalty") == "touch", "Tuile Bonus : la consigne part avec ses commandes")
+	var fond := func(b: Button) -> Color: return (b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color if b != null and b.get_theme_stylebox("normal") is StyleBoxFlat else Color.BLACK
+	check(securiser != null and fond.call(securiser) == Between.OR and fond.call(viser) != Between.OR, "Tuile Bonus : la consigne en place est en or")
+	# 1280×720 : la tuile reste dans l'écran, ses boutons aussi.
+	root.size = Vector2i(1280, 720)
+	between.size = Vector2(1280, 620)
+	for i in 4: await process_frame
+	var cadre: Rect2 = between.bonus_tuile.get_global_rect()
+	check(cadre.size.x > 0 and cadre.end.x <= 1281.0 and cadre.end.y <= 721.0, "Tuile Bonus visible en 1280×720 (" + str(cadre) + ")")
+	fin["bonus"] = null
+	between.update_frame({}, live, fin, func(_c: Variant): pass)
+	check(not between.bonus_tuile.visible, "Élimination directe ou amical : tuile masquée")
 	print("MATCH_ECHANTILLON %d controles, %d echec" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)

@@ -146,7 +146,8 @@ try {
   assert.ok(pied.coups > base.coups && garder.coups < base.coups, 'jeu au pied suivi');
   assert.ok(toucheSure.touchesG / toucheSure.touches > base.touchesG / base.touches, 'lancer court plus sûr');
   // Nouvelles consignes (attaque, conquête, adversaire), 100 matchs par réglage.
-  const relancer = serie('l.pilotage.consignes.relance="relancer";', 100), degager = serie('l.pilotage.consignes.relance="degager";', 100);
+  // Relance : +1,2 à 2,2 % d'erreurs de main, soit ≈ 0,2 ballon par match, sous l'erreur type d'une série de 100 matchs : 400 matchs.
+  const relancer = serie('l.pilotage.consignes.relance="relancer";', 400), degager = serie('l.pilotage.consignes.relance="degager";', 400);
   const courts = serie('l.pilotage.consignes.coupsEnvoi="courts";', 100), longs = serie('l.pilotage.consignes.coupsEnvoi="longs";', 100);
   const pousser = serie('l.pilotage.consignes.melee="pousser";', 100), maulSouvent = serie('l.pilotage.consignes.maul="souvent";', 100), maulJamais = serie('l.pilotage.consignes.maul="jamais";', 100);
   const aile = serie('l.pilotage.consignes.cible="aile";l.pilotage.depuis.cible=0;', 100), base100 = serie('', 100);

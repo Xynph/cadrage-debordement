@@ -233,14 +233,33 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
   });
  }
 
+ // Joueurs de la liste élite qui ont déjà joué 9 des 11 derniers tests de la France (le test à venir est le 12e).
+ function capped(state, players, fixture, chosen) {
+  const listed = players.filter(player => player.listeElite).map(player => player.id);
+  if (!listed.length) return new Set();
+  const last = state.appearances.filter(row => row.nation === 'FRA' && row.date < fixture.date)
+   .sort((a, b) => compare(a.date, b.date) || compare(a.fixtureId, b.fixtureId)).slice(-11);
+  const manual = new Set(chosen.filter(Boolean));
+  return new Set(listed.filter(id => !manual.has(id) && last.filter(row => row.playedIds.includes(id)).length >= 9));
+ }
+
  function nationalSheet(state, fixture, nation, players, preferredLineup = [], preferredReserves = []) {
   const camp = state.callups.find(row => row.competitionId === fixture.competitionId &&
    row.nation === nation && isActive(row, fixture.date));
   check(camp, 'Rassemblement international introuvable.');
   const reserves = pool(nation);
   const squad = [...players, ...reserves];
-  const options = { players: squad, calledIds: camp.playerIds, preferredLineup, preferredReserves };
+  // Protocole FFR-LNR 2026-27 (liste de 33, rapport RugbyPass : https://www.rugbypass.com/fr/news/liste-33-joueurs-xv-de-france-2027/) :
+  // le XV de France fait jouer ces joueurs au maximum 9 fois sur les 12 tests de la saison. Fenêtre glissante de
+  // 12 tests, bancs compris ; ligne directrice : ignorée pour un choix manuel du sélectionneur et si la feuille
+  // ne peut pas être complétée sans eux.
+  const rested = nation === 'FRA' ? capped(state, players, fixture, [...preferredLineup, ...preferredReserves]) : new Set();
+  const options = { players: squad, calledIds: camp.playerIds.filter(id => !rested.has(id)), preferredLineup, preferredReserves };
   let sheet = callups.selectInternationalSheet(options);
+  if (!sheet.complete && rested.size) {
+   options.calledIds = camp.playerIds;
+   sheet = callups.selectInternationalSheet(options);
+  }
   if (!sheet.complete) {
    options.calledIds = [...new Set([...camp.playerIds, ...reserves.map(player => player.id)])];
    sheet = callups.selectInternationalSheet(options);

@@ -374,7 +374,7 @@ function factory(geometry) {
   }
 
   return Object.freeze({
-    LEAGUE, FROZEN_MODEL, EXTRA_TIME, PREM_PROMOTION_2026_27: false, calendarFixtures, terrainPoints,
+    LEAGUE, FROZEN_MODEL, EXTRA_TIME, PREM_PROMOTION_2026_27: false, calendarFixtures, terrainPoints, pointsFor,
     table, playoffSeeds, kickAt, shootoutWinner, knockoutWinner, knockoutFixtures, finalOutcome, lowerPlan,
   });
 }

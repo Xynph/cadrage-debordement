@@ -653,19 +653,30 @@ static func lineup(app:Control) -> Control:
 		var note: Dictionary = licences.get("notice", {})
 		bloc.tooltip_text = str(note.get("summary", "")) + "\n" + str(note.get("detail", ""))
 		side.add_child(bloc)
-	var jiff: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
-	if bool(jiff.get("applies", false)):
-		var current := int(jiff.get("currentSheet", 0))
-		var target := int(jiff.get("target", 16))
-		var line := "JIFF  ·  %d sur cette feuille  ·  %d exigés en moyenne" % [current, target]
-		if jiff.get("average") != null:
-			line += "  ·  moyenne de la saison %s" % String.num(float(jiff.average), 2)
-		if int(jiff.get("deduction", 0)) > 0:
-			line += "  ·  retrait de %d point(s) cette saison" % int(jiff.deduction)
-		var jiff_bloc := G.wrap(line, 11, G.ALERT if current < target else G.MUTED)
-		jiff_bloc.name = "LineupJiffNotice"
-		jiff_bloc.tooltip_text = "Joueurs issus des filières de formation : 3 saisons en centre de formation français ou 5 saisons de licence en France avant 22 ans. Sous la moyenne de %d par feuille sur la saison, le club perd des points la saison suivante ; à partir de %d, le fonds JIFF verse une prime." % [target, int(jiff.get("bonusFrom", 17))]
-		side.add_child(jiff_bloc)
+	# Quota du championnat : JIFF (Top 14, Pro D2) ou EQP (Premiership), même ligne (nom LineupJiffNotice conservé).
+	var quota: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
+	if bool(quota.get("applies", false)):
+		# 13 px et couleur d'état (capture 1280×720 du 18/11 : à 11 px gris atténué, la ligne passait inaperçue) :
+		# rouge sous la trajectoire, vert quand la feuille atteint la moyenne exigée, gris sinon.
+		var quota_ok := int(quota.get("currentSheet", 0)) + int(quota.get("doublon", 0)) >= int(quota.get("target", 16))
+		var quota_bloc := G.wrap(quota_line(quota), 13, G.ALERT if bool(quota.get("alert", false)) else (G.GOOD if quota_ok else G.MUTED))
+		quota_bloc.name = "LineupJiffNotice"
+		quota_bloc.tooltip_text = quota_tooltip(quota)
+		side.add_child(quota_bloc)
+	# Protocole des Bleus (liste de 33) : joueurs de la feuille qui doivent souffler ce week-end.
+	var bleus: Dictionary = app.model.get("clubLife", {}).get("doublons", {})
+	if bool(bleus.get("applies", false)):
+		var a_reposer: Array = bleus.get("reposer", [])
+		var noms: Array = []
+		for item: Variant in a_reposer:
+			if item is Dictionary:
+				for p: Variant in app.model.get("squad", []):
+					if p is Dictionary and str(p.get("id", "")) == str(item.get("playerId", "")): noms.append(str(p.get("name", "")))
+		if not noms.is_empty():
+			var bleus_bloc := G.wrap("BLEUS  ·  %s doit souffler ce week-end (protocole : 2 repos sur 8 matchs)" % ", ".join(noms), 11, G.ALERT)
+			bleus_bloc.name = "LineupBleusNotice"
+			bleus_bloc.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus."
+			side.add_child(bleus_bloc)
 	var auto:=G.button("SÉLECTION AUTOMATIQUE DU STAFF",func():app._command("auto_lineup"))
 	auto.name="LineupAutomatic"
 	auto.disabled=not app._live().is_empty()
@@ -681,6 +692,7 @@ static func lineup(app:Control) -> Control:
 	var eligible:Variant=selected.get("eligibleIds")
 	for p in app.model.get("squad",[]):
 		var identity := "%s · %s" % [p.name, p.pos]
+		if p.get("playerFacts", {}).get("listeElite", false): identity += " · Liste des 33"
 		var metrics := "Condition %s %% · Niveau %s" % [G.n(p.condition), G.rating_text(p,true)]
 		var b := G.button("",func():app._command("set_lineup",{"playerId":p.id,"slot":app.selected_slot}))
 		b.accessibility_name = identity + " · " + metrics
@@ -725,6 +737,36 @@ static func lineup(app:Control) -> Control:
 
 static func preparation(app:Control) -> Control:
 	return preload("res://ui/preparation_view.gd").build(app)
+
+## Ligne du quota de joueurs formés localement : sur la feuille (doublon compris), besoin du prochain match, moyenne, marge.
+## `quota` = clubLife.jiff (jiff.cjs). L'alerte (feuille sous la trajectoire de la moyenne exigée) colore la ligne.
+static func quota_line(quota: Dictionary) -> String:
+	var label := str(quota.get("label", "JIFF"))
+	var target := int(quota.get("target", 16))
+	var current := int(quota.get("currentSheet", 0))
+	var doublon := int(quota.get("doublon", 0))
+	var line := "%s  ·  %d sur cette feuille" % [label, current]
+	if doublon > 0:
+		line += " + %d convoqué%s en équipe de France" % [doublon, "s" if doublon > 1 else ""]
+	line += "  ·  %d exigés en moyenne" % target
+	if quota.get("average") != null:
+		line += "  ·  moyenne de la saison %s" % String.num(float(quota.average), 2)
+		var margin := int(quota.get("margin", 0))
+		if margin != 0:
+			line += "  ·  marge %s%d" % ["+" if margin > 0 else "−", absi(margin)]
+	if quota.get("need") != null and bool(quota.get("alert", false)):
+		line += "  ·  il en faut %d à ce match pour tenir la moyenne" % int(quota.need)
+		if bool(quota.get("outOfReach", false)):
+			line += " (même 23 ne suffiraient plus)"
+	if int(quota.get("deduction", 0)) > 0:
+		line += "  ·  retrait de %d point(s) cette saison" % int(quota.deduction)
+	return line
+
+static func quota_tooltip(quota: Dictionary) -> String:
+	var target := int(quota.get("target", 16))
+	if str(quota.get("kind", "jiff")) == "eqp":
+		return "Joueurs sélectionnables pour l'Angleterre (EQP). La Premiership exige %d EQP par feuille de 23 en moyenne sur la saison ; en dessous, la ligue inflige une amende (jusqu'à 250 000 £), sans retrait de points." % target
+	return "Joueurs issus des filières de formation : 3 saisons en centre de formation français ou 5 saisons de licence en France avant 22 ans. Sous la moyenne de %d par feuille sur la saison, le club perd des points la saison suivante ; à partir de %d, le fonds JIFF verse une prime. Les jours de doublon, les JIFF convoqués en équipe de France comptent dans la feuille du club." % [target, int(quota.get("bonusFrom", 17))]
 
 static func market(app:Control) -> Control:
 	var page:=G.h(14)
@@ -833,6 +875,12 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 		summary.add_child(G.label(G.n(p.age)+" ans",13))
 		summary.add_child(G.label("Niveau "+G.rating_text(p),13,G.GOLD))
 		card.add_child(G.wrap(G.salary(p.get("salary",0))+" · salaire demandé",13,G.MUTED))
+		# Statut JIFF / EQP de la piste pour le quota du club (moteur : market[].quota), seulement quand il compte.
+		var quota_badge: Variant = p.get("quota")
+		if quota_badge is Dictionary and bool(quota_badge.get("ok", false)):
+			var quota_note := G.wrap(str(quota_badge.get("note", "")), 12, G.GOLD if bool(quota_badge.get("useful", false)) else G.MUTED)
+			quota_note.name = "MarketQuota" + str(p.id).replace(":", "_")
+			card.add_child(quota_note)
 		var followed:bool=str(p.id) in app.management_ui.shortlist
 		var track:=G.button("RETIRER DU SUIVI" if followed else "SUIVRE CETTE PISTE",func():
 			var saved:Dictionary=app.model.get("clubLife",{}).get("managerCareer",{})

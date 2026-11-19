@@ -126,9 +126,12 @@ module.exports=function clubTransfers(){
   if(plan==='rajeunissement'&&p.age>25)return null;
   const need=known.needs.find(n=>slotEligible(p,n.slot)),slot=primarySlot(p);
   const upgrade=est-known.starters[slot];
-  if(!need&&!(plan==='vedettes'&&upgrade>=3)&&!(plan==='rajeunissement'&&upgrade>=0&&p.age<=24))return null;
+  const wantsQuota=typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.recruitBonus==='function'&&upgrade>=0&&CDJiff.recruitBonus(S,buyer.id,p)>0;
+  if(!need&&!wantsQuota&&!(plan==='vedettes'&&upgrade>=3)&&!(plan==='rajeunissement'&&upgrade>=0&&p.age<=24))return null;
   if(est<buyer.base-14)return null;
-  return {score:(need?need.score:0)+upgrade*4+(plan==='vedettes'?est:0)-(offer.listed?0:10)-Math.round(offer.fee/200000),need:need?.pos||POS[slot],upgrade};
+  // Quota de championnat (JIFF, EQP) : un club dont la moyenne est menacée valorise un joueur qui compte (jiff.cjs).
+  const quota=typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.recruitBonus==='function'?CDJiff.recruitBonus(S,buyer.id,p):0;
+  return {score:(need?need.score:0)+upgrade*4+(plan==='vedettes'?est:0)-(offer.listed?0:10)-Math.round(offer.fee/200000)+quota,need:need?.pos||POS[slot],upgrade,quota};
  }
  function affordable(buyer,offer,salary){
   const info=worldClub(buyer.id);

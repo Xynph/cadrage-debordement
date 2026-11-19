@@ -6,6 +6,12 @@ module.exports=function positionAptitudes(){
  const cover=[2,1,3,4,6,9,10,11],adjacent=[[],[],[3],[2],[5,6],[4,8,7],[7,8],[6,8,5],[6,5,7]];
  const critical=[['scrum','power'],['lineout','scrum'],['lineout','tackle'],['tackle','stamina'],['pass','mental'],['pass','kick'],['speed'],['pass','tackle'],['kick','speed']];
  const cache=new Map(),playerCache=new WeakMap(),keys=Object.keys(ATTR);
+ // Quota du club (JIFF : joueurs formés en France ; EQP en Premiership : joueurs sélectionnables pour l'Angleterre),
+ // lu dans CDJiff : {target, yes(p)} ou null quand le club n'est soumis à aucun quota.
+ function quotaOf(team){
+  if(typeof CDJiff==='undefined'||!CDJiff.qualifierFor||typeof S==='undefined'||S?.jiff?.version!==1||team.id===undefined)return null;
+  return CDJiff.qualifierFor(S,team.id);
+ }
  const compareId=(a,b)=>String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0;
  function positionNumber(slot){return slot<15?slot+1:cover[slot-15]??null;}
  // Clé des qualifications du joueur. Quand ses deux listes ont exactement les mêmes éléments que lors du dernier calcul
@@ -277,22 +283,21 @@ module.exports=function positionAptitudes(){
    if(new Set(lineup.filter(Boolean)).size!==lineup.filter(Boolean).length)return sheet;
    return {...sheet,lineup};
   }
-  // Règle JIFF (CDJiff.target joueurs formés en France sur les 23) intégrée à l'attribution : on
+  // Règle de quota (JIFF ou EQP : `target` qualifiés sur les 23) intégrée à l'attribution : on
   // remplace un non-JIFF par un JIFF disponible en minimisant la perte de note au poste (banc
   // pondéré à moitié, donc sacrifié en premier), jamais en dessous de 40 au poste tant qu'une
   // autre option existe. Cas limite : sans JIFF jouable au poste, le quota prime (meilleure option).
   function jiffFit(team,sheet){
-   if(typeof CDJiff==='undefined'||!CDJiff.isJiff||!CDJiff.target||typeof S==='undefined'||S?.jiff?.version!==1||team.id===undefined)return sheet;
-   const leagues=CDJiff.subjectLeagues(S);if(!leagues||!Object.values(leagues).some(l=>l.includes(team.id)))return sheet;
+   const quota=quotaOf(team);if(!quota)return sheet;
    const pool=availablePool(team),byId=new Map(team.players.map(p=>[p.id,p]));
    const slots=sheet.lineup.concat(sheet.bench),used=new Set(slots.filter(Boolean));
-   let count=slots.filter(id=>id&&CDJiff.isJiff(S,byId.get(id))).length;
+   let count=slots.filter(id=>id&&quota.yes(byId.get(id))).length;
    const value=(p,k)=>rating(p,k)*(.5+p.condition*.005);
-   const jiffs=pool.filter(p=>CDJiff.isJiff(S,p)).sort(compareId);
-   while(count<CDJiff.target){
+   const jiffs=pool.filter(p=>quota.yes(p)).sort(compareId);
+   while(count<quota.target){
     let best=null;
     for(let k=0;k<slots.length;k++){
-     const cur=byId.get(slots[k]);if(!cur||CDJiff.isJiff(S,cur))continue;
+     const cur=byId.get(slots[k]);if(!cur||quota.yes(cur))continue;
      for(const p of jiffs){
       if(used.has(p.id)||!eligible(p,k))continue;
       const loss=(value(cur,k)-value(p,k))*(k>=15?.5:1)+(rating(p,k)<40?1000:0);
@@ -359,8 +364,8 @@ module.exports=function positionAptitudes(){
   if(!tired.length)return null;
   tired.sort((a,b)=>a.p.condition-b.p.condition||a.slot-b.slot);
   const pool=availablePool(team),inXV=new Set(lineup.filter(Boolean)),slots=lineup.concat(bench),inGroup=new Set(slots.filter(Boolean));
-  const jiffOn=typeof CDJiff!=='undefined'&&CDJiff.isJiff&&typeof S!=='undefined'&&S?.jiff?.version===1&&team.id!==undefined&&(()=>{const l=CDJiff.subjectLeagues(S);return !!l&&Object.values(l).some(x=>x.includes(team.id));})();
-  const isJ=p=>jiffOn&&CDJiff.isJiff(S,p);
+  const qd=quotaOf(team),jiffOn=!!qd;
+  const isJ=p=>jiffOn&&qd.yes(p);
   let jiffCount=jiffOn?slots.map(id=>byId.get(id)).filter(p=>p&&isJ(p)).length:0;
   const quota=typeof CDWorldJapanQuota!=='undefined'&&CDWorldJapanQuota.activeClub(S,team.id);
   const value=(p,k)=>rating(p,k)*(.5+p.condition*.005);
@@ -372,7 +377,7 @@ module.exports=function positionAptitudes(){
     const bi=bench.indexOf(q.id),fromBench=bi>=0;
     if(fromBench){if(!eligible(sortant,15+bi))continue;}
     else if(quota)continue;
-    else if(jiffOn&&isJ(sortant)&&!isJ(q)&&jiffCount<=CDJiff.target)continue;
+    else if(jiffOn&&isJ(sortant)&&!isJ(q)&&jiffCount<=qd.target)continue;
     const v=value(q,slot)+(fromBench?1000:0);
     if(!best||v>best.v+1e-9||Math.abs(v-best.v)<=1e-9&&compareId(q,best.q)<0)best={q,v,fromBench};
    }
@@ -383,5 +388,19 @@ module.exports=function positionAptitudes(){
   }
   return {threshold:seuil,count:tired.length,starters:tired.map(({slot,p})=>({slot,playerId:p.id,condition:Math.floor(p.condition)})),changes,unresolved};
  }
- return Object.freeze({project,positionNumber,rating,efficiency,contextualSkill,installHooks,fatigueAdvice});
+ // Alerte de quota de Gabi (JIFF en Top 14 / Pro D2, EQP en Premiership) : la feuille du prochain match de championnat
+ // aligne moins de qualifiés (doublon de JIFF convoqués en équipe de France compris) que la trajectoire de moyenne
+ // exigée (CDJiff.standing) ; propose pour chaque manque un échange concret (non qualifié sorti, qualifié disponible
+ // du même poste entré, perte de note minimale). null : rien à signaler.
+ function quotaAdvice(team,lineup,bench){
+  if(!team||!Array.isArray(lineup)||!Array.isArray(bench)||typeof CDJiff==='undefined'||!CDJiff.standing)return null;
+  const qd=quotaOf(team);if(!qd)return null;
+  const st=CDJiff.standing(S,team.id);if(!st||!st.nextIsLeague||st.need===null)return null;
+  const slots=lineup.concat(bench),byId=new Map(team.players.map(p=>[p.id,p])),onSheet=new Set(slots.filter(Boolean));
+  const sheet=slots.filter(id=>id&&qd.yes(byId.get(id))).length,twice=CDJiff.doublon(S,team,st.nextDate,onSheet),current=sheet+twice,missing=st.need-current;
+  if(missing<=0)return null;
+  const changes=CDJiff.advise(S,team.id,slots,{pool:availablePool(team),rating,eligible,missing:Math.min(missing,4)});
+  return {kind:st.kind,label:st.label,target:st.target,need:st.need,current,sheet,doublon:twice,average:st.average,sheets:st.sheets,remaining:st.remaining,outOfReach:st.outOfReach,missing,changes};
+ }
+ return Object.freeze({project,positionNumber,rating,efficiency,contextualSkill,installHooks,fatigueAdvice,quotaAdvice});
 };
