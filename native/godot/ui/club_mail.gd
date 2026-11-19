@@ -8,11 +8,12 @@ extends RefCounted
 const U = preload("res://ui/management_state.gd")
 
 ## Catégorie du moteur -> rubrique de la Réception (filtres, icônes et couleurs existants).
-const CATEGORY := {"infirmerie":"Médical", "commotion":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Recrutement", "presse":"Club", "direction":"Direction", "contrats":"Direction", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Météo"}
+const CATEGORY := {"infirmerie":"Médical", "commotion":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Recrutement", "presse":"Club", "direction":"Direction", "contrats":"Direction", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Météo", "transferts":"Recrutement"}
 ## Écrans que le courrier et les arrêts peuvent ouvrir (routes de main.gd) ; « infirmerie », « contrats » et
 ## « fiche » sont des vues préparées (Effectif filtré, fiche d'un joueur).
 const ROUTES := ["Composition", "Effectif", "Classements", "Recrutement", "Préparation", "Vestiaire", "Presse", "Club", "Finances", "Formation", "Calendrier", "Réception", "Bureau"]
-const CAPTIONS := {"infirmerie":"Infirmerie", "contrats":"Contrats", "fiche":"Fiche du joueur"}
+## « ventes » : Recrutement, offres reçues ouvertes (ui/player_sales_view.gd).
+const CAPTIONS := {"infirmerie":"Infirmerie", "contrats":"Contrats", "fiche":"Fiche du joueur", "ventes":"Offres reçues"}
 
 ## Mails du club projetés par le moteur, du plus ancien au plus récent.
 static func mails(model: Dictionary) -> Array:
@@ -56,7 +57,7 @@ static func route_of(ecran: String) -> String:
 	if ecran in ["infirmerie", "contrats"]: return "Effectif"
 	# Consignes de match (réponse « Régler les consignes » du plan adverse de la veille).
 	if ecran == "Plan de jeu": return ecran
-	if ecran == "fiche": return "Recrutement"
+	if ecran == "fiche" or ecran == "ventes": return "Recrutement"
 	return ecran if ecran in ROUTES else "Bureau"
 
 ## Prépare l'écran utile (filtres de l'effectif) et rend la route à ouvrir ; "" si une fiche de joueur a été ouverte.
@@ -75,6 +76,9 @@ static func prepare(app: Control, ecran: String, joueur: String, deferred: bool)
 			app.roster_sort = roster.sort
 			app.selected_player = ""
 			return "Effectif"
+		"ventes":
+			app.set_meta("open_player_sales", true)
+			return "Recrutement"
 		"fiche":
 			if joueur.is_empty() or not is_instance_valid(app.navigation_controller): return "Recrutement"
 			var target := {"kind":"player", "id":joueur}

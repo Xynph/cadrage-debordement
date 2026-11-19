@@ -466,6 +466,10 @@ function factory() {
       const v = typeof repriseCourrier === 'function' ? repriseCourrier() : null;
       return v ? [{ key: v.cle, vars: v.vars }] : [];
     },
+    // Vente de joueurs (vente-joueurs.cjs) : une offre reçue = un courrier ; accord exécuté ou tombé = un courrier.
+    offre_transfert(F) { return typeof venteCourriers === 'function' ? venteCourriers(F.s) : []; },
+    vente_executee(F) { return typeof venteCourriersAccords === 'function' ? venteCourriersAccords(F.s, 'executee', F.d) : []; },
+    vente_annulee(F) { return typeof venteCourriersAccords === 'function' ? venteCourriersAccords(F.s, 'annulee', F.d) : []; },
     // Investissements des excédents (club-investments.cjs) : une fois par saison, tant que le manager n'a pas orienté.
     investissements(F) {
       const v = typeof investCourrier === 'function' ? investCourrier() : null;

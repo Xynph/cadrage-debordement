@@ -117,6 +117,7 @@ function factory(){
   transferEvent(player.name+' rejoint '+buyer.name+' depuis '+seller.name+' : accord de '+money(p.fee)+', fin de contrat '+(typeof libelleSaison==='function'?libelleSaison:String)(player.contractEnd)+'.');
   return {interclubTransfer:{playerId:player.id,sellerId:seller.id,buyerId:buyer.id,fee:p.fee,salary:player.salary,contractEnd:player.contractEnd}};
  }
- return {project,execute,validate:()=>true,installHooks:()=>true};
+ // releasePolicy : même effectif minimum pour la vente de joueurs du club joué (vente-joueurs.cjs).
+ return {project,execute,validate:()=>true,installHooks:()=>true,releasePolicy};
 }
 module.exports={files:[],commands:['interclub_transfer','interclub_negotiate','interclub_auction'],factory};
