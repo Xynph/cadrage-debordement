@@ -7,55 +7,143 @@ function factory(){
  const world=s=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s);
  const weekOf=s=>s.franceMode?.version===1?s.franceMode.week:s.round;
  const maxWeek=s=>world(s)?CDWorldCareer.sizing(s).maxRound:s.franceMode?.version===1?34:26;
- const context=s=>s?{season:s.season,week:weekOf(s),club:s.club}:null;
- const invitationId=c=>'press-v1:'+c.season+':'+c.week+':'+c.club;
- const invitationLimit=24;
- const invitationKinds=['arrival','weekly','knockout','season_review'];
- const priorityThemes={arrival:['carriere','vestiaire','formation'],knockout:['phase_finale','avant_match'],season_review:['classement','carriere','supporters']};
+ // Calendrier de presse façon FM (décision de Léo, 18/11/2026) : plus de conférence chaque lundi. Une rentrée la semaine
+ // du 1er match officiel ; un avant-match pour les seules affiches (derby, gros adversaire, phase finale, coupe
+ // d'Europe), à l'avant-veille ou la veille ; un après-match court après chaque match officiel, ouvert dès la
+ // validation du résultat ; des conférences d'événement (recrue signée, rumeur de départ) ; le bilan de saison.
+ // L'après-match occupe un créneau à part (slot 'apres') : il partage la semaine d'un éventuel avant-match.
+ const afterMatch=s=>!!s?.live?.finished&&s.worldMode?.resultConfirmed===true;
+ const slotOf=x=>x?.slot==='apres'?'apres':null;
+ const context=s=>s?{season:s.season,week:weekOf(s),club:s.club,...(afterMatch(s)?{slot:'apres'}:{})}:null;
+ const invitationId=c=>'press-v1:'+c.season+':'+c.week+':'+c.club+(slotOf(c)?':apres':'');
+ const invitationLimit=80;
+ // « weekly » reste lisible pour les carrières commencées avant le 18/11/2026 ; il n'est plus créé.
+ const invitationKinds=['arrival','weekly','knockout','season_review','prematch','postmatch','recrue','rumeur'];
+ const baseThemes={arrival:['carriere','recrutement','joueurs','direction','supporters'],knockout:['phase_finale','avant_match'],season_review:['classement','carriere','supporters'],recrue:['recrutement','joueurs','contrats'],rumeur:['contrats','joueurs','carriere']};
  const requiredReason='Ouvre l’invitation dans Réception et publie tes réponses avant de poursuivre.';
  const mandatory=()=>typeof nativeMandatoryPress!=='undefined'&&nativeMandatoryPress;
  // Promesses publiques (press-promises.cjs) : la question d'objectif s'ajoute à une conférence tenue en personne.
  const promises=()=>typeof nativeSystems!=='undefined'?nativeSystems.domain('pressPromises'):null;
- // Conférence rapide (consolidation du 14/11/2026, façon FM) : 3 questions au plus pour une conférence ordinaire,
- // 4 pour un grand moment (arrivée, phase finale, bilan de saison, derby, crise). Une conférence ordinaire peut être
- // confiée à l'adjoint (Gabi) : réponses prudentes, léger coût auprès de la presse (médias −2, relation −1 avec
- // chaque journaliste). Réglage de carrière « Conférences ordinaires : y aller / envoyer l'adjoint » : avec
- // l'adjoint, la conférence ordinaire est tenue dès son ouverture, sans arrêter « Jour suivant » ni « Continuer ».
+ // Conférence courte (façon FM) : 2 ou 3 questions pour un après-match ou un événement, 3 au plus pour une ancienne
+ // conférence de la semaine, 4 pour un grand moment (arrivée ou rentrée, affiche, phase finale, bilan, crise). Une
+ // conférence ordinaire peut être confiée à l'adjoint (Gabi) : réponses prudentes, léger coût auprès de la presse
+ // (médias −2, relation −1 avec chaque journaliste). Réglage « Conférences ordinaires : y aller / envoyer l'adjoint ».
  const ORDINARY_MAX=3,MAJOR_COUNT=4,delegationLimit=60,POLICIES=['moi','adjoint'];
  const delegationCost=Object.freeze({mediaTrust:-2,relation:-1});
  const delegationNotice='Gabi répond à ta place sur un ton prudent : ni moral ni confiance gagnés. Coût : médias −2 et relation −1 avec chaque journaliste présent.';
  const policyOf=s=>s?.pressDelegation?.ordinary==='adjoint'?'adjoint':'moi';
- const sameContext=(a,b)=>!!a&&!!b&&a.season===b.season&&a.week===b.week&&a.club===b.club;
+ const sameContext=(a,b)=>!!a&&!!b&&a.season===b.season&&a.week===b.week&&a.club===b.club&&slotOf(a)===slotOf(b);
  const delegatedAt=(s,c)=>(s.pressDelegation?.delegated||[]).some(d=>sameContext(d,c));
- // Grand moment : conférence obligatoire en personne et plus longue. Le derby est une rivalité déjà nouée
- // (tension d'au moins 60 dans le monde interclubs) contre l'adversaire de la prochaine rencontre.
+ const ownId=s=>s.clubs?.[s.club]?.id??s.club;
+ const top15=c=>{const r=(c?.players||[]).map(p=>p.rating||0).sort((a,b)=>b-a).slice(0,15);return r.length?r.reduce((a,b)=>a+b,0)/r.length:0;};
+ function weekFixture(s){
+  if(s.phase==='ended'||!world(s))return null;
+  const f=CDWorldCareer.userFixture?.(s);return f&&f.week===s.round?f:null;
+ }
+ const opponentOf=(s,f)=>{const own=ownId(s),other=[f.homeId,f.awayId].find(id=>id!==own&&id!==s.club);return other===undefined?null:other;};
+ const derbyAgainst=(s,rival)=>{
+  if(rival===null||rival===undefined)return false;
+  const own=ownId(s),pair=[own,rival].sort((a,b)=>a<b?-1:a>b?1:0),tension=s.interclubWorld?.pairs?.[pair[0]+':'+pair[1]]?.tension;
+  return typeof isDerby==='function'?!!isDerby(s,own,rival):Number.isFinite(tension)&&tension>=60;
+ };
+ // Top 3 du championnat : le classement dès que le club a joué 3 matchs de championnat, les effectifs avant.
+ function top3(s,leagueId,members){
+  const played=(Array.isArray(s.history)?s.history:[]).filter(m=>(m.season??s.season)===s.season&&m.competitionId===leagueId&&Array.isArray(m.pair)&&m.pair.includes(s.club)).length;
+  if(played>=3){try{const rows=CDWorldCareer.ranked(s,leagueId);if(Array.isArray(rows)&&rows.length)return rows.slice(0,3).map(r=>r.id);}catch(e){}}
+  return members.map(id=>({id,v:top15(s.clubs[id])})).sort((a,b)=>b.v-a.v).slice(0,3).map(x=>x.id);
+ }
+ // Affiche de la semaine : phase finale, coupe d'Europe, derby, ou gros adversaire (règle choisie par Léo le 18/11/2026 :
+ // adversaire dans le top 3 du championnat, et pas nettement plus faible que nous — moyenne des 15 meilleures notes
+ // au plus 2 points sous la nôtre). Les chocs entre cadors comptent, comme les déplacements d'un petit chez un cador.
+ function affiche(s){
+  const f=weekFixture(s);if(!f)return null;
+  const rival=opponentOf(s,f),name=s.clubs?.[rival]?.name||'ton adversaire';
+  if(!['league','pool'].includes(f.phase))return {kind:'finale',fixture:f,rival,name};
+  if(['champions','challenge'].includes(f.competitionId))return {kind:'europe',fixture:f,rival,name};
+  if(derbyAgainst(s,rival))return {kind:'derby',fixture:f,rival,name};
+  const members=s.worldMode?.leagues?.[f.competitionId]?.members;
+  if(Array.isArray(members)&&members.includes(rival)&&top3(s,f.competitionId,members).includes(rival)&&top15(s.clubs[rival])>=top15(s.clubs[s.club])-2)return {kind:'gros',fixture:f,rival,name};
+  return null;
+ }
+ const daysToFixture=(s,f)=>s.worldMode?.day===undefined?0:Math.round((Date.parse(f.date)-Date.parse(CDWorldCareer.calendarToday(s)))/86400000);
+ // Résultat du match qui vient d'être validé (créneau après-match) : score vu du club, adversaire, domicile.
+ function liveResult(s){
+  if(!afterMatch(s))return null;const f=weekFixture(s),score=s.live?.score;
+  if(!f||!Array.isArray(score)||score.length!==2)return null;
+  const home=f.homeId===ownId(s)||f.homeId===s.club,i=home?0:1,tries=Array.isArray(s.live.tries)?s.live.tries:[0,0];
+  return {for:score[i],against:score[1-i],triesFor:tries[i]||0,triesAgainst:tries[1-i]||0,home,rival:opponentOf(s,f),fixture:f};
+ }
+ // Série en cours (résultats enregistrés de la saison, puis le match qui vient d'être validé) : négatif = défaites.
+ function streak(s){
+  const own=s.club,results=(Array.isArray(s.history)?s.history:[]).filter(m=>m&&(m.season??s.season)===s.season&&Array.isArray(m.pair)&&m.pair.includes(own)&&Array.isArray(m.score)).map(m=>{const i=m.pair.indexOf(own);return Math.sign(m.score[i]-m.score[1-i]);});
+  const r=liveResult(s);if(r)results.push(Math.sign(r.for-r.against));
+  let n=0;const last=results[results.length-1];if(!last)return 0;
+  for(let i=results.length-1;i>=0&&results[i]===last;i--)n++;return n*last;
+ }
+ // Sujets de la banque qui collent au match : une victoire à l'extérieur n'est pas commentée comme un succès à domicile.
+ function postmatchPlan(s){
+  const r=liveResult(s);if(!r)return {themes:['attaque','defense','discipline'],subjects:null};
+  const gap=r.for-r.against,favori=top15(s.clubs[r.rival])>=top15(s.clubs[s.club])+2,run=streak(s);
+  if(gap>0){
+   const subjects=[...(r.triesFor>=4&&r.triesFor-r.triesAgainst>=3?['bonus offensif']:[]),...(gap<=7?['succès arraché en fin de match']:[]),...(favori?['succès contre un favori']:[]),...(!r.home?['victoire à l’extérieur',"victoire à l'extérieur"]:[]),'domination en conquête'];
+   return {themes:['victoire',...(run>=3?['serie']:[]),'attaque','defense'],subjects:{victoire:subjects,serie:['enchaînement de succès','risque de relâchement']}};
+  }
+  if(gap<0){
+   const subjects=[...(r.home?['défaite à domicile']:[]),...(-gap>=15?['écart au score']:[]),...(-gap<=7?['fin de match ratée']:[]),...(r.against>=30?['problèmes en défense']:[]),...(r.for<=12?['manque de réalisme']:[])];
+   return {themes:[...(run<=-3?['crise']:[]),'defaite','defense','attaque'],subjects:{defaite:subjects.length?subjects:['écart au score','fin de match ratée'],crise:['troisième revers consécutif','confiance du vestiaire','pression de la direction']}};
+  }
+  return {themes:['attaque','defense','discipline'],subjects:null};
+ }
+ function plan(s,invitation){
+  const kind=invitation?.kind;
+  if(kind==='postmatch')return postmatchPlan(s);
+  if(kind==='prematch'){const a=affiche(s);return {themes:[...(a?.kind==='derby'?['derby']:[]),'avant_match',...(a?.kind==='europe'||a?.kind==='gros'?['classement']:['supporters'])],subjects:null};}
+  if(kind==='weekly')return {themes:undefined,subjects:null};
+  return {themes:baseThemes[kind],subjects:null};
+ }
+ const extraOf=(s,invitation)=>{const p=plan(s,invitation);return {derby:moment(s,invitation)?.kind==='derby',slot:slotOf(invitation?.context??context(s)),...(p.subjects?{subjects:p.subjects}:{})};};
+ const prepareBase=(s,invitation,count)=>{const p=plan(s,invitation);return CDV60RichPress.prepare(s,p.themes,count,slotOf(invitation?.context??(afterMatch(s)?{slot:'apres'}:null)),p.subjects);};
+ // Grand moment : conférence obligatoire en personne et plus longue.
  function moment(s,invitation){
   if(!invitation)return null;
-  if(invitation.kind==='arrival')return {kind:'arrivee',label:'Arrivée au club'};
-  if(invitation.kind==='season_review')return {kind:'bilan',label:'Bilan de la saison'};
   const facts=conferenceFacts(s);
+  if(invitation.kind==='arrival')return (s.pressConference?.history||[]).some(h=>h.club===s.club&&(h.season<s.season))?{kind:'rentree',label:'Conférence de rentrée'}:{kind:'arrivee',label:'Arrivée au club'};
+  if(invitation.kind==='season_review')return {kind:'bilan',label:'Bilan de la saison'};
   if(invitation.kind==='knockout')return {kind:'finale',label:facts.fixture?.stage?'Phase finale : '+facts.fixture.stage+' face à '+facts.fixture.opponent:'Phase finale'};
-  const rival=nextOpponentId(s);
-  if(rival!==null){
-   const own=s.clubs?.[s.club]?.id??s.club,pair=[own,rival].sort((a,b)=>a<b?-1:a>b?1:0),tension=s.interclubWorld?.pairs?.[pair[0]+':'+pair[1]]?.tension;
-   if(typeof isDerby==='function'?isDerby(s,own,rival):Number.isFinite(tension)&&tension>=60)return {kind:'derby',label:'Derby face à '+(facts.fixture?.opponent||'ton rival')};
+  if(invitation.kind==='prematch'){
+   const a=affiche(s);if(!a)return {kind:'affiche',label:'Avant-match'};
+   if(a.kind==='derby')return {kind:'derby',label:'Derby face à '+a.name};
+   if(a.kind==='europe')return {kind:'europe',label:'Coupe d’Europe face à '+a.name};
+   if(a.kind==='finale')return {kind:'finale',label:'Phase finale face à '+a.name};
+   return {kind:'affiche',label:'Affiche face à '+a.name};
   }
-  if((s.trust??50)<35||(s.pressRelations?.boardPressure??0)>=75)return {kind:'crise',label:'Climat de crise'};
+  if(invitation.kind==='postmatch'){
+   if(streak(s)<=-3)return {kind:'crise',label:'Série de défaites'};
+   if((s.trust??50)<35||(s.pressRelations?.boardPressure??0)>=75)return {kind:'crise',label:'Climat de crise'};
+   return null;
+  }
+  if(invitation.kind==='weekly'){
+   const rival=nextOpponentId(s);
+   if(rival!==null&&derbyAgainst(s,rival))return {kind:'derby',label:'Derby face à '+(facts.fixture?.opponent||'ton rival')};
+   if((s.trust??50)<35||(s.pressRelations?.boardPressure??0)>=75)return {kind:'crise',label:'Climat de crise'};
+  }
   return null;
  }
  function nextOpponentId(s){
   if(s.phase==='ended'||!world(s))return null;
   const f=CDWorldCareer.userFixture?.(s);if(!f)return null;
-  const pair=f.pair??[f.homeId,f.awayId],own=s.clubs?.[s.club]?.id??s.club;
-  if(!Array.isArray(pair)||pair.length!==2)return null;
-  const other=pair.find(id=>id!==own&&id!==s.club);
-  return other===undefined?null:(s.clubs?.[other]?.id??other);
+  const other=opponentOf(s,f);
+  return other===null?null:(s.clubs?.[other]?.id??other);
  }
- // Sans invitation (presse non obligatoire : outils, anciens essais), la cadence historique de 2 à 4 questions reste.
- const questionCount=(s,invitation)=>!invitation?undefined:moment(s,invitation)?MAJOR_COUNT:Math.min(ORDINARY_MAX,2+((weekOf(s)+s.season)%3));
+ const questionCount=(s,invitation)=>{
+  if(!invitation)return undefined;
+  if(moment(s,invitation))return MAJOR_COUNT;
+  if(['postmatch','recrue','rumeur'].includes(invitation.kind))return 2+((weekOf(s)+s.season)%2);
+  return Math.min(ORDINARY_MAX,2+((weekOf(s)+s.season)%3));
+ };
  function recorded(s,c){
   const history=s.pressConference?.history;
-  return Array.isArray(history)&&history.some(h=>h.season===c.season&&h.week===c.week&&(h.club===undefined||h.club===c.club));
+  return Array.isArray(history)&&history.some(h=>h.season===c.season&&h.week===c.week&&(h.club===undefined||h.club===c.club)&&slotOf(h)===slotOf(c));
  }
  function invitationStatus(s,entry){
   if(entry.status!=='pending')return entry.status;
@@ -63,33 +151,61 @@ function factory(){
   return entry.id===invitationId(context(s))?'pending':'expired';
  }
  const pendingInvitation=s=>s?.pressInvitations?.entries.find(i=>invitationStatus(s,i)==='pending');
+ const heldThisSeason=s=>(s.pressConference?.history||[]).some(h=>h.season===s.season&&h.club===s.club);
+ const playedThisSeason=s=>(Array.isArray(s.history)?s.history:[]).some(m=>(m.season??s.season)===s.season&&Array.isArray(m.pair)&&m.pair.includes(s.club));
+ // Recrue arrivée cette semaine dans l'effectif (signature ou prêt ; pas une promotion du centre de formation).
+ const freshSigning=s=>(s.clubs?.[s.club]?.players||[]).some(p=>p.joinedSeason===s.season&&p.joinedRound===s.round&&!p.academy&&p.trainingOrigin?.clubId!==ownId(s));
+ // Rumeur de départ : le vendredi, dès la 5e semaine, un des 8 meilleurs joueurs en fin de contrat (comme la rumeur du
+ // courrier du club) ; une seule conférence de ce type par saison.
+ function rumour(s){
+  if(s.worldMode?.day===undefined||!(s.round>=4))return false;
+  if(new Date(CDWorldCareer.calendarToday(s)+'T00:00:00Z').getUTCDay()!==5)return false;
+  if((s.pressInvitations?.entries||[]).some(e=>e.kind==='rumeur'&&e.context.season===s.season&&e.context.club===s.club))return false;
+  return [...(s.clubs?.[s.club]?.players||[])].sort((a,b)=>b.rating-a.rating).slice(0,8).some(p=>p.contractEnd===s.season);
+ }
  function invitationKind(s,previous,current,created){
-  if(created||previous&&previous.club!==current.club||current.week===0&&(current.season===1||
-   s.managerMobility?.history.some(move=>move.toClub===current.club&&move.arrivalSeason===current.season)))return 'arrival';
   if(s.phase==='ended')return 'season_review';
-  const phase=world(s)?CDWorldCareer.userFixture(s)?.phase:
-   s.franceMode?.version===1?CDFranceCompetition.userFixture(s)?.phase:nextMatch()?s.phase:null;
-  return phase&&!['league','pool'].includes(phase)?'knockout':'weekly';
+  if(slotOf(current))return world(s)&&weekFixture(s)?'postmatch':null;
+  if(previous&&previous.club!==current.club&&!created)return 'arrival';
+  if(!world(s))return created?'arrival':'weekly';
+  const f=weekFixture(s);
+  // Rentrée : la semaine du 1er match officiel de la saison, avant lui, si aucune conférence n'a encore eu lieu.
+  if(f&&!playedThisSeason(s)&&!heldThisSeason(s))return 'arrival';
+  if(!heldThisSeason(s))return null;
+  const a=affiche(s);
+  if(a){const d=daysToFixture(s,f);return d>=0&&d<=2?(a.kind==='finale'?'knockout':'prematch'):null;}
+  if(freshSigning(s))return 'recrue';
+  if(rumour(s))return 'rumeur';
+  return null;
  }
  function observeInvitation(previous=null,created=false){
-  if(!mandatory()||!S||S.live)return;
+  if(!mandatory()||!S||S.live&&!afterMatch(S))return;
   const current=context(S);
   const id=invitationId(current);
   const entries=S.pressInvitations?.entries??[];
   for(const entry of entries)entry.status=invitationStatus(S,entry);
   if(entries.some(i=>i.id===id))return;
   const kind=invitationKind(S,previous,current,created);
-  const published=recorded(S,current);
-  if(!published&&(CDV60RichPress.prepare(S,priorityThemes[kind])?.length??0)<2)return;
-  S.pressInvitations={version:1,entries:[{id,context:current,kind,status:published?'published':'pending'},...entries].slice(0,invitationLimit)};
+  if(!kind)return;
+  const published=recorded(S,current),entry={id,context:current,kind,status:'pending'};
+  if(!published&&(prepareBase(S,entry,questionCount(S,entry))?.length??0)<2)return;
+  entry.status=published?'published':'pending';
+  S.pressInvitations={version:1,entries:[entry,...entries].slice(0,invitationLimit)};
  }
  function canPublish(s,invitation){
-  return !!invitation&&!s.live&&(CDV60RichPress.prepare(s,priorityThemes[invitation.kind])?.length??0)>=2;
+  return !!invitation&&(!s.live||afterMatch(s)&&!!slotOf(invitation.context))&&(prepareBase(s,invitation,questionCount(s,invitation))?.length??0)>=2;
  }
  function requiresConference(){
   return mandatory()&&canPublish(S,pendingInvitation(S));
  }
+ // Après-match ordinaire laissé sans réponse (le manager poursuit) : Gabi le tient à sa place, comme quand on saute la
+ // conférence d'après-match dans FM ; coût de la délégation, compte rendu en Réception. Les grands moments bloquent.
  function guardProgress(){
+  const invitation=mandatory()&&S?pendingInvitation(S):null;
+  if(invitation?.kind==='postmatch'&&!moment(S,invitation)&&canPublish(S,invitation)){
+   const questions=prepareConference(S,invitation);
+   if(questions)publish(invitation,questions,neutralAnswers(questions),{auto:true});
+  }
   check(!requiresConference(),requiredReason);
  }
  const keys=(value,allowed)=>obj(value)&&Object.keys(value).every(k=>allowed.includes(k));
@@ -115,7 +231,7 @@ function factory(){
    const seen=new Set();
    let prior=Infinity,pending=0;
    for(const entry of agenda.entries){
-    check(keys(entry,['id','context','kind','status'])&&keys(entry.context,['season','week','club']),'Invitation de presse invalide.');
+    check(keys(entry,['id','context','kind','status'])&&keys(entry.context,['season','week','club','slot'])&&(entry.context.slot===undefined||entry.context.slot==='apres'),'Invitation de presse invalide.');
     const c=entry.context, order=c.season*100+c.week;
     check(date(c.season,c.week)&&int(c.club,0,s.clubs.length-1)&&entry.id===invitationId(c)&&!seen.has(entry.id)&&order<=prior&&invitationKinds.includes(entry.kind)&&['pending','published','expired'].includes(entry.status),'Invitation de presse invalide.');
     // Un ancien moteur peut conserver le courrier brut en avançant ou en publiant.
@@ -141,14 +257,14 @@ function factory(){
    const p=s.pressConference;check(keys(p,['version','history','lastOutcome','week','season','club'])&&p.version===1&&Array.isArray(p.history)&&p.history.length<=500,'Historique de conférence de presse invalide.');
    if(p.week!==undefined)check(int(p.week,0,maxWeek(s)));if(p.season!==undefined)check(int(p.season,1,s.season));if(p.club!==undefined)check(int(p.club,0,s.clubs.length-1));
    const seen=new Set(),groups=new Map();let previous=-1;
-   for(const h of p.history){check(keys(h,['id','season','week','answerId','club','questionText','answerText','journalist'])&&date(h.season,h.week)&&CDPressQuestionBank.questions.some(q=>q.id===h.id)&&/^r[0-4]$/.test(h.answerId)&&(h.club===undefined||int(h.club,0,s.clubs.length-1)),'Choix de conférence de presse invalide.');if(h.journalist!==undefined)check(keys(h.journalist,['id','name','outlet'])&&Object.keys(h.journalist).length===3&&!!reporter(h.journalist.id)&&text(h.journalist.name)&&text(h.journalist.outlet),'Journaliste de conférence invalide.');if(h.questionText!==undefined||h.answerText!==undefined)check([h.questionText,h.answerText].every(t=>typeof t==='string'&&t.length>0&&t.length<=600&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(t)),'Libellé de conférence de presse invalide.');const key=h.season+':'+h.week+':'+(h.club??'legacy'),id=key+':'+h.id;check(!seen.has(id),'Choix de conférence de presse répété.');seen.add(id);groups.set(key,(groups.get(key)||0)+1);check(groups.get(key)<=4);const d=h.season*100+h.week;check(d>=previous);previous=d;}
-   if(p.lastOutcome!==undefined){const o=p.lastOutcome;check(keys(o,['context','before','after','delta','exchanges','delegated'])&&(o.delegated===undefined||o.delegated===true)&&keys(o.context,['season','week','club'])&&date(o.context.season,o.context.week)&&int(o.context.club,0,s.clubs.length-1));for(const key of ['before','after','delta'])check(keys(o[key],['morale','trust','mediaTrust','fanTrust','boardPressure'])&&Object.keys(o[key]).length===5&&Object.values(o[key]).every(x=>num(x,key==='delta'?-100:0,100)));for(const key of Object.keys(o.delta))check(o.after[key]-o.before[key]===o.delta[key]);if(o.exchanges!==undefined){check(Array.isArray(o.exchanges)&&o.exchanges.length>=2&&o.exchanges.length<=4);for(const e of o.exchanges)check(keys(e,['journalistId','before','after','delta'])&&Object.keys(e).length===4&&!!reporter(e.journalistId)&&int(e.before,-100,100)&&int(e.after,-100,100)&&int(e.delta,-6,6)&&e.after-e.before===e.delta,'Retour de relation journaliste invalide.');}check(p.history.some(h=>h.season===o.context.season&&h.week===o.context.week&&(h.club===undefined||h.club===o.context.club)));}
+   for(const h of p.history){check(keys(h,['id','season','week','answerId','club','questionText','answerText','journalist','slot'])&&(h.slot===undefined||h.slot==='apres')&&date(h.season,h.week)&&CDPressQuestionBank.questions.some(q=>q.id===h.id)&&/^r[0-4]$/.test(h.answerId)&&(h.club===undefined||int(h.club,0,s.clubs.length-1)),'Choix de conférence de presse invalide.');if(h.journalist!==undefined)check(keys(h.journalist,['id','name','outlet'])&&Object.keys(h.journalist).length===3&&!!reporter(h.journalist.id)&&text(h.journalist.name)&&text(h.journalist.outlet),'Journaliste de conférence invalide.');if(h.questionText!==undefined||h.answerText!==undefined)check([h.questionText,h.answerText].every(t=>typeof t==='string'&&t.length>0&&t.length<=600&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(t)),'Libellé de conférence de presse invalide.');const key=h.season+':'+h.week+':'+(h.club??'legacy')+(slotOf(h)?':apres':''),id=key+':'+h.id;check(!seen.has(id),'Choix de conférence de presse répété.');seen.add(id);groups.set(key,(groups.get(key)||0)+1);check(groups.get(key)<=4);const d=h.season*100+h.week;check(d>=previous);previous=d;}
+   if(p.lastOutcome!==undefined){const o=p.lastOutcome;check(keys(o,['context','before','after','delta','exchanges','delegated'])&&(o.delegated===undefined||o.delegated===true)&&keys(o.context,['season','week','club','slot'])&&(o.context.slot===undefined||o.context.slot==='apres')&&date(o.context.season,o.context.week)&&int(o.context.club,0,s.clubs.length-1));for(const key of ['before','after','delta'])check(keys(o[key],['morale','trust','mediaTrust','fanTrust','boardPressure'])&&Object.keys(o[key]).length===5&&Object.values(o[key]).every(x=>num(x,key==='delta'?-100:0,100)));for(const key of Object.keys(o.delta))check(o.after[key]-o.before[key]===o.delta[key]);if(o.exchanges!==undefined){check(Array.isArray(o.exchanges)&&o.exchanges.length>=2&&o.exchanges.length<=4);for(const e of o.exchanges)check(keys(e,['journalistId','before','after','delta'])&&Object.keys(e).length===4&&!!reporter(e.journalistId)&&int(e.before,-100,100)&&int(e.after,-100,100)&&int(e.delta,-6,6)&&e.after-e.before===e.delta,'Retour de relation journaliste invalide.');}check(p.history.some(h=>h.season===o.context.season&&h.week===o.context.week&&(h.club===undefined||h.club===o.context.club)&&slotOf(h)===slotOf(o.context)));}
   }
   if(s.pressDelegation!==undefined){
    const d=s.pressDelegation;
    check(keys(d,['version','ordinary','delegated'])&&d.version===1&&POLICIES.includes(d.ordinary)&&Array.isArray(d.delegated)&&d.delegated.length<=delegationLimit,'Réglage de délégation de presse invalide.');
    const seen=new Set();
-   for(const e of d.delegated){check(keys(e,['season','week','club','auto'])&&Object.keys(e).length===4&&date(e.season,e.week)&&int(e.club,0,s.clubs.length-1)&&typeof e.auto==='boolean'&&!seen.has(e.season+':'+e.week+':'+e.club)&&recorded(s,e),'Conférence déléguée invalide.');seen.add(e.season+':'+e.week+':'+e.club);}
+   for(const e of d.delegated){const k=e.season+':'+e.week+':'+e.club+(slotOf(e)?':apres':'');check(keys(e,['season','week','club','auto','slot'])&&Object.keys(e).length===(e.slot===undefined?4:5)&&(e.slot===undefined||e.slot==='apres')&&date(e.season,e.week)&&int(e.club,0,s.clubs.length-1)&&typeof e.auto==='boolean'&&!seen.has(k)&&recorded(s,e),'Conférence déléguée invalide.');seen.add(k);}
   }
   if(s.pressPeople!==undefined){
    const p=s.pressPeople;check(keys(p,['version','contacts'])&&Object.keys(p).length===2&&p.version===1&&obj(p.contacts)&&Object.keys(p.contacts).length<=CDPressQuestionBank.journalists.length,'Relations personnelles de presse invalides.');
@@ -194,6 +310,9 @@ function factory(){
    const index=match.pair.indexOf(s.club);
    result={opponent:rival,week:date,for:match.score[index],against:match.score[1-index]};
   }
+  // Après-match : le score qui vient d'être validé (il n'entre dans l'historique qu'à la clôture de la semaine).
+  const live=liveResult(s);
+  if(live){const rival=nameOf(s.clubs?.[live.rival]?.name);if(rival)result={opponent:rival,week,for:live.for,against:live.against};}
   const injured=club(s.club)?.players?.find(p=>Number.isFinite(p?.injury)&&p.injury>0&&nameOf(p.name));
   return {fixture,result,injured:nameOf(injured?.name)};
  }
@@ -316,7 +435,7 @@ function factory(){
     'Les flèches du tableau noir ne gagneront pas un mètre. Je veux d’abord des soutiens proches du porteur.'
    ]);
   }
-  if(result&&['attaque','defense','defaite','victoire'].includes(q.theme)){
+  if(result&&['attaque','defense'].includes(q.theme)){
    const match=result.for+'–'+result.against+' face à '+result.opponent;
    const defense=q.theme==='defense';
    let review;
@@ -367,13 +486,13 @@ function factory(){
  // A callback is a quotation from this saved career, never a reconstruction
  // from a tone or the question bank. Its exact displayed text is archived below.
  function prepareConference(s,invitation){
-  const questions=mandatory()&&!invitation?null:CDV60RichPress.prepare(s,priorityThemes[invitation?.kind],questionCount(s,invitation));
+  const questions=mandatory()&&!invitation?null:prepareBase(s,invitation,questionCount(s,invitation));
   if(!questions||questions.length<2)return null;
   const history=s.pressConference?.history||[],prefix='Lors de notre échange de saison ';
   const facts=conferenceFacts(s);
   return questions.map(base=>{
    const q=contextualQuestion(base,facts);
-   const sources=history.filter(h=>h.journalist?.id===q.journalist.id&&h.club===s.club&&h.season===s.season&&int(h.week,0,weekOf(s)-1)&&CDPressQuestionBank.questions.some(source=>source.id===h.id&&source.theme===q.theme)&&text(h.questionText)&&text(h.answerText)&&!h.questionText.startsWith(prefix)&&!delegatedAt(s,{season:h.season,week:h.week,club:h.club}));
+   const sources=history.filter(h=>h.journalist?.id===q.journalist.id&&h.club===s.club&&h.season===s.season&&int(h.week,0,weekOf(s)-1)&&CDPressQuestionBank.questions.some(source=>source.id===h.id&&source.theme===q.theme)&&text(h.questionText)&&text(h.answerText)&&!h.questionText.startsWith(prefix)&&!delegatedAt(s,{season:h.season,week:h.week,club:h.club,...(slotOf(h)?{slot:'apres'}:{})}));
    for(const h of sources.slice().reverse()){
     const reminder=prefix+(typeof libelleSaison==='function'?libelleSaison:String)(h.season)+', semaine '+(h.week+1)+', pour ce club, tu avais répondu : « '+h.answerText+' ». ';
     if(history.some(p=>p.journalist?.id===q.journalist.id&&p.club===s.club&&p.season===s.season&&p.questionText?.startsWith(reminder)))continue;
@@ -407,15 +526,15 @@ function factory(){
    return {...copy(q),journalist:{...copy(q.journalist),identityLabel:person.identityLabel,personality:person.personality,styleLabel:person.styleLabel},relation:{score:person.score,label:person.relationLabel,encounters:person.encounters},answers:q.answers.map(a=>{const effects=CDPressRelations.dialogueEffect(q.journalist,a.tone,q.theme,person.score,sit),mod=['crise','direction'].includes(q.theme)?2:1;const applied={morale:effects.morale*mod,media:effects.media*mod,fans:effects.fans*mod,pressure:effects.pressure*mod,relation:Math.max(-100,Math.min(100,person.score+effects.relation))-person.score};const signed=n=>n>=0?'+'+n:String(n);return {...copy(a),toneLabel:CDPressRelations.dialogueTones[a.tone],effects:applied,consequence:'Moral '+signed(applied.morale)+' · médias '+signed(applied.media)+' · supporters '+signed(applied.fans)+' · pression '+signed(applied.pressure)+' · relation '+signed(applied.relation)};})};
   });
   const required=mandatory()&&!!questions;
-  const reason=S.live?'Conférence indisponible pendant un match.':required?requiredReason:
-   questions?'':mandatory()?'Aucune invitation de presse en attente.':'Conférence déjà réalisée cette semaine.';
-  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,invitations,policy:{ordinary:policyOf(S),notice:'Conférences ordinaires : avec l’adjoint, Gabi les tient à ta place dès leur ouverture, sans arrêter l’avance. Arrivée, phase finale, bilan de saison, derby et crise restent les tiennes.'},conference:{available:!!questions,required,invitationId:invitation?.id??null,reason,moment:questions?moment(S,invitation):null,promise:questions?promises()?.offer(S,invitation,moment(S,invitation))??null:null,questionLimit:questions?questions.length:0,situation:sit?{...sit,label:sit.slump?'Deux défaites de suite':sit.run?'Deux victoires de suite':sit.derby?'Derby':''}:null,delegation:delegationState(S,invitation,questions),memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,...(delegatedAt(S,{season:h.season,week:h.week,club:h.club})?{delegated:true}:{}),...(h.journalist&&reporter(h.journalist.id)?{journalist:signature(h.journalist.id)}:{}),question:h.questionText??null,answer:h.answerText??null})),lastOutcome};
+  const reason=S.live&&!afterMatch(S)?'Conférence indisponible pendant un match.':required?requiredReason:
+   questions?'':mandatory()?'Aucune conférence de presse prévue.':'Conférence déjà réalisée cette semaine.';
+  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,invitations,policy:{ordinary:policyOf(S),notice:'Après-match et conférences d’événement : avec l’adjoint, Gabi les tient à ta place, sans arrêter l’avance. Rentrée, affiches, phases finales, bilan de saison et crise restent les tiennes.'},conference:{available:!!questions,required,invitationId:invitation?.id??null,reason,moment:questions?moment(S,invitation):null,promise:questions?promises()?.offer(S,invitation,moment(S,invitation))??null:null,questionLimit:questions?questions.length:0,situation:sit?{...sit,label:sit.slump?'Deux défaites de suite':sit.run?'Deux victoires de suite':sit.derby?'Derby':''}:null,delegation:delegationState(S,invitation,questions),memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,...(delegatedAt(S,{season:h.season,week:h.week,club:h.club,...(slotOf(h)?{slot:'apres'}:{})})?{delegated:true}:{}),...(h.journalist&&reporter(h.journalist.id)?{journalist:signature(h.journalist.id)}:{}),question:h.questionText??null,answer:h.answerText??null})),lastOutcome};
  }
  // Série de conférences déléguées en cours : nombre de conférences consécutives tenues par l'adjoint juste avant
  // celle-ci (une conférence menée en personne remet la série à zéro).
  function delegatedRun(s){
   const seen=new Set(),order=[];
-  for(const h of s.pressConference?.history||[]){const k=h.season+':'+h.week+':'+h.club;if(!seen.has(k)){seen.add(k);order.push({season:h.season,week:h.week,club:h.club});}}
+  for(const h of s.pressConference?.history||[]){const k=h.season+':'+h.week+':'+h.club+(slotOf(h)?':apres':'');if(!seen.has(k)){seen.add(k);order.push({season:h.season,week:h.week,club:h.club,...(slotOf(h)?{slot:'apres'}:{})});}}
   let n=0;
   for(let i=order.length-1;i>=0&&delegatedAt(s,order[i]);i--)n++;
   return n;
@@ -427,9 +546,9 @@ function factory(){
  function publish(invitation,questions,answers,delegation){
   const scores=questions.map(q=>({journalistId:q.journalist.id,before:S.pressPeople?.contacts?.[q.journalist.id]?.score??0}));
   const before=measures(S);let penalty=0;const runBefore=delegation?delegatedRun(S):0,gauges={morale:S.morale,trust:S.trust,pressMorale:S.pressRelations?.morale,boardPressure:S.pressRelations?.boardPressure};
-  check(CDV60RichPress.apply(S,answers.map(a=>a.answerId),priorityThemes[invitation?.kind],questions.length,{derby:moment(S,invitation)?.kind==='derby'})===true,'Conférence de presse refusée.');
+  check(CDV60RichPress.apply(S,answers.map(a=>a.answerId),plan(S,invitation).themes,questions.length,extraOf(S,invitation))===true,'Conférence de presse refusée.');
   for(const [index,q] of questions.entries()){
-   const archived=S.pressConference.history.find(h=>h.id===q.id&&h.season===S.season&&h.week===weekOf(S)&&h.club===S.club);
+   const archived=S.pressConference.history.find(h=>h.id===q.id&&h.season===S.season&&h.week===weekOf(S)&&h.club===S.club&&slotOf(h)===slotOf(context(S)));
    check(!!archived,'Déclaration de conférence non archivée.');
    archived.questionText=q.question;
    archived.answerText=q.answers.find(a=>a.id===answers[index].answerId).text;
@@ -457,7 +576,7 @@ function factory(){
   S.pressConference.lastOutcome={context:context(S),before,after,delta,exchanges:scores.map(e=>{const after=S.pressPeople.contacts[e.journalistId].score;return {...e,after,delta:after-e.before};}),...(delegation?{delegated:true}:{})};
   if(delegation?.auto&&typeof managerMessage==='function'){
    const signed=n=>(n>=0?'+':'−')+Math.abs(n);
-   managerMessage('Conférence tenue par Gabi','Ton adjoint a répondu à '+questions.length+' questions sur un ton prudent. Moral '+signed(delta.morale)+' · médias '+signed(delta.mediaTrust)+' · confiance '+signed(delta.trust)+'. Les conférences importantes restent les tiennes.'+(penalty?' Conférences déléguées de suite : la direction y voit une fuite devant la presse (confiance −'+penalty+').':''),'staff','dashboard');
+   managerMessage(invitation?.kind==='postmatch'?'Après-match : Gabi a répondu':'Conférence tenue par Gabi','Ton adjoint a répondu à '+questions.length+' questions sur un ton prudent. Moral '+signed(delta.morale)+' · médias '+signed(delta.mediaTrust)+' · confiance '+signed(delta.trust)+'. Les conférences importantes restent les tiennes.'+(penalty?' Conférences déléguées de suite : la direction y voit une fuite devant la presse (confiance −'+penalty+').':''),'staff','dashboard');
   }
   validate(S);return {pressOutcome:{...copy(S.pressConference.lastOutcome),...(invitation?{invitationId:invitation.id}:{})}};
  }
@@ -477,10 +596,10 @@ function factory(){
    const own=S.pressDelegation||{version:1,ordinary:'moi',delegated:[]};S.pressDelegation={...own,ordinary:payload.ordinary};
    validate(S);return {pressPolicy:{ordinary:payload.ordinary}};
   }
-  check(!S.live,'Conférence indisponible pendant un match.');validate(S);
+  check(!S.live||afterMatch(S),'Conférence indisponible pendant un match.');validate(S);
   const allowed=command==='press_delegate'?['context','invitationId']:['context','answers','invitationId','promise'];
-  check(keys(payload,allowed)&&keys(payload.context,['season','week','club'])&&Object.keys(payload.context).length===3&&(command==='press_delegate'||Array.isArray(payload.answers)),'Paramètres de conférence de presse invalides.');
-  check(JSON.stringify(context(S))===JSON.stringify({season:payload.context.season,week:payload.context.week,club:payload.context.club}),'Préparation de conférence périmée.');
+  check(keys(payload,allowed)&&keys(payload.context,['season','week','club','slot'])&&Object.keys(payload.context).length===(payload.context.slot===undefined?3:4)&&(command==='press_delegate'||Array.isArray(payload.answers)),'Paramètres de conférence de presse invalides.');
+  check(JSON.stringify(context(S))===JSON.stringify({season:payload.context.season,week:payload.context.week,club:payload.context.club,...(payload.context.slot!==undefined?{slot:payload.context.slot}:{})}),'Préparation de conférence périmée.');
   const invitation=pendingInvitation(S);
   if(mandatory()||payload.invitationId!==undefined)check(!!invitation&&payload.invitationId===invitation.id,'Invitation de presse périmée ou inconnue.');
   const questions=prepareConference(S,invitation);check(!!questions,'Conférence déjà réalisée cette semaine.');
@@ -500,7 +619,7 @@ function factory(){
  // Réglage « envoyer l'adjoint » : appelé par le moteur après une avance du calendrier, avant la sauvegarde. Une
  // conférence ordinaire qui vient de s'ouvrir est tenue par Gabi ; un grand moment reste au manager.
  function autoDelegate(){
-  if(!S||S.live||policyOf(S)!=='adjoint'||!mandatory())return false;
+  if(!S||S.live&&!afterMatch(S)||policyOf(S)!=='adjoint'||!mandatory())return false;
   const invitation=pendingInvitation(S);
   if(!invitation||!canPublish(S,invitation)||moment(S,invitation))return false;
   const questions=prepareConference(S,invitation);if(!questions)return false;

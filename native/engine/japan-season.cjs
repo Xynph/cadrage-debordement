@@ -78,6 +78,8 @@ function factory(D1,D2){
   });
   return next;
  }
- return Object.freeze({leagues,promotionId,phases:D1.phases,slotKeys,regular,table,playoffSeeds,knockout,finalRanking,promotion,promotionDecision,move});
+ // Bonus d'une rencontre jouée (D1 et D2 suivent le barème de D1, `bonuses` via leagueResult) : direct de fin de match.
+ const matchBonus=(score,tries)=>{const r=D1.leagueResult({score,tries});return [0,1].map(i=>({bo:!!r.attacking[i],bd:!!r.defending[i]}));};
+ return Object.freeze({leagues,promotionId,phases:D1.phases,slotKeys,regular,table,matchBonus,playoffSeeds,knockout,finalRanking,promotion,promotionDecision,move});
 }
 module.exports={factory,...factory(require('./league-one-d1.cjs'),require('./jlo-d2-calendar-2026-27-public.json'))};

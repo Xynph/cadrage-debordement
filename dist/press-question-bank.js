@@ -37,7 +37,9 @@ function pick({season=1,week=0,history=[],context={},count=3,seed=0,seasonWeeks=
  const roster=journalistsFor(region);
  if(!Number.isInteger(season)||season<1||!Number.isInteger(week)||week<0||!Array.isArray(history)||!Number.isInteger(count)||count<2||count>4)throw Error('Briefing invalide');
  const eligible=questions.filter(q=>(!Array.isArray(context.themes)||context.themes.includes(q.theme))&&!recent(history,q,season,week,seasonWeeks));
- const weighted=eligible.map(q=>({q,score:(Array.isArray(context.themes)?context.themes.indexOf(q.theme):0)*100+((q.id.length*73+seed*19+week*31+q.intent*17)%97)})).sort((a,b)=>a.score-b.score);
+ // context.subjects (facultatif) : sujets préférés par thème ({victoire:['bonus offensif']}) ; une question d'un autre sujet du même thème reste possible, après elles.
+ const prefer=q=>!context.subjects||!Array.isArray(context.subjects[q.theme])||context.subjects[q.theme].includes(q.subject)?0:98;
+ const weighted=eligible.map(q=>({q,score:(Array.isArray(context.themes)?context.themes.indexOf(q.theme):0)*200+prefer(q)+((q.id.length*73+seed*19+week*31+q.intent*17)%97)})).sort((a,b)=>a.score-b.score);
  const selected=[],seen=new Set(),usedOutlets=new Set(),usedJournalists=new Set();
  for(const {q} of weighted){if(selected.length>=count)break;if(seen.has(q.theme)&&weighted.length>=count*3)continue;selected.push(q);seen.add(q.theme);}
  for(const {q} of weighted){if(selected.length>=count)break;if(!selected.includes(q))selected.push(q);}

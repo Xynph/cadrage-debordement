@@ -123,6 +123,52 @@ func reply_and_open() -> void:
 	await settle()
 	if str(mail.ecran) != "fiche": check(app.route == expected, "Écran concerné ouvert : " + expected + " (actuel : " + app.route + ")")
 
+## Non-régression (18/11) : « Lésion des ischio-jambiers » coupé dans le tableau de l'infirmerie et le panneau « Concerné ».
+## Aux deux résolutions, aucun libellé de blessure n'est coupé : retour à la ligne actif, ni clip ni ellipse, taille minimale ≤ taille allouée.
+func injury_name_fits() -> void:
+	var longest := "Lésion des ischio-jambiers"
+	for size: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720)]:
+		root.size = size
+		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(size)
+		app._render()
+		await settle(10)
+		app._render()
+		await settle(8)
+		var tag := " · %dx%d" % [size.x, size.y]
+		var cells: Array = []
+		for row: Node in app.root_content.find_children("InboxInfirmaryRow_*", "", true, false):
+			for cell: Node in row.get_children():
+				if cell is Label and (cell as Label).text.contains(longest): cells.append(cell)
+		check(not cells.is_empty(), "Libellé de blessure le plus long présent dans le tableau" + tag)
+		var availability := node("InboxConcernedAvailability") as Label
+		check(availability != null and availability.text.contains(longest), "Libellé de blessure le plus long présent dans « Concerné »" + tag)
+		if availability != null: cells.append(availability)
+		for cell: Label in cells:
+			var needed := cell.get_minimum_size()
+			check(not cell.clip_text and cell.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING, "Blessure sans clip ni ellipse : " + cell.text + tag)
+			check(cell.autowrap_mode != TextServer.AUTOWRAP_OFF or needed.x <= cell.size.x + 1.0, "Blessure : retour à la ligne actif ou largeur suffisante : " + cell.text + tag)
+			check(needed.y <= cell.size.y + 1.0 and needed.x <= cell.size.x + 1.0, "Blessure entièrement visible (min %s, alloué %s) : %s%s" % [needed, cell.size, cell.text, tag])
+			var lines := cell.get_line_count()
+			check(lines * cell.get_line_height() <= cell.size.y + 1.0, "Hauteur de ligne qui suit (%d lignes) : %s%s" % [lines, cell.text, tag])
+		# Tableau : une ligne par joueur de l'infirmerie, en-tête figé au-dessus des lignes, première ligne visible.
+		var rows: Array = app.root_content.find_children("InboxInfirmaryRow_*", "", true, false)
+		check(rows.size() == Reception.infirmary_rows(app.model).size() and rows.size() > 0, "Toutes les lignes de l'infirmerie présentes (%d)%s" % [rows.size(), tag])
+		var scroller := node("InboxInfirmaryScroll") as ScrollContainer
+		check(scroller != null and not rows.is_empty() and scroller.get_global_rect().grow(1.0).encloses((rows[0] as Control).get_global_rect()), "Première ligne de l'infirmerie visible" + tag)
+		if scroller != null and node("InboxInfirmary") != null:
+			var header := (node("InboxInfirmary") as Control).get_child(1) as Control
+			check(header.get_global_rect().end.y <= scroller.get_global_rect().position.y + 1.0, "En-tête du tableau figé au-dessus des lignes" + tag)
+			check(scroller.get_v_scroll_bar().max_value <= scroller.get_v_scroll_bar().page + 2.0 or scroller.size.y >= Reception.INFIRMARY_MAX_ROWS * C.density - 2.0, "Lignes toutes visibles ou défilement sous l'en-tête figé" + tag)
+		# Cartes de réponse : ni clip ni ellipse, texte entier dans la carte.
+		for reply: Node in app.root_content.find_children("InboxClubMailReply_*", "Button", true, false):
+			var box := (reply as Control).get_global_rect()
+			for part: Node in reply.find_children("*", "Label", true, false):
+				var part_label := part as Label
+				check(not part_label.clip_text and part_label.text_overrun_behavior != TextServer.OVERRUN_TRIM_ELLIPSIS and part_label.max_lines_visible < 0, "Carte de réponse sans clip ni ellipse : " + part_label.text + tag)
+				check(part_label.get_minimum_size().y <= part_label.size.y + 1.0 and part_label.get_global_rect().end.y <= box.end.y + 1.0, "Texte de carte entièrement dans la carte : " + part_label.text + tag)
+		var identity := node("InboxConcernedIdentity") as Label
+		check(identity != null and identity.get_minimum_size().y <= identity.size.y + 1.0 and identity.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING, "Poste et âge du panneau « Concerné » entiers" + tag)
+
 ## Arrêts informatifs : écran utile préparé pour la réponse de « Continuer ».
 func info_stops() -> void:
 	check(ClubMail.stop_route(app, {"kind":"info", "type":"veille", "ecran":"Composition"}) == "Composition", "Veille de match : composition")
@@ -352,13 +398,14 @@ func direction_a(mail: Dictionary) -> void:
 		for row: Dictionary in division.get("rows", []):
 			if str(row.get("id")) != str(app.model.club.get("id")): rivals.append(row)
 	if not rivals.is_empty(): press.club = int(rivals[0].id)
+	var rival_name := str(rivals[0].get("name", "Stade Toulousain")) if not rivals.is_empty() else "Stade Toulousain"
 	# Bulletin du médecin tel que le moteur le rédige (type « blessure » de club-mail.json).
 	var medical := {"id":"mail-990002", "type":"blessure", "categorie":"infirmerie", "date":yesterday, "expediteur":"Le médecin du club",
 		"sujet":str(hurt.name) + " : Lésion des ischio-jambiers", "status":"nouveau", "ecran":"infirmerie", "arret":false, "joueur":str(hurt.id),
-		"corps":"Coach, mauvaise nouvelle pour " + str(hurt.name) + " (" + str(hurt.pos) + "). Il est sorti touché du match contre nos adversaires (24-17, le " + yesterday.substr(8, 2) + "/" + yesterday.substr(5, 2) + "). Diagnostic : lésion des ischio-jambiers. Il est indisponible 3 semaines.\n\nMuscle à reconstruire : reprise progressive des courses. Revenir trop vite, c'est s'exposer à une rechute plus longue.\n\nIl manquera le prochain match : prévois son remplaçant dans la composition.",
-		"reponses":[{"id":"progressif", "libelle":"Le ménager à son retour", "effets":"Charge individuelle : charge allégée", "disponible":true, "raison":""},
-			{"id":"repos", "libelle":"Le laisser au repos complet", "effets":"Satisfaction −1 · Charge individuelle : repos", "disponible":true, "raison":""},
-			{"id":"presser", "libelle":"Le relancer vite dans le groupe", "effets":"Satisfaction +2 · Charge +5 · Charge individuelle : séance collective", "disponible":true, "raison":""}]}
+		"corps":"Coach, mauvaise nouvelle pour " + str(hurt.name) + " (" + str(hurt.pos) + "). Il est sorti touché sur le terrain de " + rival_name + " (24-17, le " + yesterday.substr(8, 2) + "/" + yesterday.substr(5, 2) + "). Diagnostic : lésion des ischio-jambiers. Il est indisponible 3 semaines.\n\nMuscle à reconstruire : reprise progressive des courses. Revenir trop vite, c'est s'exposer à une rechute plus longue.\n\nIl manquera le prochain match : prévois son remplaçant dans la composition.",
+		"reponses":[{"id":"progressif", "libelle":"Le ménager à son retour", "effets":"Risque de rechute −8 (4 %) · Charge individuelle : charge allégée", "disponible":true, "raison":""},
+			{"id":"repos", "libelle":"Le laisser au repos complet", "effets":"Risque de rechute −12 (0 %) · Retour retardé au " + Reception._shift(today, 28).substr(8, 2) + "/" + Reception._shift(today, 28).substr(5, 2) + " · Satisfaction −1 · Charge individuelle : repos", "disponible":true, "raison":""},
+			{"id":"presser", "libelle":"Le relancer vite dans le groupe", "effets":"Risque de rechute +15 (27 %) · Retour avancé au " + Reception._shift(today, 14).substr(8, 2) + "/" + Reception._shift(today, 14).substr(5, 2) + " · Satisfaction +2 · Charge individuelle : séance collective", "disponible":true, "raison":""}]}
 	if not app.model.clubLife.has("clubMail") or not app.model.clubLife.clubMail is Dictionary: app.model.clubLife.clubMail = {"mails":[], "reponses":{}}
 	var box: Dictionary = app.model.clubLife.clubMail
 	var same_a := {"id":"mail-990003", "type":"kine_bilan", "categorie":"infirmerie", "date":yesterday, "expediteur":"Le kiné du club",
@@ -430,6 +477,7 @@ func direction_a(mail: Dictionary) -> void:
 	check(effects.has("▲ Supporters +2") and effects.has("▼ Moral −1"), "Conséquences de la réponse : " + str(effects))
 	check(node("InboxReplyHeading") != null and node("InboxSpaceHint") != null, "« TA RÉPONSE » et rappel Espace")
 	check(Reception.consequences("Pression +2")[0][0] == "▼" and Reception.consequences("Coût 1 000 €")[0][0] == "▼" and Reception.consequences("Charge individuelle : allégée")[0][0] == "=" and Reception.consequences("")[0][1] == "Sans effet chiffré", "Sens des conséquences (pression, coût, neutre)")
+	check(Reception.consequences("Risque de rechute +15 (27 %)")[0][0] == "▲" and Reception.consequences("Risque de rechute +15 (27 %)")[0][2] == C.ALERT and Reception.consequences("Risque de rechute −8 (4 %)")[0][0] == "▼" and Reception.consequences("Retour avancé au 04/10")[0][0] == "▲" and Reception.consequences("Retour retardé au 18/10")[0][0] == "▼", "Sens des conséquences médicales (rechute, retour)")
 	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
 		check(root.get_texture().get_image().save_png(capture_dir.path_join("reception-presse-1920x1080.png")) == OK, "Capture presse")
 	# Courrier sans élément lié : panneau masqué et mail élargi.
@@ -455,6 +503,18 @@ func direction_a(mail: Dictionary) -> void:
 	var cited := node("InboxConcernedName") as Label
 	check(cited != null and cited.text == str(hurt.name), "Panneau « Concerné » du joueur blessé")
 	check(node("InboxClubMailReply_progressif") != null and node("InboxClubMailReply_repos") != null, "Réponses du médecin proposées")
+	# Conséquences médicales réelles : risque de rechute (▲ hausse / ▼ baisse) et date de retour, pas seulement la charge.
+	var medical_effects := func(id: String) -> Array:
+		var card := node("InboxClubMailReply_" + id)
+		return [] if card == null else card.find_children("InboxReplyEffect*", "Label", true, false).map(func(l: Label) -> String: return l.text)
+	var soft: Array = medical_effects.call("progressif")
+	var rest: Array = medical_effects.call("repos")
+	var rush: Array = medical_effects.call("presser")
+	check(soft.has("▼ Risque de rechute −8 (4 %)") and soft.size() == 2, "Le ménager : rechute en baisse affichée : " + str(soft))
+	check(rest.size() == 4 and str(rest[1]).begins_with("▼ Retour retardé au "), "Repos : retour retardé avec sa date : " + str(rest))
+	check(rush.has("▲ Risque de rechute +15 (27 %)") and str(rush[1]).begins_with("▲ Retour avancé au "), "Relancer vite : rechute en hausse, retour avancé : " + str(rush))
+	check(node("InboxReadingScroll") == null or not str((node("InboxReadingScroll") as Control).find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)).contains("nos adversaires"), "Bulletin : l'adversaire est nommé")
+	await injury_name_fits()
 	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
 		check(root.get_texture().get_image().save_png(capture_dir.path_join("reception-medical-1920x1080.png")) == OK, "Capture médical")
 		root.size = Vector2i(1280, 720)

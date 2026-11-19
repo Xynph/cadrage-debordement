@@ -125,6 +125,18 @@ function validateFrontRowState(l,s,side){
  if(f.uncontested)saveCheck(f.prepared&&[0,1,2].some(i=>!sh.on[i]||unavailable.has(sh.on[i])||!slotEligible(get(sh.on[i]),i)));
 }
 
+// Protocole commotion du match (native/engine/club-support.cjs) : évaluations HIA et sorties sur signes évidents.
+function validateHiaState(l,side){
+ saveCheck(l.hiaVersion===1&&saveArray(l.hia,60)&&(l.hiaDiagnosed===undefined||l.hiaDiagnosed===true),'Protocole HIA du match invalide.');
+ const sh=l.sheets[side];
+ for(const h of l.hia.filter(h=>h&&h.side===side)){
+  saveCheck(saveObject(h)&&Object.keys(h).length===8&&saveId(h.id)&&saveId(h.repl)&&h.id!==h.repl&&sh.nominated.includes(h.id)&&sh.nominated.includes(h.repl)&&saveInt(h.slot,0,14)&&saveInt(h.minute,1,l.minute)&&['evident','hia1'].includes(h.kind)&&['en_cours','retour','apte','definitif'].includes(h.etat)&&(h.kind==='evident'?h.until===null&&h.etat==='definitif':h.until===h.minute+12),'Évaluation HIA invalide.');
+  saveCheck(l.subs.some(x=>x.side===side&&x.minute===h.minute&&x.out===h.id&&x.in===h.repl&&x.reason===(h.kind==='evident'?'commotion':'hia')),'Remplacement HIA introuvable.');
+  if(h.etat==='en_cours')saveCheck(!sh.on.includes(h.id)&&(l.finished||h.until>l.minute),'Évaluation HIA en cours invalide.');
+  if(h.etat==='definitif')saveCheck(!sh.on.includes(h.id),'Joueur sorti sur commotion revenu en jeu.');
+ }
+ for(const x of l.subs.filter(x=>x.side===side&&['hia','commotion'].includes(x.reason)))saveCheck(l.hia.some(h=>h.side===side&&h.minute===x.minute&&h.id===x.out),'Remplacement HIA sans évaluation.');
+}
 function validateMatchRules(l,s){
  const reduced=l.nationaleReducedBench!==undefined;
  if(reduced)saveCheck(l.rulesProfile===MATCH_RULES&&l.frontRowVersion===1&&typeof CDNationaleReducedBench!=='undefined'&&CDNationaleReducedBench?.validate(s,l),'Feuille de Nationale à 22 incohérente.');
@@ -147,12 +159,13 @@ function validateMatchRules(l,s){
   });
   const seen=new Set(sh.initial);let count=0,returns=0;
   for(const sub of l.subs.filter(x=>x.side===side)){
-   saveCheck(roster.has(sub.in)&&roster.has(sub.out)&&sub.in!==sub.out&&typeof sub.returning==='boolean'&&sub.returning===seen.has(sub.in)&&(l.frontRowVersion===1?['tactical','red20','frontcover','frontreturn','frontrelease']:['tactical','red20']).includes(sub.reason));
+   saveCheck(roster.has(sub.in)&&roster.has(sub.out)&&sub.in!==sub.out&&typeof sub.returning==='boolean'&&sub.returning===seen.has(sub.in)&&(l.frontRowVersion===1?['tactical','red20','frontcover','frontreturn','frontrelease']:['tactical','red20']).concat(l.hiaVersion===1?['hia','hia-retour','commotion']:[]).includes(sub.reason));
    if(sub.reason==='red20')saveCheck(sh.redCards.some(c=>c.id===sub.out&&c.filled&&c.until!==null&&c.until<=sub.minute));
    else if(sub.returning&&sub.reason==='tactical')returns++;
    seen.add(sub.in);count++;
   }
   if(l.frontRowVersion===1)validateFrontRowState(l,s,side);
+  if(l.hiaVersion!==undefined)validateHiaState(l,side);
   saveCheck(count===sh.subs&&returns===sh.tacticalReturns&&seen.size===sh.used.length&&sh.used.every(id=>seen.has(id)),'Le décompte des changements est incohérent.');
  }
 }

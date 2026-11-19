@@ -180,6 +180,15 @@ function factory() {
   const metric = (r, k) => Number.isFinite(r[k]) ? r[k] : 0;
   const descending = (a,b,keys) => { for(const k of keys) { const d=metric(b,k)-metric(a,k);if(d) return d; } return 0; };
   const epcrCompare = (a,b) => descending(a,b,['points','won','diff','tf']);
+  // Bonus d'une rencontre (règle `bonus` du profil, voir rules) : `side` marque le bonus offensif (écart d'essais ou
+  // nombre d'essais marqués) et/ou défensif (défaite d'au plus `losingMargin` points). Seule source du calcul : le
+  // classement (table) et le direct (dilemme du bonus en fin de match, native/engine/match-bonus.cjs).
+  function bonusFor(bonus, score, tries, side) {
+    if(!bonus) return {bo:false,bd:false};
+    const margin=score[side]-score[1-side], gap=tries[side]-tries[1-side];
+    return {bo:bonus.tryMargin!==undefined?gap>=bonus.tryMargin:tries[side]>=bonus.tries, bd:margin<0 && -margin<=bonus.losingMargin};
+  }
+  const matchBonus = (competitionId, score, tries) => { const b=rules(competitionId).bonus; return [0,1].map(side=>bonusFor(b,score,tries,side)); };
   function table(clubIds, results, competitionId, options = {}) {
     const list = ids(clubIds), allowed = new Set(list), p=rules(competitionId);
     assert(Array.isArray(results),'results array required');
@@ -201,7 +210,7 @@ function factory() {
       included.push(r);
       for(let side=0;side<2;side++) {
         const row=byId.get(r.pair[side]), other=1-side, margin=r.score[side]-r.score[other], tries=r.tries[side]-r.tries[other];
-        const win=margin>0, draw=margin===0, bo=p.bonus && (p.bonus.tryMargin!==undefined?tries>=p.bonus.tryMargin:r.tries[side]>=p.bonus.tries), bd=p.bonus && margin<0 && -margin<=p.bonus.losingMargin;
+        const win=margin>0, draw=margin===0, {bo,bd}=bonusFor(p.bonus,r.score,r.tries,side);
         row.played++;row.won+=+win;row.drawn+=+draw;row.lost+=+(!win&&!draw);row.pf+=r.score[side];row.pa+=r.score[other];row.tf+=r.tries[side];row.ta+=r.tries[other];row.offensiveBonus+=+!!bo;row.defensiveBonus+=+!!bd;row.bonus+=+!!bo + +!!bd;row.points+=(win?p.win:draw?p.draw:p.loss)+ +!!bo + +!!bd;row.form.push(win?'W':draw?'D':'L');
       }
     }
@@ -528,6 +537,6 @@ function factory() {
     }
     return fixturesFor(phase);
   }
-  return {CHALLENGE_DRAW_POLICY,rules,regularFixtures,table,europeanWeeks,weekKey,poolStage,poolQualifiers,qualifyEurope,drawPools,knockoutWinner,knockoutFixtures};
+  return {CHALLENGE_DRAW_POLICY,rules,matchBonus,regularFixtures,table,europeanWeeks,weekKey,poolStage,poolQualifiers,qualifyEurope,drawPools,knockoutWinner,knockoutFixtures};
 }
 module.exports = { factory };

@@ -17,11 +17,12 @@ const mailKeys = ['id','kind','title','body','date','action','nation','players']
 const limit = 45;
 
 // Expression VM : joueurs de tous les clubs tels que les sélections les voient.
-const ROSTER = `S.clubs.flatMap(club=>club.players.map(p=>({
+const ROSTER = `(()=>{const liste=typeof nativeSystems!=='undefined'?nativeSystems.domain('doublons').idSet(S):new Set();return S.clubs.flatMap(club=>club.players.map(p=>({
     id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),condition:p.condition,
     ...nativePositionAptitudes.project(p),injury:p.injury,suspension:p.suspension,nationaleQualifications:p.nationaleQualifications,clubId:club.id,
-    formeMatch:typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.selection(p.id):0
-  })))`;
+    formeMatch:typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.selection(p.id):0,
+    listeElite:liste.has(p.id)
+  })));})()`;
 // `peek` (facultatif) : lecture immédiate de l'état sans minuterie de garde (worker.cjs).
 module.exports = function nativeInternational(run, ctx, facts, enabled, peek = run) {
   const career = createInternationalCareer(competitions, callups, facts);

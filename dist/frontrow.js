@@ -13,7 +13,7 @@ function frontLocked(l,side,id){
  return f.held.some(h=>h.id===id&&(h.mode==='carence'&&f.uncontested||frontCaseActive(l,f.exclusions[h.caseIndex],'yellow')));
 }
 function frontCaseActive(l,e,kind=null){return !!e&&(!kind||e.kind===kind)&&!e.closed&&(e.until===null||e.until>l.minute)}
-function frontAvailable(l,side,id){const sh=l.sheets[side],p=matchPlayer(l,side,id);return p&&!p.injury&&!sh.sentOff.includes(id)&&!sh.cards.some(c=>c.id===id&&c.until>l.minute)}
+function frontAvailable(l,side,id){const sh=l.sheets[side],p=matchPlayer(l,side,id);return p&&!p.injury&&!(typeof hiaBlocked==='function'&&hiaBlocked(l,side,id))&&!sh.sentOff.includes(id)&&!sh.cards.some(c=>c.id===id&&c.until>l.minute)}
 function frontTarget(l,side){
  const sh=l.sheets[side];
  const yellows=sh.cards.filter(c=>c.until>l.minute).length,reds=sh.redCards.filter(c=>c.until===null||c.until>l.minute).length;

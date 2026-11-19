@@ -76,7 +76,9 @@ func run() -> void:
 	root.add_child(app)
 	var until := Time.get_ticks_msec() + 60000
 	while app.model.is_empty() and Time.get_ticks_msec() < until: await process_frame
-	app._command("new_career", {"mode": "world-champ", "club": 0, "start": "club"})
+	# Presse façon FM (18/11/2026) : la conférence d'arrivée est celle de la rentrée, la semaine du 1er match ; le départ
+	# « veille de la 1re journée » l'ouvre dès la création.
+	app._command("new_career", {"mode": "world-champ", "club": 0, "start": "veille"})
 	await idle()
 	if is_instance_valid(app.coach): app.coach.close()
 	var meeting: Variant = app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")

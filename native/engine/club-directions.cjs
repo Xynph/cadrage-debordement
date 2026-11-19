@@ -415,10 +415,12 @@ module.exports=function clubDirections(T,N){
   const homecoming=p.age>=29&&formedBy(buyer,p);
   // Doublon : un directeur sportif peu fiable cède à une « occasion » sans besoin réel.
   const impulse=!need&&x.director.traits.evaluation<45&&upgrade>=4&&roll('impulse',buyer.id,p.id,S.season)<.35;
-  if(!need&&!impulse&&!homecoming&&!(plan==='vedettes'&&upgrade>=3)&&!(plan==='rajeunissement'&&upgrade>=0&&p.age<=24))return null;
+  // Quota de championnat (JIFF, EQP) : un club dont la moyenne est menacée valorise un joueur qui compte (jiff.cjs).
+  const quota=typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.recruitBonus==='function'?CDJiff.recruitBonus(S,buyer.id,p):0;
+  if(!need&&!impulse&&!homecoming&&!(quota>0&&upgrade>=0)&&!(plan==='vedettes'&&upgrade>=3)&&!(plan==='rajeunissement'&&upgrade>=0&&p.age<=24))return null;
   if(est<buyer.base-14)return null;
   const national=country(sellerLeague)===country(buyerLeague)?(x.director.traits.national-50)/5:(50-x.director.traits.national)/10;
-  const score=(need?need.score:0)+upgrade*4+(plan==='vedettes'?est*.5:0)+national+(homecoming?25:0)-(offer.listed?0:10)-Math.round(offer.ask/250000);
+  const score=(need?need.score:0)+upgrade*4+(plan==='vedettes'?est*.5:0)+national+(homecoming?25:0)-(offer.listed?0:10)-Math.round(offer.ask/250000)+quota;
   return {score,est,upgrade,need:need?.pos||POS[slot],impulse,homecoming};
  }
  // Ce que l'acheteur est prêt à payer : la valeur, plus ce que vaut à ses yeux le
