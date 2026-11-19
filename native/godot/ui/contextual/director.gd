@@ -263,7 +263,7 @@ const Components = preload("res://ui/immersive08/components.gd")
 const INVITATION_PANEL := Color("172321")
 const INVITATION_TITLE := Color("f2ecdc")
 const INVITATION_REASON := Color("abb7b1")
-const INVITATION_GOLD := Color("d8c183")
+const INVITATION_GOLD := S.GOLD
 const INVITATION_GAP := 12
 
 # Mêmes corps que les lignes du courrier (reception_canvas.gd : 20 pour le titre, 17 pour le détail), mis à l'échelle

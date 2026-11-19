@@ -52,7 +52,9 @@ static func compact(app: Control) -> Control:
 					context = summary
 		if context != null:
 			dossier.add_child(context)
-			dossier.move_child(context,0)
+			# Sous la bannière de la page, au-dessus de la barre d'onglets.
+			var banner := dossier.get_node_or_null("PreparationBanner")
+			dossier.move_child(context,banner.get_index() + 1 if banner != null else 0)
 		return dossier
 	var preparation := SeasonPreparation.data(app.model.meta)
 	if preparation.is_empty() and not next is Dictionary: return dossier
