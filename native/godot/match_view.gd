@@ -30,9 +30,14 @@ const REFORMATION_MIN := 6
 ## Caméras de retransmission (TV) et « au contact » (action), en perspective depuis le 18 novembre
 ## 2026 (orthographiques avant, TV à 41° et 42 à 64 m de champ). Seule la direction de ces décalages
 ## compte : la distance découle de la hauteur visible voulue au point visé et de l'angle de champ.
-## TV : plein travers, environ 28° au-dessus de l'horizon, comme la caméra principale d'une tribune ;
+## TV : plein travers, environ 24° au-dessus de l'horizon, comme la caméra principale d'une tribune ;
 ## action : plus près, plus ouverte, un peu de biais.
-const TV_OFFSET := Vector3(0.0, 0.47, 0.883)
+## 19 novembre 2026 : à 28°, le haut de l'image (28° - 12° de demi-champ = 16° sous l'horizon)
+## passait à 2 m à peine au-dessus du premier rang de la tribune d'en face : le public n'apparaissait
+## que sur les coups de pied (caméra relevée vers le ballon haut). À 24°, les premiers rangs d'en face
+## bordent le haut de l'image dès que le jeu est au milieu ou dans la moitié lointaine ; près de la
+## touche proche, la grue relève toujours la vue jusqu'au même plafond (INCLINAISON_TV_MAX).
+const TV_OFFSET := Vector3(0.0, 0.4067, 0.9135)
 const ACTION_OFFSET := Vector3(0.24, 0.5, 0.832)
 ## Caméra-grue : quand le jeu approche de la touche proche (z du point visé entre GRUE_DEBUT et
 ## GRUE_FIN), la caméra monte et plonge jusqu'à GRUE_ANGLE degrés de plus, comme la caméra
@@ -118,6 +123,12 @@ const PLAN_SORTIE_LISSAGE := 0.6
 const TERRAIN := Vector2(55.0, 35.0)
 const TERRAIN_MARGE := 3.0
 const BORD_HAUT := 0.12
+## Caméra TV : bande de tribune d'en face un peu plus haute en haut de l'image (public visible).
+const BORD_HAUT_TV := 0.2
+## Vue tactique (de dessus) : profondeur gardée de part et d'autre de l'axe (m). 41 m s'arrêtait
+## avant les tribunes latérales (premier rang à 46 m) ; 45 m (x 1,08 de marge) montre leurs deux
+## premiers rangs.
+const TACTIQUE_PROFONDEUR := 45.0
 const BORD_BAS := 0.9
 const BORD_COTE := 0.04
 const BALLON_SUR := 0.2
@@ -1489,9 +1500,10 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 		return
 	var aspect := viewport_size.x / viewport_size.y
 	var half_height := 0.0
-	# Tactical retains the entire pitch and its five-metre presentation apron.
+	# Tactical retains the entire pitch and its five-metre presentation apron, plus the first rows
+	# of both side stands (TACTIQUE_PROFONDEUR) : le public borde le terrain vu de dessus.
 	for x in [-56.0, 56.0]:
-		for z in [-41.0, 41.0]:
+		for z in [-TACTIQUE_PROFONDEUR, TACTIQUE_PROFONDEUR]:
 			var point := _camera.to_local(Vector3(x, 0, z))
 			half_height = maxf(half_height, maxf(absf(point.y), absf(point.x) / aspect))
 	_camera.size = maxf(half_height * 2.16, 88.0)
@@ -1696,7 +1708,7 @@ func _borner(look: Vector3, size: float, offset: Vector3, aspect: float) -> Vect
 	var ballon := _ball.global_position if _ball.visible else look
 	var haut_sur := BALLON_SUR
 	var bas_sur := 1.0 - BALLON_SUR
-	var bord_haut := BORD_HAUT
+	var bord_haut := BORD_HAUT if _camera_mode == "action" else BORD_HAUT_TV
 	var bord_bas := BORD_BAS
 	if _cadrage:
 		# L'interface du direct couvre le haut et le bas : le ballon reste dans la partie visible,
