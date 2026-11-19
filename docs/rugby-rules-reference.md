@@ -220,3 +220,28 @@ Cette édition de compétition ne remplace pas le profil de lois de match `fr-pr
 Abstractions déclarées : monde fermé à trente clubs sans Nationale, cadence commune de 34 semaines et calendrier sans dates réelles. Les calendriers générés suivent des tables de Berger avec alternance (au plus deux réceptions ou deux déplacements de suite, retour en miroir de l’aller) ; l’ordre des journées n’est pas celui du calendrier LNR publié ([détail](calendrier-alternance-20261111.md)). À égalité encore indiscernable après les critères disponibles, la convention de classement antérieur puis d'ID stable reste une convention du jeu. Aucun forfait administratif ni conformité intégrale du rugby 2026–2027 n'est annoncé. Le stade 3D conserve des dimensions de présentation ; il ne certifie ni une enceinte réelle ni sa conformité réglementaire.
 
 Le [rapport de réception natif](godot-carriere-20261107.md) distingue les tests moteur, les sauvegardes et la réception graphique Windows. Les modes historiques restent séparés : aucune conversion automatique fiction14/LNR14 vers France30.
+
+## Protocole commotion (HIA) — carrière Monde, 18 novembre 2026
+
+Règles World Rugby du rugby d'élite en vigueur depuis le 1er juillet 2022
+([communiqué](https://www.world.rugby/news/726094), [suite](https://www.world.rugby/news/730239),
+[détail SA Rugby 2022](https://www.sarugby.co.za/media/lg0owndp/changes-to-return-to-play-guidelines-following-concussion-explained-for-elite-hia-tournaments-only-2022.pdf)),
+appliquées aux 116 clubs (`native/engine/club-support.cjs`) :
+
+- signes évidents (critère 1) : sortie définitive immédiate, remplacement normal ;
+- choc suspect : HIA1 de 12 minutes hors du terrain, remplacement temporaire
+  hors quota tactique (comme la clarification FFR ci-dessus) ; retour s'il passe
+  le test, sinon le remplaçant reste ;
+- diagnostic après le match (HIA2 le soir, HIA3 à 36-48 h) : 12 jours de repos
+  au moins, comptés en jours de calendrier ; exception au 7e jour seulement sans
+  antécédent (moins de 3 mois, 3 commotions sur 12 mois nouvelle comprise,
+  5 en carrière), hors critère 1, HIA3 revenu à la normale et avis favorable
+  d'un spécialiste indépendant. Décision médicale : aucun protocole générique.
+- Proportions : Fuller et al., Sports Medicine 2020
+  ([texte](https://eprints.whiterose.ac.uk/155999/)). Fréquence : hypothèse
+  prudente de 0,9 choc évalué par match (≈ 0,52 commotion confirmée par match,
+  ≈ 13 pour 1 000 heures-joueur). Non publiés, réglés à une chance sur deux :
+  HIA3 normal, avis favorable du spécialiste.
+- Non suivis : récupération de plus de 21 jours, seuil d'impact abaissé,
+  troubles psychologiques (autres cas d'antécédent du SCRM). Un joueur sans
+  remplaçant éligible à son poste n'est pas tiré au sort pour un choc.

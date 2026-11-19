@@ -154,6 +154,9 @@ var _passer := false
 ## Tiroir Tactique ou Banc ouvert pendant l'écran intermédiaire, et pause posée pour lui.
 var _tiroir := false
 var _pause_tiroir := false
+## Consigne de fin de match choisie dans la tuile Bonus (`direct.bonus`) : le moteur n'accepte les consignes
+## qu'en pause, la régie enchaîne pause, set_tactics, set_penalty_policy puis reprise (étape en cours, reprise due).
+var _consigne_bonus: Dictionary = {}
 ## Horloge qui défile : dernière horloge du moteur montrée, secondes réelles depuis, et
 ## dernier modèle montrable (rien du temps fort retenu : score, fil).
 var _horloge_inter := ""
@@ -253,6 +256,7 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	# Mon XV : un joueur choisi ouvre la fenêtre Équipe sur lui (le match se met en pause).
 	between.joueur_choisi.connect(func(poste: int): view.ouvrir_equipe("composition", poste))
 	between.score_joue.connect(_score_joue)
+	between.consigne_bonus.connect(appliquer_consigne_bonus)
 	# « Pourquoi » d'après-match : l'action d'une raison ouvre l'écran de son levier.
 	between.levier_choisi.connect(func(route: String): app._navigate(route))
 	# Terrain 2D : il suit l'horloge de l'entracte et repart de la dernière image connue.
@@ -566,6 +570,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 func _process(delta: float) -> void:
 	if view == null or not is_instance_valid(stage): return
 	_animer_bandeau(delta)
+	_suivre_consigne_bonus()
 	if etat == SORTIE:
 		_lire_sortie(delta * vitesse)
 		return
@@ -1760,3 +1765,33 @@ func _cacher_bandeau() -> void:
 	_bandeau_reste = 0.0
 	_bandeau_titre = ""
 	if bandeau != null: bandeau.hide()
+
+## Consigne de la tuile Bonus : mêmes commandes que le tiroir Tactique (set_tactics, set_penalty_policy), posées
+## pendant une courte pause si le match roule ; la reprise suit d'elle-même.
+func appliquer_consigne_bonus(consigne: Dictionary) -> void:
+	if _live.is_empty() or _live.get("finished", false) or not _consigne_bonus.is_empty(): return
+	if str(consigne.get("attack", "")).is_empty() or str(consigne.get("defense", "")).is_empty() or str(consigne.get("penalty", "")).is_empty(): return
+	_consigne_bonus = {"attack": consigne.attack, "defense": consigne.defense, "penalty": consigne.penalty,
+		"etape": "pause", "reprendre": not _live.get("paused", false), "essais": 0}
+
+func _suivre_consigne_bonus() -> void:
+	if _consigne_bonus.is_empty() or app.waiting: return
+	var c := _consigne_bonus
+	c.essais = int(c.essais) + 1
+	# Garde-fou : une étape qui ne passe pas (refus du moteur, fin du match) abandonne la consigne.
+	if int(c.essais) > 600 or _live.get("finished", false):
+		_consigne_bonus = {}
+		return
+	match str(c.etape):
+		"pause":
+			if _live.get("paused", false): c.etape = "tactique"
+			elif app._command("pause", {"paused": true}): c.etape = "attente"
+		"attente":
+			if _live.get("paused", false): c.etape = "tactique"
+		"tactique":
+			if app._command("set_tactics", {"attack": c.attack, "defense": c.defense}): c.etape = "penalite"
+		"penalite":
+			if app._command("set_penalty_policy", {"policy": c.penalty}): c.etape = "reprise"
+		"reprise":
+			_consigne_bonus = {}
+			if c.reprendre and _live.get("paused", false) and arret.is_empty() and not _tiroir: app._command("pause", {"paused": false})
