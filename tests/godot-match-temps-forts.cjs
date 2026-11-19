@@ -81,11 +81,12 @@ etape('gestes',()=>{
  bilan.push('gestes '+gestes.checks);
 });
 etape('reprise',()=>{
- // Le match laissé en pause par le mode « gestes » est repris par une nouvelle session, sans variable.
+ // Le match laissé en pause par le mode « gestes » : une nouvelle session rouvre la carrière AVANT le coup d'envoi
+ // (aucune reprise en plein match depuis le 16/11/2026), le match est rejoué en temps forts au niveau enregistré.
  assert.ok(fs.existsSync(path.join(directory,'gestes','PrototypeGodot')),'« reprise » suit « gestes »');
  const reprise=run('reprise','gestes');
- assert.deepEqual(reprise.failures,[]);assert.ok(reprise.checks>=15,'contrôles à la reprise : '+reprise.checks);
- assert.ok(reprise.suivi.some(e=>e.evenement==='reprise')&&reprise.suivi.some(e=>e.evenement==='delegation'),'reprise puis délégation : '+JSON.stringify(reprise.suivi.map(e=>e.evenement)));
+ assert.deepEqual(reprise.failures,[]);assert.ok(reprise.checks>=8,'contrôles à la reprise : '+reprise.checks);
+ assert.ok(reprise.suivi.some(e=>e.evenement==='temps_fort')&&!reprise.suivi.some(e=>e.evenement==='reprise'),'match rejoué du coup d\'envoi, sans reprise en cours : '+JSON.stringify(reprise.suivi.map(e=>e.evenement)));
  bilan.push('reprise '+reprise.checks);
 });
 etape('defaut',()=>{
@@ -117,7 +118,9 @@ etape('entracte',()=>{
  assert.deepEqual(entracte.failures,[]);assert.ok(entracte.checks>=12,'contrôles de l’entracte : '+entracte.checks);
  const ordre=entracte.suivi.map(e=>e.evenement);
  // Décision de Léo (12 novembre 2026) : plus de pause minimale, de retenue ni de « Passer ».
- assert.ok(ordre.includes('tiroir')&&!ordre.includes('entracte_retenu')&&!ordre.includes('entracte_passe'),'entracte : '+ordre.join(', '));
+ // Les tiroirs Tactique et Banc ont laissé place à la fenêtre Équipe (18/11/2026) : sa pause pendant l'entracte, sans
+ // temps fort qui parte, est contrôlée côté Godot (interval) ; plus d'événement « tiroir » dans le suivi.
+ assert.ok(!ordre.includes('entracte_retenu')&&!ordre.includes('entracte_passe'),'entracte : '+ordre.join(', '));
  bilan.push('entracte '+entracte.checks);
 });
 console.log('Preuves temps forts : '+directory+' · contrôles : '+bilan.join(' · '));

@@ -276,7 +276,7 @@ func run() -> void:
 	if mode == "reprise":
 		# Aucune importation : la carrière et son match en cours viennent du dossier de données.
 		await settle()
-		followed = await resumed()
+		followed = await reprise_avant_match()
 	elif mode == "liaison":
 		# Carrière Monde arrêtée à la causerie d'avant-match (godot-match-liaison-monde.cjs).
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("monde.json"))})
@@ -1263,53 +1263,31 @@ func player_path() -> Array:
 	if audible and scoring: check(not cues.is_empty(), "Le stade réagit aux essais et aux tirs montrés")
 	return followed
 
-## Match repris en cours de route : rien n'est rejoué, puis la fin est confiée à l'adjoint.
-func resumed() -> Array:
-	var director: Node = app.contextual_director
+## Carrière rouverte après un match quitté en cours (mode « gestes ») : depuis la décision de Léo du 16/11/2026,
+## une carrière n'est jamais enregistrée en plein match ; elle reprend avant le coup d'envoi, le match est à
+## rejouer. Le niveau de temps forts enregistré (« étendus ») est conservé et le nouveau coup d'envoi part en
+## temps forts, sans rien de l'ancien direct.
+func reprise_avant_match() -> Array:
+	await settle(10)
+	var live: Variant = app.model.get("live")
+	check(surface() == null and not (live is Dictionary and not (live as Dictionary).is_empty()), "Rouverte après un match quitté en cours : aucun direct, la carrière reprend avant le coup d'envoi")
+	check(bool(app.model.get("meta", {}).get("calendarCadence", {}).get("matchReady", false)) and app.model.get("next") is Dictionary, "Le match est à rejouer : jour de match, coup d'envoi possible")
+	check(str(app.user_preferences.data.get("match_highlights", "")) == "etendus", "Le niveau de temps forts enregistré est repris : " + str(app.user_preferences.data.get("match_highlights", "")))
+	if not app.model.get("selection", {}).get("valid", false): await command("auto_lineup")
+	await command("begin_match")
+	var limite := Time.get_ticks_msec() + 120000
+	while Time.get_ticks_msec() < limite and (surface() == null or surface().regie == null):
+		var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+		if scene is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+		await settle(2)
 	var view := surface()
-	check(view != null and view.regie != null and view.temps_forts_actifs(), "Le match en cours rouvre en temps forts")
+	check(view != null and view.regie != null and view.temps_forts_actifs() and view.regie.niveau == "etendus", "Le match rejoué s'ouvre en temps forts, au niveau repris")
 	if view == null or view.regie == null: return []
-	var regie: Node = view.regie
-	var direct: Dictionary = app.model.live.direct
-	print("Reprise à ", direct.get("horloge"), " · temps fort déjà simulé : ", direct.get("tempsFort") is Dictionary)
-	check(int(app.model.live.minute) >= 20, "La sauvegarde reprend en cours de match (minute %d)" % int(app.model.live.minute))
-	check(regie.etat == regie.INTER and regie.between.is_visible_in_tree() and highlights(regie.suivi) == 0, "Aucun temps fort passé n'est rejoué à la reprise")
-	check(regie.suivi.any(func(entry: Dictionary): return entry.evenement == "reprise"), "La reprise est notée par la régie")
-	check(is_equal_approx(regie.vitesse, 1.0), "Un temps fort se joue à vitesse réelle")
-	check(regie.niveau == "etendus", "Le niveau enregistré au match précédent est repris : " + regie.niveau)
-	# Écran intermédiaire : sa barre de commandes porte le niveau (la barre du direct est masquée).
-	var level: OptionButton = view.find_child("MatchLevel", true, false)
-	var repris: String = level.get_item_text(level.selected) if level != null and level.is_visible_in_tree() else regie.between.niveau_libelle()
-	check(repris == "Temps forts étendus", "La barre ou les paramètres montrent le niveau repris : " + repris)
-	check(view.stage.get("_gestes") != null, "Les gestes sont actifs par défaut")
-	# Écran intermédiaire : la minute du moteur, secondes comprises (entracte, 12 novembre 2026).
-	var differee: String = regie.between.horloge_differee().trim_suffix("′")
-	check(view.clock.text.begins_with(str(direct.get("horloge", "")).trim_suffix("′") + ":") or view.clock.text.begins_with(str(direct.get("horlogeMontree", "")).trim_suffix("′") + ":") or not differee.is_empty() and view.clock.text.begins_with(differee + ":"), "L'horloge du match repris est affichée : " + view.clock.text)
-	await settle(40)
-	check(highlights(regie.suivi) == 0 and regie.etat == regie.INTER and not app.waiting, "En pause, le match repris attend")
-	var minute: int = app.model.live.minute
-	await command("pause", {"paused": false})
-	check(await until(func(): return int(app.model.live.minute) >= minute + 2, 120000), "Le match repris continue")
-	# « Confier la fin à l'adjoint » : pendant un temps fort si possible.
-	var playing: bool = await until(func(): return regie.etat == regie.JEU and not app.waiting, 180000)
-	await until(func(): return not app.waiting, 30000)
-	var before := highlights(regie.suivi)
-	await command("delegate")
-	check(app.model.live.finished, "L'adjoint termine le match : " + app.last_error)
-	await settle()
-	print("Fin confiée à l'adjoint pendant un temps fort : ", playing, " · score final ", app.model.live.score)
-	check(regie.etat == regie.INTER and regie.between.is_visible_in_tree(), "La fin confiée ramène à l'écran intermédiaire")
-	check(regie.suivi.any(func(entry: Dictionary): return entry.evenement == "delegation"), "La délégation est notée par la régie")
-	await settle(60)
-	check(highlights(regie.suivi) == before and regie.etat == regie.INTER, "Aucun temps fort n'est joué après la délégation")
-	var final: Array = app.model.live.score
-	check(view.clock.text == "TERMINÉ" and view.score.text == "%d — %d" % [int(final[0]), int(final[1])], "Le score final est affiché : " + view.score.text)
-	check(view.finish.is_visible_in_tree() and not view.finish.disabled, "La journée peut être validée")
-	var followed: Array = regie.suivi
-	await command("finish_round")
-	await settle()
-	check(app.model.get("live") == null and (not director.active() or director.kind != "live"), "La journée validée referme le match")
-	return followed
+	check(int(app.model.live.minute) <= 1, "Le match repart du coup d'envoi (minute %d)" % int(app.model.live.minute))
+	check(await until(func(): return view.regie.suivi.any(func(e: Dictionary): return e.evenement == "temps_fort"), 60000), "Le coup d'envoi est joué en temps forts")
+	app._command("pause", {"paused": true})
+	await wait_command()
+	return view.regie.suivi
 
 ## Terrain 2D de l'entracte (demande de Léo, 12 novembre 2026) et tableau de bord autour.
 func terrain2d(view: Control) -> void:
@@ -1580,8 +1558,12 @@ func terrain2d(view: Control) -> void:
 	await layout(view, Vector2i(1280, 720))
 	await layout(view, Vector2i(1920, 1080))
 	await layout(view, Vector2i(2560, 1440))
+	# Carrière Monde : la vraie journée en direct arrive avec chaque minute et remplacerait la journée injectée ;
+	# le match est mis en pause le temps des contrôles sur données fictives.
+	var relancer := await suspendre_direct()
 	await journee_injectee(view, direct)
 	await consignes_fictives(view, direct)
+	if relancer: await command("pause", {"paused": false})
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	print("TERRAIN2D ", JSON.stringify({"faits": ecarts.faits, "deplacement": deplacement, "ballons": ballons.size(), "minutes": minutes.size()}))
@@ -1766,7 +1748,17 @@ func journee_directe(view: Control) -> void:
 		print("MULTIPLEX_REEL ", JSON.stringify({"minute": journee.get("minute"), "matchs": matchs.size(), "clubs": classement.size(), "nous": nous[0].rang if nous.size() == 1 else null}))
 	await _mise_en_page_journee(view, "reel")
 	for taille: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]: await layout(view, taille)
+	var relancer := await suspendre_direct()
 	await journee_fictive(view, direct)
+	if relancer: await command("pause", {"paused": false})
+
+## Met le direct en pause (s'il tourne) pour des contrôles sur une journée injectée ; vrai s'il faudra le relancer.
+func suspendre_direct() -> bool:
+	await until(func(): return not app.waiting, 30000)
+	if not (app.model.get("live") is Dictionary) or app.model.live.get("paused", false) or app.model.live.get("finished", false): return false
+	await command("pause", {"paused": true})
+	await settle(4)
+	return true
 
 func _cartes_multiplex(between: Control) -> Array:
 	return between.multiplex_cartes.get_children().filter(func(n: Node): return not n.is_queued_for_deletion() and str(n.name).begins_with("MatchBetweenMultiplexMatch"))
