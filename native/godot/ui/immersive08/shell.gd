@@ -610,7 +610,14 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> void:
 	sub.name = "ImmersiveClubContext"
 	sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	sub.tooltip_text = context
-	D.place(sub, Rect2(96, top + line_height * lines + 2, room, 21))
+	# Toujours trop long au plancher : deux lignes (jamais de « … » tant qu'elles suffisent).
+	var sub_lines := 2 if _rw(C.BODY, context, sub_size) > room else 1
+	if sub_lines == 2:
+		sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		sub.max_lines_visible = 2
+		sub.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	D.place(sub, Rect2(96, top + line_height * lines + 2, room, 21 * sub_lines))
+	header.tooltip_text = (identity + " · " + context + " · fiche du club") if not national else identity
 	var stripe := _incline(header, Rect2(27, RAIL_HEADER - 17, RAIL_WIDTH - 48, 4), Charte.club_trait(app.accent))
 	stripe.name = "ImmersiveClubStripe"
 
