@@ -268,6 +268,134 @@ func check_view(view: Node3D) -> void:
 	check(not view.jouer_clip_natif("s0_4", "Clip_Inconnu"), "An unknown clip is refused")
 
 
+## Mêlée du moteur décalée en largeur de `dy` m (y de la scène ; y croissants vers la caméra TV).
+func scrum_at(bx: float, dy: float, possession: int, kind: String, key: String, featured: String = "") -> Dictionary:
+	var scene := scrum(bx, possession, kind, key, featured)
+	for player: Dictionary in scene.players:
+		player.y = clampf(float(player.y) + dy, 2.0, 68.0)
+	scene.ball.y = float(scene.ball.y) + dy
+	scene.origin.y = float(scene.origin.y) + dy
+	return scene
+
+
+## Angles de la caméra courante (degrés) : [inclinaison de l'axe sous l'horizon, plongée du bas de l'image].
+func camera_angles(view) -> Vector2:
+	var camera: Camera3D = view._camera
+	# La caméra regarde vers -basis.z : l'axe plonge de asin(basis.z.y) sous l'horizon.
+	var inclinaison := rad_to_deg(asin(clampf(camera.global_basis.z.y, -1.0, 1.0)))
+	return Vector2(inclinaison, inclinaison + camera.fov * 0.5)
+
+
+## Distance au sol (m) du ballon au joueur le plus proche, et son id.
+func nearest_to_ball(view) -> Array:
+	var ball: Vector3 = view._ball.global_position
+	var best := INF
+	var who := ""
+	for id: String in view._actors:
+		var at: Vector3 = (view._actors[id].node as Node3D).position
+		var d := Vector2(at.x - ball.x, at.z - ball.z).length()
+		if d < best:
+			best = d
+			who = id
+	return [best, who]
+
+
+## Mêlée en caméra TV (19/11/2026, match filmé : mêlée en petite tache, ballon seul sur l'herbe à
+## 10 m du paquet pendant « conserve sa mêlée et avance ») : au milieu du terrain et près de la touche
+## proche (caméra-grue), cadrage serré et jamais plus plongeant que les plafonds TV ; le demi tient le
+## ballon côté caméra à l'introduction ; à la sortie, le ballon reste dans les mains d'un joueur, même
+## quand le moteur le fait avancer de 8 m vers un arrière éloigné ou sans porteur désigné.
+func check_tv_scrum(view) -> void:
+	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
+	root.size = Vector2i(1280, 720)
+	root.content_scale_size = root.size
+	await process_frame
+	var Cadrage = load("res://match_cadrage.gd")
+	var cadrage = Cadrage.new(view)
+	view.set_cadrage(cadrage)
+	view.set_camera("tv")
+	var pire := Vector2.ZERO
+	var plus_large := 0.0
+	var paquet_min := INF
+	var intro_ecart := 0.0
+	var intro_cote := INF
+	var sortie_ecart := 0.0
+	var sortie_seul := ""
+	var sortie_sol := ""
+	var cas := 0
+	for dy in [0.0, 23.0]:
+		for featured in ["s0_12", "", "s0_7"]:
+			cas += 1
+			var centre_z: float = dy
+			cadrage.regler(true, "scrum")
+			cadrage.couper()
+			view.apply_frame({"scene": scrum_at(60.0, dy, 0, "scrum", "melee-tv-%d" % cas)})
+			for frame in 420:
+				view._process(1.0 / 60.0)
+				if frame < 240:
+					continue
+				# Les 3 dernières secondes de la mêlée : demi accroupi au tunnel, ballon en main, côté caméra.
+				var angles := camera_angles(view)
+				pire = Vector2(maxf(pire.x, angles.x), maxf(pire.y, angles.y))
+				plus_large = maxf(plus_large, float(view._camera.size))
+				var ball: Vector3 = view._ball.global_position
+				var demi: Vector3 = (view._actors.s0_8.node as Node3D).position
+				intro_ecart = maxf(intro_ecart, Vector2(ball.x - demi.x, ball.z - demi.z).length())
+				intro_cote = minf(intro_cote, ball.z - centre_z)
+			# Part de la largeur de l'image occupée par les deux paquets (pieds des seize avants).
+			var gauche := INF
+			var droite := -INF
+			for side in 2:
+				for slot in 8:
+					var x: float = view._camera.unproject_position((view._actors["s%d_%d" % [side, slot]].node as Node3D).position).x
+					gauche = minf(gauche, x)
+					droite = maxf(droite, x)
+			paquet_min = minf(paquet_min, (droite - gauche) / 1280.0)
+			# Sortie : le moteur fait « avancer » le ballon de 8 m (point du fait) ; son porteur désigné y
+			# est placé (arrière éloigné, aucun, ou n° 8 qui se détache).
+			var sortie := scrum_at(60.0, dy, 0, "setpiece-win", "sortie-tv-%d" % cas, featured)
+			sortie.ball.x = 68.0
+			for player: Dictionary in sortie.players:
+				if player.id == featured:
+					player.x = 68.0
+					player.y = sortie.ball.y
+			cadrage.regler(true, "setpiece-win")
+			view.apply_frame({"scene": sortie})
+			var attendu := "s0_7" if featured == "s0_7" else "s0_8"
+			check(view._carrier_id == attendu, "Scrum exit (%s, y+%d): the ball is held by %s, not sent alone to the engine's spot (%s)" % [featured, int(dy), attendu, view._carrier_id])
+			for frame in 150:
+				view._process(1.0 / 60.0)
+				var proche: Array = nearest_to_ball(view)
+				# Ballon au sol (hauteur de la marque, 0,23 m) loin de tout joueur : posé seul sur l'herbe.
+				if view._ball.global_position.y < 0.28 and float(proche[0]) > 1.0:
+					sortie_sol += " %s y+%d frame %d (%.2f m)" % [featured, int(dy), frame, proche[0]]
+				# Passé le temps d'une transmission (BLEND_SECONDS), le ballon est dans des mains.
+				if frame >= 40 and float(proche[0]) > sortie_ecart:
+					sortie_ecart = float(proche[0])
+					sortie_seul = "%s y+%d frame %d: %.2f m from %s" % [featured, int(dy), frame, proche[0], proche[1]]
+				var angles := camera_angles(view)
+				pire = Vector2(maxf(pire.x, angles.x), maxf(pire.y, angles.y))
+			var porteur: Vector3 = (view._actors[attendu].node as Node3D).position
+			var ball: Vector3 = view._ball.global_position
+			check(Vector2(ball.x - porteur.x, ball.z - porteur.z).length() < 0.8 and ball.y > 0.5, "Scrum exit (%s, y+%d): the ball is still in %s's hands after the exit (%.2f m, %.2f m high)" % [featured, int(dy), attendu, Vector2(ball.x - porteur.x, ball.z - porteur.z).length(), ball.y])
+	var View = load("res://match_view.gd")
+	check(pire.x <= View.INCLINAISON_TV_MAX + 0.5, "TV scrum: camera axis no steeper than the TV ceiling (%.1f deg, max %.1f)" % [pire.x, View.INCLINAISON_TV_MAX])
+	check(pire.y <= View.PLONGEE_TV_MAX + 0.5, "TV scrum: bottom of the picture no steeper than the TV ceiling (%.1f deg, max %.1f)" % [pire.y, View.PLONGEE_TV_MAX])
+	check(sortie_sol.is_empty(), "Scrum exit: the ball never lies alone on the grass;" + sortie_sol)
+	check(plus_large <= Cadrage.SERRE.tv[1] + 0.01, "TV scrum: tight framing on the pack (%.1f m visible)" % plus_large)
+	check(paquet_min >= 0.22, "TV scrum: both packs fill at least 22%% of the picture width (%.2f)" % paquet_min)
+	check(intro_ecart < 1.0, "Put-in: the ball stays in the scrum-half's hands (%.2f m at most)" % intro_ecart)
+	check(intro_cote > 0.5, "Put-in: scrum-half and ball on the TV camera side of the scrum (%.2f m)" % intro_cote)
+	check(sortie_ecart < 1.0, "Scrum exit: the ball is never alone on the grass (worst %s)" % sortie_seul)
+	metrics.tv_scrum_axis_deg = snappedf(pire.x, 0.1)
+	metrics.tv_scrum_bottom_deg = snappedf(pire.y, 0.1)
+	metrics.tv_scrum_size_m = snappedf(plus_large, 0.1)
+	metrics.tv_scrum_pack_width = snappedf(paquet_min, 0.01)
+	metrics.intro_ball_demi_m = snappedf(intro_ecart, 0.01)
+	metrics.exit_ball_nearest_m = snappedf(sortie_ecart, 0.01)
+	view.set_cadrage(null)
+
+
 func run() -> void:
 	check_scrum_formation()
 	check_scrum_exit()
@@ -277,6 +405,7 @@ func run() -> void:
 	await process_frame
 	view.set_process(false)
 	check_view(view)
+	await check_tv_scrum(view)
 	print("MATCH_FORMATIONS_METRICS ", JSON.stringify(metrics))
 	if failures.is_empty():
 		print("MATCH_FORMATIONS_OK")

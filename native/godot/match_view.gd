@@ -555,6 +555,10 @@ func apply_frame(live: Dictionary) -> void:
 	scene = _impacts.observer(scene, new_action, _action_motion and not _paused and has_ball and _live_cadence == 1)
 	# Mêlée, sortie de mêlée, touche : places et postures de la phase (match_formations.gd).
 	_formations.preparer(scene, new_action)
+	# Sortie de mêlée : le ballon reste dans les mains du demi qui ramasse (ou du n° 8 détaché), au
+	# lieu de partir seul vers le point du fait, loin du paquet (match_formations.gd, DEMI_SORTIE).
+	if has_ball:
+		_carrier_id = _formations.porteur(_carrier_id)
 	var play_action := (_action_motion and not _paused and has_ball and _ball.visible
 		and not _action_key.is_empty() and not key.is_empty())
 	_action_key = key
@@ -1789,7 +1793,7 @@ func regroupement() -> Array[Vector3]:
 	var retenus: Array = []
 	match str(formation.get("type", "")):
 		"melee", "sortie_melee":
-			retenus = ["pack", "demi_intro", "demi_adverse"]
+			retenus = ["pack", "demi_intro", "demi_adverse", "demi_sortie"]
 		"touche":
 			retenus = ["lanceur", "alignement", "sauteur", "demi"]
 	for id: String in roles:

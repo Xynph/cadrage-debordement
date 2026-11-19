@@ -17,8 +17,10 @@ const SORTIE := 1.5        # retour au cadrage large
 const HAUTEUR := {"tv": [22.0, 34.0], "action": [9.0, 18.0]}
 ## Jeu au pied, longue course : hauteur visible maximale (le ballon et son point de chute).
 const LARGE := {"tv": 50.0, "action": 34.0}
-## Regroupement (mêlée, touche, ruck) : cadrage serré sur le paquet et les demis.
-const SERRE := {"tv": [18.0, 28.0], "action": [9.0, 14.0]}
+## Regroupement (mêlée, touche, ruck) : cadrage serré sur le paquet et les demis. 19/11/2026 : en TV,
+## 18 m au moins de hauteur visible laissaient la mêlée en petite tache (un cinquième de la largeur) ;
+## 13 m : les deux paquets et le demi occupent environ un tiers de l'image.
+const SERRE := {"tv": [13.0, 24.0], "action": [9.0, 14.0]}
 const MARGE := 1.25
 const PROCHES := 9.0       # rayon des joueurs concernés autour du ballon
 const TEMOINS_RAYON := 18.0  # rayon des témoins (joueurs les plus proches) quand peu de joueurs sont proches
