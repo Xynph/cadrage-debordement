@@ -48,6 +48,13 @@ static func page(app: Control) -> Control:
 	_action(importing)
 	importing.disabled = app.waiting
 	top.add_child(importing)
+	# Packs abonnés sur le Steam Workshop : liste vide tant que Steamworks n'est pas configuré (steam/steam.json).
+	for workshop_pack in app.pack_manager.workshop_packs():
+		var subscribed := C.button("Workshop · " + str(workshop_pack.title), app.pack_manager.inspect.bind(str(workshop_pack.path)))
+		subscribed.name = "PackWorkshop" + str(workshop_pack.item_id)
+		_action(subscribed)
+		subscribed.disabled = app.waiting
+		top.add_child(subscribed)
 	var calendar := C.button("Atelier calendrier", func(): preload("res://ui/competition_editor_view.gd").open(app))
 	calendar.name = "OpenCompetitionEditor"
 	_action(calendar)
