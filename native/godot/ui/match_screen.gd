@@ -403,6 +403,8 @@ func _side() -> void:
 				row.add_child(G.label("/",20,G.MUTED,true))
 				row.add_child(G.label(G.n(stat.away),25,G.INK,true))
 				side.add_child(row)
+				if stat.get("detail") is Array:
+					for ligne in stat.detail: side.add_child(G.wrap(str(ligne),12,G.MUTED))
 				var percentage := str(stat.home).trim_suffix("%")
 				if str(stat.home).ends_with("%") and percentage.is_valid_float():
 					G.gauge(side, "Domicile (%)", float(percentage), 100, G.GOLD)
