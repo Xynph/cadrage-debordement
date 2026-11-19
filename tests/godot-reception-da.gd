@@ -182,7 +182,7 @@ func links_open_screens() -> void:
 	app._navigate("Réception", false)
 	await settle(10)
 	var link := node("InboxConcernedName") as Button
-	check(link != null and link.has_meta("mini_fiche_joueur"), "Joueur lié : nom en lien avec mini-fiche")
+	check(link != null and link.has_meta("mini_fiche_joueur"), "Joueur lié : nom en lien avec mini-fiche (%s, mail %s, route %s)" % [str(node("InboxConcernedName")), str(holder.get("id")), app.route])
 	if link == null: return
 	link.pressed.emit()
 	await settle(10)
