@@ -6,13 +6,22 @@ const POTENTIAL_COLOR = Knowledge.POTENTIAL_COLOR
 const W = preload("res://visual_widgets.gd")
 const SeasonLabel = preload("res://ui/season_label.gd")
 const Art = preload("res://ui/art_widgets.gd")
+# Jetons communs du bureau du manager : seule source des couleurs d'encre et d'or.
+# carnet_skin.gd (papier clair) et contextual/skin.gd (salles du club) les reprennent.
 const BG = Color("151b1f")
 const PANEL = Color("1d262b")
 const LINE = Color("445259")
 const INK = Color("f5f4ec")
 const MUTED = Color("bdc8c9")
 const GOLD = Color("ddbd80")
+## Or lisible sur papier clair uniquement (carnet) ; sur fond sombre, toujours GOLD.
+const PAPER_GOLD = Color("82592e")
 const GOOD = Color("a6d2ae")
+## Trois rayons d'angle seulement : puces et pastilles, boutons et cartes, panneaux.
+const RADIUS_CHIP := 4
+const RADIUS_CONTROL := 8
+const RADIUS_PANEL := 12
+const RADII := {"chip": RADIUS_CHIP, "control": RADIUS_CONTROL, "panel": RADIUS_PANEL}
 # Assez large pour un groupe pro entier (60 photos de 512 px) : plus petit, le cache
 # se renouvelle à chaque ouverture de l'effectif. Les plus anciens partent en premier (LRU).
 const PACK_TEXTURES := 128
@@ -28,6 +37,16 @@ static func reading_size(requested: int) -> int:
 	if requested >= 18: return 13
 	if requested >= 15: return 12
 	return mini(requested, 12)
+
+## Rayon d'angle d'un rôle : "chip" (4), "control" (8, boutons et cartes) ou "panel" (12).
+## Exemple : `G.radius("panel")` vaut 12 ; un rôle inconnu prend le rayon des boutons.
+static func radius(kind: String) -> int:
+	return int(RADII.get(kind, RADIUS_CONTROL))
+
+## Fond à angles communs, seul point d'entrée des habillages pour T.box.
+## Exemple : `G.box(G.PANEL, "panel", G.LINE)`.
+static func box(color: Color, kind: String = "control", border: Color = Color.TRANSPARENT) -> StyleBoxFlat:
+	return T.box(color, radius(kind), border)
 
 static func label(text: Variant, size: int = 14, color: Color = INK, title: bool = false) -> Label:
 	var l := Label.new()
@@ -49,9 +68,9 @@ static func button(text: String, callback: Callable, primary: bool = false) -> B
 	b.custom_minimum_size.y = 28
 	b.add_theme_font_size_override("font_size", 12)
 	if primary:
-		b.add_theme_stylebox_override("normal", T.box(INK, 4))
-		b.add_theme_stylebox_override("hover", T.box(Color("d7d6c9"), 4))
-		b.add_theme_stylebox_override("pressed", T.box(Color("bec8ba"), 4))
+		b.add_theme_stylebox_override("normal", box(INK))
+		b.add_theme_stylebox_override("hover", box(Color("d7d6c9")))
+		b.add_theme_stylebox_override("pressed", box(Color("bec8ba")))
 		for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: b.add_theme_color_override(key, BG)
 	b.pressed.connect(callback)
 	return b
@@ -66,7 +85,7 @@ static func nav_button(text:String,callback:Callable,accent:Color,selected:bool,
 	b.alignment=HORIZONTAL_ALIGNMENT_LEFT
 	b.custom_minimum_size.y=28
 	b.add_theme_font_size_override("font_size",12)
-	var normal:=T.box(Color("263238").lerp(Color(accent,1),.20) if selected else Color.TRANSPARENT,3)
+	var normal:=box(Color("263238").lerp(Color(accent,1),.20) if selected else Color.TRANSPARENT,"control")
 	normal.content_margin_top=4
 	normal.content_margin_bottom=4
 	normal.content_margin_left=34 if not chapter.is_empty() else 10
@@ -80,7 +99,7 @@ static func nav_button(text:String,callback:Callable,accent:Color,selected:bool,
 	var pressed:=normal.duplicate()
 	pressed.bg_color=Color("44575b").lerp(Color(accent,1),.16)
 	b.add_theme_stylebox_override("pressed",pressed)
-	var focus:=T.box(Color.TRANSPARENT,3,INK)
+	var focus:=box(Color.TRANSPARENT,"control",INK)
 	focus.set_border_width_all(2)
 	b.add_theme_stylebox_override("focus",focus)
 	for state in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]:b.add_theme_color_override(state,INK if selected else MUTED)
@@ -113,7 +132,7 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 	var p := PanelContainer.new()
 	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	p.size_flags_stretch_ratio = ratio
-	var style:=T.box(color,3,LINE)
+	var style:=box(color,"panel",LINE)
 	style.shadow_color=Color(0,0,0,.09)
 	style.shadow_size=2
 	style.shadow_offset=Vector2(0,1)

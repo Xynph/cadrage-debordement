@@ -417,7 +417,7 @@ func _receive_model(value: Dictionary) -> void:
 			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
 		if is_instance_valid(root_content) and decision_feedback != null:
 			var feedback_button: Button = root_content.find_child("DecisionFeedbackButton", true, false)
-			if feedback_button != null: feedback_button.disabled = decision_feedback.receipts().is_empty()
+			if feedback_button != null: decision_feedback.refresh_control(feedback_button)
 		if last_command in ["recruit","extend_contract"] and model.get("meta",{}).get("negotiation") is Dictionary:
 			var offer: Dictionary = model.meta.negotiation
 			notice("La réponse du joueur", str(offer.get("message","La négociation est enregistrée.")))

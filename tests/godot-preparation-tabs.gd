@@ -59,15 +59,53 @@ func mouse(control: Control) -> void:
 		root.push_input(event, true)
 		await process_frame
 	await worker()
+## Section d'un sous-onglet de la Préparation riche (shell.gd, RICH_FROM_720P) : l'Entraînement ouvre son propre gabarit.
+func section(id: String) -> Control:
+	return named("ImmersiveTraining") if id == "Entrainement" else named("Preparation" + id)
+func shown(control: Control) -> bool:
+	return control != null and control.is_visible_in_tree()
 func tab(id: String) -> void:
+	# Depuis l'Entraînement, le retour au dossier redonne la barre d'onglets de la Préparation.
+	if named("PreparationTab" + id) == null and named("TrainingBackToPreparation") != null:
+		await keyboard(named("TrainingBackToPreparation"))
 	await keyboard(named("PreparationTab" + id))
-	check(named("Preparation" + id).is_visible_in_tree(), "Sous-onglet visible " + id)
+	check(shown(section(id)), "Sous-onglet visible " + id)
 	var visible := 0
-	var selected := 0
 	for section_id in ["Dossier", "Consignes", "Entrainement"]:
-		if named("Preparation" + section_id).is_visible_in_tree(): visible += 1
-		if named("PreparationTab" + section_id).button_pressed: selected += 1
-	check(visible == 1 and selected == 1, "Un seul onglet et une seule section actifs")
+		if shown(section(section_id)): visible += 1
+	check(visible == 1 and app.management_ui.preparation.tab == ["Dossier", "Consignes", "Entrainement"].find(id), "Un seul onglet et une seule section actifs")
+	if id != "Entrainement":
+		var selected := 0
+		for tab_id in ["Dossier", "Consignes", "Entrainement"]:
+			if named("PreparationTab" + tab_id).button_pressed: selected += 1
+		check(selected == 1, "Un seul onglet enfoncé")
+## Ouvre une fenêtre de l'Entraînement par son repère de semaine puis l'action de la séance sélectionnée.
+func training_slot(slot: int) -> void:
+	await keyboard(named("TrainingStep" + str(slot)))
+	await keyboard(named("TrainingEditSelected"))
+## Part de la hauteur visible laissée vide sous le dernier élément peint de la section
+## (conteneurs de mise en page exclus : ils s'étirent sans rien dessiner ; les panneaux comptent).
+func void_ratio(section: Control) -> float:
+	var viewport: Rect2 = app.body_scroll.get_global_rect()
+	var bottom: float = viewport.position.y
+	for node: Node in section.find_children("*", "Control", true, false):
+		var control := node as Control
+		if (control is Container and not control is PanelContainer) or not control.is_visible_in_tree() or control.size.y <= 0: continue
+		bottom = maxf(bottom, control.get_global_rect().end.y)
+	return maxf(0.0, viewport.end.y - bottom) / maxf(1.0, viewport.size.y)
+## Nom de club long dans la colonne de gauche : deux lignes au plus, taille réduite, jamais tronqué.
+func club_title_fits() -> void:
+	var D = load("res://ui/immersive08/primitives.gd")
+	var holder := Control.new()
+	root.add_child(holder)
+	for title in ["RUGBY CLUB DES DEUX VALLÉES ATLANTIQUE", "UNION SPORTIVE DU PLATEAU", "XV"]:
+		var label: Label = D.fit_title(D.text(holder, 124, 331, title, 23, Color.WHITE, 700, 222, HORIZONTAL_ALIGNMENT_CENTER), 222, 46)
+		var size: int = label.get_meta("fit_title_size")
+		var font: Font = label.get_theme_font("font")
+		var lines: int = D.title_lines(font, title, size, label.size.x)
+		check(lines <= 2 and lines == int(label.get_meta("fit_title_lines")), "Nom du club sur deux lignes au plus : " + title)
+		check(font.get_height(size) * lines <= label.size.y + 1.0, "Nom du club entier, sans points de suspension : " + title)
+	holder.queue_free()
 func capture(id: String) -> void:
 	if DisplayServer.get_name() == "headless": return
 	await RenderingServer.frame_post_draw
@@ -94,6 +132,7 @@ func run() -> void:
 	quit(0 if failures.is_empty() else 1)
 func cases() -> void:
 	print("PREPARATION_INITIAL ", root.size, " / ", app.size)
+	club_title_fits()
 	await command("export")
 	var before: String = app.model.meta.exportText
 	var disk_path := OS.get_environment("CD_GODOT_DATA_DIR").path_join("donnees.json")
@@ -101,16 +140,23 @@ func cases() -> void:
 	check(not bytes.is_empty(), "Profil réel pour invariant sauvegarde/RNG")
 	await tab("Dossier")
 	await key(KEY_RIGHT)
-	check(named("PreparationConsignes").is_visible_in_tree() and named("PreparationTabConsignes").has_focus(), "Flèche droite : onglet et focus suivent")
+	check(shown(named("PreparationConsignes")) and named("PreparationTabConsignes").has_focus(), "Flèche droite : onglet et focus suivent")
 	await key(KEY_RIGHT)
-	check(named("PreparationEntrainement").is_visible_in_tree(), "Flèche droite : entraînement accessible")
-	await key(KEY_LEFT)
-	await key(KEY_TAB)
-	await key(KEY_TAB)
-	var focus := app.get_viewport().gui_get_focus_owner()
+	check(shown(named("ImmersiveTraining")) and app.management_ui.preparation.tab == 2, "Flèche droite : entraînement accessible")
+	# L'Entraînement a son propre gabarit : on revient aux consignes par la Préparation.
+	await tab("Consignes")
+	named("PreparationTabConsignes").grab_focus()
+	await settle()
+	# La barre d'onglets porte aussi les raccourcis du chapitre (préparer la suite, Composition, Plan de jeu, match) :
+	# Tab les traverse avant d'atteindre les consignes (dix pressions au plus).
+	var focus: Control = null
+	for pression in 10:
+		await key(KEY_TAB)
+		focus = app.get_viewport().gui_get_focus_owner()
+		if focus != null and str(focus.name).begins_with("PreparationAttack_"): break
 	check(focus != null and str(focus.name).begins_with("PreparationAttack_") and focus.is_visible_in_tree(), "Tab atteint les vraies consignes visibles")
 	await mouse(named("PreparationTabDossier"))
-	check(named("PreparationDossier").is_visible_in_tree(), "Sélection d’onglet à la souris")
+	check(shown(named("PreparationDossier")), "Sélection d’onglet à la souris")
 	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:
 		root.size = resolution
 		DisplayServer.window_set_size(resolution)
@@ -118,19 +164,44 @@ func cases() -> void:
 		for id in ["Dossier", "Consignes", "Entrainement"]:
 			await tab(id)
 			check(app.body_scroll.get_global_rect().end.y <= app.size.y + 1, "CareerWorkspace borné " + str(resolution))
+			check(named("ImmersivePreparation" if id != "Entrainement" else "ImmersiveTraining") != null, "Gabarit riche de la Préparation " + id + " " + str(resolution))
+			var empty := void_ratio(section(id))
+			check(empty <= 0.30, "Préparation sans vide > 30 %% de la hauteur (%s %s : %d %%)" % [id, resolution, roundi(empty * 100)])
+			check(app.heading != null and app.heading.is_visible_in_tree() and not app.heading.text.strip_edges().is_empty(), "Titre de la page visible " + str(resolution))
+			if named("CarnetPreparation") != null:
+				check(named("PreparationBanner") != null and named("PreparationBanner").is_visible_in_tree(), "Bannière de la page visible " + str(resolution))
+				if id == "Dossier":
+					# Le bas du Dossier porte des repères utiles ; la photo du club n'est plus qu'une bannière basse.
+					var board := named("PreparationWeekBoard")
+					check(board != null and board.is_visible_in_tree(), "Repères de la semaine visibles sous le dossier " + str(resolution))
+					check(named("PreparationFiller_city") == null, "Plus de grande photo de remplissage dans le Dossier " + str(resolution))
+					var strip := named("PreparationStrip_city")
+					var viewport_height: float = app.body_scroll.get_global_rect().size.y
+					check(strip != null and strip.get_global_rect().size.y <= viewport_height * .15, "Photo du club réduite à une bannière (%s : %d px)" % [resolution, roundi(strip.get_global_rect().size.y) if strip != null else -1])
+					if board != null and strip != null:
+						check(board.get_global_rect().size.y >= strip.get_global_rect().size.y * 2.0, "Les repères occupent plus de place que la photo " + str(resolution))
+					check(named("PreparationStaffNotes") != null and named("PreparationSquadPulse") != null, "Repères du staff et état du XV présents " + str(resolution))
+			var chapter_rows := 0
+			for row: Node in app.root_content.find_children("ChapterSubnavigation", "", true, false):
+				if (row as Control).is_visible_in_tree(): chapter_rows += 1
+			check(chapter_rows == 0, "Une seule barre d’onglets sur la Préparation " + str(resolution))
 			if id == "Consignes":
 				for list_id in ["PreparationAttackScroll", "PreparationDefenseScroll"]:
 					var list: ScrollContainer = named(list_id)
 					check(list.size.y >= 190, "190 unités de lecture conservées " + list_id)
 					check(list.get_global_rect().end.x <= app.size.x + 1, "Liste sans débordement horizontal")
-			print("PREPARATION_GEOMETRY ", JSON.stringify({"window":root.size,"canvas":app.size,"tab":id,"workspace":app.body_scroll.get_global_rect(),"section":named("Preparation" + id).get_global_rect()}))
+			print("PREPARATION_GEOMETRY ", JSON.stringify({"window":root.size,"canvas":app.size,"tab":id,"workspace":app.body_scroll.get_global_rect(),"section":section(id).get_global_rect()}))
 			if resolution.x == 1280: await capture("preparation-1280-" + id.to_lower())
 		await tab("Entrainement")
-		var match_button := named("PreparationMatch")
-		check(app.body_scroll.get_global_rect().encloses(match_button.get_global_rect()), "Match visible dès ouverture Entraînement " + str(resolution))
-		match_button.grab_focus()
-		await settle()
-		check(app.body_scroll.get_global_rect().encloses(match_button.get_global_rect()), "Accès au match par focus/scroll " + str(resolution))
+		# Le jour de match reste à un clic : « Continuer » du bandeau et le repère « Jour de match » de la semaine.
+		var match_button := app.find_child("ImmersiveContinue", true, false) as Control
+		check(match_button != null and Rect2(Vector2.ZERO, app.size).grow(1).encloses(match_button.get_global_rect()), "Match visible dès ouverture Entraînement " + str(resolution))
+		var match_step := named("TrainingStep11")
+		check(match_step != null, "Repère Jour de match présent " + str(resolution))
+		if match_step != null:
+			match_step.grab_focus()
+			await settle()
+			check(Rect2(Vector2.ZERO, app.size).grow(1).encloses(match_step.get_global_rect()), "Accès au match par focus/scroll " + str(resolution))
 	root.size = Vector2i(1280,720)
 	DisplayServer.window_set_size(root.size)
 	await settle()
@@ -163,7 +234,7 @@ func cases() -> void:
 	check(FileAccess.get_file_as_bytes(disk_path) == bytes, "Consultation : octets profil inchangés")
 	await command("export")
 	check(app.model.meta.exportText == before, "Consultation : S et RNG/export identiques")
-	await command("new_career", {"club":0,"mode":"common"})
+	await command("new_career", {"club":5,"mode":"world-champ"})
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Préparation")
 	await settle()
@@ -177,26 +248,38 @@ func cases() -> void:
 	check(app.model.tactics.attack == option.id and app.model.tactics.defense == defense, "Consigne exacte via le vrai clavier, défense conservée")
 	check(named("PreparationConsignes").is_visible_in_tree() and named(target_id).has_focus(), "Commande : onglet et focus conservés après rebuild")
 	await tab("Entrainement")
+	# Entraînement riche : préparation spécifique (repère 1) et niveau adverse (repère 9) se choisissent dans leur fenêtre.
 	var selected_values: Array[String] = []
-	for pair in [["CollectiveFocus", "set_collective_focus"], ["OpponentLevel", "set_opponent_level"]]:
-		var choice: OptionButton = named(pair[0])
-		check(not choice.disabled, "Choix disponible " + pair[0])
-		var index := (choice.selected + 1) % choice.item_count
-		var selected: String = choice.get_item_metadata(index)
-		selected_values.append(selected)
-		var initial := choice.selected
-		choice.grab_focus()
-		await key(KEY_SPACE)
-		for i in initial: await key(KEY_UP)
-		for i in index: await key(KEY_DOWN)
-		await key(KEY_ENTER)
+	for pair in [["CollectiveFocus", "set_collective_focus", 1, app.model.decisions.training.collective], ["OpponentLevel", "set_opponent_level", 9, app.model.decisions.difficulty]]:
+		await training_slot(pair[2])
+		var dialog := app.find_child("TrainingChoices", true, false) as AcceptDialog
+		check(dialog != null and dialog.visible, "Fenêtre de choix ouverte " + pair[0])
+		var source: Dictionary = pair[3]
+		var options: Array = source.get("options", [])
+		var wanted := ""
+		for option_entry: Dictionary in options:
+			if str(option_entry.id) != str(source.get("selected", "")):
+				wanted = str(option_entry.id)
+				break
+		selected_values.append(wanted)
+		var choice: Button = dialog.find_child(pair[0] + "_" + wanted, true, false) as Button if dialog != null else null
+		check(choice != null and not choice.disabled, "Choix disponible " + pair[0])
+		if choice == null: continue
+		choice.pressed.emit()
 		await worker()
-		check(named(pair[0]).get_item_metadata(named(pair[0]).selected) == selected, "Choix sportif persistant " + pair[1])
-		check(named(pair[0]).has_focus(), "Focus du choix conservé après commande " + pair[0])
-	check(app.model.decisions.training.collective.selected == selected_values[0] and app.model.decisions.difficulty.selected == selected_values[1], "Projection worker confirme les deux paramètres exacts")
-	await keyboard(named("PreparationTrain_normal"))
+		check(str((app.model.decisions.training.collective if pair[2] == 1 else app.model.decisions.difficulty).selected) == wanted, "Choix sportif persistant " + pair[1])
+		check(shown(named("ImmersiveTraining")), "Entraînement conservé après commande " + pair[0])
+	check(selected_values.size() == 2 and str(app.model.decisions.training.collective.selected) == selected_values[0] and str(app.model.decisions.difficulty.selected) == selected_values[1], "Projection worker confirme les deux paramètres exacts")
+	# « Effectuer la séance » demande la charge : la fenêtre propose les vraies charges.
+	await keyboard(named("TrainingValidateWeek"))
+	var session := app.find_child("TrainingSessionDialog", true, false) as AcceptDialog
+	var normal: Button = session.find_child("PreparationTrain_normal", true, false) as Button if session != null else null
+	check(normal != null, "Charge normale proposée")
+	if normal != null:
+		normal.pressed.emit()
+		await worker()
 	check(app.model.meta.trained, "Entraînement réel exécuté")
-	check(named("PreparationEntrainement").is_visible_in_tree(), "Entraînement : onglet conservé")
+	check(shown(named("ImmersiveTraining")) and app.management_ui.preparation.tab == 2, "Entraînement : onglet conservé")
 	await command("export")
 	var saved: String = app.model.meta.exportText
 	await command("import", {"text":saved})
@@ -206,9 +289,9 @@ func cases() -> void:
 	await tab("Consignes")
 	check(app.model.tactics.attack == option.id, "Import conserve la vraie consigne")
 	await tab("Entrainement")
-	check(app.model.meta.trained and named("PreparationTrain_normal").disabled, "Import conserve la séance, sans répétition")
-	check(app.model.decisions.training.collective.selected == selected_values[0] and app.model.decisions.difficulty.selected == selected_values[1], "Import conserve les deux paramètres sportifs")
-	await keyboard(named("PreparationMatch"))
+	check(app.model.meta.trained and named("TrainingValidateWeek").disabled, "Import conserve la séance, sans répétition")
+	check(str(app.model.decisions.training.collective.selected) == selected_values[0] and str(app.model.decisions.difficulty.selected) == selected_values[1], "Import conserve les deux paramètres sportifs")
+	await training_slot(11)
 	check(app.route == "Match", "Accès réel au match")
 	for i in 3:
 		app._navigate("Préparation")

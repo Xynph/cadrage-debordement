@@ -248,8 +248,15 @@ func run() -> void:
 		var target_search:LineEdit=named(app,"MarketSearch")
 		target_search.text=str(available_players[0].name)
 		target_search.text_changed.emit(target_search.text);await settle()
-		for candidate:Button in app.body.find_children("*","Button",true,false):
-			if str(candidate.get_meta("player_id",""))==str(available_players[0].id) and candidate.text=="PROPOSER UN CONTRAT":available_offer=candidate;break
+		# Recrutement ouvre son gabarit riche dès 1280 × 720 : l'offre (« OfferRecruitment ») suit la piste sélectionnée.
+		var available_row := named(app,"MarketPlayer_"+str(available_players[0].id).replace(":","_")) as Button
+		if available_row!=null:
+			await activate(available_row)
+			var selected_offer := named(app,"OfferRecruitment") as Button
+			if selected_offer!=null and str(selected_offer.get_meta("player_id",""))==str(available_players[0].id):available_offer=selected_offer
+		else:
+			for candidate:Button in app.body.find_children("*","Button",true,false):
+				if str(candidate.get_meta("player_id",""))==str(available_players[0].id) and candidate.text=="PROPOSER UN CONTRAT":available_offer=candidate;break
 	check(available_offer!=null and not available_offer.disabled,"Le bouton de recrutement respecte la capacité commune reçue du moteur")
 	var market_search:LineEdit=named(app,"MarketSearch")
 	market_search.clear();market_search.text_changed.emit("");await settle()

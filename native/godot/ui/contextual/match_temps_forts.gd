@@ -18,14 +18,22 @@ const Cadrage = preload("res://match_cadrage.gd")
 const Liaison = preload("res://match_liaison.gd")
 const Arbitre = preload("res://match_arbitre.gd")
 const Pilotage = preload("res://ui/contextual/match_consignes.gd")
+const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 
-enum { INTER, JEU, ATTENTE }
+## SORTIE : mi-temps ou fin de match, plan large puis joueurs qui rentrent au tunnel (grands moments).
+enum { INTER, JEU, ATTENTE, SORTIE }
 const NIVEAUX := ["aucun", "resume", "cles", "etendus", "dynamique", "integral"]
 ## Secondes réelles par minute de match sur l'écran intermédiaire.
 const HORLOGES := {"lente": 3.0, "normale": 1.5, "rapide": 0.6, "eclair": 0.25}
 ## Pose « prêt » après une coupe : tireur face aux poteaux, équipes en place au renvoi.
 const PRET := {"goal": 1.2, "miss": 1.2, "transformation": 1.2, "kickoff": 0.8, "drop22": 0.8, "goalLine": 0.8}
 const DEPART_BALLON := ["goal", "miss", "transformation", "kickoff", "drop22", "goalLine"]
+## Tirs au but (19 novembre 2026) : toujours une coupe sur la pose « prêt », gestes ou non ; buteur
+## posé quelques pas derrière le ballon (élan), places de la loi 8 pour la transformation, caméra dans
+## l'axe (match_cadrage.gd) ; il s'élance PRET_ELAN s avant la frappe (match_apres_essai.gd).
+const ApresEssai = preload("res://match_apres_essai.gd")
+const TIRS_AU_BUT := ["goal", "miss", "transformation"]
+const PRET_ELAN := 0.6
 ## Intervalle des positions intermédiaires d'une course balle en main.
 const PAS := 0.2
 ## Délai entre la frappe d'un tir au but et l'affichage de son résultat.
@@ -53,6 +61,44 @@ const ECHEANCE_LIAISON := 3.0
 ## Fin d'un plan : l'action suivante attend que les joueurs proches du ballon aient fini leur
 ## déplacement à l'écran (allure plafonnée de la vue), au plus ECHEANCE_PLACE secondes de plus.
 const ECHEANCE_PLACE := 1.5
+## Grands moments (18 novembre 2026). Essai : à l'instant où il est aplati à l'écran, bandeau
+## « ESSAI » (marqueur, équipe) sous le score, ralenti de la vue 3D puis image tenue : la
+## transformation attend ESSAI_MOMENT secondes. Le ralenti part à ESSAI_RALENTI de la vitesse
+## réelle et la retrouve avant la fin du moment (aucun ralenti si le joueur a réduit les animations).
+const ESSAI_MOMENT := 2.2
+const ESSAI_RALENTI := 0.35
+## Bandeau « ESSAI » : lisible ESSAI_BANDEAU s (18/11/2026 soir : vu ~2 s au film), il déborde sur la
+## pose de la transformation et n'est plus effacé par un retour à l'écran intermédiaire (_vers_inter).
+const ESSAI_BANDEAU := 3.6
+## Mi-temps et fin de match : plan large du terrain (SORTIE_LARGE s, joueurs encore à leur place),
+## puis coupe sur un plan serré qui suit les joueurs rentrant au tunnel, partis plus près de lui
+## (SORTIE_MARCHE s, match_view.gd sortir_du_terrain), avant la causerie ou l'écran de fin.
+## Échap, Entrée, Espace ou un clic abrègent la séquence. Repli : CD_MATCH_SORTIE=0.
+const SORTIE_LARGE := 1.5
+const SORTIE_MARCHE := 6.0
+## Bandeau des grands moments, façon retransmission (19/11/2026, film : le cadre « ESSAI » au centre
+## masquait la célébration). Entrée en BANDEAU_ENTREE s (glissé depuis la gauche pour « ESSAI », depuis
+## le bas pour « MI-TEMPS » et « FIN DU MATCH », de BANDEAU_GLISSE de la hauteur), sortie en
+## BANDEAU_FONDU s (fondu, léger glissé vers le bas). Animations réduites : ni glissé ni fondu.
+const BANDEAU_ENTREE := 0.3
+const BANDEAU_FONDU := 0.25
+const BANDEAU_GLISSE := 0.04
+## « ESSAI » en tiers inférieur : calé à gauche sur la légende, BANDEAU_MARGE de la hauteur au-dessus
+## d'elle (sans légende connue : bas à BANDEAU_BAS_REPLI de la hauteur du bas de l'image).
+const BANDEAU_MARGE := 0.015
+const BANDEAU_BAS_REPLI := 0.11
+## Ralenti de l'essai (19 novembre 2026, idée validée par Léo) : à la fin du moment d'essai (célébration
+## de ESSAI_MOMENT s), la vue rejoue au ralenti (Rejeu.VITESSE) la fin de l'action jusqu'à l'aplati,
+## sous un autre angle (caméra latérale basse), avec la mention « RALENTI » en haut à droite, puis
+## revient à la vue normale : la célébration et la transformation reprennent où elles en étaient
+## (match_rejeu.gd). Seulement pour un essai, au plus REJEU_MAX s ajoutées ; abrégé comme la sortie
+## (Échap, Entrée, Espace, clic, « Passer ») ; jamais si le joueur a réduit les animations.
+const Rejeu = preload("res://match_rejeu.gd")
+const REJEU_MAX := 4.0
+## Mention « RALENTI » : coin haut droit de la zone libre (sous le score et les commandes), à
+## MENTION_MARGE de la hauteur des bords ; taille du texte en part de la hauteur de l'image.
+const MENTION_MARGE := 0.015
+const MENTION_TAILLE := 0.026
 
 var view: Control
 var app: Control
@@ -97,6 +143,9 @@ var _resultat_sonne := false
 var _essai_montre := false
 ## Plaquage de fin de course déjà joué pour le plan en cours (animations adaptées seulement).
 var _plaque := false
+## Tir au but en pose « prêt » : le buteur s'est-il déjà élancé ? L'arbitre est-il placé pour le tir ?
+var _elan := true
+var _arbitre_au_tir := false
 ## Nombre d'actions du journal déjà connues du joueur quand le temps fort a commencé.
 var _vus := 0
 ## Pistes du chorégraphe en cours : le fait du plan courant est-il déjà à l'écran (jalon passé) ?
@@ -143,6 +192,30 @@ var _places: Dictionary = {}
 var _saut_max := 0.0
 ## Secondes déjà attendues, à la fin du plan courant, pour que les joueurs finissent leur déplacement.
 var _attente_place := 0.0
+## Grands moments : secondes restantes du moment d'essai (ralenti puis image tenue), secondes
+## écoulées dans la sortie, bandeau (« ESSAI », « MI-TEMPS », « FIN DU MATCH ») et sa durée restante.
+var _moment_essai := 0.0
+var _sortie_t := 0.0
+var _sortie_depuis_inter := false
+var _espace: Control
+var bandeau: PanelContainer
+var _bandeau_duree := 0.0
+var _bandeau_reste := 0.0
+var _bandeau_titre := ""
+## Dernière place connue de la légende (repère de la vue) : le bandeau « ESSAI » se pose au-dessus.
+var _legende_rect := Rect2()
+## Plus petit ralenti posé pendant le dernier moment d'essai (contrôle des tests).
+var ralenti_min := 1.0
+## Ralenti de l'essai : mention « RALENTI », ralenti dû à la fin du moment d'essai (essai repéré par
+## la vue), ralenti abrégé par le joueur.
+var mention: PanelContainer
+var _rejeu_du := false
+var _rejeu_passe := false
+## Diagnostic texte / image : début à l'écran de la phase courante (ms, index du journal) et
+## dernière légende tracée au suivi.
+var _image_ms := 0
+var _image_journal := -1
+var _legende_tracee := ""
 
 static func enabled() -> bool:
 	return OS.get_environment("CD_MATCH_TEMPS_FORTS") != "0"
@@ -179,6 +252,14 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	S.full(voile)
 	view.add_child(voile)
 	view.move_child(voile, container.get_index() + 1)
+	# Bandeau des grands moments : au-dessus de l'image 3D et du voile, sous le bandeau du score.
+	_espace = space
+	bandeau = construire_bandeau()
+	view.add_child(bandeau)
+	view.move_child(bandeau, voile.get_index() + 1)
+	mention = construire_mention()
+	view.add_child(mention)
+	view.move_child(mention, bandeau.get_index() + 1)
 	between = Between.new()
 	between.horloge = horloge
 	between.hote_barre = view.get("bande_temps_forts")
@@ -256,6 +337,7 @@ func _activer(direct: Dictionary) -> void:
 		stage.set_cadrage(cadrage)
 	# Gestes et coupes vers les remises en jeu font partie du mode de base.
 	if OS.get_environment("CD_MATCH_GESTES") != "0" and stage.has_method("set_gestes"): stage.set_gestes(true)
+	if is_instance_valid(app.get("soundscape")) and app.soundscape.has_method("suivre_foule") and stage.get("foule") != null: app.soundscape.suivre_foule(stage.foule) # Clameur : la foule des images montrées.
 	if view.has_method("montrer_reglages_temps_forts"): view.montrer_reglages_temps_forts(direct, self)
 	# Arbitre : seulement dans le mode temps forts (le direct d'origine reste tel quel).
 	if liaisons_actives() and stage.get("_athlete_scene") != null:
@@ -264,12 +346,18 @@ func _activer(direct: Dictionary) -> void:
 		if not arbitre.preparer():
 			arbitre.queue_free()
 			arbitre = null
+		elif stage.has_method("inscrire_rejeu"):
+			# Ralenti de l'essai : l'arbitre est rejoué et figé avec les joueurs.
+			stage.inscrire_rejeu(arbitre, arbitre.model, arbitre.rig)
+	if stage.has_signal("rejeu_fini") and not stage.is_connected("rejeu_fini", _rejeu_fini):
+		stage.connect("rejeu_fini", _rejeu_fini)
 
 ## Liaisons et arbitre actifs (repli : CD_MATCH_LIAISON=0, comportement d'avant).
 static func liaisons_actives() -> bool:
 	return OS.get_environment("CD_MATCH_LIAISON") != "0"
 
 func _exit_tree() -> void:
+	_finir_rejeu()
 	_presenter(false)
 
 ## Le son du stade suit ce qui est montré, pas l'avance du moteur.
@@ -313,21 +401,78 @@ func montre(live: Dictionary) -> Dictionary:
 		var avant := live.duplicate()
 		avant["events"] = _events.slice(0, borne_liaison)
 		return avant
-	# Pendant les pistes du chorégraphe, chaque fait n'entre au journal qu'une fois montré.
-	var avance := 0 if phase == "choregraphie" and not _jalon_montre else 1
-	var jusque: int = maxi(int(tf.plans[index].index) + avance, _vus)
-	if jusque >= _events.size(): return live
+	# Un fait n'entre au journal qu'une fois à l'écran (même règle que la légende) : jalon des pistes,
+	# résultat d'un tir après la frappe, essai une fois aplati.
+	var plan: Dictionary = tf.plans[index]
+	var kind := str(plan.get("kind", ""))
+	var vu := fait_a_l_ecran(plan, phase, temps, _essai_montre, _jalon_montre)
+	# Transformation : son fait du journal est celui de l'essai (même index), déjà montré.
+	var avance := 1 if vu or (kind == "transformation" and phase != "choregraphie") else 0
+	var jusque: int = maxi(int(plan.index) + avance, _vus)
+	# Le texte brut de l'essai dit déjà la transformation et le score : jusqu'au résultat du tir,
+	# le journal garde la légende de l'essai (native/engine/match-direct.cjs, `legende`).
+	var tronquer: bool = (kind == "try" or (kind == "transformation" and not vu)) and int(plan.index) >= _vus and int(plan.index) < mini(jusque, _events.size())
+	if jusque >= _events.size() and not tronquer: return live
+	var journal: Array = _events.slice(0, jusque)
+	if tronquer and journal[int(plan.index)] is Dictionary:
+		var fait: Dictionary = (journal[int(plan.index)] as Dictionary).duplicate()
+		fait["text"] = sans_transformation(str(fait.get("text", "")))
+		journal[int(plan.index)] = fait
 	var copie := live.duplicate()
-	copie["events"] = _events.slice(0, jusque)
+	copie["events"] = journal
 	return copie
 
+## Le fait du plan est à l'écran : la légende et le journal peuvent le dire. Pistes : à leur jalon ;
+## tir au but : après la frappe (RESULTAT), jamais pendant la pose « prêt » ; essai : une fois aplati.
+## Jamais quand le moteur le calcule ou quand la régie le met en file.
+static func fait_a_l_ecran(plan: Dictionary, phase_plan: String, instant: float, essai_montre: bool, jalon_montre: bool) -> bool:
+	if phase_plan == "choregraphie": return jalon_montre
+	if plan.has("annonce") and (phase_plan == "pret" or instant < RESULTAT): return false
+	if phase_plan == "jeu" and str(plan.get("kind", "")) == "try" and not essai_montre: return false
+	return true
+
+## Texte d'un essai sans sa transformation ni le score (même coupe que `legende` de match-direct.cjs).
+static func sans_transformation(texte: String) -> String:
+	var coupe := texte.find(", transform")
+	return texte.substr(0, coupe) + "." if coupe > 0 else "Essai."
+
+## Ligne d'état du haut pendant un plan : le fait du plan montré, jamais l'état du moteur (une minute
+## d'avance, la mi-temps comprise). Arrêt de jeu (« Essai — X », « Touche pour X », « Mêlée pour X »,
+## tir au but) ou possession et territoire de la scène affichée (Between.etat_du_fait).
+static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") -> String:
+	var scene: Variant = plan.get("scene")
+	if not scene is Dictionary: return "Le match"
+	var camp: Variant = scene.get("possession", scene.get("team", -1))
+	if not (camp is int or camp is float): camp = -1
+	var ballon: Variant = scene.get("ball")
+	var x: float = float(ballon.x) if ballon is Dictionary and (ballon.get("x") is float or ballon.get("x") is int) else NAN
+	return Between.etat_du_fait(kind if not kind.is_empty() else str(plan.get("kind", "")), int(camp), x, equipes)
+
+## Ligne d'état pendant la lecture d'un plan, même règle que la légende (`fait_a_l_ecran`) : un arrêt
+## de jeu (essai, touche, mêlée…) n'est dit qu'une fois à l'écran ; avant, la possession de la scène
+## montrée (le porteur qui court vers la ligne). Tir au but : l'arrêt est connu dès la pose « prêt ».
+static func etat_montre(plan: Dictionary, phase_plan: String, instant: float, essai_montre: bool, jalon_montre: bool, equipes: Array) -> String:
+	if plan.has("annonce") or fait_a_l_ecran(plan, phase_plan, instant, essai_montre, jalon_montre): return etat_du_plan(plan, equipes)
+	return etat_du_plan(plan, equipes, "carry")
+
+## Modèle tel que la ligne météo du bandeau peut le dire : pendant un temps fort, la mi-temps déjà
+## atteinte par le moteur attend la fin de l'action.
+static func meteo_montree(live: Dictionary, en_temps_fort: bool) -> Dictionary:
+	if not en_temps_fort or not bool(live.get("atBreak", false)): return live
+	var avant := live.duplicate()
+	avant["atBreak"] = false
+	return avant
+
 ## Vrai tant qu'un temps fort reste à montrer : la causerie et le débrief attendent sa fin.
+## La sortie des joueurs (mi-temps, fin de match) retient aussi la causerie et le débrief.
 func retient(live: Dictionary) -> bool:
-	if etat == JEU: return true
+	if etat == JEU or etat == SORTIE: return true
 	var direct: Variant = live.get("direct")
-	if not direct is Dictionary or not direct.get("tempsFort") is Dictionary: return false
+	if not direct is Dictionary: return false
 	var rencontre := str(direct.get("rencontre", "")) + "|"
 	if str(app.management_ui.get("match_temps_forts_rencontre", "")) != rencontre and int(live.get("minute", 0)) > 0: return false
+	if sortie_due(live): return true
+	if not direct.get("tempsFort") is Dictionary: return false
 	return rencontre + str(direct.tempsFort.get("cle", "")) != str(app.management_ui.get("match_temps_forts_cle", ""))
 
 ## Appelée par la vue à chaque modèle reçu, après la mise à jour du bandeau.
@@ -374,6 +519,9 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 	var delegue: bool = live.get("finished", false) and str(app.get("last_command")) == "delegate"
 	if (premiere and int(live.get("minute", 0)) > 0) or delegue:
 		if candidat is Dictionary: app.management_ui["match_temps_forts_cle"] = rencontre + str(candidat.get("cle", ""))
+		# Mi-temps ou fin déjà passées (reprise), ou fin confiée à l'adjoint : pas de sortie mise en scène.
+		if not cle_sortie(live).is_empty(): app.management_ui["match_temps_forts_sortie"] = cle_sortie(live)
+		if etat == SORTIE: _finir_sortie(false)
 		if signale is Dictionary: app.management_ui["match_temps_forts_arret"] = rencontre + str(signale.get("cle", ""))
 		nouveau = false
 		_arret_attendu = {}
@@ -417,6 +565,8 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		_horloge_montree = str(direct.get("horlogeMontree", ""))
 		between.update_frame(model, live, direct, func(conseil: Dictionary): app._command("set_tactics", {"attack": conseil.get("attack"), "defense": conseil.get("defence")}))
 	if nouveau:
+		# Un temps fort arrive pendant la sortie des joueurs : elle s'arrête là, le temps fort part.
+		if etat == SORTIE: _finir_sortie(false)
 		app.management_ui["match_temps_forts_cle"] = rencontre + str(candidat.get("cle", ""))
 		gel = false
 		# Un match déjà en pause (reprise d'une sauvegarde) joue tout de même son temps fort.
@@ -437,8 +587,13 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 			if phase == "choregraphie" or phase == "liaison": stage.figer_choregraphie(gel)
 			elif index >= 0 and index < tf.plans.size(): stage.apply_frame(_image(tf.plans[index].scene, gel, int(tf.plans[index].index)))
 	elif etat == ATTENTE:
-		_vers_inter()
-	if etat != JEU:
+		# Mi-temps ou fin de match annoncée pendant que la 3D attend la minute suivante : sortie des joueurs.
+		if sortie_due(live): _debut_sortie()
+		else: _vers_inter()
+	elif etat == INTER and _retenu.is_empty() and sortie_due(live):
+		# Mi-temps ou fin de match arrivée pendant l'écran intermédiaire : la 3D revient pour la sortie.
+		_debut_sortie()
+	if etat != JEU and etat != SORTIE:
 		attente = 0.0
 		# Un arrêt suit le temps fort retenu, jamais avant lui.
 		if _retenu.is_empty(): _apres_lecture()
@@ -447,8 +602,14 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 
 func _process(delta: float) -> void:
 	if view == null or not is_instance_valid(stage): return
+	_animer_bandeau(delta)
+	if is_instance_valid(mention) and mention.visible: _placer_mention()
 	_suivre_consigne_bonus()
-	if etat == JEU or etat == ATTENTE: _mesurer(delta)
+	if etat == SORTIE:
+		_lire_sortie(delta * vitesse)
+		return
+	# Pendant le ralenti, les joueurs montrent des poses passées : pas de vitesse mesurée sur elles.
+	if (etat == JEU or etat == ATTENTE) and not rejeu_en_cours(): _mesurer(delta)
 	if etat == JEU:
 		between.terrain.gel = true
 		_lire(delta * vitesse, delta)
@@ -496,6 +657,15 @@ func entracte_en_cours() -> bool:
 ## « Passer » : l'entracte s'abrège ; sans temps fort reçu, les minutes s'enchaînent sans
 ## attendre l'horloge jusqu'au prochain.
 func passer() -> void:
+	# Ralenti de l'essai : abrégé, la vue normale reprend (célébration, puis transformation).
+	if rejeu_en_cours():
+		_rejeu_passe = true
+		_finir_rejeu()
+		return
+	# Sortie des joueurs (mi-temps, fin de match) : abrégée, la causerie ou l'écran de fin suit.
+	if etat == SORTIE:
+		_finir_sortie(true)
+		return
 	if etat == JEU or _live.get("finished", false): return
 	_passer = true
 	suivi.append({"evenement": "entracte_passe", "debut_ms": Time.get_ticks_msec()})
@@ -621,6 +791,11 @@ func _gestes_actifs() -> bool:
 ## allure d'une image à l'autre pendant un plan de liaison, en m/s (contrôle : aucun saut).
 func _mesurer(delta: float) -> void:
 	if delta <= 0.0: return
+	# La régie passe avant la vue (process_priority) : le pas mesuré ici a été fait pendant l'image
+	# précédente de la vue, sur sa durée à elle. Diviser par la durée de l'image courante gonflait
+	# l'allure dès qu'une image longue suivait une courte (exécuteur de CI chargé : 32 m/s mesurés).
+	var duree_vue: Variant = stage.get("dernier_delta")
+	if (duree_vue is float) and float(duree_vue) > 0.0: delta = float(duree_vue)
 	var coupe := phase == "liaison" and _liaison_t <= 0.0001
 	for id: String in stage._actors:
 		var at: Vector3 = (stage._actors[id].node as Node3D).position
@@ -677,8 +852,14 @@ func _demarrer(candidat: Dictionary, lien: Dictionary = {}) -> void:
 	var depuis_inter := etat == INTER
 	_entracte = -1.0
 	_passer = false
+	_moment_essai = 0.0
+	_regler_ralenti()
 	between.montrer_entracte("", false)
 	tf = candidat
+	# Ralenti de l'essai : la vue enregistre ce qu'elle montre seulement pour un temps fort avec un essai.
+	_finir_rejeu()
+	_rejeu_du = false
+	if is_instance_valid(stage) and stage.has_method("enregistrer_rejeu"): stage.enregistrer_rejeu(rejeu_voulu(tf.get("plans", []), _calme()))
 	index = 0
 	etat = JEU
 	_debut_ms = Time.get_ticks_msec()
@@ -743,6 +924,8 @@ func _lancer_plan_liaison(k: int) -> bool:
 	phase = "liaison"
 	_liaison_plan = k
 	_liaison_t = 0.0
+	var arrets: Array = liaison.get("arrets", [])
+	_image_posee(int(arrets[k]) if k < arrets.size() else int(liaison.get("arret", -1)))
 	if cadrage != null:
 		# Plan A : large (le ballon qui sort, les joueurs autour) ; plan B : cadrage de la remise en jeu.
 		# (« penalty » : plan d'arrêt de jeu, large, sans les extrémités d'un vol de ballon déjà fini.)
@@ -806,11 +989,18 @@ func _lire_liaison(reel: float) -> void:
 
 func _commencer_plan() -> void:
 	var plan: Dictionary = tf.plans[index]
+	if str(plan.get("kind", "")) == "transformation" and plan.get("scene") is Dictionary and not plan.get("loi_8", false):
+		# Transformation (loi 8) : défense derrière sa ligne de but, équipe du buteur derrière le ballon.
+		plan.scene = ApresEssai.transformation(plan.scene)
+		plan["loi_8"] = true
 	var scene: Dictionary = plan.scene
+	var tir := tir_au_but(plan)
 	temps = 0.0
 	sous_image = 0.0
 	_tenu = 0.0
 	phase = "jeu"
+	_elan = not tir
+	_image_posee(int(plan.get("index", -1)))
 	if cadrage != null:
 		cadrage.regler(true, str(plan.get("kind", "")), float(plan.get("mouvement", 0.0)) >= 2.5)
 		# Bandeau du score en haut, légende et commandes en bas : l'action est cadrée entre les deux.
@@ -818,12 +1008,16 @@ func _commencer_plan() -> void:
 		var legende: Control = view.events.get_parent().get_parent().get_parent()
 		cadrage.couvrir(view.clock.get_global_rect().end.y / hauteur + 0.03, (hauteur - legende.get_global_rect().position.y) / hauteur + 0.02)
 		if plan.get("coupe", false) and not _sans_coupe: cadrage.couper()
+		# Tir au but : caméra dans l'axe, derrière le buteur, les deux poteaux au fond.
+		if tir and cadrage.has_method("viser_poteaux"): cadrage.viser_poteaux(stage._world(scene.origin), ApresEssai.poteaux_x(scene) - 50.0, ApresEssai.buteur(scene))
+	_placer_arbitre_tir(plan if tir else {})
 	_sans_coupe = false
 	if _jouer_choregraphie(plan):
 		return
-	if plan.get("coupe", false) and not _gestes_actifs():
-		# Coupe franche : la phase est montrée déjà en place.
-		var pret := scene.duplicate()
+	if plan.get("coupe", false) and (not _gestes_actifs() or tir):
+		# Coupe franche : la phase est montrée déjà en place (tir au but : buteur à quelques pas derrière
+		# le ballon, qui s'élance ensuite ; la vue ne coupe pas d'elle-même vers un tir).
+		var pret := ApresEssai.elan(scene, ApresEssai.ELAN) if tir else scene.duplicate()
 		pret.key = str(scene.get("key", "")) + ":pret"
 		if str(plan.get("kind", "")) in DEPART_BALLON and scene.get("origin") is Dictionary: pret.ball = scene.origin
 		stage.apply_frame(_image(pret, true, int(plan.index) - 1))
@@ -834,6 +1028,30 @@ func _commencer_plan() -> void:
 			_habiller()
 			return
 	_jouer(plan)
+
+## Plan de tir au but (transformation, pénalité tentée) avec sa marque et son buteur.
+static func tir_au_but(plan: Dictionary) -> bool:
+	var scene: Variant = plan.get("scene")
+	if str(plan.get("kind", "")) not in TIRS_AU_BUT or not scene is Dictionary: return false
+	var origine: Variant = scene.get("origin")
+	return origine is Dictionary and origine.has("x") and origine.has("y") and not ApresEssai.buteur(scene).is_empty()
+
+## Tir au but : l'arbitre est déjà placé, devant la marque et sur le côté (coupe) ; il reprend
+## le suivi du ballon au plan suivant.
+func _placer_arbitre_tir(plan: Dictionary) -> void:
+	if arbitre == null: return
+	if plan.is_empty():
+		if _arbitre_au_tir:
+			_arbitre_au_tir = false
+			arbitre.dirige = false
+		return
+	var scene: Dictionary = plan.scene
+	var marque: Vector3 = stage._world(scene.origin)
+	var poteaux := Vector3(ApresEssai.poteaux_x(scene) - 50.0, 0.0, 0.0)
+	_arbitre_au_tir = true
+	arbitre.dirige = true
+	arbitre.signal_bras = ""
+	arbitre.placer(ApresEssai.place_arbitre_tir(marque, poteaux.x), marque)
 
 ## Pistes continues du chorégraphe pour ce plan (moteur Node, CD_MATCH_CHOREGRAPHE=1) :
 ## la vue les suit à la place de l'interpolation et des gestes du plan. Sans pistes, ou
@@ -895,10 +1113,12 @@ func _lire_choregraphie(reel: float) -> void:
 			_score = tf.plans[index].get("score", _score)
 			index = k
 		_jalon_montre = true
+		_image_posee(int(tf.plans[index].get("index", -1)))
 		if str(tf.plans[index].get("kind", "")) == "try":
 			_sonner("try", _camp_du_plan(tf.plans[index]))
 			# Essai aplati et annoncé : le bandeau passe aussitôt au nouveau score (+5).
 			_score = tf.plans[index].get("score", _score)
+			_celebrer_essai(tf.plans[index])
 		# Tir au but : son jalon est le passage du ballon, le résultat est à l'écran.
 		if tf.plans[index].has("annonce") and not _resultat_sonne:
 			_resultat_sonne = true
@@ -950,6 +1170,16 @@ func _jouer(plan: Dictionary) -> void:
 
 func _lire(delta: float, reel: float) -> void:
 	if gel or index < 0 or index >= tf.plans.size(): return
+	# Ralenti de l'essai rejoué : la régie attend sa fin (rien n'avance, ni pistes, ni plan).
+	if rejeu_en_cours(): return
+	if _moment_essai > 0.0:
+		_moment_essai = maxf(0.0, _moment_essai - delta)
+		_regler_ralenti()
+		# Fin de la célébration : le ralenti de l'essai, sous un autre angle, avant la suite.
+		if _moment_essai <= 0.0 and _lancer_rejeu(): return
+		# Essai aplati : ralenti puis image tenue ; la suite (transformation) attend la fin du moment.
+		# Les pistes du chorégraphe continuent, au ralenti de la vue.
+		if phase != "choregraphie": return
 	if phase == "liaison":
 		_lire_liaison(reel)
 		return
@@ -969,6 +1199,12 @@ func _lire(delta: float, reel: float) -> void:
 	var plan: Dictionary = tf.plans[index]
 	temps += delta
 	if phase == "pret":
+		if not _elan and temps >= float(PRET.get(str(plan.get("kind", "")), 0.0)) - PRET_ELAN:
+			# Tir au but : le buteur s'élance vers le ballon (même image, aucun nouveau fait).
+			_elan = true
+			var elan := ApresEssai.elan(plan.scene, ApresEssai.FRAPPE)
+			elan.key = str(plan.scene.get("key", "")) + ":pret"
+			stage.apply_frame(_image(elan, false, int(plan.index) - 1))
 		if temps >= float(PRET.get(str(plan.get("kind", "")), 0.0)): _jouer(plan)
 		return
 	# Le résultat d'un tir s'affiche après la frappe, pas avant.
@@ -1008,7 +1244,10 @@ func _lire(delta: float, reel: float) -> void:
 	index = -1
 	# L'entracte commence à la fin du temps fort.
 	_entracte = 0.0
-	if _live.get("paused", false) or _live.get("finished", false) or not _arret_attendu.is_empty():
+	if sortie_due(_live):
+		# Dernier temps fort de la période : plan large et sortie des joueurs avant la causerie.
+		_debut_sortie()
+	elif _live.get("paused", false) or _live.get("finished", false) or not _arret_attendu.is_empty():
 		_vers_inter()
 		_apres_lecture()
 		# Mi-temps ou fin de match : la causerie retenue pendant l'action peut s'ouvrir.
@@ -1060,6 +1299,12 @@ func _vers_inter() -> void:
 	if etat != INTER and _entracte >= 0.0: _entracte = 0.0
 	etat = INTER
 	attente = 0.0
+	_moment_essai = 0.0
+	_regler_ralenti()
+	_finir_rejeu()
+	_rejeu_du = false
+	# Le bandeau « ESSAI » finit sa durée même si l'écran intermédiaire revient entre l'essai et la transformation.
+	if _bandeau_titre != "ESSAI": _cacher_bandeau()
 	_presenter(false)
 	if cadrage != null: cadrage.regler(false)
 	_montrer_jeu(false)
@@ -1103,9 +1348,25 @@ func _habiller() -> void:
 	if view.drawer.visible and view.drawer_tab == "Journal": view._update_drawer()
 	# Pendant un temps fort, le bandeau montre l'instant rejoué, pas l'état du moteur.
 	var legende: Control = view.events.get_parent().get_parent().get_parent()
-	# Hors liaison, le bandeau du haut revient à l'état du moteur.
-	if phase != "liaison" or etat != JEU: between.forcer_etat("")
+	# Ligne d'état du haut : pendant un plan, le fait du plan affiché (essai, touche, possession…),
+	# jamais l'état du moteur (une minute d'avance, mi-temps comprise) ; en liaison, l'arrêt de jeu
+	# (plus bas) ; la 3D tenue après le temps fort garde le dernier fait montré ; ailleurs (écran
+	# intermédiaire, sortie), l'état du terrain 2D et du moteur borné (match_between.gd).
+	if etat == JEU and phase != "liaison" and index >= 0 and index < tf.get("plans", []).size():
+		between.forcer_etat(etat_montre(tf.plans[index], phase, temps, _essai_montre, _jalon_montre, _teams))
+	elif etat != JEU and etat != ATTENTE:
+		between.forcer_etat("")
+	_habiller_meteo()
+	if etat == SORTIE:
+		# Plan large et sortie des joueurs : score du moteur (tout a été montré), mi-temps ou fin.
+		var marque_sortie: Array = _live.get("direct", {}).get("score", _live.get("score", [0, 0]))
+		if marque_sortie.size() >= 2: view.score.text = "%d — %d" % [int(marque_sortie[0]), int(marque_sortie[1])]
+		view.clock.text = "TERMINÉ" if _live.get("finished", false) else "MI-TEMPS"
+		legende.hide()
+		_valider(false)
+		return
 	if etat == INTER:
+		_legende_tracee = ""
 		legende.hide()
 		# Retour à l'état du moteur, avec la même écriture de l'horloge que pendant un
 		# temps fort (40+2′ en arrêts de jeu).
@@ -1144,6 +1405,7 @@ func _habiller() -> void:
 		between.forcer_etat(bandeau_liaison())
 		view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
 		legende.visible = not view.events.text.is_empty()
+		_tracer_legende()
 		return
 	view.clock.text = str(plan.get("horloge", ""))
 	if _score.size() >= 2: view.score.text = "%d — %d" % [int(_score[0]), int(_score[1])]
@@ -1157,6 +1419,49 @@ func _habiller() -> void:
 	if phase == "choregraphie" and not _jalon_montre: view.events.text = ""
 	view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
 	legende.visible = not view.events.text.is_empty()
+	_tracer_legende()
+
+## Diagnostic texte / image : chaque nouvelle légende entre au suivi de la régie avec l'instant où
+## elle s'affiche et celui où la phase correspondante a commencé à l'écran (report.json du match
+## filmé ; CD_MATCH_TRACE_LEGENDE=1 l'écrit aussi dans la sortie, préfixe LEGENDE_IMAGE).
+func _tracer_legende() -> void:
+	var texte := str(view.events.text)
+	if texte == _legende_tracee: return
+	_legende_tracee = texte
+	if texte.is_empty(): return
+	var maintenant := Time.get_ticks_msec()
+	var plan: Dictionary = {}
+	if index >= 0 and index < tf.get("plans", []).size(): plan = tf.plans[index]
+	var fait := meta_legende(phase, plan, liaison, _liaison_plan)
+	var trace := {"evenement": "legende", "texte": texte, "phase": phase, "kind": fait.kind, "journal": fait.journal,
+		"horloge": fait.horloge, "texte_ms": maintenant, "image_ms": _image_ms, "image_journal": _image_journal,
+		"ecart_ms": maintenant - _image_ms, "debut_ms": maintenant}
+	suivi.append(trace)
+	if OS.get_environment("CD_MATCH_TRACE_LEGENDE") == "1": print("LEGENDE_IMAGE ", JSON.stringify(trace))
+
+## Fait que dit la légende : en liaison, c'est l'arrêt de jeu qui clôt le temps fort précédent (essai, touche...),
+## pas le plan à venir (kind, journal et horloge du plan courant décriraient la suite, pas ce texte).
+## L'horloge d'un arrêt n'est pas connue ici : vide plutôt que celle de la suite.
+static func meta_legende(phase_: String, plan: Dictionary, lien: Dictionary, k: int) -> Dictionary:
+	if phase_ == "liaison" and not lien.is_empty():
+		var arrets: Array = lien.get("arrets", [])
+		var kinds: Array = lien.get("kinds", [])
+		return {"kind": str(kinds[k]) if k < kinds.size() else "", "journal": int(arrets[k]) if k < arrets.size() else int(lien.get("arret", -1)), "horloge": ""}
+	return {"kind": str(plan.get("kind", "")), "journal": int(plan.get("index", -1)), "horloge": str(plan.get("horloge", ""))}
+
+## La phase courante commence à l'écran (plan, plan de liaison, jalon des pistes).
+func _image_posee(journal: int) -> void:
+	_image_ms = Time.get_ticks_msec()
+	_image_journal = journal
+
+## Ligne météo du bandeau (posée par la vue avec l'état du moteur) : rien de la mi-temps avant la fin de l'action.
+func _habiller_meteo() -> void:
+	var ligne: Variant = view.get("meteo_ligne")
+	if not ligne is Label: return
+	var montre_live := meteo_montree(_live, etat == JEU)
+	(ligne as Label).text = Meteo.bandeau(montre_live)
+	(ligne as Label).visible = not (ligne as Label).text.is_empty()
+	(ligne as Label).add_theme_color_override("font_color", S.GOLD if montre_live.get("atBreak", false) else S.MUTED)
 
 ## Plan d'essai encore en mouvement à l'instant `instant` (secondes depuis le début du plan) :
 ## le ballon n'est pas encore aplati à l'écran.
@@ -1183,12 +1488,17 @@ func _essai_attendu(plan: Dictionary) -> bool:
 
 ## Légende et clameur de l'essai du plan joué, à l'instant où il est aplati à l'écran.
 func _legender_essai() -> void:
+	# Public de la vue 3D : il attend l'aplati montré (même instant que la légende et la clameur).
+	if is_instance_valid(stage) and "essai_attendu_regie" in stage:
+		stage.essai_attendu_regie = phase == "jeu" and not _essai_montre and index >= 0 and index < tf.plans.size() and str(tf.plans[index].get("kind", "")) == "try"
 	if phase != "jeu" or _essai_montre or index < 0 or index >= tf.plans.size(): return
 	if _essai_attendu(tf.plans[index]): return
 	_essai_montre = true
+	if is_instance_valid(stage) and "essai_attendu_regie" in stage: stage.essai_attendu_regie = false
 	_sonner("try", _camp_du_plan(tf.plans[index]))
 	# L'essai est aplati et légendé : le bandeau du score passe au nouveau score (+5) au même instant.
 	_score = tf.plans[index].get("score", _score)
+	_celebrer_essai(tf.plans[index])
 	_habiller()
 
 ## Un fait vient d'être joué sur le terrain 2D : le bandeau du score le suit.
@@ -1204,6 +1514,417 @@ func _valider(visible_fin: bool) -> void:
 	view.finish.visible = visible_fin
 	view.finish.set_meta("contextual_enabled", visible_fin)
 	if is_instance_valid(view.director): view.director._refresh_controls()
+
+# --- Grands moments : essai, mi-temps, fin de match ---------------------------
+
+## Sortie des joueurs mise en scène (repli : CD_MATCH_SORTIE=0, causerie aussitôt comme avant).
+static func sorties_actives() -> bool:
+	return OS.get_environment("CD_MATCH_SORTIE") != "0"
+
+## Clé de la sortie que ce modèle annonce : « <rencontre>|mi-temps » ou « <rencontre>|fin » ; vide
+## hors mi-temps et fin de match, ou sans projection du moteur.
+static func cle_sortie(live: Dictionary) -> String:
+	var direct: Variant = live.get("direct")
+	if not direct is Dictionary: return ""
+	var rencontre := str(direct.get("rencontre", "")) + "|"
+	if bool(live.get("finished", false)): return rencontre + "fin"
+	if bool(live.get("atBreak", false)): return rencontre + "mi-temps"
+	return ""
+
+## Vrai quand la mi-temps ou la fin de match de ce modèle n'a pas encore eu sa sortie des joueurs
+## (une fois par rencontre et par moment, même si la vue est recréée). Une fin confiée à l'adjoint
+## passe directement au débrief.
+func sortie_due(live: Dictionary) -> bool:
+	if not sorties_actives() or not is_instance_valid(stage) or not stage.has_method("sortir_du_terrain"): return false
+	var cle := cle_sortie(live)
+	if cle.is_empty() or cle == str(app.management_ui.get("match_temps_forts_sortie", "")): return false
+	return not (bool(live.get("finished", false)) and str(app.get("last_command")) == "delegate")
+
+func sortie_en_cours() -> bool:
+	return etat == SORTIE
+
+## Plan large, bandeau « MI-TEMPS » ou « FIN DU MATCH » (score), puis la marche vers le tunnel.
+## Depuis l'écran intermédiaire, la 3D revient sur la dernière scène du moteur.
+func _debut_sortie() -> void:
+	var depuis_inter := etat == INTER
+	var cle := cle_sortie(_live)
+	app.management_ui["match_temps_forts_sortie"] = cle
+	_moment_essai = 0.0
+	_regler_ralenti()
+	# Mi-temps, fin de match : jamais de ralenti (ni rallongé, ni en cours).
+	_finir_rejeu()
+	_rejeu_du = false
+	if depuis_inter or stage._actors.is_empty():
+		var scene: Variant = _live.get("scene")
+		if scene is Dictionary and scene.get("players") is Array and not (scene.players as Array).is_empty():
+			# Posée d'un coup (coupe), puis vivante : les joueurs respirent sous le plan large.
+			stage.apply_frame(_image(scene, true, _events.size() - 1))
+			stage.apply_frame(_image(scene, false, _events.size() - 1))
+	if stage._actors.is_empty():
+		# Aucun joueur à montrer : pas de plan large d'un terrain vide, la causerie suit.
+		suivi.append({"evenement": "sortie_refusee", "cle": cle, "debut_ms": Time.get_ticks_msec()})
+		if etat != INTER: _vers_inter()
+		_apres_lecture()
+		if is_instance_valid(view.director): view.director.call_deferred("sync")
+		return
+	etat = SORTIE
+	_sortie_depuis_inter = depuis_inter
+	index = -1
+	phase = "jeu"
+	gel = false
+	_sortie_t = 0.0
+	if cadrage != null: cadrage.regler(false)
+	if arbitre != null: arbitre.dirige = false
+	_presenter(true)
+	_montrer_jeu(true)
+	stage.set_plan_large(true)
+	var fin: bool = _live.get("finished", false)
+	montrer_bandeau("FIN DU MATCH" if fin else "MI-TEMPS", _ligne_score(), "", SORTIE_LARGE + SORTIE_MARCHE)
+	suivi.append({"evenement": "sortie", "moment": "fin" if fin else "mi-temps", "cle": cle, "depuis_inter": depuis_inter,
+		"joueurs": stage._actors.size(), "debut_ms": Time.get_ticks_msec()})
+	_habiller()
+
+## Secondes de sortie écoulées (`pas` : temps de la régie, accéléré seulement dans les tests).
+func _lire_sortie(pas: float) -> void:
+	var avant := _sortie_t
+	_sortie_t += pas
+	if avant < SORTIE_LARGE and _sortie_t >= SORTIE_LARGE and stage.has_method("sortir_du_terrain"):
+		stage.sortir_du_terrain(true)
+		# Coupe sur le plan serré : le bandeau descend sur la même image.
+		if bandeau != null and bandeau.visible: _placer_bandeau()
+		_noter_sortie({"marche_ms": Time.get_ticks_msec(), "plan_serre": bool(stage.get("plan_sortie"))})
+	if _sortie_t >= SORTIE_LARGE + SORTIE_MARCHE: _finir_sortie(false)
+
+## Fin de la sortie (à son terme ou abrégée) : écran intermédiaire, puis causerie ou écran de fin.
+func _finir_sortie(passe: bool) -> void:
+	if etat != SORTIE: return
+	var debut := 0
+	for i in range(suivi.size() - 1, -1, -1):
+		if str(suivi[i].get("evenement", "")) == "sortie":
+			debut = int(suivi[i].get("debut_ms", 0))
+			break
+	_noter_sortie({"duree_reelle": (Time.get_ticks_msec() - debut) / 1000.0, "passe": passe, "marche": _sortie_t >= SORTIE_LARGE})
+	_cacher_bandeau()
+	# Venue de l'écran intermédiaire : le terrain 2D garde où il en était (rien n'est recalé).
+	if _sortie_depuis_inter: etat = INTER
+	_vers_inter()
+	_apres_lecture()
+	_habiller()
+	# La causerie ou le débrief retenus par la sortie peuvent s'ouvrir.
+	if is_instance_valid(view.director): view.director.call_deferred("sync")
+
+func _noter_sortie(champs: Dictionary) -> void:
+	for i in range(suivi.size() - 1, -1, -1):
+		if str(suivi[i].get("evenement", "")) == "sortie":
+			suivi[i].merge(champs, true)
+			return
+
+## Échap, Entrée, Espace ou un clic pendant la sortie ou le ralenti de l'essai : la séquence est abrégée.
+func _input(event: InputEvent) -> void:
+	if etat != SORTIE and not rejeu_en_cours(): return
+	var touche := event as InputEventKey
+	var souris := event as InputEventMouseButton
+	if touche != null and touche.pressed and not touche.echo and (touche.is_action("ui_accept") or touche.is_action("ui_cancel") or touche.keycode == KEY_SPACE):
+		get_viewport().set_input_as_handled()
+		passer()
+	elif souris != null and souris.pressed and souris.button_index == MOUSE_BUTTON_LEFT:
+		passer()
+
+## Marqueur d'un essai d'après sa légende ou le journal (« TLS · Essai de Jean Dupont sur ballon
+## porté. », « … Essai de J. Dupont, transformé. 7 – 0. ») ; vide si le texte ne le nomme pas.
+static func marqueur_essai(texte: String) -> String:
+	var corps := texte.strip_edges()
+	var point := corps.find(" · ")
+	if point >= 0: corps = corps.substr(point + 3)
+	# Score en fin de ligne du journal (« 7 – 0. ») : retiré avant de lire le nom.
+	corps = RegEx.create_from_string("\\s*\\d+\\s*[–-]\\s*\\d+\\.?$").sub(corps, "")
+	var trouve := RegEx.create_from_string("^Essai(?: décisif)? de (.+?)(?: sur ballon porté| sur mêlée)?(?:,.*)?\\.?$").search(corps)
+	return trouve.get_string(1).strip_edges() if trouve != null else ""
+
+## Vitesse de la vue pendant le moment d'essai, d'après les secondes qui en restent : creux du
+## ralenti au début, retour à la vitesse réelle avant l'image tenue de la fin.
+static func ralenti_essai(reste: float) -> float:
+	if reste <= 0.0: return 1.0
+	var k := 1.0 - clampf(reste / ESSAI_MOMENT, 0.0, 1.0)
+	return lerpf(ESSAI_RALENTI, 1.0, smoothstep(0.35, 0.75, k))
+
+## Essai aplati à l'écran : bandeau « ESSAI » (marqueur, équipe), ralenti puis image tenue.
+func _celebrer_essai(plan: Dictionary) -> void:
+	_moment_essai = ESSAI_MOMENT
+	ralenti_min = 1.0
+	_regler_ralenti()
+	# Ralenti de l'essai : la vue cale sa fenêtre sur l'aplati ; il partira à la fin du moment.
+	_rejeu_du = not _calme() and is_instance_valid(stage) and stage.has_method("reperer_rejeu") and stage.reperer_rejeu()
+	var camp := _camp_du_plan(plan)
+	if camp not in [0, 1] and plan.get("scene") is Dictionary: camp = int(plan.scene.get("possession", -1))
+	var equipe := S.G.club_name(_teams[camp]) if camp in [0, 1] and camp < _teams.size() and _teams[camp] is Dictionary else ""
+	var nom := marqueur_essai(str(plan.get("texte", "")))
+	var fait := int(plan.get("index", -1))
+	if nom.is_empty() and fait >= 0 and fait < _events.size() and _events[fait] is Dictionary: nom = marqueur_essai(str(_events[fait].get("text", "")))
+	montrer_bandeau("ESSAI", nom, equipe, ESSAI_BANDEAU)
+	suivi.append({"evenement": "essai_moment", "cle": str(tf.get("cle", "")), "plan": index, "marqueur": nom, "equipe": equipe, "debut_ms": Time.get_ticks_msec()})
+
+func _calme() -> bool:
+	var preferences: Variant = app.get("user_preferences") if is_instance_valid(app) else null
+	return preferences != null and bool(preferences.data.get("reduced_motion", false))
+
+# --- Ralenti de l'essai ------------------------------------------------------
+
+## Le temps fort mérite l'enregistrement du ralenti : il contient un essai, animations non réduites.
+static func rejeu_voulu(plans: Array, calme: bool) -> bool:
+	if calme: return false
+	for plan: Variant in plans:
+		if plan is Dictionary and str(plan.get("kind", "")) == "try": return true
+	return false
+
+func rejeu_en_cours() -> bool:
+	return is_instance_valid(stage) and stage.has_method("rejeu_actif") and stage.rejeu_actif()
+
+## Ce que montre la mention « RALENTI » (tests, match filmé).
+func mention_affichee() -> bool:
+	return is_instance_valid(mention) and mention.visible
+
+## Fin du moment d'essai : le ralenti part s'il est dû (essai repéré, animations non réduites).
+func _lancer_rejeu() -> bool:
+	if not _rejeu_du: return false
+	_rejeu_du = false
+	if _calme() or not is_instance_valid(stage) or not stage.has_method("commencer_rejeu"): return false
+	if not stage.commencer_rejeu(Rejeu.VITESSE * vitesse):
+		suivi.append({"evenement": "rejeu_refuse", "cle": str(tf.get("cle", "")), "debut_ms": Time.get_ticks_msec()})
+		return false
+	var info: Dictionary = stage.rejeu_etat()
+	_rejeu_passe = false
+	montrer_mention()
+	suivi.append({"evenement": "rejeu", "cle": str(tf.get("cle", "")), "plan": index, "vitesse": Rejeu.VITESSE, "vitesse_regie": vitesse,
+		"duree_source": float(info.get("duree_source", 0.0)), "duree_prevue": float(info.get("duree_source", 0.0)) / Rejeu.VITESSE,
+		"hauteur_camera": float(info.get("hauteur_camera", 0.0)), "gene_angle": float(info.get("gene_angle", 0.0)), "retrait": float(info.get("retrait", 0.0)), "debut_ms": Time.get_ticks_msec()})
+	return true
+
+## Abrège le ralenti en cours (l'état d'avant est remis par la vue, puis `_rejeu_fini`).
+func _finir_rejeu() -> void:
+	if rejeu_en_cours(): stage.finir_rejeu()
+	elif mention_affichee(): _cacher_mention()
+
+## La vue a fini le ralenti (à son terme ou abrégé) : mention retirée sur la même image, durée notée.
+func _rejeu_fini() -> void:
+	_cacher_mention()
+	var info: Dictionary = stage.rejeu_etat() if is_instance_valid(stage) and stage.has_method("rejeu_etat") else {}
+	for i in range(suivi.size() - 1, -1, -1):
+		if str(suivi[i].get("evenement", "")) != "rejeu": continue
+		if not suivi[i].has("duree_reelle"):
+			suivi[i]["duree_reelle"] = (Time.get_ticks_msec() - int(suivi[i].get("debut_ms", 0))) / 1000.0
+			suivi[i]["duree_lue"] = float(info.get("ecoule", 0.0))
+			suivi[i]["passe"] = _rejeu_passe
+			# Écart entre l'état remis et l'état d'avant (0 : identique ; 999 : joueur ou ballon différent).
+			suivi[i]["ecart_restitution"] = minf(float(info.get("ecart_restitution", 999.0)), 999.0)
+		break
+	_rejeu_passe = false
+
+## Mention « RALENTI » des retransmissions : petit cartouche du style des bandeaux, sans animation.
+static func construire_mention() -> PanelContainer:
+	var cadre := PanelContainer.new()
+	cadre.name = "MatchRalenti"
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fond := S.G.T.box(Color(0.03, 0.08, 0.065, 0.85), 6, Color(S.GOLD, 0.7))
+	fond.content_margin_left = 12
+	fond.content_margin_right = 12
+	fond.content_margin_top = 2
+	fond.content_margin_bottom = 3
+	cadre.add_theme_stylebox_override("panel", fond)
+	var titre := S.label("RALENTI", 18, S.GOLD)
+	titre.name = "MatchRalentiTitre"
+	titre.add_theme_font_override("font", S.G.T.DISPLAY)
+	titre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.add_child(titre)
+	cadre.hide()
+	return cadre
+
+## Taille du texte de la mention pour une image de `hauteur` pixels : discrète, lisible.
+static func taille_mention(hauteur: float) -> int:
+	return clampi(roundi(hauteur * MENTION_TAILLE), 16, 40)
+
+## Place de la mention (repère de la vue) : coin haut droit de la zone libre qui commence à `haut_libre`.
+static func place_mention(ecran: Vector2, taille: Vector2, haut_libre: float) -> Vector2:
+	var marge := roundf(ecran.y * MENTION_MARGE)
+	return Vector2(roundf(maxf(0.0, ecran.x - taille.x - marge)), roundf(haut_libre + marge))
+
+func montrer_mention() -> void:
+	if not is_instance_valid(mention) or view == null: return
+	var titre: Label = mention.find_child("MatchRalentiTitre", true, false)
+	if titre != null: titre.add_theme_font_size_override("font_size", taille_mention(maxf(1.0, view.size.y)))
+	mention.reset_size()
+	mention.show()
+	_placer_mention()
+
+func _placer_mention() -> void:
+	if not is_instance_valid(mention) or view == null: return
+	var haut: float = (_espace.get_global_rect().position.y if is_instance_valid(_espace) else view.clock.get_global_rect().end.y) - view.get_global_rect().position.y
+	mention.reset_size()
+	mention.position = place_mention(Vector2(view.size.x, maxf(1.0, view.size.y)), mention.size, haut)
+
+func _cacher_mention() -> void:
+	if is_instance_valid(mention): mention.hide()
+
+func _regler_ralenti() -> void:
+	if not is_instance_valid(stage) or not stage.has_method("set_ralenti"): return
+	var facteur := 1.0 if _moment_essai <= 0.0 or _calme() else ralenti_essai(_moment_essai)
+	ralenti_min = minf(ralenti_min, facteur)
+	stage.set_ralenti(facteur)
+
+func _ligne_score() -> String:
+	var marque: Array = _live.get("direct", {}).get("score", _live.get("score", [0, 0]))
+	if _teams.size() < 2 or marque.size() < 2 or not _teams[0] is Dictionary or not _teams[1] is Dictionary: return ""
+	return "%s   %d — %d   %s" % [S.G.club_name(_teams[0]), int(marque[0]), int(marque[1]), S.G.club_name(_teams[1])]
+
+## Bandeau des grands moments, façon retransmission : titre doré, filet, puis le marqueur (ou le
+## score) et son équipe à droite, sur une ou deux lignes. Ne capte jamais la souris.
+static func construire_bandeau() -> PanelContainer:
+	var cadre := PanelContainer.new()
+	cadre.name = "MatchMomentBandeau"
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fond := S.G.T.box(Color(0.03, 0.08, 0.065, 0.92), 8, Color(S.GOLD, 0.85))
+	fond.content_margin_left = 18
+	fond.content_margin_right = 22
+	fond.content_margin_top = 4
+	fond.content_margin_bottom = 6
+	fond.shadow_color = Color(0, 0, 0, 0.35)
+	fond.shadow_size = 8
+	cadre.add_theme_stylebox_override("panel", fond)
+	var ligne := HBoxContainer.new()
+	ligne.name = "MatchMomentLigne"
+	ligne.alignment = BoxContainer.ALIGNMENT_BEGIN
+	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ligne.add_theme_constant_override("separation", 14)
+	cadre.add_child(ligne)
+	var titre := S.label("", 36, S.GOLD)
+	titre.name = "MatchMomentTitre"
+	titre.add_theme_font_override("font", S.G.T.DISPLAY)
+	titre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	titre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ligne.add_child(titre)
+	var filet := ColorRect.new()
+	filet.name = "MatchMomentFilet"
+	filet.color = Color(S.GOLD, 0.85)
+	filet.custom_minimum_size = Vector2(2, 0)
+	filet.size_flags_vertical = Control.SIZE_FILL
+	filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ligne.add_child(filet)
+	var texte := VBoxContainer.new()
+	texte.name = "MatchMomentTexte"
+	texte.alignment = BoxContainer.ALIGNMENT_CENTER
+	texte.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texte.add_theme_constant_override("separation", -2)
+	ligne.add_child(texte)
+	var nom := S.label("", 22, S.TEXT)
+	nom.name = "MatchMomentNom"
+	nom.add_theme_font_override("font", S.G.T.DISPLAY)
+	var equipe := S.label("", 16, S.MUTED)
+	equipe.name = "MatchMomentEquipe"
+	for l: Label in [nom, equipe]:
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		texte.add_child(l)
+	cadre.hide()
+	return cadre
+
+## Tailles de police du bandeau pour une image de `hauteur` pixels (lisible en 720p, compact, sans
+## excès en 1440p).
+static func tailles_bandeau(hauteur: float) -> Dictionary:
+	return {"titre": clampi(roundi(hauteur * 0.05), 30, 72), "nom": clampi(roundi(hauteur * 0.03), 18, 44), "equipe": clampi(roundi(hauteur * 0.022), 14, 32)}
+
+static func habiller_bandeau(cadre: PanelContainer, titre: String, nom: String, equipe: String, hauteur: float) -> void:
+	var tailles := tailles_bandeau(hauteur)
+	var lignes := {"MatchMomentTitre": [titre, tailles.titre], "MatchMomentNom": [nom, tailles.nom], "MatchMomentEquipe": [equipe, tailles.equipe]}
+	for nom_ligne: String in lignes:
+		var ligne: Label = cadre.find_child(nom_ligne, true, false)
+		if ligne == null: continue
+		ligne.text = str(lignes[nom_ligne][0])
+		ligne.add_theme_font_size_override("font_size", int(lignes[nom_ligne][1]))
+		ligne.visible = not ligne.text.is_empty()
+	var texte: Control = cadre.find_child("MatchMomentTexte", true, false)
+	var filet: Control = cadre.find_child("MatchMomentFilet", true, false)
+	var reste := not (nom.is_empty() and equipe.is_empty())
+	if texte != null: texte.visible = reste
+	if filet != null: filet.visible = reste
+	cadre.reset_size()
+
+## Ce que montre le bandeau (tests, capture) : {visible, titre, nom, equipe}.
+func bandeau_affiche() -> Dictionary:
+	if bandeau == null: return {"visible": false}
+	var lire := func(n: String) -> String:
+		var ligne: Label = bandeau.find_child(n, true, false)
+		return ligne.text if ligne != null and ligne.visible else ""
+	return {"visible": bandeau.visible, "titre": lire.call("MatchMomentTitre"), "nom": lire.call("MatchMomentNom"), "equipe": lire.call("MatchMomentEquipe")}
+
+func montrer_bandeau(titre: String, nom: String, equipe: String, duree: float) -> void:
+	if bandeau == null or view == null: return
+	habiller_bandeau(bandeau, titre, nom, equipe, maxf(1.0, view.size.y))
+	_bandeau_titre = titre
+	_bandeau_duree = maxf(duree, BANDEAU_ENTREE + BANDEAU_FONDU)
+	_bandeau_reste = _bandeau_duree
+	bandeau.show()
+	_placer_bandeau()
+
+## « MI-TEMPS » et « FIN DU MATCH » : sous le bandeau du score et la bande de commandes (zone libre
+## de l'image), centré. Sortie des joueurs en plan serré (18/11/2026, nuit) : le tunnel est en haut
+## de l'image, sous la tribune ; le bandeau descend dans la pelouse vide du bas (BANDEAU_SORTIE_BAS
+## de la hauteur) pour laisser voir les joueurs rentrer.
+const BANDEAU_SORTIE_BAS := 0.70
+
+## Place du bandeau (repère de la vue, sans l'animation) pour une image `ecran`, un bandeau `taille`,
+## la zone libre qui commence à `haut_libre` (sous le score et les commandes) et la légende `legende`
+## (Rect2() si inconnue). « ESSAI » : tiers inférieur, calé à gauche sur la légende, juste au-dessus
+## d'elle, comme un bandeau de retransmission (le marqueur et sa célébration restent visibles).
+static func place_bandeau(titre: String, ecran: Vector2, taille: Vector2, haut_libre: float, legende: Rect2, sortie_serree: bool) -> Vector2:
+	if titre == "ESSAI":
+		var marge := roundf(ecran.y * BANDEAU_MARGE)
+		var connue := legende.has_area()
+		var bas := (legende.position.y if connue else ecran.y * (1.0 - BANDEAU_BAS_REPLI)) - marge
+		var gauche := legende.position.x if connue else roundf(ecran.x * 0.015)
+		return Vector2(roundf(clampf(gauche, 0.0, maxf(0.0, ecran.x - taille.x))), roundf(maxf(haut_libre + marge, bas - taille.y)))
+	var haut := haut_libre + ecran.y * 0.03
+	if sortie_serree: haut = maxf(haut, ecran.y * BANDEAU_SORTIE_BAS - taille.y * 0.5)
+	return Vector2(roundf((ecran.x - taille.x) * 0.5), roundf(haut))
+
+## Animation du bandeau `ecoule` s après son apparition, `reste` s avant sa fin, dans une image de
+## `hauteur` px : {alpha, decalage}. Entrée courte (glissé + fondu), sortie en fondu qui descend un peu.
+static func animation_bandeau(titre: String, ecoule: float, reste: float, hauteur: float, calme: bool) -> Dictionary:
+	if calme: return {"alpha": 1.0, "decalage": Vector2.ZERO}
+	var entree := clampf(ecoule / BANDEAU_ENTREE, 0.0, 1.0)
+	var sortie := clampf(reste / BANDEAU_FONDU, 0.0, 1.0)
+	var arrivee := 1.0 - pow(1.0 - entree, 3.0)
+	var glisse := hauteur * BANDEAU_GLISSE
+	var decalage := Vector2(-(1.0 - arrivee) * glisse * 3.0, 0.0) if titre == "ESSAI" else Vector2(0.0, (1.0 - arrivee) * glisse)
+	decalage.y += (1.0 - sortie) * glisse * 0.5
+	return {"alpha": minf(entree, sortie), "decalage": decalage}
+
+func _placer_bandeau() -> void:
+	var hauteur := maxf(1.0, view.size.y)
+	var haut: float = (_espace.get_global_rect().position.y if is_instance_valid(_espace) else view.clock.get_global_rect().end.y) - view.get_global_rect().position.y
+	var legende: Control = view.events.get_parent().get_parent().get_parent() if is_instance_valid(view.events) else null
+	if legende != null and legende.is_visible_in_tree() and legende.size.y > 0.0:
+		_legende_rect = Rect2(legende.get_global_rect().position - view.get_global_rect().position, legende.size)
+	bandeau.reset_size()
+	var place := place_bandeau(_bandeau_titre, Vector2(view.size.x, hauteur), bandeau.size, haut, _legende_rect, etat == SORTIE and _sortie_t >= SORTIE_LARGE)
+	var anime := animation_bandeau(_bandeau_titre, _bandeau_duree - _bandeau_reste, _bandeau_reste, hauteur, _calme())
+	bandeau.modulate.a = float(anime.alpha)
+	bandeau.position = (place + (anime.decalage as Vector2)).round()
+
+func _animer_bandeau(delta: float) -> void:
+	if bandeau == null or not bandeau.visible: return
+	if not gel: _bandeau_reste -= delta
+	if _bandeau_reste <= 0.0:
+		_cacher_bandeau()
+		return
+	_placer_bandeau()
+
+func _cacher_bandeau() -> void:
+	_bandeau_reste = 0.0
+	_bandeau_titre = ""
+	if bandeau != null: bandeau.hide()
 
 ## Consigne de la tuile Bonus : mêmes commandes que le tiroir Tactique (set_tactics, set_penalty_policy), posées
 ## pendant une courte pause si le match roule ; la reprise suit d'elle-même.

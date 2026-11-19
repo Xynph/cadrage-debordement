@@ -11,6 +11,9 @@ const Decisions = preload("res://ui/decision_views.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
+## Colonne Poste de la liste : libellés courts en compact (< 950 px), libellé complet en large.
+const POS_COMPACT_WIDTH := 80
+const POS_FULL_WIDTH := 132
 
 # Keep the bound dictionary when a career reset replaces management_ui. Retiring
 # controls can only update their former UI state, never the new career's state.
@@ -253,7 +256,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		row.mouse_filter=Control.MOUSE_FILTER_IGNORE
 		inset.add_child(row)
 		for column:Array in columns:
-			var value:=_roster_value(p,str(column[0]))
+			var value:=_roster_value(p,str(column[0]),columns[1][2]<=POS_COMPACT_WIDTH)
 			var color: Color = G.POTENTIAL_COLOR if column[0]=="potential" else G.INK if column[0]=="name" else (G.GOLD if column[0]=="watch" else G.MUTED)
 			if state.family==U.WATCH_FILTER and column[0]=="condition" and float(p.get("injury",0))>0:
 				value="Blessé"
@@ -263,7 +266,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 				color=G.GOLD
 			var label:=G.cell(value,column[2],color,column[0]=="name")
 			label.name="RosterValue_"+str(column[0])
-			label.tooltip_text=value
+			label.tooltip_text=position_label(str(p.get("pos","—"))) if column[0]=="pos" else value
 			row.add_child(label)
 		list.add_child(b)
 		if str(p.id)==focus_id:FocusLater.grab(b)
@@ -282,15 +285,22 @@ static func _reveal_roster_row(app: Control, list: Control, row: Control) -> voi
 	list.set_meta("reveal_id","")
 
 static func _roster_columns(width:float) -> Array:
-	var columns:Array=[["name","JOUEUR",130],["pos","POSTE",64],["age","ÂGE",26],["rating","NIV.",30],["condition","COND.",42]]
+	var columns:Array=[["name","JOUEUR",130],["pos","POSTE",POS_COMPACT_WIDTH],["age","ÂGE",26],["rating","NIV.",30],["condition","COND.",42]]
 	if width>=700:columns.append_array([["salary","SALAIRE "+G.salary_period(true).to_upper(),78],["contractEnd","ÉCH.",38]])
 	if width>=900:columns.append_array([["minutes","MIN.",42],["appearances","APP.",32],["physicalLoad","CHARGE",42]])
 	if width>=950:
-		columns[1][2]=100
+		columns[1][2]=POS_FULL_WIDTH
 		columns.append_array([["potential","POT.",60],["status","SÉLECTION",76]])
 	return columns
 
-static func _roster_value(p:Dictionary,key:String) -> String:
+## Libellé officiel du poste dans le jeu : le numéro 8 est la « troisième ligne centre » (comme fiche, vestiaire et contrats).
+static func position_label(pos:String,compact:bool=false) -> String:
+	var full:String={"Numéro 8":"Troisième ligne centre","N° 8":"Troisième ligne centre","N°8":"Troisième ligne centre","Troisième ligne":"Troisième ligne aile"}.get(pos,pos)
+	if not compact:return full
+	return {"Pilier gauche":"Pilier g.","Pilier droit":"Pilier d.","Deuxième ligne":"2e ligne","Troisième ligne aile":"3e l. aile","Troisième ligne centre":"3e l. centre","Demi de mêlée":"Demi mêlée","Demi d’ouverture":"Demi d’ouv.","Talonneur remplaçant":"Talon. rempl.","Pilier remplaçant":"Pilier rempl."}.get(full,full)
+
+static func _roster_value(p:Dictionary,key:String,compact:bool=false) -> String:
+	if key=="pos":return position_label(str(p.get("pos","—")),compact)
 	if key in ["rating","note"]:return G.rating_text(p,true)
 	if key=="potential":return G.potential_text(p)
 	if key=="salary":return G.salary_amount(p.get(key,0))
@@ -324,6 +334,9 @@ static func _profile_reading_link(app: Control, content: Control, player_id: Str
 	link.custom_minimum_size = content.get_combined_minimum_size()
 	link.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
 	link.add_theme_stylebox_override("focus", G.T.box(Color.TRANSPARENT, 2, G.GOLD))
+	# Lien de lecture nu : l'habillage sombre (legacy_style) n'en fait pas un bouton encadré, le nom reste un titre.
+	link.set_meta("plain_link", true)
+	link.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	link.accessibility_name = "Consulter la fiche · " + caption
 	link.tooltip_text = link.accessibility_name
 	link.set_meta("entity_kind", "player")
@@ -354,9 +367,11 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	name.add_theme_font_override("font",G.T.DISPLAY)
 	name.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	identity.add_child(_profile_reading_link(app,name,str(p.id),str(p.name),"ProfileOpenPlayerName"))
-	identity.add_child(G.wrap("%s · %s ans"%[p.pos,G.n(p.age)],12))
+	identity.add_child(G.wrap("%s · %s ans"%[position_label(str(p.pos)),G.n(p.age)],12))
 	var facts: Dictionary = p.get("playerFacts", {})
-	if not facts.is_empty(): identity.add_child(preload("res://ui/player_identity.gd").row(facts,15,G.INK,app))
+	# Encre claire : la ligne d'identité est faite de libellés immersifs, que l'habillage sombre ne repeint pas
+	# (l'encre du carnet, sombre, la rendait illisible sur le panneau sombre de l'Effectif).
+	if not facts.is_empty(): identity.add_child(preload("res://ui/player_identity.gd").row(facts,15,G.Base.MUTED,app))
 	list.add_child(G.separator())
 	var tabs:=TabContainer.new()
 	tabs.name="ProfileTabs"

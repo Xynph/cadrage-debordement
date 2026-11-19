@@ -60,7 +60,7 @@ static func home(app: Control) -> Control:
 	var catalogue: Array = app.pack_manager.creation_catalogue()
 	var next_chip := 112
 	if not catalogue.is_empty():
-		var count := catalogue.filter(func(item: Dictionary): return item.get("playable", true)).size()
+		var count: int = app.pack_manager.playable_club_count("creation")
 		D.chip(content,Rect2(next_chip,895,270,52),"Monde · %d clubs jouables" % count,C.BLUE).name="EntryWorldCount"
 		next_chip += 284
 	var starting_player_count := int(database.get("startingPlayerCount", database.get("playerCount", 0)))
@@ -124,6 +124,24 @@ static func _choices(card: Panel, app: Control, club: Dictionary, meta: Dictiona
 	choices.add_child(row)
 	C.fill(_action(row,"Paramètres",app.settings,"EntrySettings",accent))
 	C.fill(_action(row,"Quitter",app.request_quit,"EntryQuit",accent))
+	# Le bas du carnet n'est jamais vide : une vignette de saison occupe la place restante.
+	choices.custom_minimum_size.y = 790.0*C.density
+	# 1280 × 720 : la vignette se contente de la place libre, sans faire défiler le carnet.
+	var season := C.card("",Vector2(0,150 if C.density >= .6 else 0))
+	season.name = "EntrySeasonCard"
+	C.fill(season,true)
+	choices.add_child(season)
+	var season_content := C.content(season)
+	var season_art := C.photo("training-session" if not club.is_empty() else "entry-ground",Vector2(0,90 if C.density >= .6 else 24),true,.35)
+	season_art.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	season_content.add_child(season_art)
+	if club.is_empty():
+		season_content.add_child(C.label("UNE SAISON À ÉCRIRE",20,C.GOLD,true,700))
+		season_content.add_child(C.wrap("Choisis un club, prends les rênes et lance la première journée.",20,C.MUTED))
+	else:
+		var objective := str(club.get("goal",""))
+		season_content.add_child(C.label("SAISON %s" % G.season_label(meta.get("season",1)),20,C.GOLD,true,700))
+		season_content.add_child(C.wrap(objective if not objective.is_empty() else "Prépare le XV, fais grandir le club et vis la journée qui vient.",20,C.MUTED))
 	for warning: String in missing:
 		choices.add_child(C.wrap(warning+" · Réimporte le pack dans Identités et packs.",19,C.ALERT))
 	if meta.get("recoveryRequired",false):
@@ -285,7 +303,7 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 		underline.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		heading.add_child(underline)
 	else:
-		heading.add_child(Editorial.sans_heading("Choisir sa réalité", 53))
+		heading.add_child(C.label("Choisir sa réalité", 74, C.IVORY, true, 700))
 		heading.add_child(C.wrap("Sélectionne la réalité de jeu pour ta prochaine carrière.", 25, C.IVORY))
 	column.add_child(C.rule())
 	var body := C.margin(21 if creation else 27)
@@ -298,14 +316,22 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 		if buttons.size() >= 2:
 			buttons.front().name = "CreationBackHome"
 			buttons.back().name = "CreationManagePacks"
-		if size.x >= 1480:
-			page.remove_child(tools)
-			rail.add_child(C.fill(Control.new()))
+		var wide := size.x >= 1480
+		if wide: page.remove_child(tools)
+		rail.add_child(C.fill(Control.new()))
+		# Gabi (« Gabi · ? » et « Visite ») vit dans le bandeau du haut, jamais sur la barre des championnats.
+		var slot := Control.new()
+		slot.name = "CreationGabiSlot"
+		slot.custom_minimum_size = Vector2(150, 34)
+		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		rail.add_child(slot)
+		if wide:
 			tools.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			rail.add_child(tools)
-			var edge := Control.new()
-			edge.custom_minimum_size.x = C.px(15)
-			rail.add_child(edge)
+		var edge := Control.new()
+		edge.custom_minimum_size.x = C.px(15)
+		rail.add_child(edge)
 	Legacy.apply(page, Editorial.BRASS)
 	_observe_entry_size(app, shell, size, creation)
 	return shell

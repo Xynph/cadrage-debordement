@@ -1,12 +1,13 @@
 extends Control
 ## Fenêtre « Équipe » du match en direct (maquette retenue par Léo le 18/11/2026, façon FM) : un seul
 ## bouton « ÉQUIPE » remplace Tactique et Banc. Elle couvre l'écran, met le match en pause à l'ouverture
-## et le relance avec « Valider et reprendre ». Deux onglets :
+## et le relance avec « Valider et reprendre ». Trois onglets :
 ## - Composition : cris de la touche, terrain avec les quinze en médaillons (portrait, anneau d'énergie,
 ##   niveau, numéro, note du match, état après la causerie), « Dans 10 minutes », le banc en tuiles,
 ##   le conseil de Gabi, et en pied les consignes en place et l'arbitre ;
 ## - Consignes : les cinq axes en direct (set_consignes), le plan de jeu (set_tactics, set_penalty_policy),
-##   l'arbitre et ses quatre jauges, ce que fait l'adversaire et qui suit la consigne.
+##   l'arbitre et ses quatre jauges, ce que fait l'adversaire et l'avis du staff (« Appliquer ces consignes ») ;
+## - Rôles : buteur, buteur de secours, lanceur en touche et botteur, changés en direct (set_role_direct).
 ## L'écran n'invente rien : tout vient du modèle (`live`, `live.pilotage`, `live.direct.notes`, `squad`) et
 ## chaque champ optionnel absent masque son bloc. Les règles du banc (première ligne, cartons) restent au
 ## moteur : un refus s'affiche en une ligne sous le terrain.
@@ -30,7 +31,7 @@ const ARBITRE_MOTS := ["", "laisse jouer", "souple", "équilibré", "pointilleux
 
 var view: Control
 var app: Node
-## « composition » ou « consignes ».
+## « composition », « consignes » ou « roles ».
 var onglet := "composition"
 ## Échelle de la maquette dans la fenêtre.
 var k := 1.0
@@ -51,6 +52,7 @@ var _message := ""
 var _message_teinte := C.MUTED
 var _conseil_ecarte := ""
 var _page: Control
+var _pied_ligne2: HBoxContainer  ## Seconde ligne du pied (arbitre) ; vide sur l'onglet Consignes.
 var _gras: FontVariation
 
 func _ready() -> void:
@@ -74,7 +76,7 @@ func _live() -> Dictionary:
 ## Ouvre la fenêtre sur un onglet (et un joueur du XV choisi) ; le match se met en pause.
 func ouvrir(vers: String = "composition", poste: int = -1) -> void:
 	if bool(_live().get("finished", false)): return
-	onglet = "consignes" if vers == "consignes" else "composition"
+	onglet = vers if vers in ["consignes", "roles"] else "composition"
 	poste_choisi = poste
 	entrant_choisi = ""
 	_message = ""
@@ -235,6 +237,22 @@ func _envoyer_consigne(axe: String, valeur: String) -> void:
 	_cle = ""
 	_rafraichir()
 
+## « Appliquer ces consignes » : l'avis du staff en attente, en une commande, sans pause.
+func appliquer_staff() -> void:
+	if app._command("appliquer_staff", {}):
+		_attente = "staff"
+		_succes = "Consignes du staff appliquées."
+	_cle = ""
+	_rafraichir()
+
+## Rôle en direct : joueur sur le terrain (id) ou retour au choix du staff (id vide).
+func choisir_role(role: String, id: String) -> void:
+	if app._command("set_role_direct", {"role": role, "id": null if id.is_empty() else id}):
+		_attente = "role"
+		_succes = "C'est noté : le staff passe le mot."
+	_cle = ""
+	_rafraichir()
+
 func _plan(cle: String, id: Variant) -> void:
 	var courant: Dictionary = _model.get("tactics", {}) if _model.get("tactics") is Dictionary else {}
 	var payload := {"attack": courant.get("attack", "equilibre"), "defense": courant.get("defense", "equilibre")}
@@ -275,6 +293,14 @@ func _coupe(etiquette: Label) -> Label:
 	etiquette.clip_text = true
 	etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	etiquette.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return etiquette
+
+## Texte qui passe à la ligne (au plus `lignes`) plutôt que d'être coupé ; le contrôle vérifie « non tronqué ».
+func _sur_deux_lignes(etiquette: Label, lignes: int) -> Label:
+	etiquette.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	etiquette.max_lines_visible = lignes
+	etiquette.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	etiquette.custom_minimum_size.x = 1.0
 	return etiquette
 
 func _h(ecart: float) -> HBoxContainer:
@@ -392,6 +418,7 @@ func _rafraichir() -> void:
 	add_child(_page)
 	_entete()
 	if onglet == "consignes": _consignes()
+	elif onglet == "roles": _roles()
 	else: _composition()
 	if not focus_nom.is_empty():
 		var retrouve: Control = find_child(focus_nom, true, false)
@@ -486,7 +513,7 @@ func _entete() -> void:
 	etat.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	etat.add_child(_texte("Match en pause" if en_pause else "Mise en pause…", 13, C.GOLD if en_pause else C.MUTED))
 	rangee.add_child(etat)
-	for paire: Array in [["composition", "Composition", "TeamTabComposition"], ["consignes", "Consignes", "TeamTabConsignes"]]:
+	for paire: Array in [["composition", "Composition", "TeamTabComposition"], ["consignes", "Consignes", "TeamTabConsignes"], ["roles", "Rôles", "TeamTabRoles"]]:
 		var vers: String = paire[0]
 		var bouton := _bouton(paire[1], func(): choisir_onglet(vers), "or" if onglet == vers else "cadre", 18, paire[2])
 		bouton.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -506,10 +533,18 @@ func _pied(gauche: Callable, secondaire: Array) -> void:
 	hote.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hote.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rangee.add_child(hote)
+	var lignes := _v(0)
+	lignes.alignment = BoxContainer.ALIGNMENT_CENTER
+	S.full(lignes)
+	hote.add_child(lignes)
 	var infos := _h(10)
-	S.full(infos)
-	hote.add_child(infos)
+	infos.name = "TeamFooterLine1"
+	lignes.add_child(infos)
+	_pied_ligne2 = _h(10)
+	_pied_ligne2.name = "TeamFooterLine2"
+	lignes.add_child(_pied_ligne2)
 	gauche.call(infos)
+	if _pied_ligne2.get_child_count() == 0: _pied_ligne2.hide()
 	var bouton_secondaire := _bouton(str(secondaire[0]), secondaire[1], "or_cadre" if onglet == "composition" else "cadre", 18, str(secondaire[2]))
 	bouton_secondaire.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rangee.add_child(bouton_secondaire)
@@ -543,6 +578,15 @@ func _consignes_actives(p: Dictionary) -> Array[String]:
 		for option: Variant in options:
 			if option is Dictionary and str(option.get("id", "")) == cran: resultat.append("%s · %s" % [str(axe.get("label", "")), str(option.get("label", ""))])
 	return resultat
+
+const CRAN_TAILLE := 14.0
+const LIBELLES_COURTS := {"Chercher les points": "Points", "Chercher la pénaltouche": "Pénaltouche", "Jouer vite à la main": "Jeu rapide", "Selon le contexte": "Auto",
+	"Montée agressive": "Montée", "Glissée prudente": "Glissée", "Jeu au large": "Large", "Jeu au près": "Près", "Jouer la montre": "La montre",
+	"Presser l’ouvreur": "Ouvreur", "Leur aile faible": "Aile faible", "Sortir vite": "Vite"}
+
+## Libellé d'un cran sur une seule ligne (« Pénaltouche ») ; le texte complet reste en infobulle.
+static func libelle_court(texte: String) -> String:
+	return str(LIBELLES_COURTS.get(texte, texte))
 
 ## Bilan court d'un axe : ce qui suit « : » dans le bilan du moteur (« 3 pénalités, 2 ballons arrachés »).
 static func bilan_court(p: Dictionary, axe: String) -> String:
@@ -586,7 +630,7 @@ func _pied_composition(infos: HBoxContainer) -> void:
 		ligne.name = "TeamFooterReferee"
 		ligne.tooltip_text = arbitre
 		ligne.mouse_filter = Control.MOUSE_FILTER_PASS
-		infos.add_child(ligne)
+		_pied_ligne2.add_child(ligne)
 
 func _cris(cris: Dictionary) -> void:
 	var colonne := _v(8)
@@ -616,7 +660,7 @@ func _cris(cris: Dictionary) -> void:
 		bouton.focus_mode = Control.FOCUS_ALL
 		bouton.disabled = not disponible or est_actif
 		bouton.tooltip_text = str(option.get("note", ""))
-		bouton.custom_minimum_size.y = px(54)
+		bouton.custom_minimum_size.y = px(88)
 		var normal := _boite(C.PANEL, C.GOLD if est_actif else C.LINE, 10, 2 if est_actif else 1, 0)
 		normal.content_margin_left = px(12)
 		var survol := normal.duplicate() as StyleBoxFlat
@@ -629,7 +673,7 @@ func _cris(cris: Dictionary) -> void:
 		bouton.pressed.connect(func(): crier(id))
 		var rangee := _h(10)
 		rangee.position = Vector2(px(12), 0)
-		rangee.size = Vector2(px(200 - 24), px(54))
+		rangee.size = Vector2(px(200 - 24), px(88))
 		rangee.alignment = BoxContainer.ALIGNMENT_CENTER
 		bouton.add_child(rangee)
 		bouton.resized.connect(func(): rangee.size = Vector2(bouton.size.x - px(24), bouton.size.y))
@@ -647,10 +691,19 @@ func _cris(cris: Dictionary) -> void:
 		var mots := _v(1)
 		mots.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mots.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		mots.add_child(_coupe(_titre(libelle, 18, C.IVORY if disponible or est_actif else C.MUTED, 700)))
+		var etiquette := _titre(libelle, 17, C.IVORY if disponible or est_actif else C.MUTED, 700)
+		etiquette.name = "TeamShoutLabel"
+		_sur_deux_lignes(etiquette, 2)
+		mots.add_child(etiquette)
 		var note := str(option.get("note", ""))
+		var note_complete := note
 		if est_actif and actif.get("jusqua") != null: note = "Actif jusqu'à la %de" % int(actif.jusqua)
-		if not note.is_empty(): mots.add_child(_coupe(_texte(note, 11, C.GOLD if est_actif or (usure > 0.0 and usure < 1.0) else (C.ALERT if usure >= 1.0 else C.MUTED))))
+		if not note.is_empty():
+			var texte_note := _texte(note, 11, C.GOLD if est_actif or (usure > 0.0 and usure < 1.0) else (C.ALERT if usure >= 1.0 else C.MUTED))
+			texte_note.name = "TeamShoutNote"
+			_sur_deux_lignes(texte_note, 3)
+			mots.add_child(texte_note)
+		bouton.tooltip_text = libelle + ("\n" + note_complete if not note_complete.is_empty() else "") + ("\n" + note if note != note_complete else "")
 		rangee.add_child(mots)
 		bouton.modulate.a = 1.0 if disponible or est_actif else 0.6
 		colonne.add_child(bouton)
@@ -1252,6 +1305,7 @@ func _consignes() -> void:
 	_poser(aside, 1150, 96, 426, 708)
 	_carte_arbitre(aside, p)
 	_carte_adversaire(aside, p, vue)
+	_carte_match(aside, p)
 	var vide := Control.new()
 	vide.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1281,28 +1335,81 @@ func _entete_groupe(texte: String, sous: String) -> Control:
 	colonne.add_child(filet)
 	return colonne
 
-## Conseil du staff (dernière entrée du staff dans le journal du pilotage), en bas de la colonne.
+## Point sur le match sous l'adversaire : score et temps, fatigue moyenne du XV, consignes en place.
+func _carte_match(parent: Control, p: Dictionary) -> void:
+	var cadre := _panneau(_boite(C.PANEL, C.LINE, 14, 1, 14))
+	cadre.name = "TeamMatchSummary"
+	parent.add_child(cadre)
+	var colonne := _v(8)
+	cadre.add_child(colonne)
+	colonne.add_child(_texte("OÙ EN EST LE MATCH", 11, C.GOLD, _gras))
+	var total := 0.0
+	var nombre := 0
+	for joueur: Variant in _lineup():
+		if joueur is Dictionary and joueur.get("condition") != null:
+			total += float(joueur.condition)
+			nombre += 1
+	var rangee := _h(10)
+	colonne.add_child(rangee)
+	var score := _titre("%s · %s" % [_score(), _horloge()], 22, C.IVORY, 800)
+	score.name = "TeamMatchScore"
+	rangee.add_child(_coupe(score))
+	if nombre > 0:
+		var moyenne := roundi(total / nombre)
+		var fatigue := _texte("Fatigue moyenne du XV : %d %%" % moyenne, 14, teinte_energie(float(moyenne)))
+		fatigue.name = "TeamMatchFatigue"
+		colonne.add_child(_coupe(fatigue))
+	var actives := _consignes_actives(p)
+	var consignes := _texte("Consignes : " + (", ".join(PackedStringArray(actives)) if not actives.is_empty() else "toutes au cran normal"), 12, C.MUTED)
+	consignes.name = "TeamMatchConsignes"
+	consignes.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	consignes.max_lines_visible = 4
+	colonne.add_child(consignes)
+
+## Avis du staff en bas de la colonne : ses propositions en attente (avant → après, et pourquoi) et le bouton
+## « Appliquer ces consignes » ; sans avis, sa dernière décision du journal.
 func _carte_staff(parent: Control, p: Dictionary) -> void:
+	var staff: Dictionary = p.get("staff") if p.get("staff") is Dictionary else {}
+	var propositions: Array = (staff.get("propositions") if staff.get("propositions") is Array else []).filter(func(x: Variant) -> bool: return x is Dictionary)
 	var journal: Array = p.get("journal") if p.get("journal") is Array else []
-	var staff: Array = journal.filter(func(e: Variant) -> bool: return e is Dictionary and str(e.get("auteur", "")) == "staff")
-	var conseil: Variant = p.get("conseilStaff")
-	var texte := ""
-	if conseil is Dictionary: texte = str(conseil.get("texte", ""))
-	elif conseil is String: texte = conseil
-	elif not staff.is_empty(): texte = "%d′ · %s" % [int(staff[-1].get("minute", 0)), str(staff[-1].get("texte", ""))]
-	if texte.is_empty(): return
-	var cadre := _panneau(_boite(C.PANEL, C.GOLD, 14, 1, 14))
+	var faits: Array = journal.filter(func(e: Variant) -> bool: return e is Dictionary and str(e.get("auteur", "")) == "staff")
+	if propositions.is_empty() and faits.is_empty(): return
+	var cadre := _panneau(_boite(C.PANEL, C.MINT if not propositions.is_empty() else C.GOLD, 14, 1, 14))
 	cadre.name = "TeamStaffNote"
 	parent.add_child(cadre)
 	var colonne := _v(8)
 	cadre.add_child(colonne)
-	colonne.add_child(_texte("LE STAFF CONSEILLE" if conseil != null else "LE STAFF", 11, C.GOLD, _gras))
-	var corps := _texte(texte, 14, C.IVORY)
-	corps.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	corps.max_lines_visible = 4
-	colonne.add_child(corps)
+	if propositions.is_empty():
+		colonne.add_child(_texte("LE STAFF", 11, C.GOLD, _gras))
+		var corps := _texte("%d′ · %s" % [int(faits[-1].get("minute", 0)), str(faits[-1].get("texte", ""))], 14, C.IVORY)
+		corps.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		corps.max_lines_visible = 4
+		colonne.add_child(corps)
+		return
+	var tete := _h(8)
+	tete.add_child(_coupe(_texte("LE STAFF CONSEILLE · %d′" % int(staff.get("minute", 0)), 11, C.MINT, _gras)))
+	colonne.add_child(tete)
+	var raisons: Array[String] = []
+	for x: Dictionary in propositions.slice(0, 3):
+		var ligne := _h(6)
+		ligne.add_child(_texte(str(x.get("label", "")), 14, C.IVORY, _gras))
+		ligne.add_child(_coupe(_texte("%s → %s" % [str(x.get("actuelLabel", "")), str(x.get("valeurLabel", ""))], 14, C.GOLD)))
+		colonne.add_child(ligne)
+		var raison := str(x.get("raison", ""))
+		if not raison.is_empty() and not raison in raisons: raisons.append(raison)
+	if not raisons.is_empty():
+		var pourquoi := _texte(" ".join(raisons), 12, C.MUTED)
+		pourquoi.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		pourquoi.max_lines_visible = 3
+		colonne.add_child(pourquoi)
+	var bouton := _bouton("Appliquer ces consignes", appliquer_staff, "menthe", 16, "TeamStaffApply")
+	bouton.disabled = bool(app.waiting) or _attente == "staff"
+	colonne.add_child(bouton)
 
 func _pied_consignes(infos: HBoxContainer) -> void:
+	if not _message.is_empty():
+		infos.add_child(_coupe(_texte(_message, 13, _message_teinte)))
+		return
 	infos.add_child(_coupe(_texte("Les consignes en direct s'appliquent dès la reprise ; le plan de jeu demande l'arrêt du match.", 13, C.MUTED)))
 
 ## Ligne d'un axe : libellé (et « match en pause » pour le plan de jeu), crans ; fond relevé et bilan
@@ -1350,17 +1457,14 @@ func _axe(p: Dictionary, axe: Dictionary) -> Control:
 		var valeur := str(option_v.get("id", ""))
 		var choisi := valeur == actuel
 		var texte := str(option_v.get("label", valeur))
-		var long := options.size() > 3
-		var bouton := _bouton(texte, _choisir_cran.bind(crans, id, valeur), "or" if choisi else "cadre", 13 if long else 15, "Consigne_%s_%s" % [id, valeur])
+		# Même taille et une seule ligne pour tous les crans : libellé court, le complet en infobulle.
+		var bouton := _bouton(libelle_court(texte), _choisir_cran.bind(crans, id, valeur), "or" if choisi else "cadre", CRAN_TAILLE, "Consigne_%s_%s" % [id, valeur])
 		bouton.set_meta("axe", id)
 		bouton.set_meta("valeur", valeur)
 		bouton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bouton.custom_minimum_size = Vector2(0, px(32))
-		# Quatre crans aux libellés longs (pénalités, plan de jeu) : sur deux lignes plutôt que tronqués.
-		if long: bouton.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		else:
-			bouton.clip_text = true
-			bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		bouton.clip_text = true
+		bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		bouton.tooltip_text = texte + ("\n" + aide if not aide.is_empty() else "")
 		for etat: String in ["normal", "hover", "pressed", "disabled"]:
 			var boite := bouton.get_theme_stylebox(etat) as StyleBoxFlat
@@ -1605,3 +1709,99 @@ func debordements() -> Array[String]:
 			var besoin := police.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, l.get_theme_font_size("font_size")).x
 			if besoin > l.size.x + 2.0: echecs.append("texte coupé « %s » (%d > %d)" % [l.text, roundi(besoin), roundi(l.size.x)])
 	return echecs
+
+# --- Onglet Rôles ----------------------------------------------------------------
+
+## Quatre cartes (deux par ligne) : qui s'en charge, le choix du staff, les candidats sur le terrain avec leur
+## note dans l'attribut du rôle. Les règles (joueurs sur le terrain seulement, secours ≠ buteur) restent au moteur.
+func _roles() -> void:
+	var source: Variant = _pilotage().get("roles")
+	var roles: Array = (source.get("roles") if source is Dictionary and source.get("roles") is Array else []).filter(func(r: Variant) -> bool: return r is Dictionary)
+	var grille := GridContainer.new()
+	grille.name = "TeamRoles"
+	grille.columns = 2
+	grille.add_theme_constant_override("h_separation", px(16))
+	grille.add_theme_constant_override("v_separation", px(16))
+	_poser(grille, 24, 96, 1552, 708)
+	if roles.is_empty():
+		var rien := _texte("Les rôles se fixent avant le coup d'envoi pour cette rencontre.", 16, C.MUTED)
+		grille.add_child(rien)
+	for role: Dictionary in roles: grille.add_child(_carte_role(role))
+	_pied(_pied_roles, ["Retour à la composition", choisir_onglet.bind("composition"), "TeamToComposition"])
+
+func _pied_roles(infos: HBoxContainer) -> void:
+	var texte := _message if not _message.is_empty() else "Le changement vaut dès la prochaine occasion : prochain but, prochaine touche, prochain dégagement."
+	infos.add_child(_coupe(_texte(texte, 13, _message_teinte if not _message.is_empty() else C.MUTED)))
+
+func _carte_role(role: Dictionary) -> Control:
+	var id := str(role.get("id", ""))
+	var designe: Variant = role.get("designe")
+	var staff: Variant = role.get("staff")
+	var en_jeu: Variant = role.get("enJeu")
+	var cadre := _panneau(_boite(C.PANEL, C.GOLD if designe is Dictionary else C.LINE, 14, 1, 16))
+	cadre.name = "Role_" + id
+	cadre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cadre.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var colonne := _v(8)
+	cadre.add_child(colonne)
+	var tete := _h(10)
+	tete.add_child(_titre(str(role.get("label", "")).to_upper(), 22, C.GOLD))
+	var attribut := _texte(str(role.get("attribut", "")), 12, C.MUTED)
+	attribut.size_flags_vertical = Control.SIZE_SHRINK_END
+	tete.add_child(attribut)
+	colonne.add_child(tete)
+	var qui := _coupe(_texte("", 14, C.IVORY))
+	if en_jeu is Dictionary:
+		qui.text = "En charge : %s (%d)%s" % [str(en_jeu.get("name", "")), int(en_jeu.get("value", 0)), "" if designe is Dictionary else " · choix du staff"]
+	else:
+		qui.text = "Personne sur le terrain"
+		qui.add_theme_color_override("font_color", C.ALERT)
+	colonne.add_child(qui)
+	var candidats: Array = (role.get("candidats") if role.get("candidats") is Array else []).filter(func(c: Variant) -> bool: return c is Dictionary)
+	var occupe := bool(app.waiting) or _attente == "role"
+	# Candidats sur deux colonnes : six au plus tiennent dans la carte sans défiler.
+	var liste := GridContainer.new()
+	liste.name = "RoleCandidates_" + id
+	liste.columns = 2
+	liste.add_theme_constant_override("h_separation", px(8))
+	liste.add_theme_constant_override("v_separation", px(8))
+	liste.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	colonne.add_child(liste)
+	for c: Dictionary in candidats.slice(0, 6):
+		liste.add_child(_candidat(id, c, en_jeu is Dictionary and str(en_jeu.get("id", "")) == str(c.get("id", "")), staff is Dictionary and str(staff.get("id", "")) == str(c.get("id", "")), occupe))
+	var vide := Control.new()
+	vide.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	colonne.add_child(vide)
+	var rendre := _bouton("Laisser le staff choisir" + (" (%s)" % str(staff.get("name", "")) if staff is Dictionary else ""), choisir_role.bind(id, ""), "cadre", 14, "RoleStaff_" + id)
+	rendre.disabled = occupe or not designe is Dictionary
+	colonne.add_child(rendre)
+	return cadre
+
+## Ligne d'un candidat : portrait, numéro et nom, note dans l'attribut ; cerclée d'or s'il est en charge.
+func _candidat(role: String, c: Dictionary, choisi: bool, du_staff: bool, occupe: bool) -> Button:
+	var bouton := _bouton("", choisir_role.bind(role, str(c.get("id", ""))), "or_cadre" if choisi else "cadre", 14, "Role_%s_%d" % [role, int(c.get("num", 0))])
+	bouton.set_meta("joueur", str(c.get("id", "")))
+	bouton.custom_minimum_size.y = px(44)
+	bouton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bouton.disabled = occupe
+	bouton.toggle_mode = false
+	var rangee := _h(10)
+	S.full(rangee)
+	rangee.offset_left = px(8)
+	rangee.offset_right = -px(12)
+	bouton.add_child(rangee)
+	var portrait := _portrait(c, px(32))
+	portrait.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	rangee.add_child(portrait)
+	var nom := _coupe(_texte("%d · %s" % [int(c.get("num", 0)), str(c.get("name", ""))], 15, C.IVORY, _gras))
+	nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	rangee.add_child(nom)
+	if du_staff:
+		var marque := _texte("choix du staff", 11, C.MUTED)
+		marque.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		rangee.add_child(marque)
+	var note := _titre(str(int(c.get("value", 0))), 18, C.GOLD)
+	note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	rangee.add_child(note)
+	return bouton

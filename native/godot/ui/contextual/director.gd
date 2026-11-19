@@ -263,7 +263,7 @@ const Components = preload("res://ui/immersive08/components.gd")
 const INVITATION_PANEL := Color("172321")
 const INVITATION_TITLE := Color("f2ecdc")
 const INVITATION_REASON := Color("abb7b1")
-const INVITATION_GOLD := Color("d8c183")
+const INVITATION_GOLD := S.GOLD
 const INVITATION_GAP := 12
 
 # Mêmes corps que les lignes du courrier (reception_canvas.gd : 20 pour le titre, 17 pour le détail), mis à l'échelle
@@ -342,12 +342,43 @@ func install_entrypoints() -> void:
 		if is_instance_valid(app.body) and app.body.find_child("ContextualObserveTraining", true, false) == null: _add_training_entry(app.body)
 
 func _add_training_entry(parent: Node) -> void:
-	var button := S.G.button("VOIR L’ENTRAÎNEMENT", open_training)
+	# Style de bouton du jeu (contour or, comme « Préparer le match »), plus le bouton blanc pleine largeur du thème Godot.
+	# Fond sombre quel que soit l'accent du club (une couleur claire donnait un bouton presque blanc), contour or.
+	var button := Components.button("VOIR L’ENTRAÎNEMENT", open_training, false, app.accent)
+	var normal := (button.get_theme_stylebox("normal") as StyleBoxFlat).duplicate() as StyleBoxFlat
+	normal.border_color = Components.GOLD
+	button.add_theme_stylebox_override("normal", normal)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	button.custom_minimum_size.x = Components.px(300)
 	button.name = "ContextualObserveTraining"
 	button.disabled = not _live().is_empty() or app.model.get("meta", {}).get("phase") == "ended"
+	# Page riche (gabarit fixe, Travail du club) : le bouton se pose dans le coin haut droit du gabarit, sur la
+	# photo d'en-tête, au lieu de pousser toute la page vers le bas (le panneau de droite se mettait à défiler).
+	var canvas := _fixed_canvas(parent)
+	if canvas != null:
+		button.custom_minimum_size.y = maxi(32, Components.px(46))
+		canvas.add_child(button)
+		var width := maxf(button.custom_minimum_size.x, button.get_combined_minimum_size().x)
+		var height := maxf(button.custom_minimum_size.y, button.get_combined_minimum_size().y)
+		var margin := float(Components.px(24))
+		button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		button.offset_left = -width - margin
+		button.offset_right = -margin
+		button.offset_top = Components.px(18)
+		button.offset_bottom = button.offset_top + height
+		return
 	parent.add_child(button)
 	parent.move_child(button, 0)
 	_contain_entry_content(parent, button)
+
+## Gabarit fixe de la page riche (Control simple, hors conteneur) posé seul dans le corps du Travail du club.
+func _fixed_canvas(parent: Node) -> Control:
+	if parent != app.body or app.route != "Travail du club": return null
+	var pages := parent.get_children().filter(func(node: Node): return node is Control and not node.is_queued_for_deletion())
+	if pages.size() != 1: return null
+	var page: Control = pages[0]
+	if page is Container: return null
+	return page
 
 func _contain_entry_content(parent: Node, entry: Control) -> void:
 	if parent != app.body: return

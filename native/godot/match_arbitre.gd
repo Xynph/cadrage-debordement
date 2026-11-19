@@ -14,11 +14,19 @@ extends Node3D
 const Presentation = preload("res://match_presentation.gd")
 const Athlete = preload("res://match_athlete.gd")
 const Kit = preload("res://match_kit.gd")
+const ApresEssai = preload("res://match_apres_essai.gd")
 const TENUES := [Color("16181b"), Color("b7e23a"), Color("e2457f"), Color("23347a")]
 const ALLURE_MAX := 6.2      # m/s
 const ACCELERATION := 4.5    # m/s²
 const RECUL := 7.5           # distance au ballon pendant le jeu
 const PROCHE := 2.5          # en deçà, il ne bouge pas pour un petit déplacement du ballon
+## Essai accordé (19 novembre 2026) : dès que le geste d'essai de la vue est aplati, il rejoint le
+## point d'aplati (à côté, match_apres_essai.gd `place_arbitre`), siffle ESSAI_SIFFLET s, puis, à
+## moins de ESSAI_PROCHE m du point, tend le bras vers lui (un peu vers le bas) ESSAI_BRAS s.
+const ESSAI_SIFFLET := 0.7
+const ESSAI_PROCHE := 5.0
+const ESSAI_BRAS := 3.0
+const ESSAI_BRAS_HAUTEUR := -0.45
 
 var view: Node3D
 var model: Node3D
@@ -40,6 +48,9 @@ var hauteur_bras := 0.0
 var _poids := 0.0
 var _signal_vu := ""
 var _regard := Vector3.ZERO
+## Essai qu'il accorde : {"point": Vector3, "t": s depuis l'aplati, "bras": instant où il tend le
+## bras (-1 avant)} ; vide hors essai ou quand la régie le dirige (liaison).
+var essai: Dictionary = {}
 
 
 func _init(owner: Node3D) -> void:
@@ -115,7 +126,9 @@ func _process(delta: float) -> void:
 		return
 	var ballon: Vector3 = view._ball.global_position if is_instance_valid(view.get("_ball")) and view._ball.visible else position
 	_regard = ballon
-	if not dirige:
+	if _accorder_essai(delta):
+		pass
+	elif not dirige:
 		var voulu := place_de_jeu(ballon)
 		if Vector2(voulu.x - cible.x, voulu.z - cible.z).length() > PROCHE or Vector2(voulu.x - position.x, voulu.z - position.z).length() > RECUL:
 			cible = voulu
@@ -135,6 +148,45 @@ func _process(delta: float) -> void:
 		rotation.y += clampf(angle_difference(rotation.y, vise), -5.0 * delta, 5.0 * delta)
 	_animer(v, mouvement.length(), delta)
 	_signaler(delta)
+
+
+## Essai aplati à l'écran (geste d'essai de la vue) : il le rejoint, siffle, puis tend le bras vers
+## le point d'aplati. Rend vrai tant qu'il accorde l'essai (sa place est alors celle de l'essai).
+func _accorder_essai(delta: float) -> bool:
+	var point := _point_essai()
+	if dirige or not point.is_finite():
+		if not essai.is_empty():
+			essai = {}
+			if not dirige:
+				signal_bras = ""
+		return false
+	if essai.is_empty() or (essai.point as Vector3).distance_to(point) > 0.5:
+		essai = {"point": point, "t": 0.0, "bras": -1.0}
+	essai.t = float(essai.t) + delta
+	cible = ApresEssai.place_arbitre(point)
+	_regard = point
+	var t := float(essai.t)
+	var pres := Vector2(position.x - point.x, position.z - point.z).length() < ESSAI_PROCHE
+	if float(essai.bras) < 0.0 and t >= ESSAI_SIFFLET and pres:
+		essai.bras = t
+	if t < ESSAI_SIFFLET:
+		signal_bras = "sifflet"
+	elif float(essai.bras) >= 0.0 and t < float(essai.bras) + ESSAI_BRAS:
+		signal_bras = "bras"
+		direction_bras = Vector3(point.x - position.x, 0.0, point.z - position.z)
+		hauteur_bras = ESSAI_BRAS_HAUTEUR
+	else:
+		signal_bras = ""
+	return true
+
+
+## Point d'aplati de l'essai que la vue met en scène, une fois le ballon au sol ; INF sinon.
+func _point_essai() -> Vector3:
+	var gestes: Variant = view.get("_gestes")
+	if gestes == null or not gestes.active() or str(gestes.phase) not in ["essai", "essai_maul"] or not gestes.essai_aplati():
+		return Vector3.INF
+	var point: Vector3 = gestes.target
+	return Vector3(point.x, 0.0, point.z)
 
 
 func _animer(v: float, parcouru: float, delta: float) -> void:

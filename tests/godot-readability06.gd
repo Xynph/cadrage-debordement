@@ -215,21 +215,23 @@ func office_card_readable(card: Control) -> bool:
 func office_reading(resolution: Vector2i) -> void:
 	await navigate("Bureau")
 	var tiles := ["OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeRecruitment", "OfficeTimeline"]
+	# Sous 1600 de large, le Bureau en conteneurs défile d'un seul tenant : chaque tuile est amenée à l'écran avant lecture.
+	var scrolling := resolution.x < 1600
 	for id: String in tiles:
 		var tile := named(id)
 		var readable := inside(tile,app.body_scroll)
-		if resolution.x == 1280: readable = await office_card_readable(tile)
+		if scrolling: readable = await office_card_readable(tile)
 		check(readable, "Tuile entière dans le Bureau %s %s" % [id,resolution])
 	var decisions := named("OfficeDecisions")
 	check(decisions != null and rect(decisions).size.x >= 280, "Espace utile pour les décisions " + str(resolution))
 	for id in ["OfficePreparationAction", "OfficeSelectionAction", "OfficeSquadAction", "OfficeStandingsAction", "OfficeCalendarAction"]:
 		var action := named(id) as Button
-		if resolution.x == 1280 and action != null:
+		if scrolling and action != null:
 			action.grab_focus()
 			await expose_office(action)
 			check(action.has_focus(), "Accès métier garde son focus dans le vrai défilement " + id)
-		check(office_contained(action) if resolution.x == 1280 else inside(action,app.body_scroll), "Accès métier visible depuis le Bureau %s %s" % [id,resolution])
-	if resolution.x == 1280:
+		check(office_contained(action) if scrolling else inside(action,app.body_scroll), "Accès métier visible depuis le Bureau %s %s" % [id,resolution])
+	if scrolling:
 		var reading := named("OfficeReadingScroll") as ScrollContainer
 		if reading != null: reading.scroll_vertical = 0
 		app.body_scroll.scroll_vertical = 0
@@ -364,6 +366,20 @@ func compact_profile(player: Dictionary, annotation: String, resolution: Vector2
 	if tabs == null or scroll == null or overview == null: return
 	check(absf(rect(scroll).end.y - rect(tabs).end.y) <= 16, "Les onglets utilisent la hauteur du dossier compact")
 	check(tabs.get_tab_title(2) == "Contrat", "Contrat reste le troisième onglet compact")
+	# Nom du joueur en titre, comme en 1920 (retours du 19 novembre 2026) : le lien vers la fiche n'a pas
+	# l'habillage d'un bouton ou d'un champ (aucun fond ni bordure hors focus clavier).
+	var name_link := named("ProfileOpenPlayerName") as Button
+	var name_label := named("ProfilePlayerName") as Label
+	check(name_link != null and name_label != null and name_link.is_ancestor_of(name_label), "Nom du joueur en lien de lecture " + str(resolution))
+	if name_link != null:
+		for state in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+			var box := name_link.get_theme_stylebox(state)
+			var bare: bool = box is StyleBoxEmpty or (box is StyleBoxFlat and (box as StyleBoxFlat).bg_color.a < 0.01 and (box as StyleBoxFlat).border_width_left + (box as StyleBoxFlat).border_width_right + (box as StyleBoxFlat).border_width_top + (box as StyleBoxFlat).border_width_bottom == 0)
+			check(bare, "Nom du joueur sans cadre de champ (%s) %s" % [state, resolution])
+	if name_label != null and name_link != null:
+		var below: Array = name_link.get_parent().get_children().filter(func(n: Node): return n is Label)
+		var line_px: int = (below[0] as Label).get_theme_font_size("font_size") if not below.is_empty() else 0
+		check(name_label.get_theme_font_size("font_size") > line_px, "Nom du joueur en titre, plus grand que la ligne du poste (%d > %d px) %s" % [name_label.get_theme_font_size("font_size"), line_px, resolution])
 	tabs.current_tab = 2
 	await settle()
 	for id in ["OfferRenewal", "PlayerLoad"]:

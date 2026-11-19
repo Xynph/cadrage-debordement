@@ -81,7 +81,7 @@ test('Chronomètre effectif et match complet sans mutation de la durée du règl
       l.paused=false;advanceRugby(l);
       if(l.japanExtra)validate();
     }validate();verifyResult()`);
-  assert.ok(h.run('l.finished && l.japanExtra && l.stats.reduce((n,s)=>n+s.possession,0)===l.minute'));
+  assert.ok(h.run('l.finished && l.japanExtra && l.stats.reduce((n,s)=>n+s.possession,0)===(l.chrono?l.chrono.actions:l.minute)'));
 });
 
 test('Le nul reste valide en championnat et dans chaque manche de barrage', () => {

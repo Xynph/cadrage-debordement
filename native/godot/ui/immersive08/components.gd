@@ -47,6 +47,36 @@ static func configure(height: float, width: float = 2560.0) -> void:
 static func px(value: float) -> int:
 	return roundi(value * density)
 
+## Taille de police avec le plancher commun de 12 px (même règle que label et D.text).
+static func font_px(value: float) -> int:
+	return maxi(12, px(value))
+
+## Cible minimale d'une commande, en pixels de fenêtre : 25 px, soit ≈ 24 px affichés une fois le gabarit
+## ajusté au pied de page (shell._fit_layout, facteur ≥ 0,977 dès 1280 × 720).
+const TARGET_MIN := 25.0
+
+## Hauteur (unités du gabarit 2560 × 1440) d'une commande dense. Les gabarits dessinés pour 1920 et plus restent
+## intacts ; sous la densité 0,75 (fenêtres plus petites que 1920 × 1080), la hauteur monte jusqu'à TARGET_MIN.
+static func reach(height: float) -> float:
+	if density >= .75: return height
+	return maxf(height, ceilf(TARGET_MIN / density))
+
+## Rectangle de commande agrandi verticalement autour de son centre (voir reach).
+static func reach_rect(rectangle: Rect2) -> Rect2:
+	var height := reach(rectangle.size.y)
+	return Rect2(rectangle.position.x, rectangle.position.y - (height - rectangle.size.y) / 2.0, rectangle.size.x, height)
+
+## Petites fenêtres (densité < 0,75) : les gabarits riches réorganisent leurs commandes les plus serrées.
+static func dense() -> bool:
+	return density < .75
+
+## Toutes les commandes d'une vue métier (thème Legacy) gardent la cible minimale en petite fenêtre.
+static func reach_controls(root: Node) -> void:
+	if not dense(): return
+	for node: Node in root.find_children("*", "BaseButton", true, false):
+		var control := node as Control
+		control.custom_minimum_size = control.custom_minimum_size.max(Vector2(TARGET_MIN, TARGET_MIN))
+
 static func box(color: Color = PANEL, border: Color = LINE, radius: int = 8, padding: int = 18) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color

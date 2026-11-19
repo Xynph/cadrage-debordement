@@ -552,12 +552,15 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 	var textes: Array = [str(fin_tf.get("texte", "")) if forcee else str(info.get("texte", ""))]
 	var arrets: Array = [int(fin_tf.get("index", -1)) if forcee else int(info.get("arret", -1))]
 	var bandeaux: Array = [arret_a]
+	# Nature du fait de chaque légende (trace du match filmé : le texte d'un arrêt n'a pas le kind de la suite).
+	var kinds: Array = [str(fin_tf.get("kind", "")) if forcee else str(info.get("arret_kind", ""))]
 	if coupe:
 		textes.append(str(info.get("texte", "")))
 		arrets.append(int(info.get("arret", -1)))
+		kinds.append(str(info.get("arret_kind", "")))
 		bandeaux.append(remise)
 	return {"type": type, "choix": info.choix, "coupe": coupe, "plans": plans, "duree": total, "arbitre": programme,
-		"detail": detail, "tenue": tenue, "texte": str(info.get("texte", "")), "textes": textes, "arrets": arrets, "bandeaux": bandeaux,
+		"detail": detail, "tenue": tenue, "texte": str(info.get("texte", "")), "textes": textes, "arrets": arrets, "kinds": kinds, "bandeaux": bandeaux,
 		"ramasseur": ramasseur, "capitaine": capitaine}
 
 

@@ -63,7 +63,7 @@ static func build(app: Control) -> Control:
 		page.add_child(recent)
 		page.custom_minimum_size.y += C.px(150)
 	var timeline := _card(page,Rect2(280,1118,main_w,226),"PROCHAINS MATCHS","calendar","OfficeTimeline")
-	_timeline(timeline,app,recent,main_w)
+	var arrange := _timeline(timeline,app,recent,main_w)
 	if gabi:
 		var zone := D.panel(page,Rect2(main_w+GAP,0,GABI_WIDTH,1124),"","","","GabiBureau")
 		zone.add_theme_stylebox_override("panel",D.surface(GABI_WIDTH,1124,Color("13241f"),Color("0b1512"),Color(C.GOLD,.45)))
@@ -76,7 +76,12 @@ static func build(app: Control) -> Control:
 		# Premiers pas de Gabi : carte sous la frise, hors de la colonne de Gabi (sa figure garde toute sa hauteur).
 		if app.coach.has_method("carte_premiers_pas"):
 			var haut: float = app.coach.carte_premiers_pas(page, Rect2(0, 1124 + GAP, main_w, 128))
-			if haut > 0.0: page.custom_minimum_size.y += C.px(haut + GAP)
+			if haut > 0.0:
+				page.custom_minimum_size.y += C.px(haut + GAP)
+				# La carte suit la frise (et les résultats) au lieu d'une ordonnée fixe : dépliée, la frise
+				# descendait jusqu'à 1202 et passait sous la carte posée à 1140.
+				arrange.call()
+				follow.call()
 	return page
 
 static func _fixture(card: Panel, app: Control, w: int = 1360) -> void:
@@ -402,7 +407,7 @@ static func _recruitment(card: Panel, app: Control, w: int = 546) -> void:
 		D.text(card,23,295,spotlight.need,20,C.IVORY,500,inner,HORIZONTAL_ALIGNMENT_LEFT,true)
 	D.button(card,Rect2(23,391,inner,39),"Ouvrir le recrutement" if player.is_empty() else "Voir le dossier",Office.open_spotlight.bind(app,str(player.get("id",""))),false,"arrow",true,app.accent,"OfficeMarketAction")
 
-static func _timeline(card: Panel, app: Control, recent: PanelContainer, w: int = 2248) -> void:
+static func _timeline(card: Panel, app: Control, recent: PanelContainer, w: int = 2248) -> Callable:
 	# En-tête : « Préparer la suite du club » à gauche de « Tout le calendrier », sans chevauchement
 	# (ils se recouvraient : 1710..2220 et 1888..2223).
 	var calendar_left := w - 360
@@ -461,15 +466,22 @@ static func _timeline(card: Panel, app: Control, recent: PanelContainer, w: int 
 	var page := card.get_parent() as Control
 	var update := func():
 		var tail := 150 if recent != null else 0
-		var expanded := not fixtures.is_empty() and page.size.y >= card.position.y + C.px(304 + tail)
+		# Carte « Premiers pas » de Gabi : posée sous la frise et les résultats, sa hauteur est réservée.
+		var first_steps := page.get_node_or_null("GabiPremiersPasCarte") as Control
+		var reserved := first_steps.size.y + C.px(GAP) if first_steps != null else 0.0
+		var expanded := not fixtures.is_empty() and page.size.y >= card.position.y + C.px(304 + tail) + reserved
 		card.size.y = C.px(304 if expanded else 226)
 		for tile in tiles: tile.size.y = C.px(210 if expanded else 132)
 		for ground in grounds: ground.visible = expanded
+		var bottom := card.position.y + card.size.y
 		if recent != null:
-			recent.position = Vector2(0,card.position.y + card.size.y + C.px(12))
+			recent.position = Vector2(0,bottom + C.px(12))
 			recent.size.x = card.size.x
+			bottom = recent.position.y + maxf(recent.size.y, recent.get_combined_minimum_size().y)
+		if first_steps != null: first_steps.position.y = bottom + C.px(GAP)
 	page.resized.connect(update)
 	update.call()
 	if fixtures.is_empty(): D.text(card,25,130,"Aucune rencontre programmée pour le moment.",25,C.MUTED,500,1500)
 	var action := D.button(card,Rect2(calendar_left,15,335,32),"Tout le calendrier",func():app._navigate("Calendrier"),false,"arrow",true,app.accent,"OfficeCalendarAction")
 	action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
+	return update

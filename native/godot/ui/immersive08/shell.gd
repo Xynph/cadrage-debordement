@@ -33,6 +33,18 @@ const MatchCompact = preload("res://ui/immersive08/match_compact.gd")
 const G = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const TACTICS_CANVAS_MIN_WIDTH := 1600
+## Gabarits riches (référence 2560 × 1440) ouverts dès 1280 × 720 (densité 0,5). Les gabarits sont
+## proportionnels (C.px, D.place) et tout texte passe par un plancher de 12 px (C.label, D.text) :
+## à 1280 × 720 le plus petit texte rendu fait 12 × 0,977 ≈ 11,7 px (pied de page compris, voir _fit_layout).
+## Préparation (Entraînement compris), Plan de jeu et Centre en font partie : sous la densité 0,75, leurs commandes
+## serrées gardent une cible d'au moins 25 px de fenêtre (C.reach, C.reach_controls) et se réorganisent au besoin
+## (XV en colonnes, repères et vigilance sur des lignes plus hautes). Seul le Calendrier en tableau hors
+## Nationale/Champ garde sa page simple. Le Match (avant le coup d'envoi) suit le même seuil RICH_MIN_SIZE ;
+## le direct est l'écran contextuel.
+const RICH_MIN_SIZE := Vector2i(1280,720)
+const SIDEBAR_AUTOSAVE_CAPTION := "Sauvegarde auto"
+const RICH_FROM_720P := ["Rivalités","Classements","Finances","Recrutement","Club","Staff","Travail du club","Stratégie",
+	"Carrière","Presse","Vestiaire","Formation","Préparation","Plan de jeu","Centre"]
 
 const FOOTER_RISE := 14
 const TOPBAR_ACTION_LEFT := 2067
@@ -137,7 +149,7 @@ static func render(app: Control) -> bool:
 	content.name = "CareerContent"
 	inset.add_child(content)
 	var canvas_script := _dedicated_page(app,physical)
-	var immersive_match: bool = app.route=="Match" and physical.x>=1920 and physical.y>=1080
+	var immersive_match: bool = app.route=="Match" and physical.x>=RICH_MIN_SIZE.x and physical.y>=RICH_MIN_SIZE.y
 	var monthly_calendar: bool = app.route=="Calendrier" and not Selections.nation_only(app.model) and not app.get_meta("calendar_table",false)
 	if canvas_script!=null or immersive_match or monthly_calendar or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
 		app.heading=null
@@ -244,7 +256,7 @@ static func _dedicated_page(app: Control, size: Vector2i) -> Script:
 	if app.route == "Calendrier" and not app.get_meta("calendar_table",false): return null
 	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId") in ["nationale","champ"]: return Competition
 	if size.x<1920 or size.y<1080:
-		return Rivalry if app.route=="Rivalités" and size.x>=1280 and size.y>=720 else null
+		if size.x<RICH_MIN_SIZE.x or size.y<RICH_MIN_SIZE.y or app.route not in RICH_FROM_720P: return null
 	if _is_training(app): return Training
 	match app.route:
 		"Préparation": return Preparation
@@ -286,7 +298,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	var crest := Selections.nation_badge(nation, C.px(126)) if national else G.crest(app.model.club,C.px(126))
 	rail.add_child(crest)
 	D.place(crest,Rect2(61,151,126,147))
-	D.text(rail,124,331,identity.to_upper(),23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER)
+	D.fit_title(D.text(rail,124,331,identity.to_upper(),23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER),222,44)
 	D.text(rail,124,354,"SAISON "+G.season_label(app.model.meta.get("season",1)),16,C.GOLD,500,215,HORIZONTAL_ALIGNMENT_CENTER)
 	var names:Array=[["mail","Réception","Réception"],["home","Bureau","Bureau"],["people","Effectif","Effectif"],["tactic","Tactique","Composition"],["train","Entraînement","Préparation"],["search","Recrutement","Recrutement"],["shield","Club","Club"],["money","Finances","Finances"],["trophy","Compétitions","Classements"],["school","Formation","Formation"]]
 	if app.model.get("international") is Dictionary: names.append(["flag","Sélections","Sélections"])
@@ -342,7 +354,12 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	D.rect(dock,Rect2(0,220,247,75),Color("0b1614"))
 	var storage_error: bool = app._storage_has_error() if app.has_method("_storage_has_error") else app._status_has_error()
 	D.rect(dock,Rect2(21,245,8,8),C.ALERT if storage_error else C.MINT,4)
-	D.text(dock,39,255,"Stockage à vérifier" if storage_error else "Sauvegarde automatique",17,C.MUTED,500,198)
+	# Libellé court : « Sauvegarde automatique » était coupé dès 1280 × 720 (plancher de 12 px) et le pied de page
+	# donne déjà la phrase complète. L'infobulle garde la précision.
+	var storage_state := D.text(dock,39,255,"Stockage à vérifier" if storage_error else SIDEBAR_AUTOSAVE_CAPTION,17,C.MUTED,500,198)
+	storage_state.name = "ImmersiveSidebarStorage"
+	storage_state.mouse_filter = Control.MOUSE_FILTER_PASS
+	storage_state.tooltip_text = "Le stockage de la carrière demande une vérification." if storage_error else "Sauvegarde automatique activée (fréquence dans les Réglages)."
 	var profile := "Sélection nationale" if national else G.club_abbr(app.model.club)+" · Carrière principale"
 	D.text(dock,24,281,profile,17,C.FAINT,500,210)
 
@@ -492,13 +509,31 @@ static func _position_topbar(layout: Control) -> void:
 		next_day.position.y=action.position.y
 		next_day.size.y=height
 
+## Chiffre clé de l'en-tête Effectif : gros chiffre et légende sur le fond sombre des blocs (comme
+## « 65 aujourd’hui » de la fiche joueur), à la place des pastilles en petit texte vert sur vert.
+static func _key_figure(row: Control, area: Rect2, index: int, item: Array) -> Panel:
+	var frame := D.rect(row,area,Color("16201f"),7,Color("415451"))
+	frame.name = "EffectifChiffre%d" % index
+	frame.mouse_filter = Control.MOUSE_FILTER_PASS
+	var value := str(item[0])
+	var pixels := maxi(12,C.px(40))
+	var width := C.font(700).get_string_size(value,HORIZONTAL_ALIGNMENT_LEFT,-1,pixels).x / C.density
+	width = minf(width, area.size.x * .5)
+	var figure := D.text(frame,18,47,value,40,item[2],700,width+2)
+	figure.name = "EffectifChiffreValeur"
+	var legend := D.text(frame,18+width+10,45,str(item[1]),21,C.MUTED,500,area.size.x-width-46)
+	legend.name = "EffectifChiffreLegende"
+	frame.tooltip_text = value + " " + str(item[1])
+	frame.accessibility_name = frame.tooltip_text
+	return frame
+
 static func _position_office_match_status(status: Label, factor: float) -> void:
 	if factor<=0: return
 	status.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
 
 static func _heading(parent: Node, app: Control) -> void:
 	var row := Control.new()
-	row.custom_minimum_size.y = C.px(91 if app.route=="Effectif" else 88 if app.route=="Composition" else 104)
+	row.custom_minimum_size.y = C.px(91 if app.route=="Effectif" else 88 if app.route=="Composition" else 112 if app.route=="Réception" else 104)
 	C.fill(row)
 	parent.add_child(row)
 	if app.route=="Réception":
@@ -520,7 +555,8 @@ static func _heading(parent: Node, app: Control) -> void:
 	var injury_count: int = values.injured
 	var injury_caption := "%d blessé%s" % [injury_count, "s" if injury_count > 1 else ""]
 	var metrics: Array = [[(P.rank_ordinal(app.model.club) if P.standings_open(app.model.club) else "Pas classé")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[injury_caption,"heart",C.ALERT if injury_count > 0 else C.MUTED]]
-	if app.route=="Effectif": metrics=[[str(values.total)+" joueurs","people",C.GOLD],metrics[1],metrics[2],["Niveau moyen "+str(values.rating),"star",C.GOLD]]
+	# Effectif : chiffres clés en gros chiffre + légende (valeur, légende, couleur du chiffre).
+	if app.route=="Effectif": metrics=[[G.n(values.total),"joueur%s" % ("s" if int(values.total) > 1 else ""),C.IVORY],[G.n(values.available),"disponible%s" % ("s" if int(values.available) > 1 else ""),C.MINT],[G.n(injury_count),"blessé%s" % ("s" if injury_count > 1 else ""),C.ALERT if injury_count > 0 else C.IVORY],[str(values.rating),"niveau moyen",C.GOLD]]
 	elif app.route not in ["Bureau","Composition"]: metrics=[]
 	if app.route=="Composition":
 		var selected:int=app.model.get("selection",{}).get("slots",[]).filter(func(slot:Dictionary):return slot.get("playerId")!=null).size()
@@ -533,7 +569,7 @@ static func _heading(parent: Node, app: Control) -> void:
 		for i in metrics.size():
 			var item: Array = metrics[i]
 			if app.route=="Effectif":
-				D.chip(row,Rect2(1242+i*253,19,241,51),item[0],C.IVORY if i==0 else item[2])
+				_key_figure(row,Rect2(1242+i*253,13,241,64),i,item)
 				continue
 			var x := 1512+i*250
 			D.rect(row,Rect2(x,15,236,58),Color("16201f"),7,Color("415451"))

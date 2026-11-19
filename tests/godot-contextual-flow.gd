@@ -221,7 +221,10 @@ func run() -> void:
 		check(root.size == resolution, "Actual training client area matches requested " + str(resolution))
 		var observe: Button = app.root_content.find_child("ContextualObserveTraining", true, false)
 		check(observe != null and observe.is_visible_in_tree(), "Actual training route exposes Observe at " + str(resolution))
-		if observe != null: observe.pressed.emit()
+		if observe != null:
+			var fond := observe.get_theme_stylebox("normal") as StyleBoxFlat
+			check(fond != null and fond.bg_color.get_luminance() < .3 and observe.size_flags_horizontal != Control.SIZE_EXPAND_FILL and observe.has_theme_stylebox_override("normal"), "Observe : style de bouton du jeu, plus le bouton blanc pleine largeur")
+			observe.pressed.emit()
 		else: director.open_training()
 		await settle()
 		immersive_check("training")

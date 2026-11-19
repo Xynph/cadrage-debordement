@@ -16,6 +16,7 @@ extends SceneTree
 ## rejouent les faits du moteur, possession suivie, pause qui fige, rien d'inventé) et le
 ## tableau de bord (domination, chiffres, Mon XV, adjoint) est alimenté par les vraies données.
 const Pilotage = preload("res://ui/contextual/match_consignes.gd")
+const VueMatch = preload("res://match_view.gd")
 const W = preload("res://ui/contextual/match_tableau_widgets.gd")
 var app: Control
 var failures: Array[String] = []
@@ -106,7 +107,7 @@ func layout(view: Control, size: Vector2i) -> void:
 	await settle(12)
 	var label := "%d×%d" % [size.x, size.y]
 	var screen := Rect2(Vector2.ZERO, Vector2(size))
-	check(between.is_visible_in_tree() and inside(screen, between.get_global_rect()), label + " : l'écran intermédiaire tient dans la fenêtre")
+	check(between.is_visible_in_tree() and inside(screen, between.get_global_rect()), label + " : l'écran intermédiaire tient dans la fenêtre (état %s, visible %s)" % [str(view.regie.etat), str(between.visible)])
 	var pitch: Control = between.terrain
 	check(pitch.size.x >= 320 and pitch.size.y >= 180 and pitch.champ().size.x >= 260, label + " : terrain lisible (%s)" % str(pitch.size))
 	# Pastilles entières dans le cadre : la marge intérieure couvre une pastille sur la touche.
@@ -154,11 +155,16 @@ func layout(view: Control, size: Vector2i) -> void:
 	# Maquette du 16 novembre 2026 : le terrain 2D en grand au centre, plus large que Notre XV et que le duel.
 	var colonne_xv: Control = between.find_child("MatchBetweenSquadColumn", true, false)
 	var column: Control = between.find_child("MatchBetweenColumn", true, false)
-	check(pitch.size.x >= size.x * 0.38 and pitch.size.y >= size.y * 0.35 and pitch.size.x > colonne_xv.size.x and pitch.size.x > column.size.x, label + " : terrain 2D en grand au centre (%s)" % str(pitch.size))
-	check(colonne_xv.get_global_rect().end.x <= pitch.get_global_rect().position.x and column.get_global_rect().position.x >= pitch.get_global_rect().end.x, label + " : Notre XV à gauche, le duel à droite")
-	# Le bandeau du dernier fait est posé sur le terrain, en haut.
+	# Le bandeau du dernier fait est au-dessus du terrain (19 novembre 2026), sans le chevaucher.
 	var bandeau: Control = between.bandeau
-	check(bandeau.is_visible_in_tree() and between.terrain.get_parent().is_ancestor_of(bandeau) and bandeau.get_global_rect().position.y <= pitch.get_global_rect().position.y + pitch.size.y * 0.2, label + " : dernier fait en bandeau sur le terrain")
+	var tuile_terrain: Control = between.find_child("MatchBetweenPitchTile", true, false)
+	check(pitch.size.x >= size.x * 0.38 and pitch.size.y >= size.y * 0.3 and pitch.size.y + bandeau.size.y >= size.y * 0.35 and pitch.size.x > colonne_xv.size.x and pitch.size.x > column.size.x, label + " : terrain 2D en grand au centre (%s)" % str(pitch.size))
+	check(colonne_xv.get_global_rect().end.x <= pitch.get_global_rect().position.x and column.get_global_rect().position.x >= pitch.get_global_rect().end.x, label + " : Notre XV à gauche, le duel à droite")
+	check(bandeau.is_visible_in_tree() and tuile_terrain != null and tuile_terrain.is_ancestor_of(bandeau) and not pitch.is_ancestor_of(bandeau) and not pitch.get_parent().is_ancestor_of(bandeau)
+		and bandeau.get_global_rect().end.y <= pitch.get_global_rect().position.y + 0.5 and not bandeau.get_global_rect().intersects(pitch.get_global_rect())
+		and bandeau.get_global_rect().position.x >= pitch.get_global_rect().position.x - 1.0 and bandeau.get_global_rect().end.x <= pitch.get_global_rect().end.x + 1.0,
+		label + " : dernier fait en bandeau au-dessus du terrain, sans chevauchement (%s / %s)" % [str(bandeau.get_global_rect()), str(pitch.get_global_rect())])
+	_tient(view, between, label, screen)
 	# Anneaux possession et occupation, tuile « Dans les 22 » seulement avec sa donnée.
 	for anneau: Control in [between.anneau_possession, between.anneau_occupation]:
 		check(anneau.is_visible_in_tree() and anneau.size.x >= between.px(110) and not str(anneau.texte_centre()).is_empty(), label + " : anneau " + str(anneau.name) + " (" + anneau.texte_centre() + ")")
@@ -182,11 +188,62 @@ func layout(view: Control, size: Vector2i) -> void:
 
 ## Rien de l'écran intermédiaire ne déborde de son cadre (le fil défile : ses lignes anciennes sont
 ## atteignables, pas coupées).
+## Le contenu des zones qui défilent (cartes du multiplex, faits marquants) est contrôlé par _tient : la
+## zone elle-même doit tenir, ses cartes peuvent être hors de vue (on les fait défiler).
 func _pas_coupe(between: Control, label: String) -> void:
 	var feed: Control = between.fil.get_parent()
+	var defilants: Array = between.find_children("*", "ScrollContainer", true, false)
 	for node: Control in between.find_children("*", "Control", true, false):
 		if not node.is_visible_in_tree() or node == between.arret or between.arret.is_ancestor_of(node) or feed.is_ancestor_of(node): continue
+		if defilants.any(func(d: Node): return d.is_ancestor_of(node)): continue
 		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé" + ("" if inside(between.get_global_rect(), node.get_global_rect()) else " (%s hors de %s)" % [str(node.get_global_rect()), str(between.get_global_rect())]))
+
+## Écran intermédiaire tenu dans la fenêtre (retours du 19 novembre 2026) : marge basse, carte de Gabi bornée,
+## une seule rangée de multiplex (le reste défile), faits marquants entiers sur deux lignes, bouton PAUSE
+## dans la police des commandes.
+func _tient(view: Control, between: Control, label: String, screen: Rect2) -> void:
+	var zone: Rect2 = between.get_global_rect()
+	var page: Control = between.find_child("MatchBetweenPage", true, false)
+	var bas: Control = between.find_child("MatchBetweenBottom", true, false)
+	check(page != null and inside(screen, zone) and inside(zone, page.get_global_rect()) and page.get_combined_minimum_size().y <= page.size.y + 1.0, label + " : la page tient dans l'écran intermédiaire (%s dans %s, minimum %d)" % [str(page.get_global_rect()) if page != null else "?", str(zone), int(page.get_combined_minimum_size().y) if page != null else -1])
+	check(bas != null and bas.is_visible_in_tree() and inside(screen, bas.get_global_rect()) and bas.get_global_rect().end.y <= zone.end.y - between.px(12) + 1.0, label + " : marge sous la bande du bas (%s, bas de l'écran intermédiaire %d)" % [str(bas.get_global_rect()) if bas != null else "?", int(zone.end.y)])
+	for nom in ["MatchBetweenAdvice", "MatchBetweenMultiplex", "MatchBetweenBonus", "MatchBetweenColumn", "MatchBetweenSquadColumn", "MatchBetweenPitchTile", "MatchBetweenHighlightsScroll", "MatchBetweenMultiplexScroll"]:
+		var noeud: Control = between.find_child(nom, true, false)
+		if noeud != null and noeud.is_visible_in_tree(): check(inside(screen, noeud.get_global_rect()) and inside(zone, noeud.get_global_rect()), label + " : " + nom + " dans l'écran (%s)" % str(noeud.get_global_rect()))
+	# Gabi : hauteur bornée (portrait, nom à côté, phrase sur deux lignes au plus).
+	check(not between.adjoint_cadre.visible or between.adjoint.get_combined_minimum_size().y <= between.px(110), label + " : carte de Gabi de hauteur bornée (%d px)" % int(between.adjoint.get_combined_minimum_size().y))
+	for etiquette: Label in between.adjoint.find_children("*", "Label", true, false):
+		if etiquette.autowrap_mode != TextServer.AUTOWRAP_OFF: check(etiquette.max_lines_visible >= 1 and etiquette.max_lines_visible <= 2, label + " : phrase de Gabi sur deux lignes au plus")
+	# Multiplex : une seule rangée de cartes, la première entière, la suite défile dans la bande.
+	if between.multiplex.is_visible_in_tree():
+		var cartes := _cartes_multiplex(between)
+		var defile: Control = between.multiplex_defile
+		check(defile != null and defile.is_ancestor_of(between.multiplex_cartes) and between.multiplex_cartes.columns == cartes.size(), label + " : multiplex sur une seule rangée (%d colonnes, %d cartes)" % [between.multiplex_cartes.columns, cartes.size()])
+		check(cartes.all(func(c: Control): return absf(c.get_global_rect().position.y - (cartes[0] as Control).get_global_rect().position.y) < 1.0), label + " : cartes du multiplex alignées sur une rangée")
+		check(not cartes.is_empty() and inside(defile.get_global_rect(), (cartes[0] as Control).get_global_rect()), label + " : première carte du multiplex entière")
+		check(defile.get_global_rect().end.y <= bas.get_global_rect().end.y + 1.0 and between.multiplex.get_global_rect().end.y <= zone.end.y - between.px(12) + 1.0, label + " : multiplex au-dessus de la marge basse")
+		# Fondu du bord droit (et « › ») seulement quand la rangée dépasse et qu'il reste des cartes à droite.
+		var fondu: Control = between.multiplex_fondu
+		var reste_a_droite: bool = between.multiplex_deborde() and float(between.multiplex_defile.scroll_horizontal) + defile.size.x < between.multiplex_cartes.size.x - 1.0
+		check(fondu != null and fondu.visible == reste_a_droite, label + " : fondu du multiplex seulement s'il déborde (fondu %s, rangée %d px dans %d)" % [str(fondu.visible) if fondu != null else "?", int(between.multiplex_cartes.size.x), int(defile.size.x)])
+		if fondu != null and fondu.visible: check(absf(fondu.get_global_rect().end.x - defile.get_global_rect().end.x) <= 1.0 and fondu.size.y >= defile.size.y - 1.0, label + " : fondu sur le bord droit du multiplex (%s / %s)" % [str(fondu.get_global_rect()), str(defile.get_global_rect())])
+	# Faits marquants : le plus récent toujours là, chaque fait sur deux lignes au plus, entier dans sa tuile.
+	var lignes_faits: Array = between.faits.get_children().filter(func(n: Node): return not n.is_queued_for_deletion() and str(n.name).begins_with("MatchBetweenHighlight"))
+	var vus: Array = lignes_faits.filter(func(n: Control): return n.is_visible_in_tree())
+	check(lignes_faits.is_empty() or lignes_faits[0].is_visible_in_tree(), label + " : le dernier fait marquant est montré")
+	for ligne: Control in vus:
+		check(inside(between.faits_defile.get_global_rect(), ligne.get_global_rect()), label + " : fait marquant " + str(ligne.name) + " entier dans sa tuile")
+		var texte: Label = ligne.get_child(0).get_child(2)
+		var police: Font = texte.get_theme_font("font")
+		var long := police.get_string_size(texte.text, HORIZONTAL_ALIGNMENT_LEFT, -1, texte.get_theme_font_size("font_size")).x
+		var deux: bool = long > texte.size.x
+		check(texte.max_lines_visible == 2 and (not deux or texte.size.y >= between.hauteur_lignes(texte, 2) - 1.0), label + " : fait sur deux lignes (« %s », %d px de haut)" % [texte.text.left(40), int(texte.size.y)])
+	# Bouton PAUSE du bandeau : la police des commandes (Barlow Condensed), comme Équipe et Paramètres.
+	var pause: Button = view.play
+	var police_pause: Font = pause.get_theme_font("font")
+	var police_equipe: Font = (view.find_child("MatchBetweenTeam", true, false) as Button).get_theme_font("font")
+	check(police_pause != null and police_pause.resource_path == "res://fonts/BarlowCondensed-SemiBold.ttf" and police_equipe != null and police_equipe.resource_path.get_file().begins_with("BarlowCondensed"), label + " : bouton PAUSE en Barlow Condensed demi-gras (%s ; Équipe : %s)" % [police_pause.resource_path if police_pause != null else "?", police_equipe.resource_path if police_equipe != null else "?"])
+	check(pause.text == pause.text.to_upper() and pause.get_theme_stylebox("normal") is StyleBoxFlat and (pause.get_theme_stylebox("normal") as StyleBoxFlat).border_width_top == 0 and inside(screen, pause.get_global_rect()), label + " : bouton PAUSE à plat, en capitales, comme les commandes")
 
 ## Capture de l'écran (CD_MATCH_TEMPS_FORTS_CAPTURES : dossier ; rendu fenêtré seulement).
 func _capture(label: String, vue: String) -> void:
@@ -242,6 +299,21 @@ func run() -> void:
 		if vue_s != null and vue_s.regie != null:
 			await scoring(vue_s)
 			followed = vue_s.regie.suivi
+	elif mode == "grands_moments":
+		# Carrière Monde arrêtée à la causerie d'avant-match (godot-match-grands-moments.cjs).
+		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("monde.json"))})
+		await settle()
+		await command("begin_match")
+		await settle()
+		var limite_g := Time.get_ticks_msec() + 120000
+		while Time.get_ticks_msec() < limite_g and (surface() == null or surface().regie == null):
+			var scene_g: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+			if scene_g is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene_g.key, "phase": scene_g.phase, "skip": true})
+			await settle(2)
+		var vue_g := surface()
+		check(vue_g != null and vue_g.regie != null, "Carrière Monde : le direct en temps forts s'ouvre")
+		if vue_g != null and vue_g.regie != null:
+			followed = await grands_moments(vue_g)
 	elif mode == "multiplex":
 		# Carrière world-champ arrêtée au coup d'envoi de son premier match (godot-match-temps-forts.cjs).
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("multiplex.json"))})
@@ -291,6 +363,7 @@ func run() -> void:
 ## vitesse réelle (jamais d'accéléré, même quand les temps forts sont accélérés pour le test),
 ## coupe franche en deux plans quand la mise en place est longue, aucun saut de position dans un
 ## plan, et seulement entre deux temps forts contigus (jamais après l'écran intermédiaire 2D).
+const SAUT_MAX_LIAISON := 12.0
 func check_liaisons(followed: Array) -> void:
 	var liaisons: Array = followed.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison")
 	for e: Dictionary in liaisons:
@@ -298,7 +371,10 @@ func check_liaisons(followed: Array) -> void:
 		if not e.has("duree_reelle"): continue
 		check(float(e.duree_reelle) >= float(e.duree_prevue) - 0.2 and float(e.duree_reelle) <= float(e.duree_prevue) + 1.5,
 			"%s : jouée à vitesse réelle (%.2f s pour %.2f s prévues)" % [nom, float(e.duree_reelle), float(e.duree_prevue)])
-		check(float(e.get("saut_max", 0.0)) <= 10.0, "%s : aucun saut de position dans un plan (pointe %.1f m/s d'une image à l'autre)" % [nom, float(e.get("saut_max", 0.0))])
+		# Seuil (19/11/2026) : au-dessus d'un sprint (12 m/s) ; un vrai saut de place dépasse 20 m/s
+		# (35 cm en une image à 60 i/s). À 10 m/s, une seule image irrégulière d'un exécuteur de CI
+		# (pointe isolée à 10,5 m/s dans la mise en place d'une touche) faisait échouer le contrôle.
+		check(float(e.get("saut_max", 0.0)) <= SAUT_MAX_LIAISON, "%s : aucun saut de position dans un plan (pointe %.1f m/s d'une image à l'autre)" % [nom, float(e.get("saut_max", 0.0))])
 		var durees: Array = e.get("duree_plans", [])
 		if bool(e.coupe):
 			check(int(e.plans) == 2 and durees.size() == 2 and float(durees[0]) <= 3.4 and float(durees[1]) >= 1.0 and float(durees[1]) <= 2.1,
@@ -383,6 +459,190 @@ func scoring(view: Control) -> void:
 	check(inter == 0 or inter_faux.is_empty(), "Bandeau 2D de l'entracte cohérent avec le score montré (%d images) : %s" % [inter, str(inter_faux)])
 	print("Score pendant l'essai : ", avant, " images avant, ", apres, " après ; transformation ", transfo_avant, "/", transfo_apres, " ; entracte ", inter)
 
+## Grands moments sur une vraie carrière Monde (godot-match-grands-moments.cjs), match entier :
+## essai joué en 3D (bandeau « ESSAI » qui nomme le marqueur et son équipe, sous le score ; ralenti
+## puis image tenue : la transformation attend), mi-temps et fin de match (plan large, joueurs qui
+## marchent vers le tunnel, bandeau « MI-TEMPS » / « FIN DU MATCH ») ; la causerie de mi-temps et
+## le débrief ne s'ouvrent qu'après la sortie, une seule sortie par moment.
+func grands_moments(view: Control) -> Array:
+	var director: Node = app.contextual_director
+	var regie: Node = view.regie
+	var suivi_courant: Array = regie.suivi
+	var anciens: Array = []
+	var limite := int(OS.get_environment("CD_GRANDS_MOMENTS_LIMITE")) if OS.get_environment("CD_GRANDS_MOMENTS_LIMITE").is_valid_int() else 1200
+	var deadline := Time.get_ticks_msec() + limite * 1000
+	var essai := {"debut": 0, "cle": "", "plan": -1, "ecart": -1.0, "bandeau": {}, "texte": "", "ralenti": 1.0, "vitesse": 1.0, "calme": false, "cadre": Rect2(), "score_bas": 0.0, "bande_bas": 0.0, "ecran": Rect2(), "legende": Rect2()}
+	var sorties := {}
+	var ralenti := {"images": 0, "ecarts": 0}
+	var relance := 0
+	var apres_fin := 0
+	var sonde := 0
+	while Time.get_ticks_msec() < deadline:
+		await process_frame
+		watch()
+		sonde += 1
+		var scene := talk()
+		if director.kind == "locker" and not scene.is_empty():
+			var phase_c := str(scene.get("phase", ""))
+			var moment_c := str({"half": "mi-temps", "post": "fin"}.get(phase_c, ""))
+			if not moment_c.is_empty() and not sorties.has(moment_c + "_causerie"):
+				sorties[moment_c + "_causerie"] = true
+				var s_c: Dictionary = sorties.get(moment_c, {})
+				# La causerie ne s'ouvre que quand la régie ne retient plus : la sortie est finie.
+				check(int(s_c.get("marche", 0)) > 0, "Causerie « %s » ouverte après le plan large et la marche vers le tunnel : %s" % [phase_c, str(s_c.get("images", 0))])
+			if phase_c == "post": break
+			if not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+			continue
+		var vue := surface()
+		if vue == null or vue.regie == null:
+			if not app.model.get("live") is Dictionary: break
+			continue
+		if vue.regie != regie:
+			# Vue recréée après la causerie : le journal de la régie précédente est gardé.
+			anciens.append_array(suivi_courant)
+			regie = vue.regie
+			view = vue
+		suivi_courant = regie.suivi
+		var live: Dictionary = app.model.live if app.model.get("live") is Dictionary else {}
+		if live.is_empty(): break
+		if sonde % 600 == 0: print("sonde grands moments : minute ", live.get("minute"), " état ", regie.etat, " essai ", essai.debut > 0, " sorties ", sorties.keys())
+		# Le match attend le manager (coup d'envoi, reprise de seconde période) : il reprend comme avec le bouton.
+		if live.get("paused", false) and not live.get("finished", false) and not live.get("atBreak", false) and regie.etat == regie.INTER and regie.arret.is_empty() and not app.waiting and Time.get_ticks_msec() > relance:
+			relance = Time.get_ticks_msec() + 2000
+			app._command("pause", {"paused": false})
+		_observer_essai(view, regie, essai)
+		_observer_sortie(view, regie, live, sorties)
+		# Ralenti de l'essai : la mention « RALENTI » est à l'écran pendant et seulement pendant lui.
+		if regie.has_method("rejeu_en_cours"):
+			var en_ralenti: bool = regie.rejeu_en_cours()
+			if en_ralenti: ralenti.images += 1
+			if en_ralenti != bool(regie.mention_affichee()): ralenti.ecarts += 1
+		# Fin de match sans débrief : l'écran de fin suit la sortie.
+		if live.get("finished", false) and sorties.has("fin") and regie.etat == regie.INTER:
+			apres_fin += 1
+			if apres_fin > 60: break
+	var tous: Array = anciens + suivi_courant
+	# Essai.
+	check(int(essai.debut) > 0, "Un essai est joué en 3D pendant le match")
+	if int(essai.debut) > 0:
+		var b: Dictionary = essai.bandeau
+		var attendu: String = load("res://ui/contextual/match_temps_forts.gd").marqueur_essai(str(essai.texte))
+		check(bool(b.get("visible", false)) and str(b.get("titre", "")) == "ESSAI", "Bandeau « ESSAI » dès que l'essai est aplati : " + str(b))
+		check(str(b.get("nom", "")) == attendu and (not attendu.is_empty() or not str(essai.texte).contains("Essai de")), "Le bandeau nomme le marqueur (« %s », légende « %s »)" % [str(b.get("nom", "")), str(essai.texte)])
+		check(not str(b.get("equipe", "")).is_empty(), "Le bandeau nomme l'équipe qui marque : " + str(b))
+		var voulu: float = 0.9 * float(load("res://ui/contextual/match_temps_forts.gd").ESSAI_MOMENT) / maxf(float(essai.vitesse), 0.01)
+		check(float(essai.ecart) >= voulu, "Pause d'essai : la suite attend %.2f s (%.2f s au moins à ×%.0f)" % [float(essai.ecart), voulu, float(essai.vitesse)])
+		check(bool(essai.calme) or float(essai.ralenti) <= 0.6, "Ralenti de la vue à l'essai (%.2f de la vitesse réelle)" % float(essai.ralenti))
+		var cadre: Rect2 = essai.cadre
+		check(cadre.size.x > 0.0 and cadre.position.y >= maxf(float(essai.score_bas), float(essai.bande_bas)) - 1.0, "Le bandeau ne masque pas le score (%s, score jusqu'à %.0f, bande jusqu'à %.0f)" % [str(cadre), float(essai.score_bas), float(essai.bande_bas)])
+		var ecran: Rect2 = essai.ecran
+		check(ecran.grow(1.0).encloses(cadre), "Bandeau entier dans l'image : %s dans %s" % [str(cadre), str(ecran)])
+		# Façon retransmission : tiers inférieur, au-dessus de la légende sans la recouvrir.
+		var sous_titre: Rect2 = essai.get("legende", Rect2())
+		check(cadre.get_center().y >= ecran.position.y + ecran.size.y * 2.0 / 3.0, "Bandeau « ESSAI » dans le tiers inférieur (%s dans %s)" % [str(cadre), str(ecran)])
+		check(sous_titre.has_area() and not cadre.intersects(sous_titre), "Le bandeau « ESSAI » ne recouvre pas la légende (%s, légende %s)" % [str(cadre), str(sous_titre)])
+	# Ralenti de l'essai (19/11/2026) : un par essai au plus, jamais deux pour le même ; environ la moitié
+	# de la vitesse réelle, au plus REJEU_MAX s ajoutées (à la vitesse du test), caméra basse, état d'avant
+	# remis ; mention « RALENTI » seulement pendant lui ; aucun avec les animations réduites.
+	var regie_script = load("res://ui/contextual/match_temps_forts.gd")
+	var essais_vus := tous.filter(func(e: Dictionary) -> bool: return str(e.get("evenement", "")) == "essai_moment")
+	var ralentis := tous.filter(func(e: Dictionary) -> bool: return str(e.get("evenement", "")) == "rejeu")
+	var cles_ralentis := {}
+	for e: Dictionary in ralentis: cles_ralentis["%s|%s" % [str(e.get("cle", "")), str(e.get("plan", ""))]] = true
+	check(ralentis.size() <= essais_vus.size() and cles_ralentis.size() == ralentis.size(), "Un ralenti par essai au plus (%d ralentis, %d essais)" % [ralentis.size(), essais_vus.size()])
+	if bool(essai.calme):
+		check(ralentis.is_empty(), "Animations réduites : aucun ralenti")
+	elif int(essai.debut) > 0:
+		check(not ralentis.is_empty(), "Ralenti de l'essai joué en 3D (%d)" % ralentis.size())
+	for e: Dictionary in ralentis:
+		var nom := "Ralenti %s" % str(e.get("cle", ""))
+		check(absf(float(e.get("vitesse", 0.0)) - 0.5) <= 0.1, "%s : à %.2f de la vitesse réelle" % [nom, float(e.get("vitesse", 0.0))])
+		check(float(e.get("duree_prevue", 99.0)) <= float(regie_script.REJEU_MAX) + 0.15, "%s : %.2f s ajoutées au plus" % [nom, float(e.get("duree_prevue", 99.0))])
+		check(float(e.get("hauteur_camera", 99.0)) < 2.0, "%s : caméra au ras de la pelouse (%.2f m)" % [nom, float(e.get("hauteur_camera", 99.0))])
+		if not e.has("duree_reelle"): continue
+		var a_vitesse_reelle := float(e.duree_reelle) * maxf(float(e.get("vitesse_regie", 1.0)), 0.01)
+		check(bool(e.get("passe", false)) or a_vitesse_reelle <= float(regie_script.REJEU_MAX) + 0.6, "%s : %.2f s à vitesse réelle" % [nom, a_vitesse_reelle])
+		check(float(e.get("ecart_restitution", 999.0)) < 0.001, "%s : état d'avant remis à l'identique (écart %.5f)" % [nom, float(e.get("ecart_restitution", 999.0))])
+	check(int(ralenti.ecarts) == 0, "Mention « RALENTI » pendant et seulement pendant le ralenti (%d images en écart, %d images de ralenti)" % [int(ralenti.ecarts), int(ralenti.images)])
+	# Mi-temps et fin de match.
+	for moment: String in ["mi-temps", "fin"]:
+		var s: Dictionary = sorties.get(moment, {})
+		check(not s.is_empty(), "Sortie des joueurs à la " + moment)
+		if s.is_empty(): continue
+		check(int(s.large) == int(s.images), "%s : plan large pendant toute la sortie (%d sur %d images)" % [moment, int(s.large), int(s.images)])
+		check(int(s.visible) > 0, "%s : l'image 3D est à l'écran pendant la sortie (%d images)" % [moment, int(s.visible)])
+		check(int(s.bandeau) > 0, "%s : bandeau « %s »" % [moment, "FIN DU MATCH" if moment == "fin" else "MI-TEMPS"])
+		var rapproches := 0
+		for id: String in s.departs:
+			var d0 := Vector2(s.departs[id].x - VueMatch.TUNNEL.x, s.departs[id].z - VueMatch.TUNNEL.z).length()
+			var d1 := Vector2(s.derniers[id].x - VueMatch.TUNNEL.x, s.derniers[id].z - VueMatch.TUNNEL.z).length()
+			if d1 < d0 - 0.3 or d1 < 5.0: rapproches += 1
+		var n: int = maxi(1, (s.departs as Dictionary).size())
+		check(int(s.marche) > 0 and rapproches >= int(n * 0.8), "%s : les joueurs marchent vers le tunnel (%d images, %d sur %d se rapprochent)" % [moment, int(s.marche), rapproches, n])
+		check(int(s.get("serre", 0)) == int(s.marche), "%s : la marche est montrée en plan serré qui suit les joueurs (%d sur %d images)" % [moment, int(s.get("serre", 0)), int(s.marche)])
+		check(int(s.get("bandeau_haut", 0)) == 0, "%s : pendant la marche, le bandeau ne cache pas le tunnel (%d images avec le bandeau en haut)" % [moment, int(s.get("bandeau_haut", 0))])
+	if sorties.has("mi-temps"): check(int(sorties["mi-temps"].retenue) > 0, "Mi-temps : la causerie attend la fin de la sortie")
+	check(sorties.has("mi-temps_causerie"), "La causerie de mi-temps s'ouvre après la sortie")
+	for moment: String in ["mi-temps", "fin"]:
+		var n_sorties := tous.filter(func(e: Dictionary) -> bool: return str(e.get("evenement", "")) == "sortie" and str(e.get("moment", "")) == moment).size()
+		check(n_sorties == 1, "Une seule sortie de %s, même après la causerie (%d)" % [moment, n_sorties])
+	print("Grands moments : essai ", essai.bandeau, " pause ", snappedf(float(essai.ecart), 0.01), " s, ralenti ", snappedf(float(essai.ralenti), 0.01),
+		" ; sorties ", sorties.keys().filter(func(k: String) -> bool: return not k.ends_with("_causerie")).map(func(k: String) -> String: return "%s %d images (marche %d)" % [k, int(sorties[k].images), int(sorties[k].marche)]))
+	return tous
+
+## Premier essai joué en 3D : bandeau au début du moment, pause mesurée jusqu'au plan suivant.
+func _observer_essai(view: Control, regie: Node, essai: Dictionary) -> void:
+	var en_jeu: bool = regie.etat == regie.JEU and regie.index >= 0 and regie.index < (regie.tf.get("plans", []) as Array).size()
+	if int(essai.debut) > 0 and float(essai.ecart) < 0.0:
+		# Fin du moment : le plan suivant (transformation) ou la fin du temps fort, jamais avant.
+		if not en_jeu or str(regie.tf.get("cle", "")) != str(essai.cle) or regie.index != int(essai.plan) or float(regie._moment_essai) <= 0.0:
+			essai.ecart = (Time.get_ticks_msec() - int(essai.debut)) / 1000.0
+			essai.ralenti = float(regie.ralenti_min)
+			if regie.bandeau != null and regie.bandeau.visible:
+				essai.cadre = (regie.bandeau as Control).get_global_rect()
+				essai.score_bas = view.score.get_global_rect().end.y
+				var bande: Control = view.get("bande_temps_forts")
+				essai.bande_bas = bande.get_global_rect().end.y if bande != null and bande.is_visible_in_tree() else 0.0
+				essai.ecran = view.get_global_rect()
+				var legende: Rect2 = regie._legende_rect
+				essai.legende = Rect2(legende.position + view.get_global_rect().position, legende.size)
+		return
+	if int(essai.debut) > 0 or not en_jeu: return
+	var plan: Dictionary = regie.tf.plans[regie.index]
+	if str(plan.get("kind", "")) != "try" or float(regie._moment_essai) <= 0.0: return
+	essai.debut = Time.get_ticks_msec()
+	essai.cle = str(regie.tf.get("cle", ""))
+	essai.plan = regie.index
+	essai.texte = str(plan.get("texte", ""))
+	essai.bandeau = regie.bandeau_affiche()
+	essai.vitesse = float(regie.vitesse)
+	essai.calme = bool(regie._calme())
+	print("Essai en 3D : ", essai.texte, " · bandeau ", essai.bandeau)
+
+## Sortie des joueurs en cours : plan large, bandeau, causerie retenue, positions des joueurs.
+func _observer_sortie(view: Control, regie: Node, live: Dictionary, sorties: Dictionary) -> void:
+	if regie.etat != regie.SORTIE: return
+	var moment := "fin" if live.get("finished", false) else "mi-temps"
+	if not sorties.has(moment): sorties[moment] = {"images": 0, "large": 0, "visible": 0, "marche": 0, "retenue": 0, "bandeau": 0, "departs": {}, "derniers": {}}
+	var s: Dictionary = sorties[moment]
+	s.images += 1
+	var stage: Node3D = view.stage
+	if stage.plan_large(): s.large += 1
+	if not regie.voile.visible or regie.voile.modulate.a < 0.5: s.visible += 1
+	if app.contextual_director.kind == "live" and view.retient_la_causerie(live): s.retenue += 1
+	var b: Dictionary = regie.bandeau_affiche()
+	if bool(b.get("visible", false)) and str(b.get("titre", "")) == ("FIN DU MATCH" if moment == "fin" else "MI-TEMPS"): s.bandeau += 1
+	if stage.sortie:
+		s.marche += 1
+		if bool(stage.get("plan_sortie")): s.serre = int(s.get("serre", 0)) + 1
+		# Plan serré : le bandeau descend dans la pelouse du bas, le tunnel (haut de l'image) reste visible.
+		if regie.bandeau != null and regie.bandeau.visible and (regie.bandeau as Control).get_global_rect().position.y < view.get_global_rect().position.y + view.size.y * 0.5:
+			s.bandeau_haut = int(s.get("bandeau_haut", 0)) + 1
+		for id: String in stage._actors:
+			var at: Vector3 = (stage._actors[id].node as Node3D).position
+			if not s.departs.has(id): s.departs[id] = at
+			s.derniers[id] = at
+
 func inactive(view: Control) -> void:
 	check(view.regie == null and not view.temps_forts_actifs(), "Repli (CD_MATCH_TEMPS_FORTS=0) : aucune régie")
 	check(view.stage.get("_cadrage") == null and view.stage.get("_gestes") == null, "Repli : ni recadrage ni gestes sur la vue 3D")
@@ -404,7 +664,9 @@ func active(view: Control) -> void:
 	var between: Control = regie.between
 	check(app.model.live.direct.tempsFort is Dictionary and app.model.live.direct.tempsFort.type == "coup_d_envoi", "Le moteur projette le coup d'envoi")
 	check(regie.etat == regie.JEU and not between.visible, "Le coup d'envoi est joué en 3D, écran intermédiaire masqué")
-	check(regie.suivi.size() == 1 and regie.suivi[0].evenement == "temps_fort", "Premier temps fort suivi")
+	# Les traces « legende » (texte / image) ne sont pas des événements de la régie.
+	var faits: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement != "legende")
+	check(faits.size() == 1 and faits[0].evenement == "temps_fort", "Premier temps fort suivi")
 	var first_key := str(view.stage.get("_action_key"))
 	check(not first_key.is_empty() and view.stage.get("_actors").size() == 30, "La vue 3D montre les trente joueurs du plan")
 	check(view.clock.text.ends_with("′"), "Le bandeau affiche l'horloge du plan rejoué : " + view.clock.text)
@@ -428,7 +690,7 @@ func active(view: Control) -> void:
 	await command("pause", {"paused": false})
 	check(await until(func(): return app.model.live.minute > minute, 30000), "L'horloge accélérée avance seule")
 	check(app.model.live.events.size() > events_before, "Chaque pas simule une minute")
-	check(regie.etat != regie.JEU or regie.suivi.size() > 2, "Une minute sans action retenue reste sur l'écran intermédiaire")
+	check(regie.etat != regie.JEU or regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement != "legende").size() > 2, "Une minute sans action retenue reste sur l'écran intermédiaire")
 	var replayed := func(): return regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "temps_fort").size() >= 2 and regie.etat != regie.JEU
 	check(await until(replayed, 240000), "Un second temps fort est joué puis rendu à l'écran intermédiaire (minute %d)" % int(app.model.live.minute))
 	var played: Array = regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")
@@ -825,12 +1087,22 @@ func player_path() -> Array:
 	# la réponse du moteur à la pause n'arrive.
 	var allure: float = regie.vitesse
 	regie.vitesse = 1.0
+	# Bandeau compact pendant l'action 3D (film du 18/11/2026 : la grande barre cachait ~20 % de
+	# l'image) ; bouton PAUSE tant que le match joue.
+	var coque: Control = view.get("_coque_score")
+	check(view.compact and view.play.text == "PAUSE", "Action 3D : bandeau compact et bouton PAUSE (%s, « %s »)" % [str(view.compact), view.play.text])
+	if coque != null:
+		var bloc := coque.get_global_rect()
+		check(bloc.size.y <= screen.size.y * 0.12 and bloc.size.x <= screen.size.x * 0.6 and bloc.position.x <= screen.size.x * 0.1, "Bloc compact en haut à gauche, petit : " + str(bloc))
+		check(not view.home.is_visible_in_tree() and (view.get("_sigles")[0] as Label).is_visible_in_tree() and view.clock.is_visible_in_tree() and view.score.is_visible_in_tree(), "Bloc compact : horloge, sigles et score, sans noms longs")
+		check(float(regie.cadrage.couvert_haut) <= view.clock.get_global_rect().end.y / maxf(1.0, view.size.y) + 0.031, "Cadrage : part cachée en haut ramenée au bloc compact (%.3f)" % float(regie.cadrage.couvert_haut))
 	view._pause()
 	await wait_command()
 	check(app.model.live.paused and regie.gel and regie.etat == regie.JEU, "La pause demandée pendant un temps fort fige l'image")
 	var frozen := [regie.index, regie.temps, regie.phase]
 	await settle(40)
 	check(frozen == [regie.index, regie.temps, regie.phase] and view.play.text == "REPRENDRE", "Rien n'avance pendant la pause")
+	check(not view.compact and view.home.is_visible_in_tree(), "Pause : la grande barre revient")
 	# Le journal ouvert pendant un temps fort ne devance pas l'image.
 	view._toggle_drawer("Journal")
 	await settle(2)
@@ -1273,10 +1545,65 @@ func terrain2d(view: Control) -> void:
 	await layout(view, Vector2i(1280, 720))
 	await layout(view, Vector2i(1920, 1080))
 	await layout(view, Vector2i(2560, 1440))
+	await journee_injectee(view, direct)
 	await consignes_fictives(view, direct)
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	print("TERRAIN2D ", JSON.stringify({"faits": ecarts.faits, "deplacement": deplacement, "ballons": ballons.size(), "minutes": minutes.size()}))
+
+## Journée en direct injectée dans l'entracte (classement et multiplex de dix matchs) : en 1280×720 et
+## 1920×1080, tout tient dans l'écran avec la marge basse, le multiplex reste sur une rangée et défile.
+func journee_injectee(view: Control, direct: Dictionary) -> void:
+	var between: Control = view.regie.between
+	var journee := _journee_test(52, 14)
+	for k in range(6, 10):
+		journee.matchs.append({"id": "m%d" % k, "home": {"id": 901 + k * 2, "abbr": "C%02d" % (1 + k * 2), "nom": "Club %d" % (1 + k * 2), "score": 3 * k, "essais": 1},
+			"away": {"id": 902 + k * 2, "abbr": "C%02d" % (2 + k * 2), "nom": "Club %d" % (2 + k * 2), "score": 6, "essais": 0}, "minute": 52, "fini": false})
+	var avec: Dictionary = direct.duplicate()
+	avec["journee"] = journee
+	# Championnat à bonus : la tuile Bonus partage la bande du bas avec Gabi et le multiplex (elle
+	# élargissait la page au-delà de l'écran en 1280×720, colonne de droite coupée, constaté au match filmé).
+	avec["bonus"] = {"regle": "3 essais d'écart · défaite de 7 pts ou moins", "offensif": {"texte": "Bonus offensif à 3 essais", "manque": 2}, "defensif": {"texte": "Défensif : défaite de 7 pts ou moins", "statut": "tenu"}}
+	between.update_frame(app.model, app.model.live, avec, func(_c: Dictionary): pass)
+	for taille: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
+		root.size = taille
+		root.content_scale_size = taille
+		await settle(12)
+		# Le direct réel (sans journée) peut avoir été rafraîchi pendant l'attente : on réinjecte la journée.
+		between.update_frame(app.model, app.model.live, avec, func(_c: Dictionary): pass)
+		await settle(3)
+		var label := "Entracte avec la journée %d×%d" % [taille.x, taille.y]
+		var ecran := Rect2(Vector2.ZERO, Vector2(taille))
+		check(between.classement_tuile.is_visible_in_tree() and between.multiplex.is_visible_in_tree() and _cartes_multiplex(between).size() == 10, label + " : classement et multiplex de dix matchs (%d cartes ; classement %s, multiplex %s)" % [_cartes_multiplex(between).size(), between.classement_tuile.is_visible_in_tree(), between.multiplex.is_visible_in_tree()])
+		_pas_coupe(between, label)
+		_tient(view, between, label, ecran)
+		check(between.multiplex_cartes.size.x > between.multiplex_defile.size.x + 1.0, label + " : dix matchs, la rangée dépasse et défile (%d px dans %d)" % [int(between.multiplex_cartes.size.x), int(between.multiplex_defile.size.x)])
+		# La dernière carte visible n'est plus coupée net : fondu et « › » au bord droit, retirés au bout de la rangée.
+		var plus: Label = between.find_child("MatchBetweenMultiplexMore", true, false)
+		check(between.multiplex_fondu.is_visible_in_tree() and plus != null and plus.is_visible_in_tree() and plus.text == "›", label + " : dix matchs, fondu et « › » au bord droit du multiplex")
+		between.multiplex_defile.scroll_horizontal = int(between.multiplex_cartes.size.x)
+		await settle(3)
+		check(not between.multiplex_fondu.visible, label + " : au bout de la rangée, plus de fondu (défilement %d)" % between.multiplex_defile.scroll_horizontal)
+		between.multiplex_defile.scroll_horizontal = 0
+		await settle(3)
+		check(between.multiplex_fondu.visible, label + " : revenu au début, le fondu revient")
+		check(between.adjoint_cadre.is_visible_in_tree() and between.adjoint_cadre.size.x >= between.size.x * 0.3, label + " : Gabi garde sa place à côté du multiplex (%d px)" % int(between.adjoint_cadre.size.x))
+		check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, label + " : faits marquants avec le classement")
+		if proof != "" and OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES") != "": await _capture(label.replace(" ", "-"), "journee")
+	# Deux matchs seulement : la rangée tient, pas de fondu ni de « › ».
+	var courte := _journee_test(52, 14)
+	courte["matchs"] = (courte["matchs"] as Array).slice(0, 2)
+	var avec_courte: Dictionary = direct.duplicate()
+	avec_courte["journee"] = courte
+	between.update_frame(app.model, app.model.live, avec_courte, func(_c: Dictionary): pass)
+	await settle(6)
+	between.update_frame(app.model, app.model.live, avec_courte, func(_c: Dictionary): pass)
+	await settle(3)
+	check(_cartes_multiplex(between).size() == 2 and not between.multiplex_deborde() and not between.multiplex_fondu.visible, "Entracte avec deux matchs : la rangée tient, pas de fondu (%d cartes, rangée %d px dans %d)" % [_cartes_multiplex(between).size(), int(between.multiplex_cartes.size.x), int(between.multiplex_defile.size.x)])
+	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
+	root.size = Vector2i(1280, 720)
+	root.content_scale_size = root.size
+	await settle(4)
 
 ## Pilotage du match (dist/match-pilotage.js, `live.pilotage`) pour une copie du direct : arbitre, cinq axes
 ## (rucks contestés depuis 52′), un bilan, une ligne du journal du staff, trois états de joueurs après la causerie.
@@ -1347,15 +1674,18 @@ func consigne_reelle(regie: Node) -> void:
 	var voulu := "lent" if actuel == "rapide" else "rapide"
 	var bouton: Button = vue.equipe.find_child("Consigne_rythme_" + voulu, true, false)
 	check(bouton != null, "Consignes (fenêtre Équipe) : cran « %s » du rythme" % voulu)
+	# Fermeture sans « Valider et reprendre » : fermer() relance le match quelques images plus tard (la
+	# fenêtre envoie la reprise dans son _process), et la régie enchaînait alors un temps fort qui masquait
+	# l'écran intermédiaire pendant les mesures du mode multiplex. Le test garde le match en pause.
 	if bouton == null:
-		vue.equipe.fermer()
+		vue.equipe.fermer(false)
 		return
 	var pauses: int = regie.suivi.size()
 	bouton.pressed.emit()
 	var recu: bool = await until(func() -> bool: return app.model.live.get("pilotage") is Dictionary and str(app.model.live.pilotage.get("consignes", {}).get("rythme", "")) == voulu, 30000)
 	check(recu, "Consignes : le moteur applique « %s » (%s)" % [voulu, str(app.model.live.get("pilotage", {}).get("consignes", {}) if app.model.live.get("pilotage") is Dictionary else null)])
 	check(regie.suivi.slice(pauses).any(func(e: Dictionary) -> bool: return e.evenement == "consigne" and e.get("valeur") == voulu), "Consignes : envoyée par la régie")
-	if vue.equipe.visible: vue.equipe.fermer()
+	if vue.equipe.visible: vue.equipe.fermer(false)
 
 ## Mode « multiplex » : carrière world-champ réelle. Le moteur projette la journée (`direct.journee`)
 ## dès le coup d'envoi : au moins une carte de multiplex et notre club dans le classement en direct ;
@@ -1375,6 +1705,13 @@ func journee_directe(view: Control) -> void:
 	await until(func(): return not app.waiting, 30000)
 	if not app.model.live.paused: await command("pause", {"paused": true})
 	await settle(6)
+	# Un temps fort lancé avant la pause va à son terme (rien ne démarre pendant la pause : la régie ne
+	# demande pas de minute au moteur match en pause) : attendre le retour à l'écran intermédiaire.
+	var revenu: bool = await until(func() -> bool: return regie.etat == regie.INTER and between.visible and regie._retenu.is_empty(), 90000)
+	check(revenu, "Multiplex : retour à l'écran intermédiaire après la consigne (état %s, visible %s)" % [str(regie.etat), str(between.visible)])
+	await settle(4)
+	# Les mesures qui suivent supposent le match arrêté : rien ne doit l'avoir relancé (fenêtre Équipe fermée sans reprise).
+	check(bool(app.model.live.get("paused", false)) and not bool(view.equipe._veut_reprise),"Multiplex : match toujours en pause pour les mesures (pause %s)" % str(app.model.live.get("paused", false)))
 	var direct: Dictionary = regie._live_inter.get("direct", app.model.live.direct)
 	var journee: Variant = direct.get("journee")
 	check(journee is Dictionary, "Carrière world-champ : le moteur fournit la journée en direct")
@@ -1435,15 +1772,15 @@ func journee_fictive(view: Control, direct: Dictionary) -> void:
 	suite["journee"] = _journee_test(53, 19)
 	between.update_frame(app.model, app.model.live, suite, func(_c: Dictionary): pass)
 	await settle(4)
-	# Classement : le leader, « … », puis notre voisinage (5e à 11e) ; rien de plus, sans défilement.
+	# Classement : notre voisinage (5e à 11e, nous 8e au milieu) ; rien de plus, sans défilement.
 	var lignes := _lignes_classement(between)
 	var rangs: Array = lignes.map(func(n: Node): return int(n.get_meta("rang")) if n.has_meta("rang") else -1)
-	# Sept lignes en 720p ; neuf sinon.
-	var attendus: Array = [5, 6, 7, 8, 9, 10, 11] if between._densite < 0.6 else [1, -1, 5, 6, 7, 8, 9, 10, 11]
-	check(between.classement_tuile.is_visible_in_tree() and rangs == attendus, "Classement fictif : notre voisinage (± 3), le leader si la hauteur le permet " + str(rangs))
+	# Cinq lignes en 720p (± 2) ; sept sinon (± 3) : la colonne de droite tient avec Gabi et le multiplex (19 novembre 2026).
+	var attendus: Array = [6, 7, 8, 9, 10] if between._densite < 0.6 else [5, 6, 7, 8, 9, 10, 11]
+	check(between.classement_tuile.is_visible_in_tree() and rangs == attendus, "Classement fictif : notre voisinage, nous au milieu " + str(rangs))
 	# Règle de sélection, indépendante de la fenêtre : 1280×720 (sept lignes) et plus grand (neuf).
 	var tableau: Array = _journee_test(52, 14).classement
-	check(between.lignes_classement(tableau, 7) == [4, 5, 6, 7, 8, 9, 10] and between.lignes_classement(tableau, 9) == [0, -1, 4, 5, 6, 7, 8, 9, 10] and between.lignes_classement(tableau.slice(0, 9), 9) == range(9), "Classement : lignes choisies (voisinage, leader, tableau court entier)")
+	check(between.lignes_classement(tableau, 7) == [4, 5, 6, 7, 8, 9, 10] and between.lignes_classement(tableau, 5) == [5, 6, 7, 8, 9] and between.lignes_classement(tableau, 9) == [0, -1, 4, 5, 6, 7, 8, 9, 10] and between.lignes_classement(tableau.slice(0, 9), 9) == range(9), "Classement : lignes choisies (voisinage, leader, tableau court entier)")
 	check(between.classement_tuile.find_children("*", "ScrollContainer", true, false).is_empty(), "Classement : pas de défilement interne")
 	var par_rang := {}
 	for n: Node in lignes:
@@ -1504,11 +1841,12 @@ func _mise_en_page_journee(view: Control, variante: String) -> void:
 		var label := "Journée %s %d×%d" % [variante, taille.x, taille.y]
 		var ecran := Rect2(Vector2.ZERO, Vector2(taille))
 		_pas_coupe(between, label)
+		_tient(view, between, label, ecran)
 		for tuile: Control in [between.classement_tuile, between.multiplex]:
 			if tuile.visible: check(tuile.is_visible_in_tree() and inside(ecran, tuile.get_global_rect()) and tuile.size.y >= tuile.get_combined_minimum_size().y - 1.0, label + " : " + str(tuile.name) + " entier")
 		if between.classement_tuile.visible:
 			var lignes := _lignes_classement(between)
-			check(lignes.size() >= mini(7, between.journee_vue.classement.size()) and lignes.all(func(l: Control): return inside(between.classement_tuile.get_global_rect(), l.get_global_rect())), label + " : lignes du classement dans la tuile (%d)" % lignes.size())
+			check(lignes.size() >= mini(5, between.journee_vue.classement.size()) and lignes.all(func(l: Control): return inside(between.classement_tuile.get_global_rect(), l.get_global_rect())), label + " : lignes du classement dans la tuile (%d)" % lignes.size())
 		# Aucun texte tronqué : sigles, rangs, points, scores et minutes entiers.
 		for tuile: Control in [between.classement_tuile, between.multiplex]:
 			if not tuile.visible: continue

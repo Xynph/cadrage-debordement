@@ -351,7 +351,7 @@ func _construire() -> void:
 	tableau = Tableau.new()
 	tableau.name = "TableauEffectif"
 	tableau.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	tableau.message_vide = "Aucun joueur ne correspond à cette recherche."
+	tableau.message_vide = message_vide()
 	tableau.entete_groupe = _entete_ligne
 	tableau.ordre_groupes = ORDRE_LIGNES
 	tableau.colonnes = _colonnes(int(etat.vue))
@@ -442,7 +442,15 @@ func _filtre_courant() -> Callable:
 		if not cherche.is_empty() and J.plier(str(j.get("name", "")) + " " + str(j.get("pos", ""))).find(cherche) < 0: return false
 		return true
 
+const VIDE_RECHERCHE := "Aucun joueur ne correspond à cette recherche."
+const VIDE_SUIVI := "Personne à surveiller cette semaine."
+
+## Message de la liste vide : « À surveiller » sans personne (et sans recherche) est une bonne nouvelle, pas un échec de recherche.
+func message_vide() -> String:
+	return VIDE_SUIVI if str(etat.filtre) == "suivi" and str(etat.recherche).strip_edges().is_empty() else VIDE_RECHERCHE
+
 func _appliquer_filtre() -> void:
+	tableau.message_vide = message_vide()
 	tableau.definir_filtre(_filtre_courant())
 
 func _filtrer(id: String) -> void:

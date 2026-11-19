@@ -74,6 +74,13 @@ static func ecusson(club: Dictionary, largeur: int = 56) -> Control:
 	initiales.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	initiales.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rect.add_child(initiales)
+	# Écusson réduit (tableaux, fiches à 1280) : des initiales sous 11 px seraient illisibles ; l'écusson garde
+	# alors ses seules couleurs, le nom du club étant toujours écrit à côté.
+	var lisible := func() -> void:
+		if is_instance_valid(initiales) and initiales.is_inside_tree():
+			initiales.visible = float(initiales.get_theme_font_size("font_size")) * initiales.get_global_transform().get_scale().y >= 11.0
+	initiales.ready.connect(func() -> void: lisible.call_deferred())
+	rect.item_rect_changed.connect(func() -> void: lisible.call_deferred())
 	return rect
 
 ## Short et chaussettes : short dans l'encre de contraste (liseré à la couleur du club), chaussettes à la

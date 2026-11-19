@@ -52,7 +52,9 @@ static func compact(app: Control) -> Control:
 					context = summary
 		if context != null:
 			dossier.add_child(context)
-			dossier.move_child(context,0)
+			# Sous la bannière de la page, au-dessus de la barre d'onglets.
+			var banner := dossier.get_node_or_null("PreparationBanner")
+			dossier.move_child(context,banner.get_index() + 1 if banner != null else 0)
 		return dossier
 	var preparation := SeasonPreparation.data(app.model.meta)
 	if preparation.is_empty() and not next is Dictionary: return dossier
@@ -227,8 +229,16 @@ func _restore() -> void:
 	if focus_id.is_empty(): return
 	var previous := find_child(focus_id, true, false) as BaseButton
 	if previous != null and previous.is_visible_in_tree():
+		# Consigne grisée le temps que le moteur réponde (commande suivante, sauvegarde) : le focus l'attend
+		# au lieu de retomber sur l'onglet, sauf si le joueur l'a posé ailleurs entre-temps.
+		var frames := 0
+		while previous.disabled and match_context != null and match_context._engine_busy() and frames < 240:
+			await tree.process_frame
+			frames += 1
+			if not is_inside_tree() or not is_instance_valid(previous): return
+			if get_viewport().gui_get_focus_owner() != null: return
 		if previous.disabled: previous = find_child("PreparationTab" + TABS[active_tab], true, false) as BaseButton
-		previous.grab_focus()
+		if previous != null: previous.grab_focus()
 
 func _dossier() -> void:
 	var section := _section("PreparationDossier")
@@ -239,7 +249,7 @@ func _dossier() -> void:
 		if not opponent.is_empty():
 			_crest(empty, opponent, Rect2(30, 86, 92, 94))
 			# Nom cliquable : fiche du club adverse.
-			Link.name_link(app, empty, Rect2(146, 92, 1130, 50), "club", str(int(opponent.get("id", -1))) if opponent.get("id") != null else "", G.club_name(opponent), 42, C.IVORY, "PreparationKnownOpponent")
+			Link.name_link(app, empty, C.reach_rect(Rect2(146, 92, 1130, 50)), "club", str(int(opponent.get("id", -1))) if opponent.get("id") != null else "", G.club_name(opponent), 42, C.IVORY, "PreparationKnownOpponent")
 			D.text(empty, 150, 169, "ADVERSAIRE ANNONCÉ AU CALENDRIER", 24, GOLD, 600, 1130)
 		var lines := D.words(CHAMP_DOSSIER_PENDING if champ_preparing else "Aucun dossier disponible pour cette rencontre.", 86, 3)
 		for line in lines.size(): D.text(empty, 29, 242 + line * 35, lines[line], 28, C.IVORY, 600, 1270)
@@ -257,7 +267,7 @@ func _dossier() -> void:
 	_crest(comparison, opponent, Rect2(1245, 72, 70, 73))
 	D.text(comparison, 117, 108, G.club_name(ours), 28, C.IVORY, 700, 488)
 	D.text(comparison, 117, 138, "TON XV SÉLECTIONNÉ", 17, GREEN, 700, 475)
-	var opponent_link := Link.name_link(app, comparison, Rect2(749, 82, 481, 36), "club", str(int(opponent.get("id", -1))) if opponent.get("id") != null else "", G.club_name(opponent), 28, C.IVORY, "PreparationOpponentLink")
+	var opponent_link := Link.name_link(app, comparison, C.reach_rect(Rect2(749, 82, 481, 36)), "club", str(int(opponent.get("id", -1))) if opponent.get("id") != null else "", G.club_name(opponent), 28, C.IVORY, "PreparationOpponentLink")
 	if opponent_link is Button: (opponent_link as Button).alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	elif opponent_link is Label: (opponent_link as Label).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	D.text(comparison, 1226, 138, "XV ADVERSE PROJETÉ", 17, GOLD, 700, 469, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -293,21 +303,33 @@ func _recommended(section: Control) -> void:
 		D.rect(panel, Rect2(x, 69, 272, 50), Color("172724"), 4)
 		D.text(panel, x+9, 87, indicators[index][0], 15, C.MUTED, 600, 253)
 		D.text(panel, x+9, 109, indicators[index][1], 21, indicators[index][2], 700, 253)
-	for index in mini(5, checks.size()):
+	# Petite fenêtre : quatre repères sur des lignes plus hautes, chaque ligne entière cliquable (titre puis détail) ;
+	# « Tous les repères » garde la liste complète.
+	var dense := C.dense()
+	var row_limit := 4 if dense else 5
+	var pitch := 76 if dense else 61
+	var shown := mini(row_limit, checks.size())
+	for index in shown:
 		var check: Dictionary = checks[index]
-		var y := 129 + index * 61
-		D.rect(panel, Rect2(18, y, 850, 56), Color(Briefing.color(check), .045), 4, Color(Briefing.color(check), .25))
+		var y := 129 + index * pitch
+		D.rect(panel, Rect2(18, y, 850, pitch - 5), Color(Briefing.color(check), .045), 4, Color(Briefing.color(check), .25))
 		var icon := C.icon({"press":"mail","selection":"people","day":"calendar","international":"flag","injuries":"heart","tactics":"tactic","sheet":"check","calendar":"calendar","live":"ball","ended":"trophy"}.get(check.id,"flag"),21,Briefing.color(check))
 		panel.add_child(icon); D.place(icon,Rect2(28,y+9,21,21))
-		var action := _button(panel, Rect2(57, y + 3, 795, 25), check.title + "  →", Briefing.open_action.bind(app, check.action, _choose.bind(1)), false, "", "PreparationBriefing_" + str(check.id))
-		action.add_theme_font_size_override("font_size", C.px(20))
+		var action := _button(panel, Rect2(57, y + 3, 795, 25) if not dense else Rect2(57, y, 795, pitch - 5), check.title + "  →", Briefing.open_action.bind(app, check.action, _choose.bind(1)), false, "", "PreparationBriefing_" + str(check.id))
 		action.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,2))
-		_dense_button(action,20,27)
+		_dense_button(action,20,27 if not dense else pitch - 5)
+		if dense:
+			# Le titre occupe le haut de la ligne, le détail s'affiche dessous, dans la même cible.
+			for kind in ["normal","hover","pressed","disabled","focus"]:
+				var style := action.get_theme_stylebox(kind).duplicate() as StyleBox
+				style.content_margin_top = C.px(4)
+				style.content_margin_bottom = C.px(36)
+				action.add_theme_stylebox_override(kind,style)
 		action.tooltip_text = check.detail + "\n" + check.caption
 		action.accessibility_name = check.title + " · " + check.detail
-		D.text(panel, 61, y + 46, check.detail, 17, C.MUTED, 500, 784, HORIZONTAL_ALIGNMENT_LEFT, true)
-	if checks.size() < 5:
-		var image_top := 129 + checks.size()*61
+		D.text(panel, 61, y + (62 if dense else 46), check.detail, 17, C.MUTED, 500, 784, HORIZONTAL_ALIGNMENT_LEFT, true)
+	if shown < row_limit:
+		var image_top := 129 + shown*pitch
 		var club := _opponent()
 		if club.is_empty(): club = app.model.club
 		var picture := G.club_picture(club)
@@ -319,11 +341,11 @@ func _recommended(section: Control) -> void:
 	var tactics: Dictionary = app.model.get("tactics", {})
 	D.text(panel,23,455,"AVEC BALLON · " + _tactic_label(tactics.get("attacks", []), tactics.get("attack")),18,GREEN,600,414)
 	D.text(panel,451,455,"SANS BALLON · " + _tactic_label(tactics.get("defenses", []), tactics.get("defense")),18,GOLD,600,414)
-	var all := _button(panel, Rect2(22, 477, 411, 44), "Tous les repères (%d)" % checks.size(), Briefing.open_all.bind(app, _choose.bind(1)), false, "search", "PreparationBriefingAll")
-	all.add_theme_font_size_override("font_size", C.px(19))
-	_button(panel, Rect2(451, 477, 413, 44), "Conseils détaillés", _open_dossier, false, "arrow", "OpenOppositionDossier").disabled = reports.is_empty()
+	var all := _button(panel, C.reach_rect(Rect2(22, 477, 411, 44)), "Tous les repères (%d)" % checks.size(), Briefing.open_all.bind(app, _choose.bind(1)), false, "search", "PreparationBriefingAll")
+	all.add_theme_font_size_override("font_size", C.font_px(19))
+	_button(panel, C.reach_rect(Rect2(451, 477, 413, 44)), "Conseils détaillés", _open_dossier, false, "arrow", "OpenOppositionDossier").disabled = reports.is_empty()
 	var advice: Dictionary = reports.get("advice", {})
-	var adopt := _button(panel, Rect2(22, 536, 842, 44), "Adopter le plan proposé par le staff", func(): app._command("set_tactics", {"attack":advice.attack, "defense":advice.defence}), true, "arrow", "PreparationAdoptPlan")
+	var adopt := _button(panel, C.reach_rect(Rect2(22, 536, 842, 44)), "Adopter le plan proposé par le staff", func(): app._command("set_tactics", {"attack":advice.attack, "defense":advice.defence}), true, "arrow", "PreparationAdoptPlan")
 	adopt.disabled = advice.is_empty() or not app._live().is_empty() or app.model.meta.get("phase") == "ended"
 
 func _summary_line(panel: Panel, y: int, label: String, title: String, detail: String, tone: Color) -> void:
@@ -349,6 +371,7 @@ func _recent(section: Control) -> void:
 		var club := _opponent()
 		if not club.is_empty():
 			var picture := G.club_picture(club)
+			picture.custom_minimum_size = Vector2.ZERO
 			panel.add_child(picture); D.place(picture,Rect2(22,110,856,145))
 			D.text(panel,32,243,"Photo d’archive" if picture.get_meta("photo_kind") == "archive" else "Photo du pack" if picture.get_meta("photo_kind") == "pack" else "Ambiance du club",16,C.MUTED,500,820)
 	for i in mini(5, recent.size()):
@@ -419,34 +442,41 @@ func _head_to_head(panel: Panel) -> void:
 func _sheet_map(section: Control) -> void:
 	var panel := D.panel(section,Rect2(917,614,427,352),"Ton XV projeté","people","","PreparationSheetMap")
 	D.rect(panel,Rect2(15,65,397,263),Color("153b2c"),3,Color("4b7f64"))
-	for y in [130,196,263]: D.line(panel,Vector2(18,y),Vector2(409,y),Color("6e9e81",.3))
-	D.line(panel,Vector2(213,68),Vector2(213,326),Color("6e9e81",.3))
+	# Petite fenêtre : les pastilles du schéma seraient des cibles de 15 px qui se chevauchent ; le XV passe en
+	# trois colonnes de cinq lignes (numéro et nom), chaque case gardant la cible minimale.
+	var dense := C.dense()
+	if not dense:
+		for y in [130,196,263]: D.line(panel,Vector2(18,y),Vector2(409,y),Color("6e9e81",.3))
+		D.line(panel,Vector2(213,68),Vector2(213,326),Color("6e9e81",.3))
 	var positions := [Vector2(.22,.06),Vector2(.5,.06),Vector2(.78,.06),Vector2(.36,.23),Vector2(.64,.23),Vector2(.18,.40),Vector2(.5,.40),Vector2(.82,.40),Vector2(.34,.56),Vector2(.66,.56),Vector2(.12,.74),Vector2(.38,.74),Vector2(.62,.74),Vector2(.88,.74),Vector2(.5,.91)]
 	var lineup: Array = app.model.get("lineup", [])
+	var cell_height := C.reach(28)
 	for index in 15:
 		var id: Variant = lineup[index] if index < lineup.size() else null
 		var player := P.player(app.model,str(id)) if id != null else {}
+		var surname := PersonName.surname(str(player.get("name","—")))
 		var point: Vector2 = Vector2(15,77)+positions[index]*Vector2(397,239)
-		var button := _button(panel,Rect2(point.x-15,point.y-14,30,28),str(index+1),_open_sheet_player.bind(str(id)),false,"","PreparationXIPlayer_"+str(index+1))
+		var cell := Rect2(point.x-15,point.y-14,30,28)
+		if dense: cell = Rect2(19 + (index % 3) * 131, 67 + floori(index / 3.0) * ((259 - cell_height) / 4.0), 127, cell_height)
+		var button := _button(panel,cell,str(index+1) + ("  " + surname if dense else ""),_open_sheet_player.bind(str(id)),false,"","PreparationXIPlayer_"+str(index+1))
 		button.disabled = player.is_empty()
-		button.add_theme_font_size_override("font_size",C.px(17))
 		button.add_theme_stylebox_override("normal",C.box(Color("e7c46a") if not player.is_empty() else Color("4b5a50"),Color("eee5cd"),14,0))
 		button.add_theme_color_override("font_color",Color("11251c"))
-		_dense_button(button,17,28)
-		button.size.x = C.px(30)
+		_dense_button(button,17,cell.size.y)
+		button.size.x = C.px(cell.size.x)
+		if dense: button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.tooltip_text = str(player.get("name","Poste non affecté")) + " · " + str(player.get("pos",""))
 		button.set_meta("player_id",id)
-		var surname := PersonName.surname(str(player.get("name","—")))
-		D.text(panel,point.x,point.y+26,surname,13,C.IVORY,500,72,HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(panel,18,345,"Schéma indicatif · cliquer pour la fiche",14,C.MUTED,500,390)
+		if not dense: D.text(panel,point.x,point.y+26,surname,13,C.IVORY,500,72,HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(panel,18,345,"Ton XV par numéro · cliquer pour la fiche" if dense else "Schéma indicatif · cliquer pour la fiche",14,C.MUTED,500,390)
 
 func _open_sheet_player(id: String) -> void:
 	app.selected_player = id
 	app._navigate("Effectif")
 
-func _dense_button(button: Button, font_size: int, height: int) -> void:
+func _dense_button(button: Button, font_size: int, height: float) -> void:
 	button.custom_minimum_size = Vector2.ZERO
-	button.add_theme_font_size_override("font_size",C.px(font_size))
+	button.add_theme_font_size_override("font_size",C.font_px(font_size))
 	for kind in ["normal","hover","pressed","disabled","focus"]:
 		var style := button.get_theme_stylebox(kind).duplicate() as StyleBox
 		style.content_margin_top = 0
@@ -487,7 +517,7 @@ func _consignes() -> void:
 		if i == 0:
 			match_context.status = D.text(card, 22, 131, "", 23, C.IVORY, 500, 745)
 			match_context.status.name = "PreparationMatchState"
-			match_context.pause_button = _button(card, Rect2(771, 100, 323, 45), "Mettre en pause", match_context.pause_match, true, "", "PreparationPauseMatch")
+			match_context.pause_button = _button(card, C.reach_rect(Rect2(771, 100, 323, 45)), "Mettre en pause", match_context.pause_match, true, "", "PreparationPauseMatch")
 		else:
 			D.text(card, 22, 131, MatchContext.PRE_MATCH_HINT, 23, C.MUTED, 500, 1065)
 		var scroll := ScrollContainer.new()
