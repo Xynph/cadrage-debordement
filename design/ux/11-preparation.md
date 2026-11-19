@@ -280,3 +280,12 @@ Les 14 cartes-raccourcis de l'onglet actuel (Séance collective, Travail spécif
 | Capture de l'écran Entraînement à produire avant la passe de design | ui-programmer | Manquante |
 | Plafond d'avertissement « sous 80 % » : seuil de la feuille (voir fiche 12) | game-designer | À confirmer |
 | Échap sur Préparation / Entraînement sans fenêtre ouverte : retour ou pause ? | Léo | **Résolue le 19/11/2026** : retour d'un sous-écran, sinon menu pause |
+
+## 11. Décision de Léo et intégration (revue DA du 19/11/2026)
+
+- **Choix** : variante 1, « Le rapport de force d'abord » ; emprunt à la variante 2 : colonne « Remarque de ton adjoint » dans « Leur XV probable ». Maquettes : `direction-artistique/interface/revue-20261119/apercus/11-preparation-1.png` et `-2.png`.
+- **Écran Dossier adverse** : bandeau Danger (phrase lue dans les signaux du dossier, sinon le plus gros écart de secteur ; le plan conseillé mène aux conseils) · Rapport de force (nous plein, eux anneau, chiffre et écart toujours écrits en mots ; chaque ligne mène à l'écran d'action : Composition, Plan de jeu ou Entraînement) · À faire avant le match (une ligne cliquable par repère) · Forme récente (pastilles ovales V/N/D, résultats, confrontations) · Joueurs à surveiller (portrait, nom = fiche) · Leur XV probable (15 lignes, banc, remarque de l'adjoint dérivée des vraies statistiques : disponibilité, rôle du dossier, essais, homme du match).
+- **L'adjoint** : nom et fonction lus dans le staff du club (fonction « adjoint »), jamais figés ; son nom ouvre sa fiche de staff. Sans adjoint, la colonne s'intitule « Remarque du staff ».
+- **Plus de petite fenêtre** : « Tous les repères » et « Conseils détaillés » sont des sous-pages du dossier (bouton « Retour au dossier adverse », étapes d'historique Précédent / Suivant). Restent des fenêtres hors périmètre : « Préparer la suite » (planning du manager) et « La reprise », partagées avec d'autres parcours.
+- **Noms** : tout joueur adverse cité ouvre sa fiche (marché ou club) ou, à défaut, l'onglet XV de la fiche de son club ; survol = mini-fiche quand une fiche existe ; clubs = fiche club.
+- **Humeur** : lumière froide de salle d'analyse, aucune photo ; panneaux sans rayon ni ombre ; aucun or (le seul ivoire plein est « Aller au jour de match », ou « Carnet de jeu » quand le match n'est pas ouvert).
