@@ -106,7 +106,7 @@ func layout(view: Control, size: Vector2i) -> void:
 	await settle(12)
 	var label := "%d×%d" % [size.x, size.y]
 	var screen := Rect2(Vector2.ZERO, Vector2(size))
-	check(between.is_visible_in_tree() and inside(screen, between.get_global_rect()), label + " : l'écran intermédiaire tient dans la fenêtre")
+	check(between.is_visible_in_tree() and inside(screen, between.get_global_rect()), label + " : l'écran intermédiaire tient dans la fenêtre (état %s, visible %s)" % [str(view.regie.etat), str(between.visible)])
 	var pitch: Control = between.terrain
 	check(pitch.size.x >= 320 and pitch.size.y >= 180 and pitch.champ().size.x >= 260, label + " : terrain lisible (%s)" % str(pitch.size))
 	# Pastilles entières dans le cadre : la marge intérieure couvre une pastille sur la touche.
@@ -1340,14 +1340,20 @@ func journee_injectee(view: Control, direct: Dictionary) -> void:
 			"away": {"id": 902 + k * 2, "abbr": "C%02d" % (2 + k * 2), "nom": "Club %d" % (2 + k * 2), "score": 6, "essais": 0}, "minute": 52, "fini": false})
 	var avec: Dictionary = direct.duplicate()
 	avec["journee"] = journee
+	# Championnat à bonus : la tuile Bonus partage la bande du bas avec Gabi et le multiplex (elle
+	# élargissait la page au-delà de l'écran en 1280×720, colonne de droite coupée, constaté au match filmé).
+	avec["bonus"] = {"regle": "3 essais d'écart · défaite de 7 pts ou moins", "offensif": {"texte": "Bonus offensif à 3 essais", "manque": 2}, "defensif": {"texte": "Défensif : défaite de 7 pts ou moins", "statut": "tenu"}}
 	between.update_frame(app.model, app.model.live, avec, func(_c: Dictionary): pass)
 	for taille: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		root.size = taille
 		root.content_scale_size = taille
 		await settle(12)
+		# Le direct réel (sans journée) peut avoir été rafraîchi pendant l'attente : on réinjecte la journée.
+		between.update_frame(app.model, app.model.live, avec, func(_c: Dictionary): pass)
+		await settle(3)
 		var label := "Entracte avec la journée %d×%d" % [taille.x, taille.y]
 		var ecran := Rect2(Vector2.ZERO, Vector2(taille))
-		check(between.classement_tuile.is_visible_in_tree() and between.multiplex.is_visible_in_tree() and _cartes_multiplex(between).size() == 10, label + " : classement et multiplex de dix matchs (%d cartes)" % _cartes_multiplex(between).size())
+		check(between.classement_tuile.is_visible_in_tree() and between.multiplex.is_visible_in_tree() and _cartes_multiplex(between).size() == 10, label + " : classement et multiplex de dix matchs (%d cartes ; classement %s, multiplex %s)" % [_cartes_multiplex(between).size(), between.classement_tuile.is_visible_in_tree(), between.multiplex.is_visible_in_tree()])
 		_pas_coupe(between, label)
 		_tient(view, between, label, ecran)
 		check(between.multiplex_cartes.size.x > between.multiplex_defile.size.x + 1.0, label + " : dix matchs, la rangée dépasse et défile (%d px dans %d)" % [int(between.multiplex_cartes.size.x), int(between.multiplex_defile.size.x)])
@@ -1456,6 +1462,11 @@ func journee_directe(view: Control) -> void:
 	await until(func(): return not app.waiting, 30000)
 	if not app.model.live.paused: await command("pause", {"paused": true})
 	await settle(6)
+	# La consigne a pu lancer un temps fort (il va à son terme malgré la pause) : attendre le retour à
+	# l'écran intermédiaire, sinon les mises en page suivantes mesurent un écran masqué.
+	var revenu: bool = await until(func() -> bool: return regie.etat == regie.INTER and between.visible and regie._retenu.is_empty(), 90000)
+	check(revenu, "Multiplex : retour à l'écran intermédiaire après la consigne (état %s, visible %s)" % [str(regie.etat), str(between.visible)])
+	await settle(4)
 	var direct: Dictionary = regie._live_inter.get("direct", app.model.live.direct)
 	var journee: Variant = direct.get("journee")
 	check(journee is Dictionary, "Carrière world-champ : le moteur fournit la journée en direct")

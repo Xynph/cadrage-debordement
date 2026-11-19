@@ -1477,6 +1477,7 @@ func _remplir_bonus(model: Dictionary, live: Dictionary, direct: Dictionary) -> 
 	if cle == _bonus_cle: return
 	_bonus_cle = cle
 	bonus_tuile.visible = bonus is Dictionary
+	_largeur_multiplex.call_deferred()
 	if not bonus is Dictionary: return
 	bonus_regle.text = str(bonus.get("regle", ""))
 	bonus_regle.tooltip_text = "Règle du championnat : " + str(bonus.get("regle", ""))
@@ -1712,6 +1713,15 @@ func _largeur_multiplex() -> void:
 	if not is_instance_valid(multiplex_defile) or not is_instance_valid(multiplex_cartes): return
 	var voulu := multiplex_cartes.get_combined_minimum_size().x
 	var plafond := maxf(float(px(360)), size.x * 0.6 - float(px(150)))
+	# Tuile Bonus visible (championnat à bonus) : elle prend sa place dans la bande ; Gabi garde au moins
+	# 30 % de la largeur et le multiplex le reste, sans jamais élargir la page au-delà de l'écran.
+	if is_instance_valid(bonus_tuile) and bonus_tuile.visible:
+		# Largeur de l'écran intermédiaire (la bande peut s'être élargie : on ne la lit pas).
+		var gabi := maxf(float(px(560)), size.x * 0.3 + 2.0)
+		# Ce que la tuile du multiplex ajoute autour de ses cartes (titre, minute, marges).
+		var habillage := maxf(0.0, multiplex.get_combined_minimum_size().x - multiplex_defile.get_combined_minimum_size().x) if is_instance_valid(multiplex) else 0.0
+		var reste := size.x - bonus_tuile.get_combined_minimum_size().x - gabi - habillage - 2.0 * float(px(20))
+		plafond = maxf(float(px(240)), minf(plafond, reste))
 	var largeur := minf(voulu, plafond)
 	if not is_equal_approx(multiplex_defile.custom_minimum_size.x, largeur): multiplex_defile.custom_minimum_size.x = largeur
 

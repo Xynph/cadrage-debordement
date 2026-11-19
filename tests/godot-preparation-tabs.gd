@@ -71,8 +71,8 @@ func tab(id: String) -> void:
 ## Part de la hauteur visible laissée vide sous le dernier élément peint de la section
 ## (conteneurs de mise en page exclus : ils s'étirent sans rien dessiner ; les panneaux comptent).
 func void_ratio(section: Control) -> float:
-	var viewport := app.body_scroll.get_global_rect()
-	var bottom := viewport.position.y
+	var viewport: Rect2 = app.body_scroll.get_global_rect()
+	var bottom: float = viewport.position.y
 	for node: Node in section.find_children("*", "Control", true, false):
 		var control := node as Control
 		if (control is Container and not control is PanelContainer) or not control.is_visible_in_tree() or control.size.y <= 0: continue
@@ -129,9 +129,13 @@ func cases() -> void:
 	await key(KEY_RIGHT)
 	check(named("PreparationEntrainement").is_visible_in_tree(), "Flèche droite : entraînement accessible")
 	await key(KEY_LEFT)
-	await key(KEY_TAB)
-	await key(KEY_TAB)
-	var focus := app.get_viewport().gui_get_focus_owner()
+	# La barre d'onglets porte aussi les raccourcis du chapitre (Composition, Plan de jeu, match) : Tab
+	# les traverse avant d'atteindre les consignes (six pressions au plus).
+	var focus: Control = null
+	for pression in 6:
+		await key(KEY_TAB)
+		focus = app.get_viewport().gui_get_focus_owner()
+		if focus != null and str(focus.name).begins_with("PreparationAttack_"): break
 	check(focus != null and str(focus.name).begins_with("PreparationAttack_") and focus.is_visible_in_tree(), "Tab atteint les vraies consignes visibles")
 	await mouse(named("PreparationTabDossier"))
 	check(named("PreparationDossier").is_visible_in_tree(), "Sélection d’onglet à la souris")

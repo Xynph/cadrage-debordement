@@ -227,7 +227,8 @@ func _load_gauge(level: int) -> HBoxContainer:
 
 ## Photo du club qui occupe la place laissée libre en bas de la section : pas de grand vide.
 func _filler(kind: String) -> Control:
-	var picture := G.club_picture(app.model.club, kind, false)
+	# Voile sombre : la photo reste une ambiance de fond, pas un contenu qui écrase la page (1280×720).
+	var picture := G.club_picture(app.model.club, kind, true)
 	picture.name = "PreparationFiller_" + kind
 	picture.custom_minimum_size = Vector2.ZERO
 	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE

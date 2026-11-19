@@ -286,7 +286,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	var crest := Selections.nation_badge(nation, C.px(126)) if national else G.crest(app.model.club,C.px(126))
 	rail.add_child(crest)
 	D.place(crest,Rect2(61,151,126,147))
-	D.text(rail,124,331,identity.to_upper(),23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER)
+	D.fit_title(D.text(rail,124,331,identity.to_upper(),23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER),222,44)
 	D.text(rail,124,354,"SAISON "+G.season_label(app.model.meta.get("season",1)),16,C.GOLD,500,215,HORIZONTAL_ALIGNMENT_CENTER)
 	var names:Array=[["mail","Réception","Réception"],["home","Bureau","Bureau"],["people","Effectif","Effectif"],["tactic","Tactique","Composition"],["train","Entraînement","Préparation"],["search","Recrutement","Recrutement"],["shield","Club","Club"],["money","Finances","Finances"],["trophy","Compétitions","Classements"],["school","Formation","Formation"]]
 	if app.model.get("international") is Dictionary: names.append(["flag","Sélections","Sélections"])

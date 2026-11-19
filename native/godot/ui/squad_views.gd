@@ -356,7 +356,9 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	identity.add_child(_profile_reading_link(app,name,str(p.id),str(p.name),"ProfileOpenPlayerName"))
 	identity.add_child(G.wrap("%s · %s ans"%[p.pos,G.n(p.age)],12))
 	var facts: Dictionary = p.get("playerFacts", {})
-	if not facts.is_empty(): identity.add_child(preload("res://ui/player_identity.gd").row(facts,15,G.INK,app))
+	# Encre claire : la ligne d'identité est faite de libellés immersifs, que l'habillage sombre ne repeint pas
+	# (l'encre du carnet, sombre, la rendait illisible sur le panneau sombre de l'Effectif).
+	if not facts.is_empty(): identity.add_child(preload("res://ui/player_identity.gd").row(facts,15,G.Base.MUTED,app))
 	list.add_child(G.separator())
 	var tabs:=TabContainer.new()
 	tabs.name="ProfileTabs"

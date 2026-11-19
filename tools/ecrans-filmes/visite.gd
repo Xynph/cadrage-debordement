@@ -340,7 +340,9 @@ func parcourir(noeud: Node, vue: Rect2, decalage: Vector2, dans_defilement: bool
 			if resultat.debordements.size() < MAX_DETAILS: resultat.debordements.append({"chemin": chemin(fenetre), "fenetre": true, "rect": arrondi(cadre), "depassement": depassement(cadre, vue)})
 	if noeud is CanvasLayer and not (noeud as CanvasLayer).visible: return
 	if noeud is Control and not (noeud as Control).is_visible_in_tree(): return
-	var defile := dans_defilement or noeud is ScrollContainer
+	# Sous un défilement ou un contrôle qui rogne son contenu (bandeau défilant de Gabi…), un enfant qui
+	# dépasse est coupé net : seul le cadre lui-même compte comme débordement.
+	var defile := dans_defilement or noeud is ScrollContainer or (noeud is Control and (noeud as Control).clip_contents)
 	if noeud is Control and utile(noeud):
 		var c: Control = noeud
 		var r := Rect2(c.get_global_rect().position + decalage, c.get_global_rect().size)
@@ -526,7 +528,7 @@ func run() -> void:
 	couper_le_son()
 	DirAccess.make_dir_recursive_absolute(profil())
 	var reglages := FileAccess.open(profil().path_join("interface.json"), FileAccess.WRITE)
-	reglages.store_string(JSON.stringify({"version": 1, "volume": 0, "reduced_motion": false, "quality": "balanced"}, "  "))
+	reglages.store_string(JSON.stringify({"version": 1, "volume": 0, "reduced_motion": false, "quality": "balanced", "camera": "tv"}, "  "))
 	reglages.close()
 	Engine.max_fps = 30
 	app = load("res://main.tscn").instantiate()
