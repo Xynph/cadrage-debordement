@@ -133,7 +133,9 @@ test('Prolongations : horloge 80′–100′, annonces de début et de fin, sir�
   assert.equal(h.run('l.sirene'), 93);
   assert.match(h.run('l.events.find(e=>/sirène|temps est écoulé/i.test(e.text)&&e.min===93).text'), /première prolongation/);
   assert.equal(h.run('matchClock(l)'), '90′');
-  h.run('l.minute=94;if(l.knockout.period===1)handFault(l,l.possession)');
+  // En-avant après la sirène : l'adversaire peut jouer l'avantage (loi 8) ; l'avantage rendu, la mêlée est due et la
+  // période se termine sur l'arrêt de jeu qui suit.
+  h.run('l.minute=94;if(l.knockout.period===1){handFault(l,l.possession);if(l.flow.advantage)returnAdvantage(l)}');
   assert.equal(h.run('l.knockout.period'), 2);
   assert.equal(h.run('l.knockout.firstEnd'), 94);
   assert.match(h.run('l.events.findLast(e=>e.type==="break").text'), /^Changement de camp : fin de la première prolongation/);
