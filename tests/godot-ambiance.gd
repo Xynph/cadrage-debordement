@@ -41,7 +41,7 @@ func run_capture() -> void:
 	await settle()
 	check(not app.model.is_empty(), "Jeu chargé (accueil sans carrière)")
 	check(app.soundscape != null and app.soundscape_ready, "Gestionnaire sonore prêt")
-	app.settings()
+	app.preferences_window()
 	await settle(24)
 	var dialog: AcceptDialog = app.find_child("PreferencesDialog", true, false)
 	check(dialog != null, "Paramètres ouverts")

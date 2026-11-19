@@ -281,7 +281,7 @@ func _bench() -> void:
 	await ContextualFlow.settle_club_meetings(app, self, _check)
 	var first_date: String = app.header_date.text
 	var first_day: String = str(app.model.calendarPlanning.today).get_slice("-", 2)
-	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.begins_with(first_day + " ") and int(app.model.meta.week) == 1, "First round validation refreshes the date in Reception")
+	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.contains(" %d " % int(first_day)) and int(app.model.meta.week) == 1, "First round validation refreshes the date in Reception")
 	await _command("auto_lineup")
 	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
 	app._navigate("Match")
@@ -291,7 +291,7 @@ func _bench() -> void:
 	await _command("finish_round")
 	await ContextualFlow.settle_club_meetings(app, self, _check)
 	var second_day: String = str(app.model.calendarPlanning.today).get_slice("-", 2)
-	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.begins_with(second_day + " ") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again in Reception")
+	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.contains(" %d " % int(second_day)) and int(app.model.meta.week) == 2, "Second round validation refreshes the date again in Reception")
 	_check(app.model.live == null and not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Both round validations restore management after the immersive match")
 	await _command("auto_lineup")
 	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
@@ -329,7 +329,7 @@ func _modal() -> void:
 				"confirmation": app.confirm("Confirmer", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.", func(): pass)
 				"recovery": app.recover_profile()
 				"credits": app._credits()
-				"settings": app.settings()
+				"settings": app.preferences_window()
 				"menu": app.pause_menu()
 			for i in 5: await process_frame
 			_dialog_bounds(kind + " " + str(dimensions))

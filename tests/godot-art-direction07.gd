@@ -36,28 +36,26 @@ func current_chrome(page: String) -> void:
 	check(rail != null and viewport.encloses(rail.get_global_rect()) and rail.get_global_rect().size.x <= root.size.x*.2,"Navigation latérale contenue "+page)
 	var header := app.find_child("ImmersiveTopbar",true,false) as Control
 	check(header != null and viewport.encloses(header.get_global_rect()),"Bandeau entièrement contenu "+page)
-	var caption := "Tactique" if page == "Composition" else page
+	# Fil d'Ariane de la coque commune : morceaux cliquables (boutons), la section est l'un d'eux.
+	var caption: String = {"Composition":"Tactique","Préparation":"Tactique","Plan de jeu":"Tactique","Classements":"Compétitions","Calendrier":"Compétitions"}.get(page,page)
 	var breadcrumb := false
 	if header != null:
-		for label: Label in header.find_children("*","Label",true,false):
-			if label.text == caption:
-				var size := label.get_theme_font_size("font_size")
-				breadcrumb = label.is_visible_in_tree() and size >= 12 and viewport.encloses(label.get_global_rect()) and label.get_theme_font("font").get_string_size(label.text,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x <= label.size.x
+		for crumb: Button in header.find_children("ImmersiveCrumb*","Button",true,false):
+			if crumb.text == caption:
+				var size := crumb.get_theme_font_size("font_size")
+				breadcrumb = crumb.is_visible_in_tree() and size >= 12 and viewport.encloses(crumb.get_global_rect()) and crumb.get_theme_font("font").get_string_size(crumb.text,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x <= crumb.size.x + 1.0
 	check(breadcrumb,"Page identifiée et texte lisible dans le bandeau "+page)
 	var selected: String = {"Bureau":"Bureau","Effectif":"Effectif","Composition":"Tactique","Préparation":"Tactique","Plan de jeu":"Tactique","Club":"Club","Finances":"Finances","Classements":"Compétitions","Calendrier":"Compétitions"}.get(page,"")
-	for name in ["Réception","Bureau","Effectif","Tactique","Entraînement","Recrutement","Club","Finances","Compétitions","Formation"]:
+	# Charte §7.1 : entrées sans numéro ni pictogramme ; Entraînement est un onglet de Tactique.
+	for name in ["Bureau","Réception","Effectif","Tactique","Recrutement","Club","Finances","Compétitions","Formation"]:
 		var button := app.find_child("Nav_"+name,true,false) as Button
 		check(button != null and button.is_visible_in_tree() and button.focus_mode == Control.FOCUS_ALL and viewport.encloses(button.get_global_rect()),"Navigation entière et accessible au clavier "+name+" / "+page)
 		if button == null: continue
 		var style := button.get_theme_stylebox("normal") as StyleBoxFlat
-		var background := style.bg_color if style != null and style.bg_color.a > 0 else Color("11191e")
+		var background := style.bg_color if style != null and style.bg_color.a > 0 else Color("171512")
 		check(button.get_theme_font_size("font_size") >= 12 and contrast(button.get_theme_color("font_color"),background) >= 4.5,"Contraste du chapitre "+name+" / "+page)
-		var icon_visible := false
-		if rail != null:
-			for child in rail.get_children():
-				if child is TextureRect and child.is_visible_in_tree() and button.get_global_rect().has_point(child.get_global_rect().get_center()): icon_visible = true
-		check(icon_visible,"Pictogramme du chapitre "+name+" / "+page)
-		if name == selected: check(style != null and style.bg_color.a > 0 and style.border_color.a > 0,"Sélection persistante "+page)
+		check(button.text == name and button.icon == null and button.find_children("*","TextureRect",true,false).is_empty(),"Chapitre sans numéro ni pictogramme "+name+" / "+page)
+		if name == selected: check(style != null and style.bg_color.a > 0 and button.find_child("RailActiveMarker",true,false) != null,"Sélection persistante "+page)
 func run() -> void:
 	root.size=Vector2i(2560,1440);DisplayServer.window_set_size(root.size)
 	app=load("res://main.tscn").instantiate();root.add_child(app);await worker()

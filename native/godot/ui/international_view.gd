@@ -24,7 +24,7 @@ static func nation_only(model: Dictionary) -> bool:
 	return model.get("international", {}).get("role") == "nation"
 
 static func navigation_allowed(model: Dictionary, route: String) -> bool:
-	return not nation_only(model) or route in ["Accueil", "Création", "Packs", "Réception", "Sélections", "Calendrier"]
+	return not nation_only(model) or route in ["Accueil", "Création", "Packs", "Réception", "Sélections", "Calendrier", "Recherche", "Réglages"]
 
 static func managed_team(model: Dictionary) -> Dictionary:
 	var international: Dictionary = model.get("international", {})

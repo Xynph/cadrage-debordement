@@ -58,7 +58,10 @@ func _run() -> void:
 		await _capture("08-candidats-720p")
 		_dismiss()
 		await _resize_window(Vector2i(2560, 1440))
-	if await _activate("Nav_Entraînement"):
+	# Entraînement est un onglet de Tactique (coque commune : plus d'entrée dans le rail).
+	app._navigate("Composition")
+	await _settle()
+	if await _activate("TacticsTab4"):
 		_check(app.find_child("ImmersiveTraining", true, false) != null, "Entraînement du paquet")
 		await _capture("09-entrainement")
 		var command_id: int = app.bridge._next_id
@@ -155,16 +158,17 @@ func _visit(route: String, expected: String, art: String, shot: String) -> void:
 func _find_club() -> void:
 	var teams: Array = app.model.get("staff", {}).get("teams", [])
 	_check(not teams.is_empty(), "La carrière commune contient son annuaire des clubs")
-	if teams.is_empty() or not await _activate("ImmersiveSearch"): return
+	if teams.is_empty(): return
 	var target: Dictionary = teams.back()
-	var palette := app.get_node_or_null("NavigationPalette") as AcceptDialog
-	if palette == null:
-		_check(false, "La palette est ouverte depuis la barre de navigation")
+	# Recherche de la barre haute (aucune fenêtre) : Entrée ouvre l'écran Recherche, puis le premier résultat.
+	var search := app.root_content.find_child("ImmersiveSearch", true, false) as LineEdit
+	if search == null:
+		_check(false, "Le champ Rechercher est dans la barre haute")
 		return
-	var search := palette.find_child("NavigationSearch", true, false) as LineEdit
 	search.text = str(target.name)
-	search.text_changed.emit(search.text)
-	palette.confirmed.emit()
+	search.text_submitted.emit(search.text)
+	await _settle()
+	if not await _activate("SearchResult0"): return
 	await _settle()
 	_check(app.route == "Staff" and app.selected_staff_club == int(target.id), "La recherche ouvre l’annuaire du club demandé")
 

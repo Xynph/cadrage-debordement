@@ -3,18 +3,25 @@ extends RefCounted
 
 const BanqueImages = preload("res://ui/banque_images.gd")
 const Base = preload("res://ui/game_skin.gd")
-const BG = Color("0b1012")
-const PANEL = Color("111a1c")
-const RAISED = Color("172321")
-const LINE = Color("53625e")
-const IVORY = Color("f2ecdc")
-const MUTED = Color("abb7b1")
-const FAINT = Color("71867b")
-const MINT = Color("82e3a3")
-const GOLD = Color("d7ad59")
-const AMBER = Color("e7bc63")
-const ALERT = Color("df897d")
-const BLUE = Color("62b9d4")
+const Charte = preload("res://ui/charte.gd")
+## Alias historiques des écrans, rabattus sur les jetons de la charte (ui/charte.gd, une seule direction artistique) :
+## noir chaud et ivoire partout. L'or n'est plus un accent : GOLD (accent, titres, focus) devient l'ivoire ;
+## le vrai or (Continuer, héritage) est OR / OR_VIF. Les couleurs à sens suivent v / d / n.
+const BG = Charte.FOND
+const PANEL = Charte.PANNEAU
+const RAISED = Charte.PANNEAU_2
+const SELECTED = Charte.PANNEAU_3
+const LINE = Charte.FILET
+const IVORY = Charte.IVOIRE
+const MUTED = Charte.IVOIRE_2
+const FAINT = Charte.IVOIRE_3
+const MINT = Charte.V
+const GOLD = Charte.IVOIRE
+const OR = Charte.OR
+const OR_VIF = Charte.OR_VIF
+const AMBER = Charte.N
+const ALERT = Charte.D
+const BLUE = Charte.IVOIRE_2
 const DISPLAY = preload("res://fonts/BarlowCondensed-SemiBold.ttf")
 const MEDIUM = preload("res://ui/immersive08/fonts/BarlowCondensed-Medium.ttf")
 const BOLD = preload("res://ui/immersive08/fonts/BarlowCondensed-Bold.ttf")
@@ -172,9 +179,9 @@ static func button(text: String, callback: Callable, primary: bool = false, acce
 	control.add_theme_font_size_override("font_size", maxi(14, px(25)))
 	var fill := readable_primary_fill(accent) if primary else accent
 	control.add_theme_stylebox_override("normal", box(fill.darkened(.2) if primary else PANEL, accent.lightened(.3) if primary else LINE, 5, 12))
-	control.add_theme_stylebox_override("hover", box(fill if primary else RAISED, MINT if primary else IVORY, 5, 12))
-	control.add_theme_stylebox_override("pressed", box(fill.darkened(.4) if primary else Color("244030"), MINT, 5, 12))
-	control.add_theme_stylebox_override("disabled", box(Color("17201e"), Color("35453e"), 5, 12))
+	control.add_theme_stylebox_override("hover", box(fill if primary else RAISED, IVORY, 5, 12))
+	control.add_theme_stylebox_override("pressed", box(fill.darkened(.4) if primary else SELECTED, IVORY, 5, 12))
+	control.add_theme_stylebox_override("disabled", box(PANEL, LINE, 5, 12))
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var style: StyleBoxFlat = control.get_theme_stylebox(state)
 		style.content_margin_top = px(7)
@@ -228,7 +235,7 @@ static func chip(text: String, color: Color = MINT) -> PanelContainer:
 static func derby_chip() -> PanelContainer:
 	var frame := PanelContainer.new()
 	frame.name = "DerbyTag"
-	frame.add_theme_stylebox_override("panel", box(Color("43361c"), GOLD, 5, 8))
+	frame.add_theme_stylebox_override("panel", box(RAISED, GOLD, 5, 8))
 	var caption := label("DERBY", 21, AMBER, true, 700)
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	frame.add_child(caption)
@@ -240,7 +247,7 @@ static func gauge(value: float, color: Color = MINT, height: int = 7) -> Progres
 	control.value = clampf(value, 0, 100)
 	control.show_percentage = false
 	control.custom_minimum_size.y = maxi(4, px(height))
-	control.add_theme_stylebox_override("background", box(Color("2b3936"), Color.TRANSPARENT, 3, 0))
+	control.add_theme_stylebox_override("background", box(SELECTED, Color.TRANSPARENT, 3, 0))
 	control.add_theme_stylebox_override("fill", box(color, Color.TRANSPARENT, 3, 0))
 	return control
 

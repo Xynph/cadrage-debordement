@@ -164,7 +164,7 @@ func _display_reception() -> void:
 		return
 	_check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN,"Windows starts in standard fullscreen before any resize")
 	await _capture("accueil-plein-ecran")
-	app.settings()
+	app.preferences_window()
 	await _settle()
 	var dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
 	var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
@@ -525,19 +525,12 @@ func _run() -> void:
 		await _resize_window(resolution)
 		var pages: Array[String] = []
 		app._navigate("Bureau")
-		_press_named("ImmersiveSearch")
+		# Recherche de la barre haute : Ctrl+K met le focus dans le champ, Entrée ouvre l'écran Recherche (aucune fenêtre).
+		_check(app.navigation_controller.focus_search(), "Bundled navigation focuses the top bar search field")
+		app.navigation_controller.submit_search("a")
 		await _settle()
-		var palette: AcceptDialog = app.navigation_controller.get("_dialog")
-		_check(is_instance_valid(palette) and palette.visible, "Bundled navigation opens its real palette")
-		if is_instance_valid(palette) and palette.visible:
-			var bounds := Rect2(Vector2.ZERO, get_tree().root.get_visible_rect().size)
-			_check(bounds.encloses(Rect2(Vector2(palette.position),Vector2(palette.size))), "Palette position and size fit the actual client")
-			var confirmation := palette.get_ok_button()
-			var confirmation_rect := confirmation.get_global_rect()
-			confirmation_rect.position += Vector2(palette.position)
-			_check(confirmation.is_visible_in_tree() and bounds.encloses(confirmation_rect), "Palette OPEN action is entirely inside the client")
-			await _capture("recherche-"+str(resolution.x))
-			palette.hide()
+		_check(app.route == "Recherche" and app.root_content.find_child("SearchResult0", true, false) != null, "Search results open as a shell screen")
+		await _capture("recherche-"+str(resolution.x))
 		for chapter: Dictionary in app.NAV_CHAPTERS:
 			for page: String in chapter.routes: pages.append(page)
 		_check(pages.size() == 21 and pages.has("Réception") and not pages.has("Presse"), "Every native career route is included, with press entered through its inbox mail")
@@ -591,7 +584,7 @@ func _run() -> void:
 			_check(app.model.tactics.attack==option.id,"Attack decision persisted")
 			break
 	app._navigate("Préparation")
-	_press_named("Nav_Entraînement")
+	app.Immersive.open_training(app)
 	await _settle()
 	_press_named("TrainingValidateWeek")
 	await _settle()
@@ -1214,7 +1207,7 @@ func _native06_reception() -> void:
 	var master_mute := AudioServer.is_bus_mute(0)
 	for resolution in _resolutions([Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]):
 		await _resize_window(resolution)
-		app.settings(); await _settle()
+		app.preferences_window(); await _settle()
 		var dialog: AcceptDialog = app.get_node("PreferencesDialog")
 		var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
 		_check(tabs != null and tabs.get_tab_count() == 4, "Native06 four compact settings tabs")

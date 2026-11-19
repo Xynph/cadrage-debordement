@@ -181,7 +181,7 @@ func dialogs() -> void:
 	app.notice("Information","Les données du club restent disponibles.")
 	await dialog_measure("information")
 	app.pause_menu(); await dialog_measure("pause")
-	app.settings(); await dialog_measure("preferences")
+	app.preferences_window(); await dialog_measure("preferences")
 	app._credits(); await dialog_measure("credits")
 	app.open_file(true); await dialog_measure("import-file-picker")
 	load("res://ui/preparation_briefing.gd").open_all(app,func(): pass)

@@ -265,7 +265,7 @@ func run() -> void:
 		var training:Control=named("ImmersiveTraining")
 		check(training!=null and app.management_ui.preparation.tab==2,"Onglet entraînement conservé "+str(resolution))
 		if training==null: continue
-		var lane:=app.body_scroll.get_global_rect().grow(1)
+		var lane:Rect2=(app.body_scroll as Control).get_global_rect().grow(1)
 		for button:BaseButton in training.find_children("*","BaseButton",true,false):
 			if not button.is_visible_in_tree(): continue
 			var bounds:=button.get_global_rect()

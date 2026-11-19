@@ -413,7 +413,7 @@ func _receive_model(value: Dictionary) -> void:
 		else: _refresh_after_response(response_ok, route != route_before or not reception_id.is_empty() or received_command in ["new_career", "import", "recover_profile", "restore_checkpoint", "next_season", "finish_round", "advance_day", CareerProgression.CONTINUE_COMMAND] or SeasonPreparation.is_advance(received_command))
 	if bridge.last_response_ok:
 		if is_instance_valid(status):
-			status.text = _settled_status_text()
+			status.text = _status_line_text()
 			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
 			_refit_status()
 		if is_instance_valid(root_content) and decision_feedback != null:
@@ -428,6 +428,8 @@ func _receive_model(value: Dictionary) -> void:
 			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nTu peux maintenant créer ou importer une carrière.")
 	# Réponse à un mail du club qui mène à un écran (négocier, prolonger, préserver un joueur).
 	if response_ok and received_command == "club_mail_reply": ClubMail.after_reply(self)
+	# Ligne « ✓ Sauvegardé <date> » du pied du rail (succès comme échec d'écriture).
+	if is_instance_valid(root_content): Immersive.refresh_save_line(self)
 	call_deferred("_refresh_coach")
 	if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 	# Portraits de l'effectif fabriqués en tâche de fond, interface au repos : la 1re Composition ou le
@@ -711,7 +713,7 @@ func _failed(message: String) -> void:
 	# status. Preserve an existing business error and the unsaved list.
 	if last_command in ["epcr_preview", "competition_editor_preview"] and not connection_error:
 		if is_instance_valid(status):
-			status.text = _settled_status_text()
+			status.text = _status_line_text()
 			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
 			_refit_status()
 		return
@@ -800,7 +802,8 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 	if is_instance_valid(contextual_director) and contextual_director.match_immersed() and target != "Match":
 		contextual_director.render_if_needed()
 		return
-	if target == "Presse" and not has_meta("press_mail_origin"): return
+	# Presse s'ouvre aussi depuis le rail, hors conférence (journal, archives) ; la conférence elle-même
+	# reste derrière son courrier (press_view.gd : « Ouvre l'invitation dans Réception »).
 	if target == "Sélections" and not model.get("international") is Dictionary: return
 	if not Immersive.Selections.navigation_allowed(model, target): return
 	if is_instance_valid(navigation_controller): navigation_controller.capture_current()
@@ -821,7 +824,7 @@ func _match_visible() -> bool:
 func _sound_error(message: String) -> void:
 	# Local audio availability never marks a career decision as failed.
 	if is_instance_valid(status):
-		status.text = _settled_status_text()
+		status.text = _status_line_text()
 		status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
 		_refit_status()
 	if not message.is_empty(): call_deferred("_show_sound_error",message)
@@ -864,7 +867,6 @@ func _render(remember_ui: bool = true) -> void:
 		_screen_stamp = _screen_state()
 
 func _render_screen(remember_ui: bool) -> void:
-	if route == "Presse" and not has_meta("press_mail_origin"): route = "Réception"
 	if not Immersive.Selections.navigation_allowed(model, route): route = "Réception"
 	call_deferred("_refresh_coach")
 	call_deferred("_observe_navigation")
@@ -1061,6 +1063,15 @@ func _settled_status_text() -> String:
 	if resume is Dictionary and not str(resume.get("text","")).is_empty(): return "REPRISE DE CARRIÈRE · " + str(resume.text)
 	return _autosave_status()
 
+## Ligne d'état affichée en pied de page. Dans la coque commune, la sauvegarde ordinaire n'y est plus répétée : la
+## ligne « ✓ Sauvegardé <date> » du rail est la seule (relectures du 19/11/2026). Erreurs, retours de décision,
+## reprise et alertes du journal de sauvegarde restent affichés ici.
+func _status_line_text() -> String:
+	var text := _settled_status_text()
+	var coque: bool = is_instance_valid(root_content) and root_content.name == "ImmersiveShell"
+	if coque and text == _autosave_status() and not _autosave_alert(): return ""
+	return text
+
 ## Ligne d'état de la sauvegarde (meta.autosave, native/engine/action-journal.cjs) : fréquence choisie, date de la
 ## dernière sauvegarde complète, reprise du journal d'actions après un arrêt imprévu.
 func _autosave_status() -> String:
@@ -1120,6 +1131,17 @@ func _open_coach() -> void:
 
 func _update_header_date() -> void:
 	if not is_instance_valid(header_date): return
+	# Barre haute de la coque : « mar. 17 nov. » et « · J9 » (shell.gd, date_caption).
+	if header_date.has_meta("coque"):
+		var caption: Array = Immersive.date_caption(model)
+		header_date.text = str(caption[0])
+		var round_text: Label = header_date.get_parent().get_node_or_null("ImmersiveRound")
+		if round_text != null: round_text.text = "· " + str(caption[1]) if not str(caption[1]).is_empty() else ""
+		var date_button := header_date.get_parent() as Button
+		if date_button != null:
+			date_button.accessibility_description = str(caption[0]) + (" · " + str(caption[2]) if not str(caption[2]).is_empty() else "")
+			date_button.tooltip_text = "Ouvrir le calendrier · " + date_button.accessibility_description
+		return
 	var meta: Dictionary = model.get("meta", {})
 	var round_label := str(meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1)))
 	var planning: Dictionary = model.get("calendarPlanning", {})
@@ -1249,12 +1271,14 @@ func _update_live_bar() -> void:
 			elif not model.meta.get("canAdvanceSeason", false):
 				var daily := _daily_progression()
 				if primary_button.name == "ImmersiveContinue": primary_button.text = daily.get("short", "Continuer")
-				primary_button.disabled = bool(daily.get("disabled", false))
+				# Coque commune : Continuer bloqué reste actif (« ! » + raison, clic = écran qui bloque).
+				primary_button.disabled = bool(daily.get("disabled", false)) and primary_button.name != "ImmersiveContinue"
 		if office_status and not live.is_empty():
 			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
 		if connection_error and bridge.child_pid <= 0 and primary_button.name == "ImmersiveContinue": primary_button.text = "Relancer"
 		primary_button.tooltip_text = primary_tooltip()
-		fit_button_text(primary_button)
+		if primary_button.name == "ImmersiveContinue": Immersive.sync_continue(self)
+		else: fit_button_text(primary_button)
 	if waiting and SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, true)
 
 ## Bouton à texte rogné (clip_text) : réduit la police jusqu'à ce que le libellé tienne en entier, icône comprise
@@ -1284,6 +1308,20 @@ func primary_tooltip() -> String:
 		var daily := _daily_progression()
 		if daily.has("tooltip"): return str(daily.tooltip)
 	return primary_text()
+
+## Ce qui arrête Continuer, en raison courte (22 caractères au plus), ou "" quand il avance (ou passe au direct, au
+## résultat, à la préparation du jour de match). Ne dépend pas de l'état désactivé du bouton : un clic ou Espace
+## ouvre l'écran qui bloque (primary_action).
+func continue_block() -> String:
+	if connection_error and bridge.child_pid <= 0: return ""
+	if not _live().is_empty(): return ""
+	if _press_required(): return "Conférence de presse"
+	if not Immersive.Selections.current_fixture(model).is_empty(): return "Courrier de match"
+	if model.get("meta", {}).get("canAdvanceSeason", false): return ""
+	var daily := _daily_progression()
+	if daily.has("open"): return "Décision attendue"
+	if bool(daily.get("disabled", false)): return "Avance indisponible"
+	return ""
 
 func primary_text() -> String:
 	if connection_error and bridge.child_pid <= 0: return "RELANCER LE MOTEUR  →"
@@ -1328,6 +1366,8 @@ func primary_action() -> void:
 		if daily.has("open"): _open_reprise_decision()
 		elif daily.has("route"): _navigate(daily.route)
 		elif daily.has("command"): _command(daily.command, daily.payload)
+		# Avance refusée par le calendrier : Continuer n'est jamais inerte, il ouvre le calendrier du jour.
+		elif bool(daily.get("disabled", false)) and route != "Calendrier": Immersive._open_current_calendar(self)
 		return
 	if not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
 	elif model.get("next") == null: _command("finish_round")
@@ -1393,8 +1433,16 @@ func pause_menu() -> void:
 	d.canceled.connect(d.queue_free)
 	ImmersiveDialogs.show_centered(d,Vector2i(820,370))
 
+## Réglages : en carrière, l'écran « Réglages » de la coque (règle « jamais de petite fenêtre ») ; hors carrière
+## (accueil, création, packs), la fenêtre des paramètres.
 func settings() -> void:
-	preload("res://ui/preferences_dialog.gd").open(self, user_preferences)
+	if _has_career() and route not in ["Accueil", "Création", "Packs"]: _navigate("Réglages")
+	else: preferences_window()
+
+## Fenêtre des paramètres (hors carrière). Même contenu que l'écran Réglages (preferences_dialog.gd, _fill) :
+## les recettes l'ouvrent directement pour vérifier ce contenu partagé.
+func preferences_window() -> AcceptDialog:
+	return preload("res://ui/preferences_dialog.gd").open(self, user_preferences)
 
 func open_career_slots() -> void:
 	preload("res://ui/career_slots_view.gd").open(self)

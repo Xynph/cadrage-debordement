@@ -96,6 +96,11 @@ func finish() -> void:
 	if app != null: app.bridge.stop()
 	quit(0 if failures.is_empty() else 1)
 
+## Accès rapide (palette) par son point d'entrée : hors coque, il reste ouvert par Ctrl+K.
+func quick() -> void:
+	nav.open_palette()
+	await settle()
+
 func run() -> void:
 	root.size = Vector2i(1440,900)
 	if not ResourceLoader.exists("res://ui/navigation_controller.gd"):
@@ -143,7 +148,12 @@ func run() -> void:
 	app.get_viewport().gui_release_focus()
 	await key(KEY_RIGHT, false, true)
 	check(app.route == "Finances", "Alt droite restaure la route suivante")
+	# Coque commune : Ctrl+K met le focus dans le champ « Rechercher » de la barre haute, sans fenêtre ; l'accès rapide
+	# (palette) reste l'outil hors coque et se teste par son point d'entrée.
 	await key(KEY_K, true)
+	check(not palette_visible() and app.get_viewport().gui_get_focus_owner() == named(app, "ImmersiveSearch"), "Ctrl+K en carrière : focus dans la recherche de la barre, aucune fenêtre")
+	app.get_viewport().gui_release_focus()
+	await quick()
 	palette_fits("première ouverture avec carrière à1440x900")
 	var palette_search: LineEdit = named(app, "NavigationSearch")
 	await key(KEY_E, false, false, 233); await key(KEY_R, false, false, 114)
@@ -161,7 +171,7 @@ func run() -> void:
 	var query := roster_search.text
 	var caret := roster_search.caret_column
 	check(query == "___axucun_joueur___" and caret == 5, "La vraie frappe prépare un filtre exclusif et un curseur intérieur")
-	await key(KEY_K, true); await search(str(app.model.squad[0].name)); await key(KEY_ENTER)
+	await quick(); await search(str(app.model.squad[0].name)); await key(KEY_ENTER)
 	check(app.selected_player == first_id and app.body.find_children("SquadPlayer*", "Button", true, false).any(func(button): return str(button.get_meta("player_id", "")) == first_id), "Palette depuis un effectif filtré : cible ID réellement visible")
 	var back: Button = named(app, "NavigationBack")
 	back.grab_focus(); await key(KEY_ENTER)
@@ -172,7 +182,7 @@ func run() -> void:
 	check(app.route == "Effectif" and app.selected_player == first_id, "Suivant rouvre la cible de la palette")
 	var ordered: Array = load("res://ui/management_state.gd").players(app.model.squad, app.management_ui.roster, int(app.model.meta.season))
 	var last_id := str(ordered.back().id)
-	await key(KEY_K, true); await search("[" + last_id + "]"); await key(KEY_ENTER)
+	await quick(); await search("[" + last_id + "]"); await key(KEY_ENTER)
 	check(app.selected_player == last_id and app.body.find_children("SquadPlayer*", "Button", true, false).any(func(button): return str(button.get_meta("player_id", "")) == last_id), "Une cible au-delà de la première page devient réellement visible depuis la palette")
 	var roster_scroll := named(app,"SquadScroll") as ScrollContainer
 	var last_row := squad_row(last_id)
@@ -192,7 +202,7 @@ func run() -> void:
 	for resolution in [Vector2i(1280,720), Vector2i(1440,900), Vector2i(1600,900), Vector2i(1920,1080)]:
 		root.size = resolution
 		palette().queue_free(); await settle()
-		await settle(); await key(KEY_K, true)
+		await settle(); await quick()
 		palette_fits("résultats initiaux " + str(resolution))
 		await search("Formation"); palette_fits("un seul résultat " + str(resolution))
 		root.size = Vector2i(1280,720); await settle(); palette_fits("redimensionnement ouvert depuis " + str(resolution))
@@ -206,7 +216,7 @@ func run() -> void:
 		await key(KEY_DOWN)
 		await key(KEY_ENTER)
 		check(app.route == "Effectif" and app.selected_player == other_id, "Flèche puis Entrée ouvre le second ID " + str(resolution))
-		await key(KEY_K, true); await search("Formation")
+		await quick(); await search("Formation")
 		var ok: Button = palette().get_ok_button()
 		var center := ok.get_global_rect().get_center() + Vector2(palette().position)
 		var motion := InputEventMouseMotion.new(); motion.position = center; motion.global_position = center
@@ -220,7 +230,7 @@ func run() -> void:
 	app.model = original
 	var market_id := str(app.model.market[1].id)
 	app.model.market[0].name = "Zoé Marché Homonyme"; app.model.market[1].name = "Zoé Marché Homonyme"
-	await key(KEY_K, true); await search("zoe marche homonyme"); await key(KEY_DOWN); await key(KEY_ENTER)
+	await quick(); await search("zoe marche homonyme"); await key(KEY_DOWN); await key(KEY_ENTER)
 	check(app.route == "Recrutement" and app.management_ui.market.navigation_id == market_id, "Piste marché ouverte sur le second identifiant")
 	var market_buttons: Array = app.body.find_children("*", "Button", true, false).filter(func(button): return button.has_meta("player_id"))
 	check(not market_buttons.is_empty() and market_buttons.all(func(button): return str(button.get_meta("player_id")) == market_id), "Le filtre strict ID du marché ne présente pas son homonyme")
@@ -231,10 +241,10 @@ func run() -> void:
 	app.model = original.duplicate(true)
 	var projected: Dictionary = app.model
 	app.model = {"club":{"id":0}, "meta":{}}
-	await key(KEY_K, true); await search("eric")
+	await quick(); await search("eric")
 	check(results().item_count == 0, "Ancienne projection sans squad/market : aucun joueur inventé")
 	await key(KEY_ESCAPE); app.model = projected
-	await key(KEY_K, true); await search("___introuvable___")
+	await quick(); await search("___introuvable___")
 	check(results().item_count == 0 and named(app, "NavigationCount").text.contains("Aucun"), "Résultat vide explicite")
 	await key(KEY_ESCAPE)
 	await visit("Effectif", first_id)
@@ -250,20 +260,20 @@ func run() -> void:
 	check(app.route == "Effectif", "Alt flèche respecte OptionButton")
 	option.queue_free(); await settle()
 	app.notice("Autre dialogue", "Ne doit pas être remplacé")
-	await key(KEY_K, true)
+	await quick()
 	check(not palette_visible(), "Dialogue visible : aucune palette superposée")
 	app._clear_dialogs(); await settle()
-	app.waiting = true; await key(KEY_K, true)
+	app.waiting = true; await quick()
 	check(not palette_visible(), "Attente commande : palette refusée")
-	app.waiting = false; app.last_error = "Échec de commande"; await key(KEY_K, true)
+	app.waiting = false; app.last_error = "Échec de commande"; await quick()
 	check(not palette_visible(), "Erreur active : palette refusée")
-	app.last_error = ""; app.closing = true; await key(KEY_K, true)
+	app.last_error = ""; app.closing = true; await quick()
 	check(not palette_visible(), "Fermeture : palette refusée")
 	app.closing = false
 	app._command("__navigation_unknown__")
 	var failed_deadline := Time.get_ticks_msec() + 30000
 	while app.waiting and Time.get_ticks_msec() < failed_deadline: await process_frame
-	await settle(); await key(KEY_K, true)
+	await settle(); await quick()
 	check(not app.bridge.last_response_ok and not app.last_error.is_empty() and not palette_visible(), "Échec réel d'une commande worker : palette bloquée sans effacer l'erreur")
 	app.last_error = ""; app._clear_dialogs(); await settle()
 	nav.reset(); await visit("Bureau"); await visit("Effectif", first_id); await visit("Finances")
