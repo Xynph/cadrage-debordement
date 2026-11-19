@@ -77,7 +77,8 @@ func essai_textes() -> void:
 	check(Regie.cle_sortie({"direct": direct, "paused": true}).is_empty() and Regie.cle_sortie({"atBreak": true}).is_empty(), "Pas de sortie en cours de jeu, ni sans projection du moteur")
 
 
-## Bandeau « ESSAI » : marqueur, équipe, tailles lisibles, sous le score, ne capte pas la souris.
+## Bandeau « ESSAI » : marqueur, équipe, tailles lisibles, ne capte pas la souris ; en tiers inférieur
+## façon retransmission (19/11/2026), au-dessus de la légende sans la recouvrir ni le score.
 func bandeau() -> void:
 	var cadre: PanelContainer = Regie.construire_bandeau()
 	root.add_child(cadre)
@@ -93,10 +94,42 @@ func bandeau() -> void:
 		if titre == null or nom == null or equipe == null: continue
 		var tailles: Dictionary = Regie.tailles_bandeau(hauteur)
 		check(titre.text == "ESSAI" and nom.text == "Jean Dupont" and equipe.text == "Toulouse Capitole XV" and nom.visible and equipe.visible, "%d p : ESSAI, marqueur et équipe écrits" % int(hauteur))
-		check(titre.get_theme_font_size("font_size") == int(tailles.titre) and int(tailles.titre) >= 40, "%d p : titre lisible (%d points)" % [int(hauteur), titre.get_theme_font_size("font_size")])
-		check(nom.get_theme_font_size("font_size") >= 20 and equipe.get_theme_font_size("font_size") >= 16, "%d p : marqueur et équipe lisibles (%d et %d points)" % [int(hauteur), nom.get_theme_font_size("font_size"), equipe.get_theme_font_size("font_size")])
-		check(cadre.size.x <= 1280.0 * hauteur / 720.0 and cadre.size.y <= hauteur * 0.3, "%d p : bandeau compact (%s)" % [int(hauteur), str(cadre.size)])
-	check(Regie.tailles_bandeau(1080.0).titre > Regie.tailles_bandeau(720.0).titre and Regie.tailles_bandeau(4320.0).titre <= 110, "Taille du titre suit l'écran, sans excès")
+		check(titre.get_theme_font_size("font_size") == int(tailles.titre) and int(tailles.titre) >= 30, "%d p : titre lisible (%d points)" % [int(hauteur), titre.get_theme_font_size("font_size")])
+		check(nom.get_theme_font_size("font_size") >= 18 and equipe.get_theme_font_size("font_size") >= 14, "%d p : marqueur et équipe lisibles (%d et %d points)" % [int(hauteur), nom.get_theme_font_size("font_size"), equipe.get_theme_font_size("font_size")])
+		# Bandeau de retransmission : une seule bande, marqueur et équipe à droite du titre.
+		var largeur := 1280.0 * hauteur / 720.0
+		check(cadre.size.x <= largeur * 0.45 and cadre.size.y <= hauteur * 0.13, "%d p : bandeau compact (%s)" % [int(hauteur), str(cadre.size)])
+		check(nom.get_global_rect().position.x > titre.get_global_rect().end.x, "%d p : le marqueur est à droite du titre, pas dessous" % int(hauteur))
+		# Place dans l'image (bandeau du score en haut à gauche, légende en bas à gauche, mesures de la vue en 720p).
+		var k := hauteur / 720.0
+		var ecran := Vector2(largeur, hauteur)
+		var score := Rect2(Vector2(18, 18) * k, Vector2(486, 65) * k)
+		var commandes_bas := 125.0 * k
+		var legende := Rect2(Vector2(18, 642) * k, Vector2(736, 58) * k)
+		var place: Vector2 = Regie.place_bandeau("ESSAI", ecran, cadre.size, commandes_bas, legende, false)
+		var rect := Rect2(place, cadre.size)
+		check(rect.position.y >= hauteur * 2.0 / 3.0 and rect.end.y <= legende.position.y, "%d p : bandeau « ESSAI » dans le tiers inférieur, au-dessus de la légende (%s)" % [int(hauteur), str(rect)])
+		check(not rect.intersects(legende) and not rect.intersects(score), "%d p : il ne recouvre ni la légende ni le score (%s)" % [int(hauteur), str(rect)])
+		check(legende.position.y - rect.end.y <= hauteur * 0.03 and is_equal_approx(rect.position.x, legende.position.x), "%d p : posé juste au-dessus de la légende, calé sur elle à gauche (%s)" % [int(hauteur), str(rect)])
+		check(Rect2(Vector2.ZERO, ecran).encloses(rect), "%d p : bandeau entier dans l'image" % int(hauteur))
+		var sans_legende := Rect2(Regie.place_bandeau("ESSAI", ecran, cadre.size, commandes_bas, Rect2(), false), cadre.size)
+		check(sans_legende.position.y >= hauteur * 2.0 / 3.0 and sans_legende.end.y <= hauteur * 0.9 and Rect2(Vector2.ZERO, ecran).encloses(sans_legende), "%d p : sans légende connue, toujours en bas de l'image (%s)" % [int(hauteur), str(sans_legende)])
+		# Mi-temps : centré sous les commandes, descendu dans la pelouse pendant la marche (plan serré).
+		var large := Rect2(Regie.place_bandeau("MI-TEMPS", ecran, cadre.size, commandes_bas, legende, false), cadre.size)
+		var serre := Rect2(Regie.place_bandeau("MI-TEMPS", ecran, cadre.size, commandes_bas, legende, true), cadre.size)
+		check(absf(large.get_center().x - largeur * 0.5) <= 1.0 and large.position.y >= commandes_bas and not large.intersects(score), "%d p : « MI-TEMPS » centré sous le score (%s)" % [int(hauteur), str(large)])
+		check(serre.get_center().y >= hauteur * 0.5 and serre.end.y <= hauteur, "%d p : « MI-TEMPS » dans la pelouse du bas pendant la marche (%s)" % [int(hauteur), str(serre)])
+	# Entrée et sortie animées, courtes ; rien d'animé si le joueur a réduit les animations.
+	var debut: Dictionary = Regie.animation_bandeau("ESSAI", 0.0, Regie.ESSAI_BANDEAU, 720.0, false)
+	var pose: Dictionary = Regie.animation_bandeau("ESSAI", Regie.BANDEAU_ENTREE, Regie.ESSAI_BANDEAU - Regie.BANDEAU_ENTREE, 720.0, false)
+	var fin: Dictionary = Regie.animation_bandeau("ESSAI", Regie.ESSAI_BANDEAU - 0.05, 0.05, 720.0, false)
+	check(float(debut.alpha) < 0.05 and (debut.decalage as Vector2).x < -10.0, "Le bandeau « ESSAI » entre en glissant depuis la gauche (%s)" % str(debut))
+	check(is_equal_approx(float(pose.alpha), 1.0) and (pose.decalage as Vector2).is_zero_approx(), "Le bandeau est posé après %.2f s d'entrée" % Regie.BANDEAU_ENTREE)
+	check(float(fin.alpha) < 0.5 and (fin.decalage as Vector2).y > 0.0, "Le bandeau sort en fondu, en descendant un peu (%s)" % str(fin))
+	check(Regie.BANDEAU_ENTREE <= 0.4 and Regie.BANDEAU_FONDU <= 0.4, "Entrée et sortie courtes")
+	var calme: Dictionary = Regie.animation_bandeau("ESSAI", 0.0, Regie.ESSAI_BANDEAU, 720.0, true)
+	check(is_equal_approx(float(calme.alpha), 1.0) and (calme.decalage as Vector2).is_zero_approx(), "Animations réduites : bandeau posé d'emblée")
+	check(Regie.tailles_bandeau(1080.0).titre > Regie.tailles_bandeau(720.0).titre and Regie.tailles_bandeau(4320.0).titre <= 72, "Taille du titre suit l'écran, sans excès")
 	Regie.habiller_bandeau(cadre, "MI-TEMPS", "Toulouse   12 — 7   Bordeaux", "", 720.0)
 	await process_frame
 	var vide: Label = cadre.find_child("MatchMomentEquipe", true, false)

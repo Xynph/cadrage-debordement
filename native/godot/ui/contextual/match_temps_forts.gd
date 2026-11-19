@@ -76,8 +76,17 @@ const ESSAI_BANDEAU := 3.6
 ## Échap, Entrée, Espace ou un clic abrègent la séquence. Repli : CD_MATCH_SORTIE=0.
 const SORTIE_LARGE := 1.5
 const SORTIE_MARCHE := 6.0
-## Fondu d'entrée et de sortie du bandeau (s).
+## Bandeau des grands moments, façon retransmission (19/11/2026, film : le cadre « ESSAI » au centre
+## masquait la célébration). Entrée en BANDEAU_ENTREE s (glissé depuis la gauche pour « ESSAI », depuis
+## le bas pour « MI-TEMPS » et « FIN DU MATCH », de BANDEAU_GLISSE de la hauteur), sortie en
+## BANDEAU_FONDU s (fondu, léger glissé vers le bas). Animations réduites : ni glissé ni fondu.
+const BANDEAU_ENTREE := 0.3
 const BANDEAU_FONDU := 0.25
+const BANDEAU_GLISSE := 0.04
+## « ESSAI » en tiers inférieur : calé à gauche sur la légende, BANDEAU_MARGE de la hauteur au-dessus
+## d'elle (sans légende connue : bas à BANDEAU_BAS_REPLI de la hauteur du bas de l'image).
+const BANDEAU_MARGE := 0.015
+const BANDEAU_BAS_REPLI := 0.11
 
 var view: Control
 var app: Control
@@ -178,6 +187,8 @@ var bandeau: PanelContainer
 var _bandeau_duree := 0.0
 var _bandeau_reste := 0.0
 var _bandeau_titre := ""
+## Dernière place connue de la légende (repère de la vue) : le bandeau « ESSAI » se pose au-dessus.
+var _legende_rect := Rect2()
 ## Plus petit ralenti posé pendant le dernier moment d'essai (contrôle des tests).
 var ralenti_min := 1.0
 ## Diagnostic texte / image : début à l'écran de la phase courante (ms, index du journal) et
@@ -1602,43 +1613,62 @@ func _ligne_score() -> String:
 	if _teams.size() < 2 or marque.size() < 2 or not _teams[0] is Dictionary or not _teams[1] is Dictionary: return ""
 	return "%s   %d — %d   %s" % [S.G.club_name(_teams[0]), int(marque[0]), int(marque[1]), S.G.club_name(_teams[1])]
 
-## Bandeau des grands moments, façon retransmission : grand titre doré, ligne du marqueur (ou du
-## score), ligne de l'équipe. Ne capte jamais la souris.
+## Bandeau des grands moments, façon retransmission : titre doré, filet, puis le marqueur (ou le
+## score) et son équipe à droite, sur une ou deux lignes. Ne capte jamais la souris.
 static func construire_bandeau() -> PanelContainer:
 	var cadre := PanelContainer.new()
 	cadre.name = "MatchMomentBandeau"
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var fond := S.G.T.box(Color(0.03, 0.08, 0.065, 0.9), 10, Color(S.GOLD, 0.85))
-	fond.content_margin_left = 34
-	fond.content_margin_right = 34
-	fond.content_margin_top = 6
-	fond.content_margin_bottom = 10
+	var fond := S.G.T.box(Color(0.03, 0.08, 0.065, 0.92), 8, Color(S.GOLD, 0.85))
+	fond.content_margin_left = 18
+	fond.content_margin_right = 22
+	fond.content_margin_top = 4
+	fond.content_margin_bottom = 6
 	fond.shadow_color = Color(0, 0, 0, 0.35)
-	fond.shadow_size = 10
+	fond.shadow_size = 8
 	cadre.add_theme_stylebox_override("panel", fond)
-	var colonne := VBoxContainer.new()
-	colonne.alignment = BoxContainer.ALIGNMENT_CENTER
-	colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	colonne.add_theme_constant_override("separation", 0)
-	cadre.add_child(colonne)
-	var titre := S.label("", 56, S.GOLD)
+	var ligne := HBoxContainer.new()
+	ligne.name = "MatchMomentLigne"
+	ligne.alignment = BoxContainer.ALIGNMENT_BEGIN
+	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ligne.add_theme_constant_override("separation", 14)
+	cadre.add_child(ligne)
+	var titre := S.label("", 36, S.GOLD)
 	titre.name = "MatchMomentTitre"
 	titre.add_theme_font_override("font", S.G.T.DISPLAY)
-	var nom := S.label("", 26, S.TEXT)
+	titre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	titre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ligne.add_child(titre)
+	var filet := ColorRect.new()
+	filet.name = "MatchMomentFilet"
+	filet.color = Color(S.GOLD, 0.85)
+	filet.custom_minimum_size = Vector2(2, 0)
+	filet.size_flags_vertical = Control.SIZE_FILL
+	filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ligne.add_child(filet)
+	var texte := VBoxContainer.new()
+	texte.name = "MatchMomentTexte"
+	texte.alignment = BoxContainer.ALIGNMENT_CENTER
+	texte.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texte.add_theme_constant_override("separation", -2)
+	ligne.add_child(texte)
+	var nom := S.label("", 22, S.TEXT)
 	nom.name = "MatchMomentNom"
 	nom.add_theme_font_override("font", S.G.T.DISPLAY)
-	var equipe := S.label("", 19, S.MUTED)
+	var equipe := S.label("", 16, S.MUTED)
 	equipe.name = "MatchMomentEquipe"
-	for ligne: Label in [titre, nom, equipe]:
-		ligne.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		colonne.add_child(ligne)
+	for l: Label in [nom, equipe]:
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		texte.add_child(l)
 	cadre.hide()
 	return cadre
 
-## Tailles de police du bandeau pour une image de `hauteur` pixels (lisible en 720p, sans excès en 1440p).
+## Tailles de police du bandeau pour une image de `hauteur` pixels (lisible en 720p, compact, sans
+## excès en 1440p).
 static func tailles_bandeau(hauteur: float) -> Dictionary:
-	return {"titre": clampi(roundi(hauteur * 0.075), 40, 110), "nom": clampi(roundi(hauteur * 0.036), 20, 52), "equipe": clampi(roundi(hauteur * 0.026), 16, 38)}
+	return {"titre": clampi(roundi(hauteur * 0.05), 30, 72), "nom": clampi(roundi(hauteur * 0.03), 18, 44), "equipe": clampi(roundi(hauteur * 0.022), 14, 32)}
 
 static func habiller_bandeau(cadre: PanelContainer, titre: String, nom: String, equipe: String, hauteur: float) -> void:
 	var tailles := tailles_bandeau(hauteur)
@@ -1649,6 +1679,11 @@ static func habiller_bandeau(cadre: PanelContainer, titre: String, nom: String, 
 		ligne.text = str(lignes[nom_ligne][0])
 		ligne.add_theme_font_size_override("font_size", int(lignes[nom_ligne][1]))
 		ligne.visible = not ligne.text.is_empty()
+	var texte: Control = cadre.find_child("MatchMomentTexte", true, false)
+	var filet: Control = cadre.find_child("MatchMomentFilet", true, false)
+	var reste := not (nom.is_empty() and equipe.is_empty())
+	if texte != null: texte.visible = reste
+	if filet != null: filet.visible = reste
 	cadre.reset_size()
 
 ## Ce que montre le bandeau (tests, capture) : {visible, titre, nom, equipe}.
@@ -1663,24 +1698,55 @@ func montrer_bandeau(titre: String, nom: String, equipe: String, duree: float) -
 	if bandeau == null or view == null: return
 	habiller_bandeau(bandeau, titre, nom, equipe, maxf(1.0, view.size.y))
 	_bandeau_titre = titre
-	_bandeau_duree = maxf(duree, 2.0 * BANDEAU_FONDU)
+	_bandeau_duree = maxf(duree, BANDEAU_ENTREE + BANDEAU_FONDU)
 	_bandeau_reste = _bandeau_duree
-	bandeau.modulate.a = 1.0 if _calme() else 0.0
 	bandeau.show()
 	_placer_bandeau()
 
-## Sous le bandeau du score et la bande de commandes (zone libre de l'image), centré.
-## Sortie des joueurs en plan serré (18/11/2026, nuit) : le tunnel est en haut de l'image, sous la
-## tribune ; le bandeau descend dans la pelouse vide du bas (BANDEAU_SORTIE_BAS de la hauteur) pour
-## laisser voir les joueurs rentrer.
+## « MI-TEMPS » et « FIN DU MATCH » : sous le bandeau du score et la bande de commandes (zone libre
+## de l'image), centré. Sortie des joueurs en plan serré (18/11/2026, nuit) : le tunnel est en haut
+## de l'image, sous la tribune ; le bandeau descend dans la pelouse vide du bas (BANDEAU_SORTIE_BAS
+## de la hauteur) pour laisser voir les joueurs rentrer.
 const BANDEAU_SORTIE_BAS := 0.70
+
+## Place du bandeau (repère de la vue, sans l'animation) pour une image `ecran`, un bandeau `taille`,
+## la zone libre qui commence à `haut_libre` (sous le score et les commandes) et la légende `legende`
+## (Rect2() si inconnue). « ESSAI » : tiers inférieur, calé à gauche sur la légende, juste au-dessus
+## d'elle, comme un bandeau de retransmission (le marqueur et sa célébration restent visibles).
+static func place_bandeau(titre: String, ecran: Vector2, taille: Vector2, haut_libre: float, legende: Rect2, sortie_serree: bool) -> Vector2:
+	if titre == "ESSAI":
+		var marge := roundf(ecran.y * BANDEAU_MARGE)
+		var connue := legende.has_area()
+		var bas := (legende.position.y if connue else ecran.y * (1.0 - BANDEAU_BAS_REPLI)) - marge
+		var gauche := legende.position.x if connue else roundf(ecran.x * 0.015)
+		return Vector2(roundf(clampf(gauche, 0.0, maxf(0.0, ecran.x - taille.x))), roundf(maxf(haut_libre + marge, bas - taille.y)))
+	var haut := haut_libre + ecran.y * 0.03
+	if sortie_serree: haut = maxf(haut, ecran.y * BANDEAU_SORTIE_BAS - taille.y * 0.5)
+	return Vector2(roundf((ecran.x - taille.x) * 0.5), roundf(haut))
+
+## Animation du bandeau `ecoule` s après son apparition, `reste` s avant sa fin, dans une image de
+## `hauteur` px : {alpha, decalage}. Entrée courte (glissé + fondu), sortie en fondu qui descend un peu.
+static func animation_bandeau(titre: String, ecoule: float, reste: float, hauteur: float, calme: bool) -> Dictionary:
+	if calme: return {"alpha": 1.0, "decalage": Vector2.ZERO}
+	var entree := clampf(ecoule / BANDEAU_ENTREE, 0.0, 1.0)
+	var sortie := clampf(reste / BANDEAU_FONDU, 0.0, 1.0)
+	var arrivee := 1.0 - pow(1.0 - entree, 3.0)
+	var glisse := hauteur * BANDEAU_GLISSE
+	var decalage := Vector2(-(1.0 - arrivee) * glisse * 3.0, 0.0) if titre == "ESSAI" else Vector2(0.0, (1.0 - arrivee) * glisse)
+	decalage.y += (1.0 - sortie) * glisse * 0.5
+	return {"alpha": minf(entree, sortie), "decalage": decalage}
+
 func _placer_bandeau() -> void:
 	var hauteur := maxf(1.0, view.size.y)
-	var haut: float = (_espace.get_global_rect().position.y if is_instance_valid(_espace) else view.clock.get_global_rect().end.y) - view.get_global_rect().position.y + hauteur * 0.03
+	var haut: float = (_espace.get_global_rect().position.y if is_instance_valid(_espace) else view.clock.get_global_rect().end.y) - view.get_global_rect().position.y
+	var legende: Control = view.events.get_parent().get_parent().get_parent() if is_instance_valid(view.events) else null
+	if legende != null and legende.is_visible_in_tree() and legende.size.y > 0.0:
+		_legende_rect = Rect2(legende.get_global_rect().position - view.get_global_rect().position, legende.size)
 	bandeau.reset_size()
-	if etat == SORTIE and _sortie_t >= SORTIE_LARGE:
-		haut = maxf(haut, hauteur * BANDEAU_SORTIE_BAS - bandeau.size.y * 0.5)
-	bandeau.position = Vector2(roundf((view.size.x - bandeau.size.x) * 0.5), roundf(haut))
+	var place := place_bandeau(_bandeau_titre, Vector2(view.size.x, hauteur), bandeau.size, haut, _legende_rect, etat == SORTIE and _sortie_t >= SORTIE_LARGE)
+	var anime := animation_bandeau(_bandeau_titre, _bandeau_duree - _bandeau_reste, _bandeau_reste, hauteur, _calme())
+	bandeau.modulate.a = float(anime.alpha)
+	bandeau.position = (place + (anime.decalage as Vector2)).round()
 
 func _animer_bandeau(delta: float) -> void:
 	if bandeau == null or not bandeau.visible: return
@@ -1688,8 +1754,6 @@ func _animer_bandeau(delta: float) -> void:
 	if _bandeau_reste <= 0.0:
 		_cacher_bandeau()
 		return
-	var ecoule := _bandeau_duree - _bandeau_reste
-	bandeau.modulate.a = 1.0 if _calme() else clampf(minf(ecoule, _bandeau_reste) / BANDEAU_FONDU, 0.0, 1.0)
 	_placer_bandeau()
 
 func _cacher_bandeau() -> void:

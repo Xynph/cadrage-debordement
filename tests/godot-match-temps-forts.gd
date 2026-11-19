@@ -415,7 +415,7 @@ func grands_moments(view: Control) -> Array:
 	var anciens: Array = []
 	var limite := int(OS.get_environment("CD_GRANDS_MOMENTS_LIMITE")) if OS.get_environment("CD_GRANDS_MOMENTS_LIMITE").is_valid_int() else 1200
 	var deadline := Time.get_ticks_msec() + limite * 1000
-	var essai := {"debut": 0, "cle": "", "plan": -1, "ecart": -1.0, "bandeau": {}, "texte": "", "ralenti": 1.0, "vitesse": 1.0, "calme": false, "cadre": Rect2(), "score_bas": 0.0, "bande_bas": 0.0, "ecran": Rect2()}
+	var essai := {"debut": 0, "cle": "", "plan": -1, "ecart": -1.0, "bandeau": {}, "texte": "", "ralenti": 1.0, "vitesse": 1.0, "calme": false, "cadre": Rect2(), "score_bas": 0.0, "bande_bas": 0.0, "ecran": Rect2(), "legende": Rect2()}
 	var sorties := {}
 	var relance := 0
 	var apres_fin := 0
@@ -475,6 +475,10 @@ func grands_moments(view: Control) -> Array:
 		check(cadre.size.x > 0.0 and cadre.position.y >= maxf(float(essai.score_bas), float(essai.bande_bas)) - 1.0, "Le bandeau ne masque pas le score (%s, score jusqu'à %.0f, bande jusqu'à %.0f)" % [str(cadre), float(essai.score_bas), float(essai.bande_bas)])
 		var ecran: Rect2 = essai.ecran
 		check(ecran.grow(1.0).encloses(cadre), "Bandeau entier dans l'image : %s dans %s" % [str(cadre), str(ecran)])
+		# Façon retransmission : tiers inférieur, au-dessus de la légende sans la recouvrir.
+		var sous_titre: Rect2 = essai.get("legende", Rect2())
+		check(cadre.get_center().y >= ecran.position.y + ecran.size.y * 2.0 / 3.0, "Bandeau « ESSAI » dans le tiers inférieur (%s dans %s)" % [str(cadre), str(ecran)])
+		check(sous_titre.has_area() and not cadre.intersects(sous_titre), "Le bandeau « ESSAI » ne recouvre pas la légende (%s, légende %s)" % [str(cadre), str(sous_titre)])
 	# Mi-temps et fin de match.
 	for moment: String in ["mi-temps", "fin"]:
 		var s: Dictionary = sorties.get(moment, {})
@@ -515,6 +519,8 @@ func _observer_essai(view: Control, regie: Node, essai: Dictionary) -> void:
 				var bande: Control = view.get("bande_temps_forts")
 				essai.bande_bas = bande.get_global_rect().end.y if bande != null and bande.is_visible_in_tree() else 0.0
 				essai.ecran = view.get_global_rect()
+				var legende: Rect2 = regie._legende_rect
+				essai.legende = Rect2(legende.position + view.get_global_rect().position, legende.size)
 		return
 	if int(essai.debut) > 0 or not en_jeu: return
 	var plan: Dictionary = regie.tf.plans[regie.index]

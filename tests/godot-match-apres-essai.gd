@@ -211,6 +211,8 @@ func apres_essai() -> void:
 	var bras_a := -1.0
 	var debout_au_done := -1.0
 	var horloge := 0.0
+	var ecart_groupe := INF
+	var traversees := 0
 	while gestes.active() and float(gestes.time) < aplati + Gestes.CELEBRATION and horloge < 30.0:
 		view._process(STEP)
 		arbitre._process(STEP)
@@ -224,6 +226,20 @@ func apres_essai() -> void:
 				if precedent.has(id) and int(view._actors[id].side) == 1:
 					allure_defense = maxf(allure_defense, sol(at, precedent[id]) / STEP)
 				precedent[id] = at
+		# Groupe du marqueur : le marqueur et les partenaires arrivés près de lui. Aucun défenseur qui
+		# rentre ne le traverse (à moins de 1,2 m d'un de ses joueurs), une fois l'écart pris.
+		if t >= Gestes.APRES_DEPART + Gestes.GROUPE_ECART + STEP and gestes._apres:
+			var groupe: Array = [marqueur]
+			for id: String in gestes.cast:
+				var m: Dictionary = gestes.cast[id]
+				if str(m.get("role", "")) == "felicite" and float(m.get("t", 0.0)) >= float(m.get("form", 0.0)): groupe.append(id)
+			for id: String in view._actors:
+				if int(view._actors[id].side) != 1: continue
+				var at: Vector3 = (view._actors[id].node as Node3D).position
+				for autre: String in groupe:
+					var ecart := sol(at, (view._actors[autre].node as Node3D).position)
+					ecart_groupe = minf(ecart_groupe, ecart)
+					if ecart < 1.2: traversees += 1
 		if gestes.done and debout_au_done < 0.0:
 			debout_au_done = (view._actors[marqueur].model as Node3D).rotation.x
 		if t >= 0.0 and str(arbitre.signal_bras) == "sifflet": siffle = true
@@ -260,6 +276,9 @@ func apres_essai() -> void:
 	check(vers_l_en_but == 15, "Les quinze défenseurs rentrent vers leur en-but, derrière leur ligne de but (%d)" % vers_l_en_but)
 	check(rentrent >= 13, "Ils se rapprochent vraiment de leur place (%d sur 15)" % rentrent)
 	check(allure_defense > 0.5 and allure_defense <= 2.6, "Ils marchent, sans courir (pointe %.2f m/s)" % allure_defense)
+	check(ecart_groupe < INF and traversees == 0, "Les défenseurs contournent le groupe du marqueur : jamais à moins de 1,2 m d'un de ses joueurs (%d images, au plus près %.2f m)" % [traversees, ecart_groupe])
+	# Le cercle laissé libre couvre bien les places autour du marqueur, avec 1,2 m de marge au moins.
+	check(Gestes.rayon_groupe() - ApresEssai.AUTOUR >= 1.2, "Cercle du groupe : %.1f m autour du marqueur" % Gestes.rayon_groupe())
 	# 3. Plus d'immobilité totale : presque tout le monde bouge pendant la célébration.
 	var bougent := 0
 	for id: String in view._actors:

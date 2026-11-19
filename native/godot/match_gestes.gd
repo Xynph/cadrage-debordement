@@ -192,6 +192,14 @@ const GLISSE_MAX := 4.0
 const TETE_BASSE := 0.24
 const CELEBRATION := 4.5
 const APRES_ROLES := ["felicite", "repli", "replace"]
+# Contournement du groupe du marqueur (19/11/2026, film : des défenseurs qui rentraient traversaient
+# le groupe). Un défenseur qui rentre ne passe jamais à moins de GROUPE_DEGAGEMENT m des places autour
+# du marqueur (ApresEssai.AUTOUR) : son chemin s'incurve (GROUPE_APPROCHE fois le rayon avant le
+# groupe) et le contourne du côté où il passait déjà. Déjà trop près au départ, il s'écarte en
+# GROUPE_ECART s (aucun saut).
+const GROUPE_DEGAGEMENT := 1.5
+const GROUPE_APPROCHE := 3.0
+const GROUPE_ECART := 0.6
 var _apres := false
 var _saved: Dictionary = {}
 var _outro: Dictionary = {}
@@ -1505,6 +1513,10 @@ func _lancer_apres() -> void:
 		_reprendre(id, "repli" if camp != side else "replace", mark, atan2(vise.x - mark.x, vise.z - mark.z), MARCHE)
 		var member: Dictionary = cast[id]
 		member.joie0 = joie
+		if camp != side:
+			# Défenseur qui rentre : il contourne le groupe du marqueur (_contourner).
+			member.evite = centre
+			member.evite_cote = 0.0
 		var bornes: Array = JOIE_SUR_PLACE if joie > 0.05 else MARCHE_DEPART
 		member.wait = lerpf(float(bornes[0]), float(bornes[1]), float(graine % 100) / 99.0)
 		member.allure = MARCHE + MARCHE_ECART * (float(int(graine / 100.0) % 21) / 10.0 - 1.0)
@@ -1541,10 +1553,12 @@ func _place_apres(id: String, member: Dictionary, actor: Node3D) -> void:
 		var reste: Vector3 = member.mark - actor.position
 		voulu = atan2(reste.x, reste.z) if Vector2(reste.x, reste.z).length() > 0.4 else float(member.facing)
 	else:
+		var precedente := actor.position
 		var attente := float(member.wait)
 		if view.geste_adapte(id) and t <= attente + 0.05:
 			# Geste en cours (déception, applaudissements) : il reste sur place, puis rentre.
 			member.wait = t
+			actor.position = _contourner(member, actor.position, t)
 			member.from = actor.position
 			member.glisse = Vector3.ZERO
 			return
@@ -1554,13 +1568,54 @@ func _place_apres(id: String, member: Dictionary, actor: Node3D) -> void:
 		var longueur := trajet.length()
 		var fait := minf(longueur, float(member.allure) * (marche - ELAN_MARCHE * (1.0 - exp(-marche / ELAN_MARCHE))))
 		var glisse: Vector3 = (member.glisse as Vector3) * GLISSE * (1.0 - exp(-t / GLISSE))
-		actor.position = member.from + (trajet / longueur * fait if longueur > 0.01 else Vector3.ZERO) + glisse
+		var droit: Vector3 = member.from + (trajet / longueur * fait if longueur > 0.01 else Vector3.ZERO) + glisse
+		actor.position = _contourner(member, droit, t)
 		if marche > 0.05 and fait < longueur - 0.05:
-			voulu = atan2(trajet.x, trajet.z)
+			# En contournant le groupe : il regarde où il va (tangente), pas à travers le groupe.
+			var pas: Vector3 = actor.position - precedente
+			pas.y = 0.0
+			voulu = atan2(pas.x, pas.z) if pas.length() > 0.2 * _dt and not actor.position.is_equal_approx(droit) else atan2(trajet.x, trajet.z)
 		elif marche > 0.05:
 			voulu = float(member.facing)
 	# Rotation bornée (3,5 rad/s) : jamais de volte-face instantanée.
 	actor.rotation.y += clampf(angle_difference(actor.rotation.y, voulu), -3.5 * _dt, 3.5 * _dt)
+
+
+## Rayon du cercle que les défenseurs qui rentrent laissent libre autour du marqueur (m).
+static func rayon_groupe() -> float:
+	return ApresEssai.AUTOUR + GROUPE_DEGAGEMENT
+
+
+## Point `p` d'un défenseur qui rentre, écarté du groupe du marqueur (member.evite) : il est décalé de
+## côté (perpendiculairement à son trajet), du côté où il passait déjà, d'un écart en cloche
+## (cos², sur GROUPE_APPROCHE fois le rayon avant et après le groupe) qui enveloppe le cercle du
+## groupe. Son chemin s'incurve donc tôt et en douceur (pente au plus π / (2 × GROUPE_APPROCHE)),
+## sans saut ni accélération. `t` : temps de la scène (écart progressif s'il démarre déjà dedans).
+func _contourner(member: Dictionary, p: Vector3, t: float) -> Vector3:
+	if not member.has("evite"):
+		return p
+	var centre: Vector3 = member.evite
+	var trajet: Vector3 = member.mark - member.from
+	trajet.y = 0.0
+	var d := trajet.normalized() if trajet.length() > 0.05 else Vector3(1.0, 0.0, 0.0)
+	var n := Vector3(-d.z, 0.0, d.x)
+	var q := p - centre
+	q.y = 0.0
+	var a := q.dot(d)
+	var b := q.dot(n)
+	var r := rayon_groupe() + 0.1
+	var portee := r * GROUPE_APPROCHE
+	if absf(a) >= portee:
+		return p
+	var enveloppe := r * pow(cos(PI * 0.5 * a / portee), 2.0)
+	if absf(b) >= enveloppe:
+		return p
+	if is_zero_approx(float(member.get("evite_cote", 0.0))):
+		# Côté choisi à l'approche : celui où il passait déjà (sinon le côté du milieu du terrain).
+		member.evite_cote = signf(b) if absf(b) > 0.01 else (1.0 if n.dot(Vector3(-signf(centre.x), 0.0, 0.0)) >= 0.0 else -1.0)
+	var cote := float(member.evite_cote)
+	var voulu := cote * maxf(cote * b, enveloppe)
+	return p + n * (voulu - b) * smoothstep(0.0, GROUPE_ECART, t)
 
 
 ## Postures de la scène d'après-essai : joie des partenaires, tête basse des défenseurs, marqueur
