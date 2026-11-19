@@ -173,6 +173,9 @@ var replacements_coupes := 0
 ## Ralenti de présentation (essai aplati, posé par la régie) : facteur appliqué au temps de la vue,
 ## 1 hors ralenti. Les joueurs, le ballon, les gestes et la caméra ralentissent ensemble.
 var ralenti := 1.0
+## Durée réelle (s, avant ralenti) de la dernière image animée par la vue : la régie, qui passe
+## avant la vue dans chaque image, mesure les déplacements de l'image précédente sur cette durée.
+var dernier_delta := 0.0
 ## Sortie des joueurs en cours (mi-temps, fin de match) : jusqu'à la prochaine image du moteur.
 var sortie := false
 
@@ -786,6 +789,7 @@ func set_camera(mode: String) -> void:
 
 
 func _process(delta: float) -> void:
+	dernier_delta = delta
 	# Ralenti de l'essai : tout ce que la vue anime avance moins vite (présentation seule).
 	delta *= ralenti
 	if not _pass_plan.is_empty():
