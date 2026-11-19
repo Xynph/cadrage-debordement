@@ -148,8 +148,20 @@ func cases() -> void:
 			check(app.body_scroll.get_global_rect().end.y <= app.size.y + 1, "CareerWorkspace borné " + str(resolution))
 			var empty := void_ratio(named("Preparation" + id))
 			check(empty <= 0.30, "Préparation sans vide > 30 %% de la hauteur (%s %s : %d %%)" % [id, resolution, roundi(empty * 100)])
+			check(app.heading != null and app.heading.is_visible_in_tree() and not app.heading.text.strip_edges().is_empty(), "Titre de la page visible " + str(resolution))
 			if named("CarnetPreparation") != null:
 				check(named("PreparationBanner") != null and named("PreparationBanner").is_visible_in_tree(), "Bannière de la page visible " + str(resolution))
+				if id == "Dossier":
+					# Le bas du Dossier porte des repères utiles ; la photo du club n'est plus qu'une bannière basse.
+					var board := named("PreparationWeekBoard")
+					check(board != null and board.is_visible_in_tree(), "Repères de la semaine visibles sous le dossier " + str(resolution))
+					check(named("PreparationFiller_city") == null, "Plus de grande photo de remplissage dans le Dossier " + str(resolution))
+					var strip := named("PreparationStrip_city")
+					var viewport_height: float = app.body_scroll.get_global_rect().size.y
+					check(strip != null and strip.get_global_rect().size.y <= viewport_height * .15, "Photo du club réduite à une bannière (%s : %d px)" % [resolution, roundi(strip.get_global_rect().size.y) if strip != null else -1])
+					if board != null and strip != null:
+						check(board.get_global_rect().size.y >= strip.get_global_rect().size.y * 2.0, "Les repères occupent plus de place que la photo " + str(resolution))
+					check(named("PreparationStaffNotes") != null and named("PreparationSquadPulse") != null, "Repères du staff et état du XV présents " + str(resolution))
 			var chapter_rows := 0
 			for row: Node in app.root_content.find_children("ChapterSubnavigation", "", true, false):
 				if (row as Control).is_visible_in_tree(): chapter_rows += 1

@@ -18,6 +18,11 @@ extends RefCounted
 ## Les rôles sans équivalent dans le moteur (sauteur, porteurs, lanceur) sont
 ## distribués par poste, comme la passe en direct choisit son passeur.
 ## Tout est procédural sur le squelette CC0 existant : aucune ressource ajoutée.
+##
+## « Touche seule » (`touche_seule`, 18/11/2026) : le direct sans gestes garde la touche
+## elle-même (alignement, lancer du talonneur, sauteur porté qui capte) et rien d'autre : ni
+## sortie en touche, ni coupe vers les autres remises en jeu, ni ballon porté, ni essai, ni
+## recadrage. La vue l'utilise quand les gestes complets ne sont pas posés.
 
 const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
@@ -102,6 +107,8 @@ const SAUT_DEBUT := 0.19
 const SAUT_VITESSE := 0.4
 
 var view
+## Touche seule (direct sans gestes) : voir l'en-tête.
+var touche_seule := false
 var phase := ""
 var time := 0.0
 var done := true
@@ -179,8 +186,9 @@ var _zoom_size_speed := 0.0
 var _zoom_focus := Vector3.ZERO
 
 
-func _init(owner: Node3D) -> void:
+func _init(owner: Node3D, seulement_touche: bool = false) -> void:
 	view = owner
+	touche_seule = seulement_touche
 
 
 func active() -> bool:
@@ -211,6 +219,10 @@ func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: boo
 		return
 	if not new_action:
 		return
+	if touche_seule and kind not in ["lineout", "setpiece-win", "setpiece-loss"]:
+		# Direct sans gestes : tout autre fait rend la main à la vue.
+		cancel()
+		return
 	var holder_before := _holder
 	_holder = Presentation.carrier_id(scene)
 	var possession := int(scene.get("possession", -1))
@@ -236,11 +248,16 @@ func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: boo
 				_align(_last_lineout, thrown_by)
 		if phase == "touche":
 			# Ballon porté : combinaison jouée, ou ballon porté formé après la prise (fait « porte » du moteur).
-			_resolve(scene, team, featured, kind == "setpiece-win" and (str(record.get("move", "")) == "maul" or record.get("porte", false) == true), record.get("porte", false) == true)
+			# Touche seule : jamais de ballon porté, le sauteur garde le ballon jusqu'au fait suivant.
+			var porte: bool = not touche_seule and kind == "setpiece-win" and (str(record.get("move", "")) == "maul" or record.get("porte", false) == true)
+			_resolve(scene, team, featured, porte, porte and record.get("porte", false) == true)
 		_velocity.clear()
 		return
 	var approaching := phase == "approche"
 	cancel()
+	if touche_seule and kind != "lineout":
+		_velocity.clear()
+		return
 	if kind == "lineout":
 		_align(scene, team)
 	elif kind == "touch" or (kind == "advantage" and approaching):
@@ -471,7 +488,7 @@ func pose() -> void:
 ## sortie lissées et une cible amortie. Hors geste et rampe retombée, rend
 ## exactement les valeurs reçues.
 func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, mode: String, delta: float) -> Array:
-	if not FRAME_MIN.has(mode):
+	if not FRAME_MIN.has(mode) or touche_seule:
 		reset_framing()
 		return [focus, size, offset]
 	var wanted := active() and phase not in ["approche", "reprise"]

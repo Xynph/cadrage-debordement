@@ -516,7 +516,7 @@ static func _position_office_match_status(status: Label, factor: float) -> void:
 
 static func _heading(parent: Node, app: Control) -> void:
 	var row := Control.new()
-	row.custom_minimum_size.y = C.px(91 if app.route=="Effectif" else 88 if app.route=="Composition" else 104)
+	row.custom_minimum_size.y = C.px(91 if app.route=="Effectif" else 88 if app.route=="Composition" else 112 if app.route=="Réception" else 104)
 	C.fill(row)
 	parent.add_child(row)
 	if app.route=="Réception":
