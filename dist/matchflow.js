@@ -1,10 +1,10 @@
 'use strict';
 function flowRules(l){return restartRules(l)&&l.flowVersion===1}
-function initializeMatchFlow(l,fixee=null){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false};if(QUICK_TAP_RULES)l.quickTapVersion=1;if(SET_PIECE_FATIGUE_RULES)l.setPieceFatigueVersion=1;if(CHRONO_RULES){l.chronoVersion=1;l.chrono={prochaine:15,debut:0,arret:0,relance:null,actions:0,arrets:{}}}if(WEATHER_RULES){l.weatherVersion=1;l.meteo=fixee?{pluie:fixee.pluie,vent:fixee.vent,chaleur:fixee.chaleur,terrain:fixee.terrain,sens:fixee.sens}:tirerMeteo(l);if(WIND_DIRECTION_RULES)l.windVersion=1}}
+function initializeMatchFlow(l,fixee=null){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false};if(QUICK_TAP_RULES)l.quickTapVersion=1;if(SET_PIECE_FATIGUE_RULES)l.setPieceFatigueVersion=1;if(CHRONO_RULES){l.chronoVersion=1;l.chrono={prochaine:15,debut:0,arret:0,relance:null,actions:0,arrets:{}}}if(WEATHER_RULES){l.weatherVersion=1;l.meteo=fixee?{pluie:fixee.pluie,vent:fixee.vent,chaleur:fixee.chaleur,terrain:fixee.terrain,sens:fixee.sens}:tirerMeteo(l);if(WIND_DIRECTION_RULES)l.windVersion=1}if(END_PERIOD_RULES)l.endPeriodVersion=1}
 function periodBoundary(l){return l.flow.period===1?40:l.flow.fullEnd}
 function atHalftime(l){return flowRules(l)?l.flow.atBreak:l.minute===40&&l.paused&&!l.finished}
 function matchMinute(l){if(!flowRules(l)||l.flow.period===1)return l.minute;return 40+l.minute-l.flow.firstEnd}
-function matchClock(l){const n=matchMinute(l),limit=flowRules(l)&&l.flow.period===1?40:80;return n>limit?`${limit}+${n-limit}′`:`${n}′`}
+function matchClock(l){const p=flowRules(l)&&l.flow.period===2?horlogeProlongation(l,l.minute,l.knockout?.period||0):null;if(p)return p;const n=matchMinute(l),limit=flowRules(l)&&l.flow.period===1?40:80;return n>limit?`${limit}+${n-limit}′`:`${n}′`}
 function endFlowPeriod(l){
  if(l.finished||l.flow.atBreak)return;
  l.flow.advantage=null;l.flow.ballDead=true;
@@ -75,6 +75,7 @@ function flowScored(l,side){
 }
 function beforeTryUnderAdvantage(l,side){if(flowRules(l)&&l.flow.advantage&&l.flow.advantage.team!==side){returnAdvantage(l);return false}return true}
 function advanceFlowPlay(l){
+ annonceSirene(l);
  if(l.flow.advantage&&l.possession!==l.flow.advantage.team){returnAdvantage(l);return}
  const expired=l.minute>=periodBoundary(l),margin=l.score[l.possession]-l.score[1-l.possession];
  // A coach may legally kick the ball out to close a period; this is a tactical
@@ -88,7 +89,81 @@ function finishRugbyMatch(l){
  l.finished=true;l.paused=false;addEvent(l,'Coup de sifflet final.','end');
 }
 
-function eventClock(l,event){if(!flowRules(l)||event.period===undefined)return `${event.min}′`;const n=event.period===1?event.min:40+event.min-l.flow.firstEnd,limit=event.period===1?40:80;return n>limit?`${limit}+${n-limit}′`:`${n}′`}
+function eventClock(l,event){if(!flowRules(l)||event.period===undefined)return `${event.min}′`;const p=event.period===2?horlogeProlongation(l,event.min,partieProlongation(l,event)):null;if(p)return p;const n=event.period===1?event.min:40+event.min-l.flow.firstEnd,limit=event.period===1?40:80;return n>limit?`${limit}+${n-limit}′`:`${n}′`}
+// Horloge des prolongations (phase finale) : 80′ à 90′ puis 90′ à 100′, arrêts de jeu en « 90+2′ ». `partie` vaut 1 ou 2
+// (période de prolongation), 0 hors prolongation. Affichage seul.
+function horlogeProlongation(l,minute,partie){
+ const k=l.knockout;if(!k||![1,2].includes(partie))return null;
+ const debut=partie===1?k.regulationEnd:k.firstEnd;if(!Number.isFinite(debut))return null;
+ const base=partie===1?80:90,n=base+minute-debut,limit=base+10;
+ return n>limit?`${limit}+${n-limit}′`:`${n}′`;
+}
+// Période de prolongation d'un fait du journal : après la dernière annonce (« break ») de la minute de reprise.
+function partieProlongation(l,event){
+ const k=l.knockout;if(!k)return 0;
+ const i=l.events.indexOf(event),debut=m=>{for(let j=l.events.length-1;j>=0;j--)if(l.events[j].type==='break'&&l.events[j].min===m)return j;return -1};
+ const avant=(m,d)=>i>=0&&d>=0?i>=d:event.min>m;
+ if(k.period===2&&Number.isFinite(k.firstEnd)&&avant(k.firstEnd,debut(k.firstEnd)))return 2;
+ return avant(k.regulationEnd,debut(k.regulationEnd))?1:0;
+}
+// Fin de période (lois 5.7 et 8 de World Rugby ; docs/rugby-rules-reference.md, « Fin de période »). Pour les rencontres
+// créées avec `endPeriodVersion: 1` (les matchs commencés avant gardent leurs règles) :
+// - la sirène est annoncée une fois par période (mi-temps, fin du match, fin de chaque prolongation) quand le temps
+//   réglementaire est atteint ballon vivant ; `l.sirene` garde la limite (minute moteur) déjà annoncée ;
+// - une pénalité à jouer après la sirène est annoncée, et le choix « auto » est rendu sensé au score dans la période
+//   qui décide du résultat : pas de tir au but si trois points ne changent rien (sauf pour aller chercher le bonus
+//   défensif), les poteaux si trois points égalisent ou font gagner et que le tir est à portée (moins de 40 m).
+//   Le choix du manager (« points », « touche », « main ») est respecté. Aucun tirage ajouté ; le tir ou la pénaltouche
+//   imposé change seulement la suite des tirages de ces nouveaux matchs.
+let END_PERIOD_RULES=1;
+function finPeriodeRules(l){return flowRules(l)&&l.endPeriodVersion===1}
+function finPeriodeMoment(l){
+ if(l.flow.period===1)return 'mi-temps';
+ if(l.knockout?.period===1)return 'prol1';
+ if(l.knockout?.period===2)return 'prol2';
+ return l.srpExtra!==undefined||l.japanExtra!==undefined?'periode':'fin';
+}
+function annonceSirene(l){
+ if(!finPeriodeRules(l)||l.finished||l.flow.atBreak)return false;
+ const b=periodBoundary(l);if(!Number.isFinite(b)||l.minute<b||l.sirene===b)return false;
+ l.sirene=b;
+ const moment={'mi-temps':'la mi-temps','fin':'la fin du match','prol1':'la fin de la première prolongation','prol2':'la fin de la prolongation','periode':'la fin de la période'}[finPeriodeMoment(l)];
+ const abbr=S.clubs[l.pair[l.possession]].abbr;
+ const textes=[
+  `La sirène a retenti pour ${moment} : le ballon est toujours vivant, on joue jusqu’à la prochaine faute ou sortie.`,
+  `Sirène pour ${moment}, mais le ballon n’est pas mort : ${abbr} a la balle, l’arbitre sifflera au prochain arrêt de jeu.`,
+  `Le temps est écoulé pour ${moment}, le jeu continue : la période s’arrêtera à la prochaine faute ou sortie du ballon.`
+ ];
+ addEvent(l,textes[(l.minute+l.score[0]+l.score[1]+l.flow.period)%textes.length],'play');
+ return true;
+}
+function penaliteApresSirene(l){return finPeriodeRules(l)&&!l.finished&&!l.flow.atBreak&&l.minute>=periodBoundary(l)}
+function periodeDecisive(l){return ['fin','prol2','periode'].includes(finPeriodeMoment(l))}
+function phaseFinale(l){const p=l.worldContext?.phase??l.franceContext?.phase??S.phase;return !!p&&!['league','pool','promotion'].includes(p)}
+// Choix imposé après la sirène : 'poteaux', 'touche' ou null (choix habituel). Sans tirage.
+function choixPenaliteSirene(l,side,distance){
+ if(!penaliteApresSirene(l)||!periodeDecisive(l)||(l.penaltyPolicies?.[side]||'auto')!=='auto')return null;
+ const diff=l.score[side]-l.score[1-side];
+ if(diff<=-4){
+  const bd=typeof nativeMatchBonus!=='undefined'?nativeMatchBonus.regleDuMatch(l)?.defensif?.ecart:null;
+  return Number.isFinite(bd)&&-diff>bd&&-diff<=bd+3&&distance<45?'poteaux':'touche';
+ }
+ return diff<=0&&distance<40?'poteaux':null;
+}
+function annoncePenaliteSirene(l,side,choix){
+ if(!penaliteApresSirene(l))return;
+ const abbr=S.clubs[l.pair[side]].abbr,diff=l.score[side]-l.score[1-side],moment=finPeriodeMoment(l),decisive=periodeDecisive(l);
+ const pause=moment==='mi-temps'?'avant la pause':'avant le changement de camp';
+ let suite;
+ if(choix==='main')suite=`${abbr} la joue vite à la main, dernière action${decisive?'':' '+pause}`;
+ else if(choix==='touche')suite=`${abbr} joue la pénaltouche, dernière action${!decisive?' '+pause:diff<0?' : il faut un essai':''}`;
+ else{
+  const bd=typeof nativeMatchBonus!=='undefined'?nativeMatchBonus.regleDuMatch(l)?.defensif?.ecart:null;
+  const but=!decisive?pause:diff>=0?(diff===0?'pour la gagne':'pour assurer la victoire'):diff>-3?'pour la gagne':diff===-3?(moment==='fin'&&phaseFinale(l)?'pour égaliser et arracher la prolongation':'pour égaliser'):Number.isFinite(bd)&&-diff-3<=bd?'pour aller chercher le bonus défensif':'pour réduire l’écart';
+  suite=`${abbr} tente les poteaux ${but}`;
+ }
+ addEvent(l,`Pénalité après la sirène : ${suite}.`,'play');
+}
 
 // Pénalité jouée vite à la main (loi 20 : l'équipe qui bénéficie de la pénalité peut la
 // jouer d'un coup de pied au point de la faute, puis courir ou passer). Troisième choix à côté

@@ -270,3 +270,33 @@ Vérifié le 18/11/2026 ; détail et mesures dans `docs/chrono-arrets-de-jeu-202
   de la compétition, plus la mise en place du renvoi ; pénaltouche : coup de
   pied en touche et alignement. Le renvoi après des points se joue au moment
   dû ; dû après la fin du temps réglementaire, il termine la période (loi 5).
+
+## Fin de période et prolongations (19/11/2026)
+
+Sources : [loi 5 — Durée](https://passport.world.rugby/fr/les-regles-du-jeu/regles-du-jeu-par-numero/5-duree-de-la-partie/)
+(déjà citée pour la version 10 ; non relue ce jour) et loi 8 (pénalité tentée au but).
+
+- Loi 5 : le temps écoulé, la période ne s'arrête qu'au ballon mort ; une
+  pénalité ou un coup franc accordé avant ou à la fin du temps est joué. Le
+  moteur le faisait déjà (`flowVersion: 1`) ; les rencontres créées avec
+  `endPeriodVersion: 1` le disent : sirène annoncée une fois par période
+  (mi-temps, fin du match, fin de chaque prolongation) si le ballon est vivant,
+  rien si un renvoi était dû (ballon mort : la période s'arrête).
+- Pénalité après la sirène : annoncée (« tente les poteaux pour la gagne »,
+  « joue la pénaltouche, dernière action »). Choix de simulation, consigne
+  « auto » seulement, dans la période qui décide du résultat : pas de tir au
+  but si trois points ne changent rien, sauf pour aller chercher le bonus
+  défensif ; les poteaux à moins de 40 m si trois points égalisent ou font
+  gagner. La consigne du manager (points, touche, à la main) prime. Le tir
+  réussi ou manqué et mort termine la période ; la pénaltouche est jouée.
+- Prolongations des phases finales Monde (règlement de chaque compétition,
+  inchangé) : horloge 80′–90′ puis 90′–100′ (arrêts de jeu « 90+2′ »),
+  annonces de début et de fin de chaque période avec le score, sirène et fin
+  sur ballon mort comme en temps réglementaire.
+- Tirs au but : séance commentée tir par tir à partir de la preuve enregistrée,
+  sans tirage ajouté ni changement du vainqueur ; critère de départage écrit en
+  français (essais marqués, pénalités réussies, drops, exclusions, tirs au but).
+- Non traité : coup franc après la sirène (le moteur n'en accorde pas), temps
+  mort de l'arbitre, prolongation « mort subite » des règlements qui en
+  prévoient une hors Pacific et Japon, chemin hérité hors Monde (« prolongation
+  simplifiée »). `tests/fin-de-periode.cjs`.

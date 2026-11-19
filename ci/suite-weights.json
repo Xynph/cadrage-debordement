@@ -274,6 +274,7 @@
       "tests/godot-entity-projections.cjs": 2,
       "tests/godot-gabi-composition.cjs": 2,
       "tests/godot-gabi-bandeau.cjs": 75,
+      "tests/godot-resolutions.cjs": 60,
       "tests/godot-premiers-pas.cjs": 20,
       "tests/godot-premiere-heure.cjs": 40,
       "tests/godot-match-animations.cjs": 2,
