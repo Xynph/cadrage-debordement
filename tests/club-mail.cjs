@@ -19,6 +19,17 @@ const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 
 const EFFETS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'consigneDS', 'orientation', 'pret', 'a2r', 'reprise', 'rechute', 'retour', 'doublon', 'repos_liste', 'specialiste'];
 
+test('Données : chaque type de courrier a une nature (action, info, routine), plus de drapeau « arret »', () => {
+  // Décision de Léo (18/11/2026) : action = arrêt à lui seul ; info = arrêt d'info du jour ; routine = jamais seule.
+  for (const [k, t] of Object.entries(DATA.types)) {
+    assert.ok(['action', 'info', 'routine'].includes(t.nature), k + ' : nature ' + t.nature);
+    assert.equal(t.arret, undefined, k + ' : ancien drapeau « arret »');
+  }
+  // Routine nommée par Léo : bulletin météo, affluence, article du lendemain ; réponses attendues : agent, contrat.
+  for (const k of ['meteo', 'affluence', 'article']) assert.equal(DATA.types[k].nature, 'routine', k);
+  for (const k of ['agent', 'prolongation', 'temps_de_jeu', 'cadre_rdv']) assert.equal(DATA.types[k].nature, 'action', k);
+});
+
 test('Données : catalogue complet, formulations variées, effets connus', () => {
   const types = Object.entries(DATA.types);
   assert.ok(types.length >= 30, types.length + ' types');

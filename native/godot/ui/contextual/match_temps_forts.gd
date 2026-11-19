@@ -473,7 +473,25 @@ func retient(live: Dictionary) -> bool:
 	if str(app.management_ui.get("match_temps_forts_rencontre", "")) != rencontre and int(live.get("minute", 0)) > 0: return false
 	if sortie_due(live): return true
 	if not direct.get("tempsFort") is Dictionary: return false
-	return rencontre + str(direct.tempsFort.get("cle", "")) != str(app.management_ui.get("match_temps_forts_cle", ""))
+	return not deja_vu(rencontre + str(direct.tempsFort.get("cle", "")))
+
+## Temps forts déjà montrés pendant la rencontre (clé « rencontre|cle ») : le dernier reste dans
+## management_ui.match_temps_forts_cle ; les précédents sont gardés aussi (VUS_MAX au plus), pour qu'une vue
+## recréée (causerie, reprise) ne rejoue jamais un temps fort déjà vu, même s'il n'est pas le dernier.
+const VUS_MAX := 64
+func deja_vu(cle: String) -> bool:
+	if cle == str(app.management_ui.get("match_temps_forts_cle", "")): return true
+	var vus: Variant = app.management_ui.get("match_temps_forts_vus")
+	return vus is Array and cle in vus
+
+func marquer_vu(cle: String) -> void:
+	app.management_ui["match_temps_forts_cle"] = cle
+	var vus: Variant = app.management_ui.get("match_temps_forts_vus")
+	if not vus is Array: vus = []
+	if cle in vus: return
+	vus.append(cle)
+	while vus.size() > VUS_MAX: vus.pop_front()
+	app.management_ui["match_temps_forts_vus"] = vus
 
 ## Appelée par la vue à chaque modèle reçu, après la mise à jour du bandeau.
 func receive(model: Dictionary, live: Dictionary) -> void:
@@ -510,7 +528,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 	# (causerie de mi-temps) sans rejouer un temps fort, et un nouveau match repart de zéro.
 	var rencontre := str(direct.get("rencontre", "")) + "|"
 	var candidat: Variant = direct.get("tempsFort")
-	var nouveau: bool = candidat is Dictionary and rencontre + str(candidat.get("cle", "")) != str(app.management_ui.get("match_temps_forts_cle", ""))
+	var nouveau: bool = candidat is Dictionary and not deja_vu(rencontre + str(candidat.get("cle", "")))
 	var signale: Variant = direct.get("arret")
 	# Match repris en cours de route (sauvegarde) ou fin confiée à l'adjoint : ce que le
 	# moteur a déjà joué n'est pas rejoué, l'écran intermédiaire montre où en est le match.
@@ -518,7 +536,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 	app.management_ui["match_temps_forts_rencontre"] = rencontre
 	var delegue: bool = live.get("finished", false) and str(app.get("last_command")) == "delegate"
 	if (premiere and int(live.get("minute", 0)) > 0) or delegue:
-		if candidat is Dictionary: app.management_ui["match_temps_forts_cle"] = rencontre + str(candidat.get("cle", ""))
+		if candidat is Dictionary: marquer_vu(rencontre + str(candidat.get("cle", "")))
 		# Mi-temps ou fin déjà passées (reprise), ou fin confiée à l'adjoint : pas de sortie mise en scène.
 		if not cle_sortie(live).is_empty(): app.management_ui["match_temps_forts_sortie"] = cle_sortie(live)
 		if etat == SORTIE: _finir_sortie(false)
@@ -567,7 +585,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 	if nouveau:
 		# Un temps fort arrive pendant la sortie des joueurs : elle s'arrête là, le temps fort part.
 		if etat == SORTIE: _finir_sortie(false)
-		app.management_ui["match_temps_forts_cle"] = rencontre + str(candidat.get("cle", ""))
+		marquer_vu(rencontre + str(candidat.get("cle", "")))
 		gel = false
 		# Un match déjà en pause (reprise d'une sauvegarde) joue tout de même son temps fort.
 		_pause_au_depart = live.get("paused", false)
@@ -712,7 +730,7 @@ func _lancer_retenu() -> void:
 	var candidat := _retenu
 	_retenu = {}
 	var rencontre := str(_live.get("direct", {}).get("rencontre", "")) + "|"
-	app.management_ui["match_temps_forts_cle"] = rencontre + str(candidat.get("cle", ""))
+	marquer_vu(rencontre + str(candidat.get("cle", "")))
 	gel = false
 	_pause_au_depart = _live.get("paused", false)
 	_vus = _retenu_vus

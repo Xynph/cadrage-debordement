@@ -43,13 +43,15 @@ test('Rien avant la veille ; annonce la veille, gardée dans la sauvegarde', () 
   run('validateCareer(S)');
 });
 
-test('Un seul courrier « Bulletin météo », qui ouvre la composition', () => {
+test('Un seul courrier « Bulletin météo » (routine de la veille), qui ouvre la composition', () => {
   const mails = etat("S.clubMail.mails.filter(x=>x.type==='meteo')");
   assert.equal(mails.length, 1, 'une fois par match');
   assert.equal(mails[0].date, veille.meta.calendarToday);
   const vu = jourJ.clubLife.clubMail.mails.find(x => x.type === 'meteo');
   assert.equal(vu.ecran, 'Composition');
-  assert.equal(vu.arret, true);
+  // Routine (18/11/2026) : n'arrête pas « Continuer » à lui seul, rangé dans l'arrêt « veille » du jour.
+  assert.equal(vu.nature, 'routine');
+  assert.equal(vu.arret, false);
   assert.match(vu.sujet, /Bulletin météo/);
   assert.match(vu.corps, new RegExp(veille.next.meteo.libelle));
   assert.ok(vu.reponses.some(r => r.ouvrir && r.disponible), 'réponse qui ouvre la composition');

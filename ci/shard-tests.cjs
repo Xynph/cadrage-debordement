@@ -8,7 +8,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { legacySuites } = require('./legacy-modes.cjs');
-const { SHARD_COUNT, GODOT_SHARD_COUNT, PHYSICAL_CORES, EXCLUSIVE_CAP, EXCLUSIVE_WEIGHT } = require('./ci-jobs.cjs');
+const { SHARD_COUNT, GODOT_SHARD_COUNT, PHYSICAL_CORES, EXCLUSIVE_CAP, EXCLUSIVE_WEIGHT, RAPIDE_MAX_S, RAPIDE_GODOT_MAX_S } = require('./ci-jobs.cjs');
 
 const PROFILE = JSON.parse(fs.readFileSync(path.join(__dirname, 'suite-weights.json'), 'utf8'));
 const WEIGHTS_SECONDS = Object.freeze({ ...PROFILE.js.weights });
@@ -82,16 +82,32 @@ function planLoads(groups, weights = WEIGHTS_SECONDS, fallback = DEFAULT_WEIGHT)
   return groups.map(g => g.reduce((sum, f) =>
     sum + (Object.prototype.hasOwnProperty.call(weights, f) ? weights[f] : fallback), 0));
 }
+
+// Mode rapide (CD_RAPIDE=1) : suites courtes (poids ≤ RAPIDE_MAX_S) et suites modifiées par la PR
+// (CD_RAPIDE_TESTS, chemins séparés par des espaces), quel que soit leur poids. Une suite inconnue des poids
+// (nouvelle) garde le poids par défaut : courte côté JS, 30 s côté Godot, donc conservée.
+function rapideOptions(env = process.env) {
+  if (env.CD_RAPIDE !== '1') return null;
+  return { modifiees: new Set(String(env.CD_RAPIDE_TESTS || '').split(/\s+/).filter(Boolean)) };
+}
+function rapideSuites(suites, weights = WEIGHTS_SECONDS, fallback = DEFAULT_WEIGHT, modifiees = new Set(), max = RAPIDE_MAX_S) {
+  return suites.filter(f => modifiees.has(f) ||
+    (Object.prototype.hasOwnProperty.call(weights, f) ? weights[f] : fallback) <= max);
+}
 // Suites d'un shard pour une couverture donnée. « godot » : suites SDK, poids godot.
 function suitesForShard(shard, coverage = 'full', count, files = allTestFiles()) {
   const godot = coverage === 'godot';
   count = shardCount(count ?? (godot ? GODOT_SHARD_COUNT : SHARD_COUNT));
   shard = shardCount(shard);
   if (shard > count) throw Error('Shard ' + shard + ' hors de 1..' + count);
-  const suites = godot ? godotTestFiles(files) : require('./test-coverage.cjs').suitesForCoverage(coverage, files);
+  let suites = godot ? godotTestFiles(files) : require('./test-coverage.cjs').suitesForCoverage(coverage, files);
+  const rapide = rapideOptions();
+  if (rapide) suites = rapideSuites(suites, godot ? GODOT_WEIGHTS_SECONDS : WEIGHTS_SECONDS, godot ? GODOT_DEFAULT_WEIGHT : DEFAULT_WEIGHT, rapide.modifiees,
+    godot ? RAPIDE_GODOT_MAX_S : RAPIDE_MAX_S);
+  if (suites.length === 0) return [];
   const plan = godot ? planShards(suites, GODOT_WEIGHTS_SECONDS, count, GODOT_DEFAULT_WEIGHT) : planShards(suites, WEIGHTS_SECONDS, count);
-  // Couverture complète : chaque shard doit recevoir au moins une suite.
-  if (coverage === 'full' && plan.some(g => g.length === 0)) throw Error('Il faut au moins une suite par shard');
+  // Couverture complète : chaque shard doit recevoir au moins une suite (sauf en mode rapide, sous-ensemble).
+  if (coverage === 'full' && !rapide && plan.some(g => g.length === 0)) throw Error('Il faut au moins une suite par shard');
   return plan[shard - 1];
 }
 
@@ -176,6 +192,6 @@ if (require.main === module) {
   }
 }
 module.exports = {
-  allTestFiles, testFilesOnDisk, legacyTestFiles, godotTestFiles, planShards, planLoads, suitesForShard, shardCount, simulateShard, memoryOf, MEMORY, isExclusive, canStart,
+  allTestFiles, testFilesOnDisk, legacyTestFiles, godotTestFiles, planShards, rapideSuites, rapideOptions, planLoads, suitesForShard, shardCount, simulateShard, memoryOf, MEMORY, isExclusive, canStart,
   WEIGHTS_SECONDS, GODOT_WEIGHTS_SECONDS, DEFAULT_WEIGHT, GODOT_DEFAULT_WEIGHT, MAX_SHARDS
 };
