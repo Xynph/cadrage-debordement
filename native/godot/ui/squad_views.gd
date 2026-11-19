@@ -324,6 +324,9 @@ static func _profile_reading_link(app: Control, content: Control, player_id: Str
 	link.custom_minimum_size = content.get_combined_minimum_size()
 	link.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
 	link.add_theme_stylebox_override("focus", G.T.box(Color.TRANSPARENT, 2, G.GOLD))
+	# Lien de lecture nu : l'habillage sombre (legacy_style) n'en fait pas un bouton encadré, le nom reste un titre.
+	link.set_meta("plain_link", true)
+	link.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	link.accessibility_name = "Consulter la fiche · " + caption
 	link.tooltip_text = link.accessibility_name
 	link.set_meta("entity_kind", "player")

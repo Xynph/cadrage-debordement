@@ -366,6 +366,20 @@ func compact_profile(player: Dictionary, annotation: String, resolution: Vector2
 	if tabs == null or scroll == null or overview == null: return
 	check(absf(rect(scroll).end.y - rect(tabs).end.y) <= 16, "Les onglets utilisent la hauteur du dossier compact")
 	check(tabs.get_tab_title(2) == "Contrat", "Contrat reste le troisième onglet compact")
+	# Nom du joueur en titre, comme en 1920 (retours du 19 novembre 2026) : le lien vers la fiche n'a pas
+	# l'habillage d'un bouton ou d'un champ (aucun fond ni bordure hors focus clavier).
+	var name_link := named("ProfileOpenPlayerName") as Button
+	var name_label := named("ProfilePlayerName") as Label
+	check(name_link != null and name_label != null and name_link.is_ancestor_of(name_label), "Nom du joueur en lien de lecture " + str(resolution))
+	if name_link != null:
+		for state in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+			var box := name_link.get_theme_stylebox(state)
+			var bare: bool = box is StyleBoxEmpty or (box is StyleBoxFlat and (box as StyleBoxFlat).bg_color.a < 0.01 and (box as StyleBoxFlat).border_width_left + (box as StyleBoxFlat).border_width_right + (box as StyleBoxFlat).border_width_top + (box as StyleBoxFlat).border_width_bottom == 0)
+			check(bare, "Nom du joueur sans cadre de champ (%s) %s" % [state, resolution])
+	if name_label != null and name_link != null:
+		var below: Array = name_link.get_parent().get_children().filter(func(n: Node): return n is Label)
+		var line_px: int = (below[0] as Label).get_theme_font_size("font_size") if not below.is_empty() else 0
+		check(name_label.get_theme_font_size("font_size") > line_px, "Nom du joueur en titre, plus grand que la ligne du poste (%d > %d px) %s" % [name_label.get_theme_font_size("font_size"), line_px, resolution])
 	tabs.current_tab = 2
 	await settle()
 	for id in ["OfferRenewal", "PlayerLoad"]:
