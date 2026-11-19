@@ -234,7 +234,7 @@ func cases() -> void:
 	check(FileAccess.get_file_as_bytes(disk_path) == bytes, "Consultation : octets profil inchangés")
 	await command("export")
 	check(app.model.meta.exportText == before, "Consultation : S et RNG/export identiques")
-	await command("new_career", {"club":0,"mode":"common"})
+	await command("new_career", {"club":5,"mode":"world-champ"})
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Préparation")
 	await settle()
