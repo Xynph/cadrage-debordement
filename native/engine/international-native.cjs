@@ -200,6 +200,31 @@ module.exports = function nativeInternational(run, ctx, facts, enabled, peek = r
     }];
   }
 
+  // Une seule source de vérité : la fenêtre de mise à disposition stockée dans `career.callups`. Quand elle est
+  // rallongée ou raccourcie après coup (calendrier précisé par les matchs joués), les courriers déjà reçus qui
+  // citent sa date de fin sont réécrits pour rester d'accord avec l'écran Sélections.
+  function syncMailDates(profile, after) {
+    const now = new Map(after.callups.map(camp => [campKey(camp), camp]));
+    const changed = profile.career.callups.map(prior => ({ prior, camp: now.get(campKey(prior)) }))
+      .filter(({ prior, camp }) => camp && camp.through !== prior.through && !camp.competitionId.startsWith('rugby-world-cup-'));
+    if (!changed.length) return profile.mail;
+    return profile.mail.map(mail => {
+      let body = mail.body;
+      for (const { prior, camp } of changed) {
+        const oldDate = readableDate(prior.through), newDate = readableDate(camp.through);
+        if (mail.id.endsWith('/' + campKey(prior)) && /^(camp|club-release)\//.test(mail.id)) {
+          body = body.replace(`jusqu’au ${oldDate} inclus`, `jusqu’au ${newDate} inclus`);
+        }
+        if (/^club-release-wave\//.test(mail.id)) {
+          const head = `${teamNames[camp.nation]} (${competitionName(camp.competitionId)}) : `;
+          body = body.split('\n').map(line => line.startsWith(head) && line.includes(`du ${readableDate(prior.from)} au ${oldDate} inclus`)
+            ? line.replace(`au ${oldDate} inclus`, `au ${newDate} inclus`) : line).join('\n');
+        }
+      }
+      return body === mail.body ? mail : { ...mail, body };
+    });
+  }
+
   function advanceProfile(profile, to, notifyActive = false) {
     const players = roster();
     const managed = role(profile);
@@ -209,7 +234,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled, peek = r
       clubPlayerIds,notifyActive});
     const messages = mergeWaves(profile,groupWaves(dutyMail(profile.career,moved.state,moved.mail,clubPlayerIds),moved.state,players,clubPlayerIds));
     messages.push(...matchMail(moved.state,players,managed.nation));
-    return {...profile,career:moved.state,mail:append(profile,messages)};
+    return {...profile,career:moved.state,mail:append({...profile,mail:syncMailDates(profile,moved.state)},messages)};
   }
 
   function validate(profile) {
@@ -285,7 +310,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled, peek = r
       if (payload.fromDate !== date || typeof payload.fixtureId !== 'string') throw Error('La rencontre internationale a changé.');
       const played = career.play(profile.career,{date,fixtureId:payload.fixtureId,managedNation:before.nation,
         players:roster(),lineup:payload.lineup,reserves:payload.reserves});
-      write({...profile,career:played.state,mail:append(profile,played.mail)});
+      write({...profile,career:played.state,mail:append({...profile,mail:syncMailDates(profile,played.state)},played.mail)});
       return;
     }
     if (payload.confirmed !== true) throw Error('Confirme le changement de mandat.');

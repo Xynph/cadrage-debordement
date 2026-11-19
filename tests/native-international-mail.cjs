@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
@@ -110,6 +110,26 @@ test('a closed club season retains the international date at the next opening af
  assert.throws(() => reopened.advance(), /Commence la saison suivante/);
 });
 
+// Bug du 19/11/2026 : le courrier annonçait une fin de mise à disposition (13 septembre) différente de la fenêtre
+// affichée par l'écran Sélections (20 septembre, retour le 21). La date du courrier suit la fenêtre stockée.
+test('the call-up mail ends on the same day as the camp window shown in Selections', () => {
+ const fijian = { ...player, id: 'fru:hook', name: 'Talonneur fidjien' };
+ const known = { nations: { FRA: ['France', 'fr'], FIJ: ['Fidji', 'fj'] }, players: { [fijian.id]: { seniorNation: 'FIJ', seniorCaps: 9 } } };
+ const career = bridge({ date: '2026-09-06', opening: '2027-08-16', phase: 'league', players: [fijian], facts: known });
+ const french = date => new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(date));
+ while (career.read().career.date < '2026-09-22') {
+  const fixture = career.project().international.currentManagedFixture;
+  if (fixture) career.play(fixture);
+  career.advance();
+ }
+ const profile = career.read();
+ const camp = profile.career.callups.find(row => row.nation === 'FIJ' && row.competitionId.startsWith('pacific-nations-cup'));
+ assert.equal(camp.through, '2026-09-20', 'fenêtre affichée : jusqu’au 20 septembre, retour le 21');
+ const release = profile.mail.find(mail => mail.kind === 'international_release');
+ assert.ok(release, 'courrier de convocation du club');
+ assert.match(release.body, new RegExp(`au ${french(camp.through)} inclus`));
+ assert.doesNotMatch(release.body, /13 septembre/);
+});
 // Décision de Léo (16/11/2026) : un seul courrier par vague de convocations, toutes sélections confondues.
 test('one call-up wave with several nations produces a single club mail listing every player', () => {
  const english = { ...player, id: 'rfu:hook', name: 'Talonneur anglais' };
@@ -125,3 +145,4 @@ test('one call-up wave with several nations produces a single club mail listing 
  assert.match(released[0].body, /Angleterre \(Tournoi des Six Nations 2027\) : Talonneur anglais/);
  assert.equal(released[0].nation, undefined, 'plusieurs sélections : pas de pays unique');
 });
+
