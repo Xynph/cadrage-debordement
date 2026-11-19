@@ -1,0 +1,16 @@
+== suites (1) (code 1)
+FAIL: Le temps fort se termine
+FAIL: L'écran intermédiaire couvre la 3D
+FAIL: Horloge du moteur, secondes comprises, sur l'écran intermédiaire : 0′
+FAIL: Les plans du temps fort se sont succédé
+FAIL: 1280×720 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 1280×720 : terrain lisible ((320.0, 180.0))
+FAIL: 1280×720 : Notre XV en vue Terrain, tuile principale
+FAIL: 1280×720 : quinze joueurs dans le mini-terrain (15)
+FAIL: 1280×720 : anneaux d'énergie lisibles ((0.0, 0.0))
+FAIL: 1280×720 : Mon XV en tableau, tuile principale (onglet Tableau)
+FAIL: 1280×720 : frise du match visible (75 px)
+FAIL: 1280×720 : carte de Gabi à l'écran
+FAIL: 1280×720 : faits marquants
+FAIL: 1280×720 : terrain 2D en grand au centre ((320.0, 180.0))
+FAIL: 1280×720 : Notre XV à gauche, le duel à droite
