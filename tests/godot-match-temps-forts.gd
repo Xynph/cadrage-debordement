@@ -1814,14 +1814,16 @@ func journee_fictive(view: Control, direct: Dictionary) -> void:
 		if n.has_meta("rang"): par_rang[int(n.get_meta("rang"))] = n
 	var texte := func(ligne: Node, nom: String) -> String: return (ligne.find_child(nom, true, false) as Label).text if ligne.find_child(nom, true, false) != null else ""
 	check(range(1, 12).filter(func(r: int): return par_rang.has(r)).all(func(r: int): return texte.call(par_rang[r], "Points") == str(40 - r * 2) and texte.call(par_rang[r], "Rang") == str(r)), "Classement fictif : rangs et points du moteur")
-	var badges := func(r: int) -> Array: return ["BO", "BD"].filter(func(b: String): return par_rang[r].find_child("Badge" + b, true, false) != null)
-	check(badges.call(1) == ["BO"] and badges.call(8) == ["BD"] and badges.call(10) == ["BO", "BD"] and badges.call(5).is_empty(), "Classement fictif : badges BO/BD (%s, %s, %s, %s)" % [badges.call(1), badges.call(8), badges.call(10), badges.call(5)])
+	var badges := func(r: int) -> Array: return ["BO", "BD"].filter(func(b: String): return par_rang.has(r) and par_rang[r].find_child("Badge" + b, true, false) != null)
+	# Le leader (BO) n'est montré que dans le classement à neuf lignes (voisinage seul en sept lignes, 19/11/2026).
+	var leader_ok: bool = badges.call(1) == ["BO"] if par_rang.has(1) else true
+	check(leader_ok and badges.call(8) == ["BD"] and badges.call(10) == ["BO", "BD"] and badges.call(5).is_empty(), "Classement fictif : badges BO/BD (%s, %s, %s, %s)" % [badges.call(1), badges.call(8), badges.call(10), badges.call(5)])
 	var nous: Control = _ligne_nous(between)
 	var style: StyleBoxFlat = nous.get_theme_stylebox("panel") if nous != null else null
 	check(nous != null and int(nous.get_meta("rang")) == 8 and style != null and style.border_width_left > 0 and style.bg_color.a > 0.1 and texte.call(nous, "Club") == "NOUS", "Classement fictif : notre club surligné")
 	check(nous != null and int(nous.find_child("Evolution", true, false).delta) == 2 and int(par_rang[9].find_child("Evolution", true, false).delta) == -1 and int(par_rang[5].find_child("Evolution", true, false).delta) == 0, "Classement fictif : flèches de l'évolution")
 	var teinte_nous: Variant = S_couleur(app.model.get("club", {}))
-	check(nous != null and (teinte_nous == null or (nous.find_child("Couleur", true, false).teinte as Color).is_equal_approx(teinte_nous)) and (par_rang[1].find_child("Couleur", true, false).teinte as Color).is_equal_approx(between.FAIBLE), "Classement fictif : pastille aux couleurs du club, neutre sinon")
+	check(nous != null and (teinte_nous == null or (nous.find_child("Couleur", true, false).teinte as Color).is_equal_approx(teinte_nous)) and (par_rang[5].find_child("Couleur", true, false).teinte as Color).is_equal_approx(between.FAIBLE), "Classement fictif : pastille aux couleurs du club, neutre sinon")
 	# Multiplex : six cartes, scores et essais, « Terminé », liseré vert sur le seul score qui a changé.
 	var cartes := _cartes_multiplex(between)
 	check(cartes.size() == 6 and between.multiplex.is_visible_in_tree(), "Multiplex fictif : six cartes (%d)" % cartes.size())
