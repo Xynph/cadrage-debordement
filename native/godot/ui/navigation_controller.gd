@@ -539,10 +539,14 @@ func _refresh_controls() -> void:
 	var blocked := _blocked()
 	if is_instance_valid(_back):
 		_back.disabled = blocked or _destination(-1) < 0
-		if _back.has_meta("coque"): _back.tooltip_text = "Pas de page précédente" if _back.disabled else "Page précédente · Alt+←"
+		if _back.has_meta("coque"):
+			_back.tooltip_text = "Pas de page précédente" if _back.disabled else "Page précédente · Alt+←"
+			_back.accessibility_name = _back.tooltip_text
 	if is_instance_valid(_forward):
 		_forward.disabled = blocked or _destination(1) < 0
-		if _forward.has_meta("coque"): _forward.tooltip_text = "Pas de page suivante" if _forward.disabled else "Page suivante · Alt+→"
+		if _forward.has_meta("coque"):
+			_forward.tooltip_text = "Pas de page suivante" if _forward.disabled else "Page suivante · Alt+→"
+			_forward.accessibility_name = _forward.tooltip_text
 	if is_instance_valid(_find): _find.disabled = blocked
 
 # Compatibility entry point used by the existing roster and scouting screens.
