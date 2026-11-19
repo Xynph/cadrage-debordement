@@ -623,6 +623,9 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> void:
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if lines == 2 else TextServer.AUTOWRAP_OFF
 	name_label.max_lines_visible = 2
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	# La taille minimale mise en cache (texte sur une ligne) bornerait la largeur : on la recalcule avant de placer.
+	name_label.update_minimum_size()
+	D.place(name_label, Rect2(96, top, room, line_height * lines))
 	header.tooltip_text = identity + " · fiche du club" if not national else identity
 	var context := "Sélection nationale" if national else club_context(app.model)
 	# « Division · rang » : même calcul sur tous les écrans (fit_context) : une ligne, puis deux lignes, puis 12 px,
@@ -638,6 +641,7 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> void:
 		sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		sub.max_lines_visible = 2
 		sub.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	sub.update_minimum_size()
 	D.place(sub, Rect2(96, top + line_height * lines + 2, room, 21 * int(fitted[2])))
 	header.tooltip_text = (identity + " · " + context + " · fiche du club") if not national else identity
 	var stripe := _incline(header, Rect2(27, RAIL_HEADER - 17, RAIL_WIDTH - 48, 4), Charte.club_trait(app.accent))
