@@ -44,6 +44,8 @@ declare -A suite_limits=(
   [tests/mesure-chrono-arrets.cjs]=2100
   # Remesure 1 200 matchs (large, bonus défensif à la 72e) : estimée 25 à 40 min sur runner.
   [tests/mesure-chrono-1200.cjs]=4200
+  # Fins de match à la 72e (−8, −6, −4), 1 200 rejeux par consigne : estimées 15 à 25 min.
+  [tests/mesure-bonus-1200.cjs]=3600
   [tests/match-rating-curve.cjs]=600
   [tests/godot-art-direction.cjs]=600
   [tests/godot-match-temps-forts.cjs]=600
