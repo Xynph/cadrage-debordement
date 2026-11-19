@@ -774,14 +774,16 @@ func _systems_reception() -> void:
 	if national_press.size() != 30 or not european_only or press.people.size() != national_press.size() + league_press.size():
 		printerr("QA press directory: national=", national_press.size(), " league=", league_press.size(), " total=", press.people.size())
 	# Rentrée façon FM (#928) : la conférence arrive la semaine du 1er match officiel, pas au changement de saison.
-	# On avance la pré-saison jour après jour, sans publier, jusqu'à cette vraie conférence.
-	var preseason_days := 0
-	while not press.conference.available and preseason_days < 60 and not (app.model.get("live") is Dictionary):
-		await _settle_required_meetings()
-		app._command("advance_day", {})
-		if not await _wait() or not app.bridge.last_response_ok: break
-		preseason_days += 1
+	# Comme le joueur : avant-saison, rendez-vous du club (point médical…), puis un jour à la fois ; arrêt dès
+	# que la conférence de rentrée est proposée, avant que l'avance suivante ne la publie.
+	if not press.conference.available and await _advance_preseason():
 		press = app.model.clubLife.press
+		for day in range(120):
+			if press.conference.available or not await _settle_required_meetings(): break
+			press = app.model.clubLife.press
+			if press.conference.available or app.model.meta.get("calendarCadence", {}).get("matchReady", false): break
+			if not await _advance_world_day(): break
+			press = app.model.clubLife.press
 	five_tones = press.conference.available
 	if press.conference.available:
 		for question: Dictionary in press.conference.questions:
