@@ -31,7 +31,7 @@
   pour un lot à passer sur la batterie complète avant fusion
   ([détail](docs/train-de-fusion.md)). `train-echec` : lire le commentaire, corriger,
   reposer `train`.
-- **Règles communes de fusion** : un seul intégrateur arbitre les collisions et les protections serveur ; le
+- **Règles communes de fusion** : Un seul intégrateur arbitre les collisions et les protections serveur ; le
   [gate officiel](docs/chat-release-gate.md) reste pour un lot sensible.
   Aucun push direct sur `main`, jamais de contournement d'un contrôle rouge ou
   d'une réservation non résolue. Si la CI est rouge, la PR attend : corriger.
