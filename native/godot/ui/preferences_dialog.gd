@@ -15,15 +15,12 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	app._prepare_dialog(dialog,width)
 	dialog.title = "Paramètres"
 	dialog.get_ok_button().text = "FERMER"
-	var content := C.v(12)
-	content.custom_minimum_size = Vector2(width-62,436)
+	# Les onglets restent fixes en haut : seul le contenu de chaque onglet défile (jamais la rangée d'onglets).
+	var content := C.v(10)
+	content.custom_minimum_size = Vector2(width-62,400)
 	C.fill(content,true)
-	var viewport := ScrollContainer.new()
-	viewport.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
-	viewport.follow_focus=true
-	viewport.custom_minimum_size=Vector2(width-62,436)
-	dialog.add_child(viewport)
-	viewport.add_child(content)
+	dialog.add_child(content)
+	Dialogs.dress_title(dialog)
 	var introduction := C.card("")
 	content.add_child(introduction)
 	var masthead := C.h(16)
@@ -32,23 +29,32 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	C.fill(description)
 	masthead.add_child(description)
 	description.add_child(C.label("TON POSTE DE MANAGER",18,C.GOLD,true,700))
-	description.add_child(C.label("Confort de jeu",38,C.IVORY,true,700))
+	description.add_child(C.label("Confort de jeu",32,C.IVORY,true,700))
 	description.add_child(C.wrap("Les préférences locales suivent ton profil.",18,C.MUTED))
-	masthead.add_child(C.photo("club-forest",Vector2(230,95)))
+	masthead.add_child(C.photo("club-forest",Vector2(190,78)))
 	var tabs := TabContainer.new()
 	tabs.name = "PreferencesTabs"
 	G.fill(tabs,true)
 	content.add_child(tabs)
-	var comfort := G.v(9); comfort.name = "Confort"; tabs.add_child(comfort)
-	var sound := G.v(10); sound.name = "Son"; tabs.add_child(sound)
-	var display := G.v(10); display.name = "Affichage"; tabs.add_child(display)
-	var shortcuts := G.v(10); shortcuts.name = "Raccourcis clavier"; tabs.add_child(shortcuts)
-	comfort.add_child(C.label("CAMÉRA ET ACCESSIBILITÉ",20,C.GOLD,true,700))
+	tabs.custom_minimum_size.y = 280
+	var comfort := _page(tabs,"Confort")
+	var sound := _page(tabs,"Son")
+	var display := _page(tabs,"Affichage")
+	var shortcuts := _page(tabs,"Raccourcis clavier")
+	# Section « Son » en tête de Confort (le volume global n'est plus rangé sous la caméra) ; les canaux détaillés sont dans l'onglet Son.
+	comfort.add_child(C.label("SON",20,C.GOLD,true,700))
 	var volume := _volume(comfort,"Volume global","PreferencesVolume")
+	comfort.add_child(C.label("CAMÉRA ET ACCESSIBILITÉ",20,C.GOLD,true,700))
+	# Même ligne « libellé à gauche, réglage à droite » que les autres réglages (police et taille identiques).
+	var motion_row := G.h(12); comfort.add_child(motion_row)
+	var motion_label := G.label("Mouvement réduit · mode calme",14); G.fill(motion_label); motion_row.add_child(motion_label)
 	var motion := CheckButton.new()
-	motion.name = "PreferencesMotion"; motion.text = "Mouvement réduit · mode calme"; motion.custom_minimum_size.y = 36
-	comfort.add_child(motion)
+	motion.name = "PreferencesMotion"; motion.custom_minimum_size.y = 36
+	motion.accessibility_name = "Mouvement réduit · mode calme"
+	motion_row.add_child(motion)
 	comfort.add_child(C.wrap("Le mode calme garde une caméra tactique fixe. Les joueurs, les sons et les bulles restent disponibles.",17,C.MUTED))
+	var camera := _choice(comfort,"Caméra préférée",["TV","Vue de dessus","Action"],"PreferencesCamera")
+	var quality := _choice(comfort,"Qualité de la scène",["Économie","Équilibrée","Détaillée"],"PreferencesQuality")
 	# Carrière Monde : championnats en détail complet ou en consultation, modifiables en cours
 	# de partie (effet dès la semaine suivante, comme le niveau de détail de FM).
 	var leagues: Variant = app.model.get("clubLife", {}).get("leagueDetail", {})
@@ -69,8 +75,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 			preload("res://ui/league_detail_view.gd").open_career(app))
 		choose.name = "PreferencesLeagueDetail"
 		comfort.add_child(choose)
-	var camera := _choice(comfort,"Caméra préférée",["TV","Vue de dessus","Action"],"PreferencesCamera")
-	var quality := _choice(comfort,"Qualité de la scène",["Économie","Équilibrée","Détaillée"],"PreferencesQuality")
+	comfort.add_child(C.label("SAUVEGARDE",20,C.GOLD,true,700))
 	var autosave := _choice(comfort,"Sauvegarde automatique",["Chaque jour","Chaque semaine","Chaque mois"],"PreferencesAutosave")
 	autosave.tooltip_text = "Sauvegarde complète à la fin d’une avance du calendrier. Chaque décision est notée aussitôt ; la fermeture et « Sauvegarder » enregistrent toujours tout."
 	# Carrière : le réglage « Conférences ordinaires » (commande press_policy) n'existait que dans la salle de presse.
@@ -117,6 +122,11 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	error.max_lines_visible = 3
 	error.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	content.add_child(error)
+	# Pied de fenêtre : filet puis bouton principal aligné à droite (plus de bouton flottant au milieu).
+	content.add_child(C.rule())
+	var footer := dialog.get_ok_button().get_parent()
+	if footer is BoxContainer: (footer as BoxContainer).alignment = BoxContainer.ALIGNMENT_END
+	dialog.get_ok_button().custom_minimum_size = Vector2(maxi(150,C.px(240)),maxi(36,C.px(52)))
 	var refresh := func():
 		volume.set_value_no_signal(profile.data.volume)
 		motion.set_pressed_no_signal(profile.data.reduced_motion)
@@ -206,6 +216,19 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	Dialogs.show_centered(dialog,Vector2i(width,680 if app.get_window().size.y>=1080 else 600))
 	FocusLater.grab(volume.get_line_edit())
 	return dialog
+
+## Page d'onglet : zone défilante propre à l'onglet (la rangée d'onglets ne défile jamais). Retourne la colonne de contenu.
+static func _page(tabs: TabContainer, title: String) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.name = title
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	tabs.add_child(scroll)
+	var column := G.v(10)
+	column.name = "Contenu"
+	C.fill(column)
+	scroll.add_child(column)
+	return column
 
 static func _volume(parent: Node, caption: String, id: String) -> SpinBox:
 	var row := G.h(12); parent.add_child(row)

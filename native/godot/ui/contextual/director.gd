@@ -342,7 +342,10 @@ func install_entrypoints() -> void:
 		if is_instance_valid(app.body) and app.body.find_child("ContextualObserveTraining", true, false) == null: _add_training_entry(app.body)
 
 func _add_training_entry(parent: Node) -> void:
-	var button := S.G.button("VOIR L’ENTRAÎNEMENT", open_training)
+	# Style de bouton du jeu (contour or, comme « Préparer le match »), plus le bouton blanc pleine largeur du thème Godot.
+	var button := Components.button("VOIR L’ENTRAÎNEMENT", open_training, true, app.accent)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	button.custom_minimum_size.x = Components.px(300)
 	button.name = "ContextualObserveTraining"
 	button.disabled = not _live().is_empty() or app.model.get("meta", {}).get("phase") == "ended"
 	parent.add_child(button)
