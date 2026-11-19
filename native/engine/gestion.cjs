@@ -23,6 +23,15 @@ module.exports=function nativeGestion(command,p){
   requireThat([p.family,p.maxAge,p.budget,p.maxWage].every(Number.isInteger),'Critères entiers requis.');
   requireThat(createScoutMission(p.family,p.maxAge,p.budget,p.maxWage),'Mission refusée : critères, trésorerie ou quatre missions déjà en cours.');return;
  }
+ // Plusieurs postes d'un coup (bannière des Bleus : « Faire souffler les 9 ») : tout ou rien, dans l'ordre donné.
+ if(command==='set_lineup'&&Array.isArray(p.changes)){
+  requireThat(!S.live&&S.phase!=='ended','Composition indisponible.');
+  requireThat(p.changes.length>0&&p.changes.length<=23&&p.changes.every(c=>c&&typeof c==='object'&&!Array.isArray(c.changes)),'Changements invalides.');
+  const avant=[S.lineup.slice(),S.reserves.slice()];
+  try{for(const c of p.changes)nativeGestion('set_lineup',{slot:c.slot,playerId:c.playerId});}
+  catch(error){S.lineup=avant[0];S.reserves=avant[1];throw error;}
+  return {lineupChange:{batch:p.changes.length}};
+ }
  if(command==='set_lineup'){
   requireThat(!S.live&&S.phase!=='ended','Composition indisponible.');requireThat(Number.isInteger(p.slot)&&p.slot>=0&&p.slot<23,'Poste invalide.');
   const eligible=(player,slot)=>slot<15?slotEligible(player,slot):benchEligible(player,slot-15),all=[...S.lineup,...S.reserves],candidate=p.playerId===null?null:player(p.playerId);
