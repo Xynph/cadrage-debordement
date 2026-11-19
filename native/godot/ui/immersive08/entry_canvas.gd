@@ -110,8 +110,11 @@ static func _choices(card: Panel, app: Control, club: Dictionary, meta: Dictiona
 		name.add_child(C.wrap("Saison %s · %s" % [G.season_label(meta.get("season",1)),str(meta.get("roundLabel","Début de saison"))],20,C.MUTED))
 		_action(choices,"Reprendre la carrière",func():app._navigate("Réception"),"EntryResume",accent,true)
 	var locked: bool = app.model.is_empty() or meta.get("recoveryRequired",false)
-	var create := _action(choices,"Nouvelle carrière",func():Entry.begin_creation(app),"EntryNewCareer",accent,club.is_empty())
+	# Carrière en cours : elle est rangée dans « Mes carrières » avant la création, jamais remplacée.
+	var create := _action(choices,"Nouvelle carrière",func():Entry.begin_creation(app) if club.is_empty() else app.new_career_slot(),"EntryNewCareer",accent,club.is_empty())
 	create.disabled = locked or app.catalogue.is_empty()
+	var careers := _action(choices,"Mes carrières",app.open_career_slots,"EntryCareerSlots",accent)
+	careers.disabled = locked
 	var importing := _action(choices,"Importer une carrière",func():app.open_file(true),"EntryImportCareer",accent)
 	importing.disabled = locked
 	var missing: Array = app.model.get("packs",{}).get("missing",[])
