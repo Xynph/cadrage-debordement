@@ -63,6 +63,18 @@ func controler(taille: Vector2i) -> void:
 			mesures[cle] = {"pastilles": pastilles, "ecart_saison_px": snappedf(ecart, .1), "hauteur": taille.y}
 			# Ligne et titre sous les tuiles : ≈ 75 unités du gabarit ; une bande vide d'une rangée en ajouterait 108.
 			verifier(ecart <= 110.0 * C_density(), cle + " : vide de %s px au-dessus de SAISON JUNIOR" % snappedf(ecart, .1))
+		# Le bouton suit la note (pas de bande vide au pied du tableau) et le panneau du bas reprend la place.
+		var bouton := statut.find_child("CentreOpenAcademy", true, false) as Control
+		var bas_texte := -1.0
+		for noeud: Node in statut.find_children("*", "Label", true, false):
+			var l := noeud as Label
+			if bouton != null and not bouton.is_ancestor_of(l): bas_texte = maxf(bas_texte, l.get_global_rect().end.y)
+		if bouton != null and saison != null:
+			var vide := bouton.get_global_rect().position.y - bas_texte
+			mesures[cle]["vide_bouton_px"] = snappedf(vide, .1)
+			verifier(vide <= 90.0 * C_density(), cle + " : vide de %s px au-dessus de « Consulter les Espoirs »" % snappedf(vide, .1))
+		var bas := page.find_child("CentreDevelopment", true, false) as Control
+		if bas != null: verifier(bas.get_global_rect().position.y - statut.get_global_rect().end.y <= 40.0 * C_density(), cle + " : panneau du bas collé au tableau du centre")
 	await poser(10)
 	if DisplayServer.get_name() != "headless" and not sortie.is_empty():
 		verifier(root.get_texture().get_image().save_png(sortie.path_join("centre-%s.png" % cle)) == OK, "capture " + cle)

@@ -177,7 +177,6 @@ func _restore_scroll(key: String, scroll: ScrollContainer) -> void:
 
 func _summary() -> void:
 	var active: bool = data.get("active", false)
-	var panel := D.panel(self, Rect2(1531, 218, 717, 596), "Le tableau du centre", "school", "", "CentreStatus")
 	var facts := [
 		["ESPOIRS SUIVIS", G.n(data.get("players", []).size()), "people", GREEN],
 		["ENVELOPPE JUNIOR", G.euros(data.recruitBudget) if data.has("recruitBudget") else "—", "money", GOLD],
@@ -185,19 +184,22 @@ func _summary() -> void:
 		["RÉPUTATION", G.n(data.get("reputation", "—")), "star", GOLD],
 	]
 	facts = facts.filter(func(fact: Array): return str(fact[1]) != "—")
+	# Une seule rangée de chiffres (Espoirs, enveloppe) : le panneau se resserre d'une rangée et la place
+	# libérée revient à la photo du panneau du bas, au lieu d'une bande vide sous les tuiles.
+	var rows := maxi(1, ceili(facts.size() / 2.0))
+	var dy := (rows - 2) * 108 if rows < 2 else 0
+	var panel := D.panel(self, Rect2(1531, 218, 717, 596 + dy), "Le tableau du centre", "school", "", "CentreStatus")
 	for i in facts.size():
 		var entry: Array = facts[i]
-		var rect := Rect2(18 + (i % 2) * 345, 73 + floori(i / 2.0) * 108, 334, 97)
+		# Tuile seule sur sa rangée : toute la largeur du panneau.
+		var wide := i == facts.size() - 1 and i % 2 == 0
+		var rect := Rect2(18 + (i % 2) * 345, 73 + floori(i / 2.0) * 108, 679 if wide else 334, 97)
 		var tile := D.panel(panel, rect)
 		var icon := C.icon(entry[2], 32, entry[3])
 		tile.add_child(icon)
 		D.place(icon, Rect2(15, 27, 32, 32))
-		D.text(tile, 61, 35, entry[0], 21, C.MUTED, 700, 265)
-		D.text(tile, 61, 75, entry[1], 35, entry[3], 700, 262)
-	# Une seule rangée de chiffres (Espoirs, enveloppe) : le bloc « Saison junior » remonte d'autant
-	# au lieu de laisser une bande vide sous les tuiles ; le bouton reste au pied du panneau.
-	var rows := maxi(1, ceili(facts.size() / 2.0))
-	var dy := (rows - 2) * 108 if rows < 2 else 0
+		D.text(tile, 61, 35, entry[0], 21, C.MUTED, 700, rect.size.x - 69)
+		D.text(tile, 61, 75, entry[1], 35, entry[3], 700, rect.size.x - 72)
 	D.line(panel, Vector2(17, 293 + dy), Vector2(699, 293 + dy))
 	D.text(panel, 22, 339 + dy, "SAISON JUNIOR", 24, GOLD, 700, 660)
 	var round := _pathway_status()
@@ -209,10 +211,10 @@ func _summary() -> void:
 		note = "L’activation ouvre le calendrier et les résultats juniors." if data.get("available", false) else "Détection, mentorat et compétition junior ouvriront avec le calendrier des Espoirs."
 	var lines := D.words(note, 69, 3)
 	for i in lines.size(): D.text(panel, 23, 439 + dy + i * 27, lines[i], 23, C.MUTED, 500, 675)
-	D.button(panel, Rect2(21, 522, 676, 55), "Consulter les Espoirs", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreOpenAcademy")
-	var lower := D.panel(self, Rect2(1531, 832, 717, 391), "De l’académie à l’équipe première", "trophy", "", "CentreDevelopment")
-	D.photo(lower, "academy-training", Rect2(14, 70, 689, 211))
+	D.button(panel, Rect2(21, 522 + dy, 676, 55), "Consulter les Espoirs", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreOpenAcademy")
+	var lower := D.panel(self, Rect2(1531, 832 + dy, 717, 391 - dy), "De l’académie à l’équipe première", "trophy", "", "CentreDevelopment")
+	D.photo(lower, "academy-training", Rect2(14, 70, 689, 211 - dy))
 	var places := G.n(data.get("places", "—"))
-	D.text(lower, 22, 328, "Places professionnelles disponibles", 26, C.IVORY, 700, 480)
-	D.text(lower, 689, 340, places, 43, GREEN, 800, 183, HORIZONTAL_ALIGNMENT_RIGHT)
-	D.text(lower, 23, 365, "La capacité tient compte des places réservées aux retours de prêt.", 20, C.MUTED, 500, 673)
+	D.text(lower, 22, 328 - dy, "Places professionnelles disponibles", 26, C.IVORY, 700, 480)
+	D.text(lower, 689, 340 - dy, places, 43, GREEN, 800, 183, HORIZONTAL_ALIGNMENT_RIGHT)
+	D.text(lower, 23, 365 - dy, "La capacité tient compte des places réservées aux retours de prêt.", 20, C.MUTED, 500, 673)
