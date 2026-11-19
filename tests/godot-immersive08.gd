@@ -579,7 +579,7 @@ func champ(compact: bool) -> void:
 	check(app.model.get("next")==null and first.date=="2026-09-19" and first.timezone=="Europe/London" and str(first.scheduleSource).begins_with("rfu-published"),"La préparation précède le vrai premier match publié")
 	var timeline := app.find_child("OfficeTimeline", true, false)
 	var dates := timeline.find_children("OfficeTimelineDate*","Label",true,false) if timeline!=null else []
-	check(dates.size()==(5 if app.find_child("GabiBureau",true,false) != null else 7) and dates[0].text.contains("19/09/2026") and dates[0].text.contains(first.kickoffLocal),"Le fil du Bureau affiche les sept échéances et l’heure du premier match")
+	check(dates.size()==(3 if app.find_child("OfficeFixtureBody",true,false) != null else 7) and dates[0].text.contains("19/09/2026") and dates[0].text.contains(first.kickoffLocal),"Le fil du Bureau affiche les sept échéances et l’heure du premier match")
 	await capture(("73" if compact else "72")+"-champ-bureau-"+dimensions)
 	# Recrutement, aide de Gabi ouverte (mode grand, bandeau en service) : « Approcher le joueur » reste dégagé.
 	var market_ids: Array = app.model.get("market",[]).filter(func(player: Dictionary): return player.get("available",false)).map(func(player: Dictionary): return str(player.id))
@@ -771,7 +771,9 @@ func resize_shell() -> void:
 		check(app.find_child("OfficeFixture",true,false)==fixture and app.navigation_controller.history==history,"Le resize conserve contrôles et navigation à "+str(size))
 		for control: Control in [fixture,journal,timeline,action]:
 			var box := control.get_global_transform()*Rect2(Vector2.ZERO,control.size)
-			check(screen.grow(1).encloses(box),"%s entièrement visible à %s" % [control.name,str(size)])
+			# Composition large « Affiche et Gabi » (≥ 1600 px) : la page défile ; seule la largeur doit tenir dans l'écran.
+			var defile: bool = app.find_child("OfficeFixtureBody",true,false) != null and control.name != "ImmersiveContinue"
+			check(screen.grow(1).encloses(box) or (defile and box.position.x >= -1.0 and box.end.x <= screen.end.x + 1.0),"%s entièrement visible à %s" % [control.name,str(size)])
 		if size in [Vector2i(1280,720),Vector2i(1440,900)]:
 			check(ground != null and ground.is_visible_in_tree() == (size.y == 900),"Le terrain apparaît lorsque le fil de saison dispose d'assez de hauteur à "+str(size))
 			await capture("06-bureau-redimensionne-%dx%d" % [size.x,size.y])

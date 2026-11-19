@@ -91,7 +91,7 @@ static func update_live_card(app: Control) -> void:
 		for item: Dictionary in priorities(app.model):
 			if item.id != "OfficeLivePriorityAction": continue
 			var number := int(priority.get_meta("priority_number",1))
-			priority.text = "%d. %s" % [number,item.title]
+			priority.text = ("%d. %s" % [number,item.title]) if priority.get_meta("inline_number",true) else str(item.title)
 			priority.tooltip_text = item.title + "\n" + priority_description(item)
 			priority.accessibility_name = priority.tooltip_text.replace("\n"," · ")
 			for pair in [["OfficePriorityDeadline",item.deadline],["OfficePriorityReason",item.detail]]:
@@ -238,10 +238,10 @@ static func scheduled_venue(app: Control, fixture: Dictionary) -> String:
 	var location := P.fixture_location_kind(fixture, app.model.club.id)
 	return P.fixture_venue(fixture, false, location != "neutral")
 
-static func territory_art(club: Dictionary) -> VBoxContainer:
+static func territory_art(club: Dictionary, horizontal: bool = false) -> BoxContainer:
 	var identity := G.identity(club)
 	var photos: Dictionary = identity.get("photos", {})
-	var cards := C.v(6)
+	var cards: BoxContainer = C.h(6) if horizontal else C.v(6)
 	cards.name = "OfficeTerritoryPreviews"
 	cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for info in [["city","VILLE DU CLUB","OfficeCityPreview"],["stadium","STADE DU CLUB","OfficeStadiumPreview"]]:
@@ -310,7 +310,7 @@ static func recent_results(app: Control) -> PanelContainer:
 	played.reverse()
 	var panel := C.card()
 	panel.name = "OfficeRecentResults"
-	panel.add_theme_stylebox_override("panel",C.box(Color("121c27"),Color("61798f"),6,10))
+	panel.add_theme_stylebox_override("panel",C.box(C.PANEL,C.LINE,0,10))
 	var content := C.content(panel)
 	var header := C.h(8)
 	content.add_child(header)
@@ -333,7 +333,7 @@ static func recent_results(app: Control) -> PanelContainer:
 		var location := P.fixture_location_kind(fixture, club_id)
 		var place: String = {"home":"Domicile","away":"Extérieur","neutral":"Terrain neutre"}.get(location,"")
 		var tile := C.card()
-		tile.add_theme_stylebox_override("panel",C.box(Color("1a2936"),Color("52677d"),5,8))
+		tile.add_theme_stylebox_override("panel",C.box(C.RAISED,C.LINE,0,8))
 		row.add_child(C.fill(tile))
 		var matchup := C.h(12)
 		C.content(tile).add_child(matchup)
@@ -343,7 +343,7 @@ static func recent_results(app: Control) -> PanelContainer:
 		var score_card := PanelContainer.new()
 		score_card.custom_minimum_size = Vector2(C.px(102),C.px(50))
 		score_card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		score_card.add_theme_stylebox_override("panel",C.box(Color("101a23").lerp(tint,.12),tint,5,4))
+		score_card.add_theme_stylebox_override("panel",C.box(C.PANEL,tint,0,4))
 		score_card.add_child(points)
 		var fixture_key := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
 		matchup.add_child(reading_control(app, score_card, score_reading_target(app, fixture), "OfficeRecentFixture_" + fixture_key, "Rencontre · " + points.text))
@@ -741,7 +741,7 @@ static func standing_action(app: Control, club: Dictionary) -> Button:
 	action.flat=true
 	action.set_meta("club_id",club.get("id"))
 	for key in ["won","drawn","lost"]: action.set_meta(key,S.count_text(club.get(key)))
-	action.tooltip_text="%s\nVictoires %s  ·  Nuls %s  ·  Défaites %s\nOuvrir le classement complet" % [G.club_name(club),action.get_meta("won"),action.get_meta("drawn"),action.get_meta("lost")]
+	action.tooltip_text="%s\nVictoires %s  ·  Nuls %s  ·  Défaites %s\nOuvrir la fiche du club" % [G.club_name(club),action.get_meta("won"),action.get_meta("drawn"),action.get_meta("lost")]
 	var zone := Zones.of(club)
 	if not zone.is_empty():
 		# Monde : la zone du règlement est dite, pas seulement montrée (liseré et symbole posés par le Bureau).
@@ -753,8 +753,14 @@ static func standing_action(app: Control, club: Dictionary) -> Button:
 	focus.set_border_width_all(2)
 	action.add_theme_stylebox_override("focus",focus)
 	action.add_theme_stylebox_override("hover",C.box(Color(C.MINT,.07),Color(C.MINT,.68),4,0))
-	action.pressed.connect(open_current_standings.bind(app))
+	action.pressed.connect(open_club_row.bind(app,club))
 	return action
+
+## Ligne du classement court : la fiche du club (son écran « Club » pour le nôtre) ; à défaut, le classement complet.
+static func open_club_row(app: Control, club: Dictionary) -> void:
+	var target := {"kind":"club","id":str(club.get("id",""))}
+	if club.get("id") == null or not is_instance_valid(app.navigation_controller) or not app.navigation_controller.open_entity(target):
+		open_current_standings(app)
 
 static func _journal(parent: VBoxContainer, app: Control) -> void:
 	var messages: Array = app.model.get("messages", [])

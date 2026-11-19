@@ -35,6 +35,7 @@ const MatchCanvas = preload("res://ui/immersive08/match_canvas.gd")
 const MatchCompact = preload("res://ui/immersive08/match_compact.gd")
 const G = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
+const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 ## Gabarits riches (référence 2560 × 1440) ouverts dès 1280 × 720 (densité 0,5). Les gabarits sont
 ## proportionnels (C.px, D.place) et tout texte passe par un plancher de 12 px (C.label, D.text) :
 ## à 1280 × 720 le plus petit texte rendu fait 12 × 0,977 ≈ 11,7 px (pied de page compris, voir _fit_layout).
@@ -1123,6 +1124,14 @@ static func _key_figure(row: Control, area: Rect2, index: int, item: Array) -> P
 	frame.accessibility_name = frame.tooltip_text
 	return frame
 
+## Titre du Bureau (maquette « Affiche et Gabi ») : « LE BUREAU » en italique, sa phrase d'accueil, la saison à droite.
+static func _entete_bureau(row: Control, app: Control) -> void:
+	ClubUI.italic(app.heading, 800)
+	var largeur := C.font(800).get_string_size("LE BUREAU", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(53))).x / C.density
+	D.text(row, largeur + 28, 74, "Ta semaine commence ici.", 21, Charte.IVOIRE_2, 500, 700, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeSubtitle"
+	var meta: Dictionary = app.model.get("meta", {})
+	if meta.has("season"):
+		D.text(row, 2248, 74, "Saison %s · semaine %d" % [G.season_label(meta.season), int(meta.get("week", 0)) + 1], 21, Charte.IVOIRE_2, 500, 700, HORIZONTAL_ALIGNMENT_RIGHT, true).name = "OfficeSeason"
 static func _position_office_match_status(status: Label, factor: float) -> void:
 	if factor<=0: return
 	status.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
@@ -1138,8 +1147,9 @@ static func _heading(parent: Node, app: Control) -> void:
 		app.minibar.visible=false
 		parent.add_child(app.minibar)
 		return
-	D.text(row,1,19,{"Bureau":"LE BUREAU","Effectif":"LE GROUPE PROFESSIONNEL","Composition":"LE PLAN DE JEU"}.get(app.route,app.route.to_upper()),19,app.accent.lightened(.48),600,1040)
-	app.heading = D.text(row,-1,76,TITLES.get(app.route,app.route),53,C.IVORY,700,1190)
+	if app.route!="Bureau": D.text(row,1,19,{"Bureau":"LE BUREAU","Effectif":"LE GROUPE PROFESSIONNEL","Composition":"LE PLAN DE JEU"}.get(app.route,app.route.to_upper()),19,app.accent.lightened(.48),600,1040)
+	app.heading = D.text(row,-1,76,"LE BUREAU" if app.route=="Bureau" else TITLES.get(app.route,app.route),53,C.IVORY,800 if app.route=="Bureau" else 700,1190)
+	if app.route=="Bureau": _entete_bureau(row,app)
 	if COMPACT_ART.has(app.route):
 		var image := D.panel(row,Rect2(1438,6,810,89),"","","","CompactRouteArt")
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1153,7 +1163,7 @@ static func _heading(parent: Node, app: Control) -> void:
 	var metrics: Array = [[(P.rank_ordinal(app.model.club) if P.standings_open(app.model.club) else "Pas classé")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[injury_caption,"heart",C.ALERT if injury_count > 0 else C.MUTED]]
 	# Effectif : chiffres clés en gros chiffre + légende (valeur, légende, couleur du chiffre).
 	if app.route=="Effectif": metrics=[[G.n(values.total),"joueur%s" % ("s" if int(values.total) > 1 else ""),C.IVORY],[G.n(values.available),"disponible%s" % ("s" if int(values.available) > 1 else ""),C.MINT],[G.n(injury_count),"blessé%s" % ("s" if injury_count > 1 else ""),C.ALERT if injury_count > 0 else C.IVORY],[str(values.rating),"niveau moyen",C.GOLD]]
-	elif app.route not in ["Bureau","Composition"]: metrics=[]
+	elif app.route!="Composition": metrics=[]
 	if app.route=="Composition":
 		var selected:int=app.model.get("selection",{}).get("slots",[]).filter(func(slot:Dictionary):return slot.get("playerId")!=null).size()
 		D.chip(row,Rect2(1140,21,288,48),str(selected)+" joueurs sélectionnés",C.MINT)
@@ -1200,6 +1210,8 @@ static func _heading(parent: Node, app: Control) -> void:
 ## Décor du bureau (ballon, coupe) : la scène n'est chargée qu'une fois ; un rendu sur deux
 ## relisait ballon.glb (et son avertissement d'UID) faute de référence gardée.
 const OFFICE_PROPS_PATH := "res://art/office_props/office_props.tscn"
+## Décor 3D du Bureau (ballon, coupe) retiré par la direction artistique du 19/11/2026 : le bandeau d'illustration voilé le remplace.
+const OFFICE_PROPS_ENABLED := false
 static var _office_props_scene: PackedScene
 
 static func _sync_office_props(match_status: Label) -> void:
@@ -1210,7 +1222,7 @@ static func _sync_office_props(match_status: Label) -> void:
 		if props != null:
 			row.remove_child(props)
 			props.queue_free()
-	elif props == null:
+	elif props == null and OFFICE_PROPS_ENABLED:
 		if _office_props_scene == null:
 			_office_props_scene = load(OFFICE_PROPS_PATH) as PackedScene
 		props = _office_props_scene.instantiate() as TextureRect

@@ -319,19 +319,19 @@ func bureau() -> void:
 	var rect := zone.get_global_rect()
 	var body: Rect2 = app.body_scroll.get_global_rect()
 	check(rect.position.x >= body.position.x - 1 and rect.end.x <= body.end.x + 1, "Zone de Gabi dans la largeur de l'écran")
-	check(rect.size.y >= rect.size.x * 1.8, "Zone de Gabi en hauteur (Gabi debout en entier)")
+	check(rect.size.y >= rect.size.x * 1.2, "Zone de Gabi en hauteur (semaine, prochains matchs, buste)")
 	for id: String in OFFICE_CARDS:
 		var card: Control = app.root_content.find_child(id, true, false)
 		if card == null: continue
 		check(not card.get_global_rect().intersects(rect), "Zone de Gabi sans chevauchement : " + id)
 	var carnet: Control = zone.find_child("GabiCarnet", true, false)
 	var figure: Control = zone.find_child("GabiBureauFigure", true, false)
-	check(carnet != null and figure != null, "Carnet de la semaine et Gabi en pied")
+	check(carnet != null and figure != null, "Carnet de la semaine et buste de Gabi")
 	if carnet != null and figure != null:
-		check(not carnet.get_global_rect().intersects(figure.get_global_rect()), "Gabi debout sous son carnet, sans chevauchement")
+		check(not carnet.get_global_rect().intersects(figure.get_global_rect()), "Buste de Gabi sous son carnet, sans chevauchement")
 		check(rect.grow(1).encloses(carnet.get_global_rect()) and rect.grow(1).encloses(figure.get_global_rect()), "Carnet et figure dans la zone")
-		check((figure as TextureRect).texture != null, "Gabi en pied rendu")
-		check(figure.get_global_rect().size.y >= app.size.y * .3, "Gabi en grand (%d px de haut)" % figure.get_global_rect().size.y)
+		check((figure as TextureRect).texture != null, "Buste de Gabi rendu")
+		check(figure.get_global_rect().size.y >= app.size.y * .14 and figure.get_global_rect().size.y <= app.size.y * .22, "Buste de Gabi de 160 à 200 px (%d px de haut)" % figure.get_global_rect().size.y)
 	for key in ["match", "groupe", "alerte", "conseil"]:
 		var line: Label = zone.find_child("GabiLigne_" + key, true, false)
 		check(line != null and not line.text.strip_edges().is_empty(), "Synthèse de la semaine : " + key)
@@ -339,7 +339,7 @@ func bureau() -> void:
 	var follow: Button = zone.find_child("GabiBureauSuivre", true, false)
 	check(follow != null and follow.text == "Suivre le conseil", "Conseil avec action au Bureau")
 	if is_instance_valid(coach._pied):
-		check(coach._pied.visible, "Gabi en pied animé pendant l'affichage du Bureau")
+		check(coach._pied.visible, "Gabi animé pendant l'affichage du Bureau")
 	# Blocs du Bureau : aucun bouton n'en recouvre un autre ni un texte (correction de « Préparer la suite »).
 	var planning: Control = app.root_content.find_child("OfficeManagerPlanning", true, false)
 	var calendar: Control = app.root_content.find_child("OfficeCalendarAction", true, false)
