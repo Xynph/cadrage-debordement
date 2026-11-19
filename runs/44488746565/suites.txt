@@ -1,0 +1,3 @@
+tests/mesure-chrono-1200.cjs
+tests/match-rating-curve.cjs
+tests/fatigue-phases-arretees.cjs

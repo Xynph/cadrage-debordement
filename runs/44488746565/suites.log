@@ -1,0 +1,101 @@
+::group::tests/mesure-chrono-1200.cjs
+## Styles contre « Équilibré » (XV identiques, consignes figées)
+style | matchs | victoires % | points | encaissés | essais | actions
+large | 1200 | 47.8 | 27.5 | 28.7 | 3.12 | 82.8
+## Mené de 8 à la 72e (1200 fins de match par consigne)
+consigne | V | N | D | BD | pts | essais + | essais − | actions
+base | 0.06 | 0 | 0.94 | 0.39 | 0.62 | 0.45 | 0.26 | 7.58
+defensif | 0.05 | 0 | 0.95 | 0.44 | 0.66 | 0.39 | 0.23 | 7.66
+victoire | 0.04 | 0 | 0.96 | 0.36 | 0.51 | 0.5 | 0.23 | 7.73
+TAP version 13
+# Subtest: Remesure 1 200 matchs : jeu au large et bonus défensif (à la demande en ligne)
+ok 1 - Remesure 1 200 matchs : jeu au large et bonus défensif (à la demande en ligne)
+  ---
+  duration_ms: 544960.352195
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 544965.176031
+CD_CPU_PROFILE suite=tests/mesure-chrono-1200.cjs user_s=1011.36 system_s=112.13 wall_s=545.00 cpu_pct=206% max_rss_kb=1736064
+PASS tests/mesure-chrono-1200.cjs (545 s)
+::endgroup::
+::group::tests/match-rating-curve.cjs
+complet, club de base 4 (27302 ms)
+écart | matchs | victoires du plus fort | à domicile | à l’extérieur | points/match | essais/match | écart moyen
++0 | 240 | 51.9 % | 62.9 % | 40.8 % | 55.4 | 7.03 | 12.7
++6 | 240 | 77.5 % | 93.8 % | 61.3 % | 56.6 | 7.23 | 17.2
++10 | 240 | 87.9 % | 95.0 % | 80.8 % | 57.2 | 7.28 | 21.5
+logistique : 0.220 par point, terrain 0.69 → domicile à niveau égal 66.6 % ; neutre +3 65.9 %, +6 79.0 %, +10 90.1 %, +15 96.5 %, −10 9.9 %
+complet, club de base 4, queue
+écart | matchs | victoires du plus fort | à domicile | à l’extérieur | points/match | essais/match | écart moyen
++15 | 600 | 93.8 % | 97.0 % | 90.7 % | 58.8 | 7.45 | 26.5
+rapide, club de base 4 (140010 ms)
+écart | matchs | victoires du plus fort | à domicile | à l’extérieur | points/match | essais/match | écart moyen
+-10 | 3000 | 13.2 % | 20.9 % | 5.5 % | 55.8 | 7.52 | 22.3
++0 | 3000 | 50.3 % | 66.2 % | 34.4 % | 51.0 | 6.78 | 13.3
++6 | 3000 | 76.4 % | 87.4 % | 65.4 % | 53.2 | 7.11 | 16.8
++10 | 3000 | 87.2 % | 94.1 % | 80.4 % | 56.2 | 7.57 | 21.8
+logistique : 0.209 par point, terrain 0.67 → domicile à niveau égal 66.2 % ; neutre +3 65.2 %, +6 77.8 %, +10 89.0 %, +15 95.8 %, −10 11.0 %
+rapide, club de base 4, queue
+écart | matchs | victoires du plus fort | à domicile | à l’extérieur | points/match | essais/match | écart moyen
++15 | 2000 | 93.2 % | 97.1 % | 89.3 % | 60.3 | 8.17 | 29.3
+TAP version 13
+# Subtest: Courbe de niveau commune au moteur complet et au résultat rapide (carrière Monde)
+ok 1 - Courbe de niveau commune au moteur complet et au résultat rapide (carrière Monde)
+  ---
+  duration_ms: 218656.814235
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 218667.402566
+CD_CPU_PROFILE suite=tests/match-rating-curve.cjs user_s=224.71 system_s=5.98 wall_s=219.20 cpu_pct=105% max_rss_kb=2483540
+PASS tests/match-rating-curve.cjs (220 s)
+::endgroup::
+::group::tests/fatigue-phases-arretees.cjs
+[{"nu":97,"points":"100:97→97 90:92.1→96 80:87.3→95.1 70:82.5→94.1 60:77.6→93.1 50:72.8→92.1 40:67.9→91.2 30:63.1→90.2 20:58.2→89.2 11:53.8→88.4 0:48.5→87.3"},{"nu":89.4,"points":"100:89.4→89.4 90:84.9→88.5 80:80.5→87.6 70:76→86.7 60:71.5→85.8 50:67.1→84.9 40:62.6→84 30:58.1→83.1 20:53.6→82.2 11:49.6→81.4 0:44.7→80.5"},{"nu":88.80000000000001,"points":"100:88.8→88.8 90:84.4→87.9 80:79.9→87 70:75.5→86.1 60:71→85.2 50:66.6→84.4 40:62.2→83.5 30:57.7→82.6 20:53.3→81.7 11:49.3→80.9 0:44.4→79.9"},{"nu":85.5,"points":"100:85.5→85.5 90:81.2→84.6 80:77→83.8 70:72.7→82.9 60:68.4→82.1 50:64.1→81.2 40:59.8→80.4 30:55.6→79.5 20:51.3→78.7 11:47.5→77.9 0:42.8→77"},{"nu":84.6,"points":"100:84.6→84.6 90:80.4→83.8 80:76.1→82.9 70:71.9→82.1 60:67.7→81.2 50:63.4→80.4 40:59.2→79.5 30:55→78.7 20:50.8→77.8 11:47→77.1 0:42.3→76.1"}]
+{"apres":[{"tranche":"0-9","tentatives":370,"reussite":76.2,"probabilite":75.4,"condition":93.2,"but":68.2},{"tranche":"10-19","tentatives":388,"reussite":74.7,"probabilite":75.1,"condition":89,"but":68.5},{"tranche":"20-29","tentatives":427,"reussite":76.8,"probabilite":74.7,"condition":85.7,"but":67.9},{"tranche":"30-39","tentatives":412,"reussite":74.3,"probabilite":74.5,"condition":80.9,"but":68},{"tranche":"40-49","tentatives":406,"reussite":74.9,"probabilite":74.6,"condition":76.5,"but":67.7},{"tranche":"50-59","tentatives":437,"reussite":76.2,"probabilite":74.4,"condition":73.7,"but":67.9},{"tranche":"60-69","tentatives":342,"reussite":71.6,"probabilite":74.3,"condition":74.1,"but":68.3},{"tranche":"70-79","tentatives":135,"reussite":75.6,"probabilite":73.5,"condition":72.9,"but":68.5},{"tranche":"80-89","tentatives":32,"reussite":62.5,"probabilite":71.8,"condition":79.3,"but":66.3}],"avant":[{"tranche":"0-9","tentatives":189,"reussite":74.1,"probabilite":75.1,"condition":93.4,"but":66.3},{"tranche":"10-19","tentatives":201,"reussite":78.6,"probabilite":74.3,"condition":89.4,"but":65.3},{"tranche":"20-29","tentatives":209,"reussite":76.1,"probabilite":73.3,"condition":85.5,"but":63.3},{"tranche":"30-39","tentatives":203,"reussite":70.9,"probabilite":73,"condition":81.2,"but":62.9},{"tranche":"40-49","tentatives":197,"reussite":73.6,"probabilite":72.7,"condition":76.1,"but":60.6},{"tranche":"50-59","tentatives":212,"reussite":70.8,"probabilite":71.9,"condition":73.7,"but":60.3},{"tranche":"60-69","tentatives":169,"reussite":76.3,"probabilite":72.2,"condition":76.7,"but":61.1},{"tranche":"70-79","tentatives":61,"reussite":68.9,"probabilite":71.2,"condition":74.7,"but":60.9},{"tranche":"80-89","tentatives":14,"reussite":71.4,"probabilite":71.4,"condition":76.6,"but":63.2}],"reussite":[74,74.9],"pointsParMatch":[52.7,53.1],"touche":[75.2,75.6]}
+TAP version 13
+# Subtest: Courbe : la compétence au but ne s’effondre plus avec la fatigue ; le jeu courant garde la sienne
+ok 1 - Courbe : la compétence au but ne s’effondre plus avec la fatigue ; le jeu courant garde la sienne
+  ---
+  duration_ms: 106.46624
+  type: 'test'
+  ...
+# Subtest: Réussite au but par tranche de 10 minutes sur 300 matchs IA contre IA : presque stable en fin de match
+ok 2 - Réussite au but par tranche de 10 minutes sur 300 matchs IA contre IA : presque stable en fin de match
+  ---
+  duration_ms: 15957.219348
+  type: 'test'
+  ...
+# Subtest: Déterminisme, compatibilité des rencontres commencées et sauvegarde
+ok 3 - Déterminisme, compatibilité des rencontres commencées et sauvegarde
+  ---
+  duration_ms: 2544.740232
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18616.131757
+CD_CPU_PROFILE suite=tests/fatigue-phases-arretees.cjs user_s=36.92 system_s=1.17 wall_s=32.30 cpu_pct=117% max_rss_kb=1626048
+PASS tests/fatigue-phases-arretees.cjs (32 s)
+::endgroup::
