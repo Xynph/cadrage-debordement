@@ -50,6 +50,23 @@ static func _dress(dialog: AcceptDialog, accent: Color) -> void:
 	message.add_theme_font_size_override("font_size",maxi(14,C.px(18)))
 	_fit.call_deferred(dialog)
 
+## Barre de titre et cadre d'une fenêtre intégrée aux couleurs des cartes du jeu (au lieu du gris par défaut de Godot).
+## Les marges (dont la hauteur de la barre de titre) restent celles du style d'origine : la mise en page ne bouge pas.
+static func dress_title(dialog: Window) -> void:
+	for state in ["embedded_border","embedded_unfocused_border"]:
+		var original := dialog.get_theme_stylebox(state,"Window")
+		var style := C.box(Color("0f1719"),C.GOLD,6,0)
+		style.set_border_width_all(2)
+		style.set_content_margin(SIDE_LEFT,original.get_margin(SIDE_LEFT))
+		style.set_content_margin(SIDE_RIGHT,original.get_margin(SIDE_RIGHT))
+		style.set_content_margin(SIDE_TOP,original.get_margin(SIDE_TOP))
+		style.set_content_margin(SIDE_BOTTOM,original.get_margin(SIDE_BOTTOM))
+		style.expand_margin_top = original.expand_margin_top
+		dialog.add_theme_stylebox_override(state,style)
+	dialog.add_theme_color_override("title_color",C.GOLD)
+	dialog.add_theme_font_override("title_font",C.BOLD)
+	dialog.set_meta("immersive_title_dressed",true)
+
 static func _watch_host(dialog: AcceptDialog) -> void:
 	var owner: Viewport = dialog.get_parent().get_viewport()
 	var resize := func(): _fit(dialog)

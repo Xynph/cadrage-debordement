@@ -25,6 +25,7 @@ var _settings_panel: PanelContainer
 var _error_panel: PanelContainer
 var _corner_left := false
 var _avoid_elapsed := 0.0
+var _avoid_scroll := Vector2i.ZERO
 var _last_key := ""
 var _compact: HBoxContainer
 var _expanded: VBoxContainer
@@ -260,10 +261,20 @@ func _has_dialog(node: Node) -> bool:
 
 func _process(delta: float) -> void:
 	_avoid_elapsed += delta
-	if _avoid_elapsed >= 0.25:
-		_avoid_elapsed = 0.0; _avoid_primary_controls()
+	# Une page qui défile (molette, focus clavier, ensure_control_visible) peut amener une commande
+	# principale sous Gabi : on réévalue aussitôt, sans attendre le prochain quart de seconde.
+	var scroll_now := _page_scroll()
+	if _avoid_elapsed >= 0.25 or scroll_now != _avoid_scroll:
+		_avoid_elapsed = 0.0; _avoid_scroll = scroll_now; _avoid_primary_controls()
 	# Also guards the interval before the parent receives a new model.
 	if is_instance_valid(app) and _blocked() == _safe: refresh()
+
+## Défilement courant du corps de page (Vector2i(-1, -1) sans corps défilable).
+func _page_scroll() -> Vector2i:
+	if not is_instance_valid(app): return Vector2i(-1, -1)
+	var scroll = app.get("body_scroll")
+	if not is_instance_valid(scroll) or not (scroll is ScrollContainer): return Vector2i(-1, -1)
+	return Vector2i(scroll.scroll_horizontal, scroll.scroll_vertical)
 
 func _compact_dock() -> Control:
 	if not is_instance_valid(app) or not is_instance_valid(app.root_content): return null

@@ -212,7 +212,8 @@ func _cote(model: Dictionary, next: Dictionary) -> int:
 func _affiche(model: Dictionary, next: Dictionary, data: Dictionary) -> Control:
 	var poster := Panel.new()
 	poster.name = "MatchPoster"
-	poster.custom_minimum_size.y = M(300)
+	# 1280 × 720 : affiche plus basse, pour que les tuiles du bas (plan de jeu, causerie) restent au-dessus du pied.
+	poster.custom_minimum_size.y = M(300 if C.density >= .6 else 240)
 	var frame := StyleBoxFlat.new()
 	frame.bg_color = C.BG
 	frame.set_corner_radius_all(M(12))
@@ -274,7 +275,8 @@ func _affiche(model: Dictionary, next: Dictionary, data: Dictionary) -> Control:
 	middle.add_child(_equipe(next.get("home", {}), 0, nous, forme[0] if forme.size() > 0 else [], next))
 	middle.add_child(_centre(next, data))
 	middle.add_child(_equipe(next.get("away", {}), 1, nous, forme[1] if forme.size() > 1 else [], next))
-	stack.add_child(_pastille_meteo(next, nous))
+	# La météo a sa tuile juste en dessous : en 1280 et 1366, l'affiche garde la place pour les noms.
+	if C.density >= .6: stack.add_child(_pastille_meteo(next, nous))
 	return poster
 
 func _equipe(club: Dictionary, side: int, nous: int, forme: Array, next: Dictionary) -> Control:
@@ -492,7 +494,7 @@ func _lien(caption: String, callback: Callable, node_name: String) -> Button:
 	button.flat = true
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.add_theme_font_override("font", C.BODY)
-	button.add_theme_font_size_override("font_size", M(15))
+	button.add_theme_font_size_override("font_size", maxi(12, M(15)))
 	button.add_theme_color_override("font_color", C.GOLD)
 	button.add_theme_color_override("font_hover_color", C.IVORY)
 	button.add_theme_color_override("font_focus_color", C.IVORY)
@@ -830,7 +832,7 @@ class Barres extends Control:
 		resized.connect(queue_redraw)
 	func _draw() -> void:
 		var n := 15
-		var font_size := maxi(10, int(size.y * .22))
+		var font_size := maxi(12, int(size.y * .22))
 		var gap := maxf(2.0, size.x * .008)
 		var w := (size.x - gap * (n - 1)) / n
 		var h := size.y - font_size - 3.0
@@ -1042,7 +1044,7 @@ func _bouton_secondaire(caption: String, callback: Callable, node_name: String) 
 	C.fill(button)
 	button.custom_minimum_size.y = M(34)
 	button.add_theme_font_override("font", C.DISPLAY)
-	button.add_theme_font_size_override("font_size", M(17))
+	button.add_theme_font_size_override("font_size", maxi(12, M(17)))
 	for state in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color(C.IVORY, .08) if state == "hover" else Color.TRANSPARENT

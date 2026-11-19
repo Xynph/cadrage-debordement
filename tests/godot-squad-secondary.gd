@@ -30,6 +30,11 @@ func pure() -> void:
 	check(Squad.primary_caption({"pos":"Pilier gauche","primaryPositions":[1]})=="Pilier gauche","Pas de polyvalence automatique pour un seul côté")
 	check(Squad.primary_caption({"pos":"Troisième ligne","primaryPositions":[6,7]})=="Troisième ligne aile","Les 6–7 sont explicitement des troisièmes lignes aile")
 	check(Squad.primary_caption({"pos":"Numéro 8","primaryPositions":[8]})=="Troisième ligne centre","Le 8 est explicitement un troisième ligne centre")
+	# Liste Effectif : même libellé officiel que la fiche, en version courte quand la colonne Poste est étroite.
+	var Liste = load("res://ui/squad_views.gd")
+	check(Liste.position_label("Numéro 8")=="Troisième ligne centre" and Liste.position_label("Troisième ligne")=="Troisième ligne aile","Effectif : libellés officiels du 8 et des 6–7")
+	check(Liste.position_label("Numéro 8",true)=="3e l. centre" and Liste.position_label("Deuxième ligne",true)=="2e ligne" and Liste.position_label("Demi d’ouverture",true)=="Demi d’ouv.","Effectif compact : libellés courts")
+	check(Liste.position_label("Talonneur",true)=="Talonneur" and Liste.position_label("Arrière",true)=="Arrière","Effectif compact : postes courts inchangés")
 	var labels := {"selection":{"slots":[{"slot":10,"label":"Ailier gauche"},{"slot":13,"label":"Ailier droit"}]}}
 	var tip := Squad.secondary_tooltip({"secondaryPositions":[11,14]},labels)
 	check(tip.contains("AL · Ailier (11 et 14)"),"Infobulle explicite les abréviations et les numéros")
@@ -84,7 +89,8 @@ func run() -> void:
 		var secondary:=item.find_child("RosterSecondaryPositions",true,false) as Label
 		var id:=str(item.get_meta("player_id"))
 		var person:Dictionary=original.squad.filter(func(player:Dictionary):return str(player.id)==id)[0]
-		check(principal.text==Squad.primary_caption(person),"Principal reprend le poste et ses côtés maîtrisés : "+id)
+		check(principal.text==Squad.fitted_position(Squad.primary_caption(person),principal),"Principal reprend le poste et ses côtés maîtrisés : "+id)
+		check(principal.get_theme_font("font").get_string_size(principal.text,HORIZONTAL_ALIGNMENT_LEFT,-1,principal.get_theme_font_size("font_size")).x<=principal.size.x+.5,"Poste principal entier dans sa colonne, sans points de suspension : "+id)
 		check(Squad.secondary_numbers(person).all(func(number:int):return not number in person.primaryPositions),"Principal et secondaires ne se recouvrent pas : "+id)
 		check(secondary.text==Squad.secondary_caption(person),"Autres reprennent seulement les numéros projetés : "+id)
 		check(principal.get_rect().end.x<=secondary.get_rect().position.x and secondary.get_rect().end.x<=568*C.density,"Colonnes contenues avant l’âge : "+id)

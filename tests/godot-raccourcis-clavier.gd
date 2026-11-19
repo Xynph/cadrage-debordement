@@ -144,7 +144,8 @@ func run() -> void:
 		var noms: Array[String] = []
 		for index in onglets.get_tab_count(): noms.append(onglets.get_tab_title(index))
 		check(noms == ["Confort", "Son", "Affichage", "Raccourcis clavier"], "Paramètres : onglets dans l'ordre " + str(noms))
-		check(rappel.get_parent() == onglets.get_tab_control(3), "Paramètres : le rappel est dans le dernier onglet")
+		# Chaque onglet est une zone défilante (la rangée d'onglets reste fixe) : le rappel est dans sa colonne.
+		check(onglets.get_tab_control(3).is_ancestor_of(rappel), "Paramètres : le rappel est dans le dernier onglet")
 		check(onglets.find_children("PreferencesShortcuts", "", true, false).size() == 1, "Paramètres : un seul onglet de raccourcis")
 		check(onglets.get_tab_control(1).find_child("PreferencesMatchSounds", true, false) != null and onglets.get_tab_control(1).find_child("PreferencesMusic*", true, false) == null, "Paramètres : onglet Son sans musique")
 	app._clear_dialogs()
