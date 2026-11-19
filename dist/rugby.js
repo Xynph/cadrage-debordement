@@ -201,7 +201,7 @@ function selectDisciplineIncident(roll=Math.random()){
 // trois fautes depuis le dernier carton ajoutaient 18 % à chaque pénalité suivante, sans oubli : ~2,6 jaunes par équipe.
 // Désormais : plaquage dangereux carton dans ~1 cas sur 5 (rouge pour ~1 sur 3 d'entre eux) ; fautes répétées = au moins
 // trois pénalités sans dix minutes de répit (avertissement de l'arbitre). Un seul tirage, comme avant.
-const CARTONS={dangereux:.22,rouge:.35,base:.006,discipline:.0005,repetees:.05};
+const CARTONS={dangereux:.22,rouge:.35,base:.006,discipline:.0005,repetees:.075};
 function disciplineDecision(l,foul,incident){
  const discipline=unit(l,foul,'discipline');
  const history=l.disciplineHistory?.[foul]||{count:0,recent:0};
