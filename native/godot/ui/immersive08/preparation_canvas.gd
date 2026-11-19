@@ -229,8 +229,16 @@ func _restore() -> void:
 	if focus_id.is_empty(): return
 	var previous := find_child(focus_id, true, false) as BaseButton
 	if previous != null and previous.is_visible_in_tree():
+		# Consigne grisée le temps que le moteur réponde (commande suivante, sauvegarde) : le focus l'attend
+		# au lieu de retomber sur l'onglet, sauf si le joueur l'a posé ailleurs entre-temps.
+		var frames := 0
+		while previous.disabled and match_context != null and match_context._engine_busy() and frames < 240:
+			await tree.process_frame
+			frames += 1
+			if not is_inside_tree() or not is_instance_valid(previous): return
+			if get_viewport().gui_get_focus_owner() != null: return
 		if previous.disabled: previous = find_child("PreparationTab" + TABS[active_tab], true, false) as BaseButton
-		previous.grab_focus()
+		if previous != null: previous.grab_focus()
 
 func _dossier() -> void:
 	var section := _section("PreparationDossier")

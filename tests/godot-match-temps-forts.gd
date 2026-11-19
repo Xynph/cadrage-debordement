@@ -347,7 +347,12 @@ func run() -> void:
 			var scene_l: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 			if scene_l is Dictionary:
 				if not app.waiting: await command("match_talk_continue", {"key": scene_l.key, "phase": scene_l.phase, "skip": true})
-			elif surface() != null and (surface().regie != null or not surface().temps_forts_actifs()): break
+			elif surface() != null and (surface().regie != null or not surface().temps_forts_actifs()):
+				# Comme l'ancien match importé : le direct s'ouvre en pause, le premier temps fort va à son
+				# terme puis l'écran intermédiaire attend (les modes reprennent le match eux-mêmes).
+				if app.model.get("live") is Dictionary and not app.model.live.get("paused", false):
+					await command("pause", {"paused": true})
+				break
 			await settle(2)
 		var view := surface()
 		check(view != null and view.has_method("temps_forts_actifs"), "Le match s'ouvre dans la vue du direct")
