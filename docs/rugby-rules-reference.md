@@ -80,9 +80,46 @@ défensif à cinq points d'écart au maximum. Art. 2034 : égalité départagée
 points des confrontations, différence générale, différence des confrontations,
 différence d'essais des confrontations, différence générale d'essais, points
 marqués, essais marqués, forfaits puis rang de saison précédente. Appliquer
-successivement aux équipes restant concernées. Les prolongations, accession,
-relégation et mesures administratives nécessitent leurs articles propres avant
-implémentation ; une pénalité décisive aléatoire n'est pas une procédure officielle.
+successivement aux équipes restant concernées. Les prolongations et mesures administratives nécessitent leurs articles propres avant
+implémentation. Accession et relégation : voir la section « Classement, phases finales,
+accession et relégation — saison 2026/27 (19/11/2026) » ci-dessous ; une pénalité décisive aléatoire n'est pas une procédure officielle.
+
+## Classement, phases finales, accession et relégation — saison 2026/27 (19/11/2026)
+
+Niveaux de preuve : règlement officiel, communiqué, presse, Wikipédia. Les règlements détaillés et leurs URL sont aussi dans `docs/world-competition-rules-20261109.md`.
+
+| Compétition (id) | Clubs | Qualifiés et phases finales | Barrage | Relégation / montée directe | Bonus | Ce que le jeu applique | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Top 14 (`elite`) | 14 | 6 ; 1–2 en demi directe ; barrages 3–6 et 4–5 | Access Match : le finaliste de Pro D2 reçoit le 13e, match sec | 14e relégué | 3 essais d'écart / défaite ≤ 5 | Format complet (Access Match chez le finaliste de Pro D2) | [LNR Livre 2 2026/27](https://assets.lnr.fr/3/0/4/6/9/8/LIVRE-2_Sportif-et-Comp%C3%A9titions_2627_V2_703069b00e686885076f1b627c8c5441.pdf) — LNR — 2026 — règlement officiel |
+| Pro D2 (`accession`) | 16 | Même format que le Top 14 | Access Match (finaliste) ; 15e joue un barrage chez le finaliste de Nationale le 30/05/2027 | Champion monte ; 16e descend en Nationale | 3 essais d'écart / défaite ≤ 5 | Access Match, barrage 15e/Nationale, montée et descente | Livre 2 (ci-dessus) ; point du 15e : [Dicodusport](https://dicodusport.fr/blog/narbonne-et-nice-sur-un-fil-beziers-et-biarritz-en-danger-les-clubs-concernes-par-la-lutte-pour-le-maintien-en-pro-d2-2026-2027/) — 2026 — presse ; [livret FFR Nationale 2025/26](https://api.www.ffr.fr/wp-content/uploads/2025/08/2025-2026_nationale_livret-de-la-competition.pdf) — FFR — 2025 — officiel, saison précédente |
+| Nationale (`nationale`) | 14 | 1–2 en demi (chez eux) ; barrages 3–6 ; finale en terrain neutre | Le finaliste reçoit le 15e de Pro D2 | Champion monte en Pro D2 ; aucune relégation en Nationale 2 en 2026/27 (16 clubs en 2027/28) | 3 essais d'écart / défaite ≤ 7 | Montée, barrage, pas de descente | [Wikipédia](https://fr.wikipedia.org/wiki/Championnat_de_France_de_rugby_à_XV_de_Nationale_2026-2027) — modifié 14/11/2026 — Wikipédia ; [Rugby Amateur](https://rugbyamateur.fr/nationale-2026-2027-clubs-saison-sans-relegation/) — presse ; [Itsrugby](https://itsrugby.fr/nationale-2026-2027-saison-sans-relegation-reforme-ffr/) — 19/08/2026 — presse |
+| Gallagher PREM (`prem`) | 10 | 4 ; demies 1–4 et 2–3 chez 1 et 2 ; finale | Aucun | Aucune relégation automatique fin 2026/27 (décision RFU du 27/02/2026) | 4 essais marqués / défaite ≤ 7 | Format complet, sans descente | [RFU, règlement PREM 2026/27](https://rfu.widen.net/s/bpmdldld6m/prem-rugby-league-regulations-2026-27) — RFU — 2026 — règlement officiel |
+| Champ Rugby (`champ`) | 14 | 6 ; 1–2 en demi ; quarts 3–6 et 4–5 | Réel : 12e contre 13e en match sec, le perdant contre le 2e de National League 1 | Pas de montée en PREM en 2026/27 ; réel : 14e relégué en National League 1 | 3 essais d'écart / défaite ≤ 7 | Phases finales ; ni montée ni descente | [Règlement RFU §3.2](https://rfu.widen.net/s/x2dmh2dxjn/champ-rugby-league-competition-regulations-2026-27) — officiel ; relégation : [Wikipédia](https://en.wikipedia.org/wiki/2026–27_Champ_Rugby) citant The Times, 23/05/2026 |
+| URC (`urc`) | 16 | 8 ; quarts 1–8, 2–7, 3–6, 4–5 | Aucun | Ligue fermée | 4 essais marqués / défaite ≤ 7 | Format 2025/26 en repli (2026/27 non publié) | [URC 2025/26](https://d19fc3vd0ojo3m.cloudfront.net/irfu/wp-content/uploads/2025/09/26090041/001.-Championship-Rules-25_26__CLEAN.pdf) — URC — 2025 — règlement officiel |
+| Super Rugby Pacific (`srp`, saison 2027) | 10 | 6 ; 3–6 et 4–5 chez 3 et 4 ; demies : 1 contre le moins bien classé des vainqueurs, 2 contre l'autre ; finale chez le mieux classé | Aucun | Ligue fermée ; 17 journées dont 1 exempte | 3 essais d'écart / défaite ≤ 7 (non confirmé pour 2027) | Format 2027 | [Phases finales](https://www.rugby.com.au/news/expanded-season-singleelimination-finals-confirmed-for-2027-super-rugby-pacific-season-2026630) — 01/07/2026 — communiqué ; [départ de la 11e franchise](https://www.rugby.com.au/news/new-zealand-rugby-confirm-moana-pasifikas-2027-super-rugby-pacific-departure-ten-team-competition-2026623) — 23/06/2026 — communiqué |
+| League One D1 (`jlo-d1`) | 12 (18 matchs) | 6 ; 1–2 en demi | 11e contre 2e de D2, 12e contre 1er de D2, deux manches (format 2025/26) | Via barrage | 3 essais d'écart / défaite ≤ 7 | Format officiel 2025/26 reconduit | [League One, 01/07/2026](https://league-one.jp/en/news/197) — communiqué ; [format 2025/26](https://league-one.jp/news/4669) — officiel ; [Rugby Republic](https://rugby-rp.com/2026/08/06/domestic/145178) — 06/08/2026 — presse |
+| League One D2 (`jlo-d2`) | 8 (double aller-retour) | Selon le format D2 | Contre D1 (ci-dessus) ; barrage D2/D3 non joué | Pas de descente dans la carrière (D3 de 7 clubs non jouée) | 3 essais d'écart / défaite ≤ 7 | Montée par barrage ; pas de descente | Mêmes sources que D1 |
+| Champions Cup (`champions`) | 24 (4 poules de 6) | 3 premiers + 4 meilleurs restants en huitièmes ; 4 suivants en Challenge | Aucun | Sans objet | 3 essais d'écart / défaite ≤ 7 | Format complet | [Règlement EPCR 2026/27](https://www.epcrugby.com/champions-cup/champions-cup-rules) — EPCR — 2026 — officiel |
+| Challenge Cup (`challenge`) | 18 (3 poules de 6) | 12 : 3 premiers + 3 meilleurs restants, plus 4 reversés de Champions | Aucun | Sans objet | 3 essais d'écart / défaite ≤ 7 | Format complet | [Règlement EPCR 2026/27](https://www.epcrugby.com/challenge-cup/reglement-ecc) — EPCR — 2026 — officiel |
+
+**Affichage.** Le classement montre ces zones par liseré, symbole et mot : ★ demi-finale directe, ● phase finale, ▲ barrage de montée, ◆ barrage de maintien, ▼ relégation, ○ repêchage possible. Une note « pas de relégation » apparaît quand il n'y en a pas.
+
+### Écarts assumés du jeu
+
+- Champ : la National League 1 n'est pas jouée, donc ni descente ni barrage de maintien, malgré la règle réelle.
+- Japon : la D3 n'est pas jouée, donc pas de descente de D2.
+- Nationale : aucune relégation, conforme à 2026/27.
+- Japon : le format des barrages 2025/26 est reconduit, faute d'annonce 2026/27.
+- Nationale : le barrage avec le 15e de Pro D2 est conservé, même si une réforme pourrait le supprimer.
+
+### Points non confirmés
+
+- Livret FFR Nationale 2026/27 introuvable ; le jeu s'appuie sur la presse et Wikipédia.
+- Convention FFR/LNR du 04/02/2026 ([synthèse](https://api.www.ffr.fr/wp-content/uploads/2026/02/synthese-convention_ffr-lnr-1-1.pdf), non lue) : deux montées et descentes directes sans barrage ; date d'effet (2026/27 ou 2027/28) contestée dans la presse.
+- Barrage du 15e de Pro D2 : Livre 2 non relu sur ce point.
+- Relégation réelle du Champ : règlement RFU §3.2 non relu sur ce point.
+- Playoffs League One D1 : Wikipédia japonais dit l'inverse du communiqué officiel ; le communiqué prime. Matchs de remplacement 2026/27 non annoncés.
+- Bonus du Super Rugby Pacific 2027 et règlement URC 2026/27 non publiés.
 
 ## Actualité des textes à ne pas manquer
 
@@ -105,7 +142,7 @@ implémentation ; une pénalité décisive aléatoire n'est pas une procédure o
 | 2 | `rugby.js` : `advanceRugby` | Arrêt automatique à 40/80, puis éventuelle pénalité gagnante aléatoire. Ajouter ballon mort, exceptions de fin de période et vraie procédure de départage. |
 | 2 | `game.js` : `ranked` | Points puis différence générale directement : manque le premier critère des confrontations et les critères suivants. |
 | 2 | Moteur de phases | Ruck, maul, avantage, hors-jeu, 50:22, marque, drop et essai de pénalité insuffisamment représentés ou absents. Une abstraction doit conserver les conséquences réglementaires observables. |
-| 3 | Compétition / effectifs | Accession-relégation, JIFF, sélections internationales, qualifications et discipline après match restent à documenter et modéliser. Ne pas annoncer ces sujets comme déjà maîtrisés/implémentés. |
+| 3 | Compétition / effectifs | Accession-relégation : documentées le 19/11/2026 (section « Classement, phases finales, accession et relégation »). JIFF, sélections internationales, qualifications et discipline après match restent à documenter et modéliser. Ne pas annoncer ces sujets comme déjà maîtrisés/implémentés. |
 
 Le calcul de base des bonus est cohérent avec le texte vérifié. Les probabilités,
 attributs, météo, fatigue et tactiques sont des choix de simulation : aucune loi
