@@ -33,6 +33,9 @@ function factory() {
   const dow = iso => (new Date(iso + 'T00:00:00Z').getUTCDay() + 6) % 7; // 0 = lundi
   const monday = iso => shift(iso, -dow(iso));
   const dayNumber = iso => Math.floor(Date.parse(iso + 'T00:00:00Z') / DAY);
+  const daysBetweenIso = (a, b) => dayNumber(b) - dayNumber(a);
+  // Protocole commotion (club-support.cjs) : disponibilités, antécédents, avis du spécialiste.
+  const commotionApi = () => typeof nativeSystems !== 'undefined' ? nativeSystems.domain('clubSupport')?.commotion || null : null;
   const shortDate = iso => iso.slice(8, 10) + '/' + iso.slice(5, 7);
   const euros = n => Math.round(n).toLocaleString('fr-FR').replace(/ | /g, ' ');
   const ordinal = n => n + (n === 1 ? 'er' : 'e');
@@ -43,7 +46,7 @@ function factory() {
   const pending = s => typeof CDPreseason !== 'undefined' && !!CDPreseason.pending(s);
   const todayOf = s => { try { return CDWorldCareer.calendarToday(s); } catch { return null; } };
   const STATUS = ['nouveau', 'repondu', 'classe', 'info'];
-  const CAUSES = ['match', 'entrainement'];
+  const CAUSES = ['match', 'entrainement', 'rechute'];
   const fold = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   // Type de blessure (données « blessures ») : parmi ceux dont la durée couvre l'indisponibilité, au poids de la ligne,
   // par empreinte stable du joueur et du jour (aucun tirage dans le flux de hasard du moteur).
@@ -63,7 +66,13 @@ function factory() {
     if (!s || !s.clubs || !date(d)) return;
     const own = s.clubs[s.club], news = Array.isArray(s.news) ? s.news.slice(0, 12).map(String) : [];
     for (const club of Object.values(s.clubs)) for (const p of club?.players || []) {
-      if (!(p.injury > 0)) { if (p.injuryType !== undefined || p.injuryCause !== undefined || p.injuryDate !== undefined) { delete p.injuryType; delete p.injuryCause; delete p.injuryDate; } continue; }
+      if (!(p.injury > 0)) {
+        // Guérison d'un joueur suivi par le médecin (réponse au bulletin) : tirage de rechute par empreinte stable,
+        // au risque fixé par les réponses (données « blessures.rechute »).
+        if (club === own && p.injuryRelapse !== undefined && relapses(p, s, d)) { p.injury = Math.max(1, Number(BL.rechute?.semaines) || 2); p.injuryCause = 'rechute'; p.injuryDate = d; delete p.injuryRelapse; continue; }
+        if (p.injuryType !== undefined || p.injuryCause !== undefined || p.injuryDate !== undefined || p.injuryRelapse !== undefined) { delete p.injuryType; delete p.injuryCause; delete p.injuryDate; delete p.injuryRelapse; }
+        continue;
+      }
       if (p.injuryType !== undefined) continue;
       const kind = injuryKind(p, s, d);
       if (!kind) continue;
@@ -74,8 +83,31 @@ function factory() {
       }
     }
   }
+  // Risque de rechute (en %) d'un blessé : base des données tant qu'aucune réponse ne l'a modifié.
+  const relapseRisk = p => clampN(Number.isFinite(p?.injuryRelapse) ? p.injuryRelapse : (Number(BL.rechute?.base) || 0), 0, 100);
+  const relapses = (p, s, d) => hash('rechute:' + p.id + ':' + (s.season ?? 0) + ':' + d) % 100 < relapseRisk(p);
+  // Effets médicaux réellement applicables à ce joueur (rechute, date de retour) : la même source sert au texte
+  // affiché et à l'application, pour qu'aucune conséquence affichée ne soit détachée de ce qui se passe.
+  function medicalEffects(e, p) {
+    const out = {};
+    if (!p || !(p.injury > 0)) return out;
+    if (Number.isFinite(e.rechute) && e.rechute) { const before = relapseRisk(p), after = clampN(before + e.rechute, 0, 100); if (after !== before) out.rechute = { before, after }; }
+    if (Number.isFinite(e.retour) && e.retour) { const weeks = Math.max(1, p.injury + e.retour); if (weeks !== p.injury) out.retour = { weeks, delta: weeks - p.injury }; }
+    return out;
+  }
+  // Origine de la blessure dans le bulletin : entraînement, rechute, ou rencontre (adversaire nommé, domicile ou
+  // extérieur, notre score d'abord) ; la rencontre est la dernière jouée au plus tard le jour de la blessure.
+  function causeText(p, results, name, d) {
+    if (p.injuryCause === 'entrainement') return "Il s'est blessé à l'entraînement, le " + shortDate(p.injuryDate) + '.';
+    if (p.injuryCause === 'rechute') return "Il a rechuté à l'entraînement, le " + shortDate(p.injuryDate) + ', à son retour de blessure.';
+    if (p.injuryCause !== 'match') return '';
+    const r = [...results].filter(x => !x.date || x.date <= (p.injuryDate || d)).pop();
+    if (!r) return 'Il est sorti touché lors du dernier match.';
+    const opp = name(r.opp) || "l'adversaire";
+    return 'Il est sorti touché ' + (r.home ? 'à domicile contre ' + opp : 'sur le terrain de ' + opp) + ' (' + r.us + '-' + r.them + (r.date ? ', le ' + shortDate(r.date) : '') + ').';
+  }
   const injuryLabel = key => BL.types?.[key]?.libelle || 'Blessure';
-  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation', 'a2r', 'reprise'];
+  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation', 'a2r', 'reprise', 'rechute', 'retour', 'doublon', 'repos_liste', 'specialiste'];
   const ORIENTATION_LABELS = { equilibre: 'répartition proposée', installations: 'priorité aux installations', staff: 'priorité au staff', accueil: 'priorité à l’accueil' };
   const PLAN_LABELS = { repos: 'repos', normal: 'charge allégée', intense: 'charge intense', collective: 'séance collective' };
   const MODE_LABELS = { repos: 'récupération', normal: 'normal', intense: 'intense' };
@@ -145,6 +177,15 @@ function factory() {
     return { classement, forme, prochain: F.next ? F.name(F.opponent(F.next)) : 'notre prochain adversaire' };
   };
 
+  // Bilan de la saison précédente du club du manager (s.jiff.results) -> variables du courrier de la ligue.
+  const quotaLigue = (F, keep) => {
+    const r = (F.s.jiff?.results || []).find(x => x.clubId === F.s.club && x.season === F.s.season - 1);
+    if (!r || !keep(r)) return [];
+    const ligue = { elite: 'le Top 14', accession: 'la Pro D2', prem: 'la Premiership' }[r.league] || 'ton championnat';
+    const eqp = r.league === 'prem';
+    return [{ key: 'quota:' + r.season, vars: { ligue, regle: eqp ? 'EQP' : 'JIFF', moyenne: String(r.average).replace('.', ','), objectif: eqp ? 15 : 16, points: r.deduction, montant: euros(r.fine || 0), prime: euros(r.bonus || 0), feuilles: r.sheets } }];
+  };
+
   // ------------------------------------------------------------------ déclencheurs : [{key, vars, player?}]
   const T = {
     bilan_kine(F) {
@@ -160,12 +201,7 @@ function factory() {
       const hurt = F.players.filter(p => p.injury > 0).sort((a, b) => b.injury - a.injury);
       return fresh.map(p => {
         const label = injuryLabel(p.injuryType), weeks = Number(p.injury) || 1;
-        let cause = '';
-        if (p.injuryCause === 'entrainement') cause = "Il s'est blessé à l'entraînement le " + shortDate(p.injuryDate) + '.';
-        else if (p.injuryCause === 'match') {
-          const r = [...F.results].filter(x => !x.date || x.date <= F.d).pop();
-          cause = r ? 'Il est sorti touché du match contre ' + F.name(r.opp) + ' (' + r.us + '-' + r.them + (r.date ? ', le ' + shortDate(r.date) : '') + ').' : 'Il est sorti touché lors du dernier match.';
-        }
+        const cause = causeText(p, F.results, F.name, F.d);
         let impact = '';
         if (F.next) {
           const days = dayNumber(F.next.date) - dayNumber(F.d), opp = F.name(F.opponent(F.next));
@@ -201,7 +237,11 @@ function factory() {
       if (!(F.s.round >= 3) || F.dow === 5) return [];
       const ratings = F.players.map(p => p.rating).sort((a, b) => a - b), median = ratings[Math.floor(ratings.length / 2)] || 0;
       const played = F.season.length;
-      const list = F.players.filter(p => !F.sheet.has(p.id) && !(p.injury > 0) && (p.age || 0) >= 20 && p.rating >= median - 2 && !p.satisfaction?.promise && (Number(p.dev?.appearances) || 0) <= Math.floor(played / 3))
+      // Matchs manqués en protocole commotion : une absence médicale n'est pas un manque de temps de jeu.
+      const missed = p => { const c = commotionApi(); return c ? c.missedMatches(F.s, p, F.season) : 0; };
+      // Sans absence médicale : règle d'origine ; avec, on juge sur au moins trois matchs où il était disponible.
+      const deficit = p => { const m = missed(p), dispo = played - m; return (m === 0 || dispo >= 3) && (Number(p.dev?.appearances) || 0) <= Math.floor(dispo / 3); };
+      const list = F.players.filter(p => !F.sheet.has(p.id) && !(p.injury > 0) && (p.age || 0) >= 20 && p.rating >= median - 2 && !p.satisfaction?.promise && deficit(p))
         .sort((a, b) => b.rating - a.rating || String(a.id).localeCompare(String(b.id)));
       const p = list[0]; if (!p) return [];
       return [{ key: p.id + ':' + F.s.season + ':' + Math.floor(dayNumber(F.d) / 30), player: p.id, vars: { ...playerVars(p), minutes: Number(p.dev?.minutes) || 0 } }];
@@ -417,6 +457,11 @@ function factory() {
       const v = typeof proprietaireCourrier === 'function' ? proprietaireCourrier() : null;
       return v && v.arrivee === 'oui' ? [{ key: 'arrivee:' + F.s.season, vars: v }] : [];
     },
+    // Bilan du quota de joueurs formés localement (jiff.cjs) : courrier de la ligue au début de la saison suivante, quand la
+    // saison finie a coûté des points (JIFF), une amende (EQP) ou rapporté la prime du fonds JIFF. Rien si le quota est tenu.
+    quota_retrait(F) { return quotaLigue(F, r => r.deduction > 0); },
+    quota_amende(F) { return quotaLigue(F, r => r.fine > 0); },
+    quota_prime(F) { return quotaLigue(F, r => r.bonus > 0 && !(r.deduction > 0)); },
     proprietaire_depart(F) {
       const v = typeof proprietaireCourrier === 'function' ? proprietaireCourrier() : null;
       return v && v.arrivee === 'non' ? [{ key: 'depart:' + F.s.season, vars: v }] : [];
@@ -445,6 +490,20 @@ function factory() {
       const sev = [['rucks', 'ne conteste pas chaque ruck'], ['melee', 'soigne la première poussée en mêlée'], ['horsJeu', 'garde la ligne défensive bien alignée'], ['cartons', 'évite les fautes gratuites']].filter(([k]) => a[k] >= 4);
       const conseil = sev.length ? 'À intégrer dans les consignes : ' + sev.map(x => x[1]).join(', ') + '.' : 'Rien de marquant : joue ton match, les consignes en direct feront le reste.';
       return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire, arbitre: a.nom + ' (' + a.pays + ')', tendances, resume: a.resume, conseil, profil: a.resume } }];
+    },
+    // Veille du match (avec la météo, dont il dépend) : plan de jeu probable de l'adversaire lu par notre staff
+    // (avant-match.cjs planAdverse : même calcul que le choix de l'IA au coup d'envoi, lecture faillible).
+    plan_adverse(F) {
+      const f = F.next;
+      if (!f || (f.date !== F.d && f.date !== shift(F.d, 1)) || F.s.worldMode?.day === undefined || typeof CDWorldCareer === 'undefined' || typeof CDWorldCareer.meteoPrevue !== 'function') return [];
+      const kept = F.s.worldMode.meteo, m = kept && kept.fixtureId === f.id ? kept : CDWorldCareer.meteoPrevue(F.s, f);
+      let plan = null;
+      try { plan = nativeSystems.domain('avantMatch').planAdverse(F.s, f, m.weather); } catch (e) { plan = null; }
+      if (!plan) return [];
+      const l = plan.lecteur || {}, lecteur = l.nom ? l.nom + ', notre ' + l.role + ',' : 'le staff';
+      const confiance = { sure: 'La lecture est nette.', probable: 'C’est le scénario le plus probable.', incertaine: 'La lecture reste incertaine : ne mets pas tout sur cette carte.' }[plan.confiance] || '';
+      const bas = plan.titre.charAt(0).toLowerCase() + plan.titre.slice(1);
+      return [{ key: f.id, club: F.opponent(f), vars: { adversaire: F.name(F.opponent(f)), quand: f.date === F.d ? 'aujourd’hui' : 'demain', lecteur, titre_bas: bas, raison: plan.raison, confiance, conseil: plan.conseil, style: plan.style } }];
     },
     rivaux(F) {
       const g = F.playedOn(shift(F.d, -2)); if (!g || g.fixture.competitionId !== F.lid) return [];
@@ -536,6 +595,34 @@ function factory() {
       const ciel = String(m.libelle || '').trim();
       const vent = m.ventDos ? ' Le vent soufflera dans le dos de ' + camp(pair[m.ventDos[0]]) + ' en première période' + (m.ventDos[0] === nous ? ' : à nous d’en profiter avant la pause.' : ', puis dans le nôtre après la pause.') : '';
       return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire: F.name(F.opponent(F.next)), quand: F.next.date === F.d ? 'aujourd’hui' : 'demain', ciel: ciel.charAt(0).toUpperCase() + ciel.slice(1), ciel_bas: ciel, vent, conseil: m.conseil || '' } }];
+    },
+    // Doublon (doublons.cjs) : le prochain match de championnat du club tombe dans une fenêtre internationale. Un seul
+    // courrier par rencontre, une semaine avant au plus (dès que les convocations sont connues), jamais le jour même.
+    doublon(F, t) {
+      const f = F.next;
+      if (!f || f.phase !== 'league' || f.competitionId !== F.lid || F.d < shift(f.date, -7) || F.d >= f.date || typeof nativeSystems === 'undefined') return [];
+      const v = nativeSystems.domain('doublons').impact(F.s, f, t.seuils || {});
+      return v ? [{ key: f.id, vars: v }] : [];
+    },
+    // Protocole des Bleus (liste de 33) : un courrier de la cellule FFR-LNR par match, pour le joueur le mieux noté qui doit souffler.
+    cellule(F) {
+      const f = F.next;
+      if (!f || typeof nativeSystems === 'undefined' || F.d >= f.date || F.d < shift(f.date, -5) || F.d < monday(f.date)) return [];
+      const v = nativeSystems.domain('doublons').aMenager(F.s, f);
+      if (!v) return [];
+      return [{ key: f.id, player: v.player.id, vars: { ...playerVars(v.player), matchs: v.matchs, repos: v.repos, adversaire: v.opponent, jour: v.jour, rencontre: f.id } }];
+    },
+    // Médecin du club : commotion confirmée (protocole World Rugby, club-support.cjs), une fois par commotion, dans les
+    // jours qui suivent le match. `seuils.exception` : courrier où l'exception à 7 jours peut être demandée.
+    commotion(F, t) {
+      const c = commotionApi(); if (!c) return [];
+      const wanted = !!t.seuils?.exception;
+      return F.players.filter(p => { const prot = c.protocol(p); return prot && prot.date < F.d && F.d <= shift(prot.date, 6) && F.d < prot.retour && (prot.exception === 'possible') === wanted; })
+        .sort((a, b) => String(a.id).localeCompare(String(b.id))).slice(0, 2).map(p => {
+          const prot = c.protocol(p), n = p.commotion.n;
+          const antecedents = prot.antecedent ? 'Il a des antécédents (' + n + ' commotion' + (n > 1 ? 's' : '') + ' en carrière, dont une récente) : 12 jours au minimum, sans exception possible.' : n > 1 ? 'C’est sa ' + n + 'e commotion en carrière.' : 'C’est sa première commotion.';
+          return { key: p.id + ':' + prot.date, player: p.id, vars: { ...playerVars(p), match: shortDate(prot.date), retour: shortDate(prot.retour), jours: daysBetweenIso(prot.date, prot.retour), motif: c.MOTIFS[prot.critere], antecedents, septieme: shortDate(c.shiftDate(prot.date, c.RULES.exception)) } };
+        });
     },
     pelouse(F) {
       if (!F.next || F.next.date !== shift(F.d, 1) || F.next.homeId !== F.s.club) return [];
@@ -661,8 +748,10 @@ function factory() {
     return { sujet: fill(form.sujet, m.vars), corps: fill(form.corps, m.vars), expediteur: fill(t.expediteur, m.vars) };
   }
   const SIGN = n => (n > 0 ? '+' : '−') + Math.abs(n);
-  function effectText(e) {
-    const out = [];
+  function effectText(e, p = null, d = null) {
+    const out = [], med = medicalEffects(e, p);
+    if (med.rechute) out.push('Risque de rechute ' + SIGN(med.rechute.after - med.rechute.before) + ' (' + med.rechute.after + ' %)');
+    if (med.retour) { const n = Math.abs(med.retour.delta); out.push('Retour ' + (med.retour.delta < 0 ? 'avancé' : 'retardé') + (date(d) ? ' au ' + shortDate(shift(d, med.retour.weeks * 7)) : n > 1 ? ' de ' + n + ' semaines' : " d'une semaine")); }
     const gauge = { moral: 'Moral', confiance: 'Confiance de la direction', supporters: 'Supporters', medias: 'Médias', pression: 'Pression', satisfaction: 'Satisfaction', fatigue: 'Charge', condition: 'Condition' };
     for (const [k, l] of Object.entries(gauge)) if (Number.isFinite(e[k]) && e[k]) out.push(l + ' ' + SIGN(e[k]));
     if (e.plan) out.push('Charge individuelle : ' + (PLAN_LABELS[e.plan] || e.plan));
@@ -672,6 +761,8 @@ function factory() {
     if (e.promouvoir) out.push('Premier contrat professionnel');
     if (Number.isFinite(e.caisse) && e.caisse) out.push((e.caisse > 0 ? 'Recette ' : 'Coût ') + euros(Math.abs(e.caisse)) + ' €');
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; out.push('Frais ' + euros(sx.frais || 1500) + ' € ; amende annulée ou portée à ' + euros(sx.alourdie || 7500) + ' €'); }
+    if (e.doublon) out.push({ rotation: 'Cadres fatigués en récupération jusqu’au match', forte: 'Meilleure feuille possible', jeunes: 'Jeunes du centre : premier contrat professionnel' }[e.doublon] || e.doublon);
+    if (e.repos_liste) out.push({ reposer: 'Il sort de la feuille', amenagement: 'Accord possible, pas garanti', ignorer: 'Relation avec la fédération −3' }[e.repos_liste] || e.repos_liste);
     if (e.orientation) out.push('Investissements : ' + (ORIENTATION_LABELS[e.orientation] || e.orientation));
     if (e.pret === 'vendre') out.push('Vente immédiate, prix affecté au remboursement');
     if (e.pret === 'accepter') out.push('Remboursement sur plusieurs saisons');
@@ -681,6 +772,7 @@ function factory() {
     if (e.reprise === 'confier') out.push('Le président vend sans attendre');
     if (e.reprise === 'delai') out.push('Deux semaines de plus');
     if (e.suite) out.push('Suite dans ' + e.suite.jours + ' jours');
+    if (e.specialiste) out.push('Retour possible au 7e jour, sans garantie');
     if (e.contratDS === 'annuler') out.push('Il partira à la fin de son contrat ; prime remboursée');
     if (e.contratDS === 'forcer') out.push('Prolongation au salaire demandé');
     if (e.consigneDS) out.push('Consigne : ' + ({ econome: 'économe', jeunes: 'miser sur les jeunes', equilibre: 'équilibre' }[e.consigneDS] || e.consigneDS));
@@ -691,17 +783,23 @@ function factory() {
     // Match terminé et résultat confirmé (calendrier journalier : S.live reste jusqu'à la clôture de la semaine) : on répond.
     if (!s || (s.live && !(s.live.finished && s.worldMode?.resultConfirmed)) || s.phase === 'ended') return 'Indisponible pendant un match ou après la saison.';
     const e = r.effets || {}, club = s.clubs[s.club], p = m.player ? club.players.find(x => x.id === m.player) : null;
-    const playerEffects = ['satisfaction', 'fatigue', 'condition', 'plan', 'promesse'].some(k => e[k] !== undefined);
+    const playerEffects = ['satisfaction', 'fatigue', 'condition', 'plan', 'promesse', 'rechute', 'retour', 'specialiste'].some(k => e[k] !== undefined);
     if (playerEffects && !p) return 'Ce joueur ne fait plus partie de l’effectif.';
     if ((e.entrainement || e.focus) && s.trained) return 'La séance de la semaine est déjà faite.';
     if (e.focus && s.collectivePrepVersion !== 1) return 'Préparation collective indisponible.';
     if (Number.isFinite(e.caisse) && e.caisse < 0 && (club.cash ?? 0) < -e.caisse) return 'Trésorerie insuffisante.';
+    if (e.doublon || e.repos_liste) {
+      if (typeof nativeSystems === 'undefined') return 'Indisponible.';
+      const raison = nativeSystems.domain('doublons').refus(s, m, e.doublon || e.repos_liste);
+      if (raison) return raison;
+    }
     if (e.orientation && !(typeof investCourrier === 'function' && investCourrier())) return 'La répartition de cette saison est déjà arrêtée.';
     if (e.pret === 'vendre') { const raison = typeof pretVenteRefus === 'function' ? pretVenteRefus() : 'Vente impossible.'; if (raison) return raison; }
     if (e.pret === 'accepter' && !(typeof pretCourrier === 'function' && pretCourrier())) return 'Le président a déjà tranché.';
     if (e.a2r) { if (typeof a2rRefus !== 'function') return 'Décision de l’A2R indisponible.'; const raison = a2rRefus(e.a2r); if (raison) return raison; }
     if (e.reprise) { if (typeof repriseRefus !== 'function') return 'Le président a déjà tranché.'; const raison = repriseRefus(e.reprise); if (raison) return raison; }
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; if ((club.cash ?? 0) < (sx.frais || 1500) + (sx.alourdie || 7500)) return 'Trésorerie insuffisante pour un appel.'; }
+    // Promesse : makePlayingPromise la refuse tant que le match de la semaine n'est pas clos (S.live), même confirmé.
     if (e.promesse) {
       // makePlayingPromise refuse tant que le match reste ouvert (résultat confirmé, journée pas encore close).
       if (s.live) return 'Promesse possible une fois la journée close.';
@@ -711,6 +809,11 @@ function factory() {
       if (typeof dsContratsRefus !== 'function') return 'Le directeur sportif ne gère pas les contrats.';
       const raison = dsContratsRefus(e.contratDS || e.consigneDS, m.player);
       if (raison) return raison;
+    }
+    if (e.specialiste) {
+      const prot = p ? commotionApi()?.protocol(p) : null;
+      if (!prot) return 'Il a terminé son protocole commotion.';
+      if (prot.exception !== 'possible') return prot.exception === 'non' ? 'L’exception à 7 jours n’est pas ouverte : 12 jours de repos.' : 'Le spécialiste a déjà rendu son avis.';
     }
     if (e.promouvoir) {
       const y = (s.development?.academy || []).find(x => x.id === m.player);
@@ -731,7 +834,7 @@ function factory() {
         const chosen = (t.reponses || []).find(x => x.id === m.choice);
         return { id: m.id, type: m.type, date: m.date, categorie: t.categorie || 'moments', categorieLabel: cat.label || 'Club', expediteur: r.expediteur, sujet: r.sujet, corps: r.corps,
           arret: !!t.arret, ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, club: m.club ?? null, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
-          reponses: m.status === 'nouveau' ? (t.reponses || []).map(x => { const raison = unavailable(S, m, x); return { id: x.id, libelle: x.libelle, effets: effectText(x.effets || {}), disponible: !raison, raison, ouvrir: !!x.ouvrir }; }) : [] };
+          reponses: m.status === 'nouveau' ? (t.reponses || []).map(x => { const raison = unavailable(S, m, x); return { id: x.id, libelle: x.libelle, effets: effectText(x.effets || {}, m.player ? S.clubs[S.club]?.players?.find(y => y.id === m.player) : null, todayOf(S) || m.date), disponible: !raison, raison, ouvrir: !!x.ouvrir }; }) : [] };
       }),
       reponses, attente: st.mails.filter(m => m.status === 'nouveau').length,
       blessures: Object.fromEntries(Object.entries(BL.types || {}).map(([k, t]) => [k, t.libelle])),
@@ -759,16 +862,25 @@ function factory() {
     if (p && Number.isFinite(e.fatigue) && typeof ensurePhysicalLoad === 'function') { const l = ensurePhysicalLoad(p); l.fatigue = clampN(Math.round(l.fatigue + e.fatigue), 0, 100); }
     if (p && Number.isFinite(e.condition)) p.condition = clampN(p.condition + e.condition, 0, 100);
     if (p && e.plan && typeof ensurePhysicalLoad === 'function') ensurePhysicalLoad(p).plan = e.plan;
+    const med = medicalEffects(e, p);
+    if (med.rechute) p.injuryRelapse = med.rechute.after;
+    if (med.retour) p.injury = med.retour.weeks;
     if (e.entrainement) s.training = e.entrainement;
     if (e.focus) s.collectiveFocus = e.focus;
     if (e.promesse) check(makePlayingPromise(p.id, e.promesse) === true, 'promesse refusée');
     if (e.promouvoir) check(promoteYouth(m.player) === true, 'promotion refusée');
     if (e.contratDS) check(dsContratsAction(e.contratDS, m.player) === true, 'décision refusée');
     if (e.consigneDS) check(dsContratsAction(e.consigneDS, m.player) === true, 'consigne refusée');
+    if (e.doublon || e.repos_liste) m.verdict = String(nativeSystems.domain('doublons').agir(s, m, e.doublon || e.repos_liste)).slice(0, 190);
     if (e.orientation) check(investOrienter(e.orientation) === true, 'répartition refusée');
     if (e.pret) check(pretRepondre(e.pret) === true, 'réponse au prêt refusée');
     if (e.a2r) { const r = a2rAction(e.a2r); check(!!r && r.ok, r?.raison || 'réponse refusée'); if (r.verdict) m.verdict = r.verdict; }
     if (e.reprise) { const r = repriseAction(e.reprise); check(!!r && r.ok, r?.raison || 'réponse refusée'); if (r.verdict) m.verdict = r.verdict; }
+    if (e.specialiste) {
+      const avis = commotionApi()?.specialistReview(s, p);
+      check(!!avis, 'avis du spécialiste indisponible');
+      m.verdict = avis.favorable ? 'Avis favorable du spécialiste indépendant : il pourra rejouer dès le ' + shortDate(avis.retour) + ' (7e jour).' : 'Avis défavorable du spécialiste indépendant : il observera les 12 jours, retour possible le ' + shortDate(avis.retour) + '.';
+    }
     if (Number.isFinite(e.caisse) && e.caisse) ledgerEntry('Courrier · ' + render(m).sujet.slice(0, 60), e.caisse);
     if (e.appel) {
       const sx = TYPES.discipline?.seuils || {}, favorable = hash(m.id + ':' + s.club + ':appel') % 2 === 0;
@@ -806,7 +918,7 @@ function factory() {
     m.status = 'repondu';
     m.choice = r.id;
     validate(S);
-    return { clubMailReply: { id: m.id, choice: r.id, resultat: m.verdict ? r.resultat + ' ' + m.verdict : r.resultat, ouvrir: !!r.ouvrir, ecran: TYPES[m.type].ecran || null, joueur: m.player } };
+    return { clubMailReply: { id: m.id, choice: r.id, resultat: m.verdict ? r.resultat + ' ' + m.verdict : r.resultat, ouvrir: !!r.ouvrir, ecran: r.ecran || TYPES[m.type].ecran || null, joueur: m.player } };
   }
 
   // Après chaque commande : une réception par jour de calendrier (carrière Monde journalière, saison ouverte).
@@ -815,6 +927,9 @@ function factory() {
     const d = todayOf(S);
     typeInjuries(S, d);
     if (!date(d) || S.clubMail?.last === d) return false;
+    // Nouveau jour : le médecin recale d'abord les disponibilités des joueurs en protocole commotion (tous les clubs),
+    // puis le courrier du jour est reçu (la réception elle-même n'écrit que la boîte).
+    if (!(S.live && !S.live.finished)) commotionApi()?.syncAt(S, d);
     receive(S, d);
     return true;
   }
@@ -836,6 +951,7 @@ function factory() {
       check(p.injuryType === undefined || (text(p.injuryType, 40) && BL.types?.[p.injuryType] !== undefined), 'type de blessure invalide');
       check(p.injuryCause === undefined || CAUSES.includes(p.injuryCause), 'cause de blessure invalide');
       check(p.injuryDate === undefined || date(p.injuryDate), 'date de blessure invalide');
+      check(p.injuryRelapse === undefined || int(p.injuryRelapse, 0, 100), 'risque de rechute invalide');
     }
     for (const su of st.suites) check(obj(su) && TYPES[su.type] !== undefined && date(su.date) && text(su.key, 200) && (su.player === null || su.player === undefined || text(su.player, 180)) && obj(su.vars), 'suite invalide');
     for (const [k, v] of Object.entries(st.sent)) check(text(k, 300) && date(v), 'mémoire invalide');
@@ -843,7 +959,7 @@ function factory() {
   }
 
   // `recevoir(s, d)` : réception sur un état donné (tests : une réception n'écrit que la boîte).
-  return { project, validate, execute, observe, stops, installHooks() { return true; }, recevoir: (s, d) => receive(s, d), blessures: { typer: typeInjuries, type: injuryKind } };
+  return { project, validate, execute, observe, stops, installHooks() { return true; }, recevoir: (s, d) => receive(s, d), blessures: { typer: typeInjuries, type: injuryKind, risque: relapseRisk, effets: effectText, cause: causeText } };
 }
 
 module.exports = { files, commands, factory, prelude, DATA };

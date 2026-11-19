@@ -115,7 +115,10 @@ func lot5() -> void:
 	for cas: Array in [["Victoire 27-13 face à Vannes.", "resultat-victoire"], ["Victoire avec le bonus offensif à Pau.", "resultat-bonus-offensif"], ["Défaite en finale face à Toulouse.", "resultat-finale-perdue"],
 			["Match nul 9-9 à Brive.", "resultat-nul"], ["Le club est sacré champion : le titre est à vous !", "resultat-titre-trophee-leve"], ["Le club est relégué en Pro D2.", "resultat-relegation"], ["Point sur la trésorerie.", "mail-finances"], ["Bonne nouvelle du jour.", "mail-pitch"]]:
 		verifier(Reception.photo_resultat(cas[0]) == cas[1], "courrier « %s » : %s (%s)" % [cas[0], Reception.photo_resultat(cas[0]), cas[1]])
-	verifier(Between.occasion_fin({"finale": true, "camp": 0}, "victoire") == "finale" and Between.occasion_fin({"essais": [5, 1], "camp": 0}, "victoire") == "bonus" and Between.occasion_fin({"essais": [5, 1], "camp": 1}, "defaite") == "championnat", "fin de match : finale, bonus, championnat")
+	verifier(Between.occasion_fin({"finale": true, "camp": 0}, "victoire") == "finale" and Between.occasion_fin({"bonus": {"offensif": {"acquis": true}}, "camp": 0}, "victoire") == "bonus" and Between.occasion_fin({"essais": [5, 1], "camp": 1}, "defaite") == "championnat", "fin de match : finale, bonus, championnat")
+	# Règle du championnat (fin.bonus du moteur) : 3 essais d'écart sans le bonus en Premiership (4 essais marqués
+	# exigés), ou en élimination directe (aucun bonus en jeu), ce n'est pas une victoire bonifiée.
+	verifier(Between.occasion_fin({"essais": [3, 0], "camp": 0, "bonus": {"offensif": {"acquis": false}}}, "victoire") == "championnat" and Between.occasion_fin({"essais": [5, 1], "camp": 0, "bonus": null}, "victoire") == "championnat", "fin de match : bonus selon la règle du championnat")
 	var club := {"id": 7, "slug": "club-7", "name": "Club 7", "abbr": "C7", "color": "#8c2f39"}
 	var planche: Control = Tenue.planche(club, 300.0)
 	verifier(planche != null and planche.get_child_count() == 4, "tenue complète : 4 pièces")

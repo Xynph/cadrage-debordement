@@ -92,6 +92,8 @@ function factory(){
  }
  // Point d'entrée du monde pour chaque rencontre de l'IA. `full` joue le moteur complet.
  function play(s,f,full){
+  // Joueurs en protocole commotion : disponibilité recalée au jour de la rencontre (club-support.cjs).
+  if(world(s)&&f?.date)commotion()?.syncAt(s,f.date,[f.homeId,f.awayId]);
   if(!active(s)||!world(s))return full();
   // Changement prévu dans les Paramètres : appliqué au début de la journée suivante.
   if(s.leagueDetail.pending)applyPending(s);
@@ -194,7 +196,10 @@ function factory(){
    p.condition=Math.round(clamp((Number(p.condition)||80)-.3*m*(1+(70-stamina)*.009),12,100));
    if(Math.random()<(p.condition<55?.07:.025)*m/80)p.injury=1+Math.floor(roll()*4);
   }
+  return minutes;
  }
+ // Protocole commotion (club-support.cjs) : mêmes règles que le moteur complet, tirages sans aléa du moteur.
+ const commotion=()=>typeof nativeSystems!=='undefined'?nativeSystems.domain('clubSupport')?.commotion||null:null;
  function simulate(s,f){
   // Météo connue avant les feuilles, comme au moteur complet (le style et la feuille de l'IA en dépendent) ; tirée d'une
   // empreinte de la rencontre, sans prendre de tirage au flux du match (scores inchangés pour une même feuille).
@@ -211,10 +216,13 @@ function factory(){
   const ecart=typeof levelGapChampionnat==='function'?levelGapChampionnat(gap+trap,f.competitionId):gap+trap;
   // Complaisance du favori (RELACHEMENT, dist/tactical-plans.js, comme le moteur complet) : au-delà de 3 points d'écart,
   // jour sans possible, tirage déterministe par rencontre ; le favori perd alors la moitié de l'écart (après compression).
+  // Poids du relâchement ramené à 1/1,2 (18/11/2026) : à plein, le résultat rapide ajoutait 5 points de surprises à 15 points
+  // d'écart (9,9 % contre 4,9 % sans), quand le moteur complet n'en gagne que 0,6 (6,3 → 6,9 %, 3 000 matchs). À 1/1,2 il
+  // en laisse 6,8 % (moteur complet 6,9 %) et la pente par point reste à 0,209, dans la courbe commune (match-rating-curve).
   let ecartJour=ecart;
   if(typeof RELACHEMENT!=='undefined'&&typeof relachementProbabilite==='function'){
    const d=Math.abs(gap),fav=gap>0?0:1,r=relachementProbabilite(d,relachementProMoyen(teams[fav].starters));
-   if(r>0&&relachementTire('relachement:'+f.id+':'+pair.join('-')+':'+s.season+':'+s.round,r))ecartJour+=(fav===0?-1:1)*relachementPoints(d);
+   if(r>0&&relachementTire('relachement:'+f.id+':'+pair.join('-')+':'+s.season+':'+s.round,r))ecartJour+=(fav===0?-1:1)*relachementPoints(d)/1.2;
   }
   const [,,poidsEcart,poidsTerrain]=volume(f.competitionId);
   const edge=clamp((ecartJour*poidsEcart+home*poidsTerrain)/curve.diviseur,-curve.borne,curve.borne);
@@ -225,7 +233,7 @@ function factory(){
   let score=[points(0),points(1)];
   // Super Rugby Pacific : pas de nul en saison régulière (le moteur complet joue le point en or).
   if(score[0]===score[1]&&f.competitionId==='srp'){const side=edge>=0?0:1;stats[side].goalAttempts++;stats[side].goals++;score=[points(0),points(1)];}
-  pair.forEach((id,i)=>playerEffects(s,s.clubs[id],teams[i]));
+  pair.forEach((id,i)=>{const minutes=playerEffects(s,s.clubs[id],teams[i]);commotion()?.quickMatch(s,f,id,minutes);});
   return {pair,score,tries,stats,weather,duration:80};
  }
  function applyPending(s){

@@ -2,7 +2,7 @@
 
 // Called in the native VM. Source facts are immutable and synthetic origins
 // use the original catalogue club, never the player's current employer.
-module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) {
+module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}, angleterre = null) {
   const nations = {
     FRA:['France','fr'], ENG:['Angleterre','gb-eng'], SCO:['Écosse','gb-sct'],
     WAL:['Pays de Galles','gb-wls'], IRE:['Irlande','ie'], ITA:['Italie','it'],
@@ -65,7 +65,68 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) 
     return anchor;
   }
 
+  // Éligibilité anglaise (EQP) des joueurs non documentés des clubs anglais (eqp_eligibilite.json, 18/11/2026) :
+  // `angleterre` = {regles, homes: id -> club d'origine}. Sans elle, origine = pays du club (100 % d'EQP en Premiership,
+  // contre ~70 % en vrai). Naissance tirée selon la part d'EQP visée par le club, puis, pour un joueur né ailleurs et pas
+  // encore sélectionné par sa fédération, ascendance anglaise ou 60 mois de résidence (règlement 8 de World Rugby).
+  const regles = angleterre?.regles ?? null, homes = angleterre?.homes ?? {};
+  const pick = (table, roll) => { const total = table.reduce((t, [, w]) => t + w, 0); let r = roll % total; for (const [v, w] of table) { if (r < w) return v; r -= w; } return table[0][0]; };
+  // Probabilité qu'un joueur né hors d'Angleterre soit quand même EQP (moyenne exacte sur les tables).
+  const eqpEtranger = regles ? (() => {
+    const nes = regles.naissances_etrangeres, total = nes.reduce((t, [, w]) => t + w, 0), res = regles.residence;
+    const resTotal = res.annees_en_angleterre.reduce((t, [, w]) => t + w, 0);
+    const pRes = res.annees_en_angleterre.filter(([a]) => a * 12 >= res.mois_requis).reduce((t, [, w]) => t + w, 0) / resTotal;
+    const pAsc = nes.reduce((t, [n, w]) => t + w * (regles.ascendance[n] ?? regles.ascendance.autre), 0) / total;
+    return (1 - regles.deja_selectionne) * (1 - (1 - pAsc) * (1 - pRes));
+  })() : 0;
+  const memoAngleterre = new Map();
+  const documente = id => { const r = source(id); return !!(r.seniorNation || r.eligibilityNations?.length || byFlag.get(r.flagCode)); };
+  // Club par club : les joueurs documentés comptent tels quels ; parmi les autres, rangés par tirage, les premiers sont
+  // nés en Angleterre, en nombre calculé pour que l'effectif atteigne la cible en moyenne (les nés ailleurs peuvent
+  // encore être EQP par ascendance ou résidence). Nombre exact par club : pas d'effectif à 45 % pour une cible à 57 %.
+  let nesAngleterre = null;
+  function clubsAngleterre() {
+    if (nesAngleterre) return nesAngleterre;
+    nesAngleterre = new Set();
+    const parClub = new Map();
+    for (const id of Object.keys(homes)) {
+      if (origins[id] !== 'ENG' || typeof regles.cibles[String(homes[id])] !== 'number') continue;
+      const k = String(homes[id]); if (!parClub.has(k)) parClub.set(k, { doc: 0, docEqp: 0, autres: [] });
+      const c = parClub.get(k);
+      if (documente(id)) { c.doc++; if (eligibleDocumente(id, 'ENG')) c.docEqp++; } else c.autres.push(id);
+    }
+    for (const [k, c] of parClub) {
+      const n = c.doc + c.autres.length, m = c.autres.length; if (!m) continue;
+      const besoin = Math.max(0, Math.min(m, regles.cibles[k] * n - c.docEqp));
+      const nes = Math.round(Math.max(0, Math.min(m, (besoin - eqpEtranger * m) / (1 - eqpEtranger))));
+      c.autres.sort((a, b) => hashId(a + ':eqp-naissance') - hashId(b + ':eqp-naissance') || (a < b ? -1 : 1));
+      for (const id of c.autres.slice(0, nes)) nesAngleterre.add(id);
+    }
+    return nesAngleterre;
+  }
+  function angleterreProfil(id) {
+    if (!regles || origins[id] !== 'ENG' || !Object.hasOwn(homes, id) || documente(id)) return null;
+    const cible = regles.cibles[String(homes[id])];
+    if (typeof cible !== 'number') return null;
+    if (memoAngleterre.has(id)) return memoAngleterre.get(id);
+    const h = k => hashId(id + ':eqp-' + k);
+    let profil;
+    if (clubsAngleterre().has(id)) profil = { naissance: 'ENG', eqp: true };
+    else {
+      const naissance = pick(regles.naissances_etrangeres, h('pays'));
+      const selectionne = h('selection') % 10000 < regles.deja_selectionne * 10000;
+      const ascendance = h('ascendance') % 10000 < (regles.ascendance[naissance] ?? regles.ascendance.autre) * 10000;
+      const annees = pick(regles.residence.annees_en_angleterre, h('residence'));
+      const residence = annees * 12 >= regles.residence.mois_requis;
+      profil = { naissance, eqp: !selectionne && (ascendance || residence), ascendance, annees };
+    }
+    memoAngleterre.set(id, profil);
+    return profil;
+  }
+
   function estimate(id) {
+    const profil = angleterreProfil(id);
+    if (profil) return profil.naissance;
     const anchorYouth = youthAnchor(id);
     if (anchorYouth && heritage[anchorYouth]) return youthHeritage(id, anchorYouth);
     const generated = /^(?:depth-|youth-|p)(\d+)-/.exec(id);
@@ -73,6 +134,15 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) 
     const hash = hashId(id + ':rugby-origin');
     if (Object.hasOwn(nations, anchor) && (Object.hasOwn(origins, id) || hash % 100 < 78)) return anchor;
     return variations[(hash >>> 8) % variations.length];
+  }
+
+  // Éligibilité des seuls joueurs documentés (null si rien n'est documenté).
+  function eligibleDocumente(id, nation) {
+    const record = source(id);
+    if (record.seniorNation) return nation === record.seniorNation;
+    if (record.eligibilityNations?.length) return record.eligibilityNations.includes(nation);
+    const documented = byFlag.get(record.flagCode);
+    return documented ? nation === documented : null;
   }
 
   function eligible(id, nation) {
@@ -83,6 +153,8 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) 
     if (documented) return nation === documented;
     const anchorYouth = youthAnchor(id);
     if (anchorYouth && heritage[anchorYouth]) return nation === anchorYouth || nation === youthHeritage(id, anchorYouth);
+    const profil = angleterreProfil(id);
+    if (profil) return nation === profil.naissance || nation === 'ENG' && profil.eqp;
     return !Object.hasOwn(origins, id) && nation === estimate(id);
   }
 
@@ -112,5 +184,5 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) 
     return (record.flagCode && byFlag.get(record.flagCode)) || estimate(id);
   }
 
-  return { eligible, project, source, nations, origin };
+  return { eligible, project, source, nations, origin, angleterreProfil };
 };

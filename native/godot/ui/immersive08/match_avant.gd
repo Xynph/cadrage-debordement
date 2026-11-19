@@ -2,7 +2,7 @@ extends PanelContainer
 ## Écran Match avant le coup d'envoi (maquette « Retenue » validée par Léo le 17/11/2026) : bandeau (date, « Déléguer
 ## le match », « Coup d'envoi »), affiche photo (écussons face à face, classement, forme, heure, bilan des
 ## confrontations, météo et vent) et six tuiles : forces en présence, météo du match, feuille, confrontations
-## directes, joueurs à surveiller, mot de Gabi. Toutes les valeurs viennent du modèle natif : `next` (affiche et
+## directes, l'adversaire (plan de jeu probable lu par le staff dès la veille, joueurs à surveiller), mot de Gabi. Toutes les valeurs viennent du modèle natif : `next` (affiche et
 ## météo annoncée la veille), `selection` et `squad` (feuille), `clubLife.avantMatch` (native/engine/avant-match.cjs :
 ## forme, forces, confrontations, joueurs, clés de Gabi). Rien n'est inventé : une donnée absente devient une phrase.
 ## Tailles données en pixels d'un écran 1080p (`M`), à l'échelle de la fenêtre comme le reste de l'interface.
@@ -882,10 +882,59 @@ func _confrontations(data: Dictionary) -> Control:
 		column.add_child(row)
 	return _tile_of(column)
 
+## Plan de jeu probable de l'adversaire lu par notre staff la veille (avant-match.cjs planAdverse) : style, raison
+## principale, fiabilité de la lecture et action pour le contrer. Avec un plan, la tuile garde deux joueurs à surveiller.
+const CONFIANCE := {"sure": ["LECTURE NETTE", C.MINT], "probable": ["PROBABLE", C.GOLD], "incertaine": ["INCERTAIN", Color("c9b79a")]}
+
+func _plan_adverse(column: VBoxContainer, plan: Dictionary) -> void:
+	var bloc := VBoxContainer.new()
+	bloc.name = "PlanAdverse"
+	bloc.add_theme_constant_override("separation", M(2))
+	var lecteur: Dictionary = plan.get("lecteur", {}) if plan.get("lecteur") is Dictionary else {}
+	var source := "Lecture de %s (%s)" % [str(lecteur.nom), str(lecteur.get("role", "staff"))] if lecteur.get("nom") is String else "Lecture du staff"
+	bloc.tooltip_text = "%s, d’après leurs derniers matchs, la météo annoncée et notre feuille actuelle. Une lecture peut se tromper." % source
+	var haut := HBoxContainer.new()
+	haut.add_theme_constant_override("separation", M(8))
+	var etiquette := texte("PLAN PROBABLE", 13, Color(C.IVORY, .7), false, 600)
+	etiquette.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	haut.add_child(etiquette)
+	var niveau: Array = CONFIANCE.get(str(plan.get("confiance", "probable")), CONFIANCE.probable)
+	var puce := PanelContainer.new()
+	puce.name = "PlanAdverseConfiance"
+	puce.set_meta("confiance", str(plan.get("confiance", "")))
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(niveau[1], .16)
+	style.border_color = Color(niveau[1], .6)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(M(4))
+	style.content_margin_left = M(6)
+	style.content_margin_right = M(6)
+	puce.add_theme_stylebox_override("panel", style)
+	puce.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	puce.add_child(texte(niveau[0], 11, niveau[1], false, 700))
+	haut.add_child(puce)
+	bloc.add_child(haut)
+	var titre := texte(str(plan.get("titre", "")), 21, C.GOLD, true, 700)
+	titre.name = "PlanAdverseTitre"
+	titre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	titre.clip_text = true
+	bloc.add_child(titre)
+	var raison := str(plan.get("raison", ""))
+	var pourquoi := texte(raison.substr(0, 1).to_upper() + raison.substr(1), 14, C.IVORY, false, 500)
+	pourquoi.name = "PlanAdverseRaison"
+	pourquoi.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	pourquoi.clip_text = true
+	pourquoi.tooltip_text = raison
+	bloc.add_child(pourquoi)
+	column.add_child(bloc)
+
 func _joueurs(data: Dictionary) -> Control:
-	var column := _tuile("TuileJoueurs", "JOUEURS À SURVEILLER")
+	var plan: Dictionary = data.get("planAdverse") if data.get("planAdverse") is Dictionary else {}
+	var column := _tuile("TuileJoueurs", "L’ADVERSAIRE" if not plan.is_empty() else "JOUEURS À SURVEILLER")
+	if not plan.is_empty(): _plan_adverse(column, plan)
 	var surveiller: Dictionary = data.get("aSurveiller", {})
 	var joueurs: Array = surveiller.get("joueurs", [])
+	if not plan.is_empty(): joueurs = joueurs.slice(0, 2)
 	if str(surveiller.get("source", "")) == "probable":
 		column.add_child(lignes("Pas encore de statistiques cette saison : leur XV probable.", 14, C.MUTED, 2))
 	if joueurs.is_empty():
@@ -929,9 +978,17 @@ func _joueurs(data: Dictionary) -> Control:
 			row.add_child(chiffre)
 		column.add_child(row)
 	_pousse(column)
-	column.add_child(_lien("Dossier adverse →", func():
+	var liens := HBoxContainer.new()
+	liens.add_theme_constant_override("separation", M(14))
+	if not plan.is_empty():
+		var route := "Plan de jeu" if str(plan.get("action", "")) == "consignes" else "Composition"
+		var contre := _lien(str(plan.get("libelle", "Ouvrir la composition")) + " →", func(): app._navigate(route), "MatchCounterPlan")
+		contre.tooltip_text = "Conseil de Gabi : " + str(plan.get("conseil", ""))
+		liens.add_child(contre)
+	liens.add_child(_lien("Dossier adverse →", func():
 		if app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.tab = 0
 		app._navigate("Préparation"), "MatchOpenPreparation"))
+	column.add_child(liens)
 	return _tile_of(column)
 
 func _gabi(data: Dictionary) -> Control:
