@@ -1,0 +1,221 @@
+::group::tests/godot-preparation-tabs.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PREPARATION_INITIAL (1280, 720) / (1280.0, 720.0)
+PREPARATION_GEOMETRY {"canvas":"(1280.0, 720.0)","section":"[P: (136.7908, 174.4083), S: (1098.235, 471.9284)]","tab":"Dossier","window":"(1280, 720)","workspace":"[P: (136.7908, 48.85387), S: (1127.547, 616.5358)]"}
+PREPARATION_GEOMETRY {"canvas":"(1280.0, 720.0)","section":"[P: (136.7908, 174.4083), S: (1098.235, 471.9284)]","tab":"Consignes","window":"(1280, 720)","workspace":"[P: (136.7908, 48.85387), S: (1127.547, 616.5358)]"}
+PREPARATION_GEOMETRY {"canvas":"(1280.0, 720.0)","section":"[P: (136.7908, 81.09743), S: (1098.235, 600.9026)]","tab":"Entrainement","window":"(1280, 720)","workspace":"[P: (136.7908, 48.85387), S: (1127.547, 616.5358)]"}
+PREPARATION_GEOMETRY {"canvas":"(1600.0, 900.0)","section":"[P: (172.9931, 221.0605), S: (1388.888, 596.8263)]","tab":"Dossier","window":"(1600, 900)","workspace":"[P: (172.9931, 62.27753), S: (1406.681, 780.9404)]"}
+PREPARATION_GEOMETRY {"canvas":"(1600.0, 900.0)","section":"[P: (172.9931, 221.0605), S: (1388.888, 596.8263)]","tab":"Consignes","window":"(1600, 900)","workspace":"[P: (172.9931, 62.27753), S: (1406.681, 780.9404)]"}
+PREPARATION_GEOMETRY {"canvas":"(1600.0, 900.0)","section":"[P: (172.9931, 100.8303), S: (1388.888, 759.9341)]","tab":"Entrainement","window":"(1600, 900)","workspace":"[P: (172.9931, 62.27753), S: (1406.681, 780.9404)]"}
+PREPARATION_GEOMETRY {"canvas":"(1920.0, 1080.0)","section":"[P: (208.9971, 267.4666), S: (1677.948, 721.0402)]","tab":"Dossier","window":"(1920, 1080)","workspace":"[P: (208.9971, 75.63705), S: (1686.906, 945.4633)]"}
+PREPARATION_GEOMETRY {"canvas":"(1920.0, 1080.0)","section":"[P: (208.9971, 267.4666), S: (1677.948, 721.0402)]","tab":"Consignes","window":"(1920, 1080)","workspace":"[P: (208.9971, 75.63705), S: (1686.906, 945.4633)]"}
+PREPARATION_GEOMETRY {"canvas":"(1920.0, 1080.0)","section":"[P: (208.9971, 122.4126), S: (1677.948, 918.0946)]","tab":"Entrainement","window":"(1920, 1080)","workspace":"[P: (208.9971, 75.63705), S: (1686.906, 945.4633)]"}
+Préparation : 290 contrôles ; 2 échec(s)
+FAIL: Vrai dossier ouvert à la souris
+FAIL: Commande : onglet et focus conservés après rebuild
+
+Preuves Préparation : /tmp/tmp.uuhHkD3Axm/suite.KLHKlb/cd-preparation-tabs-NLhG36
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PREPARATION_INITIAL (1280, 720) / (1280.0, 720.0)
+PREPARATION_GEOMETRY {"canvas":"(1280.0, 720.0)","section":"[P: (136.7908, 174.4083), S: (1098.235, 471.9284)]","tab":"Dossier","window":"(1280, 720)","workspace":"[P: (136.7908, 48.85387), S: (1127.547, 616.5358)]"}
+PREPARATION_GEOMETRY {"canvas":"(1280.0, 720.0)","section":"[P: (136.7908, 174.4083), S: (1098.235, 471.9284)]","tab":"Consignes","window":"(1280, 720)","workspace":"[P: (136.7908, 48.85387), S: (1127.547, 616.5358)]"}
+PREPARATION_GEOMETRY {"canvas":"(1280.0, 720.0)","section":"[P: (136.7908, 81.09743), S: (1098.235, 600.9026)]","tab":"Entrainement","window":"(1280, 720)","workspace":"[P: (136.7908, 48.85387), S: (1127.547, 616.5358)]"}
+PREPARATION_GEOMETRY {"canvas":"(1600.0, 900.0)","section":"[P: (172.9931, 221.0605), S: (1388.888, 596.8263)]","tab":"Dossier","window":"(1600, 900)","workspace":"[P: (172.9931, 62.27753), S: (1406.681, 780.9404)]"}
+PREPARATION_GEOMETRY {"canvas":"(1600.0, 900.0)","section":"[P: (172.9931, 221.0605), S: (1388.888, 596.8263)]","tab":"Consignes","window":"(1600, 900)","workspace":"[P: (172.9931, 62.27753), S: (1406.681, 780.9404)]"}
+PREPARATION_GEOMETRY {"canvas":"(1600.0, 900.0)","section":"[P: (172.9931, 100.8303), S: (1388.888, 759.9341)]","tab":"Entrainement","window":"(1600, 900)","workspace":"[P: (172.9931, 62.27753), S: (1406.681, 780.9404)]"}
+PREPARATION_GEOMETRY {"canvas":"(1920.0, 1080.0)","section":"[P: (208.9971, 267.4666), S: (1677.948, 721.0402)]","tab":"Dossier","window":"(1920, 1080)","workspace":"[P: (208.9971, 75.63705), S: (1686.906, 945.4633)]"}
+PREPARATION_GEOMETRY {"canvas":"(1920.0, 1080.0)","section":"[P: (208.9971, 267.4666), S: (1677.948, 721.0402)]","tab":"Consignes","window":"(1920, 1080)","workspace":"[P: (208.9971, 75.63705), S: (1686.906, 945.4633)]"}
+PREPARATION_GEOMETRY {"canvas":"(1920.0, 1080.0)","section":"[P: (208.9971, 122.4126), S: (1677.948, 918.0946)]","tab":"Entrainement","window":"(1920, 1080)","workspace":"[P: (208.9971, 75.63705), S: (1686.906, 945.4633)]"}
+Préparation : 290 contrôles ; 2 échec(s)
+FAIL: Vrai dossier ouvert à la souris
+FAIL: Commande : onglet et focus conservés après rebuild
+
+
+1 !== 0
+
+    at Object.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-preparation-tabs.cjs:15:43)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-preparation-tabs.cjs user_s=53.78 system_s=5.34 wall_s=58.57 cpu_pct=100% max_rss_kb=1783388
+::error file=tests/godot-preparation-tabs.cjs::Godot : ECHEC (1), durée 59 s, limite 300s
+::endgroup::
+::group::tests/godot-match-temps-forts.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (inactif) : 15 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts — cadrage : 1014 images, hauteur visible de 17.0 à 37.8 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Temps forts (actif) : 175 contrôles ; 35 échec(s)
+FAIL: En pause, aucune minute n'est demandée
+FAIL: 1280×720 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 1280×720 : Notre XV en vue Terrain, tuile principale
+FAIL: 1280×720 : quinze joueurs dans le mini-terrain (15)
+FAIL: 1280×720 : anneaux d'énergie lisibles ((0.0, 0.0))
+FAIL: 1280×720 : Mon XV en tableau, tuile principale (onglet Tableau)
+FAIL: 1280×720 : frise du match visible (79 px)
+FAIL: 1280×720 : carte de Gabi à l'écran
+FAIL: 1280×720 : faits marquants
+FAIL: 1280×720 : dernier fait en bandeau au-dessus du terrain, sans chevauchement ([P: (460.0, 141.0), S: (500.0, 27.0)] / [P: (460.0, 172.0), S: (500.0, 247.0)])
+FAIL: 1280×720 : la page tient dans l'écran intermédiaire ([P: (18.0, 131.0), S: (1244.0, 486.0)] dans [P: (18.0, 131.0), S: (1244.0, 468.0)], minimum 490)
+FAIL: 1280×720 : marge sous la bande du bas ([P: (18.0, 564.0), S: (1244.0, 58.0)], bas de l'écran intermédiaire 599)
+FAIL: 1280×720 : le dernier fait marquant est montré
+FAIL: 1280×720 : anneau MatchBetweenPossession (—)
+FAIL: 1280×720 : anneau MatchBetweenOccupation (—)
+FAIL: 1280×720 : carte Changement sous Notre XV
+FAIL: 1280×720 : carte de Gabi en largeur, en bas
+FAIL: 1920×1080 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 1920×1080 : Notre XV en vue Terrain, tuile principale
+FAIL: 1920×1080 : quinze joueurs dans le mini-terrain (15)
+FAIL: 1920×1080 : anneaux d'énergie lisibles ((0.0, 0.0))
+FAIL: 1920×1080 : Mon XV en tableau, tuile principale (onglet Tableau)
+FAIL: 1920×1080 : frise du match visible (113 px)
+FAIL: 1920×1080 : carte de Gabi à l'écran
+FAIL: 1920×1080 : faits marquants
+FAIL: 1920×1080 : terrain 2D en grand au centre ((420.0, 225.0))
+FAIL: 1920×1080 : Notre XV à gauche, le duel à droite
+FAIL: 1920×1080 : dernier fait en bandeau au-dessus du terrain, sans chevauchement ([P: (18.0, 147.0), S: (108.0, 40.0)] / [P: (18.0, 147.0), S: (420.0, 225.0)])
+FAIL: 1920×1080 : marge sous la bande du bas ([P: (18.0, 147.0), S: (1511.0, 84.0)], bas de l'écran intermédiaire 959)
+FAIL: 1920×1080 : le dernier fait marquant est montré
+FAIL: 1920×1080 : anneau MatchBetweenPossession (—)
+FAIL: 1920×1080 : anneau MatchBetweenOccupation (—)
+FAIL: 1920×1080 : carte Changement sous Notre XV
+FAIL: 1920×1080 : carte de Gabi en largeur, en bas
+FAIL: Chaque pas simule une minute
+
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts — cadrage : 1014 images, hauteur visible de 17.0 à 37.8 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Temps forts (actif) : 175 contrôles ; 35 échec(s)
+FAIL: En pause, aucune minute n'est demandée
+FAIL: 1280×720 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 1280×720 : Notre XV en vue Terrain, tuile principale
+FAIL: 1280×720 : quinze joueurs dans le mini-terrain (15)
+FAIL: 1280×720 : anneaux d'énergie lisibles ((0.0, 0.0))
+FAIL: 1280×720 : Mon XV en tableau, tuile principale (onglet Tableau)
+FAIL: 1280×720 : frise du match visible (79 px)
+FAIL: 1280×720 : carte de Gabi à l'écran
+FAIL: 1280×720 : faits marquants
+FAIL: 1280×720 : dernier fait en bandeau au-dessus du terrain, sans chevauchement ([P: (460.0, 141.0), S: (500.0, 27.0)] / [P: (460.0, 172.0), S: (500.0, 247.0)])
+FAIL: 1280×720 : la page tient dans l'écran intermédiaire ([P: (18.0, 131.0), S: (1244.0, 486.0)] dans [P: (18.0, 131.0), S: (1244.0, 468.0)], minimum 490)
+FAIL: 1280×720 : marge sous la bande du bas ([P: (18.0, 564.0), S: (1244.0, 58.0)], bas de l'écran intermédiaire 599)
+FAIL: 1280×720 : le dernier fait marquant est montré
+FAIL: 1280×720 : anneau MatchBetweenPossession (—)
+FAIL: 1280×720 : anneau MatchBetweenOccupation (—)
+FAIL: 1280×720 : carte Changement sous Notre XV
+FAIL: 1280×720 : carte de Gabi en largeur, en bas
+FAIL: 1920×1080 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 1920×1080 : Notre XV en vue Terrain, tuile principale
+FAIL: 1920×1080 : quinze joueurs dans le mini-terrain (15)
+FAIL: 1920×1080 : anneaux d'énergie lisibles ((0.0, 0.0))
+FAIL: 1920×1080 : Mon XV en tableau, tuile principale (onglet Tableau)
+FAIL: 1920×1080 : frise du match visible (113 px)
+FAIL: 1920×1080 : carte de Gabi à l'écran
+FAIL: 1920×1080 : faits marquants
+FAIL: 1920×1080 : terrain 2D en grand au centre ((420.0, 225.0))
+FAIL: 1920×1080 : Notre XV à gauche, le duel à droite
+FAIL: 1920×1080 : dernier fait en bandeau au-dessus du terrain, sans chevauchement ([P: (18.0, 147.0), S: (108.0, 40.0)] / [P: (18.0, 147.0), S: (420.0, 225.0)])
+FAIL: 1920×1080 : marge sous la bande du bas ([P: (18.0, 147.0), S: (1511.0, 84.0)], bas de l'écran intermédiaire 959)
+FAIL: 1920×1080 : le dernier fait marquant est montré
+FAIL: 1920×1080 : anneau MatchBetweenPossession (—)
+FAIL: 1920×1080 : anneau MatchBetweenOccupation (—)
+FAIL: 1920×1080 : carte Changement sous Notre XV
+FAIL: 1920×1080 : carte de Gabi en largeur, en bas
+FAIL: Chaque pas simule une minute
+
+
+1 !== 0
+
+    at run (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.cjs:57:44)
+    at Object.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.cjs:68:13)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-match-temps-forts.cjs user_s=91.57 system_s=11.29 wall_s=100.91 cpu_pct=101% max_rss_kb=2616360
+::error file=tests/godot-match-temps-forts.cjs::Godot : ECHEC (1), durée 101 s, limite 600s
+::endgroup::
+::group::tests/godot-guide-voice.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+COACH VOIX LOCALE : 202 contrôles ; 0 échec(s)
+TAP version 13
+# Subtest: Gabi : couverture explicite, WAV exacts et cycle audio réel
+ok 1 - Gabi : couverture explicite, WAV exacts et cycle audio réel
+  ---
+  duration_ms: 2666.369815
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2671.796567
+CD_CPU_PROFILE suite=tests/godot-guide-voice.cjs user_s=0.42 system_s=0.04 wall_s=2.69 cpu_pct=17% max_rss_kb=117040
+PASS tests/godot-guide-voice.cjs (3 s)
+::endgroup::
+::group::tests/godot-centre-720.cjs
+Centre (Godot) : {"controles":25,"failures":[],"mesures":{"1280x720":{"ecart_saison_px":18.6,"hauteur":720,"pastilles":3,"vide_bouton_px":24.4},"1920x1080":{"ecart_saison_px":27.4,"hauteur":1080,"pastilles":3,"vide_bouton_px":37.3}}}
+Captures : /tmp/tmp.uuhHkD3Axm/suite.oLX5kx/rl27-centre-captures-a0C8aT
+TAP version 13
+# Subtest: Centre en 1280 × 720 : pastilles entières, Saison junior sous les tuiles
+ok 1 - Centre en 1280 × 720 : pastilles entières, Saison junior sous les tuiles
+  ---
+  duration_ms: 18904.42069
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18909.050885
+CD_CPU_PROFILE suite=tests/godot-centre-720.cjs user_s=21.78 system_s=1.79 wall_s=19.22 cpu_pct=122% max_rss_kb=1353656
+PASS tests/godot-centre-720.cjs (19 s)
+::endgroup::
