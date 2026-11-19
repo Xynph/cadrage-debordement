@@ -124,12 +124,12 @@ Colonnes dans l'ordre, priorité d'affichage (1 = retirée en dernier) :
 | Vue | Colonnes ajoutées / remplaçantes (ordre) | Tri par défaut |
 |---|---|---|
 | Condition | Joueur, Poste, Condition, Fatigue (valeur + « plus bas = mieux »), Charge prévue, Absence (type, gravité, retour), Minutes, Matchs | Condition croissant |
-| Contrats | Joueur, Poste, Salaire/sem., Fin de contrat, Prolongation (Disponible / Refusée / Impossible), Marge | Fin de contrat croissant |
+| Contrats | Joueur, Poste, Salaire/sem., Fin de contrat, Prolongation (Disponible / Refusée / Impossible), Marge, **Marché** (« — » · « Sur le marché » · « Offre reçue », mot + icône ; GDD `vente-joueurs.md`) | Fin de contrat croissant |
 | Développement | Joueur, Âge, Niv., Pot. estimé, Marge, Minutes, Moy., Forme | Marge décroissant |
 
 ### 6.4 Panneau du joueur choisi
 
-Contenu (dans l'ordre) : photo, Prénom NOM, poste, âge ; niveau + potentiel ; statut (mot) ; condition (% + barre) et fatigue (n/100) ; **3 points forts** (attribut + valeur, mêmes clés que la carte « Points forts » de la fiche 08 ; « — » si indisponible) ; contrat (salaire/sem., fin) ; **Ouvrir la fiche** (principal) ; **Prolonger** (visible seulement si la prolongation est possible) ; Comparer.
+Contenu (dans l'ordre) : photo, Prénom NOM, poste, âge ; niveau + potentiel ; statut (mot) ; condition (% + barre) et fatigue (n/100) ; **3 points forts** (attribut + valeur, mêmes clés que la carte « Points forts » de la fiche 08 ; « — » si indisponible) ; contrat (salaire/sem., fin) ; **Ouvrir la fiche** (principal) ; **Prolonger** (visible seulement si la prolongation est possible) ; **Proposer aux autres clubs** / **Retirer du marché** (secondaire ; grisé + raison si bloqué) ; Comparer.
 Retirés : bloc « Équilibre du groupe » (Avants 21 / Arrières 19 / U21 11 : en infobulle du compteur « Aptes ») et le doublon « Disponibilité » + « Contrat & statut » en trois cartes (fusionnés en un seul bloc).
 
 ### 6.5 Sources de données
@@ -155,7 +155,8 @@ L'interface ne modifie aucune donnée : « Prolonger » et « Ouvrir la fiche »
 | Comparer | bouton, bouton de ligne | Maj+Espace sur une ligne (ajoute/retire, max 2) ; Entrée sur « Comparer (2/2) » | écran de comparaison |
 | Changer de vue | onglets | Ctrl+Tab / Ctrl+Maj+Tab (cycle), flèches ← → sur la rangée d'onglets | colonnes remplacées, tri de la vue appliqué |
 | Prolonger | bouton | Tab, Entrée | négociation (fenêtre) |
-| Clic droit sur une ligne | menu : Ouvrir la fiche · Comparer · Prolonger | touche Menu / Maj+F10 | motif « menu rapide » (manquant n°4) |
+| Mettre en vente / retirer | bouton du panneau | Tab, Entrée | commande `sale_list` ; colonne « Marché » et message au pied (« {Nom} proposé aux autres clubs. Les offres arrivent à la fin de la semaine. ») |
+| Clic droit sur une ligne | menu : Ouvrir la fiche · Comparer · Prolonger · Proposer aux autres clubs | touche Menu / Maj+F10 | motif « menu rapide » (manquant n°4) |
 
 Aucun raccourci à une lettre pendant la saisie (K5). Le focus d'un tableau et celui d'une ligne sont distingués (K2) : voir §9.
 

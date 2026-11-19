@@ -103,7 +103,7 @@ Retiré : le niveau répété dans la carte « Évaluation du joueur » (la mêm
 |---|---|
 | **Disponibilité** | Condition % + barre + repère 80 % ; fatigue n/100 avec « (plus bas = mieux) » ; plan de charge (mot) ; satisfaction n/100 ; si blessé : type, gravité en mots, retour prévu ; bouton « Régler la charge individuelle » |
 | **Points forts / à travailler** | 3 meilleurs et 3 plus faibles attributs du poste, valeur numérique ; bouton « Voir les 36 attributs » (remplace la carte « Évaluation » qui ne montrait que le niveau) |
-| **Contrat** | salaire/sem., fin de contrat (année + « fin de saison » si échéance en cours), prolongation (Disponible / Refusée / Impossible, raison) ; bouton « Proposer une prolongation » (principal si échéance ≤ 1 saison, sinon secondaire) |
+| **Contrat** | salaire/sem., fin de contrat (année + « fin de saison » si échéance en cours), prolongation (Disponible / Refusée / Impossible, raison) ; bouton « Proposer une prolongation » (principal si échéance ≤ 1 saison, sinon secondaire) ; **vente** (GDD `docs/gdd/vente-joueurs.md`) : valeur estimée (€) ; bouton secondaire « Proposer aux autres clubs » / « Retirer du marché » ; si listé, ligne « Sur le marché · offre de {club} : {montant} → Voir l'offre » ou « Sur le marché · pas encore d'offre » ; bloqué : bouton grisé + raison en clair (« Espoir : vendable à partir de 20 ans », « Nouvelle recrue : attends trois journées ») |
 | **Postes** | poste principal et autres postes en mots ; note au poste de chaque ; schéma des 15 postes en petit, avec les mots (le schéma illustre, ne porte pas l'information seul) |
 | **Saison** | apparitions, minutes, moyenne, forme des 5 derniers matchs (note) ; « Aucun match joué cette saison. » si 0 |
 
@@ -141,6 +141,7 @@ L'interface ne possède aucune de ces données.
 | Action | Événement | Payload |
 |---|---|---|
 | Proposer une prolongation | `ContractNegotiationRequested` | `{playerId}` |
+| Proposer aux autres clubs / Retirer du marché | commande `sale_list` | `{playerId, listed}` |
 | Régler la charge | `LoadPlanDialogRequested` | `{playerId}` |
 | Ma note | `PlayerNoteSaved` | `{playerId, text}` |
 | Comparer | `CompareToggled` | `{playerId}` |

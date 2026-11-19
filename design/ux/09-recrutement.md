@@ -32,7 +32,7 @@ Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (
 ```
 Carrière Monde
   └── Recrutement                         ← cet écran
-        ├── Onglets : Besoins du club (défaut) · Recherche · Joueurs suivis · Rapports
+        ├── Onglets : Besoins du club (défaut) · Recherche · Joueurs suivis · Rapports · Offres reçues (n)
         ├── Comparaison (2 pistes)        ← plein écran
         ├── Mission du recruteur          ← fenêtre
         └── Négociation                   ← fenêtre, depuis « Approcher » ou une prolongation
@@ -143,6 +143,10 @@ Puis : synthèse du contrat (prime, salaire demandé, durée proposée : « 1 à
 | Joueurs suivis (n) | pistes étoilées | « Tu ne suis personne. Étoile une piste pour la retrouver ici. » + « Voir les besoins » |
 | Rapports (n) | rapports datés, filtre par poste | « Aucun rapport. Lance une mission pour en recevoir en n jours. » + « Lancer une mission » |
 
+| Offres reçues (n) | GDD `docs/gdd/vente-joueurs.md`. Haut : « Sur le marché : n joueurs » (liste courte, « Retirer » par ligne). Puis une carte par offre : Prénom NOM, poste, âge · **{Club acheteur}** ({championnat}) · **{montant}** (valeur estimée {valeur}) · « Valable jusqu'à la fin de la semaine prochaine » / « Dernière semaine » · « Revient au budget de transferts : {50 %} » (si #1001). Actions : **Accepter la vente** (fenêtre de confirmation, focus sur Annuler), **Demander plus** (+5 / +10 / +15 %, une fois ; ensuite « Offre déjà relevée »), **Refuser**. Garde : « Accepter » grisé + raison (« Tu dois garder au moins 37 joueurs professionnels », « Il te faut deux joueurs à ce poste ») | « Aucune offre pour l'instant. Propose un joueur aux autres clubs depuis l'Effectif ou sa fiche ; les offres arrivent à la fin de chaque semaine. » + « Ouvrir l'Effectif » |
+
+**Confirmation de vente** (fenêtre W1) : « Vendre {Prénom NOM} à {Club} pour {montant} ? » · lignes : « Caisse : +{montant} » · « Budget de transferts : +{retour} » (si #1001) · « Effectif après vente : {n} joueurs » · « Tu garderas {k} JIFF » (si le joueur est JIFF) · « S'il est dans ta feuille, il en sera retiré. » Boutons : **Vendre** / Annuler (focus). Réponses écrites après action : « {Nom} rejoint {Club} pour {montant}. » · « {Club} relève son offre à {montant}. La vente reste à confirmer. » · « {Club} retire son offre après ta demande de {montant}. » · « Offre refusée. »
+
 Les deux compteurs « 0 profils suivis » / « 0 rapports conservés » du bandeau actuel passent dans les libellés d'onglet.
 
 ### 6.6 Négociation (fenêtre)
@@ -165,6 +169,7 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 | Suivre | `ProspectFollowToggled` | `{playerId}` |
 | Envoyer l'offre | `OfferSubmitted` | `{playerId, premium, wage, years}` |
 | Comparer | `CompareToggled` | `{playerId}` |
+| Accepter / Demander plus / Refuser une offre | commande `sale_answer` | `{offerId, action: accept\|counter\|decline, percent?, confirmed?}` |
 
 ## 7. Actions et raccourcis
 
