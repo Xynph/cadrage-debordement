@@ -69,7 +69,15 @@ class PositionPitch extends Control:
 
 static func build(app:Control,player:Dictionary) -> Control:
 	var page:=Control.new();page.name="ImmersivePlayerFull";page.custom_minimum_size=Vector2(2248,1236)*C.density;C.fill(page,true)
-	var hero:=D.panel(page,Rect2(0,0,2248,350),"","","","FullPlayerHero")
+	# Petite fenêtre (1280×720) : rangées resserrées pour que la fiche tienne sans masquer le bas (bouton Contrat compris).
+	var tight := C.density <= .56
+	var hero_height := 330 if tight else 350
+	var tabs_y := hero_height+12 if tight else 365
+	var top := tabs_y+56 if tight else 430
+	var row_height := 504 if tight else 520
+	var row2_y := top+row_height+8 if tight else 966
+	var row2_height := 252 if tight else 270
+	var hero:=D.panel(page,Rect2(0,0,2248,hero_height),"","","","FullPlayerHero")
 	var portrait: TextureRect
 	if not str(player.get("id","")).is_empty():
 		portrait = G.portrait(int(player.get("portraitIndex",0)),0,player)
@@ -78,7 +86,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 		portrait.tooltip_text = "Portrait du joueur"
 	hero.add_child(portrait)
 	# Le portrait occupe aussi la marge à gauche des onglets.
-	D.place(portrait,Rect2(1,1,469,429))
+	D.place(portrait,Rect2(1,1,469,top-1))
 	hero.tooltip_text = portrait.tooltip_text
 	var shirt_number: Variant = player.get("shirtNumber")
 	var number := G.n(shirt_number) if shirt_number != null else "—"
@@ -138,45 +146,48 @@ static func build(app:Control,player:Dictionary) -> Control:
 	for i in 6:
 		var id := "FullPlayerTab"+str(i)
 		var caption: String = ["Vue d’ensemble","Attributs","Performances","Contrat","Développement","Repères"][i]
-		var tab := ClubUI.tab(page,Rect2(500+i*230,365,218,44),caption,active==i,func():
+		var tab := ClubUI.tab(page,Rect2(500+i*230,tabs_y,218,44),caption,active==i,func():
 			app.management_ui.immersive_player_tab=i
 			app._render()
 			ClubUI.focus(app,id),id)
 		tab.toggle_mode = true
 		tab.set_pressed_no_signal(active==i)
 		tab.add_theme_stylebox_override("pressed",tab.get_theme_stylebox("normal"))
-	D.button(page,Rect2(1900,365,348,44),"Retour à l’effectif",func():app.set_meta("immersive08_full_player",false);app._navigate("Effectif"),false,"",true,app.accent,"PlayerBackToSquad")
+	D.button(page,Rect2(1900,tabs_y,348,44),"Retour à l’effectif",func():app.set_meta("immersive08_full_player",false);app._navigate("Effectif"),false,"",true,app.accent,"PlayerBackToSquad")
 	match active:
 		0:
-			_position(D.panel(page,Rect2(0,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
-			_evaluation(D.panel(page,Rect2(496,430,1174,520),"ÉVALUATION DU JOUEUR","star"),app,player,not detailed.is_empty())
-			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
-			_usage(D.panel(page,Rect2(0,966,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
-			_contract(D.panel(page,Rect2(1686,966,562,270),"CONTRAT","money"),app,player)
+			_position(D.panel(page,Rect2(0,top,480,row_height),"POSTE PRINCIPAL","tactic"),app,player)
+			_evaluation(D.panel(page,Rect2(496,top,1174,row_height),"ÉVALUATION DU JOUEUR","star"),app,player,not detailed.is_empty())
+			_health(D.panel(page,Rect2(1686,top,562,row_height),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
+			_usage(D.panel(page,Rect2(0,row2_y,1670,row2_height),"PERFORMANCES DE LA SAISON","trophy"),app,player)
+			_contract(D.panel(page,Rect2(1686,row2_y,562,row2_height),"CONTRAT","money"),app,player)
 		1:
 			if detailed.is_empty():
-				_evaluation(D.panel(page,Rect2(0,430,1174,520),"ÉVALUATION DU JOUEUR","star"),app,player,false)
-				_position(D.panel(page,Rect2(1190,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
-				_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
+				_evaluation(D.panel(page,Rect2(0,top,1174,row_height),"ÉVALUATION DU JOUEUR","star"),app,player,false)
+				_position(D.panel(page,Rect2(1190,top,480,row_height),"POSTE PRINCIPAL","tactic"),app,player)
+				_health(D.panel(page,Rect2(1686,top,562,row_height),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
 			else:
-				_detailed_attributes(D.panel(page,Rect2(0,430,2248,590),"36 ATTRIBUTS DÉTAILLÉS","star","","PlayerDetailedAttributes"),detailed)
+				_detailed_attributes(D.panel(page,Rect2(0,top,2248,590),"36 ATTRIBUTS DÉTAILLÉS","star","","PlayerDetailedAttributes"),detailed)
 		2:
-			_usage(D.panel(page,Rect2(0,430,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
-			_history(D.panel(page,Rect2(0,716,1670,420),"HISTORIQUE DES MATCHS","calendar","","PlayerMatchHistory"),app,player)
-			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
-			_selection(D.panel(page,Rect2(1686,966,562,270),"SÉLECTION","flag","","PlayerSelectionNotes"),app,player)
+			_usage(D.panel(page,Rect2(0,top,1670,row2_height),"PERFORMANCES DE LA SAISON","trophy"),app,player)
+			_history(D.panel(page,Rect2(0,top+row2_height+16,1670,420),"HISTORIQUE DES MATCHS","calendar","","PlayerMatchHistory"),app,player)
+			_health(D.panel(page,Rect2(1686,top,562,row_height),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
+			_selection(D.panel(page,Rect2(1686,row2_y,562,row2_height),"SÉLECTION","flag","","PlayerSelectionNotes"),app,player)
 		3:
-			_contract(D.panel(page,Rect2(0,430,850,270),"CONTRAT ET NÉGOCIATION","money"),app,player)
-			_health(D.panel(page,Rect2(866,430,562,520),"CHARGE INDIVIDUELLE","heart"),app,player,injury,recovering)
-			D.photo(page,"hospitality",Rect2(1444,430,804,520))
+			_contract(D.panel(page,Rect2(0,top,850,row2_height),"CONTRAT ET NÉGOCIATION","money"),app,player)
+			_health(D.panel(page,Rect2(866,top,562,row_height),"CHARGE INDIVIDUELLE","heart"),app,player,injury,recovering)
+			D.photo(page,"hospitality",Rect2(1444,top,804,row_height))
 		4:
-			_development(D.panel(page,Rect2(0,430,1670,550),"DÉVELOPPEMENT ET PROGRESSION","school"),app,player)
+			_development(D.panel(page,Rect2(0,top,1670,550),"DÉVELOPPEMENT ET PROGRESSION","school"),app,player)
 			var poste := BanqueImages.poste(str(player.get("pos", "")))
-			D.photo(page,poste if not poste.is_empty() else "academy-player",Rect2(1686,430,562,550))
+			D.photo(page,poste if not poste.is_empty() else "academy-player",Rect2(1686,top,562,550))
 		5:
-			_contexts(D.panel(page,Rect2(0,430,1498,806),"LE JOUEUR DANS LE GROUPE","people","","FullPlayerContexts"),app,player)
-			_sources(D.panel(page,Rect2(1514,430,734,520),"REPÈRES DE DÉPART","info","","FullPlayerSources"),app,player)
-			D.photo(page,"scouting",Rect2(1514,966,734,270))
+			_contexts(D.panel(page,Rect2(0,top,1498,806),"LE JOUEUR DANS LE GROUPE","people","","FullPlayerContexts"),app,player)
+			_sources(D.panel(page,Rect2(1514,top,734,row_height),"REPÈRES DE DÉPART","info","","FullPlayerSources"),app,player)
+			D.photo(page,"scouting",Rect2(1514,row2_y,734,row2_height))
+	if tight:
+		var page_end: int = [row2_y+row2_height,top+(row_height if detailed.is_empty() else 590),row2_y+row2_height,top+row_height,top+550,top+806][active]
+		page.custom_minimum_size.y = (page_end+4)*C.density
 	return page
 
 static func _slanted_badge(parent: Control, area: Rect2, fill: Color, border: Color) -> Control:
@@ -293,7 +304,10 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 		D.text(card,478,145,"—",64,C.MUTED,700,124,HORIZONTAL_ALIGNMENT_CENTER).name = "FullPlayerNoteAverage"
 	var matchs := int(notes.get("matchs",0))
 	# Deux lignes (le libellé entier ne tient pas sur 184 px) : « MOYENNE SAISON » puis « N matchs ».
-	var legende := D.text(card,416,182,"MOYENNE SAISON",20,C.MUTED,600,184,HORIZONTAL_ALIGNMENT_LEFT,true)
+	# Petite fenêtre (1280×720) : la police ne descend pas sous 12 px, le libellé entier déborderait : forme courte.
+	var libelle := "MOYENNE SAISON"
+	if C.BODY.get_string_size(libelle,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(20))).x > C.px(184): libelle = "MOY. SAISON"
+	var legende := D.text(card,416,182,libelle,20,C.MUTED,600,184,HORIZONTAL_ALIGNMENT_LEFT,true)
 	legende.name = "FullPlayerNoteMatches"
 	legende.tooltip_text = "Moyenne de la saison en cours sur %d match%s (notes de 1 à 10, 6,5 au coup d’envoi)." % [matchs,"s" if matchs>1 else ""]
 	if matchs>0:

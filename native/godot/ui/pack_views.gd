@@ -143,7 +143,7 @@ static func _section(parent: Container, caption: String, title: String, art: Str
 	inset.add_child(content)
 	var heading := C.h(14)
 	content.add_child(heading)
-	heading.add_child(C.fill(Editorial.sans_heading(title, 44)))
+	heading.add_child(C.fill(C.label(title, 52, C.IVORY, true, 700)))
 	if not caption.is_empty():
 		var badge := PanelContainer.new()
 		Editorial.surface(badge, Editorial.PANEL, Editorial.BRASS, 5)
@@ -165,7 +165,7 @@ static func _catalogue(app: Control, parent: Container, selected: String, compat
 	var facts := C.h(18)
 	content.add_child(facts)
 	var database: Dictionary = app.pack_manager.database()
-	_fact(facts, database.get("clubCount", 0), "Clubs")
+	_fact(facts, app.pack_manager.playable_club_count(app.pack_manager.scope), "Clubs jouables")
 	Editorial.divider(facts)
 	_fact(facts, database.get("startingPlayerCount", database.get("playerCount", 0)), "Joueurs")
 	content.add_child(C.rule())
@@ -186,7 +186,7 @@ static func _installed_card(app: Control, parent: Container, pack: Dictionary, s
 	var content := _section(parent, "Pack actif" if active else "Pack installé", str(pack.get("name", "Pack personnalisé")), "maquette-reality-pack", picture_height)
 	if featured:
 		content.add_child(C.wrap("Les identités et les médias fournis par ton pack, dans le monde commun de Rugby Legacy 27.", 21, C.IVORY))
-		_inventory(content, pack)
+		_inventory(content, pack, app.pack_manager.playable_club_count(app.pack_manager.scope))
 		content.add_child(C.rule())
 	else:
 		var counts: Dictionary = pack.get("counts", {})
@@ -222,12 +222,12 @@ static func _create_with_pack(app: Control, id: String) -> void:
 	else:
 		app._command("pack_select", {"id":id, "scope":"creation", "mode":app.pack_manager.mode("creation")}, "Création")
 
-static func _inventory(parent: VBoxContainer, pack: Dictionary) -> void:
+static func _inventory(parent: VBoxContainer, pack: Dictionary, playable_clubs: int = -1) -> void:
 	var counts: Dictionary = pack.get("counts", {})
 	parent.add_child(C.rule())
 	var tiles := C.h(12)
 	parent.add_child(tiles)
-	_fact(tiles, counts.get("clubs", 0), "Clubs")
+	_fact(tiles, playable_clubs if playable_clubs > 0 else counts.get("clubs", 0), "Clubs jouables")
 	Editorial.divider(tiles)
 	_fact(tiles, counts.get("players", 0), "Joueurs")
 	Editorial.divider(tiles)
@@ -250,7 +250,7 @@ static func _inventory(parent: VBoxContainer, pack: Dictionary) -> void:
 		parent.add_child(C.rule())
 		var line := C.h(16)
 		parent.add_child(line)
-		var label := Editorial.sans_heading(item[0], 20)
+		var label := C.label(item[0], 24, C.IVORY, true, 700)
 		label.custom_minimum_size.x = C.px(225)
 		line.add_child(label)
 		line.add_child(C.fill(C.wrap(item[1], 19, C.IVORY)))
@@ -259,8 +259,7 @@ static func _fact(parent: Container, value: Variant, caption: String) -> void:
 	var line := C.h(8)
 	C.fill(line)
 	parent.add_child(line)
-	var number := Editorial.sans_heading(G.n(value), 29)
-	number.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var number := C.label(G.n(value), 36, C.IVORY, true, 700)
 	number.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	line.add_child(number)
 	var label := C.wrap(caption, 22, C.IVORY)
@@ -269,7 +268,7 @@ static func _fact(parent: Container, value: Variant, caption: String) -> void:
 
 static func _preview(app: Control, parent: Container, pack: Dictionary) -> void:
 	var content := _section(parent, "Prêt à installer", str(pack.get("name", "Pack personnalisé")))
-	_inventory(content, pack)
+	_inventory(content, pack, app.pack_manager.playable_club_count(app.pack_manager.scope))
 	content.add_child(C.wrap("L’installation ajoute le pack à ton profil. Tu pourras ensuite le sélectionner."))
 	if pack.get("rightsStatus", "") == "not-cleared-for-public-distribution":
 		content.add_child(C.wrap("Droits de redistribution publique des photos et logos à vérifier séparément."))

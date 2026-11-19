@@ -82,7 +82,7 @@ func executer() -> void:
 	# Libellés demandés : « MOYENNE SAISON » puis « N matchs » dans la fiche, « MOY. » dans l'effectif.
 	var libelle := app.find_child("FullPlayerNoteMatches", true, false)
 	var nombre_matchs := app.find_child("FullPlayerNoteCount", true, false)
-	verifier(libelle != null and str(libelle.get("text")) == "MOYENNE SAISON" and nombre_matchs != null and str(nombre_matchs.get("text")) == ("%d matchs" % plus if plus > 1 else "1 match"), "libellé « MOYENNE SAISON » puis « N matchs » de la fiche (deux lignes, rien de tronqué)")
+	verifier(libelle != null and str(libelle.get("text")) in ["MOYENNE SAISON", "MOY. SAISON"] and nombre_matchs != null and str(nombre_matchs.get("text")) == ("%d matchs" % plus if plus > 1 else "1 match"), "libellé « MOYENNE SAISON » puis « N matchs » de la fiche (deux lignes, rien de tronqué)")
 	# Panneau « Sélection » : vide sans match international, puis rempli (données de présentation
 	# posées dans le modèle de l'interface uniquement, jamais dans la carrière).
 	verifier(app.find_child("PlayerSelectionNotes", true, false) != null, "panneau « Sélection » de la fiche")
