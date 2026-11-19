@@ -177,7 +177,7 @@ func _preparer(scene: Dictionary) -> void:
 		return
 	if kind != "carry" or float(ball.x) <= 0.5 or float(ball.x) >= 99.5:
 		return
-	if view._gestes != null and view._gestes.stages(vedette):
+	if view.mise_en_scene().stages(vedette):
 		return
 	var proche := PLAQUEUR_PORTEE
 	var choisi := ""
@@ -272,7 +272,7 @@ func _former_ruck() -> void:
 			var entry: Dictionary = view._actors[id]
 			if id == porteur or ruck.has(id) or int(entry.side) != camp or occupe(id):
 				continue
-			if view._is_pass_player(id) or (view._gestes != null and view._gestes.stages(id)):
+			if view._is_pass_player(id) or view.mise_en_scene().stages(id):
 				continue
 			var distance := (entry.node as Node3D).position.distance_to(arret)
 			if distance <= RUCK_RAYON:
@@ -346,7 +346,7 @@ func _applaudir() -> void:
 			joie.erase(id)
 			continue
 		var entry: Dictionary = view._actors[id]
-		if view._gestes != null and (view._gestes.stages(id) or id in view._gestes.cheer):
+		if view.mise_en_scene().stages(id) or id in view.mise_en_scene().cheer:
 			joie.erase(id)
 			continue
 		if not entry.get("geste", {}).is_empty() or float(entry.elapsed) < float(entry.duree):

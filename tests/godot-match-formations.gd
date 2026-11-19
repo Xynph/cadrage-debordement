@@ -16,6 +16,15 @@ func check(condition: bool, message: String) -> void:
 		printerr("FAIL: ", message)
 
 
+## Centre de la tête d'un joueur : l'os « Head » est à la base du crâne ; le centre est 9 cm plus
+## loin dans l'axe cou -> tête (crâne de 0,2 m environ sur le modèle calibré à 1,9 m).
+func head_centre(view, id: String) -> Vector3:
+	var rig: Skeleton3D = view._actors[id].rig
+	var head := rig.to_global(rig.get_bone_global_pose(rig.find_bone("Head")).origin)
+	var neck := rig.to_global(rig.get_bone_global_pose(rig.find_bone("Neck")).origin)
+	return head + (head - neck).normalized() * 0.09
+
+
 func _initialize() -> void:
 	call_deferred("run")
 
@@ -67,14 +76,29 @@ func check_scrum_formation() -> void:
 	for id: String in f.roles:
 		if f.roles[id] == "pack": pack += 1
 	check(pack == 16, "Both packs are bound in the scrum (%d forwards)" % pack)
-	# Premières lignes face à face, de part et d'autre du ballon ; tête contre tête (2,3 m entre les pieds).
+	# Premières lignes face à face, de part et d'autre du ballon ; épaule contre épaule (2,4 m entre les pieds).
 	for slot in 3:
 		var a: Vector2 = f.places["s0_%d" % slot]
 		var b: Vector2 = f.places["s1_%d" % slot]
 		check(a.x < 60.0 and b.x > 60.0, "Front row %d: each pack on its own side of the ball" % (slot + 1))
-		check(absf((b.x - a.x) - 2.3) < 0.01, "Front row %d: feet 2.3 m apart, heads together" % (slot + 1))
-	# Pilier gauche contre pilier droit adverse (loi 19).
-	check(is_equal_approx(f.places.s0_0.y, f.places.s1_2.y) and is_equal_approx(f.places.s0_2.y, f.places.s1_0.y), "Looseheads face tightheads")
+		check(absf((b.x - a.x) - 2.4) < 0.01, "Front row %d: feet 2.4 m apart, shoulder to shoulder" % (slot + 1))
+	# Pilier gauche contre pilier droit adverse, tête à l'extérieur de la sienne (loi 19).
+	var ecart: float = 2.0 * Formations.DECALAGE_TETES
+	check(absf((f.places.s1_2.y - f.places.s0_0.y) - ecart) < 0.01 and absf((f.places.s1_0.y - f.places.s0_2.y) - ecart) < 0.01, "Looseheads bind outside the opposing tighthead")
+	# Têtes emboîtées : les six têtes alternent d'un paquet à l'autre, jamais deux partenaires côte à côte,
+	# et deux têtes adverses voisines sont à plus de deux rayons de tête l'une de l'autre.
+	var front: Array = []
+	for side in 2:
+		for slot in 3:
+			front.append({"side": side, "y": (f.places["s%d_%d" % [side, slot]] as Vector2).y})
+	front.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.y < b.y)
+	var alternate := true
+	var closest := INF
+	for i in range(1, front.size()):
+		alternate = alternate and front[i].side != front[i - 1].side
+		closest = minf(closest, float(front[i].y) - float(front[i - 1].y))
+	check(alternate, "Front-row heads alternate between the two packs")
+	check(closest > 2.0 * Formations.TETE_RAYON, "Neighbouring opposing heads are more than two head radii apart (%.2f m)" % closest)
 	# 3-4-1 : trois devant, quatre liés derrière, le n° 8 au fond, tous à moins de 1,3 m du suivant.
 	for side in 2:
 		var s := 1.0 if side == 0 else -1.0
@@ -86,8 +110,13 @@ func check_scrum_formation() -> void:
 	# Demi qui introduit : au tunnel, accroupi, tourné vers le tunnel ; demi adverse de son côté du ballon.
 	var demi: Vector2 = f.places.s0_8
 	check(f.roles.s0_8 == "demi_intro" and f.postures.s0_8 == "introduction", "The put-in scrum-half introduces")
-	check(demi.distance_to(Vector2(60.0, 35.0)) < 1.6, "The put-in scrum-half stands at the tunnel (%.2f m)" % demi.distance_to(Vector2(60.0, 35.0)))
+	check(demi.distance_to(Vector2(60.0, 35.0)) < 2.0, "The put-in scrum-half stands at the tunnel (%.2f m)" % demi.distance_to(Vector2(60.0, 35.0)))
 	check(demi.y < 35.0, "He feeds from his loosehead side")
+	# Hors du paquet : à l'extérieur de son pilier gauche (décalé vers l'extérieur avec les têtes).
+	check(demi.y < (f.places.s0_0 as Vector2).y - 0.6, "The scrum-half crouches outside his loosehead")
+	# Le ballon tenu devant lui (BALLON_DEVANT, vers le tunnel) arrive à l'entrée du tunnel.
+	var ballon := demi + Vector2(sin(float(f.caps.s0_8)), cos(float(f.caps.s0_8))) * Formations.BALLON_DEVANT
+	check(ballon.distance_to(Vector2(60.0, 35.0)) < 1.4 and ballon.y < (f.places.s0_0 as Vector2).y - 0.3, "The ball is held at the mouth of the tunnel (%.2f m from the mark)" % ballon.distance_to(Vector2(60.0, 35.0)))
 	check(f.roles.s1_8 == "demi_adverse" and (f.places.s1_8 as Vector2).x > 60.0, "The opposing scrum-half stays on his side of the ball")
 	# Arrières derrière la ligne de hors-jeu (5 m derrière les pieds du n° 8).
 	var limite: float = Formations.MELEE[7].x + Formations.PIEDS_N8 + Formations.HORS_JEU
@@ -97,7 +126,8 @@ func check_scrum_formation() -> void:
 	var g: Dictionary = Formations.calculer(near)
 	check((g.places.s1_9 as Vector2).x >= 60.0 + limite - 0.01, "A back too close is put back behind the scrum offside line")
 	check(not g.places.has("s0_12"), "Backs already onside keep the engine's place")
-	metrics.front_rows_gap_m = 2.3
+	metrics.front_rows_gap_m = 2.4
+	metrics.front_heads_lateral_gap_m = snappedf(closest, 0.001)
 	metrics.demi_tunnel_m = snappedf(demi.distance_to(Vector2(60.0, 35.0)), 0.01)
 
 
@@ -151,6 +181,42 @@ func check_view(view: Node3D) -> void:
 	check(lowest_foot > -0.03, "Bound forwards keep their feet on the grass (%.3f m)" % lowest_foot)
 	var demi: Dictionary = view._actors.s0_8
 	check((demi.model as Node3D).rotation.x > 0.2, "The put-in scrum-half crouches at the tunnel")
+	# Têtes des premières lignes : jamais l'une dans l'autre (plus de deux rayons de tête entre deux
+	# têtes adverses), mesuré sur les os des modèles penchés.
+	var heads := {}
+	for side in 2:
+		for slot in 3:
+			heads["s%d_%d" % [side, slot]] = head_centre(view, "s%d_%d" % [side, slot])
+	var head_gap := INF
+	for a in 3:
+		for b in 3:
+			head_gap = minf(head_gap, (heads["s0_%d" % a] as Vector3).distance_to(heads["s1_%d" % b]))
+	check(head_gap > 2.0 * Formations.TETE_RAYON, "Opposing front-row heads never interpenetrate (%.3f m apart, %.2f m needed)" % [head_gap, 2.0 * Formations.TETE_RAYON])
+	var head_height := 0.0
+	for id: String in heads:
+		head_height = maxf(head_height, (heads[id] as Vector3).y)
+	check(head_height < 1.3, "Front-row heads are down at scrum height (%.2f m at most)" % head_height)
+	metrics.scrum_head_gap_m = snappedf(head_gap, 0.001)
+	metrics.scrum_head_height_m = snappedf(head_height, 0.01)
+	# Introduction : le demi accroupi tient le ballon bas, à hauteur de genoux, à l'entrée du tunnel.
+	var rig: Skeleton3D = demi.rig
+	var hips := 0.0
+	var knees := 0.0
+	for leg in ["L", "R"]:
+		hips += rig.to_global(rig.get_bone_global_pose(rig.find_bone("UpperLeg." + leg)).origin).y * 0.5
+		knees += rig.to_global(rig.get_bone_global_pose(rig.find_bone("LowerLeg." + leg)).origin).y * 0.5
+	var ball: Vector3 = view._ball.global_position
+	check(view._carrier_id == "s0_8" and view._formations.tient_ballon("s0_8"), "The put-in scrum-half holds the ball himself")
+	check(hips < 0.65, "The put-in scrum-half is crouched (hips %.2f m high)" % hips)
+	check(ball.y < 0.65 and absf(ball.y - clampf(knees, Formations.BALLON_BAS_MIN, Formations.BALLON_BAS_MAX)) < 0.12, "The ball is held low, at knee height (ball %.2f m, knees %.2f m)" % [ball.y, knees])
+	check(Vector2(ball.x - 10.0, ball.z).length() < 1.5, "The ball is held at the tunnel (%.2f m from the mark)" % Vector2(ball.x - 10.0, ball.z).length())
+	var grip := 0.0
+	for hand in ["Palm.L", "Palm.R"]:
+		grip = maxf(grip, rig.to_global(rig.get_bone_global_pose(rig.find_bone(hand)).origin).distance_to(ball))
+	check(grip < 0.3, "Both hands are on the ball (%.2f m)" % grip)
+	metrics.intro_ball_height_m = snappedf(ball.y, 0.01)
+	metrics.intro_knees_m = snappedf(knees, 0.01)
+	metrics.intro_hips_m = snappedf(hips, 0.01)
 	metrics.scrum_place_error_m = snappedf(worst, 0.001)
 	metrics.scrum_lowest_foot_m = snappedf(lowest_foot, 0.001)
 	# Ballon gagné : les paquets restent liés SORTIE s, puis rejoignent les places de la scène.
