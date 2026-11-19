@@ -173,8 +173,18 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(between.carte_changement.is_visible_in_tree() and between.carte_changement.get_global_rect().position.y >= between.tuile_principale.get_global_rect().end.y - 1.0 and between.find_child("MatchBetweenSwapAction", true, false).is_visible_in_tree(), label + " : carte Changement sous Notre XV")
 	# Gabi en largeur, en bas.
 	# Avec la journée en direct, le multiplex partage la bande du bas avec Gabi.
-	var bande_bas: float = between.adjoint_cadre.size.x + (between.multiplex.size.x + between.px(20) if between.multiplex.visible else 0.0)
-	check(not between.adjoint_cadre.visible or bande_bas >= between.size.x * 0.9 and between.adjoint_cadre.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : carte de Gabi en largeur, en bas")
+	# Le multiplex (journée en direct) et la tuile Bonus (décision de fin de match) partagent la bande du bas avec Gabi :
+	# c'est la bande entière qui occupe la largeur.
+	var bas_bande := between.find_child("MatchBetweenBottom", true, false) as BoxContainer
+	var bande_bas := 0.0
+	var visibles := 0
+	if bas_bande != null:
+		for enfant: Node in bas_bande.get_children():
+			if enfant is Control and (enfant as Control).visible:
+				bande_bas += (enfant as Control).size.x
+				visibles += 1
+		bande_bas += maxi(0, visibles - 1) * bas_bande.get_theme_constant("separation")
+	check(not between.adjoint_cadre.visible or bande_bas >= between.size.x * 0.9 and between.adjoint_cadre.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : carte de Gabi en largeur, en bas (bande %d px sur %d, %d tuiles ; Gabi %s, terrain %s)" % [int(bande_bas), int(between.size.x), visibles, str(between.adjoint_cadre.get_global_rect()), str(pitch.get_global_rect())])
 	var used := 0.0
 	for panel: Control in column.get_children():
 		if panel.visible: used += panel.size.y
@@ -890,6 +900,12 @@ func gestures(view: Control) -> void:
 		if not resumed and not app.waiting and regie.etat != regie.JEU:
 			resumed = true
 			if app.model.live.paused: app._command("pause", {"paused": false})
+		elif resumed and not app.waiting and regie.etat != regie.JEU and app.model.live.paused:
+			# Arrêt de jeu qui attend le manager (carton, blessure… carrière Monde) : le test répond comme lui.
+			print("Reprise après un arrêt à la minute ", int(app.model.live.minute), " : ", str(regie.get("arret")))
+			if not (regie.get("arret") as Dictionary).is_empty(): regie.between.reprise_demandee.emit()
+			else: app._command("pause", {"paused": false})
+			await wait_command()
 		observe_framing()
 		var gestes: RefCounted = view.stage.get("_gestes")
 		var camera: Camera3D = view.stage.get("_camera")
