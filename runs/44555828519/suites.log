@@ -1,0 +1,36 @@
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/godot-preferences.cjs
+::group::tests/small-window-contracts.cjs
+Preuves petits écrans : /tmp/tmp.QgMZI9yybg/suite.MZn4z5/small-window-contracts-09tO2M/contracts
+Preuves petits écrans : /tmp/tmp.QgMZI9yybg/suite.MZn4z5/small-window-contracts-09tO2M/shared
+Preuves petits écrans : /tmp/tmp.QgMZI9yybg/suite.MZn4z5/small-window-contracts-09tO2M/open-contract-resize
+TAP version 13
+# Subtest: Contract dialogs fit supported windows and essential controls remain reachable
+ok 1 - Contract dialogs fit supported windows and essential controls remain reachable
+  ---
+  duration_ms: 23124.489791
+  type: 'test'
+  ...
+# Subtest: Shared dialog fitting preserves confirmations, file pickers, preferences and resizing
+ok 2 - Shared dialog fitting preserves confirmations, file pickers, preferences and resizing
+  ---
+  duration_ms: 28601.542666
+  type: 'test'
+  ...
+# Subtest: Open contract preserves typed terms and keyboard access through live resizing
+ok 3 - Open contract preserves typed terms and keyboard access through live resizing
+  ---
+  duration_ms: 11962.316632
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 63693.849532
+CD_CPU_PROFILE suite=tests/small-window-contracts.cjs user_s=1.92 system_s=0.24 wall_s=63.72 cpu_pct=3% max_rss_kb=186360
+PASS tests/small-window-contracts.cjs (63 s)
+::endgroup::

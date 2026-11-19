@@ -1,0 +1,2 @@
+tests/godot-preferences.cjs
+tests/small-window-contracts.cjs
