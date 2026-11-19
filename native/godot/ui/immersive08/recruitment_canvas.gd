@@ -11,6 +11,7 @@ const Decisions = preload("res://ui/decision_views.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Sort = preload("res://ui/recruitment_sort.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
+const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const SalesView = preload("res://ui/player_sales_view.gd")
 const ROW_HEIGHT := 38
 # Construction progressive de la liste : les premières lignes tout de suite, le reste sur les images suivantes.
@@ -494,7 +495,13 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 	if tab != 3 and not report.is_empty():
 		_reading_area(row,Rect2(1039,0,128,ROW_HEIGHT),{"kind":"report","id":str(report.get("id",""))},"MarketReportLink_"+str(report.get("id","")).validate_node_name(),"Rapport d’observation · " + str(item.get("name","")))
 	var entity_target := {"kind":"report", "id":str(item.id)} if tab == 3 else {"kind":"market", "id":player_id}
-	_reading_area(row,Rect2(60,0,426 if tab == 3 else 257,ROW_HEIGHT),entity_target,"MarketEntity_"+str(item.id).validate_node_name(),str(item.get("name","Dossier")))
+	var nom_lien := _reading_area(row,Rect2(60,0,426 if tab == 3 else 257,ROW_HEIGHT),entity_target,"MarketEntity_"+str(item.id).validate_node_name(),str(item.get("name","Dossier")))
+	# Nom d'une piste : survol (ou focus + I) = mini-fiche, clic = fiche complète ; « i » juste après le nom.
+	if tab != 3 and nom_lien != null and not player.is_empty():
+		MiniFiche.lier(app, nom_lien, player_id, "market")
+		var police: Font = C.font(700)
+		var largeur := minf(190.0, police.get_string_size(str(item.get("name","—")),HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(18))).x/C.density)
+		MiniFiche.icone(app, row, Rect2(128+largeur+6, 4 if C.density >= .75 else 10, 18, 18), player_id, "market")
 	row.pressed.connect(func():
 		state["report_id" if tab == 3 else "player_id"] = str(item.id)
 		var target := str(row.name)
@@ -657,8 +664,8 @@ func _staff(index: int, role: String = "") -> void:
 		for prefix: String in families[i]:
 			if role.begins_with(prefix): field.select(i); return
 
-func _reading_area(parent: Node, area: Rect2, target: Dictionary, id: String, caption: String) -> void:
-	if not app.navigation_controller.entity_available(target): return
+func _reading_area(parent: Node, area: Rect2, target: Dictionary, id: String, caption: String) -> Button:
+	if not app.navigation_controller.entity_available(target): return null
 	var link := Button.new()
 	link.name = id
 	link.flat = true
@@ -668,6 +675,7 @@ func _reading_area(parent: Node, area: Rect2, target: Dictionary, id: String, ca
 	Link.bind(link,app,target,caption)
 	parent.add_child(link)
 	D.place(link,area)
+	return link
 
 func _report_dialog(report: Dictionary) -> void:
 	app.navigation_controller.open_entity({"kind":"report", "id":str(report.get("id", ""))})

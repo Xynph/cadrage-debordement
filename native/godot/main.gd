@@ -810,6 +810,8 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 	if target != "Presse" and has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 	if not keep_subview:
 		if target == "Effectif": set_meta("immersive08_full_player",false)
+		# Fiche joueur d'une piste ou d'un Espoir : le menu rouvre l'écran lui-même.
+		management_ui.erase("fiche_joueur")
 		if target == "Préparation" and management_ui.get("preparation", {}).get("tab", 0) == 2:
 			management_ui.preparation.tab = 0
 	route = target

@@ -28,6 +28,28 @@ const N := Color("ada597")
 const D := Color("ee6f5f")
 const V_DALTONIEN := Color("5aa9e6")
 
+## Barème des attributs (fiche joueur, mini-fiche ; décision de Léo du 19/11/2026) : le chiffre est toujours
+## écrit, la couleur dit le palier. Une légende accompagne chaque grille (BAREME_ATTRIBUTS).
+const ATTRIBUT_0 := Color("ee6f5f")   ## 0-39
+const ATTRIBUT_40 := Color("f2a04a")  ## 40-54
+const ATTRIBUT_55 := Color("eadb55")  ## 55-64
+const ATTRIBUT_65 := Color("a8d878")  ## 65-74
+const ATTRIBUT_75 := Color("4fcb78")  ## 75-84
+const ATTRIBUT_85 := Color("3debb4")  ## 85 et plus
+## [seuil bas, couleur, libellé de légende], du plus faible au plus fort.
+const BAREME_ATTRIBUTS := [
+	[0, ATTRIBUT_0, "0-39"], [40, ATTRIBUT_40, "40-54"], [55, ATTRIBUT_55, "55-64"],
+	[65, ATTRIBUT_65, "65-74"], [75, ATTRIBUT_75, "75-84"], [85, ATTRIBUT_85, "85+"],
+]
+
+## Couleur d'un attribut (ou d'une moyenne de famille) ; valeur inconnue : IVOIRE_3.
+static func couleur_attribut(valeur: Variant) -> Color:
+	if not (valeur is int or valeur is float) or not is_finite(float(valeur)): return IVOIRE_3
+	var couleur: Color = ATTRIBUT_0
+	for palier: Array in BAREME_ATTRIBUTS:
+		if float(valeur) >= float(palier[0]): couleur = palier[1]
+	return couleur
+
 ## Inclinaison du logo (fûts du R et du L) : marqueurs, bord droit des boutons or, titres en italique.
 const INCLINAISON_DEGRES := 10.0
 ## Décalage horizontal d'un bord incliné de 10° pour une hauteur donnée (32 px → 6 px).

@@ -8,6 +8,10 @@ const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const TABS = ["Effectif U21", "Effectif U18", "Progression", "Passerelles", "Encadrement"]
 const Order = preload("res://ui/player_table_order.gd")
+const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+## Le tableau prend toute la largeur depuis le retrait du dossier fixe de droite (fiche complète au clic sur le nom) :
+## les colonnes dessinées pour 1367 s'étalent sur 2221.
+const ETALEMENT := 2221.0 / 1367.0
 const GREEN = Color("63ef96")
 const GOLD = Color("ffcf67")
 const RED = Color("f69a91")
@@ -51,7 +55,6 @@ var selected: Dictionary
 var active_tab := 0
 var staff: Array
 var rows: Control
-var dossier: Panel
 var integration: Button
 
 static func build(application: Control, canvas: Control) -> void:
@@ -87,7 +90,6 @@ func _build() -> void:
 		0, 1, 2: _table(group, visible)
 		3: _pathways()
 		4: _staff_page()
-	_dossier()
 	_lower_pathways()
 	_staff_card()
 	_junior()
@@ -191,7 +193,7 @@ func _select_visible(people: Array) -> void:
 	state.player = selected.id
 
 func _table(group: String, people: Array) -> void:
-	var table := D.panel(self, Rect2(1, 317, 1393, 581), "", "", "", "AcademyImmersiveTable")
+	var table := D.panel(self, Rect2(1, 317, 2247, 581), "", "", "", "AcademyImmersiveTable")
 	_icon(table, "search", Rect2(22, 20, 25, 25), C.IVORY)
 	D.text(table, 59, 42, "Filtres", 26, C.IVORY, 700, 115)
 	_picker(table, Rect2(144, 12, 227, 43), "AcademyImmersiveGroup", "Groupe", {"u21":"U21", "u18":"U18", "academy":"Tous les Espoirs", "professional":"Jeunes professionnels"}, group, func(value): _set_filter("group", value))
@@ -203,12 +205,12 @@ func _table(group: String, people: Array) -> void:
 	_picker(table, Rect2(391, 12, 252, 43), "AcademyImmersivePosition", "Poste", positions, state.get("position", ""), func(value): _set_filter("position", value))
 	_picker(table, Rect2(663, 12, 255, 43), "AcademyImmersivePotential", "Potentiel", {0:"Tous", 80:"80 et +", 85:"85 et +", 90:"90 et +"}, state.get("potential", 0), func(value): _set_filter("potential", value))
 	_picker(table, Rect2(938, 12, 308, 43), "AcademyImmersivePreparation", "Préparation", {"":"Tous", "fit":"Disponibles", "watched":"Condition < 70 %", "planned":"Parcours pro"}, state.get("preparation", ""), func(value): _set_filter("preparation", value))
-	var header := D.rect(table, Rect2(13, 69, 1367, 36), Color("1b2828"), 5)
+	var header := D.rect(table, Rect2(13, 69, 2221, 36), C.SELECTED, 5)
 	var columns := [["#",22,40,"source"],["JOUEUR",127,247,"name"],["ÂGE",365,70,"age"],["POSTE",462,194,"pos"],["NIVEAU",657,90,"note"],["POTENTIEL",745,105,"potential"],["PROGRESSION",850,144,"change"],["TEMPS DE JEU",997,143,"minutes"],["STATUT",1148,197,"status"]]
 	for column: Array in columns:
 		var key: String = column[3]
 		var caption := str(column[0]) + ((" ↓" if state.get("table_descending",false) else " ↑") if state.get("table_sort","source")==key else "")
-		var action := _action(header,Rect2(column[1],0,column[2],34),caption,_sort_by.bind(key),false,"","AcademySort_"+key)
+		var action := _action(header,Rect2(column[1]*ETALEMENT,0,column[2]*ETALEMENT,34),caption,_sort_by.bind(key),false,"","AcademySort_"+key)
 		action.add_theme_font_size_override("font_size",maxi(12,C.px(16)))
 		action.tooltip_text = "Trier " + str(column[0]) + " · valeurs inconnues en dernier"
 		for mode in ["normal","hover","pressed","disabled","focus"]:
@@ -220,11 +222,11 @@ func _table(group: String, people: Array) -> void:
 	scroll.mouse_force_pass_scroll_events = false
 	scroll.follow_focus = true
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	table.add_child(scroll); D.place(scroll,Rect2(13,106,1380,434))
+	table.add_child(scroll); D.place(scroll,Rect2(13,106,2234,434))
 	rows = Control.new()
 	rows.name = "AcademyImmersiveRows"
 	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rows.custom_minimum_size = Vector2(C.px(1367),C.px(36*people.size()))
+	rows.custom_minimum_size = Vector2(C.px(2221),C.px(36*people.size()))
 	scroll.add_child(rows)
 	_draw_rows(people)
 	scroll.get_v_scroll_bar().value_changed.connect(func(value): state.table_scroll=value)
@@ -277,25 +279,26 @@ func _draw_rows(people: Array) -> void:
 	for i in shown.size():
 		var p: Dictionary = shown[i]
 		var status := _status(p)
-		var hit := _action(rows, Rect2(1, i * 36, 1365, 35), "", func(): _select(p), false, "", "AcademyRow_" + str(p.id).replace(":", "_"))
+		var hit := _action(rows, Rect2(1, i * 36, 2219, 35), "", func(): _select(p), false, "", "AcademyRow_" + str(p.id).replace(":", "_"))
 		hit.set_meta("development_id", p.id)
 		hit.accessibility_name = str(p.name) + " · " + str(status[0])
 		hit.tooltip_text = "%s · %s" % [p.name, p.pos]
 		_row_style(hit, p.id == selected.get("id"), i)
-		D.text(hit, 33, 27, G.n(_source_index(p) + 1), 25, C.IVORY, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
-		_portrait(hit, p, Rect2(78, 0, 44, 35))
-		D.text(hit, 130, 27, str(p.name), 26, C.IVORY, 700, 222)
-		D.text(hit, 365, 26, G.n(p.age) + " ans", 21, C.IVORY, 500, 87)
-		D.text(hit, 462, 26, str(p.pos), 22, C.IVORY, 500, 190)
-		D.text(hit, 700, 27, G.rating_text(p,true), 26, C.IVORY, 700, 82, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(hit, 796, 27, G.potential_text(p), 20, G.POTENTIAL_COLOR, 700, 88, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(hit, 907, 27, _change(p), 24, GREEN, 700, 117, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(hit, 1054, 26, G.n(_minutes(p)) + " min", 22, C.IVORY, 500, 123, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(hit, 33 * ETALEMENT, 27, G.n(_source_index(p) + 1), 25, C.IVORY, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
+		_portrait(hit, p, Rect2(78 * ETALEMENT, 0, 44, 35))
+		D.text(hit, 130 * ETALEMENT, 27, str(p.name), 26, C.IVORY, 700, 222)
+		D.text(hit, 365 * ETALEMENT, 26, G.n(p.age) + " ans", 21, C.IVORY, 500, 87)
+		D.text(hit, 462 * ETALEMENT, 26, str(p.pos), 22, C.IVORY, 500, 190)
+		D.text(hit, 700 * ETALEMENT, 27, G.rating_text(p,true), 26, C.IVORY, 700, 82, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(hit, 796 * ETALEMENT, 27, G.potential_text(p), 20, G.POTENTIAL_COLOR, 700, 88, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(hit, 907 * ETALEMENT, 27, _change(p), 24, GREEN, 700, 117, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(hit, 1054 * ETALEMENT, 26, G.n(_minutes(p)) + " min", 22, C.IVORY, 500, 123, HORIZONTAL_ALIGNMENT_CENTER)
 		if status[1] == C.IVORY:
-			D.text(hit, 1148, 26, status[0], 21, C.IVORY, 500, 204)
+			D.text(hit, 1148 * ETALEMENT, 26, status[0], 21, C.IVORY, 500, 204)
 		else:
-			D.chip(hit, Rect2(1138, 4, 211, 27), status[0], status[1])
-		D.line(hit, Vector2(11, 35), Vector2(1354, 35), Color(C.LINE, .54))
+			D.chip(hit, Rect2(1138 * ETALEMENT, 4, 211, 27), status[0], status[1])
+		D.line(hit, Vector2(11, 35), Vector2(2208, 35), Color(C.LINE, .54))
+		_lien_nom(hit, p, Rect2(78 * ETALEMENT, 0, 300, 35))
 
 func _row_style(hit: Button, active: bool, row: int) -> void:
 	var style := C.box(Color("075331") if active else Color("111b1b") if row % 2 else Color("0e1719"), Color("43a86d") if active else Color.TRANSPARENT, 5, 0)
@@ -308,51 +311,35 @@ func _select(p: Dictionary) -> void:
 		var child := rows.get_child(i)
 		if child is Button: _row_style(child, child.get_meta("development_id", "") == p.id, i)
 	_update_integration()
-	_dossier()
+
+## Nom d'un Espoir (ou d'un jeune pro) : survol (ou focus + I) = mini-fiche, clic = fiche complète ; « i » après le nom.
+func _lien_nom(parent: Control, p: Dictionary, zone: Rect2) -> void:
+	var id := str(p.get("id", ""))
+	var pro := _professional(p)
+	var cible := {"kind":"player" if pro else "academy", "id":id}
+	if id.is_empty() or not app.navigation_controller.entity_available(cible): return
+	var lien := Button.new()
+	lien.name = "AcademyName_" + id.validate_node_name()
+	lien.flat = true
+	lien.focus_mode = Control.FOCUS_ALL
+	lien.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	lien.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
+	lien.add_theme_stylebox_override("hover", C.box(Color(C.IVORY, .05), Color.TRANSPARENT, 3, 0))
+	lien.add_theme_stylebox_override("pressed", C.box(Color(C.IVORY, .08), Color.TRANSPARENT, 3, 0))
+	lien.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.IVORY, 3, 0))
+	lien.accessibility_name = "Ouvrir la fiche · " + str(p.get("name", ""))
+	lien.pressed.connect(func(): app.navigation_controller.open_entity(cible))
+	parent.add_child(lien)
+	D.place(lien, zone)
+	MiniFiche.lier(app, lien, id, "squad" if pro else "academy")
+	var police: Font = C.font(700)
+	var largeur := minf(222.0, police.get_string_size(str(p.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(26))).x / C.density)
+	MiniFiche.icone(app, parent, Rect2(130 * ETALEMENT + largeur + 8, 8, 20, 20), id, "squad" if pro else "academy")
 
 func _update_integration() -> void:
 	integration.disabled = app.waiting or selected.is_empty() or _professional(selected)
 	integration.text = "Préparer une intégration" if development.get("promotionAvailable", false) else "Consulter le premier contrat"
 	integration.tooltip_text = "Consulter les conditions du premier contrat professionnel" if not integration.disabled else "Sélectionne un Espoir."
-
-func _dossier() -> void:
-	if is_instance_valid(dossier):
-		remove_child(dossier)
-		dossier.queue_free()
-	dossier = D.panel(self, Rect2(1410, 317, 838, 581), "", "", "", "AcademyImmersiveDossier")
-	dossier.clip_contents = true
-	if selected.is_empty():
-		D.photo(dossier, "academy-training", Rect2(2, 2, 293, 336))
-		D.text(dossier, 308, 63, "Aucun dossier sélectionné", 38, C.IVORY, 700, 510)
-		D.text(dossier, 310, 105, "Choisis un joueur dans le tableau.", 25, C.MUTED, 500, 510)
-		return
-	_portrait(dossier, selected, Rect2(2, 2, 293, 336), true)
-	var p := selected
-	var progress: Dictionary = p.get("development", {})
-	var info := _path(p)
-	var shirt: Array = pathway.get("lineup", [])
-	var slot := shirt.find(p.id)
-	var badge := D.rect(dossier, Rect2(291, 12, 76, 59), Color("12221c"), 8, Color(GREEN, .84))
-	D.text(badge, 38, 44, G.n(slot + 1) if slot >= 0 else "—", 40, C.IVORY, 800, 65, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(dossier, 387, 46, str(p.name).to_upper(), 45, C.IVORY, 800, 426)
-	D.text(dossier, 388, 74, "%s  ·  %s ANS" % [str(p.pos).to_upper(), G.n(p.age)], 23, C.IVORY, 600, 424)
-	_number_card(dossier, Rect2(337, 91, 210, 89), G.rating_text(p,true), "Niveau", GREEN)
-	_number_card(dossier, Rect2(571, 91, 245, 89), G.potential_text(p), "Potentiel", G.POTENTIAL_COLOR)
-	D.line(dossier, Vector2(307, 194), Vector2(817, 194))
-	_icon(dossier, "star", Rect2(309, 207, 26, 26), GREEN)
-	D.text(dossier, 345, 230, "Suivi de formation", 25, GREEN, 700, 244)
-	_icon(dossier, "warning", Rect2(580, 207, 25, 25), RED)
-	D.text(dossier, 616, 230, "Vigilance", 25, RED, 700, 202)
-	D.line(dossier, Vector2(564, 209), Vector2(564, 324), Color(C.LINE, .75))
-	var focus := _focus_name(progress)
-	var left := [focus, "%s minutes de jeu" % G.n(_minutes(p)), PATHS.get(info.get("path", ""), "Suivi individuel")]
-	var right := ["Condition · %s %%" % G.n(p.get("condition", "—")), "Indisponible · %s sem." % G.n(p.get("injury", 0)) if float(p.get("injury", 0)) > 0 else "Disponible"]
-	for i in left.size(): D.text(dossier, 313, 261 + i * 26, left[i], 21, C.IVORY, 500, 241)
-	for i in right.size(): D.text(dossier, 584, 261 + i * 26, right[i], 21, C.IVORY, 500, 231)
-	D.line(dossier, Vector2(18, 339), Vector2(820, 339))
-	_trend(dossier, p)
-	var action := _action(dossier, Rect2(20, 518, 796, 48), "Ouvrir le suivi individuel  ·  " + str(_status(p)[0]), func(): _focus_dialog(p), true, "arrow", "AcademyIndividualProgress")
-	action.add_theme_font_size_override("font_size", C.px(23))
 
 func _trend(parent: Node, p: Dictionary) -> void:
 	var history: Array = p.get("development", {}).get("history", [])
@@ -377,7 +364,7 @@ func _trend(parent: Node, p: Dictionary) -> void:
 	_number_card(parent, Rect2(704, 382, 114, 119), _change(p), "Cette saison", GREEN)
 
 func _pathways() -> void:
-	var panel := D.panel(self, Rect2(1, 317, 1393, 581), "Du centre au rugby professionnel", "school", "", "AcademyPathwayPane")
+	var panel := D.panel(self, Rect2(1, 317, 2247, 581), "Du centre au rugby professionnel", "school", "", "AcademyPathwayPane")
 	D.text(panel, 25, 107, Copy.notice("academy", pathway.get("description", "Choisis un Espoir pour suivre sa progression.")), 25, C.IVORY, 500, 1347)
 	var people := _prospects()
 	D.text(panel, 25, 150, "LES MEILLEURS POTENTIELS", 24, GOLD, 700, 1250)
@@ -385,9 +372,7 @@ func _pathways() -> void:
 		var p: Dictionary = people[i]
 		var entry := _action(panel, Rect2(23 + (i % 2) * 681, 173 + floori(i / 2.0) * 85, 665, 75), "", func():
 			state.player = p.id
-			selected = p
-			_update_integration()
-			_dossier(), false, "", "AcademyPathway_" + str(p.id).replace(":", "_"))
+			app.navigation_controller.open_entity({"kind":"academy", "id":str(p.id)}), false, "", "AcademyPathway_" + str(p.id).replace(":", "_"))
 		entry.accessibility_name = str(p.name)
 		_portrait(entry, p, Rect2(10, 5, 75, 63))
 		D.text(entry, 106, 32, str(p.name), 28, C.IVORY, 700, 464)
@@ -401,7 +386,7 @@ func _prospects() -> Array:
 	return prospects
 
 func _staff_page() -> void:
-	var panel := D.panel(self, Rect2(1, 317, 1393, 581), "Le centre de formation", "people", "", "AcademyStaffPane")
+	var panel := D.panel(self, Rect2(1, 317, 2247, 581), "Le centre de formation", "people", "", "AcademyStaffPane")
 	D.text(panel, 25, 106, Copy.notice("academy", pathway.get("description", "Aucune donnée d’encadrement disponible.")), 25, C.IVORY, 500, 1345)
 	var labels := [["Éducateurs", G.n(pathway.get("coaches", "—")), "people"], ["Installations", G.n(pathway.get("facilities", "—")), "home"], ["Cohésion", G.n(pathway.get("cohesion", "—")), "heart"]]
 	for i in labels.size():
@@ -558,49 +543,15 @@ static func professional_progress(app: Control, player_id: String) -> Dictionary
 		if str(person.id) == player_id: return person
 	return {}
 
-static func open_professional_progress(app: Control, player_id: String, source_id: String) -> void:
-	var person := professional_progress(app, player_id)
-	if person.is_empty(): return
-	var dialog := _show_progress(app, person, person.get("minutes", 0))
-	dialog.tree_exited.connect(func(): U.focus(app, source_id))
-
-func _focus_dialog(p: Dictionary) -> void:
-	var professional := _professional(p)
-	var caption := "Ouvrir la fiche du joueur" if professional else "Ouvrir les parcours du centre"
-	_show_progress(app, p, _minutes(p), caption, func():
-		if professional:
-			app.selected_player = str(p.id)
-			app._navigate("Effectif")
-		else:
-			app._navigate("Centre"))
-
-static func _show_progress(app: Control, p: Dictionary, minutes: Variant, caption: String = "", open_context: Callable = Callable()) -> AcceptDialog:
-	var dialog_parts := _create_dialog(app, "AcademyFocusDialog", "Progression · " + str(p.name))
-	var dialog: AcceptDialog = dialog_parts[0]
-	var body: VBoxContainer = dialog_parts[1]
-	dialog.set_meta("development_player_id", p.id)
-	var detail: Dictionary = p.get("development", {})
-	body.add_child(C.wrap("%s minutes · %s apparition(s) · %s de progression cette saison" % [G.n(minutes), G.n(p.get("appearances", 0)), _change(p)], 24, C.IVORY, true))
-	for year: Dictionary in detail.get("history", []):
-		body.add_child(C.label("%s · %s → %s · %s min" % [G.season_label(year.get("season", "—")), G.n(year.get("start", "—")), G.n(year.get("end", "—")), G.n(year.get("minutes", 0))], 21))
-	if detail.get("history", []).is_empty(): body.add_child(C.wrap("Historique annuel disponible après l’intersaison.", 19, C.MUTED, true))
-	var options := {}
-	for option: Dictionary in detail.get("options", []): options[option.id] = option.label
-	if not options.is_empty():
-		var control := _option("Focus" + str(p.id).replace(":", "_"), "Spécialisation", options, detail.get("focus"), func(value):
-			dialog.hide()
-			dialog.queue_free()
-			app._command("set_development_focus", {"playerId":p.id, "focus":value}))
-		control.disabled = not detail.get("available", false)
-		body.add_child(control)
-		body.add_child(C.wrap(str(detail.get("reason", "")) if control.disabled else "Changer d’axe remet à zéro l’expérience partielle non dépensée. Les qualités déjà acquises sont conservées.", 19, C.MUTED, true))
-	if open_context.is_valid():
-		body.add_child(C.button(caption, func():
-			dialog.hide()
-			dialog.queue_free()
-			open_context.call()))
-	app.ImmersiveDialogs.show_centered(dialog, Vector2i(C.px(790), C.px(450)))
-	return dialog
+## Suivi individuel d'un jeune professionnel : onglet Développement de sa fiche complète (plus de fenêtre).
+static func open_professional_progress(app: Control, player_id: String, _source_id: String = "") -> void:
+	if professional_progress(app, player_id).is_empty(): return
+	app.management_ui.immersive_player_tab = 4
+	if not app.navigation_controller.open_entity({"kind":"player", "id":player_id}):
+		app.selected_player = player_id
+		app.set_meta("immersive08_full_player", true)
+		app._render()
+	U.focus(app, "FullPlayerTab4")
 
 static func _option(id: String, caption: String, choices: Dictionary, chosen: Variant, callback: Callable) -> OptionButton:
 	var control := OptionButton.new()

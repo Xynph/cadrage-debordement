@@ -2,6 +2,11 @@
 
 Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
 
+**Mini-fiche au survol (validée, 19/11/2026)** : survoler le nom d'un joueur ou le « i » voisin montre la mini-fiche
+(en-tête, forme, contrat, 36 attributs colorés) sans changer d'écran ; clic sur le nom = fiche complète ; au clavier,
+focus sur le nom + I. La fiche fixe de droite est retirée : le tableau prend toute la largeur. Détail :
+`mini-fiche-joueur.md`.
+
 > **Template**: UX Spec
 > **Statut** : proposé (ux-designer CCGS, 19/11/2026, mode autonome, rigueur `minimal`)
 > **Écran** : `Effectif` (route « Effectif », chapitre Effectif/Vestiaire) · carrière Monde · PC souris + clavier

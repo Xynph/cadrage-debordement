@@ -29,6 +29,7 @@ const HORS_CARRIERE := ["Accueil", "Création", "Packs"]
 const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
+	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "options", "libelle": "Options", "type": "options"},
 ]
@@ -411,6 +412,22 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var ouvert: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(effectif[0].get("id"))})
 			await stabiliser()
 			if not ouvert or app.route != "Effectif" or not bool(app.get_meta("immersive08_full_player", false)): return {"statut": "echec", "note": "fiche joueur non ouverte"}
+		"mini_fiche":
+			# Le bureau séparé n'a pas de souris : la mini-fiche est affichée par programme sur le nom d'un joueur
+			# (même appel que le survol, ui/immersive08/mini_fiche.gd).
+			var effectif: Array = app.model.get("squad", [])
+			if effectif.is_empty(): return {"statut": "indisponible", "note": "effectif vide"}
+			app._navigate("Effectif")
+			await stabiliser()
+			var liens: Array = app.root_content.find_children("SquadOpenPlayer_*", "Button", true, false)
+			if liens.is_empty(): return {"statut": "indisponible", "note": "aucun nom de joueur cliquable"}
+			var lien: Button = liens[mini(3, liens.size() - 1)]
+			var defilement := app.find_child("SquadScroll", true, false) as ScrollContainer
+			if defilement != null: defilement.ensure_control_visible(lien)
+			await stabiliser()
+			var mini_fiche: Control = load("res://ui/immersive08/mini_fiche.gd").montrer(app, str(lien.get_meta("entity_id", "")), "squad", lien)
+			await stabiliser()
+			if mini_fiche == null or not is_instance_valid(mini_fiche): return {"statut": "echec", "note": "mini-fiche non affichée"}
 		"club":
 			var id := club_adverse()
 			if id.is_empty(): return {"statut": "indisponible", "note": "aucun club adverse connu"}
@@ -433,6 +450,7 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) == "calendrier_semaine":
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
+	if str(ecran.type) == "mini_fiche": load("res://ui/immersive08/mini_fiche.gd").cacher(app)
 	fermer_fenetres()
 
 func surface() -> Control:
