@@ -23,12 +23,19 @@ func ask(command: String, payload: Dictionary = {}) -> void:
 	app._command(command,payload)
 	await wait_response()
 	check(app.bridge.last_response_ok,"commande worker : " + command)
+func status_label() -> Label:
+	if is_instance_valid(app.status): return app.status
+	return app.find_child("ImmersiveSaveStatus",true,false) as Label
+func republish_status() -> void:
+	var label := status_label()
+	if label != null: label.text = app._settled_status_text()
+	if app.has_method("_refit_status"): app._refit_status()
 func screen_rect(node: Control) -> Rect2:
 	return node.get_global_transform() * Rect2(Vector2.ZERO,node.size)
 func inspect(tag: String) -> void:
-	var status: Label = app.status
-	check(is_instance_valid(status) and status.is_visible_in_tree(),tag + " : ligne de retour visible")
-	if not is_instance_valid(status) or not status.is_visible_in_tree(): return
+	var status: Label = status_label()
+	check(status != null and status.is_visible_in_tree(),tag + " : ligne de retour visible")
+	if status == null or not status.is_visible_in_tree(): return
 	check(status.text.begins_with("Conférence tenue"),tag + " : ligne « Conférence tenue » (" + status.text + ")")
 	check(status.get_line_count() == 1,tag + " : une seule ligne (%d)" % status.get_line_count())
 	var font: Font = status.get_theme_font("font")
@@ -67,13 +74,11 @@ func run() -> void:
 			inspect("%dx%d %s" % [resolution.x,resolution.y,route])
 			# Pire cas : reçu long (grosses sommes, deux mesures) publié après coup, comme après une réponse du moteur.
 			app.decision_feedback._receipts.append({"command":"press_conference","title":"Conférence tenue","text":"","summary":long_cash,"before":{},"after":{},"targets":[]})
-			app.status.text = app._settled_status_text()
-			if app.has_method("_refit_status"): app._refit_status()
+			republish_status()
 			await settle()
 			inspect("%dx%d %s (reçu long)" % [resolution.x,resolution.y,route])
 			app.decision_feedback._receipts.pop_back()
-			app.status.text = app._settled_status_text()
-			if app.has_method("_refit_status"): app._refit_status()
+			republish_status()
 	var report := {"checks":checks,"failures":failures}
 	var file := FileAccess.open(directory.path_join("report.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify(report)); file.close()

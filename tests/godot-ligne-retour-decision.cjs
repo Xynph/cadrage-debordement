@@ -19,10 +19,10 @@ test('Ligne de retour d’action (« Conférence tenue ») sur une ligne à 1920
  // The copied harness resolves its relative preload beside itself.
  const env={...process.env,CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_SELF_TEST:'0',CD_GODOT_DATA_DIR:dir+'-profile',CD_LIGNE_RETOUR_ARTIFACTS:dir,XDG_DATA_HOME:path.join(dir,'xdg-data'),XDG_CONFIG_HOME:path.join(dir,'xdg-config'),XDG_CACHE_HOME:path.join(dir,'xdg-cache')};
  for(const key of ['XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME'])fs.mkdirSync(env[key],{recursive:true});
- const imported=spawnSync(godot,['--headless','--editor','--path',project,'--import'],{env,encoding:'utf8',timeout:200000});
+ const imported=spawnSync(godot,['--headless','--editor','--path',project,'--import'],{env,encoding:'utf8',timeout:420000});
  fs.writeFileSync(path.join(dir,'import.log'),(imported.stdout||'')+(imported.stderr||''));
  if(imported.error)throw imported.error;assert.equal(imported.status,0,'Import Godot du projet jetable');
- const result=spawnSync(godot,['--headless','--audio-driver','Dummy','--max-fps','120','--log-file',path.join(dir,'runtime.log'),'--path',project,'--script',path.join(project,'ligne-retour-test.gd')],{env,encoding:'utf8',timeout:200000});
+ const result=spawnSync(godot,['--headless','--audio-driver','Dummy','--max-fps','120','--log-file',path.join(dir,'runtime.log'),'--path',project,'--script',path.join(project,'ligne-retour-test.gd')],{env,encoding:'utf8',timeout:420000});
  const output=(result.stdout||'')+(result.stderr||'');fs.writeFileSync(path.join(dir,'godot.log'),output);console.log(output.trim());console.log('Preuves ligne de retour : '+dir);
  if(result.error)throw result.error;assert.equal(result.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:|instances were leaked/);
  const report=JSON.parse(fs.readFileSync(path.join(dir,'report.json'),'utf8'));assert.deepEqual(report.failures,[]);assert.ok(report.checks>=40);

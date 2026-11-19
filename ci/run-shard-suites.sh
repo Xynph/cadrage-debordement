@@ -77,6 +77,10 @@ budget() {
     tests/native-club-strategy.cjs) echo 2400s ;; # Monde : saison de 46 semaines jouée jusqu'à next_season (1512 à 1581 s sous charge locale, 1062 à 1456 s en CI sur main ; le job Suites a 50 min)
     # Version Monde (migration du 13/11) : ~180-200 s en local, aussi sur main ; 180 s par défaut ne suffit plus.
     tests/performance-analysis.cjs) echo 600s ;;
+    # Bulletin médical en vraie carrière Monde (coupe d'Europe + entraînement, jour par jour) : ~160 s en local ; 180 s dépassées en CI.
+    tests/blessure-bulletin-coupe-monde.cjs) echo 600s ;;
+    # 169 s en CI sur 180 (Suites 2/7, run de #947) : au ras du cap.
+    tests/club-mail.cjs|tests/presse-rapide-monde.cjs) echo 400s ;;
     # Notes de match + XV type (carrière Monde) : une seule carrière jouée par le pont (4 journées) + deux comparaisons
     # dans le harnais VM, au lieu de 7 carrières et 16 journées : 17 min en CI avant (1031 s, 1074 s de CPU), ~385 s de CPU
     # en local après (2,2 fois moins) donc ~8 min estimées en CI ; budget ≈ 3 fois.
