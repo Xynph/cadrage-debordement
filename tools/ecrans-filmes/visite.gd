@@ -4,11 +4,12 @@ extends SceneTree
 ## Charge le vrai jeu (main.tscn) avec un profil temporaire, importe une carrière Monde
 ## (tools/ecrans-filmes/preparer-carriere.cjs : jour de match, une rencontre déjà jouée), puis, pour
 ## chaque taille demandée, ouvre chaque écran comme le ferait la navigation du jeu (app._navigate), ferme
-## les bulles de Gabi, attend que l'image ne bouge plus et l'enregistre (<ecran>-<largeur>.png). Écrans :
+## les bulles de Gabi, attend que l'image ne bouge plus et l'enregistre (<ecran>-<largeur>.png, voir suffixe_taille). Écrans :
 ## la liste ROUTES de tests/small-window-geometry.gd, puis fiche joueur, fiche d'un club adverse,
 ## calendrier en semaine, options, et pour finir le direct et la fenêtre Équipe (coup d'envoi donné dans
 ## le profil jetable). Écrit report.json (écrans réussis/échoués, débordements : contrôles hors de
-## l'écran, textes probablement tronqués) et une planche par taille (planche-<largeur>.png).
+## l'écran, textes probablement tronqués) et une planche par taille (planche-<largeur>.png ; hors 16:9,
+## <largeur>x<hauteur> : planche-2560x1080.png, bureau-3440x1440.png).
 ## Point d'entrée habituel : scripts/ecrans-filmes.ps1 (bureau Windows séparé, pilote audio muet).
 ##
 ##   godot --path native/godot --audio-driver Dummy --script tools/ecrans-filmes/visite.gd -- \
@@ -65,11 +66,16 @@ static func slug(texte: String) -> String:
 	while sortie.contains("--"): sortie = sortie.replace("--", "-")
 	return sortie.trim_prefix("-").trim_suffix("-")
 
-static func nom_fichier(id: String, largeur: int) -> String:
-	return "%s-%d.png" % [id, largeur]
+## Suffixe d'une taille : « 1920 » en 16:9, « 2560x1080 » sinon (2560 × 1440 et 2560 × 1080 ne s'écrasent pas).
+static func suffixe_taille(largeur: int, hauteur: int = 0) -> String:
+	if hauteur <= 0 or hauteur == roundi(largeur * 9.0 / 16.0): return str(largeur)
+	return "%dx%d" % [largeur, hauteur]
 
-static func nom_planche(largeur: int) -> String:
-	return "planche-%d.png" % largeur
+static func nom_fichier(id: String, largeur: int, hauteur: int = 0) -> String:
+	return "%s-%s.png" % [id, suffixe_taille(largeur, hauteur)]
+
+static func nom_planche(largeur: int, hauteur: int = 0) -> String:
+	return "planche-%s.png" % suffixe_taille(largeur, hauteur)
 
 ## ROUTES lues dans le texte de tests/small-window-geometry.gd ([] si introuvables).
 static func routes_depuis_texte(texte: String) -> Array:
@@ -483,7 +489,7 @@ func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
 		entree.statut = "echec"
 		entree.note = "aucune image rendue"
 		return
-	var fichier := nom_fichier(str(entree.id), taille.x)
+	var fichier := nom_fichier(str(entree.id), taille.x, taille.y)
 	if image.save_png(str(o.sortie).path_join(fichier)) != OK:
 		entree.statut = "echec"
 		entree.note = "écriture impossible : " + fichier
@@ -496,8 +502,8 @@ func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
 		entree.note = "image noire"
 	entree.merge(analyser())
 	if o.planche:
-		if not vignettes.has(taille.x): vignettes[taille.x] = []
-		vignettes[taille.x].append(vignette(image, 384))
+		if not vignettes.has(taille): vignettes[taille] = []
+		vignettes[taille].append(vignette(image, 384))
 
 func run() -> void:
 	var lu := lire_options(OS.get_cmdline_user_args())
@@ -608,9 +614,10 @@ func run() -> void:
 				if entree.statut == "ok": await capturer(entree, o, taille)
 				print("ECRANS_FILMES ", entree.taille, " ", entree.id, " ", entree.statut)
 	if o.planche:
-		for largeur in vignettes:
-			var feuille := planche(vignettes[largeur], 5)
-			if feuille != null and feuille.save_png(str(o.sortie).path_join(nom_planche(largeur))) == OK: report.planches.append(nom_planche(largeur))
+		for taille_planche: Vector2i in vignettes:
+			var nom := nom_planche(taille_planche.x, taille_planche.y)
+			var feuille := planche(vignettes[taille_planche], 5)
+			if feuille != null and feuille.save_png(str(o.sortie).path_join(nom)) == OK: report.planches.append(nom)
 	var compte := {"ok": 0, "echec": 0, "redirige": 0, "indisponible": 0, "non_visite": 0}
 	var debordements := 0
 	var tronques := 0
