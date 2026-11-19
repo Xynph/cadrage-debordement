@@ -5,11 +5,9 @@ name: Train de fusion
 # Déclenchement (19/11) : dès qu'une PR reçoit l'étiquette `train` (le code exécuté reste celui de main :
 # pull_request_target ne lance pas le code de la PR), et toutes les 20 min en secours, à des minutes décalées
 # (GitHub saute souvent les tâches planifiées à l'heure pile : une seule exécution planifiée la nuit du 18 au 19/11).
+# Train ARRÊTÉ (décision de Léo, 19/11/2026 : 1 lot fusionné sur 10 en 16 h). Plus de déclenchement par étiquette ni
+# horaire ; lancement à la main seulement. Voie par défaut : fusion automatique classique en squash (AGENTS.md).
 on:
-  pull_request_target:
-    types: [labeled]
-  schedule:
-    - cron: '7,27,47 * * * *'
   workflow_dispatch:
     inputs:
       taille_max:
