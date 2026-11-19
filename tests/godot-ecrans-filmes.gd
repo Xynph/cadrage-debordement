@@ -29,6 +29,7 @@ func run() -> void:
 	check(outil.slug("Stratégie") == "strategie" and outil.slug("Rivalités") == "rivalites" and outil.slug("Sélections") == "selections", "Accents retirés")
 	check(outil.slug("  Fenêtre Équipe · consignes ") == "fenetre-equipe-consignes", "Majuscules accentuées et ponctuation : " + outil.slug("  Fenêtre Équipe · consignes "))
 	check(outil.nom_fichier("plan-de-jeu", 1920) == "plan-de-jeu-1920.png" and outil.nom_planche(1280) == "planche-1280.png", "Noms des images et des planches")
+	check(outil.nom_fichier("bureau", 1920, 1080) == "bureau-1920.png" and outil.nom_fichier("bureau", 1366, 768) == "bureau-1366.png" and outil.nom_fichier("bureau", 2560, 1080) == "bureau-2560x1080.png" and outil.nom_planche(2560, 1440) == "planche-2560.png" and outil.nom_planche(2560, 1080) == "planche-2560x1080.png", "Tailles de même largeur (2560 × 1440 et 2560 × 1080) sans écrasement")
 
 	# Tailles.
 	var tailles: Dictionary = outil.lire_tailles("1920x1080, 1280X720,1920x1080")
