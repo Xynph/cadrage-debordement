@@ -1,0 +1,332 @@
+::group::tests/godot-match-temps-forts.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (inactif) : 16 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts — cadrage : 1077 images, hauteur visible de 17.0 à 37.8 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Temps forts (actif) : 1608 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Reprise après un arrêt à la minute 6 : { "cle": "carton-16", "raison": "carton", "rouge": true, "pourNous": false, "texte": "Maxime DUJARDIN reçoit un carton rouge : sortie définitive du joueur. Aucun remplacement autorisé.", "horloge": "6′" }
+Hauteur visible minimale pendant les gestes : 17.0 m
+Temps forts et gestes — cadrage : 8049 images, hauteur visible de 17.0 à 39.2 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Pause demandée pendant un temps fort : true (minute 22)
+Temps forts (gestes) : 18 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (reprise) : 2 contrôles ; 1 échec(s)
+FAIL: Le match en cours rouvre en temps forts
+
+ECHEC mode reprise
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Mi-temps à la minute 44 · causerie retenue par un temps fort : true
+Fin du match à la minute 85 · débrief retenu par un temps fort : true · score [45.0, 6.0] · arrêts sur carton repris : 0
+Réactions du stade : 16 · son actif : true · plans montrés : ["carry", "touch", "lineout", "setpiece-win", "turnover", "try", "transformation", "scrum", "penalty", "goal", "goalLine", "reception", "ingoal", "kick", "miss"]
+Liaisons jouées : ["touche (coupe) 4.2 s"]
+Temps forts (defaut) : 68 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (choregraphie) : 20 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0
+ENTRACTE2D 2 montre_max=6 temps_fort_debut=8 faits=0
+ENTRACTE2D 3 montre_max=15 temps_fort_debut=17 faits=1
+ENTRACTE2D 4 montre_max=25 temps_fort_debut=28 faits=6
+TERRAIN2D {"ballons":63,"deplacement":3962.48158300733,"faits":6,"minutes":16}
+Temps forts (terrain2d) : 4987 contrôles ; 1 échec(s)
+ERROR: Condition "!is_inside_tree()" is true.
+   at: grab_focus (scene/gui/control.cpp:3001)
+ERROR: Condition "!is_inside_tree()" is true.
+   at: grab_focus (scene/gui/control.cpp:3001)
+FAIL: Entracte avec la journée 1920×1080 : classement et multiplex de dix matchs (6 cartes ; classement true, multiplex true)
+
+ECHEC mode terrain2d
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MULTIPLEX_REEL {"clubs":14,"matchs":6,"minute":3.0,"nous":4.0}
+Temps forts (multiplex) : 3799 contrôles ; 1 échec(s)
+SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')
+          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+          GDScript backtrace (most recent call first):
+              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)
+              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)
+SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')
+          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+          GDScript backtrace (most recent call first):
+              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)
+              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)
+SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')
+          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+          GDScript backtrace (most recent call first):
+              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)
+              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)
+SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')
+          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+          GDScript backtrace (most recent call first):
+              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)
+              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)
+FAIL: Classement fictif : badges BO/BD ([], ["BD"], ["BO", "BD"], [])
+SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')
+          at: journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1832)
+          GDScript backtrace (most recent call first):
+              [0] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1832)
+              [1] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)
+
+ECHEC mode multiplex
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENTRACTE {"horloges":43,"premier_s":6.687}
+Temps forts (entracte) : 28 contrôles ; 0 échec(s)
+
+ECHEC mode entracte
+Preuves temps forts : /tmp/tmp.ZXhZfauyaA/suite.KflZVN/cd-match-temps-forts-9FgVfB · contrôles : repli 16 · actif 1608 (2 temps forts) · gestes 18 · défaut 68 · chorégraphe 20
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: modes en échec :
+reprise : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (reprise) : 2 contrôles ; 1 échec(s)
+FAIL: Le match en cours rouvre en temps forts
+
+
+1 !== 0
+
+
+terrain2d : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0
+ENTRACTE2D 2 montre_max=6 temps_fort_debut=8 faits=0
+ENTRACTE2D 3 montre_max=15 temps_fort_debut=17 faits=1
+ENTRACTE2D 4 montre_max=25 temps_fort_debut=28 faits=6
+TERRAIN2D {"ballons":63,"deplacement":3962.48158300733,"faits":6,"minutes":16}
+Temps forts (terrain2d) : 4987 contrôles ; 1 échec(s)
+ERROR: Condition "!is_inside_tree()" is true.
+   at: grab_focus (scene/gui/control.cpp:3001)
+ERROR: Condition "!is_inside_tree()" is true.
+   at: grab_focus (scene/gui/control.cpp:3001)
+FAIL: Entracte avec la journée 1920×1080 : classement et multiplex de dix matchs (6 cartes ; classement true, multiplex true)
+
+
+1 !== 0
+
+
+multiplex : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MULTIPLEX_REEL {"clubs":14,"matchs":6,"minute":3.0,"nous":4.0}
+Temps forts (multiplex) : 3799 contrôles ; 1 échec(s)
+SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')
+          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+          GDScript backtrace (most recent call first):
+              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)
+              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)
+SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')
+          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+          GDScript backtrace (most recent call first):
+              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)
+              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)
+SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')
+          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+          GDScript backtrace (most recent call first):
+              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)
+              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)
+SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')
+          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+          GDScript backtrace (most recent call first):
+              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)
+              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)
+              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)
+FAIL: Classement fictif : badges BO/BD ([], ["BD"], ["BO", "BD"], [])
+SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')
+          at: journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1832)
+          GDScript backtrace (most recent call first):
+              [0] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1832)
+              [1] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)
+
+
+1 !== 0
+
+
+entracte : entracte : temps_fort, legende, legende, intermediaire, temps_fort, legende, temps_fort, legende, legende, temps_fort, legende, intermediaire, temps_fort, legende
++ actual - expected
+
++ [
++   'reprise : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
++     '\n' +
++     'Temps forts (reprise) : 2 contrôles ; 1 échec(s)\n' +
++     'FAIL: Le match en cours rouvre en temps forts\n' +
++     '\n' +
++     '\n' +
++     '1 !== 0\n',
++   'terrain2d : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
++     '\n' +
++     'ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0\n' +
++     'ENTRACTE2D 2 montre_max=6 temps_fort_debut=8 faits=0\n' +
++     'ENTRACTE2D 3 montre_max=15 temps_fort_debut=17 faits=1\n' +
++     'ENTRACTE2D 4 montre_max=25 temps_fort_debut=28 faits=6\n' +
++     'TERRAIN2D {"ballons":63,"deplacement":3962.48158300733,"faits":6,"minutes":16}\n' +
++     'Temps forts (terrain2d) : 4987 contrôles ; 1 échec(s)\n' +
++     'ERROR: Condition "!is_inside_tree()" is true.\n' +
++     '   at: grab_focus (scene/gui/control.cpp:3001)\n' +
++     'ERROR: Condition "!is_inside_tree()" is true.\n' +
++     '   at: grab_focus (scene/gui/control.cpp:3001)\n' +
++     'FAIL: Entracte avec la journée 1920×1080 : classement et multiplex de dix matchs (6 cartes ; classement true, multiplex true)\n' +
++     '\n' +
++     '\n' +
++     '1 !== 0\n',
++   'multiplex : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
++     '\n' +
++     'MULTIPLEX_REEL {"clubs":14,"matchs":6,"minute":3.0,"nous":4.0}\n' +
++     'Temps forts (multiplex) : 3799 contrôles ; 1 échec(s)\n' +
++     "SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')\n" +
++     '          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '          GDScript backtrace (most recent call first):\n' +
++     '              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)\n' +
++     '              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)\n' +
++     "SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')\n" +
++     '          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '          GDScript backtrace (most recent call first):\n' +
++     '              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)\n' +
++     '              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)\n' +
++     "SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')\n" +
++     '          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '          GDScript backtrace (most recent call first):\n' +
++     '              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)\n' +
++     '              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)\n' +
++     "SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')\n" +
++     '          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '          GDScript backtrace (most recent call first):\n' +
++     '              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
++     '              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)\n' +
++     '              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)\n' +
++     'FAIL: Classement fictif : badges BO/BD ([], ["BD"], ["BO", "BD"], [])\n' +
++     "SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')\n" +
++     '          at: journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1832)\n' +
++     '          GDScript backtrace (most recent call first):\n' +
++     '              [0] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1832)\n' +
++     '              [1] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)\n' +
++     '\n' +
++     '\n' +
++     '1 !== 0\n',
++   'entracte : entracte : temps_fort, legende, legende, intermediaire, temps_fort, legende, temps_fort, legende, legende, temps_fort, legende, intermediaire, temps_fort, legende'
++ ]
+- []
+
+    at Object.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.cjs:124:8)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'reprise : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
+      '\n' +
+      'Temps forts (reprise) : 2 contrôles ; 1 échec(s)\n' +
+      'FAIL: Le match en cours rouvre en temps forts\n' +
+      '\n' +
+      '\n' +
+      '1 !== 0\n',
+    'terrain2d : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
+      '\n' +
+      'ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0\n' +
+      'ENTRACTE2D 2 montre_max=6 temps_fort_debut=8 faits=0\n' +
+      'ENTRACTE2D 3 montre_max=15 temps_fort_debut=17 faits=1\n' +
+      'ENTRACTE2D 4 montre_max=25 temps_fort_debut=28 faits=6\n' +
+      'TERRAIN2D {"ballons":63,"deplacement":3962.48158300733,"faits":6,"minutes":16}\n' +
+      'Temps forts (terrain2d) : 4987 contrôles ; 1 échec(s)\n' +
+      'ERROR: Condition "!is_inside_tree()" is true.\n' +
+      '   at: grab_focus (scene/gui/control.cpp:3001)\n' +
+      'ERROR: Condition "!is_inside_tree()" is true.\n' +
+      '   at: grab_focus (scene/gui/control.cpp:3001)\n' +
+      'FAIL: Entracte avec la journée 1920×1080 : classement et multiplex de dix matchs (6 cartes ; classement true, multiplex true)\n' +
+      '\n' +
+      '\n' +
+      '1 !== 0\n',
+    'multiplex : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
+      '\n' +
+      'MULTIPLEX_REEL {"clubs":14,"matchs":6,"minute":3.0,"nous":4.0}\n' +
+      'Temps forts (multiplex) : 3799 contrôles ; 1 échec(s)\n' +
+      "SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')\n" +
+      '          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '          GDScript backtrace (most recent call first):\n' +
+      '              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)\n' +
+      '              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)\n' +
+      "SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')\n" +
+      '          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '          GDScript backtrace (most recent call first):\n' +
+      '              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)\n' +
+      '              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)\n' +
+      "SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')\n" +
+      '          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '          GDScript backtrace (most recent call first):\n' +
+      '              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)\n' +
+      '              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)\n' +
+      "SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')\n" +
+      '          at: <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '          GDScript backtrace (most recent call first):\n' +
+      '              [0] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '              [1] <anonymous lambda> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1825)\n' +
+      '              [2] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1826)\n' +
+      '              [3] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)\n' +
+      'FAIL: Classement fictif : badges BO/BD ([], ["BD"], ["BO", "BD"], [])\n' +
+      "SCRIPT ERROR: Out of bounds get index '1' (on base: 'Dictionary')\n" +
+      '          at: journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1832)\n' +
+      '          GDScript backtrace (most recent call first):\n' +
+      '              [0] journee_fictive (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:1832)\n' +
+      '              [1] settle (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.gd:36)\n' +
+      '\n' +
+      '\n' +
+      '1 !== 0\n',
+    'entracte : entracte : temps_fort, legende, legende, intermediaire, temps_fort, legende, temps_fort, legende, legende, temps_fort, legende, intermediaire, temps_fort, legende'
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-match-temps-forts.cjs user_s=451.60 system_s=47.25 wall_s=914.97 cpu_pct=54% max_rss_kb=2622788
+::error file=tests/godot-match-temps-forts.cjs::Godot : ECHEC (1), durée 915 s, limite 1200s
+::endgroup::
