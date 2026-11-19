@@ -5,7 +5,8 @@ const Editorial = preload("res://ui/entry_editorial.gd")
 
 static func _action(button: Button, primary: bool = false, height: int = 42) -> void:
 	Editorial.action(button, primary, false, height)
-	button.add_theme_font_override("font", Editorial.sans_bold() if primary else C.BODY)
+	# Même police condensée que les titres de la page (« Choisir sa réalité », « Jeu de base »).
+	button.add_theme_font_override("font", C.BOLD)
 
 static func missing_warning(app: Control, parent: Container, scope: String, paper: bool = false) -> void:
 	var messages: Array[String] = []
@@ -108,8 +109,21 @@ static func page(app: Control) -> Control:
 			_installed_card(app, pack_column, pack, selected, compatible, creation, false, 0)
 
 	page.add_child(C.rule())
+	# Pied de page : l'état à gauche, la place réservée à Gabi (« Gabi · ? », « Visite ») à droite, sous le filet,
+	# pour que ses boutons ne touchent jamais le filet du pied de page.
+	var footer := C.h(16)
+	footer.name = "PacksFooter"
+	page.add_child(footer)
 	app.status = C.wrap("Analyse en cours…" if app.waiting else "RUGBY LEGACY 27     /     Installation locale", 18)
-	page.add_child(app.status)
+	C.fill(app.status)
+	app.status.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	footer.add_child(app.status)
+	var slot := Control.new()
+	slot.name = "PacksGabiSlot"
+	slot.custom_minimum_size = Vector2(150, 34)
+	slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	footer.add_child(slot)
 	return page
 
 static func _empty(parent: Container, picture_height: float) -> void:

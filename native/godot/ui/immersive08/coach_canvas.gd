@@ -1371,19 +1371,30 @@ func disable() -> void:
 	if is_instance_valid(app) and app._has_career(): app.call_deferred("_render")
 
 func _avoid_primary_controls() -> void:
-	# Mode grand : une courte scène, écran assombri ; Gabi reste sous le bandeau.
-	if is_instance_valid(_bulle) and _adjoint_actif(): return
+	# Mode grand : une courte scène, écran assombri ; Gabi garde sa place de base (coin bas)…
+	# … sauf s'il y recouvre une commande principale (« Approcher le joueur » du Recrutement, validation) :
+	# il prend alors la place libre que calcule l'évitement commun. Sans ce recours, la liste des commandes
+	# protégées (OfferRecruitment…) restait sans effet tant que le bandeau de Gabi était en service.
+	if is_instance_valid(_bulle) and _adjoint_actif():
+		if not expanded or not visible: return
+		var rects := _priority_rects()
+		if not _covers_priority(rects): return
 	if _place_in_creation_slot(): return
 	super._avoid_primary_controls()
 
-## Création : les boutons compacts occupent l'emplacement réservé du bandeau du haut (aucun recouvrement).
+## Création (bandeau du haut) et Packs (pied de page) : les boutons compacts occupent l'emplacement réservé.
 func _place_in_creation_slot() -> bool:
-	if expanded or _error_panel.visible or not is_instance_valid(app) or str(app.route) != "Création": return false
+	if expanded or _error_panel.visible or not is_instance_valid(app) or str(app.route) not in ["Création", "Packs"]: return false
 	if not is_instance_valid(app.root_content): return false
-	var slot := app.root_content.find_child("CreationGabiSlot", true, false) as Control
+	var packs := str(app.route) == "Packs"
+	# Packs : la place est dans le pied de page, sous son filet (marge garantie avec le filet).
+	var slot := app.root_content.find_child("PacksGabiSlot" if packs else "CreationGabiSlot", true, false) as Control
 	if slot == null or not slot.is_visible_in_tree(): return false
 	var rect := slot.get_global_rect()
-	if rect.size.x < size.x or rect.position.y >= app.size.y * .5: return false
+	if rect.size.x < size.x: return false
+	if packs:
+		if not Rect2(Vector2.ZERO, app.size).encloses(rect): return false
+	elif rect.position.y >= app.size.y * .5: return false
 	global_position = rect.position + (rect.size - size) / 2.0
 	return true
 

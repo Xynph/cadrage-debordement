@@ -89,7 +89,8 @@ func run() -> void:
 		var secondary:=item.find_child("RosterSecondaryPositions",true,false) as Label
 		var id:=str(item.get_meta("player_id"))
 		var person:Dictionary=original.squad.filter(func(player:Dictionary):return str(player.id)==id)[0]
-		check(principal.text==Squad.primary_caption(person),"Principal reprend le poste et ses côtés maîtrisés : "+id)
+		check(principal.text==Squad.fitted_position(Squad.primary_caption(person),principal),"Principal reprend le poste et ses côtés maîtrisés : "+id)
+		check(principal.get_theme_font("font").get_string_size(principal.text,HORIZONTAL_ALIGNMENT_LEFT,-1,principal.get_theme_font_size("font_size")).x<=principal.size.x+.5,"Poste principal entier dans sa colonne, sans points de suspension : "+id)
 		check(Squad.secondary_numbers(person).all(func(number:int):return not number in person.primaryPositions),"Principal et secondaires ne se recouvrent pas : "+id)
 		check(secondary.text==Squad.secondary_caption(person),"Autres reprennent seulement les numéros projetés : "+id)
 		check(principal.get_rect().end.x<=secondary.get_rect().position.x and secondary.get_rect().end.x<=568*C.density,"Colonnes contenues avant l’âge : "+id)

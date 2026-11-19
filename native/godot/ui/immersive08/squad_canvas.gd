@@ -169,6 +169,14 @@ static func primary_caption(player: Dictionary) -> String:
 	if numbers==[8]: return "Troisième ligne centre"
 	return str(player.get("pos","—"))
 
+## Libellé de poste qui tient dans la largeur réelle du label (police et taille mesurées) ; sinon sa forme courte.
+static func fitted_position(caption: String, label: Label) -> String:
+	var font: Font = label.get_theme_font("font")
+	var pixels := label.get_theme_font_size("font_size")
+	if font == null or font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x <= label.size.x: return caption
+	var short := str(preload("res://ui/squad_views.gd").position_label(caption, true))
+	return short if not short.is_empty() else caption
+
 static func secondary_numbers(player: Dictionary) -> Array[int]:
 	var result: Array[int] = []
 	var source: Variant = player.get("secondaryPositions")
@@ -394,6 +402,9 @@ func _row(player:Dictionary,index:int) -> void:
 	_reading_link(row, Rect2(54,2,231,30), player, "", "SquadOpenPlayer_")
 	var main_position := D.text(row,325,24,primary_caption(player),21,C.MUTED,500,154)
 	main_position.name = "RosterPrimaryPosition"
+	# Colonne mesurée : un libellé qui ne tient pas (« Troisième ligne centre ») prend sa forme courte, jamais « ce… ».
+	var fitted := fitted_position(primary_caption(player), main_position)
+	if fitted != main_position.text: main_position.text = fitted
 	main_position.mouse_filter = Control.MOUSE_FILTER_PASS
 	var primary: Array[String] = []
 	for number: int in primary_numbers(player): primary.append(str(number))

@@ -500,6 +500,17 @@ func champ(compact: bool) -> void:
 	check(("%d" % count) in pack_numbers and ("Clubs jouables" in pack_numbers),"Packs : « %d Clubs jouables », comme à l'accueil" % count)
 	var registry_total := int(app.model.meta.get("champDatabase",{}).get("clubCount",count))
 	check(registry_total==count or not (("%d" % registry_total) in pack_numbers),"Packs : le total du registre (%d, clubs invités compris) n'est pas affiché" % registry_total)
+	for pack_button_name in ["PackBack","PackImportZip","PackUseBase"]:
+		var pack_button := app.find_child(pack_button_name,true,false) as Button
+		check(pack_button!=null and pack_button.get_theme_font("font").resource_path.ends_with("BarlowCondensed-Bold.ttf"),"Packs : « %s » dans la police condensée des titres" % pack_button_name)
+	var pack_guide := app.coach as Control
+	var pack_slot := app.find_child("PacksGabiSlot",true,false) as Control
+	check(pack_slot!=null,"Packs : place réservée à Gabi dans le pied de page")
+	if pack_guide!=null and pack_guide.visible and not pack_guide.expanded and pack_slot!=null:
+		pack_guide._avoid_primary_controls()
+		# Le pied de page commence sous son filet (séparation de la colonne) : Gabi y reste entièrement.
+		var footer_top := pack_slot.get_parent().get_global_rect().position.y
+		check(pack_guide.get_global_rect().position.y >= footer_top - .5,"Packs à %s : Gabi et Visite laissent une marge sous le filet du pied de page" % dimensions)
 	app._navigate("Accueil")
 	await settle()
 	if not await edition_action("EntryNewCareer"): return
@@ -535,6 +546,21 @@ func champ(compact: bool) -> void:
 	var dates := timeline.find_children("OfficeTimelineDate*","Label",true,false) if timeline!=null else []
 	check(dates.size()==(5 if app.find_child("GabiBureau",true,false) != null else 7) and dates[0].text.contains("19/09/2026") and dates[0].text.contains(first.kickoffLocal),"Le fil du Bureau affiche les sept échéances et l’heure du premier match")
 	await capture(("73" if compact else "72")+"-champ-bureau-"+dimensions)
+	# Recrutement, aide de Gabi ouverte (mode grand, bandeau en service) : « Approcher le joueur » reste dégagé.
+	var market_ids: Array = app.model.get("market",[]).filter(func(player: Dictionary): return player.get("available",false)).map(func(player: Dictionary): return str(player.id))
+	if app.coach!=null and not market_ids.is_empty() and app.navigation_controller.open_market_player(market_ids[0]):
+		await settle()
+		var offer_guide := app.coach as Control
+		offer_guide.open_help()
+		await settle()
+		var offer := app.find_child("OfferRecruitment",true,false) as Button
+		if offer!=null and offer.is_visible_in_tree():
+			app.body_scroll.ensure_control_visible(offer)
+			await settle()
+			offer_guide._avoid_primary_controls()
+			check(not offer_guide.get_global_rect().intersects(offer.get_global_rect()),"Recrutement à %s : Gabi ouvert ne recouvre pas « %s »" % [dimensions,offer.text])
+		offer_guide.close()
+		await settle()
 	app._navigate("Rivalités" if compact else "Calendrier")
 	await settle()
 	if not await edition_action("ChampPreparationAdvance" if compact else "CompetitionChampAdvance"): return
@@ -957,6 +983,12 @@ func desktop_1080() -> void:
 			check(app.find_child("CompactRouteArt",true,false)==null,"Plus de repli compact en 720p · "+route)
 			var smallest := smallest_text(app.root_content)
 			check(smallest[0]>=11.0,"Aucun texte sous 11 px en 720p · %s · %.1f px · %s « %s »" % [route,smallest[0],smallest[1],smallest[2]])
+			if route=="Travail du club":
+				# « Voir l'entraînement » est posé dans le gabarit : il ne pousse plus la page ni n'ajoute de défilement.
+				var observe := app.find_child("ContextualObserveTraining",true,false) as Button
+				check(observe!=null and observe.is_visible_in_tree() and observe.get_parent().is_ancestor_of(rich_view) and not observe.get_parent() is Container,"Travail du club : « Voir l'entraînement » intégré au gabarit")
+				check(app.find_child("ContextualPageWorkspace",true,false)==null,"Travail du club : pas de défilement ajouté autour de la page")
+				if observe!=null: check(Rect2(Vector2.ZERO,app.size).encloses(observe.get_global_rect()),"Travail du club : « Voir l'entraînement » entier dans la fenêtre")
 			if route in ["Classements","Recrutement","Club","Carrière"]: await capture(family[2]+"-1280x720")
 		elif route=="Calendrier":
 			check(app.find_child("CalendarMonthGrid",true,false)!=null,"Grille mensuelle visible en 720p")
