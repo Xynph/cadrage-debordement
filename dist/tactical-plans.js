@@ -41,7 +41,7 @@ function penaliteConquete(l,side,kind,a,b){
  if(Math.random()>=(melee?PENALITES.melee*(typeof pilotageScrumPenalty==='function'?pilotageScrumPenalty(l):1)*pm.freq:PENALITES.touche))return false;
  const pourLanceur=melee?clamp(.55+(a-b)*PENALITES.meleeDominant+pm.biais,.2,.9):.65;
  const beneficiaire=Math.random()<pourLanceur?side:1-side;
- awardPenalty(l,beneficiaire,{phase:melee?'melee':'touche',incident:melee?'scrum':'maul'});
+ awardPenalty(l,beneficiaire,{phase:melee?'melee':'touche',incident:melee?'scrum':'maul',lanceur:side});
  return true;
 }
 const OUVERTURE_CHAMPIONNATS={elite:0,accession:-.03,nationale:-.015,urc:.025,champions:.02,challenge:.03,prem:.11,srp:.115,champ:.125,'jlo-d1':.125,'jlo-d2':.11};

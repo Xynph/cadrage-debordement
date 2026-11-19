@@ -71,6 +71,13 @@ test('Chaque fait structuré dit la même chose que le texte du journal', () => 
       } else if (s.kind === 'penalty') {
         // Coup de sifflet : la nature de la faute (règles professionnelles révisées).
         if (s.cause !== undefined) assert.ok(['offside', 'ruck', 'holding', 'obstruction', 'dangerous', 'scrum', 'maul', 'not-release', 'sealing'].includes(s.cause), e.text);
+        if (s.detail !== undefined) {
+          // Arbitrage fin (arbitrageVersion 1) : cause détaillée connue, de la même famille que l'incident tiré.
+          const famille = { scrum: ['scrum'], holding: ['holding'], 'not-release': ['not-release'], sealing: ['sealing'], dangerous: ['dangerous'], obstruction: ['obstruction'], offside: ['offside', 'ruck-offside'], ruck: ['ruck-side-entry', 'ruck-hands'], maul: ['lineout-obstruction', 'maul-collapse', 'maul-entry'] }[s.cause];
+          assert.ok(famille && famille.includes(s.detail), s.detail + ' / ' + s.cause + ' : ' + e.text);
+          assert.ok(e.text.includes('énalité'), e.text);
+          continue;
+        }
         assert.equal(s.cause === 'scrum', e.text.includes('faute en mêlée'), e.text);
         assert.equal(s.cause === 'holding', e.text.includes('ballon conservé au sol'), e.text);
       } else if (s.kind === 'card') {

@@ -100,11 +100,12 @@ module.exports=function nativeModel(){
   ['Territoire',total?Math.round(a.territory/total)+'%':'—',total?Math.round(b.territory/total)+'%':'—'],
   ['Mêlées conservées',a.scrumsWon+' / '+a.scrums,b.scrumsWon+' / '+b.scrums],
   ...(l.uncontestedScrums?.some(count=>count>0)?[['Dont non disputées',...l.uncontestedScrums]]:[]),
-  ['Touches conservées',a.lineoutsWon+' / '+a.lineouts,b.lineoutsWon+' / '+b.lineouts],
-  ['Pénalités concédées',a.penalties,b.penalties],['Cartons jaunes',a.yellows,b.yellows],
+  // Arbitrage fin (dist/arbitrage.js) : sous le compte, une ligne courte par équipe (lancers pas droits ; pénalités par famille).
+  ['Touches conservées',a.lineoutsWon+' / '+a.lineouts,b.lineoutsWon+' / '+b.lineouts,a.lineoutNotStraight||b.lineoutNotStraight?l.pair.map((ci,s)=>{const n=l.stats[s].lineoutNotStraight||0;return S.clubs[ci].abbr+' · '+(n?n+' lancer'+(n>1?'s':'')+' pas droit'+(n>1?'s':''):'aucun lancer pas droit')}):null],
+  ['Pénalités concédées',a.penalties,b.penalties,typeof arbitrageResume==='function'&&a.penaltyFamilies&&b.penaltyFamilies?l.pair.map((ci,s)=>S.clubs[ci].abbr+' · '+arbitrageResume(l.stats[s])):null],['Cartons jaunes',a.yellows,b.yellows],
   ['Tirs de pénalité',a.goals+' / '+a.goalAttempts,b.goals+' / '+b.goalAttempts],
   ['Transformations',a.conversions+' / '+a.conversionAttempts,b.conversions+' / '+b.conversionAttempts]
- ].map(([label,home,away])=>({label,home,away}));}
+ ].map(([label,home,away,detail])=>({label,home,away,...(detail?{detail}:{})}));}
  return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:typeof staffKickerId==='function'?staffKickerId():(S.playerRoles?.buteur&&S.lineup.includes(S.playerRoles.buteur)?S.playerRoles.buteur:chooseScorer(own,S.lineup)?.id)||null,selection,tactics,calendar,leagues,market,figures:(()=>{
   // Chiffres lus par plusieurs écrans : une seule source (club-budget.cjs), jamais recalculés côté interface.
   const w=typeof chiffresMasse==='function'?chiffresMasse():{joueursHebdo:own.players.reduce((n,p)=>n+p.salary,0)};
