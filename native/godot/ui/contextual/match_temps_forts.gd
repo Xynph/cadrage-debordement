@@ -436,17 +436,24 @@ static func sans_transformation(texte: String) -> String:
 	var coupe := texte.find(", transform")
 	return texte.substr(0, coupe) + "." if coupe > 0 else "Essai."
 
-## Bandeau du haut pendant un plan, quand le moteur a déjà atteint la mi-temps : l'équipe en
-## possession dans le plan montré (« Mi-temps » attend la fin de l'action).
-static func etat_du_plan(plan: Dictionary, equipes: Array) -> String:
+## Ligne d'état du haut pendant un plan : le fait du plan montré, jamais l'état du moteur (une minute
+## d'avance, la mi-temps comprise). Arrêt de jeu (« Essai — X », « Touche pour X », « Mêlée pour X »,
+## tir au but) ou possession et territoire de la scène affichée (Between.etat_du_fait).
+static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") -> String:
 	var scene: Variant = plan.get("scene")
 	if not scene is Dictionary: return "Le match"
 	var camp: Variant = scene.get("possession", scene.get("team", -1))
-	if not (camp is int or camp is float) or int(camp) not in [0, 1] or int(camp) >= equipes.size() or not equipes[int(camp)] is Dictionary: return "Le match"
-	var texte := "%s a le ballon" % S.G.club_name(equipes[int(camp)])
+	if not (camp is int or camp is float): camp = -1
 	var ballon: Variant = scene.get("ball")
-	if ballon is Dictionary and (ballon.get("x") is float or ballon.get("x") is int): texte += " " + Between._zone(float(ballon.x), int(camp))
-	return texte
+	var x: float = float(ballon.x) if ballon is Dictionary and (ballon.get("x") is float or ballon.get("x") is int) else NAN
+	return Between.etat_du_fait(kind if not kind.is_empty() else str(plan.get("kind", "")), int(camp), x, equipes)
+
+## Ligne d'état pendant la lecture d'un plan, même règle que la légende (`fait_a_l_ecran`) : un arrêt
+## de jeu (essai, touche, mêlée…) n'est dit qu'une fois à l'écran ; avant, la possession de la scène
+## montrée (le porteur qui court vers la ligne). Tir au but : l'arrêt est connu dès la pose « prêt ».
+static func etat_montre(plan: Dictionary, phase_plan: String, instant: float, essai_montre: bool, jalon_montre: bool, equipes: Array) -> String:
+	if plan.has("annonce") or fait_a_l_ecran(plan, phase_plan, instant, essai_montre, jalon_montre): return etat_du_plan(plan, equipes)
+	return etat_du_plan(plan, equipes, "carry")
 
 ## Modèle tel que la ligne météo du bandeau peut le dire : pendant un temps fort, la mi-temps déjà
 ## atteinte par le moteur attend la fin de l'action.
@@ -1341,13 +1348,14 @@ func _habiller() -> void:
 	if view.drawer.visible and view.drawer_tab == "Journal": view._update_drawer()
 	# Pendant un temps fort, le bandeau montre l'instant rejoué, pas l'état du moteur.
 	var legende: Control = view.events.get_parent().get_parent().get_parent()
-	# Hors liaison, le bandeau du haut revient à l'état du moteur, sauf la mi-temps déjà atteinte par
-	# le moteur pendant le dernier temps fort : elle attend la fin de l'action.
-	if phase != "liaison" or etat != JEU:
-		if etat == JEU and bool(_live.get("atBreak", false)) and index >= 0 and index < tf.get("plans", []).size():
-			between.forcer_etat(etat_du_plan(tf.plans[index], _teams))
-		else:
-			between.forcer_etat("")
+	# Ligne d'état du haut : pendant un plan, le fait du plan affiché (essai, touche, possession…),
+	# jamais l'état du moteur (une minute d'avance, mi-temps comprise) ; en liaison, l'arrêt de jeu
+	# (plus bas) ; la 3D tenue après le temps fort garde le dernier fait montré ; ailleurs (écran
+	# intermédiaire, sortie), l'état du terrain 2D et du moteur borné (match_between.gd).
+	if etat == JEU and phase != "liaison" and index >= 0 and index < tf.get("plans", []).size():
+		between.forcer_etat(etat_montre(tf.plans[index], phase, temps, _essai_montre, _jalon_montre, _teams))
+	elif etat != JEU and etat != ATTENTE:
+		between.forcer_etat("")
 	_habiller_meteo()
 	if etat == SORTIE:
 		# Plan large et sortie des joueurs : score du moteur (tout a été montré), mi-temps ou fin.
