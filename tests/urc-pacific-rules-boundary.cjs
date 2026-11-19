@@ -30,7 +30,7 @@ test('Pacifique : reprise disque et continuation déterministes sans changement 
   function boundary(model, save) {
     assert.equal(model.meta.edition, 'world-pacific');
     assert.equal(model.meta.rulesProfile, 'world-pro-2026-27-srp-2027-v2');
-    assert.match(model.meta.competitionRules, /2026–2027.*Pacifique 2027/);
+    assert.match(model.meta.competitionRules, /2026-2027.*Pacifique 2027/);
     assert.equal(save.worldMode.startYear, 2026);
     const srp = save.worldMode.fixtures.filter(f => f.competitionId === 'srp');
     assert.equal(srp.length, 80);
