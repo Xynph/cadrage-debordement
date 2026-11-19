@@ -47,6 +47,6 @@ function factory(){
   return true;
  }
  function setActive(value){if(typeof value!=='boolean')throw Error('Délégation : drapeau invalide.');actif=value;}
- return {project(){return null;},validate(){return true;},execute(){throw Error('Délégation : aucune commande.');},installHooks,setActive,clearTransient(){actif=false;}};
+ return {project(){return null;},validate(){return true;},execute(){throw Error('Délégation : aucune commande.');},installHooks,setActive,actif:()=>actif,clearTransient(){actif=false;}};
 }
 module.exports={files,commands,factory};

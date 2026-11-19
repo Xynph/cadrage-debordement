@@ -38,6 +38,7 @@
       "tests/economy-audit.cjs": 4,
       "tests/epcr-preparation-worker.cjs": 155,
       "tests/frontrow.cjs": 3,
+      "tests/incidents-match.cjs": 70,
       "tests/integration-cloud-complete.cjs": 420,
       "tests/international-career.cjs": 5,
       "tests/japan-match.cjs": 95,

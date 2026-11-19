@@ -159,7 +159,7 @@ function validateMatchRules(l,s){
   });
   const seen=new Set(sh.initial);let count=0,returns=0;
   for(const sub of l.subs.filter(x=>x.side===side)){
-   saveCheck(roster.has(sub.in)&&roster.has(sub.out)&&sub.in!==sub.out&&typeof sub.returning==='boolean'&&sub.returning===seen.has(sub.in)&&(l.frontRowVersion===1?['tactical','red20','frontcover','frontreturn','frontrelease']:['tactical','red20']).concat(l.hiaVersion===1?['hia','hia-retour','commotion']:[]).includes(sub.reason));
+   saveCheck(roster.has(sub.in)&&roster.has(sub.out)&&sub.in!==sub.out&&typeof sub.returning==='boolean'&&sub.returning===seen.has(sub.in)&&(l.frontRowVersion===1?['tactical','red20','frontcover','frontreturn','frontrelease']:['tactical','red20']).concat(l.hiaVersion===1?['hia','hia-retour','commotion']:[],l.incidentsVersion===1?['blessure','saignement','saignement-retour']:[]).includes(sub.reason));
    if(sub.reason==='red20')saveCheck(sh.redCards.some(c=>c.id===sub.out&&c.filled&&c.until!==null&&c.until<=sub.minute));
    else if(sub.returning&&sub.reason==='tactical')returns++;
    seen.add(sub.in);count++;
