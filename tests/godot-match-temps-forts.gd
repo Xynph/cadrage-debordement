@@ -346,16 +346,15 @@ func run() -> void:
 		while Time.get_ticks_msec() < limite_l:
 			var scene_l: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 			if scene_l is Dictionary:
-				# Comme l'ancien match importé en pause : la pause est posée avant le coup d'envoi (pendant la
-				# causerie). Un match déjà en pause joue tout de même son temps fort (régie, _pause_au_depart),
-				# puis l'écran intermédiaire attend ; les modes reprennent le match eux-mêmes. Une pause posée
-				# PENDANT un temps fort le figerait (pause du manager).
-				if not app.waiting and app.model.get("live") is Dictionary and not app.model.live.get("paused", false):
-					await command("pause", {"paused": true})
 				if not app.waiting: await command("match_talk_continue", {"key": scene_l.key, "phase": scene_l.phase, "skip": true})
 			elif surface() != null and (not surface().temps_forts_actifs() or surface().regie != null):
+				# État de l'ancien match importé en pause (la reprise d'une sauvegarde en plein match n'existe plus,
+				# décision du 16/11/2026) : le coup d'envoi part en direct, puis le match est mis en pause comme
+				# s'il l'était déjà au départ du temps fort (régie._pause_au_depart) : ce temps fort va à son terme,
+				# puis l'écran intermédiaire attend ; les modes reprennent le match eux-mêmes. Sans cela, la pause
+				# serait celle du manager pendant un temps fort, qui fige l'image (contrôlée par player_path).
 				if app.model.get("live") is Dictionary and not app.model.live.get("paused", false):
-					print("TEMPS_FORTS_PAUSE_TARDIVE ", mode)
+					if surface().regie != null: surface().regie.set("_pause_au_depart", true)
 					await command("pause", {"paused": true})
 				break
 			await process_frame
