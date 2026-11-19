@@ -1573,6 +1573,12 @@ static func _open_current_player(app: Control, player_id: String) -> void:
 	app.navigation_controller.open_entity({"kind":"player","id":player_id,"section":"contract"})
 
 ## Actions du mail, en bas, sur une rangée (au-dessus du rappel Espace).
+## Libellé du bouton d'une invitation du club : « Ouvrir l’entretien » pour un entretien (staff, joueur),
+## « Ouvrir l’invitation » pour les autres moments au club. Casse normale, style « action » du jeu.
+static func scene_invitation_caption(scene: Dictionary) -> String:
+	var title := str(scene.get("title", "")).to_lower()
+	return "Ouvrir l’entretien" if title.contains("entretien") else "Ouvrir l’invitation"
+
 static func _action_rect(index: int, top: int) -> Rect2:
 	var width := minf(520.0, (_reading_width() - 18) / 2.0)
 	return Rect2(PAD + index * (width + 18), top, width, _h(46))
@@ -1595,7 +1601,7 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 					_press_policy_toggle(card, app, _action_rect(1,top))
 	elif message.has("scene_invitation"):
 		var scene: Dictionary = message.scene_invitation
-		var open := D.button(card,_action_rect(0,top),"Ouvrir l’invitation",func():
+		var open := D.button(card,_action_rect(0,top),scene_invitation_caption(scene),func():
 			if is_instance_valid(app.contextual_director): app.contextual_director.open_invitation(str(scene.id)),true,"arrow",false,app.accent,"InboxOpenSceneInvitation")
 		var blocking := _blocking(app)
 		open.disabled = app.waiting or not blocking.is_empty()

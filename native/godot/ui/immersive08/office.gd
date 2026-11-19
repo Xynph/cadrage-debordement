@@ -13,6 +13,11 @@ const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
 const EntityLink = preload("res://ui/entity_link.gd")
 const UPCOMING_TILE = Color("26231b")
 const UPCOMING_BORDER = Color("706042")
+## Hauteur fixe des tuiles « Prochains matchs » (gabarit 2560 × 1440).
+const TIMELINE_TILE := 156
+const TIMELINE_TILE_JAPAN := 182
+## Blocs principaux du Bureau, dans l'ordre de la page : rien ne doit se chevaucher.
+const PAGE_BLOCKS := ["OfficeFixture","OfficeDecisions","OfficeGroup","OfficeStandings","OfficeJournal","OfficeRecruitment","OfficeTimeline","OfficeRecentResults","GabiPremiersPasCarte","GabiBureau"]
 
 static func _live_fixture(model: Dictionary, pair: Array, include_next: bool = true) -> Dictionary:
 	if pair.size() != 2: return {}
@@ -275,24 +280,22 @@ static func build(app: Control) -> Control:
 	_fixture(hero, app)
 	var priorities := _card(top, "OfficeDecisions", "▦  Tes trois priorités", 418)
 	_priorities(C.content(priorities), app)
-	# Keep the next decision visible while the secondary cards share the
-	# remaining workspace. Their natural minima can exceed a small window.
-	var scroll := ScrollContainer.new()
-	scroll.name = "OfficeReadingScroll"
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.follow_focus = true
-	C.fill(scroll, true)
-	page.add_child(scroll)
-	var reading := C.v(16)
-	C.fill(reading, true)
-	scroll.add_child(reading)
+	# Un seul défilement pour toute la page (celui de l'espace de travail) : l'ancien défilement interne
+	# laissait au classement et aux cartes du dessous la hauteur restante sous le prochain match, soit
+	# quelques demi-lignes en 1280 × 720. Chaque bloc garde désormais sa hauteur entière, l'un sous l'autre.
+	var reading := page
 	var middle := C.h(16)
+	middle.name = "OfficeReadingGrid"
+	middle.custom_minimum_size.y = C.px(448)
 	reading.add_child(middle)
 	_group(C.content(_card(middle, "OfficeGroup", "♡  État du groupe", 448, .77)), app)
 	_standings(C.content(_card(middle, "OfficeStandings", "♜  Classement · " + P.league_name(app.model), 448, 1.25)), app)
 	_journal(C.content(_card(middle, "OfficeJournal", "✉  Dans ton Bureau", 448)), app)
 	_recruitment(C.content(_card(middle, "OfficeRecruitment", "⌕  Le profil à suivre", 448)), app)
-	_timeline(C.content(_card(reading, "OfficeTimeline", "▦  Prochains matchs", 226)), app)
+	var timeline := _card(reading, "OfficeTimeline", "▦  Prochains matchs", 226)
+	# Frise à hauteur fixe : elle ne s'étire plus pour remplir le bas d'une grande fenêtre.
+	timeline.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_timeline(C.content(timeline), app)
 	var results := recent_results(app)
 	if results != null: reading.add_child(results)
 	return page
@@ -801,6 +804,10 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 	for fixture: Dictionary in fixtures:
 		var tile := C.card()
 		tile.add_theme_stylebox_override("panel",C.box(UPCOMING_TILE,UPCOMING_BORDER,6,12))
+		tile.name = "OfficeTimelineTile%d" % row.get_child_count()
+		# Hauteur fixe, la même pour toutes les tuiles (une ligne de plus pour le lieu au Japon).
+		tile.custom_minimum_size.y = C.px(TIMELINE_TILE_JAPAN if japan else TIMELINE_TILE)
+		tile.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		C.fill(tile)
 		row.add_child(tile)
 		var list := C.content(tile)

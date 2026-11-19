@@ -68,6 +68,29 @@ func tab(id: String) -> void:
 		if named("Preparation" + section_id).is_visible_in_tree(): visible += 1
 		if named("PreparationTab" + section_id).button_pressed: selected += 1
 	check(visible == 1 and selected == 1, "Un seul onglet et une seule section actifs")
+## Part de la hauteur visible laissée vide sous le dernier élément peint de la section
+## (conteneurs de mise en page exclus : ils s'étirent sans rien dessiner ; les panneaux comptent).
+func void_ratio(section: Control) -> float:
+	var viewport: Rect2 = app.body_scroll.get_global_rect()
+	var bottom: float = viewport.position.y
+	for node: Node in section.find_children("*", "Control", true, false):
+		var control := node as Control
+		if (control is Container and not control is PanelContainer) or not control.is_visible_in_tree() or control.size.y <= 0: continue
+		bottom = maxf(bottom, control.get_global_rect().end.y)
+	return maxf(0.0, viewport.end.y - bottom) / maxf(1.0, viewport.size.y)
+## Nom de club long dans la colonne de gauche : deux lignes au plus, taille réduite, jamais tronqué.
+func club_title_fits() -> void:
+	var D = load("res://ui/immersive08/primitives.gd")
+	var holder := Control.new()
+	root.add_child(holder)
+	for title in ["RUGBY CLUB DES DEUX VALLÉES ATLANTIQUE", "UNION SPORTIVE DU PLATEAU", "XV"]:
+		var label: Label = D.fit_title(D.text(holder, 124, 331, title, 23, Color.WHITE, 700, 222, HORIZONTAL_ALIGNMENT_CENTER), 222, 46)
+		var size: int = label.get_meta("fit_title_size")
+		var font: Font = label.get_theme_font("font")
+		var lines: int = D.title_lines(font, title, size, label.size.x)
+		check(lines <= 2 and lines == int(label.get_meta("fit_title_lines")), "Nom du club sur deux lignes au plus : " + title)
+		check(font.get_height(size) * lines <= label.size.y + 1.0, "Nom du club entier, sans points de suspension : " + title)
+	holder.queue_free()
 func capture(id: String) -> void:
 	if DisplayServer.get_name() == "headless": return
 	await RenderingServer.frame_post_draw
@@ -94,6 +117,7 @@ func run() -> void:
 	quit(0 if failures.is_empty() else 1)
 func cases() -> void:
 	print("PREPARATION_INITIAL ", root.size, " / ", app.size)
+	club_title_fits()
 	await command("export")
 	var before: String = app.model.meta.exportText
 	var disk_path := OS.get_environment("CD_GODOT_DATA_DIR").path_join("donnees.json")
@@ -105,9 +129,13 @@ func cases() -> void:
 	await key(KEY_RIGHT)
 	check(named("PreparationEntrainement").is_visible_in_tree(), "Flèche droite : entraînement accessible")
 	await key(KEY_LEFT)
-	await key(KEY_TAB)
-	await key(KEY_TAB)
-	var focus := app.get_viewport().gui_get_focus_owner()
+	# La barre d'onglets porte aussi les raccourcis du chapitre (Composition, Plan de jeu, match) : Tab
+	# les traverse avant d'atteindre les consignes (six pressions au plus).
+	var focus: Control = null
+	for pression in 6:
+		await key(KEY_TAB)
+		focus = app.get_viewport().gui_get_focus_owner()
+		if focus != null and str(focus.name).begins_with("PreparationAttack_"): break
 	check(focus != null and str(focus.name).begins_with("PreparationAttack_") and focus.is_visible_in_tree(), "Tab atteint les vraies consignes visibles")
 	await mouse(named("PreparationTabDossier"))
 	check(named("PreparationDossier").is_visible_in_tree(), "Sélection d’onglet à la souris")
@@ -118,6 +146,14 @@ func cases() -> void:
 		for id in ["Dossier", "Consignes", "Entrainement"]:
 			await tab(id)
 			check(app.body_scroll.get_global_rect().end.y <= app.size.y + 1, "CareerWorkspace borné " + str(resolution))
+			var empty := void_ratio(named("Preparation" + id))
+			check(empty <= 0.30, "Préparation sans vide > 30 %% de la hauteur (%s %s : %d %%)" % [id, resolution, roundi(empty * 100)])
+			if named("CarnetPreparation") != null:
+				check(named("PreparationBanner") != null and named("PreparationBanner").is_visible_in_tree(), "Bannière de la page visible " + str(resolution))
+			var chapter_rows := 0
+			for row: Node in app.root_content.find_children("ChapterSubnavigation", "", true, false):
+				if (row as Control).is_visible_in_tree(): chapter_rows += 1
+			check(chapter_rows == 0, "Une seule barre d’onglets sur la Préparation " + str(resolution))
 			if id == "Consignes":
 				for list_id in ["PreparationAttackScroll", "PreparationDefenseScroll"]:
 					var list: ScrollContainer = named(list_id)

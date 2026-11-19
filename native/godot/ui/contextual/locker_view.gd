@@ -68,7 +68,7 @@ func _draw() -> void:
 		go_on.add_theme_font_size_override("font_size", 26)
 		go_on.tooltip_text = "Reprendre le match (Entrée ou Espace)"
 		for state in ["normal", "hover", "pressed"]:
-			var style := S.G.T.box(Color("d8c183") if state == "hover" else Color("c9ae6a"), 6, Color("f1e2b0"))
+			var style := S.Base.box(S.GOLD if state == "hover" else Color("c9ae6a"), "control", Color("f1e2b0"))
 			style.set_border_width_all(2)
 			go_on.add_theme_stylebox_override(state, style)
 		declarations.add_child(go_on)

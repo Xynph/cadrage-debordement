@@ -357,6 +357,19 @@ func invitations_in_list(mail: Dictionary) -> void:
 		await settle()
 		var open := node("InboxOpenSceneInvitation") as Button
 		check(open != null and not open.disabled and str(open.text).begins_with("Ouvrir"), "Invitation ouverte : bouton pour y répondre")
+		if open != null:
+			check(open.text == "Ouvrir l’entretien", "Entretien : bouton « Ouvrir l’entretien » (%s)" % open.text)
+			check(open.text != open.text.to_upper(), "Entretien : libellé en casse normale, pas en capitales")
+			check(open.has_theme_stylebox_override("normal") and open.get_theme_stylebox("normal") is StyleBoxTexture, "Entretien : bouton au style « action » du jeu, pas au style par défaut")
+			var detail := node("InboxDetail") as Control
+			check(detail != null and detail.get_global_rect().grow(1.0).encloses(open.get_global_rect()), "Entretien : bouton dans la colonne du message")
+		check(Reception.scene_invitation_caption({"title":"Moment au club"}) == "Ouvrir l’invitation", "Autres invitations : « Ouvrir l’invitation »")
+		# Les colonnes (liste, message, concerné) ne se recouvrent pas : aucune bande ne passe au-dessus d'elles.
+		var colonnes: Array = ["InboxMessages", "InboxDetail", "InboxConcerne"].map(func(id: String): return node(id)).filter(func(c): return c is Control and (c as Control).is_visible_in_tree())
+		check(colonnes.size() >= 2, "Réception : liste et message affichés")
+		for i in colonnes.size():
+			for j in range(i + 1, colonnes.size()):
+				check(not (colonnes[i] as Control).get_global_rect().grow(-1.0).intersects((colonnes[j] as Control).get_global_rect().grow(-1.0)), "Réception : colonnes %s et %s sans chevauchement" % [colonnes[i].name, colonnes[j].name])
 		check(app.find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return b.text == "OUVRIR").is_empty(), "Aucun bouton « OUVRIR » hors palette")
 	var ids: Array = rows().map(func(item: Button) -> String: return str(item.get_meta("message_id")))
 	check(ids == display_order() and ids.has("invitation:qa-invitation"), "Invitations dans l'ordre d'affichage (Espace = prochain non lu)")
