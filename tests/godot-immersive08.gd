@@ -657,7 +657,7 @@ func reception() -> void:
 	var last_count := int(last.get_meta("message_count", 1))
 	last.pressed.emit()
 	await settle()
-	check(app.find_child("InboxMessageText", true, false).text == unread, "Un message sélectionné reste lisible dans les non lus")
+	check(lettre_texte() == unread,"Un message sélectionné reste lisible dans les non lus")
 	app.find_child("InboxToggleRead", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
@@ -669,7 +669,7 @@ func reception() -> void:
 	# Les avis du calendrier et les invitations de presse précèdent désormais l'alerte contrat et n'offrent pas de traitement :
 	# on sélectionne le premier message traitable qui ouvre l'effectif (alerte contrat).
 	original = await select_actionable()
-	check(app.find_child("InboxMessageText", true, false).text == original, "La sélection affiche le texte complet reçu")
+	check(lettre_texte() == original,"La sélection affiche le texte complet reçu")
 	app.find_child("InboxToggleFavorite", true, false).pressed.emit()
 	await choose_subject("Favoris")
 	list = app.find_child("InboxMessageRows", true, false)
@@ -741,6 +741,12 @@ func select_actionable() -> String:
 		var open_action: Button = app.find_child("InboxOpenMessageAction", true, false)
 		if app.find_child("InboxToggleArchive", true, false) != null and open_action != null and (open_action.text.contains("Effectif") or open_action.text.contains("échéances")): return text
 	return ""
+
+## Texte de la lettre ouverte (corps en texte riche avec liens : texte brut sans balises).
+func lettre_texte() -> String:
+	var text := app.find_child("InboxMessageText", true, false)
+	if text is RichTextLabel: return (text as RichTextLabel).get_parsed_text()
+	return str(text.get("text")) if text != null else ""
 
 func expand_threads() -> VBoxContainer:
 	for attempt in 24:
