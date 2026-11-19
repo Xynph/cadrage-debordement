@@ -114,10 +114,20 @@ Mené de 8 à la 72e, 1 200 fins de match par consigne :
 
 Garde-fous : `match-rating-curve` et `fatigue-phases-arretees` verts, seuils inchangés.
 
-Constat : taper au but rapporte désormais nettement plus de bonus défensif (0,44 contre 0,30 avant le chrono). Mais la
-pénaltouche ne gagne plus davantage de matchs (0,04 contre 0,05) : à −8 à la 72e, le choix n'est plus un vrai dilemme
-(les 400 fins de match de #937 donnaient 0,11 contre 0,17 de victoires). Piste : réussite de la pénaltouche dans les 22
-en fin de match (ballon porté), à remesurer sur 1 200 fins de match.
+Constat : taper au but rapporte désormais nettement plus de bonus défensif (0,44 contre 0,30 avant le chrono), et la
+pénaltouche ne gagne pas davantage de matchs à −8 (0,04 contre 0,05). C'est conforme au rugby réel : à −8, il faut deux
+scores pour gagner quelle que soit l'option, prendre les points est le choix courant.
+
+### Le dilemme là où il existe (19/11, `tests/mesure-bonus-1200.cjs`, run 44494782700, 1 200 rejeux par consigne, 72e)
+
+| Situation | Pénaltouche (« Tout pour la victoire ») V / BD / pts | Points (« défensif » ou « garder ») V / BD / pts |
+| --- | --- | --- |
+| −8 | 0,04 / 0,36 / 0,51 | 0,05 / **0,44** / **0,66** |
+| −6 (un essai transformé gagne) | **0,33** / 0,10 / **1,43** | 0,23 / 0,25 / 1,20 |
+| −4 (bonus en poche) | **0,37** / 0,40 / **1,98** | 0,26 / **0,53** / 1,66 |
+
+À −6 et −4, la pénaltouche gagne nettement plus (+10 et +11 points de victoires) au prix du bonus défensif : vrai choix.
+À −8, les points dominent : réaliste, aucun recalage du moteur.
 
 ## Limites
 
