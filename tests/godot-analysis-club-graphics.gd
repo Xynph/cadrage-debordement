@@ -180,7 +180,7 @@ func run() -> void:
 		check(app.route=="Finances" and app.management_ui.immersive08_finance_tab==item[1],"Bon onglet financier · "+str(item[1]))
 		await key(KEY_LEFT,true)
 	await OfficeCases.run(self,str(target.id))
-	check(app.bridge._next_id==requests and saved==FileAccess.get_file_as_bytes(save_path),"Liens graphiques sans commande ni écriture de sauvegarde")
+	check(OfficeCases.reads_only(app,requests) and saved==FileAccess.get_file_as_bytes(save_path),"Liens graphiques sans décision ni écriture de sauvegarde (lectures déclarées seules) "+str(OfficeCases.sent_since(app,requests)))
 	await command("export")
 	check(before==JSON.parse_string(app.model.meta.exportText).state,"État sportif, registre, RNG inchangés après consultation")
 	finish()

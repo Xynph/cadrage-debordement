@@ -338,7 +338,7 @@ static func _any_unread(marks: Dictionary, message: Dictionary) -> bool:
 	return members(message).any(func(id: String): return not marks.get(id, {}).get("read", false))
 
 ## Ordre d'affichage du dossier « Tous » (messages non archivés), une entrée par ligne de la liste : celui de la liste
-## et de `next_unread` (raccourci Espace).
+## et de `next_unread` (bouton « Courrier suivant non lu »).
 static func display_order(app: Control) -> Array:
 	var state := _state(app)
 	var view := {"marks":state.marks, "oldest_first":state.oldest_first}
@@ -987,7 +987,7 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	y += _h(46)
 	y = _mail_context(bottom, app, message, when, y, hint_base - 34 - top)
 	D.place(bottom, Rect2(0, top, _w, y))
-	D.text(card,PAD,hint_base,"Espace : message non lu suivant",16,C.FAINT.lightened(.1),500,reading_width).name = "InboxSpaceHint"
+	# Plus de rappel « Espace : message non lu suivant » : dans la coque commune, Espace = Continuer partout.
 	_settle_reading.call_deferred(scroll, bottom, (hint_base - 34) * C.density)
 
 ## Sous un mail court, le bas du panneau se complète au lieu de rester vide : illustration du thème (banque
@@ -1033,7 +1033,7 @@ static func _mail_context(bottom: Panel, app: Control, message: Dictionary, when
 		follow.disabled = next.is_empty() or str(next.get("id", "")) == str(message.get("id", ""))
 	return top + height
 
-## Même effet que la touche Espace : ouvre le prochain courrier non lu de la liste affichée.
+## Ouvre le prochain courrier non lu de la liste affichée (bouton « Courrier suivant non lu »).
 static func _open_next(app: Control) -> void:
 	if open_next_unread(app): app._render()
 

@@ -153,17 +153,28 @@ try {
   const relancer = serie('l.pilotage.consignes.relance="relancer";', 400), degager = serie('l.pilotage.consignes.relance="degager";', 400);
   const courts = serie('l.pilotage.consignes.coupsEnvoi="courts";', 100), longs = serie('l.pilotage.consignes.coupsEnvoi="longs";', 100);
   const pousser = serie('l.pilotage.consignes.melee="pousser";', 100), maulSouvent = serie('l.pilotage.consignes.maul="souvent";', 100), maulJamais = serie('l.pilotage.consignes.maul="jamais";', 100);
-  // Aile faible : effet de l'ordre de 0,3 point par match, sous l'erreur type d'une série de 100 matchs (≈ 1,5 point) :
-  // 400 matchs, comme la relance (sur 100, l'écart s'inversait au moindre changement d'effectif, ex. postes réels du 19/11).
-  const aile = serie('l.pilotage.consignes.cible="aile";l.pilotage.depuis.cible=0;', 400), base400 = serie('', 400), base100 = serie('', 100);
+  // Aile faible (AILE_FAIBLE, 19/11/2026) : l'effet dépend de leur ailier, pas du tirage d'effectif du jour. Leur ailier
+  // n° 14 est posé à 12 points de plaquage sous le reste de leurs trois-quarts (vraie aile faible), puis leurs deux ailiers
+  // à 5 points au-dessus (aucune aile faible). 400 matchs par réglage, mêmes graines : avant le correctif, +0,36 point
+  // seulement et +0,27 face à une aile solide (le bonus visait n'importe quel ailier, comparé aux avants).
+  const ailier = (ecart, numeros) => `{const o=1-l.userSide,on=l.sheets[o].on,arr=activePlayers(l,o).filter(p=>{const n=on.indexOf(p.id)+1;return n>=10&&n<=15});
+    for(const n of ${JSON.stringify(numeros)}){const p=matchPlayer(l,o,on[n-1]),autres=arr.filter(x=>x.id!==p.id),moy=autres.reduce((s,x)=>s+skill(x,'tackle'),0)/autres.length;
+      ensureSkills(p);p.skills.tackle+=moy+(${ecart})-skill(p,'tackle')}}`;
+  const viser = 'l.pilotage.consignes.cible="aile";l.pilotage.depuis.cible=0;';
+  const faible = ailier(-12, [14]), solide = ailier(5, [11, 14]);
+  const faibleBase = serie(faible, 400), faibleAile = serie(faible + viser, 400), solideBase = serie(solide, 400), solideAile = serie(solide + viser, 400), base100 = serie('', 100);
   console.log('relance : coups de pied', r(degager.coups), '/', r(relancer.coups), '· mètres', r(degager.metres), '/', r(relancer.metres), '· pertes', r(degager.pertes), '/', r(relancer.pertes));
   console.log('coups d’envoi repris : courts', r(courts.repris / courts.envois), '· base', r(base100.repris / base100.envois), '· longs', r(longs.repris / longs.envois));
-  console.log('pénalités de mêlée : base', r(base100.penMelee), '· pousser', r(pousser.penMelee), '| essais sur ballon porté : jamais', r(maulJamais.maul), '· base', r(base100.maul), '· souvent', r(maulSouvent.maul), '| point faible aile : écart', r(aile.ecart), 'contre', r(base400.ecart));
+  console.log('pénalités de mêlée : base', r(base100.penMelee), '· pousser', r(pousser.penMelee), '| essais sur ballon porté : jamais', r(maulJamais.maul), '· base', r(base100.maul), '· souvent', r(maulSouvent.maul), '| aile faible visée : écart', r(faibleAile.ecart), 'contre', r(faibleBase.ecart), '· mètres', r(faibleAile.metres), 'contre', r(faibleBase.metres), '| aile solide visée : écart', r(solideAile.ecart), 'contre', r(solideBase.ecart));
   assert.ok(degager.coups > relancer.coups && relancer.pertes > degager.pertes, 'relance suivie');
   assert.ok(courts.repris / courts.envois > base100.repris / base100.envois && longs.repris / longs.envois < base100.repris / base100.envois, 'coups d’envoi courts plus souvent repris');
   assert.ok(pousser.penMelee > base100.penMelee * 1.2, 'pousser en mêlée fait siffler davantage');
   assert.ok(maulSouvent.maul > base100.maul && maulJamais.maul < base100.maul, 'ballon porté suivi');
-  assert.ok(aile.ecart > base400.ecart, 'attaquer leur aile faible rapporte, au moins au début');
+  // Seuil 1 point, près de trois fois l'ancien effet ; mesuré +2,37 et +34 m après le correctif.
+  assert.ok(faibleAile.ecart > faibleBase.ecart + 1, 'attaquer leur aile faible rapporte : ' + r(faibleAile.ecart - faibleBase.ecart));
+  assert.ok(faibleAile.metres > faibleBase.metres * 1.08, 'débordements sur leur aile faible : ' + r(faibleAile.metres - faibleBase.metres) + ' m');
+  // Sans aile faible, la consigne ne fait que rendre le jeu prévisible : pas de gain (mesuré -1,06 après le correctif).
+  assert.ok(solideAile.ecart < solideBase.ecart + .3, 'viser une aile solide ne rapporte rien : ' + r(solideAile.ecart - solideBase.ecart));
   assert.ok(galvanises.ecart > vexes.ecart + 1.5, 'l’état des joueurs pèse sur le match : ' + r(galvanises.ecart - vexes.ecart));
   assert.ok(vexes.pen > base.pen, 'des joueurs vexés concèdent plus de fautes');
   // Scénario construit : l'adversaire mené de 10 points à l'heure de jeu, staff vigilant → il accélère et garde le ballon.

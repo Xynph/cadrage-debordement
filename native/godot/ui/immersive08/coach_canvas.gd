@@ -325,8 +325,12 @@ func installer_bandeau(zone: Control) -> void:
 	_pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(_pastille)
 	_visage = Medaillon.new()
+	_visage.ovale = _bandeau_compact
 	zone.add_child(_visage)
 	_visage.afficher(portrait)
+	if _bandeau_compact:
+		zone.accessibility_name = "Gabi, ton adjoint · F1"
+		zone.tooltip_text = "Gabi, ton adjoint · clic : son avis sur cet écran · F1 : l'aide"
 	_bandeau_titre = Label.new()
 	_bandeau_titre.name = "GabiBandeauTitre"
 	_bandeau_titre.add_theme_font_override("font", C.BOLD)
@@ -395,11 +399,12 @@ func _disposer_bandeau() -> void:
 	var s := _bandeau.size
 	var h := s.y
 	if _bandeau_compact:
-		_visage.position = Vector2((s.x - h) / 2.0, 0)
-		_visage.size = Vector2(h, h)
+		# Médaillon ovale (72 × 48 en référence) : le visage remplit la zone, l'ovale tracé est dessiné par-dessus.
+		_visage.position = Vector2.ZERO
+		_visage.size = s
 		_style_pastille()
 		if not _bandeau_masque and portrait is GabiPortrait and portrait.framing == "visage":
-			portrait.set_render_size(Vector2i.ONE * roundi(h * _bandeau.get_global_transform_with_canvas().get_scale().y * 2.0))
+			portrait.set_render_size(Vector2i.ONE * roundi(maxf(s.x, h) * _bandeau.get_global_transform_with_canvas().get_scale().y * 2.0))
 		return
 	var d := roundf(h * 0.97)
 	_visage.position = Vector2(0, (h - d) / 2.0)
@@ -1351,6 +1356,11 @@ func _maj_indice() -> void:
 		# Le message d'un écran ne suit pas le coach ailleurs : il revient à la prochaine visite.
 		_attente.clear()
 	if is_instance_valid(_visage): _visage.indice = not _attente.is_empty() and not _bulle.visible
+	# Médaillon ovale : plus de pastille ; un mot en attente est dit en toutes lettres (infobulle, nom accessible).
+	if _bandeau_compact and not _bandeau_masque and is_instance_valid(_bandeau):
+		var waiting := not _attente.is_empty() and not _bulle.visible
+		_bandeau.accessibility_name = "Gabi, ton adjoint · F1" + (" · un mot pour toi" if waiting else "")
+		_bandeau.tooltip_text = ("Gabi a un mot pour toi · clic pour le lire" if waiting else "Gabi, ton adjoint · clic : son avis sur cet écran") + " · F1 : l'aide"
 	_maj_remarque()
 
 func refresh() -> void:

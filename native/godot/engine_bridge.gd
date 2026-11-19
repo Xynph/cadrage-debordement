@@ -51,6 +51,8 @@ var _mutex := Mutex.new()
 var _wake := Semaphore.new()
 var _queue: Array[Dictionary] = []
 var _next_id: int = 0
+## Noms des dernières commandes envoyées (les 256 dernières) : les recettes vérifient ce qu'un clic a demandé.
+var sent_commands: PackedStringArray = []
 var _stopping: bool = false
 var _stop_deadline_ms: int = 0
 # Révision du modèle annoncée au moteur : propriété du fil d’E/S. Le modèle lui-même (`model`) appartient au fil
@@ -132,6 +134,8 @@ func send(command: String, payload: Dictionary = {}) -> void:
 		command_failed.emit("Le moteur est fermé.")
 		return
 	_next_id += 1
+	sent_commands.append(command)
+	if sent_commands.size() > 256: sent_commands = sent_commands.slice(sent_commands.size() - 256)
 	var request := {"id": _next_id, "command": command, "payload": payload.duplicate(true)}
 	# The reader applies the edition-specific 8/16/20/24 MiB save limits. Only imports
 	# can use the larger bounded envelope for escaped world save text.

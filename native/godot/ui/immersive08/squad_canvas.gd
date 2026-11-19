@@ -17,6 +17,7 @@ const ETALEMENT := LARGEUR / 1668.0
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Notes = preload("res://ui/notes_match.gd")
+const Sales = preload("res://ui/player_sales_view.gd")
 var app: Control
 var state: Dictionary
 var rows: VBoxContainer

@@ -117,7 +117,8 @@ static func render(app: Control) -> bool:
 	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	app.root_content.add_child(layout)
 	var reference := Vector2(2560,1440)*C.density
-	_coque_floor = ceili(12.0 / maxf(.5, _predicted_factor(Vector2(physical), reference)) - .001)
+	_coque_factor = maxf(.5, _predicted_factor(Vector2(physical), reference))
+	_coque_floor = ceili(12.0 / _coque_factor - .001)
 	_fit_layout(app.root_content,layout,reference)
 	app.root_content.resized.connect(_fit_layout.bind(app.root_content,layout,reference))
 	var shell := C.h(0)
@@ -367,6 +368,8 @@ class Picto extends Control:
 				draw_line(_p(.5 - s * .34, .5), _p(tip, .5), c, w)
 				draw_line(_p(tip, .5), _p(tip - s * .28, .24), c, w)
 				draw_line(_p(tip, .5), _p(tip - s * .28, .76), c, w)
+				# Impossible (bord de l'historique) : flèche barrée, en plus de la teinte ivoire-3 (couleur jamais seule).
+				if is_instance_valid(source) and source.disabled: draw_line(_p(.18, .86), _p(.82, .14), c, w)
 			"loupe":
 				draw_arc(_p(.42, .42), size.x * .28, 0.0, TAU, 32, c, w, true)
 				draw_line(_p(.62, .62), _p(.9, .9), c, w)
@@ -394,6 +397,8 @@ class Picto extends Control:
 ## Plancher des textes de la coque en pixels de construction : 12 px réels une fois le gabarit mis à l'échelle
 ## (_fit_layout peut le réduire de quelques pour cent pour loger le pied de page, 0,977 à 1280 × 720).
 static var _coque_floor := 12
+## Facteur prévu du gabarit (_fit_layout) pour la fenêtre en cours : cibles de la coque en pixels réels.
+static var _coque_factor := 1.0
 
 static func _fpx(size_ref: float) -> int:
 	return maxi(_coque_floor, C.px(size_ref))
@@ -433,7 +438,7 @@ static func _shell_button(id: String, contour: bool = false) -> Button:
 	var border := C.FAINT if contour else Color.TRANSPARENT
 	var radius := 3.0 if contour else 0.0
 	var fills := {"normal":Color.TRANSPARENT, "hover":C.RAISED, "pressed":C.SELECTED, "hover_pressed":C.SELECTED, "disabled":Color.TRANSPARENT}
-	for state: String in fills: button.add_theme_stylebox_override(state, _style(fills[state], radius, border))
+	for state: String in fills: button.add_theme_stylebox_override(state, _style(fills[state], radius, C.LINE if state == "disabled" and contour else border))
 	var focus := _style(Color.TRANSPARENT, 0.0, C.IVORY, 2)
 	focus.set_expand_margin_all(2)
 	button.add_theme_stylebox_override("focus", focus)
@@ -510,6 +515,23 @@ static func club_context(model: Dictionary) -> String:
 	var rank := P.rank_ordinal(club)
 	return division if rank == "—" else division + " · " + rank
 
+## « Division · rang » ajusté à `room` (unités de référence) : [texte, taille, lignes]. Une ligne en 16 (12 px à
+## 1920), sinon deux lignes, puis la taille descend jusqu'au plancher de 12 px réels ; si cela ne suffit toujours pas,
+## la division est raccourcie avec « … » mais « · rang » reste entier.
+static func fit_context(context: String, rank: String, room: float) -> Array:
+	if _rw(C.BODY, context, 16) <= room: return [context, 16.0, 1]
+	var size := 16.0
+	while true:
+		if D.title_lines(C.BODY, context, _fpx(size), room * C.density) <= 2: return [context, size, 2]
+		if _fpx(size) <= _coque_floor or size <= 1.0: break
+		size -= 1.0
+	var suffix := " · " + rank if not rank.is_empty() and context.ends_with(" · " + rank) else ""
+	var division := context.trim_suffix(suffix)
+	while division.length() > 1:
+		division = division.substr(0, division.length() - 1).strip_edges()
+		var candidate := division + "…" + suffix
+		if D.title_lines(C.BODY, candidate, _fpx(size), room * C.density) <= 2: return [candidate, size, 2]
+	return [context, size, 2]
 static func _rail_entries(app: Control) -> Array:
 	return RAIL_NATION if Selections.nation_only(app.model) else RAIL_SECTIONS
 
@@ -604,22 +626,26 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> void:
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if lines == 2 else TextServer.AUTOWRAP_OFF
 	name_label.max_lines_visible = 2
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	# La taille minimale mise en cache (texte sur une ligne) bornerait la largeur : on la recalcule avant de placer.
+	name_label.update_minimum_size()
+	D.place(name_label, Rect2(96, top, room, line_height * lines))
 	header.tooltip_text = identity + " · fiche du club" if not national else identity
 	var context := "Sélection nationale" if national else club_context(app.model)
-	# « Division · rang » : 16 (12 px à 1920), réduit jusqu'au plancher puis coupé avec infobulle.
-	var sub_size := 16.0
-	while sub_size > 12.0 and _rw(C.BODY, context, sub_size) > room: sub_size -= 1.0
-	var sub := _label(header, Rect2(96, top + line_height * lines + 2, room, 21), context, sub_size, C.MUTED, C.BODY)
+	# « Division · rang » : même calcul sur tous les écrans (fit_context) : une ligne, puis deux lignes, puis 12 px,
+	# puis la division se raccourcit — le rang n'est jamais perdu ; texte complet en infobulle.
+	var rank := "" if national or P.rank_ordinal(app.model.get("club", {}) if app.model.get("club") is Dictionary else {}) == "—" else P.rank_ordinal(app.model.club)
+	var fitted := fit_context(context, rank, room)
+	var sub := _label(header, Rect2(96, top + line_height * lines + 2, room, 21), str(fitted[0]), float(fitted[1]), C.MUTED, C.BODY)
 	sub.name = "ImmersiveClubContext"
-	sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	sub.tooltip_text = context
-	# Toujours trop long au plancher : deux lignes (jamais de « … » tant qu'elles suffisent).
-	var sub_lines := 2 if _rw(C.BODY, context, sub_size) > room else 1
-	if sub_lines == 2:
+	sub.set_meta("context_complet", context)
+	sub.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	if int(fitted[2]) == 2:
 		sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		sub.max_lines_visible = 2
 		sub.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	D.place(sub, Rect2(96, top + line_height * lines + 2, room, 21 * sub_lines))
+	sub.update_minimum_size()
+	D.place(sub, Rect2(96, top + line_height * lines + 2, room, 21 * int(fitted[2])))
 	header.tooltip_text = (identity + " · " + context + " · fiche du club") if not national else identity
 	var stripe := _incline(header, Rect2(27, RAIL_HEADER - 17, RAIL_WIDTH - 48, 4), Charte.club_trait(app.accent))
 	stripe.name = "ImmersiveClubStripe"
@@ -820,15 +846,21 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 		D.place(next_day, Rect2(right - day_width, cy, day_width, ch))
 		next_day.pressed.connect(app.next_day_action)
 		right -= day_width + 16.0
-	var f1_width := _key_width("F1")
+	# Médaillon ovale de Gabi (72 × 48 en référence, 54 × 36 px à 1920) et sa touche « F1 » : cibles d'au moins 28 px
+	# réels (58 de haut à 1280 × 720), et au moins 50 pour rester ≥ 24 px si la fenêtre passe de 2560 à 1280 sans
+	# reconstruction. Les deux s'affichent ensemble ou pas du tout (Bureau : Gabi en pied, coach coupé).
+	var target := ceilf(28.0 / maxf(.01, C.density * _coque_factor))
+	var medallion_height := clampf(maxf(50.0, target), 50.0, TOPBAR_HEIGHT - 4.0)
+	var medallion_width := medallion_height * 1.5
+	var f1_width := maxf(_key_width("F1") + 8.0, target)
 	var help := _shell_button("GabiF1")
 	help.tooltip_text = "Aide de Gabi · F1"
 	help.accessibility_name = "Aide de Gabi · F1"
 	panel.add_child(help)
-	D.place(help, Rect2(right - f1_width - 8.0, cy, f1_width + 8.0, ch))
+	D.place(help, Rect2(right - f1_width, (TOPBAR_HEIGHT - medallion_height) / 2.0, f1_width, medallion_height))
 	help.pressed.connect(func(): app._open_coach())
-	_key(help, 4, (ch - 27) / 2.0, "F1", C.RAISED)
-	right -= f1_width + 8.0 + 4.0
+	_key(help, (f1_width - _key_width("F1")) / 2.0, (medallion_height - 27) / 2.0, "F1", C.RAISED)
+	right -= f1_width + 4.0
 	var gabi_en_pied: bool = app.route == "Bureau" and not national and is_instance_valid(app.get("coach")) and app.coach.has_method("bureau_disponible") and app.coach.bureau_disponible()
 	var gabi := Control.new()
 	gabi.name = "GabiBandeau"
@@ -836,10 +868,8 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	gabi.set_meta("masque", gabi_en_pied)
 	gabi.set_meta("compact", true)
 	panel.add_child(gabi)
-	# Médaillon (cible ≥ 24 px même quand la fenêtre passe de 2560 à 1280 sans reconstruction : 50 en référence).
-	var medallion := maxf(square, 50.0)
-	D.place(gabi, Rect2(right - medallion, (TOPBAR_HEIGHT - medallion) / 2.0, medallion, medallion))
-	right -= medallion + 27.0
+	D.place(gabi, Rect2(right - medallion_width, (TOPBAR_HEIGHT - medallion_height) / 2.0, medallion_width, medallion_height))
+	right -= medallion_width + 27.0
 	# Date + journée : « mar. 17 nov. · J9 » ; clic : Calendrier (au jour courant).
 	var caption := date_caption(app.model)
 	var widest := maxf(_rw(Charte.texte_moyen(), caption[0], 17), _rw(Charte.texte_moyen(), "mer. 28 sept.", 17))
@@ -868,6 +898,9 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	_continue_button(panel, app, continue_rect)
 	if next_day != null: next_day.focus_neighbor_right = app.primary_button.get_path()
 	if is_instance_valid(app.coach) and app.coach.has_method("installer_bandeau"): app.coach.installer_bandeau(gabi)
+	else: gabi.hide()
+	# « F1 » n'est jamais seul dans la barre : il suit le médaillon (masqué au Bureau, où Gabi est en pied).
+	help.visible = gabi.visible and not gabi_en_pied
 
 ## Date du jeu de la barre haute : [« mar. 17 nov. », « J9 » ou vide, infobulle].
 static func date_caption(model: Dictionary) -> Array:
@@ -884,8 +917,12 @@ static func date_caption(model: Dictionary) -> Array:
 		text = "%s%d %s" % [(JOURS[weekday] + " ") if weekday >= 0 and weekday < 7 else "", int(parts[2].substr(0, 2)), MOIS[int(parts[1]) - 1]]
 	else:
 		text = "Saison " + G.season_label(meta.get("season", 1))
+	# Journée : celle du libellé de la semaine (« Journée 9 · … ») ; sinon celle de la prochaine rencontre du club
+	# (« Journée 2 », relectures du 19/11/2026 : l'avant-saison et les semaines sans libellé gardent leur repère).
 	var journee := ""
-	var matched := RegEx.create_from_string("^Journée (\\d+)").search(round_label)
+	var pattern := RegEx.create_from_string("(?i)journée\\s+(\\d+)")
+	var matched := pattern.search(round_label)
+	if matched == null: matched = pattern.search(str(P.next_fixture(model).get("label", "")))
 	if matched != null: journee = "J" + matched.get_string(1)
 	return [text, journee, round_label]
 
@@ -935,13 +972,17 @@ static func _place_crumbs(panel: Control, app: Control, crumbs: Array, left: flo
 	for i in shown.size():
 		var last: bool = i == shown.size() - 1
 		var font: Font = Charte.texte_moyen() if last else C.BODY
-		var width := minf(_rw(font, str(shown[i][0]), 17) + 8.0, maxf(40.0, right - x))
+		# Le dernier morceau (la page) se resserre jusqu'au plancher de 12 px avant tout « … ».
+		var size := 17.0
+		var room := maxf(40.0, right - x)
+		while _fpx(size) > _coque_floor and _rw(font, str(shown[i][0]), size) + 8.0 > room: size -= 1.0
+		var width := minf(_rw(font, str(shown[i][0]), size) + 8.0, room)
 		var crumb := _shell_button("ImmersiveCrumb%d" % (first_index + i))
 		crumb.text = str(shown[i][0])
 		crumb.tooltip_text = str(shown[i][0])
 		crumb.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		crumb.add_theme_font_override("font", font)
-		crumb.add_theme_font_size_override("font_size", _fpx(17))
+		crumb.add_theme_font_size_override("font_size", _fpx(size))
 		if not last:
 			for key in ["font_color", "font_focus_color"]: crumb.add_theme_color_override(key, C.MUTED)
 		else: crumb.set_meta("ariane_ici", true)
@@ -1040,18 +1081,29 @@ static func sync_continue(app: Control) -> void:
 	var state := str(button.text).strip_edges()
 	var own_head: bool = state in ["Relancer", "Retour au direct", "Valider le résultat"]
 	label.text = state.to_upper() if own_head else "CONTINUER"
-	hint.text = "Espace" if own_head or state.is_empty() or state == "Continuer" else state
-	if button.disabled: hint.text = "! Indisponible"
-	button.accessibility_name = label.text.capitalize() + " · " + hint.text
+	# « Espace » au repos ; « ! » + raison courte seulement quand quelque chose arrête Continuer (main.continue_block),
+	# jamais d'après l'état désactivé ni d'après la prochaine étape ordinaire (« Préparer »).
+	var block: String = str(app.continue_block()) if app.has_method("continue_block") else ""
+	hint.text = "Espace" if block.is_empty() else "! " + block
+	button.accessibility_name = label.text.capitalize() + " · " + (block + " (clic : l'écran qui bloque)" if not block.is_empty() else "touche Espace")
 	var width_ref := button.size.x / C.density if button.size.x > 0 else CONTINUE_WIDTH
 	var height_ref := button.size.y / C.density if button.size.y > 0 else TOPBAR_HEIGHT - 16
-	var hint_width := minf(_rw(C.BODY, hint.text, 16) + 4.0, width_ref * .52)
+	# Jamais de « … » : le libellé et la raison se resserrent jusqu'au plancher de 12 px pour tenir entiers.
+	var hint_size := 16.0
+	var label_size := 24.0
 	var hint_right := width_ref - 35.0
+	while hint_size > 1.0 and _fpx(hint_size) > _coque_floor and _rw(C.BODY, hint.text, hint_size) + 4.0 > width_ref * .55: hint_size -= 1.0
+	var hint_width := _rw(C.BODY, hint.text, hint_size) + 4.0
+	var label_room := hint_right - hint_width - 37.0 - 24.0
+	while label_size > 1.0 and _fpx(label_size) > _coque_floor and _rw(Charte.TITRE_EXTRA_ITALIQUE, label.text, label_size) > label_room: label_size -= 1.0
+	hint.add_theme_font_size_override("font_size", _fpx(hint_size))
+	label.add_theme_font_size_override("font_size", _fpx(label_size))
+	hint.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	hint.tooltip_text = hint.text
 	D.place(hint, Rect2(hint_right - hint_width, 0, hint_width, height_ref))
-	hint.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	D.place(rule, Rect2(hint_right - hint_width - 13.0, height_ref * .28, 1.0 / C.density, height_ref * .44))
-	D.place(label, Rect2(24, 0, maxf(40.0, hint_right - hint_width - 37.0), height_ref))
-	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	D.place(label, Rect2(24, 0, maxf(40.0, label_room), height_ref))
 
 ## Chiffre clé de l'en-tête Effectif : gros chiffre et légende sur le fond sombre des blocs (comme
 ## « 65 aujourd’hui » de la fiche joueur), à la place des pastilles en petit texte vert sur vert.
@@ -1189,7 +1241,7 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	parent.add_child(row)
 	layout.set_meta("immersive_footer",row)
 	D.line(row,Vector2(0,-FOOTER_RISE),Vector2(2248,-FOOTER_RISE),Color(C.LINE,.7))
-	app.status = D.text(row,2,36,app._settled_status_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
+	app.status = D.text(row,2,36,app._status_line_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
 	app.status.name = "ImmersiveSaveStatus"
 	# Une seule ligne, jamais coupée : le texte se resserre au lieu de passer à la ligne (voir _fit_status).
 	app.status.autowrap_mode = TextServer.AUTOWRAP_OFF

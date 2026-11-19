@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "_doc": "Vente de joueurs (native/engine/vente-joueurs.cjs, docs/gdd/vente-joueurs.md). Lu à chaque calcul : changer une valeur change le jeu sans toucher au code. relances : « Demander plus » (une fois par offre), montant arrondi au millier supérieur (décision technique du 19/11/2026) ; plafond de l'acheteur = arrondi au millier inférieur de min(caisse − reserveAcheteur, offre × (margeBase + besoin / margeBesoin)) ; au-delà, l'acheteur retire son offre. spontanees : offres d'autres clubs pour des joueurs NON proposés (décision de Léo, 19/11/2026) ; chaque semaine de la saison à partir de semaineMin, tirage déterministe (graine de la carrière + saison + semaine) ; au plus maxParSaison semaines tirées par saison ; joueur pris parmi les candidats meilleurs joueurs de l'effectif, acheteur parmi les clubs dont le besoin au poste atteint besoinMin ; montant = valeur × fourchette, arrondi. fenetres : décision de Léo du 19/11/2026, fidèle au règlement LNR (régime des mutations 2023-24, voir source) : une cession de joueur sous contrat ne se conclut que pendant les periodes (MM-JJ, bornes comprises, une période peut chevaucher le 1er janvier). Hors période, on propose, on reçoit des offres et on négocie ; une offre acceptée devient un accord conclu, exécuté à la première clôture de semaine à partir de l'ouverture suivante (argent, départ, garde d'effectif revérifiée). mode « saison » : ventes immédiates toute la saison hors match (ancien comportement, gardé comme réglage). Ne concerne que la vente : le recrutement a ses propres règles (chantier suivant).",
+  "relances": {
+    "pourcents": [5, 10, 15],
+    "arrondi": 1000,
+    "reserveAcheteur": 350000,
+    "margeBase": 1.08,
+    "margeBesoin": 500
+  },
+  "spontanees": {
+    "actives": true,
+    "semaineMin": 3,
+    "chanceSemaine": 0.14,
+    "maxParSaison": 4,
+    "candidats": 6,
+    "besoinMin": 20,
+    "fourchette": [1.05, 1.3],
+    "arrondi": 10000,
+    "reserveAcheteur": 350000
+  },
+  "fenetres": {
+    "mode": "fenetres",
+    "source": "LNR, période de mutations 2023-2024 : https://www.techxv.org/IMG/pdf/lnr_-_periode_de_mutations_2023-2024.pdf (lu par Léo, 19/11/2026)",
+    "periodes": [
+      { "debut": "05-01", "fin": "06-30" }
+    ]
+  },
+  "consequences": {
+    "_doc": "Conséquences légères d'une vente choisie (décision de Léo, 19/11/2026), appliquées au départ effectif du joueur, sur des jauges existantes : satisfaction des coéquipiers liés par un duo positif (S.v70Relations), moral du groupe si le joueur est le leader du vestiaire (CDRelationsV70.leader), confiance des supporters (S.pressRelations.fanTrust) si le joueur est un cadre (leader ou parmi les « meilleurs » de l'effectif par note au poste), confiance du président (S.trust) si la caisse était sous la réserve du club. Le moteur n'a ni capitaine ni statut « emblématique » : ces deux repères les remplacent. Mêmes bornes que les réponses au courrier.",
+    "actives": true,
+    "meilleurs": 3,
+    "satisfactionProches": -4,
+    "moralGroupeLeader": -2,
+    "supportersCadre": -2,
+    "confiancePresident": 2
+  },
+  "accords": {
+    "evenementsGardes": 20,
+    "courrierJours": 14
+  }
+}

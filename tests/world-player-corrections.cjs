@@ -46,3 +46,22 @@ test('une nouvelle carrière Monde applique les corrections et se recharge à l�
  b.close();b=createBridge(config);
  a.deepEqual(JSON.parse(act('export').meta.exportText).state,first);
 });
+
+// Postes francais verifies : ils vivent dans la fondation d'effectif (les `lnr:` sont exclus du fichier de corrections).
+const FRENCH={'lnr:1058':'Troisième ligne','lnr:11767':'Pilier droit','lnr:11953':'Pilier gauche','lnr:1753':'Pilier droit','lnr:2298':'Pilier droit'};
+test('les cinq postes français vérifiés viennent de la fondation et se rechargent à l’identique',t=>{
+ a.ok(Object.keys(fixes.players).every(id=>!id.startsWith('lnr:')));
+ const foundation=require('../dist/rugby-roster-foundation.js');
+ for(const [id,pos] of Object.entries(FRENCH)){const p=foundation.players[id].position;a.equal(p.primary,pos,id);a.equal(p.basis,'official',id);a.deepEqual(p.qualifications,[pos],id);}
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-world-french-'));
+ const config={dataDir:dir,seed:4823,now:1788134400000};
+ let b=createBridge(config),n=0;
+ t.after(()=>{b.close();fs.rmSync(dir,{recursive:true,force:true});});
+ const act=(command,payload={})=>{const res=b.handle({id:++n,command,payload});a.equal(res.ok,true,res.error);return res.model;};
+ act('new_career',{mode:'world-champ',club:0});
+ const first=JSON.parse(act('export').meta.exportText).state;
+ const players=new Map(first.clubs.flatMap(c=>c.players.map(p=>[p.id,p])));
+ for(const [id,pos] of Object.entries(FRENCH)){const p=players.get(id);a.ok(p,id);a.equal(p.pos,pos,id);a.equal(p.gameplayPosition,pos,id);a.equal(p.rosterProfile.position.primary,pos,id);}
+ b.close();b=createBridge(config);
+ a.deepEqual(JSON.parse(act('export').meta.exportText).state,first);
+});

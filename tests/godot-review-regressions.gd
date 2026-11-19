@@ -329,7 +329,7 @@ func _modal() -> void:
 				"confirmation": app.confirm("Confirmer", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.", func(): pass)
 				"recovery": app.recover_profile()
 				"credits": app._credits()
-				"settings": app.settings()
+				"settings": app.preferences_window()
 				"menu": app.pause_menu()
 			for i in 5: await process_frame
 			_dialog_bounds(kind + " " + str(dimensions))

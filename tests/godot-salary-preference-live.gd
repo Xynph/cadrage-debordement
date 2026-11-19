@@ -28,7 +28,7 @@ func capture(name: String) -> void:
 	check(image.get_size()==Vector2i(2560,1440),"Capture2560×1440")
 	check(image.save_png(output.path_join(name+".png"))==OK,"Capture "+name)
 func choose_unit(unit: String, screenshot: bool=false) -> void:
-	app.settings();await settle()
+	app.preferences_window();await settle()
 	var dialog := app.find_child("PreferencesDialog",true,false) as AcceptDialog
 	var tabs := dialog.find_child("PreferencesTabs",true,false) as TabContainer
 	tabs.current_tab=2;await settle()

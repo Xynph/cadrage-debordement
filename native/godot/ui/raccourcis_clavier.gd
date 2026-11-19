@@ -1,16 +1,17 @@
 extends Node
 # Raccourcis clavier de la carrière (façon Football Manager). Un seul gestionnaire, installé par le décor
 # immersif ; il ne touche ni au moteur ni aux commandes : il actionne les boutons que le manager voit.
-#   Espace : prochain message non lu de la Réception ; sans non lu, Continuer (bouton visible et actif)      1 à 9 : menus de gauche, dans l'ordre affiché
+#   Espace : Continuer (bouton visible et actif), et rien d'autre dans toute la coque      1 à 9 : menus de gauche, dans l'ordre affiché
 #   Échap : referme la fiche ouverte (sinon le menu de la carrière, déjà géré)      Ctrl+F : accès rapide (Ctrl+K)
 # Jamais actif : champ de saisie ayant le focus, fenêtre ou dialogue ouvert, réunion ou match en cours, intro.
 # Les autres raccourcis (Ctrl+S, Ctrl+J, Ctrl+K, F1, Alt+←/→) restent dans navigation_controller.gd.
 const NOM := "RaccourcisClavier"
 const Reception = preload("res://ui/immersive08/reception_canvas.gd")
-const INDICES := [" · Espace : prochain message", " · Espace : continuer"]
+## Ancienne indication « prochain message » gardée pour la retirer des infobulles déjà écrites.
+const INDICES := [" · Espace : continuer", " · Espace : prochain message"]
 ## Table unique des raccourcis : [touche, libellé court, explication, dans le pied de page]. Pied de page, paramètres et aide F1 la lisent.
 const TABLE := [
-	["Espace", "Suite", "Ouvre le prochain message non lu ; une fois le courrier lu, passe à la suite du calendrier. Sur un bouton ciblé au clavier, Espace l'active lui-même.", true],
+	["Espace", "Continuer", "Continuer : passe à la suite du calendrier (ou ouvre ce qui l'arrête). Sur un bouton ciblé au clavier, Espace l'active lui-même.", true],
 	["1 à 9", "Menus", "Ouvre l'écran du menu de gauche, dans l'ordre affiché.", true],
 	["Échap", "Retour", "Referme la fiche ou la fenêtre au premier plan.", true],
 	["Ctrl F", "Rechercher", "Cherche un joueur, un club ou un écran (Ctrl K aussi).", true],
@@ -22,7 +23,7 @@ var app: Control
 # Vrai après Tab ou une flèche : Espace appartient alors au bouton ciblé, pas à « Continuer ».
 var _focus_clavier := false
 
-## Pied de page : « Espace Suite   ·   1 à 9 Menus … ».
+## Pied de page : « Espace Continuer   ·   1 à 9 Menus … ».
 static func pied_de_page() -> String:
 	return "   ·   ".join(TABLE.filter(func(l: Array): return l[3]).map(func(l: Array): return "%s %s" % [l[0], l[1]]))
 
@@ -39,7 +40,7 @@ static func installer(owner_app: Control) -> void:
 		owner_app.add_child(gestionnaire)
 	gestionnaire.annoncer_continuer()
 
-## Info-bulle « Espace : prochain message » ou « Espace : continuer », recalculée au survol et au focus (le texte est réécrit chaque jour).
+## Info-bulle « Espace : continuer », recalculée au survol et au focus (le texte est réécrit chaque jour).
 func annoncer_continuer() -> void:
 	var bouton: Button = app.primary_button if is_instance_valid(app) else null
 	if not is_instance_valid(bouton): return
@@ -50,7 +51,7 @@ func _ajouter_indice(bouton: Button) -> void:
 	if not is_instance_valid(bouton) or bouton.disabled: return
 	var texte := bouton.tooltip_text
 	for indice: String in INDICES: texte = texte.trim_suffix(indice)
-	bouton.tooltip_text = texte + INDICES[0 if not Reception.next_unread(app).is_empty() else 1]
+	bouton.tooltip_text = texte + INDICES[0]
 
 ## Passe avant les contrôles uniquement quand Espace tombe sur « Continuer » lui-même, resté ciblé après un clic : il doit alors ouvrir le courrier non lu.
 ## Tout autre contrôle (bouton, liste, arbre, dialogue) reçoit Espace d'abord ; le gestionnaire ne voit la touche que par `_unhandled_key_input`.
@@ -113,10 +114,10 @@ func _fenetre_ouverte(noeud: Node) -> bool:
 		if _fenetre_ouverte(enfant): return true
 	return false
 
-## Règle de Léo : tant qu'il reste un message non lu, la touche l'ouvre ; Continuer seulement quand la boîte est lue.
+## Coque commune (relecture UX du 19/11/2026) : Espace = Continuer partout, un seul sens. Le courrier non lu se lit
+## par le bouton « Courrier suivant non lu » de la Réception ; Continuer s'arrête de lui-même sur ce qui compte.
 func _continuer() -> bool:
 	if not actif(): return false
-	if Reception.open_next_unread(app): return true
 	var bouton: Button = app.primary_button
 	if not is_instance_valid(bouton) or bouton.disabled or not bouton.is_visible_in_tree(): return false
 	# Un contrôle qui utilise Espace (bouton, liste, arbre) le garde pour lui.

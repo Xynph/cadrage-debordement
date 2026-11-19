@@ -133,7 +133,7 @@ Retiré : le niveau répété dans la carte « Évaluation du joueur » (la mêm
 |---|---|
 | **Disponibilité** | Condition % + barre + repère 80 % ; fatigue n/100 avec « (plus bas = mieux) » ; plan de charge (mot) ; satisfaction n/100 ; si blessé : type, gravité en mots, retour prévu ; bouton « Régler la charge individuelle » |
 | **Points forts / à travailler** | 3 meilleurs et 3 plus faibles attributs du poste, valeur numérique ; bouton « Voir les 36 attributs » (remplace la carte « Évaluation » qui ne montrait que le niveau) |
-| **Contrat** | salaire/sem., fin de contrat (année + « fin de saison » si échéance en cours), prolongation (Disponible / Refusée / Impossible, raison) ; bouton « Proposer une prolongation » (principal si échéance ≤ 1 saison, sinon secondaire) |
+| **Contrat** | salaire/sem., fin de contrat (année + « fin de saison » si échéance en cours), prolongation (Disponible / Refusée / Impossible, raison) ; bouton « Proposer une prolongation » (principal si échéance ≤ 1 saison, sinon secondaire) ; **vente** (GDD `docs/gdd/vente-joueurs.md`) : carte « Marché des transferts » de l'onglet Contrat. Ligne d'état : « Valeur estimée {montant}. Il n'est pas proposé aux autres clubs. » · « Proposé aux autres clubs · valeur estimée {montant} » · « Offre reçue : à traiter dans Offres reçues. » · vente en attente (« effectif au 1er mai », en doré). Boutons : « **Proposer aux autres clubs** » / « **Retirer du marché** » (le second, secondaire) et « **Offres reçues** » (ou « Offres reçues · n ») qui ouvre la fenêtre des offres (fiche 09 §6.5). Bloqué (espoir de moins de 20 ans, recrue de moins de 3 journées, prêt, joueur appelé du centre) : « Proposer » grisé + raison écrite en rouge sous l'état ; pendant un match ou une vente en attente : grisé aussi. Le dossier de l'Effectif (fiche 07) reprend la même ligne d'état et les mêmes boutons |
 | **Postes** | poste principal et autres postes en mots ; note au poste de chaque ; schéma des 15 postes en petit, avec les mots (le schéma illustre, ne porte pas l'information seul) |
 | **Saison** | apparitions, minutes, moyenne, forme des 5 derniers matchs (note) ; « Aucun match joué cette saison. » si 0 |
 
@@ -171,6 +171,7 @@ L'interface ne possède aucune de ces données.
 | Action | Événement | Payload |
 |---|---|---|
 | Proposer une prolongation | `ContractNegotiationRequested` | `{playerId}` |
+| Proposer aux autres clubs / Retirer du marché | commande `sale_list` | `{playerId, listed}` |
 | Régler la charge | `LoadPlanDialogRequested` | `{playerId}` |
 | Ma note | `PlayerNoteSaved` | `{playerId, text}` |
 | Comparer | `CompareToggled` | `{playerId}` |
@@ -201,6 +202,8 @@ L'interface ne possède aucune de ces données.
 | Chargement | ouverture, retour moteur | squelette de cartes ; photo : silhouette neutre jusqu'au chargement |
 | Erreur | joueur introuvable (libéré, parti) | « Ce joueur n'est plus dans ton club. » + « Retour à {origine} » ; Échap fonctionne |
 | Moteur occupé | Continuer | boutons d'action désactivés avec la raison en infobulle ; lecture libre |
+| Vente bloquée | espoir < 20 ans, recrue < 3 journées, prêt | « Proposer aux autres clubs » grisé ; raison écrite en rouge dans la carte (pas seulement en infobulle) |
+| Vente en attente | accord conclu hors période des mutations | état « vente en attente » en doré (date d'effet 1er mai) ; « Proposer » grisé ; « Offres reçues » reste actif ; le joueur reste disponible jusqu'au départ |
 
 ## 9. Accessibilité (T1, T5, C1, C3, D1, D3, D6, K1, K2, K6, K8)
 
@@ -251,6 +254,7 @@ L'interface ne possède aucune de ces données.
 - [ ] Maj+→ passe au joueur suivant de la liste d'origine ; grisé en fin de liste avec infobulle.
 - [ ] Saison sans match : message textuel, pas de « 0 · 0 · — ».
 - [ ] Tous les contrôles atteignables sans souris, focus visible.
+- [ ] Onglet Contrat : « Proposer aux autres clubs » devient « Retirer du marché » une fois le joueur proposé ; un joueur bloqué affiche sa raison écrite et le bouton grisé ; « Offres reçues » ouvre la fenêtre des offres.
 
 ## 13. Questions ouvertes
 

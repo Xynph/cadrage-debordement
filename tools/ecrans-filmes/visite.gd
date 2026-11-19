@@ -437,10 +437,10 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 		"options":
 			app._navigate("Bureau")
 			await stabiliser()
+			# En carrière, Réglages est un écran de la coque (plus de fenêtre).
 			app.settings()
 			await stabiliser()
-			var dialogue: Node = app.get_node_or_null("PreferencesDialog")
-			if not dialogue is Window or not (dialogue as Window).visible: return {"statut": "echec", "note": "fenêtre des options non ouverte"}
+			if app.route != "Réglages" or app.root_content.find_child("PreferencesPage", true, false) == null: return {"statut": "echec", "note": "écran Réglages non ouvert"}
 		_:
 			return {"statut": "echec", "note": "type d'écran inconnu : " + str(ecran.type)}
 	return {"statut": "ok"}

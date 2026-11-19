@@ -514,7 +514,7 @@ func direction_a(mail: Dictionary) -> void:
 	var reply := node("InboxClubMailReply_dementir")
 	var effects: Array = [] if reply == null else reply.find_children("InboxReplyEffect*", "Label", true, false).map(func(l: Label) -> String: return l.text)
 	check(effects.has("▲ Supporters +2") and effects.has("▼ Moral −1"), "Conséquences de la réponse : " + str(effects))
-	check(node("InboxReplyHeading") != null and node("InboxSpaceHint") != null, "« TA RÉPONSE » et rappel Espace")
+	check(node("InboxReplyHeading") != null and node("InboxSpaceHint") == null, "« TA RÉPONSE », sans rappel Espace (Espace = Continuer dans toute la coque)")
 	check(Reception.consequences("Pression +2")[0][0] == "▼" and Reception.consequences("Coût 1 000 €")[0][0] == "▼" and Reception.consequences("Charge individuelle : allégée")[0][0] == "=" and Reception.consequences("")[0][1] == "Sans effet chiffré", "Sens des conséquences (pression, coût, neutre)")
 	check(Reception.consequences("Risque de rechute +15 (27 %)")[0][0] == "▲" and Reception.consequences("Risque de rechute +15 (27 %)")[0][2] == C.ALERT and Reception.consequences("Risque de rechute −8 (4 %)")[0][0] == "▼" and Reception.consequences("Retour avancé au 04/10")[0][0] == "▲" and Reception.consequences("Retour retardé au 18/10")[0][0] == "▼", "Sens des conséquences médicales (rechute, retour)")
 	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":

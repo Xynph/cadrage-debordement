@@ -134,7 +134,7 @@ func integration() -> void:
 	app._command("export")
 	await wait_response()
 	var before: Dictionary = JSON.parse_string(app.model.meta.exportText)
-	app.settings()
+	app.preferences_window()
 	press("Packs et identités")
 	await process_frame
 	check(app.route == "Packs" and app.pack_manager.scope == "career", "Paramètres : deuxième entrée fonctionnelle des packs")

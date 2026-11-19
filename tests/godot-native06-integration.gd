@@ -68,7 +68,7 @@ func persistence_refusals() -> void:
 	await qa._key_action(popup.find_child("CoachNoteSave",true,false)); await qa._wait(); await settle()
 	check(app.bridge.last_response_ok and app.model.clubLife.coachNotebook.entries.any(func(row): return row.target == "career" and row.text == draft),"Réessai réel sauvegarde le brouillon exact")
 	popup.hide(); popup.queue_free(); await settle()
-	app.settings(); await settle()
+	app.preferences_window(); await settle()
 	var dialog: AcceptDialog = app.get_node("PreferencesDialog")
 	dialog.find_child("PreferencesTabs",true,false).current_tab = 1; await settle()
 	var volume: SpinBox = dialog.find_child("PreferencesInterfaceVolume",true,false)

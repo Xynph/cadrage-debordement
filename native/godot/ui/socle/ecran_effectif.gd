@@ -8,6 +8,7 @@ const Tableau = preload("res://ui/socle/tableau.gd")
 const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const Salaire = preload("res://ui/salary_display.gd")
+const Sales = preload("res://ui/player_sales_view.gd")
 
 ## Lignes de l'équipe, dans l'ordre du moteur (`fam`), et places sur le terrain.
 const LIGNES := [
@@ -226,7 +227,12 @@ func _colonnes(vue: int) -> Array:
 				{"id": "prolongation", "titre": "Prolongation", "largeur": 150, "priorite": 1,
 					"valeur": func(j: Dictionary) -> Variant: return 1 if j.get("renewal", {}).get("available", false) else 0,
 					"texte": func(j: Dictionary) -> String: return "Ouverte" if j.get("renewal", {}).get("available", false) else "Pas encore",
-					"couleur": func(j: Dictionary) -> Color: return J.VERT if j.get("renewal", {}).get("available", false) else J.TEXTE_FAIBLE}]
+					"couleur": func(j: Dictionary) -> Color: return J.VERT if j.get("renewal", {}).get("available", false) else J.TEXTE_FAIBLE},
+				# Vente (vente-joueurs.cjs) : en vente, offre reçue ou départ prévu.
+				{"id": "marche", "titre": "Marché", "largeur": 130, "priorite": 2,
+					"valeur": func(j: Dictionary) -> Variant: return Sales.short(j), "texte": func(j: Dictionary) -> String: return Sales.short(j) if not Sales.short(j).is_empty() else "—",
+					"couleur": func(j: Dictionary) -> Color: return J.OR if not Sales.short(j).is_empty() else J.TEXTE_FAIBLE,
+					"infobulle": func(j: Dictionary) -> String: return Sales.status(j)}]
 		3:
 			return [numero, joueur, age, niveau,
 				{"id": "potentiel", "titre": "Potentiel estimé", "largeur": 130, "decroissant_d_abord": true,
@@ -617,6 +623,25 @@ func _carte_contrat(joueur: Dictionary) -> Control:
 		var ouverte := J.texte("Prolongation ouverte.", J.T_CORPS, J.OR)
 		ouverte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		pile.add_child(ouverte)
+	# Vente (vente-joueurs.cjs) : état, raison d'un blocage en clair, proposer / retirer, offres reçues.
+	var vente: Dictionary = joueur.get("sale", {}) if joueur.get("sale") is Dictionary else {}
+	if not vente.is_empty():
+		var etat_vente := Sales.status(joueur)
+		var bloque := str(vente.get("blocked", ""))
+		var ligne := J.texte(etat_vente if not etat_vente.is_empty() else bloque if not bloque.is_empty() else "Valeur estimée %s." % G.euros(vente.get("value", 0)), J.T_CORPS, J.OR if not etat_vente.is_empty() else J.ALERTE if not bloque.is_empty() else J.TEXTE_DOUX)
+		ligne.name = "CarteContratVente"
+		ligne.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		pile.add_child(ligne)
+		var en_attente: bool = vente.get("pending") is Dictionary
+		var liste := bool(vente.get("listed", false))
+		var bouton := _bouton("Retirer du marché" if liste else "Proposer aux autres clubs", false, true, func(): Sales.toggle(app, joueur))
+		bouton.name = "CarteContratVendre"
+		bouton.disabled = en_attente or not app._live().is_empty() or (not liste and not bloque.is_empty())
+		pile.add_child(bouton)
+		if vente.get("offerId") is String or en_attente:
+			var offres := _bouton(Sales.caption(app.model), false, true, func(): Sales.open(app))
+			offres.name = "CarteContratOffres"
+			pile.add_child(offres)
 	return carte
 
 func _carte_profondeur() -> Control:

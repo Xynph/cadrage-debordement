@@ -413,7 +413,7 @@ func _receive_model(value: Dictionary) -> void:
 		else: _refresh_after_response(response_ok, route != route_before or not reception_id.is_empty() or received_command in ["new_career", "import", "recover_profile", "restore_checkpoint", "next_season", "finish_round", "advance_day", CareerProgression.CONTINUE_COMMAND] or SeasonPreparation.is_advance(received_command))
 	if bridge.last_response_ok:
 		if is_instance_valid(status):
-			status.text = _settled_status_text()
+			status.text = _status_line_text()
 			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
 			_refit_status()
 		if is_instance_valid(root_content) and decision_feedback != null:
@@ -713,7 +713,7 @@ func _failed(message: String) -> void:
 	# status. Preserve an existing business error and the unsaved list.
 	if last_command in ["epcr_preview", "competition_editor_preview"] and not connection_error:
 		if is_instance_valid(status):
-			status.text = _settled_status_text()
+			status.text = _status_line_text()
 			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
 			_refit_status()
 		return
@@ -826,7 +826,7 @@ func _match_visible() -> bool:
 func _sound_error(message: String) -> void:
 	# Local audio availability never marks a career decision as failed.
 	if is_instance_valid(status):
-		status.text = _settled_status_text()
+		status.text = _status_line_text()
 		status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
 		_refit_status()
 	if not message.is_empty(): call_deferred("_show_sound_error",message)
@@ -1065,6 +1065,15 @@ func _settled_status_text() -> String:
 	if resume is Dictionary and not str(resume.get("text","")).is_empty(): return "REPRISE DE CARRIÈRE · " + str(resume.text)
 	return _autosave_status()
 
+## Ligne d'état affichée en pied de page. Dans la coque commune, la sauvegarde ordinaire n'y est plus répétée : la
+## ligne « ✓ Sauvegardé <date> » du rail est la seule (relectures du 19/11/2026). Erreurs, retours de décision,
+## reprise et alertes du journal de sauvegarde restent affichés ici.
+func _status_line_text() -> String:
+	var text := _settled_status_text()
+	var coque: bool = is_instance_valid(root_content) and root_content.name == "ImmersiveShell"
+	if coque and text == _autosave_status() and not _autosave_alert(): return ""
+	return text
+
 ## Ligne d'état de la sauvegarde (meta.autosave, native/engine/action-journal.cjs) : fréquence choisie, date de la
 ## dernière sauvegarde complète, reprise du journal d'actions après un arrêt imprévu.
 func _autosave_status() -> String:
@@ -1264,7 +1273,8 @@ func _update_live_bar() -> void:
 			elif not model.meta.get("canAdvanceSeason", false):
 				var daily := _daily_progression()
 				if primary_button.name == "ImmersiveContinue": primary_button.text = daily.get("short", "Continuer")
-				primary_button.disabled = bool(daily.get("disabled", false))
+				# Coque commune : Continuer bloqué reste actif (« ! » + raison, clic = écran qui bloque).
+				primary_button.disabled = bool(daily.get("disabled", false)) and primary_button.name != "ImmersiveContinue"
 		if office_status and not live.is_empty():
 			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
 		if connection_error and bridge.child_pid <= 0 and primary_button.name == "ImmersiveContinue": primary_button.text = "Relancer"
@@ -1300,6 +1310,20 @@ func primary_tooltip() -> String:
 		var daily := _daily_progression()
 		if daily.has("tooltip"): return str(daily.tooltip)
 	return primary_text()
+
+## Ce qui arrête Continuer, en raison courte (22 caractères au plus), ou "" quand il avance (ou passe au direct, au
+## résultat, à la préparation du jour de match). Ne dépend pas de l'état désactivé du bouton : un clic ou Espace
+## ouvre l'écran qui bloque (primary_action).
+func continue_block() -> String:
+	if connection_error and bridge.child_pid <= 0: return ""
+	if not _live().is_empty(): return ""
+	if _press_required(): return "Conférence de presse"
+	if not Immersive.Selections.current_fixture(model).is_empty(): return "Courrier de match"
+	if model.get("meta", {}).get("canAdvanceSeason", false): return ""
+	var daily := _daily_progression()
+	if daily.has("open"): return "Décision attendue"
+	if bool(daily.get("disabled", false)): return "Avance indisponible"
+	return ""
 
 func primary_text() -> String:
 	if connection_error and bridge.child_pid <= 0: return "RELANCER LE MOTEUR  →"
@@ -1344,6 +1368,8 @@ func primary_action() -> void:
 		if daily.has("open"): _open_reprise_decision()
 		elif daily.has("route"): _navigate(daily.route)
 		elif daily.has("command"): _command(daily.command, daily.payload)
+		# Avance refusée par le calendrier : Continuer n'est jamais inerte, il ouvre le calendrier du jour.
+		elif bool(daily.get("disabled", false)) and route != "Calendrier": Immersive._open_current_calendar(self)
 		return
 	if not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
 	elif model.get("next") == null: _command("finish_round")
@@ -1401,7 +1427,7 @@ func pause_menu() -> void:
 			"import": open_file(true)
 			"career_slots": open_career_slots()
 			"profile_safety": open_profile_safety()
-			"settings": settings_page()
+			"settings": settings()
 			"quit": request_quit()
 	)
 	add_child(d)
@@ -1409,13 +1435,16 @@ func pause_menu() -> void:
 	d.canceled.connect(d.queue_free)
 	ImmersiveDialogs.show_centered(d,Vector2i(820,370))
 
+## Réglages : en carrière, l'écran « Réglages » de la coque (règle « jamais de petite fenêtre ») ; hors carrière
+## (accueil, création, packs), la fenêtre des paramètres.
 func settings() -> void:
-	preload("res://ui/preferences_dialog.gd").open(self, user_preferences)
-
-## Réglages dans la coque (écran « Réglages », aucune fenêtre) ; hors carrière, la fenêtre des paramètres.
-func settings_page() -> void:
 	if _has_career() and route not in ["Accueil", "Création", "Packs"]: _navigate("Réglages")
-	else: settings()
+	else: preferences_window()
+
+## Fenêtre des paramètres (hors carrière). Même contenu que l'écran Réglages (preferences_dialog.gd, _fill) :
+## les recettes l'ouvrent directement pour vérifier ce contenu partagé.
+func preferences_window() -> AcceptDialog:
+	return preload("res://ui/preferences_dialog.gd").open(self, user_preferences)
 
 func open_career_slots() -> void:
 	preload("res://ui/career_slots_view.gd").open(self)

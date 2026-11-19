@@ -164,7 +164,7 @@ func _display_reception() -> void:
 		return
 	_check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN,"Windows starts in standard fullscreen before any resize")
 	await _capture("accueil-plein-ecran")
-	app.settings()
+	app.preferences_window()
 	await _settle()
 	var dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
 	var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
@@ -1207,7 +1207,7 @@ func _native06_reception() -> void:
 	var master_mute := AudioServer.is_bus_mute(0)
 	for resolution in _resolutions([Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]):
 		await _resize_window(resolution)
-		app.settings(); await _settle()
+		app.preferences_window(); await _settle()
 		var dialog: AcceptDialog = app.get_node("PreferencesDialog")
 		var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
 		_check(tabs != null and tabs.get_tab_count() == 4, "Native06 four compact settings tabs")
