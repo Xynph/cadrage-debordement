@@ -5,6 +5,7 @@ const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const Salary = preload("res://ui/salary_display.gd")
+const Budget = preload("res://ui/transfer_budget.gd")
 
 static func money(value: Variant) -> String:
 	return G.euros(value) if value is int or value is float else "Non communiqué"
@@ -157,7 +158,14 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	action.name = "ContractNextAction"
 	body.add_child(action)
 	if blocked and not phase.blocked:
-		body.add_child(C.wrap(str(quote.get("reason","Cette offre ne peut pas être envoyée dans la situation actuelle.")),18,C.ALERT))
+		var reason := C.wrap(str(quote.get("reason","Cette offre ne peut pas être envoyée dans la situation actuelle.")),18,C.ALERT)
+		reason.name = "ContractBlockedReason"
+		body.add_child(reason)
+	var transfer := Budget.data(app.model)
+	if recruiting and not transfer.is_empty():
+		var share := C.wrap("%s : %s %s. La prime à la signature y est prélevée ; le salaire n’y entre pas." % [Budget.LABEL, Budget.remaining(transfer), Budget.allocated(transfer)],16,C.MUTED)
+		share.name = "ContractTransferBudget"
+		body.add_child(share)
 	body.add_child(C.wrap("En autorisant, tu envoies ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée. Sinon, seule la discussion est enregistrée. Annuler ne transmet aucune proposition.",16,C.MUTED))
 	dialog.get_ok_button().text = "AUTORISER LA SIGNATURE SI ACCORD"
 	dialog.get_ok_button().disabled = blocked

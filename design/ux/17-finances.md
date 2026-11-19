@@ -176,7 +176,7 @@ Mode consultation : pas d'écriture. « Ajuster les engagements » mène à un �
 |---|---|---|---|---|
 | Trésorerie | `finance.cash` | à chaque semaine, à chaque opération | euros | « — » |
 | Masse salariale | `finance.wage` | à chaque contrat | euros / semaine | « — » |
-| Disponible pour recruter | budget de transferts (à confirmer) | semaine | euros | « Budget non fixé » |
+| Disponible pour les transferts | `finance.transferBudget.disponible` (enveloppe : `enveloppe`, détail : `depense`, `reconstitue`) | à chaque dépense, vente ou mouvement de caisse | euros à l'euro + « sur X € alloués par le conseil » | `transferBudget` absent ou `actif` faux : tuile actuelle « Marché du recrutement » conservée (pas de « Budget non fixé ») |
 | Marge courante par semaine | revenus − charges connus | semaine | euros | « — » |
 | Répartition des charges | grand livre | semaine | % + euros | masquée |
 | Flux | grand livre | par opération | date, libellé, montant | « Aucun flux » |
@@ -249,7 +249,7 @@ Pas de compteur qui défile pour les montants.
 
 | Question | Propriétaire | Résolution |
 |---|---|---|
-| Quel est exactement le « budget transferts » disponible, et qui le fixe ? | game-designer | Ouverte |
+| Quel est exactement le « budget transferts » disponible, et qui le fixe ? | game-designer | Résolue : le conseil, une fois par saison ; `finance.transferBudget` ([GDD](../../docs/gdd/budget-transferts.md)) |
 | Quand le verdict passe-t-il de « tension » à « rouge » ? (seuils) | game-designer / économie | Ouverte |
 | Cinq onglets non capturés | ui-programmer | À capturer |
 | « Classement » dans Finances : de quoi ? (non vérifié) | game-designer | Ouverte |
@@ -258,7 +258,7 @@ Pas de compteur qui défile pour les montants.
 
 **Seuils du verdict (proposés, à confirmer par game-designer)** : « Dans le vert » = marge courante ≥ 0 ; « Sous tension » = marge < 0 mais trésorerie projetée à fin de saison ≥ 0 ; « Dans le rouge » = trésorerie ou projection < 0. Ces trois conditions sont des réglages de données, pas des constantes d'interface.
 
-**Bloquant restant** : « Disponible pour recruter » (but n° 2 des 5 secondes) n'a aucune source dans le code (aucune notion de budget de transferts trouvée sous `native/`). Tant que game-designer n'a pas dit quelle valeur c'est, le bloc affiche « Budget non fixé » et le but n° 2 n'est pas servi.
+**Bloquant levé (19/11/2026)** : « Disponible pour les transferts » (but n° 2 des 5 secondes) a sa source : `finance.transferBudget` (règle : [docs/gdd/budget-transferts.md](../../docs/gdd/budget-transferts.md)). Budget actif : la deuxième tuile du haut, à côté de la Trésorerie, affiche le restant à l'euro et « sur X € alloués par le conseil » ; infobulle : enveloppe, trésorerie, dépensé, reconstitué, nombre de profils au marché ; clic = Recrutement. Budget inactif : tuile « Marché du recrutement » inchangée.
 
 **Localisation (longueurs max, +40 % prévus)** : verdict 18 caractères ; libellé de vigilance 48 ; libellé d'échéance 30 ; montant 12 (« −1,25 M€ ») ; bouton 28.
 
