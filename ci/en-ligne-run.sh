@@ -51,7 +51,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|reception-medicale|creation|derby|avis-staff|meteo|presse|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres|equipe|pilotage|vestiaire|dilemmes) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|reception-medicale|creation|derby|avis-staff|meteo|presse|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres|equipe|pilotage|vestiaire|dilemmes|centre) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -169,6 +169,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/creation"
     phase "captures création (choix du club, options de carrière ; 1080p)" captures-creation.log \
       env CD_REPRISE_UI_GRAPHICS=1 CD_REPRISE_UI_OUTPUT="$cap/creation" node --test tests/godot-reprise.cjs
+  fi
+  if veut centre; then
+    mkdir -p "$cap/centre"
+    phase "captures Centre de formation (pastilles et Saison junior ; 1440p, 1080p, 1280x720)" captures-centre.log \
+      env CD_CENTRE_GRAPHICS=1 CD_CENTRE_OUTPUT="$cap/centre" node tests/godot-centre-720.cjs
   fi
   if veut derby; then
     mkdir -p "$cap/derby"
