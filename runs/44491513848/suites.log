@@ -1,0 +1,139 @@
+::group::tests/godot-immersive08.cjs
+Illustrations immersive08 : 66 PNG vérifiés, treize références, empreintes et provenance.
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-13" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-14" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-15" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-16" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-17" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-18" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-19" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-20" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-21" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-22" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-23" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-24" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-25" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-26" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-27" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-28" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-29" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-30" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-07-31" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-01" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-02" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-03" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-04" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-05" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-06" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-07" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-08" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-09" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-10" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-11" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-12" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-13" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-14" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-15" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-16" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-17" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-18" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-19" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-20" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-21" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-22" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-23" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-24" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-25" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-26" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-27" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-28" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-29" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-30" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-08-31" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-01" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-02" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-03" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-04" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-05" }
+DIAG journal : clic sans effet, bouton [P: (18.0, 18.0), S: (69.0, 38.0)] visible=false désactivé=false onglet= fenêtre=(2560, 1440)
+immersive08 : 761 contrôles, 0 échecs
+Preuves immersive08 : /tmp/tmp.FXBA0iIY2F/suite.M1VAMJ/oval-immersive08-s96waT
+CD_CPU_PROFILE suite=tests/godot-immersive08.cjs user_s=108.97 system_s=9.16 wall_s=119.96 cpu_pct=98% max_rss_kb=1750716
+PASS tests/godot-immersive08.cjs (120 s)
+::endgroup::
+::group::tests/doublons-liste-elite.cjs
+TAP version 13
+# Subtest: la liste compte 33 joueurs éligibles à la France et se montre sur leur fiche
+ok 1 - la liste compte 33 joueurs éligibles à la France et se montre sur leur fiche
+  ---
+  duration_ms: 10483.651695
+  type: 'test'
+  ...
+# Subtest: fenêtre glissante : au moins 2 repos sur 8 matchs
+ok 2 - fenêtre glissante : au moins 2 repos sur 8 matchs
+  ---
+  duration_ms: 86.72037
+  type: 'test'
+  ...
+# Subtest: les clubs de l’ordinateur laissent hors de la feuille le joueur qui doit souffler
+ok 3 - les clubs de l’ordinateur laissent hors de la feuille le joueur qui doit souffler
+  ---
+  duration_ms: 114.722877
+  type: 'test'
+  ...
+# Subtest: rotation du staff : repos étalés (3 au plus par match), obligatoires toujours, sélection du staff du club aussi
+ok 4 - rotation du staff : repos étalés (3 au plus par match), obligatoires toujours, sélection du staff du club aussi
+  ---
+  duration_ms: 422.5596
+  type: 'test'
+  ...
+# Subtest: le suivi des feuilles distingue repos, sélection et blessure
+ok 5 - le suivi des feuilles distingue repos, sélection et blessure
+  ---
+  duration_ms: 89.947496
+  type: 'test'
+  ...
+# Subtest: alerte de feuille : le joueur de la liste qui doit souffler est signalé avec son remplaçant
+ok 6 - alerte de feuille : le joueur de la liste qui doit souffler est signalé avec son remplaçant
+  ---
+  duration_ms: 92.055574
+  type: 'test'
+  ...
+# Subtest: courrier doublon : chiffre l’impact et propose trois actions aux effets réels
+ok 7 - courrier doublon : chiffre l’impact et propose trois actions aux effets réels
+  ---
+  duration_ms: 2585.062928
+  type: 'test'
+  ...
+# Subtest: courrier doublon : « aligner la plus forte » et « lancer des jeunes » changent la feuille
+ok 8 - courrier doublon : « aligner la plus forte » et « lancer des jeunes » changent la feuille
+  ---
+  duration_ms: 5053.450663
+  type: 'test'
+  ...
+# Subtest: courrier de la cellule FFR-LNR : reposer, aménagement (pas garanti) ou ignorer
+ok 9 - courrier de la cellule FFR-LNR : reposer, aménagement (pas garanti) ou ignorer
+  ---
+  duration_ms: 5902.749257
+  type: 'test'
+  ...
+# Subtest: Bleus : la liste ne joue pas plus de 9 des 12 tests de la France
+ok 10 - Bleus : la liste ne joue pas plus de 9 des 12 tests de la France
+  ---
+  duration_ms: 39.953443
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24914.949571
+CD_CPU_PROFILE suite=tests/doublons-liste-elite.cjs user_s=29.88 system_s=1.83 wall_s=25.25 cpu_pct=125% max_rss_kb=2132556
+PASS tests/doublons-liste-elite.cjs (25 s)
+::endgroup::

@@ -1,0 +1,2 @@
+tests/godot-immersive08.cjs
+tests/doublons-liste-elite.cjs
