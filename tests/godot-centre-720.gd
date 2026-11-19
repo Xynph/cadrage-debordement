@@ -71,7 +71,7 @@ func controler(taille: Vector2i) -> void:
 			if bouton != null and not bouton.is_ancestor_of(l): bas_texte = maxf(bas_texte, l.get_global_rect().end.y)
 		if bouton != null and saison != null:
 			var vide := bouton.get_global_rect().position.y - bas_texte
-			mesures[cle]["vide_bouton_px"] = snappedf(vide, .1)
+			if mesures.has(cle): mesures[cle]["vide_bouton_px"] = snappedf(vide, .1)
 			verifier(vide <= 90.0 * C_density(), cle + " : vide de %s px au-dessus de « Consulter les Espoirs »" % snappedf(vide, .1))
 		var bas := page.find_child("CentreDevelopment", true, false) as Control
 		if bas != null: verifier(bas.get_global_rect().position.y - statut.get_global_rect().end.y <= 40.0 * C_density(), cle + " : panneau du bas collé au tableau du centre")
