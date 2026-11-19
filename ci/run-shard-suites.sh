@@ -176,6 +176,8 @@ budget() {
     # Réactivité du moteur (lot 19) : deux carrières Monde par test (projection d'avant et par sections), 130 à 170 s
     # mesurées ; 180 s dépassées au hasard en CI le 16/11 (#788, #790, #796, #801). Budget ≈ 3 fois, assertions inchangées.
     tests/reactivite-projection-verification.cjs|tests/reactivite-projection-rapide.cjs|tests/reactivite-projection-decisions.cjs) echo 540s ;;
+    # Presse rapide Monde (#928) : carrière Monde + matchs joués au worker, 194 s de mur sur main (Tests JavaScript 44419838338) et 180 s dépassées sur main (44413663397, 44404301884) comme sur la PR #943 ; limite par défaut trop juste, sans lien avec le lot. Budget ≈ 3 fois, assertions inchangées.
+    tests/presse-rapide-monde.cjs) echo 540s ;;
     *) echo 180s ;;
   esac
 }
