@@ -30,17 +30,22 @@ if((s.round??0)>19)t.unshift('classement','phase_finale');
 return [...new Set(t)];}
 // `count` (2 à 4) : nombre de questions fixé par la conférence native (3 au plus pour une conférence ordinaire,
 // 4 pour un grand moment) ; sans lui, la cadence historique de 2 à 4 questions est conservée.
-function prepare(s,priorityThemes=[],count){
-if(!s||s.live)return null;
+// Créneau « après-match » (slot 'apres', 18/11/2026) : conférence tenue juste après le match validé, la même semaine
+// qu'une éventuelle conférence d'avant-match ; ses déclarations portent slot:'apres' dans l'historique.
+const afterMatch=s=>!!s?.live?.finished&&s.worldMode?.resultConfirmed===true;
+const slotOf=h=>h&&h.slot==='apres'?'apres':null;
+function prepare(s,priorityThemes=[],count,slot=null,subjects=null){
+if(!s||s.live&&!(slot==='apres'&&afterMatch(s)))return null;
 validate(s);
 const old=snapshot(s),season=s.season,week=weekOf(s);
-if(s.pressRelations?.clubId==='club-'+s.club&&s.pressRelations.used?.some(id=>id.startsWith(season+':'+week+':')))return null;
-if(old.history.some(h=>h.season===season&&h.week===week&&(h.club===undefined||h.club===s.club)))return null;
-return bank.pick({season,week,history:old.history,context:{themes:[...new Set([...priorityThemes,...chooseThemes(s)])]},count:Number.isInteger(count)&&count>=2&&count<=4?count:2+((week+season)%3),seed:s.club,region:bank.regionFor(s),seasonWeeks:s.franceMode?.version===1?34:29});
+if(slot!=='apres'&&s.pressRelations?.clubId==='club-'+s.club&&s.pressRelations.used?.some(id=>id.startsWith(season+':'+week+':')))return null;
+if(old.history.some(h=>h.season===season&&h.week===week&&(h.club===undefined||h.club===s.club)&&slotOf(h)===(slot==='apres'?'apres':null)))return null;
+return bank.pick({season,week,history:old.history,context:{themes:[...new Set([...priorityThemes,...chooseThemes(s)])],...(subjects&&typeof subjects==='object'?{subjects}:{})},count:Number.isInteger(count)&&count>=2&&count<=4?count:2+((week+season)%3),seed:s.club,region:bank.regionFor(s),seasonWeeks:s.franceMode?.version===1?34:29});
 }
 function apply(s,selected,priorityThemes=[],count,extra){
-if(!s||s.live||!Array.isArray(selected)||selected.length<2||selected.length>4)throw Error('Conférence invalide');
-validate(s);const original=JSON.stringify(s),questions=prepare(s,priorityThemes,count);
+const slot=extra&&extra.slot==='apres'?'apres':null;
+if(!s||s.live&&!(slot&&afterMatch(s))||!Array.isArray(selected)||selected.length<2||selected.length>4)throw Error('Conférence invalide');
+validate(s);const original=JSON.stringify(s),questions=prepare(s,priorityThemes,count,slot,extra&&extra.subjects||null);
 if(!questions||questions.length!==selected.length)throw Error('Conférence déjà réalisée');
 for(let i=0;i<questions.length;i++)if(!questions[i].answers.some(a=>a.id===selected[i]))throw Error('Réponse invalide');
 try {
@@ -58,7 +63,7 @@ state.boardPressure=Math.max(0,Math.min(100,state.boardPressure+fx.pressure*mod)
 state.morale=Math.max(0,Math.min(100,state.morale+fx.morale*mod));
 moraleDelta+=fx.morale*mod;trustDelta-=fx.pressure*mod;
 }
-s.pressConference={version:1,history:questions.reduce((hist,q,i)=>bank.appendHistory(hist,q,s.season,weekOf(s),selected[i],s.club),snapshot(s).history)};
+s.pressConference={version:1,history:questions.reduce((hist,q,i)=>{const next=bank.appendHistory(hist,q,s.season,weekOf(s),selected[i],s.club);if(slot)next[next.length-1].slot=slot;return next;},snapshot(s).history)};
 s.pressRelations=state;s.morale=Math.max(0,Math.min(100,(s.morale??50)+moraleDelta));s.trust=Math.max(0,Math.min(100,(s.trust??50)+trustDelta));
 validate(s);if(typeof save==='function')save();if(typeof lastSaveError!=='undefined'&&lastSaveError)throw Error('Échec sauvegarde');
 if(typeof render==='function')render();return true;

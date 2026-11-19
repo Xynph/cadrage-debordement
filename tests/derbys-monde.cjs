@@ -12,7 +12,10 @@ const {context} = require('./monde-harness.cjs');
 
 const h = context(827381, {club: 5}).start(5);
 test.after(() => h.close());
-const N = Math.max(30, Number(process.env.CD_DERBY_MESURES) || 40);
+// 120 matchs (18/11/2026) : à 40, l'écart de cartons (≈ 3 par match, Poisson) a un écart-type de 0,4 carton pour un
+// effet mesuré de +0,74 (main) à +0,83 (#925) sur 200 matchs ; n'importe quelle règle qui déplace le flux du hasard
+// faisait passer la mesure de 0,7 à 1,1. Le seuil (+1 carton au plus) ne change pas.
+const N = Math.max(30, Number(process.env.CD_DERBY_MESURES) || 120);
 
 test('Données : rivalités et bornes', () => {
   const D = JSON.parse(h.run('JSON.stringify(DERBYS)'));

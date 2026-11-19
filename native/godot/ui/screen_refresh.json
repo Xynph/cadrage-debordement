@@ -68,6 +68,7 @@
         "ui/immersive08/match_canvas.gd",
         "ui/immersive08/training_canvas.gd",
         "ui/optimistic_decisions.gd",
+        "ui/press_view.gd",
         "ui/staff_view.gd"
       ],
       "note": "délégation à l'adjoint : entraînement (Préparation), staff_view.build (Staff), match, case des prolongations (Effectif > Contrats, contract_review) ; scènes contextuelles et fenêtre de délégation se redessinent seules"

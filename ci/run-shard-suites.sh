@@ -102,6 +102,9 @@ budget() {
     tests/godot-engine.cjs) echo 600s ;;
     # Pilotage du match (#912) : carrière Monde + 11 séries de 160 matchs rejoués, 125-150 s en local ; 180 s dépassées en CI.
     tests/match-pilotage.cjs) echo 480s ;;
+    # Dilemmes rugby (#925, 18/11/2026) : la presse rapide en carrière Monde passe de 149 à 172 s en local (commotions, doublons, relâchement
+    # calculés chaque jour) ; 180 s dépassées en CI. Même cause pour le test de charge natif (71 s en local, 180 s dépassées sur le runner).
+    tests/presse-rapide-monde.cjs|tests/v63-2-stress-native.cjs) echo 420s ;;
     # Cartons réalistes (#912) : carrière Monde + 80 matchs rejoués, ~90 s en local.
     tests/cartons-realistes.cjs) echo 420s ;;
     # Pénalité jouée à la main : 148 s de poids, au ras du cap de 180 s ; le crochet du pilotage dans skill() coûte ~5-10 % (#912).

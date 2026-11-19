@@ -8,7 +8,7 @@ extends RefCounted
 const U = preload("res://ui/management_state.gd")
 
 ## Catégorie du moteur -> rubrique de la Réception (filtres, icônes et couleurs existants).
-const CATEGORY := {"infirmerie":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Recrutement", "presse":"Club", "direction":"Direction", "contrats":"Direction", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Météo"}
+const CATEGORY := {"infirmerie":"Médical", "commotion":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Recrutement", "presse":"Club", "direction":"Direction", "contrats":"Direction", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Météo"}
 ## Écrans que le courrier et les arrêts peuvent ouvrir (routes de main.gd) ; « infirmerie », « contrats » et
 ## « fiche » sont des vues préparées (Effectif filtré, fiche d'un joueur).
 const ROUTES := ["Composition", "Effectif", "Classements", "Recrutement", "Préparation", "Vestiaire", "Presse", "Club", "Finances", "Formation", "Calendrier", "Réception", "Bureau"]
@@ -54,6 +54,8 @@ static func caption(ecran: String) -> String:
 
 static func route_of(ecran: String) -> String:
 	if ecran in ["infirmerie", "contrats"]: return "Effectif"
+	# Consignes de match (réponse « Régler les consignes » du plan adverse de la veille).
+	if ecran == "Plan de jeu": return ecran
 	if ecran == "fiche": return "Recrutement"
 	return ecran if ecran in ROUTES else "Bureau"
 

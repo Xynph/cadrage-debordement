@@ -6,6 +6,7 @@ const CLAUSES = {
 	"support": {
 		"Arbitrages fictifs du jeu. ": "",
 		"Le suivi médical générique ne représente ni une commotion, ni un protocole HIA, ni un avis de santé.": "Les commotions et les protocoles HIA ne sont pas couverts par ce suivi.",
+		"Commotions : protocole HIA de World Rugby, repos de 12 jours au moins décidé par le médecin, sans arbitrage du staff.": "Commotions : protocole HIA de World Rugby, 12 jours de repos au moins, décision du médecin.",
 		" Les budgets sont fictifs.": ""
 	},
 	"academy": {

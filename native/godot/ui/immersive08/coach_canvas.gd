@@ -1091,6 +1091,7 @@ func consider_context(route: String, model: Dictionary, command: String, respons
 		return
 	super.consider_context(route, model, command, response_ok)
 	_conseil_composition(route, model)
+	_alerte_bleus(model)
 	_alerte_fatigue(model)
 	_maj_indice()
 
@@ -1267,6 +1268,25 @@ func _alerte_fatigue(model: Dictionary) -> void:
 	if avis.is_empty() or event in profile.data.events or attente_event == event: return
 	if not _attente.is_empty(): return
 	var message: Dictionary = avis.merged({"genre": "avis", "titre": "GABI · FATIGUE", "route": str(app.route), "partout": true, "event": event})
+	if _spontane_permis():
+		_consommer(message)
+		_montrer(message)
+	else: _attente = message
+
+## Protocole des Bleus : un joueur de la liste de 33 doit souffler ce week-end. Une alerte par jour de jeu au plus
+## (même mécanique que l'alerte de fatigue), avec « Suivre le conseil » pour changer la composition.
+func _alerte_bleus(model: Dictionary) -> void:
+	var avis := Avis.repos_bleus(model)
+	var meta: Dictionary = model.get("meta", {}) if model.get("meta") is Dictionary else {}
+	var context := _career_context(model)
+	if context.is_empty(): return
+	var jour := int(Time.get_unix_time_from_datetime_string(str(meta.get("calendarToday", meta.get("date", ""))) + "T00:00:00") / 86400.0)
+	var event := "bleus:%s:%x" % [context, maxi(jour, 0)]
+	var attente_event := str(_attente.get("event", ""))
+	if attente_event.begins_with("bleus:") and (avis.is_empty() or attente_event != event): _attente.clear()
+	if avis.is_empty() or avis.get("action", {}).is_empty() or event in profile.data.events or attente_event == event: return
+	if not _attente.is_empty(): return
+	var message: Dictionary = avis.merged({"genre": "avis", "titre": "GABI · PROTOCOLE DES BLEUS", "route": str(app.route), "partout": true, "event": event})
 	if _spontane_permis():
 		_consommer(message)
 		_montrer(message)
