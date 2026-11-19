@@ -94,9 +94,25 @@ func reference_rects(expected: Dictionary) -> void:
 	for id: String in expected:
 		var node := app.find_child(id,true,false) as Control
 		var actual := node.get_global_transform()*Rect2(Vector2.ZERO,node.size) if node!=null else Rect2()
-		var source: Rect2 = expected[id]
-		check(node!=null and actual.position.distance_to(source.position)<=1.5 and actual.size.distance_to(source.size)<=1.5,
+		var source: Rect2 = approved_rect(expected[id])
+		# Frise et Gabi en pied descendent jusqu'au pied de page : la barre haute plus basse (64 au lieu de 78) leur
+		# laisse quelques pixels de plus en hauteur ; largeur et position restent celles du gabarit.
+		var height_ok := actual.size.y>=source.size.y-1.5 if id in ["OfficeTimeline","GabiBureau"] else absf(actual.size.y-source.size.y)<=1.5
+		check(node!=null and actual.position.distance_to(source.position)<=1.5 and absf(actual.size.x-source.size.x)<=1.5 and height_ok,
 			"Rectangle du gabarit approuvé · %s · %s / %s" % [id,str(actual),str(source)])
+
+## Les gabarits approuvés ont été relevés dans l'ancienne coque (rail de 248, bandeau de 78, en pixels de référence).
+## La coque commune (rail de 309, barre de 64) pose la même zone de contenu, mise à l'échelle de la place restante
+## (shell.gd, _fit_content) : le rectangle approuvé est transposé à l'identique, sans tolérance supplémentaire.
+func approved_rect(source: Rect2) -> Rect2:
+	var stage := app.find_child("ImmersiveContentStage",true,false) as Control
+	var layout := app.find_child("ImmersiveLayout",true,false) as Control
+	var inset := app.get("workspace_inset") as Control
+	if stage==null or layout==null or inset==null: return source
+	var unit: float = layout.get_global_transform().get_scale().x*load("res://ui/immersive08/components.gd").density
+	var factor: float = inset.get_global_transform().get_scale().x/layout.get_global_transform().get_scale().x
+	var origin := stage.get_global_transform()*Vector2.ZERO
+	return Rect2(origin+(source.position-Vector2(248,78)*unit)*factor,source.size*factor)
 
 func click(control: Control, fraction: Vector2 = Vector2(.5,.5)) -> void:
 	var point := control.get_global_transform()*(control.size*fraction)
@@ -878,11 +894,14 @@ const FAMILIES = [
 ]
 
 func families() -> void:
-	var training: Button = app.find_child("Nav_Entraînement",true,false)
+	# Coque commune : Entraînement est un onglet de Tactique (plus d'entrée dans le rail).
+	app._navigate("Composition")
+	await settle()
+	var training: Button = app.find_child("TacticsTab4",true,false)
 	await click(training)
 	await settle()
 	var week: Control = app.find_child("ImmersiveTraining",true,false)
-	check(week!=null and app.management_ui.preparation.tab==2,"Rail Entraînement raccordé à la vraie préparation")
+	check(week!=null and app.management_ui.preparation.tab==2,"Onglet Entraînement de Tactique raccordé à la vraie préparation")
 	if week!=null:
 		await capture("09-entrainement-2560x1440")
 		await click(week.find_child("TrainingBackToPreparation",true,false))
@@ -1104,8 +1123,8 @@ func navigation_flow() -> void:
 	await settle()
 	await click(app.find_child("ImmersiveContinue",true,false))
 	await settle()
-	# Préparation riche dès 720p : l'Entraînement s'ouvre par la barre latérale (la Préparation garde aussi son onglet).
-	await click(app.find_child("Nav_Entraînement",true,false))
+	# Préparation riche dès 720p : l'Entraînement s'ouvre par son onglet de la Préparation (et de Tactique).
+	await click(app.find_child("PreparationTabEntrainement",true,false))
 	await settle()
 	check(app.route=="Préparation" and app.management_ui.preparation.tab==2 and app.find_child("ImmersiveTraining",true,false)!=null,"Entraînement riche sélectionné dans la Préparation en 720p")
 	command_id = app.bridge._next_id
@@ -1191,17 +1210,19 @@ func dialogs() -> void:
 			root.size=Vector2i(2560,1440)
 			if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 			await settle()
+	# Coque commune : Ctrl K met le focus dans le champ de la barre haute (aucune fenêtre) ; Entrée ouvre l'écran Recherche.
 	await key(KEY_K,true)
-	var palette: AcceptDialog = app.get_node_or_null("NavigationPalette")
-	check(palette!=null and palette.visible,"Ctrl K ouvre la palette native")
-	if palette!=null and palette.visible:
-		await capture("31-recherche-2560x1440")
-		var search: LineEdit = palette.find_child("NavigationSearch",true,false)
+	var search: LineEdit = app.root_content.find_child("ImmersiveSearch",true,false)
+	check(search!=null and search.has_focus() and app.get_node_or_null("NavigationPalette")==null,"Ctrl K : focus dans la recherche de la barre, sans fenêtre")
+	if search!=null and search.has_focus():
 		search.text="entrainement"
-		search.text_changed.emit(search.text)
 		await key(KEY_ENTER)
-		check(app.route=="Préparation" and app.find_child("ImmersiveTraining",true,false)!=null,"Recherche et Entrée ouvrent le véritable menu Entraînement")
-	app.settings()
+		await capture("31-recherche-2560x1440")
+		var result: Button = app.root_content.find_child("SearchResult0",true,false)
+		check(app.route=="Recherche" and result!=null,"Entrée ouvre l'écran Recherche avec ses résultats")
+		if result!=null: await click(result); await settle()
+		check(app.route=="Préparation" and app.find_child("ImmersiveTraining",true,false)!=null,"Le résultat ouvre le véritable menu Entraînement")
+	app.preferences_window()
 	await settle()
 	var preferences: AcceptDialog = app.get_node_or_null("PreferencesDialog")
 	check(preferences!=null and preferences.visible and preferences.find_child("PreferencesMotion",true,false)!=null,"Paramètres natifs et mode calme disponibles")
@@ -1264,7 +1285,8 @@ func footer_feedback() -> void:
 	var button: Button = app.find_child("DecisionFeedbackButton",true,false)
 	# Gabi vit dans le bandeau du haut (14/11/2026) : plus de dock dans le pied de page.
 	var dock: Control = app.find_child("GabiBandeau",true,false)
-	check(dock!=null and dock.is_visible_in_tree() and dock.get_global_rect().size.x>=100,"Place physique pour Gabi dans le bandeau en 720p")
+	# Coque commune : médaillon de Gabi (54 × 36 px à 1920) à côté de « F1 », au moins 24 px en 720p.
+	check(dock!=null and dock.is_visible_in_tree() and dock.get_global_rect().size.x>=24,"Place physique pour Gabi dans le bandeau en 720p")
 	check(button!=null and not button.disabled and not dock.get_global_rect().intersects(button.get_global_rect()),"Le reçu et le coach ont des cibles distinctes en 720p")
 	if button!=null:
 		await click(button)

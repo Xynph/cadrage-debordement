@@ -168,7 +168,7 @@ func readability() -> void:
 		var style := b.get_theme_stylebox("normal") as StyleBoxFlat
 		if style!=null and style.bg_color.a>.9 and not b.text.is_empty():
 			check(contrast(b.get_theme_color("font_focus_color"),style.bg_color)>=4.5,"Contraste du texte au focus " + b.text)
-	app.settings()
+	app.preferences_window()
 	for d in dialogs():
 		var border: StyleBoxFlat=d.get_theme_stylebox("embedded_border","Window")
 		check(contrast(d.get_theme_color("title_color","Window"),border.bg_color)>=4.5,"Titre du dialogue lisible")
@@ -256,7 +256,7 @@ func reading_actions() -> void:
 	if leagues.size()>1:
 		await press(str(leagues[1].name).to_upper())
 		check(app.table_division==leagues[1].id,"Changement réel de division")
-	app.settings()
+	app.preferences_window()
 	var preference_tabs := named(app,"PreferencesTabs") as TabContainer
 	check(preference_tabs!=null,"Onglets réels des paramètres")
 	if preference_tabs!=null:

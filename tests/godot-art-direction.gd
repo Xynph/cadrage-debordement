@@ -226,7 +226,7 @@ func run() -> void:
 		preload("res://ui/decision_views.gd").dossier(app)
 		await capture("Dossier-adverse")
 		app._clear_dialogs()
-		app.settings()
+		app.preferences_window()
 		await capture("Paramètres")
 		app._clear_dialogs()
 	if dialogs_only or scenario.begins_with("routes-"): finish(); return

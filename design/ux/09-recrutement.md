@@ -33,6 +33,7 @@ Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (
 Carrière Monde
   └── Recrutement                         ← cet écran
         ├── Onglets : Besoins du club (défaut) · Recherche · Joueurs suivis · Rapports
+        ├── Offres reçues (n)             ← fenêtre (bouton « Offres reçues · n »)
         ├── Comparaison (2 pistes)        ← plein écran
         ├── Mission du recruteur          ← fenêtre
         └── Négociation                   ← fenêtre, depuis « Approcher » ou une prolongation
@@ -143,6 +144,17 @@ Puis : synthèse du contrat (prime, salaire demandé, durée proposée : « 1 à
 | Joueurs suivis (n) | pistes étoilées | « Tu ne suis personne. Étoile une piste pour la retrouver ici. » + « Voir les besoins » |
 | Rapports (n) | rapports datés, filtre par poste | « Aucun rapport. Lance une mission pour en recevoir en n jours. » + « Lancer une mission » |
 
+| Offres reçues | **Pas un onglet** : un bouton « **Offres reçues · n** » (« Offres reçues » sans offre ; principal s'il y a une offre) dans l'écran Recrutement (`OpenPlayerSales`), qui ouvre la fenêtre « Offres reçues » (W3, bouton FERMER). Même fenêtre depuis la fiche joueur (onglet Contrat), le dossier de l'Effectif, la vue Contrats et le lien du courrier « offre_transfert » (GDD `docs/gdd/vente-joueurs.md`). Voir ci-dessous | voir « Fenêtre Offres reçues » |
+
+**Fenêtre « Offres reçues »** (lecture seule ; le moteur valide chaque réponse et écrit la raison d'un refus). De haut en bas :
+1. **Ligne de période** : « Période des mutations : du 1er mai au 30 juin. » puis, ouverte, « Elle est ouverte : une vente acceptée est conclue tout de suite. » ; fermée, « Hors période : une vente acceptée devient un accord effectif le 1er mai ; le joueur reste et joue jusque-là. » (mode « toute la saison » : « Ventes possibles toute la saison, hors match. »).
+2. **Ventes en attente** (si besoin) : une phrase par accord conclu (joueur, club, montant, départ au 1er mai).
+3. **Offres reçues** : une carte par offre : « {Prénom NOM} · {poste} · {âge} ans » ; « {Club} propose {montant} · valeur estimée {valeur} » ; note : « Joueur proposé aux autres clubs. » ou « **Offre spontanée : tu ne l'avais pas proposé.** », « Valable jusqu'à la fin de la semaine prochaine. » / « … de la semaine. », « Tu as déjà demandé +{n} % : accepte ou refuse. » ; hors période, note d'accord effectif au 1er mai. Boutons : **ACCEPTER…** (hors période : **CONCLURE L'ACCORD…**), **DEMANDER +5 %**, **+10 %**, **+15 %** (une seule fois par offre), **REFUSER**. Blocage : « Accepter » grisé et raison écrite en rouge sur la carte, avant le clic (« Tu dois garder au moins 37 joueurs professionnels. », plus de poste, « Plus disponible : {club} n'a plus les moyens ou plus de place dans son effectif. ») ; « Demander plus » grisé avec sa raison une fois la relance faite.
+4. **Joueurs proposés aux autres clubs** : une ligne par joueur (« Nom · poste · âge ans · valeur estimée ») + « **RETIRER DU MARCHÉ** » ; vide : « Aucun joueur proposé pour l'instant. »
+5. **Message de réponse** en tête (« Réponse en cours… » puis le texte du moteur, ex. relève ou retrait de l'acheteur, vente conclue).
+
+**Confirmation de vente** (fenêtre W1, focus sur ANNULER) : titre « Vendre {Nom} » (hors période : « Conclure l'accord »). Boutons : **VENDRE {NOM}** (hors période : **CONCLURE L'ACCORD AVEC {CLUB}**) / ANNULER. Phrase d'en-tête : « {Nom} rejoint {Club} pour {montant}. La vente est définitive. » (hors période : « Accord avec {Club} : {Nom} partira le 1er mai contre {montant}. L'accord est définitif. »). Lignes : « Caisse : +{montant} (après la vente : {caisse}). » (hors période : « … le 1er mai, au départ du joueur. ») · « Effectif après la vente : {n} joueurs professionnels. » + « Le club signera {k} joueur(s) de complément pour revenir à 40. » (hors période, préfixe « Il reste au club et joue jusqu'au 1er mai. ») · « Budget de transferts : {50 %} reviennent à l'enveloppe » (ou « l'enveloppe est à son plafond, rien n'y revient ») si le budget est actif · « Il figure sur ta feuille de match : vérifie ta feuille à 23 après la vente. » · mention JIFF (« Tu garderas n JIFF dans l'effectif ») · **conséquences légères** (« Ce départ touchera le vestiaire… », supporters, président) si le joueur est un cadre, le leader ou un proche d'un duo.
+
 Les deux compteurs « 0 profils suivis » / « 0 rapports conservés » du bandeau actuel passent dans les libellés d'onglet.
 
 ### 6.6 Négociation (fenêtre)
@@ -165,6 +177,7 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 | Suivre | `ProspectFollowToggled` | `{playerId}` |
 | Envoyer l'offre | `OfferSubmitted` | `{playerId, premium, wage, years}` |
 | Comparer | `CompareToggled` | `{playerId}` |
+| Accepter / Demander plus / Refuser une offre | commande `sale_answer` | `{offerId, action: accept\|counter\|decline, percent?, confirmed?}` |
 
 ## 7. Actions et raccourcis
 
@@ -189,6 +202,7 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 | Vide | filtre sans résultat | message + « Réinitialiser » | focus sur le bouton |
 | Marché fermé | hors fenêtre | bandeau : « Le marché est fermé jusqu'au jj/mm. Tu peux observer et suivre. » ; Approcher grisé | Observer reste actif |
 | Budget insuffisant | prime à la signature (joueur libre) ou indemnité (accord entre clubs) > `transferBudget.disponible` ; le salaire n'entre pas dans le budget (jugé par la masse salariale) | le moteur rend le devis indisponible (`available:false`) avec la raison (« Hors budget de transferts : il reste X € sur l'enveloppe de Y € fixée par le conseil. ») ; raison écrite visible dans la fiche (Vigilance), la négociation et la carte du marché entre clubs, pas seulement en infobulle | bouton d'envoi grisé ; le moteur revérifie à la signature. Marché entre clubs : indemnité saisie au-delà du disponible → « Soumettre les conditions » grisé avec la raison sous les champs. Si la caisse le permet : bouton « Demander X € au conseil » sous la raison (confirmation, focus sur Annuler, effet sur la confiance) ; sinon la raison dit que la caisse limite et aucun bouton n'apparaît |
+| Offres reçues vides | aucune offre en cours | « Aucune offre en cours. Propose un joueur aux autres clubs depuis sa fiche ou l'Effectif : les offres arrivent à la fin de la semaine. Les clubs peuvent aussi faire une offre pour tes meilleurs joueurs. » ; sous « Joueurs proposés » : « Aucun joueur proposé pour l'instant. » | bouton FERMER |
 | Piste déjà prise / retirée | autre club signe | ligne « Plus disponible » barrée + icône ; sélection suivante | message au pied, conservé jusqu'à l'action suivante (aucune disparition automatique, M6) |
 | Offre refusée | réponse | fenêtre : raison + options (revoir salaire, durée) | aucun silence : G3 |
 | Erreur de marché | données illisibles | bandeau + Réessayer | liste vide, pas de crash |
@@ -248,6 +262,9 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 - [ ] États vides : message + action, focus sur l'action.
 - [ ] Aucun « fin(s) » ni jargon ; pluriel correct.
 - [ ] Capture en niveaux de gris : priorités 1-2-3 distinguables.
+- [ ] Le bouton « Offres reçues · n » ouvre la fenêtre des offres ; la ligne de période dit si une vente est conclue tout de suite ou devient un accord effectif au 1er mai.
+- [ ] Une offre spontanée est signalée comme telle ; « Demander +5/+10/+15 % » ne sert qu'une fois par offre ; une garde d'effectif ou un acheteur sans moyens grise « Accepter » avec la raison écrite avant le clic.
+- [ ] La confirmation de vente porte le verbe de l'action sur son bouton, le focus est sur ANNULER, et elle affiche caisse, effectif, budget de transferts, JIFF et conséquences légères quand elles existent.
 
 ## 13. Questions ouvertes
 

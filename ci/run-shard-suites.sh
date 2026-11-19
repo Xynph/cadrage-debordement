@@ -204,6 +204,9 @@ budget() {
     # Incidents de match (blessures, saignements, choix du manager) : carrière Monde, deux matchs rejoués minute par
     # minute puis un direct au worker ; 36 s en local. Budget ≈ 8 fois, comme les autres suites Monde du match.
     tests/incidents-match.cjs) echo 300s ;;
+    # Vente de joueurs (carrière Monde) : trois carrières jouées sur plusieurs semaines, dont deux mesures de clôture
+    # (hebdomadaire et journalière) ; 237 à 281 s en local. Budget ≈ 2,5 fois, assertions et seuils de performance inchangés.
+    tests/vente-joueurs.cjs) echo 600s ;;
     *) echo 180s ;;
   esac
 }

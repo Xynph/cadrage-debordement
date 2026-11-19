@@ -104,8 +104,11 @@ rallonge est possible pour une offre m si `reste < m ≤ caisseLibre` (calcul re
   club) rend **50 %** de son montant à l'enveloppe ; le reste renforce la trésorerie.
 - Une **vente imposée** ne rend rien à l'enveloppe : vente décidée par le président (reprise), vente pour
   rembourser le prêt de l'actionnaire. Elles servent à renflouer la caisse, pas à racheter.
-- Le reconstitué est plafonné : l'enveloppe totale de la saison (initiale + reconstitué) ne dépasse jamais
-  le plafond R6.
+- **Pas de plafond d'enveloppe** (décision de Léo, 19/11/2026) : la part rendue n'est plus limitée par recettes ×
+  plafond ; seule la caisse limite ce qu'on peut dépenser (R6 : disponible = min(reste, caisse − matelas)). Une vente
+  conclue hors période des mutations rend sa part au moment de son exécution (`docs/gdd/vente-joueurs.md`).
+- Une indemnité d'accord d'achat conclu hors période (`docs/gdd/calendrier-mutations.md`) est engagée sur l'enveloppe
+  dès la conclusion ; la prime d'un pré-contrat la consomme à la signature.
 
 ### R5 — D'une saison à l'autre : report partiel (décision de Léo, 19/11/2026)
 
@@ -155,7 +158,7 @@ matelas    = max(matelas.fixe, matelas.partReserve × réserve)
 caisseLibre= max(0, cash − matelas)
 reste      = max(0, enveloppe + report + rallonge + reconstitué − dépensé)
 disponible = min(reste, caisseLibre)
-reconstitué += partVentes × vente choisie, tant que enveloppe + report + reconstitué ≤ recettes × plafond
+reconstitué += partVentes × vente choisie            (sans plafond d'enveloppe, R4 du 19/11/2026)
 
 rallonge demandée X = arrondi1k↑(offre − reste)        si reste < offre ≤ caisseLibre, sinon aucune
 accordée  ⇔ rallongesAccordees < maxParSaison  et  confiance ≥ confianceMin  et  X ≤ partEnveloppe × enveloppe
@@ -301,6 +304,7 @@ joués Pro D2 ne passe pas sous la moitié de la réserve. Dynamique pluri-saiso
 | Reprise du président (`president-reprise.cjs`) | interface | un achat dans l'enveloppe ne déclenche plus la reprise ; ses ventes ne rendent rien |
 | Prêt de l'actionnaire (`club-owner.cjs`) | interface | sa vente forcée ne rend rien |
 | Indemnités de formation (`formation-fees.cjs`) | aval | reçues : +50 % ; versées : consomment |
+| Calendrier du recrutement (`docs/gdd/calendrier-mutations.md`) | aval | accord d'achat différé : indemnité engagée à la conclusion (rendue s'il tombe) ; prime de pré-contrat débitée à la signature |
 | Écrans Recrutement et Finances (Godot) | aval | lisent `finance.transferBudget` |
 | Fiches UX `design/ux/09-recrutement.md` §6.1, §8, §13 ; `design/ux/17-finances.md` §7, §13 | aval | répond aux questions ouvertes « budget de recrutement » |
 

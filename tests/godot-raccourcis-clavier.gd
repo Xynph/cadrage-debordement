@@ -62,14 +62,16 @@ func run() -> void:
 	if gestionnaire == null: return finish()
 	check(app.get_viewport().gui_get_focus_owner() == null or not (app.get_viewport().gui_get_focus_owner() is LineEdit), "Aucun champ de saisie au départ")
 
-	# Menus 1 à 9 : dans l'ordre affiché (Réception, Bureau, Effectif, Tactique…).
+	# Menus 1 à 9 : dans l'ordre affiché (Bureau, Réception, Effectif, Tactique…), sans numéro écrit devant.
 	var menus: Array = app.root_content.find_children("Nav_*", "Button", true, false)
 	check(menus.size() >= 9, "Au moins neuf menus à gauche (" + str(menus.size()) + ")")
-	check(menus[2].tooltip_text.contains("(3)") and menus[0].tooltip_text.contains("(1)"), "Info-bulles « (1) », « (3) » sur les menus")
+	check(menus[2].tooltip_text.contains("touche 3") and menus[0].tooltip_text.contains("touche 1") and not menus[0].text.substr(0, 1).is_valid_int(), "Info-bulles « touche 1 », « touche 3 » sur les menus, sans numéro affiché")
 	await key(KEY_3)
 	check(app.route == "Effectif", "Touche 3 : Effectif (" + app.route + ")")
 	await key(KEY_KP_2)
-	check(app.route == "Bureau", "Pavé numérique 2 : Bureau (" + app.route + ")")
+	check(app.route == "Réception", "Pavé numérique 2 : Réception (" + app.route + ")")
+	await key(KEY_1)
+	check(app.route == "Bureau", "Touche 1 : Bureau (" + app.route + ")")
 	await key(KEY_4)
 	check(app.route == "Composition", "Touche 4 : Tactique (" + app.route + ")")
 	await key(KEY_2, true)
@@ -99,15 +101,22 @@ func run() -> void:
 	check(not app.get_meta("immersive08_full_player", false) and app.route == "Effectif", "Échap referme la fiche joueur")
 	check(app.find_child("ImmersivePauseMenu", true, false) == null, "Échap sur la fiche : pas de menu de pause")
 
-	# Ctrl+F : l'accès rapide (seule recherche existante), refermé par Échap.
+	# Ctrl+F (comme Ctrl+K) : focus dans le champ « Rechercher » de la barre haute, aucune fenêtre ; Échap le rend.
 	await key(KEY_F, true)
-	var palette := app.find_child("NavigationPalette", true, false) as Window
-	check(palette != null and palette.visible, "Ctrl+F ouvre l'accès rapide")
+	var recherche := app.root_content.find_child("ImmersiveSearch", true, false) as LineEdit
+	check(recherche != null and recherche.has_focus() and app.find_child("NavigationPalette", true, false) == null, "Ctrl+F met le focus dans la recherche, sans fenêtre")
+	# Champ ciblé : les raccourcis du bureau restent muets.
+	await key(KEY_5)
+	check(app.route == "Effectif", "Recherche ciblée : touche 5 ignorée (" + app.route + ")")
+	await key(KEY_ESCAPE)
+	check(recherche != null and not recherche.has_focus() and app.find_child("ImmersivePauseMenu", true, false) == null, "Échap rend le focus sans ouvrir le menu")
 	# Dialogue ouvert : les raccourcis du bureau restent muets.
+	app.notice("Essai", "Fenêtre ouverte")
+	await settle()
 	await key(KEY_5)
 	check(app.route == "Effectif", "Dialogue ouvert : touche 5 ignorée (" + app.route + ")")
-	await key(KEY_ESCAPE)
-	check(palette != null and not palette.visible, "Échap referme l'accès rapide")
+	app._clear_dialogs()
+	await settle()
 
 	# Rappels : une seule table pour le pied de page, les paramètres et l'aide F1.
 	var Table = load("res://ui/raccourcis_clavier.gd")
@@ -158,7 +167,8 @@ func run() -> void:
 	app.coach.close()
 	await settle(2)
 
-	# Espace : d'abord le prochain message non lu, puis seulement Continuer.
+	# Espace = Continuer et rien d'autre (coque commune : un raccourci garde un seul sens) ; même avec des non-lus,
+	# Espace n'ouvre jamais le courrier (le bouton « Courrier suivant non lu » de la Réception reste là pour ça).
 	var Reception = load("res://ui/immersive08/reception_canvas.gd")
 	app._navigate("Bureau")
 	await settle()
@@ -175,16 +185,16 @@ func run() -> void:
 		marques[cible.id] = {"read": false}
 		avant = Reception.unread(app)
 	check(avant > 0, "Au moins un message non lu au départ (" + str(avant) + ")")
-	var attendu: Dictionary = Reception.next_unread(app)
 	continuer.mouse_entered.emit()
-	check(continuer.tooltip_text.ends_with("Espace : prochain message"), "Info-bulle : prochain message (" + continuer.tooltip_text + ")")
+	check(continuer.tooltip_text.ends_with("Espace : continuer"), "Info-bulle avec non-lus : continuer (" + continuer.tooltip_text + ")")
 	continuer.mouse_entered.emit()
 	check(continuer.tooltip_text.count("Espace :") == 1, "Indication jamais doublée")
+	# Bouton rendu inactif le temps de la vérification : Espace ne doit ni avancer ni ouvrir le courrier.
+	continuer.disabled = true
 	await key(KEY_SPACE)
-	check(compteur[0] == 0, "Non lus restants : Espace ne déclenche pas Continuer")
-	check(app.route == "Réception", "Espace ouvre la Réception (" + app.route + ")")
-	check(app.management_ui.reception.selected == attendu.get("id", "?"), "Le prochain message non lu est sélectionné")
-	check(Reception.unread(app) == avant - 1, "Ce message est marqué lu (" + str(Reception.unread(app)) + " pour " + str(avant) + ")")
+	check(compteur[0] == 0 and app.route == "Bureau", "Non lus restants : Espace n'ouvre pas la Réception (" + app.route + ")")
+	check(Reception.unread(app) == avant, "Aucun message marqué lu par Espace (" + str(Reception.unread(app)) + " pour " + str(avant) + ")")
+	continuer.disabled = false
 	# Tout lire : Espace = Continuer.
 	var marques2: Dictionary = app.management_ui.reception.marks
 	for message: Dictionary in Reception._messages(app): marques2[message.id] = {"read": true}

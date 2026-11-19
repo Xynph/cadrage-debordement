@@ -11,6 +11,7 @@
       "ecrans": [],
       "lecteurs": [
         "main.gd",
+        "ui/immersive08/shell.gd",
         "ui/preferences_dialog.gd",
         "ui/user_preferences.gd"
       ],

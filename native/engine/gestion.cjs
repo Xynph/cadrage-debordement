@@ -104,6 +104,10 @@ module.exports=function nativeGestion(command,p){
  if(command==='recruit'||command==='extend_contract'){
   requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
   const kind=command==='recruit'?'recruit':'renew',target=talkPlayer(p.playerId,kind);requireThat(target,'Joueur indisponible ou offre périmée.');
+  // Calendrier du recrutement (calendrier-mutations.cjs) : joueurs sans club jusqu'au 31 décembre, deux supplémentaires en
+  // janvier ; un joueur qui a signé un pré-contrat ailleurs ne se prolonge plus.
+  const ferme=kind==='recruit'&&typeof calendrierRefusRecrue==='function'?calendrierRefusRecrue():'';requireThat(!ferme,ferme);
+  const parti=kind==='renew'&&typeof preContratRefusProlongation==='function'?preContratRefusProlongation(p.playerId):'';requireThat(!parti,parti);
   requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||professionalPlaces()>0,'Effectif complet.');
   // Contrôle de gestion (a2r.cjs) : une recrue que l'A2R n'homologue pas n'est même pas proposée.
   const a2r=kind==='recruit'&&typeof a2rRefusRecrue==='function'?a2rRefusRecrue(p.salary):'';requireThat(!a2r,a2r);
@@ -114,6 +118,8 @@ module.exports=function nativeGestion(command,p){
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');
   if(kind==='recruit'&&talk.status==='signed'&&typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(talk.fee);
+  if(kind==='recruit'&&talk.status==='signed'&&typeof calendrierApresRecrue==='function')calendrierApresRecrue(p.playerId);
+  if(kind==='renew'&&talk.status==='signed'&&typeof calendrierApresProlongation==='function')calendrierApresProlongation(p.playerId);
   // Le président reprend la main si l'achat fait passer la trésorerie sous la réserve (president-reprise.cjs),
   // sauf pour un achat dans l'enveloppe de transferts fixée par le conseil.
   if(kind==='recruit'&&talk.status==='signed'&&typeof repriseApresAchat==='function'&&!(typeof budgetTransfertsExempte==='function'&&budgetTransfertsExempte()))repriseApresAchat(club(),avant);
@@ -121,6 +127,11 @@ module.exports=function nativeGestion(command,p){
  }
  // Rallonge demandée au conseil (budget-transferts.cjs, R3 bis) : {amount, confirmed:true} ; réponse dans meta.transferBudgetExtension.
  if(command==='transfer_budget_extension'){requireThat(typeof budgetTransfertsRallonge==='function','Budget de transferts indisponible.');return {transferBudgetExtension:budgetTransfertsRallonge(p)};}
+ // Vente de joueurs (vente-joueurs.cjs) : proposer / retirer un joueur ; répondre à une offre reçue.
+ if(command==='sale_list'){requireThat(typeof venteListe==='function'&&S.phase!=='ended','Vente de joueurs indisponible.');return venteListe(p);}
+ if(command==='sale_answer'){requireThat(typeof venteRepondre==='function'&&S.phase!=='ended','Vente de joueurs indisponible.');return venteRepondre(p);}
+ // Pré-contrat avec un joueur d'un autre club en fin de contrat (calendrier-mutations.cjs) : réponse dans meta.preContract.
+ if(command==='precontract_offer'){requireThat(typeof preContratProposer==='function'&&S.phase!=='ended','Pré-contrats indisponibles.');return preContratProposer(p);}
  if(command==='next_season'){requireThat(p.confirmed===true&&S.phase==='ended'&&!S.live,'Confirme le passage à la saison suivante après la fin des compétitions.');advanceSeason();return;}
  if(command==='substitute'){
   const l=S.live;requireThat(l&&l.paused&&!l.finished&&!presentationPending(l),'Remplacement indisponible : mets le match en pause.');

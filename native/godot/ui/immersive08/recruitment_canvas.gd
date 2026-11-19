@@ -11,6 +11,7 @@ const Decisions = preload("res://ui/decision_views.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Sort = preload("res://ui/recruitment_sort.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
+const SalesView = preload("res://ui/player_sales_view.gd")
 const ROW_HEIGHT := 38
 # Construction progressive de la liste : les premières lignes tout de suite, le reste sur les images suivantes.
 const FIRST_ROWS := 26
@@ -112,6 +113,10 @@ func _build() -> void:
 	_needs()
 	_refresh()
 	U.restore(app, self, "market")
+	# Courrier « offre_transfert » (Réception) : ouvre directement les offres reçues.
+	if app.has_meta("open_player_sales"):
+		app.remove_meta("open_player_sales")
+		(func(): SalesView.open(app)).call_deferred()
 
 func _header(positions: Array) -> void:
 	D.text(self, 24, 43, "CONSTRUIRE L’EFFECTIF DE DEMAIN", 31, WARM, 700, 470)
@@ -138,7 +143,27 @@ func _header(positions: Array) -> void:
 	D.place(fade, Rect2(506, 130, 128, 156))
 	C.veil(fade).flip_h = true
 	D.button(self, Rect2(24, 223, 270, 48), "Repérer la relève →", func(): preload("res://ui/regen_scouting_view.gd").open(app), false, "", false, PRIMARY, "OpenRegenScouting")
-	D.button(self, Rect2(310, 223, 272, 48), "Marché entre clubs →", func(): preload("res://ui/interclub_market_view.gd").open(app), false, "", false, PRIMARY, "OpenInterclubMarket")
+	var interclub := D.button(self, Rect2(310, 223, 272, 48), "Marché entre clubs →", func(): preload("res://ui/interclub_market_view.gd").open(app), false, "", false, PRIMARY, "OpenInterclubMarket")
+	# Calendrier du recrutement (calendrier-mutations.cjs, model.mutations) : période des joueurs sans club au-dessus des
+	# accès au marché ; raison et date de réouverture en clair, période des mutations dans les infobulles.
+	var calendrier: Dictionary = app.model.get("mutations", {}) if app.model.get("mutations") is Dictionary else {}
+	if calendrier.get("available", false):
+		var libres: Dictionary = calendrier.get("freeAgents", {}) if calendrier.get("freeAgents") is Dictionary else {}
+		# Bandeau sombre sous la période : posée sur la photo de recrutement, elle était illisible (captures 19/11).
+		var bandeau := D.rect(self, Rect2(16, 126, 574, 36), Color(0.03, 0.08, 0.06, 0.9), 6, Color(0.03, 0.08, 0.06, 0.9))
+		bandeau.name = "RecruitmentWindowBand"
+		bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var fenetre := D.text(self, 24, 148,str(calendrier.get("summary", "")), 26, GREEN if libres.get("open", true) else C.ALERT, 700, 558)
+		fenetre.name = "RecruitmentWindow"
+		fenetre.tooltip_text = str(calendrier.get("detail", ""))
+		fenetre.mouse_filter = Control.MOUSE_FILTER_PASS
+		interclub.tooltip_text = str(calendrier.get("interclub", {}).get("note", ""))
+	# Ventes (vente-joueurs.cjs) : offres reçues pour les joueurs du club, au-dessus des deux accès au marché.
+	var offers := (SalesView.sales(app.model).get("offers", []) as Array).size()
+	var sales := D.button(self, Rect2(24, 163, 558, 52), SalesView.caption(app.model) + "  →", func(): SalesView.open(app), offers > 0, "money", false, PRIMARY, "OpenPlayerSales")
+	sales.add_theme_font_size_override("font_size", maxi(14, C.px(28)))
+	sales.tooltip_text = "Offres des autres clubs pour tes joueurs : accepter, demander plus ou refuser"
+	sales.accessibility_name = sales.text
 	for i in TABS.size():
 		_tab(Rect2(624 + 206 * i, 190, 216, 65), TABS[i], i)
 	var compare := D.button(self, Rect2(1510, 181, 230, 61), "Comparer", _compare, false, "people", false, app.accent, "CompareMarket")

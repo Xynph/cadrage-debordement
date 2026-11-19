@@ -71,8 +71,11 @@ func menu_input(mouse: bool) -> void:
 			var event := InputEventKey.new(); event.keycode = KEY_ENTER; event.pressed = pressed
 			Input.parse_input_event(event); await process_frame
 	await settle()
-	check(app.get_children().any(func(child): return child is AcceptDialog and child.visible and child.title in ["Ta carrière", "Paramètres"]), "Accès aux paramètres ouvert par " + ("souris" if mouse else "Entrée") + " / " + str(root.size.x))
+	# Coque commune : « Réglages » du rail ouvre l'écran Réglages (aucune fenêtre).
+	var opened: bool = app.route == "Réglages" and app.root_content.find_child("PreferencesPage", true, false) != null
+	check(opened or app.get_children().any(func(child): return child is AcceptDialog and child.visible and child.title in ["Ta carrière", "Paramètres"]), "Accès aux paramètres ouvert par " + ("souris" if mouse else "Entrée") + " / " + str(root.size.x))
 	app._clear_dialogs(); await settle()
+	if opened: app.navigation_controller._travel(-1); await settle()
 func ordinary_routes() -> void:
 	# No open_help between the render under test and geometry / input assertions.
 	app.coach.close()
@@ -289,7 +292,7 @@ func run() -> void:
 		app._navigate("Bureau"); await settle()
 		app.coach.disable(); await settle()
 		check(not app.coach.visible, "Désactivation persistée sans erreur")
-		app.settings(); await settle()
+		app.preferences_window(); await settle()
 		var dialogs := app.find_children("*", "AcceptDialog", false, false)
 		var settings: AcceptDialog
 		for dialog in dialogs:

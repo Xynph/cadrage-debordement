@@ -5,21 +5,24 @@ extends RefCounted
 ## l'échelle par `px()`. L'échelle ne descend pas sous 0,8 : en 1280×720 on
 ## retire des colonnes plutôt que de rendre le texte illisible.
 
-const FOND := Color("0b1012")
-const PANNEAU := Color("121a1c")
-const PANNEAU_HAUT := Color("18231f")
-const TRAIT := Color("232f2e")
-const TEXTE := Color("f2ecdc")
-const TEXTE_DOUX := Color("aeb9b3")
-const TEXTE_FAIBLE := Color("7b8a84")
-const OR := Color("e0b35a")
-const VERT := Color("65b081")
-const JAUNE := Color("c9c46a")
-const ALERTE := Color("e2876f")
-const SURVOL := Color("182322")
-const CHOIX := Color("1f2e2b")
-const RAIL := Color("26322f")
-const RESERVE := Color("3a4744")
+## Couleurs : alias des jetons de la charte (ui/charte.gd), une seule direction artistique.
+## OR reste le nom de l'accent historique du socle ; il vaut l'ivoire (le vrai or est réservé à Continuer).
+const Charte = preload("res://ui/charte.gd")
+const FOND := Charte.FOND
+const PANNEAU := Charte.PANNEAU
+const PANNEAU_HAUT := Charte.PANNEAU_2
+const TRAIT := Charte.FILET
+const TEXTE := Charte.IVOIRE
+const TEXTE_DOUX := Charte.IVOIRE_2
+const TEXTE_FAIBLE := Charte.IVOIRE_3
+const OR := Charte.IVOIRE
+const VERT := Charte.V
+const JAUNE := Charte.N
+const ALERTE := Charte.D
+const SURVOL := Charte.PANNEAU_2
+const CHOIX := Charte.PANNEAU_3
+const RAIL := Charte.PANNEAU_3
+const RESERVE := Charte.IVOIRE_3
 
 const TITRE = preload("res://fonts/BarlowCondensed-SemiBold.ttf")
 const TITRE_GRAS = preload("res://ui/immersive08/fonts/BarlowCondensed-Bold.ttf")

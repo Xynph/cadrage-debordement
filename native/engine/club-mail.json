@@ -4,7 +4,7 @@
   "cadence": {
     "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; nature de chaque type (décision de Léo, 18/11/2026) : « action » (une réponse est attendue : arrêt de « Continuer » à lui seul), « info » (rangé dans l'arrêt d'info du jour, un seul par jour), « routine » (n'arrête jamais à lui seul : rangé dans l'arrêt veille, lendemain ou info du jour s'il y en a un) ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
-    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2, "commotion": 6 },
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2, "commotion": 6, "transferts": 6 },
     "boite": 160,
     "projection": 80,
     "delaiReponse": 7,
@@ -22,7 +22,8 @@
     "moments": { "label": "Club", "ecran": "Effectif" },
     "contrats": { "label": "Contrats", "ecran": "contrats" },
     "meteo": { "label": "Météo", "ecran": "Composition" },
-    "commotion": { "label": "Médical", "ecran": "infirmerie" }
+    "commotion": { "label": "Médical", "ecran": "infirmerie" },
+    "transferts": { "label": "Transferts", "ecran": "ventes" }
   },
   "humeurs": {
     "haut": ["le groupe vit bien, ça rigole à la muscu et ça bosse dur", "l'ambiance est au beau fixe, les jeunes suivent les anciens", "on sent une vraie envie, personne ne traîne aux séances"],
@@ -486,16 +487,60 @@
         {"id":"acte","libelle":"Prendre acte","effets":{"a2r":"acte"},"resultat":"Le club fera sans recrue cet été."}
       ]
     },
-    "reprise_president": {
+    "offre_transfert": {
+      "categorie": "transferts", "declencheur": "offre_transfert", "priorite": 20, "nature": "info", "ecran": "ventes",
+      "expediteur": "Le directeur sportif",
+      "formulations": [
+        {"sujet":"Offre de {acheteur} pour {joueur}","corps":"Coach, {acheteur} propose {montant} pour {joueur}. Sa valeur sur le marché tourne autour de {valeur}. {origine}\n\nL’offre tient {delai}. Tu peux l’accepter, demander plus une fois, ou la refuser : tout se règle dans Recrutement, onglet Offres reçues."},
+        {"sujet":"{joueur} intéresse {acheteur}","corps":"Coach, {acheteur} m’a appelé : ils mettent {montant} sur la table pour {joueur} (valeur estimée {valeur}). {origine}\n\nLeur offre vaut {delai}. À toi de voir dans Recrutement, onglet Offres reçues : accepter, demander plus une fois, ou refuser."}
+      ],
+      "reponses": []
+    },
+    "vente_executee": {
+      "categorie": "transferts", "declencheur": "vente_executee", "priorite": 18, "nature": "info", "ecran": "Effectif",
+      "expediteur": "Le directeur sportif",
+      "formulations": [
+        {"sujet":"{joueur} a rejoint {acheteur}","corps":"Coach, la période des mutations est ouverte : l’accord conclu avec {acheteur} est exécuté. {joueur} a quitté le club et {montant} sont arrivés dans la caisse.\n\nPense à vérifier ta feuille à 23."},
+        {"sujet":"Départ de {joueur} : c’est fait","corps":"Coach, comme convenu, {joueur} part chez {acheteur} à l’ouverture des mutations. L’indemnité de {montant} est encaissée.\n\nRegarde ta feuille à 23 avant le prochain match."}
+      ],
+      "reponses": []
+    },
+    "vente_annulee": {
+      "categorie": "transferts", "declencheur": "vente_annulee", "priorite": 18, "nature": "info", "ecran": "Effectif",
+      "expediteur": "Le directeur sportif",
+      "formulations": [
+        {"sujet":"L’accord pour {joueur} tombe","corps":"Coach, l’accord conclu avec {acheteur} pour {joueur} ({montant}) n’a pas pu être exécuté à l’ouverture des mutations : {raison}\n\n{joueur} reste au club. Tu peux le proposer de nouveau si tu veux toujours le vendre."},
+        {"sujet":"Pas de départ pour {joueur}","corps":"Coach, mauvaise nouvelle sur le dossier {joueur} : la vente à {acheteur} pour {montant} est annulée. {raison}\n\nIl reste avec nous ; rien ne t’empêche de le remettre sur le marché."}
+      ],
+      "reponses": []
+    },
+    "precontrat_approche": {
+      "categorie": "transferts", "declencheur": "precontrat_approche", "priorite": 15, "nature": "info", "ecran": "prolongation",
+      "expediteur": "Le directeur sportif",
+      "formulations": [
+        {"sujet":"{joueur} a été approché par {acheteur}","corps":"Coach, {acheteur} a approché {joueur}. Son contrat s’achève en fin de saison : ils lui proposent un pré-contrat pour la saison prochaine, sans rien nous verser.\n\nSi tu veux le garder, propose-lui une prolongation avant le {echeance}. Sinon, il signera là-bas et partira libre le {depart}. D’ici là, il reste à cent pour cent avec nous."},
+        {"sujet":"{acheteur} tourne autour de {joueur}","corps":"Coach, {joueur} m’a prévenu : {acheteur} lui a fait une proposition pour la saison prochaine. Il arrive en fin de contrat, ils n’auront rien à nous payer.\n\nOn a jusqu’au {echeance} pour lui proposer une prolongation. Passé ce délai, il signera chez eux et partira libre le {depart}. Il reste pleinement concerné jusque-là."}
+      ],
+      "reponses": []
+    },
+    "precontrat_signe": {
+      "categorie": "transferts", "declencheur": "precontrat_signe", "priorite": 16, "nature": "info", "ecran": "fiche",
+      "expediteur": "Le directeur sportif",
+      "formulations": [
+        {"sujet":"{joueur} a signé à {acheteur}","corps":"Coach, c’est officiel : {joueur} s’est engagé avec {acheteur} pour la saison prochaine. Il partira libre le {depart}, sans indemnité.\n\nIl reste avec nous jusqu’au bout et jouera normalement. La presse en parle déjà."},
+        {"sujet":"Départ de {joueur} en fin de saison","corps":"Coach, {joueur} a signé son pré-contrat avec {acheteur}. Départ libre le {depart}.\n\nJusque-là, rien ne change à l’entraînement : il est professionnel et concerné. Les journalistes, eux, s’en sont emparés."}
+      ],
+      "reponses": []
+    },    "reprise_president": {
       "categorie": "direction", "declencheur": "reprise_president", "priorite": 9, "nature": "action", "ecran": "Effectif",
       "expediteur": "Le président",
       "formulations": [
-        {"sujet":"Il faut vendre avant le {echeance}","corps":"Coach, je sors des comptes. Avec les dernières arrivées, la trésorerie est tombée à {tresorerie}, sous la réserve que le club s’impose ({reserve}). Il manque {manque}.\n\nJe ne laisserai pas le club vivre au-dessus de ses moyens. Voici les joueurs que je veux voir partir avant le {echeance} : {liste}.\n\nSi la caisse repasse au-dessus de la réserve d’ici là, par ces ventes ou autrement, je n’insisterai pas. Sinon, je les vendrai moi-même, au prix d’une vente pressée."},
-        {"sujet":"La réserve du club est entamée","corps":"Coach, les achats de ces derniers jours ont fait tomber la trésorerie à {tresorerie}. La réserve que nous nous imposons, c’est {reserve} : il manque {manque}.\n\nJ’ai regardé l’effectif avec le directeur sportif. Ceux-là doivent partir avant le {echeance} : {liste}.\n\nSi tu trouves l’argent autrement d’ici là, tant mieux. Sinon, je m’en chargerai, et je ne négocierai pas longtemps."}
+        {"sujet":"Il faut vendre avant le {echeance}","corps":"Coach, je sors des comptes. Avec les dernières arrivées, la trésorerie est tombée à {tresorerie}, sous la réserve que le club s’impose ({reserve}). Il manque {manque}.\n\nJe ne laisserai pas le club vivre au-dessus de ses moyens. Voici les joueurs que je veux voir partir avant le {echeance} : {liste}.\n\nSi la caisse repasse au-dessus de la réserve d’ici là, par ces ventes ou autrement, je n’insisterai pas. Sinon, je les vendrai moi-même, au prix d’une vente pressée. {mutations}"},
+        {"sujet":"La réserve du club est entamée","corps":"Coach, les achats de ces derniers jours ont fait tomber la trésorerie à {tresorerie}. La réserve que nous nous imposons, c’est {reserve} : il manque {manque}.\n\nJ’ai regardé l’effectif avec le directeur sportif. Ceux-là doivent partir avant le {echeance} : {liste}.\n\nSi tu trouves l’argent autrement d’ici là, tant mieux. Sinon, je m’en chargerai, et je ne négocierai pas longtemps. {mutations}"}
       ],
       "reponses": [
         {"id":"lister","libelle":"Les mettre sur la liste des transferts","effets":{"reprise":"lister"},"resultat":"Les joueurs désignés sont proposés aux autres clubs. Les offres arriveront dans les prochains jours."},
-        {"id":"confier","libelle":"Le laisser les vendre tout de suite","effets":{"reprise":"confier"},"resultat":"Le président s’en occupe dès cette semaine."},
+        {"id":"confier","libelle":"Le laisser les vendre tout de suite","effets":{"reprise":"confier"},"resultat":"Le président s’en occupe dès cette semaine. Hors période des mutations, les départs se feront à l’ouverture, le 1er mai."},
         {"id":"delai","libelle":"Plaider pour deux semaines de plus","effets":{"reprise":"delai","confiance":-3},"resultat":"Le président accepte, à contrecœur."}
       ]
     },
@@ -790,7 +835,7 @@
       ],
       "reponses": [
         {"id": "accepter", "libelle": "Accepter le prêt et rembourser sur la durée", "effets": {"pret": "accepter"}, "resultat": "Le prêt est signé : le club remboursera chaque saison, et le président le rappellera au moment des recrues."},
-        {"id": "vendre", "libelle": "Vendre le joueur proposé pour rembourser tout de suite", "effets": {"pret": "vendre", "confiance": 2}, "resultat": "La vente est conclue : son prix rembourse le prêt de l'actionnaire, le président apprécie."}
+        {"id": "vendre", "libelle": "Vendre le joueur proposé pour rembourser tout de suite", "effets": {"pret": "vendre", "confiance": 2}, "resultat": "La vente est conclue : son prix rembourse le prêt de l'actionnaire, le président apprécie. Hors période des mutations, le joueur part et le prêt est remboursé à l’ouverture, le 1er mai."}
       ]
     },
     "proprietaire_arrivee": {

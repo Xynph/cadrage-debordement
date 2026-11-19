@@ -3,6 +3,8 @@ const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Prospect = preload("res://ui/prospect_profile.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
+## Textes à 13 px au moins en 1280×720 (même règle que les ventes : le style immersif repose un plancher de 12 px).
+const Sales = preload("res://ui/player_sales_view.gd")
 var app: Control
 var rows: VBoxContainer
 var query := ""
@@ -19,6 +21,11 @@ var fee_input: SpinBox
 var salary_input: SpinBox
 var search_field: LineEdit
 var pending := false
+var only_ending := false
+var pre_salary: SpinBox
+var pre_years: SpinBox
+var pre_premium: Label
+var pre_button: Button
 var page := 0
 const PAGE_SIZE := 12
 
@@ -59,7 +66,21 @@ func _build() -> void:
 	G.fill(body,true)
 	scroll.add_child(body)
 	body.add_child(G.section("Approcher un joueur sous contrat"))
+	# Période des mutations (calendrier-mutations.cjs) : hors période, un accord est conclu et exécuté à l'ouverture.
+	var mutations: Dictionary = _data().get("window", {}) if _data().get("window") is Dictionary else {}
+	if not mutations.is_empty():
+		var period := G.wrap(str(mutations.get("note", "")), 14, G.MUTED if mutations.get("open", false) else G.ALERT)
+		period.name = "InterclubWindow"
+		body.add_child(period)
 	body.add_child(G.wrap(Copy.notice("interclub", _data().get("notice","Marché indisponible dans cette édition.")),13))
+	# Joueurs en fin de contrat : pré-contrat possible à moins de six mois de l'échéance (arrivée au 1er juillet).
+	var ending := CheckButton.new()
+	ending.name = "InterclubPreContractFilter"
+	ending.text = "Seulement les fins de contrat (pré-contrats)"
+	ending.add_theme_font_size_override("font_size", 14)
+	ending.button_pressed = only_ending
+	ending.toggled.connect(func(value: bool): only_ending = value; page = 0; _redraw())
+	body.add_child(ending)
 	var search := LineEdit.new()
 	search_field = search
 	search.name = "InterclubSearch"
@@ -75,6 +96,7 @@ func _build() -> void:
 	app.bridge.model_changed.connect(_on_model)
 	app.bridge.command_failed.connect(_on_failure)
 	popup_centered(Vector2i(880,580))
+	Sales.lisible(body)
 
 func _redraw() -> void:
 	for child in rows.get_children():
@@ -85,6 +107,7 @@ func _redraw() -> void:
 	var available := 0
 	var term := query.to_lower()
 	for person: Dictionary in data.get("candidates",[]):
+		if only_ending and not person.get("preContract") is Dictionary: continue
 		if term.is_empty() or (str(person.name)+" "+str(person.club)+" "+str(person.pos)).to_lower().contains(term):
 			filtered.append(person)
 			if person.get("available", false): available += 1
@@ -110,12 +133,148 @@ func _redraw() -> void:
 		var card := G.card(rows)
 		_profile_heading(card, person)
 		card.add_child(G.wrap("Indemnité %s · salaire proposé %s · échéance %s conservée" % [G.euros(person.fee),G.salary(person.salary),G.season_label(person.contractEnd)],13))
-		if not str(person.reason).is_empty(): card.add_child(G.wrap(Copy.notice("interclub", person.reason),12,G.ALERT))
+		if not str(person.reason).is_empty(): card.add_child(G.wrap(Copy.notice("interclub", person.reason),13,G.ALERT))
 		var offer := G.button("PROPOSER L’ACCORD",func(): _offer(person))
 		offer.name = "InterclubOffer"
 		offer.set_meta("player_id",str(person.id))
 		offer.disabled = app.waiting or not person.get("available",false)
 		card.add_child(offer)
+		_precontract_line(card, person)
+	Sales.lisible(rows)
+
+## Pré-contrat (calendrier-mutations.cjs, `candidates[].preContract`) : signé (arrivée au 1er juillet), possible
+## (bouton) ou pas encore (raison écrite).
+func _precontract_line(card: Container, person: Dictionary) -> void:
+	var pre: Variant = person.get("preContract")
+	if not pre is Dictionary: return
+	if pre.get("signed") is Dictionary:
+		var signed := G.wrap(str(pre.signed.get("label", "")), 14)
+		signed.name = "InterclubPreContractStatus"
+		card.add_child(signed)
+	elif pre.get("available", false):
+		var button := G.button("PROPOSER UN PRÉ-CONTRAT", func(): _precontract(person))
+		button.name = "InterclubPreContract"
+		button.set_meta("player_id", str(person.id))
+		button.disabled = app.waiting
+		card.add_child(button)
+	else:
+		var reason := G.wrap("Pré-contrat : " + str(pre.get("reason", "")), 13, G.MUTED)
+		reason.name = "InterclubPreContractReason"
+		card.add_child(reason)
+
+## Fenêtre du pré-contrat : salaire (au moins la demande du joueur), durée, prime à la signature recalculée, budget de
+## transferts ; « Proposer » ouvre la confirmation (W1).
+func _precontract(person: Dictionary) -> void:
+	if app.waiting or pending: return
+	selected_person = person.duplicate(true)
+	var pre: Dictionary = person.preContract
+	for child in rows.get_children():
+		rows.remove_child(child)
+		child.queue_free()
+	search_field.editable = false
+	_profile_heading(rows, person)
+	var note := G.wrap(str(pre.get("note", "")), 14)
+	note.name = "PreContractNote"
+	rows.add_child(note)
+	var fields := G.h(12)
+	rows.add_child(fields)
+	for item in [["Salaire " + G.salary_period(), "PreContractSalary"], ["Durée (saisons)", "PreContractYears"]]:
+		var column := G.v(4)
+		fields.add_child(column)
+		column.add_child(G.label(str(item[0]), 14))
+		var input := SpinBox.new()
+		input.name = str(item[1])
+		column.add_child(input)
+		if item[1] == "PreContractSalary":
+			pre_salary = input
+			input.min_value = 1000
+			input.max_value = 100000
+			input.step = 100
+			preload("res://ui/salary_display.gd").bind_input(input, int(pre.get("salary", 1000)), int(pre.get("salary", 1000)), 100000)
+			input.value_changed.connect(func(_value: float): _precontract_check())
+		else:
+			pre_years = input
+			input.min_value = int(pre.get("minYears", 1))
+			input.max_value = int(pre.get("maxYears", 1))
+			input.step = 1
+			input.value = int(pre.get("minYears", 1))
+	pre_premium = G.wrap("", 14)
+	pre_premium.name = "PreContractPremium"
+	rows.add_child(pre_premium)
+	local_message = G.wrap("Le joueur demande au moins %s ; il arrivera le %s." % [G.salary(pre.get("salary", 0)), str(pre.get("arrivalLabel", ""))], 14)
+	local_message.name = "PreContractMessage"
+	rows.add_child(local_message)
+	pre_button = G.button("PROPOSER LE PRÉ-CONTRAT", _confirm_precontract)
+	pre_button.name = "PreContractSubmit"
+	rows.add_child(pre_button)
+	rows.add_child(G.button("REVENIR AUX JOUEURS", func():
+		if pending: return
+		selected_person = {}; search_field.editable = true; _redraw()))
+	_precontract_check()
+	Sales.lisible(rows)
+
+func _precontract_salary() -> int:
+	return preload("res://ui/salary_display.gd").input_weekly(pre_salary) if is_instance_valid(pre_salary) else 0
+
+## Prime = arrondi supérieur(salaire × premiumWeeks, premiumStep) ; refusée au-delà du budget de transferts disponible.
+func _precontract_premium() -> int:
+	var pre: Dictionary = selected_person.get("preContract", {})
+	var step := maxi(1, int(pre.get("premiumStep", 1000)))
+	return int(ceil(float(_precontract_salary()) * float(pre.get("premiumWeeks", 2)) / step)) * step
+
+func _precontract_check() -> void:
+	if not is_instance_valid(pre_premium): return
+	var premium := _precontract_premium()
+	var transfer := Budget.data(app.model)
+	var over := not transfer.is_empty() and premium > int(transfer.get("disponible", 0))
+	pre_premium.text = "Prime à la signature : %s, payée maintenant sur le budget de transferts (%s). Aucune indemnité pour %s." % [G.euros(premium), Budget.remaining(transfer) if not transfer.is_empty() else "trésorerie", str(selected_person.get("club", ""))]
+	if over: pre_premium.text += " Prime supérieure au budget de transferts disponible."
+	pre_premium.add_theme_color_override("font_color", G.ALERT if over else G.INK)
+	if is_instance_valid(pre_button): pre_button.disabled = over or pending or app.waiting
+
+func _confirm_precontract() -> void:
+	if pending or app.waiting or selected_person.is_empty(): return
+	var pre: Dictionary = selected_person.get("preContract", {})
+	var payload := {"playerId":str(selected_person.id), "sellerId":int(selected_person.clubId), "salary":_precontract_salary(), "years":int(pre_years.value), "confirmed":true}
+	var dialog := ConfirmationDialog.new()
+	dialog.name = "PreContractConfirmation"
+	dialog.title = "Signer un pré-contrat"
+	app._prepare_dialog(dialog, 600)
+	# W1 : le bouton dit l'action, le focus va sur Annuler.
+	dialog.get_ok_button().text = ("SIGNER LE PRÉ-CONTRAT AVEC " + str(selected_person.get("name", ""))).to_upper()
+	dialog.get_cancel_button().text = "ANNULER"
+	var content := G.v(8)
+	dialog.add_child(content)
+	var heading := G.wrap("%s rejoindra ton club le %s pour %d saison%s (salaire : %s). Aucune indemnité pour %s." % [str(selected_person.get("name", "")), str(pre.get("arrivalLabel", "")), int(pre_years.value), "s" if int(pre_years.value) > 1 else "", G.salary(_precontract_salary()), str(selected_person.get("club", ""))], 14, G.INK)
+	heading.name = "PreContractConfirmHeading"
+	content.add_child(heading)
+	var cost := G.wrap("Prime à la signature : %s, payée maintenant (budget de transferts). Il reste à %s jusqu’au 30 juin." % [G.euros(_precontract_premium()), str(selected_person.get("club", ""))], 14, G.INK)
+	cost.name = "PreContractConfirmPremium"
+	content.add_child(cost)
+	add_child(dialog)
+	dialog.confirmed.connect(func():
+		pending = true
+		if is_instance_valid(pre_button): pre_button.disabled = true
+		local_message.text = "Proposition transmise au joueur…"
+		if not app._command("precontract_offer", payload): _on_failure("Pré-contrat indisponible.")
+		dialog.queue_free())
+	dialog.canceled.connect(dialog.queue_free)
+	Sales.lisible(dialog)
+	# Fenêtre fille du marché : centrée à l'écran et ajustée à son contenu (comme la confirmation de vente).
+	dialog.popup_centered(Vector2i(620, 260))
+	_center_on_screen.call_deferred(dialog)
+	dialog.get_cancel_button().grab_focus()
+
+func _center_on_screen(dialog: Window) -> void:
+	for i in 3: await get_tree().process_frame
+	if not is_instance_valid(dialog) or not dialog.visible: return
+	var screen := Vector2i(get_tree().root.get_visible_rect().size)
+	var title_height := dialog.get_theme_constant("title_height", "Window")
+	dialog.size = Vector2i(mini(620, screen.x - 28), 1)
+	await get_tree().process_frame
+	if not is_instance_valid(dialog): return
+	dialog.size = Vector2i(mini(dialog.size.x, screen.x - 28), mini(dialog.size.y, screen.y - 68))
+	dialog.position = (screen - dialog.size + Vector2i(0, title_height)) / 2
 
 func _offer(person: Dictionary) -> void:
 	if app.waiting: return
@@ -176,6 +335,7 @@ func _draw_negotiation() -> void:
 		if pending: return
 		selected_person={}; negotiation={}; search_field.editable=true; _redraw()))
 	_budget_check()
+	Sales.lisible(rows)
 
 ## Enveloppe du conseil (finance.transferBudget) : une indemnité au-delà du disponible ne peut pas être soumise.
 ## Le moteur la refuse de toute façon ; la raison est écrite avant l’envoi. Le salaire n’entre pas dans le budget.
@@ -239,6 +399,7 @@ func _on_model(value: Dictionary) -> void:
 		for offer: Dictionary in negotiation.get("offers",[]):
 			lines.append("%s : %s d’indemnité, %s · besoin annoncé %d" % [str(offer.club),G.euros(offer.fee),G.salary(offer.salary),int(offer.need)])
 		var winner: Variant = negotiation.get("winner")
+		if negotiation.get("deferred") is Dictionary: lines.append(str(negotiation.deferred.get("note", "")))
 		if winner is Dictionary:
 			lines.append("Gagnant pressenti : " + str(winner.club) + ". Vérification finale à la clôture.")
 			close_button.disabled = false
@@ -254,11 +415,21 @@ func _on_model(value: Dictionary) -> void:
 		negotiation = {}
 		close_button.disabled = true
 		var receipt: Dictionary = value.get("meta",{}).get("interclubTransfer",{})
-		local_message.text = "Accord conclu : le joueur rejoint ton club." if receipt.get("humanWon",false) else "Un club concurrent a remporté le joueur. Ta trésorerie est conservée."
+		if receipt.get("deferred", false): local_message.text = "Accord conclu hors période des mutations : le joueur rejoindra ton club le %s. L’indemnité est engagée sur le budget de transferts ; elle sera versée à son arrivée." % str(receipt.get("dateLabel", ""))
+		else: local_message.text = "Accord conclu : le joueur rejoint ton club." if receipt.get("humanWon",false) else "Un club concurrent a remporté le joueur. Ta trésorerie est conservée."
+	elif app.last_command == "precontract_offer":
+		pending = false
+		var signed: Variant = value.get("meta",{}).get("preContract")
+		local_message.text = str(signed.get("message","")) if signed is Dictionary else "Pré-contrat signé."
+		if is_instance_valid(pre_button): pre_button.disabled = true
 
 func _on_failure(message: String) -> void:
 	if not pending: return
 	pending = false
+	if is_instance_valid(pre_button) and pre_button.is_inside_tree():
+		local_message.text = message
+		_precontract_check()
+		return
 	fee_input.editable = true
 	salary_input.editable = true
 	negotiation = {}
@@ -277,6 +448,11 @@ func _confirm_auction() -> void:
 	confirm.name = "InterclubAuctionConfirmation"
 	confirm.title = "Clôturer la négociation"
 	confirm.dialog_text = "%s remportera le joueur au devis actuel : %s d’indemnité, %s. Confirmer cette transaction définitive ?" % [str(winner.club),G.euros(winner.fee),G.salary(winner.salary)]
+	# Hors période des mutations (calendrier-mutations.cjs) : accord conclu maintenant, arrivée à l'ouverture.
+	if negotiation.get("deferred") is Dictionary:
+		confirm.dialog_text = "Hors période des mutations : l’accord est conclu maintenant (%s d’indemnité, %s), le joueur rejoindra ton club le %s. L’accord est définitif." % [G.euros(winner.fee), G.salary(winner.salary), str(negotiation.deferred.get("dateLabel", ""))]
+		confirm.get_ok_button().text = "CONCLURE L’ACCORD"
+		confirm.get_cancel_button().text = "ANNULER"
 	add_child(confirm)
 	confirm.confirmed.connect(func():
 		pending=true; close_button.disabled=true; fee_input.editable=false; salary_input.editable=false
@@ -284,3 +460,4 @@ func _confirm_auction() -> void:
 		confirm.queue_free())
 	confirm.canceled.connect(confirm.queue_free)
 	confirm.popup_centered(Vector2i(600,180))
+	if negotiation.get("deferred") is Dictionary: confirm.get_cancel_button().grab_focus()

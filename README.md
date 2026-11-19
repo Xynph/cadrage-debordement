@@ -64,7 +64,7 @@ Le contact 3D reçoit une préparation debout et une protection du ballon lorsqu
 
 Le [récapitulatif initial des idées GitHub](docs/idees-github-20261108.md) confronte dix-huit familles au code alors chargé. Son [tableau de réception](docs/portage-natif-20261108.md) suit les 31 candidats : presse, rivalités et formation avancée sont portées ; la voix finale est complète et les contacts à deux corps restent partiels. Les branches déjà reprises ou supplantées ne sont pas refusionnées.
 
-Les nouvelles carrières communes utilisent le **registre effectifs v2 : 241 postes, 86 échéances et 9 statuts documentés** ; le reste est estimé explicitement. Les statistiques de la base active sont conservées. Les anciennes carrières v1 gardent leurs références sans migration, et les packs changent les identités sans remplacer les progrès. Les sources et limites du lot2 (`docs/roster-foundation-lot2.md`) sont dans le dépôt privé de données ; voir le [protocole de réception Windows](docs/oval-legacy-27-carnet-coach-20261108.md).
+Les nouvelles carrières communes utilisent le **registre effectifs v2 : 246 postes, 86 échéances et 9 statuts documentés** ; le reste est estimé explicitement. Les statistiques de la base active sont conservées. Les anciennes carrières v1 gardent leurs références sans migration, et les packs changent les identités sans remplacer les progrès. Les sources et limites du lot2 (`docs/roster-foundation-lot2.md`) sont dans le dépôt privé de données ; voir le [protocole de réception Windows](docs/oval-legacy-27-carnet-coach-20261108.md).
 
 ## Lot 1 effectifs — étape historique
 

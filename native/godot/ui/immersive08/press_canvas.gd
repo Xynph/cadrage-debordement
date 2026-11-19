@@ -128,14 +128,18 @@ func _sidebar() -> void:
 	D.photo(section, "presse-journaliste" if BanqueImages.existe("presse-journaliste") else "mail-staff", Rect2(452, 67, RIGHT - 468, 171), .3)
 	var available: bool = conference.get("available", false)
 	var questions: Array = conference.get("questions", [])
-	var status := "Conférence ouverte" if available else "Conférence indisponible"
+	# Ouverte depuis le rail (sans le courrier d'invitation) : la conférence reste derrière son courrier.
+	var invited: bool = available and str(app.get_meta("press_mail_origin", "")) == str(conference.get("invitationId", ""))
+	var status := ("Conférence ouverte" if invited else "Une conférence t'attend") if available else "Pas de conférence cette semaine"
 	D.text(section, 19, 266, status, 33, C.IVORY, 800, RIGHT - 38)
-	var context := "%d question(s) à préparer" % questions.size() if available else str(conference.get("reason", ""))
-	D.text(section, 19, 304, context, 25, C.MUTED, 500, RIGHT - 40)
+	var context := ("%d question(s) à préparer" % questions.size() if invited else "Ouvre son invitation dans la Réception.") if available else str(conference.get("reason", "Le journal et les archives restent consultables."))
+	D.text(section, 19, 304, context, 25, C.MUTED, 500, RIGHT - 40).name = "PressConferenceState"
 	draft_status = D.text(section, 19, 341, "", 23, C.GOLD, 600, RIGHT - 36)
 	draft_status.name = "PressDraftStatus"
 	_update_draft()
-	D.button(section, Rect2(17, 368, RIGHT - 34, 53), "Préparer la conférence" if available else "Consulter le compte rendu", func(): _select(1), true, "arrow", false, PRIMARY, "OpenPressConference")
+	if available and not invited:
+		D.button(section, Rect2(17, 368, RIGHT - 34, 53), "Ouvrir la Réception", func(): app._navigate("Réception"), true, "arrow", false, PRIMARY, "OpenPressConference")
+	else: D.button(section, Rect2(17, 368, RIGHT - 34, 53), "Préparer la conférence" if available else "Consulter le compte rendu", func(): _select(1), true, "arrow", false, PRIMARY, "OpenPressConference")
 	var memory := D.panel(self, Rect2(LEFT + 16, 858, RIGHT, 366), "Mémoire des échanges", "calendar", "", "PressMemoryBrief")
 	var history: Array = data.get("history", [])
 	var people: Array = data.get("people", [])

@@ -21,27 +21,33 @@ module.exports=function nativeModel(){
  // Read-only ID projection; final order is stored, historical points are not.
  const archives={limit:15,seasons:(france?S.franceMode.yearbook:[]).slice(-15).map(y=>({season:y.season,champions:['elite','accession'].map((leagueId,i)=>({leagueId,clubId:y.champions[i]})),standings:Object.fromEntries(['elite','accession'].map(id=>[id,y.standings[id].slice()])),movement:{promoted:y.movement.promoted.slice(),relegated:y.movement.relegated.slice()}}))};
  const rankedFor=c=>france?divisionRankings[CDFranceCompetition.leagueId(S,c.id)]:sorted;
+ // Vente de joueurs (vente-joueurs.cjs) : état de vente de chaque joueur (squad[].sale) ; prêts calculés une fois.
+ const venteLoansVue=typeof venteVueJoueur==='function'&&S.economy?venteLoans():null;
  const squad=own.players.map(source=>{
   const p=JSON.parse(JSON.stringify(source)),index=S.lineup.indexOf(p.id),bench=S.reserves.indexOf(p.id);
   let hash=2166136261;for(const ch of p.id){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619);}const nativeId=/^p\d+-(\d+)-\d+$/.exec(p.id);
   const negotiation=currentNegotiation(p.id,'renew'),withdrawn=negotiation?.status==='withdrawn';
-  const renewal={available:!S.live&&!withdrawn&&p.contractEnd<contractBase()+2&&careerContractYears(p)>=Math.max(1,p.contractEnd-contractBase()+2),
+  // Pré-contrat signé ailleurs (calendrier-mutations.cjs) : plus de prolongation possible.
+  const parti=typeof preContratRefusProlongation==='function'?preContratRefusProlongation(p.id):'';
+  const renewal={available:!S.live&&!withdrawn&&!parti&&p.contractEnd<contractBase()+2&&careerContractYears(p)>=Math.max(1,p.contractEnd-contractBase()+2),
    salary:askingWage(p,'renew'),fee:contractFee(p,'renew'),minYears:Math.max(1,p.contractEnd-contractBase()+2),maxYears:Math.min(3,careerContractYears(p)),
-   ...(negotiation?{negotiation}:{}),...(withdrawn?{reason:withdrawnReason}:{})};
-  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),rosterProfile:p.rosterProfile??null,...(p.espoirLoan?{calledUp:true}:{}),id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,physicalLoad:physicalLoadValue(p),loadPlan:physicalPlan(p),injury:p.injury,...(p.injury>0&&p.injuryType?{injuryType:p.injuryType,...(p.injuryCause?{injuryCause:p.injuryCause}:{}),...(p.injuryDate?{injuryDate:p.injuryDate}:{})}:{}),...(p.commotion?{commotion:{n:p.commotion.n,derniere:p.commotion.hist[p.commotion.hist.length-1].date,retour:p.commotion.protocole?.retour??p.commotion.hist[p.commotion.hist.length-1].retour,enCours:!!p.commotion.protocole}}:{}),salary:p.salary,marketValue:typeof transferValue==='function'?Math.round(transferValue(JSON.parse(JSON.stringify(source)))):null,contractEnd:p.contractEnd??null,renewal,contractLabel:p.espoirLoan?'Appelé du centre de formation':p.contractEnd==null?'Sans contrat professionnel':contractLabel(p),minutes:p.dev?.minutes??0,appearances:p.dev?.appearances??0,status:p.injury?'Blessé':index>=0?'Titulaire':bench>=0?'Remplaçant':'Hors groupe',shirtNumber:index>=0?index+1:bench>=0?bench+16:null,...nativePlayerAttributes(p),attributes:Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(p,k)])),portraitIndex:nativeId?Number(nativeId[1])%32:(hash>>>0)%32};
+   ...(negotiation?{negotiation}:{}),...(withdrawn?{reason:withdrawnReason}:parti?{reason:parti}:{})};
+  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),rosterProfile:p.rosterProfile??null,...(p.espoirLoan?{calledUp:true}:{}),id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,physicalLoad:physicalLoadValue(p),loadPlan:physicalPlan(p),injury:p.injury,...(p.injury>0&&p.injuryType?{injuryType:p.injuryType,...(p.injuryCause?{injuryCause:p.injuryCause}:{}),...(p.injuryDate?{injuryDate:p.injuryDate}:{})}:{}),...(p.commotion?{commotion:{n:p.commotion.n,derniere:p.commotion.hist[p.commotion.hist.length-1].date,retour:p.commotion.protocole?.retour??p.commotion.hist[p.commotion.hist.length-1].retour,enCours:!!p.commotion.protocole}}:{}),salary:p.salary,marketValue:typeof transferValue==='function'?Math.round(transferValue(JSON.parse(JSON.stringify(source)))):null,contractEnd:p.contractEnd??null,renewal,contractLabel:p.espoirLoan?'Appelé du centre de formation':p.contractEnd==null?'Sans contrat professionnel':contractLabel(p),minutes:p.dev?.minutes??0,appearances:p.dev?.appearances??0,status:p.injury?'Blessé':index>=0?'Titulaire':bench>=0?'Remplaçant':'Hors groupe',shirtNumber:index>=0?index+1:bench>=0?bench+16:null,...nativePlayerAttributes(p),attributes:Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(p,k)])),portraitIndex:nativeId?Number(nativeId[1])%32:(hash>>>0)%32,...(venteLoansVue?{sale:venteVueJoueur(source,venteLoansVue)}:{}),...(typeof preContratVueJoueur==='function'?preContratVueJoueur(source):{})};
  });
  const places=professionalPlaces(own),cash=own.cash;
  // Budget de transferts (budget-transferts.cjs) : contexte calculé une fois pour tous les devis ; null hors budget de saison.
  const transferBudget=typeof budgetTransfertsContexte==='function'?budgetTransfertsContexte():null;
  // Statut JIFF / EQP de la piste pour le club du manager (null hors championnat à quota).
  const quotaBadge=p=>typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.marketBadge==='function'&&S.jiff?.version===1?CDJiff.marketBadge(S,p):null;
+ const calendrierFerme=typeof calendrierRefusRecrue==='function'?calendrierRefusRecrue():'';
  const market=S.market.map(source=>{
   const p=JSON.parse(JSON.stringify(source));
   const negotiation=currentNegotiation(p.id,'recruit'),maxYears=Math.min(3,careerContractYears(p));
   const withdrawn=negotiation?.status==='withdrawn';
   const fee=contractFee(p,'recruit'),horsBudget=transferBudget?budgetTransfertsRefus(fee,transferBudget):null;
-  const reason=S.live?'Match en cours':places<=0?'Effectif complet':cash<p.price?'Trésorerie insuffisante':horsBudget?horsBudget:maxYears<1?'Retraite prévue':withdrawn?withdrawnReason:'';
-  const available=!S.live&&places>0&&cash>=p.price&&!horsBudget&&maxYears>=1&&!withdrawn;
+  // Calendrier du recrutement (calendrier-mutations.cjs) : raison écrite avec la date de réouverture.
+  const reason=S.live?'Match en cours':calendrierFerme?calendrierFerme:places<=0?'Effectif complet':cash<p.price?'Trésorerie insuffisante':horsBudget?horsBudget:maxYears<1?'Retraite prévue':withdrawn?withdrawnReason:'';
+  const available=!S.live&&!calendrierFerme&&places>0&&cash>=p.price&&!horsBudget&&maxYears>=1&&!withdrawn;
   return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,...nativePlayerAttributes(p),
    salary:askingWage(p,'recruit'),fee,minYears:1,maxYears,available,reason,...(negotiation?{negotiation}:{}),...(quotaBadge(p)?{quota:quotaBadge(p)}:{})};
  });
@@ -109,7 +115,7 @@ module.exports=function nativeModel(){
   ['Tirs de pénalité',a.goals+' / '+a.goalAttempts,b.goals+' / '+b.goalAttempts],
   ['Transformations',a.conversions+' / '+a.conversionAttempts,b.conversions+' / '+b.conversionAttempts]
  ].map(([label,home,away,detail])=>({label,home,away,...(detail?{detail}:{})}));}
- return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:typeof staffKickerId==='function'?staffKickerId():(S.playerRoles?.buteur&&S.lineup.includes(S.playerRoles.buteur)?S.playerRoles.buteur:chooseScorer(own,S.lineup)?.id)||null,selection,tactics,calendar,leagues,market,figures:(()=>{
+ return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:typeof staffKickerId==='function'?staffKickerId():(S.playerRoles?.buteur&&S.lineup.includes(S.playerRoles.buteur)?S.playerRoles.buteur:chooseScorer(own,S.lineup)?.id)||null,selection,tactics,calendar,leagues,market,...(typeof venteVue==='function'?{sales:venteVue()}:{}),...(typeof calendrierVue==='function'?{mutations:calendrierVue()}:{}),figures:(()=>{
   // Chiffres lus par plusieurs écrans : une seule source (club-budget.cjs), jamais recalculés côté interface.
   const w=typeof chiffresMasse==='function'?chiffresMasse():{joueursHebdo:own.players.reduce((n,p)=>n+p.salary,0)};
   const c=typeof chiffresContrats==='function'?chiffresContrats():null;
