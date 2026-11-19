@@ -76,7 +76,9 @@ func fiche_joueur() -> void:
 		var largeur := police.get_string_size(legende.text, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x
 		check(legende.get_line_count() == 1, "« %s » tient sur une seule ligne (%d lignes)" % [legende.text, legende.get_line_count()])
 		check(largeur <= legende.size.x + 1.0, "Texte entier visible : %.0f px de texte pour %.0f px de largeur" % [largeur, legende.size.x])
-		check(legende.text == "MOYENNE SAISON", "Libellé complet : " + legende.text)
+		# En 1280×720 la police ne descend pas sous 12 px : la forme courte remplace le libellé entier.
+		check(legende.text in ["MOYENNE SAISON", "MOY. SAISON"], "Libellé de la moyenne : " + legende.text)
+		if app.get_window().size.x >= 1600: check(legende.text == "MOYENNE SAISON", "Libellé complet à grande taille : " + legende.text)
 	var compte := app.find_child("FullPlayerNoteCount", true, false) as Label
 	check(compte != null and compte.text.ends_with("match") or compte != null and compte.text.ends_with("matchs"), "Nombre de matchs sur sa ligne : " + (compte.text if compte != null else "absent"))
 	if compte != null:
@@ -98,6 +100,19 @@ func fiche_joueur() -> void:
 		if texts(ligne).contains(nom): trouve = true
 	check(trouve, "La colonne compétition affiche « %s »" % nom)
 	await capture("fiche-performances")
+	# Vue d'ensemble en petite fenêtre : le bouton « Proposer une prolongation » du Contrat est entièrement visible.
+	app.management_ui.immersive_player_tab = 0
+	app._render()
+	await settle(30)
+	var offre := app.find_child("OfferRenewal", true, false) as Control
+	var fiche := app.find_child("ImmersivePlayerFull", true, false) as Control
+	check(offre != null and fiche != null, "Vue d'ensemble de la fiche avec son bouton de contrat")
+	if offre != null and fiche != null and app.get_window().size.y <= 800:
+		var defilement: Node = fiche.get_parent()
+		while defilement != null and not defilement is ScrollContainer: defilement = defilement.get_parent()
+		if defilement != null:
+			var zone := (defilement as Control).get_global_rect()
+			check(zone.grow(1).encloses(offre.get_global_rect()), "Bouton de contrat entièrement visible sans défiler (%s dans %s)" % [offre.get_global_rect(), zone])
 	app.set_meta("immersive08_full_player", false)
 
 # ---- 3 : Gabi, voile -----------------------------------------------------------------------------------------------

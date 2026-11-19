@@ -113,8 +113,8 @@ func profile_cases() -> void:
 	var retired := directory.path_join("retired"); DirAccess.make_dir_recursive_absolute(retired)
 	var old := FileAccess.open(retired.path_join("interface.json"), FileAccess.WRITE)
 	old.store_string('{"version":1,"volume":60,"reduced_motion":false,"quality":"balanced","camera":"tv","continue_flow":"allege"}'); old.close()
-	var q = profile_script.new()
-	check(q.load_profile(retired) and q.data.volume == 60 and not q.data.has("continue_flow"),"Ancien flux de Continuer ignoré sans erreur (" + q.last_error + ")")
+	var q_old = profile_script.new()
+	check(q_old.load_profile(retired) and q_old.data.volume == 60 and not q_old.data.has("continue_flow"),"Ancien flux de Continuer ignoré sans erreur (" + q_old.last_error + ")")
 	check(not FileAccess.file_exists(folder.path_join("interface.json")),"Lire un profil absent ne crée pas de fichier")
 	check(not p.load_profile("relative-folder") and not p.last_error.is_empty(),"Chemin relatif refusé visiblement")
 	check(p.load_profile(folder),"Retour au dossier absolu")
@@ -241,6 +241,20 @@ func dialog_cases() -> void:
 		var camera: OptionButton = d.find_child("PreferencesCamera",true,false)
 		var quality: OptionButton = d.find_child("PreferencesQuality",true,false)
 		check(volume != null and motion != null and camera != null and quality != null,"Contrôles natifs identifiables")
+		var onglets := d.find_child("PreferencesTabs",true,false) as TabContainer
+		var defile := false
+		var ancetre: Node = onglets.get_parent()
+		while ancetre != null and ancetre != d:
+			if ancetre is ScrollContainer: defile = true
+			ancetre = ancetre.get_parent()
+		check(not defile and onglets.get_child(0) is ScrollContainer,"Onglets fixes : seul le contenu de chaque onglet défile (%s)" % str(resolution))
+		check(d.get_theme_stylebox("embedded_border","Window") is StyleBoxFlat and d.has_meta("immersive_title_dressed"),"Barre de titre habillée aux couleurs du jeu")
+		var titres: Array[String] = []
+		for section: Node in onglets.get_child(0).find_children("*","Label",true,false):
+			if str((section as Label).text) in ["SON","CAMÉRA ET ACCESSIBILITÉ"]: titres.append((section as Label).text)
+		check(titres == ["SON","CAMÉRA ET ACCESSIBILITÉ"],"Volume global sous une section « Son » distincte de la caméra : %s" % str(titres))
+		check(motion.get_parent() is HBoxContainer and motion.text.is_empty() and (motion.get_parent().get_child(0) as Label).get_theme_font_size("font_size") == (volume.get_parent().get_child(0) as Label).get_theme_font_size("font_size"),"Mouvement réduit : même ligne et même taille de texte que les autres réglages")
+		check((d.get_ok_button().get_parent() as BoxContainer).alignment == BoxContainer.ALIGNMENT_END,"Bouton Fermer en pied de fenêtre")
 		if volume != null and motion != null:
 			volume.get_line_edit().grab_focus(); await settle(); await key(KEY_UP)
 			check(p.data.volume == int(volume.value) and p.data.volume > 0,"Volume clavier enregistré et affiché")

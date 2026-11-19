@@ -31,12 +31,22 @@ func mode(target_scope: String = "") -> String:
 	return "world" if creation_mode in ["auto", "world", "world-pacific", "world-japan", "world-nationale", "world-champ"] and not meta.get("worldCatalogue", []).is_empty() else "common"
 
 func creation_catalogue() -> Array:
+	return _catalogue_for(mode("creation"))
+
+func _catalogue_for(edition: String) -> Array:
 	var key: String = {
 		"world-champ": "champCatalogue", "world-nationale": "nationaleCatalogue",
 		"world-japan": "japanCatalogue", "world-pacific": "pacificCatalogue",
 		"world": "worldCatalogue",
-	}.get(mode("creation"), "legacyCatalogue")
+	}.get(edition, "legacyCatalogue")
 	return app.model.get("meta", {}).get(key, app.catalogue)
+
+## Source unique du nombre de clubs affiché (accueil, packs, choix du club) : les clubs jouables.
+## Le registre en compte davantage (clubs invités, non jouables) : ce total n'est jamais montré au joueur.
+func playable_club_count(target_scope: String = "creation") -> int:
+	var catalogue := _catalogue_for(mode(target_scope))
+	if catalogue.is_empty(): return int(database(target_scope).get("clubCount", 0))
+	return catalogue.filter(func(club: Dictionary): return club.get("playable", true)).size()
 
 func competition(id: String, target_scope: String = "") -> Dictionary:
 	var meta: Dictionary = app.model.get("meta", {})

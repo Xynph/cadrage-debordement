@@ -44,6 +44,25 @@ func check(condition: bool, message: String) -> void:
 	checks += 1
 	if not condition: failures.append(message); printerr("FAIL: " + message)
 
+## Plus petit texte visible, en pixels réellement affichés (taille de police × échelle globale) : [px, nœud, texte].
+func smallest_text(node: Node) -> Array:
+	var result: Array = [INF, "", ""]
+	for item: Node in node.find_children("*","Control",true,false):
+		var control := item as Control
+		if not control.is_visible_in_tree(): continue
+		var font_size := 0
+		var shown := ""
+		if control is Label: font_size = control.get_theme_font_size("font_size"); shown = (control as Label).text
+		elif control is Button: font_size = control.get_theme_font_size("font_size"); shown = (control as Button).text
+		elif control is LineEdit:
+			font_size = control.get_theme_font_size("font_size")
+			shown = (control as LineEdit).text if not (control as LineEdit).text.is_empty() else (control as LineEdit).placeholder_text
+		elif control is RichTextLabel: font_size = control.get_theme_font_size("normal_font_size"); shown = (control as RichTextLabel).get_parsed_text()
+		if shown.strip_edges().is_empty() or font_size <= 0: continue
+		var effective := float(font_size) * control.get_global_transform().get_scale().y
+		if effective < result[0]: result = [effective, str(control.name), shown.left(40)]
+	return result
+
 func caption_fits(button: Button) -> bool:
 	if button == null: return false
 	var font := button.get_theme_font("font")
@@ -462,9 +481,50 @@ func champ(compact: bool) -> void:
 	var count := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
 	var badge := app.find_child("EntryWorldCount",true,false) as Panel
 	check(badge!=null and badge.get_child(0).text=="Monde · %d clubs jouables" % count,"Accueil compte les clubs jouables de Champ Rugby")
+	check(app.pack_manager.playable_club_count("creation")==count,"Une seule source pour le nombre de clubs jouables")
+	var career_card := app.find_child("EntryCareerCard",true,false) as Control
+	var season_card := app.find_child("EntrySeasonCard",true,false) as Control
+	check(career_card!=null and season_card!=null and career_card.get_global_rect().encloses(season_card.get_global_rect()) and season_card.size.y>0.0,"Accueil : une vignette de saison remplit le bas du carnet")
+	if career_card!=null and season_card!=null:
+		check(career_card.get_global_rect().end.y-season_card.get_global_rect().end.y<=career_card.size.y*.12,"Accueil : plus de grand vide sous le menu")
+	# Packs : même police de titre que le choix du club, et le même nombre de clubs que l'accueil.
+	app.pack_manager.open("creation")
+	await settle()
+	var reality_title: Label = null
+	for label: Label in app.find_children("*","Label",true,false):
+		if label.is_visible_in_tree() and label.text=="Choisir sa réalité": reality_title=label
+	check(reality_title!=null and reality_title.get_theme_font("font").resource_path.ends_with("BarlowCondensed-Bold.ttf"),"Packs : titre en police condensée de l'écran suivant")
+	var pack_numbers: Array = []
+	for label: Label in app.find_children("*","Label",true,false):
+		if label.is_visible_in_tree(): pack_numbers.append(label.text)
+	check(("%d" % count) in pack_numbers and ("Clubs jouables" in pack_numbers),"Packs : « %d Clubs jouables », comme à l'accueil" % count)
+	var registry_total := int(app.model.meta.get("champDatabase",{}).get("clubCount",count))
+	check(registry_total==count or not (("%d" % registry_total) in pack_numbers),"Packs : le total du registre (%d, clubs invités compris) n'est pas affiché" % registry_total)
+	for pack_button_name in ["PackBack","PackImportZip","PackUseBase"]:
+		var pack_button := app.find_child(pack_button_name,true,false) as Button
+		check(pack_button!=null and pack_button.get_theme_font("font").resource_path.ends_with("BarlowCondensed-Bold.ttf"),"Packs : « %s » dans la police condensée des titres" % pack_button_name)
+	var pack_guide := app.coach as Control
+	var pack_slot := app.find_child("PacksGabiSlot",true,false) as Control
+	check(pack_slot!=null,"Packs : place réservée à Gabi dans le pied de page")
+	if pack_guide!=null and pack_guide.visible and not pack_guide.expanded and pack_slot!=null:
+		pack_guide._avoid_primary_controls()
+		# Le pied de page commence sous son filet (séparation de la colonne) : Gabi y reste entièrement.
+		var footer_top: float = (pack_slot.get_parent() as Control).get_global_rect().position.y
+		check(pack_guide.get_global_rect().position.y >= footer_top - .5,"Packs à %s : Gabi et Visite laissent une marge sous le filet du pied de page" % dimensions)
+	app._navigate("Accueil")
+	await settle()
 	if not await edition_action("EntryNewCareer"): return
 	if not await edition_action("CreationCountry_GB"): return
 	if not await edition_action("CreationDivision_champ"): return
+	# Création : Gabi (« Gabi · ? », « Visite ») ne recouvre aucun bouton de la page.
+	var guide := app.coach as Control
+	if guide!=null and guide.visible and not guide.expanded:
+		guide._avoid_primary_controls()
+		var guide_zone := guide.get_global_rect()
+		for creation_button: Button in app.root_content.find_children("*","Button",true,false):
+			if creation_button.is_visible_in_tree() and creation_button.get_parent()!=guide._compact and not guide.is_ancestor_of(creation_button) and not creation_button.text.is_empty():
+				check(not guide_zone.intersects(creation_button.get_global_rect().intersection(Rect2(Vector2.ZERO,Vector2(root.size)))),"Création à %s : Gabi ne recouvre pas « %s »" % [dimensions,creation_button.text.left(30)])
+		check(app.find_child("CreationGabiSlot",true,false)!=null,"Création : emplacement réservé à Gabi dans le bandeau")
 	var scroll := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
 	for id in range(102,116):
 		var club := app.find_child("CreationClub%d" % id,true,false) as Button
@@ -486,6 +546,21 @@ func champ(compact: bool) -> void:
 	var dates := timeline.find_children("OfficeTimelineDate*","Label",true,false) if timeline!=null else []
 	check(dates.size()==(5 if app.find_child("GabiBureau",true,false) != null else 7) and dates[0].text.contains("19/09/2026") and dates[0].text.contains(first.kickoffLocal),"Le fil du Bureau affiche les sept échéances et l’heure du premier match")
 	await capture(("73" if compact else "72")+"-champ-bureau-"+dimensions)
+	# Recrutement, aide de Gabi ouverte (mode grand, bandeau en service) : « Approcher le joueur » reste dégagé.
+	var market_ids: Array = app.model.get("market",[]).filter(func(player: Dictionary): return player.get("available",false)).map(func(player: Dictionary): return str(player.id))
+	if app.coach!=null and not market_ids.is_empty() and app.navigation_controller.open_market_player(market_ids[0]):
+		await settle()
+		var offer_guide := app.coach as Control
+		offer_guide.open_help()
+		await settle()
+		var offer := app.find_child("OfferRecruitment",true,false) as Button
+		if offer!=null and offer.is_visible_in_tree():
+			app.body_scroll.ensure_control_visible(offer)
+			await settle()
+			offer_guide._avoid_primary_controls()
+			check(not offer_guide.get_global_rect().intersects(offer.get_global_rect()),"Recrutement à %s : Gabi ouvert ne recouvre pas « %s »" % [dimensions,offer.text])
+		offer_guide.close()
+		await settle()
 	app._navigate("Rivalités" if compact else "Calendrier")
 	await settle()
 	if not await edition_action("ChampPreparationAdvance" if compact else "CompetitionChampAdvance"): return
@@ -893,12 +968,29 @@ func desktop_1080() -> void:
 	root.size=Vector2i(1280,720)
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await settle()
+	# Gabarits riches ouverts dès 1280 × 720 (shell.gd, RICH_FROM_720P) ; les autres gardent le repli compact.
+	var rich_720: Array = app.Immersive.RICH_FROM_720P
+	check(rich_720.has("Classements") and rich_720.has("Finances") and rich_720.has("Recrutement") and not rich_720.has("Préparation"),"Liste explicite des gabarits riches dès 720p")
 	for route: String in ["Finances","Calendrier","Formation","Plan de jeu","Centre","Préparation","Recrutement",
 		"Classements","Club","Staff","Travail du club","Stratégie","Presse","Rivalités","Vestiaire","Carrière"]:
 		if route=="Presse": app.set_meta("press_mail_origin","qa-presse")
 		app._navigate(route)
 		await settle()
-		if route=="Calendrier":
+		if route!="Rivalités" and rich_720.has(route):
+			var family: Array = FAMILIES.filter(func(item: Array): return item[0]==route)[0]
+			var rich_view: Control = app.find_child("ImmersiveFinance" if route=="Finances" else family[1],true,false)
+			check(rich_view!=null and rich_view.is_visible_in_tree(),"Gabarit riche ouvert en 720p · "+route)
+			check(app.find_child("CompactRouteArt",true,false)==null,"Plus de repli compact en 720p · "+route)
+			var smallest := smallest_text(app.root_content)
+			check(smallest[0]>=11.0,"Aucun texte sous 11 px en 720p · %s · %.1f px · %s « %s »" % [route,smallest[0],smallest[1],smallest[2]])
+			if route=="Travail du club":
+				# « Voir l'entraînement » est posé dans le gabarit : il ne pousse plus la page ni n'ajoute de défilement.
+				var observe := app.find_child("ContextualObserveTraining",true,false) as Button
+				check(observe!=null and observe.is_visible_in_tree() and observe.get_parent().is_ancestor_of(rich_view) and not observe.get_parent() is Container,"Travail du club : « Voir l'entraînement » intégré au gabarit")
+				check(app.find_child("ContextualPageWorkspace",true,false)==null,"Travail du club : pas de défilement ajouté autour de la page")
+				if observe!=null: check(Rect2(Vector2.ZERO,app.size).encloses(observe.get_global_rect()),"Travail du club : « Voir l'entraînement » entier dans la fenêtre")
+			if route in ["Classements","Recrutement","Club","Carrière"]: await capture(family[2]+"-1280x720")
+		elif route=="Calendrier":
 			check(app.find_child("CalendarMonthGrid",true,false)!=null,"Grille mensuelle visible en 720p")
 		elif route=="Rivalités":
 			var hero := app.find_child("RivalryHero",true,false) as Control
@@ -960,7 +1052,10 @@ func navigation_flow() -> void:
 	command_id = app.bridge._next_id
 	await click(app.find_child("ImmersiveContinue",true,false))
 	await settle()
-	check(app.route=="Match" and app._live().is_empty() and app.bridge._next_id==command_id,"Continuer ouvre l’avant-match compact sans commande")
+	check(app.route=="Match" and app._live().is_empty() and app.bridge._next_id==command_id,"Continuer ouvre l’avant-match en 720p sans commande")
+	check(app.find_child("MatchPosterPhoto",true,false)!=null,"L’avant-match illustré s’ouvre aussi en 720p")
+	var match_smallest := smallest_text(app.root_content)
+	check(match_smallest[0]>=11.0,"Aucun texte sous 11 px dans l’avant-match en 720p · %.1f px · %s « %s »" % [match_smallest[0],match_smallest[1],match_smallest[2]])
 	await key(KEY_LEFT,false,true)
 	check(app.route=="Préparation" and app.management_ui.preparation.tab==2,"Alt gauche retrouve l’onglet Entraînement sélectionné sur place")
 	await click(app.find_child("PreparationMatch",true,false))

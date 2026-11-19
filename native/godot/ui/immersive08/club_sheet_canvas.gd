@@ -418,7 +418,9 @@ func _overview() -> void:
 		kit.gui_input.connect(func(event: InputEvent):
 			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT: _tenue_complete(identite))
 		club.add_child(kit)
-		D.place(kit, Rect2(586, 4, 96, 92))
+		# Sous le filet de l'en-tête « Le club », à droite de la première ligne : aucun recouvrement.
+		kit.name = "ClubSheetKit"
+		D.place(kit, Rect2(600, 62, 76, 62))
 	_palmares(club, 700)
 	_season_panel()
 	_rivalry_panel()

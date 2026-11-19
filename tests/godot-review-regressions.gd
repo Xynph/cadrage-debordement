@@ -54,11 +54,11 @@ func _buttons(node: Node) -> Array[Button]:
 	for child in node.get_children(): result.append_array(_buttons(child))
 	return result
 
-func _speed(node: Node) -> OptionButton:
-	if node is OptionButton and node.is_visible_in_tree() and node.item_count == 3 and node.get_item_text(2) == "Cadence ×12":
+func _speed(node: Node, visible_only: bool = true) -> OptionButton:
+	if node is OptionButton and (not visible_only or node.is_visible_in_tree()) and node.item_count == 3 and node.get_item_text(2) == "Cadence ×12":
 		return node
 	for child in node.get_children():
-		var found := _speed(child)
+		var found := _speed(child, visible_only)
 		if found != null: return found
 	return null
 
@@ -515,14 +515,17 @@ func _run() -> void:
 			_check(app.model.get("club") != null, "Explicit retry creates career after disk repair")
 	elif mode == "ui":
 		app._navigate("Match")
-		var speed := _speed(app.body)
+		# Dès 1280 × 720, l'avant-match est le tableau de bord immersif (match_avant.gd) : la cadence du direct
+		# reste un vrai contrôle de l'écran de match, masqué jusqu'au coup d'envoi. On l'exerce sans exiger qu'il soit affiché.
+		var immersive_opening: bool = app.match_screen != null and app.match_screen.get_meta("immersive_match", false)
+		var speed := _speed(app.body, not immersive_opening)
 		_check(speed != null and not speed.disabled, "Match cadence offers an enabled x12 action")
 		if speed != null and not speed.disabled:
 			speed.select(2)
 			speed.item_selected.emit(2)
 		app._navigate("Effectif")
 		app._navigate("Match")
-		var restored_speed := _speed(app.body)
+		var restored_speed := _speed(app.body, not immersive_opening)
 		_check(restored_speed != null and restored_speed.selected == 2 and app.tick_steps == 12, "Cadence remains visually and actually x12 after navigation")
 		await _command("begin_match")
 		await ContextualFlow.skip_talk(app, self, "pre", _check)
