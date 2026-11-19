@@ -1199,9 +1199,13 @@ func dialogs() -> void:
 	app._navigate("Bureau")
 	await settle()
 	var open_notebook: Button = app.find_child("OpenCoachNotebook",true,false)
-	check(open_notebook!=null,"Le Bureau donne accès au carnet personnel")
-	if open_notebook!=null:
-		await click(open_notebook)
+	# Composition large (DA du 19/11/2026) : plus de lien « carnet personnel » (une fenêtre) au Bureau ; le carnet reste ouvrable
+	# par programme (compact, raccourcis) : la recette garde la vérification de l'éditeur.
+	var large: bool = app.find_child("OfficeFixtureBody",true,false)!=null
+	check(open_notebook!=null or large,"Le Bureau donne accès au carnet personnel")
+	if open_notebook==null and large: preload("res://ui/immersive08/office.gd").open_notebook(app)
+	if open_notebook!=null or large:
+		if open_notebook!=null: await click(open_notebook)
 		await settle()
 		var notebook: AcceptDialog = app.get_node_or_null("CoachNotebook")
 		check(notebook!=null and notebook.visible and notebook.find_child("CoachNoteText",true,false)!=null,
