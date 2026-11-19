@@ -337,8 +337,24 @@ func run() -> void:
 		await settle()
 		followed = await player_path()
 	else:
+		# Carrière Monde du jour de match : coup d'envoi, causerie d'avant-match passée, puis le direct.
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("live.json"))})
 		await settle()
+		await command("begin_match")
+		await settle()
+		var limite_l := Time.get_ticks_msec() + 120000
+		while Time.get_ticks_msec() < limite_l:
+			var scene_l: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+			if scene_l is Dictionary:
+				if not app.waiting: await command("match_talk_continue", {"key": scene_l.key, "phase": scene_l.phase, "skip": true})
+			elif surface() != null and (not surface().temps_forts_actifs() or (surface().regie != null and surface().regie.suivi.any(func(e: Dictionary) -> bool: return e.evenement == "temps_fort"))):
+				# Comme l'ancien match importé en pause : une fois le premier temps fort (coup d'envoi) lancé à
+				# l'écran, le match est mis en pause ; ce temps fort va à son terme puis l'écran intermédiaire
+				# attend (les modes reprennent le match eux-mêmes). Sans régie (repli), pause aussitôt.
+				if app.model.get("live") is Dictionary and not app.model.live.get("paused", false):
+					await command("pause", {"paused": true})
+				break
+			await process_frame
 		var view := surface()
 		check(view != null and view.has_method("temps_forts_actifs"), "Le match s'ouvre dans la vue du direct")
 		if view != null:

@@ -1,25 +1,28 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Vraie interface + vrai moteur. Le match en temps forts est le mode de base : sans
 // aucune variable, le match enchaîne temps fort → écran intermédiaire → temps fort.
 // CD_MATCH_TEMPS_FORTS=0 rend le direct d'origine, sans régie.
+// Mode Monde uniquement : tous les modes partent d'une vraie carrière world-champ arrêtée le jour de son
+// premier match (feuille valide) ; le test lance begin_match après l'import (pas de reprise en plein match,
+// décision du 16/11/2026), puis la causerie d'avant-match et la régie des temps forts.
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),assert=require('node:assert/strict');
-const {spawnSync}=require('node:child_process'),{context}=require('./harness.cjs');
+const {spawnSync}=require('node:child_process');
 const {createBridge}=require('../native/engine/worker.cjs'),{settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const godot=process.env.CD_GODOT_EXECUTABLE||process.env.CD_GODOT_EXE;
 if(!godot||!fs.existsSync(godot)){console.log('SKIP godot-match-temps-forts : SDK Godot absent (CD_GODOT_EXECUTABLE/CD_GODOT_EXE).');process.exit(0);}
 const directory=fs.mkdtempSync(path.join(os.tmpdir(),'cd-match-temps-forts-'));
-const source=context();
-source.run('start(0);beginMatch()');
-fs.writeFileSync(path.join(directory,'live.json'),source.run('JSON.stringify(createSaveDocument())'));
-// Parcours du joueur : une vraie carrière arrêtée à la causerie d'avant-match (causeries et débrief actifs).
+// Carrière world-champ réelle arrêtée le jour de son premier match ; le moteur projette `direct.journee` dès `begin_match`.
 {
- const dataDir=fs.mkdtempSync(path.join(directory,'carriere-'));
+ const dataDir=fs.mkdtempSync(path.join(directory,'carriere-monde-'));
  const bridge=createBridge({dataDir,seed:7,now:1700000000000,dailyCalendar:true,mandatoryPress:true,internationalCareer:true});
  let id=0;const call=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+' : '+r.error);return r.model;};
- settleClubMeetings(call('new_career',{club:0}),call);
- // Pas de reprise en plein match (décision du 16/11/2026) : export le jour du match, le test lance begin_match après l'import.
- fs.writeFileSync(path.join(directory,'causerie.json'),call('export').meta.exportText);
+ let model=call('new_career',{mode:'world-champ',club:0});
+ for(let day=0;day<150;day++){model=settleClubMeetings(model,call);if(model.meta.calendarCadence?.matchReady)break;model=call('advance_day',{fromDate:model.meta.calendarToday});}
+ assert.equal(model.meta.calendarCadence?.matchReady,true,'jour du premier match atteint');
+ model=settleClubMeetings(model,call);model=call('auto_lineup');if(!model.selection?.valid)call('promote_cover',{confirmed:true});
+ const texte=call('export').meta.exportText;
+ // live : modes de régie (actif, gestes, entracte…) ; causerie : parcours par défaut ; multiplex : journée en direct.
+ for(const nom of ['live.json','causerie.json','multiplex.json'])fs.writeFileSync(path.join(directory,nom),texte);
  bridge.close?.();fs.rmSync(dataDir,{recursive:true,force:true});
 }
 function run(mode,dossier=mode){
@@ -46,7 +49,7 @@ function run(mode,dossier=mode){
  // Terrain 2D : horloge normale, vitesse réelle, comme le joueur le voit.
  if(mode==='terrain2d')Object.assign(env,{CD_GODOT_SEED:'7'});
  // Journée en direct (carrière world-champ) : horloge rapide pour atteindre vite l'écran intermédiaire.
- if(mode==='multiplex'){Object.assign(env,{CD_MATCH_TEMPS_FORTS_HORLOGE:'rapide',CD_MATCH_TEMPS_FORTS_VITESSE:'4',CD_GODOT_SEED:'7'});delete env.CD_MODES_HERITES;}
+ if(mode==='multiplex'){Object.assign(env,{CD_MATCH_TEMPS_FORTS_HORLOGE:'rapide',CD_MATCH_TEMPS_FORTS_VITESSE:'4',CD_GODOT_SEED:'7'})}
  // CD_MATCH_TEMPS_FORTS_CAPTURES=<dossier> : rendu fenêtré (pas headless) et captures de l'écran intermédiaire.
  const fenetre=!!process.env.CD_MATCH_TEMPS_FORTS_CAPTURES;
  const result=spawnSync(godot,[...(fenetre?['--display-driver','x11','--rendering-method','gl_compatibility','--windowed']:['--headless']),'--audio-driver','Dummy','--max-fps','60','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts.gd')],{env,encoding:'utf8',windowsHide:true,timeout:600000});
@@ -56,74 +59,66 @@ function run(mode,dossier=mode){
 }
 // CD_MATCH_TEMPS_FORTS_MODES=defaut,reprise… ne rejoue que les modes cités (mise au point) ; « reprise » suit « gestes ».
 const voulus=(process.env.CD_MATCH_TEMPS_FORTS_MODES||'').split(',').filter(Boolean),veut=mode=>!voulus.length||voulus.includes(mode);
-const bilan=[];
-if(veut('inactif')){
+const bilan=[],echecs=[];
+// Chaque mode est joué même si un précédent échoue : un seul passage montre tous les échecs (rassemblés à la fin).
+function etape(mode,corps){if(!veut(mode))return;try{corps();}catch(e){echecs.push(mode+' : '+String(e&&e.message||e).slice(0,4000));console.error('ECHEC mode '+mode);}}
+etape('inactif',()=>{
  const sans=run('inactif');
  assert.deepEqual(sans.failures,[]);assert.ok(sans.checks>=4);bilan.push('repli '+sans.checks);
-}
-if(veut('actif')){
+});
+etape('actif',()=>{
  const avec=run('actif');
  assert.deepEqual(avec.failures,[]);assert.ok(avec.checks>=25,'contrôles : '+avec.checks);
  const ordre=avec.suivi.map(e=>e.evenement);
  const premier=ordre.indexOf('temps_fort'),entre=ordre.indexOf('intermediaire',premier+1),second=ordre.indexOf('temps_fort',entre+1);
  assert.ok(premier>=0&&entre>premier&&second>entre,'temps fort → écran intermédiaire → temps fort : '+ordre.join(', '));
  bilan.push('actif '+avec.checks+' ('+ordre.filter(e=>e==='temps_fort').length+' temps forts)');
-}
-if(veut('gestes')){
+});
+etape('gestes',()=>{
  const gestes=run('gestes');
  assert.deepEqual(gestes.failures,[]);assert.ok(gestes.checks>=10,'contrôles avec les gestes : '+gestes.checks);
  assert.ok(gestes.suivi.filter(e=>e.evenement==='temps_fort').length>=4&&!gestes.suivi.some(e=>e.evenement==='echeance'),'temps forts et gestes : '+JSON.stringify(gestes.suivi.map(e=>e.evenement)));
  bilan.push('gestes '+gestes.checks);
-}
-if(veut('reprise')){
+});
+etape('reprise',()=>{
  // Le match laissé en pause par le mode « gestes » est repris par une nouvelle session, sans variable.
  assert.ok(fs.existsSync(path.join(directory,'gestes','PrototypeGodot')),'« reprise » suit « gestes »');
  const reprise=run('reprise','gestes');
  assert.deepEqual(reprise.failures,[]);assert.ok(reprise.checks>=15,'contrôles à la reprise : '+reprise.checks);
  assert.ok(reprise.suivi.some(e=>e.evenement==='reprise')&&reprise.suivi.some(e=>e.evenement==='delegation'),'reprise puis délégation : '+JSON.stringify(reprise.suivi.map(e=>e.evenement)));
  bilan.push('reprise '+reprise.checks);
-}
-if(veut('defaut')){
+});
+etape('defaut',()=>{
  const defaut=run('defaut');
  assert.deepEqual(defaut.failures,[]);assert.ok(defaut.checks>=35,'contrôles du parcours par défaut : '+defaut.checks);
  assert.ok(defaut.suivi.filter(e=>e.evenement==='temps_fort').length>=4,'temps forts du parcours par défaut : '+JSON.stringify(defaut.suivi.map(e=>e.evenement)));
  bilan.push('défaut '+defaut.checks);
-}
-if(veut('choregraphie')){
+});
+etape('choregraphie',()=>{
  const chore=run('choregraphie');
  assert.deepEqual(chore.failures,[]);assert.ok(chore.checks>=9,'contrôles du chorégraphe : '+chore.checks);
  assert.ok(chore.suivi.some(e=>e.evenement==='choregraphie'&&e.duree_reelle>0),'pistes jouées : '+JSON.stringify(chore.suivi.map(e=>e.evenement)));
  bilan.push('chorégraphe '+chore.checks);
-}
-if(veut('terrain2d')){
+});
+etape('terrain2d',()=>{
  // Terrain 2D de l'entracte : pastilles qui rejouent les faits du moteur, tableau de bord.
  const terrain=run('terrain2d');
  assert.deepEqual(terrain.failures,[]);assert.ok(terrain.checks>=25,'contrôles du terrain 2D : '+terrain.checks);
  bilan.push('terrain 2D '+terrain.checks);
-}
-if(veut('multiplex')){
- // Journée en direct (classement et multiplex) : carrière world-champ réelle arrêtée au coup d'envoi
- // de son premier match ; le moteur projette `direct.journee` dès `begin_match`.
- const dataDir=fs.mkdtempSync(path.join(directory,'carriere-monde-'));
- const bridge=createBridge({dataDir,seed:7,now:1700000000000,dailyCalendar:true,mandatoryPress:true,internationalCareer:true});
- let id=0;const call=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+' : '+r.error);return r.model;};
- let model=call('new_career',{mode:'world-champ',club:0});
- for(let day=0;day<150;day++){model=settleClubMeetings(model,call);if(model.meta.calendarCadence?.matchReady)break;model=call('advance_day',{fromDate:model.meta.calendarToday});}
- assert.equal(model.meta.calendarCadence?.matchReady,true,'jour du premier match atteint');
- model=settleClubMeetings(model,call);model=call('auto_lineup');if(!model.selection?.valid)call('promote_cover',{confirmed:true});
- // Pas de reprise en plein match (décision du 16/11/2026) : export le jour du match, le test lance begin_match après l'import.
- fs.writeFileSync(path.join(directory,'multiplex.json'),call('export').meta.exportText);
- bridge.close?.();fs.rmSync(dataDir,{recursive:true,force:true});
+});
+etape('multiplex',()=>{
+ // Journée en direct (classement et multiplex) : la carrière world-champ du jour de match (multiplex.json).
  const journee=run('multiplex');
  assert.deepEqual(journee.failures,[]);assert.ok(journee.checks>=60,'contrôles de la journée en direct : '+journee.checks);
  bilan.push('journée en direct '+journee.checks);
-}
-if(veut('entracte')){
+});
+etape('entracte',()=>{
  const entracte=run('entracte');
  assert.deepEqual(entracte.failures,[]);assert.ok(entracte.checks>=12,'contrôles de l’entracte : '+entracte.checks);
  const ordre=entracte.suivi.map(e=>e.evenement);
  // Décision de Léo (12 novembre 2026) : plus de pause minimale, de retenue ni de « Passer ».
  assert.ok(ordre.includes('tiroir')&&!ordre.includes('entracte_retenu')&&!ordre.includes('entracte_passe'),'entracte : '+ordre.join(', '));
  bilan.push('entracte '+entracte.checks);
-}
+});
 console.log('Preuves temps forts : '+directory+' · contrôles : '+bilan.join(' · '));
+assert.deepEqual(echecs,[],'modes en échec :\n'+echecs.join('\n\n'));
