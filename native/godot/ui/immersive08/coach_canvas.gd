@@ -655,18 +655,25 @@ func _layout_bulle() -> void:
 	_bulle.size = Vector2(width, height)
 	var x := clampf(face.position.x - 22.0, 8.0, app.size.x - width - 8.0)
 	var y := topbar.end.y + 12.0
+	var en_colonne := false
 	if _bandeau_masque and is_instance_valid(_bureau_figure) and _bureau_figure.is_inside_tree():
 		# Visage masqué : la bulle sort de la colonne de Gabi, à sa gauche, sans pointe vers le bandeau.
 		var colonne: Rect2 = (_bureau_figure.get_parent() as Control).get_global_rect()
-		x = clampf(colonne.position.x - width - 16.0, 8.0, app.size.x - width - 8.0)
+		# DA du Bureau (19/11/2026) : la colonne de Gabi occupe tout le côté droit et le reste de l'écran est plein de commandes ;
+		# la bulle s'ouvre donc dans la colonne, à gauche du buste, au-dessus de la bulle fixe du conseil.
+		var buste: Rect2 = _bureau_figure.get_global_rect()
+		x = clampf(maxf(colonne.position.x + 8.0, buste.position.x - width - 8.0), 8.0, app.size.x - width - 8.0)
 		# À hauteur de la tête de Gabi (elle parle), pas en haut de l'écran où elle cacherait les priorités.
 		var tete := _bureau_figure.get_global_rect().position.y + _bureau_figure.get_global_rect().size.y * 0.16
-		y = clampf(tete - 56.0, y, maxf(y, app.size.y - height - 12.0))
+		y = clampf(minf(tete - 56.0, colonne.end.y - height - 12.0), y, maxf(y, app.size.y - height - 12.0))
+		# Trop large pour tenir à gauche du buste : elle se pose juste au-dessus de lui, sans cacher son visage.
+		if x + width > buste.position.x - 4.0: y = clampf(buste.position.y - height - 8.0, topbar.end.y + 12.0, maxf(topbar.end.y + 12.0, app.size.y - height - 12.0))
+		en_colonne = true
 		_bulle.vers_droite = true
 		_bulle.pointe_y = clampf(tete - y, 24.0, height - 24.0)
 	else: _bulle.vers_droite = false
 	# Générique : la bulle ne recouvre aucun contrôle interactif de l'écran (boutons, champs, curseurs).
-	var libre := _position_libre(Vector2(x, y), Vector2(width, height), topbar.end.y + 12.0)
+	var libre := Vector2(x, y) if en_colonne else _position_libre(Vector2(x, y), Vector2(width, height), topbar.end.y + 12.0)
 	x = libre.x; y = libre.y
 	if _bulle_tween == null or not _bulle_tween.is_running(): _bulle.global_position = Vector2(x, y)
 	else: _bulle.global_position.x = x

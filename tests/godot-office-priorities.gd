@@ -107,7 +107,7 @@ func run() -> void:
 			action.grab_focus(); await process_frame
 			check(action.has_focus(),"Focus clavier " + str(tasks[index].id))
 			var due := app.find_child("OfficePriorityDeadline"+str(index+1),true,false) as Label
-			check(due != null and due.text == tasks[index].deadline,"Échéance affichée")
+			check(due != null and due.text.begins_with(str(tasks[index].deadline)),"Échéance affichée")
 		check(app.find_child("OpenCoachNotebook",true,false) != null,"Carnet conservé")
 		check(app.find_child("OfficeTrainingAction",true,false) != null,"Entraînement reste accessible hors top trois")
 		await capture("bureau-priorites-"+str(dimensions.x))

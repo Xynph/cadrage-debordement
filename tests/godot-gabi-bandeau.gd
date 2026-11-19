@@ -322,7 +322,8 @@ func bureau() -> void:
 	check(rect.size.y >= rect.size.x * 1.2, "Zone de Gabi en hauteur (semaine, prochains matchs, buste)")
 	for id: String in OFFICE_CARDS:
 		var card: Control = app.root_content.find_child(id, true, false)
-		if card == null: continue
+		# La frise « Prochains matchs » est dans la colonne de Gabi (choix de Léo) : elle n'est pas à côté mais dedans.
+		if card == null or zone.is_ancestor_of(card): continue
 		check(not card.get_global_rect().intersects(rect), "Zone de Gabi sans chevauchement : " + id)
 	var carnet: Control = zone.find_child("GabiCarnet", true, false)
 	var figure: Control = zone.find_child("GabiBureauFigure", true, false)
@@ -343,7 +344,8 @@ func bureau() -> void:
 	# Blocs du Bureau : aucun bouton n'en recouvre un autre ni un texte (correction de « Préparer la suite »).
 	var planning: Control = app.root_content.find_child("OfficeManagerPlanning", true, false)
 	var calendar: Control = app.root_content.find_child("OfficeCalendarAction", true, false)
-	check(planning != null and calendar != null and not planning.get_global_rect().intersects(calendar.get_global_rect()), "« Préparer la suite du club » ne chevauche plus « Tout le calendrier »")
+	# Large : « Préparer la suite du club » n'est plus au Bureau (dans Préparation) ; le lien du calendrier reste seul.
+	check(calendar != null and (planning == null or not planning.get_global_rect().intersects(calendar.get_global_rect())), "« Tout le calendrier » est présent et sans chevauchement")
 	for id: String in OFFICE_CARDS:
 		var card: Control = app.root_content.find_child(id, true, false)
 		if card == null: continue
@@ -367,7 +369,8 @@ func bureau() -> void:
 	await click_at(figure.get_global_rect().get_center() if figure != null else rect.get_center())
 	check(coach._bulle.visible, "Bureau : clic sur Gabi en pied, sa bulle s'ouvre")
 	var colonne := zone.get_global_rect()
-	check(not coach._bulle.get_global_rect().intersects(colonne), "Bureau : la bulle ne recouvre pas la colonne de Gabi")
+	# DA du Bureau : la bulle s'ouvre dans la colonne de Gabi, à gauche de son buste, sans cacher son visage.
+	check(figure != null and not coach._bulle.get_global_rect().intersects(figure.get_global_rect().grow(-6.0)), "Bureau : la bulle ne recouvre pas le buste de Gabi")
 	check(Rect2(Vector2.ZERO, app.size).grow(1).encloses(coach._bulle.get_global_rect()), "Bureau : bulle entière dans l'application")
 	await capture("bureau-bulle")
 	# Une réplique spontanée commence par l'information utile du moteur, avec son bouton d'action.
@@ -400,7 +403,7 @@ func coupe() -> void:
 	check(zone == null or not zone.is_visible_in_tree(), "Gabi coupé : plus de Gabi dans le bandeau")
 	check(app.root_content.find_child("GabiBureau", true, false) == null, "Gabi coupé : Bureau classique")
 	var fixture: Control = app.root_content.find_child("OfficeFixture", true, false)
-	check(fixture != null and absf(fixture.size.x - 1360 * C.density) <= 1.5, "Gabi coupé : blocs du Bureau en pleine largeur")
+	check(fixture != null and absf(fixture.size.x - 1496 * C.density) <= 1.5, "Gabi coupé : la colonne de droite garde les prochains matchs, les blocs ne bougent pas")
 	coach.open_help(); await settle()
 	coach.close(); await settle()
 	zone = app.root_content.find_child("GabiBandeau", true, false)

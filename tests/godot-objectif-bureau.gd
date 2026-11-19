@@ -122,7 +122,8 @@ func executer() -> void:
 			texte = objectif.text
 			verifier(carte.get_global_rect().encloses(objectif.get_global_rect()), "objectif dans la carte")
 			var titre := carte.find_child("CardTitle", true, false) as Label
-			verifier(titre != null and titre.text.begins_with("TES TROIS") and titre.get_global_rect().end.y <= objectif.get_global_rect().position.y + 1.0, "objectif sous le titre, sans le chevaucher")	await poser(14)
+			verifier(titre != null and titre.text.begins_with("TES TROIS") and titre.get_global_rect().end.y <= objectif.get_global_rect().position.y + 1.0, "objectif sous le titre, sans le chevaucher")
+	await poser(14)
 	if DisplayServer.get_name() != "headless" and not sortie.is_empty():
 		verifier(root.get_texture().get_image().save_png(sortie.path_join("bureau-objectif.png")) == OK, "capture")
 	for taille: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:

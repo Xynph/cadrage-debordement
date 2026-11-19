@@ -428,11 +428,10 @@ static func _priorities(card: Panel, app: Control, w: int = 900) -> void:
 		raison.name = "OfficePriorityReason" + str(i + 1)
 		raison.tooltip_text = item.detail
 	var y_pied := 100.0 + 3 * 90.0 + 14.0
-	var x := 24.0
+	# « Mon carnet personnel » (une fenêtre) n'est plus au Bureau : décision de Léo, plus de petite fenêtre ; le carnet
+	# de la semaine est celui de Gabi, à droite.
 	if not tasks.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason", false) and app.model.meta.get("phase", "") != "ended":
-		var entrainement := _lien(card, x, y_pied, "Entraînement →", func(): app.Immersive.open_training(app), "OfficeTrainingAction", 20)
-		x += entrainement.size.x / C.density + 24
-	_lien(card, x, y_pied, "Mon carnet personnel →", func(): Office.open_notebook(app), "OpenCoachNotebook", 20)
+		_lien(card, 24, y_pied, "Entraînement →", func(): app.Immersive.open_training(app), "OfficeTrainingAction", 20)
 
 ## « Objectif du conseil : … » sous le titre ; sans objectif : « Aucun objectif fixé ».
 static func _objectif(card: Panel, app: Control, w: int) -> void:

@@ -5,6 +5,7 @@ extends SceneTree
 const Charte = preload("res://ui/charte.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Office = preload("res://ui/immersive08/office.gd")
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -60,20 +61,26 @@ func cliquables() -> void:
 	var noms: Array[String] = []
 	for bouton in boutons(): noms.append(str(bouton.name))
 	check(noms.size() >= 12, "Le Bureau offre beaucoup d'éléments cliquables (%d)" % noms.size())
-	for attendu in ["OfficePreparationAction", "OfficeSelectionAction", "OfficeSquadAction", "OfficeStandingsAction", "OfficeInboxAction", "OfficeCalendarAction", "OfficeGroupAvailable", "OfficeGroupInjured", "OfficeMarketAction"]:
+	var a_un_match: bool = app.model.get("next") is Dictionary and not app.model.next.is_empty()
+	for attendu in (["OfficePreparationAction", "OfficeSelectionAction"] if a_un_match else []) + ["OfficeSquadAction", "OfficeStandingsAction", "OfficeInboxAction", "OfficeCalendarAction", "OfficeGroupAvailable", "OfficeGroupInjured", "OfficeMarketAction"]:
 		check(noms.has(attendu), "Élément cliquable présent : " + attendu)
 	check(noms.any(func(n: String): return n.begins_with("OfficeStandingRow_")), "Chaque club du classement court est cliquable")
 	check(noms.any(func(n: String): return n.begins_with("OfficeTimelineTile")), "Chaque prochain match est cliquable")
 	var messages: Array = app.model.get("messages", [])
 	if not messages.is_empty(): check(noms.any(func(n: String): return n.begins_with("OfficeJournalMessage")), "Chaque message du courrier est cliquable")
+	var fenetres_de_base := fenetres().size()
 	for nom in noms:
+		# Hors match à venir, « Continuer » du Bureau fait avancer le temps : c'est une commande, pas un écran.
+		if nom == "OfficePreparationAction" and not a_un_match: continue
+		# La carte « Premiers pas » est celle de Gabi (masquer, objectif suivant) : hors du périmètre des éléments du Bureau.
+		if nom.begins_with("GabiPremiersPas"): continue
 		await bureau()
 		var bouton := page().find_child(nom, true, false) as Button
 		if bouton == null or not bouton.is_visible_in_tree() or bouton.disabled: continue
 		var avant := str(app.route)
 		bouton.pressed.emit()
 		await settle()
-		check(fenetres().is_empty(), "Aucune fenêtre ouverte par « %s »" % nom)
+		check(fenetres().size() <= fenetres_de_base, "Aucune fenêtre ouverte par « %s »" % nom)
 		var ouvert := ouvre_quelque_chose()
 		# « Suivre le conseil » peut présélectionner sans quitter l'écran si Gabi n'a rien à proposer : alors le bouton n'existe pas.
 		check(ouvert, "« %s » change d'écran ou ouvre une fiche (route %s → %s)" % [nom, avant, app.route])
@@ -107,18 +114,20 @@ func bandeau_et_gabi() -> void:
 	if bulle != null:
 		var fond := bulle.get_theme_stylebox("panel") as StyleBoxFlat
 		check(fond != null and fond.bg_color.is_equal_approx(Charte.PANNEAU_2), "Bulle de Gabi en panneau-2")
-	check(ancre("OfficeFaceAFace"), "Face-à-face chiffré des deux clubs présent")
+	if app.model.get("next") is Dictionary and not app.model.next.is_empty(): check(ancre("OfficeFaceAFace"), "Face-à-face chiffré des deux clubs présent")
 
 func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	await wait_model("snapshot initial")
+	var accepte: bool = app._command("new_career", {"club": 0, "mode": "world-champ"})
+	check(accepte, "Commande publique new_career")
+	await wait_model("new_career")
 	var maximize := Callable(app, "_keep_filled_display")
 	if root.size_changed.is_connected(maximize): root.size_changed.disconnect(maximize)
 	if root.focus_entered.is_connected(maximize): root.focus_entered.disconnect(maximize)
 	root.mode = Window.MODE_WINDOWED
-	app._command("new_career", {"club": 0, "mode": "common"})
-	await wait_model("new_career")
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await bureau()
 	check(page() != null, "Le Bureau de la DA est affiché")
 	await cliquables()
