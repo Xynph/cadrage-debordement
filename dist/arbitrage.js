@@ -63,7 +63,7 @@ const ARBITRAGE_CAUSES=Object.freeze({
 // Part des touches perdues qui sont des lancers pas droits (une sur cinq), sans changer le taux de touches perdues.
 const ARBITRAGE_LANCER={part:5};
 function arbitrageStatsVides(){return {penaltyFamilies:Object.fromEntries(Object.keys(ARBITRAGE_FAMILLES).map(k=>[k,0])),penaltyCauses:{},lineoutNotStraight:0}}
-function arbitrageEmpreinte(l,camp){return Math.abs(l.minute*31+(l.stats[camp]?.penalties||0)*17+(l.stats[camp]?.lineouts||0)*11+camp*7+l.events.length*13)}
+function arbitrageEmpreinte(l,camp){return Math.abs(l.minute*31+(l.stats[camp]?.penalties||0)*17+(l.stats[camp]?.lineouts||0)*11+camp*7)}
 // Cause détaillée d'un incident déjà tiré (rugby.js, awardPenalty) : jamais un tirage de plus.
 function arbitrageCause(l,foul,incident,options={}){
  const h=arbitrageEmpreinte(l,foul);
