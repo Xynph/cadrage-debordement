@@ -7,6 +7,7 @@ const U = preload("res://ui/immersive08/club_ui.gd")
 const Link = preload("res://ui/entity_link.gd")
 const G = preload("res://ui/game_skin.gd")
 const Health = preload("res://ui/immersive08/finance_health.gd")
+const Budget = preload("res://ui/transfer_budget.gd")
 const KEY = "immersive08_finance_tab"
 const PAGE_KEY_PREFIX = "immersive08_finance_page_"
 const LEDGER_SELECTION_KEY := "immersive08_finance_ledger_selection"
@@ -160,12 +161,22 @@ static func _metrics(app: Control, canvas: Control, accounts: Dictionary, financ
 		["Salaires des joueurs", "people", G.salary_amount(wages), "hors cotisations", C.MINT],
 		["Marge courante · par semaine", "shield", U.amount(margin), "hors guichet", C.AMBER if margin != null and float(margin)<0.0 else C.MINT]
 	]
+	# Budget de transferts actif : la deuxième tuile, à côté de la trésorerie, montre l’enveloppe du conseil.
+	var transfer := Budget.data(app.model)
+	if not transfer.is_empty():
+		captions[1] = [Budget.LABEL, "search", Budget.remaining(transfer), Budget.allocated(transfer), C.MINT if int(transfer.get("disponible",0)) > 0 else C.ALERT]
 	for i in captions.size():
 		var item: Array = captions[i]
 		var card := D.panel(canvas, Rect2(i*566,195,550,135), item[0], item[1], "", "FinanceMetric"+str(i))
-		D.text(card, 23, 111, item[2], 54, item[4], 800, 323)
-		D.chip(card, Rect2(346,70,181,46), item[3], item[4])
 		var explanation := ""
+		if i == 1 and not transfer.is_empty():
+			# Montant à l’euro sur toute la largeur (jamais tronqué), l’enveloppe allouée dessous.
+			D.text(card, 23, 98, item[2], 46, item[4], 800, 504).name = "FinanceTransferBudgetAmount"
+			D.text(card, 23, 125, item[3], 20, C.MUTED, 600, 504).name = "FinanceTransferBudgetAllocated"
+			explanation = Budget.detail(transfer, cash) + "\n%d profils au marché, %d accessibles." % [market.size(), available.size()]
+		else:
+			D.text(card, 23, 111, item[2], 54, item[4], 800, 323)
+			D.chip(card, Rect2(346,70,181,46), item[3], item[4])
 		if i == 2:
 			explanation = "Salaires des contrats %s, cotisations non comprises (somme des salaires des joueurs). Charge versée avec %s de cotisations : %s par semaine de jeu, dans la répartition ci-dessous et sur l'écran Club." % [G.salary_period(), "%d %%" % roundi(float(payroll.contributions)*100.0), G.euros(payroll.charge_weekly)]
 		elif i == 3:

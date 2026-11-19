@@ -89,7 +89,8 @@ Les trois cartes « Besoins » passent **du bas de l'écran vers le haut** : le 
 
 ### 6.1 Montant disponible
 
-« Disponible pour les transferts » : budget de recrutement restant (€) ; infobulle : trésorerie du club, budget annuel, salaire de la masse en cours. Clic = Finances. Remplace la tuile « Trésorerie du club » dont la valeur n'est pas le plafond de dépense. **Sous réserve** de l'existence d'un budget de recrutement distinct (question 1, §13) : sinon, le libellé devient « Trésorerie disponible » et la source reste Finances.
+« Disponible pour les transferts » : montant restant de l'enveloppe de transferts fixée par le conseil (`finance.transferBudget.disponible`, à l'euro, jamais tronqué), avec « sur X € alloués par le conseil » (`enveloppe`) et « Dépensé X € · reconstitué Y € ». Infobulle : enveloppe de la saison, trésorerie du club, dépensé en indemnités et primes, reconstitué par les ventes, rappel que les salaires n'y entrent pas. Clic = Finances (Synthèse). Règle : [docs/gdd/budget-transferts.md](../../docs/gdd/budget-transferts.md).
+Implémentation (19/11/2026) : bandeau sous les trois repères du haut, entre la photo et la priorité du poste ; la tuile « Trésorerie du club » reste (la trésorerie n'est pas le plafond de dépense, mais elle reste utile). Si `transferBudget` est absent ou `actif` faux (carrière sans budget de saison), pas de bandeau : la tuile « Trésorerie du club » reste la seule référence.
 
 ### 6.1 bis Bandeau « fins de contrat »
 
@@ -183,7 +184,7 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 | Chargement | actualisation du marché, mission en cours | squelette de lignes ; « Observation en cours · reste n jours » dans la colonne | tri reste utilisable |
 | Vide | filtre sans résultat | message + « Réinitialiser » | focus sur le bouton |
 | Marché fermé | hors fenêtre | bandeau : « Le marché est fermé jusqu'au jj/mm. Tu peux observer et suivre. » ; Approcher grisé | Observer reste actif |
-| Budget insuffisant | prime + salaire > disponible | avertissement dans la négociation (mot + icône) : « Dépasse ton budget de X € » | Envoyer reste possible si le moteur l'autorise, sinon grisé avec raison |
+| Budget insuffisant | prime à la signature (joueur libre) ou indemnité (accord entre clubs) > `transferBudget.disponible` ; le salaire n'entre pas dans le budget (jugé par la masse salariale) | le moteur rend le devis indisponible (`available:false`) avec la raison (« Hors budget de transferts : il reste X € sur l'enveloppe de Y € fixée par le conseil. ») ; raison écrite visible dans la fiche (Vigilance), la négociation et la carte du marché entre clubs, pas seulement en infobulle | bouton d'envoi grisé ; le moteur revérifie à la signature. Marché entre clubs : indemnité saisie au-delà du disponible → « Soumettre les conditions » grisé avec la raison sous les champs |
 | Piste déjà prise / retirée | autre club signe | ligne « Plus disponible » barrée + icône ; sélection suivante | message au pied, conservé jusqu'à l'action suivante (aucune disparition automatique, M6) |
 | Offre refusée | réponse | fenêtre : raison + options (revoir salaire, durée) | aucun silence : G3 |
 | Erreur de marché | données illisibles | bandeau + Réessayer | liste vide, pas de crash |
@@ -248,7 +249,7 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 
 | Question | Propriétaire | Statut |
 |---|---|---|
-| Existe-t-il un « budget de recrutement » distinct de la trésorerie ? | game-designer | À vérifier dans Finances |
+| Existe-t-il un « budget de recrutement » distinct de la trésorerie ? | game-designer | **Résolu (19/11/2026)** : oui, enveloppe de transferts fixée par le conseil chaque saison, voir [docs/gdd/budget-transferts.md](../../docs/gdd/budget-transferts.md) ; source `finance.transferBudget` |
 | La file de fins de contrat (journey §3.4) doit-elle vivre ici ou dans Effectif > Contrats ? | Léo / game-designer | Proposé : Effectif (vue Contrats) + bandeau ici |
 | Missions : durée et coût visibles avant lancement ? | game-designer | À confirmer |
 | Le comparateur à 2 exige-t-il que les deux pistes soient observées ? | game-designer | À confirmer |

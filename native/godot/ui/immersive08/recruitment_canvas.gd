@@ -10,6 +10,7 @@ const U = preload("res://ui/management_state.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Sort = preload("res://ui/recruitment_sort.gd")
+const Budget = preload("res://ui/transfer_budget.gd")
 const ROW_HEIGHT := 38
 # Construction progressive de la liste : les premières lignes tout de suite, le reste sur les images suivantes.
 const FIRST_ROWS := 26
@@ -128,6 +129,7 @@ func _header(positions: Array) -> void:
 		_icon(card, item[2], Rect2(24, 19, 37, 37), item[5])
 		D.text(card, 77, 46 if item[4] == "" else 27, item[3], 30 if item[4] == "" else 22, C.IVORY, 600, w - 86)
 		if item[4] != "": D.text(card, 77, 59, item[4], 31, C.IVORY, 700, w - 86)
+	_transfer_budget()
 	_watch(positions)
 	D.photo(self, "scouting", Rect2(0, 130, 634, 156))
 	var fade := Control.new()
@@ -143,6 +145,31 @@ func _header(positions: Array) -> void:
 	compare.tooltip_text = "Comparer deux pistes de recrutement"
 	compare.accessibility_name = compare.tooltip_text
 	D.button(self, Rect2(1758, 175, 490, 69), "Lancer une mission", func(): _staff(1), true, "arrow", false, PRIMARY, "OpenScoutMission")
+
+## Enveloppe du conseil (finance.transferBudget) : bandeau sous les repères, entre la photo et la priorité du poste.
+## Absente ou inactive : rien de plus, la tuile « Trésorerie du club » reste la seule référence.
+func _transfer_budget() -> void:
+	var budget := Budget.data(app.model)
+	if budget.is_empty(): return
+	var area := Rect2(798, 121, 1034, 56)
+	var band := D.button(self, area, "", func(): pass, false, "", false, PRIMARY, "RecruitmentTransferBudget")
+	band.add_theme_stylebox_override("normal", C.box(Color("102820"), Color("206848"), 9, 0))
+	band.add_theme_stylebox_override("hover", C.box(Color("163a2c"), C.MINT, 9, 0))
+	band.add_theme_stylebox_override("focus", C.box(Color("102820"), WARM, 9, 0))
+	Link.bind(band, app, {"kind":"finance", "id":"summary"}, Budget.LABEL)
+	var detail := Budget.detail(budget, app.model.get("finance", {}).get("cash"))
+	band.tooltip_text = detail
+	band.accessibility_name = "%s · %s %s · Ouvrir les finances" % [Budget.LABEL, Budget.remaining(budget), Budget.allocated(budget)]
+	_icon(band, "money", Rect2(18, 12, 32, 32), WARM)
+	D.text(band, 64, 23, Budget.LABEL, 20, C.MUTED, 600, 420).name = "RecruitmentTransferBudgetLabel"
+	var amount := D.text(band, 64, 50, Budget.remaining(budget), 28, GREEN if int(budget.get("disponible", 0)) > 0 else C.ALERT, 800, 420)
+	amount.name = "RecruitmentTransferBudgetAmount"
+	D.text(band, 500, 23, Budget.allocated(budget), 20, C.IVORY, 600, 520).name = "RecruitmentTransferBudgetAllocated"
+	D.text(band, 500, 50, Budget.movements(budget), 20, C.MUTED, 500, 520).name = "RecruitmentTransferBudgetMoves"
+	for child in band.get_children():
+		if child is Control:
+			(child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+			(child as Control).tooltip_text = ""
 
 func _watch(positions: Array) -> void:
 	var watch := Decisions.market_watch(app)
