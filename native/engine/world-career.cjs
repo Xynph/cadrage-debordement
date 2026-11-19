@@ -1,10 +1,11 @@
 'use strict';
 // Factory executed in the same VM as the rugby engine. Presentation packs never
 // alter its identities, membership, ratings, calendar or results.
-module.exports=function worldCareer(edition,active,initialContracts=null,lnrCalendar=null,seniorCalibration=null){
+module.exports=function worldCareer(edition,active,initialContracts=null,lnrCalendar=null,seniorCalibration=null,playerCorrections=null){
  const C=CDWorldCompetitions,REG=edition.registry,LEGACY=REG.compatibilityAliases||{},SOURCES=new Map([...REG.clubs.flatMap(c=>c.players.map(p=>[p.id,p])),...Object.entries(LEGACY).map(([id,row])=>[id,row.player])]),IDS=edition.leagueIds,WEEKS=46;
  const opening=edition.version===5&&edition.mode==='world-champ'&&initialContracts?.databaseId===REG.id&&initialContracts?.schema==='world-initial-contracts-v1'?initialContracts:null;
  const startingTerms=opening?.players;
+ const REAL_FACTS=edition.mode==='world-champ'&&playerCorrections?.schema==='world-player-corrections-v1'&&playerCorrections.databaseId===REG.id?playerCorrections.players:{};
  const EUROPE_LEAGUES=['elite','prem','urc'],playable=new Set(edition.playable),SRP=IDS.includes("srp")?CDWorldSRP:null,JP=IDS.includes('jlo-d1')?CDWorldJapan:null,N=IDS.includes('nationale')?CDWorldNationale:null,CH=IDS.includes('champ')?CDWorldChamp:null;
  const srpSeason=s=>2027+s.season-1;
  const japanYear=s=>2026+s.season-1,japanAnchor=s=>new Date(referenceStart(s)).toISOString().slice(0,10);
@@ -340,6 +341,14 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   if(N)appendNationale(s,allowDraw);
   if(CH)appendChamp(s,allowDraw);
  }
+ // Postes et années de naissance vérifiés (world-player-corrections.json, identifiants seulement) :
+ // le joueur garde son écart à la référence V12, transposé au poste confirmé.
+ function realFacts(p){
+  const f=String(p.id).startsWith('world:')?REAL_FACTS[p.id]:null;if(!f)return p;
+  if(f.pos&&POS.includes(f.pos)&&f.pos!==p.pos){seniorCalibration?.alignStartingRole(p,f.pos);p.gameplayPosition=f.pos;p.pos=f.pos;p.fam=FAMILIES[POS.indexOf(f.pos)];}
+  if(Number.isInteger(f.birthYear)&&f.birthYear!==p.birthYear){if(Number.isFinite(p.age)&&Number.isInteger(p.birthYear))p.age+=p.birthYear-f.birthYear;p.birthYear=f.birthYear;p.ageEstimated=false;delete p.birthDate;}
+  return p;
+ }
  function sourcePlayer(source){
   const p=copy(source),profile=CDRosterFoundation.resolve(CDRosterFoundation.marker)?.players[p.id];
   if(profile){
@@ -349,6 +358,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    }
    p.rosterProfile=copy(profile);p.pos=profile.position.primary;p.fam=FAMILIES[POS.indexOf(p.pos)];p.contractEnd=profile.contract.endSeason;
   }
+  realFacts(p);
   if(REG.worldProfiles[p.id])p.worldProfile=copy(REG.worldProfiles[p.id]);if(REG.nationaleQualifications?.[p.id])p.nationaleQualifications=REG.nationaleQualifications[p.id].roles.slice();return p;
  }
  function initialRoster(c){
@@ -608,8 +618,9 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    if(String(p.id).startsWith('world:')||p.worldRatingsVersion!==undefined){
     check(source&&profile&&p.worldRatingsVersion===1&&p.lnrRatingsVersion===undefined,'identité de joueur mondiale inconnue.');
     check(eq(p.worldProfile,profile),'référence initiale mondiale modifiée.');
+    const facts=REAL_FACTS[p.id]?realFacts(copy(source)):source;
     for(const key of ['potential','birthYear','birthDate','ageEstimated','gameplayPosition','pos','fam']){
-     const expected=key==='potential'&&s.careerVariation!==undefined?nativeCareerVariation.sourcePotential(source.potential,p.id,s.careerVariation):source[key];
+     const expected=key==='potential'&&s.careerVariation!==undefined?nativeCareerVariation.sourcePotential(source.potential,p.id,s.careerVariation):facts[key];
      check(eq(p[key],expected),'profil de joueur mondial incompatible : '+key);
     }
     check(p.attributesV2&&Object.keys(p.attributesV2).length===36&&Object.keys(source.attributesV2).every(k=>Number.isFinite(p.attributesV2[k])&&p.attributesV2[k]>=20&&p.attributesV2[k]<=97),'attributs mondiaux invalides.');
