@@ -70,7 +70,7 @@ const CONSIGNES={
  maul:{groupe:'conquete',label:'Ballon porté',aide:'Après une touche gagnée près de leur ligne.',valeurs:[['jamais','Jamais'],['selon','Selon'],['souvent','Souvent']]},
  melee:{groupe:'conquete',label:'Mêlée',aide:'Pousser pour la pénalité : plus de coups de sifflet, pour ou contre nous.',valeurs:[['vite','Sortir vite'],['normale','Normale'],['pousser','Pousser']]},
  coupsEnvoi:{groupe:'conquete',label:'Coups d’envoi',aide:'Courts pour récupérer le ballon, longs pour occuper.',valeurs:[['longs','Longs'],['normaux','Normaux'],['courts','Courts']]},
- cible:{groupe:'adversaire',label:'Point faible',aide:'L’effet s’émousse : l’adversaire s’adapte en 20 à 30 minutes.',neutre:'aucune',valeurs:[['aucune','Aucun'],['aile','Leur aile faible'],['ouvreur','Presser l’ouvreur']]}
+ cible:{groupe:'adversaire',label:'Point faible',aide:'L’adversaire s’adapte en 20 à 30 minutes et lit le jeu ; sans vrai point faible, on perd plus qu’on ne gagne.',neutre:'aucune',valeurs:[['aucune','Aucun'],['aile','Leur aile faible'],['ouvreur','Presser l’ouvreur']]}
 };
 const CONSIGNES_NEUTRES=Object.fromEntries(Object.entries(CONSIGNES).map(([k,c])=>[k,c.neutre||c.valeurs[1][0]]));
 function consigneLabel(axe,valeur){return CONSIGNES[axe]?.valeurs.find(v=>v[0]===valeur)?.[1]||valeur}
@@ -200,20 +200,45 @@ function pilotageEdge(l,side,kind){
  const rel=enCampPropre(l,side)?pilConsigne(l,side,'relance'):null,f=finDeMatch(l,side),c=pilConsigne(l,side,'cible');
  return (y==='rapide'?.02:y==='lent'?-.02:0)+(r==='agressive'?-.012:r==='prudente'?.012:0)+(d==='stricte'?.012:d==='limite'?-.008:0)+(p&&p.side===side&&l.minute-p.minute<=1?.05:0)
   +(rel==='relancer'?.022:0)+(f==='montre'?-.012:f==='tout'?.025:0)
-  // Attaquer leur aile la plus faible : l'écart de plaquage avec le reste de leur ligne, jusqu'à ce qu'ils s'adaptent.
-  +(c==='aile'?aileFaible(l,1-side)*cibleForce(l,side):0);
+  // Attaquer leur aile la plus faible : voir AILE_FAIBLE.
+  +(c==='aile'?aileEdge(l,side):0);
 }
 // Notre camp (là où « Relance » joue) et fin de match (dès la 70e) pour le côté `side`.
 function enCampPropre(l,side){return side===0?l.territory<50:l.territory>50}
 function finDeMatch(l,side){const f=pilConsigne(l,side,'finDeMatch');return l.minute>=70&&f&&f!=='normal'?f:null}
 // Effet d'un point faible visé : plein au début, nul 30 minutes après (l'adversaire corrige).
 function cibleForce(l,side){const d=side===l.userSide?l.pilotage.depuis?.cible:null;return Number.isFinite(d)?Math.max(0,1-(l.minute-d)/30):1}
-function aileFaible(l,defenseur){
+// « Leur aile faible » (19/11/2026). Avant : l'ailier le plus faible comparé à toute la ligne (avants compris, meilleurs
+// plaqueurs), donc un bonus presque toujours au plafond (+0,035) même face à une aile solide, et nul 30 minutes après :
+// ≈ 0,3 point par match sur 400 matchs. Désormais l'ailier est comparé au reste de leurs trois-quarts (10 à 15) :
+// - `seuil` : points de plaquage de retard sur ses voisins avant qu'il y ait quelque chose à exploiter ;
+// - `parPoint`, `max` : avantage d'attaque (réussite des temps de jeu et finition) par point au-delà, plafonné ;
+// - `metres` : mètres en plus par temps de jeu réussi (débordements sur son côté), à pleine force ;
+// - `adaptation` : minutes pour que l'adversaire corrige (glissement de sa couverture) ; `residuel` : ce qui reste
+//   ensuite, un ailier faible le restant ;
+// - `previsible` : coût d'une attaque qui va toujours du même côté, à mesure que l'adversaire la lit (nul au départ,
+//   plein une fois adapté) ; sans aile faible à viser, il ne reste que ce coût.
+// Valeurs de jeu, étalonnées dans tests/match-pilotage.cjs (400 matchs, mêmes graines).
+const AILE_FAIBLE=Object.freeze({seuil:2,parPoint:.015,max:.09,metres:5,adaptation:30,residuel:.35,previsible:.015});
+// Retard au plaquage de leur ailier le plus faible sur le reste de leurs trois-quarts en jeu (0 si aucun ailier).
+function aileEcart(l,defenseur){
  if(typeof activePlayers!=='function')return 0;
- const ligne=activePlayers(l,defenseur),ailes=ligne.filter(p=>[11,14].includes(l.sheets[defenseur].on.indexOf(p.id)+1));
- if(!ailes.length||!ligne.length)return 0;
- const moyenne=ligne.reduce((n,p)=>n+skill(p,'tackle'),0)/ligne.length,faible=Math.min(...ailes.map(p=>skill(p,'tackle')));
- return Math.max(.008,Math.min(.035,(moyenne-faible)*.002));
+ const on=l.sheets[defenseur].on,arrieres=activePlayers(l,defenseur).filter(p=>{const n=on.indexOf(p.id)+1;return n>=10&&n<=15});
+ const ailes=arrieres.filter(p=>[11,14].includes(on.indexOf(p.id)+1));
+ if(!ailes.length)return 0;
+ const faible=ailes.reduce((a,p)=>skill(p,'tackle')<skill(a,'tackle')?p:a),autres=arrieres.filter(p=>p!==faible);
+ if(!autres.length)return 0;
+ return autres.reduce((n,p)=>n+skill(p,'tackle'),0)/autres.length-skill(faible,'tackle');
+}
+// Avantage d'exploitation (avant le coût), à pleine force.
+function aileFaible(l,defenseur){const A=AILE_FAIBLE;return clamp((aileEcart(l,defenseur)-A.seuil)*A.parPoint,0,A.max)}
+// Part de l'effet encore exploitable : pleine au choix de la consigne, `residuel` une fois l'adversaire adapté.
+function aileForce(l,side){const d=side===l.userSide?l.pilotage.depuis?.cible:null,A=AILE_FAIBLE;return Number.isFinite(d)?Math.max(A.residuel,1-(l.minute-d)/A.adaptation):1}
+function aileEdge(l,side){const f=aileForce(l,side);return aileFaible(l,1-side)*f-AILE_FAIBLE.previsible*(1-f)/(1-AILE_FAIBLE.residuel)}
+// Mètres en plus d'un temps de jeu réussi par `side` (tactical-plans.js, carryGain).
+function pilotageGain(l,side){
+ if(!pilotageActif(l)||pilConsigne(l,side,'cible')!=='aile')return 0;
+ const A=AILE_FAIBLE,f=aileForce(l,side);return aileFaible(l,1-side)>0?Math.round(A.metres*f):0;
 }
 function pilotageKick(l,side){
  const k=pilConsigne(l,side,'piedJeu'),y=pilConsigne(l,side,'rythme'),rel=enCampPropre(l,side)?pilConsigne(l,side,'relance'):null,f=finDeMatch(l,side);
@@ -599,7 +624,7 @@ function pilotageBilan(l,axe){
   maul:[`${d('touchesGagnees')} touche${d('touchesGagnees')>1?'s':''} gagnée${d('touchesGagnees')>1?'s':''}`,pl(maulTries,'essai sur ballon porté','essais sur ballon porté')],
   melee:[`${d('meleesGagnees')}/${d('melees')} mêlée${d('melees')>1?'s':''} gagnée${d('meleesGagnees')>1?'s':''}`,pl(d('penalitesAdverses'),'pénalité adverse','pénalités adverses'),pl(d('penalites'),'pénalité contre nous','pénalités contre nous')],
   coupsEnvoi:[`${repris}/${envois} coup${envois>1?'s':''} d’envoi récupéré${repris>1?'s':''}`],
-  cible:[pl(d('essais'),'essai','essais'),pl(d('metres'),'mètre gagné','mètres gagnés'),v==='ouvreur'?pl(d('arraches'),'ballon perdu chez eux','ballons perdus chez eux'):`effet ${Math.round(cibleForce(l,u)*100)} %`]
+  cible:[pl(d('essais'),'essai','essais'),pl(d('metres'),'mètre gagné','mètres gagnés'),v==='ouvreur'?pl(d('arraches'),'ballon perdu chez eux','ballons perdus chez eux'):aileFaible(l,1-u)>0?`effet ${Math.round(aileForce(l,u)*100)} %`:'pas d’aile faible chez eux']
  }[axe]||[];
  return {axe,valeur:v,depuis:l.pilotage.depuis[axe],texte:`${CONSIGNES[axe].label} « ${consigneLabel(axe,v)} » depuis ${l.pilotage.depuis[axe]}′ : ${morceaux.join(', ')}.`};
 }

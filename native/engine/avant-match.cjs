@@ -231,7 +231,7 @@ function factory(){
   }
   // Complaisance (tactical-plans.js, RELACHEMENT) : gros favori → risque de jour sans, qu'une causerie exigeante annule.
   const ecart=ecartNiveau(s,own,adv);
-  if(ecart!==null&&typeof RELACHEMENT!=='undefined'&&ecart>=RELACHEMENT.seuil)ajoute('relachement',84,'Pas de relâchement','on est favoris : choisis une causerie exigeante avant le coup d’envoi');
+  if(ecart!==null&&typeof RELACHEMENT!=='undefined'&&ecart>=RELACHEMENT.seuil)ajoute('relachement',84,'Pas de relâchement','on est favoris : causerie exigeante avant le coup d’envoi');
   const leur=data.forme[eux]||[],victoires=leur.filter(x=>x==='V').length;
   if(leur.length>=4&&victoires>=4)ajoute('dynamique',48,'Casser leur dynamique',victoires+' victoires sur leurs '+leur.length+' derniers matchs');
   const ar=data.arbitre;

@@ -219,7 +219,7 @@ test('Moteur Monde : trois lignes pour un montant, chantiers aboutis, trésoreri
       const depart={cash:c.cash,fac:worldClub(c.id).facilities,acc:p.accueil,niv:investStaff(c.id).map(x=>x.level)};
       const gerees=S.clubs.filter(x=>x.id!==c.id).slice(0,40).map(x=>x.id);
       const avantGeres=gerees.map(id=>({id,fac:worldClub(id).facilities,niv:investStaff(id).reduce((s,x)=>s+x.level,0),cash:S.clubs[id].cash}));
-      let ecartAutres=0,ecartRecettes=0,pires=0,depenses=0,attendu=0,cashJoue=0,cashBase=0,maxLignes=0;
+      let recettes=0,ecartAutres=0,ecartRecettes=0,pires=0,depenses=0,attendu=0,cashJoue=0,cashBase=0,maxLignes=0;
       const total=l=>l.reduce((s,x)=>s+x.amount,0),hors=l=>l.filter(x=>!/Billetterie|Boutique|Investissements|Frais de match/.test(x.title)).map(x=>[x.title,x.amount]);
       for(let w=0;w<${ouv.semaines};w++){
         const rc={pair:w%2?[c.id,autre]:[autre,c.id],neutral:false,phase:'league'};
@@ -232,7 +232,7 @@ test('Moteur Monde : trois lignes pour un montant, chantiers aboutis, trésoreri
         const inv=l=>total(l.filter(x=>/Investissements/.test(x.title))),rec=l=>total(l.filter(x=>/Billetterie|Boutique/.test(x.title)));
         if(inv(base)!==inv(reel))pires++;
         if(rec(reel)<rec(base))ecartRecettes++;
-        depenses+=inv(reel);attendu+=inv(base);cashJoue+=total(reel);cashBase+=total(base);
+        recettes+=rec(reel);depenses+=inv(reel);attendu+=inv(base);cashJoue+=total(reel);cashBase+=total(base);
         for(const id of gerees)budgetSemaine(forces,repere,S.clubs[id],null,'');
       }
       const joue={fac:worldClub(c.id).facilities,acc:p.accueil,niv:investStaff(c.id).map(x=>x.level),travaux:p.travaux,points:p.points,depense:p.depense,
@@ -240,7 +240,7 @@ test('Moteur Monde : trois lignes pour un montant, chantiers aboutis, trésoreri
       const geres=gerees.map((id,i)=>({id,fac:worldClub(id).facilities-avantGeres[i].fac,niv:investStaff(id).reduce((s,x)=>s+x.level,0)-avantGeres[i].niv,
        depense:somme(S.clubInvest.clubs[id].depense),montant:S.clubInvest.clubs[id].montant,travaux:S.clubInvest.clubs[id].travaux}));
       function somme(o){return o.installations+o.staff+o.accueil;}
-      return {depart,joue,ecartAutres,ecartRecettes,pires,depenses,attendu,cashJoue,cashBase,maxLignes,geres,
+      return {recettes,depart,joue,ecartAutres,ecartRecettes,pires,depenses,attendu,cashJoue,cashBase,maxLignes,geres,
        upgrades:S.worldManagement.upgrades.filter(x=>x.source==='excedents').length,valide:nativeClubInvestments.valide(S.clubInvest,S.clubs.length),
        lim:[...S.clubInvest.clubs[c.id].parts?[]:[]]};})()`);
     assert.equal(sim.maxLignes, 3);
@@ -249,7 +249,10 @@ test('Moteur Monde : trois lignes pour un montant, chantiers aboutis, trésoreri
     assert.equal(sim.depenses, sim.attendu, 'dépense totale inchangée');
     assert.equal(sim.ecartRecettes, 0, 'l’accueil ne réduit jamais les recettes');
     assert.ok(sim.cashJoue >= sim.cashBase, 'trésorerie : pas moins que #870');
-    assert.ok(sim.cashJoue - sim.cashBase <= (sim.cashJoue + Math.abs(sim.depenses)) * 0.2, 'gain d’accueil modeste (≤ 12,5 % des recettes de match)');
+    // Plafond mesuré sur les recettes de match (billetterie + boutique) de la saison, comme le dit le message : l'ancien
+    // dénominateur (trésorerie + dépenses) variait avec la masse salariale du club testé, donc avec son effectif
+    // (19/11/2026 : 8,1 % avec les cinq postes corrigés, 7,7 % avant ; plafond 12,5 %).
+    assert.ok(sim.recettes > 0 && sim.cashJoue - sim.cashBase <= sim.recettes * 0.125, 'gain d’accueil modeste (≤ 12,5 % des recettes de match)');
     assert.equal(sim.valide, true);
     // Chantiers aboutis : installations et/ou staff du club joué ; le mécanisme est aussi à l'œuvre chez les clubs gérés.
     assert.ok(sim.joue.fac > sim.depart.fac || sim.joue.niv.some((n, i) => n > sim.depart.niv[i]), 'un chantier a abouti chez le club joué');

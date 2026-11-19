@@ -7,7 +7,7 @@ const builder=require('../scripts/build-roster-foundation.cjs'),privees=require(
 const registry=files?JSON.parse(fs.readFileSync(files['data/roster-foundation/verified.json'],'utf8')):null;
 const data=require('../dist/rugby-roster-foundation.js'),base=require('../dist/rugby-common-rosters.js'),v1=data.resolve({...data.marker,version:1});
 const ids=base.clubs.flatMap(c=>c.players.map(p=>p.id)).sort();assert.equal(ids.length,1592);assert.deepEqual(Object.keys(data.players).sort(),ids);assert.deepEqual(Object.keys(v1.players).sort(),ids);
-const count=k=>Object.values(data.players).filter(p=>p[k].basis==='official').length;assert.equal(count('position'),241);assert.equal(count('contract'),86);assert.equal(count('status'),9);
+const count=k=>Object.values(data.players).filter(p=>p[k].basis==='official').length;assert.equal(count('position'),246);assert.equal(count('contract'),86);assert.equal(count('status'),9);
 for(const [section,field] of [['positions','position'],['contracts','contract'],['statuses','status']])for(const [id,p] of Object.entries(v1.players))if(p[field].basis==='official')assert.deepEqual(data.players[id][field],p[field],'v1 known '+section+' retained');
 const knownStatuses={'lnr:1734':'professionnel','lnr:11794':'professionnel','lnr:13550':'espoir','lnr:13725':'espoir','lnr:13499':'espoir','lnr:13174':'espoir','lnr:13505':'espoir','lnr:13417':'espoir'};for(const [id,value] of Object.entries(knownStatuses)){assert.equal(data.players[id].status.value,value);assert.equal(data.players[id].status.basis,'official');}
 for(const id of ['lnr:13516','lnr:13531','lnr:13650','lnr:13711'])assert.equal(data.players[id].position.basis,'estimated','quarantine retained '+id);
