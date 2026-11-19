@@ -173,7 +173,7 @@ def main():
         encoding="utf-8")
     summary = {"steam": str(steam), "content": str(content), "exe": str(executable), "signed": bool(thumbprint),
                "steamworks": {"enabled": bool(settings.get("enabled")), "achievements": bool(settings.get("achievements")),
-                              "cloud_saves": bool(settings.get("cloud_saves"))},
+                              "cloud_saves": bool(settings.get("cloud_saves")), "workshop": bool(settings.get("workshop"))},
                "app_id": app_id, "depot_id": depot_id, "warnings": warnings}
     print(json.dumps(summary, ensure_ascii=False, indent=2), flush=True)
 

@@ -3,5 +3,6 @@
   "enabled": false,
   "app_id": 0,
   "achievements": false,
-  "cloud_saves": false
+  "cloud_saves": false,
+  "workshop": false
 }

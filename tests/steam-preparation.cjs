@@ -6,18 +6,22 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const read = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/^﻿/, '');
+const read = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/^﻿/, '').replace(/\r\n/g, '\n');
 const options = text => Object.fromEntries(text.split(/\r?\n/).filter(line => /^[a-z_/0-9]+=/.test(line))
   .map(line => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]));
 
 // 1. Steamworks reste inactif tant que Léo ne l'a pas configuré.
 const steam = JSON.parse(read('native/godot/steam/steam.json'));
-assert.deepEqual(steam, { schema: 'rl27-steam-v1', enabled: false, app_id: 0, achievements: false, cloud_saves: false });
+assert.deepEqual(steam, { schema: 'rl27-steam-v1', enabled: false, app_id: 0, achievements: false, cloud_saves: false, workshop: false });
 assert.ok(!fs.existsSync(path.join(root, 'native/godot/addons/godotsteam/godotsteam.gdextension')),
   'GodotSteam ne doit pas être installé avant la création de l’application Steam');
 const service = read('native/godot/steam/steam_service.gd');
 assert.match(service, /Engine\.has_singleton\("Steam"\)/);
 assert.doesNotMatch(service, /^class_name /m, 'pas de classe globale : aucun cache d’import requis');
+// Workshop : les packs abonnés passent par la validation normale du moteur (inspect), jamais chargés en direct.
+assert.match(service, /static func workshop_packs\(\) -> Array:\n\tvar packs: Array = \[\]\n\tif not workshop_enabled\(\): return packs/);
+assert.match(read('native/godot/pack_manager.gd'), /func workshop_packs\(\) -> Array:\n\treturn preload\("res:\/\/steam\/steam_service\.gd"\)\.workshop_packs\(\)/);
+assert.match(read('native/godot/ui/pack_views.gd'), /app\.pack_manager\.inspect\.bind\(str\(workshop_pack\.path\)\)/);
 
 // 2. Le réglage Steam reprend l'export Windows vérifié, avec identité de l'exécutable et sans fichiers de recette.
 const windows = options(read('native/godot/windows-release.cfg'));
