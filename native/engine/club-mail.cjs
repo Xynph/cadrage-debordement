@@ -470,6 +470,9 @@ function factory() {
     offre_transfert(F) { return typeof venteCourriers === 'function' ? venteCourriers(F.s) : []; },
     vente_executee(F) { return typeof venteCourriersAccords === 'function' ? venteCourriersAccords(F.s, 'executee', F.d) : []; },
     vente_annulee(F) { return typeof venteCourriersAccords === 'function' ? venteCourriersAccords(F.s, 'annulee', F.d) : []; },
+    // Pré-contrats (calendrier-mutations.cjs) : un autre club approche un joueur en fin de contrat, puis il signe ailleurs.
+    precontrat_approche(F) { return typeof calCourriers === 'function' ? calCourriers(F.s, 'approche') : []; },
+    precontrat_signe(F) { return typeof calCourriers === 'function' ? calCourriers(F.s, 'signe') : []; },
     // Investissements des excédents (club-investments.cjs) : une fois par saison, tant que le manager n'a pas orienté.
     investissements(F) {
       const v = typeof investCourrier === 'function' ? investCourrier() : null;

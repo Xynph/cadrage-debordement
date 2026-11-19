@@ -202,6 +202,10 @@ test('Président : tempérament des clubs gérés (4 à 8 mois entre deux interv
 
 test('Moteur Monde : le président désigne des ventes, un seul courrier, vend à l’échéance ou renonce', { timeout: 170000 }, () => {
   const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  // Ventes immédiates (période des mutations ouverte toute la saison) : la vente différée hors période est vérifiée par
+  // tests/calendrier-mutations.cjs.
+  const VR = require('../native/engine/vente-joueurs.json'), modeAvant = VR.fenetres.mode;
+  VR.fenetres.mode = 'saison';
   try {
     creer(jeu, 0);
     const { run, lire, recevoir } = outils(jeu);
@@ -254,5 +258,5 @@ test('Moteur Monde : le président désigne des ventes, un seul courrier, vend �
     assert.equal(ia.ok, true); assert.equal(ia.vente, true); assert.equal(ia.joue, false);
     assert.ok(ia.n >= 1 && ia.n <= P.DESIGNES_IA); assert.equal(ia.retour, false, 'tempérament : pas de retour avant 4 à 8 mois');
     assert.equal(lire('nativePresidentReprise.valide(S.presidentReprise)'), true);
-  } finally { jeu.fermer(); }
+  } finally { VR.fenetres.mode = modeAvant; jeu.fermer(); }
 });
