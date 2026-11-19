@@ -30,7 +30,6 @@ const NIVEAU_MAX := 100.0
 var app: Control
 var etat: Dictionary
 var tableau: Control
-var colonne_droite: VBoxContainer
 var pied: Label
 var boutons_vue: Array = []
 var boutons_filtre: Dictionary = {}
@@ -343,7 +342,7 @@ func _construire() -> void:
 		rang_vues.add_child(bouton)
 	barre.add_child(vues)
 
-	# Corps : tableau à gauche, fiche à droite.
+	# Corps : le tableau prend toute la largeur (décision de Léo, 19/11/2026 : plus de fiche à droite).
 	var corps := HBoxContainer.new()
 	corps.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	corps.add_theme_constant_override("separation", J.px(J.E4))
@@ -364,8 +363,7 @@ func _construire() -> void:
 	tableau.tri_colonne = str(etat.tri)
 	tableau.tri_decroissant = bool(etat.decroissant)
 	tableau.ligne_choisie.connect(func(joueur: Dictionary):
-		app.selected_player = str(joueur.id)
-		_fiche())
+		app.selected_player = str(joueur.id))
 	tableau.ligne_activee.connect(func(joueur: Dictionary):
 		app.selected_player = str(joueur.id)
 		_ouvrir_fiche())
@@ -391,15 +389,6 @@ func _construire() -> void:
 		tableau.definir_lignes(_joueurs_ordonnes()))
 	bas.add_child(grouper)
 
-	var defile := ScrollContainer.new()
-	defile.name = "FicheEffectif"
-	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	defile.custom_minimum_size = Vector2(J.px(392), 0)
-	corps.add_child(defile)
-	colonne_droite = VBoxContainer.new()
-	colonne_droite.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	colonne_droite.add_theme_constant_override("separation", J.px(J.E3))
-	defile.add_child(colonne_droite)
 
 	_appliquer_groupes()
 	tableau._filtre = _filtre_courant()
@@ -408,7 +397,6 @@ func _construire() -> void:
 	if visibles.filter(func(j: Dictionary): return str(j.id) == app.selected_player).is_empty() and not visibles.is_empty():
 		app.selected_player = str(visibles[0].id)
 	tableau.choisir(app.selected_player, false)
-	_fiche()
 	_caler_hauteur.call_deferred()
 
 func _caler_hauteur() -> void:
@@ -483,203 +471,3 @@ func _ouvrir_fiche() -> void:
 	app.set_meta("immersive08_full_player", true)
 	app._render()
 
-# ---------------------------------------------------------------- fiche de droite
-
-class Trait extends Control:
-	var dessiner: Callable
-	func _draw() -> void:
-		if dessiner.is_valid(): dessiner.call(self)
-
-func _joueur_choisi() -> Dictionary:
-	for j: Dictionary in _joueurs():
-		if str(j.get("id", "")) == app.selected_player: return j
-	return {}
-
-func _fiche() -> void:
-	for enfant in colonne_droite.get_children():
-		colonne_droite.remove_child(enfant)
-		enfant.queue_free()
-	var joueur := _joueur_choisi()
-	if joueur.is_empty():
-		var vide := _carte()
-		vide.add_child(J.texte("Choisis un joueur dans la liste.", J.T_CORPS, J.TEXTE_DOUX))
-		colonne_droite.add_child(vide)
-	else:
-		colonne_droite.add_child(_carte_joueur(joueur))
-		colonne_droite.add_child(_carte_contrat(joueur))
-	colonne_droite.add_child(_carte_profondeur())
-
-func _carte_joueur(joueur: Dictionary) -> Control:
-	var carte := _carte()
-	carte.name = "CarteJoueur"
-	var pile := VBoxContainer.new()
-	pile.add_theme_constant_override("separation", J.px(J.E3))
-	carte.add_child(pile)
-	var tete := HBoxContainer.new()
-	tete.add_theme_constant_override("separation", J.px(J.E4))
-	pile.add_child(tete)
-	var cadre := Panel.new()
-	var cote := Vector2(J.px(92), J.px(104))
-	cadre.custom_minimum_size = cote
-	cadre.clip_children = CanvasItem.CLIP_CHILDREN_ONLY
-	cadre.add_theme_stylebox_override("panel", J.boite(J.PANNEAU_HAUT, 8))
-	var portrait: TextureRect = G.portrait(int(joueur.get("portraitIndex", 0)), int(cote.x), joueur)
-	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	portrait.custom_minimum_size = Vector2.ZERO
-	portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	cadre.add_child(portrait)
-	tete.add_child(cadre)
-	var identite := VBoxContainer.new()
-	identite.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	identite.alignment = BoxContainer.ALIGNMENT_END
-	identite.add_theme_constant_override("separation", J.px(2))
-	tete.add_child(identite)
-	var nom := J.texte(str(joueur.get("name", "")), 28, J.TEXTE, J.TITRE_GRAS)
-	nom.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	identite.add_child(nom)
-	var precision := _precision_poste(joueur)
-	var ligne_poste := str(joueur.get("pos", ""))
-	if not precision.is_empty() and int(joueur.get("fam", -1)) == 3: ligne_poste += " " + precision
-	if _nombre(joueur.get("age")): ligne_poste += ", %d ans" % int(joueur.age)
-	identite.add_child(J.texte(ligne_poste, J.T_CORPS, J.TEXTE_DOUX))
-	var numero: Variant = joueur.get("shirtNumber")
-	var situation := _statut(joueur)
-	if _nombre(numero) and not _blesse(joueur): situation += ", numéro %d" % int(numero)
-	identite.add_child(J.texte(situation, J.T_CORPS, J.ALERTE if _blesse(joueur) else J.VERT if _nombre(numero) else J.TEXTE_FAIBLE))
-
-	var chiffres := HBoxContainer.new()
-	chiffres.add_theme_constant_override("separation", J.px(J.E2))
-	pile.add_child(chiffres)
-	var niveau := J.texte(str(int(joueur.rating)) if _nombre(joueur.get("rating")) else "—", J.T_GEANT, J.TEXTE, J.TITRE_GRAS)
-	chiffres.add_child(niveau)
-	var aujourd_hui := J.texte("aujourd’hui", J.T_CORPS, J.TEXTE_DOUX)
-	aujourd_hui.size_flags_vertical = Control.SIZE_SHRINK_END
-	chiffres.add_child(aujourd_hui)
-	var p := _potentiel(joueur)
-	if not p.is_empty():
-		var espace := Control.new(); espace.custom_minimum_size = Vector2(J.px(J.E2), 0); chiffres.add_child(espace)
-		var possible := J.texte(_texte_potentiel(joueur), 32, J.OR, J.TITRE_GRAS)
-		possible.size_flags_vertical = Control.SIZE_SHRINK_END
-		chiffres.add_child(possible)
-		var suffixe := J.texte("possible", J.T_CORPS, J.TEXTE_DOUX)
-		suffixe.size_flags_vertical = Control.SIZE_SHRINK_END
-		chiffres.add_child(suffixe)
-	var barre := Trait.new()
-	barre.custom_minimum_size = Vector2(0, J.px(18))
-	barre.dessiner = func(sur: Control): _barre_niveau(sur, Rect2(0, sur.size.y / 2.0 - J.px(3), sur.size.x, J.px(6)), joueur)
-	pile.add_child(barre)
-
-	if _nombre(joueur.get("condition")):
-		var rang := HBoxContainer.new()
-		pile.add_child(rang)
-		var libelle := J.texte("Condition", J.T_CORPS, J.TEXTE_DOUX)
-		libelle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		rang.add_child(libelle)
-		var charge := float(joueur.get("physicalLoad", 0))
-		rang.add_child(J.texte("%d %%, fatigue %d / 100" % [floori(float(joueur.condition)), int(charge)], J.T_CORPS, J.TEXTE))
-		var jauge := Trait.new()
-		jauge.custom_minimum_size = Vector2(0, J.px(6))
-		jauge.dessiner = func(sur: Control):
-			sur.draw_style_box(J.boite(J.RAIL, 3), Rect2(Vector2.ZERO, sur.size))
-			sur.draw_style_box(J.boite(_couleur_condition(float(joueur.condition)), 3), Rect2(0, 0, sur.size.x * clampf(float(joueur.condition) / 100.0, 0, 1), sur.size.y))
-		pile.add_child(jauge)
-	var suivi := U.watch_reason(joueur)
-	if not suivi.is_empty():
-		var alerte := J.texte("À surveiller : " + suivi, J.T_PETIT + 1, J.JAUNE)
-		alerte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		pile.add_child(alerte)
-
-	var ouvrir := _bouton("Ouvrir sa fiche", true, false, _ouvrir_fiche)
-	ouvrir.name = "OuvrirFicheJoueur"
-	pile.add_child(ouvrir)
-	return carte
-
-func _carte_contrat(joueur: Dictionary) -> Control:
-	var carte := _carte()
-	carte.name = "CarteContrat"
-	var pile := VBoxContainer.new()
-	pile.add_theme_constant_override("separation", J.px(J.E1))
-	carte.add_child(pile)
-	pile.add_child(J.texte("Son contrat", J.T_TITRE, J.TEXTE, J.TITRE))
-	var rang := HBoxContainer.new()
-	rang.add_theme_constant_override("separation", J.px(J.E2))
-	pile.add_child(rang)
-	rang.add_child(J.texte(Salaire.amount(joueur.get("salary")), 32, J.TEXTE, J.TITRE_GRAS))
-	var fin := "jusqu’à la fin de cette saison" if _fin_cette_saison(joueur) else "jusqu’en " + G.contract_year(joueur.get("contractEnd"))
-	var suite := J.texte(Salaire.period_label() + ", " + fin, J.T_CORPS, J.ALERTE if _fin_cette_saison(joueur) else J.TEXTE_DOUX)
-	suite.size_flags_vertical = Control.SIZE_SHRINK_END
-	rang.add_child(suite)
-	# Repère factuel : rang du salaire dans sa ligne.
-	var famille := int(joueur.get("fam", -1))
-	var meme_ligne := _joueurs().filter(func(j: Dictionary): return int(j.get("fam", -2)) == famille and _nombre(j.get("salary")))
-	if meme_ligne.size() > 1 and _nombre(joueur.get("salary")) and famille >= 0 and famille < LIGNES.size():
-		var devant := meme_ligne.filter(func(j: Dictionary): return float(j.salary) > float(joueur.salary)).size()
-		var repere := J.texte("%s salaire sur %d à ce poste (%s)." % ["1er" if devant == 0 else "%de" % (devant + 1), meme_ligne.size(), LIGNES[famille].un], J.T_CORPS, J.TEXTE_DOUX)
-		repere.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		pile.add_child(repere)
-	if joueur.get("renewal", {}).get("available", false):
-		var ouverte := J.texte("Prolongation ouverte.", J.T_CORPS, J.OR)
-		ouverte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		pile.add_child(ouverte)
-	# Vente (vente-joueurs.cjs) : état, raison d'un blocage en clair, proposer / retirer, offres reçues.
-	var vente: Dictionary = joueur.get("sale", {}) if joueur.get("sale") is Dictionary else {}
-	if not vente.is_empty():
-		var etat_vente := Sales.status(joueur)
-		var bloque := str(vente.get("blocked", ""))
-		var ligne := J.texte(etat_vente if not etat_vente.is_empty() else bloque if not bloque.is_empty() else "Valeur estimée %s." % G.euros(vente.get("value", 0)), J.T_CORPS, J.OR if not etat_vente.is_empty() else J.ALERTE if not bloque.is_empty() else J.TEXTE_DOUX)
-		ligne.name = "CarteContratVente"
-		ligne.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		pile.add_child(ligne)
-		var en_attente: bool = vente.get("pending") is Dictionary
-		var liste := bool(vente.get("listed", false))
-		var bouton := _bouton("Retirer du marché" if liste else "Proposer aux autres clubs", false, true, func(): Sales.toggle(app, joueur))
-		bouton.name = "CarteContratVendre"
-		bouton.disabled = en_attente or not app._live().is_empty() or (not liste and not bloque.is_empty())
-		pile.add_child(bouton)
-		if vente.get("offerId") is String or en_attente:
-			var offres := _bouton(Sales.caption(app.model), false, true, func(): Sales.open(app))
-			offres.name = "CarteContratOffres"
-			pile.add_child(offres)
-	return carte
-
-func _carte_profondeur() -> Control:
-	var carte := _carte()
-	carte.name = "CarteProfondeur"
-	var pile := VBoxContainer.new()
-	pile.add_theme_constant_override("separation", J.px(3))
-	carte.add_child(pile)
-	var titre := J.texte("Profondeur par ligne", J.T_TITRE, J.TEXTE, J.TITRE)
-	titre.tooltip_text = "Clair : sur la prochaine feuille de match. Sombre : en réserve. Rouge : blessé."
-	titre.mouse_filter = Control.MOUSE_FILTER_PASS
-	pile.add_child(titre)
-	var joueurs := _joueurs()
-	for famille: int in ORDRE_LIGNES:
-		var ligne := joueurs.filter(func(j: Dictionary): return int(j.get("fam", -1)) == famille)
-		var retenus := ligne.filter(func(j: Dictionary): return str(j.get("status", "")) in ["Titulaire", "Remplaçant"] and not _blesse(j)).size()
-		var blesses := ligne.filter(_blesse).size()
-		var rang := HBoxContainer.new()
-		rang.add_theme_constant_override("separation", J.px(J.E2))
-		pile.add_child(rang)
-		var nom := J.texte(LIGNES[famille].nom, J.T_CORPS, J.TEXTE_DOUX)
-		nom.custom_minimum_size = Vector2(J.px(134), 0)
-		rang.add_child(nom)
-		var cases := Trait.new()
-		cases.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		cases.custom_minimum_size = Vector2(0, J.px(18))
-		var total := ligne.size()
-		cases.dessiner = func(sur: Control):
-			var l := float(J.px(11))
-			var pas := l + J.px(3)
-			for i in total:
-				var couleur := J.TEXTE if i < retenus else J.ALERTE if i >= total - blesses else J.RESERVE
-				sur.draw_style_box(J.boite(couleur, 2), Rect2(i * pas, (sur.size.y - l) / 2.0, l, l))
-		cases.tooltip_text = "%d sur la feuille, %d en réserve%s" % [retenus, total - retenus - blesses, ", %d blessé%s" % [blesses, "s" if blesses > 1 else ""] if blesses > 0 else ""]
-		cases.mouse_filter = Control.MOUSE_FILTER_PASS
-		rang.add_child(cases)
-		var compte := J.texte(str(total), J.T_CORPS, J.TEXTE, J.corps_gras())
-		compte.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		compte.custom_minimum_size = Vector2(J.px(24), 0)
-		rang.add_child(compte)
-	return carte

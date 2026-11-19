@@ -151,7 +151,7 @@ static func render(app: Control) -> bool:
 	var canvas_script := _dedicated_page(app,physical)
 	var immersive_match: bool = app.route=="Match" and physical.x>=RICH_MIN_SIZE.x and physical.y>=RICH_MIN_SIZE.y
 	var monthly_calendar: bool = app.route=="Calendrier" and not Selections.nation_only(app.model) and not app.get_meta("calendar_table",false)
-	if canvas_script!=null or immersive_match or monthly_calendar or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
+	if canvas_script!=null or immersive_match or monthly_calendar or app.route=="Effectif":
 		app.heading=null
 		app.minibar=C.label("",17,C.GOLD);app.minibar.visible=false;content.add_child(app.minibar)
 	else: _heading(content, app)
@@ -1219,7 +1219,7 @@ static func _sync_office_props(match_status: Label) -> void:
 
 static func _subnavigation(parent: Node, app: Control) -> void:
 	if Selections.nation_only(app.model): return
-	if app.route=="Composition" or (app.route=="Effectif" and app.get_window().size.x>=1600): return
+	if app.route=="Composition" or app.route=="Effectif": return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
 		var row := C.h(8)
@@ -1349,11 +1349,8 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 			var player:=P.player(app.model,app.selected_player)
 			if app.get_meta("immersive08_full_player",false) and not player.is_empty():app.body.add_child(PlayerCanvas.build(app,player))
 			elif SocleEffectif.actif(app):app.body.add_child(SocleEffectif.build(app))
-			elif app.get_window().size.x>=1600:app.body.add_child(SquadCanvas.build(app))
-			else:
-				var roster: Control = app.SquadViews.squad(app)
-				app.body.add_child(roster)
-				Legacy.apply(roster, app.accent)
+			# Décision de Léo (19/11/2026) : un seul tableau, à toutes les tailles (colonnes retirées en fenêtre étroite).
+			else:app.body.add_child(SquadCanvas.build(app))
 		"Composition":
 			# Décision de Léo (19/11/2026) : plus jamais l'ancienne feuille de match. L'écran de la maquette validée
 			# (proportionnel, plancher de 12 px) sert à toutes les tailles, 1280 × 720 compris.

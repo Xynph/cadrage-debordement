@@ -15,6 +15,17 @@ static func watch_reason(player: Dictionary) -> String:
 		reasons.append("Condition " + value + " %")
 	return " · ".join(reasons)
 
+## Raison d'indisponibilité d'un joueur du club : "blesse", "suspendu", "selection" ; vide s'il est apte
+## (un joueur en reprise reste apte).
+static func indisponibilite(player: Dictionary) -> String:
+	var blessure: Variant = player.get("injury")
+	if (blessure is int or blessure is float) and float(blessure) > 0: return "blesse"
+	var suspension: Variant = player.get("suspension")
+	if (suspension is int or suspension is float) and float(suspension) > 0: return "suspendu"
+	var faits: Variant = player.get("playerFacts")
+	if faits is Dictionary and faits.get("onInternationalDuty", false): return "selection"
+	return ""
+
 static func watch_caption(count: int) -> String:
 	return "Voir %d joueur%s sous surveillance" % [count, "s" if count > 1 else ""]
 
@@ -48,6 +59,8 @@ static func players(source:Array,state:Dictionary,season:int,market:bool=false,f
 			if state.family=="Avants" and float(p.get("fam",0))>3:continue
 			if state.family=="Arrières" and float(p.get("fam",0))<=3:continue
 			if state.family=="Blessés" and float(p.get("injury",0))<=0:continue
+			if state.family=="Indisponibles" and indisponibilite(p).is_empty():continue
+			if state.family=="Aptes" and not indisponibilite(p).is_empty():continue
 			if state.family==WATCH_FILTER and watch_reason(p).is_empty():continue
 			if state.family=="Hors groupe" and p.get("shirtNumber")!=null:continue
 			if state.available=="Disponibles" and float(p.get("injury",0))>0:continue
