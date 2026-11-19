@@ -8,6 +8,12 @@ var app: Control
 func settle() -> void:
 	for i in 8: await process_frame
 
+## Une fenêtre (AcceptDialog, Popup…) visible sous l'application ?
+func visible_window() -> bool:
+	for node: Node in app.find_children("*", "Window", true, false):
+		if (node as Window).visible: return true
+	return false
+
 func worker() -> void:
 	var deadline := Time.get_ticks_msec() + 30000
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline: await process_frame
@@ -1559,18 +1565,26 @@ func run() -> void:
 		app._navigate("Composition")
 		await settle()
 		var tactics: Control = app.find_child("ImmersiveTactics",true,false)
-		check(tactics != null,"Tactique native du gabarit approuvé")
+		check(tactics != null,"Composition native de la maquette validée (variante 1 du 19/11)")
 		if tactics != null:
-			reference_rects({"TacticsPitch":Rect2(280,264,1070,906), "TacticsIdentity":Rect2(1980,264,548,906),
-				"TacticsBench":Rect2(1366,264,598,529), "TacticsOutside":Rect2(1366,809,598,361),
-				"TacticsMatchup0":Rect2(280,1186,546,158), "TacticsMatchup1":Rect2(842,1186,546,158),
-				"TacticsMatchup2":Rect2(1404,1186,546,158), "TacticsVigilance":Rect2(1966,1186,562,158),
-				"TacticsSave":Rect2(1983,121,248,48), "TacticsValidate":Rect2(2247,121,281,48)})
+			# Terrain au centre, banc puis impact à droite, candidats dessous (choix de Léo du 19/11/2026).
+			var pitch := app.find_child("TacticsPitch",true,false) as Control
+			var bench := app.find_child("TacticsBench",true,false) as Control
+			var impact := app.find_child("TacticsImpact",true,false) as Control
+			var under := app.find_child("TacticsCandidates",true,false) as Control
+			check(pitch!=null and bench!=null and impact!=null and under!=null,"Terrain, banc, impact et candidats présents")
+			if pitch!=null and bench!=null and impact!=null and under!=null:
+				var rp := pitch.get_global_rect()
+				var rb := bench.get_global_rect()
+				var ri := impact.get_global_rect()
+				check(rp.end.x<=rb.position.x+1 and rb.end.x<=ri.position.x+1,"Terrain, puis banc, puis impact de gauche à droite")
+				check(under.get_global_rect().position.y>=maxf(rp.end.y,rb.end.y)-1,"Candidats sous le terrain")
+				check(absf(rp.size.x/rp.size.y-100.0/70.0)<.02,"Terrain aux proportions réelles (100 × 70, charte §6)")
 			for slot in 23:
 				var jersey: Button = app.find_child("LineupSlot%02d" % (slot+1),true,false)
 				check(jersey != null,"Poste réel disponible : "+str(slot+1))
-			check(app.find_child("Art_tactics_briefing",true,false)!=null,"Image approuvée du briefing intégrée")
-			check(app.find_child("TacticsIdentity",true,false)!=null,"Consignes et indicateurs du XV sélectionné")
+			check(app.find_child("Art_tactics_briefing",true,false)==null and app.find_child("TacticsIdentity",true,false)==null,"Plus de bandeau photo ni de colonne « Identité de jeu »")
+			check(app.find_child("TacticsValidate",true,false)!=null and app.find_child("LineupAutomatic",true,false)!=null,"Valider la feuille et Proposition du staff dans l’en-tête de l’écran")
 			await capture("03-tactique-2560x1440")
 		for pair in [["OfficePreparationAction", "Préparation"], ["OfficeSquadAction", "Effectif"], ["OfficeStandingsAction", "Classements"], ["OfficeCalendarAction", "Calendrier"]]:
 			app._navigate("Bureau")
@@ -1599,94 +1613,75 @@ func run() -> void:
 		var fly_half: Button=app.find_child("LineupSlot10",true,false)
 		await click(fly_half,Vector2(.97,.92))
 		await settle()
-		# Depuis l'évolution de la composition, un premier clic sélectionne le numéro et un second sur le même numéro ouvre ses choix.
-		check(app.selected_slot==9,"Le bas du maillot 10 sélectionne son poste malgré l’enveloppe voisine")
-		# Le premier clic reconstruit la composition : le bouton précédent est libéré, on le retrouve avant le second clic.
-		fly_half=app.find_child("LineupSlot10",true,false)
-		await click(fly_half,Vector2(.97,.92))
+		# Choix de Léo (19/11/2026) : un clic sur un poste remplit les candidats sous le terrain, jamais une fenêtre.
+		check(app.selected_slot==9,"Le bas de la carte 10 sélectionne son poste")
+		var candidates_title := app.find_child("TacticsCandidatesTitle",true,false) as Label
+		check(candidates_title!=null and candidates_title.text.contains("N° 10"),"Les candidats du n° 10 s’affichent sous le terrain")
+		check(not visible_window(),"Aucune fenêtre ouverte par le choix d’un poste")
+		root.size=Vector2i(1280,720)
 		await settle()
-		var candidates: AcceptDialog = app.find_child("LineupCandidates",true,false)
-		check(app.selected_slot==9 and candidates!=null,"Le bas du maillot 10 ouvre son poste malgré l’enveloppe voisine")
-		if candidates!=null:
-			root.size=Vector2i(1280,720)
-			await settle()
-			var visible := Rect2(Vector2.ZERO,root.get_visible_rect().size)
-			var title_height := candidates.get_theme_constant("title_height","Window")
-			var decoration := Vector2(0,title_height)
-			var frame := Rect2(Vector2(candidates.position)-decoration,Vector2(candidates.size)+decoration)
-			check(visible.encloses(frame),"La barre de titre et les actions du sélecteur restent visibles en 720p")
-			check(candidates.get_theme_font("title_font","Window").resource_path.ends_with("BarlowCondensed-Bold.ttf"),"Le sélecteur de poste conserve la fonte du gabarit dans sa barre de titre")
-			for action: Button in [candidates.get_ok_button(), candidates.find_child("LineupRemove",true,false)]:
-				var bounds := action.get_global_rect()
-				bounds.position+=Vector2(candidates.position)
-				check(visible.encloses(bounds),"Action de la sélection entièrement visible en 720p · "+str(action.name))
-			await capture("37-candidats-redimensionne-1280x720")
-			for pressed in [true,false]:
-				var escape := InputEventKey.new()
-				escape.keycode=KEY_ESCAPE
-				escape.pressed=pressed
-				root.push_input(escape,true)
-			await settle()
-			check(app.find_child("LineupCandidates",true,false)==null,"Échap libère complètement le sélecteur de poste")
-			root.size=Vector2i(2560,1440)
-			await settle()
-		app._clear_dialogs()
+		var candidates_panel := app.find_child("TacticsCandidates",true,false) as Control
+		check(candidates_panel!=null and candidates_panel.is_visible_in_tree(),"Candidats présents en 720p")
+		await capture("37-candidats-1280x720")
+		root.size=Vector2i(2560,1440)
 		await settle()
+		# Consignes : « Modifier → » ouvre l'onglet Consignes de la préparation (attaque et défense).
 		var original_defense:String=app.model.tactics.defense
-		var attack:Button=app.find_child("TacticsAttack_occupation",true,false)
-		await click(attack)
-		await worker()
-		check(app.bridge.last_response_ok and app.model.tactics.attack=="occupation","Le bouton d’attaque commande réellement le moteur")
+		var modify := app.find_child("TacticsPlanModify",true,false) as Button
+		check(modify!=null,"Résumé du plan avec « Modifier → »")
+		if modify!=null: modify.pressed.emit()
+		await settle()
+		check(app.route=="Préparation","« Modifier → » ouvre les consignes")
+		var attack: Button=app.find_child("PreparationAttack_occupation",true,false)
+		check(attack!=null,"Choix d’attaque dans les consignes")
+		if attack!=null:
+			attack.pressed.emit()
+			await worker()
+		check(app.bridge.last_response_ok and app.model.tactics.attack=="occupation","Le choix d’attaque commande réellement le moteur")
 		check(app.model.tactics.defense==original_defense,"Changer l’attaque conserve la défense")
-		var paths := app.find_child("TacticsOccupationOverlay",true,false) as TextureRect
-		check(paths!=null and paths.texture!=null and paths.mouse_filter==Control.MOUSE_FILTER_IGNORE and paths.focus_mode==Control.FOCUS_NONE,"Les trajectoires Occupation sont un calque natif transparent aux actions")
-		reference_rects({"TacticsOccupationOverlay":Rect2(304,509,1022,626)})
-		var briefing := app.find_child("Art_tactics_briefing",true,false) as TextureRect
-		var crop: AtlasTexture = briefing.texture as AtlasTexture if briefing!=null else null
-		check(crop!=null and absf(crop.region.get_center().y-crop.atlas.get_height()/2.0)<.1,"Le briefing reprend le cadrage vertical centré du SVG")
-		var summary := app.find_child("TacticsSummaryText2",true,false) as Label
-		var summary_action := app.find_child("TacticsSummary2",true,false) as Button
-		var attacks: Array = app.model.tactics.attacks
-		var description: String = attacks[attacks.find_custom(func(option: Dictionary): return option.id=="occupation")].description
-		check(summary!=null and summary_action!=null and summary.text==description and summary.max_lines_visible==2 and summary_action.tooltip_text.contains(description),"L’aperçu et l’infobulle conservent le texte complet du plan")
-		await capture("03b-tactique-occupation-2560x1440")
-		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await footer_feedback()
-		app.find_child("TacticsSummary1",true,false).pressed.emit()
-		await settle()
-		var pressure:Button=app.find_child("TacticsDefense_pression",true,false)
-		check(pressure!=null,"Sous-menu défensif fonctionnel")
-		if pressure!=null:pressure.pressed.emit();await worker()
+		var pressure: Button=app.find_child("PreparationDefense_pression",true,false)
+		check(pressure!=null,"Choix défensif dans les consignes")
+		if pressure!=null:
+			pressure.pressed.emit()
+			await worker()
 		check(app.bridge.last_response_ok and app.model.tactics.defense=="pression" and app.model.tactics.attack=="occupation","Consigne défensive enregistrée sans écraser l’attaque")
+		app._navigate("Composition")
+		await settle()
+		var plan_summary := app.find_child("TacticsPlanSummary",true,false) as Label
+		check(plan_summary!=null and plan_summary.text.begins_with("Plan :"),"Résumé du plan sur la composition")
+		await capture("03b-tactique-plan-2560x1440")
+		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await footer_feedback()
 		app.find_child("LineupSlot01",true,false).pressed.emit()
 		await settle()
-		check(app.selected_slot==0,"Le premier appui sélectionne le maillot")
-		app.find_child("LineupSlot01",true,false).pressed.emit()
-		await settle()
-		check(app.find_child("LineupCandidates",true,false)!=null,"Le maillot ouvre les choix du poste (second appui sur le numéro sélectionné)")
+		check(app.selected_slot==0,"Le premier appui sélectionne le n° 1")
+		check(app.find_child("TacticsFrontRowRule",true,false)!=null,"Encart « Première ligne formée » sur le n° 1")
 		var eligibility:Array=app.model.selection.slots[0].eligibleIds
 		var chosen:String=""
-		for candidate:Button in (app.find_child("LineupCandidatesList",true,false).get_children() if app.find_child("LineupCandidatesList",true,false)!=null else []):
-			var player_id:String=candidate.get_meta("player_id")
-			check(candidate.disabled==(player_id not in eligibility),"Qualifications réelles conservées : "+player_id)
-			if chosen.is_empty() and not candidate.disabled and player_id!=str(app.model.selection.slots[0].playerId):chosen=player_id
+		var candidate_rows := app.find_child("TacticsCandidateRows",true,false)
+		for candidate in (candidate_rows.get_children() if candidate_rows!=null else []):
+			if not candidate is Button: continue
+			var player_id:String=candidate.get_meta("player_id","")
+			var status := candidate.find_child("TacticsCandidateStatus",true,false) as Label
+			check(status!=null and not status.text.is_empty(),"Statut écrit pour chaque candidat : "+player_id)
+			if chosen.is_empty() and player_id in eligibility and player_id!=str(app.model.selection.slots[0].playerId):chosen=player_id
 		check(not chosen.is_empty(),"Autre joueur qualifié disponible dans la fixture")
 		if not chosen.is_empty():
-			app.find_child("LineupPlayer"+chosen.replace(":","_"),true,false).pressed.emit()
+			(app.find_child("TacticsCandidate_"+chosen.validate_node_name(),true,false) as Button).pressed.emit()
 			await worker()
 			check(app.bridge.last_response_ok and str(app.model.selection.slots[0].playerId)==chosen,"Affectation réelle du joueur qualifié")
-			# L'affectation ferme le sélecteur : le numéro déjà sélectionné le rouvre, puis « Consignes du joueur »
-			# (TacticsIndividualInstructions) ouvre les consignes individuelles (le bouton TacticsChoosePlayer n'existe plus).
-			var reopen: Button = app.find_child("LineupSlot01",true,false) as Button
-			if reopen != null:
-				reopen.pressed.emit()
-				await settle()
-				if app.find_child("LineupCandidates",true,false) == null:
-					reopen.pressed.emit()
-					await settle()
-			var individual_instructions: Button = app.find_child("TacticsIndividualInstructions",true,false) as Button
-			check(individual_instructions != null, "Le sélecteur de poste propose les consignes du joueur")
-			if individual_instructions != null:
-				individual_instructions.pressed.emit()
+			check(not visible_window(),"Affectation sans fenêtre")
+			# Charge individuelle : depuis la fiche du joueur (clic sur son nom sur le terrain).
+			var name_link := app.find_child("TacticsName01",true,false) as Button
+			check(name_link!=null,"Nom du n° 1 cliquable")
+			# La fiche s'ouvre sur sa vue d'ensemble (un onglet Repères a été visité plus haut).
+			app.management_ui.immersive_player_tab=0
+			if name_link!=null: name_link.pressed.emit()
+			await settle()
+			check(app.route=="Effectif" and app.get_meta("immersive08_full_player",false) and app.selected_player==chosen,"Clic sur le nom : fiche complète du joueur")
+			var load_action := app.find_child("PlayerLoad",true,false) as Button
+			check(load_action!=null,"La fiche propose la charge individuelle")
+			if load_action!=null:
+				load_action.pressed.emit()
 				await settle()
 			var recovery:Button=app.find_child("IndividualLoad_repos",true,false)
 			check(recovery!=null,"Sous-menu de consignes individuelles illustré")
