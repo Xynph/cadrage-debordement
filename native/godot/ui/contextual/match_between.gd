@@ -1114,6 +1114,35 @@ static func _zone(x: float, possession: int) -> String:
 	if reste <= 78.0: return "dans son camp"
 	return "dans ses 22 mètres"
 
+## Libellés d'arrêt de jeu de la ligne d'état (fait montré, avec l'équipe qu'il concerne).
+const ETATS_ARRET := {"try": "Essai — %s", "transformation": "Transformation — %s", "goal": "Tir au but — %s", "miss": "Tir au but — %s",
+	"lineout": "Touche pour %s", "scrum": "Mêlée pour %s"}
+
+## Ligne d'état du haut pour un fait montré : arrêt de jeu (« Essai — X », « Touche pour X »,
+## « Mêlée pour X ») ou possession et territoire (« X a le ballon dans son camp »).
+## `camp` : équipe concernée (0/1) ; `x` : position du ballon (NAN : inconnue). Règle commune à la
+## 3D (plan affiché, match_temps_forts.gd) et au terrain 2D de l'écran intermédiaire.
+static func etat_du_fait(kind: String, camp: int, x: float, equipes: Array) -> String:
+	var club := ""
+	if camp in [0, 1] and camp < equipes.size() and equipes[camp] is Dictionary: club = S.G.club_name(equipes[camp])
+	if ETATS_ARRET.has(kind):
+		var modele := str(ETATS_ARRET[kind])
+		return modele % club if not club.is_empty() else modele.replace(" — %s", "").replace(" pour %s", "")
+	if club.is_empty(): return "Le match"
+	var texte := "%s a le ballon" % club
+	if not is_nan(x): texte += " " + _zone(x, camp)
+	return texte
+
+## Ligne d'état d'un fait du terrain 2D (élément de direct.deroule), « » si inexploitable.
+static func etat_du_deroule(item: Dictionary, equipes: Array) -> String:
+	var scene: Variant = item.get("scene")
+	if not scene is Dictionary: return ""
+	var camp: Variant = scene.get("possession", item.get("equipe", -1))
+	if not (camp is int or camp is float): camp = item.get("equipe", -1)
+	var b: Variant = scene.get("ballon")
+	var x: float = float(b[0]) if b is Array and (b as Array).size() >= 1 and (b[0] is float or b[0] is int) else NAN
+	return etat_du_fait(str(item.get("kind", scene.get("kind", ""))), int(camp) if (camp is int or camp is float) else -1, x, equipes)
+
 func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appliquer: Callable) -> void:
 	if not is_node_ready(): return
 	_dernier = [model, live, direct, appliquer]
@@ -1173,6 +1202,11 @@ func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 	if not etat_force.is_empty(): etat.text = etat_force
 	elif live.get("finished", false): etat.text = "Match terminé"
 	elif live.get("atBreak", false): etat.text = "Mi-temps · on change de camp" if live.get("meteo") is Dictionary and live.meteo.get("ventDos") is Array else "Mi-temps"
+	elif terrain != null and terrain.en_retard():
+		# Le terrain rejoue des faits en retard sur la borne : la ligne suit le dernier fait joué
+		# (celui du bandeau du fil), pas le dernier fait de la borne.
+		var montre := etat_du_deroule(terrain.joue, equipes)
+		etat.text = montre if not montre.is_empty() else "Le match"
 	elif (possession is float or possession is int) and equipes.size() >= 2:
 		var cote := clampi(int(possession), 0, 1)
 		etat.text = "%s a le ballon %s" % [S.G.club_name(equipes[cote]), _zone(float(direct.get("zone", {}).get("x", 50.0)), cote)]
@@ -1181,6 +1215,8 @@ func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 ## Un fait vient d'être joué sur le terrain : le fil le montre, le score le suit.
 func _fait_joue(item: Dictionary) -> void:
 	_remplir_fil()
+	# La ligne d'état suit le fait joué (même instant que le bandeau du fil).
+	if not _dernier.is_empty() and is_instance_valid(etat): _etat(_dernier[1], _dernier[2], _equipes)
 	var marque: Variant = item.get("score")
 	if marque is Array and (marque as Array).size() == 2: score_joue.emit(marque)
 
