@@ -5,6 +5,8 @@ const Decisions = preload("res://ui/decision_views.gd")
 const MatchContext = preload("res://ui/preparation_match_context.gd")
 const Reprise = preload("res://ui/reprise_view.gd")
 const C = preload("res://ui/immersive08/components.gd")
+const P = preload("res://ui/immersive08/projection.gd")
+const Briefing = preload("res://ui/preparation_briefing.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 const TAB_CAPTIONS = ["Dossier adverse et repères du staff", "Consignes avec et sans le ballon", "Entraînement · le travail de la semaine"]
 ## Les trois charges de la séance collective : [mode, titre, effet, niveau de charge, image].
@@ -70,7 +72,9 @@ func _build() -> void:
 		sections.append(section)
 	if Reprise.relevant(app.model): Reprise.build(app, sections[0])
 	Decisions.dossier_summary(app, sections[0])
-	sections[0].add_child(_filler("city"))
+	# Le bas de l'onglet Dossier porte des repères utiles ; la photo du club se réduit à une bannière.
+	_week_board(sections[0])
+	sections[0].add_child(_strip("city"))
 	_consigne(sections[1])
 	_training(sections[2])
 	add_child(match_context)
@@ -234,6 +238,112 @@ func _filler(kind: String) -> Control:
 	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	G.fill(picture, true)
 	return picture
+
+## Bannière photo basse (hauteur fixe) : l'ambiance du club sans écraser les repères de la semaine.
+func _strip(kind: String) -> Control:
+	var picture := G.club_picture(app.model.club, kind, true)
+	picture.name = "PreparationStrip_" + kind
+	picture.custom_minimum_size = Vector2(0, 56)
+	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	G.fill(picture)
+	return picture
+
+## Repères de la semaine : ce que le staff a relevé avant le coup d'envoi, l'état du XV et la forme adverse.
+## Lecture seule : chaque repère ouvre l'écran concerné, aucune commande sportive n'est envoyée.
+func _week_board(parent: Control) -> void:
+	var board := G.panel(parent)
+	board.get_parent().name = "PreparationWeekBoard"
+	G.fill(board.get_parent(), true)
+	var columns := G.h(22)
+	G.fill(columns, true)
+	board.add_child(columns)
+	# Colonne gauche : les repères du staff (trois au plus, la liste complète reste à un clic).
+	var staff := G.v(6)
+	staff.name = "PreparationStaffNotes"
+	G.fill(staff, false, 1.5)
+	columns.add_child(staff)
+	staff.add_child(G.section("Avant le coup d’envoi", "Les repères du staff pour cette semaine"))
+	var checks: Array = Briefing.project(app.model).checks
+	for index in mini(3, checks.size()):
+		var check: Dictionary = checks[index]
+		var row := G.h(10)
+		row.name = "PreparationStaffNote_" + str(check.id)
+		staff.add_child(row)
+		var mark := ColorRect.new()
+		mark.color = _level_color(str(check.get("level", "info")))
+		mark.custom_minimum_size = Vector2(4, 24)
+		mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(mark)
+		var open := G.button(str(check.title) + "  →", Briefing.open_action.bind(app, str(check.action), func(): _choose(1)))
+		open.name = "PreparationStaffOpen_" + str(check.id)
+		open.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		open.custom_minimum_size.x = 230
+		open.tooltip_text = str(check.caption)
+		open.accessibility_name = str(check.title) + " · " + str(check.detail)
+		row.add_child(open)
+		var detail := G.wrap(check.detail, 12)
+		detail.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		G.fill(detail)
+		row.add_child(detail)
+	if checks.is_empty(): staff.add_child(G.wrap("Rien à signaler : le staff n’a relevé aucun point avant la rencontre.", 13))
+	if checks.size() > 3:
+		var all := G.reading_button(G.button("Tous les repères (%d)  →" % checks.size(), Briefing.open_all.bind(app, func(): _choose(1))), 160)
+		all.name = "PreparationStaffAll"
+		all.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		staff.add_child(all)
+	# Colonne droite : le XV du club et l'adversaire en chiffres.
+	var squad := G.v(8)
+	squad.name = "PreparationSquadPulse"
+	G.fill(squad)
+	columns.add_child(squad)
+	squad.add_child(G.section("Ton XV cette semaine", "Feuille, fraîcheur et intentions de jeu"))
+	var metrics := G.h(14)
+	squad.add_child(metrics)
+	var valid: bool = app.model.get("selection", {}).get("valid", false)
+	metrics.add_child(G.metric("Valide" if valid else "À revoir", "feuille de match", G.GOOD if valid else G.ALERT))
+	metrics.add_child(G.metric(P.lineup_condition(app.model), "condition du XV", G.GOOD))
+	var squad_list: Array = app.model.get("squad", [])
+	var injured: int = squad_list.filter(func(player: Dictionary): return float(player.get("injury", 0)) > 0).size()
+	metrics.add_child(G.metric(G.n(injured), "blessé" + ("s" if injured > 1 else ""), G.ALERT if injured > 0 else G.GOOD))
+	var tactics: Dictionary = app.model.get("tactics", {})
+	squad.add_child(G.wrap("Avec le ballon · %s     Sans le ballon · %s" % [_tactic_label(tactics.get("attacks", []), tactics.get("attack")), _tactic_label(tactics.get("defenses", []), tactics.get("defense"))], 13, G.INK))
+	squad.add_child(_opponent_form())
+
+## Forme de l'adversaire : cinq derniers résultats publiés dans le dossier du staff.
+func _opponent_form() -> Control:
+	var row := G.h(6)
+	row.name = "PreparationOpponentForm"
+	var report: Variant = app.model.get("decisions", {}).get("preparation")
+	var recent: Array = report.get("recent", []) if report is Dictionary else []
+	var caption := G.label("FORME ADVERSE", 11, G.MUTED)
+	caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(caption)
+	var shown := 0
+	for result: Dictionary in recent.slice(0, 5):
+		var score: Array = result.get("score", [])
+		if score.size() != 2: continue
+		var side := int(result.get("side", 0))
+		var us := int(score[side])
+		var them := int(score[1 - side])
+		var letter := "V" if us > them else "D" if us < them else "N"
+		var chip := PanelContainer.new()
+		chip.custom_minimum_size = Vector2(26, 24)
+		chip.add_theme_stylebox_override("panel", G.Base.box(G.ALERT if letter == "D" else G.GOLD if letter == "N" else G.GOOD, "chip"))
+		var mark := G.label(letter, 13, G.WHITE, true)
+		mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		chip.add_child(mark)
+		row.add_child(chip)
+		shown += 1
+	if shown == 0: row.add_child(G.wrap("Aucun résultat adverse publié pour l’instant." if recent.is_empty() else "Résultats adverses sans score publié.", 12))
+	return row
+
+func _level_color(level: String) -> Color:
+	return G.ALERT if level == "urgent" else G.GOLD if level == "important" else G.GOOD
+
+func _tactic_label(options: Array, id: Variant) -> String:
+	for entry: Variant in options:
+		if entry is Dictionary and entry.get("id") == id: return str(entry.get("label", "—"))
+	return "—"
 
 ## Bannière photo sur toute la largeur : chapitre, onglet ouvert, puis la barre d'onglets (rendue au retour).
 func _banner() -> VBoxContainer:
