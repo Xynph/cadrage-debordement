@@ -38,8 +38,11 @@ avec le lien), corriger, retirer `train-echec` et reposer `train`.
    attend le train suivant ; rouge, on recoupe, jusqu'à une PR seule qui passe en
    `train-echec`.
 
-Prérequis (coché par Léo le 18/11) : Settings → Actions → General → « Allow GitHub
-Actions to create and approve pull requests ». Ni le ruleset ni `tests.yml` ne changent.
+Prérequis : secret **`TRAIN_TOKEN`** (Settings → Secrets and variables → Actions) = jeton
+personnel *fine-grained* limité à ce dépôt, permissions Contents, Pull requests, Issues et
+Actions en lecture/écriture (Metadata en lecture), validité 90 jours — à renouveler avant
+l'échéance. Sans lui le train s'arrête avec un message clair. Ni le ruleset ni `tests.yml`
+ne changent.
 
 ## Limites connues
 
@@ -58,3 +61,4 @@ Actions to create and approve pull requests ». Ni le ruleset ni `tests.yml` ne 
   elle-même rendait « Validation CI » en attente : la fusion lancée sur la batterie
   séparée était bloquée. Correctif : la PR du train est ouverte d'abord et sa propre
   batterie fait foi.
+- 19/11/2026 : fusion de la PR du train refusée avec le jeton du dépôt (CI de la PR en `action_required`) ; passage au jeton personnel `TRAIN_TOKEN`.
