@@ -814,6 +814,7 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 		management_ui.erase("fiche_joueur")
 		# Sous-page de la Composition (tireurs, espoir, renforts) : le menu rouvre l'écran lui-même.
 		management_ui.erase("composition_page")
+		management_ui.erase("charge_joueur")
 		if target == "Préparation" and management_ui.get("preparation", {}).get("tab", 0) == 2:
 			management_ui.preparation.tab = 0
 	route = target

@@ -49,7 +49,10 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 	var entry := {"route":route, "player":player_id if route == "Effectif" else "", "staff":staff_club if route == "Staff" else -1, "market":""}
 	entry.target = _current_target(route)
 	entry.detail = _reading_location(route)
-	if route == "Effectif": entry.full_player = app.get_meta("immersive08_full_player", false)
+	if route == "Effectif":
+		entry.full_player = app.get_meta("immersive08_full_player", false)
+		# Sous-page « Charge individuelle » de la fiche : une étape d'historique distincte.
+		entry.charge = str(app.management_ui.get("charge_joueur", ""))
 	if route == "Préparation": entry.preparation_tab = int(app.management_ui.get("preparation", {}).get("tab", 0))
 	if route == "Recrutement": entry.market = str(app.management_ui.get("market", {}).get("navigation_id", ""))
 	# Fiche d'une piste ou d'un Espoir : une étape d'historique distincte de la liste.
@@ -510,6 +513,8 @@ func _travel(direction: int) -> void:
 	if entry.route == "Effectif":
 		app.selected_player = entry.player
 		app.set_meta("immersive08_full_player", entry.get("full_player", false))
+		if str(entry.get("charge", "")).is_empty(): app.management_ui.erase("charge_joueur")
+		else: app.management_ui.charge_joueur = str(entry.charge)
 		app.management_ui.roster = entry.roster.duplicate(true)
 		app.management_ui.profile_scroll = entry.profile_scroll
 		app.roster_filter = entry.roster.family

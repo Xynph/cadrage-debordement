@@ -24,7 +24,6 @@ const Cover = preload("res://ui/lineup_cover.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const PersonName = preload("res://ui/person_name.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
-const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 ## Hauteur du gabarit (unités) ; largeur 2248 comme toutes les pages de la coque.
 const HAUTEUR := 1305.0
 const TERRAIN := Rect2(0, 246, 990, 693)
@@ -60,6 +59,7 @@ static func build(app: Control, canvas: Control = null) -> Control:
 	var sous := SousPages.actuelle(app)
 	if not sous.is_empty():
 		SousPages.build(app, page, sous)
+		Kit.angles_droits(page)
 		return page
 	var choisir_cb := func(slot: int): choisir(app, slot)
 	var clavier_cb := func(event: InputEvent, slot: int, carte: Control): clavier(app, event, slot, carte)
@@ -73,10 +73,11 @@ static func build(app: Control, canvas: Control = null) -> Control:
 	D.line(page, Vector2(0, 238), Vector2(TERRAIN.size.x, 238), Charte.FILET)
 	Terrain.build(app, page, TERRAIN, choisir_cb, clavier_cb, avis, bleus)
 	Banc.build(app, page, BANC, choisir_cb, clavier_cb, avis, bleus, premiere)
-	Impact.build(app, page, IMPACT, _adversaire(app))
+	Impact.build(app, page, IMPACT, _adversaire(app), choisir_cb)
 	var alertes := _alertes(app)
 	var bloc := Candidats.build(app, page, Rect2(0, CANDIDATS_Y, 2248, HAUTEUR - CANDIDATS_Y), premiere, choisir_cb, alertes.size() * 56.0)
 	for i in alertes.size(): (alertes[i] as Callable).call(bloc, 52.0 + i * 56.0)
+	Kit.angles_droits(page)
 	_restore_focus.call_deferred(app)
 	return page
 
@@ -106,7 +107,7 @@ static func _entete(app: Control, page: Control) -> void:
 	var titre := Kit.titre(page, 0, 40, "Composition", 38, 500)
 	titre.name = "CompositionTitle"
 	var largeur_titre := Charte.TITRE_GRAS_ITALIQUE.get_string_size("COMPOSITION", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(38))).x / C.density
-	if P.is_derby(app.model): D.derby_chip(page, Rect2(largeur_titre + 18, 12, 98, 29))
+	if P.is_derby(app.model): Kit.puce(page, Rect2(largeur_titre + 18, 14, 90, 26), "DERBY", Charte.PANNEAU_3, Charte.IVOIRE, "DerbyTag").tooltip_text = "Derby : une rivalité ancienne, plus de tension sur le terrain et dans les tribunes."
 	var affiche := _affiche(app)
 	var equipes := Kit.texte(page, 0, 72, affiche[0], Charte.IVOIRE, 0, 18)
 	equipes.name = "TacticsFixture"
@@ -191,11 +192,33 @@ static func _validite(app: Control, page: Control) -> void:
 	if not bas.is_empty() and curseur.x < 1500:
 		D.line(page, Vector2(curseur.x + 4, ligne - 18), Vector2(curseur.x + 5, ligne + 4), Charte.FILET)
 		curseur.x += 16
-		ajouter.call("! %d avertissement%s" % [bas.size(), "s" if bas.size() > 1 else ""], Charte.D, true, "TacticsWarnings")
+		# Menu déroulant (exception autorisée) : chaque joueur sous 80 %, l'entrée montre les candidats de son poste.
+		var avertissements := "! %d avertissement%s ▾" % [bas.size(), "s" if bas.size() > 1 else ""]
+		var menu := MenuButton.new()
+		menu.name = "TacticsWarnings"
+		menu.text = avertissements
+		menu.flat = true
+		menu.add_theme_font_override("font", Kit.texte_gras())
+		menu.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
+		for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: menu.add_theme_color_override(couleur, Charte.D)
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 2)
+		focus.set_border_width_all(2)
+		menu.add_theme_stylebox_override("focus", focus)
+		Impact._styler_menu(menu.get_popup())
+		for i in bas.size():
+			menu.get_popup().add_item("%s (n° %d) · %d %% de condition" % [Kit.casse(str(bas[i][1].get("name", ""))), int(bas[i][0]) + 1, int(bas[i][2])], i)
+		menu.get_popup().id_pressed.connect(func(i: int): choisir(app, int(bas[i][0])))
+		page.add_child(menu)
+		var large := Kit.largeur(avertissements, 18) + 16
+		D.place(menu, Rect2(curseur.x - 6, ligne - 28, large, 38))
+		curseur.x += large + 4
+		# Premier avertissement : le nom ouvre la fiche (survol = mini-fiche), « voir le poste » ses candidats.
 		var premier: Array = bas[0]
-		var texte := "%s (n° %d) à %d %% de condition →" % [PersonName.initial_and_surname(str(premier[1].get("name", ""))), int(premier[0]) + 1, int(premier[2])]
-		var lien := Kit.lien(page, Rect2(curseur.x - 6, ligne - 28, 0, 38), texte, func(): choisir(app, int(premier[0])), "TacticsWarning")
-		lien.add_theme_color_override("font_color", Charte.IVOIRE_2)
+		var nom_joueur := Kit.casse(str(premier[1].get("name", "")), true)
+		Kit.nom(app, page, Rect2(curseur.x, ligne - 24, Kit.largeur(nom_joueur, 18) + 4, 32), nom_joueur, str(premier[1].get("id", "")), "TacticsWarningName", Charte.IVOIRE, 18)
+		curseur.x += Kit.largeur(nom_joueur, 18) + 8
+		ajouter.call("(n° %d) à %d %% de condition" % [int(premier[0]) + 1, int(premier[2])], Charte.IVOIRE_2, false, "TacticsWarningDetail")
+		Kit.lien(page, Rect2(curseur.x - 6, ligne - 28, 0, 38), "voir le poste →", func(): choisir(app, int(premier[0])), "TacticsWarning")
 	# Quota du championnat (JIFF / EQP), à droite de la ligne.
 	var quota: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
 	if bool(quota.get("applies", false)):
@@ -344,7 +367,7 @@ static func _focus_candidat(app: Control) -> void:
 			FocusLater.grab(ligne)
 			return
 
-## Clavier sur une place (terrain ou banc) : Espace prend puis pose (échange), Échap annule, Suppr libère,
+## Clavier sur une place (terrain ou banc) : Espace prend puis pose (échange), Échap annule, Suppr libère (confirmation),
 ## Maj+Entrée ouvre la fiche, I montre la mini-fiche. Alternative complète au glisser-déposer (K6).
 static func clavier(app: Control, event: InputEvent, slot: int, carte: Control) -> void:
 	var touche := event as InputEventKey
@@ -390,7 +413,7 @@ static func clavier(app: Control, event: InputEvent, slot: int, carte: Control) 
 		KEY_DELETE:
 			if person.is_empty() or not Selection.editable(app): return
 			carte.accept_event()
-			Candidats.activer(app, id, slot)
+			Candidats.liberer(app, id, slot)
 		KEY_I:
 			if person.is_empty() or touche.shift_pressed: return
 			carte.accept_event()
@@ -423,24 +446,7 @@ static func validate(app: Control) -> void:
 	var corriger := app.root_content.find_child("TacticsCorriger", true, false) as Control
 	if corriger != null: FocusLater.grab(corriger)
 
-## Consignes individuelles d'un joueur (charge d'entraînement), ouvertes depuis la fiche joueur.
+## Charge individuelle d'un joueur, ouverte depuis la fiche joueur : sous-page de la fiche (fiche_charge.gd), plus une
+## fenêtre (décision de Léo du 19/11/2026).
 static func _individual(app:Control,player:Dictionary) -> void:
-	app._clear_dialogs()
-	var popup:=AcceptDialog.new();popup.name="IndividualInstructions";app._prepare_dialog(popup,740);popup.title="Consignes · "+str(player.name)
-	var body:=C.v(12);popup.add_child(body)
-	body.add_child(C.photo("medical-recovery" if float(player.get("injury",0))>0 else "training-session",Vector2(680,170)))
-	body.add_child(C.wrap(str(player.pos)+" · Condition "+G.n(player.get("condition",0))+" % · Charge "+G.n(player.get("physicalLoad",0))+" / 100",22,C.IVORY,true))
-	var load_reason: String = app.SquadViews.player_load_unavailable_reason(app)
-	var load_hint := C.wrap(load_reason if not load_reason.is_empty() else "La charge individuelle sera appliquée à la prochaine préparation.",18)
-	if not load_reason.is_empty(): load_hint.name = "PlayerLoadUnavailableReason"
-	body.add_child(load_hint)
-	for pair in [["collective","Suivre le collectif"],["repos","Récupération"],["normal","Charge normale"],["intense","Travail intense"]]:
-		var action:=C.button(pair[1],func():popup.queue_free();app._command("set_player_load",{"playerId":player.id,"mode":pair[0]}),player.get("loadPlan","collective")==pair[0],app.accent)
-		action.name = "IndividualLoad_" + pair[0]
-		action.disabled = not load_reason.is_empty()
-		if action.disabled: action.focus_mode = Control.FOCUS_NONE
-		body.add_child(action)
-	popup.confirmed.connect(popup.queue_free)
-	popup.canceled.connect(popup.queue_free)
-	app.add_child(popup)
-	Dialogs.show_centered(popup,Vector2i(740,620))
+	load("res://ui/immersive08/fiche_charge.gd").ouvrir(app,player)

@@ -53,15 +53,11 @@ static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary
 	D.place(recherche, Rect2(w - 22 - 190, 10, 190, 34))
 	var filtre := CheckBox.new()
 	filtre.name = "TacticsCandidateOutsideOnly"
-	filtre.text = "Hors feuille seulement"
+	# Petite fenêtre : libellé court, la case reste visible avec son état (carré plein si cochée).
+	filtre.text = "Hors feuille" if C.dense() else "Hors feuille seulement"
 	filtre.button_pressed = bool(etat.hors_feuille)
-	filtre.add_theme_font_override("font", Charte.TEXTE)
-	filtre.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
-	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: filtre.add_theme_color_override(couleur, Charte.IVOIRE_2)
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 2)
-	focus.set_border_width_all(2)
-	filtre.add_theme_stylebox_override("focus", focus)
-	for etat_case in ["normal", "hover", "pressed", "hover_pressed", "disabled"]: filtre.add_theme_stylebox_override(etat_case, StyleBoxEmpty.new())
+	filtre.accessibility_name = "Hors feuille seulement"
+	Kit.styler_case(filtre)
 	bloc.add_child(filtre)
 	D.place(filtre, Rect2(w - 22 - 190 - 16 - 250, 10, 250, 34))
 	var compte := Kit.etiquette(bloc, w - 22 - 190 - 16 - 250 - 16, 32, "", 520, true)
@@ -176,12 +172,13 @@ static func _remplir(app: Control, lignes: Control, compte: Label, slot: int, la
 	qualifies.sort_custom(tri)
 	autres.sort_custom(tri)
 	var toutes: Array = qualifies + autres
-	compte.text = ("%d candidat%s · %d non qualifié%s plus bas" % [qualifies.size(), "s" if qualifies.size() > 1 else "", autres.size(), "s" if autres.size() > 1 else ""]).to_upper()
+	compte.text = ("%d candidat%s · %d plus bas" % [qualifies.size(), "s" if qualifies.size() > 1 else "", autres.size()] if C.dense() else "%d candidat%s · %d non qualifié%s plus bas" % [qualifies.size(), "s" if qualifies.size() > 1 else "", autres.size(), "s" if autres.size() > 1 else ""]).to_upper()
 	lignes.custom_minimum_size = Vector2(C.px(largeur), C.px(maxf(LIGNE, toutes.size() * LIGNE)))
 	if toutes.is_empty():
 		Kit.texte(lignes, 8, 23, "Aucun joueur ne correspond.", Charte.IVOIRE_2, largeur - 16)
 	for i in toutes.size():
 		_ligne(app, lignes, i, toutes[i].person, toutes[i].statut, slot, largeur, colonnes)
+	Kit.angles_droits(lignes)
 
 static func _valeur(app: Control, person: Dictionary, slot: int, cle: String) -> Variant:
 	match cle:
@@ -229,7 +226,8 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 	if s.couleur == Charte.D: texte.add_theme_font_override("font", Kit.texte_gras())
 	var action := str(s.action)
 	if not action.is_empty() and Selection.editable(app):
-		var lien := Kit.lien(bouton, Rect2(colonnes.action[0] + colonnes.action[1], 0, 0, LIGNE), action, func(): activer(app, id, slot), "LineupRemove" if actuel else "TacticsCandidateAction_" + id.validate_node_name(), 18, true)
+		var quoi: Callable = (func(): liberer(app, id, slot)) if actuel else (func(): activer(app, id, slot))
+		var lien := Kit.lien(bouton, Rect2(colonnes.action[0] + colonnes.action[1], 0, 0, LIGNE), action, quoi, "LineupRemove" if actuel else "TacticsCandidateAction_" + id.validate_node_name(), 18, true)
 		lien.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		lien.focus_mode = Control.FOCUS_NONE
 		lien.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -247,9 +245,8 @@ static func activer(app: Control, id: String, slot: int) -> void:
 	var person := Selection.player(app.model, id)
 	var s := statut(app, person, slot)
 	if Selection.source(app.model, id) == slot:
-		lecture_tactique.message = "Poste n° %d libéré : %s rejoint le groupe." % [slot + 1, str(person.get("name", ""))]
-		lecture_tactique.focus = "LineupSlot%02d" % (slot + 1)
-		app._command("set_lineup", {"playerId":null, "slot":slot})
+		lecture_tactique.message = "%s tient déjà le n° %d : « Libérer » (ou Suppr sur sa carte) le retire de la feuille." % [str(person.get("name", "")), slot + 1]
+		_message(app)
 		return
 	if not s.eligible:
 		lecture_tactique.message = "%s ne peut pas tenir le n° %d : %s." % [str(person.get("name", "")), slot + 1, str(s.texte).to_lower().trim_prefix("✚ ").trim_prefix("! ")]
@@ -258,6 +255,21 @@ static func activer(app: Control, id: String, slot: int) -> void:
 	lecture_tactique.message = "%s au n° %d." % [str(person.get("name", "")), slot + 1]
 	lecture_tactique.focus = "LineupSlot%02d" % (slot + 1)
 	Selection.apply(app, Selection.payload(app, id, Selection.source(app.model, id)), slot)
+
+## « Libérer » (lien du titulaire, Suppr sur sa carte) : petite confirmation autorisée par Léo (19/11/2026), puis la
+## commande set_lineup du moteur vide la place.
+static func liberer(app: Control, id: String, slot: int) -> void:
+	if not Selection.editable(app) or Selection.source(app.model, id) != slot: return
+	var nom := str(Selection.player(app.model, id).get("name", ""))
+	app.confirm("Libérer le n° %d ?" % (slot + 1), "%s quitte la feuille et rejoint le groupe ; le n° %d reste vide jusqu’à ton prochain choix." % [Kit.casse(nom), slot + 1], func():
+		var lecture_tactique := Selection.state(app)
+		lecture_tactique.message = "Poste n° %d libéré : %s rejoint le groupe." % [slot + 1, Kit.casse(nom)]
+		lecture_tactique.focus = "LineupSlot%02d" % (slot + 1)
+		app._command("set_lineup", {"playerId":null, "slot":slot}), true)
+	for enfant in app.get_children():
+		if enfant is ConfirmationDialog and enfant.visible:
+			enfant.name = "LineupReleaseConfirm"
+			enfant.get_ok_button().text = "LIBÉRER"
 
 static func _message(app: Control) -> void:
 	var label := app.root_content.find_child("TacticsCandidateMessage", true, false) as Label
@@ -303,9 +315,15 @@ static func _encart(app: Control, bloc: Control, zone: Rect2, slot: int, premier
 		for j in 2:
 			var place: int = int(poste.titulaire) if j == 0 else int(poste.remplacant)
 			var person := Selection.occupant(app.model, place)
-			var nom := ("%d · %s" % [place + 1, PersonName.initial_and_surname(str(person.get("name", "")))]) if not person.is_empty() else "%d · place vide" % (place + 1)
-			var lien := Kit.lien(cadre, Rect2(xs[j + 1] - 6, haut, 220, LIGNE), nom, func(): choisir.call(place), "TacticsFrontRowSlot%02d" % (place + 1), 18)
-			lien.tooltip_text = "Voir les candidats du n° %d" % (place + 1)
+			# Le numéro montre les candidats de la place ; le nom ouvre la fiche (survol = mini-fiche).
+			var numero := Kit.lien(cadre, Rect2(xs[j + 1] - 6, haut, 0, LIGNE), "%d ·" % (place + 1), func(): choisir.call(place), "TacticsFrontRowSlot%02d" % (place + 1), 18)
+			numero.accessibility_name = "Voir les candidats du n° %d" % (place + 1)
+			var x_nom: float = xs[j + 1] - 6 + numero.size.x / C.density
+			if person.is_empty():
+				Kit.texte(cadre, x_nom, haut + 23, "place vide", Charte.IVOIRE_2, 160)
+			else:
+				var court := Kit.casse(str(person.get("name", "")), true)
+				Kit.nom(app, cadre, Rect2(x_nom, haut + 3, Kit.largeur(court, 18) + 4, LIGNE - 6), court, str(person.get("id", "")), "TacticsFrontRowName%02d" % (place + 1), Charte.IVOIRE, 18)
 		var ok := int(poste.formes) >= 2
 		var marque := Kit.texte(cadre, xs[3], haut + 23, "%d %s" % [int(poste.formes), "✓" if ok else "!"], Charte.IVOIRE if ok else Charte.D, 90, 18, HORIZONTAL_ALIGNMENT_RIGHT)
 		marque.add_theme_font_override("font", Kit.texte_gras())

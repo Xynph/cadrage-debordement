@@ -94,16 +94,149 @@ static func largeur(valeur: String, taille: int = 18) -> float:
 	return Charte.texte_moyen().get_string_size(valeur, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(taille))).x / C.density
 
 ## Lien texte (« Proposition du staff → ») : bouton plat DM Sans, focus visible. Largeur 0 = celle du texte.
+## Point unique de l'écran pour le style des liens : quand components.gd aura le style « lien » commun (branche
+## Réception : souligné au survol, flèche, focus), seul `_bouton_lien` changera.
 static func lien(parent: Control, zone: Rect2, valeur: String, action: Callable, id: String, taille: int = 18, droite: bool = false) -> Button:
 	if zone.size.x <= 0:
 		zone.size.x = largeur(valeur, taille) + 12
 		if droite: zone.position.x -= zone.size.x
+	var bouton := _bouton_lien(parent, zone, valeur, taille, id)
+	bouton.pressed.connect(action)
+	# Pas d'info-bulle qui répète le libellé (une info-bulle est une fenêtre système).
+	bouton.tooltip_text = ""
+	return bouton
+
+static func _bouton_lien(parent: Control, zone: Rect2, valeur: String, taille: int, id: String) -> Button:
 	var bouton := Link.styled_button(parent, zone, valeur, taille, Charte.IVOIRE, id)
 	bouton.add_theme_font_override("font", Charte.texte_moyen())
 	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
-	bouton.pressed.connect(action)
-	bouton.tooltip_text = valeur
 	return bouton
+
+## Nom en casse normale comme la maquette : « Angus FORBES » → « Angus Forbes » ; `court` : « A. Forbes ».
+## Les mots écrits en capitales dans les données passent en minuscules, initiale (et lettre après - ou ') en capitale.
+static func casse(nom_complet: String, court: bool = false) -> String:
+	var mots: Array[String] = []
+	for mot: String in nom_complet.strip_edges().split(" ", false):
+		if mot.length() > 1 and mot == mot.to_upper() and mot != mot.to_lower():
+			var bas := mot.to_lower()
+			var sortie := ""
+			var majuscule := true
+			for i in bas.length():
+				var lettre := bas[i]
+				sortie += lettre.to_upper() if majuscule else lettre
+				majuscule = lettre in ["-", "'", "’"]
+			mot = sortie
+		mots.append(mot)
+	if mots.is_empty(): return ""
+	if not court or mots.size() == 1: return " ".join(mots)
+	return mots[0].left(1) + ". " + " ".join(mots.slice(1))
+
+## Texte courant qui passe à la ligne, avec des morceaux cliquables : {texte} (texte simple), {texte, joueur} (nom :
+## fiche + mini-fiche), {texte, action} (lien). Rend le nombre de lignes utilisées (au plus `max_lignes`) ; ce qui
+## dépasse n'est jamais coupé en « … » : les morceaux restants sont simplement omis et comptés dans `reste`.
+static func flux(app: Control, parent: Control, x: float, ligne: float, largeur_max: float, morceaux: Array, taille: int = 17, interligne: float = 24, max_lignes: int = 2, id: String = "") -> Dictionary:
+	interligne = maxf(interligne, hauteur_ligne(taille) + 2)
+	var curseur := 0.0
+	var rang := 0
+	var poses := 0
+	var espace := largeur(" ", taille)
+	var omis := 0
+	for i in morceaux.size():
+		var morceau: Dictionary = morceaux[i]
+		var mots: Array = [str(morceau.texte)]
+		if not (morceau.has("joueur") or morceau.has("action")): mots = Array(str(morceau.texte).split(" ", false))
+		for mot: String in mots:
+			var w := largeur(mot, taille)
+			if curseur > 0 and curseur + espace + w > largeur_max:
+				rang += 1
+				curseur = 0.0
+			if rang >= max_lignes:
+				omis += 1
+				continue
+			var gauche := x + curseur + (espace if curseur > 0 else 0.0)
+			var y := ligne + rang * interligne
+			if morceau.has("joueur"):
+				nom(app, parent, Rect2(gauche, y - taille - 1, w + 2, taille + 7), mot, str(morceau.joueur), "%sNom%d" % [id, i], Charte.IVOIRE, taille)
+			elif morceau.has("action"):
+				lien(parent, Rect2(gauche - 4, y - taille - 1, w + 10, taille + 7), mot, morceau.action, "%sLien%d" % [id, i], taille)
+			else:
+				texte(parent, gauche, y, mot, morceau.get("couleur", Charte.IVOIRE), w + 4, taille)
+			curseur = gauche - x + w
+			poses += 1
+	return {"lignes": mini(rang + 1, max_lignes) if poses > 0 else 0, "omis": omis}
+
+## Charte §3 « rayons 0 » : `C.box` impose un rayon minimal de 3 ; cette passe remet à 0 les coins de tous les fonds
+## posés dans l'écran (panneaux, lignes, barres, champs, puces, focus). Appelée une fois à la fin de la construction.
+static func angles_droits(racine: Node) -> void:
+	for noeud in racine.find_children("*", "Control", true, false):
+		var control := noeud as Control
+		for etat in ["panel", "normal", "hover", "pressed", "hover_pressed", "disabled", "focus", "read_only"]:
+			if not control.has_theme_stylebox_override(etat): continue
+			var style := control.get_theme_stylebox(etat) as StyleBoxFlat
+			if style != null: style.set_corner_radius_all(0)
+
+## Hauteur d'une ligne de texte DM Sans (unités), plancher de 12 px compris (petites fenêtres).
+static func hauteur_ligne(taille: int) -> float:
+	return Charte.TEXTE.get_height(maxi(12, C.px(taille))) / C.density
+
+## Puce pleine (charte §3 : rayon 0, aucun cadre) : « ! » de l'avis du staff, « 33 » des Bleus, « DERBY ».
+static func puce(parent: Control, zone: Rect2, valeur: String, fond: Color, encre: Color, id: String = "") -> Panel:
+	var cadre := D.rect(parent, zone, fond, 0)
+	if not id.is_empty(): cadre.name = id
+	D.text(cadre, zone.size.x / 2.0, zone.size.y / 2.0 + 6, valeur, 16, encre, 700, zone.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	return cadre
+
+## Case à cocher ou bouton radio de la charte : carré rayon 0, trait ivoire, plein si
+## coché ; libellé DM Sans ivoire-2 ; focus = contour ivoire 2 px.
+static func styler_case(case_: CheckBox) -> void:
+	var cote := maxi(12, C.px(20))
+	case_.add_theme_icon_override("unchecked", _case(cote, false))
+	case_.add_theme_icon_override("checked", _case(cote, true))
+	case_.add_theme_icon_override("radio_unchecked", _case(cote, false))
+	case_.add_theme_icon_override("radio_checked", _case(cote, true))
+	case_.add_theme_icon_override("unchecked_disabled", _case(cote, false))
+	case_.add_theme_icon_override("checked_disabled", _case(cote, true))
+	case_.add_theme_font_override("font", Charte.TEXTE)
+	case_.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
+	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: case_.add_theme_color_override(couleur, Charte.IVOIRE_2)
+	var vide := StyleBoxEmpty.new()
+	for etat in ["normal", "hover", "pressed", "hover_pressed", "disabled"]: case_.add_theme_stylebox_override(etat, vide)
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 2)
+	focus.set_border_width_all(2)
+	case_.add_theme_stylebox_override("focus", focus)
+	case_.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+static func _case(cote: int, coche: bool) -> ImageTexture:
+	var image := Image.create(cote, cote, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0, 0, 0, 0))
+	var epaisseur := maxi(1, roundi(cote / 10.0))
+	for x in cote:
+		for y in cote:
+			var bord := x < epaisseur or y < epaisseur or x >= cote - epaisseur or y >= cote - epaisseur
+			var interieur := x >= epaisseur * 3 and y >= epaisseur * 3 and x < cote - epaisseur * 3 and y < cote - epaisseur * 3
+			if bord or (coche and interieur): image.set_pixel(x, y, Charte.IVOIRE)
+	return ImageTexture.create_from_image(image)
+
+## Liste déroulante de la charte (menu déroulant autorisé) : fond panneau-3, rayon 0, filet ivoire-3, focus ivoire.
+static func styler_liste(liste: OptionButton) -> void:
+	liste.add_theme_font_override("font", Charte.TEXTE)
+	liste.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
+	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: liste.add_theme_color_override(couleur, Charte.IVOIRE)
+	liste.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+	var fond := C.box(Charte.PANNEAU_3, Charte.IVOIRE_3, 0, 10)
+	var survol := C.box(Charte.PANNEAU_2, Charte.IVOIRE_2, 0, 10)
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 10)
+	focus.set_border_width_all(2)
+	for etat in ["normal", "pressed", "disabled"]: liste.add_theme_stylebox_override(etat, fond)
+	liste.add_theme_stylebox_override("hover", survol)
+	liste.add_theme_stylebox_override("focus", focus)
+	var menu := liste.get_popup()
+	menu.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3, Charte.FILET, 0, 6))
+	menu.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 4))
+	menu.add_theme_font_override("font", Charte.TEXTE)
+	menu.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
+	menu.add_theme_color_override("font_color", Charte.IVOIRE)
+	menu.add_theme_color_override("font_hover_color", Charte.IVOIRE)
 
 ## Touche de clavier dessinée (« Ctrl Entrée ») ; renvoie sa largeur.
 static func touche(parent: Control, x: float, ligne: float, valeur: String, droite: bool = false) -> float:

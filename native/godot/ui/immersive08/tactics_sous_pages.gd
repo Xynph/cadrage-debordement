@@ -11,7 +11,6 @@ const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Roles = preload("res://ui/immersive08/tactics_roles.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
-const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const PAGES := ["roles", "espoir", "renforts"]
 const TITRES := {"roles":"Tireurs et lanceur", "espoir":"Appeler un espoir", "renforts":"Renforts d’urgence"}
 
@@ -68,13 +67,14 @@ static func _roles(app: Control, bloc: Control) -> void:
 	var contenu := Roles.body(app.model, func(data: Dictionary): app._command("set_tactics", data))
 	contenu.name = "TacticsRoles"
 	corps.add_child(contenu)
-	Legacy.apply(contenu, app.accent)
+	_charte(contenu)
 
 ## Appel d'un espoir du centre (feuille incomplète) : choix du jeune, puis la commande espoir_appeler.
 static func _espoir(app: Control, bloc: Control) -> void:
 	var corps := _corps(bloc)
 	_paragraphe(corps, Espoir.vacancy_text(app.model), Charte.IVOIRE).name = "LineupEspoirVacancy"
 	var choix := Espoir.add_choices(corps, app.model, false)
+	_charte(corps)
 	_paragraphe(corps, "Comme en vrai, le jeune est prêté à l’équipe première pour ce match seulement : pas de contrat professionnel, il retourne au centre ensuite et gagne de l’expérience.", Charte.IVOIRE_2, 18)
 	var valider := Kit.bouton_ivoire(bloc, Rect2(28, 680, 300, 48), "Appeler le jeune", func():
 		if app.waiting or not choix.is_valid(): return
@@ -98,3 +98,12 @@ static func _renforts(app: Control, bloc: Control) -> void:
 	signer.disabled = int(quote.get("places", 0)) < (quote.get("slots", []) as Array).size()
 	if signer.disabled: _paragraphe(corps, "Le groupe professionnel compte trop peu de places libres.", Charte.D, 18)
 	Kit.lien(bloc, Rect2(380, 684, 0, 40), "Annuler", func(): fermer(app), "LineupCoverCancel", 20)
+
+## Habille les contrôles génériques d'une sous-page aux jetons de la charte (pas de thème historique) : listes
+## déroulantes, cases et boutons radio, textes en DM Sans.
+static func _charte(racine: Node) -> void:
+	for noeud in racine.find_children("*", "", true, false):
+		if noeud is OptionButton: Kit.styler_liste(noeud)
+		elif noeud is CheckBox: Kit.styler_case(noeud)
+		elif noeud is Label:
+			(noeud as Label).add_theme_font_override("font", Charte.TEXTE)

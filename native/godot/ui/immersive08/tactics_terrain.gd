@@ -10,10 +10,11 @@ const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const PersonName = preload("res://ui/person_name.gd")
-const CARTE := Vector2(172, 50)
+const CARTE := Vector2(200, 50)
 ## Centre de chaque carte en fraction du terrain (maquette validée), du n° 1 au n° 15.
-const PLACES := {1: Vector2(.90, .20), 2: Vector2(.90, .35), 3: Vector2(.90, .50), 4: Vector2(.72, .27), 5: Vector2(.72, .42),
-	6: Vector2(.54, .18), 8: Vector2(.54, .34), 7: Vector2(.54, .50), 9: Vector2(.43, .62), 10: Vector2(.32, .70),
+## Cartes de 200 : les n° 4, 5 et 8 descendent d'un rien pour ne jamais chevaucher leurs voisines.
+const PLACES := {1: Vector2(.895, .20), 2: Vector2(.895, .35), 3: Vector2(.895, .50), 4: Vector2(.72, .275), 5: Vector2(.72, .425),
+	6: Vector2(.54, .18), 8: Vector2(.54, .35), 7: Vector2(.54, .50), 9: Vector2(.43, .62), 10: Vector2(.32, .70),
 	11: Vector2(.26, .20), 12: Vector2(.22, .78), 13: Vector2(.12, .86), 14: Vector2(.36, .92), 15: Vector2(.11, .46)}
 
 class Trace extends Control:
@@ -78,7 +79,7 @@ static func carte(app: Control, parent: Control, zone: Rect2, slot: int, choisir
 		Kit.texte(bouton, gauche, 31, "Poste n° %d vide" % (slot + 1), Charte.IVOIRE_2, zone.size.x - 66, 17)
 		accessible += "vide"
 	else:
-		var court := PersonName.initial_and_surname(str(person.get("name", "")))
+		var court := Kit.casse(str(person.get("name", "")), true)
 		Kit.nom(app, bouton, Rect2(gauche, 1, zone.size.x - gauche - 2, 25), court, id, "TacticsName%02d" % (slot + 1), Charte.IVOIRE, 17)
 		var note := Selection.rating_text(app.model, person, slot)
 		var chiffre := D.text(bouton, gauche + 4, 43, note, 18, Charte.IVOIRE, 700, 40, HORIZONTAL_ALIGNMENT_LEFT, true)
@@ -95,12 +96,10 @@ static func carte(app: Control, parent: Control, zone: Rect2, slot: int, choisir
 			alerte.name = "TacticsCondition%02d" % (slot + 1)
 			accessible += " · condition %d %%" % roundi(float(forme))
 	if avis.has(slot):
-		var marque := D.chip(bouton, Rect2(-6, -8, 20, 20), "!", Charte.IVOIRE_2)
-		marque.name = "TacticsStaffAdviceMark%02d" % (slot + 1)
+		Kit.puce(bouton, Rect2(-6, -8, 18, 20), "!", Charte.IVOIRE_2, Charte.NUIT, "TacticsStaffAdviceMark%02d" % (slot + 1))
 		accessible += " · " + str(avis[slot])
 	if bleus.has(slot):
-		var marque := D.chip(bouton, Rect2(zone.size.x - 30, -8, 28, 20), "33", Charte.D)
-		marque.name = "TacticsBleusMark%02d" % (slot + 1)
+		Kit.puce(bouton, Rect2(zone.size.x - 30, -8, 28, 20), "33", Charte.D, Charte.NUIT, "TacticsBleusMark%02d" % (slot + 1))
 		accessible += " · liste des 33 : doit souffler"
 	# Pendant un « prendre / poser » : les destinations possibles sont soulignées, la source est marquée « pris ».
 	if not pris.is_empty():

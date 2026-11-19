@@ -20,8 +20,9 @@ class PlayerButton extends Button:
 		var data: Variant = make_payload.call(drag_player,source_slot)
 		if data == null: return null
 		var preview := PanelContainer.new()
-		preview.add_theme_stylebox_override("panel",C.box(C.RAISED,C.MINT,5,12))
-		preview.add_child(C.label(drag_caption,20,C.IVORY))
+		# Aperçu du glisser aux jetons de la charte : panneau-3, rayon 0, sans cadre, texte ivoire.
+		preview.add_theme_stylebox_override("panel",C.box(C.SELECTED,Color.TRANSPARENT,0,12))
+		preview.add_child(C.label(drag_caption,20,C.IVORY,false,500))
 		preview.mouse_filter=Control.MOUSE_FILTER_IGNORE
 		set_drag_preview(preview)
 		return data

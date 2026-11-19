@@ -62,7 +62,7 @@ static func build(app: Control, page: Control, zone: Rect2, choisir: Callable, c
 		_ligne(app, lignes, i, entrees[i].slot, entrees[i].person, zone.size.x, choisir, clavier, avis, bleus, pris)
 	var y := 86.0 + LIGNE * 8 + 30
 	Kit.texte(bloc, 22, y, "Les n° 16 à 18 sont généralement la première ligne ;", Charte.IVOIRE_2, zone.size.x - 44, 16).name = "BenchFrontRowNote"
-	Kit.texte(bloc, 22, y + 22, "la règle compte les premières lignes formées sur toute la feuille.", Charte.IVOIRE_2, zone.size.x - 44, 16)
+	Kit.texte(bloc, 22, y + 22, "la règle compte les formés sur la feuille." if C.dense() else "la règle compte les premières lignes formées sur toute la feuille.", Charte.IVOIRE_2, zone.size.x - 44, 16)
 	_doublures(app, bloc, y + 68, zone.size.x, choisir)
 	return bloc
 
@@ -82,7 +82,7 @@ static func _ligne(app: Control, parent: Control, rang: int, slot: int, person: 
 		Kit.texte(bouton, X_JOUEUR - 14, 23, "Place vide", Charte.IVOIRE_2, 200)
 		accessible += "place vide"
 	else:
-		var court := PersonName.initial_and_surname(str(person.get("name", "")))
+		var court := Kit.casse(str(person.get("name", "")), true)
 		Kit.nom(app, bouton, Rect2(X_JOUEUR - 14, 3, 200, 27), court, id, "BenchName%02d" % (slot + 1))
 		Kit.texte(bouton, X_COUVRE - 14, 23, Selection.positions(person), Charte.IVOIRE_2, 100, 16)
 		if Selection.premiere_ligne_formee(app.model, person):
@@ -92,9 +92,9 @@ static func _ligne(app: Control, parent: Control, rang: int, slot: int, person: 
 		Kit.condition(bouton, X_CONDITION - 14, 23, person.get("condition"), 34)
 		accessible += "%s · couvre %s" % [str(person.get("name", "")), Selection.positions(person)]
 	if avis.has(slot):
-		D.chip(bouton, Rect2(X_MARQUE + 56 - 14, 6, 20, 20), "!", Charte.IVOIRE_2).name = "TacticsStaffAdviceMark%02d" % (slot + 1)
+		Kit.puce(bouton, Rect2(X_MARQUE + 56 - 14, 6, 18, 20), "!", Charte.IVOIRE_2, Charte.NUIT, "TacticsStaffAdviceMark%02d" % (slot + 1))
 		accessible += " · " + str(avis[slot])
-	if bleus.has(slot): D.chip(bouton, Rect2(X_MARQUE - 44, 6, 28, 20), "33", Charte.D).name = "TacticsBleusMark%02d" % (slot + 1)
+	if bleus.has(slot): Kit.puce(bouton, Rect2(X_MARQUE - 44, 6, 28, 20), "33", Charte.D, Charte.NUIT, "TacticsBleusMark%02d" % (slot + 1))
 	if not pris.is_empty() and str(pris.get("player_id", "")) != id and Selection.can_drop(app, Selection.payload(app, str(pris.get("player_id", "")), int(pris.get("source", -1))), slot):
 		D.rect(bouton, Rect2(0, LIGNE - 3, largeur - 28, 3), Charte.IVOIRE_2, 0).name = "TacticsCible%02d" % (slot + 1)
 	bouton.accessibility_name = accessible
@@ -115,7 +115,7 @@ static func _doublures(app: Control, bloc: Control, y: float, largeur: float, ch
 		for poste in _postes(person):
 			if comptes.has(poste): comptes[poste] += 1
 	var case_l := (largeur - 44 - 7 * 6) / 8.0
-	var seuls: Array[String] = []
+	var seuls: Array[int] = []
 	for poste in range(1, 16):
 		var rang := poste - 1
 		var zone := Rect2(22 + (rang % 8) * (case_l + 6), y + 24 + int(rang / 8) * 62, case_l, 56)
@@ -130,11 +130,17 @@ static func _doublures(app: Control, bloc: Control, y: float, largeur: float, ch
 		case_.accessibility_name = "Poste n° %d · %d joueur%s du métier sur la feuille" % [poste, compte, "s" if compte > 1 else ""]
 		case_.tooltip_text = case_.accessibility_name
 		case_.pressed.connect(func(): choisir.call(poste - 1))
-		if compte <= 1: seuls.append("n° %d" % poste)
-	var texte := "Chaque poste a au moins une doublure de métier sur la feuille." if seuls.is_empty() else "Sans doublure de métier : " + ", ".join(seuls) + "."
-	var ligne := Kit.texte(bloc, 22, y + 24 + 2 * 62 + 22, texte, Charte.IVOIRE_2, largeur - 44, 16)
-	ligne.name = "TacticsDepthSummary"
-
+		if compte <= 1: seuls.append(poste)
+	var bas := y + 24 + 2 * 62 + 22
+	if seuls.is_empty():
+		Kit.texte(bloc, 22, bas, "Chaque poste a au moins une doublure de métier sur la feuille.", Charte.IVOIRE_2, largeur - 44, 16).name = "TacticsDepthSummary"
+		return
+	var debut := "Sans doublure de métier : "
+	Kit.texte(bloc, 22, bas, debut, Charte.IVOIRE_2, Kit.largeur(debut, 16) + 4, 16).name = "TacticsDepthSummary"
+	var x := 22.0 + Kit.largeur(debut, 16)
+	for poste: int in seuls:
+		var lien := Kit.lien(bloc, Rect2(x - 2, bas - 22, 0, 30), "n° %d" % poste, func(): choisir.call(poste - 1), "TacticsDepthAlone%02d" % poste, 16)
+		x += lien.size.x / C.density + 2
 static func _postes(person: Dictionary) -> Array[int]:
 	var result: Array[int] = []
 	var principal: Variant = person.get("primaryPosition")

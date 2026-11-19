@@ -129,7 +129,7 @@ func run() -> void:
 	var muets: Array[String] = []
 	for node in page.find_children("*", "BaseButton", true, false):
 		var bouton := node as BaseButton
-		if bouton is CheckBox or bouton is OptionButton or not bouton.is_visible_in_tree(): continue
+		if bouton is CheckBox or bouton is OptionButton or bouton is MenuButton or not bouton.is_visible_in_tree(): continue
 		if bouton.pressed.get_connections().is_empty(): muets.append(str(bouton.name))
 	check(muets.is_empty(), "Aucune zone cliquable sans effet : " + ", ".join(muets))
 	await capture("composition-1920")
@@ -280,6 +280,62 @@ func run() -> void:
 		check(named("TacticsPitch") != null, "Suivant revient à la composition")
 	else:
 		check(Selection == null or app.model.get("tactics", {}).get("roles") == null, "Tireurs et lanceur absents seulement sans projection du moteur")
+
+	# 8 bis. Relecture du 19/11 : noms de Vigilance et de la bulle de Gabi cliquables (fiche + mini-fiche), duels vers
+	# le dossier adverse, avertissements en menu déroulant, « Libérer » avec confirmation, charge individuelle en sous-page.
+	await composition()
+	var sous_80 := 0
+	for index in 23:
+		var forme: Variant = Selection.occupant(app.model, index).get("condition")
+		if (forme is int or forme is float) and float(forme) < 80: sous_80 += 1
+	if sous_80 > 0:
+		var noms_vigilance := named("TacticsVigilance").find_children("*Nom*", "Button", true, false)
+		check(not noms_vigilance.is_empty(), "Vigilance : noms cliquables")
+		for bouton in noms_vigilance: check(bouton.has_meta("mini_fiche_joueur") and not str((bouton as Button).text).ends_with("…"), "Vigilance : mini-fiche et nom entier · " + (bouton as Button).text)
+		check(named("TacticsWarnings") is MenuButton and (named("TacticsWarnings") as MenuButton).get_popup().item_count == sous_80, "Avertissements : menu déroulant de %d joueurs" % sous_80)
+		check(named("TacticsWarningName") != null and named("TacticsWarningName").has_meta("mini_fiche_joueur"), "Ligne de validité : nom du premier avertissement → fiche + mini-fiche")
+	var conseil := named("TacticsStaffAdvice0")
+	if conseil != null: check(not conseil.find_children("*Nom*", "Button", true, false).is_empty(), "Bulle de Gabi : noms cliquables")
+	var duel := named("TacticsDuel_scrum") as Button
+	if duel != null:
+		duel.pressed.emit()
+		await settle()
+		check(app.route == "Préparation", "Duel « Mêlée » : ouvre le dossier adverse")
+		await composition()
+	check(named("TacticsFrontRowName01") == null or named("TacticsFrontRowName01").has_meta("mini_fiche_joueur"), "Encart : noms → fiche + mini-fiche")
+	(named("LineupSlot03") as Button).pressed.emit()
+	await settle()
+	var titulaire := str(Selection.slot(app.model, 2).get("playerId"))
+	(named("TacticsCandidate_" + titulaire.validate_node_name()) as Button).pressed.emit()
+	await settle()
+	check(str(Selection.slot(app.model, 2).get("playerId")) == titulaire and not app.waiting, "Clic sur la ligne du titulaire : rien n'est libéré")
+	var liberer := named("LineupRemove") as Button
+	check(liberer != null, "Lien « Libérer » du titulaire")
+	if liberer != null:
+		liberer.pressed.emit()
+		await settle()
+		var confirmation := app.get_node_or_null("LineupReleaseConfirm") as ConfirmationDialog
+		check(confirmation != null and confirmation.visible and confirmation.get_ok_button().text == "LIBÉRER", "« Libérer » demande confirmation")
+		if confirmation != null: confirmation.get_cancel_button().pressed.emit()
+		await settle()
+		check(str(Selection.slot(app.model, 2).get("playerId")) == titulaire, "Annuler : le titulaire reste")
+	var lien_nom := named("TacticsName04") as Button
+	if lien_nom != null:
+		app.management_ui.immersive_player_tab = 0
+		lien_nom.pressed.emit()
+		await settle()
+		var charge := named("PlayerLoad") as Button
+		check(charge != null, "Fiche : « Régler la charge individuelle »")
+		if charge != null:
+			charge.pressed.emit()
+			await settle()
+			check(named("FicheChargePage") != null and named("IndividualLoad_repos") != null and windows(app).is_empty(), "Charge individuelle : sous-page de la fiche, sans fenêtre")
+			if is_instance_valid(app.coach) and app.coach.has_method("fermer_bulle"): app.coach.fermer_bulle()
+			await key(KEY_ESCAPE)
+			check(named("FicheChargePage") == null and named("PlayerLoad") != null, "Échap revient à la fiche")
+			app.navigation_controller._travel(-1)
+			await settle()
+			check(named("FicheChargePage") != null, "Précédent rouvre la sous-page de charge")
 
 	# 9. Proposition du staff (commande réelle), puis Valider la feuille (Ctrl+Entrée) → préparation.
 	await composition()
