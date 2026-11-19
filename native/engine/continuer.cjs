@@ -43,8 +43,8 @@ const STOPS = Object.freeze({
   // nouvel appui sur Continuer repart. Un seul arrêt par semaine, qui résume tous les éléments de la semaine.
   a_noter: { mandatory: false, label: 'À noter' },
   // Moments de la saison sans décision (veille et lendemain de match, rapport médical, mi-saison, fin de phase,
-  // marché, recruteur) : arrêts informatifs réglés par continuer-arrets.json, toujours actifs ; plusieurs le même jour
-  // possibles (file du jour, voir arrets()). Libellé de l'arrêt : celui du type (« Veille de match »…).
+  // marché, recruteur, courrier du club) : réglés par continuer-arrets.json, toujours actifs. Un seul arrêt d'info par
+  // jour, plus un arrêt par courrier qui attend une réponse (voir arrets()). Libellé : celui du plus important.
   info: { mandatory: false, label: 'À savoir' },
   message: { mandatory: false, label: 'Nouveau message' },
   ouverture: { mandatory: false, label: 'Ouverture de la saison' },
@@ -271,12 +271,12 @@ const competitionLabel = (id, after) => ARRETS.competitions[id] || (id === after
 const pts = st => st && st.rank ? ordinal(st.rank) + (st.size ? ' sur ' + st.size : '') + ' (' + st.points + ' pts, ' + st.played + ' matchs)' : null;
 
 // Éléments informatifs apparus entre `before` et `after` (tous les types, toujours actifs), triés par priorité :
-// [{type, key, label, detail}]. Vide si l'arrêt « info » est ignoré.
+// [{type, key, label, detail, nature}]. Vide si l'arrêt « info » est ignoré.
 function informatifs(before, after, settings = {}) {
   if (!before || !after || !after.today || before.today === after.today) return [];
   if ((settings.ignorer || []).includes('info')) return [];
   const allowed = new Set(Object.keys(TYPES)), out = [];
-  const push = (type, key, detail, extra = {}) => { if (allowed.has(type) && detail) out.push({ type, key: type + ':' + key, label: TYPES[type].label, detail, ...extra }); };
+  const push = (type, key, detail, extra = {}) => { if (allowed.has(type) && detail) out.push({ type, key: type + ':' + key, label: TYPES[type].label, detail, nature: 'info', ...extra }); };
   const v = after.veille;
   // Veille de la 1re journée déjà annoncée par la préparation (reprise.cjs, « À noter ») : pas en double.
   const preVeille = (after.notes || []).includes('veille:' + after.today);
@@ -315,33 +315,50 @@ function informatifs(before, after, settings = {}) {
   const known = new Set((before.missions || []).map(x => x.id));
   for (const x of (after.missions || []).filter(x => !known.has(x.id)))
     push('recruteur', x.id, x.n ? x.n + ' profil' + (x.n > 1 ? 's' : '') + ' proposé' + (x.n > 1 ? 's' : '') + ' par ton recruteur, à comparer dans Recrutement.' : 'Mission terminée : aucun profil ne correspond à tous les critères.', x.player ? { joueur: x.player } : {});
-  // Courrier du club qui attend une réponse ou compte (club-mail.cjs) : un arrêt par mail, l'écran s'ouvre sur lui.
+  // Courrier du club du jour (club-mail.cjs), avec sa nature : « action » (réponse attendue), « info », « routine ».
   const lus = new Set((before.courrier || []).map(x => x.id));
   for (const c of (after.courrier || []).filter(x => !lus.has(x.id)))
-    push('courrier', c.id, c.expediteur + ' : ' + c.sujet, { mail: c.id, ...(c.joueur ? { joueur: c.joueur } : {}) });
-  return out.sort((a, b) => TYPES[a.type].priorite - TYPES[b.type].priorite || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+    push('courrier', c.id, c.expediteur + ' : ' + c.sujet, { mail: c.id, nature: NATURES.includes(c.nature) ? c.nature : 'action', priorite: c.priorite, ...(c.joueur ? { joueur: c.joueur } : {}) });
+  return out.sort((a, b) => rangItem(a) - rangItem(b) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 }
+const NATURES = ['action', 'info', 'routine'];
+// Ordre dans la journée : courriers à réponse, puis informations (moments de la saison et courriers d'info, par
+// priorité du type), puis routine. Un courrier garde sa priorité propre (club-mail.json) dans sa nature.
+const prio = item => item.type === 'courrier' && Number.isFinite(item.priorite) ? item.priorite : TYPES[item.type].priorite;
+const rangItem = item => ({ action: 0, info: 1, routine: 2 })[item.nature || 'info'] * 1000 + Math.min(999, prio(item));
 
 // Écran utile ouvert par l'interface sur cet arrêt (continuer-arrets.json, « ecran ») ; mail ou joueur concerné.
-const infoStop = item => ({ kind: 'info', label: item.label, detail: item.detail, type: item.type, ...(TYPES[item.type]?.ecran ? { ecran: TYPES[item.type].ecran } : {}),
-  ...(item.mail ? { mail: item.mail } : {}), ...(item.joueur ? { joueur: item.joueur } : {}) });
-// Arrêts du jour : l'arrêt principal (detect) puis les éléments informatifs, au plus `maxParJour` ; au-delà, le
-// dernier arrêt regroupe le reste. Rend {stop, queue} : `queue` = arrêts suivants du même jour, montrés à chaque
-// nouvel appui sur Continuer sans avancer (worker.cjs).
+const infoStop = item => ({ kind: 'info', label: item.label, detail: item.detail, type: item.type, nature: item.nature || 'info',
+  ...(TYPES[item.type]?.ecran ? { ecran: TYPES[item.type].ecran } : {}), ...(item.mail ? { mail: item.mail } : {}), ...(item.joueur ? { joueur: item.joueur } : {}) });
+// Arrêt d'info du jour (décision de Léo, 18/11/2026) : un seul, qui range tous les éléments sans réponse attendue —
+// moments de la saison (veille, lendemain, rapport médical…), courriers d'info et de routine. Le plus important est
+// en tête (libellé, détail) ; s'il range du courrier d'info, la Réception s'ouvre sur le plus important (`mails` :
+// tous les courriers rangés, dans l'ordre). De la routine seule n'arrête jamais l'avance.
+function arretInfo(items) {
+  const lead = items.find(i => i.nature !== 'routine');
+  if (!lead) return null;
+  const ordre = [lead, ...items.filter(i => i !== lead)];
+  if (ordre.length === 1) return infoStop(lead);
+  const mails = ordre.filter(i => i.mail).map(i => i.mail);
+  const plusieurs = ordre.filter(i => i.nature !== 'routine').length > 1;
+  const ligne = i => i.type === 'courrier' ? i.detail : i.label + ' : ' + i.detail;
+  return { kind: 'info', label: lead.label, detail: [lead.detail, ...ordre.slice(1).map(ligne)].join(' · '), type: plusieurs ? 'groupe' : lead.type, nature: 'info',
+    // Courrier d'info rangé (ou rien d'autre où aller) : la Réception sur le plus important ; sinon l'écran du plus
+    // important (veille : la composition), la routine restant lisible en Réception.
+    ...(mails.length && (lead.mail || ordre.some(i => i.mail && i.nature !== 'routine') || !TYPES[lead.type]?.ecran) ? { ecran: 'Réception', mail: mails[0] }
+      : TYPES[lead.type]?.ecran ? { ecran: TYPES[lead.type].ecran, ...(lead.joueur ? { joueur: lead.joueur } : {}) } : {}),
+    ...(mails.length ? { mails } : {}), elements: ordre.length };
+}
+// Arrêts du jour : l'arrêt principal (detect), puis l'arrêt d'info du jour (un seul), puis un arrêt par courrier qui
+// attend une réponse (agent, joueur qui veut parler, contrat, décision…). Rend {stop, queue} : `queue` = arrêts
+// suivants du même jour, montrés à chaque nouvel appui sur Continuer sans avancer (worker.cjs).
 function arrets(before, after, settings, repriseDate = null) {
   const primary = detect(before, after, settings, repriseDate);
   if (primary && primary.kind === 'blocage' && !after) return { stop: primary, queue: [] };
   const items = informatifs(before, after, settings);
-  const max = Math.max(1, ARRETS.maxParJour || 1), room = max - (primary ? 1 : 0);
-  let infos = items.map(infoStop);
-  if (infos.length > room) {
-    if (room <= 0) infos = [];
-    else {
-      const rest = items.slice(room - 1);
-      infos = [...infos.slice(0, room - 1), { kind: 'info', label: STOPS.info.label, detail: rest.map(i => i.label + ' : ' + i.detail).join(' · '), type: 'groupe', ecran: 'Réception' }];
-    }
-  }
-  const all = primary ? [primary, ...infos] : infos;
+  const info = arretInfo(items.filter(i => i.nature !== 'action'));
+  const actions = items.filter(i => i.nature === 'action').map(infoStop);
+  const all = [...(primary ? [primary] : []), ...(info ? [info] : []), ...actions];
   return { stop: all[0] || null, queue: all.slice(1) };
 }
 
@@ -374,4 +391,4 @@ function plan(after, repriseDate = null, ignorer = []) {
   return candidates[0] || null;
 }
 
-module.exports = { plan, STOPS, MAX_DAYS, MESSAGE_MODES, INJURY_MODES, ARRETS, SIGNAL_SOURCE, validate, detect, informatifs, arrets, routine, decisionText };
+module.exports = { plan, arretInfo, STOPS, MAX_DAYS, MESSAGE_MODES, INJURY_MODES, ARRETS, SIGNAL_SOURCE, validate, detect, informatifs, arrets, routine, decisionText };
