@@ -57,7 +57,7 @@ func _build() -> void:
 	var tabs := TabContainer.new()
 	tabs.name = "PlaybookTabs"
 	tabs.add_theme_font_override("font", C.BOLD)
-	tabs.add_theme_font_size_override("font_size", C.px(28))
+	tabs.add_theme_font_size_override("font_size", C.font_px(28))
 	var panel := C.box(Color("0c1415"), C.LINE, 7, 0)
 	for edge in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]: panel.set_content_margin(edge, 0)
 	tabs.add_theme_stylebox_override("panel", panel)
@@ -122,9 +122,11 @@ func _zones() -> void:
 			var chosen: String = str(zone.get(key, "inherit"))
 			var top := 109 + j * 140
 			_metric(tile, Rect2(22, top, 702, 29), "Attaque" if j == 0 else "Défense", _option_title(options, effective), GREEN if j == 0 else GOLD)
-			_selector(tile, Rect2(22, top + 38, 703, 50), key, options, chosen, str(zone.id))
+			_selector(tile, C.reach_rect(Rect2(22, top + 38, 703, 50)), key, options, chosen, str(zone.id))
 			var label := _description(options, chosen)
-			var lines := D.words(label, 82, 2)
+			# Petite fenêtre : au plancher de 12 px, deux lignes espacées de 23 unités se touchent ; une seule ligne,
+			# terminée par des points de suspension si la description dépasse.
+			var lines: Array = [label] if C.dense() else Array(D.words(label, 82, 2))
 			for k in lines.size(): D.text(tile, 24, top + 112 + k * 23, lines[k], 20, C.MUTED, 500, 700)
 	_field(zones)
 	_notice(zone_page, 872)
@@ -186,6 +188,7 @@ func _advice() -> void:
 	scroll.add_child(content)
 	Rules._advice(app, content, data, available)
 	Legacy.apply(content, Color("09673e"))
+	C.reach_controls(content)
 	var scene := D.panel(advice_page, Rect2(1476, 16, 755, 826), "Lecture du rapport de force", "tactic", "", "PlaybookAdviceContext")
 	D.photo(scene, "analysis-room", Rect2(14, 67, 727, 200), .50)
 	var general: Dictionary = data.get("general", {})
@@ -213,7 +216,7 @@ func _selector(parent: Node, rectangle: Rect2, key: String, options: Array, sele
 	control.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	control.disabled = not available
 	control.add_theme_font_override("font", C.BOLD)
-	control.add_theme_font_size_override("font_size", C.px(24))
+	control.add_theme_font_size_override("font_size", C.font_px(24))
 	control.add_theme_color_override("font_color", C.IVORY)
 	control.add_theme_color_override("font_hover_color", C.IVORY)
 	control.add_theme_color_override("font_disabled_color", C.MUTED)
@@ -224,7 +227,7 @@ func _selector(parent: Node, rectangle: Rect2, key: String, options: Array, sele
 	var popup := control.get_popup()
 	popup.add_theme_stylebox_override("panel", C.box(C.PANEL, C.LINE, 5, 10))
 	popup.add_theme_font_override("font", C.DISPLAY)
-	popup.add_theme_font_size_override("font_size", C.px(23))
+	popup.add_theme_font_size_override("font_size", C.font_px(23))
 	popup.add_theme_color_override("font_color", C.IVORY)
 	popup.add_theme_color_override("font_hover_color", C.IVORY)
 	for option: Dictionary in options:

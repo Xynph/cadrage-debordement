@@ -57,7 +57,7 @@ func measure(label: String) -> Dictionary:
 		record.body_minimum = [app.body.get_combined_minimum_size().x,app.body.get_combined_minimum_size().y]
 		record.outer_scroll = maxf(0,app.body_scroll.get_v_scroll_bar().max_value-app.body_scroll.get_v_scroll_bar().page)
 	record.important = []
-	for id: String in ["CarnetCalendar","CalendarMonthGrid","CalendarWeekGrid","MonthDayDetail","CalendarUpcomingContext","ContextualInvitations","ContextualObserveTraining","ImmersiveInbox","CarnetPreparation"]:
+	for id: String in ["CarnetCalendar","CalendarMonthGrid","CalendarWeekGrid","MonthDayDetail","CalendarUpcomingContext","ContextualInvitations","ContextualObserveTraining","ImmersiveInbox","CarnetPreparation","ImmersivePreparation","ImmersiveTraining","ImmersivePlaybook","ImmersiveCentre"]:
 		var item := app.find_child(id,true,false) as Control
 		if item != null:
 			record.important.append({"name":id,"rect":rect(item.get_global_rect()),"minimum":[item.get_combined_minimum_size().x,item.get_combined_minimum_size().y]})
