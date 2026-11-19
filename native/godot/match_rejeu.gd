@@ -31,6 +31,12 @@ const CAMERA_LISSAGE := 0.35
 const VISEE_LISSAGE := 0.12
 ## Au-delà de la durée prévue, plus cette marge (s réelles), le ralenti s'arrête de lui-même.
 const MARGE := 1.0
+## Angle du ralenti : retraits essayés (m en deçà du ballon), fin de fenêtre jugée (s de vue avant
+## l'aplati), préférence pour l'angle par défaut (gêne ajoutée à l'autre côté ; un dixième par mètre
+## de retrait en plus ou en moins).
+const RETRAITS := [4.0, 8.0, 12.0]
+const FENETRE_ANGLE := 0.8
+const PREFERENCE := 0.3
 
 var view: Node3D
 ## Enregistrement demandé par la régie (temps fort avec un essai).
@@ -63,6 +69,9 @@ var _camera_avant: Dictionary = {}
 var _process_avant: Array = []
 var _cibles: Dictionary = {}
 var _cote := Vector2.ONE
+var _retrait := Cadrage.REJEU_RETRAIT
+## Gêne de l'angle retenu (Cadrage.gene_rejeu cumulée ; contrôle des tests).
+var gene_angle := 0.0
 var _curseur := 0
 var _ballon := Vector3.ZERO
 var _cam := Vector3.ZERO
@@ -235,6 +244,7 @@ func commencer(facteur: float) -> bool:
 	ecart_restitution = 0.0
 	_ballon = _ballon_a(float(clip[0].t))
 	_cote = Cadrage.cote_rejeu(_ballon_a(_repere if _avec_repere else float(clip[-1].t)))
+	_choisir_angle()
 	_montrer(0.0)
 	_filmer(0.0)
 	return true
@@ -411,12 +421,39 @@ func _ballon_a(t: float) -> Vector3:
 	return place
 
 
+## Angle du ralenti : côté et retrait de la caméra qui masquent le moins le marqueur, mesurés sur
+## les poses de la fin de la fenêtre (l'aplati) ; à gêne égale, l'angle par défaut. Évite qu'un
+## défenseur aligné sur la ligne d'en-but remplisse l'image au moment de l'aplati.
+func _choisir_angle() -> void:
+	_retrait = Cadrage.REJEU_RETRAIT
+	var fin := (_repere if _avec_repere else float(clip[-1].t)) - FENETRE_ANGLE
+	var meilleure := INF
+	var cote_defaut := _cote
+	for lateral: float in [cote_defaut.y, -cote_defaut.y]:
+		for retrait: float in RETRAITS:
+			var cote := Vector2(cote_defaut.x, lateral)
+			var gene := 0.0 if lateral == cote_defaut.y else PREFERENCE
+			gene += absf(retrait - Cadrage.REJEU_RETRAIT) * PREFERENCE * 0.1
+			for pose: Dictionary in clip:
+				if float(pose.t) < fin: continue
+				var ballon: Vector3 = (pose.b[0] as Transform3D).origin
+				var places := PackedVector3Array()
+				for cle: String in pose.e:
+					if bool(pose.e[cle][2]): places.append((pose.e[cle][0] as Transform3D).origin)
+				gene += Cadrage.gene_rejeu(Cadrage.plan_rejeu(ballon, cote, retrait), places)
+			if gene < meilleure - 0.001:
+				meilleure = gene
+				_cote = cote
+				_retrait = retrait
+	gene_angle = meilleure
+
+
 ## Caméra du ralenti : basse, sur le côté, elle suit le ballon (amortie ; posée d'un coup au début).
 func _filmer(delta: float) -> void:
 	var camera: Camera3D = view._camera
 	if not is_instance_valid(camera):
 		return
-	var plan: Dictionary = Cadrage.plan_rejeu(_ballon, _cote)
+	var plan: Dictionary = Cadrage.plan_rejeu(_ballon, _cote, _retrait)
 	if delta <= 0.0:
 		_cam = plan.camera
 		_vise = plan.vise

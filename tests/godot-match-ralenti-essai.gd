@@ -94,6 +94,19 @@ func angle() -> void:
 	# Côté de la tribune principale, sauf ballon contre la touche proche.
 	check(Cadrage.cote_rejeu(Vector3(50.0, 0.0, 0.0)).y > 0.0 and Cadrage.cote_rejeu(Vector3(50.0, 0.0, 33.0)).y < 0.0, "Côté de la tribune principale, contrechamp près de la touche proche")
 	check(Cadrage.cote_rejeu(Vector3(51.0, 0.0, 0.0)).x > 0.0 and Cadrage.cote_rejeu(Vector3(-51.0, 0.0, 0.0)).x < 0.0, "Sens de l'en-but de l'essai")
+	# Défenseurs alignés sur la ligne d'en-but entre la caméra par défaut et le marqueur (match filmé
+	# du 19/11 : un dos plein écran à l'aplati) : l'angle par défaut est gêné, un autre retrait non.
+	var aplati := Vector3(51.0, 0.3, 0.0)
+	var ligne := PackedVector3Array()
+	for k in 6: ligne.append(Vector3(50.0, 0.0, 2.0 + 1.6 * k))
+	var cote_aplati := Cadrage.cote_rejeu(aplati)
+	var gene_defaut := Cadrage.gene_rejeu(Cadrage.plan_rejeu(aplati, cote_aplati), ligne)
+	var gene_autre := INF
+	for retrait: float in Rejeu.RETRAITS:
+		for lateral: float in [1.0, -1.0]:
+			gene_autre = minf(gene_autre, Cadrage.gene_rejeu(Cadrage.plan_rejeu(aplati, Vector2(cote_aplati.x, lateral), retrait), ligne))
+	check(gene_defaut > 1.0 and gene_autre < 0.2, "Ralenti : un angle sans défenseur entre caméra et marqueur existe (gêne %.2f → %.2f)" % [gene_defaut, gene_autre])
+	check(Cadrage.gene_rejeu(Cadrage.plan_rejeu(aplati, cote_aplati), PackedVector3Array()) == 0.0, "Ralenti : gêne nulle sans personne autour")
 
 
 ## 3. Mention « RALENTI » : discrète, en haut à droite de la zone libre.

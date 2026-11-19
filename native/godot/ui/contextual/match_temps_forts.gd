@@ -1697,7 +1697,7 @@ func _lancer_rejeu() -> bool:
 	montrer_mention()
 	suivi.append({"evenement": "rejeu", "cle": str(tf.get("cle", "")), "plan": index, "vitesse": Rejeu.VITESSE, "vitesse_regie": vitesse,
 		"duree_source": float(info.get("duree_source", 0.0)), "duree_prevue": float(info.get("duree_source", 0.0)) / Rejeu.VITESSE,
-		"hauteur_camera": float(info.get("hauteur_camera", 0.0)), "debut_ms": Time.get_ticks_msec()})
+		"hauteur_camera": float(info.get("hauteur_camera", 0.0)), "gene_angle": float(info.get("gene_angle", 0.0)), "retrait": float(info.get("retrait", 0.0)), "debut_ms": Time.get_ticks_msec()})
 	return true
 
 ## Abrège le ralenti en cours (l'état d'avant est remis par la vue, puis `_rejeu_fini`).

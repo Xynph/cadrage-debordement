@@ -815,7 +815,7 @@ func inscrire_rejeu(noeud: Node3D, modele: Node3D, squelette: Skeleton3D) -> voi
 ## Contrôles du ralenti (régie, tests, match filmé).
 func rejeu_etat() -> Dictionary:
 	return {"actif": _rejeu.actif, "lecture": _rejeu.lecture, "duree_source": _rejeu.duree_source, "vitesse": _rejeu.vitesse,
-		"ecoule": _rejeu.ecoule, "hauteur_camera": _rejeu.hauteur_camera, "ecart_restitution": _rejeu.ecart_restitution,
+		"ecoule": _rejeu.ecoule, "hauteur_camera": _rejeu.hauteur_camera, "gene_angle": _rejeu.gene_angle, "retrait": _rejeu._retrait, "ecart_restitution": _rejeu.ecart_restitution,
 		"enregistre": _rejeu.enregistre, "poses": _rejeu.tampon.size(), "fenetre": _rejeu.clip.size()}
 
 

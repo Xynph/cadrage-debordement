@@ -472,10 +472,10 @@ static func cote_rejeu(ballon: Vector3) -> Vector2:
 
 
 ## Plan du ralenti quand le ballon est en `ballon` : {"camera", "vise", "champ"} (repère de la vue).
-static func plan_rejeu(ballon: Vector3, cote: Vector2) -> Dictionary:
+static func plan_rejeu(ballon: Vector3, cote: Vector2, retrait: float = REJEU_RETRAIT) -> Dictionary:
 	var sens := 1.0 if cote.x >= 0.0 else -1.0
 	var lateral := 1.0 if cote.y >= 0.0 else -1.0
-	var camera := Vector3(ballon.x - sens * REJEU_RETRAIT, REJEU_HAUTEUR, ballon.z + lateral * REJEU_RECUL)
+	var camera := Vector3(ballon.x - sens * retrait, REJEU_HAUTEUR, ballon.z + lateral * REJEU_RECUL)
 	camera.x = clampf(camera.x, -REJEU_BORNE.x, REJEU_BORNE.x)
 	camera.z = clampf(camera.z, -REJEU_BORNE.y, REJEU_BORNE.y)
 	# Ballon dans l'en-but : la caméra pourrait frôler un montant ; elle reste alors dans le terrain.
@@ -483,6 +483,35 @@ static func plan_rejeu(ballon: Vector3, cote: Vector2) -> Dictionary:
 		if Vector2(camera.x - sens * 50.0, camera.z - z).length() < REJEU_POTEAU:
 			camera.x = sens * (50.0 - REJEU_POTEAU)
 	return {"camera": camera, "vise": Vector3(ballon.x, REJEU_VISEE, ballon.z), "champ": REJEU_CHAMP}
+
+
+## Gêne d'un plan de ralenti (0 : rien ne masque) : un joueur (ou l'arbitre) debout entre la caméra
+## et le ballon le cache d'autant plus qu'il est près de l'objectif ; un joueur à moins de
+## REJEU_PRES m de la caméra et dans le champ remplit l'image même sans cacher le ballon.
+## `places` : pieds de chaque personne (repère de la vue).
+const REJEU_PRES := 4.5
+const REJEU_CARRURE := 0.45
+static func gene_rejeu(plan: Dictionary, places: PackedVector3Array) -> float:
+	var camera: Vector3 = plan.camera
+	var vise: Vector3 = plan.vise
+	var regard := Vector2(vise.x - camera.x, vise.z - camera.z)
+	var portee := regard.length()
+	if portee < 0.5: return 0.0
+	regard /= portee
+	var demi_champ := deg_to_rad(float(plan.get("champ", REJEU_CHAMP))) * 0.5 * 16.0 / 9.0
+	var gene := 0.0
+	for p: Vector3 in places:
+		var rel := Vector2(p.x - camera.x, p.z - camera.z)
+		var loin := rel.dot(regard)
+		if loin <= 0.3: continue
+		var travers := absf(rel.x * regard.y - rel.y * regard.x)
+		# Devant le ballon (au moins 1,5 m avant lui) et sur la ligne de visée : le marqueur est caché.
+		if loin < portee - 1.5 and travers < REJEU_CARRURE + loin / portee:
+			gene += 4.0 / maxf(loin, 1.0)
+		# Tout près de l'objectif et dans le champ : un corps en gros plan.
+		if loin < REJEU_PRES and atan2(travers, loin) < demi_champ:
+			gene += 3.0 / maxf(loin, 1.0)
+	return gene
 
 
 ## Déplace le point visé juste assez pour que le ballon reste dans la zone sûre de l'image.

@@ -361,7 +361,7 @@ func run() -> void:
 	report["legendes"] = legendes
 	report["ralentis"] = ralentis.map(func(e: Dictionary) -> Dictionary: return {"evenement": e.get("evenement"), "secondes": snappedf((int(e.get("debut_ms", debut)) - debut) / 1000.0, 0.1),
 		"plan": e.get("plan", -1), "duree_source": e.get("duree_source", 0.0), "duree_prevue": e.get("duree_prevue", 0.0), "duree_reelle": e.get("duree_reelle", -1.0),
-		"passe": e.get("passe", false), "hauteur_camera": e.get("hauteur_camera", 0.0), "ecart_restitution": e.get("ecart_restitution", -1.0)})
+		"passe": e.get("passe", false), "hauteur_camera": e.get("hauteur_camera", 0.0), "gene_angle": e.get("gene_angle", -1.0), "retrait": e.get("retrait", -1.0),"ecart_restitution": e.get("ecart_restitution", -1.0)})
 	report["images_ralenti"] = report.images.filter(func(i: Dictionary) -> bool: return bool(i.get("ralenti", false))).size()
 	if o.planche and not report.images.is_empty():
 		var choisies: Array = []
