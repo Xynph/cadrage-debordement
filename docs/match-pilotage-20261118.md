@@ -79,12 +79,46 @@ de score selon chaque réglage. Ces séries figent le banc adverse (une seule va
 des consignes adverses neutres donnent exactement les mêmes matchs qu'avant (20 matchs, mêmes graines), puis
 mesure le banc adverse actif sur 60 matchs (~2,9 changements de consigne par match).
 
+## Coach de l'ordinateur (19/11/2026)
+
+Demande de Léo : un coach de l'ordinateur crédible, avec les mêmes leviers que le manager, sans tricher.
+
+- **Minute du moteur** : `match-pilotage.js` enveloppe `advanceRugby` (`pilotageMinute`). Après chaque minute, quel que
+  soit le match : banc adverse du match du joueur (`pilotageAdversaire`, donc aussi dans la version web, sans le
+  domaine `match-delegation`), et causeries adverses d'avant-match et de mi-temps si la causerie du manager ne les a
+  pas déjà déclenchées (match sans causerie, version web).
+- **Matchs entre clubs de l'ordinateur** (`initPilotageIA`, appelé par la simulation du Monde, `world-career.cjs`) :
+  arbitre désigné comme pour le joueur, et pour chaque banc (`l.pilotage.cotes[side]`) causerie d'avant-match et de
+  mi-temps (`causerieDuBanc`, même modèle de réaction, contexte vu de son côté), consignes revues toutes les 5 minutes
+  (`reglesDuStaff`, compétence réelle de ses entraîneurs, sinon le réglage « niveau adverse »). Remplacements selon la
+  fatigue et révisions du plan de jeu : ceux du moteur, inchangés (`manageSubstitutions`, `adaptManager`).
+- **États des joueurs** : `pilotageSkillMod` lit le match qui joue sa minute (`PILOTAGE_EN_COURS`), pas le direct :
+  un match de l'ordinateur simulé pendant le direct (multiplex) ne mélange pas ses états avec ceux du joueur.
+- **Équité** : « Accélérer » use plus vite les deux bancs (avant : seulement le club joué). Nouvelle règle de staff,
+  partagée par les trois bancs (staff délégué, adversaire, ordinateur) : dès 70′, « Jouer la montre » devant d'au plus
+  7 points, « Tout tenter » mené d'au plus 14 points.
+
+Mesure (`tests/coach-ordinateur.cjs`, 2 100 matchs du Monde rejoués avec les mêmes graines, coach absent puis présent) :
+
+| | Sans coach | Avec coach |
+|---|---|---|
+| Victoires à domicile | 57 % | 60 % |
+| Le favori (≥ 3 points de niveau) gagne | 69 % | 68 % |
+| Points par match | 47,6 | 48,9 |
+| Essais par match | 5,6 | 5,9 |
+| Pénalités par équipe | 9,8 | 9,2 |
+| Jaunes par équipe | 0,31 | 0,27 |
+| Changements par équipe | 7,3 | 7,3 |
+
+Deux causeries par banc, ~2,9 changements de consigne par banc et par match ; réactions variées (Motivé, Serein,
+Galvanisé, Vexé, Tendu, Relâché). Le coach nuance les matchs sans changer la hiérarchie.
+
 ## Limites connues
 
 - Le moteur donne déjà ~2,5 cartons jaunes par équipe et par match (bien au-dessus du Top 14) : antérieur à ce
   chantier, à corriger à part.
-- Les matchs IA contre IA n'ont ni causerie ni consigne (pilotage réservé au match du joueur).
-- Version web : sans le domaine natif `match-delegation`, le banc adverse ne revoit pas ses consignes en cours de match.
+- Le coach de l'ordinateur ne pousse pas de cris de la touche et ne touche ni la mêlée, ni le ballon porté, ni les coups
+  d'envoi, ni le point faible ; une consigne posée reste jusqu'à la fin (pas de retour au neutre).
 
 ## Cris de la touche, fatigue, conseil de changement (fenêtre Équipe)
 
