@@ -19,16 +19,23 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-dilemmes-'));
 const sauvegarde = path.join(root, 'dilemmes.json');
 const sortie = process.env.CD_DILEMMES_CAPTURE || '';
 // 4. Bannière des Bleus : il faut un historique de club (fenêtre glissante de 8 matchs, 2 repos). Carrière Monde jouée
-// par le vrai moteur, composition et matchs confiés au staff (qui ne tient pas compte du protocole), jusqu'au premier
-// jour de match où un titulaire de la liste des 33 doit souffler. Seulement avec les captures (≈ 8 matchs simulés).
+// par le vrai moteur, matchs délégués, mais un manager qui garde son XV du premier match à chaque rencontre (la
+// sélection du staff, elle, étale les repos depuis le 19/11), jusqu'au premier jour de match où un titulaire de la
+// liste des 33 doit souffler. Seulement avec les captures (≈ 6 à 8 matchs simulés).
 const sauvegardeBleus = sortie ? path.join(root, 'dilemmes-bleus.json') : '';
 if (sauvegardeBleus) {
   const jeu = Monde.ouvrir({ testVm: true });
   try {
-    let model = Monde.creer(jeu, 0), joues = 0;
+    let model = Monde.creer(jeu, 0), joues = 0, xv = null;
     for (; joues <= 10; joues++) {
       model = Monde.jusquAuMatch(jeu, model);
-      if (!model.selection.valid) model = jeu.call('auto_lineup');
+      if (!xv) { model = jeu.call('auto_lineup'); xv = model.selection.slots.map(x => x.playerId ?? null); }
+      else {
+        const aptes = new Set(model.squad.filter(p => !(p.injury > 0) && !(p.suspension > 0)).map(p => String(p.id)));
+        const changes = xv.map((playerId, slot) => ({ slot, playerId })).filter(c => c.playerId && aptes.has(String(c.playerId)));
+        try { model = jeu.call('set_lineup', { changes }); } catch { /* XV impossible à remettre tel quel : feuille du jour */ }
+        if (!model.selection.valid) model = jeu.call('auto_lineup');
+      }
       if ((model.clubLife.doublons?.reposer || []).length) break;
       model = Monde.jusquALaSemaineSuivante(jeu, Monde.jouerLeMatch(jeu, model));
     }
