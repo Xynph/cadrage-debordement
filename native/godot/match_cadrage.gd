@@ -540,6 +540,70 @@ static func gene_poteaux(plan: Dictionary) -> float:
 	return gene
 
 
+## Marqueur masqué à un instant du ralenti (verdict, pas une gêne) : un montant, protection comprise
+## (POTEAU_PROTECTION m de demi-largeur : la protection fait 0,42 m de côté, vue en biais 0,6 m), ou un
+## joueur debout (REJEU_CARRURE) coupe le cône qui va de l'objectif au marqueur couché (REJEU_CORPS m
+## de part et d'autre du ballon). Un montant juste derrière le ballon compte aussi (le corps du marqueur
+## s'étend au-delà du ballon) ; un joueur à moins de 1,5 m du ballon est le marqueur ou son plaqueur.
+## Caméra à 1,1 m, protection haute de 1,6 m et montant de 12 m : rien ne passe au-dessus.
+## (19/11/2026 : marqueur aplati derrière la protection, angle gardé car un montant à moins de 0,5 m
+## du ballon n'était pas compté et la gêne moyenne diluait l'aplati.)
+const POTEAU_PROTECTION := 0.3
+const REJEU_CORPS := 0.6
+static func masque_rejeu(plan: Dictionary, places: PackedVector3Array) -> bool:
+	var camera: Vector3 = plan.camera
+	var vise: Vector3 = plan.vise
+	var regard := Vector2(vise.x - camera.x, vise.z - camera.z)
+	var portee := regard.length()
+	if portee < 0.5: return false
+	regard /= portee
+	for x: float in [-50.0, 50.0]:
+		for z: float in [-POTEAUX_Z, POTEAUX_Z]:
+			var rel := Vector2(x - camera.x, z - camera.z)
+			var loin := rel.dot(regard)
+			if loin <= 0.3 or loin > portee + REJEU_CORPS: continue
+			var travers := absf(rel.x * regard.y - rel.y * regard.x)
+			if travers < POTEAU_PROTECTION + REJEU_CORPS * minf(loin / portee, 1.0):
+				return true
+	for p: Vector3 in places:
+		var rel := Vector2(p.x - camera.x, p.z - camera.z)
+		var loin := rel.dot(regard)
+		if loin <= 0.3 or loin >= portee - 1.5: continue
+		var travers := absf(rel.x * regard.y - rel.y * regard.x)
+		if travers < REJEU_CARRURE + REJEU_CORPS * loin / portee:
+			return true
+	return false
+
+
+## Premier plan d'un instant du ralenti : chaque joueur (ou montant) dans le champ à moins de
+## REJEU_PREMIER_PLAN m de l'objectif compte de 0 (à cette distance) à 1 (à REJEU_TRES_PRES m ou
+## moins) ; somme. Un corps à 5 m remplit déjà les deux tiers de la hauteur de l'image (champ de 30°).
+const REJEU_PREMIER_PLAN := 6.5
+const REJEU_TRES_PRES := 3.5
+static func premier_plan_rejeu(plan: Dictionary, places: PackedVector3Array) -> float:
+	var camera: Vector3 = plan.camera
+	var vise: Vector3 = plan.vise
+	var regard := Vector2(vise.x - camera.x, vise.z - camera.z)
+	var portee := regard.length()
+	if portee < 0.5: return 0.0
+	regard /= portee
+	var demi_champ := deg_to_rad(float(plan.get("champ", REJEU_CHAMP))) * 0.5 * 16.0 / 9.0
+	var obstacles := places.duplicate()
+	for x: float in [-50.0, 50.0]:
+		for z: float in [-POTEAUX_Z, POTEAUX_Z]:
+			obstacles.append(Vector3(x, 0.0, z))
+	var somme := 0.0
+	for p: Vector3 in obstacles:
+		var rel := Vector2(p.x - camera.x, p.z - camera.z)
+		var loin := rel.dot(regard)
+		if loin <= 0.3 or loin >= minf(REJEU_PREMIER_PLAN, portee - 1.5): continue
+		var travers := absf(rel.x * regard.y - rel.y * regard.x)
+		# Le bord du corps (0,3 m) suffit à entrer dans l'image.
+		if atan2(maxf(travers - 0.3, 0.0), loin) < demi_champ:
+			somme += clampf((REJEU_PREMIER_PLAN - loin) / (REJEU_PREMIER_PLAN - REJEU_TRES_PRES), 0.0, 1.0)
+	return somme
+
+
 ## Déplace le point visé juste assez pour que le ballon reste dans la zone sûre de l'image.
 func _garder(ballon: Vector3, centre: Vector3, taille: float, basis: Basis, aspect: float) -> Vector3:
 	var relatif := basis.inverse() * (ballon - centre)
