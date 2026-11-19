@@ -1,5 +1,7 @@
 # UX Spec : Presse
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
+
 > **Statut** : En conception (brouillon autonome, rigueur `minimal`)
 > **Auteur** : ux-designer (CCGS)
 > **Dernière mise à jour** : 19/11/2026
@@ -34,7 +36,7 @@ Rail > Presse (entrée à confirmer à l'écran ; accès aussi depuis Bureau, R�
         └── Onglet Portraits (journalistes et relations)
 ```
 
-Onglets : les quatre sont dans l'écran (motif N2 : un seul jeu d'onglets). Sorties : Échap ferme d'abord la fenêtre ou la fiche ouverte ; sinon menu pause, comme sur tout écran racine (règle provisoire alignée sur 04 et 05, en attente de la décision de Léo, §11) ; Alt ← revient à l'écran précédent.
+Onglets : les quatre sont dans l'écran (motif N2 : un seul jeu d'onglets). Sorties : Échap ferme d'abord la fenêtre ou la fiche ouverte ; sinon menu pause, comme sur tout écran racine (règle unique décidée par Léo le 19/11/2026, alignée sur 04 et 05 ; bouton « Menu » de la coque en plus) ; Alt ← revient à l'écran précédent.
 
 Entrées : courrier de presse de Réception (« Ouvrir la conférence », avec « Revenir au courrier » dans l'onglet Conférence), Bureau, Après-match, rail (entrée « Presse » de la coque ; emplacement exact à confirmer à l'écran).
 
@@ -107,14 +109,14 @@ Entrées : courrier de presse de Réception (« Ouvrir la conférence », avec �
 
 ## 8. Accessibilité
 
-- **Texte** : corps ≥ 14 px, titres de journal ≥ 14 px, classement/tableau ≥ 13 px (T1) ; pas de troncature d'un titre de presse (T5).
+- **Texte** : corps ~13 px, titres de journal ≥ 13 px, classement/tableau 12-13 px (T1) ; pas de troncature d'un titre de presse (T5).
 - **Contraste** : texte sur la grande photo du bandeau : aplat derrière le titre et les indicateurs (C5).
 - **Couleur** : indicateurs avec chiffre `n / 100` + mot de seuil + barre ; état « conférence ouverte/indisponible » par mot (D1, D6) ; réglage « Y aller / Envoyer l'adjoint » par coche.
 - **Clavier** : ordre : rail, onglets, panneau principal, salle de presse, mémoire, réglage (K1) ; focus d'arrivée sur « Préparer la conférence » si ouverte, sinon sur le premier titre (K8).
 - **Mouvement** : aucun défilement automatique du journal (M6).
 - **Gabi** : conseil de presse en texte, pas seulement audio (S2).
 - **Cognitif** : 3 indicateurs au lieu de 5 ; 4 onglets ; 1 bouton principal.
-- **Cibles** : onglets ≥ 32 px de haut (K6).
+- **Cibles** : onglets ≥ 28 px de haut (K6).
 
 ## 9. Ce qu'on retire ou déplace par rapport à l'écran actuel
 
@@ -149,7 +151,7 @@ Déviation aux motifs : N2 (un seul jeu d'onglets avec raccourci), F3 (valeur nu
 |---|---|---|
 | Contenu des onglets Conférence et Historique et Portraits relevé dans le code (§6) ; rendu à capturer | ux-designer | relevé, capture à faire |
 | La conférence ne s'ouvre que depuis l'invitation du courrier : garder ce circuit, ou permettre l'accès direct depuis Presse ? | Léo / game-designer | à trancher |
-| Échap sur écran racine (Presse comprise) : menu pause ou rien ? Règle provisoire = menu pause | Léo | à trancher |
+| Échap sur écran racine (Presse comprise) : menu pause ou rien ? | Léo | **Résolue le 19/11/2026** : menu pause, plus bouton « Menu » dans la coque |
 | Publication en deux temps avec récapitulatif des conséquences (aujourd'hui un seul clic) | Léo | à valider |
 | Les captures nomment des journalistes et joueurs apparemment réels : pack actif ? | Léo / data | à vérifier |
 | Quelle échéance d'une conférence : fin de semaine ? avant le prochain match ? | game-designer | à trancher |
@@ -173,7 +175,7 @@ Déviation aux motifs : N2 (un seul jeu d'onglets avec raccourci), F3 (valeur nu
 
 ### Contrôle d'entrée (souris + clavier ; manette hors périmètre)
 - [x] Onglets, réponses, boutons atteignables au clavier (Tab, flèches, Entrée, Espace) ; ordre de focus défini (§8).
-- [x] Tout faisable à la souris ; onglets et boutons ≥ 32 px.
+- [x] Tout faisable à la souris ; onglets et boutons ≥ 28 px.
 - [x] Un brouillon de conférence survit à Échap et à la navigation.
 - [x] Aucun glisser ; aucune limite de temps (la clôture « JJ/MM » est une échéance de jeu annoncée, pas un chrono).
 

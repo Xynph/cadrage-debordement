@@ -1,5 +1,7 @@
 # UX Spec : 14 — Entracte du match (2D)
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) (hors direct : le texte du match garde ses minimums T2) ; en match, Échap = pause.
+
 > **Statut** : en conception (proposé, non validé par Léo)
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
 > **Dernière mise à jour** : 19/11/2026
@@ -62,7 +64,7 @@ Match en direct 3D (13)
 ```
 
 **Mode** : overlay, jeu en défilement 2D à la vitesse choisie (pas de pause par défaut ; ÉQUIPE met en pause).
-**Échap** : ferme la fenêtre ou le panneau ouvert ; sans fenêtre : **pause** (jamais quitter, jamais menu carrière ; décision 16/11).
+**Échap** : ferme la fenêtre ou le panneau ouvert ; sans fenêtre : **pause du match** (jamais quitter, jamais menu carrière ; décision 16/11, confirmée par la règle unique d'Échap du 19/11/2026 : en match, Échap = pause).
 
 | Entrée | Déclencheur | Note |
 |---|---|---|
@@ -211,7 +213,7 @@ Les autres matchs de la journée et le classement en direct (aujourd'hui dans la
 | « Faits marquants » (liste) | Replier dans PLUS > Journal | Dupliqué avec le journal |
 | Duel en chiffres (stats par thème) | Garder derrière « voir stats » | Progressive disclosure |
 | Pastilles du terrain : couleur seule | Ajouter numéro + contour distinct (forme) | D5 |
-| Texte du terrain en 11-12 px | Plancher 14 px (T1) | Lisibilité |
+| Texte du terrain en 11-12 px | Plancher 12 px (jamais sous 11 px, T1 dense) | Lisibilité |
 | Colonnes multiples en 1280 | La colonne Mon XV passe sous le terrain à < 1100 px | Éviter la police 11 px |
 
 ### Conflit à signaler
@@ -279,7 +281,7 @@ Aucun flash. Pas d'animation qui porte seule l'information.
 **Localisation (longueurs max, +40 % prévus)** : nom d'équipe 22 caractères (barre) ; nom de joueur dans Mon XV 24 ; phrase de l'adjoint 90 caractères sur 2 lignes (au-delà : infobulle) ; libellé de bouton 24 (« Remplacer le N », « Confier la fin à l'adjoint ») ; étiquette de chiffre clé 18. Aucun texte dans une image (E4).
 
 **Méthodes d'entrée (PC)**
-- Souris : tout ce qui est en §6.1 ; cibles ≥ 24×24 px, boutons de la barre ≥ 32 px de haut (K6).
+- Souris : tout ce qui est en §6.1 ; cibles ≥ 24×24 px, boutons de la barre ≥ 28 px de haut (K6).
 - Clavier seul : Tab / Maj+Tab dans l'ordre de §10, ↑ ↓ et Entrée dans Mon XV, Espace = Reprendre / Pause, Échap = ferme la fenêtre puis pause. Aucune action n'exige un glisser-déposer.
 - Manette : hors périmètre.
 

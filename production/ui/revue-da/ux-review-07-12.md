@@ -185,9 +185,9 @@ Communs aux six (corrigés dans les fiches) : pas de ligne Template ; pas de sec
 
 ## Questions pour Léo (ne bloquent pas)
 
-1. **Échap sur un écran racine** (07, 09, 10, 11, 12) : retour, ou menu pause comme aujourd'hui ? Les fiches écrivent « retour » partout et gardent le comportement actuel sans filtre ni fenêtre (07).
-2. **Hauteur de ligne des tableaux** (07, 09) : 32 px (K6, environ 17 lignes visibles) ou 28 px actuels (21 lignes) ?
-3. **Budget de recrutement** (09) : existe-t-il un plafond distinct de la trésorerie ? Sinon le libellé devient « Trésorerie disponible ».
+1. **Échap sur un écran racine** (07, 09, 10, 11, 12) : retour, ou menu pause comme aujourd'hui ? Les fiches écrivent « retour » partout et gardent le comportement actuel sans filtre ni fenêtre (07). **Résolu le 19/11/2026 : Échap = fenêtre, puis retour de fiche/sous-écran, sinon menu pause.**
+2. **Hauteur de ligne des tableaux** (07, 09) : 32 px (K6, environ 17 lignes visibles) ou 28 px actuels (21 lignes) ? **Résolu le 19/11/2026 : 24-26 px comme Football Manager (≈ 22-24 lignes visibles).**
+3. **Budget de recrutement** (09) : existe-t-il un plafond distinct de la trésorerie ? Sinon le libellé devient « Trésorerie disponible ». **Résolu le 19/11/2026 : oui, « Budget de transferts » distinct ; évolution moteur à spécifier.**
 4. **Verrou de 0,5 s sur « Coup d'envoi »** (12) : acceptable (changement de N5/N6) ?
 5. **Confirmation avant le coup d'envoi** avec avertissements ouverts (12) : proposé non.
 6. **Précédent/suivant** de la fiche depuis la composition (08) : XV, groupe ou aucun.

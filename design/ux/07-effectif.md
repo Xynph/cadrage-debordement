@@ -1,5 +1,7 @@
 # Fiche UX 07 — Effectif
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
+
 > **Template**: UX Spec
 > **Statut** : proposé (ux-designer CCGS, 19/11/2026, mode autonome, rigueur `minimal`)
 > **Écran** : `Effectif` (route « Effectif », chapitre Effectif/Vestiaire) · carrière Monde · PC souris + clavier
@@ -39,7 +41,7 @@ Carrière Monde
 - **Modalité** : écran plein, non modal ; sélection et filtres sont de l'état d'interface (aucune commande moteur).
 - **Entrées** : rail (Effectif), alerte Bureau (arrive avec le filtre correspondant), accès rapide (joueur : arrive en fiche, pas ici), retour de la fiche (garde ligne choisie, tri, filtre, position de défilement).
 - **Sorties** : fiche joueur (Entrée) · Composition (via bandeau d'alerte « n joueurs indisponibles dans ton XV », voir §6) · Prolongation (bouton du panneau, ouvre la négociation) · autre menu du rail.
-- **Échap** : ordre de priorité, une seule action par appui : (1) ferme une fenêtre ouverte ; (2) si la recherche a le focus, la vide, puis un 2e appui sort du champ ; (3) si un filtre est actif, le retire ; (4) sinon, comportement actuel de l'écran racine (menu pause, N5) **jusqu'à la décision de Léo** (question 1, §13). Un filtre actif n'ouvre donc jamais la pause (déviation, voir §11).
+- **Échap** : ordre de priorité, une seule action par appui : (1) ferme une fenêtre ouverte ; (2) si la recherche a le focus, la vide, puis un 2e appui sort du champ ; (3) si un filtre est actif, le retire ; (4) sinon ouvre le menu pause (règle unique décidée par Léo le 19/11/2026, N5 ; le bouton « Menu » de la coque l'ouvre aussi). Un filtre ou une recherche actifs n'ouvrent donc jamais la pause : il faut d'abord les retirer (déviation, voir §11).
 
 ## 4. Hiérarchie
 
@@ -174,8 +176,8 @@ Aucun raccourci à une lettre pendant la saisie (K5). Le focus d'un tableau et c
 
 ## 9. Accessibilité (T1, C1, C3, D1, D3, D6, K1, K2, K6, K8, E1)
 
-- **Texte** : lignes de tableau 13 px minimum à 1920 (T1), aucune étiquette < 12 px ; pied et raccourcis lisibles (C1, ratio ≥ 4,5:1).
-- **Hauteur de ligne** ≥ 32 px à 1920 (K6, action fréquente) ; aujourd'hui ≈ 28 px : moins de lignes visibles (≈ 17 au lieu de 21), compensé par les groupes repliables (Entrée sur le titre de groupe).
+- **Texte** : lignes de tableau 12-13 px à 1920 (T1), en-têtes de colonne en capitales 11-12 px, jamais sous 11 px ; pied et raccourcis lisibles (C1, ratio ≥ 4,5:1).
+- **Hauteur de ligne** 24-26 px à 1920, comme Football Manager (décision de Léo, 19/11/2026 ; K6 : cible ≥ 24 px) ; aujourd'hui ≈ 28 px : ≈ 22-24 lignes visibles au lieu de 21, groupes repliables conservés (Entrée sur le titre de groupe).
 - **Couleur non seule** : statut en mot ; blessure = icône + gravité en texte (D3) ; fin de contrat = icône + mot ; condition = chiffre + barre + repère à 80 % (D6) ; chips « Titulaire / Hors groupe » aujourd'hui verts identiques : différencier par forme (pleine / cerclée / sans chip) et mot.
 - **Focus** : liseré ≥ 2 px, distinct du survol et de la sélection. La ligne choisie et le tableau focalisé ont chacun un signe visible (le filet doré actuel sous l'en-tête ne suffit pas, K2).
 - **Ordre de focus** : rail → onglets de vue → compteurs → recherche → pastilles → poste → Filtres & tri → tableau (en-tête puis lignes) → panneau (Ouvrir, Prolonger, Comparer) → pied.
@@ -202,7 +204,7 @@ Aucun raccourci à une lettre pendant la saisie (K5). Le focus d'un tableau et c
 ## 11. Déviations des motifs
 
 - **E3** : ajoute le tri au clavier et l'ordre de poste rugby, déviation voulue (motif manquant n°9).
-- **N5** : Échap n'ouvre pas la pause quand un filtre ou la recherche est actif (incohérence 1 du relevé) ; proposition à valider.
+- **N5** : Échap n'ouvre pas la pause quand un filtre ou la recherche est actif (incohérence 1 du relevé) ; sinon règle unique de Léo (19/11/2026) : menu pause.
 - **E2** : pastille de filtre au format « Tous 40 » (sans virgule) comme en Réception ; actif = repère de forme (cadre épais) en plus de la teinte.
 
 ## 11 bis. Transitions, localisation, entrées
@@ -216,7 +218,7 @@ Aucun raccourci à une lettre pendant la saisie (K5). Le focus d'un tableau et c
 ## 12. Critères d'acceptation (binaires)
 
 - [ ] Ouvert, le focus est sur une ligne du tableau, visible, en < 200 ms (hors chargement).
-- [ ] Hauteur de ligne ≥ 32 px à 1920 (ou la valeur arbitrée par Léo, question 3) et texte de ligne ≥ 13 px.
+- [ ] Hauteur de ligne 24-26 px à 1920 (≈ 22-24 lignes visibles) et texte de ligne 12-13 px.
 - [ ] Le panneau du joueur affiche 3 points forts ; « / » ouvre la recherche locale sans toucher l'accès rapide (Ctrl K).
 - [ ] Le tableau se trie, s'inverse et se filtre sans souris ; la comparaison de 2 joueurs aussi.
 - [ ] Tri par défaut : groupes Avants puis Arrières, postes dans l'ordre rugby 1→15 (test sur « pilier gauche avant talonneur avant pilier droit »).
@@ -230,9 +232,9 @@ Aucun raccourci à une lettre pendant la saisie (K5). Le focus d'un tableau et c
 
 | Question | Propriétaire | Statut |
 |---|---|---|
-| Échap sur écran racine : pause ou rien ? | Léo / game-designer | À trancher (relevé, question 1) |
+| Échap sur écran racine : pause ou rien ? | Léo / game-designer | **Résolue le 19/11/2026** : menu pause ; bouton « Menu » dans la coque en plus |
 | Un joueur « Blessé » sort-il automatiquement des groupes Avants/Arrières ? | game-designer | À valider |
-| Hauteur de ligne 32 px : acceptable (≈ 17 lignes à l'écran) ? | direction artistique + Léo | À valider (coût de densité, accessibilité T1/K6) |
+| Hauteur de ligne des tableaux | direction artistique + Léo | **Résolue le 19/11/2026** : 24-26 px comme Football Manager (≈ 22-24 lignes visibles) |
 | Où vit la liste des fins de contrat (file de tâches de fin de saison, journey §3.4) ? | game-designer + ui-programmer | Ici, vue « Contrats » et compteur, sinon à créer |
 | Écran de comparaison (2 joueurs), appelé d'ici, de la fiche 08 et du recrutement : aucune fiche ne le spécifie | ux-designer | À spécifier (fiche à créer) |
 | Compteur « Aptes » : son clic ouvre « Tous » ; un filtre « Aptes » serait plus honnête | ux-designer | Conseil, non bloquant |

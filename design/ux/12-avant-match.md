@@ -1,5 +1,7 @@
 # Fiche UX 12 — Avant-match
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
+
 > **Template**: UX Spec
 > **Statut** : proposé (ux-designer CCGS, 19/11/2026, mode autonome, rigueur `minimal`)
 > **Écran** : `Match` avant le coup d'envoi (route « Match », ouverture du match ; maquette « Retenue » validée par Léo le 17/11/2026 : on **resserre**, on ne refond pas) · carrière Monde · souris + clavier
@@ -41,7 +43,7 @@ Carrière Monde › Tactique (chapitre)
 - **Modalité** : écran plein ; la délégation est une fenêtre.
 - **Entrées** : Préparation, barre haute, Bureau, rail, **reprise après arrêt forcé** (si le jeu est fermé en plein match, on revient ici, décision du 16/11).
 - **Sorties** : Match en direct (coup d'envoi) ; résultat direct (délégation, vers l'après-match) ; Composition, Plan de jeu, Dossier adverse ; autre menu du rail (le match n'est pas lancé, rien n'est perdu).
-- **Échap** : ferme la fenêtre ; sinon retour à l'écran précédent ; jamais pause ici (rien n'est lancé).
+- **Échap** : ferme la fenêtre ; sinon retour à l'écran précédent ; sans historique, ouvre le menu pause (règle unique de Léo, 19/11/2026). Le match n'est pas lancé : la pause du match n'existe pas ici.
 
 ## 4. Hiérarchie
 
@@ -172,7 +174,7 @@ L'écran ne calcule ni la validité ni le résultat.
 ## 9. Accessibilité (T1, C1, C5, D1, D2, D5, K1, K2, K8, M3, S2)
 
 - **Texte sur photo** : voile ou aplat sous tout texte de l'affiche (C5) ; test sur les 5 photos de météo (sec, vent, chaleur, pluie, forte pluie).
-- **Texte** : tuiles ≥ 14 px à 1920 ; « Classement ouvert… », « Pas encore de match… », « Rucks / Mêlée / Hors-jeu / Cartons » aujourd'hui sous le plancher à 1280 : ≥ 12 px réels, ≥ 14 px à 1920.
+- **Texte** : tuiles ~13 px à 1920 ; « Classement ouvert… », « Pas encore de match… », « Rucks / Mêlée / Hors-jeu / Cartons » aujourd'hui sous le plancher à 1280 : ≥ 11 px réels, ≥ 12-13 px à 1920.
 - **Couleur non seule** : forme V/N/D avec lettre ; météo icône + mot ; arbitre mot + repères ; « Probable » en mot ; statut de feuille icône + mot.
 - **Focus** : liseré ≥ 2 px ; ordre : rail → bandeau (Déléguer, Coup d'envoi) → Ta feuille → Conditions → L'adversaire → Gabi → pied ; focus initial sur « Coup d'envoi ».
 - **Délégation** : focus piégé, Échap annule, focus par défaut sur Annuler.
@@ -199,7 +201,7 @@ L'écran ne calcule ni la validité ni le résultat.
 ## 11. Déviations des motifs
 
 - **N5/N6** : verrou de 0,5 s à l'ouverture et touche maintenue ignorée ; pression volontaire sur le bouton focalisé.
-- **N5 (Échap)** : Échap n'ouvre jamais la pause ici (rien n'est lancé) ; choix final de Léo : question 5, §13.
+- **N5 (Échap)** : fenêtre, puis retour, puis menu pause de la carrière (règle unique de Léo, 19/11/2026) ; jamais de lancement ni d'abandon du match.
 - **W1** : délégation = action irréversible : bouton nommé, focus sur Annuler.
 - **F9** : raison d'un blocage visible à l'écran, pas seulement en infobulle.
 
@@ -232,7 +234,7 @@ L'écran ne calcule ni la validité ni le résultat.
 | Le verrou de 0,5 s + touche maintenue ignorée est-il acceptable pour Léo (changement de N5/N6) ? | Léo | À trancher |
 | Faut-il une confirmation avant le coup d'envoi quand des avertissements sont ouverts ? | Léo / game-designer | Proposé : non (pas de modale ; avertissement visible) |
 | La reprise après arrêt forcé : rejouer depuis le coup d'envoi ou résultat conservé ? | game-designer | Décision du 16/11 : reprise avant le match ; détail à confirmer |
-| Échap sur l'avant-match : retour (proposé) ou pause ? | Léo | À trancher (même question que la fiche 07) |
+| Échap sur l'avant-match : retour (proposé) ou pause ? | Léo | **Résolue le 19/11/2026** : retour, sinon menu pause |
 
 ## 14. Limites du relevé
 

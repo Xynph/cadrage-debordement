@@ -1,5 +1,7 @@
 # Fiche UX 08 — Fiche joueur
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
+
 > **Template**: UX Spec
 > **Statut** : proposé (ux-designer CCGS, 19/11/2026, mode autonome, rigueur `minimal`)
 > **Écran** : `Fiche joueur` (lecteur ouvert depuis une liste ; titre « Fiche joueur : NOM ») · carrière Monde · souris + clavier
@@ -37,7 +39,7 @@ Origine (Effectif | Composition | Recrutement | Bureau)
 - **Modalité** : écran plein, non modal ; « lecteur » (fermer = revenir à l'origine).
 - **Entrées** : voir ci-dessus ; la fiche garde la liste d'origine (précédent/suivant) quand elle vient de l'effectif ou d'une liste de recrutement.
 - **Sorties** : Échap ou « Retour à {origine} » (libellé dynamique : « Retour à l'effectif », « à la composition », « au recrutement ») · Prolonger (négociation) · Comparer · autre menu du rail.
-- **Échap** = retour (N5) ; jamais pause sur cet écran.
+- **Échap** = retour d'une fiche (étape 2 de la règle unique, N5) ; la pause ne s'ouvre qu'une fois revenu sur un écran principal (règle de Léo, 19/11/2026).
 
 ## 4. Hiérarchie
 
@@ -172,7 +174,7 @@ L'interface ne possède aucune de ces données.
 
 ## 9. Accessibilité (T1, T5, C1, C3, D1, D3, D6, K1, K2, K6, K8)
 
-- Texte ≥ 14 px à 1920 (≥ 13 px dans le tableau des matchs) ; aucune étiquette < 12 px (aujourd'hui « NIVEAU / 100 », « MON CARNET PERSONNEL » sont minuscules et grises : C1).
+- Texte ~13 px à 1920 (12-13 px dans le tableau des matchs) ; aucune étiquette < 11 px (aujourd'hui « NIVEAU / 100 », « MON CARNET PERSONNEL » sont minuscules et grises : C1).
 - Statut de disponibilité jamais en couleur seule : mot + icône ; blessure : icône spécifique + gravité en mots (D3).
 - Condition, fatigue : chiffre à côté de la barre et repère visible au seuil (D6).
 - **Alternative au clic** : tout est au clavier (onglets, précédent/suivant, boutons) ; aucun glisser-déposer sur cet écran.
@@ -198,7 +200,7 @@ L'interface ne possède aucune de ces données.
 ## 11. Déviations des motifs
 
 - **N2** : un seul motif d'onglet avec raccourci Ctrl+Tab (le motif actuel n'en a pas).
-- **N5** : Échap = retour, pas pause, même si la fiche vient d'être ouverte par accès rapide (le motif d'origine est conservé).
+- **N5** : Échap = retour d'une fiche, pas pause, même si la fiche vient d'être ouverte par accès rapide (règle unique du 19/11/2026).
 - **F3** : jauge toujours avec valeur numérique et seuil (le motif actuel peut afficher une barre seule).
 
 ## 11 bis. Transitions, localisation, entrées

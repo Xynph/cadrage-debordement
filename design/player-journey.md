@@ -1,5 +1,7 @@
 # Parcours du joueur — Rugby Legacy 27
 
+Décisions de Léo du 19/11/2026 intégrées : page Centre retirée et Suivi des jeunes fusionné dans Formation (écran 19 = une seule page) ; Échap ouvre le menu pause sur un écran principal (bouton « Menu » visible dans la coque en plus) ; densité « Football Manager » ; Budget de transferts distinct de la trésorerie ; zones de classement propres à chaque championnat.
+
 Statut : proposé (ux-designer, 19/11/2026, mode autonome, rigueur minimale).
 Source des écrans : inventaire du 19/11/2026 (19 écrans) et captures 1920 (bureau, effectif, direct).
 Public : manager PC, souris/clavier, tutoiement, vocabulaire de manager, pas de manette.
@@ -66,7 +68,7 @@ Légende : « 5 s » = ce que le joueur doit pouvoir faire ou comprendre en 5 se
 | 16 | Calendrier + classement + rivalités | Depuis le bureau (prochains matchs, classement) ; fin de saison | Voir la date et l'adversaire suivants, sa place au classement ; repérer les phases finales |
 | 17 | Finances | Alerte du conseil ; avant un transfert ; en fin de saison | Savoir s'il est dans le vert, combien il peut dépenser ; repérer ce qui pèse (salaires) |
 | 18 | Club (stade, installations, staff, direction, histoire) | Décisions à moyen terme ; objectifs du conseil ; fin de saison | Choisir un onglet ; voir ce qu'il peut améliorer et à quel prix ; lire l'état de la direction |
-| 19 | Formation / centre / suivi des jeunes | Cycle de formation ; fin de saison ; alerte « espoir » | Voir les jeunes à décider (promouvoir, garder, libérer) ; suivre un parcours |
+| 19 | Formation (page unique : Centre retiré, suivi des jeunes dans l'onglet Progression) | Cycle de formation ; fin de saison ; alerte « espoir » | Voir les jeunes à décider (promouvoir, garder, libérer) ; suivre un parcours |
 
 ## 3. Points de friction à traiter (par ordre d'effet)
 
@@ -75,7 +77,7 @@ Légende : « 5 s » = ce que le joueur doit pouvoir faire ou comprendre en 5 se
 3. Chargement (03) : doit toujours dire ce qu'il fait ; si bloqué, une sortie claire.
 4. Fin de saison : regrouper les décisions de contrats dans une file de tâches, pas dix alertes isolées.
 5. Après-match (15) : montrer d'abord trois causes, le reste derrière « voir plus » (progressive disclosure).
-6. Raccourcis du pied de page (« Espace Suite », « 1 à 9 Menus », « Échap Retour », « Ctrl F Rechercher », « F1 Aide ») : à vérifier qu'ils fonctionnent partout et qu'ils s'affichent avec un contraste suffisant (voir accessibilité).
+6. Raccourcis du pied de page (« Espace Suite », « 1 à 9 Menus », « Échap Menu » sur un écran principal / « Échap Retour » dans une fiche, « Ctrl F Rechercher », « F1 Aide ») : à vérifier qu'ils fonctionnent partout et qu'ils s'affichent avec un contraste suffisant (voir accessibilité).
 
 ## 4. Suite
 

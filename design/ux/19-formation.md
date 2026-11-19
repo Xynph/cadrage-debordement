@@ -1,10 +1,12 @@
-# UX Spec : 19 — Formation, centre, suivi des jeunes
+# UX Spec : 19 — Formation (centre retiré, suivi des jeunes fusionné)
+
+Décisions de Léo du 19/11/2026 intégrées : Page « Centre » retirée ; Suivi des jeunes fusionné dans Formation (page unique) ; densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
 
 > **Statut** : en conception (proposé, non validé par Léo)
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
 > **Dernière mise à jour** : 19/11/2026
 > **Phase du parcours** : 1.2 (cycle de formation), 1.4 fin de saison (promotions, contrats)
-> **Identifiants** : trois pages du chapitre « Formation » : Formation (`academy_canvas.gd`, 5 onglets), Centre, Suivi des jeunes
+> **Identifiants** : une seule page « Formation » (`academy_canvas.gd`, 5 onglets) ; la page Centre est retirée et le Suivi des jeunes est fusionné dans l'onglet Progression (décision de Léo, 19/11/2026)
 > **Plateforme** : PC souris + clavier ; palier Standard
 > **Sources** : captures `formation-1920.png`, `centre-1920.png`, `suivi-des-jeunes-1920.png` (semaine 5, 60 espoirs).
 > **Non vérifié** : onglets Effectif U18, Progression, Passerelles, Encadrement ; l'écran « suivi individuel » (bouton « Indisponible ») ; fin de saison.
@@ -52,9 +54,8 @@
 
 ```
 Formation (rail)
-  ├── Formation  [Effectif U21 · Effectif U18 · Progression · Passerelles · Encadrement]
-  ├── Centre            (aujourd'hui : présentation de fonctions « au calendrier des Espoirs »)
-  └── Suivi des jeunes  (Crabos 16-17, Espoirs 18-21 ; progression, temps de jeu)
+  └── Formation  [Effectif U21 · Effectif U18 · Progression (inclut le suivi des jeunes : Crabos 16-17, Espoirs 18-21, progression, temps de jeu) · Passerelles · Encadrement]
+      (page Centre retirée : plus d'entrée au rail ; plus de page Suivi des jeunes)
 ```
 **Mode** : écran plein.
 
@@ -70,8 +71,8 @@ Formation (rail)
 | Préparer une intégration | écran d'intégration à l'équipe première |
 | Clic sur un jeune | fiche du joueur |
 | Ouvrir le suivi individuel | suivi (actuellement « Indisponible ») |
-| Gérer la formation / Consulter les Espoirs | autres pages du chapitre |
-| Échap | historique |
+| Gérer la formation / Consulter les Espoirs | onglets de la même page |
+| Échap | règle unique (décision de Léo, 19/11/2026) : ferme la fenêtre, sinon retour (historique), sinon menu pause |
 
 ---
 
@@ -163,7 +164,7 @@ Le parcours Académie → Passerelles → Équipe première (aujourd'hui en bas)
 | P | Promouvoir le jeune sélectionné | proposé (hors champ de saisie, K5) |
 | Ctrl+Tab | onglet | proposé |
 | Tri au clavier | flèche sur l'en-tête | proposé |
-| Échap | historique | existant |
+| Échap | règle unique : fenêtre, retour, sinon menu pause | modifié (décision de Léo, 19/11/2026) |
 
 ### 6.3 Actions engageantes
 | Action | Règle |
@@ -193,8 +194,8 @@ L'écran lit seulement. Événements : promouvoir, garder, libérer, préparer u
 
 | Élément | Décision | Raison |
 |---|---|---|
-| Page **Centre** (Détection, Mentorat, Compétition junior, tous « au calendrier des Espoirs ») | Retirer du rail tant que ces fonctions n'existent pas ; garder une ligne dans Formation | Page de promesse, aucune action ; la consolidation prime |
-| Page **Suivi des jeunes** | Fusionner dans l'onglet Progression de Formation | Le suivi duplique le tableau ; il dit lui-même « sans rien décider ici » |
+| Page **Centre** (Détection, Mentorat, Compétition junior, tous « au calendrier des Espoirs ») | **Retirée** (décision de Léo, 19/11/2026) ; aucune ligne de remplacement tant que ces fonctions n'existent pas | Page de promesse, aucune action ; la consolidation prime |
+| Page **Suivi des jeunes** | **Fusionnée** dans l'onglet Progression de Formation (décision de Léo, 19/11/2026) | Le suivi duplique le tableau ; il dit lui-même « sans rien décider ici » |
 | Bandeau hero + photo | Réduire | 10 % d'écran |
 | Bouton « Ouvrir le suivi individuel · Indisponible » | Retirer | Bouton mort |
 | Bouton « Préparer une intégration » (CTA vert en bannière) | Remplacer par les actions Promouvoir / Garder / Libérer dans le panneau du jeune | L'action est à côté du jeune |
@@ -222,9 +223,9 @@ L'écran lit seulement. Événements : promouvoir, garder, libérer, préparer u
 
 | Texte | Fond | Seuil |
 |---|---|---|
-| Colonnes du tableau (9-11 px à 1920 sur la capture) | tableau sombre | **13 px réels minimum** (tableaux denses, T1) |
+| Colonnes du tableau (9-11 px à 1920 sur la capture) | tableau sombre | **12-13 px réels minimum** (tableaux denses, T1 dense ; en-têtes 11-12 px) |
 | Potentiel (ambre) | panneau | 4,5:1 |
-| Étiquettes « JIFF · 0/3 SAISONS · 3/30 MATCHS » | fond | ≥ 12 px, 4,5:1 |
+| Étiquettes « JIFF · 0/3 SAISONS · 3/30 MATCHS » | fond | ≥ 11 px, 4,5:1 |
 
 | Élément | Risque | Mitigation |
 |---|---|---|
@@ -243,10 +244,11 @@ L'écran lit seulement. Événements : promouvoir, garder, libérer, préparer u
 - [ ] Promouvoir, Garder, Libérer sont accessibles depuis le jeune sélectionné.
 - [ ] Un jeune blessé affiche motif et durée, avec icône.
 - [ ] Aucun bouton « Indisponible » : le bouton est absent ou actif.
-- [ ] Le tableau se trie et se parcourt au clavier ; texte ≥ 13 px réels.
+- [ ] Le tableau se trie et se parcourt au clavier ; texte ≥ 12 px réels.
 - [ ] « Promouvoir » et « Libérer » demandent confirmation avec le focus sur Annuler.
 - [ ] En fin de saison, les décisions de contrat des jeunes sont regroupées dans « À décider ».
-- [ ] Pas de page vide dans le rail (Centre retiré tant qu'il n'a pas d'action).
+- [ ] Pas de page vide dans le rail : Centre retiré, Suivi des jeunes absent du rail (décision de Léo, 19/11/2026).
+- [ ] L'onglet Progression montre le suivi des jeunes (Crabos, Espoirs, progression, temps de jeu) sans seconde page.
 - [ ] 1280×720 sans coupe ni chevauchement.
 
 ## 12. Questions ouvertes
@@ -254,8 +256,8 @@ L'écran lit seulement. Événements : promouvoir, garder, libérer, préparer u
 | Question | Propriétaire | Résolution |
 |---|---|---|
 | Où se prennent aujourd'hui les décisions promouvoir / garder / libérer ? | ui-programmer / game-designer | Résolue (revue UX 19/11, voir §13) : Promouvoir = `academy_promote` ; Garder / Libérer = `academy_intake_confirm` à l'arrivée de la promotion |
-| Centre : retirer du rail ou garder comme annonce ? | Léo | Ouverte (recommandé : retirer) |
-| Fusionner Suivi des jeunes dans Progression ? | Léo | Ouverte (recommandé : oui) |
+| Centre : retirer du rail ou garder comme annonce ? | Léo | **Résolue le 19/11/2026** : retiré |
+| Fusionner Suivi des jeunes dans Progression ? | Léo | **Résolue le 19/11/2026** : fusionné dans Formation |
 | Onglets U18, Progression, Passerelles, Encadrement non capturés | ui-programmer | À capturer |
 
 ## 13. Ajouts de la revue UX (19/11/2026)

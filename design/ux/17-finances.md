@@ -1,5 +1,7 @@
 # UX Spec : 17 — Finances
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque ; « Budget de transferts » distinct de la trésorerie.
+
 > **Statut** : en conception (proposé, non validé par Léo)
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
 > **Dernière mise à jour** : 19/11/2026
@@ -19,13 +21,13 @@
 
 ### 5 secondes
 1. Un verdict : « Dans le vert / Sous tension / Dans le rouge » et la trésorerie.
-2. Combien il peut dépenser (budget transferts + marge salariale).
+2. Combien il peut dépenser : **Budget de transferts** (montant restant / alloué par le conseil, distinct de la trésorerie) + marge salariale.
 3. Les trois vigilances (contrats, infrastructures, échéances).
 
 ### Hiérarchie
 | Rang | Bloc | Pourquoi |
 |---|---|---|
-| Principale | Verdict + trésorerie + « disponible pour recruter » | Répond à la question du joueur |
+| Principale | Verdict + trésorerie + « Budget de transferts » | Répond à la question du joueur |
 | Secondaire 1 | Vigilances (contrats à anticiper, infrastructures) | Ce qui demande une décision |
 | Secondaire 2 | Prochaines échéances (semaine prochaine : salaires, formation, recettes) | Anticiper |
 | Secondaire 3 | Répartition des charges (salaires, formation, staff) | Comprendre ce qui pèse |
@@ -71,7 +73,7 @@ Finances (rail)
 | Vigilances | Contrats, Club |
 | Ajuster les engagements | onglet Budget |
 | Clic sur une opération | détail du flux |
-| Échap | historique |
+| Échap | règle unique (décision de Léo, 19/11/2026) : ferme la fenêtre, sinon retour (historique), sinon menu pause |
 
 ---
 
@@ -87,7 +89,7 @@ Finances (rail)
 │    ├───────────────────────────────────────────────────────────────────────┤
 │    │ ┌ VERDICT ──────────────────────────────────────────────────────────┐ │
 │    │ │ ● DANS LE VERT     Trésorerie 3,54 M€                             │ │
-│    │ │ Disponible pour recruter : X €  · Marge salariale : Y €/sem.      │ │
+│    │ │ Budget de transferts : X € restant / Z € alloué · Marge salariale : Y │ │
 │    │ └────────────────────────────────────────────────────────────────────┘ │
 │    │ ┌ VIGILANCES ─────────────────┐ ┌ PROCHAINES ÉCHÉANCES ─────────────┐ │
 │    │ │ ! 25 contrats à anticiper → │ │ Sem. 6 · Salaires      −22 300 €  │ │
@@ -118,7 +120,7 @@ Le tableau « flux récents » (8 lignes, pagination 1/5) passe dans l'onglet Tr
 | Composant | Rôle | Existant ? |
 |---|---|---|
 | Carte de verdict (chip + mot + trésorerie) | feu vert / orange / rouge en mots | **Nouveau** (compte sur le principe : couleur + mot + icône) |
-| 4 cartes de chiffres du haut (Trésorerie, Marché du recrutement, Salaires, Marge courante) | aujourd'hui | Existant → **réduit à 2 chiffres** (trésorerie, disponible pour recruter) ; « Marché du recrutement 27 profils » est du recrutement, pas de la finance : déplacer |
+| 4 cartes de chiffres du haut (Trésorerie, Marché du recrutement, Salaires, Marge courante) | aujourd'hui | Existant → **réduit à 2 chiffres** (trésorerie, Budget de transferts restant / alloué) ; « Marché du recrutement 27 profils » est du recrutement, pas de la finance : déplacer |
 | Vigilance (ligne à action) | décision | Existant |
 | Échéance | anticipation | Existant |
 | Barres de répartition avec % | où va l'argent | Existant |
@@ -241,7 +243,7 @@ Pas de compteur qui défile pour les montants.
 - [ ] Aucune unité mélangée dans un même bloc.
 - [ ] Aucun terme comptable (« écritures », « guichet ») sans infobulle d'explication.
 - [ ] Entrées et sorties distinguables en niveaux de gris (signe, forme).
-- [ ] Tout texte ≥ 13 px réels (tableaux) / 14 px (corps) à 1920.
+- [ ] Tout texte ≥ 12 px réels (tableaux) / 13 px (corps) à 1920 ; jamais sous 11 px.
 - [ ] Tableau triable et parcourable au clavier.
 - [ ] Les 5 blocs tiennent à 1280×720 sans défilement.
 
@@ -263,7 +265,7 @@ Pas de compteur qui défile pour les montants.
 **Localisation (longueurs max, +40 % prévus)** : verdict 18 caractères ; libellé de vigilance 48 ; libellé d'échéance 30 ; montant 12 (« −1,25 M€ ») ; bouton 28.
 
 **Méthodes d'entrée (PC)**
-- Souris : §6.1 ; lignes de tableau ≥ 32 px de haut.
+- Souris : §6.1 ; lignes de tableau 24-26 px de haut (comme Football Manager).
 - Clavier seul : Tab dans l'ordre de §10, ↑ ↓ dans les tableaux, Ctrl+Tab pour les onglets ; aucun glisser-déposer.
 - Manette : hors périmètre.
 

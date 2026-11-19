@@ -1,5 +1,7 @@
 # Fiche UX 09 — Recrutement et contrats
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque ; Budget de transferts distinct de la trésorerie.
+
 > **Template**: UX Spec
 > **Statut** : proposé (ux-designer CCGS, 19/11/2026, mode autonome, rigueur `minimal`)
 > **Écran** : `Recrutement` (routes Recrutement + négociation de contrat en fenêtre) · carrière Monde · souris + clavier
@@ -39,7 +41,7 @@ Carrière Monde
 - **Modalité** : écran plein ; comparaison et missions en fenêtre (W3, une seule fenêtre à la fois).
 - **Entrées** : rail ; alerte Bureau (arrive filtré sur le poste en besoin) ; fiche joueur (négociation seule, pas cet écran) ; accès rapide.
 - **Sorties** : fiche joueur de la piste (Entrée) ; Effectif vue « Contrats » (bandeau « n fins de contrat cette saison ») ; Finances (lien sur le montant disponible).
-- **Échap** : ferme la fenêtre ouverte, sinon revient à l'écran précédent dans l'historique ; pas de pause tant qu'une piste est ouverte.
+- **Échap** : ferme la fenêtre ouverte, sinon revient d'une piste ou d'un sous-écran, sinon ouvre le menu pause (règle unique de Léo, 19/11/2026) ; jamais de pause tant qu'une piste ou une fenêtre est ouverte.
 
 ## 4. Hiérarchie
 
@@ -51,7 +53,7 @@ Carrière Monde
 
 ```
 ┌────┬──────────────────────────────────────────────────────────────────────────────────────┐
-│    │ Recrutement · Le prochain renfort.             Disponible pour les transferts 3 542 000 €│
+│    │ Recrutement · Le prochain renfort.             Budget de transferts 1,8 M€ / 3,5 M€      │
 │ Nav│ BESOINS DU CLUB :                                                                      │
 │124 │ ┌P1 Talonneur ────────┐┌P2 Deuxième ligne ─┐┌P3 Troisième ligne ─┐   [Lancer une mission]│
 │ px │ │relève insuffisante  ││10 fins de contrat ││10 fins de contrat  │   [Comparer 0/2]     │
@@ -152,7 +154,7 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 |---|---|---|---|
 | Pistes, prime, salaire demandé | marché (moteur) | à chaque jour | ligne masquée si identité manquante |
 | Niveau, potentiel observés | rapports de recrutement | à la fin d'une mission | « ? » |
-| Budget disponible | Finances (moteur) | à chaque jour ou dépense | « — » + « Voir Finances » |
+| Disponible pour les transferts | `finance.transferBudget` (disponible, enveloppe) | à chaque jour ou dépense | « — » + « Voir Finances » si absent ou inactif |
 | Besoins du club | analyse de l'effectif | à chaque jour, après contrat | « Aucun besoin urgent » |
 
 | Action | Événement | Payload |
@@ -192,7 +194,7 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 
 ## 9. Accessibilité (T1, T5, C1, C3, D6, K1, K2, K6)
 
-- Tableau 13 px minimum ; lignes ≥ 32 px (aujourd'hui ≈ 28 px, 14 lignes visibles à 1920).
+- Tableau 12-13 px ; lignes 24-26 px comme Football Manager (aujourd'hui ≈ 28 px, 14 lignes visibles à 1920 ; cible ≈ 22-24).
 - Priorité des besoins, statut d'observation, « Marché fermé » : toujours en mots (la couleur rouge/ambre/vert des cartes actuelles est retirée comme seul porteur).
 - Montants entiers, séparateur de milliers, devise toujours présente ; jamais de troncature d'un montant (T5).
 - Étoile : état en texte (« Suivi ») pour lecteur et infobulle.
@@ -209,7 +211,7 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 | Illustration (photo de coach) + liens « Repérer la relève » / « Marché entre clubs » | Retirés ; remplacés par les pastilles de source |
 | Tuiles « profils suivis », « rapports conservés » | Déplacées en compteurs d'onglets |
 | Tuile « Poste à surveiller : Talonneur » | Fusionnée dans la carte Priorité 1 |
-| Tuile « Trésorerie » | Remplacée par « Disponible pour les transferts » |
+| Tuile « Trésorerie » | Remplacée par « Budget de transferts » (restant / alloué) |
 | Cartes « Besoins de recrutement » en bas, « Veille 1/2/3 » | Montées en haut, « Priorité 1/2/3 » en mots |
 | Bouton « À observer » sur chaque ligne | Retiré ; action dans le panneau |
 | Panneau détail à 6 blocs | Réduit à 4 blocs + « Voir le rapport » replié |
@@ -222,7 +224,7 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 - **W1** : bouton nommé par l'action et focus sur Annuler pour tout engagement d'argent (déviation voulue, incohérence 4).
 - **F8** : états vides avec action (motif manquant n°8).
 - **E2** : pastilles de source au même format que les autres filtres.
-- **N5** : Échap n'ouvre pas la pause tant qu'une fenêtre ou une piste est ouverte ; sinon retour (choix final de Léo : question 5, §13).
+- **N5** : Échap n'ouvre pas la pause tant qu'une fenêtre ou une piste est ouverte ; sinon menu pause (règle unique de Léo, 19/11/2026).
 
 ## 11 bis. Transitions, localisation, entrées
 
@@ -253,5 +255,8 @@ Champs : prime, salaire/sem., durée (1 à 3 ans), clauses disponibles ; sous le
 | La file de fins de contrat (journey §3.4) doit-elle vivre ici ou dans Effectif > Contrats ? | Léo / game-designer | Proposé : Effectif (vue Contrats) + bandeau ici |
 | Missions : durée et coût visibles avant lancement ? | game-designer | À confirmer |
 | Le comparateur à 2 exige-t-il que les deux pistes soient observées ? | game-designer | À confirmer |
-| Échap sur Recrutement sans fenêtre ni piste ouverte : retour ou pause ? | Léo | À trancher (même question que la fiche 07) |
+| Échap sur Recrutement sans fenêtre ni piste ouverte : retour ou pause ? | Léo | **Résolue le 19/11/2026** : menu pause |
 | Écran de comparaison (2 pistes) : aucune fiche ne le spécifie | ux-designer | À spécifier (fiche à créer) |
+
+## 14. Dépendances
+

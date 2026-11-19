@@ -73,9 +73,9 @@ Fiches : `design/ux/01-accueil.md`, `02-creation.md`, `03-chargement.md`, `04-bu
 
 ## Questions pour Léo (ne bloquent pas)
 
-1. **Échap sur un écran racine** (Bureau, Réception, Presse) : ouvre le menu pause (état actuel, règle provisoire écrite dans 04, 05, 06) ou ne fait rien ?
+1. **Échap sur un écran racine** (Bureau, Réception, Presse) : ouvre le menu pause (état actuel, règle provisoire écrite dans 04, 05, 06) ou ne fait rien ? **Résolu le 19/11/2026 : Échap ouvre le menu pause ; bouton « Menu » visible dans la coque en plus.**
 2. **« Reprendre la carrière »** : doit-il arriver au Bureau (cible des fiches) ou rester sur Réception (code actuel) ?
-3. **Densité du Bureau** : corps de texte à 14 px à 1080p (accessibilité) contre ~12 px (brief) ; le Bureau devient plus aéré.
+3. **Densité du Bureau** : corps de texte à 14 px à 1080p (accessibilité) contre ~12 px (brief) ; le Bureau devient plus aéré. **Résolu le 19/11/2026 : densité « Football Manager » (corps ~13 px à 1080p, jamais sous 11 px), compensée par l'échelle d'interface 90/100/115/130 %.**
 4. **Réponses de courrier du club** : envoyer en deux temps (choisir puis « Envoyer la réponse », avec annulation) au lieu d'un clic ?
 5. **Marquage « lu » aux flèches** : seulement après 1 s, pour ne pas vider la boîte en parcourant ? Et « Tout marquer comme lu » : acceptable ?
 6. **Publication d'une conférence** : récapitulatif des conséquences avant publication (aujourd'hui un seul clic) ?

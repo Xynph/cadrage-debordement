@@ -1,5 +1,7 @@
 # UX Spec : 16 — Calendrier, classement, rivalités (chapitre « Compétitions »)
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque ; zones de classement lues par compétition dans les données.
+
 > **Statut** : en conception (proposé, non validé par Léo)
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
 > **Dernière mise à jour** : 19/11/2026
@@ -14,13 +16,13 @@
 ## 1. But
 
 **Besoin** : situer son club dans le temps (quand je joue, contre qui) et dans la compétition (où je me classe, ce que ça implique).
-**But du joueur** : voir en 5 secondes la date et l'adversaire du prochain match, sa place, et si un tournant approche (phases finales, relégation).
+**But du joueur** : voir en 5 secondes la date et l'adversaire du prochain match, sa place, et si un tournant approche (phases finales, barrage, relégation, selon la compétition).
 **Besoin du jeu** : donner un fil de saison et de la mémoire (rivalités) pour nourrir « encore une semaine ».
 
 ### 5 secondes
 1. Ma place au classement (ligne du club surlignée) et mes points.
 2. Mon prochain match : adversaire, date, domicile ou extérieur, bouton « Préparer le match ».
-3. Ce qui est en jeu : zone de promotion, de maintien ou de relégation.
+3. Ce qui est en jeu, **selon les zones propres à la compétition** (qualification aux phases finales, barrage d'accession ou de relégation, relégation directe, ou aucune zone quand le championnat modèle n'en a pas).
 
 ### Hiérarchie (par onglet)
 | Onglet | Principale | Secondaires |
@@ -40,7 +42,7 @@
 | Charge cognitive | Basse |
 | Sait déjà | Sa division, son prochain adversaire |
 | Cherche | Une date, un écart de points, un dossier d'adversaire |
-| Craint | Rater un match, ne pas voir la zone de relégation |
+| Craint | Rater un match, ne pas voir la zone qui le menace |
 
 **Cible émotionnelle** : « Je suis dans ma saison, je vois où ça se joue. »
 
@@ -71,7 +73,7 @@ Compétitions (rail)
 | « À jouer » sur une ligne | Préparation de cette rencontre |
 | Clic sur un club | fiche du club |
 | Clic sur un duel | dossier du duel (même page) |
-| Échap | retour (historique), jamais menu pause sur cet écran racine : **conflit connu, voir interaction-patterns #1** |
+| Échap | règle unique (décision de Léo, 19/11/2026) : ferme la fenêtre, sinon retour (historique), sinon menu pause ; bouton « Menu » de la coque en plus |
 
 ---
 
@@ -90,9 +92,9 @@ Compétitions (rail)
 │    │ ▌1 Alder Fen   0  0  0  0  0  0   0   0   0  ─     │ Meadowbridge R.      │
 │    │  2 Northmere…                                   │ 19/09 17:00 · Extérieur│
 │    │  …                                              │ [ Préparer le match → ]│
-│    │ ── Zone de promotion ──────────────────────      │ DERNIERS / PROCHAINS   │
-│    │ ── Zone de relégation ─────────────────────      │ 26/09 Trentwood (D)    │
-│    │ Légende : ▲ promotion  ● maintien  ▼ relégation  │ 02/10 Hawthorn (E)     │
+│    │ ── Zone (libellé lu dans la donnée) ───────      │ DERNIERS / PROCHAINS   │
+│    │ ── Zone (libellé lu dans la donnée) ───────      │ 26/09 Trentwood (D)    │
+│    │ Légende : uniquement les zones de la compétition │ 02/10 Hawthorn (E)     │
 │    ├──────────────────────────────────────────┴────────────────────────────┤
 │    │ Pied : Espace Suite · 1 à 9 Menus · Échap Retour · Ctrl K · F1         │
 └────┴───────────────────────────────────────────────────────────────────────┘
@@ -113,7 +115,7 @@ Compétitions (rail)
 |---|---|---|
 | Tableau de classement | lire sa place | Existant, **hors socle `tableau.gd`** (pas de tri ni de navigation clavier unifiée) : migrer |
 | Pastille de forme V/N/D avec lettre | derniers résultats | Existant en Préparation, à généraliser (pattern F6) |
-| Liseré + libellé de zone (promotion, barrage, maintien, relégation) | D4 | **Absent sur la capture** (aucune zone visible) : à ajouter |
+| Liseré + libellé de zone (qualification phases finales, barrage d'accession / de relégation, relégation directe : **selon la compétition**) | D4 | **Absent sur la capture** (aucune zone visible) : à ajouter ; pas de zone par défaut |
 | Carte « Prochain rendez-vous » | action principale | Existant |
 | Grille de mois | calendrier | Existant |
 | Programme du jour | détail du jour | Existant |
@@ -130,7 +132,7 @@ Compétitions (rail)
 |---|---|---|---|
 | Début de saison (J0) | avant la 1re journée | tous les compteurs à 0, place « – », forme vide | **Aujourd'hui : colonnes vides sans explication.** Afficher « Le championnat s'ouvre le 19/09 » dans le tableau et masquer FORME |
 | Saison en cours | normal | club surligné + liseré | — |
-| Zone de promotion / barrage / relégation | selon position | liseré latéral + libellé + légende | D4 |
+| Zone de classement (qualification, barrage, relégation directe, selon la compétition) | selon position et selon la donnée | liseré latéral + libellé + légende | D4 |
 | Fin de saison | dernière journée | bandeau « Dernière journée : il te faut X points » | — |
 | Phases finales | après la saison régulière | onglet Phases finales actif par défaut | non vérifié |
 | Compétition non disputée par le club | filtre autre compétition | bandeau « Ton club ne joue pas cette compétition » ; ligne du club absente | — |
@@ -177,7 +179,7 @@ Aucune : pas de saisie ni de décision sur ces écrans (consultation). Seul « P
 |---|---|---|---|---|
 | Classement de la compétition | moteur (compétition) | après chaque match | lignes | message de J0 |
 | Forme (5 derniers) | historique des matchs | après chaque match | V/N/D | masquée |
-| Zones | règles de la compétition (promotion, barrage, relégation) | à la saison | enum | légende absente + `NON SOURÇABLE` à vérifier avec `rugby-rules-reference.md` |
+| Zones | **donnée de la compétition** (rangs concernés et type de zone, par championnat réel modèle ; peut être vide) | à la saison | liste (rang de début, rang de fin, type) | aucune zone, aucune légende |
 | Prochain match | calendrier | à chaque jour | date, lieu | « Aucun match programmé » |
 | Séances publiées | plan d'entraînement | à la semaine | liste | « Aucune séance » |
 | Absences / sélections | convocations | quotidien | texte | masqué |
@@ -220,7 +222,7 @@ Cet écran n'écrit rien. Événements : « ouvrir la préparation », « ouvrir
 | Texte | Fond | Seuil |
 |---|---|---|
 | Lignes du tableau | fond sombre | 4,5:1 ; chiffres V (vert) et D (rouge) à valider |
-| Cases du calendrier (mini-textes ≈ 9-10 px à 1920) | cases sombres | ≥ 12 px réels, 14 px visé (T1) |
+| Cases du calendrier (mini-textes ≈ 9-10 px à 1920) | cases sombres | ≥ 11 px réels, 12-13 px visé (T1 dense) |
 | Étiquettes de colonne | idem | 4,5:1 |
 | Pied de page des raccourcis (gris sur sombre) | idem | 4,5:1 (C1, défaut connu) |
 
@@ -245,7 +247,7 @@ Cet écran n'écrit rien. Événements : « ouvrir la préparation », « ouvrir
 - [ ] Forme V/N/D avec lettre, lisible en deutéranopie.
 - [ ] Une seule rangée d'onglets de chapitre.
 - [ ] Rivalités s'ouvre sur « Notre club ».
-- [ ] Texte du calendrier ≥ 12 px réels à 1920 ; cible de jour ≥ 24 px de côté.
+- [ ] Texte du calendrier ≥ 11 px réels à 1920 ; cible de jour ≥ 24 px de côté.
 - [ ] Tableau parcourable au clavier (↑ ↓ Début Fin Entrée) et triable au clavier.
 - [ ] À J0, aucune colonne vide sans explication.
 
@@ -263,7 +265,8 @@ Cet écran n'écrit rien. Événements : « ouvrir la préparation », « ouvrir
 
 Légende : ★ demi-finale directe, ● phase finale, ▲ barrage de montée, ◆ barrage de maintien, ▼ relégation, ○ repêchage possible. Chaque zone porte liseré, symbole et mot (jamais la couleur seule).
 
-**Échap** : le comportement décrit en §3 (retour, jamais pause) est la cible ; le code actuel ouvre la pause sur un écran racine (`interaction-patterns.md` #1). Décision de Léo en attente.
+
+**Échap** : règle unique décidée par Léo le 19/11/2026 (`interaction-patterns.md` #1) : fenêtre, sinon retour, sinon menu pause ; conforme au code actuel.
 
 **Localisation (longueurs max, +40 % prévus)** : nom de club 24 caractères (infobulle au-delà) ; en-tête de colonne 4 ; bouton « Préparer le match » 24 ; libellé de zone 22 ; case de jour : 2 lignes de 14 caractères.
 

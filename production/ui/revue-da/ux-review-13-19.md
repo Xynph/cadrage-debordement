@@ -145,14 +145,15 @@ Constat commun aux six fiches 3A : sections « Localisation » (longueurs max), 
 ## Questions pour Léo (arbitrages, sans blocage)
 
 1. **Raccourcis en match** : Espace = Pause / Reprendre, T = Équipe, 1/2/3 = caméras pendant le direct (hud, 14).
-2. **Page Centre** : la retirer du rail tant qu'elle n'a aucune action (19).
-3. **Suivi des jeunes** : le fusionner dans l'onglet Progression de Formation (19).
+2. **Page Centre** : la retirer du rail tant qu'elle n'a aucune action (19). **Résolu le 19/11/2026 : retirée.**
+3. **Suivi des jeunes** : le fusionner dans l'onglet Progression de Formation (19). **Résolu le 19/11/2026 : fusionné dans Formation.**
 4. **Onglets** : garder trois pages avec une seule rangée d'onglets (16), plutôt que fusionner Classements et Calendrier.
 5. **Replier le multiplex et le classement en direct sous PLUS** dans l'entracte (14).
-6. **Échap sur un écran racine** : retour ou menu pause (16, interaction-patterns #1).
+6. **Échap sur un écran racine** : retour ou menu pause (16, interaction-patterns #1). **Résolu le 19/11/2026 : Échap ouvre le menu pause (après fenêtre, puis retour de fiche), et le menu est aussi accessible par un bouton visible dans la coque.**
 7. **Libérer un jeune hors de la revue d'effectif** : oui ou non, avec une nouvelle commande moteur (19).
 8. **Gabi après victoire** : nomme-t-il toujours une cause négative ? (15)
-9. **« Disponible pour recruter »** : quelle valeur (budget de transferts ? marge salariale ?) (17).
+9. **« Disponible pour recruter »** : quelle valeur (budget de transferts ? marge salariale ?) (17). **Résolu le 19/11/2026 : « Budget de transferts », distinct de la trésorerie ; évolution moteur à spécifier (game-designer / economy-designer).**
+10. **Zones de classement** (16) : **Résolu le 19/11/2026 : zones lues par compétition dans les données, comme dans la réalité ; documentation à écrire dans `docs/rugby-rules-reference.md`.**
 
 ## Fichiers modifiés par la revue (sans commit)
 

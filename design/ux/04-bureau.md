@@ -1,5 +1,7 @@
 # UX Spec : Bureau
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
+
 > **Statut** : En conception (brouillon autonome, rigueur `minimal`)
 > **Auteur** : ux-designer (CCGS)
 > **Dernière mise à jour** : 19/11/2026
@@ -37,7 +39,7 @@ Barre latérale (Réception 1 · Bureau 2 · Effectif 3 · Tactique 4 · Entraî
         └── Suivre le conseil --> Composition (changement présélectionné)
 ```
 
-Modal : non. Écran racine : Échap ouvre le menu pause (incohérence n°1 ; ici on l'**annonce** dans le pied : « Échap : menu »).
+Modal : non. Écran racine : Échap ouvre le menu pause (décision de Léo du 19/11/2026, règle unique de `interaction-patterns.md` ; on l'**annonce** dans le pied : « Échap : menu »). Le menu est aussi ouvert par le bouton « Menu » de la coque (écusson du club en haut du rail ou bouton de la barre haute).
 
 ## 4. Wireframe 1280×720
 
@@ -119,14 +121,14 @@ Plus de bouton « Préparer » **dans la barre haute** quand le Bureau est affic
 
 ## 8. Accessibilité
 
-- **Texte** : corps ≥ 14 px à 1080p (aujourd'hui 9 px, T1) ; étiquettes secondaires (« PROCHAIN MATCH », « LE GROUPE ») ≥ 12 px mais jamais seul porteur de sens ; pied de page ≥ 12 px, contraste ≥ 4,5:1 (C1).
+- **Texte** : corps ~13 px à 1080p (aujourd'hui 9 px, T1) ; étiquettes secondaires en capitales (« PROCHAIN MATCH », « LE GROUPE ») 11-12 px mais jamais seul porteur de sens ; pied de page ≥ 11 px, contraste ≥ 4,5:1 (C1).
 - **Couleur** : domicile/extérieur par mot + icône ; barres de condition, confiance, moral avec chiffre et repère de seuil (D6) ; forme V/N/D par lettre et forme (D2) ; « Hors groupe » reste en mot (D1).
 - **Texte sur photo** : adversaire et stade sur la photo : aplat derrière (C5).
 - **Focus** : ordre visuel, liseré 2 px ; focus d'arrivée sur « Préparer le match » (K8) ; carte entière atteignable par Tab.
 - **Mouvement** : Gabi en pied sans balancement sous « Mouvement réduit » (M5).
 - **Gabi** : texte toujours lisible, sans lecture audio obligatoire (S2).
 - **Cognitif** : 7 blocs (dont 3 aperçus d'une ligne), 3 priorités dans un seul bloc : dans 7±2 ; le principal est unique.
-- **Cibles** : lignes de priorité ≥ 32 px de haut (K6).
+- **Cibles** : lignes de priorité 24-26 px de haut (K6, comme Football Manager).
 
 ## 9. Ce qu'on retire ou déplace par rapport à l'écran actuel
 
@@ -152,7 +154,7 @@ Déviation aux motifs : N6 (Continuer) : on propose de remplacer les libellés e
 - [ ] L'objectif du conseil est lisible sur le Bureau, sans clic (« Objectif du conseil : … » ou « Aucun objectif fixé »).
 - [ ] Une seule action « Préparer » visible (pas de doublon avec la barre haute).
 - [ ] Domicile/extérieur lisibles sans icône ni couleur ; V/N/D avec lettres.
-- [ ] Chaque jauge affiche sa valeur numérique ; texte ≥ 14 px à 1920×1080.
+- [ ] Chaque jauge affiche sa valeur numérique ; texte ~13 px à 1920×1080.
 - [ ] État « première semaine » : trois cartes pleines maximum.
 - [ ] Focus d'arrivée sur « Préparer le match » ; Tab suit l'ordre visuel ; Échap pas de piège.
 - [ ] Les 11 états du §7 rendent sans débordement.
@@ -165,8 +167,8 @@ Déviation aux motifs : N6 (Continuer) : on propose de remplacer les libellés e
 | « Suivre le conseil » applique-t-il le changement aujourd'hui ? | ui-programmer | non vérifié |
 | État « première semaine » : validé avec la direction artistique ? | art-director / Léo | à valider |
 | L'objectif du conseil est-il une donnée du moteur affichable en une ligne ? | game-designer / ui-programmer | non vérifié |
-| Corps de texte : 14 px à 1080p (accessibilité T1) contre ~12 px au calque (brief) : arbitrage de densité du Bureau | Léo | à trancher |
-| Échap sur écran racine : pause ou rien ? (question ouverte du catalogue) | Léo | à trancher |
+| Corps de texte : densité du Bureau | Léo | **Résolue le 19/11/2026** : densité « Football Manager », corps ~13 px à 1080p, échelle d'interface 90/100/115/130 % |
+| Échap sur écran racine : pause ou rien ? | Léo | **Résolue le 19/11/2026** : Échap ouvre le menu pause ; bouton « Menu » visible dans la coque en plus |
 
 ## 12. Compléments de revue (ux-review, 19/11/2026)
 
@@ -187,10 +189,10 @@ Déviation aux motifs : N6 (Continuer) : on propose de remplacer les libellés e
 
 ### Contrôle d'entrée (souris + clavier ; manette hors périmètre)
 - [x] Tout atteignable au clavier : ordre de Tab défini (§6) ; raccourcis 1 à 9, Espace, Ctrl J, Ctrl K/F, F1, Alt ← →.
-- [x] Tout atteignable à la souris ; lignes de priorité ≥ 32 px.
+- [x] Tout atteignable à la souris ; lignes de priorité 24-26 px.
 - [x] Focus d'arrivée sur « Préparer le match » (K8) ; carte entière atteignable.
 - [x] Aucun glisser ; aucune limite de temps.
-- [x] Échap : menu pause, annoncé au pied (sous réserve de la décision de Léo, §11).
+- [x] Échap : menu pause, annoncé au pied (décision de Léo du 19/11/2026).
 
 ### Localisation (français seul ; limites pour +40 %)
 | Élément | Max. actuel | Prévoir |
