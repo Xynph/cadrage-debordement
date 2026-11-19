@@ -7,7 +7,8 @@
 // différent à chaque rejeu (le même pour toutes les consignes) :
 //   offensif : +3, deux essais d'écart (un essai pour le bonus offensif) ;
 //   defensif : −8 (trois points à refaire pour le bonus défensif : une pénalité suffit) ;
-//   tenu     : −4 (bonus défensif en poche).
+//   tenu     : −4 (bonus défensif en poche) ;
+//   six      : −6 (un essai transformé gagne, trois points suffisent pour le bonus défensif ; consignes de « defensif »).
 // Sortie : victoires, nuls, défaites, bonus offensif et défensif obtenus, points de classement, essais marqués et
 // encaissés, ballons perdus (fautes de main) et actions de jeu (chrono des arrêts) sur les vingt dernières minutes.
 //
@@ -26,7 +27,7 @@ const MINUTE = Number((args.find(a => a.startsWith('--minute=')) || '--minute=60
 const choisies = (args.find(a => a.startsWith('--situations=')) || '').slice(13).split(',').filter(Boolean);
 // Variante de consigne à l'essai : --essai=securiser:conquete/prudente/points
 const essai = (args.find(a => a.startsWith('--essai=')) || '').slice(8);
-const SITUATIONS = { offensif: { score: [24, 21], essais: [4, 2] }, defensif: { score: [21, 29], essais: [2, 3] }, tenu: { score: [22, 26], essais: [2, 3] } };
+const SITUATIONS = { offensif: { score: [24, 21], essais: [4, 2] }, defensif: { score: [21, 29], essais: [2, 3] }, tenu: { score: [22, 26], essais: [2, 3] }, six: { score: [23, 29], essais: [2, 3], options: 'defensif' } };
 
 function mesurer(options = {}) {
   const n = options.n ?? N, minute = options.minute ?? MINUTE, avecContre = options.contre ?? contre, avecMiroir = options.miroir ?? miroir;
@@ -48,7 +49,7 @@ function mesurer(options = {}) {
     for (const e of essai.split(';').filter(Boolean)) { const [id, v] = e.split(':'), [attack, defense, penalty] = v.split('/'); consignes[id] = { attack, defense, penalty }; }
     const resultats = {};
     for (const nom of situations) {
-      const sit = SITUATIONS[nom], ids = ['base', ...B.OPTIONS[nom]];
+      const sit = SITUATIONS[nom], ids = ['base', ...B.OPTIONS[sit.options || nom]];
       resultats[nom] = {};
       for (const id of ids) {
         resultats[nom][id] = JSON.parse(vm.run(`(()=>{
