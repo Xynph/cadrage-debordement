@@ -106,7 +106,11 @@ module.exports = function nationaleMatchFactory(rules) {
       fail(p.end === null && l.knockout?.period === 2, 'seconde prolongation incohérente');
       p.end = l.minute;
     }
+    // Annonces et commentaire tir par tir : texte seul, après coup, sans tirage (world-knockout.cjs).
+    CDWorldKnockout.extraTimeEnd(l);
     const shootout = tied(l.score) && tied(l.tries) ? playShootout(l) : null;
+    if (shootout) CDWorldKnockout.commentShootout(l,
+      shootout.attempts.flat().map(k => ({side: k.side, playerId: k.playerId, made: k.scored})), 5);
     const decision = {extraTime: Boolean(p), redCards: l.sheets.map(sh => sh.redCards.length),
       ...(shootout ? {shootout} : {})};
     const framed = asRuleResult({...l, ...l.worldContext, decision});
@@ -114,7 +118,8 @@ module.exports = function nationaleMatchFactory(rules) {
     l.winner = winner;
     l.decision = {method, ...decision};
     if (method !== 'score') addEvent(l, S.clubs[winner].abbr +
-      (method === 'tries' ? ' se qualifie au nombre d’essais.' : ' remporte la séance de tirs au but.'), 'end');
+      (method === 'tries' ? ' se qualifie au nombre d’essais.' :
+        ` remporte la séance de tirs au but${shootout ? ` (${shootout.score[0]} – ${shootout.score[1]})` : ''}.`), 'end');
     return false;
   }
 

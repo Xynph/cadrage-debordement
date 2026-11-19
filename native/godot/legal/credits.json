@@ -1,0 +1,70 @@
+{
+  "schema": "rl27-credits-v1",
+  "editeur": {
+    "nom": "",
+    "forme": "",
+    "adresse": "",
+    "contact": "",
+    "directeur_publication": ""
+  },
+  "sections": [
+    {
+      "titre": "Rugby Legacy 27",
+      "lignes": [
+        "Un jeu de management de rugby à XV, conçu et développé de façon indépendante.",
+        "Gabi, l'adjoint du manager, est un personnage original."
+      ]
+    },
+    {
+      "titre": "Moteur et outils",
+      "lignes": [
+        "Godot Engine 4.7 : licence MIT, © Juan Linietsky, Ariel Manzur et les contributeurs de Godot.",
+        "Node.js : licence MIT, © OpenJS Foundation et les contributeurs de Node.js ; notices complètes dans le dossier Licences."
+      ]
+    },
+    {
+      "titre": "Polices",
+      "lignes": [
+        "DM Sans et Barlow Condensed : SIL Open Font License 1.1."
+      ]
+    },
+    {
+      "titre": "Images et 3D",
+      "lignes": [
+        "Photographies de territoires : auteurs, sources, licences et modifications dans Licences/photos.md.",
+        "Athlètes 3D : Quaternius, CC0.",
+        "Mobilier des salles : Kenney Furniture Kit, CC0.",
+        "Drapeaux : flag-icons, licence MIT, © Panayiotis Lipiridis.",
+        "Écussons, blasons, paysages et illustrations du coach : créations originales du jeu ; une partie des portraits et des illustrations est produite avec des outils d'IA, provenance détaillée dans le dossier Licences."
+      ]
+    },
+    {
+      "titre": "Voix",
+      "lignes": [
+        "Voix de Gabi : voix de synthèse ElevenLabs produites sous abonnement payant ; aucune voix d'une personne réelle n'est imitée.",
+        "Détails et conditions dans Licences/voix-coach."
+      ]
+    },
+    {
+      "titre": "Clubs, joueurs et compétitions",
+      "lignes": [
+        "Les clubs, joueurs, staffs et compétitions du jeu de base sont anonymisés. Capacités, salaires et finances relèvent de la simulation et ne sont pas officiels.",
+        "Rugby Legacy 27 n'est affilié à aucune fédération, ligue, compétition, club ou joueur, et n'est approuvé par aucun d'eux.",
+        "Les packs d'identités importés par le joueur restent séparés du jeu de base et sous sa responsabilité."
+      ]
+    },
+    {
+      "titre": "Données personnelles",
+      "lignes": [
+        "Le jeu fonctionne hors ligne et ne collecte, n'envoie ni ne vend aucune donnée personnelle.",
+        "Carrières et réglages restent sur cet ordinateur, dans %APPDATA%/CadrageDebordement."
+      ]
+    },
+    {
+      "titre": "Marques",
+      "lignes": [
+        "Steam et le logo Steam sont des marques de Valve Corporation. Les autres marques citées appartiennent à leurs propriétaires."
+      ]
+    }
+  ]
+}

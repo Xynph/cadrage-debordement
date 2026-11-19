@@ -56,6 +56,13 @@ const BALLON_BAS_MAX := 0.6
 const DEMI_ADVERSE := Vector2(-0.6, -2.4)
 ## Écart latéral minimal (m) entre le demi adverse et l'avant le plus à l'extérieur.
 const DEMI_HORS_PAQUET := 0.8
+## Sortie de mêlée (19/11/2026) : le demi du camp qui gagne le ballon le ramasse au pied de son n° 8,
+## côté caméra : [recul derrière les pieds du n° 8, écart vers la caméra], en mètres. Il porte le
+## ballon pendant la sortie, sauf si le moteur désigne un avant du paquet (n° 8 qui se détache).
+## Avant : le ballon partait seul vers le point du fait (5 à 11 m plus loin que la mêlée, « avance »)
+## et restait posé sur l'herbe, loin de tout joueur, quand le porteur désigné était un arrière
+## éloigné (ou absent).
+const DEMI_SORTIE := Vector2(0.9, 0.9)
 ## Hors-jeu de mêlée (loi 19) : arrières à 5 m au moins derrière les pieds du dernier avant.
 const HORS_JEU := 5.0
 const PIEDS_N8 := 0.6
@@ -97,7 +104,7 @@ func _init(owner: Node3D) -> void:
 
 
 static func _vide() -> Dictionary:
-	return {"type": "", "places": {}, "caps": {}, "postures": {}, "roles": {}}
+	return {"type": "", "places": {}, "caps": {}, "postures": {}, "roles": {}, "porteur": ""}
 
 
 ## Formation d'une scène du moteur, en coordonnées du terrain (x 0-100, y 0-70) :
@@ -132,6 +139,12 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 	for player: Dictionary in scene.get("players", []):
 		if player.get("featured", false) and int(player.get("side", -1)) == possession:
 			porteur = str(player.get("id", ""))
+	# Sortie : porteur du ballon pendant la sortie (avant détaché du paquet, sinon demi qui ramasse).
+	f.porteur = ""
+	for player: Dictionary in scene.get("players", []):
+		var slot_porteur := int(player.get("slot", -1))
+		if sortie and str(player.get("id", "")) == porteur and slot_porteur >= 0 and slot_porteur < 8:
+			f.porteur = porteur
 	for player: Dictionary in scene.get("players", []):
 		var id := str(player.get("id", ""))
 		var side := int(player.get("side", -1))
@@ -166,6 +179,13 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 				f.caps[id] = atan2(centre.x - place.x, centre.y - place.y)
 				f.postures[id] = "aguets"
 				f.roles[id] = "demi_adverse"
+		elif slot == 8 and sortie and side == possession:
+			# Demi qui ramasse au pied du n° 8, côté caméra, tourné vers ses arrières.
+			f.places[id] = centre + Vector2(-s * (MELEE[7].x + PIEDS_N8 + DEMI_SORTIE.x), COTE_INTRO * DEMI_SORTIE.y)
+			f.caps[id] = atan2(-s, 0.0)
+			f.roles[id] = "demi_sortie"
+			if str(f.porteur).is_empty():
+				f.porteur = id
 		elif not sortie and player.has("x") and player.has("y"):
 			# Arrières : places du moteur, ramenées derrière la ligne de hors-jeu si besoin.
 			var limite := MELEE[7].x + PIEDS_N8 + HORS_JEU
@@ -242,6 +262,15 @@ func place(id: String, moteur: Vector3) -> Vector3:
 
 func active() -> bool:
 	return not str(formation.type).is_empty() and not libere
+
+
+## Porteur du ballon montré pour cette image : à la sortie de mêlée, l'avant détaché ou le demi qui
+## ramasse (DEMI_SORTIE), jamais un porteur éloigné vers qui le ballon partirait seul ; sinon
+## `moteur`, le porteur de la scène. Fixé pour toute l'image : le demi garde le ballon en se replaçant.
+func porteur(moteur: String) -> String:
+	if str(formation.type) == "sortie_melee" and not str(formation.get("porteur", "")).is_empty():
+		return str(formation.porteur)
+	return moteur
 
 
 func _mis_en_scene(id: String) -> bool:
