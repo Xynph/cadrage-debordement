@@ -1,5 +1,5 @@
 extends SceneTree
-## Centre de formation en 1280 × 720 (profil Monde préparé par tests/godot-centre-720.cjs) : les pastilles
+## Centre de formation en 1440p, 1080p et 1280 × 720 (profil Monde préparé par tests/godot-centre-720.cjs) : les pastilles
 ## « AU CALENDRIER DES ESPOIRS » tiennent sans points de suspension et le bloc « SAISON JUNIOR » suit
 ## directement les tuiles du tableau du centre (pas de bande vide). Captures en affichage graphique.
 var app: Control
@@ -88,6 +88,7 @@ func executer() -> void:
 	if app.timer: app.timer.stop()
 	await controler(Vector2i(1280, 720))
 	await controler(Vector2i(1920, 1080))
+	await controler(Vector2i(2560, 1440))
 	print("CENTRE ", JSON.stringify({"controles": controles, "mesures": mesures, "failures": echecs}))
 	app.closing = true
 	app.bridge.stop()

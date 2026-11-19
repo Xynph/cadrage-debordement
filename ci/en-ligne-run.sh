@@ -172,7 +172,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   fi
   if veut centre; then
     mkdir -p "$cap/centre"
-    phase "captures Centre de formation (pastilles et Saison junior ; 1280x720, 1080p)" captures-centre.log \
+    phase "captures Centre de formation (pastilles et Saison junior ; 1440p, 1080p, 1280x720)" captures-centre.log \
       env CD_CENTRE_GRAPHICS=1 CD_CENTRE_OUTPUT="$cap/centre" node tests/godot-centre-720.cjs
   fi
   if veut derby; then
