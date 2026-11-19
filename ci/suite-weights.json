@@ -272,6 +272,7 @@
       "tests/world-wage-forecast.cjs": 22,
       "tests/world-worker-atomic.cjs": 48,
       "tests/world-youth-history-promotion.cjs": 38,
+      "tests/world-zones-classement.cjs": 131,
       "tests/youth-development-plan.cjs": 20,
       "tests/youth-development-review.cjs": 11,
       "tests/youth-identity.cjs": 17,

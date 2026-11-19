@@ -253,13 +253,15 @@ Cet écran n'écrit rien. Événements : « ouvrir la préparation », « ouvrir
 
 | Question | Propriétaire | Résolution |
 |---|---|---|
-| Règles exactes de promotion, barrage, relégation par compétition : source ? | game-designer | Ouverte (NON SOURÇABLE ici) |
+| Règles exactes de promotion, barrage, relégation par compétition : source ? | game-designer | Résolue (19/11/2026) : voir `docs/rugby-rules-reference.md`, section « Classement, phases finales, accession et relégation » |
 | Onglets Phases finales / Statistiques / Palmarès non capturés | ui-programmer | À capturer |
 | Fusionner Classements et Calendrier en un seul écran ? | Léo | Ouverte (recommandé non : garder trois pages, une seule rangée) |
 
 ## 13. Ajouts de la revue UX (19/11/2026)
 
-**Zones de classement** : `docs/rugby-rules-reference.md` (§ accession-relégation) dit que ces règles « restent à documenter ». La fiche ne les invente pas : liseré, libellé et légende s'affichent seulement pour les zones que la donnée de la compétition fournit. Sans donnée : pas de zone, pas de légende. Tant que la règle n'est pas sourcée, la vérification des libellés de zone reste NOT ASSESSED.
+**Zones de classement** : `docs/rugby-rules-reference.md` (§ accession-relégation) documente ces règles depuis le 19/11/2026. Les zones viennent des données de compétition sourcées : liseré, libellé et légende s'affichent seulement pour les zones que la donnée fournit. Sans donnée : pas de zone, pas de légende ; une note « pas de relégation » apparaît quand il n'y en a pas.
+
+Légende : ★ demi-finale directe, ● phase finale, ▲ barrage de montée, ◆ barrage de maintien, ▼ relégation, ○ repêchage possible. Chaque zone porte liseré, symbole et mot (jamais la couleur seule).
 
 **Échap** : le comportement décrit en §3 (retour, jamais pause) est la cible ; le code actuel ouvre la pause sur un écran racine (`interaction-patterns.md` #1). Décision de Léo en attente.
 
