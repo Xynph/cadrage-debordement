@@ -31,6 +31,7 @@ const {calendarContext}=require('./calendar-clock.cjs');
 const franceCalendar=require('./france-calendar-cadence.cjs');
 const confirmMatchResult=require('./match-result.cjs');
 const matchDirect=require('./match-direct.cjs');
+const matchBonus=require('./match-bonus.cjs');
 const calendarPlanning=require('./calendar-planning.cjs'),calendarMail=require('./calendar-mail.cjs');
 const jsonCopy=require('./json-copy.cjs'),worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),publishedVenue=require('./world-venues.cjs'),worldRegistry=require('./world-registry.json');
 const clubHistory=require('./club-history.json');
@@ -58,7 +59,10 @@ function clubCountry(club){
 }
 const factClubs=Object.fromEntries(referenceClubs.map(club=>[club.id,clubCountry(club)]));
 const factOrigins=Object.fromEntries(referenceClubs.flatMap(club=>club.players.map(player=>[player.id,factClubs[club.id]])));
-const nationalFacts=makePlayerFacts(playerFactsCatalogue,factOrigins,factClubs);
+// Éligibilité anglaise (EQP) des joueurs non documentés, club par club : native/engine/eqp_eligibilite.json.
+const eqpEligibilite=JSON.parse(fs.readFileSync(path.join(__dirname,'eqp_eligibilite.json'),'utf8'));
+const factHomes=Object.fromEntries(referenceClubs.flatMap(club=>club.players.map(player=>[player.id,club.id])));
+const nationalFacts=makePlayerFacts(playerFactsCatalogue,factOrigins,factClubs,{regles:eqpEligibilite,homes:factHomes});
 const portraitLooks=makePortraitLooks(nationalFacts);
 const MODULES=['season-label.js','storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match-pilotage.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
 MODULES.splice(MODULES.indexOf('game.js'),0,...systems.files.filter(name=>!MODULES.includes(name)));
@@ -297,14 +301,14 @@ function createBridge(options={}){
     if(nativeVerifySections&&JSON.stringify(root)!==nativeSaveSections.whole)throw Error('Sections de sauvegarde périmées avant la validation.');
     return {texts:nativeSaveSections.texts,cache:nativeSafeTreeCache};
    }
-   function nativeValidateSaved(full){nativeSafeTreeArmed=full?null:S;try{return validateCareer(S);}finally{nativeSafeTreeArmed=null;}}validatingStartup=false;const nativeCareerVariation=(${careerVariation.toString()})();const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)});
+   function nativeValidateSaved(full){nativeSafeTreeArmed=full?null:S;try{return validateCareer(S);}finally{nativeSafeTreeArmed=null;}}validatingStartup=false;const nativeCareerVariation=(${careerVariation.toString()})();const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)},${JSON.stringify({regles:eqpEligibilite,homes:factHomes})});
    const nativeCallups=(${internationalCallups.toString()})();
    const nativeInternationalStatus=new WeakMap();
    const nativePlayerAttributes=p=>{
     const career=S?.national?.career;
     if(career&&!nativeInternationalStatus.has(career))nativeInternationalStatus.set(career,nativeCallups.internationalStatus(career));
     const status=career&&nativeInternationalStatus.get(career);
-    return {...nativeAttributeStore.project(p),...nativePositionAptitudes.project(p),playerFacts:{...nativeFacts.project(p.id,status?.caps.get(p.id),p),onInternationalDuty:status?.released.has(p.id)??false}};
+    return {...nativeAttributeStore.project(p),...nativePositionAptitudes.project(p),playerFacts:{...nativeFacts.project(p.id,status?.caps.get(p.id),p),onInternationalDuty:status?.released.has(p.id)??false,listeElite:nativeSystems.domain('doublons').isListed(S,p.id)}};
    };
    const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel,(${publishedVenue.factory.toString()})(${JSON.stringify(publishedVenue.data)}),${JSON.stringify(clubHistory)});const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`,'native-bootstrap');
   ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...worldEditions.entries.map(e=>e.id)].map(id=>[id,staff.forDatabase(id).registry.clubs])));
@@ -330,6 +334,8 @@ function createBridge(options={}){
    const nativeConfirmMatchResult=(${confirmMatchResult.toString()});`);
   // Match en temps forts (mode de base ; repli CD_MATCH_TEMPS_FORTS=0) : lecture seule du match en cours.
   run(`const nativeMatchDirect=(${matchDirect.lecteur.toString()})();`);
+  // Dilemme du bonus en fin de match (match-bonus.cjs) : barème lu dans les classements, décision des clubs IA.
+  run(`const nativeMatchBonus=(${matchBonus.factory.toString()})();nativeMatchBonus.installHooks();`);
   let matchHighlights=options.matchHighlights??null;
   // Chorégraphe des temps forts (présentation seule, éteint par défaut) : CD_MATCH_CHOREGRAPHE=1.
   const matchChoreography=options.matchChoreography??process.env.CD_MATCH_CHOREGRAPHE==='1';
@@ -1250,6 +1256,8 @@ function createBridge(options={}){
      // Courrier du club (club-mail.cjs) : une réception par jour de calendrier ; seule la boîte est écrite.
      // Prolongations confiées au directeur sportif (mars à juin) : décisions du jour, avant le courrier qui les annonce.
      run("if(typeof dsContratsObserver==='function')dsContratsObserver();if(typeof dsStaffObserver==='function')dsStaffObserver();");
+     // Liste élite des Bleus et plans de doublon en attente (doublons.cjs) : avant le courrier qui s'en sert.
+     run("nativeSystems.domain('doublons').observe();");
      run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »

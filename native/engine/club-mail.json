@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "_doc": "Courrier du club (club-mail.cjs), façon Football Manager : chaque jour de calendrier, des interlocuteurs du club écrivent au manager (tutoiement) selon l'état de la carrière. Recevoir un mail ne change rien au monde : seule la réponse du manager a un effet (commande club_mail_reply, notée au journal d'actions). Contenu en données : types, expéditeurs, formulations (une par réception, jamais deux fois de suite la même pour un type), réponses et effets, seuils et cadence. Effets possibles d'une réponse : moral (moral du groupe), confiance (direction), supporters, medias, pression (relations presse), satisfaction, fatigue, condition, plan (charge individuelle), entrainement (séance collective), focus (préparation collective), promesse (temps de jeu promis), promouvoir (jeune du centre), caisse (euros), suite (mail de suivi), appel (commission de discipline). Placeholders entre accolades : variables calculées par le moteur à la réception.",
+  "_doc": "Courrier du club (club-mail.cjs), façon Football Manager : chaque jour de calendrier, des interlocuteurs du club écrivent au manager (tutoiement) selon l'état de la carrière. Recevoir un mail ne change rien au monde : seule la réponse du manager a un effet (commande club_mail_reply, notée au journal d'actions). Contenu en données : types, expéditeurs, formulations (une par réception, jamais deux fois de suite la même pour un type), réponses et effets, seuils et cadence. Effets possibles d'une réponse : moral (moral du groupe), confiance (direction), supporters, medias, pression (relations presse), satisfaction, fatigue, condition, plan (charge individuelle), entrainement (séance collective), focus (préparation collective), promesse (temps de jeu promis), promouvoir (jeune du centre), caisse (euros), suite (mail de suivi), appel (commission de discipline), specialiste (avis du spécialiste indépendant sur une commotion : retour au 7e jour possible, sans garantie). Une réponse « ouvrir » mène à l'écran du type, ou à son propre « ecran » s'il est donné. Placeholders entre accolades : variables calculées par le moteur à la réception.",
   "cadence": {
     "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; arretsParJour : mails qui arrêtent « Continuer » le même jour ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
     "arretsParJour": 2,
-    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2 },
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2, "commotion": 6 },
     "boite": 160,
     "projection": 80,
     "delaiReponse": 7,
@@ -22,7 +22,8 @@
     "formation": { "label": "Formation", "ecran": "Formation" },
     "moments": { "label": "Club", "ecran": "Effectif" },
     "contrats": { "label": "Contrats", "ecran": "contrats" },
-    "meteo": { "label": "Météo", "ecran": "Composition" }
+    "meteo": { "label": "Météo", "ecran": "Composition" },
+    "commotion": { "label": "Médical", "ecran": "infirmerie" }
   },
   "humeurs": {
     "haut": ["le groupe vit bien, ça rigole à la muscu et ça bosse dur", "l'ambiance est au beau fixe, les jeunes suivent les anciens", "on sent une vraie envie, personne ne traîne aux séances"],
@@ -815,6 +816,314 @@
       "reponses": [
         {"id": "rassurer", "libelle": "Rassurer le vestiaire", "effets": {"moral": 3}, "resultat": "Le groupe reste concentré sur le terrain."},
         {"id": "garanties", "libelle": "Demander des garanties au nouveau bureau", "effets": {"confiance": 2, "pression": 2}, "resultat": "Le bureau s'engage sur le budget de la saison, et attend des résultats en retour."}
+      ]
+    },
+    "quota_retrait": {
+      "categorie": "competition",
+      "declencheur": "quota_retrait",
+      "priorite": 24,
+      "intervalle": 300,
+      "arret": true,
+      "ecran": "Classements",
+      "expediteur": "La ligue",
+      "formulations": [
+        {
+          "sujet": "Quota JIFF : retrait de points",
+          "corps": "Ta saison s'est terminée avec une moyenne de {moyenne} JIFF par feuille sur {feuilles} journées de {ligue}, sous les {objectif} exigés. Le règlement est net : {points} point(s) de pénalité à valoir sur le classement de cette saison.\n\nLe retrait figure déjà au classement. Pour ne plus le subir, il faudra plus de joueurs issus de nos filières de formation sur la feuille, et les recruter ou les former à temps."
+        },
+        {
+          "sujet": "Commission des quotas : pénalité",
+          "corps": "Moyenne de {moyenne} JIFF par feuille sur {feuilles} journées de {ligue}, pour {objectif} attendus : la commission nous retire {points} point(s) cette saison.\n\nIl nous manquait des joueurs formés en France sur les feuilles de match. Regarde le classement, et pense à ta politique de jeunes avant la prochaine fenêtre de recrutement."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "classement",
+          "libelle": "Voir le classement",
+          "effets": {},
+          "resultat": "Le classement s'ouvre : le retrait de points y figure déjà.",
+          "ouvrir": true
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Planifier plus de jeunes",
+          "effets": {
+            "consigneDS": "jeunes",
+            "confiance": 1
+          },
+          "resultat": "Consigne passée au directeur sportif : il privilégiera les jeunes du centre et les joueurs formés en France pour les prochains contrats."
+        },
+        {
+          "id": "lu",
+          "libelle": "Pris note",
+          "effets": {},
+          "resultat": "Courrier de la ligue classé."
+        }
+      ]
+    },
+    "quota_amende": {
+      "categorie": "competition",
+      "declencheur": "quota_amende",
+      "priorite": 24,
+      "intervalle": 300,
+      "arret": true,
+      "ecran": "Finances",
+      "expediteur": "La ligue",
+      "formulations": [
+        {
+          "sujet": "Quota EQP : amende de la ligue",
+          "corps": "Sur la saison de {ligue}, nos feuilles de match ont compté {moyenne} joueurs sélectionnables pour l'Angleterre en moyenne, pour {objectif} exigés. La ligue nous inflige une amende de {montant}, déjà prélevée sur la trésorerie. Pas de retrait de points : c'est une sanction financière.\n\nSi l'effectif ne change pas, elle se reproduira."
+        },
+        {
+          "sujet": "Les EQP : la ligue nous sanctionne",
+          "corps": "La moyenne de {moyenne} EQP par feuille sur {feuilles} journées de {ligue} est sous le seuil de {objectif}. Amende : {montant}, prélevée sur le compte du club.\n\nAvant la prochaine saison, il faut des joueurs du cru dans le groupe, au recrutement comme au centre de formation."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "finances",
+          "libelle": "Voir les finances",
+          "effets": {},
+          "resultat": "Les finances s'ouvrent : l'amende y est inscrite.",
+          "ouvrir": true
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Planifier plus de jeunes",
+          "effets": {
+            "consigneDS": "jeunes",
+            "confiance": 1
+          },
+          "resultat": "Consigne passée au directeur sportif : il privilégiera les jeunes du centre et les joueurs du cru pour les prochains contrats."
+        },
+        {
+          "id": "lu",
+          "libelle": "Pris note",
+          "effets": {},
+          "resultat": "Courrier de la ligue classé."
+        }
+      ]
+    },
+    "quota_prime": {
+      "categorie": "competition",
+      "declencheur": "quota_prime",
+      "priorite": 24,
+      "intervalle": 300,
+      "arret": true,
+      "ecran": "Finances",
+      "expediteur": "La ligue",
+      "formulations": [
+        {
+          "sujet": "Fonds JIFF : la prime est versée",
+          "corps": "Moyenne de {moyenne} JIFF par feuille sur {feuilles} journées de {ligue} : le quota est tenu et le fonds JIFF verse {prime} au club.\n\nLa formation locale paie. On continue ?"
+        },
+        {
+          "sujet": "Prime du fonds JIFF",
+          "corps": "Tu as aligné {moyenne} JIFF en moyenne sur la saison de {ligue}, au-dessus des {objectif} exigés : le fonds JIFF nous verse {prime}.\n\nC'est le bon moment pour décider quoi faire de ce coup de pouce."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "finances",
+          "libelle": "Voir les finances",
+          "effets": {},
+          "resultat": "Les finances s'ouvrent : la prime y est inscrite.",
+          "ouvrir": true
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Planifier plus de jeunes",
+          "effets": {
+            "consigneDS": "jeunes",
+            "confiance": 1
+          },
+          "resultat": "Consigne passée au directeur sportif : il continuera de miser sur les jeunes du centre."
+        },
+        {
+          "id": "lu",
+          "libelle": "Pris note",
+          "effets": {},
+          "resultat": "Courrier de la ligue classé."
+        }
+      ]
+    },
+    "doublon": {
+      "categorie": "competition",
+      "declencheur": "doublon",
+      "priorite": 12,
+      "arret": true,
+      "ecran": "Composition",
+      "expediteur": "Le directeur sportif",
+      "seuils": {
+        "absents": 3,
+        "titulaires": 1
+      },
+      "formulations": [
+        {
+          "sujet": "Doublon face à {adversaire} : {n} internationaux manquent",
+          "corps": "Coach, le {jour} contre {adversaire}, la fenêtre internationale nous prend {n} joueurs ({joueurs}), dont {titulaires} de ton XV type. Postes touchés : {postes}. Ils rejoignent {nations}.\n\nTrois façons de voir les choses : faire tourner pour ménager les cadres restants qui accusent la fatigue, aligner la meilleure équipe possible malgré tout, ou profiter de l'occasion pour lancer des jeunes du centre. À toi de choisir ce que ce match vaut pour nous."
+        },
+        {
+          "sujet": "Match du {jour} : un groupe amputé",
+          "corps": "On joue {adversaire} le {jour} sans {n} joueurs partis en sélection ({joueurs}), dont {titulaires} titulaires habituels. Ça touche surtout : {postes}.\n\nOn peut ménager les cadres fatigués, serrer les rangs avec la meilleure feuille possible, ou donner leur chance à des jeunes du centre. Dis-moi ce que tu veux faire."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "rotation",
+          "libelle": "Faire tourner l'effectif",
+          "effets": {
+            "doublon": "rotation"
+          },
+          "resultat": "Les cadres fatigués passent en récupération jusqu'au match, puis reprennent leur charge."
+        },
+        {
+          "id": "forte",
+          "libelle": "Aligner l'équipe la plus forte possible",
+          "effets": {
+            "doublon": "forte"
+          },
+          "resultat": "La meilleure feuille possible sera posée pour ce match."
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Lancer des jeunes du centre",
+          "effets": {
+            "doublon": "jeunes"
+          },
+          "resultat": "Des jeunes du centre signent et sont lancés dans la feuille."
+        }
+      ]
+    },
+    "cellule_repos": {
+      "categorie": "competition",
+      "declencheur": "cellule",
+      "priorite": 18,
+      "arret": false,
+      "ecran": "Composition",
+      "expediteur": "La cellule FFR-LNR",
+      "formulations": [
+        {
+          "sujet": "Protocole des Bleus : {joueur} doit souffler",
+          "corps": "Selon les lignes directrices du protocole 2026-27, {joueur} ({poste}) ne compte que {repos} repos sur ses {matchs} derniers matchs : il doit être laissé hors de la feuille contre {adversaire} ({jour}).\n\nCe sont des lignes directrices, ajustables par accord entre staffs : tu peux demander un aménagement au staff des Bleus, sans garantie. Les passer sous silence est consigné."
+        },
+        {
+          "sujet": "{joueur} : repos attendu ce week-end",
+          "corps": "La cellule de suivi note que {joueur} ({poste}) n'a pas eu assez de repos récemment ({repos} sur {matchs} matchs). Nous lui en demandons un contre {adversaire}, le {jour}.\n\nTu peux le reposer, solliciter un aménagement auprès du staff des Bleus (accord possible, pas garanti), ou ignorer : ce sera noté dans nos échanges."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "reposer",
+          "libelle": "Le reposer ce week-end",
+          "effets": {
+            "repos_liste": "reposer"
+          },
+          "resultat": "Il quitte la feuille du match : la cellule en prend note."
+        },
+        {
+          "id": "amenagement",
+          "libelle": "Demander un aménagement au staff des Bleus",
+          "effets": {
+            "repos_liste": "amenagement"
+          },
+          "resultat": "Demande transmise au staff des Bleus."
+        },
+        {
+          "id": "ignorer",
+          "libelle": "Ignorer",
+          "effets": {
+            "repos_liste": "ignorer"
+          },
+          "resultat": "La cellule consigne que tu passes outre ; s'il joue, la relation avec la fédération en souffrira."
+        }
+      ]
+    },
+    "commotion": {
+      "categorie": "commotion",
+      "declencheur": "commotion",
+      "priorite": 10,
+      "arret": true,
+      "ecran": "infirmerie",
+      "expediteur": "Le médecin du club",
+      "formulations": [
+        {
+          "sujet": "Commotion confirmée : {joueur}",
+          "corps": "Le protocole commotion a tranché pour {joueur} ({poste}) après le match du {match} : {motif}.\n\nC'est la règle de World Rugby, il n'y a rien à négocier : {jours} jours de repos au minimum, avec une reprise par paliers. Il ne pourra pas rejouer avant le {retour}. {antecedents}\n\nPrépare son remplacement pour {prochain}, je te tiens au courant à chaque palier."
+        },
+        {
+          "sujet": "{joueur} au repos : protocole commotion",
+          "corps": "Les tests HIA sont formels pour {joueur} : {motif} lors du match du {match}.\n\n{antecedents} Il reste au repos jusqu'au {retour} au moins. C'est une décision médicale, ni lui ni nous n'avons la main dessus.\n\nIl va bien et il est suivi chaque jour. Pense à sa place dans le groupe d'ici là."
+        },
+        {
+          "sujet": "Point médical : {joueur} (commotion)",
+          "corps": "Je te fais le point sur {joueur} ({poste}) : {motif} (match du {match}).\n\nProtocole commotion classique : repos, reprise progressive, et pas de terrain avant le {retour}, soit {jours} jours. {antecedents}\n\nOn le récupère frais et en sécurité, c'est tout ce qui compte."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "infirmerie",
+          "libelle": "Voir l'infirmerie",
+          "effets": {},
+          "resultat": "Son protocole est suivi à l'infirmerie, jour après jour.",
+          "ouvrir": true,
+          "ecran": "infirmerie"
+        },
+        {
+          "id": "remplacant",
+          "libelle": "Préparer son remplaçant",
+          "effets": {},
+          "resultat": "Tu prépares la feuille sans lui.",
+          "ouvrir": true,
+          "ecran": "Composition"
+        }
+      ]
+    },
+    "commotion_exception": {
+      "categorie": "commotion",
+      "declencheur": "commotion",
+      "priorite": 9,
+      "arret": true,
+      "ecran": "infirmerie",
+      "expediteur": "Le médecin du club",
+      "seuils": {
+        "exception": true
+      },
+      "formulations": [
+        {
+          "sujet": "{joueur} : retour au 7e jour envisageable",
+          "corps": "Commotion confirmée pour {joueur} ({poste}) après le match du {match} : {motif}.\n\nPas d'antécédent récent et un HIA3 revenu à la normale : le règlement permet alors un retour dès le 7e jour ({septieme}), seulement si un spécialiste indépendant donne son accord. Sans cet avis, c'est 12 jours de repos, retour le {retour}.\n\nJe peux lui envoyer le dossier. C'est lui qui tranche, je ne te promets rien."
+        },
+        {
+          "sujet": "Commotion de {joueur} : on demande un avis ?",
+          "corps": "{joueur} a passé son HIA3 sans symptôme après sa commotion du {match} ({motif}). {antecedents}\n\nDans ce cas précis, World Rugby autorise un retour au 7e jour ({septieme}) avec l'accord d'un spécialiste indépendant. Sinon, il rejoue au plus tôt le {retour}.\n\nVeux-tu que je sollicite le spécialiste ? Son avis sera sans appel, dans un sens comme dans l'autre."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "specialiste",
+          "libelle": "Demander l'avis du spécialiste indépendant",
+          "effets": {
+            "specialiste": true
+          },
+          "resultat": "Le dossier est parti chez le spécialiste indépendant."
+        },
+        {
+          "id": "remplacant",
+          "libelle": "Garder les 12 jours et préparer son remplaçant",
+          "effets": {},
+          "resultat": "Il observera les 12 jours ; tu prépares la feuille sans lui.",
+          "ouvrir": true,
+          "ecran": "Composition"
+        },
+        {
+          "id": "infirmerie",
+          "libelle": "Voir l'infirmerie",
+          "effets": {},
+          "resultat": "Son protocole est suivi à l'infirmerie, jour après jour.",
+          "ouvrir": true,
+          "ecran": "infirmerie"
+        }
       ]
     },
     "blessure": {

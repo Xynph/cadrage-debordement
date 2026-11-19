@@ -51,7 +51,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
   [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
   for q in $quoi; do
-    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|reception-medicale|creation|derby|avis-staff|meteo|presse|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres|equipe|pilotage|vestiaire) ;;
+    case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|reception-medicale|creation|derby|avis-staff|meteo|presse|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres|equipe|pilotage|vestiaire|dilemmes) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac
   done
   veut() { [[ "$quoi" == *" $1 "* ]]; }
@@ -154,6 +154,11 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
     mkdir -p "$cap/regles-financieres"
     phase "captures A2R et président (courriers en Réception ; 1080p)" captures-regles-financieres.log \
       env CD_A2R_GRAPHICS=1 CD_A2R_OUTPUT="$cap/regles-financieres" node --test tests/godot-a2r-president.cjs
+  fi
+  if veut dilemmes; then
+    mkdir -p "$cap/dilemmes"
+    phase "captures dilemmes (entracte 2D à la 70e avec tuile Bonus, feuille de match JIFF et liste des 33, infirmerie HIA ; 1280x720)" captures-dilemmes.log \
+      env CD_DILEMMES_CAPTURE="$cap/dilemmes" node tests/godot-dilemmes.cjs
   fi
   if veut comparateur; then
     mkdir -p "$cap/comparateur"

@@ -97,8 +97,21 @@ tester() {
       --limit 1 --json databaseId,headSha --jq '.[] | select(.headSha=="'"$sha"'") | .databaseId')
     [[ -n "$id" ]] && break
   done
+  # Constaté le 18/11 : sur une PR ouverte par le jeton du dépôt, l'exécution pull_request de tests.yml
+  # s'arrête en ~1 min sans aucun job (démarrage refusé). On la laisse finir, puis repli en dispatch.
+  if [[ -n "$id" ]]; then
+    for _ in $(seq 1 12); do
+      etat=$(gh run view "$id" --repo "$REPO" --json status --jq .status)
+      [[ "$etat" == "completed" ]] && break
+      nb=$(gh api "repos/$REPO/actions/runs/$id/jobs" --jq '.jobs|length')
+      (( nb > 0 )) && break
+      sleep 10
+    done
+    nb=$(gh api "repos/$REPO/actions/runs/$id/jobs" --jq '.jobs|length')
+    if [[ "$etat" == "completed" && "$nb" == "0" ]]; then log "exécution pull_request sans job (démarrage refusé) : repli"; id=""; fi
+  fi
   if [[ -z "$id" ]]; then
-    log "aucune batterie déclenchée par la PR : repli sur workflow_dispatch"; evt="workflow_dispatch"
+    log "aucune batterie utilisable déclenchée par la PR : repli sur workflow_dispatch"; evt="workflow_dispatch"
     gh workflow run tests.yml --repo "$REPO" --ref "$branche" || return 2
     for _ in $(seq 1 30); do
       sleep 10

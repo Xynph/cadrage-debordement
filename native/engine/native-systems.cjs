@@ -131,7 +131,9 @@ domains.clubMail=require('./club-mail.cjs');
 domains.multiplex=require('./match-multiplex.cjs');
 // Écran Match avant le coup d'envoi : forme, forces en présence, confrontations, joueurs à surveiller, clés de Gabi (native/engine/avant-match.cjs).
 domains.avantMatch=require('./avant-match.cjs');
-const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands]);
+// Doublons et liste élite des Bleus (native/engine/doublons.cjs).
+domains.doublons=require('./doublons.cjs');
+const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files])]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};

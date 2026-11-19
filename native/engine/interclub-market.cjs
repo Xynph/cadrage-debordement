@@ -45,6 +45,9 @@ function factory(){
   base.candidates=S.clubs.filter(c=>c.id!==S.club).flatMap(c=>c.players.map(p=>quote(c,p,loanIds))).sort((a,b)=>a.clubId-b.clubId||a.contractEnd-b.contractEnd||a.name.localeCompare(b.name));
   return base;
  }
+ // Quota de championnat (JIFF, EQP) : un club dont la moyenne est menacée enchérit davantage pour un joueur qui compte
+ // (jiff.cjs) ; effet modéré : un cran de besoin de plus, donc +4 % d'indemnité et +2,5 % de salaire proposés.
+ const quotaNeed=(c,p)=>typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.recruitBonus==='function'&&CDJiff.recruitBonus(S,c.id,p)>0?1:0;
  function publicNeed(c,p){
   const eligible=c.players.filter(q=>p.fam===0?q.pos===p.pos:q.fam===p.fam);
   const durable=eligible.filter(q=>q.contractEnd>S.season&&!q.injury&&(q.condition??100)>=70).length;
@@ -67,7 +70,8 @@ function factory(){
   if(humanReady)offers.push({clubId:S.club,club:S.clubs[S.club].name,fee:p.fee,salary:p.salary,need:publicNeed(S.clubs[S.club],player),human:true});
   for(const c of S.clubs){
    if(c.id===S.club||c.id===seller.id)continue;
-   const need=publicNeed(c,player);if(need<=0)continue;
+   const base=publicNeed(c,player);if(base<=0)continue;
+   const need=base+quotaNeed(c,player);
    const fee=Math.ceil(q.fee*(1+Math.min(5,need)*.04)/1000)*1000,salary=Math.min(100000,Math.ceil(q.salary*(1+Math.min(5,need)*.025)/100)*100);
    if(salary<q.salary||!affordable(c,fee,salary,true))continue;
    offers.push({clubId:c.id,club:c.name,fee,salary,need,human:false});

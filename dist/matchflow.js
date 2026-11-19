@@ -201,7 +201,7 @@ function playQuickTap(l,side){
   l.quickTapLog?.push({side,minute:l.minute,issue:why});
   if(why==='en-avant')return handFault(l,side);
   if(why==='tenu')return resolveInGoal(l,side,'held-up');
-  tacticalCount(l,opp,'recoveries');ballPossession(l,opp);
+  tacticalCount(l,opp,'recoveries');noterContre(l,side);ballPossession(l,opp);
   addEvent(l,`${actionName(l,opp,'defender')} récupère le ballon sur la pénalité jouée vite pour ${S.clubs[l.pair[opp]].abbr}.`,'turnover',{kind:'turnover',team:opp,actor:actionPlayer(l,opp,'defender')?.id||null});
  };
  const roll=Math.random();
