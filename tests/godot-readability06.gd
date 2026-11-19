@@ -215,21 +215,23 @@ func office_card_readable(card: Control) -> bool:
 func office_reading(resolution: Vector2i) -> void:
 	await navigate("Bureau")
 	var tiles := ["OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeRecruitment", "OfficeTimeline"]
+	# Sous 1600 de large, le Bureau en conteneurs défile d'un seul tenant : chaque tuile est amenée à l'écran avant lecture.
+	var scrolling := resolution.x < 1600
 	for id: String in tiles:
 		var tile := named(id)
 		var readable := inside(tile,app.body_scroll)
-		if resolution.x == 1280: readable = await office_card_readable(tile)
+		if scrolling: readable = await office_card_readable(tile)
 		check(readable, "Tuile entière dans le Bureau %s %s" % [id,resolution])
 	var decisions := named("OfficeDecisions")
 	check(decisions != null and rect(decisions).size.x >= 280, "Espace utile pour les décisions " + str(resolution))
 	for id in ["OfficePreparationAction", "OfficeSelectionAction", "OfficeSquadAction", "OfficeStandingsAction", "OfficeCalendarAction"]:
 		var action := named(id) as Button
-		if resolution.x == 1280 and action != null:
+		if scrolling and action != null:
 			action.grab_focus()
 			await expose_office(action)
 			check(action.has_focus(), "Accès métier garde son focus dans le vrai défilement " + id)
-		check(office_contained(action) if resolution.x == 1280 else inside(action,app.body_scroll), "Accès métier visible depuis le Bureau %s %s" % [id,resolution])
-	if resolution.x == 1280:
+		check(office_contained(action) if scrolling else inside(action,app.body_scroll), "Accès métier visible depuis le Bureau %s %s" % [id,resolution])
+	if scrolling:
 		var reading := named("OfficeReadingScroll") as ScrollContainer
 		if reading != null: reading.scroll_vertical = 0
 		app.body_scroll.scroll_vertical = 0

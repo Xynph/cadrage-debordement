@@ -119,8 +119,19 @@ func parcours(ecran: Control) -> void:
 	verifier(t.lignes_visibles().size() > 0 and t.lignes_visibles().all(func(j: Dictionary): return int(j.fam) == 2), "recherche sans accent : « deuxieme » trouve les deuxièmes lignes")
 	champ.text = "zzzz"; champ.text_changed.emit("zzzz"); await poser()
 	verifier(t.lignes_visibles().is_empty(), "recherche sans résultat : liste vide et message")
+	verifier(t.message_vide == "Aucun joueur ne correspond à cette recherche.", "recherche sans résultat : message de recherche")
 	await capture("socle-recherche-vide")
 	champ.text = ""; champ.text_changed.emit(""); await poser()
+	# « À surveiller » sans personne : état vide rassurant (« Personne à surveiller cette semaine. »), pas un
+	# échec de recherche ; avec une recherche sans résultat, le message de recherche reste.
+	ecran.find_child("Filtre_suivi", true, false).pressed.emit(); await poser()
+	verifier(t.message_vide == "Personne à surveiller cette semaine.", "À surveiller sans recherche : message « Personne à surveiller cette semaine. »")
+	if t.lignes_visibles().is_empty(): await capture("socle-personne-a-surveiller")
+	champ.text = "zzzz"; champ.text_changed.emit("zzzz"); await poser()
+	verifier(t.lignes_visibles().is_empty() and t.message_vide == "Aucun joueur ne correspond à cette recherche.", "À surveiller + recherche sans résultat : message de recherche")
+	champ.text = ""; champ.text_changed.emit(""); await poser()
+	ecran.find_child("Filtre_tous", true, false).pressed.emit(); await poser()
+	verifier(t.lignes_visibles().size() == total, "filtre « Tous » rétabli après le contrôle de l'état vide")
 	verifier(t.lignes_visibles().size() == total, "recherche effacée : tout l'effectif revient")
 
 	# Souris : clic sur une ligne, molette.

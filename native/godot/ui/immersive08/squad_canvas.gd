@@ -325,7 +325,9 @@ func _refresh(reveal: bool) -> void:
 	_build_rows(players,0,built)
 	if built < players.size(): _build_remaining(players,built,_generation)
 	if players.is_empty():
-		var empty:=C.wrap("Aucun joueur ne correspond. Modifie les filtres ou réinitialise la recherche.",22)
+		var nobody_watched: bool = state.family==U.WATCH_FILTER and str(state.search).strip_edges().is_empty()
+		var empty:=C.wrap("Personne à surveiller cette semaine." if nobody_watched else "Aucun joueur ne correspond. Modifie les filtres ou réinitialise la recherche.",22,C.IVORY if nobody_watched else C.MUTED)
+		empty.name = "RosterEmpty"
 		rows.add_child(empty)
 	if reveal:
 		var scroll := find_child("SquadScroll",true,false) as ScrollContainer
