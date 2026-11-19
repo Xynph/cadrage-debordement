@@ -96,6 +96,29 @@ hors Top 14.
 souvent le bonus défensif (essais encaissés 0,31 → 0,16 : l'adversaire n'a plus le temps), la pénaltouche garde plus de
 victoires : un vrai choix. À la 60e, il reste trop de temps pour que les trois points pèsent : normal.
 
+### Remesure après fusion (19/11, 1 200 matchs, `tests/mesure-chrono-1200.cjs`, run 44488746565)
+
+Sur `main` après #925 et #937 (contre recalé à .03/5 m), XV identiques.
+
+| Mesure | Avant le chrono (#925) | Après |
+| --- | --- | --- |
+| Jeu au large contre « Équilibré », victoires (1 200 matchs) | 49,4 % | 47,8 % (écart type ≈ 1,4 point : dans le bruit) |
+
+Mené de 8 à la 72e, 1 200 fins de match par consigne :
+
+| Consigne | Victoires | Bonus défensif | Points de classement | Essais encaissés |
+| --- | --- | --- | --- | --- |
+| Staff (« auto ») | 0,06 | 0,39 | 0,62 | 0,26 |
+| Pénalités tentées (« Aller chercher le bonus défensif ») | 0,05 | **0,44** | **0,66** | 0,23 |
+| Pénaltouche (« Tout pour la victoire ») | 0,04 | 0,36 | 0,51 | 0,23 |
+
+Garde-fous : `match-rating-curve` et `fatigue-phases-arretees` verts, seuils inchangés.
+
+Constat : taper au but rapporte désormais nettement plus de bonus défensif (0,44 contre 0,30 avant le chrono). Mais la
+pénaltouche ne gagne plus davantage de matchs (0,04 contre 0,05) : à −8 à la 72e, le choix n'est plus un vrai dilemme
+(les 400 fins de match de #937 donnaient 0,11 contre 0,17 de victoires). Piste : réussite de la pénaltouche dans les 22
+en fin de match (ballon porté), à remesurer sur 1 200 fins de match.
+
 ## Limites
 
 - Le moteur ne distingue pas ballon vivant et ballon mort à l'intérieur d'une action : le temps de jeu effectif réel

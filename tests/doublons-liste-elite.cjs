@@ -71,6 +71,34 @@ test('les clubs de l’ordinateur laissent hors de la feuille le joueur qui doit
  assert.equal(out.back, true, 'une fois la règle tenue, il rejoue');
 });
 
+test('rotation du staff : repos étalés (3 au plus par match), obligatoires toujours, sélection du staff du club aussi', () => {
+ const h = world();
+ const out = h.run(`(()=>{
+  // Neuf titulaires de l'adversaire sur la liste, quatre matchs joués sans repos : il reste de la marge, mais peu.
+  const titulaires=buildSheet(opp).lineup.filter(Boolean).slice(0,9);
+  S.doublons.ids.splice(0,9,...titulaires);
+  for(const id of titulaires)S.doublons.rests[id]='jjjj';
+  const feuille=s=>[...s.lineup,...s.bench];
+  const reposes=titulaires.filter(id=>!feuille(buildSheet(opp)).includes(id)).length;
+  // Six matchs sans repos : tous obligatoires, le plafond ne s'applique pas.
+  for(const id of titulaires)S.doublons.rests[id]='jjjjjj';
+  const obligatoires=titulaires.filter(id=>!feuille(buildSheet(opp)).includes(id)).length;
+  // Début de saison : personne n'est reposé.
+  for(const id of titulaires)S.doublons.rests[id]='';
+  const debut=titulaires.filter(id=>!feuille(buildSheet(opp)).includes(id)).length;
+  // Club du manager : « Sélection du staff » (autoLineup) étale aussi ; une feuille choisie à la main reste intacte.
+  const club=S.clubs[S.club];autoLineup();const miens=S.lineup.filter(Boolean).slice(0,5);
+  S.doublons.ids.splice(9,5,...miens);for(const id of miens)S.doublons.rests[id]='jjjj';
+  autoLineup();const staff=miens.filter(id=>![...S.lineup,...S.reserves].includes(id)).length;
+  const main=feuille(buildSheet(club,miens)).filter(id=>miens.includes(id)).length;
+  return {reposes,obligatoires,debut,staff,main};})()`);
+ assert.equal(out.reposes, 3, 'quatre matchs pleins : le staff en repose 3, pas 0 ni 9');
+ assert.equal(out.obligatoires, 9, 'repos obligatoires : tous sortent');
+ assert.equal(out.debut, 0, 'début de saison : aucun repos anticipé');
+ assert.equal(out.staff, 3, 'sélection du staff du club du manager : 3 repos anticipés');
+ assert.equal(out.main, 5, 'feuille choisie à la main : inchangée');
+});
+
 test('le suivi des feuilles distingue repos, sélection et blessure', () => {
  const h = world();
  const codes = h.run(`(()=>{

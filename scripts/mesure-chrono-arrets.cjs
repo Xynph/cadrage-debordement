@@ -12,7 +12,8 @@
 // Crochets en lecture seule (aucun tirage ajouté).
 //
 // Usage : node --max-old-space-size=1400 scripts/mesure-chrono-arrets.cjs [--reels=600] [--styles=200] [--courbe=150]
-//         [--bonus=400] [--parties=reels,styles,courbe,bonus] [--json fichier]
+//         [--bonus=400] [--parties=reels,styles,courbe,bonus] [--liste-styles=equilibre,large,conquete,occupation]
+//         [--minutes-bonus=60,72] [--json fichier]
 const fs = require('node:fs');
 const { context } = require('../tests/monde-harness.cjs');
 const B = require('../tests/helpers/courbe-niveau.cjs');
@@ -22,6 +23,8 @@ const opt = (k, d) => { const a = args.find(x => x.startsWith(`--${k}=`)); retur
 const N = { reels: +opt('reels', 600), styles: +opt('styles', 200), courbe: +opt('courbe', 150), bonus: +opt('bonus', 400) };
 const parties = opt('parties', 'reels,styles,courbe,bonus').split(',');
 const json = opt('json', null);
+const listeStyles = opt('liste-styles', 'equilibre,large,conquete,occupation').split(',');
+const minutesBonus = opt('minutes-bonus', '60,72').split(',').map(Number);
 
 const VM = String.raw`globalThis.__chronoMesure=function(o){
  const fixtures=S.worldMode.fixtures.filter(f=>f.competitionId==='elite'&&f.phase==='league');
@@ -90,7 +93,7 @@ try {
   }
   if (parties.includes('styles')) {
     resultat.styles = [];
-    for (const style of ['equilibre', 'large', 'conquete', 'occupation']) {
+    for (const style of listeStyles) {
       h.restore(cp);
       const m = JSON.parse(h.run(`__chronoMesure(${JSON.stringify({ partie: 'styles', n: N.styles, style, base: 4, graine: 1 })})`, 3600000));
       resultat.styles.push(resumeStyle(style, m));
@@ -108,7 +111,7 @@ try {
 if (parties.includes('bonus')) {
   const { mesurer } = require('./mesure-bonus-fin-de-match.cjs');
   resultat.bonus = {};
-  for (const minute of [60, 72]) {
+  for (const minute of minutesBonus) {
     const r = resultat.bonus[minute] = mesurer({ n: N.bonus, minute, situations: ['defensif'] }).defensif;
     console.log(`## Mené de 8 à la ${minute}e (${N.bonus} fins de match par consigne)\nconsigne | V | N | D | BD | pts | essais + | essais − | actions`);
     for (const [id, t] of Object.entries(r)) console.log([id, t.victoire, t.nul, t.defaite, t.bonusDefensif, t.points, t.essaisMarques, t.essaisEncaisses, t.actions].join(' | '));
