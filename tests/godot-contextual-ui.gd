@@ -143,7 +143,8 @@ func run() -> void:
 	await taille(Vector2i(1920,1080)); await photographier("apres-1920x1080")
 	await taille(Vector2i(1280,720))
 	var palette := preload("res://ui/contextual/match_tableau_widgets.gd")
-	var expected_colors := [palette.VERT, Color("c0c9b5"), palette.ALERTE]
+	# Réaction neutre : texte secondaire commun (jeton MUTED de game_skin.gd, repris par contextual/skin.gd).
+	var expected_colors := [palette.VERT, preload("res://ui/contextual/skin.gd").MUTED, palette.ALERTE]
 	var reaction_cards := 0
 	for card: Node in director.view.find_children("*", "Button", true, false):
 		if not card.has_meta("participant_id"): continue

@@ -11,6 +11,7 @@ const notesMatch=require('./match-notes.cjs');
 const feuilleStats=require('./match-stats.cjs');
 const pourquoi=require('./match-pourquoi.cjs');
 const {zone22}=require('./match-zone22.cjs');
+const bonusFin=require('./match-bonus.cjs');
 
 const NIVEAUX=Object.freeze(Object.keys(selection.NIVEAUX));
 const LIBELLES=Object.freeze({aucun:'Commentaire seul',resume:'Résumé',cles:'Temps forts clés',etendus:'Temps forts étendus',dynamique:'Dynamique',integral:'Match complet'});
@@ -63,7 +64,9 @@ function lecteur(){
    const notes=typeof CDMatchNotes!=='undefined'?CDMatchNotes.contexte(l):null;
    // Énergie moyenne des deux XV sur le terrain (« Pourquoi » d'après-match, match-pourquoi.cjs).
    const energie=l.userSide>=0?[l.userSide,1-l.userSide].map(side=>{const on=l.sheets[side].on.map(id=>id==null?null:matchPlayer(l,side,id)).filter(Boolean);return on.length?Math.round(on.reduce((n,p)=>n+(p.condition??100),0)/on.length):null;}):null;
-   return {notes,energie,rencontre:[S.season,S.round,S.phase,l.pair.join('-')].join(':'),horloge:matchClock(l),camp:l.userSide,possession:l.possession,territoire:l.territory,cartons,effectifAdverse,xvAdverseActuel,
+   // Barème du bonus de la rencontre (match-bonus.cjs), null hors phase de classement.
+   const bonus=typeof nativeMatchBonus!=='undefined'?nativeMatchBonus.regleDuMatch(l):null;
+   return {bonus,notes,energie,rencontre:[S.season,S.round,S.phase,l.pair.join('-')].join(':'),horloge:matchClock(l),camp:l.userSide,possession:l.possession,territoire:l.territory,cartons,effectifAdverse,xvAdverseActuel,
     tactique:l.tacticalStats?l.tacticalStats.map(s=>({longGains:s.longGains,handErrors:s.handErrors,metres:Math.round(s.metres)})):null};
   }
  };
@@ -379,6 +382,9 @@ function project(model,niveau,lire,options={}){
   // Entrées dans les 22 adverses, points et secondes qui en découlent (faits montrés seulement).
   zone22:zone22(vues),notes:notesDuMatch(vues,events,etat.camp??-1,contexteNotes),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel,contexteNotes),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null,hommeDuMatch:null};
+ // Bonus de la rencontre vu de notre camp (règle du championnat, état, dilemme de fin de match), sur le score, les
+ // essais et la minute du journal montré : rien d'un temps fort à venir. null sans bonus en jeu.
+ {const vue=vues.at(-1);direct.bonus=bonusFin.projection(etat.bonus||null,{score:direct.score,essais:vue?vue.essaisApres:[0,0],camp:direct.camp,minute:minuteVue,fini:live.finished===true&&borne>=events.length});}
  // Homme du match (résumé d'après-match) : désigné quand tout le journal a été montré, par le
  // calcul de la note enregistrée (match-notes.cjs).
  if(live.finished&&borne>=events.length&&etat.notes){
@@ -431,12 +437,21 @@ function project(model,niveau,lire,options={}){
  }
  // Arrêt-décision : un carton contre mon équipe, ou un rouge adverse, dans la dernière rafale.
  const rafale=bilan.decisions.at(-1)?.rafale;
+ let arretLigne=-1;
  if(rafale&&direct.camp>=0){
   for(let i=rafale[0];i<=rafale[1];i++){
    const l=lignes[i];
-   if(l.kind==='card'&&l.incident&&(l.equipe===direct.camp||l.cause==='red'))
-    direct.arret={cle:'carton-'+i,raison:'carton',rouge:l.cause==='red',pourNous:l.equipe!==direct.camp,texte:nommer(events[i].text),horloge:horloge(l)};
+   if(l.kind==='card'&&l.incident&&(l.equipe===direct.camp||l.cause==='red')){
+    direct.arret={cle:'carton-'+i,raison:'carton',rouge:l.cause==='red',pourNous:l.equipe!==direct.camp,texte:nommer(events[i].text),horloge:horloge(l)};arretLigne=i;}
   }
+ }
+ // Arrêt-incident (incidents-match.cjs) : remplacement forcé de mon équipe (blessure, saignement, HIA, commotion,
+ // couverture de première ligne) déjà montré ; le choix du manager y est joint s'il a plus d'une option. Un carton plus
+ // récent garde la main.
+ const incident=live.incidentChoix;
+ if(incident&&direct.camp>=0&&Number.isInteger(incident.evenement)&&incident.evenement<borne&&incident.evenement>arretLigne&&lignes[incident.evenement]){
+  const i=incident.evenement;
+  direct.arret={cle:incident.cle,raison:incident.kind,rouge:false,pourNous:false,texte:nommer(events[i].text),horloge:horloge(lignes[i]),...(incident.options.length>1?{choix:{type:incident.type,options:incident.options}}:{})};
  }
  // Multiplex des autres matchs de la journée et classement « si ça finit ainsi » (match-multiplex.cjs),
  // à la minute du dernier fait montré : jamais au-delà de ce que le joueur a vu.

@@ -92,6 +92,8 @@ budget() {
     tests/continuer-evenement-monde.cjs|tests/retouches-coherence.cjs) echo 600s ;;
     # Dilemmes de presse (#727) : carrière Monde, 146 s sur le runner sur main (shard 7) et délai de 180 s dépassé sur la PR #730 (shard 4, même code) ; budget ≈ 3 fois.
     tests/presse-dilemmes-monde.cjs) echo 420s ;;
+    # Presse rapide (#928) : carrière Monde, 192 s en local sur main (19/11) et délai de 180 s dépassé dans le train 20261118-2307 ; budget ≈ 2 fois.
+    tests/presse-rapide-monde.cjs) echo 420s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
     tests/homme-du-match-postes.cjs) echo 600s ;;
     # Fiche club : carrière Monde hebdomadaire, 3 journées (293 s en local sous forte charge).
@@ -99,13 +101,21 @@ budget() {
     # Délégation de la composition au staff : trois carrières Monde hebdomadaires (10 journées déléguées, feuille gardée jusqu'à l'alerte de fatigue, refus), ~5 min en local sous charge.
     tests/delegue-composition-staff.cjs) echo 900s ;;
     # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local, 112 s en CI (PR #712, poids 129 = mesure +15 %).
-    tests/match-rating-curve.cjs) echo 420s ;;
+    # 334 s sur main (Tests JavaScript 44443910094) et 420 s dépassées sur la PR #943 (Suites 1/7, run 44447171817) : la phase « rapide » seule
+    # (4 x 3 000 matchs) prend 273 s sur le runner lent ; moteur JS seul, sans lien avec le lot. Budget ≈ 2,7 fois main.
+    tests/match-rating-curve.cjs) echo 900s ;;
+    # Suites Monde de 76 à 131 s (main 44443910094 et PR #943 44447171817), sans limite propre donc à 180 s : même ralentissement du runner ; budget ≈ 2,5-3 fois.
+    tests/ai-roster-cycle.cjs|tests/continuer-arrets-saison.cjs|tests/essais-realistes.cjs|tests/reactivite-projection-rapide-semaines.cjs|tests/reactivite-projection-verification-direct.cjs|tests/sauvegarde-journal-plantage-monde.cjs) echo 300s ;;
+    tests/avant-match-donnees.cjs|tests/reactivite-projection-verification-semaines.cjs) echo 360s ;;
     # Chorégraphe (#591, 15/11) : sous-test natif passé au Monde, deux carrières world-champ jouées minute par minute (drapeau éteint puis allumé), 580 s en local sous charge.
     tests/match-choregraphe.cjs) echo 1200s ;;
     # Pont natif en carrière Monde (#828) : deux workers jumeaux, un match délégué, exports de ~20 Mo, sept workers successifs ; 151 s en local avec Godot, 180 s dépassées en CI.
     tests/godot-engine.cjs) echo 600s ;;
     # Pilotage du match (#912) : carrière Monde + 11 séries de 160 matchs rejoués, 125-150 s en local ; 180 s dépassées en CI.
     tests/match-pilotage.cjs) echo 480s ;;
+    # Dilemmes rugby (#925, 18/11/2026) : la presse rapide en carrière Monde passe de 149 à 172 s en local (commotions, doublons, relâchement
+    # calculés chaque jour) ; 180 s dépassées en CI. Même cause pour le test de charge natif (71 s en local, 180 s dépassées sur le runner).
+    tests/presse-rapide-monde.cjs|tests/v63-2-stress-native.cjs) echo 420s ;;
     # Cartons réalistes (#912) : carrière Monde + 80 matchs rejoués, ~90 s en local.
     tests/cartons-realistes.cjs) echo 420s ;;
     # Pénalité jouée à la main : 148 s de poids, au ras du cap de 180 s ; le crochet du pilotage dans skill() coûte ~5-10 % (#912).
@@ -180,6 +190,20 @@ budget() {
     # Réactivité du moteur (lot 19) : deux carrières Monde par test (projection d'avant et par sections), 130 à 170 s
     # mesurées ; 180 s dépassées au hasard en CI le 16/11 (#788, #790, #796, #801). Budget ≈ 3 fois, assertions inchangées.
     tests/reactivite-projection-verification.cjs|tests/reactivite-projection-rapide.cjs|tests/reactivite-projection-decisions.cjs) echo 540s ;;
+    # Presse rapide Monde (#928) : carrière Monde + matchs joués au worker, 194 s de mur sur main (Tests JavaScript 44419838338) et 180 s dépassées sur main (44413663397, 44404301884) comme sur la PR #943 ; limite par défaut trop juste, sans lien avec le lot. Budget ≈ 3 fois, assertions inchangées.
+    tests/presse-rapide-monde.cjs) echo 540s ;;
+    # Courrier du club (carrière Monde, plusieurs semaines) : 136-140 s sur main (runs 44419838338, 44424700419), 3 à 4 fois sous la limite
+    # de 180 s seulement ; sur la PR #943 le même shard tourne ~1,5 fois plus lentement (finitions-critiques 179 s contre 123-129 s,
+    # lifecycle-native 210 s contre 141 s), d'où 180 s dépassées. Bonus de fin de match : 150 s sur main. Budget ≈ 3 fois, assertions inchangées.
+    tests/club-mail.cjs|tests/bonus-fin-de-match.cjs) echo 420s ;;
+    # Suites Monde de 100 à 106 s sur main (mesures CD_CPU_PROFILE), exposées au même ralentissement du runner ; budget ≈ 3 fois.
+    tests/avance-jour-differe.cjs|tests/arbitre-veille.cjs|tests/plan-adverse.cjs|tests/world-reprise-preparation.cjs|tests/club-mail-enseignements.cjs|tests/world-championnats-suivis.cjs) echo 300s ;;
+    # Protocole commotion (carrière Monde, HIA en match puis repos jour par jour) : moteur JS seul, sans lien avec le lot du match 3D ;
+    # 180 s dépassées sur la PR #943 (Suites 5/7, run 44436008167) avec le runner ~1,5 fois plus lent. Budget ≈ 3 fois, assertions inchangées.
+    tests/commotion-hia.cjs) echo 420s ;;
+    # Incidents de match (blessures, saignements, choix du manager) : carrière Monde, deux matchs rejoués minute par
+    # minute puis un direct au worker ; 36 s en local. Budget ≈ 8 fois, comme les autres suites Monde du match.
+    tests/incidents-match.cjs) echo 300s ;;
     *) echo 180s ;;
   esac
 }

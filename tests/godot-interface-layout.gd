@@ -257,14 +257,20 @@ func run() -> void:
 	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
 	check(is_instance_valid(offer) and offer.visible and salary.text=="12345" and salary.caret_column==3,"Brouillon contrat sur même dialogue")
 	offer.hide();offer.queue_free();await settle()
+	# Préparation riche à toutes les tailles (shell.gd, RICH_FROM_720P) : l'onglet Entraînement ouvre son gabarit.
 	app._navigate("Préparation");await settle();app.coach.close()
 	await enter(named("PreparationTabEntrainement"))
-	var preparation:Control=named("CarnetPreparation")
 	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:
 		await resize_to(resolution)
-		check(named("CarnetPreparation")==preparation and app.management_ui.preparation.tab==2,"Onglet entraînement conservé")
-		for button in named("PreparationEntrainement").find_children("*","BaseButton",true,false):
-			check(app.body_scroll.get_global_rect().encloses(button.get_global_rect()),"Commande entraînement entière "+str(button.name))
+		var training:Control=named("ImmersiveTraining")
+		check(training!=null and app.management_ui.preparation.tab==2,"Onglet entraînement conservé "+str(resolution))
+		if training==null: continue
+		var lane:=app.body_scroll.get_global_rect().grow(1)
+		for button:BaseButton in training.find_children("*","BaseButton",true,false):
+			if not button.is_visible_in_tree(): continue
+			var bounds:=button.get_global_rect()
+			check(bounds.position.x>=lane.position.x and bounds.end.x<=lane.end.x,"Commande entraînement entière en largeur "+str(button.name)+" "+str(resolution))
+			check(minf(bounds.size.x,bounds.size.y)>=24.0,"Commande entraînement d’au moins 24 px "+str(button.name)+" "+str(resolution))
 	await capture("preparation-1280")
 	if await press_from_mail():
 		var tabs:TabContainer=named("PressTabs")

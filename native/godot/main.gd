@@ -381,6 +381,9 @@ func _receive_model(value: Dictionary) -> void:
 			_reset_reception(reception_id)
 			if has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 			route = "Réception"
+			# Après-match façon FM (18/11/2026) : la conférence courte s'ouvre dès la validation du résultat, sans
+			# arrêt de « Continuer » en plus.
+			if received_command == "finish_round" and _press_required(): call_deferred("_open_postmatch_press")
 		# Arrêt « À noter » de « Continuer » (façon FM) : tous les éléments du jour sont en Réception, le plus récent en tête.
 		elif received_command == CareerProgression.CONTINUE_COMMAND and _stop_kind(model) == "a_noter":
 			_reset_reception()
@@ -415,7 +418,7 @@ func _receive_model(value: Dictionary) -> void:
 			_refit_status()
 		if is_instance_valid(root_content) and decision_feedback != null:
 			var feedback_button: Button = root_content.find_child("DecisionFeedbackButton", true, false)
-			if feedback_button != null: feedback_button.disabled = decision_feedback.receipts().is_empty()
+			if feedback_button != null: decision_feedback.refresh_control(feedback_button)
 		if last_command in ["recruit","extend_contract"] and model.get("meta",{}).get("negotiation") is Dictionary:
 			var offer: Dictionary = model.meta.negotiation
 			notice("La réponse du joueur", str(offer.get("message","La négociation est enregistrée.")))
@@ -762,6 +765,15 @@ func _open_press_conference() -> void:
 	inbox.press_opened = id
 	_navigate("Réception", false)
 	_open_press_invitation(id)
+
+## Après-match (18/11/2026) : la salle de presse s'ouvre directement sur la conférence d'après-match ; sans elle
+## (ancienne carrière, autre créneau), le courrier de la conférence comme avant.
+func _open_postmatch_press() -> void:
+	var id := _pending_press_invitation()
+	if id.is_empty(): return
+	set_meta("press_mail_origin", id)
+	if is_instance_valid(contextual_director) and contextual_director.sync("postmatch_press", true): return
+	_open_press_conference()
 
 ## Identifiant du courrier de la conférence de presse ouverte cette semaine, vide s'il n'y en a pas.
 func _pending_press_invitation() -> String:
@@ -1504,10 +1516,9 @@ func _credits() -> void:
 	_clear_dialogs()
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 760)
-	d.title = "Rugby Legacy 27 · Crédits"
-	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nCertains portraits sont des illustrations IA ; leur provenance figure dans les crédits et les métadonnées. L'enceinte3D est générique."
+	preload("res://ui/credits_view.gd").fill(d)
 	add_child(d)
-	d.popup_centered(Vector2i(760,300))
+	ImmersiveDialogs.show_centered(d, Vector2i(900,640))
 	d.confirmed.connect(d.queue_free)
 
 ## Reprise avant le match (décision de Léo, 16/11/2026) : une carrière n'est jamais enregistrée en plein match. Du coup

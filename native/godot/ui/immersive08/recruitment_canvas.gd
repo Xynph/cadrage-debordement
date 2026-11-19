@@ -344,8 +344,10 @@ func _sort_arrows() -> void:
 		button.text = str(button.get_meta("sort_caption")) + (" ↓" if _sort_descending() else " ↑") if active else str(button.get_meta("sort_caption")) + " ↕"
 		button.tooltip_text = "Trier par %s · %s · valeurs inconnues en dernier" % [column.to_lower(),"croissant au prochain clic" if active and _sort_descending() else "décroissant au prochain clic" if active else "activer le tri"]
 		button.accessibility_name = button.text + " · " + button.tooltip_text
-		var pixels := C.px(18)
-		while pixels > C.px(13) and C.DISPLAY.get_string_size(button.text,HORIZONTAL_ALIGNMENT_LEFT,-1,pixels).x > button.size.x-C.px(4): pixels -= 1
+		# Plancher lisible dès 1280 × 720 (densité 0,5) ; inchangé à partir de 1920 × 1080.
+		var smallest := C.px(13) if C.density >= .75 else 12
+		var pixels := maxi(smallest, C.px(18))
+		while pixels > smallest and C.DISPLAY.get_string_size(button.text,HORIZONTAL_ALIGNMENT_LEFT,-1,pixels).x > button.size.x-C.px(4): pixels -= 1
 		button.add_theme_font_size_override("font_size",pixels)
 
 func _refresh() -> void:
@@ -413,8 +415,13 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 	D.line(row, Vector2(0, ROW_HEIGHT-1), Vector2(LEFT - 2, ROW_HEIGHT-1), Color(C.LINE, .65))
 	D.text(row, 25, 25, str(index + 1), 17, C.IVORY, 700, 38, HORIZONTAL_ALIGNMENT_CENTER)
 	_portrait(row, Rect2(65, 2, 35, 34), player, player_id)
-	D.text(row, 128, 18, item.get("name", "—"), 18, C.IVORY, 700, 190 if tab != 3 else 359)
-	D.text(row, 128, 33, "★ Suivi" if player_id in app.management_ui.shortlist else "Marché des joueurs" if tab != 3 else "Dossier d’observation", 13, WARM if player_id in app.management_ui.shortlist else C.MUTED, 500, 190)
+	# 1280 × 720 (densité 0,5) : le plancher de police ne laisse place qu'à une ligne ; le suivi passe en étoile.
+	if C.density < .75:
+		var followed: bool = player_id in app.management_ui.shortlist
+		D.text(row, 128, 25, ("★ " if followed else "") + str(item.get("name", "—")), 18, WARM if followed else C.IVORY, 700, 190 if tab != 3 else 359)
+	else:
+		D.text(row, 128, 18, item.get("name", "—"), 18, C.IVORY, 700, 190 if tab != 3 else 359)
+	if C.density >= .75: D.text(row, 128, 33, "★ Suivi" if player_id in app.management_ui.shortlist else "Marché des joueurs" if tab != 3 else "Dossier d’observation", 13, WARM if player_id in app.management_ui.shortlist else C.MUTED, 500, 190)
 	var assessment: Dictionary = report.get("assessment", {})
 	if tab == 3:
 		D.text(row, 506, 25, item.get("pos", "—"), 18, C.IVORY, 500, 250)

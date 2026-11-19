@@ -562,7 +562,8 @@ function aiRosterPopulationTargets(c,pool){
   // clubs de première division : ils ne recrutaient plus personne.
   const sustainable=aiRosterTarget(c)===37?finance.sustainable:c.cash-finance.fee>=300000;
   out.push({p,need,evidence,finance,within:sustainable&&p.salary<=100000,
-   score:need.score*2+Math.round(evidence.quality/2)-(p.age>=32?10:0)});
+   // Quota de championnat (JIFF, EQP) : un club dont la moyenne est menacée valorise davantage un joueur qui compte (jiff.cjs).
+   score:need.score*2+Math.round(evidence.quality/2)-(p.age>=32?10:0)+(typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.recruitBonus==='function'?CDJiff.recruitBonus(S,c.id,p):0)});
  }
  return out.sort((a,b)=>Number(b.within)-Number(a.within)||b.score-a.score||a.p.id.localeCompare(b.p.id)).slice(0,12);
 }

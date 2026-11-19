@@ -13,7 +13,7 @@ function frontLocked(l,side,id){
  return f.held.some(h=>h.id===id&&(h.mode==='carence'&&f.uncontested||frontCaseActive(l,f.exclusions[h.caseIndex],'yellow')));
 }
 function frontCaseActive(l,e,kind=null){return !!e&&(!kind||e.kind===kind)&&!e.closed&&(e.until===null||e.until>l.minute)}
-function frontAvailable(l,side,id){const sh=l.sheets[side],p=matchPlayer(l,side,id);return p&&!p.injury&&!sh.sentOff.includes(id)&&!sh.cards.some(c=>c.id===id&&c.until>l.minute)}
+function frontAvailable(l,side,id){const sh=l.sheets[side],p=matchPlayer(l,side,id);return p&&!p.injury&&!(typeof hiaBlocked==='function'&&hiaBlocked(l,side,id))&&!sh.sentOff.includes(id)&&!sh.cards.some(c=>c.id===id&&c.until>l.minute)}
 function frontTarget(l,side){
  const sh=l.sheets[side];
  const yellows=sh.cards.filter(c=>c.until>l.minute).length,reds=sh.redCards.filter(c=>c.until===null||c.until>l.minute).length;
@@ -55,10 +55,13 @@ function reconcileFrontRow(l,side,prepare=false){
   const donor=frontDonor(l,side,candidate.id,slot);if(!donor)continue;
   const caseIndex=f.exclusions.map((e,i)=>({e,i})).filter(x=>x.e.slot===slot&&!x.e.closed).at(-1)?.i;
   if(caseIndex===undefined)continue;
+  // Choix du manager (native/engine/incidents-match.cjs) : joueurs qui pourraient sortir à la place du choix du staff.
+  const incidents=typeof matchIncidents==='function'?matchIncidents():null,sortants=incidents?.sortants(l,side,candidate.id,slot);
   sh.on[donor.slot]=null;sh.bench=sh.bench.filter(id=>id!==candidate.id);sh.bench.push(donor.id);sh.on[slot]=candidate.id;
   f.exclusions[caseIndex].releaseSlot=donor.slot;f.held.push({id:donor.id,slot:donor.slot,caseIndex,mode:'cover'});
   recordFrontMove(l,side,donor.id,candidate.id,'frontcover');
   addEvent(l,`${S.clubs[l.pair[side]].abbr} · ${candidate.name} entre au poste de ${POS[slot].toLowerCase()}. Le staff fait sortir ${donor.p.name} pour conserver une première ligne qualifiée, sans rétablir l’effectif.`,'sub');
+  incidents?.frontCover(l,side,slot,donor.id,candidate.id,sortants);
  }
  const uncontested=[0,1,2].some(slot=>!sh.on[slot]||!frontAvailable(l,side,sh.on[slot])||!slotEligible(matchPlayer(l,side,sh.on[slot]),slot));
  if(uncontested!==f.uncontested)addEvent(l,`${S.clubs[l.pair[side]].abbr} : ${uncontested?'carence en première ligne. Les mêlées deviennent non disputées ; la réduction supplémentaire d’effectif s’applique.':'une première ligne qualifiée est disponible. Les mêlées peuvent de nouveau être disputées.'}`,'card');

@@ -54,6 +54,7 @@ func talk() -> Dictionary:
 
 const TUILES := ["TuileForces", "TuileMeteo", "TuileFeuille", "TuileConfrontations", "TuileJoueurs", "TuileGabi"]
 const AvantMatch = preload("res://ui/immersive08/match_avant.gd")
+const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
 
 ## Textes d'un nœud de l'écran Match (labels de toute la sous-arborescence).
 func textes_de(noeud: Node) -> String:
@@ -260,6 +261,18 @@ func executer() -> void:
 		await capturer("meteo-bandeau-direct", func(): vue.update_frame(avec_vent()))
 		vue.update_frame(avec_vent(true))
 		await poser(4)
+		# Mi-temps atteinte par le moteur pendant un temps fort (18/11/2026) : le bandeau garde la
+		# 1re période jusqu'à la fin de l'action, puis annonce le changement de camp.
+		var regie: Node = vue.get("regie")
+		if regie != null and regie.etat == TempsForts.JEU:
+			verifier(vue.meteo_ligne.text.ends_with("en 1re période"), "bandeau : la mi-temps attend la fin de l'action « %s »" % vue.meteo_ligne.text)
+			regie.vitesse = 4.0
+			var limite := Time.get_ticks_msec() + 90000
+			while regie.etat == TempsForts.JEU and Time.get_ticks_msec() < limite:
+				await process_frame
+			verifier(regie.etat != TempsForts.JEU, "temps fort fini avant la mi-temps")
+			vue.update_frame(avec_vent(true))
+			await poser(4)
 		textes.mi_temps = vue.meteo_ligne.text
 		verifier(vue.meteo_ligne.text.begins_with("Mi-temps · changement de camp : le vent passe dans le dos de"), "bandeau : changement de camp « %s »" % vue.meteo_ligne.text)
 		await capturer("meteo-bandeau-mi-temps", func(): vue.update_frame(avec_vent(true)))

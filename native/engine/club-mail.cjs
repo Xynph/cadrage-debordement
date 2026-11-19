@@ -12,8 +12,9 @@
 //    (moral, confiance de la direction, relations presse, satisfaction, promesse de temps de jeu, charge physique,
 //    séance collective, préparation collective, promotion d'un jeune, trésorerie) et restent mesurés.
 //  - Cadence : plafond par jour, par catégorie et par semaine, intervalle par type, mémoire des sujets déjà écrits ;
-//    les mails « arret » arrêtent « Continuer » (continuer.cjs, arrêt informatif « courrier »), les autres arrivent
-//    dans la boîte sans arrêt.
+//    chaque type a une nature (18/11/2026) : « action » (réponse attendue) arrête « Continuer » à lui seul ;
+//    « info » est rangé dans l'arrêt d'info du jour (un seul par jour) ; « routine » n'arrête jamais à lui seul
+//    (continuer.cjs). Rien ne disparaît : tout reste en Réception.
 const DATA = require('./club-mail.json');
 const files = Object.freeze([]), commands = Object.freeze(['club_mail_reply']);
 // Données injectées dans la VM avant les domaines (native-systems.cjs, bootstrap).
@@ -33,6 +34,9 @@ function factory() {
   const dow = iso => (new Date(iso + 'T00:00:00Z').getUTCDay() + 6) % 7; // 0 = lundi
   const monday = iso => shift(iso, -dow(iso));
   const dayNumber = iso => Math.floor(Date.parse(iso + 'T00:00:00Z') / DAY);
+  const daysBetweenIso = (a, b) => dayNumber(b) - dayNumber(a);
+  // Protocole commotion (club-support.cjs) : disponibilités, antécédents, avis du spécialiste.
+  const commotionApi = () => typeof nativeSystems !== 'undefined' ? nativeSystems.domain('clubSupport')?.commotion || null : null;
   const shortDate = iso => iso.slice(8, 10) + '/' + iso.slice(5, 7);
   const euros = n => Math.round(n).toLocaleString('fr-FR').replace(/ | /g, ' ');
   const ordinal = n => n + (n === 1 ? 'er' : 'e');
@@ -126,7 +130,7 @@ function factory() {
     return 'Il est sorti touché ' + where + (Number.isFinite(us) && Number.isFinite(them) ? ' (' + us + '-' + them + (when ? ', le ' + shortDate(when) : '') + ')' : '') + '.';
   }
   const injuryLabel = key => BL.types?.[key]?.libelle || 'Blessure';
-  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation', 'a2r', 'reprise', 'rechute', 'retour'];
+  const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation', 'a2r', 'reprise', 'rechute', 'retour', 'doublon', 'repos_liste', 'specialiste'];
   const ORIENTATION_LABELS = { equilibre: 'répartition proposée', installations: 'priorité aux installations', staff: 'priorité au staff', accueil: 'priorité à l’accueil' };
   const PLAN_LABELS = { repos: 'repos', normal: 'charge allégée', intense: 'charge intense', collective: 'séance collective' };
   const MODE_LABELS = { repos: 'récupération', normal: 'normal', intense: 'intense' };
@@ -196,6 +200,15 @@ function factory() {
     return { classement, forme, prochain: F.next ? F.name(F.opponent(F.next)) : 'notre prochain adversaire' };
   };
 
+  // Bilan de la saison précédente du club du manager (s.jiff.results) -> variables du courrier de la ligue.
+  const quotaLigue = (F, keep) => {
+    const r = (F.s.jiff?.results || []).find(x => x.clubId === F.s.club && x.season === F.s.season - 1);
+    if (!r || !keep(r)) return [];
+    const ligue = { elite: 'le Top 14', accession: 'la Pro D2', prem: 'la Premiership' }[r.league] || 'ton championnat';
+    const eqp = r.league === 'prem';
+    return [{ key: 'quota:' + r.season, vars: { ligue, regle: eqp ? 'EQP' : 'JIFF', moyenne: String(r.average).replace('.', ','), objectif: eqp ? 15 : 16, points: r.deduction, montant: euros(r.fine || 0), prime: euros(r.bonus || 0), feuilles: r.sheets } }];
+  };
+
   // ------------------------------------------------------------------ déclencheurs : [{key, vars, player?}]
   const T = {
     bilan_kine(F) {
@@ -247,7 +260,11 @@ function factory() {
       if (!(F.s.round >= 3) || F.dow === 5) return [];
       const ratings = F.players.map(p => p.rating).sort((a, b) => a - b), median = ratings[Math.floor(ratings.length / 2)] || 0;
       const played = F.season.length;
-      const list = F.players.filter(p => !F.sheet.has(p.id) && !(p.injury > 0) && (p.age || 0) >= 20 && p.rating >= median - 2 && !p.satisfaction?.promise && (Number(p.dev?.appearances) || 0) <= Math.floor(played / 3))
+      // Matchs manqués en protocole commotion : une absence médicale n'est pas un manque de temps de jeu.
+      const missed = p => { const c = commotionApi(); return c ? c.missedMatches(F.s, p, F.season) : 0; };
+      // Sans absence médicale : règle d'origine ; avec, on juge sur au moins trois matchs où il était disponible.
+      const deficit = p => { const m = missed(p), dispo = played - m; return (m === 0 || dispo >= 3) && (Number(p.dev?.appearances) || 0) <= Math.floor(dispo / 3); };
+      const list = F.players.filter(p => !F.sheet.has(p.id) && !(p.injury > 0) && (p.age || 0) >= 20 && p.rating >= median - 2 && !p.satisfaction?.promise && deficit(p))
         .sort((a, b) => b.rating - a.rating || String(a.id).localeCompare(String(b.id)));
       const p = list[0]; if (!p) return [];
       return [{ key: p.id + ':' + F.s.season + ':' + Math.floor(dayNumber(F.d) / 30), player: p.id, vars: { ...playerVars(p), minutes: Number(p.dev?.minutes) || 0 } }];
@@ -463,6 +480,11 @@ function factory() {
       const v = typeof proprietaireCourrier === 'function' ? proprietaireCourrier() : null;
       return v && v.arrivee === 'oui' ? [{ key: 'arrivee:' + F.s.season, vars: v }] : [];
     },
+    // Bilan du quota de joueurs formés localement (jiff.cjs) : courrier de la ligue au début de la saison suivante, quand la
+    // saison finie a coûté des points (JIFF), une amende (EQP) ou rapporté la prime du fonds JIFF. Rien si le quota est tenu.
+    quota_retrait(F) { return quotaLigue(F, r => r.deduction > 0); },
+    quota_amende(F) { return quotaLigue(F, r => r.fine > 0); },
+    quota_prime(F) { return quotaLigue(F, r => r.bonus > 0 && !(r.deduction > 0)); },
     proprietaire_depart(F) {
       const v = typeof proprietaireCourrier === 'function' ? proprietaireCourrier() : null;
       return v && v.arrivee === 'non' ? [{ key: 'depart:' + F.s.season, vars: v }] : [];
@@ -596,6 +618,34 @@ function factory() {
       const ciel = String(m.libelle || '').trim();
       const vent = m.ventDos ? ' Le vent soufflera dans le dos de ' + camp(pair[m.ventDos[0]]) + ' en première période' + (m.ventDos[0] === nous ? ' : à nous d’en profiter avant la pause.' : ', puis dans le nôtre après la pause.') : '';
       return [{ key: F.next.id, club: F.opponent(F.next), vars: { adversaire: F.name(F.opponent(F.next)), quand: F.next.date === F.d ? 'aujourd’hui' : 'demain', ciel: ciel.charAt(0).toUpperCase() + ciel.slice(1), ciel_bas: ciel, vent, conseil: m.conseil || '' } }];
+    },
+    // Doublon (doublons.cjs) : le prochain match de championnat du club tombe dans une fenêtre internationale. Un seul
+    // courrier par rencontre, une semaine avant au plus (dès que les convocations sont connues), jamais le jour même.
+    doublon(F, t) {
+      const f = F.next;
+      if (!f || f.phase !== 'league' || f.competitionId !== F.lid || F.d < shift(f.date, -7) || F.d >= f.date || typeof nativeSystems === 'undefined') return [];
+      const v = nativeSystems.domain('doublons').impact(F.s, f, t.seuils || {});
+      return v ? [{ key: f.id, vars: v }] : [];
+    },
+    // Protocole des Bleus (liste de 33) : un courrier de la cellule FFR-LNR par match, pour le joueur le mieux noté qui doit souffler.
+    cellule(F) {
+      const f = F.next;
+      if (!f || typeof nativeSystems === 'undefined' || F.d >= f.date || F.d < shift(f.date, -5) || F.d < monday(f.date)) return [];
+      const v = nativeSystems.domain('doublons').aMenager(F.s, f);
+      if (!v) return [];
+      return [{ key: f.id, player: v.player.id, vars: { ...playerVars(v.player), matchs: v.matchs, repos: v.repos, adversaire: v.opponent, jour: v.jour, rencontre: f.id } }];
+    },
+    // Médecin du club : commotion confirmée (protocole World Rugby, club-support.cjs), une fois par commotion, dans les
+    // jours qui suivent le match. `seuils.exception` : courrier où l'exception à 7 jours peut être demandée.
+    commotion(F, t) {
+      const c = commotionApi(); if (!c) return [];
+      const wanted = !!t.seuils?.exception;
+      return F.players.filter(p => { const prot = c.protocol(p); return prot && prot.date < F.d && F.d <= shift(prot.date, 6) && F.d < prot.retour && (prot.exception === 'possible') === wanted; })
+        .sort((a, b) => String(a.id).localeCompare(String(b.id))).slice(0, 2).map(p => {
+          const prot = c.protocol(p), n = p.commotion.n;
+          const antecedents = prot.antecedent ? 'Il a des antécédents (' + n + ' commotion' + (n > 1 ? 's' : '') + ' en carrière, dont une récente) : 12 jours au minimum, sans exception possible.' : n > 1 ? 'C’est sa ' + n + 'e commotion en carrière.' : 'C’est sa première commotion.';
+          return { key: p.id + ':' + prot.date, player: p.id, vars: { ...playerVars(p), match: shortDate(prot.date), retour: shortDate(prot.retour), jours: daysBetweenIso(prot.date, prot.retour), motif: c.MOTIFS[prot.critere], antecedents, septieme: shortDate(c.shiftDate(prot.date, c.RULES.exception)) } };
+        });
     },
     pelouse(F) {
       if (!F.next || F.next.date !== shift(F.d, 1) || F.next.homeId !== F.s.club) return [];
@@ -734,6 +784,8 @@ function factory() {
     if (e.promouvoir) out.push('Premier contrat professionnel');
     if (Number.isFinite(e.caisse) && e.caisse) out.push((e.caisse > 0 ? 'Recette ' : 'Coût ') + euros(Math.abs(e.caisse)) + ' €');
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; out.push('Frais ' + euros(sx.frais || 1500) + ' € ; amende annulée ou portée à ' + euros(sx.alourdie || 7500) + ' €'); }
+    if (e.doublon) out.push({ rotation: 'Cadres fatigués en récupération jusqu’au match', forte: 'Meilleure feuille possible', jeunes: 'Jeunes du centre : premier contrat professionnel' }[e.doublon] || e.doublon);
+    if (e.repos_liste) out.push({ reposer: 'Il sort de la feuille', amenagement: 'Accord possible, pas garanti', ignorer: 'Relation avec la fédération −3' }[e.repos_liste] || e.repos_liste);
     if (e.orientation) out.push('Investissements : ' + (ORIENTATION_LABELS[e.orientation] || e.orientation));
     if (e.pret === 'vendre') out.push('Vente immédiate, prix affecté au remboursement');
     if (e.pret === 'accepter') out.push('Remboursement sur plusieurs saisons');
@@ -743,6 +795,7 @@ function factory() {
     if (e.reprise === 'confier') out.push('Le président vend sans attendre');
     if (e.reprise === 'delai') out.push('Deux semaines de plus');
     if (e.suite) out.push('Suite dans ' + e.suite.jours + ' jours');
+    if (e.specialiste) out.push('Retour possible au 7e jour, sans garantie');
     if (e.contratDS === 'annuler') out.push('Il partira à la fin de son contrat ; prime remboursée');
     if (e.contratDS === 'forcer') out.push('Prolongation au salaire demandé');
     if (e.consigneDS) out.push('Consigne : ' + ({ econome: 'économe', jeunes: 'miser sur les jeunes', equilibre: 'équilibre' }[e.consigneDS] || e.consigneDS));
@@ -753,17 +806,23 @@ function factory() {
     // Match terminé et résultat confirmé (calendrier journalier : S.live reste jusqu'à la clôture de la semaine) : on répond.
     if (!s || (s.live && !(s.live.finished && s.worldMode?.resultConfirmed)) || s.phase === 'ended') return 'Indisponible pendant un match ou après la saison.';
     const e = r.effets || {}, club = s.clubs[s.club], p = m.player ? club.players.find(x => x.id === m.player) : null;
-    const playerEffects = ['satisfaction', 'fatigue', 'condition', 'plan', 'promesse', 'rechute', 'retour'].some(k => e[k] !== undefined);
+    const playerEffects = ['satisfaction', 'fatigue', 'condition', 'plan', 'promesse', 'rechute', 'retour', 'specialiste'].some(k => e[k] !== undefined);
     if (playerEffects && !p) return 'Ce joueur ne fait plus partie de l’effectif.';
     if ((e.entrainement || e.focus) && s.trained) return 'La séance de la semaine est déjà faite.';
     if (e.focus && s.collectivePrepVersion !== 1) return 'Préparation collective indisponible.';
     if (Number.isFinite(e.caisse) && e.caisse < 0 && (club.cash ?? 0) < -e.caisse) return 'Trésorerie insuffisante.';
+    if (e.doublon || e.repos_liste) {
+      if (typeof nativeSystems === 'undefined') return 'Indisponible.';
+      const raison = nativeSystems.domain('doublons').refus(s, m, e.doublon || e.repos_liste);
+      if (raison) return raison;
+    }
     if (e.orientation && !(typeof investCourrier === 'function' && investCourrier())) return 'La répartition de cette saison est déjà arrêtée.';
     if (e.pret === 'vendre') { const raison = typeof pretVenteRefus === 'function' ? pretVenteRefus() : 'Vente impossible.'; if (raison) return raison; }
     if (e.pret === 'accepter' && !(typeof pretCourrier === 'function' && pretCourrier())) return 'Le président a déjà tranché.';
     if (e.a2r) { if (typeof a2rRefus !== 'function') return 'Décision de l’A2R indisponible.'; const raison = a2rRefus(e.a2r); if (raison) return raison; }
     if (e.reprise) { if (typeof repriseRefus !== 'function') return 'Le président a déjà tranché.'; const raison = repriseRefus(e.reprise); if (raison) return raison; }
     if (e.appel) { const sx = TYPES.discipline?.seuils || {}; if ((club.cash ?? 0) < (sx.frais || 1500) + (sx.alourdie || 7500)) return 'Trésorerie insuffisante pour un appel.'; }
+    // Promesse : makePlayingPromise la refuse tant que le match de la semaine n'est pas clos (S.live), même confirmé.
     if (e.promesse) {
       // makePlayingPromise refuse tant que le match reste ouvert (résultat confirmé, journée pas encore close).
       if (s.live) return 'Promesse possible une fois la journée close.';
@@ -774,6 +833,11 @@ function factory() {
       const raison = dsContratsRefus(e.contratDS || e.consigneDS, m.player);
       if (raison) return raison;
     }
+    if (e.specialiste) {
+      const prot = p ? commotionApi()?.protocol(p) : null;
+      if (!prot) return 'Il a terminé son protocole commotion.';
+      if (prot.exception !== 'possible') return prot.exception === 'non' ? 'L’exception à 7 jours n’est pas ouverte : 12 jours de repos.' : 'Le spécialiste a déjà rendu son avis.';
+    }
     if (e.promouvoir) {
       const y = (s.development?.academy || []).find(x => x.id === m.player);
       if (!y) return 'Ce jeune n’est plus au centre.';
@@ -781,6 +845,12 @@ function factory() {
     }
     return '';
   }
+
+  // Nature d'un type de courrier (club-mail.json) et rang d'importance dans la journée : réponse attendue d'abord,
+  // puis information, puis routine ; à nature égale, la priorité du type (plus petite = plus importante).
+  // Repli pour un type encore écrit avec l'ancien drapeau `arret` (branche antérieure) : arret → action, sinon routine.
+  function nature(type) { const t = TYPES[type] || {}, n = t.nature; return n === 'action' || n === 'info' || n === 'routine' ? n : t.arret ? 'action' : 'routine'; }
+  function rang(type) { return ({ action: 3, info: 2, routine: 1 })[nature(type)] * 1000 - Math.min(999, TYPES[type]?.priorite ?? 99); }
 
   function project() {
     if (typeof S === 'undefined' || !S || !obj(S.clubMail)) return { mails: [], reponses: {}, attente: 0, blessures: Object.fromEntries(Object.entries(BL.types || {}).map(([k, t]) => [k, t.libelle])) };
@@ -792,7 +862,7 @@ function factory() {
         const t = TYPES[m.type] || {}, r = render(m), cat = D.categories?.[t.categorie] || {};
         const chosen = (t.reponses || []).find(x => x.id === m.choice);
         return { id: m.id, type: m.type, date: m.date, categorie: t.categorie || 'moments', categorieLabel: cat.label || 'Club', expediteur: r.expediteur, sujet: r.sujet, corps: r.corps,
-          arret: !!t.arret, ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, club: m.club ?? null, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
+          arret: nature(m.type) === 'action', nature: nature(m.type), importance: rang(m.type), ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, club: m.club ?? null, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
           reponses: m.status === 'nouveau' ? (t.reponses || []).map(x => { const raison = unavailable(S, m, x); return { id: x.id, libelle: x.libelle, effets: effectText(x.effets || {}, m.player ? S.clubs[S.club]?.players?.find(y => y.id === m.player) : null, todayOf(S) || m.date), disponible: !raison, raison, ouvrir: !!x.ouvrir }; }) : [] };
       }),
       reponses, attente: st.mails.filter(m => m.status === 'nouveau').length,
@@ -800,14 +870,15 @@ function factory() {
     };
   }
 
-  // Mails du jour qui arrêtent « Continuer » (continuer.cjs) : au plus `arretsParJour`, par priorité.
+  // Courrier du jour vu par « Continuer » (continuer.cjs), le plus important d'abord, avec sa nature (décision de
+  // Léo, 18/11/2026) : « action » arrête l'avance à lui seul, « info » est rangé dans l'arrêt d'info du jour,
+  // « routine » n'arrête jamais à lui seul. Tous restent en Réception, lisibles et avec leurs réponses.
   function stops(s) {
     if (!s || !obj(s.clubMail) || !world(s)) return [];
     const d = todayOf(s);
-    return s.clubMail.mails.filter(m => m.date === d && TYPES[m.type]?.arret && m.status === 'nouveau')
-      .sort((a, b) => (TYPES[a.type].priorite ?? 99) - (TYPES[b.type].priorite ?? 99))
-      .slice(0, C.arretsParJour ?? 2)
-      .map(m => { const r = render(m); return { id: m.id, type: m.type, sujet: r.sujet, expediteur: r.expediteur, ecran: TYPES[m.type].ecran || 'Bureau', joueur: m.player }; });
+    return s.clubMail.mails.filter(m => m.date === d && TYPES[m.type] && m.status === 'nouveau')
+      .sort((a, b) => rang(b.type) - rang(a.type) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+      .map(m => { const r = render(m); return { id: m.id, type: m.type, nature: nature(m.type), priorite: TYPES[m.type].priorite ?? 99, sujet: r.sujet, expediteur: r.expediteur, ecran: TYPES[m.type].ecran || 'Bureau', joueur: m.player }; });
   }
 
   // ------------------------------------------------------------------ réponse du manager (seul effet sur le monde)
@@ -830,10 +901,16 @@ function factory() {
     if (e.promouvoir) check(promoteYouth(m.player) === true, 'promotion refusée');
     if (e.contratDS) check(dsContratsAction(e.contratDS, m.player) === true, 'décision refusée');
     if (e.consigneDS) check(dsContratsAction(e.consigneDS, m.player) === true, 'consigne refusée');
+    if (e.doublon || e.repos_liste) m.verdict = String(nativeSystems.domain('doublons').agir(s, m, e.doublon || e.repos_liste)).slice(0, 190);
     if (e.orientation) check(investOrienter(e.orientation) === true, 'répartition refusée');
     if (e.pret) check(pretRepondre(e.pret) === true, 'réponse au prêt refusée');
     if (e.a2r) { const r = a2rAction(e.a2r); check(!!r && r.ok, r?.raison || 'réponse refusée'); if (r.verdict) m.verdict = r.verdict; }
     if (e.reprise) { const r = repriseAction(e.reprise); check(!!r && r.ok, r?.raison || 'réponse refusée'); if (r.verdict) m.verdict = r.verdict; }
+    if (e.specialiste) {
+      const avis = commotionApi()?.specialistReview(s, p);
+      check(!!avis, 'avis du spécialiste indisponible');
+      m.verdict = avis.favorable ? 'Avis favorable du spécialiste indépendant : il pourra rejouer dès le ' + shortDate(avis.retour) + ' (7e jour).' : 'Avis défavorable du spécialiste indépendant : il observera les 12 jours, retour possible le ' + shortDate(avis.retour) + '.';
+    }
     if (Number.isFinite(e.caisse) && e.caisse) ledgerEntry('Courrier · ' + render(m).sujet.slice(0, 60), e.caisse);
     if (e.appel) {
       const sx = TYPES.discipline?.seuils || {}, favorable = hash(m.id + ':' + s.club + ':appel') % 2 === 0;
@@ -880,6 +957,9 @@ function factory() {
     const d = todayOf(S);
     typeInjuries(S, d);
     if (!date(d) || S.clubMail?.last === d) return false;
+    // Nouveau jour : le médecin recale d'abord les disponibilités des joueurs en protocole commotion (tous les clubs),
+    // puis le courrier du jour est reçu (la réception elle-même n'écrit que la boîte).
+    if (!(S.live && !S.live.finished)) commotionApi()?.syncAt(S, d);
     receive(S, d);
     return true;
   }

@@ -264,26 +264,41 @@ static func _add_play_button(app: Control, parent: Control, international: Dicti
 static func build(app: Control) -> Control:
 	var target := team_by_id(app.model, str(app.management_ui.get("international", {}).get("navigation_id", "")))
 	if not target.is_empty(): return _nation_details(app, target)
-	var page := G.v(8)
+	var page := G.v(10)
 	page.name = "InternationalSelections"
+	G.fill(page, true)
 	var international: Dictionary = app.model.get("international", {})
 	var names := _team_names(international)
 	var nation := str(international.get("nation", ""))
 	var role: String = international.get("role", "club")
-	if role in ["dual", "nation"]:
-		var status := "Club et sélection" if role == "dual" else "Sélection uniquement"
-		page.add_child(G.section("%s · %s" % [status, names.get(nation, nation)]))
-	else:
-		page.add_child(G.section("Ta carrière en club", "Suis les convocations et les postes disponibles."))
+	page.add_child(_hero(names, role, nation))
+	page.add_child(_key_figures(international))
+	# Corps de page : les onglets à gauche, le calendrier international et l'annuaire des sélections à droite.
+	var body := G.h(14)
+	body.name = "InternationalBody"
+	G.fill(body, true)
+	page.add_child(body)
+	var main := G.v(8)
+	G.fill(main, true, 1.8)
+	body.add_child(main)
+	_add_play_button(app, main, international, names)
+	var side := C.card("Le calendrier international")
+	side.name = "InternationalUpcoming"
+	C.fill(side, true)
+	body.add_child(side)
+	_upcoming(app, C.content(side), international, names)
 	var directory := HFlowContainer.new()
 	directory.name = "InternationalNationLinks"
-	page.add_child(directory)
+	directory.add_theme_constant_override("h_separation", 6)
+	directory.add_theme_constant_override("v_separation", 6)
+	C.content(side).add_child(C.label("LES SÉLECTIONS", 18, C.GOLD, true, 700))
+	C.content(side).add_child(directory)
 	for team: Dictionary in international.get("teams", []):
 		directory.add_child(_nation_link(app, str(team.id), str(team.name)))
-	_add_play_button(app, page, international, names)
 	var tabs := TabContainer.new()
 	tabs.name = "InternationalTabs"
-	page.add_child(tabs)
+	G.fill(tabs, true)
+	main.add_child(tabs)
 	# Onglets lisibles : même corps que les boutons de la page, jamais sous 14 px.
 	tabs.add_theme_font_size_override("font_size", maxi(14, C.px(20)))
 	tabs.add_child(_callups(app, international, names))
@@ -302,9 +317,83 @@ static func build(app: Control) -> Control:
 		app.management_ui.international_section = sections[index])
 	return page
 
+## En-tête de la page : photo de la banque, rôle du manager et ce que la page permet de suivre.
+static func _hero(names: Dictionary, role: String, nation: String) -> Control:
+	var card := C.card()
+	card.name = "InternationalHero"
+	var row := C.h(18)
+	C.content(card).add_child(row)
+	var picture := C.photo("mail-selection-nationale", Vector2(320, 120), true, .35)
+	picture.name = "InternationalHeroPhoto"
+	picture.tooltip_text = "Rassemblement international"
+	row.add_child(picture)
+	var words := C.v(4)
+	C.fill(words)
+	words.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(words)
+	var nation_name := str(names.get(nation, nation))
+	var overline := "CLUB ET SÉLECTION · " + nation_name.to_upper() if role == "dual" else "SÉLECTION · " + nation_name.to_upper() if role == "nation" else "TA CARRIÈRE EN CLUB"
+	words.add_child(C.label(overline, 19, C.GOLD, true, 700))
+	var title := C.label("Tes internationaux et les sélections" if role != "nation" else "Le groupe de " + nation_name, 44, C.IVORY, true, 800)
+	title.name = "InternationalHeroTitle"
+	words.add_child(title)
+	words.add_child(C.wrap("Suis les convocations de tes joueurs, leurs retours au club, les compétitions internationales et les postes de sélectionneur ouverts.", 19, C.MUTED))
+	return card
+
+## Chiffres clés tirés de la projection internationale (aucun calcul sportif côté interface).
+static func _key_figures(international: Dictionary) -> Control:
+	var row := C.h(12)
+	row.name = "InternationalKeyFigures"
+	var availability: Dictionary = international.get("availability", {}) if international.get("availability") is Dictionary else {}
+	var called := 0
+	for callup: Dictionary in international.get("callups", []): called += callup.get("players", []).size()
+	if availability.get("clubManaged", false): called = int(availability.get("absentCount", called))
+	var next_return := Availability._date(availability.get("nextReturn")) if called > 0 else "Groupe au complet"
+	var jobs: int = international.get("jobs", []).size()
+	var figures := [
+		["JOUEURS CONVOQUÉS", G.n(called), C.GOLD if called > 0 else C.MINT, "InternationalFigureCalled"],
+		["PROCHAIN RETOUR AU CLUB", next_return, C.MINT, "InternationalFigureReturn"],
+		["COMPÉTITIONS SUIVIES", G.n(international.get("editions", []).size()), C.IVORY, "InternationalFigureEditions"],
+		["POSTES DE SÉLECTIONNEUR", G.n(jobs) if jobs > 0 else "Aucun ouvert", C.GOLD if jobs > 0 else C.MUTED, "InternationalFigureJobs"],
+	]
+	for figure: Array in figures:
+		var card := C.card()
+		card.name = figure[3]
+		C.fill(card)
+		row.add_child(card)
+		var content := C.content(card)
+		content.add_child(C.label(figure[0], 16, C.MUTED, true, 700))
+		var value := C.label(figure[1], 30, figure[2], true, 700)
+		value.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		value.tooltip_text = str(figure[1])
+		content.add_child(value)
+	return row
+
+## Les prochaines rencontres internationales (toutes sélections), les plus proches d'abord.
+static func _upcoming(app: Control, parent: Control, international: Dictionary, names: Dictionary) -> void:
+	var today := _today(app.model)
+	var coming: Array = []
+	for edition: Dictionary in international.get("editions", []):
+		for fixture: Dictionary in edition.get("fixtures", []):
+			var date := str(fixture.get("date", ""))
+			if date.is_empty() or date < today or fixture.get("result") is Dictionary: continue
+			coming.append({"fixture":fixture, "competition":_edition_title(edition, _edition_year(edition))})
+	coming.sort_custom(func(a: Dictionary, b: Dictionary): return str(a.fixture.get("date", "")) < str(b.fixture.get("date", "")))
+	if coming.is_empty():
+		parent.add_child(C.wrap("Aucune rencontre internationale annoncée : les sélections sont au repos, ton groupe aussi.", 19, C.MUTED))
+	for index in mini(4, coming.size()):
+		var entry: Dictionary = coming[index]
+		var line := C.v(1)
+		line.name = "InternationalUpcoming_%d" % index
+		parent.add_child(line)
+		line.add_child(C.wrap(_fixture_row(entry.fixture, names), 19, C.IVORY, true, 600))
+		line.add_child(C.wrap(str(entry.competition), 16, C.MUTED))
+	parent.add_child(C.rule())
+
 static func _callups(app: Control, international: Dictionary, names: Dictionary) -> Control:
 	var view := G.v()
 	view.name = "Convocations"
+	var squad: Array = app.model.get("squad", []) if app.model.get("squad") is Array else []
 	for callup: Dictionary in international.get("callups", []):
 		var list := G.panel(view)
 		var caption := str(names.get(callup.nation, callup.nation))
@@ -314,12 +403,28 @@ static func _callups(app: Control, international: Dictionary, names: Dictionary)
 		var title_link := _projected_reading(app, title, {"kind":"nation", "id":str(callup.nation)}, "InternationalCallupNation_" + str(callup.nation).validate_node_name(), caption)
 		heading.add_child(title_link)
 		heading.move_child(title_link, 0)
-		list.add_child(heading)
+		# Drapeau de la sélection devant son nom : la convocation se lit d'un coup d'œil.
+		var top := G.h(12)
+		list.add_child(top)
+		top.add_child(nation_badge(team_by_id(app.model, str(callup.nation)), 46))
+		G.fill(heading)
+		top.add_child(heading)
 		for player: Dictionary in callup.get("players", []):
 			var identity := "%s · %s · %s ans" % [player.name, player.pos, G.n(player.age)]
 			identity += " · Niveau " + G.rating_text(player)
-			list.add_child(_projected_reading(app, G.wrap(identity, 15, G.INK), {"kind":"player", "id":str(player.get("id", ""))}, "InternationalCallupPlayer_" + str(player.get("id", "")).validate_node_name(), str(player.name)))
-	if view.get_child_count() == 0: view.add_child(G.wrap("Aucune convocation enregistrée."))
+			var row := G.h(10)
+			list.add_child(row)
+			var known: Dictionary = player
+			for person: Variant in squad:
+				if person is Dictionary and str(person.get("id", "")) == str(player.get("id", "")): known = person
+			var face := G.portrait(posmod(str(player.get("id", player.name)).hash(), 32), 38, known)
+			face.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			row.add_child(face)
+			var reading := _projected_reading(app, G.wrap(identity, 15, G.INK), {"kind":"player", "id":str(player.get("id", ""))}, "InternationalCallupPlayer_" + str(player.get("id", "")).validate_node_name(), str(player.name))
+			reading.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			G.fill(reading)
+			row.add_child(reading)
+	if view.get_child_count() == 0: view.add_child(G.wrap("Aucun joueur du club convoqué : le groupe reste au complet pour la semaine."))
 	return view
 
 static func _edition_year(edition: Dictionary) -> int:

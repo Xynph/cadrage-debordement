@@ -343,7 +343,8 @@ func _grid(parent: Node) -> void:
 	var count := _month_length(month.left(4).to_int(), month.right(2).to_int())
 	var start := int(Time.get_unix_time_from_datetime_string(first + "T00:00:00")) - offset * DAY_SECONDS
 	var weeks := ceili(float(offset + count) / 7.0)
-	var height := 96 if weeks == 6 else 110
+	# En 1280 (densité réduite) les lignes sont resserrées pour que tout le mois tienne sans défilement.
+	var height := (74 if weeks == 6 else 86) if C.density < .67 else (96 if weeks == 6 else 110)
 	for row_index in weeks:
 		var week := C.h(0)
 		grid.add_child(week)
@@ -525,7 +526,10 @@ func _absence_marker(date: String, events: Array[Dictionary]) -> PanelContainer:
 	var absent := events.size() - returning.size()
 	var signature := _absence_signature(date)
 	var starts := signature != _absence_signature(Agenda.shift(date, -1)) or _weekday(date) == 0
-	var panel := _tile(Color(C.BLUE, .20 if starts else .14), Color(C.BLUE, .55), 2)
+	# Conteneur sans cadre ni fond : seule une fine bande pleine (jamais un champ vide encadré) marque la journée.
+	var panel := _tile(Color.TRANSPARENT, Color.TRANSPARENT, 0)
+	var flat := StyleBoxEmpty.new()
+	panel.add_theme_stylebox_override("panel", flat)
 	panel.name = "CalendarAbsence_" + str(events[0].id).validate_node_name()
 	panel.set_meta("event_count", events.size())
 	panel.set_meta("period_start", starts)
@@ -542,13 +546,20 @@ func _absence_marker(date: String, events: Array[Dictionary]) -> PanelContainer:
 	if not last.is_empty(): detail += " · jusqu’au " + _display_date(last).to_lower()
 	panel.accessibility_name = detail
 	panel.tooltip_text = detail
+	var stack := C.v(2)
+	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(stack)
 	if starts:
 		var label := C.label(" · ".join(captions), 16, C.BLUE, true, 700)
 		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		panel.add_child(label)
-	else:
-		panel.custom_minimum_size.y = C.px(8)
+		stack.add_child(label)
+	var band := ColorRect.new()
+	band.name = "AbsenceBand"
+	band.color = Color(C.BLUE, .85 if starts else .6)
+	band.custom_minimum_size.y = 4
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stack.add_child(band)
 	return panel
 
 func _absence_chip(events: Array[Dictionary], expanded: bool = false) -> PanelContainer:

@@ -134,6 +134,16 @@ func executer() -> void:
 	verifier(page.find_child("ClubSheetSeason", true, false) != null and page.find_child("ClubSheetHeadToHead", true, false) != null, "vue d'ensemble : saison et confrontations")
 	verifier(page.find_child("ClubSheetPalmaresVide", true, false) != null or page.find_child("ClubSheetPalmaresDetail", true, false) != null, "vue d'ensemble : palmarès connu ou état vide en langage de club")
 	chevauchements(page, "vue")
+	# Le maillot reste sous l'en-tête « Le club » (titre, icône et filet) : aucun recouvrement.
+	var identite := page.find_child("ClubSheetIdentity", true, false) as Control
+	var maillot := page.find_child("ClubSheetKit", true, false) as Control
+	if maillot != null and identite != null:
+		var entete := identite.find_child("CardTitle", true, false) as Control
+		var rect_maillot := maillot.get_global_rect()
+		var filet := identite.get_global_rect().position.y + 56.0 * identite.get_global_rect().size.y / 844.0
+		verifier(entete != null and not rect_maillot.intersects(entete.get_global_rect()), "maillot : ne recouvre pas le titre « Le club »")
+		verifier(rect_maillot.position.y >= filet - 1.0, "maillot : sous le filet de l'en-tête « Le club » (%.0f >= %.0f)" % [rect_maillot.position.y, filet])
+		verifier(identite.get_global_rect().encloses(rect_maillot), "maillot : entièrement dans le panneau")
 	await capture("fiche-club-vue-ensemble")
 	# Actions : calendrier du club, comparaison, suivi (commande moteur).
 	(page.find_child("ClubSheetCalendar", true, false) as Button).pressed.emit(); await poser(6)

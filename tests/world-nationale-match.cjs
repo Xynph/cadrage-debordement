@@ -99,7 +99,7 @@ test('Horloge de match réelle avec seconde période et reprise depuis JSON', ()
     }
     validate();verifyResult()`);
   assert.equal(h.run('l.finished && reloads===2'), true);
-  assert.ok(h.run('l.stats.reduce((n,s)=>n+s.possession,0)===l.minute && l.minute>=100'));
+  assert.ok(h.run('l.stats.reduce((n,s)=>n+s.possession,0)===(l.chrono?l.chrono.actions:l.minute) && l.minute>=100'));
 });
 
 test('Le contexte est limité aux phases KO de Nationale', () => {

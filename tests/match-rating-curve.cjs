@@ -17,7 +17,7 @@ const B = require('./helpers/courbe-niveau.cjs');
 const LONGUE = process.env.CD_COURBE_LONGUE === '1';
 const PLAN = LONGUE
   ? { complet: { ecarts: [-15, -10, -6, -3, 0, 3, 6, 10, 15], n: 600 }, rapide: { ecarts: [-15, -10, -6, -3, 0, 3, 6, 10, 15], n: 4000 }, bases: [4, 20, 44] }
-  : { complet: { ecarts: [0, 6, 10], n: 240 }, rapide: { ecarts: [-10, 0, 6, 10], n: 1000 }, bases: [4] };
+  : { complet: { ecarts: [0, 6, 10], n: 240 }, rapide: { ecarts: [-10, 0, 6, 10], n: 3000 }, bases: [4] };
 // Série de la queue (+15, hors ajustement logistique) : version CI seulement, la version longue la contient déjà.
 PLAN.queue = { complet: 600, rapide: 2000 };
 // Bornes : cible ± tolérance de conception ± trois erreurs types de l'ajustement (variance mesurée de l'échantillon, tests/helpers/courbe-niveau.cjs).

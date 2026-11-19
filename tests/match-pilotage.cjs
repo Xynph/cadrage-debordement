@@ -51,7 +51,8 @@ try {
   assert.equal(jeu.brut('set_consignes', { axe: 'tempo', valeur: 'rapide' }).ok, false);
   m = jeu.call('set_consignes', { axe: 'rucks', valeur: 'agressive' });
   assert.equal(m.live.pilotage.consignes.rucks, 'agressive');
-  m = jeu.call('tick', { steps: 15 });
+  // 20 pas : le banc adverse revoit ses consignes dès la 5e minute ; 15 pas n'y suffisaient plus selon le tirage (4e minute).
+  m = jeu.call('tick', { steps: 20 });
   const bilan = m.live.pilotage.bilans.find(b => b.axe === 'rucks');
   assert.ok(JSON.parse(vm.run('S.live.pilotage.adversaire.minute')) >= 5, 'le banc adverse revoit ses consignes pendant le direct (tick)');
   assert.ok(bilan && /^Rucks « Contester » depuis \d+′ : \d+ pénalités?, \d+ ballons? arrachés?\.$/.test(bilan.texte), bilan?.texte);
@@ -112,8 +113,10 @@ try {
   const pied = serie('l.pilotage.consignes.piedJeu="plus";');
   const garder = serie('l.pilotage.consignes.piedJeu="moins";');
   const toucheSure = serie('l.pilotage.consignes.touche="sure";');
-  const galvanises = serie('for(const id of l.sheets[l.userSide].initial)l.pilotage.etats[id]={etat:"galvanise",phase:"pre"};');
-  const vexes = serie('for(const id of l.sheets[l.userSide].initial)l.pilotage.etats[id]={etat:"vexe",phase:"pre"};');
+  // 480 matchs : depuis le recalage des cartons (19/11/2026), l'écart galvanisés / vexés tombe de ~3,1 à ~2 points (plus de
+  // cartons des deux côtés) ; sur 160 matchs l'erreur type (~1,5 point) le rendait illisible.
+  const galvanises = serie('for(const id of l.sheets[l.userSide].initial)l.pilotage.etats[id]={etat:"galvanise",phase:"pre"};', 480);
+  const vexes = serie('for(const id of l.sheets[l.userSide].initial)l.pilotage.etats[id]={etat:"vexe",phase:"pre"};', 480);
   // Banc adverse aux consignes neutres et immobile : exactement le match d'avant (mêmes graines, mêmes chiffres).
   const avant = mesurer(neutre + seed('(i*7919+17)>>>0'), 20);
   const neutresAdverses = mesurer(neutre + 'l.pilotage.consignesAdverses={piedJeu:"normal",rucks:"normale",discipline:"normale",rythme:"normal",touche:"normale"};' + seed('(i*7919+17)>>>0'), 20);
@@ -146,7 +149,8 @@ try {
   assert.ok(pied.coups > base.coups && garder.coups < base.coups, 'jeu au pied suivi');
   assert.ok(toucheSure.touchesG / toucheSure.touches > base.touchesG / base.touches, 'lancer court plus sûr');
   // Nouvelles consignes (attaque, conquête, adversaire), 100 matchs par réglage.
-  const relancer = serie('l.pilotage.consignes.relance="relancer";', 100), degager = serie('l.pilotage.consignes.relance="degager";', 100);
+  // Relance : +1,2 à 2,2 % d'erreurs de main, soit ≈ 0,2 ballon par match, sous l'erreur type d'une série de 100 matchs : 400 matchs.
+  const relancer = serie('l.pilotage.consignes.relance="relancer";', 400), degager = serie('l.pilotage.consignes.relance="degager";', 400);
   const courts = serie('l.pilotage.consignes.coupsEnvoi="courts";', 100), longs = serie('l.pilotage.consignes.coupsEnvoi="longs";', 100);
   const pousser = serie('l.pilotage.consignes.melee="pousser";', 100), maulSouvent = serie('l.pilotage.consignes.maul="souvent";', 100), maulJamais = serie('l.pilotage.consignes.maul="jamais";', 100);
   const aile = serie('l.pilotage.consignes.cible="aile";l.pilotage.depuis.cible=0;', 100), base100 = serie('', 100);
@@ -158,7 +162,7 @@ try {
   assert.ok(pousser.penMelee > base100.penMelee * 1.2, 'pousser en mêlée fait siffler davantage');
   assert.ok(maulSouvent.maul > base100.maul && maulJamais.maul < base100.maul, 'ballon porté suivi');
   assert.ok(aile.ecart > base100.ecart, 'attaquer leur aile faible rapporte, au moins au début');
-  assert.ok(galvanises.ecart > vexes.ecart + 2, 'l’état des joueurs pèse sur le match');
+  assert.ok(galvanises.ecart > vexes.ecart + 1.5, 'l’état des joueurs pèse sur le match : ' + r(galvanises.ecart - vexes.ecart));
   assert.ok(vexes.pen > base.pen, 'des joueurs vexés concèdent plus de fautes');
   // Scénario construit : l'adversaire mené de 10 points à l'heure de jeu, staff vigilant → il accélère et garde le ballon.
   const poursuite = JSON.parse(vm.run(`(()=>{S.live=JSON.parse(__live);const l=S.live,o=1-l.userSide;l.pilotage.adversaire.niveau=85;

@@ -3,7 +3,8 @@
 //   1. Balayage de la banque : aucun ton n'est meilleur ou égal sur tous les axes (moral, médias, confiance de la
 //      direction, relation) dans plus de ~30 % des questions, quel que soit le style du journaliste et le contexte
 //      (neutre, série de défaites, série de victoires, derby).
-//   2. Échantillon de vraies conférences (carrière `world-champ`) : même exigence sur les aperçus affichés, puis la
+//   2. Échantillon de vraies conférences (carrière `world-champ`, calendrier de presse façon FM du 18/11/2026 : rentrée
+//      la semaine du 1er match, puis après-matchs et conférences d'événement) : même exigence sur les aperçus affichés, puis la
 //      délégation à Gabi ne donne jamais de moral ni de confiance de la direction ; à partir de la 3e conférence de
 //      suite déléguée, la confiance de la direction baisse ; une conférence en personne remet la série à zéro.
 //   3. Compatibilité : archives (identifiants de réponse et textes cités) inchangées par le rééquilibrage.
@@ -13,6 +14,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { test, before, after } = require('node:test');
 const M = require('./helpers/carriere-monde.cjs');
+const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 const C = require('../native/engine/continuer.cjs');
 const relations = require('../dist/press-relations.js');
 const bank = require('../dist/press-question-bank.js');
@@ -87,20 +89,39 @@ before(() => {
   origine = path.join(racine, 'origine');
   const jeu = M.ouvrir({ dataDir: origine });
   try {
-    jeu.call('new_career', { mode: 'world-champ', club: 102, start: 'premiers-clubs' });
+    // Club 0 (le plus fort effectif du Monde) : l'échantillon de conférences d'après-match n'est pas noyé par une série de
+    // défaites (3 revers de suite = « crise », grand moment obligatoire en personne, jamais délégable).
+    jeu.call('new_career', { mode: 'world-champ', club: 0, start: 'premiers-clubs' });
     jeu.call('save');
   } finally { jeu.bridge.close(); }
 });
 after(() => { if (racine) fs.rmSync(racine, { recursive: true, force: true }); });
 
 const conferenceOuverte = model => model.clubLife?.press?.conference?.available === true;
-function jusquALaConference(jeu, model, garde = 30) {
+// Avance (décisions de reprise et rendez-vous hors presse réglés) jusqu'à la conférence d'arrivée : lundi de la semaine du 1er match.
+function jusquALArrivee(jeu, model, garde = 40) {
   for (let i = 0; i < garde; i++) {
-    if (conferenceOuverte(model)) return model;
-    if (model.clubLife?.clubMeetings?.scene || model.clubLife?.reprise?.due?.length) model = jeu.regler(model);
+    model = jeu.reglerSaufPresse(model);
     if (conferenceOuverte(model)) return model;
     model = jeu.call('advance_until_event', { fromDate: model.meta.calendarToday, stops: { messages: 'aucun', ignorer: FACULTATIFS } });
-    if (model.meta.advanceUntilEvent?.stop?.kind === 'match') model = M.jouerLeMatch(jeu, model);
+  }
+  assert.fail('la conférence d’arrivée ne s’ouvre pas');
+}
+// Prochaine conférence ouverte (après-match du match joué, ou conférence d'événement) : on avance jour par jour et on joue
+// (match délégué) le jour de la rencontre sans régler l'après-match.
+function jusquALaConference(jeu, model, garde = 150) {
+  for (let i = 0; i < garde; i++) {
+    model = jeu.reglerSaufPresse(model);
+    if (conferenceOuverte(model)) return model;
+    if (model.meta.calendarCadence?.matchReady && model.next) {
+      if (!model.selection.valid) model = jeu.call('auto_lineup');
+      model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
+      model = skipMatchTalk(jeu.call('delegate'), jeu.call);
+      if (model.live) model = skipMatchTalk(jeu.call('finish_round'), jeu.call);
+      continue;
+    }
+    assert.equal(model.meta.calendarCadence?.canAdvance, true, 'journée autorisée (' + model.meta.calendarToday + ')');
+    model = jeu.call('advance_day', { fromDate: model.meta.calendarToday });
   }
   assert.fail('aucune conférence ouverte');
 }
@@ -114,7 +135,8 @@ test('Échantillon de conférences : aucun ton dominant, délégation sans gain,
   try {
     let model = jeu.call('snapshot');
     const echantillon = [];
-    // Arrivée (grand moment) : en personne, ton honnête partout.
+    // Arrivée (grand moment) : atteinte en avançant jusqu'à la semaine du 1er match, en personne, ton honnête partout.
+    model = jusquALArrivee(jeu, model);
     let conf = model.clubLife.press.conference;
     assert.equal(conf.moment?.kind, 'arrivee');
     echantillon.push(...apercu(conf));
@@ -122,42 +144,45 @@ test('Échantillon de conférences : aucun ton dominant, délégation sans gain,
     model = jeu.call('press_conference', { context: model.clubLife.press.context, invitationId: conf.invitationId,
       answers: conf.questions.map(q => ({ questionId: q.id, answerId: q.answers.find(a => a.tone === 'honest').id })) });
     assert.equal(model.clubLife.press.history.filter(h => h.delegated).length, 0);
-    // Quatre conférences ordinaires déléguées de suite, puis une en personne, puis une déléguée.
+    // Conférences ordinaires (après-matchs, recrues, rumeurs) déléguées de suite jusqu'à ce que la série coûte, puis une en
+    // personne (la série repart de zéro), puis une déléguée. Les grands moments (affiche, crise) se tiennent en personne.
     const resultats = [];
-    for (let n = 1; n <= 6; n++) {
+    let enPersonneFaite = false, apresPersonne = false;
+    for (let n = 0; n < 24 && !apresPersonne; n++) {
       model = jeu.regler(model);
       model = jusquALaConference(jeu, model);
       const press = model.clubLife.press;
       conf = press.conference;
-      if (conf.moment) { // grand moment éventuel : en personne (remet la série à zéro comme une conférence ordinaire)
+      const enPersonne = !!conf.moment || (!enPersonneFaite && resultats.some(r => r.delegue && r.malus >= 1));
+      if (enPersonne) { // grand moment, ou conférence ordinaire en personne : remet la série à zéro
+        echantillon.push(...apercu(conf));
         model = jeu.call('press_conference', { context: press.context, invitationId: conf.invitationId,
-          answers: conf.questions.map(q => ({ questionId: q.id, answerId: q.answers.find(a => a.tone === 'cautious').id })) });
-        resultats.push({ n, enPersonne: true, moment: true });
-        n--; continue;
-      }
-      echantillon.push(...apercu(conf));
-      const avant = press.metrics;
-      const attendu = resultats.filter(r => r.delegue).length;
-      const enPersonne = n === 5;
-      if (enPersonne) {
-        model = jeu.call('press_conference', { context: press.context, invitationId: conf.invitationId,
-          answers: conf.questions.map(q => ({ questionId: q.id, answerId: q.answers.find(a => a.tone === 'honest').id })) });
-        resultats.push({ n, enPersonne: true });
+          answers: conf.questions.map(q => ({ questionId: q.id, answerId: q.answers.find(a => a.tone === (conf.moment ? 'cautious' : 'honest')).id })) });
+        resultats.push({ n, enPersonne: true, moment: !!conf.moment });
+        if (!conf.moment) enPersonneFaite = true;
       } else {
+        echantillon.push(...apercu(conf));
+        const avant = press.metrics;
         assert.equal(conf.delegation.allowed, true);
         const serie = conf.delegation.streak;
+        if (enPersonneFaite) assert.equal(serie, 0, 'la conférence en personne remet la série à zéro');
         model = jeu.call('press_delegate', { context: press.context, invitationId: conf.invitationId });
         const issue = model.clubLife.press.lastOutcome;
         assert.equal(issue.delegated, true);
-        assert.ok(issue.delta.morale <= 0, `Gabi ne donne pas de moral (${issue.delta.morale})`);
+        // Coût fixe et annoncé (18/11/2026) : médias −2, relation −1 par journaliste, rien d'autre.
+        assert.equal(issue.delta.morale, 0, `Gabi ne change pas le moral (${issue.delta.morale})`);
+        assert.equal(issue.delta.fanTrust, 0, `Gabi ne change pas l'opinion des supporters (${issue.delta.fanTrust})`);
+        assert.equal(issue.delta.mediaTrust, Math.max(-2, -avant.mediaTrust), 'coût médias exactement −2');
+        for (const e of issue.exchanges) assert.equal(e.delta, e.before > -100 ? -1 : 0, 'relation −1 par journaliste');
         const malus = serie >= 3 ? 2 : serie === 2 ? 1 : 0;
         assert.equal(issue.delta.trust, malus ? -malus : 0, `confiance de la direction : ${-malus} (série précédente ${serie})`);
-        assert.equal(issue.delta.mediaTrust <= -2 || avant.mediaTrust <= 2, true, 'coût médias conservé');
-        assert.ok(model.clubLife.press.metrics.boardPressure >= avant.boardPressure, 'pression du conseil jamais réduite par Gabi');
+        assert.equal(model.clubLife.press.metrics.boardPressure, Math.min(100, avant.boardPressure + malus), 'pression du conseil : seul le malus de série');
         resultats.push({ n, delegue: true, serie, malus });
+        if (enPersonneFaite) apresPersonne = true;
       }
       if (model.clubLife?.clubMeetings?.scene?.completed) model = jeu.call('club_meeting_continue', { meetingId: model.clubLife.clubMeetings.scene.id });
     }
+    assert.ok(apresPersonne, 'série déléguée, conférence en personne, puis délégation : ' + JSON.stringify(resultats));
     console.log('séries de délégations :', JSON.stringify(resultats.map(r => r.delegue ? 'D' + r.serie + (r.malus ? '(−' + r.malus + ')' : '') : 'P')));
     const gabi = resultats.filter(r => r.delegue);
     assert.ok(gabi.some(r => r.malus >= 1), 'la série déléguée finit par coûter');

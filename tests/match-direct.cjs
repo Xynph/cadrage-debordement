@@ -89,9 +89,11 @@ test('Avec la variable, le moteur projette chaque temps fort au moment où il es
     for (let ticks = 0; ticks < 60 && model.live.minute < 36 && !model.live.finished; ticks++) {
       model = skipMatchTalk(model, jeu.call);
       if (model.live.paused) model = jeu.call('pause', { paused: false });
-      const avant = model.live.events.length;
+      const avant = model.live.events.length, minuteAvant = model.live.minute;
       model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
-      assert.ok(model.live.events.length > avant, 'un pas simule une minute entière');
+      // Chrono des arrêts : une minute occupée par un tir au but ou un renvoi peut ne pas écrire de ligne ; le pas avance toujours d'une minute.
+      assert.ok(model.live.minute > minuteAvant || model.live.finished, 'un pas simule une minute entière');
+      assert.ok(model.live.events.length >= avant);
       observer(model.live);
     }
     assert.ok(vus.length >= 5, `au moins cinq temps forts en 35 minutes (${vus.length})`);

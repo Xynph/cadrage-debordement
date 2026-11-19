@@ -1,11 +1,10 @@
 {
   "version": 1,
-  "_doc": "Courrier du club (club-mail.cjs), façon Football Manager : chaque jour de calendrier, des interlocuteurs du club écrivent au manager (tutoiement) selon l'état de la carrière. Recevoir un mail ne change rien au monde : seule la réponse du manager a un effet (commande club_mail_reply, notée au journal d'actions). Contenu en données : types, expéditeurs, formulations (une par réception, jamais deux fois de suite la même pour un type), réponses et effets, seuils et cadence. Effets possibles d'une réponse : moral (moral du groupe), confiance (direction), supporters, medias, pression (relations presse), satisfaction, fatigue, condition, plan (charge individuelle), entrainement (séance collective), focus (préparation collective), promesse (temps de jeu promis), promouvoir (jeune du centre), caisse (euros), suite (mail de suivi), appel (commission de discipline). Placeholders entre accolades : variables calculées par le moteur à la réception.",
+  "_doc": "Courrier du club (club-mail.cjs), façon Football Manager : chaque jour de calendrier, des interlocuteurs du club écrivent au manager (tutoiement) selon l'état de la carrière. Recevoir un mail ne change rien au monde : seule la réponse du manager a un effet (commande club_mail_reply, notée au journal d'actions). Contenu en données : types, expéditeurs, formulations (une par réception, jamais deux fois de suite la même pour un type), réponses et effets, seuils et cadence. Effets possibles d'une réponse : moral (moral du groupe), confiance (direction), supporters, medias, pression (relations presse), satisfaction, fatigue, condition, plan (charge individuelle), entrainement (séance collective), focus (préparation collective), promesse (temps de jeu promis), promouvoir (jeune du centre), caisse (euros), suite (mail de suivi), appel (commission de discipline), specialiste (avis du spécialiste indépendant sur une commotion : retour au 7e jour possible, sans garantie). Une réponse « ouvrir » mène à l'écran du type, ou à son propre « ecran » s'il est donné. Placeholders entre accolades : variables calculées par le moteur à la réception.",
   "cadence": {
-    "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; arretsParJour : mails qui arrêtent « Continuer » le même jour ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
+    "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; nature de chaque type (décision de Léo, 18/11/2026) : « action » (une réponse est attendue : arrêt de « Continuer » à lui seul), « info » (rangé dans l'arrêt d'info du jour, un seul par jour), « routine » (n'arrête jamais à lui seul : rangé dans l'arrêt veille, lendemain ou info du jour s'il y en a un) ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
-    "arretsParJour": 2,
-    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2 },
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2, "commotion": 6 },
     "boite": 160,
     "projection": 80,
     "delaiReponse": 7,
@@ -22,7 +21,8 @@
     "formation": { "label": "Formation", "ecran": "Formation" },
     "moments": { "label": "Club", "ecran": "Effectif" },
     "contrats": { "label": "Contrats", "ecran": "contrats" },
-    "meteo": { "label": "Météo", "ecran": "Composition" }
+    "meteo": { "label": "Météo", "ecran": "Composition" },
+    "commotion": { "label": "Médical", "ecran": "infirmerie" }
   },
   "humeurs": {
     "haut": ["le groupe vit bien, ça rigole à la muscu et ça bosse dur", "l'ambiance est au beau fixe, les jeunes suivent les anciens", "on sent une vraie envie, personne ne traîne aux séances"],
@@ -63,7 +63,7 @@
   },
   "types": {
     "kine_bilan": {
-      "categorie": "infirmerie", "declencheur": "bilan_kine", "priorite": 40, "arret": false, "ecran": "infirmerie",
+      "categorie": "infirmerie", "declencheur": "bilan_kine", "priorite": 40, "nature": "routine", "ecran": "infirmerie",
       "expediteur": "Le kiné du club",
       "formulations": [
         { "sujet": "Bilan de l'infirmerie : {n} absent(s)", "corps": "Point du lundi, coach. À l'infirmerie : {liste}.\n\nLes soins suivent leur cours, pas de mauvaise surprise ce week-end. Ceux qui reviennent sont encore raides, surtout après les contacts.\n\nSi tu passes la séance collective en récupération, on accélère les retours et on soulage tout le monde avant {prochain}. Si on garde le programme, je surveille les plus fragiles de près." },
@@ -76,7 +76,7 @@
       ]
     },
     "retour_blesse": {
-      "categorie": "infirmerie", "declencheur": "retour_blesse", "priorite": 30, "arret": false, "ecran": "infirmerie",
+      "categorie": "infirmerie", "declencheur": "retour_blesse", "priorite": 30, "nature": "routine", "ecran": "infirmerie",
       "expediteur": "Le médecin du club",
       "formulations": [
         { "sujet": "{joueur} reprend l'entraînement", "corps": "Bonne nouvelle : {joueur} ({poste}) a terminé ses soins et rejoint le groupe aujourd'hui. Je conseille une reprise progressive, mais c'est ton choix." },
@@ -89,7 +89,7 @@
       ]
     },
     "surcharge": {
-      "categorie": "infirmerie", "declencheur": "surcharge", "priorite": 15, "arret": true, "ecran": "infirmerie",
+      "categorie": "infirmerie", "declencheur": "surcharge", "priorite": 15, "nature": "action", "ecran": "infirmerie",
       "expediteur": "Le préparateur physique",
       "seuils": { "fatigue": 25, "condition": 62 },
       "formulations": [
@@ -104,7 +104,7 @@
       ]
     },
     "gene": {
-      "categorie": "infirmerie", "declencheur": "gene", "priorite": 12, "arret": true, "ecran": "Composition",
+      "categorie": "infirmerie", "declencheur": "gene", "priorite": 12, "nature": "action", "ecran": "Composition",
       "expediteur": "Le médecin du club",
       "seuils": { "condition": 72, "conditionMin": 45 },
       "formulations": [
@@ -119,7 +119,7 @@
       ]
     },
     "moral_groupe": {
-      "categorie": "vestiaire", "declencheur": "moral_groupe", "priorite": 50, "arret": false, "ecran": "Vestiaire",
+      "categorie": "vestiaire", "declencheur": "moral_groupe", "priorite": 50, "nature": "routine", "ecran": "Vestiaire",
       "expediteur": "{capitaine}, capitaine",
       "intervalle": 13,
       "formulations": [
@@ -134,7 +134,7 @@
       ]
     },
     "temps_de_jeu": {
-      "categorie": "vestiaire", "declencheur": "temps_de_jeu", "priorite": 20, "arret": true, "ecran": "Vestiaire",
+      "categorie": "vestiaire", "declencheur": "temps_de_jeu", "priorite": 20, "nature": "action", "ecran": "Vestiaire",
       "expediteur": "{joueur}",
       "intervalle": 9,
       "formulations": [
@@ -149,7 +149,7 @@
       ]
     },
     "relance_temps_de_jeu": {
-      "categorie": "vestiaire", "declencheur": "suite", "priorite": 22, "arret": true, "ecran": "Vestiaire",
+      "categorie": "vestiaire", "declencheur": "suite", "priorite": 22, "nature": "action", "ecran": "Vestiaire",
       "expediteur": "{joueur}",
       "formulations": [
         { "sujet": "On devait en reparler", "corps": "Coach, tu m'avais dit qu'on en reparlerait. Je n'ai toujours pas eu ma chance. Je commence à me poser des questions sur mon avenir ici." },
@@ -161,7 +161,7 @@
       ]
     },
     "promesse_tenue": {
-      "categorie": "vestiaire", "declencheur": "promesse_tenue", "priorite": 35, "arret": false, "ecran": "Vestiaire",
+      "categorie": "vestiaire", "declencheur": "promesse_tenue", "priorite": 35, "nature": "routine", "ecran": "Vestiaire",
       "expediteur": "{joueur}",
       "formulations": [
         { "sujet": "Merci coach", "corps": "Tu as tenu parole, j'ai eu mes minutes. Je ne l'oublierai pas, je vais tout donner pour le groupe." },
@@ -173,7 +173,7 @@
       ]
     },
     "promesse_rompue": {
-      "categorie": "vestiaire", "declencheur": "promesse_rompue", "priorite": 18, "arret": true, "ecran": "Vestiaire",
+      "categorie": "vestiaire", "declencheur": "promesse_rompue", "priorite": 18, "nature": "action", "ecran": "Vestiaire",
       "expediteur": "{joueur}",
       "formulations": [
         { "sujet": "Tu m'avais promis", "corps": "Tu m'avais promis du temps de jeu. Je n'ai pas eu mes minutes. Je me sens trahi, et je ne suis pas le seul à l'avoir remarqué." },
@@ -185,7 +185,7 @@
       ]
     },
     "cadre_rdv": {
-      "categorie": "vestiaire", "declencheur": "cadre_rdv", "priorite": 16, "arret": true, "ecran": "Vestiaire",
+      "categorie": "vestiaire", "declencheur": "cadre_rdv", "priorite": 16, "nature": "action", "ecran": "Vestiaire",
       "expediteur": "{joueur}",
       "formulations": [
         { "sujet": "Je peux te voir ?", "corps": "Coach, après {defaites} défaites de suite, les anciens voudraient te parler. Rien contre toi, on veut juste trouver des solutions ensemble." },
@@ -199,7 +199,7 @@
       ]
     },
     "recrue": {
-      "categorie": "vestiaire", "declencheur": "recrue", "priorite": 45, "arret": false, "ecran": "Vestiaire",
+      "categorie": "vestiaire", "declencheur": "recrue", "priorite": 45, "nature": "routine", "ecran": "Vestiaire",
       "expediteur": "{capitaine}, capitaine",
       "formulations": [
         { "sujet": "Comment va {joueur} ?", "corps": "{joueur} est là depuis quelques semaines. {integration}" },
@@ -215,7 +215,7 @@
       ]
     },
     "seance_adjoint": {
-      "categorie": "staff", "declencheur": "seance_adjoint", "priorite": 60, "arret": false, "ecran": "Préparation",
+      "categorie": "staff", "declencheur": "seance_adjoint", "priorite": 60, "nature": "routine", "ecran": "Préparation",
       "expediteur": "Gabi, ton adjoint",
       "formulations": [
         { "sujet": "La séance de la semaine", "corps": "Coach, pour la séance de la semaine on est sur un mode « {mode} ». Condition moyenne du groupe : {condition} %.\n\nAvant {prochain}, j'ai calé le contenu sur la conquête et les lancements. Les gars sont {classement}, ils savent ce qui les attend.\n\nIntensifier : plus de progrès, plus de fatigue. Alléger : on récupère. Sinon, je garde le plan." },
@@ -229,7 +229,7 @@
       ]
     },
     "analyste": {
-      "categorie": "staff", "declencheur": "analyste", "priorite": 25, "arret": false, "ecran": "Préparation",
+      "categorie": "staff", "declencheur": "analyste", "priorite": 25, "nature": "routine", "ecran": "Préparation",
       "expediteur": "L'analyste vidéo",
       "formulations": [
         { "sujet": "Vidéo : {adversaire}", "corps": "J'ai découpé les derniers matchs de {adversaire} (forme : {forme}).\n\nLeur point faible : {faiblesse}. Ça revient sur presque chaque séquence où ils sont mis sous pression.\n\nOn peut orienter la préparation dessus : conquête ou défense, je monte la vidéo en conséquence. Sinon, on reste sur notre plan." },
@@ -243,7 +243,7 @@
       ]
     },
     "tests_physiques": {
-      "categorie": "staff", "declencheur": "tests_physiques", "priorite": 55, "arret": false, "ecran": "Préparation",
+      "categorie": "staff", "declencheur": "tests_physiques", "priorite": 55, "nature": "routine", "ecran": "Préparation",
       "expediteur": "Le préparateur physique",
       "intervalle": 25,
       "formulations": [
@@ -256,7 +256,7 @@
       ]
     },
     "entraineur_avants": {
-      "categorie": "staff", "declencheur": "entraineur_avants", "priorite": 58, "arret": false, "ecran": "Préparation",
+      "categorie": "staff", "declencheur": "entraineur_avants", "priorite": 58, "nature": "routine", "ecran": "Préparation",
       "expediteur": "L'entraîneur des avants",
       "intervalle": 18,
       "formulations": [
@@ -269,7 +269,7 @@
       ]
     },
     "entraineur_arrieres": {
-      "categorie": "staff", "declencheur": "entraineur_arrieres", "priorite": 59, "arret": false, "ecran": "Préparation",
+      "categorie": "staff", "declencheur": "entraineur_arrieres", "priorite": 59, "nature": "routine", "ecran": "Préparation",
       "expediteur": "L'entraîneur des trois-quarts",
       "intervalle": 18,
       "formulations": [
@@ -282,7 +282,7 @@
       ]
     },
     "recruteur": {
-      "categorie": "recrutement", "declencheur": "recruteur", "priorite": 30, "arret": false, "ecran": "fiche",
+      "categorie": "recrutement", "declencheur": "recruteur", "priorite": 30, "nature": "info", "ecran": "fiche",
       "expediteur": "La cellule de recrutement",
       "formulations": [
         { "sujet": "Mission terminée : {n} profil(s)", "corps": "Rapport bouclé, coach : {n} profil(s) observés sur la mission.\n\nMon préféré : {joueur}, {poste} de {age} ans, note {note}. Il a le volume de jeu et la tête pour s'adapter vite chez nous.\n\nLes autres profils, avec mes notes de match, sont dans Recrutement. Si tu veux avancer, je peux relancer son entourage cette semaine." },
@@ -291,7 +291,7 @@
       "reponses": []
     },
     "agent": {
-      "categorie": "recrutement", "declencheur": "agent", "priorite": 35, "arret": true, "ecran": "fiche",
+      "categorie": "recrutement", "declencheur": "agent", "priorite": 35, "nature": "action", "ecran": "fiche",
       "expediteur": "Un agent de joueurs",
       "intervalle": 20,
       "formulations": [
@@ -306,7 +306,7 @@
       ]
     },
     "rapport_agent": {
-      "categorie": "recrutement", "declencheur": "suite", "priorite": 33, "arret": false, "ecran": "fiche",
+      "categorie": "recrutement", "declencheur": "suite", "priorite": 33, "nature": "info", "ecran": "fiche",
       "expediteur": "La cellule de recrutement",
       "formulations": [
         { "sujet": "Rapport sur {joueur}", "corps": "Je l'ai vu : {joueur}, note actuelle {note}, potentiel estimé {potentiel}. {avis}" },
@@ -315,7 +315,7 @@
       "reponses": []
     },
     "contrats": {
-      "categorie": "recrutement", "declencheur": "contrats", "priorite": 52, "arret": false, "ecran": "contrats",
+      "categorie": "recrutement", "declencheur": "contrats", "priorite": 52, "nature": "routine", "ecran": "contrats",
       "expediteur": "Le directeur sportif",
       "intervalle": 27,
       "formulations": [
@@ -325,7 +325,7 @@
       "reponses": []
     },
     "prolongation": {
-      "categorie": "recrutement", "declencheur": "prolongation", "priorite": 26, "arret": true, "ecran": "contrats",
+      "categorie": "recrutement", "declencheur": "prolongation", "priorite": 26, "nature": "action", "ecran": "contrats",
       "expediteur": "L'agent de {joueur}",
       "formulations": [
         { "sujet": "Avenir de {joueur}", "corps": "Bonjour coach. Le contrat de {joueur} se termine en fin de saison. Il se plaît au club, sa famille est installée, et il souhaite prolonger.\n\nSes chiffres parlent pour lui : {parcours}, une note de {note} à {age} ans. D'autres clubs l'ont appelé, il n'a pas décroché.\n\nSi tu ouvres les discussions, on négocie depuis sa fiche et il le prendra comme une marque de confiance. Reporter le froissera ; refuser, il comprendra qu'il n'a plus d'avenir ici." },
@@ -339,7 +339,7 @@
       ]
     },
     "article": {
-      "categorie": "presse", "declencheur": "article", "priorite": 48, "arret": false, "ecran": "Presse",
+      "categorie": "presse", "declencheur": "article", "priorite": 48, "nature": "routine", "ecran": "Presse",
       "expediteur": "Le quotidien régional",
       "formulations": [
         { "sujet": "« {titre} »", "corps": "Le journal titre ce matin : « {titre} ». {score} face à {adversaire}.\n\nLe correspondant détaille le match en une page et termine sur une question : l'équipe, aujourd'hui {classement}, peut-elle tenir ce rythme ?\n\nIl attend une réaction. Saluer le travail du groupe fera plaisir au vestiaire ; ne rien dire, il le notera dans son prochain papier." },
@@ -356,7 +356,7 @@
       ]
     },
     "rumeur": {
-      "categorie": "presse", "declencheur": "rumeur", "priorite": 42, "arret": false, "ecran": "Presse",
+      "categorie": "presse", "declencheur": "rumeur", "priorite": 42, "nature": "info", "ecran": "Presse",
       "expediteur": "Le quotidien régional",
       "intervalle": 20,
       "formulations": [
@@ -369,7 +369,7 @@
       ]
     },
     "critique": {
-      "categorie": "presse", "declencheur": "critique", "priorite": 14, "arret": true, "ecran": "Presse",
+      "categorie": "presse", "declencheur": "critique", "priorite": 14, "nature": "info", "ecran": "Presse",
       "expediteur": "Le quotidien régional",
       "formulations": [
         { "sujet": "« Le club en crise ? »", "corps": "{defaites} défaites de suite : le quotidien titre sur une possible crise et s'interroge ouvertement sur tes choix.\n\nForme récente : {forme}, l'équipe est {classement}. Les chiffres sont durs, et l'éditorialiste ne s'en prive pas.\n\nLes journalistes demandent une conférence de presse. Un ton calme rassurera les observateurs ; un ton offensif galvanisera le vestiaire mais braquera la presse ; protéger les joueurs, c'est tout prendre sur toi, et la direction le notera." },
@@ -384,7 +384,7 @@
       ]
     },
     "une_derby": {
-      "categorie": "presse", "declencheur": "une_derby", "priorite": 28, "arret": false, "ecran": "Presse",
+      "categorie": "presse", "declencheur": "une_derby", "priorite": 28, "nature": "info", "ecran": "Presse",
       "expediteur": "Le quotidien régional",
       "formulations": [
         { "sujet": "À la une : le derby contre {adversaire}", "corps": "Toute la ville ne parle que de ça : le derby contre {adversaire}, dans trois jours. Le journal veut ta déclaration d'avant-match." },
@@ -396,7 +396,7 @@
       ]
     },
     "affluence": {
-      "categorie": "direction", "declencheur": "affluence", "priorite": 56, "arret": false, "ecran": "Finances",
+      "categorie": "direction", "declencheur": "affluence", "priorite": 56, "nature": "routine", "ecran": "Finances",
       "expediteur": "Le responsable de la billetterie",
       "formulations": [
         { "sujet": "Affluence contre {adversaire}", "corps": "Bilan billetterie de la réception de {adversaire} : {ambiance} (capacité {capacite} places). On peut relancer avec une opération places à petit prix." },
@@ -413,7 +413,7 @@
       ]
     },
     "sponsor": {
-      "categorie": "direction", "declencheur": "sponsor", "priorite": 46, "arret": false, "ecran": "Finances",
+      "categorie": "direction", "declencheur": "sponsor", "priorite": 46, "nature": "routine", "ecran": "Finances",
       "expediteur": "Le directeur commercial",
       "intervalle": 27,
       "formulations": [
@@ -427,7 +427,7 @@
       ]
     },
     "investissements": {
-      "categorie": "direction", "declencheur": "investissements", "priorite": 20, "intervalle": 330, "arret": true, "ecran": "Finances",
+      "categorie": "direction", "declencheur": "investissements", "priorite": 20, "intervalle": 330, "nature": "action", "ecran": "Finances",
       "expediteur": "Le président",
       "formulations": [
         {"sujet": "Ce que nous faisons de l'excédent", "corps": "Coach, la saison dernière nous a laissé plus que la réserve que le club se fixe. Le conseil a décidé de réinvestir {montant} pendant la saison, semaine après semaine, plutôt que de laisser dormir l'argent.\n\nVoici ce que je propose :\n- installations : {installations}. {travaux}\n- staff : {staff}. {staff_etat}\n- accueil et billetterie : {accueil}. {accueil_etat}\n\nRien n'arrive d'un coup : les travaux se paient au fil des semaines et l'entretien augmentera ensuite. Si tu veux mettre l'accent ailleurs, dis-le-moi maintenant ; sinon je garde cette répartition."},
@@ -441,7 +441,7 @@
       ]
     },
     "a2r_conditions": {
-      "categorie": "direction", "declencheur": "a2r", "niveau": 1, "priorite": 6, "arret": true, "ecran": "Finances",
+      "categorie": "direction", "declencheur": "a2r", "niveau": 1, "priorite": 6, "nature": "info", "ecran": "Finances",
       "expediteur": "L’A2R (Autorité de régulation du rugby)",
       "formulations": [
         {"sujet":"A2R : autorisé sous conditions","corps":"Monsieur le manager,\n\nLa commission de contrôle de gestion de l’A2R a auditionné le club. {constat}\n\nDécision : le club est autorisé à s’engager pour la saison {saison}, sous conditions. Sa masse salariale est encadrée jusqu’à la fin du mercato d’été : pas au-delà de {masse} par an. Des recrues restent possibles si des départs leur font de la place.\n\nAucune autre mesure."},
@@ -450,7 +450,7 @@
       "reponses": []
     },
     "a2r_homologation": {
-      "categorie": "direction", "declencheur": "a2r", "niveau": 2, "priorite": 6, "arret": true, "ecran": "Finances",
+      "categorie": "direction", "declencheur": "a2r", "niveau": 2, "priorite": 6, "nature": "action", "ecran": "Finances",
       "expediteur": "L’A2R (Autorité de régulation du rugby)",
       "formulations": [
         {"sujet":"A2R : contrats des recrues non homologués","corps":"Monsieur le manager,\n\nLa commission de contrôle de gestion de l’A2R a auditionné le club. {constat}\n\nDécision : les contrats des nouvelles recrues ne seront pas homologués tant que les comptes ne seront pas rétablis. Dès que le trou est comblé (ventes, économies), la commission homologue de nouveau, avec une masse salariale encadrée jusqu’à la fin du mercato d’été.\n\nLe club peut faire appel ({frais} de frais)."},
@@ -462,7 +462,7 @@
       ]
     },
     "a2r_apport": {
-      "categorie": "direction", "declencheur": "a2r", "niveau": 3, "priorite": 6, "arret": true, "ecran": "Finances",
+      "categorie": "direction", "declencheur": "a2r", "niveau": 3, "priorite": 6, "nature": "action", "ecran": "Finances",
       "expediteur": "L’A2R (Autorité de régulation du rugby)",
       "formulations": [
         {"sujet":"A2R : apport de l’actionnaire exigé avant le 30 juin","corps":"Monsieur le manager,\n\nLa commission de contrôle de gestion de l’A2R a auditionné le club. {constat}\n\nDécision : la commission demande à l’actionnaire un apport de {montant} avant le {echeance}. D’ici là, aucune recrue ne sera homologuée. Sans apport ni comptes rétablis à cette date, le club sera interdit de recruter jusqu’au début de la saison prochaine.\n\nLe club peut faire appel ({frais} de frais)."},
@@ -475,7 +475,7 @@
       ]
     },
     "a2r_interdiction": {
-      "categorie": "direction", "declencheur": "a2r", "niveau": 4, "priorite": 6, "arret": true, "ecran": "Finances",
+      "categorie": "direction", "declencheur": "a2r", "niveau": 4, "priorite": 6, "nature": "action", "ecran": "Finances",
       "expediteur": "L’A2R (Autorité de régulation du rugby)",
       "formulations": [
         {"sujet":"A2R : interdiction de recruter","corps":"Monsieur le manager,\n\nLa commission de contrôle de gestion de l’A2R a auditionné le club. {constat}\n\nDécision : interdiction de recruter jusqu’au début de la saison prochaine (fin du mercato d’été). Seuls les jokers indispensables pour compléter une feuille de match restent autorisés.\n\nLe club peut faire appel ({frais} de frais)."},
@@ -487,7 +487,7 @@
       ]
     },
     "reprise_president": {
-      "categorie": "direction", "declencheur": "reprise_president", "priorite": 9, "arret": true, "ecran": "Effectif",
+      "categorie": "direction", "declencheur": "reprise_president", "priorite": 9, "nature": "action", "ecran": "Effectif",
       "expediteur": "Le président",
       "formulations": [
         {"sujet":"Il faut vendre avant le {echeance}","corps":"Coach, je sors des comptes. Avec les dernières arrivées, la trésorerie est tombée à {tresorerie}, sous la réserve que le club s’impose ({reserve}). Il manque {manque}.\n\nJe ne laisserai pas le club vivre au-dessus de ses moyens. Voici les joueurs que je veux voir partir avant le {echeance} : {liste}.\n\nSi la caisse repasse au-dessus de la réserve d’ici là, par ces ventes ou autrement, je n’insisterai pas. Sinon, je les vendrai moi-même, au prix d’une vente pressée."},
@@ -500,7 +500,7 @@
       ]
     },
     "president": {
-      "categorie": "direction", "declencheur": "president", "priorite": 24, "arret": true, "ecran": "Club",
+      "categorie": "direction", "declencheur": "president", "priorite": 24, "nature": "action", "ecran": "Club",
       "expediteur": "Le président",
       "intervalle": 34,
       "formulations": [
@@ -519,7 +519,7 @@
       ]
     },
     "supporters_derby": {
-      "categorie": "direction", "declencheur": "supporters_derby", "priorite": 32, "arret": false, "ecran": "Club",
+      "categorie": "direction", "declencheur": "supporters_derby", "priorite": 32, "nature": "routine", "ecran": "Club",
       "expediteur": "Le président des supporters",
       "formulations": [
         { "sujet": "Après le derby", "corps": "{reaction} Le kop attend un mot de ta part." },
@@ -536,7 +536,7 @@
       ]
     },
     "arbitre": {
-      "categorie": "competition", "declencheur": "arbitre", "priorite": 54, "arret": false, "ecran": "Préparation",
+      "categorie": "competition", "declencheur": "arbitre", "priorite": 54, "nature": "routine", "ecran": "Préparation",
       "expediteur": "La commission des arbitres",
       "formulations": [
         { "sujet": "Arbitre de demain contre {adversaire}", "corps": "Demain contre {adversaire}, ce sera {arbitre}. Tendances : {tendances}. En résumé : {resume} {conseil}" },
@@ -548,7 +548,7 @@
       ]
     },
     "rivaux": {
-      "categorie": "competition", "declencheur": "rivaux", "priorite": 57, "arret": false, "ecran": "Classements",
+      "categorie": "competition", "declencheur": "rivaux", "priorite": 57, "nature": "routine", "ecran": "Classements",
       "expediteur": "Le service des sports",
       "formulations": [
         { "sujet": "Les résultats de nos rivaux", "corps": "Ce week-end chez nos voisins de classement : {liste}. Nous sommes {rang}." },
@@ -557,7 +557,7 @@
       "reponses": []
     },
     "tirage": {
-      "categorie": "competition", "declencheur": "tirage", "priorite": 36, "arret": false, "ecran": "Calendrier",
+      "categorie": "competition", "declencheur": "tirage", "priorite": 36, "nature": "info", "ecran": "Calendrier",
       "expediteur": "L'organisateur de la compétition",
       "formulations": [
         { "sujet": "Tirage : {competition}", "corps": "Le tirage est connu : en {competition}, nous affronterons {liste}." },
@@ -566,7 +566,7 @@
       "reponses": []
     },
     "tele": {
-      "categorie": "competition", "declencheur": "tele", "priorite": 34, "arret": false, "ecran": "Calendrier",
+      "categorie": "competition", "declencheur": "tele", "priorite": 34, "nature": "info", "ecran": "Calendrier",
       "expediteur": "La ligue",
       "formulations": [
         { "sujet": "Calendrier modifié pour la télévision", "corps": "Le diffuseur a choisi notre rencontre contre {adversaire} : elle est déplacée au {date}. Décide en Réception si tu recales la préparation." },
@@ -575,7 +575,7 @@
       "reponses": []
     },
     "discipline": {
-      "categorie": "competition", "declencheur": "discipline", "priorite": 19, "arret": true, "ecran": "Préparation",
+      "categorie": "competition", "declencheur": "discipline", "priorite": 19, "nature": "action", "ecran": "Préparation",
       "expediteur": "La commission de discipline",
       "seuils": { "cartons": 6, "amende": 5000, "frais": 1500, "alourdie": 7500 },
       "formulations": [
@@ -588,7 +588,7 @@
       ]
     },
     "verdict_appel": {
-      "categorie": "competition", "declencheur": "suite", "priorite": 20, "arret": false, "ecran": "Finances",
+      "categorie": "competition", "declencheur": "suite", "priorite": 20, "nature": "info", "ecran": "Finances",
       "expediteur": "La commission d'appel",
       "formulations": [
         { "sujet": "Verdict de l'appel", "corps": "{verdict}" },
@@ -597,7 +597,7 @@
       "reponses": []
     },
     "pepite": {
-      "categorie": "formation", "declencheur": "pepite", "priorite": 27, "arret": true, "ecran": "Formation",
+      "categorie": "formation", "declencheur": "pepite", "priorite": 27, "nature": "action", "ecran": "Formation",
       "expediteur": "Le directeur du centre de formation",
       "seuils": { "age": 18, "potentiel": 68, "note": 58 },
       "formulations": [
@@ -610,7 +610,7 @@
       ]
     },
     "rapport_centre": {
-      "categorie": "formation", "declencheur": "rapport_centre", "priorite": 60, "arret": false, "ecran": "Formation",
+      "categorie": "formation", "declencheur": "rapport_centre", "priorite": 60, "nature": "routine", "ecran": "Formation",
       "expediteur": "Le directeur du centre de formation",
       "intervalle": 27,
       "formulations": [
@@ -620,7 +620,7 @@
       "reponses": []
     },
     "selection_jeune": {
-      "categorie": "formation", "declencheur": "selection_jeune", "priorite": 44, "arret": false, "ecran": "Formation",
+      "categorie": "formation", "declencheur": "selection_jeune", "priorite": 44, "nature": "info", "ecran": "Formation",
       "expediteur": "La fédération",
       "formulations": [
         { "sujet": "Les sélections de jeunes reprennent", "corps": "Les sélections nationales de jeunes entrent en compétition ({competition}). Nos jeunes du centre suivent la compétition de près." }
@@ -628,7 +628,7 @@
       "reponses": []
     },
     "anniversaire": {
-      "categorie": "moments", "declencheur": "anniversaire", "priorite": 70, "arret": false, "ecran": "Effectif",
+      "categorie": "moments", "declencheur": "anniversaire", "priorite": 70, "nature": "routine", "ecran": "Effectif",
       "expediteur": "L'intendant",
       "formulations": [
         { "sujet": "C'est l'anniversaire de {joueur}", "corps": "{joueur} fête son anniversaire aujourd'hui. Le gâteau est prêt au vestiaire, il ne manque que toi pour souffler les bougies." },
@@ -640,7 +640,7 @@
       ]
     },
     "jalon": {
-      "categorie": "moments", "declencheur": "jalon", "priorite": 66, "arret": false, "ecran": "Effectif",
+      "categorie": "moments", "declencheur": "jalon", "priorite": 66, "nature": "routine", "ecran": "Effectif",
       "expediteur": "Le service communication",
       "formulations": [
         { "sujet": "{joueur} : {n}e match de la saison", "corps": "{joueur} vient de disputer son {n}e match de la saison. Une petite attention pour un pilier du groupe ?" },
@@ -652,7 +652,7 @@
       ]
     },
     "jalon_carriere": {
-      "categorie": "moments", "declencheur": "jalon_carriere", "priorite": 65, "arret": false, "ecran": "Effectif",
+      "categorie": "moments", "declencheur": "jalon_carriere", "priorite": 65, "nature": "routine", "ecran": "Effectif",
       "expediteur": "Le service communication",
       "seuils": { "caps": [50, 100, 150, 200, 250, 300] },
       "formulations": [
@@ -666,7 +666,7 @@
       ]
     },
     "serie": {
-      "categorie": "moments", "declencheur": "serie", "priorite": 41, "arret": false, "ecran": "Classements",
+      "categorie": "moments", "declencheur": "serie", "priorite": 41, "nature": "routine", "ecran": "Classements",
       "expediteur": "Le service communication",
       "formulations": [
         { "sujet": "{n} victoires de suite !", "corps": "Le club enchaîne {n} victoires de suite, sa meilleure série de la saison. Les supporters en redemandent." },
@@ -678,7 +678,7 @@
       ]
     },
     "meteo": {
-      "categorie": "meteo", "declencheur": "meteo", "priorite": 8, "arret": true, "ecran": "Composition",
+      "categorie": "meteo", "declencheur": "meteo", "priorite": 8, "nature": "routine", "ecran": "Composition",
       "expediteur": "Le staff technique",
       "formulations": [
         { "sujet": "Bulletin météo : {ciel}", "corps": "Les prévisions pour {quand} contre {adversaire} sont tombées : {ciel_bas}.{vent} {conseil} Regarde ta feuille et tes consignes en conséquence." },
@@ -691,7 +691,7 @@
     },
     "plan_adverse": {
       "_doc": "Veille du match (avant-match.cjs planAdverse) : le plan de jeu probable de l'adversaire lu par l'analyste vidéo (à défaut l'adjoint), qui peut se tromper ; réponses : ouvrir la composition ou les consignes.",
-      "categorie": "staff", "declencheur": "plan_adverse", "priorite": 66, "arret": false, "ecran": "Composition",
+      "categorie": "staff", "declencheur": "plan_adverse", "priorite": 66, "nature": "routine", "ecran": "Composition",
       "expediteur": "Gabi, ton adjoint",
       "formulations": [
         { "sujet": "{adversaire} : {titre_bas} ?", "corps": "Coach, {lecteur} a décortiqué les derniers matchs de {adversaire}. Sa lecture pour {quand} : {titre_bas}, parce que {raison}. {confiance} Mon conseil : {conseil}." },
@@ -704,7 +704,7 @@
       ]
     },
     "pelouse": {
-      "categorie": "moments", "declencheur": "pelouse", "priorite": 64, "arret": false, "ecran": "Composition",
+      "categorie": "moments", "declencheur": "pelouse", "priorite": 64, "nature": "routine", "ecran": "Composition",
       "expediteur": "Le responsable de la pelouse",
       "formulations": [
         { "sujet": "État de la pelouse avant {adversaire}", "corps": "Pour demain contre {adversaire} : la pelouse est {pelouse}. À prendre en compte dans ta composition." },
@@ -713,7 +713,7 @@
       "reponses": []
     },
     "bilan_match": {
-      "categorie": "staff", "declencheur": "bilan_match", "priorite": 22, "arret": true, "ecran": "Préparation",
+      "categorie": "staff", "declencheur": "bilan_match", "priorite": 22, "nature": "info", "ecran": "Préparation",
       "expediteur": "Gabi, ton adjoint",
       "formulations": [
         {"sujet":"Trois enseignements contre {adversaire}","corps":"Coach, j'ai revu le match ({score}, {resultat}). Ce que je retiens : un, {un} ; deux, {deux} ; trois, {trois}. Je proposerais d'axer la semaine sur {axe}."},
@@ -728,7 +728,7 @@
       ]
     },
     "tour_championnats": {
-      "categorie": "competition", "declencheur": "tour_championnats", "priorite": 30, "arret": false, "ecran": "Classements",
+      "categorie": "competition", "declencheur": "tour_championnats", "priorite": 30, "nature": "routine", "ecran": "Classements",
       "expediteur": "Le service communication",
       "formulations": [
         {"sujet":"Le tour du championnat","corps":"Ce qu'il fallait retenir de la semaine chez nos concurrents. Le carton : {carton}. La surprise : {surprise}. En tête : {leader}. Et {serie}."},
@@ -741,7 +741,7 @@
       ]
     },
     "ds_prolongation": {
-      "categorie":  "contrats", "declencheur":  "ds_contrats", "decision":  "prolonge", "priorite":  24, "arret":  true, "ecran":  "contrats",
+      "categorie":  "contrats", "declencheur":  "ds_contrats", "decision":  "prolonge", "priorite":  24, "nature": "action", "ecran":  "contrats",
       "expediteur": "{signature}",
       "formulations": [
         {"sujet": "J'ai prolongé {joueur}", "corps": "Coach, comme convenu, j'ai réglé le contrat de {joueur} ({poste}, {age} ans) : il reste au club jusqu'à la fin de la saison {fin}, à {salaire} € par an à partir de la saison prochaine (il touche {ancien} € aujourd'hui).\n\n{raison}\n\nSi tu n'es pas d'accord, dis-le moi maintenant : j'annule, il partira libre à la fin de son contrat et on récupère la prime. Et si tu veux que je serre davantage les cordons de la bourse, je m'adapterai pour les suivants."},
@@ -755,7 +755,7 @@
       ]
     },
     "ds_depart": {
-      "categorie":  "contrats", "declencheur":  "ds_contrats", "decision":  "libere", "priorite":  24, "arret":  true, "ecran":  "contrats",
+      "categorie":  "contrats", "declencheur":  "ds_contrats", "decision":  "libere", "priorite":  24, "nature": "action", "ecran":  "contrats",
       "expediteur": "{signature}",
       "formulations": [
         {"sujet": "Je laisse partir {joueur}", "corps": "Coach, je ne prolongerai pas {joueur} ({poste}, {age} ans). Son contrat s'achève en fin de saison et il partira libre.\n\n{raison}\n\nSi tu tiens à lui, je peux encore le prolonger au salaire qu'il demande, tant que le plafond de la ligue le permet. Tu peux aussi me demander de miser davantage sur les jeunes pour les prochaines échéances."},
@@ -769,7 +769,7 @@
       ]
     },
     "ds_staff": {
-      "categorie":  "staff", "declencheur":  "ds_staff", "priorite":  26, "arret":  true, "ecran":  "Club",
+      "categorie":  "staff", "declencheur":  "ds_staff", "priorite":  26, "nature": "action", "ecran":  "Club",
       "expediteur": "{signature}",
       "formulations": [
         {"sujet": "Le staff : ce que j'ai réglé", "corps": "Coach, comme convenu, je me suis occupé des contrats du staff.\n\n{resume}\n\nJ'ai visé ce qui est à la portée du club. Si tu veux que je serre davantage les cordons de la bourse, dis-le moi ; tu gardes la main dans l'écran du staff pour engager ou libérer qui tu veux."},
@@ -782,7 +782,7 @@
       ]
     },
     "pret_actionnaire": {
-      "categorie": "direction", "declencheur": "pret_actionnaire", "priorite": 18, "intervalle": 300, "arret": true, "ecran": "Finances",
+      "categorie": "direction", "declencheur": "pret_actionnaire", "priorite": 18, "intervalle": 300, "nature": "action", "ecran": "Finances",
       "expediteur": "Le président",
       "formulations": [
         {"sujet": "Je comble, mais tu me rembourseras", "corps": "Coach, la saison s'est terminée dans le rouge. Le propriétaire a comblé la perte, comme promis : {montant}. Mais cette fois, ce n'est pas un cadeau. C'est un prêt au club.\n\nLe club doit aujourd'hui {encours} à l'actionnaire. On remboursera {annuite} par saison, pendant {saisons} saisons : autant d'argent qui n'ira pas aux salaires.\n\n{proposition}\n\nÀ toi de me dire."},
@@ -794,7 +794,7 @@
       ]
     },
     "proprietaire_arrivee": {
-      "categorie": "direction", "declencheur": "proprietaire_arrivee", "priorite": 16, "intervalle": 300, "arret": true, "ecran": "Club",
+      "categorie": "direction", "declencheur": "proprietaire_arrivee", "priorite": 16, "intervalle": 300, "nature": "action", "ecran": "Club",
       "expediteur": "Le nouvel actionnaire",
       "formulations": [
         {"sujet": "Le club change de mains", "corps": "Coach, je suis le nouveau propriétaire du club. J'ai racheté les parts du {ancien} et je compte investir sur ma fortune : le club devient un club de mécène.\n\nJe ne suis pas venu pour la Pro D2. Je veux voir le club grandir, et vite. Ma confiance, tu l'as pour l'instant ; elle se gagnera sur le terrain.\n\nDis-moi comment tu vois la suite."},
@@ -806,7 +806,7 @@
       ]
     },
     "proprietaire_depart": {
-      "categorie": "direction", "declencheur": "proprietaire_depart", "priorite": 16, "intervalle": 300, "arret": true, "ecran": "Finances",
+      "categorie": "direction", "declencheur": "proprietaire_depart", "priorite": 16, "intervalle": 300, "nature": "action", "ecran": "Finances",
       "expediteur": "Le président",
       "formulations": [
         {"sujet": "Le mécène se retire", "corps": "Coach, je préfère te l'annoncer moi-même : notre mécène se retire après {raison}. Le club passe à un {nouveau}.\n\nConcrètement, plus personne ne comblera les grosses pertes comme avant. Le budget de la saison sera tenu au plus juste et le conseil regardera chaque dépense.\n\nLe vestiaire va l'apprendre par la presse. Comment veux-tu qu'on gère ça ?"},
@@ -817,11 +817,319 @@
         {"id": "garanties", "libelle": "Demander des garanties au nouveau bureau", "effets": {"confiance": 2, "pression": 2}, "resultat": "Le bureau s'engage sur le budget de la saison, et attend des résultats en retour."}
       ]
     },
+    "quota_retrait": {
+      "categorie": "competition",
+      "declencheur": "quota_retrait",
+      "priorite": 24,
+      "intervalle": 300,
+      "nature": "action",
+      "ecran": "Classements",
+      "expediteur": "La ligue",
+      "formulations": [
+        {
+          "sujet": "Quota JIFF : retrait de points",
+          "corps": "Ta saison s'est terminée avec une moyenne de {moyenne} JIFF par feuille sur {feuilles} journées de {ligue}, sous les {objectif} exigés. Le règlement est net : {points} point(s) de pénalité à valoir sur le classement de cette saison.\n\nLe retrait figure déjà au classement. Pour ne plus le subir, il faudra plus de joueurs issus de nos filières de formation sur la feuille, et les recruter ou les former à temps."
+        },
+        {
+          "sujet": "Commission des quotas : pénalité",
+          "corps": "Moyenne de {moyenne} JIFF par feuille sur {feuilles} journées de {ligue}, pour {objectif} attendus : la commission nous retire {points} point(s) cette saison.\n\nIl nous manquait des joueurs formés en France sur les feuilles de match. Regarde le classement, et pense à ta politique de jeunes avant la prochaine fenêtre de recrutement."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "classement",
+          "libelle": "Voir le classement",
+          "effets": {},
+          "resultat": "Le classement s'ouvre : le retrait de points y figure déjà.",
+          "ouvrir": true
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Planifier plus de jeunes",
+          "effets": {
+            "consigneDS": "jeunes",
+            "confiance": 1
+          },
+          "resultat": "Consigne passée au directeur sportif : il privilégiera les jeunes du centre et les joueurs formés en France pour les prochains contrats."
+        },
+        {
+          "id": "lu",
+          "libelle": "Pris note",
+          "effets": {},
+          "resultat": "Courrier de la ligue classé."
+        }
+      ]
+    },
+    "quota_amende": {
+      "categorie": "competition",
+      "declencheur": "quota_amende",
+      "priorite": 24,
+      "intervalle": 300,
+      "nature": "action",
+      "ecran": "Finances",
+      "expediteur": "La ligue",
+      "formulations": [
+        {
+          "sujet": "Quota EQP : amende de la ligue",
+          "corps": "Sur la saison de {ligue}, nos feuilles de match ont compté {moyenne} joueurs sélectionnables pour l'Angleterre en moyenne, pour {objectif} exigés. La ligue nous inflige une amende de {montant}, déjà prélevée sur la trésorerie. Pas de retrait de points : c'est une sanction financière.\n\nSi l'effectif ne change pas, elle se reproduira."
+        },
+        {
+          "sujet": "Les EQP : la ligue nous sanctionne",
+          "corps": "La moyenne de {moyenne} EQP par feuille sur {feuilles} journées de {ligue} est sous le seuil de {objectif}. Amende : {montant}, prélevée sur le compte du club.\n\nAvant la prochaine saison, il faut des joueurs du cru dans le groupe, au recrutement comme au centre de formation."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "finances",
+          "libelle": "Voir les finances",
+          "effets": {},
+          "resultat": "Les finances s'ouvrent : l'amende y est inscrite.",
+          "ouvrir": true
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Planifier plus de jeunes",
+          "effets": {
+            "consigneDS": "jeunes",
+            "confiance": 1
+          },
+          "resultat": "Consigne passée au directeur sportif : il privilégiera les jeunes du centre et les joueurs du cru pour les prochains contrats."
+        },
+        {
+          "id": "lu",
+          "libelle": "Pris note",
+          "effets": {},
+          "resultat": "Courrier de la ligue classé."
+        }
+      ]
+    },
+    "quota_prime": {
+      "categorie": "competition",
+      "declencheur": "quota_prime",
+      "priorite": 24,
+      "intervalle": 300,
+      "nature": "action",
+      "ecran": "Finances",
+      "expediteur": "La ligue",
+      "formulations": [
+        {
+          "sujet": "Fonds JIFF : la prime est versée",
+          "corps": "Moyenne de {moyenne} JIFF par feuille sur {feuilles} journées de {ligue} : le quota est tenu et le fonds JIFF verse {prime} au club.\n\nLa formation locale paie. On continue ?"
+        },
+        {
+          "sujet": "Prime du fonds JIFF",
+          "corps": "Tu as aligné {moyenne} JIFF en moyenne sur la saison de {ligue}, au-dessus des {objectif} exigés : le fonds JIFF nous verse {prime}.\n\nC'est le bon moment pour décider quoi faire de ce coup de pouce."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "finances",
+          "libelle": "Voir les finances",
+          "effets": {},
+          "resultat": "Les finances s'ouvrent : la prime y est inscrite.",
+          "ouvrir": true
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Planifier plus de jeunes",
+          "effets": {
+            "consigneDS": "jeunes",
+            "confiance": 1
+          },
+          "resultat": "Consigne passée au directeur sportif : il continuera de miser sur les jeunes du centre."
+        },
+        {
+          "id": "lu",
+          "libelle": "Pris note",
+          "effets": {},
+          "resultat": "Courrier de la ligue classé."
+        }
+      ]
+    },
+    "doublon": {
+      "categorie": "competition",
+      "declencheur": "doublon",
+      "priorite": 12,
+      "nature": "action",
+      "ecran": "Composition",
+      "expediteur": "Le directeur sportif",
+      "seuils": {
+        "absents": 3,
+        "titulaires": 1
+      },
+      "formulations": [
+        {
+          "sujet": "Doublon face à {adversaire} : {n} internationaux manquent",
+          "corps": "Coach, le {jour} contre {adversaire}, la fenêtre internationale nous prend {n} joueurs ({joueurs}), dont {titulaires} de ton XV type. Postes touchés : {postes}. Ils rejoignent {nations}.\n\nTrois façons de voir les choses : faire tourner pour ménager les cadres restants qui accusent la fatigue, aligner la meilleure équipe possible malgré tout, ou profiter de l'occasion pour lancer des jeunes du centre. À toi de choisir ce que ce match vaut pour nous."
+        },
+        {
+          "sujet": "Match du {jour} : un groupe amputé",
+          "corps": "On joue {adversaire} le {jour} sans {n} joueurs partis en sélection ({joueurs}), dont {titulaires} titulaires habituels. Ça touche surtout : {postes}.\n\nOn peut ménager les cadres fatigués, serrer les rangs avec la meilleure feuille possible, ou donner leur chance à des jeunes du centre. Dis-moi ce que tu veux faire."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "rotation",
+          "libelle": "Faire tourner l'effectif",
+          "effets": {
+            "doublon": "rotation"
+          },
+          "resultat": "Les cadres fatigués passent en récupération jusqu'au match, puis reprennent leur charge."
+        },
+        {
+          "id": "forte",
+          "libelle": "Aligner l'équipe la plus forte possible",
+          "effets": {
+            "doublon": "forte"
+          },
+          "resultat": "La meilleure feuille possible sera posée pour ce match."
+        },
+        {
+          "id": "jeunes",
+          "libelle": "Lancer des jeunes du centre",
+          "effets": {
+            "doublon": "jeunes"
+          },
+          "resultat": "Des jeunes du centre signent et sont lancés dans la feuille."
+        }
+      ]
+    },
+    "cellule_repos": {
+      "categorie": "competition",
+      "declencheur": "cellule",
+      "priorite": 18,
+      "nature": "info",
+      "ecran": "Composition",
+      "expediteur": "La cellule FFR-LNR",
+      "formulations": [
+        {
+          "sujet": "Protocole des Bleus : {joueur} doit souffler",
+          "corps": "Selon les lignes directrices du protocole 2026-27, {joueur} ({poste}) ne compte que {repos} repos sur ses {matchs} derniers matchs : il doit être laissé hors de la feuille contre {adversaire} ({jour}).\n\nCe sont des lignes directrices, ajustables par accord entre staffs : tu peux demander un aménagement au staff des Bleus, sans garantie. Les passer sous silence est consigné."
+        },
+        {
+          "sujet": "{joueur} : repos attendu ce week-end",
+          "corps": "La cellule de suivi note que {joueur} ({poste}) n'a pas eu assez de repos récemment ({repos} sur {matchs} matchs). Nous lui en demandons un contre {adversaire}, le {jour}.\n\nTu peux le reposer, solliciter un aménagement auprès du staff des Bleus (accord possible, pas garanti), ou ignorer : ce sera noté dans nos échanges."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "reposer",
+          "libelle": "Le reposer ce week-end",
+          "effets": {
+            "repos_liste": "reposer"
+          },
+          "resultat": "Il quitte la feuille du match : la cellule en prend note."
+        },
+        {
+          "id": "amenagement",
+          "libelle": "Demander un aménagement au staff des Bleus",
+          "effets": {
+            "repos_liste": "amenagement"
+          },
+          "resultat": "Demande transmise au staff des Bleus."
+        },
+        {
+          "id": "ignorer",
+          "libelle": "Ignorer",
+          "effets": {
+            "repos_liste": "ignorer"
+          },
+          "resultat": "La cellule consigne que tu passes outre ; s'il joue, la relation avec la fédération en souffrira."
+        }
+      ]
+    },
+    "commotion": {
+      "categorie": "commotion",
+      "declencheur": "commotion",
+      "priorite": 10,
+      "nature": "action",
+      "ecran": "infirmerie",
+      "expediteur": "Le médecin du club",
+      "formulations": [
+        {
+          "sujet": "Commotion confirmée : {joueur}",
+          "corps": "Le protocole commotion a tranché pour {joueur} ({poste}) après le match du {match} : {motif}.\n\nC'est la règle de World Rugby, il n'y a rien à négocier : {jours} jours de repos au minimum, avec une reprise par paliers. Il ne pourra pas rejouer avant le {retour}. {antecedents}\n\nPrépare son remplacement pour {prochain}, je te tiens au courant à chaque palier."
+        },
+        {
+          "sujet": "{joueur} au repos : protocole commotion",
+          "corps": "Les tests HIA sont formels pour {joueur} : {motif} lors du match du {match}.\n\n{antecedents} Il reste au repos jusqu'au {retour} au moins. C'est une décision médicale, ni lui ni nous n'avons la main dessus.\n\nIl va bien et il est suivi chaque jour. Pense à sa place dans le groupe d'ici là."
+        },
+        {
+          "sujet": "Point médical : {joueur} (commotion)",
+          "corps": "Je te fais le point sur {joueur} ({poste}) : {motif} (match du {match}).\n\nProtocole commotion classique : repos, reprise progressive, et pas de terrain avant le {retour}, soit {jours} jours. {antecedents}\n\nOn le récupère frais et en sécurité, c'est tout ce qui compte."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "infirmerie",
+          "libelle": "Voir l'infirmerie",
+          "effets": {},
+          "resultat": "Son protocole est suivi à l'infirmerie, jour après jour.",
+          "ouvrir": true,
+          "ecran": "infirmerie"
+        },
+        {
+          "id": "remplacant",
+          "libelle": "Préparer son remplaçant",
+          "effets": {},
+          "resultat": "Tu prépares la feuille sans lui.",
+          "ouvrir": true,
+          "ecran": "Composition"
+        }
+      ]
+    },
+    "commotion_exception": {
+      "categorie": "commotion",
+      "declencheur": "commotion",
+      "priorite": 9,
+      "nature": "action",
+      "ecran": "infirmerie",
+      "expediteur": "Le médecin du club",
+      "seuils": {
+        "exception": true
+      },
+      "formulations": [
+        {
+          "sujet": "{joueur} : retour au 7e jour envisageable",
+          "corps": "Commotion confirmée pour {joueur} ({poste}) après le match du {match} : {motif}.\n\nPas d'antécédent récent et un HIA3 revenu à la normale : le règlement permet alors un retour dès le 7e jour ({septieme}), seulement si un spécialiste indépendant donne son accord. Sans cet avis, c'est 12 jours de repos, retour le {retour}.\n\nJe peux lui envoyer le dossier. C'est lui qui tranche, je ne te promets rien."
+        },
+        {
+          "sujet": "Commotion de {joueur} : on demande un avis ?",
+          "corps": "{joueur} a passé son HIA3 sans symptôme après sa commotion du {match} ({motif}). {antecedents}\n\nDans ce cas précis, World Rugby autorise un retour au 7e jour ({septieme}) avec l'accord d'un spécialiste indépendant. Sinon, il rejoue au plus tôt le {retour}.\n\nVeux-tu que je sollicite le spécialiste ? Son avis sera sans appel, dans un sens comme dans l'autre."
+        }
+      ],
+      "reponses": [
+        {
+          "id": "specialiste",
+          "libelle": "Demander l'avis du spécialiste indépendant",
+          "effets": {
+            "specialiste": true
+          },
+          "resultat": "Le dossier est parti chez le spécialiste indépendant."
+        },
+        {
+          "id": "remplacant",
+          "libelle": "Garder les 12 jours et préparer son remplaçant",
+          "effets": {},
+          "resultat": "Il observera les 12 jours ; tu prépares la feuille sans lui.",
+          "ouvrir": true,
+          "ecran": "Composition"
+        },
+        {
+          "id": "infirmerie",
+          "libelle": "Voir l'infirmerie",
+          "effets": {},
+          "resultat": "Son protocole est suivi à l'infirmerie, jour après jour.",
+          "ouvrir": true,
+          "ecran": "infirmerie"
+        }
+      ]
+    },
     "blessure": {
       "categorie": "infirmerie",
       "declencheur": "blessure",
       "priorite": 28,
-      "arret": false,
+      "nature": "info",
       "ecran": "infirmerie",
       "expediteur": "Le médecin du club",
       "formulations": [

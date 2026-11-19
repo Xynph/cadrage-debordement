@@ -61,6 +61,8 @@ func watch_button() -> Button:
 		if b.is_visible_in_tree() and str(b.get_meta("follow_id", "")) == watched_id: return b
 	return null
 func reveal_watch_button() -> Button:
+	# Le gabarit riche du Recrutement (dès 1280 × 720) construit les lignes du marché par lots, image après image.
+	for _frame in 24: await process_frame
 	for direction in ["Previous", "Next"]:
 		for _page in range(app.model.market.size() + 1):
 			var track := watch_button()

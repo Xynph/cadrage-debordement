@@ -210,8 +210,12 @@ func calendrier() -> void:
 	var debuts := 0
 	for marqueur: Node in marqueurs:
 		if marqueur.get_meta("period_start", false): debuts += 1
-		for child: Node in marqueur.get_children():
-			if child is Label and str(child.text).contains("en sélection"): legendes += 1
+		for child: Node in marqueur.find_children("*", "Label", true, false):
+			if str(child.text).contains("en sélection"): legendes += 1
+		# Bande pleine et fine, sans bordure : jamais un champ vide encadré.
+		var bande := marqueur.find_child("AbsenceBand", true, false)
+		check(bande is ColorRect and bande.custom_minimum_size.y >= 3 and bande.custom_minimum_size.y <= 4, "Absence : bande pleine de 3-4 px")
+		check(not (marqueur as PanelContainer).get_theme_stylebox("panel") is StyleBoxFlat, "Absence : marqueur sans cadre")
 	if marqueurs.is_empty():
 		print("INFO : aucune absence dans le mois courant (pas de marqueur à mesurer)")
 	else:

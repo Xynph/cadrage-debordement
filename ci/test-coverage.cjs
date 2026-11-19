@@ -117,7 +117,10 @@ if (require.main === module) {
   }
   const coverage = classify(EVENT_NAME, diffs);
   const godot = files.some(touchesGodot);
-  fs.appendFileSync(GITHUB_OUTPUT, 'coverage=' + coverage + '\ngodot=' + godot + '\n');
+  // Suites modifiées ou ajoutées par le changement : toujours exécutées en mode rapide, quel que soit leur poids.
+  const modifiees = diffs ? [...new Set(diffs.flat().filter(c => c.status !== 'D').map(c => c.file))]
+    .filter(f => /^tests\/[A-Za-z0-9._-]+\.cjs$/.test(f) && f !== 'tests/harness.cjs').sort() : [];
+  fs.appendFileSync(GITHUB_OUTPUT, 'coverage=' + coverage + '\ngodot=' + godot + '\ntests_modifies=' + modifiees.join(' ') + '\n');
   console.log('Couverture : ' + coverage + ' · fichiers Godot touchés : ' + godot);
 }
 

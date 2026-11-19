@@ -118,7 +118,7 @@ test('Relecture du match réel à partir de JSON dans les deux périodes', () =>
       }
     }validate();verifyResult()`);
   assert.equal(h.run('l.finished && reloads===2'),true);
-  assert.equal(h.run('l.stats.reduce((n,s)=>n+s.possession,0)===l.minute'),true);
+  assert.equal(h.run('l.stats.reduce((n,s)=>n+s.possession,0)===(l.chrono?l.chrono.actions:l.minute)'),true);
 });
 
 test('Phase et édition exactes', () => {

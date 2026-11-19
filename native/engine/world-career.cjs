@@ -69,7 +69,12 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   return f&&f.homeId===pair[0]&&f.awayId===pair[1]?m:null;
  }
  const callups=s=>s.national?.career?.callups??[];
- const during=(call,date)=>call.from<=date&&date<=call.through;
+ // Mise à disposition des clubs : une sélection qui se réunit le dimanche (test le samedi suivant, six jours après)
+ // ne prive pas encore les clubs de leurs internationaux ce dimanche-là : les journées de championnat se terminent le
+ // dimanche et les calendriers LNR ne comptent aucun « doublon » ces week-ends (Top 14, 31 oct.-1er nov., 30-31 janv.
+ // et 27-28 fév. 2027). Le club libère donc ses joueurs à partir du lundi ; le rassemblement, lui, reste daté du dimanche.
+ const clubFrom=call=>{const monday=new Date(call.from+'T00:00:00Z').getUTCDay()===0?new Date(Date.parse(call.from+'T00:00:00Z')+86400000).toISOString().slice(0,10):call.from;return monday<=call.through?monday:call.from;};
+ const during=(call,date)=>clubFrom(call)<=date&&date<=call.through;
  const releasedIds=(s,date)=>new Set(callups(s).filter(call=>during(call,date)).flatMap(call=>call.playerIds));
  function clubReleaseOn(s,id,date=userFixture(s)?.date){
   return date ? callups(s).find(call=>during(call,date)&&call.playerIds.includes(id))??null : null;
@@ -118,6 +123,21 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  const jiffDeductions=(s,id,season)=>(id==='elite'||id==='accession')&&typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.deductionsFor==='function'?{deductions:CDJiff.deductionsFor(s,season)}:{};
  function rows(s,id,season=s.season){if(id==='guest')return edition.guests.map(clubId=>({clubId,points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[]}));const ids=s.worldMode.leagues[id]?.members;if(!ids)return[];const options={season:(id==='srp'?2027:2026)+season-1,phase:'league',tieBreaks:{previousRank:s.worldMode.previousRanks||{},drawOrder:s.worldMode.draws?.['league:'+id]?.ranks},...jiffDeductions(s,id,season)};
  return (champLeague(id)?CH.table(ids,s.history.filter(r=>r.season===season),{fixtures:s.worldMode.fixtures.filter(f=>f.competitionId===id&&f.phase==='league'),tieBreaks:options.tieBreaks}):nationallyMutable(id)?N.table(ids,s.history.filter(r=>r.season===season),{fixtures:s.worldMode.fixtures.filter(f=>f.competitionId===id&&f.phase==='league'),tieBreaks:{drawOrder:s.worldMode.draws?.['league:'+id]?.ranks,previousRank:s.worldMode.previousRanks}}):japanLeague(id)?JP.table({id,members:ids,fixtures:s.worldMode.fixtures,results:s.history,season,drawOrder:s.worldMode.draws?.['league:'+id]?.order}):id==='srp'?SRP.table(ids,s.history.map(asResult),id,{...options,...srpOptions}):C.table(ids,s.history.map(asResult),id,options)).map(r=>({...r,form:r.form.map(x=>({W:'V',L:'D',D:'N'})[x])}));}
+ // Bonus d'une rencontre (dilemme de fin de match, match-bonus.cjs) : évaluateur (score, essais) → bonus offensif et
+ // défensif de chaque camp, par la fonction même du classement de la compétition ; null hors phase de classement
+ // (élimination directe, barrage, amical, sélection) : aucun bonus en jeu.
+ const pair=r=>({bo:!!r.bo,bd:!!r.bd});
+ function matchBonus(f){
+  if(!f||f.phase!=='league'||typeof f.competitionId!=='string')return null;const id=f.competitionId;
+  if(champLeague(id))return (score,tries)=>[0,1].map(side=>pair(CH.pointsFor(score,tries,side)));
+  if(nationallyMutable(id))return (score,tries)=>[0,1].map(side=>pair(N.pointsFor(score,tries,side)));
+  if(japanLeague(id))return JP.matchBonus;
+  if(id==='srp'&&SRP)return (score,tries)=>SRP.resultPoints(score,tries,SRP.referencePolicy).map(r=>({bo:!!r.attackingBonus,bd:!!r.losingBonus}));
+  let bonus=null;try{bonus=C.rules(id).bonus;}catch{return null;}
+  return bonus?(score,tries)=>C.matchBonus(id,score,tries):null;
+ }
+ // Places qualificatives de la phase de classement (enjeu d'un point de bonus pour l'IA) ; 0 si le profil ne le dit pas.
+ function qualifyingPlaces(id){try{if(id==='srp'&&SRP)return SRP.rules().playoffs|0;return C.rules(id).playoffs|0;}catch{return 0;}}
  const worldRanked=(s,id=leagueId(s))=>rows(s,id).map(r=>({...s.clubs[r.clubId],...r,id:r.clubId}));
  function worldLabel(s){if(s.phase==='ended')return'Saison terminée';const f=userFixture(s);return f?`${REG.leagues.find(l=>l.id===f.competitionId)?.name||({champions:'Coupe des champions',challenge:'Challenge européen',access:'Barrage d’accession','jlo-d1-d2':'Barrage Japon D1 / D2','access-nationale':'Barrage Pro D2 / Nationale'})[f.competitionId]||f.competitionId} · ${f.phase==='league'||f.phase==='pool'?'Journée '+(f.round+1):({barrage:'Barrages',elimination:'Match de barrage',quarter:'Quarts de finale',semi:'Demi-finales',final:'Finale',r16:'Huitièmes de finale',access:'Barrage d’accession','third-place':'Petite finale',promotion:'Manche '+(f.round+1)})[f.phase]||f.phase}`:'Semaine '+(s.round+1)+' · Préparation';}
  function installFixture(s,f){
@@ -414,13 +434,15 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  // Rencontre de l'IA : moteur complet, ou suivi de loin selon les championnats suivis (league-detail.cjs).
  // `watch(l)` (déroulé anticipé du multiplex, match-multiplex.cjs) : appelé après chaque minute jouée.
  // Sans `watch`, une rencontre dont le déroulé a été montré garde ce résultat (CDMultiplex.official).
- function simulate(f,watch=null){const full=()=>{const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);const l=createRugbyMatch(pair,null,true);for(let n=0;!l.finished;n++){check(n<=600,'limite de simulation atteinte.');l.paused=false;advanceRugby(l);if(watch)watch(l);}applyMatchInjuries(l);return result(l);};const play=()=>typeof CDLeagueDetail!=='undefined'?CDLeagueDetail.play(S,f,full):full();return !watch&&typeof CDMultiplex!=='undefined'?CDMultiplex.official(S,f,play):play();}
+ function simulate(f,watch=null){const full=()=>{const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);const l=createRugbyMatch(pair,null,true);if(typeof initPilotageIA==='function')initPilotageIA(l,f);for(let n=0;!l.finished;n++){check(n<=600,'limite de simulation atteinte.');l.paused=false;advanceRugby(l);if(watch)watch(l);}applyMatchInjuries(l);return result(l);};const play=()=>typeof CDLeagueDetail!=='undefined'?CDLeagueDetail.play(S,f,full):full();return !watch&&typeof CDMultiplex!=='undefined'?CDMultiplex.official(S,f,play):play();}
  const fixtureEntry=(s,f,r)=>({...r,fixtureId:f.id,competitionId:f.competitionId,leagueId:f.competitionId,season:s.season,round:s.round,competitionRound:f.round,week:s.round,date:f.date,phase:f.phase,poolId:f.poolId??null,neutral:f.neutral});
  // Multiplex : rencontre jouée comme à la validation, ligne d'historique, résultat du direct et
  // classement avec des résultats provisoires, par la même fonction de table que rows().
  const multiplex=s=>({simulate:(f,watch)=>simulate(f,watch),entry:(f,r)=>fixtureEntry(s,f,r),live:()=>result(s.live),rows:(id,extra)=>rows({...s,history:s.history.concat(extra)},id)});
  function finishWeek(){
   check(active(S)&&S.round<WEEKS&&!(S.live&&!S.live.finished),'semaine indisponible.');
+  // Quotas JIFF/EQP (jiff.cjs) : feuilles de la semaine comptées ici, aussi en calendrier journalier.
+  if(typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.beforeWeek==='function')CDJiff.beforeWeek(S);
   trainWeek();captureReport();const results=[],ownFixture=userFixture(S);
   for(const f of fixtures(S)){
    check(!S.history.some(r=>r.fixtureId===f.id),'rencontre déjà enregistrée.');
@@ -624,9 +646,13 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    if(!active(S))return oldCreate(pair,legacy,automated,preparation);
    const fixture=context(pair),match=createClubMatch(oldCreate,fixture,pair,legacy,automated,preparation);
    match.worldContext=fixture;
+   // Relâchement du favori (dist/tactical-plans.js) : tiré à la création, avant que la rencontre connaisse son
+   // calendrier ; la clé n'avait pas l'identifiant du match (même tirage pour toutes les affiches d'une paire et d'une
+   // journée, différent de celui du résultat rapide). On le retire une fois la rencontre rattachée à son match.
+   if(match.relachementVersion===1&&typeof initializeRelachement==='function'){delete match.relachementVersion;delete match.relachementRisque;initializeRelachement(match);}
    return match;
   };
  }
  // Aliases prevent named inner functions shadowing the globals they replace.
- return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,previewFixtures,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,nextOpening,clubReleaseOn,enableDaily,dailyStatus,advanceDay,fixerMeteo,meteoAnnoncee,meteoMatch,meteoPrevue,label:worldLabel,context,start,finishWeek,multiplex,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
+ return Object.freeze({active,sizing,matchBonus,qualifyingPlaces,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,previewFixtures,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,nextOpening,clubReleaseOn,enableDaily,dailyStatus,advanceDay,fixerMeteo,meteoAnnoncee,meteoMatch,meteoPrevue,label:worldLabel,context,start,finishWeek,multiplex,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
 };

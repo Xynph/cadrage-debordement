@@ -123,6 +123,13 @@ func modele_enrichi() -> Dictionary:
 		adversaire["derniers"] = [{"minute": 12, "texte": "Ils contestent chaque ruck."}, {"minute": 18, "texte": "Ils occupent au pied dès la sortie de leurs 22."}]
 	adversaire["lecture"] = "Ils concèdent des pénalités au sol : jouer vite les ballons les punit."
 	p["adversaire"] = adversaire
+	# Avis du staff : celui du moteur s'il en a un, sinon un avis type (à la 0e minute il n'a encore rien vu).
+	var staff: Dictionary = p.get("staff") if p.get("staff") is Dictionary else {}
+	if not staff.get("propositions") is Array or (staff.propositions as Array).is_empty():
+		staff = {"niveau": 64, "minute": 45, "propositions": [
+			{"axe": "discipline", "valeur": "stricte", "label": "Discipline", "actuelLabel": "Normale", "valeurLabel": "Zéro faute", "raison": "3 pénalités concédées en 5 minutes."},
+			{"axe": "touche", "valeur": "sure", "label": "Touche", "actuelLabel": "Normale", "valeurLabel": "Assurer", "raison": "2 touches perdues en 5 minutes."}]}
+	p["staff"] = staff
 	l["pilotage"] = p
 	return m
 
@@ -144,6 +151,31 @@ func controler_mise_en_page(contexte: String) -> void:
 	for echec in fenetre.debordements(): verifier(false, contexte + " : " + echec)
 	var page: Control = fenetre.find_child("TeamPage", true, false)
 	verifier(page != null and ecran.grow(1).encloses(page.get_global_rect()), contexte + " : page de la maquette dans l'écran")
+
+## Textes non tronqués : les étiquettes qui passent à la ligne montrent toutes leurs lignes, celles d'une seule
+## ligne tiennent dans leur largeur ; les crans partagent une seule taille de police et ont l'infobulle complète.
+func controler_textes(contexte: String) -> void:
+	for nom in ["TeamShoutLabel", "TeamShoutNote", "TeamMatchConsignes"]:
+		for l: Label in fenetre.find_children(nom, "Label", true, false):
+			if not l.is_visible_in_tree(): continue
+			verifier(l.get_visible_line_count() >= l.get_line_count(), contexte + " : « %s » entier (%d/%d lignes)" % [l.text, l.get_visible_line_count(), l.get_line_count()])
+	var arbitre: Label = fenetre.find_child("TeamFooterReferee", true, false)
+	if arbitre != null:
+		var police: Font = arbitre.get_theme_font("font")
+		var besoin := police.get_string_size(arbitre.text, HORIZONTAL_ALIGNMENT_LEFT, -1, arbitre.get_theme_font_size("font_size")).x
+		verifier(besoin <= arbitre.size.x + 1.0, contexte + " : ligne arbitre du pied entière (%d > %d)" % [roundi(besoin), roundi(arbitre.size.x)])
+		verifier(arbitre.get_parent().name == "TeamFooterLine2", contexte + " : arbitre sur sa propre ligne")
+	var tailles := {}
+	for b: Button in fenetre.find_children("Consigne_*_*", "Button", true, false):
+		if not b.has_meta("axe"): continue
+		tailles[b.get_theme_font_size("font_size")] = true
+		var largeur := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
+		verifier(largeur <= b.size.x - 2.0, contexte + " : cran « %s » non tronqué (%d > %d)" % [b.text, roundi(largeur), roundi(b.size.x)])
+		verifier(b.tooltip_text.begins_with(b.text) or b.tooltip_text.length() > b.text.length(), contexte + " : infobulle du cran « %s »" % b.text)
+		verifier(b.autowrap_mode == TextServer.AUTOWRAP_OFF, contexte + " : cran « %s » sur une ligne" % b.text)
+	if not tailles.is_empty(): verifier(tailles.size() == 1, contexte + " : crans à une seule taille de police (%s)" % str(tailles.keys()))
+	var plan: Button = fenetre.find_child("Consigne_penalites_touch", true, false)
+	if plan != null: verifier(plan.text == "Pénaltouche" and plan.tooltip_text.begins_with("Chercher la pénaltouche"), contexte + " : « Pénaltouche » court, libellé complet en infobulle")
 
 func composition_enrichie(contexte: String) -> void:
 	fenetre.choisir_onglet("composition")
@@ -167,6 +199,7 @@ func composition_enrichie(contexte: String) -> void:
 	for nom in ["TeamShouts", "TeamFatigue", "TeamAdvice", "TeamFooterReferee"]:
 		var n: Control = fenetre.find_child(nom, true, false)
 		verifier(n != null and n.is_visible_in_tree(), contexte + " : bloc " + nom)
+	controler_textes(contexte + " composition")
 	await controler_mise_en_page(contexte + " composition")
 
 func consignes_enrichies(contexte: String) -> void:
@@ -196,7 +229,21 @@ func consignes_enrichies(contexte: String) -> void:
 		if contexte != "1280x720": verifier(defile != null and not defile.get_v_scroll_bar().visible, contexte + " : les quatre groupes tiennent sans défilement")
 	var jauges := fenetre.find_children("TeamRefereeGauge_*", "", true, false).size()
 	verifier(jauges == 4, contexte + " : 4 jauges de l'arbitre (%d)" % jauges)
+	verifier(fenetre.find_child("TeamMatchSummary", true, false) != null, contexte + " : colonne de droite comblée (point sur le match)")
+	controler_textes(contexte + " consignes")
 	await controler_mise_en_page(contexte + " consignes")
+
+func roles_enrichis(contexte: String) -> void:
+	fenetre.choisir_onglet("roles")
+	fenetre.update_frame(modele_enrichi())
+	await poser(8)
+	var roles: Variant = live().get("pilotage", {}).get("roles")
+	verifier(roles is Dictionary, contexte + " : rôles dans le modèle")
+	for id in ["buteur", "secours", "lanceur", "pied"]:
+		var carte: Control = fenetre.find_child("Role_" + id, true, false)
+		verifier(carte != null and carte.is_visible_in_tree(), contexte + " : carte du rôle " + id)
+		if carte != null: verifier(carte.find_children("Role_%s_*" % id, "Button", true, false).size() >= 1, contexte + " : candidats du rôle " + id)
+	await controler_mise_en_page(contexte + " rôles")
 
 func executer() -> void:
 	await taille(1920, 1080)
@@ -321,7 +368,49 @@ func executer() -> void:
 			await poser(4)
 			var actif: Button = fenetre.find_child("TeamShout_" + id_cri, true, false)
 			verifier(actif != null and actif.disabled, "cri actif non relançable")
-	# Mise en page : trois tailles, deux onglets ; captures en 1080p et 720p.
+	# Avis du staff : le bouton « Appliquer ces consignes » envoie une seule commande (à la 0e minute le moteur
+	# n'a rien à proposer et refuse en clair ; l'application réelle est vérifiée par tests/match-staff-roles.cjs).
+	fenetre.choisir_onglet("consignes")
+	fenetre.update_frame(modele_enrichi())
+	await poser(6)
+	var appliquer: Button = fenetre.find_child("TeamStaffApply", true, false)
+	verifier(appliquer != null and appliquer.is_visible_in_tree() and not appliquer.disabled, "bouton Appliquer ces consignes")
+	if appliquer != null:
+		appliquer.pressed.emit()
+		verifier(app.last_command == "appliquer_staff", "clic : commande appliquer_staff")
+		await jusqua(func() -> bool: return not app.waiting, 20000)
+		rapport.staff_reponse = str(app.last_error)
+	# Onglet Rôles : un autre buteur parmi les joueurs sur le terrain, gardé par le moteur.
+	(fenetre.find_child("TeamTabRoles", true, false) as Button).pressed.emit()
+	fenetre.update_frame(app.model)
+	await poser(6)
+	verifier(fenetre.onglet == "roles", "onglet Rôles")
+	var buteur: Dictionary = {}
+	var roles_reels: Variant = live().get("pilotage", {}).get("roles")
+	if roles_reels is Dictionary:
+		for r: Variant in roles_reels.get("roles", []):
+			if r is Dictionary and str(r.get("id", "")) == "buteur": buteur = r
+	verifier(not buteur.is_empty(), "rôle buteur dans le modèle")
+	if not buteur.is_empty():
+		var choix := ""
+		var numero := 0
+		for c: Variant in buteur.get("candidats", []):
+			if choix.is_empty() and c is Dictionary and str(c.id) != str(buteur.get("enJeu", {}).get("id", "")):
+				choix = str(c.id)
+				numero = int(c.num)
+		# Nœud nommé par le numéro du joueur (un identifiant peut contenir des caractères refusés dans un nom de nœud).
+		var bouton_role: Button = fenetre.find_child("Role_buteur_%d" % numero, true, false)
+		if bouton_role != null: verifier(str(bouton_role.get_meta("joueur", "")) == choix, "bouton du candidat lié au bon joueur")
+		verifier(bouton_role != null and not bouton_role.disabled, "candidat buteur cliquable")
+		if bouton_role != null:
+			bouton_role.pressed.emit()
+			verifier(app.last_command == "set_role_direct", "clic : commande set_role_direct")
+			await attendre("set_role_direct")
+			var apres: String = ""
+			for r: Variant in live().get("pilotage", {}).get("roles", {}).get("roles", []):
+				if r is Dictionary and str(r.get("id", "")) == "buteur" and r.get("enJeu") is Dictionary: apres = str(r.enJeu.id)
+			verifier(apres == choix, "le moteur garde le nouveau buteur (%s → %s)" % [choix, apres])
+	# Mise en page : trois tailles, trois onglets ; captures en 1080p et 720p.
 	for t: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(2560, 1440)]:
 		await taille(t.x, t.y)
 		var nom := "%dx%d" % [t.x, t.y]
@@ -329,6 +418,8 @@ func executer() -> void:
 		if t.x != 2560: await capturer("equipe-composition-" + nom)
 		await consignes_enrichies(nom)
 		if t.x != 2560: await capturer("equipe-consignes-" + nom)
+		await roles_enrichis(nom)
+		if t.x != 2560: await capturer("equipe-roles-" + nom)
 	await taille(1920, 1080)
 	# Joueur choisi puis remplaçant (état sélectionné) pour la capture.
 	fenetre.choisir_onglet("composition")

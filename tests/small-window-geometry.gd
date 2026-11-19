@@ -57,7 +57,7 @@ func measure(label: String) -> Dictionary:
 		record.body_minimum = [app.body.get_combined_minimum_size().x,app.body.get_combined_minimum_size().y]
 		record.outer_scroll = maxf(0,app.body_scroll.get_v_scroll_bar().max_value-app.body_scroll.get_v_scroll_bar().page)
 	record.important = []
-	for id: String in ["CarnetCalendar","CalendarMonthGrid","CalendarWeekGrid","MonthDayDetail","CalendarUpcomingContext","ContextualInvitations","ContextualObserveTraining","ImmersiveInbox","CarnetPreparation"]:
+	for id: String in ["CarnetCalendar","CalendarMonthGrid","CalendarWeekGrid","MonthDayDetail","CalendarUpcomingContext","ContextualInvitations","ContextualObserveTraining","ImmersiveInbox","CarnetPreparation","ImmersivePreparation","ImmersiveTraining","ImmersivePlaybook","ImmersiveCentre"]:
 		var item := app.find_child(id,true,false) as Control
 		if item != null:
 			record.important.append({"name":id,"rect":rect(item.get_global_rect()),"minimum":[item.get_combined_minimum_size().x,item.get_combined_minimum_size().y]})
@@ -115,7 +115,7 @@ func check_reading(label: String) -> void:
 	var fixed: Control = app.find_child("MonthToday",true,false)
 	if fixed == null: fixed = app.find_child("ContextualInvitations",true,false)
 	if fixed == null: fixed = app.find_child("ContextualObserveTraining",true,false)
-	if fixed == null: fixed = app.find_child("OfficePreparationAction",true,false)
+	# Le Bureau défile d'un seul tenant : son action principale suit la page, elle n'est plus un en-tête fixe.
 	var initial := fixed.get_global_rect() if fixed != null else Rect2()
 	var notebook := app.find_child("OpenCoachNotebook",true,false) as Control
 	var notebook_initial := notebook.get_global_rect() if notebook != null else Rect2()
@@ -125,11 +125,21 @@ func check_reading(label: String) -> void:
 		var accessible := exposed_rect(control).grow(1.5).encloses(control.get_global_rect())
 		check(accessible,"Contenu exposable "+label+" "+str(root.size)+" "+str(control.name))
 		reading.append({"path":str(app.get_path_to(control)),"rect":rect(control.get_global_rect()),"visible_bounds":rect(exposed_rect(control)),"accessible":accessible})
-	if notebook != null: check(notebook.get_global_rect().is_equal_approx(notebook_initial),"Carnet Gabi fixe "+label+" "+str(root.size))
+	if notebook != null and app.route != "Bureau": check(notebook.get_global_rect().is_equal_approx(notebook_initial),"Carnet Gabi fixe "+label+" "+str(root.size))
 	if fixed != null:
 		check(fixed.get_global_rect().is_equal_approx(initial),"En-tête/action fixe "+label+" "+str(root.size))
 		records.append({"resolution":[root.size.x,root.size.y],"label":label+" accessibilité","reading":reading,"fixed":str(fixed.name),"fixed_rect":rect(fixed.get_global_rect())})
 		await capture(label+"-last-content")
+func check_office_blocks(resolution: Vector2i) -> void:
+	var blocks: Array[Control] = []
+	for id: String in preload("res://ui/immersive08/office.gd").PAGE_BLOCKS:
+		var block := app.find_child(id,true,false) as Control
+		if block != null and block.is_visible_in_tree(): blocks.append(block)
+	check(app.find_child("OfficeReadingScroll",true,false) == null,"Bureau sans défilement interne "+str(resolution))
+	for i in blocks.size():
+		check(blocks[i].get_global_rect().size.y+1.0 >= blocks[i].get_combined_minimum_size().y*blocks[i].get_global_transform().get_scale().y,"Bloc du Bureau entier "+str(blocks[i].name)+" "+str(resolution))
+		for j in range(i+1,blocks.size()):
+			check(not blocks[i].get_global_rect().grow(-1.0).intersects(blocks[j].get_global_rect().grow(-1.0)),"Blocs du Bureau sans chevauchement "+str(blocks[i].name)+" / "+str(blocks[j].name)+" "+str(resolution))
 func dialog_measure(label: String, target: Window = null) -> void:
 	await settle()
 	var found := false
@@ -208,7 +218,9 @@ func run() -> void:
 			if is_instance_valid(app.coach): app.coach.close()
 			var record := measure(route)
 			if route in ["Réception","Préparation","Calendrier","Bureau"]:
-				check(record.get("outer_scroll",0)<=1.5,"Page entière "+route+" "+str(resolution)+" scroll="+str(record.get("outer_scroll",0)))
+				# Bureau : un seul défilement pour toute la page (les blocs gardent leur hauteur entière, rien ne se recouvre).
+				if route == "Bureau": check_office_blocks(resolution)
+				else: check(record.get("outer_scroll",0)<=1.5,"Page entière "+route+" "+str(resolution)+" scroll="+str(record.get("outer_scroll",0)))
 				await capture(route)
 				await check_reading(route)
 			await audit_interactions(route)

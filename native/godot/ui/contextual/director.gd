@@ -45,6 +45,22 @@ func _meeting() -> Dictionary:
 		return value if outcome is Dictionary and outcome.get("invitationId") == origin and outcome.get("context") == value.get("context") else {}
 	return value if press.get("context") == value.get("context") and press.get("conference", {}).get("invitationId") == origin else {}
 
+## Après-match façon FM (18/11/2026) : la conférence courte d'après-match (créneau « apres ») n'est pas un rendez-vous
+## du club, mais elle se tient dans la même salle de presse, ouverte depuis son courrier ou juste après le résultat.
+## Vide sinon. `completed` : réponses publiées (par le manager ou Gabi), la salle attend « Continuer ».
+func postmatch_press() -> Dictionary:
+	var origin := str(app.get_meta("press_mail_origin", ""))
+	if origin.is_empty(): return {}
+	var press: Dictionary = app.model.get("clubLife", {}).get("press", {})
+	var context: Variant = press.get("context")
+	var conference: Dictionary = press.get("conference", {})
+	if conference.get("available", false) and conference.get("invitationId") == origin and context is Dictionary and context.get("slot") == "apres":
+		return {"postmatch":true, "completed":false, "invitationId":origin}
+	var outcome: Variant = press.get("lastOutcome")
+	if kind == "press" and outcome is Dictionary and outcome.get("invitationId") == origin and outcome.get("context", {}).get("slot") == "apres":
+		return {"postmatch":true, "completed":true, "invitationId":origin}
+	return {}
+
 ## Rendez-vous du club obligatoire qui bloque les autres actions (en cours ou premier de la file), vide sinon.
 func blocking_meeting() -> Dictionary:
 	var meetings: Dictionary = app.model.get("clubLife", {}).get("clubMeetings", {})
@@ -98,6 +114,10 @@ func sync(_received_command: String = "", _response_ok: bool = true) -> bool:
 		data = meeting.duplicate(true)
 		data["meetingId"] = meeting.get("id")
 		key = next + ":" + str(meeting.get("id", ""))
+	elif not postmatch_press().is_empty():
+		next = "press"
+		data = postmatch_press()
+		key = "press:apres:" + str(data.get("invitationId", ""))
 	elif training_open and app.model.get("club") is Dictionary:
 		next = "training"
 		key = "training"
@@ -198,6 +218,14 @@ func open_room(room_kind: String, _data: Dictionary = {}) -> void:
 	if not app.waiting and str(_meeting().get("kind", "")) == room_kind: sync()
 
 func close_room() -> void:
+	var postmatch := postmatch_press() if _meeting().is_empty() else {}
+	if not postmatch.is_empty():
+		if app.waiting or not postmatch.get("completed", false): return
+		app.remove_meta("press_mail_origin")
+		_close()
+		app.route = "Réception"
+		app._render(false)
+		return
 	var meeting := _meeting()
 	if app.waiting or not meeting.get("completed", false): return
 	command("club_meeting_continue", {"meetingId":meeting.get("id")})
@@ -235,7 +263,7 @@ const Components = preload("res://ui/immersive08/components.gd")
 const INVITATION_PANEL := Color("172321")
 const INVITATION_TITLE := Color("f2ecdc")
 const INVITATION_REASON := Color("abb7b1")
-const INVITATION_GOLD := Color("d8c183")
+const INVITATION_GOLD := S.GOLD
 const INVITATION_GAP := 12
 
 # Mêmes corps que les lignes du courrier (reception_canvas.gd : 20 pour le titre, 17 pour le détail), mis à l'échelle
@@ -314,12 +342,43 @@ func install_entrypoints() -> void:
 		if is_instance_valid(app.body) and app.body.find_child("ContextualObserveTraining", true, false) == null: _add_training_entry(app.body)
 
 func _add_training_entry(parent: Node) -> void:
-	var button := S.G.button("VOIR L’ENTRAÎNEMENT", open_training)
+	# Style de bouton du jeu (contour or, comme « Préparer le match »), plus le bouton blanc pleine largeur du thème Godot.
+	# Fond sombre quel que soit l'accent du club (une couleur claire donnait un bouton presque blanc), contour or.
+	var button := Components.button("VOIR L’ENTRAÎNEMENT", open_training, false, app.accent)
+	var normal := (button.get_theme_stylebox("normal") as StyleBoxFlat).duplicate() as StyleBoxFlat
+	normal.border_color = Components.GOLD
+	button.add_theme_stylebox_override("normal", normal)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	button.custom_minimum_size.x = Components.px(300)
 	button.name = "ContextualObserveTraining"
 	button.disabled = not _live().is_empty() or app.model.get("meta", {}).get("phase") == "ended"
+	# Page riche (gabarit fixe, Travail du club) : le bouton se pose dans le coin haut droit du gabarit, sur la
+	# photo d'en-tête, au lieu de pousser toute la page vers le bas (le panneau de droite se mettait à défiler).
+	var canvas := _fixed_canvas(parent)
+	if canvas != null:
+		button.custom_minimum_size.y = maxi(32, Components.px(46))
+		canvas.add_child(button)
+		var width := maxf(button.custom_minimum_size.x, button.get_combined_minimum_size().x)
+		var height := maxf(button.custom_minimum_size.y, button.get_combined_minimum_size().y)
+		var margin := float(Components.px(24))
+		button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		button.offset_left = -width - margin
+		button.offset_right = -margin
+		button.offset_top = Components.px(18)
+		button.offset_bottom = button.offset_top + height
+		return
 	parent.add_child(button)
 	parent.move_child(button, 0)
 	_contain_entry_content(parent, button)
+
+## Gabarit fixe de la page riche (Control simple, hors conteneur) posé seul dans le corps du Travail du club.
+func _fixed_canvas(parent: Node) -> Control:
+	if parent != app.body or app.route != "Travail du club": return null
+	var pages := parent.get_children().filter(func(node: Node): return node is Control and not node.is_queued_for_deletion())
+	if pages.size() != 1: return null
+	var page: Control = pages[0]
+	if page is Container: return null
+	return page
 
 func _contain_entry_content(parent: Node, entry: Control) -> void:
 	if parent != app.body: return

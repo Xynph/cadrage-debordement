@@ -30,6 +30,36 @@ func run() -> void:
 	var mauvais: Dictionary = outil.lire_options(PackedStringArray(["--camera", "drone", "--cadence", "0", "--taille", "640x360", "--minutes", "-3", "--inconnu", "--sortie", "relatif"]))
 	check(mauvais.erreurs.size() >= 6, "Caméra, cadence, taille, minute, argument inconnu, sortie relative et export absent refusés : " + str(mauvais.erreurs))
 	check(not outil.lire_options(PackedStringArray(["--sortie"])).erreurs.is_empty(), "Valeur manquante refusée")
+	# Grands moments : cadence rapprochée (essai, sortie des joueurs à la mi-temps et en fin de match).
+	check(is_equal_approx(defauts.cadence_moments, 0.5), "Défaut : une image toutes les 0,5 s pendant un grand moment")
+	var moments: Dictionary = outil.lire_options(PackedStringArray(["--sortie", sortie, "--export", carriere, "--cadence-moments", "0.25"]))
+	check(moments.erreurs.is_empty() and is_equal_approx(moments.options.cadence_moments, 0.25), "--cadence-moments lu : " + str(moments.erreurs))
+	check(not outil.lire_options(PackedStringArray(["--sortie", sortie, "--export", carriere, "--cadence-moments", "0.1"])).erreurs.is_empty(), "--cadence-moments trop court refusé")
+	check(outil.ETATS.size() == 4 and outil.ETATS[3] == "sortie", "État « sortie » de la régie nommé dans le rapport")
+	check(outil.foule_de(null) == {}, "Sans gestionnaire sonore : champ foule vide")
+	var faux := GDScript.new()
+	faux.source_code = "extends Node\nvar etat := 1\nvar index := 0\nvar tf := {\"plans\": [{\"kind\": \"try\"}, {\"kind\": \"transformation\"}]}\nvar _live := {}\nvar en_sortie := false\nvar titre := \"\"\nfunc sortie_en_cours() -> bool:\n\treturn en_sortie\nfunc bandeau_affiche() -> Dictionary:\n\treturn {\"visible\": not titre.is_empty(), \"titre\": titre}\nvar rejeu := false\nfunc rejeu_en_cours() -> bool:\n\treturn rejeu\nfunc mention_affichee() -> bool:\n\treturn rejeu\n"
+	check(faux.reload() == OK, "Régie factice")
+	var regie: Node = faux.new()
+	check(outil.moment_de(null) == "", "Sans régie : aucun moment")
+	check(outil.moment_de(regie) == "essai", "Plan d'essai en cours : moment « essai »")
+	# Ralenti de l'essai : état « ralenti » et mention notés à chaque image.
+	check(outil.ralenti_de(null) == {"ralenti": false, "mention": false}, "Sans régie : ni ralenti ni mention")
+	check(outil.ralenti_de(regie) == {"ralenti": false, "mention": false}, "Hors ralenti : rien de noté")
+	regie.rejeu = true
+	check(outil.ralenti_de(regie) == {"ralenti": true, "mention": true}, "Pendant le ralenti : ralenti et mention notés")
+	check(outil.moment_de(regie) == "essai", "Pendant le ralenti : toujours le moment « essai » (images rapprochées)")
+	regie.rejeu = false
+	regie.index = 1
+	check(outil.moment_de(regie) == "", "Transformation sans bandeau : plus de moment")
+	regie.titre = "ESSAI"
+	check(outil.moment_de(regie) == "essai", "Bandeau « ESSAI » encore affiché : moment « essai »")
+	regie.titre = "MI-TEMPS"
+	regie.en_sortie = true
+	check(outil.moment_de(regie) == "mi-temps", "Sortie à la mi-temps")
+	regie._live = {"finished": true}
+	check(outil.moment_de(regie) == "fin", "Sortie en fin de match")
+	regie.free()
 
 	var noire := Image.create_empty(320, 180, false, Image.FORMAT_RGB8)
 	check(outil.luminance(noire) < outil.SEUIL_NOIR, "Image noire détectée")

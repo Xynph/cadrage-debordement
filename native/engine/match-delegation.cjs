@@ -11,7 +11,7 @@
 // pour l'adversaire, qui fait 6 à 8 changements), et cette fatigue se reportait sur la semaine
 // suivante. Le même club géré par l'IA, lui, fait tourner son banc.
 //
-// Toujours actif (direct et délégation) : le banc adverse ajuste ses consignes (`pilotageAdversaire`).
+// Le banc adverse ajuste ses consignes depuis la minute du moteur (`pilotageMinute`, dist/match-pilotage.js).
 //
 // Pendant la seule commande `delegate` (le worker appelle `setActive(true)` puis `false`),
 // l'adjoint applique au club du joueur exactement les décisions d'un entraîneur IA du même niveau
@@ -35,8 +35,8 @@ function factory(){
   advanceRugby=function(l){
    const result=avance.apply(this,arguments);
    if(l&&typeof S!=='undefined'&&S&&l===S.live&&l.userSide>=0&&!l.finished){
-    // Banc adverse (match-pilotage.js) : il revoit ses consignes toutes les 5 minutes, en direct comme en délégation.
-    if(typeof pilotageAdversaire==='function')pilotageAdversaire(l);
+    // Avis du staff du club joué (bouton « Appliquer ces consignes ») ; en délégation il l'applique lui-même.
+    if(typeof pilotageStaffAvis==='function')pilotageStaffAvis(l);
     if(actif)adjoint(l);
    }
    return result;
@@ -45,6 +45,6 @@ function factory(){
   return true;
  }
  function setActive(value){if(typeof value!=='boolean')throw Error('Délégation : drapeau invalide.');actif=value;}
- return {project(){return null;},validate(){return true;},execute(){throw Error('Délégation : aucune commande.');},installHooks,setActive,clearTransient(){actif=false;}};
+ return {project(){return null;},validate(){return true;},execute(){throw Error('Délégation : aucune commande.');},installHooks,setActive,actif:()=>actif,clearTransient(){actif=false;}};
 }
 module.exports={files,commands,factory};

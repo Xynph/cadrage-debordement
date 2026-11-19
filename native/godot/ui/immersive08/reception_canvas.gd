@@ -177,7 +177,11 @@ static func _messages(app: Control) -> Array[Dictionary]:
 
 ## Ordre d'arrivée dans une journée : courrier du club par numéro, puis les autres courriers datés (stable).
 static func _arrival(message: Dictionary) -> float:
-	if message.has("club_mail"): return float(str(message.id).trim_prefix("mail-").to_int())
+	# Courrier du club : le plus important du jour en tête (réponse attendue, puis info, puis routine ; moteur :
+	# club-mail.cjs « importance »), puis l'ordre d'arrivée.
+	if message.has("club_mail"):
+		var mail: Dictionary = message.club_mail
+		return float(int(mail.get("importance", 0))) * 1000000.0 + float(str(message.id).trim_prefix("mail-").to_int())
 	return -1000.0 + float(absi(hash(str(message.id))) % 1000)
 
 ## Heure de réception (heure de jeu plausible et stable) : les courriers d'un même jour s'échelonnent de 7 h 30
@@ -405,10 +409,12 @@ static func _tasks(app: Control) -> Array:
 	return tasks
 
 static func heading(row: Control, app: Control) -> Label:
-	D.text(row,1,19,"LE COURRIER DE TA CARRIÈRE",17,C.GOLD,600,780)
-	var title := D.text(row,-1,57,"Réception.",28,C.IVORY,700,777)
+	# Même hiérarchie que les autres pages (Bureau, Effectif) : surtitre, grand titre, puis l'état de la boîte.
+	D.text(row,1,19,"LE COURRIER DE TA CARRIÈRE",19,C.GOLD,600,1040)
+	var title := D.text(row,-1,66,"Réception.",46,C.IVORY,700,1040)
+	title.name = "InboxPageTitle"
 	var counts := Reading.counts(_messages(app),app.model)
-	D.text(row,1,82,"%d non lus · %d à faire · %s" % [unread(app),counts.todo,P.plural(counts.urgent,"urgence","urgences")],17,C.MUTED,500,730)
+	D.text(row,1,102,"%d non lus · %d à faire · %s" % [unread(app),counts.todo,P.plural(counts.urgent,"urgence","urgences")],19,C.MUTED,500,1040).name = "InboxPageCounts"
 	return title
 
 
@@ -979,9 +985,57 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 		y += 40 + float(replies.height) + 18
 	_actions(bottom,app,state,message,int(y))
 	y += _h(46)
+	y = _mail_context(bottom, app, message, when, y, hint_base - 34 - top)
 	D.place(bottom, Rect2(0, top, _w, y))
 	D.text(card,PAD,hint_base,"Espace : message non lu suivant",16,C.FAINT.lightened(.1),500,reading_width).name = "InboxSpaceHint"
 	_settle_reading.call_deferred(scroll, bottom, (hint_base - 34) * C.density)
+
+## Sous un mail court, le bas du panneau se complète au lieu de rester vide : illustration du thème (banque
+## d'images), expéditeur, service, date de réception, état du courrier, état de la boîte et le courrier suivant.
+## Lecture seule ; rien n'est ajouté quand la place manque. Renvoie la nouvelle hauteur du pied.
+const CONTEXT_GAP := 26.0
+static func _mail_context(bottom: Panel, app: Control, message: Dictionary, when: String, y: float, limit: float) -> float:
+	var top := y + CONTEXT_GAP
+	var height := minf(limit - top, 340.0)
+	if height < 180.0: return y
+	var width := _w - 2 * PAD
+	var box := D.panel(bottom, Rect2(PAD, top, width, height), "", "", "", "InboxMailContext")
+	box.mouse_filter = Control.MOUSE_FILTER_PASS
+	var photo_width := 0.0
+	var photo_id := photo_resultat(str(message.get("subject", "")) + " " + str(message.get("text", "")))
+	if C.texture(photo_id) != null:
+		photo_width = minf(440.0, width * .34)
+		D.photo(box, photo_id, Rect2(12, 12, photo_width, height - 24), .4).name = "InboxMailContextPhoto"
+	var x := photo_width + 40.0
+	var column := width - x - 28.0
+	D.text(box, x, 44, "LE DOSSIER DU COURRIER", 19, C.GOLD, 700, column).name = "InboxMailContextTitle"
+	var reading := Reading.status(message, app.model)
+	var state := str(reading.get("label", "Information"))
+	if reading.get("key") != "info" and not str(reading.get("reason", "")).is_empty(): state += " · " + str(reading.reason)
+	var counts := Reading.counts(_messages(app), app.model)
+	var rows := [
+		["EXPÉDITEUR", _sender(app, message)],
+		["SERVICE", _service(message)],
+		["REÇU", when if not when.is_empty() else "Date non précisée"],
+		["ÉTAT", state],
+		["TA BOÎTE", "%d non lus · %d à faire" % [unread(app), counts.todo]],
+	]
+	var next := next_unread(app)
+	var with_button := height >= 280.0
+	var room := height - 70.0 - (70.0 if with_button else 0.0)
+	var shown := clampi(floori(room / 40.0), 2, rows.size())
+	for index in shown:
+		var baseline := 90.0 + index * 40.0
+		D.text(box, x, baseline, rows[index][0], 17, C.MUTED, 600, 200)
+		D.text(box, x + 210, baseline, rows[index][1], 20, C.IVORY, 600, column - 210).name = "InboxMailContext_%d" % index
+	if with_button:
+		var follow := D.button(box, Rect2(x, height - 66, minf(460.0, column), _h(46)), "Courrier suivant non lu" if not next.is_empty() else "Tout est lu", _open_next.bind(app), false, "arrow", true, app.accent, "InboxMailContextNext")
+		follow.disabled = next.is_empty() or str(next.get("id", "")) == str(message.get("id", ""))
+	return top + height
+
+## Même effet que la touche Espace : ouvre le prochain courrier non lu de la liste affichée.
+static func _open_next(app: Control) -> void:
+	if open_next_unread(app): app._render()
 
 ## Une fois le contenu mis en page : si sa hauteur réelle dépasse la mesure, la zone de lecture grandit (dans la
 ## place libre au-dessus du rappel Espace) et le pied descend d'autant ; aucun défilement inutile.
@@ -994,6 +1048,13 @@ static func _settle_reading(scroll: ScrollContainer, footer: Control, limit: flo
 	var content := scroll.get_child(0) as Control
 	var missing := content.get_combined_minimum_size().y + 4.0 - scroll.size.y
 	var spare := limit - (footer.position.y + footer.size.y)
+	# Le dossier du courrier ne complète qu'un mail court : il cède sa place si le texte en a besoin.
+	var extra := footer.get_node_or_null("InboxMailContext") as Control
+	if missing > spare and extra != null:
+		footer.size.y = maxf(0.0, extra.position.y - C.px(CONTEXT_GAP))
+		footer.remove_child(extra)
+		extra.queue_free()
+		spare = limit - (footer.position.y + footer.size.y)
 	var grow := minf(missing, spare)
 	if grow <= 0.5: return
 	scroll.size.y += grow
@@ -1573,6 +1634,12 @@ static func _open_current_player(app: Control, player_id: String) -> void:
 	app.navigation_controller.open_entity({"kind":"player","id":player_id,"section":"contract"})
 
 ## Actions du mail, en bas, sur une rangée (au-dessus du rappel Espace).
+## Libellé du bouton d'une invitation du club : « Ouvrir l’entretien » pour un entretien (staff, joueur),
+## « Ouvrir l’invitation » pour les autres moments au club. Casse normale, style « action » du jeu.
+static func scene_invitation_caption(scene: Dictionary) -> String:
+	var title := str(scene.get("title", "")).to_lower()
+	return "Ouvrir l’entretien" if title.contains("entretien") else "Ouvrir l’invitation"
+
 static func _action_rect(index: int, top: int) -> Rect2:
 	var width := minf(520.0, (_reading_width() - 18) / 2.0)
 	return Rect2(PAD + index * (width + 18), top, width, _h(46))
@@ -1595,7 +1662,7 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 					_press_policy_toggle(card, app, _action_rect(1,top))
 	elif message.has("scene_invitation"):
 		var scene: Dictionary = message.scene_invitation
-		var open := D.button(card,_action_rect(0,top),"Ouvrir l’invitation",func():
+		var open := D.button(card,_action_rect(0,top),scene_invitation_caption(scene),func():
 			if is_instance_valid(app.contextual_director): app.contextual_director.open_invitation(str(scene.id)),true,"arrow",false,app.accent,"InboxOpenSceneInvitation")
 		var blocking := _blocking(app)
 		open.disabled = app.waiting or not blocking.is_empty()

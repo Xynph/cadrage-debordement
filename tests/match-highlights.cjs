@@ -148,7 +148,9 @@ function finsDeRafale(events) {
 
 testReels('En direct, la décision d’une rafale n’utilise que le passé et ne change plus ensuite', (reel) => {
   const fins = finsDeRafale(reel.events);
-  assert.ok(fins.length > 80, 'un match fait plus de 80 rafales');
+  // Chrono des arrêts : un tir au but ou un essai transformé occupe 2 minutes sans rafale, d'où ≈ 74 rafales (et non plus > 80) par match.
+  // Cartons recalés (19/11/2026) : moyenne inchangée (~70 sur 63 matchs) mais minimum 58 au lieu de 64, d'où le seuil 50.
+  assert.ok(fins.length > 50, 'un match fait plus de 50 rafales : ' + fins.length);
   for (const niveau of NIVEAUX) {
     const complet = H.en_direct(reel.events, { niveau });
     assert.equal(complet.decisions.length, fins.length, niveau + ' : une décision par rafale');

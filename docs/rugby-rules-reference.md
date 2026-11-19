@@ -220,3 +220,83 @@ Cette édition de compétition ne remplace pas le profil de lois de match `fr-pr
 Abstractions déclarées : monde fermé à trente clubs sans Nationale, cadence commune de 34 semaines et calendrier sans dates réelles. Les calendriers générés suivent des tables de Berger avec alternance (au plus deux réceptions ou deux déplacements de suite, retour en miroir de l’aller) ; l’ordre des journées n’est pas celui du calendrier LNR publié ([détail](calendrier-alternance-20261111.md)). À égalité encore indiscernable après les critères disponibles, la convention de classement antérieur puis d'ID stable reste une convention du jeu. Aucun forfait administratif ni conformité intégrale du rugby 2026–2027 n'est annoncé. Le stade 3D conserve des dimensions de présentation ; il ne certifie ni une enceinte réelle ni sa conformité réglementaire.
 
 Le [rapport de réception natif](godot-carriere-20261107.md) distingue les tests moteur, les sauvegardes et la réception graphique Windows. Les modes historiques restent séparés : aucune conversion automatique fiction14/LNR14 vers France30.
+
+## Protocole commotion (HIA) — carrière Monde, 18 novembre 2026
+
+Règles World Rugby du rugby d'élite en vigueur depuis le 1er juillet 2022
+([communiqué](https://www.world.rugby/news/726094), [suite](https://www.world.rugby/news/730239),
+[détail SA Rugby 2022](https://www.sarugby.co.za/media/lg0owndp/changes-to-return-to-play-guidelines-following-concussion-explained-for-elite-hia-tournaments-only-2022.pdf)),
+appliquées aux 116 clubs (`native/engine/club-support.cjs`) :
+
+- signes évidents (critère 1) : sortie définitive immédiate, remplacement normal ;
+- choc suspect : HIA1 de 12 minutes hors du terrain, remplacement temporaire
+  hors quota tactique (comme la clarification FFR ci-dessus) ; retour s'il passe
+  le test, sinon le remplaçant reste ;
+- diagnostic après le match (HIA2 le soir, HIA3 à 36-48 h) : 12 jours de repos
+  au moins, comptés en jours de calendrier ; exception au 7e jour seulement sans
+  antécédent (moins de 3 mois, 3 commotions sur 12 mois nouvelle comprise,
+  5 en carrière), hors critère 1, HIA3 revenu à la normale et avis favorable
+  d'un spécialiste indépendant. Décision médicale : aucun protocole générique.
+- Proportions : Fuller et al., Sports Medicine 2020
+  ([texte](https://eprints.whiterose.ac.uk/155999/)). Fréquence : hypothèse
+  prudente de 0,9 choc évalué par match (≈ 0,52 commotion confirmée par match,
+  ≈ 13 pour 1 000 heures-joueur). Non publiés, réglés à une chance sur deux :
+  HIA3 normal, avis favorable du spécialiste.
+- Non suivis : récupération de plus de 21 jours, seuil d'impact abaissé,
+  troubles psychologiques (autres cas d'antécédent du SCRM). Un joueur sans
+  remplaçant éligible à son poste n'est pas tiré au sort pour un choc.
+
+## Chrono des arrêts de jeu (18/11/2026)
+
+Vérifié le 18/11/2026 ; détail et mesures dans `docs/chrono-arrets-de-jeu-20261118.md`.
+
+- Loi 8.21 ([loi 8](https://passport.world.rugby/laws-of-the-game/laws-by-number/8-scoring/)) :
+  pénalité tentée au but dans les 60 s (temps de jeu) après l'annonce du tir,
+  sinon tir refusé et mêlée.
+- Loi 8.8c : transformation dans les 60 s (temps de jeu) après l'essai accordé.
+  C'était 90 s jusqu'en 2024 ; 60 s est un essai mondial de World Rugby
+  ([essais du 1er janvier 2025](https://passport.world.rugby/laws-of-the-game/laws-news/2025-01-global-law-trials/)),
+  repris dans le texte en ligne des lois.
+- Top 14 2026-2027 (LNR) : 45 s pour pénalités et transformations, chrono lancé
+  au bras levé de l'arbitre (annonce du calendrier 2026-2027 et mesures LNR
+  pour le temps de jeu effectif). Pro D2 : non vérifié, gardé à 60 s.
+- Loi 18.12 : alignement formé dans les 30 s après la marque ; mêlée prête dans
+  les 30 s (directives de 2023).
+- Temps de jeu effectif réel (Opta, rapport World Rugby) : Top 14 ≈ 33,6 min en
+  2025-2026 (34,5 en 2023-2024), Premiership ≈ 36,3 min (37,9), Super Rugby
+  ≈ 36,8 min. Le moteur ne distingue pas encore ballon vivant et ballon mort
+  dans une action : il ne prétend pas reproduire ce chiffre.
+- Moteur (`chronoVersion: 1`) : tir au but et transformation comptés au délai
+  de la compétition, plus la mise en place du renvoi ; pénaltouche : coup de
+  pied en touche et alignement. Le renvoi après des points se joue au moment
+  dû ; dû après la fin du temps réglementaire, il termine la période (loi 5).
+
+## Fin de période et prolongations (19/11/2026)
+
+Sources : [loi 5 — Durée](https://passport.world.rugby/fr/les-regles-du-jeu/regles-du-jeu-par-numero/5-duree-de-la-partie/)
+(déjà citée pour la version 10 ; non relue ce jour) et loi 8 (pénalité tentée au but).
+
+- Loi 5 : le temps écoulé, la période ne s'arrête qu'au ballon mort ; une
+  pénalité ou un coup franc accordé avant ou à la fin du temps est joué. Le
+  moteur le faisait déjà (`flowVersion: 1`) ; les rencontres créées avec
+  `endPeriodVersion: 1` le disent : sirène annoncée une fois par période
+  (mi-temps, fin du match, fin de chaque prolongation) si le ballon est vivant,
+  rien si un renvoi était dû (ballon mort : la période s'arrête).
+- Pénalité après la sirène : annoncée (« tente les poteaux pour la gagne »,
+  « joue la pénaltouche, dernière action »). Choix de simulation, consigne
+  « auto » seulement, dans la période qui décide du résultat : pas de tir au
+  but si trois points ne changent rien, sauf pour aller chercher le bonus
+  défensif ; les poteaux à moins de 40 m si trois points égalisent ou font
+  gagner. La consigne du manager (points, touche, à la main) prime. Le tir
+  réussi ou manqué et mort termine la période ; la pénaltouche est jouée.
+- Prolongations des phases finales Monde (règlement de chaque compétition,
+  inchangé) : horloge 80′–90′ puis 90′–100′ (arrêts de jeu « 90+2′ »),
+  annonces de début et de fin de chaque période avec le score, sirène et fin
+  sur ballon mort comme en temps réglementaire.
+- Tirs au but : séance commentée tir par tir à partir de la preuve enregistrée,
+  sans tirage ajouté ni changement du vainqueur ; critère de départage écrit en
+  français (essais marqués, pénalités réussies, drops, exclusions, tirs au but).
+- Non traité : coup franc après la sirène (le moteur n'en accorde pas), temps
+  mort de l'arbitre, prolongation « mort subite » des règlements qui en
+  prévoient une hors Pacific et Japon, chemin hérité hors Monde (« prolongation
+  simplifiée »). `tests/fin-de-periode.cjs`.

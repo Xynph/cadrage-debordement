@@ -5,7 +5,8 @@ const Editorial = preload("res://ui/entry_editorial.gd")
 
 static func _action(button: Button, primary: bool = false, height: int = 42) -> void:
 	Editorial.action(button, primary, false, height)
-	button.add_theme_font_override("font", Editorial.sans_bold() if primary else C.BODY)
+	# Même police condensée que les titres de la page (« Choisir sa réalité », « Jeu de base »).
+	button.add_theme_font_override("font", C.BOLD)
 
 static func missing_warning(app: Control, parent: Container, scope: String, paper: bool = false) -> void:
 	var messages: Array[String] = []
@@ -47,6 +48,13 @@ static func page(app: Control) -> Control:
 	_action(importing)
 	importing.disabled = app.waiting
 	top.add_child(importing)
+	# Packs abonnés sur le Steam Workshop : liste vide tant que Steamworks n'est pas configuré (steam/steam.json).
+	for workshop_pack in app.pack_manager.workshop_packs():
+		var subscribed := C.button("Workshop · " + str(workshop_pack.title), app.pack_manager.inspect.bind(str(workshop_pack.path)))
+		subscribed.name = "PackWorkshop" + str(workshop_pack.item_id)
+		_action(subscribed)
+		subscribed.disabled = app.waiting
+		top.add_child(subscribed)
 	var calendar := C.button("Atelier calendrier", func(): preload("res://ui/competition_editor_view.gd").open(app))
 	calendar.name = "OpenCompetitionEditor"
 	_action(calendar)
@@ -108,8 +116,21 @@ static func page(app: Control) -> Control:
 			_installed_card(app, pack_column, pack, selected, compatible, creation, false, 0)
 
 	page.add_child(C.rule())
+	# Pied de page : l'état à gauche, la place réservée à Gabi (« Gabi · ? », « Visite ») à droite, sous le filet,
+	# pour que ses boutons ne touchent jamais le filet du pied de page.
+	var footer := C.h(16)
+	footer.name = "PacksFooter"
+	page.add_child(footer)
 	app.status = C.wrap("Analyse en cours…" if app.waiting else "RUGBY LEGACY 27     /     Installation locale", 18)
-	page.add_child(app.status)
+	C.fill(app.status)
+	app.status.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	footer.add_child(app.status)
+	var slot := Control.new()
+	slot.name = "PacksGabiSlot"
+	slot.custom_minimum_size = Vector2(150, 34)
+	slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	footer.add_child(slot)
 	return page
 
 static func _empty(parent: Container, picture_height: float) -> void:
@@ -143,7 +164,7 @@ static func _section(parent: Container, caption: String, title: String, art: Str
 	inset.add_child(content)
 	var heading := C.h(14)
 	content.add_child(heading)
-	heading.add_child(C.fill(Editorial.sans_heading(title, 44)))
+	heading.add_child(C.fill(C.label(title, 52, C.IVORY, true, 700)))
 	if not caption.is_empty():
 		var badge := PanelContainer.new()
 		Editorial.surface(badge, Editorial.PANEL, Editorial.BRASS, 5)
@@ -165,7 +186,7 @@ static func _catalogue(app: Control, parent: Container, selected: String, compat
 	var facts := C.h(18)
 	content.add_child(facts)
 	var database: Dictionary = app.pack_manager.database()
-	_fact(facts, database.get("clubCount", 0), "Clubs")
+	_fact(facts, app.pack_manager.playable_club_count(app.pack_manager.scope), "Clubs jouables")
 	Editorial.divider(facts)
 	_fact(facts, database.get("startingPlayerCount", database.get("playerCount", 0)), "Joueurs")
 	content.add_child(C.rule())
@@ -186,7 +207,7 @@ static func _installed_card(app: Control, parent: Container, pack: Dictionary, s
 	var content := _section(parent, "Pack actif" if active else "Pack installé", str(pack.get("name", "Pack personnalisé")), "maquette-reality-pack", picture_height)
 	if featured:
 		content.add_child(C.wrap("Les identités et les médias fournis par ton pack, dans le monde commun de Rugby Legacy 27.", 21, C.IVORY))
-		_inventory(content, pack)
+		_inventory(content, pack, app.pack_manager.playable_club_count(app.pack_manager.scope))
 		content.add_child(C.rule())
 	else:
 		var counts: Dictionary = pack.get("counts", {})
@@ -222,12 +243,12 @@ static func _create_with_pack(app: Control, id: String) -> void:
 	else:
 		app._command("pack_select", {"id":id, "scope":"creation", "mode":app.pack_manager.mode("creation")}, "Création")
 
-static func _inventory(parent: VBoxContainer, pack: Dictionary) -> void:
+static func _inventory(parent: VBoxContainer, pack: Dictionary, playable_clubs: int = -1) -> void:
 	var counts: Dictionary = pack.get("counts", {})
 	parent.add_child(C.rule())
 	var tiles := C.h(12)
 	parent.add_child(tiles)
-	_fact(tiles, counts.get("clubs", 0), "Clubs")
+	_fact(tiles, playable_clubs if playable_clubs > 0 else counts.get("clubs", 0), "Clubs jouables")
 	Editorial.divider(tiles)
 	_fact(tiles, counts.get("players", 0), "Joueurs")
 	Editorial.divider(tiles)
@@ -250,7 +271,7 @@ static func _inventory(parent: VBoxContainer, pack: Dictionary) -> void:
 		parent.add_child(C.rule())
 		var line := C.h(16)
 		parent.add_child(line)
-		var label := Editorial.sans_heading(item[0], 20)
+		var label := C.label(item[0], 24, C.IVORY, true, 700)
 		label.custom_minimum_size.x = C.px(225)
 		line.add_child(label)
 		line.add_child(C.fill(C.wrap(item[1], 19, C.IVORY)))
@@ -259,8 +280,7 @@ static func _fact(parent: Container, value: Variant, caption: String) -> void:
 	var line := C.h(8)
 	C.fill(line)
 	parent.add_child(line)
-	var number := Editorial.sans_heading(G.n(value), 29)
-	number.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var number := C.label(G.n(value), 36, C.IVORY, true, 700)
 	number.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	line.add_child(number)
 	var label := C.wrap(caption, 22, C.IVORY)
@@ -269,7 +289,7 @@ static func _fact(parent: Container, value: Variant, caption: String) -> void:
 
 static func _preview(app: Control, parent: Container, pack: Dictionary) -> void:
 	var content := _section(parent, "Prêt à installer", str(pack.get("name", "Pack personnalisé")))
-	_inventory(content, pack)
+	_inventory(content, pack, app.pack_manager.playable_club_count(app.pack_manager.scope))
 	content.add_child(C.wrap("L’installation ajoute le pack à ton profil. Tu pourras ensuite le sélectionner."))
 	if pack.get("rightsStatus", "") == "not-cleared-for-public-distribution":
 		content.add_child(C.wrap("Droits de redistribution publique des photos et logos à vérifier séparément."))

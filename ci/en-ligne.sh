@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Lance les tests lourds sur GitHub Actions quand le PC de Léo est indisponible.
 # Usage : bash ci/en-ligne.sh --ref <branche> [--suites "a b"] [--captures [intro,finitions,fiche-club,
-#   feuille-espoir,match-rendu,comparateur,audio,reception,reception-medicale,creation,derby,avis-staff,meteo,banque-images,prolongations-staff,investissements,sante,proprietaire,regles-financieres,equipe,pilotage,vestiaire]] [--mesures]   (--captures seul = toutes les captures)
+#   feuille-espoir,match-rendu,comparateur,audio,reception,reception-medicale,creation,derby,avis-staff,meteo,presse,banque-images,prolongations-staff,investissements,sante,proprietaire,regles-financieres,equipe,pilotage,vestiaire,dilemmes,centre]] [--mesures]   (--captures seul = toutes les captures)
 #         bash ci/en-ligne.sh --menage   (supprime les branches en-ligne/* et tmp/* de plus d'un jour)
 # Le workflow a-la-demande.yml doit exister sur main (limite de workflow_dispatch).
 # Dispatch refusé (403/404 du proxy) : repli par push d'une branche en-ligne/<horodatage>

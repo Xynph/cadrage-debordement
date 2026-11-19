@@ -209,7 +209,7 @@ func _table(group: String, people: Array) -> void:
 		var key: String = column[3]
 		var caption := str(column[0]) + ((" ↓" if state.get("table_descending",false) else " ↑") if state.get("table_sort","source")==key else "")
 		var action := _action(header,Rect2(column[1],0,column[2],34),caption,_sort_by.bind(key),false,"","AcademySort_"+key)
-		action.add_theme_font_size_override("font_size",C.px(16))
+		action.add_theme_font_size_override("font_size",maxi(12,C.px(16)))
 		action.tooltip_text = "Trier " + str(column[0]) + " · valeurs inconnues en dernier"
 		for mode in ["normal","hover","pressed","disabled","focus"]:
 			var style := action.get_theme_stylebox(mode).duplicate() as StyleBox
@@ -609,7 +609,7 @@ static func _option(id: String, caption: String, choices: Dictionary, chosen: Va
 	control.fit_to_longest_item = false
 	control.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	control.add_theme_font_override("font", C.DISPLAY)
-	control.add_theme_font_size_override("font_size", C.px(22))
+	control.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
 	control.add_theme_color_override("font_color", C.IVORY)
 	control.add_theme_color_override("font_hover_color", C.IVORY)
 	control.add_theme_stylebox_override("normal", C.box(Color("101819"), C.LINE, 5, 11))
@@ -618,7 +618,7 @@ static func _option(id: String, caption: String, choices: Dictionary, chosen: Va
 	var menu := control.get_popup()
 	menu.add_theme_stylebox_override("panel", C.box(C.PANEL, C.LINE, 5, 10))
 	menu.add_theme_font_override("font", C.DISPLAY)
-	menu.add_theme_font_size_override("font_size", C.px(22))
+	menu.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
 	menu.add_theme_color_override("font_color", C.IVORY)
 	menu.add_theme_color_override("font_hover_color", C.IVORY)
 	for key: Variant in choices:

@@ -18,9 +18,15 @@ extends RefCounted
 ## Les rôles sans équivalent dans le moteur (sauteur, porteurs, lanceur) sont
 ## distribués par poste, comme la passe en direct choisit son passeur.
 ## Tout est procédural sur le squelette CC0 existant : aucune ressource ajoutée.
+##
+## « Touche seule » (`touche_seule`, 18/11/2026) : le direct sans gestes garde la touche
+## elle-même (alignement, lancer du talonneur, sauteur porté qui capte) et rien d'autre : ni
+## sortie en touche, ni coupe vers les autres remises en jeu, ni ballon porté, ni essai, ni
+## recadrage. La vue l'utilise quand les gestes complets ne sont pas posés.
 
 const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
+const ApresEssai = preload("res://match_apres_essai.gd")
 
 const FORM := 2.0          # instant du geste où l'alignement est en place ; la mise en place commence avant (temps négatif)
 const FORM_MIN := 1.2      # durée minimale d'une course de mise en place
@@ -80,7 +86,10 @@ const OUTRO := 0.45
 const FRAME_IN := 1.5      # rapprochement, en secondes
 const FRAME_OUT := 1.8     # retour au cadrage normal
 const FRAME_SMOOTH := 0.6  # amortissement du centre et de la taille entre deux temps du geste
-const FRAME_MIN := {"tv": 26.0, "action": 14.0}  # hauteur visible minimale, en mètres (TV : 15 m, 11 m avant le 12 novembre 2026)
+# Hauteur visible minimale, en mètres (TV : 11 m, puis 15 m le 12 novembre 2026, 26 m avec la caméra en
+# perspective, 15 m le 19 novembre 2026 au soir avec la vue TV plus basse et plus serrée : égale au bas
+# du cadrage de base, SUIVI de match_cadrage.gd, comme avant).
+const FRAME_MIN := {"tv": 15.0, "action": 14.0}
 const FRAME_MARGIN := 1.2
 # Pendant le retour, si le suivi d'origine part en panoramique rapide (ballon
 # renvoyé au centre après un essai : 100 m/s), le recadrage cède aussitôt la place
@@ -102,6 +111,8 @@ const SAUT_DEBUT := 0.19
 const SAUT_VITESSE := 0.4
 
 var view
+## Touche seule (direct sans gestes) : voir l'en-tête.
+var touche_seule := false
 var phase := ""
 var time := 0.0
 var done := true
@@ -153,7 +164,46 @@ var _fin_essai := false
 # Marqueur qui se relève (clip adapté) : sa pose de plongeon s'efface pendant le relevé.
 var _releve := ""
 var _celebre_a := 0.0
+var _releve_duree := 0.45
 const JOY_HOLD := 2.6       # avec les clips adaptés : le temps de voir la joie avant la transformation
+# Après l'essai (19 novembre 2026, match filmé : marqueur couché seul, deux bras levés, 28 joueurs
+# immobiles pendant une quinzaine de secondes). Jusqu'à la coupe vers la transformation, la scène
+# vit : APRES_DEPART s après l'aplati, FELICITE_MAX partenaires (au moins FELICITE_MIN, choisis dans
+# FELICITE_RAYON m) courent, bras levés, se regrouper autour du marqueur ; les défenseurs rentrent
+# en marchant, buste penché (TETE_BASSE rad), vers leur en-but, sous leurs poteaux (places de la
+# transformation, loi 8 : match_apres_essai.gd) ; les autres partenaires fêtent sur place puis
+# regagnent tranquillement leur place derrière la marque du buteur. Allure de marche MARCHE m/s
+# (± MARCHE_ECART selon le joueur), mise en marche en ELAN_MARCHE s, départ échelonné (MARCHE_DEPART,
+# JOIE_SUR_PLACE pour ceux qui ont levé les bras). L'élan d'avant est gardé GLISSE s (GLISSE_MAX m/s
+# au plus). Sans clip de relevé (bibliothèque absente), le marqueur reste allongé COUCHE s (fin du
+# geste pour la régie), puis se relève en RELEVE s (genoux pliés de RELEVE_PLIE m à mi-chemin), lève
+# les bras et se tourne vers ses partenaires. CELEBRATION : durée de la scène (repère des contrôles).
+const APRES_DEPART := 0.3
+const COUCHE := 1.6
+const RELEVE := 0.9
+const RELEVE_PLIE := 0.3
+const FELICITE_MAX := 4
+const FELICITE_MIN := 3
+const FELICITE_RAYON := 25.0
+const MARCHE := 1.7
+const MARCHE_ECART := 0.25
+const MARCHE_DEPART := [0.2, 1.4]
+const JOIE_SUR_PLACE := [2.0, 3.2]
+const ELAN_MARCHE := 0.5
+const GLISSE := 0.4
+const GLISSE_MAX := 4.0
+const TETE_BASSE := 0.24
+const CELEBRATION := 4.5
+const APRES_ROLES := ["felicite", "repli", "replace"]
+# Contournement du groupe du marqueur (19/11/2026, film : des défenseurs qui rentraient traversaient
+# le groupe). Un défenseur qui rentre ne passe jamais à moins de GROUPE_DEGAGEMENT m des places autour
+# du marqueur (ApresEssai.AUTOUR) : son chemin s'incurve (GROUPE_APPROCHE fois le rayon avant le
+# groupe) et le contourne du côté où il passait déjà. Déjà trop près au départ, il s'écarte en
+# GROUPE_ECART s (aucun saut).
+const GROUPE_DEGAGEMENT := 1.5
+const GROUPE_APPROCHE := 3.0
+const GROUPE_ECART := 0.6
+var _apres := false
 var _saved: Dictionary = {}
 var _outro: Dictionary = {}
 var _dt := 1.0 / 60.0
@@ -179,8 +229,9 @@ var _zoom_size_speed := 0.0
 var _zoom_focus := Vector3.ZERO
 
 
-func _init(owner: Node3D) -> void:
+func _init(owner: Node3D, seulement_touche: bool = false) -> void:
 	view = owner
+	touche_seule = seulement_touche
 
 
 func active() -> bool:
@@ -211,6 +262,10 @@ func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: boo
 		return
 	if not new_action:
 		return
+	if touche_seule and kind not in ["lineout", "setpiece-win", "setpiece-loss"]:
+		# Direct sans gestes : tout autre fait rend la main à la vue.
+		cancel()
+		return
 	var holder_before := _holder
 	_holder = Presentation.carrier_id(scene)
 	var possession := int(scene.get("possession", -1))
@@ -236,11 +291,16 @@ func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: boo
 				_align(_last_lineout, thrown_by)
 		if phase == "touche":
 			# Ballon porté : combinaison jouée, ou ballon porté formé après la prise (fait « porte » du moteur).
-			_resolve(scene, team, featured, kind == "setpiece-win" and (str(record.get("move", "")) == "maul" or record.get("porte", false) == true), record.get("porte", false) == true)
+			# Touche seule : jamais de ballon porté, le sauteur garde le ballon jusqu'au fait suivant.
+			var porte: bool = not touche_seule and kind == "setpiece-win" and (str(record.get("move", "")) == "maul" or record.get("porte", false) == true)
+			_resolve(scene, team, featured, porte, porte and record.get("porte", false) == true)
 		_velocity.clear()
 		return
 	var approaching := phase == "approche"
 	cancel()
+	if touche_seule and kind != "lineout":
+		_velocity.clear()
+		return
 	if kind == "lineout":
 		_align(scene, team)
 	elif kind == "touch" or (kind == "advantage" and approaching):
@@ -277,6 +337,8 @@ func cancel() -> void:
 	_lancer_adapte = false
 	_fin_essai = false
 	_releve = ""
+	_releve_duree = 0.45
+	_apres = false
 	done = true
 	_ball_ready = false
 
@@ -346,11 +408,40 @@ func advance(delta: float) -> void:
 		if time >= peel and not dive_set:
 			_set_dive(view._actors[carrier].node.position, true)
 		var aplati := maxf(drive, peel + dive_seconds)
-		if time >= aplati + 0.3: _celebrer()
-		done = time >= aplati + (JOY_HOLD if _fin_essai else 1.6)
+		_apres_essai(aplati)
+		done = time >= aplati + (JOY_HOLD if _fin_essai else COUCHE)
 	elif phase == "essai":
-		if time >= pass_at + drive + 0.3: _celebrer()
-		done = time >= pass_at + drive + (JOY_HOLD if _fin_essai else 1.6)
+		var aplati := pass_at + drive
+		_apres_essai(aplati)
+		done = time >= aplati + (JOY_HOLD if _fin_essai else COUCHE)
+
+
+## Après l'aplati : la scène d'après-essai part (partenaires, défenseurs, autres), puis la joie
+## adaptée (clips) ; sans clip de relevé, le marqueur se relève seul après COUCHE s.
+func _apres_essai(aplati: float) -> void:
+	if time >= aplati + APRES_DEPART: _lancer_apres()
+	if time >= aplati + 0.3: _celebrer()
+	if _releve.is_empty() and time >= aplati + COUCHE and view._actors.has(carrier):
+		_releve = carrier
+		_celebre_a = time
+		_releve_duree = RELEVE
+
+
+## Relevé du marqueur (0 allongé, 1 debout).
+func _rise() -> float:
+	return smoothstep(_celebre_a, _celebre_a + _releve_duree, time) if _releve == carrier and not carrier.is_empty() else 0.0
+
+
+## Relevé procédural (sans clip) : genoux pliés à mi-chemin.
+func _rise_dip(rise: float) -> float:
+	return RELEVE_PLIE * sin(rise * PI) if _releve_duree > 0.5 else 0.0
+
+
+## Debout, le marqueur se tourne vers le terrain (ses partenaires arrivent de ce côté).
+func _turn_scorer(heading: float) -> float:
+	if _releve != carrier or carrier.is_empty():
+		return heading
+	return lerp_angle(heading, atan2(-dir, 0.0), smoothstep(_celebre_a + _releve_duree * 0.6, _celebre_a + _releve_duree + 0.8, time))
 
 
 func restore(id: String, entry: Dictionary) -> void:
@@ -375,6 +466,10 @@ func place(id: String, actor: Node3D) -> void:
 	var before := actor.position
 	if member.role == "walk":
 		_walk(id, member, actor)
+		_velocity[id] = (actor.position - before) / maxf(_dt, 0.001)
+		return
+	if member.role in APRES_ROLES:
+		_place_apres(id, member, actor)
 		_velocity[id] = (actor.position - before) / maxf(_dt, 0.001)
 		return
 	match phase:
@@ -419,7 +514,7 @@ func place(id: String, actor: Node3D) -> void:
 				actor.position = dive_from.lerp(dive_to, k)
 				var line := dive_to - dive_from
 				var around := lerp_angle(facing, atan2(line.x, line.z), smoothstep(0.0, 0.25, k))
-				actor.rotation.y = lerp_angle(around, atan2(dive_axis.x, dive_axis.z), smoothstep(0.4, 0.7, k))
+				actor.rotation.y = _turn_scorer(lerp_angle(around, atan2(dive_axis.x, dive_axis.z), smoothstep(0.4, 0.7, k)))
 			else:
 				actor.position = spot
 				actor.rotation.y = facing
@@ -445,7 +540,7 @@ func place(id: String, actor: Node3D) -> void:
 			var line := dive_to - dive_from
 			var start_heading := heading_from if giver.is_empty() else atan2(dir, 0.0)
 			var run := lerp_angle(start_heading, atan2(line.x, line.z), smoothstep(0.0, 0.25, run_time))
-			actor.rotation.y = lerp_angle(run, atan2(dive_axis.x, dive_axis.z), smoothstep(0.5, 0.8, k))
+			actor.rotation.y = _turn_scorer(lerp_angle(run, atan2(dive_axis.x, dive_axis.z), smoothstep(0.5, 0.8, k)))
 
 
 ## Corps, bras et ballon ; appelé après l'animation source et avant les prises.
@@ -461,8 +556,12 @@ func pose() -> void:
 	match phase:
 		"touche": _pose_touche()
 		"maul": _pose_maul()
-		"essai_maul": _pose_maul_try()
-		"essai": _pose_try()
+		"essai_maul":
+			_pose_maul_try()
+			_pose_apres()
+		"essai":
+			_pose_try()
+			_pose_apres()
 
 
 ## Cadrage de la caméra suivie pendant un geste. Reçoit le point visé et la
@@ -471,7 +570,7 @@ func pose() -> void:
 ## sortie lissées et une cible amortie. Hors geste et rampe retombée, rend
 ## exactement les valeurs reçues.
 func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, mode: String, delta: float) -> Array:
-	if not FRAME_MIN.has(mode):
+	if not FRAME_MIN.has(mode) or touche_seule:
 		reset_framing()
 		return [focus, size, offset]
 	var wanted := active() and phase not in ["approche", "reprise"]
@@ -564,12 +663,19 @@ func _frame_points() -> Array[Vector3]:
 			if not giver.is_empty() and time < pass_at + 0.6:
 				ground.append(giver_from)
 				ground.append(view._actors[carrier].node.position if view._actors.has(carrier) else dive_from)
-			ground.append(dive_from)
+			# Après l'essai, le départ de la course quitte peu à peu le cadre : il se resserre sur le groupe.
+			ground.append(dive_from.lerp(dive_to, smoothstep(pass_at + drive, pass_at + drive + 3.0, time)))
 			ground.append(target)
 			ground.append(Vector3(dir * 52.5, 0.0, target.z))
 			for id: String in cheer:
-				if view._actors.has(id) and (view._actors[id].target as Vector3).distance_to(target) < 12.0:
+				if view._actors.has(id) and (view._actors[id].target as Vector3).distance_to(target) < 12.0 and not cast.has(id):
 					ground.append(view._actors[id].target)
+	if phase in ["essai", "essai_maul"] and _apres:
+		# Les partenaires qui accourent vers le marqueur, ajoutés en douceur (aucun saut du cadrage).
+		var centre: Vector3 = view._actors[carrier].node.position if view._actors.has(carrier) else target
+		for id: String in cast:
+			if cast[id].role == "felicite" and view._actors.has(id):
+				ground.append(centre.lerp(view._actors[id].node.position, smoothstep(0.0, 1.0, float(cast[id].t))))
 	var points: Array[Vector3] = []
 	for point: Vector3 in ground:
 		points.append(Vector3(point.x, 0.0, point.z))
@@ -718,17 +824,18 @@ func _pose_maul_try() -> void:
 		if id == carrier or cast[id].role == "walk":
 			continue
 		_bind(id, push)
-		if joy > 0.0 and cast[id].team == side and not _adapte(id):
+		# Après l'essai, la joie de ceux qui restent ou accourent est posée par _pose_apres.
+		if joy > 0.0 and cast[id].team == side and not _adapte(id) and cast[id].role not in APRES_ROLES:
 			_cheer(id, joy)
 	var dive := smoothstep(0.55, 1.0, (time - peel) / dive_seconds) if dive_set else 0.0
-	var rise := smoothstep(_celebre_a, _celebre_a + 0.45, time) if _releve == carrier else 0.0
+	var rise := _rise()
 	if dive <= 0.0:
 		# Le marqueur quitte sa posture de poussée en douceur avant de se détacher.
 		_ease_body(carrier, 0.2, 0.0)
 		_push_legs(carrier, 1.0 - smoothstep(peel, peel + 0.35, time) if dive_set else 1.0)
 	else:
 		var member: Dictionary = cast[carrier]
-		_body(carrier, lerpf(float(member.get("lean_now", 0.2)), 1.42, dive) * (1.0 - rise), (lerpf(float(member.get("crouch_now", 0.0)), 0.14, dive) + sin(dive * PI) * 0.3) * (1.0 - rise))
+		_body(carrier, lerpf(float(member.get("lean_now", 0.2)), 1.42, dive) * (1.0 - rise), (lerpf(float(member.get("crouch_now", 0.0)), 0.14, dive) + sin(dive * PI) * 0.3) * (1.0 - rise) - _rise_dip(rise))
 	var scorer: Dictionary = view._actors[carrier]
 	var anchor := Presentation.ball_anchor(scorer.node, scorer.rig)
 	var held := anchor
@@ -744,9 +851,10 @@ func _pose_try() -> void:
 	var ball: Node3D = view._ball
 	var run_time := time - pass_at
 	var dive := smoothstep(drive - 0.42, drive, run_time)
-	# Relevé du clip adapté : la pose de plongeon s'efface pendant qu'il se redresse.
-	var rise := smoothstep(_celebre_a, _celebre_a + 0.45, time) if _releve == carrier else 0.0
-	_body(carrier, 1.42 * dive * (1.0 - rise), (0.14 * dive + sin(dive * PI) * 0.3) * (1.0 - rise))
+	# Relevé du clip adapté : la pose de plongeon s'efface pendant qu'il se redresse (sans clip :
+	# relevé procédural, genoux pliés à mi-chemin).
+	var rise := _rise()
+	_body(carrier, 1.42 * dive * (1.0 - rise), (0.14 * dive + sin(dive * PI) * 0.3) * (1.0 - rise) - _rise_dip(rise))
 	var scorer: Dictionary = view._actors[carrier]
 	var anchor := Presentation.ball_anchor(scorer.node, scorer.rig)
 	if not giver.is_empty() and view._actors.has(giver):
@@ -770,7 +878,7 @@ func _pose_try() -> void:
 	var joy := smoothstep(drive + 0.3, drive + 0.75, run_time)
 	if joy > 0.0:
 		for id: String in cheer:
-			if view._actors.has(id) and not _adapte(id):
+			if view._actors.has(id) and not _adapte(id) and not (cast.has(id) and cast[id].role in APRES_ROLES):
 				_cheer(id, joy)
 
 
@@ -1308,6 +1416,9 @@ func _celebrer() -> void:
 	if _fin_essai or not view.has_method("jouer_geste"):
 		return
 	_fin_essai = true
+	# Sans aucun clip lancé, l'appel se répète à chaque image : l'instant du relevé procédural
+	# (_apres_essai) ne doit pas être repoussé à chaque fois, sinon le marqueur reste couché.
+	var avant := _celebre_a
 	_celebre_a = time
 	var lances := 0
 	if view.jouer_geste(carrier, "se_relever", 0.2, 1.75, true, [["joie_poing", 0.3, 2.4]]):
@@ -1325,6 +1436,9 @@ func _celebrer() -> void:
 			mates.append(pair[1])
 	var n := 0
 	for id: String in mates:
+		# Partenaire qui accourt vers le marqueur : sa joie part à l'arrivée (_pose_apres).
+		if cast.has(id) and cast[id].role == "felicite":
+			continue
 		if view._actors.has(id) and view.jouer_geste(id, "joie" if n % 2 == 0 else "joie_poing", 0.35 if n % 2 == 0 else 0.4, 3.2 if n % 2 == 0 else 2.4):
 			lances += 1
 		n += 1
@@ -1338,6 +1452,231 @@ func _celebrer() -> void:
 		if view.jouer_geste(pair[1], "deception", 0.3, 3.0, true):
 			lances += 1
 	_fin_essai = lances > 0
+	if not _fin_essai:
+		_celebre_a = avant
+
+
+## Scène d'après-essai (voir APRES_DEPART) : partenaires vers le marqueur, défense vers son en-but,
+## les autres vers leur place de la transformation. Tous restent mis en scène jusqu'au fait suivant.
+func _lancer_apres() -> void:
+	if _apres or not view._actors.has(carrier):
+		return
+	_apres = true
+	var scorer: Vector3 = view._actors[carrier].node.position
+	var centre := Vector3(scorer.x, 0.0, scorer.z)
+	# Places de la transformation (repère du moteur), marque dans l'axe du point d'essai.
+	var joueurs: Array = []
+	for id: String in view._actors:
+		var at: Vector3 = view._actors[id].node.position
+		joueurs.append({"id": id, "side": int(view._actors[id].side), "x": at.x + 50.0, "y": at.z + 35.0})
+	var places := ApresEssai.places(joueurs, side, ApresEssai.marque(side, target.z + 35.0), carrier)
+	# Partenaires les plus proches du marqueur : FELICITE_MAX dans FELICITE_RAYON m, au moins FELICITE_MIN.
+	var proches: Array = []
+	for id: String in view._actors:
+		if id != carrier and int(view._actors[id].side) == side and is_instance_valid(view._actors[id].rig):
+			proches.append([(view._actors[id].node.position as Vector3).distance_to(centre), id])
+	proches.sort()
+	var mates: Array = []
+	for paire: Array in proches:
+		if mates.size() < FELICITE_MAX and (float(paire[0]) <= FELICITE_RAYON or mates.size() < FELICITE_MIN):
+			mates.append(str(paire[1]))
+	var slots: Array[Vector3] = ApresEssai.autour(centre, dir, mates.size())
+	var libres: Array = range(slots.size())
+	var rang := 0
+	for id: String in mates:
+		# Place libre la plus proche : personne ne traverse le groupe.
+		var at: Vector3 = view._actors[id].node.position
+		var choix := 0
+		for k in libres.size():
+			if (slots[libres[k]] as Vector3).distance_to(at) < (slots[libres[choix]] as Vector3).distance_to(at):
+				choix = k
+		var slot: Vector3 = slots[libres[choix]]
+		libres.remove_at(choix)
+		var joie := _joie_actuelle(id)
+		_reprendre(id, "felicite", slot, atan2(centre.x - slot.x, centre.z - slot.z), PACE_BACK)
+		cast[id].joie0 = joie
+		cast[id].rang = rang
+		rang += 1
+		# Il court rejoindre le marqueur : il quitte ses applaudissements ou sa joie sur place.
+		if view.has_method("arreter_geste"):
+			view.arreter_geste(id)
+		_plan(id, cast[id])
+	for id: String in view._actors:
+		if id == carrier or cast.has(id) and cast[id].role in APRES_ROLES or not is_instance_valid(view._actors[id].rig):
+			continue
+		if not places.has(id):
+			continue
+		var ou: Vector2 = places[id]
+		var mark := Vector3(ou.x - 50.0, 0.0, ou.y - 35.0)
+		var camp := int(view._actors[id].side)
+		var graine := absi(id.hash())
+		var joie := _joie_actuelle(id) if camp == side else 0.0
+		var marque_tir := ApresEssai.marque(side, target.z + 35.0)
+		var vise := Vector3(marque_tir.x - 50.0, 0.0, marque_tir.y - 35.0)
+		_reprendre(id, "repli" if camp != side else "replace", mark, atan2(vise.x - mark.x, vise.z - mark.z), MARCHE)
+		var member: Dictionary = cast[id]
+		member.joie0 = joie
+		if camp != side:
+			# Défenseur qui rentre : il contourne le groupe du marqueur (_contourner).
+			member.evite = centre
+			member.evite_cote = 0.0
+		var bornes: Array = JOIE_SUR_PLACE if joie > 0.05 else MARCHE_DEPART
+		member.wait = lerpf(float(bornes[0]), float(bornes[1]), float(graine % 100) / 99.0)
+		member.allure = MARCHE + MARCHE_ECART * (float(int(graine / 100.0) % 21) / 10.0 - 1.0)
+		var elan: Vector3 = _velocity.get(id, view._actors[id].get("velocity", Vector3.ZERO))
+		elan.y = 0.0
+		member.glisse = elan.limit_length(GLISSE_MAX)
+
+
+## Poids des bras levés d'un partenaire à l'instant (essai : les trois plus proches ; ballon
+## porté : les liés de l'équipe), pour que sa joie continue sans saut.
+func _joie_actuelle(id: String) -> float:
+	if phase == "essai":
+		return smoothstep(drive + 0.3, drive + 0.75, time - pass_at) if id in cheer else 0.0
+	if phase == "essai_maul" and cast.has(id) and cast[id].team == side and cast[id].role not in ["walk", "tail"] and id != carrier:
+		return smoothstep(drive + 0.25, drive + 0.7, time)
+	return 0.0
+
+
+## Nouveau rôle d'après-essai, depuis la place et la posture du moment (aucun saut de pose).
+func _reprendre(id: String, role: String, mark: Vector3, facing: float, peak: float) -> void:
+	var avant: Dictionary = cast.get(id, {})
+	_enlist(id, role, mark, facing, int(view._actors[id].side), peak)
+	for cle in ["pitch", "lift", "lean_now", "crouch_now"]:
+		if avant.has(cle):
+			cast[id][cle] = avant[cle]
+
+
+## Place d'un joueur de la scène d'après-essai.
+func _place_apres(id: String, member: Dictionary, actor: Node3D) -> void:
+	var t := float(member.t)
+	var voulu := actor.rotation.y
+	if member.role == "felicite":
+		actor.position = _run(member, member.mark)
+		var reste: Vector3 = member.mark - actor.position
+		voulu = atan2(reste.x, reste.z) if Vector2(reste.x, reste.z).length() > 0.4 else float(member.facing)
+	else:
+		var precedente := actor.position
+		var attente := float(member.wait)
+		if view.geste_adapte(id) and t <= attente + 0.05:
+			# Geste en cours (déception, applaudissements) : il reste sur place, puis rentre.
+			member.wait = t
+			actor.position = _contourner(member, actor.position, t)
+			member.from = actor.position
+			member.glisse = Vector3.ZERO
+			return
+		var marche := maxf(0.0, t - attente)
+		var trajet: Vector3 = member.mark - member.from
+		trajet.y = 0.0
+		var longueur := trajet.length()
+		var fait := minf(longueur, float(member.allure) * (marche - ELAN_MARCHE * (1.0 - exp(-marche / ELAN_MARCHE))))
+		var glisse: Vector3 = (member.glisse as Vector3) * GLISSE * (1.0 - exp(-t / GLISSE))
+		var droit: Vector3 = member.from + (trajet / longueur * fait if longueur > 0.01 else Vector3.ZERO) + glisse
+		actor.position = _contourner(member, droit, t)
+		if marche > 0.05 and fait < longueur - 0.05:
+			# En contournant le groupe : il regarde où il va (tangente), pas à travers le groupe.
+			var pas: Vector3 = actor.position - precedente
+			pas.y = 0.0
+			voulu = atan2(pas.x, pas.z) if pas.length() > 0.2 * _dt and not actor.position.is_equal_approx(droit) else atan2(trajet.x, trajet.z)
+		elif marche > 0.05:
+			voulu = float(member.facing)
+	# Rotation bornée (3,5 rad/s) : jamais de volte-face instantanée.
+	actor.rotation.y += clampf(angle_difference(actor.rotation.y, voulu), -3.5 * _dt, 3.5 * _dt)
+
+
+## Rayon du cercle que les défenseurs qui rentrent laissent libre autour du marqueur (m).
+static func rayon_groupe() -> float:
+	return ApresEssai.AUTOUR + GROUPE_DEGAGEMENT
+
+
+## Point `p` d'un défenseur qui rentre, écarté du groupe du marqueur (member.evite) : il est décalé de
+## côté (perpendiculairement à son trajet), du côté où il passait déjà, d'un écart en cloche
+## (cos², sur GROUPE_APPROCHE fois le rayon avant et après le groupe) qui enveloppe le cercle du
+## groupe. Son chemin s'incurve donc tôt et en douceur (pente au plus π / (2 × GROUPE_APPROCHE)),
+## sans saut ni accélération. `t` : temps de la scène (écart progressif s'il démarre déjà dedans).
+func _contourner(member: Dictionary, p: Vector3, t: float) -> Vector3:
+	if not member.has("evite"):
+		return p
+	var centre: Vector3 = member.evite
+	var trajet: Vector3 = member.mark - member.from
+	trajet.y = 0.0
+	var d := trajet.normalized() if trajet.length() > 0.05 else Vector3(1.0, 0.0, 0.0)
+	var n := Vector3(-d.z, 0.0, d.x)
+	var q := p - centre
+	q.y = 0.0
+	var a := q.dot(d)
+	var b := q.dot(n)
+	var r := rayon_groupe() + 0.1
+	var portee := r * GROUPE_APPROCHE
+	if absf(a) >= portee:
+		return p
+	var enveloppe := r * pow(cos(PI * 0.5 * a / portee), 2.0)
+	if absf(b) >= enveloppe:
+		return p
+	if is_zero_approx(float(member.get("evite_cote", 0.0))):
+		# Côté choisi à l'approche : celui où il passait déjà (sinon le côté du milieu du terrain).
+		member.evite_cote = signf(b) if absf(b) > 0.01 else (1.0 if n.dot(Vector3(-signf(centre.x), 0.0, 0.0)) >= 0.0 else -1.0)
+	var cote := float(member.evite_cote)
+	var voulu := cote * maxf(cote * b, enveloppe)
+	return p + n * (voulu - b) * smoothstep(0.0, GROUPE_ECART, t)
+
+
+## Postures de la scène d'après-essai : joie des partenaires, tête basse des défenseurs, marqueur
+## debout qui lève les bras (sans clip).
+func _pose_apres() -> void:
+	if not _apres:
+		return
+	for id: String in cast:
+		var member: Dictionary = cast[id]
+		if member.role not in APRES_ROLES or not view._actors.has(id):
+			continue
+		var t := float(member.t)
+		match member.role:
+			"repli":
+				if not _adapte(id):
+					_tete_basse(id, smoothstep(float(member.wait), float(member.wait) + 0.8, t))
+			"replace":
+				var joie := float(member.get("joie0", 0.0))
+				if joie > 0.05 and not _adapte(id):
+					_cheer(id, lerpf(joie, 1.0, smoothstep(0.0, 0.35, t)) * (1.0 - smoothstep(float(member.wait) - 0.4, float(member.wait), t)))
+			"felicite":
+				var form := float(member.form)
+				var pres := t >= form
+				if pres and not member.get("joie_lancee", false):
+					member.joie_lancee = true
+					# Bibliothèque adaptée : joie ou poing levé à l'arrivée.
+					var pair := int(member.get("rang", 0)) % 2 == 0
+					view.jouer_geste(id, "joie" if pair else "joie_poing", 0.35 if pair else 0.4, 3.2 if pair else 2.4)
+				if _adapte(id):
+					continue
+				# Il accourt bras levés ; arrivé, un sur deux tape dans le dos du marqueur.
+				var leve := lerpf(float(member.get("joie0", 0.0)), 1.0, smoothstep(0.0, 0.35, t))
+				var tape := smoothstep(form + 0.6, form + 1.0, t) if int(member.get("rang", 0)) % 2 == 1 else 0.0
+				if tape > 0.0 and view._actors.has(carrier):
+					var dos: Vector3 = (view._actors[carrier].node as Node3D).global_position + Vector3.UP * 1.45
+					var actor: Node3D = view._actors[id].node
+					var lateral := actor.global_basis.x.normalized() * 0.18
+					_arms(id, dos + lateral, dos - lateral, tape, false)
+				_cheer(id, leve * (1.0 - tape))
+	# Marqueur debout (relevé procédural) : bras levés, puis à hauteur d'épaules quand on le félicite.
+	if _releve == carrier and _releve_duree > 0.5 and not _adapte(carrier) and view._actors.has(carrier):
+		var debout := _celebre_a + _releve_duree
+		_cheer(carrier, smoothstep(debout - 0.1, debout + 0.4, time) * (1.0 - 0.7 * smoothstep(debout + 1.6, debout + 2.2, time)))
+
+
+## Défenseur qui rentre : buste et tête penchés vers l'avant.
+func _tete_basse(id: String, weight: float) -> void:
+	if weight <= 0.0:
+		return
+	_bend(id, TETE_BASSE * weight)
+	var entry: Dictionary = view._actors[id]
+	var rig: Skeleton3D = entry.rig
+	var axis := (rig.global_basis.inverse() * (entry.node as Node3D).global_basis.x).normalized()
+	for bone in ["Neck", "Head"]:
+		var index := rig.find_bone(bone)
+		if index >= 0:
+			_keep(id, entry, [bone])
+			Presentation._orient(rig, index, Basis(Quaternion(axis, 0.22 * weight)) * rig.get_bone_global_pose(index).basis, 1.0)
 
 
 func _adapte(id: String) -> bool:

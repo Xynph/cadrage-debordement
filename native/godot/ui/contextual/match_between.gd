@@ -36,6 +36,8 @@ signal levier_choisi(route: String)
 signal score_joue(score: Array)
 ## Caméra du direct 3D choisie dans le menu Plus (« tv », « tactical », « action »).
 signal camera_demandee(mode: String)
+## Consigne de fin de match choisie dans la tuile Bonus ({attack, defense, penalty}, commandes existantes).
+signal consigne_bonus(consigne: Dictionary)
 ## Bande de la vue du match (sous le score) qui porte la barre de commandes, la même en 3D et
 ## pendant l'entracte ; sans elle, la barre reste en haut de l'écran intermédiaire.
 var hote_barre: Control
@@ -74,6 +76,10 @@ var domination: Domination
 var arret: PanelContainer
 var arret_titre: Label
 var arret_texte: Label
+var arret_options: VBoxContainer
+var arret_reprendre: Button
+## Choix du manager déjà envoyé pour l'arrêt montré : {cle, id, nom} (vide sinon).
+var _choix_fait: Dictionary = {}
 var _niveaux: Array = []
 var _cle := ""
 var _densite := 0.5
@@ -85,6 +91,10 @@ var _dernier_fait := -1
 var _rangs: Array = []
 ## Faits marquants (les derniers faits joués).
 var faits: VBoxContainer
+## Les faits défilent sans barre : autant de faits (deux lignes chacun) que la tuile en tient, le plus récent d'abord.
+var faits_defile: ScrollContainer
+var faits_titre: Control
+var colonne_droite: VBoxContainer
 ## Photo d'ambiance des faits marquants (banque d'images) : le dernier grand fait joué, puis le résultat.
 var photo_faits: TextureRect
 var _fin := {}
@@ -125,7 +135,19 @@ var classement_lignes: VBoxContainer
 ## Marges des trois tuiles de droite (duel, classement, faits), resserrées avec le classement.
 var _tuiles_droite: Array = []
 var multiplex: PanelContainer
+## Tuile Bonus (`direct.bonus`, moteur match-bonus.cjs) : règle du championnat, état du bonus offensif et défensif,
+## et à partir de la 65e minute le dilemme de fin de match avec ses deux consignes. Masquée sans bonus en jeu.
+var bonus_tuile: PanelContainer
+var bonus_regle: Label
+var bonus_etat: HBoxContainer
+var bonus_situation: Label
+var bonus_choix: HBoxContainer
+var _bonus_cle := ""
 var multiplex_cartes: GridContainer
+## Une seule rangée de cartes ; au-delà de la largeur, défilement horizontal (molette ou glisser).
+var multiplex_defile: ScrollContainer
+## Fondu du bord droit et « › » : la suite du multiplex est hors de vue (masqué quand tout tient ou en fin de rangée).
+var multiplex_fondu: TextureRect
 ## Pilotage reçu du moteur (`live.pilotage`) : sert aux états des joueurs (Galvanisé, Vexé…) de Mon XV.
 ## Les consignes en direct ne sont pas sur cet écran (fenêtre Équipe de la vue du match).
 var _pilotage: Dictionary = {}
@@ -140,6 +162,10 @@ var _scores_cour: Dictionary = {}
 var _scores_prec: Dictionary = {}
 ## Lignes du classement en direct : notre voisinage (± 3 places) et le haut du tableau.
 const CLASSEMENT_LIGNES := 9
+## Lignes montrées à l'écran : notre voisinage (± 3 places) ; ± 2 en 1280×720. Avec le duel, les faits
+## marquants et la bande du bas, la colonne de droite tient ainsi dans l'écran (1080p comme 720p).
+const CLASSEMENT_ECRAN := 7
+const CLASSEMENT_ECRAN_720 := 5
 const VERT_SCORE := Color("65b081")
 const MONTEE := Color("65b081")
 const DESCENTE := Color("e2876f")
@@ -539,6 +565,7 @@ func _ready() -> void:
 	_densite = densite_pour(get_viewport_rect().size)
 	_construire()
 	resized.connect(_a_l_echelle)
+	resized.connect(_largeur_multiplex)
 	visibility_changed.connect(_apparaitre)
 
 ## Apparition en fondu (0,25 s), sauf si le joueur a demandé de réduire les animations.
@@ -578,6 +605,7 @@ func _construire() -> void:
 		enfant.queue_free()
 	_cle = ""
 	_journee_cle = ""
+	_bonus_cle = ""
 	terrain = ancien if ancien != null else Terrain2D.new()
 	terrain.densite = _densite
 	terrain.legende = false
@@ -733,7 +761,8 @@ func _composants() -> void:
 	domination = Domination.new()
 	domination.name = "MatchBetweenMomentum"
 	domination.densite = _densite
-	domination.custom_minimum_size = Vector2(0, px(180))
+	# Frise un peu plus basse (180 → 150) : le dernier fait passe au-dessus du terrain sans le rétrécir.
+	domination.custom_minimum_size = Vector2(0, px(150))
 	domination.tooltip_text = "Qui domine, minute par minute (occupation, possession, points, franchissements), et les essais, tirs réussis et cartons déjà vus."
 	domination.mouse_filter = Control.MOUSE_FILTER_PASS
 	S.G.fill(domination, true)
@@ -802,11 +831,15 @@ func _cellule(texte: String, largeur: int, couleur: Color, taille: float = 26, c
 ## Tableau de bord (maquette validée par Léo, 16 novembre 2026) : la barre de commandes, trois
 ## colonnes, puis Gabi en largeur. Gauche : Notre XV (onglets Terrain, Tableau, XV adverse), tuile
 ## principale au liseré or, et la carte Changement dessous. Centre : le terrain 2D en grand (dernier
-## fait en bandeau par-dessus), puis momentum, anneaux possession et occupation, tuile « Dans les
-## 22 ». Droite : le duel (chiffres comparés), puis les faits marquants.
+## fait en bandeau juste au-dessus), puis momentum, anneaux possession et occupation, tuile « Dans les
+## 22 ». Droite : le duel (chiffres comparés), puis les faits marquants. Tout tient dans l'écran de
+## 1280×720 à 2560×1440, avec une marge basse (19 novembre 2026).
 func _page() -> void:
 	var page := S.G.v(px(14))
+	page.name = "MatchBetweenPage"
 	S.full(page)
+	# Marge basse : la bande du bas ne touche jamais le bord de l'écran.
+	page.offset_bottom = -px(12)
 	add_child(page)
 	var barre: Control
 	if is_instance_valid(hote_barre):
@@ -825,6 +858,7 @@ func _page() -> void:
 	_colonne_centre(grille)
 	# Droite : le duel (chiffres comparés), puis les faits marquants.
 	var droite := S.G.v(px(20))
+	colonne_droite = droite
 	droite.name = "MatchBetweenColumn"
 	droite.custom_minimum_size.x = px(560)
 	grille.add_child(droite)
@@ -859,8 +893,22 @@ func _page() -> void:
 	tuile_faits.clip_contents = true
 	tuile_faits.add_child(photo_faits)
 	tuile_faits.move_child(photo_faits, 0)
-	cadre_faits.add_child(_titre("Faits marquants"))
-	cadre_faits.add_child(faits)
+	faits_titre = _titre("Faits marquants")
+	cadre_faits.add_child(faits_titre)
+	# Les faits ne poussent pas la colonne : la tuile prend la place restante et montre autant de faits
+	# (deux lignes chacun) qu'elle en tient ; elle en garde toujours un.
+	S.G.fill(tuile_faits, true)
+	faits_defile = ScrollContainer.new()
+	faits_defile.name = "MatchBetweenHighlightsScroll"
+	faits_defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	faits_defile.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	faits_defile.mouse_filter = Control.MOUSE_FILTER_PASS
+	faits_defile.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	S.G.fill(faits_defile, true)
+	cadre_faits.add_child(faits_defile)
+	S.G.fill(faits)
+	faits_defile.add_child(faits)
+	faits_defile.resized.connect(_ajuster_faits)
 	_tuiles_droite = [cadre_chiffres.get_parent(), cadre_classement.get_parent(), cadre_faits.get_parent()]
 	# Bas : la carte de Gabi en largeur, le multiplex des autres matchs à côté.
 	var bas := S.G.h(px(20))
@@ -869,7 +917,41 @@ func _page() -> void:
 	page.add_child(bas)
 	_carte_gabi(bas)
 	S.G.fill(adjoint_cadre)
-	# Multiplex : titre et minute à gauche, une rangée de cartes (la bande garde la hauteur de Gabi).
+	# Bonus : à côté de Gabi, la décision de fin de match du manager.
+	var cadre_bonus := _panneau(bas, px(14))
+	bonus_tuile = cadre_bonus.get_parent().get_parent()
+	bonus_tuile.name = "MatchBetweenBonus"
+	bonus_tuile.custom_minimum_size.x = px(780)
+	cadre_bonus.add_theme_constant_override("separation", px(6))
+	var tete_bonus := _titre("Bonus")
+	bonus_regle = _texte("", 22, FAIBLE)
+	bonus_regle.name = "MatchBetweenBonusRule"
+	bonus_regle.add_theme_font_size_override("font_size", maxi(px(22), 12))
+	bonus_regle.clip_text = true
+	bonus_regle.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	bonus_regle.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	S.G.fill(bonus_regle)
+	tete_bonus.add_child(bonus_regle)
+	# Le titre ne prend que sa place : la règle du championnat reçoit le reste de la ligne (elle était coupée en deux).
+	tete_bonus.get_child(0).size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	cadre_bonus.add_child(tete_bonus)
+	bonus_etat = S.G.h(px(16))
+	bonus_etat.name = "MatchBetweenBonusState"
+	cadre_bonus.add_child(bonus_etat)
+	bonus_situation = _texte("", 26, IVOIRE, true, true)
+	bonus_situation.name = "MatchBetweenBonusDilemma"
+	# Sous 1440p, le dilemme et ses boutons gardent une taille lisible (réduits de moitié en 720p, ils tombaient à 13 et 26 px).
+	bonus_situation.add_theme_font_size_override("font_size", maxi(px(26), 15))
+	bonus_situation.max_lines_visible = 2
+	bonus_situation.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	bonus_situation.mouse_filter = Control.MOUSE_FILTER_PASS
+	cadre_bonus.add_child(bonus_situation)
+	bonus_choix = S.G.h(px(10))
+	bonus_choix.name = "MatchBetweenBonusChoices"
+	cadre_bonus.add_child(bonus_choix)
+	bonus_tuile.visible = false
+	# Multiplex : titre et minute à gauche, une seule rangée de cartes (la bande garde la hauteur de
+	# Gabi) ; les cartes qui ne tiennent pas dans la largeur se font défiler (molette ou glisser).
 	var cadre_multiplex := _panneau(bas, px(14 if _densite >= 0.6 else 10))
 	multiplex = cadre_multiplex.get_parent().get_parent()
 	multiplex.name = "MatchBetweenMultiplex"
@@ -888,8 +970,56 @@ func _page() -> void:
 	multiplex_cartes.name = "MatchBetweenMultiplexCards"
 	multiplex_cartes.add_theme_constant_override("h_separation", px(10))
 	multiplex_cartes.add_theme_constant_override("v_separation", px(8))
-	multiplex_cartes.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	rangee_multiplex.add_child(multiplex_cartes)
+	multiplex_defile = ScrollContainer.new()
+	multiplex_defile.name = "MatchBetweenMultiplexScroll"
+	multiplex_defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	multiplex_defile.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	multiplex_defile.mouse_filter = Control.MOUSE_FILTER_PASS
+	multiplex_defile.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	multiplex_defile.tooltip_text = "Les autres matchs de la journée : molette ou glisser pour voir la suite."
+	S.G.fill(multiplex_defile)
+	multiplex_defile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# Le défilement et son fondu superposés (retours du 19 novembre 2026 : la dernière carte visible était
+	# coupée net, rien ne disait qu'il y avait une suite).
+	var pile_multiplex := MarginContainer.new()
+	pile_multiplex.name = "MatchBetweenMultiplexStack"
+	for cote in ["left", "right", "top", "bottom"]: pile_multiplex.add_theme_constant_override("margin_" + cote, 0)
+	pile_multiplex.mouse_filter = Control.MOUSE_FILTER_PASS
+	S.G.fill(pile_multiplex)
+	pile_multiplex.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	rangee_multiplex.add_child(pile_multiplex)
+	pile_multiplex.add_child(multiplex_defile)
+	multiplex_defile.add_child(multiplex_cartes)
+	multiplex_fondu = TextureRect.new()
+	multiplex_fondu.name = "MatchBetweenMultiplexFade"
+	multiplex_fondu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var degrade := Gradient.new()
+	degrade.set_color(0, Color(PANNEAU, 0.0))
+	degrade.set_color(1, Color(PANNEAU, 0.97))
+	degrade.add_point(0.55, Color(PANNEAU, 0.8))
+	var texture_fondu := GradientTexture2D.new()
+	texture_fondu.gradient = degrade
+	texture_fondu.width = 64
+	texture_fondu.height = 2
+	multiplex_fondu.texture = texture_fondu
+	multiplex_fondu.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	multiplex_fondu.stretch_mode = TextureRect.STRETCH_SCALE
+	multiplex_fondu.custom_minimum_size.x = px(72)
+	multiplex_fondu.size_flags_horizontal = Control.SIZE_SHRINK_END
+	multiplex_fondu.size_flags_vertical = Control.SIZE_FILL
+	var suite := _texte("›", 40, OR, false, true)
+	suite.name = "MatchBetweenMultiplexMore"
+	suite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	suite.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	suite.offset_right = -px(6)
+	suite.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	suite.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	multiplex_fondu.add_child(suite)
+	multiplex_fondu.visible = false
+	pile_multiplex.add_child(multiplex_fondu)
+	multiplex_defile.resized.connect(_fondu_multiplex)
+	multiplex_cartes.resized.connect(_fondu_multiplex)
+	multiplex_defile.get_h_scroll_bar().value_changed.connect(func(_v: float): _fondu_multiplex())
 	multiplex.visible = false
 
 ## Colonne gauche : Notre XV, onglets Terrain (par défaut), Tableau et XV adverse ; la carte
@@ -947,23 +1077,17 @@ func _colonne_xv(grille: Control) -> void:
 	cadre_changement.add_child(changement)
 	_montrer_vue_xv()
 
-## Colonne centrale : le terrain 2D en grand, le dernier fait en bandeau par-dessus ; dessous,
+## Colonne centrale : le terrain 2D en grand, le dernier fait en bandeau au-dessus ; dessous,
 ## momentum, anneaux possession et occupation, tuile « Dans les 22 ».
 func _colonne_centre(grille: Control) -> void:
 	var centre := S.G.v(px(20))
 	S.G.fill(centre, false, 1.0)
 	grille.add_child(centre)
-	var cadre_terrain := _panneau(centre, px(14))
+	var cadre_terrain := _panneau(centre, px(12))
 	cadre_terrain.get_parent().get_parent().name = "MatchBetweenPitchTile"
 	S.G.fill(cadre_terrain.get_parent().get_parent(), true)
-	var scene := Control.new()
-	scene.name = "MatchBetweenScene"
-	scene.clip_contents = true
-	scene.custom_minimum_size = Vector2(px(560), px(300))
-	S.G.fill(scene, true)
-	cadre_terrain.add_child(scene)
-	S.full(terrain)
-	scene.add_child(terrain)
+	# Le dernier fait en bandeau au-dessus du terrain (il masquait le haut du terrain et ses pastilles).
+	cadre_terrain.add_theme_constant_override("separation", px(8))
 	bandeau = PanelContainer.new()
 	bandeau.name = "MatchBetweenBanner"
 	var style := S.G.T.box(Color(FOND, 0.72), maxi(4, px(8)))
@@ -975,14 +1099,18 @@ func _colonne_centre(grille: Control) -> void:
 	style.content_margin_bottom = px(4)
 	bandeau.add_theme_stylebox_override("panel", style)
 	bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bandeau.anchor_right = 1.0
-	bandeau.offset_left = px(12)
-	bandeau.offset_right = -px(12)
-	bandeau.offset_top = px(10)
-	bandeau.offset_bottom = px(10)
-	scene.add_child(bandeau)
+	S.G.fill(bandeau)
+	cadre_terrain.add_child(bandeau)
 	bandeau.add_child(fil)
 	S.G.fill(fil)
+	var scene := Control.new()
+	scene.name = "MatchBetweenScene"
+	scene.clip_contents = true
+	scene.custom_minimum_size = Vector2(px(560), px(300))
+	S.G.fill(scene, true)
+	cadre_terrain.add_child(scene)
+	S.full(terrain)
+	scene.add_child(terrain)
 	var rangee := S.G.h(px(20))
 	rangee.name = "MatchBetweenGauges"
 	centre.add_child(rangee)
@@ -1053,13 +1181,21 @@ func _arret_decision() -> void:
 	arret_texte = _texte("", 30, IVOIRE, true)
 	arret_texte.custom_minimum_size.x = px(840)
 	colonne.add_child(arret_texte)
+	# Remplacement forcé : une ligne par joueur possible (cinq au plus en pratique), en colonne
+	# pour tenir dans la largeur du panneau dès 1280×720.
+	arret_options = S.G.v(px(10))
+	arret_options.name = "MatchBetweenStopOptions"
+	arret_options.hide()
+	colonne.add_child(arret_options)
 	var choix := S.G.h(px(16))
 	colonne.add_child(choix)
 	var vers_equipe := _bouton("ÉQUIPE", func(): tiroir_demande.emit("Équipe"))
 	vers_equipe.name = "MatchBetweenStopTeam"
 	choix.add_child(vers_equipe)
 	choix.add_child(S.G.spacer())
-	choix.add_child(_bouton("REPRENDRE LE MATCH", func(): reprise_demandee.emit(), true, true))
+	arret_reprendre = _bouton("REPRENDRE LE MATCH", func(): reprise_demandee.emit(), true, true)
+	arret_reprendre.name = "MatchBetweenStopResume"
+	choix.add_child(arret_reprendre)
 	arret.hide()
 
 static func _zone(x: float, possession: int) -> String:
@@ -1069,6 +1205,35 @@ static func _zone(x: float, possession: int) -> String:
 	if reste <= 50.0: return "dans le camp adverse"
 	if reste <= 78.0: return "dans son camp"
 	return "dans ses 22 mètres"
+
+## Libellés d'arrêt de jeu de la ligne d'état (fait montré, avec l'équipe qu'il concerne).
+const ETATS_ARRET := {"try": "Essai — %s", "transformation": "Transformation — %s", "goal": "Tir au but — %s", "miss": "Tir au but — %s",
+	"lineout": "Touche pour %s", "scrum": "Mêlée pour %s"}
+
+## Ligne d'état du haut pour un fait montré : arrêt de jeu (« Essai — X », « Touche pour X »,
+## « Mêlée pour X ») ou possession et territoire (« X a le ballon dans son camp »).
+## `camp` : équipe concernée (0/1) ; `x` : position du ballon (NAN : inconnue). Règle commune à la
+## 3D (plan affiché, match_temps_forts.gd) et au terrain 2D de l'écran intermédiaire.
+static func etat_du_fait(kind: String, camp: int, x: float, equipes: Array) -> String:
+	var club := ""
+	if camp in [0, 1] and camp < equipes.size() and equipes[camp] is Dictionary: club = S.G.club_name(equipes[camp])
+	if ETATS_ARRET.has(kind):
+		var modele := str(ETATS_ARRET[kind])
+		return modele % club if not club.is_empty() else modele.replace(" — %s", "").replace(" pour %s", "")
+	if club.is_empty(): return "Le match"
+	var texte := "%s a le ballon" % club
+	if not is_nan(x): texte += " " + _zone(x, camp)
+	return texte
+
+## Ligne d'état d'un fait du terrain 2D (élément de direct.deroule), « » si inexploitable.
+static func etat_du_deroule(item: Dictionary, equipes: Array) -> String:
+	var scene: Variant = item.get("scene")
+	if not scene is Dictionary: return ""
+	var camp: Variant = scene.get("possession", item.get("equipe", -1))
+	if not (camp is int or camp is float): camp = item.get("equipe", -1)
+	var b: Variant = scene.get("ballon")
+	var x: float = float(b[0]) if b is Array and (b as Array).size() >= 1 and (b[0] is float or b[0] is int) else NAN
+	return etat_du_fait(str(item.get("kind", scene.get("kind", ""))), int(camp) if (camp is int or camp is float) else -1, x, equipes)
 
 func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appliquer: Callable) -> void:
 	if not is_node_ready(): return
@@ -1088,6 +1253,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_etat(live, direct, equipes)
 	_pilotage = Pilotage.pilotage(live)
 	_remplir_journee(model, direct, equipes)
+	_remplir_bonus(model, live, direct)
 	_niveaux = direct.get("niveaux", [])
 	var voulu := niveau_regie if not niveau_regie.is_empty() else str(direct.get("niveau", ""))
 	if niveau_libelle() != _libelle_niveau(voulu) or grille_niveaux.get_child_count() != _niveaux.size(): _remplir_niveaux(voulu)
@@ -1103,11 +1269,13 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	var conseil: Variant = passe.conseil
 	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []), direct.get("feuille", {}).get("joueurs", {}) if direct.get("feuille") is Dictionary else {},
 		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs, direct.get("pourquoi"), direct.get("hommeDuMatch"), direct.get("zone22"), direct.get("echantillon"), _pilotage.get("joueurs")])
+	_suivre_choix(live)
 	if cle == _cle: return
 	_cle = cle
 	_lignes = direct.get("fil", [])
 	_fin = {"fini": live.get("finished", false), "score": live.get("score", []), "camp": int(direct.get("camp", -1)),
-		"finale": str(model.get("next", {}).get("phase", "") if model.get("next") is Dictionary else "") == "final", "essais": live.get("tries", [])}
+		"finale": str(model.get("next", {}).get("phase", "") if model.get("next") is Dictionary else "") == "final", "essais": live.get("tries", []),
+		"bonus": direct.get("bonus") if direct.get("bonus") is Dictionary else null}
 	_remplir_fil()
 	_remplir_chiffres(direct, live)
 	_remplir_xv(passe.lineup, direct)
@@ -1127,6 +1295,11 @@ func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 	if not etat_force.is_empty(): etat.text = etat_force
 	elif live.get("finished", false): etat.text = "Match terminé"
 	elif live.get("atBreak", false): etat.text = "Mi-temps · on change de camp" if live.get("meteo") is Dictionary and live.meteo.get("ventDos") is Array else "Mi-temps"
+	elif terrain != null and terrain.en_retard():
+		# Le terrain rejoue des faits en retard sur la borne : la ligne suit le dernier fait joué
+		# (celui du bandeau du fil), pas le dernier fait de la borne.
+		var montre := etat_du_deroule(terrain.joue, equipes)
+		etat.text = montre if not montre.is_empty() else "Le match"
 	elif (possession is float or possession is int) and equipes.size() >= 2:
 		var cote := clampi(int(possession), 0, 1)
 		etat.text = "%s a le ballon %s" % [S.G.club_name(equipes[cote]), _zone(float(direct.get("zone", {}).get("x", 50.0)), cote)]
@@ -1135,6 +1308,8 @@ func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 ## Un fait vient d'être joué sur le terrain : le fil le montre, le score le suit.
 func _fait_joue(item: Dictionary) -> void:
 	_remplir_fil()
+	# La ligne d'état suit le fait joué (même instant que le bandeau du fil).
+	if not _dernier.is_empty() and is_instance_valid(etat): _etat(_dernier[1], _dernier[2], _equipes)
 	var marque: Variant = item.get("score")
 	if marque is Array and (marque as Array).size() == 2: score_joue.emit(marque)
 
@@ -1173,35 +1348,80 @@ func _remplir_fil() -> void:
 	# Faits marquants : les derniers faits joués, le plus récent en haut.
 	if is_instance_valid(faits):
 		S.clear(faits)
-		# 1280×720 : deux faits (le premier sur deux lignes, le suivant sur une) pour que la colonne de droite
-		# tienne avec Gabi en bas sans rien couper.
-		var petit := _densite < 0.6
-		var nombre := 2 if petit else 4
-		# Classement en direct sous le duel : les faits marquants se resserrent (le dernier fait
-		# reste en bandeau sur le terrain ; en 1280×720, une ligne par fait, le texte en infobulle).
+		# Chaque fait sur deux lignes au plus (texte entier en infobulle) ; la tuile en montre autant
+		# qu'elle en tient (_ajuster_faits), le plus récent en haut, jamais un fait coupé.
 		var serre := _journee_montree()
-		if serre: nombre = 1 if _densite < 0.6 else 2
-		var recents := visibles.slice(maxi(0, visibles.size() - nombre))
+		var recents := visibles.slice(maxi(0, visibles.size() - FAITS_MAX))
 		recents.reverse()
 		for n in recents.size():
 			var ligne_fait := _ligne_fil(recents[n], n == 0, false)
-			if serre or petit:
-				for etiquette: Label in ligne_fait.find_children("*", "Label", true, false):
-					etiquette.max_lines_visible = 1 if serre or n > 0 else 2
-					etiquette.tooltip_text = etiquette.text
+			ligne_fait.name = "MatchBetweenHighlight%d" % n
+			var texte_fait: Label = ligne_fait.get_child(0).get_child(2)
+			texte_fait.max_lines_visible = 2
+			texte_fait.tooltip_text = texte_fait.text
+			texte_fait.mouse_filter = Control.MOUSE_FILTER_PASS
+			# Largeur connue après la mise en page : une ou deux lignes réservées selon le texte.
+			texte_fait.resized.connect(_ajuster_faits)
 			if serre:
 				for icone: Control in ligne_fait.find_children("*", "Control", true, false):
 					if icone is Icone: icone.custom_minimum_size = Vector2(px(30), px(30))
 			faits.add_child(ligne_fait)
 		if recents.is_empty(): faits.add_child(_texte("Aucun fait marquant pour l’instant.", 24, FAIBLE))
+		_ajuster_faits.call_deferred()
 	_photo_faits(visibles)
 
-## Occasion de la photo de fin de match : finale, victoire bonifiée (3 essais de plus), sinon championnat.
+## Faits marquants montrés au plus (deux lignes chacun) ; la hauteur de la tuile décide du reste.
+const FAITS_MAX := 4
+
+## Hauteur d'une étiquette pour montrer `lignes` lignes entières (police, interligne et style compris).
+static func hauteur_lignes(etiquette: Label, lignes: int) -> float:
+	var police: Font = etiquette.get_theme_font("font")
+	var taille := etiquette.get_theme_font_size("font_size")
+	var interligne := float(etiquette.get_theme_constant("line_spacing"))
+	var style: StyleBox = etiquette.get_theme_stylebox("normal")
+	var marges := style.get_minimum_size().y if style != null else 0.0
+	return ceilf(police.get_height(taille) * lignes + interligne * maxi(0, lignes - 1) + marges + 1.0)
+
+## Montre les faits qui tiennent entiers dans la tuile, du plus récent au plus ancien ; le premier
+## reste toujours (la tuile lui réserve sa hauteur).
+func _ajuster_faits() -> void:
+	if not is_instance_valid(faits_defile) or not is_instance_valid(faits): return
+	var lignes: Array = faits.get_children().filter(func(n: Node): return not n.is_queued_for_deletion())
+	if lignes.is_empty(): return
+	var ecart := float(faits.get_theme_constant("separation"))
+	var dispo := faits_defile.size.y
+	var cumul := 0.0
+	var plein := false
+	for n in lignes.size():
+		var ligne: Control = lignes[n]
+		# Un texte à la ligne avec points de suspension ne réserve qu'une ligne : on lui en réserve deux
+		# quand il ne tient pas sur une seule (largeur réelle, ou estimée avant la première mise en page).
+		var rang: Node = ligne.get_child(0) if ligne.get_child_count() > 0 else null
+		if rang is HBoxContainer and rang.get_child_count() >= 3 and rang.get_child(2) is Label:
+			var texte: Label = rang.get_child(2)
+			var largeur := texte.size.x
+			if largeur <= 1.0: largeur = faits_defile.size.x - px(56) - px(38) - 2 * px(14) - 2 * px(6)
+			var police: Font = texte.get_theme_font("font")
+			var long := police.get_string_size(texte.text, HORIZONTAL_ALIGNMENT_LEFT, -1, texte.get_theme_font_size("font_size")).x
+			var voulu := hauteur_lignes(texte, 2 if long > largeur else 1)
+			if not is_equal_approx(texte.custom_minimum_size.y, voulu): texte.custom_minimum_size.y = voulu
+		var hauteur := ligne.get_combined_minimum_size().y
+		if n == 0:
+			ligne.visible = true
+			cumul = hauteur
+			if not is_equal_approx(faits_defile.custom_minimum_size.y, hauteur): faits_defile.custom_minimum_size.y = hauteur
+			continue
+		plein = plein or cumul + ecart + hauteur > dispo + 0.5
+		ligne.visible = not plein
+		if not plein: cumul += ecart + hauteur
+
+## Occasion de la photo de fin de match : finale, victoire bonifiée selon la règle du championnat (`fin.bonus`,
+## calculé par le moteur : 3 essais d'écart en Top 14, 4 essais marqués en Premiership et URC…), sinon championnat.
+## Sans bonus en jeu (élimination directe, amical), jamais de victoire bonifiée.
 static func occasion_fin(fin: Dictionary, resultat: String) -> String:
 	if fin.get("finale", false) and resultat != "nul": return "finale"
-	var essais: Variant = fin.get("essais")
-	var camp := int(fin.get("camp", -1))
-	if resultat == "victoire" and essais is Array and essais.size() == 2 and camp in [0, 1] and int(essais[camp]) - int(essais[1 - camp]) >= 3: return "bonus"
+	var bonus: Variant = fin.get("bonus")
+	if resultat == "victoire" and bonus is Dictionary and bonus.get("offensif") is Dictionary and bool(bonus.offensif.get("acquis", false)): return "bonus"
 	return "championnat"
 
 ## Image de la banque pour un fait du moteur ("" : fait sans photo).
@@ -1269,11 +1489,11 @@ func _ligne_fil(entree: Dictionary, dernier: bool, en_bandeau: bool) -> Control:
 	icone.kind = kind
 	icone.teinte = teinte
 	icone.rouge = str(entree.get("texte", "")).to_lower().contains("rouge")
-	icone.custom_minimum_size = Vector2(px(38), px(38))
-	icone.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	icone.custom_minimum_size = Vector2(px(30), px(30)) if en_bandeau else Vector2(px(38), px(38))
+	icone.size_flags_vertical = Control.SIZE_SHRINK_CENTER if en_bandeau else Control.SIZE_SHRINK_BEGIN
 	rang.add_child(icone)
 	var texte := _texte(str(entree.get("texte", "")), 28 if en_bandeau or essai else 26, IVOIRE if dernier or points else DOUX, not en_bandeau, essai)
-	texte.max_lines_visible = 1 if en_bandeau else (3 if dernier or essai else 2)
+	texte.max_lines_visible = 1 if en_bandeau else 2
 	texte.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	if en_bandeau: texte.clip_text = true
 	S.G.fill(texte)
@@ -1337,6 +1557,54 @@ func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	_remplir_anneaux(direct)
 	_remplir_zone22(direct)
 
+## Tuile Bonus : la règle du championnat, l'état vu de notre camp et, en fin de match, le dilemme et ses deux
+## consignes (la consigne en place est en or). Rien n'est calculé ici : tout vient de `direct.bonus`.
+func _remplir_bonus(model: Dictionary, live: Dictionary, direct: Dictionary) -> void:
+	if not is_instance_valid(bonus_tuile): return
+	var bonus: Variant = direct.get("bonus")
+	var tactiques: Dictionary = model.get("tactics", {}) if model.get("tactics") is Dictionary else {}
+	var cle := JSON.stringify([bonus, tactiques.get("attack"), tactiques.get("defense"), tactiques.get("penalty"), live.get("finished", false)])
+	if cle == _bonus_cle: return
+	_bonus_cle = cle
+	bonus_tuile.visible = bonus is Dictionary
+	_largeur_multiplex.call_deferred()
+	if not bonus is Dictionary: return
+	bonus_regle.text = str(bonus.get("regle", ""))
+	bonus_regle.tooltip_text = "Règle du championnat : " + str(bonus.get("regle", ""))
+	S.clear(bonus_etat)
+	for cote: String in ["offensif", "defensif"]:
+		var item: Variant = bonus.get(cote)
+		if not item is Dictionary or str(item.get("texte", "")).is_empty(): continue
+		var teinte := DOUX
+		if bool(item.get("acquis", false)) or str(item.get("statut", "")) == "tenu": teinte = MONTEE
+		elif bool(item.get("horsDePortee", false)): teinte = FAIBLE
+		elif str(item.get("statut", "")) == "perdu" or int(item.get("manque", 0) if item.get("manque") != null else 0) > 0: teinte = OR
+		var etiquette := _texte(str(item.texte), 24, teinte, false, true)
+		etiquette.add_theme_font_size_override("font_size", maxi(px(24), 14))
+		etiquette.name = "MatchBetweenBonus_" + cote
+		bonus_etat.add_child(etiquette)
+	S.clear(bonus_choix)
+	var situation: Variant = bonus.get("situation")
+	bonus_situation.visible = situation is Dictionary
+	bonus_choix.visible = situation is Dictionary
+	if not situation is Dictionary: return
+	bonus_situation.text = str(situation.get("texte", ""))
+	bonus_situation.tooltip_text = bonus_situation.text
+	for consigne: Variant in situation.get("consignes", []):
+		if not consigne is Dictionary: continue
+		var c: Dictionary = consigne
+		var en_place := str(tactiques.get("attack", "")) == str(c.get("attack", "")) and str(tactiques.get("defense", "")) == str(c.get("defense", "")) and str(tactiques.get("penalty", "auto")) == str(c.get("penalty", ""))
+		var bouton := _bouton(str(c.get("label", "")), func(): consigne_bonus.emit(c), not live.get("finished", false), en_place)
+		bouton.name = "MatchBetweenBonusChoice_" + str(c.get("id", ""))
+		bouton.custom_minimum_size.y = maxi(px(52), 36)
+		bouton.add_theme_font_size_override("font_size", maxi(px(24), 15))
+		bouton.clip_text = true
+		bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		bouton.tooltip_text = str(c.get("aide", "")) + ("\nConsigne en place." if en_place else "\nLe match se met en pause le temps de la donner.")
+		bouton.set_meta("contextual_enabled", true)
+		S.G.fill(bouton)
+		bonus_choix.add_child(bouton)
+
 ## Journée en direct (`direct.journee`) : classement en direct et multiplex, masqués sans elle.
 func _remplir_journee(model: Dictionary, direct: Dictionary, equipes: Array) -> void:
 	if not is_instance_valid(classement_tuile) or not is_instance_valid(multiplex): return
@@ -1367,6 +1635,10 @@ func _resserrer(direct: Dictionary) -> void:
 		var marge: MarginContainer = _tuiles_droite[n]
 		for bord in ["left", "top", "right", "bottom"]: marge.add_theme_constant_override("margin_" + bord, px(10 if serre else [16, 14, 14][n]))
 		(marge.get_child(0) as VBoxContainer).add_theme_constant_override("separation", mini(8, px(6 if serre else 10)))
+	if is_instance_valid(colonne_droite): colonne_droite.add_theme_constant_override("separation", px(12 if serre else 20))
+	# En 1280×720 avec le classement, la tuile des faits perd son titre (le fait, sa minute et son
+	# pictogramme suffisent) : la colonne de droite tient avec Gabi et le multiplex en bas.
+	if is_instance_valid(faits_titre): faits_titre.visible = not (serre and _densite < 0.6)
 	_remplir_chiffres(direct, {})
 	_remplir_fil()
 
@@ -1401,7 +1673,8 @@ static func lignes_classement(classement: Array, capacite: int = CLASSEMENT_LIGN
 		if classement[k] is Dictionary and bool(classement[k].get("nous", false)): nous = k
 	if nous < 0: return range(capacite)
 	var fenetre := mini(7, capacite)
-	var debut := clampi(nous - 3, 0, n - fenetre)
+	# Notre club au milieu de la fenêtre (± 3 places sur sept, ± 2 sur cinq).
+	var debut := clampi(nous - floori(fenetre / 2.0), 0, n - fenetre)
 	var fin := debut + fenetre
 	var restants := capacite - fenetre
 	if debut <= restants: return range(maxi(capacite, fin))
@@ -1415,8 +1688,8 @@ func _remplir_classement(classement: Array, teintes: Dictionary) -> void:
 	S.clear(classement_lignes)
 	classement_tuile.visible = not classement.is_empty()
 	if classement.is_empty(): return
-	# En 1280×720, notre voisinage seul (± 3 places) ; plus grand, le haut du tableau en plus.
-	for k: int in lignes_classement(classement, CLASSEMENT_LIGNES if _densite >= 0.6 else 7):
+	# Notre voisinage (± 3 places) ; en 1280×720, ± 2 places : la colonne de droite tient dans l'écran.
+	for k: int in lignes_classement(classement, CLASSEMENT_ECRAN if _densite >= 0.6 else CLASSEMENT_ECRAN_720):
 		if k < 0:
 			var ellipse := _texte("…", 22, FAIBLE)
 			ellipse.name = "MatchBetweenLiveTableGap"
@@ -1512,8 +1785,8 @@ func _remplir_multiplex(journee: Dictionary, teintes: Dictionary) -> void:
 	multiplex.visible = not matchs.is_empty()
 	if matchs.is_empty(): return
 	multiplex_precision.text = "%d′" % minute if not matchs.all(func(m: Variant): return m is Dictionary and bool(m.get("fini", false))) else "terminé"
-	# Une seule rangée jusqu'à huit matchs (championnat de seize clubs), deux au-delà.
-	multiplex_cartes.columns = matchs.size() if matchs.size() <= 8 else ceili(matchs.size() / 2.0)
+	# Une seule rangée, quel que soit le nombre de matchs : ce qui dépasse la largeur défile.
+	multiplex_cartes.columns = maxi(1, matchs.size())
 	for m: Variant in matchs:
 		if not m is Dictionary: continue
 		var id := str(m.get("id", ""))
@@ -1521,6 +1794,37 @@ func _remplir_multiplex(journee: Dictionary, teintes: Dictionary) -> void:
 		var carte := _carte_match(m, change, teintes)
 		carte.name = "MatchBetweenMultiplexMatch%d" % multiplex_cartes.get_child_count()
 		multiplex_cartes.add_child(carte)
+	_largeur_multiplex()
+	_largeur_multiplex.call_deferred()
+
+## Largeur du multiplex : celle de sa rangée de cartes, sans dépasser environ 60 % de la bande du bas
+## (Gabi garde le reste) ; au-delà, les cartes défilent.
+func _largeur_multiplex() -> void:
+	if not is_instance_valid(multiplex_defile) or not is_instance_valid(multiplex_cartes): return
+	var voulu := multiplex_cartes.get_combined_minimum_size().x
+	var plafond := maxf(float(px(360)), size.x * 0.6 - float(px(150)))
+	# Tuile Bonus visible (championnat à bonus) : elle prend sa place dans la bande ; Gabi garde au moins
+	# 30 % de la largeur et le multiplex le reste, sans jamais élargir la page au-delà de l'écran.
+	if is_instance_valid(bonus_tuile) and bonus_tuile.visible:
+		# Largeur de l'écran intermédiaire (la bande peut s'être élargie : on ne la lit pas).
+		var gabi := maxf(float(px(560)), size.x * 0.3 + 2.0)
+		# Ce que la tuile du multiplex ajoute autour de ses cartes (titre, minute, marges).
+		var habillage := maxf(0.0, multiplex.get_combined_minimum_size().x - multiplex_defile.get_combined_minimum_size().x) if is_instance_valid(multiplex) else 0.0
+		var reste := size.x - bonus_tuile.get_combined_minimum_size().x - gabi - habillage - 2.0 * float(px(20))
+		plafond = maxf(float(px(240)), minf(plafond, reste))
+	var largeur := minf(voulu, plafond)
+	if not is_equal_approx(multiplex_defile.custom_minimum_size.x, largeur): multiplex_defile.custom_minimum_size.x = largeur
+	_fondu_multiplex()
+
+## Fondu du bord droit du multiplex et « › » : seulement quand la rangée dépasse et qu'il reste des cartes
+## à droite (rien quand tout tient, rien une fois au bout de la rangée).
+func _fondu_multiplex() -> void:
+	if not is_instance_valid(multiplex_fondu) or not is_instance_valid(multiplex_defile) or not is_instance_valid(multiplex_cartes): return
+	multiplex_fondu.visible = multiplex_deborde() and float(multiplex_defile.scroll_horizontal) + multiplex_defile.size.x < multiplex_cartes.size.x - 1.0
+
+## Vrai quand la rangée de cartes du multiplex est plus large que sa zone de défilement.
+func multiplex_deborde() -> bool:
+	return is_instance_valid(multiplex_defile) and is_instance_valid(multiplex_cartes) and multiplex_cartes.size.x > multiplex_defile.size.x + 1.0
 
 func _carte_match(m: Dictionary, change: bool, teintes: Dictionary) -> Control:
 	var carte := PanelContainer.new()
@@ -2130,17 +2434,25 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	portrait.texture = image
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	portrait.custom_minimum_size = Vector2(px(80), px(80))
+	# Carte de hauteur bornée (celle du portrait) : « Gabi, ton adjoint » à côté du portrait, pas
+	# au-dessus de la phrase, et la phrase sur deux lignes au plus (le reste en infobulle).
+	portrait.custom_minimum_size = Vector2(px(72), px(72))
 	portrait.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var matte := ShaderMaterial.new()
 	matte.shader = MATTE
 	portrait.material = matte
 	carte.add_child(portrait)
+	var signature := S.G.v(0)
+	signature.name = "MatchBetweenAdviceName"
+	signature.add_theme_constant_override("separation", 0)
+	signature.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	signature.add_child(_texte("Gabi", 26, OR, false, true))
+	signature.add_child(_texte("ton adjoint", 20, FAIBLE))
+	carte.add_child(signature)
 	var colonne := S.G.v(px(8))
 	S.G.fill(colonne)
 	carte.add_child(colonne)
-	colonne.add_child(_texte("Gabi, ton adjoint", 22, FAIBLE))
 	var graves := alertes_xv.filter(func(a: Dictionary): return a.alerte != "fatigué")
 	var fatigues := alertes_xv.filter(func(a: Dictionary): return a.alerte == "fatigué")
 	var phrases: Array = []
@@ -2173,12 +2485,15 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	if phrases.is_empty() and parlantes.is_empty(): phrases.append([_lecture_generale(direct), DOUX])
 	if phrases.is_empty() and not raisons.is_empty(): phrases.append([_phrase_forte(raisons), IVOIRE])
 	for phrase: Array in phrases:
-		var etiquette := _texte(str(phrase[0]), 28 if phrase[1] == DOUX else 32, phrase[1], true, true)
-		etiquette.max_lines_visible = 3
+		var etiquette := _texte(str(phrase[0]), 26, phrase[1], true, true)
+		etiquette.max_lines_visible = 2 if phrases.size() == 1 else 1
 		etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		etiquette.tooltip_text = "\n".join(raisons) if not raisons.is_empty() else str(phrase[0])
 		etiquette.mouse_filter = Control.MOUSE_FILTER_PASS
 		colonne.add_child(etiquette)
+		# Lignes réservées (un texte à la ligne tronqué n'en réserve qu'une) : la carte garde la hauteur
+		# du portrait et la phrase n'est jamais coupée à mi-hauteur.
+		etiquette.custom_minimum_size.y = hauteur_lignes(etiquette, etiquette.max_lines_visible)
 	# Les actions à droite de la carte (Gabi en largeur, sous le tableau de bord).
 	var actions := S.G.h(px(10))
 	actions.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -2308,7 +2623,115 @@ func montrer_arret(valeur: Dictionary) -> void:
 	if valeur.is_empty():
 		arret.hide()
 		return
-	var titre := "CARTON ROUGE" if valeur.get("rouge", false) else "CARTON JAUNE"
-	arret_titre.text = "%s · %s" % [titre, str(valeur.get("horloge", ""))]
-	arret_texte.text = str(valeur.get("texte", "")) + "\nLe match est en pause : réorganise ton équipe si besoin, puis reprends."
+	var cle := str(valeur.get("cle", ""))
+	if str(_choix_fait.get("cle", "")) != cle: _choix_fait = {}
+	arret_titre.text = "%s · %s" % [titre_arret(valeur), str(valeur.get("horloge", ""))]
+	var choix: Variant = valeur.get("choix")
+	var options: Array = choix.get("options", []) if choix is Dictionary and choix.get("options") is Array else []
+	for enfant in arret_options.get_children():
+		arret_options.remove_child(enfant)
+		enfant.queue_free()
+	arret_options.visible = options.size() > 1
+	if options.size() <= 1:
+		arret_texte.text = str(valeur.get("texte", "")) + "\nLe match est en pause : réorganise ton équipe si besoin, puis reprends."
+		arret.show()
+		return
+	var entrant := str(choix.get("type", "entrant")) != "sortant"
+	var staff: Dictionary = options[0]
+	for option: Variant in options:
+		if option is Dictionary and option.get("actuel", false): staff = option
+	var retenu: Variant = _choix_fait.get("id") if not _choix_fait.is_empty() else null
+	var focus: Button = null
+	for option: Variant in options:
+		if not option is Dictionary: continue
+		var id: Variant = option.get("id")
+		var bouton := _bouton(libelle_option(option), _choisir_option.bind(cle, id, str(option.get("nom", "")), entrant), retenu == null)
+		bouton.name = "MatchBetweenStopOption%d" % arret_options.get_child_count()
+		bouton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		bouton.custom_minimum_size.y = px(56)
+		bouton.set_meta("option_id", id)
+		var marque := (str(id) == str(retenu)) if retenu != null else bool(option.get("actuel", false))
+		if marque: _marquer_option(bouton)
+		if option == staff: focus = bouton
+		arret_options.add_child(bouton)
+	if retenu != null:
+		arret_texte.text = str(valeur.get("texte", "")) + "\n" + _phrase_choix(str(_choix_fait.get("nom", "")), entrant)
+		focus = arret_reprendre
+	else:
+		arret_texte.text = str(valeur.get("texte", "")) + "\nLe staff propose %s. Choisis qui %s :" % [_nom_initiale(str(staff.get("nom", ""))), "entre" if entrant else "sort"]
 	arret.show()
+	# Clavier et manette : le choix du staff a le focus (Entrée le confirme), puis Reprendre.
+	if focus != null: focus.call_deferred("grab_focus")
+
+## Titre du panneau d'arrêt selon le motif projeté par le moteur (`live.direct.arret.raison`).
+static func titre_arret(valeur: Dictionary) -> String:
+	match str(valeur.get("raison", "carton")):
+		"blessure": return "BLESSURE"
+		"saignement": return "SAIGNEMENT"
+		"hia", "commotion": return "CHOC À LA TÊTE"
+		"premiere-ligne": return "PREMIÈRE LIGNE"
+	return "CARTON ROUGE" if valeur.get("rouge", false) else "CARTON JAUNE"
+
+## « J. Dupont · Talonneur · 82 % » : nom, poste et énergie du joueur proposé.
+static func libelle_option(option: Dictionary) -> String:
+	var morceaux: Array[String] = [_nom_initiale(str(option.get("nom", "")))]
+	var poste := str(option.get("poste", "")).strip_edges()
+	if not poste.is_empty(): morceaux.append(poste.substr(0, 1).to_upper() + poste.substr(1))
+	morceaux.append("%d %%" % int(option.get("energie", 0)))
+	return " · ".join(morceaux)
+
+static func _nom_initiale(nom: String) -> String:
+	var morceaux := nom.strip_edges().split(" ", false)
+	if morceaux.size() < 2: return nom.strip_edges()
+	return "%s. %s" % [morceaux[0].substr(0, 1), " ".join(morceaux.slice(1))]
+
+static func _phrase_choix(nom: String, entrant: bool) -> String:
+	return "Choix enregistré : %s %s." % [_nom_initiale(nom), "entre" if entrant else "sort"]
+
+## Option retenue : liseré et texte or, comme le focus de l'écran.
+func _marquer_option(bouton: Button) -> void:
+	bouton.set_meta("retenue", true)
+	for etat in ["normal", "hover", "pressed", "disabled"]:
+		var style := S.G.T.box(SURVOL, maxi(4, px(10)), OR)
+		style.set_border_width_all(maxi(1, px(3)))
+		style.content_margin_left = px(22)
+		style.content_margin_right = px(22)
+		bouton.add_theme_stylebox_override(etat, style)
+	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]:
+		bouton.add_theme_color_override(couleur, OR)
+
+## L'écran n'a pas de référence au jeu : ses signaux sont branchés par la régie
+## (match_temps_forts.gd), qui ne relaie pas ce choix. On remonte donc les parents jusqu'au
+## premier nœud qui porte l'application (`app` avec `_command`, la vue du match), ou jusqu'à
+## l'application elle-même. Un test peut aussi poser `app_commandes` directement.
+var app_commandes: Object = null
+
+func _app() -> Object:
+	if app_commandes != null and is_instance_valid(app_commandes): return app_commandes
+	var noeud := get_parent()
+	while noeud != null:
+		var candidat: Variant = noeud.get("app")
+		if candidat is Object and is_instance_valid(candidat) and candidat.has_method("_command"): return candidat
+		if noeud.has_method("_command"): return noeud
+		noeud = noeud.get_parent()
+	return null
+
+func _choisir_option(cle: String, id: Variant, nom: String, entrant: bool) -> void:
+	if not _choix_fait.is_empty() or cle != str(_arret.get("cle", "")): return
+	var app: Object = _app()
+	if app == null or not app._command("match_incident_choice", {"cle": cle, "id": id}):
+		arret_texte.text = str(_arret.get("texte", "")) + "\nUne décision est déjà en cours : réessaie dans un instant."
+		return
+	_choix_fait = {"cle": cle, "id": id, "nom": nom}
+	montrer_arret(_arret)
+
+## Choix devenu impossible côté moteur (`live.incidentChoix` vide sans réponse du manager) :
+## le staff garde sa décision, les options se figent.
+func _suivre_choix(live: Dictionary) -> void:
+	if _arret.is_empty() or not _choix_fait.is_empty() or not _arret.get("choix") is Dictionary: return
+	if not live.has("incidentChoix") or live.incidentChoix != null: return
+	var cle := str(_arret.get("cle", ""))
+	if arret_options.get_child_count() == 0 or (arret_options.get_child(0) as Button).disabled: return
+	for bouton: Button in arret_options.get_children(): bouton.disabled = true
+	arret_texte.text = str(_arret.get("texte", "")) + "\nLe staff garde sa décision. Reprends quand tu veux."
+	if cle != "" and arret.visible: arret_reprendre.call_deferred("grab_focus")

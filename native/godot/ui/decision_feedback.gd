@@ -366,9 +366,22 @@ func control() -> Button:
 	button.tooltip_text = "Consulter les dix derniers reçus de cette session"
 	button.custom_minimum_size = Vector2(146,30)
 	button.add_theme_font_size_override("font_size",12)
-	button.disabled = _receipts.is_empty()
+	# Bouton secondaire discret, calé à droite du pied de page par le décor.
+	button.add_theme_stylebox_override("normal",G.Base.box(Color.TRANSPARENT,"control",G.Base.LINE))
+	button.add_theme_stylebox_override("hover",G.Base.box(G.Base.PANEL,"control",G.Base.MUTED))
+	button.add_theme_stylebox_override("pressed",G.Base.box(G.Base.PANEL.darkened(.15),"control",G.Base.MUTED))
+	button.add_theme_stylebox_override("disabled",G.Base.box(Color.TRANSPARENT,"control",G.Base.LINE))
+	button.add_theme_color_override("font_color",G.Base.MUTED)
+	for state in ["font_hover_color","font_pressed_color","font_focus_color"]: button.add_theme_color_override(state,G.Base.INK)
 	button.pressed.connect(_open)
+	refresh_control(button)
 	return button
+
+## Sans décision dans la session, le bouton disparaît au lieu de flotter grisé.
+func refresh_control(button: Button) -> void:
+	if button == null: return
+	button.disabled = _receipts.is_empty()
+	button.visible = not _receipts.is_empty()
 func _modal_visible(node: Node) -> bool:
 	for child in node.get_children():
 		if child is Window and child.visible: return true

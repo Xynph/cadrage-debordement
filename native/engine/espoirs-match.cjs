@@ -47,8 +47,9 @@ function factory(){
  function row(st,s,clubId){
   return st.clubs[clubId]||(st.clubs[clubId]={q:seasonGoal(s,clubId),used:[],plan:null,sheets:0,total:0,window:0,windowTotal:0,low:0,lowTotal:0});
  }
- const isJiff=(s,p)=>typeof CDJiff!=='undefined'&&CDJiff&&CDJiff.isJiff?CDJiff.isJiff(s,p):false;
- const jiffOn=(s,c)=>typeof CDJiff!=='undefined'&&CDJiff&&s.jiff?.version===1&&CDJiff.subjectLeagues(s)&&Object.values(CDJiff.subjectLeagues(s)).some(l=>l.includes(c.id));
+ // Quota du club (JIFF en Top 14 / Pro D2, EQP en Premiership) : {target, yes(p)} ou null (jiff.cjs).
+ const quotaOf=(s,c)=>typeof CDJiff!=='undefined'&&CDJiff&&CDJiff.qualifierFor&&s.jiff?.version===1&&c?CDJiff.qualifierFor(s,c.id):null;
+ const jiffOn=(s,c)=>!!quotaOf(s,c);
  // Joueurs de l'équipe première absents ce week-end : sélections (mode monde) et blessés.
  function absences(s,c){
   let released=0;
@@ -147,9 +148,9 @@ function factory(){
   const players=new Map(c.players.map(p=>[p.id,p]));
   const lineup=sheet.lineup.slice(),bench=sheet.bench.slice();
   const onSheet=new Set([...lineup,...bench].filter(Boolean));
-  const jiffGuard=jiffOn(s,c);
-  let jiffCount=[...onSheet].filter(x=>isJiff(s,players.get(x))).length;
-  const floor=Math.min(jiffCount,JIFF_TARGET);
+  const Q=quotaOf(s,c),jiffGuard=!!Q,isQ=p=>!!Q&&!!p&&Q.yes(p);
+  let jiffCount=[...onSheet].filter(x=>isQ(players.get(x))).length;
+  const floor=Math.min(jiffCount,Q?Q.target:JIFF_TARGET);
   const rate=p=>p?.rating||0;
   for(const pid of ids){
    if(onSheet.has(pid))continue;
@@ -162,12 +163,12 @@ function factory(){
    const target=options.find(o=>{
     if(o.cur&&ids.includes(o.cur.id))return false;
     if(!jiffGuard)return true;
-    const drop=o.cur&&isJiff(s,o.cur)&&!isJiff(s,e)?1:0;
+    const drop=o.cur&&isQ(o.cur)&&!isQ(e)?1:0;
     return jiffCount-drop>=floor;
    });
    if(!target)continue;
-   if(target.cur&&isJiff(s,target.cur))jiffCount--;
-   if(isJiff(s,e))jiffCount++;
+   if(isQ(target.cur))jiffCount--;
+   if(isQ(e))jiffCount++;
    target.list[target.i]=pid;onSheet.add(pid);
   }
   return {...sheet,lineup,bench};
@@ -255,24 +256,25 @@ function factory(){
   const sheet=buildSheet(team,s.lineup,s.reserves);
   return sheet.lineup.concat(sheet.bench).flatMap((x,i)=>x?[]:[i]);
  }
+ const ownQ=(s,p)=>{const Q=quotaOf(s,s.clubs[s.club]);return !!Q&&Q.yes(p);};
  function ownCandidates(s,slot,taken,wantJiff){
   const out=[];
   for(const p of s.development.academy){
    if(!callable(s,p)||taken.has(p.id)||!slotOk(p,slot))continue;
    const note=noteAt(p,slot);if(!(note>=OWN_MIN_NOTE))continue;
-   out.push({p,slot,note,jiff:isJiff(s,p),value:note*(.5+(p.condition??100)*.005)});
+   out.push({p,slot,note,jiff:ownQ(s,p),value:note*(.5+(p.condition??100)*.005)});
   }
   return out.sort((a,b)=>(wantJiff?Number(b.jiff)-Number(a.jiff):0)||b.value-a.value||(a.p.id<b.p.id?-1:1));
  }
  // Meilleur jeune par place vide (jamais le même deux fois), places rares d'abord ; la règle JIFF guide le choix.
  function propose(s,slots){
   const own=s.clubs[s.club],byId=new Map(own.players.map(p=>[p.id,p]));
-  const jOn=jiffOn(s,own),onSheet=s.lineup.concat(s.reserves).filter(x=>x&&byId.has(x));
-  let jiffCount=jOn?onSheet.filter(x=>isJiff(s,byId.get(x))).length:0;
+  const Q=quotaOf(s,own),jOn=!!Q,onSheet=s.lineup.concat(s.reserves).filter(x=>x&&byId.has(x));
+  let jiffCount=jOn?onSheet.filter(x=>Q.yes(byId.get(x))).length:0;
   const order=slots.slice(0,OWN_MAX).map(slot=>({slot,n:ownCandidates(s,slot,new Set(),false).length})).sort((a,b)=>a.n-b.n||a.slot-b.slot).map(x=>x.slot);
   const taken=new Set(),picks=[],options=new Map();
   for(const slot of order){
-   const wantJiff=jOn&&jiffCount<JIFF_TARGET,list=ownCandidates(s,slot,taken,wantJiff);
+   const wantJiff=jOn&&jiffCount<Q.target,list=ownCandidates(s,slot,taken,wantJiff);
    options.set(slot,list);
    if(!list.length)continue;
    taken.add(list[0].p.id);picks.push(list[0]);if(list[0].jiff)jiffCount++;

@@ -171,8 +171,12 @@ def build(args):
     config += "\n[editor]\n\nimport/use_multiple_threads=false\n"
     project_file.write_text(config, encoding="utf-8")
     voice_coverage = validate_voice_assets(source)
-    preset = (PROJECT / "windows-release.cfg").read_text(encoding="utf-8-sig")
-    preset = preset.replace("{{RELEASE_TEMPLATE}}", template.as_posix())
+    # Steam (scripts/build-steam.py) choisit son propre réglage d'export et ses valeurs ; défaut inchangé.
+    preset = (PROJECT / getattr(args, "preset", "windows-release.cfg")).read_text(encoding="utf-8-sig")
+    values = {"RELEASE_TEMPLATE": template.as_posix(), "VERSION": BUILD_VERSION, **getattr(args, "preset_values", {})}
+    for key, value in values.items():
+        preset = preset.replace("{{" + key + "}}", str(value).replace('"', "'"))
+    assert "{{" not in preset, "Valeur manquante dans le réglage d'export"
     (source / "export_presets.cfg").write_text(preset, encoding="utf-8")
     app = target / "RugbyLegacy27-PrototypeGodot"
     app.mkdir()
@@ -216,6 +220,7 @@ def build(args):
     shutil.copy2(ROOT / "docs/club-atlas-credits.md", licenses / "photos.md")
     shutil.copy2(PROJECT / "guide/assets/NOTICE.md", licenses / "coach-original.md")
     shutil.copy2(PROJECT / "guide/assets/NOTICE-coach-poses.md", licenses / "coach-16-poses.md")
+    shutil.copy2(PROJECT / "ui/contextual/rooms/assets/furniture/LICENSE.txt", licenses / "mobilier-kenney.txt")
     voice_licenses = licenses / "voix-coach"
     voice_licenses.mkdir()
     for document in (PROJECT / "guide/assets/voice").iterdir():

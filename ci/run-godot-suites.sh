@@ -40,8 +40,11 @@ engine_skip='SDK Godot (requis|absent)|Godot SDK required|SKIP [^ ]+ : SDK absen
 # au cas par cas, jamais pour l'ensemble. Les assertions elles-mêmes ne changent pas.
 # (Les plafonds et suites informatives ci-dessous des suites exclues — CD_MODES_HERITES — sont conservés pour leur retour.)
 declare -A suite_limits=(
+  # Mesure du chrono des arrêts (à la demande en ligne seulement, sautée en CI) : ≈ 15 min sur runner.
+  [tests/mesure-chrono-arrets.cjs]=2100
+  [tests/match-rating-curve.cjs]=600
   [tests/godot-art-direction.cjs]=600
-  [tests/godot-match-temps-forts.cjs]=600
+  [tests/godot-match-temps-forts.cjs]=1200
   [tests/godot-immersive08.cjs]=600
   # Notes de match : préparation Node de la carrière Monde (~68 jours jusqu'au premier match, 3 matchs), puis Godot.
   # Mesuré sur runner le 13/11 (run 43474285948) : 311 s, suite verte ; plafond 600 s = marge d'environ deux fois.

@@ -8,11 +8,12 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
-  # Créneau régulier : seulement les suites Godot (informatives : un échec ne rougit pas le run) sur le
-  # dernier main, au lieu de les relancer à chaque fusion. Ni suites JS ni verdict (les gates ignorent
-  # l'événement schedule).
+  # Batterie complète horaire sur main (19/11/2026) : suites JS et Godot complètes, verdict bloquant.
+  # Les PR prêtes tournent en mode rapide ; c'est ce créneau qui vérifie tout. Sautée si le dernier
+  # commit de main a déjà une batterie horaire verte. Rouge : main-rouge.yml relance une fois les jobs
+  # en échec, puis alerte #591 et ouvre le retour arrière quand une seule PR est en cause.
   schedule:
-    - cron: '23 */2 * * *'
+    - cron: '41 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -39,6 +40,12 @@ jobs:
       # Le changement touche des fichiers Godot (jeu natif, suites Godot, lanceur CI) : le job Godot
       # devient alors obligatoire pour « Validation CI » ; sinon il est sauté (et ne bloque pas).
       godot: ${{ steps.diff.outputs.godot }}
+      # Mode rapide (PR prête sans étiquette `batterie-complete`, hors PR du train) : suites courtes et
+      # suites modifiées seulement (ci/shard-tests.cjs, CD_RAPIDE). Batterie complète chaque heure sur main.
+      rapide: ${{ steps.draft.outputs.rapide == 'true' }}
+      tests_modifies: ${{ steps.diff.outputs.tests_modifies }}
+      # Créneau horaire : main déjà vérifié par une batterie horaire verte sur ce commit -> rien à relancer.
+      deja_vert: ${{ steps.deja.outputs.deja_vert == 'true' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -55,12 +62,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
           EVENT_DRAFT: ${{ github.event.pull_request.draft }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           set -euo pipefail
           draft=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .draft 2>/dev/null || echo "$EVENT_DRAFT")
           [[ "$draft" == true || "$draft" == false ]] || draft="$EVENT_DRAFT"
           echo "draft=$draft" >> "$GITHUB_OUTPUT"
           echo "Brouillon : événement=$EVENT_DRAFT, actuel=$draft"
+          rapide=true
+          if [[ "$HEAD_REF" == train/* ]]; then rapide=false; fi
+          if gh api "repos/$GITHUB_REPOSITORY/issues/$PR/labels" --jq '.[].name' 2>/dev/null | grep -qx 'batterie-complete'; then rapide=false; fi
+          echo "rapide=$rapide" >> "$GITHUB_OUTPUT"
+          echo "Mode rapide : $rapide"
+      - id: deja
+        name: Batterie horaire déjà verte sur ce commit ?
+        if: ${{ github.event_name == 'schedule' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          vert=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/tests.yml/runs?event=schedule&branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""' 2>/dev/null || echo "")
+          if [[ "$vert" == "$GITHUB_SHA" ]]; then echo "deja_vert=true" >> "$GITHUB_OUTPUT"; echo "main $GITHUB_SHA déjà vert : rien à relancer"; fi
       - id: diff
         name: Classifier le changement et vérifier la syntaxe JS modifiée
         shell: bash
@@ -72,16 +95,16 @@ jobs:
         run: node ci/test-coverage.cjs
 
   shards:
-    name: Suites ${{ matrix.shard }}/7
+    name: Suites ${{ matrix.shard }}/10
     needs: classification
-    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' && needs.classification.outputs.draft != 'true' && github.event_name != 'schedule' }}
+    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' && needs.classification.outputs.draft != 'true' && needs.classification.outputs.deja_vert != 'true' }}
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
-    # Sept lots équilibrés (ci/shard-tests.cjs, poids ci/suite-weights.json), toutes
-    # les suites conservées, trois au plus par runner (deux dès qu'une suite exclusive
+    # Dix lots équilibrés (ci/shard-tests.cjs, poids ci/suite-weights.json), toutes
+    # les suites conservées (mode rapide : suites courtes et modifiées seulement), trois au plus par runner (deux dès qu'une suite exclusive
     # tourne : 2 cœurs physiques) sous budget mémoire.
     # Nombre de shards et parallélisme : ci/ci-jobs.cjs (SHARD_COUNT, SHARD_PARALLEL).
     # Marge globale finie ; chaque suite garde aussi son propre délai maximal.
@@ -102,9 +125,11 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
           COVERAGE: ${{ needs.classification.outputs.coverage }}
+          CD_RAPIDE: ${{ needs.classification.outputs.rapide == 'true' && '1' || '0' }}
+          CD_RAPIDE_TESTS: ${{ needs.classification.outputs.tests_modifies }}
         run: |
           set -euo pipefail
-          node ci/shard-tests.cjs "$SHARD" "$COVERAGE" 7 > "$RUNNER_TEMP/shard-suites.txt"
+          node ci/shard-tests.cjs "$SHARD" "$COVERAGE" 10 > "$RUNNER_TEMP/shard-suites.txt"
           if grep -q -F -x -f ci/mobilite-suites.txt "$RUNNER_TEMP/shard-suites.txt"; then echo "mobilite=true" >> "$GITHUB_OUTPUT"; fi
           echo "CD_MOBILITE_DIR=$RUNNER_TEMP/mobilite" >> "$GITHUB_ENV"
       - name: Cache de la sauvegarde de fin de saison
@@ -124,22 +149,23 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
           COVERAGE: ${{ needs.classification.outputs.coverage }}
+          RAPIDE: ${{ needs.classification.outputs.rapide }}
         run: |
           set -euo pipefail
           mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
           if [[ "${#suites[@]}" -eq 0 ]]; then
             # Couverture ciblée (web, native-art) : moins de suites que de shards.
-            # En couverture complète, un shard vide est une erreur de planification.
-            [[ "$COVERAGE" != full ]] || exit 1
-            echo "### Shard $SHARD/7 ($COVERAGE) : aucune suite attribuée" >> "$GITHUB_STEP_SUMMARY"
+            # En couverture complète (hors mode rapide), un shard vide est une erreur de planification.
+            [[ "$COVERAGE" != full || "$RAPIDE" == true ]] || exit 1
+            echo "### Shard $SHARD/10 ($COVERAGE) : aucune suite attribuée" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           # Trois suites au plus (4 vCPU = 2 cœurs physiques) : deux dès qu'une suite
           # exclusive (longue ou machine virtuelle à délai interne) tourne ; budget mémoire
           # de 12 Go. Budgets par suite, journaux groupés et résumé : ci/run-shard-suites.sh.
-          bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/7 ($COVERAGE)" 3
+          bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/10 ($COVERAGE)" 3
   godot:
-    name: Godot ${{ matrix.shard }}/3
+    name: Godot ${{ matrix.shard }}/5
     needs: classification
     # Suites qui pilotent le SDK (source lisant CD_GODOT_EXE ou CD_GODOT_EXECUTABLE).
     # BLOQUANT (14/11) : « Validation CI » dépend de ce job (voir validation ci-dessous).
@@ -147,15 +173,15 @@ jobs:
     #    ci/test-coverage.cjs) : le job tourne et doit réussir ;
     #  - autre PR (aucun fichier Godot) : job sauté, et un job sauté ne fait pas échouer l'agrégateur ;
     #  - workflow_dispatch : tourne et doit réussir ;
-    #  - créneau régulier (schedule) sur main : informatif (continue-on-error), ni suites JS ni verdict.
+    #  - créneau horaire (schedule) sur main : batterie Godot complète, obligatoire (19/11/2026).
+    # Mode rapide d'une PR : suites Godot courtes et modifiées seulement (CD_RAPIDE).
     # Pas lancé sur chaque fusion dans main (rafales de fusions automatiques) ; recette Godot ciblée
     # d'une PR : étiquette `godot-sdk` (godot-sdk.yml, workflow à part, non requis).
-    if: ${{ needs.classification.result == 'success' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && needs.classification.outputs.draft != 'true' && needs.classification.outputs.godot == 'true')) }}
-    continue-on-error: ${{ github.event_name == 'schedule' }}
+    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.deja_vert != 'true' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && needs.classification.outputs.draft != 'true' && needs.classification.outputs.godot == 'true')) }}
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5]
     runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 55
     env:
@@ -202,8 +228,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends xvfb xauth libgl1 libgl1-mesa-dri \
+          sudo apt-get -o Acquire::Retries=5 update -qq
+          sudo apt-get -o Acquire::Retries=5 install -y --fix-missing -qq --no-install-recommends xvfb xauth libgl1 libgl1-mesa-dri \
             libglx-mesa0 libegl1 libxcursor1 libxinerama1 libxrandr2 libxi6 libxkbcommon0 libfontconfig1
           node ci/godot-env.cjs --check
       - name: Cache des imports Godot
@@ -240,16 +266,19 @@ jobs:
         timeout-minutes: 45
         env:
           SHARD: ${{ matrix.shard }}
+          CD_RAPIDE: ${{ needs.classification.outputs.rapide == 'true' && '1' || '0' }}
+          CD_RAPIDE_TESTS: ${{ needs.classification.outputs.tests_modifies }}
           LIBGL_ALWAYS_SOFTWARE: '1'
           GALLIUM_DRIVER: llvmpipe
         run: |
           set -euo pipefail
-          node ci/shard-tests.cjs "$SHARD" godot 3 > "$RUNNER_TEMP/godot-suites.txt"
+          node ci/shard-tests.cjs "$SHARD" godot 5 > "$RUNNER_TEMP/godot-suites.txt"
+          if [[ ! -s "$RUNNER_TEMP/godot-suites.txt" ]]; then echo "### Godot $SHARD/5 : aucune suite (mode rapide)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           xvfb-run -a -s "-screen 0 1920x1080x24" \
-            bash ci/run-godot-suites.sh "$RUNNER_TEMP/godot-suites.txt" "Godot $SHARD/3"
+            bash ci/run-godot-suites.sh "$RUNNER_TEMP/godot-suites.txt" "Godot $SHARD/5"
   validation:
     name: Validation CI
-    if: ${{ always() && github.event_name != 'schedule' }}
+    if: ${{ always() && needs.classification.outputs.deja_vert != 'true' }}
     needs: [classification, shards, godot]
     runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 5
@@ -265,6 +294,7 @@ jobs:
           DRAFT: ${{ needs.classification.outputs.draft }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           EVENT_NAME: ${{ github.event_name }}
+          RAPIDE: ${{ needs.classification.outputs.rapide }}
         run: |
           set -euo pipefail
           result='ÉCHEC'
@@ -276,14 +306,14 @@ jobs:
           elif [[ "$CLASSIFICATION" == "success" ]]; then
             case "$EVENT_NAME:$COVERAGE:$SHARDS" in
               pull_request:documentation:skipped|pull_request:web:success|pull_request:native-art:success|\
-              pull_request:full:success|push:full:success|workflow_dispatch:full:success)
+              pull_request:full:success|push:full:success|workflow_dispatch:full:success|schedule:full:success)
                 result='SUCCÈS' ;;
             esac
           fi
           # Suites Godot : obligatoires (job réussi) sur workflow_dispatch et sur une PR qui touche des
           # fichiers Godot ; sinon le job est sauté et ne bloque pas. Échec ou annulation : jamais vert.
           godot_required=false
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]] ||
+          if [[ "$EVENT_NAME" == "workflow_dispatch" || "$EVENT_NAME" == "schedule" ]] ||
              [[ "$EVENT_NAME" == "pull_request" && "${GODOT_CHANGED:-false}" == "true" && "$COVERAGE" =~ ^(full|native-art)$ ]]; then
             godot_required=true
           fi
@@ -305,6 +335,7 @@ jobs:
             echo "- Suites : $SHARDS"
             echo "- Suites Godot : $GODOT (obligatoires : $godot_required)"
             echo "- Couverture : $COVERAGE"
+            if [[ "${RAPIDE:-false}" == "true" ]]; then echo "- Mode rapide : suites courtes et modifiées seulement ; batterie complète chaque heure sur main (étiquette \`batterie-complete\` pour la forcer ici)"; fi
             if [[ -n "$draft_wait" ]]; then echo "- $draft_wait"; fi
             echo "- [Voir les contrôles et les erreurs]($url)"
             echo ""

@@ -104,7 +104,10 @@ module.exports = function champMatchFactory(rules, editionId = 'rugby-world-2026
       fail(p.end === null && l.knockout?.period === 2, 'seconde prolongation incohérente');
       p.end = l.minute;
     }
+    // Annonces et commentaire tir par tir : texte seul, après coup, sans tirage (world-knockout.cjs).
+    CDWorldKnockout.extraTimeEnd(l);
     const shootout = tied(l.score) && tied(l.tries) ? playShootout(l) : null;
+    if (shootout) CDWorldKnockout.commentShootout(l, shootout.attempts, 6);
     const decision = {extraTime: Boolean(p), redCards: l.sheets.map(sh => sh.redCards.length),
       ...(shootout ? {shootout} : {})};
     const {competitionId, phase} = l.worldContext;
@@ -114,7 +117,8 @@ module.exports = function champMatchFactory(rules, editionId = 'rugby-world-2026
     l.winner = winner;
     l.decision = {method, ...decision};
     if (method !== 'score') addEvent(l, S.clubs[winner].abbr +
-      (method === 'tries' ? ' se qualifie au nombre d’essais.' : ' remporte la séance de tirs au but.'), 'end');
+      (method === 'tries' ? ' se qualifie au nombre d’essais.' :
+        ` remporte la séance de tirs au but (${shootout.score[0]} – ${shootout.score[1]}).`), 'end');
     return false;
   }
 
