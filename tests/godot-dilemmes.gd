@@ -160,14 +160,13 @@ func run() -> void:
 		if banniere != null:
 			var r := (banniere as Control).get_global_rect()
 			check(r.size.x > 0 and r.end.y <= taille.y + 0.5, "Bannière des Bleus dans l'écran 1280x720 (%s)" % str(r))
-			var boutons := (banniere as Node).find_children("LineupBleusRest*", "Button", true, false)
-			check(not boutons.is_empty() and boutons.size() <= 2, "Bannière des Bleus : 1 ou 2 boutons « Faire souffler » (%d)" % boutons.size())
-			var liste_candidats := page_visible("LineupCandidatesScroll")
-			check(liste_candidats != null and (liste_candidats as Control).get_global_rect().position.y < taille.y - 120, "La liste des candidats reste visible sous la bannière")
+			check(page_visible("ImmersiveTactics") != null, "1280x720 : écran Composition de la maquette (plus d'ancienne feuille)")
+			check(page_visible("CarnetLineup") == null, "1280x720 : l'ancienne feuille de match n'apparaît plus")
+			var tous := (banniere as Node).find_children("LineupBleusRestAll", "Button", true, false)
+			check(tous.size() == 1, "Bannière des Bleus : bouton « Faire souffler »")
 		await capture("4-feuille-match-banniere-bleus")
 		if banniere != null:
 			var bouton := (banniere as Node).find_children("LineupBleusRestAll", "Button", true, false)
-			if bouton.is_empty(): bouton = (banniere as Node).find_children("LineupBleusRest*", "Button", true, false)
 			if bouton.size() == 1:
 				(bouton[0] as Button).pressed.emit()
 				await wait_engine()

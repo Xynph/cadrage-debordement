@@ -32,7 +32,6 @@ const MatchCanvas = preload("res://ui/immersive08/match_canvas.gd")
 const MatchCompact = preload("res://ui/immersive08/match_compact.gd")
 const G = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
-const TACTICS_CANVAS_MIN_WIDTH := 1600
 ## Gabarits riches (référence 2560 × 1440) ouverts dès 1280 × 720 (densité 0,5). Les gabarits sont
 ## proportionnels (C.px, D.place) et tout texte passe par un plancher de 12 px (C.label, D.text) :
 ## à 1280 × 720 le plus petit texte rendu fait 12 × 0,977 ≈ 11,7 px (pied de page compris, voir _fit_layout).
@@ -613,7 +612,7 @@ static func _sync_office_props(match_status: Label) -> void:
 
 static func _subnavigation(parent: Node, app: Control) -> void:
 	if Selections.nation_only(app.model): return
-	if (app.route=="Composition" and app.get_window().size.x>=TACTICS_CANVAS_MIN_WIDTH) or (app.route=="Effectif" and app.get_window().size.x>=1600): return
+	if app.route=="Composition" or (app.route=="Effectif" and app.get_window().size.x>=1600): return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
 		var row := C.h(8)
@@ -723,18 +722,9 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 				app.body.add_child(roster)
 				Legacy.apply(roster, app.accent)
 		"Composition":
-			if app.get_window().size.x>=TACTICS_CANVAS_MIN_WIDTH:
-				app.body.add_child(TacticsCanvas.build(app))
-			else:
-				var lineup: Control = app.SquadViews.lineup(app)
-				var remove := lineup.find_child("LineupRemove",true,false) as Button
-				var candidates := lineup.find_child("LineupCandidatesScroll",true,false) as ScrollContainer
-				# La libération reste au-dessus de la liste.
-				remove.get_parent().move_child(remove,candidates.get_index())
-				var selected := lineup.find_child("LineupSlot%02d" % (app.selected_slot+1),true,false) as Button
-				if selected != null: selected.set_meta("carnet_selected",true)
-				app.body.add_child(lineup)
-				Legacy.apply(lineup,app.accent)
+			# Décision de Léo (19/11/2026) : plus jamais l'ancienne feuille de match. L'écran de la maquette validée
+			# (proportionnel, plancher de 12 px) sert à toutes les tailles, 1280 × 720 compris.
+			app.body.add_child(TacticsCanvas.build(app))
 		"Préparation": app.body.add_child(Preparation.compact(app))
 		"Plan de jeu": app.body.add_child(app.PlaybookViews.build(app))
 		"Recrutement": app.body.add_child(app.SquadViews.market(app))
