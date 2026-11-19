@@ -132,10 +132,10 @@ func check_articulation(folder: String) -> void:
 	speech.speaking_changed.connect(portrait.set_speaking)
 	speech.articulation_changed.connect(portrait.set_articulation)
 	var wav := AudioStreamWAV.new(); wav.format = AudioStreamWAV.FORMAT_16_BITS; wav.mix_rate = 24000
-	var pcm := PackedByteArray(); pcm.resize(24000 * 2 * 1.4)
+	var pcm := PackedByteArray(); pcm.resize(24000 * 2 * 2.0)
 	for frame in int(pcm.size() / 2):
 		var time := float(frame) / 24000.0
-		pcm.encode_s16(frame * 2, int(14000.0 * sin(time * TAU * 220.0)) if time >= 0.4 and time < 0.8 else 0)
+		pcm.encode_s16(frame * 2, int(14000.0 * sin(time * TAU * 220.0)) if time >= 0.4 and time < 1.4 else 0)
 	wav.data = pcm
 	check(wav.save_to_wav(folder.path_join("silence-parole.wav")) == OK, "Fixture réelle silence, parole, silence")
 	var text := "La bouche respecte les pauses."
@@ -146,11 +146,14 @@ func check_articulation(folder: String) -> void:
 	check(speech.speaking and speech.articulation == 0.0 and portrait.pose_index == portrait._rest, "La bouche reste fermée pendant le silence initial d'un clip en lecture")
 	await at_position(speech,0.54)
 	check(speech.articulation > 0.0, "La vraie portion PCM parlée ouvre l'articulation")
+	# Parole de 1 s (plus d'un cycle complet de 0,54 s du portrait) : les deux poses apparaissent quel que soit
+	# le décalage entre l'horloge du portrait et la position de lecture ; seules comptent les images où le PCM parle.
 	var frames: Dictionary = {}
-	while speech.player.playing and speech.player.get_playback_position() < 0.75:
-		frames[portrait.pose_index] = true; await process_frame
+	while speech.player.playing and speech.player.get_playback_position() < 1.35:
+		if speech.articulation > 0.0: frames[portrait.pose_index] = true
+		await process_frame
 	check(frames.has(portrait._talk) and frames.has(portrait._rest), "Le portrait articule réellement dans la portion parlée")
-	await at_position(speech,1.0)
+	await at_position(speech,1.6)
 	check(speech.speaking and speech.articulation == 0.0 and portrait.pose_index == portrait._rest, "Le silence intérieur ferme la bouche sans annoncer une fin de phrase")
 	speech.rate = 1.5; speech.speak(text)
 	await at_position(speech,0.54)
