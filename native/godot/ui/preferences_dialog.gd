@@ -21,6 +21,58 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	C.fill(content,true)
 	dialog.add_child(content)
 	Dialogs.dress_title(dialog)
+	var parts := _fill(app, profile, content, func(): dialog.hide(); dialog.queue_free())
+	# Pied de fenêtre : filet puis bouton principal aligné à droite (plus de bouton flottant au milieu).
+	content.add_child(C.rule())
+	var footer := dialog.get_ok_button().get_parent()
+	if footer is BoxContainer: (footer as BoxContainer).alignment = BoxContainer.ALIGNMENT_END
+	dialog.get_ok_button().custom_minimum_size = Vector2(maxi(150,C.px(240)),maxi(36,C.px(52)))
+	# Dans le pied, à côté de FERMER : la réinitialisation vaut pour tous les onglets et reste visible quand
+	# l'onglet Confort s'allonge en carrière (vitesse du monde, conférences ordinaires).
+	var reset := dialog.add_button("Réinitialiser ces préférences")
+	reset.name = "PreferencesReset"
+	reset.custom_minimum_size.y = dialog.get_ok_button().custom_minimum_size.y
+	reset.pressed.connect(parts.reset)
+	var initial_salary_period := str(profile.data.salary_period)
+	var close := func():
+		if initial_salary_period != str(profile.data.salary_period): app.call_deferred("_render",false)
+		dialog.queue_free()
+	dialog.confirmed.connect(close)
+	dialog.canceled.connect(close)
+	app.add_child(dialog)
+	parts.refresh.call()
+	# Grands écrans : le dialogue gagne en hauteur pour que l'onglet Affichage tienne entier dans sa zone défilante.
+	Dialogs.show_centered(dialog,Vector2i(width,680 if app.get_window().size.y>=1080 else 600))
+	FocusLater.grab(parts.focus)
+	return dialog
+
+## Écran « Réglages » de la coque (règle « jamais de petite fenêtre ») : mêmes onglets et mêmes réglages que la
+## fenêtre des paramètres (encore ouverte hors carrière), montés dans la zone de contenu. Les réglages s'appliquent
+## aussitôt ; « Réinitialiser » est au pied de l'écran.
+static func page(app: Control, profile: RefCounted) -> Control:
+	var content := C.v(10)
+	content.name = "PreferencesPage"
+	C.fill(content,true)
+	if profile == null:
+		content.add_child(C.wrap("Les réglages locaux sont indisponibles : le profil n'a pas pu être lu.",20,C.ALERT))
+		return content
+	var parts := _fill(app, profile, content, Callable(), true)
+	content.add_child(C.rule())
+	var footer := C.h(12)
+	footer.alignment = BoxContainer.ALIGNMENT_END
+	content.add_child(footer)
+	var reset := G.button("Réinitialiser ces préférences", parts.reset)
+	reset.name = "PreferencesReset"
+	reset.custom_minimum_size.y = maxi(36,C.px(52))
+	footer.add_child(reset)
+	parts.refresh.call()
+	return content
+
+## Contenu commun à la fenêtre et à l'écran Réglages. `quitter` referme la fenêtre avant d'ouvrir un autre écran
+## (sans effet sur l'écran Réglages) ; `en_page` redessine la coque quand l'unité des salaires change.
+static func _fill(app: Control, profile: RefCounted, content: VBoxContainer, quitter: Callable, en_page: bool = false) -> Dictionary:
+	var leave := func():
+		if quitter.is_valid(): quitter.call()
 	var introduction := C.card("")
 	content.add_child(introduction)
 	var masthead := C.h(16)
@@ -71,7 +123,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		comfort.add_child(gauge_box)
 		detail_view.gauge(gauge_box, app, detailed)
 		var choose := G.button("Championnats suivis…", func():
-			dialog.queue_free()
+			leave.call()
 			preload("res://ui/league_detail_view.gd").open_career(app))
 		choose.name = "PreferencesLeagueDetail"
 		comfort.add_child(choose)
@@ -122,11 +174,6 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	error.max_lines_visible = 3
 	error.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	content.add_child(error)
-	# Pied de fenêtre : filet puis bouton principal aligné à droite (plus de bouton flottant au milieu).
-	content.add_child(C.rule())
-	var footer := dialog.get_ok_button().get_parent()
-	if footer is BoxContainer: (footer as BoxContainer).alignment = BoxContainer.ALIGNMENT_END
-	dialog.get_ok_button().custom_minimum_size = Vector2(maxi(150,C.px(240)),maxi(36,C.px(52)))
 	var refresh := func():
 		volume.set_value_no_signal(profile.data.volume)
 		motion.set_pressed_no_signal(profile.data.reduced_motion)
@@ -167,7 +214,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	camera.item_selected.connect(func(index: int): profile.set_value("camera",["tv","tactical","action"][index]); refresh.call())
 	salary_period.item_selected.connect(func(index: int):
 		profile.set_value("salary_period",["weekly","monthly","annual"][index])
-		refresh.call())
+		refresh.call()
+		if en_page: app.call_deferred("_render",false))
 	quality.item_selected.connect(func(index: int): profile.set_value("quality",["economy","balanced","detail"][index]); refresh.call())
 	screen.item_selected.connect(func(index: int): profile.set_value("display_screen",index-1); refresh.call())
 	stadium.item_selected.connect(func(index: int): profile.set_value("stadium",["day","evening"][index]); refresh.call())
@@ -183,12 +231,6 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	match_sounds.toggled.connect(func(value: bool):
 		if sound_profile != null: sound_profile.set_value("match_sounds",value)
 		refresh.call())
-	# Dans le pied, à côté de FERMER : la réinitialisation vaut pour tous les onglets et reste visible quand
-	# l'onglet Confort s'allonge en carrière (vitesse du monde, conférences ordinaires).
-	var reset := dialog.add_button("Réinitialiser ces préférences")
-	reset.name = "PreferencesReset"
-	reset.custom_minimum_size.y = dialog.get_ok_button().custom_minimum_size.y
-	reset.pressed.connect(func(): profile.reset_defaults(); refresh.call())
 	display.add_child(C.wrap("Le mode de fenêtre s’applique à cette session.",18,C.IVORY))
 	var display_row := G.h(8); display.add_child(display_row)
 	var fullscreen := G.button("Plein écran",app._set_display_mode.bind(Window.MODE_FULLSCREEN),true)
@@ -201,25 +243,14 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	display_row.add_child(windowed)
 	var links := G.h(8); display.add_child(links)
 	links.add_child(G.button("Importe un pack personnalisé",func():
-		dialog.hide(); dialog.queue_free()
+		leave.call()
 		app.pack_manager.open("career" if app._has_career() else "creation")))
 	links.add_child(G.button("Aide du coach",func():
-		dialog.hide(); dialog.queue_free()
+		leave.call()
 		app.call_deferred("_open_coach")))
 	links.get_child(0).name = "PreferencesPack"; links.get_child(1).name = "PreferencesCoachHelp"
 	for button in display_row.get_children() + links.get_children(): G.fill(button)
-	var initial_salary_period := str(profile.data.salary_period)
-	var close := func():
-		if initial_salary_period != str(profile.data.salary_period): app.call_deferred("_render",false)
-		dialog.queue_free()
-	dialog.confirmed.connect(close)
-	dialog.canceled.connect(close)
-	app.add_child(dialog)
-	refresh.call()
-	# Grands écrans : le dialogue gagne en hauteur pour que l'onglet Affichage tienne entier dans sa zone défilante.
-	Dialogs.show_centered(dialog,Vector2i(width,680 if app.get_window().size.y>=1080 else 600))
-	FocusLater.grab(volume.get_line_edit())
-	return dialog
+	return {"refresh":refresh, "focus":volume.get_line_edit(), "reset":func(): profile.reset_defaults(); refresh.call()}
 
 ## Page d'onglet : zone défilante propre à l'onglet (la rangée d'onglets ne défile jamais). Retourne la colonne de contenu.
 static func _page(tabs: TabContainer, title: String) -> VBoxContainer:

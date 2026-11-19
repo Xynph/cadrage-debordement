@@ -1,6 +1,8 @@
 extends RefCounted
-const CLUB_CHROME := Color("11191e")
 const C = preload("res://ui/immersive08/components.gd")
+const Charte = preload("res://ui/charte.gd")
+const SearchPage = preload("res://ui/immersive08/search_canvas.gd")
+const Preferences = preload("res://ui/preferences_dialog.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Raccourcis = preload("res://ui/raccourcis_clavier.gd")
@@ -41,25 +43,10 @@ const D = preload("res://ui/immersive08/primitives.gd")
 ## Nationale/Champ garde sa page simple. Le Match (avant le coup d'envoi) suit le même seuil RICH_MIN_SIZE ;
 ## le direct est l'écran contextuel.
 const RICH_MIN_SIZE := Vector2i(1280,720)
-const SIDEBAR_AUTOSAVE_CAPTION := "Sauvegarde auto"
 const RICH_FROM_720P := ["Rivalités","Classements","Finances","Recrutement","Club","Staff","Travail du club","Stratégie",
 	"Carrière","Presse","Vestiaire","Formation","Préparation","Plan de jeu","Centre"]
 
 const FOOTER_RISE := 14
-const TOPBAR_ACTION_LEFT := 2067
-const TOPBAR_MATCH_ACTION_LEFT := 2008
-## Petit bouton « Jour suivant » (+1 j) à droite de « Continuer ».
-const NEXT_DAY_WIDTH := 58
-## Bandeau du haut (pixels de référence, largeur 2312) : fil d'Ariane, historique et recherche à gauche,
-## Gabi (visage et remarque du moment) au milieu, à côté de la date et du bouton « Continuer »
-## (demande de Léo, 14/11/2026, option A). Gabi ne prend aucune place à l'écran : il vit dans le bandeau.
-const TOPBAR_BREADCRUMB_END := 700
-const TOPBAR_HISTORY_LEFT := 712
-const TOPBAR_SEARCH_LEFT := 815
-const TOPBAR_SEARCH_WIDTH := 420
-const TOPBAR_SEARCH_WIDTH_PIED := 640
-const TOPBAR_GABI_LEFT := 1253
-const TOPBAR_GABI_GAP := 16
 
 const GROUPS = [
 	["Bureau", "Bureau", ["Bureau"]],
@@ -72,7 +59,7 @@ const GROUPS = [
 	["Formation", "Formation", ["Formation", "Centre", "Suivi des jeunes"]],
 	["Carrière", "Carrière", ["Carrière"]]
 ]
-const TITLES = {"Bureau":"Ta semaine commence ici.", "Effectif":"Les hommes du projet.", "Composition":"Le XV de départ.", "Préparation":"La semaine se gagne ici.", "Plan de jeu":"Ton identité de jeu.", "Vestiaire":"Un groupe, une ambition.", "Recrutement":"Le prochain renfort.", "Club":"Un club. Un territoire.", "Finances":"Garder une longueur d’avance.", "Classements":"Chaque point compte.", "Calendrier":"Le fil de ta saison.", "Formation":"Le futur porte nos couleurs.", "Centre":"Les chemins de la progression.", "Suivi des jeunes":"Ils grandissent sous nos couleurs.", "Staff":"Le collectif derrière le collectif.", "Travail du club":"Des décisions qui engagent.", "Stratégie":"Construire dans la durée.", "Presse":"La voix du club.", "Rivalités":"Ta place dans le rugby.", "Carrière":"Une carrière à écrire.", "Match":"Le jour de match."}
+const TITLES = {"Bureau":"Ta semaine commence ici.", "Effectif":"Les hommes du projet.", "Composition":"Le XV de départ.", "Préparation":"La semaine se gagne ici.", "Plan de jeu":"Ton identité de jeu.", "Vestiaire":"Un groupe, une ambition.", "Recrutement":"Le prochain renfort.", "Club":"Un club. Un territoire.", "Finances":"Garder une longueur d’avance.", "Classements":"Chaque point compte.", "Calendrier":"Le fil de ta saison.", "Formation":"Le futur porte nos couleurs.", "Centre":"Les chemins de la progression.", "Suivi des jeunes":"Ils grandissent sous nos couleurs.", "Staff":"Le collectif derrière le collectif.", "Travail du club":"Des décisions qui engagent.", "Stratégie":"Construire dans la durée.", "Presse":"La voix du club.", "Rivalités":"Ta place dans le rugby.", "Carrière":"Une carrière à écrire.", "Match":"Le jour de match.", "Recherche":"Un joueur, un club, un écran.", "Réglages":"Ton confort de jeu."}
 ## Rapport largeur/hauteur maximal de la zone de travail (16:9) ; au-delà, elle est centrée.
 const LARGEUR_MAX_RATIO := 16.0/9.0
 const COMPACT_ART = {
@@ -129,6 +116,7 @@ static func render(app: Control) -> bool:
 	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	app.root_content.add_child(layout)
 	var reference := Vector2(2560,1440)*C.density
+	_coque_floor = ceili(12.0 / maxf(.5, _predicted_factor(Vector2(physical), reference)) - .001)
 	_fit_layout(app.root_content,layout,reference)
 	app.root_content.resized.connect(_fit_layout.bind(app.root_content,layout,reference))
 	var shell := C.h(0)
@@ -206,8 +194,6 @@ static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> v
 		var footer: Control = layout.get_meta("immersive_footer")
 		footer.custom_minimum_size.y=maxf(base_footer,38.0/factor)
 		_position_footer(footer)
-	if layout.has_meta("immersive_topbar"):
-		_position_topbar(layout)
 	if layout.has_meta("immersive_office_match_status"):
 		var match_status: Label = layout.get_meta("immersive_office_match_status")
 		_position_office_match_status(match_status,factor)
@@ -282,241 +268,756 @@ static func _dedicated_page(app: Control, size: Vector2i) -> Script:
 		"Carrière": return Career
 	return null
 
+# --- Coque commune : rail de gauche et barre haute (charte §7.1, design/ux/coque-commune.md) --------------------
+# Mesures en pixels de référence 2560 × 1440 (maquette 1920 × 1080 × 4/3), mises à l'échelle par C.px / D.place.
+# Une seule direction artistique : jetons de ui/charte.gd, rayons 0 (2 px pour les champs), aucune ombre ni dégradé,
+# un seul aplat or (Continuer). Aucun numéro devant les entrées : les touches 1 à 9 sont dites dans l'infobulle.
+
+## Rail : [libellé, destination, routes où l'entrée est active]. Touches 1 à 9 dans cet ordre (raccourcis_clavier.gd).
+## Entraînement est rangé sous Tactique (onglet « Entraînement » de Tactique et de la Préparation).
+const RAIL_SECTIONS := [
+	["Bureau", "Bureau", ["Bureau"]],
+	["Réception", "Réception", ["Réception"]],
+	["Effectif", "Effectif", ["Effectif", "Vestiaire"]],
+	["Tactique", "Composition", ["Composition", "Préparation", "Plan de jeu", "Match"]],
+	["Recrutement", "Recrutement", ["Recrutement"]],
+	["Club", "Club", ["Club", "Staff", "Travail du club", "Stratégie"]],
+	["Finances", "Finances", ["Finances"]],
+	["Compétitions", "Classements", ["Classements", "Calendrier", "Rivalités", "Fiche club"]],
+	["Formation", "Formation", ["Formation", "Centre", "Suivi des jeunes"]],
+]
+const RAIL_NATION := [["Réception", "Réception", ["Réception"]], ["Sélections", "Sélections", ["Sélections"]], ["Calendrier", "Calendrier", ["Calendrier"]]]
+## Écrans propres à la coque (aucune fenêtre) : résultats de recherche et réglages.
+const SHELL_ROUTES := ["Recherche", "Réglages"]
+const RAIL_WIDTH := 309.0
+const RAIL_HEADER := 152.0
+const RAIL_TOP := 169.0
+const RAIL_ROW := 83.0
+const RAIL_ROW_MIN := 59.0
+const RAIL_ROW_SMALL := 72.0
+const RAIL_GAP := 23.0
+const RAIL_DOCK := 293.0
+const RAIL_TEXT := 29.0
+const TOPBAR_HEIGHT := 64.0
+const TOPBAR_WIDTH := 2560.0 - RAIL_WIDTH
+const CONTINUE_WIDTH := 389.0
+const JOURS := ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."]
+const MOIS := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
+
+## Parallélogramme incliné de 10° (logo) : liseré du club, marqueur de l'entrée active, badge, fond de Continuer.
+## `pente_gauche` faux : bord gauche droit (Continuer n'a que son bord droit incliné).
+class Incline extends Control:
+	var couleur := Color.WHITE
+	var couleur_survol := Color.TRANSPARENT
+	var source: BaseButton
+	var pente_gauche := true
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	func _draw() -> void:
+		var h := size.y
+		var d := h * 0.17633
+		var c := couleur
+		if is_instance_valid(source):
+			if source.disabled: c = Color(couleur, .55)
+			elif couleur_survol.a > 0.0 and (source.is_hovered() or source.button_pressed or source.has_focus()): c = couleur_survol
+		draw_colored_polygon(PackedVector2Array([Vector2(d if pente_gauche else 0.0, 0.0), Vector2(size.x, 0.0), Vector2(size.x - d, h), Vector2(0.0, h)]), c)
+
+## Pictogrammes de la coque, dessinés au trait (charte §7.1 : pas de caractère de police, pas de bibliothèque).
+class Picto extends Control:
+	var forme := ""
+	var couleur := Color.WHITE
+	var couleur_inactive := Color.WHITE
+	var source: BaseButton
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	func _p(x: float, y: float) -> Vector2:
+		return Vector2(x * size.x, y * size.y)
+	func _draw() -> void:
+		var c := couleur_inactive if is_instance_valid(source) and source.disabled else couleur
+		var w := maxf(1.5, size.x * .085)
+		match forme:
+			"burger":
+				for y in [.24, .5, .76]: draw_line(_p(.1, y), _p(.9, y), c, w)
+			"gauche", "droite":
+				var s := -1.0 if forme == "gauche" else 1.0
+				var tip := .5 + s * .34
+				draw_line(_p(.5 - s * .34, .5), _p(tip, .5), c, w)
+				draw_line(_p(tip, .5), _p(tip - s * .28, .24), c, w)
+				draw_line(_p(tip, .5), _p(tip - s * .28, .76), c, w)
+			"loupe":
+				draw_arc(_p(.42, .42), size.x * .28, 0.0, TAU, 32, c, w, true)
+				draw_line(_p(.62, .62), _p(.9, .9), c, w)
+			"carriere":
+				draw_arc(_p(.5, .52), size.x * .34, deg_to_rad(-60.0), deg_to_rad(230.0), 32, c, w, true)
+				var bout := _p(.5, .52) + Vector2.from_angle(deg_to_rad(-60.0)) * size.x * .34
+				draw_line(bout, bout + Vector2(-size.x * .2, -size.y * .04), c, w)
+				draw_line(bout, bout + Vector2(size.x * .02, size.y * .2), c, w)
+			"reglages":
+				draw_arc(_p(.5, .5), size.x * .17, 0.0, TAU, 24, c, w, true)
+				for i in 8:
+					var a := TAU * i / 8.0
+					draw_line(_p(.5, .5) + Vector2.from_angle(a) * size.x * .28, _p(.5, .5) + Vector2.from_angle(a) * size.x * .44, c, w)
+			"sauver":
+				draw_line(_p(.5, .1), _p(.5, .66), c, w)
+				draw_line(_p(.5, .66), _p(.26, .42), c, w)
+				draw_line(_p(.5, .66), _p(.74, .42), c, w)
+				draw_line(_p(.14, .9), _p(.86, .9), c, w)
+			"coche":
+				draw_polyline(PackedVector2Array([_p(.12, .54), _p(.4, .8), _p(.88, .24)]), c, w, true)
+			"alerte":
+				draw_line(_p(.5, .1), _p(.5, .62), c, w * 1.2)
+				draw_circle(_p(.5, .86), w * .8, c)
+
+## Plancher des textes de la coque en pixels de construction : 12 px réels une fois le gabarit mis à l'échelle
+## (_fit_layout peut le réduire de quelques pour cent pour loger le pied de page, 0,977 à 1280 × 720).
+static var _coque_floor := 12
+
+static func _fpx(size_ref: float) -> int:
+	return maxi(_coque_floor, C.px(size_ref))
+
+## Facteur que _fit_layout appliquera au gabarit pour cette taille de fenêtre.
+static func _predicted_factor(size: Vector2, reference: Vector2) -> float:
+	if size.x <= 0 or size.y <= 0: return 1.0
+	var factor := minf(size.x / reference.x, size.y / reference.y)
+	var base_footer := C.px(44)
+	if base_footer * factor < 38.0 and size.y > 38.0: factor = minf(factor, (size.y - 38.0) / (reference.y - base_footer))
+	return factor
+
+## Largeur d'un texte en unités de référence (mesuré à la taille réellement rendue, plancher 12 px compris).
+static func _rw(font: Font, text: String, size_ref: float) -> float:
+	return font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, _fpx(size_ref)).x / C.density
+
+static func _style(color: Color, radius: float = 0.0, border: Color = Color.TRANSPARENT, border_width: int = 1) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.draw_center = color.a > 0.0
+	style.set_corner_radius_all(C.px(radius) if radius > 0.0 else 0)
+	if border.a > 0.0:
+		style.border_color = border
+		style.set_border_width_all(border_width)
+	return style
+
+## Bouton de la coque : fond transparent, survol panneau-2, pressé panneau-3, focus clavier contour ivoire 2 px
+## décalé de 2 px (charte §7.1, États). `contour` : filet 1 px ivoire-3, rayon 2 (Menu, Précédent, Suivant).
+static func _shell_button(id: String, contour: bool = false) -> Button:
+	var button := Button.new()
+	button.name = id
+	button.focus_mode = Control.FOCUS_ALL
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.clip_text = true
+	button.set_meta("immersive_style_applied", true)
+	var border := C.FAINT if contour else Color.TRANSPARENT
+	var radius := 3.0 if contour else 0.0
+	var fills := {"normal":Color.TRANSPARENT, "hover":C.RAISED, "pressed":C.SELECTED, "hover_pressed":C.SELECTED, "disabled":Color.TRANSPARENT}
+	for state: String in fills: button.add_theme_stylebox_override(state, _style(fills[state], radius, border))
+	var focus := _style(Color.TRANSPARENT, 0.0, C.IVORY, 2)
+	focus.set_expand_margin_all(2)
+	button.add_theme_stylebox_override("focus", focus)
+	button.add_theme_font_override("font", C.BODY)
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: button.add_theme_color_override(state, C.IVORY)
+	button.add_theme_color_override("font_disabled_color", C.FAINT)
+	return button
+
+static func _button_margins(button: Button, left: float, right: float = 0.0) -> void:
+	for state in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
+		var style := button.get_theme_stylebox(state)
+		style.content_margin_left = C.px(left)
+		style.content_margin_right = C.px(right)
+
+static func _label(parent: Node, rect: Rect2, text: String, size_ref: float, color: Color, font: Font, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_override("font", font)
+	label.add_theme_font_size_override("font_size", _fpx(size_ref))
+	label.add_theme_color_override("font_color", color)
+	label.horizontal_alignment = align
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.set_meta("immersive_style_applied", true)
+	parent.add_child(label)
+	D.place(label, rect)
+	return label
+
+## Touche écrite (« Échap », « Ctrl K », « Ctrl S », « F1 ») : pavé panneau-3, Barlow Condensed SemiBold ivoire-2.
+static func _key(parent: Node, x: float, y: float, text: String, fond: Color = C.SELECTED) -> Panel:
+	var width := _rw(C.DISPLAY, text, 16) + 16.0
+	var chip := Panel.new()
+	chip.name = "Touche_" + text.replace(" ", "")
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_theme_stylebox_override("panel", _style(fond, 3.0))
+	parent.add_child(chip)
+	D.place(chip, Rect2(x, y, width, 27))
+	_label(chip, Rect2(0, 0, width, 27), text, 16, C.MUTED, C.DISPLAY, HORIZONTAL_ALIGNMENT_CENTER)
+	return chip
+
+static func _key_width(text: String) -> float:
+	return _rw(C.DISPLAY, text, 16) + 16.0
+
+static func _picto(parent: Node, rect: Rect2, forme: String, color: Color = C.MUTED, source: BaseButton = null) -> Picto:
+	var picto := Picto.new()
+	picto.name = "Picto_" + forme
+	picto.forme = forme
+	picto.couleur = color
+	picto.couleur_inactive = C.FAINT
+	picto.source = source
+	parent.add_child(picto)
+	D.place(picto, rect)
+	if source != null: source.draw.connect(picto.queue_redraw)
+	return picto
+
+static func _incline(parent: Node, rect: Rect2, color: Color, pente_gauche: bool = true) -> Incline:
+	var shape := Incline.new()
+	shape.couleur = color
+	shape.pente_gauche = pente_gauche
+	parent.add_child(shape)
+	D.place(shape, rect)
+	return shape
+
+## Section du rail qui contient la route (fil d'Ariane, entrée active).
+static func rail_section(route: String) -> Array:
+	for entry: Array in RAIL_SECTIONS + [["Presse", "Presse", ["Presse"]], ["Sélections", "Sélections", ["Sélections"]], ["Carrière", "Carrière", ["Carrière"]], ["Réglages", "Réglages", ["Réglages"]], ["Recherche", "Recherche", ["Recherche"]]]:
+		if route in entry[2]: return entry
+	return [route, route, [route]]
+
+## « Division · rang » sous le nom du club, lus dans les données du club en cours (jeu de base ou pack Rugby Réel).
+static func club_context(model: Dictionary) -> String:
+	var division := P.league_name(model)
+	var club: Dictionary = model.get("club", {}) if model.get("club") is Dictionary else {}
+	var rank := P.rank_ordinal(club)
+	return division if rank == "—" else division + " · " + rank
+
+static func _rail_entries(app: Control) -> Array:
+	return RAIL_NATION if Selections.nation_only(app.model) else RAIL_SECTIONS
+
 static func _sidebar(parent: Node, app: Control) -> void:
-	var rail:=Control.new();rail.name="ImmersiveSidebar";rail.custom_minimum_size.x=C.px(248);rail.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	var rail := Control.new()
+	rail.name = "ImmersiveSidebar"
+	rail.custom_minimum_size.x = C.px(RAIL_WIDTH)
+	rail.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	parent.add_child(rail)
-	var height:float=app.get_window().size.y/C.density
-	var club_accent: Color = app.accent
-	var club_edge := club_accent.lightened(.38)
-	var background:=D.rect(rail,Rect2(0,0,248,height),CLUB_CHROME)
-	background.add_theme_stylebox_override("panel",D.surface(248,height,CLUB_CHROME.lerp(club_accent,.40),CLUB_CHROME,Color.TRANSPARENT,0,false))
+	var background := ColorRect.new()
+	background.name = "ImmersiveSidebarBackground"
+	background.color = C.PANEL
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rail.add_child(background)
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var border:=D.line(rail,Vector2(247,0),Vector2(247,height))
-	border.set_anchor(SIDE_BOTTOM,1,false)
-	border.offset_bottom=0
-	var logo:=D.button(rail,Rect2(17,20,214,93),"",app.pause_menu,false,"",false,app.accent,"ImmersiveMainMenu")
-	logo.tooltip_text="Menu, sauvegardes et paramètres"
-	logo.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
-	var bitmap:=C.photo("brand",Vector2.ZERO,false);logo.add_child(bitmap);D.place(bitmap,Rect2(0,0,214,93))
-	D.line(rail,Vector2(24,128),Vector2(224,128),Color(C.GOLD,.55))
-	D.rect(rail,Rect2(18,143,212,224),CLUB_CHROME.lerp(club_accent,.24),12,Color(club_edge,.46))
-	D.line(rail,Vector2(75,367),Vector2(173,367),club_edge,3)
 	var national := Selections.nation_only(app.model)
+	_rail_header(rail, app, national)
+	var sections: Array = _rail_entries(app)
+	var secondary: Array = []
+	if not national:
+		secondary.append(["Presse", "Presse", ["Presse"]])
+		if app.model.get("international") is Dictionary: secondary.append(["Sélections", "Sélections", ["Sélections"]])
+	# Lignes de 83 (62 px à 1920) compressibles jusqu'à 59 (44 px) ; au-delà, le groupe central défile, le pied reste fixe.
+	var height: float = app.get_window().size.y / C.density
+	var available := maxf(RAIL_ROW_MIN, height - RAIL_TOP - RAIL_DOCK - 8.0)
+	var gap := RAIL_GAP if not secondary.is_empty() else 0.0
+	var weight := sections.size() + secondary.size() * RAIL_ROW_SMALL / RAIL_ROW
+	var row := clampf(floorf((available - gap) / weight), RAIL_ROW_MIN, RAIL_ROW)
+	var small := roundf(row * RAIL_ROW_SMALL / RAIL_ROW)
+	var total := sections.size() * row + gap + secondary.size() * small
+	var scroll := ScrollContainer.new()
+	scroll.name = "ImmersiveSidebarSections"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO if total > available else ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	scroll.follow_focus = true
+	rail.add_child(scroll)
+	D.place(scroll, Rect2(0, RAIL_TOP, RAIL_WIDTH, minf(total, available)))
+	var column := Control.new()
+	column.name = "ImmersiveSidebarColumn"
+	column.mouse_filter = Control.MOUSE_FILTER_PASS
+	column.custom_minimum_size = Vector2(RAIL_WIDTH, total) * C.density
+	scroll.add_child(column)
+	var y := 0.0
+	for i in sections.size():
+		_rail_entry(column, app, sections[i], y, row, i)
+		y += row
+	if not secondary.is_empty():
+		D.line(column, Vector2(27, y + 11), Vector2(RAIL_WIDTH - 27, y + 11), C.LINE)
+		y += gap
+		for entry: Array in secondary:
+			_rail_entry(column, app, entry, y, small, -1)
+			y += small
+	_rail_dock(rail, app, national)
+
+## En-tête : écusson, nom du club (Barlow Condensed ExtraBold Italic, capitales), « division · rang », liseré club-trait
+## incliné. Un clic ouvre la fiche du club (pour son propre club : l'écran Club, décision de Léo du 14/11/2026).
+static func _rail_header(rail: Control, app: Control, national: bool) -> void:
+	var header := _shell_button("ImmersiveClubHeader")
+	header.tooltip_text = "Fiche du club"
+	if app.route == "Club" and not national: header.add_theme_stylebox_override("normal", _style(C.SELECTED))
+	(header.get_theme_stylebox("focus") as StyleBoxFlat).set_expand_margin_all(0)
+	rail.add_child(header)
+	D.place(header, Rect2(0, 0, RAIL_WIDTH, RAIL_HEADER))
+	var club: Dictionary = app.model.get("club", {}) if app.model.get("club") is Dictionary else {}
+	header.pressed.connect(func():
+		if national: app._navigate("Sélections")
+		elif not club.has("id") or not app.navigation_controller.open_entity({"kind":"club", "id":str(int(club.get("id", -1)))}): app._navigate("Club"))
 	var nation := Selections.managed_team(app.model)
-	var identity := str(nation.get("name", "Sélection")) if national else G.club_name(app.model.club)
-	var crest := Selections.nation_badge(nation, C.px(126)) if national else G.crest(app.model.club,C.px(126))
-	rail.add_child(crest)
-	D.place(crest,Rect2(61,151,126,147))
-	D.fit_title(D.text(rail,124,331,identity.to_upper(),23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER),222,44)
-	D.text(rail,124,354,"SAISON "+G.season_label(app.model.meta.get("season",1)),16,C.GOLD,500,215,HORIZONTAL_ALIGNMENT_CENTER)
-	var names:Array=[["mail","Réception","Réception"],["home","Bureau","Bureau"],["people","Effectif","Effectif"],["tactic","Tactique","Composition"],["train","Entraînement","Préparation"],["search","Recrutement","Recrutement"],["shield","Club","Club"],["money","Finances","Finances"],["trophy","Compétitions","Classements"],["school","Formation","Formation"]]
-	if app.model.get("international") is Dictionary: names.append(["flag","Sélections","Sélections"])
-	if national: names = [["mail","Réception","Réception"],["flag","Sélections","Sélections"],["calendar","Calendrier","Calendrier"]]
-	for i in names.size():
-		var entry:Array=names[i]
-		var destination:String=entry[2]
-		var selected:bool=app.route==destination
-		if i==2 and not national:selected=app.route in ["Effectif","Vestiaire"]
-		if i==3:selected=app.route in ["Composition","Plan de jeu","Match"] or (app.route=="Préparation" and not _is_training(app))
-		if i==4:selected=_is_training(app)
-		if i==6:selected=app.route in ["Club","Staff","Travail du club","Stratégie"]
-		if i==8:selected=app.route in ["Classements","Calendrier","Rivalités",ClubSheet.ROUTE]
-		if i==9:selected=app.route in ["Formation","Centre","Suivi des jeunes"]
-		var y:=394+i*57
-		var action:=D.button(rail,Rect2(7,y,234,49),entry[1],func():
-			if destination=="Préparation": open_training(app)
-			else: app._navigate(destination),selected,"",false,app.accent,"Nav_"+entry[1])
-		if selected: _club_button(action,CLUB_CHROME.lerp(club_accent,.46),club_edge)
-		if i<9: action.tooltip_text=str(entry[1])+" ("+str(i+1)+")"
-		action.add_theme_font_override("font",C.DISPLAY);action.add_theme_font_size_override("font_size",maxi(12,C.px(26)))
-		var style:StyleBox=action.get_theme_stylebox("normal").duplicate() if selected else C.box(Color.TRANSPARENT,Color.TRANSPARENT,4,0)
-		style.content_margin_left=C.px(58);action.add_theme_stylebox_override("normal",style)
-		for state in ["hover","pressed","disabled"]:
-			var alternate:StyleBox=action.get_theme_stylebox(state).duplicate();alternate.content_margin_left=C.px(58);action.add_theme_stylebox_override(state,alternate)
-		var focus := action.get_theme_stylebox("focus") as StyleBoxFlat
-		focus.set_expand_margin_all(2)
-		if selected:D.rect(rail,Rect2(7,y,4,49),club_edge)
-		var symbol:=C.icon(entry[0],25,C.IVORY if selected else Color("c8d0c6"));rail.add_child(symbol);D.place(symbol,Rect2(23,y+12,25,25))
-		var unread: int = Reception.unread(app) if destination=="Réception" else 0
-		if unread>0:
-			D.rect(rail,Rect2(207,y+13,24,24),C.GOLD,4)
-			D.text(rail,219,y+31,unread,18,Color("101511"),700,24,HORIZONTAL_ALIGNMENT_CENTER)
-	var dock:=Control.new()
-	dock.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	var identity := str(nation.get("name", "Sélection")) if national else G.club_name(club)
+	var crest: Control = Selections.nation_badge(nation, C.px(53)) if national else G.crest(club, C.px(53))
+	crest.name = "ImmersiveClubCrest"
+	header.add_child(crest)
+	D.place(crest, Rect2(27, 36, 53, 67))
+	for node in [crest] + crest.find_children("*", "Control", true, false): (node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Nom : une ligne en 27 (20 px à 1920), sinon deux lignes (jusqu'à 21) ; jamais de « … », infobulle complète.
+	var room := RAIL_WIDTH - 96.0 - 21.0
+	var font: Font = Charte.TITRE_EXTRA_ITALIQUE
+	var caption := identity.to_upper()
+	var chosen := 27.0
+	var lines := 1
+	if _rw(font, caption, 27) > room:
+		lines = 2
+		chosen = 21.0
+		for candidate in [24.0, 23.0, 22.0, 21.0]:
+			if _lines_ref(font, caption, candidate, room) <= 2:
+				chosen = candidate
+				break
+	var line_height := font.get_height(_fpx(chosen)) / C.density
+	var top := 40.0 if lines == 1 else 30.0
+	var name_label := _label(header, Rect2(96, top, room, line_height * lines), caption, chosen, C.IVORY, font)
+	name_label.name = "ImmersiveClubName"
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if lines == 2 else TextServer.AUTOWRAP_OFF
+	name_label.max_lines_visible = 2
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	header.tooltip_text = identity + " · fiche du club" if not national else identity
+	var context := "Sélection nationale" if national else club_context(app.model)
+	# « Division · rang » : 16 (12 px à 1920), réduit jusqu'au plancher puis coupé avec infobulle.
+	var sub_size := 16.0
+	while sub_size > 12.0 and _rw(C.BODY, context, sub_size) > room: sub_size -= 1.0
+	var sub := _label(header, Rect2(96, top + line_height * lines + 2, room, 21), context, sub_size, C.MUTED, C.BODY)
+	sub.name = "ImmersiveClubContext"
+	sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	sub.tooltip_text = context
+	D.place(sub, Rect2(96, top + line_height * lines + 2, room, 21))
+	var stripe := _incline(header, Rect2(27, RAIL_HEADER - 17, RAIL_WIDTH - 48, 4), Charte.club_trait(app.accent))
+	stripe.name = "ImmersiveClubStripe"
+
+## Nombre de lignes d'un texte coupé aux mots (largeur en unités de référence).
+static func _lines_ref(font: Font, text: String, size_ref: float, width_ref: float) -> int:
+	return D.title_lines(font, text, _fpx(size_ref), width_ref * C.density)
+
+static func _rail_entry(column: Control, app: Control, entry: Array, y: float, height: float, index: int) -> Button:
+	var caption: String = entry[0]
+	var destination: String = entry[1]
+	var selected: bool = app.route in entry[2]
+	var button := _shell_button("Nav_" + caption)
+	button.text = caption
+	button.add_theme_font_override("font", Charte.texte_moyen() if selected else C.BODY)
+	button.add_theme_font_size_override("font_size", _fpx(24))
+	button.tooltip_text = caption + (" · touche %d" % (index + 1) if index >= 0 and index < 9 else "")
+	button.accessibility_name = caption
+	if selected:
+		button.add_theme_stylebox_override("normal", _style(C.SELECTED))
+		button.add_theme_stylebox_override("hover", _style(C.SELECTED))
+		button.set_meta("rail_actif", true)
+	column.add_child(button)
+	D.place(button, Rect2(4, y, RAIL_WIDTH - 8, height))
+	_button_margins(button, RAIL_TEXT - 4, 70 if destination == "Réception" else 12)
+	button.pressed.connect(func(): app._navigate(destination))
+	if selected:
+		var marker := _incline(button, Rect2(7, 15, 4 + 0.17633 * (height - 30), height - 30), C.IVORY)
+		marker.name = "RailActiveMarker"
+	if destination == "Réception":
+		var unread: int = Reception.unread(app)
+		if unread > 0:
+			var text := "99+" if unread > 99 else str(unread)
+			var width := maxf(37.0, _rw(C.BODY, text, 21) + 20.0)
+			var badge := _incline(button, Rect2(RAIL_WIDTH - 8 - 21 - width, (height - 32) / 2.0, width, 32), C.IVORY)
+			badge.name = "RailUnreadBadge"
+			_label(badge, Rect2(0, 0, width, 32), text, 21, Charte.NUIT, C.BOLD, HORIZONTAL_ALIGNMENT_CENTER).name = "RailUnreadCount"
+			button.accessibility_name = "Réception, %d message%s non lu%s" % [unread, "s" if unread > 1 else "", "s" if unread > 1 else ""]
+	return button
+
+## Pied du rail : Carrière, Réglages, Sauvegarder (« Ctrl S »), puis la ligne « ✓ Sauvegardé <date du jeu> ».
+static func _rail_dock(rail: Control, app: Control, national: bool) -> void:
+	var dock := Control.new()
+	dock.name = "ImmersiveSidebarDock"
+	dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rail.add_child(dock)
 	dock.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	dock.offset_top=-C.px(295)
-	D.photo(dock,"forest",Rect2(0,109,247,158))
-	D.rect(dock,Rect2(0,45,247,94),Color("0c1717"))
-	D.line(dock,Vector2(22,45),Vector2(226,45))
-	for i in 3:
+	dock.offset_top = -C.px(RAIL_DOCK)
+	D.line(dock, Vector2(27, 0), Vector2(RAIL_WIDTH - 27, 0), C.LINE)
+	var actions := [["Carrière", "carriere", "Carrière"], ["Réglages", "reglages", "Réglages"], ["Sauvegarder", "sauver", ""]]
+	var y := 11.0
+	for i in actions.size():
 		if i == 0 and national: continue
-		var caption:String=["Carrière","Réglages","Sauvegarder"][i]
-		var y:float=[0,58,100][i]
-		var action:=D.button(dock,Rect2(12,y,224,38),caption,func():
-			if i==0:app._navigate("Carrière")
-			elif i==1:app.settings()
-			else:app._command("save"),false,"",false,app.accent,"ImmersiveSidebarAction"+str(i))
-		var style:=C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0);style.content_margin_left=C.px(53);action.add_theme_stylebox_override("normal",style)
-		action.add_theme_font_override("font",C.DISPLAY);action.add_theme_font_size_override("font_size",maxi(12,C.px(23)));action.add_theme_color_override("font_color",C.MUTED)
-		var symbol:=C.icon(["flag","settings","save"][i],24,C.MUTED);dock.add_child(symbol);D.place(symbol,Rect2(23,y+10,24,24))
-	D.rect(dock,Rect2(0,220,247,75),Color("0b1614"))
-	var storage_error: bool = app._storage_has_error() if app.has_method("_storage_has_error") else app._status_has_error()
-	D.rect(dock,Rect2(21,245,8,8),C.ALERT if storage_error else C.MINT,4)
-	# Libellé court : « Sauvegarde automatique » était coupé dès 1280 × 720 (plancher de 12 px) et le pied de page
-	# donne déjà la phrase complète. L'infobulle garde la précision.
-	var storage_state := D.text(dock,39,255,"Stockage à vérifier" if storage_error else SIDEBAR_AUTOSAVE_CAPTION,17,C.MUTED,500,198)
-	storage_state.name = "ImmersiveSidebarStorage"
-	storage_state.mouse_filter = Control.MOUSE_FILTER_PASS
-	storage_state.tooltip_text = "Le stockage de la carrière demande une vérification." if storage_error else "Sauvegarde automatique activée (fréquence dans les Réglages)."
-	var profile := "Sélection nationale" if national else G.club_abbr(app.model.club)+" · Carrière principale"
-	D.text(dock,24,281,profile,17,C.FAINT,500,210)
+		var item: Array = actions[i]
+		var route: String = item[2]
+		var selected: bool = not route.is_empty() and app.route == route
+		var button := _shell_button("ImmersiveSidebarAction" + str(i))
+		button.text = item[0]
+		button.add_theme_font_override("font", Charte.texte_moyen() if selected else C.BODY)
+		button.add_theme_font_size_override("font_size", _fpx(24))
+		if selected:
+			button.add_theme_stylebox_override("normal", _style(C.SELECTED))
+			button.set_meta("rail_actif", true)
+		dock.add_child(button)
+		D.place(button, Rect2(4, y, RAIL_WIDTH - 8, RAIL_ROW_SMALL))
+		_button_margins(button, 68, 12)
+		_picto(button, Rect2(RAIL_TEXT - 4, (RAIL_ROW_SMALL - 27) / 2.0, 27, 27), item[1], C.IVORY if selected else C.MUTED)
+		match i:
+			0: button.pressed.connect(func(): app._navigate("Carrière"))
+			1: button.pressed.connect(func(): app._navigate("Réglages"))
+			2:
+				button.pressed.connect(func(): save_now(app))
+				button.tooltip_text = "Sauvegarder la carrière maintenant · Ctrl S"
+				var key_width := _key_width("Ctrl S")
+				_key(button, RAIL_WIDTH - 8 - 21 - key_width, (RAIL_ROW_SMALL - 27) / 2.0, "Ctrl S")
+		if i == 0: button.tooltip_text = "Ta carrière de manager"
+		if i == 1: button.tooltip_text = "Réglages : confort, son, affichage, raccourcis"
+		y += RAIL_ROW_SMALL
+	var line := _shell_button("ImmersiveSaveLine")
+	line.add_theme_font_size_override("font_size", _fpx(19))
+	dock.add_child(line)
+	D.place(line, Rect2(4, y + 6, RAIL_WIDTH - 8, 40))
+	_button_margins(line, 52, 8)
+	_picto(line, Rect2(RAIL_TEXT - 4, 10, 20, 20), "coche", Charte.V).name = "SaveLinePicto"
+	line.pressed.connect(func(): save_now(app))
+	refresh_save_line(app, line)
 
+## Sauvegarde directe (Ctrl S, Sauvegarder, « Réessayer ») : aucune boîte ; la ligne passe à « Sauvegarde… ».
+static func save_now(app: Control) -> void:
+	if not app._has_career(): return
+	if app._command("save"): refresh_save_line(app)
+
+static func _short_date(date: String) -> String:
+	var parts := date.split("-")
+	if parts.size() != 3 or not parts[1].is_valid_int() or not parts[2].is_valid_int(): return ""
+	var stamp := Time.get_unix_time_from_datetime_string(date.substr(0, 10) + "T12:00:00")
+	var weekday := int(Time.get_datetime_dict_from_unix_time(stamp).get("weekday", -1))
+	return ("%s %s/%s" % [JOURS[weekday], parts[2].substr(0, 2), parts[1]]) if weekday >= 0 and weekday < 7 else "%s/%s" % [parts[2].substr(0, 2), parts[1]]
+
+## Ligne d'état de la sauvegarde dans le pied du rail : [texte, couleur, picto, infobulle].
+static func save_caption(app: Control) -> Array:
+	var meta: Dictionary = app.model.get("meta", {})
+	if bool(app.get("waiting")) and str(app.get("last_command")) == "save": return ["Sauvegarde…", C.MUTED, "sauver", "Sauvegarde en cours"]
+	var failed: bool = bool(meta.get("saveError", false)) or (app.has_method("_storage_has_error") and app._storage_has_error())
+	if failed: return ["Échec de la sauvegarde · Réessayer", Charte.D, "alerte", "La dernière sauvegarde n'a pas pu être écrite. Clique pour réessayer."]
+	var info: Variant = meta.get("autosave")
+	var last := str(info.get("lastSave", "")) if info is Dictionary and info.get("lastSave") != null else ""
+	if last.is_empty(): return ["Pas encore sauvegardé", C.MUTED, "sauver", "Clique pour sauvegarder maintenant."]
+	var policy := str({"jour":"chaque jour", "semaine":"chaque semaine", "mois":"chaque mois"}.get(str(info.get("policy", "")), ""))
+	return ["Sauvegardé " + _short_date(last), Charte.V, "coche", "Dernière sauvegarde complète le %s%s. Clique pour sauvegarder maintenant." % [_short_date(last), " · automatique " + policy if not policy.is_empty() else ""]]
+
+static func refresh_save_line(app: Control, line: Button = null) -> void:
+	if line == null and is_instance_valid(app.get("root_content")): line = app.root_content.find_child("ImmersiveSaveLine", true, false) as Button
+	if not is_instance_valid(line): return
+	var state := save_caption(app)
+	line.text = state[0]
+	line.tooltip_text = state[3]
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: line.add_theme_color_override(key, state[1])
+	var picto := line.get_node_or_null("SaveLinePicto") as Picto
+	if picto != null:
+		picto.forme = state[2]
+		picto.couleur = state[1]
+		picto.queue_redraw()
+
+## Barre haute (48 px à 1920, 64 en référence) : Menu « Échap », Précédent / Suivant, fil d'Ariane cliquable,
+## Rechercher « Ctrl K » (champ, aucune fenêtre), date + journée (Calendrier), médaillon de Gabi « F1 »,
+## « +1 j » discret, Continuer (seul aplat or, bord droit incliné, « Espace » ou ce qui l'arrête).
 static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var panel := Control.new()
 	panel.name = "ImmersiveTopbar"
-	panel.custom_minimum_size.y = C.px(78)
+	panel.custom_minimum_size.y = C.px(TOPBAR_HEIGHT)
 	C.fill(panel)
 	parent.add_child(panel)
-	D.rect(panel,Rect2(0,0,2312,78),Color("0e1618"))
-	D.line(panel,Vector2(0,77),Vector2(2312,77))
-	var club_edge: Color = app.accent.lightened(.38)
-	D.line(panel,Vector2(33,76),Vector2(430,76),Color(club_edge,.83),2)
-	var home := C.icon("home",25,C.IVORY)
-	panel.add_child(home)
-	D.place(home,Rect2(34,24,25,25))
-	D.text(panel,77,48,"›",26,C.MUTED)
+	var background := ColorRect.new()
+	background.name = "ImmersiveTopbarBackground"
+	background.color = C.PANEL
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(background)
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var bottom := ColorRect.new()
+	bottom.name = "ImmersiveTopbarRule"
+	bottom.color = C.LINE
+	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(bottom)
+	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom.offset_top = -1
 	var national := Selections.nation_only(app.model)
-	var club_name := str(Selections.managed_team(app.model).get("name", "Sélection")) if national else G.club_name(app.model.club)
-	var name_width := clampf(C.MEDIUM.get_string_size(club_name,HORIZONTAL_ALIGNMENT_LEFT,-1,C.px(24)).x/C.density+8,170,320)
-	D.text(panel,103,48,club_name,24,C.MUTED,500,name_width)
-	D.text(panel,108+name_width,48,"›",26,C.MUTED)
-	var route_caption:String="Tactique" if app.route=="Composition" else app.route
-	if _is_training(app): route_caption="Entraînement"
-	if app.route=="Effectif" and app.get_meta("immersive08_full_player",false):route_caption="Fiche joueur : "+str(P.player(app.model,app.selected_player).get("name",""))
-	if app.route==ClubSheet.ROUTE:route_caption="Fiche club : "+ClubSheet.caption(app)
-	var caption_left := 137+name_width
-	var caption_width := minf(C.BOLD.get_string_size(route_caption,HORIZONTAL_ALIGNMENT_LEFT,-1,C.px(25)).x/C.density+6,TOPBAR_BREADCRUMB_END-caption_left)
-	var caption := D.text(panel,caption_left,48,route_caption,25,C.IVORY,700,caption_width)
-	caption.name = "ImmersiveRouteCaption"
-	var history: Control = app.navigation_controller.controls(false)
-	panel.add_child(history)
-	D.place(history,Rect2(TOPBAR_HISTORY_LEFT,19,91,42))
-	var office_live: bool = app.route=="Bureau" and not app._live().is_empty()
-	var search_caption := "Rechercher un joueur, un menu…" if app.model.get("staff",{}).get("teams",[]).is_empty() else "Rechercher un joueur, un club…"
-	if national: search_caption = "Rechercher un écran…"
-	# Petites fenêtres : la phrase complète ne tient plus dans le champ ; « Rechercher… » reste lisible.
-	# Au Bureau, Gabi est déjà là en pied (colonne de droite) : son visage quitte le bandeau, la recherche
-	# profite d'un peu de la place libérée (le reste demeure vide, la date garde sa place).
-	var gabi_en_pied: bool = app.route=="Bureau" and not national and is_instance_valid(app.get("coach")) and app.coach.has_method("bureau_disponible") and app.coach.bureau_disponible()
-	var search_width := TOPBAR_SEARCH_WIDTH_PIED if gabi_en_pied else TOPBAR_SEARCH_WIDTH
-	var search_room := C.px(search_width) - C.px(48) - C.px(70)
-	var visible_caption := search_caption if C.BODY.get_string_size(search_caption,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(18))).x <= search_room else "Rechercher…"
-	var search := D.button(panel,Rect2(TOPBAR_SEARCH_LEFT,19,search_width,42),visible_caption,func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
-	search.tooltip_text = search_caption
-	search.add_theme_font_override("font",C.BODY)
-	search.add_theme_font_size_override("font_size",maxi(12,C.px(18)))
-	search.add_theme_color_override("font_color",C.MUTED)
-	var search_style := search.get_theme_stylebox("normal").duplicate()
-	search_style.content_margin_left=C.px(48)
-	search_style.content_margin_right=C.px(70)
-	search.add_theme_stylebox_override("normal",search_style)
-	var magnifier := C.icon("search",21,C.MUTED)
-	panel.add_child(magnifier)
-	D.place(magnifier,Rect2(TOPBAR_SEARCH_LEFT+14,30,21,21))
-	var shortcut := D.chip(panel,Rect2(TOPBAR_SEARCH_LEFT+search_width-62,29,48,23),"Ctrl K",C.MUTED)
-	var calendar := C.button("", _open_current_calendar.bind(app))
-	calendar.name = "ImmersiveCalendarDate"
-	calendar.accessibility_name = "Ouvrir le calendrier"
-	calendar.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	panel.add_child(calendar)
-	var calendar_icon := C.icon("calendar",25,C.IVORY)
-	calendar.add_child(calendar_icon)
-	app.header_date = D.text(calendar,0,48,"",24,C.IVORY,600,240)
-	app._update_header_date()
-	var action_left := TOPBAR_MATCH_ACTION_LEFT if office_live else TOPBAR_ACTION_LEFT
-	# « Jour suivant » (+1 j) : le bouton principal garde sa largeur, la zone de la date cède la place.
+	var ch := C.reach(43.0)
+	var cy := (TOPBAR_HEIGHT - ch) / 2.0
+	var square := C.reach(48.0)
+	var sy := (TOPBAR_HEIGHT - square) / 2.0
+	# Gauche : Menu (menu pause, la seule fenêtre de la coque), historique, filet.
+	var menu_text := _rw(Charte.texte_moyen(), "Menu", 17)
+	var menu_width := 8.0 + 21.0 + 11.0 + menu_text + 11.0 + _key_width("Échap") + 8.0
+	var menu := _shell_button("ImmersiveMenu", true)
+	menu.tooltip_text = "Menu : sauvegardes, réglages, quitter · Échap"
+	menu.accessibility_name = "Menu · Échap"
+	panel.add_child(menu)
+	D.place(menu, Rect2(21, cy, menu_width, ch))
+	menu.pressed.connect(app.pause_menu)
+	_picto(menu, Rect2(8, (ch - 21) / 2.0, 21, 21), "burger", C.IVORY)
+	_label(menu, Rect2(40, 0, menu_text + 2, ch), "Menu", 17, C.IVORY, Charte.texte_moyen())
+	_key(menu, 40 + menu_text + 11, (ch - 27) / 2.0, "Échap")
+	var x := 21.0 + menu_width + 27.0
+	var back := _shell_button("NavigationBack", true)
+	var forward := _shell_button("NavigationForward", true)
+	for item: Array in [[back, "gauche", "Page précédente · Alt+←"], [forward, "droite", "Page suivante · Alt+→"]]:
+		var arrow: Button = item[0]
+		arrow.set_meta("coque", true)
+		arrow.tooltip_text = item[2]
+		arrow.accessibility_name = item[2]
+		panel.add_child(arrow)
+		D.place(arrow, Rect2(x, sy, square, square))
+		_picto(arrow, Rect2(square * .27, square * .27, square * .46, square * .46), item[1], C.IVORY, arrow)
+		x += square + 11.0
+	if is_instance_valid(app.navigation_controller): app.navigation_controller.bind_history_buttons(back, forward)
+	x += 16.0
+	D.line(panel, Vector2(x, 16), Vector2(x, 48), C.LINE)
+	var crumbs_left := x + 28.0
+	# Droite, de droite à gauche : Continuer, +1 j, F1 et Gabi, date, recherche ; le fil prend le reste.
+	var right := TOPBAR_WIDTH - 11.0
+	var continue_height := C.reach(48.0)
+	var continue_rect := Rect2(right - CONTINUE_WIDTH, (TOPBAR_HEIGHT - continue_height) / 2.0, CONTINUE_WIDTH, continue_height)
+	right -= CONTINUE_WIDTH + 16.0
+	var office_live: bool = app.route == "Bureau" and not app._live().is_empty()
 	var single_day: bool = not office_live and app.has_method("next_day_available") and app.next_day_available()
-	if single_day: action_left -= NEXT_DAY_WIDTH + 6
-	# « Jour suivant » reste à portée (petit bouton à droite de « Continuer », Ctrl+J) les jours où l'on peut avancer.
-	var action_right := 2278 - (NEXT_DAY_WIDTH + 6 if single_day else 0)
-	app.primary_button = D.button(panel,Rect2(action_left,17,action_right-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
-	_club_button(app.primary_button,CLUB_CHROME.lerp(app.accent,.69),club_edge)
-	app.primary_button.tooltip_text = app.primary_tooltip() if app.has_method("primary_tooltip") else app.primary_text()
 	var next_day: Button = null
 	if single_day:
-		next_day = D.button(panel,Rect2(2278-NEXT_DAY_WIDTH,17,NEXT_DAY_WIDTH,45),"+1 j",app.next_day_action,false,"",true,app.accent,"ImmersiveNextDay")
+		var day_width := _rw(C.BODY, "+1 j", 17) + 22.0
+		next_day = _shell_button("ImmersiveNextDay")
+		next_day.text = "+1 j"
 		next_day.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var compact_style: StyleBox = next_day.get_theme_stylebox("normal").duplicate()
-		compact_style.content_margin_left = C.px(4)
-		compact_style.content_margin_right = C.px(4)
-		next_day.add_theme_stylebox_override("normal",compact_style)
-		for state in ["hover","pressed","disabled","focus"]:
-			var other: StyleBox = next_day.get_theme_stylebox(state).duplicate()
-			other.content_margin_left = C.px(4)
-			other.content_margin_right = C.px(4)
-			next_day.add_theme_stylebox_override(state,other)
+		next_day.add_theme_font_size_override("font_size", _fpx(17))
+		for key in ["font_color", "font_focus_color"]: next_day.add_theme_color_override(key, C.MUTED)
 		next_day.tooltip_text = "Jour suivant : avancer d’un seul jour (Ctrl+J)"
 		next_day.accessibility_name = "Jour suivant"
+		panel.add_child(next_day)
+		D.place(next_day, Rect2(right - day_width, cy, day_width, ch))
+		next_day.pressed.connect(app.next_day_action)
+		right -= day_width + 16.0
+	var f1_width := _key_width("F1")
+	var help := _shell_button("GabiF1")
+	help.tooltip_text = "Aide de Gabi · F1"
+	help.accessibility_name = "Aide de Gabi · F1"
+	panel.add_child(help)
+	D.place(help, Rect2(right - f1_width - 8.0, cy, f1_width + 8.0, ch))
+	help.pressed.connect(func(): app._open_coach())
+	_key(help, 4, (ch - 27) / 2.0, "F1", C.RAISED)
+	right -= f1_width + 8.0 + 4.0
+	var gabi_en_pied: bool = app.route == "Bureau" and not national and is_instance_valid(app.get("coach")) and app.coach.has_method("bureau_disponible") and app.coach.bureau_disponible()
 	var gabi := Control.new()
 	gabi.name = "GabiBandeau"
 	gabi.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	gabi.set_meta("masque", gabi_en_pied)
+	gabi.set_meta("compact", true)
 	panel.add_child(gabi)
-	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left,calendar_icon,gabi,next_day])
-	_position_topbar(layout)
+	D.place(gabi, Rect2(right - square, sy, square, square))
+	right -= square + 27.0
+	# Date + journée : « mar. 17 nov. · J9 » ; clic : Calendrier (au jour courant).
+	var caption := date_caption(app.model)
+	var widest := maxf(_rw(Charte.texte_moyen(), caption[0], 17), _rw(Charte.texte_moyen(), "mer. 28 sept.", 17))
+	var round_width := _rw(Charte.TITRE_GRAS_ITALIQUE, "· J30", 20) + 6.0
+	var date_width := widest + round_width + 16.0
+	var calendar := _shell_button("ImmersiveCalendarDate")
+	calendar.accessibility_name = "Ouvrir le calendrier"
+	panel.add_child(calendar)
+	D.place(calendar, Rect2(right - date_width, cy, date_width, ch))
+	calendar.pressed.connect(_open_current_calendar.bind(app))
+	app.header_date = _label(calendar, Rect2(8, 0, widest, ch), "", 17, C.IVORY, Charte.texte_moyen(), HORIZONTAL_ALIGNMENT_RIGHT)
+	app.header_date.name = "ImmersiveDateText"
+	app.header_date.set_meta("coque", true)
+	app.header_date.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var round_label := _label(calendar, Rect2(8 + widest + 4, 0, round_width, ch), "", 20, C.IVORY, Charte.TITRE_GRAS_ITALIQUE)
+	round_label.name = "ImmersiveRound"
+	app._update_header_date()
+	right -= date_width + 27.0
+	# Recherche : 400 (300 px à 1920), réduite jusqu'à 293 (220 px) si le fil manque de place.
+	var crumbs := _crumbs(app)
+	var crumbs_width := _crumbs_width(crumbs)
+	var search_width := clampf(right - crumbs_left - minf(crumbs_width, 520.0) - 27.0, 293.0, 400.0)
+	var search := _search_field(panel, app, Rect2(right - search_width, cy, search_width, ch))
+	right -= search_width + 27.0
+	_place_crumbs(panel, app, crumbs, crumbs_left, right, ch, cy)
+	_continue_button(panel, app, continue_rect)
+	if next_day != null: next_day.focus_neighbor_right = app.primary_button.get_path()
 	if is_instance_valid(app.coach) and app.coach.has_method("installer_bandeau"): app.coach.installer_bandeau(gabi)
 
-static func _club_button(button: Button, fill: Color, edge: Color) -> void:
-	for state in ["normal","hover","pressed"]:
-		var previous := button.get_theme_stylebox(state)
-		var color := fill.lightened(.07) if state == "hover" else fill.darkened(.1) if state == "pressed" else fill
-		var style := C.box(C.readable_primary_fill(color),edge,5,0)
-		for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:
-			style.set_content_margin(side,previous.get_content_margin(side))
-		button.add_theme_stylebox_override(state,style)
+## Date du jeu de la barre haute : [« mar. 17 nov. », « J9 » ou vide, infobulle].
+static func date_caption(model: Dictionary) -> Array:
+	var meta: Dictionary = model.get("meta", {})
+	var round_label := str(meta.get("roundLabel", ""))
+	var planning: Dictionary = model.get("calendarPlanning", {}) if model.get("calendarPlanning") is Dictionary else {}
+	var today: Variant = planning.get("today", meta.get("calendarToday", meta.get("date", "")))
+	var date: String = today if today is String else ""
+	var parts := date.split("-")
+	var text := ""
+	if parts.size() == 3 and parts[1].is_valid_int() and int(parts[1]) in range(1, 13) and parts[2].substr(0, 2).is_valid_int():
+		var stamp := Time.get_unix_time_from_datetime_string(date.substr(0, 10) + "T12:00:00")
+		var weekday := int(Time.get_datetime_dict_from_unix_time(stamp).get("weekday", -1))
+		text = "%s%d %s" % [(JOURS[weekday] + " ") if weekday >= 0 and weekday < 7 else "", int(parts[2].substr(0, 2)), MOIS[int(parts[1]) - 1]]
+	else:
+		text = "Saison " + G.season_label(meta.get("season", 1))
+	var journee := ""
+	var matched := RegEx.create_from_string("^Journée (\\d+)").search(round_label)
+	if matched != null: journee = "J" + matched.get_string(1)
+	return [text, journee, round_label]
 
-static func _position_topbar(layout: Control) -> void:
-	var factor := layout.scale.y
-	if factor<=0: return
-	var elements: Array = layout.get_meta("immersive_topbar")
-	var date: Label = elements[0]
-	var action: Button = elements[1]
-	var compact := C.px(24)*factor<14.0
-	# En petit format, les raccourcis sont regroupés dans le pied.
-	elements[2].visible=not compact
-	var calendar: Button = elements[3]
-	var calendar_icon: TextureRect = elements[5]
-	var date_px := maxi(C.px(24),ceili(14.0/factor))
-	var date_font := date.get_theme_font("font")
-	var action_left: int = elements[4]
-	var office_live := action_left == TOPBAR_MATCH_ACTION_LEFT
-	var icon_left := (1658 if compact else 1680) if office_live else (1753 if compact else 1773)
-	var calendar_left := icon_left - 7
-	var calendar_right := action_left - 13
-	var height := maxf(45.0*C.density,26.0/factor)
-	calendar.position = Vector2(C.px(calendar_left),(79.0*C.density-height)/2.0)
-	calendar.size = Vector2(C.px(calendar_right-calendar_left),height)
-	calendar_icon.position = Vector2(C.px(7),(height-calendar_icon.size.y)/2.0)
-	var date_left := C.px(40)
-	var text_height := date_font.get_height(date_px)
-	date.add_theme_font_size_override("font_size",date_px)
-	date.position = Vector2(date_left,(height-text_height)/2.0)
-	date.set_deferred("size",Vector2(calendar.size.x-date_left-C.px(7),text_height))
-	if elements.size() > 6 and is_instance_valid(elements[6]):
-		# Zone de Gabi : de la recherche au calendrier, toute la hauteur utile du bandeau.
-		var gabi: Control = elements[6]
-		var gabi_right := calendar_left - TOPBAR_GABI_GAP
-		gabi.position = Vector2(C.px(TOPBAR_GABI_LEFT),C.px(6))
-		gabi.size = Vector2(0.0 if gabi.get_meta("masque",false) else maxf(0.0,C.px(gabi_right-TOPBAR_GABI_LEFT)),C.px(66))
-	action.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
-	action.position.y=(79.0*C.density-height)/2.0
-	action.size.y=height
-	if elements.size() > 7 and is_instance_valid(elements[7]):
-		var next_day: Button = elements[7]
-		next_day.add_theme_font_size_override("font_size",maxi(C.px(21),ceili(13.0/factor)))
-		next_day.position.y=action.position.y
-		next_day.size.y=height
+## Fil d'Ariane : [libellé, action]. Club → fiche du club ; section → page racine de la section ; sous-page → la page.
+static func _crumbs(app: Control) -> Array:
+	var national := Selections.nation_only(app.model)
+	var club: Dictionary = app.model.get("club", {}) if app.model.get("club") is Dictionary else {}
+	var identity := str(Selections.managed_team(app.model).get("name", "Sélection")) if national else G.club_name(club)
+	var result := []
+	result.append([identity, func():
+		if national: app._navigate("Sélections")
+		elif not club.has("id") or not app.navigation_controller.open_entity({"kind":"club", "id":str(int(club.get("id", -1)))}): app._navigate("Club")])
+	var section := rail_section(app.route)
+	var section_root: String = section[1]
+	result.append([str(section[0]), func(): app._navigate(section_root)])
+	var page := _page_caption(app)
+	if not page.is_empty() and page != str(section[0]):
+		var route: String = app.route
+		result.append([page, func(): app._navigate(route, true, true)])
+	return result
+
+static func _page_caption(app: Control) -> String:
+	if app.route == "Effectif" and app.get_meta("immersive08_full_player", false): return "Fiche joueur : " + str(P.player(app.model, app.selected_player).get("name", ""))
+	if app.route == ClubSheet.ROUTE: return "Fiche club : " + ClubSheet.caption(app)
+	if _is_training(app): return "Entraînement"
+	if app.route == "Recherche":
+		var query := str(app.management_ui.get("search_query", "")).strip_edges()
+		return "« %s »" % query if not query.is_empty() else "Résultats"
+	return {"Effectif":"Vue d'ensemble", "Composition":"Composition", "Classements":"Classements", "Réception":"Courrier", "Bureau":"Ta semaine"}.get(app.route, app.route)
+
+static func _crumbs_width(crumbs: Array) -> float:
+	var total := 0.0
+	for i in crumbs.size():
+		var last: bool = i == crumbs.size() - 1
+		total += _rw(Charte.texte_moyen() if last else C.BODY, str(crumbs[i][0]), 17) + 8.0
+		if not last: total += _rw(C.BODY, "/", 17) + 22.0
+	return total
+
+## Place les morceaux du fil entre `left` et `right` ; s'il manque de place, il perd ses premiers morceaux.
+static func _place_crumbs(panel: Control, app: Control, crumbs: Array, left: float, right: float, ch: float, cy: float) -> void:
+	var shown := crumbs.duplicate()
+	while shown.size() > 1 and _crumbs_width(shown) > right - left: shown.pop_front()
+	var x := left
+	var first_index := crumbs.size() - shown.size()
+	for i in shown.size():
+		var last: bool = i == shown.size() - 1
+		var font: Font = Charte.texte_moyen() if last else C.BODY
+		var width := minf(_rw(font, str(shown[i][0]), 17) + 8.0, maxf(40.0, right - x))
+		var crumb := _shell_button("ImmersiveCrumb%d" % (first_index + i))
+		crumb.text = str(shown[i][0])
+		crumb.tooltip_text = str(shown[i][0])
+		crumb.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		crumb.add_theme_font_override("font", font)
+		crumb.add_theme_font_size_override("font_size", _fpx(17))
+		if not last:
+			for key in ["font_color", "font_focus_color"]: crumb.add_theme_color_override(key, C.MUTED)
+		else: crumb.set_meta("ariane_ici", true)
+		crumb.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		panel.add_child(crumb)
+		D.place(crumb, Rect2(x, cy, width, ch))
+		crumb.pressed.connect(shown[i][1])
+		x += width
+		if not last:
+			_label(panel, Rect2(x + 7, cy, _rw(C.BODY, "/", 17) + 8, ch), "/", 17, C.FAINT, C.BODY, HORIZONTAL_ALIGNMENT_CENTER)
+			x += _rw(C.BODY, "/", 17) + 22.0
+
+## Champ « Rechercher » (Ctrl K) : fond panneau-3, contour ivoire-3, rayon 2 ; Entrée ouvre l'écran Recherche.
+static func _search_field(panel: Control, app: Control, rect: Rect2) -> LineEdit:
+	var field := LineEdit.new()
+	field.name = "ImmersiveSearch"
+	field.set_meta("immersive_style_applied", true)
+	var national := Selections.nation_only(app.model)
+	var hint := "Rechercher un écran…" if national else "Rechercher un joueur, un club…"
+	field.placeholder_text = hint if _rw(C.BODY, hint, 17) <= rect.size.x - 39.0 - _key_width("Ctrl K") - 20.0 else "Rechercher…"
+	field.tooltip_text = "Rechercher un joueur, un club ou un écran · Ctrl K · Entrée : résultats"
+	field.accessibility_name = "Rechercher · Ctrl K"
+	field.add_theme_font_override("font", C.BODY)
+	field.add_theme_font_size_override("font_size", _fpx(17))
+	field.add_theme_color_override("font_color", C.IVORY)
+	field.add_theme_color_override("font_placeholder_color", C.MUTED)
+	field.add_theme_color_override("caret_color", C.IVORY)
+	field.add_theme_color_override("selection_color", C.LINE)
+	var normal := _style(C.SELECTED, 3.0, C.FAINT)
+	var focus := _style(Color.TRANSPARENT, 0.0, C.IVORY, 2)
+	focus.set_expand_margin_all(2)
+	for style: StyleBoxFlat in [normal, focus]:
+		style.content_margin_left = C.px(39)
+		style.content_margin_right = C.px(_key_width("Ctrl K") + 14.0)
+	field.add_theme_stylebox_override("normal", normal)
+	field.add_theme_stylebox_override("read_only", normal)
+	field.add_theme_stylebox_override("focus", focus)
+	if app.route == "Recherche": field.text = str(app.management_ui.get("search_query", ""))
+	panel.add_child(field)
+	D.place(field, rect)
+	_picto(field, Rect2(12, (rect.size.y - 21) / 2.0, 21, 21), "loupe", C.MUTED)
+	var key := _key(field, rect.size.x - _key_width("Ctrl K") - 8.0, (rect.size.y - 27) / 2.0, "Ctrl K", C.RAISED)
+	key.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	field.text_submitted.connect(func(text: String): app.navigation_controller.submit_search(text))
+	field.gui_input.connect(func(event: InputEvent):
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+			field.accept_event()
+			if not field.text.is_empty(): field.clear()
+			else: field.release_focus())
+	if is_instance_valid(app.navigation_controller): app.navigation_controller.bind_search_field(field)
+	return field
+
+## Continuer : aplat or (seul aplat or de la coque), texte nuit, bord droit incliné 10° ; « Espace » à droite, ou ce
+## qui l'arrête (« Préparer », « Conf. de presse »…). main.gd écrit l'état dans `text` (invisible) : sync_continue
+## le recopie dans les libellés visibles.
+static func _continue_button(panel: Control, app: Control, rect: Rect2) -> void:
+	var button := _shell_button("ImmersiveContinue")
+	button.text = "Continuer"
+	for state in ["normal", "hover", "pressed", "hover_pressed", "disabled"]: button.add_theme_stylebox_override(state, StyleBoxEmpty.new())
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_disabled_color"]: button.add_theme_color_override(key, Color.TRANSPARENT)
+	var focus := _style(Color.TRANSPARENT, 0.0, C.IVORY, 2)
+	focus.set_expand_margin_all(2)
+	button.add_theme_stylebox_override("focus", focus)
+	button.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	button.add_theme_font_size_override("font_size", _fpx(24))
+	panel.add_child(button)
+	D.place(button, rect)
+	var plate := _incline(button, Rect2(Vector2.ZERO, rect.size), C.OR, false)
+	plate.name = "ContinuePlate"
+	plate.show_behind_parent = true
+	plate.couleur_survol = C.OR_VIF
+	plate.source = button
+	button.draw.connect(plate.queue_redraw)
+	var label := _label(button, Rect2(24, 0, rect.size.x - 150, rect.size.y), "CONTINUER", 24, Charte.NUIT, Charte.TITRE_EXTRA_ITALIQUE)
+	label.name = "ContinueLabel"
+	var rule := ColorRect.new()
+	rule.name = "ContinueRule"
+	rule.color = Color(Charte.NUIT, .35)
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(rule)
+	var hint := _label(button, Rect2(rect.size.x - 120, 0, 85, rect.size.y), "Espace", 16, Charte.NUIT, C.BODY, HORIZONTAL_ALIGNMENT_RIGHT)
+	hint.name = "ContinueHint"
+	app.primary_button = button
+	button.pressed.connect(app.primary_action)
+	button.tooltip_text = app.primary_tooltip() if app.has_method("primary_tooltip") else app.primary_text()
+	sync_continue(app)
+
+## Recopie l'état de Continuer (texte court posé par main.gd) dans ses libellés visibles.
+static func sync_continue(app: Control) -> void:
+	var button := app.get("primary_button") as Button
+	if not is_instance_valid(button) or button.name != "ImmersiveContinue": return
+	var label := button.get_node_or_null("ContinueLabel") as Label
+	var hint := button.get_node_or_null("ContinueHint") as Label
+	var rule := button.get_node_or_null("ContinueRule") as ColorRect
+	if label == null or hint == null or rule == null: return
+	var state := str(button.text).strip_edges()
+	var own_head: bool = state in ["Relancer", "Retour au direct", "Valider le résultat"]
+	label.text = state.to_upper() if own_head else "CONTINUER"
+	hint.text = "Espace" if own_head or state.is_empty() or state == "Continuer" else state
+	if button.disabled: hint.text = "! Indisponible"
+	button.accessibility_name = label.text.capitalize() + " · " + hint.text
+	var width_ref := button.size.x / C.density if button.size.x > 0 else CONTINUE_WIDTH
+	var height_ref := button.size.y / C.density if button.size.y > 0 else TOPBAR_HEIGHT - 16
+	var hint_width := minf(_rw(C.BODY, hint.text, 16) + 4.0, width_ref * .52)
+	var hint_right := width_ref - 35.0
+	D.place(hint, Rect2(hint_right - hint_width, 0, hint_width, height_ref))
+	hint.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	D.place(rule, Rect2(hint_right - hint_width - 13.0, height_ref * .28, 1.0 / C.density, height_ref * .44))
+	D.place(label, Rect2(24, 0, maxf(40.0, hint_right - hint_width - 37.0), height_ref))
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
 ## Chiffre clé de l'en-tête Effectif : gros chiffre et légende sur le fond sombre des blocs (comme
 ## « 65 aujourd’hui » de la fiche joueur), à la place des pastilles en petit texte vert sur vert.
@@ -784,6 +1285,11 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 		"Suivi des jeunes": app.body.add_child(app.AcademyFollowUpViews.build(app))
 		"Travail du club": app.body.add_child(app.SupportViews.build(app))
 		"Carrière": app.body.add_child(app.ManagerCareerViews.build(app))
+		"Recherche": app.body.add_child(SearchPage.build(app))
+		"Réglages":
+			var preferences := Preferences.page(app, app.user_preferences)
+			app.body.add_child(preferences)
+			Legacy.apply(preferences, app.accent)
 		"Match":
 			app.match_screen = MatchCanvas.new() if immersive_match else MatchCompact.new()
 			app.match_screen.app = app

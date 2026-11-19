@@ -51,6 +51,9 @@ var _coulisse: Control
 var _bandeau: Control
 ## Au Bureau, Gabi en pied tient déjà la colonne : le visage et la remarque du bandeau sont masqués.
 var _bandeau_masque := false
+## Coque commune (charte §7.1) : le bandeau n'est plus qu'un médaillon à côté de la touche « F1 » ; la remarque du
+## moment et son titre ne sont plus affichés dans la barre (son avis reste au clic, l'indice sur le médaillon).
+var _bandeau_compact := false
 var _visage: Control
 var _pastille: Panel
 var _bandeau_titre: Label
@@ -253,7 +256,7 @@ func _build_adjoint() -> void:
 func _adjoint_actif() -> bool:
 	if not is_instance_valid(app) or not is_instance_valid(_bulle) or not app._has_career(): return false
 	if not profile.data.enabled: return false
-	return is_instance_valid(_bandeau) and _bandeau.is_inside_tree() and _bandeau.is_visible_in_tree() and (_bandeau.size.x >= 40.0 or _bandeau_masque)
+	return is_instance_valid(_bandeau) and _bandeau.is_inside_tree() and _bandeau.is_visible_in_tree() and (_bandeau.size.x >= (20.0 if _bandeau_compact else 40.0) or _bandeau_masque)
 
 ## Mode grand (moments clés, aide, visite) ou écran sans bandeau : le portrait rejoint la grande bulle.
 ## Sinon il reste en coulisse, cadré sur le visage, et le bandeau affiche sa texture.
@@ -307,6 +310,7 @@ func _layout_voile() -> void:
 func installer_bandeau(zone: Control) -> void:
 	_bandeau = zone
 	_bandeau_masque = bool(zone.get_meta("masque", false))
+	_bandeau_compact = bool(zone.get_meta("compact", false))
 	_visage = null
 	if not is_instance_valid(app) or not profile.data.enabled or not app._has_career():
 		zone.hide()
@@ -371,6 +375,8 @@ func installer_bandeau(zone: Control) -> void:
 	_remarque_cle = ""
 	if _bandeau_masque:
 		for masque: Control in [_pastille, _visage, _bandeau_titre, _fil]: masque.hide()
+	elif _bandeau_compact:
+		for masque: Control in [_pastille, _bandeau_titre, _fil]: masque.hide()
 	_disposer_bandeau()
 	_maj_indice()
 
@@ -388,6 +394,13 @@ func _disposer_bandeau() -> void:
 	if not is_instance_valid(_bandeau) or not is_instance_valid(_visage): return
 	var s := _bandeau.size
 	var h := s.y
+	if _bandeau_compact:
+		_visage.position = Vector2((s.x - h) / 2.0, 0)
+		_visage.size = Vector2(h, h)
+		_style_pastille()
+		if not _bandeau_masque and portrait is GabiPortrait and portrait.framing == "visage":
+			portrait.set_render_size(Vector2i.ONE * roundi(h * _bandeau.get_global_transform_with_canvas().get_scale().y * 2.0))
+		return
 	var d := roundf(h * 0.97)
 	_visage.position = Vector2(0, (h - d) / 2.0)
 	_visage.size = Vector2(d, d)
@@ -858,7 +871,7 @@ func _process(delta: float) -> void:
 	if is_instance_valid(_bulle_suivre) and _bulle.visible: _bulle_suivre.disabled = app.waiting or not app._live().is_empty()
 	if _adjoint_actif():
 		_maj_remarque()
-		if not _bandeau_masque: _defiler(delta)
+		if not _bandeau_masque and not _bandeau_compact: _defiler(delta)
 	_maj_pied()
 
 # --- C. Gabi chez lui, au Bureau -------------------------------------------------------------------------

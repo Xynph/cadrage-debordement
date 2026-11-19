@@ -18,6 +18,7 @@ var _forward: Button
 var _find: Button
 var _restoring := false
 var _palette_return_focus: WeakRef
+var _search_field: WeakRef
 var _dispatching := false
 var _reading_revision := 0
 var _readers: Dictionary = {}
@@ -85,6 +86,7 @@ func _reading_location(route: String) -> Dictionary:
 		"Classements": return {"division":app.table_division, "tab":app.management_ui.get("competition", {}).get("tab", "league")}
 		"Calendrier": return {"date":app.management_ui.get("calendar_reading", {}).get("selected", "")}
 		"Finances": return {"tab":app.management_ui.get("immersive08_finance_tab", "summary")}
+		"Recherche": return {"query":str(app.management_ui.get("search_query", ""))}
 	return {}
 
 # Called before a route or entity changes. This snapshots only local reading state;
@@ -120,6 +122,61 @@ func controls(show_search: bool = true) -> Control:
 	else: _find = null
 	_refresh_controls()
 	return row
+
+## Coque (ui/immersive08/shell.gd) : Précédent et Suivant de la barre haute deviennent les boutons de l'historique.
+func bind_history_buttons(back: Button, forward: Button) -> void:
+	_back = back
+	_forward = forward
+	_find = null
+	_back.pressed.connect(func(): _travel(-1))
+	_forward.pressed.connect(func(): _travel(1))
+	_refresh_controls()
+
+## Champ « Rechercher » de la barre haute : Ctrl+K, Ctrl+F et l'accès rapide y mettent le focus (aucune fenêtre).
+func bind_search_field(field: LineEdit) -> void:
+	_search_field = weakref(field)
+
+func _coque_search() -> LineEdit:
+	var field := _search_field.get_ref() as LineEdit if _search_field != null else null
+	if field == null or not field.is_inside_tree() or not field.is_visible_in_tree(): return null
+	return field
+
+## Met le focus dans le champ de la barre haute, texte sélectionné. Faux hors de la coque (pas de champ).
+func focus_search() -> bool:
+	var field := _coque_search()
+	if field == null or app == null or _blocked(): return false
+	field.grab_focus()
+	field.select_all()
+	field.caret_column = field.text.length()
+	return true
+
+## Entrée dans le champ : ouvre l'écran « Recherche » de la coque (dans l'historique Précédent / Suivant).
+func submit_search(text: String) -> void:
+	if app == null or _blocked(): return
+	app.management_ui.search_query = text.strip_edges()
+	app._navigate("Recherche")
+
+## Candidats de recherche (écrans, joueurs, clubs, staff, sélections, compétitions) : les `limit` premiers et le total.
+func search_results(query: String, limit: int = RESULT_LIMIT) -> Dictionary:
+	var needle := U.fold(query).strip_edges()
+	var found: Array[Dictionary] = []
+	var total := 0
+	for candidate: Dictionary in _candidates():
+		if not entity_available(candidate): continue
+		if not needle.is_empty() and not U.fold(candidate.label).contains(needle): continue
+		total += 1
+		if found.size() < limit: found.append(candidate)
+	return {"matches":found, "total":total}
+
+## Ouvre un résultat de recherche (écran Recherche de la coque) : fiche joueur, fiche club ou écran.
+func open_search_result(candidate: Dictionary) -> bool:
+	if app == null or _blocked(): return false
+	var entry := candidate.duplicate(true)
+	if entry.kind == "squad":
+		entry.kind = "player"
+		entry.section = "roster"
+	if not entity_available(entry): return false
+	return open_entity(entry)
 
 func _small_button(text: String, tooltip: String, id: String, action: Callable, immersive: bool = false) -> Button:
 	var button := C.button(text, action) if immersive else G.button(text, action)
@@ -162,7 +219,8 @@ func handle_shortcut(event: InputEvent) -> bool:
 	var save_shortcut: bool = code==KEY_S and event.ctrl_pressed and not event.alt_pressed
 	if _blocked(null,save_shortcut): return false
 	if save_shortcut and app._has_career():
-		app._command("save")
+		# Sauvegarde directe ; la ligne « Sauvegardé » du rail passe aussitôt à « Sauvegarde… ».
+		app.Immersive.save_now(app)
 		return true
 	# « Jour suivant » : un seul jour (le bouton principal est « Continuer », jusqu'au prochain événement).
 	if code == KEY_J and event.ctrl_pressed and not event.alt_pressed and app.has_method("next_day_action") and app._has_career():
@@ -172,7 +230,8 @@ func handle_shortcut(event: InputEvent) -> bool:
 		app._open_coach()
 		return true
 	if code == KEY_K and event.ctrl_pressed and not event.alt_pressed:
-		open_palette()
+		# Dans la coque : focus dans le champ de la barre haute (aucune fenêtre) ; hors coque : accès rapide.
+		if not focus_search(): open_palette()
 		return true
 	if event.alt_pressed and not event.ctrl_pressed and code in [KEY_LEFT, KEY_RIGHT]:
 		var focus := app.get_viewport().gui_get_focus_owner()
@@ -269,7 +328,17 @@ func _build_palette() -> void:
 
 func _refresh_results(query: String) -> void:
 	_results.clear(); _matches.clear()
-	var needle := U.fold(query).strip_edges()
+	var found := search_results(query)
+	var total: int = found.total
+	for candidate: Dictionary in found.matches:
+		_matches.append(candidate)
+		_results.add_item(candidate.label)
+		_results.set_item_tooltip(_results.item_count - 1, candidate.label)
+	if _results.item_count > 0: _results.select(0)
+	_count.text = "Aucun résultat · essaie un autre nom ou menu." if total == 0 else "%d résultat(s)%s" % [total, " · les 12 premiers, précise ta recherche" if total > RESULT_LIMIT else ""]
+	_dialog.get_ok_button().disabled = total == 0
+
+func _candidates() -> Array[Dictionary]:
 	var candidates: Array[Dictionary] = []
 	if not app._has_career():
 		candidates.append({"kind":"menu", "route":"Accueil", "label":"Menu · Accueil"})
@@ -280,6 +349,8 @@ func _refresh_results(query: String) -> void:
 		if app.model.get("international") is Dictionary:
 			candidates.append({"kind":"menu", "route":"Sélections", "label":"Menu · Sélections internationales"})
 		candidates.append({"kind":"training","route":"Préparation","label":"Menu · Entraînement · Équipe"})
+		for extra: Array in [["Presse", "Menu · Presse · journal et conférences"], ["Réglages", "Menu · Réglages · confort de jeu"]]:
+			candidates.append({"kind":"menu", "route":extra[0], "label":extra[1]})
 		for team: Dictionary in app.model.get("staff", {}).get("teams", []):
 			for person: Dictionary in team.get("members", []):
 				var staff_id := str(person.get("id", ""))
@@ -328,18 +399,7 @@ func _refresh_results(query: String) -> void:
 				var context := "Effectif" if source == "squad" else "Marché"
 				var label := "%s · %s · %s · %s [%s]" % [context, str(person.get("name", "Sans nom")), str(person.get("pos", "Poste non renseigné")), "dossier" if source == "squad" else "piste de recrutement", id]
 				candidates.append({"kind":source, "id":id, "route":"Effectif" if source == "squad" else "Recrutement", "label":label})
-	var total := 0
-	for candidate: Dictionary in candidates:
-		if not entity_available(candidate): continue
-		if not needle.is_empty() and not U.fold(candidate.label).contains(needle): continue
-		total += 1
-		if _matches.size() >= RESULT_LIMIT: continue
-		_matches.append(candidate)
-		_results.add_item(candidate.label)
-		_results.set_item_tooltip(_results.item_count - 1, candidate.label)
-	if _results.item_count > 0: _results.select(0)
-	_count.text = "Aucun résultat · essaie un autre nom ou menu." if total == 0 else "%d résultat(s)%s" % [total, " · les 12 premiers, précise ta recherche" if total > RESULT_LIMIT else ""]
-	_dialog.get_ok_button().disabled = total == 0
+	return candidates
 
 func _activate_selected() -> void:
 	if not is_instance_valid(_dialog) or _blocked(_dialog): return
@@ -399,6 +459,9 @@ func _allowed_route(route: String) -> bool:
 	if not app.Immersive.Selections.navigation_allowed(app.model, route): return false
 	if route == "Sélections": return app.model.get("international") is Dictionary
 	if route == app.Immersive.ClubSheet.ROUTE: return not app.Immersive.Selections.nation_only(app.model)
+	# Écrans de la coque hors chapitres : Recherche et Réglages ; Presse s'ouvre aussi hors conférence.
+	if route in app.Immersive.SHELL_ROUTES: return true
+	if route == "Presse": return not app.Immersive.Selections.nation_only(app.model)
 	for chapter: Dictionary in app.NAV_CHAPTERS:
 		if route in chapter.routes: return true
 	return false
@@ -474,8 +537,12 @@ func _has_popup(node: Node, ignore: Window) -> bool:
 func _refresh_controls() -> void:
 	if app == null: return
 	var blocked := _blocked()
-	if is_instance_valid(_back): _back.disabled = blocked or _destination(-1) < 0
-	if is_instance_valid(_forward): _forward.disabled = blocked or _destination(1) < 0
+	if is_instance_valid(_back):
+		_back.disabled = blocked or _destination(-1) < 0
+		if _back.has_meta("coque"): _back.tooltip_text = "Pas de page précédente" if _back.disabled else "Page précédente · Alt+←"
+	if is_instance_valid(_forward):
+		_forward.disabled = blocked or _destination(1) < 0
+		if _forward.has_meta("coque"): _forward.tooltip_text = "Pas de page suivante" if _forward.disabled else "Page suivante · Alt+→"
 	if is_instance_valid(_find): _find.disabled = blocked
 
 # Compatibility entry point used by the existing roster and scouting screens.
@@ -498,7 +565,7 @@ func entity_available(target: Dictionary) -> bool:
 	match kind:
 		"menu":
 			var route := str(target.get("route", ""))
-			return route != "Presse" and _allowed_route(route)
+			return _allowed_route(route)
 		"player", "squad":
 			return not id.is_empty() and ((_allowed_route("Effectif") and not _person("squad", id).is_empty()) or (_allowed_route("Recrutement") and not _person("market", id).is_empty()))
 		"market":

@@ -428,6 +428,8 @@ func _receive_model(value: Dictionary) -> void:
 			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nTu peux maintenant créer ou importer une carrière.")
 	# Réponse à un mail du club qui mène à un écran (négocier, prolonger, préserver un joueur).
 	if response_ok and received_command == "club_mail_reply": ClubMail.after_reply(self)
+	# Ligne « ✓ Sauvegardé <date> » du pied du rail (succès comme échec d'écriture).
+	if is_instance_valid(root_content): Immersive.refresh_save_line(self)
 	call_deferred("_refresh_coach")
 	if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 	# Portraits de l'effectif fabriqués en tâche de fond, interface au repos : la 1re Composition ou le
@@ -800,7 +802,8 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 	if is_instance_valid(contextual_director) and contextual_director.match_immersed() and target != "Match":
 		contextual_director.render_if_needed()
 		return
-	if target == "Presse" and not has_meta("press_mail_origin"): return
+	# Presse s'ouvre aussi depuis le rail, hors conférence (journal, archives) ; la conférence elle-même
+	# reste derrière son courrier (press_view.gd : « Ouvre l'invitation dans Réception »).
 	if target == "Sélections" and not model.get("international") is Dictionary: return
 	if not Immersive.Selections.navigation_allowed(model, target): return
 	if is_instance_valid(navigation_controller): navigation_controller.capture_current()
@@ -864,7 +867,6 @@ func _render(remember_ui: bool = true) -> void:
 		_screen_stamp = _screen_state()
 
 func _render_screen(remember_ui: bool) -> void:
-	if route == "Presse" and not has_meta("press_mail_origin"): route = "Réception"
 	if not Immersive.Selections.navigation_allowed(model, route): route = "Réception"
 	call_deferred("_refresh_coach")
 	call_deferred("_observe_navigation")
@@ -1120,6 +1122,17 @@ func _open_coach() -> void:
 
 func _update_header_date() -> void:
 	if not is_instance_valid(header_date): return
+	# Barre haute de la coque : « mar. 17 nov. » et « · J9 » (shell.gd, date_caption).
+	if header_date.has_meta("coque"):
+		var caption: Array = Immersive.date_caption(model)
+		header_date.text = str(caption[0])
+		var round_text: Label = header_date.get_parent().get_node_or_null("ImmersiveRound")
+		if round_text != null: round_text.text = "· " + str(caption[1]) if not str(caption[1]).is_empty() else ""
+		var date_button := header_date.get_parent() as Button
+		if date_button != null:
+			date_button.accessibility_description = str(caption[0]) + (" · " + str(caption[2]) if not str(caption[2]).is_empty() else "")
+			date_button.tooltip_text = "Ouvrir le calendrier · " + date_button.accessibility_description
+		return
 	var meta: Dictionary = model.get("meta", {})
 	var round_label := str(meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1)))
 	var planning: Dictionary = model.get("calendarPlanning", {})
@@ -1254,7 +1267,8 @@ func _update_live_bar() -> void:
 			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
 		if connection_error and bridge.child_pid <= 0 and primary_button.name == "ImmersiveContinue": primary_button.text = "Relancer"
 		primary_button.tooltip_text = primary_tooltip()
-		fit_button_text(primary_button)
+		if primary_button.name == "ImmersiveContinue": Immersive.sync_continue(self)
+		else: fit_button_text(primary_button)
 	if waiting and SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, true)
 
 ## Bouton à texte rogné (clip_text) : réduit la police jusqu'à ce que le libellé tienne en entier, icône comprise
@@ -1385,7 +1399,7 @@ func pause_menu() -> void:
 			"import": open_file(true)
 			"career_slots": open_career_slots()
 			"profile_safety": open_profile_safety()
-			"settings": settings()
+			"settings": settings_page()
 			"quit": request_quit()
 	)
 	add_child(d)
@@ -1395,6 +1409,11 @@ func pause_menu() -> void:
 
 func settings() -> void:
 	preload("res://ui/preferences_dialog.gd").open(self, user_preferences)
+
+## Réglages dans la coque (écran « Réglages », aucune fenêtre) ; hors carrière, la fenêtre des paramètres.
+func settings_page() -> void:
+	if _has_career() and route not in ["Accueil", "Création", "Packs"]: _navigate("Réglages")
+	else: settings()
 
 func open_career_slots() -> void:
 	preload("res://ui/career_slots_view.gd").open(self)

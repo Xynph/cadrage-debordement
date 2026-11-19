@@ -144,9 +144,10 @@ func _retour() -> bool:
 		return true
 	return false
 
-## La seule recherche existante est l'accès rapide (menus, joueurs, clubs) : Ctrl+F l'ouvre comme Ctrl+K.
+## Ctrl+F comme Ctrl+K : focus dans le champ « Rechercher » de la barre haute (aucune fenêtre) ;
+## hors coque seulement, l'accès rapide.
 func _recherche() -> bool:
 	var navigation: Node = app.get("navigation_controller") if is_instance_valid(app) else null
 	if not actif() or not is_instance_valid(navigation): return false
-	navigation.open_palette()
+	if not navigation.focus_search(): navigation.open_palette()
 	return true
