@@ -45,6 +45,8 @@ fi
 log "candidates : ${CANDIDATES[*]}"
 
 INCLUSES=()
+declare -A TETES=()   # PR -> sha de la tête au moment de la construction du lot
+RELANCE=""            # « oui » si le lot est passé au vert après relance des jobs en échec
 # construire <branche> <PR...> : main + squash de chaque PR ; remplit INCLUSES.
 construire() {
   local branche="$1"; shift
@@ -72,6 +74,7 @@ construire() {
     titre=$(gh api "repos/$REPO/pulls/$n" --jq .title)
     auteur=$(gh api "repos/$REPO/pulls/$n" --jq '"\(.user.login) <\(.user.id)+\(.user.login)@users.noreply.github.com>"')
     git commit -q --author="$auteur" -m "$titre (#$n)" -m "Fusionné par le train de fusion $STAMP."
+    TETES[$n]=$(git rev-parse "pr-$n")
     INCLUSES+=("$n")
   done
 }
@@ -83,6 +86,7 @@ construire() {
 RUN_URL=""; TRAIN_PR=""
 tester() {
   local branche="$1" id="" debut=$SECONDS etat conclusion liste sha evt="pull_request"
+  RELANCE=""; DIAG=""
   [[ "$ESSAI" == "true" ]] && { log "(essai) batterie non lancée"; return 1; }
   git push -q -f origin "$branche" || { log "push impossible"; return 2; }
   sha=$(git rev-parse HEAD)
@@ -123,14 +127,56 @@ tester() {
   [[ -n "$id" ]] || { log "exécution introuvable"; return 2; }
   RUN_URL="https://github.com/$REPO/actions/runs/$id"
   log "batterie ($evt) : $RUN_URL"
+  attendre_fin "$id" "$debut"
+  conclusion=$(gh run view "$id" --repo "$REPO" --json jobs --jq '.jobs[] | select(.name=="Validation CI") | .conclusion')
+  log "Validation CI : ${conclusion:-absente}"
+  # Un rouge peut venir d'un délai dépassé (runner lent), pas d'une assertion : on relance UNE fois les seuls
+  # jobs en échec avant de conclure (et de couper le lot, ce qui coûte une batterie entière par coupe).
+  if [[ "$conclusion" != "success" ]] && (( SECONDS - debut < ATTENTE_MAX_S )); then
+    diagnostic "$id"
+    log "relance unique des jobs en échec"
+    if gh run rerun "$id" --repo "$REPO" --failed >/dev/null 2>&1; then
+      sleep 45
+      attendre_fin "$id" "$debut"
+      conclusion=$(gh run view "$id" --repo "$REPO" --json jobs --jq '.jobs[] | select(.name=="Validation CI") | .conclusion')
+      log "Validation CI après relance : ${conclusion:-absente}"
+      [[ "$conclusion" == "success" ]] && RELANCE="oui"
+    fi
+  fi
+  [[ "$conclusion" == "success" ]]
+}
+
+# attendre_fin <run> <début> : attend la fin de l'exécution (ou ATTENTE_MAX_S depuis <début>).
+attendre_fin() {
+  local id="$1" debut="$2" etat
   while (( SECONDS - debut < ATTENTE_MAX_S )); do
     sleep 60
     etat=$(gh run view "$id" --repo "$REPO" --json status --jq .status)
     [[ "$etat" == "completed" ]] && break
   done
-  conclusion=$(gh run view "$id" --repo "$REPO" --json jobs --jq '.jobs[] | select(.name=="Validation CI") | .conclusion')
-  log "Validation CI : ${conclusion:-absente}"
-  [[ "$conclusion" == "success" ]]
+}
+
+# diagnostic <run> : DIAG = « délai dépassé » (code 124 / ETIMEDOUT dans les jobs en échec) ou « assertion rouge ».
+DIAG=""
+diagnostic() {
+  local id="$1" noms
+  noms=$(gh run view "$id" --repo "$REPO" --json jobs --jq '[.jobs[] | select(.conclusion=="failure") | .name] | join(", ")')
+  if gh run view "$id" --repo "$REPO" --log-failed 2>/dev/null | grep -qE 'ETIMEDOUT|ECHEC \(124\)|exit code 124|timed out|dépass'; then
+    DIAG="délai dépassé (jobs : ${noms:-?})"
+  else
+    DIAG="assertion rouge (jobs : ${noms:-?})"
+  fi
+  log "diagnostic : $DIAG"
+}
+
+# retirees : PR du lot dont l'étiquette `train` a été retirée, fermées ou dont la tête a changé depuis la construction.
+retirees() {
+  local n info
+  RETIREES=()
+  for n in "${INCLUSES[@]}"; do
+    info=$(gh api "repos/$REPO/pulls/$n" --jq '[.state, ([.labels[].name] | index("train") != null), .head.sha] | @tsv' 2>/dev/null) || continue
+    [[ "$info" == $'open\ttrue\t'"${TETES[$n]}" ]] || RETIREES+=("$n")
+  done
 }
 
 # fusionner : fusion en rebase de la PR du train (un commit par PR), clôture des PR d'origine.
@@ -177,15 +223,25 @@ while (( ${#LOT[@]} > 0 )); do
   log "lot $essai : ${INCLUSES[*]}"
   tester "$branche"; verdict=$?
   if (( verdict == 0 )); then
+    retirees
+    if (( ${#RETIREES[@]} > 0 )); then
+      log "PR retirée ou modifiée pendant le test : ${RETIREES[*]} — lot refait sans elle"
+      resume "⚠️ Lot vert mais PR retirée/modifiée pendant le test (${RETIREES[*]}) : on refait le lot sans elle, rien n'est fusionné."
+      gh api -X PATCH "repos/$REPO/pulls/$TRAIN_PR" -f state=closed >/dev/null 2>&1 || true
+      git push -q origin --delete "$branche" 2>/dev/null
+      LOT=(); for n in "${INCLUSES[@]}"; do [[ " ${RETIREES[*]} " == *" $n "* ]] || LOT+=("$n"); done
+      (( ${#LOT[@]} > 0 )) && continue || break
+    fi
+    [[ -n "$RELANCE" ]] && resume "ℹ️ Lot passé au vert après relance des jobs en échec (rouge intermittent) : ${INCLUSES[*]}"
     fusionner || { resume "❌ Lot vert mais fusion impossible : ${INCLUSES[*]} — PR du train #$TRAIN_PR laissée ouverte pour une fusion à la main."; exit 1; }
     break
   fi
   [[ "$ESSAI" != "true" ]] && git push -q origin --delete "$branche" 2>/dev/null
   if (( verdict == 2 )); then resume "❌ Batterie impossible à lancer (lot ${INCLUSES[*]})."; exit 1; fi
   [[ "$ESSAI" == "true" ]] && { resume "Essai : lot construit sans conflit : ${INCLUSES[*]}"; break; }
-  resume "🔴 Lot rouge : ${INCLUSES[*]} — [batterie]($RUN_URL)"
+  resume "🔴 Lot rouge (${DIAG:-cause inconnue}, après relance) : ${INCLUSES[*]} — [batterie]($RUN_URL)"
   if (( ${#INCLUSES[@]} == 1 )); then
-    etiquette_echec "${INCLUSES[0]}" "la batterie complète est rouge sur main + cette PR : $RUN_URL"
+    etiquette_echec "${INCLUSES[0]}" "la batterie complète reste rouge après relance (${DIAG:-cause inconnue}) sur main + cette PR : $RUN_URL"
     break
   fi
   moitie=$(( ${#INCLUSES[@]} / 2 ))

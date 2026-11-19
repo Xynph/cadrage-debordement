@@ -51,8 +51,14 @@ ne changent.
 - Les recettes non obligatoires lancées au passage en prête (UI Chromium, étiquettes
   `windows-*`, `godot-sdk`) ne tournent pas sur un brouillon : poser l'étiquette voulue
   si la PR en a besoin.
-- Un test instable peut faire rougir un lot : la dichotomie coûte alors une ou deux
-  batteries de plus.
+- Un test instable ou lent (délai dépassé sur un runner chargé) fait d'abord l'objet d'**une relance unique des
+  seuls jobs en échec** (`gh run rerun --failed`) : verte après relance, le lot est fusionné (mention
+  « rouge intermittent » dans le résumé). Seul un rouge persistant déclenche la dichotomie, dont chaque coupe
+  coûte une batterie entière. Le résumé et le commentaire disent « délai dépassé » ou « assertion rouge ».
+- Une PR dont l'étiquette `train` est retirée, qui est fermée ou dont la branche reçoit un nouveau commit pendant
+  le test sort du lot : si le lot est vert, rien n'est fusionné et il est refait sans elle (jamais de contenu
+  périmé fusionné, jamais de branche modifiée supprimée). Pour corriger une PR en cours de test : attendre la fin
+  du lot, ou retirer l'étiquette en sachant qu'un lot sera refait.
 - Le planning `schedule` de GitHub peut prendre du retard : lancer le train à la main
   si c'est pressé.
 - La fusion classique (prête + fusion automatique) reste possible et prime pour un
