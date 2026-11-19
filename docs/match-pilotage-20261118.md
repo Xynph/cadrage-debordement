@@ -81,8 +81,8 @@ mesure le banc adverse actif sur 60 matchs (~2,9 changements de consigne par mat
 
 ## Limites connues
 
-- Le moteur donne déjà ~2,5 cartons jaunes par équipe et par match (bien au-dessus du Top 14) : antérieur à ce
-  chantier, à corriger à part.
+- Cartons : les ~2,5 jaunes par équipe et par match constatés ici sont corrigés (voir
+  [cartons réalistes](cartons-realistes-20261118.md), recalé le 19/11/2026 : ~0,65 jaune par équipe en Top 14).
 - Les matchs IA contre IA n'ont ni causerie ni consigne (pilotage réservé au match du joueur).
 - Version web : sans le domaine natif `match-delegation`, le banc adverse ne revoit pas ses consignes en cours de match.
 

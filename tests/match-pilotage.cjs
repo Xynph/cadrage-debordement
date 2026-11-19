@@ -112,8 +112,10 @@ try {
   const pied = serie('l.pilotage.consignes.piedJeu="plus";');
   const garder = serie('l.pilotage.consignes.piedJeu="moins";');
   const toucheSure = serie('l.pilotage.consignes.touche="sure";');
-  const galvanises = serie('for(const id of l.sheets[l.userSide].initial)l.pilotage.etats[id]={etat:"galvanise",phase:"pre"};');
-  const vexes = serie('for(const id of l.sheets[l.userSide].initial)l.pilotage.etats[id]={etat:"vexe",phase:"pre"};');
+  // 480 matchs : depuis le recalage des cartons (19/11/2026), l'écart galvanisés / vexés tombe de ~3,1 à ~2 points (plus de
+  // cartons des deux côtés) ; sur 160 matchs l'erreur type (~1,5 point) le rendait illisible.
+  const galvanises = serie('for(const id of l.sheets[l.userSide].initial)l.pilotage.etats[id]={etat:"galvanise",phase:"pre"};', 480);
+  const vexes = serie('for(const id of l.sheets[l.userSide].initial)l.pilotage.etats[id]={etat:"vexe",phase:"pre"};', 480);
   // Banc adverse aux consignes neutres et immobile : exactement le match d'avant (mêmes graines, mêmes chiffres).
   const avant = mesurer(neutre + seed('(i*7919+17)>>>0'), 20);
   const neutresAdverses = mesurer(neutre + 'l.pilotage.consignesAdverses={piedJeu:"normal",rucks:"normale",discipline:"normale",rythme:"normal",touche:"normale"};' + seed('(i*7919+17)>>>0'), 20);
@@ -159,7 +161,7 @@ try {
   assert.ok(pousser.penMelee > base100.penMelee * 1.2, 'pousser en mêlée fait siffler davantage');
   assert.ok(maulSouvent.maul > base100.maul && maulJamais.maul < base100.maul, 'ballon porté suivi');
   assert.ok(aile.ecart > base100.ecart, 'attaquer leur aile faible rapporte, au moins au début');
-  assert.ok(galvanises.ecart > vexes.ecart + 2, 'l’état des joueurs pèse sur le match');
+  assert.ok(galvanises.ecart > vexes.ecart + 1.5, 'l’état des joueurs pèse sur le match : ' + r(galvanises.ecart - vexes.ecart));
   assert.ok(vexes.pen > base.pen, 'des joueurs vexés concèdent plus de fautes');
   // Scénario construit : l'adversaire mené de 10 points à l'heure de jeu, staff vigilant → il accélère et garde le ballon.
   const poursuite = JSON.parse(vm.run(`(()=>{S.live=JSON.parse(__live);const l=S.live,o=1-l.userSide;l.pilotage.adversaire.niveau=85;
