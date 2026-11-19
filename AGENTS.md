@@ -12,29 +12,34 @@
 - Les producteurs travaillent sur des branches distinctes et des périmètres
   compatibles ; la description de la PR est la passation
   ([cycle court](docs/developpement-parallele.md)).
-- **CI** ([détail](docs/train-de-fusion.md#fusion-rapide)) : PR ouverte en brouillon (CI
+- **CI** ([détail](docs/ci-debit-20261112.md)) : PR ouverte en brouillon (CI
   légère, « Validation CI » rouge exprès : ne pas le « réparer ») ; passée en
-  prête, elle tourne en **mode rapide** (décision de Léo, 19/11/2026 : suites courtes
-  et suites modifiées, ~10 min). Étiquette `batterie-complete` pour forcer la batterie
-  complète. Jobs « Godot i/5 » bloquants quand le diff touche Godot, sautés sinon.
-  La **batterie complète tourne chaque heure sur `main`** ; rouge après une relance :
-  « MAIN ROUGE » sur #591 et retour arrière automatique si une seule PR est en cause.
-  Main rouge : le corriger avant toute autre fusion. Recette SDK ciblée : étiquette
-  `godot-sdk`.
+  prête, elle lance la batterie complète. Les jobs « Godot i/3 » sont bloquants
+  quand le diff touche Godot (`native/godot/`, `tests/godot-*`, lanceurs) et
+  sautés sinon. Recette SDK ciblée : étiquette `godot-sdk`. Vérifications
+  lourdes (SDK, économie, résilience, Windows) : créneau régulier sur `main`.
 - **PC de Léo indisponible** : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot) ; résultats lisibles via la branche `resultats-en-ligne` (`runs/<run_id>/`, extraits par `ci/en-ligne.sh` dans `/tmp/en-ligne/<run_id>/`), l'artefact étant bloqué ; `--captures intro,fiche-club` limite les captures ; ne jamais créer de branche `tmp/` ailleurs : le workflow supprime seul `en-ligne/*` et `tmp/*` (`bash ci/en-ligne.sh --menage`).
-- **Fusion rapide** (décision de Léo, 19/11/2026, voie par défaut) : PR prête puis
-  fusion auto de GitHub en squash
+- **Train de fusion** (décision de Léo, 18/11/2026, voie par défaut) : laisser la PR
+  en brouillon et poser l'étiquette `train` quand elle est prête ; le train regroupe
+  les PR, lance une seule batterie complète et fusionne le lot, puis poste `FUSIONNÉ`
+  sur #591 ([détail](docs/train-de-fusion.md)). `train-echec` : lire le commentaire,
+  corriger, reposer `train`. Ne pas surveiller le train en boucle.
+- **Fusion automatique classique** (16/11/2026) : seulement pour une PR qui touche
+  `.github/workflows/`, un lot urgent ou sensible ; en passant une PR en
+  prête, activer la fusion auto de GitHub en squash
   (`gh api -X PUT repos/Xynph/cadrage-debordement/pulls/<n>/ccr/auto_merge -f merge_method=squash`
-  depuis Claude Code, sinon `gh pr merge <n> --auto --squash`) ; GitHub fusionne dès que
-  le mode rapide est vert. Poster `FUSIONNÉ` sur #591. Ne pas surveiller la CI en boucle.
-- **Train de fusion** (18/11/2026, facultatif) : étiquette `train` sur une PR en brouillon
-  pour un lot à passer sur la batterie complète avant fusion
-  ([détail](docs/train-de-fusion.md)). `train-echec` : lire le commentaire, corriger,
-  reposer `train`.
-- **Règles communes de fusion** : Un seul intégrateur arbitre les collisions et les protections serveur ; le
+  depuis Claude Code, sinon `gh pr merge <n> --auto --squash`). GitHub fusionne
+  seul dès que la CI obligatoire est verte : ne pas surveiller la CI en boucle.
+  Un seul intégrateur arbitre les collisions et les protections serveur ; le
   [gate officiel](docs/chat-release-gate.md) reste pour un lot sensible.
   Aucun push direct sur `main`, jamais de contournement d'un contrôle rouge ou
   d'une réservation non résolue. Si la CI est rouge, la PR attend : corriger.
+- **Mode rapide et batterie horaire** (décision de Léo, 19/11/2026,
+  [détail](docs/fusion-rapide.md)) : une PR prête ne passe que les suites courtes et
+  celles qu'elle modifie (~10 min) ; étiquette `batterie-complete` pour tout lancer.
+  La batterie complète tourne chaque heure sur `main` ; rouge après une relance :
+  « MAIN ROUGE » sur #591 et retour arrière automatique si une seule PR est en cause.
+  Main rouge : le corriger avant toute autre fusion.
 - Expliquer chaque phase en une phrase, rendre le résultat, le lien de PR et
   la prochaine étape. Messages courts.
 - **Réponses à Léo : courtes et côté jeu** (consigne permanente du 17/11/2026) :

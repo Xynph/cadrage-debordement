@@ -5,7 +5,7 @@ name: Main rouge (batterie horaire)
 #  2. toujours rouge : alerte « MAIN ROUGE » sur #591 avec les PR fusionnées depuis la dernière batterie
 #     horaire verte ; si une seule PR est en cause, ouverture d'une PR de retour arrière (fusion
 #     automatique en squash). Plusieurs PR : pas de retour arrière automatique, l'alerte les liste.
-# Voir docs/train-de-fusion.md (section « Fusion rapide »).
+# Voir docs/fusion-rapide.md.
 on:
   workflow_run:
     workflows: ["Tests JavaScript"]
