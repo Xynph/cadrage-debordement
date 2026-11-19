@@ -90,10 +90,11 @@ test('Courrier : types, variables présentes, réponses', () => {
   const vars = { ...A.courrier({ montant: 1.2e6, part: 0.1, dette: 0, encadrement: 100000, recidive: true }, { saison: '2027-2028' }), constat: 'x' };
   for (const id of ['a2r_conditions', 'a2r_homologation', 'a2r_apport', 'a2r_interdiction']) {
     const t = DATA.types[id];
-    assert.equal(t.declencheur, 'a2r'); assert.ok(t.arret, id);
+    assert.equal(t.declencheur, 'a2r'); assert.ok(['action', 'info'].includes(t.nature), id + ' : arrête toujours « Continuer » (jamais de la routine)');
     for (const f of t.formulations) for (const [, k] of (f.sujet + f.corps).matchAll(/\{([^}]+)\}/g)) assert.ok(k in vars, id + ' : ' + k);
   }
   assert.equal(DATA.types.a2r_conditions.reponses.length, 0, 'niveau 1 : simple information');
+  assert.equal(DATA.types.a2r_conditions.nature, 'info', 'niveau 1 : rangé dans l\'arrêt d\'info du jour');
   assert.deepEqual(DATA.types.a2r_apport.reponses.map(r => r.id), ['apport', 'appel', 'acte']);
   const rv = P.courrier({ echeance: '2027-02-14', joueurs: [] }, { tresorerie: 1, reserve: 2 });
   for (const f of DATA.types.reprise_president.formulations) for (const [, k] of (f.sujet + f.corps).matchAll(/\{([^}]+)\}/g)) assert.ok(k in rv, 'reprise : ' + k);
