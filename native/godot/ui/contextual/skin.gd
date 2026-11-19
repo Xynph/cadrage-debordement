@@ -2,9 +2,14 @@ extends RefCounted
 # Contextual views only render career projections. They never compute outcomes.
 const G = preload("res://ui/carnet_skin.gd")
 const RoomFactory = preload("res://ui/contextual/rooms/room_factory.gd")
-const TEXT = Color("f1f0df")
-const MUTED = Color("c0c9b5")
-const GOLD = Color("d8c183")
+const Base = preload("res://ui/game_skin.gd")
+# Encre, texte secondaire et or : jetons communs du bureau (game_skin.gd).
+const TEXT = Base.INK
+const MUTED = Base.MUTED
+const GOLD = Base.GOLD
+## Fond des boutons principaux : l'or commun assombri de 15 % (GOLD.darkened(.15)),
+## pour garder l'encre foncée lisible.
+const PRIMARY_FILL = Color("bca16d")
 const PANEL = Color(0.055, 0.115, 0.10, 0.94)
 
 static func label(text: Variant, size: int = 16, color: Color = TEXT) -> Label:
@@ -19,24 +24,24 @@ static func button(text: String, callback: Callable, enabled: bool = true, prima
 	result.set_meta("contextual_enabled", enabled)
 	result.disabled = not enabled
 	for state in ["normal", "hover", "pressed"]:
-		result.add_theme_stylebox_override(state, G.T.box(Color("bca36a") if primary else PANEL, 4, Color("66745e")))
+		result.add_theme_stylebox_override(state, Base.box(PRIMARY_FILL if primary else PANEL, "control", Color("66745e")))
 		result.add_theme_color_override("font_color", Color("152a22") if primary else TEXT)
 		result.add_theme_color_override("font_hover_color", Color("152a22") if primary else GOLD)
 		result.add_theme_color_override("font_pressed_color", Color("152a22") if primary else GOLD)
-	result.add_theme_stylebox_override("disabled", G.T.box(Color("172a23"), 4, Color("53604e")))
+	result.add_theme_stylebox_override("disabled", Base.box(Color("172a23"), "control", Color("53604e")))
 	result.add_theme_color_override("font_disabled_color", MUTED)
 	return result
 
 static func selected(control: Button, accent: Color = GOLD) -> void:
 	for state in ["normal", "hover", "pressed"]:
-		var style := G.T.box(Color("283e2d"), 4, accent)
+		var style := Base.box(Color("283e2d"), "control", accent)
 		style.border_width_left = 4
 		control.add_theme_stylebox_override(state, style)
 	control.add_theme_color_override("font_color", GOLD)
 
 static func panel(parent: Node, padding: int = 14) -> VBoxContainer:
 	var shell := PanelContainer.new()
-	shell.add_theme_stylebox_override("panel", G.T.box(PANEL, 5, Color("53624d")))
+	shell.add_theme_stylebox_override("panel", Base.box(PANEL, "panel", Color("53624d")))
 	parent.add_child(shell)
 	var margin := G.margin(padding)
 	shell.add_child(margin)
