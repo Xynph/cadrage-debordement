@@ -12,14 +12,22 @@
 // (ci/shard-tests.cjs isExclusive : ≥ EXCLUSIVE_WEIGHT s ou machine virtuelle node:vm)
 // gardent donc un cœur physique : tant qu'une d'elles tourne, au plus EXCLUSIVE_CAP
 // suites au total. La troisième place ne sert qu'aux suites légères.
-const SHARD_COUNT = 7;
+// 19/11/2026 : dix runners (poids recalculés sur 8 runs verts du jour) ; pic simulé ~17 min contre ~24 à sept.
+const SHARD_COUNT = 10;
 const SHARD_PARALLEL = 3;
 const PHYSICAL_CORES = 2;
 const EXCLUSIVE_CAP = PHYSICAL_CORES;
 const EXCLUSIVE_WEIGHT = 30;
 // Jobs Godot : SDK 4.7.2 installé en CI, suites natives sous xvfb. Bloquants (14/11) : « Validation CI »
 // en dépend dans le workflow ; sautés (donc sans effet) quand aucun fichier Godot ne change.
-const GODOT_SHARD_COUNT = 3;
+// 19/11/2026 : cinq jobs Godot (≈ 20 min de suites chacun contre ≈ 33 à trois).
+const GODOT_SHARD_COUNT = 5;
+// Mode rapide (PR prête sans étiquette `batterie-complete`, 19/11/2026) : suites dont le poids ne dépasse pas
+// RAPIDE_MAX_S, plus les suites modifiées par la PR quel que soit leur poids. La batterie complète tourne
+// chaque heure sur main (schedule).
+const RAPIDE_MAX_S = 60;
+// Côté Godot (suites en série, démarrage du moteur compris) : 20 s ; une suite Godot sans mesure (30 s par défaut) en est exclue.
+const RAPIDE_GODOT_MAX_S = 20;
 
 const shardJob = (shard, count = SHARD_COUNT) => 'Suites ' + shard + '/' + count;
 const SHARD_JOBS = Object.freeze(Array.from({ length: SHARD_COUNT }, (_, i) => shardJob(i + 1)));
@@ -54,6 +62,6 @@ function shardSeries(jobs) {
 }
 
 module.exports = {
-  SHARD_COUNT, SHARD_PARALLEL, PHYSICAL_CORES, EXCLUSIVE_CAP, EXCLUSIVE_WEIGHT, GODOT_SHARD_COUNT, SHARD_JOBS, SHARD_JOB_SKIPPED, OFFICIAL_JOBS,
+  SHARD_COUNT, SHARD_PARALLEL, PHYSICAL_CORES, RAPIDE_MAX_S, RAPIDE_GODOT_MAX_S, EXCLUSIVE_CAP, EXCLUSIVE_WEIGHT, GODOT_SHARD_COUNT, SHARD_JOBS, SHARD_JOB_SKIPPED, OFFICIAL_JOBS,
   GODOT_JOBS, GODOT_JOB_SKIPPED, isInformativeJob, officialJobs, shardSeries, shardJob
 };
