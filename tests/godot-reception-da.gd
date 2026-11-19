@@ -174,16 +174,31 @@ func reply_flow(mail: Dictionary) -> void:
 
 ## Le nom du joueur lié ouvre sa fiche (écran), jamais une fenêtre.
 func links_open_screens() -> void:
-	var holder: Dictionary = {}
-	for item: Dictionary in ClubMail.mails(app.model):
-		if item.get("joueur") is String and not str(item.joueur).is_empty(): holder = item
-	if holder.is_empty(): return
+	# Déterministe : un courrier de recette (donnée d'interface, le moteur n'est pas touché) lié à un joueur réel de l'effectif,
+	# quel que soit l'ordre ou le contenu des courriers de la carrière.
+	var squad: Array = app.model.get("squad", [])
+	var box: Dictionary = app.model.clubLife.clubMail
+	var source: Dictionary = (box.mails[0] as Dictionary).duplicate(true)
+	if squad.is_empty() or source.is_empty(): check(false, "Courrier de recette impossible : effectif ou courriers absents"); return
+	var star: Dictionary = squad[0]
+	source.id = "qa-joueur-lie"
+	source.categorie = "moments" # jamais une coupure de presse : on veut une lettre
+	source.erase("reponses")
+	source.joueur = str(star.id)
+	source.erase("club")
+	source.corps = "Coach, %s a besoin de te parler." % star.name
+	(box.mails as Array).append(source)
+	var holder: Dictionary = source
 	app._reset_reception(str(holder.id))
 	app._navigate("Réception", false)
 	await settle(10)
 	var link := node("InboxConcernedName") as Button
 	check(link != null and link.has_meta("mini_fiche_joueur"), "Joueur lié : nom en lien avec mini-fiche (%s, mail %s, route %s)" % [str(node("InboxConcernedName")), str(holder.get("id")), app.route])
 	if link == null: return
+	check(link.text == str(star.name), "Le lien porte le nom du joueur lié")
+	var body := node("InboxMessageText") as RichTextLabel
+	check(body != null, "Lettre ouverte (texte riche)")
+	if body != null and body.get_parsed_text().contains(str(star.name)): check(body.text.contains("[url=player:" + str(star.id) + "]"), "Le nom cité dans la lettre est aussi un lien")
 	link.pressed.emit()
 	await settle(10)
 	check(app.route == "Effectif" and windows().is_empty(), "Le nom du joueur ouvre sa fiche, sans petite fenêtre (route : %s)" % app.route)
