@@ -205,6 +205,18 @@ func expand_threads() -> void:
 		closed[0].pressed.emit()
 		await settle()
 
+## Part de la hauteur du mail ouvert laissée vide sous son dernier élément peint (rappel Espace exclu,
+## conteneurs de mise en page exclus : ils s'étirent sans rien dessiner).
+func mail_void(detail: Control) -> float:
+	if detail == null: return 1.0
+	var area := detail.get_global_rect()
+	var lowest := area.position.y
+	for item: Node in detail.find_children("*", "Control", true, false):
+		var control := item as Control
+		if not control.is_visible_in_tree() or control.size.y <= 0 or str(control.name) == "InboxSpaceHint" or control is Container: continue
+		lowest = maxf(lowest, minf(control.get_global_rect().end.y, area.end.y))
+	return maxf(0.0, area.end.y - lowest) / maxf(1.0, area.size.y)
+
 ## Disposition façon Football Manager, ouverture d'un mail, lu/non lu, ordre de la liste.
 func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 	var tag := "%dx%d" % [size.x, size.y]
@@ -290,6 +302,11 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 			var b: Rect2 = actions[j].get_global_rect().grow(-1)
 			if a.intersects(b) and not actions[i].is_ancestor_of(actions[j]) and not actions[j].is_ancestor_of(actions[i]):
 				check(false, "Chevauchement %s / %s · %s" % [actions[i].name, actions[j].name, tag])
+	# Titre affirmé et mail complété (demande du 19/11) : « Réception. » à la taille des autres pages,
+	# et pas de vide > 30 % de la hauteur sous le contenu du mail ouvert.
+	var page_title := node("InboxPageTitle") as Label
+	check(page_title != null and page_title.is_visible_in_tree() and page_title.get_theme_font_size("font_size") >= maxi(12, roundi(40 * C.density)), "Titre « Réception. » affirmé · " + tag)
+	check(mail_void(detail) <= .30, "Mail sans vide > 30 %% sous son contenu · %s (%d %%)" % [tag, roundi(mail_void(detail) * 100)])
 	# Icône du service à la place d'un même visage : un portrait seulement pour une personne identifiée.
 	var portraits := 0
 	var icons := 0
@@ -499,6 +516,21 @@ func direction_a(mail: Dictionary) -> void:
 	await settle(8)
 	check(node("InboxConcerne") == null, "Panneau « Concerné » masqué sans élément lié")
 	check(node("InboxDetail") != null and node("InboxDetail").size.x > with_side + 10, "Le mail s'élargit sans le panneau")
+	# Mail court (« Soins de routine. ») : le bas du panneau se complète (expéditeur, réception, état, courrier suivant).
+	for size: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720)]:
+		root.size = size
+		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(size)
+		app._render()
+		await settle(10)
+		var context := node("InboxMailContext")
+		check(context != null and context.is_visible_in_tree(), "Mail court complété par le dossier du courrier · %dx%d" % [size.x, size.y])
+		check(context == null or node("InboxDetail").get_global_rect().grow(1).encloses(context.get_global_rect()), "Dossier du courrier dans le mail · %dx%d" % [size.x, size.y])
+		check(node("InboxMailContext_0") != null and (node("InboxMailContext_0") as Label).text == "Le kiné du club", "Expéditeur dans le dossier du courrier · %dx%d" % [size.x, size.y])
+		check(mail_void(node("InboxDetail")) <= .30, "Mail court sans vide > 30 %% · %dx%d (%d %%)" % [size.x, size.y, roundi(mail_void(node("InboxDetail")) * 100)])
+	root.size = Vector2i(1920, 1080)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	app._render()
+	await settle(8)
 	# Bulletin médical : tableau complet de l'infirmerie (blessé avec son type, incertain), joueur cité, réponses.
 	app.management_ui.reception.selected = "mail-990002"
 	app._render()

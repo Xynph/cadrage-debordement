@@ -57,6 +57,9 @@ var _bandeau_titre: Label
 var _fil: Control
 var _fil_texte: Label
 var _fil_fondu: TextureRect
+var _fil_fondu_gauche: TextureRect
+## Marge intérieure gauche du fil : la première lettre n'est jamais collée au bord qui coupe.
+var _fil_marge := 0.0
 var _fil_largeur := 0.0
 var _fil_decalage := 0.0
 var _fil_pause := DEFILEMENT_PAUSE
@@ -348,6 +351,19 @@ func installer_bandeau(zone: Control) -> void:
 	_fil_fondu.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_fil_fondu.stretch_mode = TextureRect.STRETCH_SCALE
 	_fil.add_child(_fil_fondu)
+	# Fondu du bord gauche : la remarque s'efface en défilant au lieu d'être coupée net (absent au départ,
+	# quand le début du texte est entier, juste après la marge intérieure).
+	_fil_fondu_gauche = TextureRect.new()
+	_fil_fondu_gauche.name = "GabiFilFonduGauche"
+	_fil_fondu_gauche.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var gradient_g := Gradient.new()
+	gradient_g.set_color(0, FOND); gradient_g.set_color(1, Color(FOND, 0.0))
+	var fade_g := GradientTexture2D.new(); fade_g.gradient = gradient_g; fade_g.width = 32; fade_g.height = 2
+	_fil_fondu_gauche.texture = fade_g
+	_fil_fondu_gauche.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_fil_fondu_gauche.stretch_mode = TextureRect.STRETCH_SCALE
+	_fil_fondu_gauche.hide()
+	_fil.add_child(_fil_fondu_gauche)
 	zone.gui_input.connect(_entree_bandeau)
 	zone.mouse_entered.connect(func(): _survol = true; _style_pastille())
 	zone.mouse_exited.connect(func(): _survol = false; _style_pastille())
@@ -394,6 +410,9 @@ func _disposer_bandeau() -> void:
 	_fil_texte.size.y = line_h
 	_fil_fondu.position = Vector2(_fil.size.x - h * 0.5, 0)
 	_fil_fondu.size = Vector2(h * 0.5, line_h)
+	_fil_marge = roundf(maxf(4.0, h * 0.12))
+	_fil_fondu_gauche.position = Vector2.ZERO
+	_fil_fondu_gauche.size = Vector2(h * 0.4, line_h)
 	# Rendu net : deux fois les pixels physiques du disque, ni plus ni moins.
 	var physical := d * _bandeau.get_global_transform_with_canvas().get_scale().y
 	if _bandeau_masque: return
@@ -472,17 +491,19 @@ func _fil_regle(reset: bool) -> void:
 	var px := _fil_texte.get_theme_font_size("font_size")
 	var width := C.BODY.get_string_size(_remarque, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 	var reduced: bool = is_instance_valid(app.user_preferences) and bool(app.user_preferences.data.get("reduced_motion", false))
-	var defile := width > _fil.size.x and not reduced
+	var place := maxf(0.0, _fil.size.x - _fil_marge)
+	var defile := width > place and not reduced
 	_fil_largeur = C.BODY.get_string_size(_remarque + SEPARATEUR, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x if defile else 0.0
 	_fil_texte.text = _remarque + SEPARATEUR + _remarque if defile else _remarque
 	_fil_texte.tooltip_text = _remarque
 	_fil_texte.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING if defile else TextServer.OVERRUN_TRIM_ELLIPSIS
-	_fil_texte.size.x = C.BODY.get_string_size(_fil_texte.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x + 4.0 if defile else _fil.size.x
-	_fil_fondu.visible = defile or width > _fil.size.x
+	_fil_texte.size.x = C.BODY.get_string_size(_fil_texte.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x + 4.0 if defile else place
+	_fil_fondu.visible = defile or width > place
 	if reset:
 		_fil_decalage = 0.0
 		_fil_pause = DEFILEMENT_PAUSE
-	_fil_texte.position.x = -_fil_decalage
+	_fil_texte.position.x = _fil_marge - _fil_decalage
+	if is_instance_valid(_fil_fondu_gauche): _fil_fondu_gauche.visible = defile and _fil_decalage > 0.0
 
 func _defiler(delta: float) -> void:
 	if not is_instance_valid(_fil_texte) or _fil_largeur <= 0.0 or not _fil_texte.is_visible_in_tree(): return
@@ -495,7 +516,9 @@ func _defiler(delta: float) -> void:
 	if _fil_decalage >= _fil_largeur:
 		_fil_decalage = 0.0
 		_fil_pause = DEFILEMENT_PAUSE
-	_fil_texte.position.x = -roundf(_fil_decalage * scale_) / scale_
+	_fil_texte.position.x = _fil_marge - roundf(_fil_decalage * scale_) / scale_
+	# Le fondu gauche n'apparaît qu'en cours de passage : au départ, le début du texte est entier.
+	if is_instance_valid(_fil_fondu_gauche): _fil_fondu_gauche.visible = _fil_decalage > 0.0
 
 # --- La bulle qui descend du bandeau ------------------------------------------------------------------
 

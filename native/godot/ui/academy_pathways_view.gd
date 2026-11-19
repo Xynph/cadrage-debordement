@@ -1,6 +1,7 @@
 extends RefCounted
 const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
+const C = preload("res://ui/immersive08/components.gd")
 
 static func _send(app: Control, data: Dictionary, command: String, payload: Dictionary, title: String = "", detail: String = "") -> void:
 	var args: Dictionary = data.context.duplicate()
@@ -49,11 +50,13 @@ static func build(app: Control, initial_tab: String = "") -> Control:
 	G.chapter(paper, "21", "Les parcours de formation", "Une place, un objectif, une génération.", app.accent)
 	if not data.get("available", false):
 		paper.add_child(G.wrap(data.get("reason", "Le centre est disponible dans une carrière active."), 18))
+		_preview(paper, app, data, false)
 		return page
 	paper.add_child(G.wrap(Copy.notice("academy", data.description), 13))
 	if not data.get("active", false):
 		paper.add_child(G.wrap("Les %d Espoirs actuels restent dans ton centre. Activer les parcours ajoute la détection, les mentorats et les compétitions juniors à cette carrière." % data.players.size(), 18))
 		_action(paper, app, data, "ACTIVER LES PARCOURS", "academy_activate", {}, 0)
+		_preview(paper, app, data, true)
 		return page
 	var summary := G.h(18)
 	paper.add_child(summary)
@@ -97,6 +100,50 @@ static func build(app: Control, initial_tab: String = "") -> Control:
 	open_tab.call(selected)
 	tabs.tab_changed.connect(open_tab)
 	return page
+
+## Centre sans parcours actifs (lisible dès 1280 × 720) : les chiffres du centre, les trois parcours
+## illustrés et le chemin vers Formation, plutôt qu'une page vide. Lecture seule, aucune commande.
+static func _preview(paper: VBoxContainer, app: Control, data: Dictionary, open: bool) -> void:
+	var players: int = data.get("players", []).size()
+	var figures := G.h(18)
+	figures.name = "AcademyPreviewFigures"
+	paper.add_child(figures)
+	figures.add_child(G.metric(G.n(players), "Espoirs suivis au centre", G.GOOD))
+	for fact: Array in [["places", "places professionnelles disponibles", G.GOLD], ["cohesion", "cohésion du centre", G.INK], ["reputation", "réputation du centre", G.INK]]:
+		if data.get(fact[0]) is int or data.get(fact[0]) is float: figures.add_child(G.metric(G.n(data.get(fact[0])), fact[1], fact[2]))
+	var offers := G.h(14)
+	offers.name = "AcademyPreviewPathways"
+	G.fill(offers, true)
+	paper.add_child(offers)
+	for offer: Array in [
+		["Detection", "Détection", "scouting", "Mener la campagne de détection du centre pour préparer la prochaine génération."],
+		["Mentoring", "Mentorat", "analysis-room", "Associer un Espoir à un joueur senior du même poste et suivre son accompagnement."],
+		["Junior", "Compétition junior", "lineout-analysis", "Préparer les rencontres juniors et suivre leur calendrier, distinct du championnat professionnel."],
+	]:
+		var card := G.card(offers, G.accent_ink(app.accent))
+		var frame := card.get_parent() as Control
+		frame.name = "AcademyPreview" + str(offer[0])
+		G.fill(frame, true)
+		var picture := C.photo(str(offer[2]), Vector2(0, 150), true, .4)
+		picture.tooltip_text = str(offer[1])
+		G.fill(picture, true)
+		card.add_child(picture)
+		if not open: card.add_child(G.label("AU CALENDRIER DES ESPOIRS", 11, G.GOLD))
+		card.add_child(G.label(offer[1], 20, G.INK, true))
+		card.add_child(G.wrap(offer[3], 13))
+	var follow := G.card(paper, G.accent_ink(app.accent))
+	follow.get_parent().name = "AcademyPreviewFollow"
+	var row := G.h(16)
+	follow.add_child(row)
+	var words := G.v(2)
+	G.fill(words)
+	row.add_child(words)
+	words.add_child(G.label("Tes %s Espoirs restent au centre." % G.n(players), 20, G.INK, true))
+	words.add_child(G.wrap("Leur progression, leurs promotions et leurs spécialisations se suivent dans Formation.", 13))
+	var go := G.button("CONSULTER LES ESPOIRS  →", func(): app._navigate("Formation"), true)
+	go.name = "AcademyPreviewFormation"
+	go.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(go)
 
 static func _center(list: VBoxContainer, app: Control, data: Dictionary) -> void:
 	var pulse := G.h(24)
