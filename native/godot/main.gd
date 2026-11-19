@@ -1374,7 +1374,7 @@ func pause_menu() -> void:
 	_prepare_dialog(d, 820)
 	d.title = "Ta carrière"
 	ImmersiveDialogs.pause_content(d,self)
-	for pair in [["Accueil","home"],["Exporter","export"],["Importer","import"],["Copies de sécurité","profile_safety"],["Paramètres","settings"],["Quitter","quit"]]:
+	for pair in [["Accueil","home"],["Mes carrières","career_slots"],["Exporter","export"],["Importer","import"],["Copies de sécurité","profile_safety"],["Paramètres","settings"],["Quitter","quit"]]:
 		var button := d.add_button(pair[0],false,pair[1])
 		if pair[1] == "profile_safety": button.name = "ProfileSafetyOpen"
 	d.custom_action.connect(func(action: String):
@@ -1383,6 +1383,7 @@ func pause_menu() -> void:
 			"home": _navigate("Accueil")
 			"export": open_file(false)
 			"import": open_file(true)
+			"career_slots": open_career_slots()
 			"profile_safety": open_profile_safety()
 			"settings": settings()
 			"quit": request_quit()
@@ -1394,6 +1395,13 @@ func pause_menu() -> void:
 
 func settings() -> void:
 	preload("res://ui/preferences_dialog.gd").open(self, user_preferences)
+
+func open_career_slots() -> void:
+	preload("res://ui/career_slots_view.gd").open(self)
+
+## Nouvelle carrière sans perdre la carrière en cours : elle est rangée dans « Mes carrières », puis le choix du club s'ouvre.
+func new_career_slot() -> void:
+	preload("res://ui/career_slots_view.gd").open(self, true)
 
 func open_profile_safety() -> void:
 	preload("res://ui/profile_safety_view.gd").open(self)

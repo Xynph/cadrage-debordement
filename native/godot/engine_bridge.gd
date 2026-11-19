@@ -8,6 +8,8 @@ signal progressed(progress: Dictionary)
 signal command_failed(message: String)
 ## Sauvegarde en arrière-plan du moteur (après la réponse) : state = "started", "done" ou "failed" (message = raison).
 signal persist_changed(state: String, message: String)
+## Liste des carrières enregistrées (commande « career_slots ») : {active, saved}.
+signal career_slots_changed(slots: Dictionary)
 
 const IMPORT_LIMIT_BYTES := 8 * 1024 * 1024
 const WORLD_IMPORT_LIMIT_BYTES := 16 * 1024 * 1024
@@ -39,6 +41,7 @@ var last_timing: Dictionary = {}
 ## Réponse complète (premier modèle, révision perdue) : last_full_model vaut true.
 var last_changes: Dictionary = {}
 var last_full_model := false
+var career_slots: Dictionary = {}
 var child_pid: int = -1
 var _stdio: FileAccess
 var _stderr: FileAccess
@@ -297,8 +300,10 @@ func _accept(response: Dictionary) -> void:
 		model_changed.emit(model)
 	elif last_response_ok and response.get("progress") is Dictionary:
 		progressed.emit(response.progress)
+	if response.get("careerSlots") is Dictionary: career_slots = response.careerSlots
 	if not response.get("ok", false):
 		command_failed.emit(str(response.get("error", "Commande refusée.")))
+	elif response.get("careerSlots") is Dictionary: career_slots_changed.emit(career_slots)
 
 func _stderr_loop() -> void:
 	while true:
