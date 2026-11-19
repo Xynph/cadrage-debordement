@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const V = require('../native/engine/vente-joueurs.cjs');
 const R = require('../native/engine/vente-joueurs.json');
-const { ouvrir, creer, jusquAuMatch, jouerLeMatch, jusquALaSemaineSuivante } = require('./helpers/carriere-monde.cjs');
+const { ouvrir, creer, jusquAuMatch, jouerLeMatch } = require('./helpers/carriere-monde.cjs');
 
 const CLUB = 102;
 const copie = x => JSON.parse(JSON.stringify(x));
@@ -361,8 +361,7 @@ test('Performance et courrier : cadence journalière, clôture de semaine par «
     const jeu = ouvrir({ testVm: true });
     try {
       let m = creer(jeu, CLUB);
-      m = jusquALaSemaineSuivante(jeu, jouerLeMatch(jeu, jusquAuMatch(jeu, m)));
-      m = jusquAuMatch(jeu, m);
+      m = jusquAuMatch(jeu, m); // première semaine de la carrière : même calendrier avec ou sans liste
       if (liste) {
         for (const p of m.squad.filter(x => !x.sale.blocked).slice(0, 5)) m = jeu.call('sale_list', { playerId: p.id, listed: true });
         assert.equal(m.sales.listed.length, 5);

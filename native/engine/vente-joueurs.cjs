@@ -57,7 +57,7 @@ const BRANCHEMENT = `
 const venteReglages=()=>nativeVenteJoueurs.REGLAGES;
 const venteGraine=()=>Number.isInteger(S?.careerVariation?.seed)?S.careerVariation.seed:0;
 const venteSemaine=()=>S.worldMode?.week??S.round;
-const venteJour=()=>typeof CDWorldCareer!=='undefined'&&typeof CDWorldCareer.calendarToday==='function'?CDWorldCareer.calendarToday(S):null;
+const venteJour=()=>typeof CDWorldCareer!=='undefined'&&typeof CDWorldCareer.calendarToday==='function'&&CDWorldCareer.active(S)?CDWorldCareer.calendarToday(S):null;
 const venteFenetre=()=>nativeVenteJoueurs.fenetre(venteJour(),venteReglages());
 const venteMinimum=()=>{const d=typeof nativeSystems!=='undefined'?nativeSystems.domain('interclubMarket'):null;return d&&typeof d.releasePolicy==='function'?d.releasePolicy(S).minimum:37;};
 const venteEuros=n=>nativeVenteJoueurs.euros(n);
