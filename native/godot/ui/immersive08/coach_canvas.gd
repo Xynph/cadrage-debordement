@@ -929,17 +929,18 @@ func _disposer_bureau(zone: Control) -> void:
 	carnet.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(carnet)
 	var y := 40.0
-	var titre := ClubUI.italic(D.text(carnet, pad, y, "TA SEMAINE, VUE PAR GABI", 26, Charte.IVOIRE, 800, w - pad * 2), 800)
+	var titre := D.text(carnet, pad, y, "TA SEMAINE, VUE PAR GABI", 26, Charte.IVOIRE, 800, w - pad * 2)
+	titre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	titre.name = "GabiCarnetTitre"
 	y += 16
 	D.line(carnet, Vector2(pad - 4, y), Vector2(w - pad + 4, y), Color(Charte.FILET, .9))
 	y += 14
 	var lignes: Array = _semaine.get("lignes", [])
 	for ligne: Dictionary in lignes:
-		y = _ligne_carnet(carnet, pad, y, text_w, str(ligne.get("libelle", "")), str(ligne.get("texte", "")), "", _couleur(str(ligne.get("couleur", "or"))), "GabiLigne_" + str(ligne.get("cle", "")))
+		y = _ligne_carnet(carnet, pad, y, text_w, str(ligne.get("libelle", "")), str(ligne.get("texte", "")), "", _couleur(str(ligne.get("couleur", "or"))), "GabiLigne_" + str(ligne.get("cle", "")), _ouvrir_ligne(str(ligne.get("cle", ""))))
 	var conseil: Dictionary = _semaine.get("conseil", {})
 	if not conseil.is_empty():
-		y = _ligne_carnet(carnet, pad, y, text_w, "MON CONSEIL", str(conseil.get("texte", "")), "", Charte.IVOIRE, "GabiLigne_conseil")
+		y = _ligne_carnet(carnet, pad, y, text_w, "MON CONSEIL", str(conseil.get("texte", "")), "", Charte.IVOIRE, "GabiLigne_conseil", (func(): suivre_conseil(conseil.get("action", {}))) if conseil.get("action") is Dictionary and not conseil.action.is_empty() else Callable())
 	var carnet_h := y + 4
 	D.place(carnet, Rect2(0, 0, w, carnet_h))
 	var bas := carnet_h + 12
@@ -1006,6 +1007,13 @@ func _disposer_bureau(zone: Control) -> void:
 		if physical.x < 8: physical = _bureau_figure.size
 		source.set_render_size(Vector2i(roundi(physical.x * 1.25), roundi(physical.y * 1.25)))
 
+## Écran ouvert par une ligne du carnet de la semaine : le match → Préparation, le groupe → Effectif, l'alerte → Composition.
+func _ouvrir_ligne(cle: String) -> Callable:
+	var route: String = {"match": "Préparation", "groupe": "Effectif", "alerte": "Composition"}.get(cle, "")
+	if route.is_empty(): return Callable()
+	return func():
+		if not app.waiting and app._live().is_empty(): app._navigate(route)
+
 ## Fond plat (rayon 0, ni ombre ni dégradé) des blocs de la colonne de Gabi.
 func _plat(couleur: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -1069,7 +1077,7 @@ func _maj_pied() -> void:
 	if _pied.visible != montrer: _pied.visible = montrer
 	if montrer and is_instance_valid(_bureau_suivre): _bureau_suivre.disabled = app.waiting or not app._live().is_empty()
 
-func _ligne_carnet(parent: Control, pad: float, y: float, text_w: float, libelle: String, texte: String, icone: String, couleur: Color, id: String) -> float:
+func _ligne_carnet(parent: Control, pad: float, y: float, text_w: float, libelle: String, texte: String, icone: String, couleur: Color, id: String, ouvrir: Callable = Callable()) -> float:
 	var x0 := pad
 	if not icone.is_empty():
 		var icon := C.icon(icone, 20, couleur)
@@ -1077,20 +1085,27 @@ func _ligne_carnet(parent: Control, pad: float, y: float, text_w: float, libelle
 		D.place(icon, Rect2(pad, y + 2, 20, 20))
 		x0 = pad + 34
 		text_w -= 34
+	var px := maxi(12, C.px(19))
+	var height := C.BODY.get_multiline_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, C.px(text_w), px).y / C.density
+	# Toute la ligne ouvre l'écran concerné (sous les noms de joueurs, qui ouvrent leur fiche).
+	if ouvrir.is_valid():
+		var zone := Link.styled_button(parent, Rect2(x0 - 8, y - 2, text_w + 16, height + 30), "", 19, Charte.IVOIRE, id + "_ouvrir")
+		zone.pressed.connect(ouvrir)
+		zone.tooltip_text = "Ouvrir · " + libelle.capitalize()
+		zone.accessibility_name = zone.tooltip_text
 	D.text(parent, x0, y + 17, libelle, 16, Charte.IVOIRE_2 if couleur != Charte.D else couleur, 700, text_w).name = id + "_libelle"
 	var label := Label.new()
 	label.name = id
 	label.text = texte
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_override("font", C.BODY)
-	var px := maxi(12, C.px(19))
 	label.add_theme_font_size_override("font_size", px)
 	label.add_theme_color_override("font_color", Charte.IVOIRE)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(label)
-	var height := C.BODY.get_multiline_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, C.px(text_w), px).y / C.density
 	D.place(label, Rect2(x0, y + 24, text_w, height + 2))
-	return y + 24 + height + 16
+	if ouvrir.is_valid(): load("res://ui/immersive08/office_canvas.gd").noms_cliquables(app, parent, Rect2(x0, y + 24, text_w, height + 2), texte, 19, C.BODY)
+	return y + 24 + height + 12
 ## Panneau du carnet : surface plate `panneau`, rayon 0 (charte : ni cadre complet, ni ombre).
 class Carnet extends Control:
 	var pointe_x := 0.0

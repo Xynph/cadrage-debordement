@@ -1126,19 +1126,19 @@ static func _key_figure(row: Control, area: Rect2, index: int, item: Array) -> P
 
 ## Titre du Bureau (maquette « Affiche et Gabi ») : « LE BUREAU » en italique, sa phrase d'accueil, la saison à droite.
 static func _entete_bureau(row: Control, app: Control) -> void:
-	ClubUI.italic(app.heading, 800)
+	app.heading.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	var largeur := C.font(800).get_string_size("LE BUREAU", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(53))).x / C.density
-	D.text(row, largeur + 28, 74, "Ta semaine commence ici.", 21, Charte.IVOIRE_2, 500, 700, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeSubtitle"
+	D.text(row, largeur + 28, 54, "Ta semaine commence ici.", 21, Charte.IVOIRE_2, 500, 700, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeSubtitle"
 	var meta: Dictionary = app.model.get("meta", {})
 	if meta.has("season"):
-		D.text(row, 2248, 74, "Saison %s · semaine %d" % [G.season_label(meta.season), int(meta.get("week", 0)) + 1], 21, Charte.IVOIRE_2, 500, 700, HORIZONTAL_ALIGNMENT_RIGHT, true).name = "OfficeSeason"
+		D.text(row, 2248, 54, "Saison %s · semaine %d" % [G.season_label(meta.season), int(meta.get("week", 0)) + 1], 21, Charte.IVOIRE_2, 500, 700, HORIZONTAL_ALIGNMENT_RIGHT, true).name = "OfficeSeason"
 static func _position_office_match_status(status: Label, factor: float) -> void:
 	if factor<=0: return
 	status.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
 
 static func _heading(parent: Node, app: Control) -> void:
 	var row := Control.new()
-	row.custom_minimum_size.y = C.px(91 if app.route=="Effectif" else 88 if app.route=="Composition" else 112 if app.route=="Réception" else 104)
+	row.custom_minimum_size.y = C.px(91 if app.route=="Effectif" else 88 if app.route=="Composition" else 112 if app.route=="Réception" else 80 if app.route=="Bureau" else 104)
 	C.fill(row)
 	parent.add_child(row)
 	if app.route=="Réception":
@@ -1148,7 +1148,7 @@ static func _heading(parent: Node, app: Control) -> void:
 		parent.add_child(app.minibar)
 		return
 	if app.route!="Bureau": D.text(row,1,19,{"Bureau":"LE BUREAU","Effectif":"LE GROUPE PROFESSIONNEL","Composition":"LE PLAN DE JEU"}.get(app.route,app.route.to_upper()),19,app.accent.lightened(.48),600,1040)
-	app.heading = D.text(row,-1,76,"LE BUREAU" if app.route=="Bureau" else TITLES.get(app.route,app.route),53,C.IVORY,800 if app.route=="Bureau" else 700,1190)
+	app.heading = D.text(row,-1,56 if app.route=="Bureau" else 76,"LE BUREAU" if app.route=="Bureau" else TITLES.get(app.route,app.route),53,C.IVORY,800 if app.route=="Bureau" else 700,1190)
 	if app.route=="Bureau": _entete_bureau(row,app)
 	if COMPACT_ART.has(app.route):
 		var image := D.panel(row,Rect2(1438,6,810,89),"","","","CompactRouteArt")

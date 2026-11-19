@@ -870,7 +870,8 @@ func recent_office_results() -> void:
 		viewport.ensure_control_visible(results)
 		await settle()
 		check(viewport.get_global_rect().grow(1).encloses(results.get_global_rect()),"Cinq résultats entièrement visibles à 1440 × 900 une fois amenés à l'écran")
-	check(results!=null,"La bande des résultats apparaît après des matchs joués")
+	# Composition large : les résultats ne sont plus au Bureau (Calendrier) ; le Bureau étroit les garde.
+	check(results!=null or app.find_child("OfficeFixtureBody",true,false)!=null,"La bande des résultats apparaît après des matchs joués")
 	await capture("48-bureau-cinq-resultats-1440x900")
 	app.model = original
 	root.size = Vector2i(2560,1440)
@@ -1457,10 +1458,10 @@ func run() -> void:
 		var bytes := FileAccess.get_file_as_bytes(disk)
 		check(shell.render(app), "Rendu natif du Bureau pris en charge")
 		await settle()
-		for id in ["ImmersiveShell", "ImmersiveSidebar", "ImmersiveTopbar", "OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeRecruitment", "OfficeTimeline"]:
+		for id in ["ImmersiveShell", "ImmersiveSidebar", "ImmersiveTopbar", "OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeTimeline"]:
 			check(app.find_child(id, true, false) != null, "Élément réel : " + id)
 		check(app.size.x >= 2500, "2560p exploités sans agrandir un canvas 1600p")
-		for id in ["OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeRecruitment", "OfficeTimeline"]:
+		for id in ["OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeTimeline"]:
 			var tile: Control = app.find_child(id, true, false)
 			if tile == null: continue
 			check(tile.get_global_rect().end.x <= app.size.x + 1, "Tuile dans la largeur : " + id)
@@ -1472,11 +1473,11 @@ func run() -> void:
 		check(city != null and city.get_meta("photo_kind", "") == "generated" and stadium != null and stadium.get_meta("photo_kind", "") == "generated", "Le Bureau de base affiche les illustrations de ville et de stade")
 		# Composition « Affiche et Gabi » (19/11/2026) : affiche et colonne de droite en haut, priorités et groupe dessous,
 		# puis classement et courrier, puis le profil à suivre ; colonne de Gabi (ou prochains matchs seuls) à droite.
-		var rects := {"OfficeFixture":Rect2(280,220,1496,520), "OfficeDecisions":Rect2(280,756,900,440),
-			"OfficeGroup":Rect2(1196,756,580,440), "OfficeStandings":Rect2(280,1212,1100,340),
-			"OfficeJournal":Rect2(1396,1212,1132,340), "OfficeRecruitment":Rect2(280,1568,2248,140)}
-		if app.coach.bureau_disponible(): rects["GabiBureau"] = Rect2(1792,220,736,976)
-		else: rects["OfficeTimeline"] = Rect2(1792,220,736,976)
+		var rects := {"OfficeFixture":Rect2(280,196,1496,430), "OfficeDecisions":Rect2(280,642,900,430),
+			"OfficeGroup":Rect2(1196,642,580,430), "OfficeStandings":Rect2(280,1088,1100,295),
+			"OfficeJournal":Rect2(1396,1088,1132,295)}
+		if app.coach.bureau_disponible(): rects["GabiBureau"] = Rect2(1792,196,736,876)
+		else: rects["OfficeTimeline"] = Rect2(1792,196,736,876)
 		reference_rects(rects)
 		await capture("01-bureau-2560x1440")
 		app._navigate("Effectif")

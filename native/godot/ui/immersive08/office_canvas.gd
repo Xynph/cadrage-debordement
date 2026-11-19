@@ -17,7 +17,6 @@ const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const Charte = preload("res://ui/charte.gd")
 const Link = preload("res://ui/entity_link.gd")
-const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 
 const PAGE_WIDTH := 2248
@@ -26,11 +25,13 @@ const GAP := 16
 ## Haut de page : le titre est dans l'en-tête de la coque (shell._entete_bureau) ; les blocs commencent à TOP.
 const TOP := 0
 ## Bandeau d'illustration voilé de l'affiche (≤ 160 px réels : 170 unités ≈ 124 px à 1920).
-const BAND := 170
-const FIXTURE_H := 520
-const ROW2_H := 440
-const ROW3_H := 340
-const STRIP_H := 140
+const BAND := 118
+const FIXTURE_H := 430
+const ROW2_H := 430
+const ROW3_H := 295
+## Lignes du classement court (notre club et ses voisines).
+const STANDINGS_ROWS := 4
+const TIMELINE_H := 190
 const JOURS := ["DIMANCHE", "LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI", "SAMEDI"]
 
 # ---------------------------------------------------------------------------------------------------------
@@ -56,10 +57,15 @@ static func _plate(parent: Node, rectangle: Rect2, id: String) -> Panel:
 
 static func _titre(card: Control, titre: String, badge: String = "") -> Label:
 	var largeur := card.size.x / C.density
-	var label := ClubUI.italic(D.text(card, 24, 40, titre, 26, Charte.IVOIRE, 800, largeur * .6), 800)
+	var label := _ex(D.text(card, 24, 40, titre, 26, Charte.IVOIRE, 800, largeur * .6))
 	label.name = "CardTitle"
 	if not badge.is_empty(): D.text(card, largeur - 24, 38, badge, 17, Charte.IVOIRE_2, 700, largeur * .4, HORIZONTAL_ALIGNMENT_RIGHT)
 	D.line(card, Vector2(20, 56), Vector2(largeur - 20, 56), Color(Charte.FILET, .9))
+	return label
+
+## Titre en Barlow Condensed ExtraBold Italic (vraie italique de la charte, 10°).
+static func _ex(label: Label) -> Label:
+	label.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	return label
 
 static func _largeur(texte: String, taille: int, police: Font = null) -> float:
@@ -113,8 +119,8 @@ static func _crest(parent: Node, club: Dictionary, rectangle: Rect2) -> void:
 	parent.add_child(image)
 	D.place(image, rectangle)
 
-static func _label_reading(app: Control, parent: Node, label: Label, target: Dictionary, id: String, caption: String) -> void:
-	Office.reading_overlay(app, parent, Rect2(label.position / C.density, label.size / C.density), target, id, caption)
+static func _label_reading(app: Control, parent: Node, label: Label, target: Dictionary, id: String, caption: String) -> Button:
+	return Office.reading_overlay(app, parent, Rect2(label.position / C.density, label.size / C.density), target, id, caption)
 
 static func _scheduled_reading(app: Control, parent: Node, fixture: Dictionary, opponent: Label, timing: Label) -> void:
 	var club := Office.fixture_opponent(app.model, fixture)
@@ -167,22 +173,15 @@ static func build(app: Control) -> Control:
 	_standings(_titree(page, Rect2(0, y, left_w, ROW3_H), "CLASSEMENT · " + P.league_name(app.model), "OfficeStandings"), app, left_w)
 	_journal(_titree(page, Rect2(left_w + GAP, y, PAGE_WIDTH - left_w - GAP, ROW3_H), "COURRIER", "OfficeJournal"), app, PAGE_WIDTH - left_w - GAP)
 	y += ROW3_H + GAP
-	_recruitment(_titree(page, Rect2(0, y, PAGE_WIDTH, STRIP_H), "LE PROFIL À SUIVRE", "OfficeRecruitment"), app, PAGE_WIDTH)
-	y += STRIP_H + GAP
-	var recent := Office.recent_results(app)
-	if recent != null:
-		page.add_child(recent)
-		recent.position = Vector2(0, C.px(y))
-		recent.size.x = C.px(PAGE_WIDTH)
-		y += 150 + GAP
+	# « Profil à suivre » (Recrutement) et « Résultats » (Calendrier) ne sont pas au Bureau : la page tient sans défiler.
 	if gabi:
 		var zone := D.panel(page, column, "", "", "", "GabiBureau")
 		zone.add_theme_stylebox_override("panel", _box(Charte.PANNEAU))
 		zone.clip_contents = true
 		var extra := func(parent: Control, haut: float, largeur: float) -> float:
-			var matches := _plate(parent, Rect2(0, haut, largeur, 250), "OfficeTimeline")
+			var matches := _plate(parent, Rect2(0, haut, largeur, TIMELINE_H), "OfficeTimeline")
 			_timeline(matches, app, null, int(largeur))
-			return 250.0
+			return float(TIMELINE_H)
 		app.coach.installer_bureau(zone, extra)
 		# Premiers pas de Gabi : carte sous le courrier, hors de la colonne de Gabi.
 		if app.coach.has_method("carte_premiers_pas"):
@@ -228,6 +227,10 @@ static func _fixture(card: Panel, app: Control, w: int = 1496) -> void:
 	if territory != null:
 		card.add_child(territory)
 		D.place(territory, Rect2(w - 700, 10, 684, BAND - 20))
+		# Les vignettes du club ouvrent l'écran Club (jamais une tuile légendée qui ne fait rien).
+		var ouvrir := _zone(card, Rect2(w - 700, 10, 684, BAND - 20), "", func(): app._navigate("Club"), "OfficeTerritoryOpen", 20)
+		ouvrir.tooltip_text = "Ouvrir l'écran Club"
+		ouvrir.accessibility_name = "Ouvrir l'écran Club"
 	var signature: Color = Charte.club_trait(app.accent)
 	D.rect(card, Rect2(0, 0, 5, FIXTURE_H), signature)
 	var body := Control.new()
@@ -250,23 +253,23 @@ static func _prochain(card: Panel, app: Control, next: Dictionary, w: int) -> vo
 	var match_label := str(next.get("label", P.league_name(app.model)))
 	var competition := Office.fixture_stage(app.model, next, match_label)
 	var location := "NEUTRE" if next.get("neutral", false) else "DOMICILE" if next.get("home", {}).get("id") == app.model.club.id else "EXTÉRIEUR"
-	var caption := D.text(card, 28, 96, "PROCHAIN MATCH · %s · %s" % [competition.to_upper(), location], 20, Charte.IVOIRE, 700, w - 780)
+	var caption := D.text(card, 28, 62, "PROCHAIN MATCH · %s · %s" % [competition.to_upper(), location], 20, Charte.IVOIRE, 700, w - 780)
 	caption.name = "OfficeFixtureCaption"
 	Office.describe_fixture(caption, match_label + " · " + location)
 	var reste := compte_a_rebours(app, next)
-	if not reste.is_empty(): ClubUI.italic(D.text(card, 28, 142, reste, 38, Charte.IVOIRE, 800, w - 780), 800).name = "OfficeFixtureCountdown"
-	if P.is_derby(app.model): D.derby_chip(card, Rect2(minf(28 + _largeur(caption.text, 20, C.font(700)) + 18, w - 900), 70, 98, 29))
+	if not reste.is_empty(): _ex(D.text(card, 28, 104, reste, 34, Charte.IVOIRE, 800, w - 780)).name = "OfficeFixtureCountdown"
+	if P.is_derby(app.model): D.derby_chip(card, Rect2(minf(28 + _largeur(caption.text, 20, C.font(700)) + 18, w - 900), 38, 98, 29))
 	var home: Dictionary = next.get("home", {})
 	var away: Dictionary = next.get("away", {})
 	var demi := w / 2.0
-	var y0 := BAND + 24
+	var y0 := BAND + 16
 	for cote in 2:
 		var club: Dictionary = home if cote == 0 else away
 		var x0 := 28.0 if cote == 0 else demi + 40.0
 		var base := y0 + 52
 		_crest(card, club, Rect2(x0, y0, 64, 64))
 		Office.reading_overlay(app, card, Rect2(x0, y0, 64, 64), Office.club_reading_target(app, club), "OfficeNext%sClubCrest" % ["Home" if cote == 0 else "Away"], G.club_name(club))
-		var nom := ClubUI.italic(D.text(card, x0 + 84, base, G.club_name(club).to_upper(), 44, Charte.IVOIRE, 800, demi - 160), 800)
+		var nom := _ex(D.text(card, x0 + 84, base, G.club_name(club).to_upper(), 44, Charte.IVOIRE, 800, demi - 160))
 		_label_reading(app, card, nom, Office.club_reading_target(app, club), "OfficeNext%sClubName" % ["Home" if cote == 0 else "Away"], nom.text)
 		if club.has("rank") and club.has("points"):
 			var rang := G.n(club.rank)
@@ -274,7 +277,7 @@ static func _prochain(card: Panel, app: Control, next: Dictionary, w: int) -> vo
 			D.text(card, x0 + 84, base + 28, texte, 20, Charte.club_texte(app.accent) if club.get("id") == app.model.club.id else Charte.IVOIRE_2, 600, demi - 160)
 	D.text(card, demi, y0 + 46, "CONTRE", 20, Charte.IVOIRE_2, 700, 120, HORIZONTAL_ALIGNMENT_CENTER)
 	# Colonne de gauche : quand, où, feuille, actions.
-	var y := y0 + 124
+	var y := y0 + 90
 	var calendrier := C.icon("calendar", 25, Charte.IVOIRE_2)
 	card.add_child(calendrier)
 	D.place(calendrier, Rect2(28, y + 4, 25, 25))
@@ -317,9 +320,11 @@ static func _face_a_face(card: Control, app: Control, home: Dictionary, away: Di
 	var panneau := D.rect(card, zone, Color(Charte.PANNEAU_2, .0))
 	panneau.name = "OfficeFaceAFace"
 	var l := zone.size.x
-	D.text(card, zone.position.x, zone.position.y + 16, G.club_name(home).to_upper(), 17, Charte.IVOIRE_2, 700, l * .36)
+	var tete_g := D.text(card, zone.position.x, zone.position.y + 16, G.club_name(home).to_upper(), 17, Charte.IVOIRE_2, 700, l * .36)
+	Office.reading_overlay(app, card, Rect2(tete_g.position.x / C.density, tete_g.position.y / C.density - 6, tete_g.size.x / C.density, 32), Office.club_reading_target(app, home), "OfficeFaceHomeClub", tete_g.text)
 	D.text(card, zone.position.x + l / 2.0, zone.position.y + 16, "FACE À FACE", 17, Charte.IVOIRE, 700, l * .28, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(card, zone.position.x + l, zone.position.y + 16, G.club_name(away).to_upper(), 17, Charte.IVOIRE_2, 700, l * .36, HORIZONTAL_ALIGNMENT_RIGHT)
+	var tete_d := D.text(card, zone.position.x + l, zone.position.y + 16, G.club_name(away).to_upper(), 17, Charte.IVOIRE_2, 700, l * .36, HORIZONTAL_ALIGNMENT_RIGHT)
+	Office.reading_overlay(app, card, Rect2(tete_d.position.x / C.density, tete_d.position.y / C.density - 6, tete_d.size.x / C.density, 32), Office.club_reading_target(app, away), "OfficeFaceAwayClub", tete_d.text)
 	if lignes.is_empty():
 		D.text(card, zone.position.x + l / 2.0, zone.position.y + 70, "Début de saison : aucun match joué.", 20, Charte.IVOIRE_2, 500, l, HORIZONTAL_ALIGNMENT_CENTER, true)
 		return
@@ -327,6 +332,11 @@ static func _face_a_face(card: Control, app: Control, home: Dictionary, away: Di
 		var ligne: Array = lignes[i]
 		var y := zone.position.y + 28 + i * 38
 		if i % 2 == 0: D.rect(card, Rect2(zone.position.x - 8, y, l + 16, 36), Color(Charte.PANNEAU_2, .8))
+		# La ligne « Classement » ouvre le classement complet ; les autres lignes sont des chiffres lus.
+		if str(ligne[0]) == "Classement":
+			var vers := _zone(card, Rect2(zone.position.x - 8, y, l + 16, 36), "", func(): Office.open_current_standings(app), "OfficeFaceClassement", 20)
+			vers.tooltip_text = "Ouvrir le classement complet"
+			vers.accessibility_name = "Ouvrir le classement complet"
 		D.text(card, zone.position.x + l / 2.0, y + 25, str(ligne[0]), 18, Charte.IVOIRE_2, 500, l * .34, HORIZONTAL_ALIGNMENT_CENTER, true)
 		for cote in 2:
 			var valeur: Variant = ligne[1 + cote]
@@ -379,24 +389,24 @@ static func _sans_prochain(card: Panel, body: Control, app: Control) -> void:
 		D.text(body, 27, 121, "Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))), 58, Charte.IVOIRE, 800, 920)
 		D.text(body, 27, 183, World.preparation_note(preparation), 30, Charte.IVOIRE, 600, 720)
 		D.text(body, 27, 223, "Avance de quatre semaines au plus, jusqu’à la prochaine rencontre.", 21, Charte.IVOIRE_2, 400, 735, HORIZONTAL_ALIGNMENT_LEFT, true)
-	_principal(body, Rect2(27, 300, 420, 54), app.primary_text().trim_suffix("  →"), app.primary_action, "OfficePreparationAction", app.accent)
+	_principal(body, Rect2(27, 244, 420, 54), app.primary_text().trim_suffix("  →"), app.primary_action, "OfficePreparationAction", app.accent)
 
 static func _live_content(body: Control, app: Control, match_info: Dictionary) -> void:
-	D.text(body, 27, 45, match_info.heading, 22, Charte.IVOIRE, 700, 400).name = "OfficeLiveHeading"
+	D.text(body, 27, 28, match_info.heading, 22, Charte.IVOIRE, 700, 400).name = "OfficeLiveHeading"
 	if not match_info.location.is_empty():
-		D.chip(body, Rect2(300, 22, 176, 29), match_info.location, Charte.IVOIRE_2)
+		D.chip(body, Rect2(300, 8, 176, 29), match_info.location, Charte.IVOIRE_2)
 	var teams: Array = match_info.teams
 	for i in teams.size():
 		var team: Dictionary = teams[i]
-		var y := 71 + 77 * i
-		_crest(body, team, Rect2(27, y, 62, 62))
-		D.text(body, 111, y + 42, G.club_name(team), 39, Charte.IVOIRE, 800, 548)
-	D.text(body, 27, 257, match_info.score, 44, Charte.IVOIRE, 800, 158).name = "OfficeLiveScore"
-	D.text(body, 188, 254, match_info.state, 25, Charte.IVOIRE, 650, 490).name = "OfficeLiveState"
+		var y := 40 + 64 * i
+		_crest(body, team, Rect2(27, y, 54, 54))
+		D.text(body, 99, y + 38, G.club_name(team), 36, Charte.IVOIRE, 800, 548)
+	D.text(body, 27, 200, match_info.score, 40, Charte.IVOIRE, 800, 158).name = "OfficeLiveScore"
+	D.text(body, 188, 198, match_info.state, 24, Charte.IVOIRE, 650, 490).name = "OfficeLiveState"
 	if not match_info.detail.is_empty():
-		D.text(body, 27, 304, match_info.detail, 22, Charte.IVOIRE_2, 400, 638, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeLiveFixtureDetail"
-	_principal(body, Rect2(27, 330, 358, 54), app.primary_text().trim_suffix("  →"), app.primary_action, "OfficePreparationAction", app.accent)
-	var review := _lien(body, 410, 341, "Revoir le match →", func(): app._navigate("Match"), "OfficeMatchReviewAction", 21)
+		D.text(body, 27, 232, match_info.detail, 21, Charte.IVOIRE_2, 400, 638, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeLiveFixtureDetail"
+	_principal(body, Rect2(27, 244, 358, 54), app.primary_text().trim_suffix("  →"), app.primary_action, "OfficePreparationAction", app.accent)
+	var review := _lien(body, 410, 255, "Revoir le match →", func(): app._navigate("Match"), "OfficeMatchReviewAction", 21)
 	review.visible = match_info.finished
 
 # ---------------------------------------------------------------------------------------------------------
@@ -413,9 +423,9 @@ static func _priorities(card: Panel, app: Control, w: int = 900) -> void:
 		var tint := Office.priority_color(item)
 		D.line(card, Vector2(20, y), Vector2(w - 20, y), Color(Charte.FILET, .7))
 		D.rect(card, Rect2(20, y + 10, 4, 66), tint).name = "OfficePriority" + str(i + 1)
-		ClubUI.italic(D.text(card, 44, y + 60, str(i + 1), 46, Charte.IVOIRE, 800, 44), 800)
+		_ex(D.text(card, 44, y + 60, str(i + 1), 46, Charte.IVOIRE, 800, 44))
 		var echeance_w := _largeur(str(item.deadline), 19, C.font(600)) + 70
-		var action := _zone(card, Rect2(86, y + 2, w - 106, 84), str(item.title), Office.open_priority.bind(app, item), str(item.id), 22, 4, 40)
+		var action := _zone(card, Rect2(20, y + 2, w - 40, 84), str(item.title), Office.open_priority.bind(app, item), str(item.id), 22, 66, 40)
 		action.set_meta("priority_number", i + 1)
 		action.set_meta("inline_number", false)
 		action.tooltip_text = item.title + "\n" + Office.priority_description(item)
@@ -427,6 +437,9 @@ static func _priorities(card: Panel, app: Control, w: int = 900) -> void:
 		raison.size.y = C.px(46)
 		raison.name = "OfficePriorityReason" + str(i + 1)
 		raison.tooltip_text = item.detail
+		# Noms de joueurs du titre et du détail : fiche au clic, mini-fiche au survol.
+		noms_cliquables(app, card, Rect2(90, y + 10, w - 260, 30), str(item.title), 22, C.font(700))
+		noms_cliquables(app, card, Rect2(92, y + 40, w - 150, 46), str(item.detail), 18, C.BODY)
 	var y_pied := 100.0 + 3 * 90.0 + 14.0
 	# « Mon carnet personnel » (une fenêtre) n'est plus au Bureau : décision de Léo, plus de petite fenêtre ; le carnet
 	# de la semaine est celui de Gabi, à droite.
@@ -473,31 +486,32 @@ static func _group(card: Panel, app: Control, w: int = 580) -> void:
 	]
 	for i in jauges.size():
 		var jauge: Array = jauges[i]
-		var y := 164.0 + i * 50.0
+		var y := 150.0 + i * 46.0
 		D.text(card, 24, y, jauge[0], 16, Charte.IVOIRE_2, 700, 260)
 		if float(jauge[4]) >= 0.0: D.text(card, right - 100, y, "SEUIL %d" % int(jauge[4]), 16, Charte.IVOIRE_2, 700, 130, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.text(card, right, y + 4, str(jauge[2]), 21, Charte.IVOIRE, 600, 110, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.bar(card, Rect2(24, y + 12, right - 24 - 130, 8), float(jauge[1]), jauge[3])
 		if float(jauge[4]) >= 0.0: D.rect(card, Rect2(24 + (right - 24 - 130) * float(jauge[4]) / 100.0, y + 8, 2, 16), Charte.IVOIRE)
-	var y_alerte := 350.0
+	var y_alerte := 318.0 if group.watched > 0 else 296.0
 	var texte_fatigue := "%d titulaire%s du prochain match sous %d %%" % [titulaires, "s" if titulaires > 1 else "", int(fatigue.seuil)]
 	if group.watched > 0:
-		var action := _lien(card, 20, 296, U.watch_caption(group.watched) + " →", app.navigation_controller.open_watched_roster, "OfficeWatchedAction", 20)
+		var action := _lien(card, 20, 270, U.watch_caption(group.watched) + " →", app.navigation_controller.open_watched_roster, "OfficeWatchedAction", 20)
 		action.tooltip_text = action.text
 	if titulaires > 0:
-		_fatigue_line(card, app, y_alerte if group.watched > 0 else 330.0, w - 50, texte_fatigue)
-		y_alerte += 32
+		_fatigue_line(card, app, y_alerte, w - 50, texte_fatigue)
+		y_alerte += 30
 	var avec_blesses := _blesses(card, app, y_alerte, w)
 	if group.watched > 0 and not avec_blesses:
 		for player: Dictionary in app.model.get("squad", []):
 			var reason := U.watch_reason(player)
 			if reason.is_empty(): continue
-			var exemple := D.text(card, 25, 396, str(player.name) + " · " + reason, 19, Charte.IVOIRE_2, 500, w - 52)
+			var exemple := D.text(card, 25, 350, str(player.name) + " · " + reason, 19, Charte.IVOIRE_2, 500, w - 52)
 			exemple.tooltip_text = exemple.text
-			_label_reading(app, card, exemple, {"kind": "player", "id": str(player.id)}, "OfficeWatchedPlayer_" + str(player.id).validate_node_name(), str(player.name))
+			var lien_exemple := _label_reading(app, card, exemple, {"kind": "player", "id": str(player.id)}, "OfficeWatchedPlayer_" + str(player.id).validate_node_name(), str(player.name))
+			if lien_exemple != null: MiniFiche.lier(app, lien_exemple, str(player.id), "squad")
 			break
 	elif titulaires <= 0 and int(group.injured) <= 0:
-		D.text(card, 25, 366, "Aucune alerte physique", 21, Charte.V, 600, w - 52).name = "OfficeNoAlert"
+		D.text(card, 25, 330, "Aucune alerte physique", 21, Charte.V, 600, w - 52).name = "OfficeNoAlert"
 	_lien(card, 20, ROW2_H - 44, "Consulter le groupe →", app.navigation_controller.open_roster_group, "OfficeSquadAction", 21)
 
 ## Blessés : « ! Blessés : nom, nom » ; chaque nom ouvre la fiche (mini-fiche au survol). Rien sans blessé.
@@ -521,6 +535,12 @@ static func _blesses(card: Panel, app: Control, baseline: float, w: int) -> bool
 			lien.pressed.connect(func(): app.navigation_controller.open_entity(cible))
 			MiniFiche.lier(app, lien, str(player.id), "squad")
 		x += largeur + 8
+	if noms.size() > 2:
+		var reste := "+%d blessé%s →" % [noms.size() - 2, "s" if noms.size() > 3 else ""]
+		var plus := _lien(card, x, baseline - 24, reste, func():
+			if app.navigation_controller.has_method("open_roster_injured"): app.navigation_controller.open_roster_injured()
+			else: app.navigation_controller.open_roster_group(), "OfficeInjuredMore", 20)
+		plus.tooltip_text = "Voir tous les joueurs blessés"
 	return true
 
 ## Ligne d'alerte « titulaires sous le seuil » : texte sans cadre, cliquable (ouvre la composition).
@@ -540,7 +560,7 @@ static func _fatigue_line(card: Panel, app: Control, baseline: float, width: flo
 
 static func _standings(card: Panel, app: Control, w: int = 1100) -> void:
 	var large := w >= 900
-	var rows := P.standings(app.model)
+	var rows := short_rows(P.standings(app.model), app.model.club.get("id"), STANDINGS_ROWS if large else 6)
 	var zones := Zones.visible(rows)
 	var stride := 34
 	var rank_x := 72 if not zones.is_empty() else 44
@@ -551,7 +571,7 @@ static func _standings(card: Panel, app: Control, w: int = 1100) -> void:
 	var vnd_x := diff_x - 140
 	var played_x := vnd_x - 100 if large else diff_x - 110
 	_lien(card, w - 20, 14, "Classement complet →", func(): app._navigate("Classements"), "OfficeStandingsAction", 20, true)
-	var entetes: Array = [["RG", rank_x, HORIZONTAL_ALIGNMENT_CENTER], ["CLUB", name_x, HORIZONTAL_ALIGNMENT_LEFT], ["J", played_x, HORIZONTAL_ALIGNMENT_CENTER], ["DIFF.", diff_x, HORIZONTAL_ALIGNMENT_RIGHT], ["PTS ▼", pts_x, HORIZONTAL_ALIGNMENT_RIGHT]]
+	var entetes: Array = [["RG", rank_x, HORIZONTAL_ALIGNMENT_CENTER], ["CLUB", name_x, HORIZONTAL_ALIGNMENT_LEFT], ["J", played_x, HORIZONTAL_ALIGNMENT_CENTER], ["DIFF.", diff_x, HORIZONTAL_ALIGNMENT_RIGHT], ["PTS", pts_x, HORIZONTAL_ALIGNMENT_RIGHT]]
 	if large:
 		entetes.append(["V-N-D", vnd_x, HORIZONTAL_ALIGNMENT_CENTER])
 		entetes.append(["FORME", w - 28 - forme_w, HORIZONTAL_ALIGNMENT_LEFT])
@@ -686,55 +706,118 @@ static func _journal(card: Panel, app: Control, w: int = 1132) -> void:
 	if messages.is_empty():
 		D.text(card, 26, 110, "Le journal s’ouvrira avec ta carrière.", 21, Charte.IVOIRE_2, 400, w - 52, HORIZONTAL_ALIGNMENT_LEFT, true)
 		return
-	D.text(card, 26, 90, "SUJET", 16, Charte.IVOIRE_2, 700, 160)
-	D.text(card, 230, 90, "TITRE", 16, Charte.IVOIRE_2, 700, 160)
 	var ids := message_ids(messages)
-	for i in mini(5, messages.size()):
-		var y := 100 + i * 46
+	# « n non lus » : même lecture que la Réception (marques « lu » de l'état de la boîte).
+	var marques: Dictionary = app.management_ui.get("reception", {}).get("marks", {}) if app.management_ui.get("reception") is Dictionary else {}
+	var non_lus := 0
+	for id in ids:
+		if not marques.get(id, {}).get("read", false): non_lus += 1
+	var etiquette := D.text(card, 24 + _largeur("COURRIER", 26, C.font(800)) + 22, 38, "%d non lu%s" % [non_lus, "s" if non_lus > 1 else ""], 20, Charte.IVOIRE_2, 500, 200, HORIZONTAL_ALIGNMENT_LEFT, true)
+	etiquette.name = "OfficeJournalUnread"
+	var reception: Script = load("res://ui/immersive08/reception_canvas.gd")
+	var avec_categorie: bool = reception != null and reception.has_method("_category")
+	if avec_categorie: D.text(card, 26, 84, "SUJET", 16, Charte.IVOIRE_2, 700, 160)
+	var x_titre := 230.0 if avec_categorie else 26.0
+	D.text(card, x_titre, 84, "TITRE", 16, Charte.IVOIRE_2, 700, 160)
+	for i in mini(4, messages.size()):
+		var y := 94 + i * 46
 		var message := Copy.news(str(messages[i])).replace("l’onglet Contrats", "les fiches joueurs")
-		var minuscule := message.to_lower()
-		var categorie := "Direction" if minuscule.contains("contrat") else "Formation" if minuscule.contains("espoir") else "Vie du club"
 		var titre := message.get_slice("\n", 0).get_slice(". ", 0).strip_edges()
 		if titre.length() > 92: titre = titre.left(89).strip_edges() + "…"
 		if i % 2 == 0: D.rect(card, Rect2(16, y, w - 32, 44), Color(Charte.PANNEAU_2, .8))
 		var ligne := _zone(card, Rect2(16, y, w - 32, 44), "", open_message.bind(app, ids[i]), "OfficeJournalMessage" + str(i + 1), 21)
 		ligne.tooltip_text = "Ouvrir la lettre · " + titre
 		ligne.accessibility_name = ligne.tooltip_text
-		D.text(card, 26, y + 29, categorie, 20, Charte.IVOIRE_2, 500, 190, HORIZONTAL_ALIGNMENT_LEFT, true)
-		D.text(card, 230, y + 29, titre, 21, Charte.IVOIRE, 600, w - 290, HORIZONTAL_ALIGNMENT_LEFT, true)
+		if avec_categorie:
+			# Catégorie du courrier : celle que la Réception attribue à la lettre (même fonction, pas de mots-clés ici).
+			var categorie := str(reception._category(U.fold(message)))
+			D.text(card, 26, y + 29, categorie, 20, Charte.IVOIRE_2, 500, 190, HORIZONTAL_ALIGNMENT_LEFT, true)
+		var texte := D.text(card, x_titre, y + 29, titre, 21, Charte.IVOIRE, 600, w - x_titre - 60, HORIZONTAL_ALIGNMENT_LEFT, true)
+		noms_cliquables(app, card, Rect2(x_titre, y + 8, w - x_titre - 60, 30), titre, 21, C.BODY)
 
 # ---------------------------------------------------------------------------------------------------------
-# Profil à suivre
+# Noms de joueurs et classement court
 # ---------------------------------------------------------------------------------------------------------
 
-static func _recruitment(card: Panel, app: Control, w: int = 2248) -> void:
-	var spotlight := Office.recruitment_spotlight(app.model)
-	var player: Dictionary = spotlight.player
-	var vide := player.is_empty()
-	_lien(card, w - 20, 14, "Ouvrir le recrutement →" if vide else "Voir la fiche →", Office.open_spotlight.bind(app, str(player.get("id", ""))), "OfficeMarketAction", 20, true)
-	if vide:
-		D.text(card, 26, 100, spotlight.empty, 24, Charte.IVOIRE, 700, w - 60)
-		if not str(spotlight.need).is_empty(): D.text(card, 26, 128, spotlight.need, 20, Charte.IVOIRE_2, 500, w - 60)
-		return
-	var portrait := G.portrait(int(player.get("portraitIndex", 0)), C.px(84), player)
-	card.add_child(portrait)
-	D.place(portrait, Rect2(24, 66, 84, 66))
-	var nom := str(player.name).to_upper()
-	var lien := Link.styled_button(card, Rect2(124, 66, minf(520, _largeur(nom, 30, C.font(700)) + 20), 40), nom, 30, Charte.IVOIRE, "OfficeSpotlightName")
-	var cible := {"kind": "market", "id": str(player.id)}
-	if app.navigation_controller.entity_available(cible):
-		lien.pressed.connect(func(): app.navigation_controller.open_entity(cible))
-		MiniFiche.lier(app, lien, str(player.id), "market")
-	D.text(card, 128, 126, str(player.pos) + " · " + G.n(player.age) + " ans · niveau " + G.rating_text(player), 20, Charte.IVOIRE_2, 500, 520, HORIZONTAL_ALIGNMENT_LEFT, true)
-	var disponible: bool = player.get("available", false)
-	var statut := "Offre possible" if disponible else "Offre indisponible"
-	var raison := str(player.get("reason", ""))
-	if not raison.is_empty(): statut += " · " + raison
-	D.text(card, 700, 90, statut, 21, Charte.V if disponible else Charte.D, 700, 760, HORIZONTAL_ALIGNMENT_LEFT, true)
-	if not str(spotlight.need).is_empty(): D.text(card, 700, 124, spotlight.need, 20, Charte.IVOIRE_2, 500, 760, HORIZONTAL_ALIGNMENT_LEFT, true)
-	D.text(card, w - 28, 100, G.euros(player.fee), 30, Charte.IVOIRE, 700, 320, HORIZONTAL_ALIGNMENT_RIGHT)
-	D.text(card, w - 28, 128, G.salary(player.salary), 21, Charte.IVOIRE_2, 500, 320, HORIZONTAL_ALIGNMENT_RIGHT, true)
+## Lignes du classement court : `nombre` lignes consécutives qui gardent notre club (au centre quand c'est possible).
+static func short_rows(rows: Array, own_id: Variant, nombre: int) -> Array:
+	if rows.size() <= nombre: return rows
+	var own := 0
+	for i in rows.size():
+		if rows[i].get("id") == own_id: own = i
+	var debut := clampi(own - (nombre - 1) / 2, 0, rows.size() - nombre)
+	return rows.slice(debut, debut + nombre)
 
+## Joueurs de l'effectif cités dans `texte` : nom complet, sinon nom de famille isolé (≥ 4 lettres, unique dans l'effectif).
+## Renvoie [{id, start, end}] triés, sans chevauchement.
+static func names_in(model: Dictionary, texte: String) -> Array:
+	var trouves: Array = []
+	var familles := {}
+	var squad: Array = model.get("squad", [])
+	for player: Dictionary in squad:
+		var parts := str(player.get("name", "")).split(" ", false)
+		if not parts.is_empty(): familles[parts[parts.size() - 1].to_lower()] = int(familles.get(parts[parts.size() - 1].to_lower(), 0)) + 1
+	for player: Dictionary in squad:
+		var nom := str(player.get("name", "")).strip_edges()
+		if nom.is_empty() or str(player.get("id", "")).is_empty(): continue
+		var debut := texte.find(nom)
+		var fin := debut + nom.length()
+		if debut < 0:
+			var parts := nom.split(" ", false)
+			var famille := parts[parts.size() - 1]
+			if famille.length() < 4 or int(familles.get(famille.to_lower(), 0)) != 1: continue
+			debut = -1
+			var depart := 0
+			while true:
+				var at := texte.findn(famille, depart)
+				if at < 0: break
+				var avant := texte[at - 1] if at > 0 else " "
+				var apres := texte[at + famille.length()] if at + famille.length() < texte.length() else " "
+				if not _lettre(avant) and not _lettre(apres):
+					debut = at
+					break
+				depart = at + 1
+			if debut < 0: continue
+			fin = debut + famille.length()
+		trouves.append({"id": str(player.id), "start": debut, "end": fin})
+	trouves.sort_custom(func(a: Dictionary, b: Dictionary): return a.start < b.start)
+	var net: Array = []
+	var limite := -1
+	for trouve: Dictionary in trouves:
+		if trouve.start >= limite:
+			net.append(trouve)
+			limite = trouve.end
+	return net
+
+static func _lettre(c: String) -> bool:
+	return c.to_lower() != c.to_upper() or c.is_valid_int()
+
+## Pose, sur chaque nom de joueur du texte écrit dans `zone` (unités de la page), un bouton transparent : clic = fiche
+## du joueur, survol = mini-fiche. `zone` est le rectangle du texte (largeur de retour à la ligne comprise).
+static func noms_cliquables(app: Control, parent: Control, zone: Rect2, texte: String, taille: int, police: Font) -> void:
+	if app.get("navigation_controller") == null or not is_instance_valid(app.get("navigation_controller")): return
+	var trouves := names_in(app.model, texte)
+	if trouves.is_empty(): return
+	var px := maxi(12, C.px(taille))
+	var paragraphe := TextParagraph.new()
+	paragraphe.add_string(texte, police, px)
+	paragraphe.width = C.px(zone.size.x)
+	paragraphe.break_flags = TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND
+	for trouve: Dictionary in trouves:
+		var cible := {"kind": "player", "id": str(trouve.id)}
+		if not app.navigation_controller.entity_available(cible): continue
+		for ligne in paragraphe.get_line_count():
+			var plage := paragraphe.get_line_range(ligne)
+			if int(trouve.start) < plage.x or int(trouve.end) > plage.y: continue
+			var avant := police.get_string_size(texte.substr(plage.x, int(trouve.start) - plage.x), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x / C.density
+			var large := police.get_string_size(texte.substr(int(trouve.start), int(trouve.end) - int(trouve.start)), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x / C.density
+			var haut := paragraphe.get_line_size(ligne).y / C.density
+			var hauteur := maxf(haut, C.reach(haut))
+			var lien := Link.styled_button(parent, Rect2(zone.position.x + avant - 2, zone.position.y + ligne * haut, large + 4, hauteur), "", taille, Charte.IVOIRE, "OfficeNom_%s_%d" % [str(trouve.id).validate_node_name(), int(trouve.start)])
+			lien.accessibility_name = "Ouvrir la fiche · " + texte.substr(int(trouve.start), int(trouve.end) - int(trouve.start))
+			lien.pressed.connect(func(): app.navigation_controller.open_entity(cible))
+			MiniFiche.lier(app, lien, str(trouve.id), "squad")
+			break
 # ---------------------------------------------------------------------------------------------------------
 # Prochains matchs (colonne de Gabi ; la colonne reste la même sans Gabi)
 # ---------------------------------------------------------------------------------------------------------
@@ -749,19 +832,19 @@ static func _timeline(card: Panel, app: Control, _recent: Variant, w: int = GABI
 		D.text(card, 25, 100, "Aucune rencontre programmée pour le moment.", 21, Charte.IVOIRE_2, 500, w - 50, HORIZONTAL_ALIGNMENT_LEFT, true)
 	for i in fixtures.size():
 		var fixture: Dictionary = fixtures[i]
-		var y := 66 + i * 46
+		var y := 62 + i * 42
 		var chez_nous: bool = fixture.get("home", {}).get("id") == app.model.club.id
 		var adversaire: Dictionary = fixture.get("away", {}) if chez_nous else fixture.get("home", {})
 		var lieu := P.fixture_location_kind(fixture, app.model.club.id)
 		var mot: String = {"neutral": "Neutre", "home": "Domicile", "away": "Extérieur"}.get(lieu, "Terrain à confirmer")
 		var cle := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
-		if i % 2 == 1: D.rect(card, Rect2(12, y, w - 24, 44), Color(Charte.PANNEAU_2, .8))
+		if i % 2 == 1: D.rect(card, Rect2(12, y, w - 24, 40), Color(Charte.PANNEAU_2, .8))
 		var cible := {"kind": "date", "id": fixture.get("date")}
 		var ligne: Callable = func():
 			if i == 0 and app.model.get("next") is Dictionary and not app.model.next.is_empty(): app._navigate("Préparation")
 			elif Office.reading_available(app, cible): app.navigation_controller.open_entity(cible)
 			else: app._navigate("Calendrier")
-		var tuile := _zone(card, Rect2(12, y, w - 24, 44), "", ligne, "OfficeTimelineTile" + str(i), 20)
+		var tuile := _zone(card, Rect2(12, y, w - 24, 40), "", ligne, "OfficeTimelineTile" + str(i), 20)
 		tuile.tooltip_text = ("Préparer le match · " if i == 0 else "Ouvrir le calendrier · ") + Office.timeline_period(fixture)
 		tuile.accessibility_name = tuile.tooltip_text
 		var date := D.text(card, 26, y + 29, Office.timeline_period(fixture), 19, Charte.IVOIRE, 600, 220)

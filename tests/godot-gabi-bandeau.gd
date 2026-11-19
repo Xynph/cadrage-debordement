@@ -319,7 +319,7 @@ func bureau() -> void:
 	var rect := zone.get_global_rect()
 	var body: Rect2 = app.body_scroll.get_global_rect()
 	check(rect.position.x >= body.position.x - 1 and rect.end.x <= body.end.x + 1, "Zone de Gabi dans la largeur de l'écran")
-	check(rect.size.y >= rect.size.x * 1.2, "Zone de Gabi en hauteur (semaine, prochains matchs, buste)")
+	check(rect.size.y >= rect.size.x * 1.1, "Zone de Gabi en hauteur (semaine, prochains matchs, buste)")
 	for id: String in OFFICE_CARDS:
 		var card: Control = app.root_content.find_child(id, true, false)
 		# La frise « Prochains matchs » est dans la colonne de Gabi (choix de Léo) : elle n'est pas à côté mais dedans.

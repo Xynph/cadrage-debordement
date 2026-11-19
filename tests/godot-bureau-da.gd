@@ -56,16 +56,24 @@ func boutons() -> Array[Button]:
 func ouvre_quelque_chose() -> bool:
 	return app.route != "Bureau" or app.management_ui.get("fiche_joueur") is Dictionary or app.get_meta("immersive08_full_player", false)
 
-func cliquables() -> void:
+func cliquables(large: bool = true) -> void:
 	await bureau()
 	var noms: Array[String] = []
 	for bouton in boutons(): noms.append(str(bouton.name))
 	check(noms.size() >= 12, "Le Bureau offre beaucoup d'éléments cliquables (%d)" % noms.size())
 	var a_un_match: bool = app.model.get("next") is Dictionary and not app.model.next.is_empty()
-	for attendu in (["OfficePreparationAction", "OfficeSelectionAction"] if a_un_match else []) + ["OfficeSquadAction", "OfficeStandingsAction", "OfficeInboxAction", "OfficeCalendarAction", "OfficeGroupAvailable", "OfficeGroupInjured", "OfficeMarketAction"]:
+	for attendu in (["OfficePreparationAction", "OfficeSelectionAction"] if a_un_match else []) + ["OfficeSquadAction", "OfficeStandingsAction", "OfficeCalendarAction"] + (["OfficeInboxAction", "OfficeGroupAvailable", "OfficeGroupInjured"] if large else []):
 		check(noms.has(attendu), "Élément cliquable présent : " + attendu)
 	check(noms.any(func(n: String): return n.begins_with("OfficeStandingRow_")), "Chaque club du classement court est cliquable")
-	check(noms.any(func(n: String): return n.begins_with("OfficeTimelineTile")), "Chaque prochain match est cliquable")
+	if large:
+		# Profil à suivre et résultats ne sont plus au Bureau large : la page tient sans défiler.
+		check(not ancre("OfficeRecruitment") and not ancre("OfficeRecentResults"), "Ni profil à suivre ni résultats au Bureau large")
+		# Les trois rangées (affiche, priorités / groupe, classement / courrier) tiennent à l'écran ; la carte « Premiers pas »
+		# de Gabi (début de carrière seulement) peut s'ajouter dessous.
+		for id in ["OfficeFixture", "OfficeDecisions", "OfficeStandings", "OfficeJournal", "GabiBureau"]:
+			var bloc := page().find_child(id, true, false) as Control
+			if bloc != null: check(bloc.get_global_rect().end.y <= app.body_scroll.get_global_rect().end.y + 2.0, "Le Bureau tient sans défiler : %s finit à %d / %d" % [id, bloc.get_global_rect().end.y, app.body_scroll.get_global_rect().end.y])
+	if large: check(noms.any(func(n: String): return n.begins_with("OfficeTimelineTile")), "Chaque prochain match est cliquable")
 	var messages: Array = app.model.get("messages", [])
 	if not messages.is_empty(): check(noms.any(func(n: String): return n.begins_with("OfficeJournalMessage")), "Chaque message du courrier est cliquable")
 	var fenetres_de_base := fenetres().size()
@@ -133,6 +141,15 @@ func run() -> void:
 	await cliquables()
 	await pas_d_or()
 	await bandeau_et_gabi()
+	# Bureau étroit (< 1600 px) : plus aucune fenêtre, tout ce qui a l'air cliquable ouvre quelque chose, pas d'or.
+	root.size = Vector2i(1280, 720)
+	await settle()
+	await cliquables(false)
+	await pas_d_or()
+	var interdits: Array[String] = []
+	for nom in ["OpenCoachNotebook", "OfficeManagerPlanning"]:
+		if ancre(nom): interdits.append(nom)
+	check(interdits.is_empty(), "Le Bureau étroit n'ouvre plus de fenêtre carnet / planning : " + str(interdits))
 	print("BUREAU DA : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	app.bridge.stop(); app.queue_free(); await settle()
 	quit(0 if failures.is_empty() else 1)
