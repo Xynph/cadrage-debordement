@@ -288,8 +288,8 @@ static func _standings(card: Panel, app: Control, w: int = 684) -> void:
 	# Avec une légende, les lignes se resserrent (pas de 39 au lieu de 42) pour la loger au-dessus de la forme.
 	var zones := Zones.visible(rows)
 	var stride := 39 if not zones.is_empty() else 42
-	var rank_x := 58 if not zones.is_empty() else 36
-	for pair in [["#",rank_x-5 if not zones.is_empty() else 26],["CLUB",78],["J",played_x],["DIFF.",w-142],["PTS",w-37]]: D.text(card,pair[1],90,pair[0],18,C.MUTED,500,35)
+	var rank_x := 66 if not zones.is_empty() else 36
+	for pair in [["#",rank_x-5 if not zones.is_empty() else 26],["CLUB",78 if zones.is_empty() else 86],["J",played_x],["DIFF.",w-142],["PTS",w-37]]: D.text(card,pair[1],90,pair[0],18,C.MUTED,500,35)
 	for i in rows.size():
 		var club: Dictionary = rows[i]
 		var y := 105+i*stride
@@ -304,10 +304,11 @@ static func _standings(card: Panel, app: Control, w: int = 684) -> void:
 			var kind := str(zone.get("kind",""))
 			var edge := D.rect(hit,Rect2(0,1,4,stride-4),Zones.tint(kind))
 			edge.name = "StandingsZoneEdge"
-			var side := Zones.mark_side()
-			Zones.mark(hit,kind,Rect2(8,(stride-2-side)/2.0,side,side),Zones.tint(kind))
+			var side := Zones.mark_side(Zones.BUREAU_MARK_PX)
+			Zones.mark(hit,kind,Rect2(7,(stride-2-side)/2.0,side,side),Zones.tint(kind))
 		D.text(card,rank_x,y+23,G.n(club.get("rank","—")) if P.standings_open(club) else "–",25,C.MINT if own else C.IVORY,600,30,HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(card,80,y+23,G.club_name(club),23,C.IVORY,600,played_x-104)
+		var name_x := 80 if zones.is_empty() else 88
+		D.text(card,name_x,y+23,G.club_name(club),23,C.IVORY,600,played_x-name_x-24)
 		D.text(card,played_x,y+23,G.n(club.get("played",0)),22,C.MUTED,500,32,HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(card,w-130,y+23,"%+d" % (int(club.get("pf",0))-int(club.get("pa",0))),23,C.MUTED,500,70,HORIZONTAL_ALIGNMENT_RIGHT)
 		D.text(card,w-37,y+23,G.n(club.get("points",0)),25,C.IVORY,700,60,HORIZONTAL_ALIGNMENT_RIGHT)
@@ -327,10 +328,7 @@ static func _standings(card: Panel, app: Control, w: int = 684) -> void:
 	action.add_theme_color_override("font_color",C.GOLD)
 
 ## Note du règlement de la ligue du club (« Pas de relégation cette saison. »), vide sinon.
-static func _zone_note(model: Dictionary) -> String:
-	for league in model.get("leagues", []):
-		if league is Dictionary and league.get("id") == model.get("meta", {}).get("leagueId") and league.get("zoneNote") is String: return str(league.zoneNote)
-	return ""
+static func _zone_note(model: Dictionary) -> String: return Zones.bureau_note(model)  # note courte, sinon complète si elle tient
 
 ## Légende courte, limitée aux zones de l'extrait : « ★ Demi-finale directe · ▼ Relégation » (symboles dessinés),
 ## puis la note du règlement seulement si elle tient sur la même ligne.
@@ -341,7 +339,7 @@ static func _zone_legend(card: Panel, zones: Array, note: String, x: float, base
 	card.add_child(group)
 	D.place(group, Rect2(x, baseline - 18, width, 24))
 	var cursor := 0.0
-	var side := Zones.mark_side()
+	var side := Zones.mark_side(Zones.BUREAU_MARK_PX)
 	for i in zones.size():
 		var kind := str(zones[i].get("kind", ""))
 		if i > 0:

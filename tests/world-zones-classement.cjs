@@ -22,6 +22,7 @@ assert.deepEqual(Object.keys(DATA.competitions).sort(),[...LEAGUES,...CUPS].sort
 for(const [id,c]of Object.entries(DATA.competitions)){
  assert.ok(typeof c.source==='string'&&c.source.length>0,id+' : source interne');
  assert.ok(c.note===undefined||typeof c.note==='string'&&c.note.length>0,id+' : note absente ou phrase');
+ assert.ok(c.shortNote===undefined||typeof c.shortNote==='string'&&c.shortNote.length>0&&c.shortNote.length<=30,id+' : note courte de 30 caractères au plus');
  let previous=0;
  for(const z of c.zones){
   assert.ok(KINDS[z.kind],id+' : type de zone connu '+z.kind);
@@ -40,6 +41,7 @@ try{
   const data=DATA.competitions[league.id];
   assert.deepEqual(league.zones,data.zones.map(z=>({...z,symbol:KINDS[z.kind]})),league.id+' : zones projetées depuis la donnée');
   assert.equal(league.zoneNote,data.note??null,league.id+' : note');
+  assert.equal(league.zoneShortNote,data.shortNote??null,league.id+' : note courte');
   const size=league.pools?Math.max(...league.pools.map(p=>p.rows.length)):league.rows.length;
   assert.ok(league.zones.every(z=>z.to<=size),league.id+' : zones dans le tableau');
   for(const row of league.rows){

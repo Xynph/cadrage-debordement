@@ -20,6 +20,7 @@
         {"from": 14, "to": 14, "kind": "relegation", "label": "Relégation"}
       ],
       "note": "Le 13e se déplace chez le finaliste de la division inférieure pour le barrage d’accession.",
+      "shortNote": "13e : barrage à l’extérieur",
       "source": "world-competitions.cjs rules.elite.playoffs=6, knockoutFixtures barrage 3-6 / 4-5 puis demi-finales des deux premiers, access [finaliste Pro D2 à domicile, 13e] ; world-career.cjs planStages (atRisk=rang 13, relegated=dernier) ; LNR 2026/27 art. 2008, 2013, 2085"
     },
     "accession": {
@@ -31,6 +32,7 @@
         {"from": 16, "to": 16, "kind": "relegation", "label": "Relégation"}
       ],
       "note": "Le champion monte ; le finaliste joue le barrage d’accession. Le 15e se déplace chez le finaliste de la division inférieure.",
+      "shortNote": "15e : barrage à l’extérieur",
       "source": "world-competitions.cjs rules.accession.playoffs=6 ; world-career.cjs planStages (champion promu, finaliste en access) ; nationale.cjs accessPlan ([challenger, bottom]=deux derniers, finaliste de Nationale à domicile) ; LNR 2026/27 art. 2011-2013"
     },
     "nationale": {
@@ -40,6 +42,7 @@
         {"from": 3, "to": 6, "kind": "playoff", "label": "Barrage phase finale"}
       ],
       "note": "Le champion monte ; le finaliste reçoit le 15e de la division supérieure. Pas de relégation cette saison.",
+      "shortNote": "Pas de relégation cette saison",
       "source": "nationale.cjs playoffSeeds (six premiers), knockoutFixtures barrage 3-6 / 4-5 puis demi-finales, accessPlan (finaliste à domicile), combineFrenchMovements lowerBoundary closed-without-nationale-2"
     },
     "prem": {
@@ -48,6 +51,7 @@
         {"from": 1, "to": 4, "kind": "playoff", "label": "Demi-finale"}
       ],
       "note": "Pas de relégation cette saison.",
+      "shortNote": "Pas de relégation cette saison",
       "source": "world-competitions.cjs rules.prem.playoffs=4, membership.automaticPromotionRelegation=false ; phases semi, final"
     },
     "champ": {
@@ -57,6 +61,7 @@
         {"from": 3, "to": 6, "kind": "playoff", "label": "Quart de finale"}
       ],
       "note": "Pas de montée dans l’élite cette saison ; pas de descente dans la carrière.",
+      "shortNote": "Pas de descente",
       "source": "champ-rugby.cjs playoffSeeds (six premiers), knockoutFixtures quarts 3-6 / 4-5 puis demi-finales ; world-career.cjs champBoundary (premExchange=false), aucun mouvement appliqué"
     },
     "urc": {
@@ -65,6 +70,7 @@
         {"from": 1, "to": 8, "kind": "playoff", "label": "Quart de finale"}
       ],
       "note": "Ligue fermée : pas de relégation.",
+      "shortNote": "Ligue fermée",
       "source": "world-competitions.cjs rules.urc.playoffs=8, knockoutFixtures quarts 1-8, 2-7, 3-6, 4-5"
     },
     "srp": {
@@ -74,6 +80,7 @@
         {"from": 3, "to": 6, "kind": "playoff", "label": "Match éliminatoire"}
       ],
       "note": "Ligue fermée : pas de relégation.",
+      "shortNote": "Ligue fermée",
       "source": "super-rugby-pacific.cjs rules.playoffs=6, knockoutFixtures elimination 3-6 / 4-5 puis demi-finales des deux premiers"
     },
     "jlo-d1": {
@@ -83,6 +90,7 @@
         {"from": 3, "to": 6, "kind": "playoff", "label": "Quart de finale"},
         {"from": 11, "to": 12, "kind": "relegation-playoff", "label": "Barrage contre la D2"}
       ],
+      "shortNote": "11e-12e : barrage aller-retour",
       "source": "league-one-d1.cjs playoffSeeds (rangs 1-6), knockoutFixtures quarts 3-6 / 4-5 puis demi-finales [1er, 2e], promotionPairs (11e contre 2e de D2, 12e contre 1er de D2, aller-retour) ; japan-season.cjs move"
     },
     "jlo-d2": {
@@ -91,6 +99,7 @@
         {"from": 1, "to": 2, "kind": "promotion-playoff", "label": "Barrage de montée"}
       ],
       "note": "Pas de descente dans la carrière.",
+      "shortNote": "Pas de descente",
       "source": "world-career.cjs appendJapan (seeds D2 = deux premiers) ; league-one-d1.cjs promotionPairs ; aucune division inférieure dans la carrière"
     },
     "champions": {

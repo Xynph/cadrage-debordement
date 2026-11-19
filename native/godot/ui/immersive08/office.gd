@@ -670,6 +670,12 @@ static func _standings(parent: VBoxContainer, app: Control) -> void:
 			row.add_child(cell)
 	if rows.is_empty(): parent.add_child(C.wrap("Le classement sera disponible lorsque le championnat sera ouvert.", 20))
 	if not zones.is_empty(): parent.add_child(_zone_legend(zones))
+	var note := Zones.bureau_note(app.model) if not zones.is_empty() else ""
+	if not note.is_empty() and note.length() <= 30:  # bloc étroit : la note courte, ou une note complète aussi brève
+		var written := C.label(note, 18, C.MUTED, true, 500)
+		written.name = "StandingsZoneNote"
+		written.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		parent.add_child(written)
 	_link(parent, "OfficeStandingsAction", "Classement complet  →", app, "Classements")
 
 ## Tête de ligne du classement court : liseré coloré et symbole dessiné de la zone (vide hors zone, même largeur).
@@ -684,7 +690,7 @@ static func _zone_lead(zone: Dictionary) -> HBoxContainer:
 	edge.color = Zones.tint(kind) if not kind.is_empty() else Color.TRANSPARENT
 	if not kind.is_empty(): edge.name = "StandingsZoneEdge"
 	lead.add_child(edge)
-	lead.add_child(Zones.mark_slot(kind))
+	lead.add_child(Zones.mark_slot(kind, Zones.BUREAU_MARK_PX))
 	return lead
 
 ## Légende courte, limitée aux zones de l'extrait : « ★ Demi-finale directe · ▼ Relégation » (symboles dessinés).
@@ -699,7 +705,7 @@ static func _zone_legend(zones: Array) -> HFlowContainer:
 		var item := C.h(5)
 		item.name = "StandingsZoneLegendEntry_%d" % i
 		item.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var slot := Zones.mark_slot(kind)
+		var slot := Zones.mark_slot(kind, Zones.BUREAU_MARK_PX)
 		slot.get_child(0).name = "StandingsZoneLegendMark_" + kind
 		item.add_child(slot)
 		var label := C.label(str(zones[i].get("label", "")), 18, C.IVORY, true, 600)

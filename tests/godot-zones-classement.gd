@@ -45,7 +45,7 @@ func league_fixture(data: Dictionary, id: String, size: int, first_id: int, ende
 			if rank >= z.from and rank <= z.to: zone = {"kind": z.kind, "label": z.label, "symbol": z.symbol}
 		rows.append({"id": first_id + i, "name": "Club des Plaines " + str(rank), "rank": rank, "standingsOpen": true, "played": 26, "won": 20 - i,
 			"drawn": 0, "lost": 6 + i, "pf": 600 - i * 10, "pa": 400 + i * 10, "bonus": 4, "points": 90 - i * 4, "form": ["V", "D", "V"], "zone": zone})
-	var league := {"id": id, "name": id, "phase": "ended" if ended else "league", "rows": rows, "zones": zones, "zoneNote": table.get("note"), "zoneScope": table.scope}
+	var league := {"id": id, "name": id, "phase": "ended" if ended else "league", "rows": rows, "zones": zones, "zoneNote": table.get("note"), "zoneShortNote": table.get("shortNote"), "zoneScope": table.scope}
 	if ended: league.merge({"champion": rows[1].duplicate(), "finalist": rows[2].duplicate()})
 	return league
 
@@ -164,9 +164,30 @@ func office_rows(app: ReadingApp, holder: Control, scope: Callable, where: Strin
 		if club.zone is Dictionary:
 			check(edge != null and edge.visible and mark != null and str(mark.get_meta("zone_kind", "")) == club.zone.kind, "Bureau : liseré et symbole au rang %d%s" % [club.rank, where])
 			check(mark != null and mark.get_child_count() == 1 and (mark.get_child(0) is Polygon2D or mark.get_child(0) is Line2D), "Bureau : symbole dessiné au rang %d%s" % [club.rank, where])
+			# Symbole du Bureau : environ 11 px réels, sans toucher le rang ni le nom.
+			var px := mark.get_global_rect().size.x if mark != null else 0.0
+			check(px >= 10.5 and px <= 12.5, "Bureau : symbole d'environ 11 px (%.1f px)%s" % [px, where])
+			if mark != null:
+				var after := mark.get_global_rect().end.x
+				for cell in rank_cells(hit, mark):
+					check(after <= cell.get_global_rect().position.x + 0.5, "Bureau : symbole sans toucher le rang au rang %d (%.1f / %.1f)%s" % [club.rank, after, cell.get_global_rect().position.x, where])
 			check(hit.accessibility_name.contains(str(club.zone.label)) and str(hit.get_meta("zone_kind", "")) == club.zone.kind, "Bureau : « %s » annoncé au rang %d%s" % [club.zone.label, club.rank, where])
 		else:
 			check(edge == null and mark == null and not hit.has_meta("zone_kind"), "Bureau : aucune zone au rang %d%s" % [club.rank, where])
+
+## Cases de texte à droite du symbole : le rang et le nom (Bureau large : textes posés sur le bloc ; compact : frères de la tête de ligne).
+func rank_cells(hit: Button, mark: Control) -> Array:
+	var result: Array = []
+	var lead := mark.get_parent().get_parent()
+	if lead is HBoxContainer and lead.name == "StandingsZoneLead":
+		for sibling in lead.get_parent().get_children():
+			if sibling is Label and sibling.text != "" and sibling.get_global_rect().position.x > lead.get_global_rect().position.x: result.append(sibling)
+		return result.slice(0, 2)
+	var card := hit.get_parent()
+	for sibling in card.get_children():
+		if sibling is Label and sibling.get_global_rect().position.y < hit.get_global_rect().end.y and sibling.get_global_rect().end.y > hit.get_global_rect().position.y and sibling.get_global_rect().position.x > hit.get_global_rect().position.x and sibling.get_global_rect().position.x < hit.get_global_rect().position.x + C.px(120):
+			result.append(sibling)
+	return result
 
 ## Légende : une forme et un mot par zone visible dans l'extrait (« ★ Demi-finale directe · ▼ Relégation »).
 func office_legend(app: ReadingApp, holder: Control, where: String) -> Control:
@@ -210,7 +231,19 @@ func office_canvas(league: Dictionary, leagues: Array, own_index: int, w: int, h
 		var form_top := 370.0 * C.density + card.get_global_rect().position.y
 		check(first != null and ink(first).y <= form_top, "Bureau : légende au-dessus de la forme" + where)
 		var note: Label = legend.find_child("StandingsZoneNote", true, false)
-		if note != null: check(league.zoneNote is String and note.text == league.zoneNote, "Bureau : note du règlement exacte" + where)
+		var expected_note: Variant = league.zoneShortNote if league.zoneShortNote is String else league.zoneNote
+		if league.zoneShortNote is String:
+			# La note courte tient sur la ligne de la légende quand il reste la place ; sinon rien (jamais tronquée).
+			var tail: Label = legend.find_child("StandingsZoneLegendItem_%d" % (expected_zones(app).size() - 1), true, false)
+			var font := C.font(500)
+			var room := (legend.size.x - (tail.get_global_rect().position.x - legend.get_global_rect().position.x) - tail.get_theme_font("font").get_string_size(tail.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tail.get_theme_font_size("font_size")).x) / C.density - 20.0
+			var fits: bool = font.get_string_size(league.zoneShortNote, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(18))).x / C.density <= room
+			check((note != null) == fits and (note == null or note.text == league.zoneShortNote and note.text.length() <= 30), "Bureau : note courte « %s » %s%s" % [league.zoneShortNote, "présente" if fits else "absente faute de place", where])
+			if note != null: print("NOTE_VISIBLE ", where)
+		if note != null:
+			check(expected_note is String and note.text == expected_note, "Bureau : note exacte" + where)
+			var last: Label = legend.find_child("StandingsZoneLegendItem_%d" % (expected_zones(app).size() - 1), true, false)
+			check(last != null and note.get_global_rect().position.x >= last.get_global_rect().position.x + last.size.x, "Bureau : note sans chevaucher la légende" + where)
 	check(app.commands == 0 and JSON.stringify(app.model) == before, "Bureau : affichage sans commande ni modification" + where)
 	app.queue_free()
 	await process_frame
@@ -229,6 +262,13 @@ func office_compact(league: Dictionary, leagues: Array, own_index: int, height: 
 	var legend := office_legend(app, box, where)
 	var action: Control = box.find_child("OfficeStandingsAction", true, false)
 	if legend != null: check(action != null and legend.get_global_rect().end.y <= action.get_global_rect().position.y + 1, "Bureau : légende avant le lien du classement complet" + where)
+	var note: Label = box.find_child("StandingsZoneNote", true, false)
+	if league.zoneShortNote is String and legend != null:
+		check(note != null and note.text == league.zoneShortNote, "Bureau compact : note courte présente" + where)
+		if note != null:
+			check(note.get_global_rect().position.y >= legend.get_global_rect().end.y - 1 and note.get_global_rect().end.y <= action.get_global_rect().position.y + 1, "Bureau compact : note sous la légende, avant le lien" + where)
+			check(note.get_theme_font("font").get_string_size(note.text, HORIZONTAL_ALIGNMENT_LEFT, -1, note.get_theme_font_size("font_size")).x <= note.size.x + 1, "Bureau compact : note entière" + where)
+	elif legend != null: check(note == null, "Bureau compact : pas de note sans note courte" + where)
 	check(app.commands == 0 and JSON.stringify(app.model) == before, "Bureau : affichage sans commande ni modification" + where)
 	app.queue_free()
 	await process_frame
