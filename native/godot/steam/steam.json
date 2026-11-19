@@ -1,0 +1,7 @@
+{
+  "schema": "rl27-steam-v1",
+  "enabled": false,
+  "app_id": 0,
+  "achievements": false,
+  "cloud_saves": false
+}

@@ -1509,10 +1509,9 @@ func _credits() -> void:
 	_clear_dialogs()
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 760)
-	d.title = "Rugby Legacy 27 · Crédits"
-	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nCertains portraits sont des illustrations IA ; leur provenance figure dans les crédits et les métadonnées. L'enceinte3D est générique."
+	preload("res://ui/credits_view.gd").fill(d)
 	add_child(d)
-	d.popup_centered(Vector2i(760,300))
+	ImmersiveDialogs.show_centered(d, Vector2i(900,640))
 	d.confirmed.connect(d.queue_free)
 
 ## Reprise avant le match (décision de Léo, 16/11/2026) : une carrière n'est jamais enregistrée en plein match. Du coup
