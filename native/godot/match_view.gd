@@ -102,8 +102,11 @@ func plongee_max() -> float:
 ## Hauteur visible (m) au point visé de la caméra de base (hors temps fort). Le cadrage des temps
 ## forts (match_cadrage.gd) la règle ensuite selon les joueurs utiles. 19 novembre 2026 (soir) : 30 m
 ## laissaient des joueurs de 40 px ; 18 m (axe à 16°) : environ 70 px au point visé.
+## 19 novembre 2026 (nuit) : caméra au contact resserrée de 16 à 12 m (SUIVI.action de match_cadrage.gd
+## 10 à 12,5 m) : avec la vue TV basse de 15 à 19 m, 16 m au contact donnaient presque le même plan.
+## Contact au plus 0,85 fois le plan TV le plus serré : joueurs au point visé environ 1,35 fois plus grands.
 const TV_TAILLE := 18.0
-const ACTION_TAILLE := 16.0
+const ACTION_TAILLE := 12.0
 ## Mi-temps et fin de match : plan large de tout le terrain, vu de haut au-dessus de la tribune
 ## proche (rayons au-dessus de son toit) : direction, point visé, recul (m) et angle de champ.
 const PLAN_LARGE_OFFSET := Vector3(0.0, 0.64, 0.77)
@@ -1470,11 +1473,10 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			look = _camera_focus
 			size = wide
 			offset = offset_suivi(ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET, _camera_focus.z)
-		# Caméra au contact : pivot amorti autour du point visé quand un poteau masquerait l'action
-		# (cherché sur le point visé final de l'image précédente, déjà stable d'une image à l'autre).
-		var contournement := 0.0
-		if _camera_mode == "action":
-			contournement = contournement_poteaux(look if cut or delta <= 0.0 else _camera_look, size, offset)
+		# Pivot amorti autour du point visé quand un poteau masquerait l'action (caméra au contact) ou
+		# passerait au premier plan, tout près de l'objectif (TV et contact ; cherché sur le point visé
+		# final de l'image précédente, déjà stable d'une image à l'autre).
+		var contournement := contournement_poteaux(look if cut or delta <= 0.0 else _camera_look, size, offset)
 		if cut or delta <= 0.0:
 			_contournement = contournement
 			_contournement_vitesse = 0.0
@@ -1630,21 +1632,80 @@ func poteau_masque(look: Vector3, size: float, offset: Vector3, marge: float = P
 ## caméra déjà tournée ne revient que si la vue d'origine est dégagée avec POTEAU_RELACHE m de marge
 ## (hystérésis : pas d'aller-retour quand le point visé glisse un peu en tournant).
 const POTEAU_RELACHE := 1.5
+## 19 novembre 2026 (nuit) : touche près de l'en-but en TV (pivot des gestes compris), la caméra se
+## posait entre les poteaux et un montant blanc, protection comprise, couvrait le tiers droit de l'image.
+## Le contournement vaut aussi pour la TV ; la caméra TV ne contourne que le premier plan (un montant
+## au loin, derrière l'action, est une image de retransmission normale). En TV, le premier sens essayé
+## ramène la caméra vers le milieu du terrain (le pivot des gestes est défait d'abord).
 func contournement_poteaux(look: Vector3, size: float, offset: Vector3) -> float:
 	# Loin des poteaux : rien à chercher (coût nul la plupart du temps).
 	if absf(absf(look.x) - POTEAUX_X) > 40.0:
 		return 0.0
-	var marge := POTEAU_RELACHE if absf(_contournement) > 0.01 else POTEAU_MARGE
-	if not poteau_masque(look, size, offset, marge):
+	var tourne := absf(_contournement) > 0.01
+	var marge := POTEAU_RELACHE if tourne else POTEAU_MARGE
+	var relache := POTEAU_RELACHE if tourne else 0.0
+	if not _poteau_gene(look, size, offset, marge, relache, true):
 		return 0.0
 	var sens := -1.0 if _contournement < 0.0 else 1.0
+	if not tourne and _camera_mode != "action":
+		# offset.rotated(UP, a) déplace la caméra en x de offset.z * a : vers le milieu d'abord.
+		sens = -1.0 if look.x * offset.z > 0.0 else 1.0
 	var pas := int(round(CONTOURNEMENT_MAX / CONTOURNEMENT_PAS))
-	for k in range(1, pas + 1):
-		for signe: float in [sens, -sens]:
-			var angle := signe * k * CONTOURNEMENT_PAS
-			if not poteau_masque(look, size, offset.rotated(Vector3.UP, angle), marge):
-				return angle
+	# D'abord ni masque ni premier plan ; sinon (caméra au contact) au moins rien entre elle et l'action.
+	for complet: bool in [true, false]:
+		if not complet and _camera_mode != "action":
+			break
+		for k in range(1, pas + 1):
+			for signe: float in [sens, -sens]:
+				var angle := signe * k * CONTOURNEMENT_PAS
+				if not _poteau_gene(look, size, offset.rotated(Vector3.UP, angle), marge, relache, complet):
+					return angle
 	return sens * CONTOURNEMENT_MAX
+
+
+## Gêne d'un poteau pour la caméra suivie : masque l'action (caméra au contact seulement) ou, si
+## `premier_plan`, montant ou barre au premier plan (poteau_premier_plan).
+func _poteau_gene(look: Vector3, size: float, offset: Vector3, marge: float, relache: float, premier_plan: bool) -> bool:
+	if _camera_mode == "action" and poteau_masque(look, size, offset, marge):
+		return true
+	return premier_plan and poteau_premier_plan(look, size, offset, relache)
+
+
+## Montant ou barre des poteaux au premier plan : une partie (protection de 0,42 m de côté, POTEAU_DEMI m
+## de demi-largeur) dans l'image, devant la caméra, assez près pour couvrir plus de POTEAU_PREMIER_PLAN
+## de la largeur de l'image (TV : à moins de 7 m environ ; contact : 4,5 m). Film du 19/11 : 16 % à 3,4 m.
+## Un montant à 12 m devant la caméra TV, entre elle et un essai sous les poteaux (4,6 %), est une image
+## de retransmission normale : pas de contournement. `relache` (m) élargit le montant et allonge la
+## distance (hystérésis du contournement).
+const POTEAU_DEMI := 0.21
+const POTEAU_PREMIER_PLAN := 0.08
+func poteau_premier_plan(look: Vector3, size: float, offset: Vector3, relache: float = 0.0) -> bool:
+	var pose := pose_camera(look, size, offset)
+	var camera: Vector3 = pose[0]
+	var pente := tan(deg_to_rad(float(pose[1]) * 0.5))
+	var ecran := get_viewport().get_visible_rect().size if is_inside_tree() else Vector2(16.0, 9.0)
+	var pente_large := pente * (ecran.x / ecran.y if ecran.y > 0.0 else 16.0 / 9.0)
+	var limite := POTEAU_DEMI / (POTEAU_PREMIER_PLAN * pente_large) + 2.0 * relache
+	var demi := POTEAU_DEMI + relache
+	var inverse := Basis.looking_at(-offset, Vector3.UP).inverse()
+	for x: float in [-POTEAUX_X, POTEAUX_X]:
+		# Loin de cette ligne de but : rien au premier plan.
+		if absf(camera.x - x) > limite + POTEAUX_Z:
+			continue
+		var points: Array[Vector3] = []
+		for z: float in [-POTEAUX_Z, POTEAUX_Z]:
+			for h in int(POTEAU_HAUT) + 1:
+				points.append(Vector3(x, float(h), z))
+		for i in 9:
+			points.append(Vector3(x, BARRE_Y, lerpf(-POTEAUX_Z, POTEAUX_Z, i / 8.0)))
+		for point: Vector3 in points:
+			var local := inverse * (point - camera)
+			var profondeur := -local.z
+			if profondeur <= 0.3 or profondeur >= limite:
+				continue
+			if absf(local.x) - demi <= profondeur * pente_large and absf(local.y) - demi <= profondeur * pente:
+				return true
+	return false
 
 
 ## Caméra suivie en perspective : `size` est la hauteur visible (m) au point visé `look`, `offset`

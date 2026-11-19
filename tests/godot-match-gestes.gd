@@ -503,7 +503,9 @@ func run() -> void:
 	check(camera_plain(view, ACTION_OFFSET, View.ACTION_TAILLE), "Caméra action d'origine hors geste")
 	view.apply_frame(live(frames, at_lineout))
 	for frame in int(ceil(Gestes.FRAME_IN / STEP)) + 2: view._process(STEP)
-	check(gestes.zoom == 1.0 and camera.size < View.ACTION_TAILLE and camera.global_basis.is_equal_approx(Basis.looking_at(-view.offset_suivi(ACTION_OFFSET, view._camera_focus.z), Vector3.UP)), "Caméra action : rapprochée, angle inchangé : " + str(camera.size))
+	# 19 novembre 2026 (nuit) : cadrage de base du contact resserré à 12 m ; l'alignement (14,5 m de
+	# profondeur) peut le remplir : le geste ne l'élargit jamais (au plus la taille de base).
+	check(gestes.zoom == 1.0 and camera.size <= View.ACTION_TAILLE + 0.01 and camera.global_basis.is_equal_approx(Basis.looking_at(-view.offset_suivi(ACTION_OFFSET, view._camera_focus.z), Vector3.UP)), "Caméra action : rapprochée, angle inchangé : " + str(camera.size))
 	print("MATCH_GESTES_ACTION_TOUCHE_SIZE ", camera.size)
 	view.set_camera("tactical")
 	check(gestes.zoom == 0.0, "Vue tactique : aucun recadrage")

@@ -2,8 +2,9 @@ extends SceneTree
 ## Ralenti de l'essai (19 novembre 2026), sans moteur ni carrière, sans bibliothèque d'animations :
 ##  1. réglages : ralenti à environ la moitié de la vitesse réelle, au plus REJEU_MAX s ajoutées,
 ##     seulement pour un temps fort avec un essai, jamais avec les animations réduites ;
-##  2. angle du ralenti : caméra basse (au ras de la pelouse) sur le côté du ballon, jamais dans une
-##     tribune ni collée à un montant, autre angle que la vue TV ;
+##  2. angle du ralenti : caméra relevée (Rejeu.HAUTEUR, au moins 2,5 m, regard rasant) sur le côté du
+##     ballon, jamais dans une tribune ni collée à un montant, autre angle que la vue TV ; marqueur
+##     contre un poteau avec un défenseur devant, joueur en gros plan au bord de l'image ;
 ##  3. mention « RALENTI » : discrète, en haut à droite, sous le score et les commandes, transparente
 ##     à la souris, cachée au départ ;
 ##  4. vue 3D : un essai couru puis plongé (0-11, 15 m) ; la vue enregistre, l'essai est repéré à
@@ -78,17 +79,17 @@ func angle() -> void:
 			for profondeur: float in [-3.0, 0.5, 4.0, 9.0]:
 				var ballon := Vector3(sens * (50.0 + profondeur), 0.3, z)
 				var cote := Cadrage.cote_rejeu(ballon)
-				var plan: Dictionary = Cadrage.plan_rejeu(ballon, cote)
+				var plan: Dictionary = Rejeu.plan_ralenti(ballon, cote)
 				var camera: Vector3 = plan.camera
 				cas += 1
 				if absf(camera.x) > Cadrage.REJEU_BORNE.x + 0.001 or absf(camera.z) > Cadrage.REJEU_BORNE.y + 0.001: hors += 1
-				if camera.y > 2.0 or camera.y < 0.5: hauts += 1
+				if camera.y > 3.5 or camera.y < 2.5: hauts += 1
 				for pz: float in [-Cadrage.POTEAUX_Z, Cadrage.POTEAUX_Z]:
 					if Vector2(camera.x - sens * 50.0, camera.z - pz).length() < Cadrage.REJEU_POTEAU - 0.001: poteaux += 1
 				var ecart := Vector2(camera.x - ballon.x, camera.z - ballon.z).length()
 				if ecart < 6.0 or ecart > 16.0: loins += 1
 	check(hors == 0, "Caméra du ralenti jamais dans un panneau ni une tribune (%d cas sur %d)" % [hors, cas])
-	check(hauts == 0, "Caméra du ralenti au ras de la pelouse, entre 0,5 et 2 m (%d cas hors)" % hauts)
+	check(hauts == 0, "Caméra du ralenti relevée au-dessus des épaules et des protections, entre 2,5 et 3,5 m (%d cas hors)" % hauts)
 	check(poteaux == 0, "Caméra du ralenti jamais collée à un montant (%d cas)" % poteaux)
 	check(loins == 0, "Caméra du ralenti de 6 à 16 m du ballon (%d cas hors)" % loins)
 	# Côté de la tribune principale, sauf ballon contre la touche proche.
@@ -130,6 +131,9 @@ func angle() -> void:
 	check(not (choix_debut.cote == cote_loin and is_equal_approx(float(choix_debut.retrait), Cadrage.REJEU_RETRAIT)), "Ralenti : un défenseur au premier plan en début de ralenti écarte l'angle par défaut")
 	pied_de_poteau_en_fin()
 	course_devant_les_poteaux()
+	survol_du_defenseur()
+	contre_un_poteau_avec_defenseur()
+	gros_plan_au_bord()
 
 
 ## 19 novembre 2026 : film mf3 (images 0041, 0152, 0198) : angle propre à l'aplati, mais au début et au
@@ -219,6 +223,122 @@ func essai_entre_les_poteaux() -> void:
 			masquees.append("%.2f s" % float(pose.t))
 	mesures["essai_entre_les_poteaux"] = {"cote": choix.cote.y, "retrait": choix.retrait, "gene": snappedf(float(choix.gene), 0.01)}
 	check(masquees.is_empty(), "Essai entre les poteaux : porteur jamais derrière une protection, caméra du plan ou filmée (côté %d, retrait %.0f m ; masqué à %s)" % [int(choix.cote.y), float(choix.retrait), ", ".join(masquees)])
+
+
+## Caméra relevée (19/11/2026, film2, images 0310-0313) : un défenseur debout à 3 m de l'objectif, sur
+## la ligne de visée, masque le marqueur sous la caméra au ras de la pelouse ; la visée relevée passe
+## au-dessus de sa tête. Plus loin (aux trois cinquièmes du chemin), il le masque toujours.
+func survol_du_defenseur() -> void:
+	var marque := Vector3(51.0, 0.15, -15.0)
+	var cote := Cadrage.cote_rejeu(marque)
+	var haut_plan: Dictionary = Rejeu.plan_ralenti(marque, cote)
+	var bas_plan: Dictionary = Cadrage.plan_rejeu(marque, cote)
+	var camera: Vector3 = haut_plan.camera
+	var pres := camera.lerp(marque, 3.0 / sol(camera, marque))
+	pres.y = 0.0
+	var milieu := camera.lerp(marque, 0.6)
+	milieu.y = 0.0
+	var seul_pres := PackedVector3Array([pres])
+	check(Rejeu.HAUTEUR >= 2.5 and camera.y >= 2.5, "Caméra du ralenti relevée à %.1f m (2,5 m au moins)" % camera.y)
+	check(Rejeu.masque_ralenti(bas_plan, seul_pres) and not Rejeu.masque_ralenti(haut_plan, seul_pres), "Défenseur à 3 m de l'objectif : il masque le marqueur sous la caméra basse, la caméra relevée passe au-dessus")
+	check(Rejeu.masque_ralenti(haut_plan, PackedVector3Array([milieu])), "Défenseur aux trois cinquièmes du chemin : il masque toujours le marqueur")
+
+
+## 19 novembre 2026, film2 (images 0310-0313) : le marqueur court vers un poteau et aplatit à un mètre
+## de son pied (POTEAU_MARQUE), un défenseur debout entre lui et la caméra par défaut (DEFENSEUR_PART
+## du chemin). Sous l'angle par défaut, protection et défenseur le cachent. L'angle retenu, caméra
+## relevée (2,5 m au moins), le montre à l'aplati et sur l'image finale, caméra du plan comme caméra
+## filmée (amortie).
+const POTEAU_MARQUE := Vector3(51.0, 0.15, 1.8)
+const POTEAU_COURSE := 6.0
+const DEFENSEUR_PART := 0.55
+func contre_un_poteau_avec_defenseur() -> void:
+	var marque := POTEAU_MARQUE
+	var depart := Vector3(marque.x - POTEAU_COURSE, 1.0, marque.z)
+	var cote := Cadrage.cote_rejeu(marque)
+	var defaut: Dictionary = Rejeu.plan_ralenti(marque, cote)
+	var camera_defaut: Vector3 = defaut.camera
+	var defenseur := camera_defaut.lerp(marque, DEFENSEUR_PART)
+	defenseur.y = 0.0
+	var clip_test: Array = []
+	var retenues: Array = []
+	var n := int(round((Rejeu.AVANT + Rejeu.APRES) / Rejeu.CADENCE))
+	for k in n:
+		var t := k * Rejeu.CADENCE
+		var ballon := depart.lerp(marque, minf(t / Rejeu.AVANT, 1.0))
+		clip_test.append(pose_test(t, ballon, {"m": Vector3(ballon.x + 0.5, 0.0, ballon.z), "d": defenseur}))
+		retenues.append({"t": t, "ballon": ballon})
+	# Le cas reproduit bien le défaut : sous l'angle par défaut (même relevé), la protection du poteau
+	# et le défenseur se trouvent entre l'objectif et le marqueur aplati.
+	var seul := PackedVector3Array([defenseur])
+	check(Cadrage.masque_rejeu(defaut, PackedVector3Array()) and entre(camera_defaut, marque, defenseur, 0.6) and Rejeu.masque_ralenti(defaut, seul), "Contre un poteau : l'angle par défaut est masqué par la protection et par le défenseur")
+	var choix: Dictionary = Rejeu.meilleur_angle(clip_test, 1.6 - Rejeu.AVANT, cote)
+	var filmees: PackedVector3Array = Rejeu.cameras_filmees(retenues, choix.cote, choix.retrait)
+	var i_aplati := n - 1
+	for k in n:
+		var pose: Dictionary = clip_test[k]
+		if float(pose.t) >= Rejeu.AVANT - 0.001:
+			i_aplati = k
+			break
+	var masquees := PackedStringArray()
+	var plus_bas := INF
+	for k: int in [i_aplati, n - 1]:
+		var pose: Dictionary = clip_test[k]
+		var places := places_test(pose)
+		var vu: Dictionary = Rejeu.plan_ralenti((pose.b[0] as Transform3D).origin, choix.cote, choix.retrait)
+		var filme := {"camera": filmees[k], "vise": vu.vise, "champ": vu.champ}
+		plus_bas = minf(plus_bas, minf((vu.camera as Vector3).y, filmees[k].y))
+		if Rejeu.masque_ralenti(vu, places) or Rejeu.masque_ralenti(filme, places):
+			masquees.append("%.2f s" % float(pose.t))
+	mesures["contre_un_poteau"] = {"cote": choix.cote.y, "retrait": choix.retrait, "gene": snappedf(float(choix.gene), 0.01), "hauteur": snappedf(plus_bas, 0.01)}
+	check(plus_bas >= 2.5, "Contre un poteau : caméra du ralenti relevée (%.2f m)" % plus_bas)
+	check(masquees.is_empty() and float(choix.gene) < Rejeu.VETO, "Contre un poteau : marqueur visible à l'aplati et sur l'image finale, ni protection ni défenseur devant (côté %d, retrait %.0f m, gêne %.2f ; masqué à %s)" % [int(choix.cote.y), float(choix.retrait), float(choix.gene), ", ".join(masquees)])
+
+
+## 19 novembre 2026, film2 (image 0165) : un joueur tout près de l'objectif, au bord du cadre, occupe
+## le tiers de l'image. Joueur immobile pendant toute la fenêtre, centré sur le bord droit de l'image
+## de l'angle par défaut, à 1,5 m puis à 3 m de l'objectif. À 1,5 m : gros plan sous la caméra basse,
+## hors de l'image sous la caméra relevée (il sort par le bas). À 3 m : encore dans l'image, la gêne de
+## l'angle par défaut en porte la pénalité (Rejeu.ENCOMBRE). Dans les deux cas, l'angle retenu n'a
+## aucun joueur en gros plan.
+func gros_plan_au_bord() -> void:
+	var marque := Vector3(51.0, 0.15, -15.0)
+	var cote := Cadrage.cote_rejeu(marque)
+	var haut_plan: Dictionary = Rejeu.plan_ralenti(marque, cote)
+	var bas_plan: Dictionary = Cadrage.plan_rejeu(marque, cote)
+	var camera: Vector3 = haut_plan.camera
+	var regard := Vector2(marque.x - camera.x, marque.z - camera.z).normalized()
+	var droite := Vector2(-regard.y, regard.x)
+	var demi_h := atan(tan(deg_to_rad(Cadrage.REJEU_CHAMP) * 0.5) * Rejeu.ASPECT)
+	for distance: float in [1.5, 3.0]:
+		var bord := Vector2(camera.x, camera.z) + regard * distance + droite * distance * tan(demi_h)
+		var joueur := Vector3(bord.x, 0.0, bord.y)
+		var seul := PackedVector3Array([joueur])
+		var bas_part := Rejeu.encombrement(bas_plan, seul)
+		var haut_part := Rejeu.encombrement(haut_plan, seul)
+		if distance < 2.0:
+			check(bas_part > 0.1 and haut_part < 0.01, "Joueur à %.1f m au bord du cadre : gros plan sous la caméra basse (%.2f de l'image), hors de l'image sous la caméra relevée (%.3f)" % [distance, bas_part, haut_part])
+		else:
+			check(haut_part > 0.02 and bas_part > haut_part, "Joueur à %.1f m au bord du cadre : encore dans l'image sous la caméra relevée (%.3f ; caméra basse %.2f)" % [distance, haut_part, bas_part])
+		var avec: Array = []
+		var sans: Array = []
+		for k in 20:
+			var porteur := Vector3(marque.x + 0.5, 0.0, marque.z)
+			avec.append(pose_test(k * 0.1, marque, {"m": porteur, "j": joueur}))
+			sans.append(pose_test(k * 0.1, marque, {"m": porteur}))
+		var gene_avec := Rejeu.gene_de(avec, 0.0, cote, cote, Cadrage.REJEU_RETRAIT)
+		var gene_sans := Rejeu.gene_de(sans, 0.0, cote, cote, Cadrage.REJEU_RETRAIT)
+		var penalite := minf(Rejeu.ENCOMBRE * haut_part, Rejeu.ENCOMBRE_PLAFOND)
+		check(gene_avec >= gene_sans + penalite - 0.001 and gene_avec > gene_sans + 0.5, "Joueur à %.1f m au bord du cadre : angle par défaut pénalisé (gêne %.2f → %.2f, dont %.2f de gros plan)" % [distance, gene_sans, gene_avec, penalite])
+		var choix: Dictionary = Rejeu.meilleur_angle(avec, 0.0, cote)
+		var pire := 0.0
+		for k in 20:
+			var pose: Dictionary = avec[k]
+			var vu: Dictionary = Rejeu.plan_ralenti(marque, choix.cote, choix.retrait)
+			pire = maxf(pire, Rejeu.encombrement(vu, places_test(pose)))
+		mesures["gros_plan_%.1f" % distance] = {"cote": choix.cote.y, "retrait": choix.retrait, "gene": snappedf(float(choix.gene), 0.01), "encombrement": snappedf(pire, 0.001)}
+		var par_defaut: bool = choix.cote == cote and is_equal_approx(float(choix.retrait), Cadrage.REJEU_RETRAIT)
+		check(not par_defaut and pire < 0.01, "Joueur à %.1f m au bord du cadre : l'angle retenu l'évite (côté %d, retrait %.0f m, encombrement %.3f)" % [distance, int(choix.cote.y), float(choix.retrait), pire])
 
 
 ## Pieds des personnes visibles d'une pose de test (comme `meilleur_angle`).
@@ -442,10 +562,11 @@ func ralenti_complet() -> void:
 	var etat: Dictionary = view.rejeu_etat()
 	var source := float(etat.duree_source)
 	check(source >= Rejeu.AVANT + Rejeu.APRES - 0.2 and source <= Rejeu.AVANT + Rejeu.APRES + 0.1, "Fenêtre rejouée : %.2f s de jeu autour de l'aplati" % source)
-	# Autre angle : caméra basse, regard rasant, différente de la vue TV.
+	# Autre angle : caméra relevée (au-dessus des épaules), regard rasant, différente de la vue TV.
 	var regard := -camera.global_transform.basis.z
-	check(camera.global_position.y < 2.0, "Caméra du ralenti au ras de la pelouse (%.2f m)" % camera.global_position.y)
-	check(regard.angle_to(regard_tv) > deg_to_rad(15.0) and absf(regard.y) < 0.2, "Autre angle que la vue TV (%.0f° d'écart, regard rasant)" % rad_to_deg(regard.angle_to(regard_tv)))
+	check(camera.global_position.y >= 2.5 and camera.global_position.y < 3.5, "Caméra du ralenti à hauteur de tribune basse, de 2,5 à 3,5 m (%.2f m)" % camera.global_position.y)
+	check(is_equal_approx(float(view.rejeu_etat().hauteur_camera), camera.position.y), "Hauteur de caméra contrôlée cohérente (%.2f m)" % float(view.rejeu_etat().hauteur_camera))
+	check(regard.angle_to(regard_tv) > deg_to_rad(15.0) and absf(regard.y) < 0.25, "Autre angle que la vue TV (%.0f° d'écart, regard rasant %.2f)" % [rad_to_deg(regard.angle_to(regard_tv)), regard.y])
 	# Première image : la course, avant l'aplati.
 	var debut_marqueur: Vector3 = (view._actors[marqueur].node as Node3D).position
 	check(sol(debut_marqueur, aplati) > 3.0, "Le ralenti part de la course du marqueur (%.1f m avant l'aplati)" % sol(debut_marqueur, aplati))
@@ -478,7 +599,7 @@ func ralenti_complet() -> void:
 	check(not view.rejeu_actif() and fins == 1, "Le ralenti se termine de lui-même, une seule fin signalée (%d)" % fins)
 	check(duree <= Regie.REJEU_MAX + 2.0 * STEP and duree >= source / Rejeu.VITESSE - 2.0 * STEP, "Durée ajoutée : %.2f s (%.1f s au plus)" % [duree, Regie.REJEU_MAX])
 	check(lecture_mi > 0.0 and absf(lecture_mi / (30.0 * STEP) - Rejeu.VITESSE) < 0.02, "Lu à %.2f de la vitesse réelle" % (lecture_mi / (30.0 * STEP)))
-	check(max_hauteur < 2.0, "Caméra basse pendant tout le ralenti (%.2f m au plus)" % max_hauteur)
+	check(max_hauteur < 3.5, "Caméra rasante pendant tout le ralenti (%.2f m au plus)" % max_hauteur)
 	check(vu_ballon > 0 and dans_le_plan >= int(vu_ballon * 0.9), "La caméra suit le ballon (%d images sur %d)" % [dans_le_plan, vu_ballon])
 	check(plus_bas > 3.0, "Les joueurs rejouent l'action (le marqueur repart vers la ligne, %.1f m)" % plus_bas)
 	check(gestes_figes, "Célébration suspendue pendant le ralenti (temps du geste inchangé)")

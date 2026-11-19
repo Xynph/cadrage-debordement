@@ -588,7 +588,8 @@ func grands_moments(view: Control) -> Array:
 		var nom := "Ralenti %s" % str(e.get("cle", ""))
 		check(absf(float(e.get("vitesse", 0.0)) - 0.5) <= 0.1, "%s : à %.2f de la vitesse réelle" % [nom, float(e.get("vitesse", 0.0))])
 		check(float(e.get("duree_prevue", 99.0)) <= float(regie_script.REJEU_MAX) + 0.15, "%s : %.2f s ajoutées au plus" % [nom, float(e.get("duree_prevue", 99.0))])
-		check(float(e.get("hauteur_camera", 99.0)) < 2.0, "%s : caméra au ras de la pelouse (%.2f m)" % [nom, float(e.get("hauteur_camera", 99.0))])
+		var h_cam := float(e.get("hauteur_camera", 99.0))
+		check(h_cam >= 2.5 and h_cam < 3.5, "%s : caméra rasante au-dessus des protections (%.2f m)" % [nom, h_cam])
 		if not e.has("duree_reelle"): continue
 		var a_vitesse_reelle := float(e.duree_reelle) * maxf(float(e.get("vitesse_regie", 1.0)), 0.01)
 		check(bool(e.get("passe", false)) or a_vitesse_reelle <= float(regie_script.REJEU_MAX) + 0.6, "%s : %.2f s à vitesse réelle" % [nom, a_vitesse_reelle])

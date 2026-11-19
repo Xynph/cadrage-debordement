@@ -5,7 +5,9 @@ extends SceneTree
 ## 3. caméra au contact : aucun poteau entre elle et l'action ;
 ## 4. hors temps fort, la hauteur visible s'élargit quand les joueurs concernés s'écartent, sans à-coup ;
 ## 5. (nuit) essai près de chaque touche en TV, gestes compris : axe et bas de l'image plafonnés ;
-## 6. (nuit) caméra au contact, essai dans les quatre coins : visée dans l'aire de jeu, regard vers l'intérieur.
+## 6. (nuit) caméra au contact, essai dans les quatre coins : visée dans l'aire de jeu, regard vers l'intérieur ;
+## 7. (19/11, nuit) touche près d'un poteau : aucun montant au premier plan, vue de touche moins plongeante ;
+## 8. (19/11, nuit) caméra au contact nettement plus serrée que la vue TV.
 
 const View = preload("res://match_view.gd")
 const Cadrage = preload("res://match_cadrage.gd")
@@ -41,6 +43,63 @@ func scene(ballon: Vector2, places: Dictionary) -> Dictionary:
 			players.append({"id": id, "side": side, "slot": slot, "x": place.x + 50.0, "y": place.y + 35.0, "featured": id == "0-0"})
 	return {"scene": {"kind": "carry", "possession": 0, "players": players, "ball": {"x": ballon.x + 50.0, "y": ballon.y + 35.0}},
 		"teams": [{"color": "#a12f41"}, {"color": "#6f9ac9"}]}
+
+
+## Touche du moteur (comme godot-match-formations.gd), le long de la touche `touche_y` (0 : lointaine,
+## 70 : proche) : lanceur sur la ligne, rangées à 0,5 m de part et d'autre, de 5,5 à 14,5 m.
+func lineout(mark: float, touche_y: float, team: int) -> Dictionary:
+	var sens := 1.0 if touche_y < 35.0 else -1.0
+	var players: Array = []
+	for side in 2:
+		var back := -1.0 if side == 0 else 1.0
+		for slot in 15:
+			var x := mark + back * (13.0 + (slot - 8) * 2.8)
+			var d := 35.0 + (slot - 8) * 3.0
+			if slot == 1:
+				x = mark + (0.0 if side == team else back * 2.0)
+				d = 0.0 if side == team else 3.0
+			elif slot < 8:
+				x = mark + back * 0.5
+				d = 5.5 + (slot - 1 if slot > 0 else 0) * 1.5
+			elif slot == 8:
+				x = mark + back * 2.5
+				d = 10.0
+			players.append({"id": "t%d_%d" % [side, slot], "side": side, "slot": slot, "x": clampf(x, 0.0, 100.0), "y": touche_y + sens * d, "featured": false})
+	return {"key": "touche", "kind": "lineout", "possession": team, "players": players,
+		"ball": {"x": mark, "y": touche_y}, "origin": {"x": mark, "y": touche_y}}
+
+
+## Premier plan : un montant ou la barre, protection comprise (0,42 m de côté), à l'image et assez près de
+## l'objectif pour couvrir plus de MONTANT_PART de la largeur de l'image (film : 16 %, à 3,4 m ; un
+## montant à 12 m derrière lequel on filme un essai, 4,6 %, reste une image normale). Rend la plus grande
+## part de largeur couverte par un point vu (0 : aucun).
+const MONTANT_PART := 0.085
+func montant_part(position: Vector3, basis: Basis, champ: float, aspect: float = 16.0 / 9.0) -> float:
+	var pente := tan(deg_to_rad(champ * 0.5))
+	var inverse := basis.inverse()
+	var part := 0.0
+	for x: float in [-View.POTEAUX_X, View.POTEAUX_X]:
+		var points: Array[Vector3] = []
+		for z: float in [-View.POTEAUX_Z, View.POTEAUX_Z]:
+			for h in 13:
+				points.append(Vector3(x, float(h), z))
+		for i in 9:
+			points.append(Vector3(x, View.BARRE_Y, lerpf(-View.POTEAUX_Z, View.POTEAUX_Z, i / 8.0)))
+		for point: Vector3 in points:
+			var local := inverse * (point - position)
+			var profondeur := -local.z
+			if profondeur <= 0.2:
+				continue
+			# Bord de la protection (0,21 m) dans le cadre.
+			if absf(local.x) - 0.21 <= profondeur * pente * aspect and absf(local.y) - 0.21 <= profondeur * pente:
+				part = maxf(part, 0.42 / (2.0 * profondeur * pente * aspect))
+	return part
+
+
+## Même mesure pour la caméra que la vue poserait sur `look` (hauteur visible `size`, direction `offset`).
+func montant_part_pose(view, look: Vector3, size: float, offset: Vector3) -> float:
+	var pose: Array = view.pose_camera(look, size, offset)
+	return montant_part(pose[0], Basis.looking_at(-offset, Vector3.UP), float(pose[1]))
 
 
 func settle(view, frame: Dictionary, seconds: float) -> void:
@@ -290,6 +349,85 @@ func run() -> void:
 	check(view.offset_suivi(View.ACTION_OFFSET, 0.0, 50.0).is_equal_approx(View.ACTION_OFFSET), "Au bout droit, la caméra au contact garde son biais")
 	view.queue_free()
 	await process_frame
+
+	# 7. Touche près d'un poteau (19 novembre 2026, nuit). Film : touche à 8 m de l'en-but, caméra TV
+	# posée entre les poteaux par le pivot des gestes, montant blanc et protection sur le tiers droit.
+	view = await make_view("tv")
+	var temoin := Vector3(42.5, 0.0, -28.0)
+	var temoin_taille: float = float(Cadrage.SERRE.tv[0])
+	var temoin_offset: Vector3 = view.offset_suivi(View.TV_OFFSET, temoin.z).rotated(Vector3.UP, float(Gestes.FRAME_YAW.tv))
+	var temoin_part := montant_part_pose(view, temoin, temoin_taille, temoin_offset)
+	check(temoin_part > MONTANT_PART and view.poteau_premier_plan(temoin, temoin_taille, temoin_offset), "Cas témoin : touche près de l'en-but, pivot des gestes, montant au premier plan de la caméra TV (%.2f de la largeur)" % temoin_part)
+	var temoin_angle: float = view.contournement_poteaux(temoin, temoin_taille, temoin_offset)
+	var temoin_degage: Vector3 = temoin_offset.rotated(Vector3.UP, temoin_angle)
+	var temoin_apres := montant_part_pose(view, temoin, temoin_taille, temoin_degage)
+	report["touche_poteau_temoin"] = {"avant": snappedf(temoin_part, 0.001), "pivot": snappedf(temoin_angle, 0.001), "apres": snappedf(temoin_apres, 0.001)}
+	check(absf(temoin_angle) > 0.0 and absf(temoin_angle) <= View.CONTOURNEMENT_MAX, "TV : le contournement du premier plan choisit un pivot borné (%.3f rad)" % temoin_angle)
+	check(temoin_angle < 0.0, "TV : la caméra contourne vers le milieu du terrain, pas vers la tribune du bout (%.3f rad)" % temoin_angle)
+	check(not view.poteau_premier_plan(temoin, temoin_taille, temoin_degage) and temoin_apres <= MONTANT_PART, "TV : après contournement, aucun montant au premier plan (%.3f de la largeur)" % temoin_apres)
+	view.queue_free()
+	await process_frame
+	# Bout en bout : touche à 5 m de chaque en-but, des deux côtés, cadrage des temps forts, TV et contact.
+	var touches := {}
+	for mode in ["tv", "action"]:
+		view = await make_view(mode)
+		var cadrage_touche = Cadrage.new(view)
+		view.set_cadrage(cadrage_touche)
+		for marque in [Vector2(95.0, 0.0), Vector2(5.0, 0.0), Vector2(95.0, 70.0), Vector2(5.0, 70.0)]:
+			cadrage_touche.regler(true, "lineout")
+			cadrage_touche.couper()
+			settle(view, {"scene": lineout(marque.x, marque.y, 0), "teams": [{"color": "#a12f41"}, {"color": "#6f9ac9"}]}, 3.0)
+			var cas := "%s_%d_%d" % [mode, int(marque.x), int(marque.y)]
+			var formation: Dictionary = view._formations.formation if view._formations.active() else {}
+			check(str(formation.get("type", "")) == "touche", "Touche %s : alignement en place" % cas)
+			var camera: Camera3D = view._camera
+			var part := montant_part(camera.global_position, camera.global_basis, camera.fov)
+			var axe := elevation(camera.global_basis.z)
+			touches[cas] = {"axe": snappedf(axe, 0.1), "montant": snappedf(part, 0.001), "taille": snappedf(camera.size, 0.1)}
+			check(part <= MONTANT_PART, "Touche %s : aucun montant ni protection au premier plan (%.3f de la largeur)" % [cas, part])
+			check(axe <= view.inclinaison_max() + 0.5, "Touche %s : axe sous le plafond (%.1f°)" % [cas, axe])
+			if marque.y < 35.0:
+				# Touche lointaine (hors grue) : vue TV de côté, de 3/4, pas plongeante ; la caméra au contact
+				# garde son angle (voir TOUCHE_INCLINAISON) mais montre elle aussi tout l'alignement.
+				var plafond_touche: float = float(Cadrage.TOUCHE_INCLINAISON.get(mode, elevation(View.ACTION_OFFSET)))
+				check(axe <= plafond_touche + 0.5, "Touche %s : vue moins plongeante (%.1f°, %.0f° au plus)" % [cas, axe, plafond_touche])
+				# Au contact (plan serré, 12 m), le fond d'un alignement de 14,5 m ne tient pas : lanceur et
+				# premiers sauteurs seulement ; la vue TV montre tout l'alignement.
+				var ids: Array = ["t0_1", "t0_2", "t0_7", "t1_2", "t1_7"]
+				if mode == "action":
+					ids = ["t0_1", "t0_2", "t1_2"]
+				for id: String in ids:
+					var spot: Vector3 = (view._actors[id].node as Node3D).position + Vector3.UP
+					var point: Vector2 = camera.unproject_position(spot) / view.get_viewport().get_visible_rect().size
+					check(not camera.is_position_behind(spot) and point.x >= 0.0 and point.x <= 1.0 and point.y >= 0.0 and point.y <= 1.0, "Touche %s : lanceur et alignement à l'image (%s %s)" % [cas, id, point])
+		view.set_cadrage(null)
+		view.queue_free()
+		await process_frame
+	report["touches_poteaux"] = touches
+
+	# 8. Caméra au contact nettement plus serrée que la TV (19 novembre 2026, nuit : depuis la vue TV basse,
+	# 15 à 19 m, le contact à 13 à 24 m donnait presque le même plan). Bornes, puis bout en bout hors temps fort.
+	check(float(Cadrage.SUIVI.action[1]) <= Cadrage.CONTACT_PART * float(Cadrage.SUIVI.tv[0]) + 0.001, "Contact au plus %.2f fois le plan TV le plus serré (%.1f m pour %.1f m)" % [Cadrage.CONTACT_PART, Cadrage.SUIVI.action[1], Cadrage.SUIVI.tv[0]])
+	check(float(Cadrage.HAUTEUR.action[1]) <= Cadrage.CONTACT_PART * float(Cadrage.HAUTEUR.tv[1]) + 0.001, "Temps fort : plafond du contact sous celui de la TV (%.1f m pour %.1f m)" % [Cadrage.HAUTEUR.action[1], Cadrage.HAUTEUR.tv[1]])
+	check(View.ACTION_TAILLE >= float(Cadrage.SUIVI.action[0]) and View.ACTION_TAILLE <= float(Cadrage.SUIVI.action[1]) and View.ACTION_TAILLE <= Cadrage.CONTACT_PART * View.TV_TAILLE, "Cadrage de base du contact (%.1f m) dans sa plage et sous la TV (%.1f m)" % [View.ACTION_TAILLE, View.TV_TAILLE])
+	check(float(Gestes.FRAME_MIN.action) <= float(Cadrage.SUIVI.action[0]), "Un geste ne desserre jamais la caméra au contact (%.1f m)" % Gestes.FRAME_MIN.action)
+	var tailles_modes := {"tv": [], "action": []}
+	for mode in ["tv", "action"]:
+		view = await make_view(mode)
+		var cadrage_suivi = Cadrage.new(view)
+		view.set_cadrage(cadrage_suivi)
+		cadrage_suivi.regler(false)
+		for groupe_places: Dictionary in [serre, ecarte, {}]:
+			cadrage_suivi.couper()
+			settle(view, scene(Vector2.ZERO, groupe_places), 3.0)
+			(tailles_modes[mode] as Array).append(snappedf(view._camera.size, 0.1))
+		view.set_cadrage(null)
+		view.queue_free()
+		await process_frame
+	var contact_max: float = (tailles_modes.action as Array).max()
+	var tv_min: float = (tailles_modes.tv as Array).min()
+	report["contact_tv"] = tailles_modes
+	check(contact_max <= Cadrage.CONTACT_PART * tv_min + 0.05, "Caméra au contact nettement plus serrée que la TV (%.1f m au plus pour %.1f m au moins)" % [contact_max, tv_min])
 
 	print("MATCH_CAMERA_RETOUCHES ", JSON.stringify(report))
 	print("MATCH_CAMERA_RETOUCHES_CHECKS %d failures=%d" % [checks, failures.size()])
