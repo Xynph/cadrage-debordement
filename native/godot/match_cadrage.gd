@@ -29,6 +29,19 @@ const VOLS := ["kick", "kickoff", "drop22", "goalLine", "reception", "touch", "g
 ## plus proche (au moins TEMOINS joueurs), en plan large ; il ne cadre jamais l'herbe seule.
 const ARRETS := ["penalty", "card", "advantage", "ingoal", "hand-fault"]
 const TEMOINS := 6
+## Hors temps fort (18 novembre 2026, soir) : le cadrage de base suit lui aussi les joueurs concernés
+## (porteur, soutiens et défenseurs à SUIVI_RAYON m du ballon, au moins SUIVI_TEMOINS joueurs) au lieu
+## d'une hauteur fixe : leur étendue, avec la marge SUIVI_MARGE (jeu ouvert : de l'espace autour),
+## donne la hauteur visible, bornée par SUIVI (TV 26 à 42 m autour des 30 m de base, contact 13 à
+## 24 m autour de 16 m) ; point visé rapproché du groupe de SUIVI_CENTRE (part de l'écart), le tout
+## amorti en SUIVI_LISSAGE secondes pour éviter les à-coups.
+const SUIVI := {"tv": [26.0, 42.0], "action": [13.0, 24.0]}
+const SUIVI_MARGE := 1.6
+const SUIVI_RAYON := 15.0
+const SUIVI_TEMOINS := 4
+const SUIVI_TEMOINS_RAYON := 25.0
+const SUIVI_CENTRE := 0.35
+const SUIVI_LISSAGE := 1.2
 
 var view
 var actif := false
@@ -44,6 +57,14 @@ var _pose := false
 ## en bas (légende et commandes) : l'action est cadrée dans ce qui reste visible.
 var couvert_haut := 0.0
 var couvert_bas := 0.0
+## Cadrage de base adaptatif (hors temps fort) : écart du point visé au suivi et hauteur visible,
+## amortis ; `_suivi_mode` vide tant qu'il n'a pas été posé (premier cadrage, coupe, changement de vue).
+var _suivi_ecart := Vector3.ZERO
+var _suivi_ecart_vitesse := Vector3.ZERO
+var _suivi_taille := 0.0
+var _suivi_taille_vitesse := Vector3.ZERO
+var _suivi_mode := ""
+var _suivi_pose := false
 
 
 func _init(owner: Node3D) -> void:
@@ -66,13 +87,23 @@ func couvrir(haut: float, bas: float) -> void:
 ## Coupe : le prochain cadrage est posé d'un coup, sans rapprochement.
 func couper() -> void:
 	_pose = true
+	_suivi_pose = true
 
 
 func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, mode: String, delta: float, cut: bool = false) -> Array:
-	if not HAUTEUR.has(mode) or (not actif and poids <= 0.0):
+	if not HAUTEUR.has(mode):
 		poids = 0.0
+		_suivi_mode = ""
 		return [focus, size, offset]
 	var basis := Basis.looking_at(-offset, Vector3.UP)
+	# Cadrage de base adaptatif : point de départ du temps fort, et cadrage hors temps fort.
+	var suivi := _suivre(focus, basis, aspect, mode, delta, cut or _suivi_pose)
+	_suivi_pose = false
+	focus = suivi[0]
+	size = suivi[1]
+	if not actif and poids <= 0.0:
+		poids = 0.0
+		return [focus, size, offset]
 	if actif:
 		var but := _but(basis, aspect, mode, size, focus)
 		if _pose or poids <= 0.0 or _taille <= 0.0:
@@ -99,6 +130,68 @@ func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, m
 		return [focus, size, offset]
 	var w := smoothstep(0.0, 1.0, poids)
 	return [focus.lerp(_centre, w), size * pow(_taille / size, w), offset]
+
+
+## Cadrage de base adaptatif : [point visé, hauteur visible] qui englobent le porteur et les joueurs
+## proches, amortis (SUIVI_LISSAGE) ; posés d'un coup à la première image et sur une coupe.
+func _suivre(focus: Vector3, basis: Basis, aspect: float, mode: String, delta: float, pose: bool) -> Array:
+	var but := _but_suivi(focus, basis, aspect, mode)
+	var ecart: Vector3 = but[0]
+	var taille: float = but[1]
+	if pose or _suivi_mode != mode or _suivi_taille <= 0.0 or not _suivi_ecart.is_finite():
+		_suivi_mode = mode
+		_suivi_ecart = ecart
+		_suivi_taille = taille
+		_suivi_ecart_vitesse = Vector3.ZERO
+		_suivi_taille_vitesse = Vector3.ZERO
+	elif delta > 0.0:
+		var pas_ecart: Array = Gestes._damp3(_suivi_ecart, ecart, _suivi_ecart_vitesse, delta, SUIVI_LISSAGE)
+		_suivi_ecart = pas_ecart[0]
+		_suivi_ecart_vitesse = pas_ecart[1]
+		var pas_taille: Array = Gestes._damp3(Vector3(_suivi_taille, 0.0, 0.0), Vector3(taille, 0.0, 0.0), _suivi_taille_vitesse, delta, SUIVI_LISSAGE)
+		_suivi_taille = (pas_taille[0] as Vector3).x
+		_suivi_taille_vitesse = pas_taille[1]
+	return [focus + _suivi_ecart, _suivi_taille]
+
+
+## But du cadrage de base : [écart du point visé au suivi, hauteur visible].
+func _but_suivi(focus: Vector3, basis: Basis, aspect: float, mode: String) -> Array:
+	var bornes: Array = SUIVI[mode]
+	var ballon := _ballon(focus)
+	var sol := Vector3(ballon.x, 0.0, ballon.z)
+	var points: Array[Vector3] = [sol, sol + Vector3.UP * maxf(TAILLE_JOUEUR, ballon.y)]
+	var distances: Array = []
+	for id: String in view._actors:
+		var place: Vector3 = view._actors[id].node.position
+		distances.append([Vector2(place.x - sol.x, place.z - sol.z).length(), id])
+	distances.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+	for rang in distances.size():
+		var ecart: float = distances[rang][0]
+		var id: String = distances[rang][1]
+		# Rang 0 : le joueur le plus proche du ballon (souvent le porteur) ; puis SUIVI_TEMOINS autres.
+		if id == view._carrier_id or ecart <= SUIVI_RAYON or (rang <= SUIVI_TEMOINS and ecart <= SUIVI_TEMOINS_RAYON):
+			var place: Vector3 = view._actors[id].node.position
+			points.append(Vector3(place.x, 0.0, place.z))
+			points.append(Vector3(place.x, TAILLE_JOUEUR, place.z))
+	var inverse := basis.inverse()
+	var bas := Vector2(INF, INF)
+	var haut := Vector2(-INF, -INF)
+	for point: Vector3 in points:
+		var local := inverse * point
+		bas = Vector2(minf(bas.x, local.x), minf(bas.y, local.y))
+		haut = Vector2(maxf(haut.x, local.x), maxf(haut.y, local.y))
+	var etendue := haut - bas
+	var visible := 1.0 - couvert_haut - couvert_bas
+	var taille := clampf(maxf(etendue.y / visible, etendue.x / maxf(aspect, 0.1)) * SUIVI_MARGE, float(bornes[0]), float(bornes[1]))
+	var milieu := (bas + haut) * 0.5
+	var centre := basis * Vector3(milieu.x, milieu.y, 0.0)
+	var axe := -basis.z
+	if absf(axe.y) > 0.01:
+		centre += axe * (-centre.y / axe.y)
+	var ecart_centre := Vector3(centre.x - focus.x, 0.0, centre.z - focus.z) * SUIVI_CENTRE
+	if not ecart_centre.is_finite() or not is_finite(taille):
+		return [Vector3.ZERO, float(bornes[0] + bornes[1]) * 0.5]
+	return [ecart_centre, taille]
 
 
 ## Dernier mot après le recadrage d'un geste (angle et taille choisis par lui) : le point

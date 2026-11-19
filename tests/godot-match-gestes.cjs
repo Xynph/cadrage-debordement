@@ -14,4 +14,10 @@ test('Gestes de match : touche portée, ballon porté et essai aplati suivent le
  const run=spawnSync(process.env.CD_GODOT_EXE,['--headless','--max-fps','120','--path',project,'--script',path.resolve(__dirname,'godot-match-gestes.gd')],{encoding:'utf8',windowsHide:true,timeout:120000,env});
  const output=(run.stdout||'')+(run.stderr||'');console.log(output);
  assert.equal(run.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:/);assert.match(output,/MATCH_GESTES_CHECKS \d+ failures=0/);
+ // Direct sans gestes complets (18/11/2026) : la touche garde le lancer du talonneur et le saut porté.
+ const direct=output.match(/MATCH_GESTES_DIRECT (\{.*\})/);
+ assert.ok(direct,'Touche du direct sans gestes : relevé absent');
+ const touche=JSON.parse(direct[1]);
+ assert.ok(touche.lanceur&&touche.sauteur&&touche.lanceur!==touche.sauteur,'Direct : un lanceur et un sauteur distincts');
+ assert.ok(touche.levee_m>0.95&&touche.ballon_haut_m>2.8,'Direct : sauteur porté et ballon lancé jusqu\'à lui');
 });

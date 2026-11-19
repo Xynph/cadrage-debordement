@@ -10,23 +10,42 @@ extends RefCounted
 ##     SORTIE secondes (le ballon sort), puis se délient vers leurs places de la scène ;
 ##   - « lineout » (loi 18) : les places du moteur sont gardées (rangées à 1 m d'écart, lanceur
 ##     sur la ligne) ; chacun se tourne vers la touche, le lanceur vers le terrain. Le lancer et le
-##     saut sont joués par match_gestes.gd quand les gestes sont actifs.
+##     saut sont joués par match_gestes.gd (gestes complets, ou touche seule du direct).
 ## Les joueurs mis en scène ailleurs (gestes, chorégraphie, passe en direct) ne sont pas touchés.
 ## Valeurs de mise en scène choisies à l'œil sur le match filmé (18/11/2026), non mesurées.
+##
+## Têtes emboîtées (loi 19 : aucune tête à côté de celle d'un partenaire) : chaque paquet est
+## décalé de DECALAGE_TETES vers la gauche de ses joueurs ; les six têtes des premières lignes
+## alternent (pilier gauche à l'extérieur du pilier droit adverse), 2 × DECALAGE_TETES entre deux
+## têtes adverses voisines, plus que deux rayons de tête (TETE_RAYON) : elles ne se traversent plus.
+## Introduction : le demi accroupi tient le ballon bas, à hauteur de genoux, devant lui, à
+## l'entrée du tunnel ; la vue lui laisse le ballon (tient_ballon).
 
 const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 
 ## Mêlée, par poste (slot 0 = n° 1) : [recul des pieds derrière le ballon, décalage vers la
 ## droite du joueur], en mètres. Première ligne, deuxième ligne et flankers liés, n° 8 derrière.
+## Premières lignes à 1,2 m du ballon (2,4 m entre les pieds) : penchés, leurs têtes arrivent à
+## quelques centimètres de la ligne du ballon, épaules adverses 0,3 m en arrière.
 const MELEE: Array[Vector2] = [
-	Vector2(1.15, -0.62), Vector2(1.15, 0.0), Vector2(1.15, 0.62),
-	Vector2(2.05, -0.32), Vector2(2.05, 0.32),
-	Vector2(1.95, -1.0), Vector2(1.95, 1.0),
-	Vector2(2.95, 0.0),
+	Vector2(1.2, -0.62), Vector2(1.2, 0.0), Vector2(1.2, 0.62),
+	Vector2(2.1, -0.32), Vector2(2.1, 0.32),
+	Vector2(2.0, -1.0), Vector2(2.0, 1.0),
+	Vector2(3.0, 0.0),
 ]
-## Demi de mêlée qui introduit : à côté du tunnel, du côté de son pilier gauche.
-const DEMI_INTRO := Vector2(0.3, -1.45)
+## Décalage de chaque paquet vers la gauche de ses joueurs (m) : têtes adverses en alternance.
+const DECALAGE_TETES := 0.155
+## Rayon de tête du modèle (m), pour l'écart minimal entre têtes adverses.
+const TETE_RAYON := 0.11
+## Demi de mêlée qui introduit : à côté du tunnel, du côté de son pilier gauche, hors du paquet
+## (le pilier gauche décalé vers l'extérieur).
+const DEMI_INTRO := Vector2(0.15, -1.8)
+## Ballon de l'introduction, dans le repère du demi : DEVANT m devant lui, à hauteur de genoux
+## (bornée entre BAS_MIN et BAS_MAX m).
+const BALLON_DEVANT := 0.55
+const BALLON_BAS_MIN := 0.3
+const BALLON_BAS_MAX := 0.6
 ## Demi adverse : de son côté du ballon (recul négatif), du même côté de la mêlée.
 const DEMI_ADVERSE := Vector2(-0.75, -1.35)
 ## Hors-jeu de mêlée (loi 19) : arrières à 5 m au moins derrière les pieds du dernier avant.
@@ -36,7 +55,8 @@ const PIEDS_N8 := 0.6
 const POSTURES := {
 	"premiere_ligne": [0.55, -0.08, 0.8],
 	"poussee": [0.5, -0.06, 0.7],
-	"introduction": [0.55, -0.3, 0.75],
+	# Demi accroupi (bassin vers 0,45 m), buste penché sur le ballon tenu bas.
+	"introduction": [0.35, -0.28, 0.6],
 	"aguets": [0.3, -0.1, 0.45],
 }
 ## Sortie de mêlée : les paquets restent liés ce temps après l'annonce du ballon gagné.
@@ -117,7 +137,8 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 			if sortie and id == porteur:
 				continue
 			var m: Vector2 = MELEE[slot]
-			f.places[id] = centre + Vector2(-s * m.x, s * m.y)
+			# Paquet décalé vers la gauche de ses joueurs : têtes adverses emboîtées en alternance.
+			f.places[id] = centre + Vector2(-s * m.x, s * (m.y - DECALAGE_TETES))
 			f.caps[id] = atan2(s, 0.0)
 			f.postures[id] = "premiere_ligne" if slot < 3 else "poussee"
 			f.roles[id] = "pack"
@@ -214,7 +235,7 @@ func active() -> bool:
 
 
 func _mis_en_scene(id: String) -> bool:
-	return ((view._gestes != null and view._gestes.stages(id)) or (view._choregraphie != null and view._choregraphie.stages(id))
+	return (view.mise_en_scene().stages(id) or (view._choregraphie != null and view._choregraphie.stages(id))
 		or view._is_pass_player(id) or not (view._actors[id].get("geste", {}) as Dictionary).is_empty()
 		or (view.get("_impacts") != null and view._impacts.occupe(id)))
 
@@ -282,6 +303,36 @@ func poser(delta: float) -> void:
 			continue
 		_poids[id] = poids
 		_appliquer(id, entry, str(_posture[id]), smoothstep(0.0, 1.0, poids))
+		if tient_ballon(id):
+			_tenir_ballon(entry, smoothstep(0.0, 1.0, poids))
+
+
+## Le demi qui introduit tient le ballon bas lui-même (la vue ne le lui remet pas sur la poitrine).
+func tient_ballon(id: String) -> bool:
+	return (active() and formation.type == "melee" and str(formation.roles.get(id, "")) == "demi_intro"
+		and view._carrier_id == id and view._ball.visible and float(_poids.get(id, 0.0)) > 0.0
+		and str(_posture.get(id, "")) == "introduction" and not _mis_en_scene(id)
+		and not view.choregraphie_active())
+
+
+## Ballon de l'introduction : à deux mains, devant le demi accroupi, à hauteur de ses genoux.
+func _tenir_ballon(entry: Dictionary, w: float) -> void:
+	var actor: Node3D = entry.node
+	var rig: Skeleton3D = entry.rig
+	var genoux := 0.0
+	var n := 0
+	for leg in ["L", "R"]:
+		var knee := rig.find_bone("LowerLeg." + leg)
+		if knee >= 0:
+			genoux += rig.to_global(rig.get_bone_global_pose(knee).origin).y
+			n += 1
+	var bas := actor.global_position + actor.global_basis.z.normalized() * BALLON_DEVANT
+	bas.y = clampf(genoux / n if n > 0 else BALLON_BAS_MIN, BALLON_BAS_MIN, BALLON_BAS_MAX)
+	var ball: Node3D = view._ball
+	ball.global_position = ball.global_position.lerp(bas, w)
+	# Grand axe dans l'axe du tunnel, comme le ballon est introduit.
+	ball.global_basis = ball.global_basis.orthonormalized().slerp(actor.global_basis.orthonormalized(), w)
+	Presentation.hold_ball(actor, rig, ball.global_position, w)
 
 
 func _appliquer(id: String, entry: Dictionary, nom: String, w: float) -> void:

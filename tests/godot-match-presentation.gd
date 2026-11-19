@@ -97,7 +97,12 @@ func run() -> void:
 		for i in 150: await process_frame
 		check(view._carrier_id == attendus[kind], "Possession phase %s names a carrier (%s)" % [kind, attendus[kind]])
 		var porteur: Node3D = view._actors[attendus[kind]].node if view._actors.has(attendus[kind]) else null
-		check(view._ball_attached and porteur != null and view._ball.global_position.distance_to(porteur.global_position) < 1.6,
+		# Touche jouée dans le direct (18/11/2026) : la mise en scène tient le ballon, le talonneur
+		# lanceur (le porteur désigné) le garde au-dessus de la tête avant le lancer.
+		var scene_touche: RefCounted = view.mise_en_scene()
+		var lancer: bool = kind == "lineout" and scene_touche.owns_ball() and scene_touche.thrower == attendus[kind]
+		check(porteur != null and (view._ball_attached or lancer)
+			and view._ball.global_position.distance_to(porteur.global_position) < (2.4 if lancer else 1.6),
 			"Ball is in the carrier's hands during %s" % kind)
 		check(view._ball_marker.global_basis.get_scale().x > 1.2, "Carrier ring is enlarged during %s" % kind)
 	print("MATCH_PRESENTATION_CHECKS ",JSON.stringify({"failures": failures, "ball": str(view._ball.position)}))

@@ -26,6 +26,8 @@ Paramètres :
   -Sortie    dossier des images (créé ; défaut : %TEMP%\match-filme-<date>)
   -Camera    tv | tactical | action (défaut tv)
   -Cadence   secondes entre deux images (défaut 2)
+  -CadenceMoments  secondes entre deux images pendant un grand moment : essai, sortie des joueurs à
+             la mi-temps et en fin de match (défaut 0,5 ; report.json les liste dans « moments »)
   -DureeMax  arrêt au plus tard après ces secondes de direct (défaut 600)
   -Minutes   arrêt à cette minute de match (défaut 0 : match entier)
   -Niveau    temps forts : aucun | resume | cles | etendus | dynamique | integral (défaut dynamique, le réglage du jeu)
@@ -45,6 +47,7 @@ param(
   [string]$Sortie = '',
   [ValidateSet('tv', 'tactical', 'action')][string]$Camera = 'tv',
   [ValidateRange(0.2, 600)][double]$Cadence = 2,
+  [ValidateRange(0.2, 600)][double]$CadenceMoments = 0.5,
   [ValidateRange(10, 14400)][int]$DureeMax = 600,
   [ValidateRange(0, 120)][int]$Minutes = 0,
   [ValidateSet('aucun', 'resume', 'cles', 'etendus', 'dynamique', 'integral')][string]$Niveau = 'dynamique',
@@ -100,7 +103,8 @@ try {
   $arguments = @('--path', (& $q $projet), '--rendering-driver', 'opengl3', '--audio-driver', 'Dummy', '--windowed', '--resolution', $Taille,
     '--log-file', (& $q (Join-Path $Sortie 'godot.log')), '--script', (& $q $outil), '--',
     '--match-filme', '--sortie', (& $q $Sortie), '--export', (& $q $Export), '--camera', $Camera,
-    '--cadence', $Cadence.ToString([Globalization.CultureInfo]::InvariantCulture), '--duree-max', $DureeMax, '--minutes', $Minutes, '--niveau', $Niveau, '--taille', $Taille)
+    '--cadence', $Cadence.ToString([Globalization.CultureInfo]::InvariantCulture),
+    '--cadence-moments', $CadenceMoments.ToString([Globalization.CultureInfo]::InvariantCulture), '--duree-max', $DureeMax, '--minutes', $Minutes, '--niveau', $Niveau, '--taille', $Taille)
   if ($SansPlanche) { $arguments += '--sans-planche' }
 
   $bilan = Invoke-GodotSurBureauCache -Godot $Godot -Arguments $arguments -Sortie $Sortie -Prefixe 'MatchFilme' -LimiteSecondes ($DureeMax + 900)
