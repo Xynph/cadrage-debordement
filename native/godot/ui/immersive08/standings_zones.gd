@@ -31,7 +31,10 @@ static func visible(rows: Array) -> Array:
 	return result
 
 ## Côté d'un symbole de zone (unités du gabarit) : 9 px réels au moins, sans empiéter sur le rang.
-static func mark_side() -> float:
+## Au Bureau : environ 11 px réels (BUREAU_MARK_PX), l'écran Classements garde 8 px.
+const BUREAU_MARK_PX := 11.0
+static func mark_side(real_px: float = 8.0) -> float:
+	if real_px > 8.0: return clampf(real_px / C.density, 15.0, 22.0)
 	return clampf(8.0 / C.density, 14.0, 16.0)
 
 ## Symbole de zone dessiné : ★ exempté du 1er tour, ● qualifié, ▲ barrage de montée, ◆ barrage de maintien,
@@ -73,8 +76,8 @@ static func mark(parent: Node, kind: String, area: Rect2, color: Color) -> Contr
 	return holder
 
 ## Case de symbole pour une rangée de conteneur (Bureau compact) : centrée verticalement, de largeur fixe.
-static func mark_slot(kind: String) -> Control:
-	var side := mark_side()
+static func mark_slot(kind: String, real_px: float = 8.0) -> Control:
+	var side := mark_side(real_px)
 	var slot := Control.new()
 	slot.name = "StandingsZoneMarkSlot"
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -82,6 +85,14 @@ static func mark_slot(kind: String) -> Control:
 	slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	if not kind.is_empty(): mark(slot, kind, Rect2(0, 0, side, side), tint(kind))
 	return slot
+
+## Note du Bureau : la note courte de la ligue du club, sinon la note complète (l'appelant l'écrit seulement si elle tient), sinon vide.
+static func bureau_note(model: Dictionary) -> String:
+	for league in model.get("leagues", []):
+		if league is Dictionary and league.get("id") == model.get("meta", {}).get("leagueId"):
+			if league.get("zoneShortNote") is String and not str(league.zoneShortNote).is_empty(): return str(league.zoneShortNote)
+			if league.get("zoneNote") is String: return str(league.zoneNote)
+	return ""
 
 ## Texte lu d'une légende courte : « ★ Demi-finale directe · ▼ Relégation ».
 static func legend_text(zones: Array) -> String:

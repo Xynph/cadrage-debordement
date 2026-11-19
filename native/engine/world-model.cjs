@@ -115,7 +115,7 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
  function withZones(league){
   const data=zoneData(),table=data?.competitions[league.id]||null;
   league.zones=table?table.zones.map(z=>({from:z.from,to:z.to,kind:z.kind,label:z.label,symbol:data.symbols[z.kind]})):[];
-  league.zoneNote=table?.note??null;league.zoneScope=table?.scope??null;
+  league.zoneNote=table?.note??null;league.zoneShortNote=table?.shortNote??null;league.zoneScope=table?.scope??null;
   for(const row of league.rows){
    const rank=Number(row.rank),zone=Number.isInteger(rank)&&rank>0?league.zones.find(z=>rank>=z.from&&rank<=z.to):null;
    row.zone=zone?{kind:zone.kind,label:zone.label,symbol:zone.symbol}:null;
