@@ -1,12 +1,16 @@
 # Exigences d'accessibilité — Rugby Legacy 27
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (échelle dense, plancher 14 px supprimé, échelle d'interface obligatoire 90/100/115/130 %) ; Échap ouvre le menu pause sur un écran principal, avec bouton « Menu » visible en plus.
+
 Statut : engagé (ux-designer, 19/11/2026, mode autonome, rigueur minimale).
 Entrée de plateforme : PC, souris/clavier, pas de manette prévue, Godot 4.7.
 Écrans : 19 écrans de la carrière Monde (voir `design/player-journey.md`).
 
 ## 1. Palier engagé : Standard
 
-**Palier : Standard.** Raison : jeu de management dense en texte et en tableaux, joué longtemps en séance ; la lisibilité et la navigation clavier sont le cœur du plaisir, et ce palier est tenable sans refonte moteur. Le palier « Complet » (lecteur d'écran, remappage intégral, multiples modes) est hors cap tant qu'on consolide. « Basique » est insuffisant : les constats ci-dessous (texte 12 px, états en couleur) sont déjà sous le bar.
+**Palier : Standard.** Raison : jeu de management dense en texte et en tableaux, joué longtemps en séance ; la lisibilité et la navigation clavier sont le cœur du plaisir, et ce palier est tenable sans refonte moteur. Le palier « Complet » (lecteur d'écran, remappage intégral, multiples modes) est hors cap tant qu'on consolide. « Basique » est insuffisant : les constats ci-dessous (texte 9 px réels, états en couleur) sont déjà sous le bar.
+
+**Palier Standard conservé, avec une exception de densité décidée par Léo (19/11/2026)** : le jeu adopte la densité d'un Football Manager (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px à 1920×1080), donc sous les 14 px que le palier Standard recommande d'ordinaire. L'écart est compensé par trois garde-fous obligatoires : réglage d'échelle d'interface (90/100/115/130 %), contrastes toujours ≥ 4,5:1, couleur jamais seule porteuse d'information.
 
 Les exigences ci-dessous sont **obligatoires** pour le palier. Une exigence marquée « Pas encore » est un écart à corriger avant la sortie, pas un choix.
 
@@ -30,9 +34,9 @@ Chaque exigence a un critère vérifiable. Mesure par capture à 1920×1080 sauf
 
 | ID | Exigence | Critère de réussite |
 |---|---|---|
-| T1 | Taille minimale du corps à 1920×1080 : **14 px** (soit ≥ 18,7 px au calque 2560, arrondi à 19) ; texte des tableaux denses (effectif, finances, grand livre) **13 px** minimum ; aucune étiquette en dessous de **12 px** réels | Audit automatique : aucun `font_size` effectif < 12 px à 1920 ; 95 % des textes ≥ 14 px, hors tableaux ≥ 13 px |
+| T1 | **Échelle dense (décision de Léo, 19/11/2026), à 1920×1080 et échelle d'interface 100 %** : corps **~13 px** (≈ 17 px au calque 2560) ; tableaux **12-13 px** ; en-têtes et étiquettes en **capitales 11-12 px** ; **jamais sous 11 px** réels. Le plancher de 14 px est supprimé : la compensation est l'échelle d'interface (E2), les contrastes (C1) et la règle couleur-jamais-seule (D). | Audit automatique : aucun `font_size` effectif < 11 px à 1920 ; corps ≥ 13 px ; tableaux ≥ 12 px ; en-têtes ≥ 11 px |
 | T2 | Texte du match (journal, score, bandeau) : **16 px** minimum à 1920, score ≥ 36 px | Mesure capture |
-| T3 | Réglage « Taille du texte » dans les réglages : 100 %, 115 %, 130 % (échelle de tout le texte, sans troncature des boutons) | Aucun texte coupé à 130 % sur les 19 écrans ; Pas encore |
+| T3 | Réglage « Taille du texte » dans les réglages : 100 %, 115 %, 130 % (échelle de tout le texte seul, en plus de l'échelle d'interface E2, sans troncature des boutons) | Aucun texte coupé à 130 % sur les écrans ; Pas encore |
 | T4 | Police sans empattement lisible, hauteur d'x suffisante ; pas de texte justifié ; interlignage ≥ 1,3 en paragraphe | Revue visuelle |
 | T5 | Troncature (« … ») jamais sur une info décisive (nom, poste, montant) ; infobulle ou largeur de colonne ajustable | Revue des tableaux |
 
@@ -66,12 +70,12 @@ Le jeu est PC : souris **et** clavier doivent suffire séparément pour tout jou
 
 | ID | Exigence | Critère |
 |---|---|---|
-| K1 | Tout élément interactif atteignable au clavier (Tab / Maj+Tab, flèches dans les listes et tableaux, Entrée/Espace pour activer, Échap pour retour) | Parcours des 19 écrans sans souris |
+| K1 | Tout élément interactif atteignable au clavier (Tab / Maj+Tab, flèches dans les listes et tableaux, Entrée/Espace pour activer, Échap : ferme la fenêtre, sinon retour d'une fiche, sinon menu pause) | Parcours des 19 écrans sans souris |
 | K2 | **Focus visible** : contour ≥ 2 px, contraste ≥ 3:1 contre fond et contre l'élément, jamais supprimé ; distinct du survol et de la sélection | Capture de chaque écran avec un focus |
 | K3 | Ordre de focus logique (gauche→droite, haut→bas, barre latérale avant contenu) ; pas de piège : Échap sort de toute fenêtre/mode | Test sur les modales et l'entracte |
-| K4 | Raccourcis existants maintenus et documentés dans l'écran Réglages : Espace = Suite/Continuer, 1 à 9 = menus, Échap = Retour, Ctrl+F / Ctrl+K = Recherche, F1 = Aide | Liste affichée et vérifiée |
+| K4 | Raccourcis existants maintenus et documentés dans l'écran Réglages : Espace = Suite/Continuer, 1 à 9 = menus, Échap = fenêtre / retour / menu pause (règle unique, `interaction-patterns.md`), Ctrl+F / Ctrl+K = Recherche, F1 = Aide | Liste affichée et vérifiée |
 | K5 | **Remappage** des raccourcis : Pas requis au palier Standard ; en revanche aucun raccourci ne doit nécessiter deux mains éloignées ni une touche mort/composée ; aucun raccourci à une lettre qui s'active pendant la saisie dans un champ | Revue |
-| K6 | Cibles souris ≥ 24×24 px à 1920 (boutons, lignes de tableau, onglets) ; actions fréquentes ≥ 32 px de haut ; aucune action n'exige un glisser-déposer sans alternative au clic (composition : sélectionner puis cliquer le poste) | Mesure ; revue |
+| K6 | Cibles souris ≥ 24×24 px à 1920 (boutons, onglets, lignes de tableau : 24-26 px comme Football Manager, décision de Léo) ; boutons d'action fréquente ≥ 28 px de haut ; aucune action n'exige un glisser-déposer sans alternative au clic (composition : sélectionner puis cliquer le poste) | Mesure ; revue |
 | K7 | Pas de limite de temps sur une décision de gestion ; pause toujours disponible pendant le match | Revue |
 | K8 | Après un changement de page, le focus arrive sur l'élément principal (titre ou première action), pas sur le vide | Test |
 
@@ -101,8 +105,9 @@ Le jeu est PC : souris **et** clavier doivent suffire séparément pour tout jou
 
 | ID | Exigence | Critère |
 |---|---|---|
-| E1 | Lisible dès 1280×720 : à cette taille, T1 s'applique **avec l'échelle de texte à 130 % par défaut proposée** ; aucune troncature d'info décisive | Captures 1280×720 |
-| E2 | Mise à l'échelle de l'interface (réglage « Échelle de l'interface » : 100/115/130 %) en plus de la taille du texte | Pas encore |
+| E1 | Lisible dès 1280×720 : à cette taille, T1 s'applique **avec l'échelle d'interface à 115 % ou 130 % proposée par défaut** ; aucune troncature d'info décisive | Captures 1280×720 |
+| E2 | **Réglage obligatoire** « Échelle de l'interface » dans les Paramètres : **90 / 100 / 115 / 130 %** (met à l'échelle texte, lignes et cibles ensemble), en plus de la taille du texte (T3). Elle compense la densité de T1 ; défaut 100 % | Pas encore ; test à 90 et 130 % sur tous les écrans sans coupure |
+| E5 | **Coque** : bouton « Menu » (ou logo/écusson du club en haut du rail) toujours visible, ouvre le menu pause : l'accès à la pause ne dépend pas d'Échap seul | Revue |
 | E3 | Plein écran / fenêtré, redimensionnement libre, ultra-large sans étirement ni contenu coupé | Captures 21:9 et 16:10 |
 | E4 | Aucune obligation de lire le texte dans une image : les libellés ne sont pas incrustés dans des textures | Revue |
 
@@ -134,7 +139,7 @@ Le jeu est PC : souris **et** clavier doivent suffire séparément pour tout jou
 
 ## 5. Réglages à exposer (écran Réglages)
 
-Taille du texte ; échelle de l'interface ; mode daltonien ; mouvement réduit ; vitesse des transitions ; sous-titres (activés par défaut) ; volumes séparés ; avertissement photosensible ; liste des raccourcis (lecture seule).
+Taille du texte ; **échelle de l'interface (90/100/115/130 %, obligatoire)** ; mode daltonien ; mouvement réduit ; vitesse des transitions ; sous-titres (activés par défaut) ; volumes séparés ; avertissement photosensible ; liste des raccourcis (lecture seule).
 
 ## 6. Hors périmètre (assumé)
 
@@ -147,5 +152,5 @@ Taille du texte ; échelle de l'interface ; mode daltonien ; mouvement réduit ;
 - Audit à lancer : `/ux-review` par écran, comparé aux ID ci-dessus.
 - Test automatique à ajouter par un programmeur : balayage des `font_size` effectifs (T1), parcours du focus clavier (K1), simulations de daltonisme sur captures (D2 à D5, D7).
 - Défauts connus à traiter en premier : T1, C1 (pied de page), M1 (couverture), M4 (flashs), D2 (forme V/N/D).
-- Décision à valider par Léo : taille de corps 14 px à 1080p (soit +58 % par rapport à 9 px actuels) : elle a un coût de densité sur le bureau et l'effectif ; compromis proposé en T1 (13 px pour les tableaux denses).
+- Décision de Léo (19/11/2026), résolue : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p), au lieu du plancher de 14 px ; compensée par l'échelle d'interface obligatoire (E2), C1 et D.
 - Direction artistique : liste des jetons de couleur à fournir pour validation de contraste (C1 à C3).

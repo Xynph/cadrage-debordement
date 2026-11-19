@@ -1,5 +1,7 @@
 # Fiche UX 11 — Préparation du match et entraînement
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
+
 > **Template**: UX Spec
 > **Statut** : proposé (ux-designer CCGS, 19/11/2026, mode autonome, rigueur `minimal`)
 > **Écrans** : `Préparation` (route « Préparation », onglets Dossier adverse · Consignes · Entraînement) et `Entraînement` (route « Entraînement », onglets Semaine · Groupes · Individuel · Staff · Fatigue) · carrière Monde · souris + clavier
@@ -42,7 +44,7 @@ Carrière Monde › Entraînement (rail)       ← partie B
 - **Modalité** : écrans pleins, non modaux ; confirmation de séance en fenêtre.
 - **Entrées** : rail, Bureau, barre haute (« Préparer » devient « Jour de match » la veille), Composition, accès rapide.
 - **Sorties** : Composition (« Revoir la composition ») · Plan de jeu (« Carnet de jeu ») · Avant-match (« Aller au jour de match », principal) · Fiche du club adverse (nom cliquable) · Fiche joueur (joueur à surveiller) · Calendrier.
-- **Échap** : ferme la fenêtre ; sinon retour à l'écran précédent ; jamais pause.
+- **Échap** : ferme la fenêtre ; sinon retour d'un sous-écran ; sur l'écran principal sans rien d'ouvert, ouvre le menu pause (règle unique de Léo, 19/11/2026).
 
 ## 4. Hiérarchie
 
@@ -221,7 +223,7 @@ Les 14 cartes-raccourcis de l'onglet actuel (Séance collective, Travail spécif
 - **V/N/D** : lettre + forme + infobulle ; capture en niveaux de gris et simulation de deutéranopie (D2).
 - **Rapport de force** : chiffres aux deux bouts, écart signé ; pas de lecture par la longueur de barre seule (D6).
 - **« À faire »** : icône + mot (« faite », « à vérifier ») ; fin des bords ambre/menthe comme seul porteur.
-- Texte ≥ 14 px à 1920 (aujourd'hui « Dossier adverse 6 secteurs », « Évaluations sur 100… » sont minuscules) ; aucune étiquette < 12 px.
+- Texte ~13 px à 1920 (aujourd'hui « Dossier adverse 6 secteurs », « Évaluations sur 100… » sont minuscules) ; aucune étiquette < 11 px.
 - Onglets : ← → déjà gérés (K1) ; Ctrl+Tab ajouté ; ordre de focus : rail → onglets → boutons d'en-tête → danger → rapport → À faire → forme → surveillés → pied.
 - Choix de charge : groupe radio, ← → ; chaque option avec nom et effet en texte.
 - Confirmation de séance : focus piégé, Échap annule.
@@ -248,7 +250,7 @@ Les 14 cartes-raccourcis de l'onglet actuel (Séance collective, Travail spécif
 - **F6** : pastilles V/N/D généralisées et dotées de formes.
 - **W1** : confirmation de séance avec bouton nommé (« Effectuer la séance »).
 - **N2** : onglets avec Ctrl+Tab en plus des flèches.
-- **N5** : Échap n'ouvre jamais la pause sur ces écrans (fenêtre, sinon retour) ; choix final de Léo : question 5, §13.
+- **N5** : Échap ferme la fenêtre, puis revient du sous-écran, et n'ouvre le menu pause que sur l'écran principal (règle unique de Léo, 19/11/2026).
 
 ## 11 bis. Transitions, localisation, entrées
 
@@ -277,4 +279,4 @@ Les 14 cartes-raccourcis de l'onglet actuel (Séance collective, Travail spécif
 | Effets de chaque mode de charge à afficher (valeurs du moteur) | game-designer | À fournir |
 | Capture de l'écran Entraînement à produire avant la passe de design | ui-programmer | Manquante |
 | Plafond d'avertissement « sous 80 % » : seuil de la feuille (voir fiche 12) | game-designer | À confirmer |
-| Échap sur Préparation / Entraînement sans fenêtre ouverte : retour ou pause ? | Léo | À trancher (même question que la fiche 07) |
+| Échap sur Préparation / Entraînement sans fenêtre ouverte : retour ou pause ? | Léo | **Résolue le 19/11/2026** : retour d'un sous-écran, sinon menu pause |

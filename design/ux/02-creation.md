@@ -1,5 +1,7 @@
 # UX Spec : Création de carrière
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %).
+
 > **Statut** : En conception (brouillon autonome, rigueur `minimal`)
 > **Auteur** : ux-designer (CCGS)
 > **Dernière mise à jour** : 19/11/2026
@@ -83,7 +85,7 @@ Une fois un club choisi, le panneau gauche affiche le club (écusson, stade, niv
 |---|---|---|
 | Pays | France, Angleterre, Japon, International (drapeau + nom) | onglets ; l'actif porte le soulignement **et** un état « sélectionné » programmatique |
 | Ligues | nom + nombre de clubs (« Élite · 14 ») | idem |
-| Panneau ligue | image, nom, « 14 clubs du championnat », « 2026-2027 saison de départ », « FORMAT ET ENJEUX » (texte de règles) | texte ≥ 14 px, 3 lignes visibles puis « Lire la suite » |
+| Panneau ligue | image, nom, « 14 clubs du championnat », « 2026-2027 saison de départ », « FORMAT ET ENJEUX » (texte de règles) | texte ≥ 13 px, 3 lignes visibles puis « Lire la suite » |
 | Carte club | écusson, nom, ville, **niveau** (ex. 80,0), **nombre de joueurs** | aujourd'hui « 80,0 » seul et « 61 j. » : libellés manquants/abrégés → écrire « Niveau » et « 61 joueurs » |
 | Pagination | « page n/m », ‹ › | existante (`CreationPagination`) |
 | Bouton | « Choisis un club » (inactif) puis « Continuer avec [Club] » | raison de l'inactivité écrite dans le bouton |
@@ -119,7 +121,7 @@ Une fois un club choisi, le panneau gauche affiche le club (écusson, stade, niv
 
 ## 9. Accessibilité
 
-- **Contraste** : texte des cartes sur fond sombre ≥ 4,5:1 ; chiffres de niveau ≥ 14 px (T1), carte entière ≥ 24 px de haut, cible souris ≥ 32 px (K6). Écussons sur fond : aplat de rattrapage si l'écusson est clair (C5).
+- **Contraste** : texte des cartes sur fond sombre ≥ 4,5:1 ; chiffres de niveau ≥ 13 px (T1), carte entière ≥ 24 px de haut, cible souris ≥ 28 px (K6). Écussons sur fond : aplat de rattrapage si l'écusson est clair (C5).
 - **Couleur** : un club n'est jamais distingué par la seule couleur de son écusson ; le nom reste toujours écrit (D1). Aucun état ne passe par la seule teinte (liseré + coche).
 - **Focus** : 2 px, 3:1, ordre visuel ; focus sur la première carte à l'ouverture (K8) ; flèches dans la grille (K1).
 - **Pas de glisser**, pas de limite de temps (K6, K7).

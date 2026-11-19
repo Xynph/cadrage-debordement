@@ -1,5 +1,7 @@
 # UX Spec : Chargement / attente
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (jamais sous 11 px à 1080p ; échelle d'interface 90/100/115/130 %).
+
 > **Statut** : En conception (brouillon autonome, rigueur `minimal`)
 > **Auteur** : ux-designer (CCGS)
 > **Dernière mise à jour** : 19/11/2026
@@ -102,7 +104,7 @@ Aucun bouton « Annuler » en usage normal. Seule exception (§7, état « Long 
 ## 8. Accessibilité
 
 - Phrase d'état annoncée poliment (`LIVE_POLITE`) : maintenu (existant). Chaque nouvelle phrase est une nouvelle annonce ; le pourcentage n'est annoncé que par paliers de 25 %.
-- Texte d'état ≥ 16 px à 1920 (T2 par analogie), conseil ≥ 14 px, **`progress_label` actuellement à 11 px : à passer à 14** (T1).
+- Texte d'état ≥ 16 px à 1920 (T2 par analogie), conseil ≥ 13 px, **`progress_label` actuellement à 11 px : à passer à 12** (T1, jamais sous 11 px).
 - Contraste panneau : texte ≥ 4,5:1 sur fond de panneau, pas sur la capture assombrie (C5).
 - Pas de flash, pas de rebond rapide (M4) ; décor optionnel sous « Mouvement réduit » (M1).
 - Information jamais portée par le décor seul : la phrase et la barre suffisent (D6).
@@ -129,7 +131,7 @@ Aucun bouton « Annuler » en usage normal. Seule exception (§7, état « Long 
 - [ ] Sous « Mouvement réduit », aucun élément du panneau ne bouge sauf la barre par paliers.
 - [ ] Tout échec laisse un avis écrit, jamais un panneau qui disparaît sans explication.
 - [ ] À la fin, le focus clavier retrouve son élément d'origine.
-- [ ] Aucun texte < 12 px, `progress_label` ≥ 14 px à 1080p.
+- [ ] Aucun texte < 11 px, `progress_label` ≥ 12 px à 1080p.
 
 ## 11. Questions ouvertes
 

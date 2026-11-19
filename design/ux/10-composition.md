@@ -1,5 +1,7 @@
 # Fiche UX 10 — Composition et plan de jeu
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
+
 > **Template**: UX Spec
 > **Statut** : proposé (ux-designer CCGS, 19/11/2026, mode autonome, rigueur `minimal`)
 > **Écran** : `Composition` (route « Tactique », chapitre Composition / Préparation / Plan de jeu / Match) et page `Plan de jeu` (quatre zones) · carrière Monde · souris + clavier
@@ -40,7 +42,7 @@ Carrière Monde › Tactique (chapitre)
 - **Modalité** : écran plein, non modal. Les candidats s'ouvrent dans un **panneau**, pas dans une fenêtre (voir §6.3).
 - **Entrées** : rail (Tactique), Préparation, Avant-match, Bureau, accès rapide.
 - **Sorties** : Valider la feuille → retour à Préparation (ou Avant-match si veille/jour de match) ; Échap = retour sans perdre le travail (la feuille en cours est conservée en brouillon) ; fiche joueur (Entrée sur un nom, retour à la même place).
-- **Échap** : ferme panneau/fenêtre ouvert, annule un « prendre » en cours (voir §8), sinon retour. Jamais pause.
+- **Échap** : ferme panneau/fenêtre ouvert, annule un « prendre » en cours (voir §8), sinon retour d'une sous-page (Plan de jeu vers Composition) ; sur l'écran principal sans rien d'ouvert, ouvre le menu pause (règle unique de Léo, 19/11/2026).
 
 ## 4. Hiérarchie
 
@@ -225,7 +227,7 @@ Le glisser-déposer reste une commodité souris ; **aucune action n'en dépend**
 ## 10. Accessibilité (T1, C1, C3, D1, D3, D6, K1, K2, K6, K8)
 
 - **Alternative clavier au glisser-déposer** : « Espace prendre / poser » et sélection puis Entrée dans Candidats ; documentée au pied et dans F1 ; équivalent complet (K6).
-- Texte ≥ 14 px à 1920 (13 px dans les tableaux Banc et Candidats) ; carte de poste : nom ≥ 13 px, note ≥ 14 px ; **le « 15 titulaires » ne tombe jamais sous 12 px** à 1280 (les cartes passent sans photo).
+- Texte ~13 px à 1920 (12 px dans les tableaux Banc et Candidats) ; carte de poste : nom ≥ 12 px, note ≥ 13 px ; **le « 15 titulaires » ne tombe jamais sous 11 px** à 1280 (les cartes passent sans photo).
 - Statuts en mots (blessé, non qualifié, en sélection) + icône ; pas de ligne rouge seule ; note au poste en chiffre.
 - Contraste ≥ 3:1 pour le cadre de sélection et le focus, qui sont **deux signes distincts** (épaisseur et forme) ; focus ≥ 2 px, distinct de la sélection.
 - Ordre de focus : rail → en-tête (Proposition du staff, Enregistrer, Valider) → onglets → terrain (1→15) → banc (16→23) → Candidats (filtres puis lignes) → Impact (lecture) → pied.
@@ -257,7 +259,7 @@ Le glisser-déposer reste une commodité souris ; **aucune action n'en dépend**
 - **E7** : glisser-déposer avec alternative clavier (motif manquant n°12).
 - **W2** : l'avis modal d'erreur est remplacé par un message en ligne avec correction ; la modale reste pour les erreurs bloquantes du moteur.
 - **W1** : « Valider avec n avertissements ? » nomme l'action, focus sur « Revoir ».
-- **N5** : Échap n'ouvre jamais la pause sur cet écran (fenêtre, « pris », panneau, sinon retour) ; choix final de Léo : question 8, §14.
+- **N5** : Échap ferme d'abord fenêtre, « pris » ou panneau, puis revient de la sous-page, et n'ouvre le menu pause que sur l'écran principal (règle unique de Léo, 19/11/2026).
 
 ## 12 bis. Transitions, localisation, entrées
 
@@ -291,4 +293,4 @@ Le glisser-déposer reste une commodité souris ; **aucune action n'en dépend**
 | Mêlée non disputée / exclusion de première ligne : avertissement sur la feuille ? | game-designer | À décider |
 | Banc de moins de 8 : valide selon la compétition (loi 3 : « jusqu'à huit selon l'organisateur ») ? | game-designer + moteur | À relever |
 | Le moteur garde-t-il un brouillon de feuille entre deux validations (hypothèse de §6.7) ? | ui-programmer + moteur | À confirmer |
-| Échap sur un écran racine du chapitre Tactique : retour ou pause ? | Léo | À trancher (même question que la fiche 07) |
+| Échap sur un écran racine du chapitre Tactique : retour ou pause ? | Léo | **Résolue le 19/11/2026** : menu pause |

@@ -1,5 +1,7 @@
 # HUD Design — Rugby Legacy 27 (match en direct, 3D)
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (boutons ≥ 28 px de haut ; le texte du match garde ses minimums T2) ; en match, Échap = pause.
+
 > **Statut** : en conception (proposé, non validé par Léo)
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
 > **Dernière mise à jour** : 19/11/2026
@@ -110,7 +112,7 @@ Score, horloge de jeu, mi-temps/fin, possession (qui a le ballon, où), phase (m
 
 - **Horloge** : pastille ; format `12'` ; `MT` à la mi-temps, `FIN` au sifflet final ; reste visible en pause. Jamais animée.
 - **Score** : `0 – 0` avec écusson et nom de chaque équipe, noms complets (ex. « Meadowbridge Rovers ») sans troncature ; à 1280 px, abréviation à 3 lettres uniquement si le nom ne tient pas, avec infobulle. Aucun flash au changement : fondu doux 300 ms (M4).
-- **Boutons** : ÉQUIPE reste le seul bouton plein (action principale). REPRENDRE remplace PAUSE en pause. Libellés en lettres, ≥ 32 px de haut à 1080p (K6).
+- **Boutons** : ÉQUIPE reste le seul bouton plein (action principale). REPRENDRE remplace PAUSE en pause. Libellés en lettres, ≥ 28 px de haut à 1080p (K6).
 - **Ligne de possession** : une phrase du moteur (« Alder Fen XV a le ballon dans son camp »). Fond ≥ 70 % d'opacité.
 - **Journal** : 2 lignes max visibles, 40 caractères par ligne max conseillés à 16 px ; pas de troncature d'un nom (T5). Texte complet en infobulle et dans PLUS > Journal.
 - **Bandeau d'événement** : « ESSAI · Donal GANNON · Alder Fen XV » ; carton « CARTON JAUNE · n° 8 AFN » ; blessure « BLESSURE · n° 7 ». Contient toujours un mot, jamais seulement une couleur ou une icône.
@@ -214,7 +216,7 @@ Repositionnement des éléments par le joueur : **non requis** (palier Standard,
 |---|---|---|---|
 | Score | 36 px mini (code : 46 px au calque) | 47 px | Noms : passage à 3 lettres + infobulle |
 | Journal | 16 px mini | 21 px | 3 lignes max puis « … » avec texte complet en infobulle |
-| Boutons | 16 px mini, 32 px de haut | 21 px, 42 px de haut | La barre passe sur 2 lignes (limite : 2 lignes, voir §9) |
+| Boutons | 16 px mini, 28 px de haut | 21 px, 36 px de haut | La barre passe sur 2 lignes (limite : 2 lignes, voir §9) |
 
 ### 10.3 Mouvement
 | Élément | Sévérité | Désactivé par « Mouvement réduit » ? | Remplacement |

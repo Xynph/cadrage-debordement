@@ -1,5 +1,7 @@
 # UX Spec : 18 — Club (vue d'ensemble, direction, infrastructures, staff, histoire)
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
+
 > **Statut** : en conception (proposé, non validé par Léo)
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
 > **Dernière mise à jour** : 19/11/2026
@@ -76,7 +78,7 @@ Club (rail)
 | Projets et devis des infrastructures | Infrastructures |
 | Présenter une demande à la direction | Direction |
 | Ouvrir l'annuaire, Travail du club | pages liées |
-| Échap | historique |
+| Échap | règle unique (décision de Léo, 19/11/2026) : ferme la fenêtre, sinon retour (historique), sinon menu pause |
 
 ---
 
@@ -164,7 +166,7 @@ Club (rail)
 | Ctrl+Tab | onglet suivant | proposé |
 | ← → sur la rangée d'onglets | change d'onglet | proposé |
 | Entrée | active | existant |
-| Échap | historique | existant |
+| Échap | règle unique : fenêtre, retour, sinon menu pause | modifié (décision de Léo, 19/11/2026) |
 
 ### 6.3 Restrictions et actions destructives
 | Action | Règle |
@@ -267,7 +269,7 @@ Aucune animation bloquante.
 **Localisation (longueurs max, +40 % prévus)** : objectif de la saison 80 caractères sur 2 lignes ; ligne « À décider » 56 ; nom de membre du staff 26 ; libellé de bouton 26 (« Libérer Rhys Ormerod » : le nom complet reste, le reste du libellé passe en infobulle si trop long).
 
 **Méthodes d'entrée (PC)**
-- Souris : §6.1 ; boutons ≥ 32 px de haut.
+- Souris : §6.1 ; boutons ≥ 28 px de haut.
 - Clavier seul : Tab dans l'ordre de §10, ← → sur les onglets, Entrée ; aucun glisser-déposer.
 - Manette : hors périmètre.
 

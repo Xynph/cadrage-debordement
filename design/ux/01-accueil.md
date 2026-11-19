@@ -1,5 +1,7 @@
 # UX Spec : Accueil (avec écran titre)
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %).
+
 > **Statut** : En conception (brouillon autonome, rigueur `minimal`)
 > **Auteur** : ux-designer (CCGS)
 > **Dernière mise à jour** : 19/11/2026
@@ -87,7 +89,7 @@ Arrivée : lancement, « Retour à l'accueil » depuis la Création ou le menu p
 | Tab / Maj+Tab, flèches ↑ ↓ | parcourent le menu dans l'ordre visuel |
 | Espace | active le bouton focalisé |
 | Échap pendant l'intro | passe l'intro |
-| Échap sur l'accueil | ne fait rien (jamais de menu pause ici, jamais de « Quitter » direct) |
+| Échap sur l'accueil | ne fait rien (écran hors carrière : pas de menu pause ici, jamais de « Quitter » direct ; la règle « Échap = menu pause » vaut pour les écrans principaux de la carrière) |
 | F1 | ouvre Gabi |
 | Tout clic / touche pendant l'intro | passe l'intro (M3) |
 
@@ -107,7 +109,7 @@ Aucun raccourci chiffre : 1 à 9 n'ont pas de sens ici (les menus de la coque n'
 
 ## 8. Accessibilité
 
-- **Contraste** : carte et boutons sur photo : aplat sous le texte, 4,5:1 mesuré au pire pixel (C1, C5). Chiffres, saison et division en 14 px mini à 1080p (T1).
+- **Contraste** : carte et boutons sur photo : aplat sous le texte, 4,5:1 mesuré au pire pixel (C1, C5). Chiffres, saison et division en 13 px mini à 1080p (T1).
 - **Focus** : liseré 2 px, 3:1, distinct du survol (K2). Ordre : Reprendre, Nouvelle, Importer, Paramètres, Quitter, Crédits, Gabi, Visite.
 - **Mouvement** : intro fixe (image) si « Mouvement réduit » (M1) ; passable dès la première seconde (M3) ; pas de flash (M4).
 - **Couleur** : bouton principal reconnaissable aussi par sa position et son focus, pas seulement par sa teinte (D1).
@@ -132,7 +134,7 @@ Déviations aux motifs : aucune. Résout l'incohérence n°1 (Échap) pour cet �
 - [ ] Au lancement avec carrière, un clic ou Entrée sur le bouton déjà focalisé ouvre le Bureau (via 03).
 - [ ] Sans carrière : pas de bouton « Reprendre », « Nouvelle carrière » focalisé.
 - [ ] Échap ne quitte jamais et n'ouvre aucun menu sur l'accueil.
-- [ ] Texte du menu ≥ 14 px à 1920×1080 ; contraste ≥ 4,5:1 sur la photo.
+- [ ] Texte du menu ≥ 13 px à 1920×1080 ; contraste ≥ 4,5:1 sur la photo.
 - [ ] Aucune mention « fictif », « IA », « application native ».
 - [ ] « Profil illisible » : aucune action destructive sans libellé précis ni focus sur « Annuler ».
 - [ ] Capture à 1280×720 : aucun texte coupé, menu entièrement visible.
@@ -164,7 +166,7 @@ Déviations aux motifs : aucune. Résout l'incohérence n°1 (Échap) pour cet �
 
 ### Contrôle d'entrée (souris + clavier ; manette hors périmètre, décision projet)
 - [x] Tout le menu atteignable au clavier (Tab, flèches, Entrée, Espace) ; ordre de focus défini (§8).
-- [x] Tout le menu atteignable à la souris ; cibles ≥ 32 px de haut.
+- [x] Tout le menu atteignable à la souris ; cibles ≥ 28 px de haut.
 - [x] Focus d'ouverture défini ; aucun piège (Échap sans effet, pas de modale hors fenêtres).
 - [x] Aucune action n'exige un glisser ni une limite de temps.
 

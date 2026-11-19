@@ -1,5 +1,7 @@
 # UX Spec : Réception (courrier)
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
+
 > **Statut** : En conception (brouillon autonome, rigueur `minimal`)
 > **Auteur** : ux-designer (CCGS)
 > **Dernière mise à jour** : 19/11/2026
@@ -33,7 +35,7 @@ Rail > RÉCEPTION (1)  <-- cet écran  (ouvert aussi par Espace « prochain non 
 ```
 
 Entrées : rail, touche 1, Bureau « Courrier », Espace sur un écran racine, lien d'un message.
-Sorties : Échap ferme d'abord la fenêtre ou la fiche ouverte ; sans rien d'ouvert, il fait ce que fait Échap sur tout écran racine (menu pause, annoncé au pied « Échap Menu » : règle provisoire alignée sur 04, en attente de la décision de Léo, §11). Jamais de menu pause juste après la fermeture d'un courrier ou d'une fiche.
+Sorties : Échap ferme d'abord la fenêtre ou la fiche ouverte ; sans rien d'ouvert, il fait ce que fait Échap sur tout écran racine (menu pause, annoncé au pied « Échap Menu » : règle unique décidée par Léo le 19/11/2026, alignée sur 04 ; le bouton « Menu » de la coque l'ouvre aussi). Jamais de menu pause juste après la fermeture d'un courrier ou d'une fiche.
 
 ## 4. Wireframe 1280×720
 
@@ -83,7 +85,7 @@ Liste ≈ 35 % de la largeur, lecture ≈ 65 %.
 | Clic carte de réponse | **proposé** : choisit ; bouton « Envoyer la réponse » confirme ; « Annuler » avant envoi |
 | F (proposé) ou clic étoile | favori ; L : lu/non lu ; A : archiver (actifs seulement hors champ de saisie) |
 | Tab | rail, filtres, Sujet, liste, actions du courrier, réponses, courrier suivant |
-| Échap | ferme la fenêtre ou la fiche ouverte ; sinon menu pause (règle provisoire, voir §3) ; Alt ← revient à l'écran précédent |
+| Échap | ferme la fenêtre ou la fiche ouverte ; sinon menu pause (règle unique du 19/11/2026, voir §3) ; Alt ← revient à l'écran précédent |
 
 Un filtre actif qui masque le courrier ouvert **ne le remet pas à « Tous » en silence** : un message « Filtre retiré : le courrier ouvert n'y figure pas ».
 
@@ -105,14 +107,14 @@ Un filtre actif qui masque le courrier ouvert **ne le remet pas à « Tous » en
 
 ## 8. Accessibilité
 
-- **Texte** : titres ≥ 14 px, métadonnées (catégorie, heure) ≥ 12 px ; actuellement 9-10 px à 1080p (T1). Pas de troncature d'un titre décisif ; titre complet en infobulle et dans le volet (T5).
+- **Texte** : titres ≥ 13 px, métadonnées (catégorie, heure) ≥ 11 px ; actuellement 9-10 px à 1080p (T1). Pas de troncature d'un titre décisif ; titre complet en infobulle et dans le volet (T5).
 - **Couleur** : non lu = pastille + gras + libellé ; « À FAIRE » / « URGENT » = mot ; conséquences des réponses ▲ ▼ = symbole + mot (« gagne », « perd »), pas seulement vert/rouge (D1).
 - **Focus** : liseré 2 px (K2) distinct de la sélection (liseré 5 px à gauche) et du survol ; arrivée sur le premier courrier prioritaire (K8) ; focus conservé sur la liste après archivage (passe au suivant).
 - **Clavier** : tout atteignable ; réponses engageantes en deux temps (K1, décision sans erreur).
 - **Défilement** : la liste ne défile pas seule (M6) ; un courrier ne disparaît jamais sans possibilité de le retrouver (Archivés).
 - **Cognitif** : aperçu de liste (4 champs par ligne) ; actions du courrier 3 ; réponses ≤ 3 visibles puis « Voir plus ».
 - **Contraste** : texte pâle des courriers lus ≥ 4,5:1 (62 % d'opacité de l'existant à vérifier, C1).
-- **Cibles** : lignes 80 px, boutons d'action ≥ 32 px de haut (K6).
+- **Cibles** : lignes 80 px, boutons d'action ≥ 28 px de haut (K6).
 
 ## 9. Ce qu'on retire ou déplace par rapport à l'écran actuel
 
@@ -135,7 +137,7 @@ Déviation aux motifs : E4 (les flèches marquent lu après 1 s) ; E5 (deux temp
 - [ ] Aucune réponse n'est envoyée sans confirmation ; « Annuler » disponible avant l'envoi.
 - [ ] Une réponse indisponible affiche sa raison à l'écran (sans survol).
 - [ ] « Aucun message dans cette vue » propose « Tout afficher ».
-- [ ] Texte de la liste ≥ 12 px et titres ≥ 14 px à 1920×1080 ; pas de titre tronqué en 1280×720.
+- [ ] Texte de la liste ≥ 11 px et titres ≥ 13 px à 1920×1080 ; pas de titre tronqué en 1280×720.
 - [ ] Niveaux de gris : non lu, à faire, urgent distinguables.
 - [ ] 40 courriers : défilement fluide sans perte de focus.
 
@@ -147,7 +149,7 @@ Déviation aux motifs : E4 (les flèches marquent lu après 1 s) ; E5 (deux temp
 | « Tout marquer comme lu » : acceptable ou on rate des décisions ? | Léo | à trancher |
 | Les raccourcis lettre (F, L, A) entrent-ils en conflit avec la recherche (K5) ? | ui-programmer | à vérifier |
 | Bascule vers les conférences : relevée dans le code (`press_view.gd`) : l'invitation de presse ouvre l'onglet Conférence de Presse avec un bouton « REVENIR AU COURRIER » ; à reprendre dans l'action principale du courrier de presse | ux-designer | résolu (reprise dans §3 : « Ouvrir la conférence ») |
-| Échap sur écran racine (Réception comprise) : menu pause ou rien ? Règle provisoire = menu pause | Léo | à trancher |
+| Échap sur écran racine (Réception comprise) : menu pause ou rien ? | Léo | **Résolue le 19/11/2026** : menu pause, plus bouton « Menu » dans la coque |
 | Réponses en deux temps, marquage lu après 1 s, filtre jamais remis à « Tous » en silence : changements de comportement proposés | Léo | à valider |
 
 ## 12. Compléments de revue (ux-review, 19/11/2026)
@@ -171,7 +173,7 @@ Déviation aux motifs : E4 (les flèches marquent lu après 1 s) ; E5 (deux temp
 
 ### Contrôle d'entrée (souris + clavier ; manette hors périmètre)
 - [x] Liste, filtres, actions et réponses atteignables au clavier (§6), ordre de focus défini.
-- [x] Tout faisable à la souris ; boutons ≥ 32 px ; lignes de 80 px.
+- [x] Tout faisable à la souris ; boutons ≥ 28 px ; lignes de 80 px.
 - [x] Raccourcis lettre (F, L, A) inactifs dans un champ de saisie (K5).
 - [x] Aucun glisser ; aucune limite de temps ; Échap sans piège.
 

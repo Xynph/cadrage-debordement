@@ -1,5 +1,7 @@
 # Bibliothèque des motifs d'interaction — Rugby Legacy 27
 
+Décisions de Léo du 19/11/2026 intégrées : règle unique d'Échap (fenêtre, puis retour de fiche, puis menu pause ; pause en match) + bouton « Menu » visible dans la coque ; densité « Football Manager » (voir `design/accessibility-requirements.md`) ; Formation, Centre et Suivi des jeunes fusionnés en une seule page Formation.
+
 > **Statut** : Brouillon d'état des lieux (relevé du code, pas une cible de conception)
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
 > **Dernière mise à jour** : 19/11/2026
@@ -27,7 +29,7 @@ Fichiers de référence (tous sous `native/godot/`) :
 
 ## Règles communes (valables pour tous les motifs)
 
-- **Échelle** : gabarits dessinés pour 2560 × 1440, mis à l'échelle (`C.px`, `C.density` entre 0,5 et 1). Plancher de texte 12 px (`C.label`, `D.text`). Sous la densité 0,75, les commandes serrées montent à 25 px de cible minimale (`C.reach`, `C.reach_controls`).
+- **Échelle** : gabarits dessinés pour 2560 × 1440, mis à l'échelle (`C.px`, `C.density` entre 0,5 et 1). Plancher de texte actuel dans le code 12 px (`C.label`, `D.text`) ; cible (décision de Léo, 19/11/2026) : échelle dense, corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px réels à 1080p, avec échelle d'interface 90/100/115/130 %. Sous la densité 0,75, les commandes serrées montent à 25 px de cible minimale (`C.reach`, `C.reach_controls`).
 - **Focus** : liseré or (`C.GOLD`, `J.OR`) de 2 px autour du contrôle ciblé. Toujours visible au clavier.
 - **Info-bulle** : `tooltip_text` natif de Godot, sans délai personnalisé ; sert aussi de nom accessible (`accessibility_name`) sur la plupart des boutons riches.
 - **Aucune commande moteur pour trier, filtrer ou sélectionner** : ce sont des états d'interface (commentaire de `ecran_effectif.gd`).
@@ -94,7 +96,7 @@ Fichiers de référence (tous sous `native/godot/`) :
 
 ### N2 · Sous-navigation de chapitre
 
-**Quand** : écrans d'un même chapitre (`shell.GROUPS`) : Effectif/Vestiaire, Composition/Préparation/Plan de jeu/Match, Club/Staff/Travail du club/Stratégie, Classements/Calendrier/Rivalités, Formation/Centre/Suivi des jeunes.
+**Quand** : écrans d'un même chapitre (`shell.GROUPS`) : Effectif/Vestiaire, Composition/Préparation/Plan de jeu/Match, Club/Staff/Travail du club/Stratégie, Classements/Calendrier/Rivalités, Formation (page unique : Centre retiré et Suivi des jeunes fusionné, décision de Léo du 19/11/2026).
 
 **Souris/clavier** : rangée de boutons en MAJUSCULES (`Section_<nom>`), bouton actif surligné. Pas de raccourci dédié ; Tab seulement.
 
@@ -138,7 +140,7 @@ Table unique `raccourcis_clavier.TABLE` (pied de page, F1, paramètres la lisent
 |---|---|---|
 | Espace | Ouvre le prochain message non lu ; sinon active Continuer | oui |
 | 1 à 9 | Menus de gauche | oui |
-| Échap | Referme la fiche ouverte ; fiche club : retour | oui (« Retour ») |
+| Échap | **Règle unique (décision de Léo, 19/11/2026)** : (1) ferme la fenêtre ouverte ; sinon (2) revient d'une fiche ou d'un sous-écran ; sinon (3) ouvre le menu pause ; **en match : pause** (jamais de sortie, décision du 16/11) | oui (« Échap Menu » sur un écran principal, « Échap Retour » dans une fiche) |
 | Ctrl F / Ctrl K | Accès rapide | oui |
 | F1 | Gabi, aide de l'écran | oui |
 | Ctrl S | Sauvegarder | non |
@@ -148,7 +150,8 @@ Table unique `raccourcis_clavier.TABLE` (pied de page, F1, paramètres la lisent
 **Garde-fous** (`actif()`) : aucun raccourci si champ de saisie focalisé, fenêtre ouverte, réunion ou match immersif, intro, attente, ou barre de progression. Après Tab ou une flèche, Espace appartient au bouton ciblé (`_focus_clavier`).
 
 **Incohérences** :
-- **Échap a quatre sens** : (1) ferme une fenêtre ouverte, (2) revient de la fiche joueur/club, (3) arrête la progression « Continuer » (`main._unhandled_key_input` + `request_stop`), (4) **sinon ouvre le menu pause** de la carrière (`pause_menu`). Le pied de page annonce seulement « Retour ». Sur un écran sans fiche, le joueur qui appuie sur Échap pour « revenir » ouvre la pause.
+- **Échap a quatre sens dans le code** : (1) ferme une fenêtre ouverte, (2) revient de la fiche joueur/club, (3) arrête la progression « Continuer » (`main._unhandled_key_input` + `request_stop`), (4) **sinon ouvre le menu pause** de la carrière (`pause_menu`). **Résolu par décision de Léo (19/11/2026)** : la règle unique ci-dessus est la cible ; le comportement (4) est confirmé, il faut seulement annoncer « Échap Menu » au pied de page et ne jamais ouvrir la pause juste après la fermeture d'une fenêtre ou d'une fiche (un appui = une action). L'arrêt de « Continuer » (3) reste prioritaire pendant la progression.
+- **Accès au menu pause sans clavier (décision de Léo, 19/11/2026)** : bouton visible dans la coque, soit le logo/écusson du club en haut du rail (déjà ouvre le menu, voir N2 ; à rendre évident par une infobulle et un focus), soit un bouton « Menu » dans la barre haute. Le menu pause ne dépend donc plus d'Échap seul.
 - Ctrl J et Alt ← / → ne sont écrits que dans les infobulles et les Réglages, pas dans le pied de page.
 - Espace « prochain non lu » ne montre rien à l'écran quand il bascule de la lecture à Continuer sauf dans l'infobulle du bouton (` · Espace : continuer`).
 
@@ -464,7 +467,7 @@ Visage et remarque du moment entre la recherche et la date (`TOPBAR_GABI_LEFT`).
 
 **Incohérences** :
 - Un conseil de Gabi apparaît à **quatre endroits** : bandeau, bulle de guide, panneau d'attente (note), colonne du Bureau, sans qu'on puisse dire laquelle est « la » voix.
-- Le guide a **son propre jeu de boutons** (32 px, police 12 px : sous le plancher de 12 px à 0,5 de densité) et ses propres symboles (‹ ↻ ■ ···) ; aucune info-bulle sur « Suite › » et « Ouvrir ».
+- Le guide a **son propre jeu de boutons** (32 px, police 12 px : à 0,5 de densité on passe sous le plancher de 11 px) et ses propres symboles (‹ ↻ ■ ···) ; aucune info-bulle sur « Suite › » et « Ouvrir ».
 - F1 est un raccourci global mais **absent de la liste des paramètres** ? non vérifié ; il est dans la table de N5 (« F1 Aide »).
 
 ---
@@ -473,7 +476,7 @@ Visage et remarque du moment entre la recherche et la date (`TOPBAR_GABI_LEFT`).
 
 | # | Constat | Gravité | Piste |
 |---|---|---|---|
-| 1 | **Échap** ferme une fenêtre, revient d'une fiche, arrête Continuer, ou **ouvre le menu pause** | Haute | Annoncer « Échap : menu » sur les écrans racines ; ne jamais ouvrir la pause si une fiche/fenêtre vient d'être fermée |
+| 1 | **Échap** ferme une fenêtre, revient d'une fiche, arrête Continuer, ou **ouvre le menu pause** | Haute | Décidé le 19/11/2026 : règle unique (fenêtre, retour de fiche, sinon menu pause) ; annoncer « Échap Menu » sur les écrans principaux ; bouton « Menu » visible dans la coque ; ne jamais ouvrir la pause si une fiche/fenêtre vient d'être fermée |
 | 2 | Deux façons de choisir un joueur en Composition (fenêtre de boutons désactivés / liste hors feuille à avis modal) | Haute | Un seul motif « choisir un joueur » avec états grisés + raison, mêmes colonnes et même tri |
 | 3 | Le tableau trié n'existe que sur Effectif ; les autres listes ne trient ni ne se parcourent pareil | Haute | Étendre le socle à Recrutement, Classements, Finances ; ajouter le tri au clavier |
 | 4 | Confirmation générique (CONFIRMER/ANNULER), focus par défaut sur CONFIRMER, aucun bouton destructif | Moyenne | Libellé = action, focus sur ANNULER pour tout ce qui supprime ou engage de l'argent |
@@ -510,7 +513,7 @@ Visage et remarque du moment entre la recherche et la date (`TOPBAR_GABI_LEFT`).
 
 | Question | Propriétaire | État |
 |---|---|---|
-| Échap doit-il ouvrir la pause sur un écran racine, ou seulement via un bouton ? | Léo / game-designer | À trancher |
+| Échap doit-il ouvrir la pause sur un écran racine, ou seulement via un bouton ? | Léo / game-designer | **Résolue le 19/11/2026** : Échap ouvre le menu pause, et un bouton visible dans la coque l'ouvre aussi |
 | Les listes de Recrutement et de Classements passent-elles au socle de tableau ? | ui-programmer | Non vérifié : à relever écran par écran |
 | La manette est-elle un objectif ? | Léo | Non décidé |
 | Le plancher de 12 px est-il tenu en 1280 × 720 dans le pied de page et le guide ? | ui-programmer | Mesure à faire (capture) |

@@ -1,5 +1,7 @@
 # UX Spec : 15 — Après-match (« Pourquoi »)
 
+Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %). Échap ne ferme pas l'écran (décision du 16/11 maintenue : arrêt forcé = reprise avant le match ; la règle « Échap = menu pause » vaut pour les écrans principaux, pas ici).
+
 > **Statut** : en conception (proposé, non validé par Léo)
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
 > **Dernière mise à jour** : 19/11/2026
@@ -189,7 +191,7 @@ Les valeurs ci-dessus sont des exemples de mise en page, pas des données du jeu
 |---|---|---|
 | Couleur seule (ivoire / vert) pour positif / négatif | Ajouter ▲ ▼ + le mot « point fort / à corriger » | D2, C1 |
 | Texte de raison tronqué à 2 lignes | 3 lignes, jamais tronquer un chiffre | T5 |
-| Étiquette de levier à 18 px (code, calque 2560) | 14 px réels minimum à 1920 | T1 |
+| Étiquette de levier à 18 px (code, calque 2560) | 12-13 px réels minimum à 1920 | T1 dense |
 | Barre PAUSE, vitesse, caméras | Masquer après le sifflet | Plus d'action possible |
 | Bouton ÉQUIPE après le match | Masquer ou renommer « Consulter l'équipe » | Pas de changement possible |
 | Quatrième raison et au-delà | Derrière « Voir plus » | Progressive disclosure (journey n° 5) |
@@ -235,7 +237,7 @@ Aucun effet de confettis ou de flash (M4).
 - [ ] Zéro raison : message affiché, jamais un écran muet.
 - [ ] Échap ne ferme ni ne quitte l'écran.
 - [ ] Chaque levier ouvre le bon écran et permet de revenir.
-- [ ] À 1280×720 : texte ≥ 14 px effectifs, aucun chevauchement.
+- [ ] À 1280×720 : texte ≥ 12 px effectifs, aucun chevauchement.
 - [ ] Test non guidé : 3 personnes sur 5 énoncent la cause principale sans aide.
 
 ## 12. Questions ouvertes
@@ -254,7 +256,7 @@ Aucun effet de confettis ou de flash (M4).
 **Localisation (longueurs max, +40 % prévus)** : titre « Pourquoi … » 28 caractères ; texte de raison 140 caractères sur 3 lignes ; libellé de levier 16 ; bouton de levier 26 ; phrase de Gabi 100 sur 2 lignes ; bouton principal 34.
 
 **Méthodes d'entrée (PC)**
-- Souris : leviers, Voir plus, bouton principal ; cibles ≥ 32 px de haut.
+- Souris : leviers, Voir plus, bouton principal ; cibles ≥ 28 px de haut.
 - Clavier seul : Tab / Maj+Tab dans l'ordre de §10, Entrée ou Espace sur le bouton au focus ; Échap ne quitte pas. Aucun glisser-déposer.
 - Manette : hors périmètre.
 
