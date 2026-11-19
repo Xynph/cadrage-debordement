@@ -1,5 +1,7 @@
 # Train de fusion (18/11/2026)
 
+> **Arrêté le 19/11/2026 (décision de Léo)** : un seul lot fusionné sur dix en 16 h. Voie par défaut : fusion automatique classique en squash (AGENTS.md). Ce document reste pour une éventuelle reprise.
+
 ## Pourquoi
 
 Le dépôt appartient à un compte personnel : la file de fusion native de GitHub (qui
