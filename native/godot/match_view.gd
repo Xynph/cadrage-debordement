@@ -2227,6 +2227,7 @@ func _build_spectators(positions: Array[Vector3], rotations: Array[float], rng: 
 		var p := positions[i]
 		torsos.append(Transform3D(basis * Basis.from_scale(Vector3(0.42, 0.62 * height, 0.31)), p + Vector3(0, 0.27 * height, 0)))
 		heads.append(Transform3D(basis.scaled(Vector3.ONE * rng.randf_range(0.92, 1.08)), p + Vector3(0, 0.73 * height, 0)))
+		foule_tetes.append(heads[-1].origin)
 		legs.append(Transform3D(basis * Basis.from_scale(Vector3(0.35, 0.18, 0.58)), p + basis * Vector3(0, -0.12, 0.22)))
 		clothes.append(palette[rng.randi_range(0, palette.size() - 1)])
 		var skin: Color = skin_palette[rng.randi_range(0, skin_palette.size() - 1)]
@@ -2289,6 +2290,9 @@ const FOULE_ECHARPES := 0.22
 var foule: Foule = Foule.new()
 ## Composition du public construite (contrôle, tests) : spectateurs par tribu, tenues aux couleurs.
 var foule_compte := {"total": 0, "domicile": 0, "visiteurs": 0, "neutres": 0, "tenues": 0}
+## Têtes des spectateurs (repère de la vue), gardées pour les contrôles de cadrage : le pilote
+## graphique factice (--headless) ne conserve pas les transformations des MultiMesh.
+var foule_tetes := PackedVector3Array()
 var _foule_matieres: Array[ShaderMaterial] = []
 ## Posé par la régie des temps forts : plan d'essai joué, essai pas encore aplati à l'écran.
 var essai_attendu_regie := false

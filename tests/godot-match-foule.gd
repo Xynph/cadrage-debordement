@@ -193,13 +193,12 @@ func check_view() -> void:
 	view.queue_free()
 
 
-## Têtes des spectateurs (repère du monde) : origines du lot « SpectatorsHead ».
-func tetes(view: Node) -> Array[Vector3]:
+## Têtes des spectateurs (repère du monde). Lues dans `foule_tetes` : sous --headless, le pilote
+## factice ne garde pas les transformations des MultiMesh (get_instance_transform rend l'identité).
+func tetes(view: Node3D) -> Array[Vector3]:
 	var points: Array[Vector3] = []
-	for lot in spectators(view):
-		if str(lot.name) == "SpectatorsHead":
-			for i in lot.multimesh.instance_count:
-				points.append(lot.global_transform * lot.multimesh.get_instance_transform(i).origin)
+	for tete: Vector3 in view.foule_tetes:
+		points.append(view.global_transform * tete)
 	return points
 
 
