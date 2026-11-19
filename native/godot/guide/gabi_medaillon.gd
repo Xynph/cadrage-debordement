@@ -6,10 +6,11 @@ extends Control
 ## Le médaillon du coin bas droit (#684) est retiré : ce disque vit dans le bandeau, qui existait déjà.
 signal pressed
 
-const GOLD := Color("d7ad59")
-const GREEN := Color("0f2a20")
-const DEEP := Color("08130f")
-const IVORY := Color("f2ecdc")
+## Couleurs de la charte (ui/charte.gd) : ovale tracé ivoire-2, fond panneau ; ni or ni ombre (une seule DA).
+const GOLD := Color("bdb4a2")
+const GREEN := Color("201d19")
+const DEEP := Color("171512")
+const IVORY := Color("f6eedc")
 const MASK := preload("res://guide/gabi_medaillon_masque.gdshader")
 
 var indice := false:
@@ -119,7 +120,6 @@ func _draw() -> void:
 	var center := size / 2.0
 	var radius := minf(size.x, size.y) / 2.0
 	# Ombre portée douce, disque vert sombre (fond du buste), lumière chaude derrière la tête.
-	draw_circle(center + Vector2(0, radius * 0.06), radius, Color(0, 0, 0, 0.35))
 	draw_circle(center, radius, DEEP)
 	draw_circle(center, radius - 2.0, GREEN)
 	for i in 6:
@@ -147,7 +147,7 @@ class Cadre extends Control:
 		var center := size / 2.0
 		var radius := minf(size.x, size.y) / 2.0
 		var ring := maxf(1.5, radius * 0.07)
-		var gold: Color = GOLD.lightened(0.2) if m._hover else GOLD
+		var gold: Color = IVORY if m._hover else GOLD
 		draw_arc(center, radius - ring / 2.0, 0, TAU, 96, gold, ring, true)
 		draw_arc(center, radius - ring * 1.9, 0, TAU, 96, Color(GOLD, 0.35), 1.0, true)
 		if not m.indice: return
@@ -157,7 +157,7 @@ class Cadre extends Control:
 		var beat := 0.0 if m.reduced_motion else (sin(m._pulse / 2.4 * TAU) + 1.0) * 0.5
 		draw_circle(dot, dot_r + 2.0 + beat * dot_r * 0.6, Color(GOLD, 0.28 * (1.0 - beat)))
 		draw_circle(dot, dot_r + 1.5, DEEP)
-		draw_circle(dot, dot_r, GOLD)
+		draw_circle(dot, dot_r, IVORY)
 		var w := dot_r * 1.0
 		var h := dot_r * 1.3
 		var book := Rect2(dot - Vector2(w / 2.0, h / 2.0), Vector2(w, h))
