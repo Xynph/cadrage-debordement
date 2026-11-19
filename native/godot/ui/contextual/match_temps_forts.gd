@@ -758,6 +758,11 @@ func _gestes_actifs() -> bool:
 ## allure d'une image à l'autre pendant un plan de liaison, en m/s (contrôle : aucun saut).
 func _mesurer(delta: float) -> void:
 	if delta <= 0.0: return
+	# La régie passe avant la vue (process_priority) : le pas mesuré ici a été fait pendant l'image
+	# précédente de la vue, sur sa durée à elle. Diviser par la durée de l'image courante gonflait
+	# l'allure dès qu'une image longue suivait une courte (exécuteur de CI chargé : 32 m/s mesurés).
+	var duree_vue: Variant = stage.get("dernier_delta")
+	if (duree_vue is float) and float(duree_vue) > 0.0: delta = float(duree_vue)
 	var coupe := phase == "liaison" and _liaison_t <= 0.0001
 	for id: String in stage._actors:
 		var at: Vector3 = (stage._actors[id].node as Node3D).position
