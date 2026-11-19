@@ -71,6 +71,8 @@ static func build(app:Control) -> Control:
 	var pitch:=Pitch.new();composition.add_child(pitch);D.place(pitch,Rect2(24,245,1022,626))
 	var advice := _staff_advice(composition,app)
 	_nationale_qualification(composition,app.model.get("selection",{}))
+	_bleus(composition,app)
+	_quota(composition,app)
 	if not Roles.view(app.model).is_empty():
 		var roles:=D.button(composition,Rect2(790,190,254,30),"TIREURS ET LANCEUR",func():Roles.open(app),false,"ball",true,app.accent,"LineupRoles")
 		roles.tooltip_text="Désigner le buteur, son remplaçant, le lanceur en touche et le joueur au pied d’occupation."
@@ -189,6 +191,41 @@ static func _nationale_qualification(parent: Panel, selection: Dictionary) -> vo
 	D.text(panel,17,32,notice.get("title",""),26,C.GOLD,700,698).name = "NationaleQualificationTitle"
 	D.text(panel,17,64,notice.get("summary",""),28,C.ALERT if alert else C.IVORY,700,698).name = "NationaleQualificationSummary"
 	D.text(panel,17,93,notice.get("detail",""),24,C.MUTED,500,698,HORIZONTAL_ALIGNMENT_LEFT,true).name = "NationaleQualificationDetail"
+
+## Protocole des Bleus (liste de 33) dans le bandeau de briefing, par-dessus l'avis du staff : capture du 19/11, l'alerte
+## n'existait que dans l'ancienne feuille (fenêtres de moins de 1600 px). Même action que là-bas (squad_views.bleus_resume).
+static func _bleus(parent: Panel, app: Control) -> void:
+	var bleus: Dictionary = app.SquadViews.bleus_resume(app)
+	if bleus.is_empty(): return
+	var panel := D.rect(parent,Rect2(23,72,1024,160),Color("1d1012",.95),5,C.ALERT)
+	panel.name = "LineupBleusNotice"
+	panel.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus."
+	D.text(panel,18,36,str(bleus.titre),24,C.ALERT,700,700).name = "LineupBleusTitle"
+	D.text(panel,18,70,"Au moins 2 repos sur 8 matchs de club. L’aligner quand même coûte la confiance du staff des Bleus.",19,C.MUTED,500,700)
+	var lignes: Array = bleus.lignes
+	var detail := D.text(panel,18,100,"Remplaçants du staff : " + "  ·  ".join(lignes),18,C.IVORY,500,990,HORIZONTAL_ALIGNMENT_LEFT,true)
+	detail.name = "LineupBleusChanges"
+	detail.tooltip_text = "\n".join(lignes)
+	detail.mouse_filter = Control.MOUSE_FILTER_PASS
+	var echanges: Array = bleus.echanges
+	if echanges.is_empty(): return
+	var lot: Array = bleus.lot
+	var caption := "FAIRE SOUFFLER" if echanges.size() == 1 else "FAIRE SOUFFLER LES %d" % echanges.size()
+	var faire := D.button(panel,Rect2(736,14,272,44),caption,func():app._command("set_lineup",{"changes":lot}),true,"people",true,C.ALERT,"LineupBleusRestAll")
+	faire.tooltip_text = "\n".join(lignes)
+	faire.disabled = not Selection.editable(app)
+
+## Quota du championnat (JIFF en Top 14 / Pro D2, EQP en Premiership) : pied de la carte Composition, couleur d'état.
+static func _quota(parent: Panel, app: Control) -> void:
+	var quota: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
+	if not bool(quota.get("applies", false)): return
+	var current := int(quota.get("currentSheet", 0)) + int(quota.get("doublon", 0))
+	var target := int(quota.get("target", 16))
+	var couleur: Color = C.ALERT if bool(quota.get("alert", false)) else (C.MINT if current >= target else C.MUTED)
+	var line := D.text(parent,370,893,"%s · %d / %d exigés" % [str(quota.get("label", "JIFF")), current, target],19,couleur,600,250,HORIZONTAL_ALIGNMENT_CENTER)
+	line.name = "LineupJiffNotice"
+	line.tooltip_text = app.SquadViews.quota_line(quota) + "\n" + app.SquadViews.quota_tooltip(quota)
+	line.mouse_filter = Control.MOUSE_FILTER_PASS
 
 static func _identity(card:Panel,app:Control,domains:Array) -> void:
 	for i in 3:

@@ -174,6 +174,27 @@ func run() -> void:
 				await settle(20)
 				check(page_visible("LineupBleusNotice") == null, "Après « Faire souffler », la bannière disparaît")
 				await capture("5-feuille-match-bleus-apres-repos")
+		# 6. Même carrière dans l'écran Composition de la maquette (fenêtre de 1600 px et plus) : bannière et quota.
+		if not dossier.is_empty():
+			taille = Vector2i(1920, 1080)
+			root.size = taille
+			app._command("import", {"text": FileAccess.get_file_as_string(bleus_save)})
+			await wait_engine()
+			app.timer.stop()
+			await fermer_gabi()
+			app._navigate("Composition")
+			await settle(30)
+			check(page_visible("ImmersiveTactics") != null, "1920x1080 : écran Composition de la maquette")
+			check(page_visible("LineupBleusNotice") != null, "Maquette : bannière des Bleus visible")
+			check(page_visible("LineupJiffNotice") != null, "Maquette : ligne du quota visible")
+			await capture("6-composition-1920-banniere-bleus")
+			var tous := app.find_child("LineupBleusRestAll", true, false) as Button
+			if tous != null:
+				tous.pressed.emit()
+				await wait_engine()
+				await settle(20)
+				check(page_visible("LineupBleusNotice") == null, "Maquette : après « Faire souffler », la bannière disparaît")
+				await capture("7-composition-1920-apres-repos")
 	fin()
 
 func fin() -> void:

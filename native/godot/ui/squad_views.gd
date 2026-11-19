@@ -679,72 +679,52 @@ static func lineup(app:Control) -> Control:
 		quota_bloc.tooltip_text = quota_tooltip(quota)
 		side.add_child(quota_bloc)
 	# Protocole des Bleus (liste de 33) : joueurs de la feuille qui doivent souffler ce week-end.
-	var bleus: Dictionary = app.model.get("clubLife", {}).get("doublons", {})
-	if bool(bleus.get("applies", false)):
-		var a_reposer: Array = bleus.get("reposer", [])
-		var noms_par_id := {}
-		for p: Variant in app.model.get("squad", []):
-			if p is Dictionary: noms_par_id[str(p.get("id", ""))] = str(p.get("name", ""))
-		var noms: Array = []
-		for item: Variant in a_reposer:
-			if item is Dictionary and noms_par_id.has(str(item.get("playerId", ""))): noms.append(noms_par_id[str(item.get("playerId", ""))])
-		if not noms.is_empty():
-			# Capture 1280×720 du 19/11 (8 matchs d'historique) : à 11 px en simple ligne de texte, l'alerte se perdait sous
-			# le quota (13 px) et n'offrait aucune action. Encadré rouge à 13 px, accord au pluriel et un bouton par joueur
-			# qui applique le remplaçant proposé par le staff (même calcul que le courrier de la cellule FFR-LNR).
-			var cadre := PanelContainer.new()
-			cadre.name = "LineupBleusNotice"
-			var fond := StyleBoxFlat.new()
-			fond.bg_color = Color(G.ALERT, 0.12)
-			fond.border_color = G.ALERT
-			fond.set_border_width_all(0)
-			fond.border_width_left = 4
-			fond.set_corner_radius_all(4)
-			fond.content_margin_left = 12; fond.content_margin_right = 10; fond.content_margin_top = 8; fond.content_margin_bottom = 8
-			cadre.add_theme_stylebox_override("panel", fond)
-			var pile := VBoxContainer.new()
-			pile.add_theme_constant_override("separation", 6)
-			cadre.add_child(pile)
-			var verbe := "doit" if noms.size() == 1 else "doivent"
-			# Au-delà de 3 noms, le titre compte les joueurs (les noms sont sur la ligne des remplaçants).
-			var qui := ", ".join(noms) if noms.size() <= 3 else "%d joueurs de la liste" % noms.size()
-			var titre := G.wrap("BLEUS  ·  %s %s souffler ce week-end" % [qui, verbe], 13, G.ALERT)
-			titre.name = "LineupBleusTitle"
-			pile.add_child(titre)
-			pile.add_child(G.wrap("Protocole de la liste des 33 : au moins 2 repos sur 8 matchs de club. L'aligner quand même coûte la confiance du staff des Bleus.", 12, G.MUTED))
-			cadre.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus."
-			var echanges: Array = []
-			var lignes: Array = []
-			for change: Variant in bleus.get("changes", []):
-				if not (change is Dictionary): continue
-				var sortant := str(noms_par_id.get(str(change.get("sortant", "")), ""))
-				var entrant := str(noms_par_id.get(str(change.get("playerId", "")), ""))
-				if sortant.is_empty() or entrant.is_empty(): continue
-				echanges.append({"slot": int(change.get("slot", 0)), "playerId": change.get("playerId"), "sortant": str(change.get("sortant", ""))})
-				lignes.append("%s → %s (%d %%)" % [sortant, entrant, int(change.get("entrantCondition", 0))])
-			# Capture du 19/11 : après 6 matchs sans repos, 9 titulaires d'un coup ; 9 boutons repoussaient la liste des
-			# candidats hors de l'écran. Jusqu'à 2 : un bouton par joueur ; au-delà, un seul bouton (échange groupé côté
-			# moteur, tout ou rien) et les remplaçants sur une ligne.
-			if echanges.size() > 2:
-				var detail := G.wrap("Remplaçants du staff : " + "  ·  ".join(lignes), 11, G.MUTED)
-				detail.name = "LineupBleusChanges"
-				pile.add_child(detail)
-				var lot: Array = []
-				for e: Dictionary in echanges: lot.append({"slot": e.slot, "playerId": e.playerId})
-				var tous := G.button("FAIRE SOUFFLER LES %d  ·  REMPLAÇANTS DU STAFF" % echanges.size(), func(): app._command("set_lineup", {"changes": lot}))
-				tous.name = "LineupBleusRestAll"
-				tous.tooltip_text = "\n".join(lignes)
-				tous.disabled = not app._live().is_empty()
-				pile.add_child(tous)
-			else:
-				for i in echanges.size():
-					var e: Dictionary = echanges[i]
-					var faire := G.button("FAIRE SOUFFLER " + str(lignes[i]).replace(" → ", "  →  "), func(): app._command("set_lineup", {"playerId": e.playerId, "slot": e.slot}))
-					faire.name = "LineupBleusRest" + str(e.sortant).replace(":", "_")
-					faire.tooltip_text = "Remplaçant proposé par le staff au même poste, hors feuille et disponible."
-					faire.disabled = not app._live().is_empty()
-					pile.add_child(faire)
-			side.add_child(cadre)
+	var bleus := bleus_resume(app)
+	if not bleus.is_empty():
+		# Capture 1280×720 du 19/11 (8 matchs d'historique) : à 11 px en simple ligne de texte, l'alerte se perdait sous
+		# le quota (13 px) et n'offrait aucune action. Encadré rouge à 13 px, accord au pluriel et action du staff.
+		var cadre := PanelContainer.new()
+		cadre.name = "LineupBleusNotice"
+		var fond := StyleBoxFlat.new()
+		fond.bg_color = Color(G.ALERT, 0.12)
+		fond.border_color = G.ALERT
+		fond.set_border_width_all(0)
+		fond.border_width_left = 4
+		fond.set_corner_radius_all(4)
+		fond.content_margin_left = 12; fond.content_margin_right = 10; fond.content_margin_top = 8; fond.content_margin_bottom = 8
+		cadre.add_theme_stylebox_override("panel", fond)
+		var pile := VBoxContainer.new()
+		pile.add_theme_constant_override("separation", 6)
+		cadre.add_child(pile)
+		var titre := G.wrap(str(bleus.titre), 13, G.ALERT)
+		titre.name = "LineupBleusTitle"
+		pile.add_child(titre)
+		pile.add_child(G.wrap("Protocole de la liste des 33 : au moins 2 repos sur 8 matchs de club. L'aligner quand même coûte la confiance du staff des Bleus.", 12, G.MUTED))
+		cadre.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus."
+		var echanges: Array = bleus.echanges
+		var lignes: Array = bleus.lignes
+		# Capture du 19/11 : après 6 matchs sans repos, 9 titulaires d'un coup ; 9 boutons repoussaient la liste des
+		# candidats hors de l'écran. Jusqu'à 2 : un bouton par joueur ; au-delà, un seul bouton (échange groupé côté
+		# moteur, tout ou rien) et les remplaçants sur une ligne.
+		if echanges.size() > 2:
+			var detail := G.wrap("Remplaçants du staff : " + "  ·  ".join(lignes), 11, G.MUTED)
+			detail.name = "LineupBleusChanges"
+			pile.add_child(detail)
+			var lot: Array = bleus.lot
+			var tous := G.button("FAIRE SOUFFLER LES %d  ·  REMPLAÇANTS DU STAFF" % echanges.size(), func(): app._command("set_lineup", {"changes": lot}))
+			tous.name = "LineupBleusRestAll"
+			tous.tooltip_text = "\n".join(lignes)
+			tous.disabled = not app._live().is_empty()
+			pile.add_child(tous)
+		else:
+			for i in echanges.size():
+				var e: Dictionary = echanges[i]
+				var faire := G.button("FAIRE SOUFFLER " + str(lignes[i]).replace(" → ", "  →  "), func(): app._command("set_lineup", {"playerId": e.playerId, "slot": e.slot}))
+				faire.name = "LineupBleusRest" + str(e.sortant).replace(":", "_")
+				faire.tooltip_text = "Remplaçant proposé par le staff au même poste, hors feuille et disponible."
+				faire.disabled = not app._live().is_empty()
+				pile.add_child(faire)
+		side.add_child(cadre)
 	var auto:=G.button("SÉLECTION AUTOMATIQUE DU STAFF",func():app._command("auto_lineup"))
 	auto.name="LineupAutomatic"
 	auto.disabled=not app._live().is_empty()
@@ -808,6 +788,34 @@ static func preparation(app:Control) -> Control:
 
 ## Ligne du quota de joueurs formés localement : sur la feuille (doublon compris), besoin du prochain match, moyenne, marge.
 ## `quota` = clubLife.jiff (jiff.cjs). L'alerte (feuille sous la trajectoire de la moyenne exigée) colore la ligne.
+## Protocole des Bleus (liste de 33) : joueurs de la feuille qui doivent souffler, remplaçants proposés par le staff
+## (clubLife.doublons). Partagé par l'ancienne feuille et par l'écran Composition (tactics_canvas.gd).
+## Rend {} si rien à signaler, sinon {noms, lignes, echanges ([{slot, playerId, sortant}]), titre, lot}.
+static func bleus_resume(app: Control) -> Dictionary:
+	var bleus: Dictionary = app.model.get("clubLife", {}).get("doublons", {})
+	if not bool(bleus.get("applies", false)): return {}
+	var noms_par_id := {}
+	for p: Variant in app.model.get("squad", []):
+		if p is Dictionary: noms_par_id[str(p.get("id", ""))] = str(p.get("name", ""))
+	var noms: Array = []
+	for item: Variant in bleus.get("reposer", []):
+		if item is Dictionary and noms_par_id.has(str(item.get("playerId", ""))): noms.append(noms_par_id[str(item.get("playerId", ""))])
+	if noms.is_empty(): return {}
+	var echanges: Array = []
+	var lignes: Array = []
+	var lot: Array = []
+	for change: Variant in bleus.get("changes", []):
+		if not (change is Dictionary): continue
+		var sortant := str(noms_par_id.get(str(change.get("sortant", "")), ""))
+		var entrant := str(noms_par_id.get(str(change.get("playerId", "")), ""))
+		if sortant.is_empty() or entrant.is_empty(): continue
+		echanges.append({"slot": int(change.get("slot", 0)), "playerId": change.get("playerId"), "sortant": str(change.get("sortant", ""))})
+		lot.append({"slot": int(change.get("slot", 0)), "playerId": change.get("playerId")})
+		lignes.append("%s → %s (%d %%)" % [sortant, entrant, int(change.get("entrantCondition", 0))])
+	var qui := ", ".join(noms) if noms.size() <= 3 else "%d joueurs de la liste" % noms.size()
+	return {"noms": noms, "lignes": lignes, "echanges": echanges, "lot": lot,
+		"titre": "BLEUS  ·  %s %s souffler ce week-end" % [qui, "doit" if noms.size() == 1 else "doivent"]}
+
 static func quota_line(quota: Dictionary) -> String:
 	var label := str(quota.get("label", "JIFF"))
 	var target := int(quota.get("target", 16))
