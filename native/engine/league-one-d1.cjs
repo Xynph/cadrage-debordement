@@ -231,7 +231,8 @@ function factory(raw) {
       } else {
         check(status==='played','état de play-off invalide.');
         const o=result.overtime;
-        if (o!==undefined) check(o && integer(o.start,80,230) && integer(o.end,o.start+1,240)
+        // Fin égale au début : marque décisive dès la minute du coup d'envoi de la prolongation.
+        if (o!==undefined) check(o && integer(o.start,80,230) && integer(o.end,o.start,240)
           && numbers(o.regulationScore) && o.regulationScore[0]===o.regulationScore[1],'preuve de prolongation invalide.');
         if (score[0]!==score[1]) {
           side=score[0]>score[1]?0:1;

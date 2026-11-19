@@ -153,15 +153,17 @@ try {
   const relancer = serie('l.pilotage.consignes.relance="relancer";', 400), degager = serie('l.pilotage.consignes.relance="degager";', 400);
   const courts = serie('l.pilotage.consignes.coupsEnvoi="courts";', 100), longs = serie('l.pilotage.consignes.coupsEnvoi="longs";', 100);
   const pousser = serie('l.pilotage.consignes.melee="pousser";', 100), maulSouvent = serie('l.pilotage.consignes.maul="souvent";', 100), maulJamais = serie('l.pilotage.consignes.maul="jamais";', 100);
-  const aile = serie('l.pilotage.consignes.cible="aile";l.pilotage.depuis.cible=0;', 100), base100 = serie('', 100);
+  // Aile faible : effet de l'ordre de 0,3 point par match, sous l'erreur type d'une série de 100 matchs (≈ 1,5 point) :
+  // 400 matchs, comme la relance (sur 100, l'écart s'inversait au moindre changement d'effectif, ex. postes réels du 19/11).
+  const aile = serie('l.pilotage.consignes.cible="aile";l.pilotage.depuis.cible=0;', 400), base400 = serie('', 400), base100 = serie('', 100);
   console.log('relance : coups de pied', r(degager.coups), '/', r(relancer.coups), '· mètres', r(degager.metres), '/', r(relancer.metres), '· pertes', r(degager.pertes), '/', r(relancer.pertes));
   console.log('coups d’envoi repris : courts', r(courts.repris / courts.envois), '· base', r(base100.repris / base100.envois), '· longs', r(longs.repris / longs.envois));
-  console.log('pénalités de mêlée : base', r(base100.penMelee), '· pousser', r(pousser.penMelee), '| essais sur ballon porté : jamais', r(maulJamais.maul), '· base', r(base100.maul), '· souvent', r(maulSouvent.maul), '| point faible aile : écart', r(aile.ecart), 'contre', r(base100.ecart));
+  console.log('pénalités de mêlée : base', r(base100.penMelee), '· pousser', r(pousser.penMelee), '| essais sur ballon porté : jamais', r(maulJamais.maul), '· base', r(base100.maul), '· souvent', r(maulSouvent.maul), '| point faible aile : écart', r(aile.ecart), 'contre', r(base400.ecart));
   assert.ok(degager.coups > relancer.coups && relancer.pertes > degager.pertes, 'relance suivie');
   assert.ok(courts.repris / courts.envois > base100.repris / base100.envois && longs.repris / longs.envois < base100.repris / base100.envois, 'coups d’envoi courts plus souvent repris');
   assert.ok(pousser.penMelee > base100.penMelee * 1.2, 'pousser en mêlée fait siffler davantage');
   assert.ok(maulSouvent.maul > base100.maul && maulJamais.maul < base100.maul, 'ballon porté suivi');
-  assert.ok(aile.ecart > base100.ecart, 'attaquer leur aile faible rapporte, au moins au début');
+  assert.ok(aile.ecart > base400.ecart, 'attaquer leur aile faible rapporte, au moins au début');
   assert.ok(galvanises.ecart > vexes.ecart + 1.5, 'l’état des joueurs pèse sur le match : ' + r(galvanises.ecart - vexes.ecart));
   assert.ok(vexes.pen > base.pen, 'des joueurs vexés concèdent plus de fautes');
   // Scénario construit : l'adversaire mené de 10 points à l'heure de jeu, staff vigilant → il accélère et garde le ballon.

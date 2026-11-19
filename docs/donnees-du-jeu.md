@@ -8,6 +8,20 @@ Les packs importés à la création ou dans les paramètres d'une carrière comm
 
 Les nouvelles carrières communes utilisent les 86 échéances publiées retenues et des durées estimées déterministes pour les 1 506 autres joueurs. Les 1 583 statuts et 1 351 postes non documentés restent estimés. Salaires et trésoreries restent fictifs. Les pages de postes observées le 7 novembre corroborent leur état courant, pas une photographie certaine au 31 octobre ; les dates et précisions figurent dans les preuves. Les calibrations candidates de la PR389 et les dossiers contradictoires restent exclus. Plafond de recrutement historique de 42 et effectifs source de 36 à 65 demeurent des limites documentées ; l'interface affiche le motif lorsque cette limite bloque une offre. Les anciennes carrières, y compris communes sans marqueur documentaire, restent inchangées, sans conversion automatique. Les sections ci-dessous décrivent les étapes antérieures.
 
+## Âges et postes réels — 19 novembre 2026
+
+La base Monde porte déjà l'année de naissance et le poste réels de presque tous
+les joueurs (contrôle du 19/11 contre les collectes privées : 20 années et 168
+postes divergents sur 5 878 joueurs, dont 77 postes français déjà corrigés par la
+fondation d'effectif). `native/engine/world-player-corrections.json` corrige, pour
+les nouvelles carrières Monde, 34 postes et 10 années vérifiés (identifiants
+seulement, aucun nom ; sources et décisions dans le dépôt privé). Un poste corrigé
+garde l'écart du joueur à la référence V12, transposé au poste confirmé, comme
+pour les postes officiels français. Une carrière commencée avant la correction ne
+se recharge plus si l'un de ses joueurs est concerné (carrières de test seulement,
+accord de Léo). Restent hors du fichier : 5 postes français (à porter dans la
+fondation d'effectif), 23 postes et 9 années incertains.
+
 ## Noms de la base — 11 novembre 2026
 
 Les 5 878 joueurs et les 2 160 staffs de la base (116 clubs) portent un nom

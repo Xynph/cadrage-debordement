@@ -93,6 +93,17 @@ test('Le nul reste valide en championnat et dans chaque manche de barrage', () =
   }
 });
 
+// Essai dès la minute du coup d'envoi de la prolongation (relevé le 19/11 dans une saison Monde complète) :
+// la fin coïncide avec le début, le résultat reste valide.
+test('Marque à la première minute de prolongation : résultat valide (SRP et League One)', () => {
+  for (const [competition,phase] of [['srp','league'],['jlo-d1','quarter']]) {
+    const h=setup({phase,competition});
+    h.run("end(40);end(80);validate();scoreTry(l,0,'open');validate();verifyResult()");
+    assert.equal(h.run('l.finished && l.minute===80'),true,competition);
+    assert.equal(h.run('l.score.join()'),'5,0',competition);
+  }
+});
+
 test('SRP : prolongation propre à la compétition, sans état japonais', () => {
   const h=setup({phase:'league',competition:'srp'});
   h.run("end(40);end(80);l.minute=81;scoreTry(l,0,'open');validate();verifyResult()");

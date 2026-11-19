@@ -158,7 +158,8 @@ module.exports = function japanMatchFactory(rules) {
     sportValid(p.regulation);
     check(tied(p.regulation.score),'prolongation après un score décisif.');
     const mark=p.firstScore;
-    if (finished) check(p.end===minute && p.end>p.start && (mark!==null || p.end>=p.limit),'durée effective de prolongation invalide.');
+    // Une marque peut tomber dès la minute du coup d'envoi : la fin coïncide alors avec le début.
+    if (finished) check(p.end===minute && (mark!==null ? p.end>=p.start : p.end>=p.limit),'durée effective de prolongation invalide.');
     else check(p.end===null && mark===null,'prolongation close avant la fin.');
     if (mark!==null) check(keys(mark,['kind','side','minute']) && (mark.kind==='try'||mark.kind==='goal')
       && integer(mark.side,0,1) && mark.minute===p.end,'première marque incohérente.');
@@ -223,7 +224,10 @@ module.exports = function japanMatchFactory(rules) {
     check(l.flow?.period===2 && l.flow.fullEnd===p.limit && p.start>=l.flow.firstEnd+40,'horloge de prolongation incompatible.');
     const restarts=l.restartLog.filter(r=>r.cause===cause);
     check(restarts.length===1 && restartAllowed(restarts[0],l),'reprise de prolongation absente ou incohérente.');
-    const scores=l.events.filter(e=>(e.type==='try'||e.type==='goal') && e.min>p.start);
+    // À la minute du coup d'envoi, seule une marque qui dépasse le total réglementaire appartient à la prolongation.
+    const regulationTotal=p.regulation.score[0]+p.regulation.score[1];
+    const scores=l.events.filter(e=>(e.type==='try'||e.type==='goal') && (e.min>p.start
+      || e.min===p.start && Array.isArray(e.scene?.score) && e.scene.score[0]+e.scene.score[1]>regulationTotal));
     if (p.firstScore) {
       const [event]=scores,mark=p.firstScore;
       check(scores.length===1 && event.type===mark.kind && event.min===mark.minute && event.scene?.team===mark.side
