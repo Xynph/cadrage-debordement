@@ -160,7 +160,8 @@ func bandeau(route: String) -> void:
 	check(topbar.get_global_rect().grow(1).encloses(band), "Zone de Gabi dans le bandeau du haut : " + route)
 	# Coque commune (charte §7.1) : médaillon seul (54 × 36 px à 1920) à côté de la touche « F1 » ; la remarque du
 	# moment ne défile plus dans la barre (son avis reste au clic, l'indice sur le médaillon).
-	check(zone.get_meta("compact", false) and band.size.y >= 24.0 and absf(band.size.x / band.size.y - 1.5) < .05, "Médaillon de Gabi compact et ovale 3:2 (%d × %d px) : %s" % [band.size.x, band.size.y, route])	var face: Control = zone.find_child("GabiMedaillon", true, false)
+	check(zone.get_meta("compact", false) and band.size.y >= 24.0 and absf(band.size.x / band.size.y - 1.5) < .05, "Médaillon de Gabi compact et ovale 3:2 (%d × %d px) : %s" % [band.size.x, band.size.y, route])
+	var face: Control = zone.find_child("GabiMedaillon", true, false)
 	check(face != null and face.is_visible_in_tree() and band.grow(1).encloses(face.get_global_rect()), "Visage de Gabi dans le bandeau : " + route)
 	check(face != null and bool(face.get("ovale")), "Médaillon ovale tracé, sans disque ni pastille : " + route)
 	var image: TextureRect = zone.find_child("GabiVisageImage", true, false)
