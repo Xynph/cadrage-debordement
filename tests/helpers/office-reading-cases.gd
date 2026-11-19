@@ -22,7 +22,11 @@ static func sent_since(app: Control, requests: int) -> PackedStringArray:
 ## Un lien de lecture ne peut demander au moteur que des lectures déclarées sans effet (READ_ONLY_COMMANDS,
 ## ex. la fiche d'un club) : aucune décision, aucune écriture.
 static func reads_only(app: Control, requests: int) -> bool:
-	return sent_since(app, requests).size() == int(app.bridge._next_id) - requests and sent_since(app, requests).all(func(command: String) -> bool: return command in app.READ_ONLY_COMMANDS)
+	var sent := sent_since(app, requests)
+	if sent.size() != int(app.bridge._next_id) - requests: return false
+	for command: String in sent:
+		if not command in app.READ_ONLY_COMMANDS: return false
+	return true
 
 static func _unavailable(harness: SceneTree, id: String, reason: String) -> void:
 	harness.visits.append({"name":id,"scope":"office","available":false,"reason":reason})
