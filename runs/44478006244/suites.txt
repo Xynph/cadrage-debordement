@@ -1,0 +1,2 @@
+tests/godot-preparation-tabs.cjs
+tests/godot-match-temps-forts.cjs
