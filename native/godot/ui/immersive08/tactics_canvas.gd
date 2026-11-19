@@ -118,7 +118,7 @@ static func build(app:Control) -> Control:
 		D.text(button,84,78,_slot_name(person),19,C.IVORY,600,158,HORIZONTAL_ALIGNMENT_CENTER)
 		if advice.has(slot):D.chip(button,Rect2(8,60,24,22),"!",C.AMBER).name="TacticsStaffAdviceMark%02d" % (slot+1)
 		if bleus_marques.has(slot):
-			D.chip(button,Rect2(8,60,34,22),"33",C.ALERT).name="TacticsBleusMark%02d" % (slot+1)
+			D.chip(button,Rect2(2,2,30,20),"33",C.ALERT).name="TacticsBleusMark%02d" % (slot+1)
 			button.tooltip_text+="\nListe des 33 : doit souffler ce week-end."
 		button.pressed.connect(func():_choose_slot(app,slot))
 	var group:=P.group(app.model)
