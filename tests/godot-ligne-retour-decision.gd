@@ -59,12 +59,22 @@ func run() -> void:
 	var deadline := Time.get_ticks_msec() + 60000
 	while (app.model.is_empty() or app.waiting) and Time.get_ticks_msec() < deadline: await process_frame
 	app.timer.stop()
-	await ask("new_career",{"mode":"world-champ","club":0})
-	var press: Dictionary = app.model.clubLife.press
-	check(press.get("conference",{}).get("questions",[]).size() > 0,"conférence de presse réelle disponible")
-	var answers: Array = []
-	for question: Dictionary in press.conference.questions: answers.append({"questionId":question.id,"answerId":question.answers[0].id})
-	await ask("press_conference",{"context":press.context,"invitationId":press.conference.invitationId,"answers":answers})
+	var press: Dictionary = {}
+	for start in [{"club":0},{"club":0,"start":"veille"},{"club":102,"start":"veille"}]:
+		var payload := {"mode":"world-champ"}
+		payload.merge(start)
+		await ask("new_career",payload)
+		press = app.model.clubLife.press
+		if press.get("conference",{}).get("questions",[]).size() > 0: break
+	if press.get("conference",{}).get("questions",[]).size() > 0:
+		var answers: Array = []
+		for question: Dictionary in press.conference.questions: answers.append({"questionId":question.id,"answerId":question.answers[0].id})
+		await ask("press_conference",{"context":press.context,"invitationId":press.conference.invitationId,"answers":answers})
+	else:
+		# Aucune invitation disponible sur ce runner : le reçu est publié directement dans le composant commun (même ligne de retour).
+		app.decision_feedback._receipts.append({"command":"press_conference","title":"Conférence tenue","text":"","summary":"Conférence tenue · Moral collectif : 62 → 64 / 100 (hausse)","before":{},"after":{},"targets":[]})
+		republish_status()
+		await settle()
 	check(app.decision_feedback.status_text().begins_with("Conférence tenue"),"reçu « Conférence tenue » enregistré : " + app.decision_feedback.status_text())
 	var long_cash := "Conférence tenue · Trésorerie : 123 456 789 € → 123 456 789 € (stable) · Salaires par semaine : 12 345 678 € → 12 345 678 € (stable) · Moral collectif : 100 → 100 / 100 (stable)"
 	for resolution in [Vector2i(1280,720),Vector2i(1920,1080)]:

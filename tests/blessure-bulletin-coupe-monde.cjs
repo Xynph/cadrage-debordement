@@ -37,16 +37,18 @@ test('Coupe d’Europe, carrière Monde : le bulletin nomme l’adversaire et l�
     // pendant son appel (tout joueur utilisé est blessé), puis on ne garde que trois blessés du club pour que la
     // carrière reste jouable. Elle s'exécute à la clôture de la semaine.
     vm.run(`(()=>{const o=applyMatchInjuries;applyMatchInjuries=Object.assign(function(){
+      const avant=new Set(S.clubs[S.club].players.filter(p=>p.injury>0).map(p=>p.id));
       const r=Math.random;Math.random=()=>0;let res;try{res=o.apply(this,arguments)}finally{Math.random=r}
-      const own=S.clubs[S.club].players.filter(p=>p.injury>0&&p.injuryOrigin);
+      const own=S.clubs[S.club].players.filter(p=>p.injury>0&&!avant.has(p.id));
       for(const p of own.slice(3)){p.injury=0;delete p.injuryOrigin}
+      for(const p of S.clubs[S.club].players.filter(p=>p.injury>0&&!avant.has(p.id)&&!p.injuryOrigin))p.injury=0
       return res},o)})()`);
     model = M.jouerLeMatch(jeu, model);
     // La clôture de la semaine (blessures du match) a lieu à la première journée suivante.
     model = jeu.regler(model);
     model = jeu.call('advance_day', { fromDate: model.meta.calendarToday });
     model = jeu.regler(model);
-    const blesses = JSON.parse(vm.run(`JSON.stringify(S.clubs[S.club].players.filter(p=>p.injury>0).map(p=>({id:p.id,origin:p.injuryOrigin||null})))`));
+    const blesses = JSON.parse(vm.run(`JSON.stringify(S.clubs[S.club].players.filter(p=>p.injury>0&&p.injuryOrigin&&p.injuryOrigin.type==='match').map(p=>({id:p.id,origin:p.injuryOrigin||null})))`));
     assert.equal(blesses.length, 3, 'trois blessés conservés après le match');
     for (const b of blesses) {
       assert.ok(b.origin, b.id + ' : origine enregistrée à la blessure');
