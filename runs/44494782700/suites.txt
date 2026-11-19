@@ -1,0 +1,1 @@
+tests/mesure-bonus-1200.cjs
