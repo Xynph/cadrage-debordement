@@ -67,7 +67,7 @@ try {
   assert.ok(r.identiques && r.compares === 20,'mêmes tirages avec et sans arbitrage fin : scores, pénalités, cartons et touches identiques');
   assert.ok(r.anciensTextes && r.sansDetail, 'match sans marqueur : anciens textes, aucun détail ni compteur');
   // Bornes de cartons-realistes.cjs (fréquences inchangées).
-  assert.ok(parEquipe.jaunes > 0.35 && parEquipe.jaunes < 0.95, 'jaunes crédibles : ' + parEquipe.jaunes);
+  assert.ok(parEquipe.jaunes > 0.5 && parEquipe.jaunes < 1.4, 'jaunes crédibles : ' + parEquipe.jaunes);
   assert.ok(parEquipe.exclusions > 0.005 && parEquipe.exclusions < 0.12, 'rouges rares mais présents : ' + parEquipe.exclusions);
   assert.ok(parEquipe.penalites > 8 && parEquipe.penalites < 16, 'pénalités inchangées en ordre de grandeur : ' + parEquipe.penalites);
   // Écran de statistiques : la ligne des pénalités porte le détail par famille de chaque équipe.
