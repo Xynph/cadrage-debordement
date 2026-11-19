@@ -115,8 +115,8 @@ Galvanisé, Vexé, Tendu, Relâché). Le coach nuance les matchs sans changer la
 
 ## Limites connues
 
-- Le moteur donne déjà ~2,5 cartons jaunes par équipe et par match (bien au-dessus du Top 14) : antérieur à ce
-  chantier, à corriger à part.
+- Cartons : les ~2,5 jaunes par équipe et par match constatés ici sont corrigés (voir
+  [cartons réalistes](cartons-realistes-20261118.md), recalé le 19/11/2026 : ~0,65 jaune par équipe en Top 14).
 - Le coach de l'ordinateur ne pousse pas de cris de la touche et ne touche ni la mêlée, ni le ballon porté, ni les coups
   d'envoi, ni le point faible ; une consigne posée reste jusqu'à la fin (pas de retour au neutre).
 

@@ -199,9 +199,10 @@ function selectDisciplineIncident(roll=Math.random()){
 // Cartons (docs/cartons-realistes-20261118.md) : un Top 14 compte ~0,6 à 0,8 jaune par équipe et par match (~1,3 par
 // match) et un rouge tous les ~8 matchs. Avant : tout plaquage dangereux (10 % des pénalités) donnait un carton, et
 // trois fautes depuis le dernier carton ajoutaient 18 % à chaque pénalité suivante, sans oubli : ~2,6 jaunes par équipe.
-// Désormais : plaquage dangereux carton dans ~1 cas sur 5 (rouge pour ~1 sur 3 d'entre eux) ; fautes répétées = au moins
-// trois pénalités sans dix minutes de répit (avertissement de l'arbitre). Un seul tirage, comme avant.
-const CARTONS={dangereux:.22,rouge:.35,base:.006,discipline:.0005,repetees:.075};
+// Désormais : plaquage dangereux carton une fois sur deux (rouge pour ~1 sur 7 d'entre eux) ; faute ordinaire (antijeu,
+// faute volontaire) ~3,5 % ; fautes répétées = au moins trois pénalités sans dix minutes de répit (+17 %). Un seul tirage.
+// Recalé le 19/11/2026 sur 1 000 affiches de Top 14 IA contre IA : ~0,66 jaune et ~0,04 exclusion par équipe et par match.
+const CARTONS={dangereux:.5,rouge:.14,base:.035,discipline:.0005,repetees:.17};
 function disciplineDecision(l,foul,incident){
  const discipline=unit(l,foul,'discipline');
  const history=l.disciplineHistory?.[foul]||{count:0,recent:0};
