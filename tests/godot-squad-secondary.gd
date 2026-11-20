@@ -79,38 +79,21 @@ func run() -> void:
 	app._navigate("Effectif");await settle()
 	var primary_header:=app.find_child("RosterColumn_POSTE",true,false) as Label
 	var secondary_header:=app.find_child("RosterColumnSecondaryPositions",true,false) as Label
-	check(primary_header!=null and primary_header.text.begins_with("POSTE PRINCIPAL"),"Poste principal explicite")
-	check(secondary_header!=null and secondary_header.text.begins_with("AUTRES"),"Autres postes dans une colonne distincte")
-	check(app.find_child("Sort_Poste",true,false)!=null and app.find_child("Sort_Autres postes",true,false)!=null,"Deux en-têtes triables, ancien identifiant conservé")
+	check(primary_header!=null and primary_header.text.begins_with("POSTE"),"Colonne Poste (poste principal)")
+	check(secondary_header==null and app.find_child("Sort_Autres postes",true,false)==null,"Colonne AUTRES retirée (décision de la revue du 19/11) : les autres postes sont en infobulle du poste")
+	check(app.find_child("Sort_Poste",true,false)!=null,"En-tête Poste triable")
 	var items: Array=page().rows.get_children().filter(func(node:Node):return node is Button and node.has_meta("player_id"))
 	check(items.size()==original.squad.size(),"Toutes les lignes sont conservées sans pagination")
 	for item:Control in items:
 		var principal:=item.find_child("RosterPrimaryPosition",true,false) as Label
-		var secondary:=item.find_child("RosterSecondaryPositions",true,false) as Label
 		var id:=str(item.get_meta("player_id"))
 		var person:Dictionary=original.squad.filter(func(player:Dictionary):return str(player.id)==id)[0]
 		check(principal.text==Squad.fitted_position(Squad.primary_caption(person),principal),"Principal reprend le poste et ses côtés maîtrisés : "+id)
 		check(principal.get_theme_font("font").get_string_size(principal.text,HORIZONTAL_ALIGNMENT_LEFT,-1,principal.get_theme_font_size("font_size")).x<=principal.size.x+.5,"Poste principal entier dans sa colonne, sans points de suspension : "+id)
 		check(Squad.secondary_numbers(person).all(func(number:int):return not number in person.primaryPositions),"Principal et secondaires ne se recouvrent pas : "+id)
-		check(secondary.text==Squad.secondary_caption(person),"Autres reprennent seulement les numéros projetés : "+id)
-		check(principal.get_rect().end.x<=secondary.get_rect().position.x and secondary.get_rect().end.x<=568*C.density,"Colonnes contenues avant l’âge : "+id)
-		check(secondary.mouse_filter==Control.MOUSE_FILTER_PASS,"Survol et clic de ligne compatibles")
+		check(principal.tooltip_text.contains("Autres postes · "+Squad.secondary_tooltip(person,original).replace("\n"," ; "))==not Squad.secondary_numbers(person).is_empty(),"Infobulle du poste : autres postes projetés seulement : "+id)
+		check(principal.mouse_filter==Control.MOUSE_FILTER_PASS,"Survol et clic de ligne compatibles")
 	await capture("effectif-postes-modele-reel-1440" if source_count>0 else "effectif-postes-ancienne-projection-1440")
-	if source_count>0 and DisplayServer.get_name()!="headless":
-		for item:Control in items:
-			var other:=item.find_child("RosterSecondaryPositions",true,false) as Label
-			if other.text=="—":continue
-			var scroll:=app.find_child("SquadScroll",true,false) as ScrollContainer
-			scroll.ensure_control_visible(item);await settle()
-			var motion:=InputEventMouseMotion.new()
-			motion.position=other.get_global_rect().get_center();motion.global_position=motion.position
-			root.push_input(motion,true)
-			await create_timer(0.85).timeout
-			await capture("effectif-postes-survol-1440")
-			break
-	var sort:=app.find_child("Sort_Autres postes",true,false) as Button
-	sort.grab_focus();await key(KEY_ENTER);var first_direction: bool=page().state.descending;await key(KEY_ENTER)
-	check(page().state.sort=="Autres postes" and page().state.descending!=first_direction and sort.has_focus(),"Clavier inverse le tri et garde le focus")
 	var controlled:=original.duplicate(true)
 	var backs: Array=controlled.squad.filter(func(player:Dictionary):return float(player.get("fam",0))>=4)
 	backs[0].secondaryPositions=[11,14]
@@ -119,7 +102,7 @@ func run() -> void:
 	app.model=controlled;app._navigate("Effectif");await settle()
 	var id0:=str(backs[0].id)
 	var sample:=page().rows.get_children().filter(func(node:Node):return str(node.get_meta("player_id",""))==id0)[0] as Control
-	check(sample.find_child("RosterSecondaryPositions",true,false).text=="AL","Cas UI contrôlé distinct, sans formule locale")
+	check((sample.find_child("RosterPrimaryPosition",true,false) as Label).tooltip_text.contains("AL · Ailier"),"Cas UI contrôlé distinct, sans formule locale")
 	var marker:=PanelContainer.new()
 	marker.z_index=1000
 	marker.position=Vector2(790,9)

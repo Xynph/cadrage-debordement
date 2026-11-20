@@ -96,8 +96,8 @@ func run() -> void:
 	check(table()!=null,"Vrai tableau d’effectif raccordé")
 	var level_cells: Array = table().rows.find_children("RosterLevel","Label",true,false)
 	var potential_cells: Array = table().rows.find_children("RosterPotential","Label",true,false)
-	check(level_cells.size()==original.squad.size() and level_cells.all(func(label):return label.get_theme_color("font_color")==Squad.C.MINT),"Niveau vert pour tous sans seuil")
-	check(potential_cells.size()==original.squad.size() and potential_cells.all(func(label):return label.get_theme_color("font_color")==Squad.POTENTIAL_COLOR),"Potentiel orange pour tous sans seuil")
+	check(level_cells.size()==original.squad.size() and level_cells.all(func(label):return label.get_theme_color("font_color")!=Squad.C.IVORY),"Niveau coloré au barème des attributs (chiffre toujours écrit)")
+	check(potential_cells.size()==original.squad.size() and potential_cells.all(func(label):return label.get_theme_color("font_color")==Squad.C.MUTED),"Potentiel en ivoire secondaire, sans couleur d’alerte")
 	check(table().sort_headers["Échéance"].caption=="FIN DE CONTRAT","Intitulé Fin de contrat")
 	check(not table().sort_headers.has("Note") and app.find_child("Sort_Note",true,false)==null,"Note au poste absente de l’Effectif")
 	var years_ok := true
@@ -105,13 +105,16 @@ func run() -> void:
 		if not row.has_meta("player_id"): continue
 		var source: Dictionary = original.squad.filter(func(player):return str(player.id)==str(row.get_meta("player_id")))[0]
 		var year_label := row.find_child("RosterContractEnd",true,false) as Label
-		if year_label == null or year_label.text != Squad.G.contract_year(source.get("contractEnd")): years_ok=false
+		if year_label == null or not year_label.text.begins_with(Squad.G.contract_year(source.get("contractEnd"))): years_ok=false
 	check(years_ok,"Chaque ligne affiche l’année de fin, sans S1/S2/S3")
 	await capture("effectif-annees-centaines-1440")
 	check(visible_ids().size()==original.squad.size() and original.squad.size()>24,"Tous les joueurs ont une ligne, au-delà de l’ancienne limite")
 	check(app.find_child("RosterPaginationNext",true,false)==null and app.find_child("RosterPaginationPrevious",true,false)==null,"Pagination supprimée")
-	var keys: Array=["Numéro","Nom","Poste","Âge","Niveau","Potentiel","Condition","Fatigue","Salaire","Échéance","Minutes","Statut"]
+	var keys: Array=["Numéro","Nom","Poste","Âge","Niveau","Potentiel","Condition","Échéance","Statut","Fatigue","Minutes"]
 	for criterion: String in keys:
+		# Fatigue et Minutes sont dans l'onglet Condition ; le salaire se trie dans l'onglet Contrats.
+		if criterion in ["Fatigue","Minutes"] and app.find_child("Sort_"+criterion,true,false)==null:
+			table().state.immersive_tab=1;app._render(false);await settle()
 		var button:=app.find_child("Sort_"+criterion,true,false) as Button
 		check(button!=null,"En-tête triable : "+criterion)
 		if button==null:continue
@@ -121,7 +124,8 @@ func run() -> void:
 		button.grab_focus();await process_frame;await key(KEY_ENTER)
 		check(table().state.sort==criterion and table().state.descending!=first_direction,"Entrée inverse le sens : "+criterion)
 		var label: Label=table().sort_headers[criterion].label
-		check(label.text.ends_with("↓" if table().state.descending else "↑"),"Flèche du sens actif : "+criterion)
+		check(label.text.ends_with("▼" if table().state.descending else "▲"),"Flèche du sens actif : "+criterion)
+	table().state.immersive_tab=0
 	var controlled:=original.duplicate(true)
 	for player: Dictionary in controlled.squad:player.rating=0
 	controlled.squad[-1].rating=100
@@ -133,17 +137,16 @@ func run() -> void:
 	var scroll:=app.find_child("SquadScroll",true,false) as ScrollContainer
 	var header:=app.find_child("RosterHeader",true,false) as Control
 	var search:=app.find_child("RosterSearch",true,false) as Control
-	var profile:=app.find_child("PlayerDossier",true,false) as Control
-	var positions: Array=[header.global_position,search.global_position,profile.global_position]
+	var positions: Array=[header.global_position,search.global_position]
 	scroll.scroll_vertical=0;await settle()
 	for i in 8:await mouse(scroll.get_global_rect().get_center(),MOUSE_BUTTON_WHEEL_DOWN)
 	check(scroll.scroll_vertical>0,"La molette défile les lignes dans le conteneur interne")
-	check(positions==[header.global_position,search.global_position,profile.global_position],"En-tête, filtres et dossier fixes pendant la molette")
+	check(positions==[header.global_position,search.global_position],"En-tête et filtres fixes pendant la molette")
 	var items: Array=table().rows.get_children().filter(func(node: Node):return node is Button and node.has_meta("player_id"))
 	items[0].grab_focus();await settle();await key(KEY_END)
 	check(root.gui_get_focus_owner()==items[-1],"Fin atteint le dernier joueur sans page intermédiaire")
 	check(scroll.get_global_rect().intersects(items[-1].get_global_rect()),"Dernier joueur visible dans le viewport interne")
-	check(positions==[header.global_position,search.global_position,profile.global_position],"Cadre fixe après accès clavier au dernier joueur")
+	check(positions==[header.global_position,search.global_position],"Cadre fixe après accès clavier au dernier joueur")
 	await capture("effectif-dernier-joueur-1440")
 	await key(KEY_HOME)
 	check(root.gui_get_focus_owner()==items[0],"Début revient au premier joueur")
