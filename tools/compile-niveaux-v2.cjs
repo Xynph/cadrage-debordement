@@ -77,6 +77,8 @@ function classe(row, age) {
   else if (t === 12) rank = uncapped ? 3 : (caps ?? 0) >= 30 && (recent === null || recent >= 2) ? 2 : 3;
   else rank = 3;
   if (STAR.test(dist) && t <= 8) rank = Math.max(0, rank - 1);
+  // International ajouté d'après les listes des capés (régularité récente inconnue) : jamais classé S sur le seul total.
+  if (row.complement) rank = Math.max(1, rank);
   // Plus convoqué depuis janvier 2025, ou dernière sélection avant novembre 2024 : ancien international, un cran en dessous.
   const last = /^(\d{4})-(\d{2})/.exec(row.derniere_selection || '');
   if (recent === 0 || last && Number(last[1]) * 12 + Number(last[2]) < 2024 * 12 + 11) rank = Math.min(3, rank + 1);
@@ -147,7 +149,7 @@ function collecteV3(niveauxDir, sources) {
   }
   if (fs.existsSync(path.join(dir, 'internationaux.csv'))) for (const r of read('internationaux.csv')) if (r.id && r.intl_nation) intl.set(r.id, r);
   // Internationaux oubliés (listes des capés par nation, audit du 20/11/2026) : ajoutés, jamais en remplacement.
-  if (fs.existsSync(path.join(dir, 'internationaux-complement.csv'))) for (const r of read('internationaux-complement.csv')) if (r.id && r.intl_nation && !intl.has(r.id)) intl.set(r.id, r);
+  if (fs.existsSync(path.join(dir, 'internationaux-complement.csv'))) for (const r of read('internationaux-complement.csv')) if (r.id && r.intl_nation && !intl.has(r.id)) intl.set(r.id, { ...r, complement: '1' });
   // Vérification des internationaux (sélections lues sur la fiche de chaque joueur, convocations depuis 2025).
   if (fs.existsSync(path.join(dir, 'internationaux-verif.csv'))) for (const r of read('internationaux-verif.csv')) {
     const base = intl.get(r.id);
@@ -231,7 +233,7 @@ function compile(prive, niveauxDir) {
       // Collecte v3 : statut, sélections et U20 trouvés remplacent ceux du 14/11.
       const row = { ...source }, found = v3.statut.get(row.id), cap = v3.intl.get(row.id), junior = v3.u20.get(row.id);
       if (found) { row.statut_club = found.statut; if (found.confiance) row.confiance = found.confiance; }
-      if (cap) for (const k of ['intl_nation', 'intl_caps_total', 'intl_caps_24m', 'convocations_24m', 'derniere_selection', 'distinctions']) if (cap[k]) row[k] = cap[k];
+      if (cap) for (const k of ['intl_nation', 'intl_caps_total', 'intl_caps_24m', 'convocations_24m', 'derniere_selection', 'distinctions', 'complement']) if (cap[k]) row[k] = cap[k];
       if (junior && Number.isFinite(age) && age <= 23) row.u20 = 'oui';
       let statut = fold(row.statut_club).replace(/ /g, '');
       if (statut === 'reservist') statut = 'reserviste';

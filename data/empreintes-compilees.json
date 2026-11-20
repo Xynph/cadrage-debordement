@@ -20,7 +20,7 @@
    }
   },
   "native/engine/world-niveaux-v2.json": {
-   "sha256": "3fdaf74b70098686397f52a6edda1d7ce85abb9dd02fd8a891b14510ffcc7567",
+   "sha256": "00a6ebf09ccb3515afc6cece553b9bbd51efb4a951211281ac4ae92c0db38572",
    "sources": {
     "data/scouting/review-v12/career-evidence.json": "0a7f60a8611ef52537926f7b30d738d55da24b4cc5ddb91cb3d6fdeabcebb4ef",
     "data/scouting/review-v12/season-evidence.json": "3a63cbab6cf678e7522696eef3acb090edc04ebd9a02956040351de82291300e",
@@ -34,6 +34,7 @@
     "niveaux/clubs-prem.csv": "d92453d4c4341162c81748b5f69612976531985b5e0b1f934eaff681cc6dccb6",
     "niveaux/clubs-srp.csv": "8b53e5e9d754445ce5d7c15d83b5a49e70f68c5d99289abb3beecfafea18227d",
     "niveaux/clubs-urc.csv": "0e3f5c7d9d7359084d75c5e74cffa62208b803a3be313b30aea7d3e1563a9a2c",
+    "niveaux/collecte-v3/internationaux-complement.csv": "5974c0c51e820efd77293ff582f0ca9cc1ef45a18802db467ecb9245f4cc6271",
     "niveaux/collecte-v3/internationaux-identite.csv": "96d2d94dd885818ffc989df5bc4a958108f4474dea0d35db804c535aab846b03",
     "niveaux/collecte-v3/internationaux-verif.csv": "5688c07c226a35446017816951a2414dab4a70ff38fd25c8b82cf30177b7eefd",
     "niveaux/collecte-v3/internationaux.csv": "ca8d11259d9d98e88863f9123ec218a0a90c5b75964613249ec1375e66237a5f",
