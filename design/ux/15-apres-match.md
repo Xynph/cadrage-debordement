@@ -19,6 +19,13 @@ division après la journée jouée (maquette validée `revue-20261119/apercus/15
   réelles du championnat (liseré + symbole dessiné + légende, `standings_zones.gd`), chaque club = sa fiche ; « Ta place »
   (écarts avec le 1er et les voisins, retiré s'il ne tient pas) ; **les autres matchs de la journée** (résultats réels
   du multiplex, clic = calendrier du jour) ; le seul aplat or de l'écran, « Valider le résultat » (Espace).
+- **Relecture adverse (20/11)** : leviers vers leur section (composition → Composition, tactique → Plan de jeu
+  (consignes), discipline → entraînement, condition → Effectif, préparation → Préparation) ; joueur adverse : clic =
+  XV type de son club, survol = mini-fiche « ce que le jeu connaît » (poste, club, match du jour, niveau et attributs
+  « — ») ; lien indisponible = grisé avec sa raison ; « Ta place » condensée en une ligne quand la place manque
+  (écarts écrits : « à 4 pts du 1er », « à égalité avec le 4e ») ; autres matchs sans « … » (noms entiers, sinon
+  sigles) ; fil du score : ESSAI / ESSAI TRANSFORMÉ (+ buteur) / PÉNALITÉ / DROP ; cadre de focus du bouton or
+  seulement au clavier.
 - **Navigation** : chaque lien ouvre l'écran visé (consultation, `director.consulter`) ; le résultat reste à valider,
   « Continuer » de la coque devient « Après-match » et ramène ici (Espace aussi). Menu « Plus ▾ » (menu déroulant) :
   détail, classements, calendrier. Aucune petite fenêtre.

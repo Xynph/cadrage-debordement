@@ -60,7 +60,7 @@ var _e := 1.0
 var _clubs: Dictionary = {}
 var _droite: VBoxContainer
 var _ta_place: Control
-var _autres: GridContainer
+var _autres: Control
 static var _gras: FontVariation
 
 ## DM Sans graisse 700 : les valeurs des lignes d'information (classement, essais).
@@ -232,10 +232,32 @@ func _lien(texte: String, cible: Dictionary, taille: float = 13, souligne := fal
 		s.content_margin_bottom = _d(2)
 		b.add_theme_stylebox_override(look, s)
 	b.set_meta("cible", cible)
-	b.set_meta("contextual_enabled", true)
 	b.focus_mode = Control.FOCUS_ALL
+	# Jamais de clic silencieux : une destination indisponible donne un lien grisé et sa raison écrite (infobulle).
+	var raison := indisponible(cible)
+	b.set_meta("contextual_enabled", raison.is_empty())
+	if not raison.is_empty():
+		b.disabled = true
+		b.set_meta("indisponible", raison)
+		b.mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN
 	b.pressed.connect(func(): ouvrir(cible))
 	return b
+
+## Raison écrite quand `cible` ne peut pas s'ouvrir (navigation_controller.entity_available), "" sinon.
+func indisponible(cible: Dictionary) -> String:
+	var kind := str(cible.get("kind", ""))
+	if kind in ["", "detail"]: return ""
+	var navigation: Variant = app.get("navigation_controller") if app != null else null
+	if navigation == null or not is_instance_valid(navigation) or not navigation.has_method("entity_available"): return ""
+	if navigation.entity_available(cible): return ""
+	return {"club": "Fiche du club indisponible dans cette carrière.", "player": "Fiche du joueur indisponible.",
+		"date": "Calendrier indisponible pour ce jour.", "competition": "Classements indisponibles pour cette compétition.",
+		"training": "Entraînement indisponible pour le moment.", "menu": "Écran indisponible pour le moment."}.get(kind, "Indisponible pour le moment.")
+
+## Infobulle d'un lien : la raison d'indisponibilité passe toujours en tête.
+func _aide(b: Control, texte: String) -> void:
+	var raison := str(b.get_meta("indisponible", ""))
+	b.tooltip_text = (raison + ("\n" + texte if not texte.is_empty() else "")) if not raison.is_empty() else texte
 
 ## Clic sur un lien : l'écran visé s'ouvre (le résultat reste à valider ; Espace ou « Continuer » ramène ici).
 func ouvrir(cible: Dictionary) -> void:
@@ -246,25 +268,111 @@ func ouvrir(cible: Dictionary) -> void:
 		return
 	if director != null and director.has_method("consulter"): director.consulter(cible)
 
-## Nom d'un joueur : notre effectif = fiche complète au clic, mini-fiche au survol ; adversaire = fiche de son club.
+## Nom d'un joueur : notre effectif = fiche complète au clic, mini-fiche au survol. Adversaire : clic = XV type de son
+## club (fiche du club), survol = mini-fiche de ce que le jeu en connaît (celle du marché s'il y est suivi).
 func _lien_joueur(id: String, nom: String, camp: int, taille: float = 13, police: Font = null) -> Control:
 	var nous := camp == _camp()
 	var a_nous := nous and _dans_effectif(id)
 	var equipes: Array = _live().get("teams", [])
 	var club: Dictionary = equipes[camp] if camp >= 0 and camp < equipes.size() and equipes[camp] is Dictionary else {}
-	var cible: Dictionary = {"kind": "player", "id": id} if a_nous else ({"kind": "club", "id": _cle_id(club.get("id"))} if club.get("id") != null else {})
+	var cible: Dictionary = {}
+	if a_nous: cible = {"kind": "player", "id": id}
+	elif club.get("id") != null: cible = {"kind": "club", "id": _cle_id(club.get("id")), "onglet": 2}
 	if nom.is_empty() or cible.is_empty(): return _texte(nom, taille, Charte.IVOIRE_2)
 	var b := _lien(nom, cible, taille)
 	if police != null: b.add_theme_font_override("font", police)
 	b.name = "ApresMatchJoueur_" + id.validate_node_name()
-	if a_nous:
-		MiniFiche.lier(app, b, id, "squad")
+	var marche := not a_nous and app != null and app.get("model") is Dictionary and not (load("res://ui/immersive08/fiche_commune.gd").trouver(app, id, "market") as Dictionary).is_empty()
+	if a_nous or marche:
+		MiniFiche.lier(app, b, id, "squad" if a_nous else "market")
 		# La mini-fiche se pose sur l'application : au-dessus de la scène du match (z 100).
 		b.mouse_entered.connect(func():
 			var fiche := MiniFiche.actuelle(app)
 			if fiche != null: fiche.z_index = 200)
-	else: b.tooltip_text = "Fiche de " + G.club_name(club)
+	else: _lier_fiche_adverse(b, id, nom, club, camp)
 	return b
+
+# --- Mini-fiche d'un joueur adverse : ce que le jeu en connaît ------------------------------------------
+
+## Survol (ou focus puis touche I) du nom d'un adversaire : poste, club, match du jour ; niveau et attributs « — »
+## tant que le joueur n'est pas observé. Un Control posé dans l'écran, jamais une fenêtre.
+func _lier_fiche_adverse(b: Button, id: String, nom: String, club: Dictionary, camp: int) -> void:
+	b.tooltip_text = ""
+	b.set_meta("fiche_adverse", id)
+	b.mouse_entered.connect(func(): montrer_fiche_adverse(b, id, nom, club, camp))
+	b.mouse_exited.connect(cacher_fiche_adverse)
+	b.focus_exited.connect(cacher_fiche_adverse)
+	b.tree_exiting.connect(cacher_fiche_adverse)
+	b.gui_input.connect(func(event: InputEvent):
+		var touche := event as InputEventKey
+		if touche == null or not touche.pressed or touche.echo or touche.keycode != KEY_I: return
+		if is_instance_valid(get_node_or_null("MiniFicheAdverse")): cacher_fiche_adverse()
+		else: montrer_fiche_adverse(b, id, nom, club, camp)
+		b.accept_event())
+
+func _adversaire(id: String) -> Dictionary:
+	for j: Variant in (_direct().get("adversaire", []) if _direct().get("adversaire") is Array else []):
+		if j is Dictionary and str(j.get("joueur", "")) == id: return j
+	return {}
+
+func montrer_fiche_adverse(ancre: Control, id: String, nom: String, club: Dictionary, camp: int) -> Control:
+	cacher_fiche_adverse()
+	if not is_instance_valid(ancre) or not ancre.is_inside_tree(): return null
+	var connu := _adversaire(id)
+	var note: Variant = connu.get("note")
+	var notes: Variant = _direct().get("notes")
+	if note == null and notes is Dictionary and notes.get(id) is Dictionary: note = notes[id].get("note")
+	var fiche := _panneau(Charte.PANNEAU_2, 16, 12)
+	fiche.name = "MiniFicheAdverse"
+	fiche.z_index = 200
+	fiche.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := fiche.get_theme_stylebox("panel") as StyleBoxFlat
+	style.border_width_left = maxi(2, _d(3))
+	style.border_color = Charte.club_trait(_couleur(club))
+	var col := _v(4)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fiche.add_child(col)
+	var tete := _h(8)
+	tete.add_child(_sigle(club, 28, 20, 12))
+	tete.add_child(_texte(nom, 16, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
+	col.add_child(tete)
+	var poste := str(connu.get("poste", ""))
+	col.add_child(_texte(" · ".join(PackedStringArray(([poste] if not poste.is_empty() else []) + [G.club_name(club)])), 13, Charte.IVOIRE_2))
+	col.add_child(_texte("CE QUE LE JEU CONNAÎT", 12, Charte.IVOIRE_3, Charte.TITRE))
+	for ligne: Array in [["Niveau", "—"], ["Attributs", "— (joueur non observé)"]]:
+		var r := _h(8)
+		r.add_child(_texte(str(ligne[0]), 13, Charte.IVOIRE_2))
+		r.add_child(_texte(str(ligne[1]), 13, Charte.IVOIRE, texte_gras()))
+		col.add_child(r)
+	var faits: Array[String] = []
+	if note is float or note is int: faits.append("note " + note_texte(note))
+	if int(connu.get("essais", 0)) > 0: faits.append("%d essai%s" % [int(connu.essais), "s" if int(connu.essais) > 1 else ""])
+	if int(connu.get("plaquages", 0)) > 0: faits.append("%d plaquages" % int(connu.plaquages))
+	if int(connu.get("metres", 0)) > 0: faits.append("%d m" % int(connu.metres))
+	if not faits.is_empty():
+		var r := _h(8)
+		r.add_child(_texte("Ce match", 13, Charte.IVOIRE_2))
+		r.add_child(_texte(" · ".join(PackedStringArray(faits)), 13, Charte.IVOIRE, texte_gras()))
+		col.add_child(r)
+	col.add_child(_texte("Clic : XV type de " + G.club_name(club), 12, Charte.IVOIRE_3))
+	add_child(fiche)
+	fiche.reset_size()
+	var taille := fiche.get_combined_minimum_size()
+	var vue := get_viewport_rect().size
+	var r_ancre := ancre.get_global_rect()
+	var pos := Vector2(r_ancre.position.x, r_ancre.end.y + _d(6))
+	if pos.y + taille.y > vue.y - 8: pos.y = r_ancre.position.y - taille.y - _d(6)
+	pos.x = clampf(pos.x, 8.0, maxf(8.0, vue.x - taille.x - 8.0))
+	pos.y = clampf(pos.y, 8.0, maxf(8.0, vue.y - taille.y - 8.0))
+	fiche.global_position = pos
+	fiche.set_meta("ancre", ancre)
+	return fiche
+
+func cacher_fiche_adverse() -> void:
+	var fiche := get_node_or_null("MiniFicheAdverse")
+	if fiche != null:
+		remove_child(fiche)
+		fiche.queue_free()
 
 func _dans_effectif(id: String) -> bool:
 	for p: Variant in model.get("squad", []):
@@ -292,7 +400,8 @@ func _pastille(lettre: String, largeur: float, hauteur: float, taille: float) ->
 	var p := PanelContainer.new()
 	p.name = "ApresMatchPastille" + lettre
 	p.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	p.custom_minimum_size = Vector2(_d(largeur), _d(hauteur))
+	# Jamais plus petit que 20 × 14 px réels : la lettre (12 px au moins) reste entière.
+	p.custom_minimum_size = Vector2(maxi(_d(largeur), 20), maxi(_d(hauteur), 14))
 	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(Trace.new("ovale", {"V": Charte.V, "N": Charte.N, "D": Charte.D}.get(lettre, Charte.N)))
@@ -362,6 +471,8 @@ func _reconstruire() -> void:
 		gauche.add_child(vide_bas)
 		_gabi(gauche)
 	_colonne_classement(_droite)
+	for b: Node in find_children("*", "BaseButton", true, false):
+		if b.has_meta("indisponible") and not (b as Control).tooltip_text.begins_with(str(b.get_meta("indisponible"))): _aide(b, (b as Control).tooltip_text)
 	if is_instance_valid(director) and director.has_method("_refresh_controls"): director._refresh_controls()
 	_ajuster.call_deferred()
 	_focus_valider.call_deferred()
@@ -369,21 +480,32 @@ func _reconstruire() -> void:
 func _focus_valider() -> void:
 	if is_instance_valid(bouton_valider) and bouton_valider.is_inside_tree() and bouton_valider.is_visible_in_tree(): bouton_valider.grab_focus()
 
-## La colonne de droite tient dans l'écran : « Ta place » s'efface d'abord (le classement dit déjà la place).
+## La colonne de droite tient dans l'écran : « Ta place » passe sur une ligne, puis les autres matchs en sigles.
+## Rien n'est retiré.
 func _ajuster() -> void:
 	if not is_inside_tree(): return
 	await get_tree().process_frame
 	if not is_instance_valid(_droite) or not _droite.is_inside_tree(): return
 	var dispo := get_viewport_rect().size.y - _droite.get_global_rect().position.y - float(_d(40))
 	if dispo <= 0: return
-	# D'abord les autres matchs sur deux colonnes (noms abrégés, entiers en infobulle), puis « Ta place » s'efface.
-	if is_instance_valid(_autres) and _autres.columns == 1 and _droite.get_combined_minimum_size().y > dispo + 1.0:
-		_autres.columns = 2
-		await get_tree().process_frame
+	if is_instance_valid(_ta_place) and not bool(_ta_place.get_meta("condense", false)) and _droite.get_combined_minimum_size().y > dispo + 1.0:
+		_remplacer(_ta_place, _place(_classement(), true))
 		await get_tree().process_frame
 		if not is_instance_valid(_droite): return
-	if is_instance_valid(_ta_place) and _droite.get_combined_minimum_size().y > dispo + 1.0: _ta_place.hide()
+	if is_instance_valid(_autres) and not bool(_autres.get_meta("sigles", false)) and _droite.get_combined_minimum_size().y > dispo + 1.0:
+		_remplacer(_autres, _autres_matchs(true))
 
+func _remplacer(ancien: Control, nouveau: Control) -> void:
+	if not is_instance_valid(ancien) or nouveau == null: return
+	var parent := ancien.get_parent()
+	var index := ancien.get_index()
+	parent.remove_child(ancien)
+	ancien.queue_free()
+	parent.add_child(nouveau)
+	parent.move_child(nouveau, index)
+	if ancien == _ta_place: _ta_place = nouveau
+	elif ancien == _autres: _autres = nouveau
+	if is_instance_valid(director) and director.has_method("_refresh_controls"): director._refresh_controls()
 func _bandeau() -> Control:
 	var bandeau := Control.new()
 	bandeau.name = "ApresMatchBandeau"
@@ -521,7 +643,15 @@ func _meta() -> Array[HBoxContainer]:
 		bloc.add_child(_texte("Classement", 15, Charte.IVOIRE_2))
 		var avant: Variant = nous.get("rangOfficiel")
 		var rang := int(nous.get("rang", 0))
-		bloc.add_child(_texte((ordinal(int(avant)) + " → " if avant is float or avant is int else "") + ordinal(rang), 15, Charte.IVOIRE, texte_gras()))
+		var valeur := (ordinal(int(avant)) + " → " if avant is float or avant is int else "") + ordinal(rang)
+		var competition := str(_fixture().get("competitionId", ""))
+		if competition.is_empty(): bloc.add_child(_texte(valeur, 15, Charte.IVOIRE, texte_gras()))
+		else:
+			var lien_rang := _lien(valeur, {"kind": "competition", "id": competition}, 15)
+			lien_rang.name = "ApresMatchRangLien"
+			lien_rang.add_theme_font_override("font", texte_gras())
+			_aide(lien_rang, "Classements de la compétition")
+			bloc.add_child(lien_rang)
 		var delta := int(nous.get("delta", 0))
 		if avant is float or avant is int:
 			if delta != 0: bloc.add_child(_triangle(delta > 0, Charte.V if delta > 0 else Charte.D))
@@ -555,6 +685,19 @@ func _meta() -> Array[HBoxContainer]:
 	for ligne in [une, deux]:
 		if ligne.get_child_count() > 0: lignes.append(ligne)
 	return lignes
+
+## Écran et libellé du lien d'un levier : la section où l'on agit (composition, consignes du plan de jeu, entraînement
+## de la discipline, condition dans l'effectif, préparation), sinon la route du moteur. {} sans destination.
+static func cible_levier(raison: Dictionary) -> Dictionary:
+	match str(raison.get("levier", "")):
+		"composition": return {"cible": {"kind": "menu", "route": "Composition"}, "libelle": "Revoir la composition"}
+		"tactique": return {"cible": {"kind": "menu", "route": "Plan de jeu"}, "libelle": "Ajuster les consignes"}
+		"discipline": return {"cible": {"kind": "training", "id": "team"}, "libelle": "Travailler à l’entraînement"}
+		"condition": return {"cible": {"kind": "menu", "route": "Effectif"}, "libelle": "Voir la condition"}
+		"preparation": return {"cible": {"kind": "menu", "route": "Préparation"}, "libelle": "Préparer la semaine"}
+	var route := str(raison.get("route", ""))
+	if route.is_empty(): return {}
+	return {"cible": {"kind": "menu", "route": route}, "libelle": str(raison.get("action", "Ouvrir " + route))}
 
 ## « Pourquoi on a gagné / perdu / ce nul » : trois raisons au plus, du moteur (match-pourquoi.cjs), chacune avec
 ## son sens (▲ point fort, ▼ à corriger : forme et mot) et le lien vers l'écran de son levier.
@@ -602,13 +745,13 @@ func _pourquoi(parent: VBoxContainer) -> void:
 		var texte := _texte(str(raison.get("texte", "")), 16, Charte.IVOIRE, Charte.TEXTE, true)
 		C.fill(texte)
 		r.add_child(texte)
-		var route := str(raison.get("route", ""))
+		var levier_cible := cible_levier(raison)
 		var action := Control.new()
-		if not route.is_empty():
-			action = _lien(str(raison.get("action", "Voir")) + " →", {"kind": "menu", "route": route}, 14, true)
+		if not levier_cible.is_empty():
+			action = _lien(str(levier_cible.libelle) + " →", levier_cible.cible, 14, true)
 			action.name = "ApresMatchLevier_" + str(raison.get("levier", ""))
 			(action as Button).alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		action.custom_minimum_size.x = _d(176)
+		action.custom_minimum_size.x = _d(200)
 		action.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		r.add_child(action)
 	if n == 0:
@@ -648,13 +791,28 @@ func _fil_du_score(parent: VBoxContainer) -> void:
 		item.mouse_filter = Control.MOUSE_FILTER_PASS
 		item.add_child(_sigle(club, 28, 20, 12))
 		item.add_child(_texte(str(m.get("horloge", m.get("minute", ""))).trim_suffix("′").trim_suffix("'") + "′", 15, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
+		var nature := nature_marque(m)
+		var mot := _texte(nature, 12, Charte.IVOIRE_2, Charte.TITRE)
+		mot.name = "Nature"
+		item.add_child(mot)
 		var nom := str(m.get("nom", ""))
-		var quoi := "Essai" if str(m.get("kind", "")) == "try" else "Pied"
-		if nom.is_empty(): item.add_child(_texte(quoi, 13))
-		else: item.add_child(_lien_joueur(str(m.get("joueur", "")), nom, cote, 13))
+		if not nom.is_empty(): item.add_child(_lien_joueur(str(m.get("joueur", "")), nom, cote, 13))
+		var buteur: Variant = m.get("buteur")
+		if buteur is Dictionary and not str(buteur.get("nom", "")).is_empty():
+			item.add_child(_texte("transf.", 12, Charte.IVOIRE_2))
+			item.add_child(_lien_joueur(str(buteur.get("joueur", "")), str(buteur.nom), cote, 13))
 		var s: Variant = m.get("score")
-		if s is Array and s.size() == 2: item.add_child(_texte("%d-%d" % [int(s[0]), int(s[1])], 13, Charte.IVOIRE_2))
+		if s is Array and s.size() == 2: item.add_child(_texte("%d–%d" % [int(s[0]), int(s[1])], 13, Charte.IVOIRE_2))
 		flux.add_child(item)
+
+## Mot écrit d'une marque : « ESSAI », « ESSAI TRANSFORMÉ », « PÉNALITÉ », « DROP » (moteur : `nature`).
+static func nature_marque(m: Dictionary) -> String:
+	match str(m.get("nature", "")):
+		"essai": return "ESSAI"
+		"essai-transforme": return "ESSAI TRANSFORMÉ"
+		"penalite": return "PÉNALITÉ"
+		"drop": return "DROP"
+	return "ESSAI" if str(m.get("kind", "")) == "try" else "PÉNALITÉ OU DROP"
 
 ## Gabi : le levier de la semaine tiré des raisons du moteur, et l'homme du match s'il est des nôtres.
 func phrase_gabi() -> String:
@@ -762,9 +920,10 @@ func _colonne_classement(parent: VBoxContainer) -> void:
 			if r is Dictionary: col.add_child(_ligne_club(r, classement.size()))
 		var legende := _legende()
 		if legende != null: col.add_child(legende)
-		_ta_place = _place(classement)
+		_ta_place = _place(classement, _e < 0.8)
 		if _ta_place != null: parent.add_child(_ta_place)
-	_autres_matchs(parent)
+	_autres = _autres_matchs(_e < 0.8)
+	if _autres != null: parent.add_child(_autres)
 	var vide := Control.new()
 	vide.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -850,13 +1009,22 @@ func _ligne_club(r: Dictionary, total: int) -> PanelContainer:
 	rangee.add_child(_cellule(signe(int(r.get("diff", 0))), 7, Charte.IVOIRE_2, Charte.TEXTE, 12))
 	rangee.add_child(_cellule(str(int(r.get("points", 0))), 8, Charte.IVOIRE, C.BOLD))
 	var forme := _h(3)
-	forme.custom_minimum_size.x = _d(LARGEURS[9])
+	forme.custom_minimum_size.x = maxi(_d(LARGEURS[9]), 5 * 20 + 4 * 3)
 	forme.name = "Forme"
-	for resultat: Variant in (r.get("forme", []) if r.get("forme") is Array else []):
-		var lettre: String = {"V": "V", "N": "N", "D": "D", "W": "V", "L": "D"}.get(str(resultat), "")
-		if not lettre.is_empty(): forme.add_child(_pastille(lettre, 24, 16, 11))
+	for lettre: String in forme_vnd(r.get("forme", []) if r.get("forme") is Array else []):
+		forme.add_child(_pastille(lettre, 24, 16, 11))
 	rangee.add_child(forme)
 	return ligne
+
+## Forme en lettres V / N / D. Le moteur (CDWorldCareer.rows, via match-multiplex.cjs) l'écrit déjà en V / N / D, où
+## D veut dire défaite ; une forme brute W / D / L (D = nul) est reconnue à ses W ou L et convertie (W→V, D→N, L→D).
+static func forme_vnd(forme: Array) -> Array[String]:
+	var brute := forme.any(func(x: Variant): return str(x) in ["W", "L"])
+	var table: Dictionary = {"W": "V", "D": "N", "L": "D"} if brute else {"V": "V", "N": "N", "D": "D"}
+	var sortie: Array[String] = []
+	for x: Variant in forme:
+		if table.has(str(x)): sortie.append(str(table[str(x)]))
+	return sortie
 
 ## Légende des zones présentes : symbole dessiné et libellé (« 1er à 4e · Phases finales »), puis la note courte.
 func _legende() -> Control:
@@ -877,8 +1045,15 @@ func _legende() -> Control:
 	if not note.is_empty(): rang.add_child(_texte(note, 12, Charte.IVOIRE_2))
 	return rang
 
-## Ta place : écart de points avec le premier et nos voisins directs (chacun mène à la fiche du club).
-func _place(classement: Array) -> Control:
+## Écart de points écrit en toutes lettres : « 3 pts d'avance sur le 13e », « à 20 pts du 1er », « à égalité avec le 11e ».
+static func ecart_texte(ecart: int, rang: int) -> String:
+	if ecart > 0: return "%d pt%s d’avance sur le %s" % [ecart, "s" if ecart > 1 else "", ordinal(rang)]
+	if ecart < 0: return "à %d pt%s du %s" % [-ecart, "s" if ecart < -1 else "", ordinal(rang)]
+	return "à égalité avec le %s" % ordinal(rang)
+
+## Ta place : écart de points avec le premier et nos voisins directs (chacun mène à la fiche du club). `condense` :
+## une seule ligne (petites hauteurs d'écran), toujours présente.
+func _place(classement: Array, condense: bool = false) -> Control:
 	var nous := {}
 	for r: Variant in classement:
 		if r is Dictionary and bool(r.get("nous", false)): nous = r
@@ -890,8 +1065,9 @@ func _place(classement: Array) -> Control:
 		if voisins.any(func(v: Dictionary): return int(v.get("rang", 0)) == cible): continue
 		var r: Variant = classement[cible - 1]
 		if r is Dictionary: voisins.append(r)
-	var cadre := _panneau(Charte.PANNEAU, 16, 10)
+	var cadre := _panneau(Charte.PANNEAU, 16, 6 if condense else 10)
 	cadre.name = "ApresMatchTaPlace"
+	cadre.set_meta("condense", condense)
 	var col := _v(6)
 	cadre.add_child(col)
 	var titre := _h(8)
@@ -899,6 +1075,19 @@ func _place(classement: Array) -> Control:
 	titre.add_child(_texte("TA PLACE", 15, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
 	var zone := _zone(rang)
 	var resume := "%s · %d pts" % [ordinal(rang), int(nous.get("points", 0))] + ((" · " + str(zone.get("label", "")).to_lower()) if not zone.is_empty() else "")
+	if condense:
+		titre.add_child(_texte(resume, 12, Charte.IVOIRE_2))
+		var flux := HFlowContainer.new()
+		flux.add_theme_constant_override("h_separation", _d(14))
+		col.add_child(flux)
+		for v: Dictionary in voisins:
+			var club_v := _club(v.get("clubId"))
+			var nom_v := G.club_name(club_v) if not club_v.is_empty() else str(v.get("nom", ""))
+			var lien := _lien(ecart_texte(int(nous.get("points", 0)) - int(v.get("points", 0)), int(v.get("rang", 0))) + ", " + nom_v, {"kind": "club", "id": _cle_id(v.get("clubId"))}, 12)
+			lien.name = "ApresMatchEcart%d" % int(v.get("rang", 0))
+			_aide(lien, "%s · %d pts" % [nom_v, int(v.get("points", 0))])
+			flux.add_child(lien)
+		return cadre
 	var droite := _texte(resume, 12, Charte.IVOIRE_2)
 	droite.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	C.fill(droite)
@@ -911,7 +1100,7 @@ func _place(classement: Array) -> Control:
 		var nom := G.club_name(club) if not club.is_empty() else str(v.get("nom", ""))
 		var b := _lien("", {"kind": "club", "id": _cle_id(v.get("clubId"))}, 12)
 		b.name = "ApresMatchEcart%d" % int(v.get("rang", 0))
-		b.tooltip_text = "%s · %d pts" % [nom, int(v.get("points", 0))]
+		_aide(b, "%s · %d pts" % [nom, int(v.get("points", 0))])
 		b.add_theme_stylebox_override("normal", _fond(Charte.PANNEAU_2, 10, 6))
 		b.add_theme_stylebox_override("hover", _fond(Charte.PANNEAU_3, 10, 6))
 		b.add_theme_stylebox_override("focus", _fond(Charte.PANNEAU_3, 10, 6))
@@ -922,29 +1111,30 @@ func _place(classement: Array) -> Control:
 		contenu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		contenu.offset_left = _d(10)
 		contenu.offset_top = _d(4)
-		contenu.add_child(_texte(signe(ecart), 20, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
-		contenu.add_child(_texte("sur le %s, %s" % [ordinal(int(v.get("rang", 0))), nom], 12, Charte.IVOIRE_2))
+		contenu.add_child(_texte(signe(ecart) if ecart != 0 else "=", 20, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
+		contenu.add_child(_texte(ecart_texte(ecart, int(v.get("rang", 0))) + ", " + nom, 12, Charte.IVOIRE_2, Charte.TEXTE, true))
 		b.add_child(contenu)
-		b.custom_minimum_size.y = _d(44)
+		b.custom_minimum_size.y = _d(60)
 		b.clip_contents = true
 		cases.add_child(b)
 	return cadre
 
-## Les autres matchs de la journée (`journee.matchs`, résultats réels du moteur) ; un clic ouvre le calendrier du jour.
-func _autres_matchs(parent: VBoxContainer) -> void:
+## Les autres matchs de la journée (`journee.matchs`, résultats réels du moteur) ; un clic ouvre le calendrier du jour
+## (le jeu n'a pas d'écran de résumé d'une rencontre : sa fiche est une petite fenêtre). Une colonne avec les noms
+## entiers ; `sigles` (place comptée) : trois colonnes « sigle score sigle », noms entiers en infobulle. Jamais de « … ».
+func _autres_matchs(sigles: bool = false) -> Control:
 	var matchs: Variant = _journee().get("matchs")
-	if not matchs is Array or matchs.is_empty(): return
+	if not matchs is Array or matchs.is_empty(): return null
 	var cadre := _panneau(Charte.PANNEAU, 16, 10)
 	cadre.name = "ApresMatchAutresMatchs"
-	parent.add_child(cadre)
+	cadre.set_meta("sigles", sigles)
 	var col := _v(4)
 	cadre.add_child(col)
 	var etape := _etape_courte()
 	col.add_child(_texte(("Les autres matchs de la " + etape if not etape.is_empty() else "Les autres matchs de la journée").to_upper(), 15, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
 	var grille := GridContainer.new()
-	grille.columns = 1
+	grille.columns = 3 if sigles else 1
 	grille.name = "ApresMatchAutresGrille"
-	_autres = grille
 	grille.add_theme_constant_override("h_separation", _d(16))
 	grille.add_theme_constant_override("v_separation", _d(2))
 	col.add_child(grille)
@@ -961,31 +1151,33 @@ func _autres_matchs(parent: VBoxContainer) -> void:
 		var n2 := G.club_name(c2) if not c2.is_empty() else str(ext.get("nom", ""))
 		var b := _lien("", cible, 13)
 		b.name = "ApresMatchAutreMatch%d" % n
-		b.tooltip_text = "%s %d – %d %s · le calendrier du jour" % [n1, int(dom.get("score", 0)), int(ext.get("score", 0)), n2]
+		_aide(b, "%s %d – %d %s · le calendrier du jour" % [n1, int(dom.get("score", 0)), int(ext.get("score", 0)), n2])
 		C.fill(b)
-		b.custom_minimum_size.y = _d(24)
-		b.clip_contents = true
 		var rang := _h(6)
 		rang.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		rang.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		rang.add_child(_sigle(c1 if not c1.is_empty() else {"abbr": dom.get("abbr", "")}, 28, 20, 12))
-		var nom1 := _texte(n1, 13)
-		nom1.clip_text = true
-		nom1.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		C.fill(nom1)
-		rang.add_child(nom1)
-		rang.add_child(_texte("%d – %d" % [int(dom.get("score", 0)), int(ext.get("score", 0))], 14, Charte.IVOIRE, Charte.TITRE_GRAS))
-		var nom2 := _texte(n2, 13)
-		nom2.clip_text = true
-		nom2.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		nom2.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		C.fill(nom2)
-		rang.add_child(nom2)
+		if not sigles:
+			var nom1 := _texte(n1, 13)
+			C.fill(nom1)
+			rang.add_child(nom1)
+		var score := _texte("%d – %d" % [int(dom.get("score", 0)), int(ext.get("score", 0))], 14, Charte.IVOIRE, Charte.TITRE_GRAS)
+		score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		score.custom_minimum_size.x = _d(56)
+		rang.add_child(score)
+		if not sigles:
+			var nom2 := _texte(n2, 13)
+			nom2.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			C.fill(nom2)
+			rang.add_child(nom2)
 		rang.add_child(_sigle(c2 if not c2.is_empty() else {"abbr": ext.get("abbr", "")}, 28, 20, 12))
+		# Le bouton ne mesure pas ses enfants : la rangée est posée dessus et lui donne sa taille minimale.
 		b.add_child(rang)
+		rang.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		b.custom_minimum_size = Vector2(rang.get_combined_minimum_size().x, maxf(_d(24), rang.get_combined_minimum_size().y))
+		rang.minimum_size_changed.connect(func(): b.custom_minimum_size = Vector2(rang.get_combined_minimum_size().x, maxf(_d(24), rang.get_combined_minimum_size().y)))
 		grille.add_child(b)
 		n += 1
-
+	return cadre
 ## Seul aplat or de l'écran (exception écrite de la charte pour l'après-match) : valide le résultat.
 func _bloc_valider() -> Control:
 	var col := _v(10)
@@ -1001,13 +1193,25 @@ func _bloc_valider() -> Control:
 	b.custom_minimum_size = Vector2(_d(440), _d(56))
 	b.size_flags_horizontal = Control.SIZE_SHRINK_END
 	for look in ["normal", "hover", "pressed", "disabled"]: b.add_theme_stylebox_override(look, StyleBoxEmpty.new())
-	var focus := StyleBoxFlat.new()
-	focus.draw_center = false
-	focus.border_color = Charte.IVOIRE
-	focus.set_border_width_all(2)
-	focus.set_expand_margin_all(3)
-	focus.set_corner_radius_all(0)
-	b.add_theme_stylebox_override("focus", focus)
+	# Focus (charte §7) : le seul cadre complet permis, et seulement en navigation au clavier ; au repos et à la souris,
+	# rien (le bouton a pourtant le focus à l'ouverture : Espace ou Entrée valident).
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	var cadre_focus := Panel.new()
+	cadre_focus.name = "ApresMatchValiderFocus"
+	var trait_focus := StyleBoxFlat.new()
+	trait_focus.draw_center = false
+	trait_focus.border_color = Charte.IVOIRE
+	trait_focus.set_border_width_all(2)
+	trait_focus.set_corner_radius_all(0)
+	cadre_focus.add_theme_stylebox_override("panel", trait_focus)
+	cadre_focus.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre_focus.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for cote: String in ["offset_left", "offset_top"]: cadre_focus.set(cote, -_d(4))
+	for cote: String in ["offset_right", "offset_bottom"]: cadre_focus.set(cote, _d(4))
+	cadre_focus.hide()
+	b.add_child(cadre_focus)
+	b.focus_entered.connect(_maj_focus_clavier)
+	b.focus_exited.connect(_maj_focus_clavier)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.set_meta("contextual_enabled", true)
 	var plaque := Trace.new("para", Charte.OR)
@@ -1038,6 +1242,21 @@ func _bloc_valider() -> Control:
 	bouton_valider = b
 	col.add_child(b)
 	return col
+
+## Navigation au clavier en cours (dernière entrée : une touche), pour le cadre de focus du bouton or.
+var clavier := false
+
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree(): return
+	var avant := clavier
+	if event is InputEventKey and event.pressed: clavier = true
+	elif event is InputEventMouseButton and event.pressed: clavier = false
+	if avant != clavier: _maj_focus_clavier()
+
+func _maj_focus_clavier() -> void:
+	if not is_instance_valid(bouton_valider): return
+	var cadre_focus := bouton_valider.get_node_or_null("ApresMatchValiderFocus") as Control
+	if cadre_focus != null: cadre_focus.visible = clavier and bouton_valider.has_focus()
 
 func valider() -> void:
 	if director != null and director.has_method("command"): director.command("finish_round")

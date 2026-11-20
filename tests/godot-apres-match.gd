@@ -20,6 +20,15 @@ class FauxDirecteur extends Node:
 	func command(nom: String, _charge: Dictionary = {}) -> void: commandes.append(nom)
 	func _refresh_controls() -> void: pass
 
+## Navigation du jeu : la fiche du club 111 est indisponible (lien grisé et raison écrite).
+class FauxNavigation extends Node:
+	func entity_available(cible: Dictionary) -> bool:
+		return not (str(cible.get("kind", "")) == "club" and str(cible.get("id", "")) == "111")
+
+class FauxApp extends Control:
+	var model: Dictionary = {}
+	var navigation_controller: Node
+
 func _initialize() -> void: call_deferred("run")
 
 func check(ok: bool, message: String) -> void:
@@ -36,8 +45,8 @@ func modele(issue: String, raisons: bool) -> Dictionary:
 	for k in 12:
 		var id := 100 + k
 		lignes.append({"id": id, "name": NOMS[k], "abbr": NOMS[k].substr(0, 2).to_upper(), "color": "#%02x4a6b" % (40 + k * 12), "rank": k + 1, "played": 9})
-		classement.append({"rang": k + 1, "clubId": id, "abbr": NOMS[k].substr(0, 2).to_upper(), "nom": NOMS[k], "joues": 9, "points": 34 - k * 2, "diff": 60 - k * 11,
-			"gagnes": 7 - floori(k / 2.0), "nuls": k % 2, "perdus": 2 + floori(k / 2.0), "forme": ["V", "D", "N", "V", "V"], "bonusOff": 1 if k == 0 else 0, "bonusDef": 1 if k == 2 else 0,
+		classement.append({"rang": k + 1, "clubId": id, "abbr": NOMS[k].substr(0, 2).to_upper(), "nom": NOMS[k], "joues": 9, "points": 30 if k == 3 else 34 - k * 2, "diff": 60 - k * 11,
+			"gagnes": 7 - floori(k / 2.0), "nuls": k % 2, "perdus": 2 + floori(k / 2.0), "forme": ["V", "D", "N", "V", "V"] if k != 5 else ["W", "D", "L"], "bonusOff": 1 if k == 0 else 0, "bonusDef": 1 if k == 2 else 0,
 			"rangOfficiel": k + 2 if k == 2 else k + 1, "delta": 1 if k == 2 else 0, "nous": k == 2})
 	var matchs: Array = []
 	for m in 5:
@@ -51,8 +60,9 @@ func modele(issue: String, raisons: bool) -> Dictionary:
 	var score := [24, 21] if issue == "victoire" else [17, 24]
 	var direct := {"camp": 0, "score": score, "pourquoi": pourquoi,
 		"hommeDuMatch": {"joueur": "p9", "camp": 0, "nom": "T. Harlow", "note": 8.1, "essais": 1, "plaquages": 9, "metres": 64},
-		"marques": [{"horloge": "12′", "minute": 12, "kind": "goal", "equipe": 0, "joueur": "p9", "nom": "T. Harlow", "score": [3, 0], "texte": "Pénalité réussie."},
-			{"horloge": "19′", "minute": 19, "kind": "try", "equipe": 1, "joueur": "x4", "nom": "J. Pell", "score": [3, 5], "texte": "Essai."}],
+		"marques": [{"horloge": "12′", "minute": 12, "kind": "goal", "nature": "penalite", "equipe": 0, "joueur": "p9", "nom": "T. Harlow", "buteur": null, "score": [3, 0], "texte": "Pénalité réussie."},
+			{"horloge": "19′", "minute": 19, "kind": "try", "nature": "essai-transforme", "equipe": 1, "joueur": "x4", "nom": "J. Pell", "buteur": {"joueur": "x10", "nom": "R. Howell"}, "score": [3, 7], "texte": "Essai."}],
+		"adversaire": [{"joueur": "x4", "nom": "J. Pell", "poste": "Ailier", "note": 7.0, "essais": 1, "plaquages": 4, "metres": 58}],
 		"notes": {"p9": {"cote": 0, "note": 8.1}, "p10": {"cote": 0, "note": 6.4}, "x4": {"cote": 1, "note": 7.0}},
 		"journee": {"minute": 80, "matchs": matchs, "classement": classement}}
 	return {"club": {"id": 102, "name": NOMS[2], "color": "#6b2a2a"},
@@ -81,7 +91,9 @@ func run() -> void:
 	# Comme la coque du jeu (shell.gd) : pas d'étirement, un pixel de l'écran = un pixel réel.
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	root.size = Vector2i(1920, 1080)
-	var app := Control.new()
+	var app := FauxApp.new()
+	app.navigation_controller = FauxNavigation.new()
+	app.add_child(app.navigation_controller)
 	app.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(app)
 	var directeur := FauxDirecteur.new()
@@ -111,6 +123,12 @@ func run() -> void:
 	check(premiere != null and premiere.find_child("StandingsZoneMark", true, false) != null, "Symbole de zone dessiné")
 	var forme := premiere.find_child("Forme", true, false) if premiere != null else null
 	check(forme != null and forme.get_child_count() == 5, "Forme : cinq pastilles")
+	# Forme du moteur en V / N / D (D = défaite) ; une forme brute W / D / L (D = nul) est convertie.
+	check(forme != null and forme.get_child(2).name.begins_with("ApresMatchPastilleN") and forme.get_child(1).name.begins_with("ApresMatchPastilleD"), "Forme : un nul s'affiche N, une défaite D")
+	check(ApresMatch.forme_vnd(["W", "D", "L"]) == ["V", "N", "D"] and ApresMatch.forme_vnd(["V", "N", "D"]) == ["V", "N", "D"], "Forme brute W/D/L : le nul (D) devient N")
+	var sixieme := ecran.find_child("ApresMatchLigne6", true, false)
+	var forme6 := sixieme.find_child("Forme", true, false) if sixieme != null else null
+	check(forme6 != null and forme6.get_child_count() == 3 and forme6.get_child(1).name.begins_with("ApresMatchPastilleN"), "Forme W/D/L affichée V N D")
 	for m in 5: check(ecran.find_child("ApresMatchAutreMatch%d" % m, true, false) != null, "Autre match de la journée n° %d" % m)
 	check(ecran.find_child("ApresMatchTaPlace", true, false) != null, "Ta place")
 	check(ecran.find_child("ApresMatchFil", true, false) != null, "Fil du score")
@@ -126,7 +144,7 @@ func run() -> void:
 		await RenderingServer.frame_post_draw
 		check(root.get_texture().get_image().save_png(capture) == OK, "Capture : " + capture)
 	# Tout ce qui a l'air cliquable ouvre quelque chose.
-	var connus := ["club", "player", "menu", "date", "competition"]
+	var connus := ["club", "player", "menu", "date", "competition", "training"]
 	for b: BaseButton in boutons(ecran):
 		if b is MenuButton:
 			var cibles: Array = b.get_meta("cibles", [])
@@ -141,15 +159,55 @@ func run() -> void:
 			check(directeur.commandes == ["finish_round"], "Valider le résultat envoie finish_round")
 			continue
 		var cible: Dictionary = b.get_meta("cible", {})
-		if str(cible.get("kind", "")) == "detail": continue
+		if str(cible.get("kind", "")) == "detail" or b.disabled: continue
 		directeur.cibles.clear()
 		b.pressed.emit()
 		var ok: bool = directeur.cibles.size() == 1 and str(directeur.cibles[0].get("kind", "")) in connus and (not str(directeur.cibles[0].get("id", "")).is_empty() or not str(directeur.cibles[0].get("route", "")).is_empty())
 		check(ok, "Clic sur %s ouvre un écran : %s" % [b.name, str(directeur.cibles)])
-	var leviers := ["condition", "tactique", "discipline"]
-	for levier in leviers:
+	# Chaque levier mène à sa section.
+	var attendus := {"condition": {"kind": "menu", "route": "Effectif"}, "tactique": {"kind": "menu", "route": "Plan de jeu"}, "discipline": {"kind": "training", "id": "team"}}
+	for levier: String in attendus:
 		var b := ecran.find_child("ApresMatchLevier_" + levier, true, false) as Button
-		check(b != null, "Lien du levier " + levier)
+		check(b != null and b.get_meta("cible", {}) == attendus[levier], "Levier %s : %s" % [levier, str(b.get_meta("cible", {}) if b != null else "absent")])
+	check(ApresMatch.cible_levier({"levier": "composition"}).cible == {"kind": "menu", "route": "Composition"}, "Levier composition : Composition")
+	# Joueur adverse : clic = XV type de son club, survol = mini-fiche « ce que le jeu connaît » (pas une fenêtre).
+	var adverse := ecran.find_child("ApresMatchJoueur_x4", true, false) as Button
+	check(adverse != null and adverse.get_meta("cible", {}) == {"kind": "club", "id": "100", "onglet": 2}, "Joueur adverse : XV type de son club")
+	check(adverse != null and adverse.has_meta("fiche_adverse"), "Joueur adverse : mini-fiche au survol")
+	if adverse != null:
+		var fiche: Control = ecran.montrer_fiche_adverse(adverse, "x4", "J. Pell", {"id": 100, "name": NOMS[0]}, 1)
+		var textes: Array = fiche.find_children("*", "Label", true, false).map(func(l: Label): return l.text) if fiche != null else []
+		check(fiche != null and not fiche.is_class("Window") and ("Ailier · " + NOMS[0]) in textes and "—" in textes, "Mini-fiche adverse : poste, club, niveau inconnu : " + str(textes))
+		ecran.cacher_fiche_adverse()
+	# Fil du score : nature écrite, auteur de la transformation.
+	var natures: Array = ecran.find_children("Nature", "Label", true, false).map(func(l: Label): return l.text)
+	check(natures == ["PÉNALITÉ", "ESSAI TRANSFORMÉ"], "Fil du score : nature de chaque marque : " + str(natures))
+	check(ecran.find_child("ApresMatchJoueur_x10", true, false) != null, "Fil du score : auteur de la transformation")
+	# Lien indisponible : grisé, raison écrite, aucun clic silencieux.
+	var indispo := ecran.find_child("ApresMatchClubLigne12", true, false) as Button
+	check(indispo != null and indispo.disabled and indispo.tooltip_text.begins_with("Fiche du club indisponible"), "Club indisponible : lien grisé et raison écrite")
+	# Ta place : écarts écrits sans ambiguïté.
+	var place := ecran.find_child("ApresMatchTaPlace", true, false)
+	var textes_place: Array = place.find_children("*", "Control", true, false).filter(func(n: Control): return n is Label or n is Button).map(func(n: Control): return n.get("text")) if place != null else []
+	check(textes_place.any(func(x: String): return x.begins_with("à égalité avec le 4e")) and textes_place.any(func(x: String): return x.begins_with("à 4 pts du 1er")), "Ta place : écarts écrits : " + str(textes_place))
+	# Autres matchs : jamais de troncature.
+	var autres := ecran.find_child("ApresMatchAutresMatchs", true, false)
+	var coupes: Array = autres.find_children("*", "Label", true, false).filter(func(l: Label): return l.clip_text or l.text_overrun_behavior != TextServer.OVERRUN_NO_TRIMMING) if autres != null else [null]
+	check(coupes.is_empty(), "Autres matchs sans troncature")
+	# Cadre de focus du bouton or : jamais au repos ni à la souris, seulement au clavier.
+	var cadre_focus := ecran.find_child("ApresMatchValiderFocus", true, false) as Control
+	check(cadre_focus != null and not cadre_focus.visible, "Bouton or : pas de cadre de focus au repos")
+	var touche := InputEventKey.new()
+	touche.keycode = KEY_TAB
+	touche.pressed = true
+	ecran._input(touche)
+	(ecran.find_child("ApresMatchValider", true, false) as Control).grab_focus()
+	await process_frame
+	check(cadre_focus != null and cadre_focus.visible, "Bouton or : cadre de focus en navigation au clavier")
+	var souris := InputEventMouseButton.new()
+	souris.pressed = true
+	ecran._input(souris)
+	check(cadre_focus != null and not cadre_focus.visible, "Bouton or : cadre retiré dès la souris")
 	check(ecran.find_child("ApresMatchJoueur_p9", true, false) != null and ecran.find_child("ApresMatchJoueur_p9", true, false).has_meta("mini_fiche_joueur"), "Homme du match : fiche au clic, mini-fiche au survol")
 	var club_ligne := ecran.find_child("ApresMatchClubLigne5", true, false) as Button
 	directeur.cibles.clear()
@@ -183,6 +241,8 @@ func run() -> void:
 	check(valider != null and valider.get_global_rect().end.y <= 721.0 and valider.get_global_rect().end.x <= 1281.0, "1280×720 : Valider le résultat dans l’écran (%s)" % (str(valider.get_global_rect()) if valider != null else "absent"))
 	var petits := ecran.find_children("*", "Label", true, false).filter(func(l: Label): return l.is_visible_in_tree() and l.get_theme_font_size("font_size") < 12)
 	check(petits.is_empty(), "1280×720 : aucun texte sous 12 px (%d)" % petits.size())
+	var place_720 := ecran.find_child("ApresMatchTaPlace", true, false) as Control
+	check(place_720 != null and place_720.is_visible_in_tree(), "1280×720 : Ta place reste (ligne condensée)")
 	var derniere_ligne := ecran.find_child("ApresMatchLigne12", true, false) as Control
 	check(derniere_ligne != null and derniere_ligne.get_global_rect().end.y <= 721.0, "1280×720 : classement complet visible")
 	if failures.is_empty(): print("Après-match Godot · %d contrôles réussis" % checks)

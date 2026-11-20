@@ -41,6 +41,9 @@ func consulter(cible: Dictionary) -> bool:
 	if app == null or app.waiting or not bool(_live().get("finished", false)) or not _talk().is_empty(): return false
 	consultation = true
 	_close()
+	# Fiche d'un club sur un onglet donné (XV type pour un joueur adverse) : open_entity garde l'onglet du même club.
+	if str(cible.get("kind", "")) == "club" and cible.has("onglet"):
+		app.management_ui.club_sheet = {"id":int(float(str(cible.get("id", -1)))), "tab":int(cible.onglet), "sort":"fam", "descending":false}
 	var ouvert := false
 	if is_instance_valid(app.navigation_controller): ouvert = app.navigation_controller.open_entity(cible)
 	if not ouvert or app.route == "Match":
