@@ -20,7 +20,22 @@ try {
  const a = doc(b).state, z = doc(control).state;
  assert.equal(a.club, target.clubId); assert.equal(a.managerMobility.history[0].fromClub, 29);
  assert.deepEqual(a.clubs.map(c => c.cash), z.clubs.map(c => c.cash));
- assert.deepEqual(a.clubs.map(c => c.players.map(p => p.id)), z.clubs.map(c => c.players.map(p => p.id)));
+ {// Effectifs conservés, à une différence près voulue par Léo (19/11/2026, docs/gdd/calendrier-mutations.md
+  // § 3 quater) : le club joué n'a plus de plancher de 40, les clubs gérés le gardent. L'ancien club (29), devenu
+  // géré dans la carrière, peut recevoir ses joueurs de complément de la nouvelle saison ; le club repris, joué, n'en
+  // reçoit pas (et inversement chez le témoin). Tout le reste est identique, joueur par joueur et dans l'ordre.
+  const fresh = (clubId, id) => id.startsWith('depth-' + clubId + '-' + a.season + '-');
+  const ids = (s, clubId, sans) => s.clubs[clubId].players.map(p => p.id).filter(id => !(sans && fresh(clubId, id)));
+  for (const c of a.clubs) {
+   if (c.id === 29 || c.id === target.clubId) continue;
+   assert.deepEqual(ids(a, c.id), ids(z, c.id), 'club ' + c.id);
+  }
+  assert.deepEqual(ids(a, 29, true), ids(z, 29), 'ancien club : seuls des joueurs de complément s’ajoutent');
+  assert.ok(ids(z, 29).every(id => !fresh(29, id)), 'club joué du témoin : aucun joueur de complément');
+  assert.deepEqual(ids(a, target.clubId), ids(z, target.clubId, true), 'club repris : seuls ses joueurs de complément manquent');
+  assert.ok(ids(a, target.clubId).every(id => !fresh(target.clubId, id)), 'club repris : aucun joueur de complément');
+  assert.ok(ids(a, 29).length >= 40 || ids(a, 29).length === ids(z, 29).length, 'ancien club : plancher retrouvé s’il manquait des joueurs');
+ }
  {// Politique 3 : le club repris garde son centre ; sa nouvelle génération attend le choix du
   // manager au lieu du choix automatique, et ses Espoirs ne sont pas réduits par le staff.
   const mine = a.development.academy, ai = z.aiRoster.academies.find(c => c.clubId === target.clubId).players, season = a.season;

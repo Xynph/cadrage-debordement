@@ -17,9 +17,17 @@ test('Effectif : un joueur généré pour compléter l’effectif est présenté
     const bridge = createBridge({ dataDir: path.join(dir, 'moteur'), seed: 37, now: 1788134400000 });
     const created = bridge.handle({ id: 1, command: 'new_career', payload: { mode: 'world-champ', club: 103, varyCurrent: false } });
     assert.equal(created.ok, true, created.error);
-    const generated = created.model.squad.find(player => player.id.startsWith('depth-'));
+    // Le club joué ne reçoit plus de joueurs de complément (décision de Léo du 19/11/2026) ; ceux des clubs gérés et
+    // ceux des anciennes sauvegardes du club joué restent présentés comme tels. Fiche d'effectif d'un joueur d'origine
+    // reprise sous l'identifiant réel d'un joueur de complément d'un club géré.
+    const exported = bridge.handle({ id: 2, command: 'export', payload: {} });
+    assert.equal(exported.ok, true, exported.error);
+    const state = JSON.parse(exported.model.meta.exportText).state;
+    const depthId = state.clubs.flatMap(club => club.players).map(player => player.id).find(id => id.startsWith('depth-'));
     const original = created.model.squad.find(player => !player.id.startsWith('depth-'));
-    assert.ok(generated && original, 'La carrière Monde contient des joueurs générés et des joueurs d’origine');
+    assert.equal(created.model.squad.some(player => player.id.startsWith('depth-')), false, 'Club joué : aucun joueur de complément');
+    assert.ok(depthId && original, 'La carrière Monde contient des joueurs générés (clubs gérés) et des joueurs d’origine');
+    const generated = { ...original, id: depthId };
     const fixture = path.join(dir, 'fixture.json');
     fs.writeFileSync(fixture, JSON.stringify({ generated, original }));
     const result = spawnSync(godot, ['--headless', '--audio-driver', 'Dummy', '--path', 'native/godot', '--script', path.resolve(__dirname, 'godot-depth-player-label.gd')], {

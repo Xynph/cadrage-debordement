@@ -204,8 +204,11 @@ test('Moteur Monde : le président désigne des ventes, un seul courrier, vend �
   const jeu = ouvrir({ hebdomadaire: true, testVm: true });
   // Ventes immédiates (période des mutations ouverte toute la saison) : la vente différée hors période est vérifiée par
   // tests/calendrier-mutations.cjs.
+  // Réglage « semaines » (ancien comportement) : la vente au changement de saison (v2) est vérifiée par
+  // tests/calendrier-mutations.cjs.
   const VR = require('../native/engine/vente-joueurs.json'), modeAvant = VR.fenetres.mode;
-  VR.fenetres.mode = 'saison';
+  const RC = require('../native/engine/calendrier-mutations.json'), calAvant = RC.clubsGeres.calendrier;
+  VR.fenetres.mode = 'saison'; RC.clubsGeres.calendrier = 'semaines';
   try {
     creer(jeu, 0);
     const { run, lire, recevoir } = outils(jeu);
@@ -258,5 +261,5 @@ test('Moteur Monde : le président désigne des ventes, un seul courrier, vend �
     assert.equal(ia.ok, true); assert.equal(ia.vente, true); assert.equal(ia.joue, false);
     assert.ok(ia.n >= 1 && ia.n <= P.DESIGNES_IA); assert.equal(ia.retour, false, 'tempérament : pas de retour avant 4 à 8 mois');
     assert.equal(lire('nativePresidentReprise.valide(S.presidentReprise)'), true);
-  } finally { VR.fenetres.mode = modeAvant; jeu.fermer(); }
+  } finally { VR.fenetres.mode = modeAvant; RC.clubsGeres.calendrier = calAvant; jeu.fermer(); }
 });

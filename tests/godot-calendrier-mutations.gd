@@ -8,6 +8,7 @@ extends SceneTree
 const G = preload("res://ui/carnet_skin.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
 const TAILLE_MIN := 13
+const PLANCHER_RECEPTION := 12
 var app: Control
 var sortie := OS.get_environment("CD_CALENDRIER_OUTPUT")
 var attendu: Dictionary = {}
@@ -46,16 +47,22 @@ func texte(parent: Node, nom: String) -> String:
 	return ""
 
 func taille(control: Control) -> int:
-	return control.get_theme_font_size("font_size")
+	return control.get_theme_font_size("normal_font_size" if control is RichTextLabel else "font_size")
+
+## Texte affiché d'un Label ou d'un RichTextLabel (lettre de la Réception : BBCode avec liens, texte brut rendu).
+func texte_affiche(c: Control) -> String:
+	if c is RichTextLabel: return (c as RichTextLabel).get_parsed_text()
+	if c is Label: return (c as Label).text
+	return ""
 
 ## Tous les textes visibles d'un sous-arbre font au moins TAILLE_MIN px.
-func textes_lisibles(parent: Node, contexte: String) -> void:
+func textes_lisibles(parent: Node, contexte: String, minimum := TAILLE_MIN) -> void:
 	var petits: Array[String] = []
-	for n in parent.find_children("*", "Label", true, false) + parent.find_children("*", "Button", true, false):
+	for n in parent.find_children("*", "Label", true, false) + parent.find_children("*", "Button", true, false) + parent.find_children("*", "RichTextLabel", true, false):
 		var c := n as Control
-		if c == null or not c.is_visible_in_tree() or (c is Label and (c as Label).text.is_empty()) or (c is Button and (c as Button).text.is_empty()): continue
-		if taille(c) < TAILLE_MIN: petits.append("%s (%d px)" % [c.name, taille(c)])
-	verifier(petits.is_empty(), contexte + " : textes sous %d px : %s" % [TAILLE_MIN, ", ".join(petits)])
+		if c == null or not c.is_visible_in_tree() or (c is Label and (c as Label).text.is_empty()) or (c is Button and (c as Button).text.is_empty()) or (c is RichTextLabel and (c as RichTextLabel).get_parsed_text().strip_edges().is_empty()): continue
+		if taille(c) < minimum: petits.append("%s (%d px)" % [c.name, taille(c)])
+	verifier(petits.is_empty(), contexte + " : textes sous %d px : %s" % [minimum, ", ".join(petits)])
 
 ## Rectangles sans chevauchement deux à deux, tous dans le cadre.
 func sans_chevauchement(cadre: Control, noms: Array, contexte: String) -> void:
@@ -68,6 +75,47 @@ func sans_chevauchement(cadre: Control, noms: Array, contexte: String) -> void:
 		for autre: Array in rects:
 			verifier(not (autre[1] as Rect2).grow(-1.0).intersects(r.grow(-1.0)), "%s : %s ne chevauche pas %s" % [contexte, nom, autre[0]])
 		rects.append([nom, r])
+
+## Lignes à puces « • » d'un texte.
+func puces(t: String) -> int:
+	var n := 0
+	for l in t.split("\n"): if l.begins_with("• "): n += 1
+	return n
+
+## Textes d'un bouton et de ses libellés.
+func textes_de(n: Node) -> String:
+	var parts := PackedStringArray([(n as Button).text if n is Button else ""])
+	for l: Label in n.find_children("*", "Label", true, false): parts.append(l.text)
+	return " ".join(parts)
+
+## Ouvre un courrier du club en Réception : corps à retours à la ligne, entier, lisible, sans chevauchement ; capture.
+## Rend le texte affiché.
+func courrier(info: Dictionary, capture: String, contexte: String) -> String:
+	app._reset_reception(str(info.id))
+	app._navigate("Réception", false)
+	await poser(24)
+	var detail := noeud(app.root_content, "InboxDetail") as Control
+	# Nouvelle Réception (lettre papier) : le corps est un RichTextLabel (noms en liens BBCode) ; l'ancien Label reste accepté.
+	var corps := noeud(app.root_content, "InboxMessageText") as Control
+	var lisible := corps is Label or corps is RichTextLabel
+	verifier(detail != null and lisible and corps.is_visible_in_tree(), contexte + " : courrier ouvert en Réception")
+	if detail == null or not lisible: return ""
+	var affiche := texte_affiche(corps)
+	var paragraphes := affiche.split("\n").size()
+	# Le titre de la lettre est en capitales : comparaison sans casse.
+	verifier(textes_de(detail).to_lower().contains(str(info.sujet).to_lower()), contexte + " : sujet « %s » affiché" % str(info.sujet))
+	verifier(corps.get("autowrap_mode") != TextServer.AUTOWRAP_OFF, contexte + " : retours à la ligne automatiques")
+	verifier(corps.get_line_count() >= paragraphes, contexte + " : une ligne par puce (%d lignes pour %d paragraphes)" % [corps.get_line_count(), paragraphes])
+	if corps is Label: verifier((corps as Label).max_lines_visible < 0 or (corps as Label).get_visible_line_count() >= corps.get_line_count(), contexte + " : texte entier")
+	else: verifier((corps as RichTextLabel).get_visible_line_count() >= corps.get_line_count(), contexte + " : texte entier (%d/%d lignes)" % [(corps as RichTextLabel).get_visible_line_count(), corps.get_line_count()])
+	var d := detail.get_global_rect()
+	var c := corps.get_global_rect()
+	verifier(c.position.x >= d.position.x - 1.0 and c.end.x <= d.end.x + 1.0, contexte + " : texte dans la largeur du courrier (%s ⊂ %s)" % [str(c), str(d)])
+	# Réception (coque immersive) : plancher de la coque en 1280×720, 12 px (comme tests/godot-courrier-club.gd).
+	textes_lisibles(detail, contexte, PLANCHER_RECEPTION)
+	sans_chevauchement(detail, ["InboxReadingScroll", "InboxReplyHeading", "InboxClubMailOpen"], contexte)
+	await capturer(capture)
+	return affiche
 
 func executer() -> void:
 	attendu = JSON.parse_string(OS.get_environment("CD_CALENDRIER_ATTENDU"))
@@ -173,6 +221,66 @@ func executer() -> void:
 	await poser(24)
 	verifier(app.selected_player == str(attendu.approche.playerId), "le lien ouvre la fiche du joueur approché")
 	verifier(int(app.management_ui.immersive_player_tab) == 3, "onglet Contrat ouvert")
+
+	# 6. Écran des ventes : une vente acceptée prend effet au changement de saison (1er juillet), jamais tout de suite.
+	var ventes: AcceptDialog = load("res://ui/player_sales_view.gd").open(app)
+	await poser(14)
+	verifier(ventes != null and ventes.visible, "écran des ventes ouvert")
+	if ventes != null:
+		var periode := texte(ventes, "SalesWindow")
+		verifier(periode.contains("1er juillet") and periode.contains("changement de saison"), "ventes : effet au 1er juillet : " + periode)
+		verifier(not periode.contains("tout de suite") and not periode.contains("1er mai"), "ventes : ni « tout de suite » ni « 1er mai » : " + periode)
+		verifier(ventes.find_children("SaleOffer_*", "", true, false).size() >= 3, "offres reçues affichées")
+		var ligne_periode := noeud(ventes, "SalesWindow") as Label
+		if ligne_periode != null: verifier(ligne_periode.get_visible_line_count() >= ligne_periode.get_line_count(), "période des ventes entière")
+		textes_lisibles(ventes, "écran des ventes")
+		await capturer("calendrier-ventes.png")
+		ventes.hide(); ventes.queue_free()
+		await poser(6)
+
+	# 7. Réception : « Point mercato » (offres reçues regroupées, lien « Ouvrir · Offres reçues ») et « Échos du mercato »
+	# (liste à puces puis « et N autres »).
+	var point := await courrier(attendu.point, "calendrier-point-mercato.png", "Point mercato")
+	verifier(point.contains("Offres reçues pour nos joueurs :"), "Point mercato : offres reçues regroupées")
+	verifier(puces(point) >= 3, "Point mercato : une puce par offre")
+	var lien := noeud(app.root_content, "InboxClubMailOpen") as Control
+	verifier(lien != null and lien.is_visible_in_tree() and textes_de(lien).to_lower().contains("offres reçues"), "lien « Ouvrir · Offres reçues » : " + ("" if lien == null else textes_de(lien)))
+	var echos := await courrier(attendu.echos, "calendrier-echos-mercato.png", "Échos du mercato")
+	verifier(puces(echos) == 6, "Échos : six lignes à puces")
+	verifier(echos.contains("\net 2 autres\n"), "Échos : « et 2 autres » sur sa ligne")
+
+	# 8. Arrêt de « Continuer » « Effectif trop juste » (arrêt réel du moteur) dans le panneau de Continuer.
+	var progression = app.continue_progress
+	var court: Dictionary = attendu.court
+	verifier(progression != null, "panneau de Continuer")
+	if progression != null:
+		progression.begin({"date": str(court.get("from", attendu.today))}, false)
+		await poser(4)
+		progression.finish(court)
+		await poser(6)
+		verifier(progression.visible, "panneau d’arrêt affiché")
+		verifier(progression.title.text == "Effectif trop juste", "titre de l’arrêt : " + progression.title.text)
+		verifier(progression.detail.text == str(court.stop.detail) and progression.detail.text.contains("pilier droit"), "détail de l’arrêt : " + progression.detail.text)
+		verifier(progression.detail.get_visible_line_count() >= progression.detail.get_line_count(), "détail de l’arrêt entier (%d/%d lignes)" % [progression.detail.get_visible_line_count(), progression.detail.get_line_count()])
+		textes_lisibles(progression.card, "panneau d’arrêt")
+		# Taille réellement affichée (la carte est mise à l'échelle de la fenêtre).
+		var petits: Array[String] = []
+		for l: Label in progression.card.find_children("*", "Label", true, false):
+			if l.is_visible_in_tree() and not l.text.is_empty() and taille(l) * progression.card.scale.y < TAILLE_MIN - 0.01: petits.append("%s (%.1f px)" % [l.name, taille(l) * progression.card.scale.y])
+		verifier(petits.is_empty(), "panneau d’arrêt : textes affichés sous %d px : %s" % [TAILLE_MIN, ", ".join(petits)])
+		var ecran := Rect2(Vector2.ZERO, Vector2(root.size))
+		var carte: Rect2 = progression.card.get_global_transform() * Rect2(Vector2.ZERO, progression.card.size)
+		verifier(ecran.encloses(carte), "carte d’arrêt dans la fenêtre : " + str(carte))
+		var zones: Array = []
+		for nom: String in ["ContinueProgressSheet", "ContinueProgressTitle", "ContinueProgressDetail", "ContinueProgressBar"]:
+			var c := noeud(progression.card, nom) as Control
+			if c == null or not c.is_visible_in_tree(): continue
+			var r: Rect2 = c.get_global_transform() * Rect2(Vector2.ZERO, c.size)
+			verifier(carte.grow(1.0).encloses(r), "panneau d’arrêt : %s dans la carte" % nom)
+			for autre: Array in zones: verifier(not (autre[1] as Rect2).grow(-1.0).intersects(r.grow(-1.0)), "panneau d’arrêt : %s ne chevauche pas %s" % [nom, autre[0]])
+			zones.append([nom, r])
+		await capturer("calendrier-effectif-court.png")
+		progression.dismiss()
 
 	print("CALENDRIER ", JSON.stringify({"controles": controles, "failures": echecs}))
 	app.closing = true
