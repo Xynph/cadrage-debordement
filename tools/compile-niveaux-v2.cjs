@@ -37,7 +37,7 @@ function tier(nation) {
   return 20;
 }
 // Distinction de très haut niveau : joueur de l'année, MVP, équipe-type, Lions.
-const STAR = /\b(mvp|joueur de l annee|player of the year|equipe type|dream team|team of the season|lions)\b/;
+const STAR = /\b(mvp|joueur de l annee|player of the year|equipe type|equipe du tournoi|joueur du tournoi|dream team|team of the season|team of the championship|lions)\b/;
 
 function csv(text) {
   const rows = []; let row = [], field = '', quoted = false;
@@ -66,11 +66,11 @@ function classe(row, age) {
   const experience = caps24 !== null ? caps24 * 3 : caps; // 24 mois réguliers ≈ 10+ sélections
   let rank; // 0 = S, 1 = A, 2 = B, 3 = C
   // Membre d'un groupe récent d'une nation du top 5, sélections inconnues : A (le groupe est l'élite du pays).
-  // Classe S (collecte v3) : sélections récentes quasi systématiques (20 sur 24 mois), ou, sans ce relevé,
-  // 50 sélections et plus avant 32 ans.
+  // Classe S (collecte v3) : avant 32 ans, international confirmé (40 sélections) et régulier depuis début 2025
+  // (10 sélections relevées), ou, sans ce relevé, 50 sélections ; une grande distinction relève d'un cran.
   if (t === 5) rank = uncapped ? 2 : experience === null ? 1
-    : caps24 !== null ? (caps24 >= 20 ? 0 : caps24 >= 5 || caps >= 15 ? 1 : 2)
-      : experience >= 50 && Number.isFinite(age) && age <= 31 ? 0 : experience >= 15 ? 1 : 2;
+    : (caps24 !== null ? caps24 >= 10 && caps >= 40 : caps >= 50) && Number.isFinite(age) && age <= 31 ? 0
+      : caps24 !== null ? (caps24 >= 5 || caps >= 15 ? 1 : 2) : experience >= 15 ? 1 : 2;
   else if (t === 8) rank = uncapped ? 3 : experience !== null && experience >= 50 ? 1 : experience !== null && experience < 10 ? 3 : 2;
   else if (t === 12) rank = uncapped ? 3 : experience !== null && experience >= 30 ? 2 : 3;
   else rank = 3;

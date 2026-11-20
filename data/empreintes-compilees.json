@@ -20,7 +20,7 @@
    }
   },
   "native/engine/world-niveaux-v2.json": {
-   "sha256": "b1a2cab6a6946cb715f1b488e447a274c451135176be47e701ca27d0cabb519f",
+   "sha256": "f4064b852f7ed16583f010369bae49ffb80ead9fab85e167fd04ee94b5d5ee3d",
    "sources": {
     "data/scouting/review-v12/career-evidence.json": "0a7f60a8611ef52537926f7b30d738d55da24b4cc5ddb91cb3d6fdeabcebb4ef",
     "data/scouting/review-v12/season-evidence.json": "3a63cbab6cf678e7522696eef3acb090edc04ebd9a02956040351de82291300e",
@@ -35,11 +35,11 @@
     "niveaux/clubs-srp.csv": "8b53e5e9d754445ce5d7c15d83b5a49e70f68c5d99289abb3beecfafea18227d",
     "niveaux/clubs-urc.csv": "0e3f5c7d9d7359084d75c5e74cffa62208b803a3be313b30aea7d3e1563a9a2c",
     "niveaux/collecte-v3/internationaux.csv": "ca8d11259d9d98e88863f9123ec218a0a90c5b75964613249ec1375e66237a5f",
-    "niveaux/collecte-v3/statut-accession.csv": "14ca5f23db6295c1b71f97cec27d83c1e4524725228191dd740c78a8aedf4010",
-    "niveaux/collecte-v3/statut-complements.csv": "14ca5f23db6295c1b71f97cec27d83c1e4524725228191dd740c78a8aedf4010",
+    "niveaux/collecte-v3/statut-accession.csv": "0bee87989d122cb3b0385b355230b6112ecc344ef2416f2403909a3aa92d4db0",
+    "niveaux/collecte-v3/statut-complements.csv": "2fbf6da162dab6342cdbdfc2fa3e4e68559044e9721d79c4cc7b013c3c3e069a",
     "niveaux/collecte-v3/statut-elite.csv": "82e78b71ef05e91e8700bb0b2ae0d8329efa29ff38228e521a910be5e68eba3c",
-    "niveaux/collecte-v3/statut-jlo-guest.csv": "f7d892249951fb50a21beb3173bef1b26d9b12fb687fb38fe21d095c4c7801e4",
-    "niveaux/collecte-v3/u20.csv": "f5f7eb01f672698f1c547b141f976866b631e6e1919c5ff7709728b12ac712b6",
+    "niveaux/collecte-v3/statut-jlo-guest.csv": "576b58f318e673ef1cad6ae3c6fac8535e6513d4b0c0e9376fd0c3409c10100c",
+    "niveaux/collecte-v3/u20.csv": "d27f2de80bb4fa210d6e9cfcdb66c2ca861ac685c4b0794c2f28b9f52f488c52",
     "niveaux/niveaux-accession.csv": "d6eb5c30aeadca499fb9eba7f7980233b312f4d9e23ba8bbccd12cacc22de6d4",
     "niveaux/niveaux-champ.csv": "eb09319ae3d3797984d41163c1ff65a6a97c8ab2d341eaaadb1a1b5096d100c3",
     "niveaux/niveaux-elite.csv": "442b31716cb15aeaebfb6f37fbf888d1e9e2ff380e0e68faf63680b348cd88c2",
