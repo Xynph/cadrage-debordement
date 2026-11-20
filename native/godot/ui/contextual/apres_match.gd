@@ -721,7 +721,7 @@ func _pourquoi(parent: VBoxContainer) -> void:
 		n += 1
 		var ligne := PanelContainer.new()
 		ligne.name = "ApresMatchRaison%d" % int(raison.get("rang", n))
-		var style := _fond(Color(0, 0, 0, 0), 20, 14 if serre else 26)
+		var style := _fond(Color(0, 0, 0, 0), 20, 8 if serre else 26)
 		style.border_width_top = 1
 		style.border_color = Charte.FILET
 		ligne.add_theme_stylebox_override("panel", style)
@@ -791,7 +791,7 @@ func _fil_du_score(parent: VBoxContainer) -> void:
 		item.mouse_filter = Control.MOUSE_FILTER_PASS
 		item.add_child(_sigle(club, 28, 20, 12))
 		item.add_child(_texte(str(m.get("horloge", m.get("minute", ""))).trim_suffix("′").trim_suffix("'") + "′", 15, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
-		var nature := nature_marque(m)
+		var nature := nature_marque(m, _e < 0.8)
 		var mot := _texte(nature, 12, Charte.IVOIRE_2, Charte.TITRE)
 		mot.name = "Nature"
 		item.add_child(mot)
@@ -806,11 +806,12 @@ func _fil_du_score(parent: VBoxContainer) -> void:
 		flux.add_child(item)
 
 ## Mot écrit d'une marque : « ESSAI », « ESSAI TRANSFORMÉ », « PÉNALITÉ », « DROP » (moteur : `nature`).
-static func nature_marque(m: Dictionary) -> String:
+## `court` (petites hauteurs) : « ESSAI TR. », « PÉN. ».
+static func nature_marque(m: Dictionary, court: bool = false) -> String:
 	match str(m.get("nature", "")):
 		"essai": return "ESSAI"
-		"essai-transforme": return "ESSAI TRANSFORMÉ"
-		"penalite": return "PÉNALITÉ"
+		"essai-transforme": return "ESSAI TR." if court else "ESSAI TRANSFORMÉ"
+		"penalite": return "PÉN." if court else "PÉNALITÉ"
 		"drop": return "DROP"
 	return "ESSAI" if str(m.get("kind", "")) == "try" else "PÉNALITÉ OU DROP"
 
@@ -992,7 +993,8 @@ func _ligne_club(r: Dictionary, total: int) -> PanelContainer:
 	rangee.add_child(_cellule(str(rang), 1))
 	var case_club := _h(8)
 	C.fill(case_club)
-	case_club.add_child(_sigle(club if not club.is_empty() else {"abbr": r.get("abbr", "")}, 28, 20, 12))
+	# Petites hauteurs : sans le sigle, le nom du club garde sa place (la forme a sa largeur minimale).
+	if _e >= 0.8: case_club.add_child(_sigle(club if not club.is_empty() else {"abbr": r.get("abbr", "")}, 28, 20, 12))
 	var nom := str(r.get("nom", "")) if club.is_empty() else G.club_name(club)
 	var lien := _lien(nom, {"kind": "club", "id": _cle_id(r.get("clubId"))}, 13)
 	lien.name = "ApresMatchClubLigne%d" % rang
@@ -1185,6 +1187,8 @@ func _bloc_valider() -> Control:
 	col.alignment = BoxContainer.ALIGNMENT_END
 	var aide := _texte("Valide le résultat · la suite de ta semaine s’ouvre ensuite", 13, Charte.IVOIRE_2)
 	aide.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	# Petites hauteurs : le libellé du bouton suffit, la colonne de droite garde le classement entier.
+	aide.visible = _e >= 0.8
 	col.add_child(aide)
 	var b := Button.new()
 	b.name = "ApresMatchValider"

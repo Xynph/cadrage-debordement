@@ -241,6 +241,8 @@ func run() -> void:
 	check(valider != null and valider.get_global_rect().end.y <= 721.0 and valider.get_global_rect().end.x <= 1281.0, "1280×720 : Valider le résultat dans l’écran (%s)" % (str(valider.get_global_rect()) if valider != null else "absent"))
 	var petits := ecran.find_children("*", "Label", true, false).filter(func(l: Label): return l.is_visible_in_tree() and l.get_theme_font_size("font_size") < 12)
 	check(petits.is_empty(), "1280×720 : aucun texte sous 12 px (%d)" % petits.size())
+	var gabi_720 := ecran.find_child("ApresMatchGabi", true, false) as Control
+	check(gabi_720 != null and gabi_720.get_global_rect().end.y <= 721.0, "1280×720 : Gabi dans l'écran")
 	var place_720 := ecran.find_child("ApresMatchTaPlace", true, false) as Control
 	check(place_720 != null and place_720.is_visible_in_tree(), "1280×720 : Ta place reste (ligne condensée)")
 	var derniere_ligne := ecran.find_child("ApresMatchLigne12", true, false) as Control
