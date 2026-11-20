@@ -818,6 +818,8 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 		management_ui.erase("composition_page")
 		# Sous-page du Recrutement (relève, entre clubs, offres, missions, négociation, rapport) : le menu rouvre l'écran lui-même.
 		if management_ui.has("recrutement_page"): load("res://ui/immersive08/recruitment_canvas.gd").oublier_page(self)
+		# Sous-page de la Formation (suivi des jeunes, revue d'effectif) : le menu rouvre l'écran lui-même.
+		if management_ui.has("formation_page"): load("res://ui/immersive08/formation_pages.gd").oublier(self)
 		management_ui.erase("charge_joueur")
 		# Sous-page de l'avant-match (délégation, espoir) : refermée dès qu'on change d'écran.
 		management_ui.erase("avant_page")

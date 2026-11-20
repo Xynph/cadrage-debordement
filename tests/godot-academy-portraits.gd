@@ -49,9 +49,13 @@ func run() -> void:
 		for group in ["u21", "u18"]:
 			var members := people.filter(func(p: Dictionary): return (int(p.age) <= 18 if group == "u18" else int(p.age) > 18 and int(p.age) <= 21))
 			check(not members.is_empty(), "Vrais académiciens du groupe " + group)
-			var tab := app.find_child("AcademyImmersiveTab" + ("0" if group == "u21" else "1"),true,false) as Button
+			# Groupe d'âge : menu « Groupe » du tableau (la DA du 20/11/2026 a retiré les onglets U21 / U18).
+			var tab := app.find_child("AcademyImmersiveGroup",true,false) as OptionButton
 			if tab != null:
-				tab.pressed.emit(); await settle()
+				for index in tab.item_count:
+					if str(tab.get_item_metadata(index)) == group:
+						tab.select(index); tab.item_selected.emit(index)
+				await settle()
 			elif not members.is_empty():
 				# Compact Formation pages six players at a time, rather than
 				# exposing the immersive age-group tabs.

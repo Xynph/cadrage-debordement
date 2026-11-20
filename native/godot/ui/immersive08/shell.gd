@@ -996,6 +996,7 @@ static func _page_caption(app: Control) -> String:
 	var fiche := FichePage.actuelle(app)
 	if not fiche.is_empty(): return "Fiche joueur : " + str(fiche.joueur.get("name", ""))
 	if app.route == ClubSheet.ROUTE: return "Fiche club : " + ClubSheet.caption(app)
+	if app.route == "Formation" and not Academy.Pages.actuelle(app).is_empty(): return str(Academy.Pages.TITRES.get(Academy.Pages.actuelle(app), "Formation"))
 	if app.route == "Recrutement" and not Recruitment.Pages.actuelle(app).is_empty(): return str(Recruitment.Pages.TITRES.get(Recruitment.Pages.actuelle(app), "Recrutement"))
 	# Liste du Recrutement : le fil d'Ariane dit aussi l'onglet courant (Besoins du club, Recherche, Joueurs suivis, Rapports).
 	if app.route == "Recrutement" and FichePage.actuelle(app).is_empty() and app.management_ui.get("market") is Dictionary:
