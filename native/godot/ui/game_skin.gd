@@ -348,7 +348,6 @@ static func _territory_texture(club: Dictionary, kind: String) -> Texture2D:
 			texture.filter_clip = true
 			return texture
 	var fallback := "club-forest" if kind == "city" else "stadium"
-	if id == 0 and kind == "stadium": fallback = "maquette-onglets-stadium"
 	return load("res://art/immersive08/%s.png" % fallback) as Texture2D
 
 static func club_picture(club: Dictionary, kind: String = "stadium", dark: bool = true) -> Control:
