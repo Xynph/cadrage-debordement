@@ -154,9 +154,9 @@ func entry() -> void:
 	check(app.find_child("EntryResume",true,false)==null,"Aucune reprise proposée sans carrière")
 	var world: Array = app.pack_manager.creation_catalogue()
 	if not world.is_empty():
-		var world_chip: Panel = app.find_child("EntryWorldCount",true,false)
+		var world_chip: Label = app.find_child("EntryWorldCount",true,false)
 		var playable := world.filter(func(club: Dictionary): return club.get("playable",true)).size()
-		check(world_chip!=null and world_chip.get_child(0).text=="Monde · %d clubs jouables" % playable,"Accueil distingue les clubs jouables des clubs invités")
+		check(world_chip!=null and world_chip.text=="Monde · %d clubs jouables" % playable,"Accueil distingue les clubs jouables des clubs invités")
 	await capture("00-accueil-2560x1440")
 	var new_career: Button = app.find_child("EntryNewCareer",true,false)
 	if new_career==null: return
@@ -201,8 +201,8 @@ func pacific() -> void:
 	check(app.pack_manager.mode("creation")=="world-pacific","Le nouveau catalogue par défaut est celui du Pacifique")
 	var catalogue: Array = app.model.meta.get("pacificCatalogue", [])
 	var count := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
-	var badge := app.find_child("EntryWorldCount",true,false) as Panel
-	check(badge!=null and badge.get_child(0).text=="Monde · %d clubs jouables" % count,"Accueil indique le vrai nombre de clubs jouables au Pacifique")
+	var badge := app.find_child("EntryWorldCount",true,false) as Label
+	check(badge!=null and badge.text=="Monde · %d clubs jouables" % count,"Accueil indique le vrai nombre de clubs jouables au Pacifique")
 	await click(app.find_child("EntryNewCareer",true,false))
 	await settle()
 	if not await edition_action("CreationCountry_international"): return
@@ -340,8 +340,8 @@ func japan(compact: bool) -> void:
 		await settle()
 	var catalogue: Array = app.model.meta.get("japanCatalogue",[])
 	var playable := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
-	var badge := app.find_child("EntryWorldCount",true,false) as Panel
-	check(badge!=null and badge.get_child(0).text=="Monde · %d clubs jouables" % playable,"Accueil compte les vrais clubs jouables du catalogue Japon")
+	var badge := app.find_child("EntryWorldCount",true,false) as Label
+	check(badge!=null and badge.text=="Monde · %d clubs jouables" % playable,"Accueil compte les vrais clubs jouables du catalogue Japon")
 	if not await edition_action("EntryNewCareer"): return
 	if not await edition_action("CreationCountry_JP"): return
 	if not await edition_action("CreationDivision_"+division): return
@@ -420,8 +420,8 @@ func nationale(compact: bool) -> void:
 		await settle()
 	var catalogue: Array = app.model.meta.get("nationaleCatalogue",[])
 	var playable := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
-	var badge := app.find_child("EntryWorldCount",true,false) as Panel
-	check(badge!=null and badge.get_child(0).text=="Monde · %d clubs jouables" % playable,"Accueil compte les vrais clubs jouables de l’édition Nationale")
+	var badge := app.find_child("EntryWorldCount",true,false) as Label
+	check(badge!=null and badge.text=="Monde · %d clubs jouables" % playable,"Accueil compte les vrais clubs jouables de l’édition Nationale")
 	if not await edition_action("EntryNewCareer"): return
 	if not await edition_action("CreationCountry_FR"): return
 	if not await edition_action("CreationDivision_nationale"): return
@@ -520,15 +520,15 @@ func champ(compact: bool) -> void:
 		await settle()
 	var catalogue: Array = app.model.meta.get("champCatalogue", [])
 	var count := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
-	var badge := app.find_child("EntryWorldCount",true,false) as Panel
-	check(badge!=null and badge.get_child(0).text=="Monde · %d clubs jouables" % count,"Accueil compte les clubs jouables de Champ Rugby")
+	var badge := app.find_child("EntryWorldCount",true,false) as Label
+	check(badge!=null and badge.text=="Monde · %d clubs jouables" % count,"Accueil compte les clubs jouables de Champ Rugby")
 	check(app.pack_manager.playable_club_count("creation")==count,"Une seule source pour le nombre de clubs jouables")
 	var career_card := app.find_child("EntryCareerCard",true,false) as Control
-	var season_card := app.find_child("EntrySeasonCard",true,false) as Control
-	check(career_card!=null and season_card!=null and career_card.get_global_rect().encloses(season_card.get_global_rect()) and season_card.size.y>0.0,"Accueil : une vignette de saison remplit le bas du carnet")
-	if career_card!=null and season_card!=null:
-		check(career_card.get_global_rect().end.y-season_card.get_global_rect().end.y<=career_card.size.y*.12,"Accueil : plus de grand vide sous le menu")
-	# Packs : même police de titre que le choix du club, et le même nombre de clubs que l'accueil.
+	var identity_block := app.find_child("EntryNewCareer",true,false) as Control
+	check(career_card!=null and identity_block!=null and career_card.get_global_rect().encloses(identity_block.get_global_rect()),"Accueil : le carnet contient ses actions")
+	if career_card!=null:
+		var page_rect := app.get_global_rect()
+		check(page_rect.encloses(career_card.get_global_rect()),"Accueil : le carnet tient tout entier à l'écran (%s)" % dimensions)	# Packs : même police de titre que le choix du club, et le même nombre de clubs que l'accueil.
 	app.pack_manager.open("creation")
 	await settle()
 	var reality_title: Label = null

@@ -181,7 +181,10 @@ func continuer() -> void:
 	panneau.size = Vector2(1920, 1080)
 	panneau.begin({"date": "2026-09-01", "accent": Color("d43e47"), "next": {"date": "2026-09-11", "opponent": "Stade Test"}}, false)
 	await settle(6)
-	check(panneau.title.text == "Jusqu’au match contre Stade Test", "Titre : l'arrêt attendu : " + panneau.title.text)
+	# Maquette « L'ovale du ballon » : le titre est fixe, l'arrêt attendu est écrit dans « Arrêt prévu » et le surtitre.
+	check(panneau.title.text == "Passage au jour suivant…", "Titre de la maquette : " + panneau.title.text)
+	check(panneau.detail.text.begins_with("Arrêt prévu : ") and panneau.detail.text.contains("match contre Stade Test"), "Arrêt prévu : l'arrêt attendu : " + panneau.detail.text)
+	check(panneau.kicker.text == "CONTINUER · jusqu’au match", "Surtitre : " + panneau.kicker.text)
 	check(not panneau.title.text.contains("défilent"), "Plus de « Les jours défilent… »")
 	check(is_equal_approx(panneau.bar.value, 0.0), "Barre au départ : %.2f" % panneau.bar.value)
 	panneau.advance_to({"today": "2026-09-06", "days": 5, "next": {"date": "2026-09-11", "opponent": "Stade Test"}})
@@ -189,7 +192,7 @@ func continuer() -> void:
 	await capture("continuer-match")
 	# Le moteur annonce un arrêt plus proche (rendez-vous) : le titre et la barre le suivent.
 	panneau.advance_to({"today": "2026-09-07", "days": 6, "next": {"date": "2026-09-11", "opponent": "Stade Test"}, "plan": {"kind": "rendez_vous", "date": "2026-09-09", "detail": "Point médical"}})
-	check(panneau.title.text.begins_with("Jusqu’au rendez-vous") and panneau.title.text.contains("point médical"), "Titre : rendez-vous annoncé : " + panneau.title.text)
+	check(panneau.detail.text.contains("rendez-vous : point médical") and panneau.kicker.text.begins_with("CONTINUER · jusqu’au rendez-vous"), "Arrêt prévu : rendez-vous annoncé : " + panneau.detail.text)
 	check(absf(panneau.bar.value - 0.75) < 0.01, "Barre vers le rendez-vous (6 jours sur 8) : %.2f" % panneau.bar.value)
 	await capture("continuer-rendez-vous")
 	panneau.dismiss()

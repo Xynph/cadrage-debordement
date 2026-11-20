@@ -183,3 +183,17 @@ Tout texte passe par la table de textes du jeu, pas de chaîne écrite dans le n
 - [ ] Le menu est affiché et utilisable ≤ 500 ms après la fin de l'intro.
 - [ ] Rendu vérifié à 1280×720, 1920×1080, 2560×1440 et en 21:9 sans contenu coupé.
 - [ ] Aucun critère n'exige la lecture d'un autre document (seuils chiffrés ci-dessus).
+
+
+## 13. Intégration de la direction artistique (20/11/2026, étape 5)
+
+Choix de Léo : **1 · Affiche et carnet**, avec l'état « première fois » de la maquette 2 et la ligne du lieu de la maquette 3. Code : `ui/immersive08/accueil_canvas.gd` (écran) et `accueil_pages.gd` (sous-pages) ; `entry_canvas.gd` ne fait plus que déléguer.
+
+- **Affiche (gauche)** : logo du jeu (référence de couleur de la charte), « Carrière de manager · Rugby à XV · Édition Windows », accroche en titre incliné, photo du club (banque d'images) sous un voile de lisibilité.
+- **Carnet (droite, aplat sans cadre ni arrondi)** : « Ouvrir le carnet / Ton prochain chapitre », bloc d'identité (marqueur incliné à la couleur du club, écusson, nom, saison · division · journée), classement et prochain match, « ✓ Sauvegardé … », puis le bouton principal.
+- **Bouton principal** : « Reprendre la carrière » en **or** (seule exception hors coque : c'est Continuer), « Entrée » en rappel, focus à l'ouverture. Sans carrière : « Nouvelle carrière » en ivoire plein (aucun or).
+- **Liens (texte ivoire + flèche + filet)** : Nouvelle carrière, Mes carrières, Importer une carrière, Paramètres | Quitter, « Identités et packs » (souligné), « Crédits » en haut à droite.
+- **Tout agit** : le classement ouvre Classements, le prochain match ouvre le Calendrier. Un lien grisé s'explique par une ligne écrite (profil à récupérer, aucun club, profil en ouverture).
+- **Plus de petite fenêtre** : Paramètres, Crédits et Mes carrières sont des sous-pages de l'Accueil (« ← Accueil » ou Échap pour revenir) ; la suppression d'une carrière se confirme en place. Seule fenêtre restante : le sélecteur de fichier système d'« Importer ».
+- **Données** : nom, écusson, saison, division, rang, points, prochain match, stade (ligne du lieu en bas à droite) et chiffres du monde sont lus du modèle et du pack chargé ; une donnée absente omet sa ligne ; rien n'est figé dans le code.
+- **Critères** : aucun or hors du bouton de reprise ; textes ≥ 12 px réels à 1280×720 ; carnet entièrement visible à 1280×720 et 1920×1080.
