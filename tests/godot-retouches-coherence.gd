@@ -265,8 +265,9 @@ func delegation_a_22() -> void:
 	await capture("delegation-22-avant")
 	bouton.pressed.emit()
 	await settle(30)
-	var dialogue := app.get_node_or_null("MatchDelegationDialog") as ConfirmationDialog
-	check(dialogue != null and dialogue.visible, "La fenêtre de délégation s'ouvre")
+	check(app.get_node_or_null("MatchDelegationDialog") == null, "Aucune fenêtre de délégation")
+	var dialogue := app.find_child("MatchDelegationPage", true, false) as Control
+	check(dialogue != null and dialogue.is_visible_in_tree(), "La page de délégation s'ouvre")
 	if dialogue == null: return
 	var info := dialogue.find_child("MatchDelegationReduced", true, false) as Label
 	check(info != null and info.text.contains("22") and info.text.contains("n° 17"), "La fenêtre confirme le match à 22 : " + (info.text if info != null else ""))
@@ -274,16 +275,17 @@ func delegation_a_22() -> void:
 	var a_22 := dialogue.find_child("FeuilleChoix_a22", true, false) as CheckBox
 	check(par_defaut != null and par_defaut.button_pressed and par_defaut.text.begins_with("Appeler un espoir :"), "Choix par défaut : appeler un espoir (" + (par_defaut.text if par_defaut != null else "absent") + ")")
 	check(a_22 != null and not a_22.button_pressed and a_22.text == "Jouer à 22", "Second choix : « Jouer à 22 »")
-	check(dialogue.get_ok_button().text == "DÉLÉGUER LE MATCH", "Espoir retenu : bouton « DÉLÉGUER LE MATCH »")
+	var confirmer := dialogue.find_child("MatchDelegationConfirm", true, false) as Button
+	check(confirmer != null and confirmer.text == "DÉLÉGUER LE MATCH", "Espoir retenu : bouton « DÉLÉGUER LE MATCH »")
 	await capture("delegation-espoir")
 	if a_22 == null: return
 	a_22.button_pressed = true
 	await settle(6)
-	check(dialogue.get_ok_button().text == "DÉLÉGUER À 22", "Bouton de confirmation « DÉLÉGUER À 22 » quand le match à 22 est choisi")
+	check(confirmer != null and confirmer.text == "DÉLÉGUER À 22", "Bouton de confirmation « DÉLÉGUER À 22 » quand le match à 22 est choisi")
 	var case_ := dialogue.find_child("MatchDelegationComposition", true, false) as CheckBox
 	check(case_ != null and case_.button_pressed, "Case « Confier aussi la composition au staff » cochée")
 	await capture("delegation-22")
-	dialogue.get_ok_button().pressed.emit()
+	confirmer.pressed.emit()
 	var until := Time.get_ticks_msec() + 180000
 	while Time.get_ticks_msec() < until:
 		await process_frame
