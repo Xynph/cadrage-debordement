@@ -151,6 +151,58 @@ func controler_mise_en_page(contexte: String) -> void:
 	for echec in fenetre.debordements(): verifier(false, contexte + " : " + echec)
 	var page: Control = fenetre.find_child("TeamPage", true, false)
 	verifier(page != null and ecran.grow(1).encloses(page.get_global_rect()), contexte + " : page de la maquette dans l'écran")
+	controler_charte(contexte)
+
+const Charte = preload("res://ui/charte.gd")
+const C = preload("res://ui/immersive08/components.gd")
+const ETATS_STYLE := ["panel", "normal", "hover", "pressed", "hover_pressed", "focus", "disabled"]
+const COULEURS_POLICE := ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_disabled_color"]
+
+static func proche_or(couleur: Color) -> bool:
+	for o: Color in [Charte.OR, Charte.OR_VIF, C.OR, C.OR_VIF]:
+		if absf(couleur.r - o.r) < 0.03 and absf(couleur.g - o.g) < 0.03 and absf(couleur.b - o.b) < 0.03 and couleur.a > 0.0: return true
+	return false
+
+## Charte (art-bible §3, §4.2, §7) sur les contrôles visibles de la page : aucune couleur or (réservée à Continuer),
+## angles droits partout (seuls les disques des joueurs sur le terrain restent ronds), aucune ombre, aucun panneau
+## encadré sur ses quatre côtés, un seul bouton ivoire plein (« Valider et reprendre »), le lien « ← Retour au direct »
+## et des textes d'au moins 12 px.
+func controler_charte(contexte: String) -> void:
+	var terrain: Control = fenetre.find_child("TeamPitchField", true, false)
+	var ors: Array[String] = []
+	var arrondis: Array[String] = []
+	var ombres: Array[String] = []
+	var cadres: Array[String] = []
+	var petits: Array[String] = []
+	var pleins: Array[String] = []
+	for c: Control in fenetre.find_children("*", "Control", true, false):
+		if not c.is_visible_in_tree(): continue
+		var sur_terrain := terrain != null and terrain.is_ancestor_of(c)
+		for etat: String in ETATS_STYLE:
+			if not c.has_theme_stylebox_override(etat): continue
+			var s := c.get_theme_stylebox(etat) as StyleBoxFlat
+			if s == null: continue
+			if proche_or(s.bg_color) or (proche_or(s.border_color) and s.border_width_left + s.border_width_top + s.border_width_right + s.border_width_bottom > 0): ors.append("%s.%s" % [c.name, etat])
+			if not sur_terrain and (s.corner_radius_top_left > 0 or s.corner_radius_top_right > 0 or s.corner_radius_bottom_left > 0 or s.corner_radius_bottom_right > 0): arrondis.append("%s.%s" % [c.name, etat])
+			if s.shadow_size > 0: ombres.append("%s.%s" % [c.name, etat])
+			if etat == "panel" and s.border_width_left > 0 and s.border_width_top > 0 and s.border_width_right > 0 and s.border_width_bottom > 0: cadres.append(str(c.name))
+			if etat == "normal" and c is BaseButton and s.bg_color.a > 0.99 and s.bg_color.is_equal_approx(Charte.IVOIRE): pleins.append(str(c.name))
+		for cle: String in COULEURS_POLICE:
+			if c.has_theme_color_override(cle) and proche_or(c.get_theme_color(cle)): ors.append("%s.%s" % [c.name, cle])
+		if c is Label or c is Button:
+			if c.has_theme_font_size_override("font_size") and c.get_theme_font_size("font_size") < 12: petits.append("%s (%d)" % [c.name, c.get_theme_font_size("font_size")])
+	verifier(ors.is_empty(), contexte + " : aucune couleur or dans la page (%s)" % str(ors.slice(0, 6)))
+	verifier(arrondis.is_empty(), contexte + " : angles droits hors terrain (%s)" % str(arrondis.slice(0, 6)))
+	verifier(ombres.is_empty(), contexte + " : aucune ombre (%s)" % str(ombres.slice(0, 6)))
+	verifier(cadres.is_empty(), contexte + " : aucun panneau encadré sur ses quatre côtés (%s)" % str(cadres.slice(0, 6)))
+	verifier(petits.is_empty(), contexte + " : textes d'au moins 12 px (%s)" % str(petits.slice(0, 6)))
+	verifier(pleins == ["TeamResume"], contexte + " : un seul bouton ivoire plein, « Valider et reprendre » (%s)" % str(pleins))
+	var retour: Button = fenetre.find_child("TeamBackToLive", true, false)
+	verifier(retour != null and retour.is_visible_in_tree() and retour.text == "← Retour au direct" and retour.has_meta("lien"), contexte + " : lien « ← Retour au direct » en tête de page")
+	var choisis := fenetre.find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return b.is_visible_in_tree() and bool(b.get_meta("coche", false)))
+	verifier(choisis.all(func(b: Button) -> bool: return b.icon != null or b.find_child("Coche", true, false) != null), contexte + " : chaque choix courant porte sa coche")
+	var onglet: Button = fenetre.find_child({"composition": "TeamTabComposition", "consignes": "TeamTabConsignes", "roles": "TeamTabRoles"}[fenetre.onglet], true, false)
+	verifier(onglet != null and bool(onglet.get_meta("coche", false)), contexte + " : onglet courant coché")
 
 ## Textes non tronqués : les étiquettes qui passent à la ligne montrent toutes leurs lignes, celles d'une seule
 ## ligne tiennent dans leur largeur ; les crans partagent une seule taille de police et ont l'infobulle complète.
@@ -427,6 +479,19 @@ func executer() -> void:
 	await poser(4)
 	fenetre.choisir_poste(1)
 	await capturer("equipe-composition-selection-1920x1080")
+	# « ← Retour au direct » : la page se ferme sans valider (le match reste arrêté), puis on la rouvre.
+	fenetre.update_frame(app.model)
+	await poser(2)
+	var retour: Button = fenetre.find_child("TeamBackToLive", true, false)
+	verifier(retour != null, "lien « ← Retour au direct »")
+	if retour != null:
+		retour.pressed.emit()
+		verifier(not fenetre.visible, "« ← Retour au direct » ferme la page")
+		await poser(30)
+		verifier(bool(live().get("paused", false)) and not bool(fenetre.get("_veut_reprise")), "« ← Retour au direct » : le match reste arrêté (rien n'est validé)")
+		vue.ouvrir_equipe()
+		await poser(4)
+		verifier(fenetre.visible, "la page se rouvre après le retour au direct")
 	# Valider et reprendre : la fenêtre se ferme, le match repart.
 	fenetre.update_frame(app.model)
 	var reprise: Button = fenetre.find_child("TeamResume", true, false)
