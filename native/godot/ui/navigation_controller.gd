@@ -60,6 +60,8 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 	if route in ["Recrutement", "Formation"]: entry.fiche = str(fiche.get("id", "")) if fiche is Dictionary else ""
 	# Sous-pages de la Composition (tireurs, espoir, renforts) : une étape d'historique distincte de l'écran.
 	if route == "Composition": entry.composition_page = str(app.management_ui.get("composition_page", ""))
+	# Sous-pages du Recrutement : une étape d'historique distincte de la liste.
+	if route == "Recrutement": entry.recrutement_page = str(app.management_ui.get("recrutement_page", {}).get("kind", "")) if app.management_ui.get("recrutement_page") is Dictionary else ""
 	if cursor >= 0:
 		var previous := history[cursor]
 		var same_location := entry.keys().all(func(key: String): return previous.get(key) == entry[key])
@@ -525,6 +527,12 @@ func _travel(direction: int) -> void:
 	if entry.route == "Composition":
 		if str(entry.get("composition_page", "")).is_empty(): app.management_ui.erase("composition_page")
 		else: app.management_ui.composition_page = str(entry.composition_page)
+	if entry.route == "Recrutement":
+		var page_demandee := str(entry.get("recrutement_page", ""))
+		var page_actuelle := str(app.management_ui.get("recrutement_page", {}).get("kind", "")) if app.management_ui.get("recrutement_page") is Dictionary else ""
+		if page_demandee != page_actuelle:
+			app.Immersive.Recruitment.oublier_page(app)
+			if not page_demandee.is_empty(): app.management_ui.recrutement_page = {"kind": page_demandee}
 	if entry.route == "Recrutement" and not entry.get("reading") is Dictionary:
 		_set_market_target(entry.market, str(_person("market", entry.market).get("name", "")))
 	app._navigate(entry.route, false, true)

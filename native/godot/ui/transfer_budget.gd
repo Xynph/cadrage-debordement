@@ -85,7 +85,9 @@ static func confirm_extension(app: Control, parent: Node, budget: Dictionary, am
 		if not app.waiting and app._command(EXTENSION_COMMAND, {"amount": amount, "confirmed": true}): on_sent.call()
 		confirm.queue_free())
 	confirm.canceled.connect(confirm.queue_free)
-	parent.add_child(confirm)
+	# Une fenêtre mère masquée (adoptée par une sous-page du Recrutement) ne montrerait pas sa fille : l'application l'accueille.
+	var host: Node = app if parent is Window and not (parent as Window).visible else parent
+	host.add_child(confirm)
 	confirm.popup_centered(Vector2i(640, 230))
 	confirm.get_cancel_button().grab_focus()
 	return confirm

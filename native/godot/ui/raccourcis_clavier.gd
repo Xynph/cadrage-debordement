@@ -154,6 +154,11 @@ func _retour() -> bool:
 	if is_instance_valid(composition) and composition.is_visible_in_tree():
 		composition.pressed.emit()
 		return true
+	# Sous-page du Recrutement (relève, entre clubs, offres, missions, négociation, rapport) : Échap revient au recrutement.
+	var recrutement: Button = app.root_content.find_child("RecrutementRetour", true, false) as Button
+	if is_instance_valid(recrutement) and recrutement.is_visible_in_tree():
+		recrutement.pressed.emit()
+		return true
 	var navigation: Node = app.get("navigation_controller")
 	if app.route == "Fiche club" and is_instance_valid(navigation):
 		if navigation._destination(-1) >= 0: navigation._travel(-1)

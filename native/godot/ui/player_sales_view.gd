@@ -253,7 +253,8 @@ func _confirm(offer: Dictionary) -> void:
 		var label := G.wrap(str(line.text), TEXTE, G.INK)
 		label.name = str(line.id)
 		content.add_child(label)
-	add_child(dialog)
+	# Fille de l'application : la boîte des offres peut être une page (fenêtre adoptée, masquée) ; une fille masquée ne s'afficherait pas.
+	app.add_child(dialog)
 	lisible(content)
 	dialog.confirmed.connect(func():
 		_send("sale_answer", {"offerId":str(offer.get("id", "")), "action":"accept", "confirmed":true})

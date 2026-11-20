@@ -251,7 +251,7 @@ func _confirm_precontract() -> void:
 	var cost := G.wrap("Prime à la signature : %s, payée maintenant (budget de transferts). Il reste à %s jusqu’au 30 juin." % [G.euros(_precontract_premium()), str(selected_person.get("club", ""))], 14, G.INK)
 	cost.name = "PreContractConfirmPremium"
 	content.add_child(cost)
-	add_child(dialog)
+	app.add_child(dialog)
 	dialog.confirmed.connect(func():
 		pending = true
 		if is_instance_valid(pre_button): pre_button.disabled = true
@@ -453,7 +453,7 @@ func _confirm_auction() -> void:
 		confirm.dialog_text = "Hors période des mutations : l’accord est conclu maintenant (%s d’indemnité, %s), le joueur rejoindra ton club le %s. L’accord est définitif." % [G.euros(winner.fee), G.salary(winner.salary), str(negotiation.deferred.get("dateLabel", ""))]
 		confirm.get_ok_button().text = "CONCLURE L’ACCORD"
 		confirm.get_cancel_button().text = "ANNULER"
-	add_child(confirm)
+	app.add_child(confirm)
 	confirm.confirmed.connect(func():
 		pending=true; close_button.disabled=true; fee_input.editable=false; salary_input.editable=false
 		if not app._command("interclub_auction",payload): _on_failure("Clôture indisponible.")
