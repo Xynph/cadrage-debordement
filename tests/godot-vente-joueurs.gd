@@ -7,7 +7,8 @@ extends SceneTree
 ## courrier « offre_transfert » (écran « ventes »). Textes ≥ 13 px, aucun chevauchement.
 const G = preload("res://ui/carnet_skin.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
-const TAILLE_MIN := 13
+## Plancher de lisibilité de la nouvelle direction artistique : 12 px réels (brief du 19/11/2026).
+const TAILLE_MIN := 12
 var app: Control
 var sortie := OS.get_environment("CD_VENTE_OUTPUT")
 var attendu: Dictionary = {}
@@ -98,44 +99,44 @@ func executer() -> void:
 	if acces != null: acces.pressed.emit()
 	await poser(12)
 	var boite := noeud(app, "PlayerSales") as AcceptDialog
-	verifier(boite != null and boite.visible, "boîte « Offres reçues » ouverte")
+	verifier(boite != null and not boite.visible and noeud(app, "RecrutementSubpage_offres") != null, "« Offres reçues » : sous-page du Recrutement, aucune fenêtre")
 	if boite != null:
-		verifier(texte(boite, "SalesWindow").contains("Période des mutations") and texte(boite, "SalesWindow").contains("1er mai"), "période des mutations écrite : " + texte(boite, "SalesWindow"))
-		var carte := noeud(boite, "SaleOffer_" + str(offre.id).validate_node_name())
+		verifier(texte(app, "SalesWindow").contains("changement de saison") and texte(app, "SalesWindow").contains("1er juillet") and not texte(app, "SalesWindow").contains("1er mai"), "effet au changement de saison écrit : " + texte(app, "SalesWindow"))
+		var carte := noeud(app, "SaleOffer_" + str(offre.id).validate_node_name())
 		verifier(carte != null, "offre « %s » affichée" % str(offre.id))
 		if carte != null:
 			verifier(texte(carte, "SaleOfferFee").contains(G.euros(offre.fee)) and texte(carte, "SaleOfferFee").contains(str(offre.buyer)), "montant et acheteur : " + texte(carte, "SaleOfferFee"))
 			var oui := noeud(carte, "SaleAccept") as Button
 			verifier(oui != null and not oui.disabled, "« Conclure l’accord » disponible")
-			verifier(texte(carte, "SaleDeferredNote").contains("1er mai"), "accord effectif à l’ouverture : " + texte(carte, "SaleDeferredNote"))
+			verifier(texte(carte, "SaleDeferredNote").contains("1er juillet"), "accord effectif au changement de saison : " + texte(carte, "SaleDeferredNote"))
 			for pct in [5, 10, 15]: verifier(noeud(carte, "SaleCounter%d" % pct) != null, "« Demander +%d %% »" % pct)
 			verifier(noeud(carte, "SaleDecline") != null, "« Refuser »")
-		var bloquee := noeud(boite, "SaleOffer_" + str(fauche.id).validate_node_name())
+		var bloquee := noeud(app, "SaleOffer_" + str(fauche.id).validate_node_name())
 		if bloquee != null:
 			verifier(texte(bloquee, "SaleAcceptReason") == str(fauche.accept.reason), "raison écrite en clair : « %s »" % texte(bloquee, "SaleAcceptReason"))
 			verifier((noeud(bloquee, "SaleAccept") as Button).disabled, "« Accepter » grisé quand l’acheteur n’a plus les moyens")
 		else: verifier(false, "offre bloquée affichée")
-		verifier(texte(boite, "SalePending_" + str(accord.id).validate_node_name()).begins_with("Vente en attente : départ pour"), "vente en attente : " + texte(boite, "SalePending_" + str(accord.id).validate_node_name()))
-		textes_lisibles(boite, "boîte des offres")
+		verifier(texte(app, "SalePending_" + str(accord.id).validate_node_name()).begins_with("Vente en attente : départ pour"), "vente en attente : " + texte(app, "SalePending_" + str(accord.id).validate_node_name()))
+		textes_lisibles(noeud(app, "RecrutementAdopte"), "page des offres")
 		await capturer("vente-offres.png")
 		# 3. Confirmation (W1) : libellé = action, focus sur Annuler ; caisse, effectif, budget.
 		if carte != null and noeud(carte, "SaleAccept") != null:
 			(noeud(carte, "SaleAccept") as Button).pressed.emit()
 			await poser(10)
-			var confirmation := noeud(boite, "SaleConfirmation") as ConfirmationDialog
-			verifier(confirmation != null and confirmation.visible, "confirmation ouverte")
+			var confirmation := noeud(app, "SaleConfirmation") as Control
+			verifier(confirmation != null and confirmation.is_visible_in_tree() and (app.find_children("*", "ConfirmationDialog", true, false).filter(func(d): return d.visible)).is_empty(), "confirmation EN PLACE (deux temps, aucune fenêtre)")
 			if confirmation != null:
-				verifier(confirmation.get_ok_button().text.begins_with("CONCLURE L’ACCORD AVEC"), "libellé = action : " + confirmation.get_ok_button().text)
-				verifier(confirmation.get_cancel_button().text == "ANNULER", "bouton Annuler")
-				verifier(confirmation.gui_get_focus_owner() == confirmation.get_cancel_button(), "focus sur Annuler")
-				verifier(texte(confirmation, "SaleConfirmCash").contains("+" + G.euros(offre.fee)) and texte(confirmation, "SaleConfirmCash").contains("1er mai"), "caisse : " + texte(confirmation, "SaleConfirmCash"))
+				verifier((noeud(app, "SaleConfirmationOk") as Button).text.begins_with("CONCLURE L’ACCORD AVEC"), "libellé = action : " + (noeud(app, "SaleConfirmationOk") as Button).text)
+				verifier((noeud(app, "SaleConfirmationAnnuler") as Button).text == "Annuler", "bouton Annuler")
+				verifier(root.gui_get_focus_owner() == noeud(app, "SaleConfirmationAnnuler"), "focus sur Annuler")
+				verifier(texte(confirmation, "SaleConfirmCash").contains("+" + G.euros(offre.fee)) and texte(confirmation, "SaleConfirmCash").contains("1er juillet"), "caisse : " + texte(confirmation, "SaleConfirmCash"))
 				verifier(texte(confirmation, "SaleConfirmSquad").contains("Effectif après la vente : %d" % int(offre.squadAfter)), "effectif après vente : " + texte(confirmation, "SaleConfirmSquad"))
 				verifier(texte(confirmation, "SaleConfirmBudget").begins_with("Budget de transferts"), "part rendue au budget : " + texte(confirmation, "SaleConfirmBudget"))
 				textes_lisibles(confirmation, "confirmation")
 				await capturer("vente-confirmation.png")
-				confirmation.get_cancel_button().pressed.emit()
+				(noeud(app, "SaleConfirmationAnnuler") as Button).pressed.emit()
 				await poser(6)
-		boite.hide(); boite.queue_free()
+		(noeud(app, "RecrutementRetour") as Button).pressed.emit()
 		await poser(6)
 
 	# 4. Fiche joueur, onglet Contrat : carte « Marché des transferts ».
@@ -200,7 +201,7 @@ func executer() -> void:
 	await poser(24)
 	verifier(app.route == "Recrutement", "le lien ouvre Recrutement (route %s)" % str(app.route))
 	var rouverte := noeud(app, "PlayerSales") as AcceptDialog
-	verifier(rouverte != null and rouverte.visible, "le lien ouvre les offres reçues")
+	verifier(rouverte != null and not rouverte.visible and noeud(app, "RecrutementSubpage_offres") != null, "le lien ouvre la page des offres reçues")
 
 	print("VENTE ", JSON.stringify({"controles": controles, "failures": echecs, "offres": n_offres}))
 	app.closing = true

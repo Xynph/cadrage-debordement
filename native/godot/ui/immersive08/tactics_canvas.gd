@@ -53,6 +53,17 @@ static func build(app: Control, canvas: Control = null) -> Control:
 		canvas.custom_minimum_size.y = maxf(canvas.custom_minimum_size.y, HAUTEUR * C.density)
 		D.place(page, Rect2(0, 0, 2248, HAUTEUR))
 	app.selected_slot = clampi(int(app.selected_slot), 0, 22)
+	# Première ouverture sous le budget de 250 ms (tests/godot-portraits-prechauffage.gd) : la feuille et l'effectif sont
+	# indexés une fois pour toute la construction, et les fonds naissent sans rayon (charte §3) au lieu d'une passe sur
+	# les ~1 500 nœuds de l'écran après coup. 171 ms → ~100 ms mesurés en local (61 joueurs).
+	Selection.lecture_debut(app.model)
+	C.rayon_nul = true
+	var construite := _construire(app, page)
+	C.rayon_nul = false
+	Selection.lecture_fin()
+	return construite
+
+static func _construire(app: Control, page: Control) -> Control:
 	var etat := Selection.state(app)
 	var pris: Variant = etat.get("pris")
 	if pris is Dictionary and Selection.payload(app, str(pris.get("player_id", "")), int(pris.get("source", -1))) == null: etat.erase("pris")
@@ -77,7 +88,6 @@ static func build(app: Control, canvas: Control = null) -> Control:
 	var alertes := _alertes(app)
 	var bloc := Candidats.build(app, page, Rect2(0, CANDIDATS_Y, 2248, HAUTEUR - CANDIDATS_Y), premiere, choisir_cb, alertes.size() * 56.0)
 	for i in alertes.size(): (alertes[i] as Callable).call(bloc, 52.0 + i * 56.0)
-	Kit.angles_droits(page)
 	_restore_focus.call_deferred(app)
 	return page
 

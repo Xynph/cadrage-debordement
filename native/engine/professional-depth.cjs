@@ -2,8 +2,22 @@
 
 // Installed in the native career VM. The floor is a game policy for signed
 // professionals and does not change match-day eligibility or the source data.
-module.exports = function professionalDepth() {
+//
+// Décision de Léo du 19/11/2026 (docs/gdd/calendrier-mutations.md § 3 quater, points 2 et 3) : en carrière Monde,
+// le club joué n'a plus de plancher de 40 ni de joueurs de complément signés automatiquement (les 40 étaient un
+// choix technique, #502). Seul garde-fou : les espoirs du centre montent pour un match quand la feuille de 23 ne
+// peut pas être remplie (espoirs-match.cjs), avec une alerte avant (continuer.cjs, « Effectif trop juste »).
+// Les joueurs « depth-… » déjà signés restent sous contrat jusqu'à leur échéance.
+// Clubs gérés : plancher gardé ; `options.managedFloor === false` le coupe en Monde (worker.cjs le lit de
+// CD_PLANCHER_CLUBS_GERES=0, pour la mesure multi-saisons). Hors Monde (anciens modes), comportement d'origine.
+// Dans la VM, worker.cjs pose `nativeDepthOptions` juste avant l'installation (aucun argument : texte d'appel inchangé).
+module.exports = function professionalDepth(options = typeof nativeDepthOptions !== 'undefined' ? nativeDepthOptions : {}) {
   const minimum = 40;
+  const managedFloor = options?.managedFloor !== false;
+  const world = state => !!state?.worldMode;
+  // Club joué d'une carrière Monde : jamais complété.
+  const playedClubExempt = state => world(state);
+  const applies = (state, clubId) => !world(state) || (clubId === state.club ? false : managedFloor);
   const prefix = 'depth-';
   const slots = POS.map((position, index) => ({
     position, index, demand: POS.filter(role => role === position).length
@@ -69,13 +83,14 @@ module.exports = function professionalDepth() {
   }
 
   function fill(state) {
-    if (!state || state.live || state.clubs.every(club => club.players.length >= minimum)) return;
+    if (!state || state.live || state.clubs.every(club => club.players.length >= minimum || !applies(state, club.id))) return;
     const occupied = new Set([
       ...state.clubs.flatMap(club => club.players), ...state.market, ...state.economy.freeAgents,
       ...(state.development?.academy ?? []), ...(state.development?.retired ?? []),
       ...(state.aiRoster?.academies ?? []).flatMap(center => center.players)
     ].map(player => player.id));
     for (const club of state.clubs) {
+      if (!applies(state, club.id)) continue;
       const signed = additions(club.id, club.players, state.season, occupied);
       for (const player of signed) {
         player.joinedSeason = state.season;
@@ -86,5 +101,5 @@ module.exports = function professionalDepth() {
     }
   }
 
-  return { minimum, additions, fill };
+  return { minimum, managedFloor, applies, playedClubExempt, additions, fill };
 };

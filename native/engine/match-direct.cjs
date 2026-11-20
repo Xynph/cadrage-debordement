@@ -397,6 +397,16 @@ function project(model,niveau,lire,options={}){
  if(live.finished&&borne>=events.length){
   try{const f=pourquoi.faits({...direct,notes:direct.notes},{energie:Array.isArray(etat.energie)&&etat.energie.every(Number.isFinite)?etat.energie:null,noms:etat.notes?.noms||{}});direct.pourquoi=pourquoi.raisons(f);}
   catch(error){direct.pourquoi={issue:null,raisons:[]};}
+  // Fil du score de l'après-match : chaque essai et chaque coup de pied réussi, son auteur (clé `joueur`, comme
+  // l'homme du match) et le score qui en découle.
+  // `nature` : essai, essai transformé (la transformation est comptée sur la ligne de l'essai), pénalité ou drop ;
+  // `buteur` : auteur de la transformation, le même que le plan « transformation » du direct (lire.transformation).
+  const nomDe=id=>id?etat.notes?.noms?.[id]||(etat.effectifAdverse||[]).find(p=>String(p.id)===id)?.name||'':'';
+  direct.marques=vues.filter(l=>l.kind==='try'||l.kind==='goal').map(l=>{const a=events[l.i]?.scene?.actor,id=a==null?null:String(a);
+   const nature=l.kind==='try'?(l.transformation===true?'essai-transforme':'essai'):/drop/i.test(String(events[l.i]?.text||''))?'drop':'penalite';
+   let buteur=null;
+   if(nature==='essai-transforme'&&typeof lire.transformation==='function'){try{const p=(lire.transformation(l.i,true)?.players||[]).find(x=>x.featured);if(p)buteur={joueur:String(p.id),nom:nomDe(String(p.id))};}catch{buteur=null;}}
+   return {horloge:horloge(l),minute:l.minute,kind:l.kind,nature,equipe:l.equipe,joueur:id,nom:nomDe(id),buteur,score:l.scoreApres,texte:nommer(events[l.i].text)};});
  }
  direct.feuille=feuille;feuilleStats.habillerAdversaire(direct.adversaire,feuille);
  direct.statsRows=[...direct.statsRows,...feuilleStats.lignesEquipe(feuille)];

@@ -125,21 +125,22 @@ func run() -> void:
 		var dossier: Button = app.body.find_child("OpenOppositionDossier", true, false)
 		check(dossier != null and not dossier.disabled, "Accès au dossier adverse")
 		if not await click(dossier): quit(1); return
-		var dialog: AcceptDialog = app.find_child("OppositionDossier", true, false)
-		check(dialog != null and dialog.visible and contains_text(dialog, "Joueurs pressentis"), "Vrai dossier avec menaces et limites")
-		if dialog == null or not dialog.visible: quit(1); return
-		check(dialog.get_visible_rect().size.y <= app.size.y + 2, "Dossier dans la fenêtre")
+		var dialog: AcceptDialog = null
+		var advice_page: Control = app.find_child("PreparationAdvice", true, false)
+		check(advice_page != null and advice_page.is_visible_in_tree() and contains_text(app.body, "JOUEURS PRESSENTIS"), "Vrai dossier avec menaces et limites, en sous-page")
+		if advice_page == null or not advice_page.is_visible_in_tree(): quit(1); return
 		await capture("dossier-" + str(size.x))
-		app._clear_dialogs(); await settle()
+		check(await click(app.body.find_child("PreparationSubBack", true, false) as Button), "Retour au dossier adverse")
 		check(await click(app.body.find_child("PreparationTabEntrainement", true, false) as Button), "Ouvrir l’entraînement")
 		check(await training_option("CollectiveFocus", 1, app.model.decisions.training.collective), "Préparation spécifique disponible")
 		check(await training_option("OpponentLevel", 9, app.model.decisions.difficulty), "Choix du comportement adverse")
 		app._navigate("Recrutement"); await settle()
-		var needs: Button = app.body.find_child("OpenRecruitmentNeeds", true, false)
-		check(needs != null, "Besoins et missions accessibles")
+		var needs: Button = app.body.find_child("OpenScoutMission", true, false)
+		check(needs != null, "Besoins et missions accessibles (« Lancer une mission »)")
 		needs.pressed.emit(); await settle()
+		# Missions et besoins : sous-page du Recrutement (la fenêtre d'origine est adoptée, masquée).
 		dialog = app.find_child("RecruitmentNeeds", true, false)
-		check(dialog != null and dialog.visible and dialog.find_child("CreateScoutMission", true, false) != null, "Missions et besoins réels dans le carnet")
+		check(dialog != null and not dialog.visible and app.find_child("RecrutementSubpage_missions", true, false) != null and app.find_child("CreateScoutMission", true, false) != null, "Missions et besoins réels dans le carnet")
 		app._clear_dialogs(); await settle()
 	await command("export")
 	check(app.model.meta.exportText == before and bytes == FileAccess.get_file_as_bytes(file), "Navigation des quatre nouveaux parcours sans mutation état/RNG/disque")

@@ -76,7 +76,7 @@ func run() -> void:
 		var level:=row.find_child("RosterLevel",true,false) as Label
 		var potential:=row.find_child("RosterPotential",true,false) as Label
 		check(potential!=null and potential.text==G.potential_text(person),"Colonne propre reprend sa fourchette")
-		check(potential.get_theme_color("font_color")==G.POTENTIAL_COLOR,"Potentiel orange")
+		check(potential.get_theme_color("font_color")==preload("res://ui/charte.gd").IVOIRE_2,"Potentiel en ivoire secondaire")
 	await capture("effectif-connaissance-modele-reel-1440")
 	var own: Dictionary=original.squad[0]
 	app.selected_player=str(own.id);app.set_meta("immersive08_full_player",true);app._render();await settle()

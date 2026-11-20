@@ -405,12 +405,14 @@ func _receive_model(value: Dictionary) -> void:
 		if route == "Bureau": Immersive.Office.update_live_card(self)
 		if is_instance_valid(match_screen): match_screen.update_frame(model)
 	else:
-		if route == "Match" and is_instance_valid(match_screen):
+		# Le passage de l'avant-match (hors coque) au direct (dans la coque), ou l'inverse, redessine tout l'écran.
+		var coque_change: bool = route == "Match" and Immersive.avant_match_hors_coque(self) != bool(get_meta("hors_coque", false))
+		if route == "Match" and is_instance_valid(match_screen) and not coque_change:
 			_update_live_bar()
 			_update_header_date()
 			match_screen.update_frame(model)
 		# Changement d'écran, de boîte de réception, de carrière ou avance du calendrier : toujours le rendu complet.
-		else: _refresh_after_response(response_ok, route != route_before or not reception_id.is_empty() or received_command in ["new_career", "import", "recover_profile", "restore_checkpoint", "next_season", "finish_round", "advance_day", CareerProgression.CONTINUE_COMMAND] or SeasonPreparation.is_advance(received_command))
+		else: _refresh_after_response(response_ok, coque_change or route != route_before or not reception_id.is_empty() or received_command in ["new_career", "import", "recover_profile", "restore_checkpoint", "next_season", "finish_round", "advance_day", CareerProgression.CONTINUE_COMMAND] or SeasonPreparation.is_advance(received_command))
 	if bridge.last_response_ok:
 		if is_instance_valid(status):
 			status.text = _status_line_text()
@@ -706,7 +708,7 @@ func _failed(message: String) -> void:
 	if anticipated and not bridge.model.is_empty() and not is_same(model, bridge.model):
 		model = bridge.model
 		call_deferred("_render_optimistic", reverted)
-	var epcr_dialog := get_node_or_null("EpcrPreparationDialog") if last_command == "epcr_preview" else null
+	var epcr_dialog := find_child("EpcrPreparationDialog", true, false) if last_command == "epcr_preview" else null
 	var editor_dialog := get_node_or_null("CompetitionEditorDialog") if last_command == "competition_editor_preview" else null
 	var market_dialog := get_node_or_null("InterclubMarket") if last_command in ["interclub_negotiate", "interclub_auction", "transfer_budget_extension"] else null
 	# A consultation refusal belongs to its report, never to the career decision
@@ -814,7 +816,12 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 		management_ui.erase("fiche_joueur")
 		# Sous-page de la Composition (tireurs, espoir, renforts) : le menu rouvre l'écran lui-même.
 		management_ui.erase("composition_page")
+		# Sous-page du Recrutement (relève, entre clubs, offres, missions, négociation, rapport) : le menu rouvre l'écran lui-même.
+		if management_ui.has("recrutement_page"): load("res://ui/immersive08/recruitment_canvas.gd").oublier_page(self)
 		management_ui.erase("charge_joueur")
+		# Sous-page de l'avant-match (délégation, espoir) : refermée dès qu'on change d'écran.
+		management_ui.erase("avant_page")
+		if management_ui.get("preparation") is Dictionary: management_ui.preparation.sub = ""
 		if target == "Préparation" and management_ui.get("preparation", {}).get("tab", 0) == 2:
 			management_ui.preparation.tab = 0
 	route = target
@@ -1280,6 +1287,8 @@ func _update_live_bar() -> void:
 				primary_button.disabled = bool(daily.get("disabled", false)) and primary_button.name != "ImmersiveContinue"
 		if office_status and not live.is_empty():
 			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
+		if primary_button.name == "ImmersiveContinue" and live.get("finished",false) and is_instance_valid(contextual_director) and contextual_director.en_consultation():
+			primary_button.text = "Après-match"
 		if connection_error and bridge.child_pid <= 0 and primary_button.name == "ImmersiveContinue": primary_button.text = "Relancer"
 		primary_button.tooltip_text = primary_tooltip()
 		if primary_button.name == "ImmersiveContinue": Immersive.sync_continue(self)
@@ -1332,6 +1341,7 @@ func primary_text() -> String:
 	if connection_error and bridge.child_pid <= 0: return "RELANCER LE MOTEUR  →"
 	var live := _live()
 	if not live.is_empty():
+		if live.get("finished",false) and is_instance_valid(contextual_director) and contextual_director.en_consultation(): return "RETOUR À L’APRÈS-MATCH  →"
 		if live.get("finished",false): return "VALIDER LE RÉSULTAT  →"
 		if route == "Préparation" and live.get("paused",false): return "RETOUR AU MATCH  →"
 		return "RETOUR AU DIRECT  →"
@@ -1352,7 +1362,9 @@ func primary_action() -> void:
 		reconnect()
 		return
 	if not _live().is_empty():
-		if _live().get("finished",false): _command("finish_round")
+		# Après-match consulté depuis un autre écran : Continuer ramène à l'après-match (le résultat s'y valide).
+		if _live().get("finished",false) and is_instance_valid(contextual_director) and contextual_director.en_consultation(): contextual_director.revenir_apres_match()
+		elif _live().get("finished",false): _command("finish_round")
 		else: _navigate("Match")
 		return
 	if _press_required():

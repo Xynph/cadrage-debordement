@@ -91,27 +91,21 @@ test('Moteur Monde : prêt du club joué, remboursement hebdomadaire, courrier d
     assert.equal(mail.reponses.length, 2);
     assert.ok(mail.reponses.every(r => r.disponible), JSON.stringify(mail.reponses));
     const joueur = lire('S.pretsActionnaires[S.club].vente.joueur'), avant = lire('({dette:worldClub(S.club).debt,cash:club().cash,n:club().players.length})');
-    // Hors période des mutations (août), la vente est conclue tout de suite et exécutée le 1er mai, remboursement compris
-    // (calendrier-mutations, décision de Léo du 19/11/2026).
-    assert.match(mail.corps, /hors période des mutations/);
+    // La vente est conclue tout de suite et exécutée au changement de saison, remboursement compris (calendrier-mutations
+    // v2, décision de Léo du 19/11/2026).
+    assert.match(mail.corps, /prennent effet au changement de saison/);
     const r = jeu.brut('club_mail_reply', { id: mail.id, choice: 'vendre' });
     assert.equal(r.ok, true, r.error);
     const conclu = lire(`({dette:worldClub(S.club).debt,n:club().players.length,ici:club().players.some(p=>p.id===${JSON.stringify(joueur)}),
       accord:S.venteJoueurs.accords.find(a=>a.playerId===${JSON.stringify(joueur)})||null})`);
     assert.equal(conclu.ici, true, 'il reste jusqu’à l’ouverture'); assert.equal(conclu.n, avant.n); assert.equal(conclu.dette, avant.dette);
     assert.ok(conclu.accord && conclu.accord.imposee && conclu.accord.pret, JSON.stringify(conclu.accord));
-    assert.match(conclu.accord.date, /-05-01$/);
-    // Ouverture de la période : la vente est exécutée et son prix rembourse le prêt.
-    const VR = require('../native/engine/vente-joueurs.json'), periodes = VR.fenetres.periodes;
-    let apres;
-    try {
-      const jour = lire('CDWorldCareer.calendarToday(S)');
-      VR.fenetres.periodes = [{ debut: jour.slice(5), fin: jour.slice(5) }];
-      apres = lire(`(()=>{for(const a of S.venteJoueurs.accords)a.date=CDWorldCareer.calendarToday(S);venteExecuterAccords();
+    assert.match(conclu.accord.date, /-07-01$/); assert.equal(conclu.accord.bascule, true);
+    // Changement de saison (ventes de settleContracts) : la vente est exécutée et son prix rembourse le prêt.
+    const apres = lire(`(()=>{venteExecuterAccords('ventes');
         return {dette:worldClub(S.club).debt,cash:club().cash,n:club().players.length,ici:club().players.some(p=>p.id===${JSON.stringify(joueur)}),pret:S.pretsActionnaires[S.club]??null,
         lignes:S.ledger.slice(0,4).map(e=>e.title)};})()`);
-      jeu.call('save');
-    } finally { VR.fenetres.periodes = periodes; }
+    jeu.call('save');
     assert.equal(apres.ici, false, 'joueur vendu');
     assert.equal(apres.n, avant.n - 1);
     assert.ok(apres.dette < avant.dette, 'dette remboursée : ' + JSON.stringify([avant, apres]));

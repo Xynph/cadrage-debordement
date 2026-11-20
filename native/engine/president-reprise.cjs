@@ -129,7 +129,7 @@ function repriseVendre(c,plan,reserve){
   if(differe){
    venteNouvelAccord({playerId:p.id,joueur:p.name,buyer:b.id,acheteur:b.name,fee,date:differe.reouverture,imposee:true});
    delete S.economy.listings[p.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==p.id);
-   transferEvent('Le président a conclu la vente de '+p.name+' à '+b.name+' pour '+money(fee)+' : départ le '+nativeVenteJoueurs.dateFr(differe.reouverture)+', à l’ouverture des mutations.');
+   transferEvent('Le président a conclu la vente de '+p.name+' à '+b.name+' pour '+money(fee)+' : départ le '+nativeVenteJoueurs.dateFr(differe.reouverture)+(differe.bascule?', au changement de saison.':', à l’ouverture des mutations.'));
    attendu+=fee;vendus.push({name:p.name,fee,club:b.name,date:differe.reouverture});repriseTally('president:vente',c.id);continue;
   }
   b.cash-=fee;c.players=c.players.filter(x=>x.id!==p.id);b.players.push(p);
@@ -173,7 +173,7 @@ function repriseCourrier(){
  // Hors période des mutations : le président prévient que ses ventes ne seront effectives qu'à l'ouverture.
  const f=repriseFenetre(club());
  return {cle:plan.date,vars:{...nativePresidentReprise.courrier(plan,{tresorerie:plan.tresorerie,reserve:plan.reserve}),
-  mutations:f?'Nous sommes hors période des mutations : une vente se conclura tout de suite, mais le joueur ne partira et l’argent n’arrivera que le '+nativeVenteJoueurs.dateFr(f.reouverture)+'.':''}};
+  mutations:f?(f.bascule?'Les transferts prennent effet au changement de saison : une vente se conclura tout de suite, mais le joueur ne partira et l’argent n’arrivera que le ':'Nous sommes hors période des mutations : une vente se conclura tout de suite, mais le joueur ne partira et l’argent n’arrivera que le ')+nativeVenteJoueurs.dateFr(f.reouverture)+'.':''}};
 }
 function repriseRefus(action){
  const plan=S.presidentReprise?.clubs?.[S.club];

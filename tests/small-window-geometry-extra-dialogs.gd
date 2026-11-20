@@ -7,8 +7,6 @@ func dialogs() -> void:
 	if app.decision_feedback != null:
 		app.decision_feedback._open()
 		await dialog_measure("decision-feedback")
-	app.SquadViews.comparison(app)
-	await dialog_measure("player-comparison")
 	# Candidats du poste et consignes défensives ne sont plus des fenêtres (Composition du 19/11/2026 : candidats sous
 	# le terrain, défense dans l'onglet Consignes) ; la charge individuelle est une sous-page de la fiche joueur.
 	load("res://ui/decision_views.gd").dossier(app)

@@ -30,12 +30,21 @@ const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
+	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
+	{"id": "comparateur", "libelle": "Comparateur (trois joueurs)", "type": "comparateur"},
 	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
 	{"id": "presse-portraits", "libelle": "Presse : Portraits", "type": "presse_onglet", "onglet": 3},
+	{"id": "v2-recrutement-offre", "libelle": "Recrutement : écran Offre au joueur", "type": "recrutement_etape", "etape": "offre"},
+	{"id": "v2-recrutement-confirmation", "libelle": "Recrutement : confirmation en place de l'offre", "type": "recrutement_etape", "etape": "offre_confirmation"},
+	{"id": "v2-recrutement-observation", "libelle": "Recrutement : confirmation en place de l'observation", "type": "recrutement_etape", "etape": "observation"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "options", "libelle": "Options", "type": "options"},
+	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
+	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
+	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
+	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -44,6 +53,8 @@ const EN_DIRECT := [
 	{"id": "direct", "libelle": "Match en direct", "type": "direct"},
 	{"id": "equipe-composition", "libelle": "Fenêtre Équipe · composition", "type": "equipe", "onglet": "composition"},
 	{"id": "equipe-consignes", "libelle": "Fenêtre Équipe · consignes", "type": "equipe", "onglet": "consignes"},
+	## Toujours le dernier : la fin du match est confiée à l'adjoint, puis l'après-match s'affiche (résultat à valider).
+	{"id": "apres-match", "libelle": "Après-match (match joué jusqu'au bout)", "type": "apres_match"},
 ]
 ## Autres noms acceptés par --ecrans (forme normalisée par `slug`).
 const ALIAS := {"transferts": ["recrutement"], "classement": ["classements"], "equipe": ["equipe-composition", "equipe-consignes"],
@@ -442,6 +453,24 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app._navigate("Presse")
 			await stabiliser()
 			if app.route != "Presse": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"recrutement_etape":
+			# Étapes du Recrutement (relecture du 20/11) : écran d'offre, confirmation en place de l'offre, de l'observation.
+			app.management_ui.erase("recrutement_page")
+			app._navigate("Recrutement")
+			await stabiliser()
+			if app.route != "Recrutement": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+			var liste: Node = app.find_child("CarnetMarket", true, false)
+			if liste == null: return {"statut": "echec", "note": "écran Recrutement absent"}
+			var etape := str(ecran.etape)
+			var cible := liste.find_child("ObserveRecruitment" if etape == "observation" else "OfferRecruitment", true, false) as Button
+			if cible == null or cible.disabled: return {"statut": "indisponible", "note": "action absente ou grisée pour la piste choisie"}
+			cible.pressed.emit()
+			await stabiliser()
+			if etape == "offre_confirmation":
+				var valider := app.find_child("RecrutementPageValider", true, false) as Button
+				if valider == null or valider.disabled: return {"statut": "indisponible", "note": "offre non envoyable pour cette piste"}
+				valider.pressed.emit()
+				await stabiliser()
 		"calendrier_semaine":
 			app._navigate("Calendrier")
 			await stabiliser()
@@ -473,12 +502,52 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var mini_fiche: Control = load("res://ui/immersive08/mini_fiche.gd").montrer(app, str(lien.get_meta("entity_id", "")), "squad", lien)
 			await stabiliser()
 			if mini_fiche == null or not is_instance_valid(mini_fiche): return {"statut": "echec", "note": "mini-fiche non affichée"}
+		"avant_delegation":
+			# Sous-page de l'avant-match (aucune fenêtre) : ouverte par le même appel que le lien « Déléguer le match ».
+			app._navigate("Match")
+			await stabiliser()
+			var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
+			if avant == null or not avant.is_visible_in_tree(): return {"statut": "indisponible", "note": "avant-match absent (match en cours ou aucune rencontre)"}
+			avant.ouvrir_page("delegation")
+			await stabiliser()
+			if app.find_child("MatchDelegationPage", true, false) == null: return {"statut": "echec", "note": "sous-page de délégation non ouverte"}
+		"equilibre_postes":
+			app._navigate("Effectif")
+			await stabiliser()
+			var tuile := app.find_child("EffectifTuileAptes", true, false) as Control
+			if tuile == null: return {"statut": "indisponible", "note": "tuile Aptes absente"}
+			tuile.mouse_entered.emit()
+			await stabiliser()
+			if app.get_node_or_null("EquilibrePostes") == null: return {"statut": "echec", "note": "infobulle non affichée"}
+		"comparateur":
+			var effectif_cmp: Array = app.model.get("squad", [])
+			if effectif_cmp.size() < 3: return {"statut": "indisponible", "note": "effectif trop court"}
+			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id")), ident(effectif_cmp[2].get("id"))]
+			app._navigate("Effectif")
+			await stabiliser()
+			load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
+			await stabiliser()
+			if app.route != "Comparateur": return {"statut": "echec", "note": "comparateur non ouvert"}
 		"club":
 			var id := club_adverse()
 			if id.is_empty(): return {"statut": "indisponible", "note": "aucun club adverse connu"}
 			var ouvert: bool = app.navigation_controller.open_entity({"kind": "club", "id": id})
 			await stabiliser()
 			if not ouvert: return {"statut": "echec", "note": "fiche du club %s non ouverte" % id}
+		"preparation_bas":
+			app._navigate("Préparation")
+			await stabiliser()
+			# Leur XV probable arrive par la lecture seule « club_sheet » : on laisse la page se reconstruire, puis on descend.
+			for _i in 90: await process_frame
+			await stabiliser()
+			if app.body_scroll != null: app.body_scroll.scroll_vertical = int(app.body_scroll.get_v_scroll_bar().max_value)
+			await stabiliser()
+		"preparation_sous":
+			app._navigate("Préparation")
+			await stabiliser()
+			app.management_ui.preparation.sub = str(ecran.sous)
+			app._render()
+			await stabiliser()
 		"options":
 			app._navigate("Bureau")
 			await stabiliser()
@@ -496,6 +565,11 @@ func refermer(ecran: Dictionary) -> void:
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
 	if str(ecran.type) == "mini_fiche": load("res://ui/immersive08/mini_fiche.gd").cacher(app)
+	if str(ecran.type) == "avant_delegation":
+		var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
+		if avant != null: avant.fermer_page()
+	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
+	if str(ecran.type) == "equilibre_postes": app.find_child("EffectifTuileAptes", true, false).mouse_exited.emit()
 	fermer_fenetres()
 
 func surface() -> Control:
@@ -530,6 +604,7 @@ func ouvrir_en_direct(ecran: Dictionary) -> Dictionary:
 	var vue: Control = surface()
 	if vue == null: return {"statut": "echec", "note": "direct fermé"}
 	var equipe: Variant = vue.get("equipe")
+	if str(ecran.type) == "apres_match": return await ouvrir_apres_match(vue)
 	if str(ecran.type) == "direct":
 		if is_instance_valid(equipe) and equipe.visible: equipe.fermer(false)
 		if bool(ecran.get("entracte", false)): return await ouvrir_entracte()
@@ -578,6 +653,34 @@ func ouvrir_entracte() -> Dictionary:
 	await create_timer(3.0).timeout
 	await stabiliser()
 	return {"statut": "ok", "note": "entracte arrêté (%s)" % note}
+
+## Après-match d'un vrai match : la fin est confiée à l'adjoint (commande du jeu), le débrief du vestiaire est passé
+## comme le ferait un joueur, puis l'écran attend que l'après-match (ui/contextual/apres_match.gd) soit affiché.
+func ouvrir_apres_match(vue: Control) -> Dictionary:
+	var equipe: Variant = vue.get("equipe")
+	if is_instance_valid(equipe) and equipe.visible: equipe.fermer(false)
+	var limite := Time.get_ticks_msec() + 240000
+	var delegue := false
+	while Time.get_ticks_msec() < limite:
+		var actuelle: Control = surface()
+		var apres: Variant = actuelle.get("apres_match") if actuelle != null else null
+		if apres is Control and is_instance_valid(apres) and (apres as Control).is_visible_in_tree(): break
+		var live: Variant = app.model.get("live")
+		var causerie: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+		if not app.waiting and causerie is Dictionary and app.contextual_director.kind == "locker":
+			app._command("match_talk_continue", {"key": causerie.key, "phase": causerie.phase, "skip": true})
+		elif not app.waiting and not delegue and live is Dictionary and not bool(live.get("finished", false)):
+			delegue = true
+			print("ECRANS_FILMES fin confiée à l'adjoint")
+			app._command("delegate", {})
+		for k in 10: await process_frame
+	var vue_finale: Control = surface()
+	var ecran_final: Variant = vue_finale.get("apres_match") if vue_finale != null else null
+	if not (ecran_final is Control and is_instance_valid(ecran_final) and (ecran_final as Control).is_visible_in_tree()):
+		return {"statut": "echec", "note": "après-match non affiché : " + str(app.last_error)}
+	await create_timer(2.0).timeout
+	await stabiliser()
+	return {"statut": "ok"}
 
 ## Capture et analyse l'écran ouvert ; complète l'entrée du rapport.
 func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
@@ -672,8 +775,8 @@ func run() -> void:
 		"source_ecrans": source.source, "pilote": RenderingServer.get_current_rendering_driver_name(), "carte": RenderingServer.get_video_adapter_name(), "audio": AudioServer.get_driver_name(),
 		"carriere": {"club": str(club.get("name", "")), "date": str(app.model.get("meta", {}).get("calendarToday", ""))},
 		"tailles": [], "ecrans": [], "planches": []}
-	var hors_direct: Array = ecrans.filter(func(e: Dictionary): return not str(e.type) in ["direct", "equipe"])
-	var en_direct: Array = ecrans.filter(func(e: Dictionary): return str(e.type) in ["direct", "equipe"])
+	var hors_direct: Array = ecrans.filter(func(e: Dictionary): return not str(e.type) in ["direct", "equipe", "apres_match"])
+	var en_direct: Array = ecrans.filter(func(e: Dictionary): return str(e.type) in ["direct", "equipe", "apres_match"])
 	var delai_depasse := false
 	for taille: Vector2i in o.tailles:
 		var obtenue: Dictionary = await appliquer_taille(taille)

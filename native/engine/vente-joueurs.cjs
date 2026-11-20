@@ -58,7 +58,8 @@ const venteReglages=()=>nativeVenteJoueurs.REGLAGES;
 const venteGraine=()=>Number.isInteger(S?.careerVariation?.seed)?S.careerVariation.seed:0;
 const venteSemaine=()=>S.worldMode?.week??S.round;
 const venteJour=()=>typeof CDWorldCareer!=='undefined'&&typeof CDWorldCareer.calendarToday==='function'&&CDWorldCareer.active(S)?CDWorldCareer.calendarToday(S):null;
-const venteFenetre=()=>nativeVenteJoueurs.fenetre(venteJour(),venteReglages());
+// v2 (calendrier-mutations.cjs, calFenetreAccords) : accords toujours différés jusqu'au changement de saison.
+const venteFenetre=()=>(typeof calFenetreAccords==='function'?calFenetreAccords():null)||nativeVenteJoueurs.fenetre(venteJour(),venteReglages());
 const venteMinimum=()=>{const d=typeof nativeSystems!=='undefined'?nativeSystems.domain('interclubMarket'):null;return d&&typeof d.releasePolicy==='function'?d.releasePolicy(S).minimum:37;};
 const venteEuros=n=>nativeVenteJoueurs.euros(n);
 // Joueurs prêtés cette saison (mêmes listes que le marché entre clubs).
@@ -74,20 +75,31 @@ function venteEtat(ecrire=false){
 // calendrier-mutations.cjs) partagent la même liste et la même exécution à l'ouverture.
 const venteAccord=id=>venteEtat().accords.find(a=>a.playerId===id&&a.clubId===S.club&&a.sens!=='achat')||null;
 // Nouvel accord différé (vente choisie, vente imposée, achat) : exécuté à la première clôture de semaine à partir de a.date.
-function venteNouvelAccord(champs){const st=venteEtat(true);st.seq++;const a={id:'accord-'+st.seq,clubId:S.club,conclu:venteJour()||'',...champs};st.accords.push(a);return a;}
+// bascule : exécuté au changement de saison (settleContracts, calendrier-mutations.cjs), plus à une clôture de semaine.
+const venteBasculeChamp=()=>typeof calFenetreAccords==='function'&&calFenetreAccords()?{bascule:true}:{};
+function venteNouvelAccord(champs){const st=venteEtat(true);st.seq++;const a={id:'accord-'+st.seq,clubId:S.club,conclu:venteJour()||'',...venteBasculeChamp(),...champs};st.accords.push(a);return a;}
 // Raison pour laquelle un joueur ne peut pas être proposé ('' : possible).
 function venteRaisonListe(p,loans=venteLoans()){
  const a=venteAccord(p.id);if(a)return 'Vente conclue avec '+(S.clubs[a.buyer]?.name||'un club')+' : départ le '+nativeVenteJoueurs.dateFr(a.date)+'.';
  const pre=typeof preContratSigne==='function'?preContratSigne(p.id):null;if(pre&&pre.sens==='depart')return 'A signé un pré-contrat avec '+pre.autre+' : il part libre le '+nativeVenteJoueurs.dateFr(pre.arrivee)+'.';
+ const fin=typeof calRaisonVenteFin==='function'?calRaisonVenteFin(p):'';if(fin)return fin;
  if(S.live)return 'Match en cours : attends la fin de la journée.';
  if(p.espoirLoan)return 'Appelé du centre de formation : il n’a pas de contrat professionnel.';
  if(loans.has(p.id))return 'Joueur concerné par un prêt cette saison.';
  return saleBlocked(p)||'';
 }
-// Garde d'effectif (seuil du marché entre clubs, interclub-market.cjs) : raison du refus, ou ''.
+// Garde d'effectif du club joué (décision de Léo du 19/11/2026, fin du plancher de 40) : après le départ, les seuls
+// professionnels (espoirs appelés exclus, blessures et suspensions ignorées) doivent encore tenir une feuille de 23
+// (premières lignes comprises, même composition que buildSheet) ; garde par famille inchangée. Raison du refus, ou ''.
+const VENTE_BANC=[1,0,2,3,5,8,9,10];
+function venteFeuilleManque(p,c=club()){
+ const pros=c.players.filter(q=>q.id!==p.id&&!q.espoirLoan).map(q=>({...q,injury:0,suspension:0,condition:100}));
+ const sh=buildSheet({...c,players:pros});
+ return [...new Set(sh.lineup.concat(sh.bench).flatMap((x,i)=>x?[]:[POS[i<15?i:VENTE_BANC[i-15]].toLowerCase()]))];
+}
 function venteGarde(p,c=club()){
- const min=venteMinimum();
- if(c.players.length<=min)return 'Tu dois garder au moins '+min+' joueurs professionnels.';
+ if(c.id===S.club&&typeof buildSheet==='function'){const manque=venteFeuilleManque(p,c);if(manque.length)return 'Après ce départ, tu ne pourrais plus aligner une feuille de 23 complète (manque : '+manque.join(', ')+').';}
+ else{const min=venteMinimum();if(c.players.length<=min)return 'Tu dois garder au moins '+min+' joueurs professionnels.';}
  if(p.fam===0&&c.players.filter(q=>q.id!==p.id&&q.pos===p.pos).length<2)return 'Tu dois garder au moins deux piliers de chaque côté.';
  if(c.players.filter(q=>q.id!==p.id&&q.fam===p.fam).length<2)return 'Tu dois garder au moins deux joueurs de cette famille de poste.';
  return '';
@@ -128,7 +140,7 @@ economyWeek=function(){
  const base=recruitmentNeeds,memo=new Map();
  if(nativeVenteMemo)recruitmentNeeds=function(c){if(arguments.length!==1||!c||typeof c!=='object')return base.apply(this,arguments);let r=memo.get(c);if(!r){r=base.call(this,c);memo.set(c,r);}return r;};
  // Pré-contrats (calendrier-mutations.cjs) : approches des autres clubs, sous la même mémoire des besoins.
- try{venteExecuterAccords();const r=economyWeekVenteV1.apply(this,arguments);venteSpontanee();if(typeof calSemaine==='function')calSemaine();return r;}finally{recruitmentNeeds=base;}
+ try{venteExecuterAccords();const r=economyWeekVenteV1.apply(this,arguments);venteSpontanee();if(typeof calOffresBascule==='function')calOffresBascule();if(typeof calSemaine==='function')calSemaine();return r;}finally{recruitmentNeeds=base;}
 };
 function venteEvenement(ev){
  const st=venteEtat(true);st.seq++;st.evenements.push({id:'vente-'+st.seq,date:venteJour()||'',...ev});
@@ -136,18 +148,20 @@ function venteEvenement(ev){
 }
 // Exécution des accords arrivés à échéance (clôture de semaine, hors match) : garde d'effectif et moyens de l'acheteur
 // revérifiés ; sinon l'accord tombe, avec la raison. Un accord d'un autre club (manager parti) disparaît sans effet.
-function venteExecuterAccords(){
- if(!venteEtatValide(S.venteJoueurs)||!S.venteJoueurs.accords.length||S.live)return;
- const jour=venteJour();if(!jour)return;
- const st=S.venteJoueurs,dus=st.accords.filter(a=>a.date<=jour);if(!dus.length)return;
- st.accords=st.accords.filter(a=>a.date>jour);
+// quand : absent = clôture de semaine (accords datés d'avant la v2) ; 'achats' / 'ventes' = changement de saison (accords
+// « bascule » ; la garde d'effectif n'est plus revérifiée : l'été sert à compléter l'effectif). Rend le nombre exécuté.
+function venteExecuterAccords(quand){
+ if(!venteEtatValide(S.venteJoueurs)||!S.venteJoueurs.accords.length||S.live)return 0;
+ const jour=venteJour();if(!jour)return 0;
+ const st=S.venteJoueurs,dus=st.accords.filter(a=>quand?a.bascule&&(quand==='achats')===(a.sens==='achat'):!a.bascule&&a.date<=jour);if(!dus.length)return 0;
+ st.accords=st.accords.filter(a=>!dus.includes(a));let n=0;
  for(const a of dus){
   if(a.clubId!==S.club)continue;
   // Achat d'un joueur sous contrat (calendrier-mutations.cjs) : revérifié et exécuté par le marché entre clubs.
-  if(a.sens==='achat'){if(typeof calExecuterAchat==='function')calExecuterAchat(a);continue;}
+  if(a.sens==='achat'){if(typeof calExecuterAchat==='function'&&calExecuterAchat(a))n++;continue;}
   const p=player(a.playerId),buyer=S.clubs[a.buyer];
   const base={joueur:a.joueur,acheteur:buyer?.name||a.acheteur,montant:a.fee,playerId:a.playerId,buyerId:a.buyer};
-  const raison=!p?'Le joueur ne fait plus partie de l’effectif.':!buyer?'Le club acheteur n’existe plus.':venteGarde(p)||(buyer.cash<a.fee||professionalPlaces(buyer)<=0?buyer.name+' n’a plus les moyens ou plus de place dans son effectif.':'');
+  const raison=!p?'Le joueur ne fait plus partie de l’effectif.':!buyer?'Le club acheteur n’existe plus.':(quand?'':venteGarde(p))||(buyer.cash<a.fee||professionalPlaces(buyer)<=0?buyer.name+' n’a plus les moyens ou plus de place dans son effectif.':'');
   if(raison){venteEvenement({type:'annulee',raison,...base});transferEvent('L’accord avec '+base.acheteur+' pour '+a.joueur+' tombe : '+raison.replace(/\\.$/,'')+'.');continue;}
   setupEconomy();const e=S.economy,id='accord-'+a.id;
   e.offers=e.offers.filter(o=>o.playerId!==p.id);e.offers.push({id,playerId:p.id,buyer:buyer.id,fee:a.fee,expires:e.week});
@@ -157,9 +171,10 @@ function venteExecuterAccords(){
   if((a.imposee&&typeof budgetTransfertsImposee==='function'?budgetTransfertsImposee(vendre):vendre())===true){
    if(cons)venteAppliquerConsequences(cons);
    if(a.pret&&typeof pretRembourser==='function'){const reste=S.pretsActionnaires?.[S.club]?.restant||0,r=Math.min(reste,a.fee);if(r>0){(typeof ledgerEntryV1==='function'?ledgerEntryV1:ledgerEntry)('Remboursement anticipé du prêt de l’actionnaire',-r);pretRembourser(S.club,r,true);}}
-   venteEvenement({type:'executee',raison:'',...base});}
+   venteEvenement({type:'executee',raison:'',...base});n++;}
   else{e.offers=e.offers.filter(o=>o.id!==id);venteEvenement({type:'annulee',raison:'La vente n’a pas pu être enregistrée.',...base});}
  }
+ return n;
 }
 const venteOffre=id=>S.economy?.offers?.find(o=>o.id===id)||null;
 // Raison pour laquelle une offre ne peut pas être acceptée ('' : possible).
@@ -179,8 +194,8 @@ function venteRaisonRelance(o){
  if(o.countered)return 'Tu as déjà demandé plus : accepte ou refuse cette offre.';
  return '';
 }
-// Joueurs de complément que le club signera après la vente (plancher d'effectif professionnel, professional-depth.cjs).
-const venteComplements=n=>Math.max(0,(typeof nativeProfessionalDepth!=='undefined'?nativeProfessionalDepth.minimum:40)-n);
+// Joueurs de complément après la vente : aucun pour le club joué (fin du plancher de 40, décision de Léo du 19/11/2026).
+const venteComplements=n=>0;
 // Conséquences légères d'une vente choisie (réglages « consequences ») : calculées avant le départ, sur les jauges
 // existantes ; textes annoncés dans la confirmation. Le moteur n'a ni capitaine ni statut « emblématique » : le leader du
 // vestiaire (CDRelationsV70.leader) et les meilleurs joueurs par note au poste en tiennent lieu.
@@ -208,7 +223,7 @@ function venteAppliquerConsequences(c){
  if(c.cadre&&R.supportersCadre&&Number.isFinite(S.pressRelations?.fanTrust))S.pressRelations.fanTrust=venteBorne(S.pressRelations.fanTrust+R.supportersCadre,0,100);
  if(c.renfloue)S.trust=venteBorne((S.trust??50)+R.confiancePresident,0,100);
 }
-const venteNoteAccord=f=>'Hors période des mutations : accord conclu, effectif le '+nativeVenteJoueurs.dateFr(f.reouverture)+'. Le joueur reste au club et joue jusque-là ; l’argent arrive à son départ.';
+const venteNoteAccord=f=>f.bascule?'Accord conclu maintenant, effectif le '+nativeVenteJoueurs.dateFr(f.reouverture)+' (changement de saison). Le joueur reste au club et joue jusque-là ; l’argent arrive à son départ.':'Hors période des mutations : accord conclu, effectif le '+nativeVenteJoueurs.dateFr(f.reouverture)+'. Le joueur reste au club et joue jusque-là ; l’argent arrive à son départ.';
 function venteRetourBudget(fee){
  const ctx=typeof budgetTransfertsContexte==='function'?budgetTransfertsContexte():null;
  return ctx?nativeBudgetTransferts.rendu(ctx.e,fee,ctx.recettes,nativeBudgetTransferts.REGLAGES):0;
@@ -287,7 +302,7 @@ function venteRepondre(p){
  if(!f.ouverte&&f.reouverture){
   // Hors période des mutations : accord conclu, exécuté à l'ouverture ; le joueur reste et joue jusque-là.
   const st=venteEtat(true);st.seq++;
-  const a={id:'accord-'+st.seq,clubId:S.club,playerId:j.id,joueur:j.name,buyer:buyer.id,acheteur:buyer.name,fee:o.fee,date:f.reouverture,conclu:venteJour()||'',spontaneous:!!o.spontaneous};
+  const a={id:'accord-'+st.seq,clubId:S.club,playerId:j.id,joueur:j.name,buyer:buyer.id,acheteur:buyer.name,fee:o.fee,date:f.reouverture,conclu:venteJour()||'',spontaneous:!!o.spontaneous,...(f.bascule?{bascule:true}:{})};
   st.accords.push(a);delete S.economy.listings[j.id];S.economy.offers=S.economy.offers.filter(x=>x.playerId!==j.id);
   transferEvent('Accord conclu : '+j.name+' rejoindra '+buyer.name+' le '+nativeVenteJoueurs.dateFr(a.date)+' pour '+venteEuros(a.fee)+'.');
   return {saleAnswer:{offerId:o.id,action:'accept',playerId:j.id,fee:o.fee,deferred:true,date:a.date,budgetReturn:0,squadSize:club().players.length,
