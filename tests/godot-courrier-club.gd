@@ -106,6 +106,11 @@ func reply_and_open() -> void:
 	if reply == null: return
 	check(not str(reply.tooltip_text).is_empty(), "Conséquences annoncées en info-bulle")
 	reply.pressed.emit()
+	await settle()
+	var send := button("InboxClubMailSend")
+	check(send != null and not send.disabled and str(app.model.get("clubLife", {}).get("clubMail", {}).get("reponses", {}).get(str(mail.id), "")).is_empty(), "Un clic choisit la réponse : rien ne part avant « Envoyer la réponse »")
+	if send == null: return
+	send.pressed.emit()
 	await process_frame
 	check(str(app.model.get("clubLife", {}).get("clubMail", {}).get("reponses", {}).get(str(mail.id), "")) == str(option.id), "Réponse affichée dès le clic")
 	await wait_engine()
@@ -166,8 +171,6 @@ func injury_name_fits() -> void:
 				var part_label := part as Label
 				check(not part_label.clip_text and part_label.text_overrun_behavior != TextServer.OVERRUN_TRIM_ELLIPSIS and part_label.max_lines_visible < 0, "Carte de réponse sans clip ni ellipse : " + part_label.text + tag)
 				check(part_label.get_minimum_size().y <= part_label.size.y + 1.0 and part_label.get_global_rect().end.y <= box.end.y + 1.0, "Texte de carte entièrement dans la carte : " + part_label.text + tag)
-		var identity := node("InboxConcernedIdentity") as Label
-		check(identity != null and identity.get_minimum_size().y <= identity.size.y + 1.0 and identity.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING, "Poste et âge du panneau « Concerné » entiers" + tag)
 
 ## Arrêts informatifs : écran utile préparé pour la réponse de « Continuer ».
 func info_stops() -> void:
@@ -195,8 +198,9 @@ func node(name: String) -> Control:
 
 ## Texte lu dans le mail ouvert : corps du mail, ou colonnes de la coupure de presse.
 func reading_text() -> String:
-	var text := node("InboxMessageText") as Label
-	if text != null: return text.text
+	var text := node("InboxMessageText")
+	if text is RichTextLabel: return (text as RichTextLabel).get_parsed_text()
+	if text is Label: return (text as Label).text
 	var clipping := node("InboxPressClipping")
 	if clipping == null: return ""
 	return " ".join(PackedStringArray(clipping.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)))
@@ -262,7 +266,8 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 	for filter in filter_row: check(absf(filter.get_global_rect().position.y - filter_row[0].get_global_rect().position.y) < 2.0, "Filtres sur une seule rangée · " + str(filter.name) + " · " + tag)
 	var filter_buttons: Array = list.find_children("Inbox*", "Button", true, false).filter(func(b: Button) -> bool: return str(b.name).begins_with("InboxFolder") or str(b.name).begins_with("InboxActivity_") or str(b.name).begins_with("InboxCategory"))
 	check(filter_buttons.size() == 3, "Trois boutons de filtre (Tous · Non lus · À faire), pas davantage · " + tag + " (" + str(filter_buttons.size()) + ")")
-	check(node("InboxSort") == null and node("InboxMarkAllRead") == null, "Plus de boutons « Tout marquer comme lu » ni de tri au-dessus de la liste · " + tag)
+	check(node("InboxSort") == null and list.find_child("InboxMarkAllRead", true, false) == null, "Pas de tri ni de « Tout marquer comme lu » dans la liste (le lien est en haut à droite de l'écran) · " + tag)
+	check(node("InboxMarkAllRead") != null, "Lien « Tout marquer comme lu → » présent en haut à droite · " + tag)
 	var menu := node("InboxSubject") as OptionButton
 	if menu != null:
 		var labels: Array = []
@@ -270,12 +275,15 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 		for wanted in ["Staff", "Médical", "Favoris", "Archives", "En attente", "Infos"]:
 			check(labels.any(func(text: String) -> bool: return text.begins_with(wanted)), "Menu Sujet : « " + wanted + " » accessible · " + tag)
 	# Le mail ouvert : texte lisible, réponses visibles en bas du mail, aucun chevauchement.
-	var text := node("InboxMessageText") as Label
+	var text := node("InboxMessageText")
 	check(reading_text().contains(str(mail.get("corps", "")).split("\n")[0].left(30)), "Le mail sélectionné est ouvert · " + tag)
 	if text != null:
-		check(text.get_theme_font_size("font_size") >= maxi(12, roundi(20 * C.density)), "Texte du mail lisible (%d px) · %s" % [text.get_theme_font_size("font_size"), tag])
-		var scroll := text.get_parent() as ScrollContainer
+		var size_name := "normal_font_size" if text is RichTextLabel else "font_size"
+		check(text.get_theme_font_size(size_name) >= maxi(12, roundi(20 * C.density)), "Texte du lettre lisible (%d px) · %s" % [text.get_theme_font_size(size_name), tag])
+		var scroll := node("InboxReadingScroll") as ScrollContainer
 		if scroll != null: check(not scroll.get_v_scroll_bar().visible, "Pas de défilement inutile du mail · " + tag)
+		var letter := node("InboxLetter") as PanelContainer
+		check(letter != null and (letter.get_theme_stylebox("panel") as StyleBoxFlat).bg_color == C.Charte.PAPIER and app.root_content.find_children("InboxLetter", "", true, false).size() == 1, "La lettre ouverte est le seul document papier de l'écran · " + tag)
 	var actions: Array = detail.find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return b.is_visible_in_tree())
 	var replies: Array = actions.filter(func(b: Button) -> bool: return str(b.name).begins_with("InboxClubMailReply_"))
 	check(not replies.is_empty(), "Réponses du courrier affichées · " + tag)
@@ -386,7 +394,7 @@ func invitations_in_list(mail: Dictionary) -> void:
 		if open != null:
 			check(open.text == "Ouvrir l’entretien", "Entretien : bouton « Ouvrir l’entretien » (%s)" % open.text)
 			check(open.text != open.text.to_upper(), "Entretien : libellé en casse normale, pas en capitales")
-			check(open.has_theme_stylebox_override("normal") and open.get_theme_stylebox("normal") is StyleBoxTexture, "Entretien : bouton au style « action » du jeu, pas au style par défaut")
+			check(open.has_theme_stylebox_override("normal") and open.get_theme_stylebox("normal") is StyleBoxFlat and (open.get_theme_stylebox("normal") as StyleBoxFlat).bg_color == C.Charte.IVOIRE, "Entretien : action principale en ivoire plein (style « action » de la charte), pas au style par défaut")
 			var detail := node("InboxDetail") as Control
 			check(detail != null and detail.get_global_rect().grow(1.0).encloses(open.get_global_rect()), "Entretien : bouton dans la colonne du message")
 		check(Reception.scene_invitation_caption({"title":"Moment au club"}) == "Ouvrir l’invitation", "Autres invitations : « Ouvrir l’invitation »")
@@ -497,19 +505,16 @@ func direction_a(mail: Dictionary) -> void:
 	var photo := node("InboxPressPhoto") as TextureRect
 	check(photo == null or photo.texture != null, "Pas de cadre photo vide")
 	# Panneau Concerné affiché : joueur lié et échéance.
-	var side := node("InboxConcerne")
-	check(side != null, "Panneau « Concerné » affiché pour un mail lié à un joueur")
-	var who := node("InboxConcernedName") as Label
-	check(who != null and who.text == str(star.name), "Mini-fiche du joueur lié")
-	check(node("InboxConcernedOpen") != null and node("InboxDeadline") != null, "Bouton « Ouvrir la fiche » et encadré « ÉCHÉANCE »")
+	check(node("InboxConcerne") == null, "Plus de panneau fixe « Concerné » à droite")
+	var who := node("InboxConcernedName") as Button
+	check(who != null and who.text == str(star.name) and who.has_meta("mini_fiche_joueur"), "Joueur lié : nom en lien, mini-fiche au survol")
+	check(node("InboxDeadline") != null, "Échéance écrite dans la lettre (mot « À FAIRE »)")
 	check(star.get("marketValue") is int or star.get("marketValue") is float, "Valeur du joueur projetée par le moteur")
 	if not rivals.is_empty(): check(node("InboxConcernedClub") != null, "Club lié : carte cliquable vers sa fiche")
 	var reading_box := node("InboxReadingScroll")
 	var reply_heading := node("InboxReplyHeading")
 	if reading_box != null and reply_heading != null and node("InboxDetail") != null:
 		check(reply_heading.get_global_rect().position.y - reading_box.get_global_rect().end.y <= .08 * node("InboxDetail").size.y, "Coupure de presse : réponses juste dessous")
-	var with_side := node("InboxDetail").size.x if node("InboxDetail") != null else 0.0
-	if side != null and node("InboxDetail") != null: check(node("InboxDetail").get_global_rect().end.x <= side.get_global_rect().position.x, "Panneau à droite du mail, sans chevauchement")
 	# Réponses : cartes et conséquences tirées des effets réels.
 	var reply := node("InboxClubMailReply_dementir")
 	var effects: Array = [] if reply == null else reply.find_children("InboxReplyEffect*", "Label", true, false).map(func(l: Label) -> String: return l.text)
@@ -523,8 +528,7 @@ func direction_a(mail: Dictionary) -> void:
 	app.management_ui.reception.selected = "mail-990004"
 	app._render()
 	await settle(8)
-	check(node("InboxConcerne") == null, "Panneau « Concerné » masqué sans élément lié")
-	check(node("InboxDetail") != null and node("InboxDetail").size.x > with_side + 10, "Le mail s'élargit sans le panneau")
+	check(node("InboxConcernedName") == null, "Rangée « Concerné » masquée sans élément lié")
 	# Mail court (« Soins de routine. ») : le bas du panneau se complète (expéditeur, réception, état, courrier suivant).
 	for size: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720)]:
 		root.size = size
@@ -554,8 +558,8 @@ func direction_a(mail: Dictionary) -> void:
 		if not doubtful.is_empty() and str(row.get_meta("player_id")) == str(doubtful.id) and status != null and status.text == "Incertain": uncertain = true
 	check(forfeit, "Joueur blessé : type de blessure et forfait en rouge, d'après les blessures de la partie")
 	if not doubtful.is_empty(): check(uncertain, "Joueur à condition basse : incertain dans le tableau")
-	var cited := node("InboxConcernedName") as Label
-	check(cited != null and cited.text == str(hurt.name), "Panneau « Concerné » du joueur blessé")
+	var cited := node("InboxConcernedName") as Button
+	check(cited != null and cited.text == str(hurt.name), "Rangée « Concerné » du joueur blessé")
 	check(node("InboxClubMailReply_progressif") != null and node("InboxClubMailReply_repos") != null, "Réponses du médecin proposées")
 	# Conséquences médicales réelles : risque de rechute (▲ hausse / ▼ baisse) et date de retour, pas seulement la charge.
 	var medical_effects := func(id: String) -> Array:

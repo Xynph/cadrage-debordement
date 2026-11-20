@@ -24,6 +24,7 @@ const Link = preload("res://ui/entity_link.gd")
 const Observation = preload("res://ui/player_observation.gd")
 const Sort = preload("res://ui/recruitment_sort.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
+const FicheCharge = preload("res://ui/immersive08/fiche_charge.gd")
 
 ## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
 ## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
@@ -126,6 +127,10 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 	var page:=Control.new();page.name="ImmersivePlayerFull";page.custom_minimum_size=Vector2(2248,HAUTEUR)*C.density;C.fill(page,true)
 	page.set_meta("player_id",str(player.get("id","")))
 	page.set_meta("fiche_source",source)
+	# Charge individuelle : sous-page de la fiche (jamais une fenêtre), avec retour et historique.
+	if source=="squad" and FicheCharge.active(app,player):
+		FicheCharge.build(app,page,player)
+		return page
 	var detailed := Commune.valeurs(player,source)
 	_barre(page,app,player,source)
 	_bandeau(page,app,player,source)

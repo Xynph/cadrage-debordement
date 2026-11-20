@@ -9,12 +9,8 @@ func dialogs() -> void:
 		await dialog_measure("decision-feedback")
 	app.SquadViews.comparison(app)
 	await dialog_measure("player-comparison")
-	load("res://ui/immersive08/tactics_canvas.gd")._candidates(app,22)
-	await dialog_measure("lineup-candidates")
-	load("res://ui/immersive08/tactics_canvas.gd")._defense(app)
-	await dialog_measure("defense-instructions")
-	load("res://ui/immersive08/tactics_canvas.gd")._individual(app,app.model.squad[0])
-	await dialog_measure("individual-instructions")
+	# Candidats du poste et consignes défensives ne sont plus des fenêtres (Composition du 19/11/2026 : candidats sous
+	# le terrain, défense dans l'onglet Consignes) ; la charge individuelle est une sous-page de la fiche joueur.
 	load("res://ui/decision_views.gd").dossier(app)
 	await dialog_measure("opposition-dossier")
 	load("res://ui/decision_views.gd").recruitment(app)

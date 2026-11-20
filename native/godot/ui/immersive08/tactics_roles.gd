@@ -1,10 +1,9 @@
 extends RefCounted
 ## Tireurs et lanceur : consignes individuelles du XV (buteur, buteur de secours, lanceur en touche,
-## jeu au pied d'occupation), ouvertes depuis l'écran Composition. Le moteur projette `tactics.roles`
+## jeu au pied d'occupation), sous-page de l'écran Composition (tactics_sous_pages.gd, jamais une fenêtre). Le moteur projette `tactics.roles`
 ## (native/engine/model.cjs, playerRolesView) et reçoit les choix par `set_tactics` avec `roles`.
 ## Premier choix de chaque liste : « Choix du staff » (celui que le staff juge le meilleur à ce rôle).
 const C = preload("res://ui/immersive08/components.gd")
-const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const PersonName = preload("res://ui/person_name.gd")
 
 ## Projection des rôles (vide si le moteur ne la donne pas).
@@ -127,18 +126,3 @@ static func body(model: Dictionary, on_choice: Callable) -> VBoxContainer:
 	if not editable:
 		box.add_child(C.wrap("Les tireurs et le lanceur se désignent avant le coup d’envoi.", 16, C.MUTED))
 	return box
-
-## Fenêtre « Tireurs et lanceur » de l'écran Composition.
-static func open(app: Control) -> void:
-	app._clear_dialogs()
-	var dialog := AcceptDialog.new()
-	dialog.name = "TacticsRoles"
-	app._prepare_dialog(dialog, 860)
-	dialog.title = "Tireurs et lanceur"
-	dialog.add_child(body(app.model, func(data: Dictionary):
-		dialog.queue_free()
-		app._command("set_tactics", data)))
-	dialog.confirmed.connect(dialog.queue_free)
-	dialog.canceled.connect(dialog.queue_free)
-	app.add_child(dialog)
-	Dialogs.show_centered(dialog, Vector2i(860, 560))

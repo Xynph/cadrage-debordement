@@ -95,7 +95,7 @@ func run() -> void:
 		await settle(8)
 		var tag := "%dx%d" % [size.x, size.y]
 		var table := node("InboxInfirmary")
-		check(table != null and node("InboxConcerne") != null, "Tableau de l'infirmerie et panneau « Concerné » affichés · " + tag)
+		check(table != null and node("InboxConcernedName") != null, "Tableau de l'infirmerie et rangée « Concerné » affichés · " + tag)
 		var injured: Dictionary = {}
 		for player: Dictionary in app.model.squad:
 			if str(player.id) == str(mail.joueur): injured = player
@@ -118,7 +118,7 @@ func run() -> void:
 				check(not (part as Label).clip_text and (part as Label).text_overrun_behavior != TextServer.OVERRUN_TRIM_ELLIPSIS, "Carte de réponse sans ellipse : " + (part as Label).text + " · " + tag)
 		shot("reception-medicale-" + tag)
 		await crop(table, "reception-medicale-infirmerie-" + tag)
-		await crop(node("InboxConcerne"), "reception-medicale-concerne-" + tag)
+		await crop(node("InboxConcernedName"),"reception-medicale-concerne-" + tag)
 	finish(mail)
 
 func finish(mail: Dictionary) -> void:

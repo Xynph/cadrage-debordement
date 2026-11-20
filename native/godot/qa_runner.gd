@@ -571,9 +571,11 @@ func _run() -> void:
 	await _ask("auto_lineup")
 	if not app.model.get("selection",{}).get("valid",true):
 		app._navigate("Composition")
+		# Renforts d'urgence : sous-page de la Composition (plus de fenêtre), « Signer les renforts » confirme.
 		_press_named("LineupCover")
+		await _settle()
 		await _capture("renforts-confirmation")
-		_confirm()
+		_press_named("LineupCoverConfirm")
 		await _wait()
 		_check(app.bridge.last_response_ok and app.model.selection.valid,"Explicit paid promotions restore initial source coverage")
 		_dismiss()
