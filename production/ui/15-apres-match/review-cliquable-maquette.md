@@ -1,5 +1,16 @@
 # Relecture adverse — 15 Après-match (cliquabilité, petites fenêtres, fidélité maquette)
 
+## Auto-relecture du lot 4 de la charte finale (20/11/2026)
+
+**A. Cliquabilité** : inchangée par le lot ; leviers, liens « Voir plus », noms et classement agissent (`godot-apres-match`, `godot-apres-match-jeu`).
+
+**B. Petites fenêtres** : aucune ; menu « Plus » = liste déroulante (exception).
+
+**C. Fidélité à la charte**
+- Corrigé : score dans un panneau sombre (écusson en case 6, plus de plaque teintée du club) ; pastilles V/N/D en pilule (V plein vert clair, N demi gris-vert, D contour doré, lettre écrite) ; classement sans bandes, notre club en ligne choisie 6 ; panneaux 18, cartes 12 ; « Plus » en pilule à contour ; « Valider le résultat » seul aplat doré ; titres droits.
+- AVIS : bandeau photo ≈ 24 % de la hauteur (art-bible : 30 %) ; menu « Plus » habillé par le thème global.
+
+
 Lecture seule : code (`apres_match.gd`, `director.gd`, `live_view.gd`, `main.gd`, `match-direct.cjs`, `match-multiplex.cjs`, `match-pourquoi.cjs`, `navigation_controller.gd`) et captures 1920/1280 (`captures2`). Godot non lancé. Les captures ne montrent ni survol ni mini-fiche : ces effets sont jugés d'après le code.
 
 Mécanisme commun : `_lien()` -> `ouvrir(cible)` -> `director.consulter(cible)` -> `navigation_controller.open_entity(cible)`. Il renvoie `false` sans rien afficher si le moteur attend (`app.waiting`), si l'entité n'est pas disponible (`entity_available`) ou si la route est interdite (`_allowed_route`). Le clic est alors **silencieux** (voir C-4).

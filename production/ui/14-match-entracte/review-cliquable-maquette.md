@@ -1,5 +1,16 @@
 # Relecture adverse, écran 14 Entracte (cliquabilité, fenêtres, maquette)
 
+## Auto-relecture du lot 4 de la charte finale (20/11/2026)
+
+**A. Cliquabilité** : inchangée par le lot ; `godot-match-entracte-da` contrôle que tout bouton visible agit.
+
+**B. Petites fenêtres** : aucune ; listes déroulantes (exception) en carte 12.
+
+**C. Fidélité à la charte**
+- Corrigé : panneaux 18, cartes 12, cases/lignes choisies 6, puces en pilule ; plus de bandes alternées (filet) ; notre club au classement sur `SELECTION` ; titres droits ; comparaisons nous vert clair / adversaire doré (plus de couleur de club) ; jauges d'énergie en pilule ; carton rouge en rouge (seul usage) ; un seul aplat doré (ÉQUIPE, ou « Valider le choix » pendant un arrêt).
+- À CORRIGER (préexistant) : ligne « Équipe… » du bas de Mon XV rognée à 1920 ; « Matthew BOOTHRO… » tronqué ; ÉQUIPE petit en 1280×720.
+
+
 Relu : `match_between.gd`, `match_terrain_2d.gd`, `match_temps_forts.gd` (branche claude/da-entracte-20261120, HEAD 0ba5b8fb), captures `entracte-1920.png` / `entracte-1280.png`, maquette `14-match-entracte-1` (+ panneau d'arrêt de `-3`, colonne Plaquages de `-2`). Hors périmètre : bandeau du score (pastille du chrono, « REPRENDRE »). Lecture seule, aucun Godot lancé.
 
 Réserve : les captures datent de 07:43, le dernier commit (légende de la domination en 1280) de 07:49. Le chevauchement « Alder Fen XV / + domine / – subit » visible sur `entracte-1280.png` serait donc corrigé, à reconfirmer sur une capture neuve.

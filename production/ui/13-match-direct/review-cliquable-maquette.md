@@ -1,5 +1,18 @@
 # Relecture adverse : 13 Match en direct (cliquabilité, petites fenêtres, fidélité maquette)
 
+## Auto-relecture du lot 4 de la charte finale (20/11/2026)
+
+Charte de référence : `design/art/art-bible.md` (charte finale du 20/11 ; remplace les règles de style du 19/11). Captures : bureau séparé, 1920×1080 et 1280×720 (direct 2D, menu Échap, fiche club, fiche joueur, relecture).
+
+**A. Cliquabilité** : inchangée par le lot (aucun comportement touché). Plaques → fiche du club dans le direct ; noms de nos joueurs (journal, bannière d'essai) → survol mini-fiche, clic fiche complète ; Pause, rappel Échap, options du menu, ◂ ▸ de la vitesse : tous agissent (contrôlés par `godot-match-direct-da`). Aucun « RIEN » trouvé.
+
+**B. Petites fenêtres** : seul le menu Échap (exception de Léo) ; Réglages, fiches et relecture restent des pages du direct. OK.
+
+**C. Fidélité à la charte**
+- Corrigé : bandeau du score en un panneau 90 % rayon 18 (plus de plaques à fond de club ni de bord incliné) ; couleur du club seulement sur l'écusson (case 6) ; titres en coupes droites ; Pause et rappel Échap en pilule, puces de touche en case 6, focus en anneau doré ; menu du match rayon 18, options en carte 12 avec anneau doré ; tiroir Journal en panneau 18 sans filet, champs en pilule ; bannière d'essai sur panneau avec liseré de 4 px du club qui marque (plus de fond rouge/vert de club) ; mention RALENTI en pilule ; un seul aplat doré (Valider la journée, en fin de match).
+- AVIS : en 1280×720 les noms longs des clubs sont raccourcis (« LA ROCHELLE ») ; l'infobulle donne le nom complet.
+
+
 Lecture seule (code `live_view.gd`, `match_temps_forts.gd`, `club_sheet_canvas.gd`, `preferences_dialog.gd` + captures 1920 et 1280). Rien n'a été lancé : les « RIEN » sont établis par le code ; un point marqué (à vérifier) demande un essai dans le vrai Godot.
 
 ## A. Cliquabilité

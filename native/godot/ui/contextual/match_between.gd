@@ -71,9 +71,10 @@ const LIBELLES_COURTS := {"metres": "Mètres gagnés", "franchissements": "Franc
 const STATS := ["possession", "occupation", "penalites", "zone22", "plaquages_reussis", "melees", "touches"]
 const FATIGUE := 55
 const EPUISE := 40
-## Charte unique (ui/charte.gd, humeur « direct ») : habillage opaque noir chaud, panneaux sans ombre ni
-## dégradé, ivoire pour l'information. L'or est réservé à Continuer : l'accent de l'écran (OR, historique)
-## est l'ivoire ; les couleurs des clubs habillent plaques, pastilles et barres.
+## Charte finale (ui/charte.gd, 20/11/2026) : panneaux arrondis (18) sans bordure ni ombre, crème pour
+## l'information ; un seul aplat doré (le bouton principal). L'accent de l'écran (OR, nom historique) est la
+## crème ; dans les comparaisons, nous en vert clair, l'adversaire en doré ; les couleurs des clubs ne
+## vont qu'aux pastilles de club, maillots (terrain) et liserés.
 const FOND := Charte.FOND
 const PANNEAU := Charte.PANNEAU
 const RELIEF := Charte.PANNEAU_2
@@ -85,7 +86,7 @@ const FAIBLE := Charte.IVOIRE_3
 const OR := Charte.IVOIRE
 const ALERTE := Charte.D
 const TITRES = preload("res://ui/immersive08/fonts/BarlowCondensed-Bold.ttf")
-const TITRES_ITALIQUE = Charte.TITRE_EXTRA_ITALIQUE
+const TITRES_EXTRA = Charte.TITRE_EXTRA
 const CHIFFRES_GRAS = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBold.ttf")
 var terrain: Terrain2D
 ## Ligne d'état du terrain : où est le ballon (« X a le ballon dans le camp adverse »), ou l'arrêt de jeu.
@@ -296,9 +297,9 @@ class Domination extends Control:
 		draw_line(Vector2(zone.position.x, milieu), Vector2(zone.end.x, milieu), Charte.IVOIRE_3, 1.0)
 		var largeur := maxf(2.0, pas * 0.82)
 		var epais := maxf(1.0, densite * 1.5)
-		# Nous : barres pleines au trait du club (lisible sur le panneau) ; eux : barres vides au trait du leur.
-		var nous := Charte.club_trait(couleurs[haut])
-		var eux := Charte.club_trait(couleurs[1 - haut])
+		# Nous : barres pleines vert clair ; eux : barres vides au trait doré (charte : les camps, pas les clubs).
+		var nous := Charte.V
+		var eux := Charte.D
 		for n in minutes.size():
 			var v := clampf(float(minutes[n]) / 100.0, -1.0, 1.0)
 			if haut == 1: v = -v
@@ -374,12 +375,12 @@ class Domination extends Control:
 		return tooltip_text
 
 ## Pictogramme d'un fait (fil du match) : essai, tir au but, carton, mêlée, touche, jeu au pied, ballon
-## perdu. Pastille sombre cerclée aux couleurs du club, signe ivoire au centre (couleurs de la charte).
+## perdu. Pastille sombre cerclée à la couleur du camp (nous vert clair, eux doré), signe crème au centre.
 class Picto:
 	const Charte = preload("res://ui/charte.gd")
 	static func dessiner(ci: CanvasItem, c: Vector2, r: float, kind: String, teinte: Color, rouge: bool = false) -> void:
 		ci.draw_circle(c, r, Charte.PANNEAU)
-		ci.draw_arc(c, r - 0.5, 0.0, TAU, 28, Charte.club_trait(teinte), maxf(1.0, r * 0.12), true)
+		ci.draw_arc(c, r - 0.5, 0.0, TAU, 28, teinte, maxf(1.0, r * 0.12), true)
 		var epais := maxf(1.2, r * 0.14)
 		var blanc := Charte.IVOIRE
 		match kind:
@@ -393,7 +394,7 @@ class Picto:
 				ci.draw_line(c + Vector2(-r * 0.35, r * 0.1), c + Vector2(r * 0.35, r * 0.1), blanc, epais, true)
 			"card":
 				# Couleur du carton (jaune ou rouge) : c'est l'objet lui-même, et le texte le nomme.
-				ci.draw_rect(Rect2(c - Vector2(r * 0.3, r * 0.45), Vector2(r * 0.6, r * 0.9)), Charte.D if rouge else Charte.ATTRIBUT_55)
+				ci.draw_rect(Rect2(c - Vector2(r * 0.3, r * 0.45), Vector2(r * 0.6, r * 0.9)), Charte.ROUGE if rouge else Charte.ATTRIBUT_55)
 			"scrum", "setpiece-win", "setpiece-loss":
 				for dx in [-0.3, 0.3]:
 					for dy in [-0.22, 0.22]: ci.draw_circle(c + Vector2(dx, dy) * r, r * 0.17, blanc)
@@ -420,26 +421,36 @@ class Icone extends Control:
 	func _draw() -> void:
 		Picto.dessiner(self, size * 0.5, minf(size.x, size.y) * 0.5, kind, teinte, rouge)
 
-## Barres face à face d'un chiffre clé : notre part pleine à gauche (couleur du club), l'adversaire en barre
-## vide à droite (liseré à sa couleur) ; rayon 0, filet de 1 px.
+## Barres face à face d'un chiffre clé (jauge de comparaison de la charte) : notre part pleine à gauche en vert
+## clair, l'adversaire en pilule vide au trait doré à droite ; rail `PANNEAU_2` en pilule.
 class Barre extends Control:
 	const Charte = preload("res://ui/charte.gd")
 	## [nous, eux].
 	var valeurs: Array = [0, 0]
-	var couleurs: Array[Color] = [Charte.CLUB, Charte.IVOIRE_2]
+	var couleurs: Array[Color] = [Charte.V, Charte.D]
 	var densite := 0.5
+
+	func _pilule(r: Rect2, couleur: Color, plein: bool) -> void:
+		var style := StyleBoxFlat.new()
+		style.set_corner_radius_all(Charte.RAYON_PILULE)
+		style.anti_aliasing = true
+		style.bg_color = couleur if plein else Color(0, 0, 0, 0)
+		if not plein:
+			style.border_color = couleur
+			style.set_border_width_all(1)
+		draw_style_box(style, r)
 
 	func _draw() -> void:
 		var a := maxf(0.0, float(valeurs[0]))
 		var b := maxf(0.0, float(valeurs[1]))
 		var h := maxf(5.0, 12.0 * densite)
 		var y := (size.y - h) * 0.5
-		draw_rect(Rect2(0, y, size.x, h), Charte.PANNEAU_2)
+		_pilule(Rect2(0, y, size.x, h), Charte.PANNEAU_2, true)
 		if a + b <= 0.0: return
 		var part := a / (a + b)
 		var jour := maxf(2.0, 4.0 * densite)
-		if part > 0.0: draw_rect(Rect2(0, y, maxf(1.0, size.x * part - jour * 0.5), h), Charte.club_trait(couleurs[0]))
-		if part < 1.0: draw_rect(Rect2(size.x * part + jour * 0.5, y + 0.5, maxf(1.0, size.x * (1.0 - part) - jour * 0.5 - 0.5), h - 1.0), Charte.club_trait(couleurs[1]), false, 1.0)
+		if part > 0.0: _pilule(Rect2(0, y, maxf(h, size.x * part - jour * 0.5), h), couleurs[0], true)
+		if part < 1.0: _pilule(Rect2(size.x * part + jour * 0.5, y, maxf(h, size.x * (1.0 - part) - jour * 0.5), h), couleurs[1], false)
 
 ## Évolution d'un club au classement en direct (`delta` du moteur) : triangle vers le haut s'il gagne des
 ## places, vers le bas s'il en perd, tiret sinon (la forme porte le sens, la couleur le double).
@@ -464,8 +475,9 @@ class Pastille extends Control:
 		draw_circle(size * 0.5, r, teinte)
 		draw_arc(size * 0.5, r - 0.5, 0.0, TAU, 20, Charte.FILET, 1.0, true)
 
-## Jauge d'énergie de Mon XV (maquette : barre fine, repère du seuil de fatigue) : ivoire au repos, orangée
-## sous le seuil de fatigue, rouge d'alerte sous celui d'épuisement ; la valeur est écrite à côté.
+## Jauge d'énergie de Mon XV (jauge de la charte : rail et remplissage en pilule, repère du seuil de fatigue) :
+## vert clair en forme (80 et plus), gris-vert au repos, doré sous le seuil de fatigue ; la valeur et le mot
+## (« fatigué », « épuisé ») sont écrits à côté.
 class Jauge extends Control:
 	const Charte = preload("res://ui/charte.gd")
 	var valeur := 100.0
@@ -475,13 +487,21 @@ class Jauge extends Control:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	static func teinte_pour(v: float) -> Color:
-		return Charte.D if v < 40.0 else (Charte.ATTRIBUT_40 if v < 55.0 else Charte.IVOIRE_2)
+		return Charte.D if v < 55.0 else (Charte.V if v >= 80.0 else Charte.IVOIRE_2)
 
 	func _draw() -> void:
 		var h := maxf(3.0, 6.0 * densite)
 		var y := (size.y - h) * 0.5
-		draw_rect(Rect2(0, y, size.x, h), Charte.PANNEAU_3)
-		draw_rect(Rect2(0, y, size.x * clampf(valeur / 100.0, 0.0, 1.0), h), teinte_pour(valeur))
+		var rail := StyleBoxFlat.new()
+		rail.set_corner_radius_all(Charte.RAYON_PILULE)
+		rail.anti_aliasing = true
+		rail.bg_color = Charte.PANNEAU_3
+		draw_style_box(rail, Rect2(0, y, size.x, h))
+		var part := clampf(valeur / 100.0, 0.0, 1.0)
+		if part > 0.0:
+			var plein: StyleBoxFlat = rail.duplicate()
+			plein.bg_color = teinte_pour(valeur)
+			draw_style_box(plein, Rect2(0, y, maxf(h, size.x * part), h))
 		# Repère du seuil de fatigue (55 %), comme sur la maquette.
 		var xs := size.x * 0.55
 		draw_line(Vector2(xs, y - h * 0.6), Vector2(xs, y + h * 1.6), Charte.IVOIRE_3, 1.0)
@@ -504,14 +524,14 @@ func _texte(texte: String, taille: float, couleur: Color, retour: bool = false, 
 	if titre: etiquette.add_theme_font_override("font", TITRES)
 	return etiquette
 
-## Titre de bloc de la charte : capitales grasses en italique (inclinaison 10° de la police), ivoire.
+## Titre de bloc de la charte : capitales Barlow Condensed ExtraBold, droites, crème.
 func _titre_bloc(texte: String, taille: float = 24) -> Label:
 	var etiquette := _texte(texte.to_upper(), taille, IVOIRE, false, true)
-	etiquette.add_theme_font_override("font", TITRES_ITALIQUE)
+	etiquette.add_theme_font_override("font", TITRES_EXTRA)
 	return etiquette
 
-## Bouton de l'écran : l'action principale en ivoire plein (un seul par écran), les autres encadrées d'un
-## filet ivoire, rayon 0 (charte §7) ; jamais d'or (réservé à Continuer).
+## Bouton de l'écran : l'action principale en pilule dorée (un seul aplat doré par écran), les autres en lien
+## de la charte (texte crème, souligné au survol).
 func _bouton(texte: String, action: Callable, actif: bool = true, principal: bool = false) -> Button:
 	var bouton := S.button(texte, action, actif, principal)
 	_habiller(bouton, principal)
@@ -519,16 +539,8 @@ func _bouton(texte: String, action: Callable, actif: bool = true, principal: boo
 
 func _habiller(bouton: Control, principal: bool = false) -> void:
 	if principal:
+		# Pilule dorée ; éteint : pilule à contour `FILET` (bouton secondaire de la charte), sans aplat doré.
 		C.style_bouton_ivoire_plein(bouton as BaseButton)
-		# Bouton éteint : un filet bas au lieu du cadre complet du composant commun (charte §3).
-		var eteint := bouton.get_theme_stylebox("disabled") as StyleBoxFlat
-		if eteint != null and eteint.border_width_left > 0 and eteint.border_width_top > 0:
-			eteint = eteint.duplicate()
-			eteint.border_width_left = 0
-			eteint.border_width_right = 0
-			eteint.border_width_top = 0
-			eteint.border_width_bottom = maxi(1, eteint.border_width_bottom)
-			bouton.add_theme_stylebox_override("disabled", eteint)
 		bouton.add_theme_font_size_override("font_size", fpx(22))
 		bouton.custom_minimum_size.y = maxi(26, px(46))
 		return
@@ -537,19 +549,13 @@ func _habiller(bouton: Control, principal: bool = false) -> void:
 	bouton.add_theme_font_size_override("font_size", fpx(22))
 	bouton.custom_minimum_size.y = maxi(26, px(40))
 
-## Choix d'un groupe (segment : vitesse, temps forts, consigne de fin de match) : filet fin ; le choix courant
-## en filet épais avec une coche (jamais un second ivoire plein, réservé à l'action principale).
+## Choix d'un groupe (segment : vitesse, temps forts, consigne de fin de match) : case rayon 6 sur `PANNEAU_2`,
+## le choix courant sur `SELECTION` avec une coche (la couleur ne porte pas seule le choix) ; focus : anneau doré.
 func _style_segment(bouton: Button) -> void:
 	for etat_bouton in ["normal", "hover", "pressed", "hover_pressed", "focus", "disabled"]:
 		var choisi: bool = etat_bouton in ["pressed", "hover_pressed"]
-		var style := StyleBoxFlat.new()
-		style.bg_color = SURVOL if choisi or etat_bouton == "hover" else Color(0, 0, 0, 0)
-		style.border_color = FAIBLE if etat_bouton == "disabled" else (IVOIRE if choisi or etat_bouton == "focus" else DOUX)
-		# Jamais de cadre complet (charte §3) : un filet bas, le choix courant en filet gauche épais (et coche).
-		style.set_border_width_all(0)
-		if choisi: style.border_width_left = maxi(2, px(5))
-		else: style.border_width_bottom = maxi(1, px(2)) if etat_bouton == "focus" else 1
-		style.set_corner_radius_all(0)
+		var style := _case(Charte.SELECTION if choisi else (SURVOL if etat_bouton == "hover" else RELIEF))
+		if etat_bouton == "focus": _anneau(style)
 		style.content_margin_left = px(16)
 		style.content_margin_right = px(16)
 		style.content_margin_top = px(6)
@@ -561,6 +567,21 @@ func _style_segment(bouton: Button) -> void:
 	bouton.add_theme_font_size_override("font_size", fpx(20))
 	bouton.add_theme_constant_override("icon_max_width", fpx(18))
 	bouton.custom_minimum_size.y = maxi(26, px(44))
+
+## Case de la charte (rayon 6 par défaut), sans bordure.
+func _case(fond: Color, rayon: int = Charte.RAYON_PETIT) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fond
+	style.set_corner_radius_all(rayon)
+	style.anti_aliasing = true
+	return style
+
+## Anneau de focus clavier de la charte : doré, 2 px, décalé de 2 px (seul contour complet permis avec le
+## bouton secondaire).
+func _anneau(style: StyleBoxFlat) -> void:
+	style.border_color = Charte.OR
+	style.set_border_width_all(2)
+	style.set_expand_margin_all(2)
 
 ## Coche du choix courant d'un segment (icône de la charte, la couleur ne porte pas seule le choix).
 func _cocher(bouton: Button, choisi: bool) -> void:
@@ -578,12 +599,10 @@ func _lien(texte: String, action: Callable, nom: String = "") -> Button:
 	bouton.set_meta("contextual_enabled", true)
 	return bouton
 
-## Touche de clavier dessinée (« Espace », « Échap », « T ») : petit cartouche ivoire atténué.
+## Touche de clavier dessinée (« Espace », « Échap », « T ») : petite pilule `PANNEAU_3`, texte gris-vert.
 func _touche(texte: String) -> PanelContainer:
 	var cadre := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = SURVOL
-	style.set_corner_radius_all(0)
+	var style := _case(SURVOL, Charte.RAYON_PILULE)
 	style.content_margin_left = px(8)
 	style.content_margin_right = px(8)
 	style.content_margin_top = px(1)
@@ -596,12 +615,10 @@ func _touche(texte: String) -> PanelContainer:
 	cadre.add_child(etiquette)
 	return cadre
 
-## Panneau de la charte : à plat, opaque, sans bordure ni ombre (humeur « direct »).
+## Panneau de la charte : opaque, rayon 18, sans bordure ni ombre.
 func _panneau(parent: Node, marge: int, fond: Color = PANNEAU) -> VBoxContainer:
 	var coque := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(fond, 1.0)
-	style.set_corner_radius_all(0)
+	var style := _case(Color(fond, 1.0), Charte.RAYON_PANNEAU)
 	coque.add_theme_stylebox_override("panel", style)
 	parent.add_child(coque)
 	var bord := S.G.margin(marge)
@@ -610,7 +627,7 @@ func _panneau(parent: Node, marge: int, fond: Color = PANNEAU) -> VBoxContainer:
 	bord.add_child(colonne)
 	return colonne
 
-## En-tête de bloc : titre en capitales italiques, précision atténuée à droite.
+## En-tête de bloc : titre en capitales droites, précision atténuée à droite.
 func _titre(texte: String, precision: String = "", principal: bool = false) -> Control:
 	var ligne := S.G.h(px(10))
 	var etiquette := _titre_bloc(texte, 26 if principal else 22)
@@ -714,7 +731,7 @@ func _commandes() -> void:
 	_equipe_pleine = true
 	equipe.tooltip_text = "Composition, banc, cris de la touche et consignes (le match se met en pause) · T"
 	equipe.set_meta("contextual_enabled", true)
-	equipe.add_theme_font_override("font", TITRES_ITALIQUE)
+	equipe.add_theme_font_override("font", TITRES_EXTRA)
 	equipe.add_theme_font_size_override("font_size", fpx(24))
 	plus = MenuButton.new()
 	plus.name = "MatchBetweenMore"
@@ -772,21 +789,14 @@ func _commandes() -> void:
 	menu_reglages.id_pressed.connect(_choix_menu_reglages)
 	parametres.add_child(menu_reglages)
 
-## Menu déroulant à la charte : fond panneau opaque, rayon 0, sans ombre ni cadre, survol un cran plus clair
-## avec filet gauche ivoire, texte ivoire (grisé pour un choix indisponible).
+## Menu déroulant à la charte : carte `PANNEAU` opaque rayon 12, sans ombre ni cadre ; survol en case
+## `PANNEAU_3` rayon 6 ; texte crème (grisé pour un choix indisponible).
 func _habiller_menu(menu: PopupMenu) -> void:
-	var fond := StyleBoxFlat.new()
-	fond.bg_color = Color(PANNEAU, 1.0)
-	fond.set_corner_radius_all(0)
+	var fond := _case(Color(PANNEAU, 1.0), Charte.RAYON_CARTE)
 	fond.shadow_size = 0
 	fond.set_content_margin_all(px(8))
 	menu.add_theme_stylebox_override("panel", fond)
-	var survol := StyleBoxFlat.new()
-	survol.bg_color = SURVOL
-	survol.set_corner_radius_all(0)
-	survol.border_width_left = maxi(2, px(4))
-	survol.border_color = IVOIRE
-	menu.add_theme_stylebox_override("hover", survol)
+	menu.add_theme_stylebox_override("hover", _case(SURVOL))
 	var filet := StyleBoxLine.new()
 	filet.color = TRAIT
 	filet.thickness = 1
@@ -1190,9 +1200,7 @@ func _colonne_droite(grille: Control) -> void:
 	# Bonus : la règle du championnat et, en fin de match, le dilemme et ses deux consignes.
 	bonus_tuile = PanelContainer.new()
 	bonus_tuile.name = "MatchBetweenBonus"
-	var style_bonus := StyleBoxFlat.new()
-	style_bonus.bg_color = RELIEF
-	style_bonus.set_corner_radius_all(0)
+	var style_bonus := _case(RELIEF, Charte.RAYON_CARTE)
 	style_bonus.set_content_margin_all(px(12))
 	bonus_tuile.add_theme_stylebox_override("panel", style_bonus)
 	cadre_chiffres.add_child(bonus_tuile)
@@ -1302,9 +1310,9 @@ func _colonne_droite(grille: Control) -> void:
 	multiplex_defile.add_child(multiplex_cartes)
 	multiplex_fondu = PanelContainer.new()
 	multiplex_fondu.name = "MatchBetweenMultiplexFade"
+	# Fondu de la couleur du panneau (invisible sur lui) : masque le bord droit des cartes qui défilent.
 	var style_fondu := StyleBoxFlat.new()
 	style_fondu.bg_color = PANNEAU
-	style_fondu.set_corner_radius_all(0)
 	multiplex_fondu.add_theme_stylebox_override("panel", style_fondu)
 	multiplex_fondu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	multiplex_fondu.custom_minimum_size.x = px(40)
@@ -1373,7 +1381,7 @@ func _poser_principal(arret_montre: bool) -> void:
 	if not is_instance_valid(equipe) or _equipe_pleine == not arret_montre: return
 	_equipe_pleine = not arret_montre
 	_habiller(equipe, _equipe_pleine)
-	equipe.add_theme_font_override("font", TITRES_ITALIQUE)
+	equipe.add_theme_font_override("font", TITRES_EXTRA)
 	equipe.add_theme_font_size_override("font_size", fpx(24))
 
 ## Vues de la colonne Mon XV : « tableau » (Mon XV et le banc) ou « adverse » (le XV adverse).
@@ -1425,7 +1433,7 @@ func _arret_decision() -> void:
 	colonne.add_child(choix)
 	arret_reprendre = _bouton("REPRENDRE LE MATCH", _valider_arret, true, true)
 	arret_reprendre.name = "MatchBetweenStopResume"
-	arret_reprendre.add_theme_font_override("font", TITRES_ITALIQUE)
+	arret_reprendre.add_theme_font_override("font", TITRES_EXTRA)
 	choix.add_child(arret_reprendre)
 	choix.add_child(_touche("Entrée"))
 	arret_aide = _texte("Équipe, Réglages, Mon XV et le banc reviennent après ce choix.", 17, DOUX, true)
@@ -1682,8 +1690,9 @@ func _poser_legende(equipes: Array, camp: int) -> void:
 	S.clear(legende_chiffres)
 	var nous := camp if camp in [0, 1] else 0
 	for cote: int in [nous, 1 - nous]:
+		# Nous : case pleine vert clair ; eux : filet bas doré (le camp, pas le club ; le nom est écrit à côté).
 		var marque := ColorRect.new()
-		marque.color = Charte.club_trait(terrain.couleurs[cote]) if cote == nous else Color(0, 0, 0, 0)
+		marque.color = Charte.V if cote == nous else Color(0, 0, 0, 0)
 		marque.custom_minimum_size = Vector2(px(18), px(12))
 		marque.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		marque.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1691,11 +1700,10 @@ func _poser_legende(equipes: Array, camp: int) -> void:
 			var cadre := Panel.new()
 			var style := StyleBoxFlat.new()
 			style.bg_color = Color(0, 0, 0, 0)
-			style.border_color = Charte.club_trait(terrain.couleurs[cote])
-			# Marque « vide » de l'adversaire : un filet bas épais (jamais un cadre complet, charte §3).
+			style.border_color = Charte.D
+			# Marque « vide » de l'adversaire : un filet bas épais.
 			style.set_border_width_all(0)
 			style.border_width_bottom = maxi(2, px(3))
-			style.set_corner_radius_all(0)
 			cadre.add_theme_stylebox_override("panel", style)
 			cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			S.full(cadre)
@@ -1789,12 +1797,13 @@ static func photo_du_fait(kind: String, texte: String) -> String:
 	if t.contains("remplac") or t.contains("entre en jeu"): return "action-remplacement"
 	return ""
 
-## Ligne du fil : minute, pictogramme du fait aux couleurs du club, texte (une ligne, le reste en infobulle).
+## Ligne du fil : minute, pictogramme du fait cerclé au camp (nous vert clair, eux doré), texte (une ligne, le reste en infobulle).
 func _ligne_fil(entree: Dictionary, dernier: bool, en_bandeau: bool) -> Control:
 	var kind := str(entree.get("kind", ""))
 	var points := kind in ["try", "goal", "transformation"]
 	var equipe := int(entree.get("equipe", -1)) if entree.get("equipe") != null else -1
-	var teinte: Color = terrain.couleurs[equipe] if equipe in [0, 1] else FAIBLE
+	var notre_camp := int(_dernier[2].get("camp", 0)) if _dernier.size() > 2 and _dernier[2] is Dictionary else 0
+	var teinte: Color = (Charte.V if equipe == notre_camp else Charte.D) if equipe in [0, 1] else FAIBLE
 	var ligne := PanelContainer.new()
 	ligne.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	ligne.set_meta("i", int(entree.get("i", -1)))
@@ -1853,9 +1862,8 @@ func _ligne_chiffre(parent: Control, rang: Dictionary, nous: int) -> void:
 	lien.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	lien.set_meta("contextual_enabled", true)
 	for etat_bouton in ["normal", "hover", "pressed", "focus"]:
-		var style := StyleBoxFlat.new()
-		style.bg_color = RELIEF if etat_bouton in ["hover", "pressed", "focus"] else Color(0, 0, 0, 0)
-		style.set_corner_radius_all(0)
+		var style := _case(RELIEF if etat_bouton in ["hover", "pressed", "focus"] else Color(0, 0, 0, 0))
+		if etat_bouton == "focus": _anneau(style)
 		lien.add_theme_stylebox_override(etat_bouton, style)
 	var libelle := str(rang.get("stats", rang.get("label", "")))
 	lien.pressed.connect(func(): stats_demandees.emit(libelle))
@@ -1873,21 +1881,21 @@ func _ligne_chiffre(parent: Control, rang: Dictionary, nous: int) -> void:
 	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bloc.add_child(ligne)
 	var a := _texte(_valeur(rang, nous), 26, IVOIRE)
-	a.add_theme_font_override("font", TITRES_ITALIQUE)
+	a.add_theme_font_override("font", TITRES_EXTRA)
 	a.custom_minimum_size.x = px(84)
 	a.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ligne.add_child(a)
 	var barre := Barre.new()
 	var valeurs: Array = rang.get("valeurs", [0, 0])
 	barre.valeurs = [valeurs[nous], valeurs[1 - nous]] if not rang.get("vide", false) else [0, 0]
-	var teintes: Array[Color] = [terrain.couleurs[nous], terrain.couleurs[1 - nous]]
+	var teintes: Array[Color] = [Charte.V, Charte.D]
 	barre.densite = _densite
 	barre.custom_minimum_size = Vector2(px(80), px(24))
 	barre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.G.fill(barre)
 	ligne.add_child(barre)
 	var b := _texte(_valeur(rang, 1 - nous), 26, IVOIRE)
-	b.add_theme_font_override("font", TITRES_ITALIQUE)
+	b.add_theme_font_override("font", TITRES_EXTRA)
 	b.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	b.custom_minimum_size.x = px(84)
 	b.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2074,11 +2082,9 @@ func _cliquable_club(zone: Control, id: Variant, fond_survol: StyleBox = null) -
 			zone.accept_event()
 			club_demande.emit(club))
 
-## Fond de survol d'une zone cliquable (ligne, carte) : un cran plus clair, filet ivoire à gauche (jamais un cadre).
+## Fond de survol d'une zone cliquable (ligne, carte) : case `PANNEAU_3` rayon 6 (survol de la charte).
 func _fond_survol() -> StyleBoxFlat:
-	var style := S.G.T.box(SURVOL, 0)
-	style.border_width_left = maxi(2, px(4))
-	style.border_color = IVOIRE
+	var style := _case(SURVOL)
 	style.content_margin_left = px(8)
 	style.content_margin_right = px(10)
 	style.content_margin_top = 0
@@ -2101,21 +2107,21 @@ func _remplir_classement(classement: Array, teintes: Dictionary) -> void:
 		if classement[k] is Dictionary: classement_lignes.add_child(_ligne_classement(classement[k], teintes))
 
 ## Ligne du classement : rang, évolution, pastille du club, sigle et nom, badges de bonus, points.
-## Notre club surligné (fond or, liseré or).
+## Notre club sur la ligne choisie de la charte (`SELECTION`, rayon 6) ; filet entre les lignes, sans bandes.
 func _ligne_classement(r: Dictionary, teintes: Dictionary) -> Control:
 	var nous := bool(r.get("nous", false))
 	var ligne := PanelContainer.new()
 	ligne.name = "MatchBetweenLiveRow%d" % int(r.get("rang", 0))
 	ligne.set_meta("rang", int(r.get("rang", 0)))
 	ligne.set_meta("nous", nous)
-	var fond := S.G.T.box(Color(OR, 0.16) if nous else RELIEF if int(r.get("rang", 0)) % 2 == 1 else Color(0, 0, 0, 0), 0)
+	var fond := _case(Charte.SELECTION if nous else Color(0, 0, 0, 0), Charte.RAYON_PETIT if nous else 0)
 	fond.content_margin_left = px(8)
 	fond.content_margin_right = px(10)
 	fond.content_margin_top = 0
 	fond.content_margin_bottom = 0
-	if nous:
-		fond.border_width_left = maxi(2, px(5))
-		fond.border_color = OR
+	if not nous:
+		fond.border_width_bottom = 1
+		fond.border_color = TRAIT
 	ligne.add_theme_stylebox_override("panel", fond)
 	ligne.custom_minimum_size.y = px(32)
 	ligne.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -2152,7 +2158,7 @@ func _ligne_classement(r: Dictionary, teintes: Dictionary) -> Control:
 		if nombre <= 0: continue
 		var pastille_bonus := PanelContainer.new()
 		pastille_bonus.name = "Badge" + str(badge[1])
-		var style := S.G.T.box(Color(VERT_SCORE, 0.18) if badge[1] == "BO" else Color(OR, 0.16), 0)
+		var style := _case(Charte.VOILE_VERT if badge[1] == "BO" else RELIEF)
 		style.content_margin_left = px(6)
 		style.content_margin_right = px(6)
 		style.content_margin_top = 0
@@ -2161,7 +2167,7 @@ func _ligne_classement(r: Dictionary, teintes: Dictionary) -> Control:
 		pastille_bonus.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		pastille_bonus.tooltip_text = "%d %s%s" % [nombre, badge[2], "s" if nombre > 1 else ""]
 		pastille_bonus.mouse_filter = Control.MOUSE_FILTER_PASS
-		var texte := _texte(str(badge[1]), 20, VERT_SCORE.lightened(0.2) if badge[1] == "BO" else OR, false, true)
+		var texte := _texte(str(badge[1]), 20, VERT_SCORE if badge[1] == "BO" else DOUX, false, true)
 		texte.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pastille_bonus.add_child(texte)
 		rang.add_child(pastille_bonus)
@@ -2222,7 +2228,7 @@ func _carte_match(m: Dictionary, change: bool, teintes: Dictionary) -> Control:
 	carte.name = "MatchBetweenMultiplexMatch"
 	carte.set_meta("id", str(m.get("id", "")))
 	carte.set_meta("change", change)
-	var style := S.G.T.box(RELIEF, 0)
+	var style := _case(RELIEF, Charte.RAYON_CARTE)
 	style.content_margin_left = px(8)
 	style.content_margin_right = px(8)
 	style.content_margin_top = px(4)
@@ -2359,8 +2365,9 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		xv.add_child(case)
 	_ligne_equipe(direct.get("feuille", {}) if direct.get("feuille") is Dictionary else {}, int(direct.get("camp", -1)), joueurs.map(func(j: Variant) -> String: return str(j.get("id", "")) if j is Dictionary else ""))
 
-## Ligne de tableau (24 px à 1920) : bouton plat zébré, focus ivoire ; son contenu est une rangée de cellules.
-func _ligne_joueur(nom: String, rang: int, action: Callable) -> Button:
+## Ligne de tableau (24 px à 1920) : bouton plat, filet entre les lignes (pas de bandes), survol `PANNEAU_2`,
+## focus `PANNEAU_3` rayon 6 avec l'anneau doré ; son contenu est une rangée de cellules.
+func _ligne_joueur(nom: String, _rang: int, action: Callable) -> Button:
 	var case := Button.new()
 	case.name = nom
 	case.flat = true
@@ -2368,16 +2375,12 @@ func _ligne_joueur(nom: String, rang: int, action: Callable) -> Button:
 	case.set_meta("contextual_enabled", true)
 	case.pressed.connect(action)
 	var fond := StyleBoxFlat.new()
-	fond.bg_color = RELIEF if rang % 2 == 1 else Color(0, 0, 0, 0)
-	fond.set_corner_radius_all(0)
-	var survol := StyleBoxFlat.new()
-	survol.bg_color = SURVOL
-	survol.set_corner_radius_all(0)
-	var focus := StyleBoxFlat.new()
-	focus.bg_color = SURVOL
-	focus.border_color = IVOIRE
-	focus.border_width_left = maxi(2, px(4))
-	focus.set_corner_radius_all(0)
+	fond.bg_color = Color(0, 0, 0, 0)
+	fond.border_color = TRAIT
+	fond.border_width_bottom = 1
+	var survol := _case(RELIEF)
+	var focus := _case(SURVOL)
+	_anneau(focus)
 	for style: StyleBox in [fond, survol, focus]: style.set_content_margin_all(0)
 	case.add_theme_stylebox_override("normal", fond)
 	case.add_theme_stylebox_override("pressed", survol)
@@ -2394,13 +2397,12 @@ func _ligne_joueur(nom: String, rang: int, action: Callable) -> Button:
 	case.add_child(ligne)
 	return case
 
-## Ligne signalée (épuisé, blessé) : marqueur ivoire incliné à gauche, comme sur la maquette.
+## Ligne signalée (épuisé, blessé) : attention de la charte, voile doré en case rayon 6 ; le mot (« épuisé »)
+## et le chiffre sont écrits dans la ligne (la couleur ne porte jamais seule l'alerte).
 func _marquer_ligne(case: Button) -> void:
 	case.set_meta("signale", true)
-	var style := (case.get_theme_stylebox("normal") as StyleBoxFlat).duplicate() as StyleBoxFlat
-	style.bg_color = SURVOL
-	style.border_color = IVOIRE
-	style.border_width_left = maxi(2, px(4))
+	var style := _case(Charte.VOILE_DORE)
+	style.set_content_margin_all(0)
 	case.add_theme_stylebox_override("normal", style)
 
 ## Nom du joueur : lien vers sa fiche (clic), mini-fiche au survol ; l'alerte écrite à côté (« épuisé »).
@@ -2916,7 +2918,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	matte.shader = MATTE
 	portrait.material = matte
 	carte.add_child(portrait)
-	# Trait incliné aux couleurs du club (charte §3 : 10°), entre le portrait et la parole de Gabi.
+	# Liseré droit à la couleur de notre club (liseré permis par la charte), entre le portrait et la parole de Gabi.
 	var trait_club := Control.new()
 	trait_club.name = "MatchBetweenAdviceStroke"
 	trait_club.custom_minimum_size = Vector2(px(22), px(104))
@@ -2924,7 +2926,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	var teinte_club: Color = Charte.club_trait(terrain.couleurs[clampi(int(direct.get("camp", 0)), 0, 1)]) if terrain != null else IVOIRE
 	trait_club.draw.connect(func():
 		var h := trait_club.size.y
-		trait_club.draw_line(Vector2(trait_club.size.x * 0.5 + Charte.decalage(h) * 0.5, 0), Vector2(trait_club.size.x * 0.5 - Charte.decalage(h) * 0.5, h), teinte_club, maxf(2.0, px(4))))
+		trait_club.draw_line(Vector2(trait_club.size.x * 0.5, 0), Vector2(trait_club.size.x * 0.5, h), teinte_club, maxf(2.0, px(4))))
 	carte.add_child(trait_club)
 	var colonne := S.G.v(px(6))
 	S.G.fill(colonne)
@@ -3236,16 +3238,12 @@ func _poser_arret_commandes() -> void:
 		bouton.disabled = bloque
 		bouton.tooltip_text = "Après le choix du staff." if bloque else ("Composition, banc, cris de la touche et consignes (le match se met en pause) · T" if bouton == equipe else "Vitesse de l’horloge entre deux temps forts et temps forts montrés.")
 
-## Ligne d'option du panneau d'arrêt : texte ivoire à gauche, à plat ; jamais de cadre complet (charte §3) :
-## survol et focus en filet gauche fin, l'option retenue en filet gauche épais et coche.
+## Ligne d'option du panneau d'arrêt : texte crème à gauche, case rayon 6 ; survol `PANNEAU_2`, l'option
+## retenue sur `SELECTION` (avec sa coche), focus : anneau doré.
 func _style_option(bouton: Button, retenue: bool) -> void:
 	for etat_bouton in ["normal", "hover", "pressed", "focus", "disabled"]:
-		var style := StyleBoxFlat.new()
-		style.bg_color = SURVOL if retenue or etat_bouton in ["hover", "pressed"] else Color(0, 0, 0, 0)
-		style.border_color = IVOIRE
-		style.set_border_width_all(0)
-		style.border_width_left = maxi(2, px(5)) if retenue else (maxi(1, px(2)) if etat_bouton in ["focus", "hover"] else 0)
-		style.set_corner_radius_all(0)
+		var style := _case(Charte.SELECTION if retenue else (RELIEF if etat_bouton in ["hover", "pressed"] else Color(0, 0, 0, 0)))
+		if etat_bouton == "focus": _anneau(style)
 		style.content_margin_left = px(16)
 		style.content_margin_right = px(16)
 		style.content_margin_top = px(6)

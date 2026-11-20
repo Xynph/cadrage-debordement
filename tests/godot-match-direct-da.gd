@@ -1,8 +1,9 @@
 extends SceneTree
 ## Écran 13 « Match en direct » dans le vrai jeu (godot-match-direct-da.cjs prépare la carrière Monde).
-## Décisions contrôlées : variante 1 « Bandeau d'angle » (charte §7), bannière d'essai à la couleur du club,
-## menu du match par Échap (seule petite fenêtre permise), plaques → fiche du club sans casser le match,
-## noms de nos joueurs liés dans le journal, aucun or, aucune fenêtre ouverte par un clic.
+## Décisions contrôlées (charte finale du 20/11/2026) : bandeau du score sur panneau rayon 18, couleur des clubs sur
+## l'écusson seul, bannière d'essai sur panneau avec le liseré du club, menu du match par Échap (seule fenêtre
+## permise), plaques → fiche du club sans casser le match, noms de nos joueurs liés dans le journal, un seul aplat
+## doré (« Valider la journée »), aucune fenêtre ouverte par un clic.
 const Charte = preload("res://ui/charte.gd")
 const LiveView = preload("res://ui/contextual/live_view.gd")
 const Regie = preload("res://ui/contextual/match_temps_forts.gd")
@@ -92,8 +93,10 @@ func actifs_hors_place(racine: Node) -> Array[String]:
 		trouves.append(str(b.name))
 	return trouves
 
-## Styles arrondis (charte §3 : rayons 0) sous `racine`.
-func arrondis(racine: Node) -> Array[String]:
+## Aplats ou cadres à angles droits sous `racine` (charte finale §3 : panneaux 18, cartes 12, cases 6, pilules ;
+## « droit partout » vaut pour les titres et les traits, pas pour les surfaces). Un soulignement seul (lien) n'est
+## pas une surface.
+func angles_droits(racine: Node) -> Array[String]:
 	var trouves: Array[String] = []
 	var noeuds: Array = [racine]
 	noeuds.append_array(racine.find_children("*", "Control", true, false))
@@ -103,10 +106,19 @@ func arrondis(racine: Node) -> Array[String]:
 		for cle in ["panel", "normal", "hover", "pressed", "focus", "disabled"]:
 			if not c.has_theme_stylebox_override(cle): continue
 			var s := c.get_theme_stylebox(cle) as StyleBoxFlat
-			if s != null and s.corner_radius_top_left + s.corner_radius_top_right + s.corner_radius_bottom_left + s.corner_radius_bottom_right > 0: trouves.append("%s<%s.%s" % [c.name, c.get_parent().name if c.get_parent() != null else "", cle])
+			if s == null: continue
+			var cotes := [s.border_width_left, s.border_width_top, s.border_width_right, s.border_width_bottom].filter(func(l: int) -> bool: return l > 0).size()
+			var surface := s.bg_color.a > 0.05 or (s.border_color.a > 0.05 and cotes >= 2)
+			if surface and s.corner_radius_top_left + s.corner_radius_top_right + s.corner_radius_bottom_left + s.corner_radius_bottom_right == 0: trouves.append("%s<%s.%s" % [c.name, c.get_parent().name if c.get_parent() != null else "", cle])
 	return trouves
 
-## Styles à cadre complet (quatre côtés) sous `racine`, hors focus (indicateur de focus accepté).
+## Rayon (coin haut gauche) du style `cle` d'un contrôle ; -1 sans StyleBoxFlat.
+func rayon(c: Control, cle: String) -> int:
+	var s := c.get_theme_stylebox(cle) as StyleBoxFlat if c != null else null
+	return s.corner_radius_top_left if s != null else -1
+
+## Styles à cadre complet (quatre côtés) sous `racine`, hors focus (anneau de focus accepté) et hors contour 1 px
+## `FILET` d'une pilule (champ, bouton secondaire : seul contour permis par la charte finale §3).
 func cadres_complets(racine: Node) -> Array[String]:
 	var trouves: Array[String] = []
 	var noeuds: Array = [racine]
@@ -117,7 +129,8 @@ func cadres_complets(racine: Node) -> Array[String]:
 		for cle in ["panel", "normal", "hover", "pressed", "disabled"]:
 			if not c.has_theme_stylebox_override(cle): continue
 			var s := c.get_theme_stylebox(cle) as StyleBoxFlat
-			if s != null and s.border_color.a > 0.0 and s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0: trouves.append("%s.%s" % [c.name, cle])
+			if s == null or (s.corner_radius_top_left >= Charte.RAYON_PILULE and s.border_color == Charte.FILET and s.border_width_left <= 1): continue
+			if s.border_color.a > 0.0 and s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0: trouves.append("%s.%s" % [c.name, cle])
 	return trouves
 
 ## Boutons actifs et visibles sans aucune action branchée.
@@ -168,16 +181,21 @@ func run() -> void:
 	await settle(4)
 	var ecran := Rect2(Vector2.ZERO, Vector2(root.size))
 
-	# 1. Bandeau d'angle : en haut à gauche, petit, plaques à la couleur des clubs, score ivoire 40 px.
+	# 1. Bandeau du score : en haut à gauche, petit, un panneau 90 % rayon 18 ; la couleur des clubs seulement sur
+	# l'écusson (puce du sigle, rayon 6) ; score crème 40 px.
 	var bandeau: Control = view.get("_coque_score")
 	var r := bandeau.get_global_rect()
 	check(r.position.x <= 48 and r.position.y <= 48 and r.size.y <= 1080 * 0.08 and r.size.x <= 1920 * 0.5, "Bandeau du score en haut à gauche, petit : " + str(r))
 	check(view.score.get_theme_font_size("font_size") == 40 and view.score.get_theme_color("font_color") == Charte.IVOIRE, "Score ivoire 40 px en 1080p")
-	check(view.plaques.size() == 2 and view.plaques.all(func(p: Control) -> bool: return Charte.contraste(Charte.IVOIRE, p.get_meta("fond")) >= 4.5), "Plaques des deux clubs lisibles en ivoire")
+	check(LiveView.BandeauAngle.FOND == Color(Charte.PANNEAU, 0.9), "Bandeau du score sur PANNEAU 90 %")
+	check(view.plaques.size() == 2 and view.plaques.all(func(p: Control) -> bool: return not p.has_meta("fond") and Charte.contraste(Charte.IVOIRE, p.get_meta("ecusson")) >= 4.5), "Plaques sans fond de club ; sigle crème lisible sur l'écusson")
 	var equipes: Array = app.model.live.teams
 	for cote in 2:
 		var voulu := LiveView.fond_plaque(Color.from_string(str(Base.identity(equipes[cote]).get("color", "")), Charte.CLUB))
-		check((view.plaques[cote].get_meta("fond") as Color).is_equal_approx(voulu), "Plaque %d à la couleur du club" % cote)
+		var puce: Control = view.plaques[cote].find_child("MatchClubChip%d" % cote, true, false)
+		var fond_puce := puce.get_theme_stylebox("panel") as StyleBoxFlat if puce != null else null
+		check((view.plaques[cote].get_meta("ecusson") as Color).is_equal_approx(voulu) and fond_puce != null and fond_puce.bg_color.is_equal_approx(voulu) and fond_puce.corner_radius_top_left == Charte.RAYON_PETIT, "Écusson %d à la couleur du club, case rayon 6" % cote)
+	check(angles_droits(bandeau).is_empty(), "Bandeau du score : aucun aplat à angles droits : " + str(angles_droits(bandeau)))
 	check(not view.home.text.is_empty() and not view.away.text.is_empty() and not view.phase.text.is_empty(), "Noms des clubs et période écrits (%s / %s / %s)" % [view.home.text, view.away.text, view.phase.text])
 	var bande: Control = view.get("bande_temps_forts")
 	check(bande != null and bande.get_global_rect().position.x >= r.end.x - 1.0 and view.play.get_global_rect().position.x >= bande.get_global_rect().end.x - 1.0 and ecran.encloses(view.play.get_global_rect()), "Commandes en haut à droite, Pause en dernier")
@@ -284,9 +302,11 @@ func run() -> void:
 	await settle(6)
 	var tiroir_journal: Control = view.get("journal")
 	check(view.drawer.visible and bool(tiroir_journal.get("charte")), "Tiroir Journal ouvert, habillé à la Charte")
-	check(ors(view.drawer).is_empty(), "Tiroir Journal : aucun or : " + str(ors(view.drawer)))
+	check(aplats_or(view.drawer).is_empty() and ors(view.drawer).all(func(n: String) -> bool: return n.ends_with(".focus")), "Tiroir Journal : aucun or hors anneau de focus : " + str(ors(view.drawer)))
 	check(cadres_complets(view.drawer).is_empty(), "Tiroir Journal : aucun cadre complet : " + str(cadres_complets(view.drawer)))
-	check(arrondis(view.drawer).is_empty(), "Tiroir Journal : rayons 0 : " + str(arrondis(view.drawer)))
+	var fond_tiroir := view.drawer.get_theme_stylebox("panel") as StyleBoxFlat
+	check(fond_tiroir != null and fond_tiroir.corner_radius_top_left == Charte.RAYON_PANNEAU and fond_tiroir.border_width_left + fond_tiroir.border_width_top + fond_tiroir.border_width_right + fond_tiroir.border_width_bottom == 0, "Tiroir Journal : panneau rayon 18 sans bordure")
+	check(angles_droits(view.drawer).is_empty(), "Tiroir Journal : aucun aplat à angles droits : " + str(angles_droits(view.drawer)))
 	var nom_notre := str(notre.get("name", ""))
 	check(str((tiroir_journal.get("lier") as Callable).call("Essai de " + nom_notre + ".")).contains("[url=%s]" % str(notre.id)), "Tiroir Journal : nos joueurs liés (survol : mini-fiche, clic : fiche)")
 	await until(func(): return not (tiroir_journal.get("visible_events") as Array).is_empty(), 30000)
@@ -299,7 +319,7 @@ func run() -> void:
 		await settle(6)
 		check(page.visible and page.find_child("ActionReviewPage", true, false) != null and fenetres().is_empty() and app.find_child("MatchActionReview", true, false) == null, "Relire : page du direct, pas une fenêtre")
 		check(app.model.live.get("paused", false), "Relire : le match est en pause")
-		check(ors(page).is_empty() and arrondis(page).is_empty(), "Page de relecture : aucun or, rayons 0 (%s / %s)" % [str(ors(page)), str(arrondis(page))])
+		check(aplats_or(page).is_empty() and angles_droits(page).is_empty(), "Page de relecture : aucun aplat doré (anneau de focus permis), aucun aplat à angles droits (%s / %s)" % [str(aplats_or(page)), str(angles_droits(page))])
 		check(muets(page).is_empty(), "Page de relecture : aucun clic sans réponse : " + str(muets(page)))
 		if proof != "": await capture("relecture")
 		var retour_relecture: Button = page.find_child("MatchPageBack", true, false)
@@ -387,11 +407,17 @@ func run() -> void:
 	touche(KEY_ESCAPE)
 	await until(func(): return not bool(app.model.live.get("paused", false)) and not app.waiting, 20000)
 	check(not menu.visible and not app.model.live.paused, "Échap referme le menu et le match repart")
-	# Clic sur le voile, hors du panneau : le menu se ferme et le match repart ; puces et menu à angles droits.
+	# Clic sur le voile, hors du panneau : le menu se ferme et le match repart ; menu en panneau 18, commandes en
+	# pilule, puces de touche en case 6, focus en anneau doré.
 	view.ouvrir_menu()
 	await until(func(): return bool(app.model.live.get("paused", false)) and not app.waiting, 20000)
 	await settle(2)
-	check(arrondis(menu).is_empty() and arrondis(view.play).is_empty() and arrondis(view.get("indice_menu")).is_empty(), "Menu et puces de touche : rayons 0 : " + str(arrondis(menu) + arrondis(view.play)))
+	var indice: Control = view.get("indice_menu")
+	check(angles_droits(menu).is_empty() and angles_droits(view.play).is_empty() and angles_droits(indice).is_empty(), "Menu, Pause, rappel Échap : aucun aplat à angles droits : " + str(angles_droits(menu) + angles_droits(view.play) + angles_droits(indice)))
+	check(rayon(panneau, "panel") == Charte.RAYON_PANNEAU and rayon(view.play, "normal") >= Charte.RAYON_PILULE and rayon(indice, "normal") >= Charte.RAYON_PILULE and rayon(view.play.get_node("Touche"), "panel") == Charte.RAYON_PETIT, "Menu en panneau 18, Pause et rappel en pilule, puce de touche en case 6")
+	var focus_pause := view.play.get_theme_stylebox("focus") as StyleBoxFlat
+	check(focus_pause != null and dore(focus_pause.border_color) and focus_pause.border_width_left == 2 and focus_pause.border_width_bottom == 2, "Focus de Pause : anneau doré de 2 px")
+	check(aplats_or(menu).is_empty(), "Menu du match : aucun aplat doré : " + str(aplats_or(menu)))
 	var droite_quitter: Label = menu.find_child("MatchMenuQuitter", true, false).find_child("Droite", true, false) as Label
 	check(droite_quitter != null and droite_quitter.text.to_lower().contains("ferme le jeu"), "Quitter le match : dit qu'il ferme le jeu")
 	var clic_voile := InputEventMouseButton.new()
@@ -426,18 +452,20 @@ func run() -> void:
 		if p.get_signal_connection_list("gui_input").is_empty() or p.mouse_filter != Control.MOUSE_FILTER_STOP: muets.append(str(p.name))
 	check(muets.is_empty(), "Aucune commande muette : " + str(muets))
 
-	# 8. Bannière d'essai : couleur du club qui marque, « +5 » et le score, 600 ms d'animation, sans or.
+	# 8. Bannière d'essai : panneau rayon 18, liseré à la couleur du club qui marque (jamais en fond), « +5 » et le
+	# score, 600 ms d'animation, sans or.
 	var cadre: PanelContainer = Regie.construire_bandeau()
 	root.add_child(cadre)
 	var rouge := Color("b0302a")
 	Regie.habiller_bandeau(cadre, "ESSAI", "Ethan Amos", "Alder Fen XV · 52e minute", 1080.0, rouge, "+5\n15 – 7")
 	cadre.show()
 	await settle(2)
-	check((cadre.get("fond") as Color).is_equal_approx(Regie.fond_bandeau(rouge)) and Charte.contraste(Charte.IVOIRE, cadre.get("fond")) >= 4.5, "Bannière à la couleur du club, ivoire lisible")
+	check((cadre.get("fond") as Color) == Charte.PANNEAU and Charte.contraste(Charte.IVOIRE, cadre.get("fond")) >= 4.5, "Bannière sur panneau, crème lisible")
+	check((cadre.get("lisere") as Color).is_equal_approx(Charte.club_trait(rouge)) and Charte.contraste(cadre.get("lisere"), Charte.PANNEAU) >= 3.0, "Bannière : liseré à la couleur du club qui marque (3:1 au moins)")
 	check((cadre.find_child("MatchMomentPoints", true, false) as Label).text.begins_with("+5") and ors(cadre).is_empty(), "Points et score, aucun or")
 	check(is_equal_approx(Regie.BANDEAU_ENTREE + Regie.BANDEAU_FONDU, 0.6), "600 ms d'animation au total")
 	Regie.habiller_bandeau(cadre, "MI-TEMPS", "A   3 — 0   B", "", 1080.0)
-	check((cadre.get("fond") as Color) == Charte.PANNEAU_3, "Mi-temps : bannière sur panneau")
+	check((cadre.get("fond") as Color) == Charte.PANNEAU and (cadre.get("lisere") as Color).a == 0.0, "Mi-temps : bannière sur panneau, sans liseré de club")
 	cadre.queue_free()
 
 	# Captures : un moment de jeu ordinaire, puis la bannière d'essai si un essai passe.

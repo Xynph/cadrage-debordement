@@ -6,7 +6,9 @@ extends SceneTree
 ## commande) ; aucun clic n'ouvre de fenêtre (seul le menu « Plus ▾ » est un menu déroulant, exception de Léo) ;
 ## un seul aplat doré (bouton principal) ; aucun texte sous 12 px ; les noms mènent à la fiche (survol :
 ## mini-fiche) ; le panneau d'arrêt prend la colonne de droite et bloque Équipe jusqu'au choix ; le clavier
-## (Espace, Échap, T) suit la fiche UX.
+## (Espace, Échap, T) suit la fiche UX. Charte finale du 20/11/2026 (design/art/art-bible.md) : panneaux arrondis sans
+## cadre, cases et lignes à 6 px, aucune bande alternée, titres droits, nous vert clair / adversaire doré dans les
+## comparaisons (jamais la couleur d'un club), rouge réservé aux cartons.
 const Between = preload("res://ui/contextual/match_between.gd")
 const Charte = preload("res://ui/charte.gd")
 var checks := 0
@@ -179,6 +181,33 @@ func run() -> void:
 			if (c is Label or c is Button) and c.get_theme_font_size("font_size") < 12: petits.append(str(c.name))
 			if aplat_or(c) and not (c is BaseButton): dores.append(str(c.name))
 		check(petits.is_empty(), cadre + " : aucun texte sous 12 px " + str(petits.slice(0, 6)))
+		# Titres droits (plus de coupe italique), rouge réservé aux cartons (aucun texte rouge).
+		var penches: Array = []
+		var rouges: Array = []
+		for noeud: Node in ecran.find_children("*", "Control", true, false):
+			var c := noeud as Control
+			if not c.is_visible_in_tree(): continue
+			if (c is Label or c is Button) and c.get_theme_font("font") != null and c.get_theme_font("font").resource_path.to_lower().contains("italic"): penches.append(str(c.name))
+			if c.has_theme_color_override("font_color") and c.get_theme_color("font_color").is_equal_approx(Charte.ROUGE): rouges.append(str(c.name))
+		check(penches.is_empty(), cadre + " : titres droits, aucune coupe italique " + str(penches.slice(0, 6)))
+		check(rouges.is_empty(), cadre + " : aucun texte rouge (réservé aux cartons) " + str(rouges.slice(0, 6)))
+		# Pas de bandes alternées : lignes de Mon XV et du banc transparentes, filet entre elles (seule une ligne
+		# signalée porte le voile doré, avec son mot).
+		var bandes: Array = []
+		var lignes_vues := 0
+		for ligne: Node in ecran.find_children("MatchBetween*", "Button", true, false):
+			var n := str(ligne.name)
+			if not (n.begins_with("MatchBetweenPlayer") or n.begins_with("MatchBetweenBench")) or n.begins_with("MatchBetweenPlayerName_"): continue
+			var normal := (ligne as Control).get_theme_stylebox("normal") as StyleBoxFlat
+			if normal == null: continue
+			lignes_vues += 1
+			if ligne.has_meta("signale"):
+				if not normal.bg_color.is_equal_approx(Charte.VOILE_DORE): bandes.append(n + " signalée")
+			elif normal.bg_color.a > 0.05 or normal.border_width_bottom < 1: bandes.append(n)
+		check(lignes_vues >= 23 and bandes.is_empty(), cadre + " : %d lignes sans bandes alternées, filet entre elles %s" % [lignes_vues, str(bandes.slice(0, 6))])
+		# Comparaisons : nous vert clair, l'adversaire doré, jamais la couleur d'un club.
+		var barres: Array = ecran.chiffres.find_children("*", "Control", true, false).filter(func(n: Node): return n.get("valeurs") != null and n.get("couleurs") != null)
+		check(not barres.is_empty() and barres.all(func(b: Control): return (b.get("couleurs") as Array)[0] == Charte.V and (b.get("couleurs") as Array)[1] == Charte.D), cadre + " : barres des chiffres clés en vert clair (nous) et doré (eux)")
 		check(dores.is_empty(), cadre + " : aucun aplat doré hors bouton principal " + str(dores.slice(0, 6)))
 		# Banc : zone fixe, entière dans l'écran ; barème des notes écrit ; terrain qui remplit sa tuile.
 		var zone_banc := ecran.find_child("MatchBetweenBenchZone", true, false) as Control
@@ -299,19 +328,29 @@ func run() -> void:
 			var i := b.find_child("MatchBetweenStopInfo", false, false) as Button
 			infos_ok = infos_ok and i != null and i.text == "i" and str(i.get_meta("player_id", "")) == str(b.get_meta("option_id")) and i.pressed.get_connections().size() > 0
 		check(infos_ok, cadre + " : « i » vers la fiche sur chaque option d'arrêt")
-		# Jamais de cadre complet (charte §3) : aucun style à quatre filets, quel que soit l'état (arrêt et option retenue compris).
+		# Charte finale : aucun cadre complet, hors les deux contours permis (anneau de focus doré ; bouton secondaire
+		# ou éteint : pilule à contour `FILET`), quel que soit l'état (arrêt et option retenue compris).
 		var cadres: Array = []
+		var carres: Array = []
 		for noeud: Node in ecran.find_children("*", "Control", true, false):
 			# Nœuds internes du moteur (« _focus » des défilements : anneau de focus clavier) : hors de l'écran dessiné.
 			if str(noeud.name).begins_with("_"): continue
 			for etat_style in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed", "panel"]:
 				var s := (noeud as Control).get_theme_stylebox(etat_style) as StyleBoxFlat if (noeud as Control).has_theme_stylebox_override(etat_style) else null
-				if s != null and s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0: cadres.append("%s:%s" % [noeud.name, etat_style])
-		check(cadres.is_empty(), cadre + " : aucun cadre complet " + str(cadres.slice(0, 6)))
-		# Menus déroulants habillés : fond opaque, angles droits, sans ombre.
+				if s == null: continue
+				if s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0:
+					var anneau: bool = etat_style == "focus" and Color(s.border_color, 1.0).is_equal_approx(Charte.OR)
+					var secondaire: bool = Color(s.border_color, 1.0).is_equal_approx(Charte.FILET) and s.corner_radius_top_left >= Charte.RAYON_PILULE
+					if not anneau and not secondaire: cadres.append("%s:%s" % [noeud.name, etat_style])
+				# Tout aplat visible est arrondi (panneau 18, carte 12, case 6, pilule) ; seul le fondu du multiplex, de la
+				# couleur du panneau qu'il recouvre (invisible sur lui), garde ses angles.
+				if s.bg_color.a > 0.05 and s.corner_radius_top_left < Charte.RAYON_PETIT and str(noeud.name) != "MatchBetweenMultiplexFade": carres.append("%s:%s" % [noeud.name, etat_style])
+		check(cadres.is_empty(), cadre + " : aucun cadre complet hors anneau de focus et bouton secondaire " + str(cadres.slice(0, 6)))
+		check(carres.is_empty(), cadre + " : aucun aplat à angles droits (charte finale : 18 / 12 / 6 / pilule) " + str(carres.slice(0, 6)))
+		# Menus déroulants habillés : carte opaque arrondie (12), sans ombre.
 		for menu_style: PopupMenu in [menu_plus, ecran.menu_reglages]:
 			var fond_menu := menu_style.get_theme_stylebox("panel") as StyleBoxFlat
-			check(fond_menu != null and fond_menu.bg_color.a == 1.0 and fond_menu.corner_radius_top_left == 0 and fond_menu.shadow_size == 0, cadre + " : menu %s à la charte" % menu_style.name)
+			check(fond_menu != null and fond_menu.bg_color.a == 1.0 and fond_menu.corner_radius_top_left == Charte.RAYON_CARTE and fond_menu.shadow_size == 0, cadre + " : menu %s à la charte" % menu_style.name)
 		ecran.arret_reprendre.pressed.emit()
 		for i in 2: await process_frame
 		var envois: Array = app.get("envois")

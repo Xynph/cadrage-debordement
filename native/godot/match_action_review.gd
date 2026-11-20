@@ -89,7 +89,8 @@ static func page(hote: Control, source: Array, source_teams: Array, start_index:
 	relecture._show_event()
 	return relecture.content_scroll
 
-## Textes ivoire / ivoire 2, boutons au style lien (souligné au survol), listes sur panneau 3 sans cadre ni rayon.
+## Textes crème / gris-vert, boutons au style lien (souligné au survol), listes en pilule sur panneau 3 à contour
+## filet, focus en anneau doré, listes déroulantes en carte (rayon 12) : charte finale §7.
 static func _habiller_charte(racine: Node) -> void:
 	const Charte = preload("res://ui/charte.gd")
 	const C = preload("res://ui/immersive08/components.gd")
@@ -103,20 +104,23 @@ static func _habiller_charte(racine: Node) -> void:
 			for etat in ["normal", "hover", "pressed", "disabled", "focus"]:
 				var style := StyleBoxFlat.new()
 				style.bg_color = Color(0, 0, 0, 0) if etat == "focus" else (Charte.PANNEAU_2 if etat in ["hover", "pressed"] else Charte.PANNEAU_3)
-				style.set_corner_radius_all(0)
-				style.border_color = Charte.IVOIRE if etat == "focus" else Charte.FILET
-				style.border_width_bottom = 2 if etat == "focus" else 1
-				style.content_margin_left = 8
-				style.content_margin_right = 8
+				style.set_corner_radius_all(Charte.RAYON_PILULE)
+				style.anti_aliasing = true
+				style.border_color = Charte.OR if etat == "focus" else Charte.FILET
+				style.set_border_width_all(2 if etat == "focus" else 1)
+				if etat == "focus": style.set_expand_margin_all(2)
+				style.content_margin_left = 14
+				style.content_margin_right = 14
 				style.content_margin_top = 5
 				style.content_margin_bottom = 5
 				(noeud as Control).add_theme_stylebox_override(etat, style)
 			for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: (noeud as Control).add_theme_color_override(cle, Charte.IVOIRE)
 			(noeud as Control).add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
-			# Liste déroulante (exception de Léo) : panneau à angles droits, sans cadre.
+			# Liste déroulante (exception de Léo) : carte rayon 12, sans cadre.
 			var liste := StyleBoxFlat.new()
 			liste.bg_color = Charte.PANNEAU_2
-			liste.set_corner_radius_all(0)
+			liste.set_corner_radius_all(Charte.RAYON_CARTE)
+			liste.anti_aliasing = true
 			liste.set_content_margin_all(6)
 			(noeud as OptionButton).get_popup().add_theme_stylebox_override("panel", liste)
 			(noeud as OptionButton).get_popup().add_theme_color_override("font_color", Charte.IVOIRE)

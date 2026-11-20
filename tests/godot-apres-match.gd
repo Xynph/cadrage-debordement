@@ -3,8 +3,10 @@ extends SceneTree
 ## moteur (`live.direct` : pourquoi, hommeDuMatch, marques, notes, journee.classement complet et journee.matchs ;
 ## zones de la compétition dans `leagues`). Vérifie : verdict en mots et pastille V/N/D, trois raisons et leur levier,
 ## classement complet (une ligne par club, zones lues dans les données, légende), autres matchs de la journée, tout ce
-## qui a l'air cliquable ouvre un écran (cible de navigation) ou valide le résultat, aucune fenêtre ouverte, aucun or
-## hors « Valider le résultat », sous-page « Voir plus » avec retour, défaite sans raison, tenue en 1280×720.
+## qui a l'air cliquable ouvre un écran (cible de navigation) ou valide le résultat, aucune fenêtre ouverte, charte finale
+## (20/11/2026 : un seul aplat doré, « Valider le résultat » en pilule ; panneaux arrondis sans bordure ; pastilles V/N/D
+## en pilule lisibles sans la couleur ; couleur des clubs seulement sur leur écusson ; pas de bandes alternées), sous-page
+## « Voir plus » avec retour, défaite sans raison, tenue en 1280×720.
 ## CD_APRES_MATCH_PNG=<fichier.png> : capture 1920×1080 (rendu fenêtré requis).
 const ApresMatch = preload("res://ui/contextual/apres_match.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -76,16 +78,38 @@ func modele(issue: String, raisons: bool) -> Dictionary:
 func boutons(ecran: Control) -> Array:
 	return ecran.find_children("*", "BaseButton", true, false).filter(func(b: BaseButton): return b.is_visible_in_tree())
 
-func or_hors_valider(ecran: Control) -> Array[String]:
-	var fautes: Array[String] = []
+## Aplats dorés (charte finale : un seul par écran, l'action principale). Le doré reste permis en texte, contour,
+## pictogramme (triangle ▲ ▼ accompagné d'un mot) et anneau de focus.
+func aplats_dores(ecran: Control) -> Array[String]:
+	var trouves: Array[String] = []
 	var ors := [Charte.OR, Charte.OR_VIF]
 	for n: Node in ecran.find_children("*", "", true, false):
-		if n is Label and (n as Label).get_theme_color("font_color") in ors: fautes.append(str(n.get_path()))
-		if n.get("couleur") is Color and n.get("couleur") in ors and n.name != "ApresMatchValiderFond": fautes.append(str(n.get_path()))
-		if n is PanelContainer:
-			var s := (n as PanelContainer).get_theme_stylebox("panel") as StyleBoxFlat
-			if s != null and s.bg_color in ors: fautes.append(str(n.get_path()))
-	return fautes
+		if n.get("couleur") is Color and n.get("couleur") in ors and str(n.get("forme")) == "pave": trouves.append(str(n.name))
+		# Un liseré (zone du classement, 3 px) ou un filet n'est pas un aplat.
+		if n is ColorRect and (n as ColorRect).color in ors and minf((n as ColorRect).size.x, (n as ColorRect).size.y) > 6.0: trouves.append(str(n.name))
+		if n is Control:
+			for cle in ["panel", "normal", "hover", "pressed"]:
+				if not (n as Control).has_theme_stylebox_override(cle): continue
+				var s := (n as Control).get_theme_stylebox(cle) as StyleBoxFlat
+				if s != null and s.draw_center and s.bg_color in ors:
+					trouves.append(str(n.name))
+					break
+	return trouves
+
+## Styles à cadre complet hors anneau de focus (charte : panneaux sans bordure ; contour 1 px seulement pour un bouton
+## secondaire, en pilule).
+func cadres_complets(ecran: Control) -> Array[String]:
+	var trouves: Array[String] = []
+	for n: Node in ecran.find_children("*", "Control", true, false):
+		# Le menu déroulant « Plus » (exception permise) a son propre habillage de thème.
+		if (n as Control).get_window() != ecran.get_window(): continue
+		for cle in ["panel", "normal", "hover", "pressed"]:
+			if not (n as Control).has_theme_stylebox_override(cle): continue
+			var s := (n as Control).get_theme_stylebox(cle) as StyleBoxFlat
+			if s == null or s.border_color.a <= 0.0 or s.border_width_left <= 0 or s.border_width_right <= 0 or s.border_width_top <= 0 or s.border_width_bottom <= 0: continue
+			if s.corner_radius_top_left >= Charte.RAYON_PILULE: continue
+			trouves.append("%s.%s" % [ecran.get_path_to(n), cle])
+	return trouves
 
 func run() -> void:
 	# Comme la coque du jeu (shell.gd) : pas d'étirement, un pixel de l'écran = un pixel réel.
@@ -107,7 +131,7 @@ func run() -> void:
 	# Verdict et score.
 	var verdict := ecran.find_child("ApresMatchVerdict", true, false) as Label
 	check(verdict != null and verdict.text == "VICTOIRE", "Verdict en mots : " + (verdict.text if verdict != null else "absent"))
-	check(ecran.find_child("ApresMatchPastilleV", true, false) != null, "Pastille ovale V")
+	check(ecran.find_child("ApresMatchPastilleV", true, false) != null, "Pastille V")
 	var titre := ecran.find_child("ApresMatchPourquoiTitre", true, false) as Label
 	check(titre != null and titre.text == "POURQUOI ON A GAGNÉ", "Titre du pourquoi selon l’issue")
 	for rang in [1, 2, 3]: check(ecran.find_child("ApresMatchRaison%d" % rang, true, false) != null, "Raison n° %d" % rang)
@@ -134,10 +158,41 @@ func run() -> void:
 	check(ecran.find_child("ApresMatchFil", true, false) != null, "Fil du score")
 	var gabi := ecran.find_child("ApresMatchGabiPhrase", true, false) as Label
 	check(gabi != null and gabi.text.contains("discipline"), "Gabi nomme le levier à corriger : " + (gabi.text if gabi != null else ""))
-	# Aucun or hors « Valider le résultat ».
-	var fautes := or_hors_valider(ecran)
-	check(fautes.is_empty(), "Aucun or hors Valider le résultat : " + str(fautes))
-	check(ecran.find_child("ApresMatchValiderFond", true, false) != null, "Bouton or Valider le résultat")
+	# Charte finale : un seul aplat doré, « Valider le résultat », en pilule.
+	var dores := aplats_dores(ecran)
+	check(dores == ["ApresMatchValiderFond"], "Un seul aplat doré, Valider le résultat : " + str(dores))
+	var fond_valider := ecran.find_child("ApresMatchValiderFond", true, false)
+	check(fond_valider != null and float(fond_valider.get("rayon")) < 0.0, "Valider le résultat : pilule dorée")
+	var texte_valider := ecran.find_child("ApresMatchValiderTexte", true, false) as Label
+	check(texte_valider != null and texte_valider.get_theme_color("font_color") == Charte.PANNEAU, "Valider le résultat : texte PANNEAU sur le doré")
+	# Panneaux arrondis à 18, sans bordure ; aucun cadre complet hors focus et pilules.
+	for nom in ["ApresMatchClassement", "ApresMatchFil", "ApresMatchGabi", "ApresMatchTaPlace", "ApresMatchAutresMatchs", "ApresMatchScoreCadre"]:
+		var panneau := ecran.find_child(nom, true, false) as PanelContainer
+		var sp := panneau.get_theme_stylebox("panel") as StyleBoxFlat if panneau != null else null
+		check(sp != null and sp.corner_radius_top_left == Charte.RAYON_PANNEAU and sp.border_width_left + sp.border_width_top + sp.border_width_right + sp.border_width_bottom == 0, "Panneau %s : rayon 18, sans bordure" % nom)
+	check(cadres_complets(ecran).is_empty(), "Aucun cadre complet : " + str(cadres_complets(ecran)))
+	# Couleur des clubs seulement sur leur écusson : le score et les plaques posent sur PANNEAU, pas sur la couleur du club.
+	for cote in 2:
+		var plaque := ecran.find_child("ApresMatchPlaque%d" % cote, true, false)
+		var traces: Array = plaque.find_children("*", "Control", true, false).filter(func(n: Node): return n.get("forme") == "pave" and n.name != "Ecusson") if plaque != null else [null]
+		check(plaque != null and traces.is_empty() and plaque.find_child("Ecusson", true, false) != null, "Plaque %d : écusson du club, sans fond à sa couleur" % cote)
+	# Pastilles V / N / D : pilule, lettre écrite, forme lisible sans la couleur (pleine, demi-pleine, contour).
+	var fond_v := ecran.find_child("ApresMatchPastilleV", true, false).find_child("FondPastille", true, false)
+	check(fond_v != null and float(fond_v.get("rayon")) < 0.0 and fond_v.get("couleur") == Charte.V, "Pastille V : pilule pleine vert clair")
+	var forme_d: Node = forme.get_child(1).find_child("FondPastille", true, false) if forme != null else null
+	check(forme_d != null and (forme_d.get("couleur") as Color).a == 0.0 and forme_d.get("bord") == Charte.D, "Pastille D : contour doré, sans aplat")
+	var forme_n: Node = forme.get_child(2).find_child("FondPastille", true, false) if forme != null else null
+	check(forme_n != null and (forme_n.get("couleur") as Color).a > 0.0 and (forme_n.get("couleur") as Color).a < 1.0, "Pastille N : demi-pleine")
+	# Classement : pas de bandes alternées ; notre club en ligne sélectionnée (coins de 6 px).
+	var fonds_lignes: Array = []
+	for rang in range(1, 13):
+		var ligne_c := ecran.find_child("ApresMatchLigne%d" % rang, true, false) as PanelContainer
+		var sl := ligne_c.get_theme_stylebox("panel") as StyleBoxFlat if ligne_c != null else null
+		if sl != null and rang != 3: fonds_lignes.append(sl.bg_color.a)
+	check(fonds_lignes.size() == 11 and fonds_lignes.all(func(a: float): return a == 0.0), "Classement sans bandes alternées : " + str(fonds_lignes))
+	var notre_ligne := ecran.find_child("ApresMatchLigne3", true, false) as PanelContainer
+	var style_nous := notre_ligne.get_theme_stylebox("panel") as StyleBoxFlat if notre_ligne != null else null
+	check(style_nous != null and style_nous.bg_color == Charte.SELECTION and style_nous.corner_radius_top_left > 0, "Notre club : ligne sélectionnée (SELECTION, coins arrondis)")
 	var capture := OS.get_environment("CD_APRES_MATCH_PNG")
 	if not capture.is_empty() and DisplayServer.get_name() != "headless":
 		for i in 12: await process_frame
@@ -194,9 +249,11 @@ func run() -> void:
 	var autres := ecran.find_child("ApresMatchAutresMatchs", true, false)
 	var coupes: Array = autres.find_children("*", "Label", true, false).filter(func(l: Label): return l.clip_text or l.text_overrun_behavior != TextServer.OVERRUN_NO_TRIMMING) if autres != null else [null]
 	check(coupes.is_empty(), "Autres matchs sans troncature")
-	# Cadre de focus du bouton or : jamais au repos ni à la souris, seulement au clavier.
+	# Anneau de focus du bouton doré : jamais au repos ni à la souris, seulement au clavier ; doré, en pilule.
 	var cadre_focus := ecran.find_child("ApresMatchValiderFocus", true, false) as Control
 	check(cadre_focus != null and not cadre_focus.visible, "Bouton or : pas de cadre de focus au repos")
+	var anneau := cadre_focus.get_theme_stylebox("panel") as StyleBoxFlat if cadre_focus != null else null
+	check(anneau != null and anneau.border_color == Charte.OR and anneau.border_width_left == 2 and anneau.corner_radius_top_left >= Charte.RAYON_PILULE, "Anneau de focus : doré, 2 px, en pilule")
 	var touche := InputEventKey.new()
 	touche.keycode = KEY_TAB
 	touche.pressed = true

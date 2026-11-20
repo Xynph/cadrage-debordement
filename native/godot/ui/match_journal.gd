@@ -139,8 +139,8 @@ func setup(owner_app: Control) -> void:
 	search.text_changed.connect(func(_text: String): _filter_changed())
 	scroll.get_v_scroll_bar().value_changed.connect(_scrolled)
 
-## Habillage du direct (Charte) : champs sur panneau 3 soulignés d'un filet (pas de cadre complet, rayons 0),
-## focus en filet ivoire de 2 px, boutons au style lien, textes ivoire / ivoire 2, aucun or.
+## Habillage du direct (charte finale §7) : champs en pilule sur panneau 3, contour filet 1 px, focus en anneau
+## doré de 2 px ; liste déroulante en carte (rayon 12) ; boutons au style lien, textes crème / gris-vert.
 func habiller_charte() -> void:
 	const Charte = preload("res://ui/charte.gd")
 	const C = preload("res://ui/immersive08/components.gd")
@@ -151,11 +151,13 @@ func habiller_charte() -> void:
 	var champ := func(fond: Color, filet: Color, epaisseur: int) -> StyleBoxFlat:
 		var style := StyleBoxFlat.new()
 		style.bg_color = fond
-		style.set_corner_radius_all(0)
+		style.set_corner_radius_all(Charte.RAYON_PILULE)
+		style.anti_aliasing = true
 		style.border_color = filet
-		style.border_width_bottom = epaisseur
-		style.content_margin_left = 8
-		style.content_margin_right = 8
+		style.set_border_width_all(epaisseur)
+		if epaisseur > 1: style.set_expand_margin_all(2)
+		style.content_margin_left = 14
+		style.content_margin_right = 14
 		style.content_margin_top = 5
 		style.content_margin_bottom = 5
 		return style
@@ -164,12 +166,13 @@ func habiller_charte() -> void:
 		if category.has_theme_stylebox_override(etat) or etat != "read_only": category.add_theme_stylebox_override(etat, champ.call(fond, Charte.FILET, 1))
 		search.add_theme_stylebox_override(etat, champ.call(Charte.PANNEAU_3, Charte.FILET, 1))
 	for controle: Control in [category, search]:
-		controle.add_theme_stylebox_override("focus", champ.call(Color(0, 0, 0, 0), Charte.IVOIRE, 2))
+		controle.add_theme_stylebox_override("focus", champ.call(Color(0, 0, 0, 0), Charte.OR, 2))
 	for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: category.add_theme_color_override(cle, Charte.IVOIRE)
-	# Liste déroulante du filtre (exception de Léo) : panneau à angles droits, sans cadre.
+	# Liste déroulante du filtre (exception de Léo) : carte rayon 12, sans cadre.
 	var liste := StyleBoxFlat.new()
 	liste.bg_color = Charte.PANNEAU_2
-	liste.set_corner_radius_all(0)
+	liste.set_corner_radius_all(Charte.RAYON_CARTE)
+	liste.anti_aliasing = true
 	liste.set_content_margin_all(6)
 	category.get_popup().add_theme_stylebox_override("panel", liste)
 	category.get_popup().add_theme_color_override("font_color", Charte.IVOIRE)

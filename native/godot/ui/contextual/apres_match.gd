@@ -1,9 +1,9 @@
 extends Control
 ## Après-match (design/ux/15-apres-match.md ; choix de Léo du 19/11/2026 : « verdict en tête » avec le classement
 ## complet de la division). Posé par la vue du direct (live_view.gd) une fois tout le match montré et avant la
-## validation du résultat : bandeau vestiaire, pastille ovale V/N/D et score, les trois raisons du « Pourquoi » avec
+## validation du résultat : bandeau vestiaire, pastille V/N/D en pilule et score, les trois raisons du « Pourquoi » avec
 ## leur levier, fil du score, Gabi ; à droite le classement complet après la journée (zones réelles du championnat),
-## ta place, les autres matchs de la journée et le seul bouton or de l'écran, « Valider le résultat ».
+## ta place, les autres matchs de la journée et le seul aplat doré de l’écran, « Valider le résultat ».
 ## Tout ce qui ressemble à un lien ouvre un écran du jeu par `director.consulter(cible)` (match_immersed laisse alors
 ## naviguer ; « Continuer » de la coque ou Espace ramène ici). Aucune donnée inventée : une donnée absente est omise.
 ## Données : `live.direct` (pourquoi, hommeDuMatch, marques, notes, journee, statsRows, camp) et le modèle.
@@ -16,38 +16,35 @@ const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const PORTRAIT = preload("res://guide/assets/coach-poses.png")
 const MATTE = preload("res://guide/coach_matte.gdshader")
 
-## Dessin plein de la charte : ovale (pastille V/N/D), triangle (▲ ▼ : aucune police du jeu n'a ces glyphes) ou
-## parallélogramme incliné de 10° (plaques et sigles de club, bouton or), avec un liseré facultatif.
+## Dessin de la charte finale : forme arrondie droite (`pave` : écusson et sigle de club à 6 px, pastille V/N/D et bouton
+## doré en pilule, liseré) ou triangle (▲ ▼ : aucune police du jeu n'a ces glyphes), avec un contour facultatif.
 class Trace extends Control:
-	const Charte = preload("res://ui/charte.gd")
-	var forme := "para"
+	var forme := "pave"
 	var couleur := Color.WHITE
 	var bord := Color(0, 0, 0, 0)
-	var pente_gauche := true
-	var pente_droite := true
-	func _init(f: String = "para", c: Color = Color.WHITE) -> void:
+	## Rayon des coins ; négatif : pilule (demi-hauteur).
+	var rayon := -1.0
+	var epaisseur := 2.0
+	func _init(f: String = "pave", c: Color = Color.WHITE, r: float = -1.0) -> void:
 		forme = f
 		couleur = c
+		rayon = r
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
-	func _points(r: Rect2) -> PackedVector2Array:
-		var p := PackedVector2Array()
-		match forme:
-			"ovale":
-				for k in 40: p.append(r.get_center() + Vector2(cos(k * TAU / 40.0) * r.size.x / 2.0, sin(k * TAU / 40.0) * r.size.y / 2.0))
-			"haut": p = PackedVector2Array([Vector2(r.position.x + r.size.x / 2.0, r.position.y), r.end, Vector2(r.position.x, r.end.y)])
-			"bas": p = PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), Vector2(r.position.x + r.size.x / 2.0, r.end.y)])
-			_:
-				var b := Charte.decalage(r.size.y)
-				p = PackedVector2Array([Vector2(r.position.x + (b if pente_gauche else 0.0), r.position.y), Vector2(r.end.x, r.position.y),
-					Vector2(r.end.x - (b if pente_droite else 0.0), r.end.y), Vector2(r.position.x, r.end.y)])
-		return p
 	func _draw() -> void:
 		var r := Rect2(Vector2.ZERO, size)
 		if r.size.x < 1 or r.size.y < 1: return
-		if bord.a > 0.0:
-			draw_colored_polygon(_points(r), bord)
-			r = r.grow(-2.0)
-		draw_colored_polygon(_points(r), couleur)
+		match forme:
+			"haut": draw_colored_polygon(PackedVector2Array([Vector2(r.size.x / 2.0, 0), r.end, Vector2(0, r.end.y)]), couleur)
+			"bas": draw_colored_polygon(PackedVector2Array([Vector2.ZERO, Vector2(r.end.x, 0), Vector2(r.size.x / 2.0, r.end.y)]), couleur)
+			_:
+				var s := StyleBoxFlat.new()
+				s.bg_color = couleur
+				s.draw_center = couleur.a > 0.0
+				s.set_corner_radius_all(roundi(minf(r.size.x, r.size.y) / 2.0 if rayon < 0.0 else rayon))
+				s.border_color = bord
+				s.set_border_width_all(roundi(epaisseur) if bord.a > 0.0 else 0)
+				s.anti_aliasing = true
+				draw_style_box(s, r)
 
 var app: Control
 var director: Node
@@ -202,19 +199,24 @@ func _v(ecart: float = 8) -> VBoxContainer:
 	b.add_theme_constant_override("separation", _d(ecart))
 	return b
 
-func _fond(couleur: Color, gauche: float = 0, haut: float = 0, droite: float = -1, bas: float = -1) -> StyleBoxFlat:
+## Fond d'un bloc. `rayon` : 0 pour une ligne de liste transparente (seul un filet la sépare), sinon un rayon de la charte
+## (RAYON_PANNEAU, RAYON_CARTE, RAYON_PETIT, RAYON_PILULE).
+func _fond(couleur: Color, gauche: float = 0, haut: float = 0, droite: float = -1, bas: float = -1, rayon: int = 0) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = couleur
-	s.set_corner_radius_all(0)
+	if rayon > 0:
+		s.set_corner_radius_all(rayon if rayon >= Charte.RAYON_PILULE else _d(rayon))
+		s.anti_aliasing = true
 	s.content_margin_left = _d(gauche)
 	s.content_margin_top = _d(haut)
 	s.content_margin_right = _d(gauche if droite < 0 else droite)
 	s.content_margin_bottom = _d(haut if bas < 0 else bas)
 	return s
 
-func _panneau(couleur: Color = Charte.PANNEAU, gauche: float = 16, haut: float = 10) -> PanelContainer:
+## Panneau de la charte (rayon 18, sans bordure) ; carte dans un panneau : `rayon` = RAYON_CARTE.
+func _panneau(couleur: Color = Charte.PANNEAU, gauche: float = 16, haut: float = 10, rayon: int = Charte.RAYON_PANNEAU) -> PanelContainer:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", _fond(couleur, gauche, haut))
+	p.add_theme_stylebox_override("panel", _fond(couleur, gauche, haut, -1, -1, rayon))
 	return p
 
 ## Lien de la charte (texte ivoire, souligné au survol) qui ouvre `cible` (navigation_controller.open_entity).
@@ -328,7 +330,7 @@ func montrer_fiche_adverse(ancre: Control, id: String, nom: String, club: Dictio
 	var note: Variant = connu.get("note")
 	var notes: Variant = _direct().get("notes")
 	if note == null and notes is Dictionary and notes.get(id) is Dictionary: note = notes[id].get("note")
-	var fiche := _panneau(Charte.PANNEAU_2, 16, 12)
+	var fiche := _panneau(Charte.PANNEAU_2, 16, 12, Charte.RAYON_CARTE)
 	fiche.name = "MiniFicheAdverse"
 	fiche.z_index = 200
 	fiche.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -340,7 +342,7 @@ func montrer_fiche_adverse(ancre: Control, id: String, nom: String, club: Dictio
 	fiche.add_child(col)
 	var tete := _h(8)
 	tete.add_child(_sigle(club, 28, 20, 12))
-	tete.add_child(_texte(nom, 16, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
+	tete.add_child(_texte(nom, 16, Charte.IVOIRE, Charte.TITRE_GRAS))
 	col.add_child(tete)
 	var poste := str(connu.get("poste", ""))
 	col.add_child(_texte(" · ".join(PackedStringArray(([poste] if not poste.is_empty() else []) + [G.club_name(club)])), 13, Charte.IVOIRE_2))
@@ -385,7 +387,8 @@ func _dans_effectif(id: String) -> bool:
 		if p is Dictionary and str(p.get("id", "")) == id: return true
 	return false
 
-## Sigle du club sur un parallélogramme (liseré à sa couleur lisible, fond à sa couleur sombre).
+## Écusson du club : vignette droite à coins de 6 px, à sa couleur sombre, liseré à sa couleur lisible (la couleur d'un
+## club ne vit que sur son écusson, son maillot et son liseré).
 func _sigle(club: Dictionary, largeur: float, hauteur: float, taille: float) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
@@ -393,15 +396,24 @@ func _sigle(club: Dictionary, largeur: float, hauteur: float, taille: float) -> 
 	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var couleur := _couleur(club)
-	var t := Trace.new("para", C.readable_primary_fill(couleur) if couleur.a > 0 else Charte.PANNEAU_3)
+	var t := Trace.new("pave", C.readable_primary_fill(couleur) if couleur.a > 0 else Charte.PANNEAU_3, _d(Charte.RAYON_PETIT))
+	t.name = "Ecusson"
 	t.bord = Charte.club_trait(couleur) if couleur.a > 0 else Charte.IVOIRE_3
+	t.epaisseur = maxf(1.0, _d(2))
 	p.add_child(t)
-	var l := _texte(G.club_abbr(club) if not club.is_empty() else "", taille, Charte.IVOIRE, Charte.TITRE_EXTRA_ITALIQUE)
+	var l := _texte(G.club_abbr(club) if not club.is_empty() else "", taille, Charte.IVOIRE, Charte.TITRE_EXTRA)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	p.add_child(l)
 	return p
 
-## Pastille ovale V / N / D : la lettre et la couleur de sens (jamais la couleur seule).
+## Pastille V / N / D en pilule (charte §4.5) : la lettre toujours écrite, et la forme dit le résultat sans la couleur :
+## V pleine vert clair (lettre PANNEAU), N demi-pleine gris-vert (lettre crème), D contour doré (lettre dorée).
+static func style_pastille(lettre: String) -> Dictionary:
+	match lettre:
+		"V": return {"fond": Charte.V, "bord": Color(0, 0, 0, 0), "lettre": Charte.PANNEAU}
+		"D": return {"fond": Color(0, 0, 0, 0), "bord": Charte.D, "lettre": Charte.D}
+	return {"fond": Color(Charte.N, 0.35), "bord": Charte.N, "lettre": Charte.IVOIRE}
+
 func _pastille(lettre: String, largeur: float, hauteur: float, taille: float) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.name = "ApresMatchPastille" + lettre
@@ -410,8 +422,13 @@ func _pastille(lettre: String, largeur: float, hauteur: float, taille: float) ->
 	p.custom_minimum_size = Vector2(maxi(_d(largeur), 20), maxi(_d(hauteur), 14))
 	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(Trace.new("ovale", {"V": Charte.V, "N": Charte.N, "D": Charte.D}.get(lettre, Charte.N)))
-	var l := _texte(lettre, taille, Charte.NUIT, Charte.TITRE_EXTRA_ITALIQUE)
+	var sens := style_pastille(lettre)
+	var forme := Trace.new("pave", sens.fond)
+	forme.name = "FondPastille"
+	forme.bord = sens.bord
+	forme.epaisseur = maxf(1.0, _d(2) if hauteur >= 30 else 1.0)
+	p.add_child(forme)
+	var l := _texte(lettre, taille, sens.lettre, Charte.TITRE_EXTRA)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	p.add_child(l)
 	return p
@@ -536,7 +553,7 @@ func _bandeau() -> Control:
 	var haut := _h(12)
 	col.add_child(haut)
 	var fin := PanelContainer.new()
-	fin.add_theme_stylebox_override("panel", _fond(Charte.PANNEAU_3, 6, 1))
+	fin.add_theme_stylebox_override("panel", _fond(Charte.PANNEAU_3, 6, 1, -1, -1, Charte.RAYON_PETIT))
 	fin.add_child(_texte("FIN", 12, Charte.IVOIRE, Charte.TITRE_GRAS))
 	fin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	haut.add_child(fin)
@@ -548,12 +565,12 @@ func _bandeau() -> Control:
 	C.fill(contexte)
 	haut.add_child(contexte)
 	haut.add_child(_menu_plus())
-	# Verdict : pastille ovale et mot.
+	# Verdict : pastille V/N/D en pilule et mot.
 	var verdict := _h(16)
 	col.add_child(verdict)
 	var lettre: String = {"victoire": "V", "defaite": "D", "nul": "N"}.get(issue(), "N")
 	verdict.add_child(_pastille(lettre, 72, 48, 32))
-	var mot := _texte({"victoire": "Victoire", "defaite": "Défaite", "nul": "Match nul"}.get(issue(), "Match nul").to_upper(), 28, Charte.IVOIRE, Charte.TITRE_EXTRA_ITALIQUE)
+	var mot := _texte({"victoire": "Victoire", "defaite": "Défaite", "nul": "Match nul"}.get(issue(), "Match nul").to_upper(), 28, Charte.IVOIRE, Charte.TITRE_EXTRA)
 	mot.name = "ApresMatchVerdict"
 	verdict.add_child(mot)
 	col.add_child(_ligne_score())
@@ -565,11 +582,14 @@ func _menu_plus() -> MenuButton:
 	plus.name = "ApresMatchPlus"
 	plus.text = "Plus  ▾"
 	plus.flat = false
-	for look in ["normal", "hover", "pressed", "focus"]:
-		plus.add_theme_stylebox_override(look, _fond(Color(Charte.PANNEAU, 0.85) if look != "hover" else Charte.PANNEAU_2, 14, 6))
+	# Bouton secondaire de la charte : pilule à contour FILET sur un panneau (lisible sur la photo voilée), focus doré.
+	C.style_bouton_contour(plus, 15)
+	for look in ["normal", "disabled"]:
+		var s := (plus.get_theme_stylebox(look) as StyleBoxFlat).duplicate() as StyleBoxFlat
+		s.bg_color = Color(Charte.PANNEAU, 0.85)
+		plus.add_theme_stylebox_override(look, s)
 	plus.add_theme_font_override("font", Charte.TEXTE)
 	plus.add_theme_font_size_override("font_size", _f(15))
-	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: plus.add_theme_color_override(k, Charte.IVOIRE)
 	plus.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	plus.set_meta("contextual_enabled", true)
 	var menu := plus.get_popup()
@@ -587,37 +607,39 @@ func _menu_plus() -> MenuButton:
 	menu.id_pressed.connect(func(id: int): if id >= 0 and id < cibles.size(): ouvrir(cibles[id]))
 	return plus
 
-func _ligne_score() -> HBoxContainer:
+## Score : un seul panneau (PANNEAU 90 %, rayon 18) qui porte les deux clubs (écusson et nom, lien vers sa fiche) et le
+## score crème 48 px. Pas de fond à la couleur des clubs : elle reste sur leur écusson.
+func _ligne_score() -> PanelContainer:
+	var cadre := PanelContainer.new()
+	cadre.name = "ApresMatchScoreCadre"
+	cadre.add_theme_stylebox_override("panel", _fond(Color(Charte.PANNEAU, 0.9), 16, 0, -1, -1, Charte.RAYON_PANNEAU))
+	cadre.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var ligne := _h(0)
 	ligne.name = "ApresMatchScore"
+	cadre.add_child(ligne)
 	var equipes: Array = _live().get("teams", [])
 	var score: Array = _live().get("score", [0, 0])
 	for cote in 2:
 		var club: Dictionary = equipes[cote] if cote < equipes.size() and equipes[cote] is Dictionary else {}
 		if cote == 1:
 			var chiffre := PanelContainer.new()
-			chiffre.add_theme_stylebox_override("panel", _fond(Charte.PANNEAU, 20, 0))
-			var texte := _texte("%d – %d" % [int(score[0]) if score.size() > 0 else 0, int(score[1]) if score.size() > 1 else 0], 48, Charte.IVOIRE, Charte.TITRE_EXTRA_ITALIQUE)
+			chiffre.add_theme_stylebox_override("panel", _fond(Color(0, 0, 0, 0), 20, 0))
+			var texte := _texte("%d – %d" % [int(score[0]) if score.size() > 0 else 0, int(score[1]) if score.size() > 1 else 0], 48, Charte.IVOIRE, Charte.TITRE_EXTRA)
 			texte.name = "ApresMatchScoreChiffres"
 			chiffre.add_child(texte)
 			ligne.add_child(chiffre)
 		ligne.add_child(_plaque(club, cote))
-	return ligne
+	return cadre
 
-## Plaque d'un club : sa couleur, son sigle, son nom (lien vers sa fiche) ; bord intérieur incliné de 10°.
+## Plaque d'un club dans le panneau du score : son écusson et son nom (lien vers sa fiche), sans fond.
 func _plaque(club: Dictionary, cote: int) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.name = "ApresMatchPlaque%d" % cote
 	p.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	p.custom_minimum_size.y = _d(52)
-	var couleur := _couleur(club)
-	var t := Trace.new("para", C.readable_primary_fill(couleur) if couleur.a > 0 else Charte.PANNEAU_3)
-	t.pente_gauche = cote == 1
-	t.pente_droite = cote == 0
-	p.add_child(t)
 	var marge := MarginContainer.new()
-	marge.add_theme_constant_override("margin_left", _d(12 if cote == 0 else 24))
-	marge.add_theme_constant_override("margin_right", _d(24 if cote == 0 else 12))
+	marge.add_theme_constant_override("margin_left", _d(0 if cote == 0 else 4))
+	marge.add_theme_constant_override("margin_right", _d(4 if cote == 0 else 0))
 	p.add_child(marge)
 	var rang := _h(10)
 	marge.add_child(rang)
@@ -625,7 +647,7 @@ func _plaque(club: Dictionary, cote: int) -> PanelContainer:
 	var nom: Control
 	if club.get("id") != null: nom = _lien(G.club_name(club).to_upper(), {"kind": "club", "id": _cle_id(club.get("id"))}, 26)
 	else: nom = _texte(G.club_name(club).to_upper(), 26)
-	nom.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+	nom.add_theme_font_override("font", Charte.TITRE_GRAS)
 	nom.name = "ApresMatchClub%d" % cote
 	if cote == 0:
 		rang.add_child(sigle)
@@ -710,7 +732,7 @@ static func cible_levier(raison: Dictionary) -> Dictionary:
 func _pourquoi(parent: VBoxContainer) -> void:
 	var titre_ligne := _h(16)
 	parent.add_child(titre_ligne)
-	var titre := _texte({"victoire": "Pourquoi on a gagné", "defaite": "Pourquoi on a perdu", "nul": "Pourquoi ce nul"}.get(issue(), "Pourquoi ce résultat").to_upper(), 28, Charte.IVOIRE, Charte.TITRE_EXTRA_ITALIQUE)
+	var titre := _texte({"victoire": "Pourquoi on a gagné", "defaite": "Pourquoi on a perdu", "nul": "Pourquoi ce nul"}.get(issue(), "Pourquoi ce résultat").to_upper(), 28, Charte.IVOIRE, Charte.TITRE_EXTRA)
 	titre.name = "ApresMatchPourquoiTitre"
 	titre_ligne.add_child(titre)
 	titre_ligne.add_child(_texte("de la plus décisive à la moins · chaque lien s’ouvre, Espace te ramène ici", 13, Charte.IVOIRE_2))
@@ -734,7 +756,7 @@ func _pourquoi(parent: VBoxContainer) -> void:
 		liste.add_child(ligne)
 		var r := _h(14)
 		ligne.add_child(r)
-		var rang := _texte(str(int(raison.get("rang", n))), 34, Charte.IVOIRE_3, Charte.TITRE_EXTRA_ITALIQUE)
+		var rang := _texte(str(int(raison.get("rang", n))), 34, Charte.IVOIRE_3, Charte.TITRE_EXTRA)
 		rang.custom_minimum_size.x = _d(36)
 		r.add_child(rang)
 		var negatif := str(raison.get("sens", "")) == "negatif"
@@ -796,7 +818,7 @@ func _fil_du_score(parent: VBoxContainer) -> void:
 		item.tooltip_text = str(m.get("texte", ""))
 		item.mouse_filter = Control.MOUSE_FILTER_PASS
 		item.add_child(_sigle(club, 28, 20, 12))
-		item.add_child(_texte(str(m.get("horloge", m.get("minute", ""))).trim_suffix("′").trim_suffix("'") + "′", 15, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
+		item.add_child(_texte(str(m.get("horloge", m.get("minute", ""))).trim_suffix("′").trim_suffix("'") + "′", 15, Charte.IVOIRE, Charte.TITRE_GRAS))
 		var nature := nature_marque(m, _e < 0.8)
 		var mot := _texte(nature, 12, Charte.IVOIRE_2, Charte.TITRE)
 		mot.name = "Nature"
@@ -855,13 +877,14 @@ func phrase_gabi() -> String:
 	return " ".join(PackedStringArray(morceaux))
 
 func _gabi(parent: VBoxContainer) -> void:
-	var carte := _panneau(Charte.PANNEAU, 0, 0)
+	# Panneau à 18 qui porte deux cartes à 12 (portrait, bulle), séparées par 12 px de panneau.
+	var carte := _panneau(Charte.PANNEAU, 10, 10)
 	carte.name = "ApresMatchGabi"
 	parent.add_child(carte)
-	var rang := _h(0)
+	var rang := _h(12)
 	carte.add_child(rang)
-	var cadre_portrait := _panneau(Charte.PANNEAU_2, 17, 5)
-	cadre_portrait.custom_minimum_size = Vector2(_d(132), _d(132))
+	var cadre_portrait := _panneau(Charte.PANNEAU_2, 17, 5, Charte.RAYON_CARTE)
+	cadre_portrait.custom_minimum_size = Vector2(_d(116), _d(116))
 	rang.add_child(cadre_portrait)
 	var portrait := TextureRect.new()
 	var image := AtlasTexture.new()
@@ -876,12 +899,12 @@ func _gabi(parent: VBoxContainer) -> void:
 	matte.shader = MATTE
 	portrait.material = matte
 	cadre_portrait.add_child(portrait)
-	var bulle := _panneau(Charte.PANNEAU_2, 24, 12)
+	var bulle := _panneau(Charte.PANNEAU_2, 24, 12, Charte.RAYON_CARTE)
 	C.fill(bulle)
 	rang.add_child(bulle)
 	var interieur := _h(14)
 	bulle.add_child(interieur)
-	var filet_club := Trace.new("para", Charte.club_trait(_couleur(model.get("club", {}) if model.get("club") is Dictionary else {})))
+	var filet_club := Trace.new("pave", Charte.club_trait(_couleur(model.get("club", {}) if model.get("club") is Dictionary else {})))
 	filet_club.custom_minimum_size = Vector2(_d(8), _d(90))
 	filet_club.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	interieur.add_child(filet_club)
@@ -917,7 +940,7 @@ func _colonne_classement(parent: VBoxContainer) -> void:
 		titre.custom_minimum_size.y = _d(28)
 		col.add_child(titre)
 		var etape := _etape_courte()
-		titre.add_child(_texte(("Classement après la " + etape if not etape.is_empty() else "Classement après la journée").to_upper(), 18, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
+		titre.add_child(_texte(("Classement après la " + etape if not etape.is_empty() else "Classement après la journée").to_upper(), 18, Charte.IVOIRE, Charte.TITRE_GRAS))
 		var droite := _texte(" · ".join(PackedStringArray([_nom_competition(), "%d clubs" % classement.size()]).slice(0 if not _nom_competition().is_empty() else 1)), 12, Charte.IVOIRE_2)
 		droite.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		C.fill(droite)
@@ -969,8 +992,12 @@ func _ligne_club(r: Dictionary, total: int) -> PanelContainer:
 	ligne.name = "ApresMatchLigne%d" % rang
 	ligne.set_meta("rang", rang)
 	ligne.set_meta("zone", str(zone.get("kind", "")))
-	var style := _fond(Charte.PANNEAU_3 if nous else (Charte.PANNEAU_2 if rang % 2 == 0 else Color(0, 0, 0, 0)), 0, 0)
-	# Fin de zone : filet sous la dernière ligne de la zone.
+	# Pas de bandes alternées : un filet entre les lignes ; notre club en ligne sélectionnée (SELECTION, coins de 6 px).
+	var style := _fond(Charte.SELECTION if nous else Color(0, 0, 0, 0), 0, 0, -1, -1, Charte.RAYON_PETIT if nous else 0)
+	if not nous and rang < total:
+		style.border_width_bottom = 1
+		style.border_color = Charte.FILET
+	# Fin de zone : filet plus marqué sous la dernière ligne de la zone.
 	if not zone.is_empty() and rang < total and _zone(rang + 1).get("kind") != zone.get("kind"):
 		style.border_width_bottom = 1
 		style.border_color = Charte.IVOIRE_3
@@ -1080,7 +1107,7 @@ func _place(classement: Array, condense: bool = false) -> Control:
 	cadre.add_child(col)
 	var titre := _h(8)
 	col.add_child(titre)
-	titre.add_child(_texte("TA PLACE", 15, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
+	titre.add_child(_texte("TA PLACE", 15, Charte.IVOIRE, Charte.TITRE_GRAS))
 	var zone := _zone(rang)
 	var resume := "%s · %d pts" % [ordinal(rang), int(nous.get("points", 0))] + ((" · " + str(zone.get("label", "")).to_lower()) if not zone.is_empty() else "")
 	if condense:
@@ -1109,17 +1136,20 @@ func _place(classement: Array, condense: bool = false) -> Control:
 		var b := _lien("", {"kind": "club", "id": _cle_id(v.get("clubId"))}, 12)
 		b.name = "ApresMatchEcart%d" % int(v.get("rang", 0))
 		_aide(b, "%s · %d pts" % [nom, int(v.get("points", 0))])
-		b.add_theme_stylebox_override("normal", _fond(Charte.PANNEAU_2, 10, 6))
-		b.add_theme_stylebox_override("hover", _fond(Charte.PANNEAU_3, 10, 6))
-		b.add_theme_stylebox_override("focus", _fond(Charte.PANNEAU_3, 10, 6))
-		b.add_theme_stylebox_override("pressed", _fond(Charte.PANNEAU_3, 10, 6))
+		b.add_theme_stylebox_override("normal", _fond(Charte.PANNEAU_2, 10, 6, -1, -1, Charte.RAYON_CARTE))
+		b.add_theme_stylebox_override("hover", _fond(Charte.PANNEAU_3, 10, 6, -1, -1, Charte.RAYON_CARTE))
+		var focus_case := _fond(Charte.PANNEAU_3, 10, 6, -1, -1, Charte.RAYON_CARTE)
+		focus_case.border_color = Charte.OR
+		focus_case.set_border_width_all(2)
+		b.add_theme_stylebox_override("focus", focus_case)
+		b.add_theme_stylebox_override("pressed", _fond(Charte.PANNEAU_3, 10, 6, -1, -1, Charte.RAYON_CARTE))
 		C.fill(b)
 		var contenu := _v(0)
 		contenu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		contenu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		contenu.offset_left = _d(10)
 		contenu.offset_top = _d(4)
-		contenu.add_child(_texte(signe(ecart) if ecart != 0 else "=", 20, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
+		contenu.add_child(_texte(signe(ecart) if ecart != 0 else "=", 20, Charte.IVOIRE, Charte.TITRE_GRAS))
 		contenu.add_child(_texte(ecart_texte(ecart, int(v.get("rang", 0))) + ", " + nom, 12, Charte.IVOIRE_2, Charte.TEXTE, true))
 		b.add_child(contenu)
 		b.custom_minimum_size.y = _d(60)
@@ -1139,7 +1169,7 @@ func _autres_matchs(sigles: bool = false) -> Control:
 	var col := _v(4)
 	cadre.add_child(col)
 	var etape := _etape_courte()
-	col.add_child(_texte(("Les autres matchs de la " + etape if not etape.is_empty() else "Les autres matchs de la journée").to_upper(), 15, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
+	col.add_child(_texte(("Les autres matchs de la " + etape if not etape.is_empty() else "Les autres matchs de la journée").to_upper(), 15, Charte.IVOIRE, Charte.TITRE_GRAS))
 	var grille := GridContainer.new()
 	grille.columns = 3 if sigles else 1
 	grille.name = "ApresMatchAutresGrille"
@@ -1186,7 +1216,7 @@ func _autres_matchs(sigles: bool = false) -> Control:
 		grille.add_child(b)
 		n += 1
 	return cadre
-## Seul aplat or de l'écran (exception écrite de la charte pour l'après-match) : valide le résultat.
+## Seul aplat doré de l'écran (charte : le bouton principal d'une page sans Continuer), en pilule : valide le résultat.
 func _bloc_valider() -> Control:
 	var col := _v(10)
 	col.name = "ApresMatchSuite"
@@ -1210,9 +1240,11 @@ func _bloc_valider() -> Control:
 	cadre_focus.name = "ApresMatchValiderFocus"
 	var trait_focus := StyleBoxFlat.new()
 	trait_focus.draw_center = false
-	trait_focus.border_color = Charte.IVOIRE
+	# Anneau de focus de la charte : doré, 2 px, décalé de 2 px, en pilule comme le bouton.
+	trait_focus.border_color = Charte.OR
 	trait_focus.set_border_width_all(2)
-	trait_focus.set_corner_radius_all(0)
+	trait_focus.set_corner_radius_all(Charte.RAYON_PILULE)
+	trait_focus.anti_aliasing = true
 	cadre_focus.add_theme_stylebox_override("panel", trait_focus)
 	cadre_focus.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cadre_focus.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1224,9 +1256,8 @@ func _bloc_valider() -> Control:
 	b.focus_exited.connect(_maj_focus_clavier)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.set_meta("contextual_enabled", true)
-	var plaque := Trace.new("para", Charte.OR)
+	var plaque := Trace.new("pave", Charte.OR)
 	plaque.name = "ApresMatchValiderFond"
-	plaque.pente_gauche = false
 	plaque.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	b.add_child(plaque)
 	b.mouse_entered.connect(func(): plaque.couleur = Charte.OR_VIF; plaque.queue_redraw())
@@ -1234,20 +1265,20 @@ func _bloc_valider() -> Control:
 	var rang := _h(14)
 	rang.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rang.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	rang.offset_left = _d(24)
-	rang.offset_right = -_d(34)
+	rang.offset_left = _d(28)
+	rang.offset_right = -_d(28)
 	b.add_child(rang)
-	var libelle := _texte("VALIDER LE RÉSULTAT", 22, Charte.NUIT, Charte.TITRE_EXTRA_ITALIQUE)
+	var libelle := _texte("VALIDER LE RÉSULTAT", 22, Charte.PANNEAU, Charte.TITRE_EXTRA)
 	libelle.name = "ApresMatchValiderTexte"
 	C.fill(libelle)
 	rang.add_child(libelle)
 	var filet := ColorRect.new()
-	filet.color = Color(Charte.NUIT, 0.35)
+	filet.color = Color(Charte.PANNEAU, 0.35)
 	filet.custom_minimum_size = Vector2(1, _d(24))
 	filet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rang.add_child(filet)
-	rang.add_child(_texte("Espace", 13, Charte.NUIT))
+	rang.add_child(_texte("Espace", 13, Charte.PANNEAU))
 	b.pressed.connect(valider)
 	bouton_valider = b
 	col.add_child(b)
@@ -1276,7 +1307,7 @@ func valider() -> void:
 func _sous_page(parent: VBoxContainer) -> void:
 	var titre := _h(16)
 	parent.add_child(titre)
-	var t := _texte("LE MATCH EN DÉTAIL", 28, Charte.IVOIRE, Charte.TITRE_EXTRA_ITALIQUE)
+	var t := _texte("LE MATCH EN DÉTAIL", 28, Charte.IVOIRE, Charte.TITRE_EXTRA)
 	t.name = "ApresMatchDetailTitre"
 	titre.add_child(t)
 	var retour := _lien("← Retour au pourquoi", {"kind": "detail", "ouvert": false}, 15, true)
