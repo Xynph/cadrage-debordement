@@ -40,6 +40,8 @@ const EXTRAS := [
 	{"id": "v2-recrutement-confirmation", "libelle": "Recrutement : confirmation en place de l'offre", "type": "recrutement_etape", "etape": "offre_confirmation"},
 	{"id": "v2-recrutement-observation", "libelle": "Recrutement : confirmation en place de l'observation", "type": "recrutement_etape", "etape": "observation"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
+	{"id": "classements-rencontre", "libelle": "Classements · sous-page d'une rencontre", "type": "classements_page", "page": "rencontre"},
+	{"id": "classements-archives", "libelle": "Classements · sous-page des archives des saisons", "type": "classements_page", "page": "archives"},
 	{"id": "options", "libelle": "Options", "type": "options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
@@ -469,6 +471,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if valider == null or valider.disabled: return {"statut": "indisponible", "note": "offre non envoyable pour cette piste"}
 				valider.pressed.emit()
 				await stabiliser()
+		"classements_page":
+			# Sous-pages de Classements (décision de Léo du 19/11/2026 : plus de petite fenêtre) : une rencontre du calendrier du club, les archives.
+			app.management_ui.erase("competition_page")
+			app._navigate("Classements")
+			await stabiliser()
+			var ouvrir: Button = app.find_child("OpenArchives" if str(ecran.page) == "archives" else "CalendarFixture_*", true, false) as Button
+			if ouvrir == null and str(ecran.page) == "rencontre":
+				var lignes := app.find_children("CalendarFixture_*", "Button", true, false)
+				if not lignes.is_empty(): ouvrir = lignes[0]
+			if ouvrir == null: return {"statut": "indisponible", "note": "aucune ligne de calendrier ni lien d'archives"}
+			ouvrir.pressed.emit()
+			await stabiliser()
+			if app.find_child("CompetitionPageBack", true, false) == null: return {"statut": "echec", "note": "la sous-page ne s'est pas ouverte"}
 		"calendrier_semaine":
 			app._navigate("Calendrier")
 			await stabiliser()
