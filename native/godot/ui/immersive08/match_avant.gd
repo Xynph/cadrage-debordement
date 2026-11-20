@@ -874,6 +874,16 @@ func _pied(en_page: bool) -> Control:
 	var aide := _bouton_lien("aide", func(): app._open_coach(), "MatchOpenHelp", 13)
 	aide.tooltip_text = "Aide de Gabi · F1"
 	ligne.add_child(aide)
+	# Ligne d'état de la carrière (sauvegarde, action refusée) : le pied de la coque n'existe pas ici, elle vit dans ce pied.
+	var etat := texte(app._status_line_text() if app.has_method("_status_line_text") else "", 13, Charte.IVOIRE_2, false, 500)
+	etat.name = "ImmersiveSaveStatus"
+	etat.add_theme_font_override("font", C.BODY)
+	etat.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	etat.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	etat.clip_text = true
+	C.fill(etat)
+	ligne.add_child(etat)
+	app.status = etat
 	return marge
 
 # ---- Les quatre vérifications -----------------------------------------------------------------------------------
@@ -1002,11 +1012,21 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 	intro.add_theme_font_override("font", C.BODY)
 	intro.name = "FeuilleConsigne"
 	column.add_child(intro)
-	var barres := HBoxContainer.new()
+	# Petite fenêtre (1280 × 720) : deux rangées de repères (1 à 8, 9 à 15) pour garder des cibles d'au moins 20 px.
+	var deux_rangees := C.dense()
+	var barres := VBoxContainer.new()
 	barres.name = "FeuilleConditions"
-	barres.add_theme_constant_override("separation", M(3))
-	barres.custom_minimum_size.y = M(130)
+	barres.add_theme_constant_override("separation", M(4))
 	barres.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var rangees: Array[HBoxContainer] = []
+	for r in (2 if deux_rangees else 1):
+		var rangee := HBoxContainer.new()
+		rangee.add_theme_constant_override("separation", M(3))
+		rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		rangee.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		barres.add_child(rangee)
+		rangees.append(rangee)
+	barres.custom_minimum_size.y = M(190 if deux_rangees else 130)
 	for i in 15:
 		var barre := Barre.new()
 		barre.name = "FeuilleBarre%d" % (i + 1)
@@ -1015,7 +1035,7 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 		barre.mini = CONDITION_MINI
 		barre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		barre.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		barre.custom_minimum_size = Vector2(M(18), M(110))
+		barre.custom_minimum_size = Vector2(M(18), M(92 if deux_rangees else 110))
 		if not str(ids[i]).is_empty():
 			barre.tooltip_text = ""
 			barre.accessibility_name = "N° %d, %s, condition %d %%" % [i + 1, noms[i], roundi(conditions[i])]
@@ -1025,7 +1045,12 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 		else:
 			barre.disabled = true
 			barre.mouse_default_cursor_shape = Control.CURSOR_ARROW
-		barres.add_child(barre)
+		rangees[1 if deux_rangees and i >= 8 else 0].add_child(barre)
+	if deux_rangees:
+		var vide := Control.new()
+		vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vide.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		rangees[1].add_child(vide)
 	column.add_child(barres)
 	var note_texte := ""
 	if etat.incomplete:

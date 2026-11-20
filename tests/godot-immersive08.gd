@@ -1130,9 +1130,15 @@ func navigation_flow() -> void:
 	check(app.route=="Match" and app._live().is_empty() and app.management_ui.preparation.tab==2 and app.bridge._next_id==command_id,"Continuer ouvre l’avant-match sans lancer la rencontre et mémorise l’entraînement")
 	var back: Button = app.find_child("NavigationBack",true,false)
 	var forward: Button = app.find_child("NavigationForward",true,false)
-	check(back!=null and not back.disabled and forward!=null and forward.disabled,"L’historique de lecture est accessible à la souris")
-	if back!=null: await click(back); await settle()
-	else: await key(KEY_LEFT,false,true)
+	# L'avant-match se joue hors coque (revue DA du 19/11/2026) : pas de boutons ← → dans une barre haute absente, l'historique
+	# reste accessible au clavier (Alt gauche / Alt droite) ; dans la coque, il reste accessible à la souris.
+	if app.get_meta("hors_coque",false):
+		check(back==null and app.navigation_controller._destination(-1)>=0 and app.navigation_controller._destination(1)<0,"L’historique de lecture est accessible au clavier depuis l’avant-match hors coque")
+		await key(KEY_LEFT,false,true)
+	else:
+		check(back!=null and not back.disabled and forward!=null and forward.disabled,"L’historique de lecture est accessible à la souris")
+		if back!=null: await click(back); await settle()
+		else: await key(KEY_LEFT,false,true)
 	check(app.find_child("ImmersiveTraining",true,false)!=null,"Retour restaure l’entraînement plutôt que le dossier adverse")
 	await key(KEY_RIGHT,false,true)
 	check(app.route=="Match" and app._live().is_empty(),"Alt droite rétablit l’avant-match")
