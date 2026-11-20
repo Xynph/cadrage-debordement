@@ -521,7 +521,8 @@ function aiRosterPrepareMarket(){
  const occupied=new Set([...S.clubs.flatMap(c=>c.players),...S.economy.freeAgents,
   ...S.development.academy,...S.aiRoster.academies.flatMap(a=>a.players)].map(p=>p.id));
  for(const [slot] of AI_POPULATION_DEPTH){
-  const count=S.economy.freeAgents.filter(p=>p.age>=18&&slotEligible(p,slot)&&p.age<p.dev.retireAge-1).length;
+  // Poste naturel : un premier-ligne qui peut dépanner à l'ouverture ne couvre pas le besoin d'un demi d'ouverture.
+  const count=S.economy.freeAgents.filter(p=>p.age>=18&&naturalSlot(p,slot)&&p.age<p.dev.retireAge-1).length;
   for(let index=0,added=0;added<Math.max(0,quota-count)&&S.economy.freeAgents.length<limit;index++){
    const p=aiRosterSmallClubPlayer(slot,index);if(occupied.has(p.id))continue;
    occupied.add(p.id);aiRosterPoolEntry(p,'small-club');added++;emerged++;aiRosterPopulationReport().emerged++;
@@ -531,7 +532,7 @@ function aiRosterPrepareMarket(){
  // Academy minors are never counted as recruitable replacements.
  while(emerged<emergenceLimit&&S.economy.freeAgents.length<limit&&
   aiRosterAccessibleCount()<state.referenceAccessible){
-  const slots=AI_POPULATION_DEPTH.map(([slot,weight])=>({slot,weight,count:S.economy.freeAgents.filter(p=>p.age>=18&&slotEligible(p,slot)).length}))
+  const slots=AI_POPULATION_DEPTH.map(([slot,weight])=>({slot,weight,count:S.economy.freeAgents.filter(p=>p.age>=18&&naturalSlot(p,slot)).length}))
    .sort((a,b)=>a.count/a.weight-b.count/b.weight||a.slot-b.slot);
   const slot=slots[0].slot;let index=0,p;
   do{p=aiRosterSmallClubPlayer(slot,index++)}while(occupied.has(p.id));
