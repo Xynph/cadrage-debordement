@@ -12,8 +12,8 @@ const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
 const EntityLink = preload("res://ui/entity_link.gd")
 const Zones = preload("res://ui/immersive08/standings_zones.gd")
-const UPCOMING_TILE = Color("26231b")
-const UPCOMING_BORDER = Color("706042")
+const UPCOMING_TILE = C.RAISED
+const UPCOMING_BORDER = C.LINE
 ## Hauteur fixe des tuiles « Prochains matchs » (gabarit 2560 × 1440).
 const TIMELINE_TILE := 156
 const TIMELINE_TILE_JAPAN := 182
@@ -91,7 +91,7 @@ static func update_live_card(app: Control) -> void:
 		for item: Dictionary in priorities(app.model):
 			if item.id != "OfficeLivePriorityAction": continue
 			var number := int(priority.get_meta("priority_number",1))
-			priority.text = "%d. %s" % [number,item.title]
+			priority.text = ("%d. %s" % [number,item.title]) if priority.get_meta("inline_number",true) else str(item.title)
 			priority.tooltip_text = item.title + "\n" + priority_description(item)
 			priority.accessibility_name = priority.tooltip_text.replace("\n"," · ")
 			for pair in [["OfficePriorityDeadline",item.deadline],["OfficePriorityReason",item.detail]]:
@@ -107,6 +107,9 @@ static func _card(parent: Node, id: String, title: String, height: int, ratio: f
 
 static func _link(parent: Node, id: String, text: String, app: Control, route: String, primary: bool = false) -> Button:
 	var action := C.button(text, func(): app._navigate(route), primary, app.accent)
+	if not primary:
+		C.style_bouton_lien(action, 21)
+		action.custom_minimum_size.y = C.px(30)
 	action.name = id
 	parent.add_child(action)
 	return action
@@ -238,10 +241,10 @@ static func scheduled_venue(app: Control, fixture: Dictionary) -> String:
 	var location := P.fixture_location_kind(fixture, app.model.club.id)
 	return P.fixture_venue(fixture, false, location != "neutral")
 
-static func territory_art(club: Dictionary) -> VBoxContainer:
+static func territory_art(club: Dictionary, horizontal: bool = false) -> BoxContainer:
 	var identity := G.identity(club)
 	var photos: Dictionary = identity.get("photos", {})
-	var cards := C.v(6)
+	var cards: BoxContainer = C.h(6) if horizontal else C.v(6)
 	cards.name = "OfficeTerritoryPreviews"
 	cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for info in [["city","VILLE DU CLUB","OfficeCityPreview"],["stadium","STADE DU CLUB","OfficeStadiumPreview"]]:
@@ -279,7 +282,7 @@ static func build(app: Control) -> Control:
 	page.add_child(top)
 	var hero := _card(top, "OfficeFixture", "", 418, 1.56)
 	_fixture(hero, app)
-	var priorities := _card(top, "OfficeDecisions", "▦  Tes trois priorités", 418)
+	var priorities := _card(top, "OfficeDecisions", "Tes trois priorités", 418)
 	_priorities(C.content(priorities), app)
 	# Un seul défilement pour toute la page (celui de l'espace de travail) : l'ancien défilement interne
 	# laissait au classement et aux cartes du dessous la hauteur restante sous le prochain match, soit
@@ -289,11 +292,11 @@ static func build(app: Control) -> Control:
 	middle.name = "OfficeReadingGrid"
 	middle.custom_minimum_size.y = C.px(448)
 	reading.add_child(middle)
-	_group(C.content(_card(middle, "OfficeGroup", "♡  État du groupe", 448, .77)), app)
-	_standings(C.content(_card(middle, "OfficeStandings", "♜  Classement · " + P.league_name(app.model), 448, 1.25)), app)
-	_journal(C.content(_card(middle, "OfficeJournal", "✉  Dans ton Bureau", 448)), app)
-	_recruitment(C.content(_card(middle, "OfficeRecruitment", "⌕  Le profil à suivre", 448)), app)
-	var timeline := _card(reading, "OfficeTimeline", "▦  Prochains matchs", 226)
+	_group(C.content(_card(middle, "OfficeGroup", "État du groupe", 448, .77)), app)
+	_standings(C.content(_card(middle, "OfficeStandings", "Classement · " + P.league_name(app.model), 448, 1.25)), app)
+	_journal(C.content(_card(middle, "OfficeJournal", "Dans ton courrier", 448)), app)
+	_recruitment(C.content(_card(middle, "OfficeRecruitment", "Le profil à suivre", 448)), app)
+	var timeline := _card(reading, "OfficeTimeline", "Prochains matchs", 226)
 	# Frise à hauteur fixe : elle ne s'étire plus pour remplir le bas d'une grande fenêtre.
 	timeline.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_timeline(C.content(timeline), app)
@@ -310,7 +313,7 @@ static func recent_results(app: Control) -> PanelContainer:
 	played.reverse()
 	var panel := C.card()
 	panel.name = "OfficeRecentResults"
-	panel.add_theme_stylebox_override("panel",C.box(Color("121c27"),Color("61798f"),6,10))
+	panel.add_theme_stylebox_override("panel",C.box(C.PANEL,C.LINE,0,10))
 	var content := C.content(panel)
 	var header := C.h(8)
 	content.add_child(header)
@@ -333,7 +336,7 @@ static func recent_results(app: Control) -> PanelContainer:
 		var location := P.fixture_location_kind(fixture, club_id)
 		var place: String = {"home":"Domicile","away":"Extérieur","neutral":"Terrain neutre"}.get(location,"")
 		var tile := C.card()
-		tile.add_theme_stylebox_override("panel",C.box(Color("1a2936"),Color("52677d"),5,8))
+		tile.add_theme_stylebox_override("panel",C.box(C.RAISED,C.LINE,0,8))
 		row.add_child(C.fill(tile))
 		var matchup := C.h(12)
 		C.content(tile).add_child(matchup)
@@ -343,7 +346,7 @@ static func recent_results(app: Control) -> PanelContainer:
 		var score_card := PanelContainer.new()
 		score_card.custom_minimum_size = Vector2(C.px(102),C.px(50))
 		score_card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		score_card.add_theme_stylebox_override("panel",C.box(Color("101a23").lerp(tint,.12),tint,5,4))
+		score_card.add_theme_stylebox_override("panel",C.box(C.PANEL,tint,0,4))
 		score_card.add_child(points)
 		var fixture_key := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
 		matchup.add_child(reading_control(app, score_card, score_reading_target(app, fixture), "OfficeRecentFixture_" + fixture_key, "Rencontre · " + points.text))
@@ -527,6 +530,21 @@ static func _live_content(left: VBoxContainer, match_info: Dictionary) -> void:
 		detail.name = "OfficeLiveFixtureDetail"
 		left.add_child(detail)
 
+static func _clic_priorite(event: InputEvent, app: Control, item: Dictionary) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT: open_priority(app, item)
+
+## Tuile « Prochains matchs » : le prochain ouvre la préparation, les autres le jour au calendrier.
+static func _clic_tuile(event: InputEvent, app: Control, fixture: Dictionary, premier: bool) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT): return
+	var cible := date_reading_target(app, fixture)
+	if premier and app.model.get("next") is Dictionary and not app.model.next.is_empty(): app._navigate("Préparation")
+	elif not cible.is_empty(): app.navigation_controller.open_entity(cible)
+	else: app._navigate("Calendrier")
+
+static func _clic_compteur(event: InputEvent, app: Control, blesses: bool) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT): return
+	if blesses and app.navigation_controller.has_method("open_roster_injured"): app.navigation_controller.open_roster_injured()
+	else: app.navigation_controller.open_roster_group()
 static func priorities(model: Dictionary) -> Array[Dictionary]:
 	return Priorities.select(model)
 
@@ -545,7 +563,9 @@ static func open_priority(app: Control, item: Dictionary) -> void:
 			app._navigate("Sélections")
 		"squad": app.navigation_controller.open_roster_group()
 		"contract": _open_player(app,str(item.player))
-		"youth_review": preload("res://ui/youth_development_view.gd").open(app,str(item.player))
+		"youth_review":
+			# Un écran, pas une fenêtre : la fiche de l'Espoir (Formation) ; à défaut, l'écran Formation.
+			if not app.navigation_controller.open_entity({"kind":"academy","id":str(item.player)}): app._navigate("Formation")
 		"preparation": app._navigate("Préparation")
 		"training": app.Immersive.open_training(app)
 		"recruitment": app._navigate("Recrutement")
@@ -561,6 +581,8 @@ static func _priorities(parent: VBoxContainer, app: Control) -> void:
 		var tint := priority_color(choice)
 		var tile := C.card()
 		tile.name = "OfficePriority" + str(i+1)
+		tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		tile.gui_input.connect(_clic_priorite.bind(app,choice))
 		tile.add_theme_stylebox_override("panel", C.box(Color(tint,.035),Color(tint,.24),4,6))
 		parent.add_child(tile)
 		var line := C.h(10)
@@ -592,11 +614,9 @@ static func _priorities(parent: VBoxContainer, app: Control) -> void:
 	if not choices.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason",false) and app.model.meta.get("phase","") != "ended":
 		var training := C.button("Entraînement",func():app.Immersive.open_training(app),false,app.accent)
 		training.name = "OfficeTrainingAction"
+		C.style_bouton_lien(training)
+		training.custom_minimum_size.y = C.px(30)
 		shortcuts.add_child(C.fill(training))
-	var notebook := C.button("Mon carnet personnel",func():open_notebook(app),false,app.accent)
-	notebook.name = "OpenCoachNotebook"
-	notebook.custom_minimum_size.y = maxi(30,C.px(40))
-	shortcuts.add_child(C.fill(notebook))
 
 static func _group(parent: VBoxContainer, app: Control) -> void:
 	var group := P.group(app.model)
@@ -606,6 +626,10 @@ static func _group(parent: VBoxContainer, app: Control) -> void:
 		var col := C.h(10)
 		C.fill(col)
 		counts.add_child(col)
+		col.mouse_filter = Control.MOUSE_FILTER_STOP
+		col.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		col.tooltip_text = "Voir les joueurs " + str(pair[1])
+		col.gui_input.connect(_clic_compteur.bind(app,pair[1] == "blessés"))
 		col.add_child(C.label(pair[0], 58, pair[2]))
 		col.add_child(C.label(pair[1], 23))
 	parent.add_child(C.rule())
@@ -625,17 +649,21 @@ static func _group(parent: VBoxContainer, app: Control) -> void:
 		if group.watched > 0:
 			var watched := C.button(U.watch_caption(group.watched) + "  →", app.navigation_controller.open_watched_roster)
 			watched.name = "OfficeWatchedAction"
-			watched.add_theme_color_override("font_color", C.AMBER)
+			C.style_bouton_lien(watched, 21)
+			watched.custom_minimum_size.y = C.px(30)
 			parent.add_child(watched)
 		if titulaires > 0:
 			var feuille := C.button(texte_fatigue + "  →", func(): app._navigate("Composition"))
 			feuille.name = "OfficeFatigueAction"
-			feuille.add_theme_color_override("font_color", C.AMBER)
+			C.style_bouton_lien(feuille, 21)
+			feuille.custom_minimum_size.y = C.px(30)
 			parent.add_child(feuille)
 	else:
 		parent.add_child(C.wrap("Aucune alerte physique", 22, C.MINT, true))
 	var roster := C.button("Consulter le groupe  →", app.navigation_controller.open_roster_group)
 	roster.name = "OfficeSquadAction"
+	C.style_bouton_lien(roster, 21)
+	roster.custom_minimum_size.y = C.px(30)
 	parent.add_child(roster)
 
 static func _standings(parent: VBoxContainer, app: Control) -> void:
@@ -741,7 +769,7 @@ static func standing_action(app: Control, club: Dictionary) -> Button:
 	action.flat=true
 	action.set_meta("club_id",club.get("id"))
 	for key in ["won","drawn","lost"]: action.set_meta(key,S.count_text(club.get(key)))
-	action.tooltip_text="%s\nVictoires %s  ·  Nuls %s  ·  Défaites %s\nOuvrir le classement complet" % [G.club_name(club),action.get_meta("won"),action.get_meta("drawn"),action.get_meta("lost")]
+	action.tooltip_text="%s\nVictoires %s  ·  Nuls %s  ·  Défaites %s\nOuvrir la fiche du club" % [G.club_name(club),action.get_meta("won"),action.get_meta("drawn"),action.get_meta("lost")]
 	var zone := Zones.of(club)
 	if not zone.is_empty():
 		# Monde : la zone du règlement est dite, pas seulement montrée (liseré et symbole posés par le Bureau).
@@ -753,20 +781,30 @@ static func standing_action(app: Control, club: Dictionary) -> Button:
 	focus.set_border_width_all(2)
 	action.add_theme_stylebox_override("focus",focus)
 	action.add_theme_stylebox_override("hover",C.box(Color(C.MINT,.07),Color(C.MINT,.68),4,0))
-	action.pressed.connect(open_current_standings.bind(app))
+	action.pressed.connect(open_club_row.bind(app,club))
 	return action
+
+## Ligne du classement court : la fiche du club (son écran « Club » pour le nôtre) ; à défaut, le classement complet.
+static func open_club_row(app: Control, club: Dictionary) -> void:
+	var target := {"kind":"club","id":str(club.get("id",""))}
+	if club.get("id") == null or not is_instance_valid(app.navigation_controller) or not app.navigation_controller.open_entity(target):
+		open_current_standings(app)
 
 static func _journal(parent: VBoxContainer, app: Control) -> void:
 	var messages: Array = app.model.get("messages", [])
 	if messages.is_empty(): parent.add_child(C.wrap("Les nouvelles de ta carrière apparaîtront ici.", 21))
+	var ids := preload("res://ui/immersive08/office_canvas.gd").message_ids(messages)
 	for index in mini(3, messages.size()):
-		parent.add_child(C.label("CARRIÈRE  ·  ÉVÉNEMENT %02d" % (index+1), 18, [C.BLUE, C.ALERT, C.GOLD][index]))
-		var note := C.wrap(Copy.news(str(messages[index])).replace("l’onglet Contrats", "les fiches joueurs"), 19)
-		note.max_lines_visible = 3
-		note.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		parent.add_child(note)
-		if index < 2: parent.add_child(C.rule())
-
+		# Chaque message ouvre sa lettre dans la Réception.
+		var note := Copy.news(str(messages[index])).replace("l’onglet Contrats", "les fiches joueurs")
+		var titre := note.get_slice("\n", 0).get_slice(". ", 0).strip_edges()
+		var ligne := C.button(titre, preload("res://ui/immersive08/office_canvas.gd").open_message.bind(app, ids[index]))
+		ligne.name = "OfficeJournalMessage" + str(index + 1)
+		C.style_bouton_lien(ligne, 20)
+		ligne.clip_text = true
+		ligne.custom_minimum_size.y = C.px(34)
+		ligne.tooltip_text = "Ouvrir la lettre · " + titre
+		parent.add_child(ligne)
 static func recruitment_spotlight(model: Dictionary) -> Dictionary:
 	var market: Array = model.get("market", [])
 	var needs: Array = model.get("decisions", {}).get("recruitment", {}).get("needs", [])
@@ -808,7 +846,12 @@ static func _recruitment(parent: VBoxContainer, app: Control) -> void:
 		var identity := C.v(6)
 		C.fill(identity)
 		row.add_child(identity)
-		identity.add_child(C.wrap(player.name, 30, C.IVORY, true))
+		var nom := C.button(str(player.name), open_spotlight.bind(app, str(player.get("id",""))))
+		nom.name = "OfficeSpotlightName"
+		C.style_bouton_lien(nom, 26)
+		nom.clip_text = true
+		preload("res://ui/immersive08/mini_fiche.gd").lier(app, nom, str(player.get("id","")), "market")
+		identity.add_child(nom)
 		identity.add_child(C.wrap(str(player.pos) + " · " + G.n(player.age) + " ans", 20))
 		identity.add_child(C.chip("NIVEAU  " + G.rating_text(player)))
 		parent.add_child(C.wrap(G.euros(player.fee) + " · " + G.salary(player.salary), 24, C.IVORY, true))
@@ -851,9 +894,6 @@ static func timeline_period(fixture: Dictionary) -> String:
 	return date if not date.is_empty() else "SEM. %02d" % (int(fixture.get("week", 0))+1)
 
 static func _timeline(parent: VBoxContainer, app: Control) -> void:
-	var planning := C.button("Préparer la suite du club", func(): load("res://ui/manager_planning.gd").open(app))
-	planning.name = "OfficeManagerPlanning"
-	parent.add_child(planning)
 	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var row := C.h(12)
 	parent.add_child(row)
@@ -869,6 +909,8 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 		tile.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		C.fill(tile)
 		row.add_child(tile)
+		tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		tile.gui_input.connect(_clic_tuile.bind(app,fixture,row.get_child_count() == 1))
 		var list := C.content(tile)
 		list.add_theme_constant_override("separation", C.px(4))
 		var period := C.label(timeline_period(fixture), 21, C.GOLD)

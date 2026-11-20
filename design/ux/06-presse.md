@@ -194,3 +194,14 @@ Déviation aux motifs : N2 (un seul jeu d'onglets avec raccourci), F3 (valeur nu
 - [ ] L'écran Presse est affiché ≤ 500 ms après navigation.
 - [ ] Rendu vérifié à 1280×720, 1920×1080, 2560×1440 et 21:9, y compris à 130 % de taille de texte.
 - [ ] Depuis Presse, le joueur n'arrive jamais sur un onglet Conférence sans action possible (questions, ou lien « Ouvrir l'invitation »).
+
+## 13. Intégration de la direction artistique (étape 3, 19/11/2026)
+
+Choix de Léo : **variante 3 · Synthèse à gauche**. Emprunts : la **barre pleine largeur de la variante 2** (état « conférence tenue » : titre, variations Moral / Direction / Médias / Supporters / Pression avant → après, « Consulter le compte rendu ») ; la **pression en verdict à trois paliers** (CALME / SOUS TENSION / TEMPÊTE : mot + symbole + barre segmentée + chiffre, jamais la couleur seule).
+
+- Colonne de gauche : « Ton image » (Médias, Supporters : `n / 100` + mot + barre ; Pression : verdict) ; « La salle de presse » (état, questions / brouillon, un seul bouton ivoire plein, mémoire des échanges, réglage des conférences ordinaires avec coche) ; en état « conférence tenue », la salle de presse laisse sa place à la barre et la colonne ne garde que la mémoire et le réglage.
+- Droite : onglets Journal / Conférence / Historique / Portraits (même jeu d'onglets, contenu monté à la demande), sélecteur de division sur l'onglet Journal (menu déroulant, seule exception).
+- Journal : coupure de journal ivoire (document `papier`) dérivée du vrai résultat choisi (score, compétition, phase, rang au classement) ; tableau des résultats (24 px) ; indisponibilités ; « Voir le classement ». Aucun titre de presse inventé : la rubrique « Ce qu'on dit du club » de la maquette est omise faute de donnée.
+- Liens : club → fiche club ; joueur → fiche complète, mini-fiche au survol ; journaliste → ses Portraits ; score → la coupure ; déclaration / échange → son détail dans Historique ; question/réponse → choix en place (cases à cocher + coche écrite).
+- Aucune petite fenêtre : choix de réponse en place, détails en sous-vue de l'onglet. La salle de presse contextuelle (`ui/contextual/press_room_view.gd`) est inchangée.
+- Boutons : `style_bouton_lien` (actions secondaires), `style_bouton_ivoire_plein` (« Préparer la conférence » ; « Publier mes réponses » le remplace dans l'onglet Conférence). Aucun or.

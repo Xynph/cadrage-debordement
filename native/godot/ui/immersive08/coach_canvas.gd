@@ -16,6 +16,9 @@ extends "res://guide/coach_guide.gd"
 ## Le médaillon du coin bas droit, la bande basse réservée et la réduction de la mise en page sont retirés.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
+const Charte = preload("res://ui/charte.gd")
+const ClubUI = preload("res://ui/immersive08/club_ui.gd")
+const Link = preload("res://ui/entity_link.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const GabiPortrait = preload("res://guide/coach_portrait_3d.gd")
 const Avis = preload("res://guide/gabi_avis.gd")
@@ -85,6 +88,7 @@ var _pied: TextureRect
 var _bureau: Control
 var _bureau_figure: TextureRect
 var _bureau_suivre: Button
+var _bureau_extra: Callable = Callable()
 var _semaine: Dictionary = {}
 ## Contenu de la bulle affichée : {genre: avis|menu|contexte|humeur|fait, texte, action, route, cle}.
 var _contenu: Dictionary = {}
@@ -651,18 +655,25 @@ func _layout_bulle() -> void:
 	_bulle.size = Vector2(width, height)
 	var x := clampf(face.position.x - 22.0, 8.0, app.size.x - width - 8.0)
 	var y := topbar.end.y + 12.0
+	var en_colonne := false
 	if _bandeau_masque and is_instance_valid(_bureau_figure) and _bureau_figure.is_inside_tree():
 		# Visage masqué : la bulle sort de la colonne de Gabi, à sa gauche, sans pointe vers le bandeau.
 		var colonne: Rect2 = (_bureau_figure.get_parent() as Control).get_global_rect()
-		x = clampf(colonne.position.x - width - 16.0, 8.0, app.size.x - width - 8.0)
+		# DA du Bureau (19/11/2026) : la colonne de Gabi occupe tout le côté droit et le reste de l'écran est plein de commandes ;
+		# la bulle s'ouvre donc dans la colonne, à gauche du buste, au-dessus de la bulle fixe du conseil.
+		var buste: Rect2 = _bureau_figure.get_global_rect()
+		x = clampf(maxf(colonne.position.x + 8.0, buste.position.x - width - 8.0), 8.0, app.size.x - width - 8.0)
 		# À hauteur de la tête de Gabi (elle parle), pas en haut de l'écran où elle cacherait les priorités.
 		var tete := _bureau_figure.get_global_rect().position.y + _bureau_figure.get_global_rect().size.y * 0.16
-		y = clampf(tete - 56.0, y, maxf(y, app.size.y - height - 12.0))
+		y = clampf(minf(tete - 56.0, colonne.end.y - height - 12.0), y, maxf(y, app.size.y - height - 12.0))
+		# Trop large pour tenir à gauche du buste : elle se pose juste au-dessus de lui, sans cacher son visage.
+		if x + width > buste.position.x - 4.0: y = clampf(buste.position.y - height - 8.0, topbar.end.y + 12.0, maxf(topbar.end.y + 12.0, app.size.y - height - 12.0))
+		en_colonne = true
 		_bulle.vers_droite = true
 		_bulle.pointe_y = clampf(tete - y, 24.0, height - 24.0)
 	else: _bulle.vers_droite = false
 	# Générique : la bulle ne recouvre aucun contrôle interactif de l'écran (boutons, champs, curseurs).
-	var libre := _position_libre(Vector2(x, y), Vector2(width, height), topbar.end.y + 12.0)
+	var libre := Vector2(x, y) if en_colonne else _position_libre(Vector2(x, y), Vector2(width, height), topbar.end.y + 12.0)
 	x = libre.x; y = libre.y
 	if _bulle_tween == null or not _bulle_tween.is_running(): _bulle.global_position = Vector2(x, y)
 	else: _bulle.global_position.x = x
@@ -885,9 +896,11 @@ func _process(delta: float) -> void:
 func bureau_disponible() -> bool:
 	return is_instance_valid(app) and is_instance_valid(_bulle) and app._has_career() and profile.data.enabled
 
-## Appelé par office_canvas.gd : carnet de la semaine (synthèse et conseil) au-dessus, Gabi debout dessous.
-func installer_bureau(zone: Control) -> void:
+## Appelé par office_canvas.gd : « Ta semaine, vue par Gabi » (synthèse et conseil), le bloc supplémentaire du Bureau
+## (prochains matchs : `extra(zone, haut, largeur) -> hauteur`), puis le buste de Gabi et sa bulle en bas de la colonne.
+func installer_bureau(zone: Control, extra: Callable = Callable()) -> void:
 	_bureau = zone
+	_bureau_extra = extra
 	PremiersPas.observer(profile, str(app.route), app.model, str(app.last_command), bool(app.bridge.last_response_ok))
 	_semaine = Semaine.synthese(app.model)
 	zone.resized.connect(_disposer_bureau.bind(zone))
@@ -897,7 +910,7 @@ func installer_bureau(zone: Control) -> void:
 		_pied.set_moment({"id": "semaine:" + _career_context(app.model) + ":" + str(hash(conseil.get("texte", ""))), "categorie": str(conseil.get("categorie", "consigne")), "ton": str(conseil.get("ton", Avis.NEUTRE))})
 
 func _couleur(nom: String) -> Color:
-	return {"or": C.GOLD, "menthe": C.MINT, "ambre": C.AMBER, "rouge": C.ALERT}.get(nom, C.GOLD)
+	return {"or": Charte.IVOIRE, "menthe": Charte.V, "ambre": Charte.IVOIRE, "rouge": Charte.D}.get(nom, Charte.IVOIRE)
 
 func _disposer_bureau(zone: Control) -> void:
 	if not is_instance_valid(zone) or zone != _bureau: return
@@ -908,57 +921,70 @@ func _disposer_bureau(zone: Control) -> void:
 	var w := zone.size.x / C.density
 	var h := zone.size.y / C.density
 	if w < 120 or h < 200: return
-	var pad := 22.0
-	var text_w := w - pad * 2 - 34
-	# Carnet de la semaine : un panneau vert sombre cerclé d'or, avec une pointe vers Gabi.
+	var pad := 24.0
+	var text_w := w - pad * 2
+	# Carnet de la semaine : un panneau plat, titre italique, une note par sujet (libellé en capitales, texte ivoire).
 	var carnet := Carnet.new()
 	carnet.name = "GabiCarnet"
 	carnet.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zone.add_child(carnet)
 	var y := 40.0
-	var titre := D.text(carnet, pad, y, "TA SEMAINE, VUE PAR GABI", 21, C.GOLD, 700, w - pad * 2)
+	var titre := D.text(carnet, pad, y, "TA SEMAINE, VUE PAR GABI", 26, Charte.IVOIRE, 800, w - pad * 2)
+	titre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	titre.name = "GabiCarnetTitre"
+	y += 16
+	D.line(carnet, Vector2(pad - 4, y), Vector2(w - pad + 4, y), Color(Charte.FILET, .9))
 	y += 14
-	D.line(carnet, Vector2(pad, y), Vector2(w - pad, y), Color(C.GOLD, .3))
-	y += 12
 	var lignes: Array = _semaine.get("lignes", [])
 	for ligne: Dictionary in lignes:
-		y = _ligne_carnet(carnet, pad, y, text_w, str(ligne.get("libelle", "")), str(ligne.get("texte", "")), str(ligne.get("icone", "info")), _couleur(str(ligne.get("couleur", "or"))), "GabiLigne_" + str(ligne.get("cle", "")))
+		y = _ligne_carnet(carnet, pad, y, text_w, str(ligne.get("libelle", "")), str(ligne.get("texte", "")), "", _couleur(str(ligne.get("couleur", "or"))), "GabiLigne_" + str(ligne.get("cle", "")), _ouvrir_ligne(str(ligne.get("cle", ""))))
 	var conseil: Dictionary = _semaine.get("conseil", {})
 	if not conseil.is_empty():
-		y = _ligne_carnet(carnet, pad, y, text_w, "MON CONSEIL", str(conseil.get("texte", "")), "star", C.GOLD, "GabiLigne_conseil")
-		var action: Dictionary = conseil.get("action", {}) if conseil.get("action") is Dictionary else {}
-		if not action.is_empty():
-			_bureau_suivre = D.button(carnet, Rect2(pad + 34, y - 2, w - pad * 2 - 34, 42), str(action.get("libelle", "Suivre le conseil")), suivre_conseil.bind(action), true, "arrow", true, ACCENT, "GabiBureauSuivre")
-			_bureau_suivre.tooltip_text = str(action.get("detail", "Applique la proposition de Gabi (tu peux toujours la défaire)"))
-			_bureau_suivre.disabled = app.waiting or not app._live().is_empty()
-			y += 42 + 16
-	var carnet_h := y + 6
+		y = _ligne_carnet(carnet, pad, y, text_w, "MON CONSEIL", str(conseil.get("texte", "")), "", Charte.IVOIRE, "GabiLigne_conseil", (func(): suivre_conseil(conseil.get("action", {}))) if conseil.get("action") is Dictionary and not conseil.action.is_empty() else Callable())
+	var carnet_h := y + 4
 	D.place(carnet, Rect2(0, 0, w, carnet_h))
-	# Gabi debout, en entier, sous son carnet : il occupe le reste de la zone, pieds en bas.
-	var top := carnet_h + 18
-	var figure_h := h - top - 4
-	if figure_h < 140: return
-	# Chez lui : une lumière chaude derrière Gabi, comme une lampe de bureau, et son ombre au sol.
-	var halo := TextureRect.new()
-	halo.name = "GabiHalo"
-	halo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var glow := Gradient.new()
-	glow.set_color(0, Color(C.GOLD, .13)); glow.set_color(1, Color(C.GOLD, 0.0))
-	var radial := GradientTexture2D.new()
-	radial.gradient = glow; radial.fill = GradientTexture2D.FILL_RADIAL
-	radial.fill_from = Vector2(.5, .5); radial.fill_to = Vector2(.5, 0.0)
-	radial.width = 128; radial.height = 128
-	halo.texture = radial
-	halo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	halo.stretch_mode = TextureRect.STRETCH_SCALE
-	zone.add_child(halo)
-	D.place(halo, Rect2(-w * .15, top - 20, w * 1.3, figure_h * .95))
-	var sol := Sol.new()
-	sol.name = "GabiSol"
-	sol.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	zone.add_child(sol)
-	D.place(sol, Rect2(w * .18, h - 40, w * .64, 30))
+	var bas := carnet_h + 12
+	if _bureau_extra.is_valid(): bas += float(_bureau_extra.call(zone, bas, w)) + 12
+	# Buste de Gabi (160-200 px, du côté opposé au texte) et sa bulle : panneau-2, filet gauche incliné au trait du club.
+	var buste_h := minf(270.0, h - bas - 8)
+	if buste_h < 150.0: return
+	var buste_w := buste_h * .92
+	var bulle_w := w - pad * 2 - buste_w - 20
+	var action: Dictionary = conseil.get("action", {}) if conseil.get("action") is Dictionary else {}
+	var bulle := Panel.new()
+	bulle.name = "GabiBureauBulle"
+	bulle.add_theme_stylebox_override("panel", _plat(Charte.PANNEAU_2))
+	bulle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	zone.add_child(bulle)
+	var bulle_h := minf(buste_h - 30.0, 170.0)
+	D.place(bulle, Rect2(pad, h - 8 - buste_h + (buste_h - bulle_h) / 2.0, bulle_w, bulle_h))
+	var filet := Polygon2D.new()
+	var inc := Charte.decalage(bulle_h)
+	filet.polygon = PackedVector2Array([Vector2(inc, 0) * C.density, Vector2(inc + 5, 0) * C.density, Vector2(5, bulle_h) * C.density, Vector2(0, bulle_h) * C.density])
+	filet.color = Charte.club_trait(app.accent)
+	bulle.add_child(filet)
+	var detail := str(action.get("detail", "")) if not action.is_empty() else ""
+	if detail.is_empty(): detail = "Je suis là si tu as besoin d’un avis."
+	var parole := Label.new()
+	parole.name = "GabiBureauParole"
+	parole.text = detail
+	parole.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	parole.add_theme_font_override("font", C.BODY)
+	parole.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
+	parole.add_theme_color_override("font_color", Charte.IVOIRE)
+	parole.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bulle.add_child(parole)
+	D.place(parole, Rect2(inc + 20, 12, bulle_w - inc - 36, bulle_h - 56))
+	parole.max_lines_visible = 3
+	if not action.is_empty():
+		_bureau_suivre = Link.styled_button(bulle, Rect2(inc + 14, bulle_h - 44, bulle_w - inc - 28, 36), str(action.get("libelle", "Suivre le conseil")), 20, Charte.IVOIRE, "GabiBureauSuivre")
+		_bureau_suivre.add_theme_font_override("font", Charte.texte_moyen())
+		_bureau_suivre.icon = C.icon_texture("arrow", Charte.IVOIRE)
+		_bureau_suivre.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		_bureau_suivre.add_theme_constant_override("icon_max_width", C.px(20))
+		_bureau_suivre.pressed.connect(suivre_conseil.bind(action))
+		_bureau_suivre.tooltip_text = str(action.get("detail", "Applique la proposition de Gabi (tu peux toujours la défaire)"))
+		_bureau_suivre.disabled = app.waiting or not app._live().is_empty()
 	_bureau_figure = TextureRect.new()
 	_bureau_figure.name = "GabiBureauFigure"
 	_bureau_figure.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -971,8 +997,7 @@ func _disposer_bureau(zone: Control) -> void:
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			_bureau_figure.accept_event(); _clic_bandeau())
 	zone.add_child(_bureau_figure)
-	D.place(_bureau_figure, Rect2(0, top, w, figure_h))
-	carnet.pointe_x = zone.size.x * 0.5
+	D.place(_bureau_figure, Rect2(w - pad - buste_w, h - 8 - buste_h, buste_w, buste_h))
 	var source := _source_pied()
 	if source == null: return
 	_bureau_figure.texture = source.texture
@@ -981,6 +1006,20 @@ func _disposer_bureau(zone: Control) -> void:
 		var physical := _bureau_figure.size * _bureau_figure.get_global_transform_with_canvas().get_scale().y
 		if physical.x < 8: physical = _bureau_figure.size
 		source.set_render_size(Vector2i(roundi(physical.x * 1.25), roundi(physical.y * 1.25)))
+
+## Écran ouvert par une ligne du carnet de la semaine : le match → Préparation, le groupe → Effectif, l'alerte → Composition.
+func _ouvrir_ligne(cle: String) -> Callable:
+	var route: String = {"match": "Préparation", "groupe": "Effectif", "alerte": "Composition"}.get(cle, "")
+	if route.is_empty(): return Callable()
+	return func():
+		if not app.waiting and app._live().is_empty(): app._navigate(route)
+
+## Fond plat (rayon 0, ni ombre ni dégradé) des blocs de la colonne de Gabi.
+func _plat(couleur: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = couleur
+	style.set_corner_radius_all(0)
+	return style
 
 ## Appelé par main.gd après chaque rendu : coche les objectifs des premiers pas sur l'événement réel.
 func observer_premiers_pas(route: String, model: Dictionary, command: String, response_ok: bool) -> void:
@@ -996,7 +1035,7 @@ func carte_premiers_pas(page: Control, rect: Rect2) -> float:
 	var objectif := PremiersPas.courant(liste)
 	if objectif.is_empty(): return 0.0
 	var carte := D.panel(page, rect, "", "", "", "GabiPremiersPasCarte")
-	carte.add_theme_stylebox_override("panel", D.surface(rect.size.x, rect.size.y, Color("13241f"), Color("0b1512"), Color(C.GOLD, .45)))
+	carte.add_theme_stylebox_override("panel", _plat(Charte.PANNEAU))
 	var pad := 22.0
 	var boutons_w := 300.0 + 78.0 + 24.0
 	var libelle := "PREMIERS PAS · %d SUR %d" % [PremiersPas.faits(liste), liste.size()]
@@ -1022,7 +1061,7 @@ func _source_pied() -> TextureRect:
 	if not is_instance_valid(_pied):
 		_pied = GabiPortrait.new()
 		_pied.model = portrait.model
-		_pied.framing = "pied"
+		_pied.framing = "buste"
 		_pied.name = "GabiPortraitPied"
 		_coulisse.add_child(_pied)
 		_pied.size = Vector2(4, 4)
@@ -1038,43 +1077,42 @@ func _maj_pied() -> void:
 	if _pied.visible != montrer: _pied.visible = montrer
 	if montrer and is_instance_valid(_bureau_suivre): _bureau_suivre.disabled = app.waiting or not app._live().is_empty()
 
-func _ligne_carnet(parent: Control, pad: float, y: float, text_w: float, libelle: String, texte: String, icone: String, couleur: Color, id: String) -> float:
-	var icon := C.icon(icone, 20, couleur)
-	parent.add_child(icon)
-	D.place(icon, Rect2(pad, y + 2, 20, 20))
-	D.text(parent, pad + 34, y + 17, libelle, 16, couleur, 700, text_w).name = id + "_libelle"
+func _ligne_carnet(parent: Control, pad: float, y: float, text_w: float, libelle: String, texte: String, icone: String, couleur: Color, id: String, ouvrir: Callable = Callable()) -> float:
+	var x0 := pad
+	if not icone.is_empty():
+		var icon := C.icon(icone, 20, couleur)
+		parent.add_child(icon)
+		D.place(icon, Rect2(pad, y + 2, 20, 20))
+		x0 = pad + 34
+		text_w -= 34
+	var px := maxi(12, C.px(19))
+	var height := C.BODY.get_multiline_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, C.px(text_w), px).y / C.density
+	# Toute la ligne ouvre l'écran concerné (sous les noms de joueurs, qui ouvrent leur fiche).
+	if ouvrir.is_valid():
+		var zone := Link.styled_button(parent, Rect2(x0 - 8, y - 2, text_w + 16, height + 30), "", 19, Charte.IVOIRE, id + "_ouvrir")
+		zone.pressed.connect(ouvrir)
+		zone.tooltip_text = "Ouvrir · " + libelle.capitalize()
+		zone.accessibility_name = zone.tooltip_text
+	D.text(parent, x0, y + 17, libelle, 16, Charte.IVOIRE_2 if couleur != Charte.D else couleur, 700, text_w).name = id + "_libelle"
 	var label := Label.new()
 	label.name = id
 	label.text = texte
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_override("font", C.BODY)
-	var px := maxi(12, C.px(19))
 	label.add_theme_font_size_override("font_size", px)
-	label.add_theme_color_override("font_color", C.IVORY)
+	label.add_theme_color_override("font_color", Charte.IVOIRE)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(label)
-	var height := C.BODY.get_multiline_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, C.px(text_w), px).y / C.density
-	D.place(label, Rect2(pad + 34, y + 24, text_w, height + 2))
-	return y + 24 + height + 16
-
-## Panneau du carnet, avec une pointe vers Gabi (en bas).
+	D.place(label, Rect2(x0, y + 24, text_w, height + 2))
+	if ouvrir.is_valid(): load("res://ui/immersive08/office_canvas.gd").noms_cliquables(app, parent, Rect2(x0, y + 24, text_w, height + 2), texte, 19, C.BODY)
+	return y + 24 + height + 12
+## Panneau du carnet : surface plate `panneau`, rayon 0 (charte : ni cadre complet, ni ombre).
 class Carnet extends Control:
 	var pointe_x := 0.0
 	func _draw() -> void:
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color("10241b")
-		style.border_color = Color(Color("d7ad59"), .55)
-		style.set_border_width_all(1)
-		style.set_corner_radius_all(10)
-		style.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
-		if pointe_x <= 0: return
-		var w := 14.0
-		var points := PackedVector2Array([Vector2(pointe_x - w, size.y - 1), Vector2(pointe_x, size.y + 14), Vector2(pointe_x + w, size.y - 1)])
-		draw_colored_polygon(points, style.bg_color)
-		draw_polyline(points, style.border_color, 1.0, true)
+		draw_rect(Rect2(Vector2.ZERO, size), Color("171512"))
 	func _notification(what: int) -> void:
 		if what == NOTIFICATION_RESIZED: queue_redraw()
-
 ## Ombre au sol sous les pieds de Gabi.
 class Sol extends Control:
 	func _draw() -> void:

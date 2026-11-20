@@ -47,10 +47,11 @@ func run() -> void:
 	await wait_command()
 	await Flow.settle_club_meetings(app, self, check)
 	var before := await state()
-	app._navigate("Bureau")
+	# Le Bureau n'ouvre plus cette fenêtre (DA du 19/11/2026) : l'entrée est « Préparer la suite » de la Préparation.
+	app._navigate("Préparation")
 	await settle()
-	var entry := app.find_child("OfficeManagerPlanning", true, false) as Button
-	check(entry != null, "Entrée réelle du Bureau")
+	var entry := app.find_child("PreparationManagerPlanning", true, false) as Button
+	check(entry != null, "Entrée réelle de la Préparation")
 	if entry == null:
 		app.bridge.stop()
 		quit(1)
