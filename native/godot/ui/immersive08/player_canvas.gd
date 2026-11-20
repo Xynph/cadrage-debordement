@@ -6,6 +6,7 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
+const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Tactics = preload("res://ui/immersive08/tactics_canvas.gd")
@@ -525,15 +526,8 @@ static func _contrat_resume(card: Panel, app: Control, player: Dictionary) -> vo
 		app._render()
 		ClubUI.focus(app,"PlayerSaleToggle","FullPlayerTab3"),"PlayerSaleOpen",20)
 	y -= 34
-	var offer:=D.button(card,Rect2(24,y+64,440,48),"PROPOSER UNE PROLONGATION",func():app.SquadViews.contract(app,player,false),true,"",true,app.accent,"OfferRenewal")
-	offer.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	# Bouton ivoire de la maquette (l'or reste réservé à Continuer).
-	offer.add_theme_font_override("font",Charte.TITRE_GRAS_ITALIQUE)
-	offer.add_theme_font_size_override("font_size",maxi(12,C.px(22)))
-	for mode: Array in [["normal",Charte.IVOIRE],["hover",Charte.IVOIRE_2],["pressed",Charte.IVOIRE_2],["disabled",Charte.PANNEAU_3]]:
-		offer.add_theme_stylebox_override(mode[0],C.box(mode[1],Color.TRANSPARENT,3,12))
-	for couleur in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]: offer.add_theme_color_override(couleur,Charte.FOND)
-	offer.add_theme_color_override("font_disabled_color",Charte.IVOIRE_3)
+	# Pilule à contour (charte §7.1) : Continuer porte l'unique aplat doré de l'écran.
+	var offer:=Kit.bouton_ivoire(card,Rect2(24,y+64,440,48),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason
 
@@ -797,7 +791,7 @@ static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	var line := D.text(card,24,183,shown if not reason.is_empty() else sale_short if not sale_short.is_empty() else "Contrat du joueur",19,C.ALERT if not reason.is_empty() else C.GOLD if not sale_short.is_empty() else C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
 	if reason.is_empty() and not sale_status.is_empty(): line.tooltip_text = sale_status
 	elif not reason.is_empty(): line.tooltip_text = reason
-	var offer:=D.button(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"arrow",true,app.accent,"OfferRenewal")
+	var offer:=Kit.bouton_ivoire(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason
 
