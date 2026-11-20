@@ -211,7 +211,8 @@ static func _poser_espace_de_travail(content: Control, scroll: ScrollContainer) 
 	place.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	C.fill(place, true)
 	content.add_child(place)
-	var cadre := Control.new()
+	var cadre := CadreDeRognage.new()
+	cadre.marge = float(Charte.OMBRE_TAILLE)
 	cadre.name = "CareerWorkspaceClip"
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cadre.clip_contents = true
@@ -227,6 +228,13 @@ static func _poser_espace_de_travail(content: Control, scroll: ScrollContainer) 
 	var suivre := func(): if is_instance_valid(place) and is_instance_valid(scroll): place.custom_minimum_size = scroll.get_combined_minimum_size()
 	scroll.minimum_size_changed.connect(suivre)
 	suivre.call()
+
+## Cadre qui rogne le dessin `marge` px plus large que l'espace de travail, mais ne laisse pointer la souris que dans
+## l'espace de travail lui-même (comme avant) : rien ne se survole ni ne se clique dans la bande de l'ombre.
+class CadreDeRognage extends Control:
+	var marge := 0.0
+	func _has_point(point: Vector2) -> bool:
+		return Rect2(Vector2.ONE * marge, size - Vector2.ONE * marge * 2.0).has_point(point)
 
 ## Largeur de référence des gabarits de contenu (2560 − rail historique de 248).
 const CONTENT_REFERENCE_WIDTH := 2312.0
