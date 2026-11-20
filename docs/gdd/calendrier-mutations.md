@@ -170,6 +170,8 @@ engagé (accord, pré-c.) = retireAge ≥ âge + (dernière saison du contrat �
 | Cas | Règle |
 |---|---|
 | Accord d'achat (ou de vente), le joueur n'est plus au club vendeur à la bascule (ne devrait plus arriver : il est réservé dès l'accord) | l'accord tombe (« Le joueur ne fait plus partie de l'effectif de X »), l'argent est rendu : caisses inverses, ligne « Indemnité rendue : Nom » ou « Vente annulée : Nom », indemnité rendue à l'enveloppe de la saison qui commence (achat) ou part de la vente retirée (vente) |
+| Vente imposée pour le prêt de l'actionnaire dont l'accord tombe (joueur disparu) | le remboursement fait à l'accord est annulé : dette de l'actionnaire rétablie (`pretRestituer`), ligne de caisse « Remboursement du prêt de l'actionnaire annulé » |
+| Plus d'accords en attente que la borne `accordsGardes` (160) | la borne n'écarte que les accords d'une saison passée (ou les pré-contrats non signés) : un accord payé en attente n'est jamais supprimé, la liste peut dépasser la borne jusqu'à la bascule |
 | Accord payé, acheteur sans place ou sans moyens à la bascule | accord honoré ; club géré au-dessus de sa capacité : libérations ; club joué : message « Effectif au-dessus du maximum (N/N)… » (§ 3 quater 6) |
 | Club géré acheteur passé sous sa réserve en payant une indemnité (à l'accord) | son président intervient (§ 3 bis 5) ; ses ventes sont des accords payés tout de suite, joueur au 1er juillet ; sans acheteur, « abandon » |
 | Joueur qui devait arrêter à la fin de la saison, engagé avant le 1er janvier | âge de retraite relevé à la conclusion : il rejoint son club et joue son contrat |

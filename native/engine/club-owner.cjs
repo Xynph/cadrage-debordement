@@ -99,6 +99,18 @@ function pretRembourser(id,montant,anticipe=false){
  p.restant=Math.round(p.restant-paye);if(info)info.debt=Math.max(0,Math.round((info.debt||0)-paye));if(anticipe){const k=S.clubBudget?.clubs?.[id];if(k)k.rembourse=(k.rembourse||0)+paye;}
  if(p.restant<=0)delete e[id];
 }
+// Inverse de pretRembourser (vente pour le prêt dont l'accord tombe : joueur disparu) : la dette est rétablie ; si le prêt avait été
+// soldé (ligne supprimée), il est recréé d'après son état d'avant (avant).
+function pretRestituer(id,montant,avant){
+ if(!(montant>0))return false;
+ const e=pretsEtat(),info=typeof worldClub==='function'?worldClub(id):null;
+ if(e[id])e[id].restant=Math.round(e[id].restant+montant);
+ else if(avant&&typeof avant==='object')e[id]={...avant,restant:Math.round(montant)};
+ else return false;
+ if(info)info.debt=Math.round((info.debt||0)+montant);
+ const k=S.clubBudget?.clubs?.[id];if(k)k.rembourse=Math.max(0,Math.round((k.rembourse||0)-montant));
+ return true;
+}
 // Joueur que le président propose de vendre pour rembourser tout de suite : le mieux valorisé hors des cadres.
 function pretVenteProposee(restant){
  if(typeof transferValue!=='function')return null;

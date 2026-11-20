@@ -129,7 +129,7 @@ func executer() -> void:
 				verifier((noeud(app, "SaleConfirmationOk") as Button).text.begins_with("CONCLURE L’ACCORD AVEC"), "libellé = action : " + (noeud(app, "SaleConfirmationOk") as Button).text)
 				verifier((noeud(app, "SaleConfirmationAnnuler") as Button).text == "Annuler", "bouton Annuler")
 				verifier(root.gui_get_focus_owner() == noeud(app, "SaleConfirmationAnnuler"), "focus sur Annuler")
-				verifier(texte(confirmation, "SaleConfirmCash").contains("+" + G.euros(offre.fee)) and texte(confirmation, "SaleConfirmCash").contains("1er juillet"), "caisse : " + texte(confirmation, "SaleConfirmCash"))
+				verifier(texte(confirmation, "SaleConfirmCash").contains("+" + G.euros(offre.fee) + " tout de suite") and texte(confirmation, "SaleConfirmCash").contains("le joueur part le 1er juillet"), "caisse : " + texte(confirmation, "SaleConfirmCash"))
 				verifier(texte(confirmation, "SaleConfirmSquad").contains("Effectif après la vente : %d" % int(offre.squadAfter)), "effectif après vente : " + texte(confirmation, "SaleConfirmSquad"))
 				verifier(texte(confirmation, "SaleConfirmBudget").begins_with("Budget de transferts"), "part rendue au budget : " + texte(confirmation, "SaleConfirmBudget"))
 				textes_lisibles(confirmation, "confirmation")

@@ -110,6 +110,22 @@ test('Moteur Monde : prêt du club joué, remboursement hebdomadaire, courrier d
     assert.equal(apres.n, avant.n - 1);
     assert.equal(apres.dette, conclu.dette, 'rien de plus au départ : ' + JSON.stringify([avant, conclu, apres]));
     assert.ok(apres.lignes.some(t => /Remboursement anticipé/.test(t)) && apres.lignes.some(t => /^Vente/.test(t)), JSON.stringify(apres.lignes));
+    // Vente pour le prêt dont le joueur disparaît avant la bascule : l'accord tombe, la dette de l'actionnaire est rétablie.
+    const tombe = lire(`(()=>{
+      const q=club().players[0],acheteur=S.clubs.find(c=>c.id!==S.club);
+      S.pretsActionnaires[S.club]={restant:500000,annuite:234000,saison:S.season-1,dernier:500000};worldClub(S.club).debt+=500000;
+      const dette0=worldClub(S.club).debt,cash0=club().cash;
+      const a=venteNouvelAccord({playerId:q.id,joueur:q.name,buyer:acheteur.id,acheteur:acheteur.name,fee:300000,date:calArrivee(),imposee:true,pret:true});
+      const mid={restant:S.pretsActionnaires[S.club]?.restant??0,dette:worldClub(S.club).debt};
+      club().players=club().players.filter(p=>p.id!==q.id);
+      venteExecuterAccords('ventes');
+      return {dette0,cash0,mid,restant:S.pretsActionnaires[S.club]?.restant??0,dette:worldClub(S.club).debt,cash:club().cash,paye:a.paye,lignes:S.ledger.slice(0,4).map(e=>e.title)};})()`);
+    assert.equal(tombe.paye, true);
+    assert.equal(tombe.mid.restant, 200000, 'prêt remboursé à l’accord : ' + JSON.stringify(tombe));
+    assert.equal(tombe.restant, 500000, 'dette rétablie quand l’accord tombe : ' + JSON.stringify(tombe));
+    assert.equal(tombe.dette, tombe.dette0, 'dette du club rétablie');
+    assert.equal(tombe.cash, tombe.cash0, 'caisse revenue à son niveau d’avant l’accord');
+    assert.ok(tombe.lignes.some(t => /prêt de l’actionnaire annulé/.test(t)), JSON.stringify(tombe.lignes));
   } finally { jeu.fermer(); }
 });
 

@@ -388,7 +388,7 @@ func _on_model(value: Dictionary) -> void:
 		negotiation = {}
 		close_button.disabled = true
 		var receipt: Dictionary = value.get("meta",{}).get("interclubTransfer",{})
-		if receipt.get("deferred", false): local_message.text = "Accord conclu hors période des mutations : le joueur rejoindra ton club le %s. L’indemnité est engagée sur le budget de transferts ; elle sera versée à son arrivée." % str(receipt.get("dateLabel", ""))
+		if receipt.get("deferred", false): local_message.text = "Accord conclu : le joueur rejoindra ton club le %s. L’indemnité est déjà versée, prélevée sur le budget de transferts." % str(receipt.get("dateLabel", ""))
 		else: local_message.text = "Accord conclu : le joueur rejoint ton club." if receipt.get("humanWon",false) else "Un club concurrent a remporté le joueur. Ta trésorerie est conservée."
 	elif app.last_command == "precontract_offer":
 		pending = false
@@ -422,7 +422,7 @@ func _confirm_auction() -> void:
 	var libelle := "Clôturer au devis : " + G.euros(winner.fee)
 	# Hors période des mutations (calendrier-mutations.cjs) : accord conclu maintenant, arrivée à l'ouverture.
 	if negotiation.get("deferred") is Dictionary:
-		phrase = "Hors période des mutations : l’accord est conclu maintenant (%s d’indemnité, %s), le joueur rejoindra ton club le %s. L’accord est définitif." % [G.euros(winner.fee), G.salary(winner.salary), str(negotiation.deferred.get("dateLabel", ""))]
+		phrase = "L’accord est conclu maintenant et l’indemnité est versée tout de suite (%s d’indemnité, %s) ; le joueur rejoindra ton club le %s. L’accord est définitif." % [G.euros(winner.fee), G.salary(winner.salary), str(negotiation.deferred.get("dateLabel", ""))]
 		libelle = "Conclure l’accord"
 	var envoyer := func():
 		pending=true; close_button.disabled=true; fee_input.editable=false; salary_input.editable=false

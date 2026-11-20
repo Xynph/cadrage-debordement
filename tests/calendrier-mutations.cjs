@@ -415,6 +415,27 @@ test('Bascule : part d’une vente rendue à l’accord, achat tombé rendu à l
   } finally { restaurer(); jeu.fermer(); }
 });
 
+// Liste des accords entre clubs gérés bornée (accordsGardes) : un accord payé et en attente n'est jamais supprimé, seuls les
+// accords d'une saison passée le sont (sinon l'argent déjà passé à l'accord serait perdu avec le transfert).
+test('Accords payés en attente : jamais écartés par la borne de la liste', { timeout: 600000 }, () => {
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    creer(jeu, CLUB);
+    const { lire, run } = outils(jeu);
+    const borne = R.clubsGeres.accordsGardes;
+    const n = borne + 40;
+    run(`(()=>{const st=calIAEtat();st.accordsIA=[];
+      for(let i=0;i<${n};i++)st.accordsIA.push({id:'faux-'+i,playerId:'faux'+i,nom:'Faux '+i,pos:'1',vendeurId:1,vendeur:'V',acheteurId:2,acheteur:'A',montant:1000,salaire:1000,annees:1,date:'',saison:S.season,paye:true});
+      st.accordsIA.unshift({id:'vieux',playerId:'vieux',nom:'Vieux',pos:'1',vendeurId:1,vendeur:'V',acheteurId:2,acheteur:'A',montant:1,salaire:1,annees:1,date:'',saison:S.season-1,paye:true});
+      const s=S.clubs.find(c=>c.id!==S.club),b=S.clubs.find(c=>c.id!==S.club&&c.id!==s.id);
+      calIANouvelAccord(b,s,s.players[0],1000,1000,1);})()`);
+    const ids = lire('S.calendrierMutations.accordsIA.map(a=>a.id)');
+    for (let i = 0; i < n; i++) assert.ok(ids.includes('faux-' + i), 'accord payé en attente conservé : faux-' + i);
+    assert.equal(ids.length, n + 1, 'les accords en attente et le nouveau restent ; l’accord de la saison passée est écarté');
+    assert.equal(ids.includes('vieux'), false, 'l’accord de la saison passée est écarté');
+  } finally { restaurer(); jeu.fermer(); }
+});
+
 // Décisions de Léo du 20/11/2026 (GDD calendrier-mutations § 3, § 3 quater) : vente conclue en octobre encaissée le jour
 // même ; achat payé à l'accord ; place de la saison suivante vérifiée à l'accord ; retraite annoncée à la première clôture
 // de janvier (période simulée) puis refus d'achat, de vente et de pré-contrat ; un joueur engagé avant l'annonce ne prend

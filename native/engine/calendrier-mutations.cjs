@@ -414,6 +414,13 @@ settleContracts=function(){
 const calG=()=>calR().clubsGeres;
 function calIAEtat(){const st=calEtat(true);st.accordsIA??=[];st.ia??=[];st.rumeurs??=[];return st;}
 const calIAListe=k=>calEtatValide(S.calendrierMutations)&&Array.isArray(S.calendrierMutations[k])?S.calendrierMutations[k]:[];
+// Borne de la liste des accords : seuls les plus anciens accords déjà réglés (saison passée, tombés ou exécutés) sont écartés.
+// Un accord en attente (déjà payé à l'accord, exécuté à la bascule) n'est JAMAIS supprimé, même au-delà de la borne : sa
+// disparition ferait perdre l'argent de l'acheteur et le transfert. enAttente(x) : vrai pour un accord à garder.
+function calGarder(liste,borne,enAttente){
+ let exces=liste.length-Math.max(1,borne|0);if(exces<=0)return liste;
+ return liste.filter(x=>{if(exces>0&&!enAttente(x)){exces--;return false;}return true;});
+}
 const calIAAccord=id=>calIAListe('accordsIA').find(a=>a.playerId===id&&a.saison===S.season)||null;
 const calIAPre=id=>calIAListe('ia').find(x=>x.playerId===id&&x.etat==='signe'&&x.saison===S.season)||null;
 const calPoste=p=>String(p.pos||'').toLowerCase();
@@ -472,7 +479,7 @@ function calActuAccord(text){
 function calIANouvelAccord(b,s,p,montant,salaire,annees){
  const st=calIAEtat();st.seq++;
  const a={id:'ia-'+st.seq,playerId:p.id,nom:p.name,pos:p.pos,vendeurId:s.id,vendeur:s.name,acheteurId:b.id,acheteur:b.name,montant,salaire,annees,date:calJour()||'',saison:S.season,paye:true};
- st.accordsIA.push(a);st.accordsIA=st.accordsIA.slice(-calG().accordsGardes);
+ st.accordsIA.push(a);st.accordsIA=calGarder(st.accordsIA,calG().accordsGardes,x=>x.saison>=S.season);
  const avant=b.cash;b.cash-=montant;s.cash+=montant;calProlongerCarriere(p,S.season+annees);
  if(typeof repriseApresAchat==='function'&&b.id!==S.club)repriseApresAchat(b,avant);
  const texte=b.name+' s’est mis d’accord avec '+s.name+' pour '+p.name+' ('+calPoste(p)+') : il arrivera le '+calJourMois(calArrivee())+'.';
@@ -575,7 +582,7 @@ function calIAPreContrats(){
   if(signes<n){
    const sal=salaire(b),annees=Math.max(1,Math.min(p.age<=27?3:p.age<=30?2:1,typeof careerContractYears==='function'?careerContractYears(p)-1:3));st.seq++;
    st.ia.push({id:'iapre-'+st.seq,playerId:p.id,nom:p.name,pos:p.pos,vendeurId:c.id,vendeur:c.name,acheteurId:b.id,acheteur:b.name,salaire:sal,annees,date:j,saison:S.season,etat:'signe'});
-   st.ia=st.ia.slice(-P.gardes);calProlongerCarriere(p,S.season+annees);
+   st.ia=calGarder(st.ia,P.gardes,x=>x.saison>=S.season&&x.etat==='signe');calProlongerCarriere(p,S.season+annees);
    achats.set(b.id,(achats.get(b.id)||0)+1);departs.set(c.id,(departs.get(c.id)||0)+1);signes++;
    if(rumeur)rumeur.suite='signe';
    const texte=b.name+' a signé '+p.name+' ('+calPoste(p)+' de '+c.name+') pour la saison prochaine.';

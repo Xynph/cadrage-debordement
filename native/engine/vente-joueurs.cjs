@@ -87,7 +87,7 @@ function venteEncaisser(a){
  buyer.cash-=a.fee;
  ledgerEntry((a.imposee&&!a.pret?'Vente décidée par le président : ':'Vente : ')+a.joueur+' (départ le '+quand+')',a.fee);
  if(!a.imposee&&typeof budgetTransfertsRecette==='function')a.rendu=budgetTransfertsRecette(a.fee,true)||0;
- if(a.pret&&typeof pretRembourser==='function'){const reste=S.pretsActionnaires?.[S.club]?.restant||0,r=Math.min(reste,a.fee);if(r>0){(typeof ledgerEntryV1==='function'?ledgerEntryV1:ledgerEntry)('Remboursement anticipé du prêt de l’actionnaire',-r);pretRembourser(S.club,r,true);}}
+ if(a.pret&&typeof pretRembourser==='function'){const reste=S.pretsActionnaires?.[S.club]?.restant||0,r=Math.min(reste,a.fee);if(r>0){a.pretRendu=r;a.pretAvant={...S.pretsActionnaires[S.club]};(typeof ledgerEntryV1==='function'?ledgerEntryV1:ledgerEntry)('Remboursement anticipé du prêt de l’actionnaire',-r);pretRembourser(S.club,r,true);}}
  if(p&&typeof calProlongerCarriere==='function')calProlongerCarriere(p,Math.max(p.contractEnd??S.season,S.season+1));
  a.paye=true;
 }
@@ -202,6 +202,8 @@ function venteExecuterPaye(a){
   if(buyer)buyer.cash+=a.fee;
   if(joue){
    ledgerEntry('Vente annulée : '+a.joueur,-a.fee);
+   // Vente pour le prêt de l'actionnaire : le remboursement fait à l'accord est annulé, la dette revient (ligne de caisse inverse).
+   if(a.pretRendu>0&&typeof pretRestituer==='function'&&pretRestituer(S.club,a.pretRendu,a.pretAvant))(typeof ledgerEntryV1==='function'?ledgerEntryV1:ledgerEntry)('Remboursement du prêt de l’actionnaire annulé',a.pretRendu);
    const e=S.budgetTransferts;if(a.rendu>0&&e&&e.clubId===S.club&&e.saison===S.season)e.reconstitue=Math.max(0,Math.round(e.reconstitue-a.rendu));
    const raison='Le joueur ne fait plus partie de l’effectif.';
    venteEvenement({type:'annulee',raison,...base});transferEvent('L’accord avec '+base.acheteur+' pour '+a.joueur+' tombe : '+raison.replace(/\\.$/,'')+'. L’indemnité est rendue.');
