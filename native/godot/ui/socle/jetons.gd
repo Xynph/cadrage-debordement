@@ -6,7 +6,7 @@ extends RefCounted
 ## retire des colonnes plutôt que de rendre le texte illisible.
 
 ## Couleurs : alias des jetons de la charte (ui/charte.gd), une seule direction artistique.
-## OR reste le nom de l'accent historique du socle ; il vaut l'ivoire (le vrai or est réservé à Continuer).
+## OR reste le nom de l'accent historique du socle ; il vaut la crème (le doré marque l'action et l'attention).
 const Charte = preload("res://ui/charte.gd")
 const FOND := Charte.FOND
 const PANNEAU := Charte.PANNEAU
@@ -42,7 +42,7 @@ const E2 := 8.0
 const E3 := 12.0
 const E4 := 16.0
 const E5 := 24.0
-const RAYON := 10.0
+const RAYON := 18.0  ## panneaux arrondis de la charte (Charte.RAYON_PANNEAU)
 const LIGNE_H := 37.0
 const ENTETE_H := 32.0
 const GROUPE_H := 46.0

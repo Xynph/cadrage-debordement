@@ -1,12 +1,15 @@
 extends RefCounted
+## Thème Godot de l'écran sombre, branché sur la charte (ui/charte.gd) : panneaux arrondis sans bordure,
+## boutons et menus en pilule, focus clavier doré.
 
-const BG = Color("151b1f")
-const PANEL = Color("1d262b")
-const PANEL_ALT = Color("263238")
-const LINE = Color("445259")
-const INK = Color("f5f4ec")
-const MUTED = Color("bdc8c9")
-const GREEN = Color("a1d5ac")
+const Charte = preload("res://ui/charte.gd")
+const BG = Charte.FOND
+const PANEL = Charte.PANNEAU
+const PANEL_ALT = Charte.PANNEAU_3
+const LINE = Charte.FILET
+const INK = Charte.IVOIRE
+const MUTED = Charte.IVOIRE_2
+const GREEN = Charte.VERT_CLAIR
 const BODY = preload("res://fonts/DMSans.ttf")
 const DISPLAY = preload("res://fonts/BarlowCondensed-SemiBold.ttf")
 
@@ -22,36 +25,57 @@ static func box(color: Color, radius: int = 8, border: Color = Color.TRANSPARENT
 	s.content_margin_bottom = 4
 	return s
 
+static func pilule(color: Color, border: Color = Color.TRANSPARENT) -> StyleBoxFlat:
+	var s := box(color, Charte.RAYON_PILULE, border)
+	s.content_margin_left = 14
+	s.content_margin_right = 14
+	s.anti_aliasing = true
+	return s
+
 static func make() -> Theme:
 	var t := Theme.new()
 	t.default_font = BODY
 	t.default_font_size = 12
 	for kind in ["Label", "Button", "OptionButton", "CheckButton", "PopupMenu"]:
 		t.set_color("font_color", kind, INK)
-	t.set_color("font_disabled_color", "Button", Color("79878d"))
+	t.set_color("font_disabled_color", "Button", Charte.IVOIRE_3)
 	t.set_color("font_hover_color", "Button", INK)
 	t.set_color("font_pressed_color", "Button", INK)
-	t.set_stylebox("normal", "Button", box(PANEL_ALT, 5, LINE))
-	t.set_stylebox("hover", "Button", box(Color("34434a"), 5, Color("8b9c9f")))
-	t.set_stylebox("pressed", "Button", box(Color("42515a"), 5, INK))
-	t.set_stylebox("disabled", "Button", box(PANEL, 5))
-	t.set_stylebox("focus", "Button", box(Color.TRANSPARENT, 5, INK))
-	t.set_stylebox("normal", "OptionButton", box(PANEL_ALT, 5, LINE))
-	t.set_stylebox("hover", "OptionButton", box(Color("34434a"), 5, INK))
-	t.set_stylebox("focus", "OptionButton", box(Color.TRANSPARENT, 5, INK))
-	t.set_stylebox("panel", "PopupMenu", box(PANEL_ALT, 5, LINE))
-	t.set_stylebox("normal","LineEdit",box(BG,4,LINE))
-	t.set_stylebox("focus","LineEdit",box(BG,4,INK))
+	t.set_stylebox("normal", "Button", pilule(Color.TRANSPARENT, LINE))
+	t.set_stylebox("hover", "Button", pilule(Charte.PANNEAU_2, Charte.IVOIRE_3))
+	t.set_stylebox("pressed", "Button", pilule(Charte.SELECTION, INK))
+	t.set_stylebox("disabled", "Button", pilule(Color.TRANSPARENT, LINE))
+	var focus := pilule(Color.TRANSPARENT, Charte.OR)
+	focus.set_border_width_all(2)
+	focus.set_expand_margin_all(2)
+	t.set_stylebox("focus", "Button", focus)
+	t.set_stylebox("normal", "OptionButton", pilule(PANEL_ALT, LINE))
+	t.set_stylebox("hover", "OptionButton", pilule(Charte.PANNEAU_2, INK))
+	t.set_stylebox("focus", "OptionButton", focus)
+	t.set_stylebox("panel", "PopupMenu", box(PANEL, 12))
+	t.set_stylebox("hover", "PopupMenu", box(Charte.PANNEAU_3, 8))
+	t.set_stylebox("normal","LineEdit",pilule(PANEL_ALT,LINE))
+	var edit_focus := pilule(PANEL_ALT, Charte.OR)
+	edit_focus.set_border_width_all(2)
+	t.set_stylebox("focus","LineEdit",edit_focus)
 	t.set_color("font_color","LineEdit",INK)
 	t.set_color("caret_color","LineEdit",INK)
-	t.set_color("selection_color","LineEdit",Color("586776"))
-	t.set_stylebox("panel","AcceptDialog",box(PANEL,6,LINE))
-	t.set_stylebox("panel","Window",box(PANEL,6,LINE))
+	t.set_color("selection_color","LineEdit",Charte.SELECTION)
+	t.set_stylebox("panel","AcceptDialog",box(PANEL,Charte.RAYON_PANNEAU))
+	t.set_stylebox("panel","Window",box(PANEL,Charte.RAYON_PANNEAU))
 	t.set_constant("separation", "VBoxContainer", 8)
 	t.set_constant("separation", "HBoxContainer", 8)
-	t.set_stylebox("panel", "PanelContainer", box(PANEL))
-	t.set_stylebox("background", "ProgressBar", box(Color("34434c"), 2))
-	t.set_stylebox("fill", "ProgressBar", box(GREEN, 2))
+	t.set_stylebox("panel", "PanelContainer", box(PANEL, Charte.RAYON_PANNEAU))
+	t.set_stylebox("background", "ProgressBar", box(Charte.PANNEAU_3, Charte.RAYON_PILULE))
+	t.set_stylebox("fill", "ProgressBar", box(GREEN, Charte.RAYON_PILULE))
+	for kind in ["TabContainer", "TabBar"]:
+		t.set_color("font_selected_color", kind, Charte.PANNEAU)
+		t.set_color("font_unselected_color", kind, INK)
+		t.set_color("font_hovered_color", kind, INK)
+		t.set_stylebox("tab_selected", kind, pilule(Charte.CREME))
+		t.set_stylebox("tab_unselected", kind, pilule(Color.TRANSPARENT, LINE))
+		t.set_stylebox("tab_hovered", kind, pilule(Charte.PANNEAU_2, Charte.IVOIRE_3))
+	t.set_stylebox("panel", "TabContainer", box(PANEL, Charte.RAYON_PANNEAU))
 	return t
 
 static func paper() -> Theme:

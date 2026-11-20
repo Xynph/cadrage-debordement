@@ -1,43 +1,88 @@
 extends RefCounted
-## Jetons de la charte (design/art/art-bible.md §3, §4.2, §7) : la seule source des couleurs, polices et formes
-## de la direction artistique du logo. Les palettes plus anciennes (ui/immersive08/components.gd, ui/socle/jetons.gd)
-## pointent sur ces jetons : tous les écrans partagent le même noir chaud et le même ivoire.
+## Jetons de la charte (design/art/art-bible.md) : la seule source des couleurs, polices et formes de l'interface.
+## Charte finale de la graphiste (20/11/2026), validée par Léo avec deux exceptions : pas de fiche à droite, pas de
+## fenêtre qui s'ouvre. Nuancier de sept teintes ; les nuances de service sont ces teintes posées en transparence
+## sur PANNEAU, figées ici en couleurs opaques. Les palettes plus anciennes (ui/immersive08/components.gd,
+## ui/socle/jetons.gd, ui/game_skin.gd) pointent sur ces jetons.
 ## Exemple : `var trait := Charte.club_trait(app.accent)` donne le liseré du club lisible sur `PANNEAU`.
 
-## Fonds, du plus profond au plus haut.
-const NUIT := Color("000000")       ## noir du logo : écran titre, plein cadre ; jamais un panneau
-const FOND := Color("0e0d0b")       ## fond de la coque (noir chaud)
-const PANNEAU := Color("171512")    ## rail, barre haute, surfaces de contenu
-const PANNEAU_2 := Color("201d19")  ## survol, ligne zébrée
-const PANNEAU_3 := Color("2b2721")  ## choisi, onglet actif, champ de saisie
-const FILET := Color("3d372e")      ## filets 1 px (décoratif)
+## Nuancier (7 teintes).
+const ARDOISE := Color("202d2d")      ## 1/7 fond de l'écran, derrière tout
+const NOIR_PANNEAU := Color("0b1517") ## 2/7 panneaux, tableaux, barre latérale
+const CREME := Color("f2ecdc")        ## 3/7 texte principal, titres, chiffres ; onglet et menu actifs (aplat)
+const GRIS_VERT := Color("abb7b1")    ## 4/7 texte secondaire, valeurs, icônes au repos
+const VERT_FRANC := Color("32644b")   ## 5/7 surface (jauges, écusson « nous », terrain) ; jamais en texte ni trait fin
+const DORE := Color("d7aa5a")         ## 6/7 action principale, attention, surtitres, focus, l'adversaire
+const VERT_CLAIR := Color("b6d6b6")   ## 7/7 bon état, chiffres favorables, notre équipe ; jamais en paragraphe
+
+## Fonds, du plus profond au plus haut (noms historiques conservés).
+const NUIT := Color("000000")       ## écran titre plein cadre seulement ; jamais un panneau
+const FOND := ARDOISE               ## fond de la coque : aplat ardoise, sans photo
+const PANNEAU := NOIR_PANNEAU       ## panneaux : se détachent du fond par la clarté, sans bordure ni ombre
+const PANNEAU_2 := Color("192223")  ## survol (crème 6 %)
+const PANNEAU_3 := Color("222a2b")  ## choisi, champ de saisie, rail de jauge (crème 10 %)
+const FILET := Color("272f2f")      ## trait : séparations, contour des boutons secondaires et des champs (crème 12 %)
+const SELECTION := Color("1d392e")  ## ligne de tableau sélectionnée (vert franc 45 %)
+const VOILE_DORE := Color("2c2d22") ## fond d'une pastille « à traiter » (doré 16 %), toujours avec texte doré
+const VOILE_VERT := Color("252f2c") ## fond d'une pastille de bon état (vert clair 14 %), avec texte vert clair
 ## Textes.
-const IVOIRE := Color("f6eedc")     ## texte principal, marqueur de sélection
-const IVOIRE_2 := Color("bdb4a2")   ## texte secondaire, étiquettes
-const IVOIRE_3 := Color("8c8474")   ## désactivé, filigrane ; jamais sur PANNEAU_3
-## Or : uniquement « Continuer » (l'action qui fait avancer le temps) et l'héritage (trophée, record, titre).
-const OR := Color("e9c062")
-const OR_VIF := Color("f1c970")     ## survol / pression du bouton or
-## Papier : le seul document ouvert d'un écran (lettre d'un courrier, contrat, carnet, une de journal) ; jamais un tableau.
-const PAPIER := Color("f6eedc")
-const ENCRE := Color("14120f")
-const ENCRE_2 := Color("5a5244")
+const IVOIRE := CREME               ## texte principal
+const IVOIRE_2 := GRIS_VERT         ## texte secondaire, étiquettes
+const IVOIRE_3 := Color("96968d")   ## texte faible (crème 60 %) : en-têtes de colonnes, légendes ; jamais sous 12 px
+## Doré : action principale (un seul aplat doré par écran : Continuer, ou le bouton principal d'une page sans
+## Continuer), attention (avec un mot ou un pictogramme), surtitres, focus clavier, l'adversaire dans une comparaison.
+const OR := DORE
+const OR_VIF := Color("e2bc77")     ## survol / pression du bouton doré
+## Papier : le seul document ouvert d'un écran (lettre, contrat, carnet, une de journal) ; jamais un tableau.
+const PAPIER := CREME
+const ENCRE := Color("0b1517")
+const ENCRE_2 := Color("4d5853")
 const OR_ENCRE := Color("7d5b10")
-const V_PAPIER := Color("2b6a43")
-const D_PAPIER := Color("a3342c")
-## Club : couleur réelle du club ; les dérivés se calculent (club_trait, club_texte).
+const V_PAPIER := VERT_FRANC
+const D_PAPIER := Color("8a5a12")
+## Club : couleur réelle du club, seulement sur écusson, maillot et liseré ; les dérivés se calculent.
 const CLUB := Color("71322f")
 const CLUB_TRAIT := Color("b5524a")
 const CLUB_TEXTE := Color("d0756c")
-## Sens : victoire / disponible, nul (neutre), défaite / blessure / alerte.
-const V := Color("6cc48a")
-const N := Color("ada597")
-const D := Color("ee6f5f")
+## Sens : favorable (vert clair), neutre, à surveiller (doré). Une couleur n'est jamais seule : mot ou pictogramme.
+const V := VERT_CLAIR
+const N := GRIS_VERT
+const D := DORE
 const V_DALTONIEN := Color("5aa9e6")
+## Rouge : hors nuancier, réservé aux cartons rouges et aux vraies erreurs (échec de sauvegarde, connexion).
+const ROUGE := Color("d9534a")
 ## Terrain (page Équipe du match) : pelouse en bandes à plat, deux verts sourds alternés, et son liseré.
 const PELOUSE := Color("1d4631")
 const PELOUSE_2 := Color("214e37")
 const PELOUSE_BORD := Color("53625e")
+
+## Formes : panneaux arrondis sans bordure, boutons, onglets et pastilles en pilule.
+const RAYON_PANNEAU := 18
+const RAYON_CARTE := 12     ## carte dans un panneau (tuile de chiffre, carte « à décider »)
+const RAYON_PILULE := 999   ## Godot ramène le rayon à la demi-hauteur : pilule à toute taille
+
+## Fond de panneau : PANNEAU arrondi, sans bordure ni ombre.
+static func style_panneau(couleur: Color = PANNEAU, rayon: int = RAYON_PANNEAU, marge: int = 18) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = couleur
+	style.set_corner_radius_all(rayon)
+	style.set_content_margin_all(marge)
+	style.anti_aliasing = true
+	return style
+
+## Pilule (bouton, onglet, pastille) : aplat `fond`, contour facultatif.
+static func style_pilule(fond: Color, contour: Color = Color.TRANSPARENT, marge_x: int = 14, marge_y: int = 5) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fond
+	style.set_corner_radius_all(RAYON_PILULE)
+	style.border_color = contour
+	style.set_border_width_all(1 if contour.a > 0 else 0)
+	style.content_margin_left = marge_x
+	style.content_margin_right = marge_x
+	style.content_margin_top = marge_y
+	style.content_margin_bottom = marge_y
+	style.anti_aliasing = true
+	return style
 
 ## Barème des attributs (fiche joueur, mini-fiche ; décision de Léo du 19/11/2026) : le chiffre est toujours
 ## écrit, la couleur dit le palier. Une légende accompagne chaque grille (BAREME_ATTRIBUTS).
@@ -61,18 +106,21 @@ static func couleur_attribut(valeur: Variant) -> Color:
 		if float(valeur) >= float(palier[0]): couleur = palier[1]
 	return couleur
 
-## Inclinaison du logo (fûts du R et du L) : marqueurs, bord droit des boutons or, titres en italique.
-const INCLINAISON_DEGRES := 10.0
-## Décalage horizontal d'un bord incliné de 10° pour une hauteur donnée (32 px → 6 px).
+## Inclinaison des titres et marqueurs : 0° depuis la charte finale (titres droits, décision de Léo du 20/11/2026).
+## Les dessins qui passent par `decalage` se redressent tous seuls.
+const INCLINAISON_DEGRES := 0.0
+## Décalage horizontal d'un bord incliné pour une hauteur donnée (0 avec la charte actuelle).
 static func decalage(hauteur: float) -> float:
 	return hauteur * tan(deg_to_rad(INCLINAISON_DEGRES))
 
-## Polices : Barlow Condensed (titres, vraies italiques) et DM Sans (texte). Pas de troisième famille.
+## Polices : Barlow Condensed (titres, droits) et DM Sans (texte). Pas de troisième famille.
+## Les anciens noms *_ITALIQUE pointent sur les coupes droites : titres droits partout sans toucher aux écrans.
 const TITRE = preload("res://fonts/BarlowCondensed-SemiBold.ttf")
 const TITRE_GRAS = preload("res://ui/immersive08/fonts/BarlowCondensed-Bold.ttf")
-const TITRE_ITALIQUE = preload("res://ui/immersive08/fonts/BarlowCondensed-SemiBoldItalic.ttf")
-const TITRE_GRAS_ITALIQUE = preload("res://ui/immersive08/fonts/BarlowCondensed-BoldItalic.ttf")
-const TITRE_EXTRA_ITALIQUE = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBoldItalic.ttf")
+const TITRE_EXTRA = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBold.ttf")
+const TITRE_ITALIQUE = TITRE
+const TITRE_GRAS_ITALIQUE = TITRE_GRAS
+const TITRE_EXTRA_ITALIQUE = TITRE_EXTRA
 const TEXTE = preload("res://fonts/DMSans.ttf")
 static var _texte_moyen: FontVariation
 
@@ -90,7 +138,7 @@ static func contraste(a: Color, b: Color) -> float:
 	var lb := b.srgb_to_linear().get_luminance()
 	return (maxf(la, lb) + .05) / (minf(la, lb) + .05)
 
-## Un club jaune ou or ne doit jamais se confondre avec l'or de Continuer : il passe à l'ivoire.
+## Un club jaune ou or ne doit jamais se confondre avec le doré de l'action : il passe à la crème.
 static func _proche_de_l_or(couleur: Color) -> bool:
 	if couleur.s < .35 or couleur.v < .45: return false
 	var ecart := absf(couleur.h - OR.h)
