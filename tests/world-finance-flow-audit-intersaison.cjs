@@ -40,6 +40,7 @@ test('The season change reconciles every managed club: closing, loans, facilitie
   assert.ok(f.worldNewSeason < 0 && s.upgrades > 0, 'facility levels bought');
   assert.ok(f.budgetOuvrir < 0, 'dividends paid to shareholder groups');
   assert.ok(f.aiRosterContracts < 0 && f.aiRosterRecruitmentWeek < 0, 'renewal and recruitment fees');
-  assert.ok(s.formationFees > 0 && f.settle === 0, 'formation fees move cash between clubs');
+  // Entre clubs, au même euro : ce que les clubs gérés versent au club joué (ou en reçoivent) est son solde d'indemnités.
+  assert.ok(s.formationFees > 0 && f.settle + s.humanFormationFees === 0, 'formation fees move cash between clubs');
   assert.ok(s.jiff > 0 && f.closeSeason !== 0, 'JIFF fund and EQP fines');
 });
