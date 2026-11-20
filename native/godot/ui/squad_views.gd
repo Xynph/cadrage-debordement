@@ -1015,6 +1015,10 @@ static func comparison(app:Control) -> void:
 	load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
 
 static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
+	# Offre à une piste du marché : un écran du Recrutement (sous-page « Offre au joueur »), jamais une fenêtre.
+	if recruiting and app.route == "Recrutement" and not app.get_children().any(func(c): return c is AcceptDialog and c.visible) and not str(p.get("id","")).is_empty() and app.model.get("market",[]).any(func(m): return m is Dictionary and str(m.get("id","")) == str(p.id)):
+		load("res://ui/immersive08/recruitment_pages.gd").ouvrir(app,"negociation",{"player_id":str(p.id)})
+		return
 	preload("res://ui/contract_negotiation.gd").open(app,p,recruiting)
 
 static func _context_text(parent:Node,text:String,id:String="") -> Label:

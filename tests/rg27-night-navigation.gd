@@ -334,7 +334,7 @@ func reading_cases() -> void:
 		check(after.size() == 1 and JSON.stringify(after[0]) == outsider_before, "Aucune information supplémentaire injectée dans la projection hors club")
 		if not limited.is_empty():
 			check(outsider.get("rating") == null and outsider.get("potential") == null and outsider.get("ratingRange") == null and outsider.get("potentialRange") == null, "Cible non observée : aucun niveau ou potentiel exact ni intervalle révélé")
-			check(text(named("RecruitmentProfilePanel")).contains("—"), "Dossier hors club non observé : les valeurs inconnues restent absentes à l’écran")
+			check(named("RecruitmentProfilePanel") == null, "Plus de panneau de dossier fixe : la fiche complète de la piste porte les valeurs inconnues")
 		await capture("recrutement-cible-2560")
 	var teams: Array = app.model.get("staff", {}).get("teams", [])
 	if not teams.is_empty() and not teams[0].get("members", []).is_empty():
