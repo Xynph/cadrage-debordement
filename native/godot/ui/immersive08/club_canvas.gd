@@ -899,8 +899,8 @@ static func _world_year(app: Control, year: Dictionary) -> PanelContainer:
 	content.add_child(C.wrap(rank,25,C.IVORY,true,600))
 	for id: String in year.titles:
 		content.add_child(C.wrap("Champion · "+World.name_for(app.model,id),23,C.MINT,true,600))
-	if year.promoted: content.add_child(C.label("Montée en Élite",22,C.MINT))
-	if year.relegated: content.add_child(C.label("Descente en Accession",22,C.AMBER))
+	for line: String in World.movement_lines(app.model,str(year.league_id),bool(year.promoted),false): content.add_child(C.label(line,22,C.MINT))
+	for line: String in World.movement_lines(app.model,str(year.league_id),false,bool(year.relegated)): content.add_child(C.label(line,22,C.AMBER))
 	for line: String in year.get("nationale_lines",[]): content.add_child(C.wrap(line,22,C.IVORY))
 	for barrage: Dictionary in year.japan_barrages:
 		for line: String in World.japan_lines(app,barrage): content.add_child(C.wrap(line,22,C.IVORY))

@@ -3,7 +3,6 @@ extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Nationale = preload("res://ui/immersive08/nationale_archive.gd")
-const DIVISIONS = {"elite":"Élite", "accession":"Accession", "nationale":"Nationale", "champ":"Champ Rugby", "prem":"Premiership", "urc":"United Rugby Championship", "srp":"Super Rugby Pacific", "jlo-d1":"League One · Division 1", "jlo-d2":"League One · Division 2"}
 
 static func _id_index(ids: Array, club_id: int) -> int:
 	# JSON.parse_string représente les nombres par des flottants : Array.find
@@ -67,33 +66,32 @@ static func world_seasons(app: Control, club_id: int) -> Array:
 		year.nationale_lines = nationale_by_season.get(year.season, [])
 	return years
 
-static func _division(id: String) -> String:
-	return DIVISIONS.get(id, "Division non conservée")
+# Noms de compétition lus dans les données (identités du pack actif comprises), jamais figés ici.
+static func _division(model: Dictionary, id: String) -> String:
+	return "Division non conservée" if id.is_empty() else World.name_for(model, id)
 
-static func _titles(year: Dictionary) -> String:
+static func _titles(model: Dictionary, year: Dictionary) -> String:
 	var titles: Array[String] = []
-	for division: String in year.titles: titles.append("Champion " + _division(division))
+	for division: String in year.titles: titles.append("Champion " + _division(model, division))
 	return " · ".join(titles) if not titles.is_empty() else "Aucun titre dans l’archive"
 
-static func _movement(year: Dictionary) -> String:
-	var movements: Array[String] = []
-	if year.promoted: movements.append("Montée en Élite")
-	if year.relegated: movements.append("Descente en Accession")
+static func _movement(model: Dictionary, year: Dictionary) -> String:
+	var movements := World.movement_lines(model, str(year.league_id), bool(year.promoted), bool(year.relegated))
 	return " · ".join(movements) if not movements.is_empty() else "Aucune montée ni descente dans l’archive"
 
-static func _rank(year: Dictionary) -> String:
-	return "Rang de phase régulière non conservé" if year.rank == null else "Dans sa division · %s · rang %d / %d" % [_division(year.league_id), int(year.rank), int(year.division_size)]
+static func _rank(model: Dictionary, year: Dictionary) -> String:
+	return "Rang de phase régulière non conservé" if year.rank == null else "Dans sa division · %s · rang %d / %d" % [_division(model, str(year.league_id)), int(year.rank), int(year.division_size)]
 
 static func _season(parent: Node, year: Dictionary, app: Control) -> void:
 	var card := G.card(parent, G.accent_ink(app.accent))
 	G.fill(card.get_parent())
 	card.add_child(G.section("Saison " + G.season_label(year.season)))
-	card.add_child(G.wrap(_rank(year), 17, G.INK))
-	card.add_child(G.wrap(_titles(year), 15, G.GOLD))
+	card.add_child(G.wrap(_rank(app.model, year), 17, G.INK))
+	card.add_child(G.wrap(_titles(app.model, year), 15, G.GOLD))
 	var barrages: Array = year.get("japan_barrages",[])
 	var nationale_lines: Array = year.get("nationale_lines", [])
 	if barrages.is_empty() and str(year.league_id) not in ["jlo-d1","jlo-d2"] and (nationale_lines.is_empty() or year.promoted or year.relegated):
-		card.add_child(G.wrap(_movement(year),14))
+		card.add_child(G.wrap(_movement(app.model, year),14))
 	for line: String in nationale_lines: card.add_child(G.wrap(line,16,G.INK))
 	for barrage: Dictionary in barrages:
 		for line: String in World.japan_lines(app,barrage): card.add_child(G.wrap(line,16,G.INK))
@@ -111,7 +109,7 @@ static func _choice(parent: Node, app: Control, seasons: Array, key: String, lab
 	var chosen: int = int(app.management_ui.get(key, fallback))
 	var selected := -1
 	for year: Dictionary in seasons:
-		selector.add_item("Saison %s · %s" % [G.season_label(year.season), _division(year.league_id)], int(year.season))
+		selector.add_item("Saison %s · %s" % [G.season_label(year.season), _division(app.model, str(year.league_id))], int(year.season))
 		if int(year.season) == chosen: selected = selector.item_count - 1
 	if selected < 0: selected = 0; chosen = int(seasons[0].season)
 	selector.select(selected)
@@ -169,7 +167,7 @@ static func build(app: Control) -> Control:
 	list.get_parent().name = "ClubMemoryScroll"
 	var notice := "Les points, scores de saisons, affluence et finances ne figurent pas dans ces archives."
 	if japanese: notice = "Rangs de phase régulière et scores des barrages japonais."
-	if nationale: notice = "Rangs de phase régulière, mouvements et barrage Pro D2 / Nationale."
+	if nationale: notice = "Rangs de phase régulière, mouvements et barrage " + World.name_for(app.model, "access-nationale") + "."
 	if champ: notice = "Rangs de phase régulière, titres et mouvements."
 	list.add_child(G.wrap("Les 15 dernières saisons au maximum. "+notice,13))
 	list.add_child(preload("res://ui/performance_analysis_view.gd").build(app))

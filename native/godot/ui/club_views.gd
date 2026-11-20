@@ -161,11 +161,12 @@ static func _territory(app: Control) -> Control:
 		content.add_child(spacer)
 		var supplied: Variant = c.get(kind)
 		var place := str(supplied).strip_edges() if supplied != null else ""
-		if place.is_empty(): place = "Ville à préciser" if kind == "city" else "Stade à préciser"
-		var title := G.wrap(place, 34, G.WHITE)
-		title.add_theme_font_override("font", G.T.DISPLAY)
-		title.add_theme_font_size_override("font_size", 24)
-		content.add_child(title)
+		# Donnée absente : pas de titre inventé.
+		if not place.is_empty():
+			var title := G.wrap(place, 34, G.WHITE)
+			title.add_theme_font_override("font", G.T.DISPLAY)
+			title.add_theme_font_size_override("font_size", 24)
+			content.add_child(title)
 		var source: String = picture.get_meta("photo_kind")
 		if source == "pack":
 			var credit := G.wrap("Photo · " + str(photo.get("credit", "")), 12, G.WHITE)
@@ -600,13 +601,13 @@ static func archives_content(app:Control, height:int = 360) -> Control:
 			if position>=0:list.add_child(G.wrap("Ton club actuel · %s · rang %d / %d en phase régulière"%[competition_name(league_id, app.model),position+1,ranks.size()],14,G.accent_ink(app.accent)))
 		var barrages: Array = world.japan_barrages(year)
 		if not barrages.is_empty(): list.add_child(G.section("MOUVEMENTS FRANÇAIS"))
-		for pair in [["promoted","Montée(s) vers l’Élite"],["relegated","Descente(s) en Accession"]]:
+		for pair in [["promoted","Montée(s) vers " + competition_name("elite", app.model)],["relegated","Descente(s) en " + competition_name("accession", app.model)]]:
 			var names:Array[String]=[]
 			for id in year.get("movement",{}).get(pair[0],[]):names.append(_archive_club(app,id))
 			list.add_child(G.wrap(pair[1]+" · "+(", ".join(names) if not names.is_empty() else "aucune"),14,G.MUTED))
 		var nationale_lines: Array[String] = nationale.lines(app, year)
 		if not nationale_lines.is_empty():
-			list.add_child(G.section("NATIONALE ET ACCESSION"))
+			list.add_child(G.section((competition_name("nationale", app.model) + " et " + competition_name("accession", app.model)).to_upper()))
 			for line: String in nationale_lines: list.add_child(G.wrap(line,16,G.INK))
 		if not barrages.is_empty():
 			list.add_child(G.section("BARRAGES DU JAPON"))

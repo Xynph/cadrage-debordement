@@ -23,7 +23,8 @@ static func lines(app: Control, year: Dictionary, club_id: int = -1) -> Array[St
 			result.append("Vainqueur après départage · " + Club._archive_club(app, winner))
 	elif club_id < 0 and access.get("status") == "ready" and access.has("fixture") and access.fixture == null:
 		result.append("Aucun barrage interdivision organisé")
-	for entry: Array in [["promoted", "Montée en Accession"], ["relegated", "Descente en division fédérale"], ["retained", "Maintien en Accession"]]:
+	var accession := Club.competition_name("accession", app.model)
+	for entry: Array in [["promoted", "Montée en " + accession], ["relegated", "Descente en " + Club.competition_name("nationale", app.model)], ["retained", "Maintien en " + accession]]:
 		var names: Array[String] = []
 		for id: Variant in boundary.get(entry[0], []):
 			if club_id < 0 or int(id) == club_id: names.append(Club._archive_club(app, id))

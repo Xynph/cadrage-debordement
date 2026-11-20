@@ -255,7 +255,6 @@ static func _creation_crest(club: Dictionary, width: int, use_mockup: bool) -> C
 	return G.crest(club, width)
 
 static func _club_preview(app: Control, parent: VBoxContainer, club: Dictionary, championship: String, base_identity: bool) -> void:
-	var toulouse := base_identity and int(club.id) == 0
 	var compact := app.get_window().size.y < 850
 	var history: Dictionary = club.get("history", {})
 	var results: Array = history.get("results", [])
@@ -270,7 +269,7 @@ static func _club_preview(app: Control, parent: VBoxContainer, club: Dictionary,
 	copy.alignment = BoxContainer.ALIGNMENT_CENTER
 	G.fill(copy)
 	identity.add_child(copy)
-	var title_text := "Toulouse\nCapitole XV" if toulouse else G.club_name(club)
+	var title_text := G.club_name(club)
 	var title := C.wrap(title_text, 42, C.IVORY, true, 800)
 	title.name = "CreationClubTitle"
 	title.uppercase = true
@@ -354,7 +353,6 @@ static func _history_competition(app: Control, id: String) -> String:
 		"sr-trans-tasman": "Championnat trans-tasman 2021",
 	}
 	var label := str(_competition_identity(app, id).get("name", historical.get(id, Club.competition_name(id))))
-	if id == "elite" and label.to_lower() == "top 14": return "Championnat de France"
 	return label
 
 static func _history_placement(result: Dictionary) -> String:
@@ -759,9 +757,9 @@ static func creation(app: Control) -> Control:
 		if is_champ:
 			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2026-2027", 22, G.WHITE, true))
 		if is_nationale:
-			over.add_child(G.label("NATIONALE  /  SAISON 2026-2027", 22, G.WHITE, true))
+			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2026-2027", 22, G.WHITE, true))
 		if is_srp:
-			over.add_child(G.label("PACIFIQUE  /  SAISON 2027", 22, G.WHITE, true))
+			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2027", 22, G.WHITE, true))
 			over.add_child(G.label(_territory(selected).to_upper(), 13, G.WHITE))
 		if is_japan:
 			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper(), 22, G.WHITE, true))
