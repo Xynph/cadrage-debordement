@@ -435,6 +435,10 @@ func _activate_selected() -> void:
 func open_watched_roster() -> void:
 	_open_roster_preset(U.WATCH_FILTER)
 
+## Effectif filtré sur les blessés (compteur « blessés » du Bureau).
+func open_roster_injured() -> void:
+	_open_roster_preset("Blessés")
+
 func open_roster_group() -> void:
 	if app.roster_filter == U.WATCH_FILTER:
 		_open_roster_preset("Tous")

@@ -2,6 +2,22 @@
 
 Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque.
 
+## Choix de Léo, revue DA du 19/11/2026 (intégré dans `office_canvas.gd`)
+
+**Variante 1 · Affiche et Gabi** (maquette `04-bureau-1.png`). Emprunts : le **face-à-face chiffré** de la variante 3
+(classement, 5 derniers, bilan, différence de points des deux clubs du prochain match, uniquement des données connues) et
+**« Prochains matchs » dans la colonne de Gabi** (3 matchs).
+- Gauche : affiche du prochain match (bandeau d'illustration voilé ≤ 160 px, « PROCHAIN MATCH · JOURNÉE · DOMICILE » et compte à rebours),
+  « Préparer le match » (bouton ivoire plein, l'or reste à Continuer), « Vérifier les 23 → » ; puis « Tes trois priorités »
+  (avec « Objectif du conseil : … » ou « Aucun objectif fixé ») et « État du groupe » ; dessous Classement (6 lignes), Courrier, Profil à suivre.
+- Droite : colonne de Gabi (« Ta semaine, vue par Gabi », Prochains matchs, buste 160-200 px et bulle panneau-2 + filet incliné).
+- **Tout ouvre quelque chose** : priorité → écran concerné ; ligne du classement → fiche du club (notre club : écran Club) ;
+  message du courrier → la lettre en Réception ; match → avant-match (le prochain) ou calendrier du jour ; compteurs
+  disponibles / blessés → Effectif (blessés filtrés) ; nom d'un blessé ou profil à suivre → fiche du joueur, mini-fiche au survol ;
+  « Suivre le conseil → » → Composition (rien ne change sans validation).
+- Aucune fenêtre : tout clic change d'écran. Aucune couleur or hors Continuer ; couleurs du club pour le liseré et le nom du club.
+- Écran étroit (< 1600 px de large) : la composition compacte historique (`office.gd`) reste, hors de ce chantier.
+
 > **Statut** : En conception (brouillon autonome, rigueur `minimal`)
 > **Auteur** : ux-designer (CCGS)
 > **Dernière mise à jour** : 19/11/2026

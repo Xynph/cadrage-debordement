@@ -65,7 +65,7 @@ func run() -> void:
 		# Bureau : classement court (club ± voisins) en haut et en bas de tableau, gabarit large (1920) et compact (1280).
 		for league: Dictionary in leagues:
 			for own_index in [1, league.rows.size() - 1]:
-				for w in [540, 684]: await office_canvas(league, leagues, own_index, w, int(height))
+				for w in [540, 684, 1100]: await office_canvas(league, leagues, own_index, w, int(height))
 				await office_compact(league, leagues, own_index, int(height))
 	C.configure(1440, 2560)
 	finish()
@@ -143,7 +143,9 @@ func office_app(league: Dictionary, leagues: Array, own_index: int) -> ReadingAp
 func expected_zones(app: ReadingApp) -> Array:
 	var seen := {}
 	var result: Array = []
-	for row: Dictionary in P.standings(app.model):
+	var rows_vues: Array = P.standings(app.model)
+	if large_rows: rows_vues = OfficeCanvas.short_rows(rows_vues, app.model.club.id, OfficeCanvas.STANDINGS_ROWS)
+	for row: Dictionary in rows_vues:
 		if row.zone is Dictionary and not seen.has(row.zone.kind):
 			seen[row.zone.kind] = true
 			result.append(row.zone)
@@ -154,6 +156,8 @@ func expected_zones(app: ReadingApp) -> Array:
 func office_rows(app: ReadingApp, holder: Control, scope: Callable, where: String) -> void:
 	var shown := P.standings(app.model)
 	check(shown.size() == 6, "Six lignes dans l'extrait" + where)
+	# Bureau large (≥ 900 de large) : 4 lignes consécutives qui gardent notre club ; zones et légende suivent ces lignes.
+	if large_rows: shown = OfficeCanvas.short_rows(shown, app.model.club.id, OfficeCanvas.STANDINGS_ROWS)
 	for club: Dictionary in shown:
 		var hit: Button = holder.find_child("OfficeStandingRow_" + str(club.id), true, false)
 		check(hit != null, "Ligne du club %s%s" % [club.id, where])
@@ -208,12 +212,16 @@ func office_legend(app: ReadingApp, holder: Control, where: String) -> Control:
 	check(items.all(func(item: Label): return item.get_theme_font_size("font_size") >= C.px(18)), "Bureau : légende à 18 au moins" + where)
 	return legend
 
+## Vrai quand le Bureau large est examiné (4 lignes au lieu de 6).
+var large_rows := false
+
 func office_canvas(league: Dictionary, leagues: Array, own_index: int, w: int, height: int) -> void:
 	var app := office_app(league, leagues, own_index)
 	var before := JSON.stringify(app.model)
 	var card := Panel.new()
 	app.add_child(card)
 	card.size = Vector2(w, 448) * C.density
+	large_rows = w >= 900
 	OfficeCanvas._standings(card, app, w)
 	await process_frame
 	var where := " (Bureau large %d, %s, club %d, %d p)" % [w, league.id, own_index + 1, height]
@@ -247,6 +255,7 @@ func office_canvas(league: Dictionary, leagues: Array, own_index: int, w: int, h
 	check(app.commands == 0 and JSON.stringify(app.model) == before, "Bureau : affichage sans commande ni modification" + where)
 	app.queue_free()
 	await process_frame
+	large_rows = false
 
 func office_compact(league: Dictionary, leagues: Array, own_index: int, height: int) -> void:
 	var app := office_app(league, leagues, own_index)

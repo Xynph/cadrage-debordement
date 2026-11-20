@@ -411,7 +411,11 @@ func real_pages() -> void:
   await real_capture("bureau-%d"%viewport.x)
   var action: Button = live_app.find_child("OfficeStandingsAction",true,false)
   check(action!=null and not action.disabled,"Vrai lien classement disponible")
-  if viewport.x==1280 and record is Button:action=record
+  # La ligne du classement court ouvre désormais la fiche du club (DA du 19/11/2026) : le lien « Classement complet » ouvre les Classements.
+  if viewport.x==1280 and record is Button:
+   record.grab_focus()
+   await settle_app()
+   check(record.has_focus() and live_app.body_scroll.get_global_rect().grow(1).encloses(record.get_global_rect()),"Le Bureau révèle entièrement la ligne du classement au focus")
   if action!=null:
    action.grab_focus()
    await settle_app()

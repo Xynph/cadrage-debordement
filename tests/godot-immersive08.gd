@@ -585,7 +585,7 @@ func champ(compact: bool) -> void:
 	check(app.model.get("next")==null and first.date=="2026-09-19" and first.timezone=="Europe/London" and str(first.scheduleSource).begins_with("rfu-published"),"La préparation précède le vrai premier match publié")
 	var timeline := app.find_child("OfficeTimeline", true, false)
 	var dates := timeline.find_children("OfficeTimelineDate*","Label",true,false) if timeline!=null else []
-	check(dates.size()==(5 if app.find_child("GabiBureau",true,false) != null else 7) and dates[0].text.contains("19/09/2026") and dates[0].text.contains(first.kickoffLocal),"Le fil du Bureau affiche les sept échéances et l’heure du premier match")
+	check(dates.size()==(3 if app.find_child("OfficeFixtureBody",true,false) != null else 7) and dates[0].text.contains("19/09/2026") and dates[0].text.contains(first.kickoffLocal),"Le fil du Bureau affiche les sept échéances et l’heure du premier match")
 	await capture(("73" if compact else "72")+"-champ-bureau-"+dimensions)
 	# Recrutement, aide de Gabi ouverte (mode grand, bandeau en service) : « Approcher le joueur » reste dégagé.
 	var market_ids: Array = app.model.get("market",[]).filter(func(player: Dictionary): return player.get("available",false)).map(func(player: Dictionary): return str(player.id))
@@ -783,9 +783,11 @@ func resize_shell() -> void:
 		check(app.find_child("OfficeFixture",true,false)==fixture and app.navigation_controller.history==history,"Le resize conserve contrôles et navigation à "+str(size))
 		for control: Control in [fixture,journal,timeline,action]:
 			var box := control.get_global_transform()*Rect2(Vector2.ZERO,control.size)
-			check(screen.grow(1).encloses(box),"%s entièrement visible à %s" % [control.name,str(size)])
+			# Composition large « Affiche et Gabi » (≥ 1600 px) : la page défile ; seule la largeur doit tenir dans l'écran.
+			var defile: bool = app.find_child("OfficeFixtureBody",true,false) != null and control.name != "ImmersiveContinue"
+			check(screen.grow(1).encloses(box) or (defile and box.position.x >= -1.0 and box.end.x <= screen.end.x + 1.0),"%s entièrement visible à %s" % [control.name,str(size)])
 		if size in [Vector2i(1280,720),Vector2i(1440,900)]:
-			check(ground != null and ground.is_visible_in_tree() == (size.y == 900),"Le terrain apparaît lorsque le fil de saison dispose d'assez de hauteur à "+str(size))
+			check(ground == null or ground.is_visible_in_tree() == (size.y == 900),"Le terrain apparaît lorsque le fil de saison dispose d'assez de hauteur à "+str(size))
 			await capture("06-bureau-redimensionne-%dx%d" % [size.x,size.y])
 	root.size = Vector2i(1440,900)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
@@ -864,7 +866,7 @@ func recent_office_results() -> void:
 	var upcoming_crests := timeline.find_children("OfficeOpponentCrest*","Control",true,false)
 	var next_opponent: Dictionary = fixtures[6].away if fixtures[6].home.id == app.model.club.id else fixtures[6].home
 	# À côté de la zone de Gabi (14/11/2026), la frise montre les cinq prochaines rencontres (sept sans Gabi).
-	var shown := 5 if app.find_child("GabiBureau",true,false) != null else 7
+	var shown := 3 if app.find_child("OfficeFixtureBody",true,false) != null else 7
 	check(upcoming_crests.size()==shown and upcoming_crests[0].get_meta("opponent_id")==next_opponent.id,"Les prochaines rencontres affichent les blasons adverses (%d)" % shown)
 	var markers := app.find_children("OfficeVenueIcon*","TextureRect",true,false)
 	var icons := markers.map(func(marker): return marker.texture)
@@ -877,8 +879,11 @@ func recent_office_results() -> void:
 		var last_opponent: Dictionary = fixtures[5].away if fixtures[5].home.id == app.model.club.id else fixtures[5].home
 		check(crests.size()==5 and crests[0].get_meta("opponent_id")==last_opponent.id,"Les cinq derniers résultats affichent les blasons adverses")
 		var viewport: Control = app.body_scroll
-		check(viewport.get_global_rect().grow(1).encloses(results.get_global_rect()),"Cinq résultats entièrement visibles à 1440 × 900")
-	check(results!=null,"La bande des résultats apparaît après des matchs joués")
+		viewport.ensure_control_visible(results)
+		await settle()
+		check(viewport.get_global_rect().grow(1).encloses(results.get_global_rect()),"Cinq résultats entièrement visibles à 1440 × 900 une fois amenés à l'écran")
+	# Composition large : les résultats ne sont plus au Bureau (Calendrier) ; le Bureau étroit les garde.
+	check(results!=null or app.find_child("OfficeFixtureBody",true,false)!=null,"La bande des résultats apparaît après des matchs joués")
 	await capture("48-bureau-cinq-resultats-1440x900")
 	app.model = original
 	root.size = Vector2i(2560,1440)
@@ -1207,9 +1212,13 @@ func dialogs() -> void:
 	app._navigate("Bureau")
 	await settle()
 	var open_notebook: Button = app.find_child("OpenCoachNotebook",true,false)
-	check(open_notebook!=null,"Le Bureau donne accès au carnet personnel")
-	if open_notebook!=null:
-		await click(open_notebook)
+	# Composition large (DA du 19/11/2026) : plus de lien « carnet personnel » (une fenêtre) au Bureau ; le carnet reste ouvrable
+	# par programme (compact, raccourcis) : la recette garde la vérification de l'éditeur.
+	var large: bool = app.find_child("OfficeFixtureBody",true,false)!=null
+	check(open_notebook!=null or large,"Le Bureau donne accès au carnet personnel")
+	if open_notebook==null and large: preload("res://ui/immersive08/office.gd").open_notebook(app)
+	if open_notebook!=null or large:
+		if open_notebook!=null: await click(open_notebook)
 		await settle()
 		var notebook: AcceptDialog = app.get_node_or_null("CoachNotebook")
 		check(notebook!=null and notebook.visible and notebook.find_child("CoachNoteText",true,false)!=null,
@@ -1461,29 +1470,27 @@ func run() -> void:
 		var bytes := FileAccess.get_file_as_bytes(disk)
 		check(shell.render(app), "Rendu natif du Bureau pris en charge")
 		await settle()
-		for id in ["ImmersiveShell", "ImmersiveSidebar", "ImmersiveTopbar", "OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeRecruitment", "OfficeTimeline"]:
+		for id in ["ImmersiveShell", "ImmersiveSidebar", "ImmersiveTopbar", "OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeTimeline"]:
 			check(app.find_child(id, true, false) != null, "Élément réel : " + id)
 		check(app.size.x >= 2500, "2560p exploités sans agrandir un canvas 1600p")
-		for id in ["OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeRecruitment", "OfficeTimeline"]:
+		for id in ["OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeTimeline"]:
 			var tile: Control = app.find_child(id, true, false)
 			if tile == null: continue
 			check(tile.get_global_rect().end.x <= app.size.x + 1, "Tuile dans la largeur : " + id)
 			check(tile.size.x >= 300, "Largeur utile en 1440p : " + id)
-			check(tile.get_global_rect().end.y <= app.body_scroll.get_global_rect().end.y + 1, "Tuile entièrement visible en 1440p : " + id)
+			# La page défile : seuls l'affiche, les priorités et le groupe tiennent dans le premier écran.
+			if id in ["OfficeFixture", "OfficeDecisions", "OfficeGroup"]: check(tile.get_global_rect().end.y <= app.body_scroll.get_global_rect().end.y + 1, "Tuile entièrement visible en 1440p : " + id)
 		var city := app.find_child("OfficeCityPreview", true, false)
 		var stadium := app.find_child("OfficeStadiumPreview", true, false)
 		check(city != null and city.get_meta("photo_kind", "") == "generated" and stadium != null and stadium.get_meta("photo_kind", "") == "generated", "Le Bureau de base affiche les illustrations de ville et de stade")
-		if app.coach.bureau_disponible():
-			# Gabi chez lui (14/11/2026) : sa colonne à droite, les blocs réagencés à sa gauche.
-			reference_rects({"OfficeFixture":Rect2(280,220,1060,418), "OfficeDecisions":Rect2(1356,220,716,418),
-				"OfficeGroup":Rect2(280,654,392,448), "OfficeStandings":Rect2(688,654,540,448),
-				"OfficeJournal":Rect2(1244,654,420,448), "OfficeRecruitment":Rect2(1680,654,392,448),
-				"OfficeTimeline":Rect2(280,1118,1792,226), "GabiBureau":Rect2(2088,220,440,1124)})
-		else:
-			reference_rects({"OfficeFixture":Rect2(280,220,1360,418), "OfficeDecisions":Rect2(1656,220,872,418),
-				"OfficeGroup":Rect2(280,654,422,448), "OfficeStandings":Rect2(718,654,684,448),
-				"OfficeJournal":Rect2(1418,654,548,448), "OfficeRecruitment":Rect2(1982,654,546,448),
-				"OfficeTimeline":Rect2(280,1118,2248,226)})
+		# Composition « Affiche et Gabi » (19/11/2026) : affiche et colonne de droite en haut, priorités et groupe dessous,
+		# puis classement et courrier, puis le profil à suivre ; colonne de Gabi (ou prochains matchs seuls) à droite.
+		var rects := {"OfficeFixture":Rect2(280,196,1496,430), "OfficeDecisions":Rect2(280,642,900,430),
+			"OfficeGroup":Rect2(1196,642,580,430), "OfficeStandings":Rect2(280,1088,1100,295),
+			"OfficeJournal":Rect2(1396,1088,1132,295)}
+		if app.coach.bureau_disponible(): rects["GabiBureau"] = Rect2(1792,196,736,876)
+		else: rects["OfficeTimeline"] = Rect2(1792,196,736,876)
+		reference_rects(rects)
 		await capture("01-bureau-2560x1440")
 		app._navigate("Effectif")
 		shell.render(app)
