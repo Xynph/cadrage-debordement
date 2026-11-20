@@ -602,39 +602,40 @@ static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	else:
 		action.call()
 
-static func _choose_role(app: Control, teams: Array) -> void:
+## Rôle de départ (club, club et sélection, sélection seule) et sélection : deux menus déroulants dans la page.
+## Un choix met la page à jour aussitôt (plus de fenêtre de confirmation).
+static func role_controls(app: Control, teams: Array, role: String) -> HBoxContainer:
 	var roles := ["club", "dual", "nation"]
-	var dialog := ConfirmationDialog.new()
-	dialog.name = "CreationRoleDialog"
-	dialog.title = "Ton rôle"
-	app._prepare_dialog(dialog, 630)
-	dialog.get_ok_button().text = "Confirmer"
-	dialog.get_cancel_button().text = "Annuler"
-	var fields := G.v()
-	dialog.add_child(fields)
-	fields.add_child(G.wrap("Choisis la responsabilité avec laquelle tu commences."))
+	var group := C.h(8)
+	group.name = "CreationChooseRole"
+	var caption := C.label("Rôle", 17, C.MUTED, false)
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	group.add_child(caption)
 	var roles_list := OptionButton.new()
 	roles_list.name = "CreationCareerRole"
 	for title: String in ["Club", "Club et sélection", "Sélection seule"]: roles_list.add_item(title)
-	roles_list.select(maxi(0, roles.find(app.management_ui.get("creation_role", "club"))))
-	fields.add_child(roles_list)
+	roles_list.select(maxi(0, roles.find(role)))
+	roles_list.add_theme_font_size_override("font_size", C.font_px(17))
+	roles_list.disabled = app.waiting and app.last_command == "new_career"
+	group.add_child(roles_list)
 	var nations := OptionButton.new()
 	nations.name = "CreationCareerNation"
 	for index in teams.size():
 		nations.add_item(str(teams[index].name))
 		if teams[index].id == app.management_ui.get("creation_nation", ""): nations.select(index)
-	if nations.selected < 0: nations.select(0)
-	nations.disabled = roles_list.selected == 0
-	fields.add_child(nations)
-	roles_list.item_selected.connect(func(index: int): nations.disabled = index == 0)
-	dialog.confirmed.connect(func():
-		app.management_ui.creation_role = roles[roles_list.selected]
-		app.management_ui.creation_nation = str(teams[nations.selected].id)
-		dialog.queue_free()
+	nations.add_theme_font_size_override("font_size", C.font_px(17))
+	nations.visible = role != "club"
+	nations.disabled = roles_list.disabled
+	group.add_child(nations)
+	roles_list.item_selected.connect(func(index: int):
+		app.management_ui.creation_role = roles[index]
+		if index > 0 and str(app.management_ui.get("creation_nation", "")).is_empty() and not teams.is_empty():
+			app.management_ui.creation_nation = str(teams[maxi(0, nations.selected)].id)
 		app._render(false))
-	dialog.canceled.connect(dialog.queue_free)
-	app.add_child(dialog)
-	dialog.popup_centered(Vector2i(630, 245))
+	nations.item_selected.connect(func(index: int):
+		app.management_ui.creation_nation = str(teams[index].id)
+		app._render(false))
+	return group
 
 static func creation(app: Control) -> Control:
 	var screen := app.get_window().size
@@ -669,13 +670,11 @@ static func creation(app: Control) -> Control:
 		if team.id == app.management_ui.get("creation_nation", ""):
 			nation = team
 			break
-	if not teams.is_empty():
-		var caption: String = {"club":"Rôle · Club", "dual":"Rôle · Club et sélection", "nation":"Rôle · Sélection seule"}.get(role, "Rôle · Club")
-		var choose := G.button(caption, _choose_role.bind(app, teams))
-		choose.name = "CreationChooseRole"
+	if not teams.is_empty() and (role == "nation" or not modern):
+		# Rôle et sélection : menus déroulants dans la page (plus de petite fenêtre).
+		var choose := role_controls(app, teams, role)
 		top.add_child(choose)
 		top.move_child(choose, manage.get_index())
-		if modern: Editorial.action(choose, false, false, 34)
 	Packs.missing_warning(app, page, "creation")
 	if role == "nation":
 		_nation_creation(app, page, mode, preferred, nation, modern)
@@ -710,6 +709,21 @@ static func creation(app: Control) -> Control:
 			selected = club
 			break
 	if not modern: app.selected_club = int(selected.id)
+	# Étape « 1 Club » (DA du 19/11/2026) : écran plein cadre, grille de cartes et panneau du club choisi.
+	if modern and str(app.management_ui.get(CREATION_STEP, "club")) != "carriere" or modern and selected.is_empty():
+		var installed_packs: Array = app.pack_manager.installed("creation")
+		var pack_label := "Jeu de base"
+		for pack: Dictionary in installed_packs:
+			if str(pack.get("id", "")) == preferred: pack_label = str(pack.get("name", "Pack personnalisé"))
+		var missing := preferred != "base" and not installed_packs.any(func(pack: Dictionary): return str(pack.id) == preferred)
+		if missing: pack_label = "Pack indisponible"
+		page.queue_free()
+		var divisions_list := [["elite", "Élite"], ["accession", "Accession"], ["nationale", "Nationale"], ["prem", "Prem"], ["champ", "Champ"], ["jlo-d1", "Japon D1"], ["jlo-d2", "Japon D2"], ["urc", "URC"], ["srp", "Super Rugby Pacific"]]
+		return load("res://ui/immersive08/creation_canvas.gd").build(app, {
+			"playable": playable, "countries": countries, "country": country, "clubs": clubs, "division": division,
+			"division_clubs": division_clubs, "selected": selected, "mode": mode, "preferred": preferred, "teams": teams,
+			"role": role, "nation": nation, "unavailable": missing, "pack_name": pack_label, "divisions_data": divisions_list,
+		})
 	# Défis de départ : bandeau en tête du choix du club (carrière Monde, rôle club).
 	if modern and champ and role != "nation" and str(app.management_ui.get(CREATION_STEP, "club")) != "carriere":
 		Defis.build(app, page, playable)

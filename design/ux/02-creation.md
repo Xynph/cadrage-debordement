@@ -2,9 +2,23 @@
 
 Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %).
 
-> **Statut** : En conception (brouillon autonome, rigueur `minimal`)
+> **Statut** : Intégré (étape 5 de la DA, 20/11/2026)
 > **Auteur** : ux-designer (CCGS)
-> **Dernière mise à jour** : 19/11/2026
+> **Dernière mise à jour** : 20/11/2026
+
+## 0. Choix de Léo (revue DA du 19/11/2026) et intégration
+
+Maquette retenue : **1 · Grille de cartes, optimisée** (`revue-20261119/apercus/02-creation-optimisee.png`). Code : `ui/immersive08/creation_canvas.gd` (étape « 1 Club », plein écran hors coque), appelé par `entry_screens.creation` ; l'étape « 2 Carrière » reste `creation_options/layout.gd`.
+
+- **Barre haute** : logo, « ← Accueil » (Échap), fil **1 Club › 2 Carrière** (« 2 Carrière » devient un lien une fois un club choisi), menus déroulants Rôle et Sélection (si le moteur propose des sélections ; l'ancienne fenêtre de rôle est supprimée), « Identités et packs » (la réalité de jeu, jeu de base ou import, s'y choisit), emplacement de Gabi.
+- **Titre** « CHOISIR SON CLUB » + championnat · clubs · saison ; recherche (Ctrl F / Ctrl K, filtre en place insensible aux accents, état vide avec « Effacer la recherche »).
+- **Pays** (drapeaux en couleur) puis **championnats** (nom du pack, nombre de clubs), onglets soulignés d'un trait incliné.
+- **Défis de départ** : une ligne de liens (titre, club, difficulté) ; le défi retenu porte « ✓ » et propose ses autres clubs.
+- **Carte allégée** (emprunts 2 et 3) : numéro d'ordre selon le tri et classement de l'an passé (historique du club, omis sans donnée), écusson, nom, ville · stade, **Niveau** et **Trésorerie** en grand (police droite), jauge du niveau, ligne « Conseil ». Étiquette « Rival » sur les rivaux du club choisi (aperçu moteur). Carte choisie : fond plus clair, marqueur incliné et « ✓ Choisi » (jamais la couleur seule). À petite taille, filet, jauge puis conseil s'effacent avant tout débordement.
+- **Tri** Niveau / Trésorerie / Attente du conseil / Saison passée (emprunt 2).
+- **Panneau de gauche** : bandeau du stade (≤ 160 px à 1080) avec « Ton choix · stade » et le nom du club ; avant le choix, le championnat (clubs, saison, format et enjeux). Puis Niveau, Trésorerie, Joueurs avec leur **rang dans la division** (« 2e sur 14 », emprunt 3) ; conseil, saison passée, fondation, ville ; **Continuer avec [club]** (or : seule exception hors coque, raison écrite quand inactif) ; « Ton choix · le mot du président » (nom réel du président) et **Rivalités** (liens : un clic choisit le rival) ; « Format de la division et enjeux → » s'ouvre en place ; Gabi en bas avec un conseil tiré du rang réel du club.
+- **Pied** : clubs jouables et joueurs ; « Double-clic ou Entrée : étape suivante · Rien n'est enregistré avant « Prendre les rênes » ».
+- Écarts assumés : « Budget » de la maquette = **Trésorerie de départ** (seule donnée réelle) ; « Masse salariale » et « dont N du centre de formation » omis (absents du catalogue) ; la carte choisie n'a pas de cadre complet (charte §3), seulement fond, marqueur et coche ; aucun dégradé sur le bandeau (voile uni).
 > **Phase du parcours** : 1.1 Première heure, étape « Création »
 > **Identifiant** : `ImmersiveCreationWorkspace` (code : `entry_canvas.gd`) ; sous-vue packs : `ImmersiveIdentityWorkspace`
 > **Plateforme** : PC Windows, souris + clavier, 1280×720 à 2560×1440
