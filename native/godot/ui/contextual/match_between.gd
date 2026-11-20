@@ -237,7 +237,8 @@ class Domination extends Control:
 		var tri := corps * 0.55
 		draw_colored_polygon(PackedVector2Array([Vector2(tri * 0.5, zone.position.y + corps - tri), Vector2(tri, zone.position.y + corps - tri * 0.1), Vector2(0, zone.position.y + corps - tri * 0.1)]), Charte.IVOIRE)
 		draw_string(POLICE, Vector2(tri * 1.6, zone.position.y + corps), nom_haut, HORIZONTAL_ALIGNMENT_LEFT, gauche - 10.0 - tri * 1.6, corps, Charte.IVOIRE)
-		draw_string(POLICE, Vector2(0, milieu + corps * 0.35), "+ domine / – subit", HORIZONTAL_ALIGNMENT_LEFT, gauche - 10.0, maxi(12, corps - 3), Charte.IVOIRE_2)
+		# Rappel du sens des barres, seulement s'il tient entre les deux noms (frise basse en 1280×720).
+		if zone.size.y >= corps * 4.0: draw_string(POLICE, Vector2(0, milieu + corps * 0.35), "+ domine / – subit", HORIZONTAL_ALIGNMENT_LEFT, gauche - 10.0, maxi(12, corps - 3), Charte.IVOIRE_2)
 		draw_colored_polygon(PackedVector2Array([Vector2(0, zone.end.y - tri), Vector2(tri, zone.end.y - tri), Vector2(tri * 0.5, zone.end.y - tri * 0.1)]), Charte.IVOIRE)
 		draw_string(POLICE, Vector2(tri * 1.6, zone.end.y), nom_bas, HORIZONTAL_ALIGNMENT_LEFT, gauche - 10.0 - tri * 1.6, corps, Charte.IVOIRE)
 		# Échelle de 80 minutes (40 avant la mi-temps) : la place d'une minute ne change pas pendant le match.
