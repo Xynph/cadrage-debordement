@@ -37,7 +37,7 @@ func modele(issue: String, raisons: bool) -> Dictionary:
 		var id := 100 + k
 		lignes.append({"id": id, "name": NOMS[k], "abbr": NOMS[k].substr(0, 2).to_upper(), "color": "#%02x4a6b" % (40 + k * 12), "rank": k + 1, "played": 9})
 		classement.append({"rang": k + 1, "clubId": id, "abbr": NOMS[k].substr(0, 2).to_upper(), "nom": NOMS[k], "joues": 9, "points": 34 - k * 2, "diff": 60 - k * 11,
-			"gagnes": 7 - floori(k / 2.0), "nuls": k % 2, "perdus": 2 + floori(k / 2.0), "forme": ["W", "L", "D", "W", "W"], "bonusOff": 1 if k == 0 else 0, "bonusDef": 1 if k == 2 else 0,
+			"gagnes": 7 - floori(k / 2.0), "nuls": k % 2, "perdus": 2 + floori(k / 2.0), "forme": ["V", "D", "N", "V", "V"], "bonusOff": 1 if k == 0 else 0, "bonusDef": 1 if k == 2 else 0,
 			"rangOfficiel": k + 2 if k == 2 else k + 1, "delta": 1 if k == 2 else 0, "nous": k == 2})
 	var matchs: Array = []
 	for m in 5:

@@ -60,6 +60,16 @@ var _e := 1.0
 var _clubs: Dictionary = {}
 var _droite: VBoxContainer
 var _ta_place: Control
+var _autres: GridContainer
+static var _gras: FontVariation
+
+## DM Sans graisse 700 : les valeurs des lignes d'information (classement, essais).
+static func texte_gras() -> Font:
+	if _gras == null:
+		_gras = FontVariation.new()
+		_gras.base_font = Charte.TEXTE
+		_gras.variation_opentype = {"wght": 700}
+	return _gras
 
 func _ready() -> void:
 	name = "ApresMatch"
@@ -312,6 +322,8 @@ func _reconstruire() -> void:
 		remove_child(enfant)
 		enfant.queue_free()
 	bouton_valider = null
+	_ta_place = null
+	_autres = null
 	var fond := ColorRect.new()
 	fond.color = Charte.FOND
 	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -332,7 +344,7 @@ func _reconstruire() -> void:
 	gauche.name = "ApresMatchGauche"
 	C.fill(gauche, true, 1116)
 	corps.add_child(gauche)
-	_droite = _v(12)
+	_droite = _v(10)
 	_droite.name = "ApresMatchDroite"
 	C.fill(_droite, true, 732)
 	corps.add_child(_droite)
@@ -344,6 +356,10 @@ func _reconstruire() -> void:
 		vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		gauche.add_child(vide)
 		_fil_du_score(gauche)
+		var vide_bas := Control.new()
+		vide_bas.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		vide_bas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		gauche.add_child(vide_bas)
 		_gabi(gauche)
 	_colonne_classement(_droite)
 	if is_instance_valid(director) and director.has_method("_refresh_controls"): director._refresh_controls()
@@ -355,9 +371,18 @@ func _focus_valider() -> void:
 
 ## La colonne de droite tient dans l'écran : « Ta place » s'efface d'abord (le classement dit déjà la place).
 func _ajuster() -> void:
-	if not is_instance_valid(_droite) or not is_instance_valid(_ta_place): return
+	if not is_inside_tree(): return
+	await get_tree().process_frame
+	if not is_instance_valid(_droite) or not _droite.is_inside_tree(): return
 	var dispo := get_viewport_rect().size.y - _droite.get_global_rect().position.y - float(_d(40))
-	if dispo > 0 and _droite.get_combined_minimum_size().y > dispo + 1.0: _ta_place.hide()
+	if dispo <= 0: return
+	# D'abord les autres matchs sur deux colonnes (noms abrégés, entiers en infobulle), puis « Ta place » s'efface.
+	if is_instance_valid(_autres) and _autres.columns == 1 and _droite.get_combined_minimum_size().y > dispo + 1.0:
+		_autres.columns = 2
+		await get_tree().process_frame
+		await get_tree().process_frame
+		if not is_instance_valid(_droite): return
+	if is_instance_valid(_ta_place) and _droite.get_combined_minimum_size().y > dispo + 1.0: _ta_place.hide()
 
 func _bandeau() -> Control:
 	var bandeau := Control.new()
@@ -496,7 +521,7 @@ func _meta() -> Array[HBoxContainer]:
 		bloc.add_child(_texte("Classement", 15, Charte.IVOIRE_2))
 		var avant: Variant = nous.get("rangOfficiel")
 		var rang := int(nous.get("rang", 0))
-		bloc.add_child(_texte((ordinal(int(avant)) + " → " if avant is float or avant is int else "") + ordinal(rang), 15, Charte.IVOIRE, Charte.TITRE_GRAS))
+		bloc.add_child(_texte((ordinal(int(avant)) + " → " if avant is float or avant is int else "") + ordinal(rang), 15, Charte.IVOIRE, texte_gras()))
 		var delta := int(nous.get("delta", 0))
 		if avant is float or avant is int:
 			if delta != 0: bloc.add_child(_triangle(delta > 0, Charte.V if delta > 0 else Charte.D))
@@ -507,7 +532,7 @@ func _meta() -> Array[HBoxContainer]:
 		var bloc := _h(5)
 		bloc.name = "ApresMatchHomme"
 		bloc.add_child(_texte("Homme du match", 15, Charte.IVOIRE_2))
-		bloc.add_child(_lien_joueur(str(homme.get("joueur", "")), str(homme.get("nom", "")), int(homme.get("camp", -1)), 15, Charte.texte_moyen()))
+		bloc.add_child(_lien_joueur(str(homme.get("joueur", "")), str(homme.get("nom", "")), int(homme.get("camp", -1)), 15, texte_gras()))
 		var note := note_texte(homme.get("note"))
 		if not note.is_empty(): bloc.add_child(_texte("(%s)" % note, 15, Charte.IVOIRE_2))
 		(une if nous.is_empty() else deux).add_child(bloc)
@@ -515,7 +540,7 @@ func _meta() -> Array[HBoxContainer]:
 	if essais is Array and essais.size() == 2:
 		var bloc := _h(5)
 		bloc.add_child(_texte("Essais", 15, Charte.IVOIRE_2))
-		bloc.add_child(_texte("%d – %d" % [int(essais[0]), int(essais[1])], 15, Charte.IVOIRE, Charte.TITRE_GRAS))
+		bloc.add_child(_texte("%d – %d" % [int(essais[0]), int(essais[1])], 15, Charte.IVOIRE, texte_gras()))
 		deux.add_child(bloc)
 	var equipes: Array = _live().get("teams", [])
 	for r: Variant in _classement():
@@ -828,7 +853,7 @@ func _ligne_club(r: Dictionary, total: int) -> PanelContainer:
 	forme.custom_minimum_size.x = _d(LARGEURS[9])
 	forme.name = "Forme"
 	for resultat: Variant in (r.get("forme", []) if r.get("forme") is Array else []):
-		var lettre: String = {"W": "V", "D": "N", "L": "D"}.get(str(resultat), "")
+		var lettre: String = {"V": "V", "N": "N", "D": "D", "W": "V", "L": "D"}.get(str(resultat), "")
 		if not lettre.is_empty(): forme.add_child(_pastille(lettre, 24, 16, 11))
 	rangee.add_child(forme)
 	return ligne
@@ -900,7 +925,7 @@ func _place(classement: Array) -> Control:
 		contenu.add_child(_texte(signe(ecart), 20, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
 		contenu.add_child(_texte("sur le %s, %s" % [ordinal(int(v.get("rang", 0))), nom], 12, Charte.IVOIRE_2))
 		b.add_child(contenu)
-		b.custom_minimum_size.y = _d(50)
+		b.custom_minimum_size.y = _d(44)
 		b.clip_contents = true
 		cases.add_child(b)
 	return cadre
@@ -917,7 +942,9 @@ func _autres_matchs(parent: VBoxContainer) -> void:
 	var etape := _etape_courte()
 	col.add_child(_texte(("Les autres matchs de la " + etape if not etape.is_empty() else "Les autres matchs de la journée").to_upper(), 15, Charte.IVOIRE, Charte.TITRE_GRAS_ITALIQUE))
 	var grille := GridContainer.new()
-	grille.columns = 2
+	grille.columns = 1
+	grille.name = "ApresMatchAutresGrille"
+	_autres = grille
 	grille.add_theme_constant_override("h_separation", _d(16))
 	grille.add_theme_constant_override("v_separation", _d(2))
 	col.add_child(grille)
