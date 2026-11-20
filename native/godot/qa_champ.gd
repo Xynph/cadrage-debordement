@@ -260,8 +260,8 @@ func _calendar_venue(fixture: Dictionary, venue: String) -> bool:
 	# Le calendrier historique présente le lieu directement, sans fenêtre de détail.
 	if not row is Button: return good
 	await _click_calendar(row)
-	var detail := app.find_child("CompetitionFixtureDetails", true, false) as AcceptDialog
-	if not _check(detail != null and detail.visible, "la ligne ouvre le vrai détail : " + str(fixture.id)): return false
+	var detail := app.find_child("CompetitionFixtureDetails", true, false) as Control
+	if not _check(detail != null and detail.is_visible_in_tree(), "la ligne ouvre la vraie page de la rencontre : " + str(fixture.id)): return false
 	var full_venue := false
 	var wrong_venue := false
 	for label: Label in detail.find_children("*", "Label", true, false):
@@ -269,8 +269,8 @@ func _calendar_venue(fixture: Dictionary, venue: String) -> bool:
 		full_venue = full_venue or label.text.contains(venue)
 		wrong_venue = wrong_venue or (different_home and label.text.contains(fallback))
 	good = _check(full_venue and not wrong_venue, "lieu complet dans le détail : " + venue) and good
-	await _click_calendar(detail.get_ok_button())
-	return _check(not is_instance_valid(detail) or not detail.visible, "le détail du match se ferme") and good
+	await _click_calendar(app.find_child("CompetitionPageBack", true, false) as Button)
+	return _check(app.find_child("CompetitionFixtureDetails", true, false) == null, "la page de la rencontre se ferme") and good
 
 
 func _receive_078_calendars() -> void:

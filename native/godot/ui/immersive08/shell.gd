@@ -1270,6 +1270,8 @@ static func _sync_office_props(match_status: Label) -> void:
 static func _subnavigation(parent: Node, app: Control) -> void:
 	if Selections.nation_only(app.model): return
 	if app.route=="Composition" or app.route=="Effectif": return
+	# Grille mensuelle du Calendrier : elle porte la rangée d'onglets de Compétitions (une seule rangée, month_calendar.gd).
+	if app.route=="Calendrier" and not app.get_meta("calendar_table",false): return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
 		var row := C.h(8)

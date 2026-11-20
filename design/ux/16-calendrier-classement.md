@@ -2,6 +2,16 @@
 
 Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) ; règle unique d'Échap (ferme la fenêtre, sinon retour de fiche/sous-écran, sinon menu pause) et bouton « Menu » visible dans la coque ; zones de classement lues par compétition dans les données.
 
+## Choix de Léo (20/11/2026) : variante 1 « Tableau et rendez-vous à droite »
+
+- **Mise en page** : tableau du classement à gauche (colonnes triables, tout club ouvre sa fiche), colonne de droite « Ta place », « Prochain rendez-vous », « Calendrier du club » ; dessous, derniers résultats puis meilleure attaque / meilleure défense. Une seule rangée d'onglets (Classements · Phases finales · Calendrier · Statistiques · Rivalités).
+- **Emprunt variante 2** : les trois écarts de « Ta place » (sur le premier, sur le club devant, sur le club derrière), chacun ouvre la fiche du club.
+- **Emprunt variante 3** : zones lues dans les données de chaque compétition : liseré, symbole dessiné (▲ △ ◆ ▼), rang et mot, légende sous le tableau ; jamais la couleur seule.
+- **Sélecteur de compétition** : menu déroulant dans la page (« Mes compétitions », « Autres compétitions »), seule petite fenêtre conservée.
+- **Plus de petites fenêtres** : une rencontre et les archives des saisons sont des sous-pages de Classements (retour, Échap, historique Précédent / Suivant) ; un club ouvre sa fiche ; une date ouvre le calendrier à ce jour ; une compétition ouvre son classement.
+- **Couleurs** : écussons et plaques aux couleurs des clubs, V / N / D, zones ; notre ligne = club-trait + marqueur incliné ; aucun or.
+- **Données absentes, donc omises** : meilleurs marqueurs d'essais et réalisateurs, arbitre, bulle de Gabi (la projection ne les fournit pas).
+
 > **Statut** : en conception (proposé, non validé par Léo)
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
 > **Dernière mise à jour** : 19/11/2026
@@ -277,3 +287,5 @@ Légende : ★ demi-finale directe, ● phase finale, ▲ barrage de montée, �
 
 **Critères supplémentaires**
 - [ ] Chaque onglet s'ouvre en moins de 400 ms.
+
+**Finition du 20/11 (après-midi)** : la rencontre reprend le gabarit du « Prochain rendez-vous » (plaques aux couleurs des clubs, score au centre, verdict écrit) ; les archives sont une page aux jetons dont chaque club cité ouvre la fiche ; la grille mensuelle porte la rangée d'onglets de Compétitions (la coque ne double plus la sienne) et le marqueur incliné du jour ; les libellés de phase viennent du type de phase, jamais d'un nom de compétition écrit dans le code.
