@@ -1001,7 +1001,8 @@ func _colonne_xv(grille: Control) -> void:
 		tete_col.set_meta("libelle", libelle)
 		tete_col.set_meta("contextual_enabled", true)
 		tete_col.text = libelle
-		tete_col.clip_text = true
+		# Jamais rogné (« LAQ. ») : la colonne s'élargit de la flèche s'il le faut.
+		tete_col.clip_text = false
 		tete_col.alignment = HORIZONTAL_ALIGNMENT_RIGHT if chiffre else HORIZONTAL_ALIGNMENT_LEFT
 		tete_col.tooltip_text = "Trier Mon XV par %s (un second clic retourne le sens)." % str(colonne[0]).to_lower() if cle != "numero" else "Revenir à l’ordre des postes (un second clic retourne le sens)."
 		var vide := StyleBoxEmpty.new()
@@ -2463,7 +2464,8 @@ func _poser_entete_tri() -> void:
 	var courant := "numero" if tri_xv.is_empty() else tri_xv
 	for bouton: Button in entetes_tri:
 		var cle := str(bouton.get_meta("tri"))
-		var actif := cle == courant
+		# Flèche sur la colonne triée ; l'ordre des postes par défaut n'en porte pas (« N° » tient dans sa colonne).
+		var actif := cle == courant and not (cle == "numero" and not tri_inverse)
 		bouton.text = str(bouton.get_meta("libelle")) + ((" ▼" if tri_inverse else " ▲") if actif else "")
 		for couleur in ["font_color", "font_focus_color"]: bouton.add_theme_color_override(couleur, IVOIRE if actif else DOUX)
 
