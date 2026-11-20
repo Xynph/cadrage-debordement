@@ -171,7 +171,10 @@ function repriseSemaine(){
 // suite : ses ventes prennent effet le jour même (1er juillet), l'argent revient aussitôt (GDD calendrier-mutations § 3 bis 5).
 // Le club joué n'est pas concerné (ses ventes imposées restent des accords). Renvoie le nombre de ventes.
 function repriseBascule(c,avant,exclus){
- if(!c||c.id===S.club||!repriseApresAchat(c,avant,exclus))return 0;
+ if(!c||c.id===S.club)return 0;
+ // Un joueur en fin de contrat part libre à cette bascule : le président ne le désigne pas (il ne rapporterait rien).
+ exclus=new Set([...(exclus||[]),...c.players.filter(p=>p.contractEnd!=null&&p.contractEnd<=S.season).map(p=>p.id)]);
+ if(!repriseApresAchat(c,avant,exclus))return 0;
  const plan=S.presidentReprise.clubs[c.id],reserve=repriseReserve(c.id)??plan.reserve;
  const vendus=repriseVendre(c,plan,reserve,true);
  plan.etat=vendus.length?'vendu':'abandon';
