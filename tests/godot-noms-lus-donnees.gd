@@ -6,6 +6,13 @@ var failures: Array[String] = []
 func check(ok: bool, message: String) -> void:
 	if not ok: failures.append(message); printerr("FAIL: ", message)
 
+class FakePacks extends RefCounted:
+	var rows: Dictionary = {}
+	func competition(id: String, _scope: String = "") -> Dictionary: return rows.get(id, {})
+
+class CreationHost extends Control:
+	var pack_manager: FakePacks
+
 func _initialize() -> void: call_deferred("run")
 
 func run() -> void:
@@ -31,5 +38,15 @@ func run() -> void:
 	check(Memory._movement(model, year) == "Descente en Ligue des Collines", "descente avec le nom du pack")
 	# Palmarès : le nom du pack est affiché tel quel.
 	check(Palmares.competition(model, "elite") == "Ligue des Volcans", "palmarès : nom du pack inchangé")
+	# Création : saison de départ et format lus dans les données ; absents, rien d'inventé.
+	var Entry = load("res://ui/entry_screens.gd")
+	var host := CreationHost.new()
+	host.pack_manager = FakePacks.new()
+	host.pack_manager.rows = {"elite": {"name": "Ligue des Volcans", "startSeasonLabel": "2040-2041", "formatLines": ["Douze matchs par club."]}, "prem": {"name": "Grande Ligue du Nord"}}
+	check(Entry.creation_season(host, "elite") == "2040-2041", "saison de départ lue dans les données")
+	check(Entry.creation_format(host, "elite") == ["Douze matchs par club."], "format lu dans les données")
+	check(Entry.creation_season(host, "prem").is_empty() and Entry.creation_format(host, "prem").is_empty(), "donnée absente : rien d'inventé")
+	check(Entry.creation_season(host, "inconnue").is_empty(), "compétition inconnue : rien d'inventé")
+	host.free()
 	print("noms-lus-donnees.gd : %d échec(s)" % failures.size())
 	quit(1 if failures.size() > 0 else 0)

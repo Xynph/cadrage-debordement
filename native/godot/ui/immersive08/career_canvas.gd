@@ -40,11 +40,12 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	D.text(hero,211,178,G.club_name(app.model.club)+"  ·  "+P.league_name(app.model),26,C.IVORY,500,1248)
 	var since: Variant = data.get("currentFrom",app.model.meta.get("season",1))
 	D.chip(hero,Rect2(211,190,242,27),"MANDAT DEPUIS S"+G.n(since),C.GOLD)
-	var source := str({"pack":"PHOTO DU PACK", "archive":"PHOTO D’ARCHIVE"}.get(picture.get_meta("photo_kind"), "VUE DU CLUB"))
-	var credit := D.chip(hero,Rect2(2015,17,211,31),source,C.GOLD)
-	credit.mouse_filter = Control.MOUSE_FILTER_PASS
-	credit.tooltip_text = picture.tooltip_text
-	credit.accessibility_name = credit.tooltip_text.replace("\n", " · ")
+	# Immersion : pas d'étiquette de provenance (pack, archive) ; seul le crédit reste, au survol.
+	if not picture.tooltip_text.is_empty():
+		var credit := D.chip(hero,Rect2(2015,17,211,31),"CRÉDIT PHOTO",C.GOLD)
+		credit.mouse_filter = Control.MOUSE_FILTER_PASS
+		credit.tooltip_text = picture.tooltip_text
+		credit.accessibility_name = credit.tooltip_text.replace("\n", " · ")
 
 	var metrics := [
 		["Places occupées","people","%s / %s" % [G.n(data.get("occupied","—")),G.n(data.get("capacity","—"))],C.IVORY],

@@ -109,7 +109,7 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
  const pressBank=pressCatalogue||pressIdentities.defaultCatalogue();
  const databases=new Map([database,worldDatabase,pacificDatabase,japanDatabase,nationaleDatabase,champDatabase].filter(Boolean).map(db=>[db.id,db]));
  const databaseFor=id=>{const found=databases.get(id);check(found,'base de données incompatible.');return found;};
- const physical=fs.realpathSync.native(dataDir),root=path.join(physical,'packs');let preview=null,storageWarning=null;const cache=new Map();
+ const physical=fs.realpathSync.native(dataDir),root=path.join(physical,'packs');let preview=null,storageWarning=null;const cache=new Map();let lastWalk=null;
  function confined(target){let p=path.resolve(target);while(!fs.existsSync(p))p=path.dirname(p);const real=fs.realpathSync.native(p),rel=path.relative(physical,real);check(rel===''||!rel.startsWith('..'+path.sep)&&rel!=='..'&&!path.isAbsolute(rel),'stockage hors du profil physique.');let ancestor=p;while(ancestor!==physical){check(!fs.lstatSync(ancestor).isSymbolicLink(),'lien de stockage interdit.');const parent=path.dirname(ancestor);if(parent===ancestor)break;ancestor=parent;}}
  function mediaSignature(pack,folder){
   const names=new Set(mediaFiles(pack));
@@ -225,6 +225,8 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
     }else section(key,value);
    }
   }
+  // Compétitions : les textes générés (courrier, objectifs, notes) citent le nom de base ; le pack actif les présente.
+  if(chosen)for(const [from,to]of leagues.replacements(edition,chosen))replacements.set(from,to);
   // Journalistes et rédactions : le texte archivé garde les noms de base, le pack actif les présente.
   if(chosen)for(const [from,to]of pressIdentities.replacements(chosen.press,pressBank))replacements.set(from,to);
   // Présidents et directeurs sportifs de départ : nom inventé de la base → nom du pack.
@@ -245,8 +247,10 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
   model.meta.creationCompetitions=Object.fromEntries(scopes.filter(([,db])=>db).map(([mode,db,pack])=>[mode,leagues.presentation(db,pack)]));
   if(world)leagues.apply(model,leagues.presentation(edition,chosen));
   const projectCatalogue=(clubs,pack)=>walk(clubs,pack,false)||[];
-  model.meta.catalogue=projectCatalogue(catalogue,creationPack);if(worldCatalogue){model.meta.worldCatalogue=projectCatalogue(worldCatalogue,internationalCreation);model.meta.worldPackCreation=worldCreation;}if(legacyCatalogue){model.meta.legacyCatalogue=projectCatalogue(legacyCatalogue,legacyCreation);model.meta.legacyPackCreation=creation;}if(pacificCatalogue){model.meta.pacificCatalogue=projectCatalogue(pacificCatalogue,pacificPack);model.meta.pacificPackCreation=pacificCreation;}if(japanCatalogue){model.meta.japanCatalogue=projectCatalogue(japanCatalogue,japanPack);model.meta.japanPackCreation=japanCreation;}if(nationaleCatalogue){model.meta.nationaleCatalogue=projectCatalogue(nationaleCatalogue,nationalePack);model.meta.nationalePackCreation=nationaleCreation;}if(champCatalogue){model.meta.champCatalogue=projectCatalogue(champCatalogue,champPack);model.meta.champPackCreation=champCreation;}const list=installed(id=>memo.has(id)?memo.get(id):read(id,false));if(storageWarning)missing.push(storageWarning);model.packs={installed:list,creation:preferred,career:binding?.id||'base',missing,preview};return model;
+  model.meta.catalogue=projectCatalogue(catalogue,creationPack);if(worldCatalogue){model.meta.worldCatalogue=projectCatalogue(worldCatalogue,internationalCreation);model.meta.worldPackCreation=worldCreation;}if(legacyCatalogue){model.meta.legacyCatalogue=projectCatalogue(legacyCatalogue,legacyCreation);model.meta.legacyPackCreation=creation;}if(pacificCatalogue){model.meta.pacificCatalogue=projectCatalogue(pacificCatalogue,pacificPack);model.meta.pacificPackCreation=pacificCreation;}if(japanCatalogue){model.meta.japanCatalogue=projectCatalogue(japanCatalogue,japanPack);model.meta.japanPackCreation=japanCreation;}if(nationaleCatalogue){model.meta.nationaleCatalogue=projectCatalogue(nationaleCatalogue,nationalePack);model.meta.nationalePackCreation=nationaleCreation;}if(champCatalogue){model.meta.champCatalogue=projectCatalogue(champCatalogue,champPack);model.meta.champPackCreation=champCreation;}lastWalk=value=>walk(value,chosen,true);const list=installed(id=>memo.has(id)?memo.get(id):read(id,false));if(storageWarning)missing.push(storageWarning);model.packs={installed:list,creation:preferred,career:binding?.id||'base',missing,preview};return model;
  }
- return {inspect,install,get,project,installed};
+ // Données lues à part (fiche d'un club…) : même présentation que la dernière projection du modèle (pack actif compris).
+ function projectExtra(value){return lastWalk?lastWalk(value):value;}
+ return {inspect,install,get,project,installed,projectExtra};
 }
 module.exports={createStore,playerIdentity,analyse,readZip,imageInfo,crc32,LIMITS,WORLD_LIMITS};

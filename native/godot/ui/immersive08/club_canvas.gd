@@ -733,8 +733,8 @@ static func _direction(app: Control, corps: Control) -> void:
 
 static func _venue_caption(picture: Control) -> String:
 	match picture.get_meta("photo_kind", ""):
-		"pack": return "Photo du pack"
-		"archive": return "Photo d’archive"
+		# Immersion : le crédit, jamais la provenance (pack, archive).
+		"pack", "archive": return "Crédit photo"
 		_: return "Vue du club"
 
 static func _venue_credit(control: Control, photo: Dictionary) -> void:

@@ -1,0 +1,69 @@
+{
+    "_note":  "Saison de départ et format des compétitions affichés à la création. saison : annuelle (2026-2027) ou civile (2027). Lu par competition-identities.cjs ; compétition absente = rien d\u0027affiché.",
+    "anneeDepart":  2026,
+    "competitions":  {
+                         "elite":  {
+                                       "saison":  "annuelle",
+                                       "format":  [
+                                                      "26 matchs par club, en aller-retour. Les six premiers disputent les phases finales.",
+                                                      "Le dernier descend. Le 13e dispute un barrage contre le finaliste de deuxième division."
+                                                  ]
+                                   },
+                         "accession":  {
+                                           "saison":  "annuelle",
+                                           "format":  [
+                                                          "30 matchs par club, en aller-retour. Les six premiers disputent les phases finales.",
+                                                          "Le champion monte en première division et le finaliste joue un barrage. Le dernier descend et le 15e joue un barrage chez le finaliste de troisième division."
+                                                      ]
+                                       },
+                         "nationale":  {
+                                           "saison":  "annuelle",
+                                           "format":  [
+                                                          "26 matchs par club, en aller-retour. Les six premiers disputent les phases finales.",
+                                                          "Le champion monte en deuxième division. Le finaliste reçoit le 15e de deuxième division pour un barrage."
+                                                      ]
+                                       },
+                         "prem":  {
+                                      "saison":  "annuelle",
+                                      "format":  [
+                                                     "18 matchs par club, en aller-retour. Les quatre premiers jouent les demi-finales.",
+                                                     "Le jeu conserve les mêmes clubs dans les deux divisions anglaises."
+                                                 ]
+                                  },
+                         "champ":  {
+                                       "saison":  "annuelle",
+                                       "format":  [
+                                                      "26 matchs par club, en aller-retour. Les six premiers disputent les phases finales.",
+                                                      "Le jeu conserve les mêmes clubs dans les deux divisions anglaises."
+                                                  ]
+                                   },
+                         "jlo-d1":  {
+                                        "saison":  "annuelle",
+                                        "format":  [
+                                                       "18 matchs par club. Les six premiers disputent les phases finales.",
+                                                       "Les deux derniers du classement final jouent des barrages aller-retour contre les deux premiers de Division 2."
+                                                   ]
+                                    },
+                         "jlo-d2":  {
+                                        "saison":  "annuelle",
+                                        "format":  [
+                                                       "14 matchs par club, en aller-retour. Le premier au classement est champion.",
+                                                       "Les deux premiers disputent des barrages aller-retour contre des clubs de Division 1."
+                                                   ]
+                                    },
+                         "urc":  {
+                                     "saison":  "annuelle",
+                                     "format":  [
+                                                    "18 matchs par club, dont trois rencontres régionales retour. Les huit premiers accèdent aux quarts de finale.",
+                                                    "Le jeu conserve les participants d’une saison à l’autre."
+                                                ]
+                                 },
+                         "srp":  {
+                                     "saison":  "civile",
+                                     "format":  [
+                                                    "16 matchs par club. Les six premiers disputent les phases finales.",
+                                                    "Le jeu conserve les participants d’une saison à l’autre."
+                                                ]
+                                 }
+                     }
+}

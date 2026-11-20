@@ -156,17 +156,13 @@ const CREATION_COUNTRY_SCOPES := {
 }
 
 # Format joué par le moteur du Monde complet pour la première saison.
-const CREATION_FORMATS := {
-	"elite": ["26 matchs par club, en aller-retour. Les six premiers disputent les phases finales.", "Le dernier descend. Le 13e dispute un barrage contre le finaliste de deuxième division."],
-	"accession": ["30 matchs par club, en aller-retour. Les six premiers disputent les phases finales.", "Le champion monte en première division et le finaliste joue un barrage. Le dernier descend et le 15e joue un barrage chez le finaliste de troisième division."],
-	"nationale": ["26 matchs par club, en aller-retour. Les six premiers disputent les phases finales.", "Le champion monte en deuxième division. Le finaliste reçoit le 15e de deuxième division pour un barrage."],
-	"prem": ["18 matchs par club, en aller-retour. Les quatre premiers jouent les demi-finales.", "Le jeu conserve les mêmes clubs dans les deux divisions anglaises."],
-	"champ": ["26 matchs par club, en aller-retour. Les six premiers disputent les phases finales.", "Le jeu conserve les mêmes clubs dans les deux divisions anglaises."],
-	"jlo-d1": ["18 matchs par club. Les six premiers disputent les phases finales.", "Les deux derniers du classement final jouent des barrages aller-retour contre les deux premiers de Division 2."],
-	"jlo-d2": ["14 matchs par club, en aller-retour. Le premier au classement est champion.", "Les deux premiers disputent des barrages aller-retour contre des clubs de Division 1."],
-	"urc": ["18 matchs par club, dont trois rencontres régionales retour. Les huit premiers accèdent aux quarts de finale.", "Le jeu conserve les participants d’une saison à l’autre."],
-	"srp": ["16 matchs par club. Les six premiers disputent les phases finales.", "Le jeu conserve les participants d’une saison à l’autre."],
-}
+## Saison de départ et format d'une compétition à la création : lus dans les données (moteur, pack compris).
+## Donnée absente : chaîne ou liste vide, et l'écran omet la ligne.
+static func creation_format(app: Control, division: String) -> Array:
+	return Array(_competition_identity(app, division).get("formatLines", []))
+
+static func creation_season(app: Control, division: String) -> String:
+	return str(_competition_identity(app, division).get("startSeasonLabel", ""))
 
 static func begin_creation(app: Control) -> void:
 	app.management_ui.erase(CREATION_SELECTION)
@@ -236,9 +232,11 @@ static func _competition_summary(app: Control, parent: VBoxContainer, division: 
 	var facts := C.h(18)
 	parent.add_child(facts)
 	Editorial.fact(facts, club_count, "Clubs du championnat")
-	Editorial.divider(facts)
-	Editorial.fact(facts, "2027" if division == "srp" else "2026-2027", "Saison de départ")
-	var format: Array = CREATION_FORMATS.get(division, [])
+	var season := creation_season(app, division)
+	if not season.is_empty():
+		Editorial.divider(facts)
+		Editorial.fact(facts, season, "Saison de départ")
+	var format: Array = creation_format(app, division)
 	if not format.is_empty():
 		parent.add_child(C.rule())
 		parent.add_child(C.label("FORMAT ET ENJEUX", 21, Editorial.BRASS))
@@ -756,12 +754,10 @@ static func creation(app: Control) -> Control:
 		row.add_child(photo)
 		var over: VBoxContainer = photo.get_meta("content")
 		over.add_child(G.label("TON FUTUR CLUB", 14, G.WHITE))
-		if is_champ:
-			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2026-2027", 22, G.WHITE, true))
-		if is_nationale:
-			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2026-2027", 22, G.WHITE, true))
+		var start_label := creation_season(app, division)
+		if is_champ or is_nationale or is_srp:
+			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + ("  /  SAISON " + start_label if not start_label.is_empty() else ""), 22, G.WHITE, true))
 		if is_srp:
-			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2027", 22, G.WHITE, true))
 			over.add_child(G.label(_territory(selected).to_upper(), 13, G.WHITE))
 		if is_japan:
 			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper(), 22, G.WHITE, true))
@@ -919,13 +915,9 @@ static func creation(app: Control) -> Control:
 	if not modern and (is_srp or is_japan or is_nationale or is_champ):
 		var facts := G.h(8)
 		list.add_child(facts)
-		var fact_data := [["16", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["FÉV.–JUIN", "SAISON 2027"]]
-		if is_japan:
-			fact_data = [["18", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["DÉC.–JUIN", "SAISON 2026-2027"]] if division == "jlo-d1" else [["14", "MATCHS PAR CLUB"], ["2", "PLACES EN BARRAGES"], ["DÉC.–MAI", "SAISON 2026–27"]]
-		if is_nationale:
-			fact_data = [["26", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["PRO D2", "ACCESSION SPORTIVE"]]
-		if is_champ:
-			fact_data = [["26", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["SEPT.–MAI", "SAISON 2026-2027"]]
+		var start := creation_season(app, division)
+		# Saison de départ lue dans les données ; absente : aucune tuile.
+		var fact_data := [[start, "SAISON DE DÉPART"]] if not start.is_empty() else []
 		for fact in fact_data:
 			var tile := G.panel(facts, 1.0)
 			tile.add_child(G.label(fact[0], 20, G.INK, true))
