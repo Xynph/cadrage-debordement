@@ -89,7 +89,7 @@ static func style_pilule(fond: Color, contour: Color = Color.TRANSPARENT, marge_
 ## écrit, la couleur dit le palier. Une légende accompagne chaque grille (BAREME_ATTRIBUTS).
 const ATTRIBUT_0 := Color("ee6f5f")   ## 0-39
 const ATTRIBUT_40 := Color("f2a04a")  ## 40-54
-const ATTRIBUT_55 := Color("eadb55")  ## 55-64
+const ATTRIBUT_55 := Color("d4e35c")  ## 55-64, citron (décision de Léo 20/11/2026) : jamais confondu avec le doré
 const ATTRIBUT_65 := Color("a8d878")  ## 65-74
 const ATTRIBUT_75 := Color("4fcb78")  ## 75-84
 const ATTRIBUT_85 := Color("3debb4")  ## 85 et plus

@@ -1,6 +1,7 @@
 extends RefCounted
 ## Applique les surfaces immersives aux contrôles métier montés dans une tuile.
 ## Les marges, signaux, états et sélections appartiennent toujours à leur vue.
+const Charte = preload("res://ui/charte.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Paper = preload("res://ui/carnet_skin.gd")
@@ -100,10 +101,10 @@ static func _style(node: Node, accent: Color) -> void:
 		for state in ["font_selected_color","font_unselected_color","font_hovered_color"]:
 			node.remove_theme_color_override(state)
 	elif node is ProgressBar:
-		node.add_theme_stylebox_override("background",C.box(Color("283634"),Color.TRANSPARENT,3,0))
+		node.add_theme_stylebox_override("background",C.box(Color("283634"),Color.TRANSPARENT,Charte.RAYON_PILULE,0))
 		var fill: StyleBox = node.get_theme_stylebox("fill")
 		if fill is StyleBoxFlat:
-			node.add_theme_stylebox_override("fill",C.box(_ink(fill.bg_color),Color.TRANSPARENT,3,0))
+			node.add_theme_stylebox_override("fill",C.box(_ink(fill.bg_color),Color.TRANSPARENT,Charte.RAYON_PILULE,0))
 	elif node is HSeparator:
 		var rule := StyleBoxLine.new()
 		rule.color = Color(C.LINE,.65)
@@ -124,7 +125,7 @@ static func _surface(node: Control) -> void:
 	var style: StyleBoxFlat = original.duplicate()
 	style.bg_color = C.PANEL if original.bg_color.get_luminance()>.22 else C.PANEL.lerp(original.bg_color,.35)
 	style.border_color = C.LINE if original.border_color.s<.27 else P.safe_accent(original.border_color)
-	style.set_corner_radius_all(maxi(3,C.px(6)))
+	style.set_corner_radius_all(Charte.RAYON_CARTE)
 	node.add_theme_stylebox_override("panel",style)
 
 static func _button(button: Button, accent: Color) -> void:

@@ -97,7 +97,7 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	var titre := Kit.titre(page, 0, 98, str(TITRES.get(kind, "")), 38, 1400)
 	titre.name = "RecrutementSubpageTitle"
 	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
-	var cadre := D.rect(page, Rect2(0, 146, LARGEUR, 1000), Charte.PANNEAU, 0)
+	var cadre := D.rect(page, Rect2(0, 146, LARGEUR, 1000), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	cadre.name = "RecrutementSubpage_" + kind
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
 	cadre.clip_contents = true
@@ -189,10 +189,17 @@ static func _teindre(noeud: Node) -> void:
 		if style == null: continue
 		style.bg_color = _teinte(style.bg_color, true)
 		style.border_color = _teinte(style.border_color, true)
-		style.set_corner_radius_all(0)
+		style.set_corner_radius_all(_rayon_charte(etat_style, controle))
 	# Boutons d'action d'une ancienne fenêtre : style « lien » de la charte (un seul ivoire plein par écran, celui de la page).
 	if noeud is Button and not (noeud is CheckBox or noeud is OptionButton or noeud is MenuButton or noeud is CheckButton):
 		C.style_bouton_lien(noeud as Button, 19)
+
+## Rayon de la charte finale selon le rôle du style : panneau 12 (dans la page), jauge pilule, champ de texte multiligne 6, champs et boutons pilule.
+static func _rayon_charte(etat_style: String, controle: Control) -> int:
+	if etat_style == "panel": return Charte.RAYON_CARTE
+	if etat_style == "fill" or etat_style == "background": return Charte.RAYON_PILULE
+	if controle is TextEdit or controle is ItemList or controle is Tree: return Charte.RAYON_PETIT
+	return Charte.RAYON_PILULE
 
 static func _charte(racine: Node) -> void:
 	_teindre(racine)

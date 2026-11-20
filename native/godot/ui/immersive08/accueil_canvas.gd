@@ -87,6 +87,14 @@ static func home(app: Control, nom_jeu: String = "RUGBY LEGACY 27") -> Control:
 	pied.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	pied.offset_right = -C.px(128)
 	pied.offset_bottom = -C.px(48)
+	# Gabi (« Gabi · ? » et « Visite ») se pose dans ce pied, jamais au milieu de l'écran sur les liens.
+	var emplacement := Control.new()
+	emplacement.name = "CoachCompactDock"
+	# Taille réelle, non mise à l'échelle : les pastilles de Gabi gardent leur taille propre (comme le pied des autres écrans).
+	emplacement.custom_minimum_size = Vector2(210, 36)
+	emplacement.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	emplacement.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pied.add_child(emplacement)
 	var lieu := str(club.get("stadium", ""))
 	if not lieu.is_empty():
 		var ligne := C.label(lieu, 18, Charte.IVOIRE, false, 500)

@@ -29,7 +29,7 @@ static func construire(ecran, app: Control, model: Dictionary, page: String) -> 
 	cadre.custom_minimum_size.x = ecran.M(780)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(Charte.PANNEAU, .95)
-	style.set_corner_radius_all(0)
+	style.set_corner_radius_all(Charte.RAYON_PANNEAU)
 	for side in ["left", "right"]: style.set("content_margin_" + side, ecran.M(28))
 	style.content_margin_top = ecran.M(22)
 	style.content_margin_bottom = ecran.M(24)
@@ -100,6 +100,16 @@ static func _delegation(ecran, app: Control, model: Dictionary, corps: VBoxConta
 	case_composition.add_theme_font_override("font", C.BODY)
 	case_composition.add_theme_font_size_override("font_size", maxi(12, ecran.M(16)))
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: case_composition.add_theme_color_override(key, Charte.IVOIRE)
+	# Case de la charte : fond sobre à coins arrondis (rayon 6), cerclée d'ivoire au focus clavier, jamais de fond rouge.
+	for etat in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
+		var fond_case := StyleBoxFlat.new()
+		fond_case.bg_color = Color.TRANSPARENT if etat == "focus" else (Charte.PANNEAU_3 if etat.contains("pressed") or etat == "hover" else Charte.PANNEAU_2)
+		fond_case.set_corner_radius_all(Charte.RAYON_PETIT)
+		if etat == "focus":
+			fond_case.border_color = Charte.IVOIRE
+			fond_case.set_border_width_all(2)
+		for bord in ["left", "right"]: fond_case.set("content_margin_" + bord, ecran.M(10))
+		case_composition.add_theme_stylebox_override(etat, fond_case)
 	corps.add_child(case_composition)
 	var detail := _paragraphe(ecran, "", 14, Charte.IVOIRE_2)
 	detail.name = "MatchDelegationDetail"

@@ -62,7 +62,7 @@ static func _surface(color: Color, padding: int = 0, radius: int = 0) -> PanelCo
 ## Titre d'écran : Barlow Condensed ExtraBold italique, capitales (charte §7).
 static func _titre(text: String, size: int) -> Label:
 	var label := C.label(text.to_upper(), size, C.IVORY, true, 800)
-	label.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	label.add_theme_font_override("font", Charte.TITRE_EXTRA)
 	return label
 
 ## Étiquette en petites capitales (ivoire 2).
@@ -599,7 +599,7 @@ static func _bouton_suivant(app: Control, content: VBoxContainer, ctx: Dictionar
 			style.border_color = C.IVORY
 			style.set_border_width_all(2)
 		start.add_theme_stylebox_override(look, style)
-	start.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE if reason.is_empty() else C.BODY)
+	start.add_theme_font_override("font", Charte.TITRE_EXTRA if reason.is_empty() else C.BODY)
 	start.add_theme_font_size_override("font_size", C.font_px(23 if reason.is_empty() else 17))
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: start.add_theme_color_override(key, Charte.NUIT)
 	start.add_theme_color_override("font_disabled_color", C.MUTED)
@@ -1043,21 +1043,21 @@ static func _barre(app: Control, ctx: Dictionary) -> Control:
 	var first := C.v(2)
 	steps.add_child(first)
 	var first_label := C.label("1  Club".to_upper(), 23, C.IVORY, true, 800)
-	first_label.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	first_label.add_theme_font_override("font", Charte.TITRE_EXTRA)
 	first.add_child(first_label)
 	first.add_child(_incline(C.IVORY, Vector2(0, maxi(2, C.px(4)))))
 	steps.add_child(C.label("›", 20, C.FAINT, false))
 	var selected: Dictionary = ctx.get("selected", {})
 	if selected.is_empty() or bool(ctx.get("unavailable", false)):
 		var second := C.label("2  Carrière".to_upper(), 23, C.MUTED, true, 700)
-		second.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+		second.add_theme_font_override("font", Charte.TITRE_GRAS)
 		second.name = "CreationStepCareer"
 		second.tooltip_text = "Choisis d’abord un club"
 		second.mouse_filter = Control.MOUSE_FILTER_PASS
 		steps.add_child(second)
 	else:
 		var go := _lien("2  CARRIÈRE  →", func(): suivant(app, ctx), "CreationStepCareer", 23)
-		go.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+		go.add_theme_font_override("font", Charte.TITRE_GRAS)
 		steps.add_child(go)
 	row.add_child(C.fill(Control.new()))
 	var teams: Array = ctx.get("teams", [])

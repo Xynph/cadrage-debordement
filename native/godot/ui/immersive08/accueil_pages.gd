@@ -77,7 +77,7 @@ static func remplir(app: Control, page: Control, quoi: String) -> void:
 	surface.set_meta("immersive_style_applied", true)
 	var fond := StyleBoxFlat.new()
 	fond.bg_color = Color(Charte.PANNEAU, .96)
-	fond.set_corner_radius_all(0)
+	fond.set_corner_radius_all(Charte.RAYON_PANNEAU)
 	for bord in ["left", "right", "top", "bottom"]: fond.set("content_margin_" + bord, C.px(32))
 	surface.add_theme_stylebox_override("panel", fond)
 	C.fill(surface, true)
@@ -148,7 +148,7 @@ class Carrieres extends VBoxContainer:
 		cadre.set_meta("immersive_style_applied", true)
 		var style := StyleBoxFlat.new()
 		style.bg_color = Charte.PANNEAU_2
-		style.set_corner_radius_all(0)
+		style.set_corner_radius_all(Charte.RAYON_CARTE)
 		if en_cours:
 			style.border_color = Charte.IVOIRE
 			style.border_width_left = maxi(2, C.px(4))

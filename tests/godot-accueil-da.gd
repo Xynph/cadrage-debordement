@@ -161,6 +161,17 @@ func resume() -> void:
 	if app.model.get("next") is Dictionary: check(node("EntryNextMatch") != null, "Prochain match lu du modèle")
 	check(windows().is_empty(), "Carrière en cours : aucune Window ouverte")
 	shot("accueil-reprise")
+	# L'emplacement de Gabi (« Gabi · ? », « Visite ») dans le pied ne recouvre ni le lieu, ni l'aide clavier, ni un lien.
+	# (Ce test tourne sans Gabi : la place réservée est vérifiée ici, ses pastilles dans la capture filmée.)
+	var emplacement := node("CoachCompactDock")
+	check(emplacement != null and emplacement.is_visible_in_tree(), "Emplacement de Gabi dans le pied de l'Accueil")
+	if emplacement != null:
+		var zone := emplacement.get_global_rect()
+		check(Rect2(Vector2.ZERO, app.size).encloses(zone), "L'emplacement de Gabi reste dans l'écran")
+		for nom_lien in ["EntryNewCareer", "EntryCareerSlots", "EntryImportCareer", "EntrySettings", "EntryQuit", "EntryPacks", "EntryPlace", "EntryResume"]:
+			var autre := node(nom_lien)
+			if autre == null or not autre.is_visible_in_tree(): continue
+			check(not zone.intersects(autre.get_global_rect()), "L'emplacement de Gabi ne recouvre pas " + nom_lien)
 	if classement != null:
 		check(press("EntryRank"), "Le classement agit")
 		await settle(10)

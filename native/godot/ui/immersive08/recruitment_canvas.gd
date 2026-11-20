@@ -35,6 +35,8 @@ const HAUTEUR := 1250
 const TABLE_TOP := 332.0
 const HEADER_H := 32.0
 const ROWS_H := 640.0
+## Marge sous la dernière ligne : elle reste entière et loin des coins arrondis du panneau en fin de défilement.
+const BAS_TABLEAU := 22.0
 const COST_TOP := 1020.0
 const TABS := ["Besoins du club", "Recherche", "Joueurs suivis", "Rapports"]
 const WEEKS_PER_YEAR := 52
@@ -508,7 +510,7 @@ func _club(player: Dictionary) -> String:
 	return ""
 
 func _table() -> void:
-	var panel := D.rect(self, Rect2(0, TABLE_TOP, WIDTH, HEADER_H + ROWS_H + 4), Charte.PANNEAU, 24)
+	var panel := D.rect(self, Rect2(0, TABLE_TOP, WIDTH, HEADER_H + ROWS_H + 4), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	panel.name = "ImmersiveMarketTable"
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	var entete := D.rect(panel, Rect2(0, 0, WIDTH, HEADER_H), Color.TRANSPARENT, 0)
@@ -669,7 +671,7 @@ func _refresh() -> void:
 	_ids_affiches = results.map(func(p: Dictionary): return str(p.get("playerId", p.id)))
 	columns = _columns_for(results if tab != 3 else [])
 	_entetes()
-	table_rows.custom_minimum_size = Vector2(0, C.px(maxi(80, results.size() * ROW_HEIGHT)))
+	table_rows.custom_minimum_size = Vector2(0, C.px(maxi(80, results.size() * ROW_HEIGHT) + BAS_TABLEAU))
 	var current := str(state.get("report_id" if tab == 3 else "player_id", ""))
 	if not results.is_empty() and not results.any(func(p: Dictionary): return str(p.id) == current):
 		current = str(results[0].id)
@@ -895,7 +897,7 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 ## masse salariale de la piste choisie ; l'action principale de l'écran (ivoire plein) est ici et nulle part ailleurs.
 func _cout() -> void:
 	_clear(cost)
-	D.rect(cost, Rect2(0, 0, WIDTH, 172), Charte.PANNEAU, 24)
+	D.rect(cost, Rect2(0, 0, WIDTH, 172), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	var player := _selected if tab != 3 else _market_player(str(_selected.get("playerId", "")))
 	var report: Dictionary = _selected if tab == 3 else report_by_player.get(str(_selected.get("id", "")), {})
 	Kit.etiquette(cost, 24, 34, "Ce que coûte l’offre", 330)

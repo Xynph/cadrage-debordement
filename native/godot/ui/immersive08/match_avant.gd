@@ -533,7 +533,7 @@ func _bouton_coup_d_envoi(play: Button) -> Control:
 	focus.bg_color = Color.TRANSPARENT
 	focus.border_color = Charte.IVOIRE
 	focus.set_border_width_all(2)
-	focus.set_corner_radius_all(0)
+	focus.set_corner_radius_all(Charte.RAYON_PETIT)
 	focus.set_expand_margin_all(M(3))
 	kickoff.add_theme_stylebox_override("focus", focus)
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color", "font_hover_pressed_color"]: kickoff.add_theme_color_override(key, Color.TRANSPARENT)
@@ -902,7 +902,7 @@ func _touche(libelle: String) -> PanelContainer:
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style := StyleBoxFlat.new()
 	style.bg_color = Charte.PANNEAU_3
-	style.set_corner_radius_all(0)
+	style.set_corner_radius_all(Charte.RAYON_CARTE)
 	style.content_margin_left = M(8)
 	style.content_margin_right = M(8)
 	style.content_margin_top = M(2)
@@ -980,7 +980,7 @@ func _tuile(id: String, titre: String, legende: String = "") -> VBoxContainer:
 	tile.size_flags_stretch_ratio = 1.0
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(Charte.PANNEAU, .94)
-	style.set_corner_radius_all(0)
+	style.set_corner_radius_all(Charte.RAYON_PANNEAU)
 	style.content_margin_left = M(18)
 	style.content_margin_right = M(18)
 	style.content_margin_top = M(12)
@@ -1270,7 +1270,7 @@ func _jauge_vent(level: int) -> Control:
 		bar.size_flags_vertical = Control.SIZE_SHRINK_END
 		var style := StyleBoxFlat.new()
 		style.bg_color = Charte.IVOIRE if level > 0 and i <= level else Color(Charte.IVOIRE, .2)
-		style.set_corner_radius_all(0)
+		style.set_corner_radius_all(Charte.RAYON_PILULE)
 		bar.add_theme_stylebox_override("panel", style)
 		gauge.add_child(bar)
 	return gauge
@@ -1323,7 +1323,7 @@ static func jauge_arbitre(libelle: String, valeur: Variant) -> Control:
 		cran.custom_minimum_size = Vector2(M(14 if i == allumes - 1 else 10), M(5))
 		var style := StyleBoxFlat.new()
 		style.bg_color = Charte.IVOIRE if i == allumes - 1 and allumes > 0 else Color(Charte.IVOIRE, .22)
-		style.set_corner_radius_all(0)
+		style.set_corner_radius_all(Charte.RAYON_PILULE)
 		cran.add_theme_stylebox_override("panel", style)
 		crans.add_child(cran)
 	ligne.add_child(crans)
@@ -1415,7 +1415,7 @@ func _montrer_mini_adverse(joueur: Dictionary, club: Dictionary, ancre: Control)
 	fond.bg_color = Charte.PANNEAU_3
 	fond.border_color = Charte.FILET
 	fond.set_border_width_all(1)
-	fond.set_corner_radius_all(0)
+	fond.set_corner_radius_all(Charte.RAYON_CARTE)
 	for cote in ["left", "right"]: fond.set("content_margin_" + cote, M(18))
 	fond.content_margin_top = M(14)
 	fond.content_margin_bottom = M(14)
@@ -1491,7 +1491,7 @@ func _plan_adverse(column: VBoxContainer, plan: Dictionary) -> void:
 	puce.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style := StyleBoxFlat.new()
 	style.bg_color = Charte.PANNEAU_3
-	style.set_corner_radius_all(0)
+	style.set_corner_radius_all(Charte.RAYON_PILULE)
 	style.content_margin_left = M(6)
 	style.content_margin_right = M(6)
 	style.content_margin_top = M(1)
@@ -1573,6 +1573,10 @@ func _gabi(data: Dictionary) -> Control:
 	if is_instance_valid(app.get("coach")) and app.coach.has_method("installer_bandeau"):
 		app.coach.installer_bandeau(medaillon)
 		_relayer_gabi.call_deferred()
+		# Le portrait ne se place (et ne se dessine) qu'une fois la zone visible et dimensionnée : à chaque changement, Gabi remet sa page en ordre.
+		for signal_zone: Signal in [medaillon.resized, medaillon.visibility_changed]:
+			signal_zone.connect(func():
+				if is_instance_valid(app) and is_instance_valid(app.get("coach")) and app.coach.has_method("_layout"): app.coach._layout.call_deferred())
 	else: medaillon.hide()
 	return _tile_of(column)
 
@@ -1581,9 +1585,18 @@ func _relayer_gabi() -> void:
 	if not is_inside_tree(): return
 	await get_tree().process_frame
 	await get_tree().process_frame
+	# Écran encore caché ou zone sans taille (ouverture en fondu) : quelques images de plus avant de remettre Gabi en place.
+	var essais := 0
+	while is_inside_tree() and essais < 40 and (not is_instance_valid(app) or not _medaillon_pret()):
+		essais += 1
+		await get_tree().process_frame
 	if not is_instance_valid(app): return
 	var coach: Variant = app.get("coach")
 	if is_instance_valid(coach) and coach.has_method("_layout"): coach._layout()
+
+func _medaillon_pret() -> bool:
+	var zone := find_child("GabiMedaillon", true, false) as Control
+	return zone != null and zone.is_visible_in_tree() and zone.size.x >= 20.0
 
 ## Contrôle « rien ne déborde » (tests) : chaque tuile contient son contenu, l'écran tient dans sa zone.
 func overflows() -> Array:

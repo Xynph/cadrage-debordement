@@ -102,6 +102,10 @@ func liberer() -> void:
 	_image = null
 	portrait = null
 
+## Remet le disque et le portrait à la taille actuelle du médaillon (à rappeler quand la zone a pris sa taille).
+func ajuster() -> void:
+	_fit_portrait()
+
 func _fit_portrait() -> void:
 	if _image == null: return
 	if _disque != null:
