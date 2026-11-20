@@ -290,3 +290,16 @@ Aucune animation bloquante.
 - Plus de petite fenêtre : les confirmations d'argent (devis, rallonge, libérer, retraite, signature…) s'ouvrent en place dans la page (`ClubConfirmHote`) ; contrat du staff, mentorat (deux pages) et engagements du staff deviennent des sous-pages du Staff avec « ← Retour au staff », Échap et historique Précédent / Suivant.
 - L'encadrement (4 visages) et « Vie du club » ne sont plus sur la Vue d'ensemble : ils vivent dans l'onglet Staff et dans Direction (supporters, sponsor).
 - Aucun or (le seul or reste Continuer dans la coque) ; coches dessinées + mots : la couleur ne porte jamais seule un signal.
+
+### 14.1 Onglet Staff (20/11/2026, même grammaire)
+
+Structure reprise de la variante 3 « Onglet Staff en tableau » (seule maquette du Staff), dans la grammaire de la 1 : aucun cadre complet, plus de numéros « 09 » / « 10 », tableau dense, liens texte ivoire + flèche, un seul bouton ivoire plein.
+
+| Zone | Contenu |
+|---|---|
+| Gauche (540) | **L'encadrement** : 4 responsables (visage, rôle, nom, fin de contrat ; visage ou nom = fiche du membre) ; **Diagnostic de la semaine** (condition, moral, joueurs fatigués avec « ! » ; ligne = Travail du club) ; **Contrats et engagements** (en poste, fins de contrat, candidats, mentorat, budget du staff : chaque ligne ouvre le tableau, la sous-page ou l'onglet concerné). |
+| Droite | Barre (club, équipe / candidats / archives, recherche, compteur), accès (mentorat, contrats rémunérés), **Recruter un membre** (seul ivoire plein, bascule sur les candidats) ; tableau Rôle · Nom · Âge · Niveau · Contrat · € / sem. (si contrats rémunérés) · actions ; délégations (adjoint, préparateur) et liens « Demander une sélection → », « Recrutement → » sous le tableau. |
+
+- Ligne ou nom = fiche du membre dans l'onglet (rôle, niveau, contrat, salaire, parcours), « ← Retour à l'annuaire » ; sur un membre du club : **Prolonger <nom>** en ivoire plein, « ✕ Libérer <nom> » à part, en rouge avec le signe et le mot.
+- Prolonger / Recruter → sous-page « Contrat du staff » ; Libérer / Retraite / Rémunérer / activations → confirmation EN PLACE avec le coût écrit.
+- Poste vacant : non affiché tant que le moteur ne publie pas les postes vacants (donnée jamais inventée).

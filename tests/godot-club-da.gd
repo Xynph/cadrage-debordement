@@ -87,9 +87,91 @@ func run() -> void:
 	await tabs()
 	await confirmation_en_place()
 	await staff_pages()
+	await staff_tab()
 	await overview()
 	shot("club-1920x1080")
+	root.size = Vector2i(1280, 720)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	await staff_open()
+	check(node("CarnetStaff") != null and windows().is_empty(), "Staff à 1280 × 720 : tableau, aucune fenêtre")
+	shot("club-staff-1280x720")
 	finish()
+
+func staff_open() -> void:
+	app.management_ui.erase("club_page")
+	app.StaffViews.reading(app).navigation_id = ""
+	app._navigate("Staff")
+	await settle(12)
+
+## Onglet Staff (DA du 20/11/2026) : tableau dense sans cadre ni numéro, un seul ivoire plein, noms et lignes vers la fiche,
+## lignes de gauche vers une page, départ confirmé EN PLACE.
+func staff_tab() -> void:
+	await staff_open()
+	for id in ["CarnetStaff", "StaffTableHead", "StaffList", "ClubStaffPeople", "ClubStaffDiagnostic", "ClubStaffContracts", "ClubStaffTable"]:
+		check(node(id) != null, "Staff : " + id)
+	var page := node("ImmersiveClub")
+	var numeros := 0
+	var cadres := 0
+	var pleins := 0
+	for control in page.find_children("*", "Control", true, false):
+		if control is Label and str(control.text).strip_edges() in ["09", "10"]: numeros += 1
+		if control is Button and control.find_child("FondIvoire", false, false) != null and control.is_visible_in_tree(): pleins += 1
+		# Champs de saisie et menus déroulants gardent leur filet de champ (charte §7) : ce ne sont pas des cadres de bloc.
+		if control is OptionButton or control is LineEdit: continue
+		# Nœuds internes du moteur (focus d'un défilement, liste d'un menu déroulant fermé) : hors de la page.
+		if str(control.name).begins_with("_") or (control as Control).get_window() != page.get_window(): continue
+		for etat in ["panel", "normal"]:
+			if not (control as Control).has_theme_stylebox_override(etat): continue
+			var boite := (control as Control).get_theme_stylebox(etat) as StyleBoxFlat
+			if boite != null and boite.border_width_left > 0 and boite.border_width_top > 0 and boite.border_width_right > 0 and boite.border_width_bottom > 0 and boite.border_color.a > .05:
+				cadres += 1
+				printerr("CADRE sur ", control.get_path())
+	check(numeros == 0, "Staff : plus de numéros de chapitre (%d)" % numeros)
+	check(cadres == 0, "Staff : aucun cadre complet (%d)" % cadres)
+	check(pleins <= 1, "Staff : au plus un bouton ivoire plein (%d)" % pleins)
+	check(windows().is_empty(), "Staff : aucune fenêtre")
+	shot("club-staff-1920x1080")
+	# Nom dans le tableau, ligne du tableau, nom à gauche : la fiche du membre, puis retour à l'annuaire.
+	for motif in ["StaffOpenName_*", "StaffRow_*", "ClubStaffName_*"]:
+		await staff_open()
+		var cibles: Array = app.root_content.find_children(motif, "Button", true, false)
+		check(not cibles.is_empty(), "Staff : élément cliquable " + motif)
+		if cibles.is_empty(): continue
+		(cibles[0] as Button).pressed.emit()
+		await settle(10)
+		check(node("StaffProfile") != null and node("StaffProfileName") != null, "Staff : %s ouvre la fiche du membre" % motif)
+		check(windows().is_empty(), "Staff : la fiche s'ouvre sans fenêtre (%s)" % motif)
+		if motif == "StaffOpenName_*": shot("club-staff-fiche-1920x1080")
+		var retour := node("StaffProfileDirectory") as Button
+		check(retour != null, "Fiche du staff : retour à l'annuaire")
+		if retour != null: retour.pressed.emit()
+		await settle(8)
+		check(node("StaffProfile") == null and node("StaffTableHead") != null, "Retour à l'annuaire du staff (%s)" % motif)
+	# Lignes de la colonne de gauche : chacune mène quelque part (tableau, sous-page ou travail du club).
+	for id in ["ClubStaffCount", "ClubStaffContractsEnding", "ClubStaffCandidates", "ClubStaffMentoring", "ClubStaffBudget", "ClubStaffDiagnosticRow0", "ClubStaffWork"]:
+		await staff_open()
+		var bouton := node(id) as Button
+		if bouton == null: continue
+		var avant := "%s|%s|%s" % [app.route, Pages.actuelle(app), str(app.StaffViews.reading(app).get("tab", 0))]
+		bouton.pressed.emit()
+		await settle(10)
+		var apres := "%s|%s|%s" % [app.route, Pages.actuelle(app), str(app.StaffViews.reading(app).get("tab", 0))]
+		check(avant != apres or (id in ["ClubStaffCount", "ClubStaffContractsEnding"] and node("StaffTableHead") != null), "%s : mène quelque part (%s -> %s)" % [id, avant, apres])
+		check(windows().is_empty(), "%s : aucune fenêtre" % id)
+	# Départ (ou activation des carrières du staff) : confirmation EN PLACE, Annuler n'envoie rien.
+	await staff_open()
+	var depart := node("StaffRelease") as Button
+	if depart == null: depart = node("EnableStaffCareer") as Button
+	if depart != null:
+		var commandes := int(app.bridge._next_id)
+		depart.pressed.emit()
+		await settle(6)
+		check(node("ClubConfirmation") != null and windows().is_empty(), "Staff : confirmation en place, sans fenêtre (%s)" % depart.name)
+		var non := node("ClubConfirmationAnnuler") as Button
+		if non != null: non.pressed.emit()
+		await settle(4)
+		check(int(app.bridge._next_id) == commandes, "Staff : Annuler n'envoie rien")
+	app.StaffViews.reading(app).tab = 0
 
 func finish() -> void:
 	print("CLUB_DA ", JSON.stringify({"checks": checks, "failures": failures}))

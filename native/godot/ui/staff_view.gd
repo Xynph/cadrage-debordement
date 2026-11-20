@@ -1,8 +1,14 @@
 extends RefCounted
+## Onglet Staff (écran Club, charte finale du 20/11/2026) : tableau dense de l'encadrement, délégations et accès, ou
+## fiche d'un membre (clic sur son nom ou sa ligne ; jamais de fiche à droite). Liens gris-vert + flèche, boutons en
+## pilule, aucun aplat doré. Les tableaux, liens et boutons viennent de staff_career_view.gd (Career.texte, .lien…).
 const G = preload("res://ui/carnet_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const ImmersiveUI = preload("res://ui/immersive08/club_ui.gd")
 const Career = preload("res://ui/staff_career_view.gd")
+const C = preload("res://ui/immersive08/components.gd")
+const Kit = preload("res://ui/immersive08/tactics_kit.gd")
+const Charte = preload("res://ui/charte.gd")
 
 static func reading(app: Control) -> Dictionary:
 	if not app.management_ui.get("staff") is Dictionary: app.management_ui.staff = {}
@@ -27,17 +33,18 @@ static func open_target(app: Control, staff_id: String) -> bool:
 static func target_available(app: Control, staff_id: String) -> bool:
 	return not person_by_id(app.model, staff_id).is_empty()
 
-static func name_link(app: Control, person: Dictionary, text_size: int = 24) -> Button:
+## Nom d'un membre : DM Sans gras crème (charte : noms des tableaux), clic = sa fiche.
+static func name_link(app: Control, person: Dictionary, text_size: int = 18) -> Button:
 	var staff_id := str(person.get("id", ""))
-	var link := G.button(str(person.get("name", "")), func():
-		app.navigation_controller.open_entity({"kind":"staff", "id":staff_id}))
-	link.name = "StaffOpenName_" + staff_id.validate_node_name()
+	var link := Career.lien(str(person.get("name", "")), func():
+		app.navigation_controller.open_entity({"kind":"staff", "id":staff_id}), "StaffOpenName_" + staff_id.validate_node_name(), text_size, Charte.IVOIRE)
+	link.add_theme_font_override("font", Kit.texte_gras())
 	link.accessibility_name = "Consulter le profil · " + str(person.get("name", ""))
-	link.tooltip_text = link.accessibility_name
 	link.set_meta("entity_kind", "staff")
 	link.set_meta("entity_id", staff_id)
 	link.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	link.add_theme_font_size_override("font_size", G.Base.reading_size(text_size))
+	link.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	link.clip_text = true
 	return link
 
 static func portrait_link(app: Control, photo: Control, person: Dictionary) -> Button:
@@ -50,97 +57,167 @@ static func portrait_link(app: Control, photo: Control, person: Dictionary) -> B
 	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	return link
 
+## Une ligne « intitulé · valeur » de la fiche (rangée dense, filet dessous).
+static func _fait(parent: Container, intitule: String, valeur: String) -> void:
+	var row := Career.rangee()
+	row.custom_minimum_size.y = C.px(Career.LIGNE)
+	parent.add_child(row)
+	row.add_child(Career.texte(intitule, 18, Charte.IVOIRE_2, 300))
+	row.add_child(Career.texte(valeur, 18, Charte.IVOIRE))
+	Career.filet(parent)
+
+## Fiche d'un membre du staff : identité, contrat, parcours, puis Prolonger (bouton plein vert franc) et Libérer à part.
 static func _profile(app: Control, parent: Container, person: Dictionary) -> void:
-	var list := G.scroll(parent)
+	var scroll := ScrollContainer.new()
+	scroll.name = "StaffProfileScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	parent.add_child(scroll)
+	var list := VBoxContainer.new()
 	list.name = "StaffProfile"
+	list.add_theme_constant_override("separation", C.px(6))
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.set_meta("staff_id", str(person.id))
-	var heading := G.h(12)
+	scroll.add_child(list)
+	var back := Career.lien("← Retour à l’annuaire", func():
+		reading(app).navigation_id = ""
+		app._render(false), "StaffProfileDirectory", 18)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	list.add_child(back)
+	var heading := Career.rangee(20)
 	list.add_child(heading)
 	var appearance := person.duplicate(true)
 	appearance.portraitRole = "staff"
-	heading.add_child(G.portrait(0, 82, appearance))
-	var words := G.v(5)
-	G.fill(words)
+	var photo := G.portrait(0, C.px(96), appearance)
+	photo.custom_minimum_size = Vector2(C.px(96), C.px(110))
+	heading.add_child(photo)
+	var words := VBoxContainer.new()
+	words.add_theme_constant_override("separation", C.px(4))
+	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	words.alignment = BoxContainer.ALIGNMENT_CENTER
 	heading.add_child(words)
-	var title := G.wrap(str(person.get("name", "")), 24, G.INK)
+	var role := str(person.get("roleLabel", person.get("role", "Staff")))
+	words.add_child(Career.surtitre(role))
+	var title := C.label(str(person.get("name", "")), 40, Charte.IVOIRE, true, 700)
+	title.add_theme_font_override("font", Charte.TITRE_EXTRA)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.custom_minimum_size.x = C.px(400)
 	title.name = "StaffProfileName"
 	words.add_child(title)
-	words.add_child(G.wrap(str(person.get("roleLabel", person.get("role", "Staff"))), 15, G.GOLD))
-	if person.has("age"): words.add_child(G.wrap("%s ans" % G.n(person.age), 14))
+	var equipe := ""
 	for team: Dictionary in app.model.get("staff", {}).get("teams", []):
 		if team.get("members", []).any(func(member: Dictionary): return str(member.get("id", "")) == str(person.id)):
-			words.add_child(G.wrap(str(team.get("name", "")), 14))
+			equipe = str(team.get("name", ""))
 			break
-	if person.get("contractEnd") != null: list.add_child(G.wrap("Contrat jusqu’à la saison %s" % G.season_label(person.contractEnd), 14))
+	var resume: Array[String] = []
+	if person.has("age"): resume.append("%s ans" % G.n(person.age))
+	if not equipe.is_empty(): resume.append(equipe)
+	if not resume.is_empty(): words.add_child(Career.texte(" · ".join(resume), 19, Charte.IVOIRE_2))
+	Career.filet(list)
+	_fait(list, "Rôle", role)
+	if person.get("level") != null: _fait(list, "Niveau", G.n(person.level))
+	if person.get("contractEnd") != null: _fait(list, "Contrat", "jusqu’à la saison %s" % G.season_label(person.contractEnd))
 	var employment := Career._employment_person(app, str(person.id))
 	if employment.get("employed", false):
-		list.add_child(G.wrap("Contrat rémunéré · %s · %s paies restantes" % [G.salary(employment.get("paidSalary", 0)), G.n(employment.get("remainingPayments", 0))], 14))
+		_fait(list, "Salaire", "%s · %s paies restantes" % [G.salary(employment.get("paidSalary", 0)), G.n(employment.get("remainingPayments", 0))])
+		if employment.get("severance") != null: _fait(list, "Indemnité de rupture", "%s €" % G.n(employment.severance))
+	if person.get("sourcePlayerId") != null: _fait(list, "Parcours", "Ancien joueur · reconversion dans l’encadrement")
 	var events: Array = app.model.get("clubLife", {}).get("staffCareer", {}).get("history", []).filter(func(event: Dictionary):
 		return str(event.get("id", "")) == str(person.id))
 	if not events.is_empty():
-		list.add_child(G.section("Parcours dans ta carrière"))
+		var section := Career.etiquette("Parcours dans ta carrière")
+		section.custom_minimum_size.y = C.px(40)
+		list.add_child(section)
 		var labels := {"reference-already-retired":"Retraite", "player-conversion":"Reconversion dans le staff", "retirement":"Retraite", "voluntary-retirement":"Départ à la retraite", "contract-ended":"Fin de contrat", "ai-renewal":"Prolongation", "ai-hire":"Arrivée au club", "hire":"Arrivée au club", "renew":"Prolongation", "release":"Départ du club"}
 		for event: Dictionary in events:
-			list.add_child(G.wrap("Saison %s · %s" % [G.season_label(event.get("season", "—")), str(labels.get(event.get("kind", ""), "Évolution du parcours"))], 14))
-	var back := G.button("Retour à l’annuaire", func():
-		reading(app).navigation_id = ""
-		app._render(false))
-	back.name = "StaffProfileDirectory"
-	list.add_child(back)
+			_fait(list, "Saison %s" % G.season_label(event.get("season", "—")), str(labels.get(event.get("kind", ""), "Évolution du parcours")))
+	# Actions sur un membre de TON club (carrières du staff actives) : Prolonger en action principale, Libérer à part.
+	var own := false
+	for team: Dictionary in app.model.get("staff", {}).get("teams", []):
+		if int(team.get("id", -1)) == int(app.model.club.id) and team.get("members", []).any(func(member: Dictionary): return str(member.get("id", "")) == str(person.id)): own = true
+	var career: Dictionary = app.model.get("clubLife", {}).get("staffCareer", {})
+	if own and career.get("active", false) and (person.get("canRenew", false) or person.get("canRelease", false) or person.get("canRetire", false)):
+		var espace := Control.new()
+		espace.custom_minimum_size.y = C.px(14)
+		list.add_child(espace)
+		var actions := Career.rangee(24)
+		actions.name = "StaffProfileActions"
+		list.add_child(actions)
+		if person.get("canRenew", false):
+			var renew := Career.bouton_principal(actions, "Prolonger " + Kit.casse(str(person.name)), func(): Career._contract(app, person, career, true), "StaffRenew", 420.0)
+			renew.set_meta("staff_id", person.id)
+		if person.get("canRelease", false):
+			Career._departure(app, actions, person, career, "staff_release", "Libérer", "Le membre du staff redeviendra disponible au recrutement.", "Libérer " + Kit.casse(str(person.name)))
+		if person.get("canRetire", false):
+			Career._departure(app, actions, person, career, "staff_retire", "Retraite", "Cette personne quittera définitivement le marché du staff.")
+		var cout := "Libérer : une confirmation s’ouvre ici, avec le coût écrit."
+		if employment.get("employed", false): cout = "Libérer : indemnité de rupture de %s €, au plus deux paies ; confirmation ici même." % G.n(employment.get("severance", 0))
+		list.add_child(Career.texte(cout, 17, Charte.IVOIRE_2))
 
-class Avatar extends Control:
-	func _draw() -> void:
-		draw_style_box(G.T.box(Color("ddd5c6"), 8), Rect2(Vector2.ZERO, size))
-		draw_circle(Vector2(size.x * .5, size.y * .32), size.x * .16, Color("aaa396"))
-		draw_style_box(G.T.box(Color("aaa396"), 20), Rect2(Vector2(size.x * .18, size.y * .53), Vector2(size.x * .64, size.y * .38)))
-
-static func build(app: Control) -> Control:
-	var page := G.h(16)
-	page.name = "CarnetStaff"
-	G.fill(page, true)
-	var left := G.panel(page, .72)
-	G.chapter(left, "09", "Autour de toi", "Les responsabilités restent tes choix.", app.accent)
-	var duties := G.scroll(left)
+## Délégations du staff (adjoint, préparateur) et accès rapides, sous le tableau.
+static func _delegations(app: Control, page: Container) -> void:
+	Career.filet(page)
+	var bloc := Career.rangee(20)
+	bloc.name = "StaffDuties"
+	page.add_child(bloc)
+	bloc.add_child(Career.etiquette("Délégations", 150))
 	var decisions: Dictionary = app.model.get("decisions", {})
 	var delegation: Dictionary = decisions.get("delegation", {})
-	for entry in [["lineup", "L'adjoint", "Prépare les 23 après la séance, selon les postes et les joueurs disponibles."], ["training", "Le préparateur", "Choisit récupération sous 75 % de condition moyenne du XV ; charge normale sinon."]]:
-		duties.add_child(G.section(entry[1]))
-		duties.add_child(G.wrap(entry[2], 14))
+	for entry in [["lineup", "L’adjoint prépare les 23", "Prépare les 23 après la séance, selon les postes et les joueurs disponibles."], ["training", "Le préparateur dose la charge", "Choisit récupération sous 75 % de condition moyenne du XV ; charge normale sinon."]]:
 		var toggle := CheckBox.new()
 		toggle.name = "Delegate" + entry[0].capitalize()
-		toggle.text = "Confier la sélection" if entry[0] == "lineup" else "Confier la charge collective"
+		toggle.text = entry[1]
+		toggle.accessibility_name = "%s · %s" % [entry[1], entry[2]]
 		toggle.button_pressed = delegation.get(entry[0], false)
 		toggle.disabled = not app._live().is_empty() or not decisions.has("delegation") or app.model.meta.get("phase") == "ended"
 		toggle.toggled.connect(func(value: bool): app._command("set_delegation", {"key":entry[0], "enabled":value}))
-		duties.add_child(toggle)
-		duties.add_child(G.separator())
-	var selection := G.button("DEMANDER UNE SÉLECTION", func(): app._command("auto_lineup"))
+		Kit.styler_case(toggle)
+		bloc.add_child(toggle)
+	var espace := Control.new()
+	espace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	espace.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bloc.add_child(espace)
+	var selection := Career.lien("Demander une sélection →", func(): app._command("auto_lineup"), "StaffAutoLineup", 18)
 	selection.disabled = not app._live().is_empty() or app.model.meta.get("phase") == "ended"
-	duties.add_child(selection)
-	duties.add_child(G.wrap("Les identités du staff ne modifient ni ses capacités ni les résultats. Les signatures restent à confirmer par toi.", 12))
-	duties.add_child(G.button("RECRUTEMENT →", func(): app._navigate("Recrutement")))
-	var right := G.panel(page, 1.9)
+	bloc.add_child(selection)
+	bloc.add_child(Career.lien("Recrutement →", func(): app._navigate("Recrutement"), "StaffRecruitment", 18))
+
+static func build(app: Control) -> Control:
+	var page := VBoxContainer.new()
+	page.name = "CarnetStaff"
+	page.add_theme_constant_override("separation", C.px(8))
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var target := person_by_id(app.model, str(reading(app).get("navigation_id", "")))
 	if not target.is_empty():
-		_profile(app, right, target)
+		_profile(app, page, target)
 		return page
 	var career: Dictionary = app.model.get("clubLife", {}).get("staffCareer", {})
 	if career.get("active", false):
-		G.chapter(right, "10", "Les carrières du staff", "Contrats, candidats et reconversions dans ta partie.", app.accent)
-		Career.build(app, right, career)
+		Career.build(app, page, career)
+		_delegations(app, page)
 		return page
-	G.chapter(right, "10", "Les visages du club", "Les membres de l’encadrement et leurs responsabilités.", app.accent)
-	Career.enable(app, right, career)
+	_annuaire(app, page, career)
+	_delegations(app, page)
+	return page
+
+## Annuaire quand les carrières du staff ne sont pas actives : même tableau, sans actions de contrat.
+static func _annuaire(app: Control, page: Container, career: Dictionary) -> void:
+	var outils := Career.rangee(12)
+	outils.name = "StaffToolbar"
+	page.add_child(outils)
+	outils.add_child(Career.titre("Encadrement"))
 	var teams: Array = app.model.get("staff", {}).get("teams", [])
 	if teams.is_empty():
-		right.add_child(G.wrap("Les collaborateurs de cette carrière sont conservés.", 17))
-		return page
+		page.add_child(Career.texte("Les collaborateurs de cette carrière sont conservés.", 19, Charte.IVOIRE_2))
+		var acces := Career.rangee(18)
+		page.add_child(acces)
+		Career.enable(app, acces, career)
+		return
 	if not teams.any(func(c: Dictionary): return int(c.id) == app.selected_staff_club): app.selected_staff_club = int(app.model.club.id)
 	var chooser := OptionButton.new()
 	chooser.name = "StaffClub"
-	chooser.fit_to_longest_item = false
-	chooser.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	chooser.custom_minimum_size.y = 40
 	for team: Dictionary in teams:
 		chooser.add_item(str(team.name))
 		chooser.set_item_metadata(chooser.item_count - 1, int(team.id))
@@ -149,24 +226,38 @@ static func build(app: Control) -> Control:
 		app.selected_staff_club = int(chooser.get_item_metadata(index))
 		app._render()
 		ImmersiveUI.focus(app,"StaffClub"))
-	right.add_child(chooser)
+	Career.styler_liste(chooser, 300)
+	outils.add_child(chooser)
 	var people: Array = []
 	for team: Dictionary in teams:
 		if int(team.id) == app.selected_staff_club: people = team.members
 	var search := LineEdit.new()
 	search.name = "StaffSearch"
-	search.placeholder_text = "Rechercher un nom ou une fonction…"
-	search.add_theme_color_override("font_placeholder_color", G.MUTED)
-	search.custom_minimum_size.y = 38
+	search.placeholder_text = "Nom ou fonction…"
 	search.text = str(reading(app).get("search", ""))
-	right.add_child(search)
-	var count := G.label("", 12, G.MUTED)
+	Career.styler_champ(search)
+	search.custom_minimum_size.x = C.px(340)
+	outils.add_child(search)
+	var count := Career.texte("", 17, Charte.IVOIRE_2, 0.0, true)
 	count.name = "StaffCount"
-	right.add_child(count)
-	var list := G.scroll(right)
-	list.get_parent().name = "StaffList"
-	list.get_parent().set_deferred("scroll_vertical", int(reading(app).get("scroll", 0)))
-	list.get_parent().get_v_scroll_bar().value_changed.connect(func(value: float): reading(app).scroll = value)
+	outils.add_child(count)
+	var acces := Career.rangee(18)
+	acces.name = "StaffAccess"
+	page.add_child(acces)
+	acces.add_child(Career.texte("Les membres de l’encadrement et leurs fonctions.", 17, Charte.IVOIRE_2))
+	Career.enable(app, acces, career)
+	Career.entete(page, false)
+	var scroll := ScrollContainer.new()
+	scroll.name = "StaffList"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", 0)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	scroll.set_deferred("scroll_vertical", int(reading(app).get("scroll", 0)))
+	scroll.get_v_scroll_bar().value_changed.connect(func(value: float): reading(app).scroll = value)
 	var redraw := func(query: String):
 		for child in list.get_children(): list.remove_child(child); child.queue_free()
 		var shown := 0
@@ -176,29 +267,9 @@ static func build(app: Control) -> Control:
 			shown += 1
 			_person(app, list, person)
 		count.text = "%d / %d membres" % [shown, people.size()]
-		if shown == 0: list.add_child(G.wrap("Aucun membre ne correspond à cette recherche.", 15))
+		if shown == 0: list.add_child(Career.texte("Aucun membre ne correspond à cette recherche.", 18, Charte.IVOIRE_2))
 	search.text_changed.connect(func(query: String): reading(app).search = query; redraw.call(query))
 	redraw.call(search.text)
-	right.add_child(G.wrap("Retrouve les fonctions de chaque membre de l’encadrement.", 12))
-	return page
 
 static func _person(app: Control, parent: VBoxContainer, person: Dictionary) -> void:
-	var card := G.card(parent)
-	var row := G.h(16)
-	row.set_meta("staff_id", person.id)
-	card.add_child(row)
-	var appearance := person.duplicate(true)
-	appearance.portraitRole = "staff"
-	var photo := G.portrait_lazy(0, 82, appearance)
-	photo.custom_minimum_size.y = 104
-	row.add_child(portrait_link(app, photo, person))
-	var text := G.v(5)
-	G.fill(text)
-	row.add_child(text)
-	text.add_child(name_link(app, person))
-	text.add_child(G.wrap(person.role, 15, G.GOLD))
-	var season := str(person.get("sourceSeason")) if person.get("sourceSeason") != null else "Saison non précisée"
-	var date := " · source du " + str(person.sourceDate) if person.get("sourceDate") != null else ""
-	if person.get("historical", false):
-		text.add_child(G.wrap("Ancien membre du staff · " + season, 11, G.MUTED))
-	card.add_child(G.separator())
+	Career._person(app, parent, person, {"role_publie": true}, false)
