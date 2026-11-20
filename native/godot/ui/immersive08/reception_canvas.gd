@@ -494,10 +494,11 @@ static func build(app: Control) -> Control:
 static func _surface(parent: Control, area: Rect2, id: String, darker: bool = false) -> Panel:
 	var card := Panel.new()
 	card.name = id
-	card.add_theme_stylebox_override("panel", C.box(C.BG if darker else C.PANEL, Color(C.LINE,.55), 0, 0))
+	card.add_theme_stylebox_override("panel", C.Charte.ombrer_droit(C.box(C.BG if darker else C.PANEL, Color(C.LINE,.55), 0, 0)))
 	parent.add_child(card)
 	D.place(card, area)
 	card.clip_contents = true
+	C.Charte.ombre_derriere(card) # le panneau rogne son contenu : l'ombre passe à un calque frère
 	return card
 
 ## Hauteur d'une rangée de boutons : gabarit approuvé, sans descendre sous la hauteur minimale réelle d'un bouton
@@ -998,7 +999,7 @@ static func linked_text(text: String, found: Array) -> String:
 static func _letter(app: Control, message: Dictionary, width: float) -> PanelContainer:
 	var paper := PanelContainer.new()
 	paper.name = "InboxLetter"
-	paper.add_theme_stylebox_override("panel", C.box(C.Charte.PAPIER, Color.TRANSPARENT, 0, int(LETTER_PAD)))
+	paper.add_theme_stylebox_override("panel", C.Charte.ombrer_droit(C.box(C.Charte.PAPIER, Color.TRANSPARENT, 0, int(LETTER_PAD))))
 	var column := C.v(10)
 	paper.add_child(column)
 	var inner := C.px(width - 2.0 * LETTER_PAD)
@@ -1150,7 +1151,13 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	else:
 		var column := C.v(22)
 		column.name = "InboxReadingColumn"
-		column.add_child(_letter(app, message, content_width))
+		# La lettre porte l'ombre de la charte : un jeu de 4 px autour d'elle, sinon la zone qui défile la rogne.
+		var marge := C.px(6) # plus que l'étendue de l'ombre (4 px), quelle que soit la densité
+		var support := MarginContainer.new()
+		support.name = "InboxLetterSupport"
+		for cote: String in ["left", "right", "top", "bottom"]: support.add_theme_constant_override("margin_" + cote, marge)
+		support.add_child(_letter(app, message, content_width - 12.0))
+		column.add_child(support)
 		if message.get("category") == "Médical" and not national: column.add_child(_infirmary(app, reading_width))
 		content = column
 	C.fill(content)

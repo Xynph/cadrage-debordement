@@ -390,7 +390,7 @@ func _titre_page(texte: String) -> void:
 
 func _page_archives() -> void:
 	_titre_page("Le carnet des saisons")
-	var panel := D.rect(self, Rect2(0, 140, LEFT, 1000), Charte.PANNEAU, 0)
+	var panel := D.rect(self, Rect2(0, 140, LEFT, 1000), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	panel.name = "CompetitionArchivesPage"
 	var content := C.v(10)
 	content.name = "SeasonArchives"
@@ -480,7 +480,7 @@ func _page_rencontre(fixture: Dictionary) -> void:
 		if competition_id == "access-nationale": heading = _competition_name(fixture)
 	_titre_page(heading)
 	# Gabarit du « Prochain rendez-vous » : plaques inclinées aux couleurs des clubs, score entre les deux.
-	var panel := D.rect(self, Rect2(0, 140, LEFT, 800), Charte.PANNEAU, 0)
+	var panel := D.rect(self, Rect2(0, 140, LEFT, 800), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	panel.name = "CompetitionFixtureDetails"
 	panel.set_meta("entity_kind", "fixture")
 	panel.set_meta("entity_id", str(fixture.get("id", "")))
@@ -1023,7 +1023,7 @@ func _ta_place(y: float) -> float:
 		var club: Dictionary = gaps[i]
 		var delta := int(float(row.get("points", 0)) - float(club.get("points", 0)))
 		var tile_x := 24 + i * (tile_w + 12)
-		var tile := D.rect(card, Rect2(tile_x, 206, tile_w, 84), Charte.PANNEAU_2, 0)
+		var tile := D.rect(card, Rect2(tile_x, 206, tile_w, 84), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 		tile.name = "CompetitionGap_%d" % i
 		var signed := "+%d" % delta if delta > 0 else str(delta)
 		var value := D.text(tile, 14, 40, signed, 40, C.IVORY, 800, tile_w - 20)
@@ -1221,7 +1221,7 @@ func _opening_strip(y: float) -> void:
 		["À SUIVRE", "Attaque · défense", "Meilleure attaque, meilleure défense et derniers résultats s’affichent dès la 1re journée."]]
 	var tile_w := (LEFT - 48 - 2 * 14) / 3.0
 	for i in facts.size():
-		var tile := D.rect(panel, Rect2(24 + i * (tile_w + 14), 62, tile_w, 134), Charte.PANNEAU_2, 0)
+		var tile := D.rect(panel, Rect2(24 + i * (tile_w + 14), 62, tile_w, 134), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 		D.text(tile, 18, 32, facts[i][0], 16, C.MUTED, 700, tile_w - 30)
 		D.text(tile, 18, 76, facts[i][1] if not str(facts[i][1]).is_empty() else "À venir", 34, C.IVORY, 800, tile_w - 30)
 		D.text(tile, 18, 112, facts[i][2], 17, C.MUTED, 500, tile_w - 30)
