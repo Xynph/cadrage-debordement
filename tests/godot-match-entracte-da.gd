@@ -51,7 +51,7 @@ func donnees() -> Array:
 	var feuille := {"joueurs": {}}
 	for n in 15:
 		var id := "p%d" % (n + 1)
-		lineup.append({"id": id, "name": "Joueur Numéro%d" % (n + 1), "pos": POSTES[n], "condition": 38 if n == 6 else 70 + n, "injury": 0})
+		lineup.append({"id": id, "name": "Darren DOWNES" if n == 12 else "Joueur Numéro%d" % (n + 1), "pos": POSTES[n], "condition": 38 if n == 6 else 70 + n, "injury": 0})
 		notes[id] = {"note": 6.0 + n * 0.1, "faits": n}
 		feuille.joueurs[id] = {"camp": 0, "plaquages": n % 7, "plaquagesManques": 1, "metres": n * 3, "essais": 1 if n == 11 else 0, "courses": 2, "passes": 3}
 	var reserves: Array = []
@@ -69,7 +69,7 @@ func donnees() -> Array:
 		{"cle": "penalites", "label": "Pénalités concédées", "valeurs": [4, 6]}]
 	var minutes: Array = []
 	for m in 40: minutes.append(int(sin(m * 0.4) * 60.0))
-	var direct := {"camp": 0, "score": [10, 7], "borne": 0, "fil": [{"i": 3, "horloge": "38′", "kind": "try", "equipe": 0, "texte": "AFN · Essai de Joueur Numéro12."}], "tableau": tableau,
+	var direct := {"camp": 0, "score": [10, 7], "borne": 0, "cartons": [{"id": "p13", "retour": 42}], "fil": [{"i": 3, "horloge": "38′", "kind": "try", "equipe": 0, "texte": "AFN · Essai de Joueur Numéro12."}], "tableau": tableau,
 		"zone22": {"entrees": [5, 3], "points": [10, 7], "secondes": [150, 40]}, "domination": {"minutes": minutes, "miTemps": null},
 		"reperes": [{"i": 3, "kind": "try", "equipe": 0, "horloge": "38′", "minute": 38, "x": 95, "nom": "Joueur Numéro12", "score": [10, 7]}, {"i": 2, "kind": "goal", "equipe": 1, "horloge": "12′", "minute": 12, "x": 20, "score": [0, 3]}, {"i": 1, "kind": "goal", "equipe": 1, "horloge": "13′", "minute": 13, "x": 20, "score": [0, 6]}], "notes": notes, "feuille": feuille, "possession": 0, "zone": {"x": 60},
 		"niveaux": [{"id": "aucun", "label": "Aucun"}, {"id": "resume", "label": "Résumé"}, {"id": "cles", "label": "Clés"}, {"id": "etendus", "label": "Étendus"}, {"id": "dynamique", "label": "Dynamique"}, {"id": "integral", "label": "Intégral"}],
@@ -232,8 +232,13 @@ func run() -> void:
 		for lien: Button in ecran.find_children("MatchBetweenPlayerName_*", "Button", true, false):
 			var entier := str(lien.get_meta("nom_entier", lien.text))
 			var largeur := lien.get_theme_font("font").get_string_size(entier, HORIZONTAL_ALIGNMENT_LEFT, -1, lien.get_theme_font_size("font_size")).x
-			if lien.text != entier or lien.size.x + 1.0 < largeur: coupes.append("%s (%s, %d px sur %d)" % [entier, lien.text, int(lien.size.x), int(largeur)])
+			# Alerte longue à côté du nom : le prénom devient une initiale (« D. DOWNES »), jamais de « … » sur le nom.
+			var abrege := lien.text != entier and not lien.text.contains("…") and lien.text.ends_with(entier.get_slice(" ", entier.get_slice_count(" ") - 1))
+			var largeur_vue := lien.get_theme_font("font").get_string_size(lien.text, HORIZONTAL_ALIGNMENT_LEFT, -1, lien.get_theme_font_size("font_size")).x
+			if (lien.text != entier and not abrege) or (not abrege and lien.size.x + 1.0 < largeur) or (abrege and lien.size.x + 1.0 < largeur_vue): coupes.append("%s (%s, %d px sur %d)" % [entier, lien.text, int(lien.size.x), int(largeur)])
 		check(coupes.is_empty(), cadre + " : aucun nom de joueur tronqué " + str(coupes))
+		var bouton_downes := ecran.find_child("MatchBetweenPlayerName_p13", true, false) as Button
+		check(bouton_downes != null and not bouton_downes.text.contains("…") and bouton_downes.text.ends_with("DOWNES") and (bouton_downes.text == "Darren DOWNES" or bouton_downes.text == "D. DOWNES"), cadre + " : avec une alerte longue, le nom de famille n'est jamais coupé (%s)" % (bouton_downes.text if bouton_downes != null else "absent"))
 		var bouton_boothroyd := ecran.find_child("MatchBetweenPlayerName_r21", true, false) as Button
 		check(bouton_boothroyd != null and bouton_boothroyd.text == "Matthew BOOTHROYD", cadre + " : « Matthew BOOTHROYD » se lit en entier sur le banc (%s)" % (bouton_boothroyd.text if bouton_boothroyd != null else "absent"))
 		var legende := ecran.find_child("MatchBetweenNotesLegend", true, false) as Control

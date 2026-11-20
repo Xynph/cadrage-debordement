@@ -2461,21 +2461,53 @@ func _nom_joueur(nom: String, id: String, alerte: String = "", humeur: Dictionar
 	cadre.resized.connect(func(): _ajuster_nom(lien, nom, cadre, rangee))
 	return cadre
 
+## « Darren DOWNES » → « D. DOWNES » : les mots qui ne sont pas tout en capitales (prénoms) deviennent des initiales.
+static func abreger_prenom(nom: String) -> String:
+	var mots := nom.strip_edges().split(" ", false)
+	if mots.size() < 2: return nom
+	var famille_debut := mots.size() - 1
+	for k in mots.size():
+		if mots[k] == mots[k].to_upper() and mots[k].to_lower() != mots[k]:
+			famille_debut = k
+			break
+	if famille_debut == 0: return nom
+	var sortie: Array[String] = []
+	for k in mots.size(): sortie.append(mots[k].substr(0, 1) + "." if k < famille_debut else mots[k])
+	return " ".join(PackedStringArray(sortie))
+
 ## Raccourcit le nom affiché avec « … » pour qu'il tienne dans son cadre, à côté des mots qui le suivent.
 func _ajuster_nom(lien: Button, nom: String, cadre: Control, rangee: HBoxContainer) -> void:
 	if not is_instance_valid(lien) or cadre.size.x <= 1.0: return
+	var separation := float(rangee.get_theme_constant("separation"))
+	var alerte := rangee.find_child("MatchBetweenPlayerAlert", false, false) as Label
 	var autres := 0.0
 	for enfant: Node in rangee.get_children():
-		if enfant != lien and enfant is Control and (enfant as Control).visible: autres += (enfant as Control).get_combined_minimum_size().x + float(rangee.get_theme_constant("separation"))
+		if enfant != lien and enfant != alerte and enfant is Control and (enfant as Control).visible: autres += (enfant as Control).get_combined_minimum_size().x + separation
 	var police: Font = lien.get_theme_font("font")
 	var taille := lien.get_theme_font_size("font_size")
 	var style := lien.get_theme_stylebox("normal")
 	var marges := style.get_minimum_size().x if style != null else 0.0
-	var dispo := cadre.size.x - autres - marges - 1.0
+	var largeur_alerte := 0.0
+	if alerte != null:
+		if not alerte.has_meta("texte_complet"): alerte.set_meta("texte_complet", alerte.text)
+		largeur_alerte = alerte.get_theme_font("font").get_string_size(str(alerte.get_meta("texte_complet")), HORIZONTAL_ALIGNMENT_LEFT, -1, alerte.get_theme_font_size("font_size")).x + separation
+	var dispo := cadre.size.x - autres - largeur_alerte - marges - 1.0
 	var texte := nom
+	var place_alerte := -1.0
 	if police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x > dispo:
-		while texte.length() > 1 and police.get_string_size(texte + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x > dispo: texte = texte.substr(0, texte.length() - 1)
-		texte = texte.strip_edges() + "…"
+		if alerte != null:
+			# Alerte à côté : le prénom passe en initiale (« D. DOWNES », décision de Léo du 20/11). Le nom de famille n'est
+			# jamais coupé : si même abrégé il ne tient pas avec l'alerte, c'est l'alerte qui est raccourcie.
+			texte = abreger_prenom(nom)
+			var largeur_nom := police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x
+			if largeur_nom > dispo: place_alerte = maxf(0.0, cadre.size.x - autres - largeur_nom - marges - separation - 1.0)
+		else:
+			while texte.length() > 1 and police.get_string_size(texte + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x > dispo: texte = texte.substr(0, texte.length() - 1)
+			texte = texte.strip_edges() + "…"
+	if alerte != null:
+		alerte.clip_text = place_alerte >= 0.0
+		alerte.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS if place_alerte >= 0.0 else TextServer.OVERRUN_NO_TRIMMING
+		alerte.custom_minimum_size.x = maxf(0.0, place_alerte)
 	if lien.text != texte: lien.text = texte
 	lien.set_meta("nom_entier", nom)
 

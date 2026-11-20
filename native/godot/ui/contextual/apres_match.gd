@@ -532,7 +532,7 @@ func _remplacer(ancien: Control, nouveau: Control) -> void:
 func _bandeau() -> Control:
 	var bandeau := Control.new()
 	bandeau.name = "ApresMatchBandeau"
-	bandeau.custom_minimum_size.y = _d(256)
+	bandeau.custom_minimum_size.y = _d(324)
 	bandeau.clip_contents = true
 	var photo := C.photo("lockerroom", Vector2.ZERO, true, 0.35)
 	photo.tooltip_text = ""
