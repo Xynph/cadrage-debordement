@@ -70,6 +70,32 @@ func click(button: Button) -> void:
 	await settle(8)
 	check(windows(app).is_empty(), "Aucune fenêtre après le clic sur " + nom)
 
+func conference_ouverte() -> void:
+	# Conférence ouverte (arrivée au club) : réponses en place, Publier expliqué, Gabi demande confirmation en ligne.
+	var conference: Dictionary = app.model.clubLife.press.conference
+	# Carrière neuve : pas toujours de conférence ouverte (l'invitation vient plus tard) ; le parcours est alors vu en capture.
+	if not conference.get("available", false): print("PRESSE DA : aucune conférence ouverte au départ, parcours des réponses non exercé")
+	if conference.get("available", false):
+		app.set_meta("press_mail_origin", conference.invitationId)
+		app.management_ui.press_tab = 1
+		app._navigate("Presse")
+		await settle(10)
+		var submit := page().find_child("PressSubmit", true, false) as Button
+		var missing := page().find_child("PressSubmitMissing", true, false) as Label
+		check(submit != null and submit.disabled and missing != null and missing.text.contains("sans réponse"), "Publier désactivé, avec la raison écrite")
+		check_buttons("Conférence ouverte")
+		for question: Dictionary in conference.questions:
+			var reponse := page().find_child("PressAnswer_" + str(question.id) + "_" + str(question.answers[0].id), true, false) as Button
+			check(reponse != null, "Réponse cliquable " + str(question.id))
+			if reponse != null: await click(reponse)
+		check(submit != null and not submit.disabled and missing.text.is_empty(), "Toutes les réponses choisies : Publier actif, raison effacée")
+		var ask := page().find_child("PressDelegateAsk", true, false) as Button
+		var confirm := page().find_child("PressDelegate", true, false) as Button
+		if ask != null:
+			check(confirm != null and not confirm.visible, "Gabi : rien ne part au premier clic")
+			await click(ask)
+			check(confirm.visible and page().find_child("PressDelegateCancel", true, false).visible, "Gabi : confirmation en ligne")
+
 func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	app = load("res://main.tscn").instantiate()
@@ -80,6 +106,7 @@ func run() -> void:
 	app.timer.stop()
 	app._command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"})
 	await wait_idle()
+	await conference_ouverte()
 	await Flow.settle_club_meetings(app, self, check)
 	if is_instance_valid(app.coach): app.coach.close()
 	app.set_meta("press_mail_origin", "qa-presse-da")
@@ -135,4 +162,12 @@ func run() -> void:
 	check((page().find_child("PressTabs", true, false) as TabContainer).current_tab == 2, "« Historique » ouvre l'onglet Historique")
 	await click(page().find_child("OpenPressPeople", true, false))
 	check((page().find_child("PressTabs", true, false) as TabContainer).current_tab == 3, "« Portraits » ouvre l'onglet Portraits")
+	# Plus d'ancienne vue : 1280 × 720 affiche la page de la direction artistique.
+	root.size = Vector2i(1280, 720)
+	await settle(10)
+	app._navigate("Presse")
+	await settle(10)
+	check(page() != null and page().find_child("PressCanvasTab0", true, false) != null and page().find_child("PressImage", true, false) != null, "1280x720 : la page Presse de la DA (onglets, Ton image)")
+	root.size = Vector2i(1920, 1080)
+	await settle(10)
 	finish()

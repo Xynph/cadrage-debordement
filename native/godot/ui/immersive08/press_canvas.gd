@@ -54,6 +54,7 @@ var data: Dictionary
 var tabs: TabContainer
 var controls: Array[Button] = []
 var draft_status: Label
+var draft_count: Label
 var action: Button
 var division_chooser: OptionButton
 var active := 0
@@ -229,13 +230,15 @@ func _barre(valeur: float, couleur: Color, hauteur: int = 8, segments: Array = [
 # --- En-tête, barre « conférence tenue », colonne de gauche -----------------------------------------------------
 
 func _title() -> void:
+	var ligne := C.h(22)
+	add_child(ligne)
+	D.place(ligne, Rect2(0, 6, 1300, 56))
 	var titre := _titre("LA VOIX DU CLUB", 46)
 	titre.name = "PressDeskTitle"
-	add_child(titre)
-	D.place(titre, Rect2(0, 6, 560, 56))
+	ligne.add_child(titre)
 	var sous := C.label("Troisième Mi-Temps.", 22, C.MUTED, false, 500)
-	add_child(sous)
-	D.place(sous, Rect2(660, 22, 600, 34))
+	sous.size_flags_vertical = Control.SIZE_SHRINK_END
+	ligne.add_child(sous)
 	var context: Dictionary = data.get("context", {})
 	var detail := G.club_name(app.model.club)
 	if not context.is_empty():
@@ -399,7 +402,9 @@ func _room_card(rect: Rect2) -> void:
 		var brouillon: Dictionary = app.get_meta("press_draft_choices", {})
 		for entree: Array in [[questions.size(), "questions"], [brouillon.size(), "en brouillon"]]:
 			var bloc := C.v(0)
-			bloc.add_child(C.label(str(entree[0]), 50, C.IVORY, true, 700))
+			var nombre := C.label(str(entree[0]), 50, C.IVORY, true, 700)
+			if str(entree[1]) == "en brouillon": draft_count = nombre
+			bloc.add_child(nombre)
 			bloc.add_child(C.label(str(entree[1]), 18, C.MUTED, false, 500))
 			chiffres.add_child(bloc)
 		colonne.add_child(chiffres)
@@ -419,8 +424,9 @@ func _room_card(rect: Rect2) -> void:
 	if available and not invited:
 		action = _lien("Ouvrir la Réception", func(): app._navigate("Réception"), 21, false, "OpenPressConference", true)
 	else:
-		var legende := "Préparer la conférence" if available else "Consulter le compte rendu"
-		action = _lien(legende, func(): _select(1), 21, false, "OpenPressConference", true)
+		var legende := "Préparer la conférence" if available else ("Consulter le compte rendu" if data.get("lastOutcome") is Dictionary else "Voir l’historique")
+		var cible := 1 if available or data.get("lastOutcome") is Dictionary else 2
+		action = _lien(legende, func(): _select(cible), 21, false, "OpenPressConference", true)
 	action.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	colonne.add_child(action)
 	_update_draft()
@@ -450,9 +456,9 @@ func _memory_block(colonne: VBoxContainer) -> void:
 		var cle: String = option[0]
 		var bouton := _lien(str(option[1]), func(): _set_policy(cle), 18, cle == actuel, "PressPolicy_" + cle)
 		if cle == actuel: bouton.text = "✓ " + bouton.text
-		bouton.tooltip_text = str(policy.get("notice", ""))
 		choix.add_child(bouton)
 	colonne.add_child(choix)
+	if not str(policy.get("notice", "")).is_empty(): colonne.add_child(_texte(str(policy.get("notice", "")), 16, C.MUTED))
 
 func _set_policy(key: String) -> void:
 	if app.waiting or str(data.get("policy", {}).get("ordinary", "moi")) == key: return
@@ -563,6 +569,7 @@ func _update_draft() -> void:
 	if draft_status == null or not is_instance_valid(draft_status): return
 	var draft: Dictionary = app.get_meta("press_draft_choices", {}) if data.conference.get("available", false) else {}
 	draft_status.text = "%d réponse(s) en brouillon" % draft.size() if not draft.is_empty() else ""
+	if draft_count != null and is_instance_valid(draft_count): draft_count.text = str(draft.size())
 
 func _defile(nom: String) -> VBoxContainer:
 	var defilement := ScrollContainer.new()
@@ -656,7 +663,19 @@ func _journal_page() -> Control:
 	droite.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	rang.add_child(droite)
 	_resultats(droite, resultats, article)
-	_indispos(droite, division.get("injuries", []))
+	# Les indisponibilités se rangent sous la coupure : les deux colonnes se répartissent la hauteur.
+	var gauche := rang.get_child(0) as Control
+	if gauche.name == "PressPaper":
+		rang.remove_child(gauche)
+		var pile := C.v(18)
+		pile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		pile.size_flags_stretch_ratio = 1.3
+		pile.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		pile.add_child(gauche)
+		_indispos(pile, division.get("injuries", []))
+		rang.add_child(pile)
+		rang.move_child(pile, 0)
+	else: _indispos(droite, division.get("injuries", []))
 	return _racine(colonne)
 
 func _article(resultats: Array) -> Dictionary:
@@ -805,8 +824,10 @@ func _conference_page() -> Control:
 		colonne.add_child(_lien("Revenir au courrier", func():
 			app.remove_meta("press_mail_origin")
 			app._navigate("Réception", false), 19, false, "PressBackToInvitation", true))
-	if outcome is Dictionary: _outcome_block(colonne, outcome)
-	if not conference.available or origin != conference.get("invitationId"):
+	var ouverte: bool = conference.available and origin == conference.get("invitationId")
+	# Conférence ouverte : les questions passent d'abord, le retour de la précédente se range en bas.
+	if outcome is Dictionary and not ouverte: _outcome_block(colonne, outcome)
+	if not ouverte:
 		if conference.available:
 			colonne.add_child(_texte("Ouvre l’invitation dans la Réception pour répondre aux questions.", 20, C.IVORY))
 			colonne.add_child(_lien("Ouvrir l’invitation", func(): app._navigate("Réception"), 21, false, "PressOpenInvitation", true))
@@ -825,6 +846,21 @@ func _conference_page() -> Control:
 	C.style_bouton_ivoire_plein(publier, 22)
 	publier.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	publier.disabled = choices.size() != conference.questions.size()
+	var manque := C.label("", 19, C.MUTED, false, 600)
+	manque.name = "PressSubmitMissing"
+	var majuscule := func() -> void:
+		var reste: int = conference.questions.size() - choices.size()
+		manque.text = "" if reste <= 0 else "Il reste %d question(s) sans réponse." % reste
+		publier.disabled = reste > 0
+	publier.set_meta("rafraichir", majuscule)
+	var inactif := StyleBoxFlat.new()
+	inactif.bg_color = C.SELECTED
+	inactif.set_corner_radius_all(0)
+	inactif.content_margin_left = C.px(18)
+	inactif.content_margin_right = C.px(18)
+	inactif.content_margin_top = C.px(7)
+	inactif.content_margin_bottom = C.px(7)
+	publier.add_theme_stylebox_override("disabled", inactif)
 	publier.pressed.connect(func():
 		var answers: Array = []
 		for question: Dictionary in conference.questions: answers.append({"questionId":question.id, "answerId":choices[question.id]})
@@ -833,19 +869,46 @@ func _conference_page() -> Control:
 		colonne.add_child(_question_block(question, choices, publier, conference.questions.find(question)))
 	var bas := C.h(18)
 	bas.add_child(publier)
+	manque.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bas.add_child(manque)
+	majuscule.call()
+	colonne.add_child(bas)
 	var delegation: Dictionary = conference.get("delegation", {})
 	if bool(delegation.get("allowed", false)):
-		var deleguer := _lien("Laisser Gabi répondre", func(): app._command("press_delegate", {"context":data.context, "invitationId":origin}), 20, false, "PressDelegate", true)
-		deleguer.tooltip_text = str(delegation.get("reason", ""))
-		bas.add_child(deleguer)
-	colonne.add_child(bas)
+		# Conséquence écrite en clair, confirmation en ligne (aucune fenêtre).
+		var bloc := C.v(6)
+		bloc.add_child(_texte(str(delegation.get("reason", "")), 17, C.MUTED))
+		var rang := C.h(16)
+		var confirmer := _lien("Confirmer : Gabi répond à ma place", func(): app._command("press_delegate", {"context":data.context, "invitationId":origin}), 19, false, "PressDelegate", true)
+		confirmer.visible = false
+		var annuler := _lien("Annuler", func(): pass, 19, false, "PressDelegateCancel")
+		annuler.visible = false
+		var proposer := _lien("Laisser Gabi répondre", func(): pass, 20, false, "PressDelegateAsk", true)
+		proposer.pressed.connect(func():
+			proposer.visible = false
+			confirmer.visible = true
+			annuler.visible = true)
+		annuler.pressed.connect(func():
+			proposer.visible = true
+			confirmer.visible = false
+			annuler.visible = false)
+		rang.add_child(proposer)
+		rang.add_child(confirmer)
+		rang.add_child(annuler)
+		bloc.add_child(rang)
+		colonne.add_child(bloc)
+	elif not str(delegation.get("reason", "")).is_empty():
+		colonne.add_child(_texte("Gabi ne peut pas répondre à ta place : " + str(delegation.get("reason", "")), 17, C.MUTED))
+	if outcome is Dictionary:
+		colonne.add_child(C.rule())
+		_outcome_block(colonne, outcome)
 	return _racine(colonne)
 
 func _outcome_block(colonne: VBoxContainer, outcome: Dictionary) -> void:
 	colonne.add_child(_petit("Retour de la dernière conférence · saison %s · semaine %d" % [G.season_label(outcome.context.season), int(outcome.context.week) + 1], 18, C.IVORY))
 	var delta: Dictionary = outcome.delta
 	var tuiles := C.h(26)
-	for entree: Array in [["morale", "Moral"], ["trust", "Confiance"], ["mediaTrust", "Médias"], ["fanTrust", "Supporters"], ["boardPressure", "Pression"]]:
+	for entree: Array in [["morale", "Moral"], ["trust", "Direction"], ["mediaTrust", "Médias"], ["fanTrust", "Supporters"], ["boardPressure", "Pression"]]:
 		var cle: String = entree[0]
 		var bloc := C.h(8)
 		bloc.add_child(C.label(str(entree[1]), 18, C.MUTED, false, 500))
@@ -919,7 +982,8 @@ func _question_block(question: Dictionary, choices: Dictionary, publier: Button,
 		option.toggled.connect(func(actif: bool): option.icon = C.icon_texture("check", C.IVORY) if actif else null)
 		option.pressed.connect(func():
 			choices[question_id] = identifiant
-			publier.disabled = choices.size() != data.conference.questions.size())
+			if publier.has_meta("rafraichir"): publier.get_meta("rafraichir").call()
+			else: publier.disabled = choices.size() != data.conference.questions.size())
 		carte.add_child(option)
 	return fond
 
@@ -1075,13 +1139,22 @@ func _people_page() -> Control:
 	liste.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	rang.add_child(liste)
 	_titre_section(liste, "Tes relations avec les journalistes")
-	_entete(liste, [["Journaliste", 0], ["Relation", 150, 1]])
+	_entete(liste, [["Journaliste", 0], ["Relation", 228, 1]])
 	var index := 0
 	for person: Dictionary in gens:
 		var id := str(person.id)
-		var bouton := _ligne_bouton("%s · %s    %+d" % [person.name, person.outlet, roundi(float(person.score))], id == str(choisi.id), index, "PressPerson_" + id.validate_node_name(), func():
+		var bouton := _ligne_bouton("%s · %s" % [person.name, person.outlet], id == str(choisi.id), index, "PressPerson_" + id.validate_node_name(), func():
 			app.management_ui.press_person = id
 			_remount(3))
+		# Vraie colonne « Relation » : valeur signée et mot, alignés à droite dans la ligne.
+		var relation := C.label("%+d · %s" % [roundi(float(person.score)), str(person.relationLabel)], 18, C.IVORY, false, 600)
+		relation.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		relation.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		bouton.add_child(relation)
+		relation.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
+		relation.offset_left = -C.px(240)
+		relation.offset_right = -C.px(12)
+		bouton.clip_text = true
 		liste.add_child(bouton)
 		index += 1
 	var detail := C.v(10)
