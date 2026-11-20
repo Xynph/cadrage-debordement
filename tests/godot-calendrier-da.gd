@@ -152,6 +152,18 @@ func run() -> void:
 	var canvas: GDScript = load("res://ui/immersive08/competition_canvas.gd")
 	check(canvas._phase({"phase": "quarter", "competitionId": "jlo-d1"}) == "Quart de finale", "Phase finale : libellé du type de phase, sans nom de compétition figé")
 	check(canvas._phase({"phase": "promotion", "competitionId": "jlo-d1-d2", "leg": 2}) == "Barrage aller-retour · Manche 2", "Barrage aller-retour : manche lue dans la rencontre")
+	# Barrages japonais des archives : noms lus dans les identités de compétition, lignes omises sans nom publié.
+	var archive_world: GDScript = load("res://ui/immersive08/world_archive.gd")
+	var barrage := {"pair": {"upperId": 1, "lowerId": 2}, "legs": [{"pair": [1, 2], "score": [10, 5]}], "outcome": {"promoted": true, "upperNext": 1, "lowerNext": 2}}
+	var identites: Variant = app.model.meta.get("competitionIdentities")
+	app.model.meta.competitionIdentities = {}
+	var sans_nom: Array = archive_world.japan_lines(app, barrage)
+	check(sans_nom.size() == 1 and sans_nom[0].begins_with("Manche 1"), "Barrage japonais : sans nom publié, seules les manches sont écrites (%s)" % str(sans_nom))
+	app.model.meta.competitionIdentities = {"jlo-d1-d2": {"name": "Nom A"}, "jlo-d1": {"name": "Nom B"}, "jlo-d2": {"name": "Nom C"}}
+	var avec_noms: Array = archive_world.japan_lines(app, barrage)
+	check(avec_noms.size() == 3 and avec_noms[0].begins_with("Nom A") and avec_noms[2].contains("Nom B") and avec_noms[2].contains("Nom C"), "Barrage japonais : les noms viennent des données de la compétition (%s)" % str(avec_noms))
+	if identites != null: app.model.meta.competitionIdentities = identites
+	else: app.model.meta.erase("competitionIdentities")
 	# Grille mensuelle du Calendrier : la même rangée d'onglets que Classements, marqueur incliné du jour courant.
 	app.set_meta("calendar_table", false)
 	app._navigate("Calendrier")
