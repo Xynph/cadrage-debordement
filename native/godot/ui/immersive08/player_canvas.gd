@@ -35,15 +35,6 @@ const GAUCHE := 1420
 const DROITE_X := 1440
 const DROITE := 808
 
-## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
-## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
-const ONGLETS := [[0, "Vue d’ensemble"], [2, "Performances"], [3, "Contrat"], [4, "Développement"], [5, "Repères"]]
-const HAUTEUR := 1296
-const HAUT := 332
-const GAUCHE := 1420
-const DROITE_X := 1440
-const DROITE := 808
-
 class ConditionDial extends Control:
 	var condition := 0.0
 	var ink := C.MINT
@@ -244,13 +235,8 @@ static func _barre(page: Control, app: Control, player: Dictionary, source: Stri
 		_lien(page,Rect2(2248-largeur_note,4,largeur_note,38),note,func():Notes.open(app,str(player.id)),"OpenPlayerCoachNote")
 		var comparer := "Comparer →"
 		var largeur_comparer := _largeur(comparer,21)
-		_lien(page,Rect2(2248-largeur_note-28-largeur_comparer,4,largeur_comparer,38),comparer,func():
-			# Le premier joueur est mémorisé ; si un autre est déjà en mémoire, il devient A et cette fiche B.
-			var memo:Array=app.management_ui.compare
-			if str(player.id) not in memo:
-				if memo.size()==1:memo.append(str(player.id))
-				else:memo.assign([str(player.id)])
-			app.SquadViews.comparison(app),"FullPlayerCompare")
+		# Comparateur pleine page : cette fiche rejoint la mémoire (trois joueurs au plus) puis l'écran s'ouvre.
+		_lien(page,Rect2(2248-largeur_note-28-largeur_comparer,4,largeur_comparer,38),comparer,func(): load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app,str(player.id)),"FullPlayerCompare")
 
 ## Joueur voisin de la liste d'origine (Maj+← / Maj+→) : même historique que tout lien joueur.
 static func _ouvrir(app: Control, id: String, source: String) -> void:

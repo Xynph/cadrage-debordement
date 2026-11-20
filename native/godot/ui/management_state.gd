@@ -89,7 +89,7 @@ static func sync(app:Control,reset:bool=false) -> void:
 	var squad_ids:Array=app.model.get("squad",[]).map(func(p):return str(p.id))
 	var market_ids:Array=app.model.get("market",[]).map(func(p):return str(p.id))
 	# Mémoire du comparateur : joueurs de l’effectif ou du marché.
-	app.management_ui.compare=app.management_ui.compare.filter(func(id):return id in squad_ids or id in market_ids).slice(0,2)
+	app.management_ui.compare=app.management_ui.compare.filter(func(id):return id in squad_ids or id in market_ids).slice(0,3)
 	var career_data: Variant=app.model.get("clubLife",{}).get("managerCareer")
 	if career_data is Dictionary and career_data.get("watch") is Array:
 		app.management_ui.shortlist=career_data.watch.map(func(id):return str(id))

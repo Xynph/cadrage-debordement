@@ -37,6 +37,7 @@ var sort_headers: Dictionary = {}
 var _generation := 0
 var _group := ""
 var _puces: Dictionary = {}
+var _marques_tuiles: Dictionary = {}
 var _colonnes_actives: Array = []
 ## Vrai pendant que le focus mémorisé est rendu : il ne doit pas déplacer la sélection choisie ailleurs (palette, retour de fiche).
 var _restaurant := false
@@ -116,7 +117,7 @@ static func _marqueur(parent: Control, zone: Rect2, couleur: Color = Charte.IVOI
 	parent.add_child(poly)
 	return poly
 
-func _lien(parent: Control, zone: Rect2, texte: String, action: Callable, id: String, couleur: Color = Charte.IVOIRE, taille := 19.0, aligne: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT) -> Button:
+func _lien(parent: Control, zone: Rect2, texte: String, action: Callable, id: String, couleur: Color = Charte.IVOIRE, taille := 19.0, aligne: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT, lien_commun := false) -> Button:
 	var bouton := Button.new()
 	bouton.name = id
 	bouton.text = texte
@@ -138,6 +139,9 @@ func _lien(parent: Control, zone: Rect2, texte: String, action: Callable, id: St
 	var focus := _plat(Color.TRANSPARENT, Charte.IVOIRE, 1); focus.content_margin_left = marge; focus.content_margin_right = marge
 	bouton.add_theme_stylebox_override("focus", focus)
 	bouton.pressed.connect(action)
+	if lien_commun:
+		C.style_bouton_lien(bouton, int(taille))
+		bouton.alignment = aligne
 	parent.add_child(bouton)
 	D.place(bouton, C.reach_rect(zone))
 	return bouton
@@ -148,7 +152,8 @@ func _entete_page() -> void:
 	var saison := int(app.model.get("meta", {}).get("season", 1))
 	var joueurs: Array = app.model.get("squad", [])
 	_italique(D.text(self, 0, 64, "EFFECTIF", 58, C.IVORY, 800, 600)).name = "RosterTitre"
-	var sous := "%d joueur%s sous contrat · saison %s" % [joueurs.size(), "s" if joueurs.size() > 1 else "", G.season_label(saison)]
+	var identite := str(app.Immersive.TITLES.get("Effectif", "")).trim_suffix(".")
+	var sous := "%s%d joueur%s sous contrat · saison %s" % [identite + " · " if not identite.is_empty() else "", joueurs.size(), "s" if joueurs.size() > 1 else "", _saison_courte(G.season_label(saison))]
 	D.text(self, 0, 102, sous, 19, C.MUTED, 500, 1000, HORIZONTAL_ALIGNMENT_LEFT, true).name = "RosterSousTitre"
 	_tuiles(joueurs, saison)
 
@@ -175,6 +180,11 @@ func _xv() -> Dictionary:
 	var resultat := {"moyenne": total / nombre}
 	if connus: resultat.evolution = (total - debut) / nombre
 	return resultat
+
+## « 2026-2027 » devient « 2026-27 » comme dans la maquette.
+static func _saison_courte(libelle: String) -> String:
+	var m := RegEx.create_from_string("^(\\d{4})-(\\d{2})(\\d{2})$").search(libelle)
+	return m.get_string(1) + "-" + m.get_string(3) if m != null else libelle
 
 static func _decimal(valeur: float) -> String:
 	return ("%.1f" % valeur).replace(".", ",")
@@ -234,6 +244,10 @@ func _tuile(zone: Rect2, d: Dictionary) -> void:
 	var l := _largeur(str(d.val), 48, false, 800)
 	if not str(d.suf).is_empty():
 		D.text(tuile, 16 + l + 12, 68, d.suf, 18, C.MUTED, 500, zone.size.x - l - 40, HORIZONTAL_ALIGNMENT_LEFT, true).name = "EffectifTuileDetail"
+	var marque_active := _marqueur(tuile, Rect2(0, 0, 6, zone.size.y))
+	marque_active.name = "EffectifTuileActive"
+	marque_active.visible = _tuile_active(str(d.act))
+	_marques_tuiles[str(d.act)] = marque_active
 	tuile.pressed.connect(_action_tuile.bind(str(d.act)))
 	if d.id == "Aptes":
 		tuile.mouse_entered.connect(_montrer_bulle.bind(tuile))
@@ -242,9 +256,19 @@ func _tuile(zone: Rect2, d: Dictionary) -> void:
 		tuile.focus_exited.connect(_cacher_bulle)
 		tuile.tree_exiting.connect(_cacher_bulle)
 
+## Le filtre de la tuile est celui qui est actif (marqueur ivoire incliné).
+func _tuile_active(action: String) -> bool:
+	match action:
+		"aptes": return str(state.family) == "Aptes" and str(state.contract) == "Tous"
+		"indisponibles": return str(state.family) == "Indisponibles" and str(state.contract) == "Tous"
+		"fin": return str(state.contract) == "Fin de saison"
+		"niveau": return str(state.sort) == "Niveau" and bool(state.descending) and int(state.get("immersive_tab", 0)) == 0
+	return false
+
 func _action_tuile(action: String) -> void:
 	_cacher_bulle()
 	if action == "niveau":
+		state.immersive_tab = 0
 		state.sort = "Niveau"; state.descending = true; app.roster_sort = "Niveau"
 		state.scroll = 0
 		state.focus = "EffectifTuileNiveau"
@@ -324,19 +348,19 @@ func _onglets() -> void:
 		x += largeur + 8.0
 	# À droite : changer d'onglet, comparer, Vestiaire.
 	var droite := LARGEUR
-	var vestiaire := _lien(self, Rect2(droite - 170, Y_ONGLETS, 170, 44), "Vestiaire", func(): app._navigate("Vestiaire"), "RosterOpenLocker", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER)
+	var vestiaire := _lien(self, Rect2(droite - 170, Y_ONGLETS, 170, 44), "Vestiaire →", func(): app._navigate("Vestiaire"), "RosterOpenLocker", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER, true)
 	vestiaire.tooltip_text = "Ouvrir le vestiaire"
 	droite -= 186.0
-	var texte := "Comparer %d/2 →" % app.management_ui.compare.size()
-	var largeur_comparer := _largeur("Comparer 2/2 →", 19) + 36.0
-	compare = _lien(self, Rect2(droite - largeur_comparer, Y_ONGLETS, largeur_comparer, 44), texte, func(): app.SquadViews.comparison(app), "OpenComparison", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER)
+	var texte := "Comparer %d/3 →" % app.management_ui.compare.size()
+	var largeur_comparer := _largeur("Comparer 3/3 →", 19) + 36.0
+	compare = _lien(self, Rect2(droite - largeur_comparer, Y_ONGLETS, largeur_comparer, 44), texte, func(): app.SquadViews.comparison(app), "OpenComparison", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER, true)
 	droite -= largeur_comparer + 16.0
 	if not _etroit():
-		var suivant := _lien(self, Rect2(droite - 130, Y_ONGLETS, 130, 44), "Ctrl Tab", func(): _onglet_suivant(), "RosterNextTab", Charte.IVOIRE_2, 17.0, HORIZONTAL_ALIGNMENT_CENTER)
+		var suivant := _lien(self, Rect2(droite - 130, Y_ONGLETS, 130, 44), "Ctrl Tab", func(): _onglet_suivant(), "RosterNextTab", Charte.IVOIRE_2, 17.0, HORIZONTAL_ALIGNMENT_CENTER, true)
 		suivant.tooltip_text = "Onglet suivant"
 		droite -= 146.0
 	if app.model.get("epcrPreparation") is Dictionary:
-		var europe := _lien(self, Rect2(droite - 300, Y_ONGLETS, 300, 44), "Préparer l’Europe →", func(): load("res://ui/epcr_preparation_dialog.gd").open(app), "OpenEpcrPreparation", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER)
+		var europe := _lien(self, Rect2(droite - 300, Y_ONGLETS, 300, 44), "Préparer l’Europe →", func(): load("res://ui/immersive08/europe_canvas.gd").open(app), "OpenEpcrPreparation", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER, true)
 		europe.tooltip_text = "Préparer la campagne européenne"
 
 func _onglet_suivant() -> void:
@@ -399,6 +423,8 @@ func _appliquer_puce(id: String) -> void:
 		_styler_puces()
 
 func _styler_puces() -> void:
+	for action: String in _marques_tuiles:
+		(_marques_tuiles[action] as Node2D).visible = _tuile_active(action)
 	for id: String in _puces:
 		var puce: Button = _puces[id].bouton
 		var active := _puce_active(id)
@@ -459,24 +485,18 @@ func _filtres() -> void:
 		x += largeur + 8.0
 	_styler_puces()
 	# À droite : menu Poste et Filtres & tri (menus déroulants, pas de fenêtre).
-	var largeur_filtres := 230.0
+	var largeur_filtres := _largeur("Filtres & tri", 19) + 22.0 + 40.0
 	var filtres := MenuButton.new()
 	filtres.name = "RosterMoreFilters"
 	filtres.text = "Filtres & tri"
 	filtres.flat = false
 	filtres.focus_mode = Control.FOCUS_ALL
-	filtres.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	filtres.icon = C.icon_texture("settings", Charte.IVOIRE)
 	filtres.expand_icon = true
+	C.style_bouton_lien(filtres, 19)
+	filtres.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	filtres.add_theme_constant_override("icon_max_width", C.px(22))
-	filtres.add_theme_font_override("font", C.BODY)
-	filtres.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
-	for nom: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		filtres.add_theme_color_override(nom, Charte.IVOIRE)
-	filtres.add_theme_stylebox_override("normal", _plat(Color.TRANSPARENT))
-	filtres.add_theme_stylebox_override("hover", _plat(Charte.PANNEAU_2))
-	filtres.add_theme_stylebox_override("pressed", _plat(Charte.PANNEAU_3))
-	filtres.add_theme_stylebox_override("focus", _plat(Color.TRANSPARENT, Charte.IVOIRE, 1))
+	filtres.add_theme_constant_override("h_separation", C.px(8))
 	add_child(filtres)
 	D.place(filtres, C.reach_rect(Rect2(LARGEUR - largeur_filtres, y, largeur_filtres, 42)))
 	var menu := filtres.get_popup()
@@ -568,7 +588,7 @@ func _colonnes(vue: int, etroit: bool, surveillance: bool) -> Array:
 			if etroit:
 				colonnes = [num, joueur, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 700.0, "w": 330.0, "a": gauche}, {"k": "fat", "t": "FAT.", "s": "Fatigue", "x": 1080.0, "w": 120.0, "a": droite}, {"k": "moy", "t": "MOY.", "s": "Moyenne", "x": 1260.0, "w": 130.0, "a": centre}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1500.0, "w": 730.0, "a": gauche}]
 			else:
-				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 560.0, "w": 250.0, "a": gauche}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 850.0, "w": 290.0, "a": gauche}, {"k": "fat", "t": "FAT.", "s": "Fatigue", "x": 1170.0, "w": 100.0, "a": droite}, {"k": "min", "t": "MIN.", "s": "Minutes", "x": 1310.0, "w": 110.0, "a": droite}, {"k": "moy", "t": "MOY.", "s": "Moyenne", "x": 1470.0, "w": 110.0, "a": centre}, {"k": "forme", "t": "FORME", "s": "Forme", "x": 1620.0, "w": 260.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1890.0, "w": 340.0, "a": gauche}]
+				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 560.0, "w": 250.0, "a": gauche}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 850.0, "w": 290.0, "a": gauche}, {"k": "fat", "t": "FAT.", "s": "Fatigue", "x": 1170.0, "w": 100.0, "a": droite}, {"k": "min", "t": "MIN.", "s": "Minutes", "x": 1310.0, "w": 110.0, "a": droite}, {"k": "moy", "t": "MOY.", "s": "Moyenne", "x": 1470.0, "w": 110.0, "a": centre}, {"k": "forme", "t": "FORME", "s": "Forme", "x": 1620.0, "w": 260.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1890.0, "w": 280.0, "a": gauche}]
 		3:
 			if etroit:
 				colonnes = [num, joueur, {"k": "age", "t": "ÂGE", "s": "Âge", "x": 700.0, "w": 90.0, "a": droite}, {"k": "niveau", "t": "NIV.", "s": "Niveau", "x": 880.0, "w": 100.0, "a": centre}, {"k": "pot", "t": "POT.", "s": "Potentiel", "x": 1060.0, "w": 170.0, "a": centre}, {"k": "min", "t": "MIN.", "s": "Minutes", "x": 1300.0, "w": 130.0, "a": droite}]
@@ -578,7 +598,7 @@ func _colonnes(vue: int, etroit: bool, surveillance: bool) -> Array:
 			if etroit:
 				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 640.0, "w": 330.0, "a": gauche}, {"k": "niveau", "t": "NIV.", "s": "Niveau", "x": 1000.0, "w": 100.0, "a": centre}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 1150.0, "w": 300.0, "a": gauche}, {"k": "contrat", "t": "FIN DE CONTRAT", "s": "Échéance", "x": 1500.0, "w": 320.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1840.0, "w": 390.0, "a": gauche}]
 			else:
-				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 560.0, "w": 250.0, "a": gauche}, {"k": "autres", "t": "AUTRES", "s": "Autres postes", "x": 810.0, "w": 120.0, "a": gauche}, {"k": "niveau", "t": "NIV.", "s": "Niveau", "x": 960.0, "w": 80.0, "a": centre}, {"k": "pot", "t": "POT.", "s": "Potentiel", "x": 1060.0, "w": 140.0, "a": centre}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 1240.0, "w": 280.0, "a": gauche}, {"k": "age", "t": "ÂGE", "s": "Âge", "x": 1540.0, "w": 70.0, "a": droite}, {"k": "contrat", "t": "FIN DE CONTRAT", "s": "Échéance", "x": 1640.0, "w": 230.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1890.0, "w": 340.0, "a": gauche}]
+				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 560.0, "w": 250.0, "a": gauche}, {"k": "niveau", "t": "NIV.", "s": "Niveau", "x": 960.0, "w": 80.0, "a": centre}, {"k": "pot", "t": "POT.", "s": "Potentiel", "x": 1060.0, "w": 140.0, "a": centre}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 1240.0, "w": 280.0, "a": gauche}, {"k": "age", "t": "ÂGE", "s": "Âge", "x": 1540.0, "w": 70.0, "a": droite}, {"k": "contrat", "t": "FIN DE CONTRAT", "s": "Échéance", "x": 1640.0, "w": 230.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1890.0, "w": 280.0, "a": gauche}]
 	if surveillance:
 		var sans: Array = colonnes.filter(func(c: Dictionary): return c.k not in ["age", "contrat", "forme", "min", "moy"])
 		var index := 0
@@ -588,10 +608,10 @@ func _colonnes(vue: int, etroit: bool, surveillance: bool) -> Array:
 		sans.insert(index, motif)
 		if etroit:
 			for c: Dictionary in sans:
-				if c.k == "statut": c.x = 1860.0; c.w = 370.0
+				if c.k == "statut": c.x = 1860.0; c.w = 310.0
 		else:
 			for c: Dictionary in sans:
-				if c.k == "statut": c.x = 1890.0; c.w = 340.0
+				if c.k == "statut": c.x = 1890.0; c.w = 280.0
 		colonnes = sans
 	return colonnes
 
@@ -641,7 +661,7 @@ func _tableau() -> void:
 	defile.add_child(rows)
 	count = D.text(table, 0, Y_PIED - Y_ENTETE + 26, "", 18, C.MUTED, 500, 1000, HORIZONTAL_ALIGNMENT_LEFT, true)
 	count.name = "RosterCount"
-	var aide := "↑↓ choisir · Entrée fiche complète · Maj Espace comparer · / chercher · Échap menu" if not _etroit() else "Entrée : fiche · / : chercher"
+	var aide := "↑↓ choisir · Entrée fiche complète · Maj Espace comparer · / chercher dans le tableau · Échap Menu" if not _etroit() else "Entrée : fiche · / : chercher · Échap Menu"
 	var conseil := D.text(table, LARGEUR, Y_PIED - Y_ENTETE + 26, aide, 18, C.MUTED, 500, 1100, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	conseil.name = "RosterScrollHint"
 
@@ -819,7 +839,7 @@ func _refresh(reveal: bool) -> void:
 	state.visible_player=app.selected_player
 	var tri := str(state.sort) + (" (ordre de la feuille)" if state.sort == "Poste" else "")
 	count.text="%d / %d joueurs · tri : %s · survol : aperçu · clic : fiche complète" % [players.size(),app.model.get("squad",[]).size(),tri]
-	if compare != null: compare.text="Comparer %d/2 →" % app.management_ui.compare.size()
+	if compare != null: compare.text="Comparer %d/3 →" % app.management_ui.compare.size()
 	# Construction progressive : les lignes visibles sont créées tout de suite, le reste sur les
 	# images suivantes (60 lignes d'un coup coûtaient plus de 100 ms avant la première image).
 	_generation += 1
@@ -988,6 +1008,7 @@ func _row(player:Dictionary,index:int) -> void:
 				var principaux: Array[String] = []
 				for numero: int in primary_numbers(player): principaux.append(str(numero))
 				poste.tooltip_text = "Poste principal · %s · %s" % ["·".join(principaux),primary_caption(player)] if not principaux.is_empty() else primary_caption(player)
+				if not secondary_numbers(player).is_empty(): poste.tooltip_text += "\nAutres postes · " + secondary_tooltip(player,app.model).replace("\n"," ; ")
 			"autres":
 				var autres := D.text(row,x,base,secondary_caption(player),18,C.MUTED,600,l,HORIZONTAL_ALIGNMENT_LEFT,true)
 				autres.name = "RosterSecondaryPositions"
@@ -1008,6 +1029,8 @@ func _row(player:Dictionary,index:int) -> void:
 				var condition: float = float(player.get("condition",0))
 				var ton := C.MINT if condition >= 85 else (C.AMBER if condition >= 60 else C.ALERT)
 				D.bar(row,Rect2(x,h/2.0-3,l-110,6),condition,ton)
+				var repere := D.rect(row,Rect2(x + (l - 110) * .8 - 1,h/2.0-8,2,16),Charte.IVOIRE_2)
+				repere.name = "RosterCondition80"
 				D.text(row,x+l,base,"%d %%" % condition,19,C.IVORY,600,100,HORIZONTAL_ALIGNMENT_RIGHT,true).name = "RosterCondition"
 			"fat":
 				var fatigue: float = float(player.get("physicalLoad",0))
@@ -1037,8 +1060,40 @@ func _row(player:Dictionary,index:int) -> void:
 			"statut":
 				var texte := D.text(row,x,base,str(statut.t),19,statut.c,600 if statut.c != C.MUTED else 500,l,HORIZONTAL_ALIGNMENT_LEFT,true)
 				texte.name = "RosterStatut"
-	var marque_comparaison := D.text(row,LARGEUR - 10,base,_repere_comparaison(id),19,C.IVORY,700,60,HORIZONTAL_ALIGNMENT_RIGHT)
-	marque_comparaison.name = "RosterCompareMark"
+	var comparer_ligne := Button.new()
+	comparer_ligne.name = "RosterCompare_" + id.validate_node_name()
+	comparer_ligne.set_meta("player_id", id)
+	comparer_ligne.focus_mode = Control.FOCUS_ALL
+	C.style_bouton_lien(comparer_ligne, 19)
+	comparer_ligne.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	row.add_child(comparer_ligne)
+	D.place(comparer_ligne, C.reach_rect(Rect2(LARGEUR - 78, 2, 70, h - 4)))
+	comparer_ligne.pressed.connect(func(): _basculer_comparaison(id))
+	_etat_comparaison(comparer_ligne, id, false)
+	row.mouse_entered.connect(func(): _etat_comparaison(comparer_ligne, id, true))
+	row.mouse_exited.connect(func(): _etat_comparaison(comparer_ligne, id, row.get_global_rect().has_point(row.get_global_mouse_position())))
+	comparer_ligne.focus_entered.connect(func(): _etat_comparaison(comparer_ligne, id, true))
+	comparer_ligne.focus_exited.connect(func(): _etat_comparaison(comparer_ligne, id, false))
+
+## Repère du comparateur au bout de la ligne : « + » au survol, A / B / C une fois ajouté (jamais la couleur seule).
+func _etat_comparaison(bouton: Button, id: String, survol: bool) -> void:
+	var repere := _repere_comparaison(id)
+	bouton.text = repere if not repere.is_empty() else "+"
+	bouton.visible = not repere.is_empty() or survol
+	bouton.tooltip_text = ("Retirer du comparateur (%s)" % repere) if not repere.is_empty() else "Ajouter au comparateur"
+	bouton.accessibility_name = bouton.tooltip_text + " · " + id
+
+func _basculer_comparaison(id: String) -> void:
+	var memo: Array = app.management_ui.compare
+	if id in memo: memo.erase(id)
+	else:
+		if memo.size() >= 3: memo.remove_at(0)
+		memo.append(id)
+	if compare != null: compare.text = "Comparer %d/3 →" % memo.size()
+	for ligne: Node in rows.get_children():
+		var pid := str(ligne.get_meta("player_id", ""))
+		var b := ligne.get_node_or_null("RosterCompare_" + pid.validate_node_name()) as Button
+		if b != null: _etat_comparaison(b, pid, false)
 
 func _echeance(player: Dictionary) -> String:
 	var fin: Variant = player.get("contractEnd")
@@ -1049,7 +1104,7 @@ func _echeance(player: Dictionary) -> String:
 func _repere_comparaison(id: String) -> String:
 	var memo: Array = app.management_ui.compare
 	var rang := memo.find(id)
-	return "" if rang < 0 else ["A", "B"][rang]
+	return "" if rang < 0 else ["A", "B", "C"][rang]
 
 ## Portrait, drapeau, nom (souligné au survol) et « i » : le nom ouvre la fiche, le survol montre la mini-fiche.
 func _cellule_joueur(row: Control, player: Dictionary, index: int, h: float, base: float) -> void:
@@ -1084,7 +1139,8 @@ func _cellule_joueur(row: Control, player: Dictionary, index: int, h: float, bas
 	var lien := _lien_lecture(row, Rect2(96, 2, 80 + largeur_nom + 12, h - 4), player, "", "SquadOpenPlayer_")
 	lien.mouse_entered.connect(func(): soulignement.visible = true)
 	lien.mouse_exited.connect(func(): soulignement.visible = false)
-	MiniFiche.icone(app, row, Rect2(176 + largeur_nom + 12, (h - 20) / 2.0, 20, 20), id, "squad")
+	var taille_i := maxf(20.0, ceilf(16.0 / C.density))
+	MiniFiche.icone(app, row, Rect2(176 + largeur_nom + 12, (h - taille_i) / 2.0, taille_i, taille_i), id, "squad")
 
 func _lien_lecture(parent: Control, zone: Rect2, player: Dictionary, section: String, prefixe: String) -> Button:
 	var id := str(player.id)
@@ -1130,15 +1186,7 @@ func _row_key(event: InputEvent, current: Button) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo or event.ctrl_pressed or event.alt_pressed: return
 	if event.keycode == KEY_SPACE and event.shift_pressed:
 		get_viewport().set_input_as_handled()
-		var id := str(current.get_meta("player_id", ""))
-		var memo: Array = app.management_ui.compare
-		if id in memo: memo.erase(id)
-		elif memo.size() < 2: memo.append(id)
-		else: memo.assign([id])
-		if compare != null: compare.text = "Comparer %d/2 →" % memo.size()
-		for ligne: Node in rows.get_children():
-			var marque := ligne.get_node_or_null("RosterCompareMark") as Label
-			if marque != null: marque.text = _repere_comparaison(str(ligne.get_meta("player_id", "")))
+		_basculer_comparaison(str(current.get_meta("player_id", "")))
 		return
 	if event.keycode not in [KEY_HOME,KEY_END,KEY_PAGEUP,KEY_PAGEDOWN]: return
 	var items := rows.get_children().filter(func(node: Node): return node is Button and node.has_meta("player_id"))

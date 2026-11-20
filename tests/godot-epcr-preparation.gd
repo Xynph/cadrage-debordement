@@ -46,7 +46,7 @@ func run() -> void:
 	var disk := FileAccess.get_file_as_bytes(career_file)
 	app._navigate("Effectif");await settle()
 	await press(app.root_content.find_child("OpenEpcrPreparation",true,false))
-	var dialog: AcceptDialog=app.get_node_or_null("EpcrPreparationDialog")
+	var dialog: Control=app.find_child("EpcrPreparationDialog",true,false)
 	check(dialog!=null and dialog.visible,"Le bouton de l’effectif ouvre le vrai brouillon Europe")
 	if dialog==null: await finish();return
 	var count: Label=dialog.find_child("EpcrPreparationCount",true,false)
@@ -106,7 +106,7 @@ func run() -> void:
 	check(unexpected_dialogs==0,"Aucune fenêtre d’erreur de décision n’est ouverte pour le brouillon fermé")
 	app.last_error=original_error
 	await press(app.root_content.find_child("OpenEpcrPreparation",true,false))
-	dialog=app.get_node_or_null("EpcrPreparationDialog")
+	dialog=app.find_child("EpcrPreparationDialog",true,false)
 	verify=dialog.find_child("EpcrVerify",true,false)
 	count=dialog.find_child("EpcrPreparationCount",true,false)
 	check(dialog.selected.size()==dialog.choices.size(),"La nouvelle ouverture repart d’un brouillon propre après le refus fermé")
@@ -120,16 +120,15 @@ func run() -> void:
 	check(not dialog.result.text.is_empty(),"Les raisons sont lisibles dans le dialogue")
 	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:
 		root.size=resolution;await settle();await create_timer(.2).timeout;await settle()
-		check(Rect2(Vector2.ZERO,Vector2(root.size)).encloses(Rect2(Vector2(dialog.position),Vector2(dialog.size))),"Fenêtre entière : "+str(resolution))
-		check(Rect2(Vector2.ZERO,Vector2(dialog.size)).encloses(dialog.get_ok_button().get_global_rect()),"Fermeture entière : "+str(resolution))
+		check(app.route=="Préparation Europe" and dialog.is_visible_in_tree() and not (app.find_child("EuropeRetour",true,false) as Control).get_global_rect().size.is_zero_approx(),"Page européenne entière, jamais une fenêtre : "+str(resolution))
 		check(dialog.selected.is_empty(),"Redimensionnement conserve le brouillon : "+str(resolution))
-	await press(dialog.get_ok_button());await settle()
+	await press(app.find_child("EuropeRetour",true,false));await settle()
 	check(not is_instance_valid(dialog),"Fermer au clavier détruit le brouillon")
 	root.size=Vector2i(1920,1080);await settle();await create_timer(.2).timeout
 	app._navigate("Effectif");await settle()
 	check(app.root_content.find_child("ImmersiveRosterTable",true,false)!=null,"La seconde ouverture utilise le canevas Effectif grand écran")
 	await press(app.root_content.find_child("OpenEpcrPreparation",true,false))
-	dialog=app.get_node_or_null("EpcrPreparationDialog")
+	dialog=app.find_child("EpcrPreparationDialog",true,false)
 	check(dialog!=null and dialog.selected.size()==dialog.choices.size(),"Réouverture propose de nouveau tout l’effectif sans reprendre la liste vidée")
 	check(dialog.result.text.contains("relancez"),"La réouverture ne reprend pas un ancien verdict")
 	var sheet: Array=app.model.lineup+app.model.reserves
@@ -137,13 +136,13 @@ func run() -> void:
 	await press(dialog.verify);await wait_preview(dialog)
 	check(dialog.preview.registration.status=="unknown" and dialog.preview.teamSheet.status=="unknown","Les qualifications non certifiées restent inconnues pour une liste de 23")
 	check(dialog.result.text.contains("À confirmer"),"Le rapport présente les informations manquantes du validateur")
-	await press(dialog.get_ok_button());await settle()
+	await press(app.find_child("EuropeRetour",true,false));await settle()
 	await ask("export")
 	check(app.model.meta.exportText==exported,"La consultation et les choix conservent chaque champ de carrière")
 	check(FileAccess.get_file_as_bytes(career_file)==disk,"La consultation conserve disque, horloge et RNG")
 	app._navigate("Effectif");await settle()
 	await press(app.root_content.find_child("OpenEpcrPreparation",true,false))
-	dialog=app.get_node_or_null("EpcrPreparationDialog")
+	dialog=app.find_child("EpcrPreparationDialog",true,false)
 	var disconnected_draft: Dictionary = dialog.selected.duplicate(true)
 	app.bridge.stop()
 	var stop_deadline := Time.get_ticks_msec()+3000
@@ -156,12 +155,12 @@ func run() -> void:
 	check(FileAccess.get_file_as_bytes(career_file)==disk,"La panne et les refus ne modifient pas le profil")
 	dialog.hide();dialog.queue_free();await settle()
 	await finish()
-func wait_preview(dialog: AcceptDialog) -> void:
+func wait_preview(dialog: Control) -> void:
 	var deadline:=Time.get_ticks_msec()+20000
 	while (app.waiting or dialog.pending) and Time.get_ticks_msec()<deadline:await process_frame
 	check(not app.waiting and not dialog.pending and app.bridge.last_response_ok,"Le vrai worker a répondu à epcr_preview")
 	await settle()
-func wait_refusal(dialog: AcceptDialog) -> void:
+func wait_refusal(dialog: Control) -> void:
 	var deadline:=Time.get_ticks_msec()+20000
 	while (app.waiting or dialog.pending) and Time.get_ticks_msec()<deadline:await process_frame
 	check(not app.waiting and not dialog.pending and not app.bridge.last_response_ok,"Le vrai worker a refusé epcr_preview")

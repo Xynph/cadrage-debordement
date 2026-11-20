@@ -28,6 +28,8 @@ const Centre = preload("res://ui/immersive08/centre_canvas.gd")
 const Press = preload("res://ui/immersive08/press_canvas.gd")
 const Rivalry = preload("res://ui/immersive08/rivalry_canvas.gd")
 const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
+const Comparateur = preload("res://ui/immersive08/comparateur_canvas.gd")
+const EuropePage = preload("res://ui/immersive08/europe_canvas.gd")
 const Locker = preload("res://ui/immersive08/locker_canvas.gd")
 const Career = preload("res://ui/immersive08/career_canvas.gd")
 const Selections = preload("res://ui/international_view.gd")
@@ -269,6 +271,8 @@ static func open_preparation(app: Control, tab: int) -> void:
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
 	# Fiche d'un club : gabarit à l'échelle, lisible dès 1280 × 720.
 	if app.route == ClubSheet.ROUTE: return ClubSheet
+	if app.route == Comparateur.ROUTE: return Comparateur
+	if app.route == EuropePage.ROUTE: return EuropePage
 	# Fiche complète d'une piste du marché ou d'un Espoir (clic sur le nom), à toutes les tailles.
 	if not FichePage.actuelle(app).is_empty(): return FichePage
 	# Composition (choix de Léo du 19/11/2026, variante 1) : page dédiée à toutes les tailles, avec son propre en-tête.
@@ -314,7 +318,7 @@ const RAIL_SECTIONS := [
 ]
 const RAIL_NATION := [["Réception", "Réception", ["Réception"]], ["Sélections", "Sélections", ["Sélections"]], ["Calendrier", "Calendrier", ["Calendrier"]]]
 ## Écrans propres à la coque (aucune fenêtre) : résultats de recherche et réglages.
-const SHELL_ROUTES := ["Recherche", "Réglages"]
+const SHELL_ROUTES := ["Recherche", "Réglages", "Comparateur", "Préparation Europe"]
 const RAIL_WIDTH := 309.0
 const RAIL_HEADER := 152.0
 const RAIL_TOP := 169.0
@@ -951,6 +955,8 @@ static func _page_caption(app: Control) -> String:
 	var fiche := FichePage.actuelle(app)
 	if not fiche.is_empty(): return "Fiche joueur : " + str(fiche.joueur.get("name", ""))
 	if app.route == ClubSheet.ROUTE: return "Fiche club : " + ClubSheet.caption(app)
+	if app.route == Comparateur.ROUTE: return Comparateur.caption(app)
+	if app.route == EuropePage.ROUTE: return "Préparer l’Europe"
 	if _is_training(app): return "Entraînement"
 	if app.route == "Recherche":
 		var query := str(app.management_ui.get("search_query", "")).strip_edges()

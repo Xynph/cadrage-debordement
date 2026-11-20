@@ -155,6 +155,9 @@ func _retour() -> bool:
 		composition.pressed.emit()
 		return true
 	var navigation: Node = app.get("navigation_controller")
+	if app.route in ["Comparateur", "Préparation Europe"]:
+		var origine := app.root_content.find_child("ComparateurRetour" if app.route == "Comparateur" else "EuropeRetour", true, false) as Button
+		if is_instance_valid(origine): origine.pressed.emit(); return true
 	if app.route == "Fiche club" and is_instance_valid(navigation):
 		if navigation._destination(-1) >= 0: navigation._travel(-1)
 		else: app._navigate("Classements")

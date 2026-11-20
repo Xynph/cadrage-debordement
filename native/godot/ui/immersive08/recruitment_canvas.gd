@@ -681,7 +681,7 @@ func _report_dialog(report: Dictionary) -> void:
 	app.navigation_controller.open_entity({"kind":"report", "id":str(report.get("id", ""))})
 
 func _compare() -> void:
-	load("res://ui/immersive08/recruitment_comparison.gd").open(app, str(dossier.get_meta("player_id", "")), report_by_player)
+	load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app, str(dossier.get_meta("player_id", "")))
 
 func _market_player(player_id: String) -> Dictionary:
 	for person: Dictionary in app.model.get("market", []):

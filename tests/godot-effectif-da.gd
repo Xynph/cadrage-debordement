@@ -174,6 +174,56 @@ func run() -> void:
 	check(list_scroll != null and last_row != null and list_scroll.get_global_rect().intersects(last_row.get_global_rect()), "Le joueur choisi, même éloigné, est visible dans la liste")
 	app.selected_player = str(squad[0].id)
 
+	# Comparateur : page pleine (jamais une fenêtre), ajout à la souris, emplacements vides, 36 attributs colorés, Échap.
+	app.management_ui.compare = []
+	app._navigate("Bureau")
+	await settle(6)
+	app._navigate("Effectif")
+	await settle(12)
+	var plus := player_rows()[0].find_child("RosterCompare_*", true, false) as Button
+	check(plus != null, "Repère du comparateur sur chaque ligne")
+	if plus != null:
+		plus.pressed.emit()
+		await settle()
+		check(app.management_ui.compare.size() == 1 and plus.text == "A" and plus.visible, "Le repère de la ligne ajoute le joueur au comparateur (A)")
+	check((app.find_child("OpenComparison", true, false) as Button).text.begins_with("Comparer 1/3"), "Compteur Comparer 1/3")
+	await press("OpenComparison")
+	check(app.route == "Comparateur" and app.find_child("ImmersiveComparateur", true, false) != null, "Comparer ouvre l'écran Comparateur")
+	check(windows(app).is_empty(), "Le comparateur n'est pas une fenêtre")
+	check(app.find_child("ComparateurVide1", true, false) != null, "À 1 joueur : emplacement « Choisir un joueur »")
+	var choix := app.find_child("ComparateurJoueur1", true, false) as OptionButton
+	check(choix != null and choix.item_count > 3, "Sélecteur de joueur par colonne")
+	if choix != null:
+		choix.item_selected.emit(2)
+		await settle(10)
+	check(app.management_ui.compare.size() == 2, "Le sélecteur ajoute un second joueur")
+	var attribute_labels := app.find_children("Attribut_*_0", "Label", true, false)
+	check(attribute_labels.size() == 36, "36 attributs affichés dans la première colonne (%d)" % attribute_labels.size())
+	var colored := 0
+	for label: Label in attribute_labels:
+		var digits := label.text.replace(" ▲", "").replace(",", ".")
+		if digits == "—" or label.get_theme_color("font_color").is_equal_approx(Charte.couleur_attribut(digits.to_float())): colored += 1
+	check(colored == 36, "Chaque attribut écrit au barème coloré (%d/36)" % colored)
+	check(app.find_child("ComparateurJoueur2", true, false) != null, "Troisième colonne proposée à 2 joueurs")
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	for down in [true, false]:
+		escape.pressed = down
+		Input.parse_input_event(escape)
+		await process_frame
+	await settle(10)
+	check(app.route == "Effectif", "Échap ramène à l'écran d'origine")
+	if app.model.get("epcrPreparation") is Dictionary:
+		await press("OpenEpcrPreparation")
+		check(app.route == "Préparation Europe" and windows(app).is_empty(), "Préparer l'Europe : un écran, pas une fenêtre")
+		await press("EuropeRetour")
+		check(app.route == "Effectif", "Retour de la préparation européenne")
+	app.management_ui.compare = []
+	# Tuile active : marqueur ivoire incliné.
+	await press("EffectifTuileIndisponibles")
+	check((app.find_child("EffectifTuileIndisponibles", true, false).find_child("EffectifTuileActive", true, false) as Node2D).visible, "Tuile Indisponibles active : marqueur ivoire")
+	await press("RosterChip_tous")
+
 	# Fenêtre étroite : même tableau, colonnes retirées, aucun texte sous 12 px.
 	root.size = Vector2i(1280, 720)
 	await settle(12)

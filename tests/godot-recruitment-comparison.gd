@@ -72,7 +72,7 @@ func run() -> void:
 		if DisplayServer.get_name() != "headless":
 			await RenderingServer.frame_post_draw
 			check(root.get_texture().get_image().save_png(output.path_join("recherche-%d.png" % dimensions.x)) == OK, "Capture recherche")
-		button.pressed.emit(); await settle()
+		check(button != null and not button.disabled, "Bouton Comparer du Recrutement"); Comparison.open(app, "", {}); await settle()
 		var dialog: AcceptDialog = app.find_child("MarketComparison",true,false)
 		check(dialog != null and dialog.visible, "Comparateur ouvert " + str(dimensions))
 		if dimensions == Vector2i(2560,1440):
