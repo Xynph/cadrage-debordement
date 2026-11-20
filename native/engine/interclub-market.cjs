@@ -139,7 +139,8 @@ function factory(){
   const ev={id:'vente-'+st.seq,date:typeof venteJour==='function'?venteJour()||'':'',type:raison?'achat_annule':'achat_execute',raison,joueur:a.joueur,acheteur:a.vendeur,montant:a.fee,playerId:a.playerId,buyerId:a.seller};
   st.evenements.push(ev);st.evenements=st.evenements.slice(-20);
   if(raison){
-   const e=S.budgetTransferts;if(e&&e.saison===a.saison&&e.clubId===S.club)e.depense=Math.max(0,Math.round(e.depense-a.fee));
+   // Indemnité engagée rendue : à la saison de l'accord, ou à la saison qui commence si l'accord tombe à la bascule.
+   const e=S.budgetTransferts;if(e&&e.saison===a.saison&&e.clubId===S.club){if(typeof budgetTransfertsBascule!=='undefined'&&budgetTransfertsBascule)budgetTransfertsRendre(e,a.fee);else e.depense=Math.max(0,Math.round(e.depense-a.fee));}
    transferEvent('L’accord avec '+(seller?.name||a.vendeur)+' pour '+a.joueur+' tombe : '+raison.replace(/\.$/,'')+'.');return false;
   }
   seller.players=seller.players.filter(x=>x.id!==player.id);buyer.players.push(player);seller.cash+=a.fee;

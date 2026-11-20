@@ -187,6 +187,8 @@ function preContratSigne(id){const x=calPre(id);return x&&x.etat==='signe'?x:nul
 // Prolongation refusée pour un joueur qui a signé ailleurs ('' sinon).
 function preContratRefusProlongation(id){const x=preContratSigne(id);return x&&x.sens==='depart'&&x.clubId===S.club?'A signé un pré-contrat avec '+x.autre+' : il part libre le '+calDateFr(x.arrivee)+'.':'';}
 // Joueur d'un autre club : un pré-contrat est-il possible ? '' si oui.
+// Pré-contrats signés par le club joué cette saison (un pré-contrat tombé, annulé ou exécuté ne compte plus).
+function calPreSignesSaison(){return calEtat().preContrats.filter(x=>x.sens==='arrivee'&&x.etat==='signe'&&x.clubId===S.club&&x.saison===S.season).length;}
 function calRaisonPreContrat(c,p){
  const P=calR().preContrats;if(!P.actifs||!calActif())return 'Pré-contrats indisponibles dans cette carrière.';
  const ia=calIAReserve(p.id);if(ia)return ia;
@@ -199,6 +201,7 @@ function calRaisonPreContrat(c,p){
  if(j<d.debut)return 'Pré-contrat possible à partir du '+calDateFr(d.debut)+', à moins de '+P.moisAvantFin+' mois de la fin de son contrat.';
  if(j>d.fin)return 'Son contrat est arrivé à échéance.';
  if(typeof careerContractYears==='function'&&careerContractYears(p)<2)return 'Il arrêtera sa carrière à la fin de son contrat.';
+ const max=P.maxParSaison;if(Number.isInteger(max)&&max>=0&&calPreSignesSaison()>=max)return 'Tu as déjà signé '+max+' pré-contrat'+(max>1?'s':'')+' cette saison ('+max+' au plus) : les suivants attendront la saison prochaine.';
  return '';
 }
 // Devis d'un pré-contrat (projection du marché entre clubs, commande precontract_offer).
@@ -212,7 +215,7 @@ function calPreContratDevis(c,p,budget){
  const blocage=a2r||horsBudget||(club().cash<premium?'Trésorerie insuffisante pour la prime.':'');
  // premiumWeeks / premiumStep : prime = arrondi supérieur(salaire × premiumWeeks, premiumStep), recalculée par l'écran.
  return {available:!blocage,reason:blocage||'',salary,premium,premiumWeeks:calR().preContrats.primeSemaines,premiumStep:calR().preContrats.arrondi,minYears:1,maxYears,arrival:d.arrivee,arrivalLabel:calDateFr(d.arrivee),
-  note:'Pré-contrat : il rejoindra ton club le '+calDateFr(d.arrivee)+', sans indemnité pour '+c.name+'. Seule la prime à la signature ('+nativeVenteJoueurs.euros(premium)+') est payée maintenant, sur le budget de transferts.'};
+  note:'Pré-contrat : il rejoindra ton club le '+calDateFr(d.arrivee)+', sans indemnité pour '+c.name+'. Seule la prime à la signature ('+nativeVenteJoueurs.euros(premium)+') est payée maintenant, sur le budget de transferts. Pré-contrats : encore '+Math.max(0,calR().preContrats.maxParSaison-calPreSignesSaison())+' sur '+calR().preContrats.maxParSaison+' cette saison.'};
 }
 // Commande precontract_offer {playerId, sellerId, salary, years, confirmed:true}.
 function preContratProposer(q){
@@ -316,11 +319,13 @@ function calExecuterPreContrats(){
 const settleContractsCalV1=settleContracts;
 settleContracts=function(){
  const du=!!S.economy&&S.economy.settled!==S.season&&calActif(),v2=du&&calBascule();let n=0;
+ // L'argent rendu au budget de transferts pendant la bascule (part des ventes, achats tombés) va à la saison qui commence.
+ const bascule=fn=>typeof budgetTransfertsPendantBascule==='function'?budgetTransfertsPendantBascule(fn):fn();
  if(du&&calEtatValide(S.calendrierMutations))calExecuterPreContrats();
- if(v2){n+=venteExecuterAccords('achats')||0;n+=calIAExecuter();}
+ if(v2){n+=bascule(()=>venteExecuterAccords('achats'))||0;n+=calIAExecuter();}
  const r=settleContractsCalV1.apply(this,arguments);
  if(v2)calIAMasseBascule();else calIAArrivees=null;
- if(v2){n+=venteExecuterAccords('ventes')||0;if(n){const t=n>1?n+' transferts entre clubs prennent effet en ce changement de saison.':'Un transfert entre clubs prend effet en ce changement de saison.';calActu(t);calMercatoLigne(calMercatoEtat(),'temps-fort',t,0);}}
+ if(v2){n+=bascule(()=>venteExecuterAccords('ventes'))||0;if(n){const t=n>1?n+' transferts entre clubs prennent effet en ce changement de saison.':'Un transfert entre clubs prend effet en ce changement de saison.';calActu(t);calMercatoLigne(calMercatoEtat(),'temps-fort',t,0);}}
  return r;
 };
 

@@ -70,6 +70,8 @@ Boucle possible : pré-contrat sur 3 ans, portage d'un an (≈ 29 × salaire), v
 
 **Recommandation chiffrée** : avant fusion ou juste après, lancer un relevé unique (script sur la base de départ) du ratio `transferValue / (salaire demandé × 52)` pour les joueurs en fin de contrat. Seuil d'alerte : plus de 10 % des joueurs avec un ratio > 1,2. Si dépassé : interdire la vente d'une recrue arrivée par pré-contrat avant le 1er juillet suivant son arrivée (« 1 saison complète »), ce qui est déjà le cas en pratique, ou limiter le club joué à 3 pré-contrats par saison (même ordre que les clubs gérés : 2). Ne rien changer sans le relevé.
 
+**Relevé du 20/11/2026** (graines 4242 et 7, janvier de la saison 1, environ 2 000 joueurs éligibles) : 89 % ont une valeur de revente supérieure à 1,2 × un an de salaire demandé (seuil d'alerte de 10 % dépassé). La boucle « pré-contrat (prime de 2 semaines, sans indemnité) puis revente un an plus tard » rapporte en médiane 56 000 € par joueur, jusqu'à 380 000 € (joueur de 23 ans noté 88, 6 800 € par semaine). **Décision** : le club joué est limité à 3 pré-contrats signés par saison (`preContrats.maxParSaison`, plage sûre 2 – 5) ; le 4e est refusé avec une raison écrite.
+
 ## 4. Vente d'un joueur du club joué à un club géré, indemnité plafonnée : sain
 
 `calOffresBascule` retire les offres pour un joueur en fin de contrat et plafonne les autres (hors offres contre-proposées, que la relance +5 / +10 / +15 % ne peut de toute façon pas faire dépasser le plafond de l'acheteur). Effet : le plafond rogne seulement la vente de joueurs **sous-payés par rapport à leur valeur** (valeur > 52 × n × salaire), cas normal d'un jeune ou d'une vedette bon marché. Cela ne crée pas d'exploit, ça réduit les recettes.

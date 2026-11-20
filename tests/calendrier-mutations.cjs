@@ -310,6 +310,42 @@ test('Moteur Monde : recrutement libre, joueurs supplémentaires, achat différ�
   } finally { restaurer(); jeu.fermer(); }
 });
 
+// Plafond de pré-contrats signés par le club joué (preContrats.maxParSaison = 3) : le 4e est refusé, sans rien écrire.
+test('Pré-contrats du club joué : trois par saison au plus, le quatrième est refusé avec sa raison', { timeout: 600000 }, () => {
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    creer(jeu, CLUB);
+    const { lire, run } = outils(jeu);
+    assert.equal(R.preContrats.maxParSaison, 3);
+    run('club().cash=Math.max(club().cash,9e6)');
+    run('(()=>{const e=budgetTransfertsEtat(true);e.enveloppe=Math.max(e.enveloppe,5e6);})()');
+    R.preContrats.moisAvantFin = 12;
+    const marche = () => lire(`nativeSystems.domain('interclubMarket').project()`);
+    const dispo = () => marche().candidates.filter(c => c.preContract?.available).sort((a, b) => a.preContract.premium - b.preContract.premium || (a.id < b.id ? -1 : 1));
+    const attendu = 'Tu as déjà signé 3 pré-contrats cette saison (3 au plus) : les suivants attendront la saison prochaine.';
+    for (let i = 0; i < 3; i++) {
+      const c = dispo()[0];
+      assert.ok(c, 'pré-contrat possible n°' + (i + 1));
+      const r = jeu.brut('precontract_offer', { playerId: c.id, sellerId: c.clubId, salary: c.preContract.salary, years: 1, confirmed: true });
+      assert.equal(r.ok, true, r.error);
+    }
+    assert.equal(lire(`S.calendrierMutations.preContrats.filter(x=>x.sens==='arrivee'&&x.etat==='signe').length`), 3);
+    const quatre = marche().candidates.filter(c => c.contractEnd === lire('S.season') && c.preContract && !c.preContract.signed);
+    assert.ok(quatre.length > 0);
+    assert.ok(quatre.every(c => c.preContract.available === false));
+    assert.ok(quatre.some(c => c.preContract.reason === attendu), quatre[0].preContract.reason);
+    // Aucun joueur n'est plus proposé : essayer le meilleur marché d'avant le plafond (salaire demandé relevé).
+    const cible = quatre.find(c => c.preContract.reason === attendu);
+    const avant = lire('({cash:club().cash,dep:S.budgetTransferts.depense,n:S.calendrierMutations.preContrats.length,seq:S.calendrierMutations.seq,led:S.ledger.length})');
+    const r4 = jeu.brut('precontract_offer', { playerId: cible.id, sellerId: cible.clubId, salary: 100000, years: 1, confirmed: true });
+    assert.equal(r4.ok, false); assert.equal(r4.error, attendu);
+    assert.deepEqual(lire('({cash:club().cash,dep:S.budgetTransferts.depense,n:S.calendrierMutations.preContrats.length,seq:S.calendrierMutations.seq,led:S.ledger.length})'), avant, 'le refus n’écrit rien');
+    // Le plafond est un réglage : à 4, le quatrième repasse.
+    R.preContrats.maxParSaison = 4;
+    assert.ok(dispo().length > 0, 'quatrième possible avec un plafond de 4');
+  } finally { restaurer(); jeu.fermer(); }
+});
+
 // Temps de clôture de semaine (cadence hebdomadaire) avec une approche tirée chaque semaine (six joueurs en fin de
 // contrat, pré-contrats possibles), comparé à la même clôture sans approche. Seuil : +1,5 s, toujours sous 15 s.
 const SURCOUT_MAX_MS = 1500;
@@ -335,4 +371,38 @@ test('Performance : clôture de semaine avec approches de pré-contrat', { timeo
   assert.equal(sans.n, 0); assert.ok(avec.n >= 2, 'approches tirées : ' + avec.n);
   assert.ok(avec.ms - sans.ms <= SURCOUT_MAX_MS, `surcoût ${avec.ms - sans.ms} ms > ${SURCOUT_MAX_MS} ms`);
   assert.ok(avec.ms < 15000);
+});
+
+// Bascule de saison (décision du 20/11/2026, budget-transferts.md R4) : la part d'une vente choisie exécutée au 1er juillet
+// et l'indemnité d'un achat qui tombe à la bascule reviennent entières à l'enveloppe de la saison qui commence, pas à la
+// saison close (où le report R5 n'en aurait passé qu'une partie).
+test('Bascule : part des ventes et achats tombés rendus à la nouvelle saison', { timeout: 600000 }, () => {
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    creer(jeu, CLUB);
+    const { lire, run } = outils(jeu);
+    run('club().cash=Math.max(club().cash,9e6)');
+    const acheteur = lire(`S.clubs.find(c=>c.id!==S.club&&professionalPlaces(c)>0&&c.cash>=2e6).id`);
+    const vendu = jeu.call('snapshot').squad.find(p => !p.sale.blocked && !p.sale.pending && !p.preContract);
+    run(`S.economy.offers.push({id:'bascule-r4',playerId:'${vendu.id}',buyer:${acheteur},fee:400000,expires:S.economy.week+1});`);
+    const r = jeu.brut('sale_answer', { offerId: 'bascule-r4', action: 'accept', confirmed: true });
+    assert.equal(r.ok, true, r.error);
+    assert.ok(lire(`S.venteJoueurs.accords.some(a=>a.playerId==='${vendu.id}'&&a.bascule)`), 'accord exécuté au 1er juillet');
+    // Achat conclu (indemnité engagée) dont le joueur a quitté le vendeur avant la bascule : il tombera.
+    run(`(()=>{const e=budgetTransfertsEtat(true);e.depense=Math.round(e.depense+150000);
+      S.venteJoueurs.seq++;S.venteJoueurs.accords.push({id:'achat-test',sens:'achat',clubId:S.club,playerId:'absent-test',joueur:'Joueur parti',seller:${acheteur},vendeur:'Vendeur',fee:150000,saison:S.season,date:'2027-07-01',bascule:true});})()`);
+    run(`S.clubs[${acheteur}].cash=Math.max(S.clubs[${acheteur}].cash,5e6)`);
+    const avant = lire('({...S.budgetTransferts})');
+    run('settleContracts()');
+    const close = lire('({...S.budgetTransferts})');
+    const part = Math.round(400000 * T.REGLAGES.partVentes);
+    assert.equal(lire(`club().players.some(p=>p.id==='${vendu.id}')`), false, 'le joueur est parti');
+    assert.equal(close.reconstitue, avant.reconstitue, 'la saison close ne reçoit rien');
+    assert.equal(close.depense, avant.depense, 'l’indemnité engagée n’est pas rendue à la saison close');
+    assert.equal(close.aNouvelleSaison, part + 150000);
+    const neuve = lire(`(()=>{const s=S.season;S.season=s+1;try{return budgetTransfertsNeuf();}finally{S.season=s;}})()`);
+    assert.equal(neuve.reconstitue, part + 150000, 'tout passe à l’enveloppe de la nouvelle saison');
+    assert.equal(neuve.depense, 0);
+    assert.equal(neuve.report, T.report(close, neuve.enveloppe, lire('budgetTransfertsEntrees().recettes')), 'le report ne compte pas cet argent deux fois');
+  } finally { restaurer(); jeu.fermer(); }
 });
