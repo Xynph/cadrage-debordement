@@ -46,6 +46,23 @@ func dore(c: Color) -> bool:
 		if c.a > 0.05 and absf(c.r - o.r) + absf(c.g - o.g) + absf(c.b - o.b) < 0.12: return true
 	return false
 
+## Aplats dorés (fond d'un bouton ou d'un panneau, tous états) : charte finale, un seul par écran, l'action principale.
+func aplats_or(racine: Node) -> Array[String]:
+	var trouves: Array[String] = []
+	var noeuds: Array = [racine]
+	noeuds.append_array(racine.find_children("*", "Control", true, false))
+	for n: Variant in noeuds:
+		var c := n as Control
+		if c == null: continue
+		for cle in ["panel", "normal", "hover", "pressed", "disabled"]:
+			if not c.has_theme_stylebox_override(cle): continue
+			var s := c.get_theme_stylebox(cle) as StyleBoxFlat
+			if s != null and dore(s.bg_color):
+				trouves.append(str(c.name))
+				break
+		if c is ColorRect and dore((c as ColorRect).color): trouves.append(str(c.name))
+	return trouves
+
 func ors(racine: Node) -> Array[String]:
 	var trouves: Array[String] = []
 	var noeuds: Array = [racine]
@@ -182,11 +199,16 @@ func run() -> void:
 	check(mini != null and mini.visible and fenetres().is_empty(), "Survol d'un nom : mini-fiche posée dans le jeu, pas une fenêtre")
 	view._mini_fiche().cacher(app)
 
-	# 3. Aucun or dans l'écran (bandeau, commandes, journal, barre du bas, bannière, mention).
+	# 3. Un seul aplat doré dans l'écran : « Valider la journée » (action principale). Texte doré, contours et focus permis.
 	var mes_noeuds: Array = [bandeau, view.play, view.get("indice_menu"), journal_panneau, view.get("_meteo_boite"), view.barre_commandes, view.drawer, view.regie.bandeau, view.regie.mention]
 	var dores: Array[String] = []
-	for n: Node in mes_noeuds: dores.append_array(ors(n))
-	check(dores.is_empty(), "Aucun or dans l'écran : " + str(dores))
+	for n: Node in mes_noeuds:
+		for nom in aplats_or(n):
+			if not dores.has(nom): dores.append(nom)
+	check(dores == ["MatchFinishButton"], "Un seul aplat doré dans l'écran, « Valider la journée » : " + str(dores))
+	var valider := view.find_child("MatchFinishButton", true, false) as Button
+	var fond_valider := valider.get_theme_stylebox("normal") as StyleBoxFlat if valider != null else null
+	check(fond_valider != null and fond_valider.corner_radius_top_left >= 999, "« Valider la journée » : pilule (rayon 999)")
 
 	# 4. Plaque cliquée : fiche du club dans le direct, match en pause, aucune fenêtre ; retour au direct.
 	if app.model.live.get("paused", false): await command("pause", {"paused": false})

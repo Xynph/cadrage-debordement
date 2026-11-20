@@ -105,8 +105,9 @@ static func _card(parent: Node, id: String, title: String, height: int, ratio: f
 	parent.add_child(frame)
 	return frame
 
+## `primary` : bouton de l'action de l'écran, en pilule à contour (secondaire) car Continuer garde l'unique aplat doré.
 static func _link(parent: Node, id: String, text: String, app: Control, route: String, primary: bool = false) -> Button:
-	var action := C.button(text, func(): app._navigate(route), primary, app.accent)
+	var action := C.button(text, func(): app._navigate(route), false, app.accent)
 	if not primary:
 		C.style_bouton_lien(action, 21)
 		action.custom_minimum_size.y = C.px(30)
@@ -490,7 +491,8 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	if next.is_empty() or not match_info.is_empty():
 		var caption: String = app.primary_text()
 		if not match_info.is_empty(): caption = caption.trim_suffix("  →")
-		var primary := C.button(caption,app.primary_action,true,app.accent)
+		# Continuer (coque) porte l'unique aplat doré de l'écran : ce bouton reste secondaire (pilule à contour).
+		var primary := C.button(caption,app.primary_action,false,app.accent)
 		primary.name="OfficePreparationAction"
 		actions.add_child(primary)
 		C.fill(primary)

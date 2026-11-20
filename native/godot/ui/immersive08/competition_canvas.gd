@@ -251,14 +251,14 @@ func _lien(parent: Node, area: Rect2, caption: String, callback: Callable, id: S
 	D.place(button, area)
 	return button
 
-## Action principale de l'écran : ivoire plein, texte nuit (jamais d'or).
+## Action de la page : pilule à contour (Continuer, dans la coque, garde l'unique aplat doré).
 func _principal(parent: Node, area: Rect2, caption: String, callback: Callable, id: String) -> Button:
 	var button := Button.new()
 	button.name = id
 	button.text = caption
 	button.focus_mode = Control.FOCUS_ALL
 	button.set_meta("immersive_style_applied", true)
-	C.style_bouton_ivoire_plein(button, 22)
+	C.style_bouton_contour(button, 22)
 	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	button.pressed.connect(callback)
 	parent.add_child(button)
@@ -533,7 +533,7 @@ func _page_rencontre(fixture: Dictionary) -> void:
 			prepare.name = "CompetitionFixturePrepare"
 			prepare.text = ("Rejoindre le match" if live else "Préparer le match").to_upper() + "  →"
 			prepare.set_meta("immersive_style_applied", true)
-			C.style_bouton_ivoire_plein(prepare, 22)
+			C.style_bouton_contour(prepare, 22)
 			prepare.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			prepare.pressed.connect(func(): app._navigate("Match" if live else "Préparation"))
 			content.add_child(prepare)

@@ -1,5 +1,5 @@
 'use strict';
-// Réception, DA « Liste et lettre » : lettre papier unique, aucun or hors Continuer, noms en liens, menu Sujet déroulant,
+// Réception, DA « Liste et lettre » : lettre papier unique, aucun aplat doré hors Continuer, noms en liens, menu Sujet déroulant,
 // réponse choisie puis confirmée, aucune petite fenêtre. Godot réel + worker réel, carrière Monde (world-champ).
 // Captures : CD_RECEPTION_DA_CAPTURES=<dossier> (rendu x11).
 const assert = require('node:assert/strict');

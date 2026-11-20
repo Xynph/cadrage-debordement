@@ -1,6 +1,6 @@
 'use strict';
 // Bureau (direction artistique « Affiche et Gabi ») : tout ce qui semble cliquable ouvre quelque chose, aucune fenêtre,
-// aucun or hors Continuer, bandeau voilé mince, buste de Gabi. Vraie interface Godot + vrai moteur, carrière Monde.
+// aucun aplat doré hors Continuer, bandeau voilé mince, buste de Gabi. Vraie interface Godot + vrai moteur, carrière Monde.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');

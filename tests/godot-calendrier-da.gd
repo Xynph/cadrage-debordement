@@ -1,7 +1,7 @@
 extends SceneTree
 # Classements (variante 1 « Tableau et rendez-vous à droite », décision de Léo du 20/11/2026), carrière Monde réelle :
 # tout ce qui ressemble à un lien en est un (club, rencontre, date, compétition, en-tête de colonne), aucune fenêtre ouverte
-# par un clic (la rencontre et les archives sont des sous-pages avec retour), aucun or, un seul ivoire plein au plus.
+# par un clic (la rencontre et les archives sont des sous-pages avec retour), au plus un aplat doré (Continuer le porte).
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
 var app: Control
@@ -45,18 +45,20 @@ func fill_of(button: Button, state: String) -> Color:
 	var style := button.get_theme_stylebox(state) as StyleBoxFlat
 	return style.bg_color if style != null else Color(0, 0, 0, 0)
 
-## Aucun or (Continuer seul, hors page), un ivoire plein au plus, aucun bouton visible sans effet.
+## Charte finale : au plus un aplat doré (fond de bouton) par page, Continuer (coque) portant le sien ; les boutons de la
+## page sont des pilules (rayon >= 999) ; aucun bouton visible sans effet.
 func check_buttons(label: String) -> void:
-	var plein := 0
+	var aplats := 0
 	var morts: Array[String] = []
 	for button: Button in page().find_children("*", "Button", true, false):
 		if not button.is_visible_in_tree(): continue
+		var dore := false
 		for state in ["normal", "hover", "pressed"]:
 			var fond := fill_of(button, state)
-			check(not fond.is_equal_approx(Charte.OR) and not fond.is_equal_approx(Charte.OR_VIF), label + " : pas d'or sur " + button.name)
-		if fill_of(button, "normal").is_equal_approx(Charte.IVOIRE): plein += 1
+			if fond.a > .05 and (fond.is_equal_approx(Charte.OR) or fond.is_equal_approx(Charte.OR_VIF)): dore = true
+		if dore: aplats += 1
 		if not button.disabled and button.mouse_filter != Control.MOUSE_FILTER_IGNORE and button.get_signal_connection_list("pressed").is_empty(): morts.append(str(button.name))
-	check(plein <= 1, label + " : un seul bouton ivoire plein (" + str(plein) + ")")
+	check(aplats == 0, label + " : aucun aplat doré dans la page, Continuer le porte seul (" + str(aplats) + ")")
 	check(morts.is_empty(), label + " : aucun bouton sans effet " + str(morts))
 
 func click(button: Button) -> void:
