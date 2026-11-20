@@ -81,7 +81,7 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	var titre := Kit.titre(page, 0, 98, str(TITRES.get(kind, "")).to_upper(), 38, 1400)
 	titre.name = "FormationSubpageTitle"
 	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
-	var cadre := D.rect(page, Rect2(0, 146, LARGEUR, 1000), Charte.PANNEAU, 0)
+	var cadre := D.rect(page, Rect2(0, 146, LARGEUR, 1000), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	cadre.name = "FormationSubpage_" + kind
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
 	cadre.clip_contents = true

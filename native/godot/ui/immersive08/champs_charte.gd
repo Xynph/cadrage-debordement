@@ -51,7 +51,7 @@ static func liste(choix: OptionButton) -> void:
 	menu.add_theme_color_override("font_color", Charte.IVOIRE)
 	menu.add_theme_color_override("font_hover_color", Charte.IVOIRE)
 
-## Case à cocher (CheckButton ou CheckBox) : carré arrondi ; coché = aplat crème et coche sombre, décoché = contour gris-vert.
+## Case à cocher (CheckButton ou CheckBox) : carré à coins de 6 px (RAYON_PETIT) ; coché = aplat crème et coche sombre, décoché = contour gris-vert.
 static func case(bouton: Button) -> void:
 	_marque(bouton)
 	var cote := maxi(14, C.px(22))
@@ -68,7 +68,7 @@ static func case(bouton: Button) -> void:
 static func _dessin(cote: int, coche: bool) -> ImageTexture:
 	var image := Image.create(cote, cote, false, Image.FORMAT_RGBA8)
 	image.fill(Color(0, 0, 0, 0))
-	var rayon := cote * 0.28
+	var rayon := minf(float(Charte.RAYON_PETIT), cote * 0.3)
 	var epaisseur := maxf(1.5, cote / 10.0)
 	for x in cote:
 		for y in cote:
