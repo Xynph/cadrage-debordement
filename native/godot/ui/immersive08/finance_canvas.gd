@@ -468,11 +468,26 @@ static func _carte(app: Control, canvas: Control, rectangle: Rect2, id: String, 
 	if not infobulle.is_empty(): ouvrir.tooltip_text = infobulle
 	return carte
 
+## Fait le lien entre la marge courante et la trésorerie prévue : trésorerie + marge courante + autres apports = prévision.
+static func _projection_reading(finance: Dictionary) -> String:
+	var detail: Variant = finance.get("projection")
+	if not (detail is Dictionary) or not finance.has("budget"): return "Hors billetterie aléatoire, primes et transferts futurs"
+	if absf(float(detail.otherInflows)) < 1.0: return "Trésorerie + marge courante sur %d semaines" % int(detail.remainingWeeks)
+	return "Trésorerie %s · marge courante %s · guichet, primes et soutien %s" % [U.amount(detail.cash), U.amount(detail.marginTotal), ("+" if float(detail.otherInflows) > 0.0 else "") + U.amount(detail.otherInflows)]
+
 static func _carte_tresorerie(app: Control, canvas: Control, rectangle: Rect2, accounts: Dictionary, finance: Dictionary, v: Dictionary) -> void:
 	# Sur l'onglet Trésorerie, le bloc mène au budget qui explique la prévision de fin de saison.
 	var ici := _onglet_courant(app) == "cash"
 	var carte := _carte(app, canvas, rectangle, "FinanceMetric0", _onglet_cible("budget" if ici else "cash"), "Ouvrir · Budget" if ici else "Ouvrir · Trésorerie", "Trésorerie du club : prévision de fin de saison, dans l'onglet Budget." if ici else "Trésorerie du club : tous les mouvements et le solde, dans l'onglet Trésorerie.")
-	var decalage := maxf(0.0, (rectangle.size.y - 120.0) * .5 - 10.0)
+	# Carte haute (Synthèse) : la prévision est expliquée dessous (trésorerie + marge courante + autres apports).
+	var lecture := _projection_reading(finance) if rectangle.size.y >= 200.0 else ""
+	var decalage := maxf(0.0, (rectangle.size.y - (200.0 if not lecture.is_empty() else 120.0)) * .5 - 10.0)
+	if not lecture.is_empty():
+		var explication := C.wrap(lecture, 16, Charte.IVOIRE_2)
+		explication.name = "FinanceProjectionReading"
+		explication.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		carte.add_child(explication)
+		D.place(explication, Rect2(20, 138 + decalage, rectangle.size.x - 40, rectangle.size.y - 146 - decalage))
 	var cash: Variant = v.cash
 	_titre(carte, 20, 36 + decalage, "TRÉSORERIE", 22, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var montant := _titre(carte, 20, 92 + decalage, U.amount(cash), 52, Charte.D if cash != null and float(cash) < 0.0 else Charte.IVOIRE, rectangle.size.x - 40)
@@ -631,6 +646,10 @@ static func _allocation(card: Panel, app: Control, finance: Dictionary, largeur:
 		D.bar(card, Rect2(22, y + 40, largeur - 44, 9), ratio, Charte.IVOIRE_2)
 		D.text(card, largeur - 22, y + 24, "%d %%" % roundi(ratio) if total > 0 else "—", 22, Charte.IVOIRE, 700, 80, HORIZONTAL_ALIGNMENT_RIGHT).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		D.text(card, largeur - 116, y + 24, G.euros(item[2]) if item[2] != null else "—", 19, Charte.IVOIRE_2, 500, 150, HORIZONTAL_ALIGNMENT_RIGHT).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Deux mesures salariales distinctes : la charge versée (avec cotisations, comme l'écran Club) et les salaires des contrats.
+	if app.model.has("figures"):
+		var payroll := P.payroll(app.model)
+		_texte(card, 22, 298, "dont salaires des joueurs %s, hors cotisations" % G.salary_amount(payroll.players_weekly), 16, Charte.IVOIRE_2, largeur - 44).name = "FinancePlayersPayroll"
 	_texte(card, 22, 326, "Engagements connus · prévision sur %d semaine(s)" % remaining, 16, Charte.IVOIRE_2, largeur - 44)
 	# Un seul bouton ivoire par écran : sur l'onglet Budget, c'est « Ouvrir les décisions financières » ; ici un lien.
 	var sur_budget := _onglet_courant(app) == "budget"
@@ -736,7 +755,7 @@ static func _vigilances(app: Control, finance: Dictionary) -> Array:
 	if budget is Dictionary and budget.get("plafondSalarial") != null and float(budget.plafondSalarial) > 0.0 and budget.get("masseSalariale") != null:
 		var part := roundi(100.0 * float(budget.masseSalariale) / float(budget.plafondSalarial))
 		if part >= 80:
-			lignes.append({"id": "FinanceWatchCap", "titre": "Masse salariale à %d %% du plafond de la ligue" % part, "detail": "marge restante : %s" % U.amount(budget.get("margePlafond")), "lien": "Budget" if _onglet_courant(app) == "wages" else "Salaires", "action": func(): _ouvrir_onglet(app, "budget") if _onglet_courant(app) == "wages" else _open_wages(app, false)})
+			lignes.append({"id": "FinanceWatchCap", "titre": "Masse salariale · joueurs à %d %% du plafond de la ligue" % part, "detail": "marge restante : %s" % U.amount(budget.get("margePlafond")), "lien": "Budget" if _onglet_courant(app) == "wages" else "Salaires", "action": func(): _ouvrir_onglet(app, "budget") if _onglet_courant(app) == "wages" else _open_wages(app, false)})
 	return lignes
 
 static func _watch(card: Panel, app: Control, finance: Dictionary, largeur: float) -> void:
