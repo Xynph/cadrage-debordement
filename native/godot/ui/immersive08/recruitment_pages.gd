@@ -37,6 +37,8 @@ static func ouvrir(app: Control, page: String, args: Dictionary = {}) -> void:
 	var contenu := {"kind": page}
 	contenu.merge(args)
 	app.management_ui.recrutement_page = contenu
+	# Depuis la fiche d'une piste (« Approcher le joueur ») : la sous-page remplace la fiche (le retour mène à la liste).
+	app.management_ui.erase("fiche_joueur")
 	app._navigate("Recrutement", true, true)
 	var cible := app.root_content.find_child("RecrutementRetour", true, false) as Control
 	if cible != null and page != "negociation": cible.grab_focus.call_deferred()

@@ -30,11 +30,11 @@ const FIRST_ROWS := 26
 const ROWS_PER_FRAME := 18
 const VISIBLE_MARGIN := 6
 const WIDTH := 2248
-const HAUTEUR := 1300
+const HAUTEUR := 1250
 const TABLE_TOP := 332.0
 const HEADER_H := 32.0
-const ROWS_H := 672.0
-const COST_TOP := 1052.0
+const ROWS_H := 640.0
+const COST_TOP := 1020.0
 const TABS := ["Besoins du club", "Recherche", "Joueurs suivis", "Rapports"]
 const WEEKS_PER_YEAR := 52
 
@@ -192,7 +192,8 @@ func _tuiles() -> void:
 		var apres := Budget.LABEL
 		if fee is int or fee is float: apres = "%s après l’offre" % G.euros(int(budget.get("disponible", 0)) - int(fee))
 		var restant := _tuile(1700, 380, "Restant", Budget.remaining(budget), apres, "RecruitmentTransferBudget", true, Budget.LABEL)
-		restant.tooltip_text = Budget.detail(budget, cash)	var finances := Kit.lien(tiles, Rect2(2248, 100, 0, 36), "Finances →", func(): app.navigation_controller.open_entity({"kind":"finance", "id":"summary"}), "RecruitmentFinances", 19, true)
+		restant.tooltip_text = Budget.detail(budget, cash)
+	var finances := Kit.lien(tiles, Rect2(2248, 100, 0, 36), "Finances →", func(): app.navigation_controller.open_entity({"kind":"finance", "id":"summary"}), "RecruitmentFinances", 19, true)
 	finances.tooltip_text = ""
 
 func _tuile(x: float, largeur: float, etiquette: String, montant: String, suite: String, id: String, marque: bool, libelle: String) -> Button:
@@ -319,8 +320,8 @@ func _tabs() -> void:
 		D.place(bouton, Rect2(x, 244, largeur, 44))
 		x += largeur + 8
 	# Sources : le marché des joueurs (cette liste), les autres clubs et la relève sont des écrans à part.
-	var droite := float(WIDTH)
-	var sources := [["Relève", "releve", "OpenRegenScouting", "Repérer la relève : agents libres majeurs, centres de formation et petits clubs"], ["Entre clubs", "interclub", "OpenInterclubMarket", ""], ["Marché joueurs %d" % app.model.get("market", []).size(), "", "MarketSourcePlayers", ""]]
+	var droite := float(WIDTH) - 8.0
+	var sources :=[["Relève", "releve", "OpenRegenScouting", "Repérer la relève : agents libres majeurs, centres de formation et petits clubs"], ["Entre clubs", "interclub", "OpenInterclubMarket", ""], ["Marché joueurs %d" % app.model.get("market", []).size(), "", "MarketSourcePlayers", ""]]
 	var calendrier: Dictionary = app.model.get("mutations", {}) if app.model.get("mutations") is Dictionary else {}
 	for source: Array in sources:
 		var actif: bool = str(source[1]).is_empty()
@@ -365,7 +366,7 @@ func _tabs() -> void:
 	var expirant: int = (data.get("expiring", []) as Array).size()
 	var liens: Array = [["OpenScoutMission", "Lancer une mission →", func(): _staff(1), false]]
 	liens.append(["OpenPlayerSales", SalesView.caption(app.model) + " →", func(): Pages.ouvrir(app, "offres"), offres > 0])
-	if expirant > 0: liens.append(["OpenExpiringContracts", P.plural(expirant, "fin de contrat", "fins de contrat") + " cette saison →", func(): _fins_de_contrat(), false])
+	if expirant > 0: liens.append(["OpenExpiringContracts", P.plural(expirant, "fin de contrat", "fins de contrat") + " →", func(): _fins_de_contrat(), false])
 	for lien: Array in liens:
 		var largeur_lien := Kit.largeur(str(lien[1]), 18) + 12
 		if limite - largeur_lien < libre:
@@ -375,6 +376,7 @@ func _tabs() -> void:
 		bouton.tooltip_text = ""
 		if lien[3]: bouton.add_theme_font_override("font", Charte.TITRE_GRAS)
 		if lien[0] == "OpenPlayerSales": bouton.accessibility_name = bouton.text
+		if lien[0] == "OpenExpiringContracts": bouton.accessibility_name = "Voir les fins de contrat de la saison dans l'effectif"
 		limite -= largeur_lien + 18
 
 func _filters(positions: Array) -> void:
@@ -547,10 +549,10 @@ func _entetes() -> void:
 		D.place(tri, Rect2(col.x - 8, 0, col.w + 16, HEADER_H))
 
 func _pied() -> void:
-	D.line(self, Vector2(0, HAUTEUR - 62), Vector2(WIDTH, HAUTEUR - 62), Charte.FILET)
-	count = Kit.texte(self, 0, HAUTEUR - 26, "", Charte.IVOIRE_2, 1000, 17)
+	D.line(self, Vector2(0, HAUTEUR - 52), Vector2(WIDTH, HAUTEUR - 52), Charte.FILET)
+	count = Kit.texte(self, 0, HAUTEUR - 18, "", Charte.IVOIRE_2, 1000, 17)
 	count.name = "MarketCount"
-	direction = Kit.lien(self, Rect2(1010, HAUTEUR - 52, 0, 34), "↓ Décroissant", func():
+	direction = Kit.lien(self, Rect2(1010, HAUTEUR - 46, 0, 34), "↓ Décroissant", func():
 		state["report_descending" if tab == 3 else "descending"] = not _sort_descending()
 		_filter_changed(), "MarketDirection", 17)
 	direction.tooltip_text = ""
@@ -560,8 +562,8 @@ func _pied() -> void:
 	for touche: Array in [["Échap", "menu"], ["I", "aperçu"]]:
 		var mot: String = touche[1]
 		droite -= Kit.largeur(mot, 17) + 6
-		Kit.texte(self, droite, HAUTEUR - 26, mot, Charte.IVOIRE_2, 0, 17)
-		var large := Kit.touche(self, droite - 8, HAUTEUR - 25, str(touche[0]), true)
+		Kit.texte(self, droite, HAUTEUR - 18, mot, Charte.IVOIRE_2, 0, 17)
+		var large := Kit.touche(self, droite - 8, HAUTEUR - 17, str(touche[0]), true)
 		droite -= large + 22
 
 
@@ -870,7 +872,8 @@ func _cout() -> void:
 			if largeur_offre > 0: D.rect(cost, Rect2(500 + largeur_depense, 52, largeur_offre, 20), Charte.IVOIRE, 0)
 			D.rect(cost, Rect2(500 + largeur_depense + largeur_offre, 52, maxf(0, 700 - largeur_depense - largeur_offre), 20), Color.TRANSPARENT, 0, Charte.IVOIRE_3)
 		var reste := int(budget.get("disponible", 0)) - (int(fee) if fee_known else 0)
-		var apres := Kit.texte(cost, 1200, 34, "après l’offre : %s restants" % G.euros(reste) if fee_known else "disponible : %s" % Budget.remaining(budget), Charte.IVOIRE if reste >= 0 else Charte.D, 420, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+		var apres := Kit.texte(cost, 500, 140, "après l’offre : %s restants" % G.euros(reste) if fee_known else "disponible : %s" % Budget.remaining(budget), Charte.IVOIRE if reste >= 0 else Charte.D, 700, 19)
+		apres.add_theme_font_override("font", Charte.texte_moyen())
 		apres.name = "RecruitmentCostAfter"
 		var legende := [["Déjà engagé", G.euros(depense), Charte.IVOIRE_3, true]]
 		if fee_known: legende.append(["Cette indemnité", G.euros(fee), Charte.IVOIRE, true])
@@ -882,7 +885,7 @@ func _cout() -> void:
 			Kit.texte(cost, lx + 22, 104, texte, Charte.IVOIRE_2, 300, 17)
 			lx += Kit.largeur(texte, 17) + 50
 		if fee_known and reste < 0:
-			Kit.texte(cost, 500, 140, "Hors budget : le conseil peut accorder une rallonge si la caisse le permet.", Charte.D, 700, 17).name = "RecruitmentCostOverBudget"
+			Kit.texte(cost, 500, 164, "Hors budget : le conseil peut accorder une rallonge si la caisse le permet.", Charte.D, 700, 17).name = "RecruitmentCostOverBudget"
 	else:
 		var cash: Variant = app.model.get("finance", {}).get("cash")
 		Kit.etiquette(cost, 500, 34, "Trésorerie du club", 520)
