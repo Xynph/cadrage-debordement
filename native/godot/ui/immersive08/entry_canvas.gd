@@ -18,8 +18,11 @@ static func _configure(app: Control) -> void:
 
 const Accueil = preload("res://ui/immersive08/accueil_canvas.gd")
 
+## Nom affiché sur l'affiche (le lettrage du logo) ; sert aussi de nom accessible.
+const NOM_JEU := "RUGBY LEGACY 27"
+
 static func home(app: Control) -> Control:
-	return Accueil.home(app)
+	return Accueil.home(app, NOM_JEU)
 
 static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	_configure(app)
