@@ -120,8 +120,15 @@ func _composition() -> void:
 		if str(person.id) == candidate: person.age = 19
 	var young_changes: Array = Avis.composition(young).get("action", {}).get("changements", [])
 	var gain := Avis.valeur(young, _player(young, candidate), _number(young, target)) - Avis.valeur(young, _player(young, out_id), _number(young, target))
+	# Le jeune peut être éligible à plusieurs postes (barème V3 : notes au poste distinctes) : la règle se vérifie à chaque
+	# poste où il est proposé, contre le titulaire qu'il remplace, pas seulement au poste visé ci-dessus.
 	if gain < Avis.SEUIL_JEUNE:
-		_check(not young_changes.any(func(c: Dictionary) -> bool: return str(c.playerId) == candidate), "Composition : un jeune de 19 ans n'est pas lancé pour un petit écart")
+		_check(not young_changes.any(func(c: Dictionary) -> bool: return int(c.slot) == target and str(c.playerId) == candidate), "Composition : un jeune de 19 ans n'est pas lancé pour un petit écart")
+	for change: Dictionary in young_changes:
+		if str(change.playerId) != candidate: continue
+		var numero := _number(young, int(change.slot))
+		var ecart := Avis.valeur(young, _player(young, candidate), numero) - Avis.valeur(young, _player(young, str(change.get("sortant", ""))), numero)
+		_check(ecart >= Avis.SEUIL_JEUNE, "Composition : un jeune de 19 ans n'est lancé que pour un écart d'au moins %s (poste %d : %s)" % [Avis.SEUIL_JEUNE, numero, ecart])
 	# Un blessé n'est jamais proposé.
 	var injured := tired.duplicate(true)
 	for person: Dictionary in injured.squad:
