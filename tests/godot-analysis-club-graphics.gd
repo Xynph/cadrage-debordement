@@ -167,7 +167,7 @@ func run() -> void:
 		await key(KEY_LEFT,true)
 		choice=found("PerformancePlayerChoice") as OptionButton
 		check(choice!=null and choice.selected==1 and str(found("PerformancePlayerLink").get_meta("entity_id"))==player_id,"Retour conserve le joueur sélectionné")
-	await overview_page()
+	app._navigate("Staff"); await settle()
 	var staff:=app.find_children("ClubStaffName_*","Button",true,false)
 	check(not staff.is_empty(),"Nom de staff réellement projeté sur Club")
 	if not staff.is_empty():
@@ -175,6 +175,7 @@ func run() -> void:
 		await activate(staff[0])
 		check(app.route=="Staff" and app.StaffViews.reading(app).navigation_id==staff_id,"Staff : bon profil par ID")
 		await key(KEY_LEFT,true)
+	await overview_page()
 	for item: Array in [["ClubCashLink","cash"],["ClubWagesLink","wages"]]:
 		await activate(found(item[0]) as Control)
 		check(app.route=="Finances" and app.management_ui.immersive08_finance_tab==item[1],"Bon onglet financier · "+str(item[1]))

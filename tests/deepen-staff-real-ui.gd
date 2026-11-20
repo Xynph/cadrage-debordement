@@ -10,21 +10,29 @@ func staff_page(name_filter: String = "") -> void:
 		var field := app.find_child("StaffSearch",true,false) as LineEdit
 		check(field != null,"Recherche nominative du staff réelle")
 		if field != null: field.text = name_filter; field.text_changed.emit(name_filter); await settle()
-func confirmation() -> ConfirmationDialog:
-	var windows := app.find_children("*","ConfirmationDialog",true,false).filter(func(d):return d.visible)
-	check(windows.size()==1,"Une confirmation publique réelle")
-	return windows[0] if windows.size()==1 else null
-func geometry(view: Window,label: String) -> void:
-	check(Rect2i(Vector2i.ZERO,root.size).encloses(Rect2i(view.position,view.size)),label+" contenu dans la fenêtre")
-	if view is AcceptDialog:
-		check(Rect2(Vector2.ZERO,Vector2(view.size)).grow(2).encloses(view.get_ok_button().get_global_rect()),label+" confirmation entièrement visible")
+## Confirmation visible : bloc EN PLACE « ClubConfirmation » (décision de Léo du 19/11/2026, plus de fenêtre).
+func confirmation() -> Control:
+	var blocs := app.find_children("ClubConfirmation","PanelContainer",true,false).filter(func(b):return b.is_visible_in_tree())
+	check(blocs.size()==1,"Une confirmation publique réelle")
+	return blocs[0] if blocs.size()==1 else null
+func texte_confirmation(bloc: Control) -> String:
+	var morceaux: PackedStringArray = []
+	for label in bloc.find_children("*","Label",true,false): morceaux.append((label as Label).text)
+	return " ".join(morceaux)
+func geometry(view: Node,label: String) -> void:
+	if view is Window:
+		check(Rect2i(Vector2i.ZERO,root.size).encloses(Rect2i(view.position,view.size)),label+" contenu dans la fenêtre")
+		return
+	check(Rect2(Vector2.ZERO,Vector2(root.size)).grow(2).encloses((view as Control).get_global_rect()),label+" contenu dans la fenêtre de l'application")
+func windows_visibles() -> int:
+	return app.find_children("*","Window",true,false).filter(func(w): return (w as Window).visible).size()
 func cancel_confirmation() -> void:
 	var view := confirmation()
-	if view != null: await press(view.get_cancel_button())
-func adoption_confirmation() -> ConfirmationDialog:
+	if view != null: await press(app.find_child("ClubConfirmationAnnuler",true,false) as Button)
+func adoption_confirmation() -> Control:
 	await press(button("StaffEmploymentAdopt"))
 	var view := confirmation()
-	if view != null: check(view.dialog_text.contains("500") and view.dialog_text.contains("engagement restant"),"Devis salaire et engagement visibles avant adoption")
+	if view != null: check(texte_confirmation(view).contains("500") and texte_confirmation(view).contains("engagement restant"),"Devis salaire et engagement visibles avant adoption")
 	return view
 func run() -> void:
 	if OS.has_environment("CD_STAFF_REAL_WORKER"): ProjectSettings.set_setting("native_engine/worker_path",OS.get_environment("CD_STAFF_REAL_WORKER"))
@@ -51,12 +59,12 @@ func run() -> void:
 	for size in [Vector2i(1280,720),Vector2i(1920,1080)]:
 		root.size=size; await staff_page(str(coach.name))
 		await press(button("StaffEmploymentBudgetOpen"))
-		var budget := dialog("StaffEmploymentBudget")
-		check(budget!=null,"Budget staff réel ouvert")
-		if budget!=null: geometry(budget,"Budget "+str(size)); await press(budget.get_ok_button())
+		var budget := app.find_child("ClubSubpage_engagements",true,false)
+		check(budget!=null and windows_visibles()==0,"Budget staff réel ouvert en sous-page, sans fenêtre")
+		if budget!=null: geometry(budget,"Budget "+str(size)); await press(app.find_child("ClubRetour",true,false) as Button)
 		await staff_page(str(coach.name))
 		var adopt := await adoption_confirmation()
-		if adopt!=null: geometry(adopt,"Adoption "+str(size)); await press(adopt.get_cancel_button())
+		if adopt!=null: geometry(adopt,"Adoption "+str(size)); await press(app.find_child("ClubConfirmationAnnuler",true,false) as Button)
 		check(await exported_state()==before,"Prévisualisation et annulation sans mutation "+str(size))
 		check(FileAccess.get_file_as_bytes(profile)==bytes,"Aucun fichier écrit par les aperçus "+str(size))
 	# A failed real disk transaction must not publish an adopted contract.
@@ -65,7 +73,7 @@ func run() -> void:
 	await staff_page(str(coach.name))
 	var failed_adoption := await adoption_confirmation()
 	if failed_adoption!=null:
-		await press(failed_adoption.get_ok_button())
+		await press(app.find_child("ClubConfirmationOk",true,false) as Button)
 		var deadline := Time.get_ticks_msec()+45000
 		while app.waiting and Time.get_ticks_msec()<deadline: await process_frame
 		await settle()
@@ -88,7 +96,7 @@ func run() -> void:
 	check(paid_state.ledger.any(func(row):return str(row.title).begins_with("Salaires du staff") and int(row.amount)==-500),"Débit réel présent dans le grand livre")
 	await staff_page(str(coach.name)); await press(button("StaffRelease"))
 	var release := confirmation()
-	if release!=null: check(release.dialog_text.contains("1") and release.dialog_text.contains("indemnité".capitalize()),"Indemnité de rupture affichée avant validation"); await press(release.get_cancel_button())
+	if release!=null: check(texte_confirmation(release).contains("1") and texte_confirmation(release).contains("ndemnité"),"Indemnité de rupture affichée avant validation"); await press(app.find_child("ClubConfirmationAnnuler",true,false) as Button)
 	before = await exported_state()
 	await staff_page(str(coach.name)); await press(button("StaffRelease")); await cancel_confirmation()
 	check(await exported_state()==before,"Annuler rupture garde engagement et trésorerie")
