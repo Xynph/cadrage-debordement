@@ -1800,7 +1800,7 @@ func journee_fictive(view: Control, direct: Dictionary) -> void:
 		check(essais == ["(2)", "(1)"], "Multiplex fictif : essais en petit " + str(essais))
 		check((cartes[0].find_child("Minute", true, false) as Label).text == "Terminé" and (cartes[1].find_child("Minute", true, false) as Label).text == "53′", "Multiplex fictif : minute et « Terminé »")
 		var changes: Array = cartes.map(func(c: Node): return bool(c.get_meta("change", false)))
-		check(changes == [false, false, true, false, false, false] and (cartes[2].get_theme_stylebox("panel") as StyleBoxFlat).border_width_top > 0 and (cartes[1].get_theme_stylebox("panel") as StyleBoxFlat).border_width_top == 0, "Multiplex fictif : liseré vert sur le score qui a changé " + str(changes))
+		check(changes == [false, false, true, false, false, false] and (cartes[2].get_theme_stylebox("panel") as StyleBoxFlat).border_width_left > 0 and (cartes[2].get_theme_stylebox("panel") as StyleBoxFlat).border_width_top == 0 and (cartes[1].get_theme_stylebox("panel") as StyleBoxFlat).border_width_left == 0, "Multiplex fictif : filet gauche vert (jamais un cadre complet) sur le score qui a changé " + str(changes))
 	check(between.fil.is_visible_in_tree() and between.fil.get_child_count() >= 1, "Faits marquants visibles avec le classement")
 	await _mise_en_page_journee(view, "fictif")
 	# Hors phase de ligue : classement vide, multiplex seul.
