@@ -121,6 +121,8 @@ static func _habiller_charte(racine: Node) -> void:
 			(noeud as OptionButton).get_popup().add_theme_stylebox_override("panel", liste)
 			(noeud as OptionButton).get_popup().add_theme_color_override("font_color", Charte.IVOIRE)
 		elif noeud is CheckButton:
+			# Case de la charte finale (carré arrondi crème, coche, anneau de focus doré) au lieu de l'interrupteur du moteur.
+			preload("res://ui/immersive08/champs_charte.gd").case(noeud as CheckButton)
 			for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: (noeud as Control).add_theme_color_override(cle, Charte.IVOIRE)
 		elif noeud is Button:
 			C.style_bouton_lien(noeud as Button, 15)
