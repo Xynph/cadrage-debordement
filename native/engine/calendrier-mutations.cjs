@@ -316,11 +316,13 @@ function calExecuterPreContrats(){
 const settleContractsCalV1=settleContracts;
 settleContracts=function(){
  const du=!!S.economy&&S.economy.settled!==S.season&&calActif(),v2=du&&calBascule();let n=0;
+ // L'argent rendu au budget de transferts pendant la bascule (part des ventes, achats tombés) va à la saison qui commence.
+ const bascule=fn=>typeof budgetTransfertsPendantBascule==='function'?budgetTransfertsPendantBascule(fn):fn();
  if(du&&calEtatValide(S.calendrierMutations))calExecuterPreContrats();
- if(v2){n+=venteExecuterAccords('achats')||0;n+=calIAExecuter();}
+ if(v2){n+=bascule(()=>venteExecuterAccords('achats'))||0;n+=calIAExecuter();}
  const r=settleContractsCalV1.apply(this,arguments);
  if(v2)calIAMasseBascule();else calIAArrivees=null;
- if(v2){n+=venteExecuterAccords('ventes')||0;if(n){const t=n>1?n+' transferts entre clubs prennent effet en ce changement de saison.':'Un transfert entre clubs prend effet en ce changement de saison.';calActu(t);calMercatoLigne(calMercatoEtat(),'temps-fort',t,0);}}
+ if(v2){n+=bascule(()=>venteExecuterAccords('ventes'))||0;if(n){const t=n>1?n+' transferts entre clubs prennent effet en ce changement de saison.':'Un transfert entre clubs prend effet en ce changement de saison.';calActu(t);calMercatoLigne(calMercatoEtat(),'temps-fort',t,0);}}
  return r;
 };
 

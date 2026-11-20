@@ -336,3 +336,37 @@ test('Performance : clôture de semaine avec approches de pré-contrat', { timeo
   assert.ok(avec.ms - sans.ms <= SURCOUT_MAX_MS, `surcoût ${avec.ms - sans.ms} ms > ${SURCOUT_MAX_MS} ms`);
   assert.ok(avec.ms < 15000);
 });
+
+// Bascule de saison (décision du 20/11/2026, budget-transferts.md R4) : la part d'une vente choisie exécutée au 1er juillet
+// et l'indemnité d'un achat qui tombe à la bascule reviennent entières à l'enveloppe de la saison qui commence, pas à la
+// saison close (où le report R5 n'en aurait passé qu'une partie).
+test('Bascule : part des ventes et achats tombés rendus à la nouvelle saison', { timeout: 600000 }, () => {
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    creer(jeu, CLUB);
+    const { lire, run } = outils(jeu);
+    run('club().cash=Math.max(club().cash,9e6)');
+    const acheteur = lire(`S.clubs.find(c=>c.id!==S.club&&professionalPlaces(c)>0&&c.cash>=2e6).id`);
+    const vendu = jeu.call('snapshot').squad.find(p => !p.sale.blocked && !p.sale.pending && !p.preContract);
+    run(`S.economy.offers.push({id:'bascule-r4',playerId:'${vendu.id}',buyer:${acheteur},fee:400000,expires:S.economy.week+1});`);
+    const r = jeu.brut('sale_answer', { offerId: 'bascule-r4', action: 'accept', confirmed: true });
+    assert.equal(r.ok, true, r.error);
+    assert.ok(lire(`S.venteJoueurs.accords.some(a=>a.playerId==='${vendu.id}'&&a.bascule)`), 'accord exécuté au 1er juillet');
+    // Achat conclu (indemnité engagée) dont le joueur a quitté le vendeur avant la bascule : il tombera.
+    run(`(()=>{const e=budgetTransfertsEtat(true);e.depense=Math.round(e.depense+150000);
+      S.venteJoueurs.seq++;S.venteJoueurs.accords.push({id:'achat-test',sens:'achat',clubId:S.club,playerId:'absent-test',joueur:'Joueur parti',seller:${acheteur},vendeur:'Vendeur',fee:150000,saison:S.season,date:'2027-07-01',bascule:true});})()`);
+    run(`S.clubs[${acheteur}].cash=Math.max(S.clubs[${acheteur}].cash,5e6)`);
+    const avant = lire('({...S.budgetTransferts})');
+    run('settleContracts()');
+    const close = lire('({...S.budgetTransferts})');
+    const part = Math.round(400000 * T.REGLAGES.partVentes);
+    assert.equal(lire(`club().players.some(p=>p.id==='${vendu.id}')`), false, 'le joueur est parti');
+    assert.equal(close.reconstitue, avant.reconstitue, 'la saison close ne reçoit rien');
+    assert.equal(close.depense, avant.depense, 'l’indemnité engagée n’est pas rendue à la saison close');
+    assert.equal(close.aNouvelleSaison, part + 150000);
+    const neuve = lire(`(()=>{const s=S.season;S.season=s+1;try{return budgetTransfertsNeuf();}finally{S.season=s;}})()`);
+    assert.equal(neuve.reconstitue, part + 150000, 'tout passe à l’enveloppe de la nouvelle saison');
+    assert.equal(neuve.depense, 0);
+    assert.equal(neuve.report, T.report(close, neuve.enveloppe, lire('budgetTransfertsEntrees().recettes')), 'le report ne compte pas cet argent deux fois');
+  } finally { restaurer(); jeu.fermer(); }
+});
