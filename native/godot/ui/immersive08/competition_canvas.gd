@@ -1441,7 +1441,7 @@ func _playoffs() -> void:
 	if phases.is_empty(): D.text(panel, 23, 244, "Aucun résultat de phase finale conservé cette saison.", 27, C.MUTED, 500, 1230)
 	for i in phases.size():
 		var result: Dictionary = phases[i]
-		var card := D.rect(panel, Rect2(16, 218 + i * 54, LEFT - 32, 47), Charte.PANNEAU_2, 0)
+		var card := _bande(panel, Rect2(16, 218 + i * 54, LEFT - 32, 47))
 		var competition := _competition_id(result)
 		var nationale := competition in ["nationale", "access-nationale"]
 		var stage_width := 304 if japanese or competition == "access-nationale" else 210
@@ -1471,7 +1471,7 @@ func _stats() -> void:
 		if row.get("id") == own.id:
 			own_row = row
 			break
-	var summary := _panel(panel, Rect2(16, 124, LEFT - 32, 269), "NOTRE CLUB · BILAN DES POULES" if league.has("pools") else "NOTRE CLUB · BILAN DU CHAMPIONNAT", "shield", "StandingsContext")
+	var summary := _section(panel, Rect2(16, 124, LEFT - 32, 269), "NOTRE CLUB · BILAN DES POULES" if league.has("pools") else "NOTRE CLUB · BILAN DU CHAMPIONNAT", "shield", "StandingsContext")
 	_crest(summary, own, Rect2(18, 67, 93, 93))
 	var club_label := D.text(summary, 132, 104, G.club_name(own), 37, C.IVORY, 800, 1100)
 	club_label.name = "StandingsContextClubName"
@@ -1483,7 +1483,7 @@ func _stats() -> void:
 	_recent_form(summary, own_row.get("form"), 132, 219)
 	D.text(summary, 357, 241, "Forme · du plus ancien au plus récent", 22, C.MUTED, 500, 718)
 	var rows_played := rows.filter(func(row: Dictionary): return float(row.get("played", 0)) > 0)
-	var aggregate := _panel(panel, Rect2(16, 411, LEFT - 32, 294), "CHIFFRES DE LA PHASE DE POULES" if league.has("pools") else "CHIFFRES DE LA PHASE RÉGULIÈRE", "trophy", "CompetitionLeagueStats")
+	var aggregate := _section(panel, Rect2(16, 411, LEFT - 32, 294), "CHIFFRES DE LA PHASE DE POULES" if league.has("pools") else "CHIFFRES DE LA PHASE RÉGULIÈRE", "trophy", "CompetitionLeagueStats")
 	var games := 0
 	var points := 0
 	var draw_count := 0
@@ -1495,7 +1495,7 @@ func _stats() -> void:
 	var values: Array = [G.n(game_count), G.n(points), G.n(draw_count / 2.0), "%.1f" % (points / game_count) if game_count > 0 else "—"]
 	for i in 4:
 		var x := 26 + i * 309
-		D.rect(aggregate, Rect2(x, 70, 288, 127), Charte.PANNEAU_2, 0)
+		_tuile(aggregate, Rect2(x, 70, 288, 127))
 		D.text(aggregate, x + 22, 112, ["Matchs joués", "Points marqués", "Matchs nuls", "Points / match"][i], 26, C.MUTED, 500, 254)
 		D.text(aggregate, x + 22, 170, values[i], 61, C.IVORY, 800, 253)
 	var caption := "Résultats de toutes les poules conservés par la carrière." if league.has("pools") else "Résultats et compteurs de championnat conservés par la carrière."
@@ -1673,15 +1673,37 @@ static func _icon(parent: Node, icon_id: String, area: Rect2, color: Color) -> v
 	D.place(icon, area)
 
 static func _panel(parent: Node, area: Rect2, title: String, _icon_id: String, id: String) -> Panel:
-	var panel := D.rect(parent, area, Charte.PANNEAU, 0)
+	var panel := D.rect(parent, area, Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	panel.name = id
 	var heading := D.text(panel, 24, 42, title.to_upper(), 32, C.IVORY, 800, area.size.x - 48)
-	heading.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+	heading.add_theme_font_override("font", Charte.TITRE_GRAS)
 	heading.name = "CardTitle"
 	return panel
 
+## Section posée sur un panneau : pas de second panneau, seulement un filet 1 px au-dessus du titre (les cartes de la section
+## sont des cartes de rayon 12 : `_bande`, `_tuile`).
+static func _section(parent: Node, area: Rect2, title: String, _icon_id: String, id: String) -> Control:
+	var section := Control.new()
+	section.name = id
+	section.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(section)
+	D.place(section, area)
+	D.line(section, Vector2(0, 0), Vector2(area.size.x, 0), Charte.FILET)
+	var heading := D.text(section, 8, 42, title.to_upper(), 32, C.IVORY, 800, area.size.x - 48)
+	heading.add_theme_font_override("font", Charte.TITRE_GRAS)
+	heading.name = "CardTitle"
+	return section
+
+## Ligne de liste de la charte : carte `PANNEAU_2` de rayon 12 dans le panneau ; le survol vient du bouton posé dessus.
+static func _bande(parent: Node, area: Rect2) -> Control:
+	return D.rect(parent, area, Charte.PANNEAU_2, Charte.RAYON_CARTE)
+
+## Chiffre clé : carte `PANNEAU_2` de rayon 12 dans le panneau.
+static func _tuile(parent: Node, area: Rect2) -> Control:
+	return D.rect(parent, area, Charte.PANNEAU_2, Charte.RAYON_CARTE)
+
 static func _box_tag(parent: Node, area: Rect2, caption: String, color: Color) -> void:
-	var box := D.rect(parent, area, Charte.PANNEAU_2, 0)
+	var box := D.rect(parent, area, Charte.PANNEAU_2, Charte.RAYON_PILULE)
 	D.text(box, area.size.x / 2, area.size.y / 2 + 7, caption, 20, color, 700, area.size.x - 7, HORIZONTAL_ALIGNMENT_CENTER)
 
 static func _result_badge(parent: Node, area: Rect2, code: String, caption: String = "", known: bool = true) -> void:

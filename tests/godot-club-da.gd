@@ -87,9 +87,97 @@ func run() -> void:
 	await tabs()
 	await confirmation_en_place()
 	await staff_pages()
+	await staff_tab()
 	await overview()
 	shot("club-1920x1080")
+	root.size = Vector2i(1280, 720)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	await staff_open()
+	check(node("CarnetStaff") != null and windows().is_empty(), "Staff à 1280 × 720 : tableau, aucune fenêtre")
+	shot("club-staff-1280x720")
 	finish()
+
+func staff_open() -> void:
+	app.management_ui.erase("club_page")
+	app.StaffViews.reading(app).navigation_id = ""
+	app._navigate("Staff")
+	await settle(12)
+
+## Onglet Staff (DA du 20/11/2026) : tableau dense sans cadre ni numéro, un seul ivoire plein, noms et lignes vers la fiche,
+## lignes de gauche vers une page, départ confirmé EN PLACE.
+func staff_tab() -> void:
+	await staff_open()
+	for id in ["CarnetStaff", "StaffTableHead", "StaffList", "ClubStaffPeople", "ClubStaffDiagnostic", "ClubStaffContracts", "ClubStaffTable"]:
+		check(node(id) != null, "Staff : " + id)
+	var page := node("ImmersiveClub")
+	var numeros := 0
+	var cadres := 0
+	var pleins := 0
+	for control in page.find_children("*", "Control", true, false):
+		if control is Label and str(control.text).strip_edges() in ["09", "10"]: numeros += 1
+		# Nœuds internes du moteur (focus d'un défilement, liste d'un menu déroulant fermé) : hors de la page.
+		if str(control.name).begins_with("_") or (control as Control).get_window() != page.get_window(): continue
+		# Charte finale : un seul aplat doré par écran, Continuer (dans la coque) ; aucun dans l'onglet.
+		if control is Button and (control as Control).has_theme_stylebox_override("normal"):
+			var fond := (control as Control).get_theme_stylebox("normal") as StyleBoxFlat
+			if fond != null and fond.bg_color.a > .5 and (close(fond.bg_color, Charte.OR) or close(fond.bg_color, Charte.OR_VIF)): pleins += 1
+		# Panneaux sans bordure (boutons secondaires et champs gardent leur contour fin, permis par la charte).
+		if not (control is Panel or control is PanelContainer): continue
+		for etat in ["panel"]:
+			if not (control as Control).has_theme_stylebox_override(etat): continue
+			var boite := (control as Control).get_theme_stylebox(etat) as StyleBoxFlat
+			if boite != null and boite.border_width_left > 0 and boite.border_width_top > 0 and boite.border_width_right > 0 and boite.border_width_bottom > 0 and boite.border_color.a > .05:
+				cadres += 1
+				printerr("CADRE sur ", control.get_path())
+	check(numeros == 0, "Staff : plus de numéros de chapitre (%d)" % numeros)
+	check(cadres == 0, "Staff : panneaux sans bordure (%d)" % cadres)
+	check(pleins == 0, "Staff : aucun aplat doré dans l'onglet, Continuer reste seul (%d)" % pleins)
+	for id in ["ClubStaffPeople", "ClubStaffTable"]:
+		var style := node(id).get_theme_stylebox("panel") as StyleBoxFlat if node(id) != null else null
+		check(style != null and style.corner_radius_top_left >= 12, "Staff : panneau %s arrondi" % id)
+	check(windows().is_empty(), "Staff : aucune fenêtre")
+	shot("club-staff-1920x1080")
+	# Nom dans le tableau, ligne du tableau, nom à gauche : la fiche du membre, puis retour à l'annuaire.
+	for motif in ["StaffOpenName_*", "StaffRow_*", "ClubStaffName_*"]:
+		await staff_open()
+		var cibles: Array = app.root_content.find_children(motif, "Button", true, false)
+		check(not cibles.is_empty(), "Staff : élément cliquable " + motif)
+		if cibles.is_empty(): continue
+		(cibles[0] as Button).pressed.emit()
+		await settle(10)
+		check(node("StaffProfile") != null and node("StaffProfileName") != null, "Staff : %s ouvre la fiche du membre" % motif)
+		check(windows().is_empty(), "Staff : la fiche s'ouvre sans fenêtre (%s)" % motif)
+		if motif == "StaffOpenName_*": shot("club-staff-fiche-1920x1080")
+		var retour := node("StaffProfileDirectory") as Button
+		check(retour != null, "Fiche du staff : retour à l'annuaire")
+		if retour != null: retour.pressed.emit()
+		await settle(8)
+		check(node("StaffProfile") == null and node("StaffTableHead") != null, "Retour à l'annuaire du staff (%s)" % motif)
+	# Lignes de la colonne de gauche : chacune mène quelque part (tableau, sous-page ou travail du club).
+	for id in ["ClubStaffCount", "ClubStaffContractsEnding", "ClubStaffCandidates", "ClubStaffMentoring", "ClubStaffBudget", "ClubStaffDiagnosticRow0", "ClubStaffWork"]:
+		await staff_open()
+		var bouton := node(id) as Button
+		if bouton == null: continue
+		var avant := "%s|%s|%s" % [app.route, Pages.actuelle(app), str(app.StaffViews.reading(app).get("tab", 0))]
+		bouton.pressed.emit()
+		await settle(10)
+		var apres := "%s|%s|%s" % [app.route, Pages.actuelle(app), str(app.StaffViews.reading(app).get("tab", 0))]
+		check(avant != apres or (id in ["ClubStaffCount", "ClubStaffContractsEnding"] and node("StaffTableHead") != null), "%s : mène quelque part (%s -> %s)" % [id, avant, apres])
+		check(windows().is_empty(), "%s : aucune fenêtre" % id)
+	# Départ (ou activation des carrières du staff) : confirmation EN PLACE, Annuler n'envoie rien.
+	await staff_open()
+	var depart := node("StaffRelease") as Button
+	if depart == null: depart = node("EnableStaffCareer") as Button
+	if depart != null:
+		var commandes := int(app.bridge._next_id)
+		depart.pressed.emit()
+		await settle(6)
+		check(node("ClubConfirmation") != null and windows().is_empty(), "Staff : confirmation en place, sans fenêtre (%s)" % depart.name)
+		var non := node("ClubConfirmationAnnuler") as Button
+		if non != null: non.pressed.emit()
+		await settle(4)
+		check(int(app.bridge._next_id) == commandes, "Staff : Annuler n'envoie rien")
+	app.StaffViews.reading(app).tab = 0
 
 func finish() -> void:
 	print("CLUB_DA ", JSON.stringify({"checks": checks, "failures": failures}))
@@ -190,6 +278,9 @@ func tabs() -> void:
 		check(windows().is_empty(), "Onglet " + cle + " : aucune fenêtre")
 		var dores := 0
 		for control in node("ImmersiveClub").find_children("*", "Control", true, false):
+			# Staff (charte finale) : le doré est permis pour le focus et l'attention écrite (« ✕ Libérer », « ! ») ;
+			# seul un aplat doré est interdit (vérifié par staff_tab). Les autres onglets gardent l'ancienne règle.
+			if cle == "staff": continue
 			if gold_on(control as Control): dores += 1
 		check(dores == 0, "Onglet " + cle + " : aucune couleur or (%d)" % dores)
 	await overview()

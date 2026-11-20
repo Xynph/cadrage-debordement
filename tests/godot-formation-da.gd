@@ -209,10 +209,25 @@ func subpages() -> void:
 	check(page_kind() == "suivi", "Le suivi des jeunes est une sous-page")
 	check(node("FormationRetour") != null and node("YouthReviewFilter") != null, "Sous-page : retour et contenu du suivi")
 	check(windows().is_empty(), "Le suivi des jeunes n'ouvre aucune fenêtre")
+	# Style de la charte : plus de carte claire du carnet, noms de jeunes = fiche au clic et mini-fiche au survol.
+	var zone := node("FormationAdopte")
+	var claires := zone.find_children("*", "PanelContainer", true, false).filter(func(p: Control): return p.name != "_focus" and p.has_theme_stylebox_override("panel") and (p.get_theme_stylebox("panel") as StyleBoxFlat) != null and (p.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.get_luminance() > .5) if zone != null else []
+	check(zone != null and claires.is_empty(), "Suivi des jeunes : aucune carte claire de l'ancienne vue (%d)" % claires.size())
+	var jeunes: Array = app.model.get("clubLife", {}).get("youthDevelopment", {}).get("players", [])
+	var noms := app.find_children("YouthName_*", "Button", true, false)
+	check(jeunes.is_empty() or not noms.is_empty(), "Suivi des jeunes : chaque nom de jeune est un lien")
+	check(noms.all(func(b: Button): return str(b.get_meta("mini_fiche_joueur", "")) != ""), "Suivi des jeunes : survol d'un nom = mini-fiche")
 	var retour := node("FormationRetour") as Button
 	if retour != null: retour.pressed.emit()
 	await settle(8)
 	check(page_kind().is_empty() and node("AcademyImmersiveTable") != null, "Retour : la liste de la formation revient")
+	if not noms.is_empty():
+		check(await press("OpenYouthDevelopment"), "Suivi des jeunes : réouverture")
+		var premier := app.find_children("YouthName_*", "Button", true, false)
+		if not premier.is_empty():
+			(premier[0] as Button).pressed.emit()
+			await settle(8)
+			check(windows().is_empty() and node("YouthReviewFilter") == null, "Suivi des jeunes : le clic sur un nom ouvre la fiche, sans fenêtre")
 
 func colors() -> void:
 	app._navigate("Formation", false)
