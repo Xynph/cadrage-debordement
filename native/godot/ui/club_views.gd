@@ -556,7 +556,7 @@ static func archives_content(app:Control, height:int = 360) -> Control:
 	var japanese: bool = app.model.get("meta",{}).get("edition") == "world-japan"
 	var notice := "Le carnet conserve le rang de phase régulière."
 	if japanese: notice = "Rangs de phase régulière et scores des barrages japonais conservés."
-	content.add_child(G.wrap("15 dernières saisons terminées · identités du pack actuel.\n"+notice,12,G.MUTED))
+	content.add_child(G.wrap("15 dernières saisons terminées.\n"+notice,12,G.MUTED))
 	var seasons:Array=app.model.get("archives",{}).get("seasons",[]).duplicate()
 	seasons.reverse()
 	var jump: OptionButton

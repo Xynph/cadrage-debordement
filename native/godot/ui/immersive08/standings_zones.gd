@@ -9,7 +9,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const WIN := Charte.V
 const WARM := Charte.N
 const LOSS := Charte.D
-const TINTS := {"bye": WIN, "playoff": WIN, "promotion-playoff": WARM, "relegation-playoff": WARM, "repechage": WARM, "relegation": LOSS}
+const TINTS := {"bye": WIN, "playoff": WIN, "promotion-playoff": Charte.IVOIRE, "relegation-playoff": WARM, "repechage": WARM, "relegation": LOSS}
 
 ## Zone d'une ligne du classement, seulement une fois le classement ouvert ({} sinon).
 static func of(club: Dictionary) -> Dictionary:

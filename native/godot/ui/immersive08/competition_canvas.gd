@@ -175,6 +175,8 @@ static func open_archives(owner_app: Control) -> void:
 	owner_app._navigate("Classements", true, true)
 
 var content_bottom := 1240.0
+var _menu_list: Control
+var _menu_button: Control
 var left_bottom := 0.0
 var right_bottom := 0.0
 
@@ -222,12 +224,12 @@ func _build() -> void:
 	mode = "calendar" if app.route == "Calendrier" else str(state.get("tab", "league"))
 	if _sous_page(): return
 	_header()
+	left_bottom = TOP + 760.0
 	match mode:
 		"calendar": _calendar()
 		"playoffs": _playoffs()
 		"stats": _stats()
 		_: _classement()
-	if mode != "league": left_bottom = TOP + 760.0
 	_bas_gauche()
 	_colonne_droite()
 	content_bottom = maxf(left_bottom, right_bottom)
@@ -299,11 +301,10 @@ func _header() -> void:
 	var sub := D.text(self, 450, 46, subhead, 22, C.MUTED, 500, 1100)
 	sub.name = "CompetitionSubhead"
 	if _followed_from_afar():
-		var afar := D.rect(self, Rect2(1580, 12, 250, 40), Charte.PANNEAU_2, 0, Charte.IVOIRE_3)
+		var afar := D.text(self, 1580, 44, "CONSULTATION", 20, C.MUTED, 700, 200)
 		afar.name = "CompetitionFollowedFromAfar"
 		afar.mouse_filter = Control.MOUSE_FILTER_STOP
 		afar.tooltip_text = AFAR_HINT
-		D.text(afar, 125, 28, "CONSULTATION", 20, C.MUTED, 700, 240, HORIZONTAL_ALIGNMENT_CENTER)
 	var emblem := G._pack_texture(str(league.get("logoPath", "")))
 	if emblem != null:
 		var logo := TextureRect.new()
@@ -345,6 +346,16 @@ func _switch(tab_id: String) -> void:
 		else: app._navigate("Classements")
 
 # --- Sous-pages (rencontre, archives) : jamais de petite fenêtre ----------------------------------------------------
+
+## Menu de compétition : se ferme au clic ailleurs et à Échap (avant le retour d'historique).
+func _input(event: InputEvent) -> void:
+	if _menu_list == null or not is_instance_valid(_menu_list) or not _menu_list.visible: return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		_menu_list.visible = false
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.pressed:
+		var point := get_viewport().get_mouse_position()
+		if not _menu_list.get_global_rect().has_point(point) and not _menu_button.get_global_rect().has_point(point): _menu_list.visible = false
 
 func _fermer_page() -> void:
 	app.management_ui.erase("competition_page")
@@ -392,6 +403,8 @@ func _recolorer(racine: Node) -> void:
 	for node: Node in racine.find_children("*", "Label", true, false):
 		var label := node as Label
 		label.add_theme_color_override("font_color", C.IVORY)
+		label.add_theme_font_override("font", Charte.TEXTE)
+		label.add_theme_font_size_override("font_size", maxi(C.px(19), label.get_theme_font_size("font_size")))
 	for node: Node in racine.find_children("*", "OptionButton", true, false):
 		var choice := node as OptionButton
 		choice.add_theme_color_override("font_color", C.IVORY)
@@ -431,10 +444,6 @@ func _page_rencontre(fixture: Dictionary) -> void:
 		else: content.add_child(C.label(date, 26, C.IVORY, true, 700))
 	if target_available(app, "competition", competition_id):
 		content.add_child(_nav_lien(_competition_name(fixture) + " · voir le classement →", {"kind":"competition", "id":competition_id}, "FixtureCompetition", 22))
-	if competition_id in JAPAN_COMPETITIONS:
-		for note: String in Club.japan_date_notes(fixture): content.add_child(C.wrap(note, 20, C.MUTED))
-	elif competition_id in ["nationale", "access-nationale", "champ"]:
-		_date_provenance(content, fixture)
 	content.add_child(C.label(_phase(fixture) + "  ·  " + place, 24, C.MUTED))
 	if fixture.get("played", false):
 		var code := _fixture_outcome(fixture)
@@ -558,14 +567,15 @@ func _classement() -> void:
 		page_key += "_poule_" + G.n(pools[selected_pool].id)
 		header_y += 52
 	rows = _sorted(rows)
-	var capacity := 16
-	var paged := rows.size() > capacity
+	# Tout le classement sur la page, qui défile (décision de Léo) : plus de pagination.
+	var capacity := maxi(1, rows.size())
+	var paged := false
 	var shown := mini(rows.size(), capacity)
 	var rows_y := header_y + 40
 	var zones: Array = league.get("zones", []) if international and league.get("zones") is Array else []
 	var zone_note := str(league.get("zoneNote", "")) if international and league.get("zoneNote") is String else ""
 	var has_champion: bool = league.get("champion") is Dictionary
-	var footer := zones.size() * 30 + int(not zone_note.is_empty()) * 30 + int(has_champion) * 30 + (44 if paged else 0) + (30 if not international and not has_champion else 0)
+	var footer := zones.size() * 30 + int(not zone_note.is_empty()) * 30 + int(has_champion) * 30 + (44 if paged else 0)
 	var panel_h := rows_y + shown * ROW + 18 + footer + 18
 	var panel := _panel(self, Rect2(0, TOP, LEFT, panel_h), "CLASSEMENT", "", "StandingsTableFrame")
 	left_bottom = TOP + panel_h
@@ -598,11 +608,6 @@ func _classement() -> void:
 		if league.get("finalist") is Dictionary: name_text += "   ·   Finaliste : " + G.club_name(league.finalist)
 		var champion := D.text(panel, 24, y + 20, name_text, 20, C.IVORY, 700, LEFT - 48)
 		champion.name = "StandingsChampion"
-	elif not international:
-		var label := "Vert : 1–6, phase finale" if rows.size() >= 6 else ""
-		if league.id == "elite" and rows.size() == 14 and str(app.model.meta.get("mode")) != "fictional14":
-			label += "   ·   Sable : 13, barrage d’accession   ·   Rouge : 14, descente"
-		D.text(panel, 24, y + 20, label, 18, C.MUTED, 500, LEFT - 48)
 
 func _entete_tri(parent: Control, area: Rect2, caption: String, key: String, align: HorizontalAlignment) -> void:
 	var active: bool = str(_sort_state().key) == key
@@ -611,7 +616,7 @@ func _entete_tri(parent: Control, area: Rect2, caption: String, key: String, ali
 	button.text = caption
 	button.focus_mode = Control.FOCUS_ALL
 	button.set_meta("immersive_style_applied", true)
-	C.style_bouton_lien(button, 16, false)
+	C.style_bouton_lien(button, 16, true)
 	button.alignment = align
 	button.tooltip_text = "Trier par " + caption
 	button.accessibility_name = "Trier par " + caption
@@ -696,6 +701,8 @@ func _division_menu(parent: Control, x: float, y: float, w: float) -> void:
 			var item := _item_menu(division, own_league)
 			column.add_child(item)
 			if first_item == null: first_item = item
+	_menu_list = menu
+	_menu_button = main
 	main.pressed.connect(func():
 		menu.visible = not menu.visible
 		if menu.visible and first_item != null: first_item.grab_focus())
@@ -747,13 +754,11 @@ func _item_menu(division: Dictionary, own_league: String) -> Button:
 func _ligne_classement(parent: Node, club: Dictionary, index: int, stride: int) -> void:
 	var mine: bool = club.id == own.id
 	var rank := int(club.get("rank", 0)) if P.standings_open(club) else 0
-	var france: bool = str(app.model.meta.get("mode")) in ["common", "france30"]
 	var zone := Color.TRANSPARENT
 	# Monde : zone publiée par le moteur pour ce rang (règlement de la compétition), seulement une fois le classement ouvert.
 	var zone_info: Dictionary = club.zone if international and rank > 0 and club.get("zone") is Dictionary else {}
+	# Les zones viennent seulement des données Monde du moteur (règlement de la compétition) : jamais de règle figée.
 	if international: zone = Zones.TINTS.get(str(zone_info.get("kind", "")), Color.TRANSPARENT)
-	else:
-		zone = WIN if rank > 0 and rank <= 6 else (DRAW if france and league.id == "elite" and rank == 13 else (LOSS if france and league.id == "elite" and rank == 14 else Color.TRANSPARENT))
 	var row := Button.new()
 	row.name = "StandingsRow_" + str(club.id)
 	row.set_meta("club_id", club.id)
@@ -765,9 +770,6 @@ func _ligne_classement(parent: Node, club: Dictionary, index: int, stride: int) 
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Charte.PANNEAU_3 if mine else (Charte.PANNEAU_2 if index % 2 == 1 else Charte.PANNEAU)
 	normal.set_corner_radius_all(0)
-	if mine:
-		normal.border_color = Charte.IVOIRE
-		normal.set_border_width_all(maxi(1, C.px(2)))
 	var hover := StyleBoxFlat.new()
 	hover.bg_color = Charte.PANNEAU_3
 	hover.set_corner_radius_all(0)
@@ -886,7 +888,9 @@ func _plaque(parent: Node, area: Rect2, club: Dictionary, id: String, right: boo
 	D.place(plaque, area)
 	var ink := Charte.IVOIRE if Charte.contraste(Charte.IVOIRE, plaque.couleur) >= 3.0 else Charte.NUIT
 	_crest(plaque, club, Rect2(22 if not right else 20, 8, 48, 48))
-	D.fit_title(D.text(plaque, 80, 40, G.club_name(club).to_upper(), 24, ink, 800, area.size.x - 100), area.size.x - 100, 54, 2, 15)
+	var short_name := str(G.identity(club).get("shortName", ""))
+	var plate_name := short_name if C.dense() and not short_name.is_empty() else G.club_name(club)
+	D.fit_title(D.text(plaque, 80, 40, plate_name.to_upper(), 24, ink, 800, area.size.x - 100), area.size.x - 100, 54, 2, 12)
 	var target := {"kind":"club", "id":str(club.get("id", ""))}
 	if target_available(app, "club", club.get("id", "")): Link.bind(plaque, app, target, "Ouvrir le club · " + G.club_name(club))
 	else:
@@ -953,6 +957,7 @@ func _ta_place(y: float) -> float:
 		value.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
 		D.text(tile, 14, 58, "sur le %s" % _ordinal(int(club.get("rank", 0))), 16, C.MUTED, 600, tile_w - 20)
 		D.fit_title(D.text(tile, 14, 78, G.club_name(club), 16, C.MUTED, 500, tile_w - 20), tile_w - 20, 30, 2, 13)
+		D.text(tile, tile_w - 14, 40, "→", 24, C.MUTED, 700, 30, HORIZONTAL_ALIGNMENT_RIGHT)
 		var link := _entity_area(tile, Rect2(0, 0, tile_w, 84), {"kind":"club", "id":str(club.id)}, "CompetitionGapLink_%d" % i, "Ouvrir le club · " + G.club_name(club))
 		if link != null: link.tooltip_text = "Ouvrir le club · " + G.club_name(club)
 	return y + 300
@@ -999,6 +1004,7 @@ func _prochain(y: float) -> float:
 	else:
 		var date_label := D.text(card, 24, 118, date, 27, C.IVORY, 700, RIGHT - 48)
 		date_label.name = "CompetitionNextDate"
+		D.line(card, Vector2(24, 124), Vector2(24 + date_label.get_theme_font("font").get_string_size(date, HORIZONTAL_ALIGNMENT_LEFT, -1, date_label.get_theme_font_size("font_size")).x / C.density, 124), Charte.IVOIRE_3)
 		var date_link := _entity_area(card, Rect2(20, 92, RIGHT - 40, 34), {"kind":"date", "id":str(next_fixture.get("date", ""))}, "CompetitionNextDateLink", "Voir la date dans le calendrier · " + date)
 		if date_link != null: date_link.size.y = maxf(C.px(34), maxf(date_link.size.y, ceilf(date_label.size.y)))
 	var home_plate := _plaque(card, Rect2(24, 138, 290, 64), home, "CompetitionNextHome", false)
@@ -1192,11 +1198,14 @@ func _calendar() -> void:
 	for spec: Array in [[19, period, 230], [296, "ADVERSAIRE", 430], [720, "LIEU", 228], [954, "COMPÉTITION", 185], [LEFT - 157, "RÉSULTAT", 140]]:
 		D.text(panel, spec[0], 134, spec[1], 15, C.MUTED, 700, spec[2])
 	D.line(panel, Vector2(9, 142), Vector2(LEFT - 9, 142), Charte.FILET)
-	var bounds := _pager(panel, "CalendarPagination", "CalendarPagination", visible.size(), 11, 683, 24)
-	for i in range(bounds.x, bounds.y):
-		_calendar_row(panel, visible[i], 148 + 48 * (i - bounds.x), LEFT, false)
+	# Toute la saison sur une page qui défile (décision de Léo) : plus de pagination.
+	var panel_h := 210 + 48 * maxi(1, visible.size()) + 40
+	panel.size.y = C.px(panel_h)
+	left_bottom = TOP + panel_h
+	for i in visible.size():
+		_calendar_row(panel, visible[i], 148 + 48 * i, LEFT, false)
 	if visible.is_empty(): D.text(panel, 23, 219, "Aucune rencontre dans cette vue du calendrier.", 24, C.MUTED, 500, LEFT - 47)
-	_result_legend(panel, 24, 700)
+	_result_legend(panel, 24, panel_h - 48)
 
 ## Date courte « 21/11 » d'une rencontre (vide sans date ISO).
 func _short_date(fixture: Dictionary) -> String:
@@ -1243,7 +1252,7 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	normal.set_corner_radius_all(0)
 	if current:
 		normal.border_color = Charte.IVOIRE
-		normal.set_border_width_all(maxi(1, C.px(2)))
+		normal.border_width_left = maxi(3, C.px(4))
 	var hover := StyleBoxFlat.new()
 	hover.bg_color = Charte.PANNEAU_3
 	hover.set_corner_radius_all(0)
@@ -1268,7 +1277,8 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	var fid := str(fixture.get("id", y)).validate_node_name()
 	if compact:
 		D.text(row, 12, middle, _round_code(fixture), 19, C.MUTED, 700, 66)
-		D.text(row, 72, middle, _short_date(fixture) if not _short_date(fixture).is_empty() else _fixture_label(fixture), 19, C.IVORY, 600, 92)
+		var short_label := D.text(row, 72, middle, _short_date(fixture) if not _short_date(fixture).is_empty() else _fixture_label(fixture), 19, C.IVORY, 600, 0)
+		if not date.is_empty(): D.line(row, Vector2(72, middle + 4), Vector2(72 + short_label.size.x / C.density, middle + 4), Charte.IVOIRE_3)
 		_crest(row, opponent, Rect2(170, (line_height - 26) / 2.0, 26, 26))
 		D.text(row, 204, middle, G.club_name(opponent), 20, C.IVORY, 700, 236)
 		D.text(row, 444, middle, _location(fixture, true), 19, C.MUTED, 500, 96)
@@ -1282,6 +1292,18 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 		else:
 			var tag := D.text(row, width - 16, middle, "À jouer →" if current else "—", 19, C.IVORY if current else C.MUTED, 700, 110, HORIZONTAL_ALIGNMENT_RIGHT)
 			tag.name = "CalendarToPlay_" + fid
+			if current:
+				# La flèche promet l'action : « À jouer → » ouvre la Préparation (ou le direct).
+				var go := Button.new()
+				go.name = "CalendarPrepare_" + fid
+				go.flat = true
+				go.set_meta("immersive_style_applied", true)
+				go.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+				go.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+				go.tooltip_text = "Préparer le match"
+				go.pressed.connect(func(): app._navigate("Match" if not app._live().is_empty() else "Préparation"))
+				row.add_child(go)
+				D.place(go, Rect2(width - 140, 0, 136, line_height))
 		_entity_area(row, Rect2(166, 0, 278, line_height), {"kind":"club", "id":str(opponent.get("id", ""))}, "CalendarOpponent_" + fid, "Ouvrir le club · " + G.club_name(opponent))
 		if not date.is_empty():
 			_entity_area(row, Rect2(8, 0, 156, line_height), {"kind":"date", "id":str(fixture.get("date", ""))}, "CalendarDate_" + fid, "Voir la date dans le calendrier · " + date)
@@ -1327,7 +1349,9 @@ func _playoffs() -> void:
 			or (japanese and competition == "jlo-d1-d2")
 			or (result.get("phase") == "access" and competition != "access-nationale" and league.id in ["elite", "accession"])
 			or (competition == "access-nationale" and league.id in ["nationale", "accession"])))
-	var bounds := _pager(panel, "PlayoffsPagination", "playoffs_" + str(league.id), phases.size(), 8, 682, 823)
+	var panel_h := 270 + 54 * maxi(1, phases.size())
+	panel.size.y = C.px(panel_h)
+	left_bottom = TOP + panel_h
 	if league.get("champion") is Dictionary:
 		_icon(panel, "trophy", Rect2(22, 121, 51, 51), WARM)
 		D.text(panel, 89, 156, "CHAMPION · " + G.club_name(league.champion).to_upper(), 36, WARM, 800, 1180)
@@ -1341,9 +1365,9 @@ func _playoffs() -> void:
 		}.get(league.id, "Barrages, demi-finales, finales et barrage d’accession selon la compétition.")
 		D.text(panel, 22, 185, note, 23, C.MUTED, 500, 1250)
 	if phases.is_empty(): D.text(panel, 23, 244, "Aucun résultat de phase finale conservé cette saison.", 27, C.MUTED, 500, 1230)
-	for i in range(bounds.x, bounds.y):
+	for i in phases.size():
 		var result: Dictionary = phases[i]
-		var card := D.rect(panel, Rect2(16, 218 + (i - bounds.x) * 54, LEFT - 32, 47), Charte.PANNEAU_2, 5, C.LINE)
+		var card := D.rect(panel, Rect2(16, 218 + i * 54, LEFT - 32, 47), Charte.PANNEAU_2, 0)
 		var competition := _competition_id(result)
 		var nationale := competition in ["nationale", "access-nationale"]
 		var stage_width := 304 if japanese or competition == "access-nationale" else 210
@@ -1362,6 +1386,7 @@ func _playoffs() -> void:
 		if tiebreak:
 			D.text(card, stage_width + 18, 41, "%s après départage" % G.club_name(identities[winner]), 18, C.MUTED, 600, 1054 - stage_width)
 		D.text(card, LEFT - 57, 31, _score(result), 27, C.IVORY, 700, 142, HORIZONTAL_ALIGNMENT_RIGHT)
+		_entity_area(card, Rect2(0, 0, LEFT - 32, 47), {"kind":"fixture", "id":str(result.get("fixtureId", ""))}, "PlayoffFixture_%d" % i, "Ouvrir la rencontre")
 
 func _stats() -> void:
 	var panel := _panel(self, Rect2(0, TOP, LEFT, 760), "STATISTIQUES – " + _league_short(league).to_upper(), "flag", "CompetitionStatsPanel")
@@ -1396,7 +1421,7 @@ func _stats() -> void:
 	var values: Array = [G.n(game_count), G.n(points), G.n(draw_count / 2.0), "%.1f" % (points / game_count) if game_count > 0 else "—"]
 	for i in 4:
 		var x := 26 + i * 309
-		D.rect(aggregate, Rect2(x, 70, 288, 127), Charte.PANNEAU_2, 6, Charte.FILET)
+		D.rect(aggregate, Rect2(x, 70, 288, 127), Charte.PANNEAU_2, 0)
 		D.text(aggregate, x + 22, 112, ["Matchs joués", "Points marqués", "Matchs nuls", "Points / match"][i], 26, C.MUTED, 500, 254)
 		D.text(aggregate, x + 22, 170, values[i], 61, C.IVORY, 800, 253)
 	var caption := "Résultats de toutes les poules conservés par la carrière." if league.has("pools") else "Résultats et compteurs de championnat conservés par la carrière."
@@ -1584,14 +1609,14 @@ static func _panel(parent: Node, area: Rect2, title: String, _icon_id: String, i
 	return panel
 
 static func _box_tag(parent: Node, area: Rect2, caption: String, color: Color) -> void:
-	var box := D.rect(parent, area, Charte.PANNEAU_2, 0, Color(color, .7))
+	var box := D.rect(parent, area, Charte.PANNEAU_2, 0)
 	D.text(box, area.size.x / 2, area.size.y / 2 + 7, caption, 20, color, 700, area.size.x - 7, HORIZONTAL_ALIGNMENT_CENTER)
 
 static func _result_badge(parent: Node, area: Rect2, code: String, caption: String = "", known: bool = true) -> void:
 	var outcome: Dictionary = S.RESULTS.get(code, {}) if known else {}
 	var color: Color = RESULT_TINTS.get(code, DRAW) if not outcome.is_empty() else DRAW
 	var text := caption if not caption.is_empty() else code if not outcome.is_empty() else "—"
-	var box := D.rect(parent, area, color, 0)
+	var box := D.rect(parent, area, color, int(minf(area.size.x, area.size.y) / 2.0))
 	box.name = "SemanticBadge"
 	box.set_meta("semantic_role", outcome.get("role", "neutral"))
 	box.set_meta("semantic_text", text)
@@ -1607,7 +1632,8 @@ static func _result_legend(parent: Node, x: float, y: float) -> void:
 static func _recent_form(parent: Node, values: Variant, x: float, y: float) -> void:
 	var group := Control.new()
 	group.name = "RecentForm"
-	group.tooltip_text = "Résultats de championnat du plus ancien au plus récent"
+	# Ne capte jamais la souris : la ligne entière reste cliquable.
+	group.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(group)
 	D.place(group, Rect2(x, y, 180, 26))
 	var sequence: Array = values.slice(-6) if values is Array and values.size() > 6 else values if values is Array else []
