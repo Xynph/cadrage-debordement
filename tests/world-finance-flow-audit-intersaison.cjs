@@ -21,6 +21,9 @@ test('Every managed club reconciles to the euro over a whole season and the star
     assert.equal(w.rows.find(x => x.kind === 'human-ledger').status, 'reconciled-ledger');
   }
   assert.ok(r.weeks.some(w => w.accords.length), 'accords between managed clubs are audited');
+  for (const w of r.weeks) for (const row of w.rows.filter(x => x.kind === 'ai')) { assert.equal(row.debtConserved, true); assert.deepEqual(row.unknownDebts, []); }
+  // Les prêts accordés à la bascule sont remboursés chaque semaine de la saison 2 : la dette suit au même euro.
+  assert.ok(r.weeks.filter(w => w.season === 2).every(w => w.ai.loanClubs > 0 && w.ai.loanRepayments < 0), 'owner loans are repaid weekly');
   assert.ok(r.weeks.filter(w => w.season === 2).some(w => w.rows.some(x => x.kind === 'ai' && x.billing.components.some(e => e.title.includes(' · Investissements : ')))),
     'reinvested surpluses split by project are audited in season 2');
 });

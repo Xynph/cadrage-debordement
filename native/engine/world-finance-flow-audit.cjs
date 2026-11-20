@@ -60,7 +60,8 @@ function humanRow(clubId, before, after, delta, traced, conserved) {
 function reconcile(before, after, trace) {
   if (before.season !== after.season || after.week !== before.week + 1 || before.mode !== 'world-champ' || after.mode !== 'world-champ')
     throw Error('Audit limited to one ordinary world-champ week, no interseason');
-  if (!trace || !Array.isArray(trace.writes) || !trace.billing) throw Error('Audit requires the traced engine writes of the week');
+  if (!trace || !Array.isArray(trace.writes) || !Array.isArray(trace.debts) || !trace.billing || !before.debt || !after.debt)
+    throw Error('Audit requires the traced engine writes (cash and debt) of the week');
   const beforeAccords = new Set((before.accordsIA || []).map(a => a.id));
   const accords = (after.accordsIA || []).filter(a => !beforeAccords.has(a.id));
   const rows = before.clubs.map(c => {
@@ -90,8 +91,20 @@ function reconcile(before, after, trace) {
     transfers.matched = transfers.expected === transfers.observed;
     const humanFlow = byFlow['human-week'] || 0;
     const residual = delta - (billing ? billing.expected : 0) - transfers.expected;
-    const reconciled = conserved && !!billing && billing.matched && transfers.matched && !unknownWrites.length && humanFlow === 0 && residual === 0;
-    return {clubId:c.id, kind:'ai', delta, traced, conserved, billing, transfers, unknownWrites, residual,
+    // Dette : seul le remboursement du prêt de l'actionnaire la fait bouger en semaine (pretRembourser, appelé
+    // par la facturation). Elle baisse exactement de l'écriture « Remboursement du prêt » rejouée, et l'encours
+    // enregistré du prêt (pretsActionnaires) baisse d'autant.
+    const debts = trace.debts.filter(w => w.clubId === c.id);
+    const debtDelta = after.debt[c.id] - before.debt[c.id], debtConserved = sum(debts.map(w => w.delta)) === debtDelta;
+    const repaid = billing ? sum(billing.components.filter(e => e.title.endsWith(' · ' + budget.LIBELLE_REMBOURSEMENT)).map(e => e.amount)) : 0;
+    const restant = s => s.prets?.[c.id]?.restant ?? 0;
+    const loan = {expected:repaid, observed:sum(debts.filter(w => w.fn === 'pretRembourser').map(w => w.delta)),
+      outstandingBefore:restant(before), outstandingAfter:restant(after)};
+    loan.matched = loan.expected === loan.observed && loan.outstandingAfter === loan.outstandingBefore + repaid;
+    const unknownDebts = debts.filter(w => w.fn !== 'pretRembourser').map(w => ({fn:w.fn, delta:w.delta}));
+    const reconciled = conserved && !!billing && billing.matched && transfers.matched && !unknownWrites.length && humanFlow === 0 && residual === 0
+      && debtConserved && loan.matched && !unknownDebts.length;
+    return {clubId:c.id, kind:'ai', delta, traced, conserved, billing, transfers, unknownWrites, residual, debtDelta, debtConserved, loan, unknownDebts,
       payrollBefore:wages(c), payrollAfter:wages(next),
       status:reconciled ? 'reconciled' : 'unknown',
       ...(reconciled ? {} : {note:'Untraced write, unknown engine flow or residual: no invented attribution.'})};
@@ -104,6 +117,7 @@ function reconcile(before, after, trace) {
       billingMatched:ai.filter(r => r.billing?.matched).length,
       transferClubs:ai.filter(r => r.transfers.accords.length).length,
       transferNet:sum(ai.map(r => r.transfers.observed)),
+      loanRepayments:sum(ai.map(r => r.loan.observed)), loanClubs:ai.filter(r => r.loan.observed).length,
       delta:sum(ai.map(r => r.delta)), residual:sum(ai.map(r => r.residual))}};
 }
 // Intersaison (commande « Saison suivante ») : chaque fonction du moteur qui écrit la caisse ou la dette d'un club

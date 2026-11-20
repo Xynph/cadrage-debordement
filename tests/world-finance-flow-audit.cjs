@@ -59,18 +59,22 @@ test('Isolated replay of the real billing preserves RNG and results; one extra w
 function fixture() {
   const forces = [0, 1, 2].map(id => ({id, division: 'champ', base: 60 + id}));
   const args = id => ({forces, clubId: id, masseHebdo: 40000, semaines: 40, receptions: 12, domicile: id === 1, neutre: false, phase: 'league',
-    resultats: [], gere: true, repere: '1|3', libelle: '', formation: null, investissement: 0, accueil: 1, marge: 0, aideRelegation: 0, remboursement: 0});
+    resultats: [], gere: true, repere: '1|3', libelle: '', formation: null, investissement: 0, accueil: 1, marge: 0, aideRelegation: 0, remboursement: id === 2 ? 400000 : 0});
   const billing = {};
   for (const id of [1, 2]) { const cap = {args: args(id), compte: {imprevu: 0, fraisMatch: 0}}; cap.ecritures = billingReplay(cap); billing[id] = cap; }
   const clubs = [0, 1, 2].map(id => ({id, cash: 1000000, players: [{id: 'p' + id, salary: 40000}]}));
-  const a = {mode: 'world-champ', season: 1, week: 3, phase: 'league', club: 0, clubs, facilities: {0: 2, 1: 2, 2: 3}, ledger: [], accordsIA: []};
+  // Club 2 rembourse le prêt de son actionnaire : 400 000 € sur 40 semaines, soit 10 000 € cette semaine.
+  const a = {mode: 'world-champ', season: 1, week: 3, phase: 'league', club: 0, clubs, facilities: {0: 2, 1: 2, 2: 3}, ledger: [], accordsIA: [],
+    debt: {0: 0, 1: 0, 2: 300000}, prets: {2: {restant: 300000}}};
   const b = structuredClone(a); b.week = 4;
   const writes = [];
   for (const id of [1, 2]) {
     const d = billing[id].ecritures.reduce((n, e) => n + e.amount, 0) - upkeep(a.facilities[id]);
     b.clubs[id].cash += d; writes.push({clubId: id, delta: d, fn: 'worldWeeklyEconomy'});
   }
-  return {a, b, trace: {writes, billing}};
+  const repaid = billing[2].ecritures.find(e => e.title.endsWith('Remboursement du prêt de l’actionnaire')).amount;
+  b.debt[2] += repaid; b.prets[2].restant += repaid;
+  return {a, b, trace: {writes, debts: [{clubId: 2, delta: repaid, fn: 'pretRembourser'}], billing}};
 }
 test('A constructed week with billing and an accord reconciles', () => {
   const {a, b, trace} = fixture();
@@ -79,6 +83,7 @@ test('A constructed week with billing and an accord reconciles', () => {
   trace.writes.push({clubId: 1, delta: -50000, fn: 'calIANouvelAccord'}, {clubId: 2, delta: 50000, fn: 'calIANouvelAccord'});
   const r = reconcile(a, b, trace);
   assert.equal(r.ai.reconciled, 2); assert.equal(r.ai.transferClubs, 2);
+  assert.equal(r.ai.loanRepayments, -10000); assert.equal(r.rows.find(x => x.clubId === 2).loan.outstandingAfter, 290000);
   assert.equal(r.rows.find(x => x.clubId === 0).status, 'reconciled-ledger');
 });
 test('Unexplained cash, unknown engine flows or a forged billing stay unknown, never attributed to a made-up flow', () => {
@@ -94,6 +99,14 @@ test('Unexplained cash, unknown engine flows or a forged billing stay unknown, n
   assert.equal(row.billing.replayMatchesEngine, false); assert.equal(row.status, 'unknown');
   f = fixture(); delete f.trace.billing[2];                         // club non facturé
   assert.equal(reconcile(f.a, f.b, f.trace).rows[2].status, 'unknown');
+  f = fixture(); f.b.debt[2] -= 1; f.trace.debts[0].delta -= 1;          // dette qui baisse plus que le remboursement
+  assert.equal(reconcile(f.a, f.b, f.trace).rows[2].status, 'unknown');
+  f = fixture(); f.b.prets[2].restant += 1;                          // encours du prêt qui ne suit pas
+  assert.equal(reconcile(f.a, f.b, f.trace).rows[2].status, 'unknown');
+  f = fixture(); f.b.debt[1] += 7; f.trace.debts.push({clubId: 1, delta: 7, fn: 'mystere'}); // dette bougée par un flux inconnu
+  assert.deepEqual(reconcile(f.a, f.b, f.trace).rows[1].unknownDebts, [{fn: 'mystere', delta: 7}]);
+  f = fixture(); f.b.debt[1] += 7;                                   // dette bougée hors trace
+  assert.equal(reconcile(f.a, f.b, f.trace).rows[1].status, 'unknown');
   f = fixture(); f.b.season++;
   assert.throws(() => reconcile(f.a, f.b, f.trace), /no interseason/);
   f = fixture(); f.a.mode = f.b.mode = 'other';
