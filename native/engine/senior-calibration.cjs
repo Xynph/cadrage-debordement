@@ -383,8 +383,9 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
   }
 
   function calibrateV2(player, context) {
-    if (reviewed[player.id] || elite[player.id]) calibrate(player);
-    else retarget(player, targetRating(player, context));
+    // Barème V3 (décision de Léo, 20/11/2026) : les profils réglés à la main suivent les mêmes règles que les
+    // autres (rôle en club, classe d'international, plafond du championnat) ; ils ne servent plus qu'au barème V1.
+    retarget(player, targetRating(player, context));
     player.dev.potential = startingPotential(player, context);
   }
 
@@ -464,7 +465,7 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     const quick = ratingsOnly && worldVersion === 2 && context && !players.some(p => /^depth-/.test(p.id) && !p.attributesV2 && Number.isFinite(p.rating));
     for (const player of players) {
       if (!player.attributesV2 || sources && !sources.has(player.id)) continue;
-      if (quick && !reviewed[player.id] && !elite[player.id]) player.rating = targetRating(player, context);
+      if (quick) player.rating = targetRating(player, context);
       else if (worldVersion === 2 && context) calibrateV2(player, context);
       else if (player.age >= 23) calibrate(player);
     }
