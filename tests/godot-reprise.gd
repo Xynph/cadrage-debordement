@@ -165,7 +165,7 @@ func run() -> void:
 		await press(option); await response()
 		check(str(app.model.clubLife.reprise.club.date)=="2026-07-20","Choix de reprise appliqué par le moteur")
 	await settle()
-	check(app.find_child("RepriseDialog",true,false)!=null,"La fenêtre de reprise reste ouverte après le choix")
+	check(app.find_child("RepriseDialog",true,false)!=null,"La sous-page de reprise reste ouverte après le choix")
 	await capture("reprise-decision")
 	# Décisions de la préparation (16/11/2026) : « Continuer » s'arrête le jour de la reprise et ouvre la fenêtre.
 	var amicaux := app.find_child("RepriseDecision_amicaux",true,false)
@@ -173,8 +173,9 @@ func run() -> void:
 	var title := app.find_child("RepriseDecisionTitle_amicaux",true,false) as Label
 	check(title!=null and title.text.contains("À DÉCIDER AVANT LE LUNDI 20 JUILLET"),"Échéance du programme affichée : "+(title.text if title else ""))
 	check(app.find_child("RepriseDecisionGabi_amicaux",true,false)!=null,"Conseil de Gabi pour les amicaux")
-	var dialog := app.find_child("RepriseDialog",true,false) as AcceptDialog
-	if dialog != null: dialog.queue_free()
+	if app.find_child("RepriseDialog",true,false) != null:
+		app.management_ui.preparation.sub = ""
+		app._render()
 	await settle()
 	var stopped := false
 	for attempt in 8:

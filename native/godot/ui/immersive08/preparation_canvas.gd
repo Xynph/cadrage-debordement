@@ -116,6 +116,9 @@ class Marque extends Control:
 		match forme:
 			"haut": draw_colored_polygon(PackedVector2Array([Vector2(w * .5, h * .08), Vector2(w * .96, h * .92), Vector2(w * .04, h * .92)]), couleur)
 			"bas": draw_colored_polygon(PackedVector2Array([Vector2(w * .04, h * .08), Vector2(w * .96, h * .08), Vector2(w * .5, h * .92)]), couleur)
+			"cadenas":
+				draw_rect(Rect2(w * .12, h * .45, w * .76, h * .5), couleur)
+				draw_arc(Vector2(w * .5, h * .45), w * .26, PI, TAU, 16, couleur, maxf(1.5, w * .1))
 			"droite": draw_colored_polygon(PackedVector2Array([Vector2(w * .1, h * .04), Vector2(w * .94, h * .5), Vector2(w * .1, h * .96)]), couleur)
 			"losange": draw_colored_polygon(PackedVector2Array([Vector2(w * .5, 0), Vector2(w, h * .5), Vector2(w * .5, h), Vector2(0, h * .5)]), couleur)
 			_:
@@ -281,6 +284,25 @@ func _adjoint() -> Dictionary:
 
 ## ---- Construction -----------------------------------------------------------------------------------
 
+## Ouvre une sous-page pleine page de la Préparation (« planning », « reprise », « reperes », « conseils », « xv »), depuis
+## n'importe quel écran : retour par « ← Retour » ou Échap, une étape d'historique (Précédent / Suivant).
+static func ouvrir_sous_page(application: Control, sous_page: String) -> void:
+	if not application.management_ui.get("preparation") is Dictionary:
+		application.management_ui.preparation = {"tab":0,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
+	if application.route != "Préparation": application._navigate("Préparation")
+	var etat: Dictionary = application.management_ui.preparation
+	etat.tab = 0
+	etat.sub = sous_page
+	etat.outer[0] = 0
+	application._render()
+	if is_instance_valid(application.navigation_controller): application.navigation_controller.observe("Préparation")
+
+## Échap ferme la sous-page ouverte (règle unique : fenêtre, puis sous-écran, puis menu).
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not event.is_action_pressed("ui_cancel") or active_tab != 0 or str(state.get("sub", "")).is_empty(): return
+	get_viewport().set_input_as_handled()
+	_ouvrir_sous("")
+
 func _build() -> void:
 	if not app.management_ui.get("preparation") is Dictionary:
 		app.management_ui.preparation = {"tab":0,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
@@ -342,6 +364,7 @@ func _heading() -> void:
 		droite -= 440
 	elif voir_match:
 		match_context.match_button = _bouton(hero, Rect2(droite - 400, 50, 400, 54), "", match_context.open_match, "ivoire", "arrow", "PreparationGoMatch")
+		_verrou_match(hero, match_context.match_button, droite)
 		droite -= 420
 	else:
 		_bouton(hero, Rect2(droite - 400, 50, 400, 54), "Carnet de jeu", func(): app._navigate("Plan de jeu"), "ivoire", "arrow", "PreparationOpenPlaybook")
@@ -373,6 +396,24 @@ func _heading() -> void:
 	x -= 350
 	_bouton(barre, Rect2(x, 0, 340, 55), "Préparer la suite", func(): load("res://ui/manager_planning.gd").open(app), "lien", "calendar", "PreparationManagerPlanning")
 	D.line(self, Vector2(0, 241), Vector2(2248, 241), Color(Charte.FILET, .85))
+
+## Le match n'est pas encore ouvert : bouton verrouillé (cadenas + raison écrite, jamais la couleur seule).
+func _verrou_match(hero: Control, bouton: Button, droite: float) -> void:
+	var live: Variant = app.model.get("live")
+	if live is Dictionary and not live.is_empty(): return
+	if app.model.get("meta", {}).get("calendarCadence", {}).get("matchReady", false): return
+	bouton.disabled = true
+	bouton.icon = null
+	var style := bouton.get_theme_stylebox("disabled").duplicate() as StyleBoxFlat
+	style.content_margin_right = C.px(48)
+	bouton.add_theme_stylebox_override("disabled", style)
+	_marque(hero, droite - 34, 77, 20, "cadenas", Charte.IVOIRE_2)
+	var date := P.fixture_date(fixture)
+	var raison := "S’ouvre le jour du match" + (" · " + date if not date.is_empty() else "")
+	var etiquette := _texte(hero, droite, 124, raison, 15, Charte.IVOIRE_2, 400, HORIZONTAL_ALIGNMENT_RIGHT)
+	etiquette.name = "PreparationGoMatchReason"
+	bouton.tooltip_text = raison
+	bouton.accessibility_name = "Aller au jour de match, verrouillé · " + raison
 
 ## Sous-titre : « Club – Adversaire · position et date · terrain · classements » ; les deux clubs sont cliquables.
 func _ligne_contexte(hero: Control, preparation: Dictionary, baseline: float) -> void:
@@ -486,6 +527,7 @@ func _dossier() -> float:
 		"reperes": return _sous_reperes(section)
 		"conseils": return _sous_conseils(section)
 		"xv": return _sous_xv(section)
+		"planning", "reprise": return _sous_externe(section, str(state.get("sub", "")))
 	var opponent := _opponent()
 	var haut := 0.0
 	if reports.is_empty():
@@ -504,12 +546,12 @@ func _dossier() -> float:
 		_a_faire(section, Rect2(1361, 0, 887, 540))
 		haut = 556.0
 	else:
-		_danger(section, Rect2(0, 0, 2248, 76))
+		_danger(section, Rect2(0, 0, 2248, 68))
 		# Gabarit 1080p sans défilement (recette immersive08) : danger 76, rapport + repères ~440, forme + surveillés ~254, XV ~196.
-		var hauteur_rapport := maxf(108.0 + 6.0 * C.reach(44.0) + 44.0, 56.0 + 5.0 * C.reach(62.0) + 82.0)
-		_rapport(section, Rect2(0, 90, 1344, hauteur_rapport))
-		_a_faire(section, Rect2(1361, 90, 887, hauteur_rapport))
-		haut = 90.0 + hauteur_rapport + 14.0
+		var hauteur_rapport := maxf(108.0 + 6.0 * _pas_rapport() + 44.0, 56.0 + 5.0 * C.reach(62.0) + 82.0)
+		_rapport(section, Rect2(0, 82, 1344, hauteur_rapport))
+		_a_faire(section, Rect2(1361, 82, 887, hauteur_rapport))
+		haut = 82.0 + hauteur_rapport + 14.0
 		var hauteur_bas := _forme(section, Rect2(0, haut, 900, 0))
 		_surveiller(section, Rect2(916, haut, 1332, hauteur_bas))
 		haut += hauteur_bas + 14.0
@@ -561,9 +603,13 @@ func _agir(code: String) -> void:
 		"train": _choose(2)
 
 ## Rapport de force : nous (plein) face à eux (anneau), chiffres écrits, écart en mots ; chaque ligne mène à l'écran d'action.
+## Pas des lignes du rapport de force : en petite fenêtre, assez haut pour le secteur et son action écrits l'un sous l'autre.
+func _pas_rapport() -> float:
+	return maxf(C.reach(44.0), 62.0) if C.dense() else C.reach(44.0)
+
 func _rapport(section: Control, rectangle: Rect2) -> void:
 	var domaines: Array = reports.get("domains", [])
-	var pas := maxf(C.reach(44.0), (rectangle.size.y - 152.0) / 6.0)
+	var pas := maxf(_pas_rapport(), (rectangle.size.y - 152.0) / 6.0)
 	var panneau := _panneau(section, rectangle, "Rapport de force", "PreparationComparison", "Évaluations sur 100 ajustées à la condition")
 	var nous: Dictionary = app.model.club
 	var eux := _opponent()
@@ -579,6 +625,8 @@ func _rapport(section: Control, rectangle: Rect2) -> void:
 		panneau.add_child(plaque)
 		D.place(plaque, Rect2(x, 60, 360, 38))
 		if i == 0: _barre(panneau, Rect2(x, 60, 6, 38), lisere)
+		if club.get("id") != null and Link.available(app, "club", str(int(club.get("id")))):
+			_zone(panneau, C.reach_rect(Rect2(x, 60, 360, 38)), _ouvrir_club.bind(club), "PreparationTagZone" + ("Us" if i == 0 else "Them"), "Ouvrir la fiche · " + G.club_name(club))
 		var nom := G.club_name(club)
 		var lien := Link.name_link(app, panneau, C.reach_rect(Rect2(x + 14, 60, 250, 38)), "club", str(int(club.get("id", -1))) if club.get("id") != null else "", nom.to_upper(), 21, Charte.IVOIRE, "PreparationOwnLink" if i == 0 else "PreparationOpponentLink")
 		if lien is Label: (lien as Label).vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -600,8 +648,8 @@ func _rapport(section: Control, rectangle: Rect2) -> void:
 		var adverse: Variant = domaine.get("opponent")
 		_titre(panneau, 24, centre + 11, G.n(propre) if _nombre(propre) else "—", 32, Charte.IVOIRE, 70)
 		if _nombre(propre): _barre(panneau, Rect2(430.0 - echelle * clampf(float(propre) / 100.0, 0, 1), centre - 7, echelle * clampf(float(propre) / 100.0, 0, 1), 14), Charte.club_trait(app.accent))
-		_texte(panneau, 590, centre + (0 if code.is_empty() or C.dense() else -3), libelle, 20, Charte.IVOIRE, 300, HORIZONTAL_ALIGNMENT_CENTER).add_theme_font_override("font", Charte.TITRE_GRAS)
-		if not code.is_empty() and not C.dense(): _texte(panneau, 590, centre + 14, "agir : " + str(DESTINATIONS[code]).to_lower(), 14, Charte.IVOIRE_2, 300, HORIZONTAL_ALIGNMENT_CENTER)
+		_texte(panneau, 590, centre + (0 if code.is_empty() else -8 if C.dense() else -3), libelle, 20, Charte.IVOIRE, 300, HORIZONTAL_ALIGNMENT_CENTER).add_theme_font_override("font", Charte.TITRE_GRAS)
+		if not code.is_empty(): _texte(panneau, 590, centre + (18 if C.dense() else 14), "agir : " + str(DESTINATIONS[code]).to_lower(), 14, Charte.IVOIRE_2, 300, HORIZONTAL_ALIGNMENT_CENTER)
 		if _nombre(adverse): _barre(panneau, Rect2(750, centre - 7, echelle * clampf(float(adverse) / 100.0, 0, 1), 14), Color(Charte.IVOIRE_2, .2), Charte.IVOIRE_2)
 		_titre(panneau, 1090, centre + 11, G.n(adverse) if _nombre(adverse) else "—", 32, Charte.IVOIRE, 70)
 		if _nombre(propre) and _nombre(adverse):
@@ -610,7 +658,7 @@ func _rapport(section: Control, rectangle: Rect2) -> void:
 			var couleur_delta: Color = Charte.V if delta > 0 else Charte.D if delta < 0 else Charte.N
 			_marque(panneau, 1168, centre, 16, "haut" if delta > 0 else "bas" if delta < 0 else "egal", couleur_delta)
 			_texte(panneau, 1194, centre + 7, mot, 19, couleur_delta, 140).add_theme_font_override("font", C.font(700))
-	_texte(panneau, 24, rectangle.size.y - 14, "Comparaison chiffrée indisponible" if domaines.is_empty() else "Écart toujours écrit en mots : « pour toi » ou « contre toi ». Clique un secteur pour agir : composition, plan de jeu ou entraînement.", 15, Charte.IVOIRE_2, 1300)
+	_texte(panneau, 24, rectangle.size.y - 14, "Comparaison chiffrée indisponible" if domaines.is_empty() else "Écart écrit en mots. Clique un secteur pour agir." if C.dense() else "Écart toujours écrit en mots : « pour toi » ou « contre toi ». Clique un secteur pour agir : composition, plan de jeu ou entraînement.", 15, Charte.IVOIRE_2, 1300)
 
 ## À faire avant le match : une ligne cliquable par repère, mêmes vraies données qu'avant.
 func _a_faire(section: Control, rectangle: Rect2) -> void:
@@ -643,13 +691,19 @@ func _a_faire(section: Control, rectangle: Rect2) -> void:
 		_texte(panneau, rectangle.size.x - 52, y + pas / 2.0 + 5, str(check.caption), 16, Charte.IVOIRE, 215, HORIZONTAL_ALIGNMENT_RIGHT)
 		_marque(panneau, rectangle.size.x - 40, y + pas / 2.0, 14, "droite", Charte.IVOIRE_2)
 	var pied := 56.0 + pas * limite + 10.0
-	var tous := _bouton(panneau, Rect2(14, pied, 330, 44), "Tous les repères (%d)" % verifs.size(), func(): _ouvrir_sous("reperes"), "lien", "search", "PreparationBriefingAll")
+	var tous := _bouton(panneau, Rect2(14, pied, 330, 44), "Tous les repères (%d)" % verifs.size(), func(): _ouvrir_sous("reperes"), "lien", "", "PreparationBriefingAll")
 	tous.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	var conseil: Dictionary = reports.get("advice", {})
 	var detail := _bouton(panneau, Rect2(350, pied, 250, 44), "Conseils détaillés", func(): _ouvrir_sous("conseils"), "lien", "arrow", "OpenOppositionDossier")
 	detail.disabled = reports.is_empty()
-	var adopter := _bouton(panneau, Rect2(rectangle.size.x - 14 - 280, pied, 280, 44), "Adopter le plan du staff", func(): app._command("set_tactics", {"attack":conseil.attack, "defense":conseil.defence}), "lien", "arrow", "PreparationAdoptPlan")
-	adopter.disabled = conseil.is_empty() or not app._live().is_empty() or app.model.meta.get("phase") == "ended"
+	var adopte := _plan_adopte(conseil)
+	var adopter := _bouton(panneau, Rect2(rectangle.size.x - 14 - 280, pied, 280, 44), "Plan du staff adopté" if adopte else "Adopter le plan du staff", func(): app._command("set_tactics", {"attack":conseil.attack, "defense":conseil.defence}), "lien", "check" if adopte else "arrow", "PreparationAdoptPlan")
+	adopter.disabled = adopte or conseil.is_empty() or not app._live().is_empty() or app.model.meta.get("phase") == "ended"
+
+## Les consignes en place sont déjà celles du plan conseillé par le staff.
+func _plan_adopte(conseil: Dictionary) -> bool:
+	var tactiques: Dictionary = app.model.get("tactics", {})
+	return not conseil.is_empty() and tactiques.get("attack") == conseil.get("attack") and tactiques.get("defense") == conseil.get("defence")
 
 const REPERES := {"press":"PRESSE", "selection":"FEUILLE", "day":"JOUR J", "international":"ABSENCES", "injuries":"INFIRMERIE", "sheet":"FEUILLE", "calendar":"RENDEZ-VOUS", "tactics":"CONSIGNES", "live":"MATCH", "ended":"SAISON"}
 
@@ -666,8 +720,8 @@ func _issue(resultat: Dictionary) -> String:
 func _forme(section: Control, rectangle: Rect2) -> float:
 	var recent: Array = reports.get("recent", [])
 	var pas := C.reach(26.0)
-	var hauteur := 100.0 + 4.0 * pas + 50.0
-	var panneau := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, hauteur)), "Forme récente", "PreparationRecent", "%d résultats observés" % recent.size() if not recent.is_empty() else "")
+	var hauteur := 100.0 + 4.0 * pas + 44.0
+	var panneau := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, hauteur)), "Forme récente", "PreparationRecent", "%d résultat%s observé%s" % [recent.size(), "s" if recent.size() > 1 else "", "s" if recent.size() > 1 else ""] if not recent.is_empty() else "")
 	var adversaire := _opponent()
 	var nom := G.club_name(adversaire)
 	Link.name_link(app, panneau, C.reach_rect(Rect2(20, 54, 250, 36)), "club", str(int(adversaire.get("id", -1))) if adversaire.get("id") != null else "", nom.to_upper(), 19, Charte.IVOIRE, "PreparationFormClub")
@@ -676,7 +730,11 @@ func _forme(section: Control, rectangle: Rect2) -> float:
 		var issue := _issue(recent[i])
 		if issue.is_empty(): continue
 		issues.append(issue)
-		_pastille(panneau, Rect2(290 + (issues.size() - 1) * 48, 58, 40, 28), issue, "PreparationOpponentForm%d" % (issues.size() - 1))
+		var pastille := _pastille(panneau, Rect2(290 + (issues.size() - 1) * 48, 58, 40, 28), issue, "PreparationOpponentForm%d" % (issues.size() - 1))
+		if Link.available(app, "club", str(int(adversaire.get("id", -1)))):
+			var cible := _zone(panneau, C.reach_rect(Rect2(290 + (issues.size() - 1) * 48, 58, 40, 28)), _ouvrir_club.bind(adversaire), "PreparationOpponentFormZone%d" % (issues.size() - 1), "Résultats de %s : ouvrir sa fiche" % nom)
+			cible.move_to_front()
+			pastille.move_to_front()
 	if not issues.is_empty():
 		_texte(panneau, 880, 80, "%d V · %d N · %d D" % [issues.count("V"), issues.count("N"), issues.count("D")], 17, Charte.IVOIRE_2, 300, HORIZONTAL_ALIGNMENT_RIGHT)
 	if recent.is_empty():
@@ -689,6 +747,8 @@ func _forme(section: Control, rectangle: Rect2) -> float:
 		var y := 100.0 + pas * i
 		var etape := "J" + G.n(int(resultat.get("round", 0)) + 1) if resultat.get("phase") == "league" else str(resultat.get("phase", ""))
 		if i % 2 == 0: _barre(panneau, Rect2(0, y, 900, pas - 2), Charte.PANNEAU_2)
+		if autre.get("id") != null and Link.available(app, "club", str(int(autre.get("id")))):
+			_zone(panneau, Rect2(0, y, 900, pas), _ouvrir_club.bind(autre), "PreparationFormRow%d" % i, "%s · %s : ouvrir la fiche de %s" % [etape, G.club_name(autre), G.club_name(autre)])
 		_texte(panneau, 24, y + pas / 2.0 + 6, etape, 16, Charte.IVOIRE_2, 110)
 		Link.name_link(app, panneau, Rect2(130, y, 420, pas), "club", str(int(autre.get("id", -1))) if autre.get("id") != null else "", G.club_name(autre), 18, Charte.IVOIRE, "PreparationFormOpponent%d" % i)
 		_titre(panneau, 700, y + pas / 2.0 + 8, "%s–%s" % [G.n(score[cote]), G.n(score[1 - cote])] if score.size() == 2 else "—", 24, Charte.IVOIRE, 120, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -704,9 +764,14 @@ func _face_a_face(panneau: Panel, y: float) -> void:
 		var issue := _issue(lignes[i])
 		if not issue.is_empty(): issues.append(issue)
 	_etiquette(panneau, 24, y + 24, "Face à eux")
+	var adversaire := _opponent()
+	var ouvrable := adversaire.get("id") != null and Link.available(app, "club", str(int(adversaire.get("id"))))
 	if issues.is_empty():
 		_texte(panneau, 150, y + 24, "Aucune confrontation enregistrée.", 18, Charte.IVOIRE_2, 700)
 		return
+	if ouvrable:
+		_zone(panneau, C.reach_rect(Rect2(0, y - 4, 900, 40)), _ouvrir_club.bind(adversaire), "PreparationHeadToHeadRow", "Confrontations avec %s : ouvrir sa fiche" % G.club_name(adversaire))
+		_texte(panneau, 880, y + 26, "Plus", 17, Charte.IVOIRE, 60, HORIZONTAL_ALIGNMENT_RIGHT).add_theme_font_override("font", C.font(700))
 	var dernier: Array = lignes[0].get("score", [])
 	var cote := int(lignes[0].get("side", 0))
 	var lieu := "à domicile" if bool(lignes[0].get("home", cote == 0)) else "à l’extérieur"
@@ -716,6 +781,35 @@ func _face_a_face(panneau: Panel, y: float) -> void:
 func _ouvrir_club_xv(club_id: int) -> void:
 	app.management_ui.club_sheet = {"id":club_id, "tab":2, "sort":"fam", "descending":false}
 	app.navigation_controller.open_entity({"kind":"club", "id":str(club_id)})
+
+## Fiche d'un club (onglet « Vue d'ensemble ») : forme, résultats, confrontations.
+func _ouvrir_club(club: Dictionary) -> void:
+	if club.get("id") == null: return
+	app.navigation_controller.open_entity({"kind":"club", "id":str(int(club.get("id")))})
+
+## Clic sur un joueur (carte, case, ligne) : sa fiche si le jeu en a une, sinon l'XV de son club.
+func _ouvrir_joueur(joueur: Dictionary, club_id: int) -> void:
+	var pid := str(joueur.get("id", ""))
+	for genre: String in ["player", "market"]:
+		if Link.available(app, genre, pid):
+			app.navigation_controller.open_entity({"kind":genre, "id":pid})
+			return
+	if club_id >= 0: _ouvrir_club_xv(club_id)
+
+## Joueur adverse ou du club ouvrable (fiche ou XV de son club) ; jamais un bouton factice.
+func _joueur_ouvrable(joueur: Dictionary, club_id: int) -> bool:
+	var pid := str(joueur.get("id", ""))
+	for genre: String in ["player", "market"]:
+		if Link.available(app, genre, pid): return true
+	return club_id >= 0 and Link.available(app, "club", str(club_id))
+
+## Zone cliquable pour toute une carte ou une case (posée avant le texte) : clic = fiche, survol = mini-fiche.
+func _zone_joueur(parent: Node, rectangle: Rect2, joueur: Dictionary, club_id: int, id: String) -> Button:
+	var pid := str(joueur.get("id", ""))
+	var zone := _zone(parent, C.reach_rect(rectangle), _ouvrir_joueur.bind(joueur, club_id), id, "Ouvrir · " + str(joueur.get("name", "")))
+	var source := "squad" if not P.player(app.model, pid).is_empty() else "market" if Link.available(app, "market", pid) else "adverse"
+	MiniFiche.lier(app, zone, pid, source)
+	return zone
 
 ## Nom de joueur adverse ou du club : clic = fiche (la sienne si elle existe, sinon l'XV de son club), survol = mini-fiche.
 func _lien_joueur(parent: Node, rectangle: Rect2, joueur: Dictionary, taille: int, id: String, club_id: int, legende: String = "") -> Control:
@@ -728,12 +822,23 @@ func _lien_joueur(parent: Node, rectangle: Rect2, joueur: Dictionary, taille: in
 			var source := "squad" if not P.player(app.model, pid).is_empty() else "market"
 			MiniFiche.lier(app, lien, pid, source)
 			return lien
+	if not _joueur_ouvrable(joueur, club_id):
+		# Aucune fiche ni club ouvrable : simple texte, jamais un nom qui ressemble à un lien.
+		var etiquette := C.label(nom, taille, Charte.IVOIRE, true, 700)
+		etiquette.name = id
+		etiquette.clip_text = true
+		etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		etiquette.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		parent.add_child(etiquette)
+		etiquette.position = (rectangle.position + Vector2(4, 0)) * C.density
+		etiquette.size = rectangle.size * C.density
+		return etiquette
 	var bouton := Link.styled_button(parent, rectangle, nom, taille, Charte.IVOIRE, id)
-	bouton.tooltip_text = "Voir son club · " + nom
+	bouton.tooltip_text = "Ouvrir · " + nom
 	bouton.set_meta("entity_kind", "player")
 	bouton.set_meta("entity_id", pid)
-	if club_id >= 0 and Link.available(app, "club", str(club_id)): bouton.pressed.connect(_ouvrir_club_xv.bind(club_id))
-	else: bouton.disabled = true
+	bouton.pressed.connect(_ouvrir_joueur.bind(joueur, club_id))
+	MiniFiche.lier(app, bouton, pid, "adverse")
 	return bouton
 
 ## Joueurs à surveiller : portrait, nom cliquable, poste, âge, note, rôle.
@@ -753,6 +858,7 @@ func _surveiller(section: Control, rectangle: Rect2) -> void:
 		carte.add_theme_stylebox_override("panel", _style(Charte.PANNEAU_2))
 		panneau.add_child(carte)
 		D.place(carte, Rect2(x, 58, 420, haut_carte))
+		if _joueur_ouvrable(menace, club_id): _zone_joueur(carte, Rect2(0, 0, 420, haut_carte), menace, club_id, "PreparationThreatCard%d" % i)
 		if not str(menace.get("id", "")).is_empty():
 			var portrait := G.portrait(0, 0, menace)
 			portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -772,9 +878,12 @@ func _surveiller(section: Control, rectangle: Rect2) -> void:
 		if _nombre(menace.get("fitness")) and not C.dense(): _texte(carte, 126, 130, "Condition %d %%" % int(menace.fitness), 15, Charte.IVOIRE_2, 285)
 	var signaux: Array = reports.get("signals", [])
 	var phrase := "%d signal(aux) relevé(s) · détails dans les conseils" % signaux.size() if not signaux.is_empty() else "Observations adverses indisponibles." if reports.is_empty() else "Pas de signal robuste dans les observations disponibles."
-	var fin := _bouton(panneau, Rect2(14, rectangle.size.y - 48, 560, 44), phrase, func(): _ouvrir_sous("conseils"), "lien", "arrow", "PreparationSignalsLink")
-	fin.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	fin.disabled = reports.is_empty()
+	if signaux.is_empty():
+		# Rien à ouvrir : simple constat, sans flèche ni lien.
+		_texte(panneau, 24, rectangle.size.y - 20, phrase, 18, Charte.IVOIRE_2, 1200)
+	else:
+		var fin := _bouton(panneau, Rect2(14, rectangle.size.y - 48, 560, 44), phrase, func(): _ouvrir_sous("conseils"), "lien", "arrow", "PreparationSignalsLink")
+		fin.alignment = HORIZONTAL_ALIGNMENT_LEFT
 
 ## Leur XV probable, en bande de quinze cases : numéro, nom (fiche), poste, remarque de l'adjoint ; le tableau complet est une sous-page.
 func _xv_bande(section: Control, rectangle: Rect2, adversaire: Dictionary) -> float:
@@ -791,11 +900,13 @@ func _xv_bande(section: Control, rectangle: Rect2, adversaire: Dictionary) -> fl
 	var menaces := {}
 	for menace: Dictionary in reports.get("threats", []): menaces[str(menace.get("id", ""))] = str(menace.get("role", ""))
 	var adjoint := _adjoint()
-	var hauteur_case := 128.0
+	var hauteur_case := 140.0
 	var hauteur := 56.0 + hauteur_case + 12.0
 	var panneau := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, hauteur)), "Leur XV probable", "PreparationTheirXI")
 	var tableau := "Tableau détaillé · remarques de %s" % str(adjoint.get("name", "")) if not adjoint.is_empty() else "Tableau détaillé · remarques du staff"
 	_bouton(panneau, Rect2(rectangle.size.x - 20 - 760, 6, 760, 44), tableau, func(): _ouvrir_sous("xv"), "lien", "arrow", "PreparationTheirXIAll")
+	_marque(panneau, rectangle.size.x - 20 - 760 - 200, 28, 14, "losange", Charte.IVOIRE)
+	_texte(panneau, rectangle.size.x - 20 - 760 - 178, 34, "à surveiller", 16, Charte.IVOIRE_2, 170)
 	var largeur := 135.0
 	for index in 15:
 		var emplacement: Dictionary = {}
@@ -809,6 +920,7 @@ func _xv_bande(section: Control, rectangle: Rect2, adversaire: Dictionary) -> fl
 		cellule.add_theme_stylebox_override("panel", _style(Charte.PANNEAU_2))
 		panneau.add_child(cellule)
 		D.place(cellule, Rect2(x, 56, largeur, hauteur_case))
+		if not joueur.is_empty() and _joueur_ouvrable(joueur, club_id): _zone_joueur(cellule, Rect2(0, 0, largeur, hauteur_case), joueur, club_id, "PreparationTheirXICellZone%d" % (index + 1))
 		_anneau(cellule, Rect2(8, 6, 40, 26), str(index + 1))
 		if joueur.is_empty():
 			_texte(cellule, 8, 64, "Non pourvu", 15, Charte.IVOIRE_2, largeur - 12)
@@ -817,12 +929,14 @@ func _xv_bande(section: Control, rectangle: Rect2, adversaire: Dictionary) -> fl
 		if not menace.is_empty(): _marque(cellule, largeur - 24, 19, 14, "losange", Charte.IVOIRE)
 		var lien := _lien_joueur(cellule, Rect2(2, 34, largeur - 4, 28), joueur, 17, "PreparationTheirXIName_%d" % (index + 1), club_id, PersonName.surname(str(joueur.get("name", ""))))
 		lien.set_meta("jersey", index + 1)
-		_texte(cellule, 8, 80, str(joueur.get("pos", "")), 15, Charte.IVOIRE_2, largeur - 12)
+		# Poste entier (jamais tronqué) : une ou deux lignes ; la remarque prend les lignes restantes.
+		var lignes_poste := D.words(str(joueur.get("pos", "")), 15, 2)
+		for ligne in lignes_poste.size(): _texte(cellule, 8, 80 + ligne * 17, lignes_poste[ligne], 15, Charte.IVOIRE_2, largeur - 8)
 		var remarque := _remarque(joueur, menace)
 		# Dans la case, seule la première remarque tient ; le tableau détaillé donne les deux.
-		var lignes_remarque := D.words(str(remarque[0]).split("  ·  ")[0], 17, 2)
+		var lignes_remarque := D.words(str(remarque[0]).split("  ·  ")[0], 17, 4 - lignes_poste.size())
 		for ligne in lignes_remarque.size():
-			_texte(cellule, 8, 99 + ligne * 17, lignes_remarque[ligne], 15, Charte.D if remarque[1] else Charte.IVOIRE, largeur - 12)
+			_texte(cellule, 8, 80 + (lignes_poste.size() + ligne) * 17 + 2, lignes_remarque[ligne], 15, Charte.D if remarque[1] else Charte.IVOIRE, largeur - 12)
 	return hauteur
 
 ## Petit anneau numéroté (cases du XV) : jamais une couleur seule, le numéro est écrit.
@@ -835,6 +949,20 @@ func _anneau(parent: Control, rectangle: Rect2, libelle: String) -> void:
 	parent.add_child(anneau)
 	D.place(anneau, rectangle)
 	D.text(anneau, rectangle.size.x / 2.0, rectangle.size.y / 2.0 + 6, libelle, 17, Charte.IVOIRE, 700, rectangle.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+
+## « Préparer la suite » et « La reprise » : écrans pleins (aucune fenêtre), contenus des vrais ateliers du jeu.
+func _sous_externe(section: Control, sous_page: String) -> float:
+	_retour(section)
+	var titre := "Préparer la suite du club" if sous_page == "planning" else "La reprise"
+	var panneau := _panneau(section, Rect2(0, 66, 2248, 880), titre, "PreparationSub_" + sous_page)
+	var hote := Control.new()
+	hote.name = "PreparationSubHost"
+	hote.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panneau.add_child(hote)
+	D.place(hote, Rect2(20, 66, 2208, 796))
+	if sous_page == "planning": load("res://ui/manager_planning.gd").embed(app, hote)
+	else: load("res://ui/reprise_dialog.gd").embed(app, hote)
+	return 66.0 + 880.0
 
 func _sous_xv(section: Control) -> float:
 	_retour(section)
@@ -981,8 +1109,13 @@ func _sous_conseils(section: Control) -> float:
 		var lignes := D.words(str(paire[2]), 78, 5)
 		for i in lignes.size(): _texte(gauche, 24, y + 100 + i * 28, lignes[i], 19, Charte.IVOIRE, 1050)
 		y += 100 + maxi(1, lignes.size()) * 28 + 30
-	var adopter := _bouton(gauche, Rect2(24, y, 440, 54), "Adopter ce plan", func(): app._command("set_tactics", {"attack":conseil.attack, "defense":conseil.defence}), "ivoire", "arrow", "AdoptDossierPlan")
-	adopter.disabled = conseil.is_empty() or not app._live().is_empty()
+	var adopte := _plan_adopte(conseil)
+	var adopter := _bouton(gauche, Rect2(24, y, 440, 54), "Plan adopté" if adopte else "Adopter ce plan", func():
+		# Retour au dossier : le plan adopté s'y lit tout de suite.
+		state.sub = ""
+		app._command("set_tactics", {"attack":conseil.attack, "defense":conseil.defence}), "lien", "check" if adopte else "arrow", "AdoptDossierPlan")
+	adopter.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	adopter.disabled = adopte or conseil.is_empty() or not app._live().is_empty()
 	_texte(gauche, 24, y + 90, "Les consignes par zone gardent la priorité. Aucun changement automatique des 23.", 16, Charte.IVOIRE_2, 1050)
 	if not str(reports.get("notice", "")).is_empty():
 		var note := D.words(str(reports.get("notice", "")), 90, 3)

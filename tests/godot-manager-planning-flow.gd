@@ -64,12 +64,15 @@ func run() -> void:
 	players.select(1)
 	(panel.find_child("PlannerSaveLineup", true, false) as Button).pressed.emit()
 	await wait_command()
+	panel = app.find_child("ManagerPlanning", true, false)
 	check(app.model.managerPlanning.fixtures[0].slots[0] != null, "Intention reçue par le vrai moteur")
 	await shot("01-trois-rencontres-1280")
 	panel.tabs.current_tab = 1
 	await settle()
+	panel = app.find_child("ManagerPlanning", true, false)
 	(panel.find_child("PlannerScenarioAdd", true, false) as Button).pressed.emit()
 	await wait_command()
+	panel = app.find_child("ManagerPlanning", true, false)
 	check(app.model.managerPlanning.scenario.operations.size() == 1, "Hypothèse enregistrée sans signature")
 	if not app.bridge.last_response_ok or not is_instance_valid(panel):
 		app.bridge.stop()
@@ -78,23 +81,23 @@ func run() -> void:
 	await shot("02-effectif-futur-1280")
 	panel.tabs.current_tab = 2
 	await settle()
+	panel = app.find_child("ManagerPlanning", true, false)
 	(panel.find_child("PlannerSaveGoal", true, false) as Button).pressed.emit()
 	await wait_command()
+	panel = app.find_child("ManagerPlanning", true, false)
 	check(app.model.managerPlanning.goal != null and app.model.managerPlanning.goal.value == null, "Objectif enregistré, mesure inconnue avant match")
 	await shot("03-objectif-1280")
 	for size in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		root.size = size
-		panel.popup_centered_clamped(Vector2i(1180, 760), 0.9)
 		await settle()
-		check(Rect2i(Vector2i.ZERO, root.size).encloses(Rect2i(panel.position, panel.size)), "Dialogue contenu " + str(size))
+		panel = app.find_child("ManagerPlanning", true, false)
+		check(panel != null and Rect2(Vector2.ZERO, Vector2(root.size)).grow(2).encloses(panel.get_global_rect()), "Page contenue dans l'écran " + str(size))
 		var scroll := panel.find_child("PlannerScroll", true, false) as ScrollContainer
 		check(scroll.get_h_scroll_bar().max_value <= scroll.size.x + 1, "Pas de débordement horizontal " + str(size))
 	await shot("04-objectif-1920")
 	var after := await state()
 	after.erase("managerPlanning")
 	check(after == before, "État sportif, financier et hasard inchangés")
-	panel.queue_free()
-	await settle()
 	app._navigate("Préparation")
 	await settle()
 	check(app.find_child("PreparationManagerPlanning", true, false) != null, "Entrée réelle de Préparation")

@@ -135,9 +135,35 @@ func run() -> void:
 	app.navigation_controller._travel(-1)
 	await settle()
 	check(str(app.management_ui.preparation.get("sub", "")) == "" and named("PreparationComparison") != null, "Précédent revient du sous-écran au dossier")
+	# Planning du manager et reprise : sous-pages pleine page (jamais une fenêtre), Échap ramène au dossier.
+	for pair: Array in [["PreparationManagerPlanning", "planning", "ManagerPlanning"], ["PreparationReprise", "reprise", "RepriseDialog"]]:
+		await reset()
+		var lien := named(pair[0]) as Button
+		if lien == null: continue
+		var resume := await press(lien)
+		check(resume == "Préparation|0|" + str(pair[1]) and named(pair[2]) != null and open_windows() == windows_before, "%s : sous-page pleine page (%s)" % [pair[0], resume])
+		check(open_windows().is_empty() and app.find_children("*", "AcceptDialog", true, false).filter(func(w: Node): return (w as Window).visible).is_empty(), "Aucune AcceptDialog pour " + str(pair[0]))
+		var echap := InputEventKey.new()
+		echap.keycode = KEY_ESCAPE
+		echap.pressed = true
+		Input.parse_input_event(echap)
+		await settle()
+		check(str(app.management_ui.preparation.get("sub", "")) == "" and named("PreparationComparison") != null, "Échap ferme la sous-page " + str(pair[1]))
+	# Mini-fiche d'un joueur adverse : ce que le jeu connaît (poste, âge, club), attributs « — », jamais une fenêtre.
+	await reset()
+	for i in 240:
+		if named("PreparationTheirXIName_1") != null: break
+		await process_frame
+	var nom1 := named("PreparationTheirXIName_1")
+	check(nom1 != null, "Nom du n° 1 adverse présent")
+	if nom1 != null:
+		var mini = load("res://ui/immersive08/mini_fiche.gd").montrer(app, str(nom1.get_meta("entity_id", "")), "adverse", nom1)
+		await settle()
+		check(mini != null and is_instance_valid(mini) and mini.find_child("MiniFichePoste", true, false) != null, "Mini-fiche d'un joueur adverse construite avec les données connues")
+		if mini != null: load("res://ui/immersive08/mini_fiche.gd").cacher(app)
 	# Noms : joueurs surveillés, XV adverse, clubs -> un écran, jamais une fenêtre.
 	var noms: Array[String] = []
-	for pattern in ["PreparationThreatName*", "PreparationTheirXIName_1", "PreparationOpponentLink", "PreparationFormClub", "PreparationContextClubOpponent"]:
+	for pattern in ["PreparationThreatName*", "PreparationThreatCard*", "PreparationTheirXIName_1", "PreparationTheirXICellZone*", "PreparationOpponentLink", "PreparationTagZone*", "PreparationFormClub", "PreparationFormRow*", "PreparationOpponentFormZone*", "PreparationContextClubOpponent"]:
 		for button: Node in app.find_children(pattern, "Button", true, false): noms.append(str(button.name))
 	check(noms.size() >= 3, "Noms cliquables : joueurs, XV adverse, clubs (%d)" % noms.size())
 	for id in noms:
