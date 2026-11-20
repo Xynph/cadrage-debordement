@@ -463,7 +463,9 @@ func _style_segment(bouton: Button, choisi: bool) -> void:
 		style.border_color = C.FAINT if etat == "disabled" and not choisi else (C.IVORY if choisi or etat in ["focus", "hover"] else C.LINE)
 		if choisi: style.border_width_left = maxi(2, px(4))
 		else: style.border_width_bottom = maxi(1, px(2 if etat in ["focus", "hover"] else 1))
-		style.set_corner_radius_all(0)
+		# Charte finale : choix et onglets arrondis comme les cases (rayon 6).
+		style.set_corner_radius_all(maxi(2, px(Charte.RAYON_PETIT)))
+		style.anti_aliasing = true
 		style.content_margin_left = px(14)
 		style.content_margin_right = px(14)
 		style.content_margin_top = px(7)
@@ -994,14 +996,18 @@ func _terrain(centre: VBoxContainer) -> void:
 				puce_texte = str(humeur.label)
 				puce_teinte = C.MINT if sens_humeur > 0 else C.ALERT
 			if not puce_texte.is_empty():
-				var puce := _panneau(_plat(puce_teinte))
+				# Pastille de la charte (§7.1) : voile tiré de la teinte + mot dans la teinte, coins 6 px ; jamais un
+				# aplat doré (« Valider et reprendre » reste l'unique aplat doré de la fenêtre).
+				var voile := Charte.VOILE_DORE if puce_teinte == C.ALERT else (Charte.VOILE_VERT if puce_teinte == C.MINT else Charte.PANNEAU_2)
+				var puce := _panneau(_plat(voile))
 				puce.name = "TeamPlayerState"
 				var style_p := puce.get_theme_stylebox("panel") as StyleBoxFlat
+				style_p.set_corner_radius_all(Charte.RAYON_PETIT)
 				style_p.content_margin_left = px(8)
 				style_p.content_margin_right = px(8)
 				puce.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 				puce.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				puce.add_child(_texte(puce_texte, 12, C.BG, _gras))
+				puce.add_child(_texte(puce_texte, 12, puce_teinte, _gras))
 				pile.add_child(puce)
 			medaillon.tooltip_text = "%d · %s · %s\nÉnergie %d %%%s" % [slot + 1, str(d.poste), str(d.nom), roundi(float(d.energie)), ("\nNote du match %.1f" % float(d.note)) if notes.has(id) else ""]
 			var eligibles := PackedStringArray()
@@ -1191,11 +1197,11 @@ func _tuile(joueur: Dictionary, numero: int, eligible: bool, choisi: bool, conse
 	# ivoire et coche ; autorisé : filet menthe (et « en vert sur le banc » écrit sous le terrain) ; conseillé par
 	# Gabi : filet ivoire (sa carte le nomme). Jamais d'or ni d'ivoire plein.
 	var bord := C.MINT if eligible and poste_choisi >= 0 else (C.IVORY if choisi or conseille else C.LINE)
-	var normal := _boite(C.SELECTED if choisi else C.PANEL, bord, 0, 4 if choisi else 2, 8, false, "left")
+	var normal := _boite(C.SELECTED if choisi else C.PANEL, bord, Charte.RAYON_PETIT, 4 if choisi else 2, 8, true, "left")
 	var survol := normal.duplicate() as StyleBoxFlat
 	survol.bg_color = C.RAISED
 	survol.border_color = C.IVORY
-	var focus := _boite(Color.TRANSPARENT, C.IVORY, 0, 2, 8)
+	var focus := _boite(Color.TRANSPARENT, C.IVORY, Charte.RAYON_PETIT, 2, 8, true)
 	for paire: Array in [["normal", normal], ["hover", survol], ["pressed", survol], ["disabled", normal], ["focus", focus]]: tuile.add_theme_stylebox_override(paire[0], paire[1])
 	var rangee := _h(8)
 	rangee.alignment = BoxContainer.ALIGNMENT_BEGIN
@@ -1652,14 +1658,14 @@ func _plan_de_jeu(colonne: VBoxContainer) -> void:
 		choix.add_theme_font_override("font", C.font(700))
 		choix.add_theme_font_size_override("font_size", fs(16))
 		# Un seul filet bas (charte §3) ; survol : filet ivoire ; focus : filet bas épais.
-		var normal := _boite(C.PANEL, C.LINE, 0, 1, 0)
+		var normal := _boite(C.PANEL, C.LINE, Charte.RAYON_PETIT, 1, 0, true)
 		normal.content_margin_left = px(10)
 		normal.content_margin_right = px(10)
 		normal.content_margin_top = px(5)
 		normal.content_margin_bottom = px(5)
 		var survol := normal.duplicate() as StyleBoxFlat
 		survol.border_color = C.IVORY
-		var focus := _boite(Color.TRANSPARENT, C.IVORY, 0, 2, 0)
+		var focus := _boite(Color.TRANSPARENT, C.IVORY, Charte.RAYON_PETIT, 2, 0, true)
 		for paire: Array in [["normal", normal], ["hover", survol], ["pressed", survol], ["disabled", normal], ["focus", focus]]: choix.add_theme_stylebox_override(paire[0], paire[1])
 		for cle: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: choix.add_theme_color_override(cle, C.IVORY)
 		_habiller_menu(choix.get_popup())
