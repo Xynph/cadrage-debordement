@@ -140,6 +140,7 @@ module.exports=function positionAptitudes(){
   const n=positionNumber(slot);
   return n<=3?(slot<15?baseSlot(p,slot):baseBench(p,slot-15)):true;
  }
+ const eligibleSlot=eligible;
  // Reserve a complete matching of the six designated front-row shirts before
  // greedy selection can use one of those specialists as an emergency back.
  function availablePool(team){
@@ -324,7 +325,10 @@ module.exports=function positionAptitudes(){
   function quotaPolish(slots,pool,byId,quota,used){
    const open=[];for(let k=3;k<slots.length;k++)if(k<15||k>=18)open.push(k);
    const weight=k=>k>=15?.5:1;
-   const value=(p,k)=>(rating(p,k)*(.5+p.condition*.005)+perceived(p,k<15?FAMILIES[k]:p.fam)-(rating(p,k)<40?1000:0))*weight(k);
+   // Valeurs et admissibilités calculées une fois par joueur et par place pour toute la retouche.
+   const memo=new Map(),okMemo=new Map();
+   const value=(p,k)=>{const key=p.id+'|'+k;let v=memo.get(key);if(v===undefined){const r=rating(p,k);v=(r*(.5+p.condition*.005)+perceived(p,k<15?FAMILIES[k]:p.fam)-(r<40?1000:0))*weight(k);memo.set(key,v);}return v;};
+   const eligible=(p,k)=>{const key=p.id+'|'+k;let v=okMemo.get(key);if(v===undefined){v=eligibleSlot(p,k);okMemo.set(key,v);}return v;};
    const free=pool.filter(p=>!p.injury).sort(compareId);
    let count=slots.filter(id=>id&&quota.yes(byId.get(id))).length;
    // Plancher : le nombre de qualifiés déjà retenu (jamais moins que le quota) ; la retouche ne rogne pas la marge.
