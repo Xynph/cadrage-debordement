@@ -163,10 +163,10 @@ static func proche_or(couleur: Color) -> bool:
 		if absf(couleur.r - o.r) < 0.03 and absf(couleur.g - o.g) < 0.03 and absf(couleur.b - o.b) < 0.03 and couleur.a > 0.0: return true
 	return false
 
-## Charte (art-bible §3, §4.2, §7) sur les contrôles visibles de la page : aucune couleur or (réservée à Continuer),
-## angles droits partout (seuls les disques des joueurs sur le terrain restent ronds), aucune ombre, aucun panneau
-## encadré sur ses quatre côtés, un seul bouton ivoire plein (« Valider et reprendre »), le lien « ← Retour au direct »
-## et des textes d'au moins 12 px.
+## Charte finale (art-bible §3, §4.3, §7.1, adoptée le 20/11/2026) sur les contrôles visibles de la page : un seul
+## aplat doré, « Valider et reprendre » (TeamResume), en pilule ; le doré reste permis en texte, en liseré et en anneau
+## de focus ; boutons arrondis (hors terrain) ; aucune ombre ; aucun panneau encadré sur ses quatre côtés (l'anneau de
+## focus excepté) ; le lien « ← Retour au direct » et des textes d'au moins 12 px.
 func controler_charte(contexte: String) -> void:
 	var terrain: Control = fenetre.find_child("TeamPitchField", true, false)
 	var ors: Array[String] = []
@@ -182,23 +182,27 @@ func controler_charte(contexte: String) -> void:
 			if not c.has_theme_stylebox_override(etat): continue
 			var s := c.get_theme_stylebox(etat) as StyleBoxFlat
 			if s == null: continue
-			if proche_or(s.bg_color) or (proche_or(s.border_color) and s.border_width_left + s.border_width_top + s.border_width_right + s.border_width_bottom > 0): ors.append("%s.%s" % [c.name, etat])
-			if not sur_terrain and (s.corner_radius_top_left > 0 or s.corner_radius_top_right > 0 or s.corner_radius_bottom_left > 0 or s.corner_radius_bottom_right > 0): arrondis.append("%s.%s" % [c.name, etat])
+			# Aplat doré : le fond au repos d'un contrôle (bouton ou panneau) ; le survol (OR_VIF) suit le même bouton.
+			if (etat == "normal" or etat == "panel") and proche_or(s.bg_color) and s.bg_color.a > 0.5: ors.append(str(c.name))
+			# Bouton arrondi : tout bouton qui dessine un fond ou un contour au repos, hors terrain.
+			if etat == "normal" and c is BaseButton and not sur_terrain and (s.bg_color.a > 0.0 or s.border_width_left + s.border_width_top + s.border_width_right + s.border_width_bottom > 0) 					and mini(mini(s.corner_radius_top_left, s.corner_radius_top_right), mini(s.corner_radius_bottom_left, s.corner_radius_bottom_right)) <= 0:
+				arrondis.append(str(c.name))
 			if s.shadow_size > 0: ombres.append("%s.%s" % [c.name, etat])
-			# Aucun cadre complet, quel que soit l'état (panneaux, tuiles, crans, focus, éteint) : au plus un filet.
-			if s.border_width_left > 0 and s.border_width_top > 0 and s.border_width_right > 0 and s.border_width_bottom > 0: cadres.append("%s.%s" % [c.name, etat])
+			# Aucun cadre complet (panneaux, tuiles, crans, éteint) : au plus un filet ; l'anneau de focus doré est la règle.
+			if etat != "focus" and s.border_width_left > 0 and s.border_width_top > 0 and s.border_width_right > 0 and s.border_width_bottom > 0: cadres.append("%s.%s" % [c.name, etat])
 			# Un fond de bouton clair (ivoire ou proche) se lit comme un second bouton principal.
 			if etat == "normal" and c is BaseButton and s.bg_color.a > 0.99 and (s.bg_color.is_equal_approx(Charte.IVOIRE) or s.bg_color.get_luminance() > 0.5): pleins.append(str(c.name))
-		for cle: String in COULEURS_POLICE:
-			if c.has_theme_color_override(cle) and proche_or(c.get_theme_color(cle)): ors.append("%s.%s" % [c.name, cle])
 		if c is Label or c is Button:
 			if c.has_theme_font_size_override("font_size") and c.get_theme_font_size("font_size") < 12: petits.append("%s (%d)" % [c.name, c.get_theme_font_size("font_size")])
-	verifier(ors.is_empty(), contexte + " : aucune couleur or dans la page (%s)" % str(ors.slice(0, 6)))
-	verifier(arrondis.is_empty(), contexte + " : angles droits hors terrain (%s)" % str(arrondis.slice(0, 6)))
+	verifier(ors == ["TeamResume"], contexte + " : un seul aplat doré, « Valider et reprendre » (%s)" % str(ors.slice(0, 6)))
+	var reprendre: Button = fenetre.find_child("TeamResume", true, false)
+	var style_reprendre := reprendre.get_theme_stylebox("normal") as StyleBoxFlat if reprendre != null else null
+	verifier(style_reprendre != null and style_reprendre.corner_radius_top_left >= reprendre.size.y * 0.5 - 1.0, contexte + " : « Valider et reprendre » en pilule")
+	verifier(arrondis.is_empty(), contexte + " : boutons arrondis hors terrain (%s)" % str(arrondis.slice(0, 6)))
 	verifier(ombres.is_empty(), contexte + " : aucune ombre (%s)" % str(ombres.slice(0, 6)))
 	verifier(cadres.is_empty(), contexte + " : aucun panneau encadré sur ses quatre côtés (%s)" % str(cadres.slice(0, 6)))
 	verifier(petits.is_empty(), contexte + " : textes d'au moins 12 px (%s)" % str(petits.slice(0, 6)))
-	verifier(pleins == ["TeamResume"], contexte + " : un seul bouton ivoire plein, « Valider et reprendre » (%s)" % str(pleins))
+	verifier(pleins == ["TeamResume"], contexte + " : un seul bouton en aplat clair, « Valider et reprendre » (%s)" % str(pleins))
 	var retour: Button = fenetre.find_child("TeamBackToLive", true, false)
 	verifier(retour != null and retour.is_visible_in_tree() and retour.text == "← Retour au direct" and retour.has_meta("lien"), contexte + " : lien « ← Retour au direct » en tête de page")
 	var choisis := fenetre.find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return b.is_visible_in_tree() and bool(b.get_meta("coche", false)))
@@ -213,7 +217,7 @@ func controler_charte(contexte: String) -> void:
 	# Menus déroulants du plan de jeu : fond PANNEAU, angles droits, sans ombre.
 	for choix: OptionButton in fenetre.find_children("*", "OptionButton", true, false):
 		var fond := choix.get_popup().get_theme_stylebox("panel") as StyleBoxFlat
-		verifier(fond != null and fond.bg_color.is_equal_approx(Charte.PANNEAU) and fond.shadow_size == 0 and fond.corner_radius_top_left == 0, contexte + " : menu de « %s » habillé (PANNEAU, rayon 0, sans ombre)" % choix.name)
+		verifier(fond != null and fond.bg_color.is_equal_approx(Charte.PANNEAU) and fond.shadow_size == 0, contexte + " : menu de « %s » habillé (PANNEAU, sans ombre)" % choix.name)
 	verifier(fenetre.name == "MatchTeamPage", contexte + " : calque nommé MatchTeamPage (%s)" % fenetre.name)
 
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
