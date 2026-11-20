@@ -520,6 +520,15 @@ func _bouton(texte: String, action: Callable, actif: bool = true, principal: boo
 func _habiller(bouton: Control, principal: bool = false) -> void:
 	if principal:
 		C.style_bouton_ivoire_plein(bouton as BaseButton)
+		# Bouton éteint : un filet bas au lieu du cadre complet du composant commun (charte §3).
+		var eteint := bouton.get_theme_stylebox("disabled") as StyleBoxFlat
+		if eteint != null and eteint.border_width_left > 0 and eteint.border_width_top > 0:
+			eteint = eteint.duplicate()
+			eteint.border_width_left = 0
+			eteint.border_width_right = 0
+			eteint.border_width_top = 0
+			eteint.border_width_bottom = maxi(1, eteint.border_width_bottom)
+			bouton.add_theme_stylebox_override("disabled", eteint)
 		bouton.add_theme_font_size_override("font_size", fpx(22))
 		bouton.custom_minimum_size.y = maxi(26, px(46))
 		return

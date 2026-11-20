@@ -294,6 +294,8 @@ func run() -> void:
 		# Jamais de cadre complet (charte §3) : aucun style à quatre filets, quel que soit l'état (arrêt et option retenue compris).
 		var cadres: Array = []
 		for noeud: Node in ecran.find_children("*", "Control", true, false):
+			# Nœuds internes du moteur (« _focus » des défilements : anneau de focus clavier) : hors de l'écran dessiné.
+			if str(noeud.name).begins_with("_"): continue
 			for etat_style in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed", "panel"]:
 				var s := (noeud as Control).get_theme_stylebox(etat_style) as StyleBoxFlat if (noeud as Control).has_theme_stylebox_override(etat_style) else null
 				if s != null and s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0: cadres.append("%s:%s" % [noeud.name, etat_style])

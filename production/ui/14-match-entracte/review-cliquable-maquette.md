@@ -127,3 +127,11 @@ Aucune `Window`, `AcceptDialog`, `ConfirmationDialog`, `PopupPanel` ni `FileDial
 - Fatigue : la teinte de l'énergie n'est portée que par le filet bas du portrait et la barre, le pourcentage est écrit, bien.
 - Terrain : numéro de badge dessiné dans un cercle (disque admis).
 - Les couleurs vert pelouse du terrain (`1d4631`, `214e37`, `53625e`) sont codées en dur dans `match_equipe.gd:774-785` ; les passer par la charte.
+### Suivi de la relecture adverse du 20/11 après-midi
+- BLOQUANTS page Équipe : noms des médaillons, du banc, des blocs Fatigue et du conseil de Gabi en liens. Survol : mini-fiche. Clic : fiche complète en page du direct (« ← Retour au direct », la page Équipe retrouvée dessous). Les clics sur médaillon et tuile gardent leur action, et le bloc Fatigue ouvre la fiche. Corrigé.
+- BLOQUANT pastilles du terrain 2D : survol = mini-fiche (déjà branché via `pastille_survolee`) ; clic sur un des nôtres = fiche complète (« ← Retour au direct »), sa ligne garde le focus. Corrigé.
+- 6 Panneau d'arrêt : « i » à droite de chaque option, vers la fiche complète ; le clic sur la ligne reste le choix. Corrigé.
+- 7-8 Cadres : segments, options d'arrêt, carte « change » du multiplex, marque de la légende adverse, bouton éteint, tuiles et menus de la page Équipe : filet unique, choix = filet gauche épais + coche ; commentaire de `_boite` corrigé. Le test vérifie l'absence de style à quatre filets. Corrigé.
+- 9 Menus déroulants (Plus, Réglages 3D, plan de jeu) : fond panneau, rayon 0, sans ombre. Corrigé.
+- 10 Capture : le choix courant (onglet, crans) est sur fond sombre relevé + filet gauche + coche, jamais lu comme un 2e ivoire plein. Vérifié.
+- 11 `MatchTeamWindow` → `MatchTeamPage`. 12 Pelouse via `Charte.PELOUSE*`. Corrigés.
