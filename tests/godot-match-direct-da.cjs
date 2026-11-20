@@ -1,7 +1,7 @@
 'use strict';
 // Écran 13 « Match en direct » (charte finale du 20/11/2026) dans le vrai jeu, avec le vrai moteur : bandeau du
 // score en haut à gauche (panneau 90 % rayon 18, couleur des clubs sur l'écusson seul, score 40 px), commandes
-// en pilule à droite, journal de deux lignes, bannière d'essai sur panneau avec le liseré du club, menu du match
+// en pilule à droite, journal de deux lignes, bannière d'essai à la couleur du club qui marque, menu du match
 // par Échap ; tout ce qui a l'air cliquable ouvre quelque chose, aucune fenêtre hors exceptions, un seul aplat doré.
 // Carrière Monde préparée ici ; ignoré sans SDK.
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), assert = require('node:assert/strict');

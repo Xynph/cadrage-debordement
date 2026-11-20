@@ -1,7 +1,7 @@
 extends SceneTree
 ## Écran 13 « Match en direct » dans le vrai jeu (godot-match-direct-da.cjs prépare la carrière Monde).
 ## Décisions contrôlées (charte finale du 20/11/2026) : bandeau du score sur panneau rayon 18, couleur des clubs sur
-## l'écusson seul, bannière d'essai sur panneau avec le liseré du club, menu du match par Échap (seule fenêtre
+## l'écusson seul, bannière d'essai en aplat à la couleur du club qui marque (exception de Léo), menu du match par Échap (seule fenêtre
 ## permise), plaques → fiche du club sans casser le match, noms de nos joueurs liés dans le journal, un seul aplat
 ## doré (« Valider la journée »), aucune fenêtre ouverte par un clic.
 const Charte = preload("res://ui/charte.gd")
@@ -452,20 +452,22 @@ func run() -> void:
 		if p.get_signal_connection_list("gui_input").is_empty() or p.mouse_filter != Control.MOUSE_FILTER_STOP: muets.append(str(p.name))
 	check(muets.is_empty(), "Aucune commande muette : " + str(muets))
 
-	# 8. Bannière d'essai : panneau rayon 18, liseré à la couleur du club qui marque (jamais en fond), « +5 » et le
-	# score, 600 ms d'animation, sans or.
+	# 8. Bannière d'essai : aplat à la couleur du club qui marque (exception de Léo du 20/11/2026), assombri pour la
+	# crème, jamais l'or (club jaune : bordeaux de la charte) ; « +5 » et le score, 600 ms d'animation.
 	var cadre: PanelContainer = Regie.construire_bandeau()
 	root.add_child(cadre)
 	var rouge := Color("b0302a")
 	Regie.habiller_bandeau(cadre, "ESSAI", "Ethan Amos", "Alder Fen XV · 52e minute", 1080.0, rouge, "+5\n15 – 7")
 	cadre.show()
 	await settle(2)
-	check((cadre.get("fond") as Color) == Charte.PANNEAU and Charte.contraste(Charte.IVOIRE, cadre.get("fond")) >= 4.5, "Bannière sur panneau, crème lisible")
-	check((cadre.get("lisere") as Color).is_equal_approx(Charte.club_trait(rouge)) and Charte.contraste(cadre.get("lisere"), Charte.PANNEAU) >= 3.0, "Bannière : liseré à la couleur du club qui marque (3:1 au moins)")
-	check((cadre.find_child("MatchMomentPoints", true, false) as Label).text.begins_with("+5") and ors(cadre).is_empty(), "Points et score, aucun or")
+	var fond_essai := cadre.get("fond") as Color
+	check(fond_essai.is_equal_approx(Regie.fond_bandeau(rouge)) and absf(fond_essai.h - rouge.h) < 0.02 and Charte.contraste(Charte.IVOIRE, fond_essai) >= 4.5, "Bannière à la couleur du club qui marque, crème lisible (4,5:1 au moins)")
+	var fond_jaune := Regie.fond_bandeau(Color("e8c03a"))
+	check(not dore(fond_jaune) and Charte.contraste(Charte.IVOIRE, fond_jaune) >= 4.5, "Club jaune : la bannière ne prend jamais l'or")
+	check((cadre.find_child("MatchMomentPoints", true, false) as Label).text.begins_with("+5") and ors(cadre).is_empty() and not dore(fond_essai), "Points et score, aucun or")
 	check(is_equal_approx(Regie.BANDEAU_ENTREE + Regie.BANDEAU_FONDU, 0.6), "600 ms d'animation au total")
 	Regie.habiller_bandeau(cadre, "MI-TEMPS", "A   3 — 0   B", "", 1080.0)
-	check((cadre.get("fond") as Color) == Charte.PANNEAU and (cadre.get("lisere") as Color).a == 0.0, "Mi-temps : bannière sur panneau, sans liseré de club")
+	check((cadre.get("fond") as Color) == Charte.PANNEAU, "Mi-temps : bannière sur panneau, sans couleur de club")
 	cadre.queue_free()
 
 	# Captures : un moment de jeu ordinaire, puis la bannière d'essai si un essai passe.

@@ -1867,22 +1867,17 @@ func _ligne_score() -> String:
 	if _teams.size() < 2 or marque.size() < 2 or not _teams[0] is Dictionary or not _teams[1] is Dictionary: return ""
 	return "%s   %d — %d   %s" % [S.G.club_name(_teams[0]), int(marque[0]), int(marque[1]), S.G.club_name(_teams[1])]
 
-## Cadre de la bannière (charte finale §3, §4.3) : panneau `PANNEAU` à 90 %, rayon 18, sans bordure ni ombre ;
-## pour un essai, liseré gauche de 4 px à la couleur du club qui marque (la couleur du club ne va jamais au fond).
+## Cadre de la bannière (charte finale §3, §4.3) : rayon 18, sans bordure ni ombre ; pour un essai, aplat plein à la
+## couleur du club qui marque (exception de Léo du 20/11/2026) ; mi-temps et fin : panneau `PANNEAU` à 90 %.
 ## Nom historique gardé (les recettes et le match filmé le lisent) : le cadre est droit.
 class CadreIncline extends PanelContainer:
 	var fond := Charte.PANNEAU
-	var lisere := Color.TRANSPARENT
 	func _draw() -> void:
-		var style := Charte.style_panneau(Color(fond, 0.9), Charte.RAYON_PANNEAU, 0)
-		if lisere.a > 0.0:
-			style.border_color = lisere
-			style.border_width_left = 4
-		draw_style_box(style, Rect2(Vector2.ZERO, size))
+		draw_style_box(Charte.style_panneau(Color(fond, 0.9 if fond == Charte.PANNEAU else 1.0), Charte.RAYON_PANNEAU, 0), Rect2(Vector2.ZERO, size))
 
-## Bannière des grands moments, façon retransmission (charte finale §7) : « ESSAI » sur panneau avec le liseré
-## du club qui marque, filet, le marqueur et « club · minute », puis les points et le score à droite ;
-## « MI-TEMPS » et « FIN DU MATCH » sur panneau sans liseré. Une seule bannière à la fois, texte crème, aucun
+## Bannière des grands moments, façon retransmission (charte finale §7) : « ESSAI » en aplat à la couleur du club
+## qui marque (exception de Léo du 20/11/2026), filet, le marqueur et « club · minute », puis les points et le score à droite ;
+## « MI-TEMPS » et « FIN DU MATCH » sur panneau. Une seule bannière à la fois, texte crème, aucun
 ## aplat doré. Ne capte jamais la souris.
 static func construire_bandeau() -> PanelContainer:
 	var cadre := CadreIncline.new()
@@ -1949,14 +1944,13 @@ static func construire_bandeau() -> PanelContainer:
 static func tailles_bandeau(hauteur: float) -> Dictionary:
 	return {"titre": clampi(roundi(hauteur * 0.045), 30, 72), "nom": clampi(roundi(hauteur * 0.024), 18, 40), "equipe": clampi(roundi(hauteur * 0.0185), 14, 30)}
 
-## Fond de la bannière : toujours le panneau (charte finale : couleurs de club sur écusson, maillot, liseré).
-static func fond_bandeau(_couleur: Color = Color.TRANSPARENT) -> Color:
-	return Charte.PANNEAU
-
-## Liseré de la bannière : la couleur du club qui marque, lisible sur le panneau (≥ 3:1, jamais l'or : un club
-## jaune ou or passe à la crème) ; sans club (mi-temps, fin) : aucun liseré.
-static func lisere_bandeau(couleur: Color) -> Color:
-	return Color.TRANSPARENT if couleur.a <= 0.0 else Charte.club_trait(couleur)
+## Fond de la bannière : le panneau, sauf pour un essai (exception de Léo du 20/11/2026, art-bible §4.3).
+static func fond_bandeau(couleur: Color = Color.TRANSPARENT) -> Color:
+	# Essai : la couleur du club qui marque, assombrie pour la crème (≥ 4,6:1) ; un club jaune ou or ne prend
+	# jamais l'or (il passe au bordeaux de la charte).
+	if couleur.a <= 0.0: return Charte.PANNEAU
+	var base := Charte.CLUB if Charte._proche_de_l_or(couleur) else Color(couleur, 1.0)
+	return C08.readable_primary_fill(base)
 
 static func habiller_bandeau(cadre: PanelContainer, titre: String, nom: String, equipe: String, hauteur: float, couleur: Color = Color.TRANSPARENT, points: String = "") -> void:
 	var tailles := tailles_bandeau(hauteur)
@@ -1975,11 +1969,10 @@ static func habiller_bandeau(cadre: PanelContainer, titre: String, nom: String, 
 	if filet != null: filet.visible = reste
 	if cadre is CadreIncline:
 		(cadre as CadreIncline).fond = fond_bandeau(couleur)
-		(cadre as CadreIncline).lisere = lisere_bandeau(couleur)
 		cadre.queue_redraw()
 	var marges: StyleBox = cadre.get_theme_stylebox("panel")
 	if marges != null:
-		marges.content_margin_left = roundi(hauteur * 0.0185) + 4
+		marges.content_margin_left = roundi(hauteur * 0.0185)
 		marges.content_margin_right = roundi(hauteur * 0.0222)
 	cadre.reset_size()
 
@@ -1990,8 +1983,7 @@ func bandeau_affiche() -> Dictionary:
 		var ligne: Label = bandeau.find_child(n, true, false)
 		return ligne.text if ligne != null and ligne.visible else ""
 	return {"visible": bandeau.visible, "titre": lire.call("MatchMomentTitre"), "nom": lire.call("MatchMomentNom"), "equipe": lire.call("MatchMomentEquipe"),
-		"points": lire.call("MatchMomentPoints"), "fond": (bandeau as CadreIncline).fond if bandeau is CadreIncline else Color.TRANSPARENT,
-		"lisere": (bandeau as CadreIncline).lisere if bandeau is CadreIncline else Color.TRANSPARENT}
+		"points": lire.call("MatchMomentPoints"), "fond": (bandeau as CadreIncline).fond if bandeau is CadreIncline else Color.TRANSPARENT}
 
 func montrer_bandeau(titre: String, nom: String, equipe: String, duree: float, couleur: Color = Color.TRANSPARENT, points: String = "") -> void:
 	if bandeau == null or view == null: return

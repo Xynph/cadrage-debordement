@@ -162,6 +162,7 @@ func _ready() -> void:
 		bande_temps_forts.alignment = BoxContainer.ALIGNMENT_END
 		bande_temps_forts.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		C.fill(bande_temps_forts)
+		bande_temps_forts.draw.connect(_fond_bande)
 		haut.add_child(bande_temps_forts)
 	else:
 		var vide := Control.new()
@@ -320,6 +321,50 @@ func _habiller_bouton_hud(bouton: Button) -> void:
 		bouton.add_theme_stylebox_override(etat, style)
 	bouton.custom_minimum_size = Vector2(0, roundf(40 * echelle))
 	_placer_puce(bouton)
+
+## Fond de la bande des commandes (phrase d'état, Équipe, Réglages, Plus), dans la continuité du bandeau du score :
+## le même panneau à 90 %, rayon 18, à la même hauteur, derrière la phrase (à sa largeur de texte) et derrière le
+## groupe des commandes. Sur la 3D, rien de la barre du haut ne reste posé à nu sur l'image.
+func _fond_bande() -> void:
+	var bande := bande_temps_forts
+	if bande == null or not is_instance_valid(_coque_score): return
+	var hauteur := maxf(_coque_score.size.y, bande.size.y)
+	var haut := roundf((bande.size.y - hauteur) * 0.5)
+	var marge := roundf(14 * echelle)
+	var style := Charte.style_panneau(BandeauAngle.FOND, Charte.RAYON_PANNEAU, 0)
+	var groupe := Rect2()
+	for enfant in bande.get_children():
+		var c := enfant as Control
+		if c == null or not c.visible: continue
+		if c is Label and c.size_flags_horizontal & Control.SIZE_EXPAND:
+			var texte := (c as Label).text.strip_edges()
+			if texte.is_empty(): continue
+			var largeur := c.get_theme_font("font").get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, c.get_theme_font_size("font_size")).x + 2.0 * marge
+			bande.draw_style_box(style, Rect2(c.position.x, haut, minf(c.size.x, largeur), hauteur))
+			continue
+		var r := Rect2(c.position, c.size)
+		groupe = r if groupe.size == Vector2.ZERO else groupe.merge(r)
+	if groupe.size != Vector2.ZERO:
+		bande.draw_style_box(style, Rect2(groupe.position.x - marge, haut, groupe.size.x + 2.0 * marge, hauteur))
+
+## Redessine le fond de la bande quand ce qu'elle montre change (texte de la phrase, commandes visibles, taille).
+var _cle_bande := ""
+func _suivre_fond_bande() -> void:
+	if bande_temps_forts == null or not bande_temps_forts.visible: return
+	var cle := str(bande_temps_forts.size)
+	for enfant in bande_temps_forts.get_children():
+		var c := enfant as Control
+		if c == null: continue
+		# La phrase garde une marge intérieure : son texte ne touche pas le bord de son fond.
+		if c is Label and c.size_flags_horizontal & Control.SIZE_EXPAND and not c.has_theme_stylebox_override("normal"):
+			var retrait := StyleBoxEmpty.new()
+			retrait.content_margin_left = roundf(14 * echelle)
+			retrait.content_margin_right = roundf(14 * echelle)
+			c.add_theme_stylebox_override("normal", retrait)
+		cle += "|%s%s%s" % [c.visible, c.position, (c as Label).text if c is Label else ""]
+	if cle == _cle_bande: return
+	_cle_bande = cle
+	bande_temps_forts.queue_redraw()
 
 ## Bandeau d'angle : [horloge / période] [plaque du club recevant] [score] [plaque du visiteur ⟋].
 func _construire_bandeau(parent: Control) -> void:
@@ -694,6 +739,7 @@ func _etat_bandeau() -> Dictionary:
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(play) or not is_instance_valid(_coque_score): return
+	_suivre_fond_bande()
 	var etat := _etat_bandeau()
 	_poser_pause(etat)
 	if bool(etat.compact) != compact: _appliquer_bandeau(bool(etat.compact))
