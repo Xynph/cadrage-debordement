@@ -22,7 +22,9 @@ func run() -> void:
 	data.enabled=true
 	var person: Dictionary={"id":"staff:test","name":"Entraîneur témoin","role":"coach","roleLabel":"Entraîneur","age":50,"canHire":true,"minYears":1,"maxYears":3}
 	data.candidates=[{"id":"staff:test","salary":500,"employed":false}]
-	Career._contract(app,person,{"context":data.context},false)
+	# Le contrat est une sous-page du Staff depuis le 19/11/2026 (jamais de fenêtre) : on construit la page elle-même.
+	var page:=VBoxContainer.new();app.add_child(page)
+	Career.contrat_page(app,page,person,{"context":data.context},false,func(): pass)
 	var cost: Label=app.find_child("StaffEmploymentCommitment",true,false);assert(cost!=null and cost.text.contains("14"))
 	var confirm: Button=app.find_child("StaffContractConfirm",true,false);confirm.pressed.emit()
 	assert(app.last_command=="staff_employment_hire" and app.last_payload.salary==500 and app.last_payload.years==1)
