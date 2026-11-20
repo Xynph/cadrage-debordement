@@ -165,10 +165,12 @@ static func _affiche(_app: Control, _club: Dictionary, _meta: Dictionary, nom_je
 	colonne.add_child(suite)
 	return colonne
 
-static func _plat(couleur: Color, marge: int) -> StyleBoxFlat:
+## `rayon` en référence 2560 (24 → 18 px à 1920, 16 → 12 px) ; Charte.RAYON_PILULE reste une pilule.
+static func _plat(couleur: Color, marge: int, rayon: int = 0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = couleur
-	style.set_corner_radius_all(0)
+	style.anti_aliasing = true
+	style.set_corner_radius_all(rayon if rayon >= Charte.RAYON_PILULE else maxi(0, C.px(rayon)))
 	style.set_border_width_all(0)
 	for bord in ["left", "right", "top", "bottom"]: style.set("content_margin_" + bord, C.px(marge))
 	return style
@@ -176,7 +178,7 @@ static func _plat(couleur: Color, marge: int) -> StyleBoxFlat:
 static func _carnet(app: Control, club: Dictionary, meta: Dictionary) -> Control:
 	var carte := PanelContainer.new()
 	carte.name = "EntryCareerCard"
-	carte.add_theme_stylebox_override("panel", _plat(Charte.PANNEAU, 34))
+	carte.add_theme_stylebox_override("panel", _plat(Charte.PANNEAU, 34, 24))
 	carte.set_meta("immersive_style_applied", true)
 	var pile := C.v(14)
 	carte.add_child(pile)
@@ -270,7 +272,7 @@ static func _identite(app: Control, club: Dictionary, meta: Dictionary) -> Contr
 	var equipe: Dictionary = app.Immersive.Selections.managed_team(app.model)
 	var bloc := PanelContainer.new()
 	bloc.name = "EntryIdentity"
-	bloc.add_theme_stylebox_override("panel", _plat(Charte.PANNEAU_2, 18))
+	bloc.add_theme_stylebox_override("panel", _plat(Charte.PANNEAU_2, 18, 16))
 	var rangee := C.h(20)
 	bloc.add_child(rangee)
 	var marqueur := Marqueur.new()
@@ -369,12 +371,12 @@ static func _principal_or(texte: String, appel: Callable, nom: String) -> Button
 	bouton.custom_minimum_size.y = C.px(88)
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	for etat in ["normal", "hover", "pressed", "focus"]:
-		var style := _plat(Charte.OR_VIF if etat == "hover" else Charte.OR, 24)
+		var style := _plat(Charte.OR_VIF if etat == "hover" else Charte.OR, 24, Charte.RAYON_PILULE)
 		if etat == "focus":
 			style.border_color = Charte.IVOIRE
 			style.set_border_width_all(maxi(2, C.px(4)))
 		bouton.add_theme_stylebox_override(etat, style)
-	bouton.add_theme_stylebox_override("disabled", _plat(Charte.PANNEAU_3, 24))
+	bouton.add_theme_stylebox_override("disabled", _plat(Charte.PANNEAU_3, 24, Charte.RAYON_PILULE))
 	for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
 		bouton.add_theme_color_override(cle, Charte.NUIT)
 	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)

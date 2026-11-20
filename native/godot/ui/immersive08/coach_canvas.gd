@@ -195,10 +195,8 @@ func _build_adjoint() -> void:
 	_bulle.name = "GabiBulle"
 	_bulle.mouse_filter = Control.MOUSE_FILTER_STOP
 	var style := StyleBoxFlat.new()
-	style.bg_color = FOND
-	style.border_color = Color(C.GOLD, .75)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(10)
+	style.bg_color = Charte.PANNEAU_3
+	style.set_corner_radius_all(Charte.RAYON_CARTE)
 	style.shadow_color = Color(0, 0, 0, .45)
 	style.shadow_size = 10
 	style.shadow_offset = Vector2(0, 4)
@@ -1112,7 +1110,7 @@ func _ligne_carnet(parent: Control, pad: float, y: float, text_w: float, libelle
 class Carnet extends Control:
 	var pointe_x := 0.0
 	func _draw() -> void:
-		draw_rect(Rect2(Vector2.ZERO, size), Color("171512"))
+		draw_rect(Rect2(Vector2.ZERO, size), Charte.PANNEAU_2)
 	func _notification(what: int) -> void:
 		if what == NOTIFICATION_RESIZED: queue_redraw()
 ## Ombre au sol sous les pieds de Gabi.

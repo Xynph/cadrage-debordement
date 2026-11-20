@@ -92,7 +92,7 @@ static func _construire(app: Control, page: Control) -> void:
 	var pas := 36.0
 	var ligne := func(titre_ligne: String, valeurs: Array, textes: Array, cle_meilleure: bool, nom: String) -> void:
 		var y: float = etat.y
-		if int(etat.rang) % 2 == 0: D.rect(contenu, Rect2(0, y, LARGEUR, pas), Color(Charte.PANNEAU_2, .6))
+		D.line(contenu, Vector2(0, y + pas - 1), Vector2(LARGEUR, y + pas - 1), Color(Charte.FILET, .6))
 		D.text(contenu, 16, y + 25, titre_ligne, 19, C.MUTED, 500, x0 - 30, HORIZONTAL_ALIGNMENT_LEFT, true)
 		var meilleure := -INF
 		var compte := 0
@@ -163,7 +163,6 @@ static func _construire(app: Control, page: Control) -> void:
 				txts.append(Attributs.caption(v))
 			ligne.call(str(paire[1]), vals, txts, true, "Attribut_" + str(paire[0]))
 	contenu.custom_minimum_size = Vector2(C.px(LARGEUR), C.px(float(etat.y) + 20.0))
-	Kit.angles_droits(page)
 
 static func _entete(app: Control, page: Control, i: int, x: float, largeur: float, joueur: Dictionary, reserve: Array, propres: Array) -> void:
 	var choix := OptionButton.new()
@@ -181,8 +180,8 @@ static func _entete(app: Control, page: Control, i: int, x: float, largeur: floa
 		style.bg_color = Charte.PANNEAU_2 if etat != "hover" else Charte.PANNEAU_3
 		style.border_color = Charte.IVOIRE if etat == "focus" else Charte.FILET
 		style.set_border_width_all(1)
-		style.set_corner_radius_all(0)
-		style.content_margin_left = C.px(12)
+		style.set_corner_radius_all(Charte.RAYON_PILULE)
+		style.content_margin_left = C.px(18)
 		style.content_margin_right = C.px(12)
 		choix.add_theme_stylebox_override(etat, style)
 	var vide := joueur.is_empty()
@@ -216,7 +215,7 @@ static func _entete(app: Control, page: Control, i: int, x: float, largeur: floa
 			style.bg_color = Color(Charte.PANNEAU, 1.0) if etat == "normal" else Charte.PANNEAU_2
 			style.border_color = Charte.IVOIRE if etat == "focus" else Charte.FILET
 			style.set_border_width_all(1)
-			style.set_corner_radius_all(0)
+			style.set_corner_radius_all(C.px(16))
 			style.content_margin_left = C.px(16)
 			emplacement.add_theme_stylebox_override(etat, style)
 		emplacement.pressed.connect(func(): choix.show_popup())

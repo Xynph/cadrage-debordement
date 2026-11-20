@@ -119,7 +119,6 @@ func _construire() -> void:
 		for box in choices: box.disabled = true
 		result.text = "Vérification du brouillon…"
 	if verify.disabled: result.text = "La référence 2026/27 ne permet pas de vérifier cette saison."
-	Kit.angles_droits(self)
 
 func _ids() -> Array:
 	var ids: Array = []

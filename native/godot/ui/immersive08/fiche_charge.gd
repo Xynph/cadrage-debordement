@@ -37,7 +37,7 @@ static func build(app: Control, page: Control, player: Dictionary) -> void:
 	Kit.touche(page, retour.size.x / C.density + 10, 32, "Échap")
 	Kit.titre(page, 0, 98, "Charge individuelle · " + Kit.casse(str(player.get("name", ""))), 38, 1600).name = "IndividualInstructions"
 	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
-	var bloc := D.rect(page, Rect2(0, 146, 1300, 520), Charte.PANNEAU, 0)
+	var bloc := D.rect(page, Rect2(0, 146, 1300, 520), Charte.PANNEAU, 24)
 	bloc.name = "FicheChargePage"
 	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
 	var resume := "%s · condition %s %% · charge %s / 100" % [str(player.get("pos", "")), G.n(player.get("condition", 0)), G.n(player.get("physicalLoad", 0))]
@@ -52,10 +52,11 @@ static func build(app: Control, page: Control, player: Dictionary) -> void:
 		var choisi := actuel == str(mode[0])
 		var ligne := Button.new()
 		ligne.name = "IndividualLoad_" + str(mode[0])
-		Kit.styler_ligne(ligne, Charte.PANNEAU_2 if i % 2 == 1 else Charte.PANNEAU, choisi)
+		Kit.styler_ligne(ligne, Color.TRANSPARENT, choisi, Charte.SELECTION)
 		bloc.add_child(ligne)
 		D.place(ligne, Rect2(20, 116 + i * 56, 1260, 52))
-		if choisi: Kit.marqueur(ligne, Rect2(2, 8, 4, 36))
+		D.line(ligne, Vector2(0, 51), Vector2(1260, 51), Charte.FILET)
+		if choisi: Kit.marqueur(ligne, Rect2(6, 8, 4, 36))
 		D.text(ligne, 22, 33, str(mode[1]), 20, Charte.IVOIRE, 700, 340, HORIZONTAL_ALIGNMENT_LEFT, true).add_theme_font_override("font", Kit.texte_gras())
 		Kit.texte(ligne, 380, 33, str(mode[2]), Charte.IVOIRE_2, 720, 18)
 		Kit.texte(ligne, 1240, 33, "actuel" if choisi else "Choisir →", Charte.IVOIRE if choisi else Charte.IVOIRE, 160, 18, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -64,4 +65,3 @@ static func build(app: Control, page: Control, player: Dictionary) -> void:
 		ligne.accessibility_name = "%s · %s%s" % [mode[1], mode[2], " · actuel" if choisi else ""]
 		var cle := str(mode[0])
 		ligne.pressed.connect(func(): app._command("set_player_load", {"playerId":player.id, "mode":cle}))
-	Kit.angles_droits(page)

@@ -341,7 +341,7 @@ static func _face_a_face(card: Control, app: Control, home: Dictionary, away: Di
 	for i in lignes.size():
 		var ligne: Array = lignes[i]
 		var y := zone.position.y + 28 + i * 38
-		if i % 2 == 0: D.rect(card, Rect2(zone.position.x - 8, y, l + 16, 36), Color(Charte.PANNEAU_2, .8))
+		if i > 0: D.line(card, Vector2(zone.position.x - 8, y), Vector2(zone.position.x + l + 8, y), Charte.FILET)
 		# La ligne « Classement » ouvre le classement complet ; les autres lignes sont des chiffres lus.
 		if str(ligne[0]) == "Classement":
 			var vers := _zone(card, Rect2(zone.position.x - 8, y, l + 16, 36), "", func(): Office.open_current_standings(app), "OfficeFaceClassement", 20)
@@ -591,7 +591,8 @@ static func _standings(card: Panel, app: Control, w: int = 1100) -> void:
 		var y := 100 + i * stride
 		var own: bool = club.get("id") == app.model.club.id
 		var box := Rect2(16, y, w - 32, stride)
-		if own: D.rect(card, box, Charte.PANNEAU_2)
+		if i > 0 and not own and not (i > 0 and rows[i - 1].get("id") == app.model.club.id): D.line(card, Vector2(16, y), Vector2(w - 16, y), Charte.FILET)
+		if own: D.rect(card, box, Charte.SELECTION, 8)  # 8 en référence 2560 = 6 px à 1920
 		var hit := Office.standing_action(app, club)
 		card.add_child(hit)
 		D.place(hit, box)
@@ -734,7 +735,7 @@ static func _journal(card: Panel, app: Control, w: int = 1132) -> void:
 		var message := Copy.news(str(messages[i])).replace("l’onglet Contrats", "les fiches joueurs")
 		var titre := message.get_slice("\n", 0).get_slice(". ", 0).strip_edges()
 		if titre.length() > 92: titre = titre.left(89).strip_edges() + "…"
-		if i % 2 == 0: D.rect(card, Rect2(16, y, w - 32, 44), Color(Charte.PANNEAU_2, .8))
+		if i > 0: D.line(card, Vector2(16, y), Vector2(w - 16, y), Charte.FILET)
 		var ligne := _zone(card, Rect2(16, y, w - 32, 44), "", open_message.bind(app, ids[i]), "OfficeJournalMessage" + str(i + 1), 21)
 		ligne.tooltip_text = "Ouvrir la lettre · " + titre
 		ligne.accessibility_name = ligne.tooltip_text
@@ -848,7 +849,7 @@ static func _timeline(card: Panel, app: Control, _recent: Variant, w: int = GABI
 		var lieu := P.fixture_location_kind(fixture, app.model.club.id)
 		var mot: String = {"neutral": "Neutre", "home": "Domicile", "away": "Extérieur"}.get(lieu, "Terrain à confirmer")
 		var cle := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
-		if i % 2 == 1: D.rect(card, Rect2(12, y, w - 24, 40), Color(Charte.PANNEAU_2, .8))
+		if i > 0: D.line(card, Vector2(12, y), Vector2(w - 12, y), Charte.FILET)
 		var cible := {"kind": "date", "id": fixture.get("date")}
 		var ligne: Callable = func():
 			if i == 0 and app.model.get("next") is Dictionary and not app.model.next.is_empty(): app._navigate("Préparation")

@@ -92,7 +92,6 @@ func _build() -> void:
 	var sous := Pages.actuelle(app)
 	if not sous.is_empty():
 		Pages.build(app, self, sous)
-		Kit.angles_droits(self)
 		return
 	active_tab = clampi(int(state.get("tab", 0)), 0, TABS.size() - 1)
 	var group := str(state.get("group", "u21"))
@@ -117,7 +116,6 @@ func _build() -> void:
 			_pied(group)
 		2: _pathways()
 		3: _staff_page()
-	Kit.angles_droits(self)
 
 # --- En-tête, compteurs, onglets ---------------------------------------------------------------------------------------
 
@@ -156,16 +154,16 @@ func _tuile(x: float, largeur: float, etiquette: String, valeur: String, suite: 
 	tuile.focus_mode = Control.FOCUS_ALL
 	tuile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	tuile.accessibility_name = "%s : %s, %s" % [etiquette.capitalize(), valeur, suite]
-	tuile.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU, Color.TRANSPARENT, 0, 0))
-	tuile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-	tuile.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	tuile.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU, Color.TRANSPARENT, 16, 0))
+	tuile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 16, 0))
+	tuile.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 16, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 16, 0)
 	focus.set_border_width_all(2)
 	tuile.add_theme_stylebox_override("focus", focus)
 	tuile.pressed.connect(action)
 	add_child(tuile)
 	D.place(tuile, Rect2(x, 6, largeur, 116))
-	if marque: Kit.marqueur(tuile, Rect2(0, 0, 8, 116))
+	if marque: Kit.marqueur(tuile, Rect2(12, 22, 6, 72))
 	var gauche := 34 if marque else 16
 	D.text(tuile, gauche, 36, etiquette, 16, Charte.IVOIRE_2, 700, largeur - 30)
 	var nombre := D.text(tuile, gauche, 84, valeur, 46, Charte.IVOIRE, 800, largeur - 30)
@@ -191,15 +189,14 @@ func _tabs() -> void:
 		bouton.text = libelle
 		bouton.focus_mode = Control.FOCUS_ALL
 		bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		# Charte §7.1 : onglet en pilule ; actif = aplat crème, texte PANNEAU.
 		bouton.add_theme_font_override("font", Charte.TITRE_GRAS if choisi else Charte.TITRE)
 		bouton.add_theme_font_size_override("font_size", maxi(12, C.px(21)))
-		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-			bouton.add_theme_color_override(etat, Charte.IVOIRE if choisi else Charte.IVOIRE_2)
-		bouton.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3 if choisi else Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-		bouton.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-		bouton.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		D.tab_state(bouton, Vector2(largeur, 44), choisi, "")
+		bouton.icon = null
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 18)
 		focus.set_border_width_all(2)
+		focus.set_expand_margin_all(2)
 		bouton.add_theme_stylebox_override("focus", focus)
 		bouton.toggle_mode = true
 		bouton.set_pressed_no_signal(choisi)
@@ -226,7 +223,7 @@ func _group_upgrade(depart: float) -> void:
 			app._render(), "AcademyGroupsBlocked", 18, true)
 		raison.tooltip_text = ""
 		if state.get("groupes_raison", false):
-			var note := D.rect(self, Rect2(WIDTH - 900, 196, 900, 70), Charte.PANNEAU_3, 0)
+			var note := D.rect(self, Rect2(WIDTH - 900, 196, 900, 70), Charte.PANNEAU_3, 16)
 			note.name = "AcademyGroupsReason"
 			note.z_index = 5
 			var texte := C.wrap(str(apercu.get("reason", "Réessaie après la prochaine intersaison.")), 18, Charte.IVOIRE)
@@ -292,8 +289,8 @@ func _filters(group: String) -> void:
 	recherche.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 	recherche.add_theme_color_override("font_color", Charte.IVOIRE)
 	recherche.add_theme_color_override("font_placeholder_color", Charte.IVOIRE_3)
-	recherche.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3, Charte.IVOIRE_3, 0, 10))
-	var focus := C.box(Charte.PANNEAU_3, Charte.IVOIRE, 0, 10)
+	recherche.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3, Charte.IVOIRE_3, Charte.RAYON_PILULE, 10))
+	var focus := C.box(Charte.PANNEAU_3, Charte.IVOIRE, Charte.RAYON_PILULE, 10)
 	focus.set_border_width_all(2)
 	recherche.add_theme_stylebox_override("focus", focus)
 	add_child(recherche)
@@ -324,12 +321,12 @@ func _filters(group: String) -> void:
 		bouton.add_theme_font_override("font", Charte.TEXTE)
 		bouton.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: bouton.add_theme_color_override(etat, Charte.IVOIRE if choisie else Charte.IVOIRE_2)
-		var fond := C.box(Charte.PANNEAU_3 if choisie else Charte.PANNEAU, Charte.IVOIRE if choisie else Charte.IVOIRE_3, 0, 8)
+		var fond := C.box(Charte.PANNEAU_3 if choisie else Charte.PANNEAU, Charte.IVOIRE if choisie else Charte.IVOIRE_3, Charte.RAYON_PILULE, 8)
 		fond.set_border_width_all(1)
 		bouton.add_theme_stylebox_override("normal", fond)
-		bouton.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Charte.IVOIRE_2, 0, 8))
+		bouton.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Charte.IVOIRE_2, Charte.RAYON_PILULE, 8))
 		bouton.add_theme_stylebox_override("pressed", fond)
-		var focus_puce := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		var focus_puce := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 0)
 		focus_puce.set_border_width_all(2)
 		bouton.add_theme_stylebox_override("focus", focus_puce)
 		var valeur: String = str(puce[0])
@@ -368,19 +365,18 @@ func _filters(group: String) -> void:
 		bouton_g.add_theme_font_override("font", Charte.TEXTE)
 		bouton_g.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: bouton_g.add_theme_color_override(etat, Charte.IVOIRE if choisi else Charte.IVOIRE_2)
-		var fond_g := C.box(Charte.PANNEAU_3 if choisi else Charte.PANNEAU, Charte.IVOIRE if choisi else Charte.IVOIRE_3, 0, 8)
+		var fond_g := C.box(Charte.PANNEAU_3 if choisi else Charte.PANNEAU, Charte.IVOIRE if choisi else Charte.IVOIRE_3, Charte.RAYON_PILULE, 8)
 		fond_g.set_border_width_all(1)
 		bouton_g.add_theme_stylebox_override("normal", fond_g)
-		bouton_g.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Charte.IVOIRE_2, 0, 8))
+		bouton_g.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Charte.IVOIRE_2, Charte.RAYON_PILULE, 8))
 		bouton_g.add_theme_stylebox_override("pressed", fond_g)
-		var focus_g := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		var focus_g := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 0)
 		focus_g.set_border_width_all(2)
 		bouton_g.add_theme_stylebox_override("focus", focus_g)
 		var cle_groupe: String = puce[0]
 		bouton_g.pressed.connect(func(): _set_filter("group", cle_groupe))
 		add_child(bouton_g)
 		D.place(bouton_g, Rect2(droite, 204, largeur_g, 38))
-		if choisi: Kit.marqueur(bouton_g, Rect2(0, 0, 5, 38))
 		droite -= 8
 
 func _picker(zone: Rect2, id: String, caption: String, choices: Dictionary, chosen: Variant, callback: Callable) -> void:
@@ -444,11 +440,12 @@ func _col(columns: Array, id: String) -> Dictionary:
 
 func _table(group: String) -> void:
 	var columns := _columns()
-	var panel := D.rect(self, Rect2(0, TABLE_TOP, WIDTH, HEADER_H + ROWS_H + 4), Charte.PANNEAU, 0)
+	var panel := D.rect(self, Rect2(0, TABLE_TOP, WIDTH, HEADER_H + ROWS_H + 4), Charte.PANNEAU, 24)
 	panel.name = "AcademyImmersiveTable"
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
-	var header := D.rect(panel, Rect2(0, 0, WIDTH, HEADER_H), Charte.PANNEAU_2, 0)
+	var header := D.rect(panel, Rect2(0, 0, WIDTH, HEADER_H), Color.TRANSPARENT, 0)
 	header.name = "AcademyHeader"
+	D.line(panel, Vector2(0, HEADER_H - 1), Vector2(WIDTH, HEADER_H - 1), Charte.FILET)
 	for col: Dictionary in columns:
 		var key: String = col.tri
 		if key.is_empty():
@@ -465,10 +462,10 @@ func _table(group: String) -> void:
 		tri.add_theme_font_size_override("font_size", maxi(12, C.px(16)))
 		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: tri.add_theme_color_override(etat, Charte.IVOIRE if actif else Charte.IVOIRE_2)
 		tri.add_theme_color_override("font_hover_color", Charte.IVOIRE)
-		tri.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-		tri.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		tri.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		tri.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
+		tri.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 8, 0))
+		tri.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 8, 0))
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
 		focus.set_border_width_all(2)
 		tri.add_theme_stylebox_override("focus", focus)
 		tri.tooltip_text = "Trier par " + str(col.titre).to_lower() + " · valeurs inconnues en dernier"
@@ -549,7 +546,7 @@ func _draw_rows(columns: Array) -> void:
 		rows.add_child(hit)
 		D.place(hit, Rect2(0, i * ROW, WIDTH, ROW))
 		hit.pressed.connect(func(): _select(p))
-		Kit.styler_ligne(hit, Charte.PANNEAU if i % 2 == 0 else Charte.PANNEAU_2, p.id == selected.get("id"))
+		Kit.styler_ligne(hit, Color.TRANSPARENT, p.id == selected.get("id"), Charte.SELECTION)
 		var marque := Kit.marqueur(hit, Rect2(2, 3, 6, ROW - 6))
 		marque.name = "Marqueur"
 		marque.visible = p.id == selected.get("id")
@@ -642,7 +639,7 @@ func _select(p: Dictionary) -> void:
 		var child := rows.get_child(i)
 		if not child is Button or not child.has_meta("development_id"): continue
 		var actif: bool = child.get_meta("development_id", "") == p.id
-		Kit.styler_ligne(child, Charte.PANNEAU if int(child.get_meta("zebra", 0)) == 0 else Charte.PANNEAU_2, actif)
+		Kit.styler_ligne(child, Color.TRANSPARENT, actif, Charte.SELECTION)
 		var marque := child.get_node_or_null("Marqueur") as Control
 		if marque != null: marque.visible = actif
 	_strip()
@@ -658,10 +655,10 @@ func _lien_nom(parent: Control, p: Dictionary, zone: Rect2, largeur_mesuree: flo
 	lien.flat = true
 	lien.focus_mode = Control.FOCUS_ALL
 	lien.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	lien.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-	lien.add_theme_stylebox_override("hover", C.box(Color(Charte.IVOIRE, .06), Color.TRANSPARENT, 0, 0))
-	lien.add_theme_stylebox_override("pressed", C.box(Color(Charte.IVOIRE, .1), Color.TRANSPARENT, 0, 0))
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	lien.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
+	lien.add_theme_stylebox_override("hover", C.box(Color(Charte.IVOIRE, .06), Color.TRANSPARENT, 8, 0))
+	lien.add_theme_stylebox_override("pressed", C.box(Color(Charte.IVOIRE, .1), Color.TRANSPARENT, 8, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
 	focus.set_border_width_all(2)
 	lien.add_theme_stylebox_override("focus", focus)
 	lien.accessibility_name = "Ouvrir la fiche · " + str(p.get("name", ""))
@@ -712,7 +709,7 @@ func _strip() -> void:
 	for enfant in strip.get_children():
 		strip.remove_child(enfant)
 		enfant.queue_free()
-	var fond := D.rect(strip, Rect2(0, 0, WIDTH, 100), Charte.PANNEAU, 0)
+	var fond := D.rect(strip, Rect2(0, 0, WIDTH, 100), Charte.PANNEAU, 24)
 	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if selected.is_empty():
 		D.text(strip, 22, 58, "Choisis un jeune dans la liste pour décider de son avenir.", 20, Charte.IVOIRE_2, 600, 1400)
@@ -730,11 +727,11 @@ func _strip() -> void:
 	nom.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	nom.add_theme_font_size_override("font_size", maxi(12, C.px(32)))
 	for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: nom.add_theme_color_override(etat, Charte.IVOIRE)
-	var plat := C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0)
+	var plat := C.box(Color.TRANSPARENT, Color.TRANSPARENT, 8, 0)
 	plat.content_margin_left = 0
 	nom.add_theme_stylebox_override("normal", plat)
-	nom.add_theme_stylebox_override("hover", C.box(Color(Charte.IVOIRE, .06), Color.TRANSPARENT, 0, 0))
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	nom.add_theme_stylebox_override("hover", C.box(Color(Charte.IVOIRE, .06), Color.TRANSPARENT, 8, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
 	focus.set_border_width_all(2)
 	nom.add_theme_stylebox_override("focus", focus)
 	var cible := {"kind":"player" if pro else "academy", "id":str(p.id)}
@@ -825,11 +822,11 @@ func _cartes() -> void:
 		carte.focus_mode = Control.FOCUS_ALL
 		carte.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		carte.accessibility_name = "Décider pour %s : %s" % [str(p.name), _raison(p)]
-		var fond := C.box(Charte.PANNEAU_3 if p.id == selected.get("id") else Charte.PANNEAU, Color.TRANSPARENT, 0, 0)
+		var fond := C.box(Charte.PANNEAU_3 if p.id == selected.get("id") else Charte.PANNEAU, Color.TRANSPARENT, 16, 0)
 		carte.add_theme_stylebox_override("normal", fond)
-		carte.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		carte.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		carte.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 16, 0))
+		carte.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 16, 0))
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 16, 0)
 		focus.set_border_width_all(2)
 		carte.add_theme_stylebox_override("focus", focus)
 		carte.pressed.connect(func(): _choisir_depuis_carte(p))
@@ -887,7 +884,7 @@ func _inactive_pathway_status() -> String:
 	return "Parcours à activer" if pathway.get("available", false) else "Au calendrier des Espoirs"
 
 func _pathways() -> void:
-	var panel := D.rect(self, Rect2(0, 216, WIDTH, 980), Charte.PANNEAU, 0)
+	var panel := D.rect(self, Rect2(0, 216, WIDTH, 980), Charte.PANNEAU, 24)
 	panel.name = "AcademyPathwayPane"
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	Kit.titre(panel, 24, 52, "Du centre au rugby professionnel", 30, 1200)
@@ -910,15 +907,15 @@ func _pathways() -> void:
 		tuile.focus_mode = Control.FOCUS_ALL
 		tuile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		tuile.accessibility_name = "%s : %s" % [str(entry[0]), str(entry[1])]
-		tuile.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-		tuile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		tuile.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 16, 0))
+		tuile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 16, 0))
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 16, 0)
 		focus.set_border_width_all(2)
 		tuile.add_theme_stylebox_override("focus", focus)
 		tuile.pressed.connect(entry[4])
 		panel.add_child(tuile)
 		D.place(tuile, Rect2(x, 122, largeur, 104))
-		Kit.marqueur(tuile, Rect2(0, 0, 8, 104), Charte.IVOIRE if i == 0 else Charte.IVOIRE_2)
+		Kit.marqueur(tuile, Rect2(12, 20, 6, 64), Charte.IVOIRE if i == 0 else Charte.IVOIRE_2)
 		D.text(tuile, 34, 44, str(entry[0]), 30, Charte.IVOIRE, 700, largeur - 60).add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 		D.text(tuile, 34, 84, str(entry[1]) + "  →", 22, Charte.IVOIRE_2, 600, largeur - 60)
 		for enfant in tuile.get_children():
@@ -939,7 +936,8 @@ func _pathways() -> void:
 
 ## Ligne d'un jeune des parcours : portrait, nom (fiche / mini-fiche), poste et âge, potentiel.
 func _ligne_personne(parent: Control, p: Dictionary, zone: Rect2, avec_potentiel: bool) -> void:
-	var ligne := D.rect(parent, zone, Charte.PANNEAU if int(zone.position.y / 40.0) % 2 == 0 else Charte.PANNEAU_2, 0)
+	var ligne := D.rect(parent, zone, Color.TRANSPARENT, 8)
+	D.line(ligne, Vector2(0, zone.size.y - 1), Vector2(zone.size.x, zone.size.y - 1), Charte.FILET)
 	ligne.mouse_filter = Control.MOUSE_FILTER_PASS
 	_portrait(ligne, p, Rect2(6, 4, 30, 30))
 	var id := str(p.get("id", ""))
@@ -957,9 +955,9 @@ func _ligne_personne(parent: Control, p: Dictionary, zone: Rect2, avec_potentiel
 		bouton.add_theme_font_override("font", Charte.TITRE_GRAS)
 		bouton.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
 		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: bouton.add_theme_color_override(etat, Charte.IVOIRE)
-		bouton.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-		bouton.add_theme_stylebox_override("hover", C.box(Color(Charte.IVOIRE, .08), Color.TRANSPARENT, 0, 0))
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		bouton.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
+		bouton.add_theme_stylebox_override("hover", C.box(Color(Charte.IVOIRE, .08), Color.TRANSPARENT, 8, 0))
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
 		focus.set_border_width_all(2)
 		bouton.add_theme_stylebox_override("focus", focus)
 		bouton.pressed.connect(func():
@@ -1003,7 +1001,7 @@ func _junior(parent: Control) -> void:
 # --- Encadrement -------------------------------------------------------------------------------------------------------
 
 func _staff_page() -> void:
-	var panel := D.rect(self, Rect2(0, 216, WIDTH, 980), Charte.PANNEAU, 0)
+	var panel := D.rect(self, Rect2(0, 216, WIDTH, 980), Charte.PANNEAU, 24)
 	panel.name = "AcademyStaffPane"
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	Kit.titre(panel, 24, 52, "Le centre de formation", 30, 1200)
@@ -1018,16 +1016,16 @@ func _staff_page() -> void:
 		tuile.focus_mode = Control.FOCUS_ALL
 		tuile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		tuile.accessibility_name = "%s : %s" % [str(item[0]), str(item[1])]
-		tuile.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-		tuile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		tuile.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 16, 0))
+		tuile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 16, 0))
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 16, 0)
 		focus.set_border_width_all(2)
 		tuile.add_theme_stylebox_override("focus", focus)
 		var destination: String = item[2]
 		tuile.pressed.connect(func(): app._navigate(destination))
 		panel.add_child(tuile)
 		D.place(tuile, Rect2(24 + i * (largeur + 24.0), 122, largeur, 140))
-		Kit.marqueur(tuile, Rect2(0, 0, 8, 140), Charte.IVOIRE if i == 0 else Charte.IVOIRE_2)
+		Kit.marqueur(tuile, Rect2(12, 24, 6, 92), Charte.IVOIRE if i == 0 else Charte.IVOIRE_2)
 		D.text(tuile, 34, 40, str(item[0]).to_upper(), 16, Charte.IVOIRE_2, 700, largeur - 60)
 		D.text(tuile, 34, 108, str(item[1]), 64, Charte.IVOIRE, 800, largeur - 60).add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 		D.text(tuile, largeur - 20, 124, "ouvrir →", 17, Charte.IVOIRE_2, 600, 160, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -1043,9 +1041,9 @@ func _staff_page() -> void:
 		ligne.focus_mode = Control.FOCUS_ALL
 		ligne.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		ligne.accessibility_name = "%s : %s" % [str(p.get("name", etiquette[0])), str(p.get("role", etiquette[1]))]
-		ligne.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU if i % 2 == 0 else Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-		ligne.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		var focus_ligne := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		ligne.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
+		ligne.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 8, 0))
+		var focus_ligne := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
 		focus_ligne.set_border_width_all(2)
 		ligne.add_theme_stylebox_override("focus", focus_ligne)
 		ligne.pressed.connect(func(): app._navigate("Staff"))

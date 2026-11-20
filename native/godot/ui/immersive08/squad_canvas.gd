@@ -314,7 +314,7 @@ func _montrer_bulle(ancre: Control) -> void:
 			effectif += 1
 			if U.indisponibilite(p).is_empty(): aptes += 1
 			if p.get("contractEnd") != null and int(p.contractEnd) <= saison: fins += 1
-		if i % 2 == 0: D.rect(fiche, Rect2(12, y - 24, 696, 32), Color(Charte.PANNEAU_2, .8))
+		if i > 0: D.line(fiche, Vector2(12, y - 24), Vector2(708, y - 24), Charte.FILET)
 		D.text(fiche, 22, y, poste[0], 19, C.IVORY, 500, 330, HORIZONTAL_ALIGNMENT_LEFT, true)
 		D.text(fiche, 470, y, str(effectif), 19, C.IVORY, 600, 110, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.text(fiche, 590, y, str(aptes), 19, C.IVORY if aptes == effectif else C.MUTED, 600, 110, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -987,11 +987,18 @@ func _row(player:Dictionary,index:int) -> void:
 	row.focus_mode = Control.FOCUS_ALL
 	row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	row.accessibility_name = "%s · %s · %s · ouvrir la fiche" % [str(player.name), primary_caption(player), str(statut.t)]
-	row.add_theme_stylebox_override("normal",_plat(Charte.PANNEAU_3 if selectionne else Color(Charte.PANNEAU_2,.6) if index%2==0 else Color.TRANSPARENT))
+	row.add_theme_stylebox_override("normal",_plat(Charte.SELECTION if selectionne else Color.TRANSPARENT))
 	row.add_theme_stylebox_override("hover",_plat(Charte.PANNEAU_2))
 	row.add_theme_stylebox_override("pressed",_plat(Charte.PANNEAU_3))
 	row.add_theme_stylebox_override("focus",_plat(Color.TRANSPARENT,Charte.IVOIRE,1))
 	rows.add_child(row)
+	var filet := Panel.new()
+	filet.name = "RosterFilet"
+	filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	filet.add_theme_stylebox_override("panel", _plat(Charte.FILET, Color.TRANSPARENT, 0, 0))
+	row.add_child(filet)
+	filet.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	filet.offset_top = -1.0
 	var marque := _marqueur(row, Rect2(0, 0, 5, h))
 	marque.name = "RosterMarqueur"
 	marque.visible = selectionne
@@ -1192,7 +1199,7 @@ func _selectionner(id: String) -> void:
 		if ligne is Button and ligne.has_meta("player_id"):
 			var choisi: bool = ligne.get_meta("player_id") == id
 			var index: int = int(ligne.get_meta("index", 0))
-			ligne.add_theme_stylebox_override("normal", _plat(Charte.PANNEAU_3 if choisi else Color(Charte.PANNEAU_2, .6) if index % 2 == 0 else Color.TRANSPARENT))
+			ligne.add_theme_stylebox_override("normal", _plat(Charte.SELECTION if choisi else Color.TRANSPARENT))
 			var marque := ligne.get_node_or_null("RosterMarqueur")
 			if marque != null: marque.visible = choisi
 	app._observe_navigation()

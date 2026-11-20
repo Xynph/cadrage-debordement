@@ -115,7 +115,6 @@ func _build() -> void:
 	var sous := Pages.actuelle(app)
 	if not sous.is_empty():
 		Pages.build(app, self, sous)
-		Kit.angles_droits(self)
 		return
 	tab = clampi(int(state.get("immersive_tab", 2 if state.get("followed", false) else 0)), 0, TABS.size() - 1)
 	if not str(state.get("navigation_id", "")).is_empty():
@@ -151,7 +150,6 @@ func _build() -> void:
 	_refresh()
 	_pied()
 	U.restore(app, self, "market")
-	Kit.angles_droits(self)
 	# Courrier « offre_transfert » (Réception) : ouvre directement les offres reçues.
 	if app.has_meta("open_player_sales"):
 		app.remove_meta("open_player_sales")
@@ -210,16 +208,16 @@ func _tuile(x: float, largeur: float, etiquette: String, montant: String, suite:
 	tuile.flat = true
 	tuile.focus_mode = Control.FOCUS_ALL
 	tuile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var fond := C.box(Charte.PANNEAU, Color.TRANSPARENT, 0, 0)
+	var fond := C.box(Charte.PANNEAU, Color.TRANSPARENT, 16, 0)
 	tuile.add_theme_stylebox_override("normal", fond)
-	tuile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-	tuile.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	tuile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 16, 0))
+	tuile.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 16, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 16, 0)
 	focus.set_border_width_all(2)
 	tuile.add_theme_stylebox_override("focus", focus)
 	tiles.add_child(tuile)
 	D.place(tuile, Rect2(x, 6, largeur, 116))
-	if marque: Kit.marqueur(tuile, Rect2(0, 0, 8, 116))
+	if marque: Kit.marqueur(tuile, Rect2(12, 22, 6, 72))
 	var gauche := 34 if marque else 16
 	var courant := D.text(tuile, gauche, 36, etiquette.to_upper(), 16, Charte.IVOIRE_2, 700, largeur - 30)
 	if id == "RecruitmentTransferBudget": courant.name = "RecruitmentTransferBudgetLabel"
@@ -279,10 +277,10 @@ func _needs() -> void:
 			bouton_carte.flat = true
 			bouton_carte.focus_mode = Control.FOCUS_ALL
 			bouton_carte.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			bouton_carte.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3 if choisi else Charte.PANNEAU, Color.TRANSPARENT, 0, 0))
-			bouton_carte.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-			bouton_carte.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-			var focus_carte := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+			bouton_carte.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3 if choisi else Charte.PANNEAU, Color.TRANSPARENT, 16, 0))
+			bouton_carte.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 16, 0))
+			bouton_carte.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 16, 0))
+			var focus_carte := C.box(Color.TRANSPARENT, Charte.IVOIRE, 16, 0)
 			focus_carte.set_border_width_all(2)
 			bouton_carte.add_theme_stylebox_override("focus", focus_carte)
 			bouton_carte.accessibility_name = "Filtrer sur %s" % role
@@ -292,7 +290,7 @@ func _needs() -> void:
 			carte = bouton_carte
 		else:
 			# Aucune piste pour ce poste : la carte n'est pas un lien vers une liste vide, elle propose une mission.
-			carte = D.rect(self, Rect2(x, 136, largeur, 90), Charte.PANNEAU, 0)
+			carte = D.rect(self, Rect2(x, 136, largeur, 90), Charte.PANNEAU, 16)
 			carte.mouse_filter = Control.MOUSE_FILTER_PASS
 		carte.name = "MarketNeed_" + str(i)
 		Kit.marqueur(carte, Rect2(18, 16, 8, 58), Charte.IVOIRE if i == 0 else Charte.IVOIRE_2)
@@ -330,15 +328,14 @@ func _tabs() -> void:
 		bouton.text = libelle
 		bouton.focus_mode = Control.FOCUS_ALL
 		bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		# Charte §7.1 : onglet en pilule ; actif = aplat crème, texte PANNEAU.
 		bouton.add_theme_font_override("font", Charte.TITRE_GRAS if choisi else Charte.TITRE)
 		bouton.add_theme_font_size_override("font_size", maxi(12, C.px(21)))
-		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-			bouton.add_theme_color_override(etat, Charte.IVOIRE if choisi else Charte.IVOIRE_2)
-		bouton.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3 if choisi else Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-		bouton.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-		bouton.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		D.tab_state(bouton, Vector2(largeur, 44), choisi, "")
+		bouton.icon = null
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 18)
 		focus.set_border_width_all(2)
+		focus.set_expand_margin_all(2)
 		bouton.add_theme_stylebox_override("focus", focus)
 		bouton.toggle_mode = true
 		bouton.button_pressed = choisi
@@ -415,8 +412,8 @@ func _filters(positions: Array) -> void:
 	recherche.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 	recherche.add_theme_color_override("font_color", Charte.IVOIRE)
 	recherche.add_theme_color_override("font_placeholder_color", Charte.IVOIRE_3)
-	recherche.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3, Charte.IVOIRE_3, 0, 10))
-	var focus := C.box(Charte.PANNEAU_3, Charte.IVOIRE, 0, 10)
+	recherche.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3, Charte.IVOIRE_3, Charte.RAYON_PILULE, 10))
+	var focus := C.box(Charte.PANNEAU_3, Charte.IVOIRE, Charte.RAYON_PILULE, 10)
 	focus.set_border_width_all(2)
 	recherche.add_theme_stylebox_override("focus", focus)
 	add_child(recherche)
@@ -511,11 +508,12 @@ func _club(player: Dictionary) -> String:
 	return ""
 
 func _table() -> void:
-	var panel := D.rect(self, Rect2(0, TABLE_TOP, WIDTH, HEADER_H + ROWS_H + 4), Charte.PANNEAU, 0)
+	var panel := D.rect(self, Rect2(0, TABLE_TOP, WIDTH, HEADER_H + ROWS_H + 4), Charte.PANNEAU, 24)
 	panel.name = "ImmersiveMarketTable"
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
-	var entete := D.rect(panel, Rect2(0, 0, WIDTH, HEADER_H), Charte.PANNEAU_2, 0)
+	var entete := D.rect(panel, Rect2(0, 0, WIDTH, HEADER_H), Color.TRANSPARENT, 0)
 	entete.name = "MarketHeader"
+	D.line(panel, Vector2(0, HEADER_H - 1), Vector2(WIDTH, HEADER_H - 1), Charte.FILET)
 	entete.set_meta("rows_origin", Vector2(0, TABLE_TOP))
 	table_scroll = ScrollContainer.new()
 	table_scroll.name = "MarketScroll"
@@ -556,10 +554,10 @@ func _entetes() -> void:
 		tri.add_theme_font_size_override("font_size", maxi(12, C.px(16)))
 		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: tri.add_theme_color_override(etat, Charte.IVOIRE_2)
 		tri.add_theme_color_override("font_hover_color", Charte.IVOIRE)
-		tri.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-		tri.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		tri.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		tri.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
+		tri.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 8, 0))
+		tri.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 8, 0))
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
 		focus.set_border_width_all(2)
 		tri.add_theme_stylebox_override("focus", focus)
 		tri.set_meta("sort_caption", str(col.titre))
@@ -776,14 +774,15 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 	row.name = "MarketReport_" + str(item.id) if tab == 3 else "MarketPlayer_" + player_id.replace(":", "_")
 	row.set_meta("player_id", player_id)
 	row.accessibility_name = "%s, %s" % [item.get("name", "Joueur inconnu"), item.get("pos", "Poste inconnu")]
-	row.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3 if selected else Charte.PANNEAU if index % 2 == 0 else Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-	row.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	row.add_theme_stylebox_override("normal", C.box(Charte.SELECTION if selected else Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
+	row.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 8, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
 	focus.set_border_width_all(2)
 	row.add_theme_stylebox_override("focus", focus)
 	table_rows.add_child(row)
 	D.place(row, Rect2(0, index * ROW_HEIGHT, WIDTH, ROW_HEIGHT))
-	if selected: Kit.marqueur(row, Rect2(2, 3, 6, ROW_HEIGHT - 6))
+	if selected: Kit.marqueur(row, Rect2(4, 3, 6, ROW_HEIGHT - 6))
+	D.line(row, Vector2(0, ROW_HEIGHT - 1), Vector2(WIDTH, ROW_HEIGHT - 1), Color(Charte.FILET, .5))
 	var assessment: Dictionary = report.get("assessment", {})
 	var suivi: bool = player_id in app.management_ui.shortlist
 	_portrait(row, Rect2(56, 2, 28, 28), player, player_id)
@@ -833,8 +832,8 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		etoile.add_theme_font_override("font", Charte.TITRE_GRAS)
 		etoile.add_theme_font_size_override("font_size", maxi(12, C.px(20)))
 		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]: etoile.add_theme_color_override(etat, Charte.IVOIRE if suivi else Charte.IVOIRE_3)
-		etoile.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-		etoile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
+		etoile.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
+		etoile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 8, 0))
 		etoile.add_theme_stylebox_override("focus", focus)
 		etoile.accessibility_name = ("Retirer du suivi : " if suivi else "Suivre cette piste : ") + str(item.get("name", ""))
 		etoile.tooltip_text = ""
@@ -896,7 +895,7 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 ## masse salariale de la piste choisie ; l'action principale de l'écran (ivoire plein) est ici et nulle part ailleurs.
 func _cout() -> void:
 	_clear(cost)
-	D.rect(cost, Rect2(0, 0, WIDTH, 172), Charte.PANNEAU, 0)
+	D.rect(cost, Rect2(0, 0, WIDTH, 172), Charte.PANNEAU, 24)
 	var player := _selected if tab != 3 else _market_player(str(_selected.get("playerId", "")))
 	var report: Dictionary = _selected if tab == 3 else report_by_player.get(str(_selected.get("id", "")), {})
 	Kit.etiquette(cost, 24, 34, "Ce que coûte l’offre", 330)
@@ -923,13 +922,13 @@ func _cout() -> void:
 		var depense := int(budget.get("depense", 0))
 		Kit.etiquette(cost, 500, 34, "Budget de transferts · %s alloués" % G.euros(total), 520)
 		var barre := Rect2(500, 52, 700, 20)
-		D.rect(cost, barre, Charte.PANNEAU_3, 0)
+		D.rect(cost, barre, Charte.PANNEAU_3, Charte.RAYON_PILULE)
 		if total > 0:
 			var largeur_depense := 700.0 * clampf(float(depense) / total, 0, 1)
 			var largeur_offre := 700.0 * clampf(float(fee if fee_known else 0) / total, 0, 1 - largeur_depense / 700.0)
-			if largeur_depense > 0: D.rect(cost, Rect2(500, 52, largeur_depense, 20), Charte.IVOIRE_3, 0)
-			if largeur_offre > 0: D.rect(cost, Rect2(500 + largeur_depense, 52, largeur_offre, 20), Charte.IVOIRE, 0)
-			D.rect(cost, Rect2(500 + largeur_depense + largeur_offre, 52, maxf(0, 700 - largeur_depense - largeur_offre), 20), Color.TRANSPARENT, 0, Charte.IVOIRE_3)
+			if largeur_depense > 0: D.rect(cost, Rect2(500, 52, largeur_depense, 20), Charte.IVOIRE_3, Charte.RAYON_PILULE)
+			if largeur_offre > 0: D.rect(cost, Rect2(500 + largeur_depense, 52, largeur_offre, 20), Charte.IVOIRE, Charte.RAYON_PILULE)
+			D.rect(cost, Rect2(500 + largeur_depense + largeur_offre, 52, maxf(0, 700 - largeur_depense - largeur_offre), 20), Color.TRANSPARENT, Charte.RAYON_PILULE, Charte.IVOIRE_3)
 		var reste := int(budget.get("disponible", 0)) - (int(fee) if fee_known else 0)
 		var apres := Kit.texte(cost, 500, 140, "après l’offre : %s restants" % G.euros(reste) if fee_known else "disponible : %s" % Budget.remaining(budget), Charte.IVOIRE if reste >= 0 else Charte.D, 700, 19)
 		apres.add_theme_font_override("font", Charte.texte_moyen())
@@ -939,7 +938,7 @@ func _cout() -> void:
 		legende.append(["Reste", G.euros(reste), Charte.IVOIRE_3, false])
 		var lx := 500.0
 		for element: Array in legende:
-			D.rect(cost, Rect2(lx, 92, 14, 14), element[2] if element[3] else Color.TRANSPARENT, 0, Charte.IVOIRE_3 if not element[3] else Color.TRANSPARENT)
+			D.rect(cost, Rect2(lx, 92, 14, 14), element[2] if element[3] else Color.TRANSPARENT, 4, Charte.IVOIRE_3 if not element[3] else Color.TRANSPARENT)
 			var texte := "%s %s" % [element[0], element[1]]
 			Kit.texte(cost, lx + 22, 104, texte, Charte.IVOIRE_2, 300, 17)
 			lx += Kit.largeur(texte, 17) + 50
@@ -1035,9 +1034,9 @@ func _reading_area(parent: Node, area: Rect2, target: Dictionary, id: String, ca
 	var link := Button.new()
 	link.name = id
 	link.flat = true
-	link.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-	link.add_theme_stylebox_override("hover", C.box(Color(Charte.IVOIRE, .06), Color(Charte.IVOIRE, .5), 0, 0))
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	link.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
+	link.add_theme_stylebox_override("hover", C.box(Color(Charte.IVOIRE, .06), Color(Charte.IVOIRE, .5), 8, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
 	focus.set_border_width_all(2)
 	link.add_theme_stylebox_override("focus", focus)
 	Link.bind(link, app, target, caption)
