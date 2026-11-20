@@ -62,7 +62,7 @@ var framing := "portrait"
 const MEDAILLON := {"size": 0.70, "target": Vector3(0, 1.56, 0), "render": Vector2i(320, 320), "offset": 0.07, "side": -0.32}
 const CADRAGES := {
 	"medaillon": MEDAILLON,
-	"visage": {"size": 0.44, "target": Vector3(0, 1.655, 0), "render": Vector2i(192, 192), "offset": 0.03, "side": -0.24},
+	"visage": {"size": 0.61, "target": Vector3(0, 1.58, 0), "render": Vector2i(192, 192), "offset": 0.03, "side": -0.24},
 	"buste": {"size": 0.92, "target": Vector3(0, 1.42, 0), "render": Vector2i(420, 420), "offset": 0.0, "side": -0.3},
 	"pied": {"size": 1.96, "target": Vector3(0, 0.95, 0), "render": Vector2i(420, 640), "offset": 0.0, "side": -0.62},
 }

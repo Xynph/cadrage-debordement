@@ -67,6 +67,14 @@ node tests/world-finance-flow-audit-intersaison.cjs
 node ci/world-finance-flow-audit.cjs --intersaison 1 --weeks 3 --out /tmp/world-finance-flow-report.json
 ```
 
+### Dette chaque semaine (20 novembre 2026, suite)
+
+La dette des clubs gérés est aussi rapprochée chaque semaine : seule `pretRembourser` (appelée par la
+facturation) peut la faire bouger, exactement du montant de l'écriture « Remboursement du prêt de
+l'actionnaire » du barème rejoué, et l'encours enregistré du prêt (`pretsActionnaires[id].restant`) baisse
+d'autant. Toute autre variation de dette, tracée ou non, laisse le club **unknown**. En saison 2 (graine 4242),
+les prêts accordés à la bascule sont remboursés chaque semaine et se rapprochent au même euro.
+
 Le texte qui suit décrit l'audit historique du 9 novembre (Monde v1, ancienne économie).
 
 Audit manuel du 9 novembre 2026 sur le moteur `c07ce6a68adfa4f6aee72caab4523c77508bf8e3`, Node 22.23.4, graine `827381`, horloge déterministe `1794178800000`, club humain 0, Monde v1. Montants fictifs du jeu. Aucun coefficient, règle de recrutement, contrat, profil utilisateur ou fichier de production existant modifié.

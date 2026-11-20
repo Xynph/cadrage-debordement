@@ -11,7 +11,9 @@ const good=(command,payload={})=>{let r=call(command,payload);for(let i=0;!r.ok&
 const exported=()=>good('export').meta.exportText;
 function sign(doc){const raw=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<raw.length;i++)hash=Math.imul(hash^raw.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
 try{
- open();let m=settleClubMeetings(good('new_career',{mode:'world-champ',club:0}),good),legacy=exported(),prior=JSON.parse(legacy),file=path.join(m.meta.dataDir,'donnees.json'),disk=fs.readFileSync(file),context=m.clubLife.coachNotebook.context,id=m.squad[0].id;
+ open();let m=settleClubMeetings(good('new_career',{mode:'world-champ',club:0}),good),legacy=exported(),prior=JSON.parse(legacy),file=path.join(m.meta.dataDir,'donnees.json'),disk=fs.readFileSync(file),context=m.clubLife.coachNotebook.context,id=m.squad.find(p=>![...prior.state.lineup,...prior.state.reserves].includes(p.id)).id;
+ // Joueur témoin hors de la feuille de match : il est retiré de l'effectif plus bas, et une feuille qui nomme un joueur absent
+ // est refusée à l'import à juste titre. Avec le barème V3 (#1048), le premier de l'effectif est devenu titulaire.
  for(let i=0;i<3;i++)good('snapshot');assert.equal(exported(),legacy);assert.deepEqual(fs.readFileSync(file),disk);assert.equal(prior.state.coachNotebook,undefined);
  const text='Émile & Zoé : <projet> "jeu calme" `revoir` 😀\n\tAucune promesse.';
  m=good('coach_note_save',{context,target:id,text});assert.equal(m.clubLife.coachNotebook.entries[0].text,text);assert.equal(m.meta.coachNote.command,'coach_note_save');
