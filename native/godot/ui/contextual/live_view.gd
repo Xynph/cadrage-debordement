@@ -981,7 +981,8 @@ func _input(event: InputEvent) -> void:
 		if menu_ouvert:
 			get_viewport().set_input_as_handled()
 			fermer_menu(true)
-		elif not page_ouverte and not equipe.visible and not play.disabled:
+		# Une commande qui a le focus (liste du journal, bouton) garde son Espace.
+		elif not page_ouverte and not equipe.visible and not play.disabled and not get_viewport().gui_get_focus_owner() is BaseButton:
 			get_viewport().set_input_as_handled()
 			_pause()
 	elif code == KEY_T and not menu_ouvert and not page_ouverte and not equipe.visible and not _live().get("finished", false):

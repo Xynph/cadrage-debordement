@@ -254,8 +254,10 @@ func _tient(view: Control, between: Control, label: String, screen: Rect2) -> vo
 	var pause: Button = view.play
 	var police_pause: Font = pause.get_theme_font("font")
 	var police_equipe: Font = (view.find_child("MatchBetweenTeam", true, false) as Button).get_theme_font("font")
-	check(police_pause != null and police_pause.resource_path == "res://fonts/BarlowCondensed-SemiBold.ttf" and police_equipe != null and police_equipe.resource_path.get_file().begins_with("BarlowCondensed"), label + " : bouton PAUSE en Barlow Condensed demi-gras (%s ; Équipe : %s)" % [police_pause.resource_path if police_pause != null else "?", police_equipe.resource_path if police_equipe != null else "?"])
-	check(pause.text == pause.text.to_upper() and pause.get_theme_stylebox("normal") is StyleBoxFlat and (pause.get_theme_stylebox("normal") as StyleBoxFlat).border_width_top == 0 and inside(screen, pause.get_global_rect()), label + " : bouton PAUSE à plat, en capitales, comme les commandes")
+	# Écran 13 (maquette 13-match-direct-1, 20/11/2026) : « Pause · Espace » en DM Sans 500 sur panneau 85 %, à plat.
+	var police_dm: bool = police_pause is FontVariation and (police_pause as FontVariation).base_font != null and (police_pause as FontVariation).base_font.resource_path.get_file().begins_with("DMSans")
+	check(police_dm and police_equipe != null, label + " : bouton Pause en DM Sans (commandes du HUD)")
+	check(pause.text in ["Pause", "Reprendre"] and pause.get_theme_stylebox("normal") is StyleBoxFlat and (pause.get_theme_stylebox("normal") as StyleBoxFlat).border_width_top == 0 and inside(screen, pause.get_global_rect()), label + " : bouton Pause à plat, dans l'écran")
 
 ## Capture de l'écran (CD_MATCH_TEMPS_FORTS_CAPTURES : dossier ; rendu fenêtré seulement).
 func _capture(label: String, vue: String) -> void:
