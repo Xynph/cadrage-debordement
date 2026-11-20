@@ -819,6 +819,7 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 		management_ui.erase("charge_joueur")
 		# Sous-page de l'avant-match (délégation, espoir) : refermée dès qu'on change d'écran.
 		management_ui.erase("avant_page")
+		if management_ui.get("preparation") is Dictionary: management_ui.preparation.sub = ""
 		if target == "Préparation" and management_ui.get("preparation", {}).get("tab", 0) == 2:
 			management_ui.preparation.tab = 0
 	route = target

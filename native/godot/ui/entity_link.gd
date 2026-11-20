@@ -69,6 +69,8 @@ static func styled_button(parent: Node, rectangle: Rect2, caption: String, font_
 	hover.border_width_bottom = 2
 	var focus := C.box(Color.TRANSPARENT, C.GOLD, 4, 0)
 	focus.set_border_width_all(2)
+	# Charte : rayon 0 (art-bible §3), y compris au survol et au focus.
+	for style: StyleBoxFlat in [plain, hover, focus]: style.set_corner_radius_all(0)
 	button.add_theme_stylebox_override("normal", plain)
 	button.add_theme_stylebox_override("hover", hover)
 	button.add_theme_stylebox_override("pressed", hover)

@@ -33,9 +33,10 @@ static func settle_reprise_decisions(app: Control, tree: SceneTree, check: Calla
 	var due: Variant = app.model.get("clubLife", {}).get("reprise", {}).get("due", [])
 	for key: Variant in (due as Array).duplicate() if due is Array else []:
 		if not await _progression_command(app, tree, check, "reprise_decide", {"decision": str(key), "option": "staff"}): return false
-	var dialog := app.get_node_or_null("RepriseDialog")
-	if dialog != null:
-		dialog.queue_free()
+	# « La reprise » est une sous-page de la Préparation (plus une fenêtre) : on la referme.
+	if app.get_node_or_null("RepriseDialog") != null:
+		app.management_ui.preparation.sub = ""
+		app._render()
 		await tree.process_frame
 	return true
 

@@ -58,35 +58,3 @@ static func open_action(app: Control, action: String, consignes: Callable) -> vo
 
 static func color(check: Dictionary) -> Color:
 	return C.ALERT if check.level == "urgent" else C.GOLD if check.level == "important" else C.MINT
-
-static func open_all(app: Control, consignes: Callable) -> void:
-	var dialog := AcceptDialog.new()
-	dialog.name = "PreparationAllChecks"
-	dialog.title = "Avant le coup d’envoi"
-	dialog.ok_button_text = "Fermer"
-	dialog.get_ok_button().add_theme_font_size_override("font_size", C.px(24))
-	app.add_child(dialog)
-	var scroll := ScrollContainer.new()
-	scroll.follow_focus = true
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	dialog.add_child(scroll)
-	var content := C.v(14)
-	C.fill(content)
-	scroll.add_child(content)
-	for check: Dictionary in project(app.model).checks:
-		var card := C.card()
-		content.add_child(card)
-		var body := C.content(card)
-		body.add_child(C.wrap(check.title, 23, color(check), true, 700))
-		body.add_child(C.wrap(check.detail, 18, C.IVORY))
-		var button := C.button(check.caption, func():
-			dialog.hide()
-			dialog.queue_free()
-			open_action(app, check.action, consignes))
-		button.name = "PreparationBriefingAll_" + str(check.id)
-		button.add_theme_font_size_override("font_size",C.px(18))
-		button.custom_minimum_size.y = C.px(34)
-		body.add_child(button)
-	dialog.confirmed.connect(dialog.queue_free)
-	dialog.canceled.connect(dialog.queue_free)
-	dialog.popup_centered(Vector2i(C.px(1120), C.px(900)))
