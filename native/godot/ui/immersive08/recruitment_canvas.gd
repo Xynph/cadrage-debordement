@@ -692,7 +692,15 @@ func _refresh() -> void:
 	if built < results.size(): _build_remaining(results, current, built, _generation)
 	if results.is_empty():
 		var caption := "Aucun rapport conservé. Confie une mission pour observer des pistes." if tab == 3 else "Aucune piste ne correspond aux filtres actuels."
+		if tab == 0 and str(state.get("position", "Tous")) != "Tous": caption = "Aucune piste pour ce poste sur le marché : lance une mission, ou élargis la recherche."
 		Kit.texte(table_rows, 24, 40, caption, Charte.IVOIRE_2, WIDTH - 50, 20)
+		if tab == 0 and str(state.get("position", "Tous")) != "Tous":
+			var tout := Kit.lien(table_rows, Rect2(20, 56, 0, 34), "Voir tout le marché →", func():
+				state.immersive_tab = 1
+				state.position = "Tous"
+				state.position_libre = true
+				app._render(false), "MarketShowAll", 19)
+			tout.tooltip_text = ""
 	_tuiles()
 	_cout()
 	table_scroll.set_deferred("scroll_vertical", scroll)
