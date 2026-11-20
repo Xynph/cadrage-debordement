@@ -35,15 +35,6 @@ const GAUCHE := 1420
 const DROITE_X := 1440
 const DROITE := 808
 
-## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
-## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
-const ONGLETS := [[0, "Vue d’ensemble"], [2, "Performances"], [3, "Contrat"], [4, "Développement"], [5, "Repères"]]
-const HAUTEUR := 1296
-const HAUT := 332
-const GAUCHE := 1420
-const DROITE_X := 1440
-const DROITE := 808
-
 class ConditionDial extends Control:
 	var condition := 0.0
 	var ink := C.MINT
