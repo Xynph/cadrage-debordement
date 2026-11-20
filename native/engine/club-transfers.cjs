@@ -22,7 +22,7 @@ module.exports=function clubTransfers(){
  const MAX_BUYS=3,MAX_SALES=3,ROUNDS=3,CASH_FLOOR=400000;
  // Accords différés (v2) pendant la fenêtre en cours.
  let deferred=false;
- const engaged=p=>typeof calIAIndisponible==='function'&&calIAIndisponible(p.id);
+ const engaged=p=>typeof calIAIndisponible==='function'&&calIAIndisponible(p.id,p);
  const fee=(p,f)=>typeof calIndemnite==='function'?calIndemnite(p,f):f;
  const STRATEGIES=Object.freeze(['vedettes','formateur','rajeunissement','vente','equilibre']);
  const world=()=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);

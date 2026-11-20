@@ -105,18 +105,20 @@ rallonge est possible pour une offre m si `reste < m ≤ caisseLibre` (calcul re
 - Une **vente imposée** ne rend rien à l'enveloppe : vente décidée par le président (reprise), vente pour
   rembourser le prêt de l'actionnaire. Elles servent à renflouer la caisse, pas à racheter.
 - **Pas de plafond d'enveloppe** (décision de Léo, 19/11/2026) : la part rendue n'est plus limitée par recettes ×
-  plafond ; seule la caisse limite ce qu'on peut dépenser (R6 : disponible = min(reste, caisse − matelas)). Une vente
-  conclue hors période des mutations rend sa part au moment de son exécution (`docs/gdd/vente-joueurs.md`).
+  plafond ; seule la caisse limite ce qu'on peut dépenser (R6 : disponible = min(reste, caisse − matelas)). **Depuis la
+  décision de Léo du 20/11/2026, une vente choisie rend sa part le jour de l'accord** (l'argent est encaissé à l'accord,
+  le joueur part au 1er juillet ; `docs/gdd/calendrier-mutations.md` § 3 règle 1) : elle compte pour la saison en cours.
+  Raison : le club équilibre ses comptes et recrute en cours de saison.
 - Une indemnité d'accord d'achat conclu hors période (`docs/gdd/calendrier-mutations.md`) est engagée sur l'enveloppe
   dès la conclusion ; la prime d'un pré-contrat la consomme à la signature.
-- **Argent rendu à la bascule de saison** (décision du 20/11/2026, calendrier des mutations v2) : depuis que les ventes et
-  les achats s'exécutent au 1er juillet, la part d'une vente choisie exécutée à la bascule et l'indemnité engagée d'un
-  achat qui tombe à la bascule reviennent **entières à l'enveloppe de la saison qui commence** (elles forment son
-  reconstitué de départ), jamais à la saison close. Raison : l'argent arrive en juillet, pour le recrutement de la
-  nouvelle saison ; le crédité à la saison close ne passait que pour 25 % par le report (R5), donc 12,5 % de la vente au
-  lieu de 50 %. Le report (R5) ne compte pas cet argent une seconde fois. Champ technique : `aNouvelleSaison` de
-  l'enveloppe close, repris par `budgetTransfertsNeuf` ; test `tests/calendrier-mutations.cjs` « Bascule : part des
-  ventes et achats tombés rendus à la nouvelle saison ».
+- **Argent rendu à la bascule de saison** (décision du 20/11/2026, calendrier des mutations v2, restreinte le même jour
+  par l'encaissement à l'accord) : il ne concerne plus que les **chutes résiduelles** — un achat payé dont le joueur a
+  disparu avant le 1er juillet (ne devrait plus arriver) : son indemnité revient **entière à l'enveloppe de la saison qui
+  commence** (reconstitué de départ), jamais à la saison close (le report R5 n'en aurait passé que 25 %). Le report (R5)
+  ne compte pas cet argent une seconde fois. Une vente qui tombe ainsi rend l'argent à l'acheteur et retire sa part de
+  l'enveloppe de la saison en cours. Champ technique : `aNouvelleSaison` de l'enveloppe close, repris par
+  `budgetTransfertsNeuf` ; test `tests/calendrier-mutations.cjs` « Bascule : part d'une vente rendue à l'accord, achat
+  tombé rendu à la nouvelle saison ».
 
 ### R5 — D'une saison à l'autre : report partiel (décision de Léo, 19/11/2026)
 
