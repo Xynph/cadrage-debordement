@@ -1345,6 +1345,13 @@ func _apres_lecture() -> void:
 
 func _montrer_jeu(visible_3d: bool) -> void:
 	if _fondu != null and _fondu.is_valid(): _fondu.kill()
+	# Animations réduites : coupe franche entre la 3D et l'entracte, sans fondu.
+	if _calme():
+		between.visible = not visible_3d
+		between.modulate.a = 1.0
+		voile.visible = not visible_3d
+		voile.modulate.a = 1.0
+		return
 	if visible_3d:
 		between.hide()
 		if not voile.visible: return

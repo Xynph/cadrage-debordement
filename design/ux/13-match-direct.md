@@ -26,8 +26,8 @@
 
 | Élément | Action |
 |---|---|
-| Plaque d'un club (clic, Entrée) | Fiche du club (fiche commune `club_sheet_canvas.gd`) dans une page du direct ; match en pause ; « ← Retour au direct » le relance s'il jouait |
-| Nom d'un de nos joueurs dans le journal | Survol : mini-fiche ; clic : fenêtre Équipe sur lui. Les adversaires restent du texte (pas de faux lien) |
+| Plaque d'un club (clic, Entrée) | Fiche du club (fiche commune `club_sheet_canvas.gd`) dans une page du direct ; match en pause ; « ← Retour au direct » le relance s'il jouait. La fiche sait que le match est en cours (« MATCH EN COURS », score, minute) ; Calendrier, Comparer, Recruter et tout lien vers un autre écran sont grisés, « disponible(s) après le match » écrit ; onglets et suivi au style lien ; notre club : ni Suivre, ni Comparer, ni Recruter |
+| Nom d'un de nos joueurs dans le journal | Survol : mini-fiche ; clic : sa fiche complète dans une page du direct (onglets sur place, liens hors match grisés), « ← Retour au direct ». Les adversaires restent du texte (pas de faux lien) |
 | Pause · Espace | Pause / Reprendre |
 | Échap · Pause et menu, ou Échap | Pause + menu du match |
 | T | Fenêtre Équipe |
@@ -39,10 +39,12 @@
 
 ## 5. Menu du match (emprunt variante 3)
 
-Échap met en pause (jamais le menu de carrière). Voile noir 70 % **sous** le bandeau (score et minute lisibles), panneau de 480 px : Reprendre le match (focus, Échap / Espace), Réglages (page du direct : l'écran Réglages, « ← Retour au menu du match »), Vitesse du match (◂ Posée / Normale / Rapide / Éclair ▸, flèches), Quitter le match (premier appui : avertit ; second : le jeu se ferme, la carrière reprend avant le match — décision du 16/11). Pied : ↑↓ Choisir · Entrée Valider · Échap Reprendre.
+Échap met en pause (jamais le menu de carrière). Voile noir 70 % sur toute l'image, commandes comprises (rien de cliquable dessous) ; seul le bandeau du score passe au-dessus (score et minute lisibles), panneau de 480 px : Reprendre le match (focus, Échap / Espace), Réglages (page du direct : l'écran Réglages, « ← Retour au menu du match » ; Championnats suivis, Importer un pack et Aide du coach grisés, « disponible après le match »), Vitesse du match (◂ ralentit, ▸ accélère : Posée / Normale / Rapide / Éclair ; flèches du clavier), Quitter le match (premier appui : avertit ; second : le jeu se ferme, la carrière reprend avant le match — décision du 16/11). Pied : ↑↓ Choisir · Entrée Valider · Échap Reprendre.
 
 ## 6. Écarts assumés
 
 - La phrase « qui a le ballon » est dans la bande des commandes, à droite du score (comme l'entracte, maquette 14), pas sous le bandeau.
 - Le bandeau garde les noms pendant l'action (variante 1) ; seules la météo et l'aide Échap se retirent.
 - Pause garde le libellé seul (pas d'icône « ❚❚ »).
+- 1280 × 720 : nom court du club sur la plaque (derniers mots retirés, sinon le sigle), jamais « … » ; journal d'une ligne par fait.
+- Plaques : couleur du club assombrie jusqu'à 5:1 pour l'ivoire (mesuré) ; la phrase « qui a le ballon » se tait pendant une bannière ; animations réduites : coupe franche entre la 3D et l'entracte.

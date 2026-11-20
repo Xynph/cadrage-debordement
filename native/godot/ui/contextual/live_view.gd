@@ -104,6 +104,8 @@ var _menu_cle := ""
 var page: Control
 var _page_sorte := ""
 var _page_cle := ""
+## Joueur de la fiche ouverte depuis le journal (page « joueur »).
+var _page_joueur := ""
 ## Le match jouait quand le menu ou la page s'est ouvert : « Reprendre » / « Retour au direct » le relance.
 var _reprendre_apres := false
 ## Pause demandée pendant une réponse du moteur : envoyée dès qu'il est libre.
@@ -427,6 +429,7 @@ func _plaque(cote: int) -> PanelContainer:
 	plaque.gui_input.connect(func(event: InputEvent):
 		var souris := event as InputEventMouseButton
 		var touche := event as InputEventKey
+		if is_instance_valid(menu) and menu.visible: return
 		if (souris != null and souris.pressed and souris.button_index == MOUSE_BUTTON_LEFT) or (touche != null and touche.pressed and not touche.echo and touche.is_action("ui_accept")):
 			plaque.accept_event()
 			ouvrir_fiche_club(cote))
@@ -473,7 +476,7 @@ func _construire_journal(frame: Control) -> void:
 		texte.bbcode_enabled = true
 		texte.fit_content = true
 		texte.scroll_active = false
-		texte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		texte.autowrap_mode = TextServer.AUTOWRAP_OFF
 		texte.mouse_filter = Control.MOUSE_FILTER_PASS
 		texte.add_theme_font_override("normal_font", Charte.texte_moyen())
 		texte.add_theme_color_override("default_color", Charte.IVOIRE if rang == 0 else Charte.IVOIRE_2)
@@ -721,7 +724,9 @@ func _process(_delta: float) -> void:
 func _suivre_possession(entracte: bool) -> void:
 	var etat_jeu: Label = regie.between.get("etat") if regie != null and regie.between != null and regie.between.get("etat") is Label else null
 	var texte := etat_jeu.text.strip_edges() if etat_jeu != null else ""
-	var montre: bool = etat_jeu != null and not entracte and not texte.is_empty() and texte != "Le match" and not _live().get("finished", false)
+	# Pendant une bannière (essai, mi-temps, fin), la phrase se tait : la bannière dit déjà le fait.
+	var banniere: bool = regie != null and regie.get("bandeau") is Control and (regie.bandeau as Control).visible
+	var montre: bool = etat_jeu != null and not entracte and not banniere and not texte.is_empty() and texte != "Le match" and not _live().get("finished", false)
 	if etat_jeu != null:
 		var alpha := 0.0 if montre else 1.0
 		if etat_jeu.modulate.a != alpha: etat_jeu.modulate.a = alpha
@@ -778,8 +783,6 @@ func update_frame(value: Dictionary) -> void:
 	var live := _live()
 	var teams: Array = live.get("teams", [{}, {}])
 	if teams.size() >= 2:
-		home.text = S.G.club_name(teams[0]).to_upper()
-		away.text = S.G.club_name(teams[1]).to_upper()
 		for cote in 2: _sigles[cote].text = S.G.club_abbr(teams[cote]) if teams[cote] is Dictionary else ""
 		_poser_plaques(teams)
 	var scores: Array = live.get("score", [0, 0])
@@ -848,22 +851,39 @@ func _poser_plaques(teams: Array) -> void:
 		style.content_margin_top = roundf(2 * echelle)
 		style.content_margin_bottom = roundf(2 * echelle)
 		puce.add_theme_stylebox_override("panel", style)
-		# Noms très longs : jamais plus de 300 px (1920 × 1080) par plaque, 120 px en 1280 × 720 (les commandes
-		# tiennent sur la même rangée), le reste en points de suspension.
+		# Noms très longs : 300 px au plus (1920 × 1080) par plaque, environ 150 px en 1280 × 720 (les commandes
+		# tiennent sur la même rangée) ; au-delà, le nom court (sans ses derniers mots), sinon le sigle. Jamais « … ».
 		var nom: Label = home if cote == 0 else away
-		var police: Font = nom.get_theme_font("font")
-		var largeur := police.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom.get_theme_font_size("font_size")).x
-		var plafond := clampf((get_viewport_rect().size.x / echelle - 1100.0) * 0.5, 120.0, 300.0) * echelle
-		nom.custom_minimum_size.x = minf(largeur + 2.0, plafond)
 		var complet := S.G.club_name(teams[cote]) if teams.size() > cote and teams[cote] is Dictionary else ""
+		var police: Font = nom.get_theme_font("font")
+		var taille := nom.get_theme_font_size("font_size")
+		var plafond := clampf((get_viewport_rect().size.x / echelle - 1000.0) * 0.55, 140.0, 300.0) * echelle
+		nom.text = nom_court(complet, _sigles[cote].text, police, taille, plafond)
+		nom.custom_minimum_size.x = police.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x + 2.0
 		plaques[cote].tooltip_text = ("%s : fiche du club (le match se met en pause)." % complet) if not complet.is_empty() else "Fiche du club (le match se met en pause)."
 	_coque_score.queue_redraw()
 
-## Fond d'une plaque : la vraie couleur du club, assombrie jusqu'à porter l'ivoire (≥ 4,6:1) ; un club
-## jaune ou or passe au bordeaux de la charte (l'or reste à Continuer).
+## Fond d'une plaque : la vraie couleur du club, assombrie (même teinte) jusqu'à ce que l'ivoire y soit lu à
+## 5:1 au moins, contraste mesuré comme la charte (Charte.contraste) ; un club jaune ou or passe au bordeaux
+## de la charte (l'or reste à Continuer).
+const CONTRASTE_PLAQUE := 5.0
 static func fond_plaque(couleur: Color) -> Color:
-	var base := Charte.CLUB if Charte._proche_de_l_or(couleur) or couleur.a <= 0.0 else Color(couleur, 1.0)
-	return C.readable_primary_fill(base)
+	var fond := Charte.CLUB if Charte._proche_de_l_or(couleur) or couleur.a <= 0.0 else Color(couleur, 1.0)
+	var pas := 0
+	while Charte.contraste(Charte.IVOIRE, fond) < CONTRASTE_PLAQUE and pas < 60:
+		fond = fond.darkened(0.05)
+		pas += 1
+	return fond
+
+## Nom affiché sur une plaque : le nom complet en capitales s'il tient dans `largeur`, sinon le nom sans ses
+## derniers mots (« MEADOWBRIDGE »), sinon le sigle.
+static func nom_court(nom: String, sigle: String, police: Font, taille: int, largeur: float) -> String:
+	var mots := nom.to_upper().split(" ", false)
+	while not mots.is_empty():
+		var essai := " ".join(mots)
+		if police.get_string_size(essai, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x <= largeur: return essai
+		mots.remove_at(mots.size() - 1)
+	return sigle.to_upper()
 
 # --- Journal ------------------------------------------------------------------
 
@@ -896,8 +916,24 @@ func _dessiner_journal() -> void:
 		(ligne[2] as Control).visible = not fait.is_empty()
 		(ligne[0] as Label).text = str(fait.get("minute", ""))
 		var riche: RichTextLabel = ligne[1]
-		var bbcode := liens_joueurs(str(fait.get("texte", "")), joueurs)
+		# Un fait = une ligne (hauteur fixe de deux faits) : un texte trop long s'arrête sur un mot entier « … ».
+		var bbcode := liens_joueurs(ligne_tenue(str(fait.get("texte", "")), Charte.texte_moyen(), riche.get_theme_font_size("normal_font_size"), _largeur_journal()), joueurs)
 		if riche.text != bbcode: riche.text = bbcode
+
+## Largeur utile d'une ligne du journal (panneau moins marges et colonne des minutes).
+func _largeur_journal() -> float:
+	if not is_instance_valid(_legende): return 600.0
+	return maxf(120.0, _legende.custom_minimum_size.x - roundf(32 * echelle) - roundf(32 * echelle) - roundf(12 * echelle) - 4.0)
+
+## `texte` s'il tient sur une ligne de `largeur`, sinon coupé au dernier mot entier qui tient, suivi de « … ».
+static func ligne_tenue(texte: String, police: Font, taille: int, largeur: float) -> String:
+	if police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x <= largeur: return texte
+	var mots := texte.split(" ", false)
+	while mots.size() > 1:
+		mots.remove_at(mots.size() - 1)
+		var essai := " ".join(mots).trim_suffix(",").trim_suffix(":").strip_edges() + " …"
+		if police.get_string_size(essai, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x <= largeur: return essai
+	return texte.left(12) + " …"
 
 ## Texte d'un fait en BBCode : chaque nom d'un de nos joueurs (nom complet, ou nom de famille sans
 ## ambiguïté) devient un lien [url=id] ; le reste est échappé. Les adversaires restent du texte.
@@ -945,18 +981,18 @@ func _mini_fiche():
 	return load("res://ui/immersive08/mini_fiche.gd")
 
 func _survol_joueur(id: String, ancre: Control) -> void:
-	_mini_fiche().montrer(app, id, "squad", ancre)
+	var fiche: Control = _mini_fiche().montrer(app, id, "squad", ancre)
+	# La mini-fiche se pose sur l'application : au-dessus de la scène du match (z 100).
+	if fiche != null: fiche.z_index = 200
 
-## Nom d'un de nos joueurs cliqué dans le journal : la fenêtre Équipe s'ouvre sur lui (le match se met en
-## pause) ; un remplaçant ouvre la composition.
+## Nom d'un de nos joueurs cliqué dans le journal : sa fiche complète dans une page du direct (le match se met
+## en pause) ; « Retour au direct » le rend tel quel.
 func ouvrir_joueur(id: String) -> void:
 	_mini_fiche().cacher(app)
-	var poste := -1
-	var lineup: Array = _live().get("lineup", []) if _live().get("lineup") is Array else []
-	for i in lineup.size():
-		var joueur: Variant = lineup[i]
-		if (joueur is Dictionary and str(joueur.get("id", "")) == id) or str(joueur) == id: poste = i
-	ouvrir_equipe("composition", poste)
+	if (load("res://ui/immersive08/fiche_commune.gd").trouver(app, id, "squad") as Dictionary).is_empty(): return
+	_suspendre()
+	_page_joueur = id
+	_ouvrir_page("joueur")
 
 ## Texte des deux lignes du journal (tests, captures) : [« 27' Bickerstaff gagne la touche », …].
 func journal_affiche() -> Array[String]:
@@ -1048,7 +1084,9 @@ func ouvrir_menu(mode: String = "menu") -> void:
 	menu.show()
 	move_child(_menu_voile, get_child_count() - 1)
 	move_child(menu, get_child_count() - 1)
-	_rangee_haut.z_index = 1
+	# Seul le bandeau du score passe au-dessus du voile (lisible) ; commandes et plaques restent dessous : rien
+	# d'autre n'est cliquable tant que le menu est ouvert.
+	_coque_score.z_index = 1
 	menu.z_index = 1
 	_placer_menu()
 	var premier: Control = menu.find_child("MatchMenuReprendre" if mode == "menu" else "MatchMenuConfirmer", true, false)
@@ -1058,7 +1096,7 @@ func ouvrir_menu(mode: String = "menu") -> void:
 func _cacher_menu() -> void:
 	if is_instance_valid(menu): menu.hide()
 	if is_instance_valid(_menu_voile): _menu_voile.hide()
-	if is_instance_valid(_rangee_haut): _rangee_haut.z_index = 0
+	if is_instance_valid(_coque_score): _coque_score.z_index = 0
 
 ## Ferme le menu ; `reprendre` : le match repart (Reprendre, Échap, Espace).
 func fermer_menu(reprendre: bool = true) -> void:
@@ -1127,7 +1165,7 @@ func _actualiser_menu() -> void:
 	else:
 		colonne.add_child(_option("MatchMenuReprendre", "Reprendre le match", "", ["Échap", "Espace"], func(): fermer_menu(true)))
 		colonne.add_child(_option("MatchMenuReglages", "Réglages", "son, image, commandes", "›", func(): ouvrir_reglages()))
-		colonne.add_child(_option("MatchMenuVitesse", "Vitesse du match", "s’applique dès la reprise", "◂ %s ▸" % _vitesse_libelle(), func(): _changer_vitesse(1)))
+		colonne.add_child(_option("MatchMenuVitesse", "Vitesse du match", "s’applique dès la reprise", {"vitesse": _vitesse_libelle()}, func(): _changer_vitesse(1)))
 		var quitter_sous := "Appuie encore : le jeu se ferme, le match sera rejoué depuis le coup d’envoi." if _menu_quitter_arme \
 			else "Tu reprendras avant le match : il sera rejoué depuis le coup d’envoi."
 		colonne.add_child(_option("MatchMenuQuitter", "Quitter le match", quitter_sous, "", _quitter))
@@ -1216,7 +1254,33 @@ func _option(nom: String, libelle: String, precision: String, droite: Variant, a
 		sous.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		sous.add_theme_font_size_override("font_size", roundi(13 * e))
 		pile.add_child(sous)
-	if droite is Array:
+	if droite is Dictionary:
+		# Vitesse : ◂ ralentit, ▸ accélère (deux zones distinctes) ; la ligne elle-même avance d'un cran.
+		var reglage := HBoxContainer.new()
+		reglage.name = "Droite"
+		reglage.add_theme_constant_override("separation", roundi(6 * e))
+		reglage.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		for sens: int in [-1, 1]:
+			var fleche := Button.new()
+			fleche.name = "MatchMenuVitesseMoins" if sens < 0 else "MatchMenuVitessePlus"
+			fleche.text = "◂" if sens < 0 else "▸"
+			fleche.focus_mode = Control.FOCUS_NONE
+			fleche.tooltip_text = "Plus lent" if sens < 0 else "Plus rapide"
+			fleche.set_meta("contextual_enabled", true)
+			fleche.pressed.connect(_changer_vitesse.bind(sens))
+			C.style_bouton_lien(fleche, 16)
+			fleche.add_theme_font_override("font", Charte.texte_moyen())
+			fleche.add_theme_font_size_override("font_size", roundi(16 * e))
+			fleche.custom_minimum_size = Vector2(roundf(28 * e), roundf(32 * e))
+			fleche.alignment = HORIZONTAL_ALIGNMENT_CENTER
+			if sens > 0:
+				var valeur := _texte(str(droite.get("vitesse", "")), Charte.texte_moyen(), Charte.IVOIRE)
+				valeur.name = "Valeur"
+				valeur.add_theme_font_size_override("font_size", roundi(16 * e))
+				reglage.add_child(valeur)
+			reglage.add_child(fleche)
+		rangee.add_child(reglage)
+	elif droite is Array:
 		# Touches du raccourci (« Échap », « Espace ») en puces, comme la maquette.
 		var touches := HBoxContainer.new()
 		touches.name = "Droite"
@@ -1285,7 +1349,7 @@ func _quitter() -> void:
 func confier_fin() -> void:
 	ouvrir_menu("deleguer")
 
-# --- Pages du direct : fiche du club, réglages ------------------------------------------
+# --- Pages du direct : fiche du club, fiche joueur, réglages -----------------------------------
 
 ## Fiche du club `cote` (0 : recevant, 1 : visiteur) dans une page du direct : match en pause, « Retour au
 ## direct » le rend tel quel (et le relance s'il jouait). Fiche commune (club_sheet_canvas.gd), y compris
@@ -1306,11 +1370,25 @@ func ouvrir_reglages() -> void:
 	_cacher_menu()
 	_ouvrir_page("reglages")
 
+## Ce que la fiche du club sait du match en cours (club_sheet_canvas.gd, « MATCH EN COURS ») : les deux clubs,
+## le score et la minute du direct.
+func _poser_match_pour_fiches() -> void:
+	var equipes: Array = _live().get("teams", [])
+	if equipes.size() < 2 or not equipes[0] is Dictionary or not equipes[1] is Dictionary or equipes[0].get("id") == null or equipes[1].get("id") == null:
+		app.remove_meta("fiche_club_en_match")
+		return
+	var marque: Array = _live().get("score", [0, 0])
+	app.set_meta("fiche_club_en_match", {"ids": [int(float(equipes[0].id)), int(float(equipes[1].id))], "score": [int(marque[0]), int(marque[1])], "minute": int(_live().get("minute", 0))})
+
 func _ouvrir_page(sorte: String) -> void:
 	_mini_fiche().cacher(app)
 	if drawer.visible: _fermer_tiroir()
 	_page_sorte = sorte
 	_page_cle = ""
+	if sorte == "joueur":
+		# Fiche ouverte depuis le direct : l'onglet Vue d'ensemble, sans charge individuelle en cours d'édition.
+		app.management_ui.erase("charge_joueur")
+		app.management_ui.immersive_player_tab = 0
 	if not is_instance_valid(page):
 		page = Control.new()
 		page.name = "MatchPage"
@@ -1322,6 +1400,44 @@ func _ouvrir_page(sorte: String) -> void:
 	_actualiser_page()
 	director._refresh_controls()
 
+## Actions qui restent sur place dans une page du direct (onglets, tri, suivi du club) ; tout le reste mène à un
+## autre écran ou ouvre une fenêtre : grisé, « Disponible après le match ».
+const ACTIONS_SUR_PLACE := ["ClubSheetTab", "ClubSheetFollow", "ClubSheetSort_", "ClubSheetRetry", "FullPlayerTab"]
+
+static func neutraliser(racine: Node) -> Array[String]:
+	var grises: Array[String] = []
+	for noeud: Node in racine.find_children("*", "BaseButton", true, false):
+		var bouton := noeud as BaseButton
+		var nom := str(bouton.name)
+		if ACTIONS_SUR_PLACE.any(func(prefixe: String) -> bool: return nom.begins_with(prefixe)): continue
+		# Le retour de la fiche (vers l'Effectif) est remplacé par « Retour au direct ».
+		if nom == "PlayerBackToSquad":
+			bouton.hide()
+			continue
+		bouton.disabled = true
+		bouton.focus_mode = Control.FOCUS_NONE
+		bouton.mouse_default_cursor_shape = Control.CURSOR_ARROW
+		bouton.tooltip_text = "Disponible après le match."
+		bouton.set_meta("indisponible_en_match", true)
+		bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+		var repos: StyleBox = bouton.get_theme_stylebox("normal")
+		if repos != null: bouton.add_theme_stylebox_override("disabled", repos)
+		grises.append(nom)
+	return grises
+
+## Onglets et suivi de la fiche du club au style lien commun (charte §7 : pas de boîte encadrée) ; l'onglet
+## ouvert reste souligné.
+static func liens_fiche_club(racine: Node) -> void:
+	for noeud: Node in racine.find_children("*", "Button", true, false):
+		var bouton := noeud as Button
+		var nom := str(bouton.name)
+		if not (nom.begins_with("ClubSheetTab") or nom == "ClubSheetFollow"): continue
+		var actif := bouton.toggle_mode and bouton.button_pressed
+		bouton.icon = null
+		C.style_bouton_lien(bouton, 22, actif)
+		if not actif and nom.begins_with("ClubSheetTab"):
+			for cle in ["font_color", "font_focus_color"]: bouton.add_theme_color_override(cle, Charte.IVOIRE_2)
+
 ## Page reconstruite quand son contenu change (onglet de la fiche, réponse du moteur, échelle).
 func _actualiser_page() -> void:
 	if not is_instance_valid(page) or not page.visible: return
@@ -1329,7 +1445,10 @@ func _actualiser_page() -> void:
 	var donnees := false
 	if _page_sorte == "club" and fiche is Dictionary:
 		donnees = not load("res://ui/immersive08/club_sheet_canvas.gd").cached(app, int(fiche.get("id", -1))).is_empty()
-	var cle := JSON.stringify([_page_sorte, fiche if _page_sorte == "club" else null, donnees, size, C.density])
+	var etat_page: Variant = null
+	if _page_sorte == "club": etat_page = fiche
+	elif _page_sorte == "joueur": etat_page = [_page_joueur, app.management_ui.get("immersive_player_tab", 0)]
+	var cle := JSON.stringify([_page_sorte, etat_page, donnees, size, C.density])
 	if cle == _page_cle: return
 	_page_cle = cle
 	S.clear(page)
@@ -1356,10 +1475,13 @@ func _actualiser_page() -> void:
 	C.style_bouton_lien(retour, 19, true)
 	retour.add_theme_font_size_override("font_size", roundi(16 * echelle))
 	tete.add_child(retour)
-	var titre := _texte("RÉGLAGES" if _page_sorte == "reglages" else "FICHE DU CLUB", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
-	titre.add_theme_font_size_override("font_size", roundi(22 * echelle))
-	tete.add_child(titre)
-	var rappel := _texte("Le match est en pause à la %de." % maxi(1, int(_live().get("minute", 0))), Charte.TEXTE, Charte.IVOIRE_2)
+	# Un seul titre : celui de la fiche (club, joueur) ; « RÉGLAGES » pour l'écran des réglages qui n'en a pas.
+	if _page_sorte == "reglages":
+		var titre := _texte("RÉGLAGES", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
+		titre.add_theme_font_size_override("font_size", roundi(22 * echelle))
+		tete.add_child(titre)
+	var rappel := _texte("Le match est en pause à la %de. Grisé : disponible après le match." % maxi(1, int(_live().get("minute", 0))), Charte.TEXTE, Charte.IVOIRE_2)
+	rappel.name = "MatchPageNote"
 	rappel.add_theme_font_size_override("font_size", roundi(13 * echelle))
 	C.fill(rappel)
 	rappel.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1374,16 +1496,26 @@ func _actualiser_page() -> void:
 		var contenu: Control = load("res://ui/preferences_dialog.gd").page(app, app.get("user_preferences"))
 		C.fill(contenu, true)
 		defile.add_child(contenu)
+	elif _page_sorte == "joueur":
+		var trouve: Dictionary = load("res://ui/immersive08/fiche_commune.gd").trouver(app, _page_joueur, "squad")
+		if not trouve.is_empty():
+			var fiche_joueur: Control = load("res://ui/immersive08/player_canvas.gd").build(app, trouve.joueur, "squad")
+			fiche_joueur.name = "MatchPlayerSheet"
+			defile.add_child(fiche_joueur)
+			neutraliser(fiche_joueur)
 	else:
+		_poser_match_pour_fiches()
 		var Fiche = load("res://ui/immersive08/club_sheet_canvas.gd")
 		var toile := Control.new()
 		toile.name = "MatchClubSheetCanvas"
 		toile.custom_minimum_size = Vector2(Fiche.WIDTH, Fiche.HEIGHT) * C.density
 		defile.add_child(toile)
 		Fiche.build(app, toile)
+		liens_fiche_club(toile)
+		neutraliser(toile)
 	retour.call_deferred("grab_focus")
 
-## Retour : au menu du match depuis les réglages, au direct depuis la fiche (le match repart s'il jouait).
+## Retour : au menu du match depuis les réglages, au direct depuis une fiche (le match repart s'il jouait).
 func fermer_page() -> void:
 	_mini_fiche().cacher(app)
 	if not is_instance_valid(page): return
@@ -1392,6 +1524,7 @@ func fermer_page() -> void:
 	S.clear(page)
 	_page_sorte = ""
 	_page_cle = ""
+	app.remove_meta("fiche_club_en_match")
 	if sorte == "reglages":
 		apply_preferences()
 		var reprendre := _reprendre_apres

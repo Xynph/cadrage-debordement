@@ -63,6 +63,25 @@ func ors(racine: Node) -> Array[String]:
 		if c.has_meta("fond") and c.get_meta("fond") is Color and dore(c.get_meta("fond")): trouves.append(str(c.name) + ".fond")
 	return trouves
 
+## Boutons actifs d'une page du direct qui mènent hors du match (hors onglets, tri, suivi) : doivent être grisés.
+func actifs_hors_place(racine: Node) -> Array[String]:
+	var trouves: Array[String] = []
+	for n: Node in racine.find_children("*", "BaseButton", true, false):
+		var b := n as BaseButton
+		if b.disabled or not b.is_visible_in_tree(): continue
+		if LiveView.ACTIONS_SUR_PLACE.any(func(p: String) -> bool: return str(b.name).begins_with(p)): continue
+		trouves.append(str(b.name))
+	return trouves
+
+## Boutons actifs et visibles sans aucune action branchée.
+func muets(racine: Node) -> Array[String]:
+	var trouves: Array[String] = []
+	for n: Node in racine.find_children("*", "BaseButton", true, false):
+		var b := n as BaseButton
+		if b.disabled or not b.is_visible_in_tree() or b is OptionButton or b is MenuButton or b is CheckBox or b is CheckButton: continue
+		if b.get_signal_connection_list("pressed").is_empty() and b.get_signal_connection_list("toggled").is_empty(): trouves.append(str(b.name))
+	return trouves
+
 func fenetres() -> Array:
 	return app.find_children("*", "Window", true, false).filter(func(w: Window) -> bool: return w.visible)
 
@@ -153,12 +172,46 @@ func run() -> void:
 	check(fenetres().is_empty(), "Aucune fenêtre ouverte par le clic : " + str(fenetres().map(func(w: Window): return w.name)))
 	await until(func(): return page.find_child("FicheClub", true, false) != null and page.find_child("ClubSheetLoading", true, false) == null, 30000)
 	check(page.find_child("FicheClub", true, false) != null, "Fiche du club construite")
+	var toile: Control = page.find_child("MatchClubSheetCanvas", true, false)
+	var apres: Label = toile.find_child("ClubSheetAfterMatch", true, false) as Label
+	check(["ClubSheetCalendar", "ClubSheetCompare", "ClubSheetRecruit"].all(func(n: String) -> bool: return toile.find_child(n, true, false) == null) and apres != null and apres.text.contains("après le match"), "Fiche du club en match : Calendrier, Comparer, Recruter écrits « disponibles après le match »")
+	check(actifs_hors_place(toile).is_empty(), "Fiche du club en match : tout lien vers un autre écran est grisé : " + str(actifs_hors_place(toile)))
+	check(muets(page).is_empty(), "Fiche du club en match : aucun clic sans réponse : " + str(muets(page)))
+	check(toile.find_child("ClubSheetLiveMatch", true, false) != null, "La fiche du club sait que le match est en cours")
 	if proof != "": await capture("fiche-club")
 	var retour: Button = page.find_child("MatchPageBack", true, false)
 	check(retour != null and retour.text.contains("Retour au direct"), "Lien « Retour au direct »")
 	if retour != null: retour.pressed.emit()
 	await wait_command()
-	check(not page.visible and surface() == view, "Retour au direct")
+	check(not page.visible and surface() == view and not app.has_meta("fiche_club_en_match"), "Retour au direct")
+	# Notre club : ni suivi, ni comparaison, ni recrutement.
+	var notre_cote := 0 if int(app.model.live.teams[0].get("id", -1)) == int(app.model.club.id) else 1
+	view.ouvrir_fiche_club(notre_cote)
+	await wait_command()
+	await until(func(): return page.find_child("FicheClub", true, false) != null and page.find_child("ClubSheetLoading", true, false) == null, 30000)
+	check(page.find_child("ClubSheetFollow", true, false) == null and page.find_child("ClubSheetAfterMatch", true, false) != null, "Notre club : pas de « Suivre », calendrier après le match")
+	view.fermer_page()
+	await wait_command()
+
+	# 4 bis. Nom d'un de nos joueurs dans le journal : sa fiche complète dans le direct, retour au direct.
+	view.ouvrir_joueur(str(notre.id))
+	await wait_command()
+	await settle(4)
+	var fiche_joueur: Control = page.find_child("MatchPlayerSheet", true, false)
+	check(page.visible and fiche_joueur != null and fenetres().is_empty(), "Nom du journal : fiche complète du joueur dans le direct")
+	if fiche_joueur != null:
+		var retour_effectif: Control = fiche_joueur.find_child("PlayerBackToSquad", true, false)
+		check(retour_effectif == null or not retour_effectif.visible, "Le retour vers l'Effectif laisse place à « Retour au direct »")
+		check(actifs_hors_place(fiche_joueur).is_empty() and muets(page).is_empty(), "Fiche joueur en match : liens hors match grisés, aucun clic muet (%s / %s)" % [str(actifs_hors_place(fiche_joueur)), str(muets(page))])
+		var onglet: Button = fiche_joueur.find_child("FullPlayerTab2", true, false)
+		if onglet != null:
+			onglet.pressed.emit()
+			await settle(4)
+			check(page.visible and page.find_child("MatchPlayerSheet", true, false) != null and int(app.management_ui.get("immersive_player_tab", 0)) == 2, "Onglet de la fiche joueur : sur place, dans le direct")
+	if proof != "": await capture("fiche-joueur")
+	view.fermer_page()
+	await wait_command()
+	check(not page.visible, "Retour au direct depuis la fiche joueur")
 
 	# 5. Échap : pause et menu du match (Reprendre en tête, Réglages, Vitesse, Quitter), voile sous le bandeau.
 	if app.model.live.get("paused", false): await command("pause", {"paused": false})
@@ -174,13 +227,28 @@ func run() -> void:
 	check(absf(panneau.size.x - 480.0) <= 2.0, "Panneau de 480 px : " + str(panneau.size))
 	var voile: Control = view.get("_menu_voile")
 	var rangee_haut: Control = view.get("_rangee_haut")
-	check(voile.visible and voile.get_index() > view.score.find_parent("MatchHud").get_parent().get_index() and rangee_haut.z_index > voile.z_index and rangee_haut.is_ancestor_of(view.score), "Voile sur le jeu et l'entracte, rangée du score au-dessus : score et minute lisibles")
+	check(voile.visible and voile.get_index() > view.score.find_parent("MatchHud").get_parent().get_index() and bandeau.z_index > voile.z_index and rangee_haut.z_index <= voile.z_index, "Voile sur le jeu, l'entracte et les commandes ; seul le bandeau du score passe au-dessus")
+	# Rien de cliquable sous le menu : la plaque ne réagit pas, le bouton Pause est sous le voile.
+	var clic_menu := InputEventMouseButton.new()
+	clic_menu.button_index = MOUSE_BUTTON_LEFT
+	clic_menu.pressed = true
+	view.plaques[0].gui_input.emit(clic_menu)
+	await settle(2)
+	check(not view.get("page").visible and menu.visible, "Plaque inactive tant que le menu est ouvert")
 	check(view.get_viewport().gui_get_focus_owner() == menu.find_child("MatchMenuReprendre", true, false), "Focus sur « Reprendre le match »")
 	if proof != "": await capture("menu-echap")
 	var vitesse_avant := str(view.regie.horloge)
 	(menu.find_child("MatchMenuVitesse", true, false) as Button).pressed.emit()
 	await settle(2)
 	check(str(view.regie.horloge) != vitesse_avant, "Vitesse du match changée (%s → %s)" % [vitesse_avant, str(view.regie.horloge)])
+	var ordre := ["lente", "normale", "rapide", "eclair"]
+	var rang_plus := ordre.find(str(view.regie.horloge))
+	(menu.find_child("MatchMenuVitesseMoins", true, false) as Button).pressed.emit()
+	await settle(2)
+	check(ordre.find(str(view.regie.horloge)) == wrapi(rang_plus - 1, 0, 4), "◂ ralentit (%s)" % str(view.regie.horloge))
+	(menu.find_child("MatchMenuVitessePlus", true, false) as Button).pressed.emit()
+	await settle(2)
+	check(ordre.find(str(view.regie.horloge)) == rang_plus, "▸ accélère (%s)" % str(view.regie.horloge))
 	view.regie.choisir_horloge(vitesse_avant)
 	(menu.find_child("MatchMenuQuitter", true, false) as Button).pressed.emit()
 	await settle(2)
@@ -189,6 +257,10 @@ func run() -> void:
 	(menu.find_child("MatchMenuReglages", true, false) as Button).pressed.emit()
 	await settle(4)
 	check(page.visible and page.find_child("PreferencesPage", true, false) != null and not menu.visible and fenetres().is_empty(), "Réglages : page du direct, pas une fenêtre")
+	for nom in ["PreferencesLeagueDetail", "PreferencesPack", "PreferencesCoachHelp"]:
+		var b := page.find_child(nom, true, false) as Button
+		check(b == null or (b.disabled and b.text.contains("disponible après le match")), "Réglages en match : « %s » grisé, « disponible après le match »" % nom)
+	check(muets(page).is_empty(), "Réglages en match : aucun clic sans réponse : " + str(muets(page)))
 	(page.find_child("MatchPageBack", true, false) as Button).pressed.emit()
 	await settle(4)
 	check(not page.visible and menu.visible, "Retour des réglages au menu du match")

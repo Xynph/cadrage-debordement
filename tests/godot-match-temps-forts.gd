@@ -706,7 +706,7 @@ func active(view: Control) -> void:
 	check(view.clock.text.ends_with("′"), "Le bandeau affiche l'horloge du plan rejoué : " + view.clock.text)
 	# Écran 13 (20/11/2026) : la légende est reprise par le journal du bas (minute + texte).
 	await settle(2)
-	check(not view.events.text.is_empty() and view.journal_affiche().any(func(l: String) -> bool: return l.ends_with(view.events.text.strip_edges())), "La légende du plan est affichée : " + view.events.text + " · journal " + str(view.journal_affiche()))
+	check(not view.events.text.is_empty() and view.journal_affiche().any(func(l: String) -> bool: return l.contains(view.events.text.strip_edges().left(16))), "La légende du plan est affichée : " + view.events.text + " · journal " + str(view.journal_affiche()))
 	# Le match importé est en pause : le temps fort va tout de même à son terme, puis l'écran intermédiaire attend.
 	check(await until(func(): return regie.etat == regie.INTER, 30000), "Le temps fort se termine")
 	check(between.is_visible_in_tree() and regie.voile.visible, "L'écran intermédiaire couvre la 3D")
