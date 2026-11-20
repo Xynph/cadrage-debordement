@@ -55,6 +55,8 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 		entry.charge = str(app.management_ui.get("charge_joueur", ""))
 	if route == "Préparation": entry.preparation_tab = int(app.management_ui.get("preparation", {}).get("tab", 0))
 	if route == "Recrutement": entry.market = str(app.management_ui.get("market", {}).get("navigation_id", ""))
+	# Sous-page de l'avant-match (délégation, feuille incomplète) : une étape d'historique distincte de l'écran.
+	if route == "Match": entry.avant_page = str(app.management_ui.get("avant_page", ""))
 	# Fiche d'une piste ou d'un Espoir : une étape d'historique distincte de la liste.
 	var fiche: Variant = app.management_ui.get("fiche_joueur")
 	if route in ["Recrutement", "Formation"]: entry.fiche = str(fiche.get("id", "")) if fiche is Dictionary else ""
@@ -521,6 +523,7 @@ func _travel(direction: int) -> void:
 		app.roster_sort = entry.roster.sort
 	if entry.route == "Préparation" and app.management_ui.get("preparation") is Dictionary:
 		app.management_ui.preparation.tab = entry.get("preparation_tab", 0)
+	if entry.route == "Match": app.management_ui["avant_page"] = entry.get("avant_page", "")
 	if entry.route == "Staff": app.selected_staff_club = int(entry.staff)
 	if entry.route == "Composition":
 		if str(entry.get("composition_page", "")).is_empty(): app.management_ui.erase("composition_page")

@@ -71,6 +71,12 @@ const COMPACT_ART = {
 	"Rivalités":"trophy", "Vestiaire":"lockerroom", "Carrière":"entry-ground",
 }
 
+## L'avant-match (route Match, aucun direct en cours, fenêtre assez grande pour l'écran riche) se joue hors coque.
+static func avant_match_hors_coque(app: Control) -> bool:
+	if app.route != "Match" or not app.model.get("club") is Dictionary or not app._live().is_empty(): return false
+	var physical := app.get_window().size
+	return physical.x >= RICH_MIN_SIZE.x and physical.y >= RICH_MIN_SIZE.y
+
 static func render(app: Control) -> bool:
 	if not app.model.get("club") is Dictionary or app.route in ["Accueil", "Création", "Packs"]: return false
 	var window := app.get_window()
@@ -124,15 +130,22 @@ static func render(app: Control) -> bool:
 	var shell := C.h(0)
 	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layout.add_child(shell)
-	_sidebar(shell, app)
+	# Avant-match : écran hors coque (charte §7) ; ni rail ni barre haute, l'écran porte son propre bandeau.
+	var hors_coque := avant_match_hors_coque(app)
+	app.set_meta("hors_coque", hors_coque)
+	# Sans bouton Continuer, l'ancien (libéré avec la coque précédente) ne doit plus être pointé.
+	if hors_coque: app.primary_button = null
+	if not hors_coque: _sidebar(shell, app)
 	var workspace := C.v(0)
 	C.fill(workspace, true)
 	shell.add_child(workspace)
-	_topbar(workspace, app, layout)
+	if not hors_coque: _topbar(workspace, app, layout)
 	Raccourcis.installer(app)
 	var inset := C.margin(32)
 	app.workspace_inset = inset
 	inset.add_theme_constant_override("margin_top", C.px(22))
+	if hors_coque:
+		for edge in ["left", "top", "right", "bottom"]: inset.add_theme_constant_override("margin_" + edge, 0)
 	inset.item_rect_changed.connect(app._layout_coach)
 	# Les gabarits des écrans sont dessinés pour une zone de travail de 2312 de large (rail de 248) ; le rail de la
 	# coque commune en fait 309 : la zone de contenu garde ses gabarits et se met à l'échelle de la place restante
@@ -158,7 +171,7 @@ static func render(app: Control) -> bool:
 	if app.route=="Bureau":
 		layout.set_meta("immersive_office_match_status",app.minibar)
 		_position_office_match_status(app.minibar,layout.scale.y)
-	_pack_warning(app,content,layout)
+	if not hors_coque: _pack_warning(app,content,layout)
 	if canvas_script==null and not immersive_match: _subnavigation(content, app)
 	app.body_scroll = ScrollContainer.new()
 	app.body_scroll.name = "CareerWorkspace"
@@ -179,7 +192,7 @@ static func render(app: Control) -> bool:
 			D.button(canvas,Rect2(1830,147,395,40),"Vue mensuelle",_calendar_table.bind(app,false),false,"calendar",true,app.accent,"CalendarShowMonth")
 	elif app.route == "Bureau": app.body.add_child(OfficeCanvas.build(app) if physical.x >= 1600 else Office.build(app))
 	else: _existing_page(app,immersive_match)
-	_footer(content, app, layout)
+	if not hors_coque: _footer(content, app, layout)
 	app._update_live_bar()
 	app.call_deferred("_refresh_coach")
 	app.call_deferred("_observe_navigation")
