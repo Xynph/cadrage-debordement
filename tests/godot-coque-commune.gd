@@ -313,6 +313,10 @@ func gold_once() -> void:
 				if color.a > .5 and (color.is_equal_approx(Charte.OR) or color.is_equal_approx(Charte.OR_VIF)): found.append(str(node.name))
 	check(found == ["ContinuePlate"], "Un seul aplat or dans la coque : Continuer (%s)" % ", ".join(found))
 
+## Rectangle réel à l'écran (position globale, taille mise à l'échelle du gabarit).
+func reel(c: Control) -> Rect2:
+	return Rect2(c.get_global_position(), c.size * c.get_global_transform().get_scale())
+
 func layout(size: Vector2i) -> void:
 	root.size = size
 	app._render(false)
@@ -350,5 +354,40 @@ func layout(size: Vector2i) -> void:
 			if text.is_empty() and not node is LineEdit: continue
 			var pixels := float(node.get_theme_font_size("font_size")) * node.get_global_transform().get_scale().y
 			check(pixels >= 11.9, "%s : « %s » à %.1f px réels (plancher 12)" % [label, text, pixels])
+	# En-tête et pied du rail : entièrement dans le rail, aucun texte rogné (fenêtre 1280×720 comprise).
+	var rail_rect := reel(rail_node)
+	var header := named("ImmersiveClubHeader") as Control
+	check(header != null and rail_rect.grow(1.0).encloses(reel(header)), "%s : en-tête du rail dans le rail" % label)
+	check(rail_rect.grow(1.0).encloses(reel(dock)), "%s : pied du rail dans le rail (%s dans %s)" % [label, str(reel(dock)), str(rail_rect)])
+	var context_label := named("ImmersiveClubContext") as Label
+	if context_label != null:
+		var rank_text: String = app.Immersive.P.rank_ordinal(app.model.club)
+		check(rank_text == "—" or context_label.text.ends_with("· " + rank_text), "%s : le rang reste dans « %s »" % [label, context_label.text])
+		if context_label.text != str(context_label.get_meta("context_complet", "")): check(context_label.tooltip_text == str(context_label.get_meta("context_complet", "")), "%s : texte complet en infobulle" % label)
+	for zone_node: Control in [header, dock]:
+		for node: Control in zone_node.find_children("*", "Control", true, false):
+			if not node.is_visible_in_tree() or not (node is Label or node is Button): continue
+			var text: String = node.get("text")
+			if text.is_empty(): continue
+			var font: Font = node.get_theme_font("font")
+			var font_size: int = node.get_theme_font_size("font_size")
+			var rect := reel(node)
+			check(rail_rect.grow(1.0).encloses(rect), "%s : « %s » dans le rail (%s)" % [label, text, str(rect)])
+			var lines: int = (node as Label).get_line_count() if node is Label else 1
+			var wrapped: bool = node is Label and (node as Label).autowrap_mode != TextServer.AUTOWRAP_OFF
+			var width_needed := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+			var margin_x := 0.0
+			if node is Button:
+				var box := (node as Button).get_theme_stylebox("normal")
+				margin_x = box.get_margin(SIDE_LEFT) + box.get_margin(SIDE_RIGHT)
+			if not wrapped: check(width_needed + margin_x <= node.size.x + 1.0, "%s : « %s » entier (%.0f px pour %.0f)" % [label, text, width_needed + margin_x, rect.size.x])
+			check(font.get_height(font_size) * lines <= node.size.y + 1.0, "%s : « %s » entier en hauteur (%.0f px pour %.0f)" % [label, text, font.get_height(font_size) * lines, node.size.y])
+	var stripe_node := named("ImmersiveClubStripe") as Control
+	for id: String in ["ImmersiveClubName", "ImmersiveClubContext"]:
+		var texte := named(id) as Control
+		if stripe_node != null and texte != null: check(reel(texte).end.y <=reel(stripe_node).position.y + 1.0, "%s : %s au-dessus du liseré du club" % [label, id])
+	var key_chip := named("Touche_CtrlS")
+	var save_button := named("ImmersiveSidebarAction2") as Control
+	if key_chip != null and save_button != null: check(reel(save_button).grow(1.0).encloses(reel(key_chip as Control)), "%s : « Ctrl S » dans le bouton Sauvegarder" % label)
 	var name_label := named("ImmersiveClubName") as Label
 	check(name_label != null and name_label.get_line_count() <= 2 and name_label.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING, "%s : nom du club entier (%d ligne(s))" % [label, name_label.get_line_count() if name_label != null else -1])

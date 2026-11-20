@@ -550,7 +550,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	rail.add_child(background)
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var national := Selections.nation_only(app.model)
-	_rail_header(rail, app, national)
+	var rail_top := _rail_header(rail, app, national) + (RAIL_TOP - RAIL_HEADER)
 	var sections: Array = _rail_entries(app)
 	var secondary: Array = []
 	if not national:
@@ -558,7 +558,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		if app.model.get("international") is Dictionary: secondary.append(["Sélections", "Sélections", ["Sélections"]])
 	# Lignes de 83 (62 px à 1920) compressibles jusqu'à 59 (44 px) ; au-delà, le groupe central défile, le pied reste fixe.
 	var height: float = app.get_window().size.y / C.density
-	var available := maxf(RAIL_ROW_MIN, height - RAIL_TOP - RAIL_DOCK - 8.0)
+	var available := maxf(RAIL_ROW_MIN, height - rail_top - RAIL_DOCK - 8.0)
 	var gap := RAIL_GAP if not secondary.is_empty() else 0.0
 	var weight := sections.size() + secondary.size() * RAIL_ROW_SMALL / RAIL_ROW
 	var row := clampf(floorf((available - gap) / weight), RAIL_ROW_MIN, RAIL_ROW)
@@ -570,7 +570,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO if total > available else ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	scroll.follow_focus = true
 	rail.add_child(scroll)
-	D.place(scroll, Rect2(0, RAIL_TOP, RAIL_WIDTH, minf(total, available)))
+	D.place(scroll, Rect2(0, rail_top, RAIL_WIDTH, minf(total, available)))
 	var column := Control.new()
 	column.name = "ImmersiveSidebarColumn"
 	column.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -590,7 +590,9 @@ static func _sidebar(parent: Node, app: Control) -> void:
 
 ## En-tête : écusson, nom du club (Barlow Condensed ExtraBold Italic, capitales), « division · rang », liseré club-trait
 ## incliné. Un clic ouvre la fiche du club (pour son propre club : l'écran Club, décision de Léo du 14/11/2026).
-static func _rail_header(rail: Control, app: Control, national: bool) -> void:
+## Retourne la hauteur réelle de l'en-tête (unités de référence) : elle grandit quand le texte, au plancher de 12 px,
+## ne tient plus dans les 152 de base ; les entrées du rail descendent d'autant.
+static func _rail_header(rail: Control, app: Control, national: bool) -> float:
 	var header := _shell_button("ImmersiveClubHeader")
 	header.tooltip_text = "Fiche du club"
 	if app.route == "Club" and not national: header.add_theme_stylebox_override("normal", _style(C.SELECTED))
@@ -637,7 +639,12 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> void:
 	# puis la division se raccourcit — le rang n'est jamais perdu ; texte complet en infobulle.
 	var rank := "" if national or P.rank_ordinal(app.model.get("club", {}) if app.model.get("club") is Dictionary else {}) == "—" else P.rank_ordinal(app.model.club)
 	var fitted := fit_context(context, rank, room)
-	var sub := _label(header, Rect2(96, top + line_height * lines + 2, room, 21), str(fitted[0]), float(fitted[1]), C.MUTED, C.BODY)
+	var sub_line := C.BODY.get_height(_fpx(float(fitted[1]))) / C.density
+	var sub_height := maxf(21.0, sub_line) * int(fitted[2])
+	var sub_top := top + line_height * lines + 2
+	var header_height := maxf(RAIL_HEADER, sub_top + sub_height + 30.0)
+	D.place(header, Rect2(0, 0, RAIL_WIDTH, header_height))
+	var sub := _label(header, Rect2(96, sub_top, room, sub_height), str(fitted[0]), float(fitted[1]), C.MUTED, C.BODY)
 	sub.name = "ImmersiveClubContext"
 	sub.tooltip_text = context
 	sub.set_meta("context_complet", context)
@@ -647,10 +654,11 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> void:
 		sub.max_lines_visible = 2
 		sub.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	sub.update_minimum_size()
-	D.place(sub, Rect2(96, top + line_height * lines + 2, room, 21 * int(fitted[2])))
+	D.place(sub, Rect2(96, sub_top, room, sub_height))
 	header.tooltip_text = (identity + " · " + context + " · fiche du club") if not national else identity
-	var stripe := _incline(header, Rect2(27, RAIL_HEADER - 17, RAIL_WIDTH - 48, 4), Charte.club_trait(app.accent))
+	var stripe := _incline(header, Rect2(27, header_height - 17, RAIL_WIDTH - 48, 4), Charte.club_trait(app.accent))
 	stripe.name = "ImmersiveClubStripe"
+	return header_height
 
 ## Nombre de lignes d'un texte coupé aux mots (largeur en unités de référence).
 static func _lines_ref(font: Font, text: String, size_ref: float, width_ref: float) -> int:
@@ -713,7 +721,21 @@ static func _rail_dock(rail: Control, app: Control, national: bool) -> void:
 			button.set_meta("rail_actif", true)
 		dock.add_child(button)
 		D.place(button, Rect2(4, y, RAIL_WIDTH - 8, RAIL_ROW_SMALL))
-		_button_margins(button, 68, 12)
+		var left_margin := 68.0
+		var right_margin := 12.0
+		var key_inset := 21.0
+		if i == 2:
+			# Texte et touche « Ctrl S » côte à côte : la marge gauche rentre (jusqu'au picto) si la place manque.
+			key_inset = 21.0
+			right_margin = _key_width("Ctrl S") + key_inset + 6.0
+			left_margin = RAIL_WIDTH - 8.0 - right_margin - _rw(C.BODY, str(item[0]), 24) - 2.0
+			if left_margin < 68.0:
+				# Rail étroit : la touche se serre contre le bord, le texte vient jusqu'au picto.
+				key_inset = 9.0
+				right_margin = _key_width("Ctrl S") + key_inset + 4.0
+				left_margin = clampf(RAIL_WIDTH - 8.0 - right_margin - _rw(C.BODY, str(item[0]), 24) - 4.0, RAIL_TEXT + 27.0 + 3.0, 68.0)
+			left_margin = minf(left_margin, 68.0)
+		_button_margins(button, left_margin, right_margin)
 		_picto(button, Rect2(RAIL_TEXT - 4, (RAIL_ROW_SMALL - 27) / 2.0, 27, 27), item[1], C.IVORY if selected else C.MUTED)
 		match i:
 			0: button.pressed.connect(func(): app._navigate("Carrière"))
@@ -722,7 +744,7 @@ static func _rail_dock(rail: Control, app: Control, national: bool) -> void:
 				button.pressed.connect(func(): save_now(app))
 				button.tooltip_text = "Sauvegarder la carrière maintenant · Ctrl S"
 				var key_width := _key_width("Ctrl S")
-				_key(button, RAIL_WIDTH - 8 - 21 - key_width, (RAIL_ROW_SMALL - 27) / 2.0, "Ctrl S")
+				_key(button, RAIL_WIDTH - 8 - key_inset - key_width, (RAIL_ROW_SMALL - 27) / 2.0, "Ctrl S")
 		if i == 0: button.tooltip_text = "Ta carrière de manager"
 		if i == 1: button.tooltip_text = "Réglages : confort, son, affichage, raccourcis"
 		y += RAIL_ROW_SMALL
@@ -763,7 +785,12 @@ static func refresh_save_line(app: Control, line: Button = null) -> void:
 	if line == null and is_instance_valid(app.get("root_content")): line = app.root_content.find_child("ImmersiveSaveLine", true, false) as Button
 	if not is_instance_valid(line): return
 	var state := save_caption(app)
-	line.text = state[0]
+	var caption := str(state[0])
+	if _rw(C.BODY, caption, 19) > RAIL_WIDTH - 8.0 - 52.0 - 8.0:
+		# Place comptée : le jour de la semaine tombe, la date reste ; le texte complet est dans l'infobulle.
+		var compact := RegEx.create_from_string("\\s[^\\s\\d]+\\.?(?=\\s\\d)").sub(caption, "")
+		if not compact.is_empty(): caption = compact
+	line.text = caption
 	line.tooltip_text = state[3]
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: line.add_theme_color_override(key, state[1])
 	var picto := line.get_node_or_null("SaveLinePicto") as Picto
