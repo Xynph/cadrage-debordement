@@ -50,7 +50,7 @@ func geometrie_bureau(taille: Vector2i) -> void:
 		var bloc := app.find_child(id, true, false) as Control
 		if bloc != null and bloc.is_visible_in_tree(): blocs.append(bloc)
 	# Large : profil à suivre et résultats sont sortis du Bureau (cinq blocs au moins) ; étroit : sept.
-		verifier(blocs.size() >= 5, "Bureau %s : les blocs principaux sont affichés (%d)" % [taille, blocs.size()])
+	verifier(blocs.size() >= 5, "Bureau %s : les blocs principaux sont affichés (%d)" % [taille, blocs.size()])
 	for i in blocs.size():
 		var a := blocs[i]
 		var minimum := a.get_combined_minimum_size().y * a.get_global_transform().get_scale().y
