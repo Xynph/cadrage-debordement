@@ -74,7 +74,11 @@ func open_scout() -> AcceptDialog:
 		check(view.scroll.get_global_rect().grow(2).encloses(field.get_global_rect()),"Filtres visibles à l’ouverture de la détection")
 	return view
 func open_youth() -> AcceptDialog:
-	app._clear_dialogs();app._navigate("Formation");await settle();await press(button("OpenYouthDevelopment"))
+	# Le bouton « OpenYouthDevelopment » ouvre une sous-page de la Formation (tests/godot-formation-da.gd) : la vue elle-même
+	# (filtres, pagination, objectifs) se teste ici dans sa fenêtre d'origine, comme la détection.
+	app._clear_dialogs();app._navigate("Formation");await settle()
+	check(button("OpenYouthDevelopment")!=null,"Entrée suivi des jeunes présente dans la Formation")
+	load("res://ui/youth_development_view.gd").open(app);await settle()
 	var view:=dialog("YouthDevelopment")
 	if view!=null:
 		var field:=view.find_child("YouthDevelopmentSearch",true,false) as Control
