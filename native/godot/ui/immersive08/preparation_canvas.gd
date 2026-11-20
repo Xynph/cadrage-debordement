@@ -514,6 +514,7 @@ func _dossier() -> float:
 		_surveiller(section, Rect2(916, haut, 1332, hauteur_bas))
 		haut += hauteur_bas + 14.0
 	if not opponent.is_empty(): haut += _xv_bande(section, Rect2(0, haut, 2248, 0), opponent)
+	return haut
 
 ## Bandeau « Danger » : la menace principale, lue dans les vrais chiffres du dossier ; le plan conseillé mène aux conseils.
 func _danger(section: Control, rectangle: Rect2) -> void:
@@ -593,7 +594,7 @@ func _rapport(section: Control, rectangle: Rect2) -> void:
 		if i % 2 == 1: _barre(panneau, Rect2(0, y, 1344, pas - 2), Charte.PANNEAU_2)
 		if not code.is_empty():
 			var destination: String = DESTINATIONS[code]
-			_zone(panneau, Rect2(0, y, 1344, pas - 2), _agir.bind(code), "PreparationSector_" + str(domaine.get("key", i)), "%s : agir dans « %s »" % [libelle, destination])
+			_zone(panneau, Rect2(0, y, 1344, pas), _agir.bind(code), "PreparationSector_" + str(domaine.get("key", i)), "%s : agir dans « %s »" % [libelle, destination])
 		var centre := y + pas / 2.0
 		var propre: Variant = domaine.get("own")
 		var adverse: Variant = domaine.get("opponent")
@@ -688,7 +689,7 @@ func _forme(section: Control, rectangle: Rect2) -> float:
 		var etape := "J" + G.n(int(resultat.get("round", 0)) + 1) if resultat.get("phase") == "league" else str(resultat.get("phase", ""))
 		if i % 2 == 0: _barre(panneau, Rect2(0, y, 900, pas - 2), Charte.PANNEAU_2)
 		_texte(panneau, 24, y + pas / 2.0 + 6, etape, 16, Charte.IVOIRE_2, 110)
-		Link.name_link(app, panneau, Rect2(130, y, 420, pas - 2), "club", str(int(autre.get("id", -1))) if autre.get("id") != null else "", G.club_name(autre), 18, Charte.IVOIRE, "PreparationFormOpponent%d" % i)
+		Link.name_link(app, panneau, Rect2(130, y, 420, pas), "club", str(int(autre.get("id", -1))) if autre.get("id") != null else "", G.club_name(autre), 18, Charte.IVOIRE, "PreparationFormOpponent%d" % i)
 		_titre(panneau, 700, y + pas / 2.0 + 8, "%s–%s" % [G.n(score[cote]), G.n(score[1 - cote])] if score.size() == 2 else "—", 24, Charte.IVOIRE, 120, HORIZONTAL_ALIGNMENT_RIGHT)
 		_texte(panneau, 840, y + pas / 2.0 + 6, "dom." if cote == 0 else "ext.", 16, Charte.IVOIRE_2, 54, HORIZONTAL_ALIGNMENT_RIGHT)
 	_face_a_face(panneau, 100.0 + 4.0 * pas + 8.0)
@@ -817,7 +818,8 @@ func _xv_bande(section: Control, rectangle: Rect2, adversaire: Dictionary) -> fl
 		lien.set_meta("jersey", index + 1)
 		_texte(cellule, 8, 80, str(joueur.get("pos", "")), 15, Charte.IVOIRE_2, largeur - 12)
 		var remarque := _remarque(joueur, menace)
-		var lignes_remarque := D.words(str(remarque[0]), 15, 2)
+		# Dans la case, seule la première remarque tient ; le tableau détaillé donne les deux.
+		var lignes_remarque := D.words(str(remarque[0]).split("  ·  ")[0], 17, 2)
 		for ligne in lignes_remarque.size():
 			_texte(cellule, 8, 99 + ligne * 17, lignes_remarque[ligne], 15, Charte.D if remarque[1] else Charte.IVOIRE, largeur - 12)
 	return hauteur
@@ -880,7 +882,7 @@ func _xv_tableau(section: Control, rectangle: Rect2, adversaire: Dictionary) -> 
 			continue
 		var menace := str(menaces.get(str(joueur.get("id", "")), ""))
 		if not menace.is_empty(): _marque(panneau, 6, centre, 12, "losange", Charte.IVOIRE)
-		var nom := _lien_joueur(panneau, Rect2(108, y, 420, pas - 2), joueur, 19, "PreparationTheirXIName_%d" % (index + 1), club_id)
+		var nom := _lien_joueur(panneau, Rect2(108, y, 420, pas), joueur, 19, "PreparationTheirXIName_%d" % (index + 1), club_id)
 		nom.set_meta("jersey", index + 1)
 		_texte(panneau, 548, centre + 7, str(joueur.get("pos", "")), 17, Charte.IVOIRE_2, 300)
 		_texte(panneau, 920, centre + 7, G.n(joueur.get("age")) if _nombre(joueur.get("age")) else "—", 18, Charte.IVOIRE_2, 70, HORIZONTAL_ALIGNMENT_RIGHT)

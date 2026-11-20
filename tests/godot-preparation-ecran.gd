@@ -82,7 +82,9 @@ func run() -> void:
 	var adjoint := {}
 	for team: Dictionary in app.model.get("staff", {}).get("teams", []):
 		for member: Dictionary in team.get("members", []):
-			if str(member.get("role", "")) == "assistant" and adjoint.is_empty(): adjoint = member
+			if str(member.get("role", "")) != "assistant": continue
+			if team.get("id") == app.model.club.get("id"): adjoint = member
+			elif adjoint.is_empty(): adjoint = member
 	# Tableau détaillé de leur XV : sous-page avec la colonne « remarque de ton adjoint » et le nom de l'adjoint lu dans le staff.
 	var tableau := named("PreparationTheirXIAll") as Button
 	check(tableau != null, "Lien vers le tableau détaillé de leur XV")
