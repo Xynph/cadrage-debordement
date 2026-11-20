@@ -79,27 +79,27 @@ func run() -> void:
 	# 1. Écran Match : les deux choix, défaut sur l'espoir.
 	app._navigate("Match")
 	await settle(40)
-	var statut := ""
-	for node: Node in app.find_children("*", "Label", true, false):
-		var l := node as Label
-		if l != null and l.is_visible_in_tree() and l.text.begins_with("FEUILLE INCOMPLÈTE"): statut = l.text
-	check(statut != "", "La carte Match annonce la feuille incomplète")
+	var statut := app.find_child("MatchOpenSheetStatus", true, false) as Button
+	check(statut != null and statut.is_visible_in_tree() and statut.text == "Feuille incomplète", "L'avant-match annonce la feuille incomplète")
 	var coup := bouton_texte("COUP D'ENVOI")
 	check(coup != null and not coup.disabled, "Bouton « COUP D'ENVOI » actif (feuille incomplète)")
 	if coup == null: fin(); return
 	coup.pressed.emit()
 	await settle(30)
-	var fenetre := app.get_node_or_null("FeuilleIncompleteDialog") as ConfirmationDialog
-	check(fenetre != null and fenetre.visible, "La fenêtre « Feuille incomplète » s'ouvre")
-	if fenetre == null: fin(); return
-	var choix_espoir := fenetre.find_child("FeuilleChoix_espoir0", true, false) as CheckBox
-	var choix_22 := fenetre.find_child("FeuilleChoix_a22", true, false) as CheckBox
+	# Plus de fenêtre : sous-page de l'avant-match (décision de Léo du 19/11/2026).
+	check(app.get_node_or_null("FeuilleIncompleteDialog") == null, "Aucune fenêtre au coup d'envoi")
+	var page := app.find_child("FeuilleIncompletePage", true, false) as Control
+	check(page != null and page.is_visible_in_tree(), "La page « Feuille incomplète » s'ouvre")
+	if page == null: fin(); return
+	var choix_espoir := page.find_child("FeuilleChoix_espoir0", true, false) as CheckBox
+	var choix_22 := page.find_child("FeuilleChoix_a22", true, false) as CheckBox
 	check(choix_espoir != null and choix_espoir.button_pressed, "« Appeler un espoir » coché par défaut")
 	check(choix_espoir != null and choix_espoir.text.begins_with(attendu), "Libellé : nom, âge, poste, note : " + (choix_espoir.text if choix_espoir != null else ""))
 	check(choix_22 != null and choix_22.text == "Jouer à 22" and not choix_22.button_pressed, "« Jouer à 22 » proposé en second")
 	await capture("feuille-espoir")
-	fenetre.get_cancel_button().pressed.emit()
+	(page.find_child("FeuilleIncompleteCancel", true, false) as Button).pressed.emit()
 	await settle(10)
+	check(app.find_child("FeuilleIncompletePage", true, false) == null, "« Annuler » referme la page : retour à l'avant-match")
 
 	# 2. Composition : lien « Appeler un espoir » → sous-page de la Composition (jamais une fenêtre, sans coup d'envoi).
 	app._navigate("Composition")

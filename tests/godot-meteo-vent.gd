@@ -52,7 +52,7 @@ func talk() -> Dictionary:
 	var v: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 	return v if v is Dictionary else {}
 
-const TUILES := ["TuileForces", "TuileMeteo", "TuileFeuille", "TuileConfrontations", "TuileJoueurs", "TuileGabi"]
+const TUILES := ["TuileMeteo", "TuileFeuille", "TuileJoueurs", "TuileGabi"]
 const AvantMatch = preload("res://ui/immersive08/match_avant.gd")
 const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
 
@@ -60,10 +60,11 @@ const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
 func textes_de(noeud: Node) -> String:
 	if noeud == null: return ""
 	var lignes: Array = noeud.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
+	lignes.append_array(noeud.find_children("*", "Button", true, false).map(func(b: Button): return b.text))
 	if noeud is Label: lignes.push_front(noeud.text)
 	return " | ".join(lignes)
 
-## Tableau de bord d'avant-match : six tuiles présentes et visibles, rien ne déborde, tout tient dans la page 1080p.
+## Avant-match (variante 1 de la revue DA : l'affiche, puis quatre vérifications) : quatre tuiles présentes et visibles, rien ne déborde, tout tient dans la page 1080p.
 func controler_tableau(contexte: String) -> void:
 	var ecran: Node = app.match_screen
 	var tableau: Control = ecran.find_child("MatchOpening", true, false) if is_instance_valid(ecran) else null
@@ -72,7 +73,7 @@ func controler_tableau(contexte: String) -> void:
 	for id in TUILES:
 		var tuile: Control = tableau.find_child(id, true, false)
 		verifier(tuile != null and tuile.is_visible_in_tree() and tuile.size.x > 200 and tuile.size.y > 150, contexte + " : tuile " + id + (" %s" % tuile.size if tuile != null else " absente"))
-	for id in ["MatchPoster", "MatchKickoff", "MatchOpenDelegation", "MatchFixtureVenue", "MatchFixtureWeather", "MatchOpenSheet", "MatchOpenPreparation", "MatchOpenPlaybook", "MatchOpenTalk"]:
+	for id in ["MatchPoster", "MatchKickoff", "MatchOpenDelegation", "MatchFixtureVenue", "MatchOpenSheet", "MatchOpenPreparation", "MatchOpenPlaybook", "MatchOpenTalk"]:
 		var noeud: Control = tableau.find_child(id, true, false)
 		verifier(noeud != null and noeud.is_visible_in_tree(), contexte + " : " + id)
 	for echec in tableau.overflows(): verifier(false, contexte + " : débordement " + str(echec))
@@ -88,6 +89,119 @@ func controler_tableau(contexte: String) -> void:
 		var dedans := parent.get_global_rect().grow(1).encloses(label.get_global_rect())
 		verifier(dedans, contexte + " : texte hors de sa tuile « %s » (%s)" % [label.text, parent.name])
 
+const Charte = preload("res://ui/charte.gd")
+const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+
+func tableau_present_meteo() -> bool:
+	var ciel := app.match_screen.find_child("MatchFixtureWeather", true, false) as Button
+	return ciel != null and ciel.is_visible_in_tree()
+
+func fenetres_visibles() -> Array:
+	return app.find_children("*", "Window", true, false).filter(func(w: Node): return (w as Window).visible and not w.is_queued_for_deletion() and w.name != "MiniFicheJoueur")
+
+## Couleur d'or (réservée à Continuer) trouvée hors du bouton « Coup d'envoi » dans l'arborescence donnée.
+func or_hors_coup_d_envoi(racine: Node) -> Array:
+	var trouves: Array = []
+	var est_or := func(c: Color) -> bool: return c.is_equal_approx(Charte.OR) or c.is_equal_approx(Charte.OR_VIF)
+	for noeud: Node in racine.find_children("*", "", true, false):
+		var dans_envoi := false
+		var parent: Node = noeud
+		while parent != null and parent != racine:
+			if parent.name == "MatchKickoff": dans_envoi = true
+			parent = parent.get_parent()
+		if dans_envoi: continue
+		if noeud is ColorRect and est_or.call((noeud as ColorRect).color): trouves.append(noeud.name)
+		if noeud is Control:
+			var c := noeud as Control
+			for style_nom in ["panel", "normal", "hover", "pressed", "focus", "disabled"]:
+				if c.has_theme_stylebox_override(style_nom):
+					var s := c.get_theme_stylebox(style_nom)
+					if s is StyleBoxFlat and est_or.call((s as StyleBoxFlat).bg_color): trouves.append(str(noeud.name) + "/" + style_nom)
+			for couleur_nom in ["font_color", "font_hover_color", "font_focus_color"]:
+				if c.has_theme_color_override(couleur_nom) and est_or.call(c.get_theme_color(couleur_nom)): trouves.append(str(noeud.name) + "/" + couleur_nom)
+	return trouves
+
+## Écran 12 (variante 1 de la revue DA du 19/11/2026) : hors coque, un seul or, tout ce qui ressemble à un lien ouvre un
+## écran, aucune fenêtre ouverte par un clic, nom de joueur = fiche (survol : mini-fiche), sous-pages et verrou d'ouverture.
+func controler_da() -> void:
+	var tableau: Control = app.match_screen.find_child("MatchOpening", true, false)
+	verifier(tableau != null, "écran 12 : avant-match présent")
+	if tableau == null: return
+	# Hors coque : ni rail, ni barre haute, ni Continuer ; l'écran porte son bandeau et son bouton or.
+	verifier(app.find_child("ImmersiveTopbar", true, false) == null and app.find_child("ImmersiveContinue", true, false) == null, "écran 12 : hors coque (ni barre haute ni Continuer)")
+	verifier(tableau.find_child("MatchMenu", true, false) != null and tableau.find_child("MatchKickoff", true, false) != null, "écran 12 : Menu et Coup d'envoi dans le bandeau")
+	verifier(or_hors_coup_d_envoi(tableau).is_empty(), "écran 12 : aucun or hors du Coup d'envoi %s" % str(or_hors_coup_d_envoi(tableau)))
+	verifier(tableau.find_child("TuileForces", true, false) == null and tableau.find_child("TuileConfrontations", true, false) == null, "écran 12 : quatre vérifications seulement")
+	# Plaques inclinées aux couleurs des clubs, noms lus dans les données.
+	var suivant: Dictionary = app.model.next
+	for cote in [["MatchPosterHome", "home"], ["MatchPosterAway", "away"]]:
+		var plaque := tableau.find_child(cote[0], true, false) as Button
+		verifier(plaque != null and plaque.is_visible_in_tree(), "écran 12 : plaque " + cote[0])
+		var nom := plaque.find_child("MatchPosterName", true, false) as Label if plaque != null else null
+		verifier(nom != null and nom.text == str(suivant[cote[1]].get("name", "")).to_upper(), "écran 12 : nom du club lu dans les données (%s)" % (nom.text if nom != null else "absent"))
+	verifier(tableau._distance(Color(.9, .1, .1), Color(.88, .12, .1)) < tableau.CLUBS_PROCHES and tableau._distance(Color.RED, Color.BLUE) > tableau.CLUBS_PROCHES, "écran 12 : clubs proches détectés (anneau ivoire)")
+	# Tout bouton visible est branché ; aucune fenêtre ouverte par un clic.
+	for b: Button in tableau.find_children("*", "Button", true, false):
+		if not b.is_visible_in_tree() or b.disabled: continue
+		verifier(b.pressed.get_connections().size() > 0, "écran 12 : « %s » (%s) est branché" % [b.text, b.name])
+	var attendus := [["MatchOpenSheet", "Composition"], ["MatchOpenSquad", "Effectif"], ["MatchOpenWeatherPlan", "Plan de jeu"], ["MatchOpenPlaybook", "Plan de jeu"],
+		["MatchOpenTalk", "Vestiaire"], ["MatchOpenPreparation", "Préparation"], ["MatchOpenForces", "Préparation"], ["MatchFixtureWeather", "Plan de jeu"],
+		["MatchPosterStanding0", "Classements"], ["MatchOpenSheetStatus", "Composition"]]
+	for lien: Array in attendus:
+		var bouton := app.match_screen.find_child(lien[0], true, false) as Button
+		if bouton == null:
+			verifier(lien[0] in ["MatchFixtureWeather", "MatchOpenForces"], "écran 12 : lien " + lien[0] + " présent")
+			continue
+		bouton.pressed.emit()
+		await poser(10)
+		verifier(app.route == lien[1], "écran 12 : %s ouvre %s (route %s)" % [lien[0], lien[1], app.route])
+		verifier(fenetres_visibles().is_empty(), "écran 12 : %s n'ouvre aucune fenêtre" % lien[0])
+		app._navigate("Match")
+		await poser(10)
+		tableau = app.match_screen.find_child("MatchOpening", true, false)
+	# Plaque d'un club : sa fiche (écran), pas une fenêtre.
+	var plaque_adverse := tableau.find_child("MatchPosterAway", true, false) as Button
+	if plaque_adverse != null:
+		plaque_adverse.pressed.emit()
+		await poser(10)
+		verifier(app.route != "Match" and fenetres_visibles().is_empty(), "écran 12 : la plaque d'un club ouvre sa fiche (route %s)" % app.route)
+		app._navigate("Match")
+		await poser(10)
+		tableau = app.match_screen.find_child("MatchOpening", true, false)
+	# Titulaire de la feuille : survol = mini-fiche, clic = fiche complète.
+	var barre: Button = null
+	for b: Button in tableau.find_children("FeuilleBarre*", "Button", true, false):
+		if not b.disabled: barre = b; break
+	verifier(barre != null, "écran 12 : repères de condition cliquables")
+	if barre != null:
+		barre.mouse_entered.emit()
+		await poser(4)
+		verifier(MiniFiche.actuelle(app) != null, "écran 12 : survol d'un titulaire = mini-fiche")
+		barre.mouse_exited.emit()
+		await poser(3)
+		barre.pressed.emit()
+		await poser(10)
+		verifier(app.route == "Effectif" and app.get_meta("immersive08_full_player", false), "écran 12 : clic sur un titulaire = fiche complète (route %s)" % app.route)
+		app._navigate("Match")
+		await poser(10)
+		tableau = app.match_screen.find_child("MatchOpening", true, false)
+	# Sous-page de délégation : un clic change d'écran, aucune fenêtre ; « Annuler » revient ; focus sur Annuler.
+	var deleguer := tableau.find_child("MatchOpenDelegation", true, false) as Button
+	if deleguer != null and not deleguer.disabled:
+		deleguer.pressed.emit()
+		await poser(10)
+		verifier(app.find_child("MatchDelegationPage", true, false) != null and fenetres_visibles().is_empty(), "écran 12 : « Déléguer le match » ouvre une sous-page, pas une fenêtre")
+		verifier(app.find_child("MatchPrematchTiles", true, false) == null and app.find_child("MatchPageBack", true, false) != null, "écran 12 : la page prend la place des vérifications, avec « Retour »")
+		verifier(app.get_meta("hors_coque", false) and or_hors_coup_d_envoi(app.match_screen.find_child("MatchOpening", true, false)).is_empty(), "écran 12 : sous-page hors coque et sans or")
+		(app.find_child("MatchDelegationCancel", true, false) as Button).pressed.emit()
+		await poser(12)
+		verifier(app.find_child("MatchDelegationPage", true, false) == null and app.find_child("MatchPrematchTiles", true, false) != null, "écran 12 : « Annuler » ramène à l'avant-match")
+		tableau = app.match_screen.find_child("MatchOpening", true, false)
+	# Verrou d'ouverture de 0,5 s sur Entrée et Espace (fiche UX 12 §7).
+	tableau._ouvert_a = Time.get_ticks_msec()
+	verifier(tableau.verrou_actif(), "écran 12 : verrou d'ouverture actif à l'ouverture")
+	tableau._ouvert_a = Time.get_ticks_msec() - 700
+	verifier(not tableau.verrou_actif(), "écran 12 : verrou levé après 0,5 s")
 ## Écran Match le jour du match : tableau de bord (maquette « Retenue »), météo annoncée la veille (vraie annonce du
 ## moteur), données calculées par le moteur (clubLife.avantMatch), puis chaque ciel et sa photo, et le grand vent.
 func avant_match() -> void:
@@ -99,11 +213,13 @@ func avant_match() -> void:
 	app._navigate("Match")
 	await poser(10)
 	controler_tableau("avant-match")
+	await controler_da()
+	verifier(tableau_present_meteo(), "écran 12 : ligne du ciel cliquable dans l'affiche")
 	var tableau: Node = app.match_screen.find_child("MatchOpening", true, false)
 	var meteo: Node = tableau.find_child("TuileMeteo", true, false) if tableau != null else null
 	var texte_meteo := textes_de(meteo)
 	textes.ecran_match = texte_meteo
-	verifier(texte_meteo.begins_with("LA MÉTÉO"), "tuile météo : « %s »" % texte_meteo)
+	verifier(texte_meteo.begins_with("CONDITIONS DU MATCH"), "tuile météo : « %s »" % texte_meteo)
 	if annonce is Dictionary:
 		var ciel := str(annonce.get("libelle", ""))
 		verifier(texte_meteo.to_lower().contains(ciel.to_lower()), "tuile météo : ciel annoncé « %s »" % ciel)
@@ -141,7 +257,6 @@ func avant_match() -> void:
 	app.match_screen.update_frame(app.model)
 	await poser(4)
 	textes.gabi = textes_de(tableau.find_child("TuileGabi", true, false) if tableau != null else null)
-	textes.forces = textes_de(tableau.find_child("TuileForces", true, false) if tableau != null else null)
 	for cle: Dictionary in donnees.get("gabi", {}).get("cles", []): verifier(str(textes.gabi).contains(str(cle.get("titre", ""))), "clé de Gabi affichée : " + str(cle.get("titre", "")))
 	await capturer("avant-match-ecran")
 	# Chaque ciel : photo du tunnel et tuile météo (variantes absentes : photo d'origine).
@@ -178,13 +293,14 @@ func avant_match() -> void:
 			verifier(photos[nom].begins_with("match-tunnel"), "coup d'envoi le soir : tunnel (%s)" % photos[nom])
 		if nom == "vent":
 			var nous := 1 if app.model.next.get("away", {}).get("id") == app.model.club.get("id") else 0
-			var bandeau := textes_de(app.match_screen.find_child("MatchPosterWeather", true, false))
+			var ligne_ciel := app.match_screen.find_child("MatchFixtureWeather", true, false) as Button
+			var bandeau: String = ligne_ciel.text if ligne_ciel != null else ""
 			textes.ecran_match_bandeau = bandeau
-			verifier(bandeau.contains("GRAND VENT") and bandeau.contains("en 1re période") and bandeau.contains("après la pause"), "affiche : vent des deux périodes « %s »" % bandeau)
-			var p1 := textes_de(app.match_screen.find_child("MeteoPeriode1", true, false))
-			var p2 := textes_de(app.match_screen.find_child("MeteoPeriode2", true, false))
-			textes.ecran_match_vent = [p1, p2]
-			verifier(p1.contains("Dans le dos" if nous == 1 else "De face") and p2.contains("De face" if nous == 1 else "Dans le dos"), "tuile météo : vent par rapport à notre attaque « %s / %s »" % [p1, p2])
+			verifier(bandeau.contains("Grand vent") and ligne_ciel != null and ligne_ciel.is_visible_in_tree(), "affiche : ciel cliquable « %s »" % bandeau)
+			var vent := textes_de(app.match_screen.find_child("MeteoVent", true, false))
+			textes.ecran_match_vent = vent
+			verifier(vent.contains("en 1re période") and vent.contains("après la pause"), "tuile météo : vent des deux périodes « %s »" % vent)
+			verifier(vent.contains("notre dos") if nous == 1 else vent.contains("dans le nôtre"), "tuile météo : vent par rapport à notre camp « %s »" % vent)
 		await capturer("meteo-ciel-" + nom, func(): app.match_screen.update_frame(copie))
 	textes.photos = photos
 	# Arbitre du match (clubLife.avantMatch.arbitre) dans la tuile des conditions : nom, profil d'une ligne et
@@ -205,7 +321,7 @@ func avant_match() -> void:
 		var tuile_a: Node = app.match_screen.find_child("TuileMeteo", true, false)
 		var bloc: Node = tuile_a.find_child("MatchArbitre", true, false) if tuile_a != null else null
 		var nom: Label = bloc.find_child("MatchArbitreNom", true, false) if bloc != null else null
-		verifier(nom != null and nom.text == "Arbitre : Julien Castaing" and nom.is_visible_in_tree(), "arbitre %s : nom dans la tuile des conditions" % variante)
+		verifier(nom != null and nom.text == "Julien Castaing" and nom.is_visible_in_tree(), "arbitre %s : nom dans la tuile des conditions" % variante)
 		verifier(nom != null and nom.tooltip_text == str(arbitre.resume), "arbitre %s : profil en infobulle du nom" % variante)
 		var niveaux: Array = []
 		for libelle: String in ["Rucks", "Mêlée", "Hors-jeu", "Cartons"]:
@@ -234,6 +350,8 @@ func executer() -> void:
 	director = app.find_child("ContextualDirector", true, false)
 	await avant_match()
 	await demander("begin_match")
+	await poser(8)
+	verifier(app.find_child("ImmersiveTopbar", true, false) != null and not app.get_meta("hors_coque", false), "écran 12 : le direct revient dans la coque au coup d'envoi")
 	verifier(app.model.get("live") is Dictionary and app.model.live.get("meteo") is Dictionary, "météo du direct dans le modèle natif")
 	if director != null and director.view != null and director.view.has_method("_meteo") and not talk().is_empty():
 		director.view.update_frame(avec_vent(), talk())
