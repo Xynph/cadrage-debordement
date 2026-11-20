@@ -80,7 +80,7 @@ func dans(r: Rect2, ecran: Vector2) -> bool:
 
 func etat(ecran: Control, app: Node) -> String:
 	var fiche: Variant = ecran.get("fiche_match")
-	return JSON.stringify([signaux.size(), ecran.vue_droite, ecran.vue_xv, fiche != null and is_instance_valid(fiche), (app.get("envois") as Array).size(), ecran.horloge, ecran.niveau_libelle()])
+	return JSON.stringify([signaux.size(), ecran.vue_droite, ecran.vue_xv, fiche != null and is_instance_valid(fiche), (app.get("envois") as Array).size(), ecran.horloge, ecran.niveau_libelle(), ecran.tri_xv, ecran.tri_inverse])
 
 ## Couleurs posées sur un contrôle (polices et styles) : aucune ne doit être l'or de Continuer.
 func ors(noeud: Control) -> Array:
@@ -112,7 +112,7 @@ func run() -> void:
 		vue.add_child(ecran)
 		for i in 4: await process_frame
 		signaux.clear()
-		for nom in ["tiroir_demande", "joueur_choisi", "reprise_demandee", "pause_demandee", "horloge_choisie", "niveau_choisi", "delegation_demandee", "camera_demandee", "consigne_bonus", "fiche_ouverte", "journal_demande", "stats_demandees"]:
+		for nom in ["tiroir_demande", "joueur_choisi", "reprise_demandee", "pause_demandee", "horloge_choisie", "niveau_choisi", "delegation_demandee", "camera_demandee", "consigne_bonus", "fiche_ouverte", "journal_demande", "stats_demandees", "club_demande", "confier_fin_demande"]:
 			var signal_nom: String = nom
 			ecran.connect(signal_nom, func(a = null, _b = null): signaux.append([signal_nom, a]))
 		var d := donnees()
@@ -131,8 +131,21 @@ func run() -> void:
 		var lignes: Array = ecran.xv.get_children().filter(func(n: Node): return n is Button and str(n.name).begins_with("MatchBetweenPlayer"))
 		check(lignes.size() == 15, cadre + " : quinze lignes dans Mon XV (%d)" % lignes.size())
 		var entete := ecran.find_child("MatchBetweenSquadHeader", true, false)
-		var colonnes: Array = entete.find_children("*", "Label", true, false).map(func(l: Label): return l.text) if entete != null else []
+		var colonnes: Array = entete.find_children("MatchBetweenSort_*", "Button", true, false).map(func(b: Button): return str(b.get_meta("libelle"))) if entete != null else []
 		check(colonnes == ["N°", "JOUEUR", "ÉNERGIE", "PLAQ.", "NOTE"], cadre + " : colonnes de Mon XV avec Plaquages " + str(colonnes))
+		# Tri par l'en-tête : énergie la plus basse d'abord, note la plus haute d'abord, second clic = sens inverse, N° = postes.
+		var ordre_lignes := func() -> Array: return ecran.xv.get_children().filter(func(n: Node): return n is Button and str(n.name).begins_with("MatchBetweenPlayer")).map(func(n: Node): return str(n.name).trim_prefix("MatchBetweenPlayer").to_int())
+		(entete.find_child("MatchBetweenSort_energie", true, false) as Button).pressed.emit()
+		check(ordre_lignes.call()[0] == 7 and (entete.find_child("MatchBetweenSort_energie", true, false) as Button).text.ends_with("▲"), cadre + " : tri par énergie, le plus fatigué (7) en tête " + str(ordre_lignes.call().slice(0, 3)))
+		(entete.find_child("MatchBetweenSort_note", true, false) as Button).pressed.emit()
+		check(ordre_lignes.call()[0] == 15 and ordre_lignes.call()[-1] == 1, cadre + " : tri par note, la meilleure (15) en tête " + str(ordre_lignes.call().slice(0, 3)))
+		(entete.find_child("MatchBetweenSort_note", true, false) as Button).pressed.emit()
+		check(ordre_lignes.call()[0] == 1 and (entete.find_child("MatchBetweenSort_note", true, false) as Button).text.ends_with("▼"), cadre + " : second clic, sens inverse " + str(ordre_lignes.call().slice(0, 3)))
+		(entete.find_child("MatchBetweenSort_numero", true, false) as Button).pressed.emit()
+		check(ordre_lignes.call() == range(1, 16), cadre + " : « N° » revient à l'ordre des postes " + str(ordre_lignes.call()))
+		ecran.choisir_vue_xv("adverse")
+		check((entete.find_child("MatchBetweenSort_note", true, false) as Button).disabled, cadre + " : tri grisé sur le XV adverse")
+		ecran.choisir_vue_xv("tableau")
 		var ligne7: Node = ecran.xv.find_child("MatchBetweenPlayer7", true, false)
 		var textes7: Array = ligne7.find_children("*", "Label", true, false).map(func(l: Label): return l.text) if ligne7 != null else []
 		check(textes7.has("épuisé") and textes7.has("! 38 %"), cadre + " : l'alerte s'écrit en mots et en chiffres " + str(textes7))
@@ -217,6 +230,10 @@ func run() -> void:
 			ecran.montrer_droite("chiffres")
 			if ecran.vue_xv != "tableau": ecran.choisir_vue_xv("tableau")
 		check(muets.is_empty(), cadre + " : chaque bouton fait quelque chose, sans fenêtre " + str(muets))
+		ecran.tri_xv = ""
+		ecran.tri_inverse = false
+		ecran._poser_entete_tri()
+		ecran.choisir_vue_xv("tableau")
 		var plus := ecran.find_child("MatchBetweenMore", true, false) as MenuButton
 		check(plus != null and plus.get_popup().item_count >= 7, cadre + " : menu Plus (statistiques, journal, délégation, autres matchs, caméras)")
 		# Réglages et autres matchs : à la place des chiffres clés, Échap y revient.
@@ -231,6 +248,19 @@ func run() -> void:
 		ecran.montrer_droite("journee")
 		await process_frame
 		check(ecran.classement_tuile.is_visible_in_tree() and ecran.multiplex.is_visible_in_tree(), cadre + " : autres matchs et classement en direct dans la colonne de droite")
+		# Classement et multiplex : chaque club mène à sa fiche (clic), jamais une zone muette.
+		signaux.clear()
+		var clic_club := InputEventMouseButton.new()
+		clic_club.button_index = MOUSE_BUTTON_LEFT
+		clic_club.pressed = true
+		var ligne_nous := ecran.classement_lignes.find_child("MatchBetweenLiveRow2", false, false) as Control
+		if ligne_nous != null: ligne_nous.gui_input.emit(clic_club)
+		var carte := ecran.multiplex_cartes.get_child(0) as Control if ecran.multiplex_cartes.get_child_count() > 0 else null
+		var domicile := carte.find_child("Domicile", true, false) as Control if carte != null else null
+		if domicile != null: domicile.gui_input.emit(clic_club)
+		check(signaux == [["club_demande", 102], ["club_demande", 3]] and ligne_nous.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, cadre + " : clic sur un club du classement et du multiplex = sa fiche " + str(signaux))
+		var muettes: Array = ecran.classement_lignes.get_children().filter(func(n: Node): return str(n.name).begins_with("MatchBetweenLiveRow") and not n.has_meta("club_id"))
+		check(muettes.is_empty(), cadre + " : toutes les lignes du classement sont cliquables " + str(muettes))
 		ecran.montrer_droite("chiffres")
 		# Clavier : Espace à la mi-temps reprend, T ouvre Équipe.
 		signaux.clear()
@@ -262,6 +292,26 @@ func run() -> void:
 		ecran.montrer_arret({})
 		await process_frame
 		check((ecran.find_child("MatchBetweenDuel", true, false) as Control).is_visible_in_tree(), cadre + " : arrêt fini, les chiffres clés reviennent")
+		# Temps fort 3D (entracte caché, la barre reste dans la bande du direct) : Réglages devient un menu déroulant
+		# (vitesse, temps forts), « Confier la fin » passe par le menu du match, « Autres matchs » est grisé et dit pourquoi.
+		ecran.visible = false
+		await process_frame
+		signaux.clear()
+		ecran._ouvrir_parametres()
+		await process_frame
+		var menu_reglages: PopupMenu = ecran.menu_reglages
+		check(menu_reglages.visible and menu_reglages.item_count == 4 + 6 + 2 and ecran.vue_droite == "chiffres", cadre + " : en 3D, Réglages ouvre un menu déroulant (%d choix)" % menu_reglages.item_count)
+		check(menu_reglages.is_item_checked(menu_reglages.get_item_index(Between.HORLOGES_IDS.find(ecran.horloge))),cadre + " : l'horloge courante est cochée")
+		menu_reglages.id_pressed.emit(2)
+		menu_reglages.id_pressed.emit(101)
+		check(ecran.horloge == "rapide" and signaux == [["horloge_choisie", "rapide"], ["niveau_choisi", "resume"]], cadre + " : le menu change l'horloge et les temps forts " + str(signaux))
+		menu_reglages.hide()
+		menu_plus.about_to_popup.emit()
+		check(menu_plus.is_item_disabled(3) and menu_plus.get_item_text(3).ends_with("à l’entracte"), cadre + " : en 3D, autres matchs grisés et dits (%s)" % menu_plus.get_item_text(3))
+		signaux.clear()
+		menu_plus.id_pressed.emit(menu_plus.get_item_id(2))
+		check(signaux == [["confier_fin_demande", null]] and ecran.vue_droite == "chiffres", cadre + " : en 3D, « Confier la fin » passe par le menu du match " + str(signaux))
+		ecran.visible = true
 		vue.queue_free()
 		app.queue_free()
 		for i in 2: await process_frame

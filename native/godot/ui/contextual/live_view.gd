@@ -1430,8 +1430,12 @@ func confier_fin() -> void:
 func ouvrir_fiche_club(cote: int) -> void:
 	var teams: Array = _live().get("teams", [])
 	if cote < 0 or cote >= teams.size() or not teams[cote] is Dictionary or teams[cote].get("id") == null: return
+	ouvrir_fiche_club_id(int(float(teams[cote].id)))
+
+## Fiche d'un club par son identifiant (autres matchs et classement en direct de l'entracte), même page du direct.
+func ouvrir_fiche_club_id(id: int) -> void:
+	if id < 0: return
 	_suspendre()
-	var id := int(float(teams[cote].id))
 	var avant: Variant = app.management_ui.get("club_sheet")
 	var meme: bool = avant is Dictionary and int(avant.get("id", -1)) == id
 	app.management_ui.club_sheet = {"id": id, "tab": int(avant.get("tab", 0)) if meme else 0, "sort": str(avant.get("sort", "fam")) if meme else "fam", "descending": bool(avant.get("descending", false)) if meme else false}

@@ -51,6 +51,10 @@ signal fiche_ouverte(ouverte: bool)
 signal journal_demande(i: int)
 ## Les statistiques complètes ouvertes à une ligne (chiffre clé cliqué) : libellé du moteur de cette ligne.
 signal stats_demandees(libelle: String)
+## Fiche d'un club demandée (carte du multiplex, ligne du classement en direct) : identifiant du club.
+signal club_demande(id: int)
+## « Confier la fin à l'adjoint » choisi pendant un temps fort 3D (entracte caché) : confirmation dans le menu du match.
+signal confier_fin_demande
 ## Vrai quand une fenêtre de la vue (Équipe) couvre l'entracte : le clavier de l'entracte se tait. Posé par la régie.
 var couvert: Callable = func() -> bool: return false
 ## Bande de la vue du match (sous le score) qui porte la barre de commandes, la même en 3D et
@@ -91,6 +95,8 @@ var phase: Label
 ## Sens du jeu, à droite de l'en-tête du terrain (« Alder Fen XV attaque vers la droite », texte, pas un lien).
 var sens_jeu: Label
 var parametres: Button
+## Réglages en menu déroulant pendant un temps fort 3D (le panneau de droite n'est visible qu'à l'entracte).
+var menu_reglages: PopupMenu
 ## Réglages du match (vitesse de l'horloge, temps forts montrés) : panneau de la colonne de droite.
 var panneau_parametres: Control
 var groupe_horloge: ButtonGroup
@@ -152,6 +158,11 @@ var pied_reglages: Label
 var _fin := {}
 ## Vue de la colonne Mon XV : « tableau » (Mon XV et le banc) ou « adverse » (le XV adverse, `direct.adversaire`).
 var vue_xv := "tableau"
+## Tri de Mon XV par l'en-tête : vide (ordre des postes), « joueur », « energie », « plaquages », « note ».
+var tri_xv := ""
+var tri_inverse := false
+## Boutons de l'en-tête de Mon XV (un par colonne, métadonnées « tri » et « libelle »).
+var entetes_tri: Array[Button] = []
 var tableau_xv: VBoxContainer
 ## Joueur du XV le plus en difficulté (poste, -1 si rien d'urgent) : Gabi propose de le remplacer.
 var changement_poste := -1
@@ -330,7 +341,8 @@ class Domination extends Control:
 			draw_string(POLICE, Vector2(debut, base_y), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille, couleur)
 			# Souligné discret : c'est un lien (clic = le journal à ce fait).
 			draw_line(Vector2(debut, base_y + 2.0), Vector2(debut + mesure, base_y + 2.0), Color(Charte.IVOIRE, 0.45), 1.0)
-			_etiquettes.append([Rect2(debut, base_y - taille, mesure, taille + 4.0), int(repere.get("i", -1)), texte])
+			# Zone de l'étiquette : du haut des lettres au souligné (deux rangées voisines ne se recouvrent pas en 1280).
+			_etiquettes.append([Rect2(debut, base_y - taille, mesure, taille + 3.0), int(repere.get("i", -1)), texte])
 
 	func _etiquette_sous(point: Vector2) -> Array:
 		for e: Array in _etiquettes:
@@ -713,9 +725,10 @@ func _commandes() -> void:
 	# dites « en 3D seulement » (la raison est écrite, jamais un choix muet).
 	var cameras := {"tv": "Vue TV", "tactical": "Vue de dessus", "action": "Vue contact"}
 	menu.about_to_popup.connect(func():
-		menu.set_item_disabled(3, journee_vue == null)
-		menu.set_item_text(3, "Autres matchs et classement en direct" + ("" if journee_vue != null else " · aucun autre match"))
 		var en_2d := is_visible_in_tree()
+		# Autres matchs : panneau de l'entracte ; pendant un temps fort 3D, grisé et dit (jamais un choix muet).
+		menu.set_item_disabled(3, journee_vue == null or not en_2d)
+		menu.set_item_text(3, "Autres matchs et classement en direct" + (" · aucun autre match" if journee_vue == null else ("" if en_2d else " · à l’entracte")))
 		var actuelle := camera_actuelle()
 		for k in menu.item_count:
 			var cle: Variant = menu.get_item_metadata(k)
@@ -727,7 +740,9 @@ func _commandes() -> void:
 	menu.id_pressed.connect(func(id: int):
 		if id == 0: tiroir_demande.emit("Stats")
 		elif id == 1: tiroir_demande.emit("Journal")
-		elif id == 2: montrer_droite("delegation")
+		elif id == 2:
+			if is_visible_in_tree(): montrer_droite("delegation")
+			else: confier_fin_demande.emit()
 		elif id == 3: montrer_droite("journee")
 		else:
 			var index := menu.get_item_index(id)
@@ -736,6 +751,40 @@ func _commandes() -> void:
 	parametres = _lien("Réglages", func(): _ouvrir_parametres(), "MatchBetweenSettings")
 	parametres.tooltip_text = "Vitesse de l’horloge entre deux temps forts et temps forts montrés."
 	parametres.add_theme_font_size_override("font_size", fpx(22))
+	# Pendant un temps fort 3D (entracte caché), les mêmes réglages en menu déroulant sous le lien (exception de Léo).
+	menu_reglages = PopupMenu.new()
+	menu_reglages.name = "MatchBetweenSettingsMenu"
+	menu_reglages.add_theme_font_size_override("font_size", fpx(22))
+	menu_reglages.id_pressed.connect(_choix_menu_reglages)
+	parametres.add_child(menu_reglages)
+
+## Réglages en menu déroulant (temps fort 3D) : vitesse de l'horloge (0 à 3) et temps forts montrés (100 et plus),
+## le choix courant coché.
+func _remplir_menu_reglages() -> void:
+	menu_reglages.clear()
+	menu_reglages.add_separator("Vitesse de l’horloge entre deux temps forts")
+	for n in HORLOGES_IDS.size():
+		menu_reglages.add_radio_check_item(HORLOGES_COURTS[n], n)
+		menu_reglages.set_item_checked(menu_reglages.get_item_index(n), HORLOGES_IDS[n] == horloge)
+	if _niveaux.is_empty(): return
+	menu_reglages.add_separator("Temps forts montrés")
+	var choisi := niveau_libelle()
+	for n in _niveaux.size():
+		var libelle := str(_niveaux[n].get("label", ""))
+		menu_reglages.add_radio_check_item(libelle, 100 + n)
+		menu_reglages.set_item_checked(menu_reglages.get_item_index(100 + n), libelle == choisi)
+
+func _choix_menu_reglages(id: int) -> void:
+	if id >= 0 and id < HORLOGES_IDS.size():
+		var bouton := find_child("MatchBetweenSpeed%d" % id, true, false) as Button
+		if bouton != null: bouton.button_pressed = true
+		horloge = HORLOGES_IDS[id]
+		horloge_choisie.emit(horloge)
+		_poser_pied()
+	elif id >= 100 and id - 100 < _niveaux.size():
+		var niveau := str(_niveaux[id - 100].get("id", ""))
+		_remplir_niveaux(niveau)
+		niveau_choisi.emit(niveau)
 
 ## Choix unique (segment) : filet épais et coche quand il est choisi, filet fin sinon.
 func _segment(texte: String, groupe: ButtonGroup, choisi: bool) -> Button:
@@ -758,6 +807,11 @@ func camera_actuelle() -> String:
 	return ""
 
 func _ouvrir_parametres() -> void:
+	if not is_visible_in_tree() and is_instance_valid(menu_reglages):
+		_remplir_menu_reglages()
+		var ancre := parametres.get_global_rect()
+		menu_reglages.popup(Rect2i(Vector2i(ancre.position + Vector2(0, ancre.size.y)), Vector2i.ZERO))
+		return
 	montrer_droite("chiffres" if vue_droite == "reglages" else "reglages")
 
 func _remplir_niveaux(choisi: String = "") -> void:
@@ -824,6 +878,8 @@ func _carte_gabi(parent: Control) -> void:
 
 ## Colonnes de Mon XV (unités 2560) : numéro, joueur, énergie (jauge et valeur), plaquages, note.
 const COLONNES_XV := [["N°", 44], ["Joueur", 0], ["Énergie", 170], ["Plaq.", 64], ["Note", 64]]
+## Clé de tri de chaque colonne de Mon XV (même ordre que COLONNES_XV).
+const TRIS_XV := ["numero", "joueur", "energie", "plaquages", "note"]
 ## Poste en deux signes, comme sur une feuille de match.
 const POSTES_COURTS := {"pilier gauche": "PG", "talonneur": "TA", "pilier droit": "PD", "deuxième ligne": "2L", "troisième ligne": "3L",
 	"numéro 8": "N8", "demi de mêlée": "DM", "demi d’ouverture": "DO", "demi d'ouverture": "DO", "ailier": "AI", "centre": "CE", "arrière": "AR"}
@@ -929,8 +985,39 @@ func _colonne_xv(grille: Control) -> void:
 	tete.add_child(lien_adverse)
 	var entete := S.G.h(px(8))
 	entete.name = "MatchBetweenSquadHeader"
-	for colonne: Array in COLONNES_XV:
-		entete.add_child(_cellule(str(colonne[0]).to_upper(), int(colonne[1]), DOUX, 16, int(colonne[1]) > 0 and colonne[0] != "Énergie"))
+	# En-têtes triables (comme les tableaux de Football Manager) : un clic trie, un second retourne le sens.
+	entetes_tri.clear()
+	for k in COLONNES_XV.size():
+		var colonne: Array = COLONNES_XV[k]
+		var libelle := str(colonne[0]).to_upper()
+		var largeur := int(colonne[1])
+		var chiffre: bool = largeur > 0 and colonne[0] != "Énergie"
+		var cle: String = TRIS_XV[k]
+		var tete_col := Button.new()
+		tete_col.name = "MatchBetweenSort_" + cle
+		tete_col.flat = true
+		tete_col.focus_mode = Control.FOCUS_ALL
+		tete_col.set_meta("tri", cle)
+		tete_col.set_meta("libelle", libelle)
+		tete_col.set_meta("contextual_enabled", true)
+		tete_col.text = libelle
+		tete_col.clip_text = true
+		tete_col.alignment = HORIZONTAL_ALIGNMENT_RIGHT if chiffre else HORIZONTAL_ALIGNMENT_LEFT
+		tete_col.tooltip_text = "Trier Mon XV par %s (un second clic retourne le sens)." % str(colonne[0]).to_lower() if cle != "numero" else "Revenir à l’ordre des postes (un second clic retourne le sens)."
+		var vide := StyleBoxEmpty.new()
+		for etat_bouton in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed"]: tete_col.add_theme_stylebox_override(etat_bouton, vide)
+		for couleur in ["font_color", "font_focus_color"]: tete_col.add_theme_color_override(couleur, DOUX)
+		for couleur in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color"]: tete_col.add_theme_color_override(couleur, IVOIRE)
+		tete_col.add_theme_color_override("font_disabled_color", FAIBLE)
+		tete_col.add_theme_font_size_override("font_size", fpx(16))
+		tete_col.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		tete_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if largeur > 0: tete_col.custom_minimum_size.x = px(largeur)
+		else: S.G.fill(tete_col)
+		tete_col.pressed.connect(trier_xv.bind(cle))
+		entetes_tri.append(tete_col)
+		entete.add_child(tete_col)
+	_poser_entete_tri()
 	var defile := ScrollContainer.new()
 	defile.name = "MatchBetweenSquadScroll"
 	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -1260,6 +1347,11 @@ func _montrer_vue_xv() -> void:
 	if not is_instance_valid(titre_xv): return
 	titre_xv.text = ("XV adverse" if vue_xv == "adverse" else "Mon XV").to_upper()
 	lien_adverse.text = "← Mon XV" if vue_xv == "adverse" else "XV adverse →"
+	# Le tri ne range que Mon XV : grisé (et dit) sur le XV adverse.
+	for bouton: Button in entetes_tri:
+		bouton.disabled = vue_xv == "adverse"
+		if not bouton.has_meta("aide"): bouton.set_meta("aide", bouton.tooltip_text)
+		bouton.tooltip_text = "Le tri range Mon XV." if vue_xv == "adverse" else str(bouton.get_meta("aide"))
 	if is_instance_valid(zone_banc): zone_banc.visible = vue_xv != "adverse"
 	if is_instance_valid(legende_notes): legende_notes.visible = vue_xv != "adverse"
 
@@ -1913,6 +2005,42 @@ static func lignes_classement(classement: Array, capacite: int = CLASSEMENT_LIGN
 	lignes.append_array(range(debut, fin))
 	return lignes
 
+## Zone qui ouvre la fiche d'un club (ligne du classement, club d'une carte du multiplex) : main au survol, fond
+## de survol, clic gauche ou Entrée = `club_demande`. Sans identifiant, la zone reste du texte (rien ne l'invite).
+func _cliquable_club(zone: Control, id: Variant, fond_survol: StyleBox = null) -> void:
+	if id == null or not (id is int or id is float or (id is String and (id as String).is_valid_int())): return
+	var club := int(id) if not id is String else (id as String).to_int()
+	zone.set_meta("club_id", club)
+	zone.mouse_filter = Control.MOUSE_FILTER_STOP
+	zone.focus_mode = Control.FOCUS_ALL
+	zone.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	zone.tooltip_text = (zone.tooltip_text + "\n" if not zone.tooltip_text.is_empty() else "") + "Clic : la fiche du club (le match se met en pause)."
+	var survol := func(dedans: bool):
+		if fond_survol == null or not zone is PanelContainer: return
+		if not zone.has_meta("fond_repos"): zone.set_meta("fond_repos", zone.get_theme_stylebox("panel"))
+		zone.add_theme_stylebox_override("panel", fond_survol if dedans else zone.get_meta("fond_repos"))
+	zone.mouse_entered.connect(survol.bind(true))
+	zone.mouse_exited.connect(survol.bind(false))
+	zone.focus_entered.connect(survol.bind(true))
+	zone.focus_exited.connect(survol.bind(false))
+	zone.gui_input.connect(func(event: InputEvent):
+		var clic := event is InputEventMouseButton and (event as InputEventMouseButton).pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT
+		var entree := event is InputEventKey and (event as InputEventKey).pressed and (event as InputEventKey).keycode in [KEY_ENTER, KEY_KP_ENTER]
+		if clic or entree:
+			zone.accept_event()
+			club_demande.emit(club))
+
+## Fond de survol d'une zone cliquable (ligne, carte) : un cran plus clair, filet ivoire à gauche (jamais un cadre).
+func _fond_survol() -> StyleBoxFlat:
+	var style := S.G.T.box(SURVOL, 0)
+	style.border_width_left = maxi(2, px(4))
+	style.border_color = IVOIRE
+	style.content_margin_left = px(8)
+	style.content_margin_right = px(10)
+	style.content_margin_top = 0
+	style.content_margin_bottom = 0
+	return style
+
 func _remplir_classement(classement: Array, teintes: Dictionary) -> void:
 	S.clear(classement_lignes)
 	classement_tuile.visible = not classement.is_empty()
@@ -1996,6 +2124,8 @@ func _ligne_classement(r: Dictionary, teintes: Dictionary) -> Control:
 	var points := _cellule(str(int(r.get("points", 0))), 44, OR if nous else IVOIRE, 26, true)
 	points.name = "Points"
 	rang.add_child(points)
+	fleche.mouse_filter = Control.MOUSE_FILTER_PASS
+	_cliquable_club(ligne, r.get("clubId"), _fond_survol())
 	return ligne
 
 ## Multiplex : une carte par autre match (deux lignes club et score, essais en petit, minute ou
@@ -2095,6 +2225,20 @@ func _carte_match(m: Dictionary, change: bool, teintes: Dictionary) -> Control:
 		var score := _cellule(str(int(club.get("score", 0))), 32, IVOIRE if meneur == cote or meneur < 0 else DOUX, 26, true)
 		score.name = "Score"
 		ligne.add_child(score)
+		petit.mouse_filter = Control.MOUSE_FILTER_PASS
+		# Chaque club de la carte mène à sa fiche ; son sigle s'éclaire et se fléche au survol.
+		_cliquable_club(ligne, club.get("id"))
+		if ligne.has_meta("club_id"):
+			ligne.tooltip_text = "%s · clic : sa fiche (le match se met en pause)." % str(club.get("nom", sigle))
+			var repos := nom_club.get_theme_color("font_color")
+			var texte_club := nom_club.text
+			var eclairer := func(dedans: bool):
+				nom_club.add_theme_color_override("font_color", IVOIRE if dedans else repos)
+				nom_club.text = texte_club + (" →" if dedans else "")
+			ligne.mouse_entered.connect(eclairer.bind(true))
+			ligne.mouse_exited.connect(eclairer.bind(false))
+			ligne.focus_entered.connect(eclairer.bind(true))
+			ligne.focus_exited.connect(eclairer.bind(false))
 	var heure := _texte("Terminé" if fini else "%d′" % int(m.get("minute", 0)), 22, FAIBLE if fini else OR, false, true)
 	heure.name = "Minute"
 	heure.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -2130,10 +2274,12 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 19, DOUX, true))
 		return
-	for poste in joueurs.size():
+	var ordre := ordre_xv(joueurs, infos, tri_xv, tri_inverse)
+	for rang_ligne in ordre.size():
+		var poste: int = ordre[rang_ligne]
 		var joueur: Variant = joueurs[poste]
 		var info: Dictionary = infos[poste]
-		var case := _ligne_joueur("MatchBetweenPlayer%d" % (poste + 1), poste, func(): joueur_choisi.emit(poste))
+		var case := _ligne_joueur("MatchBetweenPlayer%d" % (poste + 1), rang_ligne, func(): joueur_choisi.emit(poste))
 		var ligne: HBoxContainer = case.get_child(0)
 		ligne.add_child(_cellule(str(poste + 1), int(COLONNES_XV[0][1]), DOUX, 19, true))
 		if not joueur is Dictionary:
@@ -2274,6 +2420,53 @@ func _ajuster_nom(lien: Button, nom: String, cadre: Control, rangee: HBoxContain
 	lien.set_meta("nom_entier", nom)
 
 ## Données de Notre XV, poste par poste : données du joueur (`W.donnees_joueur`), alerte, infobulle.
+## Ordre d'affichage de Mon XV (indices de poste) : par numéro (tri vide), ou par la colonne choisie (« joueur »,
+## « energie », « plaquages », « note ») ; sens naturel : nom A→Z, énergie la plus basse d'abord (qui remplacer),
+## plaquages et note les plus hauts d'abord ; `inverse` retourne le sens. Égalité : le numéro. Postes vacants en fin.
+static func ordre_xv(joueurs: Array, infos: Array, tri: String, inverse: bool) -> Array:
+	var ordre: Array = range(joueurs.size())
+	if tri.is_empty() or tri == "numero":
+		if inverse: ordre.reverse()
+		return ordre
+	var valeur := func(poste: int) -> Variant:
+		var info: Dictionary = infos[poste] if poste < infos.size() and infos[poste] is Dictionary else {}
+		match tri:
+			"joueur": return str(joueurs[poste].get("name", "")).to_lower() if joueurs[poste] is Dictionary else ""
+			"energie": return float(info.get("energie", 0.0))
+			"plaquages": return -float(info.get("plaquages", 0))
+			"note": return -float(info.get("note", 0.0))
+		return poste
+	ordre.sort_custom(func(a: int, b: int) -> bool:
+		var vacant_a := not joueurs[a] is Dictionary
+		var vacant_b := not joueurs[b] is Dictionary
+		if vacant_a != vacant_b: return vacant_b
+		var va: Variant = valeur.call(a)
+		var vb: Variant = valeur.call(b)
+		if va == vb: return a < b
+		return (va > vb) if inverse else (va < vb))
+	return ordre
+
+## Tri de Mon XV choisi par l'en-tête : la même colonne deux fois retourne le sens ; « N° » revient à l'ordre des postes.
+func trier_xv(cle: String) -> void:
+	if cle == "numero" and tri_xv.is_empty():
+		tri_inverse = not tri_inverse
+	elif cle == tri_xv: tri_inverse = not tri_inverse
+	else:
+		tri_xv = "" if cle == "numero" else cle
+		tri_inverse = false
+	_poser_entete_tri()
+	if not _xv_donnees.is_empty(): _remplir_xv(_xv_donnees[0], _xv_donnees[1])
+	_appliquer_blocage()
+
+## Flèche du tri courant dans l'en-tête (▲ sens naturel, ▼ inversé) ; la colonne triée en ivoire.
+func _poser_entete_tri() -> void:
+	var courant := "numero" if tri_xv.is_empty() else tri_xv
+	for bouton: Button in entetes_tri:
+		var cle := str(bouton.get_meta("tri"))
+		var actif := cle == courant
+		bouton.text = str(bouton.get_meta("libelle")) + ((" ▼" if tri_inverse else " ▲") if actif else "")
+		for couleur in ["font_color", "font_focus_color"]: bouton.add_theme_color_override(couleur, IVOIRE if actif else DOUX)
+
 func _infos_xv(joueurs: Array, direct: Dictionary) -> Array:
 	var notes: Dictionary = direct.get("notes", {}) if direct.get("notes") is Dictionary else {}
 	var feuille: Dictionary = direct.get("feuille", {}) if direct.get("feuille") is Dictionary else {}

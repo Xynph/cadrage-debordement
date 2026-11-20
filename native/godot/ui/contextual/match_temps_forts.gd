@@ -282,6 +282,10 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.journal_demande.connect(ouvrir_journal_a)
 	between.stats_demandees.connect(ouvrir_stats_a)
 	between.camera_demandee.connect(func(mode: String): view.choisir_camera(mode))
+	# Club du multiplex ou du classement en direct : sa fiche dans une page du direct (« ← Retour au direct »).
+	between.club_demande.connect(func(id: int): if view.has_method("ouvrir_fiche_club_id"): view.ouvrir_fiche_club_id(id))
+	# En 3D (entracte caché), « Confier la fin » du menu Plus se confirme dans le menu du match.
+	between.confier_fin_demande.connect(func(): if view.has_method("confier_fin"): view.confier_fin())
 	# Une seule barre de commandes : celle de l'écran intermédiaire, pendant qu'il est affiché.
 	between.visibility_changed.connect(_barre_unique)
 	# Mon XV : un joueur choisi ouvre la fenêtre Équipe sur lui (le match se met en pause).
