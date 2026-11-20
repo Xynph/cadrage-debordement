@@ -67,12 +67,11 @@ function classe(row, age) {
   // Rugby Championship, des tests d'été et d'automne, de la Pacific Nations Cup, des Lions), sinon sélections
   // relevées sur la période ; null = inconnue.
   const recent = convocations !== null ? convocations : caps24 === null ? null : caps24 >= 10 ? 4 : caps24 >= 5 ? 2 : caps24 >= 1 ? 1 : 0;
-  const young = Number.isFinite(age) && age <= 31;
   let rank; // 0 = S, 1 = A, 2 = B, 3 = C
-  // Classe S : nation du top 5, avant 32 ans, international confirmé (40 sélections) et convoqué presque à chaque
+  // Classe S : nation du top 5, international confirmé (40 sélections) et convoqué presque à chaque
   // fois (4 groupes et plus) ; sans relevé récent, 50 sélections. Une grande distinction relève d'un cran.
   if (t === 5) rank = uncapped ? 2 : caps === null && recent === null ? 1
-    : young && (recent !== null ? recent >= 4 && (caps ?? 0) >= 40 : (caps ?? 0) >= 50) ? 0
+    : (recent !== null ? recent >= 4 && (caps ?? 0) >= 40 : (caps ?? 0) >= 50) ? 0
       : (recent !== null ? recent >= 2 || (caps ?? 0) >= 15 : (caps ?? 0) >= 15) ? 1 : 2;
   else if (t === 8) rank = uncapped ? 3 : (recent !== null ? recent >= 4 && (caps ?? 0) >= 30 : (caps ?? 0) >= 50) ? 1 : (caps ?? 0) < 10 && !(recent >= 2) ? 3 : 2;
   else if (t === 12) rank = uncapped ? 3 : (caps ?? 0) >= 30 && (recent === null || recent >= 2) ? 2 : 3;
@@ -81,8 +80,8 @@ function classe(row, age) {
   // Plus convoqué depuis janvier 2025, ou dernière sélection avant novembre 2024 : ancien international, un cran en dessous.
   const last = /^(\d{4})-(\d{2})/.exec(row.derniere_selection || '');
   if (recent === 0 || last && Number(last[1]) * 12 + Number(last[2]) < 2024 * 12 + 11) rank = Math.min(3, rank + 1);
-  // Ancien international de 33 ans et plus : un cran en dessous (déclin), jamais sous C.
-  if (Number.isFinite(age) && age >= 33) rank = Math.min(3, rank + 1);
+  // Classe S réservée aux 31 ans et moins : à partir de 32 ans, un cran en dessous (déclin), jamais sous C.
+  if (Number.isFinite(age) && age >= 32) rank = Math.min(3, rank + 1);
   return ['S', 'A', 'B', 'C'][rank];
 }
 
@@ -147,6 +146,8 @@ function collecteV3(niveauxDir, sources) {
     }
   }
   if (fs.existsSync(path.join(dir, 'internationaux.csv'))) for (const r of read('internationaux.csv')) if (r.id && r.intl_nation) intl.set(r.id, r);
+  // Internationaux oubliés (listes des capés par nation, audit du 20/11/2026) : ajoutés, jamais en remplacement.
+  if (fs.existsSync(path.join(dir, 'internationaux-complement.csv'))) for (const r of read('internationaux-complement.csv')) if (r.id && r.intl_nation && !intl.has(r.id)) intl.set(r.id, r);
   // Vérification des internationaux (sélections lues sur la fiche de chaque joueur, convocations depuis 2025).
   if (fs.existsSync(path.join(dir, 'internationaux-verif.csv'))) for (const r of read('internationaux-verif.csv')) {
     const base = intl.get(r.id);
@@ -155,6 +156,12 @@ function collecteV3(niveauxDir, sources) {
     // Convocations comptées sur les groupes du Tournoi, du Rugby Championship, de la Pacific Nations Cup et sur les
     // feuilles des tests : la Géorgie (Rugby Europe, groupes non publiés) serait sous-comptée, elle garde l'ancien relevé.
     if (int(r.convocations_24m) !== null && tier(base.intl_nation) && !/^g[ée]orgi/i.test(base.intl_nation)) base.convocations_24m = r.convocations_24m;
+  }
+  // Contrôle d'identité (homonymes) : un faux international perd sa sélection, ou reçoit la sienne si elle est connue.
+  if (fs.existsSync(path.join(dir, 'internationaux-identite.csv'))) for (const r of read('internationaux-identite.csv')) {
+    if (r.verdict !== 'faux' || !intl.has(r.id)) continue;
+    if (r.vraie_nation && int(r.vraies_selections) !== null) intl.set(r.id, { id: r.id, intl_nation: r.vraie_nation, intl_caps_total: r.vraies_selections, distinctions: '' });
+    else intl.delete(r.id);
   }
   if (fs.existsSync(path.join(dir, 'u20.csv'))) for (const r of read('u20.csv')) if (r.id && r.u20_nation) u20.set(r.id, r);
   return { statut, intl, u20 };

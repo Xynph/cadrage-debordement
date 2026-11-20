@@ -361,7 +361,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   realFacts(p);
   // Âge des joueurs LNR : la base française date de 2025 (âge = 2025 − année de naissance) ; une carrière Monde démarre en 2026
   // comme les autres championnats (relevé du 20/11/2026 sur 165 fiches LNR : 152 avaient un an de trop peu).
-  if(edition.mode==='world-champ'&&String(p.id).startsWith('lnr:')&&Number.isInteger(p.birthYear)&&p.age===2025-p.birthYear)p.age=2026-p.birthYear;
+  if(String(edition.mode).startsWith('world')&&String(p.id).startsWith('lnr:')&&Number.isInteger(p.birthYear)&&p.age===2025-p.birthYear)p.age=2026-p.birthYear;
   if(REG.worldProfiles[p.id])p.worldProfile=copy(REG.worldProfiles[p.id]);if(REG.nationaleQualifications?.[p.id])p.nationaleQualifications=REG.nationaleQualifications[p.id].roles.slice();return p;
  }
  function initialRoster(c){
