@@ -3,7 +3,7 @@ extends AcceptDialog
 ## Ouverte depuis Recrutement (« Offres reçues »), la fiche d'un joueur (carte Marché des transferts), l'Effectif
 ## (vue Contrats) et le courrier « offre_transfert » de la Réception. Réponses : accepter (confirmation : caisse,
 ## effectif après la vente, part rendue au budget de transferts), demander plus une fois (+5, +10 ou +15 %),
-## refuser ; retrait d'un joueur proposé. Hors période des mutations, accepter conclut un accord effectif à l'ouverture.
+## refuser ; retrait d'un joueur proposé. Accepter conclut un accord effectif au changement de saison (1er juillet).
 ## Affichage seul : le moteur valide chaque réponse et rend la raison d'un refus, écrite telle quelle.
 const G = preload("res://ui/carnet_skin.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
@@ -146,10 +146,17 @@ static func _relever(node: Node) -> void:
 
 func _window_text(window: Dictionary) -> String:
 	if str(window.get("mode", "")) != "fenetres": return "Ventes possibles toute la saison, hors match."
+	# Calendrier v2 (bascule) : accord conclu à toute date, effectif au changement de saison (1er juillet). La période
+	# des mutations (1er mai – 30 juin) ne concerne plus le moment où la vente prend effet : on ne l'écrit pas ici.
+	if str(window.get("reopens", "")).ends_with("-07-01"):
+		return "Une vente acceptée prend effet au changement de saison, le %s : le joueur reste au club et joue jusque-là." % str(window.get("reopensLabel", ""))
 	var periods := PackedStringArray()
 	for p: Dictionary in window.get("periods", []):
 		periods.append("du %s au %s" % [_day(str(p.get("start", ""))), _day(str(p.get("end", ""))) ])
 	var text := "Période des mutations : " + ", ".join(periods) + "."
+	# Calendrier v2 : la raison du moteur dit quand une vente acceptée prend effet (changement de saison).
+	var reason := str(window.get("reason", ""))
+	if reason != "": return text + " " + reason
 	if bool(window.get("open", true)): return text + " Elle est ouverte : une vente acceptée est conclue tout de suite."
 	return text + " Hors période : une vente acceptée devient un accord effectif le %s ; le joueur reste et joue jusque-là." % str(window.get("reopensLabel", ""))
 

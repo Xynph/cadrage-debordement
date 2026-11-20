@@ -108,6 +108,8 @@ const SIGNAL_SOURCE = `(function(){
   notesBrief:typeof CDReprise!=='undefined'&&today&&(s.reprise?.notes||[]).some(id=>id.endsWith(':'+today))?CDReprise.notesBrief(s,new Date(Date.parse(today)-6*86400000).toISOString().slice(0,10),today):{},
   preseason:!!pre,
   courrier:(()=>{try{return nativeSystems.domain('clubMail').stops(s);}catch(e){return [];}})(),
+  // Feuille de 23 impossible avec les seuls pros disponibles au prochain match (espoirs-match.cjs shortage).
+  court:world&&today?(()=>{try{return nativeSystems.domain('espoirsMatch').shortage(s);}catch(e){return null;}})():null,
   ...(world&&today?saison(s,today,fixtures,next,name,byId,players):{})};
  // Faits de la saison pour les arrêts informatifs (continuer-arrets.json) : lecture seule, calculés seulement les
  // jours où ils servent (veille, lendemain, mi-saison, fin de phase).
@@ -287,6 +289,11 @@ function informatifs(before, after, settings = {}) {
     const rapport = [v.rank ? v.opponent + ' ' + ordinal(v.rank) + (v.ownRank ? ', nous ' + ordinal(v.ownRank) : '') : null, v.form ? 'forme ' + v.form.split('').join('-') : null].filter(Boolean).join(', ');
     push('veille', v.id, 'Demain, ' + where + ' : ' + sheet + hurt + '.' + (rapport ? ' Adversaire : ' + rapport + '.' : ''));
   }
+  // Effectif trop juste (décision de Léo du 19/11/2026 : plus de plancher de 40 pour le club joué) : alerte une fois
+  // par match et par manque, dès qu'il apparaît dans les jours qui précèdent la rencontre (au plus tard la veille,
+  // ou le jour même si le manque naît à l'entraînement).
+  const ck = courtKey(after);
+  if (ck && (ck !== courtKey(before) || courtDays(after) === 1)) push('effectif_court', ck, courtText(after));
   const l = after.lendemain;
   if (l && (!before.lendemain || before.lendemain.id !== l.id)) {
     const issue = l.us > l.them ? 'Victoire' : l.us < l.them ? 'Défaite' : 'Match nul';
@@ -320,6 +327,35 @@ function informatifs(before, after, settings = {}) {
   for (const c of (after.courrier || []).filter(x => !lus.has(x.id)))
     push('courrier', c.id, c.expediteur + ' : ' + c.sujet, { mail: c.id, nature: NATURES.includes(c.nature) ? c.nature : 'action', priorite: c.priorite, ...(c.joueur ? { joueur: c.joueur } : {}) });
   return out.sort((a, b) => rangItem(a) - rangItem(b) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+}
+// Manque d'effectif pour la feuille de 23 : clé (rencontre + places) tant que la rencontre est dans la fenêtre
+// d'alerte (continuer-arrets.json, effectif_court.joursAvant), sinon null.
+// Le manque est rappelé la veille même s'il était déjà connu (« au plus tard la veille »).
+function courtDays(sig) {
+  const c = sig?.court;
+  return c && c.date && sig.today ? Math.round((Date.parse(c.date) - Date.parse(sig.today)) / 86400000) : null;
+}
+function courtKey(sig) {
+  const c = sig?.court;
+  if (!c || !Array.isArray(c.slots) || !c.slots.length || !c.date || !sig.today) return null;
+  const days = courtDays(sig);
+  const window = Number(TYPES.effectif_court?.joursAvant) || 7;
+  return days >= 0 && days <= window ? (c.fixtureId || c.date) + ':' + c.slots.map(x => x.slot).join('-') : null;
+}
+// Texte côté manager : postes à couvrir, puis ce qui se passera le jour du match.
+function courtText(sig) {
+  const c = sig.court, n = c.slots.length;
+  // Un même poste peut manquer deux fois (titulaire et remplaçant portent le même numéro de poste) : regroupé.
+  const groupes = [];
+  for (const x of c.slots) { const label = String(x.label).toLowerCase(), g = groupes.find(y => y.label === label); if (g) g.n++; else groupes.push({ label, number: x.number, n: 1 }); }
+  const postes = groupes.map(g => g.n > 1 ? g.n + ' places de ' + g.label : 'la place de ' + g.label + ' (n°' + g.number + ')');
+  const liste = postes.length > 1 ? postes.slice(0, -1).join(', ') + ' et ' + postes[postes.length - 1] : postes[0];
+  const match = (sig.next && sig.next.date === c.date ? 'le match contre ' + sig.next.opponent : 'le prochain match') + ' du ' + shortDate(c.date);
+  const suite = c.youth >= n
+    ? (n > 1 ? 'Les meilleurs espoirs' : 'Le meilleur espoir') + ' du centre de formation à ce poste ' + (n > 1 ? 'monteront' : 'montera') + ' pour ce match seulement, sauf si tu complètes l’effectif d’ici là.'
+    : 'Le centre de formation ne peut pas tout couvrir : recrute ou la feuille restera incomplète.';
+  // Le titre de l'arrêt dit déjà « Effectif trop juste » : le détail commence par le match.
+  return 'Pour ' + match + ', personne de disponible pour ' + liste + '. ' + suite;
 }
 const NATURES = ['action', 'info', 'routine'];
 // Ordre dans la journée : courriers à réponse, puis informations (moments de la saison et courriers d'info, par

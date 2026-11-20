@@ -107,8 +107,11 @@ test('Moteur Monde : enveloppe, refus, débits, matelas, président, recettes, s
   const jeu = ouvrir({ hebdomadaire: true, testVm: true });
   // Achats entre clubs immédiats (période des mutations ouverte toute la saison) : ce test vérifie le budget, pas le
   // calendrier des mutations (tests/calendrier-mutations.cjs).
+  // Réglage « semaines » (ancien comportement, transferts immédiats) : l'arrivée au changement de saison (v2) est vérifiée
+  // par tests/calendrier-mutations.cjs et tests/clubs-geres-mutations.cjs.
   const VR = require('../native/engine/vente-joueurs.json'), modeAvant = VR.fenetres.mode;
-  VR.fenetres.mode = 'saison';
+  const RC = require('../native/engine/calendrier-mutations.json'), calAvant = RC.clubsGeres.calendrier;
+  VR.fenetres.mode = 'saison'; RC.clubsGeres.calendrier = 'semaines';
   try {
     let m = creer(jeu, CLUB);
     const { run, lire, vue, fixer } = outils(jeu);
@@ -254,7 +257,7 @@ test('Moteur Monde : enveloppe, refus, débits, matelas, président, recettes, s
     // Hors budget de saison (carrière non marquée) : règles inchangées, vue inactive.
     const hors = lire(`(()=>{const s=S.startingSalaries;delete S.startingSalaries;const r={v:budgetTransfertsVue(),refus:budgetTransfertsRefus(9e9)};S.startingSalaries=s;return r;})()`);
     assert.equal(hors.v.actif, false); assert.equal(hors.refus, null);
-  } finally { VR.fenetres.mode = modeAvant; jeu.fermer(); }
+  } finally { VR.fenetres.mode = modeAvant; RC.clubsGeres.calendrier = calAvant; jeu.fermer(); }
 });
 
 test('Moteur Monde : rallonge accordée, refusée (confiance, part, plafond), caisse limitante, report et changement de club', { timeout: 300000 }, () => {

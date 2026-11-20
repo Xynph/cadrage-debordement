@@ -88,7 +88,7 @@ func _ready() -> void:
 	_style_label(sheet_day, "", 46, INK, BOLD_FONT, HORIZONTAL_ALIGNMENT_CENTER)
 	sheet_day.name = "ContinueProgressDate"
 	sheet_box.add_child(sheet_day)
-	_style_label(sheet_weekday, "", 12, Color("3b4442"), BOLD_FONT, HORIZONTAL_ALIGNMENT_CENTER)
+	_style_label(sheet_weekday, "", 13,Color("3b4442"), BOLD_FONT, HORIZONTAL_ALIGNMENT_CENTER)
 	sheet_box.add_child(sheet_weekday)
 	var text := VBoxContainer.new()
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -197,7 +197,8 @@ func _apply_style() -> void:
 
 func _layout() -> void:
 	# Carte de largeur fixe, mise à l'échelle avec la hauteur de la fenêtre (1080p = 1), centrée.
-	var factor := clampf(size.y / 1080.0, 0.6, 1.6)
+	# Jamais sous l'échelle 1 (sauf fenêtre trop étroite) : en 1280×720, textes à 13 px au moins.
+	var factor := clampf(size.y / 1080.0, 1.0, 1.6)
 	factor = minf(factor, (size.x - 32.0) / CARD_WIDTH) if size.x > 64.0 else factor
 	card.custom_minimum_size = Vector2(CARD_WIDTH, 0)
 	card.size = card.get_combined_minimum_size()
@@ -223,6 +224,7 @@ func begin(context: Dictionary, animate: bool = true) -> void:
 	if next is Dictionary and not _target.is_empty(): _plan = {"kind": "match", "date": _target, "opponent": str(next.get("opponent", ""))}
 	title.text = _plan_title(_plan)
 	detail.text = _next_text(next)
+	detail.max_lines_visible = 2
 	hint.text = "Arrêt au prochain match, rendez-vous ou courrier important."
 	stop_button.text = "ARRÊTER"
 	stop_button.disabled = false
@@ -279,6 +281,8 @@ func finish(info: Dictionary) -> void:
 	kicker.add_theme_color_override("font_color", IVORY)
 	title.text = str(stop.get("label", "Avance arrêtée"))
 	detail.text = str(stop.get("detail", "")) if stop.get("detail") != null else ""
+	# Motif d'arrêt écrit en entier (« Effectif trop juste » : postes et suite, 4-5 lignes).
+	detail.max_lines_visible = -1
 	# Conférences ordinaires tenues par Gabi pendant l'avance (réglage « envoyer l'adjoint ») : dites, sans arrêt.
 	var delegated := int(info.get("pressDelegated", 0))
 	hint.text = ("Gabi a tenu %s à ta place. " % ("la conférence de presse" if delegated == 1 else "%d conférences de presse" % delegated) if delegated > 0 else "") + "Carrière sauvegardée."

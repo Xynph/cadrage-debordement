@@ -101,14 +101,14 @@ func executer() -> void:
 	var boite := noeud(app, "PlayerSales") as AcceptDialog
 	verifier(boite != null and not boite.visible and noeud(app, "RecrutementSubpage_offres") != null, "« Offres reçues » : sous-page du Recrutement, aucune fenêtre")
 	if boite != null:
-		verifier(texte(app, "SalesWindow").contains("Période des mutations") and texte(app, "SalesWindow").contains("1er mai"), "période des mutations écrite : " + texte(app, "SalesWindow"))
+		verifier(texte(app, "SalesWindow").contains("changement de saison") and texte(app, "SalesWindow").contains("1er juillet") and not texte(app, "SalesWindow").contains("1er mai"), "effet au changement de saison écrit : " + texte(app, "SalesWindow"))
 		var carte := noeud(app, "SaleOffer_" + str(offre.id).validate_node_name())
 		verifier(carte != null, "offre « %s » affichée" % str(offre.id))
 		if carte != null:
 			verifier(texte(carte, "SaleOfferFee").contains(G.euros(offre.fee)) and texte(carte, "SaleOfferFee").contains(str(offre.buyer)), "montant et acheteur : " + texte(carte, "SaleOfferFee"))
 			var oui := noeud(carte, "SaleAccept") as Button
 			verifier(oui != null and not oui.disabled, "« Conclure l’accord » disponible")
-			verifier(texte(carte, "SaleDeferredNote").contains("1er mai"), "accord effectif à l’ouverture : " + texte(carte, "SaleDeferredNote"))
+			verifier(texte(carte, "SaleDeferredNote").contains("1er juillet"), "accord effectif au changement de saison : " + texte(carte, "SaleDeferredNote"))
 			for pct in [5, 10, 15]: verifier(noeud(carte, "SaleCounter%d" % pct) != null, "« Demander +%d %% »" % pct)
 			verifier(noeud(carte, "SaleDecline") != null, "« Refuser »")
 		var bloquee := noeud(app, "SaleOffer_" + str(fauche.id).validate_node_name())
@@ -129,7 +129,7 @@ func executer() -> void:
 				verifier((noeud(app, "SaleConfirmationOk") as Button).text.begins_with("CONCLURE L’ACCORD AVEC"), "libellé = action : " + (noeud(app, "SaleConfirmationOk") as Button).text)
 				verifier((noeud(app, "SaleConfirmationAnnuler") as Button).text == "Annuler", "bouton Annuler")
 				verifier(root.gui_get_focus_owner() == noeud(app, "SaleConfirmationAnnuler"), "focus sur Annuler")
-				verifier(texte(confirmation, "SaleConfirmCash").contains("+" + G.euros(offre.fee)) and texte(confirmation, "SaleConfirmCash").contains("1er mai"), "caisse : " + texte(confirmation, "SaleConfirmCash"))
+				verifier(texte(confirmation, "SaleConfirmCash").contains("+" + G.euros(offre.fee)) and texte(confirmation, "SaleConfirmCash").contains("1er juillet"), "caisse : " + texte(confirmation, "SaleConfirmCash"))
 				verifier(texte(confirmation, "SaleConfirmSquad").contains("Effectif après la vente : %d" % int(offre.squadAfter)), "effectif après vente : " + texte(confirmation, "SaleConfirmSquad"))
 				verifier(texte(confirmation, "SaleConfirmBudget").begins_with("Budget de transferts"), "part rendue au budget : " + texte(confirmation, "SaleConfirmBudget"))
 				textes_lisibles(confirmation, "confirmation")

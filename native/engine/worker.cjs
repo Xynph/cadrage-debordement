@@ -303,7 +303,7 @@ function createBridge(options={}){
     if(nativeVerifySections&&JSON.stringify(root)!==nativeSaveSections.whole)throw Error('Sections de sauvegarde périmées avant la validation.');
     return {texts:nativeSaveSections.texts,cache:nativeSafeTreeCache};
    }
-   function nativeValidateSaved(full){nativeSafeTreeArmed=full?null:S;try{return validateCareer(S);}finally{nativeSafeTreeArmed=null;}}validatingStartup=false;const nativeCareerVariation=(${careerVariation.toString()})();const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)},${JSON.stringify({regles:eqpEligibilite,homes:factHomes})});
+   function nativeValidateSaved(full){nativeSafeTreeArmed=full?null:S;try{return validateCareer(S);}finally{nativeSafeTreeArmed=null;}}validatingStartup=false;const nativeCareerVariation=(${careerVariation.toString()})();const nativeDepthOptions=${JSON.stringify({managedFloor:process.env.CD_PLANCHER_CLUBS_GERES!=='0'})};const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)},${JSON.stringify({regles:eqpEligibilite,homes:factHomes})});
    const nativeCallups=(${internationalCallups.toString()})();
    const nativeInternationalStatus=new WeakMap();
    const nativePlayerAttributes=p=>{
@@ -1141,6 +1141,12 @@ function createBridge(options={}){
         // Feuille incomplète : « Appeler un espoir » (jeunes choisis, places vides) ou « Jouer à 22 » (le staff n'appelle alors personne).
         const nativeEspoirs=nativeSystems.domain('espoirsMatch'),nativeAt22=nativePayload.reducedBench===true;
         if(Array.isArray(nativePayload.espoirs))nativeEspoirs.callUp(S,nativePayload.espoirs);
+        // Plus de plancher de 40 pour le club joué (décision de Léo du 19/11/2026) : feuille encore incomplète au coup
+        // d'envoi, sans choix du joueur (ni jeunes désignés, ni match à 22) : les meilleurs espoirs aptes du centre
+        // montent pour ce match seulement (prêt espoirLoan, rendus au centre une fois la rencontre passée).
+        // Sauf quand « Jouer à 22 » est ouvert (Nationale, pilier manquant) : ce choix reste au manager, et un coup
+        // d'envoi sans réponse est refusé sans écriture (tests/native-nationale-reduced-bench.cjs).
+        else if(!nativeAt22&&nativeProfessionalDepth.playedClubExempt(S)&&!(typeof CDNationaleReducedBench!=='undefined'&&CDNationaleReducedBench?.vacancy(S))){const nativeMontes=nativeEspoirs.callUpProposed(S);if(nativeMontes.length)managerMessage('Des espoirs montent pour le match',(nativeMontes.length>1?nativeMontes.length+' jeunes du centre de formation complètent':'Un jeune du centre de formation complète')+' la feuille de 23 pour ce match : '+nativeMontes.map(id=>S.clubs[S.club].players.find(p=>p.id===id)?.name).filter(Boolean).join(', ')+'. '+(nativeMontes.length>1?'Ils retourneront':'Il retournera')+' au centre après la rencontre.','staff','team');}
         if(nativeAt22)nativeEspoirs.setOff(true);
         try{beginMatch(nativePayload.reducedBench===true);}finally{if(nativeAt22)nativeEspoirs.setOff(false);if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(false);if(nativeDelegation)nativeDelegation.lineup=nativeLineupFlag;}
        }finally{createRugbyMatch=nativeCreate;}

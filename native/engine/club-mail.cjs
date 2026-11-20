@@ -201,6 +201,75 @@ function factory() {
   };
 
   // Bilan de la saison précédente du club du manager (s.jiff.results) -> variables du courrier de la ligue.
+  // ------------------------------------------------------------------ mercato (docs/gdd/calendrier-mutations.md § 3 ter)
+  // Période des mutations (vente-joueurs.json, `fenetres`) lue sur la date seule ; échos hors période, point hebdomadaire,
+  // ouverture et dernière semaine pendant. Les accords prennent tous effet à la bascule de saison (lendemain de la fin
+  // de période). Ce qui a déjà été annoncé est noté (memo.mercatoVus, ids préfixés par la saison) : ni répété d'un
+  // courrier à l'autre, ni redonné en courrier individuel après la période.
+  const MK = D.mercato || {};
+  const VJ = () => typeof nativeVenteJoueurs !== 'undefined' && nativeVenteJoueurs && typeof nativeVenteJoueurs.fenetre === 'function' ? nativeVenteJoueurs : null;
+  const dansPeriode = (md, p) => p.debut <= p.fin ? md >= p.debut && md <= p.fin : md >= p.debut || md <= p.fin;
+  const periodesMutations = () => (VJ()?.REGLAGES?.fenetres?.periodes || []).filter(p => obj(p) && /^\d{2}-\d{2}$/.test(p.debut) && /^\d{2}-\d{2}$/.test(p.fin));
+  // 'ouverte' {debut, fin} | 'fermee' {fin : prochaine fin de période} | null (pas de calendrier des mutations).
+  function mercato(d) {
+    const V = VJ(); if (!V || !date(d)) return null;
+    const f = V.fenetre(d, V.REGLAGES); if (f.mode !== 'fenetres') return null;
+    const md = d.slice(5), an = Number(d.slice(0, 4)), list = periodesMutations();
+    if (!list.length) return null;
+    const p = f.ouverte ? list.find(x => dansPeriode(md, x)) : null;
+    if (p) return { ouverte: true, debut: (p.debut <= md ? an : an - 1) + '-' + p.debut, fin: (p.fin >= md ? an : an + 1) + '-' + p.fin };
+    const fin = list.map(x => { const iso = an + '-' + x.fin; return iso >= d ? iso : (an + 1) + '-' + x.fin; }).sort()[0];
+    return { ouverte: false, fin };
+  }
+  const dateLongue = iso => VJ()?.dateFr ? VJ().dateFr(iso) : shortDate(iso);
+  const montant = n => VJ()?.euros ? VJ().euros(n) : euros(n) + ' €';
+  const semaineMonde = s => Number.isInteger(s.worldMode?.week) ? s.worldMode.week : Number(s.round) || 0;
+  const vuId = (s, id) => (s.season ?? 0) + ':' + id;
+  const dejaVu = (st, s, id) => (st.memo.mercatoVus || []).includes(vuId(s, id));
+  function voir(st, s, ids) {
+    const vus = Array.isArray(st.memo.mercatoVus) ? st.memo.mercatoVus : [];
+    for (const id of ids) { const k = vuId(s, id); if (!vus.includes(k)) vus.push(k); }
+    st.memo.mercatoVus = vus.slice(-(MK.memoire ?? 600));
+  }
+  // Faits du mercato écrits par le moteur (calendrier-mutations.cjs : S.calendrierMutations.mercato.semaines) ;
+  // absents ou d'une autre saison : rien.
+  function faitsMercato(s, types) {
+    const m = s.calendrierMutations?.mercato;
+    if (!obj(m) || (m.saison !== undefined && m.saison !== s.season) || !obj(m.semaines)) return [];
+    const wk = semaineMonde(s), out = [];
+    for (const k of Object.keys(m.semaines).map(Number).filter(Number.isInteger).sort((a, b) => a - b)) {
+      if (k > wk || !Array.isArray(m.semaines[k])) continue;
+      // La date d'arrivée est dite une fois en fin de courrier : retirée de chaque ligne d'accord.
+      m.semaines[k].forEach(x => { if (obj(x) && types.includes(x.type) && text(x.texte, 300) && x.texte) out.push({ id: 'm:' + k + ':' + hash(x.type + ':' + x.texte), texte: x.texte.replace(/\s*:\s*il arrivera le 1er juillet\.?$/, '.'), type: x.type, montant: Number(x.montant) || 0, semaine: k }); });
+    }
+    return out;
+  }
+  const parMontant = list => [...list].sort((a, b) => b.montant - a.montant || a.semaine - b.semaine || a.id.localeCompare(b.id));
+  // Offres en cours pour les joueurs du club (mêmes offres que les courriers « offre_transfert »).
+  function offresClub(s) {
+    const e = s.economy, own = s.clubs?.[s.club]; if (!e || !own || !Array.isArray(e.offers)) return [];
+    return e.offers.filter(o => o.expires >= e.week).map(o => {
+      const p = own.players.find(x => x.id === o.playerId), b = s.clubs[o.buyer];
+      return p && b ? { id: 'o:' + o.id, texte: b.name + ' propose ' + montant(o.fee) + ' pour ' + p.name + ' (' + p.pos + ')' } : null;
+    }).filter(Boolean);
+  }
+  // Accords conclus par le club (ventes et achats), qui prennent effet à la bascule de saison.
+  function accordsClub(s) {
+    const list = Array.isArray(s.venteJoueurs?.accords) ? s.venteJoueurs.accords : [];
+    return list.filter(a => obj(a) && a.clubId === s.club && text(a.id, 60)).map(a => ({ id: 'a:' + a.id,
+      texte: a.sens === 'achat' ? String(a.joueur || 'Un joueur') + ' arrive de ' + String(s.clubs?.[a.seller]?.name || a.vendeur || 'un autre club') + ' pour ' + montant(a.fee || 0)
+        : String(a.joueur || 'Un joueur') + ' part à ' + String(s.clubs?.[a.buyer]?.name || a.acheteur || 'un autre club') + ' pour ' + montant(a.fee || 0) + (a.imposee ? ' (décision du président)' : '') }));
+  }
+  // Section de liste d'un courrier : titre (vide s'il n'y a rien), lignes nom_a…, « et N autres ».
+  function section(vars, nom, titre, items, max) {
+    vars[nom] = items.length ? titre : '';
+    'abcdef'.slice(0, max).split('').forEach((l, i) => { vars[nom + '_' + l] = items[i]?.texte || ''; });
+    const n = items.length - max;
+    vars[nom + '_plus'] = n > 0 ? 'et ' + n + ' autre' + (n > 1 ? 's' : '') : '';
+  }
+  const titre = (k, vars) => fill(MK.titres?.[k] || '', vars);
+  const mercatoVars = (P, d) => ({ fin: dateLongue(P.fin), arrivee: dateLongue(shift(P.fin, 1)), semaine: shortDate(monday(d)) });
+
   const quotaLigue = (F, keep) => {
     const r = (F.s.jiff?.results || []).find(x => x.clubId === F.s.club && x.season === F.s.season - 1);
     if (!r || !keep(r)) return [];
@@ -467,7 +536,52 @@ function factory() {
       return v ? [{ key: v.cle, vars: v.vars }] : [];
     },
     // Vente de joueurs (vente-joueurs.cjs) : une offre reçue = un courrier ; accord exécuté ou tombé = un courrier.
-    offre_transfert(F) { return typeof venteCourriers === 'function' ? venteCourriers(F.s) : []; },
+    // Pendant la période des mutations, les offres sont regroupées dans le « Point mercato » ; une offre déjà annoncée
+    // là n'est pas redonnée seule après la période.
+    offre_transfert(F, t, st) {
+      if (typeof venteCourriers !== 'function' || mercato(F.d)?.ouverte) return [];
+      return venteCourriers(F.s).filter(c => !dejaVu(st, F.s, 'o:' + c.key));
+    },
+    // Échos du mercato (hors période) : accords entre clubs gérés, pré-contrats et rumeurs de la semaine, en liste courte.
+    echos_mercato(F, t, st) {
+      const P = mercato(F.d); if (!P || P.ouverte) return [];
+      const items = faitsMercato(F.s, MK.echos?.types || ['achat', 'accord', 'precontrat', 'rumeur']).filter(x => !dejaVu(st, F.s, x.id));
+      if (!items.length) return [];
+      const vars = { arrivee: dateLongue(shift(P.fin, 1)) };
+      section(vars, 'echo', '', items, MK.echos?.lignes ?? 6);
+      return [{ key: F.s.season + ':' + semaineMonde(F.s), vars, vus: items.map(x => x.id) }];
+    },
+    // Point mercato (période, hors première et dernière semaine) : offres reçues, accords du club, principaux accords du Monde.
+    point_mercato(F, t, st) {
+      const P = mercato(F.d); if (!P || !P.ouverte || F.d <= shift(P.debut, 6) || shift(F.d, 7) > P.fin) return [];
+      const L = MK.point || {}, vars = mercatoVars(P, F.d), nouveau = x => !dejaVu(st, F.s, x.id);
+      const offres = offresClub(F.s).filter(nouveau), accords = accordsClub(F.s).filter(nouveau);
+      const monde = faitsMercato(F.s, MK.monde?.types || ['achat', 'accord']).filter(nouveau);
+      if (!offres.length && !accords.length && !monde.length) return [];
+      section(vars, 'offres', titre('offres', vars), offres, L.offres ?? 4);
+      section(vars, 'accords', titre('accords', vars), accords, L.accords ?? 3);
+      section(vars, 'monde', titre('monde', vars), parMontant(monde).slice(0, L.monde ?? 3), L.monde ?? 3);
+      return [{ key: F.s.season + ':' + semaineMonde(F.s), vars, vus: [...offres, ...accords, ...monde].map(x => x.id) }];
+    },
+    // Ouverture (première semaine de la période), une fois par saison : accords déjà conclus, offres nouvelles.
+    mercato_ouverture(F, t, st) {
+      const P = mercato(F.d); if (!P || !P.ouverte || F.d > shift(P.debut, 6)) return [];
+      const vars = mercatoVars(P, F.d), offres = offresClub(F.s).filter(x => !dejaVu(st, F.s, x.id)), accords = accordsClub(F.s);
+      section(vars, 'accords', titre('accords_conclus', vars), accords, MK.point?.accords ?? 3);
+      section(vars, 'offres', titre('offres', vars), offres, MK.point?.offres ?? 4);
+      vars.rien = offres.length || accords.length ? '' : titre('rien', vars);
+      return [{ key: P.fin.slice(0, 4), vars, vus: [...offres, ...accords].map(x => x.id) }];
+    },
+    // Dernière semaine (date + 7 jours après la fin de période), une fois par saison : offres en attente, plus gros accords.
+    mercato_derniere(F, t, st) {
+      const P = mercato(F.d); if (!P || !P.ouverte || shift(F.d, 7) <= P.fin) return [];
+      const vars = mercatoVars(P, F.d), offres = offresClub(F.s), accords = accordsClub(F.s).filter(x => !dejaVu(st, F.s, x.id));
+      const monde = faitsMercato(F.s, MK.monde?.types || ['achat', 'accord']);
+      section(vars, 'offres', titre('offres_attente', vars), offres, MK.point?.offres ?? 4);
+      section(vars, 'accords', titre('accords', vars), accords, MK.point?.accords ?? 3);
+      section(vars, 'monde', titre('monde_saison', vars), parMontant(monde).slice(0, MK.point?.monde ?? 3), MK.point?.monde ?? 3);
+      return [{ key: P.fin.slice(0, 4), vars, vus: [...offres, ...accords, ...monde].map(x => x.id) }];
+    },
     vente_executee(F) { return typeof venteCourriersAccords === 'function' ? venteCourriersAccords(F.s, 'executee', F.d) : []; },
     vente_annulee(F) { return typeof venteCourriersAccords === 'function' ? venteCourriersAccords(F.s, 'annulee', F.d) : []; },
     // Pré-contrats (calendrier-mutations.cjs) : un autre club approche un joueur en fin de contrat, puis il signe ailleurs.
@@ -755,6 +869,8 @@ function factory() {
       if (c.player) players.add(c.player);
       received++;
       st.mails.push({ id: 'mail-' + (++st.seq), type: c.type, date: d, f, vars: sanitize(c.vars || {}), player: c.player ? String(c.player) : null, ...(c.club != null && c.club !== '' ? { club: c.club } : {}), status: (t.reponses || []).length ? 'nouveau' : 'info', choice: null });
+      // Mercato : faits annoncés dans ce courrier, ni répétés au suivant ni redonnés seuls.
+      if (Array.isArray(c.vus) && c.vus.length) voir(st, s, c.vus);
     }
     remember(s, st, F);
     st.memo.season = s.season;
@@ -775,7 +891,11 @@ function factory() {
   const fill = (template, vars) => String(template || '').replace(/\{([^}]+)\}/g, (_, k) => vars[k] === undefined ? '' : String(vars[k]));
   function render(m) {
     const t = TYPES[m.type] || {}, form = (t.formulations || [])[m.f] || (t.formulations || [])[0] || {};
-    return { sujet: fill(form.sujet, m.vars), corps: fill(form.corps, m.vars), expediteur: fill(t.expediteur, m.vars) };
+    let corps = fill(form.corps, m.vars);
+    // Courrier en liste (mercato) : puces et titres vides retirés.
+    // « 1er juillet » ne se coupe pas en fin de ligne (espace insécable).
+    if (t.liste) corps = corps.split('\n').filter(l => l.trim() !== '•').join('\n').replace(/\n{3,}/g, '\n\n').trim().replace(/\b1er (?=\p{L})/gu, '1er ');
+    return { sujet: fill(form.sujet, m.vars), corps, expediteur: fill(t.expediteur, m.vars) };
   }
   const SIGN = n => (n > 0 ? '+' : '−') + Math.abs(n);
   function effectText(e, p = null, d = null) {
