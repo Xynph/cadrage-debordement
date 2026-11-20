@@ -30,6 +30,9 @@ const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
+	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
+	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
+	{"id": "presse-portraits", "libelle": "Presse : Portraits", "type": "presse_onglet", "onglet": 3},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "options", "libelle": "Options", "type": "options"},
 ]
@@ -397,6 +400,12 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app._navigate(route)
 			await stabiliser()
 			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"presse_onglet":
+			preparer_presse()
+			app.management_ui.press_tab = int(ecran.onglet)
+			app._navigate("Presse")
+			await stabiliser()
+			if app.route != "Presse": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
 		"calendrier_semaine":
 			app._navigate("Calendrier")
 			await stabiliser()
