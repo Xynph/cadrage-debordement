@@ -1144,7 +1144,8 @@ func player_path() -> Array:
 	var frozen := [regie.index, regie.temps, regie.phase]
 	await settle(40)
 	check(frozen == [regie.index, regie.temps, regie.phase] and view.play.text == "Reprendre", "Rien n'avance pendant la pause")
-	check(not view.compact and view.home.is_visible_in_tree() and view.get("_meteo_boite").visible, "Pause : la ligne météo revient sous le bandeau")
+	await settle(2)
+	check(not view.compact and view.home.is_visible_in_tree() and view.get("_meteo_boite").visible == view.meteo_ligne.visible, "Pause : la ligne météo revient sous le bandeau")
 	# Le journal ouvert pendant un temps fort ne devance pas l'image.
 	view._toggle_drawer("Journal")
 	await settle(2)

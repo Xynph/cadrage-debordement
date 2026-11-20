@@ -78,6 +78,13 @@ var compact := false
 var _recouvrir := 0
 ## Rappel « Échap · Pause et menu » sous les commandes (cliquable : ouvre le menu du match).
 var indice_menu: Button
+## Qui a le ballon, sous le bandeau (maquette 13-1) : en 3D, la phrase de l'état du jeu (écran 14,
+## `MatchBetweenState`) sur panneau 85 % avec le liseré du club qui a le ballon ; à l'entracte, la phrase
+## reste dans la bande des commandes (maquette 14).
+var ligne_possession: PanelContainer
+var _possession_trait: Control
+var _possession_texte: Label
+var _rangee_haut: Control
 ## Journal affiché : deux faits au plus, le plus récent en premier ({minute, texte}).
 var _journal: Array = []
 var _journal_texte := ""
@@ -162,16 +169,35 @@ func _ready() -> void:
 	play = _bouton_hud("Pause", "Espace", _pause, "MatchPauseButton")
 	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	haut.add_child(play)
-	# Sous le bandeau : météo (aux arrêts) à gauche, rappel « Échap · Pause et menu » à droite.
+	_rangee_haut = haut
+	# Sous le bandeau : qui a le ballon (en 3D) et météo (aux arrêts) à gauche, rappel « Échap · Pause et
+	# menu » à droite.
 	var sous := HBoxContainer.new()
 	sous.name = "MatchSubRow"
 	sous.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sous.add_theme_constant_override("separation", 12)
 	frame.add_child(sous)
+	ligne_possession = PanelContainer.new()
+	ligne_possession.name = "MatchPossession"
+	ligne_possession.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ligne_possession.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	ligne_possession.add_theme_stylebox_override("panel", _fond_hud(Vector4(22, 0, 16, 0)))
+	var possession_rangee := HBoxContainer.new()
+	possession_rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ligne_possession.add_child(possession_rangee)
+	_possession_trait = Marqueur.new()
+	_possession_trait.name = "Trait"
+	_possession_trait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_possession_trait.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	possession_rangee.add_child(_possession_trait)
+	_possession_texte = _texte("", Charte.texte_moyen(), Charte.IVOIRE)
+	_possession_texte.name = "Texte"
+	possession_rangee.add_child(_possession_texte)
+	ligne_possession.hide()
+	sous.add_child(ligne_possession)
 	meteo_ligne = S.label("", 13, Charte.IVOIRE_2)
 	meteo_ligne.name = "MatchWeather"
 	meteo_ligne.add_theme_font_override("font", Charte.TEXTE)
-	meteo_ligne.clip_text = true
-	meteo_ligne.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	meteo_ligne.hide()
 	# Boîte propre à la ligne météo : le mode compact la masque sans lutter avec la régie, qui règle
 	# la visibilité de la ligne elle-même.
@@ -593,8 +619,14 @@ func _mettre_a_l_echelle() -> void:
 		souligne.custom_minimum_size.y = maxf(1.0, roundf(2 * echelle))
 	for etiquette: Label in [meteo_ligne]: etiquette.add_theme_font_size_override("font_size", t.call("meteo"))
 	for bouton: Button in [play, indice_menu]: _habiller_bouton_hud(bouton)
+	_possession_texte.add_theme_font_size_override("font_size", t.call("legende"))
+	_possession_trait.custom_minimum_size = Vector2(roundf(7 * echelle), roundf(20 * echelle))
+	ligne_possession.custom_minimum_size.y = roundf(36 * echelle)
+	ligne_possession.add_theme_stylebox_override("panel", _fond_hud(Vector4(roundf(9 * echelle), 0, roundf(16 * echelle), 0)))
+	(ligne_possession.get_child(0) as HBoxContainer).add_theme_constant_override("separation", roundi(10 * echelle))
 	if is_instance_valid(_legende):
-		_legende.custom_minimum_size.x = roundi(LEGENDE_LARGEUR * echelle)
+		# 744 px en 1080p ; jamais plus de 45 % de la largeur (1280 × 720 : 576 px, la 3D garde sa place).
+		_legende.custom_minimum_size.x = mini(roundi(LEGENDE_LARGEUR * echelle), roundi(get_viewport_rect().size.x * 0.45))
 		var marge_journal: MarginContainer = _legende.get_child(0)
 		for bord in ["left", "right"]: marge_journal.add_theme_constant_override("margin_" + bord, roundi(16 * echelle))
 		for bord in ["top", "bottom"]: marge_journal.add_theme_constant_override("margin_" + bord, roundi(9 * echelle))
@@ -660,12 +692,42 @@ func _process(_delta: float) -> void:
 	var entracte: bool = regie != null and regie.between != null and regie.between.visible
 	var rappel: bool = not compact and not entracte and not _live().get("finished", false)
 	if indice_menu.visible != rappel: indice_menu.visible = rappel
+	_suivre_possession(entracte)
+	var meteo_vue: bool = not compact and meteo_ligne.visible
+	if _meteo_boite.visible != meteo_vue: _meteo_boite.visible = meteo_vue
 	# La fenêtre Équipe ouverte depuis la bande ferme le menu (le match reste en pause).
 	if is_instance_valid(menu) and menu.visible and is_instance_valid(equipe) and equipe.visible: _cacher_menu()
+	# Panneau du menu : ses lignes à retour automatique ne connaissent leur hauteur qu'après une mise en page.
+	if is_instance_valid(menu) and menu.visible: _placer_menu()
+	# Fiche du club ouverte pendant une réponse du moteur : la demande part dès qu'il est libre.
+	if is_instance_valid(page) and page.visible and _page_sorte == "club" and not app.waiting:
+		var Fiche = load("res://ui/immersive08/club_sheet_canvas.gd")
+		var fiche: Variant = app.management_ui.get("club_sheet")
+		if fiche is Dictionary and Fiche.cached(app, int(fiche.get("id", -1))).is_empty(): Fiche.request(app, int(fiche.get("id", -1)))
 	if _pause_voulue != 0 and not app.waiting:
 		var voulue := _pause_voulue > 0
 		_pause_voulue = 0
 		if bool(_live().get("paused", false)) != voulue and not _live().get("finished", false): director.command("pause", {"paused": voulue})
+
+## Qui a le ballon : en 3D, la phrase d'état de l'écran 14 passe sous le bandeau, sur panneau, avec le liseré
+## du club nommé en tête ; la phrase de la bande s'efface (elle revient telle quelle à l'entracte).
+func _suivre_possession(entracte: bool) -> void:
+	var etat_jeu: Label = regie.between.get("etat") if regie != null and regie.between != null and regie.between.get("etat") is Label else null
+	var texte := etat_jeu.text.strip_edges() if etat_jeu != null else ""
+	var montre: bool = etat_jeu != null and not entracte and not texte.is_empty() and texte != "Le match" and not _live().get("finished", false)
+	if etat_jeu != null:
+		var alpha := 0.0 if montre else 1.0
+		if etat_jeu.modulate.a != alpha: etat_jeu.modulate.a = alpha
+	if ligne_possession.visible != montre: ligne_possession.visible = montre
+	if not montre or _possession_texte.text == texte: return
+	_possession_texte.text = texte
+	var couleur := Charte.IVOIRE_2
+	var equipes: Array = _live().get("teams", [])
+	for cote in equipes.size():
+		if equipes[cote] is Dictionary and texte.begins_with(S.G.club_name(equipes[cote])):
+			couleur = Charte.club_trait(Color.from_string(str(S.G.identity(equipes[cote]).get("color", "")), Charte.CLUB))
+	(_possession_trait as Marqueur).couleur = couleur
+	_possession_trait.queue_redraw()
 
 ## Période sous l'horloge, et horloge plus petite quand elle écrit un mot (« MI-TEMPS », « TERMINÉ »).
 func _poser_periode() -> void:
@@ -784,6 +846,8 @@ func _poser_plaques(teams: Array) -> void:
 		var largeur := police.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom.get_theme_font_size("font_size")).x
 		var plafond := clampf((get_viewport_rect().size.x / echelle - 1100.0) * 0.5, 120.0, 300.0) * echelle
 		nom.custom_minimum_size.x = minf(largeur + 2.0, plafond)
+		var complet := S.G.club_name(teams[cote]) if teams.size() > cote and teams[cote] is Dictionary else ""
+		plaques[cote].tooltip_text = ("%s : fiche du club (le match se met en pause)." % complet) if not complet.is_empty() else "Fiche du club (le match se met en pause)."
 	_coque_score.queue_redraw()
 
 ## Fond d'une plaque : la vraie couleur du club, assombrie jusqu'à porter l'ivoire (≥ 4,6:1) ; un club
@@ -966,9 +1030,14 @@ func ouvrir_menu(mode: String = "menu") -> void:
 	_menu_cle = ""
 	if not is_instance_valid(menu): _construire_menu()
 	_actualiser_menu()
+	# Voile au-dessus de tout (3D, entracte 2D, bannières) ; la rangée du score passe au-dessus de lui :
+	# le score et la minute restent lisibles.
 	_menu_voile.show()
 	menu.show()
+	move_child(_menu_voile, get_child_count() - 1)
 	move_child(menu, get_child_count() - 1)
+	_rangee_haut.z_index = 1
+	menu.z_index = 1
 	_placer_menu()
 	var premier: Control = menu.find_child("MatchMenuReprendre" if mode == "menu" else "MatchMenuConfirmer", true, false)
 	if premier != null: premier.call_deferred("grab_focus")
@@ -977,6 +1046,7 @@ func ouvrir_menu(mode: String = "menu") -> void:
 func _cacher_menu() -> void:
 	if is_instance_valid(menu): menu.hide()
 	if is_instance_valid(_menu_voile): _menu_voile.hide()
+	if is_instance_valid(_rangee_haut): _rangee_haut.z_index = 0
 
 ## Ferme le menu ; `reprendre` : le match repart (Reprendre, Échap, Espace).
 func fermer_menu(reprendre: bool = true) -> void:
@@ -990,9 +1060,6 @@ func _construire_menu() -> void:
 	_menu_voile.mouse_filter = Control.MOUSE_FILTER_STOP
 	S.full(_menu_voile)
 	add_child(_menu_voile)
-	# Le voile passe sous le HUD : le bandeau du score et la minute restent lisibles au-dessus.
-	var hud: Control = clock.find_parent("MatchHud").get_parent()
-	move_child(_menu_voile, hud.get_index())
 	menu = Control.new()
 	menu.name = "MatchMenu"
 	menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1041,12 +1108,12 @@ func _actualiser_menu() -> void:
 	pile.add_child(texte)
 	colonne.add_child(_filet())
 	if _menu_mode == "deleguer":
-		colonne.add_child(_option("MatchMenuConfirmer", "Confirmer : l’adjoint finit le match", "le match se joue sans toi jusqu’au coup de sifflet", "Entrée", func():
+		colonne.add_child(_option("MatchMenuConfirmer", "Confirmer : l’adjoint finit le match", "le match se joue sans toi jusqu’au coup de sifflet", ["Entrée"], func():
 			fermer_menu(false)
 			director.command("delegate")))
-		colonne.add_child(_option("MatchMenuAnnuler", "Annuler et reprendre le match", "", "Échap", func(): fermer_menu(true)))
+		colonne.add_child(_option("MatchMenuAnnuler", "Annuler et reprendre le match", "", ["Échap"], func(): fermer_menu(true)))
 	else:
-		colonne.add_child(_option("MatchMenuReprendre", "Reprendre le match", "", "Échap  Espace", func(): fermer_menu(true)))
+		colonne.add_child(_option("MatchMenuReprendre", "Reprendre le match", "", ["Échap", "Espace"], func(): fermer_menu(true)))
 		colonne.add_child(_option("MatchMenuReglages", "Réglages", "son, image, commandes", "›", func(): ouvrir_reglages()))
 		colonne.add_child(_option("MatchMenuVitesse", "Vitesse du match", "s’applique dès la reprise", "◂ %s ▸" % _vitesse_libelle(), func(): _changer_vitesse(1)))
 		var quitter_sous := "Appuie encore : le jeu se ferme, le match sera rejoué depuis le coup d’envoi." if _menu_quitter_arme \
@@ -1086,7 +1153,7 @@ func _filet() -> ColorRect:
 
 ## Option du menu : ligne de 52 px (1080p), libellé, précision en ivoire secondaire, indication à droite ;
 ## survol en panneau plus clair, focus en panneau choisi avec le marqueur ivoire incliné à gauche.
-func _option(nom: String, libelle: String, precision: String, droite: String, action: Callable) -> Button:
+func _option(nom: String, libelle: String, precision: String, droite: Variant, action: Callable) -> Button:
 	var e := echelle
 	var bouton := Button.new()
 	bouton.name = nom
@@ -1137,20 +1204,34 @@ func _option(nom: String, libelle: String, precision: String, droite: String, ac
 		sous.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		sous.add_theme_font_size_override("font_size", roundi(13 * e))
 		pile.add_child(sous)
-	if not droite.is_empty():
-		var indication := _texte(droite, Charte.TEXTE if droite.length() > 2 else Charte.texte_moyen(), Charte.IVOIRE_2 if not droite.begins_with("◂") else Charte.IVOIRE)
+	if droite is Array:
+		# Touches du raccourci (« Échap », « Espace ») en puces, comme la maquette.
+		var touches := HBoxContainer.new()
+		touches.name = "Droite"
+		touches.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		touches.add_theme_constant_override("separation", roundi(6 * e))
+		touches.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		for nom_touche: Variant in droite:
+			var puce := _touche(str(nom_touche))
+			(puce.get_child(0) as Label).add_theme_font_size_override("font_size", roundi(13 * e))
+			touches.add_child(puce)
+		rangee.add_child(touches)
+	elif not str(droite).is_empty():
+		var texte_droite := str(droite)
+		var indication := _texte(texte_droite, Charte.texte_moyen(), Charte.IVOIRE if texte_droite.begins_with("◂") else Charte.IVOIRE_2)
 		indication.name = "Droite"
-		indication.add_theme_font_size_override("font_size", roundi((16 if droite.begins_with("◂") else 13) * e))
+		indication.add_theme_font_size_override("font_size", roundi((16 if texte_droite.begins_with("◂") else 15) * e))
 		rangee.add_child(indication)
 	bouton.custom_minimum_size.y = maxf(roundf(52 * e), (pile.get_combined_minimum_size().y if not precision.is_empty() else 0.0) + roundf(16 * e))
 	return bouton
 
 ## Marqueur de l'option choisie : trait ivoire de 3 px incliné de 10° (charte §3).
 class Marqueur extends Control:
+	var couleur := Charte.IVOIRE
 	func _draw() -> void:
 		var d := Charte.decalage(size.y)
 		var l := maxf(2.0, size.x * 0.5)
-		draw_colored_polygon(PackedVector2Array([Vector2(d, 0), Vector2(d + l, 0), Vector2(l, size.y), Vector2(0, size.y)]), Charte.IVOIRE)
+		draw_colored_polygon(PackedVector2Array([Vector2(d, 0), Vector2(d + l, 0), Vector2(l, size.y), Vector2(0, size.y)]), couleur)
 
 func _placer_menu() -> void:
 	if not is_instance_valid(_menu_panneau): return

@@ -394,7 +394,9 @@ func run() -> void:
 				v.depuis = temps
 			if int(v.etape) == 1:
 				vue_hud_en_cours = true
-				if temps - float(v.depuis) >= (1.0 if v.nom == "menu-echap" else 3.0) and not app.waiting:
+				var page_hud: Variant = vue.get("page")
+				var prete: bool = v.nom == "menu-echap" or (page_hud is Control and (page_hud as Control).find_child("FicheClub", true, false) != null and (page_hud as Control).find_child("ClubSheetLoading", true, false) == null)
+				if temps - float(v.depuis) >= (1.0 if v.nom == "menu-echap" else 2.0) and (prete or temps - float(v.depuis) >= 15.0) and not app.waiting:
 					await RenderingServer.frame_post_draw
 					var vue_image := root.get_texture().get_image()
 					if vue_image != null: vue_image.save_png(str(o.sortie).path_join(str(v.nom) + ".png"))
