@@ -99,6 +99,18 @@ function pretRembourser(id,montant,anticipe=false){
  p.restant=Math.round(p.restant-paye);if(info)info.debt=Math.max(0,Math.round((info.debt||0)-paye));if(anticipe){const k=S.clubBudget?.clubs?.[id];if(k)k.rembourse=(k.rembourse||0)+paye;}
  if(p.restant<=0)delete e[id];
 }
+// Inverse de pretRembourser (vente pour le prêt dont l'accord tombe : joueur disparu) : la dette est rétablie ; si le prêt avait été
+// soldé (ligne supprimée), il est recréé d'après son état d'avant (avant).
+function pretRestituer(id,montant,avant){
+ if(!(montant>0))return false;
+ const e=pretsEtat(),info=typeof worldClub==='function'?worldClub(id):null;
+ if(e[id])e[id].restant=Math.round(e[id].restant+montant);
+ else if(avant&&typeof avant==='object')e[id]={...avant,restant:Math.round(montant)};
+ else return false;
+ if(info)info.debt=Math.round((info.debt||0)+montant);
+ const k=S.clubBudget?.clubs?.[id];if(k)k.rembourse=Math.max(0,Math.round((k.rembourse||0)-montant));
+ return true;
+}
 // Joueur que le président propose de vendre pour rembourser tout de suite : le mieux valorisé hors des cadres.
 function pretVenteProposee(restant){
  if(typeof transferValue!=='function')return null;
@@ -118,7 +130,7 @@ function pretCourrier(){
  const j=p.vente?club().players.find(x=>x.id===p.vente.joueur):null;
  const f=pretFenetre();
  const proposition=j?'Si tu préfères solder tout de suite, j’ai un acheteur pour '+j.name+' ('+j.pos+') : '+nativeClubBudget.euros(p.vente.prix)+'. Le prix de la vente irait directement au remboursement, et tu repartirais avec toute ta marge salariale.'
-  +(f?(f.bascule?' Les transferts prennent effet au changement de saison : la vente serait conclue tout de suite, mais il ne partirait et le prêt ne serait remboursé que le ':' Nous sommes hors période des mutations : la vente serait conclue tout de suite, mais il ne partirait et le prêt ne serait remboursé que le ')+nativeVenteJoueurs.dateFr(f.reouverture)+'.':'')
+  +(f?(f.bascule?' Les transferts prennent effet au changement de saison : la vente serait conclue et le prêt remboursé tout de suite, mais il ne partirait que le ':' Nous sommes hors période des mutations : la vente serait conclue tout de suite, mais il ne partirait et le prêt ne serait remboursé que le ')+nativeVenteJoueurs.dateFr(f.reouverture)+'.':'')
   :'Je ne vois personne à vendre sans affaiblir le groupe : il faudra rembourser sur la durée.';
  return {montant:nativeClubBudget.euros(p.dernier),encours:nativeClubBudget.euros(p.restant),annuite:nativeClubBudget.euros(p.annuite),saisons:Math.max(1,Math.ceil(p.restant/p.annuite)),proposition,joueur:j?j.name:''};
 }
@@ -132,6 +144,7 @@ function pretVenteRefus(){
  const p=S.pretsActionnaires?.[S.club];if(!p||p.repondu)return 'Le président a déjà tranché.';
  const j=p.vente?club().players.find(x=>x.id===p.vente.joueur):null;if(!j)return 'Le joueur proposé ne fait plus partie de l’effectif.';
  if(typeof venteAccord==='function'&&venteAccord(j.id))return 'Une vente est déjà conclue pour ce joueur.';
+ if(typeof calRaisonRetraite==='function'&&calRaisonRetraite(j))return calRaisonRetraite(j);
  if(typeof saleBlocked==='function'&&saleBlocked(j))return saleBlocked(j);
  if(S.live)return 'La vente se fera une fois la journée de championnat close.';
  if(!pretAcheteur(j,p.vente.prix))return 'Aucun club n’a les moyens de l’acheter aujourd’hui.';

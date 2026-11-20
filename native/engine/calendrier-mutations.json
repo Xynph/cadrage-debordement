@@ -6,6 +6,7 @@
   "libres": { "periodes": [ { "debut": "05-01", "fin": "12-31" } ] },
   "supplementaires": { "periodes": [ { "debut": "01-01", "fin": "01-31" } ], "maxParSaison": 2 },
   "jokers": { "periodes": [ { "debut": "07-01", "fin": "03-31" } ] },
+  "retraites": { "_doc": "Retraite annoncée à l'avance (décision de Léo du 20/11/2026, comme Football Manager) : à la première clôture de semaine de la période (MM-JJ), les joueurs dont la retraite tombe à la fin de la saison l'annoncent ; ils ne peuvent plus être achetés, vendus, mis en vente ni recevoir de pré-contrat.", "periodes": [ { "debut": "01-01", "fin": "06-30" } ] },
   "preContrats": {
     "actifs": true,
     "moisAvantFin": 6,

@@ -516,8 +516,8 @@
       "categorie": "transferts", "declencheur": "vente_executee", "priorite": 18, "nature": "info", "ecran": "Effectif",
       "expediteur": "Le directeur sportif",
       "formulations": [
-        {"sujet":"{joueur} a rejoint {acheteur}","corps":"Coach, l’accord conclu avec {acheteur} a pris effet : {joueur} a quitté le club et {montant} sont arrivés dans la caisse.\n\nPense à vérifier ta feuille à 23."},
-        {"sujet":"Départ de {joueur} : c’est fait","corps":"Coach, comme convenu, {joueur} est parti chez {acheteur}. L’indemnité de {montant} est encaissée.\n\nRegarde ta feuille à 23 avant le prochain match."}
+        {"sujet":"{joueur} a rejoint {acheteur}","corps":"Coach, l’accord conclu avec {acheteur} a pris effet : {joueur} a quitté le club ; les {montant} de l’indemnité étaient déjà dans la caisse depuis l’accord.\n\nPense à vérifier ta feuille à 23."},
+        {"sujet":"Départ de {joueur} : c’est fait","corps":"Coach, comme convenu, {joueur} est parti chez {acheteur}. L’indemnité de {montant} était déjà encaissée depuis l’accord.\n\nRegarde ta feuille à 23 avant le prochain match."}
       ],
       "reponses": []
     },
@@ -888,7 +888,7 @@
       ],
       "reponses": [
         {"id": "accepter", "libelle": "Accepter le prêt et rembourser sur la durée", "effets": {"pret": "accepter"}, "resultat": "Le prêt est signé : le club remboursera chaque saison, et le président le rappellera au moment des recrues."},
-        {"id": "vendre", "libelle": "Vendre le joueur proposé pour rembourser tout de suite", "effets": {"pret": "vendre", "confiance": 2}, "resultat": "La vente est conclue : son prix rembourse le prêt de l'actionnaire, le président apprécie. Le joueur part et le prêt est remboursé au changement de saison, le 1er juillet."}
+        {"id": "vendre", "libelle": "Vendre le joueur proposé pour rembourser tout de suite", "effets": {"pret": "vendre", "confiance": 2}, "resultat": "La vente est conclue : son prix rembourse le prêt de l'actionnaire, le président apprécie. Le prêt est remboursé tout de suite ; le joueur partira au changement de saison, le 1er juillet."}
       ]
     },
     "proprietaire_arrivee": {

@@ -220,7 +220,7 @@ static func confirmation_lines(offer: Dictionary, model: Dictionary) -> Array[Di
 	var lines: Array[Dictionary] = []
 	var fee := G.euros(offer.get("fee", 0))
 	if later:
-		lines.append({"id":"SaleConfirmCash", "text":"Caisse : +%s le %s, au départ du joueur." % [fee, str(deferred.get("dateLabel", ""))]})
+		lines.append({"id":"SaleConfirmCash", "text":"Caisse : +%s tout de suite ; le joueur part le %s." % [fee, str(deferred.get("dateLabel", ""))]})
 	else:
 		lines.append({"id":"SaleConfirmCash", "text":"Caisse : +%s (après la vente : %s)." % [fee, G.euros(offer.get("cashAfter", 0))]})
 	var squad := "Effectif après la vente : %d joueurs professionnels." % int(offer.get("squadAfter", 0))
@@ -231,7 +231,7 @@ static func confirmation_lines(offer: Dictionary, model: Dictionary) -> Array[Di
 	var budget := int(offer.get("budgetReturn", 0))
 	var active: Variant = model.get("finance", {}).get("transferBudget")
 	if active is Dictionary and bool(active.get("actif", false)):
-		lines.append({"id":"SaleConfirmBudget", "text":("Budget de transferts : %s reviennent à l’enveloppe%s." % [G.euros(budget), " à son départ" if later else ""]) if budget > 0 else "Budget de transferts : l’enveloppe est à son plafond, rien n’y revient."})
+		lines.append({"id":"SaleConfirmBudget", "text":("Budget de transferts : %s reviennent à l’enveloppe%s." % [G.euros(budget), " tout de suite" if later else ""]) if budget > 0 else "Budget de transferts : l’enveloppe est à son plafond, rien n’y revient."})
 	if bool(offer.get("onSheet", false)): lines.append({"id":"SaleConfirmSheet", "text":"Il figure sur ta feuille de match : vérifie ta feuille à 23 après la vente."})
 	if not str(offer.get("jiff", "")).is_empty(): lines.append({"id":"SaleConfirmJiff", "text":str(offer.jiff)})
 	# Conséquences légères (vestiaire, supporters, président) calculées par le moteur.

@@ -172,11 +172,17 @@ test('Moteur Monde : liste, blocages, offres, spontanées, réponses, garde, pé
     // 7. Accepter sans confirmation : refusé. Accord conclu, le joueur reste et joue jusqu'au changement de saison.
     const oa2 = r.model.sales.offers.find(x => x.playerId === a.id) || (offrir(run, 'test-a', a.id, 7, 80000), jeu.call('snapshot').sales.offers.find(x => x.id === 'test-a'));
     assert.equal(jeu.brut('sale_answer', { offerId: oa2.id, action: 'accept' }).error, 'Confirme la vente avant de l’accepter.');
-    const caisse0 = lire('club().cash'), n0 = lire('club().players.length');
+    // Décision de Léo du 20/11/2026 : l'indemnité est encaissée à l'accord et la part du budget revient tout de suite.
+    run(`S.budgetTransferts.reconstitue=0;S.budgetTransferts.enveloppe=Math.min(S.budgetTransferts.enveloppe,500000)`);
+    const caisse0 = lire('club().cash'), n0 = lire('club().players.length'), recettes = lire('budgetTransfertsEntrees().recettes'), env = lire('S.budgetTransferts');
     r = jeu.brut('sale_answer', { offerId: oa2.id, action: 'accept', confirmed: true });
     assert.equal(r.ok, true, r.error);
     assert.equal(r.model.meta.saleAnswer.deferred, true); assert.equal(r.model.meta.saleAnswer.date, '2027-07-01');
-    assert.equal(lire('club().cash'), caisse0, 'argent à l’exécution seulement'); assert.equal(lire('club().players.length'), n0);
+    const fee = r.model.meta.saleAnswer.fee, part = require('../native/engine/budget-transferts.cjs').rendu(env, fee, recettes);
+    assert.equal(lire('club().cash'), caisse0 + fee, 'argent encaissé à l’accord'); assert.equal(lire('club().players.length'), n0);
+    assert.equal(lire('S.budgetTransferts.reconstitue'), part, '50 % rendus à l’enveloppe tout de suite'); assert.ok(part > 0);
+    assert.equal(r.model.meta.saleAnswer.budgetReturn, part);
+    assert.ok(lire(`S.ledger.some(l=>JSON.stringify(l).includes('Vente : ${a.name.replace(/'/g, "\\'")} (départ le 1er juillet)'))`), 'ligne de caisse « Vente : Nom (départ le 1er juillet) »');
     const pa = r.model.squad.find(x => x.id === a.id).sale;
     assert.equal(pa.listed, false); assert.equal(pa.pending.date, '2027-07-01');
     assert.match(pa.pending.label, /^Vente en attente : départ pour .+ le 1er juillet 2027/);
@@ -185,20 +191,17 @@ test('Moteur Monde : liste, blocages, offres, spontanées, réponses, garde, pé
     assert.ok(m.squad.some(x => x.id === a.id), 'pas d’exécution à une clôture de semaine');
     assert.deepEqual(r.model.sales.pending.map(x => x.playerId), [a.id]);
 
-    // 8. Accord exécuté au changement de saison (exécution des ventes de settleContracts) : caisse +montant, joueur parti,
-    // ligne de caisse, 50 % au budget.
+    // 8. Accord exécuté au changement de saison (exécution des ventes de settleContracts) : joueur parti, sans nouveau
+    // mouvement d'argent (caisse et budget déjà réglés à l'accord).
     const accordId = lire('S.venteJoueurs.accords[0].id');
     assert.equal(lire('S.venteJoueurs.accords[0].bascule'), true);
-    run(`S.budgetTransferts.reconstitue=0;S.budgetTransferts.enveloppe=Math.min(S.budgetTransferts.enveloppe,500000)`);
-    const fee = lire('S.venteJoueurs.accords[0].fee'), recettes = lire('budgetTransfertsEntrees().recettes'), env = lire('S.budgetTransferts');
+    const avantExec = lire('({cash:club().cash,rec:S.budgetTransferts.reconstitue})');
     assert.equal(run(`venteExecuterAccords('achats')`), 0, 'les achats d’abord, les ventes après le cycle des contrats');
     assert.equal(run(`venteExecuterAccords('ventes')`), 1);
     m = jeu.call('snapshot');
     assert.equal(m.squad.some(x => x.id === a.id), false, 'joueur parti');
     assert.equal(lire('S.venteJoueurs.accords.length'), 0);
-    assert.ok(lire(`S.ledger.some(l=>JSON.stringify(l).includes('Vente : ${a.name.replace(/'/g, "\\'")}'))`), 'ligne de caisse « Vente : Nom »');
-    assert.equal(lire('S.budgetTransferts.reconstitue'), require('../native/engine/budget-transferts.cjs').rendu(env, fee, recettes), '50 % rendus à l’enveloppe');
-    assert.ok(lire('S.budgetTransferts.reconstitue') > 0);
+    assert.deepEqual(lire('({cash:club().cash,rec:S.budgetTransferts.reconstitue})'), avantExec, 'rien de plus à l’exécution');
     const ev = lire('S.venteJoueurs.evenements').find(e => e.type === 'executee');
     assert.ok(ev && ev.playerId === a.id && ev.montant === fee);
     assert.equal(lire(`venteCourriersAccords(S,'executee',CDWorldCareer.calendarToday(S))`)[0].key, ev.id);
@@ -285,14 +288,25 @@ test('Moteur Monde : liste, blocages, offres, spontanées, réponses, garde, pé
       c.players=c.players.filter(q=>q.fam!==0||q.pos!==p.pos||q.id===p.id).concat([{id:'y',fam:0,pos:p.pos}]);return venteGarde(p,c);})()`), 'Tu dois garder au moins deux piliers de chaque côté.');
 
     // 11. Accords qui tombent à l'exécution, raison écrite (courrier « vente_annulee ») ; le joueur reste au club.
-    // v2 : l'acheteur n'a plus les moyens au changement de saison.
+    // v2 (décision de Léo du 20/11/2026) : l'argent est passé à l'accord, l'acheteur sans moyens au changement de saison
+    // reçoit quand même le joueur (rendu ensuite au club pour la suite du test).
     offrir(run, 'test-bascule', e, acheteur, 100000);
     r = jeu.brut('sale_answer', { offerId: 'test-bascule', action: 'accept', confirmed: true });
     assert.equal(r.ok, true, r.error); assert.equal(r.model.meta.saleAnswer.date, '2027-07-01');
-    const tombeV2 = lire(`(()=>{const c=S.clubs[${acheteur}],cash=c.cash;c.cash=-5e8;const n=venteExecuterAccords('ventes');c.cash=cash;return {n,ev:S.venteJoueurs.evenements.at(-1),reste:club().players.some(p=>p.id==='${e}')};})()`);
+    const honore = lire(`(()=>{const c=S.clubs[${acheteur}],cash=c.cash,caisse=club().cash,lu=S.lineup.slice(),re=S.reserves.slice();c.cash=-5e8;const n=venteExecuterAccords('ventes');c.cash=cash;
+      const q=c.players.find(p=>p.id==='${e}');if(q){c.players=c.players.filter(p=>p!==q);club().players.push(q);S.lineup=lu;S.reserves=re;}return {n,parti:!!q,caisse,caisseApres:club().cash};})()`);
     jeu.call('save');
-    assert.equal(tombeV2.n, 0); assert.equal(tombeV2.ev.type, 'annulee'); assert.equal(tombeV2.reste, true);
-    assert.match(tombeV2.ev.raison, /n’a plus les moyens ou plus de place/);
+    assert.equal(honore.n, 1); assert.equal(honore.parti, true, 'accord honoré'); assert.equal(honore.caisseApres, honore.caisse);
+    // Seul cas de chute : le joueur n'est plus au club ; l'argent est rendu (caisses, ligne de caisse).
+    offrir(run, 'test-chute', e, acheteur, 100000);
+    r = jeu.brut('sale_answer', { offerId: 'test-chute', action: 'accept', confirmed: true });
+    assert.equal(r.ok, true, r.error);
+    const chute = lire(`(()=>{const c=club(),p=c.players.find(q=>q.id==='${e}');c.players=c.players.filter(q=>q!==p);const caisse=c.cash,b=S.clubs[${acheteur}].cash;
+      const n=venteExecuterAccords('ventes');c.players.push(p);return {n,ev:S.venteJoueurs.evenements.at(-1),caisse,caisseApres:c.cash,b,bApres:S.clubs[${acheteur}].cash,ligne:JSON.stringify(S.ledger[0])};})()`);
+    jeu.call('save');
+    assert.equal(chute.n, 0); assert.equal(chute.ev.type, 'annulee'); assert.equal(chute.ev.raison, 'Le joueur ne fait plus partie de l’effectif.');
+    assert.equal(chute.caisseApres, chute.caisse - 100000); assert.equal(chute.bApres, chute.b + 100000);
+    assert.ok(chute.ligne.includes('Vente annulée : '), chute.ligne);
     // Réglage « semaines » : accord exécuté à l'ouverture, garde revérifiée à la clôture de semaine.
     ancien();
     regler(x => { x.fenetres.periodes = [{ debut: '05-01', fin: '06-30' }]; });
