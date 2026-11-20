@@ -152,6 +152,17 @@ func run() -> void:
 	check(chosen_card != null and chosen_card.find_child("CreationCardChosen", true, false) != null and chosen_card.find_child("CreationCardMarker", true, false) != null, "La carte choisie porte « ✓ Choisi » et un marqueur incliné (pas la couleur seule)")
 	start = node("CreationNext") as Button
 	check(start != null and not start.disabled and start.text.begins_with("CONTINUER AVEC"), "« Continuer avec … » s’active")
+	# Un chiffre du panneau agit : Trésorerie trie la grille.
+	var cash_figure := node("CreationCash")
+	if cash_figure != null:
+		var click := InputEventMouseButton.new()
+		click.button_index = MOUSE_BUTTON_LEFT
+		click.pressed = true
+		cash_figure.gui_input.emit(click)
+		await settle()
+		check(str(app.management_ui.get("creation_tri", "")) == "tresorerie" and (node("CreationSort_tresorerie") as Button).button_pressed, "Le chiffre Trésorerie du panneau trie la grille")
+		await press("CreationSort_niveau")
+	start = node("CreationNext") as Button
 	# --- L'or n'est porté que par l'action principale ---
 	var golden: Array[String] = []
 	for control: Control in app.root_content.find_children("*", "Control", true, false):

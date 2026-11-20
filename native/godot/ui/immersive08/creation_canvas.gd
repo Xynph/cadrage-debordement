@@ -511,12 +511,12 @@ static func _chiffres_club(app: Control, content: VBoxContainer, ctx: Dictionary
 	content.add_child(facts)
 	if _niveau(selected) > 0:
 		var level := _chiffre(facts, "Niveau", Entry._rating(selected.get("startingRoster", {})), "%s sur %d" % [_ordinal(_rang(clubs, selected, _niveau)), total], "CreationRosterSummary")
-		level.tooltip_text = "Note moyenne de l’effectif de départ"
-		level.mouse_filter = Control.MOUSE_FILTER_PASS
+		level.tooltip_text = "Note moyenne de l’effectif de départ · clic : trier la grille par niveau"
+		_trier_au_clic(app, level, "niveau")
 	if selected.has("cashMillions"):
 		var cash := _chiffre(facts, "Trésorerie", _millions(float(selected.cashMillions)), "%s sur %d" % [_ordinal(_rang(clubs, selected, func(c: Dictionary): return float(c.get("cashMillions", 0)))), total], "CreationCash")
-		cash.tooltip_text = "Trésorerie de départ · " + G.euros(roundi(float(selected.cashMillions) * 1_000_000))
-		cash.mouse_filter = Control.MOUSE_FILTER_PASS
+		cash.tooltip_text = "Trésorerie de départ · %s · clic : trier la grille par trésorerie" % G.euros(roundi(float(selected.cashMillions) * 1_000_000))
+		_trier_au_clic(app, cash, "tresorerie")
 	var roster: Dictionary = selected.get("startingRoster", {}) if selected.get("startingRoster") is Dictionary else {}
 	if _joueurs(selected) > 0:
 		_chiffre(facts, "Joueurs", str(_joueurs(selected)), "%d avants, %d arrières" % [int(roster.get("forwards", 0)), int(roster.get("backs", 0))], "CreationPlayers")
@@ -536,6 +536,18 @@ static func _chiffres_club(app: Control, content: VBoxContainer, ctx: Dictionary
 	if history.has("founded"): _ligne(table, "Fondé en", str(int(history.founded)))
 	var city := Entry._territory(selected)
 	if not city.is_empty(): _ligne(table, "Ville", city)
+
+## Un chiffre du panneau trie la grille selon sa mesure (un chiffre ne reste jamais sans effet).
+static func _trier_au_clic(app: Control, figure: Control, key: String) -> void:
+	figure.mouse_filter = Control.MOUSE_FILTER_STOP
+	figure.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	figure.set_meta("tri", key)
+	figure.gui_input.connect(func(event: InputEvent) -> void:
+		var mouse := event as InputEventMouseButton
+		if mouse == null or not mouse.pressed or mouse.button_index != MOUSE_BUTTON_LEFT: return
+		figure.accept_event()
+		app.management_ui[TRI] = key
+		app._render())
 
 static func _ligne(table: GridContainer, caption: String, value: String) -> void:
 	var key := _etiquette(caption)
@@ -803,6 +815,9 @@ static func _ajuster(scroll: ScrollContainer, grid: GridContainer, rows: int) ->
 		for node: Control in optional:
 			if inset.get_combined_minimum_size().y <= height: break
 			node.visible = false
+		# Ligne d'ordre effacée : « ✓ » et « Rival » passent devant le nom (la sélection ne repose jamais sur la couleur).
+		var name := card.get_meta("nom", null) as Label
+		if name != null: name.text = (str(card.get_meta("repere", "")) if not (card.get_meta("ligne") as Control).visible else "") + G.club_name(card.get_meta("club", {}))
 		card.custom_minimum_size.y = maxf(height, inset.get_combined_minimum_size().y)
 
 static func _carte(app: Control, club: Dictionary, order: int, ctx: Dictionary, rival: bool) -> Button:
@@ -839,12 +854,12 @@ static func _carte(app: Control, club: Dictionary, order: int, ctx: Dictionary, 
 			suivant(app, ctx))
 	var inset := C.margin(0)
 	for edge in ["left", "right"]: inset.add_theme_constant_override("margin_" + edge, C.px(24))
-	inset.add_theme_constant_override("margin_top", C.px(16))
-	inset.add_theme_constant_override("margin_bottom", C.px(14))
+	inset.add_theme_constant_override("margin_top", C.px(14))
+	inset.add_theme_constant_override("margin_bottom", C.px(10))
 	inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(inset)
 	inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var stack := C.v(8)
+	var stack := C.v(6)
 	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	inset.add_child(stack)
 	var optional: Array[Control] = []
@@ -928,7 +943,11 @@ static func _carte(app: Control, club: Dictionary, order: int, ctx: Dictionary, 
 	optional.append(rule)
 	optional.append(rail)
 	if not goal.is_empty(): optional.append(stack.get_child(stack.get_child_count() - 1))
-	if not chosen and not rival: optional.append(top)
+	optional.append(top)
+	card.set_meta("nom", name)
+	card.set_meta("ligne", top)
+	card.set_meta("club", club)
+	card.set_meta("repere", ("✓ " if chosen else "") + ("Rival · " if rival else ""))
 	card.set_meta("optionnel", optional)
 	card.accessibility_description += " · Niveau %s · %d joueurs" % [Entry._rating(club.get("startingRoster", {})), _joueurs(club)]
 	return card
