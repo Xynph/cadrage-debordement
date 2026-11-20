@@ -46,44 +46,44 @@ test('Calendrier des tours, indemnité plafonnée, réglage de mesure', () => {
   assert.equal(K.interclub('2026-10-12', RV, '2027-07-01').raison, 'Hors période des mutations : un accord conclu maintenant prendra effet le 1er juillet 2027 ; les autres clubs n’enchérissent qu’à partir du 1er mai 2027.');
 });
 
-test('Monde : acheteur géré passé sous sa réserve à la bascule, le président vend le jour même', { timeout: 300000 }, () => {
-  // GDD calendrier-mutations § 3 bis 5 : après le paiement des indemnités de la bascule, le président d'un club géré passé
-  // sous sa réserve tranche tout de suite ; ses ventes prennent effet au 1er juillet, l'argent revient aussitôt.
+test('Monde : accord entre clubs gérés payé à l’accord, président à la conclusion, acheteur au-dessus de sa capacité à la bascule', { timeout: 300000 }, () => {
+  // Décisions de Léo du 20/11/2026 (GDD calendrier-mutations § 3 bis 1 et 5) : l'indemnité passe d'une caisse à l'autre dès
+  // l'accord ; le président d'un acheteur passé sous sa réserve tranche à la conclusion, ses ventes sont des accords payés
+  // tout de suite (joueur au 1er juillet) ; à la bascule l'accord ne tombe plus faute de place : l'acheteur libère des joueurs.
   const jeu = ouvrir({ hebdomadaire: true, testVm: true });
   try {
     creer(jeu, CLUB);
     const lire = s => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + s + ')'));
-    const saison = lire('S.season');
     // Accord entre deux clubs gérés de l'élite ; l'acheteur, après l'indemnité, tombe à 30 % de sa réserve (« Fragile »).
     const x = lire(`(()=>{const geres=S.clubs.filter(c=>c.id!==S.club&&budgetLigue(c.id)==='elite');
-      const place=b=>professionalCapacity(b)-b.players.filter(q=>!(q.contractEnd!=null&&q.contractEnd<=S.season)).length;
-      const b=geres.find(c=>place(c)>0),s=geres.find(c=>c.id!==b.id);
-      const p=s.players.slice().sort((u,v)=>u.rating-v.rating||(u.id<v.id?-1:1))[0];
+      const b=geres[0],s=geres[1];
+      const p=s.players.filter(q=>q.contractEnd>S.season).sort((u,v)=>u.rating-v.rating||(u.id<v.id?-1:1))[0];
       const reserve=S.clubBudget.clubs[b.id].reserve,montant=Math.max(500000,Math.round(reserve*0.2/10000)*10000);
-      b.cash=montant+Math.round(reserve*0.3);
+      b.cash=montant+Math.round(reserve*0.3);const cb=b.cash,cs=s.cash;
       calIANouvelAccord(b,s,p,montant,p.salary,2);
-      globalThis.__bascule={ventes:[]};
-      const ev=aiRosterEvent;aiRosterEvent=function(id,k,q,fee){if(id===b.id&&k==='sell')__bascule.ventes.push({id:q.id,fee});return ev.apply(this,arguments);};
-      const ex=calIAExecuter;calIAExecuter=function(){__bascule.avant=b.cash;const r=ex.apply(this,arguments);__bascule.apres=b.cash;return r;};
-      return {b:b.id,s:s.id,p:p.id,montant};})()`);
-    const r = lire(`(()=>{settleContracts();const b=S.clubs[${x.b}],plan=S.presidentReprise?.clubs?.[${x.b}]||null;
-      return {arrive:b.players.some(q=>q.id==='${x.p}'),plan,ventes:__bascule.ventes,avant:__bascule.avant,apres:__bascule.apres,
-        partis:(plan?.joueurs||[]).filter(j=>!b.players.some(q=>q.id===j.id)).map(j=>{const q=S.clubs.flatMap(c=>c.players).find(q=>q.id===j.id);return q?{id:q.id,joinedSeason:q.joinedSeason,joinedRound:q.joinedRound,contractEnd:q.contractEnd}:null;}),
-        fil:S.economy.transfers.map(t=>t.text)};})()`);
-    assert.equal(r.arrive, true, 'accord exécuté');
-    assert.ok(r.plan, 'le président est intervenu pour l’acheteur');
-    assert.ok(r.plan.joueurs.every(j => j.id !== x.p), 'l’arrivée n’est pas désignée');
-    assert.equal(r.plan.etat, 'vendu');
-    assert.ok(r.partis.length >= 1 && r.partis.every(Boolean), 'au moins un joueur désigné parti à la même bascule');
-    assert.deepEqual(r.ventes.map(v => v.id).sort(), r.partis.map(p => p.id).sort());
-    const recettes = r.ventes.reduce((t, v) => t + v.fee, 0);
-    assert.ok(recettes > 0);
-    assert.equal(r.apres, r.avant - x.montant + recettes, 'caisse remontée du montant des ventes');
-    for (const p of r.partis) { assert.equal(p.joinedSeason, saison + 1); assert.equal(p.joinedRound, 0); assert.ok(p.contractEnd >= saison + 1); }
-    assert.ok(r.fil.some(t => /\(le président veut retrouver sa réserve\), au changement de saison\.$/.test(t)), 'ligne du fil');
+      return {b:b.id,s:s.id,p:p.id,montant,cb,cs,apresB:b.cash,apresS:s.cash,ici:s.players.some(q=>q.id===p.id),plan:S.presidentReprise?.clubs?.[b.id]||null};})()`);
+    assert.equal(x.apresB, x.cb - x.montant, 'l’acheteur paie à l’accord');
+    assert.equal(x.apresS, x.cs + x.montant, 'le vendeur encaisse à l’accord');
+    assert.equal(x.ici, true, 'le joueur reste à son club jusqu’à la bascule');
+    assert.ok(x.plan && x.plan.etat === 'en_cours', 'le président intervient à la conclusion');
+    // Échéance du président : ses ventes deviennent des accords payés tout de suite, joueurs au 1er juillet.
+    const v = lire(`(()=>{const b=S.clubs[${x.b}],plan=S.presidentReprise.clubs[${x.b}];plan.echeance=CDWorldCareer.calendarToday(S);const avant=b.cash;repriseSemaine();
+      const ventes=S.calendrierMutations.accordsIA.filter(a=>a.vendeurId===${x.b}&&a.saison===S.season);
+      return {etat:plan.etat,avant,apres:b.cash,ventes:ventes.map(a=>({playerId:a.playerId,montant:a.montant,paye:!!a.paye,ici:b.players.some(q=>q.id===a.playerId)}))};})()`);
+    assert.equal(v.etat, 'vendu');
+    assert.ok(v.ventes.length >= 1 && v.ventes.every(a => a.paye && a.ici), JSON.stringify(v.ventes));
+    assert.equal(v.apres, v.avant + v.ventes.reduce((t, a) => t + a.montant, 0), 'argent des ventes encaissé tout de suite');
+    // L'acheteur dépasse sa capacité à la bascule (joueurs ajoutés sous contrat) : l'accord est honoré, il libère des joueurs.
+    const r = lire(`(()=>{const b=S.clubs[${x.b}],cap=professionalCapacity(b),autres=S.clubs.filter(c=>c.id!==S.club&&c.id!==${x.b}&&c.id!==${x.s});
+      for(const c of autres){if(b.players.length>=cap+3)break;const q=c.players.find(q=>q.contractEnd>S.season+1);if(!q)continue;c.players=c.players.filter(y=>y!==q);q.joinedSeason=S.season-1;b.players.push(q);}
+      for(const q of b.players)if(q.contractEnd!=null&&q.contractEnd<=S.season)q.contractEnd=S.season+1;
+      const cash=b.cash;settleContracts();
+      return {arrive:b.players.some(q=>q.id==='${x.p}'),n:b.players.length,cap,cash,cashApres:b.cash,fil:S.economy.transfers.map(t=>t.text)};})()`);
+    assert.equal(r.arrive, true, 'accord honoré malgré l’effectif plein');
+    assert.ok(r.n <= r.cap, 'revenu à sa capacité : ' + r.n + '/' + r.cap);
+    assert.ok(r.fil.some(t => t.includes(' pour revenir à ' + r.cap + ' joueurs après ses arrivées.')), 'libérations écrites');
   } finally { jeu.fermer(); }
 });
-
 test('Monde : tours des clubs gérés, accords différés, pré-contrats, rumeurs, temps forts, bascule', { timeout: 900000 }, () => {
   const debut = Date.now();
   const jeu = ouvrir({ hebdomadaire: true, testVm: true });
