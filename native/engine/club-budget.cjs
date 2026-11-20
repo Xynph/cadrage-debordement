@@ -547,12 +547,24 @@ const budgetCredits=()=>{const credits={};for(const c of S.clubs){const v=native
 const budgetTypes=()=>budgetLisible(S.clubBudget)?S.clubBudget.clubs.map(c=>c.type):null;
 // Demandées à chaque joueur étudié par un club géré : gardées tant que la carrière, la saison et la force des clubs ne changent pas.
 let budgetLimitesMemo=null;
+// Limite de masse votée avec le budget de la saison (Monde, à partir de la saison 2) : le niveau de chaque club est celui
+// noté à l'ouverture du budget (budgetOuvrir, juste après la remise à niveau des contrats). Le niveau qui bouge ensuite
+// (arrivée des espoirs, aiRosterPopulationYouthIntake : ±2) ne recalcule plus la limite en cours de saison : les recettes
+// étant réparties selon le rang de niveau dans la ligue, 2 points suffisaient à retirer 25 à 30 % de la limite d'un club
+// de Championship ou de Nationale, juste après qu'il eut été recalé dessous (mesure du 20/11/2026). Sauvegarde sans niveau
+// noté : niveau actuel, comme avant.
+const budgetForcesLimites=creation=>{
+ const f=budgetForces(),b=S.clubBudget;
+ if(creation===true||S.season<=1||budgetFrance()||!budgetLisible(b)||b.saison!==S.season)return f;
+ return f.map(x=>{const v=b.clubs[x.id]?.base;return Number.isFinite(v)?{...x,base:v}:x;});
+};
 const budgetLimites=creation=>{
- let bases=0;for(const c of S.clubs)bases+=c.base;
+ const forces=budgetForcesLimites(creation);
+ let bases=0;for(const f of forces)bases+=f.base;
  const m=budgetLimitesMemo,premiere=creation===true;
  if(m&&m.etat===S&&m.saison===S.season&&m.creation===premiere&&m.bases===bases&&m.club===S.club)return m.valeur;
  const remboursements={};if(typeof nativeClubOwner!=='undefined')for(const [id,p] of Object.entries(S.pretsActionnaires||{}))remboursements[id]=nativeClubOwner.remboursementSaison(p,S.season)||Math.min(p.restant||0,p.annuite||0);
- budgetLimitesMemo={etat:S,saison:S.season,creation:premiere,bases,club:S.club,valeur:nativeClubBudget.limites(budgetForces(),S.season,{creation:premiere,types:budgetTypes(),credits:budgetCredits(),remboursements})};
+ budgetLimitesMemo={etat:S,saison:S.season,creation:premiere,bases,club:S.club,valeur:nativeClubBudget.limites(forces,S.season,{creation:premiere,types:budgetTypes(),credits:budgetCredits(),remboursements})};
  return budgetLimitesMemo.valeur;
 };
 const budgetPlancherHebdo=()=>nativeStartingSalaries.plancherHebdo(S,budgetLigue(S.club));
@@ -599,6 +611,8 @@ function budgetOuvrir(annoncer,nouvelleSaison=false){
  // Aide de la ligue aux relégués (S.aidesRelegation = {id:{depuis, saison}}, posée par worldNewSeason à la descente).
  const aides={};for(const [id,a] of Object.entries(S.aidesRelegation||{})){const v=nativeClubBudget.aideRelegation(budgetLigue(Number(id)),a?.depuis,S.season-a?.saison);if(v>0)aides[id]=v;}
  S.clubBudget=budgetCopie(nativeClubBudget.ouverture({forces,saison:S.season,types,excedents:nouvelleSaison===true,aides,clubs:S.clubs.map(c=>({id:c.id,cash:c.cash,masse:budgetMasse(c)*52}))}));
+ // Niveau des clubs noté avec le budget : la limite de masse de la saison en dépend (budgetForcesLimites).
+ if(!budgetFrance())for(const c of S.clubs){const k=S.clubBudget.clubs[c.id];if(k)k.base=c.base;}
  // Prêt de l'actionnaire (club-owner.cjs) : remboursé au fil de la saison qui suit le prêt.
  if(typeof nativeClubOwner!=='undefined')for(const [id,p] of Object.entries(S.pretsActionnaires||{})){const k=S.clubBudget.clubs[id];if(k)k.remboursement=nativeClubOwner.remboursementSaison(p,S.season);}
  for(const c of S.clubs){
