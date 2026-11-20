@@ -97,7 +97,7 @@ static func _plat(fond: Color, bord: Color = Color.TRANSPARENT, epaisseur: int =
 	style.set_border_width_all(epaisseur)
 	style.set_corner_radius_all(rayon if rayon >= Charte.RAYON_PILULE else maxi(3, C.px(rayon)))
 	style.anti_aliasing = true
-	return style
+	return Charte.ombrer(style, rayon)
 
 static func _italique(label: Label, gras := true) -> Label:
 	label.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE if gras else Charte.TITRE_GRAS_ITALIQUE)

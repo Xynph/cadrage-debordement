@@ -284,7 +284,7 @@ func _boite(fond: Color, bord: Color = Color.TRANSPARENT, rayon: float = 0, epai
 	style.set_corner_radius_all(maxi(2, px(rayon)) if rond else 0)
 	style.set_content_margin_all(px(marge))
 	style.anti_aliasing = rond
-	return style
+	return Charte.ombrer(style, rayon if rond else 0.0)
 
 ## Panneau à plat de la charte : fond opaque, sans bordure ; au plus UN filet (`cote` : left, top, bottom).
 func _plat(fond: Color = C.PANEL, filet: Color = Color.TRANSPARENT, marge: float = 0, cote: String = "left", epaisseur: float = 3) -> StyleBoxFlat:
@@ -488,7 +488,7 @@ func _portrait(joueur: Dictionary, largeur: float, hauteur: float = -1.0, rond: 
 	cadre.size = Vector2(largeur, h)
 	cadre.clip_children = CanvasItem.CLIP_CHILDREN_ONLY
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cadre.add_theme_stylebox_override("panel", _boite(C.RAISED, Color.TRANSPARENT, largeur / 2.0 / k, 0, 0, rond))
+	cadre.add_theme_stylebox_override("panel", Charte.sans_ombre(_boite(C.RAISED, Color.TRANSPARENT, largeur / 2.0 / k, 0, 0, rond)))
 	var complet := _joueur_complet(joueur)
 	var image: TextureRect = G.portrait_lazy(int(complet.get("portraitIndex", 0)), roundi(largeur), complet)
 	image.tooltip_text = ""

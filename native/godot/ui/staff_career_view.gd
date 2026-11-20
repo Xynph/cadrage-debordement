@@ -153,7 +153,7 @@ static func styler_liste(liste: OptionButton, largeur: float) -> void:
 	liste.add_theme_stylebox_override("hover", survol)
 	liste.add_theme_stylebox_override("focus", anneau_focus())
 	var menu := liste.get_popup()
-	menu.add_theme_stylebox_override("panel", Charte.style_panneau(Charte.PANNEAU, Charte.RAYON_CARTE, C.px(8)))
+	menu.add_theme_stylebox_override("panel", Charte.sans_ombre(Charte.style_panneau(Charte.PANNEAU, Charte.RAYON_CARTE, C.px(8))))
 	var choix := Charte.style_panneau(Charte.PANNEAU_2, RAYON_LIGNE, C.px(4))
 	menu.add_theme_stylebox_override("hover", choix)
 	liste.custom_minimum_size = Vector2(C.px(largeur), C.px(38))

@@ -33,7 +33,7 @@ static func construire(ecran, app: Control, model: Dictionary, page: String) -> 
 	for side in ["left", "right"]: style.set("content_margin_" + side, ecran.M(28))
 	style.content_margin_top = ecran.M(22)
 	style.content_margin_bottom = ecran.M(24)
-	cadre.add_theme_stylebox_override("panel", style)
+	cadre.add_theme_stylebox_override("panel", Charte.ombrer(style))
 	zone.add_child(cadre)
 	var corps := VBoxContainer.new()
 	corps.name = "MatchDelegationBody" if page == "delegation" else "FeuilleIncompleteBody"
@@ -62,7 +62,8 @@ static func _actions(ecran, corps: VBoxContainer, libelle: String, nom_confirmer
 	ok.name = nom_confirmer
 	ok.text = libelle
 	ok.set_meta("immersive_style_applied", true)
-	C.style_bouton_ivoire_plein(ok, roundi(20 / .75))
+	# Bouton secondaire (contour) : le Coup d'envoi du bandeau reste le seul aplat doré de l'écran (charte finale).
+	C.style_bouton_contour(ok, roundi(20 / .75))
 	ok.pressed.connect(confirmer)
 	ligne.add_child(ok)
 	var annuler := Button.new()

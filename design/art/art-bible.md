@@ -49,14 +49,15 @@ Même palette, mêmes polices partout ; la lumière vient des illustrations (ple
 
 ## 3. Shape Language
 
-- **Panneau** : `panneau` rayon 18, **sans bordure ni ombre** ; il se détache du fond par sa clarté. Carte dans un panneau : rayon 12.
+- **Panneau** : `panneau` rayon 18, **sans bordure** ; il se détache du fond par sa clarté et son ombre. Carte dans un panneau : rayon 12.
+- **Ombre portée** sur panneaux, cartes et tuiles : noir 50 %, sans décalage, étendue 4 px (choix de Léo du 20/11/2026, d'après la graphiste qui proposait 10 px). Jamais sur pilules, boutons, champs, pastilles ni lignes. Jetons `OMBRE_COULEUR`, `OMBRE_TAILLE`, `OMBRE_DECALAGE`, posés par `Charte.ombrer()` ; un panneau qui rogne son contenu confie son ombre à `Charte.ombre_derriere()`.
 - **Pilule** (`RAYON_PILULE`) : boutons, onglets, champs, jauges (rail et remplissage).
 - **Rayon 6** (`RAYON_PETIT`) : pastilles d'état, cases, vignettes, ligne sélectionnée.
 - **Séparation** : filet 1 px `filet` à l'intérieur d'un panneau ; entre panneaux, 16 px de fond visible. Contour 1 px `filet` seulement pour bouton secondaire et champ ; seul autre contour : anneau de focus.
 - **Droit partout** : titres, marqueurs, bandeaux du match, soulignements ; aucun bord incliné, aucun texte penché, aucune italique (anciens noms `*_ITALIQUE` = coupes droites).
 - **Ovale du logo** : réservé au symbole (logo, icône, chargement) ; la pastille V/N/D est une pilule ; pastilles de joueur sur terrain : disque plein (nous) / anneau 2 px (adversaire) ; pas de cercle parfait ailleurs.
 - **Hiérarchie** : héros = un élément par écran (affiche, score ou bouton principal) ; secondaire = tableaux crème ; recul = étiquettes `ivoire-3`, filets.
-- Aucun dégradé décoratif, aucun verre, aucune ombre portée ; dégradé admis seulement pour le voile sombre sous un texte posé sur une illustration.
+- Aucun dégradé décoratif, aucun verre ; ombre portée sur panneaux, cartes et tuiles : noir 50 %, sans décalage, étendue 4 px (choix de Léo du 20/11/2026, d'après la graphiste qui proposait 10 px). Jamais sur pilules, boutons, champs, pastilles ni lignes. Dégradé admis seulement pour le voile sombre sous un texte posé sur une illustration.
 - **Silhouettes (3D et portraits)** : rugbyman lisible en vignette 48 px par la carrure, le maillot de club et le numéro dans le dos ; poste lu par la carrure, jamais par un accessoire.
 
 ## 4. Color System
@@ -174,7 +175,7 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 **Typographie** (OFL, dans le jeu) :
 - **Barlow Condensed**, **droite** (SemiBold, Bold, ExtraBold ; plus de fichiers italiques) : titres, en-têtes, menus, onglets, boutons, chiffres d'affiche. C'est la police des titres retenue par Léo (écart : la charte prévoit une police d'affiche distincte, abandonnée).
 - **DM Sans** : texte courant et cellules ; chiffres tabulaires (`tnum`, à vérifier).
-- Pas de troisième famille.
+- Pas de troisième famille. Exception (Léo, 20/11/2026) : Anton (OFL) pour le nom, le numéro, le niveau, le potentiel et les titres de blocs de la fiche joueur.
 
 | Niveau | Police | Taille / interligne | Casse |
 |---|---|---|---|
@@ -196,7 +197,7 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 **Iconographie** : pictogrammes au trait 1,75 px, 20 px (menus, boutons), 16 px (texte), 24 px au plus ; gris-vert au repos, crème actif, doré devant un titre de panneau ; toujours un mot. Famille Tabler (MIT) proposée par la graphiste, **à valider** ; pictogrammes rugby à créer dans le même trait. Icône d'application : symbole doré, 12 % de marge, 16-256 px, `.ico` Windows (16 et 24 provisoires).
 
 **Composants** (un seul de chaque ; états : survol = `PANNEAU_2` ou aplat éclairci de 8 % ; enfoncé 98 % ; focus = anneau doré 2 px décalé de 2 px ; désactivé = opacité 40 % + raison au survol) :
-- **Panneau** : `PANNEAU`, rayon 18, marge 18, titre capitales BC Bold 18 (icône dorée avant le titre) ; sans bordure ni ombre ; panneau-contenant d'un écran, jamais un panneau dans un panneau sauf carte (rayon 12).
+- **Panneau** : `PANNEAU`, rayon 18, marge 18, titre capitales BC Bold 18 (icône dorée avant le titre) ; sans bordure ; ombre portée sur panneaux, cartes et tuiles : noir 50 %, sans décalage, étendue 4 px (choix de Léo du 20/11/2026, d'après la graphiste qui proposait 10 px). Jamais sur pilules, boutons, champs, pastilles ni lignes ; panneau-contenant d'un écran, jamais un panneau dans un panneau sauf carte (rayon 12).
 - **Bouton principal** : pilule dorée, texte `PANNEAU`, 40 px (32 compact), un par écran ; survol `OR_VIF`. Continuer en coque ; sur une page sans Continuer, l'action qui fait avancer (« Lancer le match », « Valider la composition »).
 - **Bouton secondaire** : contour 1 px `FILET`, texte crème ; secondaire plein : `VERT_FRANC`, texte crème, dans un panneau ; **lien** : sans fond ni contour, gris-vert + flèche, souligné au survol (« Annuler », pied de page). Libellé ≤ 4 mots ; jamais de texte en vert franc.
 - **Onglets** : pilules ; actif = aplat crème, texte `PANNEAU` ; inactif = gris-vert ; jamais actif en vert.
@@ -218,7 +219,7 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 - Mouvement réduit : fondus 100 ms, rien ne glisse ; « Transitions : Aucune » = instantané.
 - Jamais : rebond, élastique, parallaxe permanente, clignotement > 3/s.
 
-**Interdits** : photo de fond non voilée ou derrière un tableau sans panneau ; panneau avec bordure, ombre, verre, biseau ; plus d'un aplat doré par écran ; doré sans mot ni pictogramme pour une attention ; vert franc en texte ou trait fin ; vert clair en paragraphe ; rouge hors cartons rouges et vraies erreurs ; couleur de club sur bouton, texte, jauge ou fond ; texte penché ; `NUIT` comme panneau ; page à fond clair (hors document papier) ; fiche flottante à droite ; fenêtre qui s'ouvre ; icône sans mot ; texte incrusté dans une image ; mentions « fictif » / « IA ».
+**Interdits** : photo de fond non voilée ou derrière un tableau sans panneau ; panneau avec bordure, verre, biseau ; ombre autre que celle de la charte (noir 50 %, 4 px, sans décalage) ou posée sur une pilule, un bouton, un champ, une pastille ou une ligne ; plus d'un aplat doré par écran ; doré sans mot ni pictogramme pour une attention ; vert franc en texte ou trait fin ; vert clair en paragraphe ; rouge hors cartons rouges et vraies erreurs ; couleur de club sur bouton, texte, jauge ou fond ; texte penché ; `NUIT` comme panneau ; page à fond clair (hors document papier) ; fiche flottante à droite ; fenêtre qui s'ouvre ; icône sans mot ; texte incrusté dans une image ; mentions « fictif » / « IA ».
 
 ### 7.2 Vue UX
 
@@ -240,7 +241,7 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 - **Logo définitif** de la graphiste intégré : version principale crème + « 27 » doré, transparente ; symbole (doré, crème, vert clair) ; icônes 16, 24, 32, 48, 64, 128, 256 px et `.ico` pour l'exécutable Windows, dans `native/godot/branding/`. Logo complet ≥ 120 px de large (sinon symbole), symbole net dès 48 px ; marge = moitié de la hauteur du « 27 » (logo), quart de la largeur (symbole). 16 et 24 px provisoires (version simplifiée à dessiner).
 - Formats : icônes SVG au trait (couleurs remplacées à l'exécution) ; illustrations PNG 2560 × 1440 (plein cadre) et 2560 × 480 (bandeaux) ; portraits PNG transparents 512 × 512 ; Gabi PNG transparent 512 × 640.
 - Couleur : sRGB ; étalonnage §6 appliqué à la source, pas dans le jeu.
-- Polices : TTF OFL, licence jointe (Barlow Condensed droite, DM Sans).
+- Polices : TTF OFL, licence jointe (Barlow Condensed droite, DM Sans, Anton pour la fiche joueur).
 - 3D : réutiliser l'existant ; maillots par couleur de club, sans texture de marque.
 
 ### 8.2 Vue technique

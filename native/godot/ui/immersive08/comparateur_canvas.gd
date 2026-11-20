@@ -217,7 +217,7 @@ static func _entete(app: Control, page: Control, i: int, x: float, largeur: floa
 			style.set_border_width_all(1)
 			style.set_corner_radius_all(C.px(16))
 			style.content_margin_left = C.px(16)
-			emplacement.add_theme_stylebox_override(etat, style)
+			emplacement.add_theme_stylebox_override(etat, Charte.ombrer(style, 16))
 		emplacement.pressed.connect(func(): choix.show_popup())
 		page.add_child(emplacement)
 		D.place(emplacement, Rect2(x, 216, largeur, 70))

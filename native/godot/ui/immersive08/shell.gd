@@ -182,7 +182,7 @@ static func render(app: Control) -> bool:
 	app.body_scroll.follow_focus = true
 	app.body_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	C.fill(app.body_scroll, true)
-	content.add_child(app.body_scroll)
+	_poser_espace_de_travail(content, app.body_scroll)
 	app.body = C.v(16)
 	C.fill(app.body, true)
 	app.body_scroll.add_child(app.body)
@@ -201,6 +201,40 @@ static func render(app: Control) -> bool:
 	app.call_deferred("_refresh_coach")
 	app.call_deferred("_observe_navigation")
 	return true
+
+## L'espace de travail défile (ScrollContainer) et rogne la page. Il rognait aussi l'ombre portée des panneaux et tuiles
+## posés contre ses bords (charte : 4 px, choix de Léo du 20/11/2026). Le rognage passe à un cadre plus grand de
+## OMBRE_TAILLE de chaque côté ; l'espace de travail garde exactement sa place, sa taille et son défilement.
+static func _poser_espace_de_travail(content: Control, scroll: ScrollContainer) -> void:
+	var place := Control.new()
+	place.name = "CareerWorkspaceSlot"
+	place.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	C.fill(place, true)
+	content.add_child(place)
+	var cadre := CadreDeRognage.new()
+	cadre.marge = float(Charte.OMBRE_TAILLE)
+	cadre.name = "CareerWorkspaceClip"
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.clip_contents = true
+	place.add_child(cadre)
+	var marge := float(Charte.OMBRE_TAILLE)
+	cadre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cadre.offset_left = -marge; cadre.offset_top = -marge; cadre.offset_right = marge; cadre.offset_bottom = marge
+	scroll.clip_contents = false
+	cadre.add_child(scroll)
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.offset_left = marge; scroll.offset_top = marge; scroll.offset_right = -marge; scroll.offset_bottom = -marge
+	# La largeur minimale de la page (défilement horizontal coupé) continue de compter dans la mise en page.
+	var suivre := func(): if is_instance_valid(place) and is_instance_valid(scroll): place.custom_minimum_size = scroll.get_combined_minimum_size()
+	scroll.minimum_size_changed.connect(suivre)
+	suivre.call()
+
+## Cadre qui rogne le dessin `marge` px plus large que l'espace de travail, mais ne laisse pointer la souris que dans
+## l'espace de travail lui-même (comme avant) : rien ne se survole ni ne se clique dans la bande de l'ombre.
+class CadreDeRognage extends Control:
+	var marge := 0.0
+	func _has_point(point: Vector2) -> bool:
+		return Rect2(Vector2.ONE * marge, size - Vector2.ONE * marge * 2.0).has_point(point)
 
 ## Largeur de référence des gabarits de contenu (2560 − rail historique de 248).
 const CONTENT_REFERENCE_WIDTH := 2312.0
@@ -465,7 +499,7 @@ static func _style(color: Color, radius: float = 0.0, border: Color = Color.TRAN
 	if border.a > 0.0:
 		style.border_color = border
 		style.set_border_width_all(border_width)
-	return style
+	return Charte.ombrer(style, radius)
 
 ## Bouton de la coque : fond transparent, survol panneau-2, pressé panneau-3, focus clavier anneau doré 2 px
 ## décalé de 2 px (charte §7.1, États). `contour` : filet 1 px `FILET` (bouton secondaire : Menu, Précédent, Suivant).

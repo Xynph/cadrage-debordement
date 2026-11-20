@@ -71,7 +71,7 @@ const LIBELLES_COURTS := {"metres": "Mètres gagnés", "franchissements": "Franc
 const STATS := ["possession", "occupation", "penalites", "zone22", "plaquages_reussis", "melees", "touches"]
 const FATIGUE := 55
 const EPUISE := 40
-## Charte finale (ui/charte.gd, 20/11/2026) : panneaux arrondis (18) sans bordure ni ombre, crème pour
+## Charte finale (ui/charte.gd, 20/11/2026) : panneaux arrondis (18) sans bordure, ombre portée de 4 px, crème pour
 ## l'information ; un seul aplat doré (le bouton principal). L'accent de l'écran (OR, nom historique) est la
 ## crème ; dans les comparaisons, nous en vert clair, l'adversaire en doré ; les couleurs des clubs ne
 ## vont qu'aux pastilles de club, maillots (terrain) et liserés.
@@ -577,7 +577,7 @@ func _case(fond: Color, rayon: int = Charte.RAYON_PETIT) -> StyleBoxFlat:
 	style.bg_color = fond
 	style.set_corner_radius_all(rayon)
 	style.anti_aliasing = true
-	return style
+	return Charte.ombrer(style, rayon)
 
 ## Anneau de focus clavier de la charte : doré, 2 px, décalé de 2 px (seul contour complet permis avec le
 ## bouton secondaire).
@@ -618,7 +618,7 @@ func _touche(texte: String) -> PanelContainer:
 	cadre.add_child(etiquette)
 	return cadre
 
-## Panneau de la charte : opaque, rayon 18, sans bordure ni ombre.
+## Panneau de la charte : opaque, rayon 18, sans bordure, ombre portée de la charte.
 func _panneau(parent: Node, marge: int, fond: Color = PANNEAU) -> VBoxContainer:
 	var coque := PanelContainer.new()
 	var style := _case(Color(fond, 1.0), Charte.RAYON_PANNEAU)

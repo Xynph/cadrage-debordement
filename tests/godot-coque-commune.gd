@@ -4,9 +4,12 @@ extends SceneTree
 #   - barre haute : chaque morceau du fil d'Ariane est cliquable, Menu, date, Précédent / Suivant ;
 #   - jamais de petite fenêtre : Ctrl+K met le focus dans le champ (aucune Window), Entrée ouvre l'écran Recherche,
 #     Réglages et Sauvegarder n'ouvrent aucune Window (le menu Échap reste une fenêtre, exception de Léo) ;
-#   - un seul aplat or dans la coque (Continuer) ; recomposition sans chevauchement à 1280, 1920 et 2560.
+#   - un seul aplat or dans la coque (Continuer) ; recomposition sans chevauchement à 1280, 1920 et 2560 ;
+#   - ombre portée (choix de Léo du 20/11/2026) : sur chaque écran du rail, tout fond plein de panneau, carte ou tuile
+#     porte l'ombre des jetons (noir 50 %, 4 px, sans décalage) ; pilules, boutons, champs, cases et lignes n'en ont pas.
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
+const C = preload("res://ui/immersive08/components.gd")
 const ORDRE := ["Bureau", "Réception", "Effectif", "Tactique", "Recrutement", "Club", "Finances", "Compétitions", "Formation"]
 const DESTINATIONS := {"Bureau":"Bureau", "Réception":"Réception", "Effectif":"Effectif", "Tactique":"Composition", "Recrutement":"Recrutement",
 	"Club":"Club", "Finances":"Finances", "Compétitions":"Classements", "Formation":"Formation", "Presse":"Presse", "Sélections":"Sélections"}
@@ -113,6 +116,7 @@ func rail() -> void:
 		close_gabi()
 		if not await press("Nav_" + caption): continue
 		check(app.route == destination, "Rail « %s » ouvre %s (%s)" % [caption, destination, app.route])
+		ombres(destination)
 		var active := named("Nav_" + caption) as Button
 		# Charte finale §7.1 : entrée active = pilule aplat crème, texte et icône PANNEAU (plus de filet incliné).
 		var active_style := active.get_theme_stylebox("normal") as StyleBoxFlat if active != null else null
@@ -135,6 +139,66 @@ func rail() -> void:
 	var long_name := "Division d'accession régionale du grand sud-ouest atlantique et pyrénéen · 12e"
 	var fitted: Array = app.Immersive.fit_context(long_name, "12e", app.Immersive.RAIL_WIDTH - 117.0)
 	check(str(fitted[0]).ends_with("· 12e") and int(fitted[2]) <= 2, "Division très longue : rang gardé (%s)" % str(fitted[0]))
+
+## Contrôle central de l'ombre portée sur l'écran affiché (1920 × 1080). Un fond plein dont le rayon atteint celui d'une
+## carte (12, mis à l'échelle de la coque : C.px) sans aller jusqu'à la pilule (rayon ≥ demi-côté) est un panneau, une carte
+## ou une tuile : il porte exactement l'ombre des jetons. Tout autre fond (pilule, case, ligne, contour seul) n'en a aucune.
+func ombres(ecran: String) -> void:
+	var seuil := C.px(Charte.RAYON_CARTE)
+	var tuiles := 0
+	var sans: Array[String] = []
+	var en_trop: Array[String] = []
+	var rognees: Array[String] = []
+	for c: Control in app.root_content.find_children("*", "Control", true, false):
+		if not c.is_visible_in_tree() or c.get_viewport() != app.get_viewport() or _dans_un_masque(c): continue
+		for etat: String in ["panel", "normal", "hover", "pressed", "disabled"]:
+			if not c.has_theme_stylebox_override(etat) and not (etat == "panel" and c is PanelContainer): continue
+			var s := c.get_theme_stylebox(etat) as StyleBoxFlat
+			if s == null: continue
+			var r := maxi(maxi(s.corner_radius_top_left, s.corner_radius_top_right), maxi(s.corner_radius_bottom_left, s.corner_radius_bottom_right))
+			var pilule := r >= Charte.RAYON_PILULE or float(r) * 2.0 >= minf(c.size.x, c.size.y) - 1.0
+			if s.draw_center and s.bg_color.a > 0.0 and r >= seuil and not pilule:
+				tuiles += 1
+				var calque := c.get_parent().get_node_or_null(NodePath(str(c.name) + "Ombre")) as Control if c.get_parent() != null else null
+				var portee := calque != null and Charte.porte_ombre(calque.get_theme_stylebox("panel"))
+				if not Charte.porte_ombre(s) and not (etat == "panel" and c.clip_contents and portee): sans.append("%s.%s (r %d)" % [c.name, etat, r])
+			elif s.shadow_size > 0 and (pilule or not s.draw_center or s.bg_color.a <= 0.0 or not Charte.porte_ombre(s) or (r < seuil and etat != "panel")):
+				en_trop.append("%s.%s (r %d)" % [c.name, etat, r])
+			if etat in ["panel", "normal"] and Charte.porte_ombre(s):
+				# Panneau ombré par son rôle malgré un petit rayon (Finances : panneaux à 6) : compté avec les tuiles.
+				if etat == "panel" and r < seuil: tuiles += 1
+				var raison := _ombre_rognee(c)
+				if not raison.is_empty(): rognees.append("%s (%s)" % [c.name, raison])
+	# Réception et Presse : colonnes à angles droits qui cadrent la page (ni panneau arrondi, ni tuile) ; pas d'ombre.
+	if not ecran in ["Réception", "Presse", "Sélections"]: check(tuiles > 0, "%s : au moins un panneau ou une tuile" % ecran)
+	check(sans.is_empty(), "%s : chaque panneau, carte ou tuile porte l'ombre des jetons (%d sans : %s)" % [ecran, sans.size(), str(sans.slice(0, 8))])
+	check(en_trop.is_empty(), "%s : aucune ombre sur pilules, boutons, cases ni lignes (%s)" % [ecran, str(en_trop.slice(0, 8))])
+	check(rognees.is_empty(), "%s : aucune ombre rognée (%d : %s)" % [ecran, rognees.size(), str(rognees.slice(0, 8))])
+
+## Section d'un panneau qui masque ses enfants à sa forme (clip_children) : elle ne peut pas porter d'ombre au dehors,
+## c'est le panneau qui la porte.
+func _dans_un_masque(c: Control) -> bool:
+	var p := c.get_parent()
+	while p is CanvasItem and p != app.root_content:
+		if (p as CanvasItem).clip_children != CanvasItem.CLIP_CHILDREN_DISABLED: return true
+		p = p.get_parent()
+	return false
+
+## Ombre d'un contrôle entièrement visible coupée : par son propre rognage (clip_contents rogne aussi le fond qu'il
+## dessine) ou par un parent qui rogne à moins de OMBRE_TAILLE de son bord. Vide si l'ombre se voit en entier.
+func _ombre_rognee(c: Control) -> String:
+	if c.clip_contents: return "rogne son contenu"
+	var boite := c.get_global_rect()
+	var ombre := boite.grow(Charte.OMBRE_TAILLE - 0.5)
+	var p := c.get_parent()
+	while p is Control:
+		var parent := p as Control
+		if parent.clip_contents:
+			var cadre := parent.get_global_rect()
+			if cadre.encloses(boite) and not cadre.encloses(ombre): return "rognée par %s" % parent.name
+			if not cadre.encloses(boite): return ""
+		p = parent.get_parent()
+	return ""
 
 func footer() -> void:
 	app._navigate("Bureau"); await settle()

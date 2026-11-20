@@ -44,7 +44,7 @@ static func liste(choix: OptionButton) -> void:
 	choix.add_theme_stylebox_override("hover", survol)
 	choix.add_theme_stylebox_override("focus", _anneau(Charte.RAYON_PILULE))
 	var menu := choix.get_popup()
-	menu.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3, Charte.FILET, Charte.RAYON_CARTE, 6))
+	menu.add_theme_stylebox_override("panel", Charte.sans_ombre(C.box(Charte.PANNEAU_3, Charte.FILET, Charte.RAYON_CARTE, 6)))
 	menu.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 8, 4))
 	menu.add_theme_font_override("font", Charte.TEXTE)
 	menu.add_theme_font_size_override("font_size", maxi(12, C.px(18)))

@@ -184,7 +184,8 @@ static func _etiquette(parent: Node, x: float, baseline: float, valeur: String, 
 static func _panneau(parent: Node, rectangle: Rect2, titre: String, id: String, legende: String = "") -> Panel:
 	var panel := Panel.new()
 	panel.name = id
-	panel.add_theme_stylebox_override("panel", _style(Charte.PANNEAU))
+	# Panneau de l'écran (rayon 6 propre aux Finances) : ombre portée de la charte, comme tout panneau.
+	panel.add_theme_stylebox_override("panel", Charte.ombrer(_style(Charte.PANNEAU), Charte.RAYON_PANNEAU))
 	parent.add_child(panel)
 	D.place(panel, rectangle)
 	if not titre.is_empty():

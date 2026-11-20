@@ -211,7 +211,7 @@ func _fond(couleur: Color, gauche: float = 0, haut: float = 0, droite: float = -
 	s.content_margin_top = _d(haut)
 	s.content_margin_right = _d(gauche if droite < 0 else droite)
 	s.content_margin_bottom = _d(haut if bas < 0 else bas)
-	return s
+	return Charte.ombrer(s, rayon)
 
 ## Panneau de la charte (rayon 18, sans bordure) ; carte dans un panneau : `rayon` = RAYON_CARTE.
 func _panneau(couleur: Color = Charte.PANNEAU, gauche: float = 16, haut: float = 10, rayon: int = Charte.RAYON_PANNEAU) -> PanelContainer:
@@ -762,8 +762,11 @@ func _pourquoi(parent: VBoxContainer) -> void:
 		var negatif := str(raison.get("sens", "")) == "negatif"
 		var sens := _h(6)
 		sens.custom_minimum_size.x = _d(128)
-		sens.add_child(_triangle(not negatif, Charte.D if negatif else Charte.IVOIRE))
-		var mot_sens := _texte("À CORRIGER" if negatif else "POINT FORT", 13, Charte.D if negatif else Charte.IVOIRE, Charte.TITRE)
+		# « À corriger » : triangle au contour doré, mot en crème (un seul aplat doré par écran : Valider le résultat).
+		var fleche := _triangle(not negatif, Charte.PANNEAU if negatif else Charte.IVOIRE) as Trace
+		if negatif: fleche.bord = Charte.D
+		sens.add_child(fleche)
+		var mot_sens := _texte("À CORRIGER" if negatif else "POINT FORT", 13, Charte.IVOIRE, Charte.TITRE)
 		mot_sens.name = "Sens"
 		sens.add_child(mot_sens)
 		r.add_child(sens)

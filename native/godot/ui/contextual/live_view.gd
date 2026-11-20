@@ -254,7 +254,7 @@ static func _fond_hud(marges: Vector4, couleur: Color = Color(Charte.PANNEAU, 0.
 	style.content_margin_top = marges.y
 	style.content_margin_right = marges.z
 	style.content_margin_bottom = marges.w
-	return style
+	return Charte.ombrer(style, rayon)
 
 ## Puce de touche (« Espace », « Échap ») : panneau haut, texte ivoire secondaire.
 static func _touche(texte: String) -> PanelContainer:

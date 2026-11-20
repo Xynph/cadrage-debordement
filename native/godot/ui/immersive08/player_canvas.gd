@@ -175,10 +175,15 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 	_pied(page,app,player,source)
 	return page
 
-## Titre de carte en capitales italiques, badge à droite, filet dessous (gabarit de la maquette).
+## Anton droite (jeton Charte.TITRE_FICHE) : nom, numéro, niveau, potentiel et titres de blocs de la fiche.
+static func _anton(label: Label) -> Label:
+	label.add_theme_font_override("font", Charte.TITRE_FICHE)
+	return label
+
+## Titre de carte en capitales Anton, badge à droite, filet dessous (gabarit de la maquette).
 static func _titre(card: Panel, titre: String, badge: String = "") -> void:
 	var largeur := card.size.x / C.density
-	ClubUI.italic(D.text(card,24,40,titre,26,Charte.IVOIRE,800,largeur*.5),800).name = "CardTitle"
+	_anton(D.text(card,24,40,titre,26,Charte.IVOIRE,800,largeur*.5)).name = "CardTitle"
 	if not badge.is_empty(): D.text(card,largeur-24,38,badge,17,Charte.IVOIRE_2,700,largeur*.45,HORIZONTAL_ALIGNMENT_RIGHT)
 	D.line(card,Vector2(20,56),Vector2(largeur-20,56),Color(Charte.FILET,.9))
 
@@ -258,12 +263,12 @@ static func _bandeau(page: Control, app: Control, player: Dictionary, source: St
 	D.place(portrait,Rect2(1,1,208,208))
 	var shirt_number: Variant = player.get("shirtNumber")
 	var number := G.n(shirt_number) if shirt_number != null else "—"
-	var shirt := ClubUI.italic(D.text(hero,212,196,number,120,Color(Charte.IVOIRE,.16),800,120),800)
+	var shirt := _anton(D.text(hero,212,196,number,120,Color(Charte.IVOIRE,.16),800,120))
 	shirt.name="FullPlayerNumber"
 	shirt.mouse_filter = Control.MOUSE_FILTER_PASS
 	shirt.tooltip_text = "Numéro sur la feuille de match" if shirt_number != null else "Aucun numéro sur la feuille de match"
 	D.text(hero,300,36,"FICHE JOUEUR · "+Roster.primary_caption(player).to_upper(),17,Charte.IVOIRE_2,700,1200).name = "FullPlayerKicker"
-	var heading:=ClubUI.italic(D.text(hero,298,92,str(player.name).to_upper(),52,Charte.IVOIRE,800,1220),800)
+	var heading:=_anton(D.text(hero,298,92,str(player.name).to_upper(),52,Charte.IVOIRE,800,1220))
 	heading.name="ProfilePlayerName"
 	var facts: Dictionary = player.get("playerFacts", {}) if player.get("playerFacts") is Dictionary else {}
 	var identite: HBoxContainer
@@ -296,12 +301,12 @@ static func _bandeau(page: Control, app: Control, player: Dictionary, source: St
 	# Niveau et potentiel, à droite du bandeau.
 	D.line(hero,Vector2(1600,22),Vector2(1601,188),Color(Charte.FILET,.9))
 	D.text(hero,1640,40,"NIVEAU",17,Charte.IVOIRE_2,700,200)
-	var niveau := ClubUI.italic(D.text(hero,1640,104,G.rating_text(player,Commune.notre_joueur(source)),56,Charte.IVOIRE,800,150),800)
+	var niveau := _anton(D.text(hero,1640,104,G.rating_text(player,Commune.notre_joueur(source)),56,Charte.IVOIRE,800,150))
 	niveau.name = "PlayerGlobalRating"
-	var largeur_niveau := C.font(800).get_string_size(niveau.text,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(56))).x/C.density
+	var largeur_niveau := Charte.TITRE_FICHE.get_string_size(niveau.text,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(56))).x/C.density
 	D.text(hero,1640+largeur_niveau+10,104,"/ 100",22,Charte.IVOIRE_2,500,80)
 	D.text(hero,1930,40,"POTENTIEL",17,Charte.IVOIRE_2,700,200)
-	var potential := ClubUI.italic(D.text(hero,1930,104,G.potential_text(player),56,Charte.IVOIRE,800,300),800)
+	var potential := _anton(D.text(hero,1930,104,G.potential_text(player),56,Charte.IVOIRE,800,300))
 	potential.name = "PlayerGlobalPotential"
 	potential.mouse_filter = Control.MOUSE_FILTER_PASS
 	potential.tooltip_text = G.potential_tooltip(player)
