@@ -247,7 +247,7 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	entracte = ENTRACTE
 	voile = ColorRect.new()
 	voile.name = "MatchBetweenVeil"
-	voile.color = Color(S.PANEL, 1.0)
+	voile.color = preload("res://ui/charte.gd").FOND
 	voile.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.full(voile)
 	view.add_child(voile)
@@ -269,7 +269,12 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.tiroir_demande.connect(func(titre: String): view._toggle_drawer(titre))
 	between.passer_demande.connect(passer)
 	between.horloge_choisie.connect(choisir_horloge)
-	between.delegation_demandee.connect(view.confier_fin)
+	# « Confier la fin à l'adjoint » : confirmée dans la colonne de droite de l'entracte (jamais une fenêtre).
+	between.delegation_demandee.connect(func(): view.director.command("delegate"))
+	between.pause_demandee.connect(func(): app._command("pause", {"paused": true}))
+	# Fiche joueur lue pendant l'entracte : le match se met en pause, comme pour la fenêtre Équipe.
+	between.fiche_ouverte.connect(func(ouverte: bool): tiroir_ouvert() if ouverte else tiroir_ferme())
+	between.couvert = func() -> bool: return is_instance_valid(view.get("equipe")) and view.equipe.visible
 	between.camera_demandee.connect(func(mode: String): view.choisir_camera(mode))
 	# Une seule barre de commandes : celle de l'écran intermédiaire, pendant qu'il est affiché.
 	between.visibility_changed.connect(_barre_unique)

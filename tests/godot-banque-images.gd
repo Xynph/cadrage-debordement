@@ -203,14 +203,15 @@ func ecran_entre_temps_forts() -> void:
 	var direct := {"fil": fil, "camp": 1, "borne": 4}
 	between.update_frame({"club": equipes[1]}, live, direct, func(_a, _b = null): pass)
 	for i in 6: await process_frame
-	var photo: TextureRect = between.find_child("MatchBetweenHighlightsPhoto", true, false)
-	verifier(photo != null and str(photo.get_meta("photo", "")) == "action-carton-jaune" and photo.texture != null, "faits marquants : photo du dernier fait (%s)" % (photo.get_meta("photo", "") if photo else "absente"))
+	# Entracte (DA du 19/11/2026) : plus de tuile de faits marquants ni de photo ; le dernier fait est sous l'en-tête
+	# du terrain, le journal complet dans le menu Plus.
+	var dernier: Array = between.fil.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
+	verifier(dernier.has("Carton jaune pour Hawthorn, plaquage haut.") and between.find_child("MatchBetweenHighlightsPhoto", true, false) == null, "entracte : le dernier fait sous le terrain, sans photo (%s)" % str(dernier))
 	await capturer("entre-temps-forts-carton")
 	live.finished = true
 	live.score = [13, 24]
 	between.update_frame({"club": equipes[1]}, live, direct.merged({"fil": fil + [{"i": 4, "horloge": "80’", "kind": "end", "texte": "Fin du match.", "equipe": null}], "borne": 5}), func(_a, _b = null): pass)
 	await process_frame
-	verifier(str(photo.get_meta("photo", "")) == "resultat-victoire", "fin de match gagné : photo de victoire (%s)" % photo.get_meta("photo", ""))
 	await capturer("entre-temps-forts-fin-victoire")
 	hote.queue_free()
 

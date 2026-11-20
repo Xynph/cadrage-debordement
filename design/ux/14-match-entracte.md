@@ -2,9 +2,22 @@
 
 Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %) (hors direct : le texte du match garde ses minimums T2) ; en match, Échap = pause.
 
-> **Statut** : en conception (proposé, non validé par Léo)
+> **Statut** : direction artistique choisie par Léo (19/11/2026), intégrée le 20/11/2026
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
-> **Dernière mise à jour** : 19/11/2026
+> **Dernière mise à jour** : 20/11/2026
+
+## 0. Choix de Léo (revue DA du 19/11/2026) — prime sur la suite de la fiche
+
+Maquettes : `direction-artistique/interface/revue-20261119/apercus/14-match-entracte-1.png` (base), `-3.png`, `-2.png`.
+
+- **Variante 1 · Terrain au centre** : barre (horloge, plaques des clubs — nous plein, adversaire vide —, score 40 px, phase du match, ÉQUIPE ivoire plein + « T », Réglages, Plus ▾, Reprendre/Pause) ; Mon XV + banc à gauche ; terrain 2D tracé ivoire 1 px, sans pelouse ; chiffres clés à droite (barres face à face : nous plein à gauche, eux vide à droite) ; domination minute par minute en largeur (barres pleines nous / vides eux, repères E · P · C) ; Gabi en largeur avec son action (« Remplacer le 7 par X · Entrée ») ; pied des raccourcis.
+- **Emprunt 1 — panneau d'arrêt de la variante 3** : il remplace les chiffres clés dans la colonne de droite (titre « BLESSURE · 38′ », ce qui se passe, choix proposés par le staff, « Valider le choix · Entrée » ; Équipe et Réglages attendent le choix).
+- **Emprunt 2 — colonne Plaquages de la variante 2** dans Mon XV (N°, joueur, énergie, plaq., note).
+- **Jamais de petite fenêtre** : Réglages (vitesse, temps forts), « Autres matchs et classement » et « Confier la fin à l'adjoint » s'ouvrent à la place des chiffres clés (« ← Chiffres clés », Échap). Seul « Plus ▾ » reste un menu déroulant (exception de Léo).
+- **Noms** : clic = fiche complète posée sur l'entracte (match en pause, « ← Retour au match », Échap) ; survol = mini-fiche. Ligne de Mon XV (clic, ↑ ↓ puis Entrée) = fenêtre Équipe sur ce joueur.
+- **Clavier** : Espace reprend / met en pause ; T Équipe ; Échap referme la fiche ou le panneau, sinon ouvre le menu du match de la vue 13 (pause ; jamais de sortie) ; Entrée = action de Gabi ou du panneau d'arrêt.
+- **Données réelles seulement** : plaquages par joueur (feuille du moteur), plaquages réussis = réussis / tentés, entrées dans les 22 (`zone22`) ; donnée absente = ligne omise.
+- **Retirés de l'écran** : vue Terrain de Mon XV, carte Changement, anneaux, faits marquants (→ Journal, menu Plus), multiplex et classement en bas (→ Plus > Autres matchs).
 > **Phase du parcours** : 1.3 jour de match (mi-temps, arrêt demandé, pause tactique)
 > **Identifiant** : `MatchBetween` (`native/godot/ui/contextual/match_between.gd`)
 > **Plateforme** : PC souris + clavier, 1280×720 à 2560×1440

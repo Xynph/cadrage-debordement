@@ -324,6 +324,7 @@
       "tests/godot-gabi-adjoint.cjs": 56,
       "tests/godot-gabi-bandeau.cjs": 18,
       "tests/godot-incident-arret.cjs": 3,
+  "tests/godot-match-entracte-da.cjs": 3,
       "tests/godot-gabi-clic-menu.cjs": 7,
       "tests/godot-guide-voice.cjs": 3,
       "tests/godot-immersion-copy.cjs": 2,

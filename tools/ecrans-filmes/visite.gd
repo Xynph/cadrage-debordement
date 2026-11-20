@@ -39,6 +39,8 @@ const EXTRAS := [
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
+	## Entracte 2D d'un vrai match arrêté à la mi-temps (horloge Éclair, aucun temps fort : le match y va vite).
+	{"id": "entracte", "libelle": "Entracte 2D (mi-temps)", "type": "direct", "entracte": true},
 	{"id": "direct", "libelle": "Match en direct", "type": "direct"},
 	{"id": "equipe-composition", "libelle": "Fenêtre Équipe · composition", "type": "equipe", "onglet": "composition"},
 	{"id": "equipe-consignes", "libelle": "Fenêtre Équipe · consignes", "type": "equipe", "onglet": "consignes"},
@@ -530,6 +532,7 @@ func ouvrir_en_direct(ecran: Dictionary) -> Dictionary:
 	var equipe: Variant = vue.get("equipe")
 	if str(ecran.type) == "direct":
 		if is_instance_valid(equipe) and equipe.visible: equipe.fermer(false)
+		if bool(ecran.get("entracte", false)): return await ouvrir_entracte()
 		await stabiliser()
 		return {"statut": "ok"}
 	if not is_instance_valid(equipe) or not vue.has_method("ouvrir_equipe"): return {"statut": "indisponible", "note": "fenêtre Équipe absente"}
@@ -538,6 +541,43 @@ func ouvrir_en_direct(ecran: Dictionary) -> Dictionary:
 	await stabiliser()
 	if not equipe.visible: return {"statut": "echec", "note": "fenêtre Équipe non ouverte (match terminé ?)"}
 	return {"statut": "ok"}
+
+## Entracte 2D d'un vrai match : horloge Éclair et aucun temps fort (réglages du jeu), causeries passées comme le
+## ferait un joueur, arrêts de jeu repris ; s'arrête à la mi-temps quand l'écran intermédiaire est affiché. Si la
+## mi-temps passe sans lui (causerie), le match est mis en pause dans l'entracte suivant (commande du jeu).
+func ouvrir_entracte() -> Dictionary:
+	var limite := Time.get_ticks_msec() + 300000
+	var note := ""
+	while Time.get_ticks_msec() < limite:
+		var vue: Control = surface()
+		var live: Dictionary = app.model.get("live", {}) if app.model.get("live") is Dictionary else {}
+		var causerie: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+		if live.get("finished", false): return {"statut": "echec", "note": "match fini avant la mi-temps"}
+		if not app.waiting and causerie is Dictionary and app.contextual_director.kind == "locker":
+			app._command("match_talk_continue", {"key": causerie.key, "phase": causerie.phase, "skip": true})
+		elif vue != null and vue.get("regie") != null and not app.waiting:
+			var regie: Node = vue.regie
+			if regie.horloge != "eclair": regie.choisir_horloge("eclair")
+			if regie.niveau != "aucun": regie.choisir_niveau("aucun")
+			var montre: bool = regie.between.is_visible_in_tree() and regie.etat == regie.INTER
+			if montre and live.get("atBreak", false):
+				note = "mi-temps"
+				break
+			if montre and int(live.get("minute", 0)) > 40 and live.get("paused", false) and note == "pause":
+				break
+			if montre and int(live.get("minute", 0)) > 40 and not live.get("paused", false):
+				app._command("pause", {"paused": true})
+				note = "pause"
+			elif regie.etat == regie.SORTIE: regie.passer()
+			elif not regie.arret.is_empty(): regie.between.reprise_demandee.emit()
+			elif live.get("paused", false) and not live.get("atBreak", false) and regie.arret.is_empty() and note.is_empty():
+				app._command("pause", {"paused": false})
+		for k in 5: await process_frame
+	if note.is_empty(): return {"statut": "echec", "note": "mi-temps non atteinte"}
+	print("ECRANS_FILMES entracte : ", note)
+	await create_timer(3.0).timeout
+	await stabiliser()
+	return {"statut": "ok", "note": "entracte arrêté (%s)" % note}
 
 ## Capture et analyse l'écran ouvert ; complète l'entrée du rapport.
 func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
