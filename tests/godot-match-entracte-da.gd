@@ -284,6 +284,24 @@ func run() -> void:
 		check(ligne_bloquee != null and ligne_bloquee.disabled and ligne_bloquee.modulate.a < 0.9 and ecran.arret_aide.visible and ecran.arret_aide.text.contains("Mon XV"), cadre + " : lignes de Mon XV bloquées et atténuées, raison écrite")
 		var pleins_arret := ecran.find_children("*", "BaseButton", true, false).filter(func(b: Control): return b.is_visible_in_tree() and b.get_theme_stylebox("normal") is StyleBoxFlat and (b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.is_equal_approx(Charte.IVOIRE))
 		check(pleins_arret.size() == 1 and pleins_arret[0] == ecran.arret_reprendre, cadre + " : en arrêt, le seul ivoire plein est « Valider le choix »")
+		# Options d'arrêt : un « i » vers la fiche complète sur chaque joueur proposé, le clic sur la ligne reste le choix.
+		var options_arret: Array = ecran.arret_options.get_children().filter(func(n: Node): return n is Button)
+		var infos_ok := options_arret.size() == 2
+		for b: Button in options_arret:
+			var i := b.find_child("MatchBetweenStopInfo", false, false) as Button
+			infos_ok = infos_ok and i != null and i.text == "i" and str(i.get_meta("player_id", "")) == str(b.get_meta("option_id")) and i.pressed.get_connections().size() > 0
+		check(infos_ok, cadre + " : « i » vers la fiche sur chaque option d'arrêt")
+		# Jamais de cadre complet (charte §3) : aucun style à quatre filets, quel que soit l'état (arrêt et option retenue compris).
+		var cadres: Array = []
+		for noeud: Node in ecran.find_children("*", "Control", true, false):
+			for etat_style in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed", "panel"]:
+				var s := (noeud as Control).get_theme_stylebox(etat_style) as StyleBoxFlat if (noeud as Control).has_theme_stylebox_override(etat_style) else null
+				if s != null and s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0: cadres.append("%s:%s" % [noeud.name, etat_style])
+		check(cadres.is_empty(), cadre + " : aucun cadre complet " + str(cadres.slice(0, 6)))
+		# Menus déroulants habillés : fond opaque, angles droits, sans ombre.
+		for menu_style: PopupMenu in [menu_plus, ecran.menu_reglages]:
+			var fond_menu := menu_style.get_theme_stylebox("panel") as StyleBoxFlat
+			check(fond_menu != null and fond_menu.bg_color.a == 1.0 and fond_menu.corner_radius_top_left == 0 and fond_menu.shadow_size == 0, cadre + " : menu %s à la charte" % menu_style.name)
 		ecran.arret_reprendre.pressed.emit()
 		for i in 2: await process_frame
 		var envois: Array = app.get("envois")

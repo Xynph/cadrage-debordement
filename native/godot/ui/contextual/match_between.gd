@@ -536,7 +536,10 @@ func _style_segment(bouton: Button) -> void:
 		var style := StyleBoxFlat.new()
 		style.bg_color = SURVOL if choisi or etat_bouton == "hover" else Color(0, 0, 0, 0)
 		style.border_color = FAIBLE if etat_bouton == "disabled" else (IVOIRE if choisi or etat_bouton == "focus" else DOUX)
-		style.set_border_width_all(maxi(2, px(4)) if choisi else 1)
+		# Jamais de cadre complet (charte §3) : un filet bas, le choix courant en filet gauche épais (et coche).
+		style.set_border_width_all(0)
+		if choisi: style.border_width_left = maxi(2, px(5))
+		else: style.border_width_bottom = maxi(1, px(2)) if etat_bouton == "focus" else 1
 		style.set_corner_radius_all(0)
 		style.content_margin_left = px(16)
 		style.content_margin_right = px(16)
@@ -715,6 +718,7 @@ func _commandes() -> void:
 	plus.add_theme_font_size_override("font_size", fpx(22))
 	var menu := plus.get_popup()
 	menu.add_theme_font_size_override("font_size", fpx(22))
+	_habiller_menu(menu)
 	for libelle: String in ["Statistiques", "Journal du match", "Confier la fin à l’adjoint", "Autres matchs et classement en direct"]: menu.add_item(libelle)
 	# Caméras du direct 3D (la barre du bas est masquée en temps forts).
 	menu.add_separator("Caméra des temps forts")
@@ -755,8 +759,34 @@ func _commandes() -> void:
 	menu_reglages = PopupMenu.new()
 	menu_reglages.name = "MatchBetweenSettingsMenu"
 	menu_reglages.add_theme_font_size_override("font_size", fpx(22))
+	_habiller_menu(menu_reglages)
 	menu_reglages.id_pressed.connect(_choix_menu_reglages)
 	parametres.add_child(menu_reglages)
+
+## Menu déroulant à la charte : fond panneau opaque, rayon 0, sans ombre ni cadre, survol un cran plus clair
+## avec filet gauche ivoire, texte ivoire (grisé pour un choix indisponible).
+func _habiller_menu(menu: PopupMenu) -> void:
+	var fond := StyleBoxFlat.new()
+	fond.bg_color = Color(PANNEAU, 1.0)
+	fond.set_corner_radius_all(0)
+	fond.shadow_size = 0
+	fond.set_content_margin_all(px(8))
+	menu.add_theme_stylebox_override("panel", fond)
+	var survol := StyleBoxFlat.new()
+	survol.bg_color = SURVOL
+	survol.set_corner_radius_all(0)
+	survol.border_width_left = maxi(2, px(4))
+	survol.border_color = IVOIRE
+	menu.add_theme_stylebox_override("hover", survol)
+	var filet := StyleBoxLine.new()
+	filet.color = TRAIT
+	filet.thickness = 1
+	for cle in ["separator", "labeled_separator_left", "labeled_separator_right"]: menu.add_theme_stylebox_override(cle, filet)
+	for cle in ["font_color", "font_hover_color", "font_accelerator_color"]: menu.add_theme_color_override(cle, IVOIRE)
+	menu.add_theme_color_override("font_disabled_color", FAIBLE)
+	menu.add_theme_color_override("font_separator_color", DOUX)
+	menu.add_theme_constant_override("v_separation", px(10))
+	menu.transparent_bg = true
 
 ## Réglages en menu déroulant (temps fort 3D) : vitesse de l'horloge (0 à 3) et temps forts montrés (100 et plus),
 ## le choix courant coché.
@@ -1590,8 +1620,9 @@ func _survol_pastille(cle: String) -> void:
 	_ancre_pastille.size = Vector2(r, r) * 2.0
 	MiniFiche.montrer(app, str(j.id), "squad", _ancre_pastille)
 
-## Clic sur une pastille : le joueur est choisi dans Mon XV (sa ligne a le focus : Entrée ouvre Équipe sur lui) ;
-## pour un adversaire, le tableau passe au XV adverse.
+## Clic sur une pastille d'un de nos joueurs : sa fiche complète (règle de Léo sur les noms ; « ← Retour au direct »
+## la referme), sa ligne de Mon XV gardant le focus derrière (Entrée ouvre Équipe sur lui). Pour un adversaire (pas
+## de fiche), le tableau passe au XV adverse.
 func _choix_pastille(cle: String) -> void:
 	var j := joueur_de_pastille(cle)
 	if j.is_empty(): return
@@ -1600,6 +1631,7 @@ func _choix_pastille(cle: String) -> void:
 		return
 	if vue_xv != "tableau": choisir_vue_xv("tableau")
 	selectionner_joueur(int(j.poste))
+	ouvrir_fiche(str(j.id))
 
 ## Met le focus sur la ligne du poste dans Mon XV et la fait défiler dans la vue.
 func selectionner_joueur(poste: int) -> void:
@@ -1651,7 +1683,9 @@ func _poser_legende(equipes: Array, camp: int) -> void:
 			var style := StyleBoxFlat.new()
 			style.bg_color = Color(0, 0, 0, 0)
 			style.border_color = Charte.club_trait(terrain.couleurs[cote])
-			style.set_border_width_all(1)
+			# Marque « vide » de l'adversaire : un filet bas épais (jamais un cadre complet, charte §3).
+			style.set_border_width_all(0)
+			style.border_width_bottom = maxi(2, px(3))
 			style.set_corner_radius_all(0)
 			cadre.add_theme_stylebox_override("panel", style)
 			cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2185,7 +2219,8 @@ func _carte_match(m: Dictionary, change: bool, teintes: Dictionary) -> Control:
 	style.content_margin_top = px(4)
 	style.content_margin_bottom = px(4)
 	if change:
-		style.set_border_width_all(maxi(1, px(3)))
+		# Score qui vient de changer : filet gauche épais (jamais un cadre complet), le mot est dans l'infobulle.
+		style.border_width_left = maxi(2, px(5))
 		style.border_color = VERT_SCORE
 	carte.add_theme_stylebox_override("panel", style)
 	carte.custom_minimum_size.x = px(160)
@@ -2635,7 +2670,7 @@ func _remplir_xv_adverse(direct: Dictionary) -> void:
 # --- Fiche joueur pendant le match ---------------------------------------------
 
 ## Fiche complète d'un de nos joueurs, posée sur l'entracte (la navigation du jeu est fermée pendant un
-## match) : « ← Retour au match » (Échap) la referme, le match reste en pause le temps de la lire.
+## match) : « ← Retour au direct » (Échap) la referme, le match reste en pause le temps de la lire.
 func ouvrir_fiche(id: String) -> void:
 	var app: Object = _app()
 	if not app is Control or id.is_empty(): return
@@ -2666,7 +2701,7 @@ func ouvrir_fiche(id: String) -> void:
 	fiche_match.add_child(colonne)
 	var tete := S.G.h(px(12))
 	colonne.add_child(tete)
-	var retour := _lien("← Retour au match", fermer_fiche, "MatchBetweenPlayerSheetBack")
+	var retour := _lien("← Retour au direct", fermer_fiche, "MatchBetweenPlayerSheetBack")
 	retour.tooltip_text = "Revenir à l’entracte · Échap"
 	tete.add_child(retour)
 	tete.add_child(_touche("Échap"))
@@ -2695,7 +2730,7 @@ func _brancher_fiche(page: Control, app: Object) -> void:
 		if nom == "PlayerBackToSquad":
 			_rebrancher(bouton, fermer_fiche)
 			bouton.tooltip_text = "Revenir à l’entracte · Échap"
-			if bouton is Button: (bouton as Button).text = "← Retour au match"
+			if bouton is Button: (bouton as Button).text = "← Retour au direct"
 		elif nom.begins_with("FullPlayerTab"):
 			var cible := _fiche_id
 			bouton.pressed.connect(func(): ouvrir_fiche.call_deferred(cible))
@@ -3125,7 +3160,19 @@ func montrer_arret(valeur: Dictionary) -> void:
 		if option == staff: bouton.tooltip_text = "Proposé par le staff."
 		# Le nom du joueur proposé : sa mini-fiche au survol (il faut savoir qui entre ou sort).
 		var app_arret: Object = _app()
-		if app_arret is Control and id != null and not str(id).is_empty(): MiniFiche.lier(app_arret, bouton, str(id), "squad")
+		if app_arret is Control and id != null and not str(id).is_empty():
+			MiniFiche.lier(app_arret, bouton, str(id), "squad")
+			# « i » à droite de la ligne : la fiche complète (le clic sur la ligne reste le choix).
+			var info := _lien("i", ouvrir_fiche.bind(str(id)), "MatchBetweenStopInfo")
+			info.tooltip_text = "Sa fiche complète (le choix attend) · survol de la ligne : sa mini-fiche"
+			info.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
+			info.offset_left = -px(44)
+			info.offset_right = -px(8)
+			info.offset_top = -px(18)
+			info.offset_bottom = px(18)
+			info.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			info.set_meta("player_id", str(id))
+			bouton.add_child(info)
 		var marque := (str(id) == str(retenu)) if retenu != null else bool(option.get("actuel", false))
 		if marque: _marquer_option(bouton)
 		if option == staff: focus = bouton
@@ -3180,14 +3227,15 @@ func _poser_arret_commandes() -> void:
 		bouton.disabled = bloque
 		bouton.tooltip_text = "Après le choix du staff." if bloque else ("Composition, banc, cris de la touche et consignes (le match se met en pause) · T" if bouton == equipe else "Vitesse de l’horloge entre deux temps forts et temps forts montrés.")
 
-## Ligne d'option du panneau d'arrêt : texte ivoire à gauche, à plat ; survol et focus en filet ivoire.
+## Ligne d'option du panneau d'arrêt : texte ivoire à gauche, à plat ; jamais de cadre complet (charte §3) :
+## survol et focus en filet gauche fin, l'option retenue en filet gauche épais et coche.
 func _style_option(bouton: Button, retenue: bool) -> void:
 	for etat_bouton in ["normal", "hover", "pressed", "focus", "disabled"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = SURVOL if retenue or etat_bouton in ["hover", "pressed"] else Color(0, 0, 0, 0)
 		style.border_color = IVOIRE
-		style.set_border_width_all(1 if retenue or etat_bouton == "focus" else 0)
-		if retenue: style.border_width_left = maxi(2, px(5))
+		style.set_border_width_all(0)
+		style.border_width_left = maxi(2, px(5)) if retenue else (maxi(1, px(2)) if etat_bouton in ["focus", "hover"] else 0)
 		style.set_corner_radius_all(0)
 		style.content_margin_left = px(16)
 		style.content_margin_right = px(16)
@@ -3228,6 +3276,7 @@ static func _phrase_choix(nom: String, entrant: bool) -> String:
 func _marquer_option(bouton: Button) -> void:
 	bouton.set_meta("retenue", true)
 	_style_option(bouton, true)
+	_cocher(bouton, true)
 ## L'écran n'a pas de référence au jeu : ses signaux sont branchés par la régie
 ## (match_temps_forts.gd), qui ne relaie pas ce choix. On remonte donc les parents jusqu'au
 ## premier nœud qui porte l'application (`app` avec `_command`, la vue du match), ou jusqu'à
