@@ -20,7 +20,7 @@ function coverageWorkerAudit(t,version){
  // Stub the service where it enters the isolated VM, including calls generated
  // inside worldVm.bootstrap(). Removing worker call sites alone misses start().
  const source=fs.readFileSync(workerFile,'utf8'),depth='const nativeProfessionalDepth=(${professionalDepth.toString()})();';
- const positions='nativePositionAptitudes.installHooks();',vmEntry='const run=source=>';
+ const positions='nativePositionAptitudes.installHooks();',vmEntry='const run=(source,filename)=>'; // signature depuis #719 (noms de fichier dans les piles)
  assert.equal(source.split(depth).length,2,'The isolated coverage fixture must replace exactly one depth service');
  assert.equal(source.split(positions).length,2,'The historical fixture must omit exactly one new position hook installation');
  assert.equal(source.split(vmEntry).length,2,'The fixture probe must enter exactly one worker VM');
@@ -42,7 +42,12 @@ function coverageWorkerAudit(t,version){
   return bridge;
  }}:normal(id);
  m._compile(fs.readFileSync(filename,'utf8'),filename);
- return {run(options){return {...m.exports.run(options),coverageFixture:beforeClose};}};
+ // L'audit (reconcile, relecture de facturation) décrit l'ancienne économie : depuis #699 (14/11/2026),
+ // le budget de saison réaliste est actif par défaut et ses flux IA n'y sont pas modélisés. Ces fixtures
+ // historiques fixent donc l'ancienne économie (CD_SALAIRES_PAR_NIVEAU=0), comme tests/world-finance-ko.cjs.
+ return {run(options){const before=process.env.CD_SALAIRES_PAR_NIVEAU;process.env.CD_SALAIRES_PAR_NIVEAU='0';
+  try{return {...m.exports.run(options),coverageFixture:beforeClose};}
+  finally{if(before===undefined)delete process.env.CD_SALAIRES_PAR_NIVEAU;else process.env.CD_SALAIRES_PAR_NIVEAU=before;}}};
 }
 function verifyCoverageFixture(report,version){
  const {fillCalls,rosters}=report.coverageFixture;
