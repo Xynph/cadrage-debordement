@@ -59,12 +59,12 @@ Sources : `staff_view.gd`, `staff_career_view.gd`, `club_canvas.gd` (`_staff_det
 | Visage et nom des 4 responsables (gauche) | fiche du membre | OK |
 | Lignes du diagnostic, « Travail du club → » | Travail du club | OK |
 | Contrats et engagements : en poste, fins de contrat / candidats / mentorat / budget | tableau (équipe) / tableau (candidats) / sous-page Mentorat / sous-page Engagements | OK |
-| « Recruter un membre » (ivoire plein) | tableau des candidats | OK |
+| « Recruter un membre → » (pilule secondaire) | tableau des candidats | OK |
 | « Prolonger → », « Recruter → » | sous-page « Contrat du staff » | OK |
 | « ✕ Libérer », « ✕ Retraite », « Rémunérer → », « Activer les contrats rémunérés → » | confirmation EN PLACE (coût écrit), Annuler n'envoie rien | OK |
 | « Mentorat des jeunes · … → », « Budget du staff · … → » | sous-pages Mentorat / Engagements | OK |
 | Cases des délégations, « Demander une sélection → », « Recrutement → » | réglage / commande / écran Recrutement | OK |
-| Fiche : « Prolonger <nom> » (ivoire), « ✕ Libérer <nom> », « ← Retour à l'annuaire » | sous-page contrat / confirmation en place / tableau | OK |
+| Fiche : « Prolonger <nom> » (pilule vert franc), « ✕ Libérer <nom> » (doré), « ← Retour à l'annuaire » | sous-page contrat / confirmation en place / tableau | OK |
 | En-têtes de colonnes, compteur, note de bas de tableau | texte gris en petites capitales, sans flèche | non cliquables, n'en ont pas l'air |
 
 ### B. Petites fenêtres (Staff)
@@ -76,3 +76,5 @@ Aucune ouverte par un clic. Restent les menus déroulants (club, équipe/candida
 BLOQUANT : aucun.
 À CORRIGER (corrigé dans ce tour) : titres de la colonne gauche coupés (« Diagnostic de la sem… ») ; colonne Contrat et lignes des responsables tronquées ou serrées à 1280 ; texte du diagnostic qui chevauchait « Travail du club → » à 1280 ; placeholder de recherche coupé.
 AVIS : pas de « poste vacant » (le moteur ne le publie pas) ; pas de note /20 ni « effet mesuré » de la maquette 3 (données absentes : le niveau du moteur est affiché) ; la phrase d'information des carrières du staff finit en « … » à 1280 ; tri par colonne non repris (la maquette l'esquisse, le tableau suit l'ordre du moteur).
+
+Charte finale (reprise du 20/11/2026, soir) : ardoise, panneaux 18 sans bordure, pilules, lignes 26 px sans bandes, liens gris-vert, aucun aplat doré dans l'onglet ; captures `club-staff-1920x1080.png`, `club-staff-1280x720.png`, `club-staff-fiche-1920x1080.png`. Écart hors Staff : les onglets du haut et les liens crème de la colonne gauche (« Travail du club → ») suivent encore l'habillage commun du Club, pas encore repris.

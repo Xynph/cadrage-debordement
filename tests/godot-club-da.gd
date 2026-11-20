@@ -115,20 +115,26 @@ func staff_tab() -> void:
 	var pleins := 0
 	for control in page.find_children("*", "Control", true, false):
 		if control is Label and str(control.text).strip_edges() in ["09", "10"]: numeros += 1
-		if control is Button and control.find_child("FondIvoire", false, false) != null and control.is_visible_in_tree(): pleins += 1
-		# Champs de saisie et menus déroulants gardent leur filet de champ (charte §7) : ce ne sont pas des cadres de bloc.
-		if control is OptionButton or control is LineEdit: continue
 		# Nœuds internes du moteur (focus d'un défilement, liste d'un menu déroulant fermé) : hors de la page.
 		if str(control.name).begins_with("_") or (control as Control).get_window() != page.get_window(): continue
-		for etat in ["panel", "normal"]:
+		# Charte finale : un seul aplat doré par écran, Continuer (dans la coque) ; aucun dans l'onglet.
+		if control is Button and (control as Control).has_theme_stylebox_override("normal"):
+			var fond := (control as Control).get_theme_stylebox("normal") as StyleBoxFlat
+			if fond != null and fond.bg_color.a > .5 and (close(fond.bg_color, Charte.OR) or close(fond.bg_color, Charte.OR_VIF)): pleins += 1
+		# Panneaux sans bordure (boutons secondaires et champs gardent leur contour fin, permis par la charte).
+		if not (control is Panel or control is PanelContainer): continue
+		for etat in ["panel"]:
 			if not (control as Control).has_theme_stylebox_override(etat): continue
 			var boite := (control as Control).get_theme_stylebox(etat) as StyleBoxFlat
 			if boite != null and boite.border_width_left > 0 and boite.border_width_top > 0 and boite.border_width_right > 0 and boite.border_width_bottom > 0 and boite.border_color.a > .05:
 				cadres += 1
 				printerr("CADRE sur ", control.get_path())
 	check(numeros == 0, "Staff : plus de numéros de chapitre (%d)" % numeros)
-	check(cadres == 0, "Staff : aucun cadre complet (%d)" % cadres)
-	check(pleins <= 1, "Staff : au plus un bouton ivoire plein (%d)" % pleins)
+	check(cadres == 0, "Staff : panneaux sans bordure (%d)" % cadres)
+	check(pleins == 0, "Staff : aucun aplat doré dans l'onglet, Continuer reste seul (%d)" % pleins)
+	for id in ["ClubStaffPeople", "ClubStaffTable"]:
+		var style := node(id).get_theme_stylebox("panel") as StyleBoxFlat if node(id) != null else null
+		check(style != null and style.corner_radius_top_left >= 12, "Staff : panneau %s arrondi" % id)
 	check(windows().is_empty(), "Staff : aucune fenêtre")
 	shot("club-staff-1920x1080")
 	# Nom dans le tableau, ligne du tableau, nom à gauche : la fiche du membre, puis retour à l'annuaire.
@@ -258,6 +264,9 @@ func tabs() -> void:
 		check(windows().is_empty(), "Onglet " + cle + " : aucune fenêtre")
 		var dores := 0
 		for control in node("ImmersiveClub").find_children("*", "Control", true, false):
+			# Staff (charte finale) : le doré est permis pour le focus et l'attention écrite (« ✕ Libérer », « ! ») ;
+			# seul un aplat doré est interdit (vérifié par staff_tab). Les autres onglets gardent l'ancienne règle.
+			if cle == "staff": continue
 			if gold_on(control as Control): dores += 1
 		check(dores == 0, "Onglet " + cle + " : aucune couleur or (%d)" % dores)
 	await overview()

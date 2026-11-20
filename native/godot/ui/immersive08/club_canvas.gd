@@ -22,6 +22,7 @@ const Strategy = preload("res://ui/strategy_view.gd")
 const Pages = preload("res://ui/immersive08/club_pages.gd")
 const Habillage = preload("res://ui/immersive08/recruitment_pages.gd")
 const Etat = preload("res://ui/management_state.gd")
+const StaffTable = preload("res://ui/staff_career_view.gd")
 const KEY = "immersive08_club_tab"
 const GOALS = {"wins":"Victoires", "points":"Points", "rank":"Place au classement", "cash":"Trésorerie"}
 const GOAL_STATUS = {"pending":"À suivre", "met":"Atteint", "missed":"Manqué", "unverified":"Non vérifié"}
@@ -117,7 +118,8 @@ static func build(app: Control, canvas: Control) -> void:
 	hote.mouse_filter = Control.MOUSE_FILTER_PASS
 	canvas.add_child(hote)
 	D.place(hote, Rect2(0, TOP + 8, W - 40, 10))
-	Kit.angles_droits(canvas)
+	# Charte finale : l'onglet Staff garde ses arrondis (panneaux 18, pilules, lignes 6) ; les autres onglets, pas encore repris, gardent leurs angles droits.
+	if app.route != "Staff": Kit.angles_droits(canvas)
 
 ## Bandeau du club : onglet Infrastructures -> le stade du club à sa taille (banque d'images, d'après la capacité),
 ## sinon la vue habituelle.
@@ -758,7 +760,7 @@ static func _staff(card: Control, app: Control) -> void:
 	for i in mini(montres, people.size()):
 		var person: Dictionary = people[i]
 		var y := 70.0 + i * 68.0
-		if i % 2 == 1: D.rect(card, Rect2(12, y, largeur - 24, 66), Charte.PANNEAU_2, 0)
+		if i > 0: D.line(card, Vector2(12, y), Vector2(largeur - 12, y), Charte.FILET)
 		var visage := person.duplicate(true)
 		visage.portraitRole = "staff"
 		var portrait := G.portrait_lazy(0, C.px(52), visage)
@@ -799,7 +801,7 @@ static func _staff_diagnostic(card: Control, app: Control) -> void:
 			var y := 70.0 + i * 34.0
 			var ligne := Button.new()
 			ligne.name = "ClubStaffDiagnosticRow%d" % i
-			Kit.styler_ligne(ligne, Charte.PANNEAU_2 if i % 2 == 1 else Color.TRANSPARENT)
+			StaffTable.styler_rangee(ligne)
 			ligne.accessibility_name = "%s · %s · travail du club" % [rows[i][0], rows[i][1]]
 			ligne.pressed.connect(func(): app._navigate("Travail du club"))
 			card.add_child(ligne)
@@ -839,13 +841,13 @@ static func _staff_contrats(card: Control, app: Control) -> void:
 		var donnees: Dictionary = lignes[i]
 		var ligne := Button.new()
 		ligne.name = str(donnees.id)
-		Kit.styler_ligne(ligne, Charte.PANNEAU_2 if i % 2 == 1 else Color.TRANSPARENT)
+		StaffTable.styler_rangee(ligne)
 		ligne.accessibility_name = "%s · %s" % [donnees.texte, donnees.valeur]
 		ligne.pressed.connect(donnees.action)
 		card.add_child(ligne)
 		D.place(ligne, Rect2(12, 70.0 + i * 34.0, largeur - 24, 34))
-		Kit.texte(ligne, 12, 23, str(donnees.texte), Charte.IVOIRE, 370, 18)
-		var valeur := Kit.texte(ligne, largeur - 36, 23, str(donnees.valeur) + " →", Charte.IVOIRE, 120, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+		Kit.texte(ligne, 12, 23, str(donnees.texte), Charte.IVOIRE, 330, 18)
+		var valeur := Kit.texte(ligne, largeur - 36, 23, str(donnees.valeur) + " →", Charte.IVOIRE, 160, 18, HORIZONTAL_ALIGNMENT_RIGHT)
 		valeur.add_theme_font_override("font", Kit.texte_gras())
 
 static func _staff_detail(app: Control, canvas: Control) -> void:
@@ -855,6 +857,7 @@ static func _staff_detail(app: Control, canvas: Control) -> void:
 	for bloc: Array in blocs:
 		var panneau := _panneau(canvas, Rect2(0, float(bloc[0]), gauche, float(bloc[1])), str(bloc[2]), str(bloc[3]))
 		# Titre sur toute la largeur de la colonne (jamais coupé en « … »).
+		panneau.add_theme_stylebox_override("panel", Charte.style_panneau())
 		var titre := panneau.get_node_or_null("CardTitle") as Label
 		if titre != null: titre.size.x = (gauche - 48.0) * C.density
 		panneaux.append(panneau)
@@ -863,6 +866,7 @@ static func _staff_detail(app: Control, canvas: Control) -> void:
 	_staff_contrats(panneaux[2], app)
 	var droite := gauche + 22.0
 	var fond := D.rect(canvas, Rect2(droite, 214, W - droite, 1030), Charte.PANNEAU, 0)
+	fond.add_theme_stylebox_override("panel", Charte.style_panneau())
 	fond.name = "ClubStaffTable"
 	var detail: Control = app.StaffViews.build(app) if app.route == "Staff" else app.SupportViews.build(app)
 	var tabs: TabContainer = detail.find_child("SupportTabs", true, false)

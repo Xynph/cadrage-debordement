@@ -13,9 +13,9 @@ const Charte = preload("res://ui/charte.gd")
 const PAGE_SIZE := 20
 ## Colonnes du tableau (unités du gabarit) : libellé, largeur, aligné à droite.
 const COLONNES := [["Rôle", 330.0, false], ["Nom", 310.0, false], ["Âge", 64.0, true], ["Niveau", 84.0, true], ["Contrat", 200.0, true], ["€ / sem.", 130.0, true]]
-## Ligne de tableau : 32 unités ≈ 27 px à 1920 (densité FM, 24-28 px).
-const LIGNE := 32.0
-const RAYON_LIGNE := 6
+## Ligne de tableau : 35 unités ≈ 26 px à 1920 (densité FM, choix de Léo du 20/11/2026).
+const LIGNE := 35.0
+const RAYON_LIGNE := Charte.RAYON_PETIT
 
 # --- Éléments de la charte posés dans des conteneurs (composants propres au Staff) ---------------------------------------
 
