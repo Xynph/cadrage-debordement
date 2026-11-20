@@ -277,3 +277,17 @@ L'écran lit seulement. Événements : promouvoir, garder, libérer, préparer u
 **Critères supplémentaires**
 - [ ] L'écran Formation s'affiche en moins de 500 ms avec 60 jeunes.
 - [ ] Rendu correct à 1280×720, 1920×1080 et 2560×1440.
+
+---
+
+## 14. Choix de Léo, intégration DA (20/11/2026)
+
+**Variante 1 · Tableau et fiche du jeune**, maquette validée « parfait » (`19-formation-retouche`), avec la règle fiche joueur : clic sur un nom = fiche complète, survol (ou « i ») = mini-fiche ; plus aucune fiche fixe à droite. Emprunt de la variante 3 : les **raisons écrites** de la file « À décider » (une carte par jeune, phrase tirée de ses vraies données : contrat qui s'achève, pépite, blessure, progression nulle).
+
+**Écran** : titre + 4 compteurs cliquables (Espoirs, Pépites, À décider, Places pro libres) ; onglets Effectif · Progression · Passerelles · Encadrement ; puces Tous / À décider / Pépites / Blessés, recherche, menus Groupe (U21, U18, tous, jeunes professionnels), Poste, Tri (« À décider d'abord » par défaut) ; tableau (lignes de 24 px à 1920) aux niveaux et potentiels au barème coloré, fourchettes selon la connaissance, drapeau, statut écrit (puce + mot) ; bande « Décision pour … » (Promouvoir en ivoire plein, conditions du premier contrat, offres de 1 à 3 saisons si les parcours sont actifs) ; file « À décider avant la fin de saison ».
+
+**Décisions** : Promouvoir ouvre une confirmation EN PLACE (jamais une fenêtre). Garder / Libérer n'existent qu'à la revue d'effectif de la nouvelle génération (sous-page « Nouvelle génération du centre », lien dans la bande de décision quand elle est à examiner ; « Libérer et valider » = confirmation en place, irréversible dit). Aucune date de contrat inventée : « fin de saison » ; « — » si la donnée manque.
+
+**Sous-pages** (coque gardée, « ← Retour à la formation », Échap, Précédent / Suivant) : Suivi des jeunes (objectifs et gains observés), Nouvelle génération du centre, Prêt d'un jeune professionnel. Leurs confirmations sont en place. Plus de fenêtre « Progression » ni de fenêtre d'intégration ; « Pourquoi la mise à jour attend » s'affiche dans la page.
+
+**Critères ajoutés** : chaque ligne, carte, compteur et nom ouvre une fiche, un filtre ou un écran ; aucune Window ouverte par un clic de l'écran ; aucun or hors Continuer.

@@ -1374,7 +1374,7 @@ func match_flow() -> void:
 	await command("tick",{"steps":12})
 	await command("pause",{"paused":true})
 	match_ui = app.match_screen
-	check(app.model.live.paused and match_ui.play.text=="REPRENDRE" and not match_ui.clock.text.strip_edges().is_empty() and match_ui.clock.text!="TERMINÉ","Le direct reflète la vraie pause · "+str(match_ui.play.text)+" · "+str(match_ui.clock.text))
+	check(app.model.live.paused and match_ui.play.text=="Reprendre" and not match_ui.clock.text.strip_edges().is_empty() and match_ui.clock.text!="TERMINÉ","Le direct reflète la vraie pause · "+str(match_ui.play.text)+" · "+str(match_ui.clock.text))
 	await capture("28-match-direct-2560x1440")
 	var journal_tab: Button
 	for button: Button in match_ui.find_children("*","Button",true,false):
