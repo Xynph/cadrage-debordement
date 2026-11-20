@@ -226,7 +226,7 @@ function aiRosterMeritPromotions(c){
   const weakest=peers.length?Math.min(...peers):0;
   const crack=p.age>=19&&(p.dev?.potential??0)>=88;
   if(!(p.rating>=weakest-2||crack))continue;
-  if(aiRosterPayroll(c)+p.salary>aiRosterWageLimit(c))continue;
+  if(!aiRosterFitWage(c,p,false))continue;
   a.players=a.players.filter(x=>x.id!==p.id);
   p.academy=false;p.contractEnd=S.season+2;p.joinedSeason=S.season;p.joinedRound=S.round;
   c.players.push(p);aiRosterEvent(c.id,'promote',p);count++;
