@@ -302,7 +302,8 @@ func _needs() -> void:
 		var nom := D.text(carte, 44, 70, role, 34, Charte.IVOIRE, 800, 340)
 		nom.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 		var raisons: Array = need.get("reasons", [])
-		Kit.texte(carte, largeur - 20, 34, _pluriel(str(raisons[0])) if not raisons.is_empty() else "Couverture du poste à examiner", Charte.IVOIRE, 420, 17, HORIZONTAL_ALIGNMENT_RIGHT)
+		var raison := _raison_au_poste(str(raisons[0]), role) if not raisons.is_empty() else "Couverture du poste à examiner"
+		if not raison.is_empty(): Kit.texte(carte, largeur - 20, 34, raison, Charte.IVOIRE, 420, 17, HORIZONTAL_ALIGNMENT_RIGHT)
 		if stock > 0:
 			var piste := "%s · %s" % [P.plural(stock, "piste", "pistes"), P.plural(suivies, "suivie", "suivies")]
 			Kit.texte(carte, largeur - 20, 70, piste, Charte.IVOIRE_2, 420, 17, HORIZONTAL_ALIGNMENT_RIGHT).name = "MarketPriorityStock" if i == 0 else "MarketNeedStock_" + str(i)
@@ -1040,8 +1041,8 @@ func _report_page(report: Dictionary) -> void:
 	app.navigation_controller.open_entity({"kind":"report", "id":str(report.get("id", ""))})
 
 func _compare() -> void:
-	# Le comparateur est un écran à part (agent de l'Effectif) : appel inchangé.
-	load("res://ui/immersive08/recruitment_comparison.gd").open(app, str(_selected.get("id", "")), report_by_player)
+	# Le comparateur est l'écran « Comparateur » (agent de l'Effectif).
+	load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app, str(_selected.get("id", "")))
 
 func _market_player(player_id: String) -> Dictionary:
 	for person: Dictionary in app.model.get("market", []):

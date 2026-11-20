@@ -235,13 +235,8 @@ static func _barre(page: Control, app: Control, player: Dictionary, source: Stri
 		_lien(page,Rect2(2248-largeur_note,4,largeur_note,38),note,func():Notes.open(app,str(player.id)),"OpenPlayerCoachNote")
 		var comparer := "Comparer →"
 		var largeur_comparer := _largeur(comparer,21)
-		_lien(page,Rect2(2248-largeur_note-28-largeur_comparer,4,largeur_comparer,38),comparer,func():
-			# Le premier joueur est mémorisé ; si un autre est déjà en mémoire, il devient A et cette fiche B.
-			var memo:Array=app.management_ui.compare
-			if str(player.id) not in memo:
-				if memo.size()==1:memo.append(str(player.id))
-				else:memo.assign([str(player.id)])
-			app.SquadViews.comparison(app),"FullPlayerCompare")
+		# Comparateur pleine page : cette fiche rejoint la mémoire (trois joueurs au plus) puis l'écran s'ouvre.
+		_lien(page,Rect2(2248-largeur_note-28-largeur_comparer,4,largeur_comparer,38),comparer,func(): load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app,str(player.id)),"FullPlayerCompare")
 
 ## Joueur voisin de la liste d'origine (Maj+← / Maj+→) : même historique que tout lien joueur.
 static func _ouvrir(app: Control, id: String, source: String) -> void:

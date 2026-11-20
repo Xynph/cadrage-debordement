@@ -28,6 +28,8 @@ const Centre = preload("res://ui/immersive08/centre_canvas.gd")
 const Press = preload("res://ui/immersive08/press_canvas.gd")
 const Rivalry = preload("res://ui/immersive08/rivalry_canvas.gd")
 const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
+const Comparateur = preload("res://ui/immersive08/comparateur_canvas.gd")
+const EuropePage = preload("res://ui/immersive08/europe_canvas.gd")
 const Locker = preload("res://ui/immersive08/locker_canvas.gd")
 const Career = preload("res://ui/immersive08/career_canvas.gd")
 const Selections = preload("res://ui/international_view.gd")
@@ -71,6 +73,12 @@ const COMPACT_ART = {
 	"Travail du club":"analysis-room", "Stratégie":"club-forest", "Presse":"press-room",
 	"Rivalités":"trophy", "Vestiaire":"lockerroom", "Carrière":"entry-ground",
 }
+
+## L'avant-match (route Match, aucun direct en cours, fenêtre assez grande pour l'écran riche) se joue hors coque.
+static func avant_match_hors_coque(app: Control) -> bool:
+	if app.route != "Match" or not app.model.get("club") is Dictionary or not app._live().is_empty(): return false
+	var physical := app.get_window().size
+	return physical.x >= RICH_MIN_SIZE.x and physical.y >= RICH_MIN_SIZE.y
 
 static func render(app: Control) -> bool:
 	if not app.model.get("club") is Dictionary or app.route in ["Accueil", "Création", "Packs"]: return false
@@ -125,15 +133,22 @@ static func render(app: Control) -> bool:
 	var shell := C.h(0)
 	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layout.add_child(shell)
-	_sidebar(shell, app)
+	# Avant-match : écran hors coque (charte §7) ; ni rail ni barre haute, l'écran porte son propre bandeau.
+	var hors_coque := avant_match_hors_coque(app)
+	app.set_meta("hors_coque", hors_coque)
+	# Sans bouton Continuer, l'ancien (libéré avec la coque précédente) ne doit plus être pointé.
+	if hors_coque: app.primary_button = null
+	if not hors_coque: _sidebar(shell, app)
 	var workspace := C.v(0)
 	C.fill(workspace, true)
 	shell.add_child(workspace)
-	_topbar(workspace, app, layout)
+	if not hors_coque: _topbar(workspace, app, layout)
 	Raccourcis.installer(app)
 	var inset := C.margin(32)
 	app.workspace_inset = inset
 	inset.add_theme_constant_override("margin_top", C.px(22))
+	if hors_coque:
+		for edge in ["left", "top", "right", "bottom"]: inset.add_theme_constant_override("margin_" + edge, 0)
 	inset.item_rect_changed.connect(app._layout_coach)
 	# Les gabarits des écrans sont dessinés pour une zone de travail de 2312 de large (rail de 248) ; le rail de la
 	# coque commune en fait 309 : la zone de contenu garde ses gabarits et se met à l'échelle de la place restante
@@ -152,14 +167,14 @@ static func render(app: Control) -> bool:
 	var canvas_script := _dedicated_page(app,physical)
 	var immersive_match: bool = app.route=="Match" and physical.x>=RICH_MIN_SIZE.x and physical.y>=RICH_MIN_SIZE.y
 	var monthly_calendar: bool = app.route=="Calendrier" and not Selections.nation_only(app.model) and not app.get_meta("calendar_table",false)
-	if canvas_script!=null or immersive_match or monthly_calendar or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
+	if canvas_script!=null or immersive_match or monthly_calendar or app.route=="Effectif":
 		app.heading=null
 		app.minibar=C.label("",17,C.GOLD);app.minibar.visible=false;content.add_child(app.minibar)
 	else: _heading(content, app)
 	if app.route=="Bureau":
 		layout.set_meta("immersive_office_match_status",app.minibar)
 		_position_office_match_status(app.minibar,layout.scale.y)
-	_pack_warning(app,content,layout)
+	if not hors_coque: _pack_warning(app,content,layout)
 	if canvas_script==null and not immersive_match: _subnavigation(content, app)
 	app.body_scroll = ScrollContainer.new()
 	app.body_scroll.name = "CareerWorkspace"
@@ -180,7 +195,7 @@ static func render(app: Control) -> bool:
 			D.button(canvas,Rect2(1830,147,395,40),"Vue mensuelle",_calendar_table.bind(app,false),false,"calendar",true,app.accent,"CalendarShowMonth")
 	elif app.route == "Bureau": app.body.add_child(OfficeCanvas.build(app) if physical.x >= 1600 else Office.build(app))
 	else: _existing_page(app,immersive_match)
-	_footer(content, app, layout)
+	if not hors_coque: _footer(content, app, layout)
 	app._update_live_bar()
 	app.call_deferred("_refresh_coach")
 	app.call_deferred("_observe_navigation")
@@ -270,6 +285,8 @@ static func open_preparation(app: Control, tab: int) -> void:
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
 	# Fiche d'un club : gabarit à l'échelle, lisible dès 1280 × 720.
 	if app.route == ClubSheet.ROUTE: return ClubSheet
+	if app.route == Comparateur.ROUTE: return Comparateur
+	if app.route == EuropePage.ROUTE: return EuropePage
 	# Fiche complète d'une piste du marché ou d'un Espoir (clic sur le nom), à toutes les tailles.
 	if not FichePage.actuelle(app).is_empty(): return FichePage
 	# Composition (choix de Léo du 19/11/2026, variante 1) : page dédiée à toutes les tailles, avec son propre en-tête.
@@ -315,7 +332,7 @@ const RAIL_SECTIONS := [
 ]
 const RAIL_NATION := [["Réception", "Réception", ["Réception"]], ["Sélections", "Sélections", ["Sélections"]], ["Calendrier", "Calendrier", ["Calendrier"]]]
 ## Écrans propres à la coque (aucune fenêtre) : résultats de recherche et réglages.
-const SHELL_ROUTES := ["Recherche", "Réglages"]
+const SHELL_ROUTES := ["Recherche", "Réglages", "Comparateur", "Préparation Europe"]
 const RAIL_WIDTH := 309.0
 const RAIL_HEADER := 152.0
 const RAIL_TOP := 169.0
@@ -983,6 +1000,8 @@ static func _page_caption(app: Control) -> String:
 	# Liste du Recrutement : le fil d'Ariane dit aussi l'onglet courant (Besoins du club, Recherche, Joueurs suivis, Rapports).
 	if app.route == "Recrutement" and FichePage.actuelle(app).is_empty() and app.management_ui.get("market") is Dictionary:
 		return str(Recruitment.TABS[clampi(int(app.management_ui.market.get("immersive_tab", 0)), 0, Recruitment.TABS.size() - 1)])
+	if app.route == Comparateur.ROUTE: return Comparateur.caption(app)
+	if app.route == EuropePage.ROUTE: return "Préparer l’Europe"
 	if _is_training(app): return "Entraînement"
 	if app.route == "Recherche":
 		var query := str(app.management_ui.get("search_query", "")).strip_edges()
@@ -1248,7 +1267,7 @@ static func _sync_office_props(match_status: Label) -> void:
 
 static func _subnavigation(parent: Node, app: Control) -> void:
 	if Selections.nation_only(app.model): return
-	if app.route=="Composition" or (app.route=="Effectif" and app.get_window().size.x>=1600): return
+	if app.route=="Composition" or app.route=="Effectif": return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
 		var row := C.h(8)
@@ -1378,11 +1397,8 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 			var player:=P.player(app.model,app.selected_player)
 			if app.get_meta("immersive08_full_player",false) and not player.is_empty():app.body.add_child(PlayerCanvas.build(app,player))
 			elif SocleEffectif.actif(app):app.body.add_child(SocleEffectif.build(app))
-			elif app.get_window().size.x>=1600:app.body.add_child(SquadCanvas.build(app))
-			else:
-				var roster: Control = app.SquadViews.squad(app)
-				app.body.add_child(roster)
-				Legacy.apply(roster, app.accent)
+			# Décision de Léo (19/11/2026) : un seul tableau, à toutes les tailles (colonnes retirées en fenêtre étroite).
+			else:app.body.add_child(SquadCanvas.build(app))
 		"Préparation": app.body.add_child(Preparation.compact(app))
 		"Plan de jeu": app.body.add_child(app.PlaybookViews.build(app))
 		"Recrutement": app.body.add_child(app.SquadViews.market(app))

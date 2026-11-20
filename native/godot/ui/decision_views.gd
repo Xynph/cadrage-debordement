@@ -56,42 +56,10 @@ static func dialog(app: Control, title: String, id: String, width: int = 880) ->
 	app.add_child(d)
 	return [d, list]
 
+## Conseils détaillés du dossier adverse : sous-page de la Préparation (jamais une fenêtre).
 static func dossier(app: Control) -> void:
-	var data: Variant = app.model.get("decisions", {}).get("preparation")
-	if not data is Dictionary: return
-	var view := dialog(app, "Le dossier adverse", "OppositionDossier", 900)
-	var d: AcceptDialog = view[0]
-	var list: VBoxContainer = view[1]
-	G.photo_note(list, data.opponent, "Dossier adverse", str(data.opponent.name), "stadium", 120)
-	list.add_child(G.section(str(data.opponent.name), "Les faits et le conseil du staff"))
-	list.add_child(G.wrap(data.get("notice", ""), 13))
-	var advice: Dictionary = data.get("advice", {})
-	list.add_child(G.section("Le plan proposé"))
-	list.add_child(G.wrap(advice.get("attackReason", ""), 15, G.INK))
-	list.add_child(G.wrap(advice.get("defenceReason", ""), 15, G.INK))
-	var adopt := G.button("ADOPTER CE PLAN PRINCIPAL", func():
-		d.queue_free()
-		app._command("set_tactics", {"attack":advice.attack, "defense":advice.defence}))
-	adopt.name = "AdoptDossierPlan"
-	adopt.disabled = not app._live().is_empty()
-	list.add_child(adopt)
-	list.add_child(G.wrap("Les éventuelles consignes par zone gardent la priorité. Aucun changement automatique des 23.", 12))
-	list.add_child(G.separator())
-	list.add_child(G.section("Joueurs pressentis à surveiller"))
-	for threat: Dictionary in data.get("threats", []):
-		list.add_child(G.wrap("%s · %s · %s" % [threat.name, threat.pos, threat.role], 16, G.INK))
-	list.add_child(G.separator())
-	list.add_child(G.section("Les faits récents"))
-	var recent: Array = data.get("recent", [])
-	if recent.is_empty(): list.add_child(G.wrap("Pas encore de résultat cette saison. Le rapport repose sur l'effectif.", 14))
-	for result: Dictionary in recent:
-		var score: Array = result.get("score", [0, 0])
-		list.add_child(G.wrap("%s — %s · %s" % [G.n(score[0]), G.n(score[1]), "Journée " + G.n(int(result.get("round", 0)) + 1) if result.get("phase") == "league" else str(result.get("phase", ""))], 14))
-	for observation: Dictionary in data.get("signals", []):
-		list.add_child(G.wrap(observation.title, 17, G.GOLD))
-		list.add_child(G.wrap(observation.evidence + " " + observation.advice, 14))
-	if data.get("signals", []).is_empty(): list.add_child(G.wrap("Pas encore de signal net : il faut au moins trois matchs et dix phases de conquête observés.", 12))
-	d.popup_centered(Vector2i(900, 580))
+	if not app.model.get("decisions", {}).get("preparation") is Dictionary: return
+	load("res://ui/immersive08/preparation_canvas.gd").ouvrir_sous_page(app, "conseils")
 
 static func training(app: Control, parent: Container, show_advice: bool) -> void:
 	var data: Dictionary = app.model.get("decisions", {})

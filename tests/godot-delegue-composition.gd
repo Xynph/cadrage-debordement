@@ -187,8 +187,10 @@ func delegation() -> void:
 	check(bouton != null and bouton.is_visible_in_tree() and not bouton.disabled, "Bouton « Déléguer le match » visible avant le coup d'envoi")
 	if bouton == null or bouton.disabled: return
 	bouton.pressed.emit(); await settle(30)
-	var dialogue: Window = app.get_node_or_null("MatchDelegationDialog")
-	check(dialogue != null and dialogue.visible, "La fenêtre de délégation s'ouvre")
+	# Plus de fenêtre : la délégation est une sous-page de l'avant-match (décision de Léo du 19/11/2026).
+	check(app.get_node_or_null("MatchDelegationDialog") == null, "Aucune fenêtre de délégation")
+	var dialogue: Control = app.find_child("MatchDelegationPage", true, false)
+	check(dialogue != null and dialogue.is_visible_in_tree(), "La page de délégation s'ouvre")
 	if dialogue == null: return
 	var case_: CheckBox = dialogue.find_child("MatchDelegationComposition", true, false)
 	check(case_ != null and case_.is_visible_in_tree() and case_.text == "Confier aussi la composition au staff", "Case « Confier aussi la composition au staff » visible")
@@ -201,7 +203,7 @@ func delegation() -> void:
 	check(detail.text != cochee and detail.text.contains("telle quelle"), "Décochable : le détail explique la feuille gardée : " + detail.text)
 	case_.button_pressed = true; await settle(6)
 	check(detail.text == cochee, "Recochée : retour au détail d'origine")
-	dialogue.get_ok_button().pressed.emit()
+	(dialogue.find_child("MatchDelegationConfirm", true, false) as Button).pressed.emit()
 	# begin_match { delegated, composition } puis delegate, chaînés : le match est joué jusqu'au bout.
 	var until := Time.get_ticks_msec() + 180000
 	while Time.get_ticks_msec() < until:

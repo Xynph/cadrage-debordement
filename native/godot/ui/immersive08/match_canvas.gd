@@ -4,7 +4,6 @@ const C = preload("res://ui/immersive08/components.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const GameSkin = preload("res://ui/game_skin.gd")
 const Present = preload("res://ui/immersive08/projection.gd")
-const DelegationDialog = preload("res://ui/delegation_dialog.gd")
 const MatchAvant = preload("res://ui/immersive08/match_avant.gd")
 const ACTION_FONT_PIXELS = 12
 const ACTION_HEIGHT_PIXELS = 28
@@ -38,7 +37,7 @@ func _ready() -> void:
 	_add_badges()
 	_add_pitch_overlays()
 	opening=MatchAvant.new()
-	opening.setup(app,_act,func():DelegationDialog.ouvrir(app))
+	opening.setup(app,_act)
 	add_child(opening)
 	for button in _bottom_controls.get_children():
 		if button is Button and button.text=="ADJOINT": delegation=button; break
@@ -148,18 +147,13 @@ func update_frame(value: Dictionary) -> void:
 	# commandes) revient au coup d'envoi.
 	for part: Control in [_score_sheet,_notebook.get_parent(),_bottom_sheet,_caption]: part.visible=active
 	if not active:
-		var ready: bool = value.get("selection",{}).get("valid",false)
 		var reduced := Present.reduced_bench_number(value) != 0
 		var espoir := not Espoir.offer(value).is_empty()
-		opening.status.text="" if fixture.is_empty() else "FEUILLE VALIDÉE" if ready else "COMPOSITION À VÉRIFIER"
-		if reduced and not fixture.is_empty(): opening.status.text="FEUILLE À 22 DISPONIBLE"
-		if espoir and not fixture.is_empty(): opening.status.text="FEUILLE INCOMPLÈTE · UN ESPOIR PEUT ÊTRE APPELÉ"
-		if fixture.is_empty(): opening.status.text="SAISON TERMINÉE" if value.meta.get("canAdvanceSeason",false) else "EN ATTENTE DE RENCONTRE"
-		opening.status.add_theme_color_override("font_color",C.MINT if ready else C.AMBER)
 		opening.refresh(value,play)
+		if not is_instance_valid(opening.delegate): return
 		# Déléguer le match : mêmes conditions que le coup d'envoi (jour de match, presse réglée). Feuille à 22 :
-		# la délégation reste possible, la fenêtre demande la confirmation du match à 22.
-		opening.delegate.tooltip_text=play.tooltip_text if play.disabled else "Feuille incomplète : la fenêtre te propose d’appeler un espoir du centre ou, quand la règle le permet, de jouer à 22." if espoir else "L’adjoint joue le match à 22 joueurs (%s) : la fenêtre te demande de le confirmer." % Present.reduced_bench_vacancy(Present.reduced_bench_number(value)).trim_suffix(".").to_lower() if reduced else "L’adjoint joue le match ; tu peux lui confier aussi la composition."
+		# la délégation reste possible, la sous-page demande la confirmation du match à 22.
+		opening.delegate.tooltip_text=play.tooltip_text if play.disabled else "Feuille incomplète : la page te propose d’appeler un espoir du centre ou, quand la règle le permet, de jouer à 22." if espoir else "L’adjoint joue le match à 22 joueurs (%s) : la page te demande de le confirmer." % Present.reduced_bench_vacancy(Present.reduced_bench_number(value)).trim_suffix(".").to_lower() if reduced else "L’adjoint joue le match ; tu peux lui confier aussi la composition."
 		return
 	if finished:
 		play.text="Terminé"
@@ -196,3 +190,12 @@ func _side() -> void:
 			var style := C.box(app.accent.darkened(.48) if selected else C.PANEL,Present.safe_accent(app.accent) if selected else C.LINE,5,8)
 			if selected: style.border_width_bottom=3
 			button.add_theme_stylebox_override("normal",style)
+
+## Coup d'envoi (ou « Jouer à 22 ») : feuille incomplète = sous-page « Feuille incomplète » de l'avant-match, plus de fenêtre.
+func _act() -> void:
+	var live:Dictionary=model.live if model.get("live") is Dictionary else {}
+	if live.is_empty() and is_instance_valid(opening) and not CareerProgression.press_required(model) and CareerProgression.kickoff_allowed(model.meta):
+		if Present.reduced_bench_number(model) != 0 or not Espoir.offer(model).is_empty():
+			opening.ouvrir_page("espoir")
+			return
+	super._act()
