@@ -56,7 +56,11 @@ function factory(){
   const amount=amountFor(r),seller=s.clubs[r[0]],buyer=s.clubs[buyerId];
   if(!seller||!buyer)return 0;
   if(!paidByBuyer&&Number.isFinite(buyer.cash))buyer.cash-=amount;
-  if(Number.isFinite(seller.cash))seller.cash+=amount;
+  // Club joué : l'indemnité reçue passe par son grand livre (sinon la caisse monte sans ligne de compte).
+  if(Number.isFinite(seller.cash)){
+   if(r[0]===s.club&&s===state()&&typeof ledgerEntry==='function')ledgerEntry('Indemnité de formation : '+p.name+' (versée par '+buyer.name+')',amount);
+   else seller.cash+=amount;
+  }
   s.formationFees.payments=s.formationFees.payments.concat({season:s.season,playerId:p.id,from:buyerId,to:r[0],amount,contracted:r[2]}).slice(-HISTORY);
   // Budget de transferts (budget-transferts.cjs) : une indemnité reçue par le club joué est une vente choisie.
   if(r[0]===s.club&&s===state()&&typeof budgetTransfertsRecette==='function')budgetTransfertsRecette(amount,true);

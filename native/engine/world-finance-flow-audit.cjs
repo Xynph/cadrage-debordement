@@ -189,7 +189,9 @@ function reconcileInterseason(before, after, trace) {
       status:reconciled ? 'reconciled' : 'unknown', ...(reconciled ? {} : {note:'Untraced write, unknown engine flow or residual: no invented attribution.'})};
   });
   const ai = rows.filter(r => r.kind === 'ai'), total = fn => sum(ai.map(r => r.flows[fn].observed));
-  return {season:before.season, interseason:true, rows, accords:accords.length, formationFees:fees.length, jiff:jiff.length, upgrades:upgrades.length,
+  return {season:before.season, interseason:true, rows, accords:accords.length, formationFees:fees.length,
+    // Indemnités de formation nettes du club joué (reçues − versées) : la part des clubs gérés en est l'opposé.
+    humanFormationFees:sum(fees.map(f => (f.to === before.club ? f.amount : 0) - (f.from === before.club ? f.amount : 0))), jiff:jiff.length, upgrades:upgrades.length,
     ai:{clubs:ai.length, reconciled:ai.filter(r => r.status === 'reconciled').length, unknown:ai.filter(r => r.status === 'unknown').length,
       closingReplayed:ai.filter(r => r.closing?.replayMatchesEngine).length, loans:sum(ai.map(r => r.loan.observed)),
       flows:Object.fromEntries(Object.keys(ai[0].flows).map(fn => [fn, total(fn)])),
