@@ -6,6 +6,7 @@ const U = preload("res://ui/immersive08/club_ui.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Manager = preload("res://ui/manager_career_view.gd")
 const G = preload("res://ui/game_skin.gd")
+const Charte = preload("res://ui/charte.gd")
 const KEY = "immersive08_career_tab"
 const PLAN_KEY = "immersive08_career_plan_index"
 
@@ -34,7 +35,7 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	hero.add_child(crest)
 	D.place(crest,Rect2(26,46,124,135))
 	D.line(hero,Vector2(180,41),Vector2(180,184),C.GOLD,2)
-	U.italic(D.text(hero,211,52,"LE PARCOURS DU MANAGER",30,C.GOLD,700,470),700)
+	D.text(hero,211,52,"LE PARCOURS DU MANAGER",30,C.GOLD,700,470).add_theme_font_override("font",Charte.TITRE_FICHE)
 	D.line(hero,Vector2(597,35),Vector2(861,35),Color(C.GOLD,.65))
 	D.text(hero,206,137,"Une carrière à écrire.",82,C.IVORY,800,1248)
 	D.text(hero,211,178,G.club_name(app.model.club)+"  ·  "+P.league_name(app.model),26,C.IVORY,500,1248)

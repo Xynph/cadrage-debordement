@@ -184,7 +184,7 @@ const INCLINAISON_DEGRES := 0.0
 static func decalage(hauteur: float) -> float:
 	return hauteur * tan(deg_to_rad(INCLINAISON_DEGRES))
 
-## Polices : Barlow Condensed (titres, droits) et DM Sans (texte). Pas de troisième famille, sauf Anton (TITRE_FICHE) pour la fiche joueur.
+## Polices : Barlow Condensed (titres, droits) et DM Sans (texte). Pas de troisième famille, sauf Anton (TITRE_FICHE) pour la fiche joueur et les grands titres des écrans Carrière et Vestiaire.
 ## Les anciens noms *_ITALIQUE pointent sur les coupes droites : titres droits partout sans toucher aux écrans.
 const TITRE = preload("res://fonts/BarlowCondensed-SemiBold.ttf")
 const TITRE_GRAS = preload("res://ui/immersive08/fonts/BarlowCondensed-Bold.ttf")
@@ -192,7 +192,7 @@ const TITRE_EXTRA = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBol
 const TITRE_ITALIQUE = TITRE
 const TITRE_GRAS_ITALIQUE = TITRE_GRAS
 const TITRE_EXTRA_ITALIQUE = TITRE_EXTRA
-## Anton, titres de la fiche joueur, choix de Léo du 20/11/2026 (nom, numéro, niveau, potentiel, titres de blocs ; droite, jamais inclinée).
+## Anton, choix de Léo du 20/11/2026 (fiche joueur : nom, numéro, niveau, potentiel, titres de blocs) élargi le 21/11/2026 aux grands titres des écrans Carrière et Vestiaire ; droite, jamais inclinée.
 const TITRE_FICHE = preload("res://ui/immersive08/fonts/Anton-Regular.ttf")
 const TEXTE = preload("res://fonts/DMSans.ttf")
 static var _texte_moyen: FontVariation
