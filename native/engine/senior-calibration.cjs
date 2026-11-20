@@ -248,15 +248,22 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     const L = leagueScale(context.leagueId), R = scale.residual, A = scale.age;
     const z = deviation(player, player.rating, context);
     const known = statut !== 'inconnu';
-    const base = statut === 'titulaire' ? L.titulaire : statut === 'rotation' || !known ? L.rotation : L.reserviste;
+    const base = statut === 'titulaire' ? L.titulaire : statut === 'rotation' || !known ? L.rotation
+      : statut === 'jeune' && L.jeune !== undefined ? L.jeune : L.reserviste;
     // Statut inconnu : valeur neutre (rotation) du championnat et de l'étage ; l'écart propre au joueur se lit
     // alors dans son effectif (même poste), là où l'estimation de départ range déjà titulaires et doublures.
     // Un jeune se compare aux jeunes de son championnat (même poste) ; l'âge est compté à part, une fois.
+    // Rang réel dans le club (barème V3, levels.joueurs[id][4], 0 = le plus utilisé) : il étage les joueurs d'un
+    // même statut autour de l'ancre ; l'écart d'attributs ne garde alors qu'un faible poids.
     const young = player.age < A.seniorFrom;
-    const spread = known ? deviation(player, player.rating, context, statut) * R.known
-      : young ? z * R.unknown : (context.club?.get(player.fam)?.(player.rating) ?? z) * R.unknown;
+    const usage = levelOf(player.id)[4];
+    const ranked = known && Number.isFinite(usage) && R.usage !== undefined;
+    const spread = ranked ? (0.5 - usage) * R.usage + deviation(player, player.rating, context, statut) * (R.knownWithUsage ?? R.known)
+      : known ? deviation(player, player.rating, context, statut) * R.known
+        : young ? z * R.unknown : (context.club?.get(player.fam)?.(player.rating) ?? z) * R.unknown;
     let value = base + etageBonus(context.clubId, context.leagueId, young) + clamp(spread, -R.limit, R.limit);
-    if (young) value -= (A.seniorFrom - player.age) * A.youngPerYear * (statut === 'titulaire' ? 0.5 : 1);
+    // L'ancre « jeune » contient déjà la jeunesse : l'âge n'y retire que la moitié, comme pour un jeune titulaire.
+    if (young) value -= (A.seniorFrom - player.age) * A.youngPerYear * (statut === 'titulaire' || statut === 'jeune' && L.jeune !== undefined ? 0.5 : 1);
     // L'écart dans l'effectif d'un senior au statut inconnu contient déjà son âge.
     if (known && player.age >= A.veteranFrom) value -= (player.age - A.veteranFrom + 1) * A.veteranPerYear;
     const range = scale.classes[classe];
@@ -264,7 +271,9 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
       let international = range[0] + clamp(R.classCenter + z * R.classSpread, 0, 1) * (range[1] - range[0]);
       if (player.age < A.seniorFrom) international -= (A.seniorFrom - player.age) * R.youngInternational;
       if (player.age > A.veteranFrom) international -= player.age - A.veteranFrom;
-      value = Math.max(value, international);
+      // Un international ne dépasse pas le plafond de son championnat (barème V3) : la classe relève la note,
+      // le championnat la borne.
+      value = Math.min(Math.max(value, international), Math.max(value, scale.leagueCeiling?.[context.leagueId] ?? 99));
     } else if (!scale.potential.eliteLeagues.includes(context.leagueId)) {
       // Hors élite, un non-international reste sous le niveau des internationaux (85) malgré l'étage élargi.
       value = Math.min(value, R.outsideEliteCeiling ?? 95);
@@ -365,7 +374,9 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
       if (international) margin += P.youngInternational;
       if (P.lowerTiers.includes(context.leagueId) && !u20 && !international) margin += P.lowerTierYoung;
     } else if (age <= 25 && (classe === 'S' || classe === 'A')) margin += P.eliteYoung;
-    if (margin > 0) margin = Math.min(P.maxMargin, margin + hashText(player.id + ':potentiel-v2') % (2 * P.spread + 1) - P.spread);
+    // La variation individuelle ne joue que chez les jeunes (barème V3 : P.spreadUntil) ; un joueur de 27 ans et plus
+    // garde la marge de son âge, nulle à 30 ans.
+    if (margin > 0 && age <= (P.spreadUntil ?? 99)) margin = Math.min(P.maxMargin, margin + hashText(player.id + ':potentiel-v2') % (2 * P.spread + 1) - P.spread);
     // Hors des championnats d'élite, un potentiel de 88 et plus est réservé aux internationaux U20.
     const ceiling = P.eliteLeagues.includes(context.leagueId) || u20 ? 99 : P.outsideEliteCeiling;
     return clamp(Math.min(player.rating + Math.max(0, margin), ceiling), player.rating, 99);

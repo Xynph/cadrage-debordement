@@ -6,7 +6,8 @@
   "classe",
   "statut",
   "u20",
-  "confiance"
+  "confiance",
+  "rang dans le club (0 = le plus utilisé, facultatif)"
  ],
  "classes": [
   "S",
@@ -32,7 +33,7 @@
  "couverture": {
   "elite": {
    "joueurs": 805,
-   "statutConnu": 413,
+   "statutConnu": 415,
    "internationaux": 96
   },
   "accession": {
@@ -133,6 +134,7 @@
  "lnr:1124":["aucune","rotation",0,"basse"],
  "lnr:11240":["B","inconnu",0,"moyenne"],
  "lnr:1125":["aucune","titulaire",0,"basse"],
+ "lnr:11251":["aucune","titulaire",0,"basse"],
  "lnr:1126":["aucune","rotation",0,"basse"],
  "lnr:1127":["aucune","rotation",0,"basse"],
  "lnr:1128":["aucune","reserviste",0,"basse"],
@@ -526,7 +528,7 @@
  "lnr:2446":["aucune","titulaire",0,"basse"],
  "lnr:2448":["A","inconnu",0,"moyenne"],
  "lnr:2449":["S","rotation",0,"moyenne"],
- "lnr:2450":["S","titulaire",0,"moyenne"],
+ "lnr:2450":["S","titulaire",0,"basse"],
  "lnr:2451":["S","inconnu",0,"moyenne"],
  "lnr:2452":["aucune","rotation",0,"basse"],
  "lnr:2453":["A","inconnu",0,"moyenne"],
@@ -541,7 +543,7 @@
  "lnr:2483":["B","rotation",0,"moyenne"],
  "lnr:2484":["aucune","rotation",0,"basse"],
  "lnr:249":["aucune","titulaire",0,"basse"],
- "lnr:2492":["B","inconnu",0,"moyenne"],
+ "lnr:2492":["B","titulaire",0,"basse"],
  "lnr:2495":["C","rotation",0,"moyenne"],
  "lnr:2498":["A","inconnu",0,"moyenne"],
  "lnr:24989":["C","inconnu",0,"moyenne"],

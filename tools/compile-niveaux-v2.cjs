@@ -71,6 +71,10 @@ function classe(row, age) {
   else if (t === 12) rank = uncapped ? 3 : experience !== null && experience >= 30 ? 2 : 3;
   else rank = 3;
   if (STAR.test(dist) && t <= 8) rank = Math.max(0, rank - 1);
+  // Collecte v3 : plus sélectionné depuis deux ans (dernière sélection avant novembre 2024, aucune sur 24 mois) :
+  // ancien international, un cran en dessous.
+  const last = /^(\d{4})-(\d{2})/.exec(row.derniere_selection || '');
+  if (caps24 === 0 || last && Number(last[1]) * 12 + Number(last[2]) < 2024 * 12 + 11) rank = Math.min(3, rank + 1);
   // Ancien international de 33 ans et plus : un cran en dessous (déclin), jamais sous C.
   if (Number.isFinite(age) && age >= 33) rank = Math.min(3, rank + 1);
   return ['S', 'A', 'B', 'C'][rank];
@@ -121,6 +125,43 @@ function publicRegistry() {
   return new Map(full.clubs.flatMap(c => c.players.map(p => [p.id, { age: p.age, club_id: c.id }])));
 }
 
+// Collecte v3 (20/11/2026, dossier <niveaux>/collecte-v3, facultatif) : statuts en club avec compteurs
+// (statut-*.csv), internationaux par sélection (internationaux.csv) et sélections U20 (u20.csv). Une valeur
+// trouvée remplace celle de la collecte du 14/11 ; une valeur vide ou « inconnu » ne l'efface pas.
+function collecteV3(niveauxDir, sources) {
+  const dir = path.join(niveauxDir, 'collecte-v3');
+  const statut = new Map(), intl = new Map(), u20 = new Map();
+  if (!fs.existsSync(dir)) return { statut, intl, u20 };
+  const read = name => { const file = path.join(dir, name); sources['niveaux/collecte-v3/' + name] = file; return csv(fs.readFileSync(file, 'utf8')); };
+  for (const name of fs.readdirSync(dir).filter(f => /^statut-.*\.csv$/.test(f)).sort()) {
+    for (const r of read(name)) {
+      const s = fold(r.statut_club).replace(/ /g, '');
+      if (!r.id || (!STATUTS.includes(s) && s !== 'blesselong') || s === 'inconnu') continue;
+      statut.set(r.id, { statut: s === 'blesselong' ? 'rotation' : s, starts: int(r.titularisations), matches: int(r.matchs), minutes: int(r.minutes), confiance: r.confiance });
+    }
+  }
+  if (fs.existsSync(path.join(dir, 'internationaux.csv'))) for (const r of read('internationaux.csv')) if (r.id && r.intl_nation) intl.set(r.id, r);
+  if (fs.existsSync(path.join(dir, 'u20.csv'))) for (const r of read('u20.csv')) if (r.id && r.u20_nation) u20.set(r.id, r);
+  return { statut, intl, u20 };
+}
+
+// Rang de chaque joueur dans son club (0 = le plus utilisé, 1 = le moins utilisé) aux titularisations, puis aux
+// matchs et aux minutes, parmi les joueurs dont la collecte donne des compteurs (au moins 8 par club).
+function usageRanks(v3, info) {
+  const byClub = new Map(), usage = new Map();
+  for (const [id, s] of v3.statut) {
+    if (!info.has(id) || [s.starts, s.matches, s.minutes].every(v => v === null)) continue;
+    const club = info.get(id).club;
+    (byClub.get(club) || byClub.set(club, []).get(club)).push([id, s.starts ?? 0, s.matches ?? 0, s.minutes ?? 0]);
+  }
+  for (const list of byClub.values()) {
+    if (list.length < 8) continue;
+    list.sort((a, b) => b[1] - a[1] || b[2] - a[2] || b[3] - a[3] || (a[0] < b[0] ? -1 : 1));
+    list.forEach(([id], i) => usage.set(id, Math.round(100 * i / (list.length - 1)) / 100));
+  }
+  return usage;
+}
+
 function compile(prive, niveauxDir) {
   const players = {}, clubs = {}, coverage = {}, ordre = {};
   const registry = publicRegistry();
@@ -130,6 +171,8 @@ function compile(prive, niveauxDir) {
     const file = path.join(prive, 'data/scouting/review-v12', f);
     if (fs.existsSync(file)) sources['data/scouting/review-v12/' + f] = file;
   }
+  const v3 = collecteV3(niveauxDir, sources);
+  const usage = usageRanks(v3, new Map([...registry].map(([id, r]) => [id, { club: r.club_id }])));
   for (const league of LEAGUES) {
     const files = ['niveaux', 'clubs'].map(k => path.join(niveauxDir, `${k}-${league}.csv`));
     if (!files.every(f => fs.existsSync(f))) throw Error('Collecte incomplète pour ' + league + ' dans ' + niveauxDir);
@@ -160,9 +203,14 @@ function compile(prive, niveauxDir) {
       for (const list of byClub.values()) list.sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).forEach(([id], i) => rankInClub.set(id, i + 1));
     }
     const count = { joueurs: 0, statutConnu: 0, internationaux: 0 };
-    for (const row of rows) {
-      if (!row.id || !info.has(row.id)) continue;
-      const { age } = info.get(row.id);
+    for (const source of rows) {
+      if (!source.id || !info.has(source.id)) continue;
+      const { age } = info.get(source.id);
+      // Collecte v3 : statut, sélections et U20 trouvés remplacent ceux du 14/11.
+      const row = { ...source }, found = v3.statut.get(row.id), cap = v3.intl.get(row.id), junior = v3.u20.get(row.id);
+      if (found) { row.statut_club = found.statut; if (found.confiance) row.confiance = found.confiance; }
+      if (cap) for (const k of ['intl_nation', 'intl_caps_total', 'intl_caps_24m', 'derniere_selection', 'distinctions']) if (cap[k]) row[k] = cap[k];
+      if (junior && Number.isFinite(age) && age <= 23) row.u20 = 'oui';
       let statut = fold(row.statut_club).replace(/ /g, '');
       if (statut === 'reservist') statut = 'reserviste';
       if (!STATUTS.includes(statut)) statut = 'inconnu';
@@ -181,7 +229,8 @@ function compile(prive, niveauxDir) {
       if (statut !== 'inconnu') count.statutConnu++;
       if (c !== 'aucune') count.internationaux++;
       if (c === 'aucune' && statut === 'inconnu' && !u20) continue; // rien de connu : absent de la table
-      players[row.id] = [c, statut, u20, confiance];
+      // 5e champ (barème V3) : rang dans le club aux titularisations, quand la collecte donne des compteurs.
+      players[row.id] = usage.has(row.id) && statut !== 'inconnu' ? [c, statut, u20, confiance, usage.get(row.id)] : [c, statut, u20, confiance];
     }
     coverage[league] = count;
   }
@@ -190,7 +239,7 @@ function compile(prive, niveauxDir) {
     schema: 'niveaux-v2',
     version: 1,
     note: 'Niveau réel compilé (identifiants seulement) pour le barème senior V2 des nouvelles carrières Monde. Joueur absent : classe aucune, statut inconnu, U20 0, confiance basse.',
-    champs: ['classe', 'statut', 'u20', 'confiance'],
+    champs: ['classe', 'statut', 'u20', 'confiance', 'rang dans le club (0 = le plus utilisé, facultatif)'],
     classes: ['S', 'A', 'B', 'C', 'aucune'],
     statuts: STATUTS,
     etages: ETAGES,
