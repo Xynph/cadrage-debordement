@@ -337,7 +337,7 @@ func _filters(group: String) -> void:
 		add_child(bouton)
 		D.place(bouton, Rect2(x, 204, largeur, 38))
 		x += largeur + 8
-	# Menus déroulants à droite : tri, poste, groupe.
+	# Groupe (maquette : U21 / U18 / Tous en puces, pas en liste) puis menus déroulants à droite : poste, tri.
 	var positions := {"": "Tous"}
 	for p: Dictionary in (professionals if group == "professional" else roster):
 		var poste := str(p.get("pos", ""))
@@ -347,8 +347,41 @@ func _filters(group: String) -> void:
 	_picker(Rect2(droite, 204, 360, 38), "AcademyImmersiveSort", "Tri", TRIS, str(state.get("table_sort", "decide")), func(value): _sort_choice(str(value)))
 	droite -= 292
 	_picker(Rect2(droite, 204, 280, 38), "AcademyImmersivePosition", "Poste", positions, state.get("position", ""), func(value): _set_filter("position", value))
-	droite -= 392
-	_picker(Rect2(droite, 204, 380, 38), "AcademyImmersiveGroup", "Groupe", GROUPES, group, func(value): _set_filter("group", value))
+	var puces_groupe: Array = []
+	for cle: String in ["professional", "academy", "u18", "u21"]:
+		var effectif: int = professionals.size() if cle == "professional" else roster.size() if cle == "academy" else roster.filter(func(p: Dictionary): return int(p.get("age", 0)) <= 18 if cle == "u18" else (int(p.get("age", 0)) > 18 and int(p.get("age", 0)) <= 21)).size()
+		var court: String = {"u21":"U21", "u18":"U18", "academy":"Tous", "professional":"Jeunes pros"}[cle]
+		puces_groupe.append([cle, "%s  %d" % [court, effectif]])
+	droite -= 16
+	for puce: Array in puces_groupe:
+		var choisi := group == str(puce[0])
+		var largeur_g := Kit.largeur(str(puce[1]), 18) + 34
+		droite -= largeur_g
+		var bouton_g := Button.new()
+		bouton_g.name = "AcademyGroup_" + str(puce[0])
+		bouton_g.text = str(puce[1])
+		bouton_g.accessibility_name = "Groupe : " + str(GROUPES.get(str(puce[0]), ""))
+		bouton_g.focus_mode = Control.FOCUS_ALL
+		bouton_g.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		bouton_g.toggle_mode = true
+		bouton_g.set_pressed_no_signal(choisi)
+		bouton_g.add_theme_font_override("font", Charte.TEXTE)
+		bouton_g.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
+		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: bouton_g.add_theme_color_override(etat, Charte.IVOIRE if choisi else Charte.IVOIRE_2)
+		var fond_g := C.box(Charte.PANNEAU_3 if choisi else Charte.PANNEAU, Charte.IVOIRE if choisi else Charte.IVOIRE_3, 0, 8)
+		fond_g.set_border_width_all(1)
+		bouton_g.add_theme_stylebox_override("normal", fond_g)
+		bouton_g.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Charte.IVOIRE_2, 0, 8))
+		bouton_g.add_theme_stylebox_override("pressed", fond_g)
+		var focus_g := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		focus_g.set_border_width_all(2)
+		bouton_g.add_theme_stylebox_override("focus", focus_g)
+		var cle_groupe: String = puce[0]
+		bouton_g.pressed.connect(func(): _set_filter("group", cle_groupe))
+		add_child(bouton_g)
+		D.place(bouton_g, Rect2(droite, 204, largeur_g, 38))
+		if choisi: Kit.marqueur(bouton_g, Rect2(0, 0, 5, 38))
+		droite -= 8
 
 func _picker(zone: Rect2, id: String, caption: String, choices: Dictionary, chosen: Variant, callback: Callable) -> void:
 	var control := OptionButton.new()
@@ -533,7 +566,7 @@ func _draw_rows(columns: Array) -> void:
 		if not _col(columns, "potential").is_empty():
 			var texte_pot := ("★ " if _pepite(p) else "") + G.potential_text(p)
 			_cellule(hit, _col(columns, "potential"), texte_pot, Charte.couleur_attribut(potentiel) if potentiel != null else Charte.IVOIRE_3, true)
-		var gain := _delta(p)
+		var gain: Variant = _delta(p)
 		if not _col(columns, "change").is_empty():
 			var colonne_gain := _col(columns, "change")
 			var mot := "—" if gain == null else ("▲ +%d" % int(gain)) if int(gain) > 0 else ("▼ %d" % int(gain)) if int(gain) < 0 else "—"
@@ -550,12 +583,16 @@ func _draw_rows(columns: Array) -> void:
 		var colonne_statut := _col(columns, "status")
 		_statut(hit, p, colonne_statut.x)
 		D.line(hit, Vector2(0, ROW - 1), Vector2(WIDTH, ROW - 1), Color(Charte.FILET, .5))
-		_lien_nom(hit, p, Rect2(60, 0, 520, ROW))
+		var police_nom := nom.get_theme_font("font")
+		var largeur_nom: float = police_nom.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom.get_theme_font_size("font_size")).x / C.density if police_nom != null else Kit.largeur(str(p.name), 20)
+		_lien_nom(hit, p, Rect2(60, 0, 520, ROW), largeur_nom)
 
 func _cellule(row: Control, col: Dictionary, texte: String, couleur: Color, gras: bool = false) -> void:
 	if col.is_empty(): return
 	var align := HORIZONTAL_ALIGNMENT_RIGHT if col.align == 2 else HORIZONTAL_ALIGNMENT_CENTER if col.align == 1 else HORIZONTAL_ALIGNMENT_LEFT
-	var cellule := D.text(row, col.x, 21, texte, 20, couleur, 700 if gras else 500, col.w, align)
+	# D.text prend le bord droit pour un texte aligné à droite et le centre pour un texte centré.
+	var ancre: float = col.x + col.w if col.align == 2 else col.x + col.w / 2.0 if col.align == 1 else col.x
+	var cellule := D.text(row, ancre, 21, texte, 20, couleur, 700 if gras else 500, col.w, align)
 	cellule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 ## Statut écrit, jamais la couleur seule : puce (symbole) + mot ; une blessure s'ajoute avec sa durée.
@@ -611,7 +648,7 @@ func _select(p: Dictionary) -> void:
 	_strip()
 
 ## Nom d'un jeune : survol (ou focus + I) = mini-fiche, clic = fiche complète ; « i » après le nom.
-func _lien_nom(parent: Control, p: Dictionary, zone: Rect2) -> void:
+func _lien_nom(parent: Control, p: Dictionary, zone: Rect2, largeur_mesuree: float = -1.0) -> void:
 	var id := str(p.get("id", ""))
 	var pro := _professional(p)
 	var cible := {"kind":"player" if pro else "academy", "id":id}
@@ -630,11 +667,11 @@ func _lien_nom(parent: Control, p: Dictionary, zone: Rect2) -> void:
 	lien.accessibility_name = "Ouvrir la fiche · " + str(p.get("name", ""))
 	lien.pressed.connect(func(): app.navigation_controller.open_entity(cible))
 	parent.add_child(lien)
-	var largeur := Kit.largeur(str(p.get("name", "")), 20)
+	var largeur: float = largeur_mesuree if largeur_mesuree > 0 else Kit.largeur(str(p.get("name", "")), 20)
 	D.place(lien, Rect2(zone.position.x, 0, 72 + 70 + minf(340.0, largeur) + 8, ROW))
 	MiniFiche.lier(app, lien, id, "squad" if pro else "academy")
 	var taille_i := maxf(20.0, ceilf(16.0 / C.density))
-	MiniFiche.icone(app, parent, Rect2(132 + minf(340.0, largeur) + 12, (ROW - taille_i) / 2.0, taille_i, taille_i), id, "squad" if pro else "academy")
+	MiniFiche.icone(app, parent, Rect2(132 + minf(340.0, largeur) + 8, (ROW - taille_i) / 2.0, taille_i, taille_i), id, "squad" if pro else "academy")
 
 func _drapeau(parent: Control, p: Dictionary, zone: Rect2) -> void:
 	var facts: Variant = p.get("playerFacts")

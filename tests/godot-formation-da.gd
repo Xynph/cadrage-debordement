@@ -114,6 +114,17 @@ func layout() -> void:
 	for id in ["AcademyTileEspoirs", "AcademyTilePepites", "AcademyTileDecider", "AcademyTilePlaces", "OpenYouthDevelopment", "AcademyDecision", "AcademyDecisions"]:
 		check(node(id) != null, "Élément de l'écran · " + id)
 	check(not app.root_content.find_children("AcademyRow_*", "Button", true, false).is_empty(), "Des jeunes sont listés")
+	for groupe in ["u21", "u18", "academy", "professional"]: check(node("AcademyGroup_" + groupe) != null, "Puce de groupe · " + groupe)
+	# Chaque valeur sous son en-tête : la cellule sous « ÂGE » est bien un âge (régression : valeurs décalées d'une colonne).
+	var lignes: Array = app.root_content.find_children("AcademyRow_*", "Button", true, false)
+	var entete_age := node("AcademySort_age")
+	if not lignes.is_empty() and entete_age != null:
+		var zone := entete_age.get_global_rect()
+		var age := ""
+		for label: Label in (lignes[0] as Control).find_children("*", "Label", false, false):
+			var centre := label.get_global_rect().get_center().x
+			if centre >= zone.position.x and centre <= zone.end.x: age = label.text
+		check(age.is_valid_int() and int(age) >= 14 and int(age) <= 25, "La colonne ÂGE montre l'âge du jeune (« %s »)" % age)
 	check(windows().is_empty(), "Aucune fenêtre ouverte sur la liste")
 
 func names_open_sheets() -> void:
@@ -151,6 +162,9 @@ func filters_and_tiles() -> void:
 	check(await press("AcademyChip_pepite"), "Puce Pépites utilisable")
 	check(state().get("status") == "pepite", "La puce Pépites filtre le tableau")
 	check(await press("AcademyChip_tous"), "Puce Tous utilisable")
+	check(await press("AcademyGroup_u18"), "Puce de groupe U18 utilisable")
+	check(state().get("group") == "u18", "La puce U18 change le groupe du tableau")
+	check(await press("AcademyGroup_u21"), "Puce de groupe U21 utilisable")
 	check(await press("AcademyTileDecider"), "Compteur À décider utilisable")
 	check(state().get("status") == "decide", "Le compteur À décider filtre le tableau")
 	check(await press("AcademyTileEspoirs"), "Compteur Espoirs utilisable")
