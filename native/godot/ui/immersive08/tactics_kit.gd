@@ -259,39 +259,23 @@ static func condition(parent: Control, x: float, ligne: float, valeur: Variant, 
 	if bas: label.add_theme_font_override("font", texte_gras())
 	return label
 
-## Bouton ivoire plein (un seul par écran : l'action principale), bord droit incliné, libellé italique en capitales.
+## Action d'un écran de la coque (charte finale §7.1) : pilule à contour FILET, texte crème (`C.style_bouton_contour`).
+## Plus d'aplat clair : Continuer porte déjà l'unique aplat doré, et un aplat crème hors onglet/menu volerait la vedette.
+## Le nom est gardé pour les appelants ; focus = contour ivoire 2 px, comme le reste du kit.
 static func bouton_ivoire(parent: Control, zone: Rect2, valeur: String, action: Callable, id: String) -> Button:
 	var bouton := Button.new()
 	bouton.name = id
 	bouton.text = valeur.to_upper()
 	bouton.focus_mode = Control.FOCUS_ALL
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	bouton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	bouton.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
-	bouton.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
-	for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
-		bouton.add_theme_color_override(etat, Charte.NUIT)
-	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_2)
-	var vide := StyleBoxEmpty.new()
-	vide.content_margin_left = C.px(18)
-	vide.content_margin_right = C.px(26)
-	for etat in ["normal", "hover", "pressed", "disabled", "hover_pressed"]: bouton.add_theme_stylebox_override(etat, vide)
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	C.style_bouton_contour(bouton, 21)
+	bouton.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bouton.clip_text = true
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 18)
 	focus.set_border_width_all(2)
-	focus.set_expand_margin_all(C.px(4))
+	focus.set_expand_margin_all(2)
 	bouton.add_theme_stylebox_override("focus", focus)
-	var fond := FondIncline.new()
-	fond.name = "FondIvoire"
-	fond.show_behind_parent = true
-	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bouton.add_child(fond)
-	fond.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var teinte := func():
-		fond.couleur = Charte.PANNEAU_2 if bouton.disabled else (Charte.IVOIRE.lightened(.35) if bouton.is_hovered() else Charte.IVOIRE)
-		fond.queue_redraw()
-	bouton.mouse_entered.connect(teinte)
-	bouton.mouse_exited.connect(func(): teinte.call_deferred())
-	bouton.ready.connect(teinte)
+	bouton.add_theme_stylebox_override("hover_pressed", bouton.get_theme_stylebox("pressed"))
 	bouton.pressed.connect(action)
 	parent.add_child(bouton)
 	D.place(bouton, zone)

@@ -117,7 +117,6 @@ static func build(app: Control, canvas: Control) -> void:
 	hote.mouse_filter = Control.MOUSE_FILTER_PASS
 	canvas.add_child(hote)
 	D.place(hote, Rect2(0, TOP + 8, W - 40, 10))
-	Kit.angles_droits(canvas)
 
 ## Bandeau du club : onglet Infrastructures -> le stade du club à sa taille (banque d'images, d'après la capacité),
 ## sinon la vue habituelle.
@@ -161,24 +160,23 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 	var x := 0.0
 	for i in TABS.size():
 		var key: String = TABS[i][0]
-		var libelle: String = str(TABS[i][1]).to_upper()
+		var libelle: String = str(TABS[i][1])
 		var choisi := key == tab or (key == "overview" and tab == "territory")
 		var id := "ClubTab_" + key
-		var largeur := Charte.TITRE_GRAS.get_string_size(libelle, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(21))).x / C.density + 44
+		var largeur := C.DISPLAY.get_string_size(libelle, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(22))).x / C.density + 44
 		var bouton := Button.new()
 		bouton.name = id
 		bouton.text = libelle
 		bouton.focus_mode = Control.FOCUS_ALL
 		bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		bouton.add_theme_font_override("font", Charte.TITRE_GRAS if choisi else Charte.TITRE)
-		bouton.add_theme_font_size_override("font_size", maxi(12, C.px(21)))
-		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-			bouton.add_theme_color_override(etat, Charte.IVOIRE if choisi else Charte.IVOIRE_2)
-		bouton.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3 if choisi else Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-		bouton.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-		bouton.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		# Charte §7.1 : onglet en pilule, bas de casse, comme les onglets de la coque ; actif = aplat crème, texte PANNEAU.
+		bouton.add_theme_font_override("font", C.DISPLAY)
+		bouton.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
+		D.tab_state(bouton, Vector2(largeur, 46), choisi, "")
+		bouton.icon = null
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 18)
 		focus.set_border_width_all(2)
+		focus.set_expand_margin_all(2)
 		bouton.add_theme_stylebox_override("focus", focus)
 		bouton.toggle_mode = true
 		bouton.button_pressed = choisi
@@ -190,10 +188,6 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 				bouton.accept_event())
 		canvas.add_child(bouton)
 		D.place(bouton, Rect2(x, 70, largeur, 46))
-		if choisi:
-			var soulignement := D.rect(bouton, Rect2(0, 42, largeur, 4), Charte.IVOIRE, 0)
-			soulignement.position = Vector2(0, bouton.size.y - maxf(3.0, C.px(4)))
-			soulignement.size = Vector2(bouton.size.x, maxf(3.0, C.px(4)))
 		x += largeur + 6
 	D.line(canvas, Vector2(0, 117), Vector2(W, 117), Charte.FILET)
 	var largeur_touche := Kit.touche(canvas, W - 250, 104, "← →", false)
@@ -217,7 +211,8 @@ static func _open_strategy(app: Control, index: int) -> void:
 # --- Vue d'ensemble ------------------------------------------------------------------------------------------------------
 
 static func _panneau(parent: Control, zone: Rect2, titre: String, id: String, filet: bool = false) -> Panel:
-	var panneau := D.rect(parent, zone, Charte.PANNEAU, 0)
+	# Charte §3 : panneau de page rayon 18 px (24 en référence 2560, comme D.panel), sans bordure.
+	var panneau := D.rect(parent, zone, Charte.PANNEAU, 24)
 	panneau.name = id
 	panneau.mouse_filter = Control.MOUSE_FILTER_PASS
 	var entete := Kit.titre(panneau, 24, 40, titre, 28, zone.size.x - 300)
@@ -252,15 +247,16 @@ static func _hero(app: Control, page: Control, fans: Dictionary) -> void:
 	bandeau.flat = true
 	bandeau.focus_mode = Control.FOCUS_ALL
 	bandeau.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	bandeau.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU, Color.TRANSPARENT, 0, 0))
-	bandeau.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-	bandeau.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	bandeau.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU, Color.TRANSPARENT, 24, 0))
+	bandeau.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 24, 0))
+	bandeau.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 24, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 24, 0)
 	focus.set_border_width_all(2)
 	bandeau.add_theme_stylebox_override("focus", focus)
 	bandeau.accessibility_name = "Voir le stade · " + str(G.identity(app.model.club).get("stadium", "le stade du club"))
 	bandeau.pressed.connect(func(): _tab(app, "territory", "ClubTab_overview"))
 	page.add_child(bandeau)
+	bandeau.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
 	D.place(bandeau, Rect2(0, 0, W, 110))
 	var photo := D.photo(bandeau, photo_entete(app.model, "overview"), Rect2(W * .4, 0, W * .6, 110), .5)
 	photo.modulate = Color(1, 1, 1, .32)
@@ -439,9 +435,11 @@ static func _bilans(panneau: Panel, app: Control, historique: Array, x: float, y
 		var haut := 74.0 + i * LIGNE
 		var rangee := Button.new()
 		rangee.name = "ClubTrustRow%d" % i
-		Kit.styler_ligne(rangee, Charte.PANNEAU_2 if i % 2 == 1 else Color.TRANSPARENT)
+		Kit.styler_ligne(rangee, Color.TRANSPARENT)
 		bloc.add_child(rangee)
 		D.place(rangee, Rect2(0, haut, largeur, LIGNE))
+		# Charte : pas de bandes alternées, un filet entre deux lignes.
+		if i > 0: D.line(bloc, Vector2(0, haut), Vector2(largeur, haut), Charte.FILET)
 		var delta := int(bilan.after) - int(bilan.previous)
 		Kit.texte(rangee, 8, 22, "J%s" % G.n(bilan.round), Charte.IVOIRE_2, 50, 18)
 		var conf := Kit.texte(rangee, 132, 22, G.n(bilan.after), Charte.IVOIRE, 62, 18, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -545,11 +543,13 @@ static func _installations(panneau: Panel, app: Control, finance: Dictionary, st
 		var donnees: Dictionary = rangees[i]
 		var rangee := Button.new()
 		rangee.name = str(donnees.id)
-		Kit.styler_ligne(rangee, Charte.PANNEAU_2 if i % 2 == 1 else Color.TRANSPARENT)
+		Kit.styler_ligne(rangee, Color.TRANSPARENT)
 		rangee.accessibility_name = str(donnees.nom)
 		rangee.pressed.connect(donnees.action)
 		panneau.add_child(rangee)
 		D.place(rangee, Rect2(18, 98 + i * 40, largeur - 36, 40))
+		# Charte : pas de bandes alternées, un filet entre deux lignes.
+		if i > 0: D.line(panneau, Vector2(18, 98 + i * 40), Vector2(largeur - 18, 98 + i * 40), Charte.FILET)
 		var nom := Kit.texte(rangee, 6, 27, str(donnees.nom), Charte.IVOIRE, 400, 19)
 		nom.add_theme_font_override("font", Kit.texte_gras())
 		var segments: Array = donnees.segments
@@ -587,7 +587,7 @@ static func _decider(panneau: Panel, app: Control, finance: Dictionary, board: D
 	for i in mini(3, elements.size()):
 		var element: Dictionary = elements[i]
 		var haut := 66.0 + i * 86.0
-		var cadre := D.rect(panneau, Rect2(18, haut, largeur - 36, 78), Charte.PANNEAU_2 if i == 0 else Color.TRANSPARENT, 0)
+		var cadre := D.rect(panneau, Rect2(18, haut, largeur - 36, 78), Charte.PANNEAU_2 if i == 0 else Color.TRANSPARENT, 16)
 		cadre.name = "ClubDecideRow%d" % i
 		_coche(panneau, Rect2(30, haut + 14, 26, 26), str(element.genre), Charte.IVOIRE)
 		# Titre et détail sur une ligne chacun (texte complet en infobulle) : jamais de chevauchement, à 1280 comme à 1920.
@@ -659,6 +659,10 @@ static func _vestiaire(panneau: Panel, app: Control) -> void:
 		var bouton := Button.new()
 		bouton.name = str(tuile.id)
 		Kit.styler_ligne(bouton, Charte.PANNEAU_2)
+		# Tuile de chiffre = carte rayon 12 px (16 en référence 2560, charte §3).
+		for etat in ["normal", "hover", "pressed", "disabled", "focus"]:
+			var fond := bouton.get_theme_stylebox(etat) as StyleBoxFlat
+			if fond != null: fond.set_corner_radius_all(maxi(3, C.px(16)))
 		bouton.accessibility_name = "%s · %s %s · vestiaire" % [tuile.etiquette, tuile.valeur, tuile.sur]
 		bouton.pressed.connect(func(): app._navigate("Vestiaire"))
 		panneau.add_child(bouton)
@@ -669,13 +673,13 @@ static func _vestiaire(panneau: Panel, app: Control) -> void:
 		var largeur_chiffre := Charte.TITRE_EXTRA_ITALIQUE.get_string_size(str(tuile.valeur), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(46))).x / C.density
 		Kit.texte(bouton, 14 + largeur_chiffre + 8, 86, str(tuile.sur), Charte.IVOIRE_2, 80, 19)
 		if float(tuile.barre) >= 0.0:
-			D.rect(bouton, Rect2(14, 104, cote - 28, 8), Charte.PANNEAU_3, 0)
-			D.rect(bouton, Rect2(14, 104, (cote - 28) * clampf(float(tuile.barre) / 100.0, 0.0, 1.0), 8), Charte.IVOIRE_2, 0)
+			D.rect(bouton, Rect2(14, 104, cote - 28, 8), Charte.PANNEAU_3, Charte.RAYON_PILULE)
+			D.rect(bouton, Rect2(14, 104, (cote - 28) * clampf(float(tuile.barre) / 100.0, 0.0, 1.0), 8), Charte.IVOIRE_2, Charte.RAYON_PILULE)
 		if not str(tuile.suite).is_empty(): _texte_lignes(bouton, 14, 112, cote - 28, str(tuile.suite), 16, Charte.TEXTE, Charte.IVOIRE_2, 2).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Leader du vestiaire : le nom ouvre la fiche, le survol la mini-fiche.
 	var relation: Dictionary = app.model.get("clubLife", {}).get("relationships", {})
 	var chef := P.player(app.model, str(relation.get("leaderId", "")))
-	var tuile_chef := D.rect(panneau, Rect2(24 + 2 * (cote + 12), 66, cote, 150), Charte.PANNEAU_2, 0)
+	var tuile_chef := D.rect(panneau, Rect2(24 + 2 * (cote + 12), 66, cote, 150), Charte.PANNEAU_2, 16)
 	tuile_chef.name = "ClubLeader"
 	tuile_chef.mouse_filter = Control.MOUSE_FILTER_PASS
 	Kit.etiquette(tuile_chef, 14, 30, "Leader", cote - 28)
@@ -692,7 +696,7 @@ static func _vestiaire(panneau: Panel, app: Control) -> void:
 	for i in mini(maximum, absents.size()):
 		var joueur: Dictionary = absents[i]
 		var haut := 266.0 + i * LIGNE
-		D.rect(panneau, Rect2(18, haut, largeur - 36, LIGNE), Charte.PANNEAU_2 if i % 2 == 0 else Color.TRANSPARENT, 0)
+		if i > 0: D.line(panneau, Vector2(18, haut), Vector2(largeur - 18, haut), Charte.FILET)
 		Kit.nom(app, panneau, Rect2(24, haut + 3, 330, LIGNE - 6), Kit.casse(str(joueur.get("name", ""))), str(joueur.get("id", "")), "ClubAbsentName%d" % i, Charte.IVOIRE, 18)
 		Kit.texte(panneau, largeur - 24, haut + 22, _statut_absent(joueur), Charte.IVOIRE_2, largeur - 400, 17, HORIZONTAL_ALIGNMENT_RIGHT)
 	if absents.size() > maximum:

@@ -88,12 +88,15 @@ func _restaurer() -> void:
 
 # ---------------------------------------------------------------- outils de dessin
 
-static func _plat(fond: Color, bord: Color = Color.TRANSPARENT, epaisseur: int = 0) -> StyleBoxFlat:
+## Fond plat de la charte (rayon en référence 2560) : 6 par défaut (case, ligne), 16 pour une tuile (12 px), pilule pour
+## onglet, puce et champ.
+static func _plat(fond: Color, bord: Color = Color.TRANSPARENT, epaisseur: int = 0, rayon: int = Charte.RAYON_PETIT) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fond
 	style.border_color = bord
 	style.set_border_width_all(epaisseur)
-	style.set_corner_radius_all(0)
+	style.set_corner_radius_all(rayon if rayon >= Charte.RAYON_PILULE else maxi(3, C.px(rayon)))
+	style.anti_aliasing = true
 	return style
 
 static func _italique(label: Label, gras := true) -> Label:
@@ -232,10 +235,10 @@ func _tuile(zone: Rect2, d: Dictionary) -> void:
 	tuile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	tuile.accessibility_name = "%s %s %s" % [str(d.cap).trim_suffix(" ▾"), d.val, d.suf]
 	tuile.tooltip_text = "" if d.id == "Aptes" else str(d.aide)
-	tuile.add_theme_stylebox_override("normal", _plat(Charte.PANNEAU))
-	tuile.add_theme_stylebox_override("hover", _plat(Charte.PANNEAU_2))
-	tuile.add_theme_stylebox_override("pressed", _plat(Charte.PANNEAU_3))
-	tuile.add_theme_stylebox_override("focus", _plat(Color.TRANSPARENT, Charte.IVOIRE, 2))
+	tuile.add_theme_stylebox_override("normal", _plat(Charte.PANNEAU, Color.TRANSPARENT, 0, 16))
+	tuile.add_theme_stylebox_override("hover", _plat(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 16))
+	tuile.add_theme_stylebox_override("pressed", _plat(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 16))
+	tuile.add_theme_stylebox_override("focus", _plat(Color.TRANSPARENT, Charte.IVOIRE, 2, 16))
 	add_child(tuile)
 	D.place(tuile, zone)
 	D.text(tuile, 16, 28, d.cap, 17, C.MUTED, 700, zone.size.x - 28)
@@ -342,9 +345,12 @@ func _onglets() -> void:
 			app.roster_sort = state.sort
 			app._render(), "RosterTab" + str(i), Charte.IVOIRE if i == courant else Charte.IVOIRE_2, 19.0, HORIZONTAL_ALIGNMENT_CENTER)
 		onglet.accessibility_name = "Onglet " + VUES[i] + (" · actif" if i == courant else "")
-		if i == courant:
-			onglet.add_theme_stylebox_override("normal", _plat(Charte.PANNEAU_3))
-			_marqueur(self, Rect2(x, Y_ONGLETS + 40, largeur, 4))
+		# Charte §7.1 : onglet en pilule, même rendu que les onglets de la coque (D.tab_state, sans icône).
+		D.tab_state(onglet, Vector2(largeur, 44), i == courant, "")
+		onglet.icon = null
+		var focus_onglet := _plat(Color.TRANSPARENT, Charte.IVOIRE, 2, Charte.RAYON_PILULE)
+		focus_onglet.set_expand_margin_all(2)
+		onglet.add_theme_stylebox_override("focus", focus_onglet)
 		x += largeur + 8.0
 	# À droite : changer d'onglet, comparer, Vestiaire.
 	var droite := LARGEUR
@@ -428,13 +434,22 @@ func _styler_puces() -> void:
 	for id: String in _puces:
 		var puce: Button = _puces[id].bouton
 		var active := _puce_active(id)
-		var fond := _plat(Charte.PANNEAU_3 if active else Color.TRANSPARENT, Charte.FILET, 1)
+		# Charte §7.1 : puce de filtre en pilule ; active = aplat crème, texte PANNEAU ; inactive = contour FILET.
+		var fond := _plat(Charte.IVOIRE if active else Color.TRANSPARENT, Color.TRANSPARENT if active else Charte.FILET, 0 if active else 1, Charte.RAYON_PILULE)
 		fond.content_margin_left = C.px(17)
 		puce.add_theme_stylebox_override("normal", fond)
-		puce.add_theme_stylebox_override("hover", _plat(Charte.PANNEAU_2, Charte.IVOIRE_3, 1))
-		puce.add_theme_stylebox_override("pressed", _plat(Charte.PANNEAU_3, Charte.FILET, 1))
-		puce.add_theme_color_override("font_color", Charte.IVOIRE if active else Charte.IVOIRE_2)
-		_puces[id].marque.visible = active
+		var survol := _plat(Charte.IVOIRE if active else Charte.PANNEAU_2, Color.TRANSPARENT if active else Charte.IVOIRE_3, 0 if active else 1, Charte.RAYON_PILULE)
+		survol.content_margin_left = C.px(17)
+		puce.add_theme_stylebox_override("hover", survol)
+		var appui := _plat(Charte.IVOIRE if active else Charte.PANNEAU_3, Color.TRANSPARENT if active else Charte.FILET, 0 if active else 1, Charte.RAYON_PILULE)
+		appui.content_margin_left = C.px(17)
+		puce.add_theme_stylebox_override("pressed", appui)
+		var focus := _plat(Color.TRANSPARENT, Charte.IVOIRE, 2, Charte.RAYON_PILULE)
+		focus.set_expand_margin_all(2)
+		puce.add_theme_stylebox_override("focus", focus)
+		for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: puce.add_theme_color_override(cle, Charte.PANNEAU if active else Charte.IVOIRE_2)
+		(_puces[id].compte as Label).add_theme_color_override("font_color", Charte.PANNEAU if active else C.MUTED)
+		_puces[id].marque.visible = false
 		puce.accessibility_name = "%s, %d%s" % [_puces[id].texte, _puces[id].nombre, " · actif" if active else ""]
 
 func _filtres() -> void:
@@ -449,11 +464,11 @@ func _filtres() -> void:
 	recherche.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
 	recherche.add_theme_color_override("font_color", Charte.IVOIRE)
 	recherche.add_theme_color_override("font_placeholder_color", Charte.IVOIRE_2)
-	var champ := _plat(Charte.PANNEAU_2, Charte.FILET, 1)
+	var champ := _plat(Charte.PANNEAU_2, Charte.FILET, 1, Charte.RAYON_PILULE)
 	champ.content_margin_left = C.px(46)
 	champ.content_margin_right = C.px(60)
 	recherche.add_theme_stylebox_override("normal", champ)
-	var champ_actif := _plat(Charte.PANNEAU_3, Charte.IVOIRE, 1)
+	var champ_actif := _plat(Charte.PANNEAU_3, Charte.IVOIRE, 1, Charte.RAYON_PILULE)
 	champ_actif.content_margin_left = C.px(46)
 	champ_actif.content_margin_right = C.px(60)
 	recherche.add_theme_stylebox_override("focus", champ_actif)
@@ -481,7 +496,7 @@ func _filtres() -> void:
 		var compte := D.text(bouton, 17 + l_texte + 12, 28, str(nombre), 19, C.MUTED, 600, l_nombre + 4)
 		compte.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var marque := _marqueur(bouton, Rect2(0, 0, 5, 42))
-		_puces[id] = {"bouton": bouton, "marque": marque, "texte": texte, "nombre": nombre}
+		_puces[id] = {"bouton": bouton, "marque": marque, "compte": compte, "texte": texte, "nombre": nombre}
 		x += largeur + 8.0
 	_styler_puces()
 	# À droite : menu Poste et Filtres & tri (menus déroulants, pas de fenêtre).

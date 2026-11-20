@@ -1014,11 +1014,13 @@ func _ouvrir_ligne(cle: String) -> Callable:
 	return func():
 		if not app.waiting and app._live().is_empty(): app._navigate(route)
 
-## Fond plat (rayon 0, ni ombre ni dégradé) des blocs de la colonne de Gabi.
-func _plat(couleur: Color) -> StyleBoxFlat:
+## Fond plat (ni ombre ni dégradé) des blocs de la colonne de Gabi : carte rayon 12 px (16 en référence 2560) par
+## défaut, panneau 18 px (24) pour une carte de page.
+func _plat(couleur: Color, rayon: int = 16) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = couleur
-	style.set_corner_radius_all(0)
+	style.set_corner_radius_all(maxi(3, C.px(rayon)))
+	style.anti_aliasing = true
 	return style
 
 ## Appelé par main.gd après chaque rendu : coche les objectifs des premiers pas sur l'événement réel.
@@ -1035,7 +1037,7 @@ func carte_premiers_pas(page: Control, rect: Rect2) -> float:
 	var objectif := PremiersPas.courant(liste)
 	if objectif.is_empty(): return 0.0
 	var carte := D.panel(page, rect, "", "", "", "GabiPremiersPasCarte")
-	carte.add_theme_stylebox_override("panel", _plat(Charte.PANNEAU))
+	carte.add_theme_stylebox_override("panel", _plat(Charte.PANNEAU, 24))
 	var pad := 22.0
 	var boutons_w := 300.0 + 78.0 + 24.0
 	var libelle := "PREMIERS PAS · %d SUR %d" % [PremiersPas.faits(liste), liste.size()]

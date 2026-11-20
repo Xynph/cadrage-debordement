@@ -46,11 +46,12 @@ static func _box(color: Color, border: Color = Color.TRANSPARENT, width: int = 0
 	style.set_corner_radius_all(0)
 	return style
 
-## Surface plate (jeton `panneau`, rayon 0, ni ombre ni dégradé) posée aux coordonnées de la page.
+## Panneau de page (charte §3, comme D.panel) : jeton `panneau`, rayon 18 px (24 en référence 2560), sans bordure ni
+## ombre, posé aux coordonnées de la page.
 static func _plate(parent: Node, rectangle: Rect2, id: String) -> Panel:
 	var panel := Panel.new()
 	panel.name = id
-	panel.add_theme_stylebox_override("panel", _box(Charte.PANNEAU))
+	panel.add_theme_stylebox_override("panel", Charte.style_panneau(Charte.PANNEAU, maxi(3, C.px(24)), 0))
 	parent.add_child(panel)
 	D.place(panel, rectangle)
 	return panel
@@ -181,8 +182,10 @@ static func build(app: Control) -> Control:
 	# « Profil à suivre » (Recrutement) et « Résultats » (Calendrier) ne sont pas au Bureau : la page tient sans défiler.
 	if gabi:
 		var zone := D.panel(page, column, "", "", "", "GabiBureau")
-		zone.add_theme_stylebox_override("panel", _box(Charte.PANNEAU))
+		zone.add_theme_stylebox_override("panel", Charte.style_panneau(Charte.PANNEAU, maxi(3, C.px(24)), 0))
 		zone.clip_contents = true
+		# Le carnet de Gabi (fond plein) suit les coins arrondis du panneau.
+		zone.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
 		var extra := func(parent: Control, haut: float, largeur: float) -> float:
 			var matches := _plate(parent, Rect2(0, haut, largeur, TIMELINE_H), "OfficeTimeline")
 			_timeline(matches, app, null, int(largeur))
@@ -225,6 +228,8 @@ static func compte_a_rebours(app: Control, fixture: Dictionary) -> String:
 
 static func _fixture(card: Panel, app: Control, w: int = 1496) -> void:
 	card.clip_contents = true
+	# Photo et liseré de club suivent les coins arrondis du panneau.
+	card.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
 	var photo := D.photo(card, P.fixture_ground(app.model.meta, "office-hero"), Rect2(0, 0, w, BAND), .53)
 	photo.name = "OfficeFixturePhoto"
 	D.rect(card, Rect2(0, 0, w, BAND), Color(Charte.FOND, .74)).name = "OfficeFixtureVeil"
