@@ -107,6 +107,9 @@ budget() {
     # Outil Monde en fin de saison (#1058) : saison 1 entière validée par le moteur, puis premier match de la saison 2 ;
     # 117 s en local, 180 s dépassées en CI (Suites 6/10). Budget ≈ 3,5 fois.
     tests/carriere-monde-fin-de-saison.cjs) echo 420s ;;
+    # Audit des flux financiers migré en carrière Monde : 13 semaines tracées + contre-épreuve dans un second worker,
+    # 85 s en local (20/11/2026) ; budget ≈ 5 fois, comme les autres carrières Monde sans poids mesuré.
+    tests/world-finance-flow-audit.cjs) echo 420s ;;
     # Suites Monde de 76 à 131 s (main 44443910094 et PR #943 44447171817), sans limite propre donc à 180 s : même ralentissement du runner ; budget ≈ 2,5-3 fois.
     tests/ai-roster-cycle.cjs|tests/continuer-arrets-saison.cjs|tests/essais-realistes.cjs|tests/reactivite-projection-rapide-semaines.cjs|tests/reactivite-projection-verification-direct.cjs|tests/sauvegarde-journal-plantage-monde.cjs) echo 300s ;;
     tests/avant-match-donnees.cjs|tests/reactivite-projection-verification-semaines.cjs) echo 360s ;;

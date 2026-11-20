@@ -1,73 +1,99 @@
 'use strict';
-// Read-only reconciliation, not an alternative economy implementation.
+// Relecture des flux financiers d'une semaine ordinaire de carrière Monde (world-champ), budget de saison
+// réaliste compris (actif par défaut depuis #699). Lecture seule : ce module ne remplace pas l'économie, il
+// rejoue les fonctions de production (barème du budget, entretien des installations) et rapproche chaque
+// variation de caisse d'une écriture tracée. Une variation sans flux connu reste « unknown » : aucune
+// attribution inventée (transfert, dette, investissement…).
+//
+// Entrées : deux états (avant / après la clôture de la semaine) et la trace de la semaine relevée dans le
+// moteur par ci/world-finance-flow-audit.cjs :
+//   writes  : [{clubId, delta, fn}] chaque écriture de `cash`, avec la fonction du moteur qui l'a faite ;
+//   billing : {clubId: {args, ecritures, compte}} : arguments du barème (club-budget.semaine), écritures
+//             rendues par budgetSemaine (frais de match compris) et compteur du club avant la semaine.
 const facilities = require('../../dist/facilities.js');
+const budget = require('./club-budget.cjs');
 const sum = xs => xs.reduce((n, x) => n + x, 0);
 const wages = c => sum(c.players.map(p => p.salary));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+// Même calcul que worldUpkeep (dist/world-career.js) : le niveau 2 de départ ne coûte rien.
 function upkeep(level) {
   return level <= 2 ? 0 : Math.round(facilities.maintenanceForecast({cash:0, levels:[level], weeks:1, baseWeekly:2000}).weekly);
 }
-function won(result, id) {
-  const side = result.pair.indexOf(id);
-  return result.phase && result.phase !== 'league' && result.winner !== undefined
-    ? result.winner === id : result.score[side] > result.score[1-side];
+// Flux connus, par fonction du moteur qui écrit la caisse.
+const FLOWS = Object.freeze({
+  worldWeeklyEconomy: 'billing',      // facturation hebdomadaire (barème V1 puis budget de saison réaliste)
+  calIANouvelAccord: 'transfer',      // accord entre deux clubs gérés (indemnité payée à l'accord)
+  financeWeek: 'human-week',          // semaine du club joué (grand livre)
+});
+// Écritures du barème rejouées hors du moteur : club-budget.semaine (module de production, figé), puis
+// les frais de match des recettes imprévues comme budgetSemaine les ajoute en mode Monde.
+function billingReplay(capture, {extraWeeklyWages = 0} = {}) {
+  const args = {...capture.args, masseHebdo: capture.args.masseHebdo + extraWeeklyWages};
+  const ecritures = budget.semaine(args);
+  const ecart = budget.recettesImprevues(ecritures, {forces:args.forces, clubId:args.clubId, receptions:args.receptions, accueil:args.accueil});
+  const frais = budget.fraisDeMatch(capture.compte, ecart, budget.deficitPrevu(args.forces, args.clubId, args.masseHebdo * 52));
+  if (frais.montant > 0) ecritures.push({title:args.libelle + ' · ' + budget.LIBELLE_FRAIS_MATCH, amount:-frais.montant});
+  return ecritures;
 }
-function reconcile(before, after) {
-  if (before.season !== after.season || after.round !== before.round + 1 || before.worldMode?.version !== 1)
-    throw Error('Audit limited to one ordinary world-v1 week, no interseason');
-  const results = after.history.filter(r => !before.history.some(p => p.fixtureId === r.fixtureId));
+function reconcile(before, after, trace) {
+  if (before.season !== after.season || after.week !== before.week + 1 || before.mode !== 'world-champ' || after.mode !== 'world-champ')
+    throw Error('Audit limited to one ordinary world-champ week, no interseason');
+  if (!trace || !Array.isArray(trace.writes) || !trace.billing) throw Error('Audit requires the traced engine writes of the week');
+  const beforeAccords = new Set((before.accordsIA || []).map(a => a.id));
+  const accords = (after.accordsIA || []).filter(a => !beforeAccords.has(a.id));
   const rows = before.clubs.map(c => {
     const next = after.clubs.find(n => n.id === c.id);
-    const oldInfo = before.worldManagement.clubInfo.find(i => i.id === c.id);
-    const newInfo = after.worldManagement.clubInfo.find(i => i.id === c.id);
     const delta = next.cash - c.cash;
+    const writes = trace.writes.filter(w => w.clubId === c.id);
+    const traced = sum(writes.map(w => w.delta));
+    const byFlow = {};
+    for (const w of writes) { const flow = FLOWS[w.fn] || 'unknown'; byFlow[flow] = (byFlow[flow] || 0) + w.delta; }
+    const unknownWrites = writes.filter(w => !FLOWS[w.fn]).map(w => ({fn:w.fn, delta:w.delta}));
+    const conserved = traced === delta;
     if (c.id === before.club) {
-      // Find the shared ledger tail; do not label the human's random tickets as AI revenue.
+      // Grand livre du club joué : la queue commune des deux livres donne les écritures de la semaine.
       let added = null;
-      for (let n=0; n<=after.ledger.length; n++) {
+      for (let n = 0; n <= after.ledger.length; n++) {
         const tail = after.ledger.slice(n);
-        if (tail.length && same(tail, before.ledger.slice(0,tail.length))) { added = after.ledger.slice(0,n); break; }
+        if (tail.length && same(tail, before.ledger.slice(0, tail.length))) { added = after.ledger.slice(0, n); break; }
       }
       if (!before.ledger.length) added = after.ledger;
       const observed = added ? sum(added.map(x => x.amount)) : null;
-      const labels={partners:' · Partenaires',wages:' · Salaires',tickets:' · Billetterie',winBonus:' · Prime de victoire',upkeep:' · Entretien des installations'};
-      const componentsObserved=added?Object.fromEntries(Object.entries(labels).map(([key,suffix])=>[key,sum(added.filter(x=>x.title.endsWith(suffix)).map(x=>x.amount))])):null;
-      const otherLedgerEntries=added?.filter(x=>!Object.values(labels).some(suffix=>x.title.endsWith(suffix)))??null;
-      return {clubId:c.id,kind:'human-ledger',delta,ledger:added,observedLedgerDelta:observed,componentsObserved,otherLedgerEntries,
-        residual:observed === null ? null : delta-observed,status:observed !== null && delta===observed ? 'reconciled-ledger' : 'unknown',
-        note:'Human tickets use rand(300,450)*1000; sponsor/other ledger entries retained, no fixed AI ticket assumption.'};
+      return {clubId:c.id, kind:'human-ledger', delta, traced, conserved, ledger:added, observedLedgerDelta:observed,
+        residual:observed === null ? null : delta - observed,
+        status:conserved && observed !== null && delta === observed ? 'reconciled-ledger' : 'unknown'};
     }
-    const own = results.find(r => r.pair.includes(c.id));
-    const home = results.some(r => r.pair[0] === c.id && !r.neutral);
-    const components = {partners:160000,tickets:home?360000:0,winBonus:own&&won(own,c.id)?80000:0,wages:-wages(c),upkeep:-upkeep(oldInfo.facilities)};
-    const expected = sum(Object.values(components));
-    const payrollStable = wages(c) === wages(next) && same(c.players.map(p=>[p.id,p.salary]),next.players.map(p=>[p.id,p.salary]));
-    const facilitiesStable = oldInfo.facilities === newInfo.facilities;
-    const residual = delta-expected;
-    const beforeIds=new Set(c.players.map(p=>p.id));
-    const addedPlayers=next.players.filter(p=>!beforeIds.has(p.id));
-    // Audited source order only for these first three weeks: ensureAISheet precedes
-    // billing; recruitment after billing is disabled at destination weeks 1/2/3.
-    // Never extend this receipt to a trading window or interseason by inference.
-    const sourceOrderVerified=before.season===1&&before.round>=0&&before.round<=2&&before.phase==='league'&&after.phase==='league'
-      &&before.aiRosterVersion===1&&before.aiRoster?.version===1&&addedPlayers.length>0
-      &&c.players.every(p=>next.players.some(q=>q.id===p.id&&q.salary===p.salary))
-      &&addedPlayers.every(p=>after.aiRoster.events.some(e=>e.season===before.season&&e.clubId===c.id&&e.playerId===p.id
-        &&['emergency','promote'].includes(e.kind)&&e.fee===0&&e.salary===p.salary));
-    const residualAtClosingPayroll=delta-(expected-wages(next)+wages(c));
-    const explained=sourceOrderVerified&&facilitiesStable&&residualAtClosingPayroll===0;
-    return {clubId:c.id,kind:'ai',delta,components,expected,residual,payrollStable,facilitiesStable,
-      payrollBefore:wages(c),payrollAfter:wages(next),payrollDelta:wages(next)-wages(c),
-      addedPlayers:addedPlayers.map(p=>({id:p.id,weeklyWage:p.salary})),sourceOrderVerified,residualAtClosingPayroll,
-      status:payrollStable&&facilitiesStable&&residual===0?'reconciled':explained?'reconciled-source-order':'unknown',
-      ...(explained?{note:'Coverage additions precede billing; later recruitment disabled in audited first-three-week window.'}:
-        payrollStable&&facilitiesStable&&residual===0?{}:{note:'Residual or payroll/facility change: no invented attribution to transfers, promotion, debt or investment.'})};
+    const capture = trace.billing[c.id];
+    let billing = null;
+    if (capture) {
+      const replay = billingReplay(capture);
+      const replayMatchesEngine = same(replay, capture.ecritures);
+      const expected = sum(replay.map(e => e.amount)) - upkeep(before.facilities[c.id]);
+      billing = {expected, observed:byFlow.billing || 0, replayMatchesEngine, components:replay,
+        upkeep:-upkeep(before.facilities[c.id])};
+      billing.matched = replayMatchesEngine && billing.expected === billing.observed;
+    }
+    // Indemnités des accords conclus cette semaine : payées par l'acheteur, reçues par le vendeur.
+    const mine = accords.filter(a => a.acheteurId === c.id || a.vendeurId === c.id);
+    const transferExpected = sum(mine.map(a => (a.vendeurId === c.id ? a.montant : 0) - (a.acheteurId === c.id ? a.montant : 0)));
+    const transfers = {expected:transferExpected, observed:byFlow.transfer || 0, accords:mine.map(a => a.id)};
+    transfers.matched = transfers.expected === transfers.observed;
+    const humanFlow = byFlow['human-week'] || 0;
+    const residual = delta - (billing ? billing.expected : 0) - transfers.expected;
+    const reconciled = conserved && !!billing && billing.matched && transfers.matched && !unknownWrites.length && humanFlow === 0 && residual === 0;
+    return {clubId:c.id, kind:'ai', delta, traced, conserved, billing, transfers, unknownWrites, residual,
+      payrollBefore:wages(c), payrollAfter:wages(next),
+      status:reconciled ? 'reconciled' : 'unknown',
+      ...(reconciled ? {} : {note:'Untraced write, unknown engine flow or residual: no invented attribution.'})};
   });
-  return {season:before.season,week:before.round,results:results.length,rows,
-    ai:{clubs:rows.filter(r=>r.kind==='ai').length,reconciled:rows.filter(r=>r.status==='reconciled').length,
-      explainedSourceOrder:rows.filter(r=>r.status==='reconciled-source-order').length,
-      unknown:rows.filter(r=>r.kind==='ai'&&r.status==='unknown').length,
-      delta:sum(rows.filter(r=>r.kind==='ai').map(r=>r.delta)),openingPayrollResidual:sum(rows.filter(r=>r.kind==='ai').map(r=>r.residual)),
-      residual:sum(rows.filter(r=>r.kind==='ai').map(r=>r.status==='reconciled-source-order'?r.residualAtClosingPayroll:r.residual))}};
+  const ai = rows.filter(r => r.kind === 'ai');
+  return {season:before.season, week:before.week, rows,
+    accords:accords.map(a => ({id:a.id, vendeurId:a.vendeurId, acheteurId:a.acheteurId, montant:a.montant})),
+    ai:{clubs:ai.length, reconciled:ai.filter(r => r.status === 'reconciled').length,
+      unknown:ai.filter(r => r.status === 'unknown').length,
+      billingMatched:ai.filter(r => r.billing?.matched).length,
+      transferClubs:ai.filter(r => r.transfers.accords.length).length,
+      transferNet:sum(ai.map(r => r.transfers.observed)),
+      delta:sum(ai.map(r => r.delta)), residual:sum(ai.map(r => r.residual))}};
 }
-module.exports = {reconcile,upkeep,wages};
+module.exports = {reconcile, billingReplay, upkeep, wages, FLOWS};

@@ -1,144 +1,100 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
-const {test}=require('node:test'),assert=require('node:assert/strict');
-const {reconcile,upkeep}=require('../native/engine/world-finance-flow-audit.cjs');
-// Historical coverage fixtures predate specialist depth, academy groups and
-// emergency out-of-position eligibility. Both execute the genuine worker/core;
-// only v1 may claim the source-order receipt. Production stays unchanged.
-function coverageWorkerAudit(t,version){
- assert.ok([1,2].includes(version));
- const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),Module=require('node:module');
- let fillCalls=0,lastRoster=null,beforeClose=null;
- const worker=require('../native/engine/worker.cjs'),dist=fs.mkdtempSync(path.join(os.tmpdir(),'cd-finance-coverage-fixture-'));
- t.after(()=>fs.rmSync(dist,{recursive:true,force:true}));
- for(const file of worker.CORE_FILES){const target=path.join(dist,file);fs.mkdirSync(path.dirname(target),{recursive:true});let text=fs.readFileSync(path.join(__dirname,'../dist',file),'utf8');
-  if(version===1&&file==='ai-roster-cycle.js')text+='\nconst fixtureBaseAiSetup=aiRosterSetup;aiRosterSetup=function(){const result=fixtureBaseAiSetup();if(S?.aiRoster){S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;}return result;};\n';
-  fs.writeFileSync(target,text);
- }
- const workerFile=require.resolve('../native/engine/worker.cjs'),historical=new Module(workerFile,module);
- historical.filename=workerFile;historical.paths=Module._nodeModulePaths(path.dirname(workerFile));
- // Stub the service where it enters the isolated VM, including calls generated
- // inside worldVm.bootstrap(). Removing worker call sites alone misses start().
- const source=fs.readFileSync(workerFile,'utf8'),depth='const nativeProfessionalDepth=(${professionalDepth.toString()})();';
- const positions='nativePositionAptitudes.installHooks();',vmEntry='const run=(source,filename)=>'; // signature depuis #719 (noms de fichier dans les piles)
- assert.equal(source.split(depth).length,2,'The isolated coverage fixture must replace exactly one depth service');
- assert.equal(source.split(positions).length,2,'The historical fixture must omit exactly one new position hook installation');
- assert.equal(source.split(vmEntry).length,2,'The fixture probe must enter exactly one worker VM');
- historical._compile(source
-  .replace('CDNativeAcademyGroups.start(S)','void 0')
-  .replace(positions,'')
-  .replace(vmEntry,'ctx.nativeCoverageProbe=options.coverageProbe;'+vmEntry)
-  .replace(depth,'const nativeProfessionalDepth={...(${professionalDepth.toString()})(),fill(state){nativeCoverageProbe(state?.clubs.map(c=>({id:c.id,players:c.players.length,depth:c.players.filter(p=>p.id.startsWith("depth-")).length})));},additions(){return []}};'),workerFile);
- const filename=path.join(__dirname,'../ci/world-finance-flow-audit.cjs'),m=new Module(filename,module);
- m.filename=filename;m.paths=Module._nodeModulePaths(path.dirname(filename));const normal=m.require.bind(m);
- m.require=id=>id==='../native/engine/worker.cjs'?{...historical.exports,createBridge:options=>{
-  const bridge=historical.exports.createBridge({...options,distDir:dist,coverageProbe:roster=>{
-   fillCalls++;lastRoster=roster?JSON.parse(JSON.stringify(roster)):null;
-  }}),handle=bridge.handle;
-  bridge.handle=request=>{
-   if(request.command==='finish_round'&&beforeClose===null)beforeClose={fillCalls,rosters:lastRoster};
-   return handle(request);
-  };
-  return bridge;
- }}:normal(id);
- m._compile(fs.readFileSync(filename,'utf8'),filename);
- // L'audit (reconcile, relecture de facturation) décrit l'ancienne économie : depuis #699 (14/11/2026),
- // le budget de saison réaliste est actif par défaut et ses flux IA n'y sont pas modélisés. Ces fixtures
- // historiques fixent donc l'ancienne économie (CD_SALAIRES_PAR_NIVEAU=0), comme tests/world-finance-ko.cjs.
- return {run(options){const before=process.env.CD_SALAIRES_PAR_NIVEAU;process.env.CD_SALAIRES_PAR_NIVEAU='0';
-  try{return {...m.exports.run(options),coverageFixture:beforeClose};}
-  finally{if(before===undefined)delete process.env.CD_SALAIRES_PAR_NIVEAU;else process.env.CD_SALAIRES_PAR_NIVEAU=before;}}};
-}
-function verifyCoverageFixture(report,version){
- const {fillCalls,rosters}=report.coverageFixture;
- assert.ok(fillCalls>0,'The no-op service received the real startup/command fill calls');
- assert.equal(rosters.length,58);
- assert.ok(rosters.some(c=>c.players<40),'The historical checkpoint predates the professional depth floor');
- assert.ok(rosters.every(c=>c.depth===0),'No specialist depth player entered the coverage fixture');
- console.log(JSON.stringify({fixture:'historical-coverage-v'+version,fillCalls,
-  minimumRoster:Math.min(...rosters.map(c=>c.players)),maximumRoster:Math.max(...rosters.map(c=>c.players)),
-  targets:rosters.filter(c=>[14,25,27].includes(c.id))}));
-}
+// Audit des flux financiers en carrière Monde (world-champ), budget de saison réaliste (économie par défaut
+// depuis #699). Vraies semaines jouées au worker (tests/helpers/carriere-monde.cjs) : chaque variation de
+// caisse des clubs gérés est rapprochée à l'euro de ses flux (facturation rejouée avec le barème de
+// production, indemnités des accords entre clubs), le club joué de son grand livre ; une contre-épreuve
+// isolée rejoue la vraie facturation. Des cas construits vérifient qu'un écart reste « unknown ».
+const {test} = require('node:test'), assert = require('node:assert/strict');
+const {reconcile, billingReplay, upkeep} = require('../native/engine/world-finance-flow-audit.cjs');
+const {run} = require('../ci/world-finance-flow-audit.cjs');
 
-test('A real worker week reconciles stable and source-order payrolls; isolated wage counterfactual preserves RNG and results',t=>{
-  const r=coverageWorkerAudit(t,1).run({seed:827381,weeks:1,club:0});
-  verifyCoverageFixture(r,1);
-  assert.equal(r.passed,true);assert.equal(r.weeks[0].ai.clubs,57);
-  assert.equal(r.weeks[0].ai.reconciled,54);assert.equal(r.weeks[0].ai.openingPayrollResidual,-8000);assert.equal(r.weeks[0].ai.residual,0);
-  const explained=r.weeks[0].rows.filter(x=>x.kind==='ai'&&x.status==='reconciled-source-order');
-  assert.deepEqual(explained.map(x=>x.clubId),[14,25,27]);assert.equal(r.weeks[0].ai.unknown,0);
-  assert.equal(r.weeks[0].billingReplay.matched,57);
-  for(const row of explained){assert.equal(row.payrollStable,false);assert.equal(row.residualAtClosingPayroll,0);assert.equal(row.residual,-row.payrollDelta);}
-  assert.equal(r.weeks[0].rows.find(x=>x.kind==='human-ledger').status,'reconciled-ledger');
-  assert.equal(r.counterfactual.cashDeltaDifference,-1000);assert(r.counterfactual.duplicateWeekRefused);
-});
-test('Coverage explanation cannot escape its source-order window, evidence or exact residual',()=>{
-  const a={season:1,round:0,phase:'league',club:0,history:[],ledger:[],worldMode:{version:1},aiRosterVersion:1,aiRoster:{version:1,events:[]},
-    worldManagement:{clubInfo:[{id:0,facilities:2},{id:1,facilities:2}]},clubs:[{id:0,cash:100,players:[]},{id:1,cash:100,players:[{id:'old',salary:1000}]}]};
-  const b=structuredClone(a);b.round=1;b.clubs[1].players.push({id:'new',salary:2000});b.clubs[1].cash+=160000-3000;
-  b.aiRoster.events.push({season:1,clubId:1,kind:'emergency',playerId:'new',salary:2000,fee:0});
-  assert.equal(reconcile(a,b).rows[1].status,'reconciled-source-order');
-  b.clubs[1].cash++;assert.equal(reconcile(a,b).rows[1].status,'unknown');b.clubs[1].cash--;
-  b.aiRoster.events[0].fee=1;assert.equal(reconcile(a,b).rows[1].status,'unknown');b.aiRoster.events[0].fee=0;
-  a.round=12;b.round=13;assert.equal(reconcile(a,b).rows[1].status,'unknown','trading week remains unknown');
-});
-test('Unexplained cash or payroll changes remain unknown, never attributed to a made-up flow',()=>{
-  const a={season:1,round:0,club:0,history:[],ledger:[],worldMode:{version:1},worldManagement:{clubInfo:[{id:0,facilities:2},{id:1,facilities:3}]},clubs:[{id:0,cash:100,players:[{id:'a',salary:1}]},{id:1,cash:100,players:[{id:'b',salary:2000}]}]};
-  const b=structuredClone(a);b.round=1;b.clubs[1].cash+=160000-2000-upkeep(3)+999;
-  const row=reconcile(a,b).rows[1];assert.equal(row.residual,999);assert.equal(row.status,'unknown');
-  b.clubs[1].cash-=999;b.clubs[1].players[0].salary++;
-  assert.equal(reconcile(a,b).rows[1].status,'unknown');
-  b.season++;assert.throws(()=>reconcile(a,b),/no interseason/);
+// Semaines 0 à 12 de la saison 1 (graine 4242, club 102) : la semaine 12 porte le premier accord entre
+// deux clubs gérés (indemnité payée à l'accord, hors facturation).
+const WEEKS = 13;
+let report = null;
+const audit = () => report ??= run({seed: 4242, weeks: WEEKS, club: 102});
+
+test('Every managed club reconciles to the euro, every week, under the season budget', () => {
+  const r = audit();
+  assert.equal(r.passed, true); assert.equal(r.mode, 'world-champ'); assert.equal(r.weeks.length, WEEKS);
+  for (const w of r.weeks) {
+    assert.ok(w.ai.clubs > 100, 'all managed clubs of the world are audited');
+    assert.equal(w.ai.reconciled, w.ai.clubs, 'week ' + w.week + ': ' + JSON.stringify(w.rows.filter(x => x.status === 'unknown').slice(0, 3)));
+    assert.equal(w.ai.unknown, 0); assert.equal(w.ai.residual, 0);
+    assert.equal(w.ai.billingMatched, w.ai.clubs, 'billing replayed by the production season-budget schedule');
+    assert.equal(w.ai.transferNet, 0, 'transfer fees move cash between clubs, never create it');
+    for (const row of w.rows.filter(x => x.kind === 'ai')) {
+      assert.equal(row.conserved, true); assert.equal(row.billing.replayMatchesEngine, true);
+      assert.deepEqual(row.unknownWrites, []);
+      assert.ok(row.billing.components.some(e => e.title.endsWith(' · Salaires des joueurs') && e.amount < 0), 'payroll is billed');
+    }
+    const human = w.rows.find(x => x.kind === 'human-ledger');
+    assert.equal(human.status, 'reconciled-ledger'); assert.equal(human.residual, 0);
+  }
+  assert.ok(r.weeks.filter(w => w.results > 0).length >= 5, 'match weeks are audited');
 });
 
-test('V2 coverage changes remain unknown to the deliberately v1-only source-order receipt',t=>{
- const r=coverageWorkerAudit(t,2).run({seed:827381,weeks:1,club:0});assert.equal(r.passed,true);
- verifyCoverageFixture(r,2);
- const changed=r.weeks[0].rows.filter(row=>row.kind==='ai'&&!row.payrollStable);
- assert.ok(changed.length>0,'real v2 fixture exercises coverage additions');
- assert.ok(changed.every(row=>row.sourceOrderVerified===false&&row.status==='unknown'));
- assert.equal(r.weeks[0].ai.explainedSourceOrder,0,'no v2 source-order claim without a separate receipt');
+test('Interclub transfer fees are traced outside the weekly billing and match the recorded accord', () => {
+  const r = audit(), weeks = r.weeks.filter(w => w.accords.length);
+  assert.ok(weeks.length >= 1, 'the audited window contains at least one accord between managed clubs');
+  for (const w of weeks) for (const a of w.accords) {
+    const seller = w.rows.find(x => x.clubId === a.vendeurId), buyer = w.rows.find(x => x.clubId === a.acheteurId);
+    assert.ok(a.montant > 0);
+    assert.equal(seller.status, 'reconciled'); assert.equal(buyer.status, 'reconciled');
+    assert.ok(seller.transfers.accords.includes(a.id) && buyer.transfers.accords.includes(a.id));
+    assert.equal(seller.delta, seller.billing.expected + seller.transfers.expected);
+    assert.equal(buyer.delta, buyer.billing.expected + buyer.transfers.expected);
+  }
 });
 
-// PC 0dad8da: force actual unavailability through the public save protocol.
-// This additional case uses the current worker and dist without historical stubs.
-const COVERAGE_CLUB=14;
-function withCurrentCoverageFixture(bridge){
- const handle=bridge.handle.bind(bridge);
- bridge.handle=request=>{
-  const response=handle(request);
-  if(request.command!=='new_career'||!response.ok)return response;
-  const exported=handle({id:'finance-coverage-export',command:'export',payload:{}});
-  assert.equal(exported.ok,true,exported.error);
-  const document=JSON.parse(exported.model.meta.exportText);
-  const club=document.state.clubs.find(c=>c.id===COVERAGE_CLUB);
-  assert.ok(club&&club.id!==document.state.club&&club.players.length>0);
-  for(const player of club.players)player.injury=2;
-  const state=JSON.stringify(document.state);
-  let checksum=2166136261;
-  for(let i=0;i<state.length;i++)checksum=Math.imul(checksum^state.charCodeAt(i),16777619);
-  document.checksum=(checksum>>>0).toString(16).padStart(8,'0');
-  const imported=handle({id:'finance-coverage-import',command:'import',payload:{text:JSON.stringify(document)}});
-  assert.equal(imported.ok,true,'Availability fixture: '+imported.error);
-  return {...imported,id:request.id};
- };
- return bridge;
+test('Isolated replay of the real billing preserves RNG and results; one extra wage costs what the budget says', () => {
+  const r = audit(), c = r.counterfactual;
+  assert.equal(r.weeks[0].billingReplay.matched, r.weeks[0].ai.clubs);
+  assert.ok(c.rngUnchanged && c.sportsUnchanged && c.otherStateIdentical && c.duplicateWeekRefused);
+  assert.equal(c.cashDeltaDifference, c.expectedDifference); assert.ok(c.cashDeltaDifference < 0);
+});
+
+// Cas construits : deux clubs gérés et le club joué, barème réel de club-budget.cjs.
+function fixture() {
+  const forces = [0, 1, 2].map(id => ({id, division: 'champ', base: 60 + id}));
+  const args = id => ({forces, clubId: id, masseHebdo: 40000, semaines: 40, receptions: 12, domicile: id === 1, neutre: false, phase: 'league',
+    resultats: [], gere: true, repere: '1|3', libelle: '', formation: null, investissement: 0, accueil: 1, marge: 0, aideRelegation: 0, remboursement: 0});
+  const billing = {};
+  for (const id of [1, 2]) { const cap = {args: args(id), compte: {imprevu: 0, fraisMatch: 0}}; cap.ecritures = billingReplay(cap); billing[id] = cap; }
+  const clubs = [0, 1, 2].map(id => ({id, cash: 1000000, players: [{id: 'p' + id, salary: 40000}]}));
+  const a = {mode: 'world-champ', season: 1, week: 3, phase: 'league', club: 0, clubs, facilities: {0: 2, 1: 2, 2: 3}, ledger: [], accordsIA: []};
+  const b = structuredClone(a); b.week = 4;
+  const writes = [];
+  for (const id of [1, 2]) {
+    const d = billing[id].ecritures.reduce((n, e) => n + e.amount, 0) - upkeep(a.facilities[id]);
+    b.clubs[id].cash += d; writes.push({clubId: id, delta: d, fn: 'worldWeeklyEconomy'});
+  }
+  return {a, b, trace: {writes, billing}};
 }
-function currentCoverageWorkerAudit(){
- const fs=require('node:fs'),path=require('node:path'),Module=require('node:module');
- const worker=require('../native/engine/worker.cjs'),filename=path.join(__dirname,'../ci/world-finance-flow-audit.cjs'),m=new Module(filename,module);
- m.filename=filename;m.paths=Module._nodeModulePaths(path.dirname(filename));const normal=m.require.bind(m);
- m.require=id=>id==='../native/engine/worker.cjs'?{...worker,createBridge:options=>withCurrentCoverageFixture(worker.createBridge(options))}:normal(id);
- m._compile(fs.readFileSync(filename,'utf8'),filename);return m.exports;
-}
-test('Current V2 coverage from publicly imported unavailability remains unknown to the historical v1 receipt',()=>{
- const r=currentCoverageWorkerAudit().run({seed:827381,weeks:1,club:0});assert.equal(r.passed,true);
- const changed=r.weeks[0].rows.filter(row=>row.kind==='ai'&&!row.payrollStable);
- assert.ok(changed.length>0,'The unchanged current worker must actually add coverage');
- assert.deepEqual(changed.map(row=>row.clubId),[COVERAGE_CLUB]);
- assert.ok(changed[0].addedPlayers.length>0&&changed[0].payrollDelta>0);
- assert.ok(changed.every(row=>row.sourceOrderVerified===false&&row.status==='unknown'));
- assert.equal(r.weeks[0].ai.explainedSourceOrder,0,'No current v2 source-order claim without a separate receipt');
- assert.equal(r.counterfactual.cashDeltaDifference,-1000);assert.ok(r.counterfactual.duplicateWeekRefused);
- assert.ok(r.counterfactual.rngUnchanged&&r.counterfactual.sportsUnchanged&&r.counterfactual.otherStateIdentical);
+test('A constructed week with billing and an accord reconciles', () => {
+  const {a, b, trace} = fixture();
+  b.accordsIA.push({id: 'ia-9', vendeurId: 2, acheteurId: 1, montant: 50000});
+  b.clubs[1].cash -= 50000; b.clubs[2].cash += 50000;
+  trace.writes.push({clubId: 1, delta: -50000, fn: 'calIANouvelAccord'}, {clubId: 2, delta: 50000, fn: 'calIANouvelAccord'});
+  const r = reconcile(a, b, trace);
+  assert.equal(r.ai.reconciled, 2); assert.equal(r.ai.transferClubs, 2);
+  assert.equal(r.rows.find(x => x.clubId === 0).status, 'reconciled-ledger');
+});
+test('Unexplained cash, unknown engine flows or a forged billing stay unknown, never attributed to a made-up flow', () => {
+  let f = fixture(); f.b.clubs[1].cash += 999;                       // écriture non tracée
+  assert.equal(reconcile(f.a, f.b, f.trace).rows[1].status, 'unknown');
+  f = fixture(); f.b.clubs[1].cash += 999; f.trace.writes.push({clubId: 1, delta: 999, fn: 'mystere'}); // flux inconnu
+  let row = reconcile(f.a, f.b, f.trace).rows[1];
+  assert.equal(row.status, 'unknown'); assert.deepEqual(row.unknownWrites, [{fn: 'mystere', delta: 999}]);
+  f = fixture(); f.b.clubs[1].cash -= 50000; f.trace.writes.push({clubId: 1, delta: -50000, fn: 'calIANouvelAccord'}); // indemnité sans accord
+  assert.equal(reconcile(f.a, f.b, f.trace).rows[1].status, 'unknown');
+  f = fixture(); f.trace.billing[1].ecritures[0].amount += 1;        // écritures du moteur différentes du barème
+  row = reconcile(f.a, f.b, f.trace).rows[1];
+  assert.equal(row.billing.replayMatchesEngine, false); assert.equal(row.status, 'unknown');
+  f = fixture(); delete f.trace.billing[2];                         // club non facturé
+  assert.equal(reconcile(f.a, f.b, f.trace).rows[2].status, 'unknown');
+  f = fixture(); f.b.season++;
+  assert.throws(() => reconcile(f.a, f.b, f.trace), /no interseason/);
+  f = fixture(); f.a.mode = f.b.mode = 'other';
+  assert.throws(() => reconcile(f.a, f.b, f.trace), /world-champ/);
 });
