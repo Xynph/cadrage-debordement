@@ -1357,7 +1357,12 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 		"Recrutement": app.body.add_child(app.SquadViews.market(app))
 		"Staff": app.body.add_child(app.StaffViews.build(app))
 		"Formation": app.body.add_child(app.DevelopmentViews.build(app))
-		"Presse": app.body.add_child(app.PressViews.build(app))
+		"Presse":
+			# Plus d'ancienne vue (papier, or, arrondis) : la page Presse de la direction artistique sert à toutes les tailles.
+			var hote := Control.new()
+			hote.custom_minimum_size = Vector2(0, Press.HEIGHT * C.density)
+			app.body.add_child(hote)
+			Press.build(app, hote)
 		"Vestiaire": app.body.add_child(app.RelationshipsViews.build(app))
 		"Rivalités": app.body.add_child(app.WorldViews.build(app))
 		"Stratégie": app.body.add_child(app.StrategyViews.build(app))

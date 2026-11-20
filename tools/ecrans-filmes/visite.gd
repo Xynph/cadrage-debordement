@@ -30,6 +30,10 @@ const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
+	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
+	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
+	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
+	{"id": "presse-portraits", "libelle": "Presse : Portraits", "type": "presse_onglet", "onglet": 3},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "options", "libelle": "Options", "type": "options"},
 ]
@@ -406,6 +410,36 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				app._navigate("Réception", false)
 				await stabiliser()
 			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"presse_ouverte":
+			# Même recette que tests/godot-presse-da.gd : carrière neuve, avance jusqu'à la conférence d'arrivée,
+			# puis page Presse avec l'origine du courrier (questions ouvertes sous les yeux).
+			var recette := GDScript.new()
+			recette.source_code = FileAccess.get_file_as_string(ProjectSettings.globalize_path("res://").path_join("../../tests/helpers/contextual_flow.gd"))
+			if recette.reload() != OK: return {"statut": "indisponible", "note": "recette de conférence illisible"}
+			var muet := func(_ok: bool, _message: String) -> void: pass
+			if not app._command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"}): return {"statut": "echec", "note": "carrière neuve refusée"}
+			while app.waiting: await process_frame
+			app.timer.stop()
+			var ouverte: bool = await recette.reach_press_conference(app, self, muet)
+			if not ouverte: return {"statut": "echec", "note": "aucune conférence ouverte atteinte"}
+			var conference: Dictionary = app.model.clubLife.press.conference
+			# La salle 3D prend la main si l'origine est posée avant la navigation : page d'abord, origine ensuite.
+			app.management_ui.press_tab = 0
+			if app.has_meta("press_mail_origin"): app.remove_meta("press_mail_origin")
+			app._navigate("Presse")
+			await stabiliser()
+			if app.route != "Presse": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+			var canvas := app.find_child("CarnetPresse", true, false)
+			if canvas == null: return {"statut": "echec", "note": "page Presse absente"}
+			app.set_meta("press_mail_origin", conference.invitationId)
+			canvas._select(1)
+			await stabiliser()
+		"presse_onglet":
+			preparer_presse()
+			app.management_ui.press_tab = int(ecran.onglet)
+			app._navigate("Presse")
+			await stabiliser()
+			if app.route != "Presse": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
 		"calendrier_semaine":
 			app._navigate("Calendrier")
 			await stabiliser()

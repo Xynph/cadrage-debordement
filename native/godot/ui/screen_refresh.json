@@ -67,6 +67,7 @@
         "ui/contract_review.gd",
         "ui/delegation_dialog.gd",
         "ui/immersive08/match_canvas.gd",
+        "ui/immersive08/press_canvas.gd",
         "ui/immersive08/training_canvas.gd",
         "ui/optimistic_decisions.gd",
         "ui/press_view.gd",
