@@ -22,7 +22,7 @@ const CLUB = 102, SEMAINE_AUTOMNE = 14, SEMAINE_FIN = 45;
 const t0 = Date.now();
 const log = (...x) => process.stderr.write(x.join(' ') + '\n');
 
-const jeu = ouvrir({ testVm: true, hebdomadaire: true, seed: GRAINE });
+const jeu = ouvrir({ testVm: true, hebdomadaire: true, simulation: true, seed: GRAINE });
 const run = src => jeu.bridge.vm.run(src);
 let model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: CLUB, start: 'premiers-clubs', varyCurrent: true }));
 
