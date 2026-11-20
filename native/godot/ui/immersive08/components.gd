@@ -87,12 +87,15 @@ static func reach_controls(root: Node) -> void:
 		var control := node as Control
 		control.custom_minimum_size = control.custom_minimum_size.max(Vector2(TARGET_MIN, TARGET_MIN))
 
-static func box(color: Color = PANEL, border: Color = LINE, radius: int = 8, padding: int = 18) -> StyleBoxFlat:
+## Panneau de la charte : arrondi (18 par défaut), sans bordure. Un `border` explicite garde un contour fin
+## (champ, bouton secondaire) ; `rayon_nul` reste pour les grilles qui veulent des cases jointives.
+static func box(color: Color = PANEL, border: Color = Color.TRANSPARENT, radius: int = Charte.RAYON_PANNEAU, padding: int = 18) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color
-	style.border_color = Color(border, .65)
+	style.border_color = border
 	style.set_border_width_all(1 if border.a > 0 else 0)
-	style.set_corner_radius_all(0 if rayon_nul else maxi(3, px(radius)))
+	style.set_corner_radius_all(0 if rayon_nul else (radius if radius >= Charte.RAYON_PILULE else maxi(3, px(radius))))
+	style.anti_aliasing = true
 	style.content_margin_left = px(padding)
 	style.content_margin_right = px(padding)
 	style.content_margin_top = px(padding)
@@ -165,13 +168,14 @@ static func style_bouton_lien(bouton: BaseButton, taille: int = 19, souligne_au_
 		(bouton as Button).icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-## Bouton d'action PRINCIPALE de l'écran : ivoire plein, texte nuit, rayon 0 (charte §7). Un seul par écran ; jamais d'or
-## (réservé à Continuer).
+## Bouton d'action PRINCIPALE de l'écran : pilule dorée, texte sombre (charte finale). Un seul aplat doré par écran :
+## sur une page où Continuer est visible, préférer un bouton secondaire (contour) pour ne pas lui voler la vedette.
 static func style_bouton_ivoire_plein(bouton: BaseButton, taille: int = 21) -> void:
 	for look in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
-		style.bg_color = Charte.IVOIRE if look != "hover" else Charte.IVOIRE.lightened(.12)
-		style.set_corner_radius_all(0)
+		style.bg_color = Charte.OR if look != "hover" else Charte.OR_VIF
+		style.set_corner_radius_all(Charte.RAYON_PILULE)
+		style.anti_aliasing = true
 		style.content_margin_left = px(18)
 		style.content_margin_right = px(18)
 		style.content_margin_top = px(7)
@@ -181,12 +185,33 @@ static func style_bouton_ivoire_plein(bouton: BaseButton, taille: int = 21) -> v
 	off.bg_color = PANEL
 	off.border_color = LINE
 	off.set_border_width_all(1)
-	off.set_corner_radius_all(0)
+	off.set_corner_radius_all(Charte.RAYON_PILULE)
 	off.content_margin_left = px(18)
 	off.content_margin_right = px(18)
 	bouton.add_theme_stylebox_override("disabled", off)
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		bouton.add_theme_color_override(key, Charte.NUIT)
+		bouton.add_theme_color_override(key, Charte.PANNEAU)
+	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+	bouton.add_theme_font_override("font", BOLD)
+	bouton.add_theme_font_size_override("font_size", maxi(12, px(taille)))
+	if bouton is Button:
+		(bouton as Button).icon = null
+
+## Action d'une page qui garde Continuer visible (coque) : pilule à contour `FILET`, texte crème, sans aplat doré
+## (Continuer porte l'unique aplat doré de l'écran). Même geste que `style_bouton_ivoire_plein`, autre rendu.
+static func style_bouton_contour(bouton: BaseButton, taille: int = 21) -> void:
+	var looks := {"normal": [Color.TRANSPARENT, LINE], "hover": [RAISED, FAINT], "pressed": [Charte.SELECTION, IVORY], "disabled": [Color.TRANSPARENT, LINE]}
+	for look: String in looks:
+		var style := box(looks[look][0], looks[look][1], Charte.RAYON_PILULE, 18)
+		style.content_margin_top = px(7)
+		style.content_margin_bottom = px(7)
+		bouton.add_theme_stylebox_override(look, style)
+	var focus := box(Color.TRANSPARENT, Charte.OR, Charte.RAYON_PILULE, 18)
+	focus.set_border_width_all(2)
+	focus.set_expand_margin_all(2)
+	bouton.add_theme_stylebox_override("focus", focus)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		bouton.add_theme_color_override(key, Charte.IVOIRE)
 	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
 	bouton.add_theme_font_override("font", BOLD)
 	bouton.add_theme_font_size_override("font_size", maxi(12, px(taille)))
@@ -237,20 +262,26 @@ static func button(text: String, callback: Callable, primary: bool = false, acce
 	control.custom_minimum_size.y = px(46)
 	control.add_theme_font_override("font", BOLD)
 	control.add_theme_font_size_override("font_size", maxi(14, px(25)))
-	var fill := readable_primary_fill(accent) if primary else accent
-	control.add_theme_stylebox_override("normal", box(fill.darkened(.2) if primary else PANEL, accent.lightened(.3) if primary else LINE, 5, 12))
-	control.add_theme_stylebox_override("hover", box(fill if primary else RAISED, IVORY, 5, 12))
-	control.add_theme_stylebox_override("pressed", box(fill.darkened(.4) if primary else SELECTED, IVORY, 5, 12))
-	control.add_theme_stylebox_override("disabled", box(PANEL, LINE, 5, 12))
+	# Charte finale : pilules. Principal = aplat doré texte sombre ; secondaire = contour trait, texte crème.
+	var pill := Charte.RAYON_PILULE
+	if primary:
+		control.add_theme_stylebox_override("normal", box(Charte.OR, Color.TRANSPARENT, pill, 18))
+		control.add_theme_stylebox_override("hover", box(Charte.OR_VIF, Color.TRANSPARENT, pill, 18))
+		control.add_theme_stylebox_override("pressed", box(Charte.OR.darkened(.15), Color.TRANSPARENT, pill, 18))
+	else:
+		control.add_theme_stylebox_override("normal", box(Color.TRANSPARENT, LINE, pill, 18))
+		control.add_theme_stylebox_override("hover", box(RAISED, FAINT, pill, 18))
+		control.add_theme_stylebox_override("pressed", box(Charte.SELECTION, IVORY, pill, 18))
+	control.add_theme_stylebox_override("disabled", box(Color.TRANSPARENT, LINE, pill, 18))
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var style: StyleBoxFlat = control.get_theme_stylebox(state)
 		style.content_margin_top = px(7)
 		style.content_margin_bottom = px(7)
-	var focus := box(Color.TRANSPARENT, GOLD, 5, 12)
+	var focus := box(Color.TRANSPARENT, OR, pill, 18)
 	focus.set_border_width_all(2)
-	if primary: focus.set_expand_margin_all(2)
+	focus.set_expand_margin_all(2)
 	control.add_theme_stylebox_override("focus", focus)
-	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: control.add_theme_color_override(state, IVORY)
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: control.add_theme_color_override(state, Charte.PANNEAU if primary else IVORY)
 	control.add_theme_color_override("font_disabled_color", FAINT)
 	control.pressed.connect(callback)
 	return control
@@ -285,8 +316,14 @@ static func fixture_location_icon(kind: String, solid: bool = false) -> String:
 
 static func chip(text: String, color: Color = MINT) -> PanelContainer:
 	var frame := PanelContainer.new()
-	frame.add_theme_stylebox_override("panel", box(Color(color, .10), color, 5, 8))
-	var caption := label(text, 21, color)
+	# Pastille de la charte : voile de la couleur (14-16 %), texte de la couleur, coins à 6 px (distincte d'un bouton).
+	var style := box(Color(color, .15), Color.TRANSPARENT, Charte.RAYON_PETIT, 8)
+	style.content_margin_left = px(12)
+	style.content_margin_right = px(12)
+	style.content_margin_top = px(3)
+	style.content_margin_bottom = px(3)
+	frame.add_theme_stylebox_override("panel", style)
+	var caption := label(text, 19, color, true, 700)
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	frame.add_child(caption)
 	return frame
@@ -295,8 +332,8 @@ static func chip(text: String, color: Color = MINT) -> PanelContainer:
 static func derby_chip() -> PanelContainer:
 	var frame := PanelContainer.new()
 	frame.name = "DerbyTag"
-	frame.add_theme_stylebox_override("panel", box(RAISED, GOLD, 5, 8))
-	var caption := label("DERBY", 21, AMBER, true, 700)
+	frame.add_theme_stylebox_override("panel", box(Charte.VOILE_DORE, Color.TRANSPARENT, Charte.RAYON_PETIT, 8))
+	var caption := label("DERBY", 19, OR, true, 700)
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	frame.add_child(caption)
 	frame.tooltip_text = "Derby : une rivalité ancienne, plus de tension sur le terrain et dans les tribunes."
@@ -307,8 +344,8 @@ static func gauge(value: float, color: Color = MINT, height: int = 7) -> Progres
 	control.value = clampf(value, 0, 100)
 	control.show_percentage = false
 	control.custom_minimum_size.y = maxi(4, px(height))
-	control.add_theme_stylebox_override("background", box(SELECTED, Color.TRANSPARENT, 3, 0))
-	control.add_theme_stylebox_override("fill", box(color, Color.TRANSPARENT, 3, 0))
+	control.add_theme_stylebox_override("background", box(SELECTED, Color.TRANSPARENT, Charte.RAYON_PILULE, 0))
+	control.add_theme_stylebox_override("fill", box(color, Color.TRANSPARENT, Charte.RAYON_PILULE, 0))
 	return control
 
 static func texture(id: String) -> Texture2D:

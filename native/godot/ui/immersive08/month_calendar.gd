@@ -372,7 +372,7 @@ func _action(caption: String, callback: Callable, id: String, tooltip: String = 
 	control.text = caption
 	control.pressed.connect(callback)
 	control.set_meta("immersive_style_applied", true)
-	if id.begins_with("CalendarOpenFixture_"): C.style_bouton_ivoire_plein(control, 20)
+	if id.begins_with("CalendarOpenFixture_"): C.style_bouton_contour(control, 20)
 	else: C.style_bouton_lien(control, 20, active)
 	control.name = id
 	control.custom_minimum_size.x = C.px(34)

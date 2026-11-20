@@ -1,7 +1,7 @@
 extends SceneTree
 ## Réception, direction artistique « Liste et lettre » (choix de Léo du 19/11/2026), Godot réel + worker réel, carrière Monde :
 ## - la lettre ouverte est le seul document « papier » de l'écran, la liste reste sombre ;
-## - aucune couleur or hors Continuer dans la liste et la lettre ; un symbole accompagne chaque sujet ;
+## - aucun aplat doré hors Continuer dans la liste et la lettre ; un symbole accompagne chaque sujet ;
 ## - noms de joueurs et de clubs cités = liens (mini-fiche au survol d'un joueur) ; aucun lien mort ;
 ## - le filtre « Sujet » est un menu déroulant ; plus de panneau fixe « Concerné » ;
 ## - un clic sur une réponse la choisit, « Envoyer la réponse » la confirme, « Annuler » la retire ;
@@ -54,16 +54,15 @@ func windows() -> Array:
 func close(a: Color, b: Color) -> bool:
 	return absf(a.r - b.r) < .01 and absf(a.g - b.g) < .01 and absf(a.b - b.b) < .01
 
-## Couleurs or posées sur un contrôle (police, fonds, bordures) : aucune hors Continuer.
+## Aplat doré posé sur un contrôle (fond d'un bouton ou d'un panneau, tous états) : le texte, le contour et l'anneau
+## de focus dorés sont permis par la charte finale ; seul Continuer (coque) porte un aplat doré.
 func gold_on(control: Control) -> bool:
 	var gold: Array[Color] = [Charte.OR, Charte.OR_VIF]
 	var tones: Array[Color] = []
-	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]:
-		if control.has_theme_color_override(key): tones.append(control.get_theme_color(key))
-	for key in ["normal", "hover", "pressed", "focus", "disabled", "panel"]:
+	for key in ["normal", "hover", "pressed", "disabled", "panel"]:
 		if control.has_theme_stylebox_override(key):
 			var box := control.get_theme_stylebox(key) as StyleBoxFlat
-			if box != null: tones.append_array([box.bg_color, box.border_color])
+			if box != null: tones.append(box.bg_color)
 	for tone in tones:
 		for reference in gold:
 			if close(tone, reference) and tone.a > .05: return true
@@ -143,7 +142,7 @@ func paper_and_colors() -> void:
 		var root_zone := node(zone)
 		for item: Node in root_zone.find_children("*", "Control", true, false):
 			if gold_on(item as Control): golds.append(str(item.name))
-	check(golds.is_empty(), "Aucune couleur or hors Continuer : " + str(golds))
+	check(golds.is_empty(), "Aucun aplat doré hors Continuer : " + str(golds))
 	var rows := node("InboxMessageRows").get_children().filter(func(n: Node) -> bool: return n.has_meta("message_id"))
 	var with_symbol := rows.filter(func(r: Node) -> bool: return r.find_child("SenderIcon", true, false) != null)
 	check(not rows.is_empty() and with_symbol.size() == rows.size(), "Chaque sujet a son symbole à côté du mot (%d/%d)" % [with_symbol.size(), rows.size()])
@@ -163,7 +162,8 @@ func reply_flow(mail: Dictionary) -> void:
 	await settle()
 	send = node("InboxClubMailSend") as Button
 	check(send != null and not send.disabled and send.text.begins_with("Envoyer la réponse"), "Le choix active « Envoyer la réponse X »")
-	check(not close((send.get_theme_stylebox("normal") as StyleBoxFlat).bg_color, Charte.OR), "L'action principale est ivoire, pas or")
+	var fond_envoi := send.get_theme_stylebox("normal") as StyleBoxFlat
+	check(fond_envoi != null and not close(fond_envoi.bg_color, Charte.OR) and fond_envoi.corner_radius_top_left >= 999, "« Envoyer la réponse » : pilule à contour, pas d'aplat doré (Continuer le porte)")
 	check(node("InboxClubMailCancel") != null, "« Annuler » proposé")
 	node("InboxClubMailCancel").pressed.emit()
 	await settle()

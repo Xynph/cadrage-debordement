@@ -95,17 +95,26 @@ func cliquables(large: bool = true) -> void:
 		app.management_ui.erase("fiche_joueur")
 		app.set_meta("immersive08_full_player", false)
 
+## Charte finale : un seul APLAT doré par écran, et c'est Continuer (dessiné par la coque, hors de la page). La page du
+## Bureau n'en porte aucun : les boutons Office* et Gabi sont des pilules à contour. Le texte doré (surtitres, attention)
+## et l'anneau de focus doré restent permis.
 func pas_d_or() -> void:
 	await bureau()
-	var trouves: Array[String] = []
+	var aplats: Array[String] = []
 	for noeud: Node in page().find_children("*", "Control", true, false):
-		if noeud is Label:
-			var encre: Color = noeud.get_theme_color("font_color")
-			if encre.is_equal_approx(Charte.OR) or encre.is_equal_approx(Charte.OR_VIF): trouves.append(str(noeud.name))
-		for style_nom in ["panel", "normal", "hover", "pressed", "focus"]:
-			var style := noeud.get_theme_stylebox(style_nom) as StyleBoxFlat
-			if style != null and (style.bg_color.is_equal_approx(Charte.OR) or style.bg_color.is_equal_approx(Charte.OR_VIF) or style.border_color.is_equal_approx(Charte.OR) or style.border_color.is_equal_approx(Charte.OR_VIF)): trouves.append(str(noeud.name))
-	check(trouves.is_empty(), "Aucune couleur or hors Continuer : " + str(trouves))
+		var controle := noeud as Control
+		if controle == null or not controle.is_visible_in_tree(): continue
+		for style_nom in ["panel", "normal", "hover", "pressed", "disabled"]:
+			var style := controle.get_theme_stylebox(style_nom) as StyleBoxFlat
+			if style != null and style.bg_color.a > .05 and (style.bg_color.is_equal_approx(Charte.OR) or style.bg_color.is_equal_approx(Charte.OR_VIF)):
+				aplats.append(str(controle.name))
+				break
+	check(aplats.is_empty(), "Aucun aplat doré dans la page du Bureau (Continuer le porte seul) : " + str(aplats))
+	var principal := page().find_child("OfficePreparationAction", true, false) as Button
+	if principal != null and principal.is_visible_in_tree():
+		var style := principal.get_theme_stylebox("normal") as StyleBoxFlat
+		check(style != null and style.corner_radius_top_left >= 999, "Bureau : « Préparer » est une pilule (rayon 999)")
+		check(style != null and style.bg_color.a < .05 and style.border_color.a > .05, "Bureau : « Préparer » est une pilule à contour, pas un aplat")
 
 func bandeau_et_gabi() -> void:
 	await bureau()
@@ -141,7 +150,7 @@ func run() -> void:
 	await cliquables()
 	await pas_d_or()
 	await bandeau_et_gabi()
-	# Bureau étroit (< 1600 px) : plus aucune fenêtre, tout ce qui a l'air cliquable ouvre quelque chose, pas d'or.
+	# Bureau étroit (< 1600 px) : plus aucune fenêtre, tout ce qui a l'air cliquable ouvre quelque chose, pas d'aplat doré.
 	root.size = Vector2i(1280, 720)
 	await settle()
 	await cliquables(false)

@@ -81,22 +81,27 @@ static func _lien(parent: Control, x: float, y: float, texte: String, action: Ca
 	bouton.tooltip_text = texte
 	return bouton
 
-## Bouton principal de l'écran : ivoire plein, texte noir chaud, Barlow italique (l'or reste à Continuer).
+## Action principale de la page : pilule à contour, texte crème, Barlow italique (l'aplat doré reste à Continuer).
 static func _principal(parent: Control, rectangle: Rect2, caption: String, action: Callable, id: String, accent: Color) -> Button:
 	var bouton := D.button(parent, rectangle, caption, action, true, "arrow", false, accent, id)
 	bouton.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
 	bouton.add_theme_font_size_override("font_size", maxi(12, C.px(25)))
-	for mode: Array in [["normal", Charte.IVOIRE], ["hover", Charte.IVOIRE_2], ["pressed", Charte.IVOIRE_2], ["disabled", Charte.PANNEAU_3]]:
-		var style := _box(mode[1])
+	# Continuer (coque) porte l'unique aplat doré de l'écran : ce bouton est une pilule à contour `LINE`, texte crème.
+	var pilule := Charte.RAYON_PILULE
+	var etats := {"normal": C.box(Color.TRANSPARENT, C.LINE, pilule, 18), "hover": C.box(C.RAISED, C.FAINT, pilule, 18),
+		"pressed": C.box(Charte.SELECTION, Charte.IVOIRE, pilule, 18), "disabled": C.box(Color.TRANSPARENT, C.LINE, pilule, 18)}
+	for mode: String in etats:
+		var style := etats[mode] as StyleBoxFlat
 		style.content_margin_left = C.px(18)
 		style.content_margin_right = C.px(18)
-		bouton.add_theme_stylebox_override(str(mode[0]), style)
-	var focus := _box(Color.TRANSPARENT, Charte.IVOIRE, 2)
+		bouton.add_theme_stylebox_override(mode, style)
+	var focus := C.box(Color.TRANSPARENT, Charte.OR, pilule, 18)
+	focus.set_border_width_all(2)
 	focus.set_expand_margin_all(C.px(3))
 	bouton.add_theme_stylebox_override("focus", focus)
-	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: bouton.add_theme_color_override(couleur, Charte.FOND)
+	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: bouton.add_theme_color_override(couleur, Charte.IVOIRE)
 	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
-	bouton.icon = C.icon_texture("arrow", Charte.FOND)
+	bouton.icon = C.icon_texture("arrow", Charte.IVOIRE)
 	return bouton
 
 ## Bouton transparent qui couvre une zone entière (ligne, compteur) : texte en haut à gauche si `marge_bas` > 0.

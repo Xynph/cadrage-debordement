@@ -108,8 +108,9 @@ static func render(app: Control) -> bool:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	app.root_content.add_child(background)
-	# Fond photo très discret de l'écran (banque d'images « fond-* »), sous les panneaux.
-	var fond := fond_ecran(app.route, str(app.model.get("meta", {}).get("phase", "")))
+	# Fond photo très discret de l'écran (banque d'images « fond-* »), voilé sur l'ardoise (charte finale, choix de Léo
+	# du 20/11/2026 : on garde les photos) ; FOND_PHOTO = false donne l'aplat seul.
+	var fond := fond_ecran(app.route, str(app.model.get("meta", {}).get("phase", ""))) if FOND_PHOTO else ""
 	if not fond.is_empty():
 		var photo := TextureRect.new()
 		photo.name = "ScreenBackdrop"
@@ -1437,6 +1438,7 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 
 
 ## Fonds d'écran de la banque d'images par route (très atténués : les panneaux restent la lecture).
+const FOND_PHOTO := true
 const FOND_OPACITE := 0.16
 const FONDS := {"Bureau":"fond-bureau", "Effectif":"fond-effectif", "Composition":"fond-composition", "Préparation":"fond-tactique",
 	"Plan de jeu":"fond-tactique", "Recrutement":"fond-transferts", "Finances":"fond-finances", "Calendrier":"fond-calendrier",

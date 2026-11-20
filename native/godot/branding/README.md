@@ -1,13 +1,12 @@
 # Identité Rugby Legacy 27
 
-> Le jeu s’appelle **Rugby Legacy 27** (renommage du 13 novembre 2026, voir `docs/renommage-rugby-legacy-27.md`). Le logo actuel est une proposition **provisoire** (même symbole, lettrage « RUGBY LEGACY 27 / CLUB MANAGER ») en attendant la graphiste. Les créations d’origine du 7 novembre (lettrage « OVAL LEGACY 27 ») sont retirées.
+> Le jeu s’appelle **Rugby Legacy 27** (renommage du 13 novembre 2026, voir `docs/renommage-rugby-legacy-27.md`). Logo, symbole et icônes sont les versions **définitives** livrées par la graphiste du projet (charte finale du 20/11/2026) ; ils remplacent le logo provisoire.
 
-Logo complet et icône créés par génération d’images au cours de la session du 7 novembre 2026, avec les indications de direction artistique du projet. Aucun logo tiers n’a été fourni comme référence : les itérations utilisent exclusivement nos propres propositions.
+Créations de la graphiste du projet, livrées en PNG transparents (logo crème et doré pour fonds sombres) et recadrées pour le moteur.
 
-Léo a retenu le symbole ovale de la première proposition, validé le logo complet sur fond noir avec le lettrage corrigé, puis choisi l’icône transparente. Le logo principal conserve son master noir intact ; le shader de présentation le compose dans l’accueil. Les essais de détourage défectueux ne sont pas utilisés.
-
-- `rugby-legacy-27-logo.png` : « RUGBY LEGACY 27 » et « CLUB MANAGER », ivoire et or, master sur fond noir, 1774×887 (provisoire).
-- `rugby-legacy-27-icon.png` : symbole ovale seul, version transparente choisie par Léo.
-- `black_key.gdshader` : composition native de l’image principale sur les photographies de l’accueil.
-
-Ces fichiers sont des créations de cette session, pas des visuels provenant du pack privé. Leur génération ne constitue pas une certification d’absence de droits tiers ni une recherche d’antériorité de marque. Les conditions OpenAI attribuent les droits sur les sorties dans la mesure permise par la loi et précisent leur possible non-unicité : [conditions applicables aux services](https://openai.com/policies/services-agreement/). Léo a reçu cette précision avant de confirmer son choix. Déclarer les contenus IA effectivement distribués lors de la préparation de la fiche Steam.
+- `rugby-legacy-27-logo.png` : logo complet crème et doré, fond transparent, 2048×581 (largeur minimale à l’écran : 120 px).
+- `rugby-legacy-27-symbole.png` : symbole seul (ovale et monogramme), crème, 512 px de haut, fond transparent.
+- `rugby-legacy-27-symbole-dore.png` : même symbole, doré.
+- `rugby-legacy-27-icon.png` : icône d’application 256×256 (symbole doré, marge de 12 %), icône du projet.
+- `rugby-legacy-27.ico` : icône Windows multi-tailles (16, 24, 32, 48, 64, 128, 256), utilisée par les exports `windows-release.cfg` et `steam-release.cfg`. Les tailles 16 et 24 sont provisoires (version simplifiée du symbole à dessiner).
+- `black_key.gdshader` : ancien détourage du master sur fond noir ; le logo étant désormais transparent, il n’est plus nécessaire.

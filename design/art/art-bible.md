@@ -2,258 +2,259 @@
 
 > **Status**: Draft (mode autonome, rigueur `minimal` : listes de contraintes)
 > **Owned By**: art-director
-> **Last Updated**: 2026-11-19
-> **Art Director Sign-Off (AD-ART-BIBLE)**: CONCERNS (accepted) 2026-11-19 — §8 budgets absents ; §7 tailles sous T1 à faire valider ; §5 atlas de Gabi opaque et portraits joueurs à produire
+> **Last Updated**: 2026-11-20
+> **Art Director Sign-Off (AD-ART-BIBLE)**: CONCERNS (accepted) 2026-11-20 — la charte finale de la graphiste (adoptée par Léo le 20/11) remplace la v19/11 (noir chaud / ivoire / or réservé à Continuer / 10°) ; contrastes recalculés ; §8 budgets toujours absents, §7 corps 13 px sous T1 (14 px), atlas de Gabi opaque
 
 AD-ART-BIBLE: CONCERNS
-- §8 : aucun budget de performance (frame, draw calls, mémoire) ni plateforme dans `project.yaml` ni `technical-preferences.md` : la tenue des standards ne peut pas être vérifiée ; arbitrage 2560/1920 des illustrations ouvert.
-- §7 : corps 13 px et en-têtes 12 px sous l'exigence T1 (14 px) ; décision de Léo pour le corps, 12 px (au lieu de 11) à valider ; `accessibility-requirements.md` T1/E1/E2 à réécrire en conséquence ; `tnum` de DM Sans et fichiers italiques de Barlow Condensed à vérifier avant production.
-- §5 : atlas de Gabi opaque (fond `#232228`, 1,15:1 contre `panneau`) : un rectangle se verra ; export avec transparence requis. Portraits joueurs actuels = vignettes provisoires (~2,8 Ko) : pas de source de production définie.
-- Cohérence vérifiée : palette ↔ humeurs (un seul jeu de jetons, variation par part d'image), formes ↔ énoncé (10° et ovale mesurés), contrastes texte ≥ 4,5:1 sur toutes les paires autorisées, secours daltonisme nommés pour chaque paire à risque. Contradiction corrigée avant signature : l'or servait aussi au focus clavier (focus passé en `ivoire`).
+- §8 : aucun budget de performance (frame, draw calls, mémoire) ni plateforme dans `project.yaml` ni `technical-preferences.md` ; arbitrage 2560/1920 des illustrations ouvert.
+- §7 : corps 13 px sous T1 (14 px), choix de Léo (densité FM) ; `accessibility-requirements.md` T1/E1/E2 à réécrire ; `tnum` de DM Sans à vérifier.
+- §5 : atlas de Gabi opaque (fond `#232228`) : un rectangle se verra sur `panneau` ; export avec transparence requis.
+- Tranché par Léo le 20/11 sur comparatifs : pastilles à coins de 6 px (comme la graphiste), lignes de tableau serrées 26 px (densité FM), menu pause en fenêtre (seule exception à « pas de fenêtre »). Reste à valider : compteur doré du menu non compté comme « aplat principal ».
+- Cohérence vérifiée : une seule règle, un seul nuancier (`charte.gd`), contrastes texte ≥ 4,5:1 sur toutes les paires autorisées, couleur jamais seule.
 
-Sources : décisions de Léo du 19/11/2026 (une seule DA tirée du logo ; densité Football Manager), `design/game-brief.md`, `design/player-journey.md`, `design/accessibility-requirements.md`, `docs/direction-artistique-20261108.md`, `production/ui/revue-da/` (options A/B/C abandonnées comme système, relectures), logo et icône `native/godot/branding/`, illustrations `native/godot/art/immersive08/`, atlas de Gabi (anthracite v5).
-Les décisions de Léo priment sur les documents antérieurs ; chaque écart est signalé « Écart ».
+Sources : décisions de Léo du 20/11/2026 (adoption de la charte finale de la graphiste, deux exceptions) et du 19/11/2026 (densité Football Manager, barème des attributs) ; **charte de la graphiste « Rugby Legacy 27 »** (README, `tokens.css`, fiches composants, logos, symboles, icônes ; lue le 20/11/2026) ; jetons Godot `native/godot/ui/charte.gd` (source de vérité des valeurs et noms) ; `design/game-brief.md`, `design/player-journey.md`, `design/accessibility-requirements.md` ; logo, symbole et icônes `native/godot/branding/` ; illustrations `native/godot/art/immersive08/` ; atlas de Gabi (anthracite v5).
+Les décisions de Léo priment sur la charte de la graphiste et sur les documents antérieurs ; chaque écart est signalé « Écart ».
 
 ---
 
 ## 1. Visual Identity Statement
 
-**Règle unique : chaque écran est une page du logo : ivoire sur noir chaud, l'or seulement pour l'héritage et pour faire avancer le temps, l'élan à 10° sur ce qui bouge, jamais sur ce qu'on lit.**
+**Règle unique : un aplat ardoise, des panneaux presque noirs aux angles larges, la crème qui porte l'information, un seul doré qui agit : le doré dit « fais ça », le vert clair dit « tout va bien », jamais deux couleurs pour un même sens.**
 
-Piliers servis (le brief n'a pas de piliers : on s'ancre sur son pitch et sa ligne « ce qu'ils ressentent ») : P1 « tout est sous contrôle » (lire, comparer, décider vite) ; P2 « le match reste incertain » (tension du jour de match) ; P3 « un club qui a une histoire » (héritage, saisons qui s'empilent).
+Piliers servis (le brief n'a pas de piliers : on s'ancre sur son pitch) : P1 « tout est sous contrôle » (lire, comparer, décider vite) ; P2 « le match reste incertain » (tension du jour de match) ; P3 « un club qui a une histoire » (héritage, saisons).
 
 Principes :
-- **Une seule langue, un seul curseur.** Les états de jeu ne changent ni de palette, ni de polices, ni de formes ; ils ne font varier que la **part d'image** (0 % au tableau, plein cadre au tunnel) et la **taille du plus grand titre**. Test : si un écran semble demander un autre style, on augmente ou on baisse la part d'image, on n'ajoute pas de couleur. (P1, P2)
-- **La donnée est droite, l'identité est penchée.** Inclinaison de 10° (mesurée sur le logo) pour titres, marqueurs de sélection, bords d'action et habillage du match ; tableaux, chiffres, texte courant restent droits. Test : si un élément porte une valeur à lire, il est droit ; s'il dit « nous », « ici » ou « vas-y », il peut pencher. (P1)
-- **L'or se mérite.** L'or du « 27 » marque ce qui fait l'héritage (trophée, record, logo) et l'unique action qui fait avancer le temps (Continuer) ; jamais un statut, une alerte, un focus, une sélection ni une décoration. Test : en cas de doute, ivoire. (P3)
+- **Sombre et posé.** Pas de blanc pur ni de noir pur à l'écran (hors `nuit`, écran titre). Le fond est l'ardoise, avec une photo d'ambiance très voilée par écran (16 %, choix de Léo du 20/11/2026). (P1)
+- **La crème porte l'information** (texte, titres, chiffres) ; le gris-vert la nuance ; les surfaces ne la portent jamais. (P1)
+- **Trois couleurs, trois rôles.** Doré = agir et attirer l'œil ; vert clair = bon état et notre équipe ; vert franc = surface rugby (jauge, écusson « nous », terrain). Test : en cas de doute, crème. (P1, P3)
+- **Une couleur n'est jamais seule** : tout état porte un mot ou un pictogramme.
+- **Droit et arrondi.** Titres et marqueurs droits (fin de l'inclinaison 10° ; `INCLINAISON_DEGRES = 0`) ; panneaux rayon 18, boutons, onglets et champs en pilule ; pastilles à 6 px.
+- **Une seule langue.** Les états de jeu ne changent ni palette, ni polices, ni formes ; ils ne varient que par la **part d'image** (0 % au tableau, plein cadre au tunnel) et la **taille du plus grand titre**. (P2)
 
 ## 2. Mood & Atmosphere
 
-Même palette, mêmes polices partout ; la lumière vient des illustrations, l'interface reste noir chaud / ivoire. Ce qui distingue les états d'un coup d'œil : part d'image, taille du titre maximal, quantité d'or.
+Même palette, mêmes polices partout ; la lumière vient des illustrations (plein cadre ou bandeau de page vitrine), et d'une photo d'ambiance très voilée sur l'ardoise derrière l'interface. Ce qui distingue les états : part d'image, titre maximal, quantité de doré.
 
-| État | Émotion cible | Lumière (dans les illustrations) | Adjectifs | Énergie | Élément porteur | Part d'image / titre max / or |
-|---|---|---|---|---|---|---|
-| Semaine (bureau, réception, effectif, finances, club) | maîtrise tranquille | fin de journée, lampe chaude unique, contraste moyen | posé, studieux, chaleureux, ordonné | mesurée | tableaux pleine largeur ; bandeau d'illustration du bureau voilé ≤ 160 px | ≤ 15 % / 28 px / 1 bouton |
-| Préparation (composition, plan, entraînement, dossier adverse) | concentration, anticipation | lumière froide de salle d'analyse, contraste haut, sans photo au centre | précis, tracé, tendu, silencieux | focalisée | terrain tracé ivoire 1 px sur `panneau` | 0-10 % / 28 px / 1 bouton |
-| Jour de match (avant-match, tunnel) | montée d'adrénaline | nuit, projecteurs sodium chauds, contre-jour, contraste très haut | électrique, humide, solennel, bruyant | montante | illustration tunnel plein cadre, affiche des deux clubs en 64 px incliné | 100 % / 64 px / affiche + 1 bouton |
-| Direct (3D, entracte 2D) | tension, lecture rapide | celle du stade 3D ; habillage opaque, aucun effet lumineux | vif, net, immédiat | haute | bandeau de score incliné haut-gauche, plaques couleur des deux clubs | 3D plein cadre / score 40 px / 0 (sauf trophée) |
-| Après-match | verdict, compréhension | vestiaire, lumière chaude basse, contraste moyen | apaisé, franc, lucide | retombante | pastille ovale V/N/D 48 px + score ; trois leviers en liste | 30 % (bandeau vestiaire) / 48 px / 1 bouton |
-| Fin de saison | héritage, fierté ou regret | trophée/stade vide, lumière dorée rasante | solennel, nostalgique, ample | contemplative | ovale tracé or autour du bilan | 40 % / 48 px / or autorisé sur titres et trophées |
+| État | Émotion cible | Lumière (dans les illustrations) | Énergie | Élément porteur | Part d'image / titre max / aplat doré |
+|---|---|---|---|---|---|
+| Semaine (bureau, réception, effectif, finances, club) | maîtrise tranquille | fin de journée, lampe chaude unique | mesurée | tableaux pleine largeur sur panneaux ; en-tête compact sans photo | 0 % / 28 px / 1 |
+| Préparation (composition, plan, entraînement, dossier adverse) | concentration | lumière froide de salle d'analyse | focalisée | terrain en bandes `pelouse` sur `panneau` | 0 % / 28 px / 1 |
+| Jour de match (avant-match, tunnel) | adrénaline | nuit, projecteurs sodium, contre-jour | montante | illustration tunnel plein cadre sous voile sombre, affiche des deux clubs 64 px | 100 % / 64 px / 1 |
+| Direct (3D, entracte 2D) | tension, lecture rapide | celle du stade 3D | haute | bandeau de score haut-gauche, panneaux `panneau` 90 % | 3D plein cadre / score 40 px / 0 |
+| Après-match | verdict, compréhension | vestiaire, lumière chaude basse | retombante | pastille V/N/D + score ; trois leviers en liste | bandeau 30 % (page vitrine) / 48 px / 1 |
+| Fin de saison | héritage, fierté ou regret | trophée/stade vide, lumière dorée rasante | contemplative | bilan sur panneau, trophée | 40 % / 48 px / 1 |
 
-- Interdits d'humeur : aucun changement de fond (clair/sombre) entre états ; aucune teinte d'état (pas de rouge de défaite plein écran, pas de vert de victoire).
+- Interdits d'humeur : aucun changement de fond (clair/sombre) entre états ; aucune teinte d'état plein écran (pas de rouge de défaite, pas de vert de victoire).
 - Son (mood seulement) : semaine feutrée ; jour de match foule et pluie ; après-match vestiaire. Choix audio hors de ce document.
 
 ## 3. Shape Language
 
-Deux formes viennent du logo ; tout le reste est rectiligne et sobre.
-
-**A. L'inclinaison (lettres du logo, 10° mesurés sur les fûts de R et L)**
-- Titres d'écran et de section : Barlow Condensed italique (vraie italique, voir §7).
-- Bord d'action : bouton principal et bandeaux du match en parallélogramme à droite (bord droit incliné 10° ; décalage = hauteur × 0,176, soit 6 px pour 32 px).
-- Marqueur de sélection : filet vertical 3 px incliné 10° à gauche de la ligne choisie.
-- Onglet actif : soulignement 3 px aux extrémités coupées à 10°.
-- Mouvement : les entrées glissent le long de l'axe incliné (§7).
-- Jamais : texte de tableau incliné, colonnes inclinées, écran entier en biais.
-
-**B. L'ovale (ballon tracé en virgules qui s'affinent, grand axe ~40°)**
-- Pastille de résultat V/N/D : ovale (rapport 1,5:1, grand axe horizontal), lettre droite au centre.
-- Pastilles de joueur sur terrain : ovale ; nous = plein, adversaire = anneau 2 px.
-- Ovale tracé (deux virgules qui s'affinent, sans fermer) : médaillon de Gabi (`ivoire-2`), progression de Continuer (`or-vif`, c'est Continuer), couronne des temps d'héritage (trophée, bilan, `or`). Max 1 ovale tracé visible dans le contenu, en plus du médaillon de la barre haute.
-- Jamais : cercle parfait (sauf boutons radio système), pastille ronde de filtre, numéro de maillot dans un rond.
-
-**C. Le reste : surfaces et filets**
-- Séparation par **paliers de fond** (`fond` → `panneau` → `panneau-2`) et par filets horizontaux 1 px `filet`. **Aucun cadre complet** (seule exception : contour de focus clavier).
-- Rayons : 0 partout ; 2 px pour champs de saisie seulement. Aucune ombre portée, aucun dégradé décoratif, aucun verre.
-- Hiérarchie : héros = un seul élément par écran (affiche, score, ou bouton principal) ; secondaire = tableaux ivoire ; recul = étiquettes `ivoire-2`, filets.
-
-**Silhouettes (3D et portraits)** : rugbyman lisible en vignette 48 px par la carrure, le maillot à couleur de club et le numéro dans le dos ; poste lu par la carrure (avants massifs, arrières élancés), jamais par un accessoire.
+- **Panneau** : `panneau` rayon 18, **sans bordure ni ombre** ; il se détache du fond par sa clarté. Carte dans un panneau : rayon 12.
+- **Pilule** (`RAYON_PILULE`) : boutons, onglets, champs, jauges (rail et remplissage).
+- **Rayon 6** (`RAYON_PETIT`) : pastilles d'état, cases, vignettes, ligne sélectionnée.
+- **Séparation** : filet 1 px `filet` à l'intérieur d'un panneau ; entre panneaux, 16 px de fond visible. Contour 1 px `filet` seulement pour bouton secondaire et champ ; seul autre contour : anneau de focus.
+- **Droit partout** : titres, marqueurs, bandeaux du match, soulignements ; aucun bord incliné, aucun texte penché, aucune italique (anciens noms `*_ITALIQUE` = coupes droites).
+- **Ovale du logo** : réservé au symbole (logo, icône, chargement) ; la pastille V/N/D est une pilule ; pastilles de joueur sur terrain : disque plein (nous) / anneau 2 px (adversaire) ; pas de cercle parfait ailleurs.
+- **Hiérarchie** : héros = un élément par écran (affiche, score ou bouton principal) ; secondaire = tableaux crème ; recul = étiquettes `ivoire-3`, filets.
+- Aucun dégradé décoratif, aucun verre, aucune ombre portée ; dégradé admis seulement pour le voile sombre sous un texte posé sur une illustration.
+- **Silhouettes (3D et portraits)** : rugbyman lisible en vignette 48 px par la carrure, le maillot de club et le numéro dans le dos ; poste lu par la carrure, jamais par un accessoire.
 
 ## 4. Color System
 
-### 4.1 Mesures sur le logo (pixels lus, moyenne par zone)
+### 4.1 Nuancier (7 teintes, source : `charte.gd`)
 
-| Zone | Hex mesuré |
-|---|---|
-| Fond | `#000000` |
-| « RUGBY LEGACY » et « CLUB MANAGER » | `#F6EEDC` |
-| « 27 » | `#E9C062` |
-| Ovale et monogramme (logo) | `#F1C970` |
-| Ovale (icône) | `#ECB95B` |
-| Pull de Gabi (atlas v5, moyenne) | `#71322F` |
-| Fond de l'atlas de Gabi | `#232228` (opaque, sans alpha) |
-
-### 4.2 Jetons
-
-| Jeton | Hex | Rôle |
+| Jeton Godot | Hex | Rôle |
 |---|---|---|
-| `nuit` | `#000000` | noir du logo : écran titre, plein cadre, sous la 3D. Jamais un panneau. |
-| `fond` | `#0E0D0B` | fond de la coque (noir chaud) |
-| `panneau` | `#171512` | surfaces de contenu, rail, barre haute |
-| `panneau-2` | `#201D19` | ligne zébrée, survol |
-| `panneau-3` | `#2B2721` | ligne choisie, champ de saisie, onglet actif |
-| `filet` | `#3D372E` | filets 1 px, grille de graphe (non textuel) |
-| `ivoire` | `#F6EEDC` | texte principal, tracés actifs, marqueur de sélection (logo) |
-| `ivoire-2` | `#BDB4A2` | texte secondaire, en-têtes de colonnes, étiquettes |
-| `ivoire-3` | `#8C8474` | désactivé, filigrane ; jamais sur `panneau-3` |
-| `or` | `#E9C062` | « 27 » : l'unique action qui fait avancer (aplat, texte `nuit`), héritage (trophée, record, titre de fin de saison) ; rien d'autre |
-| `or-vif` | `#F1C970` | ovale du logo : survol/pression du bouton `or`, ovale tracé |
-| `club` | variable (défaut `#71322F`, le pull de Gabi) | plaque d'identité (écusson, bandeau de score) avec texte `ivoire` |
-| `club-trait` | dérivé (défaut `#B5524A`) | ligne du club au classement, pastilles « nous », liseré de rail ; ≥ 3:1 sur `panneau` |
-| `club-texte` | dérivé (défaut `#D0756C`) | nom du club en texte coloré ; ≥ 4,5:1 sur `panneau-3` |
-| `v` | `#6CC48A` | victoire, « apte / disponible » ; rien d'autre |
-| `n` | `#ADA597` | nul (neutre) |
-| `d` | `#EE6F5F` | défaite, blessure, alerte, refus ; toujours avec lettre ou pictogramme |
-| `papier` / `encre` / `encre-2` / `or-encre` | `#F6EEDC` / `#14120F` / `#5A5244` / `#7D5B10` | logo inversé : **un seul usage**, le document ouvert (lettre du courrier, contrat, page du carnet de Gabi, une du journal) ; jamais un tableau ; max 1 par écran |
-| `v-papier` / `d-papier` | `#2B6A43` / `#A3342C` | V/D sur `papier` |
+| `FOND` (`ARDOISE`) | `#202d2d` | fond de l'écran : aplat, derrière tout |
+| `PANNEAU` (`NOIR_PANNEAU`) | `#0b1517` | panneaux, tableaux, barre latérale |
+| `IVOIRE` (`CREME`) | `#f2ecdc` | texte principal, titres, chiffres ; onglet et menu actifs (aplat) |
+| `IVOIRE_2` (`GRIS_VERT`) | `#abb7b1` | texte secondaire, valeurs, icônes au repos |
+| `VERT_FRANC` | `#32644b` | **surface** : jauge, écusson « nous », terrain, bouton secondaire plein ; jamais en texte ni trait fin |
+| `OR` (`DORE`) | `#d7aa5a` | voir 4.2 |
+| `VERT_CLAIR` | `#b6d6b6` | bon état, chiffres favorables, notre équipe ; jamais en paragraphe |
 
-- Couleur de club : `club-trait` et `club-texte` sont calculés en montant la luminosité de la vraie couleur jusqu'au seuil ; un club jaune/or est poussé vers `ivoire` + liseré (jamais confondu avec `or`) ; un club blanc devient `ivoire`, un club noir passe par sa seconde couleur.
-- Adversaire : sa couleur de club suit les mêmes règles, toujours en **anneau** ; si les deux clubs sont trop proches (écart de luminance < 1,5:1), l'adversaire passe en anneau `ivoire`.
-- Graphes : série « nous » `club-trait`, comparaison `ivoire-2` en tirets, grille `filet` ; jamais `v`/`d` pour une série.
-- Écart : `n` neutre au lieu de l'ambre du brief : l'ambre se confondait avec `or` (même famille, luminances 0,38 / 0,56) ; un nul n'est ni bon ni mauvais.
-- Écart : la base ivoire claire du « Carnet du club » (2026-11-08) devient l'exception `papier` ; la base devient le noir chaud du logo (décision de Léo).
+Hors nuancier : `NUIT` `#000000` (écran titre plein cadre, jamais un panneau) ; `OR_VIF` `#e2bc77` (survol/pression du bouton doré).
 
-### 4.3 Contrastes calculés (WCAG 2.x)
+### 4.2 Nuances (nuancier posé en transparence sur `PANNEAU`, figées en opaque)
+
+| Jeton | Hex | Tirée de | Rôle |
+|---|---|---|---|
+| `PANNEAU_2` | `#192223` | crème 6 % | survol |
+| `PANNEAU_3` | `#222a2b` | crème 10 % | choisi, champ, rail de jauge |
+| `FILET` | `#272f2f` | crème 12 % | séparations, contour des boutons secondaires et des champs |
+| `IVOIRE_3` | `#96968d` | crème 60 % | texte faible : en-têtes de colonnes, légendes ; jamais sous 12 px |
+| `SELECTION` | `#1d392e` | vert franc 45 % | ligne de tableau sélectionnée |
+| `VOILE_DORE` | `#2c2d22` | doré 16 % | fond de pastille « à traiter », avec texte doré |
+| `VOILE_VERT` | `#252f2c` | vert clair 14 % | fond de pastille de bon état, avec texte vert clair |
+
+Aucune huitième teinte : toute nouvelle nuance se tire du nuancier par transparence.
+
+### 4.3 Qui fait quoi
+
+- **Doré** : action principale (**un seul aplat doré par écran** : Continuer, ou le bouton principal d'une page sans Continuer), attention (toujours avec un mot ou un pictogramme : « Blessé », « Fin de contrat », « À traiter »), surtitres, focus clavier (anneau 2 px décalé de 2 px), colonne triée, l'adversaire dans une comparaison.
+- **Vert clair** : bon état (disponible, en forme), chiffres favorables, notre équipe.
+- **Crème** : texte principal ; **aplat crème** = onglet actif et entrée de menu active (texte `PANNEAU`). Un deuxième aplat clair (crème ou vert clair) hors onglet/menu volerait la vedette au doré.
+- **Gris-vert** : secondaire, neutre (« Prêté », « Remplaçant »), icônes au repos.
+- **Rouge** (`ROUGE` `#d9534a`) : hors nuancier, réservé aux cartons rouges et aux vraies erreurs (échec de sauvegarde, connexion). Blessure, fin de contrat, conférence obligatoire : doré + mot + pictogramme. Les cartons jaune/rouge du match sont des objets du rugby, pas des états d'interface.
+- **Couleurs de club** (`CLUB`, `CLUB_TRAIT`, `CLUB_TEXTE`) : seulement sur écusson, maillot et liseré (liseré 4 px en tête de fiche club, pastille 12 px devant le nom dans un classement) ; jamais sur bouton, texte, jauge ni fond de panneau. Les deux camps d'un match restent vert clair (nous) et doré (adversaire) quelles que soient les couleurs des clubs. Club trop sombre : contour crème 12 %. Club jaune/or : dérivé poussé vers la crème (jamais confondu avec le doré). `CLUB_TRAIT` ≥ 3:1 sur `PANNEAU`, `CLUB_TEXTE` ≥ 4,5:1 sur `PANNEAU_3`.
+- **Papier** (`PAPIER` = crème, `ENCRE` `#0b1517`, `ENCRE_2` `#4d5853`, `OR_ENCRE` `#7d5b10`, `V_PAPIER` `#32644b`, `D_PAPIER` `#8a5a12`) : un seul document ouvert par écran (lettre, contrat, carnet, une de journal) ; jamais un tableau.
+- **Terrain** : `PELOUSE` `#1d4631` / `PELOUSE_2` `#214e37` en bandes à plat, liseré `PELOUSE_BORD` `#53625e`.
+- **Barème des attributs** (fiche joueur, mini-fiche ; décision de Léo du 19/11, **inchangé**) : six paliers `ATTRIBUT_0` à `ATTRIBUT_85`, chiffre toujours écrit, légende avec chaque grille. Seule exception à « couleur du nuancier » et à « rouge hors nuancier » dans une grille d'attributs.
+- **Graphes** : nous `VERT_CLAIR`, adversaire `OR`, séries suivantes crème puis gris-vert ; 4 séries au plus ; axes et quadrillage `FILET`, étiquettes `IVOIRE_3`, valeurs en Barlow Condensed ; pas de camembert.
+- **Logo** : version principale crème + « 27 » doré, transparente, sur `FOND`/`PANNEAU` ; symbole doré ou crème en coin d'écran, chargement, icône ; jamais recoloré, ombré ni posé sur photo chargée sans voile.
+- Écart : le doré n'est plus réservé à Continuer ni à l'héritage ; il porte aussi attention, surtitres, focus et adversaire (charte de la graphiste). Écart : `n` neutre et `v`/`d` verts/corail du 19/11 supprimés (`V` = vert clair, `N` = gris-vert, `D` = doré).
+
+### 4.4 Contrastes calculés (WCAG 2.x)
+
+Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun interpréteur disponible dans cette session) ; les six valeurs de la charte de la graphiste sont retrouvées à ±0,1.
 
 | Paire | Ratio | Usage permis |
 |---|---|---|
-| `ivoire` / `fond`, `panneau`, `panneau-2`, `panneau-3` | 16,82 / 15,78 / 14,53 / 12,85 | tout texte |
-| `ivoire-2` / `fond`, `panneau`, `panneau-2`, `panneau-3` | 9,45 / 8,86 / 8,16 / 7,22 | tout texte |
-| `ivoire-3` / `fond`, `panneau` | 5,24 / 4,92 | filigrane, désactivé |
-| `ivoire-3` / `panneau-3` | **4,01** | interdit |
-| `or` / `fond`, `panneau`, `panneau-3` | 11,27 / 10,57 / 8,61 | titres et chiffres d'héritage |
-| `nuit` sur `or` / `or-vif` (bouton) | 12,18 / 13,33 | texte du bouton `or` (et `nuit` sur `ivoire` : 18,18 pour le bouton `ivoire`) |
-| `ivoire` sur `club` défaut | 8,27 | plaque d'identité |
-| `club-trait` / `panneau`, `panneau-3` | 3,71 / 3,02 | marqueur non textuel (≥ 3:1) |
-| `club-texte` / `panneau`, `panneau-2`, `panneau-3` | 5,59 / 5,15 / 4,55 | texte |
-| `club` défaut brut / `panneau` | **1,91** | jamais seul : d'où `club-trait` |
-| `v` / `panneau`, `panneau-3` | 8,59 / 7,00 | texte, pastille |
-| `n` / `panneau`, `panneau-3` | 7,47 / 6,08 | texte, pastille |
-| `d` / `panneau`, `panneau-3` | 6,14 / 5,00 | texte, pastille |
-| `encre` / `encre-2` / `or-encre` / `v-papier` / `d-papier` sur `papier` | 16,19 / 6,67 / 5,39 / 5,60 / 5,89 | texte sur document |
-| `filet` / `panneau` | 1,55 | décoratif uniquement, jamais seul porteur de sens |
-| `or` / `ivoire` | **1,49** | jamais l'un sur l'autre |
+| crème / `PANNEAU`, `PANNEAU_3`, `FOND` | 15,71 / 12,42 / 12,07 | tout texte |
+| gris-vert / `PANNEAU`, `PANNEAU_3`, `FOND` | 8,95 / 7,07 / 6,9 | tout texte |
+| `IVOIRE_3` (texte faible) / `PANNEAU`, `PANNEAU_3` | 6,21 / 4,91 | en-têtes, légendes ≥ 12 px |
+| doré / `PANNEAU`, `PANNEAU_3`, `FOND` | 8,63 / 6,83 / 6,64 | texte, surtitre, focus |
+| `PANNEAU` sur doré (bouton principal) | 8,63 | texte du bouton doré |
+| `PANNEAU` sur crème (onglet, menu actifs) | 15,71 | texte de l'onglet actif |
+| vert clair / `PANNEAU`, `VOILE_VERT` | 11,72 / 8,73 | texte, chiffre favorable |
+| doré / `VOILE_DORE`, `SELECTION` | 6,50 / 5,84 | pastille « à traiter », ligne choisie |
+| crème / `VERT_FRANC`, `SELECTION` | 5,83 / 10,6 | bouton secondaire plein, ligne choisie |
+| vert clair / `VERT_FRANC` | 4,35 | gros texte seulement (≥ 18 px) |
+| doré / `VERT_FRANC` | 3,20 | icône ou titre seulement |
+| `VERT_FRANC` / `PANNEAU` | 2,7 | surface seulement : jamais texte ni trait fin |
+| `ROUGE` / `PANNEAU` | 4,66 | texte d'erreur ; toujours avec mot |
+| `V_DALTONIEN` `#5aa9e6` / `PANNEAU` | 7,28 | mode daltonien |
+| `FILET` / `PANNEAU` | ~1,3 | décoratif, jamais porteur de sens |
+| doré / crème, vert clair / crème | 1,2 / 1,3 | **jamais l'un sur l'autre** |
 
-### 4.4 Daltonisme : paires à risque et secours
+### 4.5 Daltonisme : paires à risque et secours
 
-- `v` / `d` (luminances proches, rapport 1,40) : lettre V/N/D dans chaque pastille + forme : V ovale plein, N ovale demi-plein, D ovale vide (anneau). Mode daltonien des réglages : `v` → `#5AA9E6` (bleu ; 7,16:1 sur `panneau`, 5,83:1 sur `panneau-3`), `d` inchangé (pas d'orange : il se confondrait avec `or`) ; l'écart bleu/corail tient en protanopie et deutéranopie, la luminance reste proche (1,17:1), donc lettres et formes restent obligatoires.
-- `n` / `ivoire-2` : N toujours lettré, jamais une couleur seule.
-- `club-trait` rouge / `d` : le club ne porte jamais de message d'alerte ; `d` toujours avec « ! », croix ou lettre D.
-- Club jaune / `or` : règle de dérivation ci-dessus.
-- Nous / adversaire (terrain, 3D) : plein / anneau ; en 3D, numéro et bandeau d'équipe au-dessus du porteur.
-- Zones de classement : liseré gauche + pictogramme (▲ montée, ◆ barrage, ▼ relégation) + légende visible.
-- Barres (forme, fatigue, moral, confiance) : remplissage `ivoire-2`, valeur chiffrée à côté, seuils en traits `ivoire-3` ; pas de vert/rouge.
+- **Doré / vert clair** (luminances proches, rapport 1,32 ; seule paire de rôles opposés) : toujours doublés d'un mot ou d'un pictogramme (« Disponible » / « Blessé », ✓ / ⚠) ; en comparaison, nous à gauche, adversaire à droite ; sur terrain et en 3D, nous = plein / adversaire = anneau (numéro et bandeau d'équipe au-dessus du porteur).
+- **Mode daltonien** (réglages) : favorable passe de `VERT_CLAIR` à `V_DALTONIEN` ; doré inchangé ; mots et pictogrammes restent obligatoires (la luminance reste proche).
+- **Gris-vert / crème** : un neutre est toujours lettré, jamais une couleur seule.
+- **Résultat V/N/D** : lettre dans chaque pastille + forme (V pilule pleine vert clair, N demi-pleine, D contour doré).
+- **Barème des attributs** : chiffre écrit + légende ; palier lisible sans couleur.
+- **Zones de classement** : liseré gauche + pictogramme (▲ montée, ◆ barrage, ▼ relégation) + légende visible.
+- **Jauges** : valeur chiffrée toujours à côté ; la couleur dit à qui appartient la barre, pas si la note est bonne.
 
 ## 5. Character Design Direction
 
-- **Gabi (le seul personnage récurrent)** : ancien coach bourru, pull bordeaux `#71322F`, chemise ivoire, carnet de cuir, cheveux gris ; 16 expressions (atlas v5) validées. Rien à redessiner.
-  - Toujours sur fond sombre, cadrage buste, regard vers le contenu (il est placé du côté opposé au texte qu'il commente).
-  - Médaillon barre haute : visage dans l'ovale tracé `ivoire-2` 40 px, touche F1 écrite à côté.
-  - Dans le corps (écrans de décision seulement : bureau, réception, préparation, avant-match, entracte, après-match, calendrier, finances) : buste 160-200 px, bulle = bloc `panneau-2` + filet gauche incliné `club-trait`, texte `ivoire` 13 px.
-  - Atlas actuel opaque sur `#232228` (froid) : écart visible de 1,15:1 contre `panneau`. Exiger un export avec transparence.
-  - Mouvement réduit : expression fixe, pas de balancement.
-- **Joueurs (portraits 2D)** : buste, légère contre-plongée, lumière chaude latérale, fond `panneau-2` uni. Vignette rectangulaire au bord droit incliné 10° ; numéro de maillot géant en Barlow Condensed ExtraBold italique `ivoire-3` derrière (filigrane, ≤ 20 % de la vignette). Pas de détourage obligatoire tant que l'atlas ne le permet pas. Pas de photo studio grise.
-- **Joueurs (3D, match)** : réalisme stylisé, carrures différenciées par poste, maillot couleur club unie + numéro dos ; pas de visage détaillé (caméra tv : 1 joueur ≈ 60-120 px de haut à 1080p). Lisibilité par silhouette, couleur de maillot et numéro.
-- **Distinguer d'un coup d'œil** : nous / adversaire par plein/anneau en 2D, par maillot + bandeau en 3D (clubs proches : l'adversaire change de jeu de maillots) ; staff et dirigeants : seulement en nom + fonction, pas de portrait générique.
-- Poses : naturelles, jamais héroïques figées ; émotion portée par le visage (Gabi) ou l'action (3D).
+- **Gabi (seul personnage récurrent)** : ancien coach bourru, pull bordeaux `#71322F`, chemise ivoire, carnet de cuir ; 16 expressions (atlas v5) validées, rien à redessiner.
+  - Cadrage buste, regard vers le contenu, placé du côté opposé au texte qu'il commente.
+  - Médaillon (barre haute) : cadre doré, fond `PANNEAU`, 40 px, touche F1 écrite à côté.
+  - Dans le corps (écrans de décision seulement) : buste 160-200 px, bulle = panneau `PANNEAU_2` rayon 12, texte crème 13 px.
+  - Atlas opaque sur `#232228` (froid) : exiger un export avec transparence.
+  - Mouvement réduit : expression fixe.
+- **Joueurs (portraits 2D)** : buste, légère contre-plongée, lumière chaude latérale, fond uni sombre ; cadrage serré, rond dans les listes, rayon 12 dans les fiches ; numéro de maillot géant `IVOIRE_3` en filigrane (≤ 20 %). Pas de photo studio grise.
+- **Joueurs (3D, match)** : réalisme stylisé, carrures par poste, maillot couleur de club unie + numéro dos ; pas de visage détaillé (1 joueur ≈ 60-120 px à 1080p).
+- Distinguer nous / adversaire : plein/anneau en 2D, maillot + bandeau en 3D (clubs proches : l'adversaire change de maillots) ; staff et dirigeants en nom + fonction, sans portrait générique.
+- Poses naturelles, jamais héroïques figées.
 
 ## 6. Environment Design Language
 
-- **Lieux** : bureau du manager, vestiaire, tunnel, salle d'analyse, salle de presse, centre médical, stades par niveau (nationale, élite, Pacifique, Japon, finale). Architecture : rugby de club, béton, tôle, tribunes couvertes, bois du vestiaire ; le niveau de division se lit à la taille de la tribune et au nombre de projecteurs.
-- **Texture** : illustrations peintes photoréalistes (existantes), soirée/nuit, une source chaude dominante (lampe, projecteur sodium) contre ombres profondes. Étalonnage commun à appliquer : ombres ramenées vers le noir chaud `fond` (retirer la dominante vert-noir actuelle), hautes lumières vers `or-vif`/`ivoire`, saturation des verts −20 %.
-- **Densité** : les illustrations ne sont jamais derrière un tableau. Semaine : bandeau ≤ 160 px voilé ; préparation : aucune ; jour de match : plein cadre ; après-match : bandeau 30 % ; titre et fin de saison : plein cadre.
-- **Voile** : dégradé `fond` 0 → 85 % du côté du texte ; contraste mesuré au pire pixel (≥ 4,5:1).
-- **Récit sans texte** : météo du match (variantes tunnel pluie, vent, chaleur, sec, neutre) ; niveau du stade selon division ; vestiaire rangé ou en désordre selon résultat (piste future, pas de nouvel asset exigé).
-- **Terrain de tactique** : jamais de pelouse verte ; lignes `ivoire` 1 px (ligne d'essai, 22 m, 10 m, médiane), pointillés 4-4 `ivoire-3` pour 5 m et 15 m, sur `panneau` ; proportions réelles (100 × 70 m, en-buts compris).
+- **Lieux** : bureau du manager, vestiaire, tunnel, salle d'analyse, salle de presse, centre médical, stades par niveau. Architecture de rugby de club : béton, tôle, tribunes couvertes, bois du vestiaire.
+- **Texture** : illustrations peintes photoréalistes, soirée/nuit, une source chaude dominante. **Un seul traitement** : légèrement désaturées et assombries, tirées vers le vert du fond (`FOND`), saturation des verts −20 % ; appliqué à la source.
+- **Fond de l'interface** : ardoise `FOND` + photo d'ambiance de l'écran à 16 % d'opacité (banque « fond-* », `shell.gd` `FOND_PHOTO`, choix de Léo du 20/11/2026, écart avec la graphiste qui proposait l'aplat seul) ; les panneaux opaques passent dessus. Les autres illustrations vivent dans leur cadre : plein cadre (titre, tunnel, fin de saison), bandeau de page vitrine (club, match, accueil), jamais derrière un tableau. Toujours un voile sombre sous un texte posé dessus (≥ 4,5:1 mesuré au pire pixel).
+- **Récit sans texte** : météo du match (tunnel pluie, vent, chaleur, sec), niveau du stade selon la division.
+- **Terrain de tactique** : bandes `PELOUSE`/`PELOUSE_2` à plat, liseré `PELOUSE_BORD` ; lignes crème 1 px (essai, 22 m, 10 m, médiane), pointillés 4-4 `IVOIRE_3` (5 m, 15 m) ; proportions réelles (100 × 70 m, en-buts compris).
 
 ## 7. UI/HUD Visual Direction
 
 ### 7.1 Vue art
 
 **Coque unique (16 écrans de gestion ; titre, chargement et match en sortent)**, mesures à 1920×1080, échelle 100 % :
-- Rail gauche 232 px `panneau` : écusson + nom du club en tête (liseré `club-trait` 3 px incliné), entrées numérotées 1 à 9 (Bureau, Réception, Effectif, Tactique, Entraînement, Recrutement, Club, Finances, Compétitions, puis Formation), sous-menu déplié seulement dans la section active ; en pied : Réglages, Sauvegarder.
-- Barre haute 48 px `panneau` : à gauche bouton **Menu** visible (☰ + « Menu » + touche « Échap » écrite) ; fil d'Ariane ; à droite recherche (Ctrl+K), date, médaillon Gabi (F1), **Continuer** (bouton `or`, bord droit incliné, « Espace » écrit, dit ce qui bloque s'il est bloqué).
-- **Menu pause** (Échap ou bouton Menu) : panneau central 480 px sur voile `nuit` 70 % : Reprendre, Sauvegarder, Charger, Réglages, Retour à l'accueil, Quitter. Même menu en match (Échap = pause + menu).
-- Zone de contenu : grille 12 colonnes, gouttière 16 px, marges 24 px, pas de 4 px. Lignes de tableau 24 px, actions fréquentes ≥ 32 px.
-- Match (direct) : bandeau de score haut-gauche (plaques `club` des deux clubs, score `ivoire` 40 px, temps, phase), bord droit incliné ; journal en bas-gauche 16 px sur `panneau` 85 % ; tiers inférieur pour l'événement (une bannière à la fois, couleur du club qui marque). Habillage télé mais même jetons et mêmes polices.
+- Rail gauche 232 px sur `PANNEAU` : logo complet (sans « Rugby Manager ») puis carte du club (écusson, nom, liseré de club), entrées numérotées 1 à 9 (Bureau, Réception, Effectif, Tactique, Entraînement, Recrutement, Club, Finances, Compétitions, puis Formation), 10 entrées principales au plus ; en pied, séparés par un filet : Réglages, Sauvegarder.
+- Barre haute 48 px : bouton **Menu** visible (☰ + « Menu » + « Échap » écrit) ; fil d'Ariane ; à droite recherche (Ctrl+K), date, médaillon Gabi (F1), **Continuer** (pilule dorée, « Espace » écrit, dit ce qui bloque).
+- **Menu pause** (Échap ou bouton Menu) : **fenêtre** centrée sur l'écran voilé (`PANNEAU` 70 %), rayon 18, ~400-560 px, seule exception à « pas de fenêtre » (choix de Léo du 20/11/2026) : Reprendre, Sauvegarder, Charger, Réglages, Retour à l'accueil, Quitter. Même menu en match (Échap = pause + menu).
+- Contenu : en-tête compact sans photo, puis grille de panneaux séparés de 16 px ; marges 24 px ; espacements 4 / 8 / 12 / 16 / 24 / 32.
+- Match (direct) : bandeau de score haut-gauche (écussons des clubs, score crème 40 px, temps, phase) sur `PANNEAU` 90 % rayon 18 ; journal en bas-gauche 16 px ; tiers inférieur pour l'événement (une bannière à la fois).
 
-**Typographie** (OFL, déjà dans le jeu) :
-- **Barlow Condensed** : titres, en-têtes, chiffres d'affiche. Ajouter les fichiers italiques réels (SemiBold Italic, Bold Italic, ExtraBold Italic) de la même famille : la pente native (~10-12°) colle à celle du logo (10° mesurés) ; fausse italique par cisaillement interdite.
-- **DM Sans** : texte courant et cellules de tableau, chiffres tabulaires (`tnum`) obligatoires dans les tableaux (présence de `tnum` dans `DMSans.ttf` à vérifier ; repli : Barlow non condensé, OFL).
-- Pas de troisième famille. (Fraunces et IBM Plex Mono des options A/C abandonnées.)
-
-**Échelle dense à 1920×1080 (100 %)** :
+**Typographie** (OFL, dans le jeu) :
+- **Barlow Condensed**, **droite** (SemiBold, Bold, ExtraBold ; plus de fichiers italiques) : titres, en-têtes, menus, onglets, boutons, chiffres d'affiche. C'est la police des titres retenue par Léo (écart : la charte prévoit une police d'affiche distincte, abandonnée).
+- **DM Sans** : texte courant et cellules ; chiffres tabulaires (`tnum`, à vérifier).
+- Pas de troisième famille.
 
 | Niveau | Police | Taille / interligne | Casse |
 |---|---|---|---|
-| Affiche (tunnel, fin de saison) | BC ExtraBold Italic | 64 / 1,0 | capitales |
-| Score direct, résultat après-match | BC ExtraBold Italic | 40-48 / 1,0 | — |
-| Titre d'écran | BC ExtraBold Italic | 28 / 1,1 | capitales |
-| Titre de section | BC Bold Italic | 18 / 1,2 | capitales |
-| Nom d'entité (joueur, club en tête de fiche) | BC SemiBold | 15 / 1,2 | casse normale |
-| Corps | DM Sans Regular | 13 / 18 px | normale |
-| Cellule de tableau | DM Sans Regular (chiffres `tnum`, alignés à droite) | 13 (12 pour colonnes secondaires) / ligne 24 px | normale |
-| En-tête de colonne, étiquette, rubrique | BC SemiBold, `ivoire-2` | 12, interlettrage +8 % | capitales |
-| Journal du match, sous-titres | DM Sans Medium | 16 / 22 | normale |
+| Affiche (tunnel, fin de saison) | BC ExtraBold | 64 / 1,0 | capitales |
+| Score direct, résultat | BC ExtraBold | 40-48 / 1,0 | — |
+| Titre d'écran | BC ExtraBold | 28 / 1,1 | capitales, une ligne |
+| Titre de panneau | BC Bold | 18 / 1,2 | capitales, 3 mots |
+| Surtitre | BC SemiBold, doré | 12-13, interlettrage +8 % | capitales |
+| Nom d'entité | BC SemiBold | 15 / 1,2 | normale |
+| Menus, onglets, boutons | BC SemiBold | 15-18 | bas de casse |
+| Corps | DM Sans Regular | 13 / 18 | normale |
+| Cellule de tableau | DM Sans (chiffres `tnum`, à droite) | 13 / ligne 26 | normale |
+| En-tête de colonne, légende | BC SemiBold, `IVOIRE_3` | 12-13 | capitales |
+| Journal, sous-titres | DM Sans Medium | 16 / 22 | normale |
 
-- Graisse pour hiérarchiser avant la taille ; jamais plus de 4 mots en capitales.
-- **Échelle d'interface** (réglage) : 90 / 100 / 115 / 130 %. Défaut 100 % ; 130 % proposé à 1280×720. **Plancher absolu : aucun texte rendu sous 12 px réels** (taille calculée = max(12, taille × facteur d'écran × échelle)) ; 90 % n'est proposé que si la fenêtre fait ≥ 2560 px de large. Les écrans se recomposent (moins de colonnes) plutôt que de tronquer.
+- Graisse avant taille ; jamais plus de 4 mots en capitales. Chiffres mis en avant en BC gras.
+- **Échelle d'interface** : 90 / 100 / 115 / 130 %, défaut 100 %. **Aucun texte rendu sous 12 px réels** ; 90 % seulement si la fenêtre fait ≥ 2560 px. Recomposer (moins de colonnes) plutôt que tronquer.
 
-**Iconographie** : pictogrammes originaux au trait 1,5 px sur grille 16/20 px, extrémités coupées à 10°, `ivoire-2` au repos, `ivoire` actif ; toujours accompagnés d'un mot ; aucun pictogramme de bibliothèque hétérogène ; flèches ▲▼ pour les tendances ; ballon = ovale.
+**Iconographie** : pictogrammes au trait 1,75 px, 20 px (menus, boutons), 16 px (texte), 24 px au plus ; gris-vert au repos, crème actif, doré devant un titre de panneau ; toujours un mot. Famille Tabler (MIT) proposée par la graphiste, **à valider** ; pictogrammes rugby à créer dans le même trait. Icône d'application : symbole doré, 12 % de marge, 16-256 px, `.ico` Windows (16 et 24 provisoires).
 
-**Boutons** (trois, pas plus) :
-- `or` plein, texte `nuit`, bord droit incliné : l'action qui fait avancer le temps. Dans la coque, c'est **Continuer** et lui seul ; hors coque (titre, avant-match, après-match), « Reprendre », « Lancer le match », « Continuer ».
-- `ivoire` plein, texte `nuit` (18,18:1), bord droit incliné : l'action principale de l'écran (« Valider la composition », « Proposer le contrat ») ; max 1 par écran.
-- Texte `ivoire` + flèche, souligné au survol : toutes les autres actions.
+**Composants** (un seul de chaque ; états : survol = `PANNEAU_2` ou aplat éclairci de 8 % ; enfoncé 98 % ; focus = anneau doré 2 px décalé de 2 px ; désactivé = opacité 40 % + raison au survol) :
+- **Panneau** : `PANNEAU`, rayon 18, marge 18, titre capitales BC Bold 18 (icône dorée avant le titre) ; sans bordure ni ombre ; panneau-contenant d'un écran, jamais un panneau dans un panneau sauf carte (rayon 12).
+- **Bouton principal** : pilule dorée, texte `PANNEAU`, 40 px (32 compact), un par écran ; survol `OR_VIF`. Continuer en coque ; sur une page sans Continuer, l'action qui fait avancer (« Lancer le match », « Valider la composition »).
+- **Bouton secondaire** : contour 1 px `FILET`, texte crème ; secondaire plein : `VERT_FRANC`, texte crème, dans un panneau ; **lien** : sans fond ni contour, gris-vert + flèche, souligné au survol (« Annuler », pied de page). Libellé ≤ 4 mots ; jamais de texte en vert franc.
+- **Onglets** : pilules ; actif = aplat crème, texte `PANNEAU` ; inactif = gris-vert ; jamais actif en vert.
+- **Pastilles** : rayon 6, 24 px de haut (20 dans un tableau), BC SemiBold 14, pictogramme 14 px puis mot ; favorable (`VOILE_VERT` + vert clair), attention (`VOILE_DORE` + doré), neutre (`PANNEAU_2` + gris-vert) ; jamais sans mot ; 2 par ligne au plus. Compteur : pastille dorée, chiffre `PANNEAU` (écart à valider : ne compte pas comme aplat principal).
+- **Tableau** (densité FM conservée) : dans un panneau ; lignes 26 px, filet entre lignes, pas de bandes colorées ; en-têtes capitales `IVOIRE_3` alignés sur leurs valeurs ; noms DM Sans 600 crème ; chiffres alignés à droite ; colonne triée : en-tête doré + flèche ; survol `PANNEAU_2`, sélection `SELECTION` sur toute la ligne (rayon 6) ; regroupement par poste avec intertitre ; tri et filtre au clavier. Valeur colorée seulement pour un état.
+- **Jauge** : rail `PANNEAU_3` 8 px en pilule, remplissage en pilule, valeur chiffrée toujours ; comparaison : nous vert clair à gauche, adversaire doré à droite, critère au centre ; note isolée : vert clair > 80, gris-vert 50-80, doré < 50, avec le chiffre ; pas de dégradé.
+- **Menu latéral** : entrée 40 px, icône 20 px gris-vert, libellé BC 600 ; **entrée active = pilule crème, icône et texte `PANNEAU`** ; survol `PANNEAU_2` ; compteur = pastille.
+- **État vide** : panneau avec pictogramme gris-vert, une phrase dite par le club (« Rien à décider aujourd'hui »), et au plus une action en lien ou secondaire ; jamais un bouton doré de remplissage.
+- **Champ** : pilule, fond `PANNEAU_3`, contour `FILET`, focus anneau doré.
 
-**États** : survol `panneau-2` ; choisi `panneau-3` + marqueur incliné `ivoire` 3 px ; focus clavier contour 2 px `ivoire` décalé 2 px, coins nets (seul contour du jeu, visible seulement au clavier ; ≥ 12,85:1 sur tous les fonds sombres ; sur un bouton `ivoire` plein, le décalage de 2 px laisse le fond entre bouton et contour) ; désactivé `ivoire-3` + forme (barré ou cadenas).
+**Exceptions de Léo contre la charte de la graphiste (maintenues)** :
+- **Pas de fiche à droite qui suit la sélection** : un clic ouvre la fiche joueur complète (page), le survol montre une mini-fiche ; l'écran de travail = barre d'outils + tableau pleine largeur.
+- **Pas de petite fenêtre** (composant « Fenêtre » non adopté) : les décisions se prennent dans la page, sur panneau ; aucune boîte modale. Seule exception : le menu pause (fenêtre sur l'écran voilé).
 
 **Mouvement** :
-- Entrée d'écran : glissement de 12 px le long de l'axe incliné + fondu, 160 ms, ease-out ; cascade 30 ms par bloc, max 6 blocs.
-- Sélection : marqueur qui glisse 100 ms ; tableaux sans animation.
-- Continuer : ovale tracé qui se remplit pendant le calcul.
-- Essai : bannière du club qui marque glisse dans le tiers inférieur, 600 ms au total, puis retour à l'état de base ; aucun flash.
+- Entrée d'écran : fondu + glissement vertical de 8 px, 160 ms, ease-out ; cascade 30 ms par panneau, 6 panneaux au plus.
+- Sélection : fond qui passe en 100 ms ; tableaux sans animation. Continuer : symbole qui se remplit pendant le calcul.
+- Essai : bannière du club qui marque dans le tiers inférieur, 600 ms au total, puis retour à l'état de base ; aucun flash.
 - Mouvement réduit : fondus 100 ms, rien ne glisse ; « Transitions : Aucune » = instantané.
 - Jamais : rebond, élastique, parallaxe permanente, clignotement > 3/s.
 
-**Interdits** : cadres complets ; ombres, dégradés de relief, verre, biseaux ; rayons > 2 px ; plus d'un aplat `or` par écran ; `or` pour un statut ou une alerte ; vert hors V/disponible ; rouge hors D/alerte/blessure ; texte incliné dans les données ; `nuit` comme panneau ; page à fond clair (hors document `papier`) ; grain de papier, textures ; texte incrusté dans une image ; pastille ronde (hors bouton radio) ; icône sans mot ; style « copie de FM » (gris-bleu, dégradés, onglets arrondis) ; mentions « fictif » / « IA ».
+**Interdits** : photo de fond non voilée ou derrière un tableau sans panneau ; panneau avec bordure, ombre, verre, biseau ; plus d'un aplat doré par écran ; doré sans mot ni pictogramme pour une attention ; vert franc en texte ou trait fin ; vert clair en paragraphe ; rouge hors cartons rouges et vraies erreurs ; couleur de club sur bouton, texte, jauge ou fond ; texte penché ; `NUIT` comme panneau ; page à fond clair (hors document papier) ; fiche flottante à droite ; fenêtre qui s'ouvre ; icône sans mot ; texte incrusté dans une image ; mentions « fictif » / « IA ».
 
 ### 7.2 Vue UX
 
-- **Interactions** : la densité FM sert la semaine (comparer, trier) : tableaux 24 px, tri et filtre au clavier. L'inclinaison n'est que sur marqueurs et titres, donc sans coût de lecture.
-- **Lisibilité au direct** : score, temps, phase lisibles en < 2 s (40 px, opaque) ; journal 16 px, relisible (défilement arrêtable).
-- **Plancher accessibilité** : contrastes ≥ 4,5:1 sur toutes les paires de texte (§4.3) ; ≥ 3:1 pour focus et marqueurs ; couleur jamais seule (§4.4) ; focus distinct du survol et de la sélection ; Échap + bouton Menu visible ; cibles ≥ 24 px.
+- **Interactions** : la densité FM sert la semaine (comparer, trier) ; arrondi et pilules n'ajoutent aucun coût de lecture.
+- **Lisibilité au direct** : score, temps, phase lisibles en < 2 s (40 px, `PANNEAU` 90 %) ; journal 16 px relisible.
+- **Plancher accessibilité** : contrastes ≥ 4,5:1 sur les paires de texte (§4.4) ; ≥ 3:1 pour focus et marqueurs ; couleur jamais seule (§4.5) ; focus distinct du survol et de la sélection ; Échap + bouton Menu visible ; cibles ≥ 24 px.
 - **Retour** : Continuer dit ce qui bloque ; chaque refus dit quoi faire ; sauvegarde visible.
-- **Conflit 1 (tranché par Léo, à garder en tête)** : `accessibility-requirements.md` T1 exige 14 px de corps à 1920 ; Léo a choisi 13 px (densité FM). Compensation retenue : plancher 12 px réels, réglage d'échelle, contrastes élevés. Coût : en dessous de T1 au défaut ; T1 et E1 à réécrire.
-- **Conflit 2** : en-têtes à 11 px voulus par Léo contre T1 « aucune étiquette < 12 px ». Retenu : 12 px (capitales condensées à 11 px illisibles sur dalle 1080p). À valider par Léo.
-- **Conflit 3** : Échap = Retour (K4) et Échap = menu pause. Retenu : Échap ferme d'abord ce qui est ouvert (fenêtre, sous-page), puis ouvre le menu quand il n'y a plus rien à fermer ; le bouton Menu reste l'accès direct.
+- **Conflit 1 (tranché par Léo)** : T1 exige 14 px de corps à 1920 ; Léo a choisi 13 px (densité FM). Compensation : plancher 12 px réels, échelle réglable, contrastes élevés. T1 et E1 à réécrire.
+- **Conflit 2** : la charte propose des lignes de 40 px ; Léo garde la densité FM (26 px, comparatif du 20/11) ; cibles ≥ 24 px.
+- **Conflit 3** : Échap = Retour et Échap = menu pause. Retenu : Échap quitte d'abord la sous-page ouverte, puis ouvre le menu pause ; le bouton Menu reste l'accès direct.
 - **Conflit 4** : 90 % d'échelle descend sous T1 à 1920 ; réservé aux fenêtres ≥ 2560 px.
+- **Conflit 5** : « un seul aplat doré par écran » contre un écran à deux décisions fortes. Retenu : un seul doré, l'autre en secondaire plein ; à escalader au creative-director si le besoin revient.
 
 ## 8. Asset Standards
 
 ### 8.1 Vue art
 
-- Nommage : `[categorie]_[nom]_[variante]_[taille].[ext]` (ex. `ui_ico_effectif_20.svg`, `env_tunnel_pluie_2560.png`, `char_gabi_rire_512.png`, `brand_logo_ivoire_1774.png`).
-- Formats : icônes SVG (trait, couleurs `ivoire`/`ivoire-2` remplacées à l'exécution) ; illustrations PNG sources 2560 × 1440 (plein cadre) et 2560 × 480 (bandeaux) ; portraits PNG avec transparence 512 × 512 (affichés ≤ 256) ; Gabi PNG avec transparence par expression 512 × 640 ; logo en PNG transparent + version vectorielle à obtenir.
-- Paliers : plein cadre 2560 ; bandeau 2560 × 480 ; vignette 512 ; icône 16/20/24.
-- Couleur : sRGB, pas de profil exotique ; étalonnage commun §6 appliqué à la source, pas dans le jeu.
-- Polices : TTF OFL, licence jointe, mêmes familles (§7).
-- 3D : réutiliser l'existant ; nouvelle pièce = même réalisme stylisé, maillots par couleur de club (pas de texture de marque).
+- Nommage : `[categorie]_[nom]_[variante]_[taille].[ext]` (ex. `ui_ico_effectif_20.svg`, `env_tunnel_pluie_2560.png`, `char_gabi_rire_512.png`, `brand_logo_creme-dore_1774.png`).
+- **Logo définitif** de la graphiste intégré : version principale crème + « 27 » doré, transparente ; symbole (doré, crème, vert clair) ; icônes 16, 24, 32, 48, 64, 128, 256 px et `.ico` pour l'exécutable Windows, dans `native/godot/branding/`. Logo complet ≥ 120 px de large (sinon symbole), symbole net dès 48 px ; marge = moitié de la hauteur du « 27 » (logo), quart de la largeur (symbole). 16 et 24 px provisoires (version simplifiée à dessiner).
+- Formats : icônes SVG au trait (couleurs remplacées à l'exécution) ; illustrations PNG 2560 × 1440 (plein cadre) et 2560 × 480 (bandeaux) ; portraits PNG transparents 512 × 512 ; Gabi PNG transparent 512 × 640.
+- Couleur : sRGB ; étalonnage §6 appliqué à la source, pas dans le jeu.
+- Polices : TTF OFL, licence jointe (Barlow Condensed droite, DM Sans).
+- 3D : réutiliser l'existant ; maillots par couleur de club, sans texture de marque.
 
 ### 8.2 Vue technique
 
 - Moteur : Godot 4.7, rendu GL Compatibility (`project.yaml`).
-- **Aucun budget de performance défini** : `project.yaml` n'a pas de bloc `performance`, `.claude/docs/technical-preferences.md` laisse Frame Budget, Draw Calls, Memory Ceiling et plateformes à `[TO BE CONFIGURED]`. Pas de limite de polygones, de mémoire texture ni de matériaux à citer.
-- Effets d'interface (voile, inclinaison, ovale tracé) : réalisables en `StyleBox`/polygones 2D et `TextureRect` ; shaders 2D à garder compatibles GL Compatibility. Non vérifié dans `docs/engine-reference/godot/`.
-- Polices : défaut d'import `hinting` changé en 4.7 (`breaking-changes.md`) : vérifier la netteté à 12-13 px. MSDF, `FontVariation` et `tnum` : NOT SOURCEABLE, non couverts par `docs/engine-reference/godot/`, à tester.
-- Illustrations actuelles : ~2 Mo PNG chacune (≈ 30 fichiers dans `immersive08/`) ; à 2560 × 1440 RGBA non compressé, ≈ 14 Mo en mémoire vidéo par image.
-- **Arbitrage ouvert (non tranché)** : idéal art = sources 2560 × 1440 pour la netteté en 1440p ; prudence technique = 1920 × 1080 en compression VRAM pour la mémoire et le temps de démarrage (déjà signalé lent). Sans budget fixé, les deux sont consignés ; défaut proposé : 2560 pour ≤ 3 illustrations chargées à la fois, sinon 1920, au cas par cas.
+- **Aucun budget de performance défini** (`project.yaml` sans bloc `performance`, `technical-preferences.md` à `[TO BE CONFIGURED]`) : pas de limite de polygones, mémoire texture ni matériaux à citer.
+- Panneaux, pilules et jauges : `StyleBoxFlat` (`Charte.style_panneau`, `Charte.style_pilule`), sans shader ; shaders 2D éventuels compatibles GL Compatibility.
+- Polices : `hinting` par défaut changé en 4.7 (`breaking-changes.md`) : vérifier la netteté à 12-13 px ; `tnum` et `FontVariation` non couverts par `docs/engine-reference/godot/`, à tester.
+- Illustrations : ~2 Mo PNG chacune (≈ 30 dans `immersive08/`) ; 2560 × 1440 RGBA ≈ 14 Mo en mémoire vidéo.
+- **Arbitrage ouvert** : sources 2560 (netteté 1440p) ou 1920 compressé VRAM (mémoire, démarrage lent) ; défaut proposé : 2560 pour ≤ 3 illustrations chargées à la fois, sinon 1920.
 
 ## 9. Reference Direction
 
 | Référence | Prendre précisément | Éviter |
 |---|---|---|
-| Le logo Rugby Legacy 27 (source) | les trois couleurs mesurées, l'inclinaison de 10°, l'ovale en virgules, les capitales espacées de « CLUB MANAGER » pour les étiquettes | le reproduire en décor (filigrane géant, motif répété) |
-| Football Manager (FM24 tableaux, OOTP pour comparaison) | densité : vrais tableaux triables, lignes 24 px, beaucoup de colonnes, panneau de détail à droite | son habillage (gris-bleu, dégradés, onglets arrondis, cartes FM26 qui remplacent les tableaux) |
-| Habillage Six Nations 2025 et scorebug moderne | score et horloge protégés et dominants ; une seule bannière liée au temps ; retour à l'état de base ; portraits en légère contre-plongée | couleurs et marques du tournoi ; dégradés et reliefs |
-| Persona 5 | palette restreinte (noir, clair, une couleur), l'inclinaison comme signature, zones d'écran fixes par type d'information | texte décoratif illisible, compositions qui bougent sans arrêt |
+| Charte de la graphiste « Rugby Legacy 27 » (source) | nuancier 7 teintes, panneaux 18 sans bordure, pilules, rôles du doré et du vert clair, logo | fiche à droite qui suit la sélection, composant Fenêtre, lignes de 40 px |
+| Football Manager (FM24 tableaux, OOTP) | densité : vrais tableaux triables, lignes 26 px, beaucoup de colonnes | son habillage (gris-bleu, dégradés), cartes FM26 qui remplacent les tableaux, panneau de détail permanent |
+| Habillage Six Nations 2025 et scorebug moderne | score et horloge protégés et dominants ; une seule bannière liée au temps ; retour à l'état de base | couleurs et marques du tournoi ; dégradés et reliefs |
 | Disco Elysium | l'illustration peinte porte l'ambiance, l'interface reste sobre à côté | texte trop petit, colonne de texte sans hiérarchie |
