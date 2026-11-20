@@ -23,9 +23,9 @@
   "leagues": {
     "elite": {
       "titulaire": 79,
-      "rotation": 73,
-      "reserviste": 68,
-      "jeune": 64
+      "rotation": 74,
+      "reserviste": 71,
+      "jeune": 66
     },
     "prem": {
       "titulaire": 77,

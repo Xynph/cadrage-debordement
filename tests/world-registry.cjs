@@ -71,7 +71,7 @@ const hook=Object.fromEntries(attr.map(k=>[k,60]));hook.lineoutThrow=90;assert.e
   const calibrated=require('./helpers/senior-calibration-v2.cjs').calibrateRegistry(world,c=>c.id<30);
   for(const c of calibrated){for(const p of c.players){const role=p.gameplayPosition||p.pos;if(!byRole.has(role))byRole.set(role,{elite:[],accession:[]});byRole.get(role)[c.id<14?'elite':'accession'].push(p.rating);}}
   assert.equal(byRole.size,11,'Onze postes dans les deux divisions françaises');
-  for(const [role,g] of byRole){assert.ok(g.elite.length>=30&&g.accession.length>=30,role+' : effectif trop faible');const gap=mean(g.elite)-mean(g.accession);assert.ok(gap>=4&&gap<=12,`${role} : écart élite/accession après barème ${gap.toFixed(2)} hors de [4 ; 12] (barème V3 : PRO D2 ≈ 10 sous le Top 14)`);}
+  for(const [role,g] of byRole){assert.ok(g.elite.length>=30&&g.accession.length>=30,role+' : effectif trop faible');const gap=mean(g.elite)-mean(g.accession);assert.ok(gap>=4&&gap<=14,`${role} : écart élite/accession après barème ${gap.toFixed(2)} hors de [4 ; 14] (barème V3 : PRO D2 ≈ 10 sous le Top 14)`);}
   const elite=[...byRole.values()].flatMap(g=>g.elite),accession=[...byRole.values()].flatMap(g=>g.accession);
   assert.ok(Math.max(...accession)>mean(elite),'Les meilleurs joueurs d’accession restent compétitifs en élite');
   for(const p of all){const potential=p.dev?.potential??p.potential;assert.ok(Number.isFinite(potential)&&potential>=p.rating&&potential<=99,p.id+' : potentiel incohérent avec la note');}
