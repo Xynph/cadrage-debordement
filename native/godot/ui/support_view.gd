@@ -214,16 +214,9 @@ static func _agents(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 		list.add_child(G.wrap("%s · semaine %d · %s · %s · %s" % [G.season_label(h.season), int(h.week) + 1, _name(app, h.id), G.salary(h.wage), status], 14))
 
 static func _confirm(app: Control, data: Dictionary, talk: Dictionary) -> void:
-	var dialog := ConfirmationDialog.new()
-	dialog.name = "AgentSignatureDialog"
-	dialog.title = "Confirmer la prolongation"
-	dialog.get_ok_button().text = "Signer la prolongation"
-	dialog.get_cancel_button().text = "Annuler"
 	var paid_weeks: int = 34 if int(app.model.meta.get("clubCount", 0)) == 30 else 29
 	for p: Dictionary in data.agents.players:
 		if p.id == talk.id and not p.quotes.is_empty(): paid_weeks = int(p.quotes[0].paidWeeks)
-	dialog.dialog_text = "%s\nPrime immédiate : %s\nSalaire : %s · %d saison(s)\nEngagement théorique : %s (%d semaines payées par saison)." % [_name(app, talk.id), G.euros(talk.fee), G.salary(talk.acceptedSalary), talk.years, G.euros(talk.acceptedSalary * paid_weeks * talk.years + talk.fee), paid_weeks]
-	dialog.confirmed.connect(func(): app._command("agent_confirm", {"context":data.context,"key":talk.key,"confirmed":true,"wage":talk.acceptedSalary,"years":talk.years,"fee":talk.fee}); dialog.queue_free())
-	dialog.canceled.connect(func(): dialog.queue_free())
-	app.add_child(dialog)
-	dialog.popup_centered(Vector2i(580, 260))
+	var texte := "%s\nPrime immédiate : %s\nSalaire : %s · %d saison(s)\nEngagement théorique : %s (%d semaines payées par saison)." % [_name(app, talk.id), G.euros(talk.fee), G.salary(talk.acceptedSalary), talk.years, G.euros(talk.acceptedSalary * paid_weeks * talk.years + talk.fee), paid_weeks]
+	# Confirmation EN PLACE (main.gd : _confirmation_club), jamais une fenêtre.
+	app.confirm("Confirmer la prolongation", texte, func(): app._command("agent_confirm", {"context":data.context,"key":talk.key,"confirmed":true,"wage":talk.acceptedSalary,"years":talk.years,"fee":talk.fee}))

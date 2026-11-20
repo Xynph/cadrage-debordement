@@ -30,15 +30,21 @@ func capture(id: String) -> void:
 	await RenderingServer.frame_post_draw
 	check(root.get_texture().get_image().save_png(OS.get_environment("CD_LIFECYCLE_CAPTURES").path_join(id + ".png")) == OK, "Capture " + id)
 func sign_contract() -> void:
-	var dialog := app.find_child("StaffContract", true, false) as AcceptDialog
-	check(dialog != null and dialog.visible, "Contrat de staff réellement ouvert")
+	var dialog := app.find_child("ClubSubpage_contrat", true, false)
+	check(dialog != null and dialog.is_visible_in_tree(), "Contrat de staff réellement ouvert (sous-page)")
 	var confirm := button("StaffContractConfirm")
 	check(confirm != null, "Confirmation du contrat disponible")
 	if confirm != null: confirm.pressed.emit(); await response("contrat staff")
 func confirmation(accept: bool) -> void:
 	var dialogs := app.find_children("*", "ConfirmationDialog", true, false).filter(func(d): return d.visible)
-	check(not dialogs.is_empty(), "Confirmation explicite d’activation")
-	if dialogs.is_empty(): return
+	var ok := app.find_child("ClubConfirmationOk", true, false) as Button
+	var annuler := app.find_child("ClubConfirmationAnnuler", true, false) as Button
+	check(not dialogs.is_empty() or ok != null, "Confirmation explicite d’activation")
+	if dialogs.is_empty() and ok == null: return
+	if ok != null:
+		if accept: ok.pressed.emit(); await response("activation")
+		else: annuler.pressed.emit(); await settle()
+		return
 	if accept: dialogs[0].confirmed.emit(); await response("activation")
 	else: dialogs[0].canceled.emit(); await settle()
 func run() -> void:

@@ -276,3 +276,17 @@ Aucune animation bloquante.
 **Critères supplémentaires**
 - [ ] La Vue d'ensemble s'affiche en moins de 400 ms.
 - [ ] Rendu correct à 1280×720, 1920×1080 et 2560×1440.
+
+## 14. Choix de Léo (20/11/2026, étape 5 de l'intégration de la DA)
+
+**Maquette retenue : variante 1 · « Deux colonnes, le conseil à gauche »**, avec l'emprunt de la variante 2 : le tableau « ce qui a fait bouger la confiance ». Titre « Club » et sous-titre (stade, places, fondé en, conseil présidé par : lus dans les données du club, omis si absents), onglets soulignés (← → pour changer), bandeau du club (un clic = « Le stade »).
+
+| Colonne | Blocs |
+|---|---|
+| Gauche | **Le conseil** : confiance /100, mot + coche (Solide ≥ 70, Fragile 40-69, Menacé < 40), barre à trois paliers avec seuils écrits et repère incliné, objectif de la saison (classement, promesses publiques, jalons : chaque ligne ouvre le suivi des objectifs), tableau des bilans (J., conf., évolution, V/N/D, cause ; une ligne ouvre le match quand il est connu, sinon les objectifs) ; **Installations** en tableau (centre d'entraînement, cellule médicale, académie, stade ; une ligne = l'écran visé). |
+| Droite | **À décider** (jalon à fixer = seule action ivoire pleine de l'écran ; devis ; demande à la direction ; liens Trésorerie et Salaires vers Finances) ; **Vestiaire** (moral, disponibles, leader, absents). |
+
+- Fiche joueur : le nom du leader et des absents ouvre la fiche complète, le survol la mini-fiche.
+- Plus de petite fenêtre : les confirmations d'argent (devis, rallonge, libérer, retraite, signature…) s'ouvrent en place dans la page (`ClubConfirmHote`) ; contrat du staff, mentorat (deux pages) et engagements du staff deviennent des sous-pages du Staff avec « ← Retour au staff », Échap et historique Précédent / Suivant.
+- L'encadrement (4 visages) et « Vie du club » ne sont plus sur la Vue d'ensemble : ils vivent dans l'onglet Staff et dans Direction (supporters, sponsor).
+- Aucun or (le seul or reste Continuer dans la coque) ; coches dessinées + mots : la couleur ne porte jamais seule un signal.
