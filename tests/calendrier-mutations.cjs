@@ -310,6 +310,42 @@ test('Moteur Monde : recrutement libre, joueurs supplémentaires, achat différ�
   } finally { restaurer(); jeu.fermer(); }
 });
 
+// Plafond de pré-contrats signés par le club joué (preContrats.maxParSaison = 3) : le 4e est refusé, sans rien écrire.
+test('Pré-contrats du club joué : trois par saison au plus, le quatrième est refusé avec sa raison', { timeout: 600000 }, () => {
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    creer(jeu, CLUB);
+    const { lire, run } = outils(jeu);
+    assert.equal(R.preContrats.maxParSaison, 3);
+    run('club().cash=Math.max(club().cash,9e6)');
+    run('(()=>{const e=budgetTransfertsEtat(true);e.enveloppe=Math.max(e.enveloppe,5e6);})()');
+    R.preContrats.moisAvantFin = 12;
+    const marche = () => lire(`nativeSystems.domain('interclubMarket').project()`);
+    const dispo = () => marche().candidates.filter(c => c.preContract?.available).sort((a, b) => a.preContract.premium - b.preContract.premium || (a.id < b.id ? -1 : 1));
+    const attendu = 'Tu as déjà signé 3 pré-contrats cette saison (3 au plus) : les suivants attendront la saison prochaine.';
+    for (let i = 0; i < 3; i++) {
+      const c = dispo()[0];
+      assert.ok(c, 'pré-contrat possible n°' + (i + 1));
+      const r = jeu.brut('precontract_offer', { playerId: c.id, sellerId: c.clubId, salary: c.preContract.salary, years: 1, confirmed: true });
+      assert.equal(r.ok, true, r.error);
+    }
+    assert.equal(lire(`S.calendrierMutations.preContrats.filter(x=>x.sens==='arrivee'&&x.etat==='signe').length`), 3);
+    const quatre = marche().candidates.filter(c => c.contractEnd === lire('S.season') && c.preContract && !c.preContract.signed);
+    assert.ok(quatre.length > 0);
+    assert.ok(quatre.every(c => c.preContract.available === false));
+    assert.ok(quatre.some(c => c.preContract.reason === attendu), quatre[0].preContract.reason);
+    // Aucun joueur n'est plus proposé : essayer le meilleur marché d'avant le plafond (salaire demandé relevé).
+    const cible = quatre.find(c => c.preContract.reason === attendu);
+    const avant = lire('({cash:club().cash,dep:S.budgetTransferts.depense,n:S.calendrierMutations.preContrats.length,seq:S.calendrierMutations.seq,led:S.ledger.length})');
+    const r4 = jeu.brut('precontract_offer', { playerId: cible.id, sellerId: cible.clubId, salary: 100000, years: 1, confirmed: true });
+    assert.equal(r4.ok, false); assert.equal(r4.error, attendu);
+    assert.deepEqual(lire('({cash:club().cash,dep:S.budgetTransferts.depense,n:S.calendrierMutations.preContrats.length,seq:S.calendrierMutations.seq,led:S.ledger.length})'), avant, 'le refus n’écrit rien');
+    // Le plafond est un réglage : à 4, le quatrième repasse.
+    R.preContrats.maxParSaison = 4;
+    assert.ok(dispo().length > 0, 'quatrième possible avec un plafond de 4');
+  } finally { restaurer(); jeu.fermer(); }
+});
+
 // Temps de clôture de semaine (cadence hebdomadaire) avec une approche tirée chaque semaine (six joueurs en fin de
 // contrat, pré-contrats possibles), comparé à la même clôture sans approche. Seuil : +1,5 s, toujours sous 15 s.
 const SURCOUT_MAX_MS = 1500;
