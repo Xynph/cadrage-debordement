@@ -101,7 +101,13 @@ func run() -> void:
 	var ancien_nom: String = "O" + "VAL LEG" + "ACY"
 	check(not creation.to_upper().contains(ancien_nom), "Création : aucune trace de l'ancien nom")
 	var mark := app.find_child("EntryWordmark", true, false)
-	check(mark != null and texts(mark).contains("RUGBY LEGACY") and texts(mark).contains("27"), "Création : lettrage RUGBY LEGACY 27")
+	# Lettrage en texte, ou logo officiel (écran 02, DA du 19/11/2026) dont le nom accessible porte la marque.
+	var lettrage := mark != null and texts(mark).contains("RUGBY LEGACY") and texts(mark).contains("27")
+	var logo := mark as TextureRect
+	var nom_logo := (str(logo.accessibility_name) + "\n" + str(logo.tooltip_text)) if logo != null else ""
+	var logo_officiel := logo != null and logo.texture != null and logo.texture.resource_path.ends_with("branding/rugby-legacy-27-logo.png") \
+		and nom_logo.contains("Rugby Legacy 27") and not nom_logo.to_upper().contains(ancien_nom)
+	check(lettrage or logo_officiel, "Création : lettrage RUGBY LEGACY 27")
 	await capture("creation")
 	# Carrière Monde : Lyon Confluences XV.
 	app._command("new_career", {"mode": "world-champ", "club": 7})

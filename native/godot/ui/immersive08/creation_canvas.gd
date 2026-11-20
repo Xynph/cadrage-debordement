@@ -1014,6 +1014,7 @@ static func _barre(app: Control, ctx: Dictionary) -> Control:
 	composite.shader = load("res://branding/black_key.gdshader")
 	logo.material = composite
 	logo.tooltip_text = "Rugby Legacy 27"
+	logo.accessibility_name = "Rugby Legacy 27"
 	logo.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_child(logo)
 	row.add_child(_filet_vertical())
