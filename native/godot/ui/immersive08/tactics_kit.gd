@@ -165,16 +165,6 @@ static func flux(app: Control, parent: Control, x: float, ligne: float, largeur_
 			poses += 1
 	return {"lignes": mini(rang + 1, max_lignes) if poses > 0 else 0, "omis": omis}
 
-## Ancienne règle « rayons 0 » : remet à 0 les coins de tous les fonds posés sous `racine`. La Composition ne s'en sert
-## plus (charte finale : rayons 18 / 12 / 6 / pilule) ; encore appelée par des écrans hors de ce lot.
-static func angles_droits(racine: Node) -> void:
-	for noeud in racine.find_children("*", "Control", true, false):
-		var control := noeud as Control
-		for etat in ["panel", "normal", "hover", "pressed", "hover_pressed", "disabled", "focus", "read_only"]:
-			if not control.has_theme_stylebox_override(etat): continue
-			var style := control.get_theme_stylebox(etat) as StyleBoxFlat
-			if style != null: style.set_corner_radius_all(0)
-
 ## Hauteur d'une ligne de texte DM Sans (unités), plancher de 12 px compris (petites fenêtres).
 static func hauteur_ligne(taille: int) -> float:
 	return Charte.TEXTE.get_height(maxi(12, C.px(taille))) / C.density
@@ -283,8 +273,8 @@ static func bouton_ivoire(parent: Control, zone: Rect2, valeur: String, action: 
 
 ## Rangée cliquable d'un tableau ou carte de poste : fond plat (zébrure, survol, choisi), focus = contour ivoire 2 px
 ## distinct de la sélection (fond + marqueur).
-static func styler_ligne(bouton: Button, fond: Color, choisi: bool = false) -> void:
-	var normal := C.box(Charte.PANNEAU_3 if choisi else fond, Color.TRANSPARENT, Charte.RAYON_PETIT, 0)
+static func styler_ligne(bouton: Button, fond: Color, choisi: bool = false, couleur_choisie: Color = Charte.PANNEAU_3) -> void:
+	var normal := C.box(couleur_choisie if choisi else fond, Color.TRANSPARENT, Charte.RAYON_PETIT, 0)
 	var survol := C.box(Charte.PANNEAU_3, Color.TRANSPARENT, Charte.RAYON_PETIT, 0)
 	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PETIT, 0)
 	focus.set_border_width_all(2)
