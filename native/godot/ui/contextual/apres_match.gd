@@ -211,7 +211,7 @@ func _fond(couleur: Color, gauche: float = 0, haut: float = 0, droite: float = -
 	s.content_margin_top = _d(haut)
 	s.content_margin_right = _d(gauche if droite < 0 else droite)
 	s.content_margin_bottom = _d(haut if bas < 0 else bas)
-	return s
+	return Charte.ombrer(s, rayon)
 
 ## Panneau de la charte (rayon 18, sans bordure) ; carte dans un panneau : `rayon` = RAYON_CARTE.
 func _panneau(couleur: Color = Charte.PANNEAU, gauche: float = 16, haut: float = 10, rayon: int = Charte.RAYON_PANNEAU) -> PanelContainer:

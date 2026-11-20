@@ -181,7 +181,7 @@ static func _plat(couleur: Color, marge: int, rayon: int = 0) -> StyleBoxFlat:
 	style.set_corner_radius_all(rayon if rayon >= Charte.RAYON_PILULE else maxi(0, C.px(rayon)))
 	style.set_border_width_all(0)
 	for bord in ["left", "right", "top", "bottom"]: style.set("content_margin_" + bord, C.px(marge))
-	return style
+	return Charte.ombrer(style, rayon)
 
 static func _carnet(app: Control, club: Dictionary, meta: Dictionary) -> Control:
 	var carte := PanelContainer.new()

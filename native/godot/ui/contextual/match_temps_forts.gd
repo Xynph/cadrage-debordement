@@ -1867,7 +1867,7 @@ func _ligne_score() -> String:
 	if _teams.size() < 2 or marque.size() < 2 or not _teams[0] is Dictionary or not _teams[1] is Dictionary: return ""
 	return "%s   %d — %d   %s" % [S.G.club_name(_teams[0]), int(marque[0]), int(marque[1]), S.G.club_name(_teams[1])]
 
-## Cadre de la bannière (charte finale §3, §4.3) : rayon 18, sans bordure ni ombre ; pour un essai, aplat plein à la
+## Cadre de la bannière (charte finale §3, §4.3) : rayon 18, sans bordure, ombre portée de la charte ; pour un essai, aplat plein à la
 ## couleur du club qui marque (exception de Léo du 20/11/2026) ; mi-temps et fin : panneau `PANNEAU` à 90 %.
 ## Nom historique gardé (les recettes et le match filmé le lisent) : le cadre est droit.
 class CadreIncline extends PanelContainer:

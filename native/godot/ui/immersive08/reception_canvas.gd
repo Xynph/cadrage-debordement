@@ -1330,10 +1330,8 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 	var paper := PanelContainer.new()
 	paper.name = "InboxPressClipping"
 	var style := C.box(C.Charte.PAPIER, Color.TRANSPARENT, 0, 34)
-	style.shadow_color = Color(0,0,0,.45)
-	style.shadow_size = C.px(14)
-	style.shadow_offset = Vector2(0, C.px(6))
-	paper.add_theme_stylebox_override("panel", style)
+	# Coupure de presse : une carte posée sur la lettre, ombre portée de la charte (choix de Léo du 20/11/2026).
+	paper.add_theme_stylebox_override("panel", C.Charte.ombrer(style, C.Charte.RAYON_CARTE))
 	paper.custom_minimum_size.x = C.px(width)
 	var column := C.v(10)
 	paper.add_child(column)

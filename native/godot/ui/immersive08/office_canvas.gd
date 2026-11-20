@@ -46,8 +46,8 @@ static func _box(color: Color, border: Color = Color.TRANSPARENT, width: int = 0
 	style.set_corner_radius_all(0)
 	return style
 
-## Panneau de page (charte §3, comme D.panel) : jeton `panneau`, rayon 18 px (24 en référence 2560), sans bordure ni
-## ombre, posé aux coordonnées de la page.
+## Panneau de page (charte §3, comme D.panel) : jeton `panneau`, rayon 18 px (24 en référence 2560), sans bordure, avec
+## l'ombre portée de la charte, posé aux coordonnées de la page.
 static func _plate(parent: Node, rectangle: Rect2, id: String) -> Panel:
 	var panel := Panel.new()
 	panel.name = id
@@ -186,8 +186,11 @@ static func build(app: Control) -> Control:
 		zone.clip_contents = true
 		# Le carnet de Gabi (fond plein) suit les coins arrondis du panneau.
 		zone.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
+		Charte.ombre_derriere(zone)
 		var extra := func(parent: Control, haut: float, largeur: float) -> float:
 			var matches := _plate(parent, Rect2(0, haut, largeur, TIMELINE_H), "OfficeTimeline")
+			# Section de la colonne de Gabi (même fond, dans son panneau) : pas une tuile à part, pas d'ombre.
+			Charte.sans_ombre(matches.get_theme_stylebox("panel") as StyleBoxFlat)
 			_timeline(matches, app, null, int(largeur))
 			return float(TIMELINE_H)
 		app.coach.installer_bureau(zone, extra)
@@ -230,6 +233,7 @@ static func _fixture(card: Panel, app: Control, w: int = 1496) -> void:
 	card.clip_contents = true
 	# Photo et liseré de club suivent les coins arrondis du panneau.
 	card.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
+	Charte.ombre_derriere(card)
 	var photo := D.photo(card, P.fixture_ground(app.model.meta, "office-hero"), Rect2(0, 0, w, BAND), .53)
 	photo.name = "OfficeFixturePhoto"
 	D.rect(card, Rect2(0, 0, w, BAND), Color(Charte.FOND, .74)).name = "OfficeFixtureVeil"

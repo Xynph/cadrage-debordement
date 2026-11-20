@@ -142,7 +142,7 @@ static func _autres(app: Control, parent: Control, zone: Rect2, joueurs: Array) 
 	return menu
 
 static func _styler_menu(liste: PopupMenu) -> void:
-	liste.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3, Charte.FILET, Charte.RAYON_CARTE, 6))
+	liste.add_theme_stylebox_override("panel", Charte.sans_ombre(C.box(Charte.PANNEAU_3, Charte.FILET, Charte.RAYON_CARTE, 6)))
 	liste.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_PETIT, 4))
 	liste.add_theme_font_override("font", Charte.TEXTE)
 	liste.add_theme_font_size_override("font_size", maxi(12, C.px(18)))

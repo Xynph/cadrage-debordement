@@ -40,7 +40,7 @@ static func surface(width: float, height: float, top: Color, bottom: Color, bord
 static func panel(parent: Node, rectangle: Rect2, title: String = "", icon_id: String = "", badge: String = "", id: String = "") -> Panel:
 	var control := Panel.new()
 	control.name = id if not id.is_empty() else "Tile"
-	# Charte §3 : panneau PANNEAU, rayon 18 px (24 en référence 2560), sans bordure ni ombre.
+	# Charte §3 : panneau PANNEAU, rayon 18 px (24 en référence 2560), sans bordure, ombre portée de la charte.
 	control.add_theme_stylebox_override("panel", C.Charte.style_panneau(C.PANEL, maxi(3, C.px(24)), 0))
 	parent.add_child(control)
 	place(control, rectangle)
@@ -57,7 +57,10 @@ static func panel(parent: Node, rectangle: Rect2, title: String = "", icon_id: S
 
 static func rect(parent: Node, rectangle: Rect2, color: Color, radius: int = 0, border: Color = Color.TRANSPARENT) -> Panel:
 	var control := Panel.new()
-	control.add_theme_stylebox_override("panel", C.box(color,border,radius,0))
+	var style := C.box(color,border,radius,0)
+	# Rayon d'au moins la demi-hauteur : pilule ou pastille ronde, jamais d'ombre (charte : ombre des tuiles seulement).
+	if float(radius) * 2.0 >= minf(rectangle.size.x, rectangle.size.y): C.Charte.sans_ombre(style)
+	control.add_theme_stylebox_override("panel", style)
 	parent.add_child(control)
 	place(control,rectangle)
 	control.mouse_filter = Control.MOUSE_FILTER_IGNORE

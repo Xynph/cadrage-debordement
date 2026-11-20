@@ -165,13 +165,17 @@ static func proche_or(couleur: Color) -> bool:
 
 ## Charte finale (art-bible §3, §4.3, §7.1, adoptée le 20/11/2026) sur les contrôles visibles de la page : un seul
 ## aplat doré, « Valider et reprendre » (TeamResume), en pilule ; le doré reste permis en texte, en liseré et en anneau
-## de focus ; boutons arrondis (hors terrain) ; aucune ombre ; aucun panneau encadré sur ses quatre côtés (l'anneau de
+## de focus ; boutons arrondis (hors terrain) ; ombre portée des jetons (noir 50 %, 4 px, sans décalage) sur chaque
+## panneau, carte ou tuile, aucune sur pilules, boutons, cases ni lignes (choix de Léo du 20/11/2026) ; aucun panneau encadré sur ses quatre côtés (l'anneau de
 ## focus excepté) ; le lien « ← Retour au direct » et des textes d'au moins 12 px.
 func controler_charte(contexte: String) -> void:
 	var terrain: Control = fenetre.find_child("TeamPitchField", true, false)
 	var ors: Array[String] = []
 	var arrondis: Array[String] = []
 	var ombres: Array[String] = []
+	var sans_ombre: Array[String] = []
+	var tuiles := 0
+	var seuil: int = fenetre.px(Charte.RAYON_CARTE) if fenetre.has_method("px") else Charte.RAYON_CARTE
 	var cadres: Array[String] = []
 	var petits: Array[String] = []
 	var pleins: Array[String] = []
@@ -187,7 +191,14 @@ func controler_charte(contexte: String) -> void:
 			# Bouton arrondi : tout bouton qui dessine un fond ou un contour au repos, hors terrain.
 			if etat == "normal" and c is BaseButton and not sur_terrain and (s.bg_color.a > 0.0 or s.border_width_left + s.border_width_top + s.border_width_right + s.border_width_bottom > 0) 					and mini(mini(s.corner_radius_top_left, s.corner_radius_top_right), mini(s.corner_radius_bottom_left, s.corner_radius_bottom_right)) <= 0:
 				arrondis.append(str(c.name))
-			if s.shadow_size > 0: ombres.append("%s.%s" % [c.name, etat])
+			# Ombre : un fond plein de carte (rayon ≥ 12 à l'échelle) qui n'est pas une pilule porte l'ombre des jetons ;
+			# tout le reste (pilule, case, ligne, contour seul) n'en a aucune.
+			var r := maxi(maxi(s.corner_radius_top_left, s.corner_radius_top_right), maxi(s.corner_radius_bottom_left, s.corner_radius_bottom_right))
+			var pilule := r >= Charte.RAYON_PILULE or float(r) * 2.0 >= minf(c.size.x, c.size.y) - 1.0
+			if s.draw_center and s.bg_color.a > 0.0 and r >= seuil and not pilule:
+				tuiles += 1
+				if not Charte.porte_ombre(s): sans_ombre.append("%s.%s" % [c.name, etat])
+			elif s.shadow_size > 0: ombres.append("%s.%s" % [c.name, etat])
 			# Aucun cadre complet (panneaux, tuiles, crans, éteint) : au plus un filet ; l'anneau de focus doré est la règle.
 			if etat != "focus" and s.border_width_left > 0 and s.border_width_top > 0 and s.border_width_right > 0 and s.border_width_bottom > 0: cadres.append("%s.%s" % [c.name, etat])
 			# Un fond de bouton clair (ivoire ou proche) se lit comme un second bouton principal.
@@ -199,7 +210,8 @@ func controler_charte(contexte: String) -> void:
 	var style_reprendre := reprendre.get_theme_stylebox("normal") as StyleBoxFlat if reprendre != null else null
 	verifier(style_reprendre != null and style_reprendre.corner_radius_top_left >= reprendre.size.y * 0.5 - 1.0, contexte + " : « Valider et reprendre » en pilule")
 	verifier(arrondis.is_empty(), contexte + " : boutons arrondis hors terrain (%s)" % str(arrondis.slice(0, 6)))
-	verifier(ombres.is_empty(), contexte + " : aucune ombre (%s)" % str(ombres.slice(0, 6)))
+	verifier(ombres.is_empty(), contexte + " : aucune ombre sur pilules, boutons, cases ni lignes (%s)" % str(ombres.slice(0, 6)))
+	verifier(sans_ombre.is_empty(), contexte + " : %d panneau(x), carte(s) ou tuile(s), tous avec l'ombre des jetons (sans : %s)" % [tuiles, str(sans_ombre.slice(0, 6))])
 	verifier(cadres.is_empty(), contexte + " : aucun panneau encadré sur ses quatre côtés (%s)" % str(cadres.slice(0, 6)))
 	verifier(petits.is_empty(), contexte + " : textes d'au moins 12 px (%s)" % str(petits.slice(0, 6)))
 	verifier(pleins == ["TeamResume"], contexte + " : un seul bouton en aplat clair, « Valider et reprendre » (%s)" % str(pleins))

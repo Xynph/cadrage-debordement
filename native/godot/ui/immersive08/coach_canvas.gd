@@ -203,7 +203,7 @@ func _build_adjoint() -> void:
 	for side in [SIDE_LEFT, SIDE_RIGHT]: style.set_content_margin(side, 18)
 	style.set_content_margin(SIDE_TOP, 12)
 	style.set_content_margin(SIDE_BOTTOM, 14)
-	_bulle.add_theme_stylebox_override("panel", style)
+	_bulle.add_theme_stylebox_override("panel", Charte.ombrer(style))
 	add_child(_bulle)
 	var column := VBoxContainer.new(); column.add_theme_constant_override("separation", 8)
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1013,14 +1013,14 @@ func _ouvrir_ligne(cle: String) -> Callable:
 	return func():
 		if not app.waiting and app._live().is_empty(): app._navigate(route)
 
-## Fond plat (ni ombre ni dégradé) des blocs de la colonne de Gabi : carte rayon 12 px (16 en référence 2560) par
+## Fond plat (sans dégradé, ombre portée de la charte) des blocs de la colonne de Gabi : carte rayon 12 px (16 en référence 2560) par
 ## défaut, panneau 18 px (24) pour une carte de page.
 func _plat(couleur: Color, rayon: int = 16) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = couleur
 	style.set_corner_radius_all(maxi(3, C.px(rayon)))
 	style.anti_aliasing = true
-	return style
+	return Charte.ombrer(style, rayon)
 
 ## Appelé par main.gd après chaque rendu : coche les objectifs des premiers pas sur l'événement réel.
 func observer_premiers_pas(route: String, model: Dictionary, command: String, response_ok: bool) -> void:

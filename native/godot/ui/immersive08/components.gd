@@ -97,7 +97,7 @@ static func box(color: Color = PANEL, border: Color = Color.TRANSPARENT, radius:
 	style.content_margin_right = px(padding)
 	style.content_margin_top = px(padding)
 	style.content_margin_bottom = px(padding)
-	return style
+	return Charte.ombrer(style, radius)
 
 static func font(weight: int = 600) -> Font:
 	if weight >= 800: return EXTRA_BOLD

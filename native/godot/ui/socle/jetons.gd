@@ -78,7 +78,7 @@ static func boite(fond: Color, rayon := RAYON, marge := 0.0, bord := Color.TRANS
 	if bord.a > 0.0:
 		style.border_color = bord
 		style.set_border_width_all(maxi(1, px(1)))
-	return style
+	return Charte.ombrer(style, rayon)
 
 static func texte(contenu: String, taille := T_CORPS, couleur := TEXTE, police: Font = null) -> Label:
 	var label := Label.new()

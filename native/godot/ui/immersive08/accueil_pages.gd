@@ -79,7 +79,7 @@ static func remplir(app: Control, page: Control, quoi: String) -> void:
 	fond.bg_color = Color(Charte.PANNEAU, .96)
 	fond.set_corner_radius_all(Charte.RAYON_PANNEAU)
 	for bord in ["left", "right", "top", "bottom"]: fond.set("content_margin_" + bord, C.px(32))
-	surface.add_theme_stylebox_override("panel", fond)
+	surface.add_theme_stylebox_override("panel", Charte.ombrer(fond))
 	C.fill(surface, true)
 	colonne.add_child(surface)
 	var defile := ScrollContainer.new()
@@ -153,7 +153,7 @@ class Carrieres extends VBoxContainer:
 			style.border_color = Charte.IVOIRE
 			style.border_width_left = maxi(2, C.px(4))
 		for bord in ["left", "right", "top", "bottom"]: style.set("content_margin_" + bord, C.px(22))
-		cadre.add_theme_stylebox_override("panel", style)
+		cadre.add_theme_stylebox_override("panel", Charte.ombrer(style))
 		add_child(cadre)
 		var pile := C.v(8)
 		cadre.add_child(pile)

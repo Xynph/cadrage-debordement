@@ -8,6 +8,7 @@ extends Control
 ## Ouverture : equipe_type_view.ouvrir(app, championnat, mode) depuis l'actualité et Compétitions.
 
 const Tableau = preload("res://ui/contextual/match_tableau_widgets.gd")
+const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/game_skin.gd")
 const Notes = preload("res://ui/notes_match.gd")
 
@@ -182,7 +183,7 @@ func _boite(parent: Control, zone: Rect2, couleur: Color, rayon := 8, bord := Co
 	if epaisseur > 0:
 		s.border_color = bord
 		s.set_border_width_all(epaisseur)
-	p.add_theme_stylebox_override("panel", s)
+	p.add_theme_stylebox_override("panel", Charte.ombrer(s))
 	p.position = zone.position
 	p.size = zone.size
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE

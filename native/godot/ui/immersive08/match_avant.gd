@@ -617,7 +617,7 @@ class Plaque extends Button:
 		style.set_border_width_all(epaisseur)
 		style.set_corner_radius_all(Charte.RAYON_CARTE)
 		style.anti_aliasing = true
-		return style
+		return Charte.ombrer(style)
 	func _draw() -> void:
 		var rect := Rect2(Vector2.ZERO, size)
 		if anneau: draw_style_box(_forme(Color(Charte.NUIT, .55), Charte.IVOIRE, 3), rect)
@@ -984,7 +984,7 @@ func _tuile(id: String, titre: String, legende: String = "") -> VBoxContainer:
 	style.content_margin_right = M(18)
 	style.content_margin_top = M(12)
 	style.content_margin_bottom = M(12)
-	tile.add_theme_stylebox_override("panel", style)
+	tile.add_theme_stylebox_override("panel", Charte.ombrer(style))
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", M(5))
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1418,7 +1418,7 @@ func _montrer_mini_adverse(joueur: Dictionary, club: Dictionary, ancre: Control)
 	for cote in ["left", "right"]: fond.set("content_margin_" + cote, M(18))
 	fond.content_margin_top = M(14)
 	fond.content_margin_bottom = M(14)
-	fiche.add_theme_stylebox_override("panel", fond)
+	fiche.add_theme_stylebox_override("panel", Charte.ombrer(fond))
 	var colonne := VBoxContainer.new()
 	colonne.add_theme_constant_override("separation", M(4))
 	colonne.custom_minimum_size.x = M(340)

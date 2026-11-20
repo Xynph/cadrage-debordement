@@ -51,7 +51,7 @@ static func _flat(color: Color = Color(0, 0, 0, 0), border: Color = Color(0, 0, 
 	style.content_margin_right = C.px(padding.x)
 	style.content_margin_top = C.px(padding.y)
 	style.content_margin_bottom = C.px(padding.y)
-	return style
+	return Charte.ombrer(style, radius)
 
 static func _surface(color: Color, padding: int = 0, radius: int = 0) -> PanelContainer:
 	var panel := PanelContainer.new()

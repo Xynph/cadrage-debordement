@@ -33,7 +33,7 @@ static func construire(ecran, app: Control, model: Dictionary, page: String) -> 
 	for side in ["left", "right"]: style.set("content_margin_" + side, ecran.M(28))
 	style.content_margin_top = ecran.M(22)
 	style.content_margin_bottom = ecran.M(24)
-	cadre.add_theme_stylebox_override("panel", style)
+	cadre.add_theme_stylebox_override("panel", Charte.ombrer(style))
 	zone.add_child(cadre)
 	var corps := VBoxContainer.new()
 	corps.name = "MatchDelegationBody" if page == "delegation" else "FeuilleIncompleteBody"
