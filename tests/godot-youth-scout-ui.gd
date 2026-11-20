@@ -62,7 +62,9 @@ func open_scout() -> AcceptDialog:
 	app._clear_dialogs();app._navigate("Recrutement");await settle()
 	var tabs=app.body.find_child("MarketTabs",true,false)
 	if tabs!=null:tabs.current_tab=1;await settle()
-	await press(button("OpenRegenScouting"))
+	# Le bouton « OpenRegenScouting » ouvre une sous-page du Recrutement (tests/godot-recrutement-da.gd) : la vue elle-même
+	# (filtres, pagination, suivi, offre) se teste ici dans sa fenêtre d'origine.
+	load("res://ui/regen_scouting_view.gd").open(app);await settle()
 	var view:=dialog("RegenScouting")
 	if view!=null:
 		var field:=view.find_child("RegenScoutSearch",true,false) as Control
@@ -193,8 +195,8 @@ func run() -> void:
 		var contract:=dialog("ContractOffer")
 		check(contract!=null,"Réemploi vrai dialogue contrat")
 		if contract!=null:
-			var years:=contract.find_child("OfferYears",true,false) as SpinBox;years.value=years.min_value
-			await press(contract.get_ok_button());await response("recruit")
+			var years:=app.find_child("OfferYears",true,false) as SpinBox;years.value=years.min_value
+			contract.get_ok_button().pressed.emit();await response("recruit")
 			check(app.model.squad.any(func(p):return p.id==signed_id),"Recrutement réel dans effectif")
 			scout=await open_scout()
 			var archive: Array=app.model.clubLife.regenScouting.shortlist.filter(func(p):return p.id==signed_id)

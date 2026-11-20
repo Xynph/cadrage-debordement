@@ -75,18 +75,25 @@ func run() -> void:
 				check(not market.get_global_rect().intersects(action.get_global_rect()), "Marché sans chevauchement avec " + str(action.name))
 		await capture("recrutement-" + str(resolution.x))
 		await click(market)
+		# Le marché entre clubs est une sous-page du Recrutement (jamais une fenêtre) : même contenu, retour et Échap.
+		var page_market: Variant = app.management_ui.get("recrutement_page")
+		check(page_market is Dictionary and page_market.get("kind") == "interclub", "Clic réel ouvre la sous-page du marché " + str(resolution))
 		var dialog := app.get_node_or_null("InterclubMarket") as AcceptDialog
-		check(dialog != null and dialog.visible, "Clic réel ouvre le marché " + str(resolution))
+		check(dialog != null and not dialog.visible, "Aucune fenêtre : le marché est dans la page " + str(resolution))
 		if dialog != null:
-			check(dialog.find_child("InterclubSearch", true, false) != null, "Recherche du vrai dialogue")
+			check(app.find_child("InterclubSearch", true, false) != null, "Recherche du vrai contenu")
 			check(not app.model.clubLife.interclubMarket.candidates.is_empty(), "Candidats du vrai worker présents")
 			await capture("marche-" + str(resolution.x))
-		app._clear_dialogs()
+		var retour_market := app.find_child("RecrutementRetour", true, false) as Button
+		check(retour_market != null, "Retour au recrutement depuis le marché " + str(resolution))
+		if retour_market != null: retour_market.pressed.emit()
 		await settle()
-		await click(youth)
-		var scouting := app.get_node_or_null("RegenScouting") as AcceptDialog
-		check(scouting != null and scouting.visible, "Clic réel conserve la relève " + str(resolution))
-		app._clear_dialogs()
+		check(app.find_child("CarnetMarket", true, false) != null and app.find_child("OpenRegenScouting", true, false) != null, "Retour sur la liste " + str(resolution))
+		await click(app.find_child("OpenRegenScouting", true, false) as Button)
+		var page_youth: Variant = app.management_ui.get("recrutement_page")
+		check(page_youth is Dictionary and page_youth.get("kind") == "releve" and app.find_child("RegenScoutSearch", true, false) != null, "Clic réel conserve la relève " + str(resolution))
+		var retour_youth := app.find_child("RecrutementRetour", true, false) as Button
+		if retour_youth != null: retour_youth.pressed.emit()
 		await settle()
 	await command("export")
 	check(before == app.model.meta.exportText, "Consultation sans changement de carrière ou RNG")

@@ -57,7 +57,7 @@ func executer() -> void:
 	# 1. Recrutement : bandeau en tête, à côté de la priorité du poste.
 	app._navigate("Recrutement"); await poser(20)
 	verifier(app.find_child("CarnetMarket", true, false) != null, "écran Recrutement ouvert")
-	verifier(texte("RecruitmentTransferBudgetLabel") == LIBELLE, "libellé Recrutement : « %s »" % texte("RecruitmentTransferBudgetLabel"))
+	verifier(texte("RecruitmentTransferBudgetLabel").to_lower() == "restant", "libellé Recrutement (tuile Restant) : « %s »" % texte("RecruitmentTransferBudgetLabel"))
 	verifier(texte("RecruitmentTransferBudgetAmount") == reste, "montant Recrutement « %s » = disponible « %s »" % [texte("RecruitmentTransferBudgetAmount"), reste])
 	verifier(texte("RecruitmentTransferBudgetAllocated").contains(enveloppe), "enveloppe allouée au Recrutement : " + texte("RecruitmentTransferBudgetAllocated"))
 	verifier(visible_a_l_ecran("RecruitmentTransferBudget"), "bandeau du budget visible")
@@ -69,7 +69,7 @@ func executer() -> void:
 			var police := montant.get_theme_font("font")
 			var largeur := police.get_string_size(montant.text, HORIZONTAL_ALIGNMENT_LEFT, -1, montant.get_theme_font_size("font_size")).x
 			verifier(largeur <= montant.size.x + 1.0, "montant Recrutement non tronqué (%.0f ≤ %.0f)" % [largeur, montant.size.x])
-		var priorite := app.find_child("MarketPriorityFilter", true, false) as Control
+		var priorite := app.find_child("MarketNeed_0", true, false) as Control
 		if priorite != null: verifier(not bandeau.get_global_rect().intersects(priorite.get_global_rect()), "bandeau sans chevauchement avec la priorité du poste")
 		var comparer := app.find_child("CompareMarket", true, false) as Control
 		if comparer != null: verifier(not bandeau.get_global_rect().intersects(comparer.get_global_rect()), "bandeau sans chevauchement avec « Comparer »")

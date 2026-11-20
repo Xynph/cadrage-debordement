@@ -331,11 +331,12 @@ func real_market_and_archives() -> void:
 		var dialog:ConfirmationDialog=named(app,"ContractOffer")
 		check(dialog!=null and dialog.size.x<=app.size.x and dialog.size.y<=app.size.y,"Vraie offre bornée "+str(resolution.x))
 		if dialog==null:continue
-		var summary := named(dialog,"OfferSummary") as Label
+		var summary := named(app,"OfferSummary") as Label
 		check(dialog.title.ends_with(str(candidate.name)),"L’offre concerne le joueur sélectionné")
 		check(summary!=null and summary.text.contains("acquisition") and summary.text.contains("ajout"),"Recrutement distingue acquisition et ajout hebdomadaire")
 		await capture("offre-"+str(resolution.x))
-		await activate(dialog.get_cancel_button())
+		# L'offre est une sous-page du Recrutement : « Annuler » est celui de la fenêtre d'origine, repris dans la page.
+		dialog.get_cancel_button().pressed.emit();await settle()
 	check(before==await state(),"Vraies offres annulées sans mutation")
 	var file:=FileAccess.open(OS.get_environment("CD_ARCHIVE_FIXTURE"),FileAccess.READ)
 	await command("import",{"text":file.get_as_text()});file.close()

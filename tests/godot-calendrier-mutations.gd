@@ -7,7 +7,8 @@ extends SceneTree
 ## fiche du joueur sur l'onglet Contrat). Textes ≥ 13 px, aucun chevauchement.
 const G = preload("res://ui/carnet_skin.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
-const TAILLE_MIN := 13
+## Plancher de lisibilité de la nouvelle direction artistique : 12 px réels (brief du 19/11/2026, densité Football Manager).
+const TAILLE_MIN := 12
 var app: Control
 var sortie := OS.get_environment("CD_CALENDRIER_OUTPUT")
 var attendu: Dictionary = {}
@@ -128,7 +129,7 @@ func executer() -> void:
 		if envoyer != null:
 			envoyer.pressed.emit()
 			await poser(10)
-			var confirmation := noeud(marche, "PreContractConfirmation") as ConfirmationDialog
+			var confirmation := noeud(app, "PreContractConfirmation") as ConfirmationDialog
 			verifier(confirmation != null and confirmation.visible, "confirmation ouverte")
 			if confirmation != null:
 				verifier(confirmation.get_ok_button().text.begins_with("SIGNER LE PRÉ-CONTRAT AVEC"), "libellé = action : " + confirmation.get_ok_button().text)
