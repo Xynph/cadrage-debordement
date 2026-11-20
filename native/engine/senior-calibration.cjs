@@ -261,7 +261,11 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     const spread = ranked ? (0.5 - usage) * R.usage + deviation(player, player.rating, context, statut) * (R.knownWithUsage ?? R.known)
       : known ? deviation(player, player.rating, context, statut) * R.known
         : young ? z * R.unknown : (context.club?.get(player.fam)?.(player.rating) ?? z) * R.unknown;
-    let value = base + etageBonus(context.clubId, context.leagueId, young) + clamp(spread, -R.limit, R.limit);
+    // Le bonus d'un grand club relève surtout ses internationaux (barème V3, 20/11/2026) : un non-international
+    // n'en garde qu'une part (R.nonInternationalClub), le malus des petits clubs reste entier.
+    let club = etageBonus(context.clubId, context.leagueId, young);
+    if (classe === 'aucune' && club > 0) club *= R.nonInternationalClub ?? 1;
+    let value = base + club + clamp(spread, -R.limit, R.limit);
     // L'ancre « jeune » contient déjà la jeunesse : l'âge n'y retire que la moitié, comme pour un jeune titulaire.
     if (young) value -= (A.seniorFrom - player.age) * A.youngPerYear * (statut === 'titulaire' || statut === 'jeune' && L.jeune !== undefined ? 0.5 : 1);
     // L'écart dans l'effectif d'un senior au statut inconnu contient déjà son âge.

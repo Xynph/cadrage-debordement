@@ -121,7 +121,8 @@
   "youngInternational": 2,
   "usage": 6,
   "knownWithUsage": 1,
-  "usageNote": "Rang du joueur dans son club (0 = le plus utilisé, 1 = le moins utilisé), aux titularisations puis aux minutes : ±usage/2 points autour de l’ancre de son statut ; l’écart d’attributs ne compte plus que pour knownWithUsage."
+  "usageNote": "Rang du joueur dans son club (0 = le plus utilisé, 1 = le moins utilisé), aux titularisations puis aux minutes : ±usage/2 points autour de l’ancre de son statut ; l’écart d’attributs ne compte plus que pour knownWithUsage.",
+  "nonInternationalClub": 0.5
  },
  "age": {
   "seniorFrom": 23,
