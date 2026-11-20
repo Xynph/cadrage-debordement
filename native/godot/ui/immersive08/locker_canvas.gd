@@ -6,6 +6,7 @@ const U = preload("res://ui/immersive08/club_ui.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Relations = preload("res://ui/relationships_view.gd")
 const G = preload("res://ui/game_skin.gd")
+const Charte = preload("res://ui/charte.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
 const KEY = "immersive08_locker_tab"
 const LOCKER_ART = "res://art/immersive08/lockerroom.png"
@@ -35,7 +36,7 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	var RI = preload("res://ui/contextual/rooms/room_identity.gd")
 	BanqueImages.recolorer(photo, art, RI.primary(identite), RI.secondary(identite))
 	U.art_fade(hero,Rect2(986,1,1261,225))
-	U.italic(D.text(hero,26,43,"LE VESTIAIRE",30,C.GOLD,700,375),700)
+	D.text(hero,26,43,"LE VESTIAIRE",30,C.GOLD,700,375).add_theme_font_override("font",Charte.TITRE_FICHE)
 	D.line(hero,Vector2(237,28),Vector2(661,28),Color(C.GOLD,.65))
 	D.text(hero,23,124,"Un groupe, une ambition.",82,C.IVORY,800,1195)
 	D.text(hero,26,175,G.club_name(app.model.club)+"  ·  "+str(app.model.meta.get("roundLabel","La semaine du groupe")),26,C.MUTED,500,1225)

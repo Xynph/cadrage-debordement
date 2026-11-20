@@ -5,21 +5,11 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const GREEN = Color("176e49")
 static var tab_surfaces: Dictionary = {}
-static var italic_fonts: Dictionary = {}
 
 static func icon(parent: Node, id: String, at: Vector2, color: Color = C.IVORY, side: int = 27) -> void:
 	var picture := C.icon(id, side, color)
 	parent.add_child(picture)
 	D.place(picture, Rect2(at, Vector2(side, side)))
-
-static func italic(label: Label, weight: int) -> Label:
-	if not italic_fonts.has(weight):
-		var font := FontVariation.new()
-		font.base_font = C.font(weight)
-		font.variation_transform = Transform2D(Vector2(1,0),Vector2(-.13,1),Vector2.ZERO)
-		italic_fonts[weight] = font
-	label.add_theme_font_override("font", italic_fonts[weight])
-	return label
 
 static func tab(parent: Node, rectangle: Rect2, caption: String, selected: bool, callback: Callable, id: String) -> Button:
 	var control := D.button(parent, rectangle, caption, callback, selected, "", false, GREEN, id)
