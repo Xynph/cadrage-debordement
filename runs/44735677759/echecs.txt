@@ -1,0 +1,5 @@
+== suites (10) (code 1)
+not ok 1 - Formation DA : tableau pleine largeur, décision en place, sous-pages, aucune petite fenêtre
+    FAIL: Formation : aucun aplat doré (Continuer le porte seul) (1)
+  name: 'AssertionError'
+::error file=tests/godot-formation-da.cjs::Godot : ECHEC (1), durée 37 s, limite 300s

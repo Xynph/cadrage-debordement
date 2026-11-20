@@ -1,0 +1,210 @@
+::group::tests/godot-accueil-da.cjs
+TAP version 13
+# Subtest: Accueil DA : première fois, reprise, sous-pages sans fenêtre, un seul or
+ok 1 - Accueil DA : première fois, reprise, sous-pages sans fenêtre, un seul or
+  ---
+  duration_ms: 24911.905622
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24917.401024
+CD_CPU_PROFILE suite=tests/godot-accueil-da.cjs user_s=28.29 system_s=1.58 wall_s=24.94 cpu_pct=119% max_rss_kb=1562416
+PASS tests/godot-accueil-da.cjs (25 s)
+::endgroup::
+::group::tests/godot-bureau-da.cjs
+BUREAU DA : 200 contrôles ; 0 échec(s)
+TAP version 13
+# Subtest: Bureau : DA Affiche et Gabi, éléments cliquables, charte
+ok 1 - Bureau : DA Affiche et Gabi, éléments cliquables, charte
+  ---
+  duration_ms: 43963.936247
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 43969.266067
+CD_CPU_PROFILE suite=tests/godot-bureau-da.cjs user_s=30.02 system_s=1.19 wall_s=43.99 cpu_pct=70% max_rss_kb=1005104
+PASS tests/godot-bureau-da.cjs (44 s)
+::endgroup::
+::group::tests/godot-calendrier-da.cjs
+CALENDRIER DA : 49 contrôles ; 0 échec(s)
+TAP version 13
+# Subtest: Classements : tableau et rendez-vous a droite, liens partout, aucune fenetre (carriere Monde)
+ok 1 - Classements : tableau et rendez-vous a droite, liens partout, aucune fenetre (carriere Monde)
+  ---
+  duration_ms: 12903.048698
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12908.283611
+CD_CPU_PROFILE suite=tests/godot-calendrier-da.cjs user_s=13.90 system_s=0.95 wall_s=12.93 cpu_pct=114% max_rss_kb=994116
+PASS tests/godot-calendrier-da.cjs (13 s)
+::endgroup::
+::group::tests/godot-formation-da.cjs
+TAP version 13
+# Subtest: Formation DA : tableau pleine largeur, décision en place, sous-pages, aucune petite fenêtre
+not ok 1 - Formation DA : tableau pleine largeur, décision en place, sous-pages, aucune petite fenêtre
+  ---
+  duration_ms: 37083.27743
+  type: 'test'
+  location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-formation-da.cjs:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    FORMATION_DA {"checks":100,"failures":["Formation : aucun aplat doré (Continuer le porte seul) (1)"]}
+    APLAT DORE sur /root/CadrageDebordement/ImmersiveShell/ImmersiveLayout/@HBoxContainer@8844/@VBoxContainer@8856/ImmersiveContentStage/@MarginContainer@8868/CareerContent/CareerWorkspace/@VBoxContainer@8872/@Control@8873/ImmersiveAcademy/AcademyImmersiveTable/AcademyPlayerScroll/AcademyImmersiveRows/AcademyRow_youth-102-1-60044/@Panel@9526
+    FAIL: Formation : aucun aplat doré (Continuer le porte seul) (1)
+    
+    + actual - expected
+    
+    + [
+    +   'Formation : aucun aplat doré (Continuer le porte seul) (1)'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'Formation : aucun aplat doré (Continuer le porte seul) (1)'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-formation-da.cjs:27:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 37088.915767
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-formation-da.cjs user_s=40.70 system_s=1.25 wall_s=37.11 cpu_pct=113% max_rss_kb=1505960
+::error file=tests/godot-formation-da.cjs::Godot : ECHEC (1), durée 37 s, limite 300s
+::endgroup::
+::group::tests/godot-match-direct-da.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MATCH_DIRECT_DA 77 controles, 0 echec
+
+CD_CPU_PROFILE suite=tests/godot-match-direct-da.cjs user_s=83.50 system_s=10.00 wall_s=77.78 cpu_pct=120% max_rss_kb=2643796
+PASS tests/godot-match-direct-da.cjs (78 s)
+::endgroup::
+::group::tests/godot-match-entracte-da.cjs
+TAP version 13
+# Subtest: Entracte (DA) : maquette, liens actifs sans fenêtre, un seul aplat doré, panneau d’arrêt, clavier
+ok 1 - Entracte (DA) : maquette, liens actifs sans fenêtre, un seul aplat doré, panneau d’arrêt, clavier
+  ---
+  duration_ms: 1735.374059
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1740.753904
+CD_CPU_PROFILE suite=tests/godot-match-entracte-da.cjs user_s=1.28 system_s=0.06 wall_s=1.76 cpu_pct=75% max_rss_kb=227944
+PASS tests/godot-match-entracte-da.cjs (1 s)
+::endgroup::
+::group::tests/godot-presse-da.cjs
+PRESSE DA : 100 contrôles ; 0 échec(s)
+TAP version 13
+# Subtest: Presse : synthèse à gauche, liens partout, aucune fenêtre (carrière Monde)
+ok 1 - Presse : synthèse à gauche, liens partout, aucune fenêtre (carrière Monde)
+  ---
+  duration_ms: 42574.272263
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 42579.538429
+CD_CPU_PROFILE suite=tests/godot-presse-da.cjs user_s=51.20 system_s=3.84 wall_s=42.60 cpu_pct=129% max_rss_kb=1679964
+PASS tests/godot-presse-da.cjs (43 s)
+::endgroup::
+::group::tests/godot-reception-da.cjs
+TAP version 13
+# Subtest: Réception DA : lettre papier, liens, réponse confirmée, aucune petite fenêtre
+ok 1 - Réception DA : lettre papier, liens, réponse confirmée, aucune petite fenêtre
+  ---
+  duration_ms: 21178.513211
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21184.051874
+CD_CPU_PROFILE suite=tests/godot-reception-da.cjs user_s=25.18 system_s=1.26 wall_s=21.21 cpu_pct=124% max_rss_kb=1437536
+PASS tests/godot-reception-da.cjs (21 s)
+::endgroup::
+::group::tests/godot-finances-ecran.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+OK finances-ecran : 188 vérifications
+
+Preuves Finances : /tmp/tmp.YYSirxuBmF/suite.NKKwCi/cd-finances-ecran-1Wjmmf
+CD_CPU_PROFILE suite=tests/godot-finances-ecran.cjs user_s=55.77 system_s=3.74 wall_s=71.62 cpu_pct=83% max_rss_kb=2185704
+PASS tests/godot-finances-ecran.cjs (72 s)
+::endgroup::
+::group::tests/godot-composition.cjs
+COMPOSITION : 85 contrôles ; 0 échec(s)
+TAP version 13
+# Subtest: Composition : variante 1, candidats dessous, première ligne, sans fenêtre (carrière Monde)
+ok 1 - Composition : variante 1, candidats dessous, première ligne, sans fenêtre (carrière Monde)
+  ---
+  duration_ms: 21922.94669
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21928.241134
+CD_CPU_PROFILE suite=tests/godot-composition.cjs user_s=20.81 system_s=1.13 wall_s=21.95 cpu_pct=99% max_rss_kb=1235452
+PASS tests/godot-composition.cjs (22 s)
+::endgroup::

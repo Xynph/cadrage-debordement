@@ -1,0 +1,10 @@
+tests/godot-accueil-da.cjs
+tests/godot-bureau-da.cjs
+tests/godot-calendrier-da.cjs
+tests/godot-formation-da.cjs
+tests/godot-match-direct-da.cjs
+tests/godot-match-entracte-da.cjs
+tests/godot-presse-da.cjs
+tests/godot-reception-da.cjs
+tests/godot-finances-ecran.cjs
+tests/godot-composition.cjs
