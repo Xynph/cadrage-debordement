@@ -894,6 +894,7 @@ func _render(remember_ui: bool = true) -> void:
 
 func _render_screen(remember_ui: bool) -> void:
 	if not Immersive.Selections.navigation_allowed(model, route): route = "Réception"
+	if route != "Accueil" and has_meta("accueil_sub"): remove_meta("accueil_sub")
 	call_deferred("_refresh_coach")
 	call_deferred("_observe_navigation")
 	for chapter: Dictionary in NAV_CHAPTERS:
