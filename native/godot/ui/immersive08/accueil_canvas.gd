@@ -23,7 +23,7 @@ class Marqueur extends Control:
 		var decalage := Charte.decalage(size.y)
 		draw_colored_polygon(PackedVector2Array([Vector2(decalage, 0), Vector2(decalage + size.x, 0), Vector2(size.x, size.y), Vector2(0, size.y)]), teinte)
 
-static func home(app: Control) -> Control:
+static func home(app: Control, nom_jeu: String = "RUGBY LEGACY 27") -> Control:
 	var window := app.get_window()
 	window.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	C.configure(window.size.y, window.size.x)
@@ -57,7 +57,7 @@ static func home(app: Control) -> Control:
 	var colonnes := C.h(48)
 	colonnes.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(colonnes)
-	colonnes.add_child(C.fill(_affiche(app, club, meta)))
+	colonnes.add_child(C.fill(_affiche(app, club, meta, nom_jeu)))
 	var droite := C.v(0)
 	droite.custom_minimum_size.x = C.px(760)
 	droite.alignment = BoxContainer.ALIGNMENT_BEGIN
@@ -122,7 +122,7 @@ static func _police(texte: String, taille: int, couleur: Color, police: Font) ->
 	return etiquette
 
 ## Affiche : logo du jeu, puis accroche en bas. Le logo est le jeu de couleurs de référence (charte).
-static func _affiche(_app: Control, _club: Dictionary, _meta: Dictionary) -> Control:
+static func _affiche(_app: Control, _club: Dictionary, _meta: Dictionary, nom_jeu: String) -> Control:
 	var colonne := C.v(0)
 	colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var logo := TextureRect.new()
@@ -131,7 +131,8 @@ static func _affiche(_app: Control, _club: Dictionary, _meta: Dictionary) -> Con
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
 	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	logo.tooltip_text = "Rugby Legacy 27"
+	logo.tooltip_text = nom_jeu.capitalize()
+	logo.accessibility_name = nom_jeu
 	var largeur := C.px(1160)
 	var ratio := float(MARQUE.get_width()) / maxf(1.0, float(MARQUE.get_height()))
 	logo.custom_minimum_size = Vector2(largeur, largeur / ratio)
