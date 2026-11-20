@@ -298,7 +298,7 @@ module.exports=function positionAptitudes(){
    const slots=sheet.lineup.concat(sheet.bench),used=new Set(slots.filter(Boolean));
    let count=slots.filter(id=>id&&quota.yes(byId.get(id))).length;
    const value=(p,k)=>rating(p,k)*(.5+p.condition*.005);
-   const jiffs=pool.filter(p=>quota.yes(p)).sort(compareId);
+   const jiffs=pool.filter(p=>quota.yes(p)).sort(compareId);let filled=0;
    while(count<quota.target){
     let best=null;
     for(let k=0;k<slots.length;k++){
@@ -310,9 +310,10 @@ module.exports=function positionAptitudes(){
      }
     }
     if(!best)break;
-    used.delete(slots[best.k]);used.add(best.p.id);slots[best.k]=best.p.id;count++;
+    used.delete(slots[best.k]);used.add(best.p.id);slots[best.k]=best.p.id;count++;filled++;
    }
-   quotaPolish(slots,pool,byId,quota,used);
+   // Retouche seulement quand le remplissage glouton a remplacé quelqu'un : sinon la feuille sort déjà de l'attribution optimale.
+   if(filled)quotaPolish(slots,pool,byId,quota,used);
    return {...sheet,lineup:slots.slice(0,15),bench:slots.slice(15)};
   }
   // Après le remplissage glouton du quota, la feuille peut garder un mauvais échange : un qualifié faible au XV
