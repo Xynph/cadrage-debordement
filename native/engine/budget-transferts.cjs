@@ -40,11 +40,13 @@ function enveloppe({ recettes, division, type, confiance, cash, reserve }, R = R
 // État enregistré : S.budgetTransferts = {version:1, saison, clubId, enveloppe, depense, reconstitue, report, rallonge,
 // demandes, rallongesAccordees}. enveloppe = montant fixé par le conseil en début de saison ; report = part reportée de la
 // saison précédente ; rallonge = rallonges accordées en cours de saison. Les quatre derniers champs manquent dans les
-// sauvegardes antérieures : lus comme 0.
+// sauvegardes antérieures : lus comme 0. aNouvelleSaison (facultatif) = argent rendu pendant la bascule de saison (part des
+// ventes exécutées au 1er juillet, indemnités d'achats tombés) : il ne compte pas dans le reste de la saison close et devient
+// le reconstitué de départ de la nouvelle enveloppe (décision du 20/11/2026, `docs/gdd/budget-transferts.md` R4).
 const n0 = x => fini(x) && x >= 0 ? x : 0;
 const valide = e => !!e && typeof e === 'object' && !Array.isArray(e) && e.version === 1 && Number.isInteger(e.saison) && Number.isInteger(e.clubId) &&
   [e.enveloppe, e.depense, e.reconstitue].every(x => fini(x) && x >= 0) &&
-  [e.report, e.rallonge, e.demandes, e.rallongesAccordees].every(x => x === undefined || fini(x) && x >= 0);
+  [e.report, e.rallonge, e.demandes, e.rallongesAccordees, e.aNouvelleSaison].every(x => x === undefined || fini(x) && x >= 0);
 
 // Enveloppe de la saison : fixée + report + rallonges (le reconstitué s'y ajoute à part).
 const total = e => e.enveloppe + n0(e.report) + n0(e.rallonge);
@@ -113,7 +115,9 @@ function budgetTransfertsEntrees(){
 function budgetTransfertsNeuf(x=budgetTransfertsEntrees()){
  const T=nativeBudgetTransferts,R=T.REGLAGES,enveloppe=T.enveloppe(x,R),p=S.budgetTransferts,meme=T.valide(p)&&p.clubId===S.club;
  const report=meme&&p.saison===S.season-1?T.report(p,enveloppe,x.recettes,R):meme&&p.saison===S.season?Math.round(p.report||0):0;
- return {version:1,saison:S.season,clubId:S.club,enveloppe,depense:0,reconstitue:0,report,rallonge:0,demandes:0,rallongesAccordees:0};
+ // Argent rendu pendant la bascule (ventes du 1er juillet, achats tombés) : entièrement à la nouvelle saison.
+ const reconstitue=meme&&p.saison===S.season-1?Math.round(p.aNouvelleSaison||0):0;
+ return {version:1,saison:S.season,clubId:S.club,enveloppe,depense:0,reconstitue,report,rallonge:0,demandes:0,rallongesAccordees:0};
 }
 // Enveloppe de la saison et du club en cours ; recalculée à la volée sinon (carrière antérieure, autre saison, autre club).
 function budgetTransfertsEtat(ecrire=true){
@@ -137,13 +141,20 @@ function budgetTransfertsRefus(montant,ctx=budgetTransfertsContexte()){return ct
 const budgetTransfertsExempte=()=>budgetTransfertsActif();
 function budgetTransfertsDepenser(montant){const e=budgetTransfertsEtat(true);if(e&&montant>0)e.depense=Math.round(e.depense+montant);}
 // Vente : choisie (offre acceptée, indemnité de formation reçue) → une part revient à l'enveloppe ; imposée → rien.
-let budgetTransfertsForcee=false;
+let budgetTransfertsForcee=false,budgetTransfertsBascule=false;
 function budgetTransfertsRecette(montant,choisie){
  if(!choisie||budgetTransfertsForcee||!(montant>0)||!budgetTransfertsActif())return 0;
  const e=budgetTransfertsEtat(true),x=budgetTransfertsEntrees(),r=nativeBudgetTransferts.rendu(e,montant,x.recettes,nativeBudgetTransferts.REGLAGES);
- e.reconstitue=Math.round(e.reconstitue+r);return r;
+ budgetTransfertsRendre(e,r);return r;
+}
+// Rend de l'argent à l'enveloppe : au reconstitué de la saison, ou, pendant la bascule, à la saison qui commence.
+function budgetTransfertsRendre(e,r){
+ if(!e||!(r>0))return;
+ if(budgetTransfertsBascule)e.aNouvelleSaison=Math.round((e.aNouvelleSaison||0)+r);else e.reconstitue=Math.round(e.reconstitue+r);
 }
 function budgetTransfertsImposee(fn){const avant=budgetTransfertsForcee;budgetTransfertsForcee=true;try{return fn();}finally{budgetTransfertsForcee=avant;}}
+// Exécutions de la bascule de saison (settleContracts, calendrier-mutations.cjs) : l'argent rendu va à la nouvelle saison.
+function budgetTransfertsPendantBascule(fn){const avant=budgetTransfertsBascule;budgetTransfertsBascule=true;try{return fn();}finally{budgetTransfertsBascule=avant;}}
 if(typeof acceptSale==='function'){
  const acceptSaleTransfertsV1=acceptSale;
  acceptSale=function(id){const o=S?.economy?.offers?.find(x=>x.id===id),fee=o?.fee;const r=acceptSaleTransfertsV1.apply(this,arguments);if(r===true&&fee>0)budgetTransfertsRecette(fee,true);return r;};

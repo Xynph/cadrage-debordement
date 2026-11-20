@@ -109,6 +109,14 @@ rallonge est possible pour une offre m si `reste < m ≤ caisseLibre` (calcul re
   conclue hors période des mutations rend sa part au moment de son exécution (`docs/gdd/vente-joueurs.md`).
 - Une indemnité d'accord d'achat conclu hors période (`docs/gdd/calendrier-mutations.md`) est engagée sur l'enveloppe
   dès la conclusion ; la prime d'un pré-contrat la consomme à la signature.
+- **Argent rendu à la bascule de saison** (décision du 20/11/2026, calendrier des mutations v2) : depuis que les ventes et
+  les achats s'exécutent au 1er juillet, la part d'une vente choisie exécutée à la bascule et l'indemnité engagée d'un
+  achat qui tombe à la bascule reviennent **entières à l'enveloppe de la saison qui commence** (elles forment son
+  reconstitué de départ), jamais à la saison close. Raison : l'argent arrive en juillet, pour le recrutement de la
+  nouvelle saison ; le crédité à la saison close ne passait que pour 25 % par le report (R5), donc 12,5 % de la vente au
+  lieu de 50 %. Le report (R5) ne compte pas cet argent une seconde fois. Champ technique : `aNouvelleSaison` de
+  l'enveloppe close, repris par `budgetTransfertsNeuf` ; test `tests/calendrier-mutations.cjs` « Bascule : part des
+  ventes et achats tombés rendus à la nouvelle saison ».
 
 ### R5 — D'une saison à l'autre : report partiel (décision de Léo, 19/11/2026)
 
