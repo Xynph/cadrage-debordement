@@ -1,5 +1,43 @@
 # Réconciliation bornée des flux hebdomadaires Monde
 
+## Mise à jour du 20 novembre 2026 : carrière world-champ et budget de saison réaliste
+
+L'audit ci-dessous (Monde v1, ancienne économie à 160 000 € par semaine) ne tournait plus que sous
+`CD_MODES_HERITES`, donc hors CI. Depuis #699, le budget de saison réaliste est l'économie par défaut ; la
+relecture de facturation ne concordait plus pour aucun club (0 sur 57) pour deux raisons :
+
+1. elle rejouait `worldWeeklyEconomy` dans un moteur monté par `tests/france-harness.cjs`, où la branche du
+   budget (`native/engine/club-budget.cjs`, `BRANCHEMENT`, installée par le worker) n'existe pas : c'était
+   l'ancien barème qui était rejoué ;
+2. une partie des variations de caisse des clubs gérés ne passe pas par la facturation : les indemnités des
+   accords entre clubs (`calIANouvelAccord`, `native/engine/calendrier-mutations.cjs`), payées à l'accord.
+
+L'audit tourne désormais sur une vraie carrière world-champ (`tests/helpers/carriere-monde.cjs`, cadence
+hebdomadaire, mode simulation) et entre en CI (`tests/world-finance-flow-audit.cjs`, sans `CD_MODES_HERITES`) :
+
+- pendant chaque `finish_round`, le moteur est seulement observé : chaque écriture de `cash` est notée avec la
+  fonction qui l'a faite, et les arguments du barème (`club-budget.semaine`) et les écritures rendues par
+  `budgetSemaine` sont copiés ; tout est retiré avant la commande suivante ;
+- par club géré : la somme des écritures tracées égale la variation observée (aucune écriture hors trace) ; la
+  facturation égale le barème rejoué hors du moteur (frais de match des recettes imprévues compris) moins
+  l'entretien des installations ; les indemnités égalent les accords enregistrés (`accordsIA`) ; toute autre
+  écriture ou tout résidu laisse le club **unknown** ;
+- le club joué reste rapproché de son grand livre ;
+- contre-épreuve : l'état pris à l'entrée de la facturation est chargé dans un second worker isolé ; la vraie
+  `worldWeeklyEconomy` y redonne la facturation observée pour chaque club, ne consomme pas d'aléa, ne touche
+  ni résultats ni calendrier, refuse une seconde facturation ; +1 000 € de salaire hebdomadaire pour un club
+  change sa caisse exactement de ce que dit le barème (−500 € pour le club 0, semaine 0), et rien d'autre.
+
+Mesure (graine 4242, club 102, semaines 0 à 13 de la saison 1) : 115 clubs gérés rapprochés à l'euro chaque
+semaine, 0 inconnu, semaine 12 : un accord (290 000 €, club 85 → club 74) tracé hors facturation.
+
+```bash
+node tests/world-finance-flow-audit.cjs
+node ci/world-finance-flow-audit.cjs --weeks 14 --out /tmp/world-finance-flow-report.json
+```
+
+Le texte qui suit décrit l'audit historique du 9 novembre (Monde v1, ancienne économie).
+
 Audit manuel du 9 novembre 2026 sur le moteur `c07ce6a68adfa4f6aee72caab4523c77508bf8e3`, Node 22.23.4, graine `827381`, horloge déterministe `1794178800000`, club humain 0, Monde v1. Montants fictifs du jeu. Aucun coefficient, règle de recrutement, contrat, profil utilisateur ou fichier de production existant modifié.
 
 ## Méthode et reproduction
