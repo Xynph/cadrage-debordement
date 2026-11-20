@@ -46,6 +46,44 @@ test('Calendrier des tours, indemnité plafonnée, réglage de mesure', () => {
   assert.equal(K.interclub('2026-10-12', RV, '2027-07-01').raison, 'Hors période des mutations : un accord conclu maintenant prendra effet le 1er juillet 2027 ; les autres clubs n’enchérissent qu’à partir du 1er mai 2027.');
 });
 
+test('Monde : acheteur géré passé sous sa réserve à la bascule, le président vend le jour même', { timeout: 300000 }, () => {
+  // GDD calendrier-mutations § 3 bis 5 : après le paiement des indemnités de la bascule, le président d'un club géré passé
+  // sous sa réserve tranche tout de suite ; ses ventes prennent effet au 1er juillet, l'argent revient aussitôt.
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    creer(jeu, CLUB);
+    const lire = s => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + s + ')'));
+    const saison = lire('S.season');
+    // Accord entre deux clubs gérés de l'élite ; l'acheteur, après l'indemnité, tombe à 30 % de sa réserve (« Fragile »).
+    const x = lire(`(()=>{const geres=S.clubs.filter(c=>c.id!==S.club&&budgetLigue(c.id)==='elite');
+      const place=b=>professionalCapacity(b)-b.players.filter(q=>!(q.contractEnd!=null&&q.contractEnd<=S.season)).length;
+      const b=geres.find(c=>place(c)>0),s=geres.find(c=>c.id!==b.id);
+      const p=s.players.slice().sort((u,v)=>u.rating-v.rating||(u.id<v.id?-1:1))[0];
+      const reserve=S.clubBudget.clubs[b.id].reserve,montant=Math.max(500000,Math.round(reserve*0.2/10000)*10000);
+      b.cash=montant+Math.round(reserve*0.3);
+      calIANouvelAccord(b,s,p,montant,p.salary,2);
+      globalThis.__bascule={ventes:[]};
+      const ev=aiRosterEvent;aiRosterEvent=function(id,k,q,fee){if(id===b.id&&k==='sell')__bascule.ventes.push({id:q.id,fee});return ev.apply(this,arguments);};
+      const ex=calIAExecuter;calIAExecuter=function(){__bascule.avant=b.cash;const r=ex.apply(this,arguments);__bascule.apres=b.cash;return r;};
+      return {b:b.id,s:s.id,p:p.id,montant};})()`);
+    const r = lire(`(()=>{settleContracts();const b=S.clubs[${x.b}],plan=S.presidentReprise?.clubs?.[${x.b}]||null;
+      return {arrive:b.players.some(q=>q.id==='${x.p}'),plan,ventes:__bascule.ventes,avant:__bascule.avant,apres:__bascule.apres,
+        partis:(plan?.joueurs||[]).filter(j=>!b.players.some(q=>q.id===j.id)).map(j=>{const q=S.clubs.flatMap(c=>c.players).find(q=>q.id===j.id);return q?{id:q.id,joinedSeason:q.joinedSeason,joinedRound:q.joinedRound,contractEnd:q.contractEnd}:null;}),
+        fil:S.economy.transfers.map(t=>t.text)};})()`);
+    assert.equal(r.arrive, true, 'accord exécuté');
+    assert.ok(r.plan, 'le président est intervenu pour l’acheteur');
+    assert.ok(r.plan.joueurs.every(j => j.id !== x.p), 'l’arrivée n’est pas désignée');
+    assert.equal(r.plan.etat, 'vendu');
+    assert.ok(r.partis.length >= 1 && r.partis.every(Boolean), 'au moins un joueur désigné parti à la même bascule');
+    assert.deepEqual(r.ventes.map(v => v.id).sort(), r.partis.map(p => p.id).sort());
+    const recettes = r.ventes.reduce((t, v) => t + v.fee, 0);
+    assert.ok(recettes > 0);
+    assert.equal(r.apres, r.avant - x.montant + recettes, 'caisse remontée du montant des ventes');
+    for (const p of r.partis) { assert.equal(p.joinedSeason, saison + 1); assert.equal(p.joinedRound, 0); assert.ok(p.contractEnd >= saison + 1); }
+    assert.ok(r.fil.some(t => /\(le président veut retrouver sa réserve\), au changement de saison\.$/.test(t)), 'ligne du fil');
+  } finally { jeu.fermer(); }
+});
+
 test('Monde : tours des clubs gérés, accords différés, pré-contrats, rumeurs, temps forts, bascule', { timeout: 900000 }, () => {
   const debut = Date.now();
   const jeu = ouvrir({ hebdomadaire: true, testVm: true });
@@ -165,5 +203,65 @@ test('Monde : tours des clubs gérés, accords différés, pré-contrats, rumeur
     assert.ok(b.news.some(t => /^\d+ transferts entre clubs prennent effet en ce changement de saison\.$/.test(t)), 'actualité de la bascule');
     assert.ok(caisses.length === lire('S.clubs.length'));
     console.log(`clubs-geres-mutations : ${accords.length} accords, ${pres.length} pré-contrats, ${((Date.now() - debut) / 1000).toFixed(0)} s`);
+  } finally { restaurer(); jeu.fermer(); }
+});
+
+test('Monde : rumeurs fausses démenties (taux 0), rumeurs vraies suivies d’un pré-contrat (taux 1)', { timeout: 900000 }, () => {
+  const debut = Date.now();
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    creer(jeu, CLUB);
+    const lire = s => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + s + ')'));
+    const jour = () => lire('CDWorldCareer.calendarToday(S)');
+    const semaine = () => { const m = jeu.regler(jeu.call('snapshot')); return m.next ? jouerLeMatch(jeu, m) : jeu.regler(jeu.call('finish_round')); };
+    const etat = () => lire('S.calendrierMutations||{}');
+    // Pré-contrats et rumeurs dès l'automne (moins de 12 mois de contrat, rumeurs jusqu'au 31 décembre).
+    R.preContrats.moisAvantFin = 12; R.clubsGeres.rumeurs.fin = '12-31';
+
+    // 1. Taux 0 : toutes les rumeurs sont fausses ; jamais de pré-contrat avec le club annoncé ; démenti 2 à 4 semaines après.
+    R.clubsGeres.rumeurs.tauxRealisation = 0;
+    semaine();
+    let st = etat();
+    const fausses = st.rumeurs.slice();
+    assert.ok(fausses.length >= 1, 'rumeurs de la semaine');
+    for (const r of fausses) {
+      assert.equal(r.piste, 'fausse', r.id);
+      assert.ok(r.dementi >= decaler(r.date, 14) && r.dementi <= decaler(r.date, 28), 'démenti dans le délai : ' + r.date + ' → ' + r.dementi);
+    }
+    R.clubsGeres.rumeurs.parSemaine = 0; R.clubsGeres.rumeurs.actives = false; // plus de nouvelle rumeur : on suit celles-ci
+    const dementis = new Map();
+    for (let k = 0; k < 5; k++) {
+      semaine();
+      st = etat();
+      const j = jour();
+      for (const r of st.rumeurs) if (r.suite === 'dementi' && !dementis.has(r.id)) {
+        assert.ok(j >= r.dementi && j < decaler(r.dementi, 7), 'démenti à la première clôture après ' + r.dementi + ' : ' + j);
+        dementis.set(r.id, j);
+      }
+      for (const r of fausses) assert.ok(!st.ia.some(x => x.playerId === r.playerId && x.acheteurId === r.interesseId && x.saison === r.saison), 'pas de pré-contrat avec le club annoncé : ' + r.nom);
+    }
+    for (const r of st.rumeurs.filter(r => fausses.some(f => f.id === r.id))) assert.ok(r.suite === 'dementi' || r.suite === 'sans-suite', r.id + ' : ' + r.suite);
+    assert.ok(dementis.size >= 1, 'au moins un démenti');
+    const d0 = st.rumeurs.find(r => r.suite === 'dementi');
+    const texte = d0.interesse + ' dément tout intérêt pour ' + d0.nom + ' (' + d0.pos.toLowerCase() + ' de ' + d0.club + ').';
+    assert.ok(lire('S.news').includes(texte), 'actualité du démenti : ' + texte);
+    assert.ok(Object.values(st.mercato.semaines).flat().some(l => l.type === 'rumeur' && l.texte === texte), 'ligne du mercato');
+    restaurer();
+
+    // 2. Taux 1 : comportement d'avant, la rumeur est prioritaire et suivie d'un pré-contrat avec le club annoncé.
+    R.preContrats.moisAvantFin = 12; R.clubsGeres.rumeurs.fin = '12-31'; R.clubsGeres.rumeurs.tauxRealisation = 1;
+    const n0 = etat().rumeurs.length;
+    semaine();
+    const vraies = etat().rumeurs.slice(n0);
+    assert.ok(vraies.length >= 1 && vraies.every(r => r.piste === 'vraie' && !r.dementi), 'rumeurs vraies');
+    R.clubsGeres.rumeurs.parSemaine = 0; R.clubsGeres.rumeurs.actives = false;
+    for (let k = 0; k < 2; k++) semaine();
+    st = etat();
+    const suivies = st.rumeurs.filter(r => vraies.some(v => v.id === r.id) && r.suite === 'signe');
+    assert.ok(suivies.length >= 1, 'rumeur suivie d’un pré-contrat');
+    // Comme avant : le club annoncé passe en tête ; s'il ne peut plus acheter, un autre signe et la rumeur compte comme suivie.
+    for (const r of suivies) assert.ok(st.ia.some(x => x.playerId === r.playerId && x.saison === r.saison), 'pré-contrat signé : ' + r.nom);
+    assert.ok(!st.rumeurs.some(r => r.suite === 'dementi' && vraies.some(v => v.id === r.id)), 'aucun démenti d’une vraie piste');
+    console.log(`clubs-geres-mutations (rumeurs) : ${fausses.length} fausses, ${dementis.size} démenties, ${vraies.length} vraies, ${suivies.length} suivies, ${((Date.now() - debut) / 1000).toFixed(0)} s`);
   } finally { restaurer(); jeu.fermer(); }
 });

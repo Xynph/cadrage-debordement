@@ -477,7 +477,7 @@ func nationale(compact: bool) -> void:
 	var next_venue := app.find_child("CompetitionNextVenue",true,false) as Label
 	check(next_date!=null and next_date.text==projection.fixture_date(fixture) and next_venue!=null and next_venue.text==projection.fixture_venue(fixture),"La tuile Calendrier garde la date et le terrain réels")
 	if next_date!=null and next_venue!=null:
-		check(next_date.get_global_rect().end.x < next_venue.get_global_rect().position.x,"La date reste dans la partie gauche sombre du prochain rendez-vous")
+		check(not next_date.get_global_rect().intersects(next_venue.get_global_rect()),"La date et le terrain du prochain rendez-vous ne se chevauchent pas")
 	await capture(("67" if compact else "66")+"-nationale-calendrier-"+dimensions)
 	var fixture_id := ""
 	for listed: Dictionary in app.model.calendar:
@@ -490,8 +490,8 @@ func nationale(compact: bool) -> void:
 	if first>=0:
 		await click(rows[first])
 		await settle()
-		var detail := app.get_node_or_null("CompetitionFixtureDetails") as AcceptDialog
-		check(detail!=null and detail.visible,"Le détail de la rencontre est visible")
+		var detail := app.find_child("CompetitionFixtureDetails", true, false) as Control
+		check(detail!=null and detail.is_visible_in_tree(),"Le détail de la rencontre est une page visible (plus de fenêtre)")
 		if detail!=null:
 			var texts := detail.find_children("*","Label",true,false).map(func(label: Label): return label.text)
 			check("Date publiée" in texts and "Heure locale · Europe/Paris" in texts,"Le détail distingue la date publiée et le fuseau du match")
@@ -622,8 +622,8 @@ func champ(compact: bool) -> void:
 	if found>=0:
 		await click(rows[found])
 		await settle()
-		var detail := app.get_node_or_null("CompetitionFixtureDetails") as AcceptDialog
-		check(detail!=null and detail.visible,"Le vrai détail du match Champ est visible")
+		var detail := app.find_child("CompetitionFixtureDetails", true, false) as Control
+		check(detail!=null and detail.is_visible_in_tree(),"Le vrai détail du match Champ est une page visible")
 		if detail!=null:
 			var notes := detail.find_children("*","Label",true,false).map(func(label: Label): return label.text)
 			check("Date publiée par la RFU" in notes and "Heure locale · Europe/London" in notes and notes.any(func(note: String): return note.begins_with("Horaire publié")),"La fiche sépare la source de la date, l’horaire publié et le fuseau")
@@ -1374,7 +1374,7 @@ func match_flow() -> void:
 	await command("tick",{"steps":12})
 	await command("pause",{"paused":true})
 	match_ui = app.match_screen
-	check(app.model.live.paused and match_ui.play.text=="REPRENDRE" and not match_ui.clock.text.strip_edges().is_empty() and match_ui.clock.text!="TERMINÉ","Le direct reflète la vraie pause · "+str(match_ui.play.text)+" · "+str(match_ui.clock.text))
+	check(app.model.live.paused and match_ui.play.text=="Reprendre" and not match_ui.clock.text.strip_edges().is_empty() and match_ui.clock.text!="TERMINÉ","Le direct reflète la vraie pause · "+str(match_ui.play.text)+" · "+str(match_ui.clock.text))
 	await capture("28-match-direct-2560x1440")
 	var journal_tab: Button
 	for button: Button in match_ui.find_children("*","Button",true,false):

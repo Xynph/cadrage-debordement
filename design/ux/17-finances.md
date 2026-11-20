@@ -273,3 +273,16 @@ Pas de compteur qui défile pour les montants.
 **Critères supplémentaires**
 - [ ] La Synthèse s'affiche en moins de 400 ms.
 - [ ] Rendu correct à 1280×720, 1920×1080 et 2560×1440.
+
+
+## 14. Revue DA du 20/11/2026 : choix de Léo et mise en œuvre
+
+**Choix de Léo** : variante 1 « Verdict en tête, quatre blocs » (avis DA). Emprunts : le bloc **Alloué / Engagé / Restant** de la variante 3 (budget de transferts) ; la **colonne de verdict fixe** de la variante 2 sur les autres onglets. Maquettes : `direction-artistique/interface/revue-20261119/apercus/17-finances-{1,2,3}.png`.
+
+**Synthèse** : verdict de la semaine (mot + pictogramme + « palier n sur 3 » + trois repères Saine / Sous tension / En danger + phrase), puis trois chiffres (trésorerie, budget de transferts en trois cases, marge courante), puis Vigilances, Prochaines échéances, Où va l'argent, et la courbe des 12 derniers mouvements. Seuils du verdict : §13 (marge ≥ 0 / marge < 0 avec prévision ≥ 0 / trésorerie ou prévision < 0).
+**Autres onglets** : colonne fixe à gauche (verdict, trésorerie, budget de transferts, marge, vigilances) et contenu à droite. La colonne est présente aussi sur Classement.
+**Budget de transferts** : Alloué = enveloppe + report + rallonges ; Engagé = dépensé − reconstitué ; Restant = disponible (peut être limité par la caisse : la note le dit). La demande de rallonge reste dans Recrutement (§7) ; le bloc ouvre Recrutement.
+**Tout est cliquable** : verdict → Budget ; trésorerie → Trésorerie ; budget de transferts → Recrutement ; marge → Budget ; vigilances → Salaires (contrats à anticiper), Infrastructures (Stratégie), Salaires (plafond) ; échéances et lignes de répartition → Salaires, Budget, Trésorerie, Infrastructures ; chaque mouvement du journal → l'écran de sa catégorie ; barre de la courbe → le mouvement dans la Trésorerie ; noms de joueurs → fiche complète (survol : mini-fiche) ; noms de clubs (Classement) → fiche du club ; totaux du journal (Trésorerie) → Budget. Aucune fenêtre ; Finances ne dépense rien elle-même (les dépenses se confirment sur leur écran : Infrastructures, Formation, Recrutement).
+**1280×720** : le plancher de 12 px grossit le petit texte ; le verdict garde alors les trois paliers (mot + symbole) et la phrase, le barème détaillé passe en infobulle ; la marge de la Synthèse met recettes et charges sur deux lignes ; le détail des vigilances prend toute la largeur.
+**Graphes** : série « nous » en trait du club, entrées pleines et sorties hachurées en ivoire-2 (forme, pas couleur), ligne d'équilibre en tirets sur une graduation « 0 € » (graduations rondes 1/2/5) ; le journal ne porte ni date ni semaine : aucune valeur hebdomadaire inventée, l'axe va du mouvement le plus ancien au plus récent.
+**Couleurs** : jetons de la charte seulement ; aucun or ; D / N / V réservés aux étiquettes de santé des clubs (liseré teinté + mot, sans pastille arrondie ; ton club : fond relevé + liseré ivoire, pas de cadre complet).

@@ -146,10 +146,11 @@ static func _person(app: Control, parent: Container, person: Dictionary, data: D
 	if own and person.get("canRelease", false): _departure(app, actions, person, data, "staff_release", "LIBÉRER", "Le membre du staff redeviendra disponible au recrutement.")
 	if own and person.get("canRetire", false): _departure(app, actions, person, data, "staff_retire", "RETRAITE", "Cette personne quittera définitivement le marché du staff.")
 
-static func _contract(app: Control, person: Dictionary, data: Dictionary, renew: bool) -> void:
-	var view := Dialogs.dialog(app, "Prolonger le staff" if renew else "Recruter le staff", "StaffContract", 700)
-	var dialog: AcceptDialog = view[0]
-	var list: VBoxContainer = view[1]
+## Recruter ou prolonger : sous-page du Staff (club_pages.gd), jamais une fenêtre.
+static func _contract(app: Control, person: Dictionary, _data: Dictionary, renew: bool) -> void:
+	load("res://ui/immersive08/club_pages.gd").ouvrir(app, "contrat", {"staff_id": str(person.id), "renew": renew})
+
+static func contrat_page(app: Control, list: VBoxContainer, person: Dictionary, data: Dictionary, renew: bool, fermer: Callable) -> void:
 	list.add_child(G.section(person.name, person.get("roleLabel", person.get("role", "Staff"))))
 	var employment: Dictionary = app.model.get("clubLife", {}).get("staffEmployment", {})
 	var context_key := JSON.stringify(data.get("context",{}))
@@ -200,7 +201,7 @@ static func _contract(app: Control, person: Dictionary, data: Dictionary, renew:
 		var bridge: Variant = app.get("bridge")
 		var expected_end := int(payload.context.season) + int(payload.years) - 1
 		if not paid and app.model.get("meta",{}).get("phase","") == "ended": expected_end += 1
-		dialog.queue_free()
+		fermer.call()
 		var sent: Variant = app._command(command,payload)
 		if sent == true and bridge != null:
 			_observe_contract(app,bridge,drafts,draft_key,draft,command,str(person.id),payload.context.duplicate(true),expected_end,paid,int(payload.get("salary",0)))
@@ -209,7 +210,6 @@ static func _contract(app: Control, person: Dictionary, data: Dictionary, renew:
 	if draft.get("status","") == "refused": sign.text = "RÉESSAYER LE CONTRAT"
 	sign.disabled = years.item_count == 0
 	list.add_child(sign)
-	dialog.popup_centered()
 
 static func _departure(app: Control, parent: Container, person: Dictionary, data: Dictionary, command: String, title: String, detail: String) -> void:
 	var button := G.button(title, func():
@@ -235,14 +235,13 @@ static func _mentoring(app: Control, parent: Container) -> void:
 	open.name = "StaffMentoringOpen"
 	parent.add_child(open)
 
-static func _mentor_overview(app: Control, data: Dictionary) -> void:
-	var view := Dialogs.dialog(app, "Transmettre aux jeunes", "StaffMentoringOverview", 700)
-	var dialog: AcceptDialog = view[0]
-	var parent: VBoxContainer = view[1]
+static func _mentor_overview(app: Control, _data: Dictionary) -> void:
+	load("res://ui/immersive08/club_pages.gd").ouvrir(app, "mentorat")
+
+static func mentorat_page(app: Control, parent: VBoxContainer, data: Dictionary, fermer: Callable) -> void:
 	parent.add_child(G.wrap(data.get("notice", ""), 14))
 	if not data.get("enabled", false):
 		var activate := G.button("ACTIVER LE MENTORAT", func():
-			dialog.queue_free()
 			app.confirm("Activer le mentorat", "Cette carrière conservera les affectations et les séances réellement encadrées. Aucun point de croissance ni salaire supplémentaire.", func(): app._command("staff_mentoring_enable", {"confirmed":true,"context":data.context.duplicate(true)})))
 		activate.name = "StaffMentoringEnable"
 		activate.disabled = not data.get("canEnable", false)
@@ -252,7 +251,7 @@ static func _mentor_overview(app: Control, data: Dictionary) -> void:
 		for assignment: Dictionary in data.get("assignments", []):
 			parent.add_child(G.wrap("%s → %s · %s · %d/8 séances · %d %% ciblés%s" % [assignment.staffName, assignment.playerName, assignment.focus, int(assignment.sessions), roundi(float(assignment.targetShare) * 100), " · " + str(assignment.reason) if not assignment.get("active", false) else ""], 13))
 			var remove := G.button("LIBÉRER LE MENTOR", func():
-				dialog.queue_free(); app._command("staff_mentor_remove", {"confirmed":true,"context":data.context.duplicate(true),"staffId":str(assignment.staffId)}))
+				fermer.call(); app._command("staff_mentor_remove", {"confirmed":true,"context":data.context.duplicate(true),"staffId":str(assignment.staffId)}))
 			remove.name = "StaffMentorRemove"
 			remove.disabled = data.get("locked", true)
 			parent.add_child(remove)
@@ -261,12 +260,11 @@ static func _mentor_overview(app: Control, data: Dictionary) -> void:
 		assign.disabled = data.get("locked", true) or data.get("mentors", []).is_empty() or data.get("players", []).is_empty()
 		parent.add_child(assign)
 		if data.get("players", []).is_empty(): parent.add_child(G.wrap("Aucun jeune de 15 à 24 ans avec progression spécialisée disponible. Les courbes annuelles restent inchangées.", 12))
-	dialog.popup_centered()
 
-static func _mentor_dialog(app: Control, data: Dictionary) -> void:
-	var view := Dialogs.dialog(app, "Un mentor, un jeune", "StaffMentoring", 700)
-	var dialog: AcceptDialog = view[0]
-	var list: VBoxContainer = view[1]
+static func _mentor_dialog(app: Control, _data: Dictionary) -> void:
+	load("res://ui/immersive08/club_pages.gd").ouvrir(app, "mentor")
+
+static func mentor_page(app: Control, list: VBoxContainer, data: Dictionary, fermer: Callable) -> void:
 	list.add_child(G.wrap("Le mentor consacre son suivi à un seul jeune. La qualité ciblée prend une part de son expérience générale. Un plan individuel explicite garde priorité. Changer de qualité remet à zéro ses XP ciblés partiels, selon la règle existante.", 14))
 	var mentors := OptionButton.new()
 	mentors.name = "StaffMentorChoice"
@@ -294,10 +292,9 @@ static func _mentor_dialog(app: Control, data: Dictionary) -> void:
 	var confirm := G.button("CONFIRMER L’AFFECTATION", func():
 		if mentors.selected < 0 or pupils.selected < 0 or focus.selected < 0: return
 		var payload := {"confirmed":true,"context":data.context.duplicate(true),"staffId":str(mentors.get_item_metadata(mentors.selected)),"playerId":str(pupils.get_item_metadata(pupils.selected)),"focus":str(focus.get_item_metadata(focus.selected))}
-		dialog.queue_free(); app._command("staff_mentor_assign", payload), true)
+		fermer.call(); app._command("staff_mentor_assign", payload), true)
 	confirm.name = "StaffMentorConfirm"
 	list.add_child(confirm)
-	dialog.popup_centered()
 
 static func _employment_person(app: Control, staff_id: String) -> Dictionary:
 	var data: Dictionary = app.model.get("clubLife", {}).get("staffEmployment", {})
@@ -313,13 +310,7 @@ static func _employment(app: Control, parent: Container) -> void:
 		activate.name = "StaffEmploymentEnable"; activate.disabled = not data.get("canEnable", false)
 		parent.add_child(activate)
 	else:
-		var budget := G.button("BUDGET STAFF · %s →" % G.salary(data.get("weeklyWages",0)),func():
-			var view := Dialogs.dialog(app,"Engagements du staff","StaffEmploymentBudget",700)
-			var dialog: AcceptDialog = view[0]
-			var list: VBoxContainer = view[1]
-			list.add_child(G.wrap(str(data.get("notice","")),14))
-			list.add_child(G.wrap("Trésorerie : %s € · engagements staff : %s € · solde après ces seuls engagements : %s €. Autres recettes et dépenses exclues." % [G.n(data.cash),G.n(data.knownCommitment),G.n(data.forecastAfterKnownStaff)],15))
-			dialog.popup_centered())
+		var budget := G.button("BUDGET STAFF · %s →" % G.salary(data.get("weeklyWages",0)),func(): load("res://ui/immersive08/club_pages.gd").ouvrir(app, "engagements"))
 		budget.name = "StaffEmploymentBudgetOpen"
 		parent.add_child(budget)
 
@@ -373,3 +364,7 @@ static func _observe_contract(app: Control,bridge: Object,drafts: Dictionary,key
 	app.set_meta("staff_contract_observer",{"bridge":bridge_ref,"model":on_model,"error":on_error,"token":token})
 	bridge.connect("model_changed",on_model)
 	bridge.connect("command_failed",on_error)
+
+static func engagements_page(_app: Control, list: VBoxContainer, data: Dictionary) -> void:
+	list.add_child(G.wrap(str(data.get("notice","")),14))
+	list.add_child(G.wrap("Trésorerie : %s € · engagements staff : %s € · solde après ces seuls engagements : %s €. Autres recettes et dépenses exclues." % [G.n(data.get("cash",0)),G.n(data.get("knownCommitment",0)),G.n(data.get("forecastAfterKnownStaff",0))],15))

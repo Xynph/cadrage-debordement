@@ -114,11 +114,12 @@ static func run(harness: SceneTree, expected_fixture: String) -> void:
 		await harness.reveal(score)
 		var before_scroll: int = app.body_scroll.scroll_vertical
 		await harness.activate(score)
-		var detail: Window = harness.found("CompetitionFixtureDetails") as Window
-		harness.check(detail != null and detail.visible and str(detail.get_meta("entity_id", "")) == expected_fixture, "Bureau · score ouvre le détail de la rencontre concordante")
+		var detail: Control = harness.found("CompetitionFixtureDetails") as Control
+		harness.check(detail != null and not detail is Window and str(detail.get_meta("entity_id", "")) == expected_fixture, "Bureau · score ouvre la page de la rencontre concordante")
 		if detail == null: return
-		if not await _back_from_dialog(harness, detail, "score réel"): return
-		harness.check(is_instance_valid(score) and score.is_visible_in_tree() and score.has_focus() and app.body_scroll.scroll_vertical == before_scroll, "Bureau · retour exact au score, même instance et même défilement")
+		await harness.key(KEY_LEFT, true)
+		score = harness.found(id) as Button
+		harness.check(app.route == "Bureau" and score != null and score.is_visible_in_tree() and app.body_scroll.scroll_vertical == before_scroll, "Bureau · retour exact au score et à son défilement")
 	else:
 		_unavailable(harness, "OfficeRecentFixture", "La rencontre attendue n'est pas un résultat de calendrier unique et concordant dans les cinq résultats du Bureau")
 	harness.check(reads_only(app, requests), "Bureau · aucune requête worker par les liens hors lectures déclarées, sans action primaire ni préparation supplémentaire " + str(sent_since(app, requests)))

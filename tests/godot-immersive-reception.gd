@@ -46,7 +46,7 @@ func run() -> void:
 		check(mentor != null,"Entrée mentorat dans vraie route Staff")
 		if mentor != null:
 			mentor.pressed.emit(); await settle()
-			check(app.get_node_or_null("StaffMentoringOverview") != null,"Dialogue mentorat ouvert")
+			check(app.root_content.find_child("ClubSubpage_mentorat",true,false) != null and app.get_node_or_null("StaffMentoringOverview") == null,"Mentorat ouvert en sous-page, sans fenêtre")
 		app._clear_dialogs(); await settle()
 		app._navigate("Formation"); await settle()
 		var youth: Button = app.root_content.find_child("OpenYouthDevelopment",true,false)

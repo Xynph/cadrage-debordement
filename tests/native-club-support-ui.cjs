@@ -116,12 +116,17 @@ func run() -> void:
  proposal.pressed.emit(); await wait_command()
  page = await open_tab(2)
  page.find_child("AgentConfirm_"+str(q.id).replace(":","_"),true,false).pressed.emit(); await settle()
- var dialog: ConfirmationDialog = app.find_child("AgentSignatureDialog",true,false)
- check(dialog != null and dialog.visible and dialog.dialog_text.contains("%d semaines payées par saison" % int(q.paidWeeks)),"Confirmation prime et engagement (semaines payées du devis)")
- check(dialog != null and dialog.get_ok_button().text == "Signer la prolongation" and dialog.get_cancel_button().text == "Annuler", "Choix du dialogue en français")
+ var bloc := app.find_child("ClubConfirmation",true,false)
+ var texte := ""
+ if bloc != null:
+  for label in bloc.find_children("*","Label",true,false): texte += (label as Label).text + " "
+ check(bloc != null and texte.contains("%d semaines payées par saison" % int(q.paidWeeks)),"Confirmation en place : prime et engagement (semaines payées du devis)")
+ var ok := app.find_child("ClubConfirmationOk",true,false) as Button
+ var non := app.find_child("ClubConfirmationAnnuler",true,false) as Button
+ check(ok != null and non != null and non.text == "Annuler" and app.find_children("*","ConfirmationDialog",true,false).filter(func(d):return d.visible).is_empty(), "Choix en place, en français, sans fenêtre")
  await capture("signature")
- if dialog != null: dialog.confirmed.emit(); await wait_command()
- check(app.model.clubLife.clubSupport.agents.history[0].status == "signed","Signature par le vrai dialogue")
+ if ok != null: ok.pressed.emit(); await wait_command()
+ check(app.model.clubLife.clubSupport.agents.history[0].status == "signed","Signature par la confirmation en place")
  var report := FileAccess.open(OS.get_environment("CD_SUPPORT_CAPTURES").path_join("report.json"),FileAccess.WRITE)
  report.store_string(JSON.stringify({"checks":checks,"failures":failures},"  ")); report.close()
  app.closing=true; app.timer.stop(); app.bridge.stop()

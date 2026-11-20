@@ -48,7 +48,12 @@ const ids=S=>S.clubs.flatMap(c=>c.players.map(p=>p.id)).sort();
  const sit=api.situation(S.clubs[0],S.clubs.slice(0,4),x),sc=api.scores(sit,x);
  assert.ok(sc.vedettes>sc.formateur&&sc.vedettes>sc.equilibre,'club riche et ambitieux');
  const y=d.clubs[3];y.missed=2;const s3=api.scores(api.situation(S.clubs[3],S.clubs.slice(0,4),y),y);
- assert.ok(s3.reconstruction>s3.equilibre,'objectif manqué et effectif âgé : reconstruction');}
+ assert.ok(s3.reconstruction>s3.equilibre,'objectif manqué et effectif âgé : reconstruction');
+ // Masse au-dessus de la limite de quelques euros (arrondi de la limite hebdomadaire) : pas de détresse ; au-delà de 1 %,
+ // la vente redevient une stratégie (mesure du 20/11/2026, docs/gdd/calendrier-mutations.md § 3 quinquies).
+ const saine={...api.situation(S.clubs[0],S.clubs.slice(0,4),x),president:false,debt:0,limit:200000,cash:9e6,cashRatio:3};
+ assert.equal(api.scores({...saine,payroll:200040},x).vente,0,'40 € au-dessus de la limite : pas de vente');
+ assert.equal(api.scores({...saine,payroll:200000*1.02},x).vente,35+x.president.traits.prudence*.3,'2 % au-dessus : vente');}
 // Évaluation bruitée : plus la compétence est faible, plus l'erreur est grande ; stable dans la saison.
 {const {S,api}=world();const d=S.clubDirections,c=S.clubs[0];
  const err=ev=>{d.clubs[0].director.traits.evaluation=ev;return S.clubs[1].players.reduce((n,p)=>n+Math.abs(api.estimate(c,p,'elite')-p.note),0)/46;};

@@ -77,7 +77,8 @@ func run() -> void:
 	# Bandeau et légende du direct : 1 jusqu'en 1080p, ×1,33 en 1440p.
 	check(LiveView.echelle_pour(720.0) == 1.0 and LiveView.echelle_pour(1080.0) == 1.0, "Bandeau : jamais réduit sous 1080p")
 	check(is_equal_approx(LiveView.echelle_pour(1440.0), 1440.0 / 1080.0), "Bandeau : agrandi en 1440p")
-	check(roundi(LiveView.BANDEAU_TAILLES.legende * LiveView.echelle_pour(1080.0)) >= 22, "Légende du temps fort lisible en 1080p")
+	# Charte §7 (revue DA du 19/11/2026, choix de Léo) : journal en 16 px sur panneau 85 %, au-dessus du plancher T2.
+	check(roundi(LiveView.BANDEAU_TAILLES.legende * LiveView.echelle_pour(1080.0)) >= 16, "Légende du temps fort lisible en 1080p")
 	check(Between.muette("Les indicateurs ne justifient pas de changement offensif prioritaire.") and not Between.muette("Occupation de 30 % : rechercher du terrain au pied."), "Conseil sans proposition : Gabi lit le match montré")
 	# Essai : rien n'est écrit ni acclamé avant que le ballon soit aplati (fin du mouvement du plan).
 	var essai := {"kind": "try", "mouvement": 2.4, "duree": 3.4}
