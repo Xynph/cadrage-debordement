@@ -103,9 +103,12 @@ test('Alerte : feuille sous la trajectoire, Gabi propose des échanges concrets 
 
 test('Recrutement : badge JIFF/EQP, valorisation modérée par les clubs IA quand leur moyenne est menacée', () => {
   const h = world();
+  // « Quota tenu » : un club de Premiership sans pression (ses 23 meilleurs valides comptent au moins 15 EQP). Le premier
+  // club de la liste ne l'est plus forcément après 8 journées : ses blessés dépendent des résultats de la saison simulée.
   const r = JSON.parse(h.run(`(()=>{const ci=S.worldMode.leagues.prem.members[0],c=S.clubs[ci];
    const eq=c.players.find(p=>CDJiff.isEqp(p)),non=c.players.find(p=>!CDJiff.isEqp(p));
-   const calm=CDJiff.recruitBonus(S,ci,eq);
+   const ti=S.worldMode.leagues.prem.members.find(x=>CDJiff.pressure(S,x)===0);
+   const calm=ti===undefined?null:CDJiff.recruitBonus(S,ti,S.clubs[ti].players.find(p=>CDJiff.isEqp(p)));
    // Menace : seuls 8 EQP sur les 23 meilleurs ; on retire le statut aux autres en retirant la nation (mémo local).
    const ranked=c.players.slice().sort((a,b)=>b.rating-a.rating);
    const save=c.players.slice();c.players=ranked.filter(p=>!CDJiff.isEqp(p)).slice(0,30).concat(ranked.filter(p=>CDJiff.isEqp(p)).slice(0,6));

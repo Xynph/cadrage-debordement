@@ -18,6 +18,10 @@ const AUDIT=`(function(ci,own){
  const byId=new Map(c.players.map(p=>[p.id,p])),inPool=new Set(pool.map(p=>p.id));
  const weighted=(p,slot)=>NP.rating(p,slot)*(.5+p.condition*.005);
  const problems=[],inXV=new Set(sheet.lineup.filter(Boolean)),inGroup=new Set([...sheet.lineup,...sheet.bench].filter(Boolean));
+ // Quota du club (JIFF, EQP) : un qualifié ne cède pas sa place à un non-qualifié si la feuille tomberait sous le quota.
+ const quota=!own&&typeof CDJiff!=='undefined'&&S.jiff?.version===1?CDJiff.qualifierFor(S,ci):null;
+ const qualified=quota?[...inGroup].filter(id=>quota.yes(byId.get(id))).length:0;
+ const quotaKeeps=(p,q)=>quota&&quota.yes(p)&&!quota.yes(q)&&qualified<=quota.target;
  const name=id=>{const p=byId.get(id);return p?p.name+' ('+p.pos+')':'vide'};
  if(sheet.lineup.length!==15||sheet.bench.length!==8)problems.push('feuille de '+sheet.lineup.length+'+'+sheet.bench.length);
  if(inGroup.size!==sheet.lineup.filter(Boolean).length+sheet.bench.filter(Boolean).length)problems.push('joueur en double');
@@ -33,7 +37,7 @@ const AUDIT=`(function(ci,own){
    if(top)problems.push('n°'+(i+1)+' '+p.name+' ('+Math.round(NP.rating(p,i))+') derrière '+top.name+' ('+Math.round(NP.rating(top,i))+', '+(sheet.bench.includes(top.id)?'au banc':'hors groupe')+')');
   }else{
    const r=NP.rating(p,i);
-   const spec=better.filter(q=>q.condition>=60&&(r<40&&NP.rating(q,i)>=40||weighted(q,i)>=weighted(p,i)+15))[0];
+   const spec=better.filter(q=>q.condition>=60&&!quotaKeeps(p,q)&&(r<40&&NP.rating(q,i)>=40||weighted(q,i)>=weighted(p,i)+15))[0];
    if(spec)problems.push('n°'+(i+1)+' '+p.name+' ('+p.pos+', '+Math.round(r)+') alors que '+spec.name+' ('+Math.round(NP.rating(spec,i))+') est disponible');
   }
  });
@@ -59,8 +63,10 @@ test('Monde : la sélection du staff du club du manager est complète et place l
   h.run('autoLineup()');
   assert.deepEqual(failures(audit(h,[club],club)),[],'sélection initiale');
   // Régression : le meilleur pilier gauche, talonneur et pilier droit ouvrent le match, les suivants sont au banc.
+  // « Meilleur » au sens du staff : note au poste pondérée par la condition. Avec le barème V3 (#1048), deux
+  // talonneurs se tiennent à 3 points (90 à 91 % de condition, 87 à 98 %) : le plus frais ouvre, à juste titre.
   const front=JSON.parse(h.run(`JSON.stringify((()=>{const NP=nativePositionAptitudes,c=club();
-   const ok=p=>!p.injury;return [0,1,2].map(i=>{const spec=c.players.filter(p=>ok(p)&&slotEligible(p,i)).sort((a,b)=>NP.rating(b,i)-NP.rating(a,i));
+   const ok=p=>!p.injury,w=(p,i)=>NP.rating(p,i)*(.5+p.condition*.005);return [0,1,2].map(i=>{const spec=c.players.filter(p=>ok(p)&&slotEligible(p,i)).sort((a,b)=>w(b,i)-w(a,i));
     return {best:spec[0]?.id,starter:S.lineup[i],bestRating:NP.rating(spec[0],i),starterRating:NP.rating(c.players.find(p=>p.id===S.lineup[i]),i)};});})())`));
   front.forEach((row,i)=>assert.equal(row.starter,row.best,'n°'+(i+1)+' : le meilleur disponible ouvre le match ('+row.starterRating+' contre '+row.bestRating+')'));
   const groupe=h.run('[...S.lineup,...S.reserves].filter(Boolean).length');

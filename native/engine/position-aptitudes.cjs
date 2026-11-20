@@ -298,7 +298,7 @@ module.exports=function positionAptitudes(){
    const slots=sheet.lineup.concat(sheet.bench),used=new Set(slots.filter(Boolean));
    let count=slots.filter(id=>id&&quota.yes(byId.get(id))).length;
    const value=(p,k)=>rating(p,k)*(.5+p.condition*.005);
-   const jiffs=pool.filter(p=>quota.yes(p)).sort(compareId);
+   const jiffs=pool.filter(p=>quota.yes(p)).sort(compareId);let filled=0;
    while(count<quota.target){
     let best=null;
     for(let k=0;k<slots.length;k++){
@@ -310,9 +310,59 @@ module.exports=function positionAptitudes(){
      }
     }
     if(!best)break;
-    used.delete(slots[best.k]);used.add(best.p.id);slots[best.k]=best.p.id;count++;
+    used.delete(slots[best.k]);used.add(best.p.id);slots[best.k]=best.p.id;count++;filled++;
    }
+   // Retouche seulement quand le remplissage glouton a remplacé quelqu'un : sinon la feuille sort déjà de l'attribution optimale.
+   if(filled)quotaPolish(slots,pool,byId,quota,used);
    return {...sheet,lineup:slots.slice(0,15),bench:slots.slice(15)};
+  }
+  // Après le remplissage glouton du quota, la feuille peut garder un mauvais échange : un qualifié faible au XV
+  // et un qualifié fort au banc, ou un non-qualifié de 80 hors du groupe alors qu'un autre non-qualifié pouvait
+  // céder sa place à un qualifié presque aussi bon (relevé du 20/11/2026 après le barème V3 : Newcastle titularisait
+  // un ailier de 57 avec un ailier qualifié de 74 au banc). On améliore donc la feuille par petits mouvements qui ne
+  // font jamais baisser le nombre de qualifiés retenus : échange de deux places, entrée d'un joueur libre, ou paire
+  // d'entrées dont le solde de qualifiés est nul. Première ligne (n°1 à 3 et trois places de banc) intouchée.
+  function quotaPolish(slots,pool,byId,quota,used){
+   const open=[];for(let k=3;k<slots.length;k++)if(k<15||k>=18)open.push(k);
+   const K=open.length,P=pool.filter(p=>!p.injury).sort(compareId),N=P.length,index=new Map(P.map((p,i)=>[p.id,i]));
+   // Valeurs et admissibilités par joueur et par place, calculées à la demande une seule fois (tableaux plats).
+   const V=new Float64Array(N*K).fill(NaN),OK=new Int8Array(N*K).fill(-1),Q=P.map(p=>quota.yes(p)?1:0);
+   const value=(i,a)=>{const x=i*K+a;let v=V[x];if(v!==v){const p=P[i],k=open[a],r=rating(p,k);v=(r*(.5+p.condition*.005)+perceived(p,k<15?FAMILIES[k]:p.fam)-(r<40?1000:0))*(k>=15?.5:1);V[x]=v;}return v;};
+   const ok=(i,a)=>{const x=i*K+a;if(OK[x]<0)OK[x]=eligible(P[i],open[a])?1:0;return OK[x]===1;};
+   const at=open.map(k=>index.has(slots[k])?index.get(slots[k]):-1),taken=new Uint8Array(N);
+   P.forEach((p,i)=>{if(used.has(p.id))taken[i]=1;});
+   let count=slots.filter(id=>id&&quota.yes(byId.get(id))).length;
+   // Plancher : le nombre de qualifiés déjà retenu (jamais moins que le quota) ; la retouche ne rogne pas la marge.
+   const floor=Math.max(quota.target,count);
+   for(let round=0;round<40;round++){
+    let best=null,bestGain=1e-9;const minus=[],plus=[];
+    for(let a=0;a<K;a++){
+     const c=at[a];if(c<0)continue;const vc=value(c,a);
+     for(let b=a+1;b<K;b++){
+      const o=at[b];if(o<0||!ok(c,b)||!ok(o,a))continue;
+      const gain=value(o,a)+value(c,b)-vc-value(o,b);
+      if(gain>bestGain){bestGain=gain;best={kind:'swap',a,b};}
+     }
+     for(let i=0;i<N;i++){
+      if(taken[i]||!ok(i,a))continue;
+      const dq=Q[i]-Q[c],gain=value(i,a)-vc;
+      if(dq>0)plus.push({a,i,dq,gain});
+      if(dq>=0||count+dq>=floor){if(gain>bestGain){bestGain=gain;best={kind:'in',a,i,dq};}}
+      else if(gain>1e-9)minus.push({a,i,dq,gain});
+     }
+    }
+    // Paire d'entrées à solde nul : un non-qualifié gagne une place, un qualifié en prend une autre.
+    minus.sort((x,y)=>y.gain-x.gain);
+    for(const m of minus.slice(0,8))for(const n of plus){
+     if(n.a===m.a||n.i===m.i)continue;const gain=m.gain+n.gain;
+     if(gain>bestGain){bestGain=gain;best={kind:'pair',m,n};}
+    }
+    if(!best)break;
+    const enter=m=>{const k=open[m.a],out=at[m.a];if(out>=0)taken[out]=0;used.delete(slots[k]);taken[m.i]=1;used.add(P[m.i].id);slots[k]=P[m.i].id;at[m.a]=m.i;count+=m.dq;};
+    if(best.kind==='swap'){const k=open[best.a],j=open[best.b],t=slots[k];slots[k]=slots[j];slots[j]=t;const u=at[best.a];at[best.a]=at[best.b];at[best.b]=u;}
+    else if(best.kind==='in')enter(best);
+    else{enter(best.m);enter(best.n);}
+   }
   }
   function reservedBuild(fn,team,preferred=[],bench=[],...args){
    if(reservations)return fn(team,preferred,bench,...args);

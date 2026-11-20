@@ -129,7 +129,10 @@ function factory(){
  // Club proche d'une ligne : à deux places de la dernière place qualificative, ou dans les deux dernières places.
  function enjeuClassement(l,side){
   try{
-   const id=l.worldContext.competitionId,rows=CDWorldCareer.rows(S,id),club=l.pair[side],i=rows.findIndex(r=>r.clubId===club);
+   // Classement d'avant la journée : les rencontres de la journée s'enregistrent une à une à la validation, alors que le
+   // multiplex les joue dès le coup d'envoi ; lire le classement en direct donnait deux fins de match différentes à graine égale.
+   const before={...S,history:(S.history||[]).filter(r=>!(r.season===S.season&&r.week===S.round))};
+   const id=l.worldContext.competitionId,rows=CDWorldCareer.rows(before,id),club=l.pair[side],i=rows.findIndex(r=>r.clubId===club);
    if(i<0||!rows.some(r=>(r.played|0)>0))return false;
    const rang=i+1,q=CDWorldCareer.qualifyingPlaces(S,id)|0;
    return rang>=rows.length-1||q>0&&rang>=q-1&&rang<=q+2;
