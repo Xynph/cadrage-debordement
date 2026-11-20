@@ -40,7 +40,8 @@ static func surface(width: float, height: float, top: Color, bottom: Color, bord
 static func panel(parent: Node, rectangle: Rect2, title: String = "", icon_id: String = "", badge: String = "", id: String = "") -> Panel:
 	var control := Panel.new()
 	control.name = id if not id.is_empty() else "Tile"
-	control.add_theme_stylebox_override("panel", surface(rectangle.size.x, rectangle.size.y, C.PANEL, C.PANEL, C.LINE, 8, false))
+	# Charte §3 : panneau PANNEAU, rayon 18 px (24 en référence 2560), sans bordure ni ombre.
+	control.add_theme_stylebox_override("panel", C.Charte.style_panneau(C.PANEL, maxi(3, C.px(24)), 0))
 	parent.add_child(control)
 	place(control, rectangle)
 	if not title.is_empty():
@@ -186,22 +187,19 @@ static func derby_chip(parent: Node, rectangle: Rect2) -> Panel:
 	frame.tooltip_text = "Derby : une rivalité ancienne, plus de tension sur le terrain et dans les tribunes."
 	return frame
 
+## Onglet de page (charte §7.1) : pilule ; actif = aplat crème, texte et icône PANNEAU ; inactif = gris-vert sans
+## fond, survol panneau-2. Jamais d'onglet actif vert ni doré.
 static func tab_state(control: Button, dimensions: Vector2, selected: bool, icon: String) -> void:
-	var top := C.SELECTED if selected else C.PANEL
-	var bottom := top
-	var border := C.IVORY if selected else C.LINE
-	var states := {
-		"normal": [top, bottom],
-		"hover": [C.RAISED if not selected else top, C.RAISED if not selected else bottom],
-		"pressed": [top.darkened(.14), bottom.darkened(.14)],
-	}
+	var states := {"normal": C.IVORY if selected else Color.TRANSPARENT, "hover": C.IVORY if selected else C.RAISED,
+		"pressed": C.IVORY if selected else C.SELECTED, "hover_pressed": C.IVORY if selected else C.SELECTED}
 	for state_name: String in states:
-		var colors: Array = states[state_name]
-		var style := surface(dimensions.x, dimensions.y, colors[0], colors[1], border, 6, false)
-		style.content_margin_left = C.px(18)
-		style.content_margin_right = C.px(18)
+		var style := C.box(states[state_name], Color.TRANSPARENT, C.Charte.RAYON_PILULE, 18)
+		style.content_margin_top = C.px(7)
+		style.content_margin_bottom = C.px(7)
 		control.add_theme_stylebox_override(state_name, style)
-	control.icon = C.icon_texture(icon, C.IVORY if selected else C.MUTED)
+	for key in ["font_color", "font_focus_color"]: control.add_theme_color_override(key, C.Charte.PANNEAU if selected else C.MUTED)
+	for key in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color"]: control.add_theme_color_override(key, C.Charte.PANNEAU if selected else C.IVORY)
+	control.icon = C.icon_texture(icon, C.Charte.PANNEAU if selected else C.MUTED)
 	var focus := control.get_theme_stylebox("focus") as StyleBoxFlat
 	if focus != null: focus.set_expand_margin_all(2)
 

@@ -48,9 +48,10 @@ static func home(app: Control, nom_jeu: String = "RUGBY LEGACY 27") -> Control:
 	var content := MarginContainer.new()
 	content.name = "ImmersiveWelcome"
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content.add_theme_constant_override("margin_left", C.px(128))
+	# Marge gauche et haute ≥ moitié de la hauteur du « 27 » du logo (charte §8.1 : logo 1160 → 329 de haut).
+	content.add_theme_constant_override("margin_left", C.px(168))
 	content.add_theme_constant_override("margin_right", C.px(128))
-	content.add_theme_constant_override("margin_top", C.px(160))
+	content.add_theme_constant_override("margin_top", C.px(168))
 	content.add_theme_constant_override("margin_bottom", C.px(96))
 	page.add_child(content)
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -133,14 +134,18 @@ static func _affiche(_app: Control, _club: Dictionary, _meta: Dictionary, nom_je
 	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	logo.tooltip_text = nom_jeu.capitalize()
 	logo.accessibility_name = nom_jeu
+	# Cadre au ratio réel de la texture (≈ 3,5:1), ni écrasé ni rogné ; logo définitif transparent, sans clé de noir.
 	var largeur := C.px(1160)
 	var ratio := float(MARQUE.get_width()) / maxf(1.0, float(MARQUE.get_height()))
-	logo.custom_minimum_size = Vector2(largeur, largeur / ratio)
+	logo.custom_minimum_size = Vector2(largeur, roundf(largeur / ratio))
 	logo.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	var cle := ShaderMaterial.new()
-	cle.shader = load("res://branding/black_key.gdshader")
-	logo.material = cle
+	logo.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	colonne.add_child(logo)
+	# Marge sous le logo : moitié de la hauteur du « 27 ».
+	var marge_logo := Control.new()
+	marge_logo.custom_minimum_size.y = roundf(largeur / ratio * 0.5)
+	marge_logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	colonne.add_child(marge_logo)
 	colonne.add_child(C.fill(Control.new(), true))
 	colonne.add_child(_police("CARRIÈRE DE MANAGER · RUGBY À XV · ÉDITION %s" % OS.get_name().to_upper(), 18, Charte.IVOIRE_2, Charte.TITRE_GRAS))
 	var filet := ColorRect.new()

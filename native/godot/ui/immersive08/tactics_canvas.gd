@@ -54,12 +54,9 @@ static func build(app: Control, canvas: Control = null) -> Control:
 		D.place(page, Rect2(0, 0, 2248, HAUTEUR))
 	app.selected_slot = clampi(int(app.selected_slot), 0, 22)
 	# Première ouverture sous le budget de 250 ms (tests/godot-portraits-prechauffage.gd) : la feuille et l'effectif sont
-	# indexés une fois pour toute la construction, et les fonds naissent sans rayon (charte §3) au lieu d'une passe sur
-	# les ~1 500 nœuds de l'écran après coup. 171 ms → ~100 ms mesurés en local (61 joueurs).
+	# indexés une fois pour toute la construction ; chaque fond naît avec le rayon de la charte (§3), sans passe après coup.
 	Selection.lecture_debut(app.model)
-	C.rayon_nul = true
 	var construite := _construire(app, page)
-	C.rayon_nul = false
 	Selection.lecture_fin()
 	return construite
 
@@ -70,7 +67,6 @@ static func _construire(app: Control, page: Control) -> Control:
 	var sous := SousPages.actuelle(app)
 	if not sous.is_empty():
 		SousPages.build(app, page, sous)
-		Kit.angles_droits(page)
 		return page
 	var choisir_cb := func(slot: int): choisir(app, slot)
 	var clavier_cb := func(event: InputEvent, slot: int, carte: Control): clavier(app, event, slot, carte)
@@ -211,7 +207,7 @@ static func _validite(app: Control, page: Control) -> void:
 		menu.add_theme_font_override("font", Kit.texte_gras())
 		menu.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 		for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: menu.add_theme_color_override(couleur, Charte.D)
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 2)
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PETIT, 2)
 		focus.set_border_width_all(2)
 		menu.add_theme_stylebox_override("focus", focus)
 		Impact._styler_menu(menu.get_popup())
@@ -285,14 +281,12 @@ static func _onglet(app: Control, page: Control, zone: Rect2, texte: String, ind
 	bouton.add_theme_font_override("font", C.DISPLAY)
 	bouton.add_theme_font_size_override("font_size", maxi(12, C.px(20)))
 	for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
-		bouton.add_theme_color_override(etat, Charte.IVOIRE if choisi else Charte.IVOIRE_2)
-	var fond := C.box(Charte.PANNEAU_3 if choisi else Color.TRANSPARENT, Color.TRANSPARENT, 0, 0)
-	if choisi:
-		fond.border_color = Charte.IVOIRE
-		fond.border_width_bottom = maxi(2, C.px(4))
+		bouton.add_theme_color_override(etat, Charte.PANNEAU if choisi else Charte.IVOIRE_2)
+	# Onglet de la charte §7.1 : pilule ; actif = aplat crème, texte `PANNEAU` ; survol `PANNEAU_2`.
+	var fond := C.box(Charte.IVOIRE if choisi else Color.TRANSPARENT, Color.TRANSPARENT, Charte.RAYON_PILULE, 0)
 	for etat in ["normal", "pressed", "hover_pressed"]: bouton.add_theme_stylebox_override(etat, fond)
-	bouton.add_theme_stylebox_override("hover", fond if choisi else C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	bouton.add_theme_stylebox_override("hover", fond if choisi else C.box(Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_PILULE, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 0)
 	focus.set_border_width_all(2)
 	bouton.add_theme_stylebox_override("focus", focus)
 	bouton.pressed.connect(func(): _ouvrir_onglet(app, index))
@@ -322,7 +316,7 @@ static func _alertes(app: Control) -> Array:
 	return alertes
 
 static func _bandeau(bloc: Control, y: float, id: String, couleur: Color) -> Panel:
-	var bandeau := D.rect(bloc, Rect2(22, y + 4, 2204, 48), Charte.PANNEAU_2, 0)
+	var bandeau := D.rect(bloc, Rect2(22, y + 4, 2204, 48), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	bandeau.name = id
 	bandeau.mouse_filter = Control.MOUSE_FILTER_PASS
 	Kit.marqueur(bandeau, Rect2(6, 8, 4, 32), couleur)

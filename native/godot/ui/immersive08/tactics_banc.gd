@@ -20,7 +20,7 @@ const X_MARQUE := 404.0
 const X_CONDITION := 484.0
 
 static func build(app: Control, page: Control, zone: Rect2, choisir: Callable, clavier: Callable, avis: Dictionary, bleus: Dictionary, premiere: Dictionary) -> Panel:
-	var bloc := D.rect(page, zone, Charte.PANNEAU, 0)
+	var bloc := D.rect(page, zone, Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	bloc.name = "TacticsBench"
 	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
 	var remplis := 0
@@ -86,7 +86,7 @@ static func _ligne(app: Control, parent: Control, rang: int, slot: int, person: 
 		Kit.nom(app, bouton, Rect2(X_JOUEUR - 14, 3, 200, 27), court, id, "BenchName%02d" % (slot + 1))
 		Kit.texte(bouton, X_COUVRE - 14, 23, Selection.positions(person), Charte.IVOIRE_2, 100, 16)
 		if Selection.premiere_ligne_formee(app.model, person):
-			var marque := D.rect(bouton, Rect2(X_MARQUE - 14, 7, 70, 20), Charte.PANNEAU_3, 0)
+			var marque := D.rect(bouton, Rect2(X_MARQUE - 14, 7, 70, 20), Charte.PANNEAU_3, Charte.RAYON_PETIT)
 			marque.name = "BenchFrontRow%02d" % (slot + 1)
 			D.text(marque, 35, 15, "1re" if C.dense() else "1re ligne", 16, Charte.IVOIRE, 600, 66, HORIZONTAL_ALIGNMENT_CENTER)
 		Kit.condition(bouton, X_CONDITION - 14, 23, person.get("condition"), 34)

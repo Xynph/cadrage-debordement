@@ -1,5 +1,6 @@
 extends SceneTree
 const ContextualFlow = preload("helpers/contextual_flow.gd")
+const Charte = preload("res://ui/charte.gd")
 ## Catches unreadable light controls, clipped navigation and presentation writes.
 var app: Control
 var checks := 0
@@ -46,7 +47,8 @@ func current_chrome(page: String) -> void:
 				breadcrumb = crumb.is_visible_in_tree() and size >= 12 and viewport.encloses(crumb.get_global_rect()) and crumb.get_theme_font("font").get_string_size(crumb.text,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x <= crumb.size.x + 1.0
 	check(breadcrumb,"Page identifiée et texte lisible dans le bandeau "+page)
 	var selected: String = {"Bureau":"Bureau","Effectif":"Effectif","Composition":"Tactique","Préparation":"Tactique","Plan de jeu":"Tactique","Club":"Club","Finances":"Finances","Classements":"Compétitions","Calendrier":"Compétitions"}.get(page,"")
-	# Charte §7.1 : entrées sans numéro ni pictogramme ; Entraînement est un onglet de Tactique.
+	# Charte finale §7.1 : entrées sans numéro, icône 20 px avant le libellé (menu latéral) ; Entraînement est un onglet de
+	# Tactique ; l'entrée active est une pilule crème.
 	for name in ["Bureau","Réception","Effectif","Tactique","Recrutement","Club","Finances","Compétitions","Formation"]:
 		var button := app.find_child("Nav_"+name,true,false) as Button
 		check(button != null and button.is_visible_in_tree() and button.focus_mode == Control.FOCUS_ALL and viewport.encloses(button.get_global_rect()),"Navigation entière et accessible au clavier "+name+" / "+page)
@@ -54,8 +56,8 @@ func current_chrome(page: String) -> void:
 		var style := button.get_theme_stylebox("normal") as StyleBoxFlat
 		var background := style.bg_color if style != null and style.bg_color.a > 0 else Color("171512")
 		check(button.get_theme_font_size("font_size") >= 12 and contrast(button.get_theme_color("font_color"),background) >= 4.5,"Contraste du chapitre "+name+" / "+page)
-		check(button.text == name and button.icon == null and button.find_children("*","TextureRect",true,false).is_empty(),"Chapitre sans numéro ni pictogramme "+name+" / "+page)
-		if name == selected: check(style != null and style.bg_color.a > 0 and button.find_child("RailActiveMarker",true,false) != null,"Sélection persistante "+page)
+		check(button.text == name and button.icon == null and button.find_children("RailIcon","TextureRect",true,false).size() == 1,"Chapitre sans numéro, une icône avant le libellé "+name+" / "+page)
+		if name == selected: check(style != null and style.bg_color.is_equal_approx(Charte.IVOIRE) and button.has_meta("rail_actif"),"Sélection persistante (pilule crème) "+page)
 func run() -> void:
 	root.size=Vector2i(2560,1440);DisplayServer.window_set_size(root.size)
 	app=load("res://main.tscn").instantiate();root.add_child(app);await worker()

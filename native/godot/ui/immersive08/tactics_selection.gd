@@ -1,6 +1,7 @@
 extends RefCounted
 ## Notes et affectations de la Tactique : projections moteur exclusivement.
 const C = preload("res://ui/immersive08/components.gd")
+const Charte = preload("res://ui/charte.gd")
 
 class PlayerButton extends Button:
 	var drag_player := ""
@@ -20,8 +21,8 @@ class PlayerButton extends Button:
 		var data: Variant = make_payload.call(drag_player,source_slot)
 		if data == null: return null
 		var preview := PanelContainer.new()
-		# Aperçu du glisser aux jetons de la charte : panneau-3, rayon 0, sans cadre, texte ivoire.
-		preview.add_theme_stylebox_override("panel",C.box(C.SELECTED,Color.TRANSPARENT,0,12))
+		# Aperçu du glisser aux jetons de la charte : panneau-3, rayon 6, sans cadre, texte ivoire.
+		preview.add_theme_stylebox_override("panel",C.box(C.SELECTED,Color.TRANSPARENT,Charte.RAYON_PETIT,12))
 		preview.add_child(C.label(drag_caption,20,C.IVORY,false,500))
 		preview.mouse_filter=Control.MOUSE_FILTER_IGNORE
 		set_drag_preview(preview)

@@ -179,11 +179,6 @@ func _invalidate_session() -> void:
 		app.management_ui.erase("navigation_target")
 
 func _refresh() -> void:
-	C.rayon_nul = true
-	_refresh_inner()
-	C.rayon_nul = false
-
-func _refresh_inner() -> void:
 	_template_draft_id()
 	if not selected_session.is_empty():
 		var valid := Competition.target_available(app, "session", selected_session) and filter in ["all", "training"]
@@ -220,7 +215,7 @@ func _refresh_inner() -> void:
 	C.fill(workspace, true)
 	add_child(workspace)
 	var left := C.card()
-	left.add_theme_stylebox_override("panel", _sbox(C.PANEL, Charte.FILET, 10, 0))
+	left.add_theme_stylebox_override("panel", _sbox(C.PANEL, Charte.FILET, Charte.RAYON_PANNEAU, 0))
 	C.fill(left, true)
 	workspace.add_child(left)
 	var body := C.content(left)
@@ -251,8 +246,10 @@ func _reading_scroll(parent: Node, id: String, separation: int = 8) -> VBoxConta
 	scroll.add_child(body)
 	return body
 
-static func _sbox(color: Color = Charte.PANNEAU, _border: Color = Color.TRANSPARENT, _radius: int = 0, padding: int = 18) -> StyleBoxFlat:
-	return C.box(color, Color.TRANSPARENT, 0, padding)
+## Fond de la charte §3 : `radius` = Charte.RAYON_PANNEAU (panneau), RAYON_CARTE (carte), RAYON_PETIT (case du mois,
+## pastille), RAYON_PILULE (jauge, bouton).
+static func _sbox(color: Color = Charte.PANNEAU, _border: Color = Color.TRANSPARENT, radius: int = Charte.RAYON_PANNEAU, padding: int = 18) -> StyleBoxFlat:
+	return C.box(color, Color.TRANSPARENT, radius, padding)
 
 static func _plural(count: int, singular: String, plural: String) -> String:
 	return "%d %s" % [count, singular if count == 1 else plural]
@@ -260,7 +257,7 @@ static func _plural(count: int, singular: String, plural: String) -> String:
 func _heading(title: String, description: String, match_count: int, session_count: int) -> void:
 	var panel := C.card("", Vector2(0,106))
 	var ink := Charte.PANNEAU_2.lerp(app.accent, .12)
-	var edge := _sbox(Charte.PANNEAU, Color.TRANSPARENT, 0, 12)
+	var edge := _sbox(Charte.PANNEAU, Color.TRANSPARENT, Charte.RAYON_PANNEAU, 12)
 	panel.add_theme_stylebox_override("panel", edge)
 	# Prochain match à l'extérieur : le voyage de l'équipe (banque d'images) ; sinon le stade.
 	var next: Variant = app.model.get("next")
@@ -321,7 +318,7 @@ func _toolbar(parent: Node) -> void:
 	for option: Array in [["all","Tout"],["matches","Matchs"],["training","Entraînements"],["absences","Absences / retours"],["travel","Matchs à l’extérieur"]]:
 		filters.add_child(_action(option[1],_filter_by.bind(option[0]),"MonthFilter_"+option[0],"Filtrer le programme affiché · "+option[1],option[0] == filter))
 
-## Onglet de l'écran Compétitions : capitales, trait ivoire sous l'onglet actif (Calendrier ici), rayon 0.
+## Onglet de l'écran Compétitions : capitales, pilule, aplat crème pour l'onglet actif (Calendrier ici).
 func _onglet(caption: String, tab: String, id: String) -> Button:
 	var selected := tab == "calendar"
 	var button := Button.new()
@@ -331,17 +328,22 @@ func _onglet(caption: String, tab: String, id: String) -> Button:
 	button.set_meta("immersive_style_applied", true)
 	button.custom_minimum_size = Vector2(C.px(220), C.px(48))
 	for look in ["normal", "hover", "pressed", "focus"]:
+		# Onglet de la charte §7.1 : pilule ; actif = aplat crème, texte `PANNEAU` ; focus = anneau crème 2 px.
 		var style := StyleBoxFlat.new()
-		style.bg_color = Charte.PANNEAU_3 if selected else (Charte.PANNEAU_2 if look == "hover" else Color(0, 0, 0, 0))
-		style.set_corner_radius_all(0)
-		style.border_color = Charte.IVOIRE
-		style.border_width_bottom = maxi(2, C.px(5)) if selected else (maxi(2, C.px(3)) if look == "focus" else 0)
+		style.bg_color = Charte.IVOIRE if selected else (Charte.PANNEAU_2 if look == "hover" else Color(0, 0, 0, 0))
+		style.set_corner_radius_all(Charte.RAYON_PILULE)
+		style.anti_aliasing = true
+		style.border_color = Charte.IVOIRE_2 if selected else Charte.IVOIRE
+		if look == "focus":
+			style.bg_color = Color(0, 0, 0, 0)
+			style.set_border_width_all(2)
+			style.set_expand_margin_all(2)
 		style.content_margin_left = C.px(16)
 		style.content_margin_right = C.px(16)
 		button.add_theme_stylebox_override(look, style)
 	for key in ["font_color", "font_pressed_color", "font_focus_color"]:
-		button.add_theme_color_override(key, Charte.IVOIRE if selected else Charte.IVOIRE_2)
-	button.add_theme_color_override("font_hover_color", Charte.IVOIRE)
+		button.add_theme_color_override(key, Charte.PANNEAU if selected else Charte.IVOIRE_2)
+	button.add_theme_color_override("font_hover_color", Charte.PANNEAU if selected else Charte.IVOIRE)
 	button.add_theme_font_override("font", C.BOLD)
 	button.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
 	button.tooltip_text = "Ouvrir · " + caption
@@ -389,8 +391,7 @@ func _grid(parent: Node) -> void:
 	grid.add_child(weekdays)
 	for index in 7:
 		var card := C.card()
-		var heading_style := _sbox(Charte.PANNEAU_3 if index < 5 else Charte.PANNEAU_3, Color.TRANSPARENT, 0, 8)
-		heading_style.set_corner_radius_all(0)
+		var heading_style := _sbox(Charte.PANNEAU_3 if index < 5 else Charte.PANNEAU_3, Color.TRANSPARENT, Charte.RAYON_PETIT, 8)
 		card.add_theme_stylebox_override("panel", heading_style)
 		var caption := C.label(SHORT_DAYS[index] if C.density < .67 else WEEKDAYS[index], 20, C.MUTED)
 		C.content(card).add_child(caption)
@@ -453,14 +454,12 @@ func _day(date: String, weekend: bool, height: int) -> Button:
 	elif selected_day: border = C.IVORY
 	for state in ["normal","hover","pressed"]:
 		var background := fill.lightened(.07) if state == "hover" else fill
-		var style := _sbox(background, border, 0, 0)
-		style.set_corner_radius_all(0)
+		var style := _sbox(background, border, Charte.RAYON_PETIT, 0)
 		style.border_color = border
 		# Jour sélectionné ou courant : marqueur ivoire à gauche (jamais un cadre complet) ; « AUJOURD’HUI » écrit en toutes lettres.
 		if selected_day or current: style.border_width_left = maxi(3, C.px(4))
 		cell.add_theme_stylebox_override(state, style)
-	var focus := _sbox(Color.TRANSPARENT, C.IVORY, 0, 0)
-	focus.set_corner_radius_all(0)
+	var focus := _sbox(Color.TRANSPARENT, C.IVORY, Charte.RAYON_PETIT, 0)
 	focus.set_border_width_all(2)
 	cell.add_theme_stylebox_override("focus", focus)
 	cell.pressed.connect(_select.bind(date))
@@ -715,7 +714,7 @@ func _session_caption(session: Dictionary, prefix: String, caption: String, colo
 		link.add_theme_color_override("font_color" if state_name == "normal" else "font_" + state_name + "_color", color)
 	for state_name in ["normal", "hover", "pressed", "disabled"]:
 		link.add_theme_stylebox_override(state_name, StyleBoxEmpty.new())
-	link.add_theme_stylebox_override("focus", _sbox(Color.TRANSPARENT, C.IVORY, 2, 0))
+	link.add_theme_stylebox_override("focus", _sbox(Color.TRANSPARENT, C.IVORY, Charte.RAYON_PETIT, 0))
 	link.set_meta("immersive_style_applied", true)
 	link.text = caption
 	Link.bind(link, app, {"kind":"session", "id":id}, caption)
@@ -742,7 +741,7 @@ static func _session_icon(kind: String) -> TextureRect:
 
 static func _tile(base: Color, border: Color, padding: int) -> PanelContainer:
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", _sbox(base,border,6,padding))
+	panel.add_theme_stylebox_override("panel", _sbox(base,border,Charte.RAYON_PETIT,padding))
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return panel
 
@@ -818,8 +817,8 @@ func _context_panels(parent: Node) -> void:
 		bar.show_percentage = false
 		bar.fill_mode = ProgressBar.FILL_BOTTOM_TO_TOP
 		bar.custom_minimum_size = Vector2(C.px(22),C.px(58))
-		bar.add_theme_stylebox_override("background",_sbox(Charte.PANNEAU_2,Color.TRANSPARENT,3,0))
-		bar.add_theme_stylebox_override("fill",_sbox(Charte.IVOIRE_2,Color.TRANSPARENT,3,0))
+		bar.add_theme_stylebox_override("background",_sbox(Charte.PANNEAU_2,Color.TRANSPARENT,Charte.RAYON_PILULE,0))
+		bar.add_theme_stylebox_override("fill",_sbox(Charte.IVOIRE_2,Color.TRANSPARENT,Charte.RAYON_PILULE,0))
 		bar.tooltip_text = _display_date(day)+" · "+str(count)+" créneau(x) publié(s)"
 		column.add_child(bar)
 		var label := C.label(SHORT_DAYS[_weekday(day)],16,C.MUTED)
@@ -858,7 +857,7 @@ func _week_sessions(parent: Node) -> void:
 func _detail(parent: Node) -> void:
 	var card := C.card("",Vector2(420,0))
 	card.name = "MonthDayDetail"
-	card.add_theme_stylebox_override("panel", _sbox(C.PANEL,Charte.FILET,10,14))
+	card.add_theme_stylebox_override("panel", _sbox(C.PANEL,Charte.FILET,Charte.RAYON_PANNEAU,14))
 	parent.add_child(card)
 	var body := C.content(card)
 	var heading := "PROGRAMME DU JOUR" if selected == today else "JOUR SÉLECTIONNÉ"
@@ -918,7 +917,7 @@ func _club_badge(club: Dictionary, id: String) -> Control:
 	link.custom_minimum_size = Vector2(C.px(50),C.px(50))
 	link.flat = true
 	link.add_theme_stylebox_override("normal",_sbox(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
-	link.add_theme_stylebox_override("focus",_sbox(Color.TRANSPARENT,C.GOLD,3,0))
+	link.add_theme_stylebox_override("focus",_sbox(Color.TRANSPARENT,C.GOLD,Charte.RAYON_PETIT,0))
 	Link.bind(link,app,{"kind":"club","id":str(club.id)},"Club · " + G.club_name(club))
 	link.add_child(crest)
 	crest.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -926,7 +925,7 @@ func _club_badge(club: Dictionary, id: String) -> Control:
 
 func _fixture_detail(fixture: Dictionary) -> PanelContainer:
 	var panel := C.card()
-	panel.add_theme_stylebox_override("panel",_sbox(Charte.PANNEAU_3, Charte.IVOIRE_3, 7, 10))
+	panel.add_theme_stylebox_override("panel",_sbox(Charte.PANNEAU_3, Charte.IVOIRE_3, Charte.RAYON_CARTE, 10))
 	var body := C.content(panel)
 	var opponent := _opponent(fixture)
 	var matchup := C.h(10)

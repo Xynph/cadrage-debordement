@@ -246,7 +246,7 @@ func _placer_vignettes() -> void:
 	var vues: Dictionary = {}
 	if not place.is_empty():
 		var creer: Callable = place.colonne.vignette
-		var diametre := float(J.px(J.LIGNE_H - 9))
+		var diametre := float(J.px(J.LIGNE_H - 6))
 		for element: Dictionary in _elements:
 			if element.groupe: continue
 			var haut: float = element.y - _defilement
@@ -288,28 +288,29 @@ func _draw() -> void:
 		var colonne: Dictionary = place.colonne
 		var actif: bool = colonne.id == tri_colonne
 		var rect := Rect2(place.x, 0, place.l, h_entete - J.px(6))
-		var couleur := J.TEXTE if actif else J.TEXTE_FAIBLE
-		var titre := str(colonne.get("titre", ""))
-		var largeur_titre := J.CORPS.get_string_size(titre, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x
+		# En-têtes : capitales Barlow Condensed SemiBold IVOIRE_3 ; colonne triée en doré + flèche (charte §7.1).
+		var couleur := J.Charte.OR if actif else J.TEXTE_FAIBLE
+		var titre := str(colonne.get("titre", "")).to_upper()
+		var largeur_titre := J.TITRE.get_string_size(titre, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x
 		var a_droite: bool = colonne.get("align", HORIZONTAL_ALIGNMENT_LEFT) == HORIZONTAL_ALIGNMENT_RIGHT
 		var fleche := float(J.px(12)) if actif else 0.0
 		if a_droite: rect.size.x -= fleche
-		_ecrire(self, J.CORPS, taille, titre, rect, couleur, colonne.get("align", HORIZONTAL_ALIGNMENT_LEFT))
+		_ecrire(self, J.TITRE, taille, titre, rect, couleur, colonne.get("align", HORIZONTAL_ALIGNMENT_LEFT))
 		if actif:
 			var cx := (rect.end.x + J.px(7)) if a_droite else minf(place.x + largeur_titre + J.px(9), place.x + place.l - J.px(5))
 			var cy := rect.position.y + rect.size.y / 2.0
 			var d := float(J.px(4))
 			var points := PackedVector2Array([Vector2(cx - d, cy - d * 0.6), Vector2(cx + d, cy - d * 0.6), Vector2(cx, cy + d * 0.8)]) if tri_decroissant else PackedVector2Array([Vector2(cx - d, cy + d * 0.6), Vector2(cx + d, cy + d * 0.6), Vector2(cx, cy - d * 0.8)])
-			draw_colored_polygon(points, J.OR)
+			draw_colored_polygon(points, J.Charte.OR)
 	draw_rect(Rect2(0, h_entete - 1, _zone.size.x, 1), J.TRAIT)
 	if has_focus():
-		draw_rect(Rect2(0, h_entete - 1, _zone.size.x, maxi(1, J.px(1.5))), J.OR)
+		draw_rect(Rect2(0, h_entete - 1, _zone.size.x, maxi(1, J.px(1.5))), J.FOCUS)
 
 func _dessiner_lignes(zone: Control) -> void:
 	if _lignes.is_empty():
 		_ecrire(zone, J.CORPS, J.px(J.T_CORPS), message_vide, Rect2(0, J.px(J.E4), zone.size.x, J.px(J.LIGNE_H)), J.TEXTE_DOUX)
 		return
-	var taille := J.px(J.T_CORPS)
+	var taille := J.px(J.T_CELLULE)
 	var gras := J.corps_gras()
 	for element: Dictionary in _elements:
 		var haut: float = element.y - _defilement
@@ -325,15 +326,16 @@ func _dessiner_lignes(zone: Control) -> void:
 			continue
 		var ligne: Dictionary = element.ligne
 		var est_choisie := str(ligne.get(cle, "")) == choisie
+		# Charte §7.1 : filet entre les lignes, pas de bandes ; survol PANNEAU_2 ; ligne choisie SELECTION sur toute la
+		# ligne, rayon 6.
+		zone.draw_rect(Rect2(0, haut + element.h - 1, zone.size.x, 1), J.TRAIT)
 		if est_choisie or element.rang == _survol:
-			zone.draw_style_box(J.boite(J.CHOIX if est_choisie else J.SURVOL, 6), Rect2(-J.px(2), haut + 1, zone.size.x + J.px(2), element.h - 2))
-		else:
-			zone.draw_rect(Rect2(0, haut + element.h - 1, zone.size.x, 1), Color(J.TRAIT, 0.55))
+			zone.draw_style_box(J.boite(J.SELECTION if est_choisie else J.SURVOL, J.RAYON_PETIT), Rect2(0, haut, zone.size.x, element.h - 1))
 		for place: Dictionary in _places:
 			var colonne: Dictionary = place.colonne
 			var rect := Rect2(place.x, haut, place.l, element.h)
 			if colonne.has("vignette"):
-				var retrait := float(J.px(J.LIGNE_H - 9 + J.E3))
+				var retrait := float(J.px(J.LIGNE_H - 6 + J.E3))
 				rect.position.x += retrait
 				rect.size.x -= retrait
 			if colonne.has("dessin"):

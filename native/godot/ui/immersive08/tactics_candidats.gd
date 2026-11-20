@@ -24,7 +24,7 @@ static func lecture(app: Control) -> Dictionary:
 	return app.management_ui.candidates_reading
 
 static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary, choisir: Callable, avis_haut: float = 0.0) -> Panel:
-	var bloc := D.rect(page, zone, Charte.PANNEAU, 0)
+	var bloc := D.rect(page, zone, Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	bloc.name = "TacticsCandidates"
 	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
 	var slot: int = clampi(int(app.selected_slot), 0, 22)
@@ -43,9 +43,9 @@ static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary
 	recherche.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 	recherche.add_theme_color_override("font_color", Charte.IVOIRE)
 	recherche.add_theme_color_override("font_placeholder_color", Charte.IVOIRE_2)
-	var champ := C.box(Charte.PANNEAU_3, Charte.IVOIRE_3, 0, 8)
+	var champ := C.box(Charte.PANNEAU_3, Charte.IVOIRE_3, Charte.RAYON_PILULE, 8)
 	recherche.add_theme_stylebox_override("normal", champ)
-	var champ_focus := C.box(Charte.PANNEAU_3, Charte.IVOIRE, 0, 8)
+	var champ_focus := C.box(Charte.PANNEAU_3, Charte.IVOIRE, Charte.RAYON_PILULE, 8)
 	champ_focus.set_border_width_all(2)
 	recherche.add_theme_stylebox_override("focus", champ_focus)
 	recherche.accessibility_name = "Rechercher un candidat par son nom"
@@ -178,8 +178,6 @@ static func _remplir(app: Control, lignes: Control, compte: Label, slot: int, la
 		Kit.texte(lignes, 8, 23, "Aucun joueur ne correspond.", Charte.IVOIRE_2, largeur - 16)
 	for i in toutes.size():
 		_ligne(app, lignes, i, toutes[i].person, toutes[i].statut, slot, largeur, colonnes)
-	# Première construction : les fonds sont déjà créés sans rayon (C.rayon_nul) ; un nouveau tri ou filtre repasse.
-	if not C.rayon_nul: Kit.angles_droits(lignes)
 
 static func _valeur(app: Control, person: Dictionary, slot: int, cle: String) -> Variant:
 	match cle:
@@ -279,12 +277,12 @@ static func _message(app: Control) -> void:
 ## Encart « Première ligne formée » (emprunt de la variante 3) : la règle en une phrase, puis pilier gauche, talonneur,
 ## pilier droit avec le titulaire, le remplaçant désigné et le nombre de formés parmi eux.
 static func _encart(app: Control, bloc: Control, zone: Rect2, slot: int, premiere: Dictionary, choisir: Callable) -> void:
-	var cadre := D.rect(bloc, zone, Charte.PANNEAU, 0)
+	var cadre := D.rect(bloc, zone, Charte.PANNEAU, Charte.RAYON_CARTE)
 	cadre.name = "TacticsFrontRowRule"
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
 	var cible := int(premiere.cible)
 	var formes := int(premiere.formes)
-	var regle := D.rect(cadre, Rect2(0, 0, zone.size.x, 64), Charte.PANNEAU_2, 0)
+	var regle := D.rect(cadre, Rect2(0, 0, zone.size.x, 64), Charte.PANNEAU_2, Charte.RAYON_PETIT)
 	D.rect(regle, Rect2(0, 0, 4, 64), Charte.IVOIRE_2, 0)
 	var poste_courant := {}
 	for poste: Dictionary in premiere.postes:

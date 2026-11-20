@@ -6,7 +6,9 @@ extends Control
 ## Le médaillon du coin bas droit (#684) est retiré : ce disque vit dans le bandeau, qui existait déjà.
 signal pressed
 
-## Couleurs de la charte (ui/charte.gd) : ovale tracé ivoire-2, fond panneau ; ni or ni ombre (une seule DA).
+## Couleurs de la charte (ui/charte.gd) : fond panneau, sans ombre ; dans la barre haute (ovale), cadre doré
+## (charte §5 : médaillon cadre doré, 40 px, F1 écrit à côté).
+const Charte = preload("res://ui/charte.gd")
 const GOLD := Color("bdb4a2")
 const GREEN := Color("201d19")
 const DEEP := Color("171512")
@@ -199,11 +201,11 @@ class Cadre extends Control:
 			var y := book.position.y + h * (0.38 + k * 0.26)
 			draw_line(Vector2(book.position.x + w * 0.28, y), Vector2(book.end.x - w * 0.15, y), GOLD, maxf(1.0, h * 0.09))
 
-	## Ovale tracé (logo) : deux virgules qui s'affinent, sans se fermer ; ivoire-2, ivoire au survol.
+	## Ovale tracé (logo) : deux virgules qui s'affinent, sans se fermer ; cadre doré, doré vif au survol.
 	func _ovale_trace(m) -> void:
 		var center := size / 2.0
 		var radius := size / 2.0 - Vector2.ONE * 1.5
-		var ink: Color = IVORY if m._hover else GOLD
+		var ink: Color = Charte.OR_VIF if m._hover else Charte.OR
 		var widest := maxf(1.5, size.y * 0.06)
 		for arc: Array in [[200.0, 340.0], [20.0, 160.0]]:
 			var steps := 16

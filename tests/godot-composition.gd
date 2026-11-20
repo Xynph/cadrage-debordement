@@ -124,16 +124,25 @@ func run() -> void:
 	var bar: VScrollBar = (app.body_scroll as ScrollContainer).get_v_scroll_bar()
 	check(bar.max_value <= bar.page + 1, "1920 × 1080 : l'écran tient sans défiler (%s / %s)" % [str(bar.max_value), str(bar.page)])
 	check(couleurs_or(page).is_empty(), "Aucun aplat doré dans l'écran (Continuer le porte seul) : " + ", ".join(couleurs_or(page)))
-	# Charte §3 « rayons 0 » : les fonds sont créés sans rayon (C.rayon_nul), plus de passe après coup sur l'écran.
-	var arrondis: Array[String] = []
+	# Charte finale §3 (arrondis) : panneaux rayon 18, lignes et cases rayon 6, onglets en pilule ; aucun fond plein
+	# à angles droits dans l'écran. Le voile à peine teinté du lien survolé (souligné, charte §7.1 « lien ») n'est pas
+	# un fond : seuls les aplats d'opacité ≥ 50 % comptent.
+	var droits: Array[String] = []
 	# Nœuds internes du moteur exclus (« _focus » du ScrollContainer : style du thème, cadre non dessiné ici).
 	for noeud in page.find_children("*", "Control", true, false):
 		if str(noeud.name).begins_with("_"): continue
-		for nom in ["panel", "normal", "hover", "pressed", "hover_pressed", "disabled", "focus", "read_only"]:
+		for nom in ["panel", "normal", "hover", "pressed", "hover_pressed", "disabled", "read_only"]:
 			if not (noeud as Control).has_theme_stylebox_override(nom): continue
 			var style := (noeud as Control).get_theme_stylebox(nom) as StyleBoxFlat
-			if style != null and (style.corner_radius_top_left > 0 or style.corner_radius_bottom_right > 0): arrondis.append(str(noeud.name) + "/" + nom)
-	check(arrondis.is_empty(), "Angles droits partout dans l'écran (charte §3) : " + ", ".join(arrondis.slice(0, 6)))
+			if style != null and style.bg_color.a >= .5 and (style.corner_radius_top_left <= 0 or style.corner_radius_bottom_right <= 0): droits.append(str(noeud.name) + "/" + nom)
+	check(droits.is_empty(), "Aucun fond à angles droits dans l'écran (charte §3) : " + ", ".join(droits.slice(0, 6)))
+	for id in ["TacticsBench", "TacticsImpact", "TacticsCandidates"]:
+		var bloc_style := named(id).get_theme_stylebox("panel") as StyleBoxFlat if named(id) != null else null
+		check(bloc_style != null and bloc_style.corner_radius_top_left == maxi(3, C.px(Charte.RAYON_PANNEAU)), "Panneau %s : rayon 18 (charte §3)" % id)
+	var onglet := named("TacticsTab0") as Button
+	if onglet == null: onglet = named("TacticsTab3") as Button
+	var onglet_style := onglet.get_theme_stylebox("normal") as StyleBoxFlat if onglet != null else null
+	check(onglet_style != null and onglet_style.corner_radius_top_left >= Charte.RAYON_PILULE, "Onglets en pilule (charte §7.1)")
 	# Tout bouton visible fait quelque chose (pressed relié), sauf cases et listes qui ont leur propre signal.
 	var muets: Array[String] = []
 	for node in page.find_children("*", "BaseButton", true, false):
