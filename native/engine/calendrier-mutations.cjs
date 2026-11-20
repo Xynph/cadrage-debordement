@@ -336,7 +336,8 @@ settleContracts=function(){
 //    bascule (l'indemnité est payée à l'exécution, revérifiée) ;
 //  ia : [{id,playerId,nom,pos,vendeurId,vendeur,acheteurId,acheteur,salaire,annees,date,saison,etat:'signe'|'execute'|'tombe'}]
 //    pré-contrats entre clubs gérés ;
-//  rumeurs : [{id,playerId,nom,pos,clubId,club,interesseId,interesse,date,saison,suite:null|'signe'}] ;
+//  rumeurs : [{id,playerId,nom,pos,clubId,club,interesseId,interesse,date,saison,suite:null|'signe'|'dementi'|'sans-suite',
+//    piste:'vraie'|'fausse' (absente : vraie), dementi:AAAA-MM-JJ (piste fausse)}] ;
 //  mercato : {saison,debut,fin,ouverture,derniere,bilan,n,top:[{texte,montant}],semaines:{[semaine]:[{type,texte,montant}]}}
 //    résumé lisible (courriers « Échos du mercato » / « Point mercato ») ; type 'accord' (transfert conclu, montant),
 //    'precontrat', 'rumeur', 'temps-fort' (ouverture, dernière semaine, bilan, bascule) ; dates AAAA-MM-JJ ou null ;
@@ -445,16 +446,37 @@ function calClubsGeresTours(ancien){
  return {tours:t.tours,differe:true,motif:t.motif};
 }
 // ---- Pré-contrats entre clubs gérés, rumeurs (clôture de semaine, calSemaine) ----
+// Démentis (chaque clôture, avant le retour hors période des pré-contrats) : une rumeur « fausse » de la saison reçoit son
+// démenti à la première clôture à partir de sa date + dementiSemaines (tiré à la création) ; joueur parti de son club :
+// sans suite, sans actualité. Les rumeurs sont purgées à la bascule : aucun démenti après.
+function calIARumeursDementis(j){
+ if(!calEtatValide(S.calendrierMutations)||!Array.isArray(S.calendrierMutations.rumeurs))return;
+ for(const r of S.calendrierMutations.rumeurs){
+  if(r.saison!==S.season||r.suite!==null||r.piste!=='fausse'||!r.dementi||j<r.dementi)continue;
+  const c=S.clubs[r.clubId];if(!c||!c.players.some(p=>p.id===r.playerId)){r.suite='sans-suite';continue;}
+  r.suite='dementi';
+  const texte=r.interesse+' dément tout intérêt pour '+r.nom+' ('+String(r.pos||'').toLowerCase()+' de '+r.club+').';
+  calActu(texte);calMercato('rumeur',texte,0);
+ }
+}
 function calIAPreContrats(){
- const G=calG();if(!G||!calBascule()||S.phase!=='league')return;
+ const G=calG();if(!G||!calBascule())return;
  const P=G.preContrats,Rm=G.rumeurs,j=calJour();if(!P.actifs||!j)return;
+ calIARumeursDementis(j);
+ if(S.phase!=='league')return;
  const d=nativeCalendrierMutations.preContratDates(calAnneeFin(S.season),calR());if(j<d.debut||j>d.fin)return;
  const st=calIAEtat(),w=S.round,cle=S.season+':'+w;if(st.iaSemaine===cle)return;st.iaSemaine=cle;
  const graine=venteGraine(),h=k=>seedHash(graine+':'+S.season+':'+w+':ia:'+k);
  const achats=new Map(),departs=new Map();
  for(const x of st.ia)if(x.saison===S.season){achats.set(x.acheteurId,(achats.get(x.acheteurId)||0)+1);departs.set(x.vendeurId,(departs.get(x.vendeurId)||0)+1);}
  const prets=new Set((S.clubDirections?.loans||[]).map(l=>l.playerId)),ligue=new Map(),jlo=id=>{if(!ligue.has(id))ligue.set(id,['jlo-d1','jlo-d2'].includes(CDWorldCareer.leagueId(S,id)));return ligue.get(id);};
- const clubs=S.clubs.filter(c=>c.id!==S.club),suivis=new Map(st.rumeurs.filter(r=>r.saison===S.season&&r.suite===null).map(r=>[r.playerId,r]));
+ const clubs=S.clubs.filter(c=>c.id!==S.club),suivis=new Map(),enCours=new Set(),fausses=new Set();
+ // Rumeur vraie (ou sans piste : sauvegardes antérieures) : prioritaire. Rumeur fausse : pas prioritaire, et le club
+ // annoncé ne signe pas ce joueur en pré-contrat cette saison.
+ for(const r of st.rumeurs)if(r.saison===S.season){
+  if(r.piste==='fausse')fausses.add(r.playerId+':'+r.interesseId);
+  if(r.suite===null){enCours.add(r.playerId);if(r.piste!=='fausse')suivis.set(r.playerId,r);}
+ }
  let cands=[];
  for(const c of clubs){
   if((departs.get(c.id)||0)>=P.parVendeur)continue;
@@ -467,7 +489,7 @@ function calIAPreContrats(){
  for(const {p,c,k} of cands){
   if(signes>=n&&rumeurs>=nr)break;
   if((departs.get(c.id)||0)>=P.parVendeur)continue;
-  const buyers=clubs.filter(b=>b.id!==c.id&&(achats.get(b.id)||0)<P.parAcheteur&&jlo(b.id)===jlo(c.id)).map(b=>({b,n:venteBesoin(b,p)})).filter(x=>x.n>=P.besoinMin)
+  const buyers=clubs.filter(b=>b.id!==c.id&&!fausses.has(p.id+':'+b.id)&&(achats.get(b.id)||0)<P.parAcheteur&&jlo(b.id)===jlo(c.id)).map(b=>({b,n:venteBesoin(b,p)})).filter(x=>x.n>=P.besoinMin)
    .sort((x,y)=>y.n-x.n||Math.abs(x.b.base-p.rating)-Math.abs(y.b.base-p.rating)||x.b.id-y.b.id).slice(0,3);
   const salaire=b=>Math.max(270,Math.min(100000,Math.round(Math.max(p.salary,nativeClubTransfers.demand(p,c,b))*P.majorationSalaire/100)*100));
   const rumeur=suivis.get(p.id),ordre=rumeur?[...buyers.filter(x=>x.b.id===rumeur.interesseId),...buyers.filter(x=>x.b.id!==rumeur.interesseId)]:buyers.slice(k%Math.max(1,buyers.length)).concat(buyers.slice(0,k%Math.max(1,buyers.length)));
@@ -482,8 +504,11 @@ function calIAPreContrats(){
    const texte=b.name+' a signé '+p.name+' ('+calPoste(p)+' de '+c.name+') pour la saison prochaine.';
    calFil(texte);calActu(texte);calMercato('precontrat',texte,0);continue;
   }
-  if(rumeurs<nr&&!rumeur){
-   st.seq++;st.rumeurs.push({id:'rumeur-'+st.seq,playerId:p.id,nom:p.name,pos:p.pos,clubId:c.id,club:c.name,interesseId:b.id,interesse:b.name,date:j,saison:S.season,suite:null});
+  if(rumeurs<nr&&!enCours.has(p.id)){
+   // Piste vraie (tauxRealisation) ou fausse : une fausse est démentie dementiSemaines plus tard.
+   const hr=k=>seedHash(graine+':'+S.season+':'+w+':'+k+':'+p.id),vraie=hr('rumeur')%1000<Math.round((Rm.tauxRealisation??1)*1000);
+   const ds=Array.isArray(Rm.dementiSemaines)?Rm.dementiSemaines:[2,4],sem=ds[0]+hr('dementi')%Math.max(1,ds[1]-ds[0]+1);
+   st.seq++;st.rumeurs.push({id:'rumeur-'+st.seq,playerId:p.id,nom:p.name,pos:p.pos,clubId:c.id,club:c.name,interesseId:b.id,interesse:b.name,date:j,saison:S.season,suite:null,piste:vraie?'vraie':'fausse',...(vraie?{}:{dementi:nativeCalendrierMutations.decaler(j,7*sem)})});
    st.rumeurs=st.rumeurs.slice(-Rm.gardees);rumeurs++;
    const texte='Selon la presse, '+b.name+' suit '+p.name+', '+calPoste(p)+' de '+c.name+' en fin de contrat.';
    calActu(texte);calMercato('rumeur',texte,0);
@@ -511,11 +536,11 @@ function calIAMasseBascule(){
 function calIAExecuter(){
  if(!calEtatValide(S.calendrierMutations))return 0;
  const st=calIAEtat();let n=0;
- const arr=calIAArrivees=new Map();
+ const arr=calIAArrivees=new Map(),caisses=new Map();
  const placeSuivante=b=>professionalCapacity(b)-b.players.filter(q=>!(q.contractEnd!=null&&q.contractEnd<=S.season)).length;
  const arriver=(p,s,b,salaire,annees,montant)=>{
   s.players=s.players.filter(q=>q.id!==p.id);b.players.push(p);
-  if(montant>0){b.cash-=montant;s.cash+=montant;}
+  if(montant>0){if(!caisses.has(b.id))caisses.set(b.id,b.cash);b.cash-=montant;s.cash+=montant;}
   p.formerClub=s.name;p.salary=salaire;p.contractEnd=S.season+annees;p.joinedSeason=S.season+1;p.joinedRound=0;if(montant>0)p.price=montant;
   if(typeof aiRosterEvent==='function'){aiRosterEvent(s.id,montant>0?'sell':'release',p,montant);aiRosterEvent(b.id,'recruit',p,montant);}
   const x=arr.get(b.id)||{salaires:0,ids:new Set()};x.salaires+=salaire;x.ids.add(p.id);arr.set(b.id,x);
@@ -536,6 +561,9 @@ function calIAExecuter(){
   arriver(p,s,b,x.salaire,x.annees,0);x.etat='execute';n++;
   calFil(p.name+' rejoint '+b.name+' libre, comme prévu par son pré-contrat.');
  }
+ // Président d'un acheteur passé sous sa réserve en payant ses indemnités : il tranche tout de suite, ventes au 1er juillet
+ // (president-reprise.cjs, repriseBascule ; GDD § 3 bis 5). Une fois par club, caisse d'avant ses paiements de la bascule.
+ if(typeof repriseBascule==='function')for(const [id,avant] of caisses)n+=repriseBascule(S.clubs[id],avant,arr.get(id)?.ids);
  st.ia=st.ia.filter(x=>x.saison>=S.season);st.rumeurs=st.rumeurs.filter(r=>r.saison>S.season);
  return n;
 }

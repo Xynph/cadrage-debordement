@@ -92,18 +92,12 @@ func navigate(route: String) -> bool:
 	check(reached,"Route réellement affichée : "+route+" → "+app.route)
 	return reached
 func select_development(group: String) -> void:
-	var picker := app.find_child("AcademyImmersiveGroup",true,false) as OptionButton
-	if picker != null:
-		var found := false
-		for index in picker.item_count:
-			if str(picker.get_item_metadata(index)) != group: continue
-			found = true
-			picker.select(index);picker.item_selected.emit(index)
-			await settle()
-			break
-		check(found,"Groupe réel disponible dans la Formation immersive : "+group)
-		var current := app.find_child("AcademyImmersiveGroup",true,false) as OptionButton
-		check(current != null and str(current.get_item_metadata(current.selected)) == group,"Groupe réel sélectionné dans la Formation immersive : "+group)
+	var picker := app.find_child("AcademyGroup_"+group,true,false) as Button
+	if app.find_child("ImmersiveAcademy",true,false) != null:
+		check(picker != null and not picker.disabled,"Groupe réel disponible dans la Formation immersive : "+group)
+		if picker != null: picker.pressed.emit();await settle()
+		var current := app.find_child("AcademyGroup_"+group,true,false) as Button
+		check(current != null and current.button_pressed and app.management_ui.get("immersive_academy",{}).get("group") == group,"Groupe réel sélectionné dans la Formation immersive : "+group)
 	else:
 		var action := app.find_child("Development"+group.capitalize(),true,false) as Button
 		check(action != null and action.is_visible_in_tree() and not action.disabled,"Groupe réel disponible dans la Formation compacte : "+group)

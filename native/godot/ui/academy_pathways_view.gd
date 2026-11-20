@@ -10,7 +10,7 @@ static func _send(app: Control, data: Dictionary, command: String, payload: Dict
 		app._command(command, args)
 	else:
 		args.confirmed = true
-		app.confirm(title, detail, func(): app._command(command, args))
+		preload("res://ui/immersive08/formation_pages.gd").confirmer(app, title, detail, func(): app._command(command, args))
 
 static func _action(parent: Node, app: Control, data: Dictionary, label: String, command: String, payload: Dictionary = {}, cost: int = -1, disabled: bool = false) -> Button:
 	var title := label if cost >= 0 else ""

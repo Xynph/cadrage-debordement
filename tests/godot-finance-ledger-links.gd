@@ -52,7 +52,7 @@ func projection_cases() -> void:
 func target_matches(index: int, entries: Array) -> void:
 	var target := found("FinanceLedgerTarget") as Label
 	check(app.route=="Finances" and app.management_ui[Finance.KEY]=="cash","Destination : vrai journal de trésorerie")
-	check(int(app.management_ui.get(Finance.PAGE_KEY_PREFIX+"cash",-1))==floori(float(index)/8),"Page exacte de l’écriture n° "+str(index+1))
+	check(int(app.management_ui.get(Finance.PAGE_KEY_PREFIX+"cash",-1))==floori(float(index)/Finance.LEDGER_PAGE),"Page exacte de l’écriture n° "+str(index+1))
 	check(target!=null,"Ligne ciblée réellement présente")
 	if target==null: return
 	check(target.get_meta("ledger_index",-1)==index and target.get_meta("ledger_entry",{})==entries[index],"Titre, montant et champs conservés correspondent à l’occurrence exacte")

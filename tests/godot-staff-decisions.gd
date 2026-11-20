@@ -152,10 +152,7 @@ func run() -> void:
 	check(app.model.decisions.delegation.lineup, "Contrôle UI réellement transmis au moteur")
 	app._navigate("Formation"); await settle()
 	var promotion_scope: Node = app.body
-	var integration := app.body.find_child("AcademyPrepareIntegration", true, false) as Button
-	if integration != null:
-		check(await click(integration), "Ouvrir le dossier d’intégration")
-		promotion_scope = app.find_child("AcademyIntegrationDialog", true, false)
+	# Formation (DA du 20/11/2026) : « Promouvoir » est dans la bande de décision du jeune choisi, sans fenêtre.
 	var promote: Button
 	if promotion_scope != null:
 		for button: Button in promotion_scope.find_children("*", "Button", true, false):
@@ -164,11 +161,10 @@ func run() -> void:
 	var old_count: int = app.model.squad.size()
 	var old_wage: float = app.model.finance.wage
 	if not await click(promote): quit(1); return
-	var confirmation: ConfirmationDialog
-	for child in app.get_children():
-		if child is ConfirmationDialog and child.visible: confirmation = child; break
-	check(confirmation != null, "Promotion exige confirmation du salaire")
-	if confirmation != null: await click(confirmation.get_ok_button())
+	var confirmation := app.body.find_child("AcademyPromoteConfirmOk", true, false) as Button
+	var fenetre_ouverte := app.get_children().any(func(child: Node): return child is ConfirmationDialog and child.visible)
+	check(confirmation != null and not fenetre_ouverte, "Promotion exige une confirmation du salaire, en place et sans fenêtre")
+	if confirmation != null: await click(confirmation)
 	await settle()
 	while app.waiting: await process_frame
 	check(app.model.squad.size() == old_count + 1 and app.model.finance.wage == old_wage + 2000, "Promotion UI : identité, groupe et salaire effectifs")

@@ -65,6 +65,8 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 	if route in ["Recrutement", "Formation"]: entry.fiche = str(fiche.get("id", "")) if fiche is Dictionary else ""
 	# Sous-pages de la Composition (tireurs, espoir, renforts) : une étape d'historique distincte de l'écran.
 	if route == "Composition": entry.composition_page = str(app.management_ui.get("composition_page", ""))
+	# Sous-pages de la Formation (suivi des jeunes, revue d'effectif) : une étape d'historique distincte de la liste.
+	if route == "Formation": entry.formation_page = load("res://ui/immersive08/formation_pages.gd").cle(app)
 	# Sous-pages du Recrutement : une étape d'historique distincte de la liste.
 	if route == "Recrutement": entry.recrutement_page = load("res://ui/immersive08/recruitment_pages.gd").cle(app.management_ui.get("recrutement_page", {})) if app.management_ui.get("recrutement_page") is Dictionary else ""
 	# Sous-pages du Staff (contrat, mentorat, engagements) : une étape d'historique distincte de l'écran.
@@ -550,6 +552,11 @@ func _travel(direction: int) -> void:
 		if page_demandee != page_actuelle:
 			app.Immersive.Recruitment.oublier_page(app)
 			if not page_demandee.is_empty(): app.management_ui.recrutement_page = load("res://ui/immersive08/recruitment_pages.gd").depuis_cle(page_demandee)
+	if entry.route == "Formation":
+		var formation_demandee := str(entry.get("formation_page", ""))
+		if formation_demandee != load("res://ui/immersive08/formation_pages.gd").cle(app):
+			load("res://ui/immersive08/formation_pages.gd").oublier(app)
+			if not formation_demandee.is_empty(): app.management_ui.formation_page = load("res://ui/immersive08/formation_pages.gd").depuis_cle(formation_demandee)
 	if entry.route == "Recrutement" and not entry.get("reading") is Dictionary:
 		_set_market_target(entry.market, str(_person("market", entry.market).get("name", "")))
 	app._navigate(entry.route, false, true)
