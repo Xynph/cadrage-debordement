@@ -50,14 +50,13 @@ func windows() -> Array:
 func close(a: Color, b: Color) -> bool:
 	return absf(a.r - b.r) < .01 and absf(a.g - b.g) < .01 and absf(a.b - b.b) < .01
 
+## Aplat doré = fond (opaque) d'un bouton ou d'un panneau, tous états ; texte, contour et anneau de focus dorés permis.
 func gold_on(control: Control) -> bool:
 	var tones: Array[Color] = []
-	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]:
-		if control.has_theme_color_override(key): tones.append(control.get_theme_color(key))
-	for key in ["normal", "hover", "pressed", "focus", "disabled", "panel"]:
+	for key in ["normal", "hover", "pressed", "disabled", "panel"]:
 		if control.has_theme_stylebox_override(key):
 			var box := control.get_theme_stylebox(key) as StyleBoxFlat
-			if box != null: tones.append_array([box.bg_color, box.border_color])
+			if box != null: tones.append(box.bg_color)
 	for tone in tones:
 		for reference: Color in [Charte.OR, Charte.OR_VIF]:
 			if close(tone, reference) and tone.a > .05: return true
@@ -223,5 +222,5 @@ func colors() -> void:
 	for control in page.find_children("*", "Control", true, false):
 		if gold_on(control as Control):
 			dores += 1
-			printerr("OR sur ", control.get_path())
-	check(dores == 0, "Aucune couleur or dans l'écran Formation (%d)" % dores)
+			printerr("APLAT DORE sur ", control.get_path())
+	check(dores == 0, "Formation : aucun aplat doré (Continuer le porte seul) (%d)" % dores)

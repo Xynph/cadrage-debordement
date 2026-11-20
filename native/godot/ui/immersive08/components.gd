@@ -197,6 +197,27 @@ static func style_bouton_ivoire_plein(bouton: BaseButton, taille: int = 21) -> v
 	if bouton is Button:
 		(bouton as Button).icon = null
 
+## Action d'une page qui garde Continuer visible (coque) : pilule à contour `FILET`, texte crème, sans aplat doré
+## (Continuer porte l'unique aplat doré de l'écran). Même geste que `style_bouton_ivoire_plein`, autre rendu.
+static func style_bouton_contour(bouton: BaseButton, taille: int = 21) -> void:
+	var looks := {"normal": [Color.TRANSPARENT, LINE], "hover": [RAISED, FAINT], "pressed": [Charte.SELECTION, IVORY], "disabled": [Color.TRANSPARENT, LINE]}
+	for look: String in looks:
+		var style := box(looks[look][0], looks[look][1], Charte.RAYON_PILULE, 18)
+		style.content_margin_top = px(7)
+		style.content_margin_bottom = px(7)
+		bouton.add_theme_stylebox_override(look, style)
+	var focus := box(Color.TRANSPARENT, Charte.OR, Charte.RAYON_PILULE, 18)
+	focus.set_border_width_all(2)
+	focus.set_expand_margin_all(2)
+	bouton.add_theme_stylebox_override("focus", focus)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		bouton.add_theme_color_override(key, Charte.IVOIRE)
+	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+	bouton.add_theme_font_override("font", BOLD)
+	bouton.add_theme_font_size_override("font_size", maxi(12, px(taille)))
+	if bouton is Button:
+		(bouton as Button).icon = null
+
 static func margin(padding: int = 18) -> MarginContainer:
 	var control := MarginContainer.new()
 	for edge in ["left", "top", "right", "bottom"]: control.add_theme_constant_override("margin_" + edge, px(padding))

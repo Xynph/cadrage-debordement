@@ -937,6 +937,8 @@ function createBridge(options={}){
      if(!peek('!!S'))throw Error('Crée ou importe une carrière.');
      ctx.nativePayload={club:payload.club};
      const model=snapshotRaw();model.clubSheet=JSON.parse(run('JSON.stringify(nativeSystems.domain("clubSheet").sheet(nativePayload.club))'));model.clubSheet.palmares=clubPalmares.build({history:clubHistory[payload.club],archives:model.archives,clubId:payload.club,clubName:model.clubSheet.name});
+     // La fiche est lue à part : même présentation que le modèle (noms, logos, compétitions du pack actif).
+     model.clubSheet=packs.projectExtra(model.clubSheet);
      return {id,ok:true,model:projectKnowledge(model)};
     }
     // Aperçu d'un club à la création (écran « Options de carrière ») : lecture seule, sans carrière requise,

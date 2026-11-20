@@ -92,6 +92,7 @@ une partie du raisonnement sont perdus au changement).
   racine) ne s'appliquent pas. Commandes réelles :
   - retour rapide : `git diff --name-only origin/main > /tmp/diff.txt && node ci/quick-check.cjs /tmp/diff.txt` (un **fichier** listant les chemins, pas les chemins en arguments ; trop long sur la machine cloud : laisser la CI) ;
   - une suite JS : `node tests/<suite>.cjs` ;
+  - simulations de carrière (mesures, sondes) : `ouvrir({ testVm: true, hebdomadaire: true, simulation: true })` dans `tests/helpers/carriere-monde.cjs` (écritures différées, pas de sauvegarde à chaque commande : même carrière, ≈ un tiers de temps en moins) ; une saison Monde coûte ≈ 15 min par graine, lancer au plus 3 graines en parallèle (4 cœurs), et pour étudier une bascule sauver l'état (`scripts/sonde-bascule-masse.cjs --etat` puis `--depuis`, 20 s au lieu de 17 min) ;
   - suites Godot (SDK 4.7.2 requis) : `bash ci/run-godot-suites.sh <liste>` ;
   - projet Godot : `godot --path native/godot`.
 - PC de Léo indisponible : voir `AGENTS.md` (tests en ligne via `bash ci/en-ligne.sh`).

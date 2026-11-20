@@ -1,5 +1,6 @@
 'use strict';
 const path=require('node:path');
+const FORMATS=require('./competition-formats.json');
 
 const BASE={
  elite:['Élite française','Élite'],
@@ -33,8 +34,29 @@ function presentation(database,pack){
   const custom=pack?.competitions?.[id],base=BASE[id];
   const row={name:custom?.name??base[0],shortName:custom?.shortName??custom?.name??base[1]};
   if(custom?.logo)row.logoPath=path.join(pack.folder,custom.logo);
+  // Saison de départ et format lus dans les données ; compétition absente du fichier : rien d'ajouté.
+  const facts=FORMATS.competitions?.[id];
+  if(facts){
+   const start=Number(FORMATS.anneeDepart);
+   if(Number.isInteger(start))row.startSeasonLabel=facts.saison==='civile'?String(start+1):start+'-'+(start+1);
+   if(Array.isArray(facts.format)&&facts.format.length)row.formatLines=facts.format.filter(line=>typeof line==='string'&&line);
+  }
   return [id,row];
  }));
+}
+
+// Noms complets de base (table ci-dessus et nom du registre de l'édition) → nom fourni par le pack.
+// Les noms courts ne sont pas remplacés : trop génériques pour un remplacement dans du texte libre.
+function replacements(database,pack){
+ const result=[];
+ for(const id of allowed(database)){
+  const name=pack?.competitions?.[id]?.name;
+  if(typeof name!=='string'||!name)continue;
+  const sources=new Set([BASE[id][0]]);
+  for(const row of database.leagues||[])if(row.id===id&&typeof row.name==='string'&&row.name)sources.add(row.name);
+  for(const from of sources)if(from!==name)result.push([from,name]);
+ }
+ return result;
 }
 
 function apply(model,identities){
@@ -65,4 +87,4 @@ function apply(model,identities){
  }
 }
 
-module.exports={allowed,presentation,apply};
+module.exports={allowed,presentation,apply,replacements};

@@ -14,7 +14,6 @@ const HISTORICAL := {
 static func competition(model: Dictionary, id: String) -> String:
 	if HISTORICAL.has(id): return str(HISTORICAL[id])
 	var label := Club.competition_name(id, model)
-	if id == "elite" and label.to_lower() == "top 14": return "Championnat de France"
 	return label
 
 static func titles_text(model: Dictionary, palmares: Dictionary, limit: int = 3) -> String:
@@ -25,7 +24,7 @@ static func titles_text(model: Dictionary, palmares: Dictionary, limit: int = 3)
 		parts.append("%s · %d titre%s" % [competition(model, str(title.get("competition", ""))), count, "s" if count > 1 else ""])
 	return "  ·  ".join(parts)
 
-## Lignes « 2025-26 · Championnat de France · Finaliste », les plus récentes d'abord.
+## Lignes « 2025-26 · <nom de la compétition> · Finaliste », les plus récentes d'abord.
 static func recent_lines(model: Dictionary, palmares: Dictionary, limit: int = 8) -> Array[String]:
 	var lines: Array[String] = []
 	for row: Dictionary in palmares.get("recent", []):

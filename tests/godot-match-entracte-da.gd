@@ -4,7 +4,7 @@ extends SceneTree
 ## `live.direct` complète posée sur l'écran (match_between.gd) en 1920×1080 et 1280×720. Vérifie : les blocs de la
 ## maquette à l'écran et dans l'écran ; tout ce qui a l'air cliquable fait quelque chose (signal, panneau, vue,
 ## commande) ; aucun clic n'ouvre de fenêtre (seul le menu « Plus ▾ » est un menu déroulant, exception de Léo) ;
-## aucune couleur or (réservée à Continuer) ; aucun texte sous 12 px ; les noms mènent à la fiche (survol :
+## un seul aplat doré (bouton principal) ; aucun texte sous 12 px ; les noms mènent à la fiche (survol :
 ## mini-fiche) ; le panneau d'arrêt prend la colonne de droite et bloque Équipe jusqu'au choix ; le clavier
 ## (Espace, Échap, T) suit la fiche UX.
 const Between = preload("res://ui/contextual/match_between.gd")
@@ -83,6 +83,14 @@ func etat(ecran: Control, app: Node) -> String:
 	return JSON.stringify([signaux.size(), ecran.vue_droite, ecran.vue_xv, fiche != null and is_instance_valid(fiche), (app.get("envois") as Array).size(), ecran.horloge, ecran.niveau_libelle(), ecran.tri_xv, ecran.tri_inverse])
 
 ## Couleurs posées sur un contrôle (polices et styles) : aucune ne doit être l'or de Continuer.
+## Aplat doré = fond (opaque) d'un bouton ou d'un panneau, dans l'un de ses états ; texte, contour et anneau permis.
+func aplat_or(noeud: Control) -> bool:
+	for cle in ["normal", "hover", "pressed", "disabled", "panel"]:
+		if noeud.has_theme_stylebox_override(cle):
+			var s := noeud.get_theme_stylebox(cle) as StyleBoxFlat
+			if s != null and s.bg_color.a > .05 and (Color(s.bg_color, 1.0).is_equal_approx(Charte.OR) or Color(s.bg_color, 1.0).is_equal_approx(Charte.OR_VIF)): return true
+	return false
+
 func ors(noeud: Control) -> Array:
 	var trouves: Array = []
 	for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]:
@@ -162,16 +170,16 @@ func run() -> void:
 		var remplacer := ecran.find_child("MatchBetweenReplace", true, false) as Button
 		check(remplacer != null and remplacer.text == "Remplacer le 7 par Banc20 →", cadre + " : Gabi propose le remplaçant conseillé (%s)" % (remplacer.text if remplacer != null else "absent"))
 		check(ecran.phase.text.begins_with("Mi-temps"), cadre + " : la barre dit la mi-temps (%s)" % ecran.phase.text)
-		# Aucun texte sous 12 px, aucun or.
+		# Aucun texte sous 12 px ; l'or n'est un aplat que pour le bouton principal (texte doré permis).
 		var petits: Array = []
 		var dores: Array = []
 		for noeud: Node in ecran.find_children("*", "Control", true, false):
 			var c := noeud as Control
 			if not c.is_visible_in_tree(): continue
 			if (c is Label or c is Button) and c.get_theme_font_size("font_size") < 12: petits.append(str(c.name))
-			if not ors(c).is_empty(): dores.append(str(c.name))
+			if aplat_or(c) and not (c is BaseButton): dores.append(str(c.name))
 		check(petits.is_empty(), cadre + " : aucun texte sous 12 px " + str(petits.slice(0, 6)))
-		check(dores.is_empty(), cadre + " : aucune couleur or (réservée à Continuer) " + str(dores.slice(0, 6)))
+		check(dores.is_empty(), cadre + " : aucun aplat doré hors bouton principal " + str(dores.slice(0, 6)))
 		# Banc : zone fixe, entière dans l'écran ; barème des notes écrit ; terrain qui remplit sa tuile.
 		var zone_banc := ecran.find_child("MatchBetweenBenchZone", true, false) as Control
 		check(zone_banc != null and zone_banc.is_visible_in_tree() and dans(zone_banc.get_global_rect(), ecran_rect) and not (ecran.find_child("MatchBetweenSquadScroll", true, false) as Node).is_ancestor_of(zone_banc), cadre + " : banc dans une zone fixe, visible en entier")
@@ -182,9 +190,9 @@ func run() -> void:
 		var terrain: Control = ecran.terrain
 		check(terrain.champ().size.x >= terrain.size.x * 0.8, cadre + " : le terrain remplit sa tuile (%d sur %d px)" % [int(terrain.champ().size.x), int(terrain.size.x)])
 		check(terrain.rayon() >= 9.0, cadre + " : pastilles lisibles (rayon %.1f px)" % terrain.rayon())
-		# Un seul ivoire plein à l'écran.
-		var pleins := ecran.find_children("*", "BaseButton", true, false).filter(func(b: Control): return b.is_visible_in_tree() and b.get_theme_stylebox("normal") is StyleBoxFlat and (b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.is_equal_approx(Charte.IVOIRE))
-		check(pleins.size() == 1, cadre + " : un seul ivoire plein (%s)" % str(pleins.map(func(b: Control): return str(b.name))))
+		# Un seul aplat doré à l'écran : le bouton principal.
+		var pleins := ecran.find_children("*", "BaseButton", true, false).filter(func(b: Control): return b.is_visible_in_tree() and aplat_or(b))
+		check(pleins.size() == 1, cadre + " : un seul aplat doré (%s)" % str(pleins.map(func(b: Control): return str(b.name))))
 		# Repères de la domination : type, marqueur, score, sans chevauchement ; clic = journal à ce fait.
 		var frise: Control = ecran.domination
 		check(frise.texte_repere(d[2].reperes[0]) == "E · Joueur Numéro12 38′ 10-7", cadre + " : repère « type · marqueur minute score » (%s)" % frise.texte_repere(d[2].reperes[0]))
@@ -282,8 +290,8 @@ func run() -> void:
 		check(ecran.equipe.disabled and ecran.parametres.disabled and ecran.arret_reprendre.text == "VALIDER LE CHOIX", cadre + " : Équipe et Réglages attendent le choix, « Valider le choix »")
 		var ligne_bloquee := ecran.xv.find_child("MatchBetweenPlayer1", false, false) as Button
 		check(ligne_bloquee != null and ligne_bloquee.disabled and ligne_bloquee.modulate.a < 0.9 and ecran.arret_aide.visible and ecran.arret_aide.text.contains("Mon XV"), cadre + " : lignes de Mon XV bloquées et atténuées, raison écrite")
-		var pleins_arret := ecran.find_children("*", "BaseButton", true, false).filter(func(b: Control): return b.is_visible_in_tree() and b.get_theme_stylebox("normal") is StyleBoxFlat and (b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.is_equal_approx(Charte.IVOIRE))
-		check(pleins_arret.size() == 1 and pleins_arret[0] == ecran.arret_reprendre, cadre + " : en arrêt, le seul ivoire plein est « Valider le choix »")
+		var pleins_arret := ecran.find_children("*", "BaseButton", true, false).filter(func(b: Control): return b.is_visible_in_tree() and aplat_or(b))
+		check(pleins_arret.size() == 1 and pleins_arret[0] == ecran.arret_reprendre, cadre + " : en arrêt, le seul aplat doré est « Valider le choix »")
 		# Options d'arrêt : un « i » vers la fiche complète sur chaque joueur proposé, le clic sur la ligne reste le choix.
 		var options_arret: Array = ecran.arret_options.get_children().filter(func(n: Node): return n is Button)
 		var infos_ok := options_arret.size() == 2

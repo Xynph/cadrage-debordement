@@ -1,6 +1,6 @@
 extends SceneTree
 ## Accueil, direction artistique « Affiche et carnet » (choix de Léo du 19/11/2026), Godot réel + worker réel, carrière Monde :
-## - première fois : « Nouvelle carrière » en ivoire plein, chiffres du monde lus du pack, aucun or ;
+## - première fois : « Nouvelle carrière » en pilule dorée pleine (seul aplat doré), chiffres du monde lus du pack ;
 ## - carrière en cours : « Reprendre la carrière » en or (seule exception hors coque), nom du club, classement et prochain
 ##   match lus du modèle ; classement et prochain match ouvrent leur page ;
 ## - tout ce qui a l'air cliquable agit ; Paramètres, Crédits et Mes carrières sont des écrans (aucune Window ouverte) ;
@@ -62,6 +62,19 @@ func gold_on(control: Control) -> bool:
 			if close(tone, reference) and tone.a > .05: return true
 	return false
 
+## Contrôles dont un fond (normal, survol, pression, focus, désactivé) est un aplat doré : un bouton = une entrée.
+func aplats_or() -> Array[String]:
+	var found: Array[String] = []
+	for control: Node in app.root_content.find_children("*", "Control", true, false):
+		var ctrl := control as Control
+		if ctrl == null or not ctrl.is_visible_in_tree(): continue
+		for key in ["normal", "hover", "pressed", "focus", "disabled", "panel"]:
+			var box := ctrl.get_theme_stylebox(key) as StyleBoxFlat if ctrl.has_theme_stylebox_override(key) else null
+			if box != null and box.bg_color.a > .05 and (close(box.bg_color, Charte.OR) or close(box.bg_color, Charte.OR_VIF)):
+				found.append(str(ctrl.name))
+				break
+	return found
+
 ## Noms des contrôles en or dans l'accueil.
 func golds() -> Array[String]:
 	var found: Array[String] = []
@@ -120,9 +133,9 @@ func first_time() -> void:
 	check(principal != null, "« Nouvelle carrière » présent")
 	if principal != null:
 		var style := principal.get_theme_stylebox("normal") as StyleBoxFlat
-		check(style != null and close(style.bg_color, Charte.IVOIRE), "Première fois : bouton principal ivoire plein")
-		check(style != null and style.corner_radius_top_left == 0, "Bouton principal : rayon 0")
-	check(golds().is_empty(), "Première fois : aucun or (%s)" % ", ".join(golds()))
+		check(style != null and close(style.bg_color, Charte.OR), "Première fois : bouton principal en aplat doré")
+		check(style != null and style.corner_radius_top_left >= 999, "Bouton principal : pilule (rayon 999)")
+	check(aplats_or() == ["EntryNewCareer"], "Première fois : un seul aplat doré, « Nouvelle carrière » (%s)" % ", ".join(aplats_or()))
 	var catalogue: Array = app.pack_manager.creation_catalogue()
 	if not catalogue.is_empty():
 		var monde := node("EntryWorldCount") as Label

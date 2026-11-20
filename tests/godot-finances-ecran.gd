@@ -37,16 +37,17 @@ func open_windows() -> Array[String]:
 	for node: Node in root.find_children("*", "Window", true, false):
 		if (node as Window).visible: found.append(str(node.name))
 	return found
+## Aplats dorés : fonds de bouton ou de panneau (tous états). Le texte, le contour et l'anneau de focus dorés sont permis.
 func gold_used(node: Node) -> int:
 	var count := 0
 	for control: Node in node.find_children("*", "Control", true, false):
-		if control is Label:
-			var color: Color = control.get_theme_color("font_color")
-			if color.is_equal_approx(Charte.OR) or color.is_equal_approx(Charte.OR_VIF): count += 1
-		for style_name: String in ["panel", "normal", "hover", "pressed", "focus"]:
+		for style_name: String in ["panel", "normal", "hover", "pressed", "disabled"]:
 			var style := (control as Control).get_theme_stylebox(style_name) as StyleBoxFlat
-			if style != null and (style.bg_color.is_equal_approx(Charte.OR) or style.bg_color.is_equal_approx(Charte.OR_VIF) or style.border_color.is_equal_approx(Charte.OR)): count += 1
+			if style != null and style.bg_color.a > .05 and (style.bg_color.is_equal_approx(Charte.OR) or style.bg_color.is_equal_approx(Charte.OR_VIF)):
+				count += 1
+				break
 	return count
+
 func ouvrir(tab: String) -> void:
 	app._clear_dialogs()
 	app.management_ui[Finance.KEY] = tab
@@ -85,7 +86,7 @@ func run() -> void:
 		var mot := named("FinanceVerdictWord") as Label
 		check(mot != null and mot.text in ["SAINE", "SOUS TENSION", "EN DANGER", "INDISPONIBLE"], "Verdict écrit en mots sur l'onglet %s : « %s »" % [tab, mot.text if mot != null else ""])
 		check(named("FinanceVerdictSentence") != null and named("FinanceMetric0") != null and named("FinanceMetric1") != null and named("FinanceMetric2") != null, "Verdict, trésorerie, budget de transferts et marge visibles · " + tab)
-		check(gold_used(vue) == 0, "Aucun or dans l'onglet " + tab)
+		check(gold_used(vue) == 0, "Aucun aplat doré dans l'onglet " + tab+" (Continuer le porte seul)")
 		check(open_windows() == fenetres_avant, "Aucune fenêtre ouverte par l'onglet " + tab)
 		var verdict := Finance.verdict(app, app.model.get("finance", {}), U.strategy(app.model).get("finance", {}))
 		check(int(verdict.palier) in [-1, 0, 1, 2], "Palier du verdict dans 0..2 (ou inconnu)")

@@ -17,12 +17,17 @@ const { skipMatchTalk } = require('./scene-match-talks.cjs');
 // un match = `begin_match`, `delegate`, `finish_round`, la semaine suivante s'ouvre d'elle-même. Plus rapide ;
 // le jeu, lui, tourne en cadence journalière (défaut).
 function ouvrir(options = {}) {
-  const { hebdomadaire, ...autres } = options;
+  const { hebdomadaire, simulation, ...autres } = options;
   options = hebdomadaire ? { dailyCalendar: false, mandatoryPress: false, internationalCareer: false, ...autres } : autres;
+  // simulation : mesures et sondes multi-saisons. Écritures différées, journal, sauvegarde mensuelle et aucune sauvegarde
+  // du jeu à chaque commande (le texte complet de la carrière, ~25 Mo, était reconstruit et validé chaque semaine) :
+  // même carrière au bit près (empreinte des clubs identique), un tiers de temps en moins (mesure du 20/11/2026).
+  if (simulation) options = { deferredCommits: true, journal: true, savePolicy: 'mois', ...options };
   const dataDir = options.dataDir || fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-notes-monde-'));
   const { dataDir: ignore, ...reste } = options;
   const bridge = createBridge({ dataDir, seed: 4242, now: 1794315600000, dailyCalendar: true, mandatoryPress: true, internationalCareer: true, matchHighlights: 'dynamique', ...reste });
   let id = 0;
+  if (simulation) bridge.vm.run('save=()=>{}');
   const brut = (command, payload = {}) => bridge.handle({ id: ++id, command, payload });
   const call = (command, payload = {}) => { const r = brut(command, payload); assert.equal(r.ok, true, command + ' : ' + r.error); return r.model; };
   // Rendez-vous du jour réglés, puis décisions de la préparation dues ce jour (reprise.cjs) confiées à Gabi

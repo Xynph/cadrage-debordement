@@ -72,18 +72,17 @@ func composition() -> void:
 func proche_de_l_or(couleur: Color) -> bool:
 	return couleur.a > .05 and (Color(couleur, 1).is_equal_approx(Charte.OR) or Color(couleur, 1).is_equal_approx(Charte.OR_VIF))
 
-## Toutes les couleurs posées par l'écran : textes, boutons, panneaux, traits, ovales et marqueurs dessinés.
+## Aplats dorés posés par l'écran : fonds de bouton ou de panneau, rectangles et ovales dessinés. Le texte doré, les contours
+## et l'anneau de focus restent permis (charte finale) ; Continuer, dans la coque, porte le seul aplat doré.
 func couleurs_or(node: Node) -> Array[String]:
 	var found: Array[String] = []
 	if node is Control:
 		var control := node as Control
-		for nom in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
-			if control.has_theme_color_override(nom) and proche_de_l_or(control.get_theme_color(nom)): found.append(str(control.name) + "/" + nom)
-		for nom in ["panel", "normal", "hover", "pressed", "focus"]:
+		for nom in ["panel", "normal", "hover", "pressed"]:
 			if control.has_theme_stylebox_override(nom):
 				var style := control.get_theme_stylebox(nom) as StyleBoxFlat
-				if style != null and (proche_de_l_or(style.bg_color) or proche_de_l_or(style.border_color)): found.append(str(control.name) + "/" + nom)
-		for propriete in ["fond", "bordure", "couleur", "color"]:
+				if style != null and proche_de_l_or(style.bg_color): found.append(str(control.name) + "/" + nom)
+		for propriete in ["fond", "couleur", "color"]:
 			var valeur: Variant = control.get(propriete)
 			if valeur is Color and proche_de_l_or(valeur): found.append(str(control.name) + "/" + propriete)
 	for child in node.get_children(): found.append_array(couleurs_or(child))
@@ -124,7 +123,7 @@ func run() -> void:
 	check(named("BenchPlayerRows") != null and named("BenchPlayerRows").get_child_count() == 8, "Banc : huit places")
 	var bar: VScrollBar = (app.body_scroll as ScrollContainer).get_v_scroll_bar()
 	check(bar.max_value <= bar.page + 1, "1920 × 1080 : l'écran tient sans défiler (%s / %s)" % [str(bar.max_value), str(bar.page)])
-	check(couleurs_or(page).is_empty(), "Aucune couleur or dans l'écran : " + ", ".join(couleurs_or(page)))
+	check(couleurs_or(page).is_empty(), "Aucun aplat doré dans l'écran (Continuer le porte seul) : " + ", ".join(couleurs_or(page)))
 	# Charte §3 « rayons 0 » : les fonds sont créés sans rayon (C.rayon_nul), plus de passe après coup sur l'écran.
 	var arrondis: Array[String] = []
 	# Nœuds internes du moteur exclus (« _focus » du ScrollContainer : style du thème, cadre non dessiné ici).

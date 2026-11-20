@@ -14,6 +14,16 @@ static func name_for(model: Dictionary, id: String) -> String:
 		if competition.get("id") == id: return str(competition.get("name",fallback))
 	return fallback
 
+# Division d'arrivée d'une montée ou d'une descente : le nom vient des données (pack compris), jamais du code.
+const PROMOTION := {"accession":"elite", "nationale":"accession", "champ":"prem", "jlo-d2":"jlo-d1"}
+const RELEGATION := {"elite":"accession", "accession":"nationale", "prem":"champ", "jlo-d1":"jlo-d2"}
+
+static func movement_lines(model: Dictionary, league_id: String, promoted: bool, relegated: bool) -> Array[String]:
+	var lines: Array[String] = []
+	if promoted: lines.append("Montée en " + name_for(model, PROMOTION[league_id]) if PROMOTION.has(league_id) else "Montée en division supérieure")
+	if relegated: lines.append("Descente en " + name_for(model, RELEGATION[league_id]) if RELEGATION.has(league_id) else "Descente en division inférieure")
+	return lines
+
 static func titles(year: Dictionary) -> Array:
 	# Le lecteur Monde fournit déjà la projection commune des titres.
 	var club_views: GDScript = Club
@@ -39,19 +49,30 @@ static func japan_barrages(year: Dictionary, club_id: int = -1) -> Array:
 		results.append({"pair":pair,"legs":matches,"outcome":outcomes[index]})
 	return results
 
+## Nom publié par les données de la compétition (identités du modèle) ; vide si la donnée manque : aucun nom figé dans le code.
+static func published_name(model: Dictionary, id: String) -> String:
+	return str(model.get("meta", {}).get("competitionIdentities", {}).get(id, {}).get("name", "")).strip_edges()
+
+## Lignes d'un barrage japonais. Les noms des compétitions viennent des données ; sans nom publié, la ligne qui en dépend est omise.
 static func japan_lines(app: Control, barrage: Dictionary) -> Array[String]:
 	var pair: Dictionary = barrage.pair
 	var outcome: Dictionary = barrage.outcome
-	var lines: Array[String] = ["Barrage D1 / D2 · %s – %s" % [Club._archive_club(app,pair.upperId),Club._archive_club(app,pair.lowerId)]]
+	var lines: Array[String] = []
+	var title := published_name(app.model, "jlo-d1-d2")
+	if not title.is_empty():
+		lines.append("%s · %s – %s" % [title,Club._archive_club(app,pair.upperId),Club._archive_club(app,pair.lowerId)])
 	for i in barrage.legs.size():
 		var leg: Dictionary = barrage.legs[i]
 		lines.append("Manche %d · %s %d – %d %s" % [i+1,Club._archive_club(app,leg.pair[0]),int(leg.score[0]),int(leg.score[1]),Club._archive_club(app,leg.pair[1])])
-	var upper := Club._archive_club(app,outcome.upperNext)
-	var lower := Club._archive_club(app,outcome.lowerNext)
-	if outcome.promoted:
-		lines.append("Montée en Division 1 · %s  /  Descente en Division 2 · %s" % [upper,lower])
-	else:
-		lines.append("Maintien en Division 1 · %s  /  Maintien en Division 2 · %s" % [upper,lower])
+	var upper_name := published_name(app.model, "jlo-d1")
+	var lower_name := published_name(app.model, "jlo-d2")
+	if not upper_name.is_empty() and not lower_name.is_empty():
+		var upper := Club._archive_club(app,outcome.upperNext)
+		var lower := Club._archive_club(app,outcome.lowerNext)
+		if outcome.promoted:
+			lines.append("Montée · %s · %s  /  Descente · %s · %s" % [upper_name,upper,lower_name,lower])
+		else:
+			lines.append("Maintien · %s · %s  /  Maintien · %s · %s" % [upper_name,upper,lower_name,lower])
 	return lines
 
 static func club_seasons(model: Dictionary, club_id: int) -> Array:
