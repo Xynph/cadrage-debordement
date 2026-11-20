@@ -219,10 +219,11 @@ module.exports=function clubDirections(T,N){
  // Score de chaque stratégie : situation réelle × traits de la direction.
  function scores(x,d){
   const p=d.president.traits,ds=d.director.traits,co=d.coach.traits;
-  // Détresse : dette ou masse nettement au-dessus de sa limite (impératif), sinon caisse courte au regard de la masse.
+  // Détresse : dette ou masse nettement au-dessus de sa limite (impératif), masse au-dessus de plus de 1 % (un écart de quelques
+  // euros, arrondi de la limite hebdomadaire, ne fait plus vendre : mesure du 20/11/2026), sinon caisse courte.
   const weeks=x.cash/Math.max(1,x.payroll);
   // Le président attend des ventes (president-reprise.cjs) : la direction assainit ses comptes.
-  const distress=x.president||x.debt>0||x.payroll>x.limit*1.03?100:x.payroll>x.limit?35+p.prudence*.3:weeks<6?60+p.prudence*.25:x.cashRatio<.5?20+p.prudence*.3:0;
+  const distress=x.president||x.debt>0||x.payroll>x.limit*1.03?100:x.payroll>x.limit*1.01?35+p.prudence*.3:weeks<6?60+p.prudence*.25:x.cashRatio<.5?20+p.prudence*.3:0;
   return {
    vente:distress,
    vedettes:x.cash<1500000||x.cashRatio<1.1&&x.repGap<2?0:p.ambition*.55+clamp(x.cashRatio-1,0,1.5)*35+clamp(x.room,0,.3)*80+clamp(x.repGap,-6,8)*2-ds.formation*.3-(x.gap>3&&p.patience<40?12:0),
