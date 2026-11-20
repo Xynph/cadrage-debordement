@@ -80,11 +80,15 @@ static func _titre(app: Control, defi: Dictionary) -> String:
 	return titre if nom.is_empty() else titre.replace("Nationale", nom)
 
 ## Bandeau des défis (rien tant que le moteur n'a pas répondu, ou s'il n'en propose aucun).
-static func build(app: Control, parent: Node, catalogue: Array) -> void:
+static func build(app: Control, parent: Node, catalogue: Array, en_ligne: bool = false) -> void:
 	var defis := liste(app)
 	demander(app)
 	if defis.is_empty(): return
 	var actuel: Variant = app.management_ui.get(CHOIX, {})
+	# Écran 02 (DA du 19/11/2026) : une ligne de liens sous les championnats, la grille garde la place.
+	if en_ligne:
+		_ligne(app, parent, catalogue, defis, actuel)
+		return
 	var cadre := C.v(6)
 	cadre.name = "CreationDefis"
 	parent.add_child(cadre)
@@ -153,3 +157,49 @@ static func build(app: Control, parent: Node, catalogue: Array) -> void:
 				puce.add_theme_color_override("font_hover_color", C.IVORY)
 				puce.pressed.connect(choisir.bind(app, str(defi.id), autre))
 				autres.add_child(puce)
+
+## Ligne des défis (écran 02) : « DÉFIS DE DÉPART » puis un lien par défi (titre, club, difficulté) ; le défi retenu
+## porte « ✓ » et propose à la suite ses autres clubs. Un clic choisit le club et le défi (comme les cartes).
+static func _ligne(app: Control, parent: Node, catalogue: Array, defis: Array, actuel: Variant) -> void:
+	var rangee := HFlowContainer.new()
+	rangee.name = "CreationDefis"
+	rangee.add_theme_constant_override("h_separation", C.px(18))
+	parent.add_child(rangee)
+	var tete := C.label("DÉFIS DE DÉPART", 16, C.MUTED, true, 600)
+	tete.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	tete.tooltip_text = "Une histoire toute prête : choisis-en une, ou prends le club de ton choix."
+	tete.mouse_filter = Control.MOUSE_FILTER_PASS
+	rangee.add_child(tete)
+	for defi: Dictionary in defis:
+		var offres: Array = (defi.get("clubs", []) as Array).filter(func(o: Dictionary) -> bool: return not _club(catalogue, int(o.club)).is_empty())
+		if offres.is_empty(): continue
+		var choisi := -1
+		if actuel is Dictionary and str(actuel.get("id", "")) == str(defi.id): choisi = int(actuel.get("club", -1))
+		var principal: Dictionary = offres[0]
+		for offre: Dictionary in offres:
+			if int(offre.club) == choisi: principal = offre
+		var club := _club(catalogue, int(principal.club))
+		var actif := choisi == int(principal.club)
+		var lien := Button.new()
+		lien.name = "CreationDefi_" + str(defi.id)
+		lien.text = "%s%s · %s %s" % ["✓ " if actif else "", _titre(app, defi), G.club_name(club), etoiles(int(principal.difficulte)).replace("☆", "")]
+		lien.tooltip_text = "%s\n%s\n%s · %s" % [_titre(app, defi), defi.accroche, principal.niveau, principal.raison]
+		lien.disabled = app.waiting and app.last_command == "new_career"
+		C.style_bouton_lien(lien, 17, actif)
+		lien.add_theme_font_override("font", C.BODY)
+		lien.pressed.connect(choisir.bind(app, str(defi.id), club))
+		rangee.add_child(lien)
+		if not actif or offres.size() < 2: continue
+		for offre: Dictionary in offres:
+			if offre == principal: continue
+			var autre := _club(catalogue, int(offre.club))
+			var puce := Button.new()
+			puce.name = "CreationDefiAutre_%s_%d" % [defi.id, int(offre.club)]
+			puce.text = "ou %s" % G.club_name(autre)
+			puce.tooltip_text = "%s · %s · %s" % [G.club_name(autre), offre.niveau, offre.raison]
+			puce.disabled = lien.disabled
+			C.style_bouton_lien(puce, 16)
+			puce.add_theme_font_override("font", C.BODY)
+			puce.add_theme_color_override("font_color", C.MUTED)
+			puce.pressed.connect(choisir.bind(app, str(defi.id), autre))
+			rangee.add_child(puce)
