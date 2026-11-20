@@ -43,6 +43,15 @@ var gel := false
 var calme := false
 ## Étiquette du fait en cours en haut à gauche du terrain (l'entracte la remplace par son fil).
 var legende := true
+## Le terrain remplit son cadre (longueur étirée, bornée) au lieu de garder l'échelle exacte (entracte en tuiles).
+var remplir := false
+## Pastilles dessinées à la dernière image (clé « camp:poste » → centre) et leur rayon : survol et clic.
+var centres_dessin: Dictionary = {}
+var rayon_dessin := 0.0
+var _survolee := ""
+## Survol d'une pastille (clé « camp:poste », vide en sortant) et clic sur elle.
+signal pastille_survolee(cle: String)
+signal pastille_choisie(cle: String)
 ## Taille des pastilles (1 : terrain plein écran ; plus petit sur le terrain de l'entracte en tuiles).
 var taille_pastilles := 1.0
 ## Zone de jeu et repères du moteur (essais, pénalités, cartons), pour le fond.
@@ -354,6 +363,39 @@ func _vivre(delta: float) -> void:
 		places[cle] = (places.get(cle, ancre) as Vector2).lerp(ancre, clampf(delta * 2.4, 0.0, 1.0))
 	if not _regroupement.is_empty(): hauteur = 0.0
 
+# --- Survol et clic des pastilles -------------------------------------------------
+
+## Pastille sous un point du terrain (clé « camp:poste »), vide s'il n'y en a pas.
+func pastille_sous(point_local: Vector2) -> String:
+	var meilleure := ""
+	var proche := rayon_dessin * 1.15
+	for cle: String in centres_dessin:
+		var d := (centres_dessin[cle] as Vector2).distance_to(point_local)
+		if d <= proche:
+			proche = d
+			meilleure = cle
+	return meilleure
+
+func _gui_input(event: InputEvent) -> void:
+	var mouvement := event as InputEventMouseMotion
+	if mouvement != null:
+		var cle := pastille_sous(mouvement.position)
+		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if not cle.is_empty() else Control.CURSOR_ARROW
+		if cle != _survolee:
+			_survolee = cle
+			pastille_survolee.emit(cle)
+		return
+	var clic := event as InputEventMouseButton
+	if clic != null and clic.pressed and clic.button_index == MOUSE_BUTTON_LEFT:
+		var cle := pastille_sous(clic.position)
+		if not cle.is_empty():
+			pastille_choisie.emit(cle)
+			accept_event()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT and not _survolee.is_empty():
+		_survolee = ""
+		pastille_survolee.emit("")
 # --- Dessin -------------------------------------------------------------------
 
 func champ() -> Rect2:
@@ -364,6 +406,12 @@ func champ() -> Rect2:
 	libre.y *= LARGEUR / (LARGEUR + 4.0)
 	var echelle := minf(libre.x / (100.0 + 2.0 * EN_BUT), libre.y / LARGEUR)
 	var taille := Vector2((100.0 + 2.0 * EN_BUT) * echelle, LARGEUR * echelle)
+	# Entracte : le terrain remplit sa tuile ; la longueur s'étire au plus de 40 % au-delà de l'échelle (lecture du jeu,
+	# pas une mesure exacte), la hauteur suit la tuile.
+	if remplir:
+		var ey := libre.y / LARGEUR
+		var ex := minf(libre.x / (100.0 + 2.0 * EN_BUT), ey * 1.4)
+		taille = Vector2((100.0 + 2.0 * EN_BUT) * ex, LARGEUR * ey)
 	return Rect2((size - taille) * 0.5, taille)
 
 func echelle() -> float:
@@ -372,7 +420,8 @@ func echelle() -> float:
 func point(x: float, y: float) -> Vector2:
 	var c := champ()
 	var e := c.size.y / LARGEUR
-	return c.position + Vector2((EN_BUT + clampf(x, -EN_BUT, 100.0 + EN_BUT)) * e, clampf(y, -2.0, LARGEUR + 2.0) * e)
+	var ex := c.size.x / (100.0 + 2.0 * EN_BUT)
+	return c.position + Vector2((EN_BUT + clampf(x, -EN_BUT, 100.0 + EN_BUT)) * ex, clampf(y, -2.0, LARGEUR + 2.0) * e)
 
 ## Rayon des pastilles : lisible en 720p (8 px au moins), proportionné au terrain.
 func rayon() -> float:
@@ -392,7 +441,7 @@ func _draw() -> void:
 	var zone: Dictionary = direct.get("zone", {})
 	if not zone.is_empty():
 		var zx := clampf(floorf(float(zone.get("x", 50.0)) / 10.0) * 10.0, 0.0, 90.0)
-		draw_rect(Rect2(point(zx, 0), Vector2(10.0 * e, c.size.y)), Color(Charte.IVOIRE, 0.04))
+		draw_rect(Rect2(point(zx, 0), Vector2(10.0 * c.size.x / (100.0 + 2.0 * EN_BUT), c.size.y)), Color(Charte.IVOIRE, 0.04))
 	draw_rect(c, ligne, false, fine)
 	for metre in [0.0, 22.0, 50.0, 78.0, 100.0]:
 		draw_line(point(metre, 0), point(metre, LARGEUR), ligne, fine)
@@ -478,6 +527,8 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 	var ordre: Array = places.keys()
 	ordre.sort_custom(func(a: String, b: String): return (1 if a.begins_with("%d:" % possession) else 0) < (1 if b.begins_with("%d:" % possession) else 0))
 	var centres := _ecartees(ordre, r, porteur)
+	centres_dessin = centres
+	rayon_dessin = r
 	var taille_numero := roundi(clampf(r * 1.2, 12.0, 38.0))
 	for cle: String in ordre:
 		var cote := int(cle.get_slice(":", 0))

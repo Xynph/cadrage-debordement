@@ -275,6 +275,9 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	# Fiche joueur lue pendant l'entracte : le match se met en pause, comme pour la fenêtre Équipe.
 	between.fiche_ouverte.connect(func(ouverte: bool): tiroir_ouvert() if ouverte else tiroir_ferme())
 	between.couvert = func() -> bool: return is_instance_valid(view.get("equipe")) and view.equipe.visible
+	# Repère de la domination, dernier fait, chiffre clé : le journal ou les statistiques ouverts à la bonne ligne.
+	between.journal_demande.connect(ouvrir_journal_a)
+	between.stats_demandees.connect(ouvrir_stats_a)
 	between.camera_demandee.connect(func(mode: String): view.choisir_camera(mode))
 	# Une seule barre de commandes : celle de l'écran intermédiaire, pendant qu'il est affiché.
 	between.visibility_changed.connect(_barre_unique)
@@ -288,6 +291,42 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.terrain.cadence = float(HORLOGES[horloge]) / maxf(vitesse, 0.01)
 	if preferences != null: between.terrain.calme = bool(preferences.data.get("reduced_motion", false))
 	between.terrain.recaler(-1)
+
+## Journal du match (volet de la vue) ouvert au fait `i` de `live.events` : sa ligne est amenée à l'écran et prend
+## le focus (Entrée la relit). Sans la ligne (filtre du journal), le journal s'ouvre seulement.
+func ouvrir_journal_a(i: int) -> void:
+	if view.get("journal") == null: return
+	if str(view.drawer_tab) != "Journal" or not view.drawer.visible: view._toggle_drawer("Journal")
+	for k in 3: await get_tree().process_frame
+	var journal: Node = view.journal
+	var evenements: Array = journal.get("_events") if journal.get("_events") is Array else []
+	if i < 0 or i >= evenements.size(): return
+	var rang: int = (journal.visible_events as Array).find(evenements[i])
+	var ligne: Control = journal.rows.get_node_or_null("JournalEvent%d" % rang) if rang >= 0 else null
+	if ligne == null: return
+	journal.set("_following", false)
+	journal.scroll.ensure_control_visible(ligne)
+	var lien: Control = ligne.get_node_or_null("JournalActionLink")
+	if lien != null: lien.grab_focus()
+
+## Statistiques complètes (volet de la vue) ouvertes à la ligne du chiffre clé cliqué (libellé du moteur) : la ligne
+## est amenée à l'écran et surlignée.
+func ouvrir_stats_a(libelle: String) -> void:
+	if view.get("drawer_body") == null: return
+	if str(view.drawer_tab) != "Stats" or not view.drawer.visible: view._toggle_drawer("Stats")
+	for k in 3: await get_tree().process_frame
+	var mot := libelle.strip_edges().split(" ", false)[0].to_lower() if not libelle.strip_edges().is_empty() else ""
+	if mot.is_empty(): return
+	var corps: Control = view.drawer_body
+	for noeud: Node in corps.get_children():
+		if not noeud is Label or not (noeud as Label).text.to_lower().contains(mot): continue
+		var surligne := StyleBoxFlat.new()
+		surligne.bg_color = preload("res://ui/charte.gd").PANNEAU_3
+		(noeud as Label).add_theme_stylebox_override("normal", surligne)
+		var defile := corps.get_parent()
+		while defile != null and not defile is ScrollContainer: defile = defile.get_parent()
+		if defile != null: (defile as ScrollContainer).ensure_control_visible(noeud)
+		return
 
 ## Une seule barre de commandes, la même en 3D et pendant l'entracte : la bande sous le score
 ## (Équipe, Paramètres, Plus) ; le match fini rend la barre du bas (« Valider la journée »).

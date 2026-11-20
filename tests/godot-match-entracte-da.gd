@@ -68,7 +68,7 @@ func donnees() -> Array:
 	for m in 40: minutes.append(int(sin(m * 0.4) * 60.0))
 	var direct := {"camp": 0, "score": [10, 7], "borne": 0, "fil": [{"i": 3, "horloge": "38′", "kind": "try", "equipe": 0, "texte": "AFN · Essai de Joueur Numéro12."}], "tableau": tableau,
 		"zone22": {"entrees": [5, 3], "points": [10, 7], "secondes": [150, 40]}, "domination": {"minutes": minutes, "miTemps": null},
-		"reperes": [{"i": 3, "kind": "try", "equipe": 0, "horloge": "38′", "minute": 38, "x": 95}], "notes": notes, "feuille": feuille, "possession": 0, "zone": {"x": 60},
+		"reperes": [{"i": 3, "kind": "try", "equipe": 0, "horloge": "38′", "minute": 38, "x": 95, "nom": "Joueur Numéro12", "score": [10, 7]}, {"i": 2, "kind": "goal", "equipe": 1, "horloge": "12′", "minute": 12, "x": 20, "score": [0, 3]}, {"i": 1, "kind": "goal", "equipe": 1, "horloge": "13′", "minute": 13, "x": 20, "score": [0, 6]}], "notes": notes, "feuille": feuille, "possession": 0, "zone": {"x": 60},
 		"niveaux": [{"id": "aucun", "label": "Aucun"}, {"id": "resume", "label": "Résumé"}, {"id": "cles", "label": "Clés"}, {"id": "etendus", "label": "Étendus"}, {"id": "dynamique", "label": "Dynamique"}, {"id": "integral", "label": "Intégral"}],
 		"niveau": "dynamique", "echantillon": {"minutes": 40, "suffisant": true, "seuil": 10},
 		"journee": {"minute": 40, "classement": [{"rang": 1, "abbr": "HCX", "points": 9, "clubId": 1}, {"rang": 2, "abbr": "AFN", "points": 8, "clubId": 102, "nous": true}],
@@ -112,7 +112,7 @@ func run() -> void:
 		vue.add_child(ecran)
 		for i in 4: await process_frame
 		signaux.clear()
-		for nom in ["tiroir_demande", "joueur_choisi", "reprise_demandee", "pause_demandee", "horloge_choisie", "niveau_choisi", "delegation_demandee", "camera_demandee", "consigne_bonus", "fiche_ouverte"]:
+		for nom in ["tiroir_demande", "joueur_choisi", "reprise_demandee", "pause_demandee", "horloge_choisie", "niveau_choisi", "delegation_demandee", "camera_demandee", "consigne_bonus", "fiche_ouverte", "journal_demande", "stats_demandees"]:
 			var signal_nom: String = nom
 			ecran.connect(signal_nom, func(a = null, _b = null): signaux.append([signal_nom, a]))
 		var d := donnees()
@@ -147,7 +147,7 @@ func run() -> void:
 		var textes_reussis: Array = reussis.find_children("*", "Label", true, false).map(func(l: Label): return l.text) if reussis != null else []
 		check(textes_reussis.has("92 %") and textes_reussis.has("83 %"), cadre + " : plaquages réussis = réussis / tentés " + str(textes_reussis))
 		var remplacer := ecran.find_child("MatchBetweenReplace", true, false) as Button
-		check(remplacer != null and remplacer.text == "Remplacer le 7 par Banc20", cadre + " : Gabi propose le remplaçant conseillé (%s)" % (remplacer.text if remplacer != null else "absent"))
+		check(remplacer != null and remplacer.text == "Remplacer le 7 par Banc20 →", cadre + " : Gabi propose le remplaçant conseillé (%s)" % (remplacer.text if remplacer != null else "absent"))
 		check(ecran.phase.text.begins_with("Mi-temps"), cadre + " : la barre dit la mi-temps (%s)" % ecran.phase.text)
 		# Aucun texte sous 12 px, aucun or.
 		var petits: Array = []
@@ -159,7 +159,43 @@ func run() -> void:
 			if not ors(c).is_empty(): dores.append(str(c.name))
 		check(petits.is_empty(), cadre + " : aucun texte sous 12 px " + str(petits.slice(0, 6)))
 		check(dores.is_empty(), cadre + " : aucune couleur or (réservée à Continuer) " + str(dores.slice(0, 6)))
-		# Noms : lien vers la fiche, mini-fiche au survol.
+		# Banc : zone fixe, entière dans l'écran ; barème des notes écrit ; terrain qui remplit sa tuile.
+		var zone_banc := ecran.find_child("MatchBetweenBenchZone", true, false) as Control
+		check(zone_banc != null and zone_banc.is_visible_in_tree() and dans(zone_banc.get_global_rect(), ecran_rect) and not (ecran.find_child("MatchBetweenSquadScroll", true, false) as Node).is_ancestor_of(zone_banc), cadre + " : banc dans une zone fixe, visible en entier")
+		check(banc.all(func(b: Control): return zone_banc.get_global_rect().grow(1.0).encloses(b.get_global_rect())), cadre + " : les huit remplaçants à l'écran")
+		var legende := ecran.find_child("MatchBetweenNotesLegend", true, false) as Control
+		check(legende != null and legende.is_visible_in_tree() and legende.get_child_count() == 6, cadre + " : barème des notes écrit sous Mon XV")
+		check(not Charte.ATTRIBUT_85.is_equal_approx(Charte.ATTRIBUT_65) and not Between._teinte_note(7.8).is_equal_approx(Charte.V) and not Between._teinte_note(7.2).is_equal_approx(Charte.V), cadre + " : deux verts distincts, jamais le vert de la victoire")
+		var terrain: Control = ecran.terrain
+		check(terrain.champ().size.x >= terrain.size.x * 0.8, cadre + " : le terrain remplit sa tuile (%d sur %d px)" % [int(terrain.champ().size.x), int(terrain.size.x)])
+		check(terrain.rayon() >= 9.0, cadre + " : pastilles lisibles (rayon %.1f px)" % terrain.rayon())
+		# Un seul ivoire plein à l'écran.
+		var pleins := ecran.find_children("*", "BaseButton", true, false).filter(func(b: Control): return b.is_visible_in_tree() and b.get_theme_stylebox("normal") is StyleBoxFlat and (b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.is_equal_approx(Charte.IVOIRE))
+		check(pleins.size() == 1, cadre + " : un seul ivoire plein (%s)" % str(pleins.map(func(b: Control): return str(b.name))))
+		# Repères de la domination : type, marqueur, score, sans chevauchement ; clic = journal à ce fait.
+		var frise: Control = ecran.domination
+		check(frise.texte_repere(d[2].reperes[0]) == "E · Joueur Numéro12 38′ 10-7", cadre + " : repère « type · marqueur minute score » (%s)" % frise.texte_repere(d[2].reperes[0]))
+		var rects: Array = frise._etiquettes.map(func(e: Array): return e[0])
+		var chevauchent := false
+		for a in rects.size():
+			for b in range(a + 1, rects.size()): chevauchent = chevauchent or (rects[a] as Rect2).intersects(rects[b])
+		check(rects.size() == 3 and not chevauchent, cadre + " : trois repères dessinés, sans chevauchement")
+		signaux.clear()
+		var clic := InputEventMouseButton.new()
+		clic.button_index = MOUSE_BUTTON_LEFT
+		clic.pressed = true
+		clic.position = (rects[0] as Rect2).get_center() if not rects.is_empty() else Vector2.ZERO
+		frise._gui_input(clic)
+		check(signaux.size() == 1 and signaux[0][0] == "journal_demande", cadre + " : clic sur un repère = le journal à ce fait " + str(signaux))
+		# Pastille du terrain : clic = le joueur choisi dans Mon XV.
+		ecran._choix_pastille("0:2")
+		await process_frame
+		check(root.gui_get_focus_owner() != null and str(root.gui_get_focus_owner().name) == "MatchBetweenPlayer3", cadre + " : clic sur la pastille 3 = le 3 choisi dans Mon XV")
+		# Plus : en entracte 2D, les caméras sont grisées et dites « en 3D seulement ».
+		var menu_plus := (ecran.find_child("MatchBetweenMore", true, false) as MenuButton).get_popup()
+		menu_plus.about_to_popup.emit()
+		var cams: Array = range(menu_plus.item_count).filter(func(k: int): return menu_plus.get_item_metadata(k) is String)
+		check(cams.size() == 3 and cams.all(func(k: int): return menu_plus.is_item_disabled(k) and menu_plus.get_item_text(k).ends_with("en 3D seulement") and menu_plus.is_item_radio_checkable(k)), cadre + " : caméras grisées en 2D, cochables")		# Noms : lien vers la fiche, mini-fiche au survol.
 		var noms: Array = ecran.find_children("MatchBetweenPlayerName_*", "Button", true, false)
 		var nom1 := ecran.find_child("MatchBetweenPlayerName_p1", true, false) as Button
 		check(nom1 != null and nom1.text == "Joueur Numéro1" and nom1.size.x >= nom1.get_theme_font("font").get_string_size(nom1.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom1.get_theme_font_size("font_size")).x, cadre + " : le nom se lit en entier (%s)" % (str(nom1.size) if nom1 != null else "absent"))
@@ -214,6 +250,10 @@ func run() -> void:
 		var arret := ecran.find_child("MatchBetweenStop", true, false) as Control
 		check(arret.is_visible_in_tree() and not (ecran.find_child("MatchBetweenDuel", true, false) as Control).is_visible_in_tree() and dans(arret.get_global_rect(), ecran_rect) and arret.get_global_rect().position.x >= centre.end.x - 1.0, cadre + " : panneau d'arrêt dans la colonne de droite")
 		check(ecran.equipe.disabled and ecran.parametres.disabled and ecran.arret_reprendre.text == "VALIDER LE CHOIX", cadre + " : Équipe et Réglages attendent le choix, « Valider le choix »")
+		var ligne_bloquee := ecran.xv.find_child("MatchBetweenPlayer1", false, false) as Button
+		check(ligne_bloquee != null and ligne_bloquee.disabled and ligne_bloquee.modulate.a < 0.9 and ecran.arret_aide.visible and ecran.arret_aide.text.contains("Mon XV"), cadre + " : lignes de Mon XV bloquées et atténuées, raison écrite")
+		var pleins_arret := ecran.find_children("*", "BaseButton", true, false).filter(func(b: Control): return b.is_visible_in_tree() and b.get_theme_stylebox("normal") is StyleBoxFlat and (b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.is_equal_approx(Charte.IVOIRE))
+		check(pleins_arret.size() == 1 and pleins_arret[0] == ecran.arret_reprendre, cadre + " : en arrêt, le seul ivoire plein est « Valider le choix »")
 		ecran.arret_reprendre.pressed.emit()
 		for i in 2: await process_frame
 		var envois: Array = app.get("envois")

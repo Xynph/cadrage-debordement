@@ -137,7 +137,7 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(between.chiffres.get_child_count() >= 2 and between.fil.get_child_count() >= 1, label + " : fil et chiffres remplis")
 	# Mise à l'échelle : textes à l'échelle de la fenêtre, jamais sous 12 px.
 	var density: float = between.densite_pour(Vector2(size))
-	var figure: Label = between.chiffres.get_child(0).get_child(0)
+	var figure: Label = between.chiffres.get_child(0).find_children("*", "Label", true, false)[0]
 	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == maxi(12, roundi(15 * density)), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
 	check(figure.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") == maxi(12, roundi(22 * density)), label + " : texte lisible")
 	# Les commandes communes sont dans la bande sous le score (la même qu'en 3D).
@@ -1405,7 +1405,7 @@ func terrain2d(view: Control) -> void:
 		var energie: Array = lignes_xv[poste].find_children("*", "Control", true, false).filter(func(c: Control): return c.get("valeur") != null)
 		var note := float(direct.get("notes", {}).get(str(joueur.id), {}).get("note", 6.5))
 		var plaq := str(int(feuille.get("joueurs", {}).get(str(joueur.id), {}).get("plaquages", 0)))
-		if nom_bouton.size() == 1 and nom_bouton[0].text == str(joueur.name) and ("%.1f" % note).replace(".", ",") in textes and plaq in textes and not energie.is_empty() and is_equal_approx(float(energie[0].valeur), float(joueur.condition)): conformes += 1
+		if nom_bouton.size() == 1 and str(nom_bouton[0].get_meta("nom_entier", nom_bouton[0].text)) == str(joueur.name) and ("%.1f" % note).replace(".", ",") in textes and plaq in textes and not energie.is_empty() and is_equal_approx(float(energie[0].valeur), float(joueur.condition)): conformes += 1
 	check(conformes == lineup.size(), "Mon XV : nom (lien vers la fiche), note, plaquages et énergie du moteur pour chaque joueur (%d/%d)" % [conformes, lineup.size()])
 	var alertes_attendues := lineup.filter(func(j: Variant): return j is Dictionary and (int(j.get("injury", 0)) > 0 or float(j.get("condition", 100)) < between.FATIGUE)).size()
 	check(between.alertes_xv.size() >= alertes_attendues, "Alertes de fatigue et de blessure reprises (%d pour %d)" % [between.alertes_xv.size(), alertes_attendues])
