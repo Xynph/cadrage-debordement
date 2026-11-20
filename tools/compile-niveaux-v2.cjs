@@ -152,7 +152,9 @@ function collecteV3(niveauxDir, sources) {
     const base = intl.get(r.id);
     if (!base) continue;
     if (int(r.intl_caps_total) !== null) base.intl_caps_total = r.intl_caps_total;
-    if (int(r.convocations_24m) !== null) base.convocations_24m = r.convocations_24m;
+    // Convocations comptées sur les groupes du Tournoi, du Rugby Championship, de la Pacific Nations Cup et sur les
+    // feuilles des tests : la Géorgie (Rugby Europe, groupes non publiés) serait sous-comptée, elle garde l'ancien relevé.
+    if (int(r.convocations_24m) !== null && tier(base.intl_nation) && !/^g[ée]orgi/i.test(base.intl_nation)) base.convocations_24m = r.convocations_24m;
   }
   if (fs.existsSync(path.join(dir, 'u20.csv'))) for (const r of read('u20.csv')) if (r.id && r.u20_nation) u20.set(r.id, r);
   return { statut, intl, u20 };
