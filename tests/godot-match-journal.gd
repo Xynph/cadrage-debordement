@@ -78,7 +78,8 @@ func keyboard(control: Control) -> void:
 	check(control.has_focus(), "Focus clavier : " + str(control.name))
 	await key(KEY_ENTER)
 func labels(node: Node) -> String:
-	var text: String = node.text + "\n" if node is Label else ""
+	# Faits du tiroir du direct : texte riche (noms de nos joueurs liés) ; texte affiché sans balises.
+	var text: String = node.text + "\n" if node is Label else ((node as RichTextLabel).get_parsed_text() + "\n" if node is RichTextLabel else "")
 	for child in node.get_children(): text += labels(child)
 	return text
 func choose(index: int) -> void:
@@ -138,20 +139,40 @@ func cases() -> void:
 	check(not disk_before.is_empty(), "Profil réel présent pour comparer octets et RNG")
 	var source_before := JSON.stringify(app.model.live)
 	await keyboard(journal.review)
-	var review := journal.find_child("MatchActionReview", true, false) as AcceptDialog
-	check(review != null and review.visible, "La relecture des actions s’ouvre au clavier depuis le vrai Journal")
-	if review != null:
-		check(review.events == live.events, "La relecture conserve l’instantané exact des faits filtrés")
-		await keyboard(review.get_ok_button())
-		await settle()
-		check(not is_instance_valid(review), "La relecture se ferme au clavier sans quitter le match")
+	var surface := match_surface()
+	if surface.has_method("ouvrir_relecture"):
+		# Direct (écran 13) : la relecture est une page du direct avec « ← Retour au direct », jamais une fenêtre.
+		while app.waiting: await process_frame
+		var page: Control = surface.get("page")
+		var contenu: Control = page.find_child("ActionReviewPage", true, false) if page != null else null
+		check(contenu != null and page.visible and journal.find_child("MatchActionReview", true, false) == null, "La relecture des actions s’ouvre au clavier depuis le vrai Journal, dans une page du direct")
+		if contenu != null:
+			check(contenu.get_meta("relecture").events == live.events, "La relecture conserve l’instantané exact des faits filtrés")
+			await keyboard(page.find_child("MatchPageBack", true, false))
+			while app.waiting: await process_frame
+			await settle()
+			check(not page.visible and match_surface() == surface, "La relecture se ferme au clavier sans quitter le match")
+		if not await open_journal(): return
+	else:
+		var review := journal.find_child("MatchActionReview", true, false) as AcceptDialog
+		check(review != null and review.visible, "La relecture des actions s’ouvre au clavier depuis le vrai Journal")
+		if review != null:
+			check(review.events == live.events, "La relecture conserve l’instantané exact des faits filtrés")
+			await keyboard(review.get_ok_button())
+			await settle()
+			check(not is_instance_valid(review), "La relecture se ferme au clavier sans quitter le match")
 	for resolution in resolutions():
 		root.size = resolution
 		DisplayServer.window_set_size(resolution)
 		await settle()
+		# Contraste mesuré sur le vrai fond du champ (carnet clair hors du direct, panneau de la Charte dans le direct).
+		var champ := journal.search.get_theme_stylebox("normal") as StyleBoxFlat
+		var fond: Color = champ.bg_color if champ != null else Color("faf6ed")
 		for color_key in ["font_placeholder_color", "font_color"]:
 			var ink: Color = journal.search.get_theme_color(color_key)
-			check((Color("faf6ed").srgb_to_linear().get_luminance() + 0.05) / (ink.srgb_to_linear().get_luminance() + 0.05) >= 4.5, "Recherche : contraste du texte supérieur à 4,5:1")
+			var clair := maxf(fond.srgb_to_linear().get_luminance(), ink.srgb_to_linear().get_luminance())
+			var sombre := minf(fond.srgb_to_linear().get_luminance(), ink.srgb_to_linear().get_luminance())
+			check((clair + 0.05) / (sombre + 0.05) >= 4.5, "Recherche : contraste du texte supérieur à 4,5:1")
 		check(journal.search.get_global_rect().end.x <= app.size.x and journal.search.get_global_rect().position.x >= 0 and journal.scroll.size.y > 80 and journal.scroll.get_global_rect().end.y <= app.size.y, "Journal et recherche visibles à " + str(resolution))
 		check(button_text("Pause") != null or button_text("Reprendre") != null, "Pause toujours accessible")
 		check(tactics_button() != null, "Fenêtre Équipe (consignes et banc) accessible")

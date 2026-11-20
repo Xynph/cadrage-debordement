@@ -36,6 +36,19 @@ var _revision := 0
 var _started := false
 var _ui_state: Dictionary = {}
 var _event_font_floor := MIN_EVENT_PIXELS
+# Tiroir du direct (écran 13, DA du 19/11/2026) : jetons de la Charte (ivoire sur panneau, aucun or, aucun cadre
+# complet, rayons 0), relecture dans une page du direct (`relire`), noms de nos joueurs liés (`lier` rend le BBCode
+# avec [url=id], `sur_joueur` ouvre la fiche, `survol_joueur` la mini-fiche). Hors du direct : style carnet et fenêtre.
+var charte := false
+var relire: Callable
+var lier: Callable
+var sur_joueur: Callable
+var survol_joueur: Callable
+var fin_survol: Callable
+var contexte_change: Callable
+var _c_lien: Color = G.GOLD
+var _c_texte: Color = G.INK
+var _c_discret: Color = G.MUTED
 
 func _ready() -> void:
 	get_viewport().size_changed.connect(_resize_event_fonts, CONNECT_DEFERRED)
@@ -126,6 +139,57 @@ func setup(owner_app: Control) -> void:
 	search.text_changed.connect(func(_text: String): _filter_changed())
 	scroll.get_v_scroll_bar().value_changed.connect(_scrolled)
 
+## Habillage du direct (Charte) : champs sur panneau 3 soulignés d'un filet (pas de cadre complet, rayons 0),
+## focus en filet ivoire de 2 px, boutons au style lien, textes ivoire / ivoire 2, aucun or.
+func habiller_charte() -> void:
+	const Charte = preload("res://ui/charte.gd")
+	const C = preload("res://ui/immersive08/components.gd")
+	charte = true
+	_c_lien = Charte.IVOIRE
+	_c_texte = Charte.IVOIRE
+	_c_discret = Charte.IVOIRE_2
+	var champ := func(fond: Color, filet: Color, epaisseur: int) -> StyleBoxFlat:
+		var style := StyleBoxFlat.new()
+		style.bg_color = fond
+		style.set_corner_radius_all(0)
+		style.border_color = filet
+		style.border_width_bottom = epaisseur
+		style.content_margin_left = 8
+		style.content_margin_right = 8
+		style.content_margin_top = 5
+		style.content_margin_bottom = 5
+		return style
+	for etat in ["normal", "hover", "pressed", "disabled", "read_only"]:
+		var fond: Color = Charte.PANNEAU_2 if etat in ["hover", "pressed"] else Charte.PANNEAU_3
+		if category.has_theme_stylebox_override(etat) or etat != "read_only": category.add_theme_stylebox_override(etat, champ.call(fond, Charte.FILET, 1))
+		search.add_theme_stylebox_override(etat, champ.call(Charte.PANNEAU_3, Charte.FILET, 1))
+	for controle: Control in [category, search]:
+		controle.add_theme_stylebox_override("focus", champ.call(Color(0, 0, 0, 0), Charte.IVOIRE, 2))
+	for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: category.add_theme_color_override(cle, Charte.IVOIRE)
+	# Liste déroulante du filtre (exception de Léo) : panneau à angles droits, sans cadre.
+	var liste := StyleBoxFlat.new()
+	liste.bg_color = Charte.PANNEAU_2
+	liste.set_corner_radius_all(0)
+	liste.set_content_margin_all(6)
+	category.get_popup().add_theme_stylebox_override("panel", liste)
+	category.get_popup().add_theme_color_override("font_color", Charte.IVOIRE)
+	search.add_theme_color_override("font_color", Charte.IVOIRE)
+	search.add_theme_color_override("font_placeholder_color", Charte.IVOIRE_2)
+	search.add_theme_color_override("font_selected_color", Charte.FOND)
+	search.add_theme_color_override("selection_color", Charte.IVOIRE_2)
+	search.add_theme_color_override("caret_color", Charte.IVOIRE)
+	for bouton: Button in [review, latest]:
+		C.style_bouton_lien(bouton, 13)
+		bouton.custom_minimum_size.y = 32
+	# Anneau de focus du défilement (cadre complet arrondi du thème du moteur) : remplacé par rien.
+	scroll.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	review.text = "Relire  →"
+	latest.text = "Dernier fait  ↓"
+	count.add_theme_color_override("font_color", Charte.IVOIRE_2)
+	new_events.add_theme_color_override("font_color", Charte.IVOIRE)
+	empty.add_theme_color_override("font_color", Charte.IVOIRE_2)
+	if _started: _render(scroll.scroll_vertical, _following)
+
 func _exit_tree() -> void:
 	_store()
 
@@ -152,6 +216,8 @@ func _bind_current_context() -> void:
 	if old_review != null:
 		old_review.hide()
 		old_review.queue_free()
+	# Relecture ouverte en page du direct : elle montre les faits de l'ancien contexte, elle se ferme aussi.
+	if contexte_change.is_valid(): contexte_change.call()
 	_ui_state = app.management_ui
 	_revision += 1
 	_started = false
@@ -184,7 +250,8 @@ func update_frame(live: Dictionary) -> void:
 	var extends_history := _started and value.size() >= _seen
 	if extends_history:
 		for index in _seen:
-			if value[index] != _events[index]:
+			# Faits anciens en texte et faits typés : types différents = autre historique (sans erreur de comparaison).
+			if typeof(value[index]) != typeof(_events[index]) or value[index] != _events[index]:
 				extends_history = false
 				break
 	var added := value.size() - _seen if extends_history else 0
@@ -248,17 +315,36 @@ func _render(position: int, follow: bool) -> void:
 		var minute := "Minute non renseignée"
 		if event is Dictionary and (event.get("min") is int or event.get("min") is float): minute = _number(event.min) + " min"
 		var caption: String = KINDS.get(kind, "Type non renseigné" if kind.is_empty() else "Type inconnu (« %s »)" % kind)
-		var event_link := G.wrap(minute + " · " + caption + " ↗",13,G.GOLD)
+		var event_link := G.wrap(minute + " · " + caption + (" →" if charte else " ↗"),13,_c_lien)
 		event_link.name = "JournalActionLink"
 		event_link.tooltip_text = "Relire ce fait et sa position enregistrée · Entrée ou clic"
 		event_link.focus_mode = Control.FOCUS_ALL
 		event_link.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		event_link.focus_entered.connect(func(): event_link.add_theme_color_override("font_color",G.WHITE))
-		event_link.focus_exited.connect(func(): event_link.add_theme_color_override("font_color",G.GOLD))
+		var repos := _c_lien
+		event_link.focus_entered.connect(func(): event_link.add_theme_color_override("font_color",G.WHITE if not charte else _c_discret))
+		event_link.focus_exited.connect(func(): event_link.add_theme_color_override("font_color",repos))
 		event_link.mouse_filter = Control.MOUSE_FILTER_STOP
 		event_link.gui_input.connect(_review_input.bind(visible_events.size()-1))
 		entry.add_child(event_link)
-		entry.add_child(G.wrap(str(event.get("text", "Texte non renseigné")) if event is Dictionary else str(event), 14, G.INK))
+		var text := str(event.get("text", "Texte non renseigné")) if event is Dictionary else str(event)
+		if lier.is_valid():
+			# Noms de nos joueurs : soulignés, survol = mini-fiche, clic = fiche complète ; le reste du texte est inerte.
+			var riche := RichTextLabel.new()
+			riche.name = "JournalEventText"
+			riche.bbcode_enabled = true
+			riche.fit_content = true
+			riche.scroll_active = false
+			riche.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			riche.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			riche.meta_underlined = true
+			riche.add_theme_color_override("default_color", _c_texte)
+			riche.add_theme_font_size_override("normal_font_size", 14)
+			riche.text = str(lier.call(text))
+			if sur_joueur.is_valid(): riche.meta_clicked.connect(func(id: Variant): sur_joueur.call(str(id)))
+			if survol_joueur.is_valid(): riche.meta_hover_started.connect(func(id: Variant): survol_joueur.call(str(id), riche))
+			if fin_survol.is_valid(): riche.meta_hover_ended.connect(func(_id: Variant): fin_survol.call(riche))
+			entry.add_child(riche)
+		else: entry.add_child(G.wrap(text, 14, _c_texte))
 		if event is Dictionary and event.get("scene") is Dictionary:
 			var scene: Dictionary = event.scene
 			var facts: Array[String] = []
@@ -270,8 +356,14 @@ func _render(position: int, follow: bool) -> void:
 			else: facts.append("Équipe non renseignée")
 			if scene.get("score") is Array and scene.score.size() == 2:
 				facts.append("Score %s — %s" % [_number(scene.score[0]), _number(scene.score[1])])
-			if not facts.is_empty(): entry.add_child(G.wrap(" · ".join(facts), 12, G.MUTED))
-		entry.add_child(G.separator())
+			if not facts.is_empty(): entry.add_child(G.wrap(" · ".join(facts), 12, _c_discret))
+		if charte:
+			var filet := ColorRect.new()
+			filet.color = preload("res://ui/charte.gd").FILET
+			filet.custom_minimum_size = Vector2(0, 1)
+			filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			entry.add_child(filet)
+		else: entry.add_child(G.separator())
 	count.text = "%d / %d faits" % [visible_events.size(), _events.size()]
 	empty.visible = visible_events.is_empty()
 	empty.text = "Aucun événement pour ces filtres." if not _events.is_empty() else "Le journal se remplira après le coup d’envoi."
@@ -289,6 +381,14 @@ func _reading_font_floor() -> int:
 func _apply_event_fonts() -> void:
 	for entry in rows.get_children():
 		for child in entry.get_children():
+			if child is RichTextLabel:
+				var actuelle: int = child.get_theme_font_size("normal_font_size")
+				var depart: int = child.get_meta("journal_font_size", actuelle)
+				var voulue := maxi(depart, _event_font_floor)
+				if voulue == actuelle: continue
+				child.set_meta("journal_font_size", depart)
+				child.add_theme_font_size_override("normal_font_size", voulue)
+				continue
 			if not child is Label: continue
 			var current: int = child.get_theme_font_size("font_size")
 			var original: int = child.get_meta("journal_font_size", current)
@@ -353,5 +453,10 @@ func _review_input(event: InputEvent, visible_index: int) -> void:
 
 func _review(start_index: int = -1) -> void:
 	# Local owned dialog is discarded with this journal on import/navigation.
+	if visible_events.is_empty(): return
+	# Dans le direct : page « Relire les actions » avec « ← Retour au direct », jamais une fenêtre.
+	if relire.is_valid():
+		relire.call(visible_events.duplicate(true), _live.get("teams", []), start_index)
+		return
 	if find_child("MatchActionReview",true,false) != null: return
 	load("res://match_action_review.gd").open(self,visible_events,_live.get("teams",[]),start_index)

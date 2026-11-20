@@ -70,7 +70,37 @@ func actifs_hors_place(racine: Node) -> Array[String]:
 		var b := n as BaseButton
 		if b.disabled or not b.is_visible_in_tree(): continue
 		if LiveView.ACTIONS_SUR_PLACE.any(func(p: String) -> bool: return str(b.name).begins_with(p)): continue
+		# Nom d'un de nos joueurs : reste actif, ouvre sa fiche dans le direct (contrôlé à part).
+		if b.has_meta("fiche_en_match"): continue
 		trouves.append(str(b.name))
+	return trouves
+
+## Styles arrondis (charte §3 : rayons 0) sous `racine`.
+func arrondis(racine: Node) -> Array[String]:
+	var trouves: Array[String] = []
+	var noeuds: Array = [racine]
+	noeuds.append_array(racine.find_children("*", "Control", true, false))
+	for n: Variant in noeuds:
+		var c := n as Control
+		if c == null: continue
+		for cle in ["panel", "normal", "hover", "pressed", "focus", "disabled"]:
+			if not c.has_theme_stylebox_override(cle): continue
+			var s := c.get_theme_stylebox(cle) as StyleBoxFlat
+			if s != null and s.corner_radius_top_left + s.corner_radius_top_right + s.corner_radius_bottom_left + s.corner_radius_bottom_right > 0: trouves.append("%s<%s.%s" % [c.name, c.get_parent().name if c.get_parent() != null else "", cle])
+	return trouves
+
+## Styles à cadre complet (quatre côtés) sous `racine`, hors focus (indicateur de focus accepté).
+func cadres_complets(racine: Node) -> Array[String]:
+	var trouves: Array[String] = []
+	var noeuds: Array = [racine]
+	noeuds.append_array(racine.find_children("*", "Control", true, false))
+	for n: Variant in noeuds:
+		var c := n as Control
+		if c == null: continue
+		for cle in ["panel", "normal", "hover", "pressed", "disabled"]:
+			if not c.has_theme_stylebox_override(cle): continue
+			var s := c.get_theme_stylebox(cle) as StyleBoxFlat
+			if s != null and s.border_color.a > 0.0 and s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0: trouves.append("%s.%s" % [c.name, cle])
 	return trouves
 
 ## Boutons actifs et visibles sans aucune action branchée.
@@ -190,6 +220,18 @@ func run() -> void:
 	await wait_command()
 	await until(func(): return page.find_child("FicheClub", true, false) != null and page.find_child("ClubSheetLoading", true, false) == null, 30000)
 	check(page.find_child("ClubSheetFollow", true, false) == null and page.find_child("ClubSheetAfterMatch", true, false) != null, "Notre club : pas de « Suivre », calendrier après le match")
+	# Onglet Effectif de notre club : chaque ligne de joueur ouvre sa fiche complète dans le direct (pas grisée).
+	var onglet_effectif: Button = page.find_child("ClubSheetTab1", true, false)
+	if onglet_effectif != null: onglet_effectif.pressed.emit()
+	await until(func(): return page.find_child("ClubSheetPlayer0", true, false) != null, 15000)
+	await settle(2)
+	var ligne_joueur := page.find_child("ClubSheetPlayer0", true, false) as BaseButton
+	check(ligne_joueur != null and not ligne_joueur.disabled and ligne_joueur.has_meta("fiche_en_match"), "Effectif de notre club en match : la ligne d'un joueur reste active")
+	if ligne_joueur != null and not ligne_joueur.disabled:
+		ligne_joueur.pressed.emit()
+		await wait_command()
+		await settle(4)
+		check(page.visible and page.find_child("MatchPlayerSheet", true, false) != null and fenetres().is_empty(), "Effectif de notre club : clic sur un joueur = sa fiche complète dans le direct")
 	view.fermer_page()
 	await wait_command()
 
@@ -212,6 +254,62 @@ func run() -> void:
 	view.fermer_page()
 	await wait_command()
 	check(not page.visible, "Retour au direct depuis la fiche joueur")
+
+	# 4 ter. Tiroir Journal (Plus → Journal du match) : jetons de la Charte, aucun cadre complet, noms de nos joueurs
+	# liés ; « Relire » ouvre une page du direct avec « ← Retour au direct », jamais une fenêtre.
+	if app.model.live.get("paused", false): await command("pause", {"paused": false})
+	view._toggle_drawer("Journal")
+	await settle(6)
+	var tiroir_journal: Control = view.get("journal")
+	check(view.drawer.visible and bool(tiroir_journal.get("charte")), "Tiroir Journal ouvert, habillé à la Charte")
+	check(ors(view.drawer).is_empty(), "Tiroir Journal : aucun or : " + str(ors(view.drawer)))
+	check(cadres_complets(view.drawer).is_empty(), "Tiroir Journal : aucun cadre complet : " + str(cadres_complets(view.drawer)))
+	check(arrondis(view.drawer).is_empty(), "Tiroir Journal : rayons 0 : " + str(arrondis(view.drawer)))
+	var nom_notre := str(notre.get("name", ""))
+	check(str((tiroir_journal.get("lier") as Callable).call("Essai de " + nom_notre + ".")).contains("[url=%s]" % str(notre.id)), "Tiroir Journal : nos joueurs liés (survol : mini-fiche, clic : fiche)")
+	await until(func(): return not (tiroir_journal.get("visible_events") as Array).is_empty(), 30000)
+	var textes_lies: Array = tiroir_journal.find_children("JournalEventText", "RichTextLabel", true, false)
+	check(not textes_lies.is_empty() and textes_lies.all(func(t: RichTextLabel) -> bool: return t.get_signal_connection_list("meta_clicked").size() > 0), "Faits du tiroir : texte riche, noms cliquables")
+	var relire: Button = tiroir_journal.find_child("MatchJournalReview", true, false)
+	if relire != null and not relire.disabled:
+		relire.pressed.emit()
+		await wait_command()
+		await settle(6)
+		check(page.visible and page.find_child("ActionReviewPage", true, false) != null and fenetres().is_empty() and app.find_child("MatchActionReview", true, false) == null, "Relire : page du direct, pas une fenêtre")
+		check(app.model.live.get("paused", false), "Relire : le match est en pause")
+		check(ors(page).is_empty() and arrondis(page).is_empty(), "Page de relecture : aucun or, rayons 0 (%s / %s)" % [str(ors(page)), str(arrondis(page))])
+		check(muets(page).is_empty(), "Page de relecture : aucun clic sans réponse : " + str(muets(page)))
+		if proof != "": await capture("relecture")
+		var retour_relecture: Button = page.find_child("MatchPageBack", true, false)
+		check(retour_relecture != null and retour_relecture.text.contains("Retour au direct"), "Relecture : « ← Retour au direct »")
+		if retour_relecture != null: retour_relecture.pressed.emit()
+		await wait_command()
+		check(not page.visible, "Retour au direct depuis la relecture")
+	else: check(false, "Bouton Relire du tiroir absent ou grisé")
+	if view.drawer.visible: view._fermer_tiroir()
+
+	# 4 quater. Bannière d'essai : notre marqueur est un lien (souligné, fiche au clic) ; un adversaire reste du texte.
+	if app.model.live.get("paused", false): await command("pause", {"paused": false})
+	var morceaux := nom_notre.split(" ")
+	morceaux[morceaux.size() - 1] = morceaux[morceaux.size() - 1].to_upper()
+	view.regie.montrer_bandeau("ESSAI", " ".join(morceaux), "Club · 12e minute", 3.0, Color("b0302a"), "+5\n5 – 0")
+	await settle(2)
+	var nom_banniere: Label = view.regie.bandeau.find_child("MatchMomentNom", true, false)
+	var souligne: Control = nom_banniere.get_node_or_null("Souligne")
+	check(nom_banniere.mouse_filter == Control.MOUSE_FILTER_STOP and souligne != null and souligne.visible and nom_banniere.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, "Bannière : notre marqueur souligné, cliquable")
+	var clic_nom := InputEventMouseButton.new()
+	clic_nom.button_index = MOUSE_BUTTON_LEFT
+	clic_nom.pressed = true
+	nom_banniere.gui_input.emit(clic_nom)
+	await wait_command()
+	await settle(4)
+	check(page.visible and page.find_child("MatchPlayerSheet", true, false) != null and fenetres().is_empty(), "Bannière : clic sur notre marqueur = sa fiche complète dans le direct")
+	view.fermer_page()
+	await wait_command()
+	view.regie.montrer_bandeau("ESSAI", "Zzyzx QUELCONQUE", "Club · 13e minute", 3.0, Color("b0302a"), "+5\n5 – 5")
+	await settle(2)
+	check(nom_banniere.mouse_filter == Control.MOUSE_FILTER_IGNORE and not souligne.visible, "Bannière : marqueur adverse en texte inerte, sans soulignement")
+	view.regie.bandeau.hide()
 
 	# 5. Échap : pause et menu du match (Reprendre en tête, Réglages, Vitesse, Quitter), voile sous le bandeau.
 	if app.model.live.get("paused", false): await command("pause", {"paused": false})
@@ -267,6 +365,19 @@ func run() -> void:
 	touche(KEY_ESCAPE)
 	await until(func(): return not bool(app.model.live.get("paused", false)) and not app.waiting, 20000)
 	check(not menu.visible and not app.model.live.paused, "Échap referme le menu et le match repart")
+	# Clic sur le voile, hors du panneau : le menu se ferme et le match repart ; puces et menu à angles droits.
+	view.ouvrir_menu()
+	await until(func(): return bool(app.model.live.get("paused", false)) and not app.waiting, 20000)
+	await settle(2)
+	check(arrondis(menu).is_empty() and arrondis(view.play).is_empty() and arrondis(view.get("indice_menu")).is_empty(), "Menu et puces de touche : rayons 0 : " + str(arrondis(menu) + arrondis(view.play)))
+	var droite_quitter: Label = menu.find_child("MatchMenuQuitter", true, false).find_child("Droite", true, false) as Label
+	check(droite_quitter != null and droite_quitter.text.to_lower().contains("ferme le jeu"), "Quitter le match : dit qu'il ferme le jeu")
+	var clic_voile := InputEventMouseButton.new()
+	clic_voile.button_index = MOUSE_BUTTON_LEFT
+	clic_voile.pressed = true
+	voile.gui_input.emit(clic_voile)
+	await until(func(): return not bool(app.model.live.get("paused", false)) and not app.waiting, 20000)
+	check(not menu.visible and not voile.visible and not app.model.live.paused, "Clic sur le voile : menu fermé, le match repart")
 
 	# 6. Rappel « Échap · Pause et menu » cliquable ; « Confier la fin » se confirme dans le menu, pas une fenêtre.
 	(view.get("indice_menu") as Button).pressed.emit()

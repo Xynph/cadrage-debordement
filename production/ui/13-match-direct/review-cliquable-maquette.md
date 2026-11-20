@@ -91,3 +91,65 @@ Vérifié dans le vrai Godot (suite `godot-match-direct-da`, 56 contrôles, 0 é
 | C7 phrase du ballon | Masquée pendant la bannière d'essai (capture du menu). Corrigé. |
 
 Reste hors périmètre : « ÉQUIPE » en or plein et « PARAMÈTRES » dans la bande des commandes (`match_between.gd`, chantier Entracte).
+
+## Relecture adverse 20/11 après-midi
+
+Lecture seule (code `live_view.gd`, `match_temps_forts.gd`, `match_journal.gd`, `match_action_review.gd`, `match_between.gd`, `club_sheet_canvas.gd` + captures 1920/1280, maquette 13-1 et 13-3). Rien lancé. Ce qui suit ne reprend pas la relecture interne ni les écarts déjà connus (ÉQUIPE or, cartes de la fiche club).
+
+### A. Cliquabilité (éléments que la relecture interne n'a pas passés)
+
+| Élément | Effet du clic (code) | Verdict |
+|---|---|---|
+| PLUS ▾ → « Journal du match » → ligne « 12 min · Essai ↗ » (`JournalActionLink`, souligné/or, curseur main) | `_review` → `match_action_review.gd` qui `extends AcceptDialog` : petite fenêtre au-dessus du match | BLOQUANT (B1) |
+| Tiroir Journal : champ de recherche, filtre catégorie (`OptionButton`), « Dernier » / « Relire » | Agissent en place ; « Relire » ouvre la même fenêtre | BLOQUANT (B1) ; filtre = exception OK |
+| Tiroir Journal : noms de joueurs dans le texte des faits | Texte simple, ni lien ni mini-fiche (alors que le journal du bas lie nos joueurs) | À CORRIGER (C3) |
+| PARAMÈTRES (bande) | `_ouvrir_parametres` : `PopupPanel` (cadre or 40 %, coins arrondis) posé sous le bouton, vitesse + temps forts montrés | BLOQUANT (B2) |
+| PLUS ▾ | `MenuButton` : menu déroulant (Statistiques, Journal, Confier, 3 caméras) | OK (exception menu déroulant) |
+| ÉQUIPE | Page plein écran `MatchTeamWindow` (un `Control`, pas une fenêtre) ; pose le match en pause | OK sur le principe |
+| Pause · Espace / Échap · Pause et menu | Pause ; ouvre le menu | OK |
+| Puce « T » de la maquette sur ÉQUIPE | Absente à l'écran : le raccourci T existe (`_input`) mais n'est écrit nulle part | À CORRIGER (C4) |
+| Bannière ESSAI : nom du marqueur (notre joueur) | `MOUSE_FILTER_IGNORE`, rien ; c'est un nom de joueur | AVIS (C3) |
+| Tiroir Statistiques | Texte seul, FERMER × en lien | OK |
+| Fiche club de NOTRE club, onglet Effectif : lignes de joueurs | `neutraliser` grise tout bouton hors onglets/suivi/tri : les lignes (`ClubSheetRow`, noms `_player_link`) deviennent « Disponible après le match » alors que la fiche complète de NOS joueurs existe (`ouvrir_joueur`) | À CORRIGER (C2, à vérifier dans Godot) |
+| Menu : clic sur la ligne « Vitesse » | +1 cran, boucle de Éclair à Posée sans prévenir | AVIS |
+| Voile du menu | Avale le clic, ne ferme rien | AVIS (déjà vu) |
+
+### B. Petites fenêtres
+
+- B1 BLOQUANT : tiroir Journal → « ↗ » / Relire ouvre un `AcceptDialog` (`match_action_review.gd`) pendant le match, hors exceptions. Même famille que A4 de la relecture interne, mais sur le tiroir, non couvert. Correction : ouvrir le relecteur dans une page du direct (`_ouvrir_page("relecture")`, « ← Retour au direct »), ou retirer le « ↗ » (et l'aspect lien) pendant le match.
+- B2 BLOQUANT (confirme le doute laissé par la relecture interne) : PARAMÈTRES ouvre un `PopupPanel` avec cadre or et coins arrondis. Ce n'est ni mini-fiche, ni menu déroulant, ni menu Échap. Correction : le faire ouvrir la page « Réglages » du direct (celle du menu), ou en faire un menu déroulant de choix simples (vitesse de l'horloge : Posée/Normale/Rapide/Éclair, comme `_changer_vitesse`) ; en tout cas supprimer le cadre or et les coins arrondis. À traiter avec le chantier Entracte, mais à décider ici puisque l'écran en dépend.
+- Conformes : menu Échap, mini-fiche, PLUS (menu), plaques, menu « Confier la fin ».
+
+### C. Fidélité à la maquette et à la charte
+
+BLOQUANT
+- C0. Même contenu que B1 et B2 (fenêtres hors exception). Pas d'autre écart bloquant dans le périmètre : aucun nom de club ni de championnat figé relevé.
+
+À CORRIGER
+- C1. Tiroir Journal (PLUS → Journal du match, `match_journal.gd`) resté dans l'ancien style : liens « ↗ » en OR, champs avec cadre or complet de 2 px et coins arrondis (`G.T.box(..., 3, G.GOLD)`), texte `G.INK`/`G.MUTED` sur fond PAPIER. L'or est réservé à Continuer et à l'héritage ; aucun cadre complet. À convertir en jetons Charte (ivoire, ivoire 2, lien souligné) comme le tiroir Statistiques.
+- C2. Tiroir (Stats et Journal) : `live_view.gd::_construire_tiroir` pose un cadre complet de 1 px (`set_border_width_all(1)`, FILET) ; charte §3 : aucun cadre complet. Remplacer par un filet gauche seul (ou aucun filet, panneau à 85 % comme le journal du bas).
+- C3. Règle des noms de joueurs non tenue partout : dans le journal du bas seuls NOS joueurs sont liés ; les noms adverses, le marqueur de la bannière d'essai et ceux du tiroir Journal sont du texte. Pour nos joueurs au moins (bannière, tiroir), mini-fiche au survol + clic = fiche (réutiliser `liens_joueurs`). Pour les adversaires : à décider avec Léo (fiche inexistante, `fiche_commune.trouver` ne cherche que `squad`).
+- C4. Maquette 13-1 : « ÉQUIPE » avec la puce « T » et « Pause » avec « Espace » ; à l'écran la puce « T » manque (la puce Espace est là). Ajouter « T » (travail de `match_between.gd`, à porter au chantier Entracte, ou à défaut dans l'infobulle).
+- C5. Puces de touche (`_touche`) et toutes les puces du menu : rayon de 2 px, charte §3 : rayons 0 (maquette : angles droits). Mettre 0.
+- C6. Fiche ouverte depuis le direct, onglet Effectif de notre club : lignes grisées au lieu de mener à la fiche du joueur (voir A, à vérifier dans Godot). Les rediriger vers `ouvrir_joueur`.
+
+AVIS
+- Repli sans régie (`CD_MATCH_TEMPS_FORTS=0`) : barre du bas avec `OptionButton` « Cadence » et « Niveau » non habillés, absente des captures ; à photographier si ce mode doit vivre.
+- Fenêtre Équipe (`match_equipe.gd`) : encore or, pastilles arrondies, cadres complets (C.GOLD, `_boite(..., 10, 2, 0)`) ; chantier Entracte/Équipe, à signaler à Léo car c'est le premier clic de la bande.
+- Menu : « Quitter le match » ferme le jeu au 2e clic ; le texte prévient bien, mais la ligne n'est pas distinguée des autres (aucun signe que c'est irréversible).
+- Les captures montrent le journal à deux lignes de hauteur fixe et la bannière d'essai de 744 px comme la maquette ; bannière à la couleur du club conforme.
+### Suivi des corrections (20/11/2026, soir)
+
+Vérifié dans le vrai Godot (`godot-match-direct-da` : 76 contrôles, 0 échec ; `godot-match-journal`, `godot-match-action-review` mis à jour, verts) et sur les captures `film1920c` / `film1280c` (`journal.png`, `relecture.png`).
+
+| Point | État |
+|---|---|
+| B1 « Relire » / « → » du tiroir | Page « RELIRE LES ACTIONS » du direct, match en pause, « ← Retour au direct » ; aucune fenêtre (contrôlé). Hors du direct (ancien écran Match), la fenêtre reste. Corrigé. |
+| C1 tiroir Journal | Jetons de la Charte : champs sur panneau 3 soulignés d'un filet, focus en filet ivoire, liens texte « Relire → », « Dernier fait ↓ », aucun or, rayons 0, liste déroulante à angles droits. Corrigé. |
+| C2 cadre du tiroir | Filet à gauche seul ; anneaux de focus des défilements retirés. Corrigé. |
+| C3 noms | Tiroir : nos joueurs soulignés, mini-fiche au survol, fiche complète au clic ; bannière d'essai : notre marqueur souligné et cliquable. Adversaires : pas de fiche complète dans les données (effectif adverse non chargé) → texte inerte, sans soulignement. Corrigé. |
+| C5 puces | Rayons 0 sur les puces de touche et du menu (contrôlé). Corrigé. |
+| C6 effectif de notre club | Les lignes de nos joueurs restent actives et ouvrent leur fiche dans le direct ; les autres liens restent grisés. Corrigé. |
+| AVIS voile / Quitter | Clic sur le voile : menu fermé, match relancé. « Quitter le match » écrit « Ferme le jeu » à droite. Fait. |
+
+Laissés au chantier Entracte : B2 (PARAMÈTRES en PopupPanel), C4 (puce « T »), fenêtre Équipe.

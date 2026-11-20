@@ -1935,6 +1935,8 @@ func bandeau_affiche() -> Dictionary:
 func montrer_bandeau(titre: String, nom: String, equipe: String, duree: float, couleur: Color = Color.TRANSPARENT, points: String = "") -> void:
 	if bandeau == null or view == null: return
 	habiller_bandeau(bandeau, titre, nom, equipe, maxf(1.0, view.size.y), couleur, points)
+	# Marqueur qui est l'un de nos joueurs : nom souligné, mini-fiche au survol, fiche complète au clic (live_view).
+	if view.has_method("lier_nom_bandeau"): view.lier_nom_bandeau(bandeau.find_child("MatchMomentNom", true, false), nom if titre == "ESSAI" else "")
 	_bandeau_titre = titre
 	_bandeau_duree = maxf(duree, BANDEAU_ENTREE + BANDEAU_FONDU)
 	_bandeau_reste = _bandeau_duree

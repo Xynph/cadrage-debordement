@@ -106,6 +106,7 @@ var _page_sorte := ""
 var _page_cle := ""
 ## Joueur de la fiche ouverte depuis le journal (page « joueur »).
 var _page_joueur := ""
+var _relecture: Array = []  ## [faits filtrés, équipes, fait de départ] de la page « Relire les actions »
 ## Le match jouait quand le menu ou la page s'est ouvert : « Reprendre » / « Retour au direct » le relance.
 var _reprendre_apres := false
 ## Pause demandée pendant une réponse du moteur : envoyée dès qu'il est libre.
@@ -264,9 +265,8 @@ static func _touche(texte: String) -> PanelContainer:
 	var puce := PanelContainer.new()
 	puce.name = "Touche"
 	puce.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style := _fond_hud(Vector4(7, 1, 7, 1), Charte.PANNEAU_3)
-	style.set_corner_radius_all(2)
-	puce.add_theme_stylebox_override("panel", style)
+	# Charte §3 : rayons 0 (angles droits, comme la maquette).
+	puce.add_theme_stylebox_override("panel", _fond_hud(Vector4(7, 1, 7, 1), Charte.PANNEAU_3))
 	var lettre := Label.new()
 	lettre.text = texte
 	lettre.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -565,9 +565,10 @@ func _construire_tiroir() -> void:
 		bande_temps_forts.item_rect_changed.connect(caler)
 	drawer.anchor_bottom = 1
 	drawer.offset_bottom = -90
+	# Charte §3 : aucun cadre complet ; un filet à gauche seul détache le tiroir de l'image.
 	var fond := _fond_hud(Vector4.ZERO, Charte.PANNEAU)
 	fond.border_color = Charte.FILET
-	fond.set_border_width_all(1)
+	fond.border_width_left = 1
 	drawer.add_theme_stylebox_override("panel", fond)
 	add_child(drawer)
 	var drawer_margin := S.G.margin(14)
@@ -578,14 +579,25 @@ func _construire_tiroir() -> void:
 	drawer_body = S.G.scroll(drawer_column)
 	S.G.fill(drawer_body.get_parent(), true)
 	_journal_shell = PanelContainer.new()
-	_journal_shell.add_theme_stylebox_override("panel", _fond_hud(Vector4.ZERO, Charte.PAPIER))
+	_journal_shell.add_theme_stylebox_override("panel", _fond_hud(Vector4.ZERO, Charte.PANNEAU))
 	S.G.fill(_journal_shell, true)
 	drawer_column.add_child(_journal_shell)
 	var journal_margin := S.G.margin(8)
 	_journal_shell.add_child(journal_margin)
 	journal = preload("res://ui/match_journal.gd").new()
 	journal.setup(app)
+	# Journal du tiroir aux jetons de la Charte ; « Relire » ouvre une page du direct ; nos joueurs sont liés
+	# (survol : mini-fiche, clic : fiche complète), les adversaires restent du texte inerte (pas de fiche).
+	journal.habiller_charte()
+	journal.relire = ouvrir_relecture
+	journal.lier = func(texte: String) -> String: return liens_joueurs(texte, model.get("squad", []) if model.get("squad") is Array else [])
+	journal.sur_joueur = ouvrir_joueur
+	journal.survol_joueur = _survol_joueur
+	journal.fin_survol = func(ancre: Control): _mini_fiche().cacher(app, ancre)
+	journal.contexte_change = func(): if _page_sorte == "relecture": fermer_page()
 	journal_margin.add_child(journal)
+	for defilement: Node in drawer.find_children("*", "ScrollContainer", true, false):
+		(defilement as Control).add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	_journal_shell.hide()
 	drawer.hide()
 
@@ -994,6 +1006,60 @@ func ouvrir_joueur(id: String) -> void:
 	_page_joueur = id
 	_ouvrir_page("joueur")
 
+## Id de l'un de `joueurs` dont le nom est `nom` (« Eddie WHITWORTH » : casse ignorée), sinon d'après le seul nom de
+## famille s'il n'appartient qu'à un joueur ; "" si personne (adversaire : pas de fiche complète).
+static func joueur_par_nom(nom: String, joueurs: Array) -> String:
+	var cherche := nom.strip_edges().to_lower()
+	if cherche.is_empty(): return ""
+	var famille := cherche.get_slice(" ", cherche.get_slice_count(" ") - 1)
+	var par_famille: Array[String] = []
+	for joueur: Variant in joueurs:
+		if not joueur is Dictionary or joueur.get("id") == null: continue
+		var complet := str(joueur.get("name", "")).strip_edges().to_lower()
+		if complet.is_empty(): continue
+		if complet == cherche: return str(joueur.id)
+		if famille.length() >= 3 and complet.get_slice(" ", complet.get_slice_count(" ") - 1) == famille: par_famille.append(str(joueur.id))
+	return par_famille[0] if par_famille.size() == 1 else ""
+
+## Nom du marqueur dans la bannière d'essai (match_temps_forts.gd) : l'un de nos joueurs devient un lien (souligné,
+## main, mini-fiche au survol, fiche complète au clic) ; sinon le texte reste inerte, sans soulignement.
+func lier_nom_bandeau(etiquette: Label, nom: String) -> void:
+	if etiquette == null: return
+	var id := joueur_par_nom(nom, model.get("squad", []) if model.get("squad") is Array else [])
+	etiquette.set_meta("joueur_id", id)
+	if not etiquette.has_meta("lien_pose"):
+		etiquette.set_meta("lien_pose", true)
+		var trait_nom := ColorRect.new()
+		trait_nom.name = "Souligne"
+		trait_nom.color = Charte.IVOIRE
+		trait_nom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		trait_nom.anchor_top = 1.0
+		trait_nom.anchor_bottom = 1.0
+		trait_nom.offset_top = -2.0
+		etiquette.add_child(trait_nom)
+		# Le trait suit la longueur du nom, pas la largeur de la colonne.
+		var caler := func():
+			var police: Font = etiquette.get_theme_font("font")
+			trait_nom.offset_right = police.get_string_size(etiquette.text, HORIZONTAL_ALIGNMENT_LEFT, -1, etiquette.get_theme_font_size("font_size")).x if police != null else etiquette.size.x
+		etiquette.resized.connect(caler)
+		etiquette.set_meta("caler_souligne", caler)
+		etiquette.gui_input.connect(func(evenement: InputEvent):
+			var clic := evenement as InputEventMouseButton
+			var cible := str(etiquette.get_meta("joueur_id", ""))
+			if clic != null and clic.pressed and clic.button_index == MOUSE_BUTTON_LEFT and not cible.is_empty():
+				etiquette.accept_event()
+				ouvrir_joueur(cible))
+		etiquette.mouse_entered.connect(func():
+			var cible := str(etiquette.get_meta("joueur_id", ""))
+			if not cible.is_empty(): _survol_joueur(cible, etiquette))
+		etiquette.mouse_exited.connect(func(): _mini_fiche().cacher(app, etiquette))
+	var lie := not id.is_empty()
+	etiquette.mouse_filter = Control.MOUSE_FILTER_STOP if lie else Control.MOUSE_FILTER_IGNORE
+	etiquette.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if lie else Control.CURSOR_ARROW
+	etiquette.tooltip_text = "Voir sa fiche" if lie else ""
+	(etiquette.get_node("Souligne") as Control).visible = lie
+	(etiquette.get_meta("caler_souligne") as Callable).call()
+
 ## Texte des deux lignes du journal (tests, captures) : [« 27' Bickerstaff gagne la touche », …].
 func journal_affiche() -> Array[String]:
 	var lignes: Array[String] = []
@@ -1108,6 +1174,12 @@ func _construire_menu() -> void:
 	_menu_voile.name = "MatchMenuVeil"
 	_menu_voile.color = Color(Charte.NUIT, 0.7)
 	_menu_voile.mouse_filter = Control.MOUSE_FILTER_STOP
+	# Un clic sur le voile, hors du panneau, ferme le menu comme Échap (reprise du match ; délégation annulée).
+	_menu_voile.gui_input.connect(func(evenement: InputEvent):
+		var clic := evenement as InputEventMouseButton
+		if clic != null and clic.pressed and clic.button_index == MOUSE_BUTTON_LEFT and menu.visible:
+			accept_event()
+			fermer_menu(true))
 	S.full(_menu_voile)
 	add_child(_menu_voile)
 	menu = Control.new()
@@ -1168,7 +1240,8 @@ func _actualiser_menu() -> void:
 		colonne.add_child(_option("MatchMenuVitesse", "Vitesse du match", "s’applique dès la reprise", {"vitesse": _vitesse_libelle()}, func(): _changer_vitesse(1)))
 		var quitter_sous := "Appuie encore : le jeu se ferme, le match sera rejoué depuis le coup d’envoi." if _menu_quitter_arme \
 			else "Tu reprendras avant le match : il sera rejoué depuis le coup d’envoi."
-		colonne.add_child(_option("MatchMenuQuitter", "Quitter le match", quitter_sous, "", _quitter))
+		# Seule option qui ferme le jeu : dit à droite, en mots, ce qu'elle fait (pas la couleur seule).
+		colonne.add_child(_option("MatchMenuQuitter", "Quitter le match", quitter_sous, "Ferme le jeu", _quitter))
 	var pied := HBoxContainer.new()
 	pied.name = "MatchMenuKeys"
 	pied.add_theme_constant_override("separation", roundi(18 * e))
@@ -1364,6 +1437,14 @@ func ouvrir_fiche_club(cote: int) -> void:
 	app.management_ui.club_sheet = {"id": id, "tab": int(avant.get("tab", 0)) if meme else 0, "sort": str(avant.get("sort", "fam")) if meme else "fam", "descending": bool(avant.get("descending", false)) if meme else false}
 	_ouvrir_page("club")
 
+## « Relire » (et « → » d'un fait) dans le tiroir Journal : la relecture des faits filtrés dans une page du direct,
+## match en pause, « ← Retour au direct » (jamais une fenêtre pendant le match).
+func ouvrir_relecture(evenements: Array, equipes: Array, depart: int = -1) -> void:
+	if evenements.is_empty(): return
+	_suspendre()
+	_relecture = [evenements, equipes, depart]
+	_ouvrir_page("relecture")
+
 ## Réglages (son, image, commandes) depuis le menu du match : l'écran Réglages de la coque, monté dans une
 ## page du direct ; « Retour au menu du match ».
 func ouvrir_reglages() -> void:
@@ -1410,6 +1491,7 @@ static func neutraliser(racine: Node) -> Array[String]:
 		var bouton := noeud as BaseButton
 		var nom := str(bouton.name)
 		if ACTIONS_SUR_PLACE.any(func(prefixe: String) -> bool: return nom.begins_with(prefixe)): continue
+		if bouton.has_meta("fiche_en_match"): continue
 		# Le retour de la fiche (vers l'Effectif) est remplacé par « Retour au direct ».
 		if nom == "PlayerBackToSquad":
 			bouton.hide()
@@ -1424,6 +1506,30 @@ static func neutraliser(racine: Node) -> Array[String]:
 		if repos != null: bouton.add_theme_stylebox_override("disabled", repos)
 		grises.append(nom)
 	return grises
+
+## Fiche du club ouverte dans le direct : les noms de NOS joueurs (Effectif, XV type, joueurs clés…) gardent leur
+## clic, qui ouvre leur fiche complète dans le direct (`ouvrir_joueur`), et leur mini-fiche au survol. Les autres
+## noms (adversaires : pas de fiche complète) restent grisés par `neutraliser`. Rend les ids liés.
+func _lier_nos_joueurs(racine: Node) -> Array[String]:
+	var lies: Array[String] = []
+	var Commune = load("res://ui/immersive08/fiche_commune.gd")
+	for noeud: Node in racine.find_children("*", "BaseButton", true, false):
+		var bouton := noeud as BaseButton
+		if str(bouton.get_meta("entity_kind", "")) != "player": continue
+		var id := str(bouton.get_meta("entity_id", ""))
+		if id.is_empty() or (Commune.trouver(app, id, "squad") as Dictionary).is_empty(): continue
+		for liaison: Dictionary in bouton.pressed.get_connections(): bouton.pressed.disconnect(liaison.callable)
+		bouton.pressed.connect(ouvrir_joueur.bind(id))
+		bouton.mouse_entered.connect(_survol_joueur.bind(id, bouton))
+		bouton.mouse_exited.connect(func(): _mini_fiche().cacher(app, bouton))
+		bouton.set_meta("fiche_en_match", true)
+		bouton.tooltip_text = "Voir sa fiche (le match reste en pause)"
+		if bouton is Button:
+			var taille: int = bouton.get_theme_font_size("font_size")
+			C.style_bouton_lien(bouton, 12)
+			bouton.add_theme_font_size_override("font_size", taille)
+		lies.append(id)
+	return lies
 
 ## Onglets et suivi de la fiche du club au style lien commun (charte §7 : pas de boîte encadrée) ; l'onglet
 ## ouvert reste souligné.
@@ -1448,6 +1554,7 @@ func _actualiser_page() -> void:
 	var etat_page: Variant = null
 	if _page_sorte == "club": etat_page = fiche
 	elif _page_sorte == "joueur": etat_page = [_page_joueur, app.management_ui.get("immersive_player_tab", 0)]
+	elif _page_sorte == "relecture": etat_page = [_relecture[2], _relecture[0].size()] if _relecture.size() == 3 else null
 	var cle := JSON.stringify([_page_sorte, etat_page, donnees, size, C.density])
 	if cle == _page_cle: return
 	_page_cle = cle
@@ -1476,8 +1583,8 @@ func _actualiser_page() -> void:
 	retour.add_theme_font_size_override("font_size", roundi(16 * echelle))
 	tete.add_child(retour)
 	# Un seul titre : celui de la fiche (club, joueur) ; « RÉGLAGES » pour l'écran des réglages qui n'en a pas.
-	if _page_sorte == "reglages":
-		var titre := _texte("RÉGLAGES", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
+	if _page_sorte in ["reglages", "relecture"]:
+		var titre := _texte("RÉGLAGES" if _page_sorte == "reglages" else "RELIRE LES ACTIONS", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
 		titre.add_theme_font_size_override("font_size", roundi(22 * echelle))
 		tete.add_child(titre)
 	var rappel := _texte("Le match est en pause à la %de. Grisé : disponible après le match." % maxi(1, int(_live().get("minute", 0))), Charte.TEXTE, Charte.IVOIRE_2)
@@ -1490,9 +1597,18 @@ func _actualiser_page() -> void:
 	var defile := ScrollContainer.new()
 	defile.name = "MatchPageScroll"
 	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	defile.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	C.fill(defile, true)
 	colonne.add_child(defile)
-	if _page_sorte == "reglages":
+	if _page_sorte == "relecture":
+		# Relecture des faits du tiroir Journal : son propre défilement, colonne de lecture de 960 px (1080p).
+		defile.hide()
+		var contenu: Control = load("res://match_action_review.gd").page(colonne, _relecture[0], _relecture[1], int(_relecture[2]))
+		if contenu != null:
+			contenu.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			contenu.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			contenu.custom_minimum_size = Vector2(minf(size.x - 2.0 * MARGE * echelle, 960.0 * echelle), 0)
+	elif _page_sorte == "reglages":
 		var contenu: Control = load("res://ui/preferences_dialog.gd").page(app, app.get("user_preferences"))
 		C.fill(contenu, true)
 		defile.add_child(contenu)
@@ -1512,6 +1628,7 @@ func _actualiser_page() -> void:
 		defile.add_child(toile)
 		Fiche.build(app, toile)
 		liens_fiche_club(toile)
+		_lier_nos_joueurs(toile)
 		neutraliser(toile)
 	retour.call_deferred("grab_focus")
 
