@@ -1,0 +1,31 @@
+'use strict';
+// Chargement, DA « les deux, selon la durée » : panneau (Arrêter honnête après 20 s), le stade (anecdotes cliquables, rien d'inventé),
+// l'ovale du ballon (Continuer : liste des jours réelle, Arrêter agit), aucune petite fenêtre, aucun or hors de l'anneau.
+// Godot réel + worker réel, carrière Monde (world-champ). Captures : CD_CHARGEMENT_DA_CAPTURES=<dossier> (rendu x11), CD_CHARGEMENT_DA_SIZE=LxH.
+const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+const { test } = require('node:test');
+const godot = process.env.CD_GODOT_EXECUTABLE || process.env.CD_GODOT_EXE;
+const racine = path.resolve(__dirname, '..');
+
+test('Chargement DA : panneau, stade, ovale du ballon, aucune petite fenêtre', { skip: !godot && 'SDK Godot requis' }, () => {
+  const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-chargement-da-'));
+  try {
+    const captures = process.env.CD_CHARGEMENT_DA_CAPTURES || '';
+    const taille = process.env.CD_CHARGEMENT_DA_SIZE || '1920x1080';
+    const affichage = captures ? ['--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', taille] : ['--headless'];
+    const r = spawnSync(godot, [...affichage, '--audio-driver', 'Dummy', '--path', 'native/godot', '--script', path.resolve(__dirname, 'godot-chargement-da.gd')], {
+      cwd: racine, encoding: 'utf8', timeout: 420000,
+      env: { ...process.env, CD_GODOT_SELF_TEST: '0', CD_GODOT_GUIDE_MODULE_TEST: '1', CD_NODE_EXECUTABLE: process.env.CD_NODE_EXECUTABLE || process.execPath, CD_GODOT_DATA_DIR: profil, CD_CHARGEMENT_DA_CAPTURES: captures ? path.resolve(captures) : '', CD_CHARGEMENT_DA_SIZE: taille },
+    });
+    const journal = (r.stdout || '') + (r.stderr || '');
+    if (r.error) throw new Error(r.error.message + '\n' + journal.slice(-4000));
+    assert.doesNotMatch(journal, /SCRIPT ERROR|Parse Error/, journal.slice(-4000));
+    const ligne = journal.split('\n').find(l => l.startsWith('CHARGEMENT_DA '));
+    assert.ok(ligne, 'rapport Godot\n' + journal.slice(-4000));
+    const rapport = JSON.parse(ligne.slice('CHARGEMENT_DA '.length));
+    assert.deepEqual(rapport.failures, [], journal.slice(-3000));
+    assert.equal(r.status, 0, journal.slice(-3000));
+  } finally { fs.rmSync(profil, { recursive: true, force: true }); }
+});
