@@ -2,22 +2,25 @@
 // Sonde : joue une saison Monde (club 102, cadence hebdomadaire), sauvegarde l'état S avant la bascule (--etat fichier),
 // ou repart d'un état sauvegardé (--depuis fichier), puis joue la bascule en relevant, après chaque étape de l'intersaison,
 // le nombre de clubs gérés au-dessus de leur limite de masse (> 0, > 1 %, > 3 %) et leur somme de masse.
-// Usage : node scripts/sonde-bascule-masse.cjs [--graine 4242] [--etat s.json | --depuis s.json]
+// Usage : node scripts/sonde-bascule-masse.cjs [--graine 4242] [--saisons 1] [--etat s.json | --depuis s.json]
 const vm = require('node:vm'), runInContext = vm.runInContext;
 vm.runInContext = (code, ctx, options) => runInContext(code, ctx, { ...options, timeout: Math.max(options?.timeout ?? 0, 600000) });
 const fs = require('node:fs');
 const { ouvrir, jouerLeMatch } = require('../tests/helpers/carriere-monde.cjs');
 const args = process.argv.slice(2), opt = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; };
-const GRAINE = Number(opt('--graine', 4242)), ETAT = opt('--etat', null), DEPUIS = opt('--depuis', null);
+const GRAINE = Number(opt('--graine', 4242)), SAISONS = Number(opt('--saisons', 1)), ETAT = opt('--etat', null), DEPUIS = opt('--depuis', null);
 const jeu = ouvrir({ testVm: true, hebdomadaire: true, simulation: true, seed: GRAINE });
 const run = src => jeu.bridge.vm.run(src);
 let model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: 102, start: 'premiers-clubs', varyCurrent: true }));
 if (DEPUIS) run('S=JSON.parse(' + JSON.stringify(fs.readFileSync(DEPUIS, 'utf8')) + ');');
 else {
-  for (let g = 0; g < 200 && run('S.phase') !== 'ended'; g++) {
-    model = jeu.regler(model);
-    if (run('S.phase') === 'ended') break;
-    model = model.next ? jouerLeMatch(jeu, model) : jeu.regler(jeu.call('finish_round'));
+  for (let saison = 1; saison <= SAISONS; saison++) {
+    for (let g = 0; g < 200 && run('S.phase') !== 'ended'; g++) {
+      model = jeu.regler(model);
+      if (run('S.phase') === 'ended') break;
+      model = model.next ? jouerLeMatch(jeu, model) : jeu.regler(jeu.call('finish_round'));
+    }
+    if (saison < SAISONS) model = jeu.regler(jeu.call('next_season', { confirmed: true }));
   }
   if (ETAT) fs.writeFileSync(ETAT, run('JSON.stringify(S)'));
 }
