@@ -282,9 +282,15 @@ func _lien_joueur(id: String, nom: String, camp: int, taille: float = 13, police
 	var b := _lien(nom, cible, taille)
 	if police != null: b.add_theme_font_override("font", police)
 	b.name = "ApresMatchJoueur_" + id.validate_node_name()
-	var marche := not a_nous and app != null and app.get("model") is Dictionary and not (load("res://ui/immersive08/fiche_commune.gd").trouver(app, id, "market") as Dictionary).is_empty()
-	if a_nous or marche:
-		MiniFiche.lier(app, b, id, "squad" if a_nous else "market")
+	# Mini-fiche commune (mini_fiche.gd) : notre effectif, sinon l'adversaire lu dans la fiche de son club déjà chargée
+	# (source « adverse », ce que le jeu en connaît), sinon une piste du marché ; à défaut, la fiche de ce match.
+	var source_fiche := "squad" if a_nous else ""
+	if not a_nous and app != null and app.get("model") is Dictionary:
+		var commune: Script = load("res://ui/immersive08/fiche_commune.gd")
+		for source: String in ["adverse", "market"]:
+			if source_fiche.is_empty() and not (commune.trouver(app, id, source) as Dictionary).is_empty(): source_fiche = source
+	if not source_fiche.is_empty():
+		MiniFiche.lier(app, b, id, source_fiche)
 		# La mini-fiche se pose sur l'application : au-dessus de la scène du match (z 100).
 		b.mouse_entered.connect(func():
 			var fiche := MiniFiche.actuelle(app)
