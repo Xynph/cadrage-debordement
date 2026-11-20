@@ -63,7 +63,7 @@ static func carte(app: Control, parent: Control, zone: Rect2, slot: int, choisir
 	bouton.name = "LineupSlot%02d" % (slot + 1)
 	Kit.styler_ligne(bouton, Charte.PANNEAU_2, choisi)
 	if person.is_empty():
-		var vide := C.box(Charte.PANNEAU_3 if choisi else Charte.PANNEAU, Charte.IVOIRE_3, 0, 0)
+		var vide := C.box(Charte.PANNEAU_3 if choisi else Charte.PANNEAU, Charte.IVOIRE_3, Charte.RAYON_PETIT, 0)
 		vide.border_color = Charte.IVOIRE_3
 		for etat in ["normal", "pressed", "disabled"]: bouton.add_theme_stylebox_override(etat, vide)
 	parent.add_child(bouton)

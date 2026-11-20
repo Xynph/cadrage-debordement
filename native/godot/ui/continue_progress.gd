@@ -127,9 +127,7 @@ func _ready() -> void:
 	_logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
 	_logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var composite := ShaderMaterial.new()
-	composite.shader = load("res://branding/black_key.gdshader")
-	_logo.material = composite
+	# Logo définitif transparent (crème + « 27 » doré, charte §8.1) : plus de clé de noir à appliquer.
 	add_child(_logo)
 	card.name = "ContinueProgressCard"
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -318,9 +316,11 @@ func _layout() -> void:
 	_left.custom_minimum_size = Vector2(ring_w, 0)
 	card.size = card.get_combined_minimum_size()
 	card.position = ((size - card.size) * 0.5).round()
-	var logo_h := roundf(clampf(size.y * 0.11, 64.0, 130.0))
-	_logo.position = Vector2(roundf(size.x * 0.043), roundf(size.y * 0.02))
-	_logo.size = Vector2(roundf(logo_h * 2.28), logo_h)
+	# Logo au ratio réel de la texture (≈ 3,5:1) ; marge = moitié de la hauteur du « 27 » (toute la hauteur du logo).
+	var logo_h := roundf(clampf(size.y * 0.08, 48.0, 104.0))
+	var ratio := float(_logo.texture.get_width()) / maxf(1.0, float(_logo.texture.get_height())) if _logo.texture != null else 3.5
+	_logo.position = Vector2.ONE * roundf(logo_h * 0.5)
+	_logo.size = Vector2(roundf(logo_h * ratio), logo_h)
 
 
 ## Début d'une avance. `context` : date du jour, couleur du club, prochaine rencontre ({date, opponent}), notes.

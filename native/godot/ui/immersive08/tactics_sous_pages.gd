@@ -40,7 +40,7 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	var titre := Kit.titre(page, 0, 98, str(TITRES.get(kind, "")), 38, 1400)
 	titre.name = "CompositionSubpageTitle"
 	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
-	var bloc := D.rect(page, Rect2(0, 146, 1500, 760), Charte.PANNEAU, 0)
+	var bloc := D.rect(page, Rect2(0, 146, 1500, 760), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	bloc.name = "CompositionSubpage_" + kind
 	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
 	match kind:

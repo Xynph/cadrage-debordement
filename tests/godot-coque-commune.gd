@@ -114,7 +114,9 @@ func rail() -> void:
 		if not await press("Nav_" + caption): continue
 		check(app.route == destination, "Rail « %s » ouvre %s (%s)" % [caption, destination, app.route])
 		var active := named("Nav_" + caption) as Button
-		check(active != null and active.has_meta("rail_actif") and active.find_child("RailActiveMarker", true, false) != null, "Entrée « %s » marquée active (fond et filet incliné)" % caption)
+		# Charte finale §7.1 : entrée active = pilule aplat crème, texte et icône PANNEAU (plus de filet incliné).
+		var active_style := active.get_theme_stylebox("normal") as StyleBoxFlat if active != null else null
+		check(active != null and active.has_meta("rail_actif") and active_style != null and active_style.bg_color.is_equal_approx(Charte.IVOIRE) and active_style.corner_radius_top_left * 2 >= int(active.size.y) and active.get_theme_color("font_color").is_equal_approx(Charte.PANNEAU) and active.find_child("RailIcon", true, false) != null, "Entrée « %s » marquée active (pilule crème, texte PANNEAU)" % caption)
 	check(app.route == "Presse" or app.route == "Sélections", "Presse s'ouvre depuis le rail, hors conférence")
 	app._navigate("Composition"); await settle()
 	check(await press("TacticsTab4") and app.route == "Préparation" and app.Immersive._is_training(app), "Tactique → onglet Entraînement")

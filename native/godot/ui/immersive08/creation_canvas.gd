@@ -37,10 +37,13 @@ static func _incline(color: Color, size: Vector2) -> Panel:
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return bar
 
-static func _flat(color: Color = Color(0, 0, 0, 0), border: Color = Color(0, 0, 0, 0), padding: Vector2 = Vector2(8, 4)) -> StyleBoxFlat:
+## Fond de la charte §3 : `radius` 0 pour les bandeaux pleine largeur (barre haute, pied, fond d'écran) ;
+## sinon Charte.RAYON_PANNEAU (panneau), RAYON_CARTE (carte), RAYON_PETIT (touche), RAYON_PILULE (bouton, champ).
+static func _flat(color: Color = Color(0, 0, 0, 0), border: Color = Color(0, 0, 0, 0), padding: Vector2 = Vector2(8, 4), radius: int = 0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color
-	style.set_corner_radius_all(0)
+	style.set_corner_radius_all(radius if radius >= Charte.RAYON_PILULE else C.px(radius))
+	style.anti_aliasing = true
 	if border.a > 0:
 		style.border_color = border
 		style.set_border_width_all(1)
@@ -50,10 +53,10 @@ static func _flat(color: Color = Color(0, 0, 0, 0), border: Color = Color(0, 0, 
 	style.content_margin_bottom = C.px(padding.y)
 	return style
 
-static func _surface(color: Color, padding: int = 0) -> PanelContainer:
+static func _surface(color: Color, padding: int = 0, radius: int = 0) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.set_meta("immersive_style_applied", true)
-	panel.add_theme_stylebox_override("panel", _flat(color, Color(0, 0, 0, 0), Vector2(padding, padding)))
+	panel.add_theme_stylebox_override("panel", _flat(color, Color(0, 0, 0, 0), Vector2(padding, padding), radius))
 	return panel
 
 ## Titre d'écran : Barlow Condensed ExtraBold italique, capitales (charte §7).
@@ -153,7 +156,6 @@ static func _competition_name(app: Control, division: String) -> String:
 static func build(app: Control, ctx: Dictionary) -> Control:
 	var screen: Vector2i = app.get_window().size
 	C.configure(screen.y, screen.x)
-	C.rayon_nul = true
 	var page := C.v(0)
 	page.name = "CarnetCreation"
 	page.set_meta("creation_club_step", true)
@@ -203,11 +205,10 @@ static func build(app: Control, ctx: Dictionary) -> Control:
 	page.add_child(row)
 	_dossier(app, row, ctx, screen)
 	_grille(app, row, ctx, screen)
-	C.rayon_nul = false
 	return page
 
 static func _recherche(app: Control) -> Control:
-	var frame := _surface(Charte.PANNEAU_3)
+	var frame := _surface(Charte.PANNEAU_3, 0, Charte.RAYON_PILULE)
 	frame.name = "CreationSearchBox"
 	(frame.get_theme_stylebox("panel") as StyleBoxFlat).border_color = Charte.IVOIRE_3
 	(frame.get_theme_stylebox("panel") as StyleBoxFlat).set_border_width_all(1)
@@ -258,7 +259,7 @@ class RaccourciRecherche extends Control:
 			get_viewport().set_input_as_handled()
 
 static func _touche(text: String) -> PanelContainer:
-	var chip := _surface(Charte.PANNEAU_2, 4)
+	var chip := _surface(Charte.PANNEAU_2, 4, Charte.RAYON_PETIT)
 	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	chip.add_child(C.label(text, 16, C.MUTED, false))
 	return chip
@@ -292,18 +293,24 @@ static func _onglet(caption: String, active: bool, callback: Callable, id: Strin
 	tab.toggle_mode = true
 	tab.button_pressed = active
 	tab.accessibility_description = "Sélectionné" if active else ""
+	# Onglet de la charte §7.1 : pilule ; actif = aplat crème, texte `PANNEAU` ; survol `PANNEAU_2` ; focus = anneau crème (comme le reste de l'écran).
 	for look in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed"]:
-		var style := _flat(Color(0, 0, 0, 0), Color(0, 0, 0, 0), Vector2(2, 9))
+		var fond: Color = C.IVORY if active else (Charte.PANNEAU_2 if look in ["hover", "hover_pressed"] else Color(0, 0, 0, 0))
+		var style := _flat(fond, Color(0, 0, 0, 0), Vector2(14, 7), Charte.RAYON_PILULE)
 		if look == "focus":
+			style.bg_color = Color(0, 0, 0, 0)
 			style.border_color = C.IVORY
-			style.border_width_bottom = 1
+			style.set_border_width_all(2)
+			style.set_expand_margin_all(2)
 		tab.add_theme_stylebox_override(look, style)
-	for key in ["font_color", "font_focus_color", "font_disabled_color"]: tab.add_theme_color_override(key, C.IVORY if active else C.MUTED)
-	for key in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color"]: tab.add_theme_color_override(key, C.IVORY)
+	var encre: Color = Charte.PANNEAU if active else C.MUTED
+	for key in ["font_color", "font_focus_color", "font_disabled_color"]: tab.add_theme_color_override(key, encre)
+	for key in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color"]: tab.add_theme_color_override(key, Charte.PANNEAU if active else C.IVORY)
 	for key in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_focus_color", "icon_hover_pressed_color"]: tab.add_theme_color_override(key, Color.WHITE)
 	tab.pressed.connect(callback)
 	group.add_child(tab)
-	var underline := _incline(C.IVORY if active else Color(0, 0, 0, 0), Vector2(0, maxi(2, C.px(4))))
+	# Repère gardé pour l'accessibilité et les tests, invisible : l'aplat crème de la pilule dit l'onglet actif.
+	var underline := _incline(Color(0, 0, 0, 0), Vector2(0, maxi(2, C.px(4))))
 	underline.name = id + "Marker"
 	group.add_child(underline)
 	return group
@@ -354,7 +361,7 @@ static func _onglets_championnats(app: Control, page: Control, ctx: Dictionary) 
 # Panneau de gauche : le championnat, puis le club choisi
 
 static func _dossier(app: Control, row: HBoxContainer, ctx: Dictionary, screen: Vector2i) -> void:
-	var frame := _surface(C.PANEL)
+	var frame := _surface(C.PANEL, 0, Charte.RAYON_PANNEAU)
 	frame.name = "CreationDossierFrame"
 	frame.custom_minimum_size.x = roundf(screen.x * .2375)
 	frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -585,7 +592,7 @@ static func _bouton_suivant(app: Control, content: VBoxContainer, ctx: Dictionar
 	# Raccourci « Entrée » écrit dans le bouton dès 1600 px de large (à 1280, le nom du club garde toute la place).
 	var wide: bool = app.get_window().size.x >= 1600 and reason.is_empty()
 	for look in ["normal", "hover", "pressed", "focus", "disabled"]:
-		var style := _flat(C.OR if look != "hover" and look != "disabled" else (C.OR_VIF if look == "hover" else Charte.PANNEAU_3), Color(0, 0, 0, 0), Vector2(24, 6))
+		var style := _flat(C.OR if look != "hover" and look != "disabled" else (C.OR_VIF if look == "hover" else Charte.PANNEAU_3), Color(0, 0, 0, 0), Vector2(24, 6), Charte.RAYON_PILULE)
 		style.content_margin_right = C.px(110 if wide else 24)
 		if look != "disabled": style.skew = skew
 		if look == "focus":
@@ -760,7 +767,7 @@ static func _grille(app: Control, row: HBoxContainer, ctx: Dictionary, screen: V
 		button.add_theme_font_override("font", C.BODY)
 		button.add_theme_font_size_override("font_size", C.font_px(17))
 		for look in ["normal", "hover", "pressed", "focus", "hover_pressed"]:
-			var style := _flat(Charte.PANNEAU_3 if active or look in ["hover", "hover_pressed"] else Color(0, 0, 0, 0), C.IVORY if active or look == "focus" else Charte.IVOIRE_3, Vector2(12, 3))
+			var style := _flat(Charte.PANNEAU_3 if active or look in ["hover", "hover_pressed"] else Color(0, 0, 0, 0), C.IVORY if active or look == "focus" else Charte.IVOIRE_3, Vector2(12, 3), Charte.RAYON_PILULE)
 			button.add_theme_stylebox_override(look, style)
 		for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: button.add_theme_color_override(key, C.IVORY)
 		button.pressed.connect(func():
@@ -840,7 +847,7 @@ static func _carte(app: Control, club: Dictionary, order: int, ctx: Dictionary, 
 	card.tooltip_text = "%s\nClic : choisir · Double-clic ou Entrée : étape suivante" % G.club_name(club)
 	for look in ["normal", "hover", "pressed", "focus", "disabled"]:
 		var fill: Color = Charte.PANNEAU_3 if chosen else (Charte.PANNEAU_2 if look in ["hover", "pressed"] else C.PANEL)
-		var style := _flat(fill, Color(0, 0, 0, 0), Vector2(0, 0))
+		var style := _flat(fill, Color(0, 0, 0, 0), Vector2(0, 0), Charte.RAYON_CARTE)
 		if look == "focus":
 			style.bg_color = Color(0, 0, 0, 0)
 			style.border_color = C.IVORY
@@ -979,7 +986,6 @@ class Jauge extends Control:
 static func workspace(app: Control, page: Control) -> Control:
 	var screen: Vector2i = app.get_window().size
 	C.configure(screen.y, screen.x)
-	C.rayon_nul = true
 	var ctx: Dictionary = page.get_meta("creation_ctx", {})
 	var shell := _surface(C.BG)
 	shell.name = "ImmersiveCreationWorkspace"
@@ -994,7 +1000,6 @@ static func workspace(app: Control, page: Control) -> Control:
 	column.add_child(body)
 	body.add_child(page)
 	column.add_child(_pied(app))
-	C.rayon_nul = false
 	return shell
 
 static func _barre(app: Control, ctx: Dictionary) -> Control:

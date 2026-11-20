@@ -28,9 +28,6 @@ const BOLD = preload("res://ui/immersive08/fonts/BarlowCondensed-Bold.ttf")
 const EXTRA_BOLD = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBold.ttf")
 const BODY = preload("res://fonts/DMSans.ttf")
 static var density := 1.0
-## Charte §3 « rayons 0 » posée à la création : vrai le temps de construire un écran qui veut des angles droits partout
-## (Composition), au lieu d'une passe sur tous ses nœuds après coup (Kit.angles_droits).
-static var rayon_nul := false
 static var _textures: Dictionary = {}
 
 class ArtTexture extends TextureRect:
@@ -88,13 +85,13 @@ static func reach_controls(root: Node) -> void:
 		control.custom_minimum_size = control.custom_minimum_size.max(Vector2(TARGET_MIN, TARGET_MIN))
 
 ## Panneau de la charte : arrondi (18 par défaut), sans bordure. Un `border` explicite garde un contour fin
-## (champ, bouton secondaire) ; `rayon_nul` reste pour les grilles qui veulent des cases jointives.
+## (champ, bouton secondaire). Rayons : 18 panneau, 12 carte, 6 case/pastille/ligne choisie, RAYON_PILULE bouton/champ.
 static func box(color: Color = PANEL, border: Color = Color.TRANSPARENT, radius: int = Charte.RAYON_PANNEAU, padding: int = 18) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color
 	style.border_color = border
 	style.set_border_width_all(1 if border.a > 0 else 0)
-	style.set_corner_radius_all(0 if rayon_nul else (radius if radius >= Charte.RAYON_PILULE else maxi(3, px(radius))))
+	style.set_corner_radius_all(radius if radius >= Charte.RAYON_PILULE else maxi(3, px(radius)))
 	style.anti_aliasing = true
 	style.content_margin_left = px(padding)
 	style.content_margin_right = px(padding)

@@ -165,9 +165,8 @@ static func flux(app: Control, parent: Control, x: float, ligne: float, largeur_
 			poses += 1
 	return {"lignes": mini(rang + 1, max_lignes) if poses > 0 else 0, "omis": omis}
 
-## Charte §3 « rayons 0 » : `C.box` impose un rayon minimal de 3 ; cette passe remet à 0 les coins de tous les fonds
-## posés dans l'écran (panneaux, lignes, barres, champs, puces, focus). La page principale de la Composition n'en a
-## plus besoin (fonds créés sans rayon : C.rayon_nul) ; reste pour les sous-pages et le tableau des candidats retrié.
+## Ancienne règle « rayons 0 » : remet à 0 les coins de tous les fonds posés sous `racine`. La Composition ne s'en sert
+## plus (charte finale : rayons 18 / 12 / 6 / pilule) ; encore appelée par des écrans hors de ce lot.
 static func angles_droits(racine: Node) -> void:
 	for noeud in racine.find_children("*", "Control", true, false):
 		var control := noeud as Control
@@ -180,14 +179,14 @@ static func angles_droits(racine: Node) -> void:
 static func hauteur_ligne(taille: int) -> float:
 	return Charte.TEXTE.get_height(maxi(12, C.px(taille))) / C.density
 
-## Puce pleine (charte §3 : rayon 0, aucun cadre) : « ! » de l'avis du staff, « 33 » des Bleus, « DERBY ».
+## Puce pleine (charte §3 : rayon 6, aucun cadre) : « ! » de l'avis du staff, « 33 » des Bleus, « DERBY ».
 static func puce(parent: Control, zone: Rect2, valeur: String, fond: Color, encre: Color, id: String = "") -> Panel:
-	var cadre := D.rect(parent, zone, fond, 0)
+	var cadre := D.rect(parent, zone, fond, Charte.RAYON_PETIT)
 	if not id.is_empty(): cadre.name = id
 	D.text(cadre, zone.size.x / 2.0, zone.size.y / 2.0 + 6, valeur, 16, encre, 700, zone.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	return cadre
 
-## Case à cocher ou bouton radio de la charte : carré rayon 0, trait ivoire, plein si
+## Case à cocher ou bouton radio de la charte : carré, trait ivoire, plein si
 ## coché ; libellé DM Sans ivoire-2 ; focus = contour ivoire 2 px.
 static func styler_case(case_: CheckBox) -> void:
 	var cote := maxi(12, C.px(20))
@@ -202,7 +201,7 @@ static func styler_case(case_: CheckBox) -> void:
 	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: case_.add_theme_color_override(couleur, Charte.IVOIRE_2)
 	var vide := StyleBoxEmpty.new()
 	for etat in ["normal", "hover", "pressed", "hover_pressed", "disabled"]: case_.add_theme_stylebox_override(etat, vide)
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 2)
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PETIT, 2)
 	focus.set_border_width_all(2)
 	case_.add_theme_stylebox_override("focus", focus)
 	case_.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -218,22 +217,22 @@ static func _case(cote: int, coche: bool) -> ImageTexture:
 			if bord or (coche and interieur): image.set_pixel(x, y, Charte.IVOIRE)
 	return ImageTexture.create_from_image(image)
 
-## Liste déroulante de la charte (menu déroulant autorisé) : fond panneau-3, rayon 0, filet ivoire-3, focus ivoire.
+## Liste déroulante de la charte (menu déroulant autorisé) : fond panneau-3, pilule, filet ivoire-3, focus ivoire.
 static func styler_liste(liste: OptionButton) -> void:
 	liste.add_theme_font_override("font", Charte.TEXTE)
 	liste.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: liste.add_theme_color_override(couleur, Charte.IVOIRE)
 	liste.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
-	var fond := C.box(Charte.PANNEAU_3, Charte.IVOIRE_3, 0, 10)
-	var survol := C.box(Charte.PANNEAU_2, Charte.IVOIRE_2, 0, 10)
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 10)
+	var fond := C.box(Charte.PANNEAU_3, Charte.IVOIRE_3, Charte.RAYON_PILULE, 10)
+	var survol := C.box(Charte.PANNEAU_2, Charte.IVOIRE_2, Charte.RAYON_PILULE, 10)
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 10)
 	focus.set_border_width_all(2)
 	for etat in ["normal", "pressed", "disabled"]: liste.add_theme_stylebox_override(etat, fond)
 	liste.add_theme_stylebox_override("hover", survol)
 	liste.add_theme_stylebox_override("focus", focus)
 	var menu := liste.get_popup()
-	menu.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3, Charte.FILET, 0, 6))
-	menu.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 4))
+	menu.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3, Charte.FILET, Charte.RAYON_CARTE, 6))
+	menu.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_PETIT, 4))
 	menu.add_theme_font_override("font", Charte.TEXTE)
 	menu.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 	menu.add_theme_color_override("font_color", Charte.IVOIRE)
@@ -243,7 +242,7 @@ static func styler_liste(liste: OptionButton) -> void:
 static func touche(parent: Control, x: float, ligne: float, valeur: String, droite: bool = false) -> float:
 	var large := Charte.TEXTE.get_string_size(valeur, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(16))).x / C.density + 16
 	var gauche := x - large if droite else x
-	D.rect(parent, Rect2(gauche, ligne - 20, large, 27), Charte.PANNEAU_3, 2)
+	D.rect(parent, Rect2(gauche, ligne - 20, large, 27), Charte.PANNEAU_3, Charte.RAYON_PETIT)
 	D.text(parent, gauche + 8, ligne - 1, valeur, 16, Charte.IVOIRE_2, 600, large - 10, HORIZONTAL_ALIGNMENT_LEFT, true)
 	return large
 
@@ -252,47 +251,31 @@ static func condition(parent: Control, x: float, ligne: float, valeur: Variant, 
 	if not (valeur is int or valeur is float):
 		return texte(parent, x + barre + 64, ligne, "—", Charte.IVOIRE_3, 60, 18, HORIZONTAL_ALIGNMENT_RIGHT)
 	var v := clampf(float(valeur), 0, 100)
-	D.rect(parent, Rect2(x, ligne - 10, barre, 8), Charte.PANNEAU_3, 0)
-	if v > 0: D.rect(parent, Rect2(x, ligne - 10, barre * v / 100.0, 8), Charte.IVOIRE_2, 0)
+	D.rect(parent, Rect2(x, ligne - 10, barre, 8), Charte.PANNEAU_3, Charte.RAYON_PILULE)
+	if v > 0: D.rect(parent, Rect2(x, ligne - 10, barre * v / 100.0, 8), Charte.IVOIRE_2, Charte.RAYON_PILULE)
 	D.rect(parent, Rect2(x + barre * .8, ligne - 14, 1.4, 16), Charte.IVOIRE_3, 0)
 	var bas := v < 80
 	var label := texte(parent, x + barre + 64, ligne, ("! " if bas else "") + "%d %%" % roundi(v), Charte.D if bas else Charte.IVOIRE, 74, 18, HORIZONTAL_ALIGNMENT_RIGHT)
 	if bas: label.add_theme_font_override("font", texte_gras())
 	return label
 
-## Bouton ivoire plein (un seul par écran : l'action principale), bord droit incliné, libellé italique en capitales.
+## Action d'un écran de la coque (charte finale §7.1) : pilule à contour FILET, texte crème (`C.style_bouton_contour`).
+## Plus d'aplat clair : Continuer porte déjà l'unique aplat doré, et un aplat crème hors onglet/menu volerait la vedette.
+## Le nom est gardé pour les appelants ; focus = contour ivoire 2 px, comme le reste du kit.
 static func bouton_ivoire(parent: Control, zone: Rect2, valeur: String, action: Callable, id: String) -> Button:
 	var bouton := Button.new()
 	bouton.name = id
 	bouton.text = valeur.to_upper()
 	bouton.focus_mode = Control.FOCUS_ALL
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	bouton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	bouton.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
-	bouton.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
-	for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
-		bouton.add_theme_color_override(etat, Charte.NUIT)
-	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_2)
-	var vide := StyleBoxEmpty.new()
-	vide.content_margin_left = C.px(18)
-	vide.content_margin_right = C.px(26)
-	for etat in ["normal", "hover", "pressed", "disabled", "hover_pressed"]: bouton.add_theme_stylebox_override(etat, vide)
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	C.style_bouton_contour(bouton, 21)
+	bouton.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bouton.clip_text = true
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 18)
 	focus.set_border_width_all(2)
-	focus.set_expand_margin_all(C.px(4))
+	focus.set_expand_margin_all(2)
 	bouton.add_theme_stylebox_override("focus", focus)
-	var fond := FondIncline.new()
-	fond.name = "FondIvoire"
-	fond.show_behind_parent = true
-	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bouton.add_child(fond)
-	fond.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var teinte := func():
-		fond.couleur = Charte.PANNEAU_2 if bouton.disabled else (Charte.IVOIRE.lightened(.35) if bouton.is_hovered() else Charte.IVOIRE)
-		fond.queue_redraw()
-	bouton.mouse_entered.connect(teinte)
-	bouton.mouse_exited.connect(func(): teinte.call_deferred())
-	bouton.ready.connect(teinte)
+	bouton.add_theme_stylebox_override("hover_pressed", bouton.get_theme_stylebox("pressed"))
 	bouton.pressed.connect(action)
 	parent.add_child(bouton)
 	D.place(bouton, zone)
@@ -301,9 +284,9 @@ static func bouton_ivoire(parent: Control, zone: Rect2, valeur: String, action: 
 ## Rangée cliquable d'un tableau ou carte de poste : fond plat (zébrure, survol, choisi), focus = contour ivoire 2 px
 ## distinct de la sélection (fond + marqueur).
 static func styler_ligne(bouton: Button, fond: Color, choisi: bool = false) -> void:
-	var normal := C.box(Charte.PANNEAU_3 if choisi else fond, Color.TRANSPARENT, 0, 0)
-	var survol := C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0)
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	var normal := C.box(Charte.PANNEAU_3 if choisi else fond, Color.TRANSPARENT, Charte.RAYON_PETIT, 0)
+	var survol := C.box(Charte.PANNEAU_3, Color.TRANSPARENT, Charte.RAYON_PETIT, 0)
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PETIT, 0)
 	focus.set_border_width_all(2)
 	for etat in ["normal", "pressed", "disabled"]: bouton.add_theme_stylebox_override(etat, normal)
 	bouton.add_theme_stylebox_override("hover", survol)

@@ -422,7 +422,8 @@ func _poser(controle: Control, x: float, y: float, largeur: float, hauteur: floa
 	return controle
 
 ## Bouton de la charte (§7) :
-## - « principal » : ivoire plein, texte nuit — UN seul par écran (« Valider et reprendre ») ;
+## - « principal » : pilule dorée, texte `PANNEAU` — le SEUL aplat doré de la fenêtre (« Valider et reprendre » ;
+##   la fenêtre couvre la coque, donc pas de Continuer à l'écran) ;
 ## - « lien » : texte ivoire (+ flèche), souligné au survol et au focus, sans cadre ni fond ;
 ## - « segment » / « choisi » : choix d'un groupe (onglets, crans, candidats) souligné d'un filet bas fin ; le choix
 ##   courant sur fond sombre relevé, filet GAUCHE épais ivoire et coche (jamais un second ivoire plein, jamais d'or).

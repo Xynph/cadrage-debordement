@@ -200,10 +200,24 @@ func layout() -> void:
 	check(node("ClubFacilityDetails") != null and node("ClubFacilityTraining") != null, "Installations en tableau")
 	check(node("ClubCashLink") != null or app.navigation_controller == null, "Lien trésorerie")
 	check(windows().is_empty(), "Aucune fenêtre ouverte sur la vue d'ensemble")
-	var seul_plein := 0
+	# Charte finale : aucun aplat crème hors onglet (Continuer porte l'unique aplat doré) ; l'action de « À décider »
+	# est une pilule à contour.
+	var aplats := 0
 	for bouton in node("ClubOverview").find_children("*", "Button", true, false):
-		if bouton.find_child("FondIvoire", false, false) != null: seul_plein += 1
-	check(seul_plein <= 1, "Au plus un bouton ivoire plein sur la vue d'ensemble (%d)" % seul_plein)
+		var fond := (bouton as Button).get_theme_stylebox("normal") as StyleBoxFlat
+		if fond != null and close(fond.bg_color, Charte.IVOIRE) and fond.bg_color.a > .5: aplats += 1
+	check(aplats == 0, "Aucun bouton en aplat crème sur la vue d'ensemble (%d)" % aplats)
+	var ligne_decider := node("ClubDecideRow0")
+	if ligne_decider != null:
+		var pilules := 0
+		for bouton in node("ClubDecide").find_children("*", "Button", true, false):
+			var fond := (bouton as Button).get_theme_stylebox("normal") as StyleBoxFlat
+			if fond != null and fond.corner_radius_top_left >= 999 and fond.border_width_left > 0: pilules += 1
+		check(pilules >= 1, "« À décider » : action principale en pilule à contour")
+	for id in ["ClubCouncil", "ClubFacilities", "ClubDecide", "ClubLocker"]:
+		var panneau := node(id) as Panel
+		var style := panneau.get_theme_stylebox("panel") as StyleBoxFlat if panneau != null else null
+		check(style != null and style.corner_radius_top_left >= 8 and style.border_width_left == 0, "Bloc %s : panneau arrondi sans bordure" % id)
 
 func colors() -> void:
 	var page := node("ImmersiveClub")

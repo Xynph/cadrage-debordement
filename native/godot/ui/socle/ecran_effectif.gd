@@ -118,7 +118,8 @@ static func _couleur_condition(valeur: float) -> Color:
 func _dessin_numero(zone: Control, rect: Rect2, joueur: Dictionary) -> void:
 	var numero: Variant = joueur.get("shirtNumber")
 	if not _nombre(numero): return
-	var rayon := float(J.px(13))
+	# Pastille de 20 px dans une ligne de 26 (charte §7.1 : pastilles de tableau à 20 px).
+	var rayon := float(J.px(10))
 	var centre := Vector2(rect.position.x + rayon + 1, rect.position.y + rect.size.y / 2.0)
 	var titulaire := str(joueur.get("status", "")) == "Titulaire"
 	if titulaire:
@@ -126,13 +127,13 @@ func _dessin_numero(zone: Control, rect: Rect2, joueur: Dictionary) -> void:
 	else:
 		zone.draw_circle(centre, rayon - 1, J.TEXTE, false, maxf(1.5, J.px(1.5)), true)
 	var texte := str(int(numero))
-	var taille := J.px(15)
+	var taille := J.px(J.T_CELLULE)
 	var largeur := J.TITRE_GRAS.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x
 	zone.draw_string(J.TITRE_GRAS, Vector2(centre.x - largeur / 2.0, centre.y + (J.TITRE_GRAS.get_ascent(taille) - J.TITRE_GRAS.get_descent(taille)) / 2.0).round(), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille, J.FOND if titulaire else J.TEXTE)
 
 func _dessin_niveau(zone: Control, rect: Rect2, joueur: Dictionary) -> void:
 	var niveau: Variant = joueur.get("rating")
-	var taille := J.px(J.T_CHIFFRE)
+	var taille := J.px(18)
 	var texte := str(int(niveau)) if _nombre(niveau) else "—"
 	zone.draw_string(J.TITRE_GRAS, Vector2(rect.position.x, rect.position.y + (rect.size.y + J.TITRE_GRAS.get_ascent(taille) - J.TITRE_GRAS.get_descent(taille)) / 2.0).round(), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille, J.TEXTE)
 	var gauche := rect.position.x + J.px(38)
@@ -157,9 +158,9 @@ func _barre_niveau(sur: CanvasItem, rail: Rect2, joueur: Dictionary) -> void:
 func _dessin_condition(zone: Control, rect: Rect2, joueur: Dictionary) -> void:
 	var valeur: Variant = joueur.get("condition")
 	if not _nombre(valeur):
-		zone.draw_string(J.CORPS, Vector2(rect.position.x, rect.position.y + rect.size.y * 0.64).round(), "—", HORIZONTAL_ALIGNMENT_LEFT, -1, J.px(J.T_CORPS), J.TEXTE_FAIBLE)
+		zone.draw_string(J.CORPS, Vector2(rect.position.x, rect.position.y + rect.size.y * 0.64).round(), "—", HORIZONTAL_ALIGNMENT_LEFT, -1, J.px(J.T_CELLULE), J.TEXTE_FAIBLE)
 		return
-	var taille := J.px(J.T_CORPS)
+	var taille := J.px(J.T_CELLULE)
 	var texte := "%d %%" % floori(float(valeur))
 	var l_texte := float(J.px(48))
 	var rail := Rect2(rect.position.x, rect.position.y + rect.size.y / 2.0 - J.px(2.5), maxf(J.px(30), rect.size.x - l_texte - J.px(12)), J.px(5))
@@ -258,19 +259,25 @@ func _bouton(texte: String, actif_: bool, pilule := false, action := Callable())
 	if action.is_valid(): bouton.pressed.connect(action)
 	return bouton
 
+## Filtres (pilules) et vues (onglets) : pilules de la charte ; actif = aplat crème, texte PANNEAU ; inactif gris-vert,
+## survol panneau-2 ; focus anneau doré. Jamais d'actif vert ni doré.
 func _habiller(bouton: Button, actif_: bool, pilule: bool) -> void:
-	var rayon := 20.0 if pilule else 7.0
+	var rayon := float(J.Charte.RAYON_PILULE)
 	var marges := func(style: StyleBoxFlat) -> StyleBoxFlat:
 		style.content_margin_left = J.px(16); style.content_margin_right = J.px(16)
 		style.content_margin_top = J.px(7 if pilule else 8); style.content_margin_bottom = J.px(7 if pilule else 8)
 		return style
-	bouton.add_theme_stylebox_override("normal", marges.call(J.boite(J.TEXTE if actif_ else (J.PANNEAU_HAUT if pilule else Color.TRANSPARENT), rayon)))
-	bouton.add_theme_stylebox_override("hover", marges.call(J.boite(J.TEXTE if actif_ else J.CHOIX, rayon)))
+	bouton.add_theme_stylebox_override("normal", marges.call(J.boite(J.TEXTE if actif_ else Color.TRANSPARENT, rayon, 0, Color.TRANSPARENT if actif_ or not pilule else J.TRAIT)))
+	bouton.add_theme_stylebox_override("hover", marges.call(J.boite(J.TEXTE if actif_ else J.SURVOL, rayon)))
 	bouton.add_theme_stylebox_override("pressed", marges.call(J.boite(J.TEXTE, rayon)))
-	bouton.add_theme_stylebox_override("focus", marges.call(J.boite(Color.TRANSPARENT, rayon, 0, J.OR)))
-	for nom: String in ["font_color", "font_hover_color", "font_focus_color"]:
-		bouton.add_theme_color_override(nom, J.FOND if actif_ else J.TEXTE)
-	bouton.add_theme_color_override("font_pressed_color", J.FOND)
+	var focus: StyleBoxFlat = marges.call(J.boite(Color.TRANSPARENT, rayon, 0, J.FOCUS))
+	focus.set_border_width_all(2)
+	focus.set_expand_margin_all(2)
+	bouton.add_theme_stylebox_override("focus", focus)
+	for nom: String in ["font_color", "font_focus_color"]:
+		bouton.add_theme_color_override(nom, J.PANNEAU if actif_ else J.TEXTE_DOUX)
+	bouton.add_theme_color_override("font_hover_color", J.PANNEAU if actif_ else J.TEXTE)
+	bouton.add_theme_color_override("font_pressed_color", J.PANNEAU)
 
 func _carte(marge := 18.0) -> PanelContainer:
 	var carte := PanelContainer.new()
@@ -317,11 +324,12 @@ func _construire() -> void:
 	recherche.add_theme_font_size_override("font_size", J.px(J.T_CORPS))
 	recherche.add_theme_color_override("font_color", J.TEXTE)
 	recherche.add_theme_color_override("font_placeholder_color", J.TEXTE_FAIBLE)
-	var champ := J.boite(J.PANNEAU_HAUT, 20)
+	# Champ de la charte : pilule PANNEAU_3, contour FILET, focus anneau doré.
+	var champ := J.boite(J.CHOIX, J.Charte.RAYON_PILULE, 0, J.TRAIT)
 	champ.content_margin_left = J.px(16); champ.content_margin_right = J.px(12); champ.content_margin_top = J.px(6); champ.content_margin_bottom = J.px(6)
 	recherche.add_theme_stylebox_override("normal", champ)
 	var champ_actif: StyleBoxFlat = champ.duplicate()
-	champ_actif.border_color = J.OR; champ_actif.set_border_width_all(maxi(1, J.px(1)))
+	champ_actif.border_color = J.FOCUS; champ_actif.set_border_width_all(2)
 	recherche.add_theme_stylebox_override("focus", champ_actif)
 	recherche.text_changed.connect(func(texte: String):
 		etat.recherche = texte
@@ -331,7 +339,7 @@ func _construire() -> void:
 	ressort.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	barre.add_child(ressort)
 	var vues := PanelContainer.new()
-	vues.add_theme_stylebox_override("panel", J.boite(J.PANNEAU, 9, 4))
+	vues.add_theme_stylebox_override("panel", J.boite(J.PANNEAU, J.Charte.RAYON_PILULE, 4))
 	var rang_vues := HBoxContainer.new()
 	rang_vues.add_theme_constant_override("separation", J.px(2))
 	vues.add_child(rang_vues)

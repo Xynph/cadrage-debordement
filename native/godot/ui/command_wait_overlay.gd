@@ -84,9 +84,7 @@ func _ready() -> void:
 	_logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
 	_logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var composite := ShaderMaterial.new()
-	composite.shader = load("res://branding/black_key.gdshader")
-	_logo.material = composite
+	# Logo définitif transparent (crème + « 27 » doré, charte §8.1) : plus de clé de noir à appliquer.
 	_frame.add_child(_logo)
 	_status.name = "CommandWaitStatus"
 	_status.max_lines_visible = 1
@@ -500,8 +498,10 @@ func _layout_stage() -> void:
 	_frame.size = size
 	var margin := roundf(64.0 * k)
 	var band_top := roundf(size.y * 0.72)
-	var logo_h := roundf(150.0 * k)
-	_place(_logo, Rect2(roundf(70.0 * k), roundf(18.0 * k), roundf(logo_h * 2.28), logo_h))
+	# Logo au ratio réel de la texture (≈ 3,5:1) ; marge = moitié de la hauteur du « 27 » (toute la hauteur du logo).
+	var logo_h := roundf(110.0 * k)
+	var logo_marge := roundf(logo_h * 0.5)
+	_place(_logo, Rect2(logo_marge, logo_marge, roundf(logo_h * _logo_ratio()), logo_h))
 	# Lieu : à droite, au-dessus de la photo.
 	var lg_px := _px(14.0, k, 13)
 	_set_font(_legend, lg_px)
@@ -780,3 +780,8 @@ func _dates() -> Array:
 	var iso := str(_context.get("date", ""))
 	if not bool(_context.get("flip", false)) or _date_parts(iso).is_empty(): return []
 	return [_date_parts(iso), _date_parts(_shift_date(iso, 1))]
+
+## Largeur / hauteur de la texture du logo (2048 × 581 pour le logo définitif).
+func _logo_ratio() -> float:
+	if _logo.texture == null: return 3.5
+	return float(_logo.texture.get_width()) / maxf(1.0, float(_logo.texture.get_height()))

@@ -337,35 +337,56 @@ const SHELL_ROUTES := ["Recherche", "Réglages", "Comparateur", "Préparation Eu
 const RAIL_WIDTH := 309.0
 const RAIL_HEADER := 152.0
 const RAIL_TOP := 169.0
-const RAIL_ROW := 83.0
-const RAIL_ROW_MIN := 59.0
-const RAIL_ROW_SMALL := 72.0
+## Entrées du menu latéral (charte §7.1) : pilule de 40 px (53,3 en référence 2560, 1920 = facteur 0,75), dans une
+## ligne de 44 px (4 px d'air entre deux pilules), en retrait de 12 px des bords du rail ; icône 20 px.
+const RAIL_ROW := 59.0
+const RAIL_ROW_MIN := 55.0
+const RAIL_ROW_SMALL := 59.0
+const RAIL_PILL := 160.0 / 3.0
+const RAIL_INSET := 16.0
+const RAIL_ICON := 80.0 / 3.0
+## Dans la pilule : 12 px avant l'icône, 9 px entre l'icône et le libellé.
+const RAIL_PAD := 16.0
+const RAIL_LABEL := RAIL_PAD + RAIL_ICON + 12.0
 const RAIL_GAP := 23.0
-const RAIL_DOCK := 293.0
+const RAIL_DOCK := 252.0
 const RAIL_TEXT := 29.0
+## Rayon 6 px de la charte (pastilles, touches, cases) en unités de référence.
+const RAYON_PETIT_REF := Charte.RAYON_PETIT / 0.75
+## Icônes du rail (famille au trait d'icon-paths.json), gris-vert au repos, PANNEAU sur l'entrée active.
+const RAIL_ICONS := {"Bureau":"home", "Réception":"mail", "Effectif":"people", "Tactique":"tactic", "Recrutement":"search",
+	"Club":"shield", "Finances":"money", "Compétitions":"trophy", "Formation":"school", "Presse":"globe", "Sélections":"flag",
+	"Calendrier":"calendar"}
 const TOPBAR_HEIGHT := 64.0
 const TOPBAR_WIDTH := 2560.0 - RAIL_WIDTH
 const CONTINUE_WIDTH := 389.0
 const JOURS := ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."]
 const MOIS := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 
-## Parallélogramme incliné de 10° (logo) : liseré du club, marqueur de l'entrée active, badge, fond de Continuer.
-## `pente_gauche` faux : bord gauche droit (Continuer n'a que son bord droit incliné).
-class Incline extends Control:
+## Aplat droit de la coque (charte finale : droit partout) : liseré du club, fond doré de Continuer. `rayon` > 0 :
+## coins arrondis (pilule avec Charte.RAYON_PILULE) ; sinon rectangle (Charte.decalage vaut 0, plus d'inclinaison).
+class Aplat extends Control:
 	var couleur := Color.WHITE
 	var couleur_survol := Color.TRANSPARENT
 	var source: BaseButton
-	var pente_gauche := true
+	var rayon := 0
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 	func _draw() -> void:
 		var h := size.y
-		var d := h * 0.17633
 		var c := couleur
 		if is_instance_valid(source):
 			if source.disabled: c = Color(couleur, .55)
 			elif couleur_survol.a > 0.0 and (source.is_hovered() or source.button_pressed or source.has_focus()): c = couleur_survol
-		draw_colored_polygon(PackedVector2Array([Vector2(d if pente_gauche else 0.0, 0.0), Vector2(size.x, 0.0), Vector2(size.x - d, h), Vector2(0.0, h)]), c)
+		if rayon > 0:
+			var box := StyleBoxFlat.new()
+			box.bg_color = c
+			box.set_corner_radius_all(mini(rayon, ceili(h / 2.0)))
+			box.anti_aliasing = true
+			draw_style_box(box, Rect2(Vector2.ZERO, size))
+			return
+		var d := Charte.decalage(h)
+		draw_colored_polygon(PackedVector2Array([Vector2(d, 0.0), Vector2(size.x, 0.0), Vector2(size.x - d, h), Vector2(0.0, h)]), c)
 
 ## Pictogrammes de la coque, dessinés au trait (charte §7.1 : pas de caractère de police, pas de bibliothèque).
 class Picto extends Control:
@@ -446,9 +467,10 @@ static func _style(color: Color, radius: float = 0.0, border: Color = Color.TRAN
 		style.set_border_width_all(border_width)
 	return style
 
-## Bouton de la coque : fond transparent, survol panneau-2, pressé panneau-3, focus clavier contour ivoire 2 px
-## décalé de 2 px (charte §7.1, États). `contour` : filet 1 px ivoire-3, rayon 2 (Menu, Précédent, Suivant).
-static func _shell_button(id: String, contour: bool = false) -> Button:
+## Bouton de la coque : fond transparent, survol panneau-2, pressé panneau-3, focus clavier anneau doré 2 px
+## décalé de 2 px (charte §7.1, États). `contour` : filet 1 px `FILET` (bouton secondaire : Menu, Précédent, Suivant).
+## `rayon` en unités de référence (Charte.RAYON_PILULE : pilule).
+static func _shell_button(id: String, contour: bool = false, radius: float = 0.0) -> Button:
 	var button := Button.new()
 	button.name = id
 	button.focus_mode = Control.FOCUS_ALL
@@ -456,11 +478,10 @@ static func _shell_button(id: String, contour: bool = false) -> Button:
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.clip_text = true
 	button.set_meta("immersive_style_applied", true)
-	var border := C.FAINT if contour else Color.TRANSPARENT
-	var radius := 3.0 if contour else 0.0
+	var border := C.LINE if contour else Color.TRANSPARENT
 	var fills := {"normal":Color.TRANSPARENT, "hover":C.RAISED, "pressed":C.SELECTED, "hover_pressed":C.SELECTED, "disabled":Color.TRANSPARENT}
-	for state: String in fills: button.add_theme_stylebox_override(state, _style(fills[state], radius, C.LINE if state == "disabled" and contour else border))
-	var focus := _style(Color.TRANSPARENT, 0.0, C.IVORY, 2)
+	for state: String in fills: button.add_theme_stylebox_override(state, _style(fills[state], radius, border))
+	var focus := _style(Color.TRANSPARENT, radius, C.OR, 2)
 	focus.set_expand_margin_all(2)
 	button.add_theme_stylebox_override("focus", focus)
 	button.add_theme_font_override("font", C.BODY)
@@ -488,13 +509,14 @@ static func _label(parent: Node, rect: Rect2, text: String, size_ref: float, col
 	D.place(label, rect)
 	return label
 
-## Touche écrite (« Échap », « Ctrl K », « Ctrl S », « F1 ») : pavé panneau-3, Barlow Condensed SemiBold ivoire-2.
+## Touche écrite (« Échap », « Ctrl K », « Ctrl S », « F1 ») : pavé panneau-3 rayon 6 px, Barlow Condensed SemiBold
+## ivoire-2.
 static func _key(parent: Node, x: float, y: float, text: String, fond: Color = C.SELECTED) -> Panel:
 	var width := _rw(C.DISPLAY, text, 16) + 16.0
 	var chip := Panel.new()
 	chip.name = "Touche_" + text.replace(" ", "")
 	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chip.add_theme_stylebox_override("panel", _style(fond, 3.0))
+	chip.add_theme_stylebox_override("panel", _style(fond, RAYON_PETIT_REF))
 	parent.add_child(chip)
 	D.place(chip, Rect2(x, y, width, 27))
 	_label(chip, Rect2(0, 0, width, 27), text, 16, C.MUTED, C.DISPLAY, HORIZONTAL_ALIGNMENT_CENTER)
@@ -515,10 +537,10 @@ static func _picto(parent: Node, rect: Rect2, forme: String, color: Color = C.MU
 	if source != null: source.draw.connect(picto.queue_redraw)
 	return picto
 
-static func _incline(parent: Node, rect: Rect2, color: Color, pente_gauche: bool = true) -> Incline:
-	var shape := Incline.new()
+static func _aplat(parent: Node, rect: Rect2, color: Color, radius: int = 0) -> Aplat:
+	var shape := Aplat.new()
 	shape.couleur = color
-	shape.pente_gauche = pente_gauche
+	shape.rayon = radius
 	parent.add_child(shape)
 	D.place(shape, rect)
 	return shape
@@ -575,7 +597,8 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	if not national:
 		secondary.append(["Presse", "Presse", ["Presse"]])
 		if app.model.get("international") is Dictionary: secondary.append(["Sélections", "Sélections", ["Sélections"]])
-	# Lignes de 83 (62 px à 1920) compressibles jusqu'à 59 (44 px) ; au-delà, le groupe central défile, le pied reste fixe.
+	# Lignes de 59 (44 px à 1920, pilule de 40 px) compressibles jusqu'à 55 ; au-delà, le groupe central défile, le pied
+	# reste fixe.
 	var height: float = app.get_window().size.y / C.density
 	var available := maxf(RAIL_ROW_MIN, height - rail_top - RAIL_DOCK - 8.0)
 	var gap := RAIL_GAP if not secondary.is_empty() else 0.0
@@ -675,7 +698,7 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> float:
 	sub.update_minimum_size()
 	D.place(sub, Rect2(96, sub_top, room, sub_height))
 	header.tooltip_text = (identity + " · " + context + " · fiche du club") if not national else identity
-	var stripe := _incline(header, Rect2(27, header_height - 17, RAIL_WIDTH - 48, 4), Charte.club_trait(app.accent))
+	var stripe := _aplat(header, Rect2(27, header_height - 17, RAIL_WIDTH - 48, 4), Charte.club_trait(app.accent))
 	stripe.name = "ImmersiveClubStripe"
 	return header_height
 
@@ -683,35 +706,61 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> float:
 static func _lines_ref(font: Font, text: String, size_ref: float, width_ref: float) -> int:
 	return D.title_lines(font, text, _fpx(size_ref), width_ref * C.density)
 
+## Entrée du menu latéral (charte §7.1) : pilule de 40 px en Barlow Condensed SemiBold ; au repos texte et icône
+## gris-vert, survol panneau-2 ; active = aplat crème, icône et texte PANNEAU (meta « rail_actif »).
+static func _rail_pill(button: Button, selected: bool) -> void:
+	button.add_theme_font_override("font", C.DISPLAY)
+	button.add_theme_font_size_override("font_size", _fpx(24))
+	if selected:
+		for state in ["normal", "hover", "pressed", "hover_pressed"]: button.add_theme_stylebox_override(state, _style(C.IVORY, Charte.RAYON_PILULE))
+		for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: button.add_theme_color_override(key, Charte.PANNEAU)
+		button.set_meta("rail_actif", true)
+	else:
+		for key in ["font_color", "font_focus_color"]: button.add_theme_color_override(key, C.MUTED)
+
+## Rectangle de la pilule centrée dans une ligne du rail (unités de référence).
+static func _rail_pill_rect(y: float, height: float) -> Rect2:
+	var pill := minf(RAIL_PILL, height - 2.0)
+	return Rect2(RAIL_INSET, y + (height - pill) / 2.0, RAIL_WIDTH - 2.0 * RAIL_INSET, pill)
+
 static func _rail_entry(column: Control, app: Control, entry: Array, y: float, height: float, index: int) -> Button:
 	var caption: String = entry[0]
 	var destination: String = entry[1]
 	var selected: bool = app.route in entry[2]
-	var button := _shell_button("Nav_" + caption)
+	var button := _shell_button("Nav_" + caption, false, Charte.RAYON_PILULE)
 	button.text = caption
-	button.add_theme_font_override("font", Charte.texte_moyen() if selected else C.BODY)
-	button.add_theme_font_size_override("font_size", _fpx(24))
+	_rail_pill(button, selected)
 	button.tooltip_text = caption + (" · touche %d" % (index + 1) if index >= 0 and index < 9 else "")
 	button.accessibility_name = caption
-	if selected:
-		button.add_theme_stylebox_override("normal", _style(C.SELECTED))
-		button.add_theme_stylebox_override("hover", _style(C.SELECTED))
-		button.set_meta("rail_actif", true)
 	column.add_child(button)
-	D.place(button, Rect2(4, y, RAIL_WIDTH - 8, height))
-	_button_margins(button, RAIL_TEXT - 4, 70 if destination == "Réception" else 12)
+	var rect := _rail_pill_rect(y, height)
+	D.place(button, rect)
+	_button_margins(button, RAIL_LABEL, 70 if destination == "Réception" else 12)
 	button.pressed.connect(func(): app._navigate(destination))
-	if selected:
-		var marker := _incline(button, Rect2(7, 15, 4 + 0.17633 * (height - 30), height - 30), C.IVORY)
-		marker.name = "RailActiveMarker"
+	var icon_id := str(RAIL_ICONS.get(caption, ""))
+	if not icon_id.is_empty():
+		var icon := TextureRect.new()
+		icon.name = "RailIcon"
+		icon.texture = C.icon_texture(icon_id, Charte.PANNEAU if selected else C.MUTED)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.add_child(icon)
+		D.place(icon, Rect2(RAIL_PAD, (rect.size.y - RAIL_ICON) / 2.0, RAIL_ICON, RAIL_ICON))
 	if destination == "Réception":
 		var unread: int = Reception.unread(app)
 		if unread > 0:
+			# Compteur : pastille rayon 6, crème au repos ; sur l'entrée active (aplat crème) elle passe en PANNEAU.
 			var text := "99+" if unread > 99 else str(unread)
 			var width := maxf(37.0, _rw(C.BODY, text, 21) + 20.0)
-			var badge := _incline(button, Rect2(RAIL_WIDTH - 8 - 21 - width, (height - 32) / 2.0, width, 32), C.IVORY)
+			var chip_height := minf(32.0, rect.size.y - 12.0)
+			var badge := Panel.new()
 			badge.name = "RailUnreadBadge"
-			_label(badge, Rect2(0, 0, width, 32), text, 21, Charte.NUIT, C.BOLD, HORIZONTAL_ALIGNMENT_CENTER).name = "RailUnreadCount"
+			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			badge.add_theme_stylebox_override("panel", _style(Charte.PANNEAU if selected else C.IVORY, RAYON_PETIT_REF))
+			button.add_child(badge)
+			D.place(badge, Rect2(rect.size.x - 14 - width, (rect.size.y - chip_height) / 2.0, width, chip_height))
+			_label(badge, Rect2(0, 0, width, chip_height), text, 21, C.IVORY if selected else Charte.PANNEAU, C.BOLD, HORIZONTAL_ALIGNMENT_CENTER).name = "RailUnreadCount"
 			button.accessibility_name = "Réception, %d message%s non lu%s" % [unread, "s" if unread > 1 else "", "s" if unread > 1 else ""]
 	return button
 
@@ -731,31 +780,27 @@ static func _rail_dock(rail: Control, app: Control, national: bool) -> void:
 		var item: Array = actions[i]
 		var route: String = item[2]
 		var selected: bool = not route.is_empty() and app.route == route
-		var button := _shell_button("ImmersiveSidebarAction" + str(i))
+		var button := _shell_button("ImmersiveSidebarAction" + str(i), false, Charte.RAYON_PILULE)
 		button.text = item[0]
-		button.add_theme_font_override("font", Charte.texte_moyen() if selected else C.BODY)
-		button.add_theme_font_size_override("font_size", _fpx(24))
-		if selected:
-			button.add_theme_stylebox_override("normal", _style(C.SELECTED))
-			button.set_meta("rail_actif", true)
+		_rail_pill(button, selected)
 		dock.add_child(button)
-		D.place(button, Rect2(4, y, RAIL_WIDTH - 8, RAIL_ROW_SMALL))
-		var left_margin := 68.0
+		var rect := _rail_pill_rect(y, RAIL_ROW_SMALL)
+		D.place(button, rect)
+		var left_margin := RAIL_LABEL
 		var right_margin := 12.0
-		var key_inset := 21.0
+		var key_inset := 12.0
 		if i == 2:
 			# Texte et touche « Ctrl S » côte à côte : la marge gauche rentre (jusqu'au picto) si la place manque.
-			key_inset = 21.0
 			right_margin = _key_width("Ctrl S") + key_inset + 6.0
-			left_margin = RAIL_WIDTH - 8.0 - right_margin - _rw(C.BODY, str(item[0]), 24) - 2.0
-			if left_margin < 68.0:
-				# Rail étroit : la touche se serre contre le bord, le texte vient jusqu'au picto.
-				key_inset = 9.0
+			var room := rect.size.x - right_margin - _rw(C.DISPLAY, str(item[0]), 24) - 2.0
+			if room < RAIL_LABEL:
+				# Rail étroit (plancher de 12 px) : la touche se serre contre le bord, le texte vient jusqu'au picto.
+				key_inset = 6.0
 				right_margin = _key_width("Ctrl S") + key_inset + 4.0
-				left_margin = clampf(RAIL_WIDTH - 8.0 - right_margin - _rw(C.BODY, str(item[0]), 24) - 4.0, RAIL_TEXT + 27.0 + 3.0, 68.0)
-			left_margin = minf(left_margin, 68.0)
+				room = rect.size.x - right_margin - _rw(C.DISPLAY, str(item[0]), 24) - 4.0
+			left_margin = clampf(room, RAIL_PAD + RAIL_ICON + 4.0, RAIL_LABEL)
 		_button_margins(button, left_margin, right_margin)
-		_picto(button, Rect2(RAIL_TEXT - 4, (RAIL_ROW_SMALL - 27) / 2.0, 27, 27), item[1], C.IVORY if selected else C.MUTED)
+		_picto(button, Rect2(RAIL_PAD, (rect.size.y - RAIL_ICON) / 2.0, RAIL_ICON, RAIL_ICON), item[1], Charte.PANNEAU if selected else C.MUTED)
 		match i:
 			0: button.pressed.connect(func(): app._navigate("Carrière"))
 			1: button.pressed.connect(func(): app._navigate("Réglages"))
@@ -763,16 +808,16 @@ static func _rail_dock(rail: Control, app: Control, national: bool) -> void:
 				button.pressed.connect(func(): save_now(app))
 				button.tooltip_text = "Sauvegarder la carrière maintenant · Ctrl S"
 				var key_width := _key_width("Ctrl S")
-				_key(button, RAIL_WIDTH - 8 - key_inset - key_width, (RAIL_ROW_SMALL - 27) / 2.0, "Ctrl S")
+				_key(button, rect.size.x - key_inset - key_width, (rect.size.y - 27) / 2.0, "Ctrl S")
 		if i == 0: button.tooltip_text = "Ta carrière de manager"
 		if i == 1: button.tooltip_text = "Réglages : confort, son, affichage, raccourcis"
 		y += RAIL_ROW_SMALL
-	var line := _shell_button("ImmersiveSaveLine")
+	var line := _shell_button("ImmersiveSaveLine", false, Charte.RAYON_PILULE)
 	line.add_theme_font_size_override("font_size", _fpx(19))
 	dock.add_child(line)
-	D.place(line, Rect2(4, y + 6, RAIL_WIDTH - 8, 40))
-	_button_margins(line, 52, 8)
-	_picto(line, Rect2(RAIL_TEXT - 4, 10, 20, 20), "coche", Charte.V).name = "SaveLinePicto"
+	D.place(line, Rect2(RAIL_INSET, y + 6, RAIL_WIDTH - 2.0 * RAIL_INSET, 40))
+	_button_margins(line, RAIL_LABEL, 8)
+	_picto(line, Rect2(RAIL_PAD + 3, 10, 20, 20), "coche", Charte.V).name = "SaveLinePicto"
 	line.pressed.connect(func(): save_now(app))
 	refresh_save_line(app, line)
 
@@ -805,7 +850,7 @@ static func refresh_save_line(app: Control, line: Button = null) -> void:
 	if not is_instance_valid(line): return
 	var state := save_caption(app)
 	var caption := str(state[0])
-	if _rw(C.BODY, caption, 19) > RAIL_WIDTH - 8.0 - 52.0 - 8.0:
+	if _rw(C.BODY, caption, 19) > RAIL_WIDTH - 2.0 * RAIL_INSET - RAIL_LABEL - 8.0:
 		# Place comptée : le jour de la semaine tombe, la date reste ; le texte complet est dans l'infobulle.
 		var compact := RegEx.create_from_string("\\s[^\\s\\d]+\\.?(?=\\s\\d)").sub(caption, "")
 		if not compact.is_empty(): caption = compact
@@ -820,7 +865,7 @@ static func refresh_save_line(app: Control, line: Button = null) -> void:
 
 ## Barre haute (48 px à 1920, 64 en référence) : Menu « Échap », Précédent / Suivant, fil d'Ariane cliquable,
 ## Rechercher « Ctrl K » (champ, aucune fenêtre), date + journée (Calendrier), médaillon de Gabi « F1 »,
-## « +1 j » discret, Continuer (seul aplat or, bord droit incliné, « Espace » ou ce qui l'arrête).
+## « +1 j » discret, Continuer (seul aplat doré : pilule de 40 px, « Espace » ou ce qui l'arrête).
 static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var panel := Control.new()
 	panel.name = "ImmersiveTopbar"
@@ -846,20 +891,22 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var square := C.reach(48.0)
 	var sy := (TOPBAR_HEIGHT - square) / 2.0
 	# Gauche : Menu (menu pause, la seule fenêtre de la coque), historique, filet.
-	var menu_text := _rw(Charte.texte_moyen(), "Menu", 17)
-	var menu_width := 8.0 + 21.0 + 11.0 + menu_text + 11.0 + _key_width("Échap") + 8.0
-	var menu := _shell_button("ImmersiveMenu", true)
+	# Bouton secondaire de la charte : pilule à contour FILET, ☰ + « Menu » (Barlow Condensed) + touche « Échap ».
+	var menu_text := _rw(C.DISPLAY, "Menu", 21)
+	var menu_width := 16.0 + 21.0 + 10.0 + menu_text + 10.0 + _key_width("Échap") + 10.0
+	var menu := _shell_button("ImmersiveMenu", true, Charte.RAYON_PILULE)
 	menu.tooltip_text = "Menu : sauvegardes, réglages, quitter · Échap"
 	menu.accessibility_name = "Menu · Échap"
 	panel.add_child(menu)
 	D.place(menu, Rect2(21, cy, menu_width, ch))
 	menu.pressed.connect(app.pause_menu)
-	_picto(menu, Rect2(8, (ch - 21) / 2.0, 21, 21), "burger", C.IVORY)
-	_label(menu, Rect2(40, 0, menu_text + 2, ch), "Menu", 17, C.IVORY, Charte.texte_moyen())
-	_key(menu, 40 + menu_text + 11, (ch - 27) / 2.0, "Échap")
+	_picto(menu, Rect2(16, (ch - 21) / 2.0, 21, 21), "burger", C.IVORY)
+	_label(menu, Rect2(47, 0, menu_text + 2, ch), "Menu", 21, C.IVORY, C.DISPLAY)
+	_key(menu, 47 + menu_text + 10, (ch - 27) / 2.0, "Échap")
 	var x := 21.0 + menu_width + 27.0
-	var back := _shell_button("NavigationBack", true)
-	var forward := _shell_button("NavigationForward", true)
+	# Précédent / Suivant : cases à contour FILET, rayon 6 px.
+	var back := _shell_button("NavigationBack", true, RAYON_PETIT_REF)
+	var forward := _shell_button("NavigationForward", true, RAYON_PETIT_REF)
 	for item: Array in [[back, "gauche", "Page précédente · Alt+←"], [forward, "droite", "Page suivante · Alt+→"]]:
 		var arrow: Button = item[0]
 		arrow.set_meta("coque", true)
@@ -875,7 +922,8 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var crumbs_left := x + 28.0
 	# Droite, de droite à gauche : Continuer, +1 j, F1 et Gabi, date, recherche ; le fil prend le reste.
 	var right := TOPBAR_WIDTH - 11.0
-	var continue_height := C.reach(48.0)
+	# Bouton principal de la charte : pilule dorée de 40 px (53,3 en référence).
+	var continue_height := C.reach(RAIL_PILL)
 	var continue_rect := Rect2(right - CONTINUE_WIDTH, (TOPBAR_HEIGHT - continue_height) / 2.0, CONTINUE_WIDTH, continue_height)
 	right -= CONTINUE_WIDTH + 16.0
 	var office_live: bool = app.route == "Bureau" and not app._live().is_empty()
@@ -883,7 +931,7 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var next_day: Button = null
 	if single_day:
 		var day_width := _rw(C.BODY, "+1 j", 17) + 22.0
-		next_day = _shell_button("ImmersiveNextDay")
+		next_day = _shell_button("ImmersiveNextDay", false, Charte.RAYON_PILULE)
 		next_day.text = "+1 j"
 		next_day.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		next_day.add_theme_font_size_override("font_size", _fpx(17))
@@ -894,11 +942,11 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 		D.place(next_day, Rect2(right - day_width, cy, day_width, ch))
 		next_day.pressed.connect(app.next_day_action)
 		right -= day_width + 16.0
-	# Médaillon ovale de Gabi (72 × 48 en référence, 54 × 36 px à 1920) et sa touche « F1 » : cibles d'au moins 28 px
-	# réels (58 de haut à 1280 × 720), et au moins 50 pour rester ≥ 24 px si la fenêtre passe de 2560 à 1280 sans
-	# reconstruction. Les deux s'affichent ensemble ou pas du tout (Bureau : Gabi en pied, coach coupé).
+	# Médaillon ovale de Gabi (charte §5 : 40 px de haut, cadre doré ; 80 × 53,3 en référence) et sa touche « F1 »
+	# écrite à côté : cibles d'au moins 28 px réels (58 de haut à 1280 × 720). Les deux s'affichent ensemble ou pas du
+	# tout (Bureau : Gabi en pied, coach coupé).
 	var target := ceilf(28.0 / maxf(.01, C.density * _coque_factor))
-	var medallion_height := clampf(maxf(50.0, target), 50.0, TOPBAR_HEIGHT - 4.0)
+	var medallion_height := clampf(maxf(RAIL_PILL, target), RAIL_PILL, TOPBAR_HEIGHT - 4.0)
 	var medallion_width := medallion_height * 1.5
 	var f1_width := maxf(_key_width("F1") + 8.0, target)
 	var help := _shell_button("GabiF1")
@@ -1051,14 +1099,14 @@ static func _place_crumbs(panel: Control, app: Control, crumbs: Array, left: flo
 			_label(panel, Rect2(x + 7, cy, _rw(C.BODY, "/", 17) + 8, ch), "/", 17, C.FAINT, C.BODY, HORIZONTAL_ALIGNMENT_CENTER)
 			x += _rw(C.BODY, "/", 17) + 22.0
 
-## Champ « Rechercher » (Ctrl K) : fond panneau-3, contour ivoire-3, rayon 2 ; Entrée ouvre l'écran Recherche.
+## Champ « Rechercher » (Ctrl K) : pilule panneau-3, contour FILET, focus anneau doré ; Entrée ouvre l'écran Recherche.
 static func _search_field(panel: Control, app: Control, rect: Rect2) -> LineEdit:
 	var field := LineEdit.new()
 	field.name = "ImmersiveSearch"
 	field.set_meta("immersive_style_applied", true)
 	var national := Selections.nation_only(app.model)
 	var hint := "Rechercher un écran…" if national else "Rechercher un joueur, un club…"
-	field.placeholder_text = hint if _rw(C.BODY, hint, 17) <= rect.size.x - 39.0 - _key_width("Ctrl K") - 20.0 else "Rechercher…"
+	field.placeholder_text = hint if _rw(C.BODY, hint, 17) <= rect.size.x - 47.0 - _key_width("Ctrl K") - 24.0 else "Rechercher…"
 	field.tooltip_text = "Rechercher un joueur, un club ou un écran · Ctrl K · Entrée : résultats"
 	field.accessibility_name = "Rechercher · Ctrl K"
 	field.add_theme_font_override("font", C.BODY)
@@ -1067,20 +1115,20 @@ static func _search_field(panel: Control, app: Control, rect: Rect2) -> LineEdit
 	field.add_theme_color_override("font_placeholder_color", C.MUTED)
 	field.add_theme_color_override("caret_color", C.IVORY)
 	field.add_theme_color_override("selection_color", C.LINE)
-	var normal := _style(C.SELECTED, 3.0, C.FAINT)
-	var focus := _style(Color.TRANSPARENT, 0.0, C.IVORY, 2)
+	var normal := _style(C.SELECTED, Charte.RAYON_PILULE, C.LINE)
+	var focus := _style(Color.TRANSPARENT, Charte.RAYON_PILULE, C.OR, 2)
 	focus.set_expand_margin_all(2)
 	for style: StyleBoxFlat in [normal, focus]:
-		style.content_margin_left = C.px(39)
-		style.content_margin_right = C.px(_key_width("Ctrl K") + 14.0)
+		style.content_margin_left = C.px(47)
+		style.content_margin_right = C.px(_key_width("Ctrl K") + 20.0)
 	field.add_theme_stylebox_override("normal", normal)
 	field.add_theme_stylebox_override("read_only", normal)
 	field.add_theme_stylebox_override("focus", focus)
 	if app.route == "Recherche": field.text = str(app.management_ui.get("search_query", ""))
 	panel.add_child(field)
 	D.place(field, rect)
-	_picto(field, Rect2(12, (rect.size.y - 21) / 2.0, 21, 21), "loupe", C.MUTED)
-	var key := _key(field, rect.size.x - _key_width("Ctrl K") - 8.0, (rect.size.y - 27) / 2.0, "Ctrl K", C.RAISED)
+	_picto(field, Rect2(16, (rect.size.y - 21) / 2.0, 21, 21), "loupe", C.MUTED)
+	var key := _key(field, rect.size.x - _key_width("Ctrl K") - 12.0, (rect.size.y - 27) / 2.0, "Ctrl K", C.RAISED)
 	key.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	field.text_submitted.connect(func(text: String): app.navigation_controller.submit_search(text))
 	field.gui_input.connect(func(event: InputEvent):
@@ -1091,35 +1139,35 @@ static func _search_field(panel: Control, app: Control, rect: Rect2) -> LineEdit
 	if is_instance_valid(app.navigation_controller): app.navigation_controller.bind_search_field(field)
 	return field
 
-## Continuer : aplat or (seul aplat or de la coque), texte nuit, bord droit incliné 10° ; « Espace » à droite, ou ce
-## qui l'arrête (« Préparer », « Conf. de presse »…). main.gd écrit l'état dans `text` (invisible) : sync_continue
+## Continuer : pilule dorée (seul aplat doré de l'écran), texte PANNEAU en Barlow Condensed Bold, bas de casse ;
+## « Espace » à droite, ou ce qui l'arrête (« Préparer », « Conf. de presse »…). main.gd écrit l'état dans `text` (invisible) : sync_continue
 ## le recopie dans les libellés visibles.
 static func _continue_button(panel: Control, app: Control, rect: Rect2) -> void:
 	var button := _shell_button("ImmersiveContinue")
 	button.text = "Continuer"
 	for state in ["normal", "hover", "pressed", "hover_pressed", "disabled"]: button.add_theme_stylebox_override(state, StyleBoxEmpty.new())
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_disabled_color"]: button.add_theme_color_override(key, Color.TRANSPARENT)
-	var focus := _style(Color.TRANSPARENT, 0.0, C.IVORY, 2)
+	var focus := _style(Color.TRANSPARENT, Charte.RAYON_PILULE, C.OR, 2)
 	focus.set_expand_margin_all(2)
 	button.add_theme_stylebox_override("focus", focus)
-	button.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	button.add_theme_font_override("font", C.BOLD)
 	button.add_theme_font_size_override("font_size", _fpx(24))
 	panel.add_child(button)
 	D.place(button, rect)
-	var plate := _incline(button, Rect2(Vector2.ZERO, rect.size), C.OR, false)
+	var plate := _aplat(button, Rect2(Vector2.ZERO, rect.size), C.OR, C.px(Charte.RAYON_PILULE))
 	plate.name = "ContinuePlate"
 	plate.show_behind_parent = true
 	plate.couleur_survol = C.OR_VIF
 	plate.source = button
 	button.draw.connect(plate.queue_redraw)
-	var label := _label(button, Rect2(24, 0, rect.size.x - 150, rect.size.y), "CONTINUER", 24, Charte.NUIT, Charte.TITRE_EXTRA_ITALIQUE)
+	var label := _label(button, Rect2(24, 0, rect.size.x - 150, rect.size.y), "Continuer", 24, Charte.PANNEAU, C.BOLD)
 	label.name = "ContinueLabel"
 	var rule := ColorRect.new()
 	rule.name = "ContinueRule"
-	rule.color = Color(Charte.NUIT, .35)
+	rule.color = Color(Charte.PANNEAU, .35)
 	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(rule)
-	var hint := _label(button, Rect2(rect.size.x - 120, 0, 85, rect.size.y), "Espace", 16, Charte.NUIT, C.BODY, HORIZONTAL_ALIGNMENT_RIGHT)
+	var hint := _label(button, Rect2(rect.size.x - 120, 0, 85, rect.size.y), "Espace", 16, Charte.PANNEAU, C.BODY, HORIZONTAL_ALIGNMENT_RIGHT)
 	hint.name = "ContinueHint"
 	app.primary_button = button
 	button.pressed.connect(app.primary_action)
@@ -1136,7 +1184,7 @@ static func sync_continue(app: Control) -> void:
 	if label == null or hint == null or rule == null: return
 	var state := str(button.text).strip_edges()
 	var own_head: bool = state in ["Relancer", "Retour au direct", "Valider le résultat", "Après-match"]
-	label.text = state.to_upper() if own_head else "CONTINUER"
+	label.text = state if own_head else "Continuer"
 	# « Espace » au repos ; « ! » + raison courte seulement quand quelque chose arrête Continuer (main.continue_block),
 	# jamais d'après l'état désactivé ni d'après la prochaine étape ordinaire (« Préparer »).
 	var block: String = str(app.continue_block()) if app.has_method("continue_block") else ""
@@ -1151,7 +1199,7 @@ static func sync_continue(app: Control) -> void:
 	while hint_size > 1.0 and _fpx(hint_size) > _coque_floor and _rw(C.BODY, hint.text, hint_size) + 4.0 > width_ref * .55: hint_size -= 1.0
 	var hint_width := _rw(C.BODY, hint.text, hint_size) + 4.0
 	var label_room := hint_right - hint_width - 37.0 - 24.0
-	while label_size > 1.0 and _fpx(label_size) > _coque_floor and _rw(Charte.TITRE_EXTRA_ITALIQUE, label.text, label_size) > label_room: label_size -= 1.0
+	while label_size > 1.0 and _fpx(label_size) > _coque_floor and _rw(C.BOLD, label.text, label_size) > label_room: label_size -= 1.0
 	hint.add_theme_font_size_override("font_size", _fpx(hint_size))
 	label.add_theme_font_size_override("font_size", _fpx(label_size))
 	hint.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
@@ -1279,12 +1327,38 @@ static func _subnavigation(parent: Node, app: Control) -> void:
 		row.name = "ChapterSubnavigation"
 		parent.add_child(row)
 		for destination: String in group[2]:
-			var action := C.button(destination.to_upper(), func(): app._navigate(destination), app.route == destination, app.accent)
+			var action := onglet(destination, app.route == destination, func(): app._navigate(destination))
 			action.name = "Section_" + destination
-			action.custom_minimum_size.y = C.px(38)
-			C.fill(action)
 			row.add_child(action)
 		return
+
+## Onglet de page (charte §7.1) : pilule en Barlow Condensed SemiBold, bas de casse ; actif = aplat crème, texte
+## PANNEAU ; inactif = texte gris-vert sans fond, survol panneau-2 ; focus anneau doré. Jamais d'onglet actif vert ni doré.
+static func onglet(caption: String, active: bool, callback: Callable) -> Button:
+	var tab := Button.new()
+	tab.text = caption
+	tab.focus_mode = Control.FOCUS_ALL
+	tab.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	tab.set_meta("immersive_style_applied", true)
+	tab.set_meta("onglet_actif", active)
+	tab.custom_minimum_size.y = C.px(43)
+	tab.add_theme_font_override("font", C.DISPLAY)
+	tab.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
+	var fills := {"normal": C.IVORY if active else Color.TRANSPARENT, "hover": C.IVORY if active else C.RAISED,
+		"pressed": C.IVORY if active else C.SELECTED, "hover_pressed": C.IVORY if active else C.SELECTED, "disabled": Color.TRANSPARENT}
+	for state: String in fills:
+		var style := _style(fills[state], Charte.RAYON_PILULE)
+		style.content_margin_left = C.px(21)
+		style.content_margin_right = C.px(21)
+		tab.add_theme_stylebox_override(state, style)
+	var focus := _style(Color.TRANSPARENT, Charte.RAYON_PILULE, C.OR, 2)
+	focus.set_expand_margin_all(2)
+	tab.add_theme_stylebox_override("focus", focus)
+	for key in ["font_color", "font_focus_color"]: tab.add_theme_color_override(key, Charte.PANNEAU if active else C.MUTED)
+	for key in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color"]: tab.add_theme_color_override(key, Charte.PANNEAU if active else C.IVORY)
+	tab.add_theme_color_override("font_disabled_color", C.FAINT)
+	tab.pressed.connect(callback)
+	return tab
 
 static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	var row := Control.new()

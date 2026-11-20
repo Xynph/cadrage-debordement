@@ -19,7 +19,7 @@ const PRES := ["scrum", "lineout", "power"]
 const LARGE := ["backs", "kick"]
 
 static func build(app: Control, page: Control, zone: Rect2, adversaire: String, choisir: Callable = Callable()) -> Panel:
-	var bloc := D.rect(page, zone, Charte.PANNEAU, 0)
+	var bloc := D.rect(page, zone, Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	bloc.name = "TacticsImpact"
 	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
 	var w := zone.size.x
@@ -64,9 +64,9 @@ static func _duel(app: Control, bloc: Control, rang: int, y: float, w: float, du
 	var a := D.text(ligne, 48, 25, G.n(roundi(nous)) if nous != null else "—", 18, Charte.IVOIRE, 700, 38, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	a.add_theme_font_override("font", gras)
 	a.name = "TacticsDomainOwn"
-	if nous != null: D.rect(ligne, Rect2(56 + barre * (1.0 - clampf(nous, 0, 100) / 100.0), 12, barre * clampf(nous, 0, 100) / 100.0, 13), Charte.club_trait(app.accent), 0)
+	if nous != null: D.rect(ligne, Rect2(56 + barre * (1.0 - clampf(nous, 0, 100) / 100.0), 12, barre * clampf(nous, 0, 100) / 100.0, 13), Charte.club_trait(app.accent), Charte.RAYON_PILULE)
 	Kit.texte(ligne, 256, 25, str(duel[1]), Charte.IVOIRE, 190, 18, HORIZONTAL_ALIGNMENT_CENTER)
-	if eux != null: D.rect(ligne, Rect2(358, 12, barre * clampf(eux, 0, 100) / 100.0, 13), Charte.IVOIRE_2, 0)
+	if eux != null: D.rect(ligne, Rect2(358, 12, barre * clampf(eux, 0, 100) / 100.0, 13), Charte.IVOIRE_2, Charte.RAYON_PILULE)
 	var b := D.text(ligne, 466, 25, G.n(roundi(eux)) if eux != null else "—", 18, Charte.IVOIRE, 700, 40, HORIZONTAL_ALIGNMENT_LEFT, true)
 	b.add_theme_font_override("font", gras)
 	b.name = "TacticsDomainOpponent"
@@ -128,7 +128,7 @@ static func _autres(app: Control, parent: Control, zone: Rect2, joueurs: Array) 
 	menu.add_theme_font_override("font", Charte.texte_moyen())
 	menu.add_theme_font_size_override("font_size", maxi(12, C.px(17)))
 	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: menu.add_theme_color_override(couleur, Charte.IVOIRE)
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 2)
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PETIT, 2)
 	focus.set_border_width_all(2)
 	menu.add_theme_stylebox_override("focus", focus)
 	var liste := menu.get_popup()
@@ -142,8 +142,8 @@ static func _autres(app: Control, parent: Control, zone: Rect2, joueurs: Array) 
 	return menu
 
 static func _styler_menu(liste: PopupMenu) -> void:
-	liste.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3, Charte.FILET, 0, 6))
-	liste.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 4))
+	liste.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3, Charte.FILET, Charte.RAYON_CARTE, 6))
+	liste.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_PETIT, 4))
 	liste.add_theme_font_override("font", Charte.TEXTE)
 	liste.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 	liste.add_theme_color_override("font_color", Charte.IVOIRE)
@@ -168,7 +168,7 @@ static func _resume(valeurs: Dictionary, cles: Array) -> String:
 static func _gabi(app: Control, bloc: Control, w: float, h: float, choisir: Callable) -> void:
 	var portrait := 120.0
 	var largeur := w - 44 - portrait - 8
-	var bulle := D.rect(bloc, Rect2(22, h - 210, largeur, 196), Charte.PANNEAU_2, 0)
+	var bulle := D.rect(bloc, Rect2(22, h - 210, largeur, 196), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	bulle.name = "TacticsStaffAdvice"
 	bulle.mouse_filter = Control.MOUSE_FILTER_PASS
 	Kit.marqueur(bulle, Rect2(6, 10, 4, 24), Charte.club_trait(app.accent))

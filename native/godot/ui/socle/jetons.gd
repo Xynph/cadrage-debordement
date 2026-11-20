@@ -21,6 +21,10 @@ const JAUNE := Charte.N
 const ALERTE := Charte.D
 const SURVOL := Charte.PANNEAU_2
 const CHOIX := Charte.PANNEAU_3
+## Ligne de tableau choisie (charte §7.1 : SELECTION sur toute la ligne, rayon 6).
+const SELECTION := Charte.SELECTION
+## Focus clavier : anneau ou trait doré (charte §7.1, États).
+const FOCUS := Charte.OR
 const RAIL := Charte.PANNEAU_3
 const RESERVE := Charte.IVOIRE_3
 
@@ -30,6 +34,7 @@ const CORPS = preload("res://fonts/DMSans.ttf")
 
 ## Tailles de texte, en pixels de maquette.
 const T_PETIT := 13.0
+const T_CELLULE := 13.0  ## cellule de tableau (charte §7.1 : DM Sans 13, ligne 26)
 const T_CORPS := 15.0
 const T_FORT := 16.0
 const T_CHIFFRE := 22.0
@@ -43,7 +48,8 @@ const E3 := 12.0
 const E4 := 16.0
 const E5 := 24.0
 const RAYON := 18.0  ## panneaux arrondis de la charte (Charte.RAYON_PANNEAU)
-const LIGNE_H := 37.0
+const RAYON_PETIT := 6.0  ## ligne choisie, pastilles, cases (Charte.RAYON_PETIT)
+const LIGNE_H := 26.0  ## densité FM de la charte : lignes de 26 px
 const ENTETE_H := 32.0
 const GROUPE_H := 46.0
 
