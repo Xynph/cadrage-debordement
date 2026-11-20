@@ -985,8 +985,8 @@ func press_panes() -> void:
 	await capture("50-presse-conference-2560x1440")
 	await click(app.find_child("PressCanvasTab3",true,false))
 	await settle()
-	var people := tabs.find_child("PressPersonPicker",true,false) as OptionButton
-	check(tabs.current_tab==3 and people!=null and people.item_count>0,"Le carnet de portraits charge le vrai annuaire de Presse")
+	var people := tabs.find_children("PressPerson_*","Button",true,false)
+	check(tabs.current_tab==3 and people.size()>0,"Le carnet de portraits charge le vrai annuaire de Presse")
 	await capture("51-presse-portraits-2560x1440")
 	await click(app.find_child("PressCanvasTab1",true,false))
 	await settle()
@@ -1499,8 +1499,8 @@ func run() -> void:
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": check(roster != null, "Table Effectif dense de la référence 1440p")
 		if roster != null:
 			# Fiche fixe de droite retirée (19/11/2026) : le tableau prend toute la largeur du gabarit.
-			reference_rects({"ImmersiveRosterTable":Rect2(280,267,2248,1068),
-				"RosterTab0":Rect2(280,207,199,42), "RosterSearch":Rect2(298,283,355,40), "RosterSearchGlyph":Rect2(311,293,21,21)})
+			reference_rects({"ImmersiveRosterTable":Rect2(280,354,2248,990),
+				"RosterTab0":Rect2(280,230,185,44), "RosterSearch":Rect2(280,296,440,42), "RosterSearchGlyph":Rect2(294,306,21,21)})
 			check(app.find_child("PlayerDossier",true,false) == null and app.find_child("SelectedPlayerCard",true,false) == null, "Plus de dossier fixe à droite de l'effectif")
 			var list: VBoxContainer = app.find_child("ImmersiveRosterRows", true, false)
 			var row_buttons: Array = list.get_children().filter(func(node:Node):return node is Button)
@@ -1522,7 +1522,7 @@ func run() -> void:
 			roster_scroll = app.find_child("SquadScroll",true,false) as ScrollContainer
 			check(roster_scroll != null and roster_scroll.scroll_vertical == saved_scroll, "Retour respecte le défilement volontaire sans révéler à nouveau le dossier")
 			list=app.find_child("ImmersiveRosterRows",true,false)
-			for id in ["RosterColumnSalary", "RosterColumnFatigue", "RosterColumnPotential", "OpenComparison", "SquadOpenPlayer_"+str(app.selected_player).validate_node_name(), "MiniFicheInfo_"+str(app.selected_player).validate_node_name()]:
+			for id in ["RosterColumn_FIN DE CONTRAT", "RosterColumn_CONDITION", "RosterColumnPotential", "OpenComparison", "SquadOpenPlayer_"+str(app.selected_player).validate_node_name(), "MiniFicheInfo_"+str(app.selected_player).validate_node_name()]:
 				check(app.find_child(id, true, false) != null, "Fonction Effectif : " + id)
 			var selected_before: String = app.selected_player
 			var target: Dictionary = app.model.squad[1]
@@ -1533,7 +1533,7 @@ func run() -> void:
 			check(list.get_children().filter(func(node:Node):return node is Button).size() == 1, "Recherche réelle réduit la liste")
 			check(app.selected_player == selected_before, "Filtrer conserve le dossier lu")
 			var person: Button = list.get_children().filter(func(node:Node):return node is Button)[0]
-			person.pressed.emit()
+			person.grab_focus()
 			await settle()
 			check(app.selected_player == str(target.id), "Sélection exacte par ID")
 			check(app.find_child("SquadOpenPlayer_"+str(target.id).validate_node_name(), true, false) != null, "Nom du joueur sélectionné cliquable vers sa fiche")

@@ -7,6 +7,25 @@ Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (
 focus sur le nom + I. La fiche fixe de droite est retirée : le tableau prend toute la largeur. Détail :
 `mini-fiche-joueur.md`.
 
+**Choix de Léo (revue DA du 19/11/2026) : variante « nouvelle 1 »**, maquette `apercus/07-effectif-retouche-v2.png`.
+Cette section remplace les wireframes ci-dessous (panneau du joueur choisi, bouton « Prolonger » du panneau) :
+- Page : titre « EFFECTIF » et sous-titre ; quatre tuiles cliquables = filtres (Aptes → ne garder que les aptes,
+  Indisponibles → puce Indisponibles, Fins de contrat → puce Fin de contrat, Niveau moyen du XV → tri par niveau).
+  Infobulle « Équilibre par poste » au survol (ou focus) de la tuile Aptes : poste, effectif, aptes, fins de contrat.
+  Tendance du XV : écart avec le début de saison, omise si inconnue.
+- Onglets Vue d'ensemble / Condition / Contrats / Développement (Ctrl Tab : onglet suivant), recherche (« / »),
+  puces Tous, Avants, Arrières, Indisponibles, Fin de contrat, À surveiller avec compteurs, menu Poste, menu
+  « Filtres & tri » (menu déroulant : disponibilité, contrat, hors groupe, tri, sens, réinitialiser), Comparer n/2, Vestiaire.
+- Tableau pleine largeur groupé AVANTS / ARRIÈRES : numéro (ovale plein titulaire, anneau remplaçant, tiret), portrait,
+  drapeau, nom (souligné au survol) + « i », poste, autres postes, niveau coloré au barème, potentiel, condition, âge,
+  fin de contrat (⧗ fin de saison), statut écrit (blessé / suspendu / en sélection avec retour connu).
+- Interactions : clic sur le nom ou sur la ligne, ou Entrée = fiche complète ; clic sur la fin de contrat = fiche, section
+  contrat ; survol du nom ou « i » = mini-fiche ; Maj Espace = comparer (repère A / B) ; ↑↓ = changer de ligne (le
+  marqueur ivoire incliné suit). En-têtes de colonne = tri.
+- Fenêtre étroite (< 1800 px de large environ) : même tableau, colonnes retirées (autres postes, âge, potentiel) et
+  détails des tuiles masqués, jamais de texte rétréci sous 12 px.
+- Restent des fenêtres : le comparateur (partagé avec Recrutement et la fiche joueur) et la préparation européenne.
+
 > **Template**: UX Spec
 > **Statut** : proposé (ux-designer CCGS, 19/11/2026, mode autonome, rigueur `minimal`)
 > **Écran** : `Effectif` (route « Effectif », chapitre Effectif/Vestiaire) · carrière Monde · PC souris + clavier

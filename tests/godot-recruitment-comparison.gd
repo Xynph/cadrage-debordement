@@ -8,6 +8,12 @@ func _initialize() -> void: call_deferred("run")
 func check(value: bool, message: String) -> void:
 	checks += 1
 	if not value: failures.append(message); printerr("FAIL: ", message)
+func windows(node: Node) -> Array:
+	var found: Array = []
+	for child in node.get_children():
+		if child is Window and child.visible and not child.is_queued_for_deletion(): found.append(child)
+		found.append_array(windows(child))
+	return found
 func settle() -> void:
 	for i in 8: await process_frame
 func command(id: String, payload: Dictionary = {}) -> void:
@@ -72,82 +78,37 @@ func run() -> void:
 		if DisplayServer.get_name() != "headless":
 			await RenderingServer.frame_post_draw
 			check(root.get_texture().get_image().save_png(output.path_join("recherche-%d.png" % dimensions.x)) == OK, "Capture recherche")
+		check(button != null and not button.disabled, "Bouton Comparer du Recrutement")
+		app.management_ui.compare = []
 		button.pressed.emit(); await settle()
-		var dialog: AcceptDialog = app.find_child("MarketComparison",true,false)
-		check(dialog != null and dialog.visible, "Comparateur ouvert " + str(dimensions))
+		check(app.route == "Comparateur" and app.find_child("ImmersiveComparateur",true,false) != null, "Écran Comparateur ouvert " + str(dimensions))
+		check(windows(app).is_empty(), "Le comparateur n'est pas une fenêtre " + str(dimensions))
+		var left: OptionButton = app.find_child("ComparateurJoueur0",true,false)
+		check(left != null and app.management_ui.compare.size() == 1 and str(left.get_item_metadata(left.selected)) == str(app.management_ui.compare[0]), "Joueur A : la piste ouverte depuis le Recrutement")
+		check(app.find_child("ComparateurVide1",true,false) != null, "Emplacement « Choisir un joueur » pour B")
+		var right: OptionButton = app.find_child("ComparateurJoueur1",true,false)
+		check(right != null and right.item_count > 3, "Sélecteur du joueur B")
+		var chosen_a := str(app.management_ui.compare[0])
+		right.item_selected.emit(2); await settle()
+		check(app.management_ui.compare.size() == 2 and str(app.management_ui.compare[0]) == chosen_a and str(app.management_ui.compare[1]) != chosen_a, "Deux vrais candidats distincts")
+		right = app.find_child("ComparateurJoueur1",true,false)
+		check(right != null and str(right.get_item_metadata(right.selected)) == str(app.management_ui.compare[1]), "Joueur B lié à son identifiant")
+		var rating: Label = app.find_child("Synthese_niveau_0",true,false)
+		check(rating != null and rating.get_theme_font_size("font_size") >= 12, "Synthèse lisible (≥ 12 px) " + str(dimensions))
 		if dimensions == Vector2i(2560,1440):
-			check(dialog.size.x >= 1850 and dialog.size.y >= 1150, "Surface de lecture confortable en 1440p")
-			check(dialog.find_child("MarketComparisonHeading",true,false) == null, "Un seul titre : pas d’en-tête doublonnant la barre de fenêtre")
-			check(dialog.size.y < 1220, "Hauteur de fenêtre ajustée au contenu en 1440p")
-		var left: OptionButton = dialog.find_child("MarketComparisonPlayer0",true,false)
-		var right: OptionButton = dialog.find_child("MarketComparisonPlayer1",true,false)
-		check(left.selected > 0 and right.selected > 0 and left.get_item_metadata(left.selected) != right.get_item_metadata(right.selected), "Deux vrais candidats distincts préselectionnés")
-		check(right.has_focus(), "Focus initial sur choix B")
-		var same: CheckButton = dialog.find_child("MarketComparisonSamePosition",true,false)
-		check(same != null and same.button_pressed, "« Même poste que A » activé par défaut")
-		var left_pos := ""
-		var right_pos := ""
-		for player: Dictionary in app.model.market:
-			if str(player.id) == str(left.get_item_metadata(left.selected)): left_pos = str(player.pos)
-			if str(player.id) == str(right.get_item_metadata(right.selected)): right_pos = str(player.pos)
-		for player: Dictionary in app.model.squad:
-			if str(player.id) == str(left.get_item_metadata(left.selected)): left_pos = str(player.pos)
-			if str(player.id) == str(right.get_item_metadata(right.selected)): right_pos = str(player.pos)
-		check(left_pos == right_pos or dialog.find_child("MarketComparisonCount",true,false).text.contains("Aucun"), "B au même poste que A, sinon mention claire")
-		if dimensions == Vector2i(2560,1440):
-			check(right.get_theme_font_size("font_size") == 20, "Sélecteur dense de 20 px en 1440p")
-			var rating_row: HBoxContainer = dialog.find_child("MarketComparisonRow_rating",true,false)
-			check(rating_row.get_child(1).get_theme_font_size("font_size") == 20, "Données denses de 20 px en 1440p")
-		var tabs: TabContainer = dialog.find_child("MarketComparisonTabs",true,false)
-		check(tabs != null and tabs.get_tab_count() == 2, "Synthèse et attributs séparés")
-		check(dialog.find_children("MarketComparisonRow_attribute_*", "HBoxContainer", true,false).size() == 36, "Les 36 attributs restent consultables par familles")
-		var search: LineEdit = dialog.find_child("MarketComparisonSearch",true,false)
-		var selected_left: Variant = left.get_item_metadata(left.selected)
-		var selected_right: Variant = right.get_item_metadata(right.selected)
-		search.text = "aucun-resultat-possible"; search.text_changed.emit(search.text); await settle()
-		check(left.item_count == 3 and right.item_count == 3, "Recherche conserve exactement les deux choix")
-		check(left.get_item_metadata(left.selected) == selected_left and right.get_item_metadata(right.selected) == selected_right, "Choix stables après recherche")
-		search.text = ""; search.text_changed.emit(""); await settle()
+			check(right.get_theme_font_size("font_size") == 19, "Sélecteur dense de 19 px en 1440p")
+			check(rating.get_theme_font_size("font_size") == 22, "Données denses de 22 px en 1440p")
+		var details := app.find_child("ComparateurDetails",true,false) as ScrollContainer
+		check(details != null and details.get_global_rect().size.y > 300 and details.scroll_vertical == 0, "Le haut du comparateur reste visible " + str(dimensions))
+		check(app.find_children("Attribut_*_0","Label",true,false).size() == 36, "Les 36 attributs sont consultables par familles")
+		check(app.find_children("ComparateurSection*","Label",true,false).size() == 5, "Synthèse et quatre familles d'attributs")
 		if DisplayServer.get_name() != "headless":
 			await RenderingServer.frame_post_draw
-			check(root.get_texture().get_image().save_png(output.path_join("comparaison-%d.png" % dimensions.x)) == OK, "Capture comparaison")
-		tabs.current_tab = 1; await settle()
-		if DisplayServer.get_name() != "headless":
-			await RenderingServer.frame_post_draw
-			check(root.get_texture().get_image().save_png(output.path_join("attributs-%d.png" % dimensions.x)) == OK, "Capture attributs")
-		var last_group := dialog.find_child("MarketComparisonGroupJump3",true,false) as Button
-		check(last_group != null, "Accès direct aux quatre familles")
-		last_group.pressed.emit(); await settle()
-		var group_heading: Control = dialog.find_child("ComparisonAttributeGroup3",true,false)
-		check(group_heading.has_focus(), "Raccourci famille restitue le focus dans la section")
-		if DisplayServer.get_name() != "headless":
-			await RenderingServer.frame_post_draw
-			check(root.get_texture().get_image().save_png(output.path_join("conquete-%d.png" % dimensions.x)) == OK, "Capture dernière famille")
+			check(root.get_texture().get_image().save_png(output.path_join("comparateur-%d.png" % dimensions.x)) == OK, "Capture comparateur")
 		var event := InputEventKey.new(); event.keycode=KEY_ESCAPE; event.pressed=true; root.push_input(event,true)
+		event = InputEventKey.new(); event.keycode=KEY_ESCAPE; event.pressed=false; root.push_input(event,true)
 		await settle()
-		check(not is_instance_valid(dialog) or not dialog.visible, "Échap ferme la consultation")
-		check(button.has_focus(), "Retour du focus au bouton Comparer")
-	# 720p : la synthèse tient sans défilement initial, sans en-tête doublon, avec des listes lisibles (≥ 13 px).
-	root.size = Vector2i(1280,720)
-	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(Vector2i(1280,720))
-	await settle()
-	Comparison.open(app, "", {})
-	for i in 6: await settle()
-	var small: AcceptDialog = app.find_child("MarketComparison",true,false)
-	check(small != null and small.visible, "Comparateur ouvert en 720p")
-	if small != null:
-		check(small.find_child("MarketComparisonHeading",true,false) == null, "720p : un seul titre")
-		var scroll: Control = small.find_child("MarketComparisonDetails",true,false)
-		var ancestor: Node = scroll
-		while ancestor != null and not ancestor is ScrollContainer: ancestor = ancestor.get_parent()
-		if ancestor != null:
-			var bar: VScrollBar = (ancestor as ScrollContainer).get_v_scroll_bar()
-			check(not bar.visible, "720p : pas de barre de défilement initiale")
-			check((ancestor as ScrollContainer).scroll_vertical == 0, "720p : le haut du comparateur reste visible")
-		for slot in 2:
-			var picker: OptionButton = small.find_child("MarketComparisonPlayer" + str(slot),true,false)
-			check(picker.get_theme_font_size("font_size") >= 13, "720p : liste déroulante lisible (≥ 13 px)")
-		(small.get_ok_button() as Button).pressed.emit(); await settle()
+		check(app.route == "Recrutement", "Échap ramène au Recrutement " + str(dimensions))
 	check(FileAccess.get_sha256(filename) == initial, "Aucune écriture de carrière ou négociation")
 	var file := FileAccess.open(output.path_join("report.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name()},"  ")); file.close()

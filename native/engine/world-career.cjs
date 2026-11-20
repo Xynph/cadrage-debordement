@@ -370,8 +370,9 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  const stadiumCapacity=id=>typeof CDWorldStadiumCapacities!=='undefined'&&Number.isInteger(CDWorldStadiumCapacities[id])?CDWorldStadiumCapacities[id]:undefined;
  // full : recalage complet (notes, attributs et potentiel de départ), comme à la création ; sinon les notes seules.
  function previewRoster(id,full=false){
+  // Aperçu d'un club jouable : effectif tel que le manager le reçoit, sans joueurs de complément (le club joué n'a
+  // plus de plancher de 40 en Monde, décision de Léo du 19/11/2026, professional-depth.cjs).
   const players=initialRoster(REG.clubs[id]);
-  players.push(...nativeProfessionalDepth.additions(id,players,1));
   // Aperçu (catalogue des clubs) : seules les notes sont lues.
   if(seniorCalibration)seniorCalibration.apply(players,SOURCES,{clubId:id,leagueId:REG.clubs[id].leagueId,registry:REG},{ratingsOnly:!full});
   return players;
@@ -407,7 +408,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    seniorCalibration.settle?.(S.clubs.flatMap(club=>club.players));
    S.seniorCalibrationVersion=seniorCalibration.worldVersion??seniorCalibration.version;
   }
-  club().players.forEach(ensureSatisfaction);v39Initialize();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();setupManager();careerSetup();worldSetup();save();view='dashboard';entryScreen='game';
+  club().players.forEach(ensureSatisfaction);v39Initialize();autoLineup();if(sheetErrors().length&&!(typeof nativeProfessionalDepth!=='undefined'&&nativeProfessionalDepth.playedClubExempt(S)))promoteCover();refreshMarket();setupManager();careerSetup();worldSetup();save();view='dashboard';entryScreen='game';
  }
  function context(pair){const f=fixtures(S).find(f=>f.homeId===pair[0]&&f.awayId===pair[1]);check(!!f,'rencontre hors calendrier.');return copy(f);}
  function createClubMatch(create,fixture,pair,legacy,automated,preparation){
@@ -479,7 +480,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   // Build next year's entrants before clearing the results they are based on.
   S.season++;newSeason(S);S.history=[];S.lastReport=null;S.ending=null;S.trained=false;
   for(const c of S.clubs){c.points=c.played=c.won=c.drawn=c.lost=c.pf=c.pa=c.bonus=0;c.form=[];c.morale=75;for(const p of c.players){p.condition=100;p.injury=0;p.managerLoad={minutes:0,streak:0};if(p.physicalLoad)p.physicalLoad.fatigue=0;}}
-  ledgerEntry('Financement de début de saison',2500000);worldNewSeason(true);S.morale=75;beginDevelopmentSeason();resetSatisfactionSeason();v39SeasonReset();careerSeasonStart();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();managerMobilityOnSeasonStart();trimHistories(S);news('Une nouvelle saison commence. Le prochain objectif est devant nous.');save();
+  ledgerEntry('Financement de début de saison',2500000);worldNewSeason(true);S.morale=75;beginDevelopmentSeason();resetSatisfactionSeason();v39SeasonReset();careerSeasonStart();autoLineup();if(sheetErrors().length&&!(typeof nativeProfessionalDepth!=='undefined'&&nativeProfessionalDepth.playedClubExempt(S)))promoteCover();refreshMarket();managerMobilityOnSeasonStart();trimHistories(S);news('Une nouvelle saison commence. Le prochain objectif est devant nous.');save();
  }
  // Fiches de progression : plusieurs milliers de joueurs gérés gagnent une ligne par
  // saison (environ 1,7 Mo et 100 000 nœuds par an pour 116 clubs, jusqu'à douze

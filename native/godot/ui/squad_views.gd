@@ -1012,7 +1012,7 @@ static func comparison(app:Control) -> void:
 	var return_focus:=str(opener.name) if opener!=null else ""
 	U.remember(app)
 	U.sync(app)
-	load("res://ui/immersive08/recruitment_comparison.gd").open(app,"",{},return_focus)
+	load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
 
 static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
 	preload("res://ui/contract_negotiation.gd").open(app,p,recruiting)

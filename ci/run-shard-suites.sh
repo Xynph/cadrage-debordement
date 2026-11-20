@@ -207,6 +207,9 @@ budget() {
     # Vente de joueurs (carrière Monde) : trois carrières jouées sur plusieurs semaines, dont deux mesures de clôture
     # (hebdomadaire et journalière) ; 237 à 281 s en local. Budget ≈ 2,5 fois, assertions et seuils de performance inchangés.
     tests/vente-joueurs.cjs) echo 600s ;;
+    # Calendrier des mutations v2 (#1018) : carrières Monde avancées jusqu'en mai et à la bascule de saison ;
+    # 65 à 75 s en local, 180 s dépassées en CI (Suites 10/10, run 44661125959). Budget ≈ 3 fois, assertions inchangées.
+    tests/clubs-geres-mutations.cjs|tests/effectif-sans-plancher.cjs|tests/calendrier-mutations.cjs) echo 540s ;;
     *) echo 180s ;;
   esac
 }
