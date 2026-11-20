@@ -39,7 +39,7 @@
   "accession": {
    "joueurs": 787,
    "statutConnu": 776,
-   "internationaux": 62
+   "internationaux": 61
   },
   "prem": {
    "joueurs": 637,
@@ -49,7 +49,7 @@
   "urc": {
    "joueurs": 888,
    "statutConnu": 831,
-   "internationaux": 212
+   "internationaux": 211
   },
   "srp": {
    "joueurs": 381,
@@ -74,7 +74,7 @@
   "champ": {
    "joueurs": 596,
    "statutConnu": 534,
-   "internationaux": 10
+   "internationaux": 8
   },
   "guest": {
    "joueurs": 91,
@@ -1235,7 +1235,7 @@
  "lnr:25053":["aucune","jeune",0,"basse",0.98],
  "lnr:25054":["aucune","jeune",0,"basse",1],
  "lnr:25055":["aucune","rotation",0,"moyenne",0.27],
- "lnr:25056":["C","jeune",0,"haute",0.94],
+ "lnr:25056":["aucune","jeune",0,"haute",0.94],
  "lnr:25057":["C","reserviste",0,"moyenne",0.88],
  "lnr:25058":["aucune","titulaire",0,"moyenne",0.04],
  "lnr:25059":["aucune","jeune",1,"moyenne",0.67],
@@ -1800,7 +1800,7 @@
  "world:champ:3e726d9ae88136c33233":["aucune","jeune",0,"moyenne"],
  "world:champ:3f0ee0952f69b9850665":["aucune","titulaire",0,"haute",0.04],
  "world:champ:3f3d97e68a93ea999ba4":["aucune","rotation",0,"moyenne",0.74],
- "world:champ:3f8ec45d81d9c3e9fc4b":["C","titulaire",0,"haute",0.36],
+ "world:champ:3f8ec45d81d9c3e9fc4b":["aucune","titulaire",0,"haute",0.36],
  "world:champ:3fb0a9af29f4f6fe6b3a":["aucune","titulaire",0,"haute",0.07],
  "world:champ:40436dfdf07fe70d2677":["aucune","titulaire",0,"haute",0.39],
  "world:champ:4070c124df8b3a50b96d":["aucune","titulaire",0,"moyenne"],
@@ -2130,7 +2130,7 @@
  "world:champ:de88f4c2151b981e6bf2":["aucune","reserviste",0,"moyenne",0.94],
  "world:champ:dedcc32baa762160fb78":["aucune","rotation",0,"moyenne"],
  "world:champ:dfa7f4a1b41a97e7f0a8":["aucune","reserviste",0,"moyenne"],
- "world:champ:e12cc7229dfb80608153":["C","reserviste",0,"basse",1],
+ "world:champ:e12cc7229dfb80608153":["aucune","reserviste",0,"basse",1],
  "world:champ:e1e9f9d1cc803678d8ac":["aucune","titulaire",0,"basse",0.45],
  "world:champ:e27006b5fbac18181d7c":["aucune","titulaire",0,"haute",0.33],
  "world:champ:e27246711fc37e78f56c":["aucune","titulaire",0,"basse",0.41],
@@ -4325,7 +4325,7 @@
  "world:prem:217844":["aucune","rotation",0,"moyenne"],
  "world:prem:218605":["aucune","titulaire",0,"haute",0.16],
  "world:prem:218695":["aucune","rotation",0,"moyenne"],
- "world:prem:218727":["B","titulaire",0,"moyenne"],
+ "world:prem:218727":["C","titulaire",0,"moyenne"],
  "world:prem:218820":["aucune","titulaire",0,"haute",0.1],
  "world:prem:218848":["C","rotation",0,"haute",0.74],
  "world:prem:219208":["aucune","reserviste",0,"moyenne",0.64],
@@ -5624,7 +5624,7 @@
  "world:urc:252357":["aucune","jeune",1,"moyenne"],
  "world:urc:252414":["aucune","titulaire",1,"haute",0.24],
  "world:urc:252415":["aucune","rotation",0,"haute",0.92],
- "world:urc:252416":["S","rotation",1,"moyenne",0.62],
+ "world:urc:252416":["aucune","rotation",1,"moyenne",0.62],
  "world:urc:252447":["aucune","jeune",1,"moyenne",0.87],
  "world:urc:252477":["aucune","jeune",1,"moyenne",0.98],
  "world:urc:252479":["aucune","reserviste",0,"moyenne",0.77],
