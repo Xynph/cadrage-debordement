@@ -23,8 +23,16 @@ var failures: Array[String]=[]
 func check(value: bool,text: String) -> void:
 	if not value:failures.append(text);printerr("FAIL: "+text)
 func _initialize() -> void:call_deferred("run")
+## Le contrat est une sous-page du Staff depuis le 19/11/2026 (jamais de fenêtre) : on construit la page elle-même, neuve à chaque
+## ouverture comme le fait la navigation ; « fermer » la retire.
+func contrat(app: Host,person: Dictionary,data: Dictionary,renew: bool) -> void:
+	var ancienne := app.get_node_or_null("PageContrat")
+	if ancienne != null: app.remove_child(ancienne);ancienne.free()
+	var page:=VBoxContainer.new();page.name="PageContrat";app.add_child(page)
+	Career.contrat_page(app,page,person,data,renew,func():
+		if is_instance_valid(page) and page.get_parent()!=null: page.get_parent().remove_child(page);page.queue_free())
 func submit(app: Host,person: Dictionary,data: Dictionary,renew: bool,years: int) -> void:
-	Career._contract(app,person,data,renew)
+	contrat(app,person,data,renew)
 	var field: OptionButton=app.find_child("StaffContractYears",true,false)
 	for i in field.item_count:
 		if int(field.get_item_metadata(i))==years:field.select(i);field.item_selected.emit(i)
@@ -43,7 +51,7 @@ func run() -> void:
 		check(app.bridge.command_failed.get_connections().size()==errors,"Pas d’observateur erreur accumulé après panne "+str(attempt))
 	app.bridge.last_response_ok=true;app.bridge.model_changed.emit({"snapshot":true})
 	check(app.management_ui.staff_contract_drafts.has("proof:mentor:hire"),"Un snapshot de reconnexion ne valide pas une signature")
-	Career._contract(app,person,data,false)
+	contrat(app,person,data,false)
 	var field: OptionButton=app.find_child("StaffContractYears",true,false)
 	check(int(field.get_item_metadata(field.selected))==2,"Deux saisons conservées après trois pannes et snapshot")
 	app._clear_dialogs();await process_frame
