@@ -602,28 +602,27 @@ func _fin_verrou(bouton: Button) -> void:
 
 # ---- Affiche ----------------------------------------------------------------------------------------------------
 
-## Plaque inclinée aux couleurs d'un club : écusson, nom en 64 px, bord incliné de 10° ; clic : fiche du club.
+## Plaque aux couleurs d'un club (angles arrondis, rayon 12) : écusson, nom en 64 px ; clic : fiche du club.
 class Plaque extends Button:
 	var couleur := Color.WHITE
 	var anneau := false
 	var droite := false
 	func _ready() -> void:
 		resized.connect(queue_redraw)
+	## Tuile arrondie (charte : rayon 12 des tuiles et cartes) ; le contour du camp « anneau » et le focus suivent la forme.
+	func _forme(fond: Color, contour: Color = Color.TRANSPARENT, epaisseur: int = 0) -> StyleBoxFlat:
+		var style := StyleBoxFlat.new()
+		style.bg_color = fond
+		style.border_color = contour
+		style.set_border_width_all(epaisseur)
+		style.set_corner_radius_all(Charte.RAYON_CARTE)
+		style.anti_aliasing = true
+		return style
 	func _draw() -> void:
-		var d := Charte.decalage(size.y)
-		var points := PackedVector2Array([Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x - d, size.y), Vector2(0, size.y)]) if not droite \
-			else PackedVector2Array([Vector2(d, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(0, size.y)])
-		if anneau:
-			draw_colored_polygon(points, Color(Charte.NUIT, .55))
-			var contour := points.duplicate()
-			contour.append(points[0])
-			draw_polyline(contour, Charte.IVOIRE, 3.0, true)
-		else:
-			draw_colored_polygon(points, couleur)
-		if is_hovered() or has_focus():
-			var contour_f := points.duplicate()
-			contour_f.append(points[0])
-			draw_polyline(contour_f, Charte.IVOIRE, 3.0 if has_focus() else 2.0, true)
+		var rect := Rect2(Vector2.ZERO, size)
+		if anneau: draw_style_box(_forme(Color(Charte.NUIT, .55), Charte.IVOIRE, 3), rect)
+		else: draw_style_box(_forme(couleur), rect)
+		if is_hovered() or has_focus(): draw_style_box(_forme(Color.TRANSPARENT, Charte.IVOIRE, 3 if has_focus() else 2), rect)
 
 func _distance(a: Color, b: Color) -> float:
 	return sqrt(pow(a.r - b.r, 2.0) + pow(a.g - b.g, 2.0) + pow(a.b - b.b, 2.0))

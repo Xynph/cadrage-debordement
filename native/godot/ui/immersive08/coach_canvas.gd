@@ -407,7 +407,7 @@ func _disposer_bandeau() -> void:
 		_visage.ajuster()
 		_style_pastille()
 		if not _bandeau_masque and portrait is GabiPortrait and portrait.framing == "visage":
-			portrait.set_render_size(Vector2i.ONE * roundi(maxf(s.x, h) * _bandeau.get_global_transform_with_canvas().get_scale().y * 2.0))
+			portrait.set_render_size(Vector2i(roundi(s.x * _bandeau.get_global_transform_with_canvas().get_scale().x * 2.0), roundi(h * _bandeau.get_global_transform_with_canvas().get_scale().y * 2.0)))
 		return
 	var d := roundf(h * 0.97)
 	_visage.position = Vector2(0, (h - d) / 2.0)
