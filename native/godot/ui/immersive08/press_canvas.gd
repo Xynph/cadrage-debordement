@@ -103,9 +103,10 @@ func _surface(parent: Node, rect: Rect2, id: String, couleur: Color = C.PANEL) -
 	var style := StyleBoxFlat.new()
 	style.bg_color = couleur
 	style.set_corner_radius_all(0)
-	panneau.add_theme_stylebox_override("panel", style)
+	panneau.add_theme_stylebox_override("panel", Charte.ombrer_droit(style))
 	parent.add_child(panneau)
 	D.place(panneau, rect)
+	Charte.ombre_derriere(panneau) # le panneau rogne son contenu : l'ombre passe à un calque frère
 	return panneau
 
 func _boite(parent: Node, rect: Rect2, id: String, couleur: Color = C.PANEL, marge: int = 24) -> VBoxContainer:

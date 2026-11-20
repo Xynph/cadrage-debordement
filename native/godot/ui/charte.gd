@@ -86,6 +86,15 @@ static func ombrer(style: StyleBoxFlat, rayon: float = -1.0) -> StyleBoxFlat:
 	style.shadow_offset = OMBRE_DECALAGE
 	return style
 
+## Même ombre sur une colonne ou un bandeau à angles droits posé sur le fond (Réception, Presse : Léo veut l'ombre sur
+## tous les panneaux, arrondis ou non). Mêmes jetons, quel que soit le rayon ; sans effet sur un fond transparent.
+static func ombrer_droit(style: StyleBoxFlat) -> StyleBoxFlat:
+	if style == null or not style.draw_center or style.bg_color.a <= 0.0: return style
+	style.shadow_color = OMBRE_COULEUR
+	style.shadow_size = OMBRE_TAILLE
+	style.shadow_offset = OMBRE_DECALAGE
+	return style
+
 ## Retire l'ombre (menu déroulant ou bouton construit avec un style de panneau).
 static func sans_ombre(style: StyleBoxFlat) -> StyleBoxFlat:
 	if style != null: style.shadow_size = 0

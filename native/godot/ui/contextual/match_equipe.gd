@@ -287,12 +287,12 @@ func _boite(fond: Color, bord: Color = Color.TRANSPARENT, rayon: float = 0, epai
 	return Charte.ombrer(style, rayon if rond else 0.0)
 
 ## Panneau à plat de la charte : fond opaque, sans bordure ; au plus UN filet (`cote` : left, top, bottom).
-func _plat(fond: Color = C.PANEL, filet: Color = Color.TRANSPARENT, marge: float = 0, cote: String = "left", epaisseur: float = 3) -> StyleBoxFlat:
+func _plat(fond: Color = C.PANEL, filet: Color = Color.TRANSPARENT, marge: float = 0, cote: String = "left", epaisseur: float = 3, ombre: bool = false) -> StyleBoxFlat:
 	var style := _boite(fond, Color.TRANSPARENT, 0, 0, marge)
 	if filet.a > 0.0:
 		style.border_color = filet
 		style.set("border_width_" + cote, maxi(1, px(epaisseur)))
-	return style
+	return Charte.ombrer_droit(style) if ombre else style
 
 ## Titre de section de la charte : Barlow Condensed ExtraBold Italic, capitales, ivoire.
 func _titre_section(texte: String, taille: float) -> Label:
@@ -561,7 +561,7 @@ func _largeur_texte(texte: String, police: Font, taille: int) -> float:
 	return police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x
 
 func _entete() -> void:
-	var cadre := _panneau(_plat(C.PANEL, C.LINE, 0, "bottom", 1))
+	var cadre := _panneau(_plat(C.PANEL, C.LINE, 0, "bottom", 1, true))
 	cadre.name = "TeamHeader"
 	(cadre.get_theme_stylebox("panel") as StyleBoxFlat).content_margin_left = px(14)
 	(cadre.get_theme_stylebox("panel") as StyleBoxFlat).content_margin_right = px(20)
@@ -623,7 +623,7 @@ func _entete() -> void:
 		rangee.add_child(bouton)
 
 func _pied(gauche: Callable, secondaire: Array) -> void:
-	var cadre := _panneau(_plat(C.PANEL, C.LINE, 0, "top", 1))
+	var cadre := _panneau(_plat(C.PANEL, C.LINE, 0, "top", 1, true))
 	cadre.name = "TeamFooter"
 	(cadre.get_theme_stylebox("panel") as StyleBoxFlat).content_margin_left = px(16)
 	(cadre.get_theme_stylebox("panel") as StyleBoxFlat).content_margin_right = px(16)
@@ -922,6 +922,13 @@ func _terrain(centre: VBoxContainer) -> void:
 	cadre.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
 	centre.add_child(cadre)
+	# Le terrain est une tuile posée sur le fond : son ombre vient d'un fond plein juste derrière le dessin.
+	var ombre := Panel.new()
+	ombre.name = "TeamPitchOmbre"
+	ombre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ombre.add_theme_stylebox_override("panel", Charte.ombrer_droit(_boite(C.BG)))
+	S.full(ombre)
+	cadre.add_child(ombre)
 	var terrain := Terrain.new()
 	terrain.name = "TeamPitchField"
 	terrain.k = k
@@ -1061,7 +1068,7 @@ func _terrain(centre: VBoxContainer) -> void:
 func _fatigue(centre: VBoxContainer, p: Dictionary) -> void:
 	var lignes: Variant = p.get("fatigue")
 	if not lignes is Array or (lignes as Array).is_empty(): return
-	var cadre := _panneau(_plat(C.PANEL))
+	var cadre := _panneau(_plat(C.PANEL, Color.TRANSPARENT, 0, "left", 3, true))
 	cadre.name = "TeamFatigue"
 	var style := cadre.get_theme_stylebox("panel") as StyleBoxFlat
 	style.content_margin_left = px(16)
@@ -1192,12 +1199,12 @@ func _tuile(joueur: Dictionary, numero: int, eligible: bool, choisi: bool, conse
 	tuile.focus_mode = Control.FOCUS_ALL
 	tuile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tuile.custom_minimum_size = Vector2(0, px(68))
-	tuile.clip_contents = true
+	tuile.clip_contents = false # le contenu est à 8 px du bord ; rogner couperait l'ombre de la carte
 	# Un seul filet, à gauche (charte §3 : aucun cadre complet). Remplaçant choisi : fond sombre relevé, filet épais
 	# ivoire et coche ; autorisé : filet menthe (et « en vert sur le banc » écrit sous le terrain) ; conseillé par
 	# Gabi : filet ivoire (sa carte le nomme). Jamais d'or ni d'ivoire plein.
 	var bord := C.MINT if eligible and poste_choisi >= 0 else (C.IVORY if choisi or conseille else C.LINE)
-	var normal := _boite(C.SELECTED if choisi else C.PANEL, bord, Charte.RAYON_PETIT, 4 if choisi else 2, 8, true, "left")
+	var normal := Charte.ombrer_droit(_boite(C.SELECTED if choisi else C.PANEL, bord, Charte.RAYON_PETIT, 4 if choisi else 2, 8, true, "left")) # carte du banc : ombre de la charte
 	var survol := normal.duplicate() as StyleBoxFlat
 	survol.bg_color = C.RAISED
 	survol.border_color = C.IVORY
@@ -1271,7 +1278,7 @@ func _carte_conseil(colonne: VBoxContainer, conseil: Dictionary) -> void:
 	vide.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	colonne.add_child(vide)
-	var cadre := _panneau(_plat(C.PANEL, C.IVORY, 14, "left", 3))
+	var cadre := _panneau(_plat(C.PANEL, C.IVORY, 14, "left", 3, true))
 	cadre.name = "TeamAdvice"
 	colonne.add_child(cadre)
 	var pile := _v(10)
@@ -1370,7 +1377,7 @@ func _consignes() -> void:
 	var p := _pilotage()
 	var envois: Dictionary = view.get("_envois_consignes") if view != null and view.get("_envois_consignes") is Dictionary else {}
 	var vue := Pilotage.avec_envois(p, envois)
-	var section := _panneau(_plat(C.PANEL))
+	var section := _panneau(_plat(C.PANEL, Color.TRANSPARENT, 0, "left", 3, true))
 	section.name = "TeamConsignes"
 	var style := section.get_theme_stylebox("panel") as StyleBoxFlat
 	style.content_margin_left = px(20)
@@ -1428,12 +1435,18 @@ func _consignes() -> void:
 	var defile_aside := ScrollContainer.new()
 	defile_aside.name = "TeamConsignesAsideScroll"
 	defile_aside.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_poser(defile_aside, 1150, 96, 426, 708)
+	# Zone élargie de 6 px de chaque côté, contenu rentré d'autant : la zone rogne, l'ombre des cartes reste entière.
+	_poser(defile_aside, 1144, 90, 438, 720)
 	var aside := _v(14 if k >= 1.0 else 8)
 	aside.name = "TeamConsignesAside"
 	aside.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	aside.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	defile_aside.add_child(aside)
+	var jeu_ombre := MarginContainer.new()
+	jeu_ombre.name = "TeamConsignesAsideMargin"
+	jeu_ombre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for cote: String in ["left", "right", "top", "bottom"]: jeu_ombre.add_theme_constant_override("margin_" + cote, px(6))
+	defile_aside.add_child(jeu_ombre)
+	jeu_ombre.add_child(aside)
 	_carte_arbitre(aside, p)
 	_carte_adversaire(aside, p, vue)
 	_carte_match(aside, p)
@@ -1468,7 +1481,7 @@ func _entete_groupe(texte: String, sous: String) -> Control:
 
 ## Point sur le match sous l'adversaire : score et temps, fatigue moyenne du XV, consignes en place.
 func _carte_match(parent: Control, p: Dictionary) -> void:
-	var cadre := _panneau(_plat(C.PANEL, Color.TRANSPARENT, 14))
+	var cadre := _panneau(_plat(C.PANEL, Color.TRANSPARENT, 14, "left", 3, true))
 	cadre.name = "TeamMatchSummary"
 	parent.add_child(cadre)
 	var colonne := _v(8)
@@ -1506,7 +1519,7 @@ func _carte_staff(parent: Control, p: Dictionary) -> void:
 	var faits: Array = journal.filter(func(e: Variant) -> bool: return e is Dictionary and str(e.get("auteur", "")) == "staff")
 	if propositions.is_empty() and faits.is_empty(): return
 	# Un seul filet à gauche : menthe quand le staff propose (le titre le dit), sinon aucun.
-	var cadre := _panneau(_plat(C.PANEL, C.MINT if not propositions.is_empty() else Color.TRANSPARENT, 14, "left", 3))
+	var cadre := _panneau(_plat(C.PANEL, C.MINT if not propositions.is_empty() else Color.TRANSPARENT, 14, "left", 3, true))
 	cadre.name = "TeamStaffNote"
 	parent.add_child(cadre)
 	var colonne := _v(8)
@@ -1630,7 +1643,7 @@ func _axe(p: Dictionary, axe: Dictionary) -> Control:
 func _plan_de_jeu(colonne: VBoxContainer) -> void:
 	var tactiques: Dictionary = _model.get("tactics", {}) if _model.get("tactics") is Dictionary else {}
 	if tactiques.is_empty(): return
-	var cadre := _panneau(_plat(C.RAISED))
+	var cadre := _panneau(_plat(C.RAISED, Color.TRANSPARENT, 0, "left", 3, true))
 	cadre.name = "TeamGamePlan"
 	var style := cadre.get_theme_stylebox("panel") as StyleBoxFlat
 	style.content_margin_left = px(14)
@@ -1719,7 +1732,7 @@ func _carte_arbitre(parent: Control, p: Dictionary) -> void:
 	var cadre := PanelContainer.new()
 	cadre.name = "TeamReferee"
 	cadre.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
-	cadre.add_theme_stylebox_override("panel", _plat(C.PANEL))
+	cadre.add_theme_stylebox_override("panel", _plat(C.PANEL, Color.TRANSPARENT, 0, "left", 3, true))
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
 	parent.add_child(cadre)
 	var rangee := _h(0)
@@ -1787,7 +1800,7 @@ func _carte_adversaire(parent: Control, p: Dictionary, vue: Dictionary) -> void:
 	for equipe: Variant in equipes:
 		if equipe is Dictionary and str(equipe.get("id", "")) != club_id: adverse = equipe
 	var nom := S.G.club_name(adverse).to_upper() if not adverse.is_empty() else "L'ADVERSAIRE"
-	var cadre := _panneau(_plat(C.PANEL, Color.TRANSPARENT, 14))
+	var cadre := _panneau(_plat(C.PANEL, Color.TRANSPARENT, 14, "left", 3, true))
 	cadre.name = "TeamOpponent"
 	parent.add_child(cadre)
 	var colonne := _v(8)
@@ -1895,7 +1908,7 @@ func _carte_role(role: Dictionary) -> Control:
 	var staff: Variant = role.get("staff")
 	var en_jeu: Variant = role.get("enJeu")
 	# Rôle désigné par le manager : un seul filet ivoire à gauche (la ligne « En charge » le dit en toutes lettres).
-	var cadre := _panneau(_plat(C.PANEL, C.IVORY if designe is Dictionary else Color.TRANSPARENT, 16, "left", 3))
+	var cadre := _panneau(_plat(C.PANEL, C.IVORY if designe is Dictionary else Color.TRANSPARENT, 16, "left", 3, true))
 	cadre.name = "Role_" + id
 	cadre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cadre.size_flags_vertical = Control.SIZE_EXPAND_FILL

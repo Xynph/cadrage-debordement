@@ -168,6 +168,14 @@ static func proche_or(couleur: Color) -> bool:
 ## de focus ; boutons arrondis (hors terrain) ; ombre portée des jetons (noir 50 %, 4 px, sans décalage) sur chaque
 ## panneau, carte ou tuile, aucune sur pilules, boutons, cases ni lignes (choix de Léo du 20/11/2026) ; aucun panneau encadré sur ses quatre côtés (l'anneau de
 ## focus excepté) ; le lien « ← Retour au direct » et des textes d'au moins 12 px.
+## Panneaux et tuiles à angles droits qui portent l'ombre par leur rôle (préfixes de noms).
+const PANNEAUX_OMBRES := ["TeamHeader", "TeamFooter", "TeamPitchOmbre", "TeamFatigue", "TeamAdvice", "TeamConsignes", "TeamMatchSummary", "TeamStaffNote", "TeamGamePlan", "TeamReferee", "TeamOpponent"]
+
+func _ombre_de_role(c: Control) -> bool:
+	var nom := str(c.name)
+	if nom.begins_with("TeamBench") and nom.substr(9).is_valid_int(): return c is BaseButton # carte du banc
+	return not c is BaseButton and (nom in PANNEAUX_OMBRES or nom.begins_with("Role_"))
+
 func controler_charte(contexte: String) -> void:
 	var terrain: Control = fenetre.find_child("TeamPitchField", true, false)
 	var ors: Array[String] = []
@@ -175,6 +183,7 @@ func controler_charte(contexte: String) -> void:
 	var ombres: Array[String] = []
 	var sans_ombre: Array[String] = []
 	var tuiles := 0
+	var vus_par_role: Array[String] = []
 	var seuil: int = fenetre.px(Charte.RAYON_CARTE) if fenetre.has_method("px") else Charte.RAYON_CARTE
 	var cadres: Array[String] = []
 	var petits: Array[String] = []
@@ -195,7 +204,14 @@ func controler_charte(contexte: String) -> void:
 			# tout le reste (pilule, case, ligne, contour seul) n'en a aucune.
 			var r := maxi(maxi(s.corner_radius_top_left, s.corner_radius_top_right), maxi(s.corner_radius_bottom_left, s.corner_radius_bottom_right))
 			var pilule := r >= Charte.RAYON_PILULE or float(r) * 2.0 >= minf(c.size.x, c.size.y) - 1.0
-			if s.draw_center and s.bg_color.a > 0.0 and r >= seuil and not pilule:
+			# Panneaux et tuiles à angles droits de la fenêtre (bandeau, pied, terrain, banc, cartes, sections) : l'ombre
+			# vient de leur rôle, quel que soit le rayon (Léo, 20/11/2026 : l'ombre sur toutes les tuiles).
+			var par_role := _ombre_de_role(c) and s.draw_center and s.bg_color.a > 0.0 and etat != "focus"
+			if par_role:
+				tuiles += 1
+				vus_par_role.append(str(c.name))
+				if not Charte.porte_ombre(s): sans_ombre.append("%s.%s" % [c.name, etat])
+			elif s.draw_center and s.bg_color.a > 0.0 and r >= seuil and not pilule:
 				tuiles += 1
 				if not Charte.porte_ombre(s): sans_ombre.append("%s.%s" % [c.name, etat])
 			elif s.shadow_size > 0: ombres.append("%s.%s" % [c.name, etat])
@@ -212,6 +228,8 @@ func controler_charte(contexte: String) -> void:
 	verifier(arrondis.is_empty(), contexte + " : boutons arrondis hors terrain (%s)" % str(arrondis.slice(0, 6)))
 	verifier(ombres.is_empty(), contexte + " : aucune ombre sur pilules, boutons, cases ni lignes (%s)" % str(ombres.slice(0, 6)))
 	verifier(sans_ombre.is_empty(), contexte + " : %d panneau(x), carte(s) ou tuile(s), tous avec l'ombre des jetons (sans : %s)" % [tuiles, str(sans_ombre.slice(0, 6))])
+	verifier(not vus_par_role.is_empty() and vus_par_role.has("TeamHeader") and vus_par_role.has("TeamFooter"), contexte + " : bandeau du haut et pied portent l'ombre (%s)" % str(vus_par_role.slice(0, 6)))
+	if fenetre.onglet == "composition": verifier(vus_par_role.has("TeamPitchOmbre") and vus_par_role.filter(func(n: String) -> bool: return n.begins_with("TeamBench")).size() >= 8, contexte + " : terrain et cartes du banc portent l'ombre (%s)" % str(vus_par_role.filter(func(n: String) -> bool: return n.begins_with("TeamBench")).size()))
 	verifier(cadres.is_empty(), contexte + " : aucun panneau encadré sur ses quatre côtés (%s)" % str(cadres.slice(0, 6)))
 	verifier(petits.is_empty(), contexte + " : textes d'au moins 12 px (%s)" % str(petits.slice(0, 6)))
 	verifier(pleins == ["TeamResume"], contexte + " : un seul bouton en aplat clair, « Valider et reprendre » (%s)" % str(pleins))

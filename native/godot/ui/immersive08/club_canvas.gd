@@ -245,7 +245,7 @@ static func _overview(app: Control, canvas: Control) -> void:
 static func _hero(app: Control, page: Control, fans: Dictionary) -> void:
 	var bandeau := Button.new()
 	bandeau.name = "ClubStadium"
-	bandeau.flat = true
+	bandeau.flat = false # un bouton « flat » ne dessine ni son fond ni son ombre
 	bandeau.focus_mode = Control.FOCUS_ALL
 	bandeau.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	bandeau.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU, Color.TRANSPARENT, 24, 0))

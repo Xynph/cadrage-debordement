@@ -149,6 +149,7 @@ func ombres(ecran: String) -> void:
 	var sans: Array[String] = []
 	var en_trop: Array[String] = []
 	var rognees: Array[String] = []
+	var plats: Array[String] = []
 	for c: Control in app.root_content.find_children("*", "Control", true, false):
 		if not c.is_visible_in_tree() or c.get_viewport() != app.get_viewport() or _dans_un_masque(c): continue
 		for etat: String in ["panel", "normal", "hover", "pressed", "disabled"]:
@@ -164,13 +165,18 @@ func ombres(ecran: String) -> void:
 				if not Charte.porte_ombre(s) and not (etat == "panel" and c.clip_contents and portee): sans.append("%s.%s (r %d)" % [c.name, etat, r])
 			elif s.shadow_size > 0 and (pilule or not s.draw_center or s.bg_color.a <= 0.0 or not Charte.porte_ombre(s) or (r < seuil and etat != "panel")):
 				en_trop.append("%s.%s (r %d)" % [c.name, etat, r])
+			# Colonne, bandeau ou carte à angles droits posé sur le fond (Réception, Presse, fenêtre Équipe, Club) : Léo veut
+			# l'ombre sur toutes les tuiles ; un grand fond plein sans ombre (ni calque d'ombre frère) est un oubli.
+			if etat == "panel" and r < seuil and s.draw_center and s.bg_color.a > 0.0 and c.size.x >= 150.0 and c.size.y >= 60.0 and not Charte.porte_ombre(s):
+				var frere := c.get_parent().get_node_or_null(NodePath(str(c.name) + "Ombre")) as Control if c.get_parent() != null else null
+				if frere == null or not Charte.porte_ombre(frere.get_theme_stylebox("panel")): plats.append("%s (%dx%d)" % [c.name, int(c.size.x), int(c.size.y)])
 			if etat in ["panel", "normal"] and Charte.porte_ombre(s):
 				# Panneau ombré par son rôle malgré un petit rayon (Finances : panneaux à 6) : compté avec les tuiles.
 				if etat == "panel" and r < seuil: tuiles += 1
 				var raison := _ombre_rognee(c)
 				if not raison.is_empty(): rognees.append("%s (%s)" % [c.name, raison])
-	# Réception et Presse : colonnes à angles droits qui cadrent la page (ni panneau arrondi, ni tuile) ; pas d'ombre.
-	if not ecran in ["Réception", "Presse", "Sélections"]: check(tuiles > 0, "%s : au moins un panneau ou une tuile" % ecran)
+	check(tuiles > 0, "%s : au moins un panneau ou une tuile" % ecran)
+	check(plats.is_empty(), "%s : aucun grand panneau à angles droits sans ombre (%d : %s)" % [ecran, plats.size(), str(plats.slice(0, 8))])
 	check(sans.is_empty(), "%s : chaque panneau, carte ou tuile porte l'ombre des jetons (%d sans : %s)" % [ecran, sans.size(), str(sans.slice(0, 8))])
 	check(en_trop.is_empty(), "%s : aucune ombre sur pilules, boutons, cases ni lignes (%s)" % [ecran, str(en_trop.slice(0, 8))])
 	check(rognees.is_empty(), "%s : aucune ombre rognée (%d : %s)" % [ecran, rognees.size(), str(rognees.slice(0, 8))])
