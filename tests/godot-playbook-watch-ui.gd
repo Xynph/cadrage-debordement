@@ -141,12 +141,14 @@ func playbook_case() -> void:
 	host.queue_free();await settle();advice_fixture=null
 func watch_case() -> void:
 	await load_fixture("full")
+	# L'onglet « Besoins du club » arrive filtré sur le poste prioritaire : la piste suivie se cherche dans toute la liste.
+	app.management_ui.market.immersive_tab = 1
 	app._navigate("Recrutement")
 	await settle()
 	watched_id = str(app.model.market[0].id)
 	check(app.model.clubLife.managerCareer.places == 0 and not app.model.clubLife.managerCareer.recruitmentAvailable, "Fixture réelle : effectif plein et embauche indisponible")
 	var followed := app.body.find_child("MarketFollowed", true, false) as Button
-	check(followed != null and followed.text == "Joueurs suivis", "Le filtre décrit le suivi persistant")
+	check(followed != null and followed.text.begins_with("Joueurs suivis"), "Le filtre décrit le suivi persistant")
 	var before: Dictionary = await state()
 	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:
 		root.size = resolution
@@ -174,6 +176,7 @@ func watch_case() -> void:
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	await command("import", {"text":saved})
 	check(app.management_ui.shortlist == [watched_id] and app.model.clubLife.managerCareer.places == 0, "Import : suivi persistant et effectif toujours plein")
+	app.management_ui.market.immersive_tab = 1
 	app._navigate("Recrutement")
 	await settle()
 	await keyboard(app.body.find_child("MarketFollowed", true, false))

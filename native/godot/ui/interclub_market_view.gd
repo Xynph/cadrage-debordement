@@ -3,6 +3,7 @@ const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Prospect = preload("res://ui/prospect_profile.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
+const EnPlace = preload("res://ui/confirmation_en_place.gd")
 ## Textes à 13 px au moins en 1280×720 (même règle que les ventes : le style immersif repose un plancher de 12 px).
 const Sales = preload("res://ui/player_sales_view.gd")
 var app: Control
@@ -232,50 +233,22 @@ func _precontract_check() -> void:
 	pre_premium.add_theme_color_override("font_color", G.ALERT if over else G.INK)
 	if is_instance_valid(pre_button): pre_button.disabled = over or pending or app.waiting
 
+## Confirmation EN PLACE du pré-contrat (deux temps, aucune fenêtre) : sous le bouton, la phrase d'engagement, la prime payée
+## maintenant, « Signer le pré-contrat avec X » / « Annuler » (focus sur Annuler). La réponse s'écrit dans le message de la page.
 func _confirm_precontract() -> void:
 	if pending or app.waiting or selected_person.is_empty(): return
 	var pre: Dictionary = selected_person.get("preContract", {})
 	var payload := {"playerId":str(selected_person.id), "sellerId":int(selected_person.clubId), "salary":_precontract_salary(), "years":int(pre_years.value), "confirmed":true}
-	var dialog := ConfirmationDialog.new()
-	dialog.name = "PreContractConfirmation"
-	dialog.title = "Signer un pré-contrat"
-	app._prepare_dialog(dialog, 600)
-	# W1 : le bouton dit l'action, le focus va sur Annuler.
-	dialog.get_ok_button().text = ("SIGNER LE PRÉ-CONTRAT AVEC " + str(selected_person.get("name", ""))).to_upper()
-	dialog.get_cancel_button().text = "ANNULER"
-	var content := G.v(8)
-	dialog.add_child(content)
-	var heading := G.wrap("%s rejoindra ton club le %s pour %d saison%s (salaire : %s). Aucune indemnité pour %s." % [str(selected_person.get("name", "")), str(pre.get("arrivalLabel", "")), int(pre_years.value), "s" if int(pre_years.value) > 1 else "", G.salary(_precontract_salary()), str(selected_person.get("club", ""))], 14, G.INK)
-	heading.name = "PreContractConfirmHeading"
-	content.add_child(heading)
-	var cost := G.wrap("Prime à la signature : %s, payée maintenant (budget de transferts). Il reste à %s jusqu’au 30 juin." % [G.euros(_precontract_premium()), str(selected_person.get("club", ""))], 14, G.INK)
-	cost.name = "PreContractConfirmPremium"
-	content.add_child(cost)
-	add_child(dialog)
-	dialog.confirmed.connect(func():
+	var lines: Array = [
+		{"id":"PreContractConfirmHeading", "text":"%s rejoindra ton club le %s pour %d saison%s (salaire : %s). Aucune indemnité pour %s." % [str(selected_person.get("name", "")), str(pre.get("arrivalLabel", "")), int(pre_years.value), "s" if int(pre_years.value) > 1 else "", G.salary(_precontract_salary()), str(selected_person.get("club", ""))]},
+		{"id":"PreContractConfirmPremium", "text":"Prime à la signature : %s, payée maintenant (budget de transferts). Il reste à %s jusqu’au 30 juin." % [G.euros(_precontract_premium()), str(selected_person.get("club", ""))]}]
+	var envoyer := func():
 		pending = true
 		if is_instance_valid(pre_button): pre_button.disabled = true
 		local_message.text = "Proposition transmise au joueur…"
 		if not app._command("precontract_offer", payload): _on_failure("Pré-contrat indisponible.")
-		dialog.queue_free())
-	dialog.canceled.connect(dialog.queue_free)
-	Sales.lisible(dialog)
-	# Fenêtre fille du marché : centrée à l'écran et ajustée à son contenu (comme la confirmation de vente).
-	dialog.popup_centered(Vector2i(620, 260))
-	_center_on_screen.call_deferred(dialog)
-	dialog.get_cancel_button().grab_focus()
-
-func _center_on_screen(dialog: Window) -> void:
-	for i in 3: await get_tree().process_frame
-	if not is_instance_valid(dialog) or not dialog.visible: return
-	var screen := Vector2i(get_tree().root.get_visible_rect().size)
-	var title_height := dialog.get_theme_constant("title_height", "Window")
-	dialog.size = Vector2i(mini(620, screen.x - 28), 1)
-	await get_tree().process_frame
-	if not is_instance_valid(dialog): return
-	dialog.size = Vector2i(mini(dialog.size.x, screen.x - 28), mini(dialog.size.y, screen.y - 68))
-	dialog.position = (screen - dialog.size + Vector2i(0, title_height)) / 2
-
+	var bloc := EnPlace.ouvrir(app, rows, "PreContractConfirmation", "Signer un pré-contrat", lines, "Signer le pré-contrat avec " + str(selected_person.get("name", "")), envoyer, pre_button)
+	Sales.lisible(bloc)
 func _offer(person: Dictionary) -> void:
 	if app.waiting: return
 	selected_person = person.duplicate(true)
@@ -363,11 +336,11 @@ func _budget_check() -> void:
 func _ask_extension() -> void:
 	var amount := int(extension_button.get_meta("amount", 0)) if is_instance_valid(extension_button) else 0
 	if pending or app.waiting or amount <= 0: return
-	Budget.confirm_extension(app, self, Budget.data(app.model), amount, func():
+	var envoyee := func():
 		pending = true
 		extension_button.disabled = true
-		local_message.text = "Demande transmise au conseil…")
-
+		local_message.text = "Demande transmise au conseil…"
+	Sales.lisible(Budget.confirm_extension(app, rows, Budget.data(app.model), amount, envoyee, extension_button))
 func _invalidate_quote() -> void:
 	negotiation = {}
 	close_button.disabled = true
@@ -437,6 +410,7 @@ func _on_failure(message: String) -> void:
 	local_message.text = message + " Tes conditions sont conservées ; soumets-les à nouveau."
 	_budget_check()
 
+## Confirmation EN PLACE de la clôture (deux temps, aucune fenêtre) : sous le bouton de clôture.
 func _confirm_auction() -> void:
 	if pending or app.waiting or negotiation.is_empty(): return
 	var winner: Variant = negotiation.get("winner")
@@ -444,20 +418,14 @@ func _confirm_auction() -> void:
 	var payload := _payload()
 	payload.context = negotiation.get("context",{}).duplicate(true)
 	payload.merge({"expectedWinner":int(winner.clubId),"expectedFee":int(winner.fee),"expectedSalary":int(winner.salary),"confirmed":true})
-	var confirm := ConfirmationDialog.new()
-	confirm.name = "InterclubAuctionConfirmation"
-	confirm.title = "Clôturer la négociation"
-	confirm.dialog_text = "%s remportera le joueur au devis actuel : %s d’indemnité, %s. Confirmer cette transaction définitive ?" % [str(winner.club),G.euros(winner.fee),G.salary(winner.salary)]
+	var phrase := "%s remportera le joueur au devis actuel : %s d’indemnité, %s. Confirmer cette transaction définitive ?" % [str(winner.club),G.euros(winner.fee),G.salary(winner.salary)]
+	var libelle := "Clôturer au devis : " + G.euros(winner.fee)
 	# Hors période des mutations (calendrier-mutations.cjs) : accord conclu maintenant, arrivée à l'ouverture.
 	if negotiation.get("deferred") is Dictionary:
-		confirm.dialog_text = "Hors période des mutations : l’accord est conclu maintenant (%s d’indemnité, %s), le joueur rejoindra ton club le %s. L’accord est définitif." % [G.euros(winner.fee), G.salary(winner.salary), str(negotiation.deferred.get("dateLabel", ""))]
-		confirm.get_ok_button().text = "CONCLURE L’ACCORD"
-		confirm.get_cancel_button().text = "ANNULER"
-	add_child(confirm)
-	confirm.confirmed.connect(func():
+		phrase = "Hors période des mutations : l’accord est conclu maintenant (%s d’indemnité, %s), le joueur rejoindra ton club le %s. L’accord est définitif." % [G.euros(winner.fee), G.salary(winner.salary), str(negotiation.deferred.get("dateLabel", ""))]
+		libelle = "Conclure l’accord"
+	var envoyer := func():
 		pending=true; close_button.disabled=true; fee_input.editable=false; salary_input.editable=false
 		if not app._command("interclub_auction",payload): _on_failure("Clôture indisponible.")
-		confirm.queue_free())
-	confirm.canceled.connect(confirm.queue_free)
-	confirm.popup_centered(Vector2i(600,180))
-	if negotiation.get("deferred") is Dictionary: confirm.get_cancel_button().grab_focus()
+	var bloc := EnPlace.ouvrir(app, rows, "InterclubAuctionConfirmation", "Clôturer la négociation", [{"id":"InterclubAuctionPhrase", "text":phrase}], libelle, envoyer, close_button)
+	Sales.lisible(bloc)

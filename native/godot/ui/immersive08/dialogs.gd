@@ -19,6 +19,8 @@ static func watch_file_picker(dialog: FileDialog) -> void:
 	_watch_host(dialog)
 
 static func show_centered(dialog: AcceptDialog, requested: Vector2i) -> void:
+	# Fenêtre adoptée par une sous-page (recruitment_pages.gd) : son contenu est affiché dans la page, jamais en fenêtre.
+	if dialog.get_meta("en_page", false): return
 	dialog.set_meta("immersive_dialog_size",requested)
 	# Une fenêtre intégrée plus grande que son hôte serait centrée à une position négative (le moteur journalise
 	# « Window spawned at invalid position ») avant le recadrage différé de _fit : on la borne d'abord à l'hôte.
