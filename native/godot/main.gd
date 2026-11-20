@@ -53,7 +53,7 @@ const AUTOSAVE_ADVANCES := ["finish_round", "next_season"]
 const READ_ONLY_COMMANDS := ["club_sheet"]
 ## Titre du panneau d’attente par commande (les autres : « En coulisses »).
 const COMMAND_WAIT_KICKERS := {
-	"advance_day": "Passage au jour suivant",
+	"advance_day": "Calendrier",
 	"finish_round": "Fin de journée",
 	"delegate": "Le match se joue",
 	"begin_match": "Avant le coup d’envoi",
@@ -569,7 +569,7 @@ func _continue_context() -> Dictionary:
 		var away: Dictionary = next.get("away", {}) if next.get("away") is Dictionary else {}
 		var opponent: Dictionary = away if home.get("id") == club_id else home
 		info = {"date": str(next.date).substr(0, 10), "opponent": str(opponent.get("name", ""))}
-	return {"date": str(meta.get("calendarToday", "")), "accent": accent, "next": info if not info.is_empty() else null}
+	return {"date": str(meta.get("calendarToday", "")), "accent": accent, "next": info if not info.is_empty() else null, "notes": _command_wait_context("continue").notes, "note_seed": Time.get_ticks_msec() / 4600}
 
 ## Sauvegarde en arrière-plan du moteur : disquette discrète en bas de l'écran, sans jamais bloquer le joueur.
 func _persist_changed(state: String, _message: String) -> void:
@@ -674,11 +674,23 @@ func _command_wait_context(command: String) -> Dictionary:
 		"flip": command == "advance_day",
 		"accent": accent if _has_career() else Color("d43e47"),
 		"club": str(club.get("abbr", "")),
+		# Lus dans le modèle ; vides tant que la carrière n'existe pas (la ligne est alors omise, jamais inventée).
+		"club_name": G.club_name(club) if not club.is_empty() else "",
+		"division": _wait_division(),
+		"season": "saison " + G.season_label(meta.get("season", 1)) if not club.is_empty() and meta.has("season") else "",
+		"stadium": str(G.identity(club).get("stadium", "")) if not club.is_empty() else "",
 		"notes": notes,
 		"note_seed": Time.get_ticks_msec() / 4600,
 		# Vrais chargements longs : photo plein écran de la banque d'images derrière le panneau.
 		"photo": command in ["snapshot", "new_career", "import", "restore_checkpoint", "next_season", "begin_match", "national_play_match"]
 	}
+
+## Nom du championnat du club (lu dans le modèle) ; vide si inconnu.
+func _wait_division() -> String:
+	var league_id: Variant = model.get("meta", {}).get("leagueId") if model.get("meta") is Dictionary else null
+	for league: Variant in model.get("leagues", []):
+		if league is Dictionary and league_id != null and league.get("id") == league_id: return str(league.get("name", ""))
+	return ""
 
 func _refuse_action(message: String) -> void:
 	# A local refusal must not complete or discard the actual in-flight action.
@@ -1649,6 +1661,7 @@ func _input(event: InputEvent) -> void:
 	# Prevent the focused control and shortcuts from bypassing the pointer veil.
 	# The fade-out after a response no longer holds input (like the pointer).
 	if is_instance_valid(command_wait_overlay) and command_wait_overlay.blocks_input() and (event is InputEventKey or event is InputEventJoypadButton):
+		command_wait_overlay.handle_key(event)
 		get_viewport().set_input_as_handled()
 
 func _unhandled_key_input(event: InputEvent) -> void:
