@@ -19,6 +19,7 @@ const S = preload("res://ui/contextual/skin.gd")
 const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 const W = preload("res://ui/contextual/match_tableau_widgets.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
+const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 
 ## Taille de la maquette : tout est écrit pour 1600×900 et mis à l'échelle (k) de la fenêtre.
 const REF := Vector2(1600, 900)
@@ -58,7 +59,7 @@ var _pied_ligne2: HBoxContainer  ## Seconde ligne du pied (arbitre) ; vide sur l
 var _gras: FontVariation
 
 func _ready() -> void:
-	name = "MatchTeamWindow"
+	name = "MatchTeamPage"
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	S.full(self)
 	_gras = FontVariation.new()
@@ -271,14 +272,15 @@ func px(valeur: float) -> int:
 func fs(valeur: float) -> int:
 	return maxi(12, roundi(valeur * k))
 
-## Boîte de la charte (§3) : angles droits (rayon 0) partout, sans ombre ni dégradé. Le rayon demandé n'est gardé
-## que pour les disques du terrain (`rond`), seule forme ronde admise. Un filet sur les 4 côtés reste réservé
-## aux commandes (crans, tuiles, cris) ; les panneaux passent par `_plat`.
-func _boite(fond: Color, bord: Color = Color.TRANSPARENT, rayon: float = 0, epaisseur: float = 1, marge: float = 0, rond: bool = false) -> StyleBoxFlat:
+## Boîte de la charte (§3) : angles droits (rayon 0) partout, sans ombre ni dégradé, et JAMAIS de cadre complet :
+## au plus un filet, sur un seul côté (`cote` : bottom par défaut, left, top), commandes comprises. Le rayon demandé
+## n'est gardé que pour les disques du terrain (`rond`), seule forme ronde admise.
+func _boite(fond: Color, bord: Color = Color.TRANSPARENT, rayon: float = 0, epaisseur: float = 1, marge: float = 0, rond: bool = false, cote: String = "bottom") -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fond
 	style.border_color = bord
-	style.set_border_width_all(maxi(1, px(epaisseur)) if bord.a > 0.0 else 0)
+	style.set_border_width_all(0)
+	if bord.a > 0.0: style.set("border_width_" + cote, maxi(1, px(epaisseur)))
 	style.set_corner_radius_all(maxi(2, px(rayon)) if rond else 0)
 	style.set_content_margin_all(px(marge))
 	style.anti_aliasing = rond
@@ -307,6 +309,64 @@ func _coche(taille: float = 16) -> TextureRect:
 	coche.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	coche.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return coche
+
+## L'un de nos joueurs (fiche complète disponible dans le direct) ? Les autres n'ont ni lien ni mini-fiche.
+func _est_des_notres(id: String) -> bool:
+	if id.is_empty() or not app is Control: return false
+	return not (load("res://ui/immersive08/fiche_commune.gd").trouver(app, id, "squad") as Dictionary).is_empty()
+
+## Nom d'un de nos joueurs (règle de Léo) : lien ivoire souligné au survol ; survol = mini-fiche, clic = fiche
+## complète dans une page du direct (« ← Retour au direct » ramène ici, la page Équipe restée ouverte dessous).
+## Sans fiche (id inconnu) : simple texte, jamais un faux lien. `largeur_max` (unités de la maquette) coupe un nom long.
+func _nom_joueur(id: String, texte: String, taille: float, nom_noeud: String, largeur_max: float = 0.0, police: Font = null) -> Control:
+	var fonte: Font = police if police != null else _gras
+	if not _est_des_notres(id):
+		var inerte := _texte(texte, taille, C.IVORY, fonte)
+		inerte.name = nom_noeud
+		return inerte
+	var lien := Button.new()
+	lien.name = nom_noeud
+	lien.text = texte
+	lien.flat = true
+	lien.focus_mode = Control.FOCUS_ALL
+	C.style_bouton_lien(lien)
+	lien.add_theme_font_override("font", fonte)
+	lien.add_theme_font_size_override("font_size", fs(taille))
+	for etat: String in ["normal", "hover", "pressed", "focus", "disabled"]:
+		var style := lien.get_theme_stylebox(etat) as StyleBoxFlat
+		style.content_margin_left = 0
+		style.content_margin_right = 0
+		style.content_margin_top = 0
+		style.content_margin_bottom = maxi(1, px(1))
+	lien.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	lien.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if largeur_max > 0.0:
+		lien.clip_text = true
+		lien.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		lien.custom_minimum_size.x = minf(_largeur_texte(texte, fonte, fs(taille)) + 2.0, px(largeur_max))
+	lien.set_meta("lien", true)
+	lien.set_meta("fiche_joueur", id)
+	lien.pressed.connect(ouvrir_fiche.bind(id))
+	MiniFiche.lier(app as Control, lien, id, "squad")
+	# Mini-fiche posée sur l'application : au-dessus de la scène du match, comme celles du direct.
+	lien.mouse_entered.connect(_mini_fiche_devant)
+	return lien
+
+func _mini_fiche_devant() -> void:
+	if not app is Control: return
+	var fiche: Control = MiniFiche.actuelle(app as Control)
+	if fiche != null: fiche.z_index = 200
+
+## Fiche complète d'un de nos joueurs : page « joueur » du direct posée au-dessus de la page Équipe.
+func ouvrir_fiche(id: String) -> void:
+	if app is Control: MiniFiche.cacher(app as Control)
+	if view != null and view.has_method("ouvrir_joueur"): view.ouvrir_joueur(id)
+
+func _clic_fiche(evenement: InputEvent, bloc: Control, id: String) -> void:
+	var clic := evenement as InputEventMouseButton
+	if clic == null or not clic.pressed or clic.button_index != MOUSE_BUTTON_LEFT: return
+	bloc.accept_event()
+	ouvrir_fiche(id)
 
 func _texte(texte: String, taille: float, couleur: Color = C.IVORY, police: Font = null) -> Label:
 	var etiquette := Label.new()
@@ -364,8 +424,8 @@ func _poser(controle: Control, x: float, y: float, largeur: float, hauteur: floa
 ## Bouton de la charte (§7) :
 ## - « principal » : ivoire plein, texte nuit — UN seul par écran (« Valider et reprendre ») ;
 ## - « lien » : texte ivoire (+ flèche), souligné au survol et au focus, sans cadre ni fond ;
-## - « segment » / « choisi » : choix d'un groupe (onglets, crans, candidats) en filet fin ; le choix courant en
-##   filet épais avec une coche (jamais un second ivoire plein, jamais d'or).
+## - « segment » / « choisi » : choix d'un groupe (onglets, crans, candidats) souligné d'un filet bas fin ; le choix
+##   courant sur fond sombre relevé, filet GAUCHE épais ivoire et coche (jamais un second ivoire plein, jamais d'or).
 func _bouton(texte: String, action: Callable, genre: String = "lien", taille: float = 18, nom: String = "") -> Button:
 	var bouton := Button.new()
 	bouton.text = texte
@@ -379,6 +439,10 @@ func _bouton(texte: String, action: Callable, genre: String = "lien", taille: fl
 			boite.content_margin_right = px(22)
 			boite.content_margin_top = px(8)
 			boite.content_margin_bottom = px(8)
+		# Éteint : à plat, un seul filet bas (le style commun pose un cadre complet, exclu par la charte §3).
+		var eteint := bouton.get_theme_stylebox("disabled") as StyleBoxFlat
+		eteint.set_border_width_all(0)
+		eteint.border_width_bottom = maxi(1, px(1))
 		bouton.add_theme_font_override("font", C.font(800))
 	elif genre == "lien":
 		C.style_bouton_lien(bouton)
@@ -389,13 +453,15 @@ func _bouton(texte: String, action: Callable, genre: String = "lien", taille: fl
 	bouton.pressed.connect(action)
 	return bouton
 
-## Habillage d'un choix de groupe : filet fin ; choisi : filet épais, fond relevé et coche (`set_meta("coche")`).
+## Habillage d'un choix de groupe (charte §3 : jamais de cadre complet) : filet bas fin ; choisi : fond sombre relevé
+## (PANNEAU_3, jamais l'ivoire plein du bouton principal), filet gauche épais ivoire et coche (`set_meta("coche")`).
 func _style_segment(bouton: Button, choisi: bool) -> void:
 	for etat: String in ["normal", "hover", "pressed", "hover_pressed", "focus", "disabled"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = C.SELECTED if choisi or etat in ["hover", "pressed", "hover_pressed"] else Color(0, 0, 0, 0)
 		style.border_color = C.FAINT if etat == "disabled" and not choisi else (C.IVORY if choisi or etat in ["focus", "hover"] else C.LINE)
-		style.set_border_width_all(maxi(2, px(3)) if choisi else maxi(1, px(1)))
+		if choisi: style.border_width_left = maxi(2, px(4))
+		else: style.border_width_bottom = maxi(1, px(2 if etat in ["focus", "hover"] else 1))
 		style.set_corner_radius_all(0)
 		style.content_margin_left = px(14)
 		style.content_margin_right = px(14)
@@ -694,8 +760,9 @@ func _cris(cris: Dictionary) -> void:
 		bouton.disabled = not disponible or est_actif
 		bouton.tooltip_text = str(option.get("note", ""))
 		bouton.custom_minimum_size.y = px(88)
-		# Cri actif : filet épais ivoire et coche (comme un choix courant), jamais d'or.
-		var normal := _boite(C.SELECTED if est_actif else C.PANEL, C.IVORY if est_actif else C.LINE, 0, 3 if est_actif else 1, 0)
+		# Cri actif : fond relevé, filet GAUCHE épais ivoire et coche (comme un choix courant), jamais d'or ; les autres :
+		# un seul filet bas (charte §3 : aucun cadre complet).
+		var normal := _boite(C.SELECTED if est_actif else C.PANEL, C.IVORY if est_actif else C.LINE, 0, 4 if est_actif else 1, 0, false, "left" if est_actif else "bottom")
 		normal.content_margin_left = px(12)
 		var survol := normal.duplicate() as StyleBoxFlat
 		survol.bg_color = C.RAISED
@@ -751,6 +818,7 @@ func _cris(cris: Dictionary) -> void:
 
 ## Terrain rayé : quinze médaillons à leur poste, avants à gauche.
 class Terrain extends Control:
+	const Charte = preload("res://ui/charte.gd")
 	var k := 1.0
 	var places: Dictionary = {}
 	func _notification(what: int) -> void:
@@ -771,18 +839,18 @@ class Terrain extends Control:
 		var x := 0.0
 		var n := 0
 		while x < size.x:
-			draw_rect(Rect2(x, 0, minf(bande, size.x - x), size.y), Color("1d4631") if n % 2 == 0 else Color("214e37"))
+			draw_rect(Rect2(x, 0, minf(bande, size.x - x), size.y), Charte.PELOUSE if n % 2 == 0 else Charte.PELOUSE_2)
 			x += bande
 			n += 1
 		var epais := maxf(1.0, 2.0 * k)
 		for paire: Array in [[0.05, 0.55, false], [0.27, 0.25, true], [0.5, 0.45, false], [0.73, 0.25, true], [0.95, 0.55, false]]:
 			var lx := size.x * float(paire[0])
-			var couleur := Color(0.949, 0.925, 0.863, float(paire[1]))
+			var couleur := Color(Charte.IVOIRE, float(paire[1]))
 			if paire[2]: draw_dashed_line(Vector2(lx, 0), Vector2(lx, size.y), couleur, epais, 8.0 * k)
 			else: draw_line(Vector2(lx, 0), Vector2(lx, size.y), couleur, epais)
 		var bord := forme.duplicate()
 		bord.append(forme[0])
-		draw_polyline(bord, Color("53625e"), maxf(1.0, k), true)
+		draw_polyline(bord, Charte.PELOUSE_BORD, maxf(1.0, k), true)
 
 ## Médaillon d'un joueur : anneau d'énergie, portrait, numéro, niveau, nom et note, état.
 class Medaillon extends Button:
@@ -903,7 +971,8 @@ func _terrain(centre: VBoxContainer) -> void:
 			etiquette.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			var ligne := _h(5)
 			etiquette.add_child(ligne)
-			ligne.add_child(_titre(nom_court(str(d.nom)), 17, C.IVORY, 700))
+			# Le clic sur le médaillon choisit le poste ; le NOM est un lien vers sa fiche (mini-fiche au survol).
+			ligne.add_child(_nom_joueur(id, nom_court(str(d.nom)), 17, "TeamPlayerName", 104, C.font(700)))
 			if notes.has(id):
 				var note := _titre(("%.1f" % float(d.note)), 17, C.IVORY, 800)
 				note.name = "TeamPlayerNote"
@@ -1030,9 +1099,13 @@ func _fatigue(centre: VBoxContainer, p: Dictionary) -> void:
 		var mots := _v(4)
 		mots.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mots.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		mots.add_child(_coupe(_texte("%s (%d)" % [nom_court(str(joueur.get("name", ""))), slot + 1], 13, C.IVORY, _gras)))
+		var tete_nom := _h(4)
+		tete_nom.add_child(_nom_joueur(id, nom_court(str(joueur.get("name", ""))), 13, "TeamFatigueName", 120))
+		tete_nom.add_child(_texte("(%d)" % (slot + 1), 13, C.IVORY, _gras))
+		mots.add_child(tete_nom)
 		var bas := _h(6)
 		var barre := Barre.new()
+		barre.mouse_filter = Control.MOUSE_FILTER_PASS
 		barre.avant = avant
 		barre.apres = apres
 		barre.teinte = teinte
@@ -1044,6 +1117,12 @@ func _fatigue(centre: VBoxContainer, p: Dictionary) -> void:
 		mots.add_child(bas)
 		bloc.add_child(mots)
 		bloc.tooltip_text = "%s : énergie %d %% maintenant, %d %% prévue dans 10 minutes." % [str(joueur.get("name", "")), avant, apres]
+		# Bloc d'un de nos joueurs : son clic (portrait, barre, chiffres) ouvre aussi sa fiche complète.
+		if _est_des_notres(id):
+			bloc.mouse_filter = Control.MOUSE_FILTER_STOP
+			bloc.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			bloc.set_meta("fiche_joueur", id)
+			bloc.gui_input.connect(_clic_fiche.bind(bloc, id))
 		rangee.add_child(bloc)
 	if montres == 0: cadre.queue_free()
 
@@ -1106,10 +1185,11 @@ func _tuile(joueur: Dictionary, numero: int, eligible: bool, choisi: bool, conse
 	tuile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tuile.custom_minimum_size = Vector2(0, px(68))
 	tuile.clip_contents = true
-	# Remplaçant choisi : filet épais ivoire et coche ; autorisé : filet menthe (et « en vert sur le banc » écrit
-	# sous le terrain) ; conseillé par Gabi : filet ivoire (sa carte le nomme). Jamais d'or.
+	# Un seul filet, à gauche (charte §3 : aucun cadre complet). Remplaçant choisi : fond sombre relevé, filet épais
+	# ivoire et coche ; autorisé : filet menthe (et « en vert sur le banc » écrit sous le terrain) ; conseillé par
+	# Gabi : filet ivoire (sa carte le nomme). Jamais d'or ni d'ivoire plein.
 	var bord := C.MINT if eligible and poste_choisi >= 0 else (C.IVORY if choisi or conseille else C.LINE)
-	var normal := _boite(C.SELECTED if choisi else C.PANEL, bord, 0, 3 if choisi else 1, 8)
+	var normal := _boite(C.SELECTED if choisi else C.PANEL, bord, 0, 4 if choisi else 2, 8, false, "left")
 	var survol := normal.duplicate() as StyleBoxFlat
 	survol.bg_color = C.RAISED
 	survol.border_color = C.IVORY
@@ -1130,7 +1210,13 @@ func _tuile(joueur: Dictionary, numero: int, eligible: bool, choisi: bool, conse
 	mots.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mots.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var haut := _h(4)
-	haut.add_child(_coupe(_titre("%d · %s" % [numero, nom_court(str(joueur.get("name", "")))], 16, C.IVORY, 700)))
+	# Le clic sur la tuile choisit l'entrant ; le NOM est un lien vers sa fiche (mini-fiche au survol).
+	haut.add_child(_titre("%d ·" % numero, 16, C.IVORY, 700))
+	haut.add_child(_nom_joueur(id, nom_court(str(joueur.get("name", ""))), 16, "TeamBenchName", 104, C.font(700)))
+	var pousse := Control.new()
+	pousse.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pousse.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	haut.add_child(pousse)
 	var niveau := _niveau(joueur)
 	if not niveau.is_empty():
 		var badge := _titre(niveau, 16, C.IVORY, 800)
@@ -1212,6 +1298,15 @@ func _carte_conseil(colonne: VBoxContainer, conseil: Dictionary) -> void:
 	phrase.max_lines_visible = 4
 	rangee.add_child(phrase)
 	pile.add_child(rangee)
+	# Qui sort, qui entre : leurs noms en liens (mini-fiche au survol, fiche complète au clic), c'est le moment où
+	# l'on veut les comparer.
+	var noms := _h(6)
+	noms.name = "TeamAdviceNames"
+	noms.add_child(_nom_joueur(out_id, nom_court(str(sortant.get("name", ""))), 14, "TeamAdviceOut", 130))
+	noms.add_child(_texte("sort ·", 13, C.MUTED))
+	noms.add_child(_nom_joueur(in_id, nom_court(str(entrant.get("name", ""))), 14, "TeamAdviceIn", 130))
+	noms.add_child(_texte("entre", 13, C.MUTED))
+	pile.add_child(noms)
 	var boutons := _h(8)
 	var faire := _bouton("Faire entrer %s →" % nom_court(str(entrant.get("name", ""))), func(): remplacer(slot, in_id), "lien", 17, "TeamAdviceApply")
 	faire.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1554,6 +1649,7 @@ func _plan_de_jeu(colonne: VBoxContainer) -> void:
 		choix.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		choix.add_theme_font_override("font", C.font(700))
 		choix.add_theme_font_size_override("font_size", fs(16))
+		# Un seul filet bas (charte §3) ; survol : filet ivoire ; focus : filet bas épais.
 		var normal := _boite(C.PANEL, C.LINE, 0, 1, 0)
 		normal.content_margin_left = px(10)
 		normal.content_margin_right = px(10)
@@ -1564,7 +1660,7 @@ func _plan_de_jeu(colonne: VBoxContainer) -> void:
 		var focus := _boite(Color.TRANSPARENT, C.IVORY, 0, 2, 0)
 		for paire: Array in [["normal", normal], ["hover", survol], ["pressed", survol], ["disabled", normal], ["focus", focus]]: choix.add_theme_stylebox_override(paire[0], paire[1])
 		for cle: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: choix.add_theme_color_override(cle, C.IVORY)
-		choix.get_popup().add_theme_font_size_override("font_size", fs(16))
+		_habiller_menu(choix.get_popup())
 		var ids: Array = []
 		for option: Variant in options:
 			if not option is Dictionary: continue
@@ -1579,6 +1675,30 @@ func _plan_de_jeu(colonne: VBoxContainer) -> void:
 		choix.item_selected.connect(_choisir_plan.bind(cle_plan, ids))
 		bloc.add_child(choix)
 		rangee.add_child(bloc)
+
+## Menu déroulant d'un choix (exception permise) habillé à la charte : fond PANNEAU à plat, angles droits, sans ombre
+## ni cadre ; ligne survolée sur PANNEAU_3 marquée d'un filet gauche ivoire ; textes ivoire.
+func _habiller_menu(menu: PopupMenu) -> void:
+	var fond := StyleBoxFlat.new()
+	fond.bg_color = Charte.PANNEAU
+	fond.set_corner_radius_all(0)
+	fond.set_border_width_all(0)
+	fond.shadow_size = 0
+	fond.set_content_margin_all(px(6))
+	menu.add_theme_stylebox_override("panel", fond)
+	var survol := StyleBoxFlat.new()
+	survol.bg_color = Charte.PANNEAU_3
+	survol.set_corner_radius_all(0)
+	survol.shadow_size = 0
+	survol.border_color = Charte.IVOIRE
+	survol.border_width_left = maxi(1, px(3))
+	menu.add_theme_stylebox_override("hover", survol)
+	for cle: String in ["font_color", "font_hover_color", "font_accelerator_color"]: menu.add_theme_color_override(cle, Charte.IVOIRE)
+	menu.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+	menu.add_theme_color_override("font_separator_color", Charte.IVOIRE_2)
+	menu.add_theme_font_override("font", C.font(700))
+	menu.add_theme_font_size_override("font_size", fs(16))
+	menu.set_meta("habille", true)
 
 func _choisir_plan(index: int, cle_plan: String, ids: Array) -> void:
 	if index < 0 or index >= ids.size(): return

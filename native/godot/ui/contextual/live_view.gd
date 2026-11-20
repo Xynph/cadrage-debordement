@@ -1002,7 +1002,9 @@ func _survol_joueur(id: String, ancre: Control) -> void:
 func ouvrir_joueur(id: String) -> void:
 	_mini_fiche().cacher(app)
 	if (load("res://ui/immersive08/fiche_commune.gd").trouver(app, id, "squad") as Dictionary).is_empty(): return
-	_suspendre()
+	# Depuis la page Équipe (restée ouverte dessous) : c'est elle qui tient la pause et la reprise ; fermer la fiche
+	# ne doit pas relancer le match.
+	if not (is_instance_valid(equipe) and equipe.visible): _suspendre()
 	_page_joueur = id
 	_ouvrir_page("joueur")
 

@@ -81,3 +81,49 @@ Aucun. Aucune donnée inventée ou figée repérée : noms de clubs, règle de b
 - Page Équipe du match (`match_equipe.gd`) : plus d'or, angles droits, plus d'ombre ni de cadre complet, choix courants en filet épais + coche, un seul ivoire plein (« Valider et reprendre »), lien « ← Retour au direct » en tête ; plancher 12 px.
 - B : aucune fenêtre nouvelle ; les seuls menus déroulants sont « Plus ▾ » et Réglages en 3D (exception de Léo).
 - Restent (AVIS) : mini-fiche des adversaires (pas de fiche du club adverse côté joueurs), noms cités par Gabi en texte simple.
+
+
+## Relecture adverse 20/11 après-midi
+
+Lecture seule du code actuel (`match_between.gd`, `match_equipe.gd`, `match_temps_forts.gd`, `match_terrain_2d.gd`) ; aucun Godot lancé. Or : aucun écart (`OR` de l'entracte vaut `Charte.IVOIRE`, aucune teinte dorée dans les quatre fichiers). Rayons : tous à 0 sauf les disques du terrain (`_boite(rond=true)`, `_portrait(rond=true)`), forme ronde assumée.
+
+### A. Cliquabilité (nouveautés ou points non couverts)
+
+| Élément | Effet du clic (code) | Verdict |
+| --- | --- | --- |
+| Page Équipe : médaillon d'un joueur sur le terrain (nom, numéro, portrait) | `choisir_poste(slot)` : sélectionne le poste pour un remplacement ; infobulle texte seule ; aucune `MiniFiche`, aucune fiche (le fichier ne contient ni `MiniFiche` ni `ouvrir_fiche`) | BLOQUANT : nom de nos joueurs sans fiche complète ni mini-fiche |
+| Page Équipe : tuile du banc (nom, poste, énergie) | `choisir_entrant(id)` ; infobulle seule | BLOQUANT : idem |
+| Page Équipe : blocs « Fatigue » (portrait, nom, barre, « 62 → 40 % ») | RIEN (bloc `_h` en `MOUSE_FILTER_IGNORE`, infobulle seule) | BLOQUANT : nom + portrait + chiffre, aspect de lien, rien ne s'ouvre ; fiche + mini-fiche |
+| Page Équipe : carte de conseil de Gabi, « Faire entrer X → », texte nommant sortant et entrant | applique le remplacement ; les noms du texte sont du texte brut | À CORRIGER : noms sans lien ni mini-fiche (les décider d'après Gabi est le moment où l'on veut la fiche) |
+| Page Équipe : menus « Avec / Sans le ballon / Sur pénalité » (`OptionButton`) | menu déroulant (`PopupMenu` de l'`OptionButton`) | Exception permise (menu de choix) ; AVIS : popup non habillé dans le fichier, à vérifier (angles droits, sans ombre) |
+| Pastilles du terrain 2D (`match_terrain_2d.gd`) | RIEN ; ni survol, ni clic (point déjà noté en interne, toujours vrai dans le code) | BLOQUANT tant que nos 15 joueurs numérotés ne portent pas mini-fiche au survol et fiche au clic |
+| Panneau d'arrêt : options de joueur (`_style_option`, ligne 3128) | `MiniFiche.lier` présent : survol OK ; le clic choisit l'option, la fiche complète ne s'ouvre pas | À CORRIGER : clic = choix seulement ; ajouter « i » ou clic droit vers la fiche, ou accepter (clic = fiche impossible ici) |
+| Multiplex : carte d'un match, ligne du classement | corrigés selon le suivi ; la carte « change » a un cadre vert complet de 3 px | voir C |
+| Menu « Plus ▾ » (`MenuButton`) | menu déroulant permis ; caméras grisées en 2D, dites « en 3D seulement » | OK |
+| « Réglages » en temps fort 3D | `PopupMenu.popup()` sous le lien (ligne 813) | Exception de Léo (menu Réglages) ; AVIS : popup posé à la main, vérifier qu'il se ferme au clic extérieur et à Échap |
+
+### B. Petites fenêtres
+
+Aucune `Window`, `AcceptDialog`, `ConfirmationDialog`, `PopupPanel` ni `FileDialog` dans les quatre fichiers (recherche faite). Seuls `PopupMenu` : « Plus ▾ » (match_between.gd:716), menu des réglages 3D (755), les trois `OptionButton` du plan de jeu (match_equipe.gd:1550) : tous des menus déroulants permis. `match_equipe.gd:61` nomme le calque « MatchTeamWindow » : simple `Control`, mais le nom trompe, à renommer. Rien de BLOQUANT.
+
+### C. Fidélité, charte et maquette
+
+#### BLOQUANT
+
+1. Nos joueurs sans fiche ni mini-fiche dans toute la page Équipe : médaillons, banc, bloc Fatigue, conseil de Gabi (voir A). C'est le cœur de la règle de Léo sur les noms.
+2. Pastilles du terrain 2D : nos joueurs numérotés sans survol ni clic (voir A).
+
+#### À CORRIGER
+
+1. Cadres complets (charte §3 : aucun) : tuile du banc `_boite(... C.LINE, ..., 1)` sur 4 côtés et filet épais 3 px ivoire quand choisie (match_equipe.gd:1112) ; `OptionButton` du plan de jeu (1557) ; segments « choisi / segment » (398) ; segments des réglages (match_between.gd:539) ; ligne retenue et focus du panneau d'arrêt (3189) ; carte « change » du multiplex, 3 px vert sur 4 côtés (2188) ; marque creuse de la légende adverse (1654). Passer à un filet unique (gauche ou bas) comme le fait déjà `_plat`, et marquer le choix par filet gauche épais + coche.
+2. Le commentaire de `_boite` (« un filet sur les 4 côtés reste réservé aux commandes ») contredit l'art bible ; le corriger avec le code.
+3. Deux `PopupMenu` (Plus, réglages) et les menus d'`OptionButton` n'ont aucun style posé dans ces fichiers : sans thème global, ils sortent du thème par défaut de Godot (fond gris, possible ombre). Les habiller (fond PANNEAU, rayon 0, sans ombre).
+4. Panneau d'arrêt : clic sur le nom d'un joueur ne mène pas à la fiche (voir A).
+5. Un second ivoire plein en bas de la page Équipe tant que le bouton principal « Valider et reprendre » coexiste avec le segment ou la tuile choisie en `C.SELECTED` plein : vérifier sur capture que le fond relevé ne se lit pas comme un deuxième bouton plein.
+6. Nom du calque « MatchTeamWindow » (match_equipe.gd:61) à renommer en « MatchTeamPage ».
+
+#### AVIS
+
+- Fatigue : la teinte de l'énergie n'est portée que par le filet bas du portrait et la barre, le pourcentage est écrit, bien.
+- Terrain : numéro de badge dessiné dans un cercle (disque admis).
+- Les couleurs vert pelouse du terrain (`1d4631`, `214e37`, `53625e`) sont codées en dur dans `match_equipe.gd:774-785` ; les passer par la charte.

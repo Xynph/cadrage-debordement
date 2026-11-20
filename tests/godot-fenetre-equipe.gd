@@ -185,8 +185,10 @@ func controler_charte(contexte: String) -> void:
 			if proche_or(s.bg_color) or (proche_or(s.border_color) and s.border_width_left + s.border_width_top + s.border_width_right + s.border_width_bottom > 0): ors.append("%s.%s" % [c.name, etat])
 			if not sur_terrain and (s.corner_radius_top_left > 0 or s.corner_radius_top_right > 0 or s.corner_radius_bottom_left > 0 or s.corner_radius_bottom_right > 0): arrondis.append("%s.%s" % [c.name, etat])
 			if s.shadow_size > 0: ombres.append("%s.%s" % [c.name, etat])
-			if etat == "panel" and s.border_width_left > 0 and s.border_width_top > 0 and s.border_width_right > 0 and s.border_width_bottom > 0: cadres.append(str(c.name))
-			if etat == "normal" and c is BaseButton and s.bg_color.a > 0.99 and s.bg_color.is_equal_approx(Charte.IVOIRE): pleins.append(str(c.name))
+			# Aucun cadre complet, quel que soit l'état (panneaux, tuiles, crans, focus, éteint) : au plus un filet.
+			if s.border_width_left > 0 and s.border_width_top > 0 and s.border_width_right > 0 and s.border_width_bottom > 0: cadres.append("%s.%s" % [c.name, etat])
+			# Un fond de bouton clair (ivoire ou proche) se lit comme un second bouton principal.
+			if etat == "normal" and c is BaseButton and s.bg_color.a > 0.99 and (s.bg_color.is_equal_approx(Charte.IVOIRE) or s.bg_color.get_luminance() > 0.5): pleins.append(str(c.name))
 		for cle: String in COULEURS_POLICE:
 			if c.has_theme_color_override(cle) and proche_or(c.get_theme_color(cle)): ors.append("%s.%s" % [c.name, cle])
 		if c is Label or c is Button:
@@ -203,6 +205,113 @@ func controler_charte(contexte: String) -> void:
 	verifier(choisis.all(func(b: Button) -> bool: return b.icon != null or b.find_child("Coche", true, false) != null), contexte + " : chaque choix courant porte sa coche")
 	var onglet: Button = fenetre.find_child({"composition": "TeamTabComposition", "consignes": "TeamTabConsignes", "roles": "TeamTabRoles"}[fenetre.onglet], true, false)
 	verifier(onglet != null and bool(onglet.get_meta("coche", false)), contexte + " : onglet courant coché")
+	# Choix courant : fond sombre relevé (jamais ivoire) et filet GAUCHE épais, sans filet sur les autres côtés.
+	for b: Button in choisis:
+		var s := b.get_theme_stylebox("normal") as StyleBoxFlat
+		if s == null or b.icon == null: continue
+		verifier(s.border_width_left >= 2 and s.border_width_top == 0 and s.border_width_right == 0 and s.border_width_bottom == 0 and s.bg_color.get_luminance() < 0.3, contexte + " : choix « %s » en filet gauche sur fond sombre" % b.name)
+	# Menus déroulants du plan de jeu : fond PANNEAU, angles droits, sans ombre.
+	for choix: OptionButton in fenetre.find_children("*", "OptionButton", true, false):
+		var fond := choix.get_popup().get_theme_stylebox("panel") as StyleBoxFlat
+		verifier(fond != null and fond.bg_color.is_equal_approx(Charte.PANNEAU) and fond.shadow_size == 0 and fond.corner_radius_top_left == 0, contexte + " : menu de « %s » habillé (PANNEAU, rayon 0, sans ombre)" % choix.name)
+	verifier(fenetre.name == "MatchTeamPage", contexte + " : calque nommé MatchTeamPage (%s)" % fenetre.name)
+
+const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+
+## Lien du nom d'un de nos joueurs sous `racine` : mini-fiche au survol (`MiniFiche.lier`) et fiche au clic.
+static func lien_fiche(racine: Node) -> Button:
+	if racine == null: return null
+	for b: Button in racine.find_children("*", "Button", true, false):
+		if b.has_meta("mini_fiche_joueur") and b.has_meta("fiche_joueur"): return b
+	return null
+
+## Règle de Léo sur les noms de nos joueurs : chaque médaillon, tuile du banc, bloc « Dans 10 minutes » et la carte
+## de Gabi portent un nom lié (mini-fiche au survol, fiche complète au clic), lié au bon joueur.
+func controler_noms(contexte: String) -> void:
+	var lineup: Array = fenetre._lineup()
+	for slot: int in fenetre.medaillons:
+		var lien := lien_fiche(fenetre.medaillons[slot])
+		var attendu := str(lineup[slot].get("id", "")) if slot < lineup.size() and lineup[slot] is Dictionary else ""
+		verifier(lien != null and str(lien.get_meta("mini_fiche_joueur")) == attendu and str(lien.get_meta("fiche_joueur")) == attendu, contexte + " : nom lié du médaillon %d" % (slot + 1))
+	for id: String in fenetre.tuiles:
+		var lien := lien_fiche(fenetre.tuiles[id])
+		verifier(lien != null and str(lien.get_meta("mini_fiche_joueur")) == id, contexte + " : nom lié du remplaçant " + id)
+	var blocs := fenetre.find_children("TeamFatigue_*", "", true, false)
+	verifier(not blocs.is_empty(), contexte + " : blocs « Dans 10 minutes »")
+	for bloc: Control in blocs:
+		var lien := lien_fiche(bloc)
+		verifier(lien != null and bloc.has_meta("fiche_joueur") and str(lien.get_meta("mini_fiche_joueur")) == str(bloc.get_meta("fiche_joueur")) and bloc.mouse_filter == Control.MOUSE_FILTER_STOP, contexte + " : bloc fatigue %s lié à la fiche" % bloc.name)
+	var conseil: Control = fenetre.find_child("TeamAdvice", true, false)
+	var liens_conseil := conseil.find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return b.has_meta("mini_fiche_joueur")) if conseil != null else []
+	verifier(liens_conseil.size() >= 2, contexte + " : sortant et entrant nommés en liens dans le conseil de Gabi (%d)" % liens_conseil.size())
+
+func source_fiche(sorte: String, id_banc: String) -> Control:
+	match sorte:
+		"medaillon": return lien_fiche(fenetre.medaillons.get(0))
+		"banc": return lien_fiche(fenetre.tuiles.get(id_banc))
+		"fatigue":
+			var blocs := fenetre.find_children("TeamFatigue_*", "", true, false)
+			return blocs[0] if not blocs.is_empty() else null
+		"conseil": return lien_fiche(fenetre.find_child("TeamAdvice", true, false))
+	return null
+
+## Clic sur un nom : la fiche complète s'ouvre dans une page du direct, la page Équipe reste ouverte dessous et on la
+## retrouve au retour ; le clic sur le médaillon ou la tuile garde son action (choisir un poste, un entrant).
+func controler_fiches() -> void:
+	fenetre.choisir_onglet("composition")
+	fenetre.update_frame(modele_enrichi())
+	await poser(6)
+	fenetre.poste_choisi = -1
+	fenetre.entrant_choisi = ""
+	(fenetre.medaillons[0] as Button).pressed.emit()
+	await poser(2)
+	verifier(fenetre.poste_choisi == 0, "clic sur le médaillon : choisit le poste")
+	(fenetre.medaillons[0] as Button).pressed.emit()
+	await poser(2)
+	verifier(fenetre.poste_choisi == -1, "second clic sur le médaillon : poste rendu")
+	var id_banc: String = fenetre.tuiles.keys()[0] if not fenetre.tuiles.is_empty() else ""
+	if not id_banc.is_empty():
+		(fenetre.tuiles[id_banc] as Button).pressed.emit()
+		await poser(2)
+		verifier(fenetre.entrant_choisi == id_banc, "clic sur la tuile : choisit l'entrant")
+		(fenetre.tuiles[id_banc] as Button).pressed.emit()
+		await poser(2)
+		verifier(fenetre.entrant_choisi == "", "second clic sur la tuile : entrant rendu")
+	var lien := lien_fiche(fenetre.medaillons[0])
+	verifier(lien != null, "nom lié du médaillon 1")
+	if lien == null: return
+	var id := str(lien.get_meta("fiche_joueur"))
+	lien.mouse_entered.emit()
+	await poser(2)
+	var mini: Control = MiniFiche.actuelle(app)
+	verifier(mini != null and str(mini.get_meta("player_id", "")) == id, "survol du nom : mini-fiche du joueur")
+	lien.mouse_exited.emit()
+	await poser(2)
+	verifier(MiniFiche.actuelle(app) == null, "la souris part : mini-fiche cachée")
+	# Chaque source est recherchée après reconstruction de la page (les nœuds d'avant peuvent avoir été libérés).
+	for paire: Array in [["nom du médaillon", "medaillon"], ["nom du banc", "banc"], ["bloc fatigue", "fatigue"], ["nom dans le conseil de Gabi", "conseil"]]:
+		var source := source_fiche(str(paire[1]), id_banc)
+		verifier(source != null, str(paire[0]) + " présent")
+		if source == null: continue
+		var attendu := str(source.get_meta("fiche_joueur", ""))
+		if source is Button: (source as Button).pressed.emit()
+		else:
+			var clic := InputEventMouseButton.new()
+			clic.button_index = MOUSE_BUTTON_LEFT
+			clic.pressed = true
+			source.gui_input.emit(clic)
+		await poser(6)
+		var page: Control = vue.get("page")
+		verifier(page != null and page.visible and str(vue.get("_page_sorte")) == "joueur" and str(vue.get("_page_joueur")) == attendu, str(paire[0]) + " : fiche complète ouverte dans le direct")
+		verifier(fenetre.visible and page != null and page.get_index() > fenetre.get_index(), str(paire[0]) + " : page Équipe ouverte dessous")
+		verifier(page != null and page.find_child("MatchPageBack", true, false) != null, str(paire[0]) + " : « ← Retour au direct » sur la fiche")
+		if page != null and page.find_child("MatchPageBack", true, false) != null: (page.find_child("MatchPageBack", true, false) as Button).pressed.emit()
+		else: vue.fermer_page()
+		await poser(10)
+		verifier(page != null and not page.visible and fenetre.visible and fenetre.medaillons.size() == 15, str(paire[0]) + " : retour, la page Équipe est retrouvée")
+		verifier(bool(live().get("paused", false)) and not bool(vue.get("_reprendre_apres")), str(paire[0]) + " : le match reste arrêté après la fiche")
+		fenetre.update_frame(modele_enrichi())
+		await poser(4)
 
 ## Textes non tronqués : les étiquettes qui passent à la ligne montrent toutes leurs lignes, celles d'une seule
 ## ligne tiennent dans leur largeur ; les crans partagent une seule taille de police et ont l'infobulle complète.
@@ -251,6 +360,7 @@ func composition_enrichie(contexte: String) -> void:
 	for nom in ["TeamShouts", "TeamFatigue", "TeamAdvice", "TeamFooterReferee"]:
 		var n: Control = fenetre.find_child(nom, true, false)
 		verifier(n != null and n.is_visible_in_tree(), contexte + " : bloc " + nom)
+	controler_noms(contexte + " composition")
 	controler_textes(contexte + " composition")
 	await controler_mise_en_page(contexte + " composition")
 
@@ -473,6 +583,8 @@ func executer() -> void:
 		await roles_enrichis(nom)
 		if t.x != 2560: await capturer("equipe-roles-" + nom)
 	await taille(1920, 1080)
+	# Noms de nos joueurs : mini-fiche au survol, fiche complète au clic, page Équipe retrouvée au retour.
+	await controler_fiches()
 	# Joueur choisi puis remplaçant (état sélectionné) pour la capture.
 	fenetre.choisir_onglet("composition")
 	fenetre.update_frame(modele_enrichi())

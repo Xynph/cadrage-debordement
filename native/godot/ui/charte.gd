@@ -34,6 +34,10 @@ const V := Color("6cc48a")
 const N := Color("ada597")
 const D := Color("ee6f5f")
 const V_DALTONIEN := Color("5aa9e6")
+## Terrain (page Équipe du match) : pelouse en bandes à plat, deux verts sourds alternés, et son liseré.
+const PELOUSE := Color("1d4631")
+const PELOUSE_2 := Color("214e37")
+const PELOUSE_BORD := Color("53625e")
 
 ## Barème des attributs (fiche joueur, mini-fiche ; décision de Léo du 19/11/2026) : le chiffre est toujours
 ## écrit, la couleur dit le palier. Une légende accompagne chaque grille (BAREME_ATTRIBUTS).
