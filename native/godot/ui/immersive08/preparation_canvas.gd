@@ -634,11 +634,12 @@ func _a_faire(section: Control, rectangle: Rect2) -> void:
 			panneau.add_child(coche)
 			D.place(coche, Rect2(22, y + pas / 2.0 - 10, 20, 20))
 		_etiquette(panneau, 62, y + pas / 2.0 + 5, str(REPERES.get(str(check.id), "REPÈRE")), 150)
-		var titre := _texte(panneau, 210, y + 23, str(check.title), 18, Charte.IVOIRE, 410)
+		var titre := _texte(panneau, 210, y + (20 if C.dense() else 23), str(check.title), 18, Charte.IVOIRE, 410)
 		titre.name = "PreparationBriefingTitle_" + str(check.id)
 		titre.add_theme_font_override("font", C.font(700))
-		var lignes_detail := D.words(str(check.detail), 48, 2)
-		for ligne in lignes_detail.size(): _texte(panneau, 210, y + 40 + ligne * 17, lignes_detail[ligne], 15, Charte.IVOIRE_2, 410)
+		# Petite fenêtre : une seule ligne de détail (le reste est dans l'infobulle et dans « Tous les repères »).
+		var lignes_detail := D.words(str(check.detail), 48, 1 if C.dense() else 2)
+		for ligne in lignes_detail.size(): _texte(panneau, 210, y + (44 if C.dense() else 40) + ligne * 17, lignes_detail[ligne], 15, Charte.IVOIRE_2, 410)
 		_texte(panneau, rectangle.size.x - 52, y + pas / 2.0 + 5, str(check.caption), 16, Charte.IVOIRE, 215, HORIZONTAL_ALIGNMENT_RIGHT)
 		_marque(panneau, rectangle.size.x - 40, y + pas / 2.0, 14, "droite", Charte.IVOIRE_2)
 	var pied := 56.0 + pas * limite + 10.0
@@ -768,7 +769,7 @@ func _surveiller(section: Control, rectangle: Rect2) -> void:
 		if _nombre(note): _titre(carte, 126, 92, "%d au poste" % int(note), 26, Charte.couleur_attribut(note), 285)
 		elif note != null and str(note) != "": _texte(carte, 126, 88, str(note), 17, Charte.IVOIRE, 285)
 		_texte(carte, 126, 112, str(menace.get("role", "")), 16, Charte.IVOIRE, 285)
-		if _nombre(menace.get("fitness")): _texte(carte, 126, 130, "Condition %d %%" % int(menace.fitness), 15, Charte.IVOIRE_2, 285)
+		if _nombre(menace.get("fitness")) and not C.dense(): _texte(carte, 126, 130, "Condition %d %%" % int(menace.fitness), 15, Charte.IVOIRE_2, 285)
 	var signaux: Array = reports.get("signals", [])
 	var phrase := "%d signal(aux) relevé(s) · détails dans les conseils" % signaux.size() if not signaux.is_empty() else "Observations adverses indisponibles." if reports.is_empty() else "Pas de signal robuste dans les observations disponibles."
 	var fin := _bouton(panneau, Rect2(14, rectangle.size.y - 48, 560, 44), phrase, func(): _ouvrir_sous("conseils"), "lien", "arrow", "PreparationSignalsLink")
