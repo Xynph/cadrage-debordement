@@ -69,6 +69,8 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 	if route == "Classements": entry.competition_page = JSON.stringify(app.management_ui.get("competition_page")) if app.management_ui.get("competition_page") is Dictionary else ""
 	# Sous-pages du Recrutement : une étape d'historique distincte de la liste.
 	if route == "Recrutement": entry.recrutement_page = load("res://ui/immersive08/recruitment_pages.gd").cle(app.management_ui.get("recrutement_page", {})) if app.management_ui.get("recrutement_page") is Dictionary else ""
+	# Sous-pages du Staff (contrat, mentorat, engagements) : une étape d'historique distincte de l'écran.
+	if route == "Staff": entry.club_page = load("res://ui/immersive08/club_pages.gd").cle(app.management_ui.get("club_page", {})) if app.management_ui.get("club_page") is Dictionary else ""
 	if cursor >= 0:
 		var previous := history[cursor]
 		var same_location := entry.keys().all(func(key: String): return previous.get(key) == entry[key])
@@ -536,7 +538,11 @@ func _travel(direction: int) -> void:
 		app.management_ui.preparation.tab = entry.get("preparation_tab", 0)
 		app.management_ui.preparation.sub = entry.get("preparation_sub", "")
 	if entry.route == "Match": app.management_ui["avant_page"] = entry.get("avant_page", "")
-	if entry.route == "Staff": app.selected_staff_club = int(entry.staff)
+	if entry.route == "Staff":
+		app.selected_staff_club = int(entry.staff)
+		var club_demandee := str(entry.get("club_page", ""))
+		if club_demandee.is_empty(): app.management_ui.erase("club_page")
+		else: app.management_ui.club_page = load("res://ui/immersive08/club_pages.gd").depuis_cle(club_demandee)
 	if entry.route == "Composition":
 		if str(entry.get("composition_page", "")).is_empty(): app.management_ui.erase("composition_page")
 		else: app.management_ui.composition_page = str(entry.composition_page)

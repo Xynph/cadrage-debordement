@@ -99,9 +99,10 @@ func run() -> void:
 	var file:=str(app.model.meta.dataDir).path_join("donnees.json")
 	var saved:=FileAccess.get_file_as_bytes(file)
 	requests=int(app.bridge._next_id)
-	app.management_ui[Club.KEY]="overview"; app._navigate("Club"); await settle()
+	# DA du 20/11/2026 : l'encadrement vit dans l'onglet Staff (plus sur la vue d'ensemble).
+	app._navigate("Staff"); await settle()
 	var staff:=app.find_children("ClubStaffName_*","Button",true,false)
-	check(not staff.is_empty(),"Staff réel présent dans le tableau de bord Club")
+	check(not staff.is_empty(),"Staff réel présent dans l'onglet Staff du Club")
 	if not staff.is_empty():
 		var staff_id:=str(staff[0].get_meta("entity_id"))
 		await activate(staff[0]); check(app.route=="Staff" and app.StaffViews.reading(app).navigation_id==staff_id,"Nom staff ouvre le profil exact")
@@ -109,6 +110,8 @@ func run() -> void:
 		await activate(found("ClubStaffPortrait_"+staff_id.validate_node_name()) as Control,true)
 		check(app.route=="Staff" and app.StaffViews.reading(app).navigation_id==staff_id,"Portrait staff ouvre le même profil exact")
 		app.navigation_controller._travel(-1); await settle()
+	# Trésorerie et salaires restent sur la vue d'ensemble (bloc « À décider »).
+	app.management_ui[Club.KEY]="overview"; app._navigate("Club"); await settle()
 	for item: Array in [["ClubCashLink","cash"],["ClubWagesLink","wages"]]:
 		await activate(found(item[0]) as Control)
 		check(app.route=="Finances" and app.management_ui.immersive08_finance_tab==item[1],"Valeur financière ouvre l’onglet exact · "+str(item[1]))
