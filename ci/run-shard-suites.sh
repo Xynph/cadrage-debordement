@@ -124,6 +124,9 @@ budget() {
     # Dilemmes rugby (#925, 18/11/2026) : la presse rapide en carrière Monde passe de 149 à 172 s en local (commotions, doublons, relâchement
     # calculés chaque jour) ; 180 s dépassées en CI. Même cause pour le test de charge natif (71 s en local, 180 s dépassées sur le runner).
     tests/presse-rapide-monde.cjs|tests/v63-2-stress-native.cjs) echo 420s ;;
+    # Zones de classement (montées, maintiens, Japon) : 179 s en CI sur main (Tests JavaScript 44770921709, 20/11/2026), 100 s en local ;
+    # 180 s dépassées sur la PR #1057 (102 s en local). Au ras du cap par défaut ; budget ≈ 2 fois.
+    tests/world-zones-classement.cjs) echo 360s ;;
     # Cartons réalistes (#912) : carrière Monde + 80 matchs rejoués, ~90 s en local.
     tests/cartons-realistes.cjs) echo 420s ;;
     # Pénalité jouée à la main : 148 s de poids, au ras du cap de 180 s ; le crochet du pilotage dans skill() coûte ~5-10 % (#912).
@@ -167,7 +170,8 @@ budget() {
     # sur les PR #837 et #841 (17/11) ; assertions inchangées.
     tests/match-zone22.cjs) echo 600s ;;
     # Multiplex de la journée (16/11) : trois carrières Monde, matchs joués en direct jusqu'au bout, 234 s en local sous charge.
-    tests/multiplex-direct.cjs) echo 600s ;;
+    # 20/11 : 323 à 362 s en local (barème V3), 600 s dépassées en CI sur main (run 44755683874) et sur la PR #1057 ; budget ≈ 2,5 fois.
+    tests/multiplex-direct.cjs) echo 900s ;;
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
     # JIFF en carrière Monde : une carrière world-champ jusqu'aux premières journées de Top 14, ~320 s en local sous charge.
     tests/jiff.cjs) echo 600s ;;
