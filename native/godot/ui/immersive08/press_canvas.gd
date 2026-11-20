@@ -276,7 +276,7 @@ func _held_bar(outcome: Dictionary) -> void:
 	gauche.add_child(statut)
 	gauche.add_child(_texte("Semaine %d · %s" % [int(outcome.context.week) + 1, _club_name(outcome.context.club)], 19, C.MUTED))
 	action = _lien("Consulter le compte rendu", func(): _select(1), 21, false, "OpenPressConference", true)
-	C.style_bouton_ivoire_plein(action, 21)
+	C.style_bouton_contour(action, 21)
 	action.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	gauche.add_child(action)
 	draft_status = C.label("", 18, C.MUTED, false, 500)
@@ -533,7 +533,7 @@ func _mark_tabs() -> void:
 ## Un seul ivoire plein par écran : « Préparer la conférence » cède la place à « Publier mes réponses » dans l'onglet Conférence.
 func _style_action() -> void:
 	if action == null or not is_instance_valid(action) or action.name != "OpenPressConference": return
-	if active != 1: C.style_bouton_ivoire_plein(action, 21)
+	if active != 1: C.style_bouton_contour(action, 21)
 	else:
 		C.style_bouton_lien(action, 21, false)
 		action.add_theme_font_override("font", Charte.texte_moyen())
@@ -843,7 +843,7 @@ func _conference_page() -> Control:
 	publier.name = "PressSubmit"
 	publier.text = "Publier mes réponses"
 	publier.focus_mode = Control.FOCUS_ALL
-	C.style_bouton_ivoire_plein(publier, 22)
+	C.style_bouton_contour(publier, 22)
 	publier.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	publier.disabled = choices.size() != conference.questions.size()
 	var manque := C.label("", 19, C.MUTED, false, 600)

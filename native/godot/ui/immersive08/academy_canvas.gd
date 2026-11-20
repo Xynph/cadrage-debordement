@@ -605,7 +605,7 @@ func _statut(row: Control, p: Dictionary, x: float) -> void:
 		courant += 170
 	var blessure := float(p.get("injury", 0))
 	if blessure > 0:
-		Kit.puce(row, Rect2(courant, 5, 20, 20), "✕", Charte.D, Charte.ENCRE)
+		Kit.puce(row, Rect2(courant, 5, 20, 20), "✕", Charte.VOILE_DORE, Charte.D)
 		D.text(row, courant + 28, 21, "Blessé · %d sem." % ceili(blessure), 20, Charte.D, 700, 200)
 		return
 	if _a_decider(p): return

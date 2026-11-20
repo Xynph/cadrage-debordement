@@ -199,7 +199,11 @@ func _hero() -> void:
 		competition.tooltip_text = "Ouvrir le classement · " + league_name
 	var stadium := str(data.get("stadium", "")) if data.get("stadium") != null else ""
 	var capacity: Variant = data.get("capacity")
-	D.text(hero, 332, 236, ("Stade : " + stadium if not stadium.is_empty() else "Stade non renseigné") + ("  ·  %s places" % _thousands(capacity) if capacity is float or capacity is int else ""), 28, C.MUTED, 500, 1030)
+	# Donnée absente : ligne omise, rien d'inventé.
+	var venue: Array[String] = []
+	if not stadium.is_empty(): venue.append("Stade : " + stadium)
+	if capacity is float or capacity is int: venue.append("%s places" % _thousands(capacity))
+	if not venue.is_empty(): D.text(hero, 332, 236, "  ·  ".join(venue), 28, C.MUTED, 500, 1030)
 	if _followed(): D.chip(hero, Rect2(332, 254, 140, 34), "★ Club suivi", C.GOLD)
 	# Tuiles clés : classement, forme, réputation, effectif.
 	var table: Dictionary = data.get("table", {})

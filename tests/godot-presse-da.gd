@@ -1,7 +1,7 @@
 extends SceneTree
 # Presse (variante 3 « Synthèse à gauche », décision de Léo du 19/11/2026), carrière Monde réelle :
 # verdict de pression à trois paliers (mot + symbole), tout ce qui ressemble à un lien en est un, aucune fenêtre ouverte
-# par un clic, un seul ivoire plein, aucun or hors Continuer, clubs et journalistes cliquables.
+# par un clic, aucun aplat doré hors Continuer (qui porte le seul), clubs et journalistes cliquables.
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
 var app: Control
@@ -51,17 +51,19 @@ func fill_of(button: Button, state: String) -> Color:
 	var style := button.get_theme_stylebox(state) as StyleBoxFlat
 	return style.bg_color if style != null else Color(0, 0, 0, 0)
 
-## Aucun or (Continuer seul), un ivoire plein au plus, aucun bouton visible sans effet.
+## Charte finale : aucun aplat doré dans la page (Continuer, dans la coque, porte le seul) ; le texte doré reste permis ;
+## aucun bouton visible sans effet.
 func check_buttons(label: String) -> void:
-	var plein := 0
+	var aplats: Array[String] = []
 	var morts: Array[String] = []
 	for button: Button in visible_buttons():
 		for state in ["normal", "hover", "pressed"]:
 			var fond := fill_of(button, state)
-			check(not fond.is_equal_approx(Charte.OR) and not fond.is_equal_approx(Charte.OR_VIF), label + " : pas d'or sur " + button.name)
-		if fill_of(button, "normal").is_equal_approx(Charte.IVOIRE): plein += 1
+			if fond.a > .05 and (fond.is_equal_approx(Charte.OR) or fond.is_equal_approx(Charte.OR_VIF)):
+				aplats.append(str(button.name))
+				break
 		if not button.disabled and button.get_signal_connection_list("pressed").is_empty(): morts.append(str(button.name))
-	check(plein <= 1, label + " : un seul bouton ivoire plein (" + str(plein) + ")")
+	check(aplats.is_empty(), label + " : aucun aplat doré dans la page, Continuer le porte seul " + str(aplats))
 	check(morts.is_empty(), label + " : aucun bouton sans effet " + str(morts))
 
 func click(button: Button) -> void:

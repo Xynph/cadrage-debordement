@@ -4,7 +4,8 @@
 // Graine fixe (helper : 4242) : résultat reproductible. N'utilise que l'API publique du worker et des lectures tolérantes de S.
 // Les variables d'environnement lues par le moteur (CD_CLUBS_GERES_CALENDRIER=semaines|mutations, CD_PLANCHER_CLUBS_GERES=0)
 // sont simplement recopiées dans le rapport.
-// Usage : node scripts/mesure-mutations-clubs-geres.cjs [--saisons 3] [--sortie fichier.json]
+// Usage : node scripts/mesure-mutations-clubs-geres.cjs [--saisons 3] [--graine N] [--sortie fichier.json] [--detail bascules.json]
+//   --detail : relevé club par club juste avant et juste après chaque bascule (masse, limite, joueurs).
 //   JSON sur stdout (ou dans --sortie), résumé lisible en français sur stderr.
 const vm = require('node:vm'), runInContext = vm.runInContext;
 vm.runInContext = (code, ctx, options) => runInContext(code, ctx, { ...options, timeout: Math.max(options?.timeout ?? 0, 600000) });
@@ -21,7 +22,7 @@ const CLUB = 102, SEMAINE_AUTOMNE = 14, SEMAINE_FIN = 45;
 const t0 = Date.now();
 const log = (...x) => process.stderr.write(x.join(' ') + '\n');
 
-const jeu = ouvrir({ testVm: true, hebdomadaire: true, seed: GRAINE });
+const jeu = ouvrir({ testVm: true, hebdomadaire: true, simulation: true, seed: GRAINE });
 const run = src => jeu.bridge.vm.run(src);
 let model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: CLUB, start: 'premiers-clubs', varyCurrent: true }));
 
@@ -37,28 +38,47 @@ const INSTANT = `(()=>{
  const note=p=>{if(aNote){try{const n=roleNote(p);if(Number.isFinite(n))return n;}catch(e){notesEchecs++;}}return p.rating;};
  const groupes={};
  for(const c of Object.values(S.clubs||{})){ if(!c||c.id===S.club)continue;
-  const g=ligueDe(c.id); const L=groupes[g]||(groupes[g]={eff:[],niv:[],cash:[],masse:[],depth:[],plafond:0,mesures:0,dessus:0});
+  const g=ligueDe(c.id); const L=groupes[g]||(groupes[g]={eff:[],niv:[],cash:[],masse:[],depth:[],plafond:0,mesures:0,dessus:0,dessus1:0,dessus3:0});
   const ps=c.players||[]; L.eff.push(ps.length);
   const top=ps.map(note).filter(Number.isFinite).sort((a,b)=>b-a).slice(0,23); if(top.length)L.niv.push(top.reduce((a,b)=>a+b,0)/top.length);
   L.cash.push(c.cash||0);
   const masse=ps.reduce((n,p)=>n+(p.salary||0),0); L.masse.push(masse);
-  if(aLim){try{const lim=aiRosterWageLimit(c);if(Number.isFinite(lim)){L.mesures++;if(masse>lim)L.dessus++;}}catch(e){}}
+  if(aLim){try{const lim=aiRosterWageLimit(c);if(Number.isFinite(lim)){L.mesures++;if(masse>lim)L.dessus++;if(masse>lim*1.01)L.dessus1++;if(masse>lim*1.03)L.dessus3++;}}catch(e){}}
   L.depth.push(ps.filter(p=>typeof p.id==='string'&&p.id.startsWith('depth-')).length);
  }
  const resume=L=>({clubs:L.eff.length,
   effectif:{min:Math.min(...L.eff),med:med(L.eff),max:Math.max(...L.eff),sous30:L.eff.filter(n=>n<30).length,sous37:L.eff.filter(n=>n<37).length},
   niveau:{med:r1(med(L.niv)),ecartType:r1(sd(L.niv))},
   caisse:{med:med(L.cash),negatifs:L.cash.filter(x=>x<0).length},
-  masseHebdo:{med:med(L.masse),auDessusLimite:aLim?L.dessus:null,limiteMesuree:aLim?L.mesures:null},
+  masseHebdo:{med:med(L.masse),auDessusLimite:aLim?L.dessus:null,auDessusLimitePlus1Pct:aLim?L.dessus1:null,auDessusLimitePlus3Pct:aLim?L.dessus3:null,limiteMesuree:aLim?L.mesures:null},
   complement:{total:L.depth.reduce((a,b)=>a+b,0),med:med(L.depth),max:Math.max(...L.depth)}});
- const tout={eff:[],niv:[],cash:[],masse:[],depth:[],dessus:0,mesures:0};
- for(const L of Object.values(groupes)){for(const k of ['eff','niv','cash','masse','depth'])tout[k].push(...L[k]);tout.dessus+=L.dessus;tout.mesures+=L.mesures;}
+ const tout={eff:[],niv:[],cash:[],masse:[],depth:[],dessus:0,dessus1:0,dessus3:0,mesures:0};
+ for(const L of Object.values(groupes)){for(const k of ['eff','niv','cash','masse','depth'])tout[k].push(...L[k]);for(const k of ['dessus','dessus1','dessus3','mesures'])tout[k]+=L[k];}
  const own=S.clubs?.[S.club];
  return JSON.stringify({saison:S.season,semaine:S.worldMode?.week,
   parLigue:Object.fromEntries(Object.entries(groupes).map(([k,L])=>[k,resume(L)])),total:tout.eff.length?resume(tout):null,
   clubJoue:own?{effectif:own.players?.length,caisse:own.cash}:null,
   disponibilite:{roleNote:aNote,aiRosterWageLimit:aLim,notesEnEchec:notesEchecs}});
 })()`;
+
+// Détail club par club (avant / après chaque bascule) : masse, limite, ligue, caisse, règle de la limite (budgetLimites),
+// joueurs [id, salaire, fin de contrat]. Sert à décomposer ce qui change à la bascule.
+const DETAIL = `(()=>{
+ const leagues=S.worldMode?.leagues||{};
+ const ligueDe=id=>{for(const [k,l] of Object.entries(leagues))if(Array.isArray(l.members)&&l.members.includes(id))return k;return 'autre';};
+ let bl=null;try{bl=typeof budgetLimites==='function'?budgetLimites(S.season===1):null;}catch(e){}
+ const prets=new Set((S.clubDirections?.loans||[]).map(l=>l.playerId));
+ const out={saison:S.season,semaine:S.worldMode?.week,phase:S.phase,clubs:{}};
+ for(const c of Object.values(S.clubs||{})){ if(!c||c.id===S.club)continue;
+  let lim=null;try{lim=aiRosterWageLimit(c);}catch(e){}
+  const l=bl?.get?.(c.id);
+  out.clubs[c.id]={ligue:ligueDe(c.id),limite:lim,limiteAnnuelle:l?.limite??null,regle:l?.regle??null,tolerance:l?.tolerance??null,audace:l?.audace??null,
+   caisse:c.cash,cible:typeof aiRosterTarget==='function'?aiRosterTarget(c):null,
+   joueurs:(c.players||[]).map(p=>[p.id,p.salary||0,p.contractEnd??null,p.age??null,prets.has(p.id)?1:0])};
+ }
+ return JSON.stringify(out);
+})()`;
+const DETAIL_SORTIE = opt('--detail', null), details = [];
 
 // Mouvements lisibles chaque semaine (les fils sont plafonnés, donc dédoublonnés côté Node).
 const MOUVEMENTS = `(()=>{
@@ -154,7 +174,9 @@ for (let saison = 1; saison <= SAISONS; saison++) {
   saisonsReleves.push(cour);
   log('Saison ' + saison + ' mesurée en ' + cour.dureeSecondes + ' s');
   if (saison < SAISONS || BASCULE_FINALE) {
+    const avant = DETAIL_SORTIE ? JSON.parse(run(DETAIL)) : null;
     model = jeu.regler(jeu.call('next_season', { confirmed: true }));
+    if (DETAIL_SORTIE) details.push({ saison, avant, apres: JSON.parse(run(DETAIL)) });
     if (saison === SAISONS) cour.releves.apresBasculeFinale = JSON.parse(run(INSTANT));
     // Exécutions à la bascule : le joueur est-il chez l'acheteur ?
     if (conclus.length) {
@@ -182,6 +204,7 @@ const rapport = {
   saisonsReleves,
 };
 const json = JSON.stringify(rapport, null, 1);
+if (DETAIL_SORTIE) { fs.mkdirSync(path.dirname(path.resolve(DETAIL_SORTIE)), { recursive: true }); fs.writeFileSync(DETAIL_SORTIE, JSON.stringify(details)); }
 if (SORTIE) { fs.mkdirSync(path.dirname(path.resolve(SORTIE)), { recursive: true }); fs.writeFileSync(SORTIE, json); } else process.stdout.write(json + '\n');
 
 // Résumé lisible.
@@ -202,7 +225,7 @@ for (const s of saisonsReleves) {
   for (const [nom, r] of Object.entries(s.releves)) {
     log('   [' + nom + ' - sem. ' + r.semaine + '] club joué : effectif ' + r.clubJoue?.effectif + ', caisse ' + M(r.clubJoue?.caisse));
     for (const [lg, v] of Object.entries({ ...r.parLigue, TOTAL: r.total }))
-      if (v) log('     ' + lg.padEnd(10) + ' eff ' + v.effectif.min + '/' + v.effectif.med + '/' + v.effectif.max + ' (<30:' + v.effectif.sous30 + ' <37:' + v.effectif.sous37 + ') niv ' + v.niveau.med + ' ±' + v.niveau.ecartType + ' caisse méd ' + M(v.caisse.med) + ' (neg ' + v.caisse.negatifs + ') masse hebdo méd ' + Math.round(v.masseHebdo.med) + ' (>limite ' + v.masseHebdo.auDessusLimite + '/' + v.masseHebdo.limiteMesuree + ') compl. ' + v.complement.total);
+      if (v) log('     ' + lg.padEnd(10) + ' eff ' + v.effectif.min + '/' + v.effectif.med + '/' + v.effectif.max + ' (<30:' + v.effectif.sous30 + ' <37:' + v.effectif.sous37 + ') niv ' + v.niveau.med + ' ±' + v.niveau.ecartType + ' caisse méd ' + M(v.caisse.med) + ' (neg ' + v.caisse.negatifs + ') masse hebdo méd ' + Math.round(v.masseHebdo.med) + ' (>limite ' + v.masseHebdo.auDessusLimite + ', >1 % ' + v.masseHebdo.auDessusLimitePlus1Pct + ', >3 % ' + v.masseHebdo.auDessusLimitePlus3Pct + ' /' + v.masseHebdo.limiteMesuree + ') compl. ' + v.complement.total);
   }
   for (const m of s.relevesManquants) log('   RELEVÉ MANQUANT : ' + m);
 }

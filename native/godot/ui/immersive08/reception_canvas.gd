@@ -1679,7 +1679,7 @@ static func _send_row(card: Panel, app: Control, state: Dictionary, message: Dic
 	var send := D.button(card, Rect2(PAD, top, 360, _h(46)), ("Envoyer la réponse " + letter) if not letter.is_empty() else "Choisis une réponse",
 		func(): _send_reply(app, state, str(mail.id), picked), true, "", false, app.accent, "InboxClubMailSend")
 	send.disabled = letter.is_empty() or app.waiting
-	C.style_bouton_ivoire_plein(send, 21)
+	C.style_bouton_contour(send, 21)
 	send.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if letter.is_empty():
 		D.text(card, PAD + 380, top + 30, "Un clic sur une carte choisit ; rien ne part sans confirmation.", 17, C.MUTED, 500, minf(700.0, _reading_width() - 380))
@@ -1928,7 +1928,7 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 		var id := str(action.name)
 		if id.begins_with("InboxOpen") or id in ["InboxClubMailOpen", "InboxRecalibratePreparation"]:
 			if awaiting_reply: C.style_bouton_lien(action, 19)
-			else: C.style_bouton_ivoire_plein(action, 19)
+			else: C.style_bouton_contour(action, 19)
 		elif id in ["InboxKeepPreparation", "InboxPressPolicy"]:
 			C.style_bouton_lien(action, 19)
 
