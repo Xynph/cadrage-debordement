@@ -49,6 +49,7 @@ func run() -> void:
 	check(not app.model.is_empty(), "Moteur prêt")
 	app.timer.stop()
 	await command("new_career", {"mode":"common", "club":29})
+	app.management_ui.market.immersive_tab = 1  # « Besoins du club » arrive filtré sur le poste prioritaire : on cherche dans tout le marché.
 	app._navigate("Recrutement"); await settle()
 	var filename := str(app.model.meta.dataDir).path_join("donnees.json")
 	var initial := FileAccess.get_sha256(filename)

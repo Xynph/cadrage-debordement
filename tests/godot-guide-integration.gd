@@ -200,7 +200,7 @@ func market_coach_click() -> void:
 				var event := InputEventMouseButton.new(); event.button_index = MOUSE_BUTTON_LEFT; event.position = point; event.global_position = point; event.pressed = pressed
 				root.push_input(event, true); await process_frame
 			await settle()
-			check(app.get_children().any(func(child): return child is ConfirmationDialog and child.visible and child.title.begins_with("Offre à ")), "Vraie offre ouverte à la souris avec Gabi / " + str(resolution.x))
+			check(app.management_ui.get("recrutement_page") is Dictionary and app.management_ui.recrutement_page.get("kind") == "negociation" and app.get_children().any(func(child): return child is ConfirmationDialog and not child.visible and child.title.begins_with("Offre à ")), "Vraie offre ouverte à la souris avec Gabi / " + str(resolution.x))
 			app._clear_dialogs(); app.coach.close(); await settle()
 func profile_error() -> void:
 	DisplayServer.window_set_size(Vector2i(1280,800))

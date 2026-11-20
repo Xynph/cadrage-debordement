@@ -7,7 +7,8 @@ extends SceneTree
 ## fiche du joueur sur l'onglet Contrat). Textes ≥ 13 px, aucun chevauchement.
 const G = preload("res://ui/carnet_skin.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
-const TAILLE_MIN := 13
+## Plancher de lisibilité de la nouvelle direction artistique : 12 px réels (brief du 19/11/2026, densité Football Manager).
+const TAILLE_MIN := 12
 const PLANCHER_RECEPTION := 12
 var app: Control
 var sortie := OS.get_environment("CD_CALENDRIER_OUTPUT")
@@ -176,17 +177,17 @@ func executer() -> void:
 		if envoyer != null:
 			envoyer.pressed.emit()
 			await poser(10)
-			var confirmation := noeud(marche, "PreContractConfirmation") as ConfirmationDialog
-			verifier(confirmation != null and confirmation.visible, "confirmation ouverte")
+			var confirmation := noeud(app, "PreContractConfirmation") as Control
+			verifier(confirmation != null and confirmation.is_visible_in_tree(), "confirmation EN PLACE ouverte (aucune fenêtre)")
 			if confirmation != null:
-				verifier(confirmation.get_ok_button().text.begins_with("SIGNER LE PRÉ-CONTRAT AVEC"), "libellé = action : " + confirmation.get_ok_button().text)
-				verifier(confirmation.get_cancel_button().text == "ANNULER", "bouton Annuler")
-				verifier(confirmation.gui_get_focus_owner() == confirmation.get_cancel_button(), "focus sur Annuler")
+				verifier((noeud(app, "PreContractConfirmationOk") as Button).text.begins_with("SIGNER LE PRÉ-CONTRAT AVEC"), "libellé = action : " + (noeud(app, "PreContractConfirmationOk") as Button).text)
+				verifier((noeud(app, "PreContractConfirmationAnnuler") as Button).text == "Annuler", "bouton Annuler")
+				verifier(marche.gui_get_focus_owner() == noeud(app, "PreContractConfirmationAnnuler") or root.gui_get_focus_owner() == noeud(app, "PreContractConfirmationAnnuler"), "focus sur Annuler")
 				verifier(texte(confirmation, "PreContractConfirmHeading").contains("Aucune indemnité"), "sans indemnité : " + texte(confirmation, "PreContractConfirmHeading"))
 				verifier(texte(confirmation, "PreContractConfirmPremium").contains(G.euros(devis.premium)), "prime : " + texte(confirmation, "PreContractConfirmPremium"))
 				textes_lisibles(confirmation, "confirmation du pré-contrat")
 				await capturer("calendrier-confirmation.png")
-				confirmation.get_cancel_button().pressed.emit()
+				(noeud(app, "PreContractConfirmationAnnuler") as Button).pressed.emit()
 				await poser(6)
 		verifier(not app.waiting, "Annuler n’envoie rien au moteur")
 		marche.hide(); marche.queue_free()

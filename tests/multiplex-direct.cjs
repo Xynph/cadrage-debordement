@@ -92,6 +92,28 @@ test('même graine : S.history identique avec et sans déroulé anticipé, multi
     const duJour = (r, k) => Math.max(0, (r[k] | 0) - (avantDe(r.clubId)[k] | 0));
     assert.deepEqual(finale.classement.map(r => [r.clubId, r.rang, r.points, r.joues, r.diff, r.bonusOff, r.bonusDef]),
       officiel.map((r, i) => [r.clubId, i + 1, r.points, r.played, r.pf - r.pa, duJour(r, 'offensiveBonus'), duJour(r, 'defensiveBonus')]));
+    // Après-match (classement complet) : victoires, nuls, défaites et forme = classement officiel.
+    assert.deepEqual(finale.classement.map(r => [r.gagnes, r.nuls, r.perdus, r.forme]), officiel.map(r => [r.won, r.drawn, r.lost, r.form]));
+    // Fil du score de l'après-match : chaque essai et coup de pied réussi, le dernier au score final.
+    const marques = a.model.live.direct.marques;
+    assert.ok(Array.isArray(marques) && marques.length > 0, 'fil du score à la fin du match');
+    assert.deepEqual(marques.at(-1).score, a.model.live.score, 'la dernière marque donne le score final');
+    assert.ok(marques.every(m => ['try', 'goal'].includes(m.kind) && (m.equipe === 0 || m.equipe === 1)));
+    // Forme en V / N / D (D = défaite) : chaque lettre reste dans les compteurs du club (un nul n'est jamais une défaite).
+    for (const r of finale.classement) {
+      const n = l => r.forme.filter(x => x === l).length;
+      assert.ok(r.forme.every(x => ['V', 'N', 'D'].includes(x)), 'forme en V/N/D : ' + r.forme);
+      assert.ok(n('V') <= r.gagnes && n('N') <= r.nuls && n('D') <= r.perdus, 'forme cohérente avec V/N/D : ' + r.clubId);
+    }
+    // Nature de chaque marque = points marqués : essai 5, essai transformé 7, pénalité ou drop 3 ; buteur de la transformation.
+    const POINTS = { essai: 5, 'essai-transforme': 7, penalite: 3, drop: 3 };
+    let avant = [0, 0];
+    for (const m of marques) {
+      assert.equal(m.score[m.equipe] - avant[m.equipe], POINTS[m.nature], 'points de la marque ' + m.horloge + ' ' + m.nature);
+      assert.equal(m.score[1 - m.equipe], avant[1 - m.equipe]);
+      if (m.nature === 'essai-transforme') assert.ok(m.buteur === null || typeof m.buteur.joueur === 'string');
+      avant = m.score;
+    }
     // Flèches : sans match officiel joué avant la journée, aucun rang officiel ni évolution.
     const classe = avantJournee.some(r => (r.played | 0) > 0);
     for (const r of finale.classement) {

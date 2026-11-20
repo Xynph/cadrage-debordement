@@ -153,7 +153,10 @@ function factory(){
    const classe=officiel.some(r=>(r.played|0)>0);
    // Bonus « si ça finit ainsi » pris CETTE journée (cumul en direct − cumul officiel), pas les cumuls de la saison.
    const jour=(r,k)=>{const n=(r[k]|0)-(avant.get(r.clubId)?.row?.[k]|0);return n>0?n:0;};
+   // Victoires, nuls, défaites et forme (cinq derniers résultats) : tableau complet de l'après-match. `W.rows` passe par
+   // CDWorldCareer.rows, qui écrit la forme en V / N / D (W→V, D→N, L→D) : D y veut dire défaite.
    classement=W.rows(c.competitionId,provisional).map((r,i)=>({rang:i+1,clubId:r.clubId,abbr:club(r.clubId).abbr,nom:club(r.clubId).nom,joues:r.played,points:r.points,diff:r.diff??(r.pf-r.pa),
+    gagnes:r.won|0,nuls:r.drawn|0,perdus:r.lost|0,forme:Array.isArray(r.form)?r.form.slice(-5):[],
     bonusOff:jour(r,'offensiveBonus'),bonusDef:jour(r,'defensiveBonus'),rangOfficiel:classe?avant.get(r.clubId)?.rang??null:null,delta:classe&&avant.has(r.clubId)?avant.get(r.clubId).rang-(i+1):0,nous:r.clubId===s.club}));
   }
   return {minute:m,matchs,classement};

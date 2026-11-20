@@ -170,7 +170,8 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 		# Refus d’enveloppe que la caisse permettrait : le manager peut demander le manquant au conseil (R3 bis).
 		var extension := Budget.extension_for_refusal(transfer, quote.get("fee"), quote.get("reason","")) if recruiting and not bool(quote.get("available",false)) else 0
 		if extension > 0:
-			var ask := C.button(Budget.extension_button(extension),func(): _ask_extension(app,dialog,player,transfer,extension))
+			var ask := C.button(Budget.extension_button(extension),func(): pass)
+			ask.pressed.connect(func(): _ask_extension(app,dialog,body,ask,player,transfer,extension))
 			ask.name = "ContractTransferBudgetExtension"
 			ask.add_theme_font_size_override("font_size",C.px(18))
 			ask.disabled = app.waiting or not app._live().is_empty()
@@ -197,16 +198,17 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	dialog.get_cancel_button().grab_focus()
 
 ## Rallonge demandée au conseil depuis le refus : confirmation (focus sur Annuler), puis devis rouvert avec la réponse.
-static func _ask_extension(app: Control, dialog: ConfirmationDialog, player: Dictionary, transfer: Dictionary, amount: int) -> void:
+static func _ask_extension(app: Control, dialog: ConfirmationDialog, body: Node, ask: Node, player: Dictionary, transfer: Dictionary, amount: int) -> void:
 	var player_id := str(player.id)
 	# Réponse traitée à l’image suivante, après la mise à jour du modèle et de l’erreur éventuelle par main.gd.
 	var after := func(): _after_extension(app,player_id,player)
 	var next_frame := func(_value: Dictionary): app.get_tree().process_frame.connect(after,CONNECT_ONE_SHOT)
-	# Demande envoyée : l’ancienne fenêtre se ferme, le devis est rouvert avec la réponse (jamais deux fenêtres empilées).
-	Budget.confirm_extension(app,dialog,transfer,amount,func():
+	# Demande envoyée : l’ancienne vue se ferme, le devis est rouvert avec la réponse (jamais deux vues empilées).
+	# Confirmation EN PLACE sous le bouton (deux temps, aucune fenêtre).
+	var envoyee := func():
 		app.bridge.model_changed.connect(next_frame,CONNECT_ONE_SHOT)
-		dialog.queue_free())
-
+		dialog.queue_free()
+	Budget.confirm_extension(app,body,transfer,amount,envoyee,ask)
 static func _after_extension(app: Control, player_id: String, previous: Dictionary) -> void:
 	if app.last_command != Budget.EXTENSION_COMMAND: return
 	var refreshed := previous
