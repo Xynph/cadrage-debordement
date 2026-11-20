@@ -511,11 +511,11 @@ function calIAMasseBascule(){
 function calIAExecuter(){
  if(!calEtatValide(S.calendrierMutations))return 0;
  const st=calIAEtat();let n=0;
- const arr=calIAArrivees=new Map();
+ const arr=calIAArrivees=new Map(),caisses=new Map();
  const placeSuivante=b=>professionalCapacity(b)-b.players.filter(q=>!(q.contractEnd!=null&&q.contractEnd<=S.season)).length;
  const arriver=(p,s,b,salaire,annees,montant)=>{
   s.players=s.players.filter(q=>q.id!==p.id);b.players.push(p);
-  if(montant>0){b.cash-=montant;s.cash+=montant;}
+  if(montant>0){if(!caisses.has(b.id))caisses.set(b.id,b.cash);b.cash-=montant;s.cash+=montant;}
   p.formerClub=s.name;p.salary=salaire;p.contractEnd=S.season+annees;p.joinedSeason=S.season+1;p.joinedRound=0;if(montant>0)p.price=montant;
   if(typeof aiRosterEvent==='function'){aiRosterEvent(s.id,montant>0?'sell':'release',p,montant);aiRosterEvent(b.id,'recruit',p,montant);}
   const x=arr.get(b.id)||{salaires:0,ids:new Set()};x.salaires+=salaire;x.ids.add(p.id);arr.set(b.id,x);
@@ -536,6 +536,9 @@ function calIAExecuter(){
   arriver(p,s,b,x.salaire,x.annees,0);x.etat='execute';n++;
   calFil(p.name+' rejoint '+b.name+' libre, comme prévu par son pré-contrat.');
  }
+ // Président d'un acheteur passé sous sa réserve en payant ses indemnités : il tranche tout de suite, ventes au 1er juillet
+ // (president-reprise.cjs, repriseBascule ; GDD § 3 bis 5). Une fois par club, caisse d'avant ses paiements de la bascule.
+ if(typeof repriseBascule==='function')for(const [id,avant] of caisses)n+=repriseBascule(S.clubs[id],avant,arr.get(id)?.ids);
  st.ia=st.ia.filter(x=>x.saison>=S.season);st.rumeurs=st.rumeurs.filter(r=>r.saison>S.season);
  return n;
 }
