@@ -86,12 +86,13 @@ const repriseEtat=()=>{if(!nativePresidentReprise.valide(S.presidentReprise))S.p
 const repriseReserve=id=>{const r=S.clubBudget?.clubs?.[id]?.reserve;return Number.isFinite(r)?r:null;};
 const repriseTally=(k,id)=>{if(typeof nativeClubDirections!=='undefined')nativeClubDirections.tally(k,id);};
 const reprisePretes=()=>new Set((S.clubDirections?.loans||[]).map(l=>l.playerId));
-function repriseJoueurs(c){
+// exclus : joueurs à ne pas désigner (arrivées de la bascule, pas encore « recrues » pour saleBlocked).
+function repriseJoueurs(c,exclus){
  const pretes=reprisePretes();
- return c.players.map(p=>({id:p.id,name:p.name,pos:p.pos,note:p.rating,salaire:p.salary,valeur:transferValue(p),bloque:!!saleBlocked(p)||pretes.has(p.id)}));
+ return c.players.map(p=>({id:p.id,name:p.name,pos:p.pos,note:p.rating,salaire:p.salary,valeur:transferValue(p),bloque:!!saleBlocked(p)||pretes.has(p.id)||!!exclus&&exclus.has(p.id)}));
 }
 // Après un achat d'un club : caisse avant l'achat. Le président désigne les joueurs à vendre s'il le faut.
-function repriseApresAchat(c,avant){
+function repriseApresAchat(c,avant,exclus){
  if(!repriseActif()||!c||S.live)return false;
  const e=repriseEtat(),date=repriseJour(),reserve=repriseReserve(c.id);
  if(!date||reserve===null||e.clubs[c.id]?.etat==='en_cours')return false;
@@ -100,7 +101,7 @@ function repriseApresAchat(c,avant){
   delai:joue?nativePresidentReprise.ESPACEMENT:nativePresidentReprise.espacement(c.id)}))return false;
  // Club géré : seulement s'il est « Fragile » après l'achat (étiquette de santé, quand elle est branchée).
  if(!joue&&typeof santeFiche==='function'){let f=null;try{f=santeFiche(c.id);}catch(err){}if(f&&f.etiquette&&f.etiquette!=='fragile'){repriseTally('president:epargne',c.id);return false;}}
- const joueurs=nativePresidentReprise.designer(repriseJoueurs(c),{manque:reserve-c.cash,max:joue?3:nativePresidentReprise.DESIGNES_IA});
+ const joueurs=nativePresidentReprise.designer(repriseJoueurs(c,exclus),{manque:reserve-c.cash,max:joue?3:nativePresidentReprise.DESIGNES_IA});
  if(!joueurs.length)return false;
  e.clubs[c.id]={date,echeance:nativePresidentReprise.decaler(date,nativePresidentReprise.DELAI),joueurs:joueurs.map(j=>({id:j.id,name:j.name,pos:j.pos,salaire:j.salaire,valeur:j.valeur})),
   etat:'en_cours',saison:S.season,tresorerie:c.cash,reserve,delai:false,confie:false};
@@ -117,8 +118,9 @@ function repriseFenetre(c){
  if(c.id!==S.club||typeof venteFenetre!=='function'||typeof venteNouvelAccord!=='function')return null;
  const f=venteFenetre();return f.ouverte||!f.reouverture?null:f;
 }
-function repriseVendre(c,plan,reserve){
- const vendus=[],differe=repriseFenetre(c);let attendu=0;
+// bascule : vente d'un club géré au changement de saison (repriseBascule) ; le joueur arrive pour la nouvelle saison.
+function repriseVendre(c,plan,reserve,bascule){
+ const vendus=[],differe=bascule?null:repriseFenetre(c);let attendu=0;
  for(const j of plan.joueurs){
   if(c.cash+attendu>=reserve)break;
   const p=c.players.find(x=>x.id===j.id);if(!p||saleBlocked(p)||differe&&(venteAccord(p.id)||venteRaisonListe(p)))continue;
@@ -133,14 +135,14 @@ function repriseVendre(c,plan,reserve){
    attendu+=fee;vendus.push({name:p.name,fee,club:b.name,date:differe.reouverture});repriseTally('president:vente',c.id);continue;
   }
   b.cash-=fee;c.players=c.players.filter(x=>x.id!==p.id);b.players.push(p);
-  p.formerClub=c.name;p.joinedSeason=S.season;p.joinedRound=S.round;p.contractEnd=Math.max(p.contractEnd,S.season+1);
+  p.formerClub=c.name;p.joinedSeason=bascule?S.season+1:S.season;p.joinedRound=bascule?0:S.round;p.contractEnd=Math.max(p.contractEnd,S.season+1);
   if(typeof aiRosterEvent==='function'){aiRosterEvent(c.id,'sell',p,fee);aiRosterEvent(b.id,'recruit',p,fee);}
   if(c.id===S.club){
    ledgerEntry('Vente décidée par le président : '+p.name,fee);
    delete S.economy.listings[p.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==p.id);
    S.lineup=S.lineup.map(x=>x===p.id?null:x);S.reserves=S.reserves.map(x=>x===p.id?null:x);
    transferEvent('Le président a vendu '+p.name+' à '+b.name+' pour '+money(fee)+'.');
-  }else{c.cash+=fee;S.economy.transfers.unshift({season:S.season,round:S.round,text:c.name+' vend '+p.name+' à '+b.name+' pour '+money(fee)+' (le président veut retrouver sa réserve).'});S.economy.transfers=S.economy.transfers.slice(0,80);}
+  }else{c.cash+=fee;S.economy.transfers.unshift({season:S.season,round:S.round,text:c.name+' vend '+p.name+' à '+b.name+' pour '+money(fee)+' (le président veut retrouver sa réserve)'+(bascule?', au changement de saison':'')+'.'});S.economy.transfers=S.economy.transfers.slice(0,80);}
   vendus.push({name:p.name,fee,club:b.name});
   repriseTally('president:vente',c.id);
  }
@@ -163,6 +165,20 @@ function repriseSemaine(){
  }
  // Mémoire bornée : les interventions closes des saisons passées disparaissent.
  for(const [id,plan] of Object.entries(e.clubs))if(plan.etat!=='en_cours'&&plan.saison<S.season)delete e.clubs[id];
+}
+// Calendrier v2 (calendrier-mutations.cjs, calIAExecuter) : un club géré qui a payé des indemnités à la bascule. avant : sa
+// caisse d'avant ses paiements de la bascule ; exclus : ses arrivées. S'il passe sous sa réserve, le président tranche tout de
+// suite : ses ventes prennent effet le jour même (1er juillet), l'argent revient aussitôt (GDD calendrier-mutations § 3 bis 5).
+// Le club joué n'est pas concerné (ses ventes imposées restent des accords). Renvoie le nombre de ventes.
+function repriseBascule(c,avant,exclus){
+ if(!c||c.id===S.club)return 0;
+ // Un joueur en fin de contrat part libre à cette bascule : le président ne le désigne pas (il ne rapporterait rien).
+ exclus=new Set([...(exclus||[]),...c.players.filter(p=>p.contractEnd!=null&&p.contractEnd<=S.season).map(p=>p.id)]);
+ if(!repriseApresAchat(c,avant,exclus))return 0;
+ const plan=S.presidentReprise.clubs[c.id],reserve=repriseReserve(c.id)??plan.reserve;
+ const vendus=repriseVendre(c,plan,reserve,true);
+ plan.etat=vendus.length?'vendu':'abandon';
+ return vendus.length;
 }
 const worldWeeklyEconomyRepriseV1=worldWeeklyEconomy;
 worldWeeklyEconomy=function(results){const r=worldWeeklyEconomyRepriseV1(results);if(r!==false)repriseSemaine();return r;};

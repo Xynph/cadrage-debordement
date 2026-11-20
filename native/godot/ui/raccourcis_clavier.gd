@@ -165,6 +165,11 @@ func _retour() -> bool:
 	if is_instance_valid(recrutement) and recrutement.is_visible_in_tree():
 		recrutement.pressed.emit()
 		return true
+	# Sous-page du Staff (contrat, mentorat, engagements) : Échap revient au staff.
+	var club_retour: Button = app.root_content.find_child("ClubRetour", true, false) as Button
+	if is_instance_valid(club_retour) and club_retour.is_visible_in_tree():
+		club_retour.pressed.emit()
+		return true
 	var navigation: Node = app.get("navigation_controller")
 	if app.route in ["Comparateur", "Préparation Europe"]:
 		var origine := app.root_content.find_child("ComparateurRetour" if app.route == "Comparateur" else "EuropeRetour", true, false) as Button

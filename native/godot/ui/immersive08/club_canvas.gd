@@ -1,38 +1,66 @@
 extends RefCounted
+## Écran Club (choix de Léo du 19/11/2026 : maquette « 1 · Deux colonnes, le conseil à gauche », avec le tableau
+## « ce qui a fait bouger la confiance » de la maquette 2). Vue d'ensemble : titre et onglets, bandeau du club, à gauche
+## le conseil (confiance, seuils, objectif, bilans) et les installations, à droite « À décider » et le vestiaire.
+## Tout ce qui ressemble à un lien, une ligne ou un chiffre ouvre un écran ; aucune petite fenêtre (confirmations en place,
+## actions longues du staff en sous-pages : club_pages.gd). Coordonnées en unités du gabarit (2248 de large), jetons de la charte.
 const EntityLink = preload("res://ui/entity_link.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
-const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
+const Charte = preload("res://ui/charte.gd")
+const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Palmares = preload("res://ui/immersive08/palmares_text.gd")
 const G = preload("res://ui/game_skin.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
-const EquipeType = preload("res://ui/equipe_type_view.gd")
-const NotesMatch = preload("res://ui/notes_match.gd")
 const History = preload("res://ui/club_memory_view.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Strategy = preload("res://ui/strategy_view.gd")
+const Pages = preload("res://ui/immersive08/club_pages.gd")
+const Habillage = preload("res://ui/immersive08/recruitment_pages.gd")
+const Etat = preload("res://ui/management_state.gd")
 const KEY = "immersive08_club_tab"
 const GOALS = {"wins":"Victoires", "points":"Points", "rank":"Place au classement", "cash":"Trésorerie"}
 const GOAL_STATUS = {"pending":"À suivre", "met":"Atteint", "missed":"Manqué", "unverified":"Non vérifié"}
+const W := 2248.0
+const TOP := 132.0
+const HAUT := 1244.0
+const TABS := [["overview", "Vue d’ensemble"], ["direction", "Direction"], ["infrastructure", "Infrastructures"], ["staff", "Staff"], ["history", "Histoire"]]
+## Seuils de la confiance du conseil (fiche UX 18, section 13) : Solide à partir de 70, Fragile de 40 à 69, Menacé en dessous.
+const SEUIL_SOLIDE := 70
+const SEUIL_FRAGILE := 40
+const LIGNE := 32.0
 
-class TrustDial extends Control:
-	var trust := 0.0
+## Case dessinée de la charte : coche (ok), point d'exclamation (alerte), croix (menace), tiret (neutre). Le sens est
+## dans la forme, jamais dans la couleur seule.
+class Coche extends Control:
+	var genre := "ok"
+	var couleur := Charte.IVOIRE
 	func _draw() -> void:
-		var radius := size.x * .43
-		var center := Vector2(size.x * .5, size.y - C.px(5))
-		var thickness := C.px(32)
-		for segment in 8:
-			var start := PI + PI * float(segment) / 8.0 + .01
-			var end := PI + PI * float(segment + 1) / 8.0 - .01
-			draw_arc(center, radius, start, end, 20, Color("2c3938"), thickness, true)
-			var progress := clampf(trust * .08 - segment, 0.0, 1.0)
-			if progress > .0:
-				var color := Color("35c362").lerp(Color("a1efae"), float(segment) / 7.0)
-				draw_arc(center, radius, start, lerpf(start, end, progress), 20, color, thickness, true)
+		var s := minf(size.x, size.y)
+		draw_rect(Rect2(Vector2.ZERO, Vector2(s, s)).grow(-1.0), couleur, false, maxf(1.5, s * .08))
+		var w := maxf(1.5, s * .1)
+		match genre:
+			"ok": draw_polyline(PackedVector2Array([Vector2(s * .24, s * .54), Vector2(s * .44, s * .74), Vector2(s * .78, s * .28)]), couleur, w)
+			"croix":
+				draw_line(Vector2(s * .28, s * .28), Vector2(s * .72, s * .72), couleur, w)
+				draw_line(Vector2(s * .72, s * .28), Vector2(s * .28, s * .72), couleur, w)
+			"alerte":
+				draw_line(Vector2(s * .5, s * .2), Vector2(s * .5, s * .6), couleur, w)
+				draw_rect(Rect2(s * .44, s * .7, s * .12, s * .12), couleur)
+			_: draw_line(Vector2(s * .28, s * .5), Vector2(s * .72, s * .5), couleur, w)
+
+static func _coche(parent: Control, zone: Rect2, genre: String, couleur: Color = Charte.IVOIRE) -> Coche:
+	var forme := Coche.new()
+	forme.genre = genre
+	forme.couleur = couleur
+	forme.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(forme)
+	D.place(forme, zone)
+	return forme
 
 static func _navigation(app: Control) -> Node:
 	for field: Dictionary in app.get_property_list():
@@ -45,30 +73,51 @@ static func _reading_area(app: Control, parent: Control, rectangle: Rect2, targe
 	var button := Button.new()
 	button.name = id
 	button.flat = true
-	button.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,2,0))
-	button.add_theme_stylebox_override("hover",C.box(Color(1,1,1,.04),C.GOLD,2,0))
-	button.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,C.GOLD,2,0))
-	EntityLink.bind(button,app,target,caption)
+	button.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
+	button.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	focus.set_border_width_all(2)
+	button.add_theme_stylebox_override("focus", focus)
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	EntityLink.bind(button, app, target, caption)
+	button.tooltip_text = ""
 	parent.add_child(button)
-	D.place(button,rectangle)
+	D.place(button, rectangle)
 	return button
 
 static func build(app: Control, canvas: Control) -> void:
 	canvas.name = "ImmersiveClub"
-	var tab: String = str(app.management_ui.get(KEY, "history" if app.management_ui.get("club_tab",0) == 1 else "overview"))
+	var tab: String = str(app.management_ui.get(KEY, "history" if app.management_ui.get("club_tab", 0) == 1 else "overview"))
 	match app.route:
 		"Stratégie": tab = "direction"
 		"Staff", "Travail du club": tab = "staff"
 	_header(app, canvas, tab)
-	match app.route:
-		"Stratégie": _direction(app, canvas)
-		"Staff", "Travail du club": _staff_detail(app, canvas)
-		_:
-			match tab:
-				"infrastructure": _infrastructure_detail(app, canvas)
-				"history": _history(app, canvas)
-				"territory": _territory(app, canvas)
-				_: _overview(app, canvas)
+	if app.route == "Staff" and not Pages.actuelle(app).is_empty():
+		Pages.build(app, canvas)
+	else:
+		var corps := Control.new()
+		corps.name = "ClubBody"
+		corps.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		canvas.add_child(corps)
+		# Les onglets autres que la vue d'ensemble sont dessinés depuis y = 214 : le corps les remonte sous les onglets.
+		corps.position = Vector2(0, (TOP - 214.0) * C.density)
+		corps.size = Vector2(W, HAUT) * C.density
+		match app.route:
+			"Stratégie": _direction(app, corps)
+			"Staff", "Travail du club": _staff_detail(app, corps)
+			_:
+				match tab:
+					"infrastructure": _infrastructure_detail(app, corps)
+					"history": _history(app, corps)
+					"territory": _territory(app, corps)
+					_: _overview(app, canvas)
+	# Confirmations d'argent EN PLACE (main.gd les route ici) : bloc posé en haut de la page, jamais une fenêtre.
+	var hote := VBoxContainer.new()
+	hote.name = "ClubConfirmHote"
+	hote.mouse_filter = Control.MOUSE_FILTER_PASS
+	canvas.add_child(hote)
+	D.place(hote, Rect2(0, TOP + 8, W - 40, 10))
+	Kit.angles_droits(canvas)
 
 ## Bandeau du club : onglet Infrastructures -> le stade du club à sa taille (banque d'images, d'après la capacité),
 ## sinon la vue habituelle.
@@ -81,52 +130,606 @@ static func photo_entete(model: Dictionary, tab: String) -> String:
 	var id := BanqueImages.choisir("infrastructures", {"categorie_image": "stade", "niveau_infrastructure": niveau}) if niveau > 0 else ""
 	return id if not id.is_empty() and BanqueImages.texture(id) != null else "club-forest"
 
+## Président du conseil, lu dans les données du club quand elles le publient (jamais figé dans le code).
+static func _president(app: Control) -> String:
+	var sources: Array = [app.model.get("club", {}), app.model.get("clubLife", {}), U.strategy(app.model).get("board", {})]
+	for source: Variant in sources:
+		if not source is Dictionary: continue
+		var valeur: Variant = source.get("president")
+		if valeur is Dictionary and not str(valeur.get("name", "")).strip_edges().is_empty(): return str(valeur.name).strip_edges()
+		if valeur is String and not valeur.strip_edges().is_empty(): return valeur.strip_edges()
+	return ""
+
+static func _sous_titre(app: Control) -> String:
+	var identite := G.identity(app.model.club)
+	var fans: Dictionary = U.strategy(app.model).get("fans", {})
+	var parts: Array[String] = []
+	var stade := str(identite.get("stadium", "")).strip_edges()
+	if not stade.is_empty(): parts.append(stade)
+	if fans.has("capacity"): parts.append(G.n(fans.capacity) + " places")
+	var histoire: Variant = identite.get("history")
+	if histoire is Dictionary and histoire.has("founded"): parts.append("fondé en %d" % int(histoire.founded))
+	var president := _president(app)
+	if not president.is_empty(): parts.append("conseil présidé par " + president)
+	return " · ".join(parts)
+
 static func _header(app: Control, canvas: Control, tab: String) -> void:
-	D.photo(canvas, photo_entete(app.model, tab), Rect2(930,0,1318,196))
-	U.art_fade(canvas, Rect2(930,0,1318,196))
-	var crest := G.crest(app.model.club, C.px(150))
-	canvas.add_child(crest)
-	D.place(crest, Rect2(24,9,150,176))
-	var slash := Line2D.new()
-	slash.default_color = C.GOLD
-	slash.width = maxf(1,C.px(2))
-	slash.antialiased = true
-	slash.points = PackedVector2Array([Vector2(196,175)*C.density, Vector2(222,53)*C.density])
-	canvas.add_child(slash)
-	U.italic(D.text(canvas, 225, 47, "UN CLUB, UNE AMBITION", 32, C.GOLD, 700, 450), 700)
-	D.line(canvas, Vector2(614,31), Vector2(917,31), Color(C.GOLD,.65))
-	D.text(canvas, 220, 131, G.club_name(app.model.club)+".", 84, C.IVORY, 800, 1950)
-	var identity := G.identity(app.model.club)
-	D.text(canvas, 225, 174, "%s  ·  Saison %s" % [identity.get("stadium", "Stade"), G.season_label(app.model.meta.get("season", 1))], 28, C.IVORY, 500, 850)
-	var tabs := [["overview","Vue d’ensemble",291],["direction","Direction",216],["infrastructure","Infrastructures",269],["staff","Staff",172],["history","Histoire",195]]
-	var x := 1081
-	for entry: Array in tabs:
-		var key: String = entry[0]
+	var titre := Kit.titre(canvas, 0, 46, "Club", 40, 150)
+	titre.name = "ClubTitle"
+	var sous := Kit.texte(canvas, 150, 46, _sous_titre(app), Charte.IVOIRE_2, 1900, 19)
+	sous.name = "ClubSubtitle"
+	var x := 0.0
+	for i in TABS.size():
+		var key: String = TABS[i][0]
+		var libelle: String = str(TABS[i][1]).to_upper()
+		var choisi := key == tab or (key == "overview" and tab == "territory")
 		var id := "ClubTab_" + key
-		U.tab(canvas, Rect2(x,145,entry[2],51), entry[1], key == tab or (key == "overview" and tab == "territory"), func(): _tab(app, key, id), id)
-		x += int(entry[2]) + 6
+		var largeur := Charte.TITRE_GRAS.get_string_size(libelle, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(21))).x / C.density + 44
+		var bouton := Button.new()
+		bouton.name = id
+		bouton.text = libelle
+		bouton.focus_mode = Control.FOCUS_ALL
+		bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		bouton.add_theme_font_override("font", Charte.TITRE_GRAS if choisi else Charte.TITRE)
+		bouton.add_theme_font_size_override("font_size", maxi(12, C.px(21)))
+		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+			bouton.add_theme_color_override(etat, Charte.IVOIRE if choisi else Charte.IVOIRE_2)
+		bouton.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3 if choisi else Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
+		bouton.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
+		bouton.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+		focus.set_border_width_all(2)
+		bouton.add_theme_stylebox_override("focus", focus)
+		bouton.toggle_mode = true
+		bouton.button_pressed = choisi
+		bouton.pressed.connect(func(): _tab(app, key, id))
+		bouton.gui_input.connect(func(evenement: InputEvent):
+			if evenement is InputEventKey and evenement.pressed and not evenement.echo and evenement.keycode in [KEY_LEFT, KEY_RIGHT]:
+				var cible := clampi(i + (1 if evenement.keycode == KEY_RIGHT else -1), 0, TABS.size() - 1)
+				if cible != i: _tab(app, TABS[cible][0], "ClubTab_" + str(TABS[cible][0]))
+				bouton.accept_event())
+		canvas.add_child(bouton)
+		D.place(bouton, Rect2(x, 70, largeur, 46))
+		if choisi:
+			var soulignement := D.rect(bouton, Rect2(0, 42, largeur, 4), Charte.IVOIRE, 0)
+			soulignement.position = Vector2(0, bouton.size.y - maxf(3.0, C.px(4)))
+			soulignement.size = Vector2(bouton.size.x, maxf(3.0, C.px(4)))
+		x += largeur + 6
+	D.line(canvas, Vector2(0, 117), Vector2(W, 117), Charte.FILET)
+	var largeur_touche := Kit.touche(canvas, W - 250, 104, "← →", false)
+	Kit.texte(canvas, W - 250 + largeur_touche + 10, 104, "changer d’onglet", Charte.IVOIRE_2, 220, 17)
 
 static func _tab(app: Control, key: String, id: String = "") -> void:
 	if key == "direction" or key == "staff":
+		app.management_ui.erase("club_page")
 		app._navigate("Stratégie" if key == "direction" else "Staff")
 		return
+	app.management_ui.erase("club_page")
 	app.management_ui[KEY] = key
 	app.management_ui.club_tab = 1 if key == "history" else 0
 	if app.route != "Club": app._navigate("Club")
 	else: U.select(app, KEY, key, id)
 
+static func _open_strategy(app: Control, index: int) -> void:
+	app.management_ui.immersive08_strategy_tab = index
+	app._navigate("Stratégie")
+
+# --- Vue d'ensemble ------------------------------------------------------------------------------------------------------
+
+static func _panneau(parent: Control, zone: Rect2, titre: String, id: String, filet: bool = false) -> Panel:
+	var panneau := D.rect(parent, zone, Charte.PANNEAU, 0)
+	panneau.name = id
+	panneau.mouse_filter = Control.MOUSE_FILTER_PASS
+	var entete := Kit.titre(panneau, 24, 40, titre, 28, zone.size.x - 300)
+	entete.name = "CardTitle"
+	if filet: D.line(panneau, Vector2(18, 56), Vector2(zone.size.x - 18, 56), Charte.FILET)
+	return panneau
+
 static func _overview(app: Control, canvas: Control) -> void:
-	var strategy := U.strategy(app.model)
-	var finance: Dictionary = strategy.get("finance", {})
-	var board: Dictionary = strategy.get("board", {})
-	_stadium(D.panel(canvas, Rect2(0,214,934,402), "", "", "", "ClubStadium"), app, strategy.get("fans", {}))
-	_trust(D.panel(canvas, Rect2(950,214,443,402), "La confiance du conseil", "shield", "", "ClubTrust"), app, finance)
-	_goals(D.panel(canvas, Rect2(1409,214,499,402), "Objectifs de la saison", "trophy", "", "ClubObjectives"), app, board)
-	_locker(D.panel(canvas, Rect2(1924,214,324,402), "Le vestiaire", "people", "", "ClubLocker"), app)
-	_installations(D.panel(canvas, Rect2(0,632,712,427), "Infrastructures", "train", "", "ClubFacilities"), app, finance)
-	_staff(D.panel(canvas, Rect2(728,632,708,427), "L’encadrement", "people", "", "ClubStaff"), app)
-	_fans(D.panel(canvas, Rect2(1452,632,796,427), "Vie du club", "mail", "", "ClubLife"), app, strategy)
-	_footer(D.panel(canvas, Rect2(0,1075,2248,169), "", "", "", "ClubBoardAndBudget"), app, finance, board)
+	var strategie := U.strategy(app.model)
+	var finance: Dictionary = strategie.get("finance", {})
+	var board: Dictionary = strategie.get("board", {})
+	var page := Control.new()
+	page.name = "ClubOverview"
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(page)
+	D.place(page, Rect2(0, TOP, W, HAUT - TOP))
+	_hero(app, page, strategie.get("fans", {}))
+	var haut := 126.0
+	var gauche := 1404.0
+	var droite_x := gauche + 22.0
+	var droite_l := W - droite_x
+	_conseil(_panneau(page, Rect2(0, haut, gauche, 650), "Le conseil", "ClubCouncil"), app, finance, board)
+	_installations(_panneau(page, Rect2(0, haut + 666, gauche, 302), "Installations", "ClubFacilities"), app, finance, strategie)
+	var decider := _panneau(page, Rect2(droite_x, haut, droite_l, 436), "À décider", "ClubDecide")
+	_decider(decider, app, finance, board, strategie)
+	_vestiaire(_panneau(page, Rect2(droite_x, haut + 452, droite_l, 516), "Vestiaire", "ClubLocker"), app)
+
+## Bandeau du club : écusson, nom, lieu et chiffres. Un clic ouvre « Le stade ».
+static func _hero(app: Control, page: Control, fans: Dictionary) -> void:
+	var bandeau := Button.new()
+	bandeau.name = "ClubStadium"
+	bandeau.flat = true
+	bandeau.focus_mode = Control.FOCUS_ALL
+	bandeau.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	bandeau.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU, Color.TRANSPARENT, 0, 0))
+	bandeau.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
+	bandeau.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	focus.set_border_width_all(2)
+	bandeau.add_theme_stylebox_override("focus", focus)
+	bandeau.accessibility_name = "Voir le stade · " + str(G.identity(app.model.club).get("stadium", "le stade du club"))
+	bandeau.pressed.connect(func(): _tab(app, "territory", "ClubTab_overview"))
+	page.add_child(bandeau)
+	D.place(bandeau, Rect2(0, 0, W, 110))
+	var photo := D.photo(bandeau, photo_entete(app.model, "overview"), Rect2(W * .4, 0, W * .6, 110), .5)
+	photo.modulate = Color(1, 1, 1, .32)
+	photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var ecusson := G.crest(app.model.club, C.px(88))
+	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bandeau.add_child(ecusson)
+	D.place(ecusson, Rect2(24, 11, 88, 88))
+	var identite := G.identity(app.model.club)
+	var nom := D.text(bandeau, 134, 60, G.club_name(app.model.club).to_upper(), 44, Charte.IVOIRE, 800, 1100)
+	nom.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	nom.name = "ClubHeroName"
+	var infos: Array[String] = []
+	if not str(identite.get("stadium", "")).is_empty(): infos.append(str(identite.stadium))
+	if fans.has("capacity"): infos.append(G.n(fans.capacity) + " places")
+	if fans.has("expectedAttendance"): infos.append("affluence prévue " + G.n(fans.expectedAttendance))
+	if fans.has("subscribers"): infos.append(G.n(fans.subscribers) + " abonnés")
+	Kit.texte(bandeau, 134, 92, " · ".join(infos), Charte.IVOIRE_2, 1500, 19)
+	var voir := Kit.texte(bandeau, W - 28, 60, "Voir le stade →", Charte.IVOIRE, 300, 19, HORIZONTAL_ALIGNMENT_RIGHT)
+	voir.add_theme_font_override("font", Kit.texte_gras())
+	voir.name = "ClubSeeStadium"
+
+static func _palier(valeur: Variant) -> Dictionary:
+	if not (valeur is int or valeur is float): return {}
+	if float(valeur) >= SEUIL_SOLIDE: return {"mot": "Solide", "rang": 1, "genre": "ok"}
+	if float(valeur) >= SEUIL_FRAGILE: return {"mot": "Fragile", "rang": 2, "genre": "alerte"}
+	return {"mot": "Menacé", "rang": 3, "genre": "croix"}
+
+static func _signe(valeur: int) -> String:
+	return "+%d" % valeur if valeur > 0 else ("−%d" % absi(valeur) if valeur < 0 else "0")
+
+static func _texte_lignes(parent: Control, x: float, haut: float, largeur: float, valeur: String, taille: int, police: Font, couleur: Color, lignes: int) -> Label:
+	var label := C.label(valeur, taille, couleur, false, 700)
+	label.add_theme_font_override("font", police)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.max_lines_visible = lignes
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	parent.add_child(label)
+	D.place(label, Rect2(x, haut, largeur, taille * 1.32 * lignes + 4))
+	return label
+
+static func _conseil(panneau: Panel, app: Control, finance: Dictionary, board: Dictionary) -> void:
+	var confiance: Variant = app.model.meta.get("trust")
+	var historique: Array = finance.get("boardHistory", [])
+	var dernier: Dictionary = historique[0] if not historique.is_empty() else {}
+	var largeur := panneau.size.x / C.density
+	var bilan := "dernier bilan après J%s" % G.n(dernier.round) if not dernier.is_empty() else "premier bilan à venir"
+	Kit.texte(panneau, largeur - 24, 40, bilan, Charte.IVOIRE_2, 400, 18, HORIZONTAL_ALIGNMENT_RIGHT).name = "ClubLastReview"
+	Kit.etiquette(panneau, 24, 90, "Confiance du conseil", 500)
+	var valeur := G.n(confiance) if confiance != null else "—"
+	var chiffre := D.text(panneau, 24, 152, valeur, 66, Charte.IVOIRE, 800, 130)
+	chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	chiffre.name = "ClubTrustValue"
+	var largeur_chiffre := Charte.TITRE_EXTRA_ITALIQUE.get_string_size(valeur, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(66))).x / C.density
+	Kit.texte(panneau, 24 + largeur_chiffre + 10, 150, "/ 100", Charte.IVOIRE_2, 80, 24)
+	if not dernier.is_empty():
+		var delta := int(dernier.after) - int(dernier.previous)
+		var evolution := Kit.texte(panneau, largeur - 24, 150, "%s après J%s" % [_signe(delta), G.n(dernier.round)], Charte.IVOIRE, 400, 22, HORIZONTAL_ALIGNMENT_RIGHT)
+		evolution.add_theme_font_override("font", Kit.texte_gras())
+		evolution.name = "ClubTrustChange"
+	var palier := _palier(confiance)
+	if palier.is_empty():
+		Kit.texte(panneau, 24, 196, "Premier bilan à venir : le conseil juge les résultats, les finances et la formation.", Charte.IVOIRE_2, 1100, 19).name = "ClubTrustNone"
+	else:
+		_coche(panneau, Rect2(24, 168, 30, 30), palier.genre)
+		var mot := Kit.titre(panneau, 64, 194, palier.mot, 30, 220)
+		mot.name = "ClubTrustWord"
+		Kit.texte(panneau, 64 + Charte.TITRE_GRAS_ITALIQUE.get_string_size(str(palier.mot).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(30))).x / C.density + 14, 194, "palier %d sur 3" % int(palier.rang), Charte.IVOIRE_2, 300, 18)
+	_barre_seuils(panneau, 24, 214, largeur - 48, confiance, palier)
+	D.line(panneau, Vector2(24, 306), Vector2(largeur - 24, 306), Charte.FILET)
+	_objectif(panneau, app, board, 24, 322, 600)
+	_bilans(panneau, app, historique, 664, 322, largeur - 664 - 24)
+
+## Trois segments à l'échelle de 0 à 100 : Menacé (0-39), Fragile (40-69), Solide (70-100). Remplissage ivoire-2, repère incliné
+## à la valeur ; chaque palier dit son nom et son seuil sous la barre (jamais la couleur seule).
+static func _barre_seuils(panneau: Control, x: float, y: float, largeur: float, confiance: Variant, palier: Dictionary) -> void:
+	var bornes := [[0, SEUIL_FRAGILE, "Menacé", "moins de %d" % SEUIL_FRAGILE, "croix", 3], [SEUIL_FRAGILE, SEUIL_SOLIDE, "Fragile", "de %d à %d" % [SEUIL_FRAGILE, SEUIL_SOLIDE - 1], "alerte", 2], [SEUIL_SOLIDE, 100, "Solide", "%d et plus" % SEUIL_SOLIDE, "ok", 1]]
+	var ecart := 6.0
+	var utile := largeur - ecart * 2.0
+	var cursor := x
+	var position_repere := -1.0
+	for borne: Array in bornes:
+		var part := utile * float(int(borne[1]) - int(borne[0])) / 100.0
+		D.rect(panneau, Rect2(cursor, y, part, 14), Charte.PANNEAU_3, 0)
+		if confiance != null and float(confiance) > float(borne[0]):
+			var rempli := clampf((float(confiance) - float(borne[0])) / float(int(borne[1]) - int(borne[0])), 0.0, 1.0)
+			D.rect(panneau, Rect2(cursor, y, part * rempli, 14), Charte.IVOIRE_2, 0)
+			if rempli < 1.0 or int(borne[1]) == 100: position_repere = cursor + part * rempli
+		var actif: bool = not palier.is_empty() and int(palier.rang) == int(borne[5])
+		var couleur: Color = Charte.IVOIRE if actif else Charte.IVOIRE_2
+		_coche(panneau, Rect2(cursor, y + 26, 20, 20), str(borne[4]), couleur)
+		var nom := Kit.texte(panneau, cursor + 28, y + 42, str(borne[2]), couleur, 200, 18)
+		nom.add_theme_font_override("font", Kit.texte_gras())
+		Kit.texte(panneau, cursor, y + 66, str(borne[3]), Charte.IVOIRE_2, 300, 17)
+		cursor += part + ecart
+	if position_repere >= 0.0: Kit.marqueur(panneau, Rect2(position_repere - 3, y - 7, 6, 28), Charte.IVOIRE)
+
+## Objectif de la saison : l'objectif du club, puis le classement, les promesses publiques et les jalons du conseil ;
+## chaque ligne ouvre le suivi des objectifs.
+static func _objectif(panneau: Panel, app: Control, board: Dictionary, x: float, y: float, largeur: float) -> void:
+	var bloc := Control.new()
+	bloc.name = "ClubObjectives"
+	bloc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panneau.add_child(bloc)
+	D.place(bloc, Rect2(x, y, largeur, 330))
+	Kit.etiquette(bloc, 0, 22, "Objectif de la saison", largeur)
+	var but := str(app.model.club.get("goal", "Projet sportif"))
+	var titre := _texte_lignes(bloc, 0, 36, largeur, but, 28, Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE, 2)
+	titre.name = "ClubGoal"
+	titre.tooltip_text = but
+	var lignes: Array = []
+	var metriques: Dictionary = board.get("metrics", {})
+	var rang: Variant = metriques.get("rank", app.model.club.get("rank"))
+	var jouees := int(app.model.club.get("played", 0))
+	if P.standings_open(app.model.club) and rang != null:
+		var place := "%s%s" % [G.n(rang), "er" if int(rang) == 1 else "e"]
+		lignes.append({"genre": "ok", "texte": "En cours : %s après %s" % [place, P.plural(jouees, "journée", "journées")] if jouees > 0 else "En cours : %s" % place, "statut": ""})
+	else:
+		lignes.append({"genre": "neutre", "texte": "Pas encore de classement", "statut": ""})
+	var promesses: Variant = app.model.get("clubLife", {}).get("pressPromises", {})
+	var actives: Array = promesses.get("active", []) if promesses is Dictionary else []
+	for i in mini(2, actives.size()):
+		var promesse: Dictionary = actives[i]
+		var avancement: Dictionary = promesse.get("progress", {})
+		var suit: Variant = avancement.get("onTrack")
+		lignes.append({"genre": "neutre" if suit == null else ("ok" if suit else "alerte"), "texte": str(promesse.get("short", "Promesse publique")), "detail": str(avancement.get("short", "")), "statut": "À suivre" if suit == null else ("En bonne voie" if suit else "En retard"), "promesse": i + 1, "bulle": "Promesse publique : " + str(promesse.get("label", "")) + "\n" + str(avancement.get("label", ""))})
+	var objectifs: Array = board.get("objectives", [])
+	for objectif: Dictionary in objectifs:
+		if lignes.size() >= 5: break
+		var genre := str(objectif.get("type", ""))
+		var etat := str(objectif.get("status", "pending"))
+		var cible: Variant = objectif.get("target")
+		var chiffre := G.euros(cible) if genre == "cash" else G.n(cible)
+		lignes.append({"genre": "ok" if etat == "met" else ("croix" if etat == "missed" else "neutre"), "texte": "%s : %s · sem. %s" % [GOALS.get(genre, "Jalon du conseil"), chiffre, G.n(objectif.get("deadline", "—"))], "statut": GOAL_STATUS.get(etat, etat)})
+	var top := 118.0
+	for i in lignes.size():
+		var ligne: Dictionary = lignes[i]
+		var rangee := Button.new()
+		rangee.name = "ClubObjectiveRow%d" % i
+		Kit.styler_ligne(rangee, Color.TRANSPARENT)
+		rangee.accessibility_name = str(ligne.texte)
+		rangee.pressed.connect(func(): _open_strategy(app, 1))
+		bloc.add_child(rangee)
+		D.place(rangee, Rect2(0, top + i * LIGNE, largeur, LIGNE))
+		_coche(rangee, Rect2(4, 6, 20, 20), str(ligne.genre) if str(ligne.genre) != "neutre" else "neutre", Charte.IVOIRE if str(ligne.genre) != "neutre" else Charte.IVOIRE_2)
+		var texte := Kit.texte(rangee, 36, 22, str(ligne.texte), Charte.IVOIRE, largeur - 36 - (130 if not str(ligne.statut).is_empty() else 0), 18)
+		if ligne.has("promesse"):
+			texte.name = "ClubPromise%d" % int(ligne.promesse)
+			texte.tooltip_text = str(ligne.get("bulle", ""))
+			texte.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if not str(ligne.statut).is_empty(): Kit.texte(rangee, largeur - 6, 22, str(ligne.statut), Charte.IVOIRE_2, 124, 17, HORIZONTAL_ALIGNMENT_RIGHT)
+	var suivre := Kit.lien(bloc, Rect2(0, top + 5 * LIGNE + 14, 0, 36), "Suivre les objectifs →", func(): _open_strategy(app, 1), "ClubBoardGoals", 19)
+	suivre.tooltip_text = ""
+
+## Ce qui a fait bouger la confiance : un bilan du conseil par ligne (journée, confiance après le bilan, évolution, résultat du match
+## de la journée, cause). Une ligne ouvre le match quand il est connu, sinon les objectifs du conseil.
+static func _bilans(panneau: Panel, app: Control, historique: Array, x: float, y: float, largeur: float) -> void:
+	var bloc := Control.new()
+	bloc.name = "ClubTrustTable"
+	bloc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panneau.add_child(bloc)
+	D.place(bloc, Rect2(x, y, largeur, 320))
+	Kit.etiquette(bloc, 0, 22, "Ce qui a fait bouger la confiance", largeur)
+	if historique.is_empty():
+		Kit.texte(bloc, 0, 90, "Aucun bilan du conseil pour l’instant : il rend le premier après quelques journées.", Charte.IVOIRE_2, largeur, 18).name = "ClubTrustTableEmpty"
+		return
+	var colonnes := [["J.", 8.0, 50.0, false], ["Conf.", 70.0, 62.0, true], ["Évol.", 142.0, 60.0, true], ["Rés.", 224.0, 70.0, false], ["Cause", 310.0, largeur - 310.0, false]]
+	for colonne: Array in colonnes:
+		Kit.etiquette(bloc, float(colonne[1]) + (float(colonne[2]) if colonne[3] else 0.0), 60, str(colonne[0]), float(colonne[2]), colonne[3])
+	D.line(bloc, Vector2(0, 70), Vector2(largeur, 70), Charte.FILET)
+	var saison := int(app.model.get("meta", {}).get("season", 1))
+	var club_id: Variant = app.model.club.id
+	for i in mini(7, historique.size()):
+		var bilan: Dictionary = historique[i]
+		var rencontre := _rencontre_du_bilan(app, bilan, saison)
+		var haut := 74.0 + i * LIGNE
+		var rangee := Button.new()
+		rangee.name = "ClubTrustRow%d" % i
+		Kit.styler_ligne(rangee, Charte.PANNEAU_2 if i % 2 == 1 else Color.TRANSPARENT)
+		bloc.add_child(rangee)
+		D.place(rangee, Rect2(0, haut, largeur, LIGNE))
+		var delta := int(bilan.after) - int(bilan.previous)
+		Kit.texte(rangee, 8, 22, "J%s" % G.n(bilan.round), Charte.IVOIRE_2, 50, 18)
+		var conf := Kit.texte(rangee, 132, 22, G.n(bilan.after), Charte.IVOIRE, 62, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+		conf.add_theme_font_override("font", Kit.texte_gras())
+		Kit.texte(rangee, 202, 22, _signe(delta), Charte.IVOIRE_2, 60, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+		var cause := "Bilan du conseil · résultats %s, finances %s, formation %s" % [G.n(bilan.get("results", "—")), G.n(bilan.get("finances", "—")), G.n(bilan.get("youth", "—"))]
+		var lettre := "—"
+		if not rencontre.is_empty():
+			var resume := _resume_rencontre(rencontre, club_id)
+			lettre = str(resume.lettre)
+			cause = str(resume.texte)
+		if lettre == "—": Kit.texte(rangee, 258, 22, "—", Charte.IVOIRE_3, 40, 18, HORIZONTAL_ALIGNMENT_CENTER)
+		else: _ovale_resultat(rangee, Rect2(232, 4, 52, 24), lettre)
+		Kit.texte(rangee, 310, 22, cause, Charte.IVOIRE, largeur - 316, 18).tooltip_text = cause
+		var cible: Dictionary = {}
+		if not rencontre.is_empty():
+			var office: Variant = load("res://ui/immersive08/office.gd")
+			cible = office.score_reading_target(app, rencontre)
+		var libelle := "Bilan du conseil, journée %s" % G.n(bilan.round)
+		if not cible.is_empty(): EntityLink.bind(rangee, app, cible, cause)
+		else:
+			rangee.accessibility_name = libelle
+			rangee.pressed.connect(func(): _open_strategy(app, 1))
+	var plus := Kit.lien(bloc, Rect2(0, 74 + 7 * LIGNE + 12, 0, 34), "Tous les bilans du conseil →", func(): _open_strategy(app, 1), "ClubTrustAll", 18)
+	plus.tooltip_text = ""
+
+static func _rencontre_du_bilan(app: Control, bilan: Dictionary, saison: int) -> Dictionary:
+	if int(bilan.get("season", saison)) != saison: return {}
+	var etiquette := "Journée %d" % int(bilan.get("round", -1))
+	for rencontre: Variant in app.model.get("calendar", []):
+		if not rencontre is Dictionary or not rencontre.get("played", false): continue
+		if str(rencontre.get("label", "")) != etiquette: continue
+		if rencontre.get("score") is Array and rencontre.score.size() == 2: return rencontre
+	return {}
+
+## {lettre : V / N / D, texte : « Victoire 21-18 contre X » (ou « à X » à l'extérieur)} du point de vue du club.
+static func _resume_rencontre(rencontre: Dictionary, club_id: Variant) -> Dictionary:
+	var cote := 0 if rencontre.get("home", {}).get("id") == club_id else 1
+	var adversaire: Dictionary = rencontre.away if cote == 0 else rencontre.home
+	var score: Array = rencontre.score
+	var lettre := "N"
+	var mot := "Nul"
+	var vainqueur: Variant = rencontre.get("winner")
+	if score[cote] != score[1 - cote] or vainqueur != null:
+		var gagne: bool = (vainqueur == club_id) if score[cote] == score[1 - cote] else score[cote] > score[1 - cote]
+		lettre = "V" if gagne else "D"
+		mot = "Victoire" if gagne else "Défaite"
+	var lieu := "à " if P.fixture_location_kind(rencontre, club_id) == "away" else "contre "
+	return {"lettre": lettre, "texte": "%s %s-%s %s%s" % [mot, G.n(score[cote]), G.n(score[1 - cote]), lieu, G.club_name(adversaire)]}
+
+## Ovale V / N / D (charte §3) : plein pour une victoire, anneau pour le reste ; la lettre dit toujours le résultat.
+static func _ovale_resultat(parent: Control, zone: Rect2, lettre: String) -> void:
+	var forme := Kit.Ovale.new()
+	forme.numero = lettre
+	forme.police = Kit.texte_gras()
+	forme.plein = lettre == "V"
+	forme.fond = Charte.V
+	forme.bordure = Charte.V if lettre == "V" else (Charte.D if lettre == "D" else Charte.IVOIRE_2)
+	forme.texte = Charte.NUIT if lettre == "V" else forme.bordure
+	forme.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(forme)
+	D.place(forme, zone)
+
+# --- Installations -------------------------------------------------------------------------------------------------------
+
+static func _segments(parent: Control, x: float, y: float, largeur: float, total: int, rempli: int) -> void:
+	var ecart := 3.0
+	var part := (largeur - ecart * (total - 1)) / total
+	for i in total: D.rect(parent, Rect2(x + i * (part + ecart), y, part, 10), Charte.IVOIRE_2 if i < rempli else Charte.PANNEAU_3, 0)
+
+static func _installations(panneau: Panel, app: Control, finance: Dictionary, strategie: Dictionary) -> void:
+	var largeur := panneau.size.x / C.density
+	Kit.texte(panneau, largeur - 24, 40, "clic : détail et devis", Charte.IVOIRE_2, 300, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+	for colonne: Array in [["Installation", 24.0, 400.0, false], ["Niveau", 470.0, 300.0, false], ["Prochaine amélioration", 800.0, 230.0, false], ["Coût", 1030.0, 130.0, true], ["Statut", 1194.0, 196.0, false]]:
+		Kit.etiquette(panneau, float(colonne[1]) + (float(colonne[2]) if colonne[3] else 0.0), 82, str(colonne[0]), float(colonne[2]), colonne[3])
+	D.line(panneau, Vector2(18, 92), Vector2(largeur - 18, 92), Charte.FILET)
+	var devis: Variant = finance.get("facility")
+	var academie: Variant = app.model.get("clubLife", {}).get("academyPathways", {}).get("facilities")
+	var suivi: Dictionary = app.model.get("clubLife", {}).get("academyFollowUp", {})
+	var centre_ouvert: bool = suivi.get("available", false) == true
+	var soutien: Dictionary = app.model.get("clubLife", {}).get("clubSupport", {})
+	var medical: Array = soutien.get("medical", {}).get("players", [])
+	var fans: Dictionary = strategie.get("fans", {})
+	var rangees: Array = []
+	var statut := ""
+	if devis is Dictionary:
+		if devis.get("used", false): statut = "Fait cette saison"
+		elif not devis.get("affordable", true): statut = "Trésorerie insuffisante"
+		elif not strategie.get("available", false): statut = "Indisponible en ce moment"
+		else: statut = "Devis disponible"
+	rangees.append({"id": "ClubFacilityTraining", "nom": "Centre d’entraînement", "niveau": "%s / 10" % G.n(devis.level) if devis is Dictionary else "Niveau indisponible", "segments": [10, int(devis.level)] if devis is Dictionary else [], "suite": "Niveau %s" % G.n(devis.nextLevel) if devis is Dictionary else "—", "cout": G.euros(devis.cost) if devis is Dictionary else "", "statut": statut, "action": func(): _tab(app, "infrastructure", "ClubTab_infrastructure")})
+	rangees.append({"id": "ClubFacilityMedical", "nom": "Cellule médicale", "niveau": "%s suivi%s" % [G.n(medical.size()), "s" if medical.size() > 1 else ""] if not soutien.is_empty() else "—", "segments": [], "suite": "Retour des blessés", "cout": "", "statut": "", "action": func(): app._navigate("Travail du club")})
+	var academie_niveau := G.n(academie) + " / 3" if academie != null else "Niveau indisponible"
+	var academie_suite := "Installations du centre"
+	if academie == null and centre_ouvert:
+		academie_niveau = "%s / %s" % [G.n(suivi.get("total", 0)), G.n(suivi.get("capacity", 75))]
+		academie_suite = "%s Crabos · %s Espoirs" % [G.n(suivi.get("crabos", {}).get("count", 0)), G.n(suivi.get("espoirs", {}).get("count", 0))]
+	rangees.append({"id": "ClubFacilityAcademy", "nom": "Académie", "niveau": academie_niveau, "segments": [3, int(academie)] if academie != null else [], "suite": academie_suite, "cout": "", "statut": "", "action": func(): app._navigate("Centre")})
+	rangees.append({"id": "ClubFacilityStadium", "nom": str(G.identity(app.model.club).get("stadium", "Le stade")), "niveau": G.n(fans.capacity) + " places" if fans.has("capacity") else "—", "segments": [], "suite": "Affluence prévue " + G.n(fans.expectedAttendance) if fans.has("expectedAttendance") else "Photo, ville et crédits", "cout": "", "statut": "", "action": func(): _tab(app, "territory", "ClubTab_overview")})
+	for i in rangees.size():
+		var donnees: Dictionary = rangees[i]
+		var rangee := Button.new()
+		rangee.name = str(donnees.id)
+		Kit.styler_ligne(rangee, Charte.PANNEAU_2 if i % 2 == 1 else Color.TRANSPARENT)
+		rangee.accessibility_name = str(donnees.nom)
+		rangee.pressed.connect(donnees.action)
+		panneau.add_child(rangee)
+		D.place(rangee, Rect2(18, 98 + i * 40, largeur - 36, 40))
+		var nom := Kit.texte(rangee, 6, 27, str(donnees.nom), Charte.IVOIRE, 400, 19)
+		nom.add_theme_font_override("font", Kit.texte_gras())
+		var segments: Array = donnees.segments
+		if segments.is_empty(): Kit.texte(rangee, 452, 27, str(donnees.niveau), Charte.IVOIRE, 320, 18)
+		else:
+			_segments(rangee, 452, 15, 150, int(segments[0]), int(segments[1]))
+			Kit.texte(rangee, 770, 27, str(donnees.niveau), Charte.IVOIRE, 90, 18, HORIZONTAL_ALIGNMENT_RIGHT).name = "ClubFacilityLevel"
+		Kit.texte(rangee, 782, 27, str(donnees.suite), Charte.IVOIRE_2, 270, 18)
+		if not str(donnees.cout).is_empty(): Kit.texte(rangee, 1142, 27, str(donnees.cout), Charte.IVOIRE, 130, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+		if not str(donnees.statut).is_empty(): Kit.texte(rangee, 1176, 27, str(donnees.statut), Charte.IVOIRE_2, 190, 17)
+	var details := Kit.lien(panneau, Rect2(24, 270, 0, 34), "Projets et devis des installations →", func(): _tab(app, "infrastructure", "ClubTab_infrastructure"), "ClubFacilityDetails", 19)
+	details.tooltip_text = ""
+
+# --- À décider -----------------------------------------------------------------------------------------------------------
+
+static func _decider(panneau: Panel, app: Control, finance: Dictionary, board: Dictionary, strategie: Dictionary) -> void:
+	var largeur := panneau.size.x / C.density
+	var elements: Array = []
+	var en_attente: Array = board.get("objectives", []).filter(func(objectif: Dictionary): return objectif.get("status") == "pending")
+	en_attente.sort_custom(func(a: Dictionary, b: Dictionary): return int(a.get("deadline", 0)) < int(b.get("deadline", 0)))
+	if en_attente.is_empty():
+		elements.append({"id": "ClubFixMilestone", "genre": "alerte", "titre": "Aucune échéance fixée avec le conseil.", "detail": "Fixe-en une : il en tiendra compte au bilan de fin de saison.", "action": "Fixer un jalon", "ouvrir": func(): _open_strategy(app, 1)})
+	else:
+		var jalon: Dictionary = en_attente[0]
+		elements.append({"id": "ClubNextMilestone", "genre": "neutre", "titre": "Prochain jalon : %s, sem. %s" % [str(GOALS.get(str(jalon.get("type", "")), "jalon du conseil")).to_lower(), G.n(jalon.get("deadline", "—"))], "detail": "Le conseil jugera le club à cette échéance.", "action": "Suivre les objectifs", "ouvrir": func(): _open_strategy(app, 1)})
+	var devis: Variant = finance.get("facility")
+	if devis is Dictionary and not devis.get("used", false):
+		var detail_devis := "%s · une amélioration par saison" % G.euros(devis.cost)
+		if not devis.get("affordable", true): detail_devis = "%s · trésorerie insuffisante" % G.euros(devis.cost)
+		elements.append({"id": "ClubQuoteLink", "genre": "alerte", "titre": "Devis du centre d’entraînement, niveau %s" % G.n(devis.nextLevel), "detail": detail_devis, "action": "Voir le devis", "ouvrir": func(): _tab(app, "infrastructure", "ClubTab_infrastructure")})
+	if strategie.get("available", false):
+		elements.append({"id": "ClubBoardRequest", "genre": "alerte", "titre": "Demande à la direction possible.", "detail": "Budget, projets ou arbitrage : présente ta demande au conseil.", "action": "Présenter la demande", "ouvrir": func(): _open_strategy(app, 1)})
+	Kit.texte(panneau, largeur - 24, 40, str(elements.size()), Charte.IVOIRE_2, 60, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+	D.line(panneau, Vector2(18, 56), Vector2(largeur - 18, 56), Charte.FILET)
+	for i in mini(3, elements.size()):
+		var element: Dictionary = elements[i]
+		var haut := 66.0 + i * 86.0
+		var cadre := D.rect(panneau, Rect2(18, haut, largeur - 36, 78), Charte.PANNEAU_2 if i == 0 else Color.TRANSPARENT, 0)
+		cadre.name = "ClubDecideRow%d" % i
+		_coche(panneau, Rect2(30, haut + 14, 26, 26), str(element.genre), Charte.IVOIRE)
+		# Titre et détail sur une ligne chacun (texte complet en infobulle) : jamais de chevauchement, à 1280 comme à 1920.
+		var titre := _texte_lignes(panneau, 72, haut + 10, 470, str(element.titre), 19, Kit.texte_gras(), Charte.IVOIRE, 1)
+		titre.name = "ClubDecideTitle%d" % i
+		titre.tooltip_text = str(element.titre)
+		titre.mouse_filter = Control.MOUSE_FILTER_PASS
+		var detail := _texte_lignes(panneau, 72, haut + 44, 470, str(element.detail), 16, Charte.TEXTE, Charte.IVOIRE_2, 1)
+		detail.tooltip_text = str(element.detail)
+		detail.mouse_filter = Control.MOUSE_FILTER_PASS
+		detail.name = "ClubDecideDetail%d" % i
+		if i == 0:
+			Kit.bouton_ivoire(panneau, Rect2(largeur - 30 - 250, haut + 16, 250, 46), str(element.action), element.ouvrir, str(element.id))
+		else:
+			var lien := Kit.lien(panneau, Rect2(largeur - 30, haut + 22, 0, 34), str(element.action) + " →", element.ouvrir, str(element.id), 18, true)
+			lien.tooltip_text = ""
+	if elements.is_empty(): Kit.texte(panneau, 24, 100, "Rien à trancher cette semaine.", Charte.IVOIRE, 600, 20).name = "ClubDecideNone"
+	D.line(panneau, Vector2(18, 330), Vector2(largeur - 18, 330), Charte.FILET)
+	_footer(panneau, app, finance, board)
+
+## Trésorerie et salaires : deux liens vers Finances (valeurs du moteur ; texte simple si la navigation est indisponible).
+static func _footer(card: Panel, app: Control, finance: Dictionary, _board: Dictionary) -> void:
+	var cash: Variant = finance.get("cash", app.model.get("club", {}).get("cash"))
+	var largeur := card.size.x / C.density
+	var texte_cash := "Trésorerie · " + U.amount(cash) + " →"
+	var etiquette := Kit.texte(card, 30, 372, texte_cash, Charte.D if cash != null and float(cash) < 0.0 else Charte.IVOIRE, 500, 19)
+	etiquette.add_theme_font_override("font", Kit.texte_gras())
+	_reading_area(app, card, Rect2(24, 346, 520, 40), {"kind": "finance", "id": "cash"}, "ClubCashLink", "Trésorerie")
+	var salaires := "Salaires et cotisations · %s par semaine →" % G.euros(P.payroll(app.model).charge_weekly)
+	var etiquette_salaires := Kit.texte(card, 30, 410, salaires, Charte.IVOIRE, 760, 19)
+	etiquette_salaires.add_theme_font_override("font", Kit.texte_gras())
+	_reading_area(app, card, Rect2(24, 384, largeur - 48, 40), {"kind": "finance", "id": "wages"}, "ClubWagesLink", "Salaires")
+
+# --- Vestiaire -----------------------------------------------------------------------------------------------------------
+
+static func _vestiaire(panneau: Panel, app: Control) -> void:
+	var largeur := panneau.size.x / C.density
+	var lien := Kit.lien(panneau, Rect2(largeur - 24, 12, 0, 34), "Entrer au vestiaire →", func(): app._navigate("Vestiaire"), "ClubLockerAction", 18, true)
+	lien.tooltip_text = ""
+	var squad: Array = app.model.get("squad", [])
+	var blesses := 0
+	var suspendus := 0
+	var selection := 0
+	var absents: Array = []
+	for joueur: Variant in squad:
+		if not joueur is Dictionary: continue
+		match Etat.indisponibilite(joueur):
+			"blesse":
+				blesses += 1
+				absents.append(joueur)
+			"suspendu":
+				suspendus += 1
+				absents.append(joueur)
+			"selection":
+				selection += 1
+				absents.append(joueur)
+	var details: Array[String] = []
+	if blesses > 0: details.append(P.plural(blesses, "blessé", "blessés"))
+	if suspendus > 0: details.append(P.plural(suspendus, "suspendu", "suspendus"))
+	if selection > 0: details.append("%d en sélection" % selection)
+	var moral: Variant = app.model.meta.get("morale")
+	var cote := (largeur - 48.0 - 24.0) / 3.0
+	var tuiles := [
+		{"id": "ClubMorale", "etiquette": "Moral", "valeur": G.n(moral) if moral != null else "—", "sur": "/ 100", "barre": float(moral) if moral != null else -1.0, "suite": ""},
+		{"id": "ClubAvailable", "etiquette": "Disponibles", "valeur": str(squad.size() - absents.size()), "sur": "/ %d" % squad.size(), "barre": -1.0, "suite": " · ".join(details) if not details.is_empty() else "Aucun absent"},
+	]
+	for i in tuiles.size():
+		var tuile: Dictionary = tuiles[i]
+		var bouton := Button.new()
+		bouton.name = str(tuile.id)
+		Kit.styler_ligne(bouton, Charte.PANNEAU_2)
+		bouton.accessibility_name = "%s · %s %s · vestiaire" % [tuile.etiquette, tuile.valeur, tuile.sur]
+		bouton.pressed.connect(func(): app._navigate("Vestiaire"))
+		panneau.add_child(bouton)
+		D.place(bouton, Rect2(24 + i * (cote + 12), 66, cote, 150))
+		Kit.etiquette(bouton, 14, 30, str(tuile.etiquette), cote - 28)
+		var chiffre := D.text(bouton, 14, 88, str(tuile.valeur), 46, Charte.IVOIRE, 800, 120)
+		chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+		var largeur_chiffre := Charte.TITRE_EXTRA_ITALIQUE.get_string_size(str(tuile.valeur), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(46))).x / C.density
+		Kit.texte(bouton, 14 + largeur_chiffre + 8, 86, str(tuile.sur), Charte.IVOIRE_2, 80, 19)
+		if float(tuile.barre) >= 0.0:
+			D.rect(bouton, Rect2(14, 104, cote - 28, 8), Charte.PANNEAU_3, 0)
+			D.rect(bouton, Rect2(14, 104, (cote - 28) * clampf(float(tuile.barre) / 100.0, 0.0, 1.0), 8), Charte.IVOIRE_2, 0)
+		if not str(tuile.suite).is_empty(): _texte_lignes(bouton, 14, 112, cote - 28, str(tuile.suite), 16, Charte.TEXTE, Charte.IVOIRE_2, 2).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Leader du vestiaire : le nom ouvre la fiche, le survol la mini-fiche.
+	var relation: Dictionary = app.model.get("clubLife", {}).get("relationships", {})
+	var chef := P.player(app.model, str(relation.get("leaderId", "")))
+	var tuile_chef := D.rect(panneau, Rect2(24 + 2 * (cote + 12), 66, cote, 150), Charte.PANNEAU_2, 0)
+	tuile_chef.name = "ClubLeader"
+	tuile_chef.mouse_filter = Control.MOUSE_FILTER_PASS
+	Kit.etiquette(tuile_chef, 14, 30, "Leader", cote - 28)
+	if chef.is_empty(): Kit.texte(tuile_chef, 14, 80, "À déterminer", Charte.IVOIRE_2, cote - 28, 20)
+	else:
+		var nom := Kit.nom(app, tuile_chef, Rect2(10, 48, cote - 20, 40), Kit.casse(str(chef.get("name", ""))), str(chef.get("id", "")), "ClubLeaderLink", Charte.IVOIRE, 24)
+		nom.accessibility_name = str(chef.get("name", "")) + " · leader du vestiaire"
+		Kit.texte(tuile_chef, 14, 112, "capitaine · %s" % str(chef.get("pos", "")) if not str(chef.get("pos", "")).is_empty() else "capitaine", Charte.IVOIRE_2, cote - 28, 17)
+	Kit.etiquette(panneau, 24, 254, "Absents", 300)
+	D.line(panneau, Vector2(18, 262), Vector2(largeur - 18, 262), Charte.FILET)
+	absents.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("injury", 0)) > float(b.get("injury", 0)))
+	var maximum := 8
+	if absents.is_empty(): Kit.texte(panneau, 24, 300, "Aucun joueur absent cette semaine.", Charte.IVOIRE_2, 600, 19).name = "ClubAbsentNone"
+	for i in mini(maximum, absents.size()):
+		var joueur: Dictionary = absents[i]
+		var haut := 266.0 + i * LIGNE
+		D.rect(panneau, Rect2(18, haut, largeur - 36, LIGNE), Charte.PANNEAU_2 if i % 2 == 0 else Color.TRANSPARENT, 0)
+		Kit.nom(app, panneau, Rect2(24, haut + 3, 330, LIGNE - 6), Kit.casse(str(joueur.get("name", ""))), str(joueur.get("id", "")), "ClubAbsentName%d" % i, Charte.IVOIRE, 18)
+		Kit.texte(panneau, largeur - 24, haut + 22, _statut_absent(joueur), Charte.IVOIRE_2, largeur - 400, 17, HORIZONTAL_ALIGNMENT_RIGHT)
+	if absents.size() > maximum:
+		var reste := Kit.lien(panneau, Rect2(24, 266 + maximum * LIGNE + 10, 0, 34), "+ %d autres absents → vestiaire" % (absents.size() - maximum), func(): app._navigate("Vestiaire"), "ClubAbsentMore", 18)
+		reste.tooltip_text = ""
+
+static func _statut_absent(joueur: Dictionary) -> String:
+	match Etat.indisponibilite(joueur):
+		"blesse":
+			var semaines := ceili(float(joueur.get("injury", 0)))
+			return "Blessé · retour dans %s" % P.plural(semaines, "semaine", "semaines")
+		"suspendu":
+			return "Suspendu · %s" % P.plural(int(joueur.get("suspension", 1)), "match", "matchs")
+		"selection": return "En sélection"
+	return ""
+
+# --- Onglets autres que la vue d'ensemble (dessinés depuis y = 214, remontés par le corps de la page) --------------------
+
+static func _academy(model: Dictionary) -> Dictionary:
+	return model.get("clubLife", {}).get("academyPathways", {})
+
+static func _lien(parent: Control, zone: Rect2, texte: String, action: Callable, id: String, taille: int = 19) -> Button:
+	var bouton := Kit.lien(parent, zone, texte, action, id, taille)
+	bouton.tooltip_text = ""
+	return bouton
+
+static func _direction(app: Control, corps: Control) -> void:
+	_lien(corps, Rect2(0, 220, 0, 34), "Ouvrir les finances →", func(): app._navigate("Finances"), "ClubDirectionFinance")
+	var detail: Control = app.StrategyViews.build(app)
+	var tabs: TabContainer = detail.find_child("StrategyTabs", true, false)
+	if tabs != null:
+		tabs.current_tab = clampi(int(app.management_ui.get("immersive08_strategy_tab", 1)), 0, 2)
+		tabs.tab_changed.connect(func(index: int): app.management_ui.immersive08_strategy_tab = index)
+	U.place_detail(corps, Rect2(0, 262, W, 960), detail)
+	Legacy.apply(detail, app.accent)
+	Habillage._charte(detail)
+	Habillage._suivre_ajouts(detail)
 
 static func _venue_caption(picture: Control) -> String:
 	match picture.get_meta("photo_kind", ""):
@@ -138,228 +741,6 @@ static func _venue_credit(control: Control, photo: Dictionary) -> void:
 	control.mouse_filter = Control.MOUSE_FILTER_STOP
 	control.tooltip_text = "%s\nSource : %s\nLicence : %s" % [photo.get("credit", ""), photo.get("source", ""), photo.get("license", "")]
 	control.accessibility_name = control.tooltip_text
-
-static func _overview_city(card: Panel, club: Dictionary) -> void:
-	var identity := G.identity(club)
-	var picture := ClubViews.territory_city_picture(club, false)
-	if picture == null: return
-	var preview := D.panel(card, Rect2(696,16,217,290), "", "", "", "ClubOverviewCity")
-	preview.clip_contents = true
-	preview.add_child(picture)
-	D.place(picture, Rect2(1,1,215,202))
-	D.text(preview, 10, 225, "VILLE DU CLUB", 16, C.GOLD, 700, 197)
-	var place: Variant = identity.get("city")
-	if place is String and not place.is_empty(): D.text(preview, 10, 251, place, 24, C.IVORY, 700, 197)
-	var photo: Dictionary = identity.get("photos", {}).get("city", {})
-	var from_pack: bool = picture.get_meta("photo_kind") == "pack"
-	var credit := D.text(preview, 10, 275, photo.get("credit", "") if from_pack else _venue_caption(picture), 17, C.MUTED, 500, 197)
-	if from_pack:
-		credit.name = "VenuePhotoCredit_city"
-		_venue_credit(credit, photo)
-
-static func _stadium(card: Panel, app: Control, fans: Dictionary) -> void:
-	card.clip_contents = true
-	var club: Dictionary = app.model.club
-	var identity := G.identity(club)
-	var picture := G.club_picture(club, "stadium", false)
-	card.add_child(picture)
-	D.place(picture, Rect2(1,1,932,386))
-	var gradient := Gradient.new()
-	gradient.offsets = PackedFloat32Array([0.0, .46, .86])
-	gradient.colors = PackedColorArray([Color("0c181700"), Color("0c1817d9"), Color("0c1817")])
-	var texture := GradientTexture2D.new()
-	texture.gradient = gradient
-	texture.fill_to = Vector2.DOWN
-	var shade := TextureRect.new()
-	shade.name = "StadiumCaptionShade"
-	shade.texture = texture
-	shade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(shade)
-	D.place(shade, Rect2(1,278,932,123))
-	var media_chip := D.chip(card, Rect2(21,16,175,27), _venue_caption(picture).to_upper(), C.GOLD)
-	if picture.get_meta("photo_kind") == "pack":
-		var photo: Dictionary = identity.photos.stadium
-		_venue_credit(media_chip, photo)
-		var backing := D.rect(card, Rect2(205,16,472,27), Color("14211d"), 5, C.LINE)
-		var credit := D.text(backing, 10, 19, photo.get("credit", ""), 17, C.MUTED, 500, 452)
-		credit.name = "VenuePhotoCredit_stadium"
-		_venue_credit(credit, photo)
-	_overview_city(card, club)
-	D.text(card, 23, 348, str(identity.get("stadium", "Le stade du club")), 41, C.IVORY, 700, 598)
-	U.icon(card, "people", Vector2(24,363), C.MUTED, 24)
-	var attendance := "Affluence prévue " + G.n(fans.expectedAttendance) if fans.has("expectedAttendance") else "Affluence indisponible"
-	var capacity := " · " + G.n(fans.capacity) + " places" if fans.has("capacity") else ""
-	D.text(card, 60, 385, attendance + capacity, 23, C.MUTED, 500, 535)
-	D.button(card, Rect2(697,337,216,48), "Voir le stade", func(): _tab(app, "territory"), false, "arrow", false, U.GREEN, "ClubSeeStadium")
-
-static func _trust(card: Panel, app: Control, finance: Dictionary) -> void:
-	var width := card.size.x / C.density
-	var inset := (width - 443.0) * .5
-	var trust: Variant = app.model.meta.get("trust")
-	var dial := TrustDial.new()
-	dial.name = "ClubTrustDial"
-	dial.trust = float(trust) if trust != null else 0.0
-	dial.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(dial)
-	D.place(dial, Rect2(55+inset,60,332,174))
-	var trust_text := G.n(trust) if trust != null else "—"
-	var value_width := C.EXTRA_BOLD.get_string_size(trust_text,HORIZONTAL_ALIGNMENT_LEFT,-1,C.px(76)).x/C.density
-	D.text(card, 205+inset, 222, trust_text, 76, C.IVORY, 800, 165, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(card, 210+inset+value_width/2, 221, "/100", 31, C.MUTED, 600, 80)
-	var history: Array = finance.get("boardHistory", [])
-	var recent: Dictionary = history[0] if not history.is_empty() else {}
-	var caption := "Premier bilan à venir"
-	var change_color := C.MUTED
-	if not recent.is_empty():
-		var delta := int(recent.after) - int(recent.previous)
-		caption = "%+d pts · dernier bilan" % delta
-		change_color = C.MINT if delta >= 0 else C.ALERT
-	D.text(card, 221+inset, 270, caption, 26, change_color, 600, 400, HORIZONTAL_ALIGNMENT_CENTER)
-	D.line(card, Vector2(20,291), Vector2(width-20,291))
-	U.icon(card, "info", Vector2(22,306), C.GOLD, 23)
-	D.text(card, 57, 328, "Confiance du président", 23, C.IVORY, 600, width-88)
-	var source := "Saison %s · journée %s" % [G.season_label(recent.season), G.n(recent.round)] if not recent.is_empty() else "Le conseil suit les résultats du club."
-	D.text(card, 57, 363, source, 22, C.MUTED, 500, width-93)
-
-static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
-	var goals: Array = board.get("objectives", [])
-	var metrics: Dictionary = board.get("metrics", {})
-	var rank: Variant = metrics.get("rank", app.model.club.get("rank"))
-	var division_size := 0
-	for league: Dictionary in app.model.get("leagues",[]):
-		if league.get("id") == app.model.meta.get("leagueId"): division_size = league.get("rows",[]).size()
-	U.icon(card, "trophy", Vector2(22,76), C.GOLD, 32)
-	var objective := D.text(card, 72, 103, app.model.club.get("goal", "Projet sportif"), 30, C.IVORY, 700, 400)
-	var font := objective.get_theme_font("font")
-	var offset := 0
-	if font.get_string_size(objective.text, HORIZONTAL_ALIGNMENT_LEFT, -1, objective.get_theme_font_size("font_size")).x > objective.size.x:
-		objective.add_theme_font_size_override("font_size", maxi(12, C.px(26)))
-		objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		objective.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		objective.max_lines_visible = 2
-		objective.add_theme_constant_override("line_spacing", 0)
-		objective.position.y = C.px(64)
-		objective.size.y = C.px(65)
-		offset = 20
-	var table_open := P.standings_open(app.model.club)
-	D.text(card, 72, 139 + offset, "Classement actuel" if table_open else "Pas encore de classement", 23, C.MUTED, 500, 279)
-	if rank != null and not table_open:
-		D.chip(card, Rect2(355,111 + offset,120,33), "0 match", C.AMBER)
-	elif rank != null:
-		var position := "%s%s" % [G.n(rank),"er" if int(rank) == 1 else "e"]
-		if division_size > 0:
-			position += " / %d" % division_size
-			D.bar(card, Rect2(72,145 + offset,263,6), 100.0*(division_size-int(rank)+1)/division_size)
-		D.chip(card, Rect2(355,111 + offset,120,33), position, C.MINT)
-	D.line(card, Vector2(19,158 + offset), Vector2(480,158 + offset))
-	# Promesses publiques de la conférence de presse (en tête : c'est votre parole), puis les jalons du conseil,
-	# qui restent aussi rappelés dans le bandeau « Prochain jalon du conseil ».
-	var promises: Array = app.model.get("clubLife", {}).get("pressPromises", {}).get("active", []) if app.model.get("clubLife", {}).get("pressPromises") is Dictionary else []
-	var shown := mini(2, promises.size())
-	for i in shown:
-		var promise: Dictionary = promises[i]
-		var progress: Dictionary = promise.get("progress", {})
-		var track: Variant = progress.get("onTrack")
-		var tint: Color = C.AMBER if track == null else (C.MINT if track else C.ALERT)
-		var y := 169 + offset + i * 84
-		U.icon(card, "flag", Vector2(23,y+15), C.GOLD, 25)
-		var title := D.text(card, 72, y+28, str(promise.get("short", "Promesse publique")), 25, C.IVORY, 700, 252)
-		title.name = "ClubPromise" + str(i+1)
-		title.tooltip_text = "Promesse publique : " + str(promise.get("label", "")) + "\n" + str(progress.get("label", ""))
-		D.text(card, 72, y+58, "Promesse publique · " + str(progress.get("short", "")), 20, C.MUTED, 500, 263)
-		D.chip(card, Rect2(344,y+12,130,32), "À suivre" if track == null else ("En bonne voie" if track else "En retard"), tint)
-		D.line(card, Vector2(19,y+75), Vector2(480,y+75), Color(C.LINE,.65))
-	for i in mini(2 - shown, goals.size()):
-		var goal: Dictionary = goals[i]
-		var kind := str(goal.get("type",""))
-		var status := str(goal.get("status","pending"))
-		var hue := C.MINT if status == "met" else C.ALERT if status == "missed" else C.AMBER
-		var y := 169 + offset + (i + shown) * 84
-		U.icon(card, "flag", Vector2(23,y+15), hue, 25)
-		D.text(card, 72, y+28, GOALS.get(kind,"Jalon du conseil"), 25, C.IVORY, 700, 252)
-		var target: Variant = goal.get("target")
-		var value := G.euros(target) if kind == "cash" else G.n(target)
-		D.text(card, 72, y+58, "%s · sem. %s" % [value,G.n(goal.get("deadline","—"))], 22, C.MUTED, 500, 263)
-		D.chip(card, Rect2(344,y+12,130,32), GOAL_STATUS.get(status,status), hue)
-		if metrics.has(kind) and target != null and float(target)>0.0 and kind != "rank":
-			D.bar(card, Rect2(72,y+63,263,6), 100.0*float(metrics[kind])/float(target), hue)
-		D.line(card, Vector2(19,y+75), Vector2(480,y+75), Color(C.LINE,.65))
-	if goals.is_empty() and shown == 0:
-		U.icon(card, "flag", Vector2(23,179 + offset), C.GOLD, 25)
-		D.text(card, 72, 201 + offset, "Aucun jalon enregistré", 26, C.IVORY, 600, 405)
-		D.text(card, 72, 238 + offset, "Fixe une échéance avec la direction.", 22, C.MUTED, 500, 400)
-	D.button(card, Rect2(21,351,457,36), "Suivre les objectifs", func(): _open_strategy(app, 1), false, "arrow", true, U.GREEN, "ClubBoardGoals")
-
-static func _locker(card: Panel, app: Control) -> void:
-	var relationship: Dictionary = app.model.get("clubLife", {}).get("relationships", {})
-	var leader := P.player(app.model, str(relationship.get("leaderId","")))
-	var group := P.group(app.model)
-	var morale: Variant = app.model.meta.get("morale")
-	var rows := [
-		["heart","Moral",G.n(morale)+" / 100" if morale != null else "—",C.MINT],
-		["people","Disponibles","%d / %d" % [group.available,group.total],C.GOLD],
-		["star","Leader du vestiaire",leader.get("name","À déterminer"),C.MINT]
-	]
-	for i in rows.size():
-		var item: Array = rows[i]
-		var y := 73 + i * 83
-		U.icon(card, item[0], Vector2(20,y+13), item[3], 35)
-		var title := D.text(card, 73, y+22, item[1], 22, C.IVORY, 500, 225)
-		var value := D.text(card, 73, y+57, item[2], 29, item[3], 700, 228)
-		if i == 2 and value.get_theme_font("font").get_string_size(value.text, HORIZONTAL_ALIGNMENT_LEFT, -1, value.get_theme_font_size("font_size")).x > value.size.x:
-			value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			value.max_lines_visible = 2
-			value.add_theme_constant_override("line_spacing", 0)
-			value.size.y = value.get_minimum_size().y
-			value.position.y = maxf(value.position.y, title.position.y + title.size.y + 1.0)
-		if i == 2 and not leader.is_empty():
-			_reading_area(app,card,Rect2(value.position/C.density,value.size/C.density),{"kind":"player","id":str(leader.get("id",""))},"ClubLeaderLink",str(leader.get("name","")))
-		if i < 2: D.line(card, Vector2(20,y+72), Vector2(304,y+72), Color(C.LINE,.65))
-	D.button(card, Rect2(20,351,284,36), "Entrer au vestiaire", func(): app._navigate("Vestiaire"), false, "arrow", true, U.GREEN, "ClubLockerAction")
-
-static func _academy(model: Dictionary) -> Dictionary:
-	return model.get("clubLife", {}).get("academyPathways", {})
-
-static func _installations(card: Panel, app: Control, finance: Dictionary) -> void:
-	var facility: Variant = finance.get("facility")
-	var academy_level: Variant = _academy(app.model).get("facilities")
-	# Carrière Monde : pas de niveau 0-3 (pas de compétitions Espoirs), mais le centre existe : on montre son état réel
-	# (Crabos, Espoirs, places), les mêmes chiffres que la page Formation (academyFollowUp), jamais « non ouverte ».
-	var follow: Dictionary = app.model.get("clubLife", {}).get("academyFollowUp", {})
-	var centre_open: bool = follow.get("available", false) == true
-	var support: Dictionary = app.model.get("clubLife", {}).get("clubSupport", {})
-	var medical: Array = support.get("medical", {}).get("players", [])
-	var academy_sub := "Installations du centre"
-	var academy_value := G.n(academy_level)+" / 3" if academy_level != null else "Niveau indisponible"
-	if academy_level == null and centre_open:
-		academy_sub = "%s Crabos · %s Espoirs" % [G.n(follow.get("crabos",{}).get("count",0)), G.n(follow.get("espoirs",{}).get("count",0))]
-		academy_value = "%s / %s" % [G.n(follow.get("total",0)), G.n(follow.get("capacity",75))]
-	var rows := [
-		["train","Centre d’entraînement","Installations du club",str(int(facility.level))+" / 10" if facility is Dictionary else "Niveau indisponible"],
-		["heart","Cellule médicale","Dossiers suivis",str(medical.size()) if not support.is_empty() else "—"],
-		["school","Académie",academy_sub,academy_value]
-	]
-	for i in rows.size():
-		var row: Array = rows[i]
-		var y := 71 + i * 82
-		U.icon(card, row[0], Vector2(23,y+13), C.IVORY, 37)
-		D.text(card, 82, y+32, row[1], 28, C.IVORY, 700, 480)
-		D.text(card, 82, y+62, row[2], 22, C.MUTED, 500, 400)
-		var level_unavailable := i == 0 and not facility is Dictionary or i == 2 and academy_level == null and not centre_open
-		D.text(card, 686, y+37, row[3], 23 if level_unavailable else 29, C.MUTED if level_unavailable else C.MINT, 700, 210, HORIZONTAL_ALIGNMENT_RIGHT)
-		if i != 1 and not level_unavailable and not (i == 2 and academy_level == null):
-			var total := 10 if i == 0 else 3
-			var value := int(academy_level) if i == 2 else int(facility.level)
-			for segment in total:
-				var spacing := 13 if total == 10 else 30
-				D.rect(card, Rect2(687-(total-segment)*spacing,y+50,spacing-3,10), C.MINT if segment < value else Color("2a3735"), 3)
-		D.line(card, Vector2(19,y+72), Vector2(691,y+72), Color(C.LINE,.65))
-	var action := D.button(card, Rect2(19,327,672,74), "Projets et devis des infrastructures", func(): _tab(app, "infrastructure", "ClubTab_infrastructure"), false, "arrow", false, U.GREEN, "ClubFacilityDetails")
-	var style: StyleBox = D.surface(672,74,Color("302918"),Color("191b14"),C.GOLD,8).duplicate()
-	style.content_margin_left = C.px(18)
-	style.content_margin_right = C.px(18)
-	action.add_theme_stylebox_override("normal", style)
 
 static func _members(app: Control) -> Array:
 	for team: Dictionary in app.model.get("staff", {}).get("teams", []):
@@ -376,7 +757,7 @@ static func _staff(card: Panel, app: Control) -> void:
 		D.place(portrait, Rect2(18,y,82,65))
 		D.text(card, 116, y+24, person.get("roleLabel",person.get("role","Encadrement")), 22, C.MUTED, 500, 390)
 		D.text(card, 116, y+54, person.get("name","—"), 28, C.IVORY, 700, 407)
-		D.text(card, 685, y+39, "Carrière" if person.get("personState", "") == "career" else "Archive" if person.get("historical",false) else "Référence", 20, C.GOLD, 500, 128, HORIZONTAL_ALIGNMENT_RIGHT)
+		if person.get("contractEnd") != null: D.text(card, 685, y+39, "Contrat · saison " + G.season_label(person.contractEnd), 20, C.MUTED, 500, 220, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.line(card, Vector2(18,y+69), Vector2(690,y+69), Color(C.LINE,.62))
 		var staff_id := str(person.get("id",""))
 		var target := {"kind":"staff","id":staff_id}
@@ -385,100 +766,8 @@ static func _staff(card: Panel, app: Control) -> void:
 	if people.is_empty():
 		D.text(card, 24, 119, "Annuaire indisponible pour cette carrière", 28, C.IVORY, 700, 660)
 		D.text(card, 24, 157, "Les responsabilités du staff restent accessibles.", 23, C.MUTED, 500, 660)
-	D.button(card, Rect2(18,373,321,40), "Ouvrir l’annuaire", func(): app._navigate("Staff"), false, "arrow", true, U.GREEN, "ClubStaffDirectory")
-	D.button(card, Rect2(351,373,339,40), "Travail du club", func(): app._navigate("Travail du club"), false, "arrow", true, U.GREEN, "ClubStaffWork")
-
-static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
-	var fans: Dictionary = strategy.get("fans", {})
-	# Tribune de la banque d'images selon le sentiment des supporters, très atténuée derrière le panneau.
-	var tribune := BanqueImages.tribune(fans.get("sentiment"))
-	if not tribune.is_empty():
-		card.clip_contents = true
-		var fond := D.photo(card, tribune, Rect2(1, 1, 794, 425), .5)
-		fond.modulate = Color(1, 1, 1, .14)
-		fond.name = "ClubLifeStands"
-	var sponsor: Dictionary = {}
-	for option: Dictionary in strategy.get("sponsors", []):
-		if option.get("selected",false): sponsor = option; break
-	U.icon(card, "people", Vector2(22,81), C.IVORY, 38)
-	U.icon(card, "shield", Vector2(418,81), C.IVORY, 38)
-	D.text(card, 78, 91, "Sentiment des supporters", 22, C.MUTED, 500, 310)
-	D.text(card, 78, 130, G.n(fans.sentiment)+" / 100" if fans.has("sentiment") else "—", 41, C.IVORY, 700, 315)
-	D.line(card, Vector2(397,73), Vector2(397,134))
-	D.text(card, 476, 91, "Abonnés", 22, C.MUTED, 500, 291)
-	D.text(card, 476, 130, G.n(fans.subscribers) if fans.has("subscribers") else "—", 41, C.IVORY, 700, 290)
-	D.line(card, Vector2(19,151), Vector2(777,151), Color(C.LINE,.7))
-	U.icon(card, "money", Vector2(23,175), C.GOLD, 35)
-	D.text(card, 78, 181, "Partenaire principal", 22, C.MUTED, 500, 518)
-	D.text(card, 78, 218, sponsor.get("label","Aucun partenaire signé"), 35, C.IVORY, 700, 536)
-	D.button(card, Rect2(563,173,214,43), "Supporters", func(): _open_strategy(app, 2), false, "arrow", true, U.GREEN, "ClubSupporters")
-	D.line(card, Vector2(19,235), Vector2(777,235))
-	D.text(card, 23, 269, "Dernières nouvelles du club", 26, C.IVORY, 700, 755)
-	var news: Array = app.model.get("messages", [])
-	for i in mini(2,news.size()):
-		var y := 284 + i * 54
-		D.rect(card, Rect2(22,y,4,43), C.BLUE if i == 0 else C.MINT, 2)
-		# Les actualités « XV de la journée / de la saison » portent une vignette cliquable.
-		var equipe_type := str(news[i]).begins_with("XV de ")
-		var lines := D.words(Copy.news(str(news[i])), 70 if equipe_type else 85, 2)
-		for j in lines.size():
-			var label := D.text(card, 39, y+19+j*21, lines[j], 19, C.MUTED, 500, 640 if equipe_type else 727)
-			label.tooltip_text = Copy.news(str(news[i]))
-		if equipe_type and EquipeType.disponible(app.model):
-			var saison := str(news[i]).begins_with("XV de la saison")
-			var ligues: Array = NotesMatch.bilan(app.model).get("equipeType", {}).get("ligues", [])
-			var cible: Dictionary = ligues[0] if not ligues.is_empty() else {}
-			var equipe: Variant = cible.get("saison" if saison else "journee")
-			if equipe is Dictionary:
-				var vignette := EquipeType.vignette(equipe, Rect2(0, 0, 38, 44), func(): EquipeType.ouvrir(app, str(cible.get("id", "")), "saison" if saison else "journee"))
-				card.add_child(vignette)
-				D.place(vignette, Rect2(704, y - 1, 48, 45))
-	if news.is_empty(): D.text(card, 23, 320, "Aucun message enregistré.", 23, C.MUTED, 500, 739)
-
-static func _footer(card: Panel, app: Control, finance: Dictionary, board: Dictionary) -> void:
-	U.icon(card, "calendar", Vector2(22,18), C.GOLD, 29)
-	D.text(card, 63, 43, "PROCHAIN JALON DU CONSEIL", 29, C.IVORY, 700, 715)
-	D.line(card, Vector2(22,59), Vector2(970,59))
-	var pending: Array = board.get("objectives", []).filter(func(goal: Dictionary): return goal.get("status") == "pending")
-	pending.sort_custom(func(a: Dictionary,b: Dictionary): return int(a.deadline) < int(b.deadline))
-	var goal: Dictionary = pending[0] if not pending.is_empty() else {}
-	D.chip(card, Rect2(22,82,287,52), "SEMAINE " + G.n(goal.deadline) if not goal.is_empty() else "À PLANIFIER", C.MINT if not goal.is_empty() else C.GOLD)
-	D.text(card, 329, 115, GOALS.get(str(goal.get("type","")),"Aucune échéance fixée"), 27, C.IVORY, 600, 620)
-	D.line(card, Vector2(991,16), Vector2(991,153))
-	U.icon(card, "money", Vector2(1015,18), C.GOLD, 29)
-	D.text(card, 1059, 43, "BUDGET", 29, C.IVORY, 700, 610)
-	D.line(card, Vector2(1015,59), Vector2(2226,59))
-	var cash: Variant = finance.get("cash",app.model.club.get("cash"))
-	D.text(card, 1030, 114, U.amount(cash), 43, C.ALERT if cash != null and float(cash)<0.0 else C.MINT, 700, 330)
-	D.text(card, 1030, 144, "Trésorerie du jeu", 22, C.MUTED, 500, 315)
-	# Charge salariale versée (cotisations comprises) : la valeur du moteur, comme dans la répartition de Finances.
-	D.text(card, 1366, 107, "Salaires et cotisations · par semaine de jeu", 22, C.MUTED, 500, 355)
-	D.text(card, 1366, 142, G.euros(P.payroll(app.model).charge_weekly), 28, C.IVORY, 600, 361)
-	_reading_area(app,card,Rect2(1022,77,334,72),{"kind":"finance","id":"cash"},"ClubCashLink","Trésorerie")
-	_reading_area(app,card,Rect2(1358,77,379,72),{"kind":"finance","id":"wages"},"ClubWagesLink","Salaires")
-	var action := D.button(card, Rect2(1750,77,476,73), "Présenter une demande à la direction", func(): _open_strategy(app, 1), true, "arrow", false, Color("966419"), "ClubBoardRequest")
-	var style: StyleBox = D.surface(476,73,Color("ab771e"),Color("694610"),Color("e7bc63"),7).duplicate()
-	style.content_margin_left = C.px(18)
-	style.content_margin_right = C.px(18)
-	action.add_theme_stylebox_override("normal", style)
-
-static func _open_strategy(app: Control, index: int) -> void:
-	app.management_ui.immersive08_strategy_tab = index
-	app._navigate("Stratégie")
-
-static func _direction(app: Control, canvas: Control) -> void:
-	var data := U.strategy(app.model)
-	var finance: Dictionary = data.get("finance",{})
-	_trust(D.panel(canvas, Rect2(0,214,499,402), "La confiance du conseil", "shield"), app, finance)
-	_goals(D.panel(canvas, Rect2(0,632,499,402), "Objectifs de la saison", "trophy"), app, data.get("board",{}))
-	D.button(canvas, Rect2(0,1050,499,57), "Ouvrir les finances", func(): app._navigate("Finances"), false, "arrow", false, U.GREEN, "ClubDirectionFinance")
-	var detail: Control = app.StrategyViews.build(app)
-	var tabs: TabContainer = detail.find_child("StrategyTabs", true, false)
-	if tabs != null:
-		tabs.current_tab = clampi(int(app.management_ui.get("immersive08_strategy_tab",1)), 0, 2)
-		tabs.tab_changed.connect(func(index: int): app.management_ui.immersive08_strategy_tab = index)
-	U.place_detail(canvas, Rect2(515,214,1733,1030), detail)
-	Legacy.apply(detail, app.accent)
+	_lien(card, Rect2(18,373,0,40), "Ouvrir l’annuaire →", func(): app._navigate("Staff"), "ClubStaffDirectory")
+	_lien(card, Rect2(351,373,0,40), "Travail du club →", func(): app._navigate("Travail du club"), "ClubStaffWork")
 
 static func style_staff(detail: Control, accent: Color) -> void:
 	Legacy.apply(detail, accent)
@@ -512,6 +801,12 @@ static func _staff_detail(app: Control, canvas: Control) -> void:
 	U.place_detail(canvas, Rect2(724,214,1524,1030), detail)
 	if app.route == "Staff": style_staff(detail, app.accent)
 	else: Legacy.apply(detail, app.accent)
+	# Habillage de la charte (boutons secondaires en liens) sans perdre la hauteur de clic des boutons (plancher 28 px).
+	var hauteurs := {}
+	for bouton: Button in detail.find_children("*", "Button", true, false): hauteurs[bouton] = bouton.custom_minimum_size.y
+	Habillage._charte(detail)
+	for bouton: Button in hauteurs:
+		if is_instance_valid(bouton): bouton.custom_minimum_size.y = maxf(bouton.custom_minimum_size.y, float(hauteurs[bouton]))
 
 static func _history(app: Control, canvas: Control) -> void:
 	var card := D.panel(canvas, Rect2(0,214,610,612), "Les archives du club", "trophy", "", "ClubHistorySummary")
@@ -539,7 +834,7 @@ static func _history(app: Control, canvas: Control) -> void:
 		D.text(card, 24, y, rows[i][0], 29, C.IVORY, 600, 475)
 		D.text(card, 586, y, rows[i][1], 35, C.MINT, 700, 118, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.line(card, Vector2(24,y+18), Vector2(586,y+18), Color(C.LINE,.6))
-	D.button(card, Rect2(24,520,562,58), "Ouvrir les compétitions", func(): app._navigate("Classements"), false, "arrow", false, U.GREEN, "ClubHistoryCompetitions")
+	_lien(card, Rect2(24,520,0,40), "Ouvrir les compétitions →", func(): app._navigate("Classements"), "ClubHistoryCompetitions")
 	if international: _world_history(app,canvas,data)
 	else: U.place_detail(canvas, Rect2(626,214,1622,1030), History.build(app))
 
@@ -671,8 +966,8 @@ static func _territory(app: Control, canvas: Control) -> void:
 			_venue_credit(credit, photo)
 	var links := D.panel(page, Rect2(0,837,2248,193), "Un territoire, une identité", "shield")
 	D.text(links, 24, 116, "Découvre le territoire et écris la suite de l’histoire du club.", 31, C.IVORY, 600, 1360)
-	D.button(links, Rect2(1415,80,373,59), "Crédits et licences", app._credits, false, "info", false, U.GREEN, "ClubAtlasCredits")
-	D.button(links, Rect2(1804,80,420,59), "Revenir à la vue d’ensemble", func(): _tab(app, "overview", "ClubTab_overview"), true, "arrow", false, U.GREEN, "ClubAtlasBack")
+	_lien(links, Rect2(1415,86,0,40), "Crédits et licences →", app._credits, "ClubAtlasCredits")
+	Kit.bouton_ivoire(links, Rect2(1804,80,420,52), "Revenir à la vue d’ensemble", func(): _tab(app, "overview", "ClubTab_overview"), "ClubAtlasBack")
 
 # Excédents réinvestis par le président (carrière Monde) : où en sont les travaux, l'accueil du stade et le staff.
 # Colonne de droite du panneau « Les moyens du club », à côté du devis du manager ; rien sans excédent cette saison.
@@ -687,7 +982,7 @@ static func _president_projects(projects: Panel, inv: Variant) -> void:
 	var inst: Dictionary = inv.get("installations", {})
 	var acc: Dictionary = inv.get("accueil", {})
 	var staff: Dictionary = inv.get("staff", {})
-	D.text(box, 0, 28, "Excédents réinvestis · " + G.euros(inv.get("montant", 0)), 26, C.GOLD, 700, 474)
+	D.text(box, 0, 28, "Excédents réinvestis · " + G.euros(inv.get("montant", 0)), 26, Charte.IVOIRE, 700, 474)
 	var travaux := "Installations au maximum"
 	if inst.get("devis") != null:
 		travaux = "Travaux du niveau %s · %s %% financés" % [G.n(int(inst.get("niveau", 0)) + 1), G.n(roundi(100.0 * float(inst.get("avancement", 0))))]
@@ -695,44 +990,58 @@ static func _president_projects(projects: Panel, inv: Variant) -> void:
 		var faits := int(inst.get("achevesCetteSaison", 0))
 		travaux += " · %s achevé%s" % [G.n(faits), "s" if faits > 1 else ""]
 	D.text(box, 0, 64, travaux, 23, C.IVORY, 600, 474)
-	D.rect(box, Rect2(0, 75, 474, 10), Color("2a3735"), 3)
-	D.rect(box, Rect2(0, 75, 474.0 * clampf(float(inst.get("avancement", 0)), 0.0, 1.0), 10), C.MINT, 3)
+	D.rect(box, Rect2(0, 75, 474, 10), Charte.PANNEAU_3, 0)
+	D.rect(box, Rect2(0, 75, 474.0 * clampf(float(inst.get("avancement", 0)), 0.0, 1.0), 10), Charte.IVOIRE_2, 0)
 	var accueil := "Accueil du stade · niveau %s / %s" % [G.n(acc.get("niveau", 0)), G.n(acc.get("max", 5))]
 	if float(acc.get("effet", 0)) > 0.0: accueil += " · guichet +%s %%" % ("%.1f" % (100.0 * float(acc.get("effet", 0)))).replace(".", ",")
 	if acc.get("degrade", false) == true: accueil += " · en recul"
 	D.text(box, 0, 114, accueil, 23, C.IVORY, 600, 474)
 	for segment in int(acc.get("max", 5)):
-		D.rect(box, Rect2(segment * 96, 125, 90, 10), C.MINT if segment < int(acc.get("niveau", 0)) else Color("2a3735"), 3)
+		D.rect(box, Rect2(segment * 96, 125, 90, 10), Charte.IVOIRE_2 if segment < int(acc.get("niveau", 0)) else Charte.PANNEAU_3, 0)
 	var points := int(staff.get("points", 0))
 	var staff_txt := "Staff · aucune progression pour l’instant" if points == 0 else "Staff · %s point%s gagné%s par %s membre%s" % [G.n(points), "s" if points > 1 else "", "s" if points > 1 else "", G.n(staff.get("personnes", 0)), "s" if int(staff.get("personnes", 0)) > 1 else ""]
 	D.text(box, 0, 164, staff_txt, 23, C.IVORY, 600, 474)
 	D.text(box, 0, 194, "Dépensé : %s sur %s" % [G.euros(inv.get("depense", 0)), G.euros(inv.get("montant", 0))], 20, C.MUTED, 500, 474)
 
-static func _infrastructure_detail(app: Control, canvas: Control) -> void:
+static func _infrastructure_detail(app: Control, corps: Control) -> void:
 	var data := U.strategy(app.model)
-	var finance: Dictionary = data.get("finance",{})
-	_installations(D.panel(canvas, Rect2(0,214,712,427), "Infrastructures", "train"), app, finance)
-	_stadium(D.panel(canvas, Rect2(0,657,934,402), "", ""), app, data.get("fans",{}))
-	var projects := D.panel(canvas, Rect2(950,214,1298,845), "Les moyens du club", "settings", "", "ClubFacilityProjects")
+	var finance: Dictionary = data.get("finance", {})
+	_installations(_panneau(corps, Rect2(0, 214, 1404, 302), "Installations", "ClubFacilities"), app, finance, data)
+	_stade(_panneau(corps, Rect2(1426, 214, W - 1426, 302), "Le stade", "ClubStadiumCard"), app, data.get("fans", {}))
+	var projects := _panneau(corps, Rect2(0, 532, W, 640), "Les moyens du club", "ClubFacilityProjects", true)
 	var quote: Variant = finance.get("facility")
 	if quote is Dictionary:
-		D.text(projects, 24, 109, "Installations du club · niveau %s / 10" % G.n(quote.level), 39, C.IVORY, 700, 1244)
-		D.text(projects, 24, 154, "Niveau suivant %s · %s" % [G.n(quote.nextLevel),G.euros(quote.cost)], 30, C.GOLD, 600, 1244)
-		var action := D.button(projects, Rect2(24,185,450,51), "Examiner le devis", func(): Strategy._send(app, "club_facility_upgrade", {"cost":quote.cost,"level":quote.level}, "Investir %s pour passer les installations au niveau %s ?" % [G.euros(quote.cost),G.n(quote.nextLevel)]), true, "arrow", false, U.GREEN, "ClubFacilityQuote")
-		action.disabled = not data.get("available",false) or app.waiting or app.model.meta.get("trained",false) or app.model.meta.get("phase","") != "league" or quote.used or not quote.affordable
+		Kit.texte(projects, 24, 104, "Installations du club · niveau %s / 10" % G.n(quote.level), Charte.IVOIRE, 740, 26).add_theme_font_override("font", Kit.texte_gras())
+		Kit.texte(projects, 24, 140, "Niveau suivant %s · %s" % [G.n(quote.nextLevel), G.euros(quote.cost)], Charte.IVOIRE, 740, 21)
+		var action := Kit.bouton_ivoire(projects, Rect2(24, 158, 300, 46), "Examiner le devis", func(): Strategy._send(app, "club_facility_upgrade", {"cost": quote.cost, "level": quote.level}, "Investir %s pour passer les installations au niveau %s ?" % [G.euros(quote.cost), G.n(quote.nextLevel)]), "ClubFacilityQuote")
+		action.disabled = not data.get("available", false) or app.waiting or app.model.meta.get("trained", false) or app.model.meta.get("phase", "") != "league" or quote.used or not quote.affordable
 		var reason := "Un investissement par saison · avant la séance de la semaine."
 		if quote.used: reason = "Une amélioration a déjà été engagée cette saison."
 		elif not quote.affordable: reason = "La trésorerie disponible est insuffisante pour ce devis."
-		D.text(projects, 24, 269, reason, 24, C.MUTED, 500, 1228)
-	else: D.text(projects, 24, 126, "Aucun devis d’installations disponible.", 31, C.MUTED, 600, 1228)
+		Kit.texte(projects, 24, 236, reason, Charte.IVOIRE_2, 740, 18)
+	else: Kit.texte(projects, 24, 110, "Aucun devis d’installations disponible.", Charte.IVOIRE_2, 740, 20)
 	_president_projects(projects, finance.get("investissements"))
-	D.line(projects, Vector2(24,296), Vector2(1274,296))
-	D.text(projects, 24, 346, "Centre de formation", 36, C.IVORY, 700, 1228)
-	D.text(projects, 24, 385, "L’investissement hebdomadaire suit la séance de formation.", 24, C.MUTED, 500, 1228)
-	D.button(projects, Rect2(24,411,450,51), "Ouvrir le centre de formation", func(): app._navigate("Centre"), false, "arrow", false, U.GREEN, "ClubAcademyFacilities")
-	D.line(projects, Vector2(24,488), Vector2(735,488))
-	D.photo(projects, "club-salle-recuperation-bains" if BanqueImages.existe("club-salle-recuperation-bains") else "medical-recovery", Rect2(757, 319, 500, 350), .4)
-	D.text(projects, 24, 537, "Cellule médicale", 36, C.IVORY, 700, 1228)
-	D.text(projects, 24, 576, "Protocoles et décisions de retour des joueurs suivis.", 24, C.MUTED, 500, 1228)
-	D.button(projects, Rect2(24,602,450,51), "Ouvrir le travail du club", func(): app._navigate("Travail du club"), false, "arrow", false, U.GREEN, "ClubFacilityMedical")
-	D.button(projects, Rect2(24,760,450,51), "Décisions d’investissement", func(): _open_strategy(app, 0), false, "arrow", false, U.GREEN, "ClubFacilityStrategy")
+	D.line(projects, Vector2(24, 262), Vector2(W - 24, 262), Charte.FILET)
+	Kit.texte(projects, 24, 304, "Centre de formation", Charte.IVOIRE, 740, 26).add_theme_font_override("font", Kit.texte_gras())
+	Kit.texte(projects, 24, 336, "L’investissement hebdomadaire suit la séance de formation.", Charte.IVOIRE_2, 740, 18)
+	_lien(projects, Rect2(24, 352, 0, 34), "Ouvrir le centre de formation →", func(): app._navigate("Centre"), "ClubAcademyFacilities")
+	D.line(projects, Vector2(24, 400), Vector2(W - 24, 400), Charte.FILET)
+	var photo := D.photo(projects, "club-salle-recuperation-bains" if BanqueImages.existe("club-salle-recuperation-bains") else "medical-recovery", Rect2(1300, 290, 880, 320), .4)
+	photo.modulate = Color(1, 1, 1, .4)
+	Kit.texte(projects, 24, 442, "Cellule médicale", Charte.IVOIRE, 740, 26).add_theme_font_override("font", Kit.texte_gras())
+	Kit.texte(projects, 24, 474, "Protocoles et décisions de retour des joueurs suivis.", Charte.IVOIRE_2, 740, 18)
+	_lien(projects, Rect2(24, 490, 0, 34), "Ouvrir le travail du club →", func(): app._navigate("Travail du club"), "ClubFacilityMedical")
+	_lien(projects, Rect2(24, 570, 0, 34), "Décisions d’investissement →", func(): _open_strategy(app, 0), "ClubFacilityStrategy")
+
+## Carte du stade (photo du club, nom, capacité) : un clic ouvre « Le stade ».
+static func _stade(panneau: Panel, app: Control, fans: Dictionary) -> void:
+	var identite := G.identity(app.model.club)
+	var image := G.club_picture(app.model.club, "stadium", false)
+	panneau.clip_contents = true
+	panneau.add_child(image)
+	D.place(image, Rect2(0, 56, panneau.size.x / C.density, 150))
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	Kit.texte(panneau, 24, 238, str(identite.get("stadium", "Le stade du club")), Charte.IVOIRE, 760, 24).add_theme_font_override("font", Kit.texte_gras())
+	var capacite := G.n(fans.capacity) + " places" if fans.has("capacity") else "Capacité indisponible"
+	Kit.texte(panneau, 24, 268, capacite + (" · affluence prévue " + G.n(fans.expectedAttendance) if fans.has("expectedAttendance") else ""), Charte.IVOIRE_2, 760, 18)
+	_lien(panneau, Rect2(panneau.size.x / C.density - 24, 244, 0, 34), "Voir le stade →", func(): _tab(app, "territory", "ClubTab_overview"), "ClubSeeStadiumLink", 19)
