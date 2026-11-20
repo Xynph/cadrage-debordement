@@ -7,6 +7,7 @@ extends AcceptDialog
 ## Affichage seul : le moteur valide chaque réponse et rend la raison d'un refus, écrite telle quelle.
 const G = preload("res://ui/carnet_skin.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const EnPlace = preload("res://ui/confirmation_en_place.gd")
 ## Tailles demandées au thème carnet (game_skin.reading_size : 18 → 13 px, 23 → 16 px) ; lisible() relève le reste à 13 px.
 const TEXTE := 18
 const NOTE := 18
@@ -231,52 +232,20 @@ static func confirmation_lines(offer: Dictionary, model: Dictionary) -> Array[Di
 	if not consequences.is_empty(): lines.append({"id":"SaleConfirmConsequences", "text":" ".join(PackedStringArray(consequences))})
 	return lines
 
+## Confirmation EN PLACE (deux temps, aucune fenêtre) : sous la carte de l'offre, phrase d'engagement, lignes de conséquence,
+## « Vendre X » / « Annuler » (focus sur Annuler). Le message de réponse du moteur s'affiche en tête de la page.
 func _confirm(offer: Dictionary) -> void:
 	if pending or app.waiting: return
 	var later := offer.get("deferred") is Dictionary
-	var dialog := ConfirmationDialog.new()
-	dialog.name = "SaleConfirmation"
-	dialog.title = "Conclure l’accord" if later else "Vendre " + str(offer.get("name", ""))
-	app._prepare_dialog(dialog, 640)
-	# W1 : le bouton dit l'action, le focus va sur Annuler.
-	dialog.get_ok_button().text = ("CONCLURE L’ACCORD AVEC " + str(offer.get("buyer", "")) if later else "VENDRE " + str(offer.get("name", ""))).to_upper()
-	dialog.get_cancel_button().text = "ANNULER"
-	var content := G.v(8)
-	content.name = "SaleConfirmContent"
-	dialog.add_child(content)
 	var heading_text := "%s rejoint %s pour %s. La vente est définitive." % [str(offer.get("name", "")), str(offer.get("buyer", "")), G.euros(offer.get("fee", 0))]
 	if later: heading_text = "Accord avec %s : %s partira le %s contre %s. L’accord est définitif." % [str(offer.get("buyer", "")), str(offer.get("name", "")), str(offer.deferred.get("dateLabel", "")), G.euros(offer.get("fee", 0))]
-	var heading := G.wrap(heading_text, TEXTE, G.INK)
-	heading.name = "SaleConfirmHeading"
-	content.add_child(heading)
-	for line: Dictionary in confirmation_lines(offer, app.model):
-		var label := G.wrap(str(line.text), TEXTE, G.INK)
-		label.name = str(line.id)
-		content.add_child(label)
-	# Fille de l'application : la boîte des offres peut être une page (fenêtre adoptée, masquée) ; une fille masquée ne s'afficherait pas.
-	app.add_child(dialog)
-	lisible(content)
-	dialog.confirmed.connect(func():
-		_send("sale_answer", {"offerId":str(offer.get("id", "")), "action":"accept", "confirmed":true})
-		dialog.queue_free())
-	dialog.canceled.connect(dialog.queue_free)
-	# Fenêtre fille de la boîte des offres : popup_centered la centrerait dans la boîte (900 × 600), pas à l'écran.
-	dialog.popup_centered(Vector2i(680, 340))
-	_center_on_screen.call_deferred(dialog)
-	dialog.get_cancel_button().grab_focus()
-
-func _center_on_screen(dialog: Window) -> void:
-	for i in 3: await get_tree().process_frame
-	if not is_instance_valid(dialog) or not dialog.visible: return
-	var screen := Vector2i(get_tree().root.get_visible_rect().size)
-	var title_height := dialog.get_theme_constant("title_height", "Window")
-	# Hauteur au contenu : les lignes à la ligne mesurées trop étroites au premier passage ont pu l'allonger.
-	dialog.size = Vector2i(mini(680, screen.x - 28), 1)
-	await get_tree().process_frame
-	if not is_instance_valid(dialog): return
-	dialog.size = Vector2i(mini(dialog.size.x, screen.x - 28), mini(dialog.size.y, screen.y - 68))
-	dialog.position = (screen - dialog.size + Vector2i(0, title_height)) / 2
-
+	var lines: Array = [{"id":"SaleConfirmHeading", "text":heading_text}]
+	lines.append_array(confirmation_lines(offer, app.model))
+	var verbe := ("Conclure l’accord avec " + str(offer.get("buyer", ""))) if later else "Vendre " + str(offer.get("name", ""))
+	var card := rows.get_node_or_null("SaleOffer_" + str(offer.get("id", "")).validate_node_name())
+	var bloc := EnPlace.ouvrir(app, rows, "SaleConfirmation", "Conclure l’accord" if later else "Vendre " + str(offer.get("name", "")), lines, verbe, func():
+		_send("sale_answer", {"offerId":str(offer.get("id", "")), "action":"accept", "confirmed":true}), card)
+	lisible(bloc)
 func _send(command: String, payload: Dictionary) -> void:
 	if pending or app.waiting: return
 	pending = true

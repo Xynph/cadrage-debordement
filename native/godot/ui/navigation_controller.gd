@@ -61,7 +61,7 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 	# Sous-pages de la Composition (tireurs, espoir, renforts) : une étape d'historique distincte de l'écran.
 	if route == "Composition": entry.composition_page = str(app.management_ui.get("composition_page", ""))
 	# Sous-pages du Recrutement : une étape d'historique distincte de la liste.
-	if route == "Recrutement": entry.recrutement_page = str(app.management_ui.get("recrutement_page", {}).get("kind", "")) if app.management_ui.get("recrutement_page") is Dictionary else ""
+	if route == "Recrutement": entry.recrutement_page = load("res://ui/immersive08/recruitment_pages.gd").cle(app.management_ui.get("recrutement_page", {})) if app.management_ui.get("recrutement_page") is Dictionary else ""
 	if cursor >= 0:
 		var previous := history[cursor]
 		var same_location := entry.keys().all(func(key: String): return previous.get(key) == entry[key])
@@ -533,10 +533,10 @@ func _travel(direction: int) -> void:
 		else: app.management_ui.composition_page = str(entry.composition_page)
 	if entry.route == "Recrutement":
 		var page_demandee := str(entry.get("recrutement_page", ""))
-		var page_actuelle := str(app.management_ui.get("recrutement_page", {}).get("kind", "")) if app.management_ui.get("recrutement_page") is Dictionary else ""
+		var page_actuelle: String = load("res://ui/immersive08/recruitment_pages.gd").cle(app.management_ui.get("recrutement_page", {})) if app.management_ui.get("recrutement_page") is Dictionary else ""
 		if page_demandee != page_actuelle:
 			app.Immersive.Recruitment.oublier_page(app)
-			if not page_demandee.is_empty(): app.management_ui.recrutement_page = {"kind": page_demandee}
+			if not page_demandee.is_empty(): app.management_ui.recrutement_page = load("res://ui/immersive08/recruitment_pages.gd").depuis_cle(page_demandee)
 	if entry.route == "Recrutement" and not entry.get("reading") is Dictionary:
 		_set_market_target(entry.market, str(_person("market", entry.market).get("name", "")))
 	app._navigate(entry.route, false, true)
@@ -735,6 +735,9 @@ func _prospect_adapter() -> Script:
 
 func inspect_entity(target: Dictionary, owner_window: Window) -> bool:
 	if str(target.get("kind", "")) != "prospect": return false
+	# Catalogue adopté par une sous-page du Recrutement : le dossier est une sous-page, jamais une fenêtre.
+	if is_instance_valid(owner_window) and owner_window.get_meta("en_page", false):
+		return load("res://ui/immersive08/recruitment_pages.gd").ouvrir_dossier(app, str(target.get("source", "")), str(target.get("id", "")))
 	if not is_instance_valid(owner_window) or owner_window.is_queued_for_deletion() or not owner_window.visible: return false
 	if app == null or not app.is_ancestor_of(owner_window): return false
 	var source := str(target.get("source", ""))

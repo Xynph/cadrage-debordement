@@ -129,11 +129,11 @@ func executer() -> void:
 		if envoyer != null:
 			envoyer.pressed.emit()
 			await poser(10)
-			var confirmation := noeud(app, "PreContractConfirmation") as ConfirmationDialog
-			verifier(confirmation != null and confirmation.visible, "confirmation ouverte")
+			var confirmation := noeud(app, "PreContractConfirmation") as Control
+			verifier(confirmation != null and confirmation.is_visible_in_tree(), "confirmation EN PLACE ouverte (aucune fenêtre)")
 			if confirmation != null:
-				verifier(confirmation.get_ok_button().text.begins_with("SIGNER LE PRÉ-CONTRAT AVEC"), "libellé = action : " + confirmation.get_ok_button().text)
-				verifier(confirmation.get_cancel_button().text == "ANNULER", "bouton Annuler")
+				verifier((noeud(app, "PreContractConfirmationOk") as Button).text.begins_with("SIGNER LE PRÉ-CONTRAT AVEC"), "libellé = action : " + (noeud(app, "PreContractConfirmationOk") as Button).text)
+				verifier((noeud(app, "PreContractConfirmationAnnuler") as Button).text == "Annuler", "bouton Annuler")
 				verifier(confirmation.gui_get_focus_owner() == confirmation.get_cancel_button(), "focus sur Annuler")
 				verifier(texte(confirmation, "PreContractConfirmHeading").contains("Aucune indemnité"), "sans indemnité : " + texte(confirmation, "PreContractConfirmHeading"))
 				verifier(texte(confirmation, "PreContractConfirmPremium").contains(G.euros(devis.premium)), "prime : " + texte(confirmation, "PreContractConfirmPremium"))

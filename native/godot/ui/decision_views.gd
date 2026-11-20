@@ -225,11 +225,16 @@ static func recruitment(app: Control) -> void:
 	var fee := spin(fields, "Prime max.", 0, 10000000, 700000, 50000)
 	var wage := spin(fields, "Salaire "+G.salary_period(), 1000, 100000, 12000, 500)
 	preload("res://ui/salary_display.gd").bind_input(wage,12000,1000,100000,500)
-	var mission := G.button("CONFIER LA MISSION · 5 000 €", func():
+	# Confirmation EN PLACE (deux temps, aucune fenêtre) : sous le bouton, « Lancer pour 5 000 € » / « Annuler ».
+	var mission := G.button("CONFIER LA MISSION · 5 000 €", func(): pass)
+	mission.pressed.connect(func():
 		var payload := {"family":position.selected, "maxAge":int(age.value), "budget":int(fee.value), "maxWage":preload("res://ui/salary_display.gd").input_weekly(wage), "confirmed":true}
-		d.queue_free()
-		app.confirm("Lancer une mission", "5 000 € seront payés immédiatement. Le rapport porte sur les agents libres disponibles et arrive après deux journées de travail. Confirmer ?", func(): app._command("scout_mission", payload)))
-	mission.name = "CreateScoutMission"
+		var lancer := func():
+			if app._command("scout_mission", payload):
+				var resultat := G.wrap("Mission confiée : 5 000 € payés, le rapport arrive après deux journées de travail.", 14)
+				resultat.name = "ScoutMissionResult"
+				list.add_child(resultat)
+		preload("res://ui/confirmation_en_place.gd").ouvrir(app, list, "ScoutMissionConfirmation", "Lancer une mission", [{"id":"ScoutMissionConfirmPhrase", "text":"5 000 € seront payés immédiatement. Le rapport porte sur les agents libres disponibles et arrive après deux journées de travail."}], "Lancer pour 5 000 €", lancer, mission))	mission.name = "CreateScoutMission"
 	mission.disabled = not data.get("missionAvailable", false)
 	list.add_child(mission)
 	for job: Dictionary in data.get("missions", []): list.add_child(G.wrap("Mission %s · %s" % [job.id, "en cours, %s journée(s)" % G.n(job.remaining) if job.status == "active" else "en attente" if job.status == "queued" else "terminée"], 13))

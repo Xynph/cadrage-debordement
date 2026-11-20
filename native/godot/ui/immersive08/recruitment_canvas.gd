@@ -23,6 +23,7 @@ const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const SalesView = preload("res://ui/player_sales_view.gd")
 const Observation = preload("res://ui/player_observation.gd")
 const Identity = preload("res://ui/player_identity.gd")
+const EnPlace = preload("res://ui/confirmation_en_place.gd")
 const Attributs = preload("res://ui/player_attributes.gd")
 const ROW_HEIGHT := 32
 # Construction progressive de la liste : les premières lignes tout de suite, le reste sur les images suivantes.
@@ -56,6 +57,7 @@ var columns: Array = []
 var _selected: Dictionary = {}
 var _signature_entetes := ""
 var _liens_filtre: Array = []
+var _ids_affiches: Array = []
 
 static func _target_report(owner_app: Control, id: Variant) -> Dictionary:
 	if str(id).is_empty(): return {}
@@ -127,6 +129,10 @@ func _build() -> void:
 		if int(report.get("week", -1)) >= int(previous.get("week", -1)):
 			report_by_player[key] = report
 	var positions: Array = app.SquadViews._positions(app.model.get("market", []))
+	# Onglet « Besoins du club » : arrive filtré sur le poste du besoin n° 1 (maquette) ; « Poste : Tous » reste un choix libre.
+	if tab == 0 and str(state.get("position", "Tous")) == "Tous" and not bool(state.get("position_libre", false)):
+		var besoins: Array = data.get("needs", [])
+		if not besoins.is_empty() and str(besoins[0].get("pos", "")) in positions: state.position = str(besoins[0].pos)
 	_header()
 	_needs()
 	_tabs()
@@ -252,21 +258,30 @@ func _needs() -> void:
 		var role := str(need.get("pos", "Poste inconnu"))
 		var choisi := str(state.get("position", "Tous")) == role
 		var x := i * (largeur + 14)
-		var carte := Button.new()
+		var stock: int = app.model.get("market", []).filter(func(p: Dictionary): return p.get("pos") == role).size()
+		var suivies: int = app.model.get("market", []).filter(func(p: Dictionary): return p.get("pos") == role and str(p.id) in app.management_ui.shortlist).size()
+		var carte: Control
+		if stock > 0:
+			var bouton_carte := Button.new()
+			bouton_carte.flat = true
+			bouton_carte.focus_mode = Control.FOCUS_ALL
+			bouton_carte.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			bouton_carte.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3 if choisi else Charte.PANNEAU, Color.TRANSPARENT, 0, 0))
+			bouton_carte.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
+			bouton_carte.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
+			var focus_carte := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+			focus_carte.set_border_width_all(2)
+			bouton_carte.add_theme_stylebox_override("focus", focus_carte)
+			bouton_carte.accessibility_name = "Filtrer sur %s" % role
+			bouton_carte.pressed.connect(func(): Decisions.open_market_position(app, role))
+			add_child(bouton_carte)
+			D.place(bouton_carte, Rect2(x, 136, largeur, 90))
+			carte = bouton_carte
+		else:
+			# Aucune piste pour ce poste : la carte n'est pas un lien vers une liste vide, elle propose une mission.
+			carte = D.rect(self, Rect2(x, 136, largeur, 90), Charte.PANNEAU, 0)
+			carte.mouse_filter = Control.MOUSE_FILTER_PASS
 		carte.name = "MarketNeed_" + str(i)
-		carte.flat = true
-		carte.focus_mode = Control.FOCUS_ALL
-		carte.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		carte.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3 if choisi or i == 0 else Charte.PANNEAU, Color.TRANSPARENT, 0, 0))
-		carte.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		carte.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
-		focus.set_border_width_all(2)
-		carte.add_theme_stylebox_override("focus", focus)
-		carte.accessibility_name = "Filtrer sur %s" % role
-		carte.pressed.connect(func(): Decisions.open_market_position(app, role))
-		add_child(carte)
-		D.place(carte, Rect2(x, 136, largeur, 90))
 		Kit.marqueur(carte, Rect2(18, 16, 8, 58), Charte.IVOIRE if i == 0 else Charte.IVOIRE_2)
 		var mot := ("PRIORITÉ %d" if need.get("need", false) else "À SURVEILLER %d") % (i + 1)
 		if i == 0 and need.get("need", false): mot += " · URGENT"
@@ -275,12 +290,16 @@ func _needs() -> void:
 		nom.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 		var raisons: Array = need.get("reasons", [])
 		Kit.texte(carte, largeur - 20, 34, _pluriel(str(raisons[0])) if not raisons.is_empty() else "Couverture du poste à examiner", Charte.IVOIRE, 420, 17, HORIZONTAL_ALIGNMENT_RIGHT)
-		var stock: int = app.model.get("market", []).filter(func(p: Dictionary): return p.get("pos") == role).size()
-		var suivies: int = app.model.get("market", []).filter(func(p: Dictionary): return p.get("pos") == role and str(p.id) in app.management_ui.shortlist).size()
-		var piste := "%s · %s" % [P.plural(stock, "piste", "pistes"), P.plural(suivies, "suivie", "suivies")]
-		Kit.texte(carte, largeur - 20, 70, piste, Charte.IVOIRE_2, 420, 17, HORIZONTAL_ALIGNMENT_RIGHT).name = "MarketPriorityStock" if i == 0 else "MarketNeedStock_" + str(i)
+		if stock > 0:
+			var piste := "%s · %s" % [P.plural(stock, "piste", "pistes"), P.plural(suivies, "suivie", "suivies")]
+			Kit.texte(carte, largeur - 20, 70, piste, Charte.IVOIRE_2, 420, 17, HORIZONTAL_ALIGNMENT_RIGHT).name = "MarketPriorityStock" if i == 0 else "MarketNeedStock_" + str(i)
 		for enfant in carte.get_children():
 			if enfant is Control: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if stock == 0:
+			var libelle_mission := "Lancer une mission pour ce poste →"
+			var largeur_mission := Kit.largeur(libelle_mission, 18) + 14
+			var lien_mission := Kit.lien(self, Rect2(x + largeur - 20 - largeur_mission, 136 + 50, largeur_mission, 34), libelle_mission, func(): _staff(1, role), "MarketNeedMission_" + str(i), 18)
+			lien_mission.tooltip_text = ""
 
 
 func _tabs() -> void:
@@ -332,16 +351,8 @@ func _tabs() -> void:
 		bouton.text = str(source[0])
 		bouton.focus_mode = Control.FOCUS_ALL
 		bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		bouton.add_theme_font_override("font", Charte.TITRE_GRAS if actif else Charte.TITRE)
-		bouton.add_theme_font_size_override("font_size", maxi(12, C.px(20)))
-		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: bouton.add_theme_color_override(etat, Charte.IVOIRE if actif else Charte.IVOIRE_2)
-		var contour := C.box(Charte.PANNEAU_3 if actif else Color.TRANSPARENT, Charte.IVOIRE if actif else Charte.IVOIRE_3, 0, 0)
-		bouton.add_theme_stylebox_override("normal", contour)
-		bouton.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Charte.IVOIRE_2, 0, 0))
-		bouton.add_theme_stylebox_override("pressed", contour)
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
-		focus.set_border_width_all(2)
-		bouton.add_theme_stylebox_override("focus", focus)
+		C.style_bouton_lien(bouton, 20, actif)
+		bouton.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		if actif:
 			bouton.pressed.connect(func():
 				state.immersive_tab = 1
@@ -400,17 +411,18 @@ func _filters(positions: Array) -> void:
 		state.search = value
 		state.navigation_id = ""
 		_filter_changed())
+	var k := 1.3 if C.density < .75 else 1.0
 	var x := 346.0
-	position_filter = _choice(Rect2(x, 292, 270, 38), "MarketPosition", "Poste", positions, state.position, func(value: String): state.position = value; _filter_changed())
-	x += 282
-	_choice(Rect2(x, 292, 190, 38), "MarketAge", "Âge", ["Tous", "≤ 22 ans", "23–28 ans", "≥ 29 ans"], state.get("age_filter", "Tous"), func(value: String): state.age_filter = value; _filter_changed())
-	x += 202
-	_choice(Rect2(x, 292, 210, 38), "MarketAvailability", "Offres", ["Tous", "Disponibles", "Indisponibles"], state.available, func(value: String): state.available = value; _filter_changed())
-	x += 222
-	_choice(Rect2(x, 292, 250, 38), "MarketBudget", "Indemnité", ["Toutes", "≤ 100 k€", "≤ 400 k€", "≤ 1 M€"], state.get("budget_filter", "Toutes"), func(value: String): state.budget_filter = value; _filter_changed())
-	x += 262
-	_choice(Rect2(x, 292, 290, 38), "MarketObservation", "Observation", ["Toutes", "Observées", "Non observées"], state.get("observation", "Toutes"), func(value: String): state.observation = value; _filter_changed())
-	x += 302
+	position_filter = _choice(Rect2(x, 292, 270 * k, 38), "MarketPosition", "Poste", positions, state.position, func(value: String): state.position = value; state.position_libre = true; _filter_changed())
+	x += 282 * k
+	_choice(Rect2(x, 292, 190 * k, 38), "MarketAge", "Âge", ["Tous", "≤ 22 ans", "23–28 ans", "≥ 29 ans"], state.get("age_filter", "Tous"), func(value: String): state.age_filter = value; _filter_changed())
+	x += 202 * k
+	_choice(Rect2(x, 292, 210 * k, 38), "MarketAvailability", "Offres", ["Tous", "Disponibles", "Indisponibles"], state.available, func(value: String): state.available = value; _filter_changed())
+	x += 222 * k
+	_choice(Rect2(x, 292, 250 * k, 38), "MarketBudget", "Indemnité", ["Toutes", "≤ 100 k€", "≤ 400 k€", "≤ 1 M€"], state.get("budget_filter", "Toutes"), func(value: String): state.budget_filter = value; _filter_changed())
+	x += 262 * k
+	_choice(Rect2(x, 292, 290 * k, 38), "MarketObservation", "Observation", ["Toutes", "Observées", "Non observées"], state.get("observation", "Toutes"), func(value: String): state.observation = value; _filter_changed())
+	x += 302 * k
 	var reset := Kit.lien(self, Rect2(x, 296, 0, 32), "Réinitialiser", func():
 		app.management_ui.market = U.defaults()
 		app.management_ui.market.immersive_tab = tab
@@ -459,8 +471,8 @@ func _columns_for(players: Array) -> Array:
 			{"id":"date", "titre":"RAPPORT", "tri":"Date du rapport", "x":1040, "w":520, "align":0},
 			{"id":"obs", "titre":"OBSERVATION", "tri":"Avis", "x":1600, "w":420, "align":0}]
 	var avec_club := players.any(func(p: Dictionary): return not _club(p).is_empty())
-	var avec_attributs := players.any(func(p: Dictionary): return not Attributs.detail(p, false).is_empty())
-	var avec_fin := players.any(func(p: Dictionary): return p.get("contractEnd") is int or p.get("contractEnd") is float)
+	var avec_attributs := C.density >= .75 and players.any(func(p: Dictionary): return not Attributs.detail(p, false).is_empty())
+	var avec_fin := C.density >= .75 and players.any(func(p: Dictionary): return p.get("contractEnd") is int or p.get("contractEnd") is float)
 	var definitions: Array = [["nom", "JOUEUR", "Nom", 330, 0], ["poste", "POSTE", "Poste", 190, 0]]
 	if avec_club: definitions.append(["club", "CLUB", "", 280, 0])
 	definitions.append_array([["age", "ÂGE", "Âge", 60, 2], ["niveau", "NIV.", "Niveau", 80, 2], ["potentiel", "POT.", "Potentiel", 120, 2]])
@@ -468,7 +480,7 @@ func _columns_for(players: Array) -> Array:
 		for attribut: Array in [["touche", "TOUCHE"], ["melee", "MÊLÉE"], ["gratt", "GRATT."], ["plaq", "PLAQ."]]: definitions.append([attribut[0], attribut[1], "", 84, 2])
 	if avec_fin: definitions.append(["fin", "FIN CTR", "", 100, 2])
 	definitions.append_array([["indemnite", "INDEMNITÉ", "Prime", 160, 2], ["salaire", "SALAIRE / SEM.", "Salaire", 170, 2]])
-	var colonnes: Array = []
+	var colonnes: Array = [{"id":"suivi", "titre":"★", "tri":"Suivi", "x":8.0, "w":44.0, "align":0}]
 	var x := 128.0
 	for definition: Array in definitions:
 		colonnes.append({"id":definition[0], "titre":definition[1], "tri":definition[2], "x":x, "w":float(definition[3]), "align":definition[4]})
@@ -515,7 +527,6 @@ func _entetes() -> void:
 		entete.remove_child(enfant)
 		enfant.queue_free()
 	sort_headers.clear()
-	D.text(entete, 14, 22, "★", 18, Charte.IVOIRE_3, 700, 30).name = "MarketStarHeader"
 	for col: Dictionary in columns:
 		if str(col.tri) == "":
 			if col.id == "action": D.text(entete, col.x + col.w - 4, 22, "ACTION", 16, Charte.IVOIRE_2, 700, col.w, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -542,7 +553,7 @@ func _entetes() -> void:
 		sort_headers[cle] = tri
 		tri.pressed.connect(func():
 			var same: bool = _sort_column() == cle
-			state["report_descending" if tab == 3 else "descending"] = not _sort_descending() if same else cle in ["Niveau", "Potentiel", "Date du rapport"]
+			state["report_descending" if tab == 3 else "descending"] = not _sort_descending() if same else cle in ["Niveau", "Potentiel", "Date du rapport", "Suivi"]
 			state["report_sort" if tab == 3 else "sort"] = cle
 			_filter_changed())
 		entete.add_child(tri)
@@ -559,7 +570,7 @@ func _pied() -> void:
 	_refresh_count()
 	# Raccourcis lisibles (la ligne dit ce que fait chaque touche ; elle n'est jamais cliquable).
 	var droite := float(WIDTH)
-	for touche: Array in [["Échap", "menu"], ["I", "aperçu"]]:
+	for touche: Array in [["Échap", "menu"], ["I", "aperçu"], ["A", "approcher"], ["↑ ↓", "choisir"]]:
 		var mot: String = touche[1]
 		droite -= Kit.largeur(mot, 17) + 6
 		Kit.texte(self, droite, HAUTEUR - 18, mot, Charte.IVOIRE_2, 0, 17)
@@ -612,6 +623,12 @@ func _filtered() -> Array:
 		if observation == "Observées" and not observe: return false
 		if observation == "Non observées" and observe: return false
 		return true)
+	if _sort_column() == "Suivi":
+		# Suivies d'abord (ou en dernier), puis l'ordre des postes.
+		var base: Array = Sort.sorted(filtered, "Poste", false, report_by_player)
+		var suivies: Array = base.filter(func(p: Dictionary): return str(p.id) in app.management_ui.shortlist)
+		var autres: Array = base.filter(func(p: Dictionary): return str(p.id) not in app.management_ui.shortlist)
+		return suivies + autres if _sort_descending() else autres + suivies
 	return Sort.sorted(filtered, _sort_column(), _sort_descending(), report_by_player)
 
 func _observed(player: Dictionary) -> bool:
@@ -637,6 +654,7 @@ func _refresh() -> void:
 	_clear(table_rows)
 	var results := _filtered()
 	_results_count = results.size()
+	_ids_affiches = results.map(func(p: Dictionary): return str(p.get("playerId", p.id)))
 	columns = _columns_for(results if tab != 3 else [])
 	_entetes()
 	table_rows.custom_minimum_size = Vector2(0, C.px(maxi(80, results.size() * ROW_HEIGHT)))
@@ -680,6 +698,28 @@ func _build_remaining(items: Array, current: String, from: int, generation: int)
 		_build_rows(items, current, next, upto)
 		next = upto
 
+## Raccourcis écrits au pied de page : « A » approche la piste choisie, ↑ ↓ passent à la piste voisine (focus sur une ligne).
+func _input(event: InputEvent) -> void:
+	var touche := event as InputEventKey
+	if touche == null or not touche.pressed or touche.echo or touche.ctrl_pressed or touche.alt_pressed or touche.meta_pressed: return
+	if not is_visible_in_tree() or tab == 3 or table_rows == null or not Pages.actuelle(app).is_empty(): return
+	var focus := get_viewport().gui_get_focus_owner()
+	if focus is LineEdit or focus is OptionButton or focus is SpinBox or focus is TextEdit: return
+	if touche.keycode == KEY_A and not touche.shift_pressed:
+		var offre := cost.find_child("OfferRecruitment", true, false) as Button
+		if offre != null and not offre.disabled:
+			get_viewport().set_input_as_handled()
+			offre.pressed.emit()
+	elif touche.keycode in [KEY_UP, KEY_DOWN] and focus is Button and focus.has_meta("player_id") and table_rows.is_ancestor_of(focus):
+		var rang := _ids_affiches.find(str(focus.get_meta("player_id")))
+		var voisin := rang + (1 if touche.keycode == KEY_DOWN else -1)
+		if rang < 0 or voisin < 0 or voisin >= _ids_affiches.size(): return
+		get_viewport().set_input_as_handled()
+		state.player_id = str(_ids_affiches[voisin])
+		_refresh()
+		var cible := table_rows.get_node_or_null("MarketPlayer_" + str(_ids_affiches[voisin]).replace(":", "_")) as Button
+		if cible != null: FocusLater.grab(cible)
+
 func _col(id: String) -> Dictionary:
 	for col: Dictionary in columns:
 		if col.id == id: return col
@@ -703,7 +743,7 @@ func _observation_text(item: Dictionary, report: Dictionary) -> Array:
 	if not report.is_empty():
 		var source := str(report.get("assessment", {}).get("source", ""))
 		return [source if not source.is_empty() else "Rapport conservé", Charte.IVOIRE]
-	if _observed(item): return [Sort.report_label(item), Charte.IVOIRE]
+	if _observed(item): return [Sort.report_label(item), Charte.IVOIRE_2]
 	return ["Non observé", Charte.IVOIRE_3]
 
 func _row(item: Dictionary, index: int, selected: bool) -> void:
@@ -792,16 +832,10 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		action.text = libelle
 		action.focus_mode = Control.FOCUS_ALL
 		action.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		action.add_theme_font_override("font", Charte.TITRE_GRAS)
-		action.add_theme_font_size_override("font_size", maxi(12, C.px(17)))
-		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: action.add_theme_color_override(etat, Charte.NUIT if selected and approcher else Charte.IVOIRE if approcher else Charte.IVOIRE_2)
-		action.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
-		var fond := C.box(Charte.IVOIRE if selected and approcher else Color.TRANSPARENT, Charte.IVOIRE if approcher else Charte.IVOIRE_3, 0, 0)
-		action.add_theme_stylebox_override("normal", fond)
-		action.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Charte.IVOIRE, 0, 0))
-		action.add_theme_stylebox_override("pressed", C.box(Charte.PANNEAU_3, Charte.IVOIRE, 0, 0))
-		action.add_theme_stylebox_override("focus", focus)
-		action.add_theme_stylebox_override("disabled", C.box(Color.TRANSPARENT, Charte.FILET, 0, 0))
+		C.style_bouton_lien(action, 17)
+		action.add_theme_color_override("font_color", Charte.IVOIRE if approcher else Charte.IVOIRE_2)
+		action.text = "Approcher →" if approcher else libelle
+		action.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		action.disabled = en_cours
 		action.accessibility_name = "%s : %s" % [libelle, item.get("name", "")]
 		action.pressed.connect(func():
@@ -815,6 +849,9 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		D.place(action, Rect2(col.x + 18, 3, col.w - 18, ROW_HEIGHT - 6))
 	# Nom : survol (ou focus + I) = mini-fiche, clic = fiche complète ; « i » juste après le nom.
 	var entity_target := {"kind":"report", "id":str(item.id)} if tab == 3 else {"kind":"market", "id":player_id}
+	if tab != 3 and not player.is_empty():
+		var portrait_lien := _reading_area(row, Rect2(52, 0, 72, ROW_HEIGHT), entity_target, "MarketPortrait_" + str(item.id).validate_node_name(), str(item.get("name", "Dossier")))
+		if portrait_lien != null: MiniFiche.lier(app, portrait_lien, player_id, "market")
 	var nom_lien := _reading_area(row, Rect2(x_nom - 4, 0, 330, ROW_HEIGHT), entity_target, "MarketEntity_" + str(item.id).validate_node_name(), str(item.get("name", "Dossier")))
 	if tab != 3 and nom_lien != null and not player.is_empty():
 		MiniFiche.lier(app, nom_lien, player_id, "market")
@@ -911,33 +948,42 @@ func _cout() -> void:
 	# Actions : principale (ivoire plein, un seul par écran), puis liens à la suite.
 	var consultation: bool = player.get("negotiation", {}).get("status", "") == "withdrawn" if player.get("negotiation") is Dictionary else false
 	var observable := player.get("scouting") is Dictionary and not Observation.reason(app, player) == "Joueur de ton club"
-	var principal := Kit.bouton_ivoire(cost, Rect2(1790, 22, 440, 52), "Consulter la discussion" if consultation else "Approcher le joueur", func(): _approcher(player), "OfferRecruitment")
+	var principal := Kit.bouton_ivoire(cost, Rect2(1790, 20, 440, 44), "Consulter la discussion" if consultation else "Approcher le joueur", func(): _approcher(player), "OfferRecruitment")
 	principal.set_meta("player_id", player_id)
 	principal.disabled = app.waiting or (not player.get("available", false) and not consultation) or not app._live().is_empty()
 	principal.tooltip_text = str(player.get("reason", "")) if not player.is_empty() else ""
 	if principal.disabled and not str(player.get("reason", "")).is_empty():
-		Kit.texte(cost, 1790, 102, str(player.get("reason", "")), Charte.D, 440, 17).name = "RecruitmentCostBlocked"
+		Kit.texte(cost, 1790, 92, str(player.get("reason", "")), Charte.D, 440, 17).name = "RecruitmentCostBlocked"
 	elif not frais.is_empty():
-		Kit.texte(cost, 1790, 102, frais, Charte.IVOIRE_2, 440, 17).name = "RecruitmentCostObservation"
+		Kit.texte(cost, 1790, 92, frais, Charte.IVOIRE_2, 440, 17).name = "RecruitmentCostObservation"
 	var liens: Array = []
-	if observable: liens.append(["Observer →" if Observation.caption(player) == "Observer" else Observation.caption(player) + " →", "ObserveRecruitment", func(): _observer(player), not Observation.reason(app, player).is_empty()])
+	if observable: liens.append(["Observer →" if Observation.caption(player) == "Observer" else Observation.caption(player) + " →", "ObserveRecruitment", func(): _confirmer_observation(player), not Observation.reason(app, player).is_empty()])
 	liens.append(["Ouvrir la fiche →", "OpenRecruitmentPlayer", func(): app.navigation_controller.open_entity({"kind":"market", "id":player_id}), false])
 	var context_suivi: Variant = app.model.get("clubLife", {}).get("managerCareer", {}).get("context")
 	var peut_suivre: bool = not app.waiting and app._live().is_empty() and app.model.meta.get("phase", "") != "ended" and context_suivi is Dictionary
 	liens.append(["Retirer du suivi" if player_id in app.management_ui.shortlist else "Suivre cette piste", "Follow" + player_id.replace(":", "_"), func(): app._command("manager_recruitment_watch", {"context": context_suivi.duplicate(true), "playerId": player_id}), not peut_suivre])
 	if tab == 3 or not report.is_empty(): liens.append(["Lire le rapport complet →", "OpenScoutReport", func(): _report_page(report), false])
 	var lx2 := 1790.0
-	var ly := 120.0
+	var ly := 100.0
 	for lien: Array in liens:
 		var largeur := Kit.largeur(str(lien[0]), 18) + 12
 		if lx2 + largeur > 2240 and lx2 > 1790:
 			lx2 = 1790.0
-			ly += 34
-		var bouton := Kit.lien(cost, Rect2(lx2, ly, largeur, 34), str(lien[0]), lien[2], str(lien[1]), 18)
+			ly += 30
+		var bouton := Kit.lien(cost, Rect2(lx2, ly, largeur, 30), str(lien[0]), lien[2], str(lien[1]), 18)
 		bouton.tooltip_text = ""
 		bouton.disabled = lien[3]
 		if str(lien[1]).begins_with("Follow"): bouton.set_meta("follow_id", player_id)
 		lx2 += largeur + 18
+
+## Observation payante : confirmation EN PLACE (deux temps, aucune fenêtre), sur la partie droite du bloc de coût.
+func _confirmer_observation(player: Dictionary) -> void:
+	if Observation.reason(app, player) != "" or not player.get("scouting") is Dictionary: return
+	var scouting: Dictionary = player.scouting
+	var phrase := "Frais : %s. Délai : %s. Le rapport sera disponible à la fin de la mission." % [G.euros(scouting.get("cost", 0)), Observation.delay(scouting)]
+	var envoyer := func(): _observer(player)
+	var bloc := EnPlace.ouvrir(app, cost, "ObservationConfirmation", "Observer " + str(player.get("name", "")), [{"id":"ObservationConfirmPhrase", "text":phrase}], "Lancer l’observation · " + G.euros(scouting.get("cost", 0)), envoyer)
+	D.place(bloc, Rect2(1100, 0, WIDTH - 1100, 172))
 
 func _observer(player: Dictionary) -> void:
 	# Le coût et le délai sont écrits à côté du bouton : cliquer vaut confirmation (aucune fenêtre).

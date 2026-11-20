@@ -72,26 +72,14 @@ static func extension_question(budget: Dictionary, amount: int) -> String:
 	var cost: Dictionary = budget.get("rallongeCout", {}) if budget.get("rallongeCout") is Dictionary else {}
 	return "Demander %s au conseil pour compléter le budget de transferts ?\nLe président répond tout de suite. Accordée, la rallonge s’ajoute à l’enveloppe de la saison et coûte %d points de confiance ; refusée, elle en coûte %d.\nRallonges accordées cette saison : %d sur %d." % [G.euros(amount), int(cost.get("accordee", 0)), int(cost.get("refusee", 0)), int(budget.get("rallongesAccordees", 0)), int(budget.get("rallongeMax", 0))]
 
-## Confirmation (motif W1 : libellé = action, focus par défaut sur Annuler) puis envoi de la commande.
-## `on_sent` est appelé si la commande part (la réponse arrive ensuite par le modèle).
-static func confirm_extension(app: Control, parent: Node, budget: Dictionary, amount: int, on_sent: Callable) -> ConfirmationDialog:
-	var confirm := ConfirmationDialog.new()
-	confirm.name = "TransferBudgetExtensionConfirm"
-	confirm.title = "Rallonge du budget de transferts"
-	confirm.dialog_text = extension_question(budget, amount)
-	confirm.get_ok_button().text = extension_button(amount).to_upper()
-	confirm.get_cancel_button().text = "ANNULER"
-	confirm.confirmed.connect(func():
+## Confirmation EN PLACE (deux temps, aucune fenêtre ; motif W1 : libellé = action, focus sur Annuler) puis envoi de la commande.
+## Le bloc s'insère dans `conteneur`, juste après `apres` s'il est donné. `on_sent` est appelé si la commande part (la réponse
+## arrive ensuite par le modèle et s'affiche dans la page).
+static func confirm_extension(app: Control, conteneur: Node, budget: Dictionary, amount: int, on_sent: Callable, apres: Node = null) -> Control:
+	var lignes: Array = [{"id":"TransferBudgetExtensionQuestion", "text":extension_question(budget, amount)}]
+	var envoyer := func():
 		if not app.waiting and app._command(EXTENSION_COMMAND, {"amount": amount, "confirmed": true}): on_sent.call()
-		confirm.queue_free())
-	confirm.canceled.connect(confirm.queue_free)
-	# Une fenêtre mère masquée (adoptée par une sous-page du Recrutement) ne montrerait pas sa fille : l'application l'accueille.
-	var host: Node = app if parent is Window and not (parent as Window).visible else parent
-	host.add_child(confirm)
-	confirm.popup_centered(Vector2i(640, 230))
-	confirm.get_cancel_button().grab_focus()
-	return confirm
-
+	return preload("res://ui/confirmation_en_place.gd").ouvrir(app, conteneur, "TransferBudgetExtensionConfirm", "Rallonge du budget de transferts", lignes, "Confirmer la demande de %s" % G.euros(amount), envoyer, apres)
 ## Réponse du conseil lue dans la réponse du moteur (meta.transferBudgetExtension), ou l’erreur de la commande.
 static func extension_answer(app: Control) -> String:
 	if not app.bridge.last_response_ok: return "Demande non transmise : " + str(app.last_error)

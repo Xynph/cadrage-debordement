@@ -14,9 +14,10 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
+const EnPlace = preload("res://ui/confirmation_en_place.gd")
 const HOTE := "RecrutementHote"
-const PAGES := ["releve", "interclub", "offres", "missions", "negociation", "rapport"]
-const TITRES := {"releve":"Repérer la relève", "interclub":"Marché entre clubs", "offres":"Offres reçues", "missions":"Besoins, missions et rapports", "negociation":"Offre au joueur", "rapport":"Rapport d’observation"}
+const PAGES := ["releve", "interclub", "offres", "missions", "negociation", "rapport", "dossier"]
+const TITRES := {"releve":"Repérer la relève", "interclub":"Marché entre clubs", "offres":"Offres reçues", "missions":"Besoins, missions et rapports", "negociation":"Offre au joueur", "rapport":"Rapport d’observation", "dossier":"Dossier"}
 const LARGEUR := 1560.0
 
 ## Sous-page demandée (sinon "").
@@ -48,6 +49,32 @@ static func fermer(app: Control) -> void:
 	app.management_ui.erase("recrutement_page")
 	app._navigate("Recrutement", true, true)
 
+## « ← Retour » : un dossier revient au catalogue d'où il vient (relève ou marché entre clubs), le reste à la liste.
+static func retour(app: Control) -> void:
+	var courant := etat(app)
+	if str(courant.get("kind", "")) == "dossier" and str(courant.get("retour", "")) in ["releve", "interclub"]: ouvrir(app, str(courant.retour))
+	else: fermer(app)
+
+## Dossier d'une piste de la relève ou du marché entre clubs : sous-page (portrait, onglets, retour au catalogue).
+static func ouvrir_dossier(app: Control, source: String, id: String) -> bool:
+	var Prospect: Variant = load("res://ui/prospect_profile.gd")
+	if not Prospect.target_available(app, source, id): return false
+	var origine := actuelle(app)
+	var retour_vers := origine if origine in ["releve", "interclub"] else "interclub" if source == "interclub" else "releve"
+	ouvrir(app, "dossier", {"source": source, "id": id, "retour": retour_vers})
+	return true
+
+## Clé d'historique d'une sous-page (une étape Précédent / Suivant par page et par dossier) et son inverse.
+static func cle(courant: Dictionary) -> String:
+	var kind := str(courant.get("kind", ""))
+	if kind != "dossier": return kind
+	return "dossier|%s|%s|%s" % [str(courant.get("source", "")), str(courant.get("id", "")), str(courant.get("retour", ""))]
+
+static func depuis_cle(valeur: String) -> Dictionary:
+	if not valeur.begins_with("dossier|"): return {"kind": valeur}
+	var morceaux := valeur.split("|")
+	return {"kind": "dossier", "source": morceaux[1] if morceaux.size() > 1 else "", "id": morceaux[2] if morceaux.size() > 2 else "", "retour": morceaux[3] if morceaux.size() > 3 else "releve"}
+
 static func _vider_hote(app: Control) -> void:
 	var hote := app.get_node_or_null(HOTE)
 	if hote == null: return
@@ -59,11 +86,14 @@ static func _vider_hote(app: Control) -> void:
 		fenetre.hide()
 		fenetre.queue_free()
 
-## Page entière : barre de retour, titre, contenu adopté.
+## Page entière : barre de retour, titre, contenu adopté (ou dossier construit ici).
 static func build(app: Control, page: Control, kind: String) -> void:
-	var retour := Kit.lien(page, Rect2(0, 4, 0, 38), "← Retour au recrutement", func(): fermer(app), "RecrutementRetour", 20)
-	retour.tooltip_text = ""
-	Kit.touche(page, retour.size.x / C.density + 10, 32, "Échap")
+	var courant := etat(app)
+	var libelle_retour := "← Retour au recrutement"
+	if kind == "dossier": libelle_retour = "← Retour " + ("au marché entre clubs" if str(courant.get("retour", "")) == "interclub" else "à la relève")
+	var lien_retour := Kit.lien(page, Rect2(0, 4, 0, 38), libelle_retour, func(): retour(app), "RecrutementRetour", 20)
+	lien_retour.tooltip_text = ""
+	Kit.touche(page, lien_retour.size.x / C.density + 10, 32, "Échap")
 	var titre := Kit.titre(page, 0, 98, str(TITRES.get(kind, "")), 38, 1400)
 	titre.name = "RecrutementSubpageTitle"
 	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
@@ -71,6 +101,9 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	cadre.name = "RecrutementSubpage_" + kind
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
 	cadre.clip_contents = true
+	if kind == "dossier":
+		_dossier(app, cadre, titre, courant)
+		return
 	var hote := _hote(app, kind)
 	if hote == null:
 		D.text(cadre, 28, 60, "Cet écran n’est pas disponible pour le moment.", 22, Charte.IVOIRE_2, 600, 1200)
@@ -87,15 +120,19 @@ static func build(app: Control, page: Control, kind: String) -> void:
 		zone.add_child(enfant)
 		(enfant as Control).set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		(enfant as Control).theme = fenetre.theme
+	_charte(zone)
+	_suivre_ajouts(zone)
 	# Boutons de la fenêtre d'origine (valider / annuler) : repris dans le pied de la page.
 	var pied := Rect2(24, 930, LARGEUR - 48, 56)
 	var ok := fenetre.get_ok_button()
 	var confirmation := fenetre is ConfirmationDialog
 	var annuler: Button = (fenetre as ConfirmationDialog).get_cancel_button() if confirmation else null
 	if confirmation and ok.visible:
-		var valider := Kit.bouton_ivoire(cadre, Rect2(pied.position.x, pied.position.y, 560, 46), str(ok.text), func():
-			if is_instance_valid(ok) and not ok.disabled:
-				ok.pressed.emit(), "RecrutementPageValider")
+		# Offre au joueur : « Envoyer l'offre » ouvre une confirmation EN PLACE (récapitulatif + « Confirmer »), jamais un engagement
+		# en un seul clic ; les autres vues ont leur propre confirmation en place.
+		var deux_temps := kind == "negociation"
+		var libelle := "Envoyer l’offre" if deux_temps else str(ok.text)
+		var valider := Kit.bouton_ivoire(cadre, Rect2(pied.position.x, pied.position.y, 560, 46), libelle, func(): _valider(app, cadre, zone, ok, deux_temps), "RecrutementPageValider")
 		valider.disabled = ok.disabled
 		valider.set_meta("source", ok)
 		var suivi := Timer.new()
@@ -104,13 +141,119 @@ static func build(app: Control, page: Control, kind: String) -> void:
 		suivi.timeout.connect(func():
 			if is_instance_valid(ok) and is_instance_valid(valider):
 				valider.disabled = ok.disabled
-				valider.text = str(ok.text).to_upper())
+				if not deux_temps: valider.text = str(ok.text).to_upper())
 		valider.add_child(suivi)
 		var lien := Kit.lien(cadre, Rect2(pied.position.x + 600, pied.position.y + 4, 0, 38), str(annuler.text).capitalize(), func():
 				if is_instance_valid(annuler):
 					annuler.pressed.emit(), "RecrutementPageAnnuler", 20)
 		lien.set_meta("source", annuler)
 		(lien as Control).grab_focus.call_deferred()
+
+## Premier clic sur le bouton principal d'une offre : confirmation EN PLACE ; le second (« Confirmer … ») envoie.
+static func _valider(app: Control, cadre: Control, zone: Control, ok: Button, deux_temps: bool) -> void:
+	if not is_instance_valid(ok) or ok.disabled: return
+	if not deux_temps:
+		ok.pressed.emit()
+		return
+	var lignes: Array = []
+	var resume := zone.find_child("OfferSummary", true, false) as Label
+	if resume != null: lignes.append({"id":"ContractSignatureSummary", "text":resume.text})
+	lignes.append({"id":"ContractSignaturePhrase", "text":"En confirmant, tu envoies ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée. Sinon, seule la discussion est enregistrée."})
+	var envoyer := func():
+		if is_instance_valid(ok): ok.pressed.emit()
+	var bloc := EnPlace.ouvrir(app, cadre, "ContractSignatureConfirmation", "Confirmer l’offre", lignes, "Confirmer : autoriser la signature si accord", envoyer)
+	D.place(bloc, Rect2(24, 520, LARGEUR - 48, 400))
+	var valider := cadre.get_node_or_null("RecrutementPageValider") as Control
+	if valider != null: valider.visible = false
+	bloc.tree_exited.connect(func():
+		if is_instance_valid(valider): valider.visible = true)
+
+# --- Habillage aux jetons de la charte des vues adoptées (anciennes fenêtres) --------------------------------------------
+
+## Or / jaune → ivoire (l'or est réservé à Continuer), vert du carnet → vert de la charte, fonds verts → panneau.
+static func _teinte(couleur: Color, fond: bool = false) -> Color:
+	if couleur.a <= .01: return couleur
+	if couleur.r > .7 and couleur.g > .5 and couleur.b < .55: return Charte.FILET if fond else Charte.IVOIRE
+	if couleur.g > couleur.r + .04 and couleur.g > couleur.b + .02: return Charte.PANNEAU_3 if fond and couleur.v < .5 else Charte.V
+	return couleur
+
+static func _teindre(noeud: Node) -> void:
+	if not is_instance_valid(noeud) or not noeud is Control: return
+	if noeud.get_meta("style_charte", false): return
+	var controle := noeud as Control
+	for cle_couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color", "font_placeholder_color"]:
+		if controle.has_theme_color_override(cle_couleur): controle.add_theme_color_override(cle_couleur, _teinte(controle.get_theme_color(cle_couleur)))
+	for etat_style in ["panel", "normal", "hover", "pressed", "focus", "disabled", "read_only", "fill", "background"]:
+		if not controle.has_theme_stylebox_override(etat_style): continue
+		var style := controle.get_theme_stylebox(etat_style) as StyleBoxFlat
+		if style == null: continue
+		style.bg_color = _teinte(style.bg_color, true)
+		style.border_color = _teinte(style.border_color, true)
+		style.set_corner_radius_all(0)
+	# Boutons d'action d'une ancienne fenêtre : style « lien » de la charte (un seul ivoire plein par écran, celui de la page).
+	if noeud is Button and not (noeud is CheckBox or noeud is OptionButton or noeud is MenuButton or noeud is CheckButton):
+		C.style_bouton_lien(noeud as Button, 19)
+
+static func _charte(racine: Node) -> void:
+	_teindre(racine)
+	for enfant in racine.find_children("*", "Control", true, false): _teindre(enfant)
+
+## Les vues adoptées se redessinent (nouvelles cartes, nouveaux boutons) : chaque ajout reçoit le même habillage.
+static func _suivre_ajouts(zone: Control) -> void:
+	var arbre := zone.get_tree()
+	if arbre == null: return
+	var accroche := func(ajout: Node):
+		if is_instance_valid(zone) and zone.is_ancestor_of(ajout): _teindre.call_deferred(ajout)
+	arbre.node_added.connect(accroche)
+	zone.tree_exiting.connect(func():
+		if arbre.node_added.is_connected(accroche): arbre.node_added.disconnect(accroche))
+
+# --- Dossier (relève, marché entre clubs) ------------------------------------------------------------------------------
+
+## Dossier d'une piste : identité, onglets Profil / Observation / Contrat / Ton effectif (mêmes lectures que l'ancienne
+## fenêtre `prospect_profile.gd`). Lecture seule : aucune commande. Nom = fiche complète quand la piste est aussi sur le marché.
+static func _dossier(app: Control, cadre: Control, titre: Label, courant: Dictionary) -> void:
+	var Prospect: Variant = load("res://ui/prospect_profile.gd")
+	var G = load("res://ui/carnet_skin.gd")
+	var source := str(courant.get("source", ""))
+	var id := str(courant.get("id", ""))
+	var personne: Dictionary = Prospect.projected_person(app, source, id)
+	if personne.is_empty():
+		D.text(cadre, 28, 60, "Ce dossier n’est plus disponible.", 22, Charte.IVOIRE_2, 600, 1200)
+		return
+	titre.text = ("Dossier · " + str(personne.get("name", ""))).to_upper()
+	var portrait: Control = G.portrait(0, 72, personne)
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.add_child(portrait)
+	D.place(portrait, Rect2(28, 24, 96, 96))
+	var sur_le_marche: bool = not load("res://ui/immersive08/fiche_commune.gd").trouver(app, id, "market").is_empty()
+	var nom_texte := str(personne.get("name", "—"))
+	if sur_le_marche:
+		Kit.nom(app, cadre, Rect2(148, 30, 700, 44), nom_texte, id, "ProspectProfileName", Charte.IVOIRE, 30)
+	else:
+		var nom_label := D.text(cadre, 148, 62, nom_texte, 30, Charte.IVOIRE, 700, 900)
+		nom_label.name = "ProspectProfileName"
+	Kit.texte(cadre, 148, 104, "%s · %s ans" % [str(personne.get("pos", "—")), G.n(personne.get("age", "—"))], Charte.IVOIRE_2, 800, 19)
+	if sur_le_marche:
+		var fiche := Kit.lien(cadre, Rect2(1180, 36, 0, 38), "Ouvrir la fiche complète →", func(): app.navigation_controller.open_entity({"kind":"market", "id":id}), "ProspectOpenSheet", 19, true)
+		fiche.tooltip_text = ""
+	var onglets := TabContainer.new()
+	onglets.name = "ProspectProfileTabs"
+	cadre.add_child(onglets)
+	D.place(onglets, Rect2(24, 140, LARGEUR - 48, 820))
+	var profil: VBoxContainer = G.scroll(onglets)
+	profil.get_parent().name = "Profil"
+	Prospect._profile(profil, personne, source)
+	var observation: VBoxContainer = G.scroll(onglets)
+	observation.get_parent().name = "Observation"
+	Prospect._observation(observation, personne)
+	var contrat: VBoxContainer = G.scroll(onglets)
+	contrat.get_parent().name = "Contrat"
+	Prospect._contract(contrat, personne, source)
+	var effectif: VBoxContainer = G.scroll(onglets)
+	effectif.get_parent().name = "Ton effectif"
+	Prospect._squad(effectif, app.model.get("squad", []), personne)
+	_charte(cadre)
 
 ## Hôte du contenu adopté pour cette page : créé au premier affichage (construit la fenêtre d'origine puis l'adopte).
 static func _hote(app: Control, kind: String) -> Control:

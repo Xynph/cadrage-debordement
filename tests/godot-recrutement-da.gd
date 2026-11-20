@@ -96,7 +96,10 @@ func run() -> void:
 	await layout()
 	await names_open_sheets()
 	await colors()
+	await needs_and_sort()
 	await subpages()
+	await dossier_page()
+	await observation_confirmation()
 	await offer_page()
 	shot("recrutement-1920x1080")
 	finish()
@@ -186,6 +189,20 @@ func offer_page() -> void:
 	bouton.pressed.emit()
 	await settle(12)
 	check(page_kind() == "negociation", "Approcher ouvre l'écran « Offre au joueur »")
+	# Deux temps : « Envoyer l'offre » ouvre la confirmation EN PLACE ; rien n'est envoyé avant « Confirmer ».
+	var envoyer := node("RecrutementPageValider") as Button
+	if envoyer != null and not envoyer.disabled:
+		check(envoyer.text.to_lower().begins_with("envoyer"), "Premier temps : « Envoyer l'offre » (%s)" % envoyer.text)
+		var commandes := int(app.bridge._next_id)
+		envoyer.pressed.emit()
+		await settle(6)
+		check(node("ContractSignatureConfirmation") != null and node("ContractSignatureConfirmationOk") != null, "Second temps : confirmation en place avec « Confirmer »")
+		check(int(app.bridge._next_id) == commandes, "Aucune commande envoyée avant la confirmation")
+		check(windows().is_empty(), "La confirmation de l'offre n'ouvre aucune fenêtre")
+		var non := node("ContractSignatureConfirmationAnnuler") as Button
+		if non != null: non.pressed.emit()
+		await settle(4)
+		check(node("ContractSignatureConfirmation") == null, "Annuler referme la confirmation sans rien envoyer")
 	check(windows().is_empty(), "L'offre n'ouvre aucune fenêtre")
 	check(node("RecrutementPageValider") != null and node("RecrutementPageAnnuler") != null, "Valider et annuler sont ceux de la page")
 	shot("recrutement-offre-1920x1080")
@@ -194,3 +211,52 @@ func offer_page() -> void:
 		annuler.pressed.emit()
 		await settle(12)
 	check(page_kind().is_empty(), "Annuler ferme l'écran d'offre sans rien envoyer")
+
+## Besoins du club : arrive filtré sur le poste du besoin n° 1 ; une carte sans piste propose une mission ; « ★ » trie.
+func needs_and_sort() -> void:
+	var besoins: Array = app.model.get("decisions", {}).get("recruitment", {}).get("needs", [])
+	if not besoins.is_empty():
+		var poste := str(besoins[0].get("pos", ""))
+		var stock: int = app.model.get("market", []).filter(func(p: Dictionary): return p.get("pos") == poste).size()
+		check(str(app.management_ui.market.get("position", "Tous")) == poste or int(app.management_ui.market.get("immersive_tab", 0)) != 0, "Onglet Besoins : filtré sur le poste du besoin n° 1 (%s)" % poste)
+		var carte := node("MarketNeed_0")
+		check(carte != null, "Carte du besoin n° 1")
+		if stock == 0: check(node("MarketNeedMission_0") != null, "Carte sans piste : lien « Lancer une mission pour ce poste »")
+	var etoile := node("MarketSort_Suivi") as Button
+	check(etoile != null, "En-tête ★ : bouton de tri")
+	if etoile != null:
+		etoile.pressed.emit()
+		await settle(6)
+		check(str(app.management_ui.market.get("sort", "")) == "Suivi", "★ trie les pistes suivies d'abord")
+
+## Dossier : sous-page (retour au catalogue, Échap), jamais une fenêtre.
+func dossier_page() -> void:
+	await press("OpenRegenScouting")
+	var ouverture: Array = app.find_children("*", "Button", true, false).filter(func(b: Node): return b.has_meta("entity_kind") and str(b.get_meta("entity_kind")) == "prospect" and not (b as Button).disabled)
+	if ouverture.is_empty():
+		await back_to_list()
+		return
+	(ouverture[0] as Button).pressed.emit()
+	await settle(10)
+	check(page_kind() == "dossier", "Nom d'une piste du catalogue : sous-page Dossier")
+	check(windows().is_empty(), "Le dossier n'ouvre aucune fenêtre")
+	check(node("ProspectProfileTabs") != null and node("RecrutementRetour") != null, "Dossier : onglets et retour au catalogue")
+	var retour := node("RecrutementRetour") as Button
+	if retour != null: retour.pressed.emit()
+	await settle(10)
+	check(page_kind() == "releve", "Retour du dossier : la relève")
+	await back_to_list()
+
+## Observation payante : « Observer → » ouvre une confirmation EN PLACE (5 000 €), rien ne part avant « Lancer l'observation ».
+func observation_confirmation() -> void:
+	var lien := node("ObserveRecruitment") as Button
+	if lien == null or lien.disabled: return
+	var commandes := int(app.bridge._next_id)
+	lien.pressed.emit()
+	await settle(6)
+	check(node("ObservationConfirmation") != null and node("ObservationConfirmationOk") != null, "Observer : confirmation en place")
+	check(int(app.bridge._next_id) == commandes and windows().is_empty(), "Observer : aucune commande ni fenêtre avant confirmation")
+	var non := node("ObservationConfirmationAnnuler") as Button
+	if non != null: non.pressed.emit()
+	await settle(4)
+	check(node("ObservationConfirmation") == null, "Annuler referme la confirmation d'observation")

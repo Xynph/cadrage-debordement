@@ -123,18 +123,18 @@ func executer() -> void:
 		if carte != null and noeud(carte, "SaleAccept") != null:
 			(noeud(carte, "SaleAccept") as Button).pressed.emit()
 			await poser(10)
-			var confirmation := noeud(app, "SaleConfirmation") as ConfirmationDialog
-			verifier(confirmation != null and confirmation.visible, "confirmation ouverte")
+			var confirmation := noeud(app, "SaleConfirmation") as Control
+			verifier(confirmation != null and confirmation.is_visible_in_tree() and (app.find_children("*", "ConfirmationDialog", true, false).filter(func(d): return d.visible)).is_empty(), "confirmation EN PLACE (deux temps, aucune fenêtre)")
 			if confirmation != null:
-				verifier(confirmation.get_ok_button().text.begins_with("CONCLURE L’ACCORD AVEC"), "libellé = action : " + confirmation.get_ok_button().text)
-				verifier(confirmation.get_cancel_button().text == "ANNULER", "bouton Annuler")
-				verifier(confirmation.gui_get_focus_owner() == confirmation.get_cancel_button(), "focus sur Annuler")
+				verifier((noeud(app, "SaleConfirmationOk") as Button).text.begins_with("CONCLURE L’ACCORD AVEC"), "libellé = action : " + (noeud(app, "SaleConfirmationOk") as Button).text)
+				verifier((noeud(app, "SaleConfirmationAnnuler") as Button).text == "Annuler", "bouton Annuler")
+				verifier(root.gui_get_focus_owner() == noeud(app, "SaleConfirmationAnnuler"), "focus sur Annuler")
 				verifier(texte(confirmation, "SaleConfirmCash").contains("+" + G.euros(offre.fee)) and texte(confirmation, "SaleConfirmCash").contains("1er mai"), "caisse : " + texte(confirmation, "SaleConfirmCash"))
 				verifier(texte(confirmation, "SaleConfirmSquad").contains("Effectif après la vente : %d" % int(offre.squadAfter)), "effectif après vente : " + texte(confirmation, "SaleConfirmSquad"))
 				verifier(texte(confirmation, "SaleConfirmBudget").begins_with("Budget de transferts"), "part rendue au budget : " + texte(confirmation, "SaleConfirmBudget"))
 				textes_lisibles(confirmation, "confirmation")
 				await capturer("vente-confirmation.png")
-				confirmation.get_cancel_button().pressed.emit()
+				(noeud(app, "SaleConfirmationAnnuler") as Button).pressed.emit()
 				await poser(6)
 		(noeud(app, "RecrutementRetour") as Button).pressed.emit()
 		await poser(6)

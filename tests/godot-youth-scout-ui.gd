@@ -56,8 +56,11 @@ func cards(view: AcceptDialog,id: String) -> Array:
 	return view.find_child(id,true,false).find_children("*","VBoxContainer",true,false).filter(func(c):return c.has_meta("player_id"))
 func confirm_action() -> void:
 	var windows:=app.find_children("*","ConfirmationDialog",true,false).filter(func(d):return d.visible)
-	check(windows.size()==1,"Confirmation publique réellement ouverte")
+	# Les confirmations d'argent sont EN PLACE (bloc « …ConfirmationOk »), plus des fenêtres.
+	var en_place:=app.find_children("*ConfirmationOk","Button",true,false).filter(func(b):return b.is_visible_in_tree())
+	check(windows.size()==1 or en_place.size()==1,"Confirmation publique réellement ouverte")
 	if windows.size()==1: await press(windows[0].get_ok_button());await response("confirmation")
+	elif en_place.size()==1: en_place[0].pressed.emit();await response("confirmation")
 func open_scout() -> AcceptDialog:
 	app._clear_dialogs();app._navigate("Recrutement");await settle()
 	var tabs=app.body.find_child("MarketTabs",true,false)
