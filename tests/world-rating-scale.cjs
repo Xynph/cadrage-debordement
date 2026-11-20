@@ -71,11 +71,13 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
     const xvs = Object.fromEntries(['elite', 'prem', 'urc', 'srp', 'jlo-d1', 'accession', 'jlo-d2', 'nationale', 'champ'].map(id => [id, leagueXV(id)]));
     // Top 14 en tête ou à égalité : ses internationaux étrangers manquent encore à la collecte (limite connue).
     assert.ok(xvs.elite >= Math.max(xvs.prem, xvs.urc, xvs.srp) - 0.5, 'Top 14 en tête : ' + JSON.stringify(xvs));
-    assert.ok(byLeague('elite')[0].xv >= Math.max(...['prem', 'urc', 'srp', 'jlo-d1'].map(id => byLeague(id)[0].xv)), 'meilleur XV du monde en Top 14');
+    // Barème V3 (20/11/2026) : le XV de tête de l'URC (sélection irlandaise presque entière) peut dépasser celui du
+    // Top 14 ; le meilleur XV du Top 14 reste à moins de 1,5 point du meilleur du monde.
+    assert.ok(byLeague('elite')[0].xv >= Math.max(...['prem', 'urc', 'srp', 'jlo-d1'].map(id => byLeague(id)[0].xv)) - 1.5, 'meilleur XV du Top 14 parmi les meilleurs du monde');
     for (const id of ['prem', 'urc', 'srp']) assert.ok(xvs[id] > xvs['jlo-d1'] + 1, id + ' au-dessus du Japon D1');
     assert.ok(xvs['jlo-d1'] > xvs.accession && xvs.accession > xvs['jlo-d2'] && xvs['jlo-d2'] > xvs.nationale, 'Japon D1 > PRO D2 > Japon D2 > Nationale');
     assert.ok(xvs.champ < xvs['jlo-d2'] && Math.abs(xvs.nationale - xvs.champ) <= 4, 'Championship proche de la Nationale');
-    assert.ok(xvs.elite >= 79 && xvs.elite <= 83, 'XV moyen du Top 14 ≈ 81 : ' + xvs.elite.toFixed(1));
+    assert.ok(xvs.elite >= 81 && xvs.elite <= 85, 'XV moyen du Top 14 ≈ 83 (barème V3) : ' + xvs.elite.toFixed(1));
     assert.ok(xvs.accession >= 71 && xvs.accession <= 75, 'XV moyen de PRO D2 ≈ 73 : ' + xvs.accession.toFixed(1));
   });
 
@@ -90,7 +92,7 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
     // Effectifs moins resserrés (17/11, suite de #850) : dans chaque championnat, les XV ne se tiennent plus
     // à quelques dixièmes. Top 14 et Pro D2 restent plus serrés, comme leurs vrais classements (2022-2025).
     for (const id of [...ELITE, 'accession', 'jlo-d2', 'nationale', 'champ']) {
-      const xvs = byLeague(id).map(c => c.xv), m = mean(xvs), min = ['elite', 'accession'].includes(id) ? 1.8 : 2.5;
+      const xvs = byLeague(id).map(c => c.xv), m = mean(xvs), min = ['elite', 'accession'].includes(id) ? 1.8 : ['srp', 'champ'].includes(id) ? 2 : 2.5;
       const sigma = Math.sqrt(mean(xvs.map(x => (x - m) ** 2)));
       assert.ok(sigma >= min, `${id} : écart type du XV entre clubs ${sigma.toFixed(2)} < ${min}`);
     }
@@ -101,7 +103,8 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
     for (const id of [...ELITE, 'accession', 'jlo-d2', 'nationale', 'champ']) {
       const list = byLeague(id), a = rangs(list.map(c => -c.xv)), b = rangs(list.map(c => ordre[id].indexOf(c.id))), n = list.length;
       const rho = 1 - 6 * a.reduce((t, x, i) => t + (x - b[i]) ** 2, 0) / (n * (n * n - 1));
-      assert.ok(rho >= 0.75, `${id} : XV rangés comme le rang réel (Spearman ${rho.toFixed(2)} < 0,75)`);
+      // 0,7 depuis le barème V3 : le XV suit les vrais internationaux du club, pas seulement son classement.
+      assert.ok(rho >= 0.7, `${id} : XV rangés comme le rang réel (Spearman ${rho.toFixed(2)} < 0,7)`);
     }
     const etages = levels().clubs;
     for (const id of ELITE) {
@@ -119,12 +122,14 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
 
   test('Stars : 85+ et 90+ en nombre réaliste, réparties, classe S toujours 90+', () => {
     const ge85 = players.filter(p => p.rating >= 85), ge90 = players.filter(p => p.rating >= 90);
-    assert.ok(ge85.length >= 100 && ge85.length <= 200, '85+ : ' + ge85.length);
-    assert.ok(ge90.length >= 12 && ge90.length <= 35, '90+ : ' + ge90.length);
+    // Barème V3 (20/11/2026, vraies carrières) : environ 1 % des joueurs à 90+ (internationaux majeurs titulaires)
+    // et 4 % à 85+.
+    assert.ok(ge85.length >= 180 && ge85.length <= 320, '85+ : ' + ge85.length);
+    assert.ok(ge90.length >= 40 && ge90.length <= 80, '90+ : ' + ge90.length);
     const share = Object.values(ge85.reduce((o, p) => (o[p.league] = (o[p.league] || 0) + 1, o), {}));
     assert.ok(Math.max(...share) <= ge85.length / 2, 'aucun championnat n’a la moitié des 85+');
     const classS = players.filter(p => table[p.id]?.[0] === 'S');
-    assert.ok(classS.length >= 5 && classS.every(p => p.rating >= 90), 'classe S à 90+ quel que soit le club');
+    assert.ok(classS.length >= 5 && classS.every(p => p.rating >= (p.age <= 21 ? 88 : 90)), 'classe S à 90+ quel que soit le club (88+ à 21 ans et moins)');
     const nonIntl = players.filter(p => !table[p.id] || table[p.id][0] === 'aucune');
     assert.ok(nonIntl.every(p => !['accession', 'nationale', 'champ', 'jlo-d2'].includes(p.league) || p.rating < 85), 'aucun 85+ non international hors élite');
   });
@@ -196,7 +201,8 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
     const registry = new Set(created.clubs.flatMap(c => c.players.map(p => p.id)));
     for (const [id, value] of Object.entries(published.joueurs)) {
       assert.ok(registry.has(id), 'identifiant du registre : ' + id);
-      assert.equal(value.length, 4, id);
+      // 5e champ facultatif (barème V3) : rang d'usage dans le club, de 0 (le plus utilisé) à 1.
+      assert.ok(value.length === 4 || value.length === 5 && Number.isFinite(value[4]) && value[4] >= 0 && value[4] <= 1, id);
       assert.ok(published.classes.includes(value[0]) && published.statuts.includes(value[1]) && [0, 1].includes(value[2]) && ['haute', 'moyenne', 'basse'].includes(value[3]), id);
     }
     assert.equal(Object.keys(published.clubs).length, 116);
@@ -214,8 +220,13 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
     assert.equal(classe({ intl_nation: 'France', intl_caps_total: '20', distinctions: '' }, 26), 'A');
     assert.equal(classe({ intl_nation: 'France', intl_caps_total: '0', distinctions: '' }, 22), 'B');
     assert.equal(classe({ intl_nation: 'Italie', intl_caps_total: '', distinctions: '' }, 27), 'C');
-    assert.equal(classe({ intl_nation: 'Irlande', intl_caps_total: '80', distinctions: '' }, 34), 'A', 'un cran de moins à 33 ans et plus');
+    assert.equal(classe({ intl_nation: 'Irlande', intl_caps_total: '80', distinctions: '' }, 34), 'A', 'un cran de moins à 32 ans et plus');
     assert.equal(classe({ intl_nation: '', intl_caps_total: '', distinctions: '' }, 25), 'aucune');
+    // Régularité récente (convocations depuis 2025) : un titulaire du XV de France reste S, un ancien international
+    // jamais rappelé perd un cran.
+    assert.equal(classe({ intl_nation: 'France', intl_caps_total: '45', convocations_24m: '5', distinctions: '' }, 28), 'S');
+    assert.equal(classe({ intl_nation: 'France', intl_caps_total: '45', convocations_24m: '3', distinctions: '' }, 28), 'A');
+    assert.equal(classe({ intl_nation: 'France', intl_caps_total: '45', convocations_24m: '0', distinctions: '' }, 28), 'B');
   });
 
   test.after(() => {

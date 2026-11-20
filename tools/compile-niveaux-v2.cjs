@@ -37,7 +37,7 @@ function tier(nation) {
   return 20;
 }
 // Distinction de très haut niveau : joueur de l'année, MVP, équipe-type, Lions.
-const STAR = /\b(mvp|joueur de l annee|player of the year|equipe type|dream team|team of the season|lions)\b/;
+const STAR = /\b(mvp|joueur de l annee|player of the year|equipe type|equipe du tournoi|joueur du tournoi|dream team|team of the season|team of the championship|lions)\b/;
 
 function csv(text) {
   const rows = []; let row = [], field = '', quoted = false;
@@ -60,19 +60,30 @@ const int = v => /^\d+$/.test(String(v).trim()) ? Number(v) : null;
 function classe(row, age) {
   const t = tier(row.intl_nation);
   if (!t) return 'aucune';
-  const caps24 = int(row.intl_caps_24m), caps = int(row.intl_caps_total);
+  const caps24 = int(row.intl_caps_24m), caps = int(row.intl_caps_total), convocations = int(row.convocations_24m);
   const dist = fold(row.distinctions);
   const uncapped = caps === 0 || /non cape/.test(dist);
-  const experience = caps24 !== null ? caps24 * 3 : caps; // 24 mois réguliers ≈ 10+ sélections
+  // Régularité récente (collecte v3) : convocations en sélection depuis janvier 2025 (groupes du Tournoi, du
+  // Rugby Championship, des tests d'été et d'automne, de la Pacific Nations Cup, des Lions), sinon sélections
+  // relevées sur la période ; null = inconnue.
+  const recent = convocations !== null ? convocations : caps24 === null ? null : caps24 >= 10 ? 4 : caps24 >= 5 ? 2 : caps24 >= 1 ? 1 : 0;
   let rank; // 0 = S, 1 = A, 2 = B, 3 = C
-  // Membre d'un groupe récent d'une nation du top 5, sélections inconnues : A (le groupe est l'élite du pays).
-  if (t === 5) rank = uncapped ? 2 : experience === null ? 1 : experience >= 50 ? 0 : experience >= 15 ? 1 : 2;
-  else if (t === 8) rank = uncapped ? 3 : experience !== null && experience >= 50 ? 1 : experience !== null && experience < 10 ? 3 : 2;
-  else if (t === 12) rank = uncapped ? 3 : experience !== null && experience >= 30 ? 2 : 3;
+  // Classe S : nation du top 5, international confirmé (40 sélections) et convoqué presque à chaque
+  // fois (4 groupes et plus) ; sans relevé récent, 50 sélections. Une grande distinction relève d'un cran.
+  if (t === 5) rank = uncapped ? 2 : caps === null && recent === null ? 1
+    : (recent !== null ? recent >= 4 && (caps ?? 0) >= 40 : (caps ?? 0) >= 50) ? 0
+      : (recent !== null ? recent >= 2 || (caps ?? 0) >= 15 : (caps ?? 0) >= 15) ? 1 : 2;
+  else if (t === 8) rank = uncapped ? 3 : (recent !== null ? recent >= 4 && (caps ?? 0) >= 30 : (caps ?? 0) >= 50) ? 1 : (caps ?? 0) < 10 && !(recent >= 2) ? 3 : 2;
+  else if (t === 12) rank = uncapped ? 3 : (caps ?? 0) >= 30 && (recent === null || recent >= 2) ? 2 : 3;
   else rank = 3;
   if (STAR.test(dist) && t <= 8) rank = Math.max(0, rank - 1);
-  // Ancien international de 33 ans et plus : un cran en dessous (déclin), jamais sous C.
-  if (Number.isFinite(age) && age >= 33) rank = Math.min(3, rank + 1);
+  // International ajouté d'après les listes des capés (régularité récente inconnue) : jamais classé S sur le seul total.
+  if (row.complement) rank = Math.max(1, rank);
+  // Plus convoqué depuis janvier 2025, ou dernière sélection avant novembre 2024 : ancien international, un cran en dessous.
+  const last = /^(\d{4})-(\d{2})/.exec(row.derniere_selection || '');
+  if (recent === 0 || last && Number(last[1]) * 12 + Number(last[2]) < 2024 * 12 + 11) rank = Math.min(3, rank + 1);
+  // Classe S réservée aux 31 ans et moins : à partir de 32 ans, un cran en dessous (déclin), jamais sous C.
+  if (Number.isFinite(age) && age >= 32) rank = Math.min(3, rank + 1);
   return ['S', 'A', 'B', 'C'][rank];
 }
 
@@ -121,6 +132,60 @@ function publicRegistry() {
   return new Map(full.clubs.flatMap(c => c.players.map(p => [p.id, { age: p.age, club_id: c.id }])));
 }
 
+// Collecte v3 (20/11/2026, dossier <niveaux>/collecte-v3, facultatif) : statuts en club avec compteurs
+// (statut-*.csv), internationaux par sélection (internationaux.csv) et sélections U20 (u20.csv). Une valeur
+// trouvée remplace celle de la collecte du 14/11 ; une valeur vide ou « inconnu » ne l'efface pas.
+function collecteV3(niveauxDir, sources) {
+  const dir = path.join(niveauxDir, 'collecte-v3');
+  const statut = new Map(), intl = new Map(), u20 = new Map();
+  if (!fs.existsSync(dir)) return { statut, intl, u20 };
+  const read = name => { const file = path.join(dir, name); sources['niveaux/collecte-v3/' + name] = file; return csv(fs.readFileSync(file, 'utf8')); };
+  for (const name of fs.readdirSync(dir).filter(f => /^statut-.*\.csv$/.test(f)).sort()) {
+    for (const r of read(name)) {
+      const s = fold(r.statut_club).replace(/ /g, '');
+      if (!r.id || (!STATUTS.includes(s) && s !== 'blesselong') || s === 'inconnu') continue;
+      statut.set(r.id, { statut: s === 'blesselong' ? 'rotation' : s, starts: int(r.titularisations), matches: int(r.matchs), minutes: int(r.minutes), confiance: r.confiance });
+    }
+  }
+  if (fs.existsSync(path.join(dir, 'internationaux.csv'))) for (const r of read('internationaux.csv')) if (r.id && r.intl_nation) intl.set(r.id, r);
+  // Internationaux oubliés (listes des capés par nation, audit du 20/11/2026) : ajoutés, jamais en remplacement.
+  if (fs.existsSync(path.join(dir, 'internationaux-complement.csv'))) for (const r of read('internationaux-complement.csv')) if (r.id && r.intl_nation && !intl.has(r.id)) intl.set(r.id, { ...r, complement: '1' });
+  // Vérification des internationaux (sélections lues sur la fiche de chaque joueur, convocations depuis 2025).
+  if (fs.existsSync(path.join(dir, 'internationaux-verif.csv'))) for (const r of read('internationaux-verif.csv')) {
+    const base = intl.get(r.id);
+    if (!base) continue;
+    if (int(r.intl_caps_total) !== null) base.intl_caps_total = r.intl_caps_total;
+    // Convocations comptées sur les groupes du Tournoi, du Rugby Championship, de la Pacific Nations Cup et sur les
+    // feuilles des tests : la Géorgie (Rugby Europe, groupes non publiés) serait sous-comptée, elle garde l'ancien relevé.
+    if (int(r.convocations_24m) !== null && tier(base.intl_nation) && !/^g[ée]orgi/i.test(base.intl_nation)) base.convocations_24m = r.convocations_24m;
+  }
+  // Contrôle d'identité (homonymes) : un faux international perd sa sélection, ou reçoit la sienne si elle est connue.
+  if (fs.existsSync(path.join(dir, 'internationaux-identite.csv'))) for (const r of read('internationaux-identite.csv')) {
+    if (r.verdict !== 'faux' || !intl.has(r.id)) continue;
+    if (r.vraie_nation && int(r.vraies_selections) !== null) intl.set(r.id, { id: r.id, intl_nation: r.vraie_nation, intl_caps_total: r.vraies_selections, distinctions: '' });
+    else intl.delete(r.id);
+  }
+  if (fs.existsSync(path.join(dir, 'u20.csv'))) for (const r of read('u20.csv')) if (r.id && r.u20_nation) u20.set(r.id, r);
+  return { statut, intl, u20 };
+}
+
+// Rang de chaque joueur dans son club (0 = le plus utilisé, 1 = le moins utilisé) aux titularisations, puis aux
+// matchs et aux minutes, parmi les joueurs dont la collecte donne des compteurs (au moins 8 par club).
+function usageRanks(v3, info) {
+  const byClub = new Map(), usage = new Map();
+  for (const [id, s] of v3.statut) {
+    if (!info.has(id) || [s.starts, s.matches, s.minutes].every(v => v === null)) continue;
+    const club = info.get(id).club;
+    (byClub.get(club) || byClub.set(club, []).get(club)).push([id, s.starts ?? 0, s.matches ?? 0, s.minutes ?? 0]);
+  }
+  for (const list of byClub.values()) {
+    if (list.length < 8) continue;
+    list.sort((a, b) => b[1] - a[1] || b[2] - a[2] || b[3] - a[3] || (a[0] < b[0] ? -1 : 1));
+    list.forEach(([id], i) => usage.set(id, Math.round(100 * i / (list.length - 1)) / 100));
+  }
+  return usage;
+}
+
 function compile(prive, niveauxDir) {
   const players = {}, clubs = {}, coverage = {}, ordre = {};
   const registry = publicRegistry();
@@ -130,6 +195,8 @@ function compile(prive, niveauxDir) {
     const file = path.join(prive, 'data/scouting/review-v12', f);
     if (fs.existsSync(file)) sources['data/scouting/review-v12/' + f] = file;
   }
+  const v3 = collecteV3(niveauxDir, sources);
+  const usage = usageRanks(v3, new Map([...registry].map(([id, r]) => [id, { club: r.club_id }])));
   for (const league of LEAGUES) {
     const files = ['niveaux', 'clubs'].map(k => path.join(niveauxDir, `${k}-${league}.csv`));
     if (!files.every(f => fs.existsSync(f))) throw Error('Collecte incomplète pour ' + league + ' dans ' + niveauxDir);
@@ -160,9 +227,14 @@ function compile(prive, niveauxDir) {
       for (const list of byClub.values()) list.sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).forEach(([id], i) => rankInClub.set(id, i + 1));
     }
     const count = { joueurs: 0, statutConnu: 0, internationaux: 0 };
-    for (const row of rows) {
-      if (!row.id || !info.has(row.id)) continue;
-      const { age } = info.get(row.id);
+    for (const source of rows) {
+      if (!source.id || !info.has(source.id)) continue;
+      const { age } = info.get(source.id);
+      // Collecte v3 : statut, sélections et U20 trouvés remplacent ceux du 14/11.
+      const row = { ...source }, found = v3.statut.get(row.id), cap = v3.intl.get(row.id), junior = v3.u20.get(row.id);
+      if (found) { row.statut_club = found.statut; if (found.confiance) row.confiance = found.confiance; }
+      if (cap) for (const k of ['intl_nation', 'intl_caps_total', 'intl_caps_24m', 'convocations_24m', 'derniere_selection', 'distinctions', 'complement']) if (cap[k]) row[k] = cap[k];
+      if (junior && Number.isFinite(age) && age <= 23) row.u20 = 'oui';
       let statut = fold(row.statut_club).replace(/ /g, '');
       if (statut === 'reservist') statut = 'reserviste';
       if (!STATUTS.includes(statut)) statut = 'inconnu';
@@ -181,7 +253,8 @@ function compile(prive, niveauxDir) {
       if (statut !== 'inconnu') count.statutConnu++;
       if (c !== 'aucune') count.internationaux++;
       if (c === 'aucune' && statut === 'inconnu' && !u20) continue; // rien de connu : absent de la table
-      players[row.id] = [c, statut, u20, confiance];
+      // 5e champ (barème V3) : rang dans le club aux titularisations, quand la collecte donne des compteurs.
+      players[row.id] = usage.has(row.id) && statut !== 'inconnu' ? [c, statut, u20, confiance, usage.get(row.id)] : [c, statut, u20, confiance];
     }
     coverage[league] = count;
   }
@@ -190,7 +263,7 @@ function compile(prive, niveauxDir) {
     schema: 'niveaux-v2',
     version: 1,
     note: 'Niveau réel compilé (identifiants seulement) pour le barème senior V2 des nouvelles carrières Monde. Joueur absent : classe aucune, statut inconnu, U20 0, confiance basse.',
-    champs: ['classe', 'statut', 'u20', 'confiance'],
+    champs: ['classe', 'statut', 'u20', 'confiance', 'rang dans le club (0 = le plus utilisé, facultatif)'],
     classes: ['S', 'A', 'B', 'C', 'aucune'],
     statuts: STATUTS,
     etages: ETAGES,

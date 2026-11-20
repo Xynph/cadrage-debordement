@@ -120,7 +120,11 @@ module.exports = function careerVariation(dependencies = {}) {
       result.rating += change;
       result.skillBase += change;
     }
-    result.dev.potential = clamp(result.dev.potential+variation.potential,result.rating,99);
+    // Un joueur fait ne gagne pas de marge cachée d'une carrière à l'autre (20/11/2026) : la hausse tirée est
+    // réduite à 1 point de 27 à 29 ans et supprimée à 30 ans et plus ; la baisse reste possible.
+    const age = Number.isFinite(result.age) ? result.age : 0;
+    const potentialChange = variation.potential > 0 ? Math.min(variation.potential, age >= 30 ? 0 : age >= 27 ? 1 : 99) : variation.potential;
+    result.dev.potential = clamp(result.dev.potential+potentialChange,result.rating,99);
     result.dev.seasonStart = result.rating;
     if (Number.isFinite(source.potential)) result.potential = sourcePotential(source.potential,source.id,config);
     return result;

@@ -29,7 +29,10 @@ test('Carrière Monde : cap de matchs en carrière franchi → un courrier, une 
       nativeSystems.domain('clubMail').recevoir(S,d);
       return JSON.stringify(S.clubMail.mails.slice(n).filter(m=>m.type==='jalon_carriere').map(m=>({player:m.player,n:m.vars.n,carriere:m.vars.carriere,status:m.status})));})()`));
     // Joueur test : 45 matchs d'anciennes saisons + 4 cette saison = 49 ; le 50e franchit le cap.
-    const id = vm.run(`(()=>{const p=S.clubs[S.club].players[0];ensureDevelopment(p);p.dev.history=[{season:2024,appearances:25},{season:2025,appearances:20}];p.dev.appearances=4;return p.id})()`);
+    // Courriers du jour reçus d'abord : le joueur test n'est cité par aucun d'eux (un joueur n'est cité qu'une fois par jour).
+    recevoir();
+    const id = vm.run(`(()=>{const d=CDWorldCareer.calendarToday(S),cites=new Set(S.clubMail.mails.filter(m=>m.date===d).map(m=>m.player));
+      const p=S.clubs[S.club].players.find(x=>!cites.has(x.id));ensureDevelopment(p);p.dev.history=[{season:2024,appearances:25},{season:2025,appearances:20}];p.dev.appearances=4;S.clubMail.memo.careerApps[p.id]=49;return p.id})()`);
     assert.deepEqual(recevoir(), [], 'aucun courrier à 49 matchs');
     vm.run(`S.clubs[S.club].players.find(p=>p.id==='${id}').dev.appearances=5`);
     const recu = recevoir();
