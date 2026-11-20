@@ -287,7 +287,7 @@ func _week_board(parent: Control) -> void:
 		row.add_child(detail)
 	if checks.is_empty(): staff.add_child(G.wrap("Rien à signaler : le staff n’a relevé aucun point avant la rencontre.", 13))
 	if checks.size() > 3:
-		var all := G.reading_button(G.button("Tous les repères (%d)  →" % checks.size(), Briefing.open_all.bind(app, func(): _choose(1))), 160)
+		var all := G.reading_button(G.button("Tous les repères (%d)  →" % checks.size(), func(): load("res://ui/immersive08/preparation_canvas.gd").ouvrir_sous_page(app, "reperes")), 160)
 		all.name = "PreparationStaffAll"
 		all.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		staff.add_child(all)

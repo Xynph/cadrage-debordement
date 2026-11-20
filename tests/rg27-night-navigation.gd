@@ -281,20 +281,20 @@ func reading_cases() -> void:
 	search = named("RosterSearch") as LineEdit
 	check(search != null and search.text == "___aucun___" and app.management_ui.roster.search == reading.search, "Retour : recherche et filtre exclusif conservés")
 	check(search != null and search.has_focus() and search.caret_column == 4 and search.get_selection_from_column() == 2 and search.get_selection_to_column() == 6, "Retour : focus, curseur et sélection de saisie conservés")
-	await activate(named("RosterMoreFilters"))
-	var reset := named("RosterReset") as Button
-	check(reset != null, "Réinitialiser est présent dans le vrai dialogue de filtres")
-	await activate(reset)
-	await activate(named("RosterMoreFilters"))
-	var sort := named("RosterSort") as OptionButton
-	check(sort != null, "Tri disponible dans le vrai dialogue de filtres")
-	if sort != null and sort.item_count > 1:
+	var more := named("RosterMoreFilters") as MenuButton
+	check(more != null and more.get_popup().visible == false, "Filtres et tri : menu déroulant, pas de fenêtre")
+	if more != null:
+		more.get_popup().about_to_popup.emit()
+		check(more.get_popup().get_item_index(600) >= 0, "Réinitialiser est présent dans le menu de filtres")
+		more.get_popup().id_pressed.emit(600); await settle()
+	more = named("RosterMoreFilters") as MenuButton
+	check(more != null, "Menu de filtres reconstruit après réinitialisation")
+	if more != null:
+		more.get_popup().about_to_popup.emit()
+		check(more.get_popup().get_item_index(401) >= 0, "Tri disponible dans le menu de filtres")
 		var selected_before: String = app.selected_player
-		var changed_sort := (sort.selected + 1) % sort.item_count
-		sort.grab_focus(); sort.select(changed_sort); sort.item_selected.emit(changed_sort); await settle()
+		more.get_popup().id_pressed.emit(404); await settle()
 		check(app.route == "Effectif" and app.selected_player == selected_before and not app.get_meta("immersive08_full_player", false), "Tri de colonne/liste distinct d’une ouverture d’entité")
-	var advanced := named("RosterAdvancedFilters") as AcceptDialog
-	if advanced != null: await activate(advanced.get_ok_button())
 	var scroll := named("SquadScroll") as ScrollContainer
 	if scroll != null:
 		scroll.scroll_vertical = mini(150, int(scroll.get_v_scroll_bar().max_value - scroll.get_v_scroll_bar().page))
@@ -334,7 +334,7 @@ func reading_cases() -> void:
 		check(after.size() == 1 and JSON.stringify(after[0]) == outsider_before, "Aucune information supplémentaire injectée dans la projection hors club")
 		if not limited.is_empty():
 			check(outsider.get("rating") == null and outsider.get("potential") == null and outsider.get("ratingRange") == null and outsider.get("potentialRange") == null, "Cible non observée : aucun niveau ou potentiel exact ni intervalle révélé")
-			check(text(named("RecruitmentProfilePanel")).contains("—"), "Dossier hors club non observé : les valeurs inconnues restent absentes à l’écran")
+			check(named("RecruitmentProfilePanel") == null, "Plus de panneau de dossier fixe : la fiche complète de la piste porte les valeurs inconnues")
 		await capture("recrutement-cible-2560")
 	var teams: Array = app.model.get("staff", {}).get("teams", [])
 	if not teams.is_empty() and not teams[0].get("members", []).is_empty():

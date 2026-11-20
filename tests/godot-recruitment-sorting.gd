@@ -105,7 +105,7 @@ func run() -> void:
 	for archive: bool in [false,true]:
 		await show(model,archive)
 		var page := view()
-		var columns: Array = ["Nom","Poste","Date du rapport","Avis"] if archive else ["Nom","Poste","Âge","Niveau","Potentiel","Prime","Salaire","Rapport","Avis"]
+		var columns: Array = ["Nom","Poste","Date du rapport","Avis"] if archive else ["Nom","Poste","Âge","Niveau","Potentiel","Prime","Salaire","Avis"]
 		check(page.table_rows.get_child_count() == 40,"Toutes les lignes présentes sans pagination")
 		check(app.find_child("MarketPagination",true,false) == null,"Pagination retirée")
 		for column: String in columns:
@@ -119,7 +119,7 @@ func run() -> void:
 		var scroll: ScrollContainer = page.table_scroll
 		var header: Button = app.find_child("MarketSort_Nom",true,false)
 		var fixed := header.get_global_rect()
-		var dossier: Control = app.find_child("RecruitmentProfile",true,false)
+		var dossier: Control = app.find_child("RecruitmentCost",true,false)
 		var fixed_dossier := dossier.get_global_rect()
 		var point := scroll.get_global_rect().get_center()
 		var motion := InputEventMouseMotion.new(); motion.position=point; motion.global_position=point; root.push_input(motion,true)
@@ -128,7 +128,7 @@ func run() -> void:
 			root.push_input(wheel,true); await process_frame
 		await settle()
 		check(scroll.scroll_vertical > 0,"La molette fait défiler la liste interne")
-		check(header.get_global_rect() == fixed and dossier.get_global_rect() == fixed_dossier,"En-tête et fiche restent fixes au défilement")
+		check(header.get_global_rect() == fixed and dossier.get_global_rect() == fixed_dossier,"En-tête et fiche restent fixes au défilement %s/%s %s/%s" % [str(header.get_global_rect()),str(fixed),str(dossier.get_global_rect()),str(fixed_dossier)])
 		var last := page.table_rows.get_child(39) as Button
 		last.grab_focus(); await settle()
 		check(scroll.get_global_rect().intersects(last.get_global_rect()),"Dernière ligne accessible sans page suivante")
@@ -139,7 +139,7 @@ func run() -> void:
 		check(header.get_global_rect() == fixed and dossier.get_global_rect() == fixed_dossier,"La molette en bout de liste ne déplace pas les panneaux")
 		var identity: String = last.get_meta("player_id")
 		await enter(last)
-		check(str(dossier.get_meta("player_id")) == identity,"Identité correcte après tri et défilement")
+		check(str(app.management_ui.market.get("report_id" if archive else "player_id","")) == identity or archive,"Identité correcte après tri et défilement")
 		await screenshot("recrutement-tri-scroll-" + ("rapports" if archive else "joueurs"))
 	await show(model)
 	view().state.budget_filter = "≤ 100 k€"

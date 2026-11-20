@@ -1,30 +1,30 @@
-extends AcceptDialog
-## La reprise (reprise.cjs) depuis la Préparation : date de reprise, groupe, jeunes, conseil de Gabi.
-## Seules les commandes reprise_* quittent cette fenêtre ; elle se redessine à chaque modèle reçu.
+extends Control
+## La reprise (reprise.cjs) : date de reprise, groupe, jeunes, conseil de Gabi. Sous-page pleine page de la Préparation (jamais une fenêtre).
+## Seules les commandes reprise_* quittent cette page ; elle se redessine à chaque modèle reçu.
 const Reprise = preload("res://ui/reprise_view.gd")
 var app: Control
 var content: VBoxContainer
 
-static func open(application: Control) -> AcceptDialog:
+## Ouvre la sous-page « La reprise » de la Préparation (écran plein, retour et historique de la coque).
+static func open(application: Control) -> void:
+	load("res://ui/immersive08/preparation_canvas.gd").ouvrir_sous_page(application, "reprise")
+
+## Construit la reprise dans `parent` (un Control déjà placé).
+static func embed(application: Control, parent: Control) -> Control:
 	var panel = load("res://ui/reprise_dialog.gd").new()
 	panel.app = application
-	application.add_child(panel)
+	parent.add_child(panel)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel._build()
-	panel.popup_centered_clamped(Vector2i(1240, 820), 0.92)
 	return panel
-
 func _build() -> void:
 	name = "RepriseDialog"
-	title = "La reprise"
-	min_size = Vector2i(620, 420)
-	ok_button_text = "Fermer"
-	confirmed.connect(queue_free)
-	canceled.connect(queue_free)
 	var scroll := ScrollContainer.new()
 	scroll.name = "RepriseScroll"
 	scroll.follow_focus = true
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	content = VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override("separation", 10)

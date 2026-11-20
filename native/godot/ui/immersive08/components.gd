@@ -28,6 +28,9 @@ const BOLD = preload("res://ui/immersive08/fonts/BarlowCondensed-Bold.ttf")
 const EXTRA_BOLD = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBold.ttf")
 const BODY = preload("res://fonts/DMSans.ttf")
 static var density := 1.0
+## Charte §3 « rayons 0 » posée à la création : vrai le temps de construire un écran qui veut des angles droits partout
+## (Composition), au lieu d'une passe sur tous ses nœuds après coup (Kit.angles_droits).
+static var rayon_nul := false
 static var _textures: Dictionary = {}
 
 class ArtTexture extends TextureRect:
@@ -89,7 +92,7 @@ static func box(color: Color = PANEL, border: Color = LINE, radius: int = 8, pad
 	style.bg_color = color
 	style.border_color = Color(border, .65)
 	style.set_border_width_all(1 if border.a > 0 else 0)
-	style.set_corner_radius_all(maxi(3, px(radius)))
+	style.set_corner_radius_all(0 if rayon_nul else maxi(3, px(radius)))
 	style.content_margin_left = px(padding)
 	style.content_margin_right = px(padding)
 	style.content_margin_top = px(padding)

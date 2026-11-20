@@ -28,9 +28,25 @@ static func _personnes(app: Control, source: String) -> Array:
 ## Joueur projeté et sa source ; `source` vide : effectif d'abord, puis marché, puis Espoirs.
 static func trouver(app: Control, id: String, source: String = "") -> Dictionary:
 	if id.is_empty(): return {}
+	if source == "adverse": return adverse(app, id)
 	for candidate: String in ([source] if source in SOURCES else SOURCES):
 		for person: Variant in _personnes(app, candidate):
 			if person is Dictionary and str(person.get("id", "")) == id: return {"joueur":person, "source":candidate}
+	return {}
+
+## Joueur d'un club adverse lu dans la fiche du club déjà chargée (commande de lecture seule « club_sheet ») : seulement
+## ce que le jeu en connaît (poste, âge, niveau selon le brouillard, club) ; les attributs restent « — ».
+static func adverse(app: Control, id: String) -> Dictionary:
+	var cache: Variant = app.get_meta("club_sheet_cache", {})
+	if not (cache is Dictionary and cache.get("sheets") is Dictionary): return {}
+	for fiche: Variant in cache.sheets.values():
+		if not fiche is Dictionary: continue
+		for person: Variant in fiche.get("squad", []):
+			if not person is Dictionary or str(person.get("id", "")) != id: continue
+			var joueur: Dictionary = person.duplicate()
+			joueur.club = str(fiche.get("name", ""))
+			joueur.playerFacts = {"nationality":person.get("nationality"), "flagCode":person.get("flagCode"), "onInternationalDuty":person.get("onInternationalDuty", false), "seniorNationName":person.get("seniorNationName")}
+			return {"joueur":joueur, "source":"adverse"}
 	return {}
 
 ## Contexte du club : les joueurs de l'effectif et les Espoirs sont connus en détail ; une piste du marché suit le
@@ -67,6 +83,7 @@ static func libelle_liste(app: Control, source: String) -> String:
 
 ## Statut de feuille lisible : « titulaire n° 2 », « remplaçant n° 18 », « hors groupe » ; vide hors effectif.
 static func statut_feuille(player: Dictionary, source: String) -> String:
+	if source == "adverse": return str(player.get("club", ""))
 	if source == "academy": return "Espoir · " + ("U18" if int(player.get("age", 99)) <= 18 else "U21")
 	if source != "squad": return ""
 	var numero: Variant = player.get("shirtNumber")

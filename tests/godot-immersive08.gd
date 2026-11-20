@@ -1135,9 +1135,15 @@ func navigation_flow() -> void:
 	check(app.route=="Match" and app._live().is_empty() and app.management_ui.preparation.tab==2 and app.bridge._next_id==command_id,"Continuer ouvre l’avant-match sans lancer la rencontre et mémorise l’entraînement")
 	var back: Button = app.find_child("NavigationBack",true,false)
 	var forward: Button = app.find_child("NavigationForward",true,false)
-	check(back!=null and not back.disabled and forward!=null and forward.disabled,"L’historique de lecture est accessible à la souris")
-	if back!=null: await click(back); await settle()
-	else: await key(KEY_LEFT,false,true)
+	# L'avant-match se joue hors coque (revue DA du 19/11/2026) : pas de boutons ← → dans une barre haute absente, l'historique
+	# reste accessible au clavier (Alt gauche / Alt droite) ; dans la coque, il reste accessible à la souris.
+	if app.get_meta("hors_coque",false):
+		check(back==null and app.navigation_controller._destination(-1)>=0 and app.navigation_controller._destination(1)<0,"L’historique de lecture est accessible au clavier depuis l’avant-match hors coque")
+		await key(KEY_LEFT,false,true)
+	else:
+		check(back!=null and not back.disabled and forward!=null and forward.disabled,"L’historique de lecture est accessible à la souris")
+		if back!=null: await click(back); await settle()
+		else: await key(KEY_LEFT,false,true)
 	check(app.find_child("ImmersiveTraining",true,false)!=null,"Retour restaure l’entraînement plutôt que le dossier adverse")
 	await key(KEY_RIGHT,false,true)
 	check(app.route=="Match" and app._live().is_empty(),"Alt droite rétablit l’avant-match")
@@ -1397,7 +1403,12 @@ func match_flow() -> void:
 	match_ui = app.match_screen
 	check(app.model.live.finished and match_ui!=null and match_ui.finish.visible and match_ui.clock.text=="TERMINÉ" and not app.match_finish.disabled,"La fin du vrai match expose résultat et validation")
 	await capture("30-resultat-2560x1440")
-	await click(app.match_finish)
+	# Après-match (ui/contextual/apres_match.gd) : il recouvre le direct et porte « Valider le résultat ».
+	await settle()
+	var apres: Variant = match_ui.get("apres_match") if is_instance_valid(match_ui) else null
+	var valider := (apres as Control).find_child("ApresMatchValider", true, false) as Button if apres is Control and is_instance_valid(apres) else null
+	check(valider != null and valider.is_visible_in_tree(), "L’après-match recouvre le direct avec « Valider le résultat »")
+	await click(valider if valider != null else app.match_finish)
 	await worker()
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.model.live==null and not app.model.history.is_empty(),"La validation du résultat alimente l’historique de carrière")
@@ -1499,8 +1510,8 @@ func run() -> void:
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": check(roster != null, "Table Effectif dense de la référence 1440p")
 		if roster != null:
 			# Fiche fixe de droite retirée (19/11/2026) : le tableau prend toute la largeur du gabarit.
-			reference_rects({"ImmersiveRosterTable":Rect2(280,267,2248,1068),
-				"RosterTab0":Rect2(280,207,199,42), "RosterSearch":Rect2(298,283,355,40), "RosterSearchGlyph":Rect2(311,293,21,21)})
+			reference_rects({"ImmersiveRosterTable":Rect2(280,354,2248,990),
+				"RosterTab0":Rect2(280,230,185,44), "RosterSearch":Rect2(280,296,440,42), "RosterSearchGlyph":Rect2(294,306,21,21)})
 			check(app.find_child("PlayerDossier",true,false) == null and app.find_child("SelectedPlayerCard",true,false) == null, "Plus de dossier fixe à droite de l'effectif")
 			var list: VBoxContainer = app.find_child("ImmersiveRosterRows", true, false)
 			var row_buttons: Array = list.get_children().filter(func(node:Node):return node is Button)
@@ -1522,7 +1533,7 @@ func run() -> void:
 			roster_scroll = app.find_child("SquadScroll",true,false) as ScrollContainer
 			check(roster_scroll != null and roster_scroll.scroll_vertical == saved_scroll, "Retour respecte le défilement volontaire sans révéler à nouveau le dossier")
 			list=app.find_child("ImmersiveRosterRows",true,false)
-			for id in ["RosterColumnSalary", "RosterColumnFatigue", "RosterColumnPotential", "OpenComparison", "SquadOpenPlayer_"+str(app.selected_player).validate_node_name(), "MiniFicheInfo_"+str(app.selected_player).validate_node_name()]:
+			for id in ["RosterColumn_FIN DE CONTRAT", "RosterColumn_CONDITION", "RosterColumnPotential", "OpenComparison", "SquadOpenPlayer_"+str(app.selected_player).validate_node_name(), "MiniFicheInfo_"+str(app.selected_player).validate_node_name()]:
 				check(app.find_child(id, true, false) != null, "Fonction Effectif : " + id)
 			var selected_before: String = app.selected_player
 			var target: Dictionary = app.model.squad[1]
@@ -1533,7 +1544,7 @@ func run() -> void:
 			check(list.get_children().filter(func(node:Node):return node is Button).size() == 1, "Recherche réelle réduit la liste")
 			check(app.selected_player == selected_before, "Filtrer conserve le dossier lu")
 			var person: Button = list.get_children().filter(func(node:Node):return node is Button)[0]
-			person.pressed.emit()
+			person.grab_focus()
 			await settle()
 			check(app.selected_player == str(target.id), "Sélection exacte par ID")
 			check(app.find_child("SquadOpenPlayer_"+str(target.id).validate_node_name(), true, false) != null, "Nom du joueur sélectionné cliquable vers sa fiche")

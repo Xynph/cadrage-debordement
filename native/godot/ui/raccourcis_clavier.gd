@@ -144,6 +144,12 @@ func _retour() -> bool:
 	if is_instance_valid(charge) and charge.is_visible_in_tree():
 		charge.pressed.emit()
 		return true
+	
+	# Avant-match : Échap referme la sous-page ouverte (délégation, feuille incomplète) ; sans elle, c'est le menu de la carrière.
+	var ecran: Variant = app.get("match_screen")
+	if app.route == "Match" and is_instance_valid(ecran) and ecran.get("opening") != null and is_instance_valid(ecran.opening) and not str(ecran.opening.page_ouverte()).is_empty():
+		ecran.opening.fermer_page()
+		return true
 	var retour: Button = app.root_content.find_child("PlayerBackToSquad", true, false) as Button
 	# Fiche joueur ouverte (effectif, piste du marché ou Espoir) : Échap revient à la liste d'origine.
 	if is_instance_valid(retour) and retour.is_visible_in_tree():
@@ -154,7 +160,15 @@ func _retour() -> bool:
 	if is_instance_valid(composition) and composition.is_visible_in_tree():
 		composition.pressed.emit()
 		return true
+	# Sous-page du Recrutement (relève, entre clubs, offres, missions, négociation, rapport) : Échap revient au recrutement.
+	var recrutement: Button = app.root_content.find_child("RecrutementRetour", true, false) as Button
+	if is_instance_valid(recrutement) and recrutement.is_visible_in_tree():
+		recrutement.pressed.emit()
+		return true
 	var navigation: Node = app.get("navigation_controller")
+	if app.route in ["Comparateur", "Préparation Europe"]:
+		var origine := app.root_content.find_child("ComparateurRetour" if app.route == "Comparateur" else "EuropeRetour", true, false) as Button
+		if is_instance_valid(origine): origine.pressed.emit(); return true
 	if app.route == "Fiche club" and is_instance_valid(navigation):
 		if navigation._destination(-1) >= 0: navigation._travel(-1)
 		else: app._navigate("Classements")

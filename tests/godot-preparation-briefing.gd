@@ -82,17 +82,23 @@ func run() -> void:
 	var original: Dictionary = app.model.duplicate(true)
 	var profile: String = app.model.meta.dataDir.path_join("donnees.json")
 	var disk := FileAccess.get_sha256(profile)
-	var commands: int = app.bridge._next_id
 	await render(original)
+	var commands: int = app.bridge._next_id
 	check(app.find_child("PreparationBriefingAll",true,false) != null, "Briefing raccordé au dossier actuel")
 	check(app.find_child("PreparationAdoptPlan",true,false) != null and app.find_child("OpenOppositionDossier",true,false) != null, "Accès directs au dossier et au plan du staff conservés")
-	check(app.find_children("PreparationXIPlayer_*","Button",true,false).size() == 15, "Schéma XV raccordé aux quinze cases publiées")
+	# Leur XV probable : lu dans la fiche du club adverse (commande de lecture seule « club_sheet », une fois).
+	for frame in 90:
+		if app.find_children("PreparationTheirXIName_*","Button",true,false).size() > 0: break
+		await process_frame
+	check(app.find_child("PreparationTheirXI",true,false) != null, "Tableau Leur XV probable présent")
+	check(app.find_children("PreparationTheirXIName_*","Button",true,false).size() == 15, "Leur XV probable : quinze noms cliquables")
 	await capture("preparation-briefing-reel-1440")
-	var first := app.find_child("PreparationXIPlayer_1",true,false) as Button
+	var first := app.find_child("PreparationTheirXIName_1",true,false) as Button
 	if first != null and not first.disabled:
-		var expected: Variant = first.get_meta("player_id")
 		await enter(first)
-		check(app.route == "Effectif" and app.selected_player == expected, "Entrée sur le XV ouvre la vraie fiche du titulaire")
+		check(app.route != "Préparation", "Entrée sur un joueur adverse ouvre sa fiche ou son club, jamais une fenêtre")
+		app._navigate("Préparation")
+		await settle()
 	var controlled := original.duplicate(true)
 	controlled.clubLife.press.conference.required = true
 	controlled.selection = {"valid":false,"errors":["Poste à compléter · recette UI"]}
@@ -106,9 +112,10 @@ func run() -> void:
 	check(app.route == "Composition", "La feuille mène à la composition")
 	await render(controlled)
 	await enter(app.find_child("PreparationBriefingAll",true,false) as Button)
-	var dialog := app.find_child("PreparationAllChecks",true,false) as AcceptDialog
-	check(dialog != null and dialog.visible, "Tous les repères consultables sans commande")
-	await enter(dialog.find_child("PreparationBriefingAll_international",true,false) as Button if dialog != null else null)
+	var page := app.find_child("PreparationAllChecks",true,false)
+	check(page != null and page.is_visible_in_tree() and app.find_child("PreparationSubBack",true,false) != null, "Tous les repères : sous-page avec retour, sans commande")
+	check(app.find_children("*","AcceptDialog",true,false).filter(func(w: Node): return (w as Window).visible).is_empty(), "Tous les repères ne s'ouvrent pas dans une fenêtre")
+	await enter(app.find_child("PreparationBriefingAll_international",true,false) as Button)
 	check(app.route == "Sélections" and app.management_ui.international_section == "availability", "Le briefing ouvre le suivi des absents")
 	var unknown := original.duplicate(true)
 	unknown.decisions.preparation = {}
