@@ -1,5 +1,14 @@
 extends Control
+## Écran 13 « Match en direct » : habillage télé du match 3D (design/ux/13-match-direct.md, revue DA du
+## 19/11/2026, variante 1 « Bandeau d'angle » choisie par Léo). Bandeau du score incliné en haut à gauche
+## (horloge et période, plaques des deux clubs, score ivoire 40 px), commandes en haut à droite, journal
+## de deux lignes en bas à gauche, bannière d'essai dans le tiers inférieur (match_temps_forts.gd) et menu
+## du match ouvert par Échap (seule petite fenêtre, exception de Léo). Jetons et polices : ui/charte.gd,
+## aucun or. Les plaques ouvrent la fiche du club et le menu ses réglages dans une page du direct : le
+## match se met en pause et « Retour au direct » le rend tel quel.
 const S = preload("res://ui/contextual/skin.gd")
+const Charte = preload("res://ui/charte.gd")
+const C = preload("res://ui/immersive08/components.gd")
 const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 const Pilotage = preload("res://ui/contextual/match_consignes.gd")
@@ -15,6 +24,8 @@ var app: Control
 var stage: Node3D
 var model: Dictionary = {}
 var clock: Label
+## Période sous l'horloge (« 1re MT », « 2e MT ») ; vide quand l'horloge dit déjà « MI-TEMPS » ou « TERMINÉ ».
+var phase: Label
 var score: Label
 ## Météo et vent sous le score (même bandeau en 3D et pendant l'entracte 2D).
 var meteo_ligne: Label
@@ -22,6 +33,8 @@ var home: Label
 var away: Label
 var play: Button
 var finish: Button
+## Dernier fait écrit : texte tenu par la vue (repli) ou par la régie (légende du temps fort). Il n'est pas
+## affiché lui-même : le journal (deux lignes, minute et noms de nos joueurs liés) le reprend.
 var events: Label
 var drawer: PanelContainer
 var drawer_body: VBoxContainer
@@ -37,30 +50,72 @@ var _drawer_key := ""
 var _camera_controls: Array[Button] = []
 var _applied_camera := ""
 var _applied_quality := ""
-## Écusson et couleur de chaque club dans le bandeau (remplis au premier affichage).
-var _ecussons: Array = [null, null]
-var _ecussons_cle := ""
-## Barre de commandes du bas : masquée pendant l'écran intermédiaire (il a sa propre barre).
+## Plaques des deux clubs dans le bandeau (fond à la couleur du club, sigle, nom) : clic = fiche du club.
+var plaques: Array[PanelContainer] = []
+var _plaques_cle := ""
+## Barre de commandes du bas : repli sans régie et fin de match (« Valider la journée »).
 var barre_commandes: Control
-## Bande de commandes des temps forts, sous le bandeau du score : la même pendant les temps forts
-## 3D et l'entracte 2D (demande de Léo, 12 novembre 2026). L'écran intermédiaire y pose sa barre.
+## Bande de commandes des temps forts (Équipe, Réglages, Plus), remplie par l'écran intermédiaire
+## (match_between.gd) : la même pendant les temps forts 3D et l'entracte 2D, à droite du score.
 var bande_temps_forts: HBoxContainer
-## Lisibilité du bandeau et de la légende (lot 5, 16/11/2026) : tailles écrites pour 1080p,
-## agrandies avec la hauteur de l'écran (×1,33 en 1440p), jamais réduites en dessous.
-const BANDEAU_TAILLES := {"horloge": 32, "equipe": 32, "score": 60, "pause": 22, "legende": 24, "ecusson": 52, "meteo": 20}
-const LEGENDE_LARGEUR := 720
-## Bandeau compact pendant l'action 3D (film du 18/11/2026 : la grande barre cachait ~20 % de
-## l'image) : horloge, sigles et score dans un bloc en haut à gauche. La grande barre revient
-## aux arrêts de jeu, à la pause, à la mi-temps et à la fin.
-const BANDEAU_COMPACT := {"horloge": 22, "sigle": 22, "score": 34, "pause": 16}
+## Tailles écrites pour 1080p (maquette 13-match-direct-1), agrandies avec la hauteur de l'écran (×1,33
+## en 1440p), jamais réduites en dessous : horloge 32, période 16, noms 22, score 40 (charte §7), sigle 15,
+## commandes 16, journal 16, météo 13.
+const BANDEAU_TAILLES := {"horloge": 32, "phase": 16, "equipe": 22, "score": 40, "sigle": 15, "pause": 16, "legende": 16, "meteo": 13}
+## Hauteur du bandeau du score et largeur du journal (maquette 1080p : 56 et 744 px), marge d'écran 24 px.
+const BANDEAU_HAUTEUR := 56
+const LEGENDE_LARGEUR := 744
+const MARGE := 24
 var echelle := 1.0
 var _legende: Control
-var _coque_score: PanelContainer
+## Bandeau du score (BandeauAngle) : horloge, plaques, score.
+var _coque_score: Control
 var _meteo_boite: Control
 var _sigles: Array[Label] = []
+## Pendant l'action 3D : la ligne météo et le rappel « Échap » se retirent (le bandeau reste entier).
 var compact := false
 ## Images à attendre avant de redonner au cadrage la part d'image cachée (mise en page différée).
 var _recouvrir := 0
+## Rappel « Échap · Pause et menu » sous les commandes (cliquable : ouvre le menu du match).
+var indice_menu: Button
+## Journal affiché : deux faits au plus, le plus récent en premier ({minute, texte}).
+var _journal: Array = []
+var _journal_texte := ""
+var _journal_lignes: Array = []
+## Menu du match (Échap) et page du direct (fiche club, réglages).
+var menu: Control
+var _menu_voile: ColorRect
+var _menu_panneau: PanelContainer
+var _menu_mode := ""
+var _menu_quitter_arme := false
+var _menu_cle := ""
+var page: Control
+var _page_sorte := ""
+var _page_cle := ""
+## Le match jouait quand le menu ou la page s'est ouvert : « Reprendre » / « Retour au direct » le relance.
+var _reprendre_apres := false
+## Pause demandée pendant une réponse du moteur : envoyée dès qu'il est libre.
+var _pause_voulue := 0
+
+## Bandeau du score façon retransmission (charte §3, §7) : segments à plat posés côte à côte, le dernier
+## (plaque du club visiteur) avec le bord droit incliné de 10°. Chaque segment porte sa couleur en méta « fond ».
+class BandeauAngle extends HBoxContainer:
+	func _ready() -> void:
+		add_theme_constant_override("separation", 0)
+		sort_children.connect(queue_redraw)
+	func _draw() -> void:
+		var visibles: Array[Control] = []
+		for enfant in get_children():
+			if enfant is Control and (enfant as Control).visible: visibles.append(enfant)
+		for i in visibles.size():
+			var segment: Control = visibles[i]
+			var fond: Color = segment.get_meta("fond", Color.TRANSPARENT)
+			var r := Rect2(segment.position, segment.size)
+			if i == visibles.size() - 1:
+				var d := Charte.decalage(r.size.y)
+				draw_colored_polygon(PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), Vector2(r.end.x - d, r.end.y), Vector2(r.position.x, r.end.y)]), fond)
+			else:
+				draw_rect(r, fond)
 
 func _ready() -> void:
 	name = "ContextualLiveMatch"
@@ -80,118 +135,347 @@ func _ready() -> void:
 	stage = load("res://match_view.gd").new()
 	if stage.has_method("set_club_identity"): stage.set_club_identity(app.model.get("club", {}))
 	viewport.add_child(stage)
-	var frame := S.frame(self, 18)
+	var frame := S.frame(self, MARGE)
+	frame.name = "MatchHud"
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Bandeau de score façon retransmission : horloge en pastille, écusson et couleur de chaque
-	# club, score très grand en police d'affichage. L'élément le plus visible de l'écran.
-	var scoreboard := S.panel(frame, 8)
-	var coque_score: PanelContainer = scoreboard.get_parent().get_parent()
-	coque_score.name = "MatchScoreboard"
-	_coque_score = coque_score
-	var fond := S.G.T.box(Color(0.05, 0.11, 0.09, 0.94), 12, Color(S.GOLD, 0.28))
-	fond.shadow_color = Color(0, 0, 0, 0.3)
-	fond.shadow_size = 8
-	coque_score.add_theme_stylebox_override("panel", fond)
-	var banner := S.G.h(14)
-	scoreboard.add_child(banner)
-	var pastille := PanelContainer.new()
-	var style_pastille := S.G.T.box(S.GOLD, 20)
-	style_pastille.content_margin_left = 16
-	style_pastille.content_margin_right = 16
-	style_pastille.content_margin_top = 2
-	style_pastille.content_margin_bottom = 2
-	pastille.add_theme_stylebox_override("panel", style_pastille)
-	pastille.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	banner.add_child(pastille)
-	clock = S.label("", 28, Color("10201a"))
-	clock.add_theme_font_override("font", S.G.T.DISPLAY)
-	clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	clock.custom_minimum_size.x = 92
-	pastille.add_child(clock)
-	home = S.label("", 24)
-	home.add_theme_font_override("font", S.G.T.DISPLAY)
-	home.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	home.clip_text = true
-	home.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	S.G.fill(home)
-	banner.add_child(home)
-	_ecussons[0] = S.G.h(6)
-	banner.add_child(_ecussons[0])
-	var cadre_score := PanelContainer.new()
-	var style_score := S.G.T.box(Color(0, 0, 0, 0.32), 10, Color(S.GOLD, 0.35))
-	style_score.content_margin_left = 22
-	style_score.content_margin_right = 22
-	style_score.content_margin_top = 0
-	style_score.content_margin_bottom = 0
-	cadre_score.add_theme_stylebox_override("panel", style_score)
-	for cote in 2:
-		var sigle := S.label("", 22)
-		sigle.name = "MatchCompactAbbr%d" % cote
-		sigle.add_theme_font_override("font", S.G.T.DISPLAY)
-		sigle.hide()
-		_sigles.append(sigle)
-	banner.add_child(_sigles[0])
-	banner.add_child(cadre_score)
-	banner.add_child(_sigles[1])
-	score = S.label("", 46, S.GOLD)
-	score.add_theme_font_override("font", S.G.T.DISPLAY)
-	score.custom_minimum_size.x = 150
-	score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	cadre_score.add_child(score)
-	_ecussons[1] = S.G.h(6)
-	banner.add_child(_ecussons[1])
-	away = S.label("", 24)
-	away.add_theme_font_override("font", S.G.T.DISPLAY)
-	away.clip_text = true
-	away.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	S.G.fill(away)
-	banner.add_child(away)
-	play = S.button("PAUSE", _pause)
-	play.name = "MatchPauseButton"
-	_habiller_pause(play)
-	banner.add_child(play)
-	meteo_ligne = S.label("", 18, S.MUTED)
+	frame.get_parent().mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Rangée du haut : bandeau du score, bande des commandes (Équipe, Réglages, Plus), Pause.
+	var haut := HBoxContainer.new()
+	haut.name = "MatchTopRow"
+	haut.add_theme_constant_override("separation", 12)
+	haut.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_child(haut)
+	_construire_bandeau(haut)
+	if TempsForts.enabled():
+		bande_temps_forts = HBoxContainer.new()
+		bande_temps_forts.name = "MatchCommandBand"
+		bande_temps_forts.add_theme_constant_override("separation", 12)
+		bande_temps_forts.alignment = BoxContainer.ALIGNMENT_END
+		bande_temps_forts.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		C.fill(bande_temps_forts)
+		haut.add_child(bande_temps_forts)
+	else:
+		var vide := Control.new()
+		vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		C.fill(vide)
+		haut.add_child(vide)
+	play = _bouton_hud("Pause", "Espace", _pause, "MatchPauseButton")
+	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	haut.add_child(play)
+	# Sous le bandeau : météo (aux arrêts) à gauche, rappel « Échap · Pause et menu » à droite.
+	var sous := HBoxContainer.new()
+	sous.name = "MatchSubRow"
+	sous.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_child(sous)
+	meteo_ligne = S.label("", 13, Charte.IVOIRE_2)
 	meteo_ligne.name = "MatchWeather"
-	meteo_ligne.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	meteo_ligne.add_theme_font_override("font", Charte.TEXTE)
 	meteo_ligne.clip_text = true
 	meteo_ligne.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	meteo_ligne.hide()
-	# Boîte propre à la ligne météo : le bandeau compact la masque sans lutter avec la régie,
-	# qui règle la visibilité de la ligne elle-même.
-	_meteo_boite = S.G.v(0)
+	# Boîte propre à la ligne météo : le mode compact la masque sans lutter avec la régie, qui règle
+	# la visibilité de la ligne elle-même.
+	_meteo_boite = PanelContainer.new()
 	_meteo_boite.name = "MatchWeatherBox"
-	scoreboard.add_child(_meteo_boite)
+	_meteo_boite.add_theme_stylebox_override("panel", _fond_hud(Vector4(12, 4, 12, 4)))
+	_meteo_boite.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_meteo_boite.add_child(meteo_ligne)
-	if TempsForts.enabled():
-		bande_temps_forts = S.G.h(12)
-		bande_temps_forts.name = "MatchCommandBand"
-		bande_temps_forts.alignment = BoxContainer.ALIGNMENT_END
-		frame.add_child(bande_temps_forts)
+	sous.add_child(_meteo_boite)
+	var vide_sous := Control.new()
+	vide_sous.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	C.fill(vide_sous)
+	sous.add_child(vide_sous)
+	indice_menu = _bouton_hud("Pause et menu", "Échap", ouvrir_menu, "MatchMenuHint", true)
+	indice_menu.tooltip_text = "Met le match en pause et ouvre le menu du match."
+	sous.add_child(indice_menu)
 	var space := Control.new()
 	space.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.G.fill(space, true)
 	frame.add_child(space)
-	var event_row := S.G.h(10)
-	frame.add_child(event_row)
-	var event_panel := S.panel(event_row, 10)
-	event_panel.get_parent().custom_minimum_size.x = LEGENDE_LARGEUR
-	event_panel.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_legende = event_panel.get_parent()
-	events = S.wrap("", 14, S.TEXT)
-	event_panel.add_child(events)
-	event_row.add_child(S.G.spacer())
-	var controls := S.panel(frame, 8)
-	barre_commandes = controls.get_parent().get_parent()
+	_construire_journal(frame)
+	_construire_barre_bas(frame)
+	if TempsForts.enabled():
+		regie = TempsForts.new()
+		add_child(regie)
+		regie.setup(self, container, viewport, space)
+	_construire_tiroir()
+	equipe = FenetreEquipe.new()
+	equipe.view = self
+	equipe.app = app
+	add_child(equipe)
+	app.match_view = stage
+	app.pause_button = play
+	app.match_finish = finish
+	app.match_clock = clock
+	_mettre_a_l_echelle()
+	get_viewport().size_changed.connect(_mettre_a_l_echelle)
+	_dessiner_journal()
+	apply_preferences()
+
+# --- Construction ---------------------------------------------------------------
+
+## Fond des éléments posés sur l'image : panneau à 85 %, rayon 0, sans cadre (charte §7).
+static func _fond_hud(marges: Vector4, couleur: Color = Color(Charte.PANNEAU, 0.85)) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = couleur
+	style.set_corner_radius_all(0)
+	style.content_margin_left = marges.x
+	style.content_margin_top = marges.y
+	style.content_margin_right = marges.z
+	style.content_margin_bottom = marges.w
+	return style
+
+## Puce de touche (« Espace », « Échap ») : panneau haut, texte ivoire secondaire.
+static func _touche(texte: String) -> PanelContainer:
+	var puce := PanelContainer.new()
+	puce.name = "Touche"
+	puce.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := _fond_hud(Vector4(7, 1, 7, 1), Charte.PANNEAU_3)
+	style.set_corner_radius_all(2)
+	puce.add_theme_stylebox_override("panel", style)
+	var lettre := Label.new()
+	lettre.text = texte
+	lettre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lettre.add_theme_font_override("font", Charte.TEXTE)
+	lettre.add_theme_color_override("font_color", Charte.IVOIRE_2)
+	lettre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	puce.add_child(lettre)
+	return puce
+
+## Commande du HUD (Pause, rappel Échap) : texte ivoire sur panneau 85 %, puce de la touche à droite (ou à
+## gauche), survol en panneau plus clair et soulignement au focus. Tout le pavé est cliquable.
+func _bouton_hud(texte: String, touche: String, action: Callable, nom: String, puce_a_gauche: bool = false) -> Button:
+	var bouton := Button.new()
+	bouton.name = nom
+	bouton.text = texte
+	bouton.focus_mode = Control.FOCUS_ALL
+	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	bouton.set_meta("contextual_enabled", true)
+	bouton.set_meta("puce_a_gauche", puce_a_gauche)
+	bouton.pressed.connect(action)
+	bouton.add_theme_font_override("font", Charte.texte_moyen())
+	for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: bouton.add_theme_color_override(cle, Charte.IVOIRE)
+	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+	var puce := _touche(touche)
+	bouton.add_child(puce)
+	bouton.resized.connect(_placer_puce.bind(bouton))
+	return bouton
+
+func _placer_puce(bouton: Button) -> void:
+	var puce: Control = bouton.get_node_or_null("Touche")
+	if puce == null: return
+	puce.reset_size()
+	var marge := roundf(12 * echelle)
+	var x := marge if bool(bouton.get_meta("puce_a_gauche", false)) else bouton.size.x - puce.size.x - marge
+	puce.position = Vector2(x, roundf((bouton.size.y - puce.size.y) * 0.5))
+
+## Styles et tailles d'une commande du HUD à l'échelle courante.
+func _habiller_bouton_hud(bouton: Button) -> void:
+	var puce: PanelContainer = bouton.get_node_or_null("Touche")
+	var taille := roundi(BANDEAU_TAILLES.pause * echelle)
+	bouton.add_theme_font_size_override("font_size", taille)
+	if puce != null: (puce.get_child(0) as Label).add_theme_font_size_override("font_size", taille)
+	var largeur_puce := puce.get_combined_minimum_size().x if puce != null else 0.0
+	var a_gauche := bool(bouton.get_meta("puce_a_gauche", false))
+	for etat in ["normal", "hover", "pressed", "focus", "disabled"]:
+		var couleur := Color(Charte.PANNEAU, 0.85)
+		if etat in ["hover", "pressed"]: couleur = Charte.PANNEAU_2
+		if etat == "focus": couleur = Color(0, 0, 0, 0)
+		var cote := roundf(14 * echelle)
+		var style := _fond_hud(Vector4(cote + (largeur_puce + 10 * echelle if a_gauche else 0.0), 0, cote + (0.0 if a_gauche else largeur_puce + 10 * echelle), 0), couleur)
+		if etat == "focus":
+			style.border_color = Charte.IVOIRE
+			style.border_width_bottom = maxi(1, roundi(2 * echelle))
+		bouton.add_theme_stylebox_override(etat, style)
+	bouton.custom_minimum_size = Vector2(0, roundf(40 * echelle))
+	_placer_puce(bouton)
+
+## Bandeau d'angle : [horloge / période] [plaque du club recevant] [score] [plaque du visiteur ⟋].
+func _construire_bandeau(parent: Control) -> void:
+	var bandeau := BandeauAngle.new()
+	bandeau.name = "MatchScoreboard"
+	bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bandeau.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	parent.add_child(bandeau)
+	_coque_score = bandeau
+	var horloge := _segment("MatchClockBlock", Charte.PANNEAU_3)
+	bandeau.add_child(horloge)
+	var pile := VBoxContainer.new()
+	pile.alignment = BoxContainer.ALIGNMENT_CENTER
+	pile.add_theme_constant_override("separation", -4)
+	pile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	horloge.add_child(pile)
+	clock = _texte("", Charte.TITRE_EXTRA_ITALIQUE, Charte.IVOIRE)
+	clock.name = "MatchClock"
+	clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pile.add_child(clock)
+	phase = _texte("", Charte.texte_moyen(), Charte.IVOIRE_2)
+	phase.name = "MatchPhase"
+	phase.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pile.add_child(phase)
+	for cote in 2:
+		var sigle := _texte("", Charte.TITRE_EXTRA_ITALIQUE, Charte.IVOIRE)
+		sigle.name = "MatchCompactAbbr%d" % cote
+		sigle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_sigles.append(sigle)
+	home = _texte("", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
+	home.name = "MatchHomeName"
+	away = _texte("", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
+	away.name = "MatchAwayName"
+	bandeau.add_child(_plaque(0))
+	var bloc_score := _segment("MatchScoreBlock", Charte.PANNEAU)
+	bandeau.add_child(bloc_score)
+	score = _texte("", Charte.TITRE_EXTRA_ITALIQUE, Charte.IVOIRE)
+	score.name = "MatchScore"
+	score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bloc_score.add_child(score)
+	bandeau.add_child(_plaque(1))
+
+func _segment(nom: String, fond: Color) -> PanelContainer:
+	var segment := PanelContainer.new()
+	segment.name = nom
+	segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	segment.set_meta("fond", fond)
+	segment.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	return segment
+
+static func _texte(texte: String, police: Font, couleur: Color) -> Label:
+	var etiquette := Label.new()
+	etiquette.text = texte
+	etiquette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	etiquette.add_theme_font_override("font", police)
+	etiquette.add_theme_color_override("font_color", couleur)
+	etiquette.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return etiquette
+
+## Plaque d'un club : sigle encadré du liseré du club, nom en capitales ; survol ou focus : le nom se souligne.
+## Clic ou Entrée : fiche du club dans une page du direct (le match se met en pause).
+func _plaque(cote: int) -> PanelContainer:
+	var plaque := _segment("MatchClubPlaque%d" % cote, Charte.CLUB)
+	plaque.mouse_filter = Control.MOUSE_FILTER_STOP
+	plaque.focus_mode = Control.FOCUS_ALL
+	plaque.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	plaque.tooltip_text = "Fiche du club (le match se met en pause)."
+	var rangee := HBoxContainer.new()
+	rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rangee.alignment = BoxContainer.ALIGNMENT_CENTER
+	plaque.add_child(rangee)
+	var puce := PanelContainer.new()
+	puce.name = "MatchClubChip%d" % cote
+	puce.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	puce.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	puce.add_child(_sigles[cote])
+	var nom := VBoxContainer.new()
+	nom.name = "MatchClubName%d" % cote
+	nom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	nom.alignment = BoxContainer.ALIGNMENT_CENTER
+	nom.add_theme_constant_override("separation", 0)
+	nom.size_flags_vertical = Control.SIZE_FILL
+	var etiquette: Label = home if cote == 0 else away
+	etiquette.clip_text = true
+	etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	nom.add_child(etiquette)
+	var souligne := ColorRect.new()
+	souligne.name = "Souligne"
+	souligne.color = Charte.IVOIRE
+	souligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	souligne.modulate.a = 0.0
+	nom.add_child(souligne)
+	if cote == 0:
+		rangee.add_child(puce)
+		rangee.add_child(nom)
+	else:
+		rangee.add_child(nom)
+		rangee.add_child(puce)
+	var survol := func(actif: bool): souligne.modulate.a = 1.0 if actif else 0.0
+	plaque.mouse_entered.connect(survol.bind(true))
+	plaque.mouse_exited.connect(func(): survol.call(plaque.has_focus()))
+	plaque.focus_entered.connect(survol.bind(true))
+	plaque.focus_exited.connect(survol.bind(false))
+	plaque.gui_input.connect(func(event: InputEvent):
+		var souris := event as InputEventMouseButton
+		var touche := event as InputEventKey
+		if (souris != null and souris.pressed and souris.button_index == MOUSE_BUTTON_LEFT) or (touche != null and touche.pressed and not touche.echo and touche.is_action("ui_accept")):
+			plaque.accept_event()
+			ouvrir_fiche_club(cote))
+	plaques.append(plaque)
+	return plaque
+
+## Journal en bas à gauche (charte §7) : deux faits, minute en italique, texte DM Sans 16 px sur panneau
+## 85 % ; le plus ancien en ivoire secondaire. Les noms de nos joueurs sont des liens (survol : mini-fiche ;
+## clic : la fenêtre Équipe sur lui).
+func _construire_journal(frame: Control) -> void:
+	var rangee := S.G.h(10)
+	rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_child(rangee)
+	var cadre := PanelContainer.new()
+	cadre.name = "MatchJournalPanel"
+	cadre.add_theme_stylebox_override("panel", _fond_hud(Vector4.ZERO))
+	cadre.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
+	rangee.add_child(cadre)
+	_legende = cadre
+	var marge := MarginContainer.new()
+	marge.mouse_filter = Control.MOUSE_FILTER_PASS
+	cadre.add_child(marge)
+	var colonne := VBoxContainer.new()
+	colonne.name = "MatchJournalLines"
+	colonne.mouse_filter = Control.MOUSE_FILTER_PASS
+	marge.add_child(colonne)
+	events = S.wrap("", 16, Charte.IVOIRE)
+	events.name = "MatchLastEvent"
+	events.hide()
+	colonne.add_child(events)
+	for rang in 2:
+		var ligne := HBoxContainer.new()
+		ligne.name = "MatchJournalLine%d" % rang
+		ligne.mouse_filter = Control.MOUSE_FILTER_PASS
+		ligne.add_theme_constant_override("separation", 12)
+		colonne.add_child(ligne)
+		var minute := _texte("", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE if rang == 0 else Charte.IVOIRE_2)
+		minute.name = "Minute"
+		minute.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		ligne.add_child(minute)
+		var texte := RichTextLabel.new()
+		texte.name = "Texte"
+		texte.bbcode_enabled = true
+		texte.fit_content = true
+		texte.scroll_active = false
+		texte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		texte.mouse_filter = Control.MOUSE_FILTER_PASS
+		texte.add_theme_font_override("normal_font", Charte.texte_moyen())
+		texte.add_theme_color_override("default_color", Charte.IVOIRE if rang == 0 else Charte.IVOIRE_2)
+		C.fill(texte)
+		texte.meta_hover_started.connect(func(meta: Variant): _survol_joueur(str(meta), texte))
+		texte.meta_hover_ended.connect(func(_meta: Variant): _mini_fiche().cacher(app, texte))
+		texte.meta_clicked.connect(func(meta: Variant): ouvrir_joueur(str(meta)))
+		ligne.add_child(texte)
+		ligne.hide()
+		_journal_lignes.append([minute, texte, ligne])
+	rangee.add_child(S.G.spacer())
+
+## Barre du bas : repli sans régie (caméras, cadence, tiroirs) et fin de match (« Valider la journée »,
+## action principale en ivoire plein ; l'or reste à Continuer, dans la coque).
+func _construire_barre_bas(frame: Control) -> void:
+	var cadre := PanelContainer.new()
+	cadre.name = "MatchBottomBar"
+	cadre.add_theme_stylebox_override("panel", _fond_hud(Vector4.ZERO))
+	frame.add_child(cadre)
+	barre_commandes = cadre
+	var marge := S.G.margin(8)
+	cadre.add_child(marge)
+	var controls := VBoxContainer.new()
+	marge.add_child(controls)
 	var bar := S.G.h(7)
 	controls.add_child(bar)
-	var bouton_equipe := S.button("ÉQUIPE", func(): ouvrir_equipe())
+	var bouton_equipe := _lien("ÉQUIPE", func(): ouvrir_equipe())
 	bouton_equipe.name = "MatchTeamButton"
 	bouton_equipe.tooltip_text = "Composition, banc, cris de la touche et consignes (le match se met en pause)."
 	bar.add_child(bouton_equipe)
 	for title in ["Stats", "Journal"]:
-		bar.add_child(S.button(title.to_upper(), func(): _toggle_drawer(title)))
+		bar.add_child(_lien(title.to_upper(), func(): _toggle_drawer(title)))
 	for pair in [["tv", "TV"], ["tactical", "VUE DE DESSUS"], ["action", "CONTACT"]]:
-		var button := S.button(pair[1], func(): _choose_camera(pair[0]))
+		var button := _lien(pair[1], func(): _choose_camera(pair[0]))
 		_camera_controls.append(button)
 		bar.add_child(button)
 	_cadence = OptionButton.new()
@@ -210,22 +494,34 @@ func _ready() -> void:
 	_niveau.item_selected.connect(func(index: int): if regie != null and index >= 0 and index < _niveaux.size(): regie.choisir_niveau(str(_niveaux[index].get("id", ""))))
 	_niveau.hide()
 	bar.add_child(_niveau)
-	if TempsForts.enabled():
-		regie = TempsForts.new()
-		add_child(regie)
-		regie.setup(self, container, viewport, space)
 	bar.add_child(S.G.spacer())
-	bar.add_child(S.button("CONFIER LA FIN À L’ADJOINT", confier_fin))
-	finish = S.button("VALIDER LA JOURNÉE  →", func(): director.command("finish_round"), false, true)
+	bar.add_child(_lien("CONFIER LA FIN À L’ADJOINT", confier_fin))
+	finish = Button.new()
+	finish.text = "VALIDER LA JOURNÉE  →"
+	finish.name = "MatchFinishButton"
+	finish.pressed.connect(func(): director.command("finish_round"))
+	finish.set_meta("contextual_enabled", false)
+	finish.disabled = true
+	C.style_bouton_ivoire_plein(finish, 21)
 	bar.add_child(finish)
+
+func _lien(texte: String, action: Callable) -> Button:
+	var bouton := Button.new()
+	bouton.text = texte
+	bouton.pressed.connect(action)
+	bouton.set_meta("contextual_enabled", true)
+	C.style_bouton_lien(bouton, 19)
+	return bouton
+
+func _construire_tiroir() -> void:
 	drawer = PanelContainer.new()
 	drawer.name = "MatchDrawer"
 	drawer.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	drawer.offset_left = -450
-	drawer.offset_right = -18
+	drawer.offset_right = -MARGE
 	drawer.offset_top = 100
-	# En temps forts, le tiroir s'ouvre sous la bande de commandes : Équipe, Paramètres
-	# et Plus restent cliquables tiroir ouvert.
+	# En temps forts, le tiroir s'ouvre sous la rangée du haut : Équipe, Réglages et Plus restent
+	# cliquables tiroir ouvert.
 	if bande_temps_forts != null:
 		var caler := func():
 			if is_instance_valid(drawer) and bande_temps_forts.is_inside_tree():
@@ -234,17 +530,20 @@ func _ready() -> void:
 		bande_temps_forts.item_rect_changed.connect(caler)
 	drawer.anchor_bottom = 1
 	drawer.offset_bottom = -90
-	drawer.add_theme_stylebox_override("panel", S.G.T.box(S.PANEL, 5, Color("68785a")))
+	var fond := _fond_hud(Vector4.ZERO, Charte.PANNEAU)
+	fond.border_color = Charte.FILET
+	fond.set_border_width_all(1)
+	drawer.add_theme_stylebox_override("panel", fond)
 	add_child(drawer)
 	var drawer_margin := S.G.margin(14)
 	drawer.add_child(drawer_margin)
 	var drawer_column := S.G.v(8)
 	drawer_margin.add_child(drawer_column)
-	drawer_column.add_child(S.button("FERMER  ×", _fermer_tiroir))
+	drawer_column.add_child(_lien("FERMER  ×", _fermer_tiroir))
 	drawer_body = S.G.scroll(drawer_column)
 	S.G.fill(drawer_body.get_parent(), true)
 	_journal_shell = PanelContainer.new()
-	_journal_shell.add_theme_stylebox_override("panel", S.G.T.box(Color("e8dfce"), 3, S.G.LINE))
+	_journal_shell.add_theme_stylebox_override("panel", _fond_hud(Vector4.ZERO, Charte.PAPIER))
 	S.G.fill(_journal_shell, true)
 	drawer_column.add_child(_journal_shell)
 	var journal_margin := S.G.margin(8)
@@ -254,64 +553,59 @@ func _ready() -> void:
 	journal_margin.add_child(journal)
 	_journal_shell.hide()
 	drawer.hide()
-	equipe = FenetreEquipe.new()
-	equipe.view = self
-	equipe.app = app
-	add_child(equipe)
-	app.match_view = stage
-	app.pause_button = play
-	app.match_finish = finish
-	app.match_clock = clock
-	_mettre_a_l_echelle()
-	get_viewport().size_changed.connect(_mettre_a_l_echelle)
-	apply_preferences()
 
-## Bouton PAUSE / REPRENDRE du bandeau : même famille que les boutons Équipe et Paramètres de la
-## bande de commandes (Barlow Condensed demi-gras, capitales, fond sapin à plat, survol or).
-const POLICE_PAUSE = preload("res://fonts/BarlowCondensed-SemiBold.ttf")
-static func _habiller_pause(bouton: Button) -> void:
-	bouton.add_theme_font_override("font", POLICE_PAUSE)
-	for etat in ["normal", "hover", "pressed"]:
-		var style := S.G.T.box(Color("18231f") if etat == "normal" else Color("1f2e2b"), 10)
-		style.set_border_width_all(0)
-		style.content_margin_left = 22
-		style.content_margin_right = 22
-		bouton.add_theme_stylebox_override(etat, style)
-	var focus := S.G.T.box(Color.TRANSPARENT, 10, Color("e0b35a"))
-	focus.set_border_width_all(2)
-	bouton.add_theme_stylebox_override("focus", focus)
-	bouton.add_theme_color_override("font_color", Color("f2ecdc"))
-	for couleur in ["font_hover_color", "font_pressed_color", "font_focus_color"]: bouton.add_theme_color_override(couleur, Color("e0b35a"))
+# --- Échelle et état du bandeau ---------------------------------------------------
 
 ## Échelle de l'écran : 1 jusqu'en 1080p, puis proportionnelle à la hauteur (1,33 en 1440p).
 static func echelle_pour(hauteur: float) -> float:
 	return clampf(hauteur / 1080.0, 1.0, 2.0)
 
-## Bandeau du score (le même en 3D et pendant l'entracte 2D) et légende du temps fort, lisibles
-## d'un coup d'œil en 1080p comme en 1440p : horloge, noms, score, pause et légende agrandis.
+## Bandeau du score (le même en 3D et pendant l'entracte 2D), commandes et journal à l'échelle.
 func _mettre_a_l_echelle() -> void:
 	if not is_instance_valid(clock): return
 	echelle = echelle_pour(get_viewport().get_visible_rect().size.y)
 	var t := func(cle: String) -> int: return roundi(float(BANDEAU_TAILLES[cle]) * echelle)
+	var marge: MarginContainer = clock.find_parent("MatchHud").get_parent() if clock.find_parent("MatchHud") != null else null
+	if marge != null:
+		for bord in ["left", "top", "right", "bottom"]: marge.add_theme_constant_override("margin_" + bord, roundi(MARGE * echelle))
+	clock.add_theme_font_size_override("font_size", t.call("horloge"))
+	phase.add_theme_font_size_override("font_size", t.call("phase"))
+	score.add_theme_font_size_override("font_size", t.call("score"))
 	for nom: Label in [home, away]: nom.add_theme_font_size_override("font_size", t.call("equipe"))
-	_tailles_bandeau()
+	for sigle: Label in _sigles: sigle.add_theme_font_size_override("font_size", t.call("sigle"))
+	var hauteur := roundf(BANDEAU_HAUTEUR * echelle)
+	var d := Charte.decalage(hauteur)
+	for segment: Control in _coque_score.get_children():
+		segment.custom_minimum_size.y = hauteur
+		var marges := StyleBoxEmpty.new()
+		marges.content_margin_left = roundf(12 * echelle)
+		marges.content_margin_right = roundf(16 * echelle)
+		if segment.name == "MatchClubPlaque1": marges.content_margin_right = roundf(16 * echelle + d)
+		if segment.name == "MatchScoreBlock":
+			marges.content_margin_left = roundf(16 * echelle)
+		segment.add_theme_stylebox_override("panel", marges)
+	(_coque_score.get_node("MatchClockBlock") as Control).custom_minimum_size.x = roundf(96 * echelle)
+	score.custom_minimum_size.x = roundf(104 * echelle)
+	for plaque: PanelContainer in plaques:
+		var rangee: HBoxContainer = plaque.get_child(0)
+		rangee.add_theme_constant_override("separation", roundi(10 * echelle))
+		var souligne: ColorRect = plaque.find_child("Souligne", true, false)
+		souligne.custom_minimum_size.y = maxf(1.0, roundf(2 * echelle))
+	for etiquette: Label in [meteo_ligne]: etiquette.add_theme_font_size_override("font_size", t.call("meteo"))
+	for bouton: Button in [play, indice_menu]: _habiller_bouton_hud(bouton)
+	if is_instance_valid(_legende):
+		_legende.custom_minimum_size.x = roundi(LEGENDE_LARGEUR * echelle)
+		var marge_journal: MarginContainer = _legende.get_child(0)
+		for bord in ["left", "right"]: marge_journal.add_theme_constant_override("margin_" + bord, roundi(16 * echelle))
+		for bord in ["top", "bottom"]: marge_journal.add_theme_constant_override("margin_" + bord, roundi(9 * echelle))
+	for ligne: Array in _journal_lignes:
+		(ligne[0] as Label).add_theme_font_size_override("font_size", roundi(17 * echelle))
+		(ligne[0] as Label).custom_minimum_size.x = roundf(32 * echelle)
+		(ligne[1] as RichTextLabel).add_theme_font_size_override("normal_font_size", t.call("legende"))
 	events.add_theme_font_size_override("font_size", t.call("legende"))
-	meteo_ligne.add_theme_font_size_override("font_size", t.call("meteo"))
-	events.add_theme_color_override("font_color", S.TEXT)
-	if is_instance_valid(_legende): _legende.custom_minimum_size.x = roundi(LEGENDE_LARGEUR * echelle)
-	_ecussons_cle = ""
-	_poser_ecussons(_live().get("teams", []))
-
-## Tailles de l'horloge, du score, des sigles et du bouton : grande barre ou bloc compact.
-func _tailles_bandeau() -> void:
-	var tailles: Dictionary = BANDEAU_COMPACT if compact else BANDEAU_TAILLES
-	clock.add_theme_font_size_override("font_size", roundi(float(tailles.horloge) * echelle))
-	clock.custom_minimum_size.x = roundi((80 if compact else 104) * echelle)
-	score.add_theme_font_size_override("font_size", roundi(float(tailles.score) * echelle))
-	score.custom_minimum_size.x = roundi((104 if compact else 170) * echelle)
-	for sigle: Label in _sigles: sigle.add_theme_font_size_override("font_size", roundi(float(BANDEAU_COMPACT.sigle) * echelle))
-	play.add_theme_font_size_override("font_size", roundi(float(tailles.pause) * echelle))
-	play.custom_minimum_size = Vector2(roundi((100 if compact else 132) * echelle), roundi((34 if compact else 46) * echelle))
+	_plaques_cle = ""
+	_poser_plaques(_live().get("teams", []))
+	if is_instance_valid(_menu_panneau): _placer_menu()
 
 ## État du bandeau et du bouton de pause, sans nœud (testable seul).
 ## `regie_active` : la régie des temps forts cadence le match ; `action_3d` : un temps fort est
@@ -337,6 +631,16 @@ static func etat_bandeau(live: Dictionary, regie_active: bool, action_3d: bool, 
 	return {"compact": reduit, "pause": "PAUSE" if joue or (fini and not arrete) else "REPRENDRE",
 		"pause_possible": not fini and not (joue and arrete)}
 
+## Libellé affiché du bouton (« Pause » / « Reprendre ») pour l'état rendu par etat_bandeau.
+static func libelle_pause(etat: Dictionary) -> String:
+	return "Pause" if str(etat.get("pause", "")) == "PAUSE" else "Reprendre"
+
+## Période sous l'horloge : « 1re MT », « 2e MT », « Prol. ».
+static func periode_texte(live: Dictionary) -> String:
+	if live.is_empty(): return ""
+	var periode := int(live.get("period", 2 if int(live.get("minute", 0)) > 40 else 1))
+	return "1re MT" if periode <= 1 else ("2e MT" if periode == 2 else "Prol.")
+
 func _etat_bandeau() -> Dictionary:
 	var action: bool = regie != null and regie.etat == regie.JEU
 	var attente: bool = regie != null and regie.etat == regie.ATTENTE
@@ -350,10 +654,32 @@ func _process(_delta: float) -> void:
 	if _recouvrir > 0:
 		_recouvrir -= 1
 		if _recouvrir == 0: _recadrer()
+	_poser_periode()
+	_suivre_journal()
+	# Rappel « Échap » : en 3D seulement (l'entracte a ses propres rappels) et hors action en cours.
+	var entracte: bool = regie != null and regie.between != null and regie.between.visible
+	var rappel: bool = not compact and not entracte and not _live().get("finished", false)
+	if indice_menu.visible != rappel: indice_menu.visible = rappel
+	# La fenêtre Équipe ouverte depuis la bande ferme le menu (le match reste en pause).
+	if is_instance_valid(menu) and menu.visible and is_instance_valid(equipe) and equipe.visible: _cacher_menu()
+	if _pause_voulue != 0 and not app.waiting:
+		var voulue := _pause_voulue > 0
+		_pause_voulue = 0
+		if bool(_live().get("paused", false)) != voulue and not _live().get("finished", false): director.command("pause", {"paused": voulue})
 
-## Libellé et accès du bouton : « PAUSE » tant que le match joue à l'écran, « REPRENDRE » en pause.
+## Période sous l'horloge, et horloge plus petite quand elle écrit un mot (« MI-TEMPS », « TERMINÉ »).
+func _poser_periode() -> void:
+	var numerique := not clock.text.is_empty() and clock.text.substr(0, 1).is_valid_int()
+	var texte := periode_texte(_live()) if numerique else ""
+	if phase.text != texte: phase.text = texte
+	phase.visible = not texte.is_empty()
+	var taille := roundi((BANDEAU_TAILLES.horloge if numerique else 22) * echelle)
+	if clock.get_theme_font_size("font_size") != taille: clock.add_theme_font_size_override("font_size", taille)
+
+## Libellé et accès du bouton : « Pause » tant que le match joue à l'écran, « Reprendre » en pause.
 func _poser_pause(etat: Dictionary) -> void:
-	if play.text != str(etat.pause): play.text = str(etat.pause)
+	var libelle := libelle_pause(etat)
+	if play.text != libelle: play.text = libelle
 	var possible: bool = bool(etat.pause_possible) and director._talk().is_empty()
 	var aide := "" if bool(etat.pause_possible) or bool(_live().get("finished", false)) else "Le match est déjà arrêté : l’action en cours se termine."
 	if play.tooltip_text != aide: play.tooltip_text = aide
@@ -361,18 +687,14 @@ func _poser_pause(etat: Dictionary) -> void:
 		play.set_meta("contextual_enabled", possible)
 		director._refresh_controls()
 
-## Grande barre ↔ bloc compact en haut à gauche (horloge, sigles, score, bouton de pause).
+## Pendant l'action 3D, la météo et le rappel Échap se retirent ; le bandeau du score reste entier.
 func _appliquer_bandeau(valeur: bool) -> void:
 	compact = valeur
-	_coque_score.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN if compact else Control.SIZE_FILL
-	for noeud: Control in [home, away, _ecussons[0], _ecussons[1], _meteo_boite]:
-		if is_instance_valid(noeud): noeud.visible = not compact
-	for sigle: Label in _sigles: sigle.visible = compact
-	_tailles_bandeau()
+	if is_instance_valid(_meteo_boite): _meteo_boite.visible = not compact
 	_recouvrir = 2
 
-## Le cadrage des temps forts tient compte de la part d'image cachée en haut et en bas : elle
-## change avec le bandeau. Même mesure que la régie au début de chaque plan.
+## Le cadrage des temps forts tient compte de la part d'image cachée en haut et en bas.
+## Même mesure que la régie au début de chaque plan.
 func _recadrer() -> void:
 	if regie == null or regie.etat != regie.JEU: return
 	var cadrage: Variant = regie.get("cadrage")
@@ -387,18 +709,18 @@ func update_frame(value: Dictionary) -> void:
 	var live := _live()
 	var teams: Array = live.get("teams", [{}, {}])
 	if teams.size() >= 2:
-		home.text = S.G.club_name(teams[0])
-		away.text = S.G.club_name(teams[1])
+		home.text = S.G.club_name(teams[0]).to_upper()
+		away.text = S.G.club_name(teams[1]).to_upper()
 		for cote in 2: _sigles[cote].text = S.G.club_abbr(teams[cote]) if teams[cote] is Dictionary else ""
-		_poser_ecussons(teams)
+		_poser_plaques(teams)
 	var scores: Array = live.get("score", [0, 0])
 	score.text = "%d — %d" % [int(scores[0]), int(scores[1])]
-	clock.text = "%d min" % int(live.get("minute", 0))
+	clock.text = "%d′" % int(live.get("minute", 0))
 	if live.get("finished", false): clock.text = "TERMINÉ"
 	elif live.get("atBreak", false): clock.text = "MI-TEMPS"
 	meteo_ligne.text = Meteo.bandeau(live)
 	meteo_ligne.visible = not meteo_ligne.text.is_empty()
-	meteo_ligne.add_theme_color_override("font_color", S.GOLD if live.get("atBreak", false) else S.MUTED)
+	meteo_ligne.add_theme_color_override("font_color", Charte.IVOIRE if live.get("atBreak", false) else Charte.IVOIRE_2)
 	meteo_ligne.tooltip_text = Meteo.conseil(live)
 	meteo_ligne.mouse_filter = Control.MOUSE_FILTER_PASS if not meteo_ligne.tooltip_text.is_empty() else Control.MOUSE_FILTER_IGNORE
 	finish.visible = live.get("finished", false)
@@ -407,13 +729,18 @@ func update_frame(value: Dictionary) -> void:
 	if regie == null:
 		stage.set_live_cadence(app.tick_steps)
 		stage.apply_frame(live)
-	var lines := PackedStringArray()
-	var rows: Array = live.get("events", [])
-	for event: Variant in rows.slice(maxi(0, rows.size() - 2)):
-		if event is Dictionary: lines.append("%s'  %s" % [str(event.get("min", "")), sigles_affiches(str(event.get("text", "")), live.get("teams", []))])
-		else: lines.append(str(event))
-	events.text = "\n".join(lines)
-	events.get_parent().get_parent().visible = not lines.is_empty()
+		# Repli : les deux derniers faits du moteur, avec leur minute.
+		var rows: Array = live.get("events", [])
+		var faits: Array = []
+		for event: Variant in rows.slice(maxi(0, rows.size() - 2)):
+			if event is Dictionary: faits.push_front({"minute": "%s'" % str(event.get("min", "")), "texte": sigles_affiches(str(event.get("text", "")), live.get("teams", []))})
+			else: faits.push_front({"minute": "", "texte": str(event)})
+		_journal = faits
+		events.text = str(faits[0].texte) if not faits.is_empty() else ""
+		_journal_texte = events.text.strip_edges()
+		_dessiner_journal()
+		events.get_parent().get_parent().visible = not faits.is_empty()
+		_legende.visible = not faits.is_empty()
 	if regie != null:
 		regie.receive(model, live)
 		if live.get("direct") is Dictionary: montrer_reglages_temps_forts(live.direct, regie)
@@ -425,6 +752,560 @@ func update_frame(value: Dictionary) -> void:
 	var etat := _etat_bandeau()
 	_poser_pause(etat)
 	if bool(etat.compact) != compact: _appliquer_bandeau(bool(etat.compact))
+	if is_instance_valid(page) and page.visible: _actualiser_page()
+	if is_instance_valid(menu) and menu.visible: _actualiser_menu()
+	director._refresh_controls()
+
+## Couleur de chaque club sur sa plaque (assombrie pour l'ivoire ; jamais l'or), liseré du sigle.
+func _poser_plaques(teams: Array) -> void:
+	var cle := JSON.stringify(teams.map(func(t: Variant): return [S.G.club_name(t), S.G.identity(t).get("color", "")] if t is Dictionary else []))
+	if cle == _plaques_cle or plaques.size() < 2: return
+	_plaques_cle = cle
+	for cote in 2:
+		var couleur := Charte.CLUB
+		if teams.size() > cote and teams[cote] is Dictionary:
+			couleur = Color.from_string(str(S.G.identity(teams[cote]).get("color", "")), Charte.CLUB)
+		plaques[cote].set_meta("fond", fond_plaque(couleur))
+		var puce: PanelContainer = plaques[cote].find_child("MatchClubChip%d" % cote, true, false)
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0, 0, 0, 0)
+		style.border_color = Charte.club_trait(couleur)
+		style.set_border_width_all(maxi(1, roundi(2 * echelle)))
+		style.set_corner_radius_all(0)
+		style.content_margin_left = roundf(7 * echelle)
+		style.content_margin_right = roundf(7 * echelle)
+		style.content_margin_top = roundf(2 * echelle)
+		style.content_margin_bottom = roundf(2 * echelle)
+		puce.add_theme_stylebox_override("panel", style)
+		# Noms très longs : jamais plus de 300 px (1920 × 1080) par plaque, 120 px en 1280 × 720 (les commandes
+		# tiennent sur la même rangée), le reste en points de suspension.
+		var nom: Label = home if cote == 0 else away
+		var police: Font = nom.get_theme_font("font")
+		var largeur := police.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom.get_theme_font_size("font_size")).x
+		var plafond := clampf((get_viewport_rect().size.x / echelle - 1100.0) * 0.5, 120.0, 300.0) * echelle
+		nom.custom_minimum_size.x = minf(largeur + 2.0, plafond)
+	_coque_score.queue_redraw()
+
+## Fond d'une plaque : la vraie couleur du club, assombrie jusqu'à porter l'ivoire (≥ 4,6:1) ; un club
+## jaune ou or passe au bordeaux de la charte (l'or reste à Continuer).
+static func fond_plaque(couleur: Color) -> Color:
+	var base := Charte.CLUB if Charte._proche_de_l_or(couleur) or couleur.a <= 0.0 else Color(couleur, 1.0)
+	return C.readable_primary_fill(base)
+
+# --- Journal ------------------------------------------------------------------
+
+## Minute affichée par l'horloge (« 27′ », « 40+2:15 » → « 27' », « 40+2' ») ; vide pour un mot.
+static func minute_de(horloge: String) -> String:
+	var tete := horloge.strip_edges()
+	for coupure in ["′", ":", "'"]:
+		var i := tete.find(coupure)
+		if i > 0: tete = tete.substr(0, i)
+	return tete + "'" if not tete.is_empty() and tete.replace("+", "").is_valid_int() else ""
+
+## Le texte du dernier fait a changé (régie ou repli) : il passe en tête du journal, l'ancien descend.
+func _suivre_journal() -> void:
+	var texte := events.text.strip_edges()
+	if texte == _journal_texte: return
+	_journal_texte = texte
+	if texte.is_empty(): return
+	if not _journal.is_empty() and str(_journal[0].texte) == texte: return
+	_journal.push_front({"minute": minute_de(clock.text), "texte": texte})
+	if _journal.size() > 2: _journal.resize(2)
+	_dessiner_journal()
+
+func _dessiner_journal() -> void:
+	var joueurs: Array = model.get("squad", []) if model.get("squad") is Array else []
+	# Journal vide : le panneau ne montre pas une bande sans texte.
+	if is_instance_valid(_legende): _legende.self_modulate.a = 0.0 if _journal.is_empty() else 1.0
+	for rang in _journal_lignes.size():
+		var ligne: Array = _journal_lignes[rang]
+		var fait: Dictionary = _journal[rang] if rang < _journal.size() and _journal[rang] is Dictionary else {}
+		(ligne[2] as Control).visible = not fait.is_empty()
+		(ligne[0] as Label).text = str(fait.get("minute", ""))
+		var riche: RichTextLabel = ligne[1]
+		var bbcode := liens_joueurs(str(fait.get("texte", "")), joueurs)
+		if riche.text != bbcode: riche.text = bbcode
+
+## Texte d'un fait en BBCode : chaque nom d'un de nos joueurs (nom complet, ou nom de famille sans
+## ambiguïté) devient un lien [url=id] ; le reste est échappé. Les adversaires restent du texte.
+static func liens_joueurs(texte: String, joueurs: Array) -> String:
+	var motifs: Array = []
+	var familles := {}
+	for joueur: Variant in joueurs:
+		if not joueur is Dictionary or joueur.get("id") == null: continue
+		var nom := str(joueur.get("name", "")).strip_edges()
+		if nom.is_empty(): continue
+		var id := str(joueur.id)
+		motifs.append([nom, id])
+		var famille := nom.get_slice(" ", nom.get_slice_count(" ") - 1)
+		if famille.length() >= 4 and famille != nom: familles[famille] = "" if familles.has(famille) else id
+	for famille: String in familles:
+		if not str(familles[famille]).is_empty(): motifs.append([famille, familles[famille]])
+	motifs.sort_custom(func(a: Array, b: Array) -> bool: return str(a[0]).length() > str(b[0]).length())
+	var pris: Array = []
+	for motif: Array in motifs:
+		var mot := str(motif[0])
+		var depuis := 0
+		while true:
+			var i := texte.find(mot, depuis)
+			if i < 0: break
+			var f := i + mot.length()
+			depuis = f
+			if (i > 0 and _lettre(texte[i - 1])) or (f < texte.length() and _lettre(texte[f])): continue
+			if pris.any(func(p: Array) -> bool: return i < int(p[1]) and f > int(p[0])): continue
+			pris.append([i, f, motif[1]])
+	pris.sort_custom(func(a: Array, b: Array) -> bool: return int(a[0]) < int(b[0]))
+	var sortie := ""
+	var curseur := 0
+	for p: Array in pris:
+		sortie += _echapper(texte.substr(curseur, int(p[0]) - curseur)) + "[url=%s]%s[/url]" % [str(p[2]), _echapper(texte.substr(int(p[0]), int(p[1]) - int(p[0])))]
+		curseur = int(p[1])
+	return sortie + _echapper(texte.substr(curseur))
+
+static func _lettre(c: String) -> bool:
+	return c.to_upper() != c.to_lower() or c.is_valid_int()
+
+static func _echapper(texte: String) -> String:
+	return texte.replace("[", "[lb]")
+
+func _mini_fiche():
+	return load("res://ui/immersive08/mini_fiche.gd")
+
+func _survol_joueur(id: String, ancre: Control) -> void:
+	_mini_fiche().montrer(app, id, "squad", ancre)
+
+## Nom d'un de nos joueurs cliqué dans le journal : la fenêtre Équipe s'ouvre sur lui (le match se met en
+## pause) ; un remplaçant ouvre la composition.
+func ouvrir_joueur(id: String) -> void:
+	_mini_fiche().cacher(app)
+	var poste := -1
+	var lineup: Array = _live().get("lineup", []) if _live().get("lineup") is Array else []
+	for i in lineup.size():
+		var joueur: Variant = lineup[i]
+		if (joueur is Dictionary and str(joueur.get("id", "")) == id) or str(joueur) == id: poste = i
+	ouvrir_equipe("composition", poste)
+
+## Texte des deux lignes du journal (tests, captures) : [« 27' Bickerstaff gagne la touche », …].
+func journal_affiche() -> Array[String]:
+	var lignes: Array[String] = []
+	for ligne: Array in _journal_lignes:
+		if (ligne[2] as Control).visible: lignes.append(("%s %s" % [(ligne[0] as Label).text, (ligne[1] as RichTextLabel).get_parsed_text()]).strip_edges())
+	return lignes
+
+# --- Clavier : Échap, Espace, T ---------------------------------------------------
+
+func _input(event: InputEvent) -> void:
+	var touche := event as InputEventKey
+	if touche == null or not touche.pressed or touche.echo or not is_visible_in_tree(): return
+	if touche.ctrl_pressed or touche.alt_pressed or touche.meta_pressed: return
+	var code: int = touche.keycode if touche.keycode != 0 else touche.physical_keycode
+	var menu_ouvert := is_instance_valid(menu) and menu.visible
+	var page_ouverte := is_instance_valid(page) and page.visible
+	if code == KEY_ESCAPE:
+		get_viewport().set_input_as_handled()
+		echap()
+	elif code == KEY_SPACE:
+		if menu_ouvert:
+			get_viewport().set_input_as_handled()
+			fermer_menu(true)
+		elif not page_ouverte and not equipe.visible and not play.disabled:
+			get_viewport().set_input_as_handled()
+			_pause()
+	elif code == KEY_T and not menu_ouvert and not page_ouverte and not equipe.visible and not _live().get("finished", false):
+		get_viewport().set_input_as_handled()
+		ouvrir_equipe()
+	elif menu_ouvert and code in [KEY_LEFT, KEY_RIGHT]:
+		var vitesse: Control = menu.find_child("MatchMenuVitesse", true, false)
+		if vitesse != null and vitesse.has_focus():
+			get_viewport().set_input_as_handled()
+			_changer_vitesse(1 if code == KEY_RIGHT else -1)
+
+## Échap : ferme ce qui est ouvert (page, menu, fenêtre Équipe, tiroir) ; sinon met en pause et ouvre le
+## menu du match (jamais celui de la carrière).
+func echap() -> void:
+	_mini_fiche().cacher(app)
+	if is_instance_valid(page) and page.visible:
+		fermer_page()
+	elif is_instance_valid(menu) and menu.visible:
+		fermer_menu(true)
+	elif is_instance_valid(equipe) and equipe.visible:
+		equipe.fermer()
+	elif drawer.visible:
+		_fermer_tiroir()
+	else:
+		ouvrir_menu()
+
+## Met le match en pause s'il joue (une seule fois) ; retient qu'il faudra le relancer.
+func _suspendre() -> void:
+	var live := _live()
+	if live.is_empty() or live.get("finished", false): return
+	var etat := _etat_bandeau()
+	if str(etat.pause) != "PAUSE" or not bool(etat.pause_possible): return
+	_reprendre_apres = true
+	if app.waiting: _pause_voulue = 1
+	else: director.command("pause", {"paused": true})
+
+## Relance le match s'il est en pause (et pas fini).
+func _relancer() -> void:
+	_reprendre_apres = false
+	var live := _live()
+	if live.is_empty() or live.get("finished", false) or not director._talk().is_empty(): return
+	if app.waiting: _pause_voulue = -1
+	elif live.get("paused", false): director.command("pause", {"paused": false})
+
+# --- Menu du match (Échap) ----------------------------------------------------------
+
+## Menu du match (maquette 13-match-direct-3, exception de Léo à la règle « jamais de petite fenêtre ») :
+## voile noir à 70 % sous le bandeau (score et minute lisibles), panneau de 480 px, « Reprendre » en tête.
+## `mode` « deleguer » : la confirmation de « Confier la fin à l'adjoint », dans le même panneau.
+func ouvrir_menu(mode: String = "menu") -> void:
+	if _live().is_empty(): return
+	_suspendre()
+	_menu_mode = mode
+	_menu_quitter_arme = false
+	_menu_cle = ""
+	if not is_instance_valid(menu): _construire_menu()
+	_actualiser_menu()
+	_menu_voile.show()
+	menu.show()
+	move_child(menu, get_child_count() - 1)
+	_placer_menu()
+	var premier: Control = menu.find_child("MatchMenuReprendre" if mode == "menu" else "MatchMenuConfirmer", true, false)
+	if premier != null: premier.call_deferred("grab_focus")
+	director._refresh_controls()
+
+func _cacher_menu() -> void:
+	if is_instance_valid(menu): menu.hide()
+	if is_instance_valid(_menu_voile): _menu_voile.hide()
+
+## Ferme le menu ; `reprendre` : le match repart (Reprendre, Échap, Espace).
+func fermer_menu(reprendre: bool = true) -> void:
+	_cacher_menu()
+	if reprendre: _relancer()
+
+func _construire_menu() -> void:
+	_menu_voile = ColorRect.new()
+	_menu_voile.name = "MatchMenuVeil"
+	_menu_voile.color = Color(Charte.NUIT, 0.7)
+	_menu_voile.mouse_filter = Control.MOUSE_FILTER_STOP
+	S.full(_menu_voile)
+	add_child(_menu_voile)
+	# Le voile passe sous le HUD : le bandeau du score et la minute restent lisibles au-dessus.
+	var hud: Control = clock.find_parent("MatchHud").get_parent()
+	move_child(_menu_voile, hud.get_index())
+	menu = Control.new()
+	menu.name = "MatchMenu"
+	menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	S.full(menu)
+	add_child(menu)
+	_menu_panneau = PanelContainer.new()
+	_menu_panneau.name = "MatchMenuPanel"
+	_menu_panneau.add_theme_stylebox_override("panel", _fond_hud(Vector4(0, 20, 0, 0), Charte.PANNEAU))
+	menu.add_child(_menu_panneau)
+	var colonne := VBoxContainer.new()
+	colonne.name = "MatchMenuColumn"
+	colonne.add_theme_constant_override("separation", 0)
+	_menu_panneau.add_child(colonne)
+	menu.hide()
+
+## Contenu du panneau selon le mode (menu, délégation) et l'état du match ; reconstruit seulement quand
+## ce qu'il dit change (le focus clavier est gardé).
+func _actualiser_menu() -> void:
+	if not is_instance_valid(_menu_panneau): return
+	var cle := JSON.stringify([_menu_mode, _menu_quitter_arme, int(_live().get("minute", 0)), _vitesse_libelle(), echelle])
+	if cle == _menu_cle: return
+	_menu_cle = cle
+	var colonne: VBoxContainer = _menu_panneau.get_child(0)
+	var focus_avant := ""
+	var focalise := get_viewport().gui_get_focus_owner()
+	if focalise != null and colonne.is_ancestor_of(focalise): focus_avant = focalise.name
+	S.clear(colonne)
+	var e := echelle
+	var tete := MarginContainer.new()
+	for bord in ["left", "right"]: tete.add_theme_constant_override("margin_" + bord, roundi(24 * e))
+	tete.add_theme_constant_override("margin_bottom", roundi(14 * e))
+	colonne.add_child(tete)
+	var pile := VBoxContainer.new()
+	pile.add_theme_constant_override("separation", roundi(4 * e))
+	tete.add_child(pile)
+	var minute := int(_live().get("minute", 0))
+	var titre := _texte("CONFIER LA FIN À L’ADJOINT" if _menu_mode == "deleguer" else "MENU DU MATCH", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
+	titre.name = "MatchMenuTitle"
+	titre.add_theme_font_size_override("font_size", roundi(24 * e))
+	pile.add_child(titre)
+	var chapo := "L’adjoint prend en charge la fin de cette rencontre ; tu retrouves le résultat à la fin du match." if _menu_mode == "deleguer" \
+		else "Le match est en pause à la %de. Le menu de carrière reste fermé jusqu’à la fin du match." % maxi(1, minute)
+	var texte := _texte(chapo, Charte.TEXTE, Charte.IVOIRE_2)
+	texte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	texte.add_theme_font_size_override("font_size", roundi(13 * e))
+	pile.add_child(texte)
+	colonne.add_child(_filet())
+	if _menu_mode == "deleguer":
+		colonne.add_child(_option("MatchMenuConfirmer", "Confirmer : l’adjoint finit le match", "le match se joue sans toi jusqu’au coup de sifflet", "Entrée", func():
+			fermer_menu(false)
+			director.command("delegate")))
+		colonne.add_child(_option("MatchMenuAnnuler", "Annuler et reprendre le match", "", "Échap", func(): fermer_menu(true)))
+	else:
+		colonne.add_child(_option("MatchMenuReprendre", "Reprendre le match", "", "Échap  Espace", func(): fermer_menu(true)))
+		colonne.add_child(_option("MatchMenuReglages", "Réglages", "son, image, commandes", "›", func(): ouvrir_reglages()))
+		colonne.add_child(_option("MatchMenuVitesse", "Vitesse du match", "s’applique dès la reprise", "◂ %s ▸" % _vitesse_libelle(), func(): _changer_vitesse(1)))
+		var quitter_sous := "Appuie encore : le jeu se ferme, le match sera rejoué depuis le coup d’envoi." if _menu_quitter_arme \
+			else "Tu reprendras avant le match : il sera rejoué depuis le coup d’envoi."
+		colonne.add_child(_option("MatchMenuQuitter", "Quitter le match", quitter_sous, "", _quitter))
+	var pied := HBoxContainer.new()
+	pied.name = "MatchMenuKeys"
+	pied.add_theme_constant_override("separation", roundi(18 * e))
+	var marge_pied := MarginContainer.new()
+	for bord in ["left", "right"]: marge_pied.add_theme_constant_override("margin_" + bord, roundi(24 * e))
+	for bord in ["top", "bottom"]: marge_pied.add_theme_constant_override("margin_" + bord, roundi(12 * e))
+	marge_pied.add_child(pied)
+	colonne.add_child(marge_pied)
+	for paire: Array in [["↑ ↓", "Choisir"], ["Entrée", "Valider"], ["Échap", "Reprendre" if _menu_mode == "menu" else "Annuler"]]:
+		var groupe := HBoxContainer.new()
+		groupe.add_theme_constant_override("separation", roundi(6 * e))
+		var puce := _touche(str(paire[0]))
+		(puce.get_child(0) as Label).add_theme_font_size_override("font_size", roundi(12 * e))
+		groupe.add_child(puce)
+		var legende := _texte(str(paire[1]), Charte.TEXTE, Charte.IVOIRE_2)
+		legende.add_theme_font_size_override("font_size", roundi(12 * e))
+		groupe.add_child(legende)
+		pied.add_child(groupe)
+	_menu_panneau.custom_minimum_size.x = roundf(480 * e)
+	_menu_panneau.reset_size()
+	_placer_menu()
+	if not focus_avant.is_empty():
+		var retrouve: Control = colonne.find_child(focus_avant, true, false)
+		if retrouve != null: retrouve.call_deferred("grab_focus")
+
+func _filet() -> ColorRect:
+	var filet := ColorRect.new()
+	filet.color = Charte.FILET
+	filet.custom_minimum_size.y = 1
+	filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return filet
+
+## Option du menu : ligne de 52 px (1080p), libellé, précision en ivoire secondaire, indication à droite ;
+## survol en panneau plus clair, focus en panneau choisi avec le marqueur ivoire incliné à gauche.
+func _option(nom: String, libelle: String, precision: String, droite: String, action: Callable) -> Button:
+	var e := echelle
+	var bouton := Button.new()
+	bouton.name = nom
+	bouton.focus_mode = Control.FOCUS_ALL
+	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	bouton.pressed.connect(action)
+	bouton.set_meta("contextual_enabled", true)
+	for etat in ["normal", "hover", "pressed", "focus", "disabled"]:
+		var fond := Color(0, 0, 0, 0)
+		if etat in ["hover", "pressed"]: fond = Charte.PANNEAU_2
+		if etat == "focus": fond = Charte.PANNEAU_3
+		var style := _fond_hud(Vector4.ZERO, fond)
+		style.border_color = Charte.FILET
+		style.border_width_bottom = 1
+		if etat == "focus":
+			style.border_color = Charte.IVOIRE
+			style.set_border_width_all(maxi(1, roundi(2 * e)))
+		bouton.add_theme_stylebox_override(etat, style)
+	var rangee := HBoxContainer.new()
+	rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rangee.add_theme_constant_override("separation", roundi(12 * e))
+	S.full(rangee)
+	rangee.offset_left = roundf(28 * e)
+	rangee.offset_right = -roundf(20 * e)
+	bouton.add_child(rangee)
+	var marqueur := Marqueur.new()
+	marqueur.name = "Marqueur"
+	marqueur.custom_minimum_size = Vector2(roundf(6 * e), roundf(26 * e))
+	marqueur.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	marqueur.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marqueur.modulate.a = 0.0
+	rangee.add_child(marqueur)
+	bouton.focus_entered.connect(func(): marqueur.modulate.a = 1.0)
+	bouton.focus_exited.connect(func(): marqueur.modulate.a = 0.0)
+	var pile := VBoxContainer.new()
+	pile.alignment = BoxContainer.ALIGNMENT_CENTER
+	pile.add_theme_constant_override("separation", 0)
+	pile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	C.fill(pile)
+	rangee.add_child(pile)
+	var titre := _texte(libelle, Charte.texte_moyen(), Charte.IVOIRE)
+	titre.name = "Libelle"
+	titre.add_theme_font_size_override("font_size", roundi(17 * e))
+	pile.add_child(titre)
+	if not precision.is_empty():
+		var sous := _texte(precision, Charte.TEXTE, Charte.IVOIRE_2)
+		sous.name = "Precision"
+		sous.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		sous.add_theme_font_size_override("font_size", roundi(13 * e))
+		pile.add_child(sous)
+	if not droite.is_empty():
+		var indication := _texte(droite, Charte.TEXTE if droite.length() > 2 else Charte.texte_moyen(), Charte.IVOIRE_2 if not droite.begins_with("◂") else Charte.IVOIRE)
+		indication.name = "Droite"
+		indication.add_theme_font_size_override("font_size", roundi((16 if droite.begins_with("◂") else 13) * e))
+		rangee.add_child(indication)
+	bouton.custom_minimum_size.y = maxf(roundf(52 * e), (pile.get_combined_minimum_size().y if not precision.is_empty() else 0.0) + roundf(16 * e))
+	return bouton
+
+## Marqueur de l'option choisie : trait ivoire de 3 px incliné de 10° (charte §3).
+class Marqueur extends Control:
+	func _draw() -> void:
+		var d := Charte.decalage(size.y)
+		var l := maxf(2.0, size.x * 0.5)
+		draw_colored_polygon(PackedVector2Array([Vector2(d, 0), Vector2(d + l, 0), Vector2(l, size.y), Vector2(0, size.y)]), Charte.IVOIRE)
+
+func _placer_menu() -> void:
+	if not is_instance_valid(_menu_panneau): return
+	_menu_panneau.reset_size()
+	var taille := _menu_panneau.size
+	_menu_panneau.position = Vector2(roundf((size.x - taille.x) * 0.5), roundf(maxf(size.y * 0.22, (size.y - taille.y) * 0.4)))
+
+## Vitesse du match : l'horloge de l'entracte en temps forts (posée → éclair), la cadence en repli.
+const VITESSES := ["lente", "normale", "rapide", "eclair"]
+const VITESSES_LIBELLES := {"lente": "Posée", "normale": "Normale", "rapide": "Rapide", "eclair": "Éclair"}
+
+func _vitesse_libelle() -> String:
+	if regie != null: return str(VITESSES_LIBELLES.get(str(regie.horloge), "Normale"))
+	return "×%d" % int(app.tick_steps)
+
+func _changer_vitesse(sens: int) -> void:
+	if regie != null:
+		var i := VITESSES.find(str(regie.horloge))
+		var suivante: String = VITESSES[wrapi(i + sens, 0, VITESSES.size())]
+		regie.choisir_horloge(suivante)
+		if regie.between != null: regie.between.horloge = suivante
+	else:
+		var pas := [1, 4, 12]
+		var j := wrapi(pas.find(int(app.tick_steps)) + sens, 0, pas.size())
+		_cadence.select(j)
+		_choisir_cadence(j)
+	_actualiser_menu()
+
+## « Quitter le match » : un premier appui arme (la ligne dit ce qui va se passer), le second ferme le jeu.
+## Pas de reprise en plein match (décision de Léo, 16/11/2026) : la carrière repart avant le match.
+func _quitter() -> void:
+	if not _menu_quitter_arme:
+		_menu_quitter_arme = true
+		_actualiser_menu()
+		return
+	app._close()
+
+## « Confier la fin à l'adjoint » (Plus) : confirmation dans le menu du match, pas dans une fenêtre.
+func confier_fin() -> void:
+	ouvrir_menu("deleguer")
+
+# --- Pages du direct : fiche du club, réglages ------------------------------------------
+
+## Fiche du club `cote` (0 : recevant, 1 : visiteur) dans une page du direct : match en pause, « Retour au
+## direct » le rend tel quel (et le relance s'il jouait). Fiche commune (club_sheet_canvas.gd), y compris
+## pour notre club.
+func ouvrir_fiche_club(cote: int) -> void:
+	var teams: Array = _live().get("teams", [])
+	if cote < 0 or cote >= teams.size() or not teams[cote] is Dictionary or teams[cote].get("id") == null: return
+	_suspendre()
+	var id := int(float(teams[cote].id))
+	var avant: Variant = app.management_ui.get("club_sheet")
+	var meme: bool = avant is Dictionary and int(avant.get("id", -1)) == id
+	app.management_ui.club_sheet = {"id": id, "tab": int(avant.get("tab", 0)) if meme else 0, "sort": str(avant.get("sort", "fam")) if meme else "fam", "descending": bool(avant.get("descending", false)) if meme else false}
+	_ouvrir_page("club")
+
+## Réglages (son, image, commandes) depuis le menu du match : l'écran Réglages de la coque, monté dans une
+## page du direct ; « Retour au menu du match ».
+func ouvrir_reglages() -> void:
+	_cacher_menu()
+	_ouvrir_page("reglages")
+
+func _ouvrir_page(sorte: String) -> void:
+	_mini_fiche().cacher(app)
+	if drawer.visible: _fermer_tiroir()
+	_page_sorte = sorte
+	_page_cle = ""
+	if not is_instance_valid(page):
+		page = Control.new()
+		page.name = "MatchPage"
+		page.mouse_filter = Control.MOUSE_FILTER_STOP
+		S.full(page)
+		add_child(page)
+	page.show()
+	move_child(page, get_child_count() - 1)
+	_actualiser_page()
+	director._refresh_controls()
+
+## Page reconstruite quand son contenu change (onglet de la fiche, réponse du moteur, échelle).
+func _actualiser_page() -> void:
+	if not is_instance_valid(page) or not page.visible: return
+	var fiche: Variant = app.management_ui.get("club_sheet")
+	var donnees := false
+	if _page_sorte == "club" and fiche is Dictionary:
+		donnees = not load("res://ui/immersive08/club_sheet_canvas.gd").cached(app, int(fiche.get("id", -1))).is_empty()
+	var cle := JSON.stringify([_page_sorte, fiche if _page_sorte == "club" else null, donnees, size, C.density])
+	if cle == _page_cle: return
+	_page_cle = cle
+	S.clear(page)
+	var fond := ColorRect.new()
+	fond.color = Charte.FOND
+	fond.mouse_filter = Control.MOUSE_FILTER_STOP
+	S.full(fond)
+	page.add_child(fond)
+	var marge := MarginContainer.new()
+	S.full(marge)
+	for bord in ["left", "top", "right", "bottom"]: marge.add_theme_constant_override("margin_" + bord, roundi(MARGE * echelle))
+	page.add_child(marge)
+	var colonne := VBoxContainer.new()
+	colonne.add_theme_constant_override("separation", roundi(12 * echelle))
+	marge.add_child(colonne)
+	var tete := HBoxContainer.new()
+	tete.add_theme_constant_override("separation", roundi(18 * echelle))
+	colonne.add_child(tete)
+	var retour := Button.new()
+	retour.name = "MatchPageBack"
+	retour.text = "←  Retour au menu du match" if _page_sorte == "reglages" else "←  Retour au direct"
+	retour.pressed.connect(fermer_page)
+	retour.set_meta("contextual_enabled", true)
+	C.style_bouton_lien(retour, 19, true)
+	retour.add_theme_font_size_override("font_size", roundi(16 * echelle))
+	tete.add_child(retour)
+	var titre := _texte("RÉGLAGES" if _page_sorte == "reglages" else "FICHE DU CLUB", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
+	titre.add_theme_font_size_override("font_size", roundi(22 * echelle))
+	tete.add_child(titre)
+	var rappel := _texte("Le match est en pause à la %de." % maxi(1, int(_live().get("minute", 0))), Charte.TEXTE, Charte.IVOIRE_2)
+	rappel.add_theme_font_size_override("font_size", roundi(13 * echelle))
+	C.fill(rappel)
+	rappel.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	tete.add_child(rappel)
+	colonne.add_child(_filet())
+	var defile := ScrollContainer.new()
+	defile.name = "MatchPageScroll"
+	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	C.fill(defile, true)
+	colonne.add_child(defile)
+	if _page_sorte == "reglages":
+		var contenu: Control = load("res://ui/preferences_dialog.gd").page(app, app.get("user_preferences"))
+		C.fill(contenu, true)
+		defile.add_child(contenu)
+	else:
+		var Fiche = load("res://ui/immersive08/club_sheet_canvas.gd")
+		var toile := Control.new()
+		toile.name = "MatchClubSheetCanvas"
+		toile.custom_minimum_size = Vector2(Fiche.WIDTH, Fiche.HEIGHT) * C.density
+		defile.add_child(toile)
+		Fiche.build(app, toile)
+	retour.call_deferred("grab_focus")
+
+## Retour : au menu du match depuis les réglages, au direct depuis la fiche (le match repart s'il jouait).
+func fermer_page() -> void:
+	_mini_fiche().cacher(app)
+	if not is_instance_valid(page): return
+	var sorte := _page_sorte
+	page.hide()
+	S.clear(page)
+	_page_sorte = ""
+	_page_cle = ""
+	if sorte == "reglages":
+		apply_preferences()
+		var reprendre := _reprendre_apres
+		ouvrir_menu()
+		_reprendre_apres = reprendre
+	elif _reprendre_apres:
+		_relancer()
 	director._refresh_controls()
 
 ## Fenêtre « Équipe » (choix de Léo, 18/11/2026 : un seul bouton à la place de Tactique et Banc) :
@@ -433,6 +1314,7 @@ func update_frame(value: Dictionary) -> void:
 func ouvrir_equipe(onglet: String = "composition", poste: int = -1) -> void:
 	if not is_instance_valid(equipe) or _live().get("finished", false): return
 	if drawer.visible: _fermer_tiroir()
+	_cacher_menu()
 	equipe.update_frame(model)
 	equipe.ouvrir(onglet, poste)
 	director._refresh_controls()
@@ -443,10 +1325,10 @@ func equipe_fermee() -> void:
 ## Le journal du moteur nomme les clubs par leur sigle interne (« FDG ») ; l'écran affiche le
 ## sigle de leur identité (presentation.abbr). Même règle que match-direct.cjs (renommeur).
 static func sigles_affiches(texte: String, equipes: Array) -> String:
-	for equipe: Variant in equipes:
-		if not equipe is Dictionary: continue
-		var interne := str(equipe.get("abbr", ""))
-		var identite: Variant = equipe.get("presentation")
+	for equipe_: Variant in equipes:
+		if not equipe_ is Dictionary: continue
+		var interne := str(equipe_.get("abbr", ""))
+		var identite: Variant = equipe_.get("presentation")
 		var affiche := str(identite.get("abbr", "")) if identite is Dictionary else ""
 		if not RegEx.create_from_string("^[A-Z0-9]{2,5}$").search(interne) or affiche.is_empty() or affiche == interne: continue
 		var motif := RegEx.create_from_string("\\b" + interne + "\\b")
@@ -489,31 +1371,6 @@ func temps_forts_actifs() -> bool:
 
 func _live() -> Dictionary:
 	return model.get("live", {}) if model.get("live") is Dictionary else {}
-
-func confier_fin() -> void:
-	app.confirm("Confier la fin du match", "L’adjoint prend en charge la fin de cette rencontre. Confirmer la délégation ?", func(): director.command("delegate"))
-
-## Écussons et filets de couleur des deux clubs dans le bandeau de score.
-func _poser_ecussons(teams: Array) -> void:
-	var cle := JSON.stringify(teams.map(func(t: Variant): return [S.G.club_name(t), S.G.identity(t).get("color", "")] if t is Dictionary else []))
-	if cle == _ecussons_cle or _ecussons[0] == null: return
-	_ecussons_cle = cle
-	for cote in 2:
-		var boite: HBoxContainer = _ecussons[cote]
-		for enfant in boite.get_children(): enfant.queue_free()
-		if teams.size() <= cote or not teams[cote] is Dictionary: continue
-		var filet := ColorRect.new()
-		filet.color = Color.from_string(str(S.G.identity(teams[cote]).get("color", "#d8c183")), S.GOLD)
-		filet.custom_minimum_size = Vector2(roundi(6 * echelle), roundi(46 * echelle))
-		filet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		var ecusson := S.G.crest(teams[cote], roundi(BANDEAU_TAILLES.ecusson * echelle))
-		ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		if cote == 0:
-			boite.add_child(ecusson)
-			boite.add_child(filet)
-		else:
-			boite.add_child(filet)
-			boite.add_child(ecusson)
 
 func _pause() -> void:
 	var live := _live()
@@ -579,14 +1436,14 @@ func _update_drawer() -> void:
 	if key == _drawer_key: return
 	_drawer_key = key
 	S.clear(drawer_body)
-	drawer_body.add_child(S.label(drawer_tab, 23, S.GOLD))
+	drawer_body.add_child(S.label(drawer_tab, 23, Charte.IVOIRE))
 	for stat: Dictionary in _stats(live):
-		drawer_body.add_child(S.label(str(stat.get("label", "")), 13))
-		drawer_body.add_child(S.label("%s    —    %s" % [str(stat.get("home", "")), str(stat.get("away", ""))], 23, S.GOLD))
+		drawer_body.add_child(S.label(str(stat.get("label", "")), 13, Charte.IVOIRE_2))
+		drawer_body.add_child(S.label("%s    —    %s" % [str(stat.get("home", "")), str(stat.get("away", ""))], 23, Charte.IVOIRE))
 		# Détail par équipe sous le compte (pénalités par phase, lancers pas droits) : une ligne courte chacune.
 		if stat.get("detail") is Array:
-			for ligne: Variant in stat.detail: drawer_body.add_child(S.wrap(str(ligne), 12))
-	if _stats(live).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14))
+			for ligne: Variant in stat.detail: drawer_body.add_child(S.wrap(str(ligne), 12, Charte.IVOIRE_2))
+	if _stats(live).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14, Charte.IVOIRE_2))
 	director._refresh_controls()
 
 ## Chiffres du tiroir : entre deux temps forts, ceux d'avant la borne du moteur (rien d'un temps fort à venir).

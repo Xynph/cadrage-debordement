@@ -19,6 +19,8 @@ const Liaison = preload("res://match_liaison.gd")
 const Arbitre = preload("res://match_arbitre.gd")
 const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
+const Charte = preload("res://ui/charte.gd")
+const C08 = preload("res://ui/immersive08/components.gd")
 
 ## SORTIE : mi-temps ou fin de match, plan large puis joueurs qui rentrent au tunnel (grands moments).
 enum { INTER, JEU, ATTENTE, SORTIE }
@@ -80,8 +82,9 @@ const SORTIE_MARCHE := 6.0
 ## masquait la célébration). Entrée en BANDEAU_ENTREE s (glissé depuis la gauche pour « ESSAI », depuis
 ## le bas pour « MI-TEMPS » et « FIN DU MATCH », de BANDEAU_GLISSE de la hauteur), sortie en
 ## BANDEAU_FONDU s (fondu, léger glissé vers le bas). Animations réduites : ni glissé ni fondu.
+## Charte §7 (20/11/2026) : 600 ms d'animation au total (entrée + sortie), aucun flash.
 const BANDEAU_ENTREE := 0.3
-const BANDEAU_FONDU := 0.25
+const BANDEAU_FONDU := 0.3
 const BANDEAU_GLISSE := 0.04
 ## « ESSAI » en tiers inférieur : calé à gauche sur la légende, BANDEAU_MARGE de la hauteur au-dessus
 ## d'elle (sans légende connue : bas à BANDEAU_BAS_REPLI de la hauteur du bas de l'image).
@@ -1479,7 +1482,7 @@ func _habiller_meteo() -> void:
 	var montre_live := meteo_montree(_live, etat == JEU)
 	(ligne as Label).text = Meteo.bandeau(montre_live)
 	(ligne as Label).visible = not (ligne as Label).text.is_empty()
-	(ligne as Label).add_theme_color_override("font_color", S.GOLD if montre_live.get("atBreak", false) else S.MUTED)
+	(ligne as Label).add_theme_color_override("font_color", Charte.IVOIRE if montre_live.get("atBreak", false) else Charte.IVOIRE_2)
 
 ## Plan d'essai encore en mouvement à l'instant `instant` (secondes depuis le début du plan) :
 ## le ballon n'est pas encore aplati à l'écran.
@@ -1679,7 +1682,16 @@ func _celebrer_essai(plan: Dictionary) -> void:
 	var nom := marqueur_essai(str(plan.get("texte", "")))
 	var fait := int(plan.get("index", -1))
 	if nom.is_empty() and fait >= 0 and fait < _events.size() and _events[fait] is Dictionary: nom = marqueur_essai(str(_events[fait].get("text", "")))
-	montrer_bandeau("ESSAI", nom, equipe, ESSAI_BANDEAU)
+	# Bannière à la couleur du club qui marque (charte §7) : « Club · 52e minute », +5 et le score.
+	var couleur := Color.TRANSPARENT
+	if camp in [0, 1] and camp < _teams.size() and _teams[camp] is Dictionary:
+		couleur = Color.from_string(str(S.G.identity(_teams[camp]).get("color", "")), Charte.CLUB)
+	var contexte := equipe
+	var minute := str(plan.get("horloge", "")).trim_suffix("′").strip_edges()
+	if minute.is_valid_int(): contexte = "%s · %se minute" % [equipe, minute] if not equipe.is_empty() else "%se minute" % minute
+	var marque: Array = plan.get("score", []) if plan.get("score") is Array else []
+	var points := "+5\n%d – %d" % [int(marque[0]), int(marque[1])] if marque.size() >= 2 else "+5"
+	montrer_bandeau("ESSAI", nom, contexte, ESSAI_BANDEAU, couleur, points)
 	suivi.append({"evenement": "essai_moment", "cle": str(tf.get("cle", "")), "plan": index, "marqueur": nom, "equipe": equipe, "debut_ms": Time.get_ticks_msec()})
 
 func _calme() -> bool:
@@ -1743,15 +1755,16 @@ static func construire_mention() -> PanelContainer:
 	var cadre := PanelContainer.new()
 	cadre.name = "MatchRalenti"
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var fond := S.G.T.box(Color(0.03, 0.08, 0.065, 0.85), 6, Color(S.GOLD, 0.7))
+	var fond := StyleBoxFlat.new()
+	fond.bg_color = Color(Charte.PANNEAU, 0.85)
 	fond.content_margin_left = 12
 	fond.content_margin_right = 12
 	fond.content_margin_top = 2
 	fond.content_margin_bottom = 3
 	cadre.add_theme_stylebox_override("panel", fond)
-	var titre := S.label("RALENTI", 18, S.GOLD)
+	var titre := S.label("RALENTI", 18, Charte.IVOIRE)
 	titre.name = "MatchRalentiTitre"
-	titre.add_theme_font_override("font", S.G.T.DISPLAY)
+	titre.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
 	titre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1796,37 +1809,44 @@ func _ligne_score() -> String:
 	if _teams.size() < 2 or marque.size() < 2 or not _teams[0] is Dictionary or not _teams[1] is Dictionary: return ""
 	return "%s   %d — %d   %s" % [S.G.club_name(_teams[0]), int(marque[0]), int(marque[1]), S.G.club_name(_teams[1])]
 
-## Bandeau des grands moments, façon retransmission : titre doré, filet, puis le marqueur (ou le
-## score) et son équipe à droite, sur une ou deux lignes. Ne capte jamais la souris.
+## Cadre de la bannière : aplat à plat, bord droit incliné de 10° (charte §3), sans ombre ni dégradé.
+class CadreIncline extends PanelContainer:
+	var fond := Charte.PANNEAU_3
+	func _draw() -> void:
+		var d := Charte.decalage(size.y)
+		draw_colored_polygon(PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0.0), Vector2(size.x - d, size.y), Vector2(0.0, size.y)]), fond)
+
+## Bannière des grands moments, façon retransmission (charte §7, revue DA du 19/11/2026, emprunt de la
+## variante 2) : « ESSAI » à la couleur du club qui marque, filet, le marqueur et « club · minute », puis
+## les points et le score à droite ; « MI-TEMPS » et « FIN DU MATCH » sur panneau. Une seule bannière à la
+## fois, texte ivoire, aucun or. Ne capte jamais la souris.
 static func construire_bandeau() -> PanelContainer:
-	var cadre := PanelContainer.new()
+	var cadre := CadreIncline.new()
 	cadre.name = "MatchMomentBandeau"
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var fond := S.G.T.box(Color(0.03, 0.08, 0.065, 0.92), 8, Color(S.GOLD, 0.85))
-	fond.content_margin_left = 18
-	fond.content_margin_right = 22
-	fond.content_margin_top = 4
-	fond.content_margin_bottom = 6
-	fond.shadow_color = Color(0, 0, 0, 0.35)
-	fond.shadow_size = 8
+	var fond := StyleBoxEmpty.new()
+	fond.content_margin_left = 20
+	fond.content_margin_right = 30
+	fond.content_margin_top = 6
+	fond.content_margin_bottom = 8
 	cadre.add_theme_stylebox_override("panel", fond)
 	var ligne := HBoxContainer.new()
 	ligne.name = "MatchMomentLigne"
 	ligne.alignment = BoxContainer.ALIGNMENT_BEGIN
 	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ligne.add_theme_constant_override("separation", 14)
+	ligne.add_theme_constant_override("separation", 18)
 	cadre.add_child(ligne)
-	var titre := S.label("", 36, S.GOLD)
+	var titre := S.label("", 36, Charte.IVOIRE)
 	titre.name = "MatchMomentTitre"
-	titre.add_theme_font_override("font", S.G.T.DISPLAY)
+	titre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	titre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	titre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ligne.add_child(titre)
 	var filet := ColorRect.new()
 	filet.name = "MatchMomentFilet"
-	filet.color = Color(S.GOLD, 0.85)
-	filet.custom_minimum_size = Vector2(2, 0)
+	filet.color = Color(Charte.IVOIRE, 0.4)
+	filet.custom_minimum_size = Vector2(1, 0)
 	filet.size_flags_vertical = Control.SIZE_FILL
 	filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ligne.add_child(filet)
@@ -1834,28 +1854,48 @@ static func construire_bandeau() -> PanelContainer:
 	texte.name = "MatchMomentTexte"
 	texte.alignment = BoxContainer.ALIGNMENT_CENTER
 	texte.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	texte.add_theme_constant_override("separation", -2)
+	texte.add_theme_constant_override("separation", 0)
+	texte.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ligne.add_child(texte)
-	var nom := S.label("", 22, S.TEXT)
+	var nom := S.label("", 22, Charte.IVOIRE)
 	nom.name = "MatchMomentNom"
-	nom.add_theme_font_override("font", S.G.T.DISPLAY)
-	var equipe := S.label("", 16, S.MUTED)
+	nom.add_theme_font_override("font", Charte.TITRE)
+	var equipe := S.label("", 16, Charte.IVOIRE)
 	equipe.name = "MatchMomentEquipe"
+	equipe.add_theme_font_override("font", Charte.texte_moyen())
 	for l: Label in [nom, equipe]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		texte.add_child(l)
+	# Points marqués et score (« +5 », « 15 – 7 ») : deux lignes calées à droite.
+	var points := S.label("", 22, Charte.IVOIRE)
+	points.name = "MatchMomentPoints"
+	points.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	points.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	points.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	points.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	points.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	points.hide()
+	ligne.add_child(points)
 	cadre.hide()
 	return cadre
 
-## Tailles de police du bandeau pour une image de `hauteur` pixels (lisible en 720p, compact, sans
-## excès en 1440p).
+## Tailles de police du bandeau pour une image de `hauteur` pixels (maquette 1080p : 48, 26, 20 ; lisible
+## en 720p, sans excès en 1440p).
 static func tailles_bandeau(hauteur: float) -> Dictionary:
-	return {"titre": clampi(roundi(hauteur * 0.05), 30, 72), "nom": clampi(roundi(hauteur * 0.03), 18, 44), "equipe": clampi(roundi(hauteur * 0.022), 14, 32)}
+	return {"titre": clampi(roundi(hauteur * 0.045), 30, 72), "nom": clampi(roundi(hauteur * 0.024), 18, 40), "equipe": clampi(roundi(hauteur * 0.0185), 14, 30)}
 
-static func habiller_bandeau(cadre: PanelContainer, titre: String, nom: String, equipe: String, hauteur: float) -> void:
+## Fond de la bannière : la couleur du club qui marque, assombrie si besoin pour l'ivoire (≥ 4,6:1) ; un club
+## jaune ou or ne prend jamais l'or (Charte) ; sans club (mi-temps, fin) : panneau.
+static func fond_bandeau(couleur: Color) -> Color:
+	if couleur.a <= 0.0: return Charte.PANNEAU_3
+	var base := Charte.CLUB if Charte._proche_de_l_or(couleur) else Color(couleur, 1.0)
+	return C08.readable_primary_fill(base)
+
+static func habiller_bandeau(cadre: PanelContainer, titre: String, nom: String, equipe: String, hauteur: float, couleur: Color = Color.TRANSPARENT, points: String = "") -> void:
 	var tailles := tailles_bandeau(hauteur)
-	var lignes := {"MatchMomentTitre": [titre, tailles.titre], "MatchMomentNom": [nom, tailles.nom], "MatchMomentEquipe": [equipe, tailles.equipe]}
+	var lignes := {"MatchMomentTitre": [titre, tailles.titre], "MatchMomentNom": [nom, tailles.nom], "MatchMomentEquipe": [equipe, tailles.equipe],
+		"MatchMomentPoints": [points, tailles.nom]}
 	for nom_ligne: String in lignes:
 		var ligne: Label = cadre.find_child(nom_ligne, true, false)
 		if ligne == null: continue
@@ -1867,19 +1907,27 @@ static func habiller_bandeau(cadre: PanelContainer, titre: String, nom: String, 
 	var reste := not (nom.is_empty() and equipe.is_empty())
 	if texte != null: texte.visible = reste
 	if filet != null: filet.visible = reste
+	if cadre is CadreIncline:
+		(cadre as CadreIncline).fond = fond_bandeau(couleur)
+		cadre.queue_redraw()
+	var marges: StyleBox = cadre.get_theme_stylebox("panel")
+	if marges != null:
+		marges.content_margin_left = roundi(hauteur * 0.0185)
+		marges.content_margin_right = roundi(hauteur * 0.0185 + Charte.decalage(hauteur * 0.074))
 	cadre.reset_size()
 
-## Ce que montre le bandeau (tests, capture) : {visible, titre, nom, equipe}.
+## Ce que montre le bandeau (tests, capture) : {visible, titre, nom, equipe, points, fond}.
 func bandeau_affiche() -> Dictionary:
 	if bandeau == null: return {"visible": false}
 	var lire := func(n: String) -> String:
 		var ligne: Label = bandeau.find_child(n, true, false)
 		return ligne.text if ligne != null and ligne.visible else ""
-	return {"visible": bandeau.visible, "titre": lire.call("MatchMomentTitre"), "nom": lire.call("MatchMomentNom"), "equipe": lire.call("MatchMomentEquipe")}
+	return {"visible": bandeau.visible, "titre": lire.call("MatchMomentTitre"), "nom": lire.call("MatchMomentNom"), "equipe": lire.call("MatchMomentEquipe"),
+		"points": lire.call("MatchMomentPoints"), "fond": (bandeau as CadreIncline).fond if bandeau is CadreIncline else Color.TRANSPARENT}
 
-func montrer_bandeau(titre: String, nom: String, equipe: String, duree: float) -> void:
+func montrer_bandeau(titre: String, nom: String, equipe: String, duree: float, couleur: Color = Color.TRANSPARENT, points: String = "") -> void:
 	if bandeau == null or view == null: return
-	habiller_bandeau(bandeau, titre, nom, equipe, maxf(1.0, view.size.y))
+	habiller_bandeau(bandeau, titre, nom, equipe, maxf(1.0, view.size.y), couleur, points)
 	_bandeau_titre = titre
 	_bandeau_duree = maxf(duree, BANDEAU_ENTREE + BANDEAU_FONDU)
 	_bandeau_reste = _bandeau_duree
@@ -1925,6 +1973,8 @@ func _placer_bandeau() -> void:
 	var legende: Control = view.events.get_parent().get_parent().get_parent() if is_instance_valid(view.events) else null
 	if legende != null and legende.is_visible_in_tree() and legende.size.y > 0.0:
 		_legende_rect = Rect2(legende.get_global_rect().position - view.get_global_rect().position, legende.size)
+	# « ESSAI » : même largeur que le journal qu'il surmonte (maquette : 744 px en 1080p).
+	bandeau.custom_minimum_size.x = _legende_rect.size.x if _bandeau_titre == "ESSAI" and _legende_rect.has_area() else 0.0
 	bandeau.reset_size()
 	var place := place_bandeau(_bandeau_titre, Vector2(view.size.x, hauteur), bandeau.size, haut, _legende_rect, etat == SORTIE and _sortie_t >= SORTIE_LARGE)
 	var anime := animation_bandeau(_bandeau_titre, _bandeau_duree - _bandeau_reste, _bandeau_reste, hauteur, _calme())
