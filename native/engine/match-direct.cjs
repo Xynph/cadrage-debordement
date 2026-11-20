@@ -397,6 +397,10 @@ function project(model,niveau,lire,options={}){
  if(live.finished&&borne>=events.length){
   try{const f=pourquoi.faits({...direct,notes:direct.notes},{energie:Array.isArray(etat.energie)&&etat.energie.every(Number.isFinite)?etat.energie:null,noms:etat.notes?.noms||{}});direct.pourquoi=pourquoi.raisons(f);}
   catch(error){direct.pourquoi={issue:null,raisons:[]};}
+  // Fil du score de l'après-match : chaque essai et chaque coup de pied réussi, son auteur (clé `joueur`, comme
+  // l'homme du match) et le score qui en découle.
+  direct.marques=vues.filter(l=>l.kind==='try'||l.kind==='goal').map(l=>{const a=events[l.i]?.scene?.actor,id=a==null?null:String(a);
+   return {horloge:horloge(l),minute:l.minute,kind:l.kind,equipe:l.equipe,joueur:id,nom:id?etat.notes?.noms?.[id]||(etat.effectifAdverse||[]).find(p=>String(p.id)===id)?.name||'':'',score:l.scoreApres,texte:nommer(events[l.i].text)};});
  }
  direct.feuille=feuille;feuilleStats.habillerAdversaire(direct.adversaire,feuille);
  direct.statsRows=[...direct.statsRows,...feuilleStats.lignesEquipe(feuille)];

@@ -92,6 +92,13 @@ test('même graine : S.history identique avec et sans déroulé anticipé, multi
     const duJour = (r, k) => Math.max(0, (r[k] | 0) - (avantDe(r.clubId)[k] | 0));
     assert.deepEqual(finale.classement.map(r => [r.clubId, r.rang, r.points, r.joues, r.diff, r.bonusOff, r.bonusDef]),
       officiel.map((r, i) => [r.clubId, i + 1, r.points, r.played, r.pf - r.pa, duJour(r, 'offensiveBonus'), duJour(r, 'defensiveBonus')]));
+    // Après-match (classement complet) : victoires, nuls, défaites et forme = classement officiel.
+    assert.deepEqual(finale.classement.map(r => [r.gagnes, r.nuls, r.perdus, r.forme]), officiel.map(r => [r.won, r.drawn, r.lost, r.form]));
+    // Fil du score de l'après-match : chaque essai et coup de pied réussi, le dernier au score final.
+    const marques = a.model.live.direct.marques;
+    assert.ok(Array.isArray(marques) && marques.length > 0, 'fil du score à la fin du match');
+    assert.deepEqual(marques.at(-1).score, a.model.live.score, 'la dernière marque donne le score final');
+    assert.ok(marques.every(m => ['try', 'goal'].includes(m.kind) && (m.equipe === 0 || m.equipe === 1)));
     // Flèches : sans match officiel joué avant la journée, aucun rang officiel ni évolution.
     const classe = avantJournee.some(r => (r.played | 0) > 0);
     for (const r of finale.classement) {
