@@ -60,25 +60,27 @@ const int = v => /^\d+$/.test(String(v).trim()) ? Number(v) : null;
 function classe(row, age) {
   const t = tier(row.intl_nation);
   if (!t) return 'aucune';
-  const caps24 = int(row.intl_caps_24m), caps = int(row.intl_caps_total);
+  const caps24 = int(row.intl_caps_24m), caps = int(row.intl_caps_total), convocations = int(row.convocations_24m);
   const dist = fold(row.distinctions);
   const uncapped = caps === 0 || /non cape/.test(dist);
-  const experience = caps24 !== null ? caps24 * 3 : caps; // 24 mois réguliers ≈ 10+ sélections
+  // Régularité récente (collecte v3) : convocations en sélection depuis janvier 2025 (groupes du Tournoi, du
+  // Rugby Championship, des tests d'été et d'automne, de la Pacific Nations Cup, des Lions), sinon sélections
+  // relevées sur la période ; null = inconnue.
+  const recent = convocations !== null ? convocations : caps24 === null ? null : caps24 >= 10 ? 4 : caps24 >= 5 ? 2 : caps24 >= 1 ? 1 : 0;
+  const young = Number.isFinite(age) && age <= 31;
   let rank; // 0 = S, 1 = A, 2 = B, 3 = C
-  // Membre d'un groupe récent d'une nation du top 5, sélections inconnues : A (le groupe est l'élite du pays).
-  // Classe S (collecte v3) : avant 32 ans, international confirmé (40 sélections) et régulier depuis début 2025
-  // (10 sélections relevées), ou, sans ce relevé, 50 sélections ; une grande distinction relève d'un cran.
-  if (t === 5) rank = uncapped ? 2 : experience === null ? 1
-    : (caps24 !== null ? caps24 >= 10 && caps >= 40 : caps >= 50) && Number.isFinite(age) && age <= 31 ? 0
-      : caps24 !== null ? (caps24 >= 5 || caps >= 15 ? 1 : 2) : experience >= 15 ? 1 : 2;
-  else if (t === 8) rank = uncapped ? 3 : experience !== null && experience >= 50 ? 1 : experience !== null && experience < 10 ? 3 : 2;
-  else if (t === 12) rank = uncapped ? 3 : experience !== null && experience >= 30 ? 2 : 3;
+  // Classe S : nation du top 5, avant 32 ans, international confirmé (40 sélections) et convoqué presque à chaque
+  // fois (4 groupes et plus) ; sans relevé récent, 50 sélections. Une grande distinction relève d'un cran.
+  if (t === 5) rank = uncapped ? 2 : caps === null && recent === null ? 1
+    : young && (recent !== null ? recent >= 4 && (caps ?? 0) >= 40 : (caps ?? 0) >= 50) ? 0
+      : (recent !== null ? recent >= 2 || (caps ?? 0) >= 15 : (caps ?? 0) >= 15) ? 1 : 2;
+  else if (t === 8) rank = uncapped ? 3 : (recent !== null ? recent >= 4 && (caps ?? 0) >= 30 : (caps ?? 0) >= 50) ? 1 : (caps ?? 0) < 10 && !(recent >= 2) ? 3 : 2;
+  else if (t === 12) rank = uncapped ? 3 : (caps ?? 0) >= 30 && (recent === null || recent >= 2) ? 2 : 3;
   else rank = 3;
   if (STAR.test(dist) && t <= 8) rank = Math.max(0, rank - 1);
-  // Collecte v3 : plus sélectionné depuis deux ans (dernière sélection avant novembre 2024, aucune sur 24 mois) :
-  // ancien international, un cran en dessous.
+  // Plus convoqué depuis janvier 2025, ou dernière sélection avant novembre 2024 : ancien international, un cran en dessous.
   const last = /^(\d{4})-(\d{2})/.exec(row.derniere_selection || '');
-  if (caps24 === 0 || last && Number(last[1]) * 12 + Number(last[2]) < 2024 * 12 + 11) rank = Math.min(3, rank + 1);
+  if (recent === 0 || last && Number(last[1]) * 12 + Number(last[2]) < 2024 * 12 + 11) rank = Math.min(3, rank + 1);
   // Ancien international de 33 ans et plus : un cran en dessous (déclin), jamais sous C.
   if (Number.isFinite(age) && age >= 33) rank = Math.min(3, rank + 1);
   return ['S', 'A', 'B', 'C'][rank];
@@ -145,6 +147,13 @@ function collecteV3(niveauxDir, sources) {
     }
   }
   if (fs.existsSync(path.join(dir, 'internationaux.csv'))) for (const r of read('internationaux.csv')) if (r.id && r.intl_nation) intl.set(r.id, r);
+  // Vérification des internationaux (sélections lues sur la fiche de chaque joueur, convocations depuis 2025).
+  if (fs.existsSync(path.join(dir, 'internationaux-verif.csv'))) for (const r of read('internationaux-verif.csv')) {
+    const base = intl.get(r.id);
+    if (!base) continue;
+    if (int(r.intl_caps_total) !== null) base.intl_caps_total = r.intl_caps_total;
+    if (int(r.convocations_24m) !== null) base.convocations_24m = r.convocations_24m;
+  }
   if (fs.existsSync(path.join(dir, 'u20.csv'))) for (const r of read('u20.csv')) if (r.id && r.u20_nation) u20.set(r.id, r);
   return { statut, intl, u20 };
 }
@@ -213,7 +222,7 @@ function compile(prive, niveauxDir) {
       // Collecte v3 : statut, sélections et U20 trouvés remplacent ceux du 14/11.
       const row = { ...source }, found = v3.statut.get(row.id), cap = v3.intl.get(row.id), junior = v3.u20.get(row.id);
       if (found) { row.statut_club = found.statut; if (found.confiance) row.confiance = found.confiance; }
-      if (cap) for (const k of ['intl_nation', 'intl_caps_total', 'intl_caps_24m', 'derniere_selection', 'distinctions']) if (cap[k]) row[k] = cap[k];
+      if (cap) for (const k of ['intl_nation', 'intl_caps_total', 'intl_caps_24m', 'convocations_24m', 'derniere_selection', 'distinctions']) if (cap[k]) row[k] = cap[k];
       if (junior && Number.isFinite(age) && age <= 23) row.u20 = 'oui';
       let statut = fold(row.statut_club).replace(/ /g, '');
       if (statut === 'reservist') statut = 'reserviste';

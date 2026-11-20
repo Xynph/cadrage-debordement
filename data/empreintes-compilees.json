@@ -20,7 +20,7 @@
    }
   },
   "native/engine/world-niveaux-v2.json": {
-   "sha256": "f4064b852f7ed16583f010369bae49ffb80ead9fab85e167fd04ee94b5d5ee3d",
+   "sha256": "c44afb49cdddc3718d69c6da74497216b397456b45c52c451391a828404329fe",
    "sources": {
     "data/scouting/review-v12/career-evidence.json": "0a7f60a8611ef52537926f7b30d738d55da24b4cc5ddb91cb3d6fdeabcebb4ef",
     "data/scouting/review-v12/season-evidence.json": "3a63cbab6cf678e7522696eef3acb090edc04ebd9a02956040351de82291300e",
