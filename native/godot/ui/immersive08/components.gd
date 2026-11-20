@@ -295,8 +295,8 @@ static func fixture_location_icon(kind: String, solid: bool = false) -> String:
 
 static func chip(text: String, color: Color = MINT) -> PanelContainer:
 	var frame := PanelContainer.new()
-	# Pastille de la charte : voile de la couleur (14-16 %), texte de la couleur, en pilule, sans contour.
-	var style := box(Color(color, .15), Color.TRANSPARENT, Charte.RAYON_PILULE, 8)
+	# Pastille de la charte : voile de la couleur (14-16 %), texte de la couleur, coins à 6 px (distincte d'un bouton).
+	var style := box(Color(color, .15), Color.TRANSPARENT, Charte.RAYON_PETIT, 8)
 	style.content_margin_left = px(12)
 	style.content_margin_right = px(12)
 	style.content_margin_top = px(3)
@@ -311,7 +311,7 @@ static func chip(text: String, color: Color = MINT) -> PanelContainer:
 static func derby_chip() -> PanelContainer:
 	var frame := PanelContainer.new()
 	frame.name = "DerbyTag"
-	frame.add_theme_stylebox_override("panel", box(Charte.VOILE_DORE, Color.TRANSPARENT, Charte.RAYON_PILULE, 8))
+	frame.add_theme_stylebox_override("panel", box(Charte.VOILE_DORE, Color.TRANSPARENT, Charte.RAYON_PETIT, 8))
 	var caption := label("DERBY", 19, OR, true, 700)
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	frame.add_child(caption)

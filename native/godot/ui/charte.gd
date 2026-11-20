@@ -56,9 +56,10 @@ const PELOUSE := Color("1d4631")
 const PELOUSE_2 := Color("214e37")
 const PELOUSE_BORD := Color("53625e")
 
-## Formes : panneaux arrondis sans bordure, boutons, onglets et pastilles en pilule.
+## Formes : panneaux arrondis sans bordure ; boutons, onglets, champs et jauges en pilule ; pastilles à 6 px.
 const RAYON_PANNEAU := 18
 const RAYON_CARTE := 12     ## carte dans un panneau (tuile de chiffre, carte « à décider »)
+const RAYON_PETIT := 6      ## pastilles d'état, cases, vignettes, ligne sélectionnée (choix de Léo du 20/11/2026)
 const RAYON_PILULE := 999   ## Godot ramène le rayon à la demi-hauteur : pilule à toute taille
 
 ## Fond de panneau : PANNEAU arrondi, sans bordure ni ombre.
