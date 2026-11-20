@@ -139,10 +139,20 @@ func _menu(rang: int) -> bool:
 ## Échap referme d'abord la fiche ouverte. Sans fiche, on laisse le menu de la carrière (main.gd), qui ne quitte jamais seul.
 func _retour() -> bool:
 	if not actif(): return false
+	# Sous-page « Charge individuelle » de la fiche : Échap revient à la fiche (avant le retour à la liste).
+	var charge: Button = app.root_content.find_child("FicheChargeRetour", true, false) as Button
+	if is_instance_valid(charge) and charge.is_visible_in_tree():
+		charge.pressed.emit()
+		return true
 	var retour: Button = app.root_content.find_child("PlayerBackToSquad", true, false) as Button
 	# Fiche joueur ouverte (effectif, piste du marché ou Espoir) : Échap revient à la liste d'origine.
 	if is_instance_valid(retour) and retour.is_visible_in_tree():
 		retour.pressed.emit()
+		return true
+	# Sous-page de la Composition (tireurs et lanceur, espoir, renforts) : Échap revient à la composition.
+	var composition: Button = app.root_content.find_child("CompositionRetour", true, false) as Button
+	if is_instance_valid(composition) and composition.is_visible_in_tree():
+		composition.pressed.emit()
 		return true
 	var navigation: Node = app.get("navigation_controller")
 	if app.route == "Fiche club" and is_instance_valid(navigation):

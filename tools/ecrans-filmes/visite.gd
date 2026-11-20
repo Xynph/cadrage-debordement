@@ -399,6 +399,15 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if route == "Presse": preparer_presse()
 			app._navigate(route)
 			await stabiliser()
+			# CD_FILM_COURRIER_REPONSES=1 : la Réception s'ouvre sur un courrier du club qui attend une réponse (cartes A/B/C).
+			if route == "Réception" and OS.get_environment("CD_FILM_COURRIER_REPONSES") == "1":
+				var attend := ""
+				for courrier: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
+					if load("res://ui/club_mail.gd").awaiting(app.model, courrier) and (courrier.get("reponses", []) as Array).size() >= 2: attend = str(courrier.id)
+				if attend.is_empty(): return {"statut": "indisponible", "note": "aucun courrier à réponses dans la carrière filmée"}
+				app._reset_reception(attend)
+				app._navigate("Réception", false)
+				await stabiliser()
 			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
 		"calendrier_semaine":
 			app._navigate("Calendrier")

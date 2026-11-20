@@ -89,7 +89,8 @@ func run() -> void:
 	check(before.todo >= 1, "Avant : au moins un courrier à action non lu (%d)" % before.todo)
 	# Direction A (18/11) : Léo a retiré les boutons « Tout marquer comme lu » et de tri au-dessus de la liste ;
 	# la fonction reste (marquage en bloc des seules informations), vérifiée ici directement.
-	check(app.root_content.find_child("InboxMarkAllRead", true, false) == null, "Plus de bouton « Tout marquer comme lu » au-dessus de la liste")
+	var inbox_list: Node = app.root_content.find_child("InboxMessages", true, false)
+	check(inbox_list != null and inbox_list.find_child("InboxMarkAllRead", true, false) == null and app.root_content.find_child("InboxMarkAllRead", true, false) != null, "« Tout marquer comme lu → » en haut à droite de l'écran, pas dans la liste")
 	check(app.root_content.find_child("InboxSort", true, false) == null, "Plus de bouton de tri au-dessus de la liste")
 	await capture("avant")
 	var marked: int = app.Immersive.Reception.mark_all_read(app, app.Immersive.Reception._messages(app))
