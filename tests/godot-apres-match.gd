@@ -185,6 +185,8 @@ func run() -> void:
 	check(fond_v != null and float(fond_v.get("rayon")) < 0.0 and fond_v.get("couleur") == Charte.V, "Pastille V : pilule pleine vert clair")
 	var forme_d: Node = forme.get_child(1).find_child("FondPastille", true, false) if forme != null else null
 	check(forme_d != null and (forme_d.get("couleur") as Color).a == 0.0 and forme_d.get("bord") == Charte.D, "Pastille D : contour doré, sans aplat")
+	var texte_d: Node = forme.get_child(1).find_children("*", "Label", true, false)[0] if forme != null and forme.get_child(1).find_children("*", "Label", true, false).size() > 0 else null
+	check(texte_d != null and (texte_d as Label).get_theme_color("font_color") == Charte.IVOIRE, "Pastille D : lettre en crème (pas de doré en plus du contour)")
 	var forme_n: Node = forme.get_child(2).find_child("FondPastille", true, false) if forme != null else null
 	check(forme_n != null and (forme_n.get("couleur") as Color).a > 0.0 and (forme_n.get("couleur") as Color).a < 1.0, "Pastille N : demi-pleine")
 	# Classement : pas de bandes alternées ; notre club en ligne sélectionnée (coins de 6 px).
