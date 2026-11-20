@@ -162,7 +162,29 @@ func _ready() -> void:
 	speed.item_selected.connect(func(index:int):app.tick_steps=[1,4,12][index])
 	bottom.add_child(speed)
 	bottom.add_child(G.button("CONSIGNES",func():app.Immersive.open_preparation(app,1)))
-	bottom.add_child(G.button("ADJOINT",func():app.confirm("Confier la fin du match", "L’adjoint prend en charge la fin de cette rencontre. Confirmer la délégation ?",func():app._command("delegate"))))
+	# « ADJOINT » : confirmation en deux temps dans la barre elle-même (jamais de fenêtre). Premier clic : « CONFIRMER ? »
+	# et « ANNULER » ; second clic : le staff joue la fin du match.
+	var adjoint:=G.button("ADJOINT",func():pass)
+	adjoint.name="MatchAdjoint"
+	var annuler_adjoint:=G.button("ANNULER",func():pass)
+	annuler_adjoint.name="MatchAdjointCancel"
+	annuler_adjoint.visible=false
+	adjoint.pressed.connect(func():
+		if not annuler_adjoint.visible:
+			adjoint.text="CONFIRMER ?"
+			adjoint.tooltip_text="L’adjoint prend en charge la fin de cette rencontre. Un second clic confirme la délégation."
+			annuler_adjoint.visible=true
+			return
+		adjoint.text="ADJOINT"
+		adjoint.tooltip_text=""
+		annuler_adjoint.visible=false
+		app._command("delegate"))
+	annuler_adjoint.pressed.connect(func():
+		adjoint.text="ADJOINT"
+		adjoint.tooltip_text=""
+		annuler_adjoint.visible=false)
+	bottom.add_child(adjoint)
+	bottom.add_child(annuler_adjoint)
 	var spacer:=Control.new()
 	G.fill(spacer)
 	bottom.add_child(spacer)
@@ -523,7 +545,10 @@ func _act() -> void:
 	if live.is_empty():
 		if CareerProgression.press_required(model) or not CareerProgression.kickoff_allowed(model.meta): return
 		# Feuille incomplète : « Appeler un espoir » (défaut) ou « Jouer à 22 », au choix, avant le coup d'envoi.
-		if MatchProjection.reduced_bench_number(model) != 0 or not Espoir.offer(model).is_empty(): Espoir.ouvrir(app, true)
+		# Jamais de fenêtre (décision de Léo, 19/11/2026) : un espoir à appeler se choisit dans la sous-page de la Composition ;
+		# sans espoir disponible, le match à 22 (seul choix restant) se lance directement.
+		if not Espoir.offer(model).is_empty(): app._navigate("Composition")
+		elif MatchProjection.reduced_bench_number(model) != 0: app._command("begin_match", {"reducedBench": true})
 		else: app._command("begin_match")
 	else:
 		app._command("pause",{"paused":not live.get("paused",false)})
