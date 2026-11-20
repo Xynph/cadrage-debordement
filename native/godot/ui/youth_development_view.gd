@@ -249,15 +249,14 @@ func _review(parent: Container,person: Dictionary) -> void:
 		var loan := G.button("EXAMINER LE PRÊT DE CE JOUEUR →",func():
 			app._clear_dialogs()
 			app.selected_player = str(person.id)
-			app._navigate("Centre")
-			preload("res://ui/academy_pathways_view.gd").open_professional(app,str(person.id)))
+			preload("res://ui/immersive08/formation_pages.gd").ouvrir(app,"pret",{"player_id":str(person.id)}))
 		loan.name = "YouthReviewLoan"
 		parent.add_child(loan)
 
 
 func _enable() -> void:
 	var payload := {"confirmed":true,"context":_data().get("context",{}).duplicate(true)}
-	app.confirm("Démarrer le suivi des jeunes","Une référence sera conservée à partir d’aujourd’hui. Le suivi ne produit aucun gain immédiat. Confirmer ?",Callable(app,"_command").bind("youth_development_enable",payload))
+	preload("res://ui/immersive08/formation_pages.gd").confirmer(app,"Démarrer le suivi des jeunes","Une référence sera conservée à partir d’aujourd’hui. Le suivi ne produit aucun gain immédiat. Confirmer ?",Callable(app,"_command").bind("youth_development_enable",payload))
 
 func _confirm_plan(person: Dictionary,plan: String,focus: Variant) -> void:
 	_remember_draft(str(person.id),plan,focus)
@@ -265,7 +264,7 @@ func _confirm_plan(person: Dictionary,plan: String,focus: Variant) -> void:
 	var detail := "Cet objectif sert uniquement au suivi : il ne change ni la courbe annuelle, ni le temps de jeu." if str(person.get("model",""))=="annual-v11" else "Le plan répartit le travail à venir, sans gain immédiat."
 	if str(person.get("model",""))!="annual-v11":
 		detail += " Si la qualité ciblée change, la progression ciblée partielle non utilisée est remise à zéro ; les qualités déjà gagnées sont conservées."
-	app.confirm("Adapter l’objectif de "+str(person.name),detail+" Confirmer date une nouvelle période de suivi à partir d’aujourd’hui, même si le plan reste identique. Les minutes, la fatigue et les blessures restent prises en compte. Confirmer ?",Callable(app,"_command").bind("youth_development_plan",payload))
+	preload("res://ui/immersive08/formation_pages.gd").confirmer(app,"Adapter l’objectif de "+str(person.name),detail+" Confirmer date une nouvelle période de suivi à partir d’aujourd’hui, même si le plan reste identique. Les minutes, la fatigue et les blessures restent prises en compte. Confirmer ?",Callable(app,"_command").bind("youth_development_plan",payload))
 
 static func _decimal(value: Variant) -> String: return "%.2f" % float(value)
 static func _signed(value: Variant) -> String: return ("+" if float(value)>0 else "")+_decimal(value)

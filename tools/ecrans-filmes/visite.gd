@@ -40,11 +40,18 @@ const EXTRAS := [
 	{"id": "v2-recrutement-confirmation", "libelle": "Recrutement : confirmation en place de l'offre", "type": "recrutement_etape", "etape": "offre_confirmation"},
 	{"id": "v2-recrutement-observation", "libelle": "Recrutement : confirmation en place de l'observation", "type": "recrutement_etape", "etape": "observation"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
+	{"id": "classements-rencontre", "libelle": "Classements · sous-page d'une rencontre", "type": "classements_page", "page": "rencontre"},
+	{"id": "classements-archives", "libelle": "Classements · sous-page des archives des saisons", "type": "classements_page", "page": "archives"},
 	{"id": "options", "libelle": "Options", "type": "options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
 	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
+	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
+	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
+	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
+	{"id": "finances-classement", "libelle": "Finances · onglet Classement", "type": "finances_onglet", "onglet": "clubs"},
+	{"id": "finances-transferts", "libelle": "Finances · onglet Transferts", "type": "finances_onglet", "onglet": "transfers"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -469,6 +476,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if valider == null or valider.disabled: return {"statut": "indisponible", "note": "offre non envoyable pour cette piste"}
 				valider.pressed.emit()
 				await stabiliser()
+		"classements_page":
+			# Sous-pages de Classements (décision de Léo du 19/11/2026 : plus de petite fenêtre) : une rencontre du calendrier du club, les archives.
+			app.management_ui.erase("competition_page")
+			app._navigate("Classements")
+			await stabiliser()
+			var ouvrir: Button = app.find_child("OpenArchives" if str(ecran.page) == "archives" else "CalendarFixture_*", true, false) as Button
+			if ouvrir == null and str(ecran.page) == "rencontre":
+				var lignes := app.find_children("CalendarFixture_*", "Button", true, false)
+				if not lignes.is_empty(): ouvrir = lignes[0]
+			if ouvrir == null: return {"statut": "indisponible", "note": "aucune ligne de calendrier ni lien d'archives"}
+			ouvrir.pressed.emit()
+			await stabiliser()
+			if app.find_child("CompetitionPageBack", true, false) == null: return {"statut": "echec", "note": "la sous-page ne s'est pas ouverte"}
 		"calendrier_semaine":
 			app._navigate("Calendrier")
 			await stabiliser()
@@ -546,6 +566,10 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui.preparation.sub = str(ecran.sous)
 			app._render()
 			await stabiliser()
+		"finances_onglet":
+			app.management_ui["immersive08_finance_tab"] = str(ecran.onglet)
+			app._navigate("Finances")
+			await stabiliser()
 		"options":
 			app._navigate("Bureau")
 			await stabiliser()
@@ -567,6 +591,7 @@ func refermer(ecran: Dictionary) -> void:
 		var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
 		if avant != null: avant.fermer_page()
 	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
+	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
 	if str(ecran.type) == "equilibre_postes": app.find_child("EffectifTuileAptes", true, false).mouse_exited.emit()
 	fermer_fenetres()
 

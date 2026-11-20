@@ -199,9 +199,8 @@ func check_competitions() -> void:
 	if table != null: await press(table)
 	check(named("CalendarFixtureDate") != null and "/" in named("CalendarFixtureDate").text, "Date du calendrier mise en forme")
 	check(text_present(app, str(app.model.calendar[0].venue)), "Lieu de la rencontre issu du moteur")
-	for page_index in range(12):
-		if text_present(app, champions) or pager_next("CalendarPagination").disabled: break
-		await press(pager_next("CalendarPagination"))
+	# Toute la saison sur une page qui défile (décision de Léo, 20/11/2026) : plus de pagination du calendrier.
+	check(named("CalendarPaginationNext") == null, "Calendrier du club sans pagination")
 	check(text_present(app, champions) and text_present(app, "Poules"), "Calendrier du club mêlant championnat et journées de coupe")
 	app._navigate("Classements")
 	await settle()
@@ -229,8 +228,8 @@ func check_competitions() -> void:
 			check(scroll_fits("StandingsScroll"), "Classement paginé sans défilement vertical · %s · hauteur %.0f · contenu %.0f · page %.0f · lignes %d" % [competition[0], standings_scroll.size.y, bar.max_value, bar.page, rows.size()])
 		else:
 			var frame := named("StandingsTableFrame") as Control
-			var framed: bool = frame != null and named("StandingsPagination") != null and rows.all(func(row: Control): return frame.get_global_rect().grow(1).encloses(row.get_global_rect()))
-			check(framed, "Classement paginé tenu dans son cadre · %s · lignes %d" % [competition[0], rows.size()])
+			var framed: bool = frame != null and named("StandingsPagination") == null and rows.all(func(row: Control): return frame.get_global_rect().grow(1).encloses(row.get_global_rect()))
+			check(framed, "Classement entier tenu dans son cadre · %s · lignes %d" % [competition[0], rows.size()])
 	# Projection de palmarès. La simulation complète et l’archivage réels sont
 	# vérifiés séparément dans world-worker-season.cjs.
 	app.model.archives.seasons = [{"season":1,"champions":[{"leagueId":"urc","clubId":40}],"europe":{"champions":{"champion":30},"challenge":{"champion":31}}}]

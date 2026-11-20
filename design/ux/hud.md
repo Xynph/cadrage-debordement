@@ -1,5 +1,7 @@
 # HUD Design — Rugby Legacy 27 (match en direct, 3D)
 
+**20/11/2026 — choix de Léo (revue DA) : variante 1 « Bandeau d'angle » + bannière d'essai de la 2 + menu Échap de la 3. Le détail du choix, des zones et des interactions est dans `13-match-direct.md`, qui prime sur les §3-4 ci-dessous (barre unique, 4 boutons) en cas d'écart.**
+
 Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (boutons ≥ 28 px de haut ; le texte du match garde ses minimums T2) ; en match, Échap = pause.
 
 > **Statut** : en conception (proposé, non validé par Léo)

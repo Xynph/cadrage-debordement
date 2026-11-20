@@ -35,7 +35,7 @@ module.exports=function clubDirections(T,N){
  // saison (calIANouvelAccord) ; joueurs engagés ou en fin de contrat exclus ; place et masse de la saison suivante.
  // Les prêts de jeunes et leurs retours restent à la semaine 0 (tour des semaines fixes).
  let deferred=false;
- const engaged=p=>typeof calIAIndisponible==='function'&&calIAIndisponible(p.id);
+ const engaged=p=>typeof calIAIndisponible==='function'&&calIAIndisponible(p.id,p);
  const STRATEGIES=Object.freeze(['vedettes','formateur','rajeunissement','reconstruction','maintien','vente','equilibre']);
  // Pays et réputation de repli quand l'économie des ligues n'est pas chargée.
  const LEAGUES={elite:['france',100],accession:['france',70],nationale:['france',50],prem:['angleterre',92],champ:['angleterre',48],urc:['celte',90],srp:['pacifique',86],'jlo-d1':['japon',78],'jlo-d2':['japon',52],guest:['autre',70]};

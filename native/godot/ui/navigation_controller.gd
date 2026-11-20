@@ -65,6 +65,10 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 	if route in ["Recrutement", "Formation"]: entry.fiche = str(fiche.get("id", "")) if fiche is Dictionary else ""
 	# Sous-pages de la Composition (tireurs, espoir, renforts) : une étape d'historique distincte de l'écran.
 	if route == "Composition": entry.composition_page = str(app.management_ui.get("composition_page", ""))
+	# Sous-page de Classements (rencontre, archives) : une étape d'historique distincte du classement.
+	if route == "Classements": entry.competition_page = JSON.stringify(app.management_ui.get("competition_page")) if app.management_ui.get("competition_page") is Dictionary else ""
+	# Sous-pages de la Formation (suivi des jeunes, revue d'effectif) : une étape d'historique distincte de la liste.
+	if route == "Formation": entry.formation_page = load("res://ui/immersive08/formation_pages.gd").cle(app)
 	# Sous-pages du Recrutement : une étape d'historique distincte de la liste.
 	if route == "Recrutement": entry.recrutement_page = load("res://ui/immersive08/recruitment_pages.gd").cle(app.management_ui.get("recrutement_page", {})) if app.management_ui.get("recrutement_page") is Dictionary else ""
 	# Sous-pages du Staff (contrat, mentorat, engagements) : une étape d'historique distincte de l'écran.
@@ -544,12 +548,21 @@ func _travel(direction: int) -> void:
 	if entry.route == "Composition":
 		if str(entry.get("composition_page", "")).is_empty(): app.management_ui.erase("composition_page")
 		else: app.management_ui.composition_page = str(entry.composition_page)
+	if entry.route == "Classements":
+		var saved: Variant = JSON.parse_string(str(entry.get("competition_page", "")))
+		if saved is Dictionary: app.management_ui.competition_page = saved
+		else: app.management_ui.erase("competition_page")
 	if entry.route == "Recrutement":
 		var page_demandee := str(entry.get("recrutement_page", ""))
 		var page_actuelle: String = load("res://ui/immersive08/recruitment_pages.gd").cle(app.management_ui.get("recrutement_page", {})) if app.management_ui.get("recrutement_page") is Dictionary else ""
 		if page_demandee != page_actuelle:
 			app.Immersive.Recruitment.oublier_page(app)
 			if not page_demandee.is_empty(): app.management_ui.recrutement_page = load("res://ui/immersive08/recruitment_pages.gd").depuis_cle(page_demandee)
+	if entry.route == "Formation":
+		var formation_demandee := str(entry.get("formation_page", ""))
+		if formation_demandee != load("res://ui/immersive08/formation_pages.gd").cle(app):
+			load("res://ui/immersive08/formation_pages.gd").oublier(app)
+			if not formation_demandee.is_empty(): app.management_ui.formation_page = load("res://ui/immersive08/formation_pages.gd").depuis_cle(formation_demandee)
 	if entry.route == "Recrutement" and not entry.get("reading") is Dictionary:
 		_set_market_target(entry.market, str(_person("market", entry.market).get("name", "")))
 	app._navigate(entry.route, false, true)
@@ -709,7 +722,7 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 				destination = app.Immersive.ClubSheet.ROUTE
 		"fixture", "competition", "date", "session":
 			opened = app.Immersive.Competition.open_target(app, kind, target.get("id"))
-			if opened and kind in ["competition", "date", "session"]: destination = app.route
+			if opened and kind in ["competition", "fixture", "date", "session"]: destination = app.route
 		"finance":
 			opened = app.Immersive.FinanceCanvas.open_target(app, target.get("id"))
 			if opened: destination = "Finances"
@@ -722,7 +735,7 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 		app.management_ui.navigation_target = location
 		if kind == "menu":
 			app._navigate(destination, false)
-		elif kind not in ["competition", "date", "session", "finance", "training"]:
+		elif kind not in ["competition", "fixture", "date", "session", "finance", "training"]:
 			app._navigate(destination, false, true)
 		observe(app.route, app.selected_player, app.selected_staff_club, kind in ["player", "squad"])
 	_dispatching = false

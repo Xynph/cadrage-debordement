@@ -996,6 +996,7 @@ static func _page_caption(app: Control) -> String:
 	var fiche := FichePage.actuelle(app)
 	if not fiche.is_empty(): return "Fiche joueur : " + str(fiche.joueur.get("name", ""))
 	if app.route == ClubSheet.ROUTE: return "Fiche club : " + ClubSheet.caption(app)
+	if app.route == "Formation" and not Academy.Pages.actuelle(app).is_empty(): return str(Academy.Pages.TITRES.get(Academy.Pages.actuelle(app), "Formation"))
 	if app.route == "Staff" and not ClubCanvas.Pages.actuelle(app).is_empty(): return str(ClubCanvas.Pages.TITRES.get(ClubCanvas.Pages.actuelle(app), "Staff"))
 	if app.route == "Recrutement" and not Recruitment.Pages.actuelle(app).is_empty(): return str(Recruitment.Pages.TITRES.get(Recruitment.Pages.actuelle(app), "Recrutement"))
 	# Liste du Recrutement : le fil d'Ariane dit aussi l'onglet courant (Besoins du club, Recherche, Joueurs suivis, Rapports).
@@ -1269,6 +1270,8 @@ static func _sync_office_props(match_status: Label) -> void:
 static func _subnavigation(parent: Node, app: Control) -> void:
 	if Selections.nation_only(app.model): return
 	if app.route=="Composition" or app.route=="Effectif": return
+	# Grille mensuelle du Calendrier : elle porte la rangée d'onglets de Compétitions (une seule rangée, month_calendar.gd).
+	if app.route=="Calendrier" and not app.get_meta("calendar_table",false): return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
 		var row := C.h(8)
