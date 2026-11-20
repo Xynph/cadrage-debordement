@@ -225,6 +225,8 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
     }else section(key,value);
    }
   }
+  // Compétitions : les textes générés (courrier, objectifs, notes) citent le nom de base ; le pack actif les présente.
+  if(chosen)for(const [from,to]of leagues.replacements(edition,chosen))replacements.set(from,to);
   // Journalistes et rédactions : le texte archivé garde les noms de base, le pack actif les présente.
   if(chosen)for(const [from,to]of pressIdentities.replacements(chosen.press,pressBank))replacements.set(from,to);
   // Présidents et directeurs sportifs de départ : nom inventé de la base → nom du pack.

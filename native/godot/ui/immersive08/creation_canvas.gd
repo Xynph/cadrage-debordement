@@ -174,7 +174,8 @@ static func build(app: Control, ctx: Dictionary) -> Control:
 	var title := _titre("Choisir son club", 37)
 	title.name = "CreationTitle"
 	titles.add_child(title)
-	var subtitle := _texte("%s · %d clubs · saison %s" % [_competition_name(app, division), division_clubs.size(), "2027" if division == "srp" else "2026-2027"], C.MUTED)
+	var season := Entry.creation_season(app, division)
+	var subtitle := _texte("%s · %d clubs" % [_competition_name(app, division), division_clubs.size()] + (" · saison " + season if not season.is_empty() else ""), C.MUTED)
 	subtitle.name = "CreationSubtitle"
 	subtitle.size_flags_vertical = Control.SIZE_SHRINK_END
 	titles.add_child(subtitle)
@@ -385,13 +386,13 @@ static func _dossier(app: Control, row: HBoxContainer, ctx: Dictionary, screen: 
 	C.fill(more, true)
 	lower.add_child(more)
 	if not selected.is_empty():
-		if bool(app.management_ui.get(FORMAT, false)): _format(more, str(ctx.division), true)
+		if bool(app.management_ui.get(FORMAT, false)): _format(app, more, str(ctx.division), true)
 		else: _president_et_rivaux(app, more, ctx)
 		var spring := Control.new()
 		spring.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		C.fill(spring, true)
 		more.add_child(spring)
-		if Entry.CREATION_FORMATS.has(str(ctx.division)):
+		if not Entry.creation_format(app, str(ctx.division)).is_empty():
 			var open := bool(app.management_ui.get(FORMAT, false))
 			var link := _lien("← Revenir au club" if open else "Format de la division et enjeux →", func():
 				app.management_ui[FORMAT] = not bool(app.management_ui.get(FORMAT, false))
@@ -476,14 +477,17 @@ static func _resume_championnat(app: Control, content: VBoxContainer, ctx: Dicti
 	var facts := C.h(0)
 	content.add_child(facts)
 	_chiffre(facts, "Clubs", str((ctx.division_clubs as Array).size()), "dans le championnat")
-	_chiffre(facts, "Saison", "2027" if ctx.division == "srp" else "2026-27", "de départ")
+	var season := Entry.creation_season(app, str(ctx.division))
+	# « 2026-2027 » s'écrit « 2026-27 » dans ce chiffre clé (maquette).
+	if season.length() == 9 and season[4] == "-": season = season.substr(0, 5) + season.substr(7)
+	if not season.is_empty(): _chiffre(facts, "Saison", season, "de départ")
 	content.add_child(C.rule())
-	_format(content, str(ctx.division), false)
+	_format(app, content, str(ctx.division), false)
 	var hint := C.wrap("Choisis un club dans la grille pour découvrir son stade, ses moyens et ce que le conseil attend de toi.", 17, C.MUTED)
 	content.add_child(hint)
 
-static func _format(parent: Container, division: String, heading: bool) -> void:
-	var format: Array = Entry.CREATION_FORMATS.get(division, [])
+static func _format(app: Control, parent: Container, division: String, heading: bool) -> void:
+	var format: Array = Entry.creation_format(app, division)
 	if format.is_empty(): return
 	var block := C.v(4)
 	block.name = "CreationFormat"

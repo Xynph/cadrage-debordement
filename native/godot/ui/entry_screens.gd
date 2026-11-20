@@ -156,17 +156,13 @@ const CREATION_COUNTRY_SCOPES := {
 }
 
 # Format joué par le moteur du Monde complet pour la première saison.
-const CREATION_FORMATS := {
-	"elite": ["26 matchs par club, en aller-retour. Les six premiers disputent les phases finales.", "Le dernier descend. Le 13e dispute un barrage contre le finaliste de deuxième division."],
-	"accession": ["30 matchs par club, en aller-retour. Les six premiers disputent les phases finales.", "Le champion monte en première division et le finaliste joue un barrage. Le dernier descend et le 15e joue un barrage chez le finaliste de troisième division."],
-	"nationale": ["26 matchs par club, en aller-retour. Les six premiers disputent les phases finales.", "Le champion monte en deuxième division. Le finaliste reçoit le 15e de deuxième division pour un barrage."],
-	"prem": ["18 matchs par club, en aller-retour. Les quatre premiers jouent les demi-finales.", "Le jeu conserve les mêmes clubs dans les deux divisions anglaises."],
-	"champ": ["26 matchs par club, en aller-retour. Les six premiers disputent les phases finales.", "Le jeu conserve les mêmes clubs dans les deux divisions anglaises."],
-	"jlo-d1": ["18 matchs par club. Les six premiers disputent les phases finales.", "Les deux derniers du classement final jouent des barrages aller-retour contre les deux premiers de Division 2."],
-	"jlo-d2": ["14 matchs par club, en aller-retour. Le premier au classement est champion.", "Les deux premiers disputent des barrages aller-retour contre des clubs de Division 1."],
-	"urc": ["18 matchs par club, dont trois rencontres régionales retour. Les huit premiers accèdent aux quarts de finale.", "Le jeu conserve les participants d’une saison à l’autre."],
-	"srp": ["16 matchs par club. Les six premiers disputent les phases finales.", "Le jeu conserve les participants d’une saison à l’autre."],
-}
+## Saison de départ et format d'une compétition à la création : lus dans les données (moteur, pack compris).
+## Donnée absente : chaîne ou liste vide, et l'écran omet la ligne.
+static func creation_format(app: Control, division: String) -> Array:
+	return Array(_competition_identity(app, division).get("formatLines", []))
+
+static func creation_season(app: Control, division: String) -> String:
+	return str(_competition_identity(app, division).get("startSeasonLabel", ""))
 
 static func begin_creation(app: Control) -> void:
 	app.management_ui.erase(CREATION_SELECTION)
@@ -236,9 +232,11 @@ static func _competition_summary(app: Control, parent: VBoxContainer, division: 
 	var facts := C.h(18)
 	parent.add_child(facts)
 	Editorial.fact(facts, club_count, "Clubs du championnat")
-	Editorial.divider(facts)
-	Editorial.fact(facts, "2027" if division == "srp" else "2026-2027", "Saison de départ")
-	var format: Array = CREATION_FORMATS.get(division, [])
+	var season := creation_season(app, division)
+	if not season.is_empty():
+		Editorial.divider(facts)
+		Editorial.fact(facts, season, "Saison de départ")
+	var format: Array = creation_format(app, division)
 	if not format.is_empty():
 		parent.add_child(C.rule())
 		parent.add_child(C.label("FORMAT ET ENJEUX", 21, Editorial.BRASS))
