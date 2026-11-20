@@ -4,6 +4,11 @@ const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 const FenetreEquipe = preload("res://ui/contextual/match_equipe.gd")
+const ApresMatch = preload("res://ui/contextual/apres_match.gd")
+## Après-match (verdict, pourquoi, classement complet, « Valider le résultat ») : posé sur toute la vue une fois
+## le match fini et entièrement montré (bouton de validation du direct visible).
+var apres_match: Control
+var _viewport: SubViewport
 var director: Node
 ## Régie du match en temps forts (mode de base ; absente avec CD_MATCH_TEMPS_FORTS=0).
 var regie: Node
@@ -77,6 +82,7 @@ func _ready() -> void:
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	viewport.msaa_3d = Viewport.MSAA_2X
 	container.add_child(viewport)
+	_viewport = viewport
 	stage = load("res://match_view.gd").new()
 	if stage.has_method("set_club_identity"): stage.set_club_identity(app.model.get("club", {}))
 	viewport.add_child(stage)
@@ -347,6 +353,7 @@ func _process(_delta: float) -> void:
 	var etat := _etat_bandeau()
 	_poser_pause(etat)
 	if bool(etat.compact) != compact: _appliquer_bandeau(bool(etat.compact))
+	_suivre_apres_match()
 	if _recouvrir > 0:
 		_recouvrir -= 1
 		if _recouvrir == 0: _recadrer()
@@ -419,6 +426,8 @@ func update_frame(value: Dictionary) -> void:
 		if live.get("direct") is Dictionary: montrer_reglages_temps_forts(live.direct, regie)
 	_update_drawer()
 	if is_instance_valid(equipe): equipe.update_frame(model)
+	if is_instance_valid(apres_match): apres_match.update_frame(model)
+	_suivre_apres_match()
 	apply_preferences()
 	# Après la régie (elle dit si un temps fort se joue) : libellé et accès du bouton de pause ;
 	# une causerie retenue par un temps fort bloque aussi la reprise (elle passera par elle).
@@ -599,3 +608,35 @@ func _envoyer_consigne(axe: String, valeur: String) -> void:
 	_envois_consignes[axe] = valeur
 	if regie != null: regie.envoyer_consigne(axe, valeur)
 	else: app._command(Pilotage.COMMANDE, Pilotage.charge(axe, valeur))
+
+## Identité de la rencontre affichée (projection du moteur, sinon les deux clubs) : l'après-match déjà montré.
+static func cle_apres_match(live: Dictionary) -> String:
+	var direct: Variant = live.get("direct")
+	if direct is Dictionary and not str(direct.get("rencontre", "")).is_empty(): return str(direct.rencontre)
+	var equipes: Array = live.get("teams", [])
+	if equipes.size() < 2 or not equipes[0] is Dictionary or not equipes[1] is Dictionary: return ""
+	return "%s|%s" % [str(equipes[0].get("id", "")), str(equipes[1].get("id", ""))]
+
+## L'après-match prend toute la vue dès que le match est fini et entièrement montré (bouton de validation du direct
+## visible) ; la scène 3D, cachée dessous, cesse alors d'être rendue.
+func _suivre_apres_match() -> void:
+	# Retour d'une consultation (fiche d'un club, levier…) : la vue est neuve et la régie rejouerait sa fin (sortie des
+	# joueurs, dernier temps fort) avant de rendre la validation ; l'après-match déjà montré pour cette rencontre
+	# revient tout de suite, sans dépendre de ce délai.
+	var cle := cle_apres_match(_live())
+	var deja_vu: bool = not cle.is_empty() and is_instance_valid(director) and str(director.get("apres_match_vu")) == cle
+	var fini: bool = bool(_live().get("finished", false)) and ((is_instance_valid(finish) and finish.visible) or deja_vu)
+	if fini and is_instance_valid(director) and director.get("apres_match_vu") != null: director.apres_match_vu = cle
+	if fini and not is_instance_valid(apres_match):
+		apres_match = ApresMatch.new()
+		apres_match.app = app
+		apres_match.director = director
+		add_child(apres_match)
+		apres_match.update_frame(model)
+		if is_instance_valid(drawer) and drawer.visible: _fermer_tiroir()
+	if is_instance_valid(apres_match) and apres_match.visible != fini:
+		apres_match.visible = fini
+		if fini: apres_match.update_frame(model)
+	if is_instance_valid(_viewport):
+		var mode := SubViewport.UPDATE_DISABLED if fini else SubViewport.UPDATE_ALWAYS
+		if _viewport.render_target_update_mode != mode: _viewport.render_target_update_mode = mode

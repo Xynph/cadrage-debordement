@@ -1403,7 +1403,12 @@ func match_flow() -> void:
 	match_ui = app.match_screen
 	check(app.model.live.finished and match_ui!=null and match_ui.finish.visible and match_ui.clock.text=="TERMINÉ" and not app.match_finish.disabled,"La fin du vrai match expose résultat et validation")
 	await capture("30-resultat-2560x1440")
-	await click(app.match_finish)
+	# Après-match (ui/contextual/apres_match.gd) : il recouvre le direct et porte « Valider le résultat ».
+	await settle()
+	var apres: Variant = match_ui.get("apres_match") if is_instance_valid(match_ui) else null
+	var valider := (apres as Control).find_child("ApresMatchValider", true, false) as Button if apres is Control and is_instance_valid(apres) else null
+	check(valider != null and valider.is_visible_in_tree(), "L’après-match recouvre le direct avec « Valider le résultat »")
+	await click(valider if valider != null else app.match_finish)
 	await worker()
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.model.live==null and not app.model.history.is_empty(),"La validation du résultat alimente l’historique de carrière")
