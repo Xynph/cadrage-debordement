@@ -47,14 +47,20 @@ func texte(parent: Node, nom: String) -> String:
 	return ""
 
 func taille(control: Control) -> int:
-	return control.get_theme_font_size("font_size")
+	return control.get_theme_font_size("normal_font_size" if control is RichTextLabel else "font_size")
+
+## Texte affiché d'un Label ou d'un RichTextLabel (lettre de la Réception : BBCode avec liens, texte brut rendu).
+func texte_affiche(c: Control) -> String:
+	if c is RichTextLabel: return (c as RichTextLabel).get_parsed_text()
+	if c is Label: return (c as Label).text
+	return ""
 
 ## Tous les textes visibles d'un sous-arbre font au moins TAILLE_MIN px.
 func textes_lisibles(parent: Node, contexte: String, minimum := TAILLE_MIN) -> void:
 	var petits: Array[String] = []
-	for n in parent.find_children("*", "Label", true, false) + parent.find_children("*", "Button", true, false):
+	for n in parent.find_children("*", "Label", true, false) + parent.find_children("*", "Button", true, false) + parent.find_children("*", "RichTextLabel", true, false):
 		var c := n as Control
-		if c == null or not c.is_visible_in_tree() or (c is Label and (c as Label).text.is_empty()) or (c is Button and (c as Button).text.is_empty()): continue
+		if c == null or not c.is_visible_in_tree() or (c is Label and (c as Label).text.is_empty()) or (c is Button and (c as Button).text.is_empty()) or (c is RichTextLabel and (c as RichTextLabel).get_parsed_text().strip_edges().is_empty()): continue
 		if taille(c) < minimum: petits.append("%s (%d px)" % [c.name, taille(c)])
 	verifier(petits.is_empty(), contexte + " : textes sous %d px : %s" % [minimum, ", ".join(petits)])
 
@@ -89,13 +95,19 @@ func courrier(info: Dictionary, capture: String, contexte: String) -> String:
 	app._navigate("Réception", false)
 	await poser(24)
 	var detail := noeud(app.root_content, "InboxDetail") as Control
-	var corps := noeud(app.root_content, "InboxMessageText") as Label
-	verifier(detail != null and corps != null and corps.is_visible_in_tree(), contexte + " : courrier ouvert en Réception")
-	if detail == null or corps == null: return ""
-	verifier(textes_de(detail).contains(str(info.sujet)), contexte + " : sujet « %s » affiché" % str(info.sujet))
-	verifier(corps.autowrap_mode != TextServer.AUTOWRAP_OFF, contexte + " : retours à la ligne automatiques")
-	verifier(corps.get_line_count() >= corps.text.split("\n").size(), contexte + " : une ligne par puce (%d lignes pour %d paragraphes)" % [corps.get_line_count(), corps.text.split("\n").size()])
-	verifier(corps.max_lines_visible < 0 or corps.get_visible_line_count() >= corps.get_line_count(), contexte + " : texte entier")
+	# Nouvelle Réception (lettre papier) : le corps est un RichTextLabel (noms en liens BBCode) ; l'ancien Label reste accepté.
+	var corps := noeud(app.root_content, "InboxMessageText") as Control
+	var lisible := corps is Label or corps is RichTextLabel
+	verifier(detail != null and lisible and corps.is_visible_in_tree(), contexte + " : courrier ouvert en Réception")
+	if detail == null or not lisible: return ""
+	var affiche := texte_affiche(corps)
+	var paragraphes := affiche.split("\n").size()
+	# Le titre de la lettre est en capitales : comparaison sans casse.
+	verifier(textes_de(detail).to_lower().contains(str(info.sujet).to_lower()), contexte + " : sujet « %s » affiché" % str(info.sujet))
+	verifier(corps.get("autowrap_mode") != TextServer.AUTOWRAP_OFF, contexte + " : retours à la ligne automatiques")
+	verifier(corps.get_line_count() >= paragraphes, contexte + " : une ligne par puce (%d lignes pour %d paragraphes)" % [corps.get_line_count(), paragraphes])
+	if corps is Label: verifier((corps as Label).max_lines_visible < 0 or (corps as Label).get_visible_line_count() >= corps.get_line_count(), contexte + " : texte entier")
+	else: verifier((corps as RichTextLabel).get_visible_line_count() >= corps.get_line_count(), contexte + " : texte entier (%d/%d lignes)" % [(corps as RichTextLabel).get_visible_line_count(), corps.get_line_count()])
 	var d := detail.get_global_rect()
 	var c := corps.get_global_rect()
 	verifier(c.position.x >= d.position.x - 1.0 and c.end.x <= d.end.x + 1.0, contexte + " : texte dans la largeur du courrier (%s ⊂ %s)" % [str(c), str(d)])
@@ -103,7 +115,7 @@ func courrier(info: Dictionary, capture: String, contexte: String) -> String:
 	textes_lisibles(detail, contexte, PLANCHER_RECEPTION)
 	sans_chevauchement(detail, ["InboxReadingScroll", "InboxReplyHeading", "InboxClubMailOpen"], contexte)
 	await capturer(capture)
-	return corps.text
+	return affiche
 
 func executer() -> void:
 	attendu = JSON.parse_string(OS.get_environment("CD_CALENDRIER_ATTENDU"))
