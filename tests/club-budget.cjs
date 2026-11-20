@@ -210,7 +210,11 @@ test('Moteur, carrière marquée : les clubs gérés s’autorisent une masse ti
  const l=h.lire('S.clubs.map(c=>aiRosterWageLimit(c)*52)');
  assert.ok(l.slice(0,14).every(x=>x<10.7e6&&x>5e6),'élite : sous le plafond');assert.ok(l.slice(14).every(x=>x<8e6&&x>1.5e6));assert.ok(new Set(l).size>25,'chaque club a sa marge');
  const libres=h.lire('S.economy.freeAgents.map(p=>p.salary)'),avant=sans.lire('S.economy.freeAgents.map(p=>p.salary)');
- assert.ok(avant.every(x=>x>=2000)&&libres.every(x=>x>=270&&x<2000)&&libres.length===avant.length);
+ const niveaux=h.lire('S.economy.freeAgents.map(p=>({r:p.rating,s:p.salary,v:nativeStartingSalaries.marche(p)}))');
+ assert.ok(avant.every(x=>x>=2000)&&libres.length===avant.length,'non marquée : ancienne fourchette, même nombre de libres');
+ assert.ok(niveaux.every(x=>x.s===x.v&&x.s>=270),'marquée : chaque libre vaut exactement son niveau, jamais sous le plancher de 270 €');
+ assert.ok(niveaux.filter(x=>x.r<70).every(x=>x.s<2000),'marquée : les libres de niveau courant restent sous l’ancienne fourchette');
+ assert.ok(niveaux.some(x=>x.r>=75&&x.s>=2000),'marquée : un très bon libre peut dépasser 2 000 € par semaine (c’est son niveau)');
  assert.equal(h.run("aiRosterSmallClubPlayer(3,77).salary<1500"),true);assert.equal(sans.run("aiRosterSmallClubPlayer(3,77).salary>=2000"),true);
 });
 test('Moteur, carrière marquée : un joueur libéré sous le plancher de la règle redemande au moins ce plancher',()=>{
