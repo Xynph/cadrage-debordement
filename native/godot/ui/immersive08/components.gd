@@ -252,36 +252,6 @@ static func button(text: String, callback: Callable, primary: bool = false, acce
 	control.pressed.connect(callback)
 	return control
 
-## Style de bouton « LIEN » commun à tous les écrans (charte §7, décision de Léo du 19/11/2026) : texte ivoire (+ flèche ou
-## symbole si le bouton en porte une), sans cadre ni fond, rayon 0 ; souligné au survol et au focus. À appliquer à toute
-## action secondaire (Favori, Archiver, « Ouvrir … → », Annuler, pièces liées). L'action principale de l'écran, elle,
-## prend `style_bouton_ivoire_plein` (un seul par écran). Avec `souligne_au_repos`, le lien actif se reconnaît d'emblée
-## (nom de joueur, de club) ; un nom sans destination reste du texte gris non souligné (jamais de faux lien).
-static func style_bouton_lien(bouton: BaseButton, taille: int = 19, souligne_au_repos: bool = false) -> void:
-	for look in ["normal", "hover", "pressed", "focus", "disabled"]:
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0, 0, 0, 0)
-		style.set_corner_radius_all(0)
-		style.content_margin_left = px(6)
-		style.content_margin_right = px(6)
-		style.content_margin_top = px(4)
-		style.content_margin_bottom = px(4)
-		var souligne: bool = look in ["hover", "pressed", "focus"] or (souligne_au_repos and look == "normal")
-		style.border_color = Charte.IVOIRE if look != "disabled" else Color(0, 0, 0, 0)
-		style.border_width_bottom = maxi(1, px(2 if look in ["hover", "pressed", "focus"] else 1)) if souligne else 0
-		bouton.add_theme_stylebox_override(look, style)
-	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		bouton.add_theme_color_override(key, Charte.IVOIRE)
-	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
-	bouton.add_theme_font_override("font", BOLD)
-	bouton.add_theme_font_size_override("font_size", maxi(12, px(taille)))
-	bouton.custom_minimum_size.y = 0
-	if bouton is Button:
-		(bouton as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
-		(bouton as Button).icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-
-
 static func icon_texture(id: String, color: Color = IVORY) -> Texture2D:
 	var key := "icon:" + id + ":" + color.to_html()
 	if _textures.has(key): return _textures[key]
