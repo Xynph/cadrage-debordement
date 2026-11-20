@@ -26,7 +26,33 @@ func active() -> bool:
 
 func match_immersed() -> bool:
 	if app == null: return false
-	return not _talk().is_empty() or not _live().is_empty()
+	return not _talk().is_empty() or (not _live().is_empty() and not en_consultation())
+
+## Après-match (ui/contextual/apres_match.gd) : match fini, résultat pas encore validé, le manager consulte un autre
+## écran (fiche d'un club, d'un joueur, levier du « Pourquoi », classement, calendrier). La scène du match se ferme ;
+## « Continuer » de la coque (ou Espace, ou Précédent) ramène à l'après-match par la route « Match ».
+var consultation := false
+
+func en_consultation() -> bool:
+	return consultation and bool(_live().get("finished", false))
+
+## Ouvre `cible` (navigation_controller.open_entity) depuis l'après-match ; rien pendant une attente du moteur.
+func consulter(cible: Dictionary) -> bool:
+	if app == null or app.waiting or not bool(_live().get("finished", false)) or not _talk().is_empty(): return false
+	consultation = true
+	_close()
+	var ouvert := false
+	if is_instance_valid(app.navigation_controller): ouvert = app.navigation_controller.open_entity(cible)
+	if not ouvert or app.route == "Match":
+		consultation = false
+		app.route = "Match"
+		sync()
+	return ouvert
+
+## Retour à l'après-match depuis un écran consulté.
+func revenir_apres_match() -> void:
+	if not en_consultation(): return
+	app._navigate("Match")
 
 func active_meeting() -> bool:
 	return not _meeting().is_empty()
@@ -93,6 +119,9 @@ func sync(_received_command: String = "", _response_ok: bool = true) -> bool:
 	var talk := _talk()
 	var live := _live()
 	var invitation: Variant = app.model.get("clubLife", {}).get("sceneInvitations", {}).get("active")
+	# Consultation terminée : retour à l'après-match (route « Match »), résultat validé ou match disparu.
+	if consultation and (live.is_empty() or not bool(live.get("finished", false)) or not talk.is_empty() or app.route == "Match"): consultation = false
+	if consultation: live = {}
 	# Match en temps forts : le dernier temps fort de la période se regarde avant la
 	# causerie ou le débrief. La régie rappelle `sync` quand il est fini.
 	if not talk.is_empty() and kind == "live" and active() and not live.is_empty() and view.has_method("retient_la_causerie") and view.retient_la_causerie(live):

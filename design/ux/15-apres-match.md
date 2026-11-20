@@ -1,8 +1,32 @@
 # UX Spec : 15 — Après-match (« Pourquoi »)
 
+## Choix de Léo (revue DA du 19/11/2026) — fait foi sur le reste de cette fiche
+
+« Le choix du DA mais avec le classement complet » : **variante 1 · Verdict en tête** + **classement complet** de la
+division après la journée jouée (maquette validée `revue-20261119/apercus/15-apres-match-complet.png`).
+
+- **Écran dédié** (`ui/contextual/apres_match.gd`), posé sur toute la vue du direct dès que le match est fini et
+  entièrement montré ; il remplace l'état « Match terminé » de l'entracte. Le débrief du vestiaire (3D/2D) reste avant.
+- **Bandeau vestiaire** (photo, voile) : `FIN` · compétition · J<n> · stade · date (lus dans la rencontre) ; pastille
+  ovale V / N / D 48 px + le mot ; plaques des deux clubs (leur couleur, sigle, nom = fiche du club) et score ;
+  classement avant → après (▲ ▼ dessinés + « +1 place »), homme du match (fiche, mini-fiche au survol), essais, points
+  de bonus de la journée. **Pas de « note du match »** : le moteur n'en calcule pas (ligne omise).
+- **Gauche** : « Pourquoi on a gagné / perdu / ce nul », trois raisons du moteur (rang, ▲ point fort / ▼ à corriger,
+  levier, texte entier, lien « Voir … → » vers l'écran du levier) ; « Voir plus » = sous-page dans l'écran
+  (statistiques, notes de ton XV, journal) avec retour ; fil du score (`direct.marques`, auteur cliquable) ; Gabi
+  (levier de la semaine tiré des raisons, homme du match s'il est des nôtres).
+- **Droite** : classement complet après la journée (`direct.journee.classement` : J V N D, diff., pts, forme), zones
+  réelles du championnat (liseré + symbole dessiné + légende, `standings_zones.gd`), chaque club = sa fiche ; « Ta place »
+  (écarts avec le 1er et les voisins, retiré s'il ne tient pas) ; **les autres matchs de la journée** (résultats réels
+  du multiplex, clic = calendrier du jour) ; le seul aplat or de l'écran, « Valider le résultat » (Espace).
+- **Navigation** : chaque lien ouvre l'écran visé (consultation, `director.consulter`) ; le résultat reste à valider,
+  « Continuer » de la coque devient « Après-match » et ramène ici (Espace aussi). Menu « Plus ▾ » (menu déroulant) :
+  détail, classements, calendrier. Aucune petite fenêtre.
+- Noms de clubs, de championnat et de zones : toujours lus dans les données (pack Rugby Réel compris).
+
 Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (corps ~13 px, tableaux 12-13 px, en-têtes 11-12 px, jamais sous 11 px à 1080p ; lignes de tableau 24-26 px ; échelle d'interface 90/100/115/130 %). Échap ne ferme pas l'écran (décision du 16/11 maintenue : arrêt forcé = reprise avant le match ; la règle « Échap = menu pause » vaut pour les écrans principaux, pas ici).
 
-> **Statut** : en conception (proposé, non validé par Léo)
+> **Statut** : maquette validée par Léo le 19/11/2026 (voir « Choix de Léo » ci-dessus), intégrée le 20/11/2026
 > **Auteur** : ux-designer (CCGS), mode autonome, rigueur `minimal`
 > **Dernière mise à jour** : 19/11/2026
 > **Phase du parcours** : 1.3 jour de match (fin) → 1.2 semaine suivante

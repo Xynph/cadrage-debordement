@@ -42,6 +42,8 @@ const EN_DIRECT := [
 	{"id": "direct", "libelle": "Match en direct", "type": "direct"},
 	{"id": "equipe-composition", "libelle": "Fenêtre Équipe · composition", "type": "equipe", "onglet": "composition"},
 	{"id": "equipe-consignes", "libelle": "Fenêtre Équipe · consignes", "type": "equipe", "onglet": "consignes"},
+	## Toujours le dernier : la fin du match est confiée à l'adjoint, puis l'après-match s'affiche (résultat à valider).
+	{"id": "apres-match", "libelle": "Après-match (match joué jusqu'au bout)", "type": "apres_match"},
 ]
 ## Autres noms acceptés par --ecrans (forme normalisée par `slug`).
 const ALIAS := {"transferts": ["recrutement"], "classement": ["classements"], "equipe": ["equipe-composition", "equipe-consignes"],
@@ -528,6 +530,7 @@ func ouvrir_en_direct(ecran: Dictionary) -> Dictionary:
 	var vue: Control = surface()
 	if vue == null: return {"statut": "echec", "note": "direct fermé"}
 	var equipe: Variant = vue.get("equipe")
+	if str(ecran.type) == "apres_match": return await ouvrir_apres_match(vue)
 	if str(ecran.type) == "direct":
 		if is_instance_valid(equipe) and equipe.visible: equipe.fermer(false)
 		await stabiliser()
@@ -537,6 +540,34 @@ func ouvrir_en_direct(ecran: Dictionary) -> Dictionary:
 	else: equipe.choisir_onglet(str(ecran.get("onglet", "composition")))
 	await stabiliser()
 	if not equipe.visible: return {"statut": "echec", "note": "fenêtre Équipe non ouverte (match terminé ?)"}
+	return {"statut": "ok"}
+
+## Après-match d'un vrai match : la fin est confiée à l'adjoint (commande du jeu), le débrief du vestiaire est passé
+## comme le ferait un joueur, puis l'écran attend que l'après-match (ui/contextual/apres_match.gd) soit affiché.
+func ouvrir_apres_match(vue: Control) -> Dictionary:
+	var equipe: Variant = vue.get("equipe")
+	if is_instance_valid(equipe) and equipe.visible: equipe.fermer(false)
+	var limite := Time.get_ticks_msec() + 240000
+	var delegue := false
+	while Time.get_ticks_msec() < limite:
+		var actuelle: Control = surface()
+		var apres: Variant = actuelle.get("apres_match") if actuelle != null else null
+		if apres is Control and is_instance_valid(apres) and (apres as Control).is_visible_in_tree(): break
+		var live: Variant = app.model.get("live")
+		var causerie: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+		if not app.waiting and causerie is Dictionary and app.contextual_director.kind == "locker":
+			app._command("match_talk_continue", {"key": causerie.key, "phase": causerie.phase, "skip": true})
+		elif not app.waiting and not delegue and live is Dictionary and not bool(live.get("finished", false)):
+			delegue = true
+			print("ECRANS_FILMES fin confiée à l'adjoint")
+			app._command("delegate", {})
+		for k in 10: await process_frame
+	var vue_finale: Control = surface()
+	var ecran_final: Variant = vue_finale.get("apres_match") if vue_finale != null else null
+	if not (ecran_final is Control and is_instance_valid(ecran_final) and (ecran_final as Control).is_visible_in_tree()):
+		return {"statut": "echec", "note": "après-match non affiché : " + str(app.last_error)}
+	await create_timer(2.0).timeout
+	await stabiliser()
 	return {"statut": "ok"}
 
 ## Capture et analyse l'écran ouvert ; complète l'entrée du rapport.
@@ -632,8 +663,8 @@ func run() -> void:
 		"source_ecrans": source.source, "pilote": RenderingServer.get_current_rendering_driver_name(), "carte": RenderingServer.get_video_adapter_name(), "audio": AudioServer.get_driver_name(),
 		"carriere": {"club": str(club.get("name", "")), "date": str(app.model.get("meta", {}).get("calendarToday", ""))},
 		"tailles": [], "ecrans": [], "planches": []}
-	var hors_direct: Array = ecrans.filter(func(e: Dictionary): return not str(e.type) in ["direct", "equipe"])
-	var en_direct: Array = ecrans.filter(func(e: Dictionary): return str(e.type) in ["direct", "equipe"])
+	var hors_direct: Array = ecrans.filter(func(e: Dictionary): return not str(e.type) in ["direct", "equipe", "apres_match"])
+	var en_direct: Array = ecrans.filter(func(e: Dictionary): return str(e.type) in ["direct", "equipe", "apres_match"])
 	var delai_depasse := false
 	for taille: Vector2i in o.tailles:
 		var obtenue: Dictionary = await appliquer_taille(taille)
