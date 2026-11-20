@@ -14,6 +14,16 @@ static func name_for(model: Dictionary, id: String) -> String:
 		if competition.get("id") == id: return str(competition.get("name",fallback))
 	return fallback
 
+# Division d'arrivée d'une montée ou d'une descente : le nom vient des données (pack compris), jamais du code.
+const PROMOTION := {"accession":"elite", "nationale":"accession", "champ":"prem", "jlo-d2":"jlo-d1"}
+const RELEGATION := {"elite":"accession", "accession":"nationale", "prem":"champ", "jlo-d1":"jlo-d2"}
+
+static func movement_lines(model: Dictionary, league_id: String, promoted: bool, relegated: bool) -> Array[String]:
+	var lines: Array[String] = []
+	if promoted: lines.append("Montée en " + name_for(model, PROMOTION[league_id]) if PROMOTION.has(league_id) else "Montée en division supérieure")
+	if relegated: lines.append("Descente en " + name_for(model, RELEGATION[league_id]) if RELEGATION.has(league_id) else "Descente en division inférieure")
+	return lines
+
 static func titles(year: Dictionary) -> Array:
 	# Le lecteur Monde fournit déjà la projection commune des titres.
 	var club_views: GDScript = Club
