@@ -184,7 +184,7 @@ static func build(owner_app: Control, canvas: Control) -> void:
 	canvas.add_child(page)
 	D.place(page, Rect2(0, 0, WIDTH, 1240))
 	page._build()
-	var bottom: float = maxf(1240.0, page.content_bottom + 30.0)
+	var bottom: float = maxf(1240.0, page.content_bottom + 10.0)
 	page.size.y = C.px(bottom)
 	canvas.custom_minimum_size.y = maxf(canvas.custom_minimum_size.y, C.px(bottom))
 
@@ -906,26 +906,26 @@ func _colonne_droite() -> void:
 
 ## Ta place : rang, points, zone, et les trois écarts (sur le premier, sur le club devant, sur le club derrière).
 func _ta_place(y: float) -> float:
-	var card := _carte(self, Rect2(LEFT + GAP, y, RIGHT, 340), "TA PLACE", "CompetitionPlace")
+	var card := _carte(self, Rect2(LEFT + GAP, y, RIGHT, 300), "TA PLACE", "CompetitionPlace")
 	var row := _own_row()
 	if row.is_empty() or not P.standings_open(row):
 		D.text(card, 24, 100, "Pas encore de classement.", 24, C.MUTED, 600, RIGHT - 48)
-		return y + 340
+		return y + 300
 	var rank := int(row.get("rank", 0))
-	var rank_label := D.text(card, 24, 130, _ordinal(rank), 76, C.IVORY, 800, 0)
+	var rank_label := D.text(card, 24, 116, _ordinal(rank), 68, C.IVORY, 800, 0)
 	rank_label.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	rank_label.name = "CompetitionPlaceRank"
 	var rank_w := rank_label.size.x / C.density
-	var points := D.text(card, 24 + rank_w + 18, 128, "%s pts" % S.number_text(row.get("points")), 44, C.IVORY, 800, 0)
+	var points := D.text(card, 24 + rank_w + 18, 114, "%s pts" % S.number_text(row.get("points")), 44, C.IVORY, 800, 0)
 	points.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
-	D.text(card, 24, 166, "%s V  ·  %s N  ·  %s D  ·  diff. %s" % [S.count_text(row.get("won")), S.count_text(row.get("drawn")), S.count_text(row.get("lost")), _standing_text(row, "difference")], 19, C.MUTED, 500, RIGHT - 48)
+	D.text(card, 24, 148, "%s V  ·  %s N  ·  %s D  ·  diff. %s" % [S.count_text(row.get("won")), S.count_text(row.get("drawn")), S.count_text(row.get("lost")), _standing_text(row, "difference")], 19, C.MUTED, 500, RIGHT - 48)
 	var zone: Dictionary = Zones.of(row)
 	if not zone.is_empty():
 		var kind := str(zone.get("kind", ""))
-		D.rect(card, Rect2(24, 184, 4, 26), Zones.tint(kind)).name = "CompetitionPlaceZoneEdge"
+		D.rect(card, Rect2(24, 162, 4, 26), Zones.tint(kind)).name = "CompetitionPlaceZoneEdge"
 		var side := Zones.mark_side()
-		Zones.mark(card, kind, Rect2(40, 197 - side / 2.0, side, side), Zones.tint(kind))
-		var zone_text := D.text(card, 64, 204, "Dans la zone : " + str(zone.get("label", "")), 20, C.IVORY, 600, RIGHT - 88)
+		Zones.mark(card, kind, Rect2(40, 175 - side / 2.0, side, side), Zones.tint(kind))
+		var zone_text := D.text(card, 64, 182, "Dans la zone : " + str(zone.get("label", "")), 20, C.IVORY, 600, RIGHT - 88)
 		zone_text.name = "CompetitionPlaceZone"
 	# Les trois écarts : premier, club juste devant, club juste derrière.
 	var ranked: Array = _own_league_rows().filter(func(club: Dictionary): return P.standings_open(club))
@@ -946,15 +946,16 @@ func _ta_place(y: float) -> float:
 		var club: Dictionary = gaps[i]
 		var delta := int(float(row.get("points", 0)) - float(club.get("points", 0)))
 		var tile_x := 24 + i * (tile_w + 12)
-		var tile := D.rect(card, Rect2(tile_x, 226, tile_w, 94), Charte.PANNEAU_2, 0)
+		var tile := D.rect(card, Rect2(tile_x, 206, tile_w, 84), Charte.PANNEAU_2, 0)
 		tile.name = "CompetitionGap_%d" % i
 		var signed := "+%d" % delta if delta > 0 else str(delta)
-		var value := D.text(tile, 14, 46, signed, 44, C.IVORY, 800, tile_w - 20)
+		var value := D.text(tile, 14, 40, signed, 40, C.IVORY, 800, tile_w - 20)
 		value.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
-		D.text(tile, 14, 78, "sur le %s, %s" % [_ordinal(int(club.get("rank", 0))), G.club_name(club)], 16, C.MUTED, 500, tile_w - 20)
-		var link := _entity_area(tile, Rect2(0, 0, tile_w, 94), {"kind":"club", "id":str(club.id)}, "CompetitionGapLink_%d" % i, "Ouvrir le club · " + G.club_name(club))
+		D.text(tile, 14, 58, "sur le %s" % _ordinal(int(club.get("rank", 0))), 16, C.MUTED, 600, tile_w - 20)
+		D.fit_title(D.text(tile, 14, 78, G.club_name(club), 16, C.MUTED, 500, tile_w - 20), tile_w - 20, 30, 2, 13)
+		var link := _entity_area(tile, Rect2(0, 0, tile_w, 84), {"kind":"club", "id":str(club.id)}, "CompetitionGapLink_%d" % i, "Ouvrir le club · " + G.club_name(club))
 		if link != null: link.tooltip_text = "Ouvrir le club · " + G.club_name(club)
-	return y + 340
+	return y + 300
 
 ## Libellés du rendez-vous quand aucune rencontre du championnat n'est à venir (exempt, préparation, saison terminée).
 func _rendez_vous_sans_match() -> Dictionary:
@@ -976,7 +977,7 @@ func _rendez_vous_sans_match() -> Dictionary:
 	return {"chip": "", "title": "Aucune rencontre programmée", "when": str(app.model.meta.get("roundLabel", "Consulte le calendrier du club.")), "venue": "", "button": "Voir le calendrier du club", "action": func(): _switch("calendar"), "id": "CompetitionCalendarLink", "title_name": ""}
 
 func _prochain(y: float) -> float:
-	var card := _carte(self, Rect2(LEFT + GAP, y, RIGHT, 340 if next_fixture.is_empty() else 470), "PROCHAIN RENDEZ-VOUS", "CompetitionNextFixture")
+	var card := _carte(self, Rect2(LEFT + GAP, y, RIGHT, 330 if next_fixture.is_empty() else 430), "PROCHAIN RENDEZ-VOUS", "CompetitionNextFixture")
 	if next_fixture.is_empty():
 		var info := _rendez_vous_sans_match()
 		if not str(info.chip).is_empty(): D.text(card, 24, 92, str(info.chip), 17, C.MUTED, 700, RIGHT - 48)
@@ -987,28 +988,28 @@ func _prochain(y: float) -> float:
 		if info.title_name == "UpcomingOpponent": moment.name = "UpcomingWhen"
 		if not str(info.venue).is_empty(): D.text(card, 24, 222, "Lieu · " + str(info.venue), 20, C.MUTED, 500, RIGHT - 48)
 		_principal(card, Rect2(24, 262, RIGHT - 48, 52), str(info.button).to_upper() + "  →", info.action, str(info.id))
-		return y + 340
+		return y + 330
 	var home: Dictionary = next_fixture.get("home", {})
 	var away: Dictionary = next_fixture.get("away", {})
 	var caption := str(next_fixture.get("label", _phase(next_fixture)))
 	var date := _date(next_fixture)
-	D.text(card, 24, 90, caption.to_upper(), 17, C.MUTED, 700, RIGHT - 48)
+	D.text(card, 24, 86, caption.to_upper(), 17, C.MUTED, 700, RIGHT - 48)
 	if date.is_empty():
-		D.text(card, 24, 122, _location(next_fixture), 26, C.IVORY, 700, RIGHT - 48)
+		D.text(card, 24, 116, _location(next_fixture), 26, C.IVORY, 700, RIGHT - 48)
 	else:
-		var date_label := D.text(card, 24, 124, date, 27, C.IVORY, 700, RIGHT - 48)
+		var date_label := D.text(card, 24, 118, date, 27, C.IVORY, 700, RIGHT - 48)
 		date_label.name = "CompetitionNextDate"
-		var date_link := _entity_area(card, Rect2(20, 98, RIGHT - 40, 34), {"kind":"date", "id":str(next_fixture.get("date", ""))}, "CompetitionNextDateLink", "Voir la date dans le calendrier · " + date)
+		var date_link := _entity_area(card, Rect2(20, 92, RIGHT - 40, 34), {"kind":"date", "id":str(next_fixture.get("date", ""))}, "CompetitionNextDateLink", "Voir la date dans le calendrier · " + date)
 		if date_link != null: date_link.size.y = maxf(C.px(34), maxf(date_link.size.y, ceilf(date_label.size.y)))
-	var home_plate := _plaque(card, Rect2(24, 150, 290, 64), home, "CompetitionNextHome", false)
-	D.text(card, 362, 188, "CONTRE", 18, C.MUTED, 700, 100, HORIZONTAL_ALIGNMENT_CENTER)
-	var away_plate := _plaque(card, Rect2(410, 150, 290, 64), away, "CompetitionNextAway", true)
+	var home_plate := _plaque(card, Rect2(24, 138, 290, 64), home, "CompetitionNextHome", false)
+	D.text(card, 362, 176, "CONTRE", 18, C.MUTED, 700, 100, HORIZONTAL_ALIGNMENT_CENTER)
+	var away_plate := _plaque(card, Rect2(410, 138, 290, 64), away, "CompetitionNextAway", true)
 	home_plate.tooltip_text = home_plate.tooltip_text if not home_plate.tooltip_text.is_empty() else G.club_name(home)
 	away_plate.tooltip_text = away_plate.tooltip_text if not away_plate.tooltip_text.is_empty() else G.club_name(away)
-	var location := D.text(card, 24, 250, _location(next_fixture), 21, C.IVORY, 700, 0)
+	var location := D.text(card, 24, 234, _location(next_fixture), 21, C.IVORY, 700, 0)
 	var venue := _venue_name(next_fixture)
 	if not venue.is_empty():
-		var venue_label := D.text(card, 24 + location.size.x / C.density + 16, 250, venue, 21, C.MUTED, 500, RIGHT - 80 - location.size.x / C.density)
+		var venue_label := D.text(card, 24 + location.size.x / C.density + 16, 234, venue, 21, C.MUTED, 500, RIGHT - 80 - location.size.x / C.density)
 		venue_label.name = "CompetitionNextVenue"
 	var opponent := away if home.get("id") == own.get("id") else home
 	var mine := _own_row()
@@ -1017,27 +1018,27 @@ func _prochain(y: float) -> float:
 		if club.id == opponent.get("id"): theirs = club
 	if not mine.is_empty() and not theirs.is_empty() and P.standings_open(mine) and P.standings_open(theirs):
 		var gap := absi(int(float(mine.get("points", 0)) - float(theirs.get("points", 0))))
-		D.text(card, 24, 286, "%s contre %s  ·  %d pt%s d’écart" % [_ordinal(int(mine.get("rank", 0))), _ordinal(int(theirs.get("rank", 0))), gap, "s" if gap > 1 else ""], 20, C.IVORY, 500, RIGHT - 48)
+		D.text(card, 24, 268, "%s contre %s  ·  %d pt%s d’écart" % [_ordinal(int(mine.get("rank", 0))), _ordinal(int(theirs.get("rank", 0))), gap, "s" if gap > 1 else ""], 20, C.IVORY, 500, RIGHT - 48)
 	if not mine.is_empty() and not theirs.is_empty():
-		D.text(card, 24, 326, "FORME", 15, C.MUTED, 700, 70)
-		_recent_form(card, mine.get("form"), 90, 306)
-		D.text(card, 276, 326, "nous", 17, C.MUTED, 500, 50)
-		_recent_form(card, theirs.get("form"), 340, 306)
-		D.text(card, 526, 326, "eux", 17, C.MUTED, 500, 50)
+		D.text(card, 24, 304, "FORME", 15, C.MUTED, 700, 70)
+		_recent_form(card, mine.get("form"), 90, 284)
+		D.text(card, 276, 304, "nous", 17, C.MUTED, 500, 50)
+		_recent_form(card, theirs.get("form"), 340, 284)
+		D.text(card, 526, 304, "eux", 17, C.MUTED, 500, 50)
 	var previous := _previous_meeting(home, away)
 	if not previous.is_empty():
 		var recorded_id := str(previous.get("fixtureId", ""))
 		var text := "Déjà joué cette saison : %s" % _meeting_text(previous)
 		if target_available(app, "fixture", recorded_id):
-			var meeting := _lien(card, Rect2(18, 346, RIGHT - 36, 36), text, func(): open_target(app, "fixture", recorded_id), "CompetitionLastMeeting", 19, true)
+			var meeting := _lien(card, Rect2(18, 322, RIGHT - 36, 36), text, func(): open_target(app, "fixture", recorded_id), "CompetitionLastMeeting", 19, true)
 			meeting.tooltip_text = "Voir la rencontre"
-		else: D.text(card, 24, 370, text, 19, C.MUTED, 500, RIGHT - 48)
+		else: D.text(card, 24, 346, text, 19, C.MUTED, 500, RIGHT - 48)
 	var live: bool = not app._live().is_empty()
-	var action := _principal(card, Rect2(24, 396, 330, 52), ("Rejoindre le match" if live else "Préparer le match").to_upper() + "  →", func(): app._navigate("Match" if live else "Préparation"), "CompetitionPrepareMatch")
+	var action := _principal(card, Rect2(24, 368, 330, 52), ("Rejoindre le match" if live else "Préparer le match").to_upper() + "  →", func(): app._navigate("Match" if live else "Préparation"), "CompetitionPrepareMatch")
 	action.tooltip_text = "Préparer le match"
 	if target_available(app, "club", opponent.get("id", "")):
-		_lien(card, Rect2(380, 402, 320, 40), "Dossier adverse →", func(): open_target(app, "club", str(opponent.id)), "CompetitionOpponentFile", 20)
-	return y + 470
+		_lien(card, Rect2(380, 374, 320, 40), "Dossier adverse →", func(): open_target(app, "club", str(opponent.id)), "CompetitionOpponentFile", 20)
+	return y + 430
 
 func _previous_meeting(home: Dictionary, away: Dictionary) -> Dictionary:
 	for result: Dictionary in season_results:
@@ -1059,19 +1060,19 @@ func _meeting_text(result: Dictionary) -> String:
 
 ## Les six prochains rendez-vous du club : chaque ligne ouvre la rencontre, le club ou la date.
 func _calendrier_club(y: float) -> float:
-	var card := _carte(self, Rect2(LEFT + GAP, y, RIGHT, 372), "CALENDRIER DU CLUB", "CompetitionCalendarPreview")
+	var card := _carte(self, Rect2(LEFT + GAP, y, RIGHT, 340), "CALENDRIER DU CLUB", "CompetitionCalendarPreview")
 	D.text(card, RIGHT - 24, 40, "6 prochains", 17, C.MUTED, 500, 200, HORIZONTAL_ALIGNMENT_RIGHT)
-	_lien(card, Rect2(RIGHT - 264, 322, 250, 40), "Toute la saison →", func(): _switch("calendar"), "OpenFullCalendar", 20, false, HORIZONTAL_ALIGNMENT_RIGHT)
+	_lien(card, Rect2(RIGHT - 264, 296, 250, 36), "Toute la saison →", func(): _switch("calendar"), "OpenFullCalendar", 20, false, HORIZONTAL_ALIGNMENT_RIGHT)
 	if fixtures.is_empty():
 		D.text(card, 24, 112, "Aucun rendez-vous programmé.", 22, C.MUTED, 500, RIGHT - 48)
-		return y + 372
-	for entry: Array in [[14, "J."], [88, "DATE"], [228, "ADVERSAIRE"], [444, "LIEU"], [546, "RANG"]]:
+		return y + 340
+	for entry: Array in [[14, "J."], [74, "DATE"], [206, "ADVERSAIRE"], [444, "LIEU"], [546, "RANG"]]:
 		D.text(card, entry[0], 78, entry[1], 14, C.MUTED, 700, 150)
 	var anchor := fixtures.find_custom(func(fixture: Dictionary): return not fixture.get("played", false))
 	var from := clampi(anchor - 1 if anchor >= 0 else fixtures.size() - 6, 0, maxi(0, fixtures.size() - 6))
 	for i in mini(fixtures.size() - from, 6):
-		_calendar_row(card, fixtures[from + i], 88 + i * 38, RIGHT, true)
-	return y + 372
+		_calendar_row(card, fixtures[from + i], 88 + i * 34, RIGHT, true)
+	return y + 340
 
 ## Sous les tableaux : derniers résultats de la compétition, puis meilleure attaque et meilleure défense.
 func _bas_gauche() -> void:
@@ -1081,14 +1082,14 @@ func _bas_gauche() -> void:
 		_opening_strip(y)
 		left_bottom = y + 211
 		return
-	var results: Array = season_results.filter(func(result: Dictionary): return _competition_id(result, league.id) == league.id and result.get("pair") is Array and result.get("score") is Array).slice(0, 6)
-	var height := 76 + maxi(1, results.size()) * 36 + 14
+	var results: Array = season_results.filter(func(result: Dictionary): return _competition_id(result, league.id) == league.id and result.get("pair") is Array and result.get("score") is Array).slice(0, 5)
+	var height := 70 + maxi(1, results.size()) * 34 + 12
 	var recent := _panel(self, Rect2(0, y, LEFT, height), "DERNIERS RÉSULTATS", "", "CompetitionRecentResults")
 	D.text(recent, LEFT - 24, 42, "du plus récent au plus ancien", 17, C.MUTED, 500, 400, HORIZONTAL_ALIGNMENT_RIGHT)
 	for i in results.size():
 		var result: Dictionary = results[i]
 		var clubs := _matchup(result)
-		var top := 64 + i * 36
+		var top := 58 + i * 34
 		var fixture_id := str(result.get("fixtureId", ""))
 		var line := Button.new()
 		line.name = "RecentResult_%d" % i
@@ -1113,21 +1114,21 @@ func _bas_gauche() -> void:
 			line.focus_mode = Control.FOCUS_NONE
 			line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		recent.add_child(line)
-		D.place(line, Rect2(8, top, LEFT - 16, 34))
-		D.text(line, 16, 24, _phase(result), 17, C.MUTED, 500, 220)
-		D.text(line, 700, 24, G.club_name(clubs[0]), 21, C.IVORY, 700, 400, HORIZONTAL_ALIGNMENT_RIGHT)
-		_crest(line, clubs[0], Rect2(716, 4, 26, 26))
-		D.text(line, 800, 24, _score(result), 22, C.IVORY, 800, 120, HORIZONTAL_ALIGNMENT_CENTER)
-		_crest(line, clubs[1], Rect2(868, 4, 26, 26))
-		D.text(line, 904, 24, G.club_name(clubs[1]), 21, C.IVORY, 700, 420)
-		_entity_area(line, Rect2(300, 0, 440, 34), {"kind":"club", "id":str(clubs[0].get("id", ""))}, "RecentHome_%d" % i, "Ouvrir le club · " + G.club_name(clubs[0]))
-		_entity_area(line, Rect2(864, 0, 460, 34), {"kind":"club", "id":str(clubs[1].get("id", ""))}, "RecentAway_%d" % i, "Ouvrir le club · " + G.club_name(clubs[1]))
+		D.place(line, Rect2(8, top, LEFT - 16, 32))
+		D.text(line, 16, 23, _phase(result), 17, C.MUTED, 500, 220)
+		D.text(line, 700, 23, G.club_name(clubs[0]), 21, C.IVORY, 700, 400, HORIZONTAL_ALIGNMENT_RIGHT)
+		_crest(line, clubs[0], Rect2(716, 3, 26, 26))
+		D.text(line, 800, 23, _score(result), 22, C.IVORY, 800, 120, HORIZONTAL_ALIGNMENT_CENTER)
+		_crest(line, clubs[1], Rect2(868, 3, 26, 26))
+		D.text(line, 904, 23, G.club_name(clubs[1]), 21, C.IVORY, 700, 420)
+		_entity_area(line, Rect2(300, 0, 440, 32), {"kind":"club", "id":str(clubs[0].get("id", ""))}, "RecentHome_%d" % i, "Ouvrir le club · " + G.club_name(clubs[0]))
+		_entity_area(line, Rect2(864, 0, 460, 32), {"kind":"club", "id":str(clubs[1].get("id", ""))}, "RecentAway_%d" % i, "Ouvrir le club · " + G.club_name(clubs[1]))
 	if results.is_empty(): D.text(recent, 24, 100, "Aucun résultat enregistré pour cette division.", 22, C.MUTED, 500, LEFT - 48)
 	y += height + GAP
 	var half := (LEFT - GAP) / 2.0
-	_leader(Rect2(0, y, half, 190), "MEILLEURE ATTAQUE", "pf", "Points marqués", true)
-	_leader(Rect2(half + GAP, y, half, 190), "MEILLEURE DÉFENSE", "pa", "Points encaissés", false)
-	left_bottom = y + 190
+	_leader(Rect2(0, y, half, 130), "MEILLEURE ATTAQUE", "pf", "Points marqués", true)
+	_leader(Rect2(half + GAP, y, half, 130), "MEILLEURE DÉFENSE", "pa", "Points encaissés", false)
+	left_bottom = y + 130
 
 ## Avant la première journée : le coup d’envoi et le format de la saison remplacent les classements vides.
 func _opening_strip(y: float) -> void:
@@ -1157,13 +1158,13 @@ func _leader(area: Rect2, title: String, metric: String, caption: String, high: 
 			tied = 1
 		elif club[metric] == best[metric]:
 			tied += 1
-	if not best.is_empty(): _crest(panel, best, Rect2(24, 70, 92, 92))
-	var club_name := D.text(panel, 134, 96, "Donnée à venir" if best.is_empty() else G.club_name(best), 28, C.IVORY, 700, area.size.x - 330)
-	D.text(panel, 134, 152, caption + (" · %d ex æquo" % tied if tied > 1 else ""), 19, C.MUTED, 500, area.size.x - 330)
-	var value := D.text(panel, area.size.x - 24, 150, S.count_text(best.get(metric)), 66, C.IVORY, 800, 180, HORIZONTAL_ALIGNMENT_RIGHT)
+	if not best.is_empty(): _crest(panel, best, Rect2(24, 56, 64, 64))
+	var club_name := D.text(panel, 106, 82, "Donnée à venir" if best.is_empty() else G.club_name(best), 26, C.IVORY, 700, area.size.x - 330)
+	D.text(panel, 106, 110, caption + (" · %d ex æquo" % tied if tied > 1 else ""), 18, C.MUTED, 500, area.size.x - 330)
+	var value := D.text(panel, area.size.x - 24, 108, S.count_text(best.get(metric)), 56, C.IVORY, 800, 180, HORIZONTAL_ALIGNMENT_RIGHT)
 	value.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	if not best.is_empty():
-		var link := _entity_area(panel, Rect2(16, 64, area.size.x - 220, 108), {"kind":"club", "id":str(best.id)}, "CompetitionLeaderLink_" + metric, "Ouvrir le club · " + G.club_name(best))
+		var link := _entity_area(panel, Rect2(16, 50, area.size.x - 220, 76), {"kind":"club", "id":str(best.id)}, "CompetitionLeaderLink_" + metric, "Ouvrir le club · " + G.club_name(best))
 		if link != null: club_name.tooltip_text = G.club_name(best)
 
 func _filtre(parent: Node, area: Rect2, caption: String, selected: bool, callback: Callable, id: String) -> Button:
@@ -1221,7 +1222,7 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	var opponent := away if is_home else home
 	var played: bool = fixture.get("played", false)
 	var current := _is_next(fixture)
-	var line_height := 36 if compact else 48
+	var line_height := 34 if compact else 48
 	var date := _date(fixture)
 	var venue := _venue_name(fixture)
 	var competition := _competition_name(fixture)
@@ -1267,9 +1268,9 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	var fid := str(fixture.get("id", y)).validate_node_name()
 	if compact:
 		D.text(row, 12, middle, _round_code(fixture), 19, C.MUTED, 700, 66)
-		D.text(row, 86, middle, _short_date(fixture) if not _short_date(fixture).is_empty() else _fixture_label(fixture), 19, C.IVORY, 600, 130)
-		_crest(row, opponent, Rect2(226, (line_height - 26) / 2.0, 26, 26))
-		D.text(row, 260, middle, G.club_name(opponent), 20, C.IVORY, 700, 178)
+		D.text(row, 72, middle, _short_date(fixture) if not _short_date(fixture).is_empty() else _fixture_label(fixture), 19, C.IVORY, 600, 92)
+		_crest(row, opponent, Rect2(170, (line_height - 26) / 2.0, 26, 26))
+		D.text(row, 204, middle, G.club_name(opponent), 20, C.IVORY, 700, 236)
 		D.text(row, 444, middle, _location(fixture, true), 19, C.MUTED, 500, 96)
 		var theirs := 0
 		for club: Dictionary in _own_league_rows():
@@ -1281,9 +1282,9 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 		else:
 			var tag := D.text(row, width - 16, middle, "À jouer →" if current else "—", 19, C.IVORY if current else C.MUTED, 700, 110, HORIZONTAL_ALIGNMENT_RIGHT)
 			tag.name = "CalendarToPlay_" + fid
-		_entity_area(row, Rect2(222, 0, 224, line_height), {"kind":"club", "id":str(opponent.get("id", ""))}, "CalendarOpponent_" + fid, "Ouvrir le club · " + G.club_name(opponent))
+		_entity_area(row, Rect2(166, 0, 278, line_height), {"kind":"club", "id":str(opponent.get("id", ""))}, "CalendarOpponent_" + fid, "Ouvrir le club · " + G.club_name(opponent))
 		if not date.is_empty():
-			_entity_area(row, Rect2(8, 0, 210, line_height), {"kind":"date", "id":str(fixture.get("date", ""))}, "CalendarDate_" + fid, "Voir la date dans le calendrier · " + date)
+			_entity_area(row, Rect2(8, 0, 156, line_height), {"kind":"date", "id":str(fixture.get("date", ""))}, "CalendarDate_" + fid, "Voir la date dans le calendrier · " + date)
 		return
 	if date.is_empty():
 		D.text(row, 16, middle, period, 23, C.IVORY, 500, 232)

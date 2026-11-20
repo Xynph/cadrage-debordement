@@ -135,13 +135,14 @@ func run() -> void:
 	var source_scroll: int=scroll.scroll_vertical
 	await capture("analyse-rencontre-reelle-2560")
 	await activate(score)
-	var detail:=found("CompetitionFixtureDetails") as Window
-	check(detail!=null and detail.visible and str(detail.get_meta("entity_id",""))==str(target.id),"Score ouvre la fiche de sa vraie rencontre")
+	var detail:=found("CompetitionFixtureDetails") as Control
+	check(detail!=null and not detail is Window and str(detail.get_meta("entity_id",""))==str(target.id),"Score ouvre la page de sa vraie rencontre")
 	await capture("fiche-rencontre-reelle-2560")
 	await key(KEY_LEFT,true)
-	check(not is_instance_valid(detail) or not detail.visible,"Back rencontre masque ou libère la fenêtre de lecture")
 	check(not nav._blocked(),"Back rencontre rend la navigation disponible")
-	check(is_instance_valid(score) and score.is_visible_in_tree() and score.has_focus() and scroll.scroll_vertical==source_scroll,"Retour exact au score source : même instance, focus et défilement")
+	score=found("PerformanceMatchScore_"+str(target.id).validate_node_name()) as Button
+	scroll=found("ClubMemoryScroll") as ScrollContainer
+	check(score!=null and score.is_visible_in_tree() and scroll!=null and scroll.scroll_vertical==source_scroll,"Retour exact au score source : même défilement")
 	var opponent:=found("PerformanceOpponent_"+str(target.id).validate_node_name()) as Button
 	var opponent_name:=str(opponent.name)
 	await activate(opponent,true)

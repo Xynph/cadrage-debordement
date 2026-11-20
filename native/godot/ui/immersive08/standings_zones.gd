@@ -3,11 +3,12 @@ extends RefCounted
 ## Classements (competition_canvas.gd) et le classement court du Bureau (office_canvas.gd, office.gd) :
 ## liseré, forme dessinée et mot, jamais la couleur seule.
 const C = preload("res://ui/immersive08/components.gd")
+const Charte = preload("res://ui/charte.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
-const WIN := Color("54de81")
-const WARM := Color("efc665")
-const LOSS := Color("ef8477")
+const WIN := Charte.V
+const WARM := Charte.N
+const LOSS := Charte.D
 const TINTS := {"bye": WIN, "playoff": WIN, "promotion-playoff": WARM, "relegation-playoff": WARM, "repechage": WARM, "relegation": LOSS}
 
 ## Zone d'une ligne du classement, seulement une fois le classement ouvert ({} sinon).

@@ -110,41 +110,22 @@ func run() -> void:
 	# Fast real-client regression: no new career or simulated week is required.
 	app._navigate("Bureau")
 	await settle()
-	var origin_page: Control = app.root_content
-	var origin_focus := app.find_child("NavigationBack", true, false) as Button
-	check(origin_focus != null and not origin_focus.disabled, "Contrôle réel d’origine disponible sur la page")
-	if origin_focus != null: origin_focus.grab_focus()
+	# Le club ouvre son écran (fiche club ; le club du manager, l'écran « Club ») : plus de lecteur en fenêtre, retour par l'historique.
+	check(nav.open_entity({"kind":"club", "id":str(app.model.club.id)}), "Page vers l'écran du club")
 	await settle()
-	check(nav.open_entity({"kind":"club", "id":str(app.model.club.id)}), "Page vers lecteur club réel")
-	await settle()
-	var root_reader := app.get_node_or_null("CompetitionClubDetails") as Window
-	check(root_reader != null and root_reader.visible and nav._blocked(), "Le lecteur est réellement visible et modal avant retour")
+	check(app.route == "Club" and not nav._blocked(), "Le club s'ouvre comme un écran, sans fenêtre modale")
 	await back_shortcut()
-	check(not is_instance_valid(root_reader) or not root_reader.visible, "Alt gauche ferme réellement le lecteur ouvert depuis la page")
-	check(not nav._blocked() and app.root_content == origin_page and origin_focus != null and origin_focus.has_focus(), "La page retrouve son instance et son focus, sans modal bloquante")
-	check(nav._page_readers.is_empty(), "Registre de lecteur racine libéré après retour")
-	check(nav.open_entity({"kind":"club", "id":str(app.model.club.id)}), "Deuxième lecteur racine pour le retour après fiche joueur")
+	check(app.route == "Bureau" and not nav._blocked(), "Alt gauche revient à la page d'origine")
+	check(nav._page_readers.is_empty(), "Aucun registre de lecteur racine : le club n'est plus une fenêtre")
+	check(nav.open_entity({"kind":"club", "id":str(app.model.club.id)}), "Deuxième ouverture du club pour le retour après fiche joueur")
 	await settle()
-	root_reader = app.get_node_or_null("CompetitionClubDetails") as Window
-	var root_instance: int = root_reader.get_instance_id() if root_reader != null else 0
-	check(root_reader != null and nav.open_entity({"kind":"player", "id":player_id}, root_reader), "Page → club → fiche joueur par identifiants projetés")
+	check(nav.open_entity({"kind":"player", "id":player_id}), "Page → club → fiche joueur par identifiants projetés")
 	await settle()
-	check(app.route == "Effectif" and is_instance_valid(root_reader) and not root_reader.visible, "Club racine suspendu pendant la lecture du joueur")
+	check(app.route == "Effectif", "La fiche joueur s'ouvre depuis le club")
 	await back_shortcut()
-	check(is_instance_valid(root_reader) and root_reader.visible and root_reader.get_instance_id() == root_instance and app.route == "Bureau", "Retour joueur restitue la même fenêtre de club sur sa page")
-	var confirmation := ConfirmationDialog.new()
-	confirmation.name = "EntityRootReaderBusinessConfirmation"
-	if is_instance_valid(root_reader): root_reader.add_child(confirmation)
-	confirmation.popup_centered(Vector2i(350, 200))
-	await settle()
+	check(app.route == "Club", "Retour joueur restitue l'écran du club")
 	await back_shortcut()
-	check(confirmation.visible and is_instance_valid(root_reader) and root_reader.visible, "Une confirmation enfant bloque le retour du lecteur parent")
-	confirmation.hide(); confirmation.queue_free()
-	await settle()
-	await back_shortcut()
-	check((not is_instance_valid(root_reader) or not root_reader.visible) and not nav._blocked(), "Deuxième retour ferme le club après disparition de la confirmation")
-	var returned_focus := app.find_child("NavigationBack", true, false) as Button
-	check(returned_focus != null and returned_focus.has_focus() and nav._page_readers.is_empty(), "Page reconstruite : focus d’origine retrouvé par sa même entrée de lecture")
+	check(app.route == "Bureau" and not nav._blocked(), "Deuxième retour revient à la page d'origine")
 	var link := Link.button(app, "Nom connu", {"kind":"player", "id":player_id}, "EntityNavigationLink")
 	app.root_content.add_child(link)
 	check(link.focus_mode == Control.FOCUS_ALL and link.accessibility_name.contains("Nom connu") and link.get_meta("entity_id") == player_id, "Lien clavier et libellé accessible partagent le même ID")
