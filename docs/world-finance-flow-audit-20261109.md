@@ -36,6 +36,37 @@ node tests/world-finance-flow-audit.cjs
 node ci/world-finance-flow-audit.cjs --weeks 14 --out /tmp/world-finance-flow-report.json
 ```
 
+### Intersaison (20 novembre 2026, suite)
+
+`tests/world-finance-flow-audit-intersaison.cjs` joue toute la saison 1, la commande « Saison suivante » puis
+3 semaines de la saison 2, toutes auditées. Pendant la bascule, la dette des clubs (`clubInfo.debt`) est tracée
+comme la caisse, la clôture des comptes (`club-budget.cloture`) et les événements d'effectif (`aiRosterEvent`,
+avec la fonction qui les déclare) sont copiés. Chaque fonction qui écrit la caisse ou la dette d'un club géré
+est rapprochée de son propre enregistrement (`reconcileInterseason`) :
+
+| Fonction du moteur | Rapprochée de |
+|---|---|
+| `budgetCloturer` | clôture rejouée hors du moteur (prime de classement, amende, apport du propriétaire), identique au résultat du moteur |
+| `pretAccorder` (dette) | prêt accordé par un propriétaire prêteur (`club-owner.preteur`, `accorder` rejoué sur le prêt en cours) ; encours enregistré identique |
+| `worldPrepareRenewalLiquidity`, `worldNewSeason` | caisse négative passée en dette et remboursements (caisse et dette bougent d'autant) ; installations : coût des niveaux de `worldManagement.upgrades` |
+| `budgetOuvrir` | dividende du budget de la nouvelle saison |
+| `aiRosterContracts`, `aiRosterRecruitmentWeek` | indemnités des renouvellements et recrutements déclarés par la même fonction |
+| `calIANouvelAccord` | accords conclus (`accordsIA`) |
+| `settle` | indemnités de formation (`formationFees.payments`) |
+| `closeSeason` | fonds JIFF et amendes EQP de la saison close (`jiff.results`) |
+
+Toute autre écriture, une dette qui bouge autrement (intérêts d'une dette de crise, non rencontrés ici) ou
+un résidu laisse le club **unknown**. Saison 2 : les investissements des excédents sont découpés par chantier
+(`club-investments.cjs`, même total) ; le rejeu de la facturation applique ce découpage avec la répartition du
+club. Mesure (graine 4242, club 102) : 115 clubs gérés sur 115 rapprochés à la bascule (98,1 M€ de clôture,
+26,7 M€ de dividendes, 18,75 M€ d'installations, 0,92 M€ de prêts d'actionnaire, 9 indemnités de formation,
+40 résultats JIFF) et chacune des 49 semaines auditées.
+
+```bash
+node tests/world-finance-flow-audit-intersaison.cjs
+node ci/world-finance-flow-audit.cjs --intersaison 1 --weeks 3 --out /tmp/world-finance-flow-report.json
+```
+
 Le texte qui suit décrit l'audit historique du 9 novembre (Monde v1, ancienne économie).
 
 Audit manuel du 9 novembre 2026 sur le moteur `c07ce6a68adfa4f6aee72caab4523c77508bf8e3`, Node 22.23.4, graine `827381`, horloge déterministe `1794178800000`, club humain 0, Monde v1. Montants fictifs du jeu. Aucun coefficient, règle de recrutement, contrat, profil utilisateur ou fichier de production existant modifié.
