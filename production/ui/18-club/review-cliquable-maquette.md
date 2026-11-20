@@ -43,5 +43,38 @@ AVIS (écarts restants, non bloquants) :
 - Début de saison : le tableau des bilans est vide (« Aucun bilan du conseil pour l'instant ») et la colonne gauche du conseil garde un vide ; la maquette montre J1-J8. Données réelles seulement, rien d'inventé.
 - Sous-titre : « fondé en » et « conseil présidé par » n'apparaissent que si les données du club les publient (absents dans la carrière de test).
 - Barre de confiance ordonnée de 0 à 100 (Menacé, Fragile, Solide) au lieu de Solide en premier dans la maquette : lecture d'échelle conservée.
-- L'onglet Staff garde l'ancienne mise en page (cadres, numéros « 09 », « 10 », boutons en capitales) : hors maquette 18-1, à reprendre dans un chantier Staff.
+- ~~L'onglet Staff garde l'ancienne mise en page~~ : repris le 20/11/2026 (section ci-dessous).
 - À 1280, quelques textes secondaires finissent en « … » (rôle du leader, bilan vide) avec infobulle ou texte complet ailleurs.
+
+## Onglet Staff — auto-relecture (20/11/2026, après-midi)
+
+Sources : `staff_view.gd`, `staff_career_view.gd`, `club_canvas.gd` (`_staff_detail`) ; captures `staff-1920.png`, `staff-1280.png`
+(tour filmé) et `club-staff-*.png` (suite `godot-club-da`, bureau séparé). Maquette : variante 3 « Onglet Staff en tableau ».
+
+### A. Cliquabilité (Staff)
+
+| Élément | Effet du clic | Verdict |
+|---|---|---|
+| Nom d'un membre (tableau), ligne du tableau | fiche du membre dans l'onglet (Précédent / Suivant) | OK |
+| Visage et nom des 4 responsables (gauche) | fiche du membre | OK |
+| Lignes du diagnostic, « Travail du club → » | Travail du club | OK |
+| Contrats et engagements : en poste, fins de contrat / candidats / mentorat / budget | tableau (équipe) / tableau (candidats) / sous-page Mentorat / sous-page Engagements | OK |
+| « Recruter un membre → » (pilule secondaire) | tableau des candidats | OK |
+| « Prolonger → », « Recruter → » | sous-page « Contrat du staff » | OK |
+| « ✕ Libérer », « ✕ Retraite », « Rémunérer → », « Activer les contrats rémunérés → » | confirmation EN PLACE (coût écrit), Annuler n'envoie rien | OK |
+| « Mentorat des jeunes · … → », « Budget du staff · … → » | sous-pages Mentorat / Engagements | OK |
+| Cases des délégations, « Demander une sélection → », « Recrutement → » | réglage / commande / écran Recrutement | OK |
+| Fiche : « Prolonger <nom> » (pilule vert franc), « ✕ Libérer <nom> » (doré), « ← Retour à l'annuaire » | sous-page contrat / confirmation en place / tableau | OK |
+| En-têtes de colonnes, compteur, note de bas de tableau | texte gris en petites capitales, sans flèche | non cliquables, n'en ont pas l'air |
+
+### B. Petites fenêtres (Staff)
+
+Aucune ouverte par un clic. Restent les menus déroulants (club, équipe/candidats/archives) — exception « menus déroulants ».
+
+### C. Fidélité (Staff)
+
+BLOQUANT : aucun.
+À CORRIGER (corrigé dans ce tour) : titres de la colonne gauche coupés (« Diagnostic de la sem… ») ; colonne Contrat et lignes des responsables tronquées ou serrées à 1280 ; texte du diagnostic qui chevauchait « Travail du club → » à 1280 ; placeholder de recherche coupé.
+AVIS : pas de « poste vacant » (le moteur ne le publie pas) ; pas de note /20 ni « effet mesuré » de la maquette 3 (données absentes : le niveau du moteur est affiché) ; la phrase d'information des carrières du staff finit en « … » à 1280 ; tri par colonne non repris (la maquette l'esquisse, le tableau suit l'ordre du moteur).
+
+Charte finale (reprise du 20/11/2026, soir) : ardoise, panneaux 18 sans bordure, pilules, lignes 26 px sans bandes, liens gris-vert, aucun aplat doré dans l'onglet ; captures `club-staff-1920x1080.png`, `club-staff-1280x720.png`, `club-staff-fiche-1920x1080.png`. Écart hors Staff : les onglets du haut et les liens crème de la colonne gauche (« Travail du club → ») suivent encore l'habillage commun du Club, pas encore repris.
