@@ -498,7 +498,7 @@ static func _carte_marge(app: Control, canvas: Control, rectangle: Rect2, financ
 	_titre(carte, 20, 92 + decalage, texte + (" / sem." if marge != null else ""), 52, Charte.D if marge != null and float(marge) < 0.0 else Charte.IVOIRE, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var recettes: Variant = finance.get("weeklyIncome")
 	var charges: Variant = finance.get("weeklyCosts")
-	_texte(carte, 20, 124 + decalage, "recettes %s · charges %s par semaine" % [U.amount(recettes), U.amount(charges)], 17, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_texte(carte, 20, 124 + decalage, "recettes %s · charges %s" % [U.amount(recettes), U.amount(charges)], 17, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 # ---- Synthèse -----------------------------------------------------------------------------------------------
 
@@ -546,12 +546,12 @@ static func _chart(app: Control, card: Panel, ledger: Array, largeur: float) -> 
 	# Légende : forme et mot (série « nous » en trait du club, entrées pleines, sorties hachurées).
 	var trait_legende := _bloc(card, Rect2(480, 28, 30, 5), Charte.club_trait(app.accent))
 	trait_legende.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_texte(card, 520, 38, "Solde cumulé de ces mouvements", 16, Charte.IVOIRE, 300)
-	_hachure_legende(card, 850, 24, true)
-	_texte(card, 878, 38, "Entrées", 16, Charte.IVOIRE, 100)
-	_hachure_legende(card, 990, 24, false)
-	_texte(card, 1018, 38, "Sorties (hachurées)", 16, Charte.IVOIRE, 200)
-	if largeur > 2000: _texte(card, largeur - 20, 38, "du plus ancien au plus récent · clic : le mouvement dans la trésorerie", 15, Charte.IVOIRE_2, 700, HORIZONTAL_ALIGNMENT_RIGHT)
+	_texte(card, 520, 38, "Solde cumulé de ces mouvements", 16, Charte.IVOIRE, 360)
+	_hachure_legende(card, 900, 24, true)
+	_texte(card, 928, 38, "Entrées", 16, Charte.IVOIRE, 120)
+	_hachure_legende(card, 1060, 24, false)
+	_texte(card, 1088, 38, "Sorties (hachurées)", 16, Charte.IVOIRE, 260)
+	if largeur > 2000: _texte(card, largeur - 20, 38, "plus ancien → plus récent · clic : le mouvement", 15, Charte.IVOIRE_2, 700, HORIZONTAL_ALIGNMENT_RIGHT)
 	if recent.is_empty():
 		_titre(card, largeur * .5, 190, "Le premier mouvement reste à venir", 36, Charte.IVOIRE, 900, HORIZONTAL_ALIGNMENT_CENTER)
 		_texte(card, largeur * .5, 226, "La courbe se remplit après une journée jouée ou une décision financière.", 19, Charte.IVOIRE_2, 1000, HORIZONTAL_ALIGNMENT_CENTER)
@@ -714,9 +714,9 @@ static func _watch(card: Panel, app: Control, finance: Dictionary, largeur: floa
 		var zone := _zone(card, Rect2(10, y, largeur - 20, 70), ligne.action, str(ligne.id), "%s · %s" % [ligne.titre, ligne.detail])
 		zone.accessibility_name = "%s · %s" % [ligne.titre, ligne.detail]
 		_symbole(card, Rect2(20, y + 20, 28, 28), "exclam", Charte.IVOIRE)
-		_texte(card, 62, y + 28, str(ligne.titre), 19, Charte.IVOIRE, largeur - 250).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_texte(card, 62, y + 54, str(ligne.detail), 16, Charte.IVOIRE_2, largeur - 250).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_texte(card, largeur - 24, y + 40, str(ligne.lien) + " →", 17, Charte.IVOIRE, 170, HORIZONTAL_ALIGNMENT_RIGHT).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_texte(card, 62, y + 28, str(ligne.titre), 19, Charte.IVOIRE, largeur - 290).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_texte(card, 62, y + 54, str(ligne.detail), 16, Charte.IVOIRE_2, largeur - 290).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_texte(card, largeur - 24, y + 40, str(ligne.lien) + " →", 17, Charte.IVOIRE, 220, HORIZONTAL_ALIGNMENT_RIGHT).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if i < lignes.size() - 1: D.line(card, Vector2(20, y + 73), Vector2(largeur - 20, y + 73), Color(Charte.FILET,.7))
 
 static func _due(card: Panel, app: Control, finance: Dictionary, largeur: float) -> void:
@@ -742,16 +742,16 @@ static func _due(card: Panel, app: Control, finance: Dictionary, largeur: float)
 		var amount: Variant = item[1]
 		var prefix := "−" if i < 2 else "+"
 		_texte(card, largeur - 22, y + 31, prefix + G.euros(absf(float(amount))) if amount != null and float(amount) != 0.0 else G.euros(amount) if amount != null else "—", 19, Charte.IVOIRE, 190, HORIZONTAL_ALIGNMENT_RIGHT).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_texte(card, 22, 276, "Chaque ligne se répète chaque semaine jusqu'à la fin de la saison (%d semaine(s))." % remaining, 16, Charte.IVOIRE_2, largeur - 44)
+	_texte(card, 22, 276, "Chaque ligne se répète jusqu'à la fin de la saison · %d sem." % remaining, 16, Charte.IVOIRE_2, largeur - 44)
 
 # ---- Colonne de verdict fixe (onglets autres que la Synthèse) -------------------------------------------------------
 
 static func _colonne(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary, ledger: Array, v: Dictionary, tab: String) -> void:
-	_verdict_panneau(app, canvas, Rect2(0, HAUT, COLONNE_W, 360), v, true, tab)
-	_carte_tresorerie(app, canvas, Rect2(0, 526, COLONNE_W, 116), accounts, finance, v)
-	_carte_budget(app, canvas, Rect2(0, 654, COLONNE_W, 176), accounts, ledger)
-	_carte_marge(app, canvas, Rect2(0, 842, COLONNE_W, 116), finance, v)
-	_watch(_panneau(canvas, Rect2(0, 970, COLONNE_W, 260), "Vigilances", "FinanceWatch"), app, finance, COLONNE_W)
+	_verdict_panneau(app, canvas, Rect2(0, HAUT, COLONNE_W, 330), v, true, tab)
+	_carte_tresorerie(app, canvas, Rect2(0, 492, COLONNE_W, 130), accounts, finance, v)
+	_carte_budget(app, canvas, Rect2(0, 634, COLONNE_W, 190), accounts, ledger)
+	_carte_marge(app, canvas, Rect2(0, 836, COLONNE_W, 130), finance, v)
+	_watch(_panneau(canvas, Rect2(0, 978, COLONNE_W, 252), "Vigilances", "FinanceWatch"), app, finance, COLONNE_W)
 
 static func _cash(app: Control, canvas: Control, zone: Rect2, ledger: Array) -> void:
 	var x := zone.position.x
@@ -768,8 +768,8 @@ static func _cash(app: Control, canvas: Control, zone: Rect2, ledger: Array) -> 
 	for i in details.size():
 		_etiquette(totals, 20 + i * colonne, 34, details[i][0], colonne - 30)
 		_titre(totals, 20 + i * colonne, 82, details[i][1], 38, Charte.IVOIRE, colonne - 30)
-	_texte(canvas, x + 4, zone.position.y + 470, "%d mouvements conservés · le journal peut inclure des saisons précédentes et ne se confond pas avec la trésorerie du club." % ledger.size(), 16, Charte.IVOIRE_2, zone.size.x - 8)
-	var journal := _panneau(canvas, Rect2(x, zone.position.y + 484, zone.size.x, 100 + LEDGER_PAGE * 33 + 14), "Journal des flux", "FinanceLedger", "clic : l'écran qui l'explique")
+	_texte(canvas, x + 4, zone.position.y + 470, "%d mouvements conservés · clic sur une ligne : l'écran qui l'explique · le journal ne se confond pas avec la trésorerie du club." % ledger.size(), 16, Charte.IVOIRE_2, zone.size.x - 8)
+	var journal := _panneau(canvas, Rect2(x, zone.position.y + 484, zone.size.x, 100 + LEDGER_PAGE * 33 + 14), "Journal des flux", "FinanceLedger")
 	_ledger(journal, app, ledger, LEDGER_PAGE, "cash", zone.size.x)
 
 static func _open_wages(app: Control, due_only: bool) -> void:
@@ -829,7 +829,7 @@ static func _wages(app: Control, canvas: Control, zone: Rect2, finance: Dictiona
 	for item: Array in colonnes:
 		var arrow := (" ▼" if sort_state.descending else " ▲") if sort_state.key == item[2] else " ↕"
 		var tri := _bouton(wages, Rect2(item[1]-4, 63, item[3], 36), str(item[0])+arrow, _wage_sort.bind(app,str(item[2])), "lien", "", "FinanceSort_"+str(item[2]))
-		tri.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		tri.alignment = HORIZONTAL_ALIGNMENT_RIGHT if item[2] == "salary" else HORIZONTAL_ALIGNMENT_LEFT
 	var scroll := ScrollContainer.new()
 	scroll.name = "FinanceWageScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
