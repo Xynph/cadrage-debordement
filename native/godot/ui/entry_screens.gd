@@ -754,12 +754,10 @@ static func creation(app: Control) -> Control:
 		row.add_child(photo)
 		var over: VBoxContainer = photo.get_meta("content")
 		over.add_child(G.label("TON FUTUR CLUB", 14, G.WHITE))
-		if is_champ:
-			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2026-2027", 22, G.WHITE, true))
-		if is_nationale:
-			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2026-2027", 22, G.WHITE, true))
+		var start_label := creation_season(app, division)
+		if is_champ or is_nationale or is_srp:
+			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + ("  /  SAISON " + start_label if not start_label.is_empty() else ""), 22, G.WHITE, true))
 		if is_srp:
-			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2027", 22, G.WHITE, true))
 			over.add_child(G.label(_territory(selected).to_upper(), 13, G.WHITE))
 		if is_japan:
 			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper(), 22, G.WHITE, true))
@@ -917,13 +915,9 @@ static func creation(app: Control) -> Control:
 	if not modern and (is_srp or is_japan or is_nationale or is_champ):
 		var facts := G.h(8)
 		list.add_child(facts)
-		var fact_data := [["16", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["FÉV.–JUIN", "SAISON 2027"]]
-		if is_japan:
-			fact_data = [["18", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["DÉC.–JUIN", "SAISON 2026-2027"]] if division == "jlo-d1" else [["14", "MATCHS PAR CLUB"], ["2", "PLACES EN BARRAGES"], ["DÉC.–MAI", "SAISON 2026–27"]]
-		if is_nationale:
-			fact_data = [["26", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["PRO D2", "ACCESSION SPORTIVE"]]
-		if is_champ:
-			fact_data = [["26", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["SEPT.–MAI", "SAISON 2026-2027"]]
+		var start := creation_season(app, division)
+		# Saison de départ lue dans les données ; absente : aucune tuile.
+		var fact_data := [[start, "SAISON DE DÉPART"]] if not start.is_empty() else []
 		for fact in fact_data:
 			var tile := G.panel(facts, 1.0)
 			tile.add_child(G.label(fact[0], 20, G.INK, true))

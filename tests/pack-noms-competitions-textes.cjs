@@ -35,8 +35,8 @@ try{
  const baseName=m.leagues.find(l=>l.id===leagueId)?.name;assert.ok(baseName,'nom de base de la compétition du club');
  const goalBefore=String(m.club.goal||m.calendar.find(x=>x.home?.id===m.club.id)?.home?.goal||'');
  const before=JSON.stringify(m);
- const packName='Ligue des Collines Test';
- const manifest={schema:'cd-identity-pack-v4',id:'competitions-test',name:'Compétitions de test',version:'1',databaseId:edition,rightsStatus:'test-local',clubs:[],players:[],staff:[],competitions:[{id:leagueId,name:packName}],assets:[]};
+ const packName='Ligue des Collines Test',rival=m.leagues.find(l=>l.id===leagueId).rows.find(r=>r.id!==m.club.id).id,rivalName='Club des Brumes Test';
+ const manifest={schema:'cd-identity-pack-v4',id:'competitions-test',name:'Compétitions de test',version:'1',databaseId:edition,rightsStatus:'test-local',clubs:[{id:rival,name:rivalName}],players:[],staff:[],competitions:[{id:leagueId,name:packName}],assets:[]};
  const zip=archive(manifest),mode='world-champ';
  const preview=jeu.call('pack_inspect',{path:zip,mode}).packs.preview;
  jeu.call('pack_install',{path:zip,digest:preview.digest,mode});
@@ -50,6 +50,10 @@ try{
  assert.ok(goalBefore&&goalBefore!==goalAfter&&goalAfter.includes(packName),'objectif du conseil avec le nom du pack : '+goalAfter);
  const quoting=(m.messages||[]).map(x=>typeof x==='string'?x:JSON.stringify(x)).filter(t=>String(t).includes(packName));
  assert.ok(quoting.length>0,'au moins un texte du courrier cite la compétition du pack');
+ // Fiche d'un autre club (lue à part) : même présentation que le reste du jeu.
+ const sheet=jeu.call('club_sheet',{club:rival}).clubSheet;
+ assert.equal(sheet.name,rivalName,'fiche club : nom du pack');
+ assert.ok(!JSON.stringify(sheet).includes(baseName),'fiche club : compétition du pack, jamais le nom de base');
  // La sauvegarde garde le texte de base : le pack ne s'écrit jamais dedans.
  assert.ok(!jeu.call('export').meta.exportText.includes(packName),'sauvegarde sans nom du pack');
  // Retour au jeu de base : les textes reprennent le nom de base.

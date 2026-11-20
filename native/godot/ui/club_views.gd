@@ -175,7 +175,7 @@ static func _territory(app: Control) -> Control:
 			credit.tooltip_text = "Source : %s\nLicence : %s" % [photo.get("source", ""), photo.get("license", "")]
 			content.add_child(credit)
 		else:
-			content.add_child(G.wrap("Photo d’archive · crédits accessibles" if source == "archive" else "Vue du club", 12, G.WHITE))
+			content.add_child(G.wrap("Crédit photo" if source == "archive" else "Vue du club", 12, G.WHITE))
 		if kind == "stadium":
 			content.move_child(spacer, content.get_child_count() - 1)
 	var dossier := G.panel(page)

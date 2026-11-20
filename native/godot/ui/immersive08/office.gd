@@ -264,7 +264,7 @@ static func territory_art(club: Dictionary, horizontal: bool = false) -> BoxCont
 		var title := C.label(info[1] + " · " + (place if not place.is_empty() else "—"), 20, C.IVORY, true, 700)
 		title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		content.add_child(title)
-		var caption := str({"pack":photo.get("credit", ""), "archive":"Photo d’archive"}.get(picture.get_meta("photo_kind"), "Vue du club"))
+		var caption := str({"pack":photo.get("credit", ""), "archive":"Crédit photo"}.get(picture.get_meta("photo_kind"), "Vue du club"))
 		var credit := C.label(caption, 17, C.MUTED)
 		credit.name = "OfficePhotoCredit"
 		credit.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
