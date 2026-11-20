@@ -2,6 +2,22 @@
 
 Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (jamais sous 11 px à 1080p ; échelle d'interface 90/100/115/130 %).
 
+## Direction artistique (choix de Léo, 20/11/2026 : « les deux, selon la durée »)
+
+Trois présentations, choisies par la durée et le type d'attente (maquettes `apercus/03-chargement-1/2/3.png`). Plancher 12 px réels (conseil 13), couleurs et polices de `ui/charte.gd`, mouvements réduits = image fixe, jamais de petite fenêtre. Les noms de club, de stade et de division sont lus dans le modèle ; donnée absente = ligne omise.
+
+| Présentation | Quand | Contenu | Or |
+|---|---|---|---|
+| **1 · Panneau sur le bureau** (`command_wait_overlay.gd`) | chargements courts (passage de jour, fin de journée, sauvegarde, avance de préparation) | panneau carré ≈ 40 % de la largeur, rayons 0, sans ombre ni dégradé, filet de tête ; cartes de date jour → lendemain ; titre ; barre indéterminée ; conseil de Gabi ou fait du club ; après 20 s « Plus long que prévu (N s)… » et « Arrêter → » | non |
+| **2 · L'ovale du ballon** (`continue_progress.gd`) | « Continuer » | écran sombre plein cadre ; anneau ovale + « NN % » ; « JOUR n SUR m » ; titre « Passage au jour suivant… » ; cartes de date ; « Arrêt prévu » (plan du moteur) ; liste des jours ✓ ▸ · tirée des vraies dates ; conseil de Gabi ; « Échap : arrêter » et « Arrêter → » | oui, l'anneau seulement |
+| **3 · Le stade, puis le terrain** (même fichier que 1, `photo`) | longs chargements hors semaine : ouverture du jeu, création, nouvelle saison, import, restauration, coup d'envoi | photo plein cadre (banque d'images), logo, lieu (stade du club), bandeau bas : surtitre, titre en capitales, club · division · saison, barre en segments ivoire, « En coulisses » avec « Anecdote suivante → » | non |
+
+Règles d'honnêteté : barre indéterminée tant que le moteur ne donne aucun pourcentage (aucun n'existe aujourd'hui hors Continuer : jamais inventé, ni étapes) ; l'anneau de Continuer mesure les jours écoulés sur les jours jusqu'à l'arrêt prévu, sans arrêt prévu il n'a ni pourcentage ni liste ; « Arrêter → » n'est actif que si l'arrêt est réel (Continuer) — sur les autres commandes il est grisé avec sa raison écrite (« Arrêt impossible : le jeu termine cette opération… ») dans le panneau, et absent du chargement long (« Ne ferme pas le jeu »).
+
+Cliquable : « Anecdote suivante → » (et Entrée) change la note ; « Arrêter → » (Continuer) arrête au jour en cours (Échap aussi) ; « Fermer → » ferme le motif d'arrêt. Rien d'autre n'a l'air cliquable : la liste des jours, les cartes de date et la barre sont du texte et du dessin.
+
+Ce qui change par rapport au §4-§9 ci-dessous : le calendrier qui tourne, le terrain animé, les rebonds du ballon, le « ballon ovale » de la barre et le panneau arrondi à ombre disparaissent ; Continuer n'est plus une carte non bloquante mais un écran plein cadre (clics retenus, Arrêter et Échap actifs).
+
 > **Statut** : En conception (brouillon autonome, rigueur `minimal`)
 > **Auteur** : ux-designer (CCGS)
 > **Dernière mise à jour** : 19/11/2026
