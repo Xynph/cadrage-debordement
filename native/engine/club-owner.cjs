@@ -118,7 +118,7 @@ function pretCourrier(){
  const j=p.vente?club().players.find(x=>x.id===p.vente.joueur):null;
  const f=pretFenetre();
  const proposition=j?'Si tu préfères solder tout de suite, j’ai un acheteur pour '+j.name+' ('+j.pos+') : '+nativeClubBudget.euros(p.vente.prix)+'. Le prix de la vente irait directement au remboursement, et tu repartirais avec toute ta marge salariale.'
-  +(f?' Nous sommes hors période des mutations : la vente serait conclue tout de suite, mais il ne partirait et le prêt ne serait remboursé que le '+nativeVenteJoueurs.dateFr(f.reouverture)+'.':'')
+  +(f?(f.bascule?' Les transferts prennent effet au changement de saison : la vente serait conclue tout de suite, mais il ne partirait et le prêt ne serait remboursé que le ':' Nous sommes hors période des mutations : la vente serait conclue tout de suite, mais il ne partirait et le prêt ne serait remboursé que le ')+nativeVenteJoueurs.dateFr(f.reouverture)+'.':'')
   :'Je ne vois personne à vendre sans affaiblir le groupe : il faudra rembourser sur la durée.';
  return {montant:nativeClubBudget.euros(p.dernier),encours:nativeClubBudget.euros(p.restant),annuite:nativeClubBudget.euros(p.annuite),saisons:Math.max(1,Math.ceil(p.restant/p.annuite)),proposition,joueur:j?j.name:''};
 }

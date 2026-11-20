@@ -6,6 +6,9 @@ const {createBridge}=require('../native/engine/worker.cjs');
 // Achat immédiat (période des mutations ouverte toute la saison) : l'accord différé hors période est vérifié par
 // tests/calendrier-mutations.cjs.
 require('../native/engine/vente-joueurs.json').fenetres.mode='saison';
+// Réglage « semaines » (ancien comportement, transfert immédiat) : l'arrivée au changement de saison (v2) est vérifiée par
+// tests/calendrier-mutations.cjs et tests/clubs-geres-mutations.cjs.
+require('../native/engine/calendrier-mutations.json').clubsGeres.calendrier='semaines';
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'oval-six-'));let bridge,id=0;
 function request(command,payload={}){return bridge.handle({id:++id,command,payload});}
 function call(command,payload={}){const r=request(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;}

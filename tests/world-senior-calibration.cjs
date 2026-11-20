@@ -49,7 +49,8 @@ test('Le nouveau Monde Champ distingue les dix meilleurs et calibre son ouvreur 
       return { model, created: state(model), preview };
     });
     for (const id of [0, 39, 52, 61, 71]) {
-      const roster = created.clubs[id].players;
+      // Aperçu = effectif reçu en prenant ce club : sans joueurs de complément (club joué sans plancher de 40, 19/11/2026).
+      const roster = created.clubs[id].players.filter(p => !p.id.startsWith('depth-'));
       const expected = Math.round(10 * roster.reduce((sum, player) => sum + player.rating, 0) / roster.length) / 10;
       assert.equal(preview[id].startingRoster.average, expected, 'Effectif de création ' + id);
     }

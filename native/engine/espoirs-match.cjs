@@ -379,6 +379,24 @@ function factory(){
   return picks.map(c=>c.p.id);
  }
  function setOff(on){ownOff=Math.max(0,ownOff+(on?1:-1));}
+ // Alerte d'avant-match (décision de Léo du 19/11/2026, plus de plancher de 40 pour le club joué) : places de la
+ // feuille de 23 (premières lignes comprises) que les seuls professionnels disponibles le jour du prochain match ne
+ // peuvent pas tenir (blessés, suspendus, joueurs retenus en sélection et jeunes déjà appelés exclus). Lecture
+ // seule (copie de l'effectif) : {fixtureId, date, slots:[{slot, number, label}], youth} ou null si la feuille tient.
+ // `youth` : places que le centre de formation peut couvrir (même règle que l'appel d'un espoir).
+ function shortage(s){
+  if(!ownWorld(s)||s.live||s.phase==='ended'||ownRegistered(s))return null;
+  let f=null;try{f=CDWorldCareer.fixtures(s).find(x=>x.homeId===s.club||x.awayId===s.club)||null;}catch(e){f=null;}
+  if(!f)try{const today=CDWorldCareer.calendarToday(s);f=(s.worldMode.fixtures||[]).filter(x=>(x.homeId===s.club||x.awayId===s.club)&&(!today||x.date>=today)).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)[0]||null;}catch(e){f=null;}
+  const own=s.clubs[s.club],date=f?.date||null;
+  const away=p=>{try{return !!date&&CDWorldCareer.clubReleaseOn(s,p.id,date);}catch(e){return false;}};
+  const pros=own.players.filter(p=>!p.espoirLoan&&!(p.suspension>0)&&!away(p)).map(p=>({...p}));
+  const sheet=buildSheet({...own,players:pros});
+  const slots=sheet.lineup.concat(sheet.bench).flatMap((x,i)=>x?[]:[i]);
+  if(!slots.length)return null;
+  const {picks}=propose(s,slots);
+  return {fixtureId:f?.id??null,date,slots:slots.map(slot=>({slot,number:slotNumber(slot),label:slotLabel(slot)})),youth:picks.length};
+ }
  // Fin du match : expérience et moral du jeune appelé, puis une ligne dans le fil d'actualité.
  function rewardOwn(s,l){
   if(!ownWorld(s)||!l||rewarded.has(l)||!l.pair?.includes(s.club)||l.userSide===undefined||l.userSide<0)return;
@@ -392,7 +410,9 @@ function factory(){
    if(!minutes&&!inscrit)continue;
    const part=minutes?0.1:0.033;
    if(typeof growPlayer==='function'&&typeof ageGrowth==='function'){try{growPlayer(p,part*ageGrowth(p),false);}catch(e){/* progression facultative */}}
-   if(p.satisfaction&&typeof p.satisfaction.score==='number')p.satisfaction.score=Math.min(100,p.satisfaction.score+(minutes?4:1));
+   // Moral borné comme partout ailleurs (20 à 95, saves.js le refuse au-delà) : sans plancher de 40, le même espoir
+   // peut être appelé souvent et dépassait 95 (« données de carrière incohérentes » à l'enregistrement).
+   if(p.satisfaction&&typeof p.satisfaction.score==='number')p.satisfaction.score=Math.max(20,Math.min(95,p.satisfaction.score+(minutes?4:1)));
    if(typeof news==='function')news(minutes?`${p.name}, appelé du centre de formation, a disputé ${Math.round(minutes)} minutes avec l’équipe première : de l’expérience et de la confiance.`:`${p.name}, appelé du centre de formation, était sur la feuille sans entrer en jeu : un peu d’expérience au contact de l’équipe première.`);
   }
  }
@@ -485,6 +505,6 @@ function factory(){
   }
   return true;
  }
- return {project,validate,execute,installHooks,withArmed,plan,sheetFor,returnLoans,summary,seasonGoal,ensure,absences,offers,callUp,callUpProposed,returnOwn,setOff,completeOwn,rewardOwn};
+ return {project,validate,execute,installHooks,withArmed,plan,sheetFor,returnLoans,summary,seasonGoal,ensure,absences,offers,callUp,callUpProposed,returnOwn,setOff,completeOwn,rewardOwn,shortage};
 }
 module.exports={files,commands,factory};
