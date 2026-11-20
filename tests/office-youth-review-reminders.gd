@@ -90,6 +90,8 @@ func run() -> void:
 	target.review=person(str(target.id),4).review
 	app.model.clubLife.youthDevelopment.enabled=true
 	app.model.clubLife.youthDevelopment.players=[players[0],target]
+	# Projection en lecture seule : le jeune ciblé est aussi un Espoir du centre (Formation), comme dans une vraie carrière.
+	app.model.decisions.development.academy=[players[0].duplicate(true),target.duplicate(true)]
 	app.management_ui.youth_development={"page":99,"query":"inexistant","stage":2,"review":true}
 	app.model.live=null;app.model.selection.valid=true;app.model.next={}
 	app.model.finance.cash=1
@@ -105,19 +107,14 @@ func run() -> void:
 	var commands: int=app.bridge._next_id
 	if card!=null: card.pressed.emit();await settle()
 	await capture("02-suivi-cible-1280")
-	var view: AcceptDialog=app.find_child("YouthDevelopment",true,false) as AcceptDialog
-	check(view!=null and view.visible,"Le clic ouvre le vrai dialogue de suivi")
-	if view!=null:
-		var rows:=view.find_child("YouthDevelopmentRows",true,false)
-		var visible_ids: Array=[]
-		for child in rows.find_children("*","VBoxContainer",true,false):
-			if child.has_meta("player_id"): visible_ids.append(str(child.get_meta("player_id")))
-		check(visible_ids==[str(target.id)],"Bon identifiant malgré homonyme, page et filtres précédents · attendu %s, reçu %s, cible %s, filtres %s" % [str(target.id),str(visible_ids),str(view.focused_player_id),str(view.state)])
-		var reset: Button=view.find_child("YouthDevelopmentShowAll",true,false) as Button
-		check(reset!=null,"Accès à la liste complète depuis le dossier ciblé")
-		if reset!=null:
-			reset.pressed.emit();await settle()
-			check(view.find_child("YouthDevelopmentCount",true,false).text.begins_with("2 jeunes"),"Retour aux deux joueurs du suivi")
+	# Le rappel ouvre un écran (la fiche de l'Espoir dans Formation), jamais une fenêtre.
+	var fenetres: Array=root.find_children("*","Window",true,false).filter(func(w:Node):return (w as Window).visible)
+	check(fenetres.is_empty(),"Le clic n'ouvre aucune fenêtre")
+	check(app.route=="Formation","Le clic ouvre l'écran Formation · route "+app.route)
+	var fiche:=app.find_child("ImmersivePlayerFull",true,false)
+	var visible_ids: Array=[]
+	if fiche!=null: visible_ids.append(str(fiche.get_meta("player_id","")))
+	check(visible_ids==[str(target.id)],"Bon identifiant malgré homonyme, page et filtres précédents · attendu %s, reçu %s" % [str(target.id),str(visible_ids)])
 	check(app.bridge._next_id==commands,"Consulter le rappel n'envoie aucune commande moteur")
 	check(JSON.stringify(app.model)==model_before,"Consulter ne modifie pas la projection")
 	check(FileAccess.get_sha256(profile)==profile_before,"Consulter ne réécrit pas la sauvegarde")
