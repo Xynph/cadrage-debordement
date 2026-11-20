@@ -545,15 +545,14 @@ static func _archive_club(app:Control,id:Variant) -> String:
 		if club.id==id:return G.club_name(club)
 	return "Club #"+str(id)
 
+## Archives des saisons : une sous-page de l'écran Classements (plus de petite fenêtre), avec retour et historique.
 static func season_archives(app:Control) -> void:
-	app._clear_dialogs()
-	var d:=AcceptDialog.new()
-	d.name="SeasonArchives"
-	app._prepare_dialog(d,820)
-	d.title="Le carnet des saisons"
-	d.get_ok_button().text="FERMER LES ARCHIVES"
+	app.Immersive.Competition.open_archives(app)
+
+## Contenu de la sous-page (competition_canvas.gd) : champions, montées et descentes de chaque saison archivée.
+static func archives_content(app:Control, height:int = 360) -> Control:
 	var content:=G.v(10)
-	d.add_child(content)
+	content.name="SeasonArchives"
 	var japanese: bool = app.model.get("meta",{}).get("edition") == "world-japan"
 	var notice := "Le carnet conserve le rang de phase régulière."
 	if japanese: notice = "Rangs de phase régulière et scores des barrages japonais conservés."
@@ -576,7 +575,7 @@ static func season_archives(app:Control) -> void:
 		navigation.add_child(jump)
 	var list := G.scroll(content)
 	var scroll := list.get_parent() as ScrollContainer
-	scroll.custom_minimum_size.y = 360
+	scroll.custom_minimum_size.y = height
 	var headings: Array[Control] = []
 	var international: bool = app.model.get("meta", {}).get("mode") == "world"
 	var world = load("res://ui/immersive08/world_archive.gd")
@@ -617,10 +616,7 @@ static func season_archives(app:Control) -> void:
 	if jump != null:
 		jump.item_selected.connect(func(index: int):
 			scroll.scroll_vertical = 0 if index == 0 else int(headings[index - 1].position.y))
-	d.confirmed.connect(d.queue_free)
-	d.canceled.connect(d.queue_free)
-	app.add_child(d)
-	d.popup_centered(Vector2i(820,540))
+	return content
 
 static func finance(app: Control) -> Control:
 	var page := G.h(14)

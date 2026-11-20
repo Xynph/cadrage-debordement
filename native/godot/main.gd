@@ -816,6 +816,8 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 		management_ui.erase("fiche_joueur")
 		# Sous-page de la Composition (tireurs, espoir, renforts) : le menu rouvre l'écran lui-même.
 		management_ui.erase("composition_page")
+		# Sous-page de Classements (rencontre, archives) : le menu rouvre l'écran lui-même.
+		management_ui.erase("competition_page")
 		management_ui.erase("charge_joueur")
 		# Sous-page de l'avant-match (délégation, espoir) : refermée dès qu'on change d'écran.
 		management_ui.erase("avant_page")
