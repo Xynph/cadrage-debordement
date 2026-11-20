@@ -8,6 +8,7 @@ const Entry = preload("res://ui/entry_screens.gd")
 const G = preload("res://ui/game_skin.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
+const CreationCanvas = preload("res://ui/immersive08/creation_canvas.gd")
 const GREEN = Color("176e49")
 
 static func _configure(app: Control) -> void:
@@ -23,6 +24,11 @@ static func home(app: Control) -> Control:
 static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	_configure(app)
 	var size := app.get_window().size
+	# Étape « 1 Club » : cadre plein écran propre à l'écran 02 (barre haute, page, pied).
+	if creation and page.has_meta("creation_club_step"):
+		var frame: Control = CreationCanvas.workspace(app, page)
+		_observe_entry_size(app, frame, size, creation)
+		return frame
 	if not creation or app.pack_manager.creation_mode == "auto":
 		return _editorial_workspace(app, page, creation, size)
 	var compact := size.y < 850
@@ -103,10 +109,11 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	inset.add_child(wordmark)
 	Editorial.divider(rail)
 	var nation_creation := creation and page.find_child("CreationNationalDossier", true, false) != null
-	var step_names := ["01  Réalité", "02  Sélection" if nation_creation else "02  Club", "03  Carrière"]
+	# Fil de la création : « 1 Club › 2 Carrière » (la réalité de jeu se choisit dans Identités et packs).
+	var step_names := (["1  Sélection" if nation_creation else "1  Club", "2  Carrière"]) if creation else ["01  Réalité", "02  Club", "03  Carrière"]
 	var options_step := creation and page.find_child("CreationCareerOptions", true, false) != null
 	for index in step_names.size():
-		var active := index == ((2 if options_step else 1) if creation else 0)
+		var active := index == ((1 if options_step else 0) if creation else 0)
 		var step := C.v(5)
 		step.alignment = BoxContainer.ALIGNMENT_CENTER
 		rail.add_child(step)
