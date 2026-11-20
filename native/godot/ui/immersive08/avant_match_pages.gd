@@ -62,7 +62,8 @@ static func _actions(ecran, corps: VBoxContainer, libelle: String, nom_confirmer
 	ok.name = nom_confirmer
 	ok.text = libelle
 	ok.set_meta("immersive_style_applied", true)
-	C.style_bouton_ivoire_plein(ok, roundi(20 / .75))
+	# Bouton secondaire (contour) : le Coup d'envoi du bandeau reste le seul aplat doré de l'écran (charte finale).
+	C.style_bouton_contour(ok, roundi(20 / .75))
 	ok.pressed.connect(confirmer)
 	ligne.add_child(ok)
 	var annuler := Button.new()

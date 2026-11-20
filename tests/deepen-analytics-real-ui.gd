@@ -52,10 +52,12 @@ func history() -> void:
 		if tabs != null: tabs.current_tab=1
 		await settle()
 	check(app.body.find_child("PerformanceAnalysis",true,false)!=null,"Analyses accessibles depuis Club / Histoire")
-func confirmation() -> ConfirmationDialog:
-	for child in app.get_children():
-		if child is ConfirmationDialog and child.visible: return child
-	return null
+## Confirmation visible : bloc EN PLACE « ClubConfirmation » sur l'écran Club (décision de Léo du 19/11/2026, plus de fenêtre).
+func confirmation() -> Control:
+	var blocs := app.find_children("ClubConfirmation","PanelContainer",true,false).filter(func(b):return b.is_visible_in_tree())
+	return blocs[0] if blocs.size()==1 else null
+func confirmation_bouton(dialog: Control, suffixe: String) -> Button:
+	return dialog.find_child("ClubConfirmation"+suffixe,true,false) as Button if dialog!=null else null
 func run() -> void:
 	root.size=Vector2i(1280,720)
 	app=load("res://main.tscn").instantiate()
@@ -78,13 +80,15 @@ func run() -> void:
 	var dialog := confirmation()
 	check(dialog!=null,"Vraie confirmation affichée")
 	if dialog==null: finish();return
-	await key(dialog.get_cancel_button())
+	await key(confirmation_bouton(dialog,"Annuler"))
 	check(not app.model.clubLife.playerMatchHistory.enabled,"Annulation sans activation")
 	check(FileAccess.get_file_as_bytes(disk)==bytes,"Annulation sans écriture de profil")
 	enable=app.body.find_child("PlayerMatchHistoryEnable",true,false)
 	await key(enable)
 	dialog=confirmation()
-	await key(dialog.get_ok_button())
+	check(dialog!=null,"Confirmation rouverte")
+	if dialog==null: finish();return
+	await key(confirmation_bouton(dialog,"Ok"))
 	await response()
 	check(app.model.clubLife.playerMatchHistory.enabled,"Activation confirmée reçue du worker")
 	# Calendrier quotidien : coup d'envoi le jour du match seulement, causerie d'avant-match, puis clôture de la semaine.
