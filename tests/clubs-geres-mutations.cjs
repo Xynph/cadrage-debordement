@@ -205,3 +205,63 @@ test('Monde : tours des clubs gérés, accords différés, pré-contrats, rumeur
     console.log(`clubs-geres-mutations : ${accords.length} accords, ${pres.length} pré-contrats, ${((Date.now() - debut) / 1000).toFixed(0)} s`);
   } finally { restaurer(); jeu.fermer(); }
 });
+
+test('Monde : rumeurs fausses démenties (taux 0), rumeurs vraies suivies d’un pré-contrat (taux 1)', { timeout: 900000 }, () => {
+  const debut = Date.now();
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    creer(jeu, CLUB);
+    const lire = s => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + s + ')'));
+    const jour = () => lire('CDWorldCareer.calendarToday(S)');
+    const semaine = () => { const m = jeu.regler(jeu.call('snapshot')); return m.next ? jouerLeMatch(jeu, m) : jeu.regler(jeu.call('finish_round')); };
+    const etat = () => lire('S.calendrierMutations||{}');
+    // Pré-contrats et rumeurs dès l'automne (moins de 12 mois de contrat, rumeurs jusqu'au 31 décembre).
+    R.preContrats.moisAvantFin = 12; R.clubsGeres.rumeurs.fin = '12-31';
+
+    // 1. Taux 0 : toutes les rumeurs sont fausses ; jamais de pré-contrat avec le club annoncé ; démenti 2 à 4 semaines après.
+    R.clubsGeres.rumeurs.tauxRealisation = 0;
+    semaine();
+    let st = etat();
+    const fausses = st.rumeurs.slice();
+    assert.ok(fausses.length >= 1, 'rumeurs de la semaine');
+    for (const r of fausses) {
+      assert.equal(r.piste, 'fausse', r.id);
+      assert.ok(r.dementi >= decaler(r.date, 14) && r.dementi <= decaler(r.date, 28), 'démenti dans le délai : ' + r.date + ' → ' + r.dementi);
+    }
+    R.clubsGeres.rumeurs.parSemaine = 0; R.clubsGeres.rumeurs.actives = false; // plus de nouvelle rumeur : on suit celles-ci
+    const dementis = new Map();
+    for (let k = 0; k < 5; k++) {
+      semaine();
+      st = etat();
+      const j = jour();
+      for (const r of st.rumeurs) if (r.suite === 'dementi' && !dementis.has(r.id)) {
+        assert.ok(j >= r.dementi && j < decaler(r.dementi, 7), 'démenti à la première clôture après ' + r.dementi + ' : ' + j);
+        dementis.set(r.id, j);
+      }
+      for (const r of fausses) assert.ok(!st.ia.some(x => x.playerId === r.playerId && x.acheteurId === r.interesseId && x.saison === r.saison), 'pas de pré-contrat avec le club annoncé : ' + r.nom);
+    }
+    for (const r of st.rumeurs.filter(r => fausses.some(f => f.id === r.id))) assert.ok(r.suite === 'dementi' || r.suite === 'sans-suite', r.id + ' : ' + r.suite);
+    assert.ok(dementis.size >= 1, 'au moins un démenti');
+    const d0 = st.rumeurs.find(r => r.suite === 'dementi');
+    const texte = d0.interesse + ' dément tout intérêt pour ' + d0.nom + ' (' + d0.pos.toLowerCase() + ' de ' + d0.club + ').';
+    assert.ok(lire('S.news').includes(texte), 'actualité du démenti : ' + texte);
+    assert.ok(Object.values(st.mercato.semaines).flat().some(l => l.type === 'rumeur' && l.texte === texte), 'ligne du mercato');
+    restaurer();
+
+    // 2. Taux 1 : comportement d'avant, la rumeur est prioritaire et suivie d'un pré-contrat avec le club annoncé.
+    R.preContrats.moisAvantFin = 12; R.clubsGeres.rumeurs.fin = '12-31'; R.clubsGeres.rumeurs.tauxRealisation = 1;
+    const n0 = etat().rumeurs.length;
+    semaine();
+    const vraies = etat().rumeurs.slice(n0);
+    assert.ok(vraies.length >= 1 && vraies.every(r => r.piste === 'vraie' && !r.dementi), 'rumeurs vraies');
+    R.clubsGeres.rumeurs.parSemaine = 0; R.clubsGeres.rumeurs.actives = false;
+    for (let k = 0; k < 2; k++) semaine();
+    st = etat();
+    const suivies = st.rumeurs.filter(r => vraies.some(v => v.id === r.id) && r.suite === 'signe');
+    assert.ok(suivies.length >= 1, 'rumeur suivie d’un pré-contrat');
+    // Comme avant : le club annoncé passe en tête ; s'il ne peut plus acheter, un autre signe et la rumeur compte comme suivie.
+    for (const r of suivies) assert.ok(st.ia.some(x => x.playerId === r.playerId && x.saison === r.saison), 'pré-contrat signé : ' + r.nom);
+    assert.ok(!st.rumeurs.some(r => r.suite === 'dementi' && vraies.some(v => v.id === r.id)), 'aucun démenti d’une vraie piste');
+    console.log(`clubs-geres-mutations (rumeurs) : ${fausses.length} fausses, ${dementis.size} démenties, ${vraies.length} vraies, ${suivies.length} suivies, ${((Date.now() - debut) / 1000).toFixed(0)} s`);
+  } finally { restaurer(); jeu.fermer(); }
+});

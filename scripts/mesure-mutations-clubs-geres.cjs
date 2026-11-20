@@ -169,7 +169,7 @@ for (const s of saisonsReleves) {
   const pre = [...iaVus.values()].filter(x => x.saison === s.saison), rum = [...rumeursVues.values()].filter(r => r.saison === s.saison);
   s.preContratsIA = { signes: pre.length, executes: pre.filter(x => x.etat === 'execute').length, tombes: pre.filter(x => x.etat === 'tombe').length, enAttente: pre.filter(x => x.etat === 'signe').length,
     parMois: pre.reduce((o, x) => (o[String(x.date).slice(0, 7)] = (o[String(x.date).slice(0, 7)] || 0) + 1, o), {}) };
-  s.rumeurs = { total: rum.length, suiviesDUnPreContrat: rum.filter(r => r.suite === 'signe').length };
+  s.rumeurs = { total: rum.length, suiviesDUnPreContrat: rum.filter(r => r.suite === 'signe').length, dementies: rum.filter(r => r.suite === 'dementi').length };
 }
 jeu.fermer();
 
