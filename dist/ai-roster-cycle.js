@@ -85,10 +85,12 @@ function aiRosterWageLimit(c){
 function aiRosterLeagueCap(c){return Infinity}
 function aiRosterFloorWage(c){return 1000}
 function aiRosterCapTally(kind,c){if(typeof nativeClubDirections!=='undefined')nativeClubDirections.tally('plafond:'+kind,c.id)}
-// Un joueur peut partir sans découvrir un poste : chaque poste qu'il tient garde au moins trois autres titulaires possibles.
+// Un joueur peut partir sans découvrir un poste : chaque poste naturel qu'il tient en garde au moins trois autres.
+// Effectifs, besoins et renforts se comptent au poste naturel (naturalSlot) : le moteur natif élargit slotEligible
+// aux dépannages (postes 4 à 15), que seule la feuille de match (buildSheet) utilise.
 function aiRosterReleasable(c,p,gone){
- for(let slot=0;slot<15;slot++)if(slotEligible(p,slot)&&
-  c.players.filter(q=>q.id!==p.id&&!gone.has(q.id)&&slotEligible(q,slot)).length<3)return false;
+ for(let slot=0;slot<15;slot++)if(naturalSlot(p,slot)&&
+  c.players.filter(q=>q.id!==p.id&&!gone.has(q.id)&&naturalSlot(q,slot)).length<3)return false;
  return true;
 }
 // Faire de la place sous le plafond, comme un vrai club : libérer (au plus deux) joueurs parmi les moins
@@ -144,8 +146,8 @@ function aiRosterContracts(){
    let salary=clamp(Math.round(p.salary*(p.age>=32?.97:p.age<=27?1.04:1.01)/100)*100,1000,100000);
    const fee=Math.round(p.salary*2/1000)*1000;
    const essential=c.players.length-releasedIds.size<=aiRosterTarget(c)-9||
-    [0,1,2].some(slot=>slotEligible(p,slot)&&
-      c.players.filter(q=>!releasedIds.has(q.id)&&q.id!==p.id&&q.contractEnd>S.season&&slotEligible(q,slot)).length<2);
+    [0,1,2].some(slot=>naturalSlot(p,slot)&&
+      c.players.filter(q=>!releasedIds.has(q.id)&&q.id!==p.id&&q.contractEnd>S.season&&naturalSlot(q,slot)).length<2);
    const merit=aiRosterPriority(c,p)>=c.base-4;
    const funded=c.cash>=fee+350000;
    // Un joueur accepte au plus 15 % de baisse pour rester ; jamais sous le plancher.
@@ -202,7 +204,7 @@ function aiRosterAcademy(c){
 function aiRosterPromote(c,slot,emergency=false){
  if((c.players.length>=Math.max(40,aiRosterTarget(c))||professionalPlaces(c)<=0))return false;
  const a=aiRosterAcademy(c);if(!a)return false;
- const eligible=a.players.filter(p=>p.age>=18&&slotEligible(p,slot))
+ const eligible=a.players.filter(p=>p.age>=18&&naturalSlot(p,slot))
   .sort((x,y)=>fitScore(y,FAMILIES[slot])-fitScore(x,FAMILIES[slot])||x.id.localeCompare(y.id));
  const p=eligible[0];if(!p)return false;
  if(!aiRosterFitWage(c,p,emergency))return false;
@@ -429,7 +431,7 @@ function aiRosterDepthNeeds(c){
  if(c.players.length>=goal||professionalPlaces(c)<=0)return [];
  const rows=AI_POPULATION_DEPTH.map(([slot,weight])=>{
   const target=Math.round(weight*goal/37);
-  const count=c.players.filter(p=>p.age<p.dev.retireAge&&slotEligible(p,slot)).length;
+  const count=c.players.filter(p=>p.age<p.dev.retireAge&&naturalSlot(p,slot)).length;
   return {slot,pos:POS[slot],score:Math.max(0,target-count)*30,target,count};
  });
  const needs=rows.filter(n=>n.score>0).sort((a,b)=>b.score-a.score||a.slot-b.slot);
@@ -448,7 +450,7 @@ function aiRosterMarketNeeds(c){
  const goal=aiRosterTarget(c);
  for(const [slot,weight] of AI_POPULATION_DEPTH){
   const target=Math.round(weight*goal/37);
-  const eligible=c.players.filter(p=>p.age<p.dev.retireAge&&slotEligible(p,slot));
+  const eligible=c.players.filter(p=>p.age<p.dev.retireAge&&naturalSlot(p,slot));
   const support=eligible.filter(p=>p.id.startsWith('depth-'));
   const count=eligible.length-support.length;
   if(count>=target||!support.length)continue;
@@ -553,7 +555,7 @@ function aiRosterPopulationTargets(c,pool){
   // Use the same public estimate for both players. A centre graduate can
   // provide succession cover at an equivalent estimated level.
   const succession=p.age<=22&&p.population?.origin==='academy';
-  const need=needs.find(n=>slotEligible(p,n.slot)&&
+  const need=needs.find(n=>naturalSlot(p,n.slot)&&
    (n.supportEstimate===undefined||evidence.quality>=n.supportEstimate+(succession?0:4)));
   if(!need)continue;
   const finance=recruitmentFinance(c,p);
@@ -584,7 +586,7 @@ function aiRosterPopulationYouthIntake(){
   a.players=a.players.filter(p=>p.age<=21&&p.age<p.dev.retireAge);
   for(const p of graduates)aiRosterGraduateAcademyPlayer(p,c.id);
   for(let k=0;![2,3].includes(S.academyGroupPolicy)&&k<6&&a.players.length<75;k++){
-   const slots=POS.map((_,slot)=>({slot,count:a.players.filter(p=>slotEligible(p,slot)).length,
+   const slots=POS.map((_,slot)=>({slot,count:a.players.filter(p=>naturalSlot(p,slot)).length,
     tie:(slot-c.id-S.season*6+150000)%15})).sort((a,b)=>a.count-b.count||a.tie-b.tie);
    const p=academyPlayer(c.id,slots[0].slot,S.season,300+k,false,c);
    a.players.push(p);
