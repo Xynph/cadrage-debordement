@@ -116,6 +116,15 @@ func layout() -> void:
 	check(table != null and table.size.x >= app.root_content.size.x * .6, "Le tableau prend toute la largeur")
 	check(node("MarketScroll") != null and node("MarketSort_Niveau") != null and node("MarketSort_Nom") != null, "Tableau triable")
 	check(node("MarketNeed_0") != null, "Besoin n° 1 en tête, cliquable")
+	# L'écran arrive filtré sur le poste du besoin n° 1. Depuis le barème V3 des notes, le besoin n° 1 du club 102 est
+	# un poste sans aucune piste sur le marché (demi d'ouverture, alors que les pistes initiales sont des premières
+	# lignes) : l'écran le dit et propose « Voir tout le marché », que le manager suit ici comme en jeu.
+	if app.root_content.find_children("MarketPlayer_*", "Button", true, false).is_empty() and not (app.model.get("market", []) as Array).is_empty():
+		var tout := node("MarketShowAll") as Button
+		check(tout != null, "Besoin n° 1 sans piste : lien « Voir tout le marché »")
+		if tout != null:
+			tout.pressed.emit()
+			await settle(10)
 	check(node("RecruitmentCost") != null and node("OfferRecruitment") != null, "Bloc « Ce que coûte l'offre » et action principale")
 	check(node("RecruitmentTransferBudget") != null, "Budget de transferts visible")
 	var lignes: Array = app.root_content.find_children("MarketPlayer_*", "Button", true, false)
