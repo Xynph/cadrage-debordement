@@ -20,7 +20,7 @@
    }
   },
   "native/engine/world-niveaux-v2.json": {
-   "sha256": "30133e2c4c346b70ffa982c8515e16cd51da3fd688ce74428d7553a943950b6d",
+   "sha256": "856cfbcf3c6024c5b02d19e88c283aa57721a7b52ff2d9cd8b353bf950b218a8",
    "sources": {
     "data/scouting/review-v12/career-evidence.json": "0a7f60a8611ef52537926f7b30d738d55da24b4cc5ddb91cb3d6fdeabcebb4ef",
     "data/scouting/review-v12/season-evidence.json": "3a63cbab6cf678e7522696eef3acb090edc04ebd9a02956040351de82291300e",
@@ -38,6 +38,7 @@
     "niveaux/collecte-v3/statut-accession.csv": "0bee87989d122cb3b0385b355230b6112ecc344ef2416f2403909a3aa92d4db0",
     "niveaux/collecte-v3/statut-complements.csv": "2fbf6da162dab6342cdbdfc2fa3e4e68559044e9721d79c4cc7b013c3c3e069a",
     "niveaux/collecte-v3/statut-elite.csv": "82e78b71ef05e91e8700bb0b2ae0d8329efa29ff38228e521a910be5e68eba3c",
+    "niveaux/collecte-v3/statut-feuilles.csv": "39b9e85fe186f9eb3a960f6a6fc0e444c296cb44a0df8d5bd5959ac3af983d5f",
     "niveaux/collecte-v3/statut-jlo-guest.csv": "576b58f318e673ef1cad6ae3c6fac8535e6513d4b0c0e9376fd0c3409c10100c",
     "niveaux/collecte-v3/statut-transferts-monde.csv": "54ef0af829ee4f935a2541c6f679d99658f032f6805c75b7081bafa4bb9bd611",
     "niveaux/collecte-v3/statut-transferts.csv": "439d4af63a88bd2964f9795035fc6d7e9b3091f2894c6d79b87387ff2fee0c8f",
