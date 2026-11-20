@@ -407,11 +407,11 @@ func _sigle(club: Dictionary, largeur: float, hauteur: float, taille: float) -> 
 	return p
 
 ## Pastille V / N / D en pilule (charte §4.5) : la lettre toujours écrite, et la forme dit le résultat sans la couleur :
-## V pleine vert clair (lettre PANNEAU), N demi-pleine gris-vert (lettre crème), D contour doré (lettre dorée).
+## V pleine vert clair (lettre PANNEAU), N demi-pleine gris-vert (lettre crème), D contour doré (lettre crème : un seul aplat doré par écran, comme #1068).
 static func style_pastille(lettre: String) -> Dictionary:
 	match lettre:
 		"V": return {"fond": Charte.V, "bord": Color(0, 0, 0, 0), "lettre": Charte.PANNEAU}
-		"D": return {"fond": Color(0, 0, 0, 0), "bord": Charte.D, "lettre": Charte.D}
+		"D": return {"fond": Color(0, 0, 0, 0), "bord": Charte.D, "lettre": Charte.IVOIRE}
 	return {"fond": Color(Charte.N, 0.35), "bord": Charte.N, "lettre": Charte.IVOIRE}
 
 func _pastille(lettre: String, largeur: float, hauteur: float, taille: float) -> PanelContainer:
