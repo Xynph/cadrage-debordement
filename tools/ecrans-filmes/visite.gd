@@ -34,6 +34,9 @@ const EXTRAS := [
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
 	{"id": "presse-portraits", "libelle": "Presse : Portraits", "type": "presse_onglet", "onglet": 3},
+	{"id": "v2-recrutement-offre", "libelle": "Recrutement : écran Offre au joueur", "type": "recrutement_etape", "etape": "offre"},
+	{"id": "v2-recrutement-confirmation", "libelle": "Recrutement : confirmation en place de l'offre", "type": "recrutement_etape", "etape": "offre_confirmation"},
+	{"id": "v2-recrutement-observation", "libelle": "Recrutement : confirmation en place de l'observation", "type": "recrutement_etape", "etape": "observation"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "options", "libelle": "Options", "type": "options"},
 ]
@@ -440,6 +443,24 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app._navigate("Presse")
 			await stabiliser()
 			if app.route != "Presse": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"recrutement_etape":
+			# Étapes du Recrutement (relecture du 20/11) : écran d'offre, confirmation en place de l'offre, de l'observation.
+			app.management_ui.erase("recrutement_page")
+			app._navigate("Recrutement")
+			await stabiliser()
+			if app.route != "Recrutement": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+			var liste: Node = app.find_child("CarnetMarket", true, false)
+			if liste == null: return {"statut": "echec", "note": "écran Recrutement absent"}
+			var etape := str(ecran.etape)
+			var cible := liste.find_child("ObserveRecruitment" if etape == "observation" else "OfferRecruitment", true, false) as Button
+			if cible == null or cible.disabled: return {"statut": "indisponible", "note": "action absente ou grisée pour la piste choisie"}
+			cible.pressed.emit()
+			await stabiliser()
+			if etape == "offre_confirmation":
+				var valider := app.find_child("RecrutementPageValider", true, false) as Button
+				if valider == null or valider.disabled: return {"statut": "indisponible", "note": "offre non envoyable pour cette piste"}
+				valider.pressed.emit()
+				await stabiliser()
 		"calendrier_semaine":
 			app._navigate("Calendrier")
 			await stabiliser()

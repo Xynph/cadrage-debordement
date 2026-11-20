@@ -162,7 +162,7 @@ static func _valider(app: Control, cadre: Control, zone: Control, ok: Button, de
 	var envoyer := func():
 		if is_instance_valid(ok): ok.pressed.emit()
 	var bloc := EnPlace.ouvrir(app, cadre, "ContractSignatureConfirmation", "Confirmer l’offre", lignes, "Confirmer : autoriser la signature si accord", envoyer)
-	D.place(bloc, Rect2(24, 520, LARGEUR - 48, 400))
+	D.place(bloc, Rect2(24, 470, LARGEUR - 48, 10))
 	var valider := cadre.get_node_or_null("RecrutementPageValider") as Control
 	if valider != null: valider.visible = false
 	bloc.tree_exited.connect(func():

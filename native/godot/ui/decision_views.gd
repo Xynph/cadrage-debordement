@@ -234,7 +234,8 @@ static func recruitment(app: Control) -> void:
 				var resultat := G.wrap("Mission confiée : 5 000 € payés, le rapport arrive après deux journées de travail.", 14)
 				resultat.name = "ScoutMissionResult"
 				list.add_child(resultat)
-		preload("res://ui/confirmation_en_place.gd").ouvrir(app, list, "ScoutMissionConfirmation", "Lancer une mission", [{"id":"ScoutMissionConfirmPhrase", "text":"5 000 € seront payés immédiatement. Le rapport porte sur les agents libres disponibles et arrive après deux journées de travail."}], "Lancer pour 5 000 €", lancer, mission))	mission.name = "CreateScoutMission"
+		preload("res://ui/confirmation_en_place.gd").ouvrir(app, list, "ScoutMissionConfirmation", "Lancer une mission", [{"id":"ScoutMissionConfirmPhrase", "text":"5 000 € seront payés immédiatement. Le rapport porte sur les agents libres disponibles et arrive après deux journées de travail."}], "Lancer pour 5 000 €", lancer, mission))
+	mission.name = "CreateScoutMission"
 	mission.disabled = not data.get("missionAvailable", false)
 	list.add_child(mission)
 	for job: Dictionary in data.get("missions", []): list.add_child(G.wrap("Mission %s · %s" % [job.id, "en cours, %s journée(s)" % G.n(job.remaining) if job.status == "active" else "en attente" if job.status == "queued" else "terminée"], 13))

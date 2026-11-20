@@ -413,16 +413,16 @@ func _filters(positions: Array) -> void:
 		_filter_changed())
 	var k := 1.3 if C.density < .75 else 1.0
 	var x := 346.0
-	position_filter = _choice(Rect2(x, 292, 270 * k, 38), "MarketPosition", "Poste", positions, state.position, func(value: String): state.position = value; state.position_libre = true; _filter_changed())
-	x += 282 * k
-	_choice(Rect2(x, 292, 190 * k, 38), "MarketAge", "Âge", ["Tous", "≤ 22 ans", "23–28 ans", "≥ 29 ans"], state.get("age_filter", "Tous"), func(value: String): state.age_filter = value; _filter_changed())
-	x += 202 * k
-	_choice(Rect2(x, 292, 210 * k, 38), "MarketAvailability", "Offres", ["Tous", "Disponibles", "Indisponibles"], state.available, func(value: String): state.available = value; _filter_changed())
-	x += 222 * k
+	position_filter = _choice(Rect2(x, 292, 270, 38), "MarketPosition", "Poste", positions, state.position, func(value: String): state.position = value; state.position_libre = true; _filter_changed())
+	x += 282
+	_choice(Rect2(x, 292, 190, 38), "MarketAge", "Âge", ["Tous", "≤ 22 ans", "23–28 ans", "≥ 29 ans"], state.get("age_filter", "Tous"), func(value: String): state.age_filter = value; _filter_changed())
+	x += 202
+	_choice(Rect2(x, 292, 210, 38), "MarketAvailability", "Offres", ["Tous", "Disponibles", "Indisponibles"], state.available, func(value: String): state.available = value; _filter_changed())
+	x += 222
 	_choice(Rect2(x, 292, 250 * k, 38), "MarketBudget", "Indemnité", ["Toutes", "≤ 100 k€", "≤ 400 k€", "≤ 1 M€"], state.get("budget_filter", "Toutes"), func(value: String): state.budget_filter = value; _filter_changed())
 	x += 262 * k
-	_choice(Rect2(x, 292, 290 * k, 38), "MarketObservation", "Observation", ["Toutes", "Observées", "Non observées"], state.get("observation", "Toutes"), func(value: String): state.observation = value; _filter_changed())
-	x += 302 * k
+	_choice(Rect2(x, 292, 290, 38), "MarketObservation", "Observation", ["Toutes", "Observées", "Non observées"], state.get("observation", "Toutes"), func(value: String): state.observation = value; _filter_changed())
+	x += 302
 	var reset := Kit.lien(self, Rect2(x, 296, 0, 32), "Réinitialiser", func():
 		app.management_ui.market = U.defaults()
 		app.management_ui.market.immersive_tab = tab
@@ -835,7 +835,7 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		C.style_bouton_lien(action, 17)
 		action.add_theme_color_override("font_color", Charte.IVOIRE if approcher else Charte.IVOIRE_2)
 		action.text = "Approcher →" if approcher else libelle
-		action.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		action.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		action.disabled = en_cours
 		action.accessibility_name = "%s : %s" % [libelle, item.get("name", "")]
 		action.pressed.connect(func():
@@ -846,7 +846,7 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 				var bloc := cost.find_child("ObserveRecruitment", true, false) as Control
 				if bloc != null: bloc.grab_focus.call_deferred())
 		row.add_child(action)
-		D.place(action, Rect2(col.x + 18, 3, col.w - 18, ROW_HEIGHT - 6))
+		D.place(action, Rect2(col.x + 14, 3, col.w - 44, ROW_HEIGHT - 6))
 	# Nom : survol (ou focus + I) = mini-fiche, clic = fiche complète ; « i » juste après le nom.
 	var entity_target := {"kind":"report", "id":str(item.id)} if tab == 3 else {"kind":"market", "id":player_id}
 	if tab != 3 and not player.is_empty():
@@ -980,10 +980,10 @@ func _cout() -> void:
 func _confirmer_observation(player: Dictionary) -> void:
 	if Observation.reason(app, player) != "" or not player.get("scouting") is Dictionary: return
 	var scouting: Dictionary = player.scouting
-	var phrase := "Frais : %s. Délai : %s. Le rapport sera disponible à la fin de la mission." % [G.euros(scouting.get("cost", 0)), Observation.delay(scouting)]
+	var phrase := "Frais : %s · délai : %s. Le rapport arrive à la fin de la mission." % [G.euros(scouting.get("cost", 0)), G.n(scouting.get("workCycles", 0)) + (" semaines" if scouting.get("workUnit") == "week" else " cycles")]
 	var envoyer := func(): _observer(player)
 	var bloc := EnPlace.ouvrir(app, cost, "ObservationConfirmation", "Observer " + str(player.get("name", "")), [{"id":"ObservationConfirmPhrase", "text":phrase}], "Lancer l’observation · " + G.euros(scouting.get("cost", 0)), envoyer)
-	D.place(bloc, Rect2(1100, 0, WIDTH - 1100, 172))
+	D.place(bloc, Rect2(1100, 0, WIDTH - 1100, 10))
 
 func _observer(player: Dictionary) -> void:
 	# Le coût et le délai sont écrits à côté du bouton : cliquer vaut confirmation (aucune fenêtre).

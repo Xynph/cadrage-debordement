@@ -62,5 +62,10 @@ static func ouvrir(app: Control, conteneur: Node, id: String, titre: String, lig
 		au_ok.call())
 	conteneur.add_child(bloc)
 	if apres != null and apres.get_parent() == conteneur: conteneur.move_child(bloc, apres.get_index() + 1)
+	annuler.grab_focus()
 	annuler.grab_focus.call_deferred()
+	# Une seconde prise de focus à l'image suivante : la page peut se redessiner juste après l'ouverture.
+	var reprise := func():
+		if is_instance_valid(annuler) and annuler.is_visible_in_tree(): annuler.grab_focus()
+	if bloc.is_inside_tree(): bloc.get_tree().process_frame.connect(reprise, CONNECT_ONE_SHOT)
 	return bloc

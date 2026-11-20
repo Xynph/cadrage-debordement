@@ -112,14 +112,17 @@ func executer() -> void:
 			if demande != null:
 				verifier(demande.text == Budget.extension_button(montant), "libellé « %s »" % demande.text)
 				demande.pressed.emit(); await poser(8)
-				var confirmation := dialogue.find_child("TransferBudgetExtensionConfirm", true, false) as ConfirmationDialog
-				verifier(confirmation != null and confirmation.visible, "confirmation de la demande ouverte")
+				# Confirmation EN PLACE (deux temps, aucune fenêtre) sous le bouton de la page d'offre.
+				var confirmation := app.find_child("TransferBudgetExtensionConfirm", true, false) as Control
+				verifier(confirmation != null and confirmation.is_visible_in_tree(), "confirmation de la demande ouverte en place")
 				if confirmation != null:
-					verifier(confirmation.get_cancel_button().has_focus(), "focus par défaut sur Annuler")
-					verifier(confirmation.get_ok_button().text == Budget.extension_button(montant).to_upper(), "bouton de confirmation = action : " + confirmation.get_ok_button().text)
-					verifier(confirmation.dialog_text.contains("confiance"), "effet sur la confiance annoncé : " + confirmation.dialog_text)
+					var oui := app.find_child("TransferBudgetExtensionConfirmOk", true, false) as Button
+					var non := app.find_child("TransferBudgetExtensionConfirmAnnuler", true, false) as Button
+					verifier(non != null and (root.gui_get_focus_owner() == non or (is_instance_valid(dialogue) and dialogue.gui_get_focus_owner() == non)), "focus par défaut sur Annuler")
+					verifier(oui != null and oui.text == ("Confirmer la demande de " + G.euros(montant)).to_upper(), "bouton de confirmation = action : " + (oui.text if oui != null else ""))
+					verifier(texte("TransferBudgetExtensionQuestion").contains("confiance"), "effet sur la confiance annoncé : " + texte("TransferBudgetExtensionQuestion"))
 					await capturer("budget-rallonge-confirmation.png")
-					confirmation.get_ok_button().pressed.emit()
+					oui.pressed.emit()
 					await poser(2); await attendre_moteur(); await poser(12)
 					var rouvert := app.find_child("ContractOffer", true, false) as ConfirmationDialog
 					verifier(rouvert != null and not is_instance_valid(dialogue), "devis rouvert après la réponse du conseil")
