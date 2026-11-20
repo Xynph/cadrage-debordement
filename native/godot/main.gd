@@ -820,6 +820,8 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 		if management_ui.has("recrutement_page"): load("res://ui/immersive08/recruitment_canvas.gd").oublier_page(self)
 		# Sous-page de la Formation (suivi des jeunes, revue d'effectif) : le menu rouvre l'écran lui-même.
 		if management_ui.has("formation_page"): load("res://ui/immersive08/formation_pages.gd").oublier(self)
+		# Sous-page du Staff (contrat, mentorat, engagements) : refermée en changeant d'écran.
+		management_ui.erase("club_page")
 		management_ui.erase("charge_joueur")
 		# Sous-page de l'avant-match (délégation, espoir) : refermée dès qu'on change d'écran.
 		management_ui.erase("avant_page")
@@ -1402,9 +1404,29 @@ func confirm_decision(command: String, payload: Dictionary, title: String, text:
 	var preview := preload("res://ui/decision_preview.gd")
 	var detail: Dictionary = preview.describe(command,payload,model)
 	if detail.is_empty(): confirm(title,text,callback)
+	elif _confirmation_club(title, [text, _lignes_decision(detail)], "Confirmer", callback): return
 	else: preview.open(self,title,text,detail,callback)
 
+## Écrans Club, Staff, Travail du club et Stratégie : la confirmation s'ouvre EN PLACE dans la page (bloc de
+## confirmation_en_place.gd), jamais dans une fenêtre (décision de Léo, 19/11/2026). Faux si la page n'a pas son hôte.
+func _confirmation_club(title: String, lignes: Array, libelle_ok: String, callback: Callable) -> bool:
+	if route not in ["Club", "Staff", "Travail du club", "Stratégie"] or not is_instance_valid(root_content): return false
+	var hote := root_content.find_child("ClubConfirmHote", true, false) as Container
+	if hote == null or not hote.is_visible_in_tree(): return false
+	_clear_dialogs()
+	preload("res://ui/confirmation_en_place.gd").ouvrir(self, hote, "ClubConfirmation", title, lignes, libelle_ok, callback)
+	return true
+
+func _lignes_decision(detail: Dictionary) -> String:
+	var parts: Array[String] = []
+	if int(detail.get("amount", 0)) != 0: parts.append(("Débit immédiat : " if str(detail.get("direction", "debit")) == "debit" else "Versement : ") + str(G.euros(detail.amount)))
+	if int(detail.get("recurring_amount", 0)) != 0: parts.append("%s : %s" % [str(detail.get("recurring_label", "Ensuite")).capitalize(), str(G.euros(detail.recurring_amount))])
+	if not str(detail.get("later", "")).is_empty(): parts.append(str(detail.later))
+	if not str(detail.get("caution", "")).is_empty(): parts.append(str(detail.caution))
+	return "\n".join(parts)
+
 func confirm(title: String, text: String, callback: Callable, focus_cancel := false) -> void:
+	if _confirmation_club(title, [text], "Confirmer", callback): return
 	_clear_dialogs()
 	var d := ConfirmationDialog.new()
 	_prepare_dialog(d, 650)

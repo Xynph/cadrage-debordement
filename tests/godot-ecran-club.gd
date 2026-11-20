@@ -55,7 +55,7 @@ func run() -> void:
 			check(all.has("Pas encore de classement"), "Club : « Pas encore de classement »")
 			check(not all.has("Classement actuel"), "Club : pas de classement actuel")
 			var digits := str(int(fans.subscribers))
-			check(all.any(func(t): return str(t).strip_edges().length() > 0 and not RegEx.create_from_string("[^0-9\\s\u00a0\u202f]").search(str(t)) and RegEx.create_from_string("[^0-9]").sub(str(t), "", true) == digits), "Club : abonnés affichés (" + digits + ")")
+			check(all.any(func(t): var s := str(t); return s.contains("abonnés") and RegEx.create_from_string("[^0-9]").sub(s.get_slice(" · ", s.count(" · ")).replace(" abonnés", ""), "", true) == digits), "Club : abonnés affichés (" + digits + ")")
 			var suivi: Dictionary = app.model.clubLife.academyFollowUp
 			check(not all.has("Non ouverte") and not all.any(func(t): return str(t).contains("à venir en carrière Monde")), "Club : jamais « Non ouverte » : le centre existe en Monde")
 			var attendu := "%d Crabos · %d Espoirs" % [int(suivi.crabos.count), int(suivi.espoirs.count)]
