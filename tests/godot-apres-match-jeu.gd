@@ -77,9 +77,19 @@ func run() -> void:
 	check(app.model.get("live") is Dictionary, "Résultat toujours à valider")
 	check(app.primary_text().begins_with("RETOUR À L’APRÈS-MATCH"), "Continuer ramène à l'après-match : " + app.primary_text())
 	# Levier « Composition » ouvert depuis la fiche ? non : retour par Continuer.
+	# La fiche du club se lit par une commande du moteur (« club_sheet ») : tant qu'elle attend sa réponse, Continuer
+	# est ignoré par le jeu (primary_action). On attend la fin de cette lecture, comme un joueur.
+	var limite_lecture := Time.get_ticks_msec() + 60000
+	while app.waiting and Time.get_ticks_msec() < limite_lecture: await process_frame
+	await settle(5)
+	check(not app.waiting, "Lecture de la fiche du club terminée")
 	app.primary_action()
-	await settle(15)
+	# Attente de l'état, pas d'un nombre d'images : la vue du direct est reconstruite (scène 3D, régie).
+	var limite_retour := Time.get_ticks_msec() + 30000
+	while apres() == null and Time.get_ticks_msec() < limite_retour: await process_frame
 	check(apres() != null, "Continuer ramène à l'après-match")
+	# Sans délai : l'après-match déjà montré revient dès la reconstruction, sans attendre la régie.
+	check(Time.get_ticks_msec() < limite_retour - 25000, "L'après-match revient aussitôt (%d ms)" % (30000 - (limite_retour - Time.get_ticks_msec())))
 	# Valider le résultat.
 	var valider := apres().find_child("ApresMatchValider", true, false) as Button if apres() != null else null
 	check(valider != null and not valider.disabled, "Valider le résultat actif")

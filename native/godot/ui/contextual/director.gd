@@ -32,6 +32,9 @@ func match_immersed() -> bool:
 ## écran (fiche d'un club, d'un joueur, levier du « Pourquoi », classement, calendrier). La scène du match se ferme ;
 ## « Continuer » de la coque (ou Espace, ou Précédent) ramène à l'après-match par la route « Match ».
 var consultation := false
+## Rencontre dont l'après-match a déjà été montré (live_view.cle_apres_match) : au retour d'une consultation, il
+## revient aussitôt, sans attendre que la régie rejoue la fin du match.
+var apres_match_vu := ""
 
 func en_consultation() -> bool:
 	return consultation and bool(_live().get("finished", false))
@@ -125,6 +128,7 @@ func sync(_received_command: String = "", _response_ok: bool = true) -> bool:
 	# Consultation terminée : retour à l'après-match (route « Match »), résultat validé ou match disparu.
 	if consultation and (live.is_empty() or not bool(live.get("finished", false)) or not talk.is_empty() or app.route == "Match"): consultation = false
 	if consultation: live = {}
+	if _live().is_empty(): apres_match_vu = ""
 	# Match en temps forts : le dernier temps fort de la période se regarde avant la
 	# causerie ou le débrief. La régie rappelle `sync` quand il est fini.
 	if not talk.is_empty() and kind == "live" and active() and not live.is_empty() and view.has_method("retient_la_causerie") and view.retient_la_causerie(live):

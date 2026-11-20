@@ -609,10 +609,24 @@ func _envoyer_consigne(axe: String, valeur: String) -> void:
 	if regie != null: regie.envoyer_consigne(axe, valeur)
 	else: app._command(Pilotage.COMMANDE, Pilotage.charge(axe, valeur))
 
+## Identité de la rencontre affichée (projection du moteur, sinon les deux clubs) : l'après-match déjà montré.
+static func cle_apres_match(live: Dictionary) -> String:
+	var direct: Variant = live.get("direct")
+	if direct is Dictionary and not str(direct.get("rencontre", "")).is_empty(): return str(direct.rencontre)
+	var equipes: Array = live.get("teams", [])
+	if equipes.size() < 2 or not equipes[0] is Dictionary or not equipes[1] is Dictionary: return ""
+	return "%s|%s" % [str(equipes[0].get("id", "")), str(equipes[1].get("id", ""))]
+
 ## L'après-match prend toute la vue dès que le match est fini et entièrement montré (bouton de validation du direct
 ## visible) ; la scène 3D, cachée dessous, cesse alors d'être rendue.
 func _suivre_apres_match() -> void:
-	var fini: bool = bool(_live().get("finished", false)) and is_instance_valid(finish) and finish.visible
+	# Retour d'une consultation (fiche d'un club, levier…) : la vue est neuve et la régie rejouerait sa fin (sortie des
+	# joueurs, dernier temps fort) avant de rendre la validation ; l'après-match déjà montré pour cette rencontre
+	# revient tout de suite, sans dépendre de ce délai.
+	var cle := cle_apres_match(_live())
+	var deja_vu: bool = not cle.is_empty() and is_instance_valid(director) and str(director.get("apres_match_vu")) == cle
+	var fini: bool = bool(_live().get("finished", false)) and ((is_instance_valid(finish) and finish.visible) or deja_vu)
+	if fini and is_instance_valid(director) and director.get("apres_match_vu") != null: director.apres_match_vu = cle
 	if fini and not is_instance_valid(apres_match):
 		apres_match = ApresMatch.new()
 		apres_match.app = app
