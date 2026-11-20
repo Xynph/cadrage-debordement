@@ -110,7 +110,11 @@ func run() -> void:
 		await activate(found("ClubStaffPortrait_"+staff_id.validate_node_name()) as Control,true)
 		check(app.route=="Staff" and app.StaffViews.reading(app).navigation_id==staff_id,"Portrait staff ouvre le même profil exact")
 		app.navigation_controller._travel(-1); await settle()
-onglet’onglet exact · "+str(item[1]))
+	# Trésorerie et salaires restent sur la vue d'ensemble (bloc « À décider »).
+	app.management_ui[Club.KEY]="overview"; app._navigate("Club"); await settle()
+	for item: Array in [["ClubCashLink","cash"],["ClubWagesLink","wages"]]:
+		await activate(found(item[0]) as Control)
+		check(app.route=="Finances" and app.management_ui.immersive08_finance_tab==item[1],"Valeur financière ouvre l’onglet exact · "+str(item[1]))
 		app.navigation_controller._travel(-1); await settle()
 	app.management_ui[Club.KEY]="history"; app._navigate("Club"); await settle()
 	var choice:=found("PerformancePlayerChoice") as OptionButton

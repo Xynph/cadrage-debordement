@@ -104,9 +104,12 @@ func run() -> void:
 	if release != null:
 		var id := str(release.get_meta("staff_id"))
 		release.pressed.emit(); await settle()
+		# Confirmation EN PLACE dans la page du Staff (décision de Léo du 19/11/2026), ou fenêtre « Libérer » ailleurs.
 		var confirms := app.find_children("*", "ConfirmationDialog", true, false).filter(func(d): return d.visible)
-		check(not confirms.is_empty(), "Départ soumis à confirmation dans le jeu")
-		if not confirms.is_empty(): confirms[0].confirmed.emit(); await response("staff_release")
+		var ok_place := app.find_child("ClubConfirmationOk", true, false) as Button
+		check(not confirms.is_empty() or (ok_place != null and ok_place.is_visible_in_tree()), "Départ soumis à confirmation dans le jeu")
+		if ok_place != null: ok_place.pressed.emit(); await response("staff_release")
+		elif not confirms.is_empty(): confirms[0].confirmed.emit(); await response("staff_release")
 		check(not own_staff().any(func(p: Dictionary): return str(p.id) == id), "Membre libéré sorti de l’équipe")
 	var tab := app.body.find_child("StaffCareerTab", true, false) as OptionButton
 	if tab != null: tab.select(1); tab.item_selected.emit(1); await settle()

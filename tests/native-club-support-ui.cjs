@@ -126,7 +126,8 @@ func run() -> void:
  check(ok != null and non != null and non.text == "Annuler" and app.find_children("*","ConfirmationDialog",true,false).filter(func(d):return d.visible).is_empty(), "Choix en place, en français, sans fenêtre")
  await capture("signature")
  if ok != null: ok.pressed.emit(); await wait_command()
- check(app.model.clubLife.clubSupport.agents.history[0].status == "signed","Signature par la confirmation en place") var report := FileAccess.open(OS.get_environment("CD_SUPPORT_CAPTURES").path_join("report.json"),FileAccess.WRITE)
+ check(app.model.clubLife.clubSupport.agents.history[0].status == "signed","Signature par la confirmation en place")
+ var report := FileAccess.open(OS.get_environment("CD_SUPPORT_CAPTURES").path_join("report.json"),FileAccess.WRITE)
  report.store_string(JSON.stringify({"checks":checks,"failures":failures},"  ")); report.close()
  app.closing=true; app.timer.stop(); app.bridge.stop()
  var deadline := Time.get_ticks_msec()+5000

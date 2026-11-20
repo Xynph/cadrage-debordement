@@ -571,7 +571,7 @@ static func _decider(panneau: Panel, app: Control, finance: Dictionary, board: D
 	var en_attente: Array = board.get("objectives", []).filter(func(objectif: Dictionary): return objectif.get("status") == "pending")
 	en_attente.sort_custom(func(a: Dictionary, b: Dictionary): return int(a.get("deadline", 0)) < int(b.get("deadline", 0)))
 	if en_attente.is_empty():
-		elements.append({"id": "ClubFixMilestone", "genre": "alerte", "titre": "Aucune échéance fixée avec le conseil.", "detail": "Fixes-en une : il en tiendra compte au bilan de fin de saison.", "action": "Fixer un jalon", "ouvrir": func(): _open_strategy(app, 1)})
+		elements.append({"id": "ClubFixMilestone", "genre": "alerte", "titre": "Aucune échéance fixée avec le conseil.", "detail": "Fixe-en une : il en tiendra compte au bilan de fin de saison.", "action": "Fixer un jalon", "ouvrir": func(): _open_strategy(app, 1)})
 	else:
 		var jalon: Dictionary = en_attente[0]
 		elements.append({"id": "ClubNextMilestone", "genre": "neutre", "titre": "Prochain jalon : %s, semaine %s." % [str(GOALS.get(str(jalon.get("type", "")), "jalon du conseil")).to_lower(), G.n(jalon.get("deadline", "—"))], "detail": "Le conseil jugera le club à cette échéance.", "action": "Suivre les objectifs", "ouvrir": func(): _open_strategy(app, 1)})
@@ -796,7 +796,12 @@ static func _staff_detail(app: Control, canvas: Control) -> void:
 	U.place_detail(canvas, Rect2(724,214,1524,1030), detail)
 	if app.route == "Staff": style_staff(detail, app.accent)
 	else: Legacy.apply(detail, app.accent)
+	# Habillage de la charte (boutons secondaires en liens) sans perdre la hauteur de clic des boutons (plancher 28 px).
+	var hauteurs := {}
+	for bouton: Button in detail.find_children("*", "Button", true, false): hauteurs[bouton] = bouton.custom_minimum_size.y
 	Habillage._charte(detail)
+	for bouton: Button in hauteurs:
+		if is_instance_valid(bouton): bouton.custom_minimum_size.y = maxf(bouton.custom_minimum_size.y, float(hauteurs[bouton]))
 
 static func _history(app: Control, canvas: Control) -> void:
 	var card := D.panel(canvas, Rect2(0,214,610,612), "Les archives du club", "trophy", "", "ClubHistorySummary")
@@ -972,7 +977,7 @@ static func _president_projects(projects: Panel, inv: Variant) -> void:
 	var inst: Dictionary = inv.get("installations", {})
 	var acc: Dictionary = inv.get("accueil", {})
 	var staff: Dictionary = inv.get("staff", {})
-	D.text(box, 0, 28, "Excédents réinvestis · " + G.euros(inv.get("montant", 0)), 26, C.GOLD, 700, 474)
+	D.text(box, 0, 28, "Excédents réinvestis · " + G.euros(inv.get("montant", 0)), 26, Charte.IVOIRE, 700, 474)
 	var travaux := "Installations au maximum"
 	if inst.get("devis") != null:
 		travaux = "Travaux du niveau %s · %s %% financés" % [G.n(int(inst.get("niveau", 0)) + 1), G.n(roundi(100.0 * float(inst.get("avancement", 0))))]
