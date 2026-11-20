@@ -138,6 +138,7 @@ var panneau_journee: Control
 var panneau_delegation: Control
 var legende_chiffres: HBoxContainer
 var meteo_ligne: Label
+var stats_lien: Button
 var journee_vide: Label
 var pied: HBoxContainer
 var pied_reglages: Label
@@ -682,7 +683,7 @@ func _composants() -> void:
 	domination = Domination.new()
 	domination.name = "MatchBetweenMomentum"
 	domination.densite = _densite
-	domination.custom_minimum_size = Vector2(0, px(170))
+	domination.custom_minimum_size = Vector2(0, px(130))
 	domination.tooltip_text = "Qui domine, minute par minute (occupation, possession, points, franchissements) : barres pleines pour nous, vides pour l’adversaire ; essais (E), pénalités (P) et cartons (C) à leur minute."
 	domination.mouse_filter = Control.MOUSE_FILTER_PASS
 	S.G.fill(domination, true)
@@ -696,7 +697,7 @@ func _composants() -> void:
 	xv.add_theme_constant_override("v_separation", 0)
 	S.G.fill(xv)
 	banc = S.G.v(0)
-	banc.name = "MatchBetweenBench"
+	banc.name = "MatchBetweenBenchList"
 	adjoint = S.G.v(px(10))
 	adjoint.name = "MatchBetweenAdvice"
 
@@ -708,7 +709,7 @@ func _carte_gabi(parent: Control) -> void:
 	cadre.add_child(adjoint)
 
 ## Colonnes de Mon XV (unités 2560) : numéro, joueur, énergie (jauge et valeur), plaquages, note.
-const COLONNES_XV := [["N°", 44], ["Joueur", 0], ["Énergie", 190], ["Plaq.", 64], ["Note", 64]]
+const COLONNES_XV := [["N°", 44], ["Joueur", 0], ["Énergie", 170], ["Plaq.", 64], ["Note", 64]]
 ## Poste en deux signes, comme sur une feuille de match.
 const POSTES_COURTS := {"pilier gauche": "PG", "talonneur": "TA", "pilier droit": "PD", "deuxième ligne": "2L", "troisième ligne": "3L",
 	"numéro 8": "N8", "demi de mêlée": "DM", "demi d’ouverture": "DO", "demi d'ouverture": "DO", "ailier": "AI", "centre": "CE", "arrière": "AR"}
@@ -801,7 +802,7 @@ func _colonne_xv(grille: Control) -> void:
 	var cadre_xv := _panneau(grille, px(18))
 	tuile_principale = cadre_xv.get_parent().get_parent()
 	tuile_principale.name = "MatchBetweenMain"
-	tuile_principale.custom_minimum_size.x = px(600)
+	tuile_principale.custom_minimum_size.x = px(640)
 	cadre_xv.add_theme_constant_override("separation", px(4))
 	var tete := S.G.h(px(10))
 	cadre_xv.add_child(tete)
@@ -885,7 +886,7 @@ func _colonne_centre(grille: Control) -> void:
 func _colonne_droite(grille: Control) -> void:
 	colonne_droite = S.G.v(px(16))
 	colonne_droite.name = "MatchBetweenColumn"
-	colonne_droite.custom_minimum_size.x = px(500)
+	colonne_droite.custom_minimum_size.x = px(540)
 	grille.add_child(colonne_droite)
 	# Chiffres clés : duel face à face, lien vers les statistiques, météo, bonus.
 	var cadre_chiffres := _panneau(colonne_droite, px(18))
@@ -916,9 +917,12 @@ func _colonne_droite(grille: Control) -> void:
 	var stats := _lien("Voir les statistiques →", func(): tiroir_demande.emit("Stats"), "MatchBetweenStatsLink")
 	stats.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	cadre_chiffres.add_child(stats)
+	# Météo : déjà sous le score (bandeau de la vue du match) ; ici seulement en infobulle du lien des statistiques.
 	meteo_ligne = _texte("", 17, DOUX, true)
 	meteo_ligne.name = "MatchBetweenWeather"
+	meteo_ligne.visible = false
 	cadre_chiffres.add_child(meteo_ligne)
+	stats_lien = stats
 	# Bonus : la règle du championnat et, en fin de match, le dilemme et ses deux consignes.
 	bonus_tuile = PanelContainer.new()
 	bonus_tuile.name = "MatchBetweenBonus"
@@ -1248,7 +1252,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_poser_phase(live)
 	_poser_legende(equipes, int(direct.get("camp", -1)))
 	meteo_ligne.text = Meteo.bandeau(live)
-	meteo_ligne.visible = not meteo_ligne.text.is_empty()
+	if is_instance_valid(stats_lien): stats_lien.tooltip_text = "Toutes les statistiques du match." + ("\n" + meteo_ligne.text if not meteo_ligne.text.is_empty() else "")
 	_remplir_banc(live)
 	# Conseil de l'adjoint et composition tels qu'ils étaient avant la borne : rien d'un temps fort à venir.
 	var passe := _passe(model, live, direct)
@@ -1295,6 +1299,10 @@ func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 		var p: Variant = direct.get("possession")
 		var montre_p: int = terrain.possession if terrain != null and terrain.possession in [0, 1] else (int(p) if (p is int or p is float) else -1)
 		sens_jeu.text = ("%s attaque %s" % [S.G.club_name(equipes[montre_p]), "→" if montre_p == 0 else "←"]) if montre_p in [0, 1] and equipes.size() >= 2 and equipes[montre_p] is Dictionary else ""
+
+## Minute du moteur écrite sans décimale (« 42 » et non « 42.0 »).
+static func _minute(valeur: Variant) -> String:
+	return str(roundi(float(valeur))) if valeur is float or valeur is int else str(valeur)
 
 ## Nom d'un club du match (vide s'il manque).
 static func _nom_club(equipes: Array, cote: int) -> String:
@@ -1797,20 +1805,20 @@ func _carte_match(m: Dictionary, change: bool, teintes: Dictionary) -> Control:
 	carte.set_meta("id", str(m.get("id", "")))
 	carte.set_meta("change", change)
 	var style := S.G.T.box(RELIEF, 0)
-	style.content_margin_left = px(10)
-	style.content_margin_right = px(10)
+	style.content_margin_left = px(8)
+	style.content_margin_right = px(8)
 	style.content_margin_top = px(4)
 	style.content_margin_bottom = px(4)
 	if change:
 		style.set_border_width_all(maxi(1, px(3)))
 		style.border_color = VERT_SCORE
 	carte.add_theme_stylebox_override("panel", style)
-	carte.custom_minimum_size.x = px(180)
+	carte.custom_minimum_size.x = px(160)
 	var fini := bool(m.get("fini", false))
 	var cotes: Array = [m.get("home", {}), m.get("away", {})]
 	carte.tooltip_text = "%s %d – %d %s · %s" % [str(cotes[0].get("nom", "")), int(cotes[0].get("score", 0)), int(cotes[1].get("score", 0)), str(cotes[1].get("nom", "")), "terminé" if fini else "%d′" % int(m.get("minute", 0))]
-	var rang := S.G.h(px(10))
-	rang.add_theme_constant_override("separation", px(10))
+	var rang := S.G.h(px(8))
+	rang.add_theme_constant_override("separation", px(8))
 	carte.add_child(rang)
 	var lignes := S.G.v(0)
 	lignes.add_theme_constant_override("separation", 0)
@@ -1833,10 +1841,10 @@ func _carte_match(m: Dictionary, change: bool, teintes: Dictionary) -> Control:
 		var sigle := str(club.get("abbr", ""))
 		var nom_club := _cellule(sigle if not sigle.is_empty() else str(club.get("nom", "")), 0, IVOIRE if meneur == cote or meneur < 0 else DOUX, 26)
 		nom_club.name = "Club"
-		nom_club.custom_minimum_size.x = px(56)
+		nom_club.custom_minimum_size.x = px(60)
 		ligne.add_child(nom_club)
 		var essais := int(club.get("essais", 0))
-		var petit := _cellule("(%d)" % essais if essais > 0 else "", 24, FAIBLE, 20, true)
+		var petit := _cellule("(%d)" % essais if essais > 0 else "", 32, FAIBLE, 20, true)
 		petit.name = "Essais"
 		petit.tooltip_text = "%d essai%s" % [essais, "s" if essais > 1 else ""]
 		ligne.add_child(petit)
@@ -1899,7 +1907,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		var jauge := Jauge.new()
 		jauge.valeur = condition
 		jauge.densite = _densite
-		jauge.custom_minimum_size = Vector2(px(100), px(20))
+		jauge.custom_minimum_size = Vector2(px(80), px(20))
 		jauge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		S.G.fill(jauge)
 		energie.add_child(jauge)
@@ -1961,16 +1969,21 @@ func _marquer_ligne(case: Button) -> void:
 
 ## Nom du joueur : lien vers sa fiche (clic), mini-fiche au survol ; l'alerte écrite à côté (« épuisé »).
 func _nom_joueur(nom: String, id: String, alerte: String = "", humeur: Dictionary = {}) -> Control:
+	# Cadre sans taille minimale : la colonne Joueur garde sa largeur, quelle que soit la longueur du nom (un nom trop
+	# long s'arrête au bord de la colonne, il reste entier dans la mini-fiche et la fiche).
+	var cadre := Control.new()
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.clip_contents = true
+	S.G.fill(cadre, true)
 	var rangee := S.G.h(px(6))
 	rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	S.G.fill(rangee)
+	S.full(rangee)
+	cadre.add_child(rangee)
 	var lien := Button.new()
 	lien.name = "MatchBetweenPlayerName_" + id.validate_node_name()
 	lien.text = nom
 	lien.flat = true
 	lien.focus_mode = Control.FOCUS_NONE
-	lien.clip_text = true
-	lien.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	C.style_bouton_lien(lien)
 	lien.add_theme_font_override("font", Charte.texte_moyen())
 	lien.add_theme_font_size_override("font_size", fpx(19))
@@ -1994,7 +2007,7 @@ func _nom_joueur(nom: String, id: String, alerte: String = "", humeur: Dictionar
 		mot.clip_text = true
 		rangee.add_child(mot)
 	if not humeur.is_empty(): rangee.add_child(_etiquette_etat(humeur, fpx(17), false))
-	return rangee
+	return cadre
 
 ## Données de Notre XV, poste par poste : données du joueur (`W.donnees_joueur`), alerte, infobulle.
 func _infos_xv(joueurs: Array, direct: Dictionary) -> Array:
@@ -2015,7 +2028,7 @@ func _infos_xv(joueurs: Array, direct: Dictionary) -> Array:
 		var condition: float = d.energie
 		var alerte := ""
 		if d.blesse: alerte = "blessé"
-		elif cartons.has(id): alerte = "carton jaune, retour %s′" % str(cartons[id].get("retour", "")) if cartons[id].get("retour") != null else "exclu"
+		elif cartons.has(id): alerte = "carton jaune, retour %s′" % _minute(cartons[id].get("retour")) if cartons[id].get("retour") != null else "exclu"
 		elif condition < EPUISE: alerte = "épuisé"
 		elif condition < FATIGUE: alerte = "fatigué"
 		var plaq := int(d.get("plaquages", 0))
@@ -2145,7 +2158,7 @@ func _remplir_xv_adverse(direct: Dictionary) -> void:
 			var jauge := Jauge.new()
 			jauge.valeur = float(j.energie)
 			jauge.densite = _densite
-			jauge.custom_minimum_size = Vector2(px(100), px(20))
+			jauge.custom_minimum_size = Vector2(px(80), px(20))
 			jauge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			S.G.fill(jauge)
 			energie.add_child(jauge)
@@ -2301,7 +2314,7 @@ func _alertes_seules(joueurs: Array, direct: Dictionary) -> void:
 		var condition := float(joueur.get("condition", 100))
 		var alerte := ""
 		if int(joueur.get("injury", 0)) > 0: alerte = "blessé"
-		elif cartons.has(id): alerte = "carton jaune, retour %s′" % str(cartons[id].get("retour", "")) if cartons[id].get("retour") != null else "exclu"
+		elif cartons.has(id): alerte = "carton jaune, retour %s′" % _minute(cartons[id].get("retour")) if cartons[id].get("retour") != null else "exclu"
 		elif condition < EPUISE: alerte = "épuisé"
 		elif condition < FATIGUE: alerte = "fatigué"
 		if not alerte.is_empty(): alertes_xv.append({"poste": poste, "id": id, "nom": str(joueur.get("name", "")), "alerte": alerte, "condition": condition})

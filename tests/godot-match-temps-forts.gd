@@ -216,12 +216,12 @@ func _tient(view: Control, between: Control, label: String, screen: Rect2) -> vo
 			check(fondu.visible == reste_a_droite, label + " : « › » du multiplex seulement s'il déborde (%s, rangée %d px dans %d)" % [str(fondu.visible), int(between.multiplex_cartes.size.x), int(defile.size.x)])
 		between.montrer_droite("chiffres")
 		await settle(2)
-	# Bouton PAUSE du bandeau : la police des commandes (Barlow Condensed), filet ivoire (charte), en capitales.
+	# Bouton PAUSE du bandeau : la police des commandes (Barlow Condensed), comme Équipe et Réglages.
 	var pause: Button = view.play
 	var police_pause: Font = pause.get_theme_font("font")
 	var police_equipe: Font = (view.find_child("MatchBetweenTeam", true, false) as Button).get_theme_font("font")
 	check(police_pause != null and police_pause.resource_path == "res://fonts/BarlowCondensed-SemiBold.ttf" and police_equipe != null and police_equipe.resource_path.get_file().begins_with("BarlowCondensed"), label + " : bouton PAUSE en Barlow Condensed demi-gras (%s ; Équipe : %s)" % [police_pause.resource_path if police_pause != null else "?", police_equipe.resource_path if police_equipe != null else "?"])
-	check(pause.text == pause.text.to_upper() and pause.get_theme_stylebox("normal") is StyleBoxFlat and (pause.get_theme_stylebox("normal") as StyleBoxFlat).border_width_top == 1 and inside(screen, pause.get_global_rect()), label + " : bouton PAUSE encadré d'un filet, en capitales, comme les commandes")
+	check(pause.text == pause.text.to_upper() and pause.get_theme_stylebox("normal") is StyleBoxFlat and (pause.get_theme_stylebox("normal") as StyleBoxFlat).border_width_top == 0 and inside(screen, pause.get_global_rect()), label + " : bouton PAUSE à plat, en capitales, comme les commandes")
 
 ## Capture de l'écran (CD_MATCH_TEMPS_FORTS_CAPTURES : dossier ; rendu fenêtré seulement).
 func _capture(label: String, vue: String) -> void:
@@ -1568,6 +1568,7 @@ func journee_injectee(view: Control, direct: Dictionary) -> void:
 	between.update_frame(app.model, app.model.live, avec_courte, func(_c: Dictionary): pass)
 	await settle(6)
 	between.update_frame(app.model, app.model.live, avec_courte, func(_c: Dictionary): pass)
+	between.montrer_droite("journee")
 	await settle(3)
 	check(_cartes_multiplex(between).size() == 2 and not between.multiplex_deborde() and not between.multiplex_fondu.visible, "Entracte avec deux matchs : la rangée tient, pas de fondu (%d cartes, rangée %d px dans %d)" % [_cartes_multiplex(between).size(), int(between.multiplex_cartes.size.x), int(between.multiplex_defile.size.x)])
 	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
@@ -1699,7 +1700,8 @@ func journee_directe(view: Control) -> void:
 		var nous: Array = classement.filter(func(r: Dictionary): return bool(r.get("nous", false)))
 		var ligne_nous := _ligne_nous(between)
 		check(nous.size() == 1 and between.classement_tuile.is_visible_in_tree() and ligne_nous != null and int(ligne_nous.get_meta("rang")) == int(nous[0].rang), "Classement réel : notre club (%s) surligné à son rang" % (str(nous[0].get("abbr", "")) if nous.size() == 1 else "absent"))
-		between.montrer_droite("chiffres") JSON.stringify({"minute": journee.get("minute"), "matchs": matchs.size(), "clubs": classement.size(), "nous": nous[0].rang if nous.size() == 1 else null}))
+		between.montrer_droite("chiffres")
+		print("MULTIPLEX_REEL ", JSON.stringify({"minute": journee.get("minute"), "matchs": matchs.size(), "clubs": classement.size(), "nous": nous[0].rang if nous.size() == 1 else null}))
 	await _mise_en_page_journee(view, "reel")
 	for taille: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]: await layout(view, taille)
 	var relancer := await suspendre_direct()

@@ -161,6 +161,8 @@ func run() -> void:
 		check(dores.is_empty(), cadre + " : aucune couleur or (réservée à Continuer) " + str(dores.slice(0, 6)))
 		# Noms : lien vers la fiche, mini-fiche au survol.
 		var noms: Array = ecran.find_children("MatchBetweenPlayerName_*", "Button", true, false)
+		var nom1 := ecran.find_child("MatchBetweenPlayerName_p1", true, false) as Button
+		check(nom1 != null and nom1.text == "Joueur Numéro1" and nom1.size.x >= nom1.get_theme_font("font").get_string_size(nom1.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom1.get_theme_font_size("font_size")).x, cadre + " : le nom se lit en entier (%s)" % (str(nom1.size) if nom1 != null else "absent"))
 		check(noms.size() == 23 and noms.all(func(b: Button): return b.has_meta("player_id") and b.has_meta("mini_fiche_joueur") and b.pressed.get_connections().size() > 0), cadre + " : 23 noms, chacun lien vers sa fiche et mini-fiche au survol (%d)" % noms.size())
 		# Tout ce qui a l'air cliquable fait quelque chose, sans ouvrir de fenêtre (le menu Plus est l'exception).
 		var fenetres_avant := root.get_children().filter(func(n: Node): return n is Window and (n as Window).visible).size()
