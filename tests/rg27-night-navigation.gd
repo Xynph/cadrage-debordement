@@ -352,12 +352,10 @@ func reading_cases() -> void:
 	check(not next.is_empty(), "Une rencontre du club est réellement projetée pour consulter son adversaire")
 	if not next.is_empty():
 		var opponent: Dictionary = next.away if int(next.home.id) == int(app.model.club.id) else next.home
-		check(await open_entity("club", opponent.id), "Club adverse ouvert dans son détail existant")
-		var club_detail := named("CompetitionClubDetails")
-		check(club_detail != null and str(club_detail.get_meta("entity_id", "")) == str(opponent.id), "Détail du bon ID de club adverse effectivement rendu")
-		check(club_detail != null and club_detail.title == GameSkin.club_name(opponent), "Nom publié du bon club adverse effectivement rendu dans le titre")
+		check(await open_entity("club", opponent.id), "Club adverse ouvert dans sa fiche (écran, plus de fenêtre)")
+		await settle()
+		check(app.route == "Fiche club" and int(app.management_ui.get("club_sheet", {}).get("id", -1)) == int(opponent.id), "Fiche du bon ID de club adverse effectivement rendue")
 		await capture("club-adverse-2560")
-		app._clear_dialogs(); await settle()
 	await cancel_real_drag()
 	await fatigue_chart_return()
 	for resolution in [Vector2i(1280,720), Vector2i(1440,900), Vector2i(1600,900), Vector2i(1920,1080), Vector2i(2560,1440)]:
@@ -667,7 +665,7 @@ func guard_cases() -> void:
 		var before := await snapshot()
 		check(await open_entity("fixture", historical.id), "Score historique : détail du vrai identifiant de rencontre")
 		var detail := named("CompetitionFixtureDetails")
-		check(detail != null and str(detail.get_meta("entity_id", "")) == str(historical.id), "Fenêtre historique du même identifiant, sans rencontre substituée")
+		check(detail != null and not detail is Window and str(detail.get_meta("entity_id", "")) == str(historical.id), "Page historique du même identifiant, sans rencontre substituée")
 		await capture("rencontre-historique-2560")
 		await unchanged(before, "Consultation du résultat historique")
 func finish() -> void:

@@ -161,6 +161,11 @@ func run() -> void:
 	var zone_note: Label = app.find_child("StandingsZoneNote", true, false)
 	check(zone_note != null and zone_note.text.contains("barrage d’accession"), "Classement : note du règlement sous la légende")
 	check(app.find_children("StandingsZoneMark", "Control", true, false).filter(func(mark: Control): return mark.get_parent().name.begins_with("StandingsRow_")).is_empty(), "Classement : aucune ligne en zone avant la 1re journée")
+	# Choix de la compétition : menu déroulant dans la page ; on l'ouvre pour mesurer chaque entrée.
+	var menu_button := app.find_child("StandingsDivisionMenu", true, false) as Button
+	check(menu_button != null, "Sélecteur de compétition présent")
+	if menu_button != null: menu_button.pressed.emit()
+	await settle()
 	for tab: Button in app.find_children("StandingsDivision_*", "Button", true, false):
 		var style := tab.get_theme_stylebox("normal")
 		var room := tab.size.x - style.content_margin_left - style.content_margin_right

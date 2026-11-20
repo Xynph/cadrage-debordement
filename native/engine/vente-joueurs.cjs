@@ -77,11 +77,25 @@ const venteAccord=id=>venteEtat().accords.find(a=>a.playerId===id&&a.clubId===S.
 // Nouvel accord différé (vente choisie, vente imposée, achat) : exécuté à la première clôture de semaine à partir de a.date.
 // bascule : exécuté au changement de saison (settleContracts, calendrier-mutations.cjs), plus à une clôture de semaine.
 const venteBasculeChamp=()=>typeof calFenetreAccords==='function'&&calFenetreAccords()?{bascule:true}:{};
-function venteNouvelAccord(champs){const st=venteEtat(true);st.seq++;const a={id:'accord-'+st.seq,clubId:S.club,conclu:venteJour()||'',...venteBasculeChamp(),...champs};st.accords.push(a);return a;}
+// Vente « bascule » (choisie ou imposée) : encaissée à la conclusion (venteEncaisser, décision de Léo du 20/11/2026).
+function venteNouvelAccord(champs){const st=venteEtat(true);st.seq++;const a={id:'accord-'+st.seq,clubId:S.club,conclu:venteJour()||'',...venteBasculeChamp(),...champs};st.accords.push(a);if(a.bascule&&a.sens!=='achat')venteEncaisser(a);return a;}
+// Encaissement d'une vente du club joué à l'accord (le joueur part au 1er juillet) : caisse de l'acheteur débitée, ligne de
+// caisse, part rendue au budget de transferts de la saison en cours (vente choisie, a.rendu), prêt de l'actionnaire
+// remboursé (vente pour le prêt) ; le joueur ne prend pas sa retraite avant la fin de son nouveau contrat. a.paye = vrai.
+function venteEncaisser(a){
+ const buyer=S.clubs[a.buyer],p=player(a.playerId),quand=typeof calJourMois==='function'?calJourMois(a.date):nativeVenteJoueurs.dateFr(a.date);
+ buyer.cash-=a.fee;
+ ledgerEntry((a.imposee&&!a.pret?'Vente décidée par le président : ':'Vente : ')+a.joueur+' (départ le '+quand+')',a.fee);
+ if(!a.imposee&&typeof budgetTransfertsRecette==='function')a.rendu=budgetTransfertsRecette(a.fee,true)||0;
+ if(a.pret&&typeof pretRembourser==='function'){const reste=S.pretsActionnaires?.[S.club]?.restant||0,r=Math.min(reste,a.fee);if(r>0){a.pretRendu=r;a.pretAvant={...S.pretsActionnaires[S.club]};(typeof ledgerEntryV1==='function'?ledgerEntryV1:ledgerEntry)('Remboursement anticipé du prêt de l’actionnaire',-r);pretRembourser(S.club,r,true);}}
+ if(p&&typeof calProlongerCarriere==='function')calProlongerCarriere(p,Math.max(p.contractEnd??S.season,S.season+1));
+ a.paye=true;
+}
 // Raison pour laquelle un joueur ne peut pas être proposé ('' : possible).
 function venteRaisonListe(p,loans=venteLoans()){
  const a=venteAccord(p.id);if(a)return 'Vente conclue avec '+(S.clubs[a.buyer]?.name||'un club')+' : départ le '+nativeVenteJoueurs.dateFr(a.date)+'.';
  const pre=typeof preContratSigne==='function'?preContratSigne(p.id):null;if(pre&&pre.sens==='depart')return 'A signé un pré-contrat avec '+pre.autre+' : il part libre le '+nativeVenteJoueurs.dateFr(pre.arrivee)+'.';
+ const rt=typeof calRaisonRetraite==='function'?calRaisonRetraite(p):'';if(rt)return rt;
  const fin=typeof calRaisonVenteFin==='function'?calRaisonVenteFin(p):'';if(fin)return fin;
  if(S.live)return 'Match en cours : attends la fin de la journée.';
  if(p.espoirLoan)return 'Appelé du centre de formation : il n’a pas de contrat professionnel.';
@@ -156,9 +170,11 @@ function venteExecuterAccords(quand){
  const st=S.venteJoueurs,dus=st.accords.filter(a=>quand?a.bascule&&(quand==='achats')===(a.sens==='achat'):!a.bascule&&a.date<=jour);if(!dus.length)return 0;
  st.accords=st.accords.filter(a=>!dus.includes(a));let n=0;
  for(const a of dus){
-  if(a.clubId!==S.club)continue;
+  // Accord payé à la conclusion (paye) : honoré même si le manager a changé de club (transfert entre ces deux clubs).
+  if(a.clubId!==S.club&&!a.paye)continue;
   // Achat d'un joueur sous contrat (calendrier-mutations.cjs) : revérifié et exécuté par le marché entre clubs.
   if(a.sens==='achat'){if(typeof calExecuterAchat==='function'&&calExecuterAchat(a))n++;continue;}
+  if(a.paye){if(venteExecuterPaye(a))n++;continue;}
   const p=player(a.playerId),buyer=S.clubs[a.buyer];
   const base={joueur:a.joueur,acheteur:buyer?.name||a.acheteur,montant:a.fee,playerId:a.playerId,buyerId:a.buyer};
   const raison=!p?'Le joueur ne fait plus partie de l’effectif.':!buyer?'Le club acheteur n’existe plus.':(quand?'':venteGarde(p))||(buyer.cash<a.fee||professionalPlaces(buyer)<=0?buyer.name+' n’a plus les moyens ou plus de place dans son effectif.':'');
@@ -176,6 +192,36 @@ function venteExecuterAccords(quand){
  }
  return n;
 }
+// Vente payée à l'accord (décision de Léo du 20/11/2026) : le joueur part au changement de saison, sans revérifier ni
+// l'acheteur ni la garde d'effectif ; conséquences de vestiaire au départ (vente choisie du club joué). Seul cas de chute :
+// le joueur n'est plus au club vendeur ; l'argent est alors rendu (caisses, ligne de caisse, part du budget retirée).
+function venteExecuterPaye(a){
+ const vendeur=S.clubs[a.clubId],buyer=S.clubs[a.buyer],joue=a.clubId===S.club,p=vendeur&&buyer?vendeur.players.find(q=>q.id===a.playerId):null;
+ const base={joueur:a.joueur,acheteur:buyer?.name||a.acheteur,montant:a.fee,playerId:a.playerId,buyerId:a.buyer};
+ if(!p){
+  if(buyer)buyer.cash+=a.fee;
+  if(joue){
+   ledgerEntry('Vente annulée : '+a.joueur,-a.fee);
+   // Vente pour le prêt de l'actionnaire : le remboursement fait à l'accord est annulé, la dette revient (ligne de caisse inverse).
+   if(a.pretRendu>0&&typeof pretRestituer==='function'&&pretRestituer(S.club,a.pretRendu,a.pretAvant))(typeof ledgerEntryV1==='function'?ledgerEntryV1:ledgerEntry)('Remboursement du prêt de l’actionnaire annulé',a.pretRendu);
+   const e=S.budgetTransferts;if(a.rendu>0&&e&&e.clubId===S.club&&e.saison===S.season)e.reconstitue=Math.max(0,Math.round(e.reconstitue-a.rendu));
+   const raison='Le joueur ne fait plus partie de l’effectif.';
+   venteEvenement({type:'annulee',raison,...base});transferEvent('L’accord avec '+base.acheteur+' pour '+a.joueur+' tombe : '+raison.replace(/\\.$/,'')+'. L’indemnité est rendue.');
+  }else if(vendeur)vendeur.cash-=a.fee;
+  return false;
+ }
+ const cons=joue&&!a.imposee?venteConsequences(p):null;
+ vendeur.players=vendeur.players.filter(q=>q.id!==p.id);buyer.players.push(p);
+ p.contractEnd=Math.max(p.contractEnd??S.season+1,S.season+1);p.formerClub=vendeur.name;p.joinedSeason=S.season+1;p.joinedRound=0;
+ if(S.economy){delete S.economy.listings[p.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==p.id);}
+ if(vendeur.id===S.club||buyer.id===S.club){S.lineup=S.lineup.map(x=>x===p.id?null:x);S.reserves=S.reserves.map(x=>x===p.id?null:x);}
+ if(vendeur.id===S.club&&typeof repairSheet==='function')repairSheet();
+ if(typeof aiRosterEvent==='function'&&buyer.id!==S.club)aiRosterEvent(buyer.id,'recruit',p,a.fee);
+ if(cons)venteAppliquerConsequences(cons);
+ transferEvent(p.name+' rejoint '+buyer.name+' : vente de '+venteEuros(a.fee)+' effective au changement de saison.');
+ if(joue)venteEvenement({type:'executee',raison:'',...base});
+ return true;
+}
 const venteOffre=id=>S.economy?.offers?.find(o=>o.id===id)||null;
 // Raison pour laquelle une offre ne peut pas être acceptée ('' : possible).
 function venteRaisonAccepter(o){
@@ -183,8 +229,13 @@ function venteRaisonAccepter(o){
  if(S.live)return 'Match en cours : attends la fin de la journée.';
  if(!p||!buyer||o.expires<e.week)return 'Cette offre n’est plus disponible.';
  if(venteAccord(p.id))return 'Un accord est déjà conclu pour ce joueur.';
+ const rt=typeof calRaisonRetraite==='function'?calRaisonRetraite(p):'';if(rt)return rt;
  const g=venteGarde(p);if(g)return g;
- if(buyer.cash<o.fee||professionalPlaces(buyer)<=0)return 'Plus disponible : '+buyer.name+' n’a plus les moyens ou plus de place dans son effectif.';
+ // v2 (accord encaissé tout de suite, joueur au 1er juillet) : réserve de l'acheteur après l'indemnité et place de sa saison
+ // suivante (arrivées et départs conclus compris), vérifiées à l'accord.
+ const f=typeof calFenetreAccords==='function'?calFenetreAccords():null;
+ if(f&&typeof calIASuivante==='function'){if(buyer.cash-o.fee<venteReglages().relances.reserveAcheteur||calIASuivante(buyer).places<=0)return 'Plus disponible : '+buyer.name+' n’a plus les moyens ou plus de place dans son effectif.';}
+ else if(buyer.cash<o.fee||professionalPlaces(buyer)<=0)return 'Plus disponible : '+buyer.name+' n’a plus les moyens ou plus de place dans son effectif.';
  return '';
 }
 function venteRaisonRelance(o){
@@ -223,7 +274,7 @@ function venteAppliquerConsequences(c){
  if(c.cadre&&R.supportersCadre&&Number.isFinite(S.pressRelations?.fanTrust))S.pressRelations.fanTrust=venteBorne(S.pressRelations.fanTrust+R.supportersCadre,0,100);
  if(c.renfloue)S.trust=venteBorne((S.trust??50)+R.confiancePresident,0,100);
 }
-const venteNoteAccord=f=>f.bascule?'Accord conclu maintenant, effectif le '+nativeVenteJoueurs.dateFr(f.reouverture)+' (changement de saison). Le joueur reste au club et joue jusque-là ; l’argent arrive à son départ.':'Hors période des mutations : accord conclu, effectif le '+nativeVenteJoueurs.dateFr(f.reouverture)+'. Le joueur reste au club et joue jusque-là ; l’argent arrive à son départ.';
+const venteNoteAccord=f=>f.bascule?'Accord conclu maintenant, effectif le '+nativeVenteJoueurs.dateFr(f.reouverture)+' (changement de saison). L’argent est encaissé tout de suite ; le joueur reste au club et joue jusque-là.':'Hors période des mutations : accord conclu, effectif le '+nativeVenteJoueurs.dateFr(f.reouverture)+'. Le joueur reste au club et joue jusque-là ; l’argent arrive à son départ.';
 function venteRetourBudget(fee){
  const ctx=typeof budgetTransfertsContexte==='function'?budgetTransfertsContexte():null;
  return ctx?nativeBudgetTransferts.rendu(ctx.e,fee,ctx.recettes,nativeBudgetTransferts.REGLAGES):0;
@@ -301,12 +352,13 @@ function venteRepondre(p){
  const f=venteFenetre();
  if(!f.ouverte&&f.reouverture){
   // Hors période des mutations : accord conclu, exécuté à l'ouverture ; le joueur reste et joue jusque-là.
-  const st=venteEtat(true);st.seq++;
-  const a={id:'accord-'+st.seq,clubId:S.club,playerId:j.id,joueur:j.name,buyer:buyer.id,acheteur:buyer.name,fee:o.fee,date:f.reouverture,conclu:venteJour()||'',spontaneous:!!o.spontaneous,...(f.bascule?{bascule:true}:{})};
-  st.accords.push(a);delete S.economy.listings[j.id];S.economy.offers=S.economy.offers.filter(x=>x.playerId!==j.id);
-  transferEvent('Accord conclu : '+j.name+' rejoindra '+buyer.name+' le '+nativeVenteJoueurs.dateFr(a.date)+' pour '+venteEuros(a.fee)+'.');
-  return {saleAnswer:{offerId:o.id,action:'accept',playerId:j.id,fee:o.fee,deferred:true,date:a.date,budgetReturn:0,squadSize:club().players.length,
-   message:'Accord conclu avec '+buyer.name+' : '+j.name+' partira le '+nativeVenteJoueurs.dateFr(a.date)+' contre '+venteEuros(a.fee)+'. Il reste au club et joue jusque-là.'}};
+  // v2 (bascule) : vente encaissée tout de suite, part du budget de transferts rendue tout de suite (venteEncaisser).
+  const a=venteNouvelAccord({playerId:j.id,joueur:j.name,buyer:buyer.id,acheteur:buyer.name,fee:o.fee,date:f.reouverture,spontaneous:!!o.spontaneous,...(f.bascule?{bascule:true}:{})});
+  delete S.economy.listings[j.id];S.economy.offers=S.economy.offers.filter(x=>x.playerId!==j.id);
+  const rendu=a.rendu||0;
+  transferEvent('Accord conclu : '+j.name+' rejoindra '+buyer.name+' le '+nativeVenteJoueurs.dateFr(a.date)+' pour '+venteEuros(a.fee)+(a.paye?', encaissés dès maintenant.':'.'));
+  return {saleAnswer:{offerId:o.id,action:'accept',playerId:j.id,fee:o.fee,deferred:true,date:a.date,budgetReturn:rendu,squadSize:club().players.length,
+   message:'Accord conclu avec '+buyer.name+' : '+j.name+' partira le '+nativeVenteJoueurs.dateFr(a.date)+' contre '+venteEuros(a.fee)+(a.paye?', encaissés dès maintenant'+(rendu>0?' ('+venteEuros(rendu)+' reviennent au budget de transferts)':''):'')+'. Il reste au club et joue jusque-là.'}};
  }
  const avant=S.budgetTransferts?.reconstitue??0,fee=o.fee,name=j.name,buyerName=buyer.name,cons=venteConsequences(j);
  if(acceptSale(o.id)!==true)throw Error('Cette offre n’est plus disponible.');

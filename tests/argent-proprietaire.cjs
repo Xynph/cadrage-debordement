@@ -91,25 +91,41 @@ test('Moteur Monde : prêt du club joué, remboursement hebdomadaire, courrier d
     assert.equal(mail.reponses.length, 2);
     assert.ok(mail.reponses.every(r => r.disponible), JSON.stringify(mail.reponses));
     const joueur = lire('S.pretsActionnaires[S.club].vente.joueur'), avant = lire('({dette:worldClub(S.club).debt,cash:club().cash,n:club().players.length})');
-    // La vente est conclue tout de suite et exécutée au changement de saison, remboursement compris (calendrier-mutations
-    // v2, décision de Léo du 19/11/2026).
+    // La vente est conclue tout de suite et exécutée au changement de saison (calendrier-mutations v2, décision de Léo du
+    // 19/11/2026) ; l'argent est encaissé et le prêt remboursé dès l'accord (décision de Léo du 20/11/2026).
     assert.match(mail.corps, /prennent effet au changement de saison/);
     const r = jeu.brut('club_mail_reply', { id: mail.id, choice: 'vendre' });
     assert.equal(r.ok, true, r.error);
     const conclu = lire(`({dette:worldClub(S.club).debt,n:club().players.length,ici:club().players.some(p=>p.id===${JSON.stringify(joueur)}),
       accord:S.venteJoueurs.accords.find(a=>a.playerId===${JSON.stringify(joueur)})||null})`);
-    assert.equal(conclu.ici, true, 'il reste jusqu’à l’ouverture'); assert.equal(conclu.n, avant.n); assert.equal(conclu.dette, avant.dette);
+    assert.equal(conclu.ici, true, 'il reste jusqu’à l’ouverture'); assert.equal(conclu.n, avant.n); assert.ok(conclu.dette < avant.dette, 'prêt remboursé à l’accord');
     assert.ok(conclu.accord && conclu.accord.imposee && conclu.accord.pret, JSON.stringify(conclu.accord));
     assert.match(conclu.accord.date, /-07-01$/); assert.equal(conclu.accord.bascule, true);
-    // Changement de saison (ventes de settleContracts) : la vente est exécutée et son prix rembourse le prêt.
+    // Changement de saison (ventes de settleContracts) : le joueur part, sans nouveau mouvement d'argent.
     const apres = lire(`(()=>{venteExecuterAccords('ventes');
         return {dette:worldClub(S.club).debt,cash:club().cash,n:club().players.length,ici:club().players.some(p=>p.id===${JSON.stringify(joueur)}),pret:S.pretsActionnaires[S.club]??null,
         lignes:S.ledger.slice(0,4).map(e=>e.title)};})()`);
     jeu.call('save');
     assert.equal(apres.ici, false, 'joueur vendu');
     assert.equal(apres.n, avant.n - 1);
-    assert.ok(apres.dette < avant.dette, 'dette remboursée : ' + JSON.stringify([avant, apres]));
+    assert.equal(apres.dette, conclu.dette, 'rien de plus au départ : ' + JSON.stringify([avant, conclu, apres]));
     assert.ok(apres.lignes.some(t => /Remboursement anticipé/.test(t)) && apres.lignes.some(t => /^Vente/.test(t)), JSON.stringify(apres.lignes));
+    // Vente pour le prêt dont le joueur disparaît avant la bascule : l'accord tombe, la dette de l'actionnaire est rétablie.
+    const tombe = lire(`(()=>{
+      const q=club().players[0],acheteur=S.clubs.find(c=>c.id!==S.club);
+      S.pretsActionnaires[S.club]={restant:500000,annuite:234000,saison:S.season-1,dernier:500000};worldClub(S.club).debt+=500000;
+      const dette0=worldClub(S.club).debt,cash0=club().cash;
+      const a=venteNouvelAccord({playerId:q.id,joueur:q.name,buyer:acheteur.id,acheteur:acheteur.name,fee:300000,date:calArrivee(),imposee:true,pret:true});
+      const mid={restant:S.pretsActionnaires[S.club]?.restant??0,dette:worldClub(S.club).debt};
+      club().players=club().players.filter(p=>p.id!==q.id);
+      venteExecuterAccords('ventes');
+      return {dette0,cash0,mid,restant:S.pretsActionnaires[S.club]?.restant??0,dette:worldClub(S.club).debt,cash:club().cash,paye:a.paye,lignes:S.ledger.slice(0,4).map(e=>e.title)};})()`);
+    assert.equal(tombe.paye, true);
+    assert.equal(tombe.mid.restant, 200000, 'prêt remboursé à l’accord : ' + JSON.stringify(tombe));
+    assert.equal(tombe.restant, 500000, 'dette rétablie quand l’accord tombe : ' + JSON.stringify(tombe));
+    assert.equal(tombe.dette, tombe.dette0, 'dette du club rétablie');
+    assert.equal(tombe.cash, tombe.cash0, 'caisse revenue à son niveau d’avant l’accord');
+    assert.ok(tombe.lignes.some(t => /prêt de l’actionnaire annulé/.test(t)), JSON.stringify(tombe.lignes));
   } finally { jeu.fermer(); }
 });
 

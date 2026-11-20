@@ -104,14 +104,14 @@ func run() -> void:
 	var save_path := str(app.model.meta.dataDir).path_join("donnees.json")
 	var saved := FileAccess.get_file_as_bytes(save_path)
 	var requests: int = app.bridge._next_id
-	# Fiche club (14/11/2026) : un nom de club ouvre la page « Fiche club » (lecture moteur `club_sheet`,
-	# sans changement d'état) ; la chaîne de lecteurs part donc de la rencontre historique.
+	# Rencontre : sous-page de Classements (décision de Léo du 19/11/2026 : plus de petite fenêtre), avec retour et historique
+	# Précédent / Suivant. Un nom de club ouvre la page « Fiche club » (lecture moteur `club_sheet`, sans changement d'état).
 	check(nav.open_entity({"kind":"fixture", "id":str(historical.id)}), "Ouverture de la rencontre historique")
 	await settle()
-	var detail := named("CompetitionFixtureDetails") as AcceptDialog
-	check(detail != null and str(detail.get_meta("entity_id", "")) == str(historical.id), "Lecteur de la vraie rencontre rendu")
+	var detail := named("CompetitionFixtureDetails")
+	check(detail != null and str(detail.get_meta("entity_id", "")) == str(historical.id) and not detail is Window, "Page de la vraie rencontre rendue (aucune fenêtre)")
 	if detail == null: await finish(); return
-	var detail_instance: int = detail.get_instance_id()
+	check(app.route == "Classements" and visible_readers() == 0, "La rencontre s'ouvre dans l'écran Classements, sans lecteur par-dessus")
 	var own_home: bool = str(historical.home.id) == str(app.model.club.id)
 	var club_id := str(historical.away.id if own_home else historical.home.id)
 	var club_link := detail.find_child("FixtureClub_away" if own_home else "FixtureClub_home", true, false) as Button
@@ -122,47 +122,30 @@ func run() -> void:
 	while (app.waiting or named("ClubSheetLoading") != null) and Time.get_ticks_msec() < deadline_sheet: await process_frame
 	await settle()
 	check(app.route == "Fiche club" and int(app.management_ui.club_sheet.id) == int(club_id) and named("FicheClub") != null, "Le lien du club ouvre la fiche du bon club")
-	check(is_instance_valid(detail) and not detail.visible and nav.is_suspended_reader(detail), "Rencontre conservée cachée pendant la fiche du club (lecture sans invalidation)")
 	check(visible_readers() == 0, "Aucun lecteur visible par-dessus la fiche du club")
 	nav._travel(-1)
 	await settle()
-	check(is_instance_valid(detail) and detail.visible and detail.get_instance_id() == detail_instance and detail.name == "CompetitionFixtureDetails", "Précédent depuis la fiche du club restitue exactement la rencontre")
-	check(club_link.has_focus(), "Le focus revient au lien du club")
+	detail = named("CompetitionFixtureDetails")
+	check(app.route == "Classements" and detail != null and str(detail.get_meta("entity_id", "")) == str(historical.id), "Précédent depuis la fiche du club restitue la rencontre")
 	# La fiche est une lecture moteur : le décompte des commandes repart d'ici.
 	requests = app.bridge._next_id
-	var detail_scroll := scroll_of(detail)
-	var date_button := detail.find_child("FixtureCalendarDate", true, false) as Button
+	var date_button := detail.find_child("FixtureCalendarDate", true, false) as Button if detail != null else null
 	check(date_button != null, "La date historique est un vrai lien vers le calendrier")
-	if detail_scroll != null and date_button != null: detail_scroll.ensure_control_visible(date_button)
-	await settle()
-	var offset: int = detail_scroll.scroll_vertical if detail_scroll != null else 0
+	if date_button == null: await finish(); return
 	await activate(date_button)
 	check(app.route == "Calendrier" and app.management_ui.calendar_reading.selected == str(historical.date), "La date cible le calendrier réellement projeté")
-	check(is_instance_valid(detail) and not detail.visible and nav.is_suspended_reader(detail), "Rencontre suspendue pendant la consultation du calendrier")
 	nav._travel(-1)
 	await settle()
-	check(is_instance_valid(detail) and detail.visible and detail.get_instance_id() == detail_instance and detail.name == "CompetitionFixtureDetails", "Précédent depuis le calendrier restitue exactement le lecteur de rencontre")
-	check(date_button.has_focus() and (detail_scroll == null or detail_scroll.scroll_vertical == offset), "Retour conserve le focus de la date et le scroll réel du lecteur")
-	var confirmation := ConfirmationDialog.new()
-	confirmation.name = "ReaderHistoryBusinessConfirmation"
-	detail.add_child(confirmation)
-	confirmation.popup_centered(Vector2i(420, 200))
-	await settle()
-	var private_count: int = nav._readers.size()
-	check(not nav.open_entity({"kind":"player", "id":str(app.model.squad[0].id)}, detail), "Autre confirmation visible : lien refusé avant suspension")
-	check(detail.visible and confirmation.visible and nav._readers.size() == private_count, "Refus garde le lecteur, la confirmation et le registre intacts")
-	confirmation.queue_free()
-	await settle()
+	detail = named("CompetitionFixtureDetails")
+	check(app.route == "Classements" and detail != null and str(detail.get_meta("entity_id", "")) == str(historical.id), "Précédent depuis le calendrier restitue la page de la rencontre")
+	check(visible_readers() == 0, "Aucune fenêtre ne s'ouvre pendant la navigation de la rencontre")
 	check(app.bridge._next_id == requests, "Tous les liens et retours sont sans commande worker")
 	check(saved == FileAccess.get_file_as_bytes(save_path), "Sauvegarde strictement identique après consultations et retours")
 	await command("export")
 	check(before == JSON.parse_string(app.model.meta.exportText).state, "État sportif et RNG exportés strictement inchangés")
-	check(nav._readers.is_empty() and not is_instance_valid(detail), "Nouvelle réponse worker invalide et libère toute la chaîne de lecteurs")
+	check(nav._readers.is_empty(), "Aucun lecteur suspendu : la rencontre est une page de l'historique")
 	var contexts := 0
 	for child: Node in app.get_children():
 		if child.has_meta("reading_dialog"): contexts += 1
-	check(contexts == 0 and app.find_children("_NavigationReader_*", "Window", true, false).is_empty(), "Aucun contexte de consultation ni fenêtre suspendue ne fuit après invalidation")
-	nav._travel(-1)
-	await settle()
-	check(visible_readers() == 0, "L’historique ne ressuscite aucun lecteur d’une ancienne projection")
+	check(contexts == 0 and app.find_children("_NavigationReader_*", "Window", true, false).is_empty(), "Aucun contexte de consultation ni fenêtre suspendue")
 	await finish()

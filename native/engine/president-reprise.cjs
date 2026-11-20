@@ -86,10 +86,12 @@ const repriseEtat=()=>{if(!nativePresidentReprise.valide(S.presidentReprise))S.p
 const repriseReserve=id=>{const r=S.clubBudget?.clubs?.[id]?.reserve;return Number.isFinite(r)?r:null;};
 const repriseTally=(k,id)=>{if(typeof nativeClubDirections!=='undefined')nativeClubDirections.tally(k,id);};
 const reprisePretes=()=>new Set((S.clubDirections?.loans||[]).map(l=>l.playerId));
-// exclus : joueurs à ne pas désigner (arrivées de la bascule, pas encore « recrues » pour saleBlocked).
+// exclus : joueurs à ne pas désigner. Calendrier v2 (transferts au 1er juillet) : jamais un joueur déjà engagé ailleurs (accord,
+// pré-contrat), qui a annoncé sa retraite, ou dont le contrat s'achève (il part libre et ne rapporterait rien).
 function repriseJoueurs(c,exclus){
- const pretes=reprisePretes();
- return c.players.map(p=>({id:p.id,name:p.name,pos:p.pos,note:p.rating,salaire:p.salary,valeur:transferValue(p),bloque:!!saleBlocked(p)||pretes.has(p.id)||!!exclus&&exclus.has(p.id)}));
+ const pretes=reprisePretes(),v2=typeof calBascule==='function'&&calBascule();
+ const engage=p=>v2&&(p.contractEnd!=null&&p.contractEnd<=S.season||(typeof calIAIndisponible==='function'&&calIAIndisponible(p.id,p))||(c.id===S.club&&typeof venteAccord==='function'&&!!venteAccord(p.id)));
+ return c.players.map(p=>({id:p.id,name:p.name,pos:p.pos,note:p.rating,salaire:p.salary,valeur:transferValue(p),bloque:!!saleBlocked(p)||pretes.has(p.id)||!!exclus&&exclus.has(p.id)||engage(p)}));
 }
 // Après un achat d'un club : caisse avant l'achat. Le président désigne les joueurs à vendre s'il le faut.
 function repriseApresAchat(c,avant,exclus){
@@ -118,31 +120,38 @@ function repriseFenetre(c){
  if(c.id!==S.club||typeof venteFenetre!=='function'||typeof venteNouvelAccord!=='function')return null;
  const f=venteFenetre();return f.ouverte||!f.reouverture?null:f;
 }
-// bascule : vente d'un club géré au changement de saison (repriseBascule) ; le joueur arrive pour la nouvelle saison.
-function repriseVendre(c,plan,reserve,bascule){
- const vendus=[],differe=bascule?null:repriseFenetre(c);let attendu=0;
+// Calendrier v2 (décision de Léo du 20/11/2026) : la vente est un accord payé tout de suite, le joueur part au 1er juillet
+// (club joué : accord imposé de vente-joueurs.cjs ; club géré : calIANouvelAccord) ; l'acheteur a la place et la masse de sa
+// saison suivante.
+function repriseVendre(c,plan,reserve){
+ const v2=typeof calBascule==='function'&&calBascule()&&typeof calIANouvelAccord==='function';
+ const vendus=[],differe=repriseFenetre(c);let attendu=0;
  for(const j of plan.joueurs){
   if(c.cash+attendu>=reserve)break;
-  const p=c.players.find(x=>x.id===j.id);if(!p||saleBlocked(p)||differe&&(venteAccord(p.id)||venteRaisonListe(p)))continue;
+  const p=c.players.find(x=>x.id===j.id);if(!p||saleBlocked(p)||differe&&(venteAccord(p.id)||venteRaisonListe(p))||v2&&c.id!==S.club&&calIAIndisponible(p.id,p))continue;
   const fee=Math.max(20000,Math.round(transferValue(p)*nativePresidentReprise.DECOTE/10000)*10000);
-  const b=S.clubs.filter(x=>x.id!==c.id&&x.id!==S.club&&professionalPlaces(x)>0&&x.cash-fee>=400000&&aiRosterPayroll(x)+p.salary<=aiRosterWageLimit(x))
+  const b=S.clubs.filter(x=>x.id!==c.id&&x.id!==S.club&&x.cash-fee>=400000&&(v2?calIAPeutAcheter(x,p.salary):professionalPlaces(x)>0&&aiRosterPayroll(x)+p.salary<=aiRosterWageLimit(x)))
    .sort((x,y)=>y.cash-x.cash||x.id-y.id)[0];
   if(!b)continue;
   if(differe){
-   venteNouvelAccord({playerId:p.id,joueur:p.name,buyer:b.id,acheteur:b.name,fee,date:differe.reouverture,imposee:true});
+   const a=venteNouvelAccord({playerId:p.id,joueur:p.name,buyer:b.id,acheteur:b.name,fee,date:differe.reouverture,imposee:true});
    delete S.economy.listings[p.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==p.id);
-   transferEvent('Le président a conclu la vente de '+p.name+' à '+b.name+' pour '+money(fee)+' : départ le '+nativeVenteJoueurs.dateFr(differe.reouverture)+(differe.bascule?', au changement de saison.':', à l’ouverture des mutations.'));
-   attendu+=fee;vendus.push({name:p.name,fee,club:b.name,date:differe.reouverture});repriseTally('president:vente',c.id);continue;
+   transferEvent('Le président a conclu la vente de '+p.name+' à '+b.name+' pour '+money(fee)+' : départ le '+nativeVenteJoueurs.dateFr(differe.reouverture)+(differe.bascule?', au changement de saison (argent encaissé tout de suite).':', à l’ouverture des mutations.'));
+   if(!a.paye)attendu+=fee;vendus.push({name:p.name,fee,club:b.name,date:differe.reouverture});repriseTally('president:vente',c.id);continue;
+  }
+  if(v2&&c.id!==S.club){
+   calIANouvelAccord(b,c,p,fee,p.salary,Math.max(1,(p.contractEnd??S.season+1)-S.season));
+   vendus.push({name:p.name,fee,club:b.name});repriseTally('president:vente',c.id);continue;
   }
   b.cash-=fee;c.players=c.players.filter(x=>x.id!==p.id);b.players.push(p);
-  p.formerClub=c.name;p.joinedSeason=bascule?S.season+1:S.season;p.joinedRound=bascule?0:S.round;p.contractEnd=Math.max(p.contractEnd,S.season+1);
+  p.formerClub=c.name;p.joinedSeason=S.season;p.joinedRound=S.round;p.contractEnd=Math.max(p.contractEnd,S.season+1);
   if(typeof aiRosterEvent==='function'){aiRosterEvent(c.id,'sell',p,fee);aiRosterEvent(b.id,'recruit',p,fee);}
   if(c.id===S.club){
    ledgerEntry('Vente décidée par le président : '+p.name,fee);
    delete S.economy.listings[p.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==p.id);
    S.lineup=S.lineup.map(x=>x===p.id?null:x);S.reserves=S.reserves.map(x=>x===p.id?null:x);
    transferEvent('Le président a vendu '+p.name+' à '+b.name+' pour '+money(fee)+'.');
-  }else{c.cash+=fee;S.economy.transfers.unshift({season:S.season,round:S.round,text:c.name+' vend '+p.name+' à '+b.name+' pour '+money(fee)+' (le président veut retrouver sa réserve)'+(bascule?', au changement de saison':'')+'.'});S.economy.transfers=S.economy.transfers.slice(0,80);}
+  }else{c.cash+=fee;S.economy.transfers.unshift({season:S.season,round:S.round,text:c.name+' vend '+p.name+' à '+b.name+' pour '+money(fee)+' (le président veut retrouver sa réserve).'});S.economy.transfers=S.economy.transfers.slice(0,80);}
   vendus.push({name:p.name,fee,club:b.name});
   repriseTally('president:vente',c.id);
  }
@@ -166,20 +175,6 @@ function repriseSemaine(){
  // Mémoire bornée : les interventions closes des saisons passées disparaissent.
  for(const [id,plan] of Object.entries(e.clubs))if(plan.etat!=='en_cours'&&plan.saison<S.season)delete e.clubs[id];
 }
-// Calendrier v2 (calendrier-mutations.cjs, calIAExecuter) : un club géré qui a payé des indemnités à la bascule. avant : sa
-// caisse d'avant ses paiements de la bascule ; exclus : ses arrivées. S'il passe sous sa réserve, le président tranche tout de
-// suite : ses ventes prennent effet le jour même (1er juillet), l'argent revient aussitôt (GDD calendrier-mutations § 3 bis 5).
-// Le club joué n'est pas concerné (ses ventes imposées restent des accords). Renvoie le nombre de ventes.
-function repriseBascule(c,avant,exclus){
- if(!c||c.id===S.club)return 0;
- // Un joueur en fin de contrat part libre à cette bascule : le président ne le désigne pas (il ne rapporterait rien).
- exclus=new Set([...(exclus||[]),...c.players.filter(p=>p.contractEnd!=null&&p.contractEnd<=S.season).map(p=>p.id)]);
- if(!repriseApresAchat(c,avant,exclus))return 0;
- const plan=S.presidentReprise.clubs[c.id],reserve=repriseReserve(c.id)??plan.reserve;
- const vendus=repriseVendre(c,plan,reserve,true);
- plan.etat=vendus.length?'vendu':'abandon';
- return vendus.length;
-}
 const worldWeeklyEconomyRepriseV1=worldWeeklyEconomy;
 worldWeeklyEconomy=function(results){const r=worldWeeklyEconomyRepriseV1(results);if(r!==false)repriseSemaine();return r;};
 // Courrier du club joué (club-mail.cjs, déclencheur « reprise_president ») : {cle, vars} ou null.
@@ -189,7 +184,7 @@ function repriseCourrier(){
  // Hors période des mutations : le président prévient que ses ventes ne seront effectives qu'à l'ouverture.
  const f=repriseFenetre(club());
  return {cle:plan.date,vars:{...nativePresidentReprise.courrier(plan,{tresorerie:plan.tresorerie,reserve:plan.reserve}),
-  mutations:f?(f.bascule?'Les transferts prennent effet au changement de saison : une vente se conclura tout de suite, mais le joueur ne partira et l’argent n’arrivera que le ':'Nous sommes hors période des mutations : une vente se conclura tout de suite, mais le joueur ne partira et l’argent n’arrivera que le ')+nativeVenteJoueurs.dateFr(f.reouverture)+'.':''}};
+  mutations:f?(f.bascule?'Les transferts prennent effet au changement de saison : une vente se conclura et sera encaissée tout de suite, mais le joueur ne partira que le ':'Nous sommes hors période des mutations : une vente se conclura tout de suite, mais le joueur ne partira et l’argent n’arrivera que le ')+nativeVenteJoueurs.dateFr(f.reouverture)+'.':''}};
 }
 function repriseRefus(action){
  const plan=S.presidentReprise?.clubs?.[S.club];

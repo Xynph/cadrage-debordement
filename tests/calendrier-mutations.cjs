@@ -157,19 +157,23 @@ test('Moteur Monde : recrutement libre, joueurs supplémentaires, achat différ�
     assert.equal(r.ok, true, r.error);
     const recu = r.model.meta.interclubTransfer;
     assert.equal(recu.deferred, true); assert.equal(recu.date, '2027-07-01'); assert.equal(recu.humanWon, true);
+    // Décision de Léo du 20/11/2026 : l'indemnité passe d'une caisse à l'autre dès l'accord ; le joueur arrive au 1er juillet.
     assert.deepEqual(lire(`({cash:club().cash,n:club().players.length,dep:S.budgetTransferts.depense,vendeur:S.clubs[${cible.clubId}].cash})`),
-      { ...avantAchat, dep: avantAchat.dep + cible.fee }, 'seule l’indemnité est engagée sur le budget');
+      { cash: avantAchat.cash - cible.fee, n: avantAchat.n, dep: avantAchat.dep + cible.fee, vendeur: avantAchat.vendeur + cible.fee }, 'indemnité payée à l’accord');
+    assert.ok(lire(`S.ledger.some(l=>JSON.stringify(l).includes(${JSON.stringify('Indemnité de transfert : ' + cible.name + ' (arrivée le 1er juillet)')}))`), 'ligne de caisse à l’accord');
     assert.deepEqual(r.model.mutations.purchases.map(a => a.playerId), [cible.id]);
     assert.match(marche().candidates.find(c => c.id === cible.id).reason, /^Accord conclu : il rejoindra ton club le 1er juillet 2027\.$/);
     // v2 : rien à une clôture de semaine, même en période ; exécution au changement de saison (achats de settleContracts).
     mutationsOuvertes();
     m = semaine();
     assert.equal(m.squad.some(p => p.id === cible.id), false, 'pas d’arrivée avant le changement de saison');
+    const cashExec = lire('club().cash');
     assert.equal(run(`venteExecuterAccords('achats')`), 1);
     m = jeu.call('snapshot');
     assert.ok(m.squad.some(p => p.id === cible.id), 'le joueur a rejoint le club');
     assert.equal(lire(`S.clubs[${cible.clubId}].players.some(p=>p.id==='${cible.id}')`), false);
-    assert.ok(lire(`S.ledger.some(l=>JSON.stringify(l).includes('Libération anticipée'))`), 'ligne de caisse');
+    assert.equal(lire('club().cash'), cashExec, 'rien de plus à l’arrivée');
+    assert.ok(!lire(`S.ledger.some(l=>JSON.stringify(l).includes('Libération anticipée'))`), 'aucune seconde ligne de caisse');
     assert.equal(lire(`S.venteJoueurs.accords.filter(a=>a.sens==='achat').length`), 0);
     assert.equal(lire(`S.venteJoueurs.evenements.filter(e=>e.type==='achat_execute').length`), 1);
     assert.equal(lire('S.budgetTransferts.depense'), avantAchat.dep + cible.fee, 'indemnité engagée une seule fois');
@@ -183,8 +187,9 @@ test('Moteur Monde : recrutement libre, joueurs supplémentaires, achat différ�
     jeu.call('save');
     assert.equal(pres.ok, true); assert.equal(pres.etat, 'vendu');
     assert.match(pres.mutations, /^Les transferts prennent effet au changement de saison : .+ le 1er juillet 2027\.$/);
-    assert.equal(pres.apres, pres.n, 'le joueur reste jusqu’au changement de saison'); assert.equal(pres.cashApres, pres.cash);
+    assert.equal(pres.apres, pres.n, 'le joueur reste jusqu’au changement de saison');
     assert.ok(pres.accords.length >= 1 && pres.accords.every(a => a.date === '2027-07-01'));
+    assert.equal(pres.cashApres, pres.cash + pres.accords.reduce((t, a) => t + a.fee, 0), 'ventes du président encaissées à l’accord');
     m = jeu.call('snapshot');
     assert.match(m.sales.pending.find(a => a.id === pres.accords[0].id).label, /^Vente décidée par le président : départ pour .+ le 1er juillet 2027/);
     run(`for(const a of S.venteJoueurs.accords)S.clubs[a.buyer].cash=Math.max(S.clubs[a.buyer].cash,5e6);`);
@@ -193,7 +198,8 @@ test('Moteur Monde : recrutement libre, joueurs supplémentaires, achat différ�
     m = jeu.call('snapshot');
     for (const a of pres.accords) assert.equal(m.squad.some(p => p.id === a.playerId), false, 'parti à l’ouverture');
     assert.equal(lire('S.budgetTransferts.reconstitue'), r0, 'vente imposée : rien au budget');
-    assert.ok(lire('club().cash') > cash0 - 2e6, 'caisse créditée');
+    assert.equal(r0, pres.r0, 'rien au budget à l’accord non plus');
+    assert.equal(lire('club().cash'), cash0, 'caisse déjà créditée à l’accord');
     restaurer();
 
     // 6. Part d'une vente choisie rendue sans plafond (R4) : enveloppe déjà au plafond des recettes (vente immédiate :
@@ -373,10 +379,10 @@ test('Performance : clôture de semaine avec approches de pré-contrat', { timeo
   assert.ok(avec.ms < 15000);
 });
 
-// Bascule de saison (décision du 20/11/2026, budget-transferts.md R4) : la part d'une vente choisie exécutée au 1er juillet
-// et l'indemnité d'un achat qui tombe à la bascule reviennent entières à l'enveloppe de la saison qui commence, pas à la
-// saison close (où le report R5 n'en aurait passé qu'une partie).
-test('Bascule : part des ventes et achats tombés rendus à la nouvelle saison', { timeout: 600000 }, () => {
+// Encaissement à l'accord (décision de Léo du 20/11/2026, budget-transferts.md R4) : la part d'une vente choisie revient
+// à l'enveloppe le jour de l'accord ; à la bascule, seul un achat qui tombe encore (joueur disparu) rend son indemnité, à
+// l'enveloppe de la saison qui commence (pas à la saison close, où le report R5 n'en aurait passé qu'une partie).
+test('Bascule : part d’une vente rendue à l’accord, achat tombé rendu à la nouvelle saison', { timeout: 600000 }, () => {
   const jeu = ouvrir({ hebdomadaire: true, testVm: true });
   try {
     creer(jeu, CLUB);
@@ -385,24 +391,128 @@ test('Bascule : part des ventes et achats tombés rendus à la nouvelle saison',
     const acheteur = lire(`S.clubs.find(c=>c.id!==S.club&&professionalPlaces(c)>0&&c.cash>=2e6).id`);
     const vendu = jeu.call('snapshot').squad.find(p => !p.sale.blocked && !p.sale.pending && !p.preContract);
     run(`S.economy.offers.push({id:'bascule-r4',playerId:'${vendu.id}',buyer:${acheteur},fee:400000,expires:S.economy.week+1});`);
+    const r0 = lire('S.budgetTransferts.reconstitue');
     const r = jeu.brut('sale_answer', { offerId: 'bascule-r4', action: 'accept', confirmed: true });
     assert.equal(r.ok, true, r.error);
-    assert.ok(lire(`S.venteJoueurs.accords.some(a=>a.playerId==='${vendu.id}'&&a.bascule)`), 'accord exécuté au 1er juillet');
-    // Achat conclu (indemnité engagée) dont le joueur a quitté le vendeur avant la bascule : il tombera.
-    run(`(()=>{const e=budgetTransfertsEtat(true);e.depense=Math.round(e.depense+150000);
-      S.venteJoueurs.seq++;S.venteJoueurs.accords.push({id:'achat-test',sens:'achat',clubId:S.club,playerId:'absent-test',joueur:'Joueur parti',seller:${acheteur},vendeur:'Vendeur',fee:150000,saison:S.season,date:'2027-07-01',bascule:true});})()`);
-    run(`S.clubs[${acheteur}].cash=Math.max(S.clubs[${acheteur}].cash,5e6)`);
+    const part = Math.round(400000 * T.REGLAGES.partVentes);
+    assert.ok(lire(`S.venteJoueurs.accords.some(a=>a.playerId==='${vendu.id}'&&a.bascule&&a.paye)`), 'accord payé, exécuté au 1er juillet');
+    assert.equal(lire('S.budgetTransferts.reconstitue'), r0 + part, 'part de la vente rendue le jour de l’accord');
+    // Achat conclu et payé dont le joueur a disparu avant la bascule : il tombe, l'indemnité est rendue.
+    run(`(()=>{const e=budgetTransfertsEtat(true);e.depense=Math.round(e.depense+150000);ledgerEntry('Indemnité de transfert : Joueur parti (arrivée le 1er juillet)',-150000);S.clubs[${acheteur}].cash+=150000;
+      S.venteJoueurs.seq++;S.venteJoueurs.accords.push({id:'achat-test',sens:'achat',clubId:S.club,playerId:'absent-test',joueur:'Joueur parti',seller:${acheteur},vendeur:'Vendeur',fee:150000,saison:S.season,date:'2027-07-01',bascule:true,paye:true});})()`);
     const avant = lire('({...S.budgetTransferts})');
     run('settleContracts()');
     const close = lire('({...S.budgetTransferts})');
-    const part = Math.round(400000 * T.REGLAGES.partVentes);
     assert.equal(lire(`club().players.some(p=>p.id==='${vendu.id}')`), false, 'le joueur est parti');
-    assert.equal(close.reconstitue, avant.reconstitue, 'la saison close ne reçoit rien');
-    assert.equal(close.depense, avant.depense, 'l’indemnité engagée n’est pas rendue à la saison close');
-    assert.equal(close.aNouvelleSaison, part + 150000);
+    assert.equal(close.reconstitue, avant.reconstitue, 'rien de plus pour la vente à la bascule');
+    assert.equal(close.depense, avant.depense, 'l’indemnité rendue ne va pas à la saison close');
+    assert.equal(close.aNouvelleSaison, 150000);
+    assert.ok(lire(`S.ledger.some(l=>JSON.stringify(l).includes('Indemnité rendue : Joueur parti'))`), 'ligne de caisse du remboursement');
     const neuve = lire(`(()=>{const s=S.season;S.season=s+1;try{return budgetTransfertsNeuf();}finally{S.season=s;}})()`);
-    assert.equal(neuve.reconstitue, part + 150000, 'tout passe à l’enveloppe de la nouvelle saison');
+    assert.equal(neuve.reconstitue, 150000, 'l’indemnité rendue passe à l’enveloppe de la nouvelle saison');
     assert.equal(neuve.depense, 0);
     assert.equal(neuve.report, T.report(close, neuve.enveloppe, lire('budgetTransfertsEntrees().recettes')), 'le report ne compte pas cet argent deux fois');
+  } finally { restaurer(); jeu.fermer(); }
+});
+
+// Liste des accords entre clubs gérés bornée (accordsGardes) : un accord payé et en attente n'est jamais supprimé, seuls les
+// accords d'une saison passée le sont (sinon l'argent déjà passé à l'accord serait perdu avec le transfert).
+test('Accords payés en attente : jamais écartés par la borne de la liste', { timeout: 600000 }, () => {
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    creer(jeu, CLUB);
+    const { lire, run } = outils(jeu);
+    const borne = R.clubsGeres.accordsGardes;
+    const n = borne + 40;
+    run(`(()=>{const st=calIAEtat();st.accordsIA=[];
+      for(let i=0;i<${n};i++)st.accordsIA.push({id:'faux-'+i,playerId:'faux'+i,nom:'Faux '+i,pos:'1',vendeurId:1,vendeur:'V',acheteurId:2,acheteur:'A',montant:1000,salaire:1000,annees:1,date:'',saison:S.season,paye:true});
+      st.accordsIA.unshift({id:'vieux',playerId:'vieux',nom:'Vieux',pos:'1',vendeurId:1,vendeur:'V',acheteurId:2,acheteur:'A',montant:1,salaire:1,annees:1,date:'',saison:S.season-1,paye:true});
+      const s=S.clubs.find(c=>c.id!==S.club),b=S.clubs.find(c=>c.id!==S.club&&c.id!==s.id);
+      calIANouvelAccord(b,s,s.players[0],1000,1000,1);})()`);
+    const ids = lire('S.calendrierMutations.accordsIA.map(a=>a.id)');
+    for (let i = 0; i < n; i++) assert.ok(ids.includes('faux-' + i), 'accord payé en attente conservé : faux-' + i);
+    assert.equal(ids.length, n + 1, 'les accords en attente et le nouveau restent ; l’accord de la saison passée est écarté');
+    assert.equal(ids.includes('vieux'), false, 'l’accord de la saison passée est écarté');
+  } finally { restaurer(); jeu.fermer(); }
+});
+
+// Décisions de Léo du 20/11/2026 (GDD calendrier-mutations § 3, § 3 quater) : vente conclue en octobre encaissée le jour
+// même ; achat payé à l'accord ; place de la saison suivante vérifiée à l'accord ; retraite annoncée à la première clôture
+// de janvier (période simulée) puis refus d'achat, de vente et de pré-contrat ; un joueur engagé avant l'annonce ne prend
+// pas sa retraite et rejoint son club.
+test('Encaissement à l’accord, place réservée, retraite annoncée', { timeout: 900000 }, () => {
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  const RETRAITE = 'A annoncé qu’il arrêtera sa carrière à la fin de la saison.';
+  try {
+    creer(jeu, CLUB);
+    const { lire, run, jour, semaine } = outils(jeu);
+    run('club().cash=Math.max(club().cash,9e6)');
+    run('(()=>{const e=budgetTransfertsEtat(true);e.enveloppe=Math.max(e.enveloppe,5e6);})()');
+    const octobre = jour().slice(0, 4) + '-10-01';
+    for (let k = 0; k < 12 && jour() < octobre; k++) semaine();
+    assert.equal(jour().slice(5, 7), '10', 'octobre : ' + jour());
+    run('club().cash=Math.max(club().cash,9e6)');
+
+    // 1. Vente conclue en octobre : caisse +montant et budget +50 % le jour même ; joueur présent jusqu'à la bascule.
+    const acheteur = lire(`S.clubs.find(c=>c.id!==S.club&&professionalPlaces(c)>0&&c.cash>=3e6).id`);
+    const vendu = jeu.call('snapshot').squad.find(p => !p.sale.blocked && !p.sale.pending && !p.preContract);
+    run(`S.economy.offers.push({id:'oct',playerId:'${vendu.id}',buyer:${acheteur},fee:300000,expires:S.economy.week+1});`);
+    const av = lire(`({cash:club().cash,rec:S.budgetTransferts.reconstitue,b:S.clubs[${acheteur}].cash})`);
+    let r = jeu.brut('sale_answer', { offerId: 'oct', action: 'accept', confirmed: true });
+    assert.equal(r.ok, true, r.error);
+    const part = Math.round(300000 * T.REGLAGES.partVentes);
+    assert.deepEqual(lire(`({cash:club().cash,rec:S.budgetTransferts.reconstitue,b:S.clubs[${acheteur}].cash})`), { cash: av.cash + 300000, rec: av.rec + part, b: av.b - 300000 });
+    assert.ok(lire(`S.ledger.some(l=>JSON.stringify(l).includes(${JSON.stringify('Vente : ' + vendu.name + ' (départ le 1er juillet)')}))`));
+    assert.ok(r.model.squad.some(p => p.id === vendu.id), 'il reste jusqu’à la bascule');
+
+    // 2. Achat payé à l'accord, d'un joueur qui devait arrêter à la fin de la saison (engagé avant l'annonce).
+    const marche = () => lire(`nativeSystems.domain('interclubMarket').project()`);
+    let liste = marche();
+    const cible = liste.candidates.filter(c => c.available && c.fee <= 400000 && c.contractEnd > lire('S.season')).sort((a, b) => a.fee - b.fee || (a.id < b.id ? -1 : 1))[0];
+    assert.ok(cible, 'joueur sous contrat abordable');
+    run(`(()=>{const p=S.clubs[${cible.clubId}].players.find(q=>q.id==='${cible.id}');ensureDevelopment(p);p.dev.retireAge=p.age+1;})()`);
+    const avA = lire(`({cash:club().cash,vendeur:S.clubs[${cible.clubId}].cash})`);
+    r = jeu.brut('interclub_transfer', { playerId: cible.id, sellerId: cible.clubId, fee: cible.fee, salary: cible.salary, sourceSalary: cible.sourceSalary, contractEnd: cible.contractEnd, context: liste.context, confirmed: true });
+    assert.equal(r.ok, true, r.error);
+    assert.deepEqual(lire(`({cash:club().cash,vendeur:S.clubs[${cible.clubId}].cash})`), { cash: avA.cash - cible.fee, vendeur: avA.vendeur + cible.fee });
+    assert.ok(lire(`S.ledger.some(l=>JSON.stringify(l).includes(${JSON.stringify('Indemnité de transfert : ' + cible.name + ' (arrivée le 1er juillet)')}))`));
+    const engage = lire(`(()=>{const p=S.clubs[${cible.clubId}].players.find(q=>q.id==='${cible.id}');return {age:p.age,retireAge:p.dev.retireAge};})()`);
+    assert.ok(engage.retireAge >= engage.age + (cible.contractEnd - lire('S.season')) + 1, 'retraite repoussée après son nouveau contrat');
+
+    // 3. Place de la saison suivante vérifiée à l'accord (capacité ramenée à l'effectif prévu) : raison exacte.
+    const plein = lire(`(()=>{const s=calIASuivante(club());globalThis.__cap=professionalCapacity;professionalCapacity=function(c,x){return (c||club()).id===S.club?s.n:__cap.apply(this,arguments);};return s.n;})()`);
+    try {
+      const raison = 'Ton effectif de la saison prochaine est déjà complet (' + plein + '/' + plein + ' avec les arrivées prévues)';
+      liste = marche();
+      const c2 = liste.candidates.find(c => c.reason === raison);
+      assert.ok(c2, 'raison écrite sur le marché : ' + liste.candidates.slice(0, 3).map(c => c.reason).join(' | '));
+      assert.equal(jeu.brut('interclub_transfer', { playerId: c2.id, sellerId: c2.clubId, fee: c2.fee, salary: c2.salary, sourceSalary: c2.sourceSalary, contractEnd: c2.contractEnd, context: liste.context, confirmed: true }).error, 'Marché entre clubs : ' + raison + '.');
+    } finally { run('professionalCapacity=__cap'); }
+
+    // 4. Retraite annoncée à la première clôture de la période (1er janvier, simulée aujourd'hui).
+    const p1 = lire(`(()=>{const p=club().players.find(q=>q.id!=='${vendu.id}'&&!venteRaisonListe(q)&&q.contractEnd>S.season);ensureDevelopment(p);p.dev.retireAge=p.age+1;return {id:p.id,name:p.name};})()`);
+    liste = marche();
+    const p2 = liste.candidates.find(c => c.available && c.id !== cible.id && c.contractEnd > lire('S.season'));
+    run(`(()=>{const p=S.clubs[${p2.clubId}].players.find(q=>q.id==='${p2.id}');ensureDevelopment(p);p.dev.retireAge=p.age+1;})()`);
+    R.retraites = { periodes: [{ debut: md(jour()), fin: md(decaler(jour(), 30)) }] };
+    let m = semaine();
+    assert.ok(lire('S.news').includes(p1.name + ' annonce qu’il arrêtera sa carrière à la fin de la saison.'), 'actualité');
+    assert.equal(m.squad.find(p => p.id === p1.id).sale.blocked, RETRAITE);
+    assert.equal(jeu.brut('sale_list', { playerId: p1.id, listed: true }).error, RETRAITE);
+    run(`S.economy.offers.push({id:'retraite',playerId:'${p1.id}',buyer:${acheteur},fee:100000,expires:S.economy.week+1});`);
+    assert.equal(jeu.brut('sale_answer', { offerId: 'retraite', action: 'accept', confirmed: true }).error, RETRAITE);
+    liste = marche();
+    const c3 = liste.candidates.find(c => c.id === p2.id);
+    assert.equal(c3.reason, RETRAITE.slice(0, -1));
+    assert.equal(jeu.brut('interclub_transfer', { playerId: c3.id, sellerId: c3.clubId, fee: c3.fee, salary: c3.salary, sourceSalary: c3.sourceSalary, contractEnd: c3.contractEnd, context: liste.context, confirmed: true }).error, 'Marché entre clubs : ' + RETRAITE);
+    assert.equal(jeu.brut('precontract_offer', { playerId: c3.id, sellerId: c3.clubId, salary: 50000, years: 1, confirmed: true }).error, RETRAITE);
+    assert.equal(lire(`S.clubs[${cible.clubId}].players.find(q=>q.id==='${cible.id}').dev.annonceRetraite??null`), null, 'le joueur engagé n’annonce rien');
+
+    // 5. Bascule : le joueur engagé avant l'annonce ne prend pas sa retraite et rejoint le club ; le vendu part.
+    const b = lire(`(()=>{rollDevelopmentYear();settleContracts();return {ici:club().players.some(p=>p.id==='${cible.id}'),vendu:S.clubs[${acheteur}].players.some(p=>p.id==='${vendu.id}'),
+      retraite:S.development.retired.some(x=>x.id==='${cible.id}')};})()`);
+    assert.equal(b.retraite, false, 'pas de retraite avant la fin du nouveau contrat');
+    assert.equal(b.ici, true, 'il rejoint le club');
+    assert.equal(b.vendu, true, 'le joueur vendu a rejoint son acheteur');
   } finally { restaurer(); jeu.fermer(); }
 });
