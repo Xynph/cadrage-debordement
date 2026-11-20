@@ -125,6 +125,16 @@ func run() -> void:
 	var bar: VScrollBar = (app.body_scroll as ScrollContainer).get_v_scroll_bar()
 	check(bar.max_value <= bar.page + 1, "1920 × 1080 : l'écran tient sans défiler (%s / %s)" % [str(bar.max_value), str(bar.page)])
 	check(couleurs_or(page).is_empty(), "Aucune couleur or dans l'écran : " + ", ".join(couleurs_or(page)))
+	# Charte §3 « rayons 0 » : les fonds sont créés sans rayon (C.rayon_nul), plus de passe après coup sur l'écran.
+	var arrondis: Array[String] = []
+	# Nœuds internes du moteur exclus (« _focus » du ScrollContainer : style du thème, cadre non dessiné ici).
+	for noeud in page.find_children("*", "Control", true, false):
+		if str(noeud.name).begins_with("_"): continue
+		for nom in ["panel", "normal", "hover", "pressed", "hover_pressed", "disabled", "focus", "read_only"]:
+			if not (noeud as Control).has_theme_stylebox_override(nom): continue
+			var style := (noeud as Control).get_theme_stylebox(nom) as StyleBoxFlat
+			if style != null and (style.corner_radius_top_left > 0 or style.corner_radius_bottom_right > 0): arrondis.append(str(noeud.name) + "/" + nom)
+	check(arrondis.is_empty(), "Angles droits partout dans l'écran (charte §3) : " + ", ".join(arrondis.slice(0, 6)))
 	# Tout bouton visible fait quelque chose (pressed relié), sauf cases et listes qui ont leur propre signal.
 	var muets: Array[String] = []
 	for node in page.find_children("*", "BaseButton", true, false):

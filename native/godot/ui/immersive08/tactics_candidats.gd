@@ -178,7 +178,8 @@ static func _remplir(app: Control, lignes: Control, compte: Label, slot: int, la
 		Kit.texte(lignes, 8, 23, "Aucun joueur ne correspond.", Charte.IVOIRE_2, largeur - 16)
 	for i in toutes.size():
 		_ligne(app, lignes, i, toutes[i].person, toutes[i].statut, slot, largeur, colonnes)
-	Kit.angles_droits(lignes)
+	# Première construction : les fonds sont déjà créés sans rayon (C.rayon_nul) ; un nouveau tri ou filtre repasse.
+	if not C.rayon_nul: Kit.angles_droits(lignes)
 
 static func _valeur(app: Control, person: Dictionary, slot: int, cle: String) -> Variant:
 	match cle:
