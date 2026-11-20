@@ -153,7 +153,7 @@ func cases() -> void:
 			var ink: Color = journal.search.get_theme_color(color_key)
 			check((Color("faf6ed").srgb_to_linear().get_luminance() + 0.05) / (ink.srgb_to_linear().get_luminance() + 0.05) >= 4.5, "Recherche : contraste du texte supérieur à 4,5:1")
 		check(journal.search.get_global_rect().end.x <= app.size.x and journal.search.get_global_rect().position.x >= 0 and journal.scroll.size.y > 80 and journal.scroll.get_global_rect().end.y <= app.size.y, "Journal et recherche visibles à " + str(resolution))
-		check(button_text("PAUSE") != null or button_text("REPRENDRE") != null, "Pause toujours accessible")
+		check(button_text("Pause") != null or button_text("Reprendre") != null, "Pause toujours accessible")
 		check(tactics_button() != null, "Fenêtre Équipe (consignes et banc) accessible")
 		await choose(1)
 		check(journal.visible_events.all(func(e): return e is Dictionary and e.get("scene",{}).get("kind","") in ["try","goal"]), "Scores issus des métadonnées")
@@ -342,7 +342,7 @@ func round_one() -> void:
 			if str(entry.name).begins_with("JournalEvent") and journal.scroll.get_global_rect().encloses(entry.get_global_rect()): complete += 1
 		check(complete >= 3, "Journal 1:1 " + str(resolution) + " : au moins trois faits complets réellement visibles, obtenu " + str(complete))
 		check(journal.scroll.size.y >= 200, "Journal 1:1 : vraie hauteur de lecture >=200, obtenu " + str(journal.scroll.size.y))
-		var controls: Array = [button_text("REPRENDRE"), tactics_button()]
+		var controls: Array = [button_text("Reprendre"), tactics_button()]
 		controls.append_array(match_surface()._camera_controls)
 		check(match_surface()._camera_controls.size() == 3, "Les trois caméras du vrai direct restent accessibles")
 		for control: Button in controls:

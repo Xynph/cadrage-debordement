@@ -1,0 +1,253 @@
+extends SceneTree
+## Écran 13 « Match en direct » dans le vrai jeu (godot-match-direct-da.cjs prépare la carrière Monde).
+## Décisions contrôlées : variante 1 « Bandeau d'angle » (charte §7), bannière d'essai à la couleur du club,
+## menu du match par Échap (seule petite fenêtre permise), plaques → fiche du club sans casser le match,
+## noms de nos joueurs liés dans le journal, aucun or, aucune fenêtre ouverte par un clic.
+const Charte = preload("res://ui/charte.gd")
+const LiveView = preload("res://ui/contextual/live_view.gd")
+const Regie = preload("res://ui/contextual/match_temps_forts.gd")
+const Base = preload("res://ui/game_skin.gd")
+var app: Control
+var checks := 0
+var failures: Array[String] = []
+var proof := OS.get_environment("CD_MATCH_DIRECT_DA_ARTIFACTS")
+
+func _initialize() -> void: call_deferred("run")
+
+func check(ok: bool, message: String) -> void:
+	checks += 1
+	if not ok:
+		failures.append(message)
+		printerr("ECHEC : ", message)
+
+func settle(frames: int = 8) -> void:
+	for i in frames: await process_frame
+
+func wait_command(limit_ms: int = 60000) -> void:
+	var deadline := Time.get_ticks_msec() + limit_ms
+	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
+	await settle(3)
+
+func command(id: String, payload: Dictionary = {}) -> void:
+	app._command(id, payload)
+	await wait_command()
+
+func surface() -> Control:
+	return app.contextual_director.view if app.contextual_director.active() and app.contextual_director.kind == "live" else null
+
+func until(condition: Callable, limit_ms: int) -> bool:
+	var deadline := Time.get_ticks_msec() + limit_ms
+	while not condition.call() and Time.get_ticks_msec() < deadline: await process_frame
+	return condition.call()
+
+## Or de Continuer (et ancien or des skins) : interdit dans l'écran.
+func dore(c: Color) -> bool:
+	for o: Color in [Charte.OR, Charte.OR_VIF, Base.GOLD, Color("e0b35a")]:
+		if c.a > 0.05 and absf(c.r - o.r) + absf(c.g - o.g) + absf(c.b - o.b) < 0.12: return true
+	return false
+
+func ors(racine: Node) -> Array[String]:
+	var trouves: Array[String] = []
+	var noeuds: Array = [racine]
+	noeuds.append_array(racine.find_children("*", "Control", true, false))
+	for n: Variant in noeuds:
+		var c := n as Control
+		if c == null: continue
+		for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "default_color"]:
+			if c.has_theme_color_override(cle) and dore(c.get_theme_color(cle)): trouves.append("%s.%s" % [c.name, cle])
+		for cle in ["panel", "normal", "hover", "pressed", "focus"]:
+			if not c.has_theme_stylebox_override(cle): continue
+			var s := c.get_theme_stylebox(cle) as StyleBoxFlat
+			if s != null and (dore(s.bg_color) or (s.border_width_bottom + s.border_width_top + s.border_width_left > 0 and dore(s.border_color))): trouves.append("%s.%s" % [c.name, cle])
+		if c is ColorRect and dore((c as ColorRect).color): trouves.append(str(c.name))
+		if c.has_meta("fond") and c.get_meta("fond") is Color and dore(c.get_meta("fond")): trouves.append(str(c.name) + ".fond")
+	return trouves
+
+func fenetres() -> Array:
+	return app.find_children("*", "Window", true, false).filter(func(w: Window) -> bool: return w.visible)
+
+func touche(code: Key) -> void:
+	var ev := InputEventKey.new()
+	ev.keycode = code
+	ev.physical_keycode = code
+	ev.pressed = true
+	root.push_input(ev)
+	var relache: InputEventKey = ev.duplicate()
+	relache.pressed = false
+	root.push_input(relache)
+
+func run() -> void:
+	root.size = Vector2i(1920, 1080)
+	root.content_scale_size = root.size
+	app = load("res://main.tscn").instantiate()
+	root.add_child(app)
+	var deadline := Time.get_ticks_msec() + 60000
+	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline: await process_frame
+	app.timer.stop()
+	await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("monde.json"))})
+	await command("begin_match")
+	var limite := Time.get_ticks_msec() + 120000
+	while Time.get_ticks_msec() < limite and (surface() == null or surface().regie == null):
+		var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+		if scene is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+		await settle(2)
+	var view := surface()
+	check(view != null and view.regie != null, "Le direct en temps forts s'ouvre")
+	if view == null or view.regie == null:
+		finir()
+		return
+	if app.model.live.get("paused", false): await command("pause", {"paused": false})
+	# Un premier fait écrit : le journal se remplit.
+	await until(func(): return not view.journal_affiche().is_empty(), 90000)
+	await settle(4)
+	var ecran := Rect2(Vector2.ZERO, Vector2(root.size))
+
+	# 1. Bandeau d'angle : en haut à gauche, petit, plaques à la couleur des clubs, score ivoire 40 px.
+	var bandeau: Control = view.get("_coque_score")
+	var r := bandeau.get_global_rect()
+	check(r.position.x <= 48 and r.position.y <= 48 and r.size.y <= 1080 * 0.08 and r.size.x <= 1920 * 0.5, "Bandeau du score en haut à gauche, petit : " + str(r))
+	check(view.score.get_theme_font_size("font_size") == 40 and view.score.get_theme_color("font_color") == Charte.IVOIRE, "Score ivoire 40 px en 1080p")
+	check(view.plaques.size() == 2 and view.plaques.all(func(p: Control) -> bool: return Charte.contraste(Charte.IVOIRE, p.get_meta("fond")) >= 4.5), "Plaques des deux clubs lisibles en ivoire")
+	var equipes: Array = app.model.live.teams
+	for cote in 2:
+		var voulu := LiveView.fond_plaque(Color.from_string(str(Base.identity(equipes[cote]).get("color", "")), Charte.CLUB))
+		check((view.plaques[cote].get_meta("fond") as Color).is_equal_approx(voulu), "Plaque %d à la couleur du club" % cote)
+	check(not view.home.text.is_empty() and not view.away.text.is_empty() and not view.phase.text.is_empty(), "Noms des clubs et période écrits (%s / %s / %s)" % [view.home.text, view.away.text, view.phase.text])
+	var bande: Control = view.get("bande_temps_forts")
+	check(bande != null and bande.get_global_rect().position.x >= r.end.x - 1.0 and view.play.get_global_rect().position.x >= bande.get_global_rect().end.x - 1.0 and ecran.encloses(view.play.get_global_rect()), "Commandes en haut à droite, Pause en dernier")
+	var journal_panneau: Control = view.get("_legende")
+	var j := journal_panneau.get_global_rect()
+	check(j.position.x <= 48 and j.end.y >= 1080 - 60 and absf(j.size.x - 744.0) <= 2.0, "Journal en bas à gauche, 744 px : " + str(j))
+	var lignes: Array = view.get("_journal_lignes")
+	check((lignes[0][1] as RichTextLabel).get_theme_font_size("normal_font_size") == 16, "Journal en 16 px")
+	check(view.journal_affiche().size() >= 1, "Journal écrit : " + str(view.journal_affiche()))
+
+	# 2. Noms de nos joueurs liés dans le journal (survol : mini-fiche ; adversaires : texte).
+	var lie := LiveView.liens_joueurs("Bickerstaff gagne la touche, Gannon écarte vers Haworth [x].", [{"id": 11, "name": "Piers Bickerstaff"}, {"id": 12, "name": "Donal Gannon"}])
+	check(lie.contains("[url=11]Bickerstaff[/url]") and lie.contains("[url=12]Gannon[/url]") and not lie.contains("[url=13]") and lie.contains("Haworth [lb]x]"), "Noms liés dans le journal : " + lie)
+	var notre: Dictionary = app.model.squad[0]
+	var riche: RichTextLabel = lignes[0][1]
+	view._survol_joueur(str(notre.id), riche)
+	await settle(2)
+	var mini := app.get_node_or_null("MiniFicheJoueur")
+	check(mini != null and mini.visible and fenetres().is_empty(), "Survol d'un nom : mini-fiche posée dans le jeu, pas une fenêtre")
+	view._mini_fiche().cacher(app)
+
+	# 3. Aucun or dans l'écran (bandeau, commandes, journal, barre du bas, bannière, mention).
+	var mes_noeuds: Array = [bandeau, view.play, view.get("indice_menu"), journal_panneau, view.get("_meteo_boite"), view.barre_commandes, view.drawer, view.regie.bandeau, view.regie.mention]
+	var dores: Array[String] = []
+	for n: Node in mes_noeuds: dores.append_array(ors(n))
+	check(dores.is_empty(), "Aucun or dans l'écran : " + str(dores))
+
+	# 4. Plaque cliquée : fiche du club dans le direct, match en pause, aucune fenêtre ; retour au direct.
+	if app.model.live.get("paused", false): await command("pause", {"paused": false})
+	var clic := InputEventMouseButton.new()
+	clic.button_index = MOUSE_BUTTON_LEFT
+	clic.pressed = true
+	view.plaques[1].gui_input.emit(clic)
+	await wait_command()
+	await settle(6)
+	var page: Control = view.get("page")
+	check(page != null and page.visible and page.find_child("MatchClubSheetCanvas", true, false) != null, "Plaque du visiteur : la fiche du club s'ouvre dans le direct")
+	check(surface() == view and app.route == "Match", "La fiche ne casse pas le match (même direct, route Match)")
+	check(fenetres().is_empty(), "Aucune fenêtre ouverte par le clic : " + str(fenetres().map(func(w: Window): return w.name)))
+	await until(func(): return page.find_child("FicheClub", true, false) != null and page.find_child("ClubSheetLoading", true, false) == null, 30000)
+	check(page.find_child("FicheClub", true, false) != null, "Fiche du club construite")
+	if proof != "": await capture("fiche-club")
+	var retour: Button = page.find_child("MatchPageBack", true, false)
+	check(retour != null and retour.text.contains("Retour au direct"), "Lien « Retour au direct »")
+	if retour != null: retour.pressed.emit()
+	await wait_command()
+	check(not page.visible and surface() == view, "Retour au direct")
+
+	# 5. Échap : pause et menu du match (Reprendre en tête, Réglages, Vitesse, Quitter), voile sous le bandeau.
+	if app.model.live.get("paused", false): await command("pause", {"paused": false})
+	touche(KEY_ESCAPE)
+	await until(func(): return bool(app.model.live.get("paused", false)) and not app.waiting, 20000)
+	await settle(4)
+	var menu: Control = view.get("menu")
+	check(menu != null and menu.visible and app.model.live.paused, "Échap : match en pause et menu du match ouvert")
+	check(app.find_child("ImmersivePauseMenu", true, false) == null and fenetres().is_empty(), "Échap n'ouvre jamais le menu de carrière ni une fenêtre")
+	var noms := ["MatchMenuReprendre", "MatchMenuReglages", "MatchMenuVitesse", "MatchMenuQuitter"]
+	check(noms.all(func(n: String) -> bool: return menu.find_child(n, true, false) != null), "Options du menu : Reprendre, Réglages, Vitesse, Quitter")
+	var panneau: Control = view.get("_menu_panneau")
+	check(absf(panneau.size.x - 480.0) <= 2.0, "Panneau de 480 px : " + str(panneau.size))
+	var voile: Control = view.get("_menu_voile")
+	check(voile.get_index() < view.score.find_parent("MatchHud").get_parent().get_index(), "Voile sous le bandeau : score et minute lisibles")
+	check(view.get_viewport().gui_get_focus_owner() == menu.find_child("MatchMenuReprendre", true, false), "Focus sur « Reprendre le match »")
+	if proof != "": await capture("menu-echap")
+	var vitesse_avant := str(view.regie.horloge)
+	(menu.find_child("MatchMenuVitesse", true, false) as Button).pressed.emit()
+	await settle(2)
+	check(str(view.regie.horloge) != vitesse_avant, "Vitesse du match changée (%s → %s)" % [vitesse_avant, str(view.regie.horloge)])
+	view.regie.choisir_horloge(vitesse_avant)
+	(menu.find_child("MatchMenuQuitter", true, false) as Button).pressed.emit()
+	await settle(2)
+	var precision: Label = menu.find_child("MatchMenuQuitter", true, false).find_child("Precision", true, false)
+	check(precision != null and precision.text.begins_with("Appuie encore") and not app.closing, "Quitter : un premier appui prévient, rien ne se ferme")
+	(menu.find_child("MatchMenuReglages", true, false) as Button).pressed.emit()
+	await settle(4)
+	check(page.visible and page.find_child("PreferencesPage", true, false) != null and not menu.visible and fenetres().is_empty(), "Réglages : page du direct, pas une fenêtre")
+	(page.find_child("MatchPageBack", true, false) as Button).pressed.emit()
+	await settle(4)
+	check(not page.visible and menu.visible, "Retour des réglages au menu du match")
+	touche(KEY_ESCAPE)
+	await until(func(): return not bool(app.model.live.get("paused", false)) and not app.waiting, 20000)
+	check(not menu.visible and not app.model.live.paused, "Échap referme le menu et le match repart")
+
+	# 6. Rappel « Échap · Pause et menu » cliquable ; « Confier la fin » se confirme dans le menu, pas une fenêtre.
+	(view.get("indice_menu") as Button).pressed.emit()
+	await wait_command()
+	check(menu.visible, "Le rappel Échap ouvre le menu")
+	view.fermer_menu(true)
+	await wait_command()
+	view.confier_fin()
+	await wait_command()
+	check(menu.visible and menu.find_child("MatchMenuConfirmer", true, false) != null and fenetres().is_empty(), "Confier la fin : confirmation dans le menu du match")
+	(menu.find_child("MatchMenuAnnuler", true, false) as Button).pressed.emit()
+	await wait_command()
+	check(not menu.visible and not app.model.live.get("finished", false), "Annuler : rien n'est confié")
+
+	# 7. Tout ce qui est cliquable dans mes éléments fait quelque chose.
+	var muets: Array[String] = []
+	for n: Node in [view.play, view.get("indice_menu"), view.barre_commandes]:
+		var boutons: Array = [n] if n is BaseButton else []
+		boutons.append_array(n.find_children("*", "BaseButton", true, false))
+		for b: BaseButton in boutons:
+			if b is OptionButton or b is MenuButton: continue
+			if b.get_signal_connection_list("pressed").is_empty(): muets.append(str(b.name))
+	for p: Control in view.plaques:
+		if p.get_signal_connection_list("gui_input").is_empty() or p.mouse_filter != Control.MOUSE_FILTER_STOP: muets.append(str(p.name))
+	check(muets.is_empty(), "Aucune commande muette : " + str(muets))
+
+	# 8. Bannière d'essai : couleur du club qui marque, « +5 » et le score, 600 ms d'animation, sans or.
+	var cadre: PanelContainer = Regie.construire_bandeau()
+	root.add_child(cadre)
+	var rouge := Color("b0302a")
+	Regie.habiller_bandeau(cadre, "ESSAI", "Ethan Amos", "Alder Fen XV · 52e minute", 1080.0, rouge, "+5\n15 – 7")
+	cadre.show()
+	await settle(2)
+	check((cadre.get("fond") as Color).is_equal_approx(Regie.fond_bandeau(rouge)) and Charte.contraste(Charte.IVOIRE, cadre.get("fond")) >= 4.5, "Bannière à la couleur du club, ivoire lisible")
+	check((cadre.find_child("MatchMomentPoints", true, false) as Label).text.begins_with("+5") and ors(cadre).is_empty(), "Points et score, aucun or")
+	check(is_equal_approx(Regie.BANDEAU_ENTREE + Regie.BANDEAU_FONDU, 0.6), "600 ms d'animation au total")
+	Regie.habiller_bandeau(cadre, "MI-TEMPS", "A   3 — 0   B", "", 1080.0)
+	check((cadre.get("fond") as Color) == Charte.PANNEAU_3, "Mi-temps : bannière sur panneau")
+	cadre.queue_free()
+
+	# Captures : un moment de jeu ordinaire, puis la bannière d'essai si un essai passe.
+	if proof != "": await capture("jeu")
+	finir()
+
+func capture(nom: String) -> void:
+	if DisplayServer.get_name() == "headless": return
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(proof.path_join("direct-%s.png" % nom))
+
+func finir() -> void:
+	print("MATCH_DIRECT_DA %d controles, %d echec" % [checks, failures.size()])
+	for f in failures: print("  - ", f)
+	if is_instance_valid(app):
+		app.closing = true
+		app.bridge.stop()
+	for i in 10: await process_frame
+	quit(0 if failures.is_empty() else 1)

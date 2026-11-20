@@ -143,7 +143,8 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(figure.get_theme_font_size("font_size") >= 13 and between.etat.get_theme_font_size("font_size") == roundi(34 * density), label + " : texte lisible")
 	# Les commandes communes sont dans la bande sous le score (la même qu'en 3D).
 	var bande: Control = view.get("bande_temps_forts")
-	check(bande != null and bande.is_visible_in_tree() and bande.get_global_rect().position.y >= view.clock.get_global_rect().end.y - 1.0 and bande.get_global_rect().end.y <= between.get_global_rect().position.y + 1.0, label + " : bande de commandes sous le score, au-dessus de l'entracte")
+	# Écran 13 (20/11/2026) : la bande est sur la rangée du score, à sa droite (maquettes 13 et 14).
+	check(bande != null and bande.is_visible_in_tree() and bande.get_global_rect().position.x >= view.get("_coque_score").get_global_rect().end.x - 1.0 and bande.get_global_rect().end.y <= between.get_global_rect().position.y + 1.0, label + " : bande de commandes à droite du score, au-dessus de l'entracte")
 	for nom in ["MatchBetweenTeam", "MatchBetweenSettings", "MatchBetweenMore"]:
 		var noeud: Control = view.find_child(nom, true, false)
 		check(noeud != null and noeud.is_visible_in_tree() and bande != null and bande.is_ancestor_of(noeud) and inside(screen, noeud.get_global_rect()), label + " : commande " + nom)
@@ -701,7 +702,9 @@ func active(view: Control) -> void:
 	var first_key := str(view.stage.get("_action_key"))
 	check(not first_key.is_empty() and view.stage.get("_actors").size() == 30, "La vue 3D montre les trente joueurs du plan")
 	check(view.clock.text.ends_with("′"), "Le bandeau affiche l'horloge du plan rejoué : " + view.clock.text)
-	check(not view.events.text.is_empty() and view.events.is_visible_in_tree(), "La légende du plan est affichée : " + view.events.text)
+	# Écran 13 (20/11/2026) : la légende est reprise par le journal du bas (minute + texte).
+	await settle(2)
+	check(not view.events.text.is_empty() and view.journal_affiche().any(func(l: String) -> bool: return l.ends_with(view.events.text.strip_edges())), "La légende du plan est affichée : " + view.events.text + " · journal " + str(view.journal_affiche()))
 	# Le match importé est en pause : le temps fort va tout de même à son terme, puis l'écran intermédiaire attend.
 	check(await until(func(): return regie.etat == regie.INTER, 30000), "Le temps fort se termine")
 	check(between.is_visible_in_tree() and regie.voile.visible, "L'écran intermédiaire couvre la 3D")
@@ -1127,19 +1130,21 @@ func player_path() -> Array:
 	# Bandeau compact pendant l'action 3D (film du 18/11/2026 : la grande barre cachait ~20 % de
 	# l'image) ; bouton PAUSE tant que le match joue.
 	var coque: Control = view.get("_coque_score")
-	check(view.compact and view.play.text == "PAUSE", "Action 3D : bandeau compact et bouton PAUSE (%s, « %s »)" % [str(view.compact), view.play.text])
+	check(view.compact and view.play.text == "Pause", "Action 3D : bandeau compact et bouton PAUSE (%s, « %s »)" % [str(view.compact), view.play.text])
 	if coque != null:
 		var bloc := coque.get_global_rect()
 		check(bloc.size.y <= screen.size.y * 0.12 and bloc.size.x <= screen.size.x * 0.6 and bloc.position.x <= screen.size.x * 0.1, "Bloc compact en haut à gauche, petit : " + str(bloc))
-		check(not view.home.is_visible_in_tree() and (view.get("_sigles")[0] as Label).is_visible_in_tree() and view.clock.is_visible_in_tree() and view.score.is_visible_in_tree(), "Bloc compact : horloge, sigles et score, sans noms longs")
+		# Écran 13 (variante 1 de Léo, 20/11/2026) : le bandeau d'angle garde les noms pendant l'action ; seules
+		# la météo et l'aide « Échap » se retirent.
+		check(view.home.is_visible_in_tree() and (view.get("_sigles")[0] as Label).is_visible_in_tree() and view.clock.is_visible_in_tree() and view.score.is_visible_in_tree() and not view.get("_meteo_boite").is_visible_in_tree(), "Bandeau d'angle pendant l'action : horloge, plaques et score, sans météo")
 		check(float(regie.cadrage.couvert_haut) <= view.clock.get_global_rect().end.y / maxf(1.0, view.size.y) + 0.031, "Cadrage : part cachée en haut ramenée au bloc compact (%.3f)" % float(regie.cadrage.couvert_haut))
 	view._pause()
 	await wait_command()
 	check(app.model.live.paused and regie.gel and regie.etat == regie.JEU, "La pause demandée pendant un temps fort fige l'image")
 	var frozen := [regie.index, regie.temps, regie.phase]
 	await settle(40)
-	check(frozen == [regie.index, regie.temps, regie.phase] and view.play.text == "REPRENDRE", "Rien n'avance pendant la pause")
-	check(not view.compact and view.home.is_visible_in_tree(), "Pause : la grande barre revient")
+	check(frozen == [regie.index, regie.temps, regie.phase] and view.play.text == "Reprendre", "Rien n'avance pendant la pause")
+	check(not view.compact and view.home.is_visible_in_tree() and view.get("_meteo_boite").visible, "Pause : la ligne météo revient sous le bandeau")
 	# Le journal ouvert pendant un temps fort ne devance pas l'image.
 	view._toggle_drawer("Journal")
 	await settle(2)
