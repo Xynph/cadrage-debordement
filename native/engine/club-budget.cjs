@@ -799,6 +799,26 @@ const budgetPlafondAnnuel=c=>{const l=budgetLigue(c.id),p=nativeClubBudget.PLAFO
 const aiRosterLeagueCapV1=aiRosterLeagueCap,aiRosterFloorWageV1=aiRosterFloorWage;
 aiRosterLeagueCap=function(c){const p=budgetActif()&&c.id!==S.club?budgetPlafondAnnuel(c):null;return p?Math.floor(p/52):aiRosterLeagueCapV1(c);};
 aiRosterFloorWage=function(c){return budgetActif()?nativeStartingSalaries.plancherHebdo(S,budgetLigue(c.id)):aiRosterFloorWageV1(c);};
+// Arrivée chez un club géré (urgence : poste non couvert, espoir promu faute de titulaire ; ou promotion au mérite) : sans plafond de ligue,
+// elle passait à n'importe quel salaire (aiRosterFitWage : « l'urgence passe comme avant »). À la bascule, un club dont la
+// moitié du groupe s'achève (contrats de départ de 3 ans, caisse trop basse pour prolonger) promouvait ses espoirs à 2 000 €
+// par semaine, après la remise à niveau des contrats : 7 clubs de Championship et de Nationale finissaient 5 à 80 % au-dessus de
+// leur limite (mesure du 20/11/2026). Le contrat d'urgence se signe au plus à ce qui reste sous la limite du club, jamais sous le plancher.
+const aiRosterFitWageV1=aiRosterFitWage;
+aiRosterFitWage=function(c,p,urgent=false){
+ const ok=aiRosterFitWageV1(c,p,urgent);
+ if(!ok||!budgetActif()||c.id===S.club||!p||!Number.isFinite(p.salary))return ok;
+ // Le club garde de quoi remplir son groupe minimal au plancher (effectif minimal de 40, professional-depth) : sans cela, les
+ // premiers espoirs promus épuisaient la limite et les 20 à 30 joueurs de complément qui suivaient la dépassaient.
+ const dedans=c.players.some(q=>q.id===p.id),plancher=aiRosterFloorWage(c),minimum=typeof nativeProfessionalDepth!=='undefined'?nativeProfessionalDepth.minimum:0;
+ const payroll=aiRosterPayroll(c)-(dedans?p.salary:0),aRemplir=Math.max(0,minimum-c.players.length-(dedans?0:1)),reste=aiRosterWageLimit(c)-payroll-aRemplir*plancher;
+ if(p.salary<=reste)return ok;
+ // Hors urgence (promotion au mérite, besoin de profondeur) : pas de promotion qui prendrait la place du groupe minimal.
+ if(!urgent)return false;
+ const wage=Math.max(plancher,Math.floor(reste/10)*10);
+ if(wage<p.salary){p.salary=wage;aiRosterCapTally('urgence-sous-limite',c);}
+ return ok;
+};
 const budgetValeur=p=>{if(budgetActif()&&p&&typeof p.id==='string'&&Number.isFinite(p.rating)){p.salary=nativeStartingSalaries.marche(p);p.price=Math.max(0,Math.round(p.salary*2/1000)*1000);}return p;};
 aiRosterSmallClubPlayer=function(slot,index){return budgetValeur(aiRosterSmallClubPlayerV1(slot,index));};
 aiRosterPoolEntry=function(p,origin,clubId=null){if(budgetActif()&&origin!=='released')budgetValeur(p);return aiRosterPoolEntryV1(p,origin,clubId);};
