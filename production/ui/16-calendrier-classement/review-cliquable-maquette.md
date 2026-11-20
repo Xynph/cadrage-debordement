@@ -100,3 +100,25 @@ Restent des menus déroulants autorisés : le sélecteur de compétition (liste 
 
 ## Données figées ou inventées
 Aucun nom de club ni de championnat inventé dans le chemin Monde de la page Classements : noms, zones, légendes et libellés de ronde viennent du modèle. Les chaînes figées sont toutes dans des branches hors Monde ou hors maquette (point 10 et 11 de « À corriger »).
+
+## Passe de finition du 20/11 (après-midi) : auto-relecture A/B/C
+
+Captures relues : `E:\Cadrage-Debordement\temp\da-calendrier\finales\` (classements, calendrier, calendrier-semaine, classements-rencontre, classements-archives ; 1920 et 1280 ; 0 débordement, 0 texte tronqué, aucune fenêtre ni premier plan pris).
+
+### A. Cliquabilité (changements de cette passe)
+| Élément | Effet du clic | Verdict |
+|---|---|---|
+| Rencontre : plaque du club à domicile / à l'extérieur | Fiche du club (`FixtureClub_home` / `_away`) | OK |
+| Rencontre : score entre les plaques, verdict « D · DÉFAITE » | Texte, sans apparence de lien | OK |
+| Archives : ligne « Champion … : club → », montée / descente d'un seul club | Fiche du club (toute la ligne, `SeasonArchiveClub_<id>`) | OK (ancien AVIS levé) |
+| Archives : ligne « Ton club · … » | Texte | OK |
+| Grille mensuelle : onglets Classements / Phases finales / Calendrier / Statistiques / Rivalités | Onglet de Classements correspondant, ou Rivalités ; Calendrier actif | OK (une seule rangée : la sous-navigation de la coque est retirée sur la grille) |
+| Grille mensuelle : marqueur incliné + « AUJOURD'HUI » | Texte (la case sélectionne le jour) | OK |
+
+### B. Petites fenêtres
+Aucune nouvelle. Archives sans OptionButton (le saut de saison est retiré : la page défile entière). Restent les menus autorisés (compétition, poule, modèle de semaine).
+
+### C. Maquette et charte
+Corrigés dans cette passe : point 4 (plaque du prochain adversaire en 1280 : nom tenu dans la plaque), point 8 (rencontre sur le gabarit « Prochain rendez-vous » : plaques, score, V/N/D écrit), point 9 (archives aux jetons, sans jargon ni police héritée, clubs reliés), point 10 en partie (libellés de phase lus par type de phase, plus de « Barrage D1 / D1–D2 » ni de note japonaise figée ; note tirée des rencontres publiées), point 2 (rangée d'onglets unique, marqueur incliné du jour), or retiré de la rencontre et des icônes de lieu.
+
+Restes (AVIS, non bloquants) : cartes des Phases finales et tuiles de Statistiques encore en panneaux imbriqués ; lignes des barrages japonais des archives (`world_archive.gd`, « Montée en Division 1 ») encore rédigées dans le code ; programme de la journée de tous les clubs absent (donnée non projetée) ; textes de la grille à 1280 proches du plancher.

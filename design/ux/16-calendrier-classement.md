@@ -287,3 +287,5 @@ Légende : ★ demi-finale directe, ● phase finale, ▲ barrage de montée, �
 
 **Critères supplémentaires**
 - [ ] Chaque onglet s'ouvre en moins de 400 ms.
+
+**Finition du 20/11 (après-midi)** : la rencontre reprend le gabarit du « Prochain rendez-vous » (plaques aux couleurs des clubs, score au centre, verdict écrit) ; les archives sont une page aux jetons dont chaque club cité ouvre la fiche ; la grille mensuelle porte la rangée d'onglets de Compétitions (la coque ne double plus la sienne) et le marqueur incliné du jour ; les libellés de phase viennent du type de phase, jamais d'un nom de compétition écrit dans le code.

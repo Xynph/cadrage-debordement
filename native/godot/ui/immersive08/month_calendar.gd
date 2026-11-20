@@ -570,8 +570,12 @@ func _match_chip(fixture: Dictionary) -> PanelContainer:
 	var text := C.v(0)
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(C.fill(text))
-	var caption := C.label(G.club_name(club), 18, C.IVORY, true, 700)
-	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	# Nom court du club en 1280 (case étroite) : le nom entier reste dans l'infobulle et la page de la rencontre.
+	var short_name := str(G.identity(club).get("shortName", ""))
+	var caption := C.label(short_name if C.dense() and not short_name.is_empty() else G.club_name(club), 18, C.IVORY, true, 700)
+	panel.tooltip_text = G.club_name(club)
+	# Sans nom court publié, le nom passe sur deux lignes plutôt que d'être coupé.
+	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.add_child(caption)
 	var time := str(fixture.get("kickoffLocal","")) if fixture.get("kickoffLocal") is String else ""
 	var note := _score(fixture) if played else time

@@ -425,8 +425,12 @@ func _page_archives() -> void:
 		for barrage: Dictionary in world.japan_barrages(year):
 			for line: String in world.japan_lines(app, barrage): _ligne_archive(content, line, null, 20, C.MUTED)
 		content.add_child(C.rule())
-		lines += 4
-	var height := maxf(1000.0, 80.0 + lines * 40.0)
+	# Hauteur du panneau : estimée ligne par ligne (titre de saison, ligne, filet), sans grand vide sous une page courte.
+	var estimate := 48.0
+	for child: Node in content.get_children():
+		estimate += 14.0 if child is HSeparator else 52.0 if str(child.name).begins_with("SeasonArchiveHeading_") else 38.0
+	lines = int(estimate)
+	var height := maxf(180.0, float(lines))
 	panel.size.y = C.px(height)
 	content.size.y = C.px(height - 60)
 	content_bottom = 160.0 + height
@@ -490,6 +494,11 @@ func _page_rencontre(fixture: Dictionary) -> void:
 	var middle_label := D.text(panel, 592, 86, middle, 52 if fixture.get("played", false) else 22, C.IVORY if fixture.get("played", false) else C.MUTED, 800, LEFT - 1184, HORIZONTAL_ALIGNMENT_CENTER)
 	middle_label.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
 	middle_label.name = "CompetitionFixtureScore"
+	# Centré entre les deux plaques une fois la police de titre posée (sa largeur change avec la police).
+	var middle_w := middle_label.get_theme_font("font").get_string_size(middle, HORIZONTAL_ALIGNMENT_LEFT, -1, middle_label.get_theme_font_size("font_size")).x
+	middle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	middle_label.size.x = middle_w + 4
+	middle_label.position.x = LEFT / 2.0 * C.density - middle_w / 2.0
 	var content := C.v(14)
 	panel.add_child(content)
 	D.place(content, Rect2(32, 140, LEFT - 64, 640))
@@ -952,7 +961,9 @@ func _plaque(parent: Node, area: Rect2, club: Dictionary, id: String, right: boo
 	_crest(plaque, club, Rect2(22 if not right else 20, 8, 48, 48))
 	var short_name := str(G.identity(club).get("shortName", ""))
 	var plate_name := short_name if C.dense() and not short_name.is_empty() else G.club_name(club)
-	D.fit_title(D.text(plaque, 80, 40, plate_name.to_upper(), 24, ink, 800, area.size.x - 100), area.size.x - 100, 54, 2, 12)
+	# Le nom reste dans la plaque : une ligne qui se resserre ; en 1280, deux lignes qui montent depuis le bas de la plaque.
+	var two_lines := C.dense()
+	D.fit_title(D.text(plaque, 80, area.size.y - 10 if two_lines else area.size.y / 2.0 + 8, plate_name.to_upper(), 24, ink, 800, area.size.x - 100), area.size.x - 100, area.size.y - 12, 2 if two_lines else 1, 12)
 	var target := {"kind":"club", "id":str(club.get("id", ""))}
 	if target_available(app, "club", club.get("id", "")): Link.bind(plaque, app, target, "Ouvrir le club · " + G.club_name(club))
 	else:
