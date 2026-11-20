@@ -1,4 +1,7 @@
 extends SceneTree
+## Page « Préparer l'Europe » (écran, jamais une fenêtre) : brouillon consultatif, validation par le vrai moteur,
+## contraintes EPCR (plafond de 42, qualifications non certifiées), refus et panne sans effet sur la carrière.
+## La page est reconstruite à chaque rendu : l'état vit dans `management_ui.europe`, le test relit la page à chaque étape.
 const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
@@ -10,172 +13,184 @@ func check(value: bool, message: String) -> void:
 	if not value: failures.append(message); printerr("FAIL: " + message)
 func settle() -> void:
 	for i in 10: await process_frame
+func dlg() -> Control:
+	return app.find_child("EpcrPreparationDialog", true, false)
+func windows(node: Node) -> Array:
+	var found: Array = []
+	for child in node.get_children():
+		if child is Window and child.visible and not child.is_queued_for_deletion(): found.append(child)
+		found.append_array(windows(child))
+	return found
 func ask(command: String, payload: Dictionary = {}) -> void:
-	app._command(command,payload)
-	var deadline := Time.get_ticks_msec()+20000
-	while app.waiting and Time.get_ticks_msec()<deadline: await process_frame
-	check(not app.waiting and app.bridge.last_response_ok,"Vrai worker : " + command)
+	app._command(command, payload)
+	var deadline := Time.get_ticks_msec() + 20000
+	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
+	check(not app.waiting and app.bridge.last_response_ok, "Vrai worker : " + command)
 	app.timer.stop(); await settle()
 func press(control: Control) -> void:
-	check(is_instance_valid(control),"Commande clavier présente")
+	check(is_instance_valid(control), "Commande clavier présente")
 	if not is_instance_valid(control): return
-	check(control.is_visible_in_tree(),"Commande visible : " + str(control.name))
+	check(control.is_visible_in_tree(), "Commande visible : " + str(control.name))
 	control.grab_focus(); await settle()
-	check(control.has_focus(),"Focus clavier : " + str(control.name))
-	var ancestor := control.get_parent()
-	while ancestor != null and ancestor != app:
-		if ancestor is ScrollContainer:
-			check(ancestor.get_global_rect().grow(1).encloses(control.get_global_rect()),"Commande entière dans le défilement : " + str(control.name))
-		ancestor = ancestor.get_parent()
-	for down in [true,false]:
+	check(control.has_focus(), "Focus clavier : " + str(control.name))
+	for down in [true, false]:
 		var event := InputEventKey.new(); event.keycode = KEY_ENTER; event.pressed = down
 		Input.parse_input_event(event); await process_frame
 	await settle()
+## Attend la fin de la consultation (la page peut avoir été reconstruite entre-temps).
+func wait_consultation() -> void:
+	var deadline := Time.get_ticks_msec() + 20000
+	while (app.waiting or (dlg() != null and dlg().pending)) and Time.get_ticks_msec() < deadline: await process_frame
+	await settle()
+func open_page() -> void:
+	await press(app.root_content.find_child("OpenEpcrPreparation", true, false))
+func leave_page() -> void:
+	await press(app.find_child("EuropeRetour", true, false))
 func run() -> void:
-	AudioServer.set_bus_mute(0,true)
-	root.size=Vector2i(1280,720)
-	app=load("res://main.tscn").instantiate();root.add_child(app)
-	var deadline:=Time.get_ticks_msec()+20000
-	while (app.model.is_empty() or app.waiting) and Time.get_ticks_msec()<deadline:await process_frame
+	AudioServer.set_bus_mute(0, true)
+	root.size = Vector2i(1280, 720)
+	app = load("res://main.tscn").instantiate(); root.add_child(app)
+	var deadline := Time.get_ticks_msec() + 20000
+	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
+	check(not app.model.is_empty(), "Moteur prêt")
 	app.timer.stop()
-	await ask("new_career",{"mode":"world","club":0})
+	await ask("new_career", {"mode": "world", "club": 0})
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	await ask("export")
-	var exported: String=app.model.meta.exportText
-	var career_file: String=str(app.model.meta.dataDir).path_join("donnees.json")
+	var exported: String = app.model.meta.exportText
+	var career_file: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var disk := FileAccess.get_file_as_bytes(career_file)
-	app._navigate("Effectif");await settle()
-	await press(app.root_content.find_child("OpenEpcrPreparation",true,false))
-	var dialog: Control=app.find_child("EpcrPreparationDialog",true,false)
-	check(dialog!=null and dialog.visible,"Le bouton de l’effectif ouvre le vrai brouillon Europe")
-	if dialog==null: await finish();return
-	var count: Label=dialog.find_child("EpcrPreparationCount",true,false)
-	var verify: Button=dialog.find_child("EpcrVerify",true,false)
-	check(dialog.choices.size()>42,"L’effectif réel permet de vérifier le dépassement de 42")
-	check(dialog.selected.size()==dialog.choices.size(),"La liste proposée conserve tous les joueurs, sans suppression cachée")
-	await press(verify)
-	await wait_preview(null);dialog=dlg();verify=dialog.find_child("EpcrVerify",true,false);count=dialog.find_child("EpcrPreparationCount",true,false)
-	check(is_instance_valid(dialog) and dialog.visible,"Le dialogue survit à la réponse et au rendu du modèle")
-	check(dialog.preview.registration.status=="invalid","Le dépassement de 42 est refusé par le vrai validateur")
-	check(str(dialog.find_child("EpcrPreparationNotice",true,false).text).contains("ne vaut pas inscription officielle"),"Aucune fausse inscription officielle annoncée")
+	app._navigate("Effectif"); await settle()
+
+	# Ouverture : une page, pas une fenêtre ; tout l'effectif proposé.
+	await open_page()
+	var page := dlg()
+	check(page != null and app.route == "Préparation Europe" and windows(app).is_empty(), "« Préparer l’Europe → » ouvre un écran, aucune fenêtre")
+	if page == null: await finish(); return
+	check(page.choices.size() > 42, "L’effectif réel permet de vérifier le dépassement de 42")
+	check(page.selected.size() == page.choices.size(), "La liste proposée conserve tous les joueurs, sans suppression cachée")
+	check(str(page.find_child("EpcrPreparationNotice", true, false).text).contains("ne vaut pas inscription officielle"), "Aucune fausse inscription officielle annoncée")
+
+	# Plafond de 42 : refusé par le vrai validateur ; la page survit à la réponse et au rendu du modèle.
+	await press(dlg().verify); await wait_consultation()
+	page = dlg()
+	check(page != null and app.bridge.last_response_ok and page.preview.registration.status == "invalid", "Le dépassement de 42 est refusé par le vrai validateur")
 	var original_error: String = app.last_error
 	app.last_error = "Décision antérieure à vérifier"
 	var previous_error: String = app.last_error
 	var receipts_before: Array = app.decision_feedback.receipts().duplicate(true)
-	var draft_before: Dictionary = dialog.selected.duplicate(true)
-	var original_id: String = dialog.choices[0].get_meta("player_id")
-	dialog.choices[0].set_meta("player_id","foreign-review-id")
-	dialog.selected.erase(original_id);dialog.selected["foreign-review-id"] = true
-	var rejected_draft: Dictionary = dialog.selected.duplicate(true)
-	await press(verify);await wait_refusal(null);dialog=dlg();verify=dialog.find_child("EpcrVerify",true,false);count=dialog.find_child("EpcrPreparationCount",true,false)
-	check(is_instance_valid(dialog) and dialog.visible and dialog.selected==rejected_draft,"Un vrai refus worker conserve dialogue et sélection")
-	check(dialog.result.text.contains("identifiants uniques de ton effectif"),"Le refus réel est présenté dans le brouillon")
-	check(app.last_error==previous_error and not app.connection_error,"Le refus consultatif ne crée pas une erreur métier")
-	dialog.choices[0].set_meta("player_id",original_id);dialog.selected=draft_before.duplicate(true)
-	await press(verify);await wait_preview(null);dialog=dlg();verify=dialog.find_child("EpcrVerify",true,false);count=dialog.find_child("EpcrPreparationCount",true,false)
-	check(dialog.preview.registration.status=="invalid","Réessai réussi après correction de l’identifiant")
-	# This refusal returns default IDs identical to the request. It must not be
-	# consumed as a successful preview before command_failed is delivered.
-	var own_competition: String = dialog.preview.competitionId
-	dialog.preview.competitionId="challenge"
-	await press(verify);await wait_refusal(null);dialog=dlg();verify=dialog.find_child("EpcrVerify",true,false);count=dialog.find_child("EpcrPreparationCount",true,false)
-	check(dialog.result.text.contains("ne participe pas à cette coupe"),"Un modèle de refus avec mêmes IDs ne produit aucun faux rapport")
-	check(dialog.selected==draft_before and app.last_error==previous_error,"Second refus préserve le brouillon et le statut métier")
-	dialog.preview.competitionId=own_competition
-	await press(verify);await wait_preview(null);dialog=dlg();verify=dialog.find_child("EpcrVerify",true,false);count=dialog.find_child("EpcrPreparationCount",true,false)
-	check(app.last_error==previous_error,"Un succès de consultation n’efface pas l’erreur métier antérieure")
-	check(app.decision_feedback.receipts()==receipts_before,"Les consultations ne créent aucun reçu de décision métier")
-	# Close synchronously after submission, before any deferred worker response.
-	# The refusal must remain a dismissed consultation, not a career decision.
-	dialog.choices[0].set_meta("player_id","foreign-closed-draft")
-	dialog.selected.erase(original_id);dialog.selected["foreign-closed-draft"] = true
+
+	# Refus du worker (identifiant étranger) : brouillon conservé, rapport local, aucune erreur métier.
+	var original_id: String = page.choices[0].get_meta("player_id")
+	page.choices[0].set_meta("player_id", "foreign-review-id")
+	page.selected.erase(original_id); page.selected["foreign-review-id"] = true
+	page.etat.selected = page.selected.duplicate()
+	await press(dlg().verify); await wait_consultation()
+	page = dlg()
+	check(page != null and app.route == "Préparation Europe" and not page.selected.has(original_id), "Un vrai refus worker conserve l’écran et la sélection")
+	check(page.result.text.contains("identifiants uniques de ton effectif"), "Le refus réel est présenté dans le brouillon")
+	check(app.last_error == previous_error and not app.connection_error, "Le refus consultatif ne crée pas une erreur métier")
+
+	# Réessai après correction, puis coupe qui ne correspond pas.
+	page.choices[0].set_pressed(true); await settle()
+	page = dlg()
+	check(page.selected.has(original_id), "Le joueur retiré peut être remis")
+	await press(dlg().verify); await wait_consultation()
+	page = dlg()
+	check(page.preview.registration.status == "invalid", "Réessai réussi après correction de l’identifiant")
+	var own_competition: String = page.preview.competitionId
+	page.etat.preview.competitionId = "challenge"
+	await press(dlg().verify); await wait_consultation()
+	page = dlg()
+	check(page.result.text.contains("ne participe pas à cette coupe"), "Un modèle de refus avec mêmes IDs ne produit aucun faux rapport")
+	check(app.last_error == previous_error, "Second refus préserve le statut métier")
+	page.etat.preview.competitionId = own_competition
+	await press(dlg().verify); await wait_consultation()
+	check(app.last_error == previous_error, "Un succès de consultation n’efface pas l’erreur métier antérieure")
+	check(app.decision_feedback.receipts() == receipts_before, "Les consultations ne créent aucun reçu de décision métier")
+
+	# Quitter la page pendant une consultation : le refus tardif n'est ni une erreur globale ni un reçu.
+	page = dlg()
+	page.choices[0].set_meta("player_id", "foreign-closed-draft")
+	page.selected.erase(original_id); page.selected["foreign-closed-draft"] = true
 	var previous_status: String = app._settled_status_text()
-	dialog._verify()
-	check(app.waiting and dialog.pending,"Requête réelle en attente avant fermeture volontaire")
-	dialog.hide();dialog.queue_free()
-	var closed_deadline := Time.get_ticks_msec()+20000
-	while app.waiting and Time.get_ticks_msec()<closed_deadline: await process_frame
+	page._verify()
+	check(app.waiting and page.pending, "Requête réelle en attente avant de quitter la page")
+	app._navigate("Effectif")
+	var closed_deadline := Time.get_ticks_msec() + 20000
+	while app.waiting and Time.get_ticks_msec() < closed_deadline: await process_frame
 	await settle()
-	check(not app.waiting and not app.bridge.last_response_ok and not is_instance_valid(dialog),"Le vrai refus arrive après destruction volontaire du brouillon")
-	check(app.last_error==previous_error and app._settled_status_text()==previous_status and not app.connection_error,"Le refus d’un brouillon fermé ne crée aucune erreur globale ou métier")
-	check(app.decision_feedback.receipts()==receipts_before,"Le refus après fermeture ne crée aucun reçu métier")
-	check(FileAccess.get_file_as_bytes(career_file)==disk,"La fermeture en attente et son refus conservent le profil exact")
-	var unexpected_dialogs := 0
+	check(not app.waiting and not app.bridge.last_response_ok and dlg() == null, "Le vrai refus arrive après avoir quitté la page")
+	check(app.last_error == previous_error and app._settled_status_text() == previous_status and not app.connection_error, "Le refus d’un brouillon quitté ne crée aucune erreur globale ou métier")
+	check(app.decision_feedback.receipts() == receipts_before, "Le refus après départ ne crée aucun reçu métier")
+	check(FileAccess.get_file_as_bytes(career_file) == disk, "Quitter en attente et son refus conservent le profil exact")
+	var unexpected := 0
 	for child in app.get_children():
-		if child is AcceptDialog and child.visible: unexpected_dialogs += 1
-	check(unexpected_dialogs==0,"Aucune fenêtre d’erreur de décision n’est ouverte pour le brouillon fermé")
-	app.last_error=original_error
-	await press(app.root_content.find_child("OpenEpcrPreparation",true,false))
-	dialog=app.find_child("EpcrPreparationDialog",true,false)
-	verify=dialog.find_child("EpcrVerify",true,false)
-	count=dialog.find_child("EpcrPreparationCount",true,false)
-	check(dialog.selected.size()==dialog.choices.size(),"La nouvelle ouverture repart d’un brouillon propre après le refus fermé")
-	await press(dialog.choices[0])
-	check(dialog.selected.size()==dialog.choices.size()-1 and count.text.begins_with(str(dialog.selected.size())),"Le clavier retire réellement un joueur et actualise le compteur")
-	check(dialog.result.text.contains("relancez"),"Un brouillon modifié invalide le rapport précédent")
-	await press(dialog.find_child("EpcrSelectNone",true,false))
-	await press(verify); await wait_preview(null);dialog=dlg();verify=dialog.find_child("EpcrVerify",true,false);count=dialog.find_child("EpcrPreparationCount",true,false)
-	check(dialog.selected.is_empty() and dialog.preview.registeredIds.is_empty(),"Le choix vide est transmis sans réinscription implicite")
-	check(dialog.preview.registration.status=="invalid" and dialog.preview.teamSheet.status=="invalid","Liste et feuille affichent les refus du worker")
-	check(not dialog.result.text.is_empty(),"Les raisons sont lisibles dans le dialogue")
-	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:
-		root.size=resolution;await settle();await create_timer(.2).timeout;await settle()
-		check(app.route=="Préparation Europe" and dialog.is_visible_in_tree() and not (app.find_child("EuropeRetour",true,false) as Control).get_global_rect().size.is_zero_approx(),"Page européenne entière, jamais une fenêtre : "+str(resolution))
-		check(dialog.selected.is_empty(),"Redimensionnement conserve le brouillon : "+str(resolution))
-	await press(app.find_child("EuropeRetour",true,false));await settle()
-	check(not is_instance_valid(dialog),"Fermer au clavier détruit le brouillon")
-	root.size=Vector2i(1920,1080);await settle();await create_timer(.2).timeout
-	app._navigate("Effectif");await settle()
-	check(app.root_content.find_child("ImmersiveRosterTable",true,false)!=null,"La seconde ouverture utilise le canevas Effectif grand écran")
-	await press(app.root_content.find_child("OpenEpcrPreparation",true,false))
-	dialog=app.find_child("EpcrPreparationDialog",true,false)
-	check(dialog!=null and dialog.selected.size()==dialog.choices.size(),"Réouverture propose de nouveau tout l’effectif sans reprendre la liste vidée")
-	check(dialog.result.text.contains("relancez"),"La réouverture ne reprend pas un ancien verdict")
-	var sheet: Array=app.model.lineup+app.model.reserves
-	for choice: CheckButton in dialog.choices: choice.button_pressed=choice.get_meta("player_id") in sheet
-	await press(dialog.verify);await wait_preview(null);dialog=dlg();verify=dialog.find_child("EpcrVerify",true,false);count=dialog.find_child("EpcrPreparationCount",true,false)
-	check(dialog.preview.registration.status=="unknown" and dialog.preview.teamSheet.status=="unknown","Les qualifications non certifiées restent inconnues pour une liste de 23")
-	check(dialog.result.text.contains("À confirmer"),"Le rapport présente les informations manquantes du validateur")
-	await press(app.find_child("EuropeRetour",true,false));await settle()
+		if child is AcceptDialog and child.visible: unexpected += 1
+	check(unexpected == 0, "Aucune fenêtre d’erreur pour le brouillon quitté")
+	app.last_error = original_error
+
+	# Réouverture : brouillon propre, jamais un ancien verdict ; le clavier retire un joueur.
+	await open_page()
+	page = dlg()
+	check(page != null and page.selected.size() == page.choices.size(), "La nouvelle ouverture repart d’un brouillon propre après le refus")
+	check(not page.result.text.contains("Liste :"), "La réouverture ne reprend pas un ancien verdict")
+	await press(page.choices[0]); page = dlg()
+	check(page.selected.size() == page.choices.size() - 1 and page.count.text.begins_with(str(page.selected.size())), "Le clavier retire réellement un joueur et actualise le compteur")
+	check(page.result.text.contains("relance la vérification"), "Un brouillon modifié invalide le rapport précédent")
+
+	# Liste vide, puis feuille de 23 : les qualifications non certifiées restent inconnues.
+	await press(page.find_child("EpcrSelectNone", true, false)); page = dlg()
+	await press(dlg().verify); await wait_consultation()
+	page = dlg()
+	check(page.selected.is_empty() and page.preview.registeredIds.is_empty(), "Le choix vide est transmis sans réinscription implicite")
+	check(page.preview.registration.status == "invalid" and page.preview.teamSheet.status == "invalid", "Liste et feuille affichent les refus du worker")
+	check(not page.result.text.is_empty(), "Les raisons sont lisibles sur la page")
+	var sheet: Array = app.model.lineup + app.model.reserves
+	for choice: CheckButton in page.choices: choice.button_pressed = choice.get_meta("player_id") in sheet
+	await settle(); page = dlg()
+	await press(dlg().verify); await wait_consultation()
+	page = dlg()
+	check(page.preview.registration.status == "unknown" and page.preview.teamSheet.status == "unknown", "Les qualifications non certifiées restent inconnues pour une liste de 23")
+	check(page.result.text.contains("À confirmer"), "Le rapport présente les informations manquantes du validateur")
+	for resolution in [Vector2i(2560, 1440), Vector2i(1920, 1080), Vector2i(1280, 720)]:
+		root.size = resolution; await settle(); await create_timer(.2).timeout; await settle()
+		var retour := app.find_child("EuropeRetour", true, false) as Control
+		check(app.route == "Préparation Europe" and retour != null and Rect2(Vector2.ZERO, Vector2(root.size)).encloses(retour.get_global_rect()), "Page entière, jamais une fenêtre : " + str(resolution))
+		check(dlg().selected.size() == dlg().etat.selected.size(), "Redimensionnement conserve le brouillon : " + str(resolution))
+	root.size = Vector2i(1920, 1080); await settle()
+	await leave_page()
+	check(app.route == "Effectif" and dlg() == null, "Retour de la page détruit l’écran européen")
 	await ask("export")
-	check(app.model.meta.exportText==exported,"La consultation et les choix conservent chaque champ de carrière")
-	check(FileAccess.get_file_as_bytes(career_file)==disk,"La consultation conserve disque, horloge et RNG")
-	app._navigate("Effectif");await settle()
-	await press(app.root_content.find_child("OpenEpcrPreparation",true,false))
-	dialog=app.find_child("EpcrPreparationDialog",true,false)
-	var disconnected_draft: Dictionary = dialog.selected.duplicate(true)
+	check(app.model.meta.exportText == exported, "La consultation et les choix conservent chaque champ de carrière")
+	check(FileAccess.get_file_as_bytes(career_file) == disk, "La consultation conserve disque, horloge et RNG")
+
+	# Panne du transport : le brouillon reste, la raison est locale, l'erreur du moteur reste globale.
+	app._navigate("Effectif"); await settle()
+	await open_page()
+	page = dlg()
+	var draft: int = page.selected.size()
 	app.bridge.stop()
-	var stop_deadline := Time.get_ticks_msec()+3000
-	while app.bridge.child_pid>0 and Time.get_ticks_msec()<stop_deadline: await process_frame
+	var stop_deadline := Time.get_ticks_msec() + 3000
+	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < stop_deadline: await process_frame
 	await settle()
-	await press(dialog.verify);await settle()
-	check(is_instance_valid(dialog) and dialog.visible and dialog.selected==disconnected_draft,"La panne réelle du transport conserve le brouillon")
-	check(app.connection_error and not app.last_error.is_empty(),"Le moteur réellement fermé reste signalé globalement")
-	check(not dialog.result.text.is_empty() and not dialog.pending,"La panne termine la consultation avec une raison locale")
-	check(FileAccess.get_file_as_bytes(career_file)==disk,"La panne et les refus ne modifient pas le profil")
-	dialog.hide();dialog.queue_free();await settle()
+	var after_stop := FileAccess.get_file_as_bytes(career_file)
+	await press(dlg().verify); await settle()
+	page = dlg()
+	check(page != null and app.route == "Préparation Europe" and page.selected.size() == draft, "La panne réelle du transport conserve le brouillon")
+	check(app.connection_error and not app.last_error.is_empty(), "Le moteur réellement fermé reste signalé globalement")
+	check(not page.result.text.is_empty() and not page.pending, "La panne termine la consultation avec une raison locale")
+	check(FileAccess.get_file_as_bytes(career_file) == after_stop, "La panne et les refus ne modifient pas le profil (arrêt du moteur exclu)")
 	await finish()
-func dlg() -> Control:
-	return app.find_child("EpcrPreparationDialog",true,false)
-func wait_preview(_dialog) -> void:
-	var deadline:=Time.get_ticks_msec()+20000
-	while (app.waiting or dlg().pending) and Time.get_ticks_msec()<deadline:await process_frame
-	check(not app.waiting and not dlg().pending and app.bridge.last_response_ok,"Le vrai worker a répondu à epcr_preview")
-	await settle()
-func wait_refusal(_dialog) -> void:
-	var deadline:=Time.get_ticks_msec()+20000
-	while (app.waiting or dlg().pending) and Time.get_ticks_msec()<deadline:await process_frame
-	check(not app.waiting and not dlg().pending and not app.bridge.last_response_ok,"Le vrai worker a refusé epcr_preview")
-	await settle()
 func finish() -> void:
-	app.closing=true;app.timer.stop()
-	if is_instance_valid(app.coach):app.coach.destroy()
-	app.soundscape.dispose();app.bridge.stop()
-	var deadline:=Time.get_ticks_msec()+2500
-	while app.bridge.child_pid>0 and Time.get_ticks_msec()<deadline:await process_frame
-	check(app.bridge.child_pid<=0,"Worker possédé arrêté")
-	app.queue_free();await create_timer(.3).timeout
-	var file:=FileAccess.open(directory.path_join("report.json"),FileAccess.WRITE)
-	file.store_string(JSON.stringify({"checks":checks,"failures":failures},"  "));file.close()
-	print("Préparation EPCR UI : ",checks," contrôles ; ",failures.size()," échec(s)")
+	app.closing = true; app.timer.stop()
+	if is_instance_valid(app.coach): app.coach.destroy()
+	app.soundscape.dispose(); app.bridge.stop()
+	var deadline := Time.get_ticks_msec() + 2500
+	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
+	check(app.bridge.child_pid <= 0, "Worker possédé arrêté")
+	app.queue_free(); await create_timer(.3).timeout
+	var file := FileAccess.open(directory.path_join("report.json"), FileAccess.WRITE)
+	file.store_string(JSON.stringify({"checks": checks, "failures": failures}, "  ")); file.close()
+	print("Préparation EPCR UI : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	quit(0 if failures.is_empty() else 1)

@@ -88,7 +88,7 @@ static func _construire(app: Control, page: Control) -> void:
 	var contenu := Control.new()
 	contenu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	defile.add_child(contenu)
-	var etat := {"y": 0.0, "rang": 0}
+	var etat := {"y": 0.0, "rang": 0, "n": 0}
 	var pas := 36.0
 	var ligne := func(titre_ligne: String, valeurs: Array, textes: Array, cle_meilleure: bool, nom: String) -> void:
 		var y: float = etat.y
@@ -113,7 +113,8 @@ static func _construire(app: Control, page: Control) -> void:
 	var section := func(titre_section: String) -> void:
 		var y: float = float(etat.y) + 14.0
 		var t := Kit.titre(contenu, 16, y + 24, titre_section, 24, 900)
-		t.name = "ComparateurSection"
+		t.name = "ComparateurSection" + str(etat.n)
+		etat.n = int(etat.n) + 1
 		D.line(contenu, Vector2(0, y + 34), Vector2(LARGEUR, y + 34), Charte.FILET)
 		etat.y = y + 44.0
 		etat.rang = 0
