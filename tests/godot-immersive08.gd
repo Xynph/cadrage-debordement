@@ -968,8 +968,8 @@ func press_panes() -> void:
 	await capture("50-presse-conference-2560x1440")
 	await click(app.find_child("PressCanvasTab3",true,false))
 	await settle()
-	var people := tabs.find_child("PressPersonPicker",true,false) as OptionButton
-	check(tabs.current_tab==3 and people!=null and people.item_count>0,"Le carnet de portraits charge le vrai annuaire de Presse")
+	var people := tabs.find_children("PressPerson_*","Button",true,false)
+	check(tabs.current_tab==3 and people.size()>0,"Le carnet de portraits charge le vrai annuaire de Presse")
 	await capture("51-presse-portraits-2560x1440")
 	await click(app.find_child("PressCanvasTab1",true,false))
 	await settle()
