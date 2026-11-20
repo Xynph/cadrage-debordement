@@ -50,12 +50,13 @@ func executer() -> void:
 	verifier(lu.contains("Excédents réinvestis") and lu.contains("Accueil du stade") and lu.contains("Staff"), "textes du bloc : « %s »" % lu)
 	verifier(lu.contains("Travaux du niveau") or lu.contains("Installations au maximum"), "état des travaux")
 	await capturer("investissements-infrastructures.png")
+	app.management_ui["immersive08_finance_tab"] = "cash"  # DA : le journal des flux vit dans l'onglet Trésorerie
 	app._navigate("Finances"); await poser(20)
 	# Flux récents : huit écritures par page, les plus récentes d'abord ; on tourne les pages comme le manager.
 	var page := 0
 	var ledger := app.find_child("FinanceLedger", true, false)
 	while ledger != null and not textes(ledger).contains("Investissements") and page < 12:
-		var suivant := app.find_child("FinanceNext_summary", true, false) as Button
+		var suivant := app.find_child("FinanceNext_cash", true, false) as Button
 		if suivant == null or suivant.disabled: break
 		suivant.emit_signal("pressed"); await poser(12); page += 1
 		ledger = app.find_child("FinanceLedger", true, false)
@@ -63,11 +64,12 @@ func executer() -> void:
 	verifier(lignes.contains("Investissements : installations") and lignes.contains("Investissements : staff"), "lignes « Investissements » dans Flux récents (page %d) : « %s »" % [page + 1, lignes.left(600)])
 	await capturer("investissements-finances.png")
 	# Recettes de guichet imprévues : la ligne « Frais de match et primes de résultats » est une charge (catégorie Matchs).
+	app.management_ui["immersive08_finance_tab"] = "cash"  # DA : le journal des flux vit dans l'onglet Trésorerie
 	app._navigate("Finances"); await poser(20)
 	page = 0
 	ledger = app.find_child("FinanceLedger", true, false)
 	while ledger != null and not textes(ledger).contains("Frais de match") and page < 12:
-		var suivant_frais := app.find_child("FinanceNext_summary", true, false) as Button
+		var suivant_frais := app.find_child("FinanceNext_cash", true, false) as Button
 		if suivant_frais == null or suivant_frais.disabled: break
 		suivant_frais.emit_signal("pressed"); await poser(12); page += 1
 		ledger = app.find_child("FinanceLedger", true, false)

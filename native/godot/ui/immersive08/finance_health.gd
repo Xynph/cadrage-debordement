@@ -4,9 +4,8 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
-const COLORS := {"fragile": Color("ef8477"), "correcte": Color("d7ad59"), "saine": Color("82e3a3"), "riche": Color("54de81")}
-const POSITIVE := Color("53cd75")
-const NEGATIVE := Color("ee7970")
+const Charte = preload("res://ui/charte.gd")
+const COLORS := {"fragile": Charte.D, "correcte": Charte.N, "saine": Charte.V, "riche": Charte.V}
 
 ## Trois barres, une par saison close (la plus récente à droite), vertes au-dessus de l’équilibre, rouges en dessous.
 ## L’échelle est propre au club : la forme compte, pas le montant.
@@ -25,7 +24,9 @@ class Sparkline extends Control:
 			var height := maxf(C.px(3), (size.y * .46) * absf(v) / peak)
 			var x := slot * (3 - values.size() + i) + slot * .22
 			var bar := Rect2(x, zero - height if v >= 0.0 else zero, slot * .56, height)
-			draw_rect(bar, POSITIVE if v >= 0.0 else NEGATIVE)
+			# Au-dessus de la ligne : barre pleine ; en dessous : barre creuse (la forme porte le signe, pas la couleur).
+			if v >= 0.0: draw_rect(bar, Charte.IVOIRE_2)
+			else: draw_rect(bar, Charte.IVOIRE_2, false, maxf(1.5, C.px(2)))
 
 static func color(health: Variant) -> Color:
 	if health is Dictionary: return COLORS.get(str(health.get("etiquette", "")), C.MUTED)
