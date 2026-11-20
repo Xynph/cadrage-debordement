@@ -156,6 +156,24 @@ func run() -> void:
 	app._navigate("Effectif")
 	await settle(10)
 
+	# Un joueur éloigné dans la liste est ramené dans la zone visible à l'ouverture de l'écran.
+	var last_id := ""
+	var candidates := player_rows()
+	candidates.reverse()
+	for candidate: Button in candidates:
+		if str(candidate.get_meta("player_id")).begins_with("world:"):
+			last_id = str(candidate.get_meta("player_id"))
+			break
+	app.selected_player = last_id
+	app._navigate("Bureau")
+	await settle(6)
+	app._navigate("Effectif")
+	await settle(14)
+	var list_scroll := app.find_child("SquadScroll", true, false) as ScrollContainer
+	var last_row := app.find_child("SquadPlayer" + last_id.replace(":", "_"), true, false) as Control
+	check(list_scroll != null and last_row != null and list_scroll.get_global_rect().intersects(last_row.get_global_rect()), "Le joueur choisi, même éloigné, est visible dans la liste")
+	app.selected_player = str(squad[0].id)
+
 	# Fenêtre étroite : même tableau, colonnes retirées, aucun texte sous 12 px.
 	root.size = Vector2i(1280, 720)
 	await settle(12)

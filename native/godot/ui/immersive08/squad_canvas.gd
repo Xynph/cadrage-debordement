@@ -38,6 +38,8 @@ var _generation := 0
 var _group := ""
 var _puces: Dictionary = {}
 var _colonnes_actives: Array = []
+## Vrai pendant que le focus mémorisé est rendu : il ne doit pas déplacer la sélection choisie ailleurs (palette, retour de fiche).
+var _restaurant := false
 
 static func build(owner_app: Control) -> Control:
 	var page: Control = load("res://ui/immersive08/squad_canvas.gd").new()
@@ -67,7 +69,21 @@ func _build() -> void:
 	_filtres()
 	_tableau()
 	_refresh(true)
-	U.restore(app, self, "roster")
+	_restaurer()
+
+## Rend la lecture (focus, défilement) puis, si personne n'a fait défiler la liste, ramène le joueur choisi dans la zone visible.
+func _restaurer() -> void:
+	_restaurant = true
+	await U.restore(app, self, "roster")
+	_restaurant = false
+	if not is_instance_valid(self) or not is_inside_tree() or int(state.get("scroll", 0)) > 0: return
+	await get_tree().process_frame
+	var defile := find_child("SquadScroll", true, false) as ScrollContainer
+	if defile == null: return
+	for ligne: Node in rows.get_children():
+		if ligne.get_meta("player_id", "") == app.selected_player:
+			defile.ensure_control_visible(ligne as Control)
+			break
 
 # ---------------------------------------------------------------- outils de dessin
 
@@ -607,7 +623,7 @@ func _tableau() -> void:
 		tri.add_theme_stylebox_override("hover", _plat(Color(Charte.PANNEAU_2, .7)))
 		tri.add_theme_stylebox_override("focus", _plat(Color.TRANSPARENT, Charte.IVOIRE, 1))
 		entete.add_child(tri)
-		D.place(tri, Rect2(x - 6, 0, largeur + 12, 36))
+		D.place(tri, C.reach_rect(Rect2(x - 6, 0, largeur + 12, 36)))
 		sort_headers[cle] = {"label": legende, "caption": str(colonne.t), "button": tri}
 		tri.pressed.connect(_toggle_sort.bind(cle))
 	var defile := ScrollContainer.new()
@@ -945,7 +961,7 @@ func _row(player:Dictionary,index:int) -> void:
 	marque.name = "RosterMarqueur"
 	marque.visible = selectionne
 	row.pressed.connect(func(): _ouvrir(id, ""))
-	row.focus_entered.connect(func(): _selectionner(id))
+	row.focus_entered.connect(func(): if not _restaurant: _selectionner(id))
 	row.gui_input.connect(_row_key.bind(row))
 	var reason := U.watch_reason(player) if state.family==U.WATCH_FILTER else ""
 	if not reason.is_empty(): row.accessibility_name += " · " + reason
