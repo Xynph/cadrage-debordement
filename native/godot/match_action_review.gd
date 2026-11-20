@@ -27,9 +27,13 @@ var action: Label
 var coordinates: Label
 var pitch: Control
 
+var charte := false
+
 class ActionPitch extends Control:
 	var from: Variant
 	var to: Variant
+	var depart := Color("f7f0d0")
+	var arrivee := Color("edbc61")
 	static func valid(point: Variant) -> bool:
 		if not point is Dictionary: return false
 		for key in ["x", "y"]:
@@ -46,13 +50,13 @@ class ActionPitch extends Control:
 		if valid(from) and valid(to):
 			var a := rect.position+rect.size*Vector2(float(from.x)/100.0,float(from.y)/70.0)
 			var b := rect.position+rect.size*Vector2(float(to.x)/100.0,float(to.y)/70.0)
-			draw_circle(a,5,Color("f7f0d0"))
-			draw_line(a,b,Color("edbc61"),3,true)
-			draw_circle(b,7,Color("edbc61"))
+			draw_circle(a,5,depart)
+			draw_line(a,b,arrivee,3,true)
+			draw_circle(b,7,arrivee)
 			if a.distance_to(b)>15:
 				var direction := (b-a).normalized()
-				draw_line(b,b-direction.rotated(.5)*13,Color("edbc61"),3,true)
-				draw_line(b,b-direction.rotated(-.5)*13,Color("edbc61"),3,true)
+				draw_line(b,b-direction.rotated(.5)*13,arrivee,3,true)
+				draw_line(b,b-direction.rotated(-.5)*13,arrivee,3,true)
 
 static func open(journal: Control, source: Array, source_teams: Array, start_index: int = -1) -> AcceptDialog:
 	if source.is_empty(): return null
@@ -62,6 +66,68 @@ static func open(journal: Control, source: Array, source_teams: Array, start_ind
 	dialog.teams = source_teams.duplicate(true)
 	dialog._build(journal)
 	return dialog
+
+## Relecture dans une page du direct (écran 13 : jamais de petite fenêtre pendant le match) : le même contenu,
+## posé dans `hote` (rien n'est ajouté à l'arbre comme fenêtre), habillé aux jetons de la Charte (ivoire sur
+## panneau, liens texte, aucun or). L'objet qui pilote la relecture vit tant que `hote` vit.
+static func page(hote: Control, source: Array, source_teams: Array, start_index: int = -1) -> Control:
+	if source.is_empty(): return null
+	var relecture: AcceptDialog = load("res://match_action_review.gd").new()
+	relecture.charte = true
+	relecture.initial_index = start_index
+	relecture.events = source.duplicate(true)
+	relecture.teams = source_teams.duplicate(true)
+	relecture._contenu(hote)
+	relecture.content_scroll.name = "ActionReviewPage"
+	relecture.content_scroll.set_meta("relecture", relecture)
+	relecture.content_scroll.tree_exited.connect(func(): if is_instance_valid(relecture): relecture.queue_free(), CONNECT_ONE_SHOT)
+	_habiller_charte(relecture.content_scroll)
+	relecture.pitch.depart = preload("res://ui/charte.gd").IVOIRE_2
+	relecture.pitch.arrivee = preload("res://ui/charte.gd").IVOIRE
+	relecture._select()
+	relecture.index = clampi(start_index,0,maxi(0,relecture.selection.size()-1)) if start_index>=0 else maxi(0,relecture.selection.size()-1)
+	relecture._show_event()
+	return relecture.content_scroll
+
+## Textes ivoire / ivoire 2, boutons au style lien (souligné au survol), listes sur panneau 3 sans cadre ni rayon.
+static func _habiller_charte(racine: Node) -> void:
+	const Charte = preload("res://ui/charte.gd")
+	const C = preload("res://ui/immersive08/components.gd")
+	var noeuds: Array = [racine]
+	noeuds.append_array(racine.find_children("*", "Control", true, false))
+	for noeud: Node in noeuds:
+		if noeud is ScrollContainer:
+			# Anneau de focus du moteur (cadre complet arrondi) : remplacé par rien, le contenu garde son propre focus.
+			(noeud as Control).add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		elif noeud is OptionButton:
+			for etat in ["normal", "hover", "pressed", "disabled", "focus"]:
+				var style := StyleBoxFlat.new()
+				style.bg_color = Color(0, 0, 0, 0) if etat == "focus" else (Charte.PANNEAU_2 if etat in ["hover", "pressed"] else Charte.PANNEAU_3)
+				style.set_corner_radius_all(0)
+				style.border_color = Charte.IVOIRE if etat == "focus" else Charte.FILET
+				style.border_width_bottom = 2 if etat == "focus" else 1
+				style.content_margin_left = 8
+				style.content_margin_right = 8
+				style.content_margin_top = 5
+				style.content_margin_bottom = 5
+				(noeud as Control).add_theme_stylebox_override(etat, style)
+			for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: (noeud as Control).add_theme_color_override(cle, Charte.IVOIRE)
+			(noeud as Control).add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+			# Liste déroulante (exception de Léo) : panneau à angles droits, sans cadre.
+			var liste := StyleBoxFlat.new()
+			liste.bg_color = Charte.PANNEAU_2
+			liste.set_corner_radius_all(0)
+			liste.set_content_margin_all(6)
+			(noeud as OptionButton).get_popup().add_theme_stylebox_override("panel", liste)
+			(noeud as OptionButton).get_popup().add_theme_color_override("font_color", Charte.IVOIRE)
+		elif noeud is CheckButton:
+			for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: (noeud as Control).add_theme_color_override(cle, Charte.IVOIRE)
+		elif noeud is Button:
+			C.style_bouton_lien(noeud as Button, 15)
+		elif noeud is Label:
+			var etiquette := noeud as Label
+			var discret: bool = str(etiquette.name) in ["", "ActionReviewSummary"] or etiquette.get_theme_font_size("font_size") <= 15
+			etiquette.add_theme_color_override("font_color", Charte.IVOIRE_2 if discret else Charte.IVOIRE)
 
 func _build(journal: Control) -> void:
 	name = "MatchActionReview"
@@ -73,13 +139,22 @@ func _build(journal: Control) -> void:
 	journal.add_child(self)
 	confirmed.connect(queue_free)
 	canceled.connect(queue_free)
+	_contenu(self)
+	_select()
+	index = clampi(initial_index,0,maxi(0,selection.size()-1)) if initial_index>=0 else maxi(0,selection.size()-1)
+	_show_event()
+	Dialogs.show_centered(self,Vector2i(680,560))
+
+## Contenu de la relecture (filtres, chronologie, fait, terrain, bilan) dans `parent` : la fenêtre hors du direct,
+## une page dans le direct.
+func _contenu(parent: Node) -> void:
 	var scroll := ScrollContainer.new()
 	content_scroll = scroll
 	scroll.name = "ActionReviewScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	scroll.custom_minimum_size = Vector2(620,420)
-	add_child(scroll)
+	parent.add_child(scroll)
 	var body := G.v(10)
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(body)
@@ -150,10 +225,6 @@ func _build(journal: Control) -> void:
 	coordinates = G.wrap("",14,G.MUTED)
 	body.add_child(coordinates)
 	body.add_child(G.button("REVENIR À LA CHRONOLOGIE",func(): content_scroll.ensure_control_visible(timeline)))
-	_select()
-	index = clampi(initial_index,0,maxi(0,selection.size()-1)) if initial_index>=0 else maxi(0,selection.size()-1)
-	_show_event()
-	Dialogs.show_centered(self,Vector2i(680,560))
 
 func _select(preserve: bool = false) -> void:
 	var current: int = selection[index] if preserve and index>=0 and index<selection.size() else -1
@@ -219,7 +290,7 @@ func _show_event() -> void:
 	if ActionPitch.valid(scene.get("from")) and ActionPitch.valid(scene.get("to")):
 		pitch.from=scene.from
 		pitch.to=scene.to
-		coordinates.text = "Ballon : (%s ; %s) → (%s ; %s) m. Départ en clair, arrivée en doré." % [Journal._number(scene.from.x),Journal._number(scene.from.y),Journal._number(scene.to.x),Journal._number(scene.to.y)]
+		coordinates.text = ("Ballon : (%s ; %s) → (%s ; %s) m. Départ en gris, arrivée en ivoire (flèche)." if charte else "Ballon : (%s ; %s) → (%s ; %s) m. Départ en clair, arrivée en doré.") % [Journal._number(scene.from.x),Journal._number(scene.from.y),Journal._number(scene.to.x),Journal._number(scene.to.y)]
 	else: coordinates.text = "Position non renseignée."
 	pitch.queue_redraw()
 
@@ -296,8 +367,9 @@ func _toggle_summary() -> void:
 
 func _reveal_summary() -> void:
 	# Its height is unknown while the label is hidden. Wait for the container.
-	if not is_inside_tree(): return
+	# Fenêtre : elle-même dans l'arbre ; page du direct : seul le contenu l'est.
+	if not is_instance_valid(content_scroll) or not content_scroll.is_inside_tree(): return
 	for frame in 2:
-		await get_tree().process_frame
-		if not is_inside_tree(): return
+		await content_scroll.get_tree().process_frame
+		if not is_instance_valid(content_scroll) or not content_scroll.is_inside_tree(): return
 	if phase_summary.visible: content_scroll.ensure_control_visible(phase_summary)
