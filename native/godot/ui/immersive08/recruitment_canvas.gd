@@ -132,7 +132,9 @@ func _build() -> void:
 	# Onglet « Besoins du club » : arrive filtré sur le poste du besoin n° 1 (maquette) ; « Poste : Tous » reste un choix libre.
 	if tab == 0 and str(state.get("position", "Tous")) == "Tous" and not bool(state.get("position_libre", false)):
 		var besoins: Array = data.get("needs", [])
-		if not besoins.is_empty() and str(besoins[0].get("pos", "")) in positions: state.position = str(besoins[0].pos)
+		if not besoins.is_empty() and not str(besoins[0].get("pos", "")).is_empty(): state.position = str(besoins[0].pos)
+	# Le menu « Poste » dit toujours le filtre actif, même pour un poste sans aucune piste sur le marché.
+	if str(state.get("position", "Tous")) not in positions: positions.append(str(state.position))
 	_header()
 	_needs()
 	_tabs()
@@ -240,6 +242,17 @@ static func _pluriel(texte: String) -> String:
 		if lettre >= "0" and lettre <= "9": chiffres += lettre
 		elif not chiffres.is_empty(): break
 	return texte.replace("(s)", "s" if not chiffres.is_empty() and int(chiffres) > 1 else "")
+## Raison d'un besoin : « n fin(s) de contrat » est un total du club dans les données ; ici, le nombre AU POSTE (lu dans
+## l'effectif), ou rien s'il n'y en a pas. Les autres raisons (relève insuffisante…) sont gardées telles quelles.
+func _raison_au_poste(raison: String, role: String) -> String:
+	if not raison.contains("contrat"): return _pluriel(raison)
+	var saison := int(app.model.get("meta", {}).get("season", 1))
+	var fins := 0
+	for joueur: Dictionary in app.model.get("squad", []):
+		var fin: Variant = joueur.get("contractEnd")
+		if str(joueur.get("pos", "")) == role and (fin is int or fin is float) and int(fin) <= saison: fins += 1
+	return P.plural(fins, "fin de contrat", "fins de contrat") + " à ce poste cette saison" if fins > 0 else ""
+
 func _needs() -> void:
 	var needs: Array = []
 	var seen: Array = []
