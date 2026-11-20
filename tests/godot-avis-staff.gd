@@ -35,10 +35,12 @@ func executer() -> void:
 	var lignes: Array = []
 	if bandeau != null:
 		for i in 4:
-			var l := bandeau.find_child("TacticsStaffAdvice%d" % i, true, false) as Label
+			# Bulle de Gabi (Composition du 19/11) : chaque conseil est un bloc dont les noms ouvrent la fiche.
+			var l := bandeau.find_child("TacticsStaffAdvice%d" % i, true, false) as Control
 			if l == null: break
 			verifier(l.tooltip_text.begins_with("Ton "), "texte complet au tutoiement : « %s »" % l.tooltip_text)
-			lignes.append(l.text)
+			verifier(not l.find_children("*Nom*", "Button", true, false).is_empty(), "noms du conseil cliquables")
+			lignes.append(str(l.get_meta("court", "")))
 	verifier(not lignes.is_empty(), "au moins un conseil affiché")
 	verifier(app.find_child("TacticsStaffAdviceMark%02d" % (poste + 1), true, false) != null, "repère sur le poste contesté")
 	await poser(14)

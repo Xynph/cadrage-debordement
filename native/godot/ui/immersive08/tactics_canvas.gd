@@ -1,520 +1,452 @@
 extends RefCounted
+## Écran Composition (route « Composition », chapitre Tactique) — choix de Léo du 19/11/2026 : variante 1 « Terrain au
+## centre, candidats dessous » (design/ux/10-composition.md, direction-artistique/interface/revue-20261119) et l'encart
+## « Première ligne formée » de la variante 3. En-tête (titre, affiche, Proposition du staff, Tireurs et lanceur,
+## Valider la feuille), ligne de validité, onglets, puis terrain (tactics_terrain.gd), banc (tactics_banc.gd), impact
+## (tactics_impact.gd) et candidats (tactics_candidats.gd). Jamais de petite fenêtre : les choix annexes sont des
+## sous-pages (tactics_sous_pages.gd). L'interface n'écrit jamais l'état du jeu : commandes du moteur seulement.
+## Exemple : page dédiée de la coque, `TacticsCanvas.build(app, canvas)`.
 const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
-const TableOrder = preload("res://ui/player_table_order.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
-const Dialogs = preload("res://ui/immersive08/dialogs.gd")
-const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
-const U = preload("res://ui/management_state.gd")
+const P = preload("res://ui/immersive08/projection.gd")
+const Charte = preload("res://ui/charte.gd")
+const Kit = preload("res://ui/immersive08/tactics_kit.gd")
+const Selection = preload("res://ui/immersive08/tactics_selection.gd")
+const Terrain = preload("res://ui/immersive08/tactics_terrain.gd")
+const Banc = preload("res://ui/immersive08/tactics_banc.gd")
+const Impact = preload("res://ui/immersive08/tactics_impact.gd")
+const Candidats = preload("res://ui/immersive08/tactics_candidats.gd")
+const SousPages = preload("res://ui/immersive08/tactics_sous_pages.gd")
+const Roles = preload("res://ui/immersive08/tactics_roles.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
-const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const PersonName = preload("res://ui/person_name.gd")
-const Roles = preload("res://ui/immersive08/tactics_roles.gd")
+const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+## Hauteur du gabarit (unités) ; largeur 2248 comme toutes les pages de la coque.
+const HAUTEUR := 1305.0
+const TERRAIN := Rect2(0, 246, 990, 693)
+const BANC := Rect2(1012, 200, 624, 739)
+const IMPACT := Rect2(1658, 200, 590, 739)
+const CANDIDATS_Y := 955.0
 
-class Pitch extends Control:
-	func _draw() -> void:
-		var border:=Rect2(Vector2.ZERO,size)
-		draw_style_box(preload("res://ui/game_skin.gd").T.box(Color("154b32"),5,Color("b3c8a3")),border)
-		for i in 10:
-			if i%2==0:draw_rect(Rect2(2,size.y*i/10.0,size.x-4,size.y/10.0),Color("174f35"))
-		var x:=size.x;var y:=size.y
-		var line_color:=Color("d5e3c8");line_color.a=.75
-		draw_rect(Rect2(x*.022,y*.027,x*.956,y*.946),line_color,false,1.5)
-		for fraction in [.22,.5,.78]:draw_line(Vector2(x*.022,y*fraction),Vector2(x*.978,y*fraction),line_color,1.5)
-		for fraction in [.19,.81]:draw_dashed_line(Vector2(x*fraction,y*.027),Vector2(x*fraction,y*.973),line_color,1.5,14)
-		draw_line(Vector2(x*.475,2),Vector2(x*.475,42),Color("f2ecdc"),2)
-		draw_line(Vector2(x*.525,2),Vector2(x*.525,42),Color("f2ecdc"),2)
-		draw_line(Vector2(x*.475,25),Vector2(x*.525,25),Color("f2ecdc"),2)
+## Page : Ctrl+Entrée valide la feuille depuis n'importe quel poste.
+class PageComposition extends Control:
+	func _input(event: InputEvent) -> void:
+		var touche := event as InputEventKey
+		if touche == null or not touche.pressed or touche.echo or not touche.ctrl_pressed: return
+		if touche.keycode not in [KEY_ENTER, KEY_KP_ENTER] or not is_visible_in_tree(): return
+		var bouton := find_child("TacticsValidate", true, false) as Button
+		var vue := get_viewport()
+		vue.set_input_as_handled()
+		# Valider change d'écran (cette page quitte l'arbre) : différé pour finir le traitement de la touche d'abord.
+		if bouton != null and not bouton.disabled: bouton.pressed.emit.call_deferred()
 
-static func _card(page:Control,rectangle:Rect2,title:String,icon:String,id:String) -> Panel:
-	var local:=rectangle;local.position-=Vector2(280,204)
-	return D.panel(page,local,title,icon,"",id)
-
-static func _player(app:Control,slot:int) -> Dictionary:
-	for assignment:Dictionary in app.model.get("selection",{}).get("slots",[]):
-		if int(assignment.get("slot",-1))==slot:return P.player(app.model,str(assignment.get("playerId","")))
-	return {}
-
-static func _slot_name(player:Dictionary) -> String:
-	if player.is_empty(): return "À pourvoir"
-	return PersonName.initial_and_surname(str(player.name))
-
-static func build(app:Control) -> Control:
-	var page:=Control.new()
-	page.name="ImmersiveTactics"
-	page.custom_minimum_size=Vector2(2248,1140)*C.density
-	C.fill(page,true)
-	# Entraînement est rangé sous Tactique (coque commune : il n'a plus d'entrée dans le rail).
-	for i in 5:
-		var captions: Array=["Composition","Consignes","Phases arrêtées","Analyse adverse","Entraînement"]
-		D.button(page,Rect2(i*218,0,206,42),captions[i],func():
-			if i==0:return
-			if i==4:
-				app.Immersive.open_training(app)
-				return
-			if i==2:
-				app.management_ui.playbook_tab=1
-				app._navigate("Plan de jeu")
-				return
-			app.Immersive.open_preparation(app,0 if i==3 else 1),i==0,"",true,app.accent,"TacticsTab"+str(i))
-	var fixture := P.next_fixture_caption(app.model,"Aucun prochain match")
-	D.text(page,2248,30,fixture.to_upper(),22,C.MUTED,500,1100,HORIZONTAL_ALIGNMENT_RIGHT)
-	if P.is_derby(app.model):
-		# Pastille collée à l'affiche du match (largeur réelle du texte, ramenée aux unités de la maquette).
-		var largeur := C.font(500).get_string_size(fixture.to_upper(),HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(22))).x*1100.0/maxf(1.0,C.px(1100))
-		D.derby_chip(page,Rect2(maxf(1090.0,2248.0-minf(largeur,1100.0)-112.0),8,98,29))
-	var preparation: Variant = app.model.get("decisions",{}).get("preparation")
-	var domains: Array = preparation.get("domains",[]) if preparation is Dictionary else []
-	var composition:=_card(page,Rect2(280,264,1070,906),"COMPOSITION · ÉQUIPE PREMIÈRE","tactic","TacticsPitch")
-	var auto:=D.button(composition,Rect2(738,14,306,30),"SÉLECTION DU STAFF",func():app._command("auto_lineup"),false,"people",true,app.accent,"LineupAutomatic")
-	auto.disabled=not Selection.editable(app)
-	auto.add_theme_stylebox_override("normal",C.box(Color("101719"),Color.TRANSPARENT,0,0))
-	D.photo(composition,"tactics-briefing",Rect2(23,72,1024,160),.5)
-	var pitch:=Pitch.new();composition.add_child(pitch);D.place(pitch,Rect2(24,245,1022,626))
-	var advice := _staff_advice(composition,app)
-	_nationale_qualification(composition,app.model.get("selection",{}))
-	var bleus_marques := _bleus(composition,app)
-	if not Roles.view(app.model).is_empty():
-		var roles:=D.button(composition,Rect2(790,190,254,30),"TIREURS ET LANCEUR",func():Roles.open(app),false,"ball",true,app.accent,"LineupRoles")
-		roles.tooltip_text="Désigner le buteur, son remplaçant, le lanceur en touche et le joueur au pied d’occupation."
-		roles.accessibility_name=roles.tooltip_text
-		roles.add_theme_stylebox_override("normal",C.box(Color("101719"),Color.TRANSPARENT,0,0))
-	if app.model.get("tactics",{}).get("attack")=="occupation":
-		var overlay := TextureRect.new()
-		overlay.name = "TacticsOccupationOverlay"
-		overlay.texture = preload("res://art/immersive08/tactics-occupation.svg")
-		overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		overlay.stretch_mode = TextureRect.STRETCH_SCALE
-		overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		overlay.focus_mode = Control.FOCUS_NONE
-		pitch.add_child(overlay)
-		overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		D.text(composition,535,891,"Schéma du plan d’occupation",18,C.MUTED,500,330,HORIZONTAL_ALIGNMENT_CENTER)
-	var positions:Array=[[435,565,1],[815,565,2],[1195,565,3],[623,656,4],[1003,656,5],[435,744,6],[815,744,8],[1195,744,7],[675,835,9],[870,915,10],[397,1003,11],[632,958,12],[1060,958,13],[1231,1003,14],[815,1069,15]]
-	var starters := 0
-	for position:Array in positions:
-		var slot:int=position[2]-1
-		var person:=_player(app,slot)
-		if not person.is_empty(): starters += 1
-		var selected:bool=app.selected_slot==slot
-		var button:=Selection.PlayerButton.new()
-		button.name="LineupSlot%02d" % (slot+1)
-		button.tooltip_text=_player_hint(app,person,slot)
-		if advice.has(slot):button.tooltip_text+="\n"+str(advice[slot])
-		button.accessibility_name=button.tooltip_text
-		button.add_theme_stylebox_override("normal",C.box(Color("16422f") if selected else Color("0c251d"),C.GOLD if selected else Color("789384"),4,0))
-		button.add_theme_stylebox_override("hover",C.box(Color("26543c"),C.MINT,4,0))
-		button.add_theme_stylebox_override("focus",C.box(Color("16422f"),C.GOLD,4,0))
-		composition.add_child(button)
-		D.place(button,Rect2(position[0]-280-84,position[1]-264-27,168,88))
-		Selection.wire(button,app,str(person.get("id","")),slot,slot,str(person.get("name","Poste vacant")))
-		if not person.is_empty():
-			var portrait:=G.portrait(int(person.get("portraitIndex",0)),C.px(52),person)
-			portrait.name="TacticsPortrait%02d" % (slot+1)
-			portrait.mouse_filter=Control.MOUSE_FILTER_IGNORE
-			button.add_child(portrait);D.place(portrait,Rect2(5,3,52,52))
-		D.chip(button,Rect2(64,8,34,28),str(slot+1),C.IVORY)
-		var note:Variant=Selection.rating(app.model,person,slot)
-		D.chip(button,Rect2(108,8,51,28),Selection.rating_text(app.model,person,slot),_note_color(note)).name="TacticsPositionRating%02d" % (slot+1)
-		D.text(button,112,52,"AU POSTE",12,C.MUTED,500,90,HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(button,84,78,_slot_name(person),19,C.IVORY,600,158,HORIZONTAL_ALIGNMENT_CENTER)
-		if advice.has(slot):D.chip(button,Rect2(8,60,24,22),"!",C.AMBER).name="TacticsStaffAdviceMark%02d" % (slot+1)
-		if bleus_marques.has(slot):
-			D.chip(button,Rect2(2,2,30,20),"33",C.ALERT).name="TacticsBleusMark%02d" % (slot+1)
-			button.tooltip_text+="\nListe des 33 : doit souffler ce week-end."
-		button.pressed.connect(func():_choose_slot(app,slot))
-	var group:=P.group(app.model)
-	var condition := "Condition · XV %s · Groupe %d %%" % [P.lineup_condition(app.model), group.condition]
-	D.text(composition,25,893,condition,21,C.IVORY,600,342).name = "LineupCondition"
-	_identity(_card(page,Rect2(1980,264,548,906),"IDENTITÉ DE JEU","flag","TacticsIdentity"),app,domains)
-	var reserves := _bench(_card(page,Rect2(1366,264,598,529),"LE BANC","people","TacticsBench"),app)
-	D.text(composition,1046,891,"%d titulaires · %d remplaçants" % [starters,reserves],19,C.MUTED,500,440,HORIZONTAL_ALIGNMENT_RIGHT)
-	_outside(_card(page,Rect2(1366,809,598,361),"HORS GROUPE","people","TacticsOutside"),app)
-	for i in 3:
-		var key:String=["scrum","lineout","kick"][i]
-		var found:Dictionary={}
-		for domain:Dictionary in domains:
-			if domain.get("key")==key:found=domain
-		var tile:=_card(page,Rect2(280+i*562,1186,546,158),["MÊLÉE","TOUCHE","JEU AU PIED"][i],["trophy","flag","ball"][i],"TacticsMatchup"+str(i))
-		if found.is_empty():
-			D.text(tile,25,105,"Projection du staff la semaine du match",25,C.MUTED,500,496).name="TacticsNoReport"
-			continue
-		D.text(tile,28,105,G.n(found.get("own","—")),48,C.MINT,700,85)
-		D.text(tile,105,96,"VS",20,C.MUTED,500,60)
-		D.text(tile,157,105,G.n(found.get("opponent","—")),42,C.IVORY,600,105)
-		D.text(tile,280,101,"Projection du staff",23,C.MUTED,500,245)
-		D.bar(tile,Rect2(25,131,496,6),float(found.get("own",0)))
-	var vigilance:=_card(page,Rect2(1966,1186,562,158),"VIGILANCE PHYSIQUE","warning","TacticsVigilance")
-	var watched: Array = app.model.get("squad", []).filter(func(player: Dictionary): return not U.watch_reason(player).is_empty())
-	if watched.is_empty():
-		D.text(vigilance,24,94,"Aucune alerte physique",27,C.MINT,600,514)
-	else:
-		var player: Dictionary = watched[0]
-		D.text(vigilance,24,72,player.name,23,C.IVORY,600,514).name = "TacticsVigilancePlayer"
-		D.text(vigilance,24,106,U.watch_reason(player),24,C.AMBER,600,514).name = "TacticsVigilanceReason"
-	D.text(vigilance,24,131 if watched.is_empty() else 135,"Consulter l’effectif pour ajuster les charges individuelles.",19,C.MUTED,400,514,HORIZONTAL_ALIGNMENT_LEFT,true)
+static func build(app: Control, canvas: Control = null) -> Control:
+	var page := PageComposition.new()
+	page.name = "ImmersiveTactics"
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.custom_minimum_size = Vector2(2248, HAUTEUR) * C.density
+	if canvas != null:
+		canvas.add_child(page)
+		canvas.custom_minimum_size.y = maxf(canvas.custom_minimum_size.y, HAUTEUR * C.density)
+		D.place(page, Rect2(0, 0, 2248, HAUTEUR))
+	app.selected_slot = clampi(int(app.selected_slot), 0, 22)
+	var etat := Selection.state(app)
+	var pris: Variant = etat.get("pris")
+	if pris is Dictionary and Selection.payload(app, str(pris.get("player_id", "")), int(pris.get("source", -1))) == null: etat.erase("pris")
+	var sous := SousPages.actuelle(app)
+	if not sous.is_empty():
+		SousPages.build(app, page, sous)
+		Kit.angles_droits(page)
+		return page
+	var choisir_cb := func(slot: int): choisir(app, slot)
+	var clavier_cb := func(event: InputEvent, slot: int, carte: Control): clavier(app, event, slot, carte)
+	_entete(app, page)
+	_onglets(app, page)
+	var avis := Impact.avis(app)
+	var bleus := _bleus_marques(app)
+	var premiere := Selection.premiere_ligne(app.model)
+	Kit.titre(page, 0, 226, "XV de départ", 24, 500)
+	Kit.etiquette(page, TERRAIN.size.x, 224, "Note au poste /100 · Espace prendre / poser", 600, true)
+	D.line(page, Vector2(0, 238), Vector2(TERRAIN.size.x, 238), Charte.FILET)
+	Terrain.build(app, page, TERRAIN, choisir_cb, clavier_cb, avis, bleus)
+	Banc.build(app, page, BANC, choisir_cb, clavier_cb, avis, bleus, premiere)
+	Impact.build(app, page, IMPACT, _adversaire(app), choisir_cb)
+	var alertes := _alertes(app)
+	var bloc := Candidats.build(app, page, Rect2(0, CANDIDATS_Y, 2248, HAUTEUR - CANDIDATS_Y), premiere, choisir_cb, alertes.size() * 56.0)
+	for i in alertes.size(): (alertes[i] as Callable).call(bloc, 52.0 + i * 56.0)
+	Kit.angles_droits(page)
 	_restore_focus.call_deferred(app)
 	return page
 
-## Avis du staff sur la feuille (moteur : selection.staffAdvice, match-actions.js lot 3), dans le bandeau
-## de briefing : au plus quatre postes où le staff composerait autrement, avec sa raison. Le staff peut se
-## tromper : c'est sa perception. Rend {poste: texte complet} pour signaler les postes concernés sur le terrain.
-static func _staff_advice(composition: Panel,app: Control) -> Dictionary:
-	var marks := {}
-	var data: Variant = app.model.get("selection",{}).get("staffAdvice")
-	if not (data is Dictionary):
-		return marks
-	var box := Panel.new()
-	box.name = "TacticsStaffAdvice"
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_theme_stylebox_override("panel",C.box(Color(0.03,0.07,0.06,0.82),Color.TRANSPARENT,0,0))
-	composition.add_child(box)
-	D.place(box,Rect2(23,72,752,160))
-	D.text(box,18,32,"AVIS DU STAFF",17,C.GOLD,700,300)
-	var tips: Array = data.get("conseils",[])
-	if tips.is_empty():
-		D.text(box,18,68,"Ton staff valide ta feuille.",19,C.MINT,600,700).name = "TacticsStaffAdviceAgree"
-		return marks
-	for i in mini(tips.size(),4):  # 4 lignes au plus (moteur : avis.max)
-		var tip: Dictionary = tips[i]
-		var line := D.text(box,18,64+i*29,"• "+str(tip.get("court",tip.get("texte",""))),20,C.IVORY,500,716)
-		line.name = "TacticsStaffAdvice%d" % i
-		line.tooltip_text = str(tip.get("texte",""))
-		line.mouse_filter = Control.MOUSE_FILTER_PASS
-		marks[int(tip.get("slot",-1))] = str(tip.get("texte",""))
-	box.mouse_filter = Control.MOUSE_FILTER_PASS
-	return marks
+## Affiche : « Domicile – Extérieur · Compétition, journée · date heure · stade · domicile ».
+static func _affiche(app: Control) -> Array[String]:
+	var match_ := P.next_fixture(app.model)
+	if match_.is_empty(): return ["Aucun prochain match", ""]
+	var equipes := G.club_name(match_.get("home", {})) + " – " + G.club_name(match_.get("away", {}))
+	var reste: Array[String] = []
+	if not str(match_.get("label", "")).is_empty(): reste.append(str(match_.label))
+	var date := P.fixture_date(match_)
+	if not date.is_empty(): reste.append(date)
+	var stade := P.fixture_venue(match_, true, true)
+	if not stade.is_empty(): reste.append(stade)
+	var lieu: String = {"home":"domicile", "away":"extérieur", "neutral":"terrain neutre"}.get(P.fixture_location_kind(match_, app.model.get("club", {}).get("id")), "")
+	if not lieu.is_empty(): reste.append(lieu)
+	return [equipes, " · ".join(reste)]
 
-static func _nationale_qualification(parent: Panel, selection: Dictionary) -> void:
-	var qualification: Dictionary = selection.get("nationaleQualification",{})
-	var notice: Dictionary = qualification.get("notice",{})
-	if notice.is_empty(): return
-	var alert: bool = notice.get("tone") == "alert"
-	var panel := D.rect(parent,Rect2(40,84,732,136),Color("101819",.94),5,C.ALERT if alert else C.LINE)
-	panel.name = "NationaleLicenceNotice"
-	D.text(panel,17,32,notice.get("title",""),26,C.GOLD,700,698).name = "NationaleQualificationTitle"
-	D.text(panel,17,64,notice.get("summary",""),28,C.ALERT if alert else C.IVORY,700,698).name = "NationaleQualificationSummary"
-	D.text(panel,17,93,notice.get("detail",""),24,C.MUTED,500,698,HORIZONTAL_ALIGNMENT_LEFT,true).name = "NationaleQualificationDetail"
+static func _adversaire(app: Control) -> String:
+	var match_ := P.next_fixture(app.model)
+	if match_.is_empty(): return ""
+	var club_id: Variant = app.model.get("club", {}).get("id")
+	var autre: Dictionary = match_.get("away", {}) if match_.get("home", {}).get("id") == club_id else match_.get("home", {})
+	return G.club_name(autre)
 
-## Protocole des Bleus (liste de 33) dans le bandeau de briefing, par-dessus l'avis du staff : capture du 19/11, l'alerte
-## n'existait que dans l'ancienne feuille (fenêtres de moins de 1600 px). Même action que là-bas (squad_views.bleus_resume).
-static func _bleus(parent: Panel, app: Control) -> Dictionary:
-	var marques := {}
+static func _entete(app: Control, page: Control) -> void:
+	var titre := Kit.titre(page, 0, 40, "Composition", 38, 500)
+	titre.name = "CompositionTitle"
+	var largeur_titre := Charte.TITRE_GRAS_ITALIQUE.get_string_size("COMPOSITION", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(38))).x / C.density
+	if P.is_derby(app.model): Kit.puce(page, Rect2(largeur_titre + 18, 14, 90, 26), "DERBY", Charte.PANNEAU_3, Charte.IVOIRE, "DerbyTag").tooltip_text = "Derby : une rivalité ancienne, plus de tension sur le terrain et dans les tribunes."
+	var affiche := _affiche(app)
+	var equipes := Kit.texte(page, 0, 72, affiche[0], Charte.IVOIRE, 0, 18)
+	equipes.name = "TacticsFixture"
+	if not affiche[1].is_empty():
+		Kit.texte(page, Kit.largeur(affiche[0], 18) + 4, 72, " · " + affiche[1], Charte.IVOIRE_2, 1300 - Kit.largeur(affiche[0], 18), 18).name = "TacticsFixtureDetail"
+	# Actions, de droite à gauche : touche Ctrl Entrée, Valider la feuille (seul bouton plein), liens.
+	var droite := 2248.0
+	droite -= Kit.touche(page, droite, 56, "Ctrl Entrée", true) + 14
+	var selection: Dictionary = app.model.get("selection", {})
+	var valider := Kit.bouton_ivoire(page, Rect2(droite - 250, 26, 250, 44), "Valider la feuille", func(): validate(app), "TacticsValidate")
+	valider.disabled = not selection.get("valid", false) or not Selection.editable(app)
+	valider.tooltip_text = "Valider la feuille et passer à la préparation · Ctrl+Entrée" if not valider.disabled else "Feuille à compléter : voir la ligne de validité"
+	droite -= 250 + 30
+	if not Roles.view(app.model).is_empty():
+		var roles := Kit.lien(page, Rect2(droite, 30, 0, 38), "Tireurs et lanceur →", func(): SousPages.ouvrir(app, "roles"), "LineupRoles", 18, true)
+		roles.tooltip_text = "Désigner le buteur, son remplaçant, le lanceur en touche et le joueur au pied d’occupation."
+		droite -= roles.size.x / C.density + 22
+	var auto := Kit.lien(page, Rect2(droite, 30, 0, 38), "Proposition du staff →", func(): app._command("auto_lineup"), "LineupAutomatic", 18, true)
+	auto.disabled = not Selection.editable(app)
+	auto.tooltip_text = "Appliquer la composition recommandée par le staff"
+	_validite(app, page)
+	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
+
+## Ligne de validité (le moteur décide : selection.valid / errors) : ✓ ivoire, jamais de vert ; sinon la première raison
+## et « Corriger → » ; premier avertissement de condition ; actions de feuille incomplète ; quota JIFF / EQP à droite.
+static func _validite(app: Control, page: Control) -> void:
+	var selection: Dictionary = app.model.get("selection", {})
+	var valide := bool(selection.get("valid", false))
+	var erreurs: Array = selection.get("errors", [])
+	var curseur := {"x": 0.0}
+	var ligne := 108.0
+	var ajouter := func(texte: String, couleur: Color, gras: bool, id: String) -> Label:
+		var label := Kit.texte(page, curseur.x, ligne, texte, couleur, Kit.largeur(texte, 18) + 6, 18)
+		if gras: label.add_theme_font_override("font", Kit.texte_gras())
+		if not id.is_empty(): label.name = id
+		curseur.x += Kit.largeur(texte, 18) + (10 if gras else 6)
+		return label
+	var titulaires := 0
+	var remplacants := 0
+	for index in 23:
+		if not Selection.occupant(app.model, index).is_empty():
+			if index < 15: titulaires += 1
+			else: remplacants += 1
+	var premiere := Selection.premiere_ligne(app.model)
+	if valide:
+		ajouter.call("✓", Charte.IVOIRE, true, "")
+		ajouter.call("Feuille valide", Charte.IVOIRE, true, "TacticsValidity")
+		ajouter.call("· %d titulaires + %d remplaçants · première ligne %d/%d formés" % [titulaires, remplacants, mini(int(premiere.formes), int(premiere.cible)), int(premiere.cible)], Charte.IVOIRE_2, false, "TacticsValidityDetail")
+	else:
+		ajouter.call("!", Charte.D, true, "")
+		ajouter.call("Feuille incomplète", Charte.IVOIRE, true, "TacticsValidity")
+		if not erreurs.is_empty():
+			var raison := str(erreurs[0])
+			if raison.length() > 90: raison = raison.left(88) + "…"
+			var label: Label = ajouter.call(": " + raison, Charte.IVOIRE_2, false, "TacticsLineupIssue")
+			label.tooltip_text = "\n".join(erreurs)
+			label.mouse_filter = Control.MOUSE_FILTER_PASS
+			if erreurs.size() > 1: ajouter.call("(+%d)" % (erreurs.size() - 1), Charte.IVOIRE_2, false, "TacticsLineupIssueCount").tooltip_text = "\n".join(erreurs)
+		var a_corriger := _place_a_corriger(app)
+		if a_corriger >= 0:
+			var corriger := Kit.lien(page, Rect2(curseur.x, ligne - 28, 0, 38), "Corriger →", func(): choisir(app, a_corriger), "TacticsCorriger")
+			curseur.x += corriger.size.x / C.density + 12
+		if not Espoir.offer(app.model).is_empty():
+			var appel := Kit.lien(page, Rect2(curseur.x, ligne - 28, 0, 38), "Appeler un espoir →", func(): SousPages.ouvrir(app, "espoir"), "LineupCallEspoir")
+			appel.tooltip_text = Espoir.vacancy_text(app.model)
+			curseur.x += appel.size.x / C.density + 12
+		elif P.reduced_bench_number(app.model) != 0:
+			var a22 := Kit.lien(page, Rect2(curseur.x, ligne - 28, 0, 38), "Jour de match · feuille à 22 →", func(): app._navigate("Match"), "LineupOpenMatchAt22")
+			a22.tooltip_text = P.reduced_bench_vacancy(P.reduced_bench_number(app.model))
+			curseur.x += a22.size.x / C.density + 12
+		var devis := Cover.data(app)
+		if not devis.is_empty():
+			var renforts := Kit.lien(page, Rect2(curseur.x, ligne - 28, 0, 38), Cover.caption(devis) + " →", func(): SousPages.ouvrir(app, "renforts"), "LineupCover")
+			Cover.configure(renforts, devis)
+			curseur.x += renforts.size.x / C.density + 12
+	# Avertissements non bloquants : joueurs de la feuille sous 80 % de condition.
+	var bas: Array = []
+	for index in 23:
+		var person := Selection.occupant(app.model, index)
+		var forme: Variant = person.get("condition")
+		if (forme is int or forme is float) and float(forme) < 80: bas.append([index, person, roundi(float(forme))])
+	if not bas.is_empty() and curseur.x < 1500:
+		D.line(page, Vector2(curseur.x + 4, ligne - 18), Vector2(curseur.x + 5, ligne + 4), Charte.FILET)
+		curseur.x += 16
+		# Menu déroulant (exception autorisée) : chaque joueur sous 80 %, l'entrée montre les candidats de son poste.
+		var avertissements := "! %d avertissement%s ▾" % [bas.size(), "s" if bas.size() > 1 else ""]
+		var menu := MenuButton.new()
+		menu.name = "TacticsWarnings"
+		menu.text = avertissements
+		menu.flat = true
+		menu.add_theme_font_override("font", Kit.texte_gras())
+		menu.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
+		for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: menu.add_theme_color_override(couleur, Charte.D)
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 2)
+		focus.set_border_width_all(2)
+		menu.add_theme_stylebox_override("focus", focus)
+		Impact._styler_menu(menu.get_popup())
+		for i in bas.size():
+			menu.get_popup().add_item("%s (n° %d) · %d %% de condition" % [Kit.casse(str(bas[i][1].get("name", ""))), int(bas[i][0]) + 1, int(bas[i][2])], i)
+		menu.get_popup().id_pressed.connect(func(i: int): choisir(app, int(bas[i][0])))
+		page.add_child(menu)
+		var large := Kit.largeur(avertissements, 18) + 16
+		D.place(menu, Rect2(curseur.x - 6, ligne - 28, large, 38))
+		curseur.x += large + 4
+		# Premier avertissement : le nom ouvre la fiche (survol = mini-fiche), « voir le poste » ses candidats.
+		var premier: Array = bas[0]
+		var nom_joueur := Kit.casse(str(premier[1].get("name", "")), true)
+		Kit.nom(app, page, Rect2(curseur.x, ligne - 24, Kit.largeur(nom_joueur, 18) + 4, 32), nom_joueur, str(premier[1].get("id", "")), "TacticsWarningName", Charte.IVOIRE, 18)
+		curseur.x += Kit.largeur(nom_joueur, 18) + 8
+		ajouter.call("(n° %d) à %d %% de condition" % [int(premier[0]) + 1, int(premier[2])], Charte.IVOIRE_2, false, "TacticsWarningDetail")
+		Kit.lien(page, Rect2(curseur.x - 6, ligne - 28, 0, 38), "voir le poste →", func(): choisir(app, int(premier[0])), "TacticsWarning")
+	# Quota du championnat (JIFF / EQP), à droite de la ligne.
+	var quota: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
+	if bool(quota.get("applies", false)):
+		var compte := int(quota.get("currentSheet", 0)) + int(quota.get("doublon", 0))
+		var cible := int(quota.get("target", 16))
+		var alerte := bool(quota.get("alert", false))
+		var texte := "%s%s %d / %d" % ["! " if alerte else "", str(quota.get("label", "JIFF")), compte, cible]
+		var puce := Kit.texte(page, 2248, ligne, texte, Charte.D if alerte else Charte.IVOIRE_2, 300, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+		puce.name = "LineupJiffNotice"
+		puce.tooltip_text = app.SquadViews.quota_line(quota) + "\n" + app.SquadViews.quota_tooltip(quota)
+		puce.mouse_filter = Control.MOUSE_FILTER_PASS
+
+## Première place à corriger : vide, sinon tenue par un joueur que le moteur n'y accepte plus ; -1 sinon.
+static func _place_a_corriger(app: Control) -> int:
+	for index in 23:
+		if Selection.slot(app.model, index).get("playerId") == null: return index
+	for index in 23:
+		var id: Variant = Selection.slot(app.model, index).get("playerId")
+		if id != null and str(id) not in Selection.slot(app.model, index).get("eligibleIds", []): return index
+	return -1
+
+## Onglets du chapitre Tactique et résumé du plan (« Modifier → » ouvre les consignes).
+static func _onglets(app: Control, page: Control) -> void:
+	var onglets := [[0, "Composition"], [1, "Consignes"], [2, "Phases arrêtées"], [4, "Entraînement"]]
+	var x := 0.0
+	for onglet: Array in onglets:
+		var index: int = onglet[0]
+		var largeur := C.DISPLAY.get_string_size(str(onglet[1]).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(20))).x / C.density + 40
+		_onglet(app, page, Rect2(x, 132, largeur, 44), str(onglet[1]), index)
+		x += largeur + 6
+	D.line(page, Vector2(0, 176), Vector2(2248, 176), Charte.FILET)
+	var tactique: Dictionary = app.model.get("tactics", {})
+	var plan := _libelle(tactique.get("attacks", []), tactique.get("attack"))
+	var defense := _libelle(tactique.get("defenses", []), tactique.get("defense"))
+	var modifier := Kit.lien(page, Rect2(2248, 136, 0, 38), "Modifier →", func(): app.Immersive.open_preparation(app, 1), "TacticsPlanModify", 18, true)
+	modifier.tooltip_text = "Consignes d’attaque et de défense"
+	var resume := "Plan : %s · Défense : %s" % [plan, defense]
+	var label := Kit.texte(page, 2248 - modifier.size.x / C.density - 14, 162, resume, Charte.IVOIRE_2, 800, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+	label.name = "TacticsPlanSummary"
+
+static func _libelle(options: Variant, id: Variant) -> String:
+	if options is Array:
+		for option: Variant in options:
+			if option is Dictionary and option.get("id") == id: return str(option.get("label", id))
+	return str(id) if id != null else "—"
+
+static func _onglet(app: Control, page: Control, zone: Rect2, texte: String, index: int) -> void:
+	var choisi := index == 0
+	var bouton := Button.new()
+	bouton.name = "TacticsTab" + str(index)
+	bouton.text = texte.to_upper()
+	bouton.focus_mode = Control.FOCUS_ALL
+	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	bouton.add_theme_font_override("font", C.DISPLAY)
+	bouton.add_theme_font_size_override("font_size", maxi(12, C.px(20)))
+	for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
+		bouton.add_theme_color_override(etat, Charte.IVOIRE if choisi else Charte.IVOIRE_2)
+	var fond := C.box(Charte.PANNEAU_3 if choisi else Color.TRANSPARENT, Color.TRANSPARENT, 0, 0)
+	if choisi:
+		fond.border_color = Charte.IVOIRE
+		fond.border_width_bottom = maxi(2, C.px(4))
+	for etat in ["normal", "pressed", "hover_pressed"]: bouton.add_theme_stylebox_override(etat, fond)
+	bouton.add_theme_stylebox_override("hover", fond if choisi else C.box(Charte.PANNEAU_2, Color.TRANSPARENT, 0, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 0, 0)
+	focus.set_border_width_all(2)
+	bouton.add_theme_stylebox_override("focus", focus)
+	bouton.pressed.connect(func(): _ouvrir_onglet(app, index))
+	page.add_child(bouton)
+	D.place(bouton, zone)
+
+## Composition (onglet courant) : focus sur les candidats du poste choisi ; les autres onglets changent d'écran.
+static func _ouvrir_onglet(app: Control, index: int) -> void:
+	match index:
+		1: app.Immersive.open_preparation(app, 1)
+		2:
+			app.management_ui.playbook_tab = 1
+			app._navigate("Plan de jeu")
+		4: app.Immersive.open_training(app)
+		_: choisir(app, app.selected_slot)
+
+## Bandeaux d'alerte posés en tête des candidats : protocole des Bleus (liste des 33) et qualification de Nationale.
+## Rend des Callable(bloc, y) ; leur nombre fixe la place réservée.
+static func _alertes(app: Control) -> Array:
+	var alertes: Array = []
 	var bleus: Dictionary = app.SquadViews.bleus_resume(app)
-	if bleus.is_empty(): return marques
-	for e: Dictionary in bleus.echanges: marques[int(e.slot)] = true
-	# Opaque (capture du 19/11 : l'avis du staff transparaissait dessous) et haute de 160 comme le bandeau de briefing.
-	var panel := D.rect(parent,Rect2(23,72,1024,160),Color("1d1012"),5,C.ALERT)
-	panel.name = "LineupBleusNotice"
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	panel.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus.\n\nRemplaçants proposés par le staff :\n" + "\n".join(bleus.lignes)
-	D.text(panel,18,38,str(bleus.titre),26,C.ALERT,700,690).name = "LineupBleusTitle"
-	D.text(panel,18,78,"Au moins 2 repos sur 8 matchs de club. L’aligner quand même coûte la confiance du staff des Bleus.",20,C.IVORY,500,990)
+	if not bleus.is_empty():
+		alertes.append(func(bloc: Control, y: float): _bandeau_bleus(app, bloc, y, bleus))
+	var notice: Dictionary = app.model.get("selection", {}).get("nationaleQualification", {}).get("notice", {})
+	if not notice.is_empty():
+		alertes.append(func(bloc: Control, y: float): _bandeau_nationale(bloc, y, notice))
+	return alertes
+
+static func _bandeau(bloc: Control, y: float, id: String, couleur: Color) -> Panel:
+	var bandeau := D.rect(bloc, Rect2(22, y + 4, 2204, 48), Charte.PANNEAU_2, 0)
+	bandeau.name = id
+	bandeau.mouse_filter = Control.MOUSE_FILTER_PASS
+	Kit.marqueur(bandeau, Rect2(6, 8, 4, 32), couleur)
+	return bandeau
+
+static func _bandeau_bleus(app: Control, bloc: Control, y: float, bleus: Dictionary) -> void:
+	var bandeau := _bandeau(bloc, y, "LineupBleusNotice", Charte.D)
+	bandeau.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus.\n\nRemplaçants proposés par le staff :\n" + "\n".join(bleus.lignes)
+	var titre := D.text(bandeau, 22, 31, str(bleus.titre), 20, Charte.D, 700, 900)
+	titre.name = "LineupBleusTitle"
 	var echanges: Array = bleus.echanges
-	var aide := "Marqués « 33 » sur le terrain. Le staff propose un remplaçant au même poste pour chacun (survol : le détail)." if echanges.size() > 1 else "Remplaçant proposé par le staff : " + str(bleus.lignes[0]) if echanges.size() == 1 else "Aucun remplaçant disponible au même poste."
-	var detail := D.text(panel,18,114,aide,19,C.MUTED,500,990)
-	detail.name = "LineupBleusChanges"
-	if echanges.is_empty(): return marques
-	var lot: Array = bleus.lot
-	var caption := "FAIRE SOUFFLER" if echanges.size() == 1 else "FAIRE SOUFFLER LES %d" % echanges.size()
-	var faire := D.button(panel,Rect2(706,12,302,44),caption,func():app._command("set_lineup",{"changes":lot}),true,"people",true,C.ALERT,"LineupBleusRestAll")
+	var aide := "Au moins 2 repos sur 8 matchs de club ; l’aligner quand même coûte la confiance du staff des Bleus. "
+	aide += ("Remplaçant proposé : " + str(bleus.lignes[0])) if echanges.size() == 1 else ("Remplaçants proposés pour %d postes (repère « 33 »)." % echanges.size() if echanges.size() > 1 else "Aucun remplaçant disponible au même poste.")
+	Kit.texte(bandeau, 940, 31, aide, Charte.IVOIRE_2, 1000, 17).name = "LineupBleusChanges"
+	if echanges.is_empty(): return
+	var faire := Kit.lien(bandeau, Rect2(2190, 5, 0, 38), "Faire souffler →" if echanges.size() == 1 else "Faire souffler les %d →" % echanges.size(), func(): app._command("set_lineup", {"changes": bleus.lot}), "LineupBleusRestAll", 18, true)
 	faire.tooltip_text = "\n".join(bleus.lignes)
 	faire.disabled = not Selection.editable(app)
+
+static func _bandeau_nationale(bloc: Control, y: float, notice: Dictionary) -> void:
+	var alerte: bool = notice.get("tone") == "alert"
+	var bandeau := _bandeau(bloc, y, "NationaleLicenceNotice", Charte.D if alerte else Charte.IVOIRE_2)
+	bandeau.tooltip_text = str(notice.get("detail", ""))
+	D.text(bandeau, 22, 31, str(notice.get("title", "")), 20, Charte.IVOIRE, 700, 700).name = "NationaleQualificationTitle"
+	Kit.texte(bandeau, 740, 31, str(notice.get("summary", "")), Charte.D if alerte else Charte.IVOIRE, 1440, 18).name = "NationaleQualificationSummary"
+
+static func _bleus_marques(app: Control) -> Dictionary:
+	var marques := {}
+	var bleus: Dictionary = app.SquadViews.bleus_resume(app)
+	for e: Dictionary in bleus.get("echanges", []): marques[int(e.slot)] = true
 	return marques
 
-static func _identity(card:Panel,app:Control,domains:Array) -> void:
-	for i in 3:
-		var key:String=["equilibre","occupation","large"][i]
-		D.button(card,Rect2(21+i*169,74,157,39),["Équilibré","Occupation","Large"][i],func():app._command("set_tactics",{"attack":key,"defense":app.model.get("tactics",{}).get("defense","equilibre")}),app.model.get("tactics",{}).get("attack")==key,"",true,app.accent,"TacticsAttack_"+key)
-	var keys:Array=["scrum","backs","power","kick","discipline"]
-	for i in keys.size():
-		var found:Dictionary={}
-		for domain:Dictionary in domains:
-			if domain.get("key")==keys[i]:found=domain
-		var y:=162+i*69
-		D.text(card,23,y,["Conquête · mêlée","Passe et vitesse","Puissance des avants","Jeu au pied","Discipline"][i],24,C.IVORY,600,500)
-		if found.is_empty():
-			D.bar(card,Rect2(23,y+14,383,7),0.0)
-			continue
-		D.text(card,23,y+29,"XV sélectionné",18,C.MUTED,500,160)
-		D.text(card,525,y+29,G.n(found.get("own","—"))+" / 100",18,C.MUTED,500,85,HORIZONTAL_ALIGNMENT_RIGHT).name="TacticsDomainValue_"+str(keys[i])
-		D.bar(card,Rect2(154,y+14,252,7),float(found.get("own",0)))
-	if domains.is_empty():
-		D.text(card,23,497,"Analyse du staff livrée la semaine du match.",18,C.MUTED,500,500,HORIZONTAL_ALIGNMENT_LEFT,true).name="TacticsAnalysisPending"
-	var domain_values:Dictionary={}
-	for domain:Dictionary in domains:domain_values[str(domain.get("key",""))]=float(domain.get("own",0))
-	var defensive:=0.0;var selected_count:=0
-	for slot in 15:
-		var player:=_player(app,slot)
-		if not player.is_empty():defensive+=float(player.get("attributes",{}).get("tackle",0));selected_count+=1
-	var attack_description:="Consulte le plan de jeu."
-	for option:Dictionary in app.model.get("tactics",{}).get("attacks",[]):
-		if option.get("id")==app.model.get("tactics",{}).get("attack"):attack_description=str(option.get("description",""))
-	var defense_description:="Choisir les consignes défensives."
-	for option:Dictionary in app.model.get("tactics",{}).get("defenses",[]):
-		if option.get("id")==app.model.get("tactics",{}).get("defense"):defense_description=str(option.get("description",""))
-	var conquest := "—"
-	if domain_values.has("scrum") and domain_values.has("lineout"):
-		conquest = G.n(roundi((domain_values.scrum+domain_values.lineout)/2.0))
-	var defense := G.n(roundi(defensive/selected_count)) if selected_count>0 else "—"
-	# Les anciennes projections seules utilisent la moyenne brute ci-dessus.
-	# La projection actuelle intègre l'aptitude au poste dans le même calcul que le moteur.
-	var decisions:Dictionary=app.model.get("decisions",{})
-	if decisions.has("lineupDefence"):
-		var projected:Variant=decisions.lineupDefence
-		defense=G.n(projected) if (projected is int or projected is float) and is_finite(float(projected)) and projected>=0 and projected<=100 else "—"
-	var backs := G.n(roundi(domain_values.backs)) if domain_values.has("backs") else "—"
-	var summaries:Array=[["CONQUÊTE",conquest,"Mêlée et touche du XV sélectionné.","trophy"],["DÉFENSE",defense,defense_description,"shield"],["ANIMATION OFFENSIVE",backs,attack_description,"tactic"]]
-	for i in summaries.size():
-		var summary:Array=summaries[i]
-		var y:=533+i*105
-		D.rect(card,Rect2(22,y,504,92),Color("14211e"),6,C.LINE)
-		var symbol:=C.icon(summary[3],23,C.IVORY);card.add_child(symbol);D.place(symbol,Rect2(487,y+13,23,23))
-		D.text(card,41,y+27,summary[0],21,C.IVORY,700,425)
-		D.text(card,38,y+75,G.n(summary[1]),42,C.MINT,700,80).name="TacticsSummaryValue"+str(i)
-		var description := D.text(card,118,y+53,summary[2],17,C.MUTED,400,380,HORIZONTAL_ALIGNMENT_LEFT,true)
-		description.name = "TacticsSummaryText" + str(i)
-		description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		description.max_lines_visible = 2
-		description.size.y = C.px(44)
-		var hit := Button.new()
-		hit.flat = true
-		hit.name = "TacticsSummary" + str(i)
-		var action: String = ["Ouvrir le dossier de préparation","Modifier les consignes défensives","Ouvrir le plan de jeu"][i]
-		hit.tooltip_text = action + "\n" + description.text
-		hit.accessibility_name = "%s · %s · %s" % [summary[0], action, description.text]
-		card.add_child(hit)
-		D.place(hit,Rect2(22,y,504,92))
-		hit.pressed.connect(func():
-			if i==1:_defense(app)
-			else:app._navigate("Plan de jeu" if i==2 else "Préparation"))
-	var quote := Cover.data(app)
-	if not quote.is_empty():
-		var cover := D.button(card, Rect2(22,855,504,34), Cover.caption(quote), func(): Cover.confirm(app, quote), false, "school", true, app.accent, "LineupCover")
-		Cover.configure(cover, quote)
-	else:D.text(card,23,884,"Indicateurs projetés · choix enregistrés immédiatement",18,C.GOLD,500,502)
-
-static func _bench(card:Panel,app:Control) -> int:
-	var vacancy := P.reduced_bench_number(app.model)
-	if not Espoir.offer(app.model).is_empty():
-		var appel := D.button(card,Rect2(251,12,242,34),"Appeler un espoir",func():Espoir.ouvrir(app,false),false,"school",true,app.accent,"LineupCallEspoir")
-		appel.tooltip_text=Espoir.vacancy_text(app.model)+"\nLe meilleur jeune du centre apte au poste est proposé ; il est prêté pour ce match seulement."
-		appel.accessibility_name="Appeler un espoir du centre de formation pour compléter la feuille"
-	elif vacancy != 0:
-		var action := D.button(card,Rect2(251,12,242,34),"Match · Feuille à 22",func():app._navigate("Match"),false,"arrow",true,app.accent,"LineupOpenMatchAt22")
-		action.tooltip_text=P.reduced_bench_vacancy(vacancy)
-		action.accessibility_name="Ouvrir le jour de match pour une feuille à 22"
-	var state: Dictionary=app.management_ui.get("bench_reading",{"key":"slot","descending":false})
-	app.management_ui.bench_reading=state
-	for spec in [["N°",3,54,"slot"],["JOUEUR",86,220,"name"],["POSTE",310,174,"pos"],["COND.",484,74,"condition"]]:
-		var key: String=spec[3]
-		var button:=D.button(card,Rect2(20+spec[1],65,spec[2],30),str(spec[0])+((" ↓" if state.descending else " ↑") if state.key==key else ""),func():
-			state.descending=not state.descending if state.key==key else false
-			state.key=key;app._render()
-			var focus: Control=app.root_content.find_child("BenchSort_"+key,true,false)
-			if focus!=null:FocusLater.grab(focus),false,"",false,app.accent,"BenchSort_"+key)
-		button.add_theme_font_size_override("font_size",C.px(16))
-	var entries: Array=[]
-	for slot in range(15,23):
-		var person:=_player(app,slot)
-		entries.append({"id":str(person.get("id","vacant"))+"/"+str(slot),"slot":slot,"person":person})
-	entries=TableOrder.ordered(entries,state.key,state.descending,func(entry:Dictionary,key:String):return entry.slot if key=="slot" else entry.person.get(key))
-	var scroll:=ScrollContainer.new();scroll.name="BenchPlayerScroll";scroll.follow_focus=true;scroll.mouse_force_pass_scroll_events=false
-	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
-	card.add_child(scroll);D.place(scroll,Rect2(20,104,578,376))
-	var rows:=Control.new();rows.name="BenchPlayerRows";rows.custom_minimum_size=Vector2(C.px(558),C.px(376));scroll.add_child(rows)
-	var filled := 0
-	for i in entries.size():
-		var slot: int=entries[i].slot
-		var person: Dictionary=entries[i].person
-		if not person.is_empty():filled+=1
-		var y:=i*47
-		var action:=Selection.PlayerButton.new()
-		action.name="LineupSlot%02d" % (slot+1)
-		rows.add_child(action);D.place(action,Rect2(0,y,558,43))
-		action.pressed.connect(func():_choose_slot(app,slot))
-		Selection.wire(action,app,str(person.get("id","")),slot,slot,str(person.get("name","Poste vacant")))
-		action.tooltip_text=_player_hint(app,person,slot)
-		action.accessibility_name=action.tooltip_text
-		action.add_theme_stylebox_override("normal",C.box(Color("14201e") if i%2 else Color("10181a"),Color.TRANSPARENT,3,0))
-		D.chip(action,Rect2(8,7,34,28),str(slot+1),C.IVORY)
-		if not person.is_empty():
-			var portrait:=G.portrait(int(person.get("portraitIndex",0)),C.px(34),person)
-			portrait.mouse_filter=Control.MOUSE_FILTER_IGNORE;action.add_child(portrait);D.place(portrait,Rect2(47,4,34,34))
-		D.text(action,87,23,_slot_name(person),21,C.IVORY,600,215)
-		D.text(action,87,39,"Note au poste "+Selection.rating_text(app.model,person,slot),14,_note_color(Selection.rating(app.model,person,slot)),500,215)
-		D.text(action,312,29,Selection.positions(person),19,C.MUTED,500,160)
-		var condition := "—" if person.is_empty() else G.n(person.get("condition","—"))+"%"
-		D.text(action,550,29,condition,25,C.MUTED if person.is_empty() else C.MINT,600,70,HORIZONTAL_ALIGNMENT_RIGHT)
-	D.text(card,578,38,"%d / 8" % filled,18,C.MUTED,500,100,HORIZONTAL_ALIGNMENT_RIGHT)
-	var selection: Dictionary = app.model.get("selection", {})
-	var errors: Array = selection.get("errors", [])
-	if errors.is_empty():
-		D.text(card, 22, 512, "Feuille complète et valide" if selection.get("valid", false) else "Des points restent à traiter dans la feuille.", 19, C.MUTED, 500, 554)
-	else:
-		# Le moteur place les motifs par poste après les messages généraux.
-		var issue := D.text(card, 22, 512, errors.back(), 21, C.AMBER, 600, 554)
-		issue.name = "TacticsLineupIssue"
-		var width := issue.get_theme_font("font").get_string_size(issue.text, HORIZONTAL_ALIGNMENT_LEFT, -1, issue.get_theme_font_size("font_size")).x
-		if errors.size() > 1 or width > issue.size.x:
-			issue.size.x = C.px(428)
-			var more := D.button(card, Rect2(462, 482, 116, 32), "Motifs (%d)" % errors.size(), validate.bind(app),
-				false, "", true, app.accent, "LineupMoreIssues")
-			more.tooltip_text = "Afficher tous les motifs de la feuille incomplète"
-			more.accessibility_name = "Motifs de la feuille (%d)" % errors.size()
-	return filled
-
-static func _note_color(value: Variant) -> Color:
-	return C.MUTED if value==null else C.ALERT if float(value)<40 else C.AMBER if float(value)<65 else C.MINT
-
-static func _player_hint(app: Control,person: Dictionary,index: int) -> String:
-	var assignment:=Selection.slot(app.model,index)
-	var number:=Selection.number(app.model,index)
-	return "N°%d · %s\n%s · %s\nNote au poste %s : %s / 100 · Condition %s %%\nChoisir le numéro puis affecter un joueur, ou glisser vers une autre place." % [index+1,str(assignment.get("label","")),str(person.get("name","À pourvoir")),Selection.positions(person),str(number) if number>0 else "—",Selection.rating_text(app.model,person,index),G.n(person.get("condition","—"))]
-
-static func _choose_slot(app: Control,index: int) -> void:
-	if app.selected_slot==index:
-		_candidates(app,index)
+## Choisir une place (carte, ligne du banc, doublure, encart) : sa liste de candidats s'affiche dessous. Un second appui
+## sur la place déjà choisie met le focus sur le premier candidat (clavier : Entrée puis ↑ ↓).
+static func choisir(app: Control, index: int) -> void:
+	var etat := Selection.state(app)
+	if app.selected_slot == index and app.root_content.find_child("TacticsCandidateRows", true, false) != null:
+		_focus_candidat(app)
 		return
-	app.selected_slot=index
-	var reading:=Selection.state(app)
-	reading.focus="LineupSlot%02d" % (index+1)
+	app.selected_slot = index
+	etat.message = ""
+	etat.scroll = 0
+	etat.focus = "LineupSlot%02d" % (index + 1)
 	app._render()
 	_restore_focus(app)
 
-static func _restore_focus(app: Control) -> void:
-	var focus_id:=str(Selection.state(app).get("focus",""))
-	if focus_id.is_empty():return
-	var focus:Control=app.root_content.find_child(focus_id,true,false)
-	if focus!=null:FocusLater.grab(focus)
+static func _focus_candidat(app: Control) -> void:
+	var lignes: Node = app.root_content.find_child("TacticsCandidateRows", true, false)
+	if lignes == null: return
+	for ligne in lignes.get_children():
+		if ligne is Button:
+			FocusLater.grab(ligne)
+			return
 
-static func _outside(card: Panel,app: Control) -> void:
-	var index:int=app.selected_slot
-	var target:=Selection.slot(app.model,index)
-	var label:="CIBLE N°%d · %s" % [index+1,str(target.get("label",""))]
-	D.text(card,20,82,label,18,C.GOLD,600,555).name="TacticsOutsideTarget"
-	D.text(card,76,109,"JOUEUR · POSTES MAÎTRISÉS",15,C.MUTED,600,348)
-	D.text(card,562,109,"NOTE AU POSTE",15,C.MUTED,600,130,HORIZONTAL_ALIGNMENT_RIGHT)
-	var scroll:=ScrollContainer.new();scroll.name="TacticsOutsideScroll";scroll.follow_focus=true;scroll.mouse_force_pass_scroll_events=false
-	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
-	card.add_child(scroll);D.place(scroll,Rect2(20,119,558,201))
-	var rows:=Control.new();rows.name="TacticsOutsideRows";scroll.add_child(rows)
-	var people:Array=[]
-	for person:Dictionary in app.model.get("squad",[]):
-		if Selection.source(app.model,str(person.id))<0:people.append(person)
-	people.sort_custom(func(a:Dictionary,b:Dictionary):
-		var ar:Variant=Selection.rating(app.model,a,index);var br:Variant=Selection.rating(app.model,b,index)
-		if ar==null and br!=null:return false
-		if br==null and ar!=null:return true
-		if ar!=br:return ar>br
-		return str(a.id)<str(b.id))
-	rows.custom_minimum_size=Vector2(C.px(538),C.px(maxi(201,people.size()*51)))
-	for i in people.size():
-		var person:Dictionary=people[i]
-		var action:=Selection.PlayerButton.new()
-		action.name="TacticsOutsidePlayer_"+str(person.id).replace(":","_")
-		action.set_meta("player_id",str(person.id))
-		action.add_theme_stylebox_override("normal",C.box(Color("14201e") if i%2 else Color("10181a"),Color.TRANSPARENT,3,0))
-		action.add_theme_stylebox_override("hover",C.box(Color("234331"),C.MINT,3,0))
-		action.add_theme_stylebox_override("focus",C.box(Color("14201e"),C.GOLD,3,0))
-		rows.add_child(action);D.place(action,Rect2(0,i*51,538,47))
-		var portrait:=G.portrait(int(person.get("portraitIndex",0)),C.px(40),person)
-		portrait.mouse_filter=Control.MOUSE_FILTER_IGNORE;action.add_child(portrait);D.place(portrait,Rect2(4,3,40,40))
-		D.text(action,56,22,str(person.name),21,C.IVORY,600,366)
-		D.text(action,56,41,Selection.positions(person)+" · "+str(person.get("status","")),15,C.MUTED,500,365)
-		var note:Variant=Selection.rating(app.model,person,index)
-		D.text(action,524,32,Selection.rating_text(app.model,person,index),27,_note_color(note),700,84,HORIZONTAL_ALIGNMENT_RIGHT).name="TacticsOutsideRating"
-		var allowed:=Selection.eligible(app,str(person.id),index)
-		action.tooltip_text=_player_hint(app,person,index)+("\nClic ou Entrée : affecter à cette cible." if allowed else "\nAffectation à cette cible indisponible ; consulter un autre numéro.")
-		action.accessibility_name=action.tooltip_text
-		Selection.wire(action,app,str(person.id),-1,-1,str(person.name))
-		action.pressed.connect(func():
-			if not Selection.eligible(app,str(person.id),app.selected_slot):
-				app.notice("Affectation indisponible","Ce joueur ne peut pas occuper ce poste. Consulte ses qualifications, sa disponibilité et le contexte du match.")
+## Clavier sur une place (terrain ou banc) : Espace prend puis pose (échange), Échap annule, Suppr libère (confirmation),
+## Maj+Entrée ouvre la fiche, I montre la mini-fiche. Alternative complète au glisser-déposer (K6).
+static func clavier(app: Control, event: InputEvent, slot: int, carte: Control) -> void:
+	var touche := event as InputEventKey
+	if touche == null or not touche.pressed or touche.echo or touche.alt_pressed or touche.meta_pressed or touche.ctrl_pressed: return
+	var etat := Selection.state(app)
+	var pris: Dictionary = etat.get("pris", {}) if etat.get("pris") is Dictionary else {}
+	var person := Selection.occupant(app.model, slot)
+	var id := str(person.get("id", ""))
+	match touche.keycode:
+		KEY_SPACE:
+			if touche.shift_pressed: return
+			carte.accept_event()
+			if pris.is_empty():
+				if person.is_empty():
+					_annoncer(app, "Poste n° %d vide : rien à prendre." % (slot + 1), carte)
+					return
+				if Selection.payload(app, id, slot) == null:
+					_annoncer(app, "La feuille ne se modifie pas maintenant.", carte)
+					return
+				etat.pris = {"player_id":id, "source":slot}
+				_annoncer(app, "%s (n° %d) pris : flèches vers sa nouvelle place, puis Espace pour poser. Échap annule." % [str(person.get("name", "")), slot + 1], carte, true)
 				return
-			Selection.apply(app,Selection.payload(app,str(person.id),-1),app.selected_slot))
-	D.text(card,578,38,str(people.size())+" joueurs",18,C.MUTED,500,120,HORIZONTAL_ALIGNMENT_RIGHT)
-	D.text(card,20,345,"Choisir un numéro · clic pour affecter · glisser pour déplacer",16,C.MUTED,500,558)
-	if people.is_empty():D.text(rows,16,46,"Tous les joueurs figurent sur la feuille.",20,C.MUTED,500,500)
-	var reading:=Selection.state(app)
-	scroll.set_deferred("scroll_vertical",int(reading.scroll))
-	scroll.get_v_scroll_bar().value_changed.connect(func(value:float):reading.scroll=int(value))
+			etat.erase("pris")
+			if int(pris.get("source", -1)) == slot:
+				_annoncer(app, "Déplacement annulé.", carte, true)
+				return
+			var payload: Variant = Selection.payload(app, str(pris.get("player_id", "")), int(pris.get("source", -1)))
+			if Selection.can_drop(app, payload, slot):
+				var nom := str(Selection.player(app.model, str(pris.get("player_id", ""))).get("name", ""))
+				etat.message = "%s posé au n° %d." % [nom, slot + 1]
+				Selection.apply(app, payload, slot)
+			else:
+				_annoncer(app, "Ce joueur ne peut pas tenir le n° %d : déplacement annulé." % (slot + 1), carte, true)
+		KEY_ESCAPE:
+			if pris.is_empty(): return
+			carte.accept_event()
+			etat.erase("pris")
+			_annoncer(app, "Déplacement annulé.", carte, true)
+		KEY_ENTER, KEY_KP_ENTER:
+			if not touche.shift_pressed or person.is_empty(): return
+			carte.accept_event()
+			app.navigation_controller.open_entity({"kind":"player", "id":id})
+		KEY_DELETE:
+			if person.is_empty() or not Selection.editable(app): return
+			carte.accept_event()
+			Candidats.liberer(app, id, slot)
+		KEY_I:
+			if person.is_empty() or touche.shift_pressed: return
+			carte.accept_event()
+			if MiniFiche.visible_pour(app, carte): MiniFiche.cacher(app, carte)
+			else: MiniFiche.montrer(app, id, "squad", carte)
 
-static func _candidates(app:Control,slot:int) -> void:
-	app._clear_dialogs()
-	var dialog:=AcceptDialog.new();dialog.name="LineupCandidates"
-	app._prepare_dialog(dialog,800)
-	dialog.title="Poste %02d · choisir un joueur" % (slot+1)
-	var body:=C.v(12);dialog.add_child(body)
-	body.add_child(C.photo("tactics-briefing",Vector2(720,100)))
-	var scroll:=ScrollContainer.new();scroll.follow_focus=true;body.add_child(scroll)
-	var viewport := app.get_viewport()
-	var list_width := C.px(720)
-	var list_height := C.px(500)
-	# La photo, les actions et le titre conservent leur place après réduction.
-	var reserved_height := C.px(230) + 68
-	var fit_list := func():
-		scroll.custom_minimum_size = Vector2(list_width,clampf(viewport.get_visible_rect().size.y-reserved_height,1,list_height))
-	fit_list.call()
-	viewport.size_changed.connect(fit_list)
-	dialog.tree_exiting.connect(func():
-		if is_instance_valid(viewport) and viewport.size_changed.is_connected(fit_list): viewport.size_changed.disconnect(fit_list),CONNECT_ONE_SHOT)
-	var list:=C.v(8);list.name="LineupCandidatesList";C.fill(list);scroll.add_child(list)
-	for player:Dictionary in app.model.get("squad",[]):
-		var action:=C.button(str(player.name)+" · "+Selection.positions(player)+" · Note "+Selection.rating_text(app.model,player,slot)+" · "+G.n(player.get("condition",0))+" %",func():dialog.queue_free();app._command("set_lineup",{"playerId":player.id,"slot":slot}))
-		action.name="LineupPlayer"+str(player.id).replace(":","_")
-		action.set_meta("player_id",str(player.id))
-		action.disabled=not Selection.eligible(app,str(player.id),slot)
-		action.tooltip_text="Indisponible ou qualification incompatible avec ce poste." if action.disabled else "Affecter ce joueur au poste %02d" % (slot+1)
-		list.add_child(action)
-	var clear:=C.button("Libérer ce poste",func():dialog.queue_free();app._command("set_lineup",{"playerId":null,"slot":slot}))
-	var actions:=C.h(8);body.add_child(actions)
-	clear.name="LineupRemove";clear.disabled=not Selection.editable(app);C.fill(clear);actions.add_child(clear)
-	var current:=_player(app,slot)
-	if not current.is_empty():
-		var individual:=C.button("Consignes du joueur",func():dialog.queue_free();_individual(app,current))
-		individual.name="TacticsIndividualInstructions";C.fill(individual);actions.add_child(individual)
-	dialog.confirmed.connect(dialog.queue_free)
-	dialog.canceled.connect(dialog.queue_free)
-	app.add_child(dialog)
-	Dialogs.show_centered(dialog,Vector2i(800,720))
+## Message lisible sous les candidats ; `rendre` redessine l'écran (marques « pris » / destinations) et garde le focus.
+static func _annoncer(app: Control, texte: String, carte: Control, rendre: bool = false) -> void:
+	var etat := Selection.state(app)
+	etat.message = texte
+	etat.focus = str(carte.name)
+	if rendre:
+		app._render()
+		_restore_focus(app)
+	else:
+		Candidats._message(app)
 
-static func validate(app:Control) -> void:
-	if app.model.get("selection",{}).get("valid",false):app._navigate("Préparation")
-	else:app.notice("La feuille reste à compléter","\n".join(app.model.get("selection",{}).get("errors",[])))
+static func _restore_focus(app: Control) -> void:
+	var focus_id := str(Selection.state(app).get("focus", ""))
+	if focus_id.is_empty(): return
+	var focus: Control = app.root_content.find_child(focus_id, true, false)
+	if focus != null: FocusLater.grab(focus)
 
-static func _defense(app:Control) -> void:
-	app._clear_dialogs()
-	var popup:=AcceptDialog.new();popup.name="TacticsDefenseChoices";app._prepare_dialog(popup,700);popup.title="Les consignes défensives"
-	var body:=C.v(12);popup.add_child(body)
-	body.add_child(C.photo("tactics-briefing",Vector2(640,120)))
-	for option:Dictionary in app.model.get("tactics",{}).get("defenses",[]):
-		var action:=C.button(str(option.label),func():popup.queue_free();app._command("set_tactics",{"attack":app.model.get("tactics",{}).get("attack","equilibre"),"defense":option.id}),app.model.get("tactics",{}).get("defense")==option.id,app.accent)
-		action.name="TacticsDefense_"+str(option.id);body.add_child(action);body.add_child(C.wrap(str(option.get("description","")),18))
-	popup.confirmed.connect(popup.queue_free)
-	popup.canceled.connect(popup.queue_free)
-	app.add_child(popup)
-	popup.popup_centered(Vector2i(700,560))
+## « Valider la feuille » : feuille valide → préparation du match. Sinon rien n'est envoyé : la ligne de validité dit
+## pourquoi et « Corriger → » prend le focus (aucune fenêtre).
+static func validate(app: Control) -> void:
+	if app.model.get("selection", {}).get("valid", false):
+		app._navigate("Préparation")
+		return
+	var corriger := app.root_content.find_child("TacticsCorriger", true, false) as Control
+	if corriger != null: FocusLater.grab(corriger)
 
+## Charge individuelle d'un joueur, ouverte depuis la fiche joueur : sous-page de la fiche (fiche_charge.gd), plus une
+## fenêtre (décision de Léo du 19/11/2026).
 static func _individual(app:Control,player:Dictionary) -> void:
-	app._clear_dialogs()
-	var popup:=AcceptDialog.new();popup.name="IndividualInstructions";app._prepare_dialog(popup,740);popup.title="Consignes · "+str(player.name)
-	var body:=C.v(12);popup.add_child(body)
-	body.add_child(C.photo("medical-recovery" if float(player.get("injury",0))>0 else "training-session",Vector2(680,170)))
-	body.add_child(C.wrap(str(player.pos)+" · Condition "+G.n(player.get("condition",0))+" % · Charge "+G.n(player.get("physicalLoad",0))+" / 100",22,C.IVORY,true))
-	var load_reason: String = app.SquadViews.player_load_unavailable_reason(app)
-	var load_hint := C.wrap(load_reason if not load_reason.is_empty() else "La charge individuelle sera appliquée à la prochaine préparation.",18)
-	if not load_reason.is_empty(): load_hint.name = "PlayerLoadUnavailableReason"
-	body.add_child(load_hint)
-	for pair in [["collective","Suivre le collectif"],["repos","Récupération"],["normal","Charge normale"],["intense","Travail intense"]]:
-		var action:=C.button(pair[1],func():popup.queue_free();app._command("set_player_load",{"playerId":player.id,"mode":pair[0]}),player.get("loadPlan","collective")==pair[0],app.accent)
-		action.name = "IndividualLoad_" + pair[0]
-		action.disabled = not load_reason.is_empty()
-		if action.disabled: action.focus_mode = Control.FOCUS_NONE
-		body.add_child(action)
-	popup.confirmed.connect(popup.queue_free)
-	popup.canceled.connect(popup.queue_free)
-	app.add_child(popup)
-	Dialogs.show_centered(popup,Vector2i(740,620))
+	load("res://ui/immersive08/fiche_charge.gd").ouvrir(app,player)

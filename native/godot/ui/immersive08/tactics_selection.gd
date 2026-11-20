@@ -20,8 +20,9 @@ class PlayerButton extends Button:
 		var data: Variant = make_payload.call(drag_player,source_slot)
 		if data == null: return null
 		var preview := PanelContainer.new()
-		preview.add_theme_stylebox_override("panel",C.box(C.RAISED,C.MINT,5,12))
-		preview.add_child(C.label(drag_caption,20,C.IVORY))
+		# Aperçu du glisser aux jetons de la charte : panneau-3, rayon 0, sans cadre, texte ivoire.
+		preview.add_theme_stylebox_override("panel",C.box(C.SELECTED,Color.TRANSPARENT,0,12))
+		preview.add_child(C.label(drag_caption,20,C.IVORY,false,500))
 		preview.mouse_filter=Control.MOUSE_FILTER_IGNORE
 		set_drag_preview(preview)
 		return data
@@ -101,6 +102,54 @@ static func apply(app: Control,data: Variant,target: int) -> bool:
 	reading.player_id="";reading.focus="LineupSlot%02d" % (target+1)
 	app._command("set_lineup",{"playerId":data.player_id,"slot":target})
 	return true
+
+## Joueur affecté à une place de la feuille (0-22), ou {}.
+static func occupant(model: Dictionary,index: int) -> Dictionary:
+	var id: Variant=slot(model,index).get("playerId")
+	return {} if id==null else player(model,str(id))
+
+## Le joueur est-il formé à ce poste de première ligne (1, 2 ou 3) ? Qualifications projetées par le moteur
+## (qualifiedFrontRowPositions) ; à défaut, éligibilité du moteur au maillot correspondant.
+static func forme_premiere_ligne(model: Dictionary,person: Dictionary,poste: int) -> bool:
+	if person.is_empty():return false
+	var qualifs: Variant=person.get("qualifiedFrontRowPositions")
+	if qualifs is Array:
+		for value: Variant in qualifs:
+			if (value is int or value is float) and int(value)==poste:return true
+		return false
+	return str(person.get("id","")) in slot(model,poste-1).get("eligibleIds",[])
+
+static func premiere_ligne_formee(model: Dictionary,person: Dictionary) -> bool:
+	return forme_premiere_ligne(model,person,1) or forme_premiere_ligne(model,person,2) or forme_premiere_ligne(model,person,3)
+
+## Règle de la première ligne (loi 3, docs/rugby-rules-reference.md, saison 2026/27) lue sur la feuille : pour chaque
+## poste (pilier gauche, talonneur, pilier droit), le titulaire, le remplaçant désigné et le nombre de formés parmi
+## eux ; `formes` = joueurs distincts de la feuille formés en première ligne ; `cible` = 6 pour une feuille à 23.
+## La validité de la feuille reste celle du moteur (selection.valid / errors) : ceci n'est qu'une lecture.
+static func premiere_ligne(model: Dictionary) -> Dictionary:
+	var libelles := {1:"Pilier gauche",2:"Talonneur",3:"Pilier droit"}
+	var banc_defaut := {2:15,1:16,3:17}
+	var postes: Array=[]
+	for poste in [1,2,3]:
+		var remplacant: int=banc_defaut[poste]
+		for index in range(15,23):
+			if int(slot(model,index).get("positionNumber",-1))==poste:remplacant=index;break
+		var titulaire_joueur:=occupant(model,poste-1)
+		var remplacant_joueur:=occupant(model,remplacant)
+		var formes:=int(forme_premiere_ligne(model,titulaire_joueur,poste))+int(forme_premiere_ligne(model,remplacant_joueur,poste))
+		postes.append({"poste":poste,"libelle":libelles[poste],"titulaire":poste-1,"remplacant":remplacant,"formes":formes})
+	var vus:={}
+	for index in 23:
+		var person:=occupant(model,index)
+		if premiere_ligne_formee(model,person):vus[str(person.id)]=true
+	return {"postes":postes,"formes":vus.size(),"cible":6}
+
+## Place de première ligne (n° 1-3 ou leurs remplaçants désignés) ?
+static func place_premiere_ligne(model: Dictionary,index: int) -> bool:
+	if index>=0 and index<3:return true
+	for poste: Dictionary in premiere_ligne(model).postes:
+		if int(poste.remplacant)==index:return true
+	return false
 
 static func wire(button: PlayerButton,app: Control,id: String,index: int,target: int,caption: String) -> void:
 	button.drag_player=id;button.source_slot=index;button.target_slot=target;button.drag_caption=caption
