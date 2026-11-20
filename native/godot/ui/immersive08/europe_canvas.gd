@@ -48,7 +48,7 @@ func _construire() -> void:
 	name = "EpcrPreparationDialog"
 	var data: Variant = app.model.get("epcrPreparation")
 	if not app.management_ui.has("europe") or str(app.management_ui.europe.get("competition", "")) != str(data.get("competitionId", "") if data is Dictionary else ""):
-		app.management_ui.europe = {"competition": str(data.get("competitionId", "") if data is Dictionary else ""), "selected": {}, "result": "", "preview": {}, "pret": false}
+		app.management_ui.europe = {"competition": str(data.get("competitionId", "") if data is Dictionary else ""), "selected": {}, "result": "", "preview": {}, "pret": false, "pending": false, "requested": []}
 	etat = app.management_ui.europe
 	preview = (etat.preview if not etat.preview.is_empty() else (data.duplicate(true) if data is Dictionary else {}))
 	var retour_lien := Kit.lien(self, Rect2(0, 4, 0, 38), "← Retour", func(): retour(app), "EuropeRetour", 20)
@@ -107,12 +107,17 @@ func _construire() -> void:
 	result.name = "EpcrPreparationResult"
 	result.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	result.size.y = C.px(700)
-	app.bridge.model_changed.connect(_on_model)
-	app.bridge.command_failed.connect(_on_failure)
+	_brancher(app)
+	pending = bool(etat.pending)
+	requested_ids = etat.requested
 	var texte_conserve := str(etat.result)
 	_changed(false)
 	verify.disabled = not preview.get("supported", false)
 	if not texte_conserve.is_empty(): result.text = texte_conserve
+	if pending:
+		verify.disabled = true
+		for box in choices: box.disabled = true
+		result.text = "Vérification du brouillon…"
 	if verify.disabled: result.text = "La référence 2026/27 ne permet pas de vérifier cette saison."
 	Kit.angles_droits(self)
 
@@ -129,6 +134,7 @@ func _changed(effacer := true) -> void:
 	if effacer:
 		result.text = "Brouillon modifié : relance la vérification."
 		etat.result = result.text
+		etat.rapport = false
 
 func _select_all(value: bool) -> void:
 	if pending: return
@@ -144,30 +150,53 @@ func _verify() -> void:
 		result.text = "Une action est en cours. Réessaie après sa réponse."
 		return
 	requested_ids = _ids()
+	etat.requested = requested_ids
+	etat.pending = true
 	pending = true
 	verify.disabled = true
 	for box in choices: box.disabled = true
 	result.text = "Vérification du brouillon…"
 	if not app._command("epcr_preview", {"registeredIds": requested_ids, "competitionId": preview.get("competitionId", "")}):
-		_on_failure("La vérification n’a pas pu démarrer. Réessaie.")
+		_recevoir_echec("La vérification n’a pas pu démarrer. Réessaie.", app)
 
-func _on_model(value: Dictionary) -> void:
-	if not pending or not app.bridge.last_response_ok or app.last_command != "epcr_preview": return
+## Les réponses du moteur s'appliquent à l'état gardé dans `management_ui.europe`, même si la page a été reconstruite
+## entre-temps (un nouveau rendu pendant la vérification ne perd ni le brouillon ni le verdict).
+static func _brancher(owner_app: Control) -> void:
+	if owner_app.has_meta("europe_branche"): return
+	owner_app.set_meta("europe_branche", true)
+	var script: Script = load("res://ui/immersive08/europe_canvas.gd")
+	owner_app.bridge.model_changed.connect(script._recevoir_modele.bind(owner_app))
+	owner_app.bridge.command_failed.connect(script._recevoir_echec.bind(owner_app))
+
+static func _recevoir_modele(value: Dictionary, owner_app: Control) -> void:
+	var donnees: Variant = owner_app.management_ui.get("europe")
+	if not donnees is Dictionary or not bool(donnees.get("pending", false)) or not owner_app.bridge.last_response_ok or owner_app.last_command != "epcr_preview": return
 	var data: Variant = value.get("epcrPreparation")
 	if not data is Dictionary: return
 	# Une réponse d'une autre action ne doit jamais valider ce brouillon.
-	if data.get("registeredIds", []) != requested_ids: return
-	preview = data.duplicate(true)
-	etat.preview = preview
-	_finish_request()
-	_show_report()
-	FocusLater.grab(verify)
+	if data.get("registeredIds", []) != donnees.get("requested", []): return
+	donnees.preview = data.duplicate(true)
+	donnees.pending = false
+	donnees.rapport = true
+	var page := owner_app.find_child("EpcrPreparationDialog", true, false)
+	if page != null: page._relire()
 
-func _on_failure(message: String) -> void:
-	if not pending: return
+static func _recevoir_echec(message: String, owner_app: Control) -> void:
+	var donnees: Variant = owner_app.management_ui.get("europe")
+	if not donnees is Dictionary or not bool(donnees.get("pending", false)): return
+	donnees.pending = false
+	donnees.rapport = false
+	donnees.result = message
+	var page := owner_app.find_child("EpcrPreparationDialog", true, false)
+	if page != null: page._relire()
+
+func _relire() -> void:
+	pending = false
+	preview = etat.preview if not etat.preview.is_empty() else preview
 	_finish_request()
-	result.text = message
-	etat.result = message
+	if bool(etat.get("rapport", false)): _show_report()
+	else: result.text = str(etat.result)
+	FocusLater.grab(verify)
 
 func _finish_request() -> void:
 	pending = false

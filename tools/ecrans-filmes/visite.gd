@@ -479,7 +479,7 @@ func refermer(ecran: Dictionary) -> void:
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
 	if str(ecran.type) == "mini_fiche": load("res://ui/immersive08/mini_fiche.gd").cacher(app)
-		if str(ecran.type) == "equilibre_postes": app.find_child("EffectifTuileAptes", true, false).mouse_exited.emit()
+	if str(ecran.type) == "equilibre_postes": app.find_child("EffectifTuileAptes", true, false).mouse_exited.emit()
 	fermer_fenetres()
 
 func surface() -> Control:
