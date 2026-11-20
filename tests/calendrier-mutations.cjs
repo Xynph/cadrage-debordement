@@ -293,15 +293,18 @@ test('Moteur Monde : recrutement libre, joueurs supplémentaires, achat différ�
 
     // 10. Bascule de saison (1er juillet) : arrivée et départ, sans indemnité.
     const avantSaison = lire(`({cash:club().cash,vendeur:S.clubs[${pc.clubId}].cash,acheteur:S.clubs[${a2.autreId}].cash})`);
+    const accordsVendeur = lire(`(S.calendrierMutations.accordsIA||[]).filter(a=>a.saison===S.season&&a.vendeurId===${pc.clubId}).map(a=>({playerId:a.playerId,acheteurId:a.acheteurId,montant:a.montant}))`);
     const bascule = lire(`(()=>{settleContracts();return {ici:club().players.find(p=>p.id==='${pc.id}')||null,parti:S.clubs[${a2.autreId}].players.find(p=>p.id==='${a2.playerId}')||null,
       libre:S.economy.freeAgents.some(p=>p.id==='${a2.playerId}'),etats:S.calendrierMutations.preContrats.map(x=>[x.id,x.etat]),saison:S.season,
       cash:club().cash,vendeur:S.clubs[${pc.clubId}].cash,acheteur:S.clubs[${a2.autreId}].cash};})()`);
+    // Accords des clubs gérés exécutés à la même bascule (autres joueurs du vendeur) : leurs indemnités sont légitimes.
+    const ventesVendeur = lire(`(${JSON.stringify(accordsVendeur)}).filter(a=>S.clubs[a.acheteurId].players.some(p=>p.id===a.playerId)).reduce((s,a)=>s+a.montant,0)`);
     assert.ok(bascule.ici, 'le joueur sous pré-contrat a rejoint le club');
     assert.equal(bascule.ici.contractEnd, bascule.saison + 1); assert.equal(bascule.ici.salary, pc.preContract.salary);
     assert.ok(bascule.parti, 'le joueur parti a rejoint son nouveau club');
     assert.ok(bascule.parti.contractEnd > bascule.saison); assert.equal(bascule.libre, false);
     // Les clubs gérés règlent aussi leurs propres fins de contrat à la bascule (primes) : aucune recette d'indemnité.
-    assert.ok(bascule.vendeur <= avantSaison.vendeur, 'aucune indemnité pour l’ancien club');
+    assert.ok(bascule.vendeur <= avantSaison.vendeur + ventesVendeur, 'aucune indemnité pour l’ancien club');
     assert.ok(!lire('S.ledger').some(l => JSON.stringify(l).includes(a2.nom)), 'aucune indemnité pour le club joué');
     assert.ok(bascule.etats.filter(([, e]) => e === 'execute').length === 2, JSON.stringify(bascule.etats));
   } finally { restaurer(); jeu.fermer(); }

@@ -1,6 +1,9 @@
 'use strict';
 // Calendrier du recrutement (docs/gdd/calendrier-mutations.md, décisions de Léo du 19/11/2026), fidèle au régime des
 // mutations LNR 2023-24 :
+//  - v2 (décision de Léo du 19/11/2026, soir) : transferts entre clubs conclus toute l'année, effet au 1er juillet
+//    (bascule de saison) pour tous les clubs, clubs gérés compris (§ 3 bis du GDD) ; le texte v1 ci-dessous reste vrai
+//    pour le réglage clubsGeres.calendrier = « semaines » ;
 //  - achats de joueurs sous contrat à un autre club : immédiats du 1er mai au 30 juin (période des mutations, réglée
 //    dans vente-joueurs.json pour les deux sens) ; hors période, accord conclu et exécuté à l'ouverture (même liste
 //    d'accords que les ventes, vente-joueurs.cjs) ;
@@ -316,6 +319,7 @@ settleContracts=function(){
  if(du&&calEtatValide(S.calendrierMutations))calExecuterPreContrats();
  if(v2){n+=venteExecuterAccords('achats')||0;n+=calIAExecuter();}
  const r=settleContractsCalV1.apply(this,arguments);
+ if(v2)calIAMasseBascule();else calIAArrivees=null;
  if(v2){n+=venteExecuterAccords('ventes')||0;if(n){const t=n>1?n+' transferts entre clubs prennent effet en ce changement de saison.':'Un transfert entre clubs prend effet en ce changement de saison.';calActu(t);calMercatoLigne(calMercatoEtat(),'temps-fort',t,0);}}
  return r;
 };
@@ -332,7 +336,7 @@ settleContracts=function(){
 //    résumé lisible (courriers « Échos du mercato » / « Point mercato ») ; type 'accord' (transfert conclu, montant),
 //    'precontrat', 'rumeur', 'temps-fort' (ouverture, dernière semaine, bilan, bascule) ; dates AAAA-MM-JJ ou null ;
 //    n et top : transferts conclus pendant la période des mutations (bilan) ;
-//  clubsGeres : {cle:'saison:semaine'} dernière clôture où les clubs gérés ont tenu leurs tours ; iaSemaine : idem pour
+//  clubsGeres : {cle:'saison:semaine',motif} dernière clôture où les clubs gérés ont tenu leurs tours ; iaSemaine : idem pour
 //    les pré-contrats ; actus : {cle, n} actualités d'accords de la semaine.
 const calG=()=>calR().clubsGeres;
 function calIAEtat(){const st=calEtat(true);st.accordsIA??=[];st.ia??=[];st.rumeurs??=[];return st;}
@@ -353,15 +357,31 @@ const calIAIndisponible=id=>!!calIAReserve(id)||(typeof calAccordAchat==='functi
 function calFil(text){if(!S.economy)return;S.economy.transfers.unshift({season:S.season,round:S.round,text});S.economy.transfers=S.economy.transfers.slice(0,80);}
 function calActu(text){if(!Array.isArray(S.news))S.news=[];S.news.unshift(text);S.news=S.news.slice(0,20);}
 // Effectif et masse de la saison suivante d'un club géré : contrats qui s'achèvent et départs conclus retirés,
-// arrivées conclues ajoutées. engage : indemnités déjà promises.
+// arrivées conclues ajoutées. engage : indemnités déjà promises. Masse : seule la part partFinsDeContratLiberee des
+// salaires qui s'achèvent est retirée (la bascule prolonge la plupart de ces contrats, aiRosterContracts) ; 1 = tous.
 function calIASuivante(c){
  const acc=calIAListe('accordsIA').filter(a=>a.saison===S.season),pre=calIAListe('ia').filter(x=>x.etat==='signe'&&x.saison===S.season);
  const out=new Set([...acc,...pre].filter(x=>x.vendeurId===c.id).map(x=>x.playerId)),inc=[...acc,...pre].filter(x=>x.acheteurId===c.id);
- let masse=0,n=0;for(const p of c.players){if(out.has(p.id)||p.contractEnd!=null&&p.contractEnd<=S.season)continue;masse+=p.salary;n++;}
- for(const x of inc){masse+=x.salaire;n++;}
- return {masse,places:professionalCapacity(c)-n,engage:acc.filter(a=>a.acheteurId===c.id).reduce((s,a)=>s+a.montant,0),postes:new Set(inc.map(x=>x.pos))};
+ const part=Math.max(0,Math.min(1,calG()?.masse?.partFinsDeContratLiberee??1));
+ let masse=0,n=0,effectif=0;for(const p of c.players){if(out.has(p.id))continue;effectif++;if(p.contractEnd!=null&&p.contractEnd<=S.season){masse+=p.salary*(1-part);continue;}masse+=p.salary;n++;}
+ for(const x of inc){masse+=x.salaire;n++;effectif++;}
+ return {masse,places:professionalCapacity(c)-n,effectif,engage:acc.filter(a=>a.acheteurId===c.id).reduce((s,a)=>s+a.montant,0),postes:new Set(inc.map(x=>x.pos))};
 }
 const calIAPeutAcheter=(c,salaire,s=calIASuivante(c))=>s.places>0&&s.masse+salaire<=aiRosterWageLimit(c);
+// Club géré qui cherche à recruter (GDD § 3 bis) : même seuil qu'avant la v2 (aiRosterMayRecruit : sous max(40, cible) ;
+// plans offensifs : jusqu'à cible + 2), lu sur l'effectif projeté (effectif actuel − départs conclus + arrivées conclues),
+// pas sur les seuls contrats qui continuent : un tiers des contrats s'achève chaque saison et la plupart sont prolongés à
+// la bascule, si bien que la seule « place de la saison suivante » rendait presque tous les clubs acheteurs à chaque tour
+// (≈ 80 accords par saison au lieu de 15 à 40). Place et masse de la saison suivante restent exigées.
+const calIACherche=(c,large,s=calIASuivante(c))=>calIAPeutAcheter(c,0,s)&&(s.effectif<Math.max(40,aiRosterTarget(c))||!!large&&s.effectif<aiRosterTarget(c)+2);
+// Hors période des mutations, seule une part des clubs gérés (participationHorsPeriode, tirage déterministe graine + saison +
+// semaine + club) tient le tour : le gros des accords se conclut en mai-juin. 1 = tous les clubs à chaque tour.
+function calIAActif(c){
+ const G=calG(),motif=calEtatValide(S.calendrierMutations)?S.calendrierMutations.clubsGeres?.motif:null;
+ if(!G||motif==='mutations'||motif==='derniere')return true;
+ const part=G.participationHorsPeriode??1;if(part>=1)return true;
+ return seedHash(venteGraine()+':'+S.season+':'+S.round+':ia-tour:'+c.id)%1000<Math.round(part*1000);
+}
 // Actualité d'un accord : au plus actusParSemaine par semaine (le fil des transferts et le résumé gardent tout).
 function calActuAccord(text){
  const st=calIAEtat(),cle=S.season+':'+S.round;if(st.actus?.cle!==cle)st.actus={cle,n:0};
@@ -377,11 +397,13 @@ function calIANouvelAccord(b,s,p,montant,salaire,annees){
  return a;
 }
 // ---- Résumé du mercato (temps forts, lignes de la semaine) ----
+// Ligne d'un gros transfert dans une liste : sans « il arrivera le 1er juillet » (dit une fois) ni point final.
+const calTopCourt=s=>{s=String(s).split(' : il arrivera')[0];return s.endsWith('.')?s.slice(0,-1):s;};
 function calMercatoEtat(){
  const st=calIAEtat(),j=calJour()||'';let m=st.mercato;
  if(m&&m.ouverture&&!m.bilan&&m.fin&&j>m.fin){
   m.bilan=j;
-  const texte='Bilan du mercato : '+(m.n>1?m.n+' transferts entre clubs conclus':m.n===1?'un transfert entre clubs conclu':'aucun transfert entre clubs conclu')+' pendant la période des mutations.'+(m.top.length?' Les plus gros : '+m.top.map(t=>t.texte).join(' ; ')+'.':'');
+  const texte='Bilan du mercato : '+(m.n>1?m.n+' transferts entre clubs conclus':m.n===1?'un transfert entre clubs conclu':'aucun transfert entre clubs conclu')+' pendant la période des mutations.'+(m.top.length?' Les plus gros : '+m.top.map(t=>calTopCourt(t.texte)).join(' ; ')+'.':'');
   calActu(texte);calMercatoLigne(m,'temps-fort',texte,0);
  }
  if(!m||m.saison!==S.season)m=st.mercato={saison:S.season,debut:null,fin:null,ouverture:null,derniere:null,bilan:null,n:0,top:[],semaines:{}};
@@ -406,15 +428,15 @@ function calMercatoTempsForts(motif){
  if(!calBascule())return;
  const m=calMercatoEtat(),j=calJour();if(!j||!m.debut||j<m.debut||j>m.fin)return;
  if(!m.ouverture){m.ouverture=j;const t='Ouverture de la période des mutations : les clubs ont jusqu’au '+calDateFr(m.fin)+' pour boucler leurs transferts, qui prendront effet le '+calDateFr(calArrivee())+'.';calActu(t);calMercatoLigne(m,'temps-fort',t,0);}
- if(motif==='derniere'&&!m.derniere){m.derniere=j;const t='Dernière semaine du mercato : les clubs bouclent leurs derniers accords avant le '+calDateFr(m.fin)+'.'+(m.top.length?' Plus gros transferts conclus : '+m.top.map(x=>x.texte).join(' ; ')+'.':'');calActu(t);calMercatoLigne(m,'temps-fort',t,0);}
+ if(motif==='derniere'&&!m.derniere){m.derniere=j;const t='Dernière semaine du mercato : les clubs bouclent leurs derniers accords avant le '+calDateFr(m.fin)+'.'+(m.top.length?' Plus gros transferts conclus : '+m.top.map(x=>calTopCourt(x.texte)).join(' ; ')+'.':'');calActu(t);calMercatoLigne(m,'temps-fort',t,0);}
 }
 // Tours de marché des clubs gérés à cette clôture (club-transfers.cjs). ancien : fenêtre des semaines 0 et 13 ouverte.
 function calClubsGeresTours(ancien){
  if(!calBascule())return {tours:ancien?3:0,differe:false,motif:null};
  const j=calJour(),w=S.round;if(!j||S.live||S.phase!=='league')return {tours:0,differe:true,motif:null};
  const st=calIAEtat(),cle=S.season+':'+w;if(st.clubsGeres?.cle===cle)return {tours:0,differe:true,motif:null};
- st.clubsGeres={cle};
  const t=nativeCalendrierMutations.toursClubs(j,w,S.season,calR(),nativeVenteJoueurs.REGLAGES);
+ st.clubsGeres={cle,motif:t.motif};
  return {tours:t.tours,differe:true,motif:t.motif};
 }
 // ---- Pré-contrats entre clubs gérés, rumeurs (clôture de semaine, calSemaine) ----
@@ -464,15 +486,34 @@ function calIAPreContrats(){
  }
 }
 // ---- Exécution à la bascule : accords et pré-contrats des clubs gérés (avant leurs prolongations et libérations) ----
+// calIAArrivees : arrivées de cette bascule par acheteur ({salaires, ids}), relues par calIAMasseBascule.
+let calIAArrivees=null;
+// Après les prolongations (aiRosterContracts) : un acheteur que ses arrivées font passer au-dessus de sa limite de masse
+// libère, comme pour faire de la place sous un plafond (aiRosterMakeRoom : au plus deux joueurs parmi les moins utiles,
+// jamais une arrivée, sans découvrir de poste), de quoi couvrir au plus le salaire de ses arrivées. Réglage
+// clubsGeres.masse.libererALaBascule.
+function calIAMasseBascule(){
+ const arr=calIAArrivees;calIAArrivees=null;
+ if(!arr||!calG()?.masse?.libererALaBascule||typeof aiRosterMakeRoom!=='function')return 0;
+ let n=0;
+ for(const [id,x] of arr){
+  const c=S.clubs[id];if(!c||c.id===S.club)continue;
+  const dessus=aiRosterPayroll(c)-aiRosterWageLimit(c);if(dessus<=0)continue;
+  if(aiRosterMakeRoom(c,Math.min(dessus,x.salaires),x.ids))n++;
+ }
+ return n;
+}
 function calIAExecuter(){
  if(!calEtatValide(S.calendrierMutations))return 0;
  const st=calIAEtat();let n=0;
+ const arr=calIAArrivees=new Map();
  const placeSuivante=b=>professionalCapacity(b)-b.players.filter(q=>!(q.contractEnd!=null&&q.contractEnd<=S.season)).length;
  const arriver=(p,s,b,salaire,annees,montant)=>{
   s.players=s.players.filter(q=>q.id!==p.id);b.players.push(p);
   if(montant>0){b.cash-=montant;s.cash+=montant;}
   p.formerClub=s.name;p.salary=salaire;p.contractEnd=S.season+annees;p.joinedSeason=S.season+1;p.joinedRound=0;if(montant>0)p.price=montant;
   if(typeof aiRosterEvent==='function'){aiRosterEvent(s.id,montant>0?'sell':'release',p,montant);aiRosterEvent(b.id,'recruit',p,montant);}
+  const x=arr.get(b.id)||{salaires:0,ids:new Set()};x.salaires+=salaire;x.ids.add(p.id);arr.set(b.id,x);
  };
  for(const a of st.accordsIA){
   if(a.saison!==S.season)continue;

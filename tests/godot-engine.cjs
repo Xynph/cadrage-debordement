@@ -312,7 +312,8 @@ func _model(model):
    stage = 1
    bridge.send("new_career", {"mode": "world-champ", "club": 102})
   1:
-   if model.squad.size() != 40:
+   # Club joué sans plancher de 40 (décision de Léo du 19/11/2026) : effectif réel, au moins une feuille de 23.
+   if model.squad.size() < 23:
     _failed("Effectif")
     return
    stage = 2

@@ -179,7 +179,7 @@ module.exports=function clubTransfers(){
    const offers=clubs.flatMap(c=>listed(c,plans.get(c.id),reports));
    // Un club « vedettes » ou qui rajeunit peut dépasser sa cible de deux places
    // pour un renfort : il cédera ensuite son surplus.
-   const room=c=>deferred?calIAPeutAcheter(c,0):aiRosterMayRecruit(c)||['vedettes','rajeunissement'].includes(plans.get(c.id))&&c.players.length<aiRosterTarget(c)+2&&professionalPlaces(c)>0;
+   const room=c=>deferred?calIAActif(c)&&calIACherche(c,['vedettes','rajeunissement'].includes(plans.get(c.id))):aiRosterMayRecruit(c)||['vedettes','rajeunissement'].includes(plans.get(c.id))&&c.players.length<aiRosterTarget(c)+2&&professionalPlaces(c)>0;
    const ranked=new Map();
    const buyers=clubs.filter(c=>(reports.get(c.id).bought||0)<MAX_BUYS&&room(c))
     .sort((a,b)=>order(plans.get(a.id))-order(plans.get(b.id))||(worldClub(b.id)?.reputation??0)-(worldClub(a.id)?.reputation??0)||a.id-b.id);

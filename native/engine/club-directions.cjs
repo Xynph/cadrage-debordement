@@ -541,7 +541,7 @@ module.exports=function clubDirections(T,N){
   for(let round=0;round<rounds;round++){
    const busy=new Set(),cache=new Map();
    const offers=clubs.flatMap(c=>listed(c,plans.get(c.id),reports));
-   const room=c=>deferred?calIAPeutAcheter(c,0):aiRosterMayRecruit(c)||['vedettes','rajeunissement','reconstruction','maintien'].includes(plans.get(c.id))&&c.players.length<aiRosterTarget(c)+2&&professionalPlaces(c)>0;
+   const room=c=>deferred?calIAActif(c)&&calIACherche(c,['vedettes','rajeunissement','reconstruction','maintien'].includes(plans.get(c.id))):aiRosterMayRecruit(c)||['vedettes','rajeunissement','reconstruction','maintien'].includes(plans.get(c.id))&&c.players.length<aiRosterTarget(c)+2&&professionalPlaces(c)>0;
    const buyers=clubs.filter(c=>(reports.get(c.id).bought||0)<MAX_BUYS&&room(c))
     .sort((a,b)=>order(plans.get(a.id))-order(plans.get(b.id))||reputation(b)-reputation(a)||a.id-b.id);
    // Chaque acheteur choisit sa cible ; plusieurs clubs peuvent viser le même joueur.

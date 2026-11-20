@@ -100,7 +100,7 @@ func executer() -> void:
 	var boite := noeud(app, "PlayerSales") as AcceptDialog
 	verifier(boite != null and boite.visible, "boîte « Offres reçues » ouverte")
 	if boite != null:
-		verifier(texte(boite, "SalesWindow").contains("Période des mutations") and texte(boite, "SalesWindow").contains("1er mai"), "période des mutations écrite : " + texte(boite, "SalesWindow"))
+		verifier(texte(boite, "SalesWindow").contains("changement de saison") and texte(boite, "SalesWindow").contains("1er juillet") and not texte(boite, "SalesWindow").contains("1er mai"), "effet au changement de saison écrit : " + texte(boite, "SalesWindow"))
 		var carte := noeud(boite, "SaleOffer_" + str(offre.id).validate_node_name())
 		verifier(carte != null, "offre « %s » affichée" % str(offre.id))
 		if carte != null:

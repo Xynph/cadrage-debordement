@@ -41,7 +41,8 @@ Chaque refus écrit la raison et la date de réouverture. Les pré-contrats marc
 
 ## 3 bis. Clubs gérés au même calendrier (v2)
 
-1. **Achats entre clubs gérés** (`club-transfers.cjs`, `club-directions.cjs`) : ils **concluent toute l'année** et le joueur arrive au **1er juillet** (bascule), comme pour le club joué. Tours de marché : semaines 0 (fin août) et 13 (novembre) comme avant, un tour toutes les 4 semaines de janvier à avril, puis **un tour par semaine pendant la période des mutations** (1er mai – 30 juin, temps fort) et **deux tours la dernière semaine** (celle dont la date + 7 jours dépasse le 30 juin : « dernière semaine du mercato »). Bornes par saison inchangées : 3 achats et 3 ventes par club (accords conclus dans la saison), une transaction par club et par tour.
+1. **Achats entre clubs gérés** (`club-transfers.cjs`, `club-directions.cjs`) : ils **concluent toute l'année** et le joueur arrive au **1er juillet** (bascule), comme pour le club joué. Tours de marché : semaines 0 (fin août) et 13 (novembre) comme avant, un tour toutes les 4 semaines de janvier à avril, puis **un tour par semaine pendant la période des mutations** (1er mai – 30 juin, temps fort) et **deux tours la dernière semaine** (celle dont la date + 7 jours dépasse le 30 juin : « dernière semaine du mercato »). Bornes par saison inchangées : 3 achats et 3 ventes par club (accords conclus dans la saison), une transaction par club et par tour. **Hors période des mutations** (semaines 0 et 13, hiver), seule une part `participationHorsPeriode` des clubs gérés (10 %, tirage déterministe graine + saison + semaine + club) tient le tour ; pendant la période, tous : le gros des accords se conclut en mai-juin.
+   - Club acheteur (réglage de la mesure du 20/11/2026) : il cherche à recruter selon le **même seuil qu'avant la v2** (effectif sous max(40, cible), plans offensifs jusqu'à cible + 2), lu sur l'**effectif projeté** (effectif actuel − départs conclus + arrivées conclues), et doit en plus avoir place et masse de la saison suivante. Raison : un tiers des contrats s'achève chaque saison et la plupart sont prolongés à la bascule ; la seule « place de la saison suivante » (contrats qui s'achèvent retirés) rendait presque tous les clubs acheteurs à chaque tour (≈ 80 accords par saison, surtout l'hiver, contre 16 à 40 avant la v2).
    - Accord conclu : le joueur est réservé (plus achetable, ni pré-contrat), annoncé dans les actualités ; il reste à son club jusqu'à la bascule. L'acheteur doit avoir la place et la masse salariale **de la saison suivante** (masse − salaires qui s'achèvent + accords en attente + nouveau salaire ≤ limite). Indemnité payée à l'exécution ; caisse ou place insuffisante à la bascule → l'accord tombe (actualité).
    - Le contrat signé court à partir de la saison suivante : échéance = saison + durée.
    - Les prêts de jeunes et leurs retours restent en début de saison (semaine 0) : ce ne sont pas des achats.
@@ -65,20 +66,43 @@ Plus d'achats entre clubs de septembre à avril : l'hiver ne doit pas devenir vi
 2. **Courriers de mai-juin regroupés** : pendant la période des mutations, les offres reçues pour les joueurs du club, les accords conclus par le club cette semaine et les principaux accords du Monde sont réunis dans **un seul courrier hebdomadaire « Point mercato »** (information : au plus l'arrêt d'info du jour) avec le lien « Ouvrir · Offres reçues ». Les courriers individuels « offre_transfert » ne sont plus déposés pendant la période (ils le restent hors période). Les courriers qui demandent une décision (approche d'un joueur en fin de contrat) restent individuels. Les arrivées et départs du 1er juillet sont annoncés à la bascule.
 3. **Temps forts du mercato** :
    - **ouverture** (première semaine de la période) : courrier « Ouverture du mercato » + actualité (les clubs accélèrent et se font concurrence jusqu'au 30 juin ; tous les accords prennent effet le 1er juillet) ;
-   - **dernière semaine** (avant le 30 juin) : courrier « Dernière semaine du mercato » + actualité, avec les plus gros transferts déjà conclus et le rappel qu'ensuite plus aucun achat n'est possible avant le 1er mai suivant ; les clubs gérés font leur rush final (deux tours de marché) ;
+   - **dernière semaine** (avant le 30 juin) : courrier « Dernière semaine du mercato » + actualité, avec les plus gros transferts déjà conclus et le rappel que ce qui sera conclu d'ici le 30 juin prendra effet le 1er juillet ; les clubs gérés ont deux tours de marché (mesure : presque aucun accord cette semaine-là, la demande est épuisée début mai — le courrier ne parle donc pas de « rush ») ;
    - **bilan** (première semaine après le 30 juin) : actualité « Bilan du mercato » (nombre de transferts, les trois plus gros montants).
 
 ## 3 quater. Indemnités et effectif minimum (v2, décisions de Léo du 19/11/2026)
 
-1. **Indemnité plafonnée aux salaires restants** (tous les clubs : achats du club joué, offres reçues par le club joué, achats entre clubs gérés) : indemnité ≤ salaire hebdomadaire × 52 × saisons de contrat restantes après l'arrivée (les salaires que l'acheteur reprend). Un joueur à qui il reste une saison après le 1er juillet coûte au plus un an de salaire ; un joueur en fin de contrat ne s'achète plus, il signe un pré-contrat sans indemnité. Le seuil LNR de 350 000 € (indemnité qui entre dans le salary cap) **n'est pas utilisé** : à revérifier sur le texte officiel avant toute règle.
+1. **Indemnité plafonnée aux salaires restants** (tous les clubs : achats du club joué, offres reçues par le club joué, achats entre clubs gérés) : indemnité ≤ salaire hebdomadaire × 52 × saisons de contrat restantes après l'arrivée (les salaires que l'acheteur reprend). Un joueur à qui il reste une saison après le 1er juillet coûte au plus un an de salaire ; un joueur en fin de contrat ne s'achète plus, il signe un pré-contrat sans indemnité. Effet réel mesuré (/balance-check du 20/11) : le plafond borne surtout les achats entre clubs gérés et les offres reçues par le club joué ; le prix demandé au club joué (≈ 29 × salaire × (saisons + 1) / 2) reste presque toujours en dessous, donc pas d'achat « pour presque rien ». Le seuil LNR de 350 000 € (indemnité qui entre dans le salary cap) **n'est pas utilisé** : à revérifier sur le texte officiel avant toute règle.
 2. **Club joué : plus de plancher de 40 professionnels** ni de « joueurs de complément » signés automatiquement (les 40 étaient un choix technique, #502, pas une règle LNR). Seul garde-fou : si la feuille de 23 (premières lignes comprises) ne peut pas être remplie avant un match, des **espoirs montent pour ce match**, avec une **alerte avant** (la veille ou dès que l'effectif ne suffit plus).
 3. **Clubs gérés** : plancher de 40 gardé ; la mesure compare avec et sans, la décision est notée en § 3 quinquies.
 4. **Garde d'effectif du club joué vendeur** : le seuil de 37 professionnels est remplacé par « après le départ, les seuls professionnels permettent encore une feuille de 23 conforme, premières lignes comprises » (calculée sur une copie de l'effectif, blessures et suspensions ignorées) + deux joueurs par famille de postes. Raison : « Après ce départ, tu ne pourrais plus aligner une feuille de 23 complète (manque : …). » Clubs gérés vendeurs : 37 inchangé.
 5. **Alerte et espoirs** : arrêt de Continuer « Effectif trop juste » (une fois par match et par manque dans les 7 jours qui précèdent, puis la veille) ; au coup d'envoi, si la feuille reste incomplète et que le manager n'a choisi ni des jeunes ni le match à 22, les meilleurs espoirs aptes montent pour ce match seulement (mécanisme existant des espoirs prêtés pour un match), courrier « Des espoirs montent pour le match ».
 
+## 3 quinquies. Mesure multi-saisons et décisions (economy-designer, /balance-check, 20/11/2026)
+
+Script reproductible : `scripts/mesure-mutations-clubs-geres.cjs --saisons 3` (carrière Monde world-champ, club 102, graine 4242, cadence hebdomadaire, ≈ 25 min). AVANT = `CD_CLUBS_GERES_CALENDRIER=semaines` sur `main` ; APRÈS = calendrier v2.
+
+| Relevé (115 clubs gérés), saisons 1 / 2 / 3 | Avant (main) | Après (v2, retenu : masse corrigée) |
+|---|---|---|
+| Transferts entre clubs gérés | 16 / 27 / 40 achats (semaines 0 et 13) | 22 / 48 / 37 accords (hiver 6–14, mai-juin 20–34, pic la 1re semaine de mai), aucun tombé |
+| Indemnité médiane | 250 / 220 / 170 k€ | 250 / 159 / 120 k€ (plafond aux salaires repris) |
+| Pré-contrats entre clubs gérés / rumeurs | — | 39 / 25–27 par saison |
+| Clubs au-dessus de la limite de masse (semaine 14), dont Pro D2 | 12 / 14 / 17 ; 1 / 2 / 3 | 18 / 16 / 17 ; 1 / 1 / 3 |
+| Caisse médiane en fin de saison, clubs en négatif | 3,32 / 1,92 / 1,36 M€ ; 0 / 4 / 9 | 3,37 / 1,81 / 1,49 M€ ; 0 / 3 / 9 |
+| Effectif médian ; niveau en saison 3 | 52 / 51 / 50 ; 78,3 | 51 / 50 / 50 ; 77,8 |
+
+Premier essai (masse de la saison suivante qui retirait 100 % des contrats finissants) : 21 clubs au-dessus de la limite en saison 3, dont 6 en Pro D2 → corrigé (`clubsGeres.masse` : 20 % des fins de contrat comptées comme libérées, car 72–76 % sont prolongées ; filet à la bascule qui libère au plus 2 joueurs peu utiles). Rapport complet : `docs/balance/balance-check-calendrier-mutations-20261120.md`.
+
+**Décisions.**
+1. Équilibre sain : effectifs, niveaux et caisses des clubs gérés inchangés à quelques pour cent près ; le marché vit toute l'année avec un pic en mai-juin. Participation hors période réglée à 10 % des clubs par tour (`participationHorsPeriode`, essais à 0,2 et 0,5 trop chargés).
+2. **Plancher de 40 des clubs gérés gardé** : sans lui, en fin de saison 3, des clubs de Nationale et de Champ descendent à 29–32 professionnels (4 clubs sous 37), sans gain d'économie mesurable.
+3. À surveiller : la dernière semaine du mercato est presque vide (la demande est épuisée début mai) ; saison 1 : 18 clubs au-dessus de la limite contre 12 (écart présent avant toute bascule) ; pré-contrats du club joué sans plafond par saison ; rumeurs toujours confirmées.
+
 ### Formules v2
 
 ```
+clubTientLeTour(c)        = jour ∈ période des mutations ou FNV(graine:saison:semaine:ia-tour:c) mod 1000 < participationHorsPeriode × 1000
+chercheÀRecruter(c)       = placeEtMasseSaisonSuivante(c) et (effectifProjeté < max(40, cible) ou plan offensif et effectifProjeté < cible + 2)
+effectifProjeté(c)        = effectif − départs conclus (accords, pré-contrats) + arrivées conclues
 tourDeMarché(jour, semaine) = semaine ∈ semainesFixes
                             ou (jour ∈ hiver et (semaine − 1re semaine d'hiver) mod toutesLesSemaines = 0)
                             ou jour ∈ période des mutations          (toursParSemaine, toursDerniereSemaine si jour + 7 > fin)
@@ -95,8 +119,10 @@ salaire pré-contrat IA    = demande chez l'acheteur × majorationSalaire
 | `calendrier` | `mutations` | `mutations` / `semaines` | nouveau calendrier ou ancien (achats immédiats aux semaines 0 et 13, indemnité non plafonnée) ; surcharge `CD_CLUBS_GERES_CALENDRIER` pour la mesure |
 | `semainesFixes` | 0, 13 | — | tours d'automne |
 | `hiver.periodes` / `toutesLesSemaines` | 01-01 – 04-30 / 4 | 2 – 8 | tours d'hiver |
-| `toursParSemaine` / `toursDerniereSemaine` | 1 / 2 | 1 – 3 | intensité de mai-juin et du rush final |
+| `toursParSemaine` / `toursDerniereSemaine` | 1 / 2 | 1 – 3 | intensité de mai-juin et de la dernière semaine |
+| `participationHorsPeriode` | 0,1 | 0,05 – 0,5 | part des clubs gérés qui tiennent un tour hors mai-juin (semaines 0, 13 et hiver) ; plus haut = accords plus tôt dans la saison, moins de pic en mai-juin. Mesure 3 saisons (graine 4242) : 0,1 → 26 / 48 / 49 accords, 63 à 77 % en mai-juin ; 0,2 → 31 / 57 / 50, 40 à 74 % ; 0,5 → ≈ 60 % avant mai |
 | `plancherIndemnite` | 10 000 € | 10 000 – 50 000 | indemnité minimale |
+| `masse.partFinsDeContratLiberee` / `libererALaBascule` | 0,2 / oui | 0,1 – 0,5 (1 = ancien test) | part des salaires qui s'achèvent retirée de la masse de la saison suivante (mesure : 82 à 85 % prolongés à la bascule) ; après les prolongations, un acheteur que ses arrivées font passer au-dessus de sa limite libère au plus deux joueurs peu utiles, à hauteur du salaire de ses arrivées. Mesure 3 saisons (graine 4242) : 22 / 48 / 37 accords, 18 / 16 / 17 clubs au-dessus de la limite (Pro D2 : 1 / 1 / 3) |
 | `actusParSemaine` | 4 | 2 – 8 | actualités d'accords par semaine (le fil des transferts les garde toutes) |
 | `preContrats.parSemaine` / `parAcheteur` / `parVendeur` | 2 / 2 / 2 | 1 – 4 | ≈ 39 pré-contrats entre clubs gérés par saison |
 | `preContrats.meilleursProteges` | 5 | 3 – 8 | meilleurs joueurs prolongés par leur club |
