@@ -410,8 +410,11 @@ func _pastille(lettre: String, largeur: float, hauteur: float, taille: float) ->
 	p.custom_minimum_size = Vector2(maxi(_d(largeur), 20), maxi(_d(hauteur), 14))
 	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(Trace.new("ovale", {"V": Charte.V, "N": Charte.N, "D": Charte.D}.get(lettre, Charte.N)))
-	var l := _texte(lettre, taille, Charte.NUIT, Charte.TITRE_EXTRA_ITALIQUE)
+	# Charte finale : V plein vert clair, N plein gris-vert, D contour doré (le seul aplat doré reste le bouton principal).
+	var ovale := Trace.new("ovale", Charte.PANNEAU if lettre == "D" else {"V": Charte.V, "N": Charte.N}.get(lettre, Charte.N))
+	if lettre == "D": ovale.bord = Charte.D
+	p.add_child(ovale)
+	var l := _texte(lettre, taille, Charte.IVOIRE if lettre == "D" else Charte.NUIT, Charte.TITRE_EXTRA_ITALIQUE)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	p.add_child(l)
 	return p
@@ -740,8 +743,11 @@ func _pourquoi(parent: VBoxContainer) -> void:
 		var negatif := str(raison.get("sens", "")) == "negatif"
 		var sens := _h(6)
 		sens.custom_minimum_size.x = _d(128)
-		sens.add_child(_triangle(not negatif, Charte.D if negatif else Charte.IVOIRE))
-		var mot_sens := _texte("À CORRIGER" if negatif else "POINT FORT", 13, Charte.D if negatif else Charte.IVOIRE, Charte.TITRE)
+		# « À corriger » : triangle au contour doré, mot en crème (un seul aplat doré par écran : Valider le résultat).
+		var fleche := _triangle(not negatif, Charte.PANNEAU if negatif else Charte.IVOIRE) as Trace
+		if negatif: fleche.bord = Charte.D
+		sens.add_child(fleche)
+		var mot_sens := _texte("À CORRIGER" if negatif else "POINT FORT", 13, Charte.IVOIRE, Charte.TITRE)
 		mot_sens.name = "Sens"
 		sens.add_child(mot_sens)
 		r.add_child(sens)

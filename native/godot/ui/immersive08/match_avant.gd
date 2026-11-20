@@ -849,7 +849,8 @@ static func pastille(result: String, size: float) -> Button:
 		style.content_margin_top = 0
 		style.content_margin_bottom = 0
 		bouton.add_theme_stylebox_override(look, style)
-	var encre := couleur if result == "D" else Charte.NUIT
+	# D : anneau doré, lettre crème (le seul doré plein de l'écran reste le Coup d'envoi).
+	var encre := Charte.IVOIRE if result == "D" else Charte.NUIT
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]: bouton.add_theme_color_override(key, encre)
 	return bouton
 
