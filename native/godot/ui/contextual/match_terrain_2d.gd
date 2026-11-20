@@ -12,6 +12,7 @@ extends Control
 ## respiration de la ligne) restent autour des places du moteur. La pause fige tout.
 const S = preload("res://ui/contextual/skin.gd")
 const T = preload("res://theme.gd")
+const Charte = preload("res://ui/charte.gd")
 
 const EN_BUT := 10.0
 const LARGEUR := 70.0
@@ -28,8 +29,8 @@ const LIBELLES := {"carry": "Temps de jeu", "try": "Essai", "kick": "Jeu au pied
 signal fait_joue(item: Dictionary)
 
 var equipes: Array = []
-var couleurs: Array[Color] = [Color("b8343c"), Color("e9e6d6")]
-var encres: Array[Color] = [Color.WHITE, Color("1b2a22")]
+var couleurs: Array[Color] = [Charte.CLUB, Charte.IVOIRE_2]
+var encres: Array[Color] = [Charte.IVOIRE, Charte.ENCRE]
 ## Côté du manager (anneau doré discret sur ses pastilles), -1 sinon.
 var camp := -1
 ## Échelle de l'interface (1 en 2560×1440, 0,5 en 1280×720).
@@ -42,6 +43,15 @@ var gel := false
 var calme := false
 ## Étiquette du fait en cours en haut à gauche du terrain (l'entracte la remplace par son fil).
 var legende := true
+## Le terrain remplit son cadre (longueur étirée, bornée) au lieu de garder l'échelle exacte (entracte en tuiles).
+var remplir := false
+## Pastilles dessinées à la dernière image (clé « camp:poste » → centre) et leur rayon : survol et clic.
+var centres_dessin: Dictionary = {}
+var rayon_dessin := 0.0
+var _survolee := ""
+## Survol d'une pastille (clé « camp:poste », vide en sortant) et clic sur elle.
+signal pastille_survolee(cle: String)
+signal pastille_choisie(cle: String)
 ## Taille des pastilles (1 : terrain plein écran ; plus petit sur le terrain de l'entracte en tuiles).
 var taille_pastilles := 1.0
 ## Zone de jeu et repères du moteur (essais, pénalités, cartons), pour le fond.
@@ -93,9 +103,9 @@ func regler_equipes(valeur: Array) -> void:
 		var teinte := str(club.get("presentation", {}).get("color", club.get("color", "")))
 		if not teinte.is_empty(): couleurs[cote] = Color.from_string(teinte, couleurs[cote])
 	if _ecart(couleurs[0], couleurs[1]) < 0.28:
-		couleurs[1] = Color("eeeadb") if couleurs[0].get_luminance() < 0.6 else Color("1f3a5c")
+		couleurs[1] = Charte.IVOIRE_2 if couleurs[0].get_luminance() < 0.6 else Charte.ENCRE_2
 	for cote in 2:
-		encres[cote] = Color("152019") if couleurs[cote].get_luminance() > 0.55 else Color.WHITE
+		encres[cote] = Charte.ENCRE if couleurs[cote].get_luminance() > 0.55 else Charte.IVOIRE
 
 static func _ecart(a: Color, b: Color) -> float:
 	return Vector3(a.r - b.r, a.g - b.g, a.b - b.b).length() + absf(a.get_luminance() - b.get_luminance())
@@ -353,6 +363,39 @@ func _vivre(delta: float) -> void:
 		places[cle] = (places.get(cle, ancre) as Vector2).lerp(ancre, clampf(delta * 2.4, 0.0, 1.0))
 	if not _regroupement.is_empty(): hauteur = 0.0
 
+# --- Survol et clic des pastilles -------------------------------------------------
+
+## Pastille sous un point du terrain (clé « camp:poste »), vide s'il n'y en a pas.
+func pastille_sous(point_local: Vector2) -> String:
+	var meilleure := ""
+	var proche := rayon_dessin * 1.15
+	for cle: String in centres_dessin:
+		var d := (centres_dessin[cle] as Vector2).distance_to(point_local)
+		if d <= proche:
+			proche = d
+			meilleure = cle
+	return meilleure
+
+func _gui_input(event: InputEvent) -> void:
+	var mouvement := event as InputEventMouseMotion
+	if mouvement != null:
+		var cle := pastille_sous(mouvement.position)
+		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if not cle.is_empty() else Control.CURSOR_ARROW
+		if cle != _survolee:
+			_survolee = cle
+			pastille_survolee.emit(cle)
+		return
+	var clic := event as InputEventMouseButton
+	if clic != null and clic.pressed and clic.button_index == MOUSE_BUTTON_LEFT:
+		var cle := pastille_sous(clic.position)
+		if not cle.is_empty():
+			pastille_choisie.emit(cle)
+			accept_event()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT and not _survolee.is_empty():
+		_survolee = ""
+		pastille_survolee.emit("")
 # --- Dessin -------------------------------------------------------------------
 
 func champ() -> Rect2:
@@ -363,6 +406,12 @@ func champ() -> Rect2:
 	libre.y *= LARGEUR / (LARGEUR + 4.0)
 	var echelle := minf(libre.x / (100.0 + 2.0 * EN_BUT), libre.y / LARGEUR)
 	var taille := Vector2((100.0 + 2.0 * EN_BUT) * echelle, LARGEUR * echelle)
+	# Entracte : le terrain remplit sa tuile ; la longueur s'étire au plus de 40 % au-delà de l'échelle (lecture du jeu,
+	# pas une mesure exacte), la hauteur suit la tuile.
+	if remplir:
+		var ey := libre.y / LARGEUR
+		var ex := minf(libre.x / (100.0 + 2.0 * EN_BUT), ey * 1.4)
+		taille = Vector2((100.0 + 2.0 * EN_BUT) * ex, LARGEUR * ey)
 	return Rect2((size - taille) * 0.5, taille)
 
 func echelle() -> float:
@@ -371,7 +420,8 @@ func echelle() -> float:
 func point(x: float, y: float) -> Vector2:
 	var c := champ()
 	var e := c.size.y / LARGEUR
-	return c.position + Vector2((EN_BUT + clampf(x, -EN_BUT, 100.0 + EN_BUT)) * e, clampf(y, -2.0, LARGEUR + 2.0) * e)
+	var ex := c.size.x / (100.0 + 2.0 * EN_BUT)
+	return c.position + Vector2((EN_BUT + clampf(x, -EN_BUT, 100.0 + EN_BUT)) * ex, clampf(y, -2.0, LARGEUR + 2.0) * e)
 
 ## Rayon des pastilles : lisible en 720p (8 px au moins), proportionné au terrain.
 func rayon() -> float:
@@ -382,65 +432,37 @@ func _draw() -> void:
 	if c.size.x <= 40.0 or c.size.y <= 30.0: return
 	var e := c.size.y / LARGEUR
 	var police: Font = T.DISPLAY
-	# Pelouse tondue en bandes de 10 m, en-buts un ton plus sombre.
-	# Pelouse tondue : bandes de 5 m à peine contrastées, en-buts un ton plus sombre, léger
-	# assombrissement le long des touches (profondeur).
-	draw_rect(c.grow(px(10)), Color("16281e"))
-	for bande in 24:
-		var x0 := -EN_BUT + bande * 5.0
-		var teinte := Color("31603c") if bande % 2 == 0 else Color("285132")
-		if x0 < 0.0 or x0 >= 100.0: teinte = teinte.darkened(0.16)
-		draw_rect(Rect2(point(x0, 0), Vector2(5.0 * e, c.size.y)), teinte)
-	# Vignettage : la pelouse s'assombrit doucement vers les bords (touches et en-buts).
-	for bord in 10:
-		var k := float(bord) / 10.0
-		var voile := Color(0, 0, 0, 0.07 * (1.0 - k))
-		draw_rect(Rect2(point(-EN_BUT, k * 6.0), Vector2(c.size.x, 0.6 * e)), voile)
-		draw_rect(Rect2(point(-EN_BUT, LARGEUR - k * 6.0 - 0.6), Vector2(c.size.x, 0.6 * e)), voile)
-		draw_rect(Rect2(point(-EN_BUT + k * 6.0, 0), Vector2(0.6 * e, c.size.y)), voile)
-		draw_rect(Rect2(point(100.0 + EN_BUT - k * 6.0 - 0.6, 0), Vector2(0.6 * e, c.size.y)), voile)
-	var ligne := Color(1, 1, 1, 0.88)
-	var fine := maxf(1.2, px(2.5))
-	# Couleurs des en-buts : celles des équipes qui les défendent, en léger voile.
-	for cote in 2:
-		draw_rect(Rect2(point(-EN_BUT if cote == 0 else 100.0, 0), Vector2(EN_BUT * e, c.size.y)), Color(couleurs[cote], 0.12))
-	# Zone de jeu actuelle (bande de 10 m du moteur).
+	# Humeur « direct » de la charte : pas de pelouse verte ; le terrain est tracé en ivoire (1 px) sur le panneau,
+	# en-buts compris, tirets pour les 5 m, 10 m et 15 m.
+	draw_rect(c, Charte.FOND)
+	var ligne := Color(Charte.IVOIRE, 0.78)
+	var fine := 1.0
+	# Zone de jeu actuelle (bande de 10 m du moteur) : un voile ivoire à peine visible.
 	var zone: Dictionary = direct.get("zone", {})
 	if not zone.is_empty():
 		var zx := clampf(floorf(float(zone.get("x", 50.0)) / 10.0) * 10.0, 0.0, 90.0)
-		draw_rect(Rect2(point(zx, 0), Vector2(10.0 * e, c.size.y)), Color(S.GOLD, 0.07))
-	draw_rect(c, ligne, false, fine * 1.2)
+		draw_rect(Rect2(point(zx, 0), Vector2(10.0 * c.size.x / (100.0 + 2.0 * EN_BUT), c.size.y)), Color(Charte.IVOIRE, 0.04))
+	draw_rect(c, ligne, false, fine)
 	for metre in [0.0, 22.0, 50.0, 78.0, 100.0]:
-		draw_line(point(metre, 0), point(metre, LARGEUR), ligne, fine * (1.3 if metre in [0.0, 50.0, 100.0] else 1.0))
+		draw_line(point(metre, 0), point(metre, LARGEUR), ligne, fine)
 	for metre in [5.0, 40.0, 60.0, 95.0]:
-		draw_dashed_line(point(metre, 0), point(metre, LARGEUR), Color(ligne, 0.6), fine, px(14))
+		draw_dashed_line(point(metre, 0), point(metre, LARGEUR), Color(ligne, 0.5), fine, px(12))
 	# Tirets des 5 m et 15 m le long des touches.
 	for largeur in [5.0, 15.0, 55.0, 65.0]:
-		var x := 5.0
-		while x < 95.0:
-			draw_line(point(x, largeur), point(minf(x + 2.0, 95.0), largeur), Color(ligne, 0.45), fine)
-			x += 5.0
-	for repere in [[22.0, "22"], [40.0, "10"], [50.0, "50"], [60.0, "10"], [78.0, "22"]]:
-		draw_string(police, point(repere[0], 0) + Vector2(-px(40), px(30)), repere[1], HORIZONTAL_ALIGNMENT_CENTER, px(80), roundi(maxf(11.0, px(24))), Color(1, 1, 1, 0.55))
+		draw_dashed_line(point(5.0, largeur), point(95.0, largeur), Color(ligne, 0.35), fine, px(12))
+	var corps := maxi(12, roundi(px(22)))
+	for repere in [[22.0, "22"], [40.0, "10"], [60.0, "10"], [78.0, "22"]]:
+		draw_string(police, point(repere[0], LARGEUR) + Vector2(px(6), -px(10)), repere[1], HORIZONTAL_ALIGNMENT_LEFT, px(80), corps, Color(Charte.IVOIRE, 0.75))
 	# Poteaux : deux montants à 5,6 m l'un de l'autre et la barre, sur la ligne d'essai.
 	for x in [0.0, 100.0]:
-		var gauche := point(x, 35.0 - 2.8)
-		var droite := point(x, 35.0 + 2.8)
-		# Ombre portée des poteaux sur l'en-but (vue de dessus, soleil de face) puis la barre.
-		var sens := Vector2(-1.0 if x == 0.0 else 1.0, 0.35) * e * 6.0
-		for montant: Vector2 in [gauche, droite]: draw_line(montant, montant + sens, Color(0, 0, 0, 0.28), maxf(2.0, px(5)), true)
-		draw_line(gauche + sens * 0.55, droite + sens * 0.55, Color(0, 0, 0, 0.2), maxf(2.0, px(4)), true)
-		draw_line(gauche, droite, Color.WHITE, maxf(2.0, px(5)))
-		for montant: Vector2 in [gauche, droite]:
-			draw_circle(montant, maxf(3.0, px(8)), Color.WHITE)
-			draw_arc(montant, maxf(3.0, px(8)), 0.0, TAU, 16, Color(0, 0, 0, 0.35), 1.0, true)
-	# Sigles des clubs dans leur en-but.
+		draw_line(point(x, 35.0 - 2.8), point(x, 35.0 + 2.8), Charte.IVOIRE, maxf(2.0, px(5)))
+	# En-buts : « EN-BUT » et le nom du club qui le défend, écrits en long.
 	for cote in mini(equipes.size(), 2):
-		var nom := S.G.club_abbr(equipes[cote]) if equipes[cote] is Dictionary else ""
+		var nom := S.G.club_name(equipes[cote]) if equipes[cote] is Dictionary else ""
 		if nom.is_empty(): continue
 		var centre := point(-EN_BUT * 0.5 if cote == 0 else 100.0 + EN_BUT * 0.5, 35.0)
 		draw_set_transform(centre, -PI / 2.0 if cote == 0 else PI / 2.0)
-		draw_string(police, Vector2(-c.size.y * 0.5, px(10)), nom, HORIZONTAL_ALIGNMENT_CENTER, c.size.y, roundi(maxf(12.0, px(30))), Color(1, 1, 1, 0.38))
+		draw_string(police, Vector2(-c.size.y * 0.5, corps * 0.35), ("En-but " + nom).to_upper(), HORIZONTAL_ALIGNMENT_CENTER, c.size.y, corps, Color(Charte.IVOIRE, 0.7))
 		draw_set_transform(Vector2.ZERO, 0.0)
 	# Essais, pénalités et cartons déjà joués : petits jalons discrets au bord du terrain.
 	for repere: Dictionary in direct.get("reperes", []):
@@ -449,11 +471,16 @@ func _draw() -> void:
 		var kind := str(repere.get("kind", ""))
 		var ou := point(clampf(float(repere.get("x", 50.0)), -4.0, 104.0), LARGEUR + 0.0) + Vector2(0, -px(14))
 		if kind == "card":
-			draw_rect(Rect2(ou - Vector2(px(6), px(9)), Vector2(px(12), px(18))), Color("d43e47") if repere.get("rouge", false) else Color("e8c24a"))
+			draw_rect(Rect2(ou - Vector2(px(6), px(9)), Vector2(px(12), px(18))), Charte.D if repere.get("rouge", false) else Charte.ATTRIBUT_55)
 		else:
-			draw_circle(ou, px(11), couleurs[equipe])
-			draw_arc(ou, px(11), 0.0, TAU, 16, Color(1, 1, 1, 0.8), maxf(1.0, px(2)), true)
+			draw_circle(ou, px(9), couleurs[equipe] if _plein(equipe) else Charte.FOND)
+			draw_arc(ou, px(9), 0.0, TAU, 16, Charte.club_trait(couleurs[equipe]), maxf(1.0, px(2)), true)
 	_dessiner_jeu(police, e)
+
+## Notre équipe en pastilles pleines, l'adversaire en anneaux (la forme dit le camp, pas la seule couleur) ;
+## sans camp connu, l'équipe qui reçoit est pleine.
+func _plein(cote: int) -> bool:
+	return cote == (camp if camp in [0, 1] else 0)
 
 ## Centres dessinés : les pastilles qui se chevauchent sont un peu écartées à l'affichage
 ## (numéros lisibles) ; les places du moteur (`places`) ne changent pas. Le porteur reste au ballon.
@@ -490,8 +517,8 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 	if _trace.size() >= 2:
 		for n in range(1, _trace.size()):
 			var a := float(n) / float(_trace.size())
-			draw_line(point(_trace[n - 1].x, _trace[n - 1].y), point(_trace[n].x, _trace[n].y), Color(S.GOLD, 0.08 + 0.5 * a * a), maxf(1.0, px(3)) * (0.35 + 0.65 * a), true)
-		draw_circle(point(_trace[0].x, _trace[0].y), maxf(1.5, px(4)), Color(S.GOLD, 0.25))
+			draw_line(point(_trace[n - 1].x, _trace[n - 1].y), point(_trace[n].x, _trace[n].y), Color(Charte.IVOIRE, 0.06 + 0.4 * a * a), maxf(1.0, px(3)) * (0.35 + 0.65 * a), true)
+		draw_circle(point(_trace[0].x, _trace[0].y), maxf(1.5, px(4)), Color(Charte.IVOIRE, 0.2))
 	var porteur := ""
 	if not _courant.is_empty() or not joue.is_empty():
 		var vedette := _vedette()
@@ -500,49 +527,45 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 	var ordre: Array = places.keys()
 	ordre.sort_custom(func(a: String, b: String): return (1 if a.begins_with("%d:" % possession) else 0) < (1 if b.begins_with("%d:" % possession) else 0))
 	var centres := _ecartees(ordre, r, porteur)
-	# Ombres douces : deux disques fondus, décalés vers le bas à droite.
-	for cle: String in ordre:
-		draw_circle(centres[cle] + Vector2(r * 0.22, r * 0.3), r * 1.18, Color(0, 0, 0, 0.10))
-		draw_circle(centres[cle] + Vector2(r * 0.14, r * 0.2), r * 0.98, Color(0, 0, 0, 0.18))
-	var taille_numero := roundi(clampf(r * 1.2, 11.0, 38.0))
+	centres_dessin = centres
+	rayon_dessin = r
+	var taille_numero := roundi(clampf(r * 1.2, 12.0, 38.0))
 	for cle: String in ordre:
 		var cote := int(cle.get_slice(":", 0))
 		var poste := int(cle.get_slice(":", 1))
 		var centre: Vector2 = centres[cle]
-		# Maillot : couleur du club, reflet en haut à gauche, liseré sombre fin.
-		draw_circle(centre, r, couleurs[cote])
-		draw_circle(centre - Vector2(r * 0.22, r * 0.26), r * 0.62, Color(1, 1, 1, 0.09))
-		draw_arc(centre, r, 0.0, TAU, 28, Color(0, 0, 0, 0.35), maxf(1.0, r * 0.1), true)
-		draw_arc(centre, r * 0.9, PI * 1.05, PI * 1.6, 10, Color(1, 1, 1, 0.22), maxf(1.0, r * 0.08), true)
-		if cote == camp: draw_arc(centre, r + maxf(1.5, r * 0.2), 0.0, TAU, 24, Color(S.GOLD, 0.5), maxf(1.0, r * 0.12), true)
+		var trait_club := Charte.club_trait(couleurs[cote])
+		# Nous : pastille pleine aux couleurs du club, liseré clair ; eux : anneau à leur couleur sur fond sombre.
+		if _plein(cote):
+			draw_circle(centre, r, couleurs[cote])
+			draw_arc(centre, r, 0.0, TAU, 28, trait_club, maxf(1.0, r * 0.12), true)
+		else:
+			draw_circle(centre, r, Charte.FOND)
+			draw_arc(centre, r - maxf(1.0, r * 0.08), 0.0, TAU, 28, trait_club, maxf(1.5, r * 0.16), true)
 		if cle == porteur:
-			# Halo du porteur : il respire doucement (fixe si les animations sont réduites).
-			var souffle := 0.0 if calme else sin(_temps * 4.0) * 0.12
-			draw_circle(centre, r * (1.9 + souffle), Color(S.GOLD, 0.16))
-			draw_arc(centre, r + maxf(2.5, r * 0.38), 0.0, TAU, 32, S.GOLD, maxf(2.0, r * 0.22), true)
+			# Porteur : anneau ivoire autour de la pastille (fixe : aucun mouvement non essentiel).
+			draw_arc(centre, r + maxf(2.5, r * 0.38), 0.0, TAU, 32, Charte.IVOIRE, maxf(1.5, r * 0.16), true)
 		var numero := str(poste + 1)
 		var largeur := police.get_string_size(numero, HORIZONTAL_ALIGNMENT_LEFT, -1, taille_numero).x
-		draw_string(police, centre + Vector2(-largeur * 0.5, taille_numero * 0.36), numero, HORIZONTAL_ALIGNMENT_LEFT, -1, taille_numero, encres[cote])
-	# Ballon : ovale blanc, ombre qui s'écarte quand il est en l'air.
+		var encre := encres[cote] if _plein(cote) else Charte.IVOIRE
+		draw_string(police, centre + Vector2(-largeur * 0.5, taille_numero * 0.36), numero, HORIZONTAL_ALIGNMENT_LEFT, -1, taille_numero, encre)
+	# Ballon : ovale ivoire cerclé de noir, ombre qui s'écarte quand il est en l'air.
 	var sol := point(ballon.x, ballon.y)
 	var leve := Vector2(0, -hauteur * e * 0.55)
 	var taille := maxf(7.0, r * 0.72) * (1.0 + hauteur * 0.035)
 	draw_set_transform(sol + Vector2(hauteur * e * 0.2, 0), 0.0, Vector2(1.25, 0.8))
 	draw_circle(Vector2.ZERO, taille, Color(0, 0, 0, clampf(0.45 - hauteur * 0.015, 0.15, 0.45)))
 	draw_set_transform(sol + leve, -0.5, Vector2(1.35, 0.9))
-	# Halo clair : le ballon reste lisible sur les pastilles comme sur l'herbe.
-	draw_circle(Vector2.ZERO, taille * 2.1, Color(S.GOLD, 0.22))
-	draw_circle(Vector2.ZERO, taille * 1.6, Color(1, 1, 1, 0.30))
-	draw_circle(Vector2.ZERO, taille, Color("fbf8ee"))
-	draw_arc(Vector2.ZERO, taille, 0.0, TAU, 20, Color("3a2a1a"), maxf(1.0, taille * 0.22), true)
+	draw_circle(Vector2.ZERO, taille, Charte.IVOIRE)
+	draw_arc(Vector2.ZERO, taille, 0.0, TAU, 20, Charte.NUIT, maxf(1.0, taille * 0.22), true)
 	draw_set_transform(Vector2.ZERO, 0.0)
-	# Sens du jeu : petite flèche aux couleurs de l'équipe en possession.
+	# Sens du jeu : petite flèche ivoire sous le ballon, vers l'en-but attaqué.
 	if possession in [0, 1] and hauteur < 0.5:
 		var sens := Vector2(1 if possession == 0 else -1, 0)
 		var pied := sol + Vector2(0, r * 2.2)
 		var pointe := pied + sens * r * 2.4
-		draw_line(pied, pointe, Color(couleurs[possession], 0.9), maxf(2.0, r * 0.28), true)
-		draw_colored_polygon(PackedVector2Array([pointe + sens * r * 0.7, pointe + Vector2(0, r * 0.55), pointe - Vector2(0, r * 0.55)]), Color(couleurs[possession], 0.9))
+		draw_line(pied, pointe, Color(Charte.IVOIRE, 0.8), maxf(1.5, r * 0.2), true)
+		draw_colored_polygon(PackedVector2Array([pointe + sens * r * 0.7, pointe + Vector2(0, r * 0.55), pointe - Vector2(0, r * 0.55)]), Color(Charte.IVOIRE, 0.8))
 	# Fait en cours, en surimpression discrète en haut à gauche du terrain.
 	var item: Dictionary = _courant if not _courant.is_empty() else joue
 	if legende and not item.is_empty():
@@ -552,5 +575,5 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 		var corps := roundi(maxf(13.0, px(26)))
 		var coin := champ().position + Vector2(px(14), px(14))
 		var mesure := police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps)
-		draw_rect(Rect2(coin, mesure + Vector2(px(24), px(14))), Color(0.03, 0.08, 0.06, 0.78))
-		draw_string(police, coin + Vector2(px(12), mesure.y * 0.82 + px(4)), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, S.TEXT)
+		draw_rect(Rect2(coin, mesure + Vector2(px(24), px(14))), Color(Charte.FOND, 0.85))
+		draw_string(police, coin + Vector2(px(12), mesure.y * 0.82 + px(4)), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, Charte.IVOIRE)

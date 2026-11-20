@@ -1002,7 +1002,9 @@ func _survol_joueur(id: String, ancre: Control) -> void:
 func ouvrir_joueur(id: String) -> void:
 	_mini_fiche().cacher(app)
 	if (load("res://ui/immersive08/fiche_commune.gd").trouver(app, id, "squad") as Dictionary).is_empty(): return
-	_suspendre()
+	# Depuis la page Équipe (restée ouverte dessous) : c'est elle qui tient la pause et la reprise ; fermer la fiche
+	# ne doit pas relancer le match.
+	if not (is_instance_valid(equipe) and equipe.visible): _suspendre()
 	_page_joueur = id
 	_ouvrir_page("joueur")
 
@@ -1430,8 +1432,12 @@ func confier_fin() -> void:
 func ouvrir_fiche_club(cote: int) -> void:
 	var teams: Array = _live().get("teams", [])
 	if cote < 0 or cote >= teams.size() or not teams[cote] is Dictionary or teams[cote].get("id") == null: return
+	ouvrir_fiche_club_id(int(float(teams[cote].id)))
+
+## Fiche d'un club par son identifiant (autres matchs et classement en direct de l'entracte), même page du direct.
+func ouvrir_fiche_club_id(id: int) -> void:
+	if id < 0: return
 	_suspendre()
-	var id := int(float(teams[cote].id))
 	var avant: Variant = app.management_ui.get("club_sheet")
 	var meme: bool = avant is Dictionary and int(avant.get("id", -1)) == id
 	app.management_ui.club_sheet = {"id": id, "tab": int(avant.get("tab", 0)) if meme else 0, "sort": str(avant.get("sort", "fam")) if meme else "fam", "descending": bool(avant.get("descending", false)) if meme else false}

@@ -31,6 +31,11 @@ func direct(minute: int, seuil: int = 10) -> Dictionary:
 		"fil": [{"i": 0, "horloge": "%d′" % minute, "texte": "Coup d’envoi.", "kind": "kickoff", "equipe": 0}],
 		"domination": {"minutes": [10, 20], "miTemps": null}, "reperes": [], "deroule": [], "borne": 1, "notes": {}, "cartons": []}
 
+## Textes d'un chiffre clé (libellé, notre valeur, la leur).
+func textes_chiffre(between: Control, cle: String) -> Array:
+	var bloc: Node = between.chiffres.find_child("MatchBetweenFigure_" + cle, false, false)
+	return bloc.find_children("*", "Label", true, false).map(func(l: Label): return l.text) if bloc != null else []
+
 func texte_gabi(between: Control) -> String:
 	var morceaux: PackedStringArray = []
 	for label: Label in between.adjoint.find_children("*", "Label", true, false): morceaux.append(label.text)
@@ -48,10 +53,10 @@ func run() -> void:
 	for i in 2: await process_frame
 	check(between.echantillon_court, "2e minute : échantillon court")
 	check(is_equal_approx(between.chiffres.modulate.a, Between.ATTENUE), "2e minute : chiffres atténués")
-	check(between.precision_chiffres.text.contains("trop tôt") and between.precision_chiffres.text.contains("10′"), "2e minute : le titre dit quand conclure (" + between.precision_chiffres.text + ")")
-	# Possession et occupation : dans leurs anneaux (maquette du 16/11/2026), plus dans le duel.
-	check(between.anneau_possession.texte_centre() == "—" and between.anneau_possession.vide and between.anneau_occupation.texte_centre() == "—", "2e minute : possession et occupation masquées (" + between.anneau_possession.texte_centre() + ")")
-	check((between.chiffres.get_child(0).get_child(0) as Label).tooltip_text == "metres" and between.chiffres.get_child_count() == 2, "Le duel commence aux mètres : ni possession ni occupation")
+	check(between.precision_chiffres.visible and between.precision_chiffres.text.contains("Trop tôt") and between.precision_chiffres.text.contains("10e"), "2e minute : la précision dit quand conclure (" + between.precision_chiffres.text + ")")
+	# Possession et occupation : en tête des chiffres clés face à face (maquette DA du 19/11/2026), « — » tant que court.
+	check(textes_chiffre(between, "possession") == ["POSSESSION", "—", "—"] and textes_chiffre(between, "occupation") == ["OCCUPATION", "—", "—"], "2e minute : possession et occupation masquées " + str(textes_chiffre(between, "possession")))
+	check(between.chiffres.get_children().map(func(n: Node): return str(n.name)) == ["MatchBetweenFigure_possession", "MatchBetweenFigure_occupation"], "Chiffres clés : possession et occupation (les mètres sont dans les statistiques complètes)")
 	var gabi := texte_gabi(between)
 	check(not gabi.contains("%") and not gabi.contains("trop") and gabi.contains("se met en place"), "2e minute : Gabi posé, sans pourcentage (" + gabi + ")")
 	# 12e minute : chiffres pleins, Gabi lit l'occupation (30 % pour son camp, écart net).
@@ -59,10 +64,10 @@ func run() -> void:
 	between.update_frame({}, live, direct(12), func(_c: Variant): pass)
 	for i in 2: await process_frame
 	check(not between.echantillon_court and between.chiffres.modulate.a == 1.0, "12e minute : chiffres pleins")
-	check(between.precision_chiffres.text == "comparées", "12e minute : titre ordinaire")
-	# Notre camp (1) au centre de l'anneau ; les deux parts du moteur dans l'arc et l'infobulle.
-	check(between.anneau_possession.texte_centre() == "43%" and between.anneau_possession.valeurs == [57, 43] and between.anneau_possession.tooltip_text.contains("57 %"), "12e minute : possession affichée (" + between.anneau_possession.texte_centre() + ", " + between.anneau_possession.tooltip_text + ")")
-	check(between.anneau_occupation.texte_centre() == "30%" and between.anneau_occupation.valeurs == [70, 30], "12e minute : occupation affichée (" + between.anneau_occupation.texte_centre() + ")")
+	check(not between.precision_chiffres.visible, "12e minute : plus d'avertissement")
+	# Notre camp (1) à gauche, l'adversaire à droite ; les deux parts du moteur dans la barre et l'infobulle.
+	check(textes_chiffre(between, "possession") == ["POSSESSION", "43 %", "57 %"] and between.chiffres.get_child(0).tooltip_text.contains("57 %"), "12e minute : possession affichée " + str(textes_chiffre(between, "possession")))
+	check(textes_chiffre(between, "occupation") == ["OCCUPATION", "30 %", "70 %"], "12e minute : occupation affichée " + str(textes_chiffre(between, "occupation")))
 	gabi = texte_gabi(between)
 	check(gabi.contains("30 %") and gabi.contains("dégagement") and not gabi.contains("trop dans notre camp"), "12e minute : lecture de l'occupation, sans alarme (" + gabi + ")")
 	# Projection d'avant le lot 5 (sans `echantillon`) : rien n'est atténué.
@@ -108,7 +113,7 @@ func run() -> void:
 		viser.pressed.emit()
 		check(recus.size() == 1 and recus[0].get("attack") == "large" and recus[0].get("penalty") == "touch", "Tuile Bonus : la consigne part avec ses commandes")
 	var fond := func(b: Button) -> Color: return (b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color if b != null and b.get_theme_stylebox("normal") is StyleBoxFlat else Color.BLACK
-	check(securiser != null and fond.call(securiser) == Between.OR and fond.call(viser) != Between.OR, "Tuile Bonus : la consigne en place est en or")
+	check(securiser != null and securiser.text.ends_with("en place") and fond.call(securiser) == Between.SURVOL and fond.call(viser) != Between.SURVOL, "Tuile Bonus : la consigne en place est marquée (mot et filet), jamais en or")
 	# 1280×720 : la tuile reste dans l'écran, ses boutons aussi.
 	root.size = Vector2i(1280, 720)
 	between.size = Vector2(1280, 620)
