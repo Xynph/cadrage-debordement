@@ -36,17 +36,48 @@ static func state(app: Control) -> Dictionary:
 		app.management_ui.tactics_reading={"mode":"bench","player_id":"","scroll":0,"focus":""}
 	return app.management_ui.tactics_reading
 
+## Index de lecture le temps d'une construction de l'écran (lecture_debut / lecture_fin) : places, joueurs et sources
+## lus une fois au lieu d'un parcours de la feuille et de l'effectif à chaque appel (61 joueurs × 23 places). Hors de
+## cette fenêtre, aucune mémoire : la projection du moteur peut changer entre deux rendus.
+static var _lecture: Dictionary = {}
+
+static func lecture_debut(model: Dictionary) -> void:
+	var slots := {}
+	var sources := {}
+	for assignment: Dictionary in model.get("selection",{}).get("slots",[]):
+		var index: Variant=assignment.get("slot")
+		if (index is int or index is float) and not slots.has(int(index)):slots[int(index)]=assignment
+		var id: Variant=assignment.get("playerId")
+		if id is String and not sources.has(id):sources[id]=int(assignment.slot)
+	var joueurs := {}
+	for person: Dictionary in model.get("squad",[]):
+		var cle:=str(person.get("id",""))
+		if not joueurs.has(cle):joueurs[cle]=person
+	_lecture={"model":model,"slots":slots,"sources":sources,"joueurs":joueurs}
+
+static func lecture_fin() -> void:
+	_lecture={}
+
+static func _index(model: Dictionary) -> Dictionary:
+	return _lecture if not _lecture.is_empty() and is_same(_lecture.model,model) else {}
+
 static func slot(model: Dictionary,index: int) -> Dictionary:
+	var lu:=_index(model)
+	if not lu.is_empty():return lu.slots.get(index,{})
 	for assignment: Dictionary in model.get("selection",{}).get("slots",[]):
 		if assignment.get("slot")==index:return assignment
 	return {}
 
 static func player(model: Dictionary,id: String) -> Dictionary:
+	var lu:=_index(model)
+	if not lu.is_empty():return lu.joueurs.get(id,{})
 	for person: Dictionary in model.get("squad",[]):
 		if str(person.get("id",""))==id:return person
 	return {}
 
 static func source(model: Dictionary,id: String) -> int:
+	var lu:=_index(model)
+	if not lu.is_empty():return lu.sources.get(id,-1)
 	for assignment: Dictionary in model.get("selection",{}).get("slots",[]):
 		if assignment.get("playerId")==id:return int(assignment.slot)
 	return -1
@@ -127,6 +158,8 @@ static func premiere_ligne_formee(model: Dictionary,person: Dictionary) -> bool:
 ## eux ; `formes` = joueurs distincts de la feuille formés en première ligne ; `cible` = 6 pour une feuille à 23.
 ## La validité de la feuille reste celle du moteur (selection.valid / errors) : ceci n'est qu'une lecture.
 static func premiere_ligne(model: Dictionary) -> Dictionary:
+	var lu:=_index(model)
+	if lu.has("premiere"):return lu.premiere
 	var libelles := {1:"Pilier gauche",2:"Talonneur",3:"Pilier droit"}
 	var banc_defaut := {2:15,1:16,3:17}
 	var postes: Array=[]
@@ -142,7 +175,9 @@ static func premiere_ligne(model: Dictionary) -> Dictionary:
 	for index in 23:
 		var person:=occupant(model,index)
 		if premiere_ligne_formee(model,person):vus[str(person.id)]=true
-	return {"postes":postes,"formes":vus.size(),"cible":6}
+	var resultat:={"postes":postes,"formes":vus.size(),"cible":6}
+	if not lu.is_empty():lu.premiere=resultat
+	return resultat
 
 ## Place de première ligne (n° 1-3 ou leurs remplaçants désignés) ?
 static func place_premiere_ligne(model: Dictionary,index: int) -> bool:

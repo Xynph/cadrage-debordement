@@ -139,7 +139,7 @@ func parcours(ecran: Control) -> void:
 	var premiere_ligne := origine + Vector2(120, J.px(J.ENTETE_H) + J.px(J.GROUPE_H) + J.px(J.LIGNE_H) * 1.5)
 	await souris(premiere_ligne)
 	verifier(app.selected_player == str(t.lignes_visibles()[1].id), "un clic sélectionne la ligne sous le pointeur")
-	verifier(ecran.find_child("CarteJoueur", true, false) != null, "la fiche de droite suit la sélection")
+	verifier(ecran.find_child("CarteJoueur", true, false) == null and ecran.find_child("FicheEffectif", true, false) == null, "plus de fiche à droite : le tableau prend toute la largeur")
 	await souris(premiere_ligne, MOUSE_BUTTON_WHEEL_DOWN)
 	verifier(t._defilement > 0, "la molette fait défiler la liste")
 	await souris(premiere_ligne, MOUSE_BUTTON_WHEEL_UP)

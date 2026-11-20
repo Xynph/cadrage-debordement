@@ -10,7 +10,9 @@ const { createBridge } = require('../native/engine/worker.cjs');
 const extra = player => player.id.startsWith('depth-');
 const readCareer = file => JSON.parse(JSON.parse(fs.readFileSync(file)).store['bdt-v1']);
 
-test('Tous les clubs du Monde complet disposent de 40 pros ou plus', () => {
+// Décision de Léo du 19/11/2026 (docs/gdd/calendrier-mutations.md § 3 quater) : en carrière Monde, le club joué n'a plus
+// de plancher de 40 ni de joueurs de complément ; les clubs gérés gardent le leur.
+test('Clubs gérés du Monde complet : 40 pros ou plus ; club joué : effectif réel, sans joueurs de complément', () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-pro-depth-'));
   let bridge = createBridge({ dataDir, seed: 37, now: 1788134400000 });
   let id = 0;
@@ -28,29 +30,25 @@ test('Tous les clubs du Monde complet disposent de 40 pros ou plus', () => {
     const file = path.join(created.meta.dataDir, 'donnees.json');
     const state = readCareer(file);
     const all = state.clubs.flatMap(club => club.players);
-    assert.ok(state.clubs.every(club => club.players.length >= 40));
+    assert.ok(state.clubs.every(club => club.id === state.club || club.players.length >= 40));
     assert.equal(new Set(all.map(player => player.id)).size, all.length);
     for (const club of state.clubs) {
       const original = club.players.filter(player => !extra(player));
       const additions = club.players.filter(extra);
-      assert.equal(additions.length, Math.max(0, 40 - original.length));
+      assert.equal(additions.length, club.id === state.club ? 0 : Math.max(0, 40 - original.length));
       if (additions.length) {
         assert.ok(additions.every(player => player.rating < Math.min(...original.map(p => p.rating))));
         assert.ok(additions.every(player => player.salary > 0 && player.contractEnd >= state.season));
       }
     }
-    const original = created.squad.filter(player => !extra(player));
-    const additions = created.squad.filter(extra);
-    assert.equal(original.length, 26);
-    assert.equal(additions.length, 14);
-    assert.ok(new Set(additions.map(player => player.age)).size >= 6);
-    assert.ok(new Set(additions.map(player => player.pos)).size >= 5);
-    for (const player of additions) {
-      const peers = original.filter(p => p.pos === player.pos);
-      assert.ok(player.note < Math.min(...(peers.length ? peers : original).map(p => p.note)));
-      assert.equal(Object.keys(player.attributesV2).length, 36);
-    }
-    assert.equal(created.meta.champCatalogue[103].startingRoster.forwards + created.meta.champCatalogue[103].startingRoster.backs, 40);
+    assert.equal(created.squad.filter(player => !extra(player)).length, 26);
+    assert.equal(created.squad.filter(extra).length, 0, 'club joué : aucun joueur de complément');
+    // Joueurs de complément des clubs gérés : variés (âges, postes), sous le moins bon joueur d'origine (contrôlé plus haut).
+    const managedAdditions = state.clubs.filter(club => club.id !== state.club).flatMap(club => club.players.filter(extra));
+    assert.ok(managedAdditions.length > 0, 'clubs gérés : des joueurs de complément');
+    assert.ok(new Set(managedAdditions.map(player => player.age)).size >= 6);
+    assert.ok(new Set(managedAdditions.map(player => player.pos)).size >= 5);
+    assert.equal(created.meta.champCatalogue[103].startingRoster.forwards + created.meta.champCatalogue[103].startingRoster.backs, 26);
     assert.equal(created.meta.champDatabase.startingPlayerCount, all.length);
 
     bridge.close();
@@ -61,11 +59,11 @@ test('Tous les clubs du Monde complet disposent de 40 pros ou plus', () => {
     const originalBytes = Buffer.from(JSON.stringify(profile));
     fs.writeFileSync(file, originalBytes);
     bridge = createBridge({ dataDir });
-    assert.equal(request('snapshot').squad.length, 40);
+    assert.equal(request('snapshot').squad.length, 26, 'au chargement, le club joué n’est pas complété');
     assert.deepEqual(fs.readFileSync(file), originalBytes);
     request('save');
     const restored = readCareer(file);
-    assert.ok(restored.clubs.every(club => club.players.length >= 40));
+    assert.ok(restored.clubs.every(club => club.id === restored.club || club.players.length >= 40));
     assert.deepEqual(restored.clubs[103].players.filter(p => !extra(p)), state.clubs[103].players);
     assert.deepEqual(restored.history, state.history);
     assert.deepEqual(restored.clubs.map(club => club.cash), state.clubs.map(club => club.cash));

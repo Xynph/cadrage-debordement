@@ -25,6 +25,22 @@
     "commotion": { "label": "Médical", "ecran": "infirmerie" },
     "transferts": { "label": "Transferts", "ecran": "ventes" }
   },
+  "mercato": {
+    "_doc": "Courriers du mercato (docs/gdd/calendrier-mutations.md § 3 ter) : échos hors période des mutations (routine), point hebdomadaire, ouverture et dernière semaine pendant la période (vente-joueurs.json, fenetres). Faits du Monde lus dans S.calendrierMutations.mercato.semaines (types listés) ; echos.lignes, point.* : lignes au plus par section avant « et N autres » ; memoire : faits déjà annoncés gardés (ni répétés, ni redonnés en courrier individuel) ; titres : en-têtes de section, {arrivee} = lendemain de la fin de période.",
+    "echos": { "types": ["achat", "accord", "precontrat", "rumeur"], "lignes": 6 },
+    "monde": { "types": ["achat", "accord"] },
+    "point": { "offres": 4, "accords": 3, "monde": 3 },
+    "memoire": 600,
+    "titres": {
+      "offres": "Offres reçues pour nos joueurs :",
+      "offres_attente": "Offres encore en attente pour nos joueurs :",
+      "accords": "Accords conclus par le club cette semaine (effet le {arrivee}) :",
+      "accords_conclus": "Nos accords déjà conclus (effet le {arrivee}) :",
+      "monde": "Les principaux accords de la semaine :",
+      "monde_saison": "Les plus gros accords du mercato :",
+      "rien": "Pas d’accord ni d’offre en cours pour nous à cette heure."
+    }
+  },
   "humeurs": {
     "haut": ["le groupe vit bien, ça rigole à la muscu et ça bosse dur", "l'ambiance est au beau fixe, les jeunes suivent les anciens", "on sent une vraie envie, personne ne traîne aux séances"],
     "moyen": ["l'ambiance est correcte mais un peu plate", "le groupe tient, sans plus : il manque une étincelle", "rien d'alarmant, mais quelques têtes sont basses"],
@@ -500,8 +516,8 @@
       "categorie": "transferts", "declencheur": "vente_executee", "priorite": 18, "nature": "info", "ecran": "Effectif",
       "expediteur": "Le directeur sportif",
       "formulations": [
-        {"sujet":"{joueur} a rejoint {acheteur}","corps":"Coach, la période des mutations est ouverte : l’accord conclu avec {acheteur} est exécuté. {joueur} a quitté le club et {montant} sont arrivés dans la caisse.\n\nPense à vérifier ta feuille à 23."},
-        {"sujet":"Départ de {joueur} : c’est fait","corps":"Coach, comme convenu, {joueur} part chez {acheteur} à l’ouverture des mutations. L’indemnité de {montant} est encaissée.\n\nRegarde ta feuille à 23 avant le prochain match."}
+        {"sujet":"{joueur} a rejoint {acheteur}","corps":"Coach, l’accord conclu avec {acheteur} a pris effet : {joueur} a quitté le club et {montant} sont arrivés dans la caisse.\n\nPense à vérifier ta feuille à 23."},
+        {"sujet":"Départ de {joueur} : c’est fait","corps":"Coach, comme convenu, {joueur} est parti chez {acheteur}. L’indemnité de {montant} est encaissée.\n\nRegarde ta feuille à 23 avant le prochain match."}
       ],
       "reponses": []
     },
@@ -509,7 +525,7 @@
       "categorie": "transferts", "declencheur": "vente_annulee", "priorite": 18, "nature": "info", "ecran": "Effectif",
       "expediteur": "Le directeur sportif",
       "formulations": [
-        {"sujet":"L’accord pour {joueur} tombe","corps":"Coach, l’accord conclu avec {acheteur} pour {joueur} ({montant}) n’a pas pu être exécuté à l’ouverture des mutations : {raison}\n\n{joueur} reste au club. Tu peux le proposer de nouveau si tu veux toujours le vendre."},
+        {"sujet":"L’accord pour {joueur} tombe","corps":"Coach, l’accord conclu avec {acheteur} pour {joueur} ({montant}) n’a pas pu prendre effet : {raison}\n\n{joueur} reste au club. Tu peux le proposer de nouveau si tu veux toujours le vendre."},
         {"sujet":"Pas de départ pour {joueur}","corps":"Coach, mauvaise nouvelle sur le dossier {joueur} : la vente à {acheteur} pour {montant} est annulée. {raison}\n\nIl reste avec nous ; rien ne t’empêche de le remettre sur le marché."}
       ],
       "reponses": []
@@ -531,7 +547,44 @@
         {"sujet":"Départ de {joueur} en fin de saison","corps":"Coach, {joueur} a signé son pré-contrat avec {acheteur}. Départ libre le {depart}.\n\nJusque-là, rien ne change à l’entraînement : il est professionnel et concerné. Les journalistes, eux, s’en sont emparés."}
       ],
       "reponses": []
-    },    "reprise_president": {
+    },
+    "echos_mercato": {
+      "categorie": "transferts", "declencheur": "echos_mercato", "priorite": 46, "nature": "routine", "ecran": "Recrutement", "liste": true,
+      "expediteur": "La revue de presse du club",
+      "formulations": [
+        {"sujet":"Échos du mercato","corps":"Coach, voici ce qui s’est signé et ce qui se murmure cette semaine sur le marché.\n\n• {echo_a}\n• {echo_b}\n• {echo_c}\n• {echo_d}\n• {echo_e}\n• {echo_f}\n{echo_plus}\n\nLes accords et pré-contrats signés prendront effet le {arrivee}."},
+        {"sujet":"Échos du mercato : la semaine en bref","corps":"Coach, la revue de presse de la semaine côté transferts.\n\n• {echo_a}\n• {echo_b}\n• {echo_c}\n• {echo_d}\n• {echo_e}\n• {echo_f}\n{echo_plus}\n\nRien ne bouge dans les effectifs avant le {arrivee} : c’est à cette date que les joueurs changent de club."}
+      ],
+      "reponses": []
+    },
+    "point_mercato": {
+      "categorie": "transferts", "declencheur": "point_mercato", "priorite": 19, "nature": "info", "ecran": "ventes", "liste": true,
+      "expediteur": "Le directeur sportif",
+      "formulations": [
+        {"sujet":"Point mercato : semaine du {semaine}","corps":"Coach, le point de la semaine sur le mercato.\n\n{offres}\n• {offres_a}\n• {offres_b}\n• {offres_c}\n• {offres_d}\n{offres_plus}\n\n{accords}\n• {accords_a}\n• {accords_b}\n• {accords_c}\n{accords_plus}\n\n{monde}\n• {monde_a}\n• {monde_b}\n• {monde_c}\n\nLa période des mutations court jusqu’au {fin} ; tout ce qui est conclu prend effet le {arrivee}. Les offres se règlent dans Recrutement, onglet Offres reçues."},
+        {"sujet":"Le mercato cette semaine","corps":"Coach, voici où on en est sur le marché.\n\n{offres}\n• {offres_a}\n• {offres_b}\n• {offres_c}\n• {offres_d}\n{offres_plus}\n\n{accords}\n• {accords_a}\n• {accords_b}\n• {accords_c}\n{accords_plus}\n\n{monde}\n• {monde_a}\n• {monde_b}\n• {monde_c}\n\nOn peut conclure jusqu’au {fin}, avec effet le {arrivee}. Pour répondre aux offres : Recrutement, onglet Offres reçues."}
+      ],
+      "reponses": []
+    },
+    "mercato_ouverture": {
+      "categorie": "transferts", "declencheur": "mercato_ouverture", "priorite": 12, "nature": "info", "ecran": "ventes", "liste": true,
+      "expediteur": "Le directeur sportif",
+      "formulations": [
+        {"sujet":"Ouverture du mercato","corps":"Coach, la période des mutations est ouverte jusqu’au {fin}. Les clubs vont accélérer : c’est le moment de conclure. Tous les accords prendront effet le {arrivee}.\n\n{accords}\n• {accords_a}\n• {accords_b}\n• {accords_c}\n{accords_plus}\n\n{offres}\n• {offres_a}\n• {offres_b}\n• {offres_c}\n• {offres_d}\n{offres_plus}\n\n{rien}\n\nJe te ferai le point chaque semaine. Les offres se règlent dans Recrutement, onglet Offres reçues."},
+        {"sujet":"Le mercato est ouvert","corps":"Coach, top départ : la période des mutations court jusqu’au {fin}. Attends-toi à ce que les autres clubs se bougent. Ce qui sera conclu prendra effet le {arrivee}.\n\n{accords}\n• {accords_a}\n• {accords_b}\n• {accords_c}\n{accords_plus}\n\n{offres}\n• {offres_a}\n• {offres_b}\n• {offres_c}\n• {offres_d}\n{offres_plus}\n\n{rien}\n\nUn point chaque semaine d’ici la fin. Pour les offres : Recrutement, onglet Offres reçues."}
+      ],
+      "reponses": []
+    },
+    "mercato_derniere": {
+      "categorie": "transferts", "declencheur": "mercato_derniere", "priorite": 12, "nature": "info", "ecran": "ventes", "liste": true,
+      "expediteur": "Le directeur sportif",
+      "formulations": [
+        {"sujet":"Dernière semaine du mercato","corps":"Coach, dernière ligne droite : la période des mutations se ferme le {fin}. Ce qui sera conclu d’ici là prendra effet le {arrivee}.\n\n{offres}\n• {offres_a}\n• {offres_b}\n• {offres_c}\n• {offres_d}\n{offres_plus}\n\n{accords}\n• {accords_a}\n• {accords_b}\n• {accords_c}\n{accords_plus}\n\n{monde}\n• {monde_a}\n• {monde_b}\n• {monde_c}\n\nLes offres se règlent dans Recrutement, onglet Offres reçues."},
+        {"sujet":"Mercato : plus qu’une semaine","corps":"Coach, il nous reste une semaine : le mercato ferme le {fin}. Tout accord conclu d’ici là prendra effet le {arrivee}.\n\n{offres}\n• {offres_a}\n• {offres_b}\n• {offres_c}\n• {offres_d}\n{offres_plus}\n\n{accords}\n• {accords_a}\n• {accords_b}\n• {accords_c}\n{accords_plus}\n\n{monde}\n• {monde_a}\n• {monde_b}\n• {monde_c}\n\nSi tu veux répondre à une offre, c’est dans Recrutement, onglet Offres reçues."}
+      ],
+      "reponses": []
+    },
+    "reprise_president": {
       "categorie": "direction", "declencheur": "reprise_president", "priorite": 9, "nature": "action", "ecran": "Effectif",
       "expediteur": "Le président",
       "formulations": [
@@ -540,7 +593,7 @@
       ],
       "reponses": [
         {"id":"lister","libelle":"Les mettre sur la liste des transferts","effets":{"reprise":"lister"},"resultat":"Les joueurs désignés sont proposés aux autres clubs. Les offres arriveront dans les prochains jours."},
-        {"id":"confier","libelle":"Le laisser les vendre tout de suite","effets":{"reprise":"confier"},"resultat":"Le président s’en occupe dès cette semaine. Hors période des mutations, les départs se feront à l’ouverture, le 1er mai."},
+        {"id":"confier","libelle":"Le laisser les vendre tout de suite","effets":{"reprise":"confier"},"resultat":"Le président s’en occupe dès cette semaine. Les accords sont conclus tout de suite ; les départs se feront au changement de saison, le 1er juillet."},
         {"id":"delai","libelle":"Plaider pour deux semaines de plus","effets":{"reprise":"delai","confiance":-3},"resultat":"Le président accepte, à contrecœur."}
       ]
     },
@@ -835,7 +888,7 @@
       ],
       "reponses": [
         {"id": "accepter", "libelle": "Accepter le prêt et rembourser sur la durée", "effets": {"pret": "accepter"}, "resultat": "Le prêt est signé : le club remboursera chaque saison, et le président le rappellera au moment des recrues."},
-        {"id": "vendre", "libelle": "Vendre le joueur proposé pour rembourser tout de suite", "effets": {"pret": "vendre", "confiance": 2}, "resultat": "La vente est conclue : son prix rembourse le prêt de l'actionnaire, le président apprécie. Hors période des mutations, le joueur part et le prêt est remboursé à l’ouverture, le 1er mai."}
+        {"id": "vendre", "libelle": "Vendre le joueur proposé pour rembourser tout de suite", "effets": {"pret": "vendre", "confiance": 2}, "resultat": "La vente est conclue : son prix rembourse le prêt de l'actionnaire, le président apprécie. Le joueur part et le prêt est remboursé au changement de saison, le 1er juillet."}
       ]
     },
     "proprietaire_arrivee": {

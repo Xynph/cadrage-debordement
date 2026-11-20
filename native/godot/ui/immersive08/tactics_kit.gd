@@ -166,7 +166,8 @@ static func flux(app: Control, parent: Control, x: float, ligne: float, largeur_
 	return {"lignes": mini(rang + 1, max_lignes) if poses > 0 else 0, "omis": omis}
 
 ## Charte §3 « rayons 0 » : `C.box` impose un rayon minimal de 3 ; cette passe remet à 0 les coins de tous les fonds
-## posés dans l'écran (panneaux, lignes, barres, champs, puces, focus). Appelée une fois à la fin de la construction.
+## posés dans l'écran (panneaux, lignes, barres, champs, puces, focus). La page principale de la Composition n'en a
+## plus besoin (fonds créés sans rayon : C.rayon_nul) ; reste pour les sous-pages et le tableau des candidats retrié.
 static func angles_droits(racine: Node) -> void:
 	for noeud in racine.find_children("*", "Control", true, false):
 		var control := noeud as Control

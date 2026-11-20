@@ -55,7 +55,7 @@ func executer() -> void:
 	mesures["joueur"] = choisi
 	mesures["ailier"] = ailiers.has(choisi)
 	mesures["matchs"] = plus
-	app._navigate("Effectif"); await poser(30)
+	app.management_ui.roster.immersive_tab = 1; app._navigate("Effectif"); await poser(30)
 	var colonne := app.find_child("RosterColumnNote", true, false)
 	verifier(colonne != null and str(colonne.get("text")) == "MOY.", "colonne « MOY. » de l'effectif")
 	verifier(app.find_child("RosterColumnForm", true, false) != null, "colonne FORME de l'effectif")

@@ -30,6 +30,8 @@ const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
+	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
+	{"id": "comparateur", "libelle": "Comparateur (trois joueurs)", "type": "comparateur"},
 	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
@@ -481,6 +483,23 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			avant.ouvrir_page("delegation")
 			await stabiliser()
 			if app.find_child("MatchDelegationPage", true, false) == null: return {"statut": "echec", "note": "sous-page de délégation non ouverte"}
+		"equilibre_postes":
+			app._navigate("Effectif")
+			await stabiliser()
+			var tuile := app.find_child("EffectifTuileAptes", true, false) as Control
+			if tuile == null: return {"statut": "indisponible", "note": "tuile Aptes absente"}
+			tuile.mouse_entered.emit()
+			await stabiliser()
+			if app.get_node_or_null("EquilibrePostes") == null: return {"statut": "echec", "note": "infobulle non affichée"}
+		"comparateur":
+			var effectif_cmp: Array = app.model.get("squad", [])
+			if effectif_cmp.size() < 3: return {"statut": "indisponible", "note": "effectif trop court"}
+			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id")), ident(effectif_cmp[2].get("id"))]
+			app._navigate("Effectif")
+			await stabiliser()
+			load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
+			await stabiliser()
+			if app.route != "Comparateur": return {"statut": "echec", "note": "comparateur non ouvert"}
 		"club":
 			var id := club_adverse()
 			if id.is_empty(): return {"statut": "indisponible", "note": "aucun club adverse connu"}
@@ -507,6 +526,7 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) == "avant_delegation":
 		var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
 		if avant != null: avant.fermer_page()
+	if str(ecran.type) == "equilibre_postes": app.find_child("EffectifTuileAptes", true, false).mouse_exited.emit()
 	fermer_fenetres()
 
 func surface() -> Control:

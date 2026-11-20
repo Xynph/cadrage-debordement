@@ -708,7 +708,7 @@ func _failed(message: String) -> void:
 	if anticipated and not bridge.model.is_empty() and not is_same(model, bridge.model):
 		model = bridge.model
 		call_deferred("_render_optimistic", reverted)
-	var epcr_dialog := get_node_or_null("EpcrPreparationDialog") if last_command == "epcr_preview" else null
+	var epcr_dialog := find_child("EpcrPreparationDialog", true, false) if last_command == "epcr_preview" else null
 	var editor_dialog := get_node_or_null("CompetitionEditorDialog") if last_command == "competition_editor_preview" else null
 	var market_dialog := get_node_or_null("InterclubMarket") if last_command in ["interclub_negotiate", "interclub_auction", "transfer_budget_extension"] else null
 	# A consultation refusal belongs to its report, never to the career decision

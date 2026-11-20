@@ -199,7 +199,7 @@ func run() -> void:
 			app.management_ui.compare = [str(app.model.squad[0].id), str(app.model.squad[1].id)]
 			preload("res://ui/squad_views.gd").comparison(app)
 			await capture("Comparaison")
-			app._clear_dialogs()
+			app._navigate("Effectif")
 			continue
 		app.pack_manager.open("career")
 		await capture("Packs")
@@ -208,7 +208,7 @@ func run() -> void:
 		app.management_ui.compare = [str(app.model.squad[0].id), str(app.model.squad[1].id)]
 		preload("res://ui/squad_views.gd").comparison(app)
 		await capture("Comparaison")
-		app._clear_dialogs()
+		app._navigate("Effectif")
 		preload("res://ui/squad_views.gd").contract(app, app.model.squad[0], false)
 		await capture("Contrat")
 		app._clear_dialogs()

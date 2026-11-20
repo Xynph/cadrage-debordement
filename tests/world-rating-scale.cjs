@@ -58,7 +58,8 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
     assert.equal(created.seniorCalibrationVersion, 2);
     // L'aperçu de création annonce les effectifs du barème V2.
     for (const id of [0, 13, 30, 40, 51, 61, 71, 103]) {
-      const roster = created.clubs[id].players;
+      // Aperçu = effectif reçu en prenant ce club : sans joueurs de complément (club joué sans plancher de 40, 19/11/2026).
+      const roster = created.clubs[id].players.filter(p => !p.id.startsWith('depth-'));
       assert.equal(preview[id].startingRoster.average, Math.round(10 * mean(roster.map(p => p.rating))) / 10, 'aperçu du club ' + id);
     }
     const reopened = ask('import', { text: exported });
