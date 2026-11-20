@@ -14,11 +14,14 @@ const { ouvrir, jouerLeMatch } = require('../tests/helpers/carriere-monde.cjs');
 const args = process.argv.slice(2);
 const opt = (nom, defaut) => { const i = args.indexOf(nom); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : defaut; };
 const SAISONS = Number(opt('--saisons', 3)), SORTIE = opt('--sortie', null);
+// --graine N : graine de la carrière (défaut 4242, celle du helper) ; --sans-bascule-finale : ne pas jouer la bascule
+// de la dernière saison (par défaut elle est jouée pour mesurer les exécutions et les masses au 1er juillet).
+const GRAINE = Number(opt('--graine', 4242)), BASCULE_FINALE = !args.includes('--sans-bascule-finale');
 const CLUB = 102, SEMAINE_AUTOMNE = 14, SEMAINE_FIN = 45;
 const t0 = Date.now();
 const log = (...x) => process.stderr.write(x.join(' ') + '\n');
 
-const jeu = ouvrir({ testVm: true, hebdomadaire: true });
+const jeu = ouvrir({ testVm: true, hebdomadaire: true, seed: GRAINE });
 const run = src => jeu.bridge.vm.run(src);
 let model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: CLUB, start: 'premiers-clubs', varyCurrent: true }));
 
@@ -130,6 +133,7 @@ for (let saison = 1; saison <= SAISONS; saison++) {
     const semaine = Number(run('S.worldMode.week')), phase = run('S.phase');
     const date = String(model.meta.calendarToday || '');
     if (semaine !== derniereSemaine) { derniereSemaine = semaine; echantillon(semaine); }
+    if (!cour.releves.debutSaison) releve('debutSaison'); // juste après la bascule (ou la création) : masses au 1er juillet
     if (!pris.automne && semaine >= SEMAINE_AUTOMNE) { releve('semaine14'); pris.automne = true; }
     if (!pris.mai && /^\d{4}-05-/.test(date) && semaine > SEMAINE_AUTOMNE) { releve('premiereSemaineMai'); cour.semaineMai = semaine; cour.dateMai = date; pris.mai = true; }
     if (!pris.fin && (semaine >= SEMAINE_FIN || phase === 'ended')) { releve('finSaison'); cour.semaineFin = semaine; pris.fin = true; }
@@ -149,8 +153,9 @@ for (let saison = 1; saison <= SAISONS; saison++) {
   dureeSaison.push(cour.dureeSecondes);
   saisonsReleves.push(cour);
   log('Saison ' + saison + ' mesurée en ' + cour.dureeSecondes + ' s');
-  if (saison < SAISONS) {
+  if (saison < SAISONS || BASCULE_FINALE) {
     model = jeu.regler(jeu.call('next_season', { confirmed: true }));
+    if (saison === SAISONS) cour.releves.apresBasculeFinale = JSON.parse(run(INSTANT));
     // Exécutions à la bascule : le joueur est-il chez l'acheteur ?
     if (conclus.length) {
       const arr = JSON.parse(run(ARRIVES(conclus.map(a => [a.pid, a.bid]))));
@@ -169,7 +174,7 @@ for (const s of saisonsReleves) {
 jeu.fermer();
 
 const rapport = {
-  club: CLUB, saisons: SAISONS, dureeTotaleSecondes: Math.round((Date.now() - t0) / 1000), dureeParSaison: dureeSaison,
+  club: CLUB, graine: GRAINE, basculeFinale: BASCULE_FINALE, saisons: SAISONS, dureeTotaleSecondes: Math.round((Date.now() - t0) / 1000), dureeParSaison: dureeSaison,
   environnement: { CD_CLUBS_GERES_CALENDRIER: process.env.CD_CLUBS_GERES_CALENDRIER ?? null, CD_PLANCHER_CLUBS_GERES: process.env.CD_PLANCHER_CLUBS_GERES ?? null },
   notes: ['Achats entre clubs gérés (ancien comptage, mode « semaines ») = événements « sell » avec indemnité > 0 des clubs gérés, hors joueurs arrivés chez le club joué (achatsTexte = fil S.economy.transfers, plafonné à 80 lignes, relu chaque semaine). En v2 (« mutations ») ces ventes n\'apparaissent qu\'à la bascule : lire « accords ».',
     'v2 : accords = S.calendrierMutations.accordsIA (dédoublonnés par id, rangés par date de conclusion : automne août-déc., hiver janv.-avr., maiJuin, derniereSemaine = à partir de mercato.derniere) ; executes/tombes = joueur chez l\'acheteur après next_season ; preContratsIA = S.calendrierMutations.ia par saison de signature ; rumeurs = S.calendrierMutations.rumeurs.',
