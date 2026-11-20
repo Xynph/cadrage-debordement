@@ -163,7 +163,7 @@ static func verdict(app: Control, accounts: Dictionary, finance: Dictionary) -> 
 static func _style(fond: Color, bord: Color = Color.TRANSPARENT, epaisseur: int = 0, bas_seulement: bool = false) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fond
-	style.set_corner_radius_all(0)
+	style.set_corner_radius_all(Charte.RAYON_PETIT)
 	if bord.a > 0.0 and epaisseur > 0:
 		style.border_color = bord
 		if bas_seulement: style.border_width_bottom = epaisseur

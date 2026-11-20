@@ -275,7 +275,7 @@ func _onglet(area: Rect2, caption: String, selected: bool, callback: Callable, i
 	for look in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = Charte.PANNEAU_3 if selected else (Charte.PANNEAU_2 if look == "hover" else Color(0, 0, 0, 0))
-		style.set_corner_radius_all(0)
+		style.set_corner_radius_all(Charte.RAYON_PILULE)
 		style.border_color = Charte.IVOIRE
 		style.border_width_bottom = maxi(2, C.px(5)) if selected else (maxi(2, C.px(3)) if look == "focus" else 0)
 		style.content_margin_left = C.px(16)
@@ -293,7 +293,7 @@ func _onglet(area: Rect2, caption: String, selected: bool, callback: Callable, i
 
 func _header() -> void:
 	var title := D.text(self, 0, 50, "COMPÉTITIONS", 50, C.IVORY, 800, 440)
-	title.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+	title.add_theme_font_override("font", Charte.TITRE_GRAS)
 	title.name = "CompetitionTitle"
 	var round_label := str(app.model.meta.get("roundLabel", "")) if league.id == state.club_league else "Phase régulière" if league.get("phase", "league") == "league" else _phase(league)
 	var short_round := round_label.trim_prefix(str(league.get("name","")) + " · ")
@@ -385,7 +385,7 @@ func _sous_page() -> bool:
 
 func _titre_page(texte: String) -> void:
 	var title := D.text(self, 0, 116, texte.to_upper(), 46, C.IVORY, 800, WIDTH)
-	title.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+	title.add_theme_font_override("font", Charte.TITRE_GRAS)
 	title.name = "CompetitionPageTitle"
 
 func _page_archives() -> void:
@@ -406,7 +406,7 @@ func _page_archives() -> void:
 	var lines := 1
 	for year: Dictionary in seasons:
 		var heading := C.label("SAISON " + G.season_label(year.season), 30, C.IVORY, true, 800)
-		heading.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+		heading.add_theme_font_override("font", Charte.TITRE_GRAS)
 		heading.name = "SeasonArchiveHeading_" + G.n(year.season)
 		content.add_child(heading)
 		for winner: Dictionary in Club.archive_titles(year):
@@ -449,7 +449,7 @@ func _ligne_archive(parent: Control, text: String, club_id: Variant, size: int, 
 	for look in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = Charte.PANNEAU_3 if look == "hover" else Color(0, 0, 0, 0)
-		style.set_corner_radius_all(0)
+		style.set_corner_radius_all(Charte.RAYON_PETIT)
 		if look == "focus":
 			style.border_color = Charte.IVOIRE
 			style.border_width_bottom = maxi(2, C.px(2))
@@ -492,7 +492,7 @@ func _page_rencontre(fixture: Dictionary) -> void:
 		if plate.tooltip_text.is_empty(): plate.tooltip_text = plate.accessibility_name
 	var middle := _score(fixture) if fixture.get("played", false) else "CONTRE"
 	var middle_label := D.text(panel, 592, 86, middle, 52 if fixture.get("played", false) else 22, C.IVORY if fixture.get("played", false) else C.MUTED, 800, LEFT - 1184, HORIZONTAL_ALIGNMENT_CENTER)
-	middle_label.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+	middle_label.add_theme_font_override("font", Charte.TITRE_GRAS)
 	middle_label.name = "CompetitionFixtureScore"
 	# Centré entre les deux plaques une fois la police de titre posée (sa largeur change avec la police).
 	var middle_w := middle_label.get_theme_font("font").get_string_size(middle, HORIZONTAL_ALIGNMENT_LEFT, -1, middle_label.get_theme_font_size("font_size")).x
@@ -518,7 +518,7 @@ func _page_rencontre(fixture: Dictionary) -> void:
 		var code := _fixture_outcome(fixture)
 		var verdict := str(S.RESULTS.get(code, {}).get("label", "Issue non renseignée"))
 		var result := C.label((code + "  ·  " + verdict if code in RESULT_TINTS else verdict).to_upper(), 34, RESULT_TINTS.get(code, C.IVORY), true, 800)
-		result.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+		result.add_theme_font_override("font", Charte.TITRE_GRAS)
 		result.name = "CompetitionFixtureResult"
 		content.add_child(result)
 		_fixture_statistics(content, fixture)
@@ -722,7 +722,7 @@ func _division_menu(parent: Control, x: float, y: float, w: float) -> void:
 	for look in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = Charte.PANNEAU_3 if look != "hover" else Charte.PANNEAU_2
-		style.set_corner_radius_all(0)
+		style.set_corner_radius_all(Charte.RAYON_PILULE)
 		style.border_color = Charte.IVOIRE if look in ["hover", "focus"] else Charte.FILET
 		style.set_border_width_all(1 if look != "focus" else 2)
 		style.content_margin_left = C.px(14)
@@ -750,7 +750,7 @@ func _division_menu(parent: Control, x: float, y: float, w: float) -> void:
 	frame.bg_color = Charte.PANNEAU_3
 	frame.border_color = Charte.FILET
 	frame.set_border_width_all(1)
-	frame.set_corner_radius_all(0)
+	frame.set_corner_radius_all(Charte.RAYON_CARTE)
 	frame.content_margin_left = C.px(8)
 	frame.content_margin_right = C.px(8)
 	frame.content_margin_top = C.px(8)
@@ -792,7 +792,7 @@ func _item_menu(division: Dictionary, own_league: String) -> Button:
 	for look in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = Charte.PANNEAU_2 if look == "hover" else (Charte.PANNEAU_3 if not selected else Charte.PANNEAU)
-		style.set_corner_radius_all(0)
+		style.set_corner_radius_all(Charte.RAYON_PETIT)
 		style.border_color = Charte.IVOIRE
 		style.border_width_left = maxi(2, C.px(4)) if selected or look == "focus" else 0
 		style.content_margin_left = C.px(14)
@@ -840,15 +840,15 @@ func _ligne_classement(parent: Node, club: Dictionary, index: int, stride: int) 
 		row.set_meta("zone_label", str(zone_info.get("label", "")))
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Charte.PANNEAU_3 if mine else (Charte.PANNEAU_2 if index % 2 == 1 else Charte.PANNEAU)
-	normal.set_corner_radius_all(0)
+	normal.set_corner_radius_all(Charte.RAYON_PETIT)
 	var hover := StyleBoxFlat.new()
 	hover.bg_color = Charte.PANNEAU_3
-	hover.set_corner_radius_all(0)
+	hover.set_corner_radius_all(Charte.RAYON_PETIT)
 	var focus := StyleBoxFlat.new()
 	focus.bg_color = Color(0, 0, 0, 0)
 	focus.border_color = Charte.IVOIRE
 	focus.set_border_width_all(maxi(2, C.px(2)))
-	focus.set_corner_radius_all(0)
+	focus.set_corner_radius_all(Charte.RAYON_PETIT)
 	row.add_theme_stylebox_override("normal", normal)
 	row.add_theme_stylebox_override("hover", hover)
 	row.add_theme_stylebox_override("pressed", hover)
@@ -990,11 +990,11 @@ func _ta_place(y: float) -> float:
 		return y + 300
 	var rank := int(row.get("rank", 0))
 	var rank_label := D.text(card, 24, 116, _ordinal(rank), 68, C.IVORY, 800, 0)
-	rank_label.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	rank_label.add_theme_font_override("font", Charte.TITRE_EXTRA)
 	rank_label.name = "CompetitionPlaceRank"
 	var rank_w := rank_label.size.x / C.density
 	var points := D.text(card, 24 + rank_w + 18, 114, "%s pts" % S.number_text(row.get("points")), 44, C.IVORY, 800, 0)
-	points.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+	points.add_theme_font_override("font", Charte.TITRE_GRAS)
 	D.text(card, 24, 148, "%s V  ·  %s N  ·  %s D  ·  diff. %s" % [S.count_text(row.get("won")), S.count_text(row.get("drawn")), S.count_text(row.get("lost")), _standing_text(row, "difference")], 19, C.MUTED, 500, RIGHT - 48)
 	var zone: Dictionary = Zones.of(row)
 	if not zone.is_empty():
@@ -1027,7 +1027,7 @@ func _ta_place(y: float) -> float:
 		tile.name = "CompetitionGap_%d" % i
 		var signed := "+%d" % delta if delta > 0 else str(delta)
 		var value := D.text(tile, 14, 40, signed, 40, C.IVORY, 800, tile_w - 20)
-		value.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+		value.add_theme_font_override("font", Charte.TITRE_GRAS)
 		D.text(tile, 14, 58, "sur le %s" % _ordinal(int(club.get("rank", 0))), 16, C.MUTED, 600, tile_w - 20)
 		D.fit_title(D.text(tile, 14, 78, G.club_name(club), 16, C.MUTED, 500, tile_w - 20), tile_w - 20, 30, 2, 13)
 		D.text(tile, tile_w - 14, 40, "→", 24, C.MUTED, 700, 30, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -1060,7 +1060,7 @@ func _prochain(y: float) -> float:
 		var info := _rendez_vous_sans_match()
 		if not str(info.chip).is_empty(): D.text(card, 24, 92, str(info.chip), 17, C.MUTED, 700, RIGHT - 48)
 		var title := D.text(card, 24, 140, str(info.title), 36, C.IVORY, 800, RIGHT - 48)
-		title.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+		title.add_theme_font_override("font", Charte.TITRE_GRAS)
 		if not str(info.title_name).is_empty(): title.name = str(info.title_name)
 		var moment := D.text(card, 24, 184, str(info["when"]), 24, C.IVORY, 600, RIGHT - 48)
 		if info.title_name == "UpcomingOpponent": moment.name = "UpcomingWhen"
@@ -1175,7 +1175,7 @@ func _bas_gauche() -> void:
 		line.set_meta("immersive_style_applied", true)
 		var normal := StyleBoxFlat.new()
 		normal.bg_color = Charte.PANNEAU_2 if i % 2 == 1 else Charte.PANNEAU
-		normal.set_corner_radius_all(0)
+		normal.set_corner_radius_all(Charte.RAYON_PETIT)
 		var hover: StyleBoxFlat = normal.duplicate()
 		hover.bg_color = Charte.PANNEAU_3
 		line.add_theme_stylebox_override("normal", normal)
@@ -1185,7 +1185,7 @@ func _bas_gauche() -> void:
 		focus.bg_color = Color(0, 0, 0, 0)
 		focus.border_color = Charte.IVOIRE
 		focus.set_border_width_all(2)
-		focus.set_corner_radius_all(0)
+		focus.set_corner_radius_all(Charte.RAYON_PETIT)
 		line.add_theme_stylebox_override("focus", focus)
 		if target_available(app, "fixture", fixture_id):
 			Link.bind(line, app, {"kind":"fixture", "id":fixture_id}, "Ouvrir la rencontre · %s %s %s" % [G.club_name(clubs[0]), _score(result), G.club_name(clubs[1])])
@@ -1241,7 +1241,7 @@ func _leader(area: Rect2, title: String, metric: String, caption: String, high: 
 	var club_name := D.text(panel, 106, 82, "Donnée à venir" if best.is_empty() else G.club_name(best), 26, C.IVORY, 700, area.size.x - 330)
 	D.text(panel, 106, 110, caption + (" · %d ex æquo" % tied if tied > 1 else ""), 18, C.MUTED, 500, area.size.x - 330)
 	var value := D.text(panel, area.size.x - 24, 108, S.count_text(best.get(metric)), 56, C.IVORY, 800, 180, HORIZONTAL_ALIGNMENT_RIGHT)
-	value.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	value.add_theme_font_override("font", Charte.TITRE_EXTRA)
 	if not best.is_empty():
 		var link := _entity_area(panel, Rect2(16, 50, area.size.x - 220, 76), {"kind":"club", "id":str(best.id)}, "CompetitionLeaderLink_" + metric, "Ouvrir le club · " + G.club_name(best))
 		if link != null: club_name.tooltip_text = G.club_name(best)
@@ -1322,18 +1322,18 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	row.tooltip_text = row.accessibility_name
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Charte.PANNEAU_3 if current else Charte.PANNEAU
-	normal.set_corner_radius_all(0)
+	normal.set_corner_radius_all(Charte.RAYON_PETIT)
 	if current:
 		normal.border_color = Charte.IVOIRE
 		normal.border_width_left = maxi(3, C.px(4))
 	var hover := StyleBoxFlat.new()
 	hover.bg_color = Charte.PANNEAU_3
-	hover.set_corner_radius_all(0)
+	hover.set_corner_radius_all(Charte.RAYON_PETIT)
 	var focus := StyleBoxFlat.new()
 	focus.bg_color = Color(0, 0, 0, 0)
 	focus.border_color = Charte.IVOIRE
 	focus.set_border_width_all(maxi(2, C.px(2)))
-	focus.set_corner_radius_all(0)
+	focus.set_corner_radius_all(Charte.RAYON_PETIT)
 	row.add_theme_stylebox_override("normal", normal)
 	row.add_theme_stylebox_override("hover", hover)
 	row.add_theme_stylebox_override("pressed", hover)
@@ -1765,7 +1765,7 @@ func _entity_area(parent: Node, area: Rect2, target: Dictionary, id: String, cap
 	focus.bg_color = Color(0, 0, 0, 0)
 	focus.border_color = Charte.IVOIRE
 	focus.set_border_width_all(maxi(2, C.px(2)))
-	focus.set_corner_radius_all(0)
+	focus.set_corner_radius_all(Charte.RAYON_PETIT)
 	button.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
 	button.add_theme_stylebox_override("hover", hover)
 	button.add_theme_stylebox_override("pressed", hover)

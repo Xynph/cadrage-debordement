@@ -89,6 +89,7 @@ func run() -> void:
 	app._navigate("Formation", false)
 	await settle(10)
 	await layout()
+	await bas_du_tableau()
 	await names_open_sheets()
 	await filters_and_tiles()
 	await decision_strip()
@@ -101,6 +102,28 @@ func run() -> void:
 func finish() -> void:
 	print("FORMATION_DA ", JSON.stringify({"checks": checks, "failures": failures}))
 	quit(0 if failures.is_empty() else 1)
+
+## Fin de défilement : la dernière ligne est entièrement visible, à l'écart des coins arrondis du panneau.
+func bas_du_tableau() -> void:
+	var defile := node("AcademyPlayerScroll") as ScrollContainer
+	var panneau := node("AcademyImmersiveTable") as Control
+	check(defile != null and panneau != null, "Tableau défilant présent")
+	if defile == null or panneau == null: return
+	await settle(30)
+	defile.scroll_vertical = int(defile.get_v_scroll_bar().max_value)
+	await settle(6)
+	var lignes: Array[Control] = []
+	for enfant in node("AcademyImmersiveRows").get_children():
+		if enfant is Control and str(enfant.name).begins_with("AcademyRow_"): lignes.append(enfant)
+	check(not lignes.is_empty(), "Le tableau a des lignes")
+	if lignes.is_empty(): return
+	lignes.sort_custom(func(a: Control, b: Control) -> bool: return a.global_position.y < b.global_position.y)
+	var derniere: Rect2 = (lignes.back() as Control).get_global_rect()
+	var fenetre := defile.get_global_rect()
+	check(derniere.end.y <= fenetre.end.y + .5 and derniere.position.y >= fenetre.position.y - .5, "Fin de défilement : la dernière ligne est entièrement visible (%s dans %s)" % [derniere, fenetre])
+	check(panneau.get_global_rect().end.y - derniere.end.y >= 13.0, "Fin de défilement : la dernière ligne reste loin des coins arrondis du panneau (%d px)" % roundi(panneau.get_global_rect().end.y - derniere.end.y))
+	defile.scroll_vertical = 0
+	await settle(4)
 
 func layout() -> void:
 	check(node("ImmersiveAcademy") != null, "Écran Formation ouvert")
