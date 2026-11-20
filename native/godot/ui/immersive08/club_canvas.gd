@@ -515,7 +515,7 @@ static func _segments(parent: Control, x: float, y: float, largeur: float, total
 static func _installations(panneau: Panel, app: Control, finance: Dictionary, strategie: Dictionary) -> void:
 	var largeur := panneau.size.x / C.density
 	Kit.texte(panneau, largeur - 24, 40, "clic : détail et devis", Charte.IVOIRE_2, 300, 18, HORIZONTAL_ALIGNMENT_RIGHT)
-	for colonne: Array in [["Installation", 24.0, 400.0, false], ["Niveau", 470.0, 300.0, false], ["Prochaine amélioration", 800.0, 330.0, false], ["Coût", 1130.0, 90.0, true], ["Statut", 1250.0, 140.0, false]]:
+	for colonne: Array in [["Installation", 24.0, 400.0, false], ["Niveau", 470.0, 300.0, false], ["Prochaine amélioration", 800.0, 230.0, false], ["Coût", 1030.0, 130.0, true], ["Statut", 1194.0, 196.0, false]]:
 		Kit.etiquette(panneau, float(colonne[1]) + (float(colonne[2]) if colonne[3] else 0.0), 82, str(colonne[0]), float(colonne[2]), colonne[3])
 	D.line(panneau, Vector2(18, 92), Vector2(largeur - 18, 92), Charte.FILET)
 	var devis: Variant = finance.get("facility")
@@ -533,7 +533,7 @@ static func _installations(panneau: Panel, app: Control, finance: Dictionary, st
 		elif not strategie.get("available", false): statut = "Indisponible en ce moment"
 		else: statut = "Devis disponible"
 	rangees.append({"id": "ClubFacilityTraining", "nom": "Centre d’entraînement", "niveau": "%s / 10" % G.n(devis.level) if devis is Dictionary else "Niveau indisponible", "segments": [10, int(devis.level)] if devis is Dictionary else [], "suite": "Niveau %s" % G.n(devis.nextLevel) if devis is Dictionary else "—", "cout": G.euros(devis.cost) if devis is Dictionary else "", "statut": statut, "action": func(): _tab(app, "infrastructure", "ClubTab_infrastructure")})
-	rangees.append({"id": "ClubFacilityMedical", "nom": "Cellule médicale", "niveau": "%s suivi%s" % [G.n(medical.size()), "s" if medical.size() > 1 else ""] if not soutien.is_empty() else "—", "segments": [], "suite": "Protocoles de retour des joueurs", "cout": "", "statut": "", "action": func(): app._navigate("Travail du club")})
+	rangees.append({"id": "ClubFacilityMedical", "nom": "Cellule médicale", "niveau": "%s suivi%s" % [G.n(medical.size()), "s" if medical.size() > 1 else ""] if not soutien.is_empty() else "—", "segments": [], "suite": "Retour des blessés", "cout": "", "statut": "", "action": func(): app._navigate("Travail du club")})
 	var academie_niveau := G.n(academie) + " / 3" if academie != null else "Niveau indisponible"
 	var academie_suite := "Installations du centre"
 	if academie == null and centre_ouvert:
@@ -557,9 +557,9 @@ static func _installations(panneau: Panel, app: Control, finance: Dictionary, st
 		else:
 			_segments(rangee, 452, 15, 150, int(segments[0]), int(segments[1]))
 			Kit.texte(rangee, 770, 27, str(donnees.niveau), Charte.IVOIRE, 90, 18, HORIZONTAL_ALIGNMENT_RIGHT).name = "ClubFacilityLevel"
-		Kit.texte(rangee, 782, 27, str(donnees.suite), Charte.IVOIRE_2, 330, 18)
-		if not str(donnees.cout).is_empty(): Kit.texte(rangee, 1202, 27, str(donnees.cout), Charte.IVOIRE, 90, 18, HORIZONTAL_ALIGNMENT_RIGHT)
-		if not str(donnees.statut).is_empty(): Kit.texte(rangee, 1232, 27, str(donnees.statut), Charte.IVOIRE_2, 140, 17)
+		Kit.texte(rangee, 782, 27, str(donnees.suite), Charte.IVOIRE_2, 270, 18)
+		if not str(donnees.cout).is_empty(): Kit.texte(rangee, 1142, 27, str(donnees.cout), Charte.IVOIRE, 130, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+		if not str(donnees.statut).is_empty(): Kit.texte(rangee, 1176, 27, str(donnees.statut), Charte.IVOIRE_2, 190, 17)
 	var details := Kit.lien(panneau, Rect2(24, 270, 0, 34), "Projets et devis des installations →", func(): _tab(app, "infrastructure", "ClubTab_infrastructure"), "ClubFacilityDetails", 19)
 	details.tooltip_text = ""
 
@@ -574,12 +574,12 @@ static func _decider(panneau: Panel, app: Control, finance: Dictionary, board: D
 		elements.append({"id": "ClubFixMilestone", "genre": "alerte", "titre": "Aucune échéance fixée avec le conseil.", "detail": "Fixe-en une : il en tiendra compte au bilan de fin de saison.", "action": "Fixer un jalon", "ouvrir": func(): _open_strategy(app, 1)})
 	else:
 		var jalon: Dictionary = en_attente[0]
-		elements.append({"id": "ClubNextMilestone", "genre": "neutre", "titre": "Prochain jalon : %s, semaine %s." % [str(GOALS.get(str(jalon.get("type", "")), "jalon du conseil")).to_lower(), G.n(jalon.get("deadline", "—"))], "detail": "Le conseil jugera le club à cette échéance.", "action": "Suivre les objectifs", "ouvrir": func(): _open_strategy(app, 1)})
+		elements.append({"id": "ClubNextMilestone", "genre": "neutre", "titre": "Prochain jalon : %s, sem. %s" % [str(GOALS.get(str(jalon.get("type", "")), "jalon du conseil")).to_lower(), G.n(jalon.get("deadline", "—"))], "detail": "Le conseil jugera le club à cette échéance.", "action": "Suivre les objectifs", "ouvrir": func(): _open_strategy(app, 1)})
 	var devis: Variant = finance.get("facility")
 	if devis is Dictionary and not devis.get("used", false):
-		var detail_devis := "Une amélioration par saison, avant la séance de la semaine."
-		if not devis.get("affordable", true): detail_devis = "La trésorerie disponible est insuffisante pour ce devis."
-		elements.append({"id": "ClubQuoteLink", "genre": "alerte", "titre": "Devis du centre d’entraînement (niveau %s) : %s" % [G.n(devis.nextLevel), G.euros(devis.cost)], "detail": detail_devis, "action": "Voir le devis", "ouvrir": func(): _tab(app, "infrastructure", "ClubTab_infrastructure")})
+		var detail_devis := "%s · une amélioration par saison" % G.euros(devis.cost)
+		if not devis.get("affordable", true): detail_devis = "%s · trésorerie insuffisante" % G.euros(devis.cost)
+		elements.append({"id": "ClubQuoteLink", "genre": "alerte", "titre": "Devis du centre d’entraînement, niveau %s" % G.n(devis.nextLevel), "detail": detail_devis, "action": "Voir le devis", "ouvrir": func(): _tab(app, "infrastructure", "ClubTab_infrastructure")})
 	if strategie.get("available", false):
 		elements.append({"id": "ClubBoardRequest", "genre": "alerte", "titre": "Demande à la direction possible.", "detail": "Budget, projets ou arbitrage : présente ta demande au conseil.", "action": "Présenter la demande", "ouvrir": func(): _open_strategy(app, 1)})
 	Kit.texte(panneau, largeur - 24, 40, str(elements.size()), Charte.IVOIRE_2, 60, 18, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -590,9 +590,14 @@ static func _decider(panneau: Panel, app: Control, finance: Dictionary, board: D
 		var cadre := D.rect(panneau, Rect2(18, haut, largeur - 36, 78), Charte.PANNEAU_2 if i == 0 else Color.TRANSPARENT, 0)
 		cadre.name = "ClubDecideRow%d" % i
 		_coche(panneau, Rect2(30, haut + 14, 26, 26), str(element.genre), Charte.IVOIRE)
-		var titre := _texte_lignes(panneau, 72, haut + 8, 470, str(element.titre), 19, Kit.texte_gras(), Charte.IVOIRE, 2)
+		# Titre et détail sur une ligne chacun (texte complet en infobulle) : jamais de chevauchement, à 1280 comme à 1920.
+		var titre := _texte_lignes(panneau, 72, haut + 10, 470, str(element.titre), 19, Kit.texte_gras(), Charte.IVOIRE, 1)
 		titre.name = "ClubDecideTitle%d" % i
-		var detail := _texte_lignes(panneau, 72, haut + 48, 470, str(element.detail), 16, Charte.TEXTE, Charte.IVOIRE_2, 1)
+		titre.tooltip_text = str(element.titre)
+		titre.mouse_filter = Control.MOUSE_FILTER_PASS
+		var detail := _texte_lignes(panneau, 72, haut + 44, 470, str(element.detail), 16, Charte.TEXTE, Charte.IVOIRE_2, 1)
+		detail.tooltip_text = str(element.detail)
+		detail.mouse_filter = Control.MOUSE_FILTER_PASS
 		detail.name = "ClubDecideDetail%d" % i
 		if i == 0:
 			Kit.bouton_ivoire(panneau, Rect2(largeur - 30 - 250, haut + 16, 250, 46), str(element.action), element.ouvrir, str(element.id))
