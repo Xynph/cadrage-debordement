@@ -68,6 +68,10 @@ func executer() -> void:
 		if apport != null:
 			apport.pressed.emit()
 			await attendre_moteur()
+			var envoi := bouton("InboxClubMailSend")
+			verifier(envoi != null and not envoi.disabled, "un clic choisit la réponse, « Envoyer la réponse » la confirme")
+			if envoi != null: envoi.pressed.emit()
+			await attendre_moteur()
 			var recu: Variant = app.model.get("meta", {}).get("clubMailReply")
 			verifier(recu is Dictionary and recu.get("choice") == "apport", "réponse confirmée par le moteur")
 			await ouvrir(mail_de("a2r_apport"))

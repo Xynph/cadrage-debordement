@@ -18,6 +18,13 @@ const IVOIRE_3 := Color("8c8474")   ## désactivé, filigrane ; jamais sur PANNE
 ## Or : uniquement « Continuer » (l'action qui fait avancer le temps) et l'héritage (trophée, record, titre).
 const OR := Color("e9c062")
 const OR_VIF := Color("f1c970")     ## survol / pression du bouton or
+## Papier : le seul document ouvert d'un écran (lettre d'un courrier, contrat, carnet, une de journal) ; jamais un tableau.
+const PAPIER := Color("f6eedc")
+const ENCRE := Color("14120f")
+const ENCRE_2 := Color("5a5244")
+const OR_ENCRE := Color("7d5b10")
+const V_PAPIER := Color("2b6a43")
+const D_PAPIER := Color("a3342c")
 ## Club : couleur réelle du club ; les dérivés se calculent (club_trait, club_texte).
 const CLUB := Color("71322f")
 const CLUB_TRAIT := Color("b5524a")

@@ -191,3 +191,17 @@ Déviation aux motifs : E4 (les flèches marquent lu après 1 s) ; E5 (deux temp
 - [ ] L'écran est affiché et la liste de 40 courriers utilisable ≤ 500 ms après navigation.
 - [ ] Rendu vérifié à 1280×720, 1920×1080, 2560×1440 et 21:9, y compris à 130 % de taille de texte.
 - [ ] Un courrier de presse propose « Ouvrir la conférence » ; depuis Presse, « Revenir au courrier » rend la même sélection.
+
+## 13. Direction artistique (choix de Léo, 19/11/2026)
+
+**Variante retenue : 1 · Liste et lettre** (avis DA), avec un emprunt : le filtre « Sujet » de la variante 3, **en menu déroulant** (pas de colonne fixe « Boîte / Sujet »).
+Maquettes : `direction-artistique/interface/revue-20261119/apercus/05-reception-1.png` (base) et `05-reception-3.png` (filtre Sujet).
+
+- **Deux colonnes seulement** : liste sombre à gauche (tableau dense, non lus en gras + pastille ovale, sujet en mot ET en symbole), lettre à droite. Le panneau fixe « Concerné » disparaît.
+- **La lettre est le seul document `papier`** de l'écran (charte §4.2 : papier, encre, or-encre ; une coupure de presse prend la même place, jamais les deux). Titre en italique 10°, échéance écrite (« À FAIRE · avant le… ») au-dessus d'un filet, texte à l'encre.
+- **Tout nom est un lien** : joueur → fiche complète (mini-fiche au survol), club → fiche du club, rencontre → avant/après-match ; la rangée « CONCERNÉ » sous les réponses reprend le joueur lié (avec sa disponibilité), le club lié et les joueurs en fin de contrat. Un nom sans écran de destination reste du texte (jamais de lien mort).
+- **Réponse en deux temps** (maquette) : un clic sur une carte la **choisit** (✓), « Envoyer la réponse X » (ivoire plein, seule action principale) la confirme, « Annuler » la retire. Rien ne part sans confirmation. Pas de bouton or : l'or reste à Continuer. Pas de réponse « recommandée » (le moteur n'en fournit pas) ni de citation de Gabi (donnée absente : ligne omise).
+- **Pied du courrier** : expéditeur, service, reçu, état et « Courrier suivant non lu » sur une ligne collée en bas. Plus de rappel Espace : Espace = Continuer partout.
+- **Aucune petite fenêtre** : décisions et réponses s'appliquent en place ou ouvrent un écran ; le menu « Sujet » est un menu déroulant (exception admise).
+- Rayons 0, pas de dégradé ; couleurs de sujet (menthe, rouge…) toujours doublées d'un mot et d'un symbole.
+- Écarts assumés : lignes de liste à deux lignes (sujet puis titre) comme sur la maquette plutôt que 24 px ; montants cités non liés (pas d'écran de négociation sans joueur lié).

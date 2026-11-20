@@ -18,6 +18,24 @@ static func configure(button: Button, quote: Dictionary) -> void:
 	button.disabled = int(quote.places) < quote.slots.size()
 	button.tooltip_text = "Le groupe professionnel compte trop peu de places libres." if button.disabled else "Voir les places et les salaires avant de signer."
 
+## Texte de la décision (places, salaires, réserve après entraînement), commun à la fenêtre de l'ancienne feuille et à la
+## sous-page « Renforts d'urgence » de la Composition.
+static func detail(quote: Dictionary) -> String:
+	var slots: Array = quote.slots
+	var count := slots.size()
+	var players := "un nouvel Espoir" if count == 1 else "%d nouveaux Espoirs" % count
+	var numbers := ", ".join(slots.map(func(slot): return str(int(slot))))
+	var places := "la place %s" % numbers if count == 1 else "les places %s" % numbers
+	var text := "Le club signera %s pour %s de la feuille.\n\n" % [players, places]
+	text += "Salaires supplémentaires de %s, soit %s par joueur." % [G.salary(quote.totalWeeklySalary), G.salary(quote.weeklySalary)]
+	if quote.get("reviewAfterTraining", false):
+		text += "\n\nUn retour de blessure pourrait réduire le besoin. Si tu prévois une séance, revérifie la feuille ensuite avant de signer."
+	return text
+
+## Commande de signature (confirmée) : le moteur vérifie que les places attendues sont toujours les mêmes.
+static func sign(app: Control, quote: Dictionary) -> void:
+	app._command("promote_cover", {"confirmed": true, "expectedSlots": quote.slots.duplicate()})
+
 static func confirm(app: Control, quote: Dictionary) -> void:
 	var slots: Array = quote.slots.duplicate()
 	var count := slots.size()
