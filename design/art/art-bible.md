@@ -9,7 +9,7 @@ AD-ART-BIBLE: CONCERNS
 - §8 : aucun budget de performance (frame, draw calls, mémoire) ni plateforme dans `project.yaml` ni `technical-preferences.md` ; arbitrage 2560/1920 des illustrations ouvert.
 - §7 : corps 13 px sous T1 (14 px), choix de Léo (densité FM) ; `accessibility-requirements.md` T1/E1/E2 à réécrire ; `tnum` de DM Sans à vérifier.
 - §5 : atlas de Gabi opaque (fond `#232228`) : un rectangle se verra sur `panneau` ; export avec transparence requis.
-- Écarts à valider par Léo : pastille en pilule (la charte propose rayon 6) ; compteur doré du menu non compté comme « aplat principal » ; menu pause en page pleine (plus de panneau central, exception Fenêtre).
+- Tranché par Léo le 20/11 sur comparatifs : pastilles à coins de 6 px (comme la graphiste), lignes de tableau serrées 26 px (densité FM), menu pause en fenêtre (seule exception à « pas de fenêtre »). Reste à valider : compteur doré du menu non compté comme « aplat principal ».
 - Cohérence vérifiée : une seule règle, un seul nuancier (`charte.gd`), contrastes texte ≥ 4,5:1 sur toutes les paires autorisées, couleur jamais seule.
 
 Sources : décisions de Léo du 20/11/2026 (adoption de la charte finale de la graphiste, deux exceptions) et du 19/11/2026 (densité Football Manager, barème des attributs) ; **charte de la graphiste « Rugby Legacy 27 »** (README, `tokens.css`, fiches composants, logos, symboles, icônes ; lue le 20/11/2026) ; jetons Godot `native/godot/ui/charte.gd` (source de vérité des valeurs et noms) ; `design/game-brief.md`, `design/player-journey.md`, `design/accessibility-requirements.md` ; logo, symbole et icônes `native/godot/branding/` ; illustrations `native/godot/art/immersive08/` ; atlas de Gabi (anthracite v5).
@@ -28,7 +28,7 @@ Principes :
 - **La crème porte l'information** (texte, titres, chiffres) ; le gris-vert la nuance ; les surfaces ne la portent jamais. (P1)
 - **Trois couleurs, trois rôles.** Doré = agir et attirer l'œil ; vert clair = bon état et notre équipe ; vert franc = surface rugby (jauge, écusson « nous », terrain). Test : en cas de doute, crème. (P1, P3)
 - **Une couleur n'est jamais seule** : tout état porte un mot ou un pictogramme.
-- **Droit et arrondi.** Titres et marqueurs droits (fin de l'inclinaison 10° ; `INCLINAISON_DEGRES = 0`) ; panneaux rayon 18, boutons, onglets, pastilles et champs en pilule.
+- **Droit et arrondi.** Titres et marqueurs droits (fin de l'inclinaison 10° ; `INCLINAISON_DEGRES = 0`) ; panneaux rayon 18, boutons, onglets et champs en pilule ; pastilles à 6 px.
 - **Une seule langue.** Les états de jeu ne changent ni palette, ni polices, ni formes ; ils ne varient que par la **part d'image** (0 % au tableau, plein cadre au tunnel) et la **taille du plus grand titre**. (P2)
 
 ## 2. Mood & Atmosphere
@@ -50,7 +50,8 @@ Même palette, mêmes polices partout ; la lumière vient des illustrations (ple
 ## 3. Shape Language
 
 - **Panneau** : `panneau` rayon 18, **sans bordure ni ombre** ; il se détache du fond par sa clarté. Carte dans un panneau : rayon 12.
-- **Pilule** (`RAYON_PILULE`) : boutons, onglets, pastilles, champs, jauges (rail et remplissage).
+- **Pilule** (`RAYON_PILULE`) : boutons, onglets, champs, jauges (rail et remplissage).
+- **Rayon 6** (`RAYON_PETIT`) : pastilles d'état, cases, vignettes, ligne sélectionnée.
 - **Séparation** : filet 1 px `filet` à l'intérieur d'un panneau ; entre panneaux, 16 px de fond visible. Contour 1 px `filet` seulement pour bouton secondaire et champ ; seul autre contour : anneau de focus.
 - **Droit partout** : titres, marqueurs, bandeaux du match, soulignements ; aucun bord incliné, aucun texte penché, aucune italique (anciens noms `*_ITALIQUE` = coupes droites).
 - **Ovale du logo** : réservé au symbole (logo, icône, chargement) ; la pastille V/N/D est une pilule ; pastilles de joueur sur terrain : disque plein (nous) / anneau 2 px (adversaire) ; pas de cercle parfait ailleurs.
@@ -164,7 +165,7 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 **Coque unique (16 écrans de gestion ; titre, chargement et match en sortent)**, mesures à 1920×1080, échelle 100 % :
 - Rail gauche 232 px sur `PANNEAU` : logo complet (sans « Rugby Manager ») puis carte du club (écusson, nom, liseré de club), entrées numérotées 1 à 9 (Bureau, Réception, Effectif, Tactique, Entraînement, Recrutement, Club, Finances, Compétitions, puis Formation), 10 entrées principales au plus ; en pied, séparés par un filet : Réglages, Sauvegarder.
 - Barre haute 48 px : bouton **Menu** visible (☰ + « Menu » + « Échap » écrit) ; fil d'Ariane ; à droite recherche (Ctrl+K), date, médaillon Gabi (F1), **Continuer** (pilule dorée, « Espace » écrit, dit ce qui bloque).
-- **Menu pause** (Échap ou bouton Menu) : **page pleine**, pas de fenêtre : Reprendre, Sauvegarder, Charger, Réglages, Retour à l'accueil, Quitter. Même menu en match (Échap = pause + menu).
+- **Menu pause** (Échap ou bouton Menu) : **fenêtre** centrée sur l'écran voilé (`PANNEAU` 70 %), rayon 18, ~400-560 px, seule exception à « pas de fenêtre » (choix de Léo du 20/11/2026) : Reprendre, Sauvegarder, Charger, Réglages, Retour à l'accueil, Quitter. Même menu en match (Échap = pause + menu).
 - Contenu : en-tête compact sans photo, puis grille de panneaux séparés de 16 px ; marges 24 px ; espacements 4 / 8 / 12 / 16 / 24 / 32.
 - Match (direct) : bandeau de score haut-gauche (écussons des clubs, score crème 40 px, temps, phase) sur `PANNEAU` 90 % rayon 18 ; journal en bas-gauche 16 px ; tiers inférieur pour l'événement (une bannière à la fois).
 
@@ -183,7 +184,7 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 | Nom d'entité | BC SemiBold | 15 / 1,2 | normale |
 | Menus, onglets, boutons | BC SemiBold | 15-18 | bas de casse |
 | Corps | DM Sans Regular | 13 / 18 | normale |
-| Cellule de tableau | DM Sans (chiffres `tnum`, à droite) | 13 / ligne 24-28 | normale |
+| Cellule de tableau | DM Sans (chiffres `tnum`, à droite) | 13 / ligne 26 | normale |
 | En-tête de colonne, légende | BC SemiBold, `IVOIRE_3` | 12-13 | capitales |
 | Journal, sous-titres | DM Sans Medium | 16 / 22 | normale |
 
@@ -197,8 +198,8 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 - **Bouton principal** : pilule dorée, texte `PANNEAU`, 40 px (32 compact), un par écran ; survol `OR_VIF`. Continuer en coque ; sur une page sans Continuer, l'action qui fait avancer (« Lancer le match », « Valider la composition »).
 - **Bouton secondaire** : contour 1 px `FILET`, texte crème ; secondaire plein : `VERT_FRANC`, texte crème, dans un panneau ; **lien** : sans fond ni contour, gris-vert + flèche, souligné au survol (« Annuler », pied de page). Libellé ≤ 4 mots ; jamais de texte en vert franc.
 - **Onglets** : pilules ; actif = aplat crème, texte `PANNEAU` ; inactif = gris-vert ; jamais actif en vert.
-- **Pastilles** : pilule 24 px, BC SemiBold 14, pictogramme 14 px puis mot ; favorable (`VOILE_VERT` + vert clair), attention (`VOILE_DORE` + doré), neutre (`PANNEAU_2` + gris-vert) ; jamais sans mot ; 2 par ligne au plus. Compteur : pastille dorée, chiffre `PANNEAU` (écart à valider : ne compte pas comme aplat principal).
-- **Tableau** (densité FM conservée) : dans un panneau ; lignes 24-28 px, filet entre lignes, pas de bandes colorées ; en-têtes capitales `IVOIRE_3` alignés sur leurs valeurs ; noms DM Sans 600 crème ; chiffres alignés à droite ; colonne triée : en-tête doré + flèche ; survol `PANNEAU_2`, sélection `SELECTION` sur toute la ligne (rayon 6) ; regroupement par poste avec intertitre ; tri et filtre au clavier. Valeur colorée seulement pour un état.
+- **Pastilles** : rayon 6, 24 px de haut (20 dans un tableau), BC SemiBold 14, pictogramme 14 px puis mot ; favorable (`VOILE_VERT` + vert clair), attention (`VOILE_DORE` + doré), neutre (`PANNEAU_2` + gris-vert) ; jamais sans mot ; 2 par ligne au plus. Compteur : pastille dorée, chiffre `PANNEAU` (écart à valider : ne compte pas comme aplat principal).
+- **Tableau** (densité FM conservée) : dans un panneau ; lignes 26 px, filet entre lignes, pas de bandes colorées ; en-têtes capitales `IVOIRE_3` alignés sur leurs valeurs ; noms DM Sans 600 crème ; chiffres alignés à droite ; colonne triée : en-tête doré + flèche ; survol `PANNEAU_2`, sélection `SELECTION` sur toute la ligne (rayon 6) ; regroupement par poste avec intertitre ; tri et filtre au clavier. Valeur colorée seulement pour un état.
 - **Jauge** : rail `PANNEAU_3` 8 px en pilule, remplissage en pilule, valeur chiffrée toujours ; comparaison : nous vert clair à gauche, adversaire doré à droite, critère au centre ; note isolée : vert clair > 80, gris-vert 50-80, doré < 50, avec le chiffre ; pas de dégradé.
 - **Menu latéral** : entrée 40 px, icône 20 px gris-vert, libellé BC 600 ; **entrée active = pilule crème, icône et texte `PANNEAU`** ; survol `PANNEAU_2` ; compteur = pastille.
 - **État vide** : panneau avec pictogramme gris-vert, une phrase dite par le club (« Rien à décider aujourd'hui »), et au plus une action en lien ou secondaire ; jamais un bouton doré de remplissage.
@@ -206,7 +207,7 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 
 **Exceptions de Léo contre la charte de la graphiste (maintenues)** :
 - **Pas de fiche à droite qui suit la sélection** : un clic ouvre la fiche joueur complète (page), le survol montre une mini-fiche ; l'écran de travail = barre d'outils + tableau pleine largeur.
-- **Pas de petite fenêtre** (composant « Fenêtre » non adopté) : les décisions se prennent dans la page, sur panneau ; aucune boîte modale ; le menu pause est une page.
+- **Pas de petite fenêtre** (composant « Fenêtre » non adopté) : les décisions se prennent dans la page, sur panneau ; aucune boîte modale. Seule exception : le menu pause (fenêtre sur l'écran voilé).
 
 **Mouvement** :
 - Entrée d'écran : fondu + glissement vertical de 8 px, 160 ms, ease-out ; cascade 30 ms par panneau, 6 panneaux au plus.
@@ -224,7 +225,7 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 - **Plancher accessibilité** : contrastes ≥ 4,5:1 sur les paires de texte (§4.4) ; ≥ 3:1 pour focus et marqueurs ; couleur jamais seule (§4.5) ; focus distinct du survol et de la sélection ; Échap + bouton Menu visible ; cibles ≥ 24 px.
 - **Retour** : Continuer dit ce qui bloque ; chaque refus dit quoi faire ; sauvegarde visible.
 - **Conflit 1 (tranché par Léo)** : T1 exige 14 px de corps à 1920 ; Léo a choisi 13 px (densité FM). Compensation : plancher 12 px réels, échelle réglable, contrastes élevés. T1 et E1 à réécrire.
-- **Conflit 2** : la charte propose des lignes de 40 px ; Léo garde la densité FM (24-28 px) ; cibles ≥ 24 px.
+- **Conflit 2** : la charte propose des lignes de 40 px ; Léo garde la densité FM (26 px, comparatif du 20/11) ; cibles ≥ 24 px.
 - **Conflit 3** : Échap = Retour et Échap = menu pause. Retenu : Échap quitte d'abord la sous-page ouverte, puis ouvre le menu pause ; le bouton Menu reste l'accès direct.
 - **Conflit 4** : 90 % d'échelle descend sous T1 à 1920 ; réservé aux fenêtres ≥ 2560 px.
 - **Conflit 5** : « un seul aplat doré par écran » contre un écran à deux décisions fortes. Retenu : un seul doré, l'autre en secondaire plein ; à escalader au creative-director si le besoin revient.
@@ -254,6 +255,6 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 | Référence | Prendre précisément | Éviter |
 |---|---|---|
 | Charte de la graphiste « Rugby Legacy 27 » (source) | nuancier 7 teintes, panneaux 18 sans bordure, pilules, rôles du doré et du vert clair, logo | fiche à droite qui suit la sélection, composant Fenêtre, lignes de 40 px |
-| Football Manager (FM24 tableaux, OOTP) | densité : vrais tableaux triables, lignes 24-28 px, beaucoup de colonnes | son habillage (gris-bleu, dégradés), cartes FM26 qui remplacent les tableaux, panneau de détail permanent |
+| Football Manager (FM24 tableaux, OOTP) | densité : vrais tableaux triables, lignes 26 px, beaucoup de colonnes | son habillage (gris-bleu, dégradés), cartes FM26 qui remplacent les tableaux, panneau de détail permanent |
 | Habillage Six Nations 2025 et scorebug moderne | score et horloge protégés et dominants ; une seule bannière liée au temps ; retour à l'état de base | couleurs et marques du tournoi ; dégradés et reliefs |
 | Disco Elysium | l'illustration peinte porte l'ambiance, l'interface reste sobre à côté | texte trop petit, colonne de texte sans hiérarchie |
