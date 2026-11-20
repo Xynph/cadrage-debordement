@@ -173,7 +173,7 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 **Typographie** (OFL, dans le jeu) :
 - **Barlow Condensed**, **droite** (SemiBold, Bold, ExtraBold ; plus de fichiers italiques) : titres, en-têtes, menus, onglets, boutons, chiffres d'affiche. C'est la police des titres retenue par Léo (écart : la charte prévoit une police d'affiche distincte, abandonnée).
 - **DM Sans** : texte courant et cellules ; chiffres tabulaires (`tnum`, à vérifier).
-- Pas de troisième famille.
+- Pas de troisième famille. Exception (Léo, 20/11/2026) : Anton (OFL) pour le nom, le numéro, le niveau, le potentiel et les titres de blocs de la fiche joueur.
 
 | Niveau | Police | Taille / interligne | Casse |
 |---|---|---|---|
@@ -239,7 +239,7 @@ Calculés à la main avec la formule WCAG 2.x sur les hex ci-dessus (aucun inter
 - **Logo définitif** de la graphiste intégré : version principale crème + « 27 » doré, transparente ; symbole (doré, crème, vert clair) ; icônes 16, 24, 32, 48, 64, 128, 256 px et `.ico` pour l'exécutable Windows, dans `native/godot/branding/`. Logo complet ≥ 120 px de large (sinon symbole), symbole net dès 48 px ; marge = moitié de la hauteur du « 27 » (logo), quart de la largeur (symbole). 16 et 24 px provisoires (version simplifiée à dessiner).
 - Formats : icônes SVG au trait (couleurs remplacées à l'exécution) ; illustrations PNG 2560 × 1440 (plein cadre) et 2560 × 480 (bandeaux) ; portraits PNG transparents 512 × 512 ; Gabi PNG transparent 512 × 640.
 - Couleur : sRGB ; étalonnage §6 appliqué à la source, pas dans le jeu.
-- Polices : TTF OFL, licence jointe (Barlow Condensed droite, DM Sans).
+- Polices : TTF OFL, licence jointe (Barlow Condensed droite, DM Sans, Anton pour la fiche joueur).
 - 3D : réutiliser l'existant ; maillots par couleur de club, sans texture de marque.
 
 ### 8.2 Vue technique
