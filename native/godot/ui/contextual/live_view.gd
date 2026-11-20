@@ -997,6 +997,8 @@ func _input(event: InputEvent) -> void:
 ## menu du match (jamais celui de la carrière).
 func echap() -> void:
 	_mini_fiche().cacher(app)
+	# Après-match (écran 15) : Échap ne ferme rien et n'ouvre pas le menu du match (décision du 16/11).
+	if is_instance_valid(apres_match) and apres_match.visible: return
 	if is_instance_valid(page) and page.visible:
 		fermer_page()
 	elif is_instance_valid(menu) and menu.visible:
