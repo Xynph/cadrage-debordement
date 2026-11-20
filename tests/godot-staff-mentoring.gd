@@ -25,7 +25,10 @@ func run() -> void:
 	Career._mentoring(app, parent)
 	var open: Button = parent.find_child("StaffMentoringOpen", true, false)
 	assert(open != null)
-	open.pressed.emit()
+	# Mentorat = sous-page du Staff (plus de fenêtre) : le contenu est construit par la même fonction dans une liste.
+	var page := VBoxContainer.new()
+	app.add_child(page)
+	Career.mentorat_page(app, page, data, func(): pass)
 	var enable: Button = app.find_child("StaffMentoringEnable", true, false)
 	assert(enable != null and not enable.disabled)
 	enable.pressed.emit()
@@ -33,7 +36,9 @@ func run() -> void:
 	data.enabled = true
 	data.mentors = [{"id":"mentor:test","name":"Ancien capitaine","observedSessions":3,"converted":true}]
 	data.players = [{"id":"young:test","name":"Jeune témoin","pos":"Pilier","focusOptions":[{"key":"scrum","label":"Mêlée"}]}]
-	Career._mentor_dialog(app, data)
+	var page_mentor := VBoxContainer.new()
+	app.add_child(page_mentor)
+	Career.mentor_page(app, page_mentor, data, func(): pass)
 	var confirm: Button = app.find_child("StaffMentorConfirm", true, false)
 	assert(confirm != null)
 	confirm.pressed.emit()

@@ -342,6 +342,15 @@ func run() -> void:
 	var ralentis: Array = []
 	var regie_id := 0
 	var suivi_lu := 0
+	# Écran 13 (20/11/2026) : vues du HUD à capturer en plus du film, à un instant de jeu simulé (secondes) :
+	# CD_MATCH_FILME_MENU_ECHAP (menu du match ouvert par Échap) et CD_MATCH_FILME_FICHE_CLUB (fiche du club
+	# visiteur ouverte depuis sa plaque). Image « menu-echap.png » / « fiche-club.png », puis retour au direct.
+	var vues_hud: Array = []
+	# Aussi CD_MATCH_FILME_JOURNAL (tiroir Journal du match) et CD_MATCH_FILME_RELECTURE (« Relire » du tiroir : page
+	# du direct) : images « journal.png » / « relecture.png ».
+	for paire: Array in [["menu-echap", "CD_MATCH_FILME_MENU_ECHAP"], ["fiche-club", "CD_MATCH_FILME_FICHE_CLUB"], ["journal", "CD_MATCH_FILME_JOURNAL"], ["relecture", "CD_MATCH_FILME_RELECTURE"]]:
+		var a := OS.get_environment(str(paire[1]))
+		if a.is_valid_float(): vues_hud.append({"nom": paire[0], "a": float(a), "etape": 0, "depuis": 0.0})
 	while true:
 		await process_frame
 		var maintenant := Time.get_ticks_msec()
@@ -376,9 +385,36 @@ func run() -> void:
 			if dernier.minute != minute_vue:
 				minute_vue = dernier.minute
 				print("MATCH_FILME minute=", minute_vue, " score=", dernier.score)
+		# Vues du HUD demandées (menu Échap, fiche club) : ouverture, une seconde de jeu, image, retour au direct.
+		var vue_hud_en_cours := false
+		for v: Dictionary in vues_hud:
+			if int(v.etape) >= 2 or vue == null or live.is_empty() or bool(live.get("finished", false)): continue
+			if int(v.etape) == 0 and temps >= float(v.a) and not app.waiting and (regie == null or regie.etat != 3):
+				if v.nom == "menu-echap": vue.ouvrir_menu()
+				elif v.nom == "journal": vue._toggle_drawer("Journal")
+				elif v.nom == "relecture":
+					vue._toggle_drawer("Journal")
+					vue.journal._review()
+				else: vue.ouvrir_fiche_club(1)
+				v.etape = 1
+				v.depuis = temps
+			if int(v.etape) == 1:
+				vue_hud_en_cours = true
+				var page_hud: Variant = vue.get("page")
+				var prete: bool = v.nom in ["menu-echap", "journal"] or (v.nom == "relecture" and page_hud is Control and (page_hud as Control).find_child("ActionReviewPage", true, false) != null) or (page_hud is Control and (page_hud as Control).find_child("FicheClub", true, false) != null and (page_hud as Control).find_child("ClubSheetLoading", true, false) == null)
+				if temps - float(v.depuis) >= (1.0 if v.nom == "menu-echap" else 2.0) and (prete or temps - float(v.depuis) >= 15.0) and not app.waiting:
+					await RenderingServer.frame_post_draw
+					var vue_image := root.get_texture().get_image()
+					if vue_image != null: vue_image.save_png(str(o.sortie).path_join(str(v.nom) + ".png"))
+					report[str(v.nom)] = {"secondes": snappedf(temps, 0.1), "minute": int(live.get("minute", 0))}
+					print("MATCH_FILME vue ", v.nom, " minute=", int(live.get("minute", 0)))
+					if v.nom == "menu-echap": vue.fermer_menu(true)
+					elif v.nom == "journal": vue._fermer_tiroir()
+					else: vue.fermer_page()
+					v.etape = 2
 		# Ce qu'un joueur ferait : passer la causerie de la mi-temps, relancer après un arrêt.
 		var causerie: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
-		if app.waiting or not str(app.last_error).is_empty(): attente = 0.0
+		if vue_hud_en_cours or app.waiting or not str(app.last_error).is_empty(): attente = 0.0
 		elif causerie is Dictionary:
 			attente = attente + delta if app.contextual_director.kind == "locker" else 0.0
 			if attente >= 2.0:

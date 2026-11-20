@@ -250,6 +250,16 @@ static func _fill(app: Control, profile: RefCounted, content: VBoxContainer, qui
 		app.call_deferred("_open_coach")))
 	links.get_child(0).name = "PreferencesPack"; links.get_child(1).name = "PreferencesCoachHelp"
 	for button in display_row.get_children() + links.get_children(): G.fill(button)
+	# Réglages ouverts pendant un match (menu Échap du direct) : ces écrans attendent la fin du match. Écrit sur le
+	# bouton, grisé : aucun clic sans réponse, aucune fenêtre par-dessus le match.
+	var director: Variant = app.get("contextual_director")
+	if director is Node and is_instance_valid(director) and director.has_method("match_immersed") and director.match_immersed():
+		for nom in ["PreferencesLeagueDetail", "PreferencesPack", "PreferencesCoachHelp"]:
+			var bouton := content.find_child(nom, true, false) as Button
+			if bouton == null: continue
+			bouton.text = bouton.text.trim_suffix("…") + " · disponible après le match"
+			bouton.tooltip_text = "Disponible après le match."
+			bouton.disabled = true
 	return {"refresh":refresh, "focus":volume.get_line_edit(), "reset":func(): profile.reset_defaults(); refresh.call()}
 
 ## Page d'onglet : zone défilante propre à l'onglet (la rangée d'onglets ne défile jamais). Retourne la colonne de contenu.

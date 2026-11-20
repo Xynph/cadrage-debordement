@@ -70,9 +70,12 @@ func run() -> void:
 	check(not e.compact and e.pause == "REPRENDRE", "Repli à la mi-temps : grande barre " + str(e))
 	e = etat({}, false, false, false)
 	check(not e.compact, "Sans direct : grande barre " + str(e))
-	# Bloc compact plus petit que la grande barre, à toutes les tailles.
-	for cle in ["horloge", "score", "pause"]:
-		check(int(LiveView.BANDEAU_COMPACT[cle]) < int(LiveView.BANDEAU_TAILLES[cle]), "Bloc compact plus petit : " + cle)
+	# Écran 13, bandeau d'angle (charte §7, 20/11/2026) : un seul bandeau, petit, score ivoire 40 px en 1080p,
+	# journal 16 px ; libellés « Pause » / « Reprendre » ; période sous l'horloge.
+	check(int(LiveView.BANDEAU_TAILLES.score) == 40 and int(LiveView.BANDEAU_TAILLES.legende) == 16 and int(LiveView.BANDEAU_HAUTEUR) <= 64, "Bandeau d'angle aux mesures de la charte : " + str(LiveView.BANDEAU_TAILLES))
+	check(LiveView.libelle_pause(etat(jeu, true, false, false)) == "Pause" and LiveView.libelle_pause(etat(pause, true, false, false)) == "Reprendre", "Libellés du bouton : Pause / Reprendre")
+	check(LiveView.periode_texte({"minute": 27, "period": 1}) == "1re MT" and LiveView.periode_texte({"minute": 52, "period": 2}) == "2e MT" and LiveView.periode_texte({"minute": 52}) == "2e MT", "Période sous l'horloge")
+	check(LiveView.minute_de("27′") == "27'" and LiveView.minute_de("40+2:15") == "40+2'" and LiveView.minute_de("MI-TEMPS") == "", "Minute du journal lue sur l'horloge")
 
 	# Météo : libellé clair sous le score et dans l'avant-match.
 	var sec := {"minute": 12, "meteo": {"libelle": "sec", "pluie": 0, "vent": 0, "chaleur": 0}}

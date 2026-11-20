@@ -29,6 +29,26 @@ func key(control: Control) -> void:
 		Input.parse_input_event(event)
 		await process_frame
 	await settle()
+## Écran 13 (DA du 19/11/2026) : dans le direct, « Relire » ouvre une page du direct (« ← Retour au direct »),
+## jamais une fenêtre. Ouvre la relecture au clavier et rend l'objet qui la pilote (faits, sélection, terrain).
+var surface: Node
+func page() -> Control:
+	return surface.get("page") if surface != null else null
+func ouvrir() -> Object:
+	if not journal.is_visible_in_tree():
+		surface._toggle_drawer("Journal")
+		await settle()
+	await key(journal.review)
+	while app.waiting: await process_frame
+	await settle()
+	var contenu: Control = page().find_child("ActionReviewPage", true, false) if page() != null else null
+	return contenu.get_meta("relecture") if contenu != null else null
+func fermer() -> void:
+	var retour: Control = page().find_child("MatchPageBack", true, false) if page() != null else null
+	check(retour != null and retour.is_visible_in_tree() and str(retour.text).contains("Retour au direct"), "« ← Retour au direct » visible")
+	if retour != null: await key(retour)
+	while app.waiting: await process_frame
+	await settle()
 func run() -> void:
 	app=load("res://main.tscn").instantiate()
 	root.add_child(app)
@@ -41,8 +61,8 @@ func run() -> void:
 	await settle()
 	# Le direct est la vue contextuelle du match : le journal s'ouvre dans son tiroir.
 	var director: Node = app.contextual_director
-	var surface: Node = director.view if is_instance_valid(director) and director.active() and director.kind == "live" else null
-	check(surface != null and surface.has_method("_toggle_drawer"), "Direct contextuel ouvert")
+	surface = director.view if is_instance_valid(director) and director.active() and director.kind == "live" else null
+	check(surface != null and surface.has_method("_toggle_drawer") and surface.has_method("ouvrir_relecture"), "Direct contextuel ouvert")
 	if surface != null and surface.drawer_tab != "Journal":
 		surface._toggle_drawer("Journal")
 	await settle()
@@ -53,9 +73,8 @@ func run() -> void:
 	var disk_before := FileAccess.get_file_as_bytes(disk_path)
 	var original: Dictionary = app.model.live.duplicate(true)
 	check(journal.review!=null and not journal.review.disabled,"Entrée Relire raccordée")
-	await key(journal.review)
-	var dialog: AcceptDialog = journal.find_child("MatchActionReview",true,false)
-	check(dialog!=null and dialog.visible,"Ouverture réelle par clavier")
+	var dialog: Object = await ouvrir()
+	check(dialog!=null and page().visible and app.find_children("*","Window",true,false).filter(func(w: Window): return w.visible).is_empty(),"Ouverture réelle par clavier, dans une page du direct (aucune fenêtre)")
 	if dialog!=null:
 		# #596 : le journal n'affiche que les faits déjà montrés (rien d'un temps fort à venir, le moteur a
 		# une minute d'avance, cf. match_temps_forts.montre) : préfixe non vide, copié sans changement.
@@ -77,18 +96,19 @@ func run() -> void:
 			root.size=resolution
 			DisplayServer.window_set_size(resolution)
 			await settle()
-			check(dialog.size.x<=resolution.x and dialog.size.y<=resolution.y,"Fenêtre de relecture contenue "+str(resolution))
-			check(dialog.get_ok_button().is_visible_in_tree(),"Fermer visible "+str(resolution))
+			var zone: Rect2 = dialog.content_scroll.get_global_rect()
+			check(zone.position.x>=0 and zone.end.x<=app.size.x+1 and zone.end.y<=app.size.y+1,"Page de relecture contenue "+str(resolution))
+			check(page().find_child("MatchPageBack",true,false).is_visible_in_tree(),"Retour visible "+str(resolution))
 			if OS.get_environment("CD_ACTION_REVIEW_GRAPHICS")=="1":
 				await RenderingServer.frame_post_draw
 				root.get_texture().get_image().save_png(proof.path_join("review-%dx%d.png" % [resolution.x,resolution.y]))
-		await key(dialog.get_ok_button())
-		await settle()
-		check(not is_instance_valid(dialog),"Fermeture libère le lecteur")
+		await fermer()
+		check(not is_instance_valid(dialog) and not page().visible,"Fermeture libère le lecteur et rend le direct")
+	if not journal.is_visible_in_tree(): surface._toggle_drawer("Journal")
+	await settle()
 	journal.update_frame({"teams":[],"events":["Essai ancien non typé",{"min":12,"text":"Faux essai textuel","scene":{"kind":"message","from":{"x":-10,"y":30},"to":{"x":20,"y":30}}},{"min":15,"text":"Essai réel","scene":{"kind":"try","score":[5,0],"team":0,"from":{"x":95,"y":30},"to":{"x":100,"y":32}}}]})
 	await settle()
-	await key(journal.review)
-	dialog=journal.find_child("MatchActionReview",true,false)
+	dialog = await ouvrir()
 	check(dialog.pitch.from=={"x":95,"y":30} and dialog.pitch.to=={"x":100,"y":32},"Positions enregistrées exactes")
 	await key(dialog.previous)
 	check(dialog.pitch.from==null and dialog.coordinates.text=="Position non renseignée.","Coordonnée hors terrain non inventée")
@@ -98,28 +118,30 @@ func run() -> void:
 	check(dialog.selection.size()==1 and dialog.action.text=="Essai réel","Texte ancien non classé comme essai")
 	check(JSON.stringify(app.model)==model_before,"Aucune mutation du modèle/horloge/RNG de carrière")
 	check(FileAccess.get_file_as_bytes(disk_path)==disk_before,"Profil disque strictement inchangé")
-	await key(dialog.get_ok_button())
+	await fermer()
+	surface._toggle_drawer("Journal")
+	await settle()
 	journal.update_frame({"teams":[],"events":["Essai ancien non typé"]})
 	await settle()
-	await key(journal.review)
-	dialog=journal.find_child("MatchActionReview",true,false)
+	dialog = await ouvrir()
 	await key(dialog.keys_only)
 	check(dialog.selection.is_empty() and dialog.heading.text.contains("Aucun moment clé"),"Filtre vide explicite")
 	check(dialog.previous.disabled and dialog.next.disabled,"Aucune navigation impossible")
 	app.management_ui = {}
 	journal.update_frame(original)
 	await settle()
-	check(not is_instance_valid(dialog),"Changement de contexte ferme les faits de l’ancienne carrière")
-	await key(journal.review)
-	dialog=journal.find_child("MatchActionReview",true,false)
+	check(not is_instance_valid(dialog) and not page().visible,"Changement de contexte ferme les faits de l’ancienne carrière")
+	surface._toggle_drawer("Journal")
+	await settle()
+	journal.update_frame(original)
+	await settle()
+	dialog = await ouvrir()
 	# Pendant le direct, le match garde la main (immersion) : la navigation est refusée et la
 	# relecture reste celle du match en cours, jusqu'à sa fermeture.
 	app._navigate("Bureau")
 	await settle()
 	check(app.route == "Match" and is_instance_valid(dialog) and dialog.events == original.events, "Navigation refusée pendant le direct, relecture du match conservée")
-	if is_instance_valid(dialog):
-		await key(dialog.get_ok_button())
-		await settle()
+	if is_instance_valid(dialog): await fermer()
 	check(not is_instance_valid(dialog),"Fermeture libère la relecture")
 	FileAccess.open(proof.path_join("report.json"),FileAccess.WRITE).store_string(JSON.stringify({"checks":checks,"failures":failures},"  "))
 	print("Action review: %d checks, %d failures" % [checks,failures.size()])

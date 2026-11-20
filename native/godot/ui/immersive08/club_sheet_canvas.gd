@@ -259,18 +259,39 @@ func _tabs() -> void:
 		tab.toggle_mode = true
 		tab.button_pressed = i == active
 	var followed := _followed()
-	var actions := [
-		["Ne plus suivre" if followed else "Suivre le club", "ClubSheetFollow", "star" if not followed else "close", _follow.bind(not followed)],
-		["Calendrier", "ClubSheetCalendar", "calendar", _calendar],
-		["Comparer", "ClubSheetCompare", "tactic", _compare],
-		["Recruter", "ClubSheetRecruit", "search", _recruit.bind("")],
-	]
+	# Notre club (ouvert depuis le direct) : ni suivi, ni comparaison, ni recrutement chez soi.
+	var own := _own()
+	var actions := []
+	if not own: actions.append(["Ne plus suivre" if followed else "Suivre le club", "ClubSheetFollow", "star" if not followed else "close", _follow.bind(not followed)])
+	# Pendant un match (fiche ouverte depuis le direct, live_view.gd) : ces écrans attendent la fin du match ; c'est
+	# écrit à leur place, rien ne reste cliquable sans réponse.
+	if _match_en_cours().is_empty():
+		actions.append(["Calendrier", "ClubSheetCalendar", "calendar", _calendar])
+		if not own:
+			actions.append(["Comparer", "ClubSheetCompare", "tactic", _compare])
+			actions.append(["Recruter", "ClubSheetRecruit", "search", _recruit.bind("")])
 	var x := 1240
 	for action: Array in actions:
 		var width := 236 if action[1] != "ClubSheetFollow" else 262
 		var button := D.button(self, Rect2(x, 320, width - 12, 58), action[0], action[3], false, action[2], true, app.accent, action[1])
 		button.tooltip_text = {"ClubSheetFollow":"Les résultats d’un club suivi arrivent dans tes actualités.", "ClubSheetCalendar":"Calendrier de la saison de ce club : résultats et matchs à venir.", "ClubSheetCompare":"Comparer ce club au tien.", "ClubSheetRecruit":"Ouvrir le marché entre clubs sur cet effectif."}[action[1]]
 		x += width
+	if not _match_en_cours().is_empty():
+		var indisponible := ("Calendrier : disponible après le match" if own else "Calendrier, comparaison, recrutement : disponibles après le match")
+		var note := D.text(self, x + 8, 358, indisponible, 22, C.FAINT, 600, WIDTH - x - 8)
+		note.name = "ClubSheetAfterMatch"
+
+## Fiche ouverte depuis le match en direct (live_view.gd, méta « fiche_club_en_match » : {ids, score, minute}) et ce
+## club joue ce match ; vide sinon.
+func _match_en_cours() -> Dictionary:
+	var direct: Variant = app.get_meta("fiche_club_en_match", {})
+	if not direct is Dictionary or direct.is_empty(): return {}
+	var ids: Array = direct.get("ids", [])
+	return direct if ids.any(func(i: Variant) -> bool: return int(i) == club_id) else {}
+
+func _own() -> bool:
+	var own: Variant = app.model.get("club")
+	return own is Dictionary and int(own.get("id", -2)) == club_id
 
 func _select(index: int) -> void:
 	state.tab = index
@@ -475,9 +496,19 @@ func _season_panel() -> void:
 	D.text(panel, 24, 200, "FORME · 5 DERNIERS", 22, C.GOLD, 700, 300)
 	_form(panel, Vector2(300, 170), table.get("form", []), 40)
 	D.line(panel, Vector2(24, 236), Vector2(736, 236), Color(C.LINE, .6))
-	D.text(panel, 24, 278, "PROCHAIN MATCH", 22, C.GOLD, 700, 300)
+	var en_cours := _match_en_cours()
+	D.text(panel, 24, 278, "MATCH EN COURS" if not en_cours.is_empty() else "PROCHAIN MATCH", 22, C.GOLD, 700, 300)
 	var next: Variant = data.get("next")
-	if next is Dictionary:
+	if not en_cours.is_empty():
+		# Le match du direct : lieu, minute et score lus dans le direct (le prochain match du moteur, c'est lui).
+		var ids: Array = en_cours.get("ids", [])
+		var marque: Array = en_cours.get("score", [0, 0])
+		var domicile := ids.size() >= 2 and int(ids[0]) == club_id
+		var adversaire := int(ids[1] if domicile else ids[0]) if ids.size() >= 2 else -1
+		D.text(panel, 24, 322, "%s · %de minute · %d – %d" % ["Domicile" if domicile else "Extérieur", int(en_cours.get("minute", 0)), int(marque[0]), int(marque[1])], 22, C.MUTED, 500, 712).name = "ClubSheetLiveMatch"
+		D.text(panel, 24, 362, "contre", 24, C.MUTED, 500, 80)
+		D.text(panel, 104, 362, G.club_name(_identity(adversaire)), 28, C.IVORY, 800, 620)
+	elif next is Dictionary:
 		var opponent := int(next.get("opponent", -1))
 		D.text(panel, 24, 322, ("Domicile" if next.get("home", false) else "Extérieur") + " · " + _date(next.get("date")) + " · " + Club.competition_name(str(next.get("competitionId", "")), app.model), 22, C.MUTED, 500, 712)
 		D.text(panel, 24, 362, "contre", 24, C.MUTED, 500, 80)
@@ -532,7 +563,18 @@ func _rivalry_panel() -> void:
 	D.text(panel, 24, 400, "Bilan de %s face à ce club, toutes saisons conservées." % G.club_name(own), 22, C.MUTED, 500, 690)
 	var h2h: Dictionary = data.get("headToHead", {})
 	var played := int(h2h.get("played", 0))
-	if played == 0:
+	var en_cours := _match_en_cours()
+	if played == 0 and not en_cours.is_empty():
+		# Fiche ouverte depuis le direct : la première confrontation se joue en ce moment.
+		var ids: Array = en_cours.get("ids", [])
+		var marque: Array = en_cours.get("score", [0, 0])
+		D.text(panel, 24, 110, "Aucune confrontation terminée.", 24, C.MUTED, 500, 690)
+		D.line(panel, Vector2(24, 140), Vector2(716, 140), Color(C.LINE, .6))
+		D.text(panel, 24, 190, "MATCH EN COURS · %de MINUTE" % int(en_cours.get("minute", 0)), 22, C.GOLD, 700, 690)
+		var noms := [G.club_name(_identity(int(ids[0]))), G.club_name(_identity(int(ids[1])))] if ids.size() >= 2 else ["", ""]
+		D.text(panel, 24, 250, "%s  %d – %d  %s" % [noms[0], int(marque[0]), int(marque[1]), noms[1]], 30, C.IVORY, 800, 690).name = "ClubSheetHeadToHeadLive"
+		D.text(panel, 24, 300, "Le bilan s’écrira au coup de sifflet final.", 22, C.MUTED, 500, 690)
+	elif played == 0:
 		_upcoming_meeting(panel, h2h.get("upcoming"))
 	else:
 		var cells := [["Matchs", played, C.IVORY], ["Victoires", h2h.get("won", 0), WIN], ["Nuls", h2h.get("drawn", 0), DRAW], ["Défaites", h2h.get("lost", 0), LOSS]]
