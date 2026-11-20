@@ -4,7 +4,8 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const {spawnSync}=require('node:child_process');
-const yaml=fs.readFileSync(path.resolve(__dirname,'../.github/workflows/tests.yml'),'utf8');
+// Fins de ligne ramenées à LF : une copie Windows (core.autocrlf) lit le workflow en CRLF.
+const yaml=fs.readFileSync(path.resolve(__dirname,'../.github/workflows/tests.yml'),'utf8').replace(/\r\n/g,'\n');
 assert.match(yaml,/name: Validation CI/);
 assert.match(yaml,/needs: \[classification, shards, godot\]/);
 assert.match(yaml,/Publier le verdict natif/);
