@@ -18,7 +18,7 @@ const VERT_CLAIR := Color("b6d6b6")   ## 7/7 bon état, chiffres favorables, not
 ## Fonds, du plus profond au plus haut (noms historiques conservés).
 const NUIT := Color("000000")       ## écran titre plein cadre seulement ; jamais un panneau
 const FOND := ARDOISE               ## fond de la coque : aplat ardoise, sans photo
-const PANNEAU := NOIR_PANNEAU       ## panneaux : se détachent du fond par la clarté, sans bordure ni ombre
+const PANNEAU := NOIR_PANNEAU       ## panneaux : se détachent du fond par la clarté et l'ombre portée, sans bordure
 const PANNEAU_2 := Color("192223")  ## survol (crème 6 %)
 const PANNEAU_3 := Color("222a2b")  ## choisi, champ de saisie, rail de jauge (crème 10 %)
 const FILET := Color("272f2f")      ## trait : séparations, contour des boutons secondaires et des champs (crème 12 %)
@@ -56,20 +56,81 @@ const PELOUSE := Color("1d4631")
 const PELOUSE_2 := Color("214e37")
 const PELOUSE_BORD := Color("53625e")
 
-## Formes : panneaux arrondis sans bordure ; boutons, onglets, champs et jauges en pilule ; pastilles à 6 px.
+## Formes : panneaux arrondis sans bordure, avec ombre portée ; boutons, onglets, champs et jauges en pilule ; pastilles à 6 px.
 const RAYON_PANNEAU := 18
 const RAYON_CARTE := 12     ## carte dans un panneau (tuile de chiffre, carte « à décider »)
 const RAYON_PETIT := 6      ## pastilles d'état, cases, vignettes, ligne sélectionnée (choix de Léo du 20/11/2026)
 const RAYON_PILULE := 999   ## Godot ramène le rayon à la demi-hauteur : pilule à toute taille
 
-## Fond de panneau : PANNEAU arrondi, sans bordure ni ombre.
+## Ombre portée des panneaux, cartes et tuiles (choix de Léo du 20/11/2026, d'après la graphiste qui proposait 10 px) :
+## noir 50 %, sans décalage, étendue 4 px. Jamais sur pilules, boutons, champs, pastilles, cases, lignes ni menus.
+const OMBRE_COULEUR := Color(0, 0, 0, 0.5)
+const OMBRE_TAILLE := 4
+const OMBRE_DECALAGE := Vector2.ZERO
+
+## Une forme de ce rayon (rayon de la charte, avant mise à l'échelle) porte-t-elle l'ombre ? Panneau (18) et carte (12) :
+## oui ; case, pastille (6) et pilule : non.
+static func rayon_ombre(rayon: float) -> bool:
+	return rayon >= RAYON_CARTE and rayon < RAYON_PILULE
+
+## Pose l'ombre de la charte sur un fond plein de panneau, carte ou tuile. `rayon` : rayon de la charte quand le style
+## a été mis à l'échelle (sinon le plus grand rayon du style). Sans effet sur une pilule, une case, un contour seul.
+## Exemple : `cadre.add_theme_stylebox_override("panel", Charte.ombrer(style, Charte.RAYON_CARTE))`.
+static func ombrer(style: StyleBoxFlat, rayon: float = -1.0) -> StyleBoxFlat:
+	if style == null: return style
+	var r := rayon if rayon >= 0.0 else float(maxi(maxi(style.corner_radius_top_left, style.corner_radius_top_right),
+		maxi(style.corner_radius_bottom_left, style.corner_radius_bottom_right)))
+	if not rayon_ombre(r) or not style.draw_center or style.bg_color.a <= 0.0: return style
+	style.shadow_color = OMBRE_COULEUR
+	style.shadow_size = OMBRE_TAILLE
+	style.shadow_offset = OMBRE_DECALAGE
+	return style
+
+## Retire l'ombre (menu déroulant ou bouton construit avec un style de panneau).
+static func sans_ombre(style: StyleBoxFlat) -> StyleBoxFlat:
+	if style != null: style.shadow_size = 0
+	return style
+
+## Le style porte-t-il exactement l'ombre de la charte ?
+static func porte_ombre(style: StyleBox) -> bool:
+	var plat := style as StyleBoxFlat
+	return plat != null and plat.shadow_size == OMBRE_TAILLE and plat.shadow_color == OMBRE_COULEUR and plat.shadow_offset == OMBRE_DECALAGE
+
+## Panneau qui rogne son contenu (clip_contents) : Godot rogne aussi l'ombre qu'il dessine. L'ombre passe à un calque
+## frère posé juste derrière lui, qui suit sa place, sa taille et sa visibilité ; le panneau garde son fond, sans ombre.
+## Parent à placement libre seulement (un conteneur rangerait le calque) ; renvoie le calque, ou null.
+## Exemple : `panneau.clip_contents = true; Charte.ombre_derriere(panneau)` une fois le panneau posé dans sa page.
+static func ombre_derriere(panneau: Control) -> Control:
+	var style := panneau.get_theme_stylebox("panel") as StyleBoxFlat if panneau != null else null
+	var parent := panneau.get_parent() as Control if panneau != null else null
+	if style == null or parent == null or parent is Container or not porte_ombre(style): return null
+	var ombre := Panel.new()
+	ombre.name = str(panneau.name) + "Ombre"
+	ombre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ombre.add_theme_stylebox_override("panel", style.duplicate())
+	panneau.add_theme_stylebox_override("panel", sans_ombre(style.duplicate()))
+	parent.add_child(ombre)
+	parent.move_child(ombre, panneau.get_index())
+	var suivre := func() -> void:
+		if not is_instance_valid(ombre) or not is_instance_valid(panneau): return
+		ombre.position = panneau.position
+		ombre.size = panneau.size
+		ombre.scale = panneau.scale
+		ombre.visible = panneau.visible
+	panneau.item_rect_changed.connect(suivre)
+	panneau.visibility_changed.connect(suivre)
+	panneau.tree_exiting.connect(func() -> void: if is_instance_valid(ombre): ombre.queue_free())
+	suivre.call()
+	return ombre
+
+## Fond de panneau : PANNEAU arrondi, sans bordure, avec l'ombre portée de la charte.
 static func style_panneau(couleur: Color = PANNEAU, rayon: int = RAYON_PANNEAU, marge: int = 18) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = couleur
 	style.set_corner_radius_all(rayon)
 	style.set_content_margin_all(marge)
 	style.anti_aliasing = true
-	return style
+	return ombrer(style, rayon)
 
 ## Pilule (bouton, onglet, pastille) : aplat `fond`, contour facultatif.
 static func style_pilule(fond: Color, contour: Color = Color.TRANSPARENT, marge_x: int = 14, marge_y: int = 5) -> StyleBoxFlat:

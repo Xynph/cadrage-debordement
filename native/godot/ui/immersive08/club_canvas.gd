@@ -663,7 +663,9 @@ static func _vestiaire(panneau: Panel, app: Control) -> void:
 		# Tuile de chiffre = carte rayon 12 px (16 en référence 2560, charte §3).
 		for etat in ["normal", "hover", "pressed", "disabled", "focus"]:
 			var fond := bouton.get_theme_stylebox(etat) as StyleBoxFlat
-			if fond != null: fond.set_corner_radius_all(maxi(3, C.px(16)))
+			if fond == null: continue
+			fond.set_corner_radius_all(maxi(3, C.px(16)))
+			Charte.ombrer(fond, 16)
 		bouton.accessibility_name = "%s · %s %s · vestiaire" % [tuile.etiquette, tuile.valeur, tuile.sur]
 		bouton.pressed.connect(func(): app._navigate("Vestiaire"))
 		panneau.add_child(bouton)

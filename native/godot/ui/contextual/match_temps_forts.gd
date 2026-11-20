@@ -329,6 +329,7 @@ func ouvrir_stats_a(libelle: String) -> void:
 		if not noeud is Label or not (noeud as Label).text.to_lower().contains(mot): continue
 		var surligne := StyleBoxFlat.new()
 		surligne.bg_color = preload("res://ui/charte.gd").PANNEAU_3
+		surligne.set_corner_radius_all(Charte.RAYON_PETIT)
 		(noeud as Label).add_theme_stylebox_override("normal", surligne)
 		var defile := corps.get_parent()
 		while defile != null and not defile is ScrollContainer: defile = defile.get_parent()
@@ -1805,21 +1806,23 @@ func _rejeu_fini() -> void:
 		break
 	_rejeu_passe = false
 
-## Mention « RALENTI » des retransmissions : petit cartouche du style des bandeaux, sans animation.
+## Mention « RALENTI » des retransmissions : petite pilule sur panneau 90 %, sans animation (charte finale).
 static func construire_mention() -> PanelContainer:
 	var cadre := PanelContainer.new()
 	cadre.name = "MatchRalenti"
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var fond := StyleBoxFlat.new()
-	fond.bg_color = Color(Charte.PANNEAU, 0.85)
-	fond.content_margin_left = 12
-	fond.content_margin_right = 12
+	fond.bg_color = Color(Charte.PANNEAU, 0.9)
+	fond.set_corner_radius_all(Charte.RAYON_PILULE)
+	fond.anti_aliasing = true
+	fond.content_margin_left = 14
+	fond.content_margin_right = 14
 	fond.content_margin_top = 2
 	fond.content_margin_bottom = 3
 	cadre.add_theme_stylebox_override("panel", fond)
 	var titre := S.label("RALENTI", 18, Charte.IVOIRE)
 	titre.name = "MatchRalentiTitre"
-	titre.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+	titre.add_theme_font_override("font", Charte.TITRE_GRAS)
 	titre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1864,17 +1867,18 @@ func _ligne_score() -> String:
 	if _teams.size() < 2 or marque.size() < 2 or not _teams[0] is Dictionary or not _teams[1] is Dictionary: return ""
 	return "%s   %d — %d   %s" % [S.G.club_name(_teams[0]), int(marque[0]), int(marque[1]), S.G.club_name(_teams[1])]
 
-## Cadre de la bannière : aplat à plat, bord droit incliné de 10° (charte §3), sans ombre ni dégradé.
+## Cadre de la bannière (charte finale §3, §4.3) : rayon 18, sans bordure, ombre portée de la charte ; pour un essai, aplat plein à la
+## couleur du club qui marque (exception de Léo du 20/11/2026) ; mi-temps et fin : panneau `PANNEAU` à 90 %.
+## Nom historique gardé (les recettes et le match filmé le lisent) : le cadre est droit.
 class CadreIncline extends PanelContainer:
-	var fond := Charte.PANNEAU_3
+	var fond := Charte.PANNEAU
 	func _draw() -> void:
-		var d := Charte.decalage(size.y)
-		draw_colored_polygon(PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0.0), Vector2(size.x - d, size.y), Vector2(0.0, size.y)]), fond)
+		draw_style_box(Charte.style_panneau(Color(fond, 0.9 if fond == Charte.PANNEAU else 1.0), Charte.RAYON_PANNEAU, 0), Rect2(Vector2.ZERO, size))
 
-## Bannière des grands moments, façon retransmission (charte §7, revue DA du 19/11/2026, emprunt de la
-## variante 2) : « ESSAI » à la couleur du club qui marque, filet, le marqueur et « club · minute », puis
-## les points et le score à droite ; « MI-TEMPS » et « FIN DU MATCH » sur panneau. Une seule bannière à la
-## fois, texte ivoire, aucun or. Ne capte jamais la souris.
+## Bannière des grands moments, façon retransmission (charte finale §7) : « ESSAI » en aplat à la couleur du club
+## qui marque (exception de Léo du 20/11/2026), filet, le marqueur et « club · minute », puis les points et le score à droite ;
+## « MI-TEMPS » et « FIN DU MATCH » sur panneau. Une seule bannière à la fois, texte crème, aucun
+## aplat doré. Ne capte jamais la souris.
 static func construire_bandeau() -> PanelContainer:
 	var cadre := CadreIncline.new()
 	cadre.name = "MatchMomentBandeau"
@@ -1893,14 +1897,14 @@ static func construire_bandeau() -> PanelContainer:
 	cadre.add_child(ligne)
 	var titre := S.label("", 36, Charte.IVOIRE)
 	titre.name = "MatchMomentTitre"
-	titre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	titre.add_theme_font_override("font", Charte.TITRE_EXTRA)
 	titre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	titre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ligne.add_child(titre)
 	var filet := ColorRect.new()
 	filet.name = "MatchMomentFilet"
-	filet.color = Color(Charte.IVOIRE, 0.4)
+	filet.color = Charte.FILET
 	filet.custom_minimum_size = Vector2(1, 0)
 	filet.size_flags_vertical = Control.SIZE_FILL
 	filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1925,7 +1929,7 @@ static func construire_bandeau() -> PanelContainer:
 	# Points marqués et score (« +5 », « 15 – 7 ») : deux lignes calées à droite.
 	var points := S.label("", 22, Charte.IVOIRE)
 	points.name = "MatchMomentPoints"
-	points.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	points.add_theme_font_override("font", Charte.TITRE_EXTRA)
 	points.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	points.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	points.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -1940,10 +1944,11 @@ static func construire_bandeau() -> PanelContainer:
 static func tailles_bandeau(hauteur: float) -> Dictionary:
 	return {"titre": clampi(roundi(hauteur * 0.045), 30, 72), "nom": clampi(roundi(hauteur * 0.024), 18, 40), "equipe": clampi(roundi(hauteur * 0.0185), 14, 30)}
 
-## Fond de la bannière : la couleur du club qui marque, assombrie si besoin pour l'ivoire (≥ 4,6:1) ; un club
-## jaune ou or ne prend jamais l'or (Charte) ; sans club (mi-temps, fin) : panneau.
-static func fond_bandeau(couleur: Color) -> Color:
-	if couleur.a <= 0.0: return Charte.PANNEAU_3
+## Fond de la bannière : le panneau, sauf pour un essai (exception de Léo du 20/11/2026, art-bible §4.3).
+static func fond_bandeau(couleur: Color = Color.TRANSPARENT) -> Color:
+	# Essai : la couleur du club qui marque, assombrie pour la crème (≥ 4,6:1) ; un club jaune ou or ne prend
+	# jamais l'or (il passe au bordeaux de la charte).
+	if couleur.a <= 0.0: return Charte.PANNEAU
 	var base := Charte.CLUB if Charte._proche_de_l_or(couleur) else Color(couleur, 1.0)
 	return C08.readable_primary_fill(base)
 
@@ -1968,7 +1973,7 @@ static func habiller_bandeau(cadre: PanelContainer, titre: String, nom: String, 
 	var marges: StyleBox = cadre.get_theme_stylebox("panel")
 	if marges != null:
 		marges.content_margin_left = roundi(hauteur * 0.0185)
-		marges.content_margin_right = roundi(hauteur * 0.0185 + Charte.decalage(hauteur * 0.074))
+		marges.content_margin_right = roundi(hauteur * 0.0222)
 	cadre.reset_size()
 
 ## Ce que montre le bandeau (tests, capture) : {visible, titre, nom, equipe, points, fond}.

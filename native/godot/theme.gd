@@ -23,7 +23,7 @@ static func box(color: Color, radius: int = 8, border: Color = Color.TRANSPARENT
 	s.content_margin_right = 8
 	s.content_margin_top = 4
 	s.content_margin_bottom = 4
-	return s
+	return Charte.ombrer(s)
 
 static func pilule(color: Color, border: Color = Color.TRANSPARENT) -> StyleBoxFlat:
 	var s := box(color, Charte.RAYON_PILULE, border)
@@ -52,7 +52,7 @@ static func make() -> Theme:
 	t.set_stylebox("normal", "OptionButton", pilule(PANEL_ALT, LINE))
 	t.set_stylebox("hover", "OptionButton", pilule(Charte.PANNEAU_2, INK))
 	t.set_stylebox("focus", "OptionButton", focus)
-	t.set_stylebox("panel", "PopupMenu", box(PANEL, 12))
+	t.set_stylebox("panel", "PopupMenu", Charte.sans_ombre(box(PANEL, 12)))
 	t.set_stylebox("hover", "PopupMenu", box(Charte.PANNEAU_3, 8))
 	t.set_stylebox("normal","LineEdit",pilule(PANEL_ALT,LINE))
 	var edit_focus := pilule(PANEL_ALT, Charte.OR)

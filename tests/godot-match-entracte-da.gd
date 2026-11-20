@@ -6,7 +6,9 @@ extends SceneTree
 ## commande) ; aucun clic n'ouvre de fenêtre (seul le menu « Plus ▾ » est un menu déroulant, exception de Léo) ;
 ## un seul aplat doré (bouton principal) ; aucun texte sous 12 px ; les noms mènent à la fiche (survol :
 ## mini-fiche) ; le panneau d'arrêt prend la colonne de droite et bloque Équipe jusqu'au choix ; le clavier
-## (Espace, Échap, T) suit la fiche UX.
+## (Espace, Échap, T) suit la fiche UX. Charte finale du 20/11/2026 (design/art/art-bible.md) : panneaux arrondis sans
+## cadre, cases et lignes à 6 px, aucune bande alternée, titres droits, nous vert clair / adversaire doré dans les
+## comparaisons (jamais la couleur d'un club), rouge réservé aux cartons.
 const Between = preload("res://ui/contextual/match_between.gd")
 const Charte = preload("res://ui/charte.gd")
 var checks := 0
@@ -49,11 +51,12 @@ func donnees() -> Array:
 	var feuille := {"joueurs": {}}
 	for n in 15:
 		var id := "p%d" % (n + 1)
-		lineup.append({"id": id, "name": "Joueur Numéro%d" % (n + 1), "pos": POSTES[n], "condition": 38 if n == 6 else 70 + n, "injury": 0})
+		lineup.append({"id": id, "name": "Darren DOWNES" if n == 12 else "Joueur Numéro%d" % (n + 1), "pos": POSTES[n], "condition": 38 if n == 6 else 70 + n, "injury": 0})
 		notes[id] = {"note": 6.0 + n * 0.1, "faits": n}
 		feuille.joueurs[id] = {"camp": 0, "plaquages": n % 7, "plaquagesManques": 1, "metres": n * 3, "essais": 1 if n == 11 else 0, "courses": 2, "passes": 3}
 	var reserves: Array = []
-	for n in 8: reserves.append({"id": "r%d" % (n + 16), "name": "Remplaçant Banc%d" % (n + 16), "pos": POSTES[n % 15]})
+	# Le 21 porte le nom le plus long du banc d'un vrai match (« Matthew BOOTHROYD ») : il doit se lire en entier.
+	for n in 8: reserves.append({"id": "r%d" % (n + 16), "name": "Matthew BOOTHROYD" if n == 5 else "Remplaçant Banc%d" % (n + 16), "pos": POSTES[n % 15]})
 	var live := {"teams": equipes, "events": [], "finished": false, "paused": false, "atBreak": true, "minute": 40, "lineup": lineup, "reserves": reserves, "remplacementsRestants": 8,
 		"pilotage": {"conseilChangement": {"outId": "p7", "inId": "r20"}}}
 	var tableau := [
@@ -66,7 +69,7 @@ func donnees() -> Array:
 		{"cle": "penalites", "label": "Pénalités concédées", "valeurs": [4, 6]}]
 	var minutes: Array = []
 	for m in 40: minutes.append(int(sin(m * 0.4) * 60.0))
-	var direct := {"camp": 0, "score": [10, 7], "borne": 0, "fil": [{"i": 3, "horloge": "38′", "kind": "try", "equipe": 0, "texte": "AFN · Essai de Joueur Numéro12."}], "tableau": tableau,
+	var direct := {"camp": 0, "score": [10, 7], "borne": 0, "cartons": [{"id": "p13", "retour": 42}], "fil": [{"i": 3, "horloge": "38′", "kind": "try", "equipe": 0, "texte": "AFN · Essai de Joueur Numéro12."}], "tableau": tableau,
 		"zone22": {"entrees": [5, 3], "points": [10, 7], "secondes": [150, 40]}, "domination": {"minutes": minutes, "miTemps": null},
 		"reperes": [{"i": 3, "kind": "try", "equipe": 0, "horloge": "38′", "minute": 38, "x": 95, "nom": "Joueur Numéro12", "score": [10, 7]}, {"i": 2, "kind": "goal", "equipe": 1, "horloge": "12′", "minute": 12, "x": 20, "score": [0, 3]}, {"i": 1, "kind": "goal", "equipe": 1, "horloge": "13′", "minute": 13, "x": 20, "score": [0, 6]}], "notes": notes, "feuille": feuille, "possession": 0, "zone": {"x": 60},
 		"niveaux": [{"id": "aucun", "label": "Aucun"}, {"id": "resume", "label": "Résumé"}, {"id": "cles", "label": "Clés"}, {"id": "etendus", "label": "Étendus"}, {"id": "dynamique", "label": "Dynamique"}, {"id": "integral", "label": "Intégral"}],
@@ -179,11 +182,65 @@ func run() -> void:
 			if (c is Label or c is Button) and c.get_theme_font_size("font_size") < 12: petits.append(str(c.name))
 			if aplat_or(c) and not (c is BaseButton): dores.append(str(c.name))
 		check(petits.is_empty(), cadre + " : aucun texte sous 12 px " + str(petits.slice(0, 6)))
+		# Titres droits (plus de coupe italique), rouge réservé aux cartons (aucun texte rouge).
+		var penches: Array = []
+		var rouges: Array = []
+		for noeud: Node in ecran.find_children("*", "Control", true, false):
+			var c := noeud as Control
+			if not c.is_visible_in_tree(): continue
+			if (c is Label or c is Button) and c.get_theme_font("font") != null and c.get_theme_font("font").resource_path.to_lower().contains("italic"): penches.append(str(c.name))
+			if c.has_theme_color_override("font_color") and c.get_theme_color("font_color").is_equal_approx(Charte.ROUGE): rouges.append(str(c.name))
+		check(penches.is_empty(), cadre + " : titres droits, aucune coupe italique " + str(penches.slice(0, 6)))
+		check(rouges.is_empty(), cadre + " : aucun texte rouge (réservé aux cartons) " + str(rouges.slice(0, 6)))
+		# Pas de bandes alternées : lignes de Mon XV et du banc transparentes, filet entre elles (seule une ligne
+		# signalée porte le voile doré, avec son mot).
+		var bandes: Array = []
+		var lignes_vues := 0
+		for ligne: Node in ecran.find_children("MatchBetween*", "Button", true, false):
+			var n := str(ligne.name)
+			if not (n.begins_with("MatchBetweenPlayer") or n.begins_with("MatchBetweenBench")) or n.begins_with("MatchBetweenPlayerName_"): continue
+			var normal := (ligne as Control).get_theme_stylebox("normal") as StyleBoxFlat
+			if normal == null: continue
+			lignes_vues += 1
+			if ligne.has_meta("signale"):
+				if not normal.bg_color.is_equal_approx(Charte.VOILE_DORE): bandes.append(n + " signalée")
+			elif normal.bg_color.a > 0.05 or normal.border_width_bottom < 1: bandes.append(n)
+		check(lignes_vues >= 23 and bandes.is_empty(), cadre + " : %d lignes sans bandes alternées, filet entre elles %s" % [lignes_vues, str(bandes.slice(0, 6))])
+		# Comparaisons : nous vert clair, l'adversaire doré, jamais la couleur d'un club.
+		var barres: Array = ecran.chiffres.find_children("*", "Control", true, false).filter(func(n: Node): return n.get("valeurs") != null and n.get("couleurs") != null)
+		check(not barres.is_empty() and barres.all(func(b: Control): return (b.get("couleurs") as Array)[0] == Charte.V and (b.get("couleurs") as Array)[1] == Charte.D), cadre + " : barres des chiffres clés en vert clair (nous) et doré (eux)")
 		check(dores.is_empty(), cadre + " : aucun aplat doré hors bouton principal " + str(dores.slice(0, 6)))
 		# Banc : zone fixe, entière dans l'écran ; barème des notes écrit ; terrain qui remplit sa tuile.
 		var zone_banc := ecran.find_child("MatchBetweenBenchZone", true, false) as Control
 		check(zone_banc != null and zone_banc.is_visible_in_tree() and dans(zone_banc.get_global_rect(), ecran_rect) and not (ecran.find_child("MatchBetweenSquadScroll", true, false) as Node).is_ancestor_of(zone_banc), cadre + " : banc dans une zone fixe, visible en entier")
 		check(banc.all(func(b: Control): return zone_banc.get_global_rect().grow(1.0).encloses(b.get_global_rect())), cadre + " : les huit remplaçants à l'écran")
+		# Défauts du match (20/11) : la dernière ligne de Mon XV et le total de l'équipe sont entiers à l'écran, et aucun
+		# nom de joueur (Mon XV, banc) n'est tronqué.
+		var defile_xv := ecran.find_child("MatchBetweenSquadScroll", true, false) as ScrollContainer
+		var dernier := ecran.find_child("MatchBetweenPlayer15", true, false) as Control
+		var total_equipe := ecran.find_child("MatchBetweenTeamTotal", true, false) as Control
+		check(dernier != null and defile_xv != null and defile_xv.get_global_rect().grow(1.0).encloses(dernier.get_global_rect()), cadre + " : la dernière ligne de Mon XV (15) est entière dans la zone de défilement (%s dans %s)" % [str(dernier.get_global_rect()) if dernier != null else "absente", str(defile_xv.get_global_rect()) if defile_xv != null else "absent"])
+		check(total_equipe != null and total_equipe.is_visible_in_tree() and dans(total_equipe.get_global_rect(), ecran_rect) and not defile_xv.is_ancestor_of(total_equipe) and total_equipe.get_global_rect().position.y >= dernier.get_global_rect().end.y - 1.0, cadre + " : la ligne « Équipe » est un pied fixe, entier, sous la ligne 15 (%s)" % (str(total_equipe.get_global_rect()) if total_equipe != null else "absente"))
+		check(zone_banc.get_global_rect().position.y >= total_equipe.get_global_rect().end.y - 1.0, cadre + " : le pied ne passe pas sous le banc")
+		for i in 3: await process_frame
+		var total_coupe: Array = []
+		for etiquette: Label in total_equipe.find_children("*", "Label", true, false):
+			var large := etiquette.get_theme_font("font").get_string_size(etiquette.text, HORIZONTAL_ALIGNMENT_LEFT, -1, etiquette.get_theme_font_size("font_size")).x
+			if etiquette.visible and etiquette.size.x + 1.0 < large: total_coupe.append("%s (%d sur %d px)" % [etiquette.text, int(etiquette.size.x), int(large)])
+		check(total_coupe.is_empty(), cadre + " : la ligne « Équipe » se lit en entier " + str(total_coupe))
+		var coupes: Array = []
+		for lien: Button in ecran.find_children("MatchBetweenPlayerName_*", "Button", true, false):
+			var entier := str(lien.get_meta("nom_entier", lien.text))
+			var largeur := lien.get_theme_font("font").get_string_size(entier, HORIZONTAL_ALIGNMENT_LEFT, -1, lien.get_theme_font_size("font_size")).x
+			# Alerte longue à côté du nom : le prénom devient une initiale (« D. DOWNES »), jamais de « … » sur le nom.
+			var abrege := lien.text != entier and not lien.text.contains("…") and lien.text.ends_with(entier.get_slice(" ", entier.get_slice_count(" ") - 1))
+			var largeur_vue := lien.get_theme_font("font").get_string_size(lien.text, HORIZONTAL_ALIGNMENT_LEFT, -1, lien.get_theme_font_size("font_size")).x
+			if (lien.text != entier and not abrege) or (not abrege and lien.size.x + 1.0 < largeur) or (abrege and lien.size.x + 1.0 < largeur_vue): coupes.append("%s (%s, %d px sur %d)" % [entier, lien.text, int(lien.size.x), int(largeur)])
+		check(coupes.is_empty(), cadre + " : aucun nom de joueur tronqué " + str(coupes))
+		var bouton_downes := ecran.find_child("MatchBetweenPlayerName_p13", true, false) as Button
+		check(bouton_downes != null and not bouton_downes.text.contains("…") and bouton_downes.text.ends_with("DOWNES") and (bouton_downes.text == "Darren DOWNES" or bouton_downes.text == "D. DOWNES"), cadre + " : avec une alerte longue, le nom de famille n'est jamais coupé (%s)" % (bouton_downes.text if bouton_downes != null else "absent"))
+		var bouton_boothroyd := ecran.find_child("MatchBetweenPlayerName_r21", true, false) as Button
+		check(bouton_boothroyd != null and bouton_boothroyd.text == "Matthew BOOTHROYD", cadre + " : « Matthew BOOTHROYD » se lit en entier sur le banc (%s)" % (bouton_boothroyd.text if bouton_boothroyd != null else "absent"))
 		var legende := ecran.find_child("MatchBetweenNotesLegend", true, false) as Control
 		check(legende != null and legende.is_visible_in_tree() and legende.get_child_count() == 6, cadre + " : barème des notes écrit sous Mon XV")
 		check(not Charte.ATTRIBUT_85.is_equal_approx(Charte.ATTRIBUT_65) and not Between._teinte_note(7.8).is_equal_approx(Charte.V) and not Between._teinte_note(7.2).is_equal_approx(Charte.V), cadre + " : deux verts distincts, jamais le vert de la victoire")
@@ -299,19 +356,29 @@ func run() -> void:
 			var i := b.find_child("MatchBetweenStopInfo", false, false) as Button
 			infos_ok = infos_ok and i != null and i.text == "i" and str(i.get_meta("player_id", "")) == str(b.get_meta("option_id")) and i.pressed.get_connections().size() > 0
 		check(infos_ok, cadre + " : « i » vers la fiche sur chaque option d'arrêt")
-		# Jamais de cadre complet (charte §3) : aucun style à quatre filets, quel que soit l'état (arrêt et option retenue compris).
+		# Charte finale : aucun cadre complet, hors les deux contours permis (anneau de focus doré ; bouton secondaire
+		# ou éteint : pilule à contour `FILET`), quel que soit l'état (arrêt et option retenue compris).
 		var cadres: Array = []
+		var carres: Array = []
 		for noeud: Node in ecran.find_children("*", "Control", true, false):
 			# Nœuds internes du moteur (« _focus » des défilements : anneau de focus clavier) : hors de l'écran dessiné.
 			if str(noeud.name).begins_with("_"): continue
 			for etat_style in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed", "panel"]:
 				var s := (noeud as Control).get_theme_stylebox(etat_style) as StyleBoxFlat if (noeud as Control).has_theme_stylebox_override(etat_style) else null
-				if s != null and s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0: cadres.append("%s:%s" % [noeud.name, etat_style])
-		check(cadres.is_empty(), cadre + " : aucun cadre complet " + str(cadres.slice(0, 6)))
-		# Menus déroulants habillés : fond opaque, angles droits, sans ombre.
+				if s == null: continue
+				if s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0:
+					var anneau: bool = etat_style == "focus" and Color(s.border_color, 1.0).is_equal_approx(Charte.OR)
+					var secondaire: bool = Color(s.border_color, 1.0).is_equal_approx(Charte.FILET) and s.corner_radius_top_left >= Charte.RAYON_PILULE
+					if not anneau and not secondaire: cadres.append("%s:%s" % [noeud.name, etat_style])
+				# Tout aplat visible est arrondi (panneau 18, carte 12, case 6, pilule) ; seul le fondu du multiplex, de la
+				# couleur du panneau qu'il recouvre (invisible sur lui), garde ses angles.
+				if s.bg_color.a > 0.05 and s.corner_radius_top_left < Charte.RAYON_PETIT and str(noeud.name) != "MatchBetweenMultiplexFade": carres.append("%s:%s" % [noeud.name, etat_style])
+		check(cadres.is_empty(), cadre + " : aucun cadre complet hors anneau de focus et bouton secondaire " + str(cadres.slice(0, 6)))
+		check(carres.is_empty(), cadre + " : aucun aplat à angles droits (charte finale : 18 / 12 / 6 / pilule) " + str(carres.slice(0, 6)))
+		# Menus déroulants habillés : carte opaque arrondie (12), sans ombre.
 		for menu_style: PopupMenu in [menu_plus, ecran.menu_reglages]:
 			var fond_menu := menu_style.get_theme_stylebox("panel") as StyleBoxFlat
-			check(fond_menu != null and fond_menu.bg_color.a == 1.0 and fond_menu.corner_radius_top_left == 0 and fond_menu.shadow_size == 0, cadre + " : menu %s à la charte" % menu_style.name)
+			check(fond_menu != null and fond_menu.bg_color.a == 1.0 and fond_menu.corner_radius_top_left == Charte.RAYON_CARTE and fond_menu.shadow_size == 0, cadre + " : menu %s à la charte" % menu_style.name)
 		ecran.arret_reprendre.pressed.emit()
 		for i in 2: await process_frame
 		var envois: Array = app.get("envois")

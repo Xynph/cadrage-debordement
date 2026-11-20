@@ -112,25 +112,18 @@ var _reprendre_apres := false
 ## Pause demandée pendant une réponse du moteur : envoyée dès qu'il est libre.
 var _pause_voulue := 0
 
-## Bandeau du score façon retransmission (charte §3, §7) : segments à plat posés côte à côte, le dernier
-## (plaque du club visiteur) avec le bord droit incliné de 10°. Chaque segment porte sa couleur en méta « fond ».
+## Bandeau du score (charte finale §7) : un seul panneau `PANNEAU` à 90 %, rayon 18, sans bordure ; un filet
+## sépare l'horloge des plaques. La couleur des clubs ne vit que sur l'écusson (puce du sigle) de chaque plaque.
 class BandeauAngle extends HBoxContainer:
+	const FOND := Color(Charte.PANNEAU, 0.9)
 	func _ready() -> void:
 		add_theme_constant_override("separation", 0)
 		sort_children.connect(queue_redraw)
 	func _draw() -> void:
-		var visibles: Array[Control] = []
-		for enfant in get_children():
-			if enfant is Control and (enfant as Control).visible: visibles.append(enfant)
-		for i in visibles.size():
-			var segment: Control = visibles[i]
-			var fond: Color = segment.get_meta("fond", Color.TRANSPARENT)
-			var r := Rect2(segment.position, segment.size)
-			if i == visibles.size() - 1:
-				var d := Charte.decalage(r.size.y)
-				draw_colored_polygon(PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), Vector2(r.end.x - d, r.end.y), Vector2(r.position.x, r.end.y)]), fond)
-			else:
-				draw_rect(r, fond)
+		draw_style_box(Charte.style_panneau(FOND, Charte.RAYON_PANNEAU, 0), Rect2(Vector2.ZERO, size))
+		var horloge: Control = get_node_or_null("MatchClockBlock")
+		if horloge != null and horloge.visible:
+			draw_rect(Rect2(horloge.position.x + horloge.size.x, size.y * 0.2, 1.0, size.y * 0.6), Charte.FILET)
 
 func _ready() -> void:
 	name = "ContextualLiveMatch"
@@ -169,6 +162,7 @@ func _ready() -> void:
 		bande_temps_forts.alignment = BoxContainer.ALIGNMENT_END
 		bande_temps_forts.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		C.fill(bande_temps_forts)
+		bande_temps_forts.draw.connect(_fond_bande)
 		haut.add_child(bande_temps_forts)
 	else:
 		var vide := Control.new()
@@ -249,24 +243,26 @@ func _ready() -> void:
 
 # --- Construction ---------------------------------------------------------------
 
-## Fond des éléments posés sur l'image : panneau à 85 %, rayon 0, sans cadre (charte §7).
-static func _fond_hud(marges: Vector4, couleur: Color = Color(Charte.PANNEAU, 0.85)) -> StyleBoxFlat:
+## Fond des éléments posés sur l'image : panneau à 90 %, sans cadre ; rayon 18 (panneau) par défaut, 6 pour
+## une case, `RAYON_PILULE` pour une commande (charte finale §3, §7).
+static func _fond_hud(marges: Vector4, couleur: Color = Color(Charte.PANNEAU, 0.9), rayon: int = Charte.RAYON_PANNEAU) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = couleur
-	style.set_corner_radius_all(0)
+	style.set_corner_radius_all(rayon)
+	style.anti_aliasing = true
 	style.content_margin_left = marges.x
 	style.content_margin_top = marges.y
 	style.content_margin_right = marges.z
 	style.content_margin_bottom = marges.w
-	return style
+	return Charte.ombrer(style, rayon)
 
 ## Puce de touche (« Espace », « Échap ») : panneau haut, texte ivoire secondaire.
 static func _touche(texte: String) -> PanelContainer:
 	var puce := PanelContainer.new()
 	puce.name = "Touche"
 	puce.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Charte §3 : rayons 0 (angles droits, comme la maquette).
-	puce.add_theme_stylebox_override("panel", _fond_hud(Vector4(7, 1, 7, 1), Charte.PANNEAU_3))
+	# Charte finale §3 : une puce de touche est une case (rayon 6).
+	puce.add_theme_stylebox_override("panel", _fond_hud(Vector4(7, 1, 7, 1), Charte.PANNEAU_3, Charte.RAYON_PETIT))
 	var lettre := Label.new()
 	lettre.text = texte
 	lettre.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -276,8 +272,8 @@ static func _touche(texte: String) -> PanelContainer:
 	puce.add_child(lettre)
 	return puce
 
-## Commande du HUD (Pause, rappel Échap) : texte ivoire sur panneau 85 %, puce de la touche à droite (ou à
-## gauche), survol en panneau plus clair et soulignement au focus. Tout le pavé est cliquable.
+## Commande du HUD (Pause, rappel Échap) : pilule, texte crème sur panneau 90 %, puce de la touche à droite (ou à
+## gauche), survol en panneau plus clair, anneau doré au focus. Tout le pavé est cliquable.
 func _bouton_hud(texte: String, touche: String, action: Callable, nom: String, puce_a_gauche: bool = false) -> Button:
 	var bouton := Button.new()
 	bouton.name = nom
@@ -312,17 +308,63 @@ func _habiller_bouton_hud(bouton: Button) -> void:
 	var largeur_puce := puce.get_combined_minimum_size().x if puce != null else 0.0
 	var a_gauche := bool(bouton.get_meta("puce_a_gauche", false))
 	for etat in ["normal", "hover", "pressed", "focus", "disabled"]:
-		var couleur := Color(Charte.PANNEAU, 0.85)
+		var couleur := Color(Charte.PANNEAU, 0.9)
 		if etat in ["hover", "pressed"]: couleur = Charte.PANNEAU_2
 		if etat == "focus": couleur = Color(0, 0, 0, 0)
-		var cote := roundf(14 * echelle)
-		var style := _fond_hud(Vector4(cote + (largeur_puce + 10 * echelle if a_gauche else 0.0), 0, cote + (0.0 if a_gauche else largeur_puce + 10 * echelle), 0), couleur)
+		var cote := roundf(16 * echelle)
+		var style := _fond_hud(Vector4(cote + (largeur_puce + 10 * echelle if a_gauche else 0.0), 0, cote + (0.0 if a_gauche else largeur_puce + 10 * echelle), 0), couleur, Charte.RAYON_PILULE)
 		if etat == "focus":
-			style.border_color = Charte.IVOIRE
-			style.border_width_bottom = maxi(1, roundi(2 * echelle))
+			# Anneau de focus de la charte : doré, 2 px, décalé de 2 px.
+			style.border_color = Charte.OR
+			style.set_border_width_all(2)
+			style.set_expand_margin_all(2)
 		bouton.add_theme_stylebox_override(etat, style)
 	bouton.custom_minimum_size = Vector2(0, roundf(40 * echelle))
 	_placer_puce(bouton)
+
+## Fond de la bande des commandes (phrase d'état, Équipe, Réglages, Plus), dans la continuité du bandeau du score :
+## le même panneau à 90 %, rayon 18, à la même hauteur, derrière la phrase (à sa largeur de texte) et derrière le
+## groupe des commandes. Sur la 3D, rien de la barre du haut ne reste posé à nu sur l'image.
+func _fond_bande() -> void:
+	var bande := bande_temps_forts
+	if bande == null or not is_instance_valid(_coque_score): return
+	var hauteur := maxf(_coque_score.size.y, bande.size.y)
+	var haut := roundf((bande.size.y - hauteur) * 0.5)
+	var marge := roundf(14 * echelle)
+	var style := Charte.style_panneau(BandeauAngle.FOND, Charte.RAYON_PANNEAU, 0)
+	var groupe := Rect2()
+	for enfant in bande.get_children():
+		var c := enfant as Control
+		if c == null or not c.visible: continue
+		if c is Label and c.size_flags_horizontal & Control.SIZE_EXPAND:
+			var texte := (c as Label).text.strip_edges()
+			if texte.is_empty(): continue
+			var largeur := c.get_theme_font("font").get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, c.get_theme_font_size("font_size")).x + 2.0 * marge
+			bande.draw_style_box(style, Rect2(c.position.x, haut, minf(c.size.x, largeur), hauteur))
+			continue
+		var r := Rect2(c.position, c.size)
+		groupe = r if groupe.size == Vector2.ZERO else groupe.merge(r)
+	if groupe.size != Vector2.ZERO:
+		bande.draw_style_box(style, Rect2(groupe.position.x - marge, haut, groupe.size.x + 2.0 * marge, hauteur))
+
+## Redessine le fond de la bande quand ce qu'elle montre change (texte de la phrase, commandes visibles, taille).
+var _cle_bande := ""
+func _suivre_fond_bande() -> void:
+	if bande_temps_forts == null or not bande_temps_forts.visible: return
+	var cle := str(bande_temps_forts.size)
+	for enfant in bande_temps_forts.get_children():
+		var c := enfant as Control
+		if c == null: continue
+		# La phrase garde une marge intérieure : son texte ne touche pas le bord de son fond.
+		if c is Label and c.size_flags_horizontal & Control.SIZE_EXPAND and not c.has_theme_stylebox_override("normal"):
+			var retrait := StyleBoxEmpty.new()
+			retrait.content_margin_left = roundf(14 * echelle)
+			retrait.content_margin_right = roundf(14 * echelle)
+			c.add_theme_stylebox_override("normal", retrait)
+		cle += "|%s%s%s" % [c.visible, c.position, (c as Label).text if c is Label else ""]
+	if cle == _cle_bande: return
+	_cle_bande = cle
+	bande_temps_forts.queue_redraw()
 
 ## Bandeau d'angle : [horloge / période] [plaque du club recevant] [score] [plaque du visiteur ⟋].
 func _construire_bandeau(parent: Control) -> void:
@@ -339,7 +381,7 @@ func _construire_bandeau(parent: Control) -> void:
 	pile.add_theme_constant_override("separation", -4)
 	pile.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	horloge.add_child(pile)
-	clock = _texte("", Charte.TITRE_EXTRA_ITALIQUE, Charte.IVOIRE)
+	clock = _texte("", Charte.TITRE_EXTRA, Charte.IVOIRE)
 	clock.name = "MatchClock"
 	clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	pile.add_child(clock)
@@ -348,18 +390,18 @@ func _construire_bandeau(parent: Control) -> void:
 	phase.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	pile.add_child(phase)
 	for cote in 2:
-		var sigle := _texte("", Charte.TITRE_EXTRA_ITALIQUE, Charte.IVOIRE)
+		var sigle := _texte("", Charte.TITRE_EXTRA, Charte.IVOIRE)
 		sigle.name = "MatchCompactAbbr%d" % cote
 		sigle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_sigles.append(sigle)
-	home = _texte("", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
+	home = _texte("", Charte.TITRE_GRAS, Charte.IVOIRE)
 	home.name = "MatchHomeName"
-	away = _texte("", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
+	away = _texte("", Charte.TITRE_GRAS, Charte.IVOIRE)
 	away.name = "MatchAwayName"
 	bandeau.add_child(_plaque(0))
 	var bloc_score := _segment("MatchScoreBlock", Charte.PANNEAU)
 	bandeau.add_child(bloc_score)
-	score = _texte("", Charte.TITRE_EXTRA_ITALIQUE, Charte.IVOIRE)
+	score = _texte("", Charte.TITRE_EXTRA, Charte.IVOIRE)
 	score.name = "MatchScore"
 	score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bloc_score.add_child(score)
@@ -369,7 +411,6 @@ func _segment(nom: String, fond: Color) -> PanelContainer:
 	var segment := PanelContainer.new()
 	segment.name = nom
 	segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	segment.set_meta("fond", fond)
 	segment.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	return segment
 
@@ -436,8 +477,8 @@ func _plaque(cote: int) -> PanelContainer:
 	plaques.append(plaque)
 	return plaque
 
-## Journal en bas à gauche (charte §7) : deux faits, minute en italique, texte DM Sans 16 px sur panneau
-## 85 % ; le plus ancien en ivoire secondaire. Les noms de nos joueurs sont des liens (survol : mini-fiche ;
+## Journal en bas à gauche (charte §7) : deux faits, minute en Barlow Condensed droite, texte DM Sans 16 px sur
+## panneau 90 % rayon 18 ; le plus ancien en ivoire secondaire. Les noms de nos joueurs sont des liens (survol : mini-fiche ;
 ## clic : la fenêtre Équipe sur lui).
 func _construire_journal(frame: Control) -> void:
 	var rangee := S.G.h(10)
@@ -467,7 +508,7 @@ func _construire_journal(frame: Control) -> void:
 		ligne.mouse_filter = Control.MOUSE_FILTER_PASS
 		ligne.add_theme_constant_override("separation", 12)
 		colonne.add_child(ligne)
-		var minute := _texte("", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE if rang == 0 else Charte.IVOIRE_2)
+		var minute := _texte("", Charte.TITRE_GRAS, Charte.IVOIRE if rang == 0 else Charte.IVOIRE_2)
 		minute.name = "Minute"
 		minute.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 		ligne.add_child(minute)
@@ -490,7 +531,7 @@ func _construire_journal(frame: Control) -> void:
 	rangee.add_child(S.G.spacer())
 
 ## Barre du bas : repli sans régie (caméras, cadence, tiroirs) et fin de match (« Valider la journée »,
-## action principale en ivoire plein ; l'or reste à Continuer, dans la coque).
+## action principale : la seule pilule dorée du direct, charte finale §4.3).
 func _construire_barre_bas(frame: Control) -> void:
 	var cadre := PanelContainer.new()
 	cadre.name = "MatchBottomBar"
@@ -565,11 +606,8 @@ func _construire_tiroir() -> void:
 		bande_temps_forts.item_rect_changed.connect(caler)
 	drawer.anchor_bottom = 1
 	drawer.offset_bottom = -90
-	# Charte §3 : aucun cadre complet ; un filet à gauche seul détache le tiroir de l'image.
-	var fond := _fond_hud(Vector4.ZERO, Charte.PANNEAU)
-	fond.border_color = Charte.FILET
-	fond.border_width_left = 1
-	drawer.add_theme_stylebox_override("panel", fond)
+	# Charte finale §3 : panneau rayon 18, sans bordure ; il se détache de l'image par sa clarté.
+	drawer.add_theme_stylebox_override("panel", _fond_hud(Vector4.ZERO, Charte.PANNEAU))
 	add_child(drawer)
 	var drawer_margin := S.G.margin(14)
 	drawer.add_child(drawer_margin)
@@ -579,7 +617,7 @@ func _construire_tiroir() -> void:
 	drawer_body = S.G.scroll(drawer_column)
 	S.G.fill(drawer_body.get_parent(), true)
 	_journal_shell = PanelContainer.new()
-	_journal_shell.add_theme_stylebox_override("panel", _fond_hud(Vector4.ZERO, Charte.PANNEAU))
+	_journal_shell.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	S.G.fill(_journal_shell, true)
 	drawer_column.add_child(_journal_shell)
 	var journal_margin := S.G.margin(8)
@@ -621,13 +659,13 @@ func _mettre_a_l_echelle() -> void:
 	for nom: Label in [home, away]: nom.add_theme_font_size_override("font_size", t.call("equipe"))
 	for sigle: Label in _sigles: sigle.add_theme_font_size_override("font_size", t.call("sigle"))
 	var hauteur := roundf(BANDEAU_HAUTEUR * echelle)
-	var d := Charte.decalage(hauteur)
 	for segment: Control in _coque_score.get_children():
 		segment.custom_minimum_size.y = hauteur
 		var marges := StyleBoxEmpty.new()
 		marges.content_margin_left = roundf(12 * echelle)
 		marges.content_margin_right = roundf(16 * echelle)
-		if segment.name == "MatchClubPlaque1": marges.content_margin_right = roundf(16 * echelle + d)
+		if segment.name == "MatchClubPlaque1": marges.content_margin_right = roundf(18 * echelle)
+		if segment.name == "MatchClockBlock": marges.content_margin_left = roundf(14 * echelle)
 		if segment.name == "MatchScoreBlock":
 			marges.content_margin_left = roundf(16 * echelle)
 		segment.add_theme_stylebox_override("panel", marges)
@@ -701,6 +739,7 @@ func _etat_bandeau() -> Dictionary:
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(play) or not is_instance_valid(_coque_score): return
+	_suivre_fond_bande()
 	var etat := _etat_bandeau()
 	_poser_pause(etat)
 	if bool(etat.compact) != compact: _appliquer_bandeau(bool(etat.compact))
@@ -842,7 +881,8 @@ func update_frame(value: Dictionary) -> void:
 	if is_instance_valid(menu) and menu.visible: _actualiser_menu()
 	director._refresh_controls()
 
-## Couleur de chaque club sur sa plaque (assombrie pour l'ivoire ; jamais l'or), liseré du sigle.
+## Couleur de chaque club sur son écusson seulement (puce du sigle, rayon 6, assombrie pour la crème ; jamais
+## l'or) ; la plaque reste sur le panneau du bandeau (charte finale §4.3 : couleurs de club sur écusson, maillot, liseré).
 func _poser_plaques(teams: Array) -> void:
 	var cle := JSON.stringify(teams.map(func(t: Variant): return [S.G.club_name(t), S.G.identity(t).get("color", "")] if t is Dictionary else []))
 	if cle == _plaques_cle or plaques.size() < 2: return
@@ -851,13 +891,16 @@ func _poser_plaques(teams: Array) -> void:
 		var couleur := Charte.CLUB
 		if teams.size() > cote and teams[cote] is Dictionary:
 			couleur = Color.from_string(str(S.G.identity(teams[cote]).get("color", "")), Charte.CLUB)
-		plaques[cote].set_meta("fond", fond_plaque(couleur))
+		var ecusson := fond_plaque(couleur)
+		plaques[cote].set_meta("ecusson", ecusson)
 		var puce: PanelContainer = plaques[cote].find_child("MatchClubChip%d" % cote, true, false)
 		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0, 0, 0, 0)
-		style.border_color = Charte.club_trait(couleur)
-		style.set_border_width_all(maxi(1, roundi(2 * echelle)))
-		style.set_corner_radius_all(0)
+		style.bg_color = ecusson
+		# Club trop sombre pour se détacher du panneau : contour crème 12 % (FILET).
+		style.border_color = Charte.FILET if Charte.contraste(ecusson, Charte.PANNEAU) < 1.5 else Color(0, 0, 0, 0)
+		style.set_border_width_all(1 if style.border_color.a > 0 else 0)
+		style.set_corner_radius_all(Charte.RAYON_PETIT)
+		style.anti_aliasing = true
 		style.content_margin_left = roundf(7 * echelle)
 		style.content_margin_right = roundf(7 * echelle)
 		style.content_margin_top = roundf(2 * echelle)
@@ -875,7 +918,7 @@ func _poser_plaques(teams: Array) -> void:
 		plaques[cote].tooltip_text = ("%s : fiche du club (le match se met en pause)." % complet) if not complet.is_empty() else "Fiche du club (le match se met en pause)."
 	_coque_score.queue_redraw()
 
-## Fond d'une plaque : la vraie couleur du club, assombrie (même teinte) jusqu'à ce que l'ivoire y soit lu à
+## Fond de l'écusson d'une plaque : la vraie couleur du club, assombrie (même teinte) jusqu'à ce que l'ivoire y soit lu à
 ## 5:1 au moins, contraste mesuré comme la charte (Charte.contraste) ; un club jaune ou or passe au bordeaux
 ## de la charte (l'or reste à Continuer).
 const CONTRASTE_PLAQUE := 5.0
@@ -1191,7 +1234,8 @@ func _construire_menu() -> void:
 	add_child(menu)
 	_menu_panneau = PanelContainer.new()
 	_menu_panneau.name = "MatchMenuPanel"
-	_menu_panneau.add_theme_stylebox_override("panel", _fond_hud(Vector4(0, 20, 0, 0), Charte.PANNEAU))
+	# Menu pause : la seule fenêtre permise (charte finale §7.1), panneau rayon 18 sur l'écran voilé.
+	_menu_panneau.add_theme_stylebox_override("panel", _fond_hud(Vector4(12, 20, 12, 4), Charte.PANNEAU))
 	menu.add_child(_menu_panneau)
 	var colonne := VBoxContainer.new()
 	colonne.name = "MatchMenuColumn"
@@ -1213,14 +1257,14 @@ func _actualiser_menu() -> void:
 	S.clear(colonne)
 	var e := echelle
 	var tete := MarginContainer.new()
-	for bord in ["left", "right"]: tete.add_theme_constant_override("margin_" + bord, roundi(24 * e))
+	for bord in ["left", "right"]: tete.add_theme_constant_override("margin_" + bord, roundi(12 * e))
 	tete.add_theme_constant_override("margin_bottom", roundi(14 * e))
 	colonne.add_child(tete)
 	var pile := VBoxContainer.new()
 	pile.add_theme_constant_override("separation", roundi(4 * e))
 	tete.add_child(pile)
 	var minute := int(_live().get("minute", 0))
-	var titre := _texte("CONFIER LA FIN À L’ADJOINT" if _menu_mode == "deleguer" else "MENU DU MATCH", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
+	var titre := _texte("CONFIER LA FIN À L’ADJOINT" if _menu_mode == "deleguer" else "MENU DU MATCH", Charte.TITRE_GRAS, Charte.IVOIRE)
 	titre.name = "MatchMenuTitle"
 	titre.add_theme_font_size_override("font_size", roundi(24 * e))
 	pile.add_child(titre)
@@ -1248,7 +1292,7 @@ func _actualiser_menu() -> void:
 	pied.name = "MatchMenuKeys"
 	pied.add_theme_constant_override("separation", roundi(18 * e))
 	var marge_pied := MarginContainer.new()
-	for bord in ["left", "right"]: marge_pied.add_theme_constant_override("margin_" + bord, roundi(24 * e))
+	for bord in ["left", "right"]: marge_pied.add_theme_constant_override("margin_" + bord, roundi(12 * e))
 	for bord in ["top", "bottom"]: marge_pied.add_theme_constant_override("margin_" + bord, roundi(12 * e))
 	marge_pied.add_child(pied)
 	colonne.add_child(marge_pied)
@@ -1276,8 +1320,8 @@ func _filet() -> ColorRect:
 	filet.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return filet
 
-## Option du menu : ligne de 52 px (1080p), libellé, précision en ivoire secondaire, indication à droite ;
-## survol en panneau plus clair, focus en panneau choisi avec le marqueur ivoire incliné à gauche.
+## Option du menu : ligne de 52 px (1080p), libellé, précision en gris-vert, indication à droite ; survol en
+## panneau plus clair (rayon 12), focus en panneau choisi avec l'anneau doré de la charte et le marqueur crème à gauche.
 func _option(nom: String, libelle: String, precision: String, droite: Variant, action: Callable) -> Button:
 	var e := echelle
 	var bouton := Button.new()
@@ -1290,19 +1334,18 @@ func _option(nom: String, libelle: String, precision: String, droite: Variant, a
 		var fond := Color(0, 0, 0, 0)
 		if etat in ["hover", "pressed"]: fond = Charte.PANNEAU_2
 		if etat == "focus": fond = Charte.PANNEAU_3
-		var style := _fond_hud(Vector4.ZERO, fond)
-		style.border_color = Charte.FILET
-		style.border_width_bottom = 1
+		var style := _fond_hud(Vector4.ZERO, fond, Charte.RAYON_CARTE)
 		if etat == "focus":
-			style.border_color = Charte.IVOIRE
-			style.set_border_width_all(maxi(1, roundi(2 * e)))
+			style.border_color = Charte.OR
+			style.set_border_width_all(2)
+			style.set_expand_margin_all(2)
 		bouton.add_theme_stylebox_override(etat, style)
 	var rangee := HBoxContainer.new()
 	rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rangee.add_theme_constant_override("separation", roundi(12 * e))
 	S.full(rangee)
-	rangee.offset_left = roundf(28 * e)
-	rangee.offset_right = -roundf(20 * e)
+	rangee.offset_left = roundf(16 * e)
+	rangee.offset_right = -roundf(12 * e)
 	bouton.add_child(rangee)
 	var marqueur := Marqueur.new()
 	marqueur.name = "Marqueur"
@@ -1376,13 +1419,13 @@ func _option(nom: String, libelle: String, precision: String, droite: Variant, a
 	bouton.custom_minimum_size.y = maxf(roundf(52 * e), (pile.get_combined_minimum_size().y if not precision.is_empty() else 0.0) + roundf(16 * e))
 	return bouton
 
-## Marqueur de l'option choisie : trait ivoire de 3 px incliné de 10° (charte §3).
+## Marqueur de l'option choisie (ou liseré du club qui a le ballon) : trait droit de 3 px aux bouts arrondis
+## (charte finale §3 : droit partout).
 class Marqueur extends Control:
 	var couleur := Charte.IVOIRE
 	func _draw() -> void:
-		var d := Charte.decalage(size.y)
 		var l := maxf(2.0, size.x * 0.5)
-		draw_colored_polygon(PackedVector2Array([Vector2(d, 0), Vector2(d + l, 0), Vector2(l, size.y), Vector2(0, size.y)]), couleur)
+		draw_style_box(Charte.style_pilule(couleur, Color.TRANSPARENT, 0, 0), Rect2(0, 0, l, size.y))
 
 func _placer_menu() -> void:
 	if not is_instance_valid(_menu_panneau): return
@@ -1590,7 +1633,7 @@ func _actualiser_page() -> void:
 	tete.add_child(retour)
 	# Un seul titre : celui de la fiche (club, joueur) ; « RÉGLAGES » pour l'écran des réglages qui n'en a pas.
 	if _page_sorte in ["reglages", "relecture"]:
-		var titre := _texte("RÉGLAGES" if _page_sorte == "reglages" else "RELIRE LES ACTIONS", Charte.TITRE_GRAS_ITALIQUE, Charte.IVOIRE)
+		var titre := _texte("RÉGLAGES" if _page_sorte == "reglages" else "RELIRE LES ACTIONS", Charte.TITRE_GRAS, Charte.IVOIRE)
 		titre.add_theme_font_size_override("font_size", roundi(22 * echelle))
 		tete.add_child(titre)
 	var rappel := _texte("Le match est en pause à la %de. Grisé : disponible après le match." % maxi(1, int(_live().get("minute", 0))), Charte.TEXTE, Charte.IVOIRE_2)

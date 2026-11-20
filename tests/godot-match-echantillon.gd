@@ -113,7 +113,9 @@ func run() -> void:
 		viser.pressed.emit()
 		check(recus.size() == 1 and recus[0].get("attack") == "large" and recus[0].get("penalty") == "touch", "Tuile Bonus : la consigne part avec ses commandes")
 	var fond := func(b: Button) -> Color: return (b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color if b != null and b.get_theme_stylebox("normal") is StyleBoxFlat else Color.BLACK
-	check(securiser != null and securiser.text.ends_with("en place") and fond.call(securiser) == Between.SURVOL and fond.call(viser) != Between.SURVOL, "Tuile Bonus : la consigne en place est marquée (mot et filet), jamais en or")
+	# Charte finale (20/11/2026) : la consigne en place est le choix courant, fond SELECTION, avec le mot « en place ».
+	var or_ := preload("res://ui/charte.gd").OR
+	check(securiser != null and securiser.text.ends_with("en place") and fond.call(securiser) == preload("res://ui/charte.gd").SELECTION and fond.call(viser) != preload("res://ui/charte.gd").SELECTION and fond.call(securiser) != or_ and fond.call(viser) != or_, "Tuile Bonus : la consigne en place est marquée (mot et fond choisi), jamais en or")
 	# 1280×720 : la tuile reste dans l'écran, ses boutons aussi.
 	root.size = Vector2i(1280, 720)
 	between.size = Vector2(1280, 620)

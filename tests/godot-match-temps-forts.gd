@@ -1462,7 +1462,7 @@ func terrain2d(view: Control) -> void:
 		check(rang_cle.size() == 1 and int(rang_cle[0].valeurs[camp_xv]) == int(somme[cle]), "Tableau : %s de l'équipe = somme des joueurs de la feuille (%d)" % [cle, somme[cle]])
 		check(int(feuille.equipes[camp_xv][cle]) == int(somme[cle]), "Feuille : total d'équipe = somme des joueurs (%s)" % cle)
 	var colonne := func(zone: Node) -> Array: return zone.find_children("*", "Label", true, false).filter(func(l: Label): return l.visible).map(func(l: Label): return l.text)
-	var total_xv: Node = between.xv.find_child("MatchBetweenTeamTotal", true, false)
+	var total_xv: Node = between.pied_xv.find_child("MatchBetweenTeamTotal", true, false)
 	check(total_xv != null and colonne.call(total_xv).has(str(somme.plaquages)), "Ligne Équipe de Mon XV : plaquages %d" % somme.plaquages)
 	var plaquages_visibles := 0
 	for joueur: Variant in lineup:
@@ -1480,7 +1480,7 @@ func terrain2d(view: Control) -> void:
 	for fj: Dictionary in feuille.get("joueurs", {}).values():
 		if int(fj.camp) == 1 - camp_xv:
 			for cle: String in somme_adverse: somme_adverse[cle] += int(fj.get(cle, 0))
-	var total_adverse: Node = between.xv.find_child("MatchBetweenTeamTotal", true, false)
+	var total_adverse: Node = between.pied_xv.find_child("MatchBetweenTeamTotal", true, false)
 	check(total_adverse != null and colonne.call(total_adverse).has(str(somme_adverse.plaquages)) and int(feuille.equipes[1 - camp_xv].plaquages) == int(somme_adverse.plaquages), "Ligne Équipe du XV adverse : plaquages %d = somme des joueurs" % somme_adverse.plaquages)
 	between.find_child("MatchBetweenTabOpponent", true, false).pressed.emit()
 	await settle(2)
@@ -1786,7 +1786,8 @@ func journee_fictive(view: Control, direct: Dictionary) -> void:
 	check(leader_ok and badges.call(8) == ["BD"] and badges.call(10) == ["BO", "BD"] and badges.call(5).is_empty(), "Classement fictif : badges BO/BD (%s, %s, %s, %s)" % [badges.call(1), badges.call(8), badges.call(10), badges.call(5)])
 	var nous: Control = _ligne_nous(between)
 	var style: StyleBoxFlat = nous.get_theme_stylebox("panel") if nous != null else null
-	check(nous != null and int(nous.get_meta("rang")) == 8 and style != null and style.border_width_left > 0 and style.bg_color.a > 0.1 and texte.call(nous, "Club") == "NOUS", "Classement fictif : notre club surligné")
+	# Charte finale (20/11/2026) : notre ligne est la ligne choisie, fond SELECTION en case de 6 px (plus de liseré).
+	check(nous != null and int(nous.get_meta("rang")) == 8 and style != null and style.bg_color.is_equal_approx(preload("res://ui/charte.gd").SELECTION) and style.corner_radius_top_left == preload("res://ui/charte.gd").RAYON_PETIT and texte.call(nous, "Club") == "NOUS", "Classement fictif : notre club surligné")
 	check(nous != null and int(nous.find_child("Evolution", true, false).delta) == 2 and int(par_rang[9].find_child("Evolution", true, false).delta) == -1 and int(par_rang[5].find_child("Evolution", true, false).delta) == 0, "Classement fictif : flèches de l'évolution")
 	var teinte_nous: Variant = S_couleur(app.model.get("club", {}))
 	check(nous != null and (teinte_nous == null or (nous.find_child("Couleur", true, false).teinte as Color).is_equal_approx(teinte_nous)) and (par_rang[5].find_child("Couleur", true, false).teinte as Color).is_equal_approx(between.FAIBLE), "Classement fictif : pastille aux couleurs du club, neutre sinon")
