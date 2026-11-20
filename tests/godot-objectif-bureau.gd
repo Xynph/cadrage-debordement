@@ -49,13 +49,15 @@ func geometrie_bureau(taille: Vector2i) -> void:
 	for id: String in Office.PAGE_BLOCKS:
 		var bloc := app.find_child(id, true, false) as Control
 		if bloc != null and bloc.is_visible_in_tree(): blocs.append(bloc)
-	verifier(blocs.size() >= 7, "Bureau %s : les sept blocs principaux sont affichés (%d)" % [taille, blocs.size()])
+	# Large : profil à suivre et résultats sont sortis du Bureau (cinq blocs au moins) ; étroit : sept.
+	verifier(blocs.size() >= 5, "Bureau %s : les blocs principaux sont affichés (%d)" % [taille, blocs.size()])
 	for i in blocs.size():
 		var a := blocs[i]
 		var minimum := a.get_combined_minimum_size().y * a.get_global_transform().get_scale().y
 		verifier(a.get_global_rect().size.y + 1.0 >= minimum, "Bureau %s : %s garde sa hauteur entière" % [taille, a.name])
 		for j in range(i + 1, blocs.size()):
 			var b := blocs[j]
+			if a.is_ancestor_of(b) or b.is_ancestor_of(a): continue
 			verifier(not a.get_global_rect().grow(-1.0).intersects(b.get_global_rect().grow(-1.0)), "Bureau %s : %s ne recouvre pas %s (%s / %s)" % [taille, a.name, b.name, a.get_global_rect(), b.get_global_rect()])
 	verifier(app.find_child("OfficeReadingScroll", true, false) == null, "Bureau %s : un seul défilement pour la page" % taille)
 	for bloc: Control in blocs:
@@ -110,23 +112,18 @@ func executer() -> void:
 	app = load("res://main.tscn").instantiate(); root.add_child(app); await attendre_moteur()
 	if app.timer: app.timer.stop()
 	app._navigate("Bureau"); await poser(20)
-	var carte := app.find_child("OfficeStandings", true, false) as Control
-	verifier(carte != null, "carte du classement")
+	var carte := app.find_child("OfficeDecisions", true, false) as Control
+	verifier(carte != null, "carte des priorités")
 	var texte := ""
 	if carte != null:
-		var chip := carte.find_child("OfficeBoardObjective", true, false) as Control
-		verifier(chip != null, "pastille de l'objectif")
-		if chip != null:
-			for l: Node in chip.find_children("*", "Label", true, false): texte += (l as Label).text
-			var zone := chip.get_global_rect()
-			verifier(carte.get_global_rect().encloses(zone), "pastille dans la carte")
-			for l: Node in carte.get_children():
-				if l is Label and (l as Label).text.begins_with("CLASSEMENT"):
-					# Largeur réelle du texte (le titre est tronqué par une ellipse : sa taille minimale ne dit rien).
-					var titre := l as Label
-					var echelle := titre.get_global_transform().get_scale().x
-					var largeur := titre.get_theme_font("font").get_string_size(titre.text, HORIZONTAL_ALIGNMENT_LEFT, -1, titre.get_theme_font_size("font_size")).x * echelle
-					verifier(titre.global_position.x + largeur <= zone.position.x and titre.global_position.x + titre.size.x * echelle <= zone.position.x, "titre non chevauché (%s)" % titre.text)
+		# L'objectif du conseil se lit sous le titre « Tes trois priorités » : « Top 6 · 4e · en avance ».
+		var objectif := carte.find_child("OfficeBoardObjective", true, false) as Label
+		verifier(objectif != null, "objectif du conseil")
+		if objectif != null:
+			texte = objectif.text
+			verifier(carte.get_global_rect().encloses(objectif.get_global_rect()), "objectif dans la carte")
+			var titre := carte.find_child("CardTitle", true, false) as Label
+			verifier(titre != null and titre.text.begins_with("TES TROIS") and titre.get_global_rect().end.y <= objectif.get_global_rect().position.y + 1.0, "objectif sous le titre, sans le chevaucher")
 	await poser(14)
 	if DisplayServer.get_name() != "headless" and not sortie.is_empty():
 		verifier(root.get_texture().get_image().save_png(sortie.path_join("bureau-objectif.png")) == OK, "capture")

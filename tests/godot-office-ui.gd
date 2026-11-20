@@ -53,7 +53,7 @@ func export_state() -> String:
 	await command("export"); return app.model.meta.exportText
 func sections() -> void:
 	check(named("ImmersiveOffice")!=null,"Le Bureau utilise le canevas de carrière actuel")
-	for id in ["OfficeFixture","OfficeDecisions","OfficeGroup","OfficeStandings","OfficeJournal","OfficeRecruitment","OfficeTimeline"]:
+	for id in ["OfficeFixture","OfficeDecisions","OfficeGroup","OfficeStandings","OfficeJournal","OfficeTimeline"]:
 		check(named(id)!=null,"Section réelle disponible : "+id)
 	var tasks:=Office.priorities(app.model)
 	for index in tasks.size():
@@ -63,7 +63,8 @@ func sections() -> void:
 	var standings: Array=P.standings(app.model)
 	check(not standings.is_empty() and standings.any(func(row: Dictionary):return row.id==app.model.club.id),"Le classement visible inclut le vrai club")
 	var market: Dictionary=Office.recruitment_spotlight(app.model).player
-	if not market.is_empty(): check(texts(named("OfficeRecruitment")).contains(str(market.name).to_upper()),"Le profil à suivre est issu du marché publié")
+	# Le profil à suivre n'est plus au Bureau large (Recrutement) ; il reste dans le Bureau étroit.
+	if not market.is_empty() and named("OfficeRecruitment") != null: check(texts(named("OfficeRecruitment")).contains(str(market.name).to_upper()),"Le profil à suivre est issu du marché publié")
 	var next: Variant=app.model.get("next")
 	if next is Dictionary:
 		check(texts(named("OfficeFixture")).contains(str(next.home.presentation.name).to_upper()) and texts(named("OfficeFixture")).contains(str(next.away.presentation.name).to_upper()),"Les deux vrais clubs figurent dans la rencontre")
@@ -104,14 +105,14 @@ func navigation() -> void:
 	var before:=await export_state()
 	var filename:=str(app.model.meta.dataDir).path_join("donnees.json")
 	var bytes:=FileAccess.get_file_as_bytes(filename)
-	for pair in [["OfficeCalendarAction","Calendrier"],["OfficeSquadAction","Effectif"],["OfficeStandingsAction","Classements"],["OfficePreparationAction","Préparation"],["OfficeInboxAction","Réception"],["OfficeMarketAction","Recrutement"]]:
+	for pair in [["OfficeCalendarAction","Calendrier"],["OfficeSquadAction","Effectif"],["OfficeStandingsAction","Classements"],["OfficePreparationAction","Préparation"],["OfficeInboxAction","Réception"]]:
 		await render();await press(pair[0],pair[1])
 	for route in ["Bureau","Effectif","Composition","Préparation","Calendrier","Classements","Finances"]:
 		app._navigate(route);await settle()
 	check(await export_state()==before and FileAccess.get_file_as_bytes(filename)==bytes,"Liens, navigation, fiches et défilement préservent état, RNG et profil")
 	await render()
 	var spotlight: Dictionary=Office.recruitment_spotlight(app.model).player
-	if not spotlight.is_empty():
+	if not spotlight.is_empty() and named("OfficeMarketAction") != null:
 		await press("OfficeMarketAction","Recrutement")
 		check(app.management_ui.market.navigation_id==str(spotlight.id),"Le lien de recrutement ouvre le bon identifiant")
 func projections() -> void:
@@ -163,7 +164,7 @@ func live_round() -> void:
 	await command("finish_round");await ContextualFlow.finish_match_week(app,self,check,previous_week)
 	await render()
 	check(not app.contextual_director.active() and app.route=="Bureau","Le Bureau revient après validation et rendez-vous")
-	check(named("OfficeRecentResults")!=null,"Le résultat réellement joué apparaît dans le Bureau")
+	check(named("OfficeRecentResults")!=null or named("OfficeFixtureBody")!=null,"Le résultat réellement joué apparaît dans le Bureau (au Calendrier pour la composition large)")
 	await capture("bureau-resultat-reel")
 func run() -> void:
 	root.size=Vector2i(1920,1080)
