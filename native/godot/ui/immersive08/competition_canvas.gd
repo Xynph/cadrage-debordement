@@ -438,7 +438,8 @@ func _ligne_archive(parent: Control, text: String, club_id: Variant, size: int, 
 	parent.add_child(label)
 	if not linked: return
 	var area := Button.new()
-	area.name = "SeasonArchiveClub_%s" % str(club_id)
+	# Identifiant entier (le JSON livre « 12.0 », et le point est interdit dans un nom de nœud).
+	area.name = "SeasonArchiveClub_" + (str(int(club_id)) if club_id is float or club_id is int else str(club_id).validate_node_name())
 	area.flat = true
 	area.set_meta("immersive_style_applied", true)
 	for look in ["normal", "hover", "pressed", "focus"]:

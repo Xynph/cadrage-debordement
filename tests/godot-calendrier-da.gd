@@ -119,19 +119,52 @@ func run() -> void:
 		await click(fixtures[0])
 		check(app.route == "Classements" and app.management_ui.get("competition_page", {}).get("kind", "") == "fixture", "La rencontre s'ouvre en sous-page de Classements")
 		check(page() != null and page().find_child("CompetitionFixtureDetails", true, false) != null, "La page de la rencontre est affichée")
+		# Gabarit du « Prochain rendez-vous » : deux plaques de clubs, chacune ouvre la fiche du club.
+		for side in ["home", "away"]:
+			var plate := page().find_child("FixtureClub_" + side, true, false) as Button
+			check(plate != null and plate.get_meta("entity_kind", "") == "club", "Rencontre : plaque du club (" + side + ") reliée à sa fiche")
+		check_buttons("Rencontre")
 		var retour := page().find_child("CompetitionPageBack", true, false) as Button
 		check(retour != null, "Retour au classement présent")
 		if retour != null:
 			await click(retour)
 			check(not app.management_ui.has("competition_page") and page().find_child("StandingsTableFrame", true, false) != null, "Retour : le classement revient")
 	# Archives : sous-page aussi.
+	# Une saison archivée (projection : les identifiants sont ceux des vrais clubs de la carrière) : le champion cité est un lien.
+	var league_rows: Array = app.model.leagues[0].get("rows", [])
+	var champion_id: Variant = league_rows[0].id if not league_rows.is_empty() else null
+	var saved_archives: Variant = app.model.get("archives")
+	if champion_id != null: app.model.archives = {"seasons": [{"season": 1, "champions": [{"leagueId": str(app.model.leagues[0].id), "clubId": champion_id}]}]}
 	var archives := page().find_child("OpenArchives", true, false) as Button
 	check(archives != null, "Archives des saisons accessibles")
 	if archives != null:
 		await click(archives)
 		check(page() != null and page().find_child("SeasonArchives", true, false) != null, "Les archives sont une page, pas une fenêtre")
+		if champion_id != null:
+			var champion_link := page().find_child("SeasonArchiveClub_" + str(int(champion_id)), true, false) as Button
+			check(champion_link != null and champion_link.get_meta("entity_kind", "") == "club", "Archives : le champion ouvre la fiche de son club")
+		check_buttons("Archives")
 		var retour := page().find_child("CompetitionPageBack", true, false) as Button
 		if retour != null: await click(retour)
+	if saved_archives != null: app.model.archives = saved_archives
+	else: app.model.erase("archives")
+	# Libellés de phase : lus par type, jamais un nom de compétition figé dans le code.
+	var canvas: GDScript = load("res://ui/immersive08/competition_canvas.gd")
+	check(canvas._phase({"phase": "quarter", "competitionId": "jlo-d1"}) == "Quart de finale", "Phase finale : libellé du type de phase, sans nom de compétition figé")
+	check(canvas._phase({"phase": "promotion", "competitionId": "jlo-d1-d2", "leg": 2}) == "Barrage aller-retour · Manche 2", "Barrage aller-retour : manche lue dans la rencontre")
+	# Grille mensuelle du Calendrier : la même rangée d'onglets que Classements, marqueur incliné du jour courant.
+	app.set_meta("calendar_table", false)
+	app._navigate("Calendrier")
+	await settle(10)
+	var tabs := app.find_child("CalendarCompetitionTabs", true, false) as Control
+	check(tabs != null and tabs.get_child_count() == 5, "Grille mensuelle : rangée d'onglets Classements · Phases finales · Calendrier · Statistiques · Rivalités")
+	var today_day := app.find_child("MonthDay_" + str(app.management_ui.get("calendar_reading", {}).get("today", "")), true, false)
+	if today_day != null: check(today_day.find_child("MonthTodayMarker", true, false) != null, "Jour courant : marqueur incliné")
+	var to_standings := tabs.find_child("Section_Classements", true, false) as Button if tabs != null else null
+	if to_standings != null:
+		to_standings.pressed.emit()
+		await settle(10)
+		check(app.route == "Classements" and page() != null, "L'onglet Classements de la grille rouvre le classement")
 	# Un clic sur une ligne change d'écran (fiche du club), sans fenêtre.
 	rows = page().find_children("StandingsRow_*", "Button", true, false)
 	var autre: Button = null
