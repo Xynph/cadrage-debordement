@@ -35,6 +35,7 @@ const MatchCanvas = preload("res://ui/immersive08/match_canvas.gd")
 const MatchCompact = preload("res://ui/immersive08/match_compact.gd")
 const G = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
+const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 ## Gabarits riches (référence 2560 × 1440) ouverts dès 1280 × 720 (densité 0,5). Les gabarits sont
 ## proportionnels (C.px, D.place) et tout texte passe par un plancher de 12 px (C.label, D.text) :
 ## à 1280 × 720 le plus petit texte rendu fait 12 × 0,977 ≈ 11,7 px (pied de page compris, voir _fit_layout).
@@ -550,7 +551,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	rail.add_child(background)
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var national := Selections.nation_only(app.model)
-	_rail_header(rail, app, national)
+	var rail_top := _rail_header(rail, app, national) + (RAIL_TOP - RAIL_HEADER)
 	var sections: Array = _rail_entries(app)
 	var secondary: Array = []
 	if not national:
@@ -558,7 +559,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		if app.model.get("international") is Dictionary: secondary.append(["Sélections", "Sélections", ["Sélections"]])
 	# Lignes de 83 (62 px à 1920) compressibles jusqu'à 59 (44 px) ; au-delà, le groupe central défile, le pied reste fixe.
 	var height: float = app.get_window().size.y / C.density
-	var available := maxf(RAIL_ROW_MIN, height - RAIL_TOP - RAIL_DOCK - 8.0)
+	var available := maxf(RAIL_ROW_MIN, height - rail_top - RAIL_DOCK - 8.0)
 	var gap := RAIL_GAP if not secondary.is_empty() else 0.0
 	var weight := sections.size() + secondary.size() * RAIL_ROW_SMALL / RAIL_ROW
 	var row := clampf(floorf((available - gap) / weight), RAIL_ROW_MIN, RAIL_ROW)
@@ -570,7 +571,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO if total > available else ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	scroll.follow_focus = true
 	rail.add_child(scroll)
-	D.place(scroll, Rect2(0, RAIL_TOP, RAIL_WIDTH, minf(total, available)))
+	D.place(scroll, Rect2(0, rail_top, RAIL_WIDTH, minf(total, available)))
 	var column := Control.new()
 	column.name = "ImmersiveSidebarColumn"
 	column.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -590,7 +591,9 @@ static func _sidebar(parent: Node, app: Control) -> void:
 
 ## En-tête : écusson, nom du club (Barlow Condensed ExtraBold Italic, capitales), « division · rang », liseré club-trait
 ## incliné. Un clic ouvre la fiche du club (pour son propre club : l'écran Club, décision de Léo du 14/11/2026).
-static func _rail_header(rail: Control, app: Control, national: bool) -> void:
+## Retourne la hauteur réelle de l'en-tête (unités de référence) : elle grandit quand le texte, au plancher de 12 px,
+## ne tient plus dans les 152 de base ; les entrées du rail descendent d'autant.
+static func _rail_header(rail: Control, app: Control, national: bool) -> float:
 	var header := _shell_button("ImmersiveClubHeader")
 	header.tooltip_text = "Fiche du club"
 	if app.route == "Club" and not national: header.add_theme_stylebox_override("normal", _style(C.SELECTED))
@@ -637,7 +640,12 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> void:
 	# puis la division se raccourcit — le rang n'est jamais perdu ; texte complet en infobulle.
 	var rank := "" if national or P.rank_ordinal(app.model.get("club", {}) if app.model.get("club") is Dictionary else {}) == "—" else P.rank_ordinal(app.model.club)
 	var fitted := fit_context(context, rank, room)
-	var sub := _label(header, Rect2(96, top + line_height * lines + 2, room, 21), str(fitted[0]), float(fitted[1]), C.MUTED, C.BODY)
+	var sub_line := C.BODY.get_height(_fpx(float(fitted[1]))) / C.density
+	var sub_height := maxf(21.0, sub_line) * int(fitted[2])
+	var sub_top := top + line_height * lines + 2
+	var header_height := maxf(RAIL_HEADER, sub_top + sub_height + 30.0)
+	D.place(header, Rect2(0, 0, RAIL_WIDTH, header_height))
+	var sub := _label(header, Rect2(96, sub_top, room, sub_height), str(fitted[0]), float(fitted[1]), C.MUTED, C.BODY)
 	sub.name = "ImmersiveClubContext"
 	sub.tooltip_text = context
 	sub.set_meta("context_complet", context)
@@ -647,10 +655,11 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> void:
 		sub.max_lines_visible = 2
 		sub.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	sub.update_minimum_size()
-	D.place(sub, Rect2(96, top + line_height * lines + 2, room, 21 * int(fitted[2])))
+	D.place(sub, Rect2(96, sub_top, room, sub_height))
 	header.tooltip_text = (identity + " · " + context + " · fiche du club") if not national else identity
-	var stripe := _incline(header, Rect2(27, RAIL_HEADER - 17, RAIL_WIDTH - 48, 4), Charte.club_trait(app.accent))
+	var stripe := _incline(header, Rect2(27, header_height - 17, RAIL_WIDTH - 48, 4), Charte.club_trait(app.accent))
 	stripe.name = "ImmersiveClubStripe"
+	return header_height
 
 ## Nombre de lignes d'un texte coupé aux mots (largeur en unités de référence).
 static func _lines_ref(font: Font, text: String, size_ref: float, width_ref: float) -> int:
@@ -713,7 +722,21 @@ static func _rail_dock(rail: Control, app: Control, national: bool) -> void:
 			button.set_meta("rail_actif", true)
 		dock.add_child(button)
 		D.place(button, Rect2(4, y, RAIL_WIDTH - 8, RAIL_ROW_SMALL))
-		_button_margins(button, 68, 12)
+		var left_margin := 68.0
+		var right_margin := 12.0
+		var key_inset := 21.0
+		if i == 2:
+			# Texte et touche « Ctrl S » côte à côte : la marge gauche rentre (jusqu'au picto) si la place manque.
+			key_inset = 21.0
+			right_margin = _key_width("Ctrl S") + key_inset + 6.0
+			left_margin = RAIL_WIDTH - 8.0 - right_margin - _rw(C.BODY, str(item[0]), 24) - 2.0
+			if left_margin < 68.0:
+				# Rail étroit : la touche se serre contre le bord, le texte vient jusqu'au picto.
+				key_inset = 9.0
+				right_margin = _key_width("Ctrl S") + key_inset + 4.0
+				left_margin = clampf(RAIL_WIDTH - 8.0 - right_margin - _rw(C.BODY, str(item[0]), 24) - 4.0, RAIL_TEXT + 27.0 + 3.0, 68.0)
+			left_margin = minf(left_margin, 68.0)
+		_button_margins(button, left_margin, right_margin)
 		_picto(button, Rect2(RAIL_TEXT - 4, (RAIL_ROW_SMALL - 27) / 2.0, 27, 27), item[1], C.IVORY if selected else C.MUTED)
 		match i:
 			0: button.pressed.connect(func(): app._navigate("Carrière"))
@@ -722,7 +745,7 @@ static func _rail_dock(rail: Control, app: Control, national: bool) -> void:
 				button.pressed.connect(func(): save_now(app))
 				button.tooltip_text = "Sauvegarder la carrière maintenant · Ctrl S"
 				var key_width := _key_width("Ctrl S")
-				_key(button, RAIL_WIDTH - 8 - 21 - key_width, (RAIL_ROW_SMALL - 27) / 2.0, "Ctrl S")
+				_key(button, RAIL_WIDTH - 8 - key_inset - key_width, (RAIL_ROW_SMALL - 27) / 2.0, "Ctrl S")
 		if i == 0: button.tooltip_text = "Ta carrière de manager"
 		if i == 1: button.tooltip_text = "Réglages : confort, son, affichage, raccourcis"
 		y += RAIL_ROW_SMALL
@@ -763,7 +786,12 @@ static func refresh_save_line(app: Control, line: Button = null) -> void:
 	if line == null and is_instance_valid(app.get("root_content")): line = app.root_content.find_child("ImmersiveSaveLine", true, false) as Button
 	if not is_instance_valid(line): return
 	var state := save_caption(app)
-	line.text = state[0]
+	var caption := str(state[0])
+	if _rw(C.BODY, caption, 19) > RAIL_WIDTH - 8.0 - 52.0 - 8.0:
+		# Place comptée : le jour de la semaine tombe, la date reste ; le texte complet est dans l'infobulle.
+		var compact := RegEx.create_from_string("\\s[^\\s\\d]+\\.?(?=\\s\\d)").sub(caption, "")
+		if not compact.is_empty(): caption = compact
+	line.text = caption
 	line.tooltip_text = state[3]
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: line.add_theme_color_override(key, state[1])
 	var picto := line.get_node_or_null("SaveLinePicto") as Picto
@@ -1126,13 +1154,21 @@ static func _key_figure(row: Control, area: Rect2, index: int, item: Array) -> P
 	frame.accessibility_name = frame.tooltip_text
 	return frame
 
+## Titre du Bureau (maquette « Affiche et Gabi ») : « LE BUREAU » en italique, sa phrase d'accueil, la saison à droite.
+static func _entete_bureau(row: Control, app: Control) -> void:
+	app.heading.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	var largeur := C.font(800).get_string_size("LE BUREAU", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(53))).x / C.density
+	D.text(row, largeur + 28, 54, "Ta semaine commence ici.", 21, Charte.IVOIRE_2, 500, 700, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeSubtitle"
+	var meta: Dictionary = app.model.get("meta", {})
+	if meta.has("season"):
+		D.text(row, 2248, 54, "Saison %s · semaine %d" % [G.season_label(meta.season), int(meta.get("week", 0)) + 1], 21, Charte.IVOIRE_2, 500, 700, HORIZONTAL_ALIGNMENT_RIGHT, true).name = "OfficeSeason"
 static func _position_office_match_status(status: Label, factor: float) -> void:
 	if factor<=0: return
 	status.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
 
 static func _heading(parent: Node, app: Control) -> void:
 	var row := Control.new()
-	row.custom_minimum_size.y = C.px(91 if app.route=="Effectif" else 88 if app.route=="Composition" else 112 if app.route=="Réception" else 104)
+	row.custom_minimum_size.y = C.px(91 if app.route=="Effectif" else 88 if app.route=="Composition" else 112 if app.route=="Réception" else 80 if app.route=="Bureau" else 104)
 	C.fill(row)
 	parent.add_child(row)
 	if app.route=="Réception":
@@ -1141,8 +1177,9 @@ static func _heading(parent: Node, app: Control) -> void:
 		app.minibar.visible=false
 		parent.add_child(app.minibar)
 		return
-	D.text(row,1,19,{"Bureau":"LE BUREAU","Effectif":"LE GROUPE PROFESSIONNEL","Composition":"LE PLAN DE JEU"}.get(app.route,app.route.to_upper()),19,app.accent.lightened(.48),600,1040)
-	app.heading = D.text(row,-1,76,TITLES.get(app.route,app.route),53,C.IVORY,700,1190)
+	if app.route!="Bureau": D.text(row,1,19,{"Bureau":"LE BUREAU","Effectif":"LE GROUPE PROFESSIONNEL","Composition":"LE PLAN DE JEU"}.get(app.route,app.route.to_upper()),19,app.accent.lightened(.48),600,1040)
+	app.heading = D.text(row,-1,56 if app.route=="Bureau" else 76,"LE BUREAU" if app.route=="Bureau" else TITLES.get(app.route,app.route),53,C.IVORY,800 if app.route=="Bureau" else 700,1190)
+	if app.route=="Bureau": _entete_bureau(row,app)
 	if COMPACT_ART.has(app.route):
 		var image := D.panel(row,Rect2(1438,6,810,89),"","","","CompactRouteArt")
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1156,7 +1193,8 @@ static func _heading(parent: Node, app: Control) -> void:
 	var metrics: Array = [[(P.rank_ordinal(app.model.club) if P.standings_open(app.model.club) else "Pas classé")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[injury_caption,"heart",C.ALERT if injury_count > 0 else C.MUTED]]
 	# Effectif : chiffres clés en gros chiffre + légende (valeur, légende, couleur du chiffre).
 	if app.route=="Effectif": metrics=[[G.n(values.total),"joueur%s" % ("s" if int(values.total) > 1 else ""),C.IVORY],[G.n(values.available),"disponible%s" % ("s" if int(values.available) > 1 else ""),C.MINT],[G.n(injury_count),"blessé%s" % ("s" if injury_count > 1 else ""),C.ALERT if injury_count > 0 else C.IVORY],[str(values.rating),"niveau moyen",C.GOLD]]
-	elif app.route != "Bureau": metrics=[]
+	# Bureau (Affiche et Gabi) et Composition (page dédiée) n'ont plus de pastilles d'en-tête.
+	else: metrics=[]
 	if app.get_window().size.x >= 1600:
 		for i in metrics.size():
 			var item: Array = metrics[i]
@@ -1186,6 +1224,8 @@ static func _heading(parent: Node, app: Control) -> void:
 ## Décor du bureau (ballon, coupe) : la scène n'est chargée qu'une fois ; un rendu sur deux
 ## relisait ballon.glb (et son avertissement d'UID) faute de référence gardée.
 const OFFICE_PROPS_PATH := "res://art/office_props/office_props.tscn"
+## Décor 3D du Bureau (ballon, coupe) retiré par la direction artistique du 19/11/2026 : le bandeau d'illustration voilé le remplace.
+const OFFICE_PROPS_ENABLED := false
 static var _office_props_scene: PackedScene
 
 static func _sync_office_props(match_status: Label) -> void:
@@ -1196,7 +1236,7 @@ static func _sync_office_props(match_status: Label) -> void:
 		if props != null:
 			row.remove_child(props)
 			props.queue_free()
-	elif props == null:
+	elif props == null and OFFICE_PROPS_ENABLED:
 		if _office_props_scene == null:
 			_office_props_scene = load(OFFICE_PROPS_PATH) as PackedScene
 		props = _office_props_scene.instantiate() as TextureRect
@@ -1345,7 +1385,12 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 		"Recrutement": app.body.add_child(app.SquadViews.market(app))
 		"Staff": app.body.add_child(app.StaffViews.build(app))
 		"Formation": app.body.add_child(app.DevelopmentViews.build(app))
-		"Presse": app.body.add_child(app.PressViews.build(app))
+		"Presse":
+			# Plus d'ancienne vue (papier, or, arrondis) : la page Presse de la direction artistique sert à toutes les tailles.
+			var hote := Control.new()
+			hote.custom_minimum_size = Vector2(0, Press.HEIGHT * C.density)
+			app.body.add_child(hote)
+			Press.build(app, hote)
 		"Vestiaire": app.body.add_child(app.RelationshipsViews.build(app))
 		"Rivalités": app.body.add_child(app.WorldViews.build(app))
 		"Stratégie": app.body.add_child(app.StrategyViews.build(app))
