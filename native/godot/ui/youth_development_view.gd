@@ -4,6 +4,10 @@ const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const C = preload("res://ui/immersive08/components.gd")
+const Charte = preload("res://ui/charte.gd")
+const Champs = preload("res://ui/immersive08/champs_charte.gd")
+const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const PAGE_SIZE := 20
 const ATTRIBUTES := {"scrum":"Mêlée","lineout":"Touche","tackle":"Plaquage","speed":"Vitesse","pass":"Passe","kick":"Jeu au pied","goal":"But","power":"Puissance","stamina":"Endurance","mental":"Mental","discipline":"Discipline"}
 const REASONS := {"enable":"Référence initiale","plan":"Objectif révisé","trainWeek":"Séance","recordDevelopmentMatch":"Match","rollDevelopmentYear":"Bilan annuel","advanceSeason":"Nouvelle saison","promoteYouth":"Passage professionnel","managerMobilityOnSeasonStart":"Changement de club"}
@@ -18,15 +22,112 @@ var next: Button
 var page_label: Label
 var focused_player_id := ""
 var show_all: Button
+var en_page := false
 
 static func entry(owner_app: Control,parent: Container) -> Button:
 	var button := G.button("SUIVRE LES JEUNES →",func(): open(owner_app))
 	button.name = "OpenYouthDevelopment"; parent.add_child(button); return button
 
-static func open(owner_app: Control, player_id: String = "") -> AcceptDialog:
+## `en_page` : le contenu est adopté par la sous-page « Suivi des jeunes » de la Formation (habillage de la charte) ;
+## sinon c'est l'ancienne fenêtre, qui garde son habillage d'origine.
+static func open(owner_app: Control, player_id: String = "", en_page: bool = false) -> AcceptDialog:
 	owner_app._clear_dialogs()
 	var view: AcceptDialog = load("res://ui/youth_development_view.gd").new()
-	view.app = owner_app; view.focused_player_id = player_id; view._build(); return view
+	view.app = owner_app; view.focused_player_id = player_id; view.en_page = en_page; view._build(); return view
+
+# --- Habillage : charte (page) ou carnet d'origine (fenêtre) ---------------------------------------------------------------
+
+## Texte courant. Les tailles du code d'origine sont des pixels réels à 1920 ; la charte les veut en unités du gabarit.
+func _t(text: Variant, size: int = 15, color: Color = G.MUTED) -> Label:
+	if not en_page: return G.wrap(text, size, color)
+	var ton := Charte.IVOIRE if color == G.INK else Charte.D if color == G.ALERT else Charte.IVOIRE_2
+	var etiquette := C.wrap(text, roundi(size / 0.75), ton, false, 500)
+	etiquette.add_theme_font_override("font", Charte.TEXTE)
+	return etiquette
+
+## Titre de section : capitales droites (Barlow Condensed) en page, titre du carnet sinon.
+func _titre(title: String, subtitle: String = "") -> VBoxContainer:
+	if not en_page: return G.section(title, subtitle)
+	var colonne := C.v(4)
+	var titre := C.label(title.to_upper(), 34, Charte.IVOIRE, true, 800)
+	titre.add_theme_font_override("font", Charte.TITRE_GRAS)
+	colonne.add_child(titre)
+	if not subtitle.is_empty(): colonne.add_child(_t(subtitle, 13))
+	return colonne
+
+## Action secondaire : pilule à contour fin `FILET` (survol `PANNEAU_3`, focus doré) en page ; bouton du carnet sinon.
+func _b(text: String, action: Callable) -> Button:
+	if not en_page: return G.button(text, action)
+	var bouton := Button.new()
+	var phrase := text.substr(0, 1) + text.substr(1).to_lower()
+	bouton.text = phrase if "→" in phrase or "←" in phrase else phrase + " →"
+	bouton.pressed.connect(action)
+	var repos := Charte.style_pilule(Color.TRANSPARENT, Charte.FILET, C.px(16), C.px(6))
+	var survol := Charte.style_pilule(Charte.PANNEAU_3, Charte.FILET, C.px(16), C.px(6))
+	var focus := Charte.style_pilule(Color.TRANSPARENT, Charte.OR, C.px(16), C.px(6))
+	focus.set_border_width_all(2)
+	var eteint := Charte.style_pilule(Color.TRANSPARENT, Charte.FILET, C.px(16), C.px(6))
+	for etat in ["normal"]: bouton.add_theme_stylebox_override(etat, repos)
+	for etat in ["hover", "pressed"]: bouton.add_theme_stylebox_override(etat, survol)
+	bouton.add_theme_stylebox_override("focus", focus)
+	bouton.add_theme_stylebox_override("disabled", eteint)
+	for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: bouton.add_theme_color_override(cle, Charte.IVOIRE)
+	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+	bouton.add_theme_font_override("font", C.BOLD)
+	bouton.add_theme_font_size_override("font_size", maxi(12, C.px(21)))
+	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	bouton.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	bouton.set_meta("style_charte", true)
+	bouton.set_meta("immersive_style_applied", true)
+	return bouton
+
+## Une fiche de jeune : en page, carte `PANNEAU_2` de rayon 12 dans le panneau de la sous-page, sans bordure.
+func _carte(parent: Node) -> VBoxContainer:
+	if not en_page: return G.card(parent)
+	var carte := PanelContainer.new()
+	carte.set_meta("immersive_style_applied", true)
+	carte.add_theme_stylebox_override("panel", Charte.style_panneau(Charte.PANNEAU_2, Charte.RAYON_CARTE, C.px(16)))
+	parent.add_child(carte)
+	var contenu := C.v(7)
+	carte.add_child(contenu)
+	return contenu
+
+## Champ de recherche, liste déroulante et case à cocher aux jetons de la charte finale (page seulement).
+func _habiller(controle: Control) -> void:
+	if not en_page: return
+	if controle is OptionButton: Champs.liste(controle)
+	elif controle is CheckButton: Champs.case(controle)
+	elif controle is LineEdit: Champs.champ(controle)
+## Nom du jeune : clic = fiche complète, survol (ou focus + I) = mini-fiche. Sans fiche à ouvrir, simple texte (jamais de faux lien).
+func _nom(parent: Container, person: Dictionary) -> Control:
+	var id := str(person.get("id", ""))
+	var professionnel := str(person.get("stage", "")) == "professional"
+	var cible := {"kind": "player" if professionnel else "academy", "id": id}
+	var texte := str(person.get("name", ""))
+	if id.is_empty() or not app.navigation_controller.entity_available(cible):
+		var simple := _t(texte, 20, G.INK)
+		parent.add_child(simple)
+		return simple
+	var lien := Button.new()
+	lien.name = "YouthName_" + id.validate_node_name()
+	lien.text = texte
+	lien.flat = true
+	lien.focus_mode = Control.FOCUS_ALL
+	lien.accessibility_name = "Ouvrir la fiche · " + texte
+	C.style_bouton_lien(lien, 27, true)
+	lien.set_meta("style_charte", true)
+	lien.set_meta("immersive_style_applied", true)
+	if not en_page:
+		for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: lien.add_theme_color_override(cle, G.INK)
+		for etat in ["normal", "hover", "pressed", "focus"]:
+			var style := lien.get_theme_stylebox(etat) as StyleBoxFlat
+			if style != null: style.border_color = G.INK
+	lien.pressed.connect(func():
+		if not en_page: app._clear_dialogs()
+		app.navigation_controller.open_entity(cible))
+	parent.add_child(lien)
+	MiniFiche.lier(app, lien, id, "squad" if professionnel else "academy")
+	return lien
 
 func _data() -> Dictionary:
 	return app.model.get("clubLife",{}).get("youthDevelopment",{})
@@ -39,13 +140,13 @@ func _build() -> void:
 		state.page = 0; state.query = ""; state.stage = 0; state.review = false
 	scroll = ScrollContainer.new(); scroll.name = "YouthDevelopmentScroll"; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; scroll.follow_focus = true; add_child(scroll)
 	body = G.v(10); G.fill(body,true); scroll.add_child(body)
-	body.add_child(G.section("Des objectifs, puis des faits", "Académie et jeunes professionnels · club courant"))
-	body.add_child(G.wrap("Les entraînements et les matchs font progresser les attributs et le niveau pendant la saison. Les plans orientent le travail à venir, sans gain immédiat ; le mentorat partage le même apprentissage. Pour les profils à progression annuelle, ces plans servent uniquement d’objectifs de suivi. Âge, personnalité, blessures, fatigue et temps de jeu influencent les progrès. Le potentiel peut évoluer au bilan de saison et ne garantit jamais le niveau atteint.",14))
+	body.add_child(_titre("Des objectifs, puis des faits", "Académie et jeunes professionnels · club courant"))
+	body.add_child(_t("Les entraînements et les matchs font progresser les attributs et le niveau pendant la saison. Les plans orientent le travail à venir, sans gain immédiat ; le mentorat partage le même apprentissage. Pour les profils à progression annuelle, ces plans servent uniquement d’objectifs de suivi. Âge, personnalité, blessures, fatigue et temps de jeu influencent les progrès. Le potentiel peut évoluer au bilan de saison et ne garantit jamais le niveau atteint.",14))
 	var data := _data()
-	if not str(data.get("reason","")).is_empty(): body.add_child(G.wrap(str(data.reason),13))
+	if not str(data.get("reason","")).is_empty(): body.add_child(_t(str(data.reason),13))
 	if data.get("canEnable",false):
-		var enable := G.button("DÉMARRER LE SUIVI DES JEUNES",_enable); enable.name = "YouthDevelopmentEnable"; enable.disabled = app.waiting; body.add_child(enable)
-	show_all = G.button("REVENIR À TOUS LES JEUNES",func(): focused_player_id = ""; _redraw())
+		var enable := _b("DÉMARRER LE SUIVI DES JEUNES",_enable); enable.name = "YouthDevelopmentEnable"; enable.disabled = app.waiting; body.add_child(enable)
+	show_all = _b("REVENIR À TOUS LES JEUNES",func(): focused_player_id = ""; _redraw())
 	show_all.name = "YouthDevelopmentShowAll"; body.add_child(show_all)
 	var filters := HFlowContainer.new(); body.add_child(filters)
 	var search := LineEdit.new(); search.name = "YouthDevelopmentSearch"; search.placeholder_text = "Nom ou poste…"; search.text = str(state.query); search.custom_minimum_size = Vector2(230,36); filters.add_child(search)
@@ -56,12 +157,13 @@ func _build() -> void:
 	stage.item_selected.connect(func(index: int): focused_player_id = ""; state.stage = index; state.page = 0; _redraw())
 	var review_filter := CheckButton.new(); review_filter.name = "YouthReviewFilter"; review_filter.text = "PARCOURS À REVOIR"; review_filter.button_pressed = bool(state.get("review",false)); filters.add_child(review_filter)
 	review_filter.toggled.connect(func(value: bool): focused_player_id = ""; state.review = value; state.page = 0; _redraw())
-	counter = G.wrap("",13); counter.name = "YouthDevelopmentCount"; body.add_child(counter)
+	for controle: Control in [search, stage, review_filter]: _habiller(controle)
+	counter = _t("",13); counter.name = "YouthDevelopmentCount"; body.add_child(counter)
 	list = G.v(8); list.name = "YouthDevelopmentRows"; body.add_child(list)
 	var paging := G.h(8); body.add_child(paging)
-	previous = G.button("← PRÉCÉDENT",func(): state.page -= 1; _redraw()); previous.name = "YouthDevelopmentPrevious"; paging.add_child(previous)
+	previous = _b("← PRÉCÉDENT",func(): state.page -= 1; _redraw()); previous.name = "YouthDevelopmentPrevious"; paging.add_child(previous)
 	page_label = G.label("",12); paging.add_child(page_label)
-	next = G.button("SUIVANT →",func(): state.page += 1; _redraw()); next.name = "YouthDevelopmentNext"; paging.add_child(next)
+	next = _b("SUIVANT →",func(): state.page += 1; _redraw()); next.name = "YouthDevelopmentNext"; paging.add_child(next)
 	confirmed.connect(queue_free); canceled.connect(queue_free); app.add_child(self)
 	app.bridge.model_changed.connect(func(_model: Dictionary):
 		if not app.bridge.last_response_ok: return
@@ -112,8 +214,9 @@ func _redraw() -> void:
 	if state.get("review",false): people = people.filter(func(p: Dictionary): return str(p.get("review",{}).get("status","")) in ["review","context"])
 	state.page = clampi(int(state.page),0,maxi(0,ceili(float(people.size())/PAGE_SIZE)-1))
 	var start: int = int(state.page)*PAGE_SIZE
-	for person: Dictionary in people.slice(start,start+PAGE_SIZE): _person(person)
-	if people.is_empty(): list.add_child(G.wrap("Aucun jeune dans cette sélection.",14))
+	for person: Dictionary in people.slice(start,start+PAGE_SIZE):
+		_person(person)
+	if people.is_empty(): list.add_child(_t("Aucun jeune dans cette sélection.",14))
 	counter.text = "%d jeunes · %s" % [people.size(),"suivi actif" if _data().get("enabled",false) else "suivi à démarrer"]
 	if not str(state.get("draft_notice","")).is_empty(): counter.text += "\n"+str(state.draft_notice)
 	if _data().get("locked",false): counter.text += "\nObjectifs verrouillés : révise-les avant la séance, hors match et pendant la saison régulière."
@@ -121,33 +224,40 @@ func _redraw() -> void:
 	page_label.text = "%d / %d" % [int(state.page)+1,maxi(1,ceili(float(people.size())/PAGE_SIZE))]
 
 func _person(person: Dictionary) -> void:
-	var card := G.card(list); card.name = "YouthDevelopmentCard"; card.set_meta("player_id",str(person.id))
-	var row := G.h(10); card.add_child(row); row.add_child(G.portrait(0,64,person))
+	var card := _carte(list); card.name = "YouthDevelopmentCard"; card.set_meta("player_id",str(person.id))
+	var row := G.h(10); card.add_child(row)
+	var portrait := G.portrait(0,64,person)
+	portrait.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	row.add_child(portrait)
 	var info := G.v(4); G.fill(info); row.add_child(info)
-	info.add_child(G.wrap("%s · %s · %s ans" % [str(person.name),str(person.pos),G.n(person.age)],20,G.INK))
+	var identite := G.h(8); info.add_child(identite)
+	_nom(identite,person)
+	var suite := _t("· %s · %s ans" % [str(person.pos),G.n(person.age)],20,G.INK)
+	suite.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identite.add_child(suite)
 	var annual: bool = str(person.get("model",""))=="annual-v11"
-	info.add_child(G.wrap("Progression annuelle : les qualités évoluent au bilan annuel selon l’exposition réelle. La spécialisation n’est pas disponible pour ce profil." if annual else "Progression par le travail : le plan répartit les efforts à venir, sans gain supplémentaire.",13))
-	info.add_child(G.wrap("Niveau général %s · potentiel estimé au poste %s · condition %s %% · fatigue %s / 100 · blessure %s semaine(s)" % [G.rating_text(person,true),G.potential_text(person),G.n(person.get("condition",0)),G.n(person.get("fatigue",0)),G.n(person.get("injury",0))],13))
+	info.add_child(_t("Progression annuelle : les qualités évoluent au bilan annuel selon l’exposition réelle. La spécialisation n’est pas disponible pour ce profil." if annual else "Progression par le travail : le plan répartit les efforts à venir, sans gain supplémentaire.",13))
+	info.add_child(_t("Niveau général %s · potentiel estimé au poste %s · condition %s %% · fatigue %s / 100 · blessure %s semaine(s)" % [G.rating_text(person,true),G.potential_text(person),G.n(person.get("condition",0)),G.n(person.get("fatigue",0)),G.n(person.get("injury",0))],13))
 	var current: Dictionary = person.get("current",{})
 	var minutes := "Minutes de carrière : %s" % G.n(person.get("careerMinutes",current.get("careerMinutes",0)))
 	if not annual: minutes += " · progression générale %s · progression ciblée %s" % [_decimal(current.get("generalXP",0)),_decimal(current.get("focusedXP",0))]
-	info.add_child(G.wrap(minutes,12))
+	info.add_child(_t(minutes,12))
 	var baseline: Variant = person.get("baseline")
 	var deltas: Variant = person.get("deltas")
 	if not baseline is Dictionary or not deltas is Dictionary:
-		info.add_child(G.wrap("Pas encore de référence suivie : aucun gain passé n’est attribué à cet objectif.",13))
+		info.add_child(_t("Pas encore de référence suivie : aucun gain passé n’est attribué à cet objectif.",13))
 	else:
-		info.add_child(G.wrap("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),_signed(deltas.get("rating",0)),_signed(deltas.get("minutes",0))],13))
+		info.add_child(_t("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),_signed(deltas.get("rating",0)),_signed(deltas.get("minutes",0))],13))
 		var changes: Array[String] = []
 		for key in ATTRIBUTES:
 			var delta: float = float(deltas.get("attributes",{}).get(key,0))
 			if not is_zero_approx(delta): changes.append(str(ATTRIBUTES[key])+" "+_signed(delta))
-		info.add_child(G.wrap(" · ".join(changes) if not changes.is_empty() else "Aucun changement de qualité observé depuis cette référence.",12))
+		info.add_child(_t(" · ".join(changes) if not changes.is_empty() else "Aucun changement de qualité observé depuis cette référence.",12))
 	_review(info,person)
 	for observation: Dictionary in person.get("observations",[]):
-		info.add_child(G.wrap("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
-	for step: Dictionary in person.get("nextSteps",[]): info.add_child(G.wrap(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label",""))+" · "+Copy.notice("youth", step.get("detail","")),12))
-	if not str(person.get("planReason","")).is_empty(): info.add_child(G.wrap(str(person.planReason),13,G.ALERT))
+		info.add_child(_t("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
+	for step: Dictionary in person.get("nextSteps",[]): info.add_child(_t(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label",""))+" · "+Copy.notice("youth", step.get("detail","")),12))
+	if not str(person.get("planReason","")).is_empty(): info.add_child(_t(str(person.planReason),13,G.ALERT))
 	var draft: Dictionary = state.drafts.get(str(person.id),{})
 	var options := HFlowContainer.new(); card.add_child(options)
 	var plan := OptionButton.new(); plan.name = "YouthPlan"; plan.set_meta("player_id",str(person.id)); options.add_child(plan)
@@ -162,7 +272,8 @@ func _person(person: Dictionary) -> void:
 	for entry: Dictionary in person.get("focusOptions",[]):
 		focus.add_item(str(entry.label)); focus.set_item_metadata(focus.item_count-1,str(entry.key))
 		if entry.key==selected_focus: focus.select(focus.item_count-1)
-	var description := G.wrap("",12); card.add_child(description)
+	_habiller(plan); _habiller(focus)
+	var description := _t("",12); card.add_child(description)
 	var update_focus := func():
 		var chosen: String = str(plan.get_item_metadata(plan.selected)) if plan.item_count>0 else ""
 		focus.visible = chosen in ["specialist","integration"] and focus.item_count>0
@@ -178,7 +289,7 @@ func _person(person: Dictionary) -> void:
 	plan.item_selected.connect(func(_index: int): update_focus.call(); remember.call())
 	focus.item_selected.connect(func(_index: int): remember.call())
 	update_focus.call()
-	var save := G.button("CONFIRMER CET OBJECTIF",func():
+	var save := _b("CONFIRMER CET OBJECTIF",func():
 		var key := str(plan.get_item_metadata(plan.selected))
 		var target: Variant = str(focus.get_item_metadata(focus.selected)) if key in ["specialist","integration"] and focus.item_count>0 else null
 		_confirm_plan(person,key,target))
@@ -186,25 +297,25 @@ func _person(person: Dictionary) -> void:
 	plan.disabled = save.disabled; focus.disabled = save.disabled
 	var suggested: Variant = person.get("review",{}).get("recommendation",{}).get("suggestedPlan")
 	if suggested != null and str(suggested) in available and str(suggested) != str(person.get("plan","")):
-		var prepare := G.button("PRÉPARER LA RÉORIENTATION CONSEILLÉE",func():
+		var prepare := _b("PRÉPARER LA RÉORIENTATION CONSEILLÉE",func():
 			for i in plan.item_count:
 				if str(plan.get_item_metadata(i))==str(suggested): plan.select(i); update_focus.call(); remember.call(); save.grab_focus())
 		prepare.name = "YouthReviewPrepare"; prepare.disabled = save.disabled; card.add_child(prepare)
-		card.add_child(G.wrap("Préparer ne modifie rien : relis la répartition, puis confirme l’objectif choisi.",12))
+		card.add_child(_t("Préparer ne modifie rien : relis la répartition, puis confirme l’objectif choisi.",12))
 
 func _review(parent: Container,person: Dictionary) -> void:
 	var review: Dictionary = person.get("review",{})
 	if review.is_empty(): return
-	var label := G.wrap(str(review.get("label","Bilan intermédiaire")),16,G.INK); label.name = "YouthReviewLabel"; parent.add_child(label)
+	var label := _t(str(review.get("label","Bilan intermédiaire")),16,G.INK); label.name = "YouthReviewLabel"; parent.add_child(label)
 	var objective: Variant = review.get("objective")
 	if objective is Dictionary:
 		var line := "Repère historique · "+str(objective.get("label","Objectif"))
 		if objective.get("value") != null and objective.get("target") != null: line += " · %s / %s %s depuis la référence" % [_decimal(objective.value),_decimal(objective.target),str(objective.get("unit",""))]
 		if objective.get("achieved",false): line += " · repère atteint"
-		parent.add_child(G.wrap(line,13))
-	parent.add_child(G.wrap(str(review.get("basis","")),12))
+		parent.add_child(_t(line,13))
+	parent.add_child(_t(str(review.get("basis","")),12))
 	var recent: Dictionary = review.get("recent",{})
-	var recent_line := G.wrap("",13)
+	var recent_line := _t("",13)
 	recent_line.name = "YouthRecentReview"
 	if recent.get("available",false):
 		recent_line.text = "Période récente observée · %s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s. Fenêtre visée : quatre semaines, bornes réelles conservées." % [G.season_label(recent.from.season),G.n(recent.from.week),G.n(recent.to.week),G.n(recent.weeks),_signed(recent.minutesDelta),_signed(recent.ratingDelta)]
@@ -217,7 +328,7 @@ func _review(parent: Container,person: Dictionary) -> void:
 		for key in ATTRIBUTES:
 			var amount: float = float(recent.get("attributeDeltas",{}).get(key,0))
 			if not is_zero_approx(amount): changes.append(str(ATTRIBUTES[key])+" "+_signed(amount))
-		parent.add_child(G.wrap("Qualités sur cette période · "+(" · ".join(changes) if not changes.is_empty() else "aucun changement observé"),12))
+		parent.add_child(_t("Qualités sur cette période · "+(" · ".join(changes) if not changes.is_empty() else "aucun changement observé"),12))
 
 	var short: Variant = review.get("shortTermObjective")
 	if short is Dictionary:
@@ -227,18 +338,18 @@ func _review(parent: Container,person: Dictionary) -> void:
 		elif short.get("coverage")=="unavailable": line += " · mesure depuis cette décision indisponible : son observation n’est plus conservée ou son contexte a changé"
 		if short.get("expired",false): line += " · échéance de réexamen atteinte"
 		line += ". Repère consultatif, sans gain ajouté ni effet causal attribué au plan."
-		var dated := G.wrap(line,13)
+		var dated := _t(line,13)
 		dated.name = "YouthShortTermObjective"
 		parent.add_child(dated)
 
 	var advice: Dictionary = review.get("recommendation",{})
-	var detail := G.wrap(str(advice.get("label",""))+" · "+str(advice.get("detail","")),13); detail.name = "YouthReviewAdvice"; parent.add_child(detail)
+	var detail := _t(str(advice.get("label",""))+" · "+str(advice.get("detail","")),13); detail.name = "YouthReviewAdvice"; parent.add_child(detail)
 	var destination: Variant = advice.get("destination")
 	if destination != null:
-		var navigate := G.button("EXAMINER LE PARCOURS →" if str(destination)=="Centre" else "EXAMINER L’EFFECTIF →",func(): app._clear_dialogs(); app.selected_player = str(person.id); app._navigate(str(destination)))
+		var navigate := _b("EXAMINER LE PARCOURS →" if str(destination)=="Centre" else "EXAMINER L’EFFECTIF →",func(): app._clear_dialogs(); app.selected_player = str(person.id); app._navigate(str(destination)))
 		navigate.name = "YouthReviewNavigate"; parent.add_child(navigate)
 	if str(advice.get("key","")) == "promotion":
-		var promote := G.button("EXAMINER LE PREMIER CONTRAT DE CE JOUEUR →",func():
+		var promote := _b("EXAMINER LE PREMIER CONTRAT DE CE JOUEUR →",func():
 			app._clear_dialogs()
 			app.selected_player = str(person.id)
 			app._navigate("Formation")
@@ -246,7 +357,7 @@ func _review(parent: Container,person: Dictionary) -> void:
 		promote.name = "YouthReviewPromotion"
 		parent.add_child(promote)
 	elif str(advice.get("key","")) == "loan":
-		var loan := G.button("EXAMINER LE PRÊT DE CE JOUEUR →",func():
+		var loan := _b("EXAMINER LE PRÊT DE CE JOUEUR →",func():
 			app._clear_dialogs()
 			app.selected_player = str(person.id)
 			preload("res://ui/immersive08/formation_pages.gd").ouvrir(app,"pret",{"player_id":str(person.id)}))

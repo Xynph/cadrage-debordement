@@ -42,6 +42,9 @@ const EXTRAS := [
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "classements-rencontre", "libelle": "Classements · sous-page d'une rencontre", "type": "classements_page", "page": "rencontre"},
 	{"id": "classements-archives", "libelle": "Classements · sous-page des archives des saisons", "type": "classements_page", "page": "archives"},
+	{"id": "classements-phases", "libelle": "Classements · onglet Phases finales", "type": "classements_onglet", "onglet": "playoffs"},
+	{"id": "classements-stats", "libelle": "Classements · onglet Statistiques", "type": "classements_onglet", "onglet": "stats"},
+	{"id": "formation-suivi", "libelle": "Formation · sous-page Suivi des jeunes", "type": "formation_suivi"},
 	{"id": "options", "libelle": "Options", "type": "options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
@@ -491,6 +494,22 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			ouvrir.pressed.emit()
 			await stabiliser()
 			if app.find_child("CompetitionPageBack", true, false) == null: return {"statut": "echec", "note": "la sous-page ne s'est pas ouverte"}
+		"classements_onglet":
+			# Onglets de Classements : l'onglet est mémorisé dans l'état de l'écran, puis l'écran est rendu.
+			app.management_ui.erase("competition_page")
+			if not app.management_ui.get("competition") is Dictionary: app.management_ui.competition = {}
+			app.management_ui.competition.tab = str(ecran.onglet)
+			app._navigate("Classements")
+			await stabiliser()
+			if app.route != "Classements": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"formation_suivi":
+			app._navigate("Formation")
+			await stabiliser()
+			var suivi := app.find_child("OpenYouthDevelopment", true, false) as Button
+			if suivi == null or suivi.disabled: return {"statut": "indisponible", "note": "lien du suivi des jeunes absent"}
+			suivi.pressed.emit()
+			await stabiliser()
+			if app.find_child("FormationRetour", true, false) == null: return {"statut": "echec", "note": "la sous-page ne s'est pas ouverte"}
 		"calendrier_semaine":
 			app._navigate("Calendrier")
 			await stabiliser()
@@ -594,6 +613,8 @@ func refermer(ecran: Dictionary) -> void:
 		if avant != null: avant.fermer_page()
 	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
+	if str(ecran.type) == "classements_onglet" and app.management_ui.get("competition") is Dictionary: app.management_ui.competition.tab = "league"
+	if str(ecran.type) == "formation_suivi": load("res://ui/immersive08/formation_pages.gd").oublier(app)
 	if str(ecran.type) == "equilibre_postes": app.find_child("EffectifTuileAptes", true, false).mouse_exited.emit()
 	fermer_fenetres()
 

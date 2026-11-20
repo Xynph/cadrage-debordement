@@ -520,6 +520,9 @@ func executer() -> void:
 	var cri: Button = fenetre.find_child("TeamShout_" + id_cri, true, false)
 	verifier(cri != null and not cri.disabled, "cri « %s » disponible" % id_cri)
 	if cri != null:
+		# Charte finale : un cri est une carte arrondie (rayon 12) sans bordure.
+		var repos := cri.get_theme_stylebox("normal") as StyleBoxFlat
+		verifier(repos != null and repos.corner_radius_top_left >= 3 and repos.border_width_left == 0 and repos.border_width_top == 0 and repos.border_width_right == 0 and repos.border_width_bottom == 0, "cri au repos : carte arrondie sans bordure")
 		cri.pressed.emit()
 		verifier(app.last_command == "cri", "clic sur un cri : commande cri")
 		await jusqua(func() -> bool: return not app.waiting, 20000)

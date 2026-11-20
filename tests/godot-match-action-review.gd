@@ -76,6 +76,8 @@ func run() -> void:
 	var dialog: Object = await ouvrir()
 	check(dialog!=null and page().visible and app.find_children("*","Window",true,false).filter(func(w: Window): return w.visible).is_empty(),"Ouverture réelle par clavier, dans une page du direct (aucune fenêtre)")
 	if dialog!=null:
+		# La case « Moments clés uniquement » porte le style de la charte (carré ivoire dessiné), pas l'interrupteur du moteur.
+		check(dialog.keys_only.has_theme_icon_override("unchecked") and dialog.keys_only.has_theme_icon_override("checked") and dialog.keys_only.has_theme_stylebox_override("normal"),"Case « Moments clés uniquement » : style de la charte")
 		# #596 : le journal n'affiche que les faits déjà montrés (rien d'un temps fort à venir, le moteur a
 		# une minute d'avance, cf. match_temps_forts.montre) : préfixe non vide, copié sans changement.
 		check(dialog.events.size()>0 and dialog.events.size()<=original.events.size() and dialog.events==original.events.slice(0,dialog.events.size()),"Faits réels du worker copiés sans changement")

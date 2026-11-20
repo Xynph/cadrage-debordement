@@ -113,7 +113,7 @@ static func _hote(app: Control, kind: String) -> Control:
 	if hote != null: _vider_hote(app)
 	var etat_courant := etat(app)
 	var joueur := str(etat_courant.get("player_id", ""))
-	var fenetre: AcceptDialog = load("res://ui/academy_pathways_view.gd").open_professional(app, joueur) if kind == "pret" else load("res://ui/youth_development_view.gd").open(app, joueur)
+	var fenetre: AcceptDialog = load("res://ui/academy_pathways_view.gd").open_professional(app, joueur) if kind == "pret" else load("res://ui/youth_development_view.gd").open(app, joueur, true)
 	if fenetre == null: return null
 	hote = Control.new()
 	hote.name = HOTE

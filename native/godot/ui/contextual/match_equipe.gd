@@ -762,14 +762,15 @@ func _cris(cris: Dictionary) -> void:
 		bouton.custom_minimum_size.y = px(88)
 		# Cri actif : fond relevé, filet GAUCHE épais ivoire et coche (comme un choix courant), jamais d'or ; les autres :
 		# un seul filet bas (charte §3 : aucun cadre complet).
-		var normal := _boite(C.SELECTED if est_actif else C.PANEL, C.IVORY if est_actif else C.LINE, 0, 4 if est_actif else 1, 0, false, "left" if est_actif else "bottom")
+		# Charte finale : un cri est une carte de rayon 12, sans bordure ; le cri actif est sur fond de ligne choisie (vert franc) avec sa coche ; focus : anneau dore.
+		var normal := _boite(Charte.SELECTION if est_actif else C.RAISED, Color.TRANSPARENT, Charte.RAYON_CARTE, 0, 0, true)
 		normal.content_margin_left = px(12)
 		var survol := normal.duplicate() as StyleBoxFlat
-		survol.bg_color = C.RAISED
-		survol.border_color = C.IVORY
+		survol.bg_color = C.SELECTED
 		var eteint := normal.duplicate() as StyleBoxFlat
-		if not est_actif: eteint.bg_color = Color(C.PANEL, 0.6)
-		var focus := _boite(Color.TRANSPARENT, C.IVORY, 0, 2, 0)
+		if not est_actif: eteint.bg_color = Color(C.RAISED, 0.5)
+		var focus := _boite(Color.TRANSPARENT, Charte.OR, Charte.RAYON_CARTE, 2, 0, true)
+		focus.set_border_width_all(maxi(1, px(2)))
 		for paire: Array in [["normal", normal], ["hover", survol], ["pressed", survol], ["disabled", eteint], ["focus", focus]]: bouton.add_theme_stylebox_override(paire[0], paire[1])
 		bouton.pressed.connect(func(): crier(id))
 		var rangee := _h(10)
