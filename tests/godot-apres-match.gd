@@ -138,6 +138,10 @@ func run() -> void:
 	var contexte := ecran.find_child("ApresMatchContexte", true, false) as Label
 	check(contexte != null and contexte.text.begins_with("Division test · J9"), "Compétition et journée lues dans les données : " + (contexte.text if contexte != null else ""))
 	check(ecran.find_child("ApresMatchRang", true, false) != null, "Classement avant → après dans le bandeau")
+	# Bandeau photo du vestiaire : 256 px sur 1080 comme la maquette 15 (24 % de la hauteur), photo non étirée hors du bandeau.
+	var bandeau_photo := ecran.find_child("ApresMatchBandeau", true, false) as Control
+	var part_bandeau := bandeau_photo.size.y / 1080.0 if bandeau_photo != null else 0.0
+	check(bandeau_photo != null and absf(bandeau_photo.size.y - 256.0) <= 1.0 and part_bandeau > 0.22 and part_bandeau < 0.26, "Bandeau photo à la hauteur de la maquette : %.1f %% (%s px)" % [part_bandeau * 100.0, str(bandeau_photo.size.y) if bandeau_photo != null else "absent"])
 	# Classement complet, zones des données, légende.
 	for rang in range(1, 13): check(ecran.find_child("ApresMatchLigne%d" % rang, true, false) != null, "Ligne du classement n° %d" % rang)
 	var premiere := ecran.find_child("ApresMatchLigne1", true, false)

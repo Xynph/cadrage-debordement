@@ -107,6 +107,9 @@ var bandeau: PanelContainer
 var fil: VBoxContainer
 var chiffres: VBoxContainer
 var xv: GridContainer
+## Pied fixe de Mon XV (ligne « Équipe »), hors de la zone de défilement : toujours entier sous la dernière ligne.
+var pied_xv: VBoxContainer
+var defile_xv: ScrollContainer
 ## Banc (remplaçants `live.reserves`) sous les titulaires.
 var banc: GridContainer
 var zone_banc: VBoxContainer
@@ -1021,8 +1024,10 @@ func _colonne_xv(grille: Control) -> void:
 	var cadre_xv := _panneau(grille, px(18))
 	tuile_principale = cadre_xv.get_parent().get_parent()
 	tuile_principale.name = "MatchBetweenMain"
-	tuile_principale.custom_minimum_size.x = px(640)
-	cadre_xv.add_theme_constant_override("separation", px(4))
+	# Assez large pour que le nom le plus long du banc (« Matthew BOOTHROYD ») se lise en entier, banc sur deux colonnes.
+	tuile_principale.custom_minimum_size.x = px(780)
+	# Séparation serrée (1 px à 1080p) : les quinze lignes et le pied « Équipe » tiennent sans défilement.
+	cadre_xv.add_theme_constant_override("separation", px(1))
 	var tete := S.G.h(px(10))
 	cadre_xv.add_child(tete)
 	titre_xv = _titre_bloc("Mon XV", 26)
@@ -1079,11 +1084,18 @@ func _colonne_xv(grille: Control) -> void:
 	S.G.fill(tableau_xv)
 	cadre_xv.add_child(entete)
 	cadre_xv.add_child(defile)
+	defile_xv = defile
 	defile.add_child(tableau_xv)
 	tableau_xv.add_child(xv)
+	# Total de l'équipe : pied fixe sous la zone de défilement (jamais coupé), aligné sur les colonnes des lignes.
+	pied_xv = S.G.v(0)
+	pied_xv.name = "MatchBetweenSquadFoot"
+	cadre_xv.add_child(pied_xv)
+	defile.resized.connect(_aligner_pied_xv)
+	defile.get_v_scroll_bar().visibility_changed.connect(_aligner_pied_xv)
 	# Banc : zone fixe sous les titulaires, toujours visible (le remplacement est l'action de l'entracte) ; deux
 	# colonnes de numéro, nom et poste ; le nombre de changements restants en tête.
-	zone_banc = S.G.v(px(4))
+	zone_banc = S.G.v(px(2))
 	zone_banc.name = "MatchBetweenBenchZone"
 	cadre_xv.add_child(zone_banc)
 	var filet := ColorRect.new()
@@ -2314,6 +2326,7 @@ static func seuil_echantillon(direct: Dictionary) -> int:
 func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	_xv_donnees = [joueurs, direct]
 	S.clear(xv)
+	if is_instance_valid(pied_xv): S.clear(pied_xv)
 	var infos := _infos_xv(joueurs, direct)
 	_remplir_changement(infos)
 	# Vue adverse : les alertes de Mon XV restent calculées pour Gabi.
@@ -2620,21 +2633,36 @@ func _ligne_equipe(feuille: Dictionary, camp: int, visibles: Array) -> void:
 			total[cle] += int(f.get(cle, 0))
 			if not visibles.has(id): sortis[cle] += int(f.get(cle, 0))
 	var ligne := S.G.h(px(8))
-	ligne.custom_minimum_size.y = maxi(18, px(32))
+	ligne.custom_minimum_size.y = maxi(16, px(24))
 	ligne.name = "MatchBetweenTeamTotal"
 	ligne.tooltip_text = "Total de l'équipe, remplaçants sortis compris : %d plaquages, %d m, %d essai%s (%d plaquage%s, %d m, %d essai%s déjà aux joueurs remplacés)." % [total.plaquages, total.metres, total.essais, "s" if total.essais > 1 else "", sortis.plaquages, "s" if sortis.plaquages > 1 else "", sortis.metres, sortis.essais, "s" if sortis.essais > 1 else ""]
 	ligne.mouse_filter = Control.MOUSE_FILTER_STOP
-	var trait_haut := ColorRect.new()
-	trait_haut.color = TRAIT
-	trait_haut.custom_minimum_size = Vector2(0, 1)
-	trait_haut.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	xv.add_child(trait_haut)
+	# Pas de trait au-dessus : la dernière ligne de Mon XV porte déjà son filet.
 	ligne.add_child(_cellule("", int(COLONNES_XV[0][1]), DOUX, 17))
 	ligne.add_child(_cellule("Équipe", 0, DOUX, 17, false))
-	ligne.add_child(_cellule("%d m · %d essai%s" % [total.metres, total.essais, "s" if total.essais > 1 else ""], int(COLONNES_XV[2][1]), DOUX, 17))
+	# Jamais rognée (« 344 m · 2 ess… » en 1280×720) : la colonne Joueur, large, cède la place qui manque.
+	var cumul := _cellule("%d m · %d essai%s" % [total.metres, total.essais, "s" if total.essais > 1 else ""], int(COLONNES_XV[2][1]), DOUX, 17)
+	cumul.clip_text = false
+	cumul.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	ligne.add_child(cumul)
 	ligne.add_child(_cellule(str(total.plaquages), int(COLONNES_XV[3][1]), IVOIRE, 19, true))
 	ligne.add_child(_cellule("", int(COLONNES_XV[4][1]), DOUX, 17))
-	xv.add_child(ligne)
+	var marge := MarginContainer.new()
+	marge.name = "MatchBetweenTeamTotalMargin"
+	marge.mouse_filter = Control.MOUSE_FILTER_PASS
+	marge.add_theme_constant_override("margin_left", px(6))
+	marge.add_theme_constant_override("margin_right", px(6))
+	marge.add_child(ligne)
+	pied_xv.add_child(marge)
+	_aligner_pied_xv.call_deferred()
+
+## Le pied suit les marges des lignes (6 px) et la place de l'ascenseur quand il est visible : mêmes colonnes.
+func _aligner_pied_xv() -> void:
+	if not is_instance_valid(pied_xv) or not is_instance_valid(defile_xv): return
+	var barre := defile_xv.get_v_scroll_bar()
+	var droite := px(6) + (int(barre.size.x) if barre.visible else 0)
+	for enfant: Node in pied_xv.get_children():
+		if enfant is MarginContainer: (enfant as MarginContainer).add_theme_constant_override("margin_right", droite)
 
 ## XV adverse (`direct.adversaire`) : le même tableau ; notes bornées aux faits montrés. Les joueurs adverses
 ## ne sont pas à nous : leurs noms ne sont pas des liens (aucune fiche du club pour eux).

@@ -1462,7 +1462,7 @@ func terrain2d(view: Control) -> void:
 		check(rang_cle.size() == 1 and int(rang_cle[0].valeurs[camp_xv]) == int(somme[cle]), "Tableau : %s de l'équipe = somme des joueurs de la feuille (%d)" % [cle, somme[cle]])
 		check(int(feuille.equipes[camp_xv][cle]) == int(somme[cle]), "Feuille : total d'équipe = somme des joueurs (%s)" % cle)
 	var colonne := func(zone: Node) -> Array: return zone.find_children("*", "Label", true, false).filter(func(l: Label): return l.visible).map(func(l: Label): return l.text)
-	var total_xv: Node = between.xv.find_child("MatchBetweenTeamTotal", true, false)
+	var total_xv: Node = between.pied_xv.find_child("MatchBetweenTeamTotal", true, false)
 	check(total_xv != null and colonne.call(total_xv).has(str(somme.plaquages)), "Ligne Équipe de Mon XV : plaquages %d" % somme.plaquages)
 	var plaquages_visibles := 0
 	for joueur: Variant in lineup:
@@ -1480,7 +1480,7 @@ func terrain2d(view: Control) -> void:
 	for fj: Dictionary in feuille.get("joueurs", {}).values():
 		if int(fj.camp) == 1 - camp_xv:
 			for cle: String in somme_adverse: somme_adverse[cle] += int(fj.get(cle, 0))
-	var total_adverse: Node = between.xv.find_child("MatchBetweenTeamTotal", true, false)
+	var total_adverse: Node = between.pied_xv.find_child("MatchBetweenTeamTotal", true, false)
 	check(total_adverse != null and colonne.call(total_adverse).has(str(somme_adverse.plaquages)) and int(feuille.equipes[1 - camp_xv].plaquages) == int(somme_adverse.plaquages), "Ligne Équipe du XV adverse : plaquages %d = somme des joueurs" % somme_adverse.plaquages)
 	between.find_child("MatchBetweenTabOpponent", true, false).pressed.emit()
 	await settle(2)

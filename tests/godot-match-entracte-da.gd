@@ -55,7 +55,8 @@ func donnees() -> Array:
 		notes[id] = {"note": 6.0 + n * 0.1, "faits": n}
 		feuille.joueurs[id] = {"camp": 0, "plaquages": n % 7, "plaquagesManques": 1, "metres": n * 3, "essais": 1 if n == 11 else 0, "courses": 2, "passes": 3}
 	var reserves: Array = []
-	for n in 8: reserves.append({"id": "r%d" % (n + 16), "name": "Remplaçant Banc%d" % (n + 16), "pos": POSTES[n % 15]})
+	# Le 21 porte le nom le plus long du banc d'un vrai match (« Matthew BOOTHROYD ») : il doit se lire en entier.
+	for n in 8: reserves.append({"id": "r%d" % (n + 16), "name": "Matthew BOOTHROYD" if n == 5 else "Remplaçant Banc%d" % (n + 16), "pos": POSTES[n % 15]})
 	var live := {"teams": equipes, "events": [], "finished": false, "paused": false, "atBreak": true, "minute": 40, "lineup": lineup, "reserves": reserves, "remplacementsRestants": 8,
 		"pilotage": {"conseilChangement": {"outId": "p7", "inId": "r20"}}}
 	var tableau := [
@@ -213,6 +214,28 @@ func run() -> void:
 		var zone_banc := ecran.find_child("MatchBetweenBenchZone", true, false) as Control
 		check(zone_banc != null and zone_banc.is_visible_in_tree() and dans(zone_banc.get_global_rect(), ecran_rect) and not (ecran.find_child("MatchBetweenSquadScroll", true, false) as Node).is_ancestor_of(zone_banc), cadre + " : banc dans une zone fixe, visible en entier")
 		check(banc.all(func(b: Control): return zone_banc.get_global_rect().grow(1.0).encloses(b.get_global_rect())), cadre + " : les huit remplaçants à l'écran")
+		# Défauts du match (20/11) : la dernière ligne de Mon XV et le total de l'équipe sont entiers à l'écran, et aucun
+		# nom de joueur (Mon XV, banc) n'est tronqué.
+		var defile_xv := ecran.find_child("MatchBetweenSquadScroll", true, false) as ScrollContainer
+		var dernier := ecran.find_child("MatchBetweenPlayer15", true, false) as Control
+		var total_equipe := ecran.find_child("MatchBetweenTeamTotal", true, false) as Control
+		check(dernier != null and defile_xv != null and defile_xv.get_global_rect().grow(1.0).encloses(dernier.get_global_rect()), cadre + " : la dernière ligne de Mon XV (15) est entière dans la zone de défilement (%s dans %s)" % [str(dernier.get_global_rect()) if dernier != null else "absente", str(defile_xv.get_global_rect()) if defile_xv != null else "absent"])
+		check(total_equipe != null and total_equipe.is_visible_in_tree() and dans(total_equipe.get_global_rect(), ecran_rect) and not defile_xv.is_ancestor_of(total_equipe) and total_equipe.get_global_rect().position.y >= dernier.get_global_rect().end.y - 1.0, cadre + " : la ligne « Équipe » est un pied fixe, entier, sous la ligne 15 (%s)" % (str(total_equipe.get_global_rect()) if total_equipe != null else "absente"))
+		check(zone_banc.get_global_rect().position.y >= total_equipe.get_global_rect().end.y - 1.0, cadre + " : le pied ne passe pas sous le banc")
+		for i in 3: await process_frame
+		var total_coupe: Array = []
+		for etiquette: Label in total_equipe.find_children("*", "Label", true, false):
+			var large := etiquette.get_theme_font("font").get_string_size(etiquette.text, HORIZONTAL_ALIGNMENT_LEFT, -1, etiquette.get_theme_font_size("font_size")).x
+			if etiquette.visible and etiquette.size.x + 1.0 < large: total_coupe.append("%s (%d sur %d px)" % [etiquette.text, int(etiquette.size.x), int(large)])
+		check(total_coupe.is_empty(), cadre + " : la ligne « Équipe » se lit en entier " + str(total_coupe))
+		var coupes: Array = []
+		for lien: Button in ecran.find_children("MatchBetweenPlayerName_*", "Button", true, false):
+			var entier := str(lien.get_meta("nom_entier", lien.text))
+			var largeur := lien.get_theme_font("font").get_string_size(entier, HORIZONTAL_ALIGNMENT_LEFT, -1, lien.get_theme_font_size("font_size")).x
+			if lien.text != entier or lien.size.x + 1.0 < largeur: coupes.append("%s (%s, %d px sur %d)" % [entier, lien.text, int(lien.size.x), int(largeur)])
+		check(coupes.is_empty(), cadre + " : aucun nom de joueur tronqué " + str(coupes))
+		var bouton_boothroyd := ecran.find_child("MatchBetweenPlayerName_r21", true, false) as Button
+		check(bouton_boothroyd != null and bouton_boothroyd.text == "Matthew BOOTHROYD", cadre + " : « Matthew BOOTHROYD » se lit en entier sur le banc (%s)" % (bouton_boothroyd.text if bouton_boothroyd != null else "absent"))
 		var legende := ecran.find_child("MatchBetweenNotesLegend", true, false) as Control
 		check(legende != null and legende.is_visible_in_tree() and legende.get_child_count() == 6, cadre + " : barème des notes écrit sous Mon XV")
 		check(not Charte.ATTRIBUT_85.is_equal_approx(Charte.ATTRIBUT_65) and not Between._teinte_note(7.8).is_equal_approx(Charte.V) and not Between._teinte_note(7.2).is_equal_approx(Charte.V), cadre + " : deux verts distincts, jamais le vert de la victoire")
