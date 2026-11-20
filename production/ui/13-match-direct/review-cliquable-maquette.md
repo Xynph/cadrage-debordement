@@ -70,3 +70,24 @@ AVIS
 - La bannière suit la maquette (ESSAI italique, filet, nom, « Club · 9e minute », +5, score ; 600 ms ; aucun flash). Le « ESSAI — nom » du marqueur pourrait être un lien vers sa mini-fiche (survol) : cohérent avec la règle des noms.
 - Pause garde son libellé seul (sans icône), écart déclaré §6.
 - Données : aucun nom de club ni de championnat figé relevé dans les fichiers du périmètre (noms lus dans le modèle). Les valeurs de la maquette (Alder Fen, Northmere) n'apparaissent pas dans le code.
+
+## Suivi : auto-relecture après corrections (20/11/2026, après-midi)
+
+Vérifié dans le vrai Godot (suite `godot-match-direct-da`, 56 contrôles, 0 échec, sur le commit des corrections) et sur les captures `film1920b` / `film1280b` (bureau séparé) :
+
+| Point | État |
+|---|---|
+| A1 fiche joueur | Clic sur un nom du journal : fiche complète du joueur dans le direct, « ← Retour au direct », liens hors match grisés. Corrigé. |
+| A2 voile du menu | Le voile passe au-dessus des commandes ; la plaque est inactive tant que le menu est ouvert. Corrigé. |
+| A3 ◂ / ▸ | Deux boutons distincts : ◂ ralentit, ▸ accélère (contrôlé). Corrigé. |
+| A4 / A5 fiche club | Calendrier, Comparer, Recruter absents ; « Calendrier : disponible après le match » écrit ; pas de « Suivre » sur notre club ; aucun clic muet, aucune fenêtre. Corrigé. |
+| A6 Réglages | Championnats suivis, pack, aide du coach grisés « · disponible après le match ». Corrigé. |
+| B petites fenêtres | Aucune fenêtre ouverte par un clic (contrôlé sur plaque, nom, menu, réglages, confier la fin). Reste : menu Échap (exception de Léo). |
+| C1 confrontation | « Match en cours · 18e minute » et le score du direct dans Tes confrontations et Saison en cours (capture `fiche-club.png`). Corrigé. |
+| C2 titre doublé | Un seul « FICHE DU CLUB » ; la page n'a plus que « ← Retour au direct ». Les cartes et la pastille « Riche » de la fiche club restent celles de l'écran Club (hors périmètre). |
+| C3 mouvement réduit | Coupe franche si mode calme (`_montrer_jeu`). Codé ; suite temps-forts verte (tous modes). |
+| C5 nom court 1280 | « MEADOWBRIDGE » (nom court) au lieu de « MEADOWBRID… » (capture 1280). Corrigé. |
+| C6 plaques | Contraste ivoire ≥ 4,5:1 contrôlé sur les deux plaques. Corrigé. |
+| C7 phrase du ballon | Masquée pendant la bannière d'essai (capture du menu). Corrigé. |
+
+Reste hors périmètre : « ÉQUIPE » en or plein et « PARAMÈTRES » dans la bande des commandes (`match_between.gd`, chantier Entracte).
