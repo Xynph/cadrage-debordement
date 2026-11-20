@@ -80,9 +80,11 @@ func executer() -> void:
 	var tuile := app.find_child("FinanceMetric1", true, false)
 	var titre: Label = null
 	if tuile != null: titre = tuile.find_child("CardTitle", true, false) as Label
-	verifier(titre != null and titre.text == LIBELLE.to_upper(), "libellé Finances : « %s »" % (titre.text if titre != null else ""))
-	verifier(texte("FinanceTransferBudgetAmount") == reste, "montant Finances « %s » = disponible « %s »" % [texte("FinanceTransferBudgetAmount"), reste])
-	verifier(texte("FinanceTransferBudgetAllocated").contains(enveloppe), "enveloppe allouée aux Finances : " + texte("FinanceTransferBudgetAllocated"))
+	# DA 20/11/2026 : bloc « Budget de transferts » en trois cases Alloué / Engagé / Restant.
+	verifier(titre != null and titre.text == "BUDGET DE TRANSFERTS", "titre du bloc Finances : « %s »" % (titre.text if titre != null else ""))
+	verifier(texte("FinanceTransferBudgetAmount") == reste, "Restant Finances « %s » = disponible « %s »" % [texte("FinanceTransferBudgetAmount"), reste])
+	verifier(texte("FinanceTransferBudgetAllocated").contains(enveloppe), "Alloué aux Finances : " + texte("FinanceTransferBudgetAllocated"))
+	verifier(not texte("FinanceTransferBudgetEngaged").is_empty(), "case Engagé présente")
 	verifier(app.find_child("FinanceMetric0", true, false) != null, "tuile Trésorerie conservée")
 	await capturer("budget-finances.png")
 	# 3. Offre hors budget : un joueur dont la prime dépasse le disponible ; le moteur rend le devis indisponible.
