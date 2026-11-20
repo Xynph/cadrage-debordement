@@ -133,6 +133,63 @@ static func fill(control: Control, vertical: bool = false, ratio: float = 1.0) -
 	control.size_flags_stretch_ratio = ratio
 	return control
 
+## Style de bouton « LIEN » commun à tous les écrans (charte §7, décision de Léo du 19/11/2026) : texte ivoire (+ flèche ou
+## symbole si le bouton en porte une), sans cadre ni fond, rayon 0 ; souligné au survol et au focus. À appliquer à toute
+## action secondaire (Favori, Archiver, « Ouvrir … → », Annuler, pièces liées). L'action principale de l'écran, elle,
+## prend `style_bouton_ivoire_plein` (un seul par écran). Avec `souligne_au_repos`, le lien actif se reconnaît d'emblée
+## (nom de joueur, de club) ; un nom sans destination reste du texte gris non souligné (jamais de faux lien).
+static func style_bouton_lien(bouton: BaseButton, taille: int = 19, souligne_au_repos: bool = false) -> void:
+	for look in ["normal", "hover", "pressed", "focus", "disabled"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0, 0, 0, 0)
+		style.set_corner_radius_all(0)
+		style.content_margin_left = px(6)
+		style.content_margin_right = px(6)
+		style.content_margin_top = px(4)
+		style.content_margin_bottom = px(4)
+		var souligne: bool = look in ["hover", "pressed", "focus"] or (souligne_au_repos and look == "normal")
+		style.border_color = Charte.IVOIRE if look != "disabled" else Color(0, 0, 0, 0)
+		style.border_width_bottom = maxi(1, px(2 if look in ["hover", "pressed", "focus"] else 1)) if souligne else 0
+		bouton.add_theme_stylebox_override(look, style)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		bouton.add_theme_color_override(key, Charte.IVOIRE)
+	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+	bouton.add_theme_font_override("font", BOLD)
+	bouton.add_theme_font_size_override("font_size", maxi(12, px(taille)))
+	bouton.custom_minimum_size.y = 0
+	if bouton is Button:
+		(bouton as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
+		(bouton as Button).icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+## Bouton d'action PRINCIPALE de l'écran : ivoire plein, texte nuit, rayon 0 (charte §7). Un seul par écran ; jamais d'or
+## (réservé à Continuer).
+static func style_bouton_ivoire_plein(bouton: BaseButton, taille: int = 21) -> void:
+	for look in ["normal", "hover", "pressed", "focus"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Charte.IVOIRE if look != "hover" else Charte.IVOIRE.lightened(.12)
+		style.set_corner_radius_all(0)
+		style.content_margin_left = px(18)
+		style.content_margin_right = px(18)
+		style.content_margin_top = px(7)
+		style.content_margin_bottom = px(7)
+		bouton.add_theme_stylebox_override(look, style)
+	var off := StyleBoxFlat.new()
+	off.bg_color = PANEL
+	off.border_color = LINE
+	off.set_border_width_all(1)
+	off.set_corner_radius_all(0)
+	off.content_margin_left = px(18)
+	off.content_margin_right = px(18)
+	bouton.add_theme_stylebox_override("disabled", off)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		bouton.add_theme_color_override(key, Charte.NUIT)
+	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+	bouton.add_theme_font_override("font", BOLD)
+	bouton.add_theme_font_size_override("font_size", maxi(12, px(taille)))
+	if bouton is Button:
+		(bouton as Button).icon = null
+
 static func margin(padding: int = 18) -> MarginContainer:
 	var control := MarginContainer.new()
 	for edge in ["left", "top", "right", "bottom"]: control.add_theme_constant_override("margin_" + edge, px(padding))

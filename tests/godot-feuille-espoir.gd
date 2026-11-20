@@ -101,20 +101,22 @@ func run() -> void:
 	fenetre.get_cancel_button().pressed.emit()
 	await settle(10)
 
-	# 2. Composition : bouton « Appeler un espoir » (même fenêtre, sans coup d'envoi).
+	# 2. Composition : lien « Appeler un espoir » → sous-page de la Composition (jamais une fenêtre, sans coup d'envoi).
 	app._navigate("Composition")
 	await settle(40)
 	var appel := app.find_child("LineupCallEspoir", true, false) as Button
-	check(appel != null and appel.is_visible_in_tree(), "Composition : bouton « Appeler un espoir »")
+	check(appel != null and appel.is_visible_in_tree(), "Composition : lien « Appeler un espoir »")
 	if appel == null: fin(); return
 	await capture("composition-espoir")
 	appel.pressed.emit()
 	await settle(30)
-	fenetre = app.get_node_or_null("FeuilleIncompleteDialog") as ConfirmationDialog
-	check(fenetre != null and fenetre.visible and fenetre.get_ok_button().text == "APPELER LE JEUNE", "Composition : fenêtre d'appel")
-	check(fenetre != null and fenetre.find_child("FeuilleChoix_a22", true, false) == null, "Composition : pas de « Jouer à 22 » (il se choisit au coup d'envoi)")
-	if fenetre == null: fin(); return
-	fenetre.get_ok_button().pressed.emit()
+	var sous_page := app.find_child("CompositionSubpage_espoir", true, false)
+	var confirmer := app.find_child("LineupEspoirConfirm", true, false) as Button
+	check(sous_page != null and confirmer != null and not confirmer.disabled and app.get_node_or_null("FeuilleIncompleteDialog") == null, "Composition : sous-page d'appel, sans fenêtre")
+	check(sous_page != null and sous_page.find_child("FeuilleChoix_a22", true, false) == null, "Composition : pas de « Jouer à 22 » (il se choisit au coup d'envoi)")
+	if confirmer == null: fin(); return
+	await capture("composition-espoir-sous-page")
+	confirmer.pressed.emit()
 	await wait_engine()
 	check(app.model.get("selection", {}).get("valid", false), "Après l'appel, la feuille est valide")
 	var sur_feuille := false

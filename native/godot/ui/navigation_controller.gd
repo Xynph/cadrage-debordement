@@ -49,12 +49,17 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 	var entry := {"route":route, "player":player_id if route == "Effectif" else "", "staff":staff_club if route == "Staff" else -1, "market":""}
 	entry.target = _current_target(route)
 	entry.detail = _reading_location(route)
-	if route == "Effectif": entry.full_player = app.get_meta("immersive08_full_player", false)
+	if route == "Effectif":
+		entry.full_player = app.get_meta("immersive08_full_player", false)
+		# Sous-page « Charge individuelle » de la fiche : une étape d'historique distincte.
+		entry.charge = str(app.management_ui.get("charge_joueur", ""))
 	if route == "Préparation": entry.preparation_tab = int(app.management_ui.get("preparation", {}).get("tab", 0))
 	if route == "Recrutement": entry.market = str(app.management_ui.get("market", {}).get("navigation_id", ""))
 	# Fiche d'une piste ou d'un Espoir : une étape d'historique distincte de la liste.
 	var fiche: Variant = app.management_ui.get("fiche_joueur")
 	if route in ["Recrutement", "Formation"]: entry.fiche = str(fiche.get("id", "")) if fiche is Dictionary else ""
+	# Sous-pages de la Composition (tireurs, espoir, renforts) : une étape d'historique distincte de l'écran.
+	if route == "Composition": entry.composition_page = str(app.management_ui.get("composition_page", ""))
 	if cursor >= 0:
 		var previous := history[cursor]
 		var same_location := entry.keys().all(func(key: String): return previous.get(key) == entry[key])
@@ -508,6 +513,8 @@ func _travel(direction: int) -> void:
 	if entry.route == "Effectif":
 		app.selected_player = entry.player
 		app.set_meta("immersive08_full_player", entry.get("full_player", false))
+		if str(entry.get("charge", "")).is_empty(): app.management_ui.erase("charge_joueur")
+		else: app.management_ui.charge_joueur = str(entry.charge)
 		app.management_ui.roster = entry.roster.duplicate(true)
 		app.management_ui.profile_scroll = entry.profile_scroll
 		app.roster_filter = entry.roster.family
@@ -515,6 +522,9 @@ func _travel(direction: int) -> void:
 	if entry.route == "Préparation" and app.management_ui.get("preparation") is Dictionary:
 		app.management_ui.preparation.tab = entry.get("preparation_tab", 0)
 	if entry.route == "Staff": app.selected_staff_club = int(entry.staff)
+	if entry.route == "Composition":
+		if str(entry.get("composition_page", "")).is_empty(): app.management_ui.erase("composition_page")
+		else: app.management_ui.composition_page = str(entry.composition_page)
 	if entry.route == "Recrutement" and not entry.get("reading") is Dictionary:
 		_set_market_target(entry.market, str(_person("market", entry.market).get("name", "")))
 	app._navigate(entry.route, false, true)

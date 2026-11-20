@@ -115,12 +115,12 @@ func run() -> void:
 		state.selected = expiry[0].id
 		app._render(); await settle()
 		var person := app.find_child("InboxExpiryPlayer_0",true,false) as Button
-		check(person != null and person.find_children("*","TextureRect",true,false).any(func(image): return image.texture != null), "Portrait chargé pour un joueur de l’effectif lié aux échéances actuelles")
+		check(person != null and person.has_meta("mini_fiche_joueur"), "Joueur lié aux échéances : nom en lien, mini-fiche au survol")
 		await capture("04-echeances-portraits")
 		if person != null:
 			var player_id := str(person.get_meta("player_id"))
 			await activate("InboxExpiryPlayer_0")
-			check(app.route == "Effectif" and app.selected_player == player_id and app.get_meta("immersive08_full_player",false), "Le portrait ouvre la bonne fiche par identifiant")
+			check(app.route == "Effectif" and app.selected_player == player_id and app.get_meta("immersive08_full_player",false), "Le nom ouvre la bonne fiche par identifiant")
 			app._navigate("Réception"); await settle()
 			check(state.selected == expiry[0].id, "Retour de la fiche au même courrier d'échéance")
 	# Controlled UI fixture only: the product still reads the engine projection.
