@@ -20,7 +20,7 @@
    }
   },
   "native/engine/world-niveaux-v2.json": {
-   "sha256": "c44afb49cdddc3718d69c6da74497216b397456b45c52c451391a828404329fe",
+   "sha256": "f3968edfb3da94ed759c01beda0a15f6393b734a784ee5ea3984ffbe5f0a54c9",
    "sources": {
     "data/scouting/review-v12/career-evidence.json": "0a7f60a8611ef52537926f7b30d738d55da24b4cc5ddb91cb3d6fdeabcebb4ef",
     "data/scouting/review-v12/season-evidence.json": "3a63cbab6cf678e7522696eef3acb090edc04ebd9a02956040351de82291300e",
@@ -39,6 +39,7 @@
     "niveaux/collecte-v3/statut-complements.csv": "2fbf6da162dab6342cdbdfc2fa3e4e68559044e9721d79c4cc7b013c3c3e069a",
     "niveaux/collecte-v3/statut-elite.csv": "82e78b71ef05e91e8700bb0b2ae0d8329efa29ff38228e521a910be5e68eba3c",
     "niveaux/collecte-v3/statut-jlo-guest.csv": "576b58f318e673ef1cad6ae3c6fac8535e6513d4b0c0e9376fd0c3409c10100c",
+    "niveaux/collecte-v3/statut-transferts.csv": "439d4af63a88bd2964f9795035fc6d7e9b3091f2894c6d79b87387ff2fee0c8f",
     "niveaux/collecte-v3/u20.csv": "d27f2de80bb4fa210d6e9cfcdb66c2ca861ac685c4b0794c2f28b9f52f488c52",
     "niveaux/niveaux-accession.csv": "d6eb5c30aeadca499fb9eba7f7980233b312f4d9e23ba8bbccd12cacc22de6d4",
     "niveaux/niveaux-champ.csv": "eb09319ae3d3797984d41163c1ff65a6a97c8ab2d341eaaadb1a1b5096d100c3",
