@@ -296,6 +296,12 @@ func _toolbar(parent: Node) -> void:
 	parent.add_child(padding)
 	var rows := C.v(10)
 	padding.add_child(rows)
+	# Une seule rangée d'onglets pour tout l'écran Compétitions (même ordre que la page Classements).
+	var tabs := C.h(4)
+	tabs.name = "CalendarCompetitionTabs"
+	rows.add_child(tabs)
+	for spec: Array in [["Classements", "league", "Section_Classements"], ["Phases finales", "playoffs", "CompetitionPlayoffs"], ["Calendrier", "calendar", "Section_Calendrier"], ["Statistiques", "stats", "CompetitionStats"], ["Rivalités", "", "Section_Rivalités"]]:
+		tabs.add_child(_onglet(str(spec[0]), str(spec[1]), str(spec[2])))
 	var bar := C.h(10)
 	rows.add_child(bar)
 	var caption := C.label("Planning du club",22,C.IVORY,true,700)
@@ -304,8 +310,6 @@ func _toolbar(parent: Node) -> void:
 	bar.add_child(C.fill(caption))
 	for mode: Array in [["month","Mois"],["week","Semaine"]]:
 		bar.add_child(_action(mode[1],_view_as.bind(mode[0]),"CalendarView_"+mode[0],"Afficher la vue "+mode[1],mode[0] == view_mode))
-	bar.add_child(_action("Classements →",func(): app._navigate("Classements"),"CalendarGoStandings","Ouvrir les classements"))
-	bar.add_child(_action("Rivalités →",func(): app._navigate("Rivalités"),"CalendarGoRivalries","Ouvrir les rivalités"))
 	bar.add_child(_action("‹",_shift_month.bind(-1),"MonthPrevious","Semaine précédente" if view_mode == "week" else "Mois précédent"))
 	if not today.is_empty(): bar.add_child(_action("Aujourd’hui",_jump_to_today,"MonthToday"))
 	bar.add_child(_action("›",_shift_month.bind(1),"MonthNext","Semaine suivante" if view_mode == "week" else "Mois suivant"))
@@ -316,6 +320,48 @@ func _toolbar(parent: Node) -> void:
 	rows.add_child(filters)
 	for option: Array in [["all","Tout"],["matches","Matchs"],["training","Entraînements"],["absences","Absences / retours"],["travel","Matchs à l’extérieur"]]:
 		filters.add_child(_action(option[1],_filter_by.bind(option[0]),"MonthFilter_"+option[0],"Filtrer le programme affiché · "+option[1],option[0] == filter))
+
+## Onglet de l'écran Compétitions : capitales, trait ivoire sous l'onglet actif (Calendrier ici), rayon 0.
+func _onglet(caption: String, tab: String, id: String) -> Button:
+	var selected := tab == "calendar"
+	var button := Button.new()
+	button.name = id
+	button.text = caption.to_upper()
+	button.focus_mode = Control.FOCUS_ALL
+	button.set_meta("immersive_style_applied", true)
+	button.custom_minimum_size = Vector2(C.px(220), C.px(48))
+	for look in ["normal", "hover", "pressed", "focus"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Charte.PANNEAU_3 if selected else (Charte.PANNEAU_2 if look == "hover" else Color(0, 0, 0, 0))
+		style.set_corner_radius_all(0)
+		style.border_color = Charte.IVOIRE
+		style.border_width_bottom = maxi(2, C.px(5)) if selected else (maxi(2, C.px(3)) if look == "focus" else 0)
+		style.content_margin_left = C.px(16)
+		style.content_margin_right = C.px(16)
+		button.add_theme_stylebox_override(look, style)
+	for key in ["font_color", "font_pressed_color", "font_focus_color"]:
+		button.add_theme_color_override(key, Charte.IVOIRE if selected else Charte.IVOIRE_2)
+	button.add_theme_color_override("font_hover_color", Charte.IVOIRE)
+	button.add_theme_font_override("font", C.BOLD)
+	button.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
+	button.tooltip_text = "Ouvrir · " + caption
+	button.focus_entered.connect(_remember_focus.bind(id))
+	button.pressed.connect(func():
+		if selected: return
+		if tab.is_empty():
+			app._navigate("Rivalités")
+			return
+		if not app.management_ui.get("competition") is Dictionary: app.management_ui.competition = {}
+		app.management_ui.competition.tab = tab
+		app.management_ui.erase("competition_page")
+		app._navigate("Classements"))
+	return button
+
+## Marqueur incliné de 10° (charte §3) : signale le jour courant à côté du mot « AUJOURD’HUI ».
+class MarqueurIncline extends Control:
+	func _draw() -> void:
+		var decalage := size.y * tan(deg_to_rad(Charte.INCLINAISON_DEGRES))
+		draw_colored_polygon(PackedVector2Array([Vector2(decalage, 0), Vector2(size.x, 0), Vector2(size.x - decalage, size.y), Vector2(0, size.y)]), Charte.IVOIRE)
 
 func _jump_to_today() -> void:
 	month = today.left(7)
@@ -436,7 +482,14 @@ func _day(date: String, weekend: bool, height: int) -> Button:
 	var date_label := C.label((SHORT_DAYS[_weekday(date)] + " " if view_mode == "week" else "") + str(date.right(2).to_int()), 22, C.MUTED if outside or past else C.IVORY, true, 700)
 	head.add_child(C.fill(date_label))
 	if current:
-		head.add_child(_pill("AUJOURD’HUI", Charte.IVOIRE, Charte.PANNEAU_3, 15))
+		var marker := MarqueurIncline.new()
+		marker.name = "MonthTodayMarker"
+		marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		marker.custom_minimum_size = Vector2(C.px(10), C.px(22))
+		marker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		head.add_child(marker)
+		head.move_child(marker, 0)
+		head.add_child(C.label("AUJOURD’HUI", 15, C.IVORY, true, 800))
 	elif selected_day:
 		head.add_child(_pill("SÉLECTION", C.IVORY, Charte.PANNEAU_2, 15))
 	if remaining > 0 and remaining <= 7 and not current and not selected_day:

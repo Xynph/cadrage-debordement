@@ -29,7 +29,7 @@ const WIN := Charte.V
 const DRAW := Charte.N
 const LOSS := Charte.D
 const PRIMARY := Charte.PANNEAU_3
-const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
+const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "third-place": "Petite finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
 const JAPAN_COMPETITIONS := ["jlo-d1", "jlo-d2", "jlo-d1-d2"]
 const RESULT_TINTS := {"V": WIN, "N": DRAW, "D": LOSS}
 const AFAR_HINT := "Championnat en consultation : scores, classement, blessures et évolution des joueurs, sans notes individuelles ni feuilles de match. À changer dans Paramètres › Championnats suivis, effet dès la semaine suivante."
@@ -392,11 +392,68 @@ func _page_archives() -> void:
 	_titre_page("Le carnet des saisons")
 	var panel := D.rect(self, Rect2(0, 140, LEFT, 1000), Charte.PANNEAU, 0)
 	panel.name = "CompetitionArchivesPage"
-	var content: Control = Club.archives_content(app, 880)
+	var content := C.v(10)
+	content.name = "SeasonArchives"
 	panel.add_child(content)
-	D.place(content, Rect2(28, 24, LEFT - 56, 950))
-	_recolorer(content)
-	content_bottom = 1160.0
+	D.place(content, Rect2(32, 24, LEFT - 64, 940))
+	var seasons: Array = app.model.get("archives", {}).get("seasons", []).duplicate()
+	seasons.reverse()
+	var world: GDScript = World
+	if seasons.is_empty():
+		content.add_child(C.wrap("Aucune saison archivée. Les championnats et les coupes alimentent ce carnet au passage à la saison suivante.", 22, C.MUTED))
+	else:
+		content.add_child(C.wrap("Les quinze dernières saisons terminées · rang de phase régulière, titres, montées et descentes.", 20, C.MUTED))
+	var lines := 1
+	for year: Dictionary in seasons:
+		var heading := C.label("SAISON " + G.season_label(year.season), 30, C.IVORY, true, 800)
+		heading.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+		heading.name = "SeasonArchiveHeading_" + G.n(year.season)
+		content.add_child(heading)
+		for winner: Dictionary in Club.archive_titles(year):
+			_ligne_archive(content, "Champion %s : %s" % [Club.competition_name(winner.leagueId, app.model), Club._archive_club(app, winner.clubId)], winner.clubId, 22, C.IVORY)
+		var standings: Dictionary = year.get("standings", {})
+		for league_id: Variant in standings.keys():
+			var ranks: Array = standings.get(league_id, [])
+			var position := ranks.find(own.get("id"))
+			if position >= 0: _ligne_archive(content, "Ton club · %s · %s sur %d en phase régulière" % [Club.competition_name(str(league_id), app.model), _ordinal(position + 1), ranks.size()], null, 20, C.IVORY)
+		for pair: Array in [["promoted", "Montée(s)"], ["relegated", "Descente(s)"]]:
+			var moved: Array = year.get("movement", {}).get(pair[0], [])
+			if moved.is_empty(): continue
+			var names := PackedStringArray()
+			for id: Variant in moved: names.append(Club._archive_club(app, id))
+			_ligne_archive(content, pair[1] + " · " + ", ".join(names), moved[0] if moved.size() == 1 else null, 20, C.MUTED)
+		for barrage: Dictionary in world.japan_barrages(year):
+			for line: String in world.japan_lines(app, barrage): _ligne_archive(content, line, null, 20, C.MUTED)
+		content.add_child(C.rule())
+		lines += 4
+	var height := maxf(1000.0, 80.0 + lines * 40.0)
+	panel.size.y = C.px(height)
+	content.size.y = C.px(height - 60)
+	content_bottom = 160.0 + height
+
+## Une ligne du carnet ; quand elle cite un seul club connu, toute la ligne ouvre sa fiche (flèche et soulignement au survol).
+func _ligne_archive(parent: Control, text: String, club_id: Variant, size: int, tint: Color) -> void:
+	var linked := club_id != null and target_available(app, "club", str(club_id))
+	var label := C.wrap(text + ("  →" if linked else ""), size, tint)
+	parent.add_child(label)
+	if not linked: return
+	var area := Button.new()
+	area.name = "SeasonArchiveClub_%s" % str(club_id)
+	area.flat = true
+	area.set_meta("immersive_style_applied", true)
+	for look in ["normal", "hover", "pressed", "focus"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Charte.PANNEAU_3 if look == "hover" else Color(0, 0, 0, 0)
+		style.set_corner_radius_all(0)
+		if look == "focus":
+			style.border_color = Charte.IVOIRE
+			style.border_width_bottom = maxi(2, C.px(2))
+		area.add_theme_stylebox_override(look, style)
+	area.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	label.add_child(area)
+	area.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	area.show_behind_parent = true
+	Link.bind(area, app, {"kind":"club", "id":str(club_id)}, "Ouvrir le club · " + Club._archive_club(app, club_id))
 
 ## Habille les textes d'une vue historique aux jetons de la charte (texte ivoire sur surface sombre).
 func _recolorer(racine: Node) -> void:
@@ -414,25 +471,27 @@ func _page_rencontre(fixture: Dictionary) -> void:
 	var heading := _fixture_label(fixture)
 	if international:
 		var stage := _dated_phase(fixture)
-		heading = stage if competition_id == "jlo-d1-d2" else _competition_name(fixture) + " · " + stage
+		heading = _competition_name(fixture) + " · " + stage
 		if competition_id == "access-nationale": heading = _competition_name(fixture)
 	_titre_page(heading)
-	var panel := D.rect(self, Rect2(0, 140, 1120, 800), Charte.PANNEAU, 0)
+	# Gabarit du « Prochain rendez-vous » : plaques inclinées aux couleurs des clubs, score entre les deux.
+	var panel := D.rect(self, Rect2(0, 140, LEFT, 800), Charte.PANNEAU, 0)
 	panel.name = "CompetitionFixtureDetails"
 	panel.set_meta("entity_kind", "fixture")
 	panel.set_meta("entity_id", str(fixture.get("id", "")))
+	var home_club: Dictionary = fixture.get("home", {})
+	var away_club: Dictionary = fixture.get("away", {})
+	var home_plate := _plaque(panel, Rect2(32, 28, 560, 88), home_club, "FixtureClub_home", false)
+	var away_plate := _plaque(panel, Rect2(LEFT - 592, 28, 560, 88), away_club, "FixtureClub_away", true)
+	for plate: Button in [home_plate, away_plate]:
+		if plate.tooltip_text.is_empty(): plate.tooltip_text = plate.accessibility_name
+	var middle := _score(fixture) if fixture.get("played", false) else "CONTRE"
+	var middle_label := D.text(panel, 592, 86, middle, 52 if fixture.get("played", false) else 22, C.IVORY if fixture.get("played", false) else C.MUTED, 800, LEFT - 1184, HORIZONTAL_ALIGNMENT_CENTER)
+	middle_label.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+	middle_label.name = "CompetitionFixtureScore"
 	var content := C.v(14)
 	panel.add_child(content)
-	D.place(content, Rect2(32, 26, 1056, 748))
-	var versus := C.label("%s  —  %s" % [G.club_name(fixture.get("home", {})), G.club_name(fixture.get("away", {}))], 40, C.IVORY, true, 800)
-	versus.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
-	content.add_child(versus)
-	var club_links := C.h(18)
-	content.add_child(club_links)
-	for side: String in ["home", "away"]:
-		var club: Dictionary = fixture.get(side, {})
-		if target_available(app, "club", club.get("id", "")):
-			club_links.add_child(_nav_lien(G.club_name(club) + " →", {"kind":"club", "id":str(club.id)}, "FixtureClub_" + side, 22))
+	D.place(content, Rect2(32, 140, LEFT - 64, 640))
 	var place := _location(fixture)
 	var venue := _venue_name(fixture)
 	if not venue.is_empty(): place += "  ·  " + venue
@@ -447,7 +506,9 @@ func _page_rencontre(fixture: Dictionary) -> void:
 	content.add_child(C.label(_phase(fixture) + "  ·  " + place, 24, C.MUTED))
 	if fixture.get("played", false):
 		var code := _fixture_outcome(fixture)
-		var result := C.label(_score(fixture) + "  ·  " + str(S.RESULTS.get(code, {}).get("label", "Issue non renseignée")), 44, RESULT_TINTS.get(code, C.IVORY), true, 800)
+		var verdict := str(S.RESULTS.get(code, {}).get("label", "Issue non renseignée"))
+		var result := C.label((code + "  ·  " + verdict if code in RESULT_TINTS else verdict).to_upper(), 34, RESULT_TINTS.get(code, C.IVORY), true, 800)
+		result.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
 		result.name = "CompetitionFixtureResult"
 		content.add_child(result)
 		_fixture_statistics(content, fixture)
@@ -1322,7 +1383,7 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 		_entity_area(row, Rect2(12, 0, 232, line_height), {"kind":"date", "id":str(fixture.get("date", ""))}, "CalendarDate_" + fid, "Voir la date dans le calendrier · " + date)
 	var place_x := 720
 	var location_kind := _location_kind(fixture)
-	_icon(row, C.fixture_location_icon(location_kind), Rect2(place_x, (line_height - 18) / 2.0, 18, 18), C.GOLD)
+	_icon(row, C.fixture_location_icon(location_kind), Rect2(place_x, (line_height - 18) / 2.0, 18, 18), C.MUTED)
 	var venue_parts := venue.split(" · ",false,1)
 	if venue_parts.size() == 2:
 		D.text(row,place_x+25,middle-7,venue_parts[0],21,C.IVORY,600,204)
@@ -1359,11 +1420,12 @@ func _playoffs() -> void:
 			D.text(panel, 89, 188, "Finaliste · " + G.club_name(league.finalist), 25, C.IVORY, 500, 1160)
 	else:
 		D.text(panel, 21, 154, "Les affiches se précisent au fil de la saison.", 30, C.IVORY, 700, 1250)
-		var note: String = {
-			"jlo-d1": "Barrages, demi-finales, petite finale et finale de D1 · Barrages D1–D2 en deux manches.",
-			"jlo-d2": "La saison régulière désigne le champion · Barrages D1–D2 en deux manches.",
-		}.get(league.id, "Barrages, demi-finales, finales et barrage d’accession selon la compétition.")
-		D.text(panel, 22, 185, note, 23, C.MUTED, 500, 1250)
+		# Les phases citées sont celles que le moteur a déjà publiées pour cette compétition (jamais de règlement figé).
+		var stages: Array[String] = []
+		for result: Dictionary in phases:
+			var stage_name := _phase(result).get_slice(" · ", 0)
+			if stage_name not in stages: stages.append(stage_name)
+		if not stages.is_empty(): D.text(panel, 22, 185, " · ".join(stages), 23, C.MUTED, 500, 1250)
 	if phases.is_empty(): D.text(panel, 23, 244, "Aucun résultat de phase finale conservé cette saison.", 27, C.MUTED, 500, 1230)
 	for i in phases.size():
 		var result: Dictionary = phases[i]
@@ -1449,7 +1511,7 @@ func _fixture_statistics(content: VBoxContainer, fixture: Dictionary) -> void:
 	var stats: Variant = fixture.get("stats", result.get("stats"))
 	if not stats is Array or stats.size() != 2 or not stats[0] is Dictionary or not stats[1] is Dictionary: return
 	content.add_child(C.rule())
-	content.add_child(C.label("Statistiques · domicile / extérieur", 23, C.GOLD, true, 700))
+	content.add_child(C.label("STATISTIQUES · DOMICILE / EXTÉRIEUR", 23, C.IVORY, true, 700))
 	for item: Array in [["Pénalités concédées", "penalties"], ["Cartons jaunes", "yellows"]]:
 		content.add_child(C.label("%s · %s / %s" % [item[0], S.count_text(stats[0].get(item[1])), S.count_text(stats[1].get(item[1]))], 22, C.IVORY))
 	for item: Array in [["Mêlées conservées", "scrumsWon", "scrums"], ["Touches conservées", "lineoutsWon", "lineouts"], ["Tirs de pénalité", "goals", "goalAttempts"], ["Transformations", "conversions", "conversionAttempts"]]:
@@ -1559,18 +1621,16 @@ func _competition_name(fixture: Dictionary) -> String:
 	var caption := World.name_for(app.model, id)
 	return caption
 
+## Libellé du type de phase publié par le moteur (aucun nom de compétition figé : le nom vient des données).
 static func _phase(fixture: Dictionary) -> String:
 	var id := str(fixture.get("phase", "league"))
-	var competition := _competition_id(fixture)
-	if competition == "jlo-d1" and id == "quarter": return "Barrage D1"
-	if competition == "jlo-d1-d2" and id == "promotion":
+	if id == "promotion":
 		var leg_value: Variant = fixture.get("leg")
 		var leg := int(leg_value) if leg_value is int or leg_value is float else 0
 		# L’historique conserve la manche dans un tour indexé à partir de zéro.
 		var round_value: Variant = fixture.get("competitionRound")
 		if leg == 0 and (round_value is int or round_value is float): leg = int(round_value) + 1
-		return "Barrage D1–D2 · Manche %d" % leg if leg in [1, 2] else "Barrage D1–D2"
-	if competition == "jlo-d1" and id == "third-place": return "Petite finale"
+		return "Barrage aller-retour · Manche %d" % leg if leg in [1, 2] else "Barrage aller-retour"
 	return str(LABELS.get(id, id.capitalize()))
 
 static func _dated_phase(fixture: Dictionary) -> String:
