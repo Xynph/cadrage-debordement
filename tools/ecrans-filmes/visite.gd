@@ -30,12 +30,17 @@ const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
+	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
+	{"id": "comparateur", "libelle": "Comparateur (trois joueurs)", "type": "comparateur"},
 	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
 	{"id": "presse-portraits", "libelle": "Presse : Portraits", "type": "presse_onglet", "onglet": 3},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "options", "libelle": "Options", "type": "options"},
+	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
+	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
+	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -473,12 +478,43 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var mini_fiche: Control = load("res://ui/immersive08/mini_fiche.gd").montrer(app, str(lien.get_meta("entity_id", "")), "squad", lien)
 			await stabiliser()
 			if mini_fiche == null or not is_instance_valid(mini_fiche): return {"statut": "echec", "note": "mini-fiche non affichée"}
+		"equilibre_postes":
+			app._navigate("Effectif")
+			await stabiliser()
+			var tuile := app.find_child("EffectifTuileAptes", true, false) as Control
+			if tuile == null: return {"statut": "indisponible", "note": "tuile Aptes absente"}
+			tuile.mouse_entered.emit()
+			await stabiliser()
+			if app.get_node_or_null("EquilibrePostes") == null: return {"statut": "echec", "note": "infobulle non affichée"}
+		"comparateur":
+			var effectif_cmp: Array = app.model.get("squad", [])
+			if effectif_cmp.size() < 3: return {"statut": "indisponible", "note": "effectif trop court"}
+			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id")), ident(effectif_cmp[2].get("id"))]
+			app._navigate("Effectif")
+			await stabiliser()
+			load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
+			await stabiliser()
+			if app.route != "Comparateur": return {"statut": "echec", "note": "comparateur non ouvert"}
 		"club":
 			var id := club_adverse()
 			if id.is_empty(): return {"statut": "indisponible", "note": "aucun club adverse connu"}
 			var ouvert: bool = app.navigation_controller.open_entity({"kind": "club", "id": id})
 			await stabiliser()
 			if not ouvert: return {"statut": "echec", "note": "fiche du club %s non ouverte" % id}
+		"preparation_bas":
+			app._navigate("Préparation")
+			await stabiliser()
+			# Leur XV probable arrive par la lecture seule « club_sheet » : on laisse la page se reconstruire, puis on descend.
+			for _i in 90: await process_frame
+			await stabiliser()
+			if app.body_scroll != null: app.body_scroll.scroll_vertical = int(app.body_scroll.get_v_scroll_bar().max_value)
+			await stabiliser()
+		"preparation_sous":
+			app._navigate("Préparation")
+			await stabiliser()
+			app.management_ui.preparation.sub = str(ecran.sous)
+			app._render()
+			await stabiliser()
 		"options":
 			app._navigate("Bureau")
 			await stabiliser()
@@ -496,6 +532,8 @@ func refermer(ecran: Dictionary) -> void:
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
 	if str(ecran.type) == "mini_fiche": load("res://ui/immersive08/mini_fiche.gd").cacher(app)
+	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
+	if str(ecran.type) == "equilibre_postes": app.find_child("EffectifTuileAptes", true, false).mouse_exited.emit()
 	fermer_fenetres()
 
 func surface() -> Control:

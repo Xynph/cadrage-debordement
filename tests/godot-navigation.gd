@@ -293,7 +293,7 @@ func run() -> void:
 	check(second_row != null, "Deuxième dossier proposé dans le vrai effectif avec sa pagination clavier")
 	check(app.selected_player == first_id, "Parcourir les pages ne remplace pas le dossier avant sélection explicite")
 	if second_row != null:
-		second_row.grab_focus(); await key(KEY_ENTER)
+		second_row.grab_focus(); await settle()
 		check(app.selected_player == other_id and nav.history[nav.cursor].player == other_id, "Ouverture clavier d'une fiche sans reconstruction : historique observé")
 		app.get_viewport().gui_release_focus(); await key(KEY_LEFT, false, true)
 		check(app.selected_player == first_id, "Précédent restaure la fiche après sélection clavier locale")

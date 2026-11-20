@@ -178,7 +178,7 @@ static func construire(app: Control, player: Dictionary, source: String) -> Pane
 	D.text(fiche, 26, 596, lecture, 17, Charte.IVOIRE_2 if not valeurs.is_empty() else Charte.IVOIRE_3, 500, 380, HORIZONTAL_ALIGNMENT_LEFT, true).name = "MiniFicheLecture"
 	commune.legende(fiche, 834, 596, 16)
 	D.line(fiche, Vector2(20, 614), Vector2(LARGEUR - 20, 614), Charte.FILET)
-	D.text(fiche, 26, 648, "Clic : fiche complète", 19, Charte.IVOIRE, 700, 400).name = "MiniFichePied"
+	D.text(fiche, 26, 648, "Clic : son club (XV)" if source == "adverse" else "Clic : fiche complète", 19, Charte.IVOIRE, 700, 400).name = "MiniFichePied"
 	D.text(fiche, 834, 648, "I : aperçu au clavier", 16, Charte.IVOIRE_2, 500, 320, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	_ignorer_souris(fiche)
 	return fiche

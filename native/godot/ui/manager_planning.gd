@@ -1,5 +1,5 @@
-extends AcceptDialog
-## An intentions workbench. Only manager_plan_* commands leave this window.
+extends Control
+## An intentions workbench. Only manager_plan_* commands leave this page. Sous-page pleine page de la Préparation (jamais une fenêtre).
 const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/game_skin.gd")
 const POSITIONS = ["Pilier gauche", "Talonneur", "Pilier droit", "Deuxième ligne", "Deuxième ligne", "Troisième ligne", "Troisième ligne", "Numéro 8", "Demi de mêlée", "Demi d’ouverture", "Ailier", "Centre", "Centre", "Ailier", "Arrière", "Talonneur remplaçant", "Pilier remplaçant", "Pilier remplaçant", "Remplaçant", "Remplaçant", "Remplaçant", "Remplaçant", "Remplaçant"]
@@ -22,24 +22,24 @@ var salary: SpinBox
 var fee: SpinBox
 var years: SpinBox
 
-static func open(application: Control) -> AcceptDialog:
+## Ouvre la sous-page « Préparer la suite » de la Préparation (écran plein, retour et historique de la coque).
+static func open(application: Control) -> void:
+	load("res://ui/immersive08/preparation_canvas.gd").ouvrir_sous_page(application, "planning")
+
+## Construit l'atelier dans `parent` (un Control déjà placé).
+static func embed(application: Control, parent: Control) -> Control:
 	var panel = load("res://ui/manager_planning.gd").new()
 	panel.app = application
-	application.add_child(panel)
+	parent.add_child(panel)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel._build()
-	panel.popup_centered_clamped(Vector2i(1180, 760), 0.9)
 	return panel
-
 func _build() -> void:
 	name = "ManagerPlanning"
-	title = "Préparer la suite du club"
-	min_size = Vector2i(560, 360)
-	ok_button_text = "Fermer"
-	confirmed.connect(queue_free)
-	canceled.connect(queue_free)
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 10)
 	add_child(page)
+	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	tabs = TabBar.new()
 	tabs.name = "PlannerTabs"
 	for label in ["Trois rencontres", "Effectif futur", "Objectif tactique"]: tabs.add_tab(label)
@@ -56,6 +56,19 @@ func _build() -> void:
 	content.add_theme_constant_override("separation", 10)
 	scroll.add_child(content)
 	app.bridge.model_changed.connect(_model_changed)
+	# La coque redessine la page à chaque modèle reçu : onglet, rencontre, créneau et recherche sont gardés.
+	var garde: Variant = app.management_ui.get("planning_ui")
+	if garde is Dictionary:
+		fixture_index = int(garde.get("fixture", 0))
+		slot_index = int(garde.get("slot", 0))
+		horizon_index = int(garde.get("horizon", 0))
+		kind_index = int(garde.get("kind", 0))
+		candidate_id = str(garde.get("candidate", ""))
+		search_text = str(garde.get("search", ""))
+		show_horizon_players = bool(garde.get("horizon_players", false))
+		tabs.set_block_signals(true)
+		tabs.current_tab = clampi(int(garde.get("tab", 0)), 0, tabs.tab_count - 1)
+		tabs.set_block_signals(false)
 	_refresh()
 
 func _model_changed(_model: Dictionary) -> void:
@@ -108,6 +121,7 @@ func _send(command: String, payload: Dictionary) -> void:
 	app._command(command, payload)
 
 func _refresh() -> void:
+	app.management_ui.planning_ui = {"tab":tabs.current_tab, "fixture":fixture_index, "slot":slot_index, "horizon":horizon_index, "kind":kind_index, "candidate":candidate_id, "search":search_text, "horizon_players":show_horizon_players}
 	for child in content.get_children():
 		content.remove_child(child)
 		child.queue_free()

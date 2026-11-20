@@ -4,6 +4,7 @@ class Host extends Control:
 	signal model_changed(model: Dictionary)
 	var model: Dictionary
 	var bridge: Node
+	var management_ui: Dictionary = {}
 	var calls: Array = []
 	func _command(command: String, payload: Dictionary) -> void:
 		calls.append({"command":command,"payload":payload})
@@ -23,7 +24,11 @@ func run() -> void:
 	root.size = Vector2i(1280, 720)
 	host.model.squad[0]["renewal"] = {"salary":9000,"fee":18000,"minYears":4,"maxYears":3,"available":false}
 	var before := JSON.stringify(host.model)
-	var panel = load("res://ui/manager_planning.gd").open(host)
+	# L'atelier est une sous-page (plus une fenêtre) : on l'embarque directement.
+	var page := Control.new()
+	root.add_child(page)
+	page.size = Vector2(1180, 700)
+	var panel = load("res://ui/manager_planning.gd").embed(host, page)
 	await process_frame
 	await process_frame
 	assert(panel.find_child("PlannerFixture", true, false) != null)

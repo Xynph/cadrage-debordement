@@ -28,6 +28,8 @@ const Centre = preload("res://ui/immersive08/centre_canvas.gd")
 const Press = preload("res://ui/immersive08/press_canvas.gd")
 const Rivalry = preload("res://ui/immersive08/rivalry_canvas.gd")
 const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
+const Comparateur = preload("res://ui/immersive08/comparateur_canvas.gd")
+const EuropePage = preload("res://ui/immersive08/europe_canvas.gd")
 const Locker = preload("res://ui/immersive08/locker_canvas.gd")
 const Career = preload("res://ui/immersive08/career_canvas.gd")
 const Selections = preload("res://ui/international_view.gd")
@@ -152,7 +154,7 @@ static func render(app: Control) -> bool:
 	var canvas_script := _dedicated_page(app,physical)
 	var immersive_match: bool = app.route=="Match" and physical.x>=RICH_MIN_SIZE.x and physical.y>=RICH_MIN_SIZE.y
 	var monthly_calendar: bool = app.route=="Calendrier" and not Selections.nation_only(app.model) and not app.get_meta("calendar_table",false)
-	if canvas_script!=null or immersive_match or monthly_calendar or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
+	if canvas_script!=null or immersive_match or monthly_calendar or app.route=="Effectif":
 		app.heading=null
 		app.minibar=C.label("",17,C.GOLD);app.minibar.visible=false;content.add_child(app.minibar)
 	else: _heading(content, app)
@@ -270,6 +272,8 @@ static func open_preparation(app: Control, tab: int) -> void:
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
 	# Fiche d'un club : gabarit à l'échelle, lisible dès 1280 × 720.
 	if app.route == ClubSheet.ROUTE: return ClubSheet
+	if app.route == Comparateur.ROUTE: return Comparateur
+	if app.route == EuropePage.ROUTE: return EuropePage
 	# Fiche complète d'une piste du marché ou d'un Espoir (clic sur le nom), à toutes les tailles.
 	if not FichePage.actuelle(app).is_empty(): return FichePage
 	# Composition (choix de Léo du 19/11/2026, variante 1) : page dédiée à toutes les tailles, avec son propre en-tête.
@@ -315,7 +319,7 @@ const RAIL_SECTIONS := [
 ]
 const RAIL_NATION := [["Réception", "Réception", ["Réception"]], ["Sélections", "Sélections", ["Sélections"]], ["Calendrier", "Calendrier", ["Calendrier"]]]
 ## Écrans propres à la coque (aucune fenêtre) : résultats de recherche et réglages.
-const SHELL_ROUTES := ["Recherche", "Réglages"]
+const SHELL_ROUTES := ["Recherche", "Réglages", "Comparateur", "Préparation Europe"]
 const RAIL_WIDTH := 309.0
 const RAIL_HEADER := 152.0
 const RAIL_TOP := 169.0
@@ -979,6 +983,8 @@ static func _page_caption(app: Control) -> String:
 	var fiche := FichePage.actuelle(app)
 	if not fiche.is_empty(): return "Fiche joueur : " + str(fiche.joueur.get("name", ""))
 	if app.route == ClubSheet.ROUTE: return "Fiche club : " + ClubSheet.caption(app)
+	if app.route == Comparateur.ROUTE: return Comparateur.caption(app)
+	if app.route == EuropePage.ROUTE: return "Préparer l’Europe"
 	if _is_training(app): return "Entraînement"
 	if app.route == "Recherche":
 		var query := str(app.management_ui.get("search_query", "")).strip_edges()
@@ -1244,7 +1250,7 @@ static func _sync_office_props(match_status: Label) -> void:
 
 static func _subnavigation(parent: Node, app: Control) -> void:
 	if Selections.nation_only(app.model): return
-	if app.route=="Composition" or (app.route=="Effectif" and app.get_window().size.x>=1600): return
+	if app.route=="Composition" or app.route=="Effectif": return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
 		var row := C.h(8)
@@ -1374,11 +1380,8 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 			var player:=P.player(app.model,app.selected_player)
 			if app.get_meta("immersive08_full_player",false) and not player.is_empty():app.body.add_child(PlayerCanvas.build(app,player))
 			elif SocleEffectif.actif(app):app.body.add_child(SocleEffectif.build(app))
-			elif app.get_window().size.x>=1600:app.body.add_child(SquadCanvas.build(app))
-			else:
-				var roster: Control = app.SquadViews.squad(app)
-				app.body.add_child(roster)
-				Legacy.apply(roster, app.accent)
+			# Décision de Léo (19/11/2026) : un seul tableau, à toutes les tailles (colonnes retirées en fenêtre étroite).
+			else:app.body.add_child(SquadCanvas.build(app))
 		"Préparation": app.body.add_child(Preparation.compact(app))
 		"Plan de jeu": app.body.add_child(app.PlaybookViews.build(app))
 		"Recrutement": app.body.add_child(app.SquadViews.market(app))
