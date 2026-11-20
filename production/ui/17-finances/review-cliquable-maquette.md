@@ -45,7 +45,7 @@ BLOQUANT (corrigés)
 - Axe de la courbe : graduations non rondes, la ligne d'équilibre marquée « −880 € ». Graduations 1/2/5, zéro écrit « 0 € » ; test ajouté.
 - Budget : deux boutons ivoire pleins ; « Ajuster le budget » y devient un lien.
 - Classement : pastille arrondie bordée (rayon ≠ 0) et cadre complet autour de ton club → liseré + mot, fond relevé + liseré ivoire.
-- Classement : même phrase « Pas encore de saison close… » sur 14 lignes, tronquée à 1280 → dite une fois sous le titre.
+- Classement : même phrase « Pas encore de saison close… » sur 14 lignes, tronquée à 1280 → l'en-tête de colonne dit « Trois dernières saisons · à venir ».
 - 1280 : textes tronqués (marge, vigilances, légende de la courbe, pagination « Préc. 1 / 4 », Transferts, Budget) → reflux ou libellés plus courts.
 
 AVIS (écarts acceptés)

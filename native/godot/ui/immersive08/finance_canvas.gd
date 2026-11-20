@@ -932,8 +932,8 @@ static func _clubs(app: Control, canvas: Control, zone: Rect2, accounts: Diction
 		return
 	# Sans saison close, la même phrase sur chaque ligne n'apprend rien : elle est dite une fois, ici.
 	var sans_courbe := clubs.all(func(club: Dictionary): return not (club.get("courbe") is Array) or (club.courbe as Array).is_empty())
-	_texte(panel, 25, 88, "Du plus solide au plus fragile, d’après la trésorerie de chaque club rapportée à la réserve qu’il se fixe." + (" Les trois dernières saisons se rempliront à la première saison close." if sans_courbe else ""), 18, Charte.IVOIRE_2, largeur - 50)
-	var head := [["#",25,60],["Club",95,440],["Santé",560,170],["Propriétaire",760,300],["Trois dernières saisons",1090,480]]
+	_texte(panel, 25, 88, "Du plus solide au plus fragile, d’après la trésorerie de chaque club rapportée à la réserve qu’il se fixe.", 18, Charte.IVOIRE_2, largeur - 50)
+	var head := [["#",25,60],["Club",95,440],["Santé",560,170],["Propriétaire",760,300],["Trois dernières saisons" + (" · à venir" if sans_courbe else ""),1090,480]]
 	for h: Array in head: D.text(panel, h[1], 126, h[0], 15, Charte.IVOIRE_2, 600, h[2])
 	var row_height := minf(38.0, (zone.size.y - 150.0) / maxf(1.0, clubs.size()))
 	for i in clubs.size():
