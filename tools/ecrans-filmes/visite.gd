@@ -47,6 +47,9 @@ const EXTRAS := [
 	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
+	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
+	{"id": "finances-classement", "libelle": "Finances · onglet Classement", "type": "finances_onglet", "onglet": "clubs"},
+	{"id": "finances-transferts", "libelle": "Finances · onglet Transferts", "type": "finances_onglet", "onglet": "transfers"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [

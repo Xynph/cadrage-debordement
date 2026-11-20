@@ -8,7 +8,7 @@ const Finance = preload("res://ui/immersive08/finance_canvas.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const TABS := ["summary", "cash", "wages", "transfers", "budget", "clubs"]
 ## Zones cliquables dont le clic doit mener ailleurs (écran ou onglet différent) ; les tris et pages restent sur place.
-const PREFIXES := ["FinanceMetricLink", "FinanceVerdictLink", "FinanceWatch", "FinanceDueRow", "FinanceAllocationRow", "FinanceLedgerRow_", "FinanceCommitmentLink", "FinanceAdjustBudget", "FinanceRecruitment", "FinanceTransferContracts", "FinanceBudgetDecisions"]
+const PREFIXES := ["FinanceMetricLink", "FinanceVerdictLink", "FinanceWatch", "FinanceDueRow", "FinanceAllocationRow", "FinanceLedgerRow_", "FinanceCommitmentLink", "FinanceAdjustBudget", "FinanceRecruitment", "FinanceTransferContracts", "FinanceBudgetDecisions", "FinanceTotalLink"]
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -127,6 +127,26 @@ func run() -> void:
 		(noms_joueurs[0] as Button).pressed.emit()
 		await settle()
 		check(app.route == "Effectif" and open_windows() == fenetres_avant, "Un nom de joueur ouvre la fiche complète (%s)" % app.route)
+	# Courbe : graduations rondes, le zéro (ligne pointillée) est une graduation.
+	await ouvrir("summary")
+	var courbe := named("FinanceLedgerPlot")
+	if courbe != null and not (courbe.get("operations") as Array).is_empty():
+		check(courbe.call("graduations").any(func(v: float): return is_zero_approx(v)), "Courbe : le zéro est une graduation (%s)" % str(courbe.call("graduations")))
+	# 1280 × 720 : la phrase du verdict ne chevauche aucun autre texte du bloc (Synthèse et colonne fixe).
+	root.size = Vector2i(1280, 720)
+	DisplayServer.window_set_size(root.size)
+	for tab in ["summary", "cash"]:
+		await ouvrir(tab)
+		var phrase := named("FinanceVerdictSentence") as Label
+		var bloc := named("FinanceVerdict")
+		check(phrase != null and bloc != null, "Verdict présent à 1280 · " + tab)
+		if phrase == null or bloc == null: continue
+		var zone_phrase := Rect2(phrase.global_position, Vector2(phrase.size.x, phrase.get_line_count() * phrase.get_line_height()))
+		for texte: Node in bloc.find_children("*", "Label", true, false):
+			if texte == phrase or not (texte as Label).is_visible_in_tree() or (texte as Label).text.strip_edges().is_empty(): continue
+			var lignes := maxi(1, (texte as Label).get_line_count()) if (texte as Label).autowrap_mode != TextServer.AUTOWRAP_OFF else 1
+			var zone_texte := Rect2((texte as Label).global_position, Vector2((texte as Label).size.x, lignes * (texte as Label).get_line_height()))
+			check(not zone_phrase.grow(-1).intersects(zone_texte.grow(-1)), "1280 · %s : la phrase du verdict chevauche « %s »" % [tab, (texte as Label).text])
 	if failures.is_empty(): print("OK finances-ecran : %d vérifications" % checks)
 	else: printerr("ÉCHECS : %d / %d" % [failures.size(), checks])
 	quit(0 if failures.is_empty() else 1)
