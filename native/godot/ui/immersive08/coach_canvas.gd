@@ -404,6 +404,7 @@ func _disposer_bandeau() -> void:
 		# Médaillon ovale (72 × 48 en référence) : le visage remplit la zone, l'ovale tracé est dessiné par-dessus.
 		_visage.position = Vector2.ZERO
 		_visage.size = s
+		_visage.ajuster()
 		_style_pastille()
 		if not _bandeau_masque and portrait is GabiPortrait and portrait.framing == "visage":
 			portrait.set_render_size(Vector2i.ONE * roundi(maxf(s.x, h) * _bandeau.get_global_transform_with_canvas().get_scale().y * 2.0))

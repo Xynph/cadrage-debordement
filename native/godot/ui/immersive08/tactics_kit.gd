@@ -77,7 +77,7 @@ static func marqueur(parent: Control, zone: Rect2, couleur: Color = Charte.IVOIR
 ## Titre de section en capitales italiques (Barlow Condensed, vraie italique).
 static func titre(parent: Control, x: float, ligne: float, texte: String, taille: int = 24, largeur: float = 900) -> Label:
 	var label := D.text(parent, x, ligne, texte.to_upper(), taille, Charte.IVOIRE, 700, largeur)
-	label.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+	label.add_theme_font_override("font", Charte.TITRE_GRAS)
 	label.name = "CardTitle"
 	return label
 

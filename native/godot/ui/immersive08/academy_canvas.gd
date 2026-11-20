@@ -26,6 +26,8 @@ const ROW := 30.0
 const HEADER_H := 34.0
 const TABLE_TOP := 258.0
 const ROWS_H := 560.0
+## Marge sous la dernière ligne : elle reste entière et loin des coins arrondis du panneau en fin de défilement.
+const BAS_TABLEAU := 22.0
 const STRIP_TOP := 874.0
 const CARTES_TOP := 1004.0
 
@@ -440,7 +442,7 @@ func _col(columns: Array, id: String) -> Dictionary:
 
 func _table(group: String) -> void:
 	var columns := _columns()
-	var panel := D.rect(self, Rect2(0, TABLE_TOP, WIDTH, HEADER_H + ROWS_H + 4), Charte.PANNEAU, 24)
+	var panel := D.rect(self, Rect2(0, TABLE_TOP, WIDTH, HEADER_H + ROWS_H + 4), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	panel.name = "AcademyImmersiveTable"
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	var header := D.rect(panel, Rect2(0, 0, WIDTH, HEADER_H), Color.TRANSPARENT, 0)
@@ -482,7 +484,7 @@ func _table(group: String) -> void:
 	rows = Control.new()
 	rows.name = "AcademyImmersiveRows"
 	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rows.custom_minimum_size = Vector2(C.px(WIDTH), C.px(ROW * maxi(1, shown.size())))
+	rows.custom_minimum_size = Vector2(C.px(WIDTH), C.px(ROW * maxi(1, shown.size()) + BAS_TABLEAU))
 	scroll.add_child(rows)
 	_draw_rows(columns)
 	scroll.get_v_scroll_bar().value_changed.connect(func(value): state.table_scroll = value)
@@ -709,7 +711,7 @@ func _strip() -> void:
 	for enfant in strip.get_children():
 		strip.remove_child(enfant)
 		enfant.queue_free()
-	var fond := D.rect(strip, Rect2(0, 0, WIDTH, 100), Charte.PANNEAU, 24)
+	var fond := D.rect(strip, Rect2(0, 0, WIDTH, 100), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if selected.is_empty():
 		D.text(strip, 22, 58, "Choisis un jeune dans la liste pour décider de son avenir.", 20, Charte.IVOIRE_2, 600, 1400)
@@ -884,7 +886,7 @@ func _inactive_pathway_status() -> String:
 	return "Parcours à activer" if pathway.get("available", false) else "Au calendrier des Espoirs"
 
 func _pathways() -> void:
-	var panel := D.rect(self, Rect2(0, 216, WIDTH, 980), Charte.PANNEAU, 24)
+	var panel := D.rect(self, Rect2(0, 216, WIDTH, 980), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	panel.name = "AcademyPathwayPane"
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	Kit.titre(panel, 24, 52, "Du centre au rugby professionnel", 30, 1200)
@@ -1001,7 +1003,7 @@ func _junior(parent: Control) -> void:
 # --- Encadrement -------------------------------------------------------------------------------------------------------
 
 func _staff_page() -> void:
-	var panel := D.rect(self, Rect2(0, 216, WIDTH, 980), Charte.PANNEAU, 24)
+	var panel := D.rect(self, Rect2(0, 216, WIDTH, 980), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	panel.name = "AcademyStaffPane"
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	Kit.titre(panel, 24, 52, "Le centre de formation", 30, 1200)

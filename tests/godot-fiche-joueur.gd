@@ -75,7 +75,7 @@ func run() -> void:
 		65:Charte.ATTRIBUT_65, 74:Charte.ATTRIBUT_65, 75:Charte.ATTRIBUT_75, 84:Charte.ATTRIBUT_75, 85:Charte.ATTRIBUT_85, 99:Charte.ATTRIBUT_85}
 	for value: int in paliers: check(Charte.couleur_attribut(value) == paliers[value], "Palier de %d" % value)
 	check(Charte.couleur_attribut(null) == Charte.IVOIRE_3, "Valeur inconnue : ivoire-3")
-	check([Charte.ATTRIBUT_0, Charte.ATTRIBUT_40, Charte.ATTRIBUT_55, Charte.ATTRIBUT_65, Charte.ATTRIBUT_75, Charte.ATTRIBUT_85] == [Color("ee6f5f"), Color("f2a04a"), Color("eadb55"), Color("a8d878"), Color("4fcb78"), Color("3debb4")], "Jetons exacts du barème")
+	check([Charte.ATTRIBUT_0, Charte.ATTRIBUT_40, Charte.ATTRIBUT_55, Charte.ATTRIBUT_65, Charte.ATTRIBUT_75, Charte.ATTRIBUT_85] == [Color("ee6f5f"), Color("f2a04a"), Color("d4e35c"), Color("a8d878"), Color("4fcb78"), Color("3debb4")], "Jetons exacts du barème")
 	check(Identity.flag_texture("fr") != null and Identity.flag_texture("gb-eng") != null, "Drapeaux en couleur chargés pour un flagCode connu")
 
 	app._command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"})

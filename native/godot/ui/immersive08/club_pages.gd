@@ -64,7 +64,7 @@ static func build(app: Control, canvas: Control) -> void:
 	var titre := Kit.titre(canvas, 0, TOP + 100, str(TITRES.get(kind, "")), 38, 1400)
 	titre.name = "ClubSubpageTitle"
 	D.line(canvas, Vector2(0, TOP + 124), Vector2(2248, TOP + 124), Charte.FILET)
-	var cadre := D.rect(canvas, Rect2(0, TOP + 148, LARGEUR, 900), Charte.PANNEAU, 0)
+	var cadre := D.rect(canvas, Rect2(0, TOP + 148, LARGEUR, 900), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	cadre.name = "ClubSubpage_" + kind
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
 	cadre.clip_contents = true

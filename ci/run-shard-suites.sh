@@ -110,6 +110,8 @@ budget() {
     # Audit des flux financiers migré en carrière Monde : 13 semaines tracées + contre-épreuve dans un second worker,
     # 85 s en local (20/11/2026) ; budget ≈ 5 fois, comme les autres carrières Monde sans poids mesuré.
     tests/world-finance-flow-audit.cjs) echo 420s ;;
+    # Audit des flux sur une saison Monde entière + « Saison suivante » + 3 semaines (intersaison) : 6 min 40 en local sous charge (20/11/2026).
+    tests/world-finance-flow-audit-intersaison.cjs) echo 1500s ;;
     # Suites Monde de 76 à 131 s (main 44443910094 et PR #943 44447171817), sans limite propre donc à 180 s : même ralentissement du runner ; budget ≈ 2,5-3 fois.
     tests/ai-roster-cycle.cjs|tests/continuer-arrets-saison.cjs|tests/essais-realistes.cjs|tests/reactivite-projection-rapide-semaines.cjs|tests/reactivite-projection-verification-direct.cjs|tests/sauvegarde-journal-plantage-monde.cjs) echo 300s ;;
     tests/avant-match-donnees.cjs|tests/reactivite-projection-verification-semaines.cjs) echo 360s ;;
